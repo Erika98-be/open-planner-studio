@@ -119,6 +119,11 @@
     "notifications.durationBelowDoneWork": "9c008315befe88d2",
     "notifications.tutorialOfferLater": "80aae2f5904649c7",
     "notifications.tutorialOfferUnavailable": "1f77b8d99b9f3171",
+    "notifications.p6xmlImportEmpty": "673ae79fa93c2e64",
+    "notifications.p6xmlImportEmptyNoObjectIds": "a814220675ae3bf7",
+    "notifications.p6xmlImportEmptyXerColumns": "b600ebb77f86c6b0",
+    "notifications.p6xmlImportOpened": "befb50170f071af0",
+    "notifications.p6xmlImportCrossProjectRelations": "f5242e453aa163a0",
     "scheduleErrors.cycle": "add6dec1772d91f1",
     "scheduleErrors.noWorkingDays": "f99738f50f5271ea",
     "scheduleErrors.invalidDayDuration": "9570c6555e03a9f4",
@@ -1191,7 +1196,11 @@
     "siteFiles.nameLabel": "d30b9bde7867797b",
     "siteFiles.saveHint": "af6f8cf36ca1c2fc",
     "siteFiles.saveToSite": "31b52b3976d4fe4d",
-    "siteFiles.toThisPc": "d951ec29c7fbc529"
+    "siteFiles.toThisPc": "d951ec29c7fbc529",
+    "notifications.p6xmlImportUnassignedActivities_one": "19b2ef64150a3f72",
+    "notifications.p6xmlImportUnassignedActivities_other": "34a478771a3daf6f",
+    "notifications.exportP6Truncated_one": "95e5a50366fdaaa3",
+    "notifications.exportP6Truncated_other": "ae64ca54c96c61a4"
   },
   "task": {
     "contourDialog.title": "2c88619a7af281e3",

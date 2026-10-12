@@ -68,7 +68,7 @@ Por formato de archivo: si puede abrir, guardar y exportar cada archivo, qué se
 
 **Qué se conserva** — estructura WBS y tareas con duración, fechas y avance; relaciones con desfase; restricciones (también una segunda, como restricción flexible); calendarios; recursos y asignaciones; la fecha de estado (como `DataDate`); un tipo de tarea personalizado, en un campo propio, `OPS Custom Task Type`, que la aplicación vuelve a leer y que P6 puede ignorar.
 
-**Qué no se conserva** — líneas base y fechas límite; códigos de actividad, campos personalizados, notas y relaciones externas; las opciones de cálculo; una excepción de calendario laboral (una excepción que convierte un día en día laborable). P6 no tiene desfase en porcentajes: la aplicación lo convierte en un número fijo de días. Un desfase en días naturales pasa a ser un desfase en tiempo laboral: 3 días naturales pasan a ser 3 días laborables. Una hamaca pasa a ser una tarea normal. Una tarea programada manualmente pasa a ser una tarea normal con fechas calculadas, y un retraso de nivelación de menos de un día se descarta.
+**Qué no se conserva** — líneas base y fechas límite; códigos de actividad, campos personalizados, notas y relaciones externas; las opciones de cálculo. P6 no tiene desfase en porcentajes: la aplicación lo convierte en un número fijo de días. Un desfase en días naturales pasa a ser un desfase en tiempo laboral: 3 días naturales pasan a ser 3 días laborables. Una hamaca pasa a ser una tarea normal. Una tarea programada manualmente pasa a ser una tarea normal con fechas calculadas, y un retraso de nivelación de menos de un día se descarta.
 
 ## Archivo de Primavera (`.xer`)
 

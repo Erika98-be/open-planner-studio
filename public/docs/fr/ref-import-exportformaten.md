@@ -68,7 +68,7 @@ Par format de fichier : si vous pouvez l'ouvrir, l'enregistrer et l'exporter, ce
 
 **Ce qui est repris** — structure WBS et tâches avec durée, dates et avancement ; relations avec décalage ; contraintes (aussi une deuxième, comme contrainte souple) ; calendriers ; ressources et affectations ; la date d'état (comme `DataDate`) ; un type de tâche personnalisé, dans un champ à part, `OPS Custom Task Type`, que l'application relit et que P6 peut ignorer.
 
-**Ce qui n'est pas repris** — références et échéances ; codes d'activité, champs personnalisés, notes et relations externes ; les options de calcul ; une exception de calendrier de travail (une exception qui fait d'un jour un jour ouvré). P6 ne connaît pas de décalage en pourcentages : l'application le convertit en un nombre fixe de jours. Un décalage en jours calendaires devient un décalage en horaires de travail : 3 jours calendaires deviennent 3 jours ouvrés. Un hamac devient une tâche ordinaire, une tâche planifiée manuellement devient une tâche ordinaire avec des dates calculées, et un retard de nivellement inférieur à un jour est supprimé.
+**Ce qui n'est pas repris** — références et échéances ; codes d'activité, champs personnalisés, notes et relations externes ; les options de calcul. P6 ne connaît pas de décalage en pourcentages : l'application le convertit en un nombre fixe de jours. Un décalage en jours calendaires devient un décalage en horaires de travail : 3 jours calendaires deviennent 3 jours ouvrés. Un hamac devient une tâche ordinaire, une tâche planifiée manuellement devient une tâche ordinaire avec des dates calculées, et un retard de nivellement inférieur à un jour est supprimé.
 
 ## Fichier Primavera (`.xer`)
 

@@ -68,7 +68,7 @@ Her dosya biçimi için: dosyayı açıp açamayacağınız, kaydedip dışa akt
 
 **Birlikte gelenler** — WBS yapısı ve görevler, süre, tarihler ve ilerleme ile; gecikmeli ilişkiler; kısıtlamalar (ikinci bir kısıtlama da, yumuşak kısıtlama olarak); takvimler; kaynaklar ve atamalar; durum tarihi (`DataDate` olarak); kendi alanında özel bir görev türü, `OPS Custom Task Type`. Uygulama bunu geri okur, P6 ise yok sayabilir.
 
-**Birlikte gelmeyenler** — temel planlar ve son tarihler; etkinlik kodları, özel alanlar, notlar ve dış ilişkiler; hesaplama seçenekleri; bir iş takvimi istisnası (bir günü iş günü yapan istisna). P6'da yüzde cinsinden gecikme yoktur. Uygulama bunu sabit bir gün sayısına çevirir. Takvim günü cinsinden bir gecikme, çalışma saatlerinde bir gecikme olur: 3 takvim günü, 3 iş günü olur. Bir hamak sıradan bir görev olur. Elle planlanan bir görev, hesaplanan tarihleri olan sıradan bir görev olur. Bir günden kısa bir dengeleme gecikmesi düşer.
+**Birlikte gelmeyenler** — temel planlar ve son tarihler; etkinlik kodları, özel alanlar, notlar ve dış ilişkiler; hesaplama seçenekleri. P6'da yüzde cinsinden gecikme yoktur. Uygulama bunu sabit bir gün sayısına çevirir. Takvim günü cinsinden bir gecikme, çalışma saatlerinde bir gecikme olur: 3 takvim günü, 3 iş günü olur. Bir hamak sıradan bir görev olur. Elle planlanan bir görev, hesaplanan tarihleri olan sıradan bir görev olur. Bir günden kısa bir dengeleme gecikmesi düşer.
 
 ## Primavera dosyası (`.xer`)
 

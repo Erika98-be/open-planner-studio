@@ -68,7 +68,7 @@ Tässä kerrotaan kustakin tiedostomuodosta: voiko sen avata, tallentaa ja vied�
 
 **Mukana** — WBS-rakenne ja tehtävät kestoineen, päivämäärineen ja edistymisineen; riippuvuudet viiveineen; rajoitteet, myös toinen rajoite pehmeänä rajoitteena; kalenterit; resurssit ja resurssikohdistukset; raportointipäivä (kenttänä `DataDate`); mukautettu tehtävätyyppi omassa kentässään, `OPS Custom Task Type`, jonka sovellus lukee takaisin ja jonka P6 voi jättää huomiotta.
 
-**Ei mukana** — perustasot ja tavoitepäivät; tehtäväkoodit, mukautetut kentät, muistiinpanot ja ulkoiset riippuvuudet; laskentavaihtoehdot; työkalenterin poikkeus (poikkeus, joka tekee päivästä työpäivän). P6:ssa ei ole viivettä prosentteina: sovellus muuntaa sen kiinteäksi määräksi päiviä. Viive kalenteripäivinä muuttuu työajan viiveeksi: 3 kalenteripäivää tulee 3 työpäivää. Riippumatto muuttuu tavalliseksi tehtäväksi, manuaalisesti ajoitettu tehtävä tavalliseksi tehtäväksi lasketuilla päivämäärillä, ja tasaamisviive, joka on alle päivän, pudotetaan pois.
+**Ei mukana** — perustasot ja tavoitepäivät; tehtäväkoodit, mukautetut kentät, muistiinpanot ja ulkoiset riippuvuudet; laskentavaihtoehdot. P6:ssa ei ole viivettä prosentteina: sovellus muuntaa sen kiinteäksi määräksi päiviä. Viive kalenteripäivinä muuttuu työajan viiveeksi: 3 kalenteripäivää tulee 3 työpäivää. Riippumatto muuttuu tavalliseksi tehtäväksi, manuaalisesti ajoitettu tehtävä tavalliseksi tehtäväksi lasketuilla päivämäärillä, ja tasaamisviive, joka on alle päivän, pudotetaan pois.
 
 ## Primavera-tiedosto (`.xer`)
 

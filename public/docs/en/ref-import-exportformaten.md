@@ -62,13 +62,21 @@ Per file format: whether you can open, save and export it, what does and does no
 
 **Open** — yes. The app recognises an `.xml` file as P6 XML by the root element `APIBusinessObjects`. Calculation profile: *Open Planner Studio*.
 
+**Several projects in one file.** Each project with activities opens in its own tab, named *Project name (Project ID)*. The app skips a project without activities. The active tab is the project with the most activities. The app does not carry over a relation to another project, nor an activity that belongs to no project. After opening, the app reports how many projects it opened.
+
+**Baselines.** A `<BaselineProject>` in the file becomes a baseline of its project. The baseline that P6 marks as active is also active in the app.
+
+**No readable activities.** If the app finds no activity it can read, it does not open a tab. It reports this, with the reason when it is known. Examples: activities without an `ObjectId`, or XER column names in an XML file. Then export the project from P6 again as P6 XML, or open it as `.xer`.
+
 **Save** — no.
 
 **Export** — yes, as *Primavera P6 XML* (*For Oracle Primavera P6.*). Default name: the project name with `.xml`, so the same name as an MS Project XML export: give them different names yourself.
 
+**Project name and project ID.** If the project name ends with a code in brackets without a space, such as *Office (OZB-05)*, then *OZB-05* becomes the project ID in P6 and *Office* the name. That way a project from P6 comes back with the same name after reopening. Text with a space, such as *New build (phase 2)*, stays in the name. Without a code, the project gets a unique ID of its own from the app, starting with *OPS:*.
+
 **What goes along** — WBS structure and tasks with duration, dates and progress; relations with lag; constraints (also a second one, as a soft constraint); calendars; resources and assignments; the status date (as `DataDate`); a custom task type, in a field of its own, `OPS Custom Task Type`, that the app reads back and that P6 may ignore.
 
-**What does not go along** — baselines and deadlines; activity codes, custom fields, notes and external links; the calculation options; a working calendar exception (an exception that makes a day a working day). P6 has no lag in percentages: the app converts it to a fixed number of days. A lag in calendar days becomes a lag in working time: 3 calendar days become 3 work days. A hammock becomes an ordinary task, a manually scheduled task an ordinary task with calculated dates, and a leveling delay of less than a day is dropped.
+**What does not go along** — baselines and deadlines; activity codes, custom fields, notes and external links; the calculation options; the names of holidays. P6 has no name per day off: after reopening, a holiday is called *Holiday* and a working exception *Working exception*. Consecutive days off come back as one range. The app shortens a name or code that is longer than P6 allows: an activity name to 120 characters, an activity ID or WBS code to 40, a WBS or project name to 100. It reports how many names and codes it shortened. P6 has no lag in percentages: the app converts it to a fixed number of days. A lag in calendar days becomes a lag in working time: 3 calendar days become 3 work days. A hammock becomes an ordinary task, a manually scheduled task an ordinary task with calculated dates, and a leveling delay of less than a day is dropped.
 
 ## Primavera file (`.xer`)
 

@@ -100,6 +100,8 @@
     "mppSourceScheduleNotes_other": "Dit MS Project-bestand bevat {{count}} taken met een onderbroken, genivelleerde of resource-gedreven planning. Die worden als zodanig ingelezen en getoond.",
     "exportSplitsLost_one": "{{count}} taak met onderbrekingen is zonder onderbrekingen geëxporteerd: MS Project/P6 kennen die alleen als urenverdeling.",
     "exportSplitsLost_other": "{{count}} taken met onderbrekingen zijn zonder onderbrekingen geëxporteerd: MS Project/P6 kennen die alleen als urenverdeling.",
+    "exportP6Truncated_one": "{{count}} naam of code is ingekort tot de lengte die P6 toestaat.",
+    "exportP6Truncated_other": "{{count}} namen of codes zijn ingekort tot de lengte die P6 toestaat.",
     "projectStartAnchorsClamped_one": "Projectstart verzet: {{count}} taakanker zonder voorganger of constraint is meegeschoven naar de nieuwe startdatum.",
     "projectStartAnchorsClamped_other": "Projectstart verzet: {{count}} taakankers zonder voorganger of constraint zijn meegeschoven naar de nieuwe startdatum.",
     "mppTimephasedSteeringLost_one": "Het datumvenster uit MS Project stuurt {{count}} taak niet meer na deze bewerking; de urenverdeling zelf blijft gelden en in het bestand bewaard.",
@@ -160,7 +162,16 @@
     "statusDateSetToday": "Er stond nog geen statusdatum: die staat nu op vandaag ({{date}}), want voortgang wordt tot de statusdatum gemeten. Aanpassen kan via Planning → Statusdatum.",
     "durationBelowDoneWork": "‘{{name}}’ is al voor {{percent}}% gedaan: een duur korter dan het gedane werk kan niet. De duur is niet gewijzigd.",
     "tutorialOfferLater": "Je vindt de tutorials altijd in Help › Tutorials.",
-    "tutorialOfferUnavailable": "De tutorials konden nu niet worden geïnstalleerd of gestart. In Help › Tutorials kun je het later opnieuw proberen."
+    "tutorialOfferUnavailable": "De tutorials konden nu niet worden geïnstalleerd of gestart. In Help › Tutorials kun je het later opnieuw proberen.",
+    "p6xmlImportEmpty": "In dit bestand staan geen activiteiten die de app kan lezen.",
+    "p6xmlImportEmptyNoObjectIds": "De activiteiten hebben geen ObjectId. Daardoor kan de app ze niet koppelen. Dit is geen gewone Primavera P6 XML.",
+    "p6xmlImportEmptyXerColumns": "Het bestand gebruikt XER-kolomnamen (zoals task_code) in plaats van P6 XML-velden. Open de .xer zelf.",
+    "p6xmlImportOpened_one": "P6 XML-bestand geopend: {{count}} projectdocument.",
+    "p6xmlImportOpened_other": "P6 XML-bestand geopend: {{count}} projectdocumenten.",
+    "p6xmlImportCrossProjectRelations_one": "{{count}} relatie tussen projecten is niet als relatie overgenomen.",
+    "p6xmlImportCrossProjectRelations_other": "{{count}} relaties tussen projecten zijn niet als relatie overgenomen.",
+    "p6xmlImportUnassignedActivities_one": "{{count}} activiteit zonder project is niet ingelezen.",
+    "p6xmlImportUnassignedActivities_other": "{{count}} activiteiten zonder project zijn niet ingelezen."
   },
   "scheduleErrors": {
     "cycle": "Kringverwijzing tussen taken: {{path}}",

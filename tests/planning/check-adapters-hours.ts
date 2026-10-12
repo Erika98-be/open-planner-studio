@@ -918,24 +918,24 @@ function roundTrip(label: string, tk: Task[], seq: Sequence[], cal: WorkCalendar
     const sundayBands = byDate.get('2026-07-12')?.bands;
     assert(!sundayBands || sundayBands.length === 0, `T13 MSPDI-workingExceptions-roundtrip: band-loze uitzondering blijft band-loos (kreeg ${JSON.stringify(sundayBands)})`);
 
-    // (i) T13 (zelfde afwijking): P6-XML kent structureel GEEN DayWorking-vlag op HolidayOrException
-    //     (geverifieerd tegen p6xmlReader.ts's parseP6HolidayOrExceptions — leest elk element
-    //     onvoorwaardelijk als niet-werkend) — workingExceptions kunnen daar dus niet veilig heen.
-    //     writeP6XML moet dat NIET stilzwijgend laten liggen: één console.warn met het juiste aantal,
-    //     en geen enkel <HolidayOrException>-element voor de werkende uitzonderingen zelf (die zouden
-    //     bij re-import als HOLIDAY (niet-werkend) misgelezen worden — erger dan weglaten).
+    // (i) T13 P6-XML (sinds 2026-10): P6 drukt een werkende uitzondering uit als <HolidayOrException>
+    //     MÉT <WorkTime>-blokken (Oracle-schema; zonder blokken = vrije dag). writeP6XML schrijft ze
+    //     zo, en de reader leest ze terug als werkende uitzondering. P6 kent geen band-loze
+    //     uitzondering: de writer vult dan de banden van die weekdag in, anders die van de eerste
+    //     werkdag (de fallback-keten van WorkingException.bands, nu expliciet). Geen naam (P6 kent er geen).
     const warns: string[] = [];
     const origWarn = console.warn;
     console.warn = (...a: unknown[]) => { warns.push(a.join(' ')); };
     let p6xml: string;
     try { p6xml = writeP6XML(project, calWithExc, tasks, sequences, resources, assignments, []); }
     finally { console.warn = origWarn; }
-    assert(
-      warns.some((w) => w.includes('2 werkende kalenderuitzondering')),
-      `T13 P6-workingExceptions-warn: verwacht een warn met "2 werkende kalenderuitzondering", kreeg [${warns.join(' | ')}]`,
-    );
-    assert(!p6xml.includes('Werkende zaterdag'), 'T13 P6-workingExceptions-warn: de werkende uitzondering zelf komt niet als <HolidayOrException> in de XML (zou als holiday misgelezen worden)');
-    assert(p6xml.includes('Feestdag'), 'T13 P6-workingExceptions-warn: de ECHTE holiday blijft gewoon staan');
+    assert(!warns.some((w) => w.includes('werkende kalenderuitzondering')), `T13 P6-workingExceptions: geen weglaat-warn meer (kreeg [${warns.join(' | ')}])`);
+    const p6cal = readP6XML(p6xml).calendar;
+    eq('T13 P6-workingExceptions-roundtrip: holiday intact', p6cal.holidays.map((h) => h.startDate), ['2026-07-09']);
+    const p6ByDate = new Map((p6cal.workingExceptions ?? []).map((w) => [w.startDate, w]));
+    assert(p6ByDate.size === 2, `T13 P6-workingExceptions-roundtrip: 2 workingExceptions terug (kreeg ${p6ByDate.size})`);
+    eq('T13 P6-workingExceptions-roundtrip: banden van de werkende zaterdag', p6ByDate.get('2026-07-11')?.bands, [{ start: 360, end: 720 }]);
+    assert((p6ByDate.get('2026-07-12')?.bands?.length ?? 0) > 0, 'T13 P6-workingExceptions-roundtrip: band-loze zondag krijgt de standaardbanden (P6 kent geen band-loze uitzondering)');
   }
 }
 

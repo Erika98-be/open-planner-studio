@@ -1,18 +1,15 @@
 import type { XerImportMetadata } from '@/services/importTypes';
+import { nameWithProjectCode } from '@/utils/projectCodeName';
 
 /**
  * Documentnaam na een XER-import: de projectnaam met
  * het P6 Project-ID (`PROJECT.proj_short_name`) erachter tussen haakjes wanneer dat afwijkt, bv.
  * "HarbourPointe Assisted Living (4408)". Geen naam ⇒ het ID; naam gelijk aan het ID ⇒ één keer.
  * `project.name` zelf blijft de kale projectnaam — dit is uitsluitend de weergavenaam.
- * Bladmodule: puur, alleen type-imports.
+ * Puur: delegeert naar `nameWithProjectCode` (`projectCodeName.ts`), dezelfde regel als P6 XML.
  */
 export function xerDocumentName(name: string | null | undefined, id: string | null | undefined): string {
-  const n = (name ?? '').trim();
-  const code = (id ?? '').trim();
-  if (!n) return code;
-  if (!code || n === code) return n;
-  return `${n} (${code})`;
+  return nameWithProjectCode(name, id);
 }
 
 /**
