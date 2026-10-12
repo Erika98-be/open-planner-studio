@@ -6,7 +6,10 @@ import { buildWriteIFCInput } from '@/state/ifcSaveInput';
 import { RecoveryDeltaTracker, type RecoverySourceDocument } from '@/services/recovery/recoveryDelta';
 import { saveRecovery } from '@/services/recovery/recoveryStore';
 import { registerRecoveryFlush } from '@/services/recovery/recoveryFlush';
-import { canWriteToRefWithoutPrompt, saveToRefWithoutPrompt, type FileRef } from '@/services/fileAccess';
+import { canWriteToRefWithoutPrompt, saveTargetRef, saveToRefWithoutPrompt } from '@/services/fileAccess';
+import { isSiteConflict, siteErrorMessage } from '@/services/fileAccess/siteHost';
+import { knownSiteVersion } from '@/services/fileAccess/siteBackend';
+import { basename } from '@/utils/filePath';
 import { actualAutoSaveDelay, createActualAutoSaveController, type ActualAutoSaveCandidate } from '@/services/actualAutosave/actualAutoSave';
 import { isProjectFileWriteBusy, runProjectFileWrite } from '@/services/fileAccess/writeCoordinator';
 import { sameIFCSource } from '@/state/ifcSaveInput';
@@ -55,6 +58,10 @@ export function useAutoSave(autoSaveEnabled: MutableRefObject<boolean>): void {
           id,
           source: payload,
           filePath: payload.filePath,
+          // Het site-doel en de versie waarop het document rust: crashherstel zet ze terug, zodat
+          // Ctrl+S na herstel weer naar de site schrijft mét conflictcontrole.
+          siteFileId: payload.siteFileId,
+          siteFileVersion: payload.siteFileId ? knownSiteVersion(payload.siteFileId) ?? null : null,
           isDirty: payload.isDirty,
           // "Datums zoals opgeslagen" is een weergavestand, geen IFC-inhoud: hij reist als
           // manifestmetadata mee zodat crashherstel hem terugzet i.p.v. hem te raden.
@@ -123,12 +130,15 @@ export function useAutoSave(autoSaveEnabled: MutableRefObject<boolean>): void {
         // Tijdens de herstelkeuze bestaat de live state nog niet betrouwbaar uit de gekozen
         // documenten. Geen bestand overschrijven vóór die blokkerende fase klaar is.
         if (!autoSaveEnabled.current || isProjectFileWriteBusy()) return [];
-        return useAppStore.getState().getOpenDocumentPayloads().map(({ id, payload }) => {
-          const ref: FileRef | null = payload.fileHandle
-            ? { kind: 'handle', handle: payload.fileHandle }
-            : (isTauri() && payload.filePath ? { kind: 'path', path: payload.filePath } : null);
-          return { id, enabled: payload.autoSaveToFile, dirty: payload.isDirty, ref, source: payload };
-        });
+        return useAppStore.getState().getOpenDocumentPayloads().map(({ id, payload }) => ({
+          id,
+          enabled: payload.autoSaveToFile,
+          dirty: payload.isDirty,
+          // Eén afleiding van het opslagdoel, dezelfde als Opslaan: ook een site-bestand.
+          ref: saveTargetRef(payload),
+          source: payload,
+          name: payload.filePath ? basename(payload.filePath) : undefined,
+        }));
       },
       serialize: candidate => writeIFC(buildWriteIFCInput(candidate.source)),
       canWrite: canWriteToRefWithoutPrompt,
@@ -138,13 +148,24 @@ export function useAutoSave(autoSaveEnabled: MutableRefObject<boolean>): void {
         const current = useAppStore.getState().getOpenDocumentPayloads().find((d) => d.id === candidate.id)?.payload;
         if (!current) return false;
         if (!sameIFCSource(candidate.source, current)) return 'stale';
-        return saveToRefWithoutPrompt(candidate.ref!, content);
+        return saveToRefWithoutPrompt(candidate.ref!, content, candidate.name);
       }),
       markSavedIfUnchanged: candidate => useAppStore.getState().markAutoSaveVersionSaved(candidate.id, candidate.source),
-      onFailure: (_candidate, error) => {
+      onFailure: (candidate, error) => {
         console.error('Werkelijke AutoSave mislukt:', error);
+        // De site weigerde omdat het bestand intussen verder is: dezelfde duidelijke melding als bij
+        // Ctrl+S. Gededupliceerd, want de timer probeert het elke 10 s opnieuw.
+        if (candidate.ref?.kind === 'site' && isSiteConflict(error)) {
+          useAppStore.getState().notify({
+            severity: 'error', messageKey: 'notifications.siteSaveConflict',
+            params: { name: candidate.name ?? '' }, detail: siteErrorMessage(error),
+            dedupeKey: 'actual-autosave-site-conflict',
+          });
+          return;
+        }
         useAppStore.getState().notify({
-          severity: 'error', messageKey: 'notifications.autoSaveFailed', detail: (error as Error).message,
+          severity: 'error', messageKey: 'notifications.autoSaveFailed',
+          detail: candidate.ref?.kind === 'site' ? siteErrorMessage(error) : (error as Error).message,
           dedupeKey: 'actual-autosave',
         });
       },

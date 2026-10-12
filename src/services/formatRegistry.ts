@@ -192,22 +192,25 @@ export async function readFormatInput(name: string, io: FormatIO): Promise<Forma
   return isBinary ? { name, bytes: await io.readFile(name) } : { name, text: await io.readTextFile(name) };
 }
 
-/** Opslagdoel-beslissing: één plek voor de filePath/fileHandle-afleiding die `fileSlice.openFile`
- *  en `openRecentFile` allebei nodig hebben. Een
+/** Opslagdoel-beslissing: één plek voor de filePath/fileHandle/siteFileId-afleiding die
+ *  `fileSlice.openAsDocument` (Bestand → Openen, Recente bestanden, Openen van de site) en de
+ *  dev-brug nodig hebben. Een
  *  bestand van een niet-`canBeSaveTarget`-formaat krijgt GEEN opslagdoel (opslaan wordt dan
- *  opslaan-als); `ref` is de herbruikbare handle/pad van de open-actie (`null` bij de download-
- *  terugval of een niet-herbruikbare bron), `name` de bestandsnaam als terugvalwaarde voor
- *  `filePath` wanneer er geen pad-ref is (Tauri levert een pad,
- *  web-FSA een handle, de input-terugval geen van beide — dan blijft alleen de naam over). */
+ *  opslaan-als); `ref` is de herbruikbare handle/pad/site-ref van de open-actie (`null` bij de
+ *  download-terugval, een niet-herbruikbare bron of een oudere site-versie), `name` de bestandsnaam
+ *  als terugvalwaarde voor `filePath` wanneer er geen pad-ref is (Tauri levert een pad,
+ *  web-FSA een handle, de site een id, de input-terugval geen van drieën — dan blijft alleen de naam
+ *  over). */
 export function saveTargetFor(
   readFormat: ReadFormat,
   ref: FileRef | null,
   name: string,
-): { filePath: string | null; fileHandle: FileSystemFileHandle | null } {
-  if (!readFormat.canBeSaveTarget) return { filePath: null, fileHandle: null };
+): { filePath: string | null; fileHandle: FileSystemFileHandle | null; siteFileId: string | null } {
+  if (!readFormat.canBeSaveTarget) return { filePath: null, fileHandle: null, siteFileId: null };
   return {
     filePath: ref?.kind === 'path' ? ref.path : name,
     fileHandle: ref?.kind === 'handle' ? ref.handle : null,
+    siteFileId: ref?.kind === 'site' ? ref.id : null,
   };
 }
 

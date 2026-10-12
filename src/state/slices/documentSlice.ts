@@ -140,7 +140,7 @@ export interface DocumentSlice {
   /** Open een nieuw, leeg document in een eigen tab en maak het actief. Geeft het nieuwe id terug. */
   newDocument: () => string;
   /** Dupliceer het actieve document naar een nieuwe, actieve kopie (wat-als/variant, MCP-WP4). De
-   *  kopie krijgt genulde `filePath`/`fileHandle` (zodat Ctrl+S het bronbestand niet overschrijft),
+   *  kopie krijgt genulde `filePath`/`fileHandle`/`siteFileId` (zodat Ctrl+S het bronbestand niet overschrijft),
    *  `isDirty: true`, lege selectie en diep gekloonde muteerbare payloadvelden. De sessiehistorie
    *  blijft app-globaal en wordt niet met de documentpayload gekopieerd.
    *  worden diep gekloond (geen enkele array/object gedeeld met de bron). Naam: `name` indien
@@ -391,7 +391,7 @@ export const createDocumentSlice: AppSliceFactory<DocumentSlice> = (runtime) => 
 
     // Bouw de kopie-payload EXPLICIET — geen stilzwijgende afhankelijkheid van Immer-copy-on-write.
     // 'clone'-rolvelden + view/collapsedTaskIds worden diep gekloond; selectie start vers;
-    // filePath/fileHandle genuld; cpmResult/resourceLoadResult ('ref') mogen per referentie mee.
+    // filePath/fileHandle/siteFileId genuld; cpmResult/resourceLoadResult ('ref') mogen per referentie mee.
     const copy: DocumentPayload = {
       project: { ...deepClone(src.project), name: copyName },
       calendar: deepClone(src.calendar),
@@ -418,6 +418,8 @@ export const createDocumentSlice: AppSliceFactory<DocumentSlice> = (runtime) => 
       collapsedTaskIds: deepClone(src.collapsedTaskIds),
       filePath: null,
       fileHandle: null,
+      // Ook het site-doel niet: anders schrijft Ctrl+S in de kopie een nieuwe versie van de bron.
+      siteFileId: null,
       autoSaveToFile: false,
       isDirty: true,
       xerImportMetadata: src.xerImportMetadata

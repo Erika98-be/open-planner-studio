@@ -4,6 +4,7 @@ import { setNoneLabelValue, setResourceTypeLabelsValue } from '@/utils/noneLabel
 import { useResolvedUITheme, useSystemColorSchemeSync } from '@/hooks/useResolvedUITheme';
 import { appLog } from '@/services/debug/appLog';
 import { installConsentDialogAsker } from '@/extensions/consentBridge';
+import { installSiteDialogAskers } from '@/state/siteDialogBridge';
 import { getGuideView, subscribeGuideView } from '@/extensions/guideRuntime';
 import { EXTENSIONS_ENABLED } from '@/utils/buildFlags';
 import { TitleBar } from '@/components/layout/TitleBar/TitleBar';
@@ -24,6 +25,7 @@ import { CloseDocumentDialog } from '@/components/layout/DocumentChrome/CloseDoc
 import { useKeyboardShortcuts } from '@/hooks/keyboard/useKeyboardShortcuts';
 import { useSettingsBootstrap } from '@/hooks/useSettingsBootstrap';
 import { useDemoStartExample } from '@/hooks/useDemoStartExample';
+import { useSiteInitialFile } from '@/hooks/useSiteInitialFile';
 import { useAutoCalcCPM } from '@/hooks/useAutoCalcCPM';
 import { useExitRecordedDates } from '@/hooks/useExitRecordedDates';
 import { useAutoSave } from '@/hooks/useAutoSave';
@@ -67,6 +69,8 @@ const ExtensionConsentDialog = EXTENSIONS_ENABLED
   ? lazy(() => import('@/components/dialogs/ExtensionConsentDialog').then(m => ({ default: m.ExtensionConsentDialog })))
   : () => null;
 const ActualStartDialog = lazy(() => import('@/components/dialogs/ActualStartDialog').then(m => ({ default: m.ActualStartDialog })));
+const SiteOpenDialog = lazy(() => import('@/components/dialogs/SiteOpenDialog').then(m => ({ default: m.SiteOpenDialog })));
+const SiteSaveDialog = lazy(() => import('@/components/dialogs/SiteSaveDialog').then(m => ({ default: m.SiteSaveDialog })));
 const FeedbackDialog = lazy(() => import('@/components/dialogs/FeedbackDialog').then(m => ({ default: m.FeedbackDialog })));
 const LevelingDialog = lazy(() => import('@/components/dialogs/LevelingDialog').then(m => ({ default: m.LevelingDialog })));
 const BaselineDialog = lazy(() => import('@/components/dialogs/BaselineDialog').then(m => ({ default: m.BaselineDialog })));
@@ -156,6 +160,13 @@ function AppContent() {
   // stilzwijgend afketsen. De dialoog zelf blijft lazy; alleen de bedrading is eager.
   // Platformbouw (#311): geen extensies; de faalstand (weigeren) blijft dan staan.
   useEffect(() => { if (EXTENSIONS_ENABLED) installConsentDialogAsker(); }, []);
+
+  // Opslag via de site (issue #309): de vragen "Openen van de site" / "Opslaan op de site" aan hun
+  // dialogen koppelen. Zonder deze registratie valt de vraag terug op "van/op deze pc" (veilig).
+  useEffect(() => { installSiteDialogAskers(); }, []);
+  // Bestand van de host bij de start: na de herstelkeuze, alleen in een leeg document. Zonder site
+  // gebeurt er niets.
+  useSiteInitialFile(recoveryResolved, recovery);
 
   // Bedrijfsbibliotheek laden bij opstarten: zet de opgeslagen bibliotheek in de store en
   // hijst `libraryLoaded`, zodat latere mutaties persisteren (vóór dit punt is persist een no-op).
@@ -424,6 +435,9 @@ function AppContent() {
             zou beginnen). Rendert alleen bij `ui.pendingActualStartQuestion`; stapelt boven
             "Taak bewerken". */}
         <ActualStartDialog />
+        {/* Opslag via de site: renderen alleen bij `ui.pendingSiteOpen` / `ui.pendingSiteSave`. */}
+        <SiteOpenDialog />
+        <SiteSaveDialog />
         <LibraryLinkDialog />
         {recovery && !(recoveryInHelp && helpOpen) && (
           <RecoveryDialog
