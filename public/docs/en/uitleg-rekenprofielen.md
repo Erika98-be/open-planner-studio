@@ -20,14 +20,14 @@ So the profile says how a package calculates. What you want for your project is 
 
 A convention is a switch: on or off. The profile decides which switches are on. A calculation option is a choice you make. You can see the difference in the app itself, in the block *Calculation profile and options*:
 
-- **Conventions** are under *Conventions of this profile*, grouped by subject, for example *Progress and completed work*, *Relationships and lag* and *Float and late dates*. Each line is a checkbox with the value of the profile after it (*base: on* or *base: off*). If your choice differs from that, the line stands out and *back to base* appears. The arrow in front of a line opens the explanation of that convention. Read it first if you want to change a convention.
+- **Conventions** are under *Conventions of this profile*, grouped by subject, for example *Progress and completed work*, *Relationships and lag* and *Float and late dates*. Each line is a checkbox with the value of the profile after it (*base: on* or *base: off*). If your choice differs from that, the line stands out and *back to base* appears. The arrow in front of a line opens the explanation of that convention. Read it first if you want to change a convention. If a convention only works on an hour calendar or only on tasks from a .xer file, a blue label next to it says so: *hour calendar only* or *.xer tasks only*. A project with only a day calendar then notices nothing of that convention.
 - **Calculation options** are under *Calculation options of this project*: among others *Critical definition*, *Float calculation*, *Open-ended tasks critical*, *Mark near-critical* and *Lag calendar*. They say what you want for this project, not how a package calculates. What they do is explained in [Critical path and float](docs://uitleg-kritiek-pad) and [Relations and lag](docs://uitleg-relaties).
 
 An example of each. "A task is critical if its total float is 0 or less" is a calculation option: you can set the threshold to 4, and then everything with 4 work days of float or less is critical. "Work that has not started moves to the status date" is a convention: Open Planner Studio and Primavera P6 do it, Microsoft Project does not.
 
 The profile and the calculation options belong to the project file, not to the app. If you save the project, they travel with it. Two projects in the same app can therefore calculate with a different profile. A project without a profile calculates as Open Planner Studio.
 
-If there are calculation options that only Primavera knows, the block also shows *Settings from the source file* at the bottom: for a project from a .xer file, but also if you choose *Primavera P6* in *New project* or apply the default options of Primavera P6. You cannot change them here.
+If your project comes from a .xer file, the block also shows *Settings from the source file* at the bottom: calculation options that only Primavera knows and that the file brought along. You cannot change them here. *Apply this profile's default options* and another profile also leave them as they are. A new project does not have them, not even with *Primavera P6*.
 
 ### Where you choose the profile
 
@@ -35,9 +35,9 @@ For a new project the profile is in the *New project* window, which you open thr
 
 For an existing project you choose the profile under *Settings › Project › Project info*, in the block *Calculation profile and options*, in the drop-down list *Calculation profile*. You can also reach the same place through *File › Project info*. Switching profile here only changes the conventions. Your calculation options stay as they are. If you also want the default calculation options of the new profile, choose *Apply this profile's default options*.
 
-Until you press *Apply*, a change exists only in the form. With *Apply* the app recalculates the schedule straight away, even if *Calculate automatically* is off. If tasks moved, it says how many, for example *After applying, 4 tasks moved.* The whole switch is one step for *Undo*.
+Until you press *Apply*, a change exists only in the form. With *Apply* the app recalculates the schedule straight away, even if *Calculate automatically* is off. If tasks moved, it says how many, for example *After applying, 4 tasks moved.* The whole switch is one step for *Undo*. If you press *Undo* or *Redo* while Project info is open, the block follows the state of the project. If you had already changed something in the block yourself, your choice stays and a yellow block says that *Apply* puts that choice back.
 
-If you switch one convention on or off in a profile, the app turns it into a custom profile. It is called *Copy of Open Planner Studio*, or *Copy of* the profile you started from. You can give it another name and keep it with *Save as template* for other projects in this app. The project always carries its own copy: if you change the template later, the project does not change with it.
+If you switch one convention on or off in a profile, the app turns it into a custom profile. It is called *Copy of Open Planner Studio*, or *Copy of* the profile you started from. If you set the checkbox back to the value of the profile, that is the same as *back to base*: no copy is made. You can give the custom profile another name and keep it with *Save as template* for other projects in this app. The app reports that the template was saved, or why that failed. *Delete template* asks for confirmation first. The project always carries its own copy: if you change the template later, the project does not change with it.
 
 ### When the app chooses a profile itself
 
