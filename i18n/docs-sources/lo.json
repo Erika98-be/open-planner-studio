@@ -1995,6 +1995,99 @@
       }
     ]
   },
+  "howto-resources-beheren": {
+    "structure": "254a47bf1b862e24",
+    "sections": [
+      {
+        "hash": "06a6845a7a489c05",
+        "labels": {}
+      },
+      {
+        "hash": "3d3d87ac996271cc",
+        "labels": {}
+      },
+      {
+        "hash": "a50d8a7405e04f65",
+        "labels": {
+          "common:calendar.library.project": "b06715c5648f5694",
+          "common:companyLibrary.editItem": "f4a8400d28ce0b16",
+          "common:context.calendarProjectDefault": "b06715c5648f5694",
+          "common:context.edit": "98a12dfb45fefa27",
+          "common:feedback.tools.undo": "e1f341645246293d",
+          "common:properties": "49c38a347a04123f",
+          "common:resource.availabilityStepsEditor.addStep": "86c2a523d39efe4b",
+          "common:resource.availabilityStepsEditor.from": "195aac33a70e0820",
+          "common:resource.availabilityStepsEditor.maxUnits": "ea3f3d253af8f73b",
+          "common:resource.availabilityStepsEditor.title": "6db354a3d794bc8b",
+          "common:resource.calendarId": "0c3b19af4b263745",
+          "common:resource.compact.overallocated": "2edb2c3f3275b937",
+          "common:resource.compact.title": "a544aaa0d0bb7988",
+          "common:resource.costPerHour": "c8be81531a5dbd70",
+          "common:resource.editCalendar": "8df027ba7efcfdac",
+          "common:resource.leveling.resourceSelect": "a544aaa0d0bb7988",
+          "common:resource.maxUnits": "ea3f3d253af8f73b",
+          "common:resource.panel.addRow": "a36f4885195a3680",
+          "common:resource.panel.confirmDelete": "ff2d864c1e4d8875",
+          "common:resource.panel.title": "a544aaa0d0bb7988",
+          "common:resource.parent": "c41b11bd13fb3419",
+          "common:resource.projectCalendar": "b06715c5648f5694",
+          "common:resource.total": "f3098e5a17659472",
+          "common:resource.type.crew": "54f783493ecc2c17",
+          "common:resource.type.equipment": "09d91a9c02d5d6b2",
+          "common:resource.type.labor": "b7a0709812a73147",
+          "common:resource.type.material": "3f368401bb74dea3",
+          "common:resource.type.subcontractor": "15f9b587b5e80ee5",
+          "common:resource.typeLabel": "4f7c6c3a87d7be94",
+          "common:resource.unitOfMeasure": "fe8e7ed4c5da3b98",
+          "common:settings.statsTotal": "f3098e5a17659472",
+          "common:shortcuts.category.edit": "f4a8400d28ce0b16",
+          "common:sidebar.properties": "49c38a347a04123f",
+          "common:view.filter.valueFrom": "2408488d9cd55dd1",
+          "common:view.layout.edit": "8df027ba7efcfdac",
+          "menu:commands.undo": "c65800588d1d11d0",
+          "menu:projectInfo.calc.lagProjectDefault": "b06715c5648f5694",
+          "menu:ribbon.calendar": "0c3b19af4b263745",
+          "menu:ribbon.calendarDialog.from": "195aac33a70e0820",
+          "menu:ribbon.dockResourcePanel": "52c7d4343d86e12c",
+          "menu:ribbon.edit": "f4a8400d28ce0b16",
+          "menu:ribbon.manageLayouts": "b04d28c5451d9910",
+          "menu:ribbon.newResource": "1f7b9566e1809ff5",
+          "menu:ribbon.openResourcePanel": "a544aaa0d0bb7988",
+          "menu:ribbon.properties": "49c38a347a04123f",
+          "menu:ribbon.resourceManagement": "8529ebeb72901c94",
+          "menu:ribbon.resources": "a544aaa0d0bb7988",
+          "menu:ribbon.undo": "c65800588d1d11d0",
+          "report:resourceGantt.resources": "55df1fb432b7a48b",
+          "report:tableReports.common.resources": "a544aaa0d0bb7988",
+          "report:tableReports.health.metric_resources": "a544aaa0d0bb7988",
+          "report:tableReports.options.periodFrom": "2408488d9cd55dd1",
+          "report:tableReports.resourceAssignments.resources": "a544aaa0d0bb7988",
+          "report:tableReports.resourceLoading.resources": "a544aaa0d0bb7988",
+          "report:tableReports.resourceLoading.type": "4f7c6c3a87d7be94",
+          "task:column.resource": "a544aaa0d0bb7988",
+          "task:contourDialog.from": "2408488d9cd55dd1",
+          "task:dialog.type": "4f7c6c3a87d7be94",
+          "task:properties.calendar": "0c3b19af4b263745",
+          "task:properties.calendarProject": "b06715c5648f5694",
+          "task:properties.type": "4f7c6c3a87d7be94",
+          "task:relations.type": "4f7c6c3a87d7be94",
+          "task:table.type": "4f7c6c3a87d7be94",
+          "task:taskGrid.category.resources": "a544aaa0d0bb7988",
+          "task:taskGrid.columns.calendar": "0c3b19af4b263745",
+          "task:taskType.rename": "74bae038a92f9f54",
+          "task:workRule.FIXED_DURATION_RATE": "f9d58c420634cced"
+        }
+      },
+      {
+        "hash": "7832839dc6aefb7e",
+        "labels": {}
+      },
+      {
+        "hash": "2e71f1c5f11b541c",
+        "labels": {}
+      }
+    ]
+  },
   "howto-resource-toewijzen": {
     "structure": "b2c503a96f2abf0f",
     "sections": [
