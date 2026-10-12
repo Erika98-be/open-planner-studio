@@ -14,7 +14,7 @@ import { isLeafTask, isSummaryTask } from '@/utils/taskHierarchy';
 import { flattenOrder } from '@/utils/wbs';
 import type { CustomTaskType } from '@/types/taskType';
 import { encodeCustomTaskType, OPS_DURATION_UNIT_NAME, toXmlDateTime } from '@/services/xmlInterchange';
-import { leaf, node, renderP6Xml, P6_ID_MAX_LENGTH, type P6Node } from './p6xmlSchemaOrder';
+import { leaf, node, renderP6Xml, P6_ID_MAX_LENGTH, P6_MAX_LENGTH, type P6Node } from './p6xmlSchemaOrder';
 import { taskDurationUnit } from '@/engine/scheduler/duration';
 import { shownStart, shownFinish } from '@/utils/taskDates';
 import { P6_DURATION_TYPE_NAME, XER_DURATION_TYPE_TOKEN } from '@/engine/work/workRuleMapping';
@@ -371,8 +371,12 @@ export function writeP6XML(
     ]));
   }
 
-  // Calendar. Bibliotheekkalenders: zelfde element als de projectkalender maar met Type="Resource" en
-  // een eigen ObjectId (de reader neemt een Resource-kalender altijd mee in de bibliotheek).
+  // Calendar. Een activiteit mag in P6 alleen een Global- of Project-kalender hebben; een
+  // Resource-kalender is voor resources. Een kalender die een taak gebruikt gaat daarom als Global
+  // (die mag ook een resource gebruiken); een kalender die alleen resources gebruiken, of geen enkel
+  // object, als Resource (de reader neemt een Resource-kalender altijd mee in de bibliotheek, en een
+  // gebruikte Global-kalender ook).
+  const taskCalendarIds = new Set(tasks.map(t => t.calendarId).filter((id): id is string => !!id));
   for (const cal of [calendar, ...libraryCalendars]) {
     const hourBands = hourTaskCalendarIds.has(cal.id);
     top.push(node('Calendar', [
@@ -381,7 +385,7 @@ export function writeP6XML(
       ...leaf('HoursPerWeek', cal.hoursPerDay * cal.workDays.length),
       ...leaf('Name', cal.name),
       ...leaf('ObjectId', calObjMap.get(cal.id)!),
-      ...leaf('Type', cal === calendar ? 'Global' : 'Resource'),
+      ...leaf('Type', cal === calendar || taskCalendarIds.has(cal.id) ? 'Global' : 'Resource'),
       standardWorkWeekNode(cal, hourBands),
       ...holidayOrExceptionsNode(cal, hourBands),
     ]));
@@ -677,4 +681,29 @@ export function p6ProjectIdentity(displayName: string): { name: string; id: stri
     return { name: displayName.slice(0, match.index), id: match[1].trim() };
   }
   return { name: displayName, id: displayName.slice(0, P6_ID_MAX_LENGTH).trim() };
+}
+
+/** Velden die bij export worden ingekort tot hun schemagrens (`P6_MAX_LENGTH`). */
+function overLimit(value: string | undefined, max: number): boolean {
+  return (value ?? '').length > max;
+}
+
+/**
+ * Hoeveel namen en codes de P6 XML-export inkort tot de schemagrens (Oracle P6 API `xs:maxLength`,
+ * zie `P6_MAX_LENGTH`): projectnaam, activiteit-Id en -naam, WBS-code en -naam. Dezelfde regels als
+ * `writeP6XML`; de export meldt het aantal (`exportP6TruncatedNotice` in fileSlice).
+ */
+export function countP6Truncations(project: Pick<Project, 'name'>, tasks: readonly Task[]): number {
+  const isParent = new Set(tasks.filter(t => t.childIds.length > 0).map(t => t.id));
+  let count = overLimit(p6ProjectIdentity(projectFileBase(project.name)).name, P6_MAX_LENGTH.Project.Name) ? 1 : 0;
+  for (const task of tasks) {
+    if (isParent.has(task.id)) {
+      if (overLimit(task.wbsCode, P6_MAX_LENGTH.WBS.Code)) count++;
+      if (overLimit(task.name, P6_MAX_LENGTH.WBS.Name)) count++;
+    } else {
+      if (overLimit(task.wbsCode || task.id, P6_MAX_LENGTH.Activity.Id)) count++;
+      if (overLimit(task.name, P6_MAX_LENGTH.Activity.Name)) count++;
+    }
+  }
+  return count;
 }

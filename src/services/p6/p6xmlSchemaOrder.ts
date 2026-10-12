@@ -19,6 +19,21 @@ import { escapeXml } from '@/services/xmlInterchange';
 /** Schemagrenzen (Oracle P6 API, `xs:maxLength`) voor velden die de writer vult. */
 export const P6_ID_MAX_LENGTH = 40;
 
+/**
+ * `xs:maxLength` per element en veld, uit het schema (MPXJ `org.mpxj.primavera.schema`, V25.12):
+ * ActivityType Id 40 / Name 120, WBSType Code 40 / Name 100, ProjectType Id 40 / Name 100,
+ * ResourceType Id 255 / Name 255, ResourceCurveType Name 60. `renderP6Xml` kapt langere tekst af;
+ * een P6-import weigert anders het hele bestand.
+ */
+export const P6_MAX_LENGTH = {
+  Activity: { Id: P6_ID_MAX_LENGTH, Name: 120 },
+  WBS: { Code: P6_ID_MAX_LENGTH, Name: 100 },
+  Project: { Id: P6_ID_MAX_LENGTH, Name: 100 },
+  Resource: { Id: 255, Name: 255 },
+  ResourceCurve: { Name: 60 },
+} as const;
+const MAX_LENGTH: Readonly<Record<string, Readonly<Record<string, number>>>> = P6_MAX_LENGTH;
+
 const ORDER: Readonly<Record<string, readonly string[]>> = {
   APIBusinessObjects: ['UDFType', 'NotebookTopic', 'Calendar', 'ResourceCurve', 'Resource', 'ResourceRate', 'Project'],
   Project: [
@@ -94,16 +109,18 @@ export function orderedChildren(parent: string, children: readonly P6Node[]): P6
 /** Serialiseer een boom met inspringing van twee spaties per niveau. */
 export function renderP6Xml(root: P6Node, rootAttributes: string): string {
   const lines: string[] = ['<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'];
-  const render = (n: P6Node, depth: number, attrs = ''): void => {
+  const render = (n: P6Node, depth: number, attrs = '', parent = ''): void => {
     const pad = '  '.repeat(depth);
     if (n.nil) { lines.push(`${pad}<${n.tag} xsi:nil="true" />`); return; }
     if (n.children) {
       lines.push(`${pad}<${n.tag}${attrs}>`);
-      for (const child of orderedChildren(n.tag, n.children)) render(child, depth + 1);
+      for (const child of orderedChildren(n.tag, n.children)) render(child, depth + 1, '', n.tag);
       lines.push(`${pad}</${n.tag}>`);
       return;
     }
-    lines.push(`${pad}<${n.tag}>${escapeXml(n.text ?? '')}</${n.tag}>`);
+    const max = MAX_LENGTH[parent]?.[n.tag];
+    const text = n.text ?? '';
+    lines.push(`${pad}<${n.tag}>${escapeXml(max !== undefined && text.length > max ? text.slice(0, max) : text)}</${n.tag}>`);
   };
   render(root, 0, rootAttributes ? ` ${rootAttributes}` : '');
   return lines.join('\n');

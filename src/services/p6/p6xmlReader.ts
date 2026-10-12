@@ -94,6 +94,10 @@ const P6_XML_PERCENT_TYPE: Readonly<Record<string, P6CompletePctType>> = {
   Physical: 'CP_Phys',
   Duration: 'CP_Drtn',
   Units: 'CP_Units',
+  // Scope (P6 21+): MPXJ kent het label en rekent het als Duration (`XmlProjectWriter`:
+  // DURATION en SCOPE delen `getPercentageComplete`). Wij ook: de Duration-route hieronder, maar
+  // eerst de eigen schemakolom `ScopePercentComplete` als die er staat.
+  Scope: 'CP_Drtn',
 };
 
 /** Een getal-element, of null als het ontbreekt of leeg/`xsi:nil` is (anders dan `getElementFloat`,
@@ -137,6 +141,8 @@ function p6ActivityCompletionPercent(actEl: Element, writtenByOps: boolean): num
   };
   if (type === 'CP_Phys') return pct('PhysicalPercentComplete') ?? 0;
   if (type === 'CP_Units') return pct('UnitsPercentComplete') ?? 0;
+  const scope = label === 'Scope' ? pct('ScopePercentComplete') : null;
+  if (scope != null) return scope;
   const duration = pct('DurationPercentComplete');
   if (duration != null) return duration;
   const remaining = optionalFloat(actEl, 'RemainingDuration');

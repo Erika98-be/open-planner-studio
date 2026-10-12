@@ -11,7 +11,8 @@
 // Corpusloos (CI).
 import { readFileSync } from 'node:fs';
 import { readP6XML } from '@/services/p6/p6xmlReader';
-import { writeP6XML } from '@/services/p6/p6xmlWriter';
+import { writeP6XML, countP6Truncations } from '@/services/p6/p6xmlWriter';
+import { exportP6TruncatedNotice } from '@/state/slices/fileSlice';
 import type { ImportResult } from '@/services/importTypes';
 import type { Sequence } from '@/types/sequence';
 import { installDOMParser } from './xmldom-shim';
@@ -135,6 +136,53 @@ eq('7b oud: exacte eindtijd (16:30 blijft 16:30 in de enkelvoudsvorm van een OPS
 eq('7c oud: procent 1 = 1 % (niet 100 %)', old.tasks.find(t => t.wbsCode === 'A')?.time.completion, 0.01);
 eq('7d oud: losse UDFValue (urentaak)', old.tasks.find(t => t.wbsCode === 'B')?.time.durationUnit, 'hours');
 eq('7e oud: <Description>', old.tasks.find(t => t.wbsCode === 'A')?.description, 'Oude beschrijving');
+
+// (8) Schemagrenzen (xs:maxLength): activiteit Id 40 / Name 120, WBS Code 40 / Name 100, project Name 100.
+{
+  const big = readP6XML(readFileSync(new URL('./fixtures/p6xml-genest-meerdere-projecten.xml', import.meta.url), 'utf8'));
+  const leaf = big.tasks.find(t => t.childIds.length === 0)!;
+  const wbs = big.tasks.find(t => t.childIds.length > 0)!;
+  leaf.name = 'N'.repeat(130);
+  leaf.wbsCode = 'C'.repeat(45);
+  wbs.name = 'W'.repeat(110);
+  big.project.name = 'P'.repeat(105);
+  const out = write(big);
+  eq('8a activiteitnaam ingekort tot 120', out.includes(`<Name>${'N'.repeat(120)}</Name>`) && !out.includes('N'.repeat(121)), true);
+  eq('8b activiteit-Id ingekort tot 40', out.includes(`<Id>${'C'.repeat(40)}</Id>`) && !out.includes('C'.repeat(41)), true);
+  eq('8c WBS-naam ingekort tot 100', out.includes(`<Name>${'W'.repeat(100)}</Name>`) && !out.includes('W'.repeat(101)), true);
+  eq('8d projectnaam ingekort tot 100', out.includes(`<Name>${'P'.repeat(100)}</Name>`) && !out.includes('P'.repeat(101)), true);
+  eq('8e telling = 4 (zelfde regels als de writer)', countP6Truncations(big.project, big.tasks), 4);
+  eq('8f melding alleen bij P6-export', [exportP6TruncatedNotice('p6', big.project, big.tasks)?.params, exportP6TruncatedNotice('mspdi', big.project, big.tasks)],
+    [{ count: 4 }, null]);
+  eq('8g geen telling bij korte namen', countP6Truncations(src.project, src.tasks), 0);
+}
+
+// (9) Kalendertype: een kalender die een taak gebruikt is Global (P6: een activiteit mag geen
+//     Resource-kalender hebben); alleen-resource of ongebruikt blijft Resource.
+{
+  const types = [...xml.matchAll(/<Calendar>[\s\S]*?<Name>([^<]*)<\/Name>[\s\S]*?<Type>([^<]*)<\/Type>/g)].map(m => [m[1], m[2]]);
+  const taskCalNames = new Set(src.tasks.map(t => t.calendarId).filter(Boolean).map(id => (src.resourceCalendars ?? []).find(c => c.id === id)?.name));
+  eq('9a taakkalender = Global, de rest Resource (behalve de projectkalender)',
+    types.every(([name, type]) => name === src.calendar.name ? type === 'Global' : type === (taskCalNames.has(name) ? 'Global' : 'Resource')), true);
+  eq('9b er is minstens één taakkalender getest', taskCalNames.size > 0, true);
+}
+
+// (10) PercentCompleteType "Scope" (P6 21+): MPXJ kent hem en rekent hem als Duration. Eigen
+//      kolom ScopePercentComplete eerst, anders de Duration-route; geen waarschuwing.
+{
+  const scopeAct = (cols: string) => `<?xml version="1.0"?><APIBusinessObjects><Project><Id>S</Id><ObjectId>1</ObjectId><Name>S</Name>
+    <Activity><Id>S1</Id><Name>s</Name><ObjectId>1</ObjectId><PercentCompleteType>Scope</PercentCompleteType>${cols}
+      <PlannedDuration>40</PlannedDuration><PlannedStartDate>2026-03-02T08:00:00</PlannedStartDate><PlannedFinishDate>2026-03-06T17:00:00</PlannedFinishDate><Status>In Progress</Status>
+      <ActualStartDate>2026-03-02T08:00:00</ActualStartDate></Activity></Project></APIBusinessObjects>`;
+  const warns: string[] = [];
+  const warn = console.warn;
+  console.warn = (m: string) => { warns.push(String(m)); };
+  try {
+    eq('10a Scope leest ScopePercentComplete', readP6XML(scopeAct('<DurationPercentComplete>0.2</DurationPercentComplete><ScopePercentComplete>0.4</ScopePercentComplete>')).tasks[0]?.time.completion, 0.4);
+    eq('10b Scope zonder eigen kolom = Duration', readP6XML(scopeAct('<DurationPercentComplete>0.2</DurationPercentComplete>')).tasks[0]?.time.completion, 0.2);
+  } finally { console.warn = warn; }
+  eq('10c geen waarschuwing over een onbekende soort', warns.some(w => w.includes('PercentCompleteType')), false);
+}
 
 if (fails.length > 0) {
   for (const f of fails) console.log(`XX  p6xml-writer-p6: ${f}`);
