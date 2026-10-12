@@ -306,19 +306,22 @@ export function createExtensionApi(
         const loaded = fromExtImportResult(result);
         const sameProject = loaded.project.id === store.project.id;
         // Zelfde project-id ⇒ wat het contract niet draagt, blijft van het document (N3, B29); zie
-        // `retainActiveDocument`. Ander id ⇒ een NIEUW project: het krijgt geen opslagdoel, zodat
-        // opslaan om een nieuwe plek vraagt in plaats van het bestand van het vorige project te
-        // overschrijven (verder de loadState-semantiek: in place, zonder fit of uur-melding).
-        store.applyLoadedProject(retainActiveDocument(result, loaded, store), {
-          recompute: true,
-          fit: false,
-          hourDataNotice: false,
-          ...(sameProject ? {} : { filePath: null, fileHandle: null, siteFileId: null }),
-        });
+        // `retainActiveDocument`.
+        store.loadState(retainActiveDocument(result, loaded, store));
         document.store.getState().runCPM();
-        // Het geladen document is gewijzigd ten opzichte van wat er bewaard is: de afsluitcontrole en
-        // AutoSave moeten het zien. `applyLoadedProject` zet `isDirty` op false (een geopend bestand).
-        document.store.setState((s) => { markDocumentEdited(s); });
+        document.store.setState((s) => {
+          // Het geladen document wijkt af van wat er bewaard is: de afsluitcontrole en AutoSave moeten
+          // het zien (`applyLoadedProject` zet `isDirty` op false, zoals voor een geopend bestand).
+          markDocumentEdited(s);
+          // Ander id ⇒ een NIEUW project zonder opslagdoel: opslaan vraagt om een nieuwe plek in plaats
+          // van het bestand van het vorige project te overschrijven.
+          if (!sameProject) {
+            s.filePath = null;
+            s.fileHandle = null;
+            s.siteFileId = null;
+            s.siteFileVersion = null;
+          }
+        });
       },
       recalculate: () => document.store.getState().runCPM(),
       // Eén snapshot voor de hele reeks i.p.v. één per mutatie — lineair in plaats van
