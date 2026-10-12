@@ -6,6 +6,7 @@ import type { CPMResult, CPMTaskResult } from './CPMSolver';
 import { writeSummaryProgress, type SummaryProgress } from './summaryProgress';
 import { CalendarEngine } from './CalendarEngine';
 import { parseInstant } from '@/utils/dateUtils';
+import { shownFinish, shownStart } from '@/utils/taskDates';
 import { projectDurationOf } from './projectDuration';
 
 /**
@@ -252,16 +253,47 @@ export function captureRecordedDates(
   return { times, total: Object.keys(times).length };
 }
 
-/** Hoeveel taken kregen door de solve andere datums dan het bestand vastlegde? Roep dit aan NÁ
- *  `runCPM`, met dezelfde `times` die vóór de solve is vastgelegd (`captureRecordedDates(...).times`
- *  — symmetrisch met `cpmResultFromRecorded` hieronder, die dezelfde `Record<string, RecordedTime>`
- *  neemt, geen bredere wrapper). */
+/**
+ * Toont `task` andere datums dan in de modus "datums zoals opgeslagen" op het scherm zouden staan?
+ * Vergelijkt de GETOONDE start en het GETOONDE einde (`shownStart`/`shownFinish`), niet de rauwe
+ * vroege datums: de modus zet `rec.start`/`rec.finish` op `earlyStart`/`earlyFinish`
+ * (`applyRecordedTimesToTasks`), en een samenvatting met eigen vastlegging krijgt haar opgeslagen
+ * voortgang terug (`summaryProgress`). Daarom wordt hier precies die taak nagebouwd en getoond.
+ *
+ * Gevolg (eigenaarsbesluit 2026-10-12, optie 1): een voltooide taak staat in de modus én na
+ * herberekenen op haar werkelijke datums, dus telt nooit als verschoven; een lopende taak alleen als
+ * haar (rest)einde verschuift. P6 legt voor zo'n taak een vroege start op de statusdatum vast (en P3
+ * zelfs een vroeg einde vóór die start); dat verschil zag de gebruiker nooit en mag de modus dus ook
+ * niet aanzetten.
+ *
+ * Eén definitie voor de telling (`countShiftedTasks`) en de markering per taak (`recordedTaskMark`).
+ */
+export function recordedDatesDeviate(task: Task, rec: RecordedTime): boolean {
+  const progress = rec.summaryProgress;
+  const asRecorded: Task = {
+    ...task,
+    time: {
+      ...task.time,
+      earlyStart: rec.start,
+      earlyFinish: rec.finish,
+      ...(progress
+        ? { completion: progress.completion, actualStart: progress.actualStart, actualFinish: progress.actualFinish }
+        : {}),
+    },
+  };
+  return shownStart(task) !== shownStart(asRecorded) || shownFinish(task) !== shownFinish(asRecorded);
+}
+
+/** Hoeveel taken kregen door de solve andere GETOONDE datums dan het bestand vastlegde
+ *  ({@link recordedDatesDeviate})? Roep dit aan NÁ `runCPM`, met dezelfde `times` die vóór de solve
+ *  is vastgelegd (`captureRecordedDates(...).times` — symmetrisch met `cpmResultFromRecorded`
+ *  hieronder, die dezelfde `Record<string, RecordedTime>` neemt, geen bredere wrapper). */
 export function countShiftedTasks(tasks: Task[], times: Record<string, RecordedTime>): number {
   let n = 0;
   for (const task of tasks) {
     const rec = times[task.id];
     if (!rec) continue;
-    if (task.time.earlyStart !== rec.start || task.time.earlyFinish !== rec.finish) n++;
+    if (recordedDatesDeviate(task, rec)) n++;
   }
   return n;
 }

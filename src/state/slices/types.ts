@@ -338,6 +338,10 @@ export type NotificationMessageKey =
   | 'notifications.startBlockedByConstraint'
   | 'notifications.startBlockedByConstraintNoDate'
   | 'notifications.startBlockedByConstraintMany'
+  // Gantt-sleep op een balk met werkelijke datums (eigenaarsbesluit 2026-10-12): de balk
+  // verschuift niet — `useBarDrag`. Parameter `name`.
+  | 'notifications.dragStartIsActual'
+  | 'notifications.dragDatesAreActual'
   // Voortgang ingevuld zonder statusdatum ⇒ de app zette hem op vandaag —
   // zie `engine/progressEntry.ts` en `state/progressEntryNotice.ts`. Parameter `date`.
   | 'notifications.statusDateSetToday'

@@ -70,13 +70,20 @@ function hoursToDays(hours: number | null, minutesPerDay: number): number | unde
  * cel aanwezig én parseerbaar is. Ontbreekt zo'n cel, dan blijft het veld `undefined` — "niet
  * vastgelegd" — nooit een verzonnen 0 en nooit gelijkgesteld aan de vroege kant.
  *
- * BEWUST GEEN ORDETOETS op `early_end_date < early_start_date`: dat is P6's EIGEN conventie voor
- * voltooide activiteiten, geen scheve bron. Corpus (25 orakelbestanden): 2.049 van 11.953 taken met
- * early-paar hebben einde vóór start, 2.036 daarvan `TK_Complete` — P6 zet `early_start` van een
- * voltooide activiteit op de statusdatum en `early_end` op het werkelijke einde, precies wat de
- * statusdatumroute van de solver nabouwt. Een guard zou 29% van rehab-2's vastlegging weggooien. De
- * rest (54 van 2.090: 50 `TK_NotStart`, 4 `TK_Active`) zijn nul-duur-/mijlpaalrijen en scheve
- * bronbestanden; ook die tonen we zoals ze zijn — "nooit verzinnen" betekent hier "nooit corrigeren".
+ * BEWUST GEEN ORDETOETS op `early_end_date < early_start_date`: dat is een conventie van de bron
+ * voor VOLTOOIDE activiteiten, geen scheve bron. Corpus (25 orakelbestanden): 2.049 van 11.953 taken
+ * met early-paar hebben einde vóór start, 2.036 daarvan `TK_Complete`, allemaal uit rehab-2 (P3-
+ * uitvoer). Daar staat `early_start` op de statusdatum (08:00) en `early_end` op het einde van de
+ * werkdag ervóór (17:00) — NIET op het werkelijke einde (`act_end_date`; gemeten 2026-10-12: 3 van de
+ * 2.037 voltooide taken vallen toevallig samen). Echte P6-uitvoer (Roads) zet bij 157 van 157
+ * voltooide taken `early_start` = `early_end`, 145 keer op de statusdatum en 0 keer op het werkelijke
+ * einde. Beide zijn dus GEEN werkelijke datums: de weergave
+ * toont voor een gestarte/voltooide taak de werkelijke start en het werkelijke einde (`shownStart`/
+ * `shownFinish`, `utils/taskDates.ts`, zoals P6's kolommen Start/Finish), en deze vastlegging blijft
+ * de rekenuitvoer (kolommen Vroegste start/Vroegste einde, X12-meetlat). Een guard zou 29% van rehab-2's
+ * vastlegging weggooien. De rest (54 van 2.090: 50 `TK_NotStart`, 4 `TK_Active`) zijn
+ * nul-duur-/mijlpaalrijen en scheve bronbestanden; ook die tonen we zoals ze zijn — "nooit
+ * verzinnen" betekent hier "nooit corrigeren".
  *
  * `isCritical` is een AFLEIDING, geen gelezen kolom: totale speling ≤ de kritiekdrempel uit
  * `ctx.criticalDefinition` (default 0) zodra die speling vastgelegd is; onder longest-path-kritiek

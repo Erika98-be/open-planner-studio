@@ -121,6 +121,8 @@
     "startBlockedByConstraintNoDate": "'{{name}}' görevinin yeni başlangıcı uygulanmadı: görevin bir öncülü ve $t(task:constraintType.{{type}}) kısıtlaması var; başlangıcı bunlar belirliyor. Başlangıcı taşımak için bu kısıtlamayı değiştirin.",
     "startBlockedByConstraintMany_one": "{{count}} görevin yeni başlangıcı uygulanmadı: görevin bir öncülü ve Şu tarihten önce başlamaz (SNET) dışında bir kısıtlaması var. Başlangıcı taşımak için bu kısıtlamayı değiştirin.",
     "startBlockedByConstraintMany_other": "{{count}} görevin yeni başlangıçları uygulanmadı: bu görevlerin bir öncülü ve Şu tarihten önce başlamaz (SNET) dışında bir kısıtlaması var. Başlangıçları taşımak için bu kısıtlamaları değiştirin.",
+    "dragStartIsActual": "'{{name}}' başladı: başlangıcı gerçek başlangıçtır ve kaymaz. Bunu ilerleme üzerinden değiştirin.",
+    "dragDatesAreActual": "'{{name}}' tamamlandı: başlangıcı ve bitişi gerçek tarihlerdir ve kaymaz. Bunları ilerleme üzerinden değiştirin.",
     "referencesClearedOnPaste_one": "{{count}} başvuru bu belgede yoktu ve temizlendi (kaynak belgeden bir görev takvimi, özel görev türü, aktivite kodu veya kullanıcı alanı).",
     "referencesClearedOnPaste_other": "{{count}} başvuru bu belgede yoktu ve temizlendi (kaynak belgeden görev takvimleri, özel görev türleri, aktivite kodları veya kullanıcı alanları).",
     "milestoneRefusedAssignments_one": "'{{task}}' kaynak atamalarına sahip ve kilometre taşı olamaz. Önce atamaları kaldırın.",

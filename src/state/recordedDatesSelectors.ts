@@ -1,4 +1,4 @@
-import type { RecordedDatesState, RecordedTime } from '@/engine/scheduler/recordedDates';
+import { recordedDatesDeviate, type RecordedDatesState, type RecordedTime } from '@/engine/scheduler/recordedDates';
 import type { Task } from '@/types/task';
 import type { RecordedTaskAxis, RecordedTaskMark } from '@/types/taskGrid';
 
@@ -6,7 +6,8 @@ import type { RecordedTaskAxis, RecordedTaskMark } from '@/types/taskGrid';
  * "Datums zoals opgeslagen" — de PURE afgeleide over
  * bestaande documentstate (`recordedDates`/`datesAsRecorded`), gedeeld door de taaktabel-kolom
  * (`taskColumnRegistry.ts`, via `TaskColumnContext.recordedMark`/`recordedUnrecordedAxes`) en het
- * eigenschappenpaneel (`TaskRecordedDatesNotice.tsx`). Bladmodule: importeert alleen types, geen
+ * eigenschappenpaneel (`TaskRecordedDatesNotice.tsx`). Bladmodule: importeert alleen types en de
+ * pure vergelijking `recordedDatesDeviate` (dezelfde als de telling `countShiftedTasks`), geen
  * nieuw `Task`-veld en geen `DOCUMENT_FIELDS`-wijziging — de informatie zit al in de state.
  *
  * `RecordedTaskMark`/`RecordedTaskAxis` staan in `@/types/taskGrid.ts` (niet hier) omdat
@@ -77,8 +78,9 @@ export function unrecordedExportGate(
  * Markering voor de taaktabel-kolom `recorded.source` (categorie `computed`). Twee gevallen, met
  * voorrang in deze volgorde:
  *
- *  1. `'deviates'` — de taak heeft een vastlegging (`recorded.times[task.id]`) waarvan de vroege
- *     start/einde AFWIJKT van wat er nu op het scherm staat (`task.time.earlyStart`/`earlyFinish`).
+ *  1. `'deviates'` — de taak heeft een vastlegging (`recorded.times[task.id]`) waarvan de GETOONDE
+ *     start/einde AFWIJKT van wat er nu op het scherm staat (`recordedDatesDeviate`: dezelfde
+ *     vergelijking als de telling, dus een voltooide taak — werkelijke datums in beide — nooit).
  *     Alleen betekenisvol BUITEN de modus (`!datesAsRecorded`): IN de modus staat het scherm per
  *     constructie gelijk aan de vastlegging (`applyRecordedTimesToTasks` schrijft `rec.start`/
  *     `rec.finish` rechtstreeks naar `task.time.early*`), dus "wijkt af" zou daar altijd `false`
@@ -103,9 +105,7 @@ export function recordedTaskMark(
   const rec = recorded?.times[task.id];
   if (!rec) return undefined;
   if (!datesAsRecorded) {
-    return task.time.earlyStart !== rec.start || task.time.earlyFinish !== rec.finish
-      ? 'deviates'
-      : undefined;
+    return recordedDatesDeviate(task, rec) ? 'deviates' : undefined;
   }
   return unrecordedAxes(rec).length > 0 ? 'partly-unrecorded' : undefined;
 }

@@ -66,6 +66,7 @@ import { removeGap } from '@/engine/scheduler/splitEdit';
 import { useGanttRowDragBridge } from './ganttRowDragBridge';
 import { TASK_ROW_HEIGHT } from '@/engine/taskGrid/rowHeight';
 import type { HistogramRenderInput } from './hooks/ganttCoordinatorTypes';
+import { shownFinish, shownStart } from '@/utils/taskDates';
 
 // Basisgeometrie op Tekengrootte 100%: de component leidt hieruit de EFFECTIEVE
 // `rowHeight`/`headerHeight` af (× ui.uiFontScale/100) — gebruik binnen de component die geschaalde
@@ -405,8 +406,9 @@ export function GanttCanvas({
   const revealTaskIfOffscreen = useCallback((task: Task) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const startString = task.time.earlyStart || task.time.scheduleStart;
-    const finishString = task.time.earlyFinish || task.time.scheduleFinish;
+    // Dezelfde datums als de balk (`GanttRenderer.barGeometry`).
+    const startString = shownStart(task);
+    const finishString = shownFinish(task);
     if (!startString || !finishString) return;
     const state = useAppStore.getState();
     const currentView = state.view;

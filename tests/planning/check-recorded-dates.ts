@@ -28,7 +28,7 @@ import { createAppStoreContext, useAppStore } from '@/state/appStore';
 import { recoveryInputFromParsed } from '@/state/documentContract';
 import { LOCALES } from '../../scripts/i18n-tools';
 import { recordedDatesActiveKey, recordedDatesTaskActiveKey } from '@/components/layout/recordedDatesNoticeText';
-import { unrecordedExportGate } from '@/state/recordedDatesSelectors';
+import { recordedTaskMark, unrecordedExportGate } from '@/state/recordedDatesSelectors';
 import { writeCSV } from '@/services/csv/csvWriter';
 import { readCSV } from '@/services/csv/csvReader';
 import { CSV_FIXTURE_UNREADABLE_DATES } from '../fixtures/recordedTimesFormats';
@@ -223,6 +223,46 @@ eq('2b identiek ⇒ 0 verschoven', countShiftedTasks([mk('a'), mk('b')], basis.t
 eq('2c één verschoven ⇒ 1',
   countShiftedTasks([mk('a', { earlyStart: '2026-05-01' }), mk('b')], basis.times), 1);
 eq('2d onbekende taak telt niet mee', countShiftedTasks([mk('c')], basis.times), 0);
+
+// 2b–2d op de GETOONDE datums (eigenaarsbesluit 2026-10-12, optie 1): een voltooide taak staat in de
+// modus én herberekend op haar werkelijke datums, een lopende taak begint op haar werkelijke start.
+// Een verschil in alleen de vroege datums (P6 zet die op de statusdatum, P3 zelfs een vroeg einde
+// vóór die start) telt dus niet. Vorm uit rehab-2 (P3): vastgelegd 27-05 08:00 → 26-05 17:00.
+{
+  const p3Done: RecordedTime = { start: '2008-05-27T08:00', finish: '2008-05-26T17:00' };
+  const done = mk('v', {
+    earlyStart: '2008-03-03T08:00', earlyFinish: '2008-03-14T17:00', completion: 1,
+    actualStart: '2008-03-03T08:00', actualFinish: '2008-03-14T17:00',
+  }, { status: 'COMPLETED' });
+  eq('2g voltooide taak: alleen de vroege datums wijken af ⇒ 0 verschoven', countShiftedTasks([done], { v: p3Done }), 0);
+  eq('2g …ook als de herberekening een stomp op de statusdatum geeft (P6, C5)',
+    countShiftedTasks([{ ...done, time: { ...done.time, earlyStart: '2008-05-27T08:00', earlyFinish: '2008-05-27T08:00' } }], { v: p3Done }), 0);
+  const running = mk('l', {
+    earlyStart: '2008-05-27T08:00', earlyFinish: '2008-06-06T17:00', completion: 0.4, actualStart: '2008-05-12T08:00',
+  }, { status: 'STARTED' });
+  eq('2h lopende taak: alleen de vroege start wijkt af (statusdatum vs werkelijke start) ⇒ 0',
+    countShiftedTasks([running], { l: { start: '2008-05-12T08:00', finish: '2008-06-06T17:00' } }), 0);
+  eq('2i lopende taak: het (rest)einde wijkt af ⇒ 1',
+    countShiftedTasks([running], { l: { start: '2008-05-27T08:00', finish: '2008-06-13T17:00' } }), 1);
+  eq('2j niet-gestarte taak: de vroege start wijkt af ⇒ 1 (ongewijzigd)',
+    countShiftedTasks([mk('a', { earlyStart: '2026-03-03' })], basis.times), 1);
+  // Een samenvatting met eigen vastlegging krijgt in de modus haar OPGESLAGEN voortgang terug; de
+  // vergelijking bouwt die na. Bestand: 62 %, einde 20-03. Herberekend: voltooid, werkelijk einde 13-03.
+  const phase = mk('f', {
+    earlyStart: '2026-03-02', earlyFinish: '2026-03-13', completion: 1, actualStart: '2026-03-02', actualFinish: '2026-03-13',
+  }, { status: 'COMPLETED', childIds: ['k'] });
+  const phaseRec: RecordedTime = {
+    start: '2026-03-02', finish: '2026-03-20',
+    summaryProgress: { completion: 0.62, status: 'STARTED', actualStart: '2026-03-02' },
+  };
+  eq('2k samenvatting: opgeslagen 62 % ⇒ in de modus haar vastgelegde einde ⇒ wijkt af', countShiftedTasks([phase], { f: phaseRec }), 1);
+  eq('2k …zonder opgeslagen voortgang zou ze op haar werkelijke einde staan (niets verschoven)',
+    countShiftedTasks([phase], { f: { start: '2026-03-02', finish: '2026-03-20' } }), 0);
+  // De markering per taak ("Wijkt af van de opgeslagen datums") gebruikt dezelfde vergelijking.
+  const state = { times: { v: p3Done, l: { start: '2008-05-27T08:00', finish: '2008-06-13T17:00' } }, total: 2 };
+  eq('2l markering per taak = telling: voltooid ⇒ geen markering, lopend met ander einde ⇒ wijkt af',
+    [recordedTaskMark(state, false, done), recordedTaskMark(state, false, running)], [undefined, 'deviates']);
+}
 
 // KLEIN-13 (kwaliteitsreview) — randgevallen die niets breken maar tot nu toe niets vastlegden.
 eq('2e een id in recordedFields dat niet in tasks zit ⇒ genegeerd',

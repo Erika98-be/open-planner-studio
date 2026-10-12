@@ -1,6 +1,6 @@
 import type { Task, ExternalLink } from '@/types/task';
 import { externalSourceSide, normalizeExternalSourcePath } from '@/engine/taskGrid/relationFormat';
-import { shownStart, shownFinish } from '@/utils/taskDates';
+import { computedStart, computedFinish } from '@/utils/taskDates';
 
 export { externalSourceSide };
 
@@ -41,12 +41,14 @@ export interface RefreshResult {
  * claimen; zo worden kopieën uit elkaar gehouden zonder een verplaatst enkel bronbestand te breken. */
 export type ExternalSourceMatchScope = 'project-or-path' | 'file-path';
 
-/** De actuele anker-datum die `link` uit `srcTask` leest; leeg ⇒ geen bruikbare datum. */
+/** De actuele anker-datum die `link` uit `srcTask` leest; leeg ⇒ geen bruikbare datum. BEWUST de
+ *  REKENdatum (`computedStart`/`computedFinish`), niet de getoonde: het anker voedt de berekening van
+ *  een ander document, en de getoonde start van een gestarte brontaak is haar werkelijke start. */
 export function sourceAnchorDate(link: ExternalLink, srcTask: Task): string {
   const side = externalSourceSide(link.direction, link.relType);
   return side === 'finish'
-    ? shownFinish(srcTask)
-    : shownStart(srcTask);
+    ? computedFinish(srcTask)
+    : computedStart(srcTask);
 }
 
 /** Matcht een link met `source`: normaal primair op project-id en secundair op genormaliseerd pad.
