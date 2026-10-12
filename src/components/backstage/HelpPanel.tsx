@@ -460,7 +460,7 @@ export function HelpPanel() {
                 <button
                   key={l}
                   type="button"
-                  className="btn btn--sm"
+                  className="btn btn--secondary btn--sm"
                   data-help-read-in={l}
                   onClick={() => changeDocsLang(l)}
                 >
