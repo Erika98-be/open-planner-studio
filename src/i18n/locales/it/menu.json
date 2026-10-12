@@ -319,6 +319,8 @@
     "helpDocsLang": "Lingua della documentazione",
     "helpDocsLangAuto": "Segui la lingua dell'app",
     "helpLangFallback": "Questo articolo non è ancora disponibile nella tua lingua; stai leggendo la versione inglese.",
+    "helpTranslatedNote": "Questa guida è stata tradotta dall'inglese e potrebbe non essere aggiornata rispetto alle versioni in inglese e in olandese.",
+    "helpReadIn": "Leggi in:",
     "unapplied": {
       "title": "Modifiche non applicate",
       "body": "Hai modificato le informazioni del progetto ma non le hai ancora applicate. Cosa vuoi fare con queste modifiche?",

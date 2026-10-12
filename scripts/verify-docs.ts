@@ -8,8 +8,8 @@
 //      DOC_LANGS = HELP_SOURCE_LANGS uit src/utils/helpManifest.ts), met titels alleen in nl + en.
 //      Onder public/docs mogen de mappen van alle UI-talen staan (src/i18n/locales.ts) plus `img/`.
 //      Geen wees-bestanden in nl/en (md zonder manifest-entry); geen dubbele ids.
-//   12. De andere talen zijn optioneel (vertaald; contracten C1–C3):
-//      wat er staat moet kloppen (index.json ↔ bestanden, indextitel = H1, parser-subset,
+//   12. De andere talen zijn optioneel (vertaalstraat, ontwerp 2026-10-09-vertaalstraat-design.md
+//      §9/§10): wat er staat moet kloppen (index.json ↔ bestanden, indextitel = H1, parser-subset,
 //      structuur = die van de en-tekst waaruit de vertaling kwam, volgens i18n/docs-sources/<taal>.json);
 //      ontbrekend, verouderd, wees en een link naar een onbekend doel zijn een rapport (exit 0).
 //      Regels: scripts/lib/docs-translations.ts.
@@ -154,7 +154,7 @@ function extractLinkTargets(source: string): string[] {
 }
 
 /** Check 5: markdown-constructies buiten de subset die src/utils/miniMarkdown.tsx ondersteunt. De
- *  regels zelf staan in `scripts/lib/docs-structure.ts` (contract C1, gedeeld met wie de docs vertaalt);
+ *  regels zelf staan in `scripts/lib/docs-structure.ts` (contract C1, gedeeld met de docs-straat);
  *  hier alleen het bestaan van de afbeeldingen (het pad wordt door de viewer opgelost tegen
  *  BASE_URL/docs/<pad>, met `{lang}` = de beeldtaal van deze docstaal). */
 function checkParserCompat(id: string, lang: string, source: string, diffs: string[], draftNotes: string[], isDraft: boolean) {
@@ -805,7 +805,7 @@ function main() {
   }
 
   // 12. De optionele docstalen (zie scripts/lib/docs-translations.ts): fouten tellen, de rest is een rapport.
-  console.log('\n── Andere docstalen (optioneel) ──');
+  console.log('\n── Andere docstalen (optioneel, via de vertaalstraat) ──');
   const aliases = manifestAliases(manifest);
   const absent: string[] = [];
   for (const lang of OPTIONAL_DOC_LANGS) {

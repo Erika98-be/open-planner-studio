@@ -3,8 +3,11 @@
 `public/docs/` is een eigen documentatiesubsysteem, los van `src/` — zie de `docs-help`-rule
 (`.claude/rules/docs-help.md`). Eén manifest (`public/docs/manifest.json`) plus de mappen `nl/` en
 `en/` met Markdown-artikelen. Jij schrijft alleen `nl` en `en`: dat is de bron. De andere UI-talen
-(`public/docs/<taal>/` met een gegenereerde `index.json`) pas je niet met de hand aan. Tot een nieuw of
-gewijzigd artikel vertaald is, leest een andere taal het Engels (of de vorige vertaling). Manifest en artikelen worden runtime gefetcht (niet gebundeld), dus een
+(`public/docs/<taal>/` met een gegenereerde `index.json`) vult de vertaalstraat (`npm run translate`,
+ontwerp `docs/superpowers/specs/2026-10-09-vertaalstraat-design.md`); pas die mappen nooit met de hand
+aan. Tot de straat een nieuw of gewijzigd artikel vertaalt, leest een andere taal het Engels (of de
+vorige vertaling), met een melding. Dat mag ook bij een release: alleen `nl` en `en` moeten bij zijn
+(besluit eigenaar, 2026-10-12). Bijwerken op verzoek met de skill `update-docs-lang`. Manifest en artikelen worden runtime gefetcht (niet gebundeld), dus een
 nieuw artikel vraagt geen rebuild om zichtbaar te worden in dev — wel om hem in `dist/` te krijgen
 voor een echte deploy.
 
@@ -133,8 +136,8 @@ artefact en wordt nooit rechtstreeks bewerkt (zie de `wiki`-skill).
 | onderwerp | bestand |
 |---|---|
 | manifest (id's, titels nl/en, `kind`, `draft`, `aliases`) | `public/docs/manifest.json` |
-| artikelen | `public/docs/{nl,en}/<id>.md` (bron); `public/docs/<taal>/<id>.md` + `index.json` (vertaling) |
-| secties en structuurhash (gedeeld met wie vertaalt) | `scripts/lib/docs-structure.ts` |
+| artikelen | `public/docs/{nl,en}/<id>.md` (bron); `public/docs/<taal>/<id>.md` + `index.json` (vertaalstraat) |
+| secties en structuurhash (gedeeld met de straat) | `scripts/lib/docs-structure.ts` |
 | poort voor de andere talen | `scripts/lib/docs-translations.ts` |
 | de regels (draft, alias, docstaal, ankers) | `src/utils/helpManifest.ts` |
 | artikel-id's die de app gebruikt | `src/state/helpArticles.ts` |

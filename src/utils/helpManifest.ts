@@ -22,8 +22,8 @@ export const MANIFEST_HELP_KINDS: readonly HelpKind[] = ['howto', 'uitleg', 'ref
 
 /**
  * De talen waarin de documentatie kan bestaan: alle UI-talen (contract C4, `src/i18n/locales.ts`).
- * `nl` en `en` zijn de bron en altijd compleet; de andere talen hebben alleen de vertaalde
- * artikelen. Welke artikelen een andere taal heeft, staat in
+ * `nl` en `en` zijn de bron en altijd compleet; de andere talen vult de vertaalstraat
+ * (`npm run translate`), per artikel. Welke artikelen een andere taal heeft, staat in
  * `public/docs/<taal>/index.json` (contract C2); wat daar niet in staat, leest de viewer in het Engels.
  */
 export const HELP_DOC_LANGS: readonly Locale[] = LOCALES;

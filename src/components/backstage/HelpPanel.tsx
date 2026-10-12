@@ -12,9 +12,9 @@
 // onvindbaar, ook via zoeken, een `docs://`-link, een alias of `openHelpArticle`. De regels zelf
 // staan puur in `utils/helpManifest.ts`.
 //
-// Talen: nl en en zijn de bron en
+// Talen (vertaalstraat, ontwerp `2026-10-09-vertaalstraat-design.md` §10): nl en en zijn de bron en
 // altijd compleet. Een andere taal heeft alleen de artikelen uit haar `public/docs/<taal>/index.json`
-// (gegenereerd); een artikel dat daar niet in staat, leest Engels met een korte melding.
+// (die de straat genereert); een artikel dat daar niet in staat, leest Engels met een korte melding.
 // Richting en `lang` van tekst en titel volgen de taal van de getoonde tekst, niet de UI: een Engelse
 // terugval in een ar-interface blijft links-naar-rechts. Een verouderde vertaling toont de viewer
 // gewoon (besluit B2); de releasepoort zorgt dat een release alles actueel heeft.

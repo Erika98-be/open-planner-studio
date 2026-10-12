@@ -1,8 +1,9 @@
-// Gedeeld contract C1 voor de vertaalde docs: de pure regels over de opbouw van een Help-artikel. Twee afnemers gebruiken exact deze
+// Gedeeld contract C1 van de vertaalstraat (ontwerp `docs/superpowers/specs/2026-10-09-vertaalstraat-design.md`
+// §9/§10): de pure regels over de opbouw van een Help-artikel. Twee afnemers gebruiken exact deze
 // functies, zodat ze niet uit elkaar kunnen lopen:
 //  - `scripts/verify-docs.ts` (de poort): parser-subset voor elke taal, en de structuurvergelijking
 //    tussen een vertaling en de Engelse bron waaruit ze kwam;
-//  - wie docs vertaalt: secties knippen en hashen, en de structuurhash bewaren in
+//  - de docs-straat (`npm run translate`): secties knippen en hashen, en de structuurhash bewaren in
 //    `i18n/docs-sources/<taal>.json` (contract C3).
 //
 // Bewust zonder `@/`-imports en met alleen `node:crypto`: de straat draait dit ook buiten de

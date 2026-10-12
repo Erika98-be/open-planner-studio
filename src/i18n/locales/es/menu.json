@@ -319,6 +319,8 @@
     "helpDocsLang": "Idioma de la documentación",
     "helpDocsLangAuto": "Seguir el idioma de la aplicación",
     "helpLangFallback": "Este artículo aún no está disponible en su idioma. Está leyendo la versión en inglés.",
+    "helpTranslatedNote": "Esta guía se tradujo del inglés. Puede estar menos actualizada que las versiones en inglés y neerlandés.",
+    "helpReadIn": "Leer en:",
     "unapplied": {
       "title": "Cambios no aplicados",
       "body": "Ha modificado la información del proyecto pero aún no la ha aplicado. ¿Qué desea hacer con estos cambios?",

@@ -98,7 +98,7 @@ primary-kaart met eventueel één gidslink, vier compacte secondary-kaarten zond
 link naar de GitHub-wiki. Kies daarom precies vijf gebruikersgerichte highlights en voeg in
 `src/services/updater/releaseHighlights.ts` **alleen een nieuw versieblok** toe; herschrijf geen
 copy van een al uitgebrachte versie. Dat blok bevat de primary, exact vier secondaries, de
-reproduceerbare statistieken en copy voor alle veertien locales.
+reproduceerbare statistieken en copy voor de veertien locales van `RELEASE_HIGHLIGHT_LOCALES` (de andere talen vallen terug op `en`).
 
 De routine-releasegegevens kennen bewust geen screenshots, afbeeldingen of layoutvelden. Wijzig
 `JustUpdatedDialog.tsx` alleen na een expliciet, afzonderlijk door de user goedgekeurd redesign;
@@ -145,9 +145,22 @@ achterloopt; laat het onaangeroerd als er niets architecturaal relevants is vera
 vorige release. Kan gecombineerd worden met de doc-subagent uit stap 5 (zelfde soort werk,
 zelfde soort dubbelcheck-tegen-de-commits), of los.
 
+### 6a. Vertalingen bijwerken met de straat (een release heeft de UI in elke taal)
+Een PR vraagt alleen `nl` + `en`; `main` mag dus achterlopen, een release niet (besluit B5, 2026-10-10,
+verfijnd 2026-10-12: de **UI** moet in elke taal compleet en actueel zijn; de Help-artikelen in andere
+talen dan `nl`/`en` mogen achterlopen). Draai vóór de kwaliteitspoorten:
+```bash
+npm run verify:translations; echo "exit=$?"      # 0 = niets te doen
+```
+Niet 0: volg de skill **`update-ui-lang`** (pakketten, Haiku-stations, `apply ui`, commit) tot deze poort
+groen is, en merge die vertalingen vóór stap 9. De poort meldt ook hoeveel Help-artikelen per taal
+achterlopen (`docs (blokkeert niet): …`). Noem dat aantal in het releasevoorstel; een docs-run
+(`update-docs-lang`) start je alleen als de user daarom vraagt.
+
 ### 7. Kwaliteitspoorten (eind-poort — zelf draaien, alles groen)
 Reproduceer vooraf precies wat de release-gate in `.github/workflows/release.yml` draait:
 ```bash
+npm run verify:translations; echo "exit=$?"        # UI in elke taal compleet en actueel (stap 6a)
 npm run verify; echo "exit=$?"                     # typecheck (npm run typecheck), lint, alle vijf suites, verify:*-poorten
 npm run verify:release-highlights -- X.Y.Z; echo "exit=$?"   # = node scripts/release-highlights.mjs X.Y.Z
 npm run build                                      # beforeBuildCommand van tauri-action
@@ -318,7 +331,7 @@ branch en PR — `main` vereist daar een review en Nozzit heeft er géén bypass
 
 ## Rode vlaggen — stop
 - Tag pushen vóór de akkoord-poort (stap 12).
-- Een poort (tsc/suite/build/verify) rood en tóch doorgaan.
+- Een poort (tsc/suite/build/verify/verify:translations) rood en tóch doorgaan.
 - De suite-tail als bewijs nemen i.p.v. exitcode + `grep ^XX`.
 - Een worktree verwijderen met ongecommit werk of een draaiende dev-server.
 - Uitgebreide verhalen in de release notes proppen — die horen in de changelog.

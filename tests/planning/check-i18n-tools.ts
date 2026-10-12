@@ -17,6 +17,8 @@ import {
   LOCALES, NAMESPACES, formatLocale, keyExists, mergeLocale, orderLike, pluralCategories, removeTranslation, serialize,
   setTranslation, translationKind, validateTranslations, type Json, type JsonObject, type Translation,
 } from '../../scripts/i18n-tools';
+import { hashUnit } from '../../scripts/translate/common';
+import { selectUnits } from '../../scripts/translate/ui';
 
 let checks = 0;
 const diffs: string[] = [];
@@ -89,7 +91,7 @@ const canon = (v: Json): Json => {
     pl: { one: '{{count}} a', many: '{{count}} c', other: '{{count}} d' },
   }).some(e => e.startsWith('pl: meervoudsvormen')));
 
-  // Per vorm vergelijken `one` met nl `one`, de rest met
+  // Per vorm vergelijken (zelfde regel als scripts/translate/gates.ts): `one` met nl `one`, de rest met
   // nl `other`. Een familie mag per vorm andere invulplekken hebben.
   const perForm = (): Record<string, Translation> => ({
     nl: { one: "'{{task}}' heeft een fout", other: '{{count}} taken hebben een fout' },
@@ -218,12 +220,13 @@ const canon = (v: Json): Json => {
   eq('alle 56 echte bestanden overleven een herschikking aan de overkant', bad, 0);
 }
 
-// ── 7. `i18n:add` echt gedraaid (besluit B5): nl + en verplicht, de rest optioneel ──────
+// ── 7. `i18n:add` echt gedraaid (besluit B5): nl + en verplicht, de rest via de vertaalstraat ──────
 {
   const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
   const work = mkdtempSync(join(tmpdir(), 'ops-i18n-add-'));
   const bundle = join(work, 'i18n-add.mjs');
   const locFile = (loc: string, ns = 'common') => join(work, 'src/i18n/locales', loc, `${ns}.json`);
+  const srcFile = (loc: string) => join(work, 'i18n/ui-sources', `${loc}.json`);
   const readText = (f: string) => readFileSync(f, 'utf8');
   const readObj = (f: string) => JSON.parse(readText(f)) as JsonObject;
   const add = (args: string[], input: unknown) => {
@@ -242,6 +245,11 @@ const canon = (v: Json): Json => {
         writeFileSync(locFile(loc, ns), serialize(ns === 'common' ? { a: `A ${loc}`, b: `B ${loc}` } : {}));
       }
     }
+    // fr heeft een basislijn (bestaande taal), ru niet (nieuwe taal, hash alleen via `apply ui`).
+    mkdirSync(join(work, 'i18n/ui-sources'), { recursive: true });
+    for (const loc of ['en', 'fr', 'ru']) {
+      writeFileSync(srcFile(loc), serialize({ common: { a: hashUnit('A nl'), b: hashUnit('B nl') } }));
+    }
     const frBefore = readText(locFile('fr'));
     const ruBefore = readText(locFile('ru'));
 
@@ -249,14 +257,26 @@ const canon = (v: Json): Json => {
     eq('7a nieuwe sleutel met alleen nl + en: exit 0', r1.status, 0);
     eq('7a nl en en hebben de sleutel', [readObj(locFile('nl')).nieuw, readObj(locFile('en')).nieuw], ['Nieuw', 'New']);
     eq('7a fr en ru zijn byte-gelijk gebleven', [readText(locFile('fr')) === frBefore, readText(locFile('ru')) === ruBefore], [true, true]);
-    ok(`7a de uitvoer noemt de niet-opgegeven talen (${r1.out})`, /26 locale\(s\) niet opgegeven/.test(r1.out));
+    ok(`7a de uitvoer noemt de niet-opgegeven talen en de straat (${r1.out})`, /26 locale\(s\) niet opgegeven/.test(r1.out) && /prepare ui/.test(r1.out));
+    eq('7a en krijgt de hash van de nieuwe nl-tekst', (readObj(srcFile('en')).common as JsonObject).nieuw, hashUnit('Nieuw'));
+    eq('7a de straat ziet de sleutel als ontbrekend in fr', selectUnits({
+      ns: 'common', nl: readObj(locFile('nl')), en: readObj(locFile('en')), target: readObj(locFile('fr')),
+    }, 'fr', 'missing', readObj(srcFile('fr')) as never).map(u => u.unit.key), ['nieuw']);
 
     const r2 = add(['common:a', '--update'], { nl: 'A nl 2', en: 'A en 2' });
     eq('7b --update met alleen nl + en: exit 0', r2.status, 0);
     eq('7b fr houdt zijn oude tekst', readObj(locFile('fr')).a, 'A fr');
+    eq('7b fr en ru verliezen de hash van a, b blijft', [readObj(srcFile('fr')).common, readObj(srcFile('ru')).common],
+      [{ b: hashUnit('B nl') }, { b: hashUnit('B nl') }]);
+    eq('7b en krijgt de nieuwe hash', (readObj(srcFile('en')).common as JsonObject).a, hashUnit('A nl 2'));
+    const stale = selectUnits({
+      ns: 'common', nl: readObj(locFile('nl')), en: readObj(locFile('en')), target: readObj(locFile('fr')),
+    }, 'fr', 'stale', readObj(srcFile('fr')) as never);
+    eq('7b prepare ui fr --stale pakt a op, met de oude tekst', stale.map(u => [u.unit.key, u.previous]), [['a', 'A fr']]);
 
     const r3 = add(['common:a', '--update'], { nl: 'A nl 3', en: 'A en 3', fr: 'A fr 3' });
-    eq('7c een opgegeven fr wordt geschreven', [r3.status, readObj(locFile('fr')).a], [0, 'A fr 3']);
+    eq('7c een opgegeven fr wordt geschreven en krijgt de hash', [r3.status, readObj(locFile('fr')).a,
+      (readObj(srcFile('fr')).common as JsonObject).a], [0, 'A fr 3', hashUnit('A nl 3')]);
 
     const before = LOCALES.map(loc => readText(locFile(loc)));
     const r4 = add(['common:c'], { nl: 'C', fr: 'C fr' });
