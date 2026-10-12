@@ -2,7 +2,7 @@
 // zodat tests/planning/check-i18n-tools.ts ze rechtstreeks kan toetsen.
 //
 // Waarom dit bestaat: elke zichtbare tekst moest in dezelfde wijziging in alle locales (besluit
-// werkwijze 2026-09; sinds B5, 2026-10-10, alleen nl + en verplicht). Met de hand betekende dat 14 bestanden openen, in 25 van de 56 met een andere
+// werkwijze 2026-09; sinds B5, 2026-10-10, alleen nl + en, de rest via de vertaalstraat). Met de hand betekende dat 14 bestanden openen, in 25 van de 56 met een andere
 // sleutelvolgorde dan het Nederlands, en in zes talen 70 kolomnamen op één regel van ~2.600 tekens
 // — waar twee gelijktijdige wijzigingen altijd een conflict over de hele regel gaven.
 //
@@ -13,7 +13,7 @@
 //     blijven achteraan in hun object staan (verify:i18n meldt ontbrekende, dit script gooit niets weg).
 //  2. TOEVOEGEN — een tekst gaat in één handeling in nl + en (verplicht) en in elke andere locale die
 //     is opgegeven, met per taal de CLDR-categorieën en dezelfde {{invulplekken}} als `nl`; anders
-//     weigert het script. De rest is optioneel (besluit B5, 2026-10-10).
+//     weigert het script. De rest vult de vertaalstraat (besluit B5, 2026-10-10).
 
 export const NAMESPACES = ['common', 'task', 'report', 'menu'] as const;
 export type Namespace = typeof NAMESPACES[number];
@@ -93,16 +93,16 @@ const placeholders = (text: string): string[] =>
 /** Eén vertaling: gewone tekst, of een meervoudsfamilie { categorie: tekst }. */
 export type Translation = string | Record<string, string>;
 
-/** De locales die `i18n:add` altijd eist (besluit B5, 2026-10-10); de rest is optioneel. */
+/** De locales die `i18n:add` altijd eist (besluit B5, 2026-10-10); de rest vult de vertaalstraat. */
 export const REQUIRED_LOCALES = ['nl', 'en'] as const;
 
 /**
  * Controleer een set vertalingen vóór het schrijven. Levert een lijst fouten (leeg = goed).
  * `nl` en `en` zijn verplicht (`REQUIRED_LOCALES`); de andere locales zijn optioneel (besluit B5:
- * de app valt terug op en). Wat er wél staat moet kloppen: een bekende
+ * de app valt terug op en, de vertaalstraat vult ze aan). Wat er wél staat moet kloppen: een bekende
  * locale, overal hetzelfde soort (tekst óf familie), bij een familie per taal exact de CLDR-categorieën,
  * en dezelfde {{invulplekken}} als nl. Een meervoudsvorm vergelijkt met de nl-vorm voor dezelfde
- * getallen (`one` met nl `one`, de rest met nl `other`),
+ * getallen (`one` met nl `one`, de rest met nl `other`; zelfde regel als `scripts/translate/gates.ts`),
  * en mag `{{count}}` in woorden uitschrijven (Arabisch "مهمة واحدة").
  */
 export function validateTranslations(input: Record<string, Translation>): string[] {

@@ -1,0 +1,2128 @@
+{
+  "_style": {
+    "address": "formal",
+    "note": "Formal address (vykání). Quotation marks are „…“, also around placeholders („{{name}}“); never straight or English quotes. Menu paths are introduced with 'na kartě' or 'v nabídce', not a bare 'v'. Hints and tooltips that tell the user to do something use the formal imperative (Vyberte…, zapněte…); never mix it with the infinitive in one sentence. Commands (buttons, menu items, context menu) follow `commands` and are never nouns.",
+    "commands": "Commands use the infinitive, like Czech Microsoft software: Uložit, Otevřít, Odstranit, Přepočítat.",
+    "quotes": "„…“",
+    "docs": "Guides: Formal address (vykání) and the formal imperative, as in the UI. A UI label stays exactly as in the UI, in italics and in the nominative; a carrier word (window, tab, button, column) takes the case. Step: 'Choose *Save*.' → 'Zvolte *Uložit*.'; 'in the *Relation type* window' → 'v okně *Typ závislosti*'. Explanation: 'The app moves the successor to the next workday.' → 'Aplikace přesune následníka na další pracovní den.' Address: 'If you change the duration, your schedule is out of date.' → 'Když změníte dobu trvání, váš plán už není aktuální.'"
+  },
+  "activity-code": {
+    "term": "kód aktivity",
+    "forms": [
+      "kód aktivity",
+      "kódu aktivity",
+      "kódy aktivit"
+    ],
+    "source": "existing-ui",
+    "status": "arbitrated"
+  },
+  "actual-date": {
+    "term": "skutečný",
+    "forms": [
+      "skutečný",
+      "skutečného",
+      "skutečné",
+      "skutečným",
+      "skutečnou"
+    ],
+    "avoid": [
+      "reálný"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "actual-duration": {
+    "term": "skutečná doba trvání",
+    "forms": [
+      "skutečná doba trvání",
+      "skutečné doby trvání",
+      "skutečnou dobu trvání"
+    ],
+    "avoid": [
+      "skutečné trvání",
+      "reálná doba trvání"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "actual-finish": {
+    "term": "skutečné dokončení",
+    "forms": [
+      "skutečné dokončení",
+      "skutečného dokončení",
+      "skutečným dokončením"
+    ],
+    "avoid": [
+      "skutečný konec"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "actual-start": {
+    "term": "skutečné zahájení",
+    "forms": [
+      "skutečné zahájení",
+      "skutečného zahájení",
+      "skutečným zahájením"
+    ],
+    "avoid": [
+      "skutečný start",
+      "aktuální zahájení"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "actual-work": {
+    "term": "skutečná práce",
+    "forms": [
+      "skutečná práce",
+      "skutečné práce",
+      "skutečnou práci"
+    ],
+    "avoid": [
+      "skutečné úsilí",
+      "reálná práce"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "ai-assistant": {
+    "term": "AI asistent",
+    "forms": [
+      "AI asistent",
+      "AI asistenta",
+      "AI asistentem",
+      "AI asistenti"
+    ],
+    "avoid": [
+      "umělá inteligence",
+      "chatbot"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "as-late-as-possible": {
+    "term": "co nejpozději",
+    "forms": [
+      "co nejpozději"
+    ],
+    "avoid": [
+      "nejpozdější možné",
+      "jak pozdě to jde"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "as-soon-as-possible": {
+    "term": "co nejdříve",
+    "forms": [
+      "co nejdříve"
+    ],
+    "avoid": [
+      "nejdřívější možné",
+      "jak nejdříve to jde"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "assignment": {
+    "term": "přiřazení",
+    "forms": [
+      "přiřazení",
+      "přiřazením",
+      "přiřazeních"
+    ],
+    "avoid": [
+      "zadání",
+      "cvičení"
+    ],
+    "source": "tbx",
+    "status": "tbx-chosen"
+  },
+  "assignment-curve": {
+    "term": "průběhová křivka přiřazení",
+    "forms": [
+      "průběhová křivka přiřazení",
+      "průběhové křivky přiřazení",
+      "průběhovou křivku přiřazení"
+    ],
+    "avoid": [
+      "kontura přiřazení"
+    ],
+    "source": "model",
+    "status": "arbitrated"
+  },
+  "assignment-units": {
+    "term": "jednotky přiřazení za den",
+    "forms": [
+      "jednotky přiřazení za den",
+      "jednotek přiřazení za den",
+      "jednotkám přiřazení za den"
+    ],
+    "avoid": [
+      "procenta za den",
+      "jednotky za den"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "baseline": {
+    "term": "směrný plán",
+    "forms": [
+      "směrný plán",
+      "směrného plánu",
+      "směrnému plánu",
+      "směrným plánem",
+      "směrné plány",
+      "směrných plánů"
+    ],
+    "avoid": [
+      "baseline",
+      "základní úroveň"
+    ],
+    "source": "tbx",
+    "status": "tbx-chosen"
+  },
+  "bei": {
+    "term": "index plnění směrného plánu",
+    "forms": [
+      "index plnění směrného plánu",
+      "indexu plnění směrného plánu",
+      "indexem plnění směrného plánu"
+    ],
+    "avoid": [
+      "baseline index",
+      "index základní úrovně"
+    ],
+    "source": "model",
+    "status": "arbitrated"
+  },
+  "calculate": {
+    "term": "přepočítat",
+    "forms": [
+      "přepočítat",
+      "přepočítání"
+    ],
+    "avoid": [
+      "vypočítat",
+      "spočítat"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "calculate-automatically": {
+    "term": "automaticky přepočítat",
+    "forms": [
+      "automaticky přepočítat",
+      "automatického přepočítání"
+    ],
+    "avoid": [
+      "automaticky vypočítat",
+      "automatický výpočet"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "calculation-profile": {
+    "term": "profil výpočtu",
+    "forms": [
+      "profil výpočtu",
+      "profilu výpočtu",
+      "profilem výpočtu",
+      "profily výpočtu"
+    ],
+    "avoid": [
+      "kalkulační profil"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "calendar": {
+    "term": "kalendář",
+    "forms": [
+      "kalendář",
+      "kalendáře",
+      "kalendářem",
+      "kalendáři"
+    ],
+    "avoid": [
+      "kalendářový program"
+    ],
+    "source": "tbx",
+    "status": "tbx-chosen"
+  },
+  "capacity": {
+    "term": "kapacita",
+    "forms": [
+      "kapacita",
+      "kapacity",
+      "kapacitě",
+      "kapacitu",
+      "kapacitou"
+    ],
+    "avoid": [
+      "výkon",
+      "kapacity zdroje"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "completion": {
+    "term": "procento dokončení",
+    "forms": [
+      "procento dokončení",
+      "procenta dokončení",
+      "procentu dokončení",
+      "procentem dokončení"
+    ],
+    "avoid": [
+      "dokončenost",
+      "splněno"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "constraint": {
+    "term": "omezení",
+    "forms": [
+      "omezení",
+      "omezením",
+      "omezeních"
+    ],
+    "avoid": [
+      "constraint",
+      "limit"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "constraint-type": {
+    "term": "typ omezení",
+    "forms": [
+      "typ omezení",
+      "typu omezení",
+      "typem omezení",
+      "typy omezení"
+    ],
+    "avoid": [
+      "typ constraintu",
+      "druh constraintu"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "construction-holiday": {
+    "term": "letní stavební uzávěra",
+    "forms": [
+      "letní stavební uzávěra",
+      "letní stavební uzávěry",
+      "letní stavební uzávěrou",
+      "letní stavební uzávěře"
+    ],
+    "avoid": [
+      "stavební dovolená",
+      "bouwvak"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "contour": {
+    "term": "průběhová křivka",
+    "forms": [
+      "průběhová křivka",
+      "průběhové křivky",
+      "průběhovou křivku",
+      "průběhovou křivkou"
+    ],
+    "avoid": [
+      "kontura"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "convention": {
+    "term": "konvence",
+    "forms": [
+      "konvence",
+      "konvenci",
+      "konvencí",
+      "konvencemi"
+    ],
+    "avoid": [
+      "úmluva"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "cost": {
+    "term": "náklady",
+    "forms": [
+      "náklady",
+      "nákladů",
+      "nákladům",
+      "nákladech"
+    ],
+    "avoid": [
+      "nákladová cena",
+      "cena"
+    ],
+    "source": "tbx",
+    "status": "tbx-chosen"
+  },
+  "crash-recovery": {
+    "term": "zotavení systému po chybě",
+    "forms": [
+      "zotavení systému po chybě",
+      "zotavení systému po chybách",
+      "zotavením systému po chybě"
+    ],
+    "avoid": [
+      "crash recovery",
+      "obnova po pádu"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "critical": {
+    "term": "kritický",
+    "forms": [
+      "kritický",
+      "kritická",
+      "kritické",
+      "kritického"
+    ],
+    "avoid": [
+      "důležitý"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "critical-chains": {
+    "term": "kritické řetězce",
+    "forms": [
+      "kritické řetězce",
+      "kritických řetězců",
+      "kritickými řetězci"
+    ],
+    "avoid": [
+      "kritické chains"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "critical-path": {
+    "term": "kritická cesta",
+    "forms": [
+      "kritická cesta",
+      "kritické cesty",
+      "kritickou cestu",
+      "kritickou cestou"
+    ],
+    "avoid": [
+      "kritický průběh",
+      "critical path"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "critical-task": {
+    "term": "kritický úkol",
+    "forms": [
+      "kritický úkol",
+      "kritického úkolu",
+      "kritické úkoly"
+    ],
+    "avoid": [
+      "kritická aktivita",
+      "critical task"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "current-finish": {
+    "term": "aktuální dokončení",
+    "forms": [
+      "aktuální dokončení",
+      "aktuálního dokončení",
+      "aktuálním dokončením"
+    ],
+    "avoid": [
+      "současné dokončení"
+    ],
+    "source": "model",
+    "status": "arbitrated"
+  },
+  "custom-field": {
+    "term": "vlastní pole",
+    "forms": [
+      "vlastní pole",
+      "vlastního pole",
+      "vlastních polí"
+    ],
+    "avoid": [
+      "vlastní sloupec",
+      "custom field"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "cycle": {
+    "term": "cyklus",
+    "forms": [
+      "cyklus",
+      "cyklu",
+      "cyklem",
+      "cykly",
+      "cyklů"
+    ],
+    "avoid": [
+      "cyklická závislost",
+      "cyklickou závislost",
+      "cyklické závislosti",
+      "cyklickou závislostí",
+      "smyčka",
+      "kruh"
+    ],
+    "source": "model",
+    "status": "arbitrated"
+  },
+  "day-task": {
+    "term": "úkol ve dnech",
+    "forms": [
+      "úkol ve dnech",
+      "úkolu ve dnech",
+      "úkoly ve dnech",
+      "úkolem ve dnech"
+    ],
+    "avoid": [
+      "úkol na dny"
+    ],
+    "source": "model",
+    "status": "arbitrated"
+  },
+  "dcma-assessment": {
+    "term": "14bodové posouzení DCMA",
+    "forms": [
+      "14bodové posouzení DCMA",
+      "14bodového posouzení DCMA",
+      "14bodovým posouzením DCMA"
+    ],
+    "avoid": [
+      "14bodový test DCMA",
+      "DCMA 14-point assessment"
+    ],
+    "source": "model",
+    "status": "arbitrated"
+  },
+  "deadline": {
+    "term": "konečný termín",
+    "forms": [
+      "konečný termín",
+      "konečného termínu",
+      "konečné termíny",
+      "konečných termínů"
+    ],
+    "avoid": [
+      "datum konečného termínu",
+      "deadline"
+    ],
+    "source": "tbx",
+    "status": "tbx-chosen"
+  },
+  "default-value": {
+    "term": "výchozí",
+    "forms": [
+      "výchozí"
+    ],
+    "source": "existing-ui",
+    "status": "arbitrated"
+  },
+  "distribution": {
+    "term": "rozložení práce",
+    "forms": [
+      "rozložení práce",
+      "rozložením práce",
+      "rozložení práce v čase"
+    ],
+    "avoid": [
+      "distribuce",
+      "distribuce práce"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "driving-relationship": {
+    "term": "hnací vazba",
+    "forms": [
+      "hnací vazba",
+      "hnací vazby",
+      "hnací vazbu",
+      "hnací vazbou"
+    ],
+    "avoid": [
+      "řídicí vazba",
+      "driving relationship"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "duration": {
+    "term": "doba trvání",
+    "forms": [
+      "doba trvání",
+      "doby trvání",
+      "dobu trvání"
+    ],
+    "avoid": [
+      "DURATION"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "early-finish": {
+    "term": "nejdřívější dokončení",
+    "forms": [
+      "nejdřívější dokončení",
+      "nejdřívějšího dokončení",
+      "nejdřívějším dokončením"
+    ],
+    "avoid": [
+      "early finish"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "early-start": {
+    "term": "nejdřívější zahájení",
+    "forms": [
+      "nejdřívější zahájení",
+      "nejdřívějšího zahájení",
+      "nejdřívějším zahájením"
+    ],
+    "avoid": [
+      "nejdřívější start",
+      "early start"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "effort-driven": {
+    "term": "řízeno úsilím",
+    "forms": [
+      "řízeno úsilím",
+      "řízený úsilím",
+      "řízená úsilím",
+      "řízené úsilím"
+    ],
+    "avoid": [
+      "řízený prací"
+    ],
+    "source": "tbx",
+    "status": "arbitrated"
+  },
+  "elapsed-time": {
+    "term": "uplynulá doba trvání",
+    "forms": [
+      "uplynulá doba trvání",
+      "uplynulé doby trvání",
+      "uplynulou dobu trvání"
+    ],
+    "avoid": [
+      "uplynulý čas"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "extension": {
+    "term": "rozšíření",
+    "forms": [
+      "rozšíření",
+      "rozšířením",
+      "rozšířeními"
+    ],
+    "avoid": [
+      "přípona"
+    ],
+    "source": "tbx",
+    "status": "tbx-chosen"
+  },
+  "external-relation": {
+    "term": "vazba mezi projekty",
+    "forms": [
+      "vazba mezi projekty",
+      "vazby mezi projekty",
+      "vazbu mezi projekty"
+    ],
+    "avoid": [
+      "externí odkaz",
+      "vnější závislost"
+    ],
+    "source": "tbx",
+    "status": "tbx-chosen"
+  },
+  "file": {
+    "term": "soubor",
+    "forms": [
+      "soubor",
+      "souboru",
+      "souborem",
+      "soubory",
+      "souborů"
+    ],
+    "source": "existing-ui",
+    "status": "arbitrated"
+  },
+  "finish": {
+    "term": "dokončení",
+    "forms": [
+      "dokončení",
+      "dokončením"
+    ],
+    "avoid": [
+      "konec"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "finish-driver": {
+    "term": "hnací vazba dokončení",
+    "forms": [
+      "hnací vazba dokončení",
+      "hnací vazby dokončení",
+      "hnací vazbě dokončení",
+      "hnací vazbu dokončení",
+      "hnací vazbou dokončení"
+    ],
+    "avoid": [
+      "určující vazba dokončení"
+    ],
+    "source": "model",
+    "status": "arbitrated"
+  },
+  "finish-no-earlier-than": {
+    "term": "dokončit nejdříve",
+    "forms": [
+      "dokončit nejdříve"
+    ],
+    "avoid": [
+      "začít nejdříve"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "finish-no-later-than": {
+    "term": "dokončit nejpozději",
+    "forms": [
+      "dokončit nejpozději"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "finish-to-finish": {
+    "term": "dokončení-dokončení",
+    "forms": [
+      "dokončení-dokončení"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "finish-to-start": {
+    "term": "dokončení-zahájení",
+    "forms": [
+      "dokončení-zahájení"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "finish-variance": {
+    "term": "odchylka dokončení",
+    "forms": [
+      "odchylka dokončení",
+      "odchylky dokončení",
+      "odchylku dokončení"
+    ],
+    "avoid": [
+      "rozptyl"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "fixed-duration": {
+    "term": "pevné trvání",
+    "forms": [
+      "pevné trvání",
+      "pevného trvání",
+      "pevným trváním"
+    ],
+    "avoid": [
+      "fixní trvání"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "fixed-units": {
+    "term": "pevné jednotky",
+    "forms": [
+      "pevné jednotky",
+      "pevných jednotek",
+      "pevným jednotkám"
+    ],
+    "avoid": [
+      "fixní jednotky"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "fixed-work": {
+    "term": "pevná práce",
+    "forms": [
+      "pevná práce",
+      "pevnou práci",
+      "pevné práce"
+    ],
+    "avoid": [
+      "fixní práce"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "float": {
+    "term": "časová rezerva",
+    "forms": [
+      "časová rezerva",
+      "časové rezervy",
+      "časovou rezervu"
+    ],
+    "avoid": [
+      "float",
+      "plovoucí"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "float-path": {
+    "term": "cesta časové rezervy",
+    "forms": [
+      "cesta časové rezervy",
+      "cesty časové rezervy",
+      "cestu časové rezervy"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "forecast-finish": {
+    "term": "předpokládané dokončení",
+    "forms": [
+      "předpokládané dokončení",
+      "předpokládaného dokončení",
+      "předpokládaným dokončením"
+    ],
+    "avoid": [
+      "prognóza"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "free-float": {
+    "term": "volná časová rezerva",
+    "forms": [
+      "volná časová rezerva",
+      "volné časové rezervy",
+      "volnou časovou rezervu"
+    ],
+    "avoid": [
+      "volný float",
+      "float"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "gantt-bar": {
+    "term": "pruh",
+    "forms": [
+      "pruh",
+      "pruhu",
+      "pruhy",
+      "pruhem",
+      "pruhů",
+      "pruzích"
+    ],
+    "source": "existing-ui",
+    "status": "arbitrated"
+  },
+  "hammock": {
+    "term": "překlenovací úkol",
+    "forms": [
+      "překlenovací úkol",
+      "překlenovacího úkolu",
+      "překlenovacímu úkolu",
+      "překlenovacím úkolem",
+      "překlenovací úkoly",
+      "překlenovacích úkolů"
+    ],
+    "source": "model",
+    "status": "arbitrated"
+  },
+  "hard-constraint": {
+    "term": "pevné omezení",
+    "forms": [
+      "pevné omezení",
+      "pevného omezení",
+      "pevným omezením"
+    ],
+    "avoid": [
+      "tvrdé omezení"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "histogram": {
+    "term": "histogram",
+    "forms": [
+      "histogram",
+      "histogramu",
+      "histogramy"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "holiday": {
+    "term": "svátek",
+    "forms": [
+      "svátek",
+      "svátku",
+      "svátky"
+    ],
+    "avoid": [
+      "prázdniny",
+      "dovolená"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "holiday-set": {
+    "term": "sada svátků",
+    "forms": [
+      "sada svátků",
+      "sady svátků",
+      "sadu svátků"
+    ],
+    "avoid": [
+      "kalendář svátků"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "hour-distribution-in-phases": {
+    "term": "rozložení hodin do fází",
+    "forms": [
+      "rozložení hodin do fází",
+      "rozložením hodin do fází"
+    ],
+    "source": "model",
+    "status": "arbitrated"
+  },
+  "hour-planning": {
+    "term": "plánování v hodinách",
+    "forms": [
+      "plánování v hodinách",
+      "plánováním v hodinách"
+    ],
+    "avoid": [
+      "hodinový plán"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "hour-task": {
+    "term": "hodinový úkol",
+    "forms": [
+      "hodinový úkol",
+      "hodinového úkolu",
+      "hodinovým úkolem"
+    ],
+    "avoid": [
+      "denní úkol"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "indent": {
+    "term": "zvětšit odsazení",
+    "forms": [
+      "zvětšit odsazení",
+      "zvětšte odsazení"
+    ],
+    "avoid": [
+      "odsadit"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "interruption": {
+    "term": "přerušení práce",
+    "forms": [
+      "přerušení práce",
+      "přerušením práce"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "lag": {
+    "term": "prodleva",
+    "forms": [
+      "prodleva",
+      "prodlevy",
+      "prodlevě",
+      "prodlevu",
+      "prodlevou",
+      "prodlev",
+      "prodlevami"
+    ],
+    "avoid": [
+      "lag"
+    ],
+    "source": "tbx",
+    "status": "arbitrated"
+  },
+  "late-dates": {
+    "term": "pozdní termíny",
+    "forms": [
+      "pozdní termíny",
+      "pozdních termínů",
+      "pozdními termíny"
+    ],
+    "avoid": [
+      "pozdní data"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "late-finish": {
+    "term": "pozdní dokončení",
+    "forms": [
+      "pozdní dokončení",
+      "pozdního dokončení",
+      "pozdním dokončením"
+    ],
+    "avoid": [
+      "pozdní konec"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "late-start": {
+    "term": "pozdní zahájení",
+    "forms": [
+      "pozdní zahájení",
+      "pozdního zahájení",
+      "pozdním zahájením"
+    ],
+    "avoid": [
+      "pozdní začátek"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "layout": {
+    "term": "rozložení",
+    "forms": [
+      "rozložení",
+      "rozložením",
+      "rozloženích"
+    ],
+    "avoid": [
+      "rozložení úložiště"
+    ],
+    "source": "tbx",
+    "status": "tbx-chosen"
+  },
+  "lead": {
+    "term": "předstih",
+    "forms": [
+      "předstih",
+      "předstihu",
+      "předstihem"
+    ],
+    "avoid": [
+      "záporné zpoždění"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "leveling": {
+    "term": "vyrovnání",
+    "forms": [
+      "vyrovnání",
+      "vyrovnáním",
+      "vyrovnáních"
+    ],
+    "avoid": [
+      "nivelace",
+      "vyhlazení"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "leveling-delay": {
+    "term": "zpoždění vyrovnání",
+    "forms": [
+      "zpoždění vyrovnání",
+      "zpožděním vyrovnání"
+    ],
+    "avoid": [
+      "nivelační zpoždění"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "link-tasks": {
+    "term": "propojit",
+    "forms": [
+      "propojit",
+      "propojte",
+      "propojení"
+    ],
+    "avoid": [
+      "odkaz",
+      "hypertextový odkaz"
+    ],
+    "source": "tbx",
+    "status": "tbx-chosen"
+  },
+  "longest-path": {
+    "term": "nejdelší cesta",
+    "forms": [
+      "nejdelší cesta",
+      "nejdelší cesty",
+      "nejdelší cestě",
+      "nejdelší cestu",
+      "nejdelší cestou"
+    ],
+    "source": "model",
+    "status": "arbitrated"
+  },
+  "manually-scheduled": {
+    "term": "ručně plánováno",
+    "forms": [
+      "ručně plánováno",
+      "ručně plánované",
+      "ručně plánovaný"
+    ],
+    "avoid": [
+      "manuálně plánováno"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "max-units": {
+    "term": "maximální počet jednotek",
+    "forms": [
+      "maximální počet jednotek",
+      "maximálního počtu jednotek",
+      "maximálním počtem jednotek",
+      "maximálním počtu jednotek"
+    ],
+    "avoid": [
+      "maximální jednotky"
+    ],
+    "source": "tbx",
+    "status": "arbitrated"
+  },
+  "milestone": {
+    "term": "milník",
+    "forms": [
+      "milník",
+      "milníku",
+      "milníky",
+      "milníkem"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "milestone-kind": {
+    "term": "typ milníku",
+    "forms": [
+      "typ milníku",
+      "typu milníku",
+      "typy milníků"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "mini-map": {
+    "term": "minimapa",
+    "forms": [
+      "minimapa",
+      "minimapy",
+      "minimapě",
+      "minimapu"
+    ],
+    "source": "existing-ui",
+    "status": "arbitrated"
+  },
+  "missed-task": {
+    "term": "opožděný úkol",
+    "forms": [
+      "opožděný úkol",
+      "opožděného úkolu",
+      "opožděné úkoly",
+      "opožděných úkolů"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "must-finish-on": {
+    "term": "musí skončit",
+    "forms": [
+      "musí skončit",
+      "skončit",
+      "skončí"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "must-start-on": {
+    "term": "musí začít",
+    "forms": [
+      "musí začít",
+      "začít"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "near-critical": {
+    "term": "téměř kritický",
+    "forms": [
+      "téměř kritický",
+      "téměř kritická",
+      "téměř kritické"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "negative-float": {
+    "term": "záporná časová rezerva",
+    "forms": [
+      "záporná časová rezerva",
+      "záporné časové rezervy",
+      "záporné časové rezervě",
+      "zápornou časovou rezervu",
+      "zápornou časovou rezervou"
+    ],
+    "source": "model",
+    "status": "arbitrated"
+  },
+  "non-working-day": {
+    "term": "nepracovní den",
+    "forms": [
+      "nepracovní den",
+      "nepracovního dne",
+      "nepracovní dny"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "occupancy": {
+    "term": "obsazenost",
+    "forms": [
+      "obsazenost",
+      "obsazenosti"
+    ],
+    "source": "existing-ui",
+    "status": "arbitrated"
+  },
+  "out-of-sequence-progress": {
+    "term": "průběh mimo posloupnost",
+    "forms": [
+      "průběh mimo posloupnost",
+      "průběhu mimo posloupnost",
+      "průběhy mimo posloupnost"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "outdent": {
+    "term": "zmenšit odsazení",
+    "forms": [
+      "zmenšit odsazení",
+      "zmenšuje odsazení"
+    ],
+    "avoid": [
+      "negativní odsazení"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "overallocation": {
+    "term": "přetížení",
+    "forms": [
+      "přetížení",
+      "přetížením"
+    ],
+    "avoid": [
+      "zatížení"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "path-tracing": {
+    "term": "sledování cesty",
+    "forms": [
+      "sledování cesty",
+      "sledováním cesty"
+    ],
+    "source": "model",
+    "status": "arbitrated"
+  },
+  "percent-complete": {
+    "term": "dokončeno %",
+    "forms": [
+      "dokončeno %",
+      "dokončeno v %"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "period": {
+    "term": "období",
+    "forms": [
+      "období",
+      "obdobím"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "planned": {
+    "term": "plánovaný",
+    "forms": [
+      "plánovaný",
+      "plánovaná",
+      "plánované",
+      "plánovaného"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "planned-work": {
+    "term": "plánovaná práce",
+    "forms": [
+      "plánovaná práce",
+      "plánované práce",
+      "plánovanou práci"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "predecessor": {
+    "term": "předchůdce",
+    "forms": [
+      "předchůdce",
+      "předchůdci",
+      "předchůdců"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "progress": {
+    "term": "průběh",
+    "forms": [
+      "průběh",
+      "průběhu",
+      "průběhem"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "progress-line": {
+    "term": "čára průběhu",
+    "forms": [
+      "čára průběhu",
+      "čáry průběhu",
+      "čáru průběhu"
+    ],
+    "source": "existing-ui",
+    "status": "arbitrated"
+  },
+  "progress-mode": {
+    "term": "režim průběhu",
+    "forms": [
+      "režim průběhu",
+      "režimu průběhu",
+      "režimy průběhu"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "project-finish": {
+    "term": "dokončení projektu",
+    "forms": [
+      "dokončení projektu",
+      "dokončením projektu"
+    ],
+    "avoid": [
+      "konec projektu"
+    ],
+    "source": "model",
+    "status": "arbitrated"
+  },
+  "project-info": {
+    "term": "info o projektu",
+    "forms": [
+      "info o projektu",
+      "informace o projektu"
+    ],
+    "source": "existing-ui",
+    "status": "arbitrated"
+  },
+  "project-start": {
+    "term": "zahájení projektu",
+    "forms": [
+      "zahájení projektu",
+      "zahájením projektu"
+    ],
+    "avoid": [
+      "začátek projektu"
+    ],
+    "source": "model",
+    "status": "arbitrated"
+  },
+  "properties-panel": {
+    "term": "panel vlastností",
+    "forms": [
+      "panel vlastností",
+      "panelu vlastností",
+      "panelem vlastností"
+    ],
+    "source": "existing-ui",
+    "status": "arbitrated"
+  },
+  "rate": {
+    "term": "standardní sazba",
+    "forms": [
+      "standardní sazba",
+      "standardní sazby",
+      "standardní sazbu"
+    ],
+    "avoid": [
+      "úroková míra"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "read-only": {
+    "term": "jen pro čtení",
+    "forms": [
+      "jen pro čtení",
+      "pouze pro čtení"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "recalculate": {
+    "term": "přepočítat",
+    "forms": [
+      "přepočítat",
+      "přepočítá",
+      "přepočítání"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "relation": {
+    "term": "závislost",
+    "forms": [
+      "závislost",
+      "závislosti",
+      "závislostí"
+    ],
+    "avoid": [
+      "relace"
+    ],
+    "source": "tbx",
+    "status": "tbx-chosen"
+  },
+  "relationship-type": {
+    "term": "typ závislosti",
+    "forms": [
+      "typ závislosti",
+      "typu závislosti",
+      "typy závislostí"
+    ],
+    "avoid": [
+      "typ vztahu"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "remaining-duration": {
+    "term": "zbývající doba trvání",
+    "forms": [
+      "zbývající doba trvání",
+      "zbývající doby trvání",
+      "zbývající dobu trvání"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "remaining-work": {
+    "term": "zbývající práce",
+    "forms": [
+      "zbývající práce",
+      "zbývající práci"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "report": {
+    "term": "sestava",
+    "forms": [
+      "sestava",
+      "sestavy",
+      "sestavu",
+      "sestavě"
+    ],
+    "avoid": [
+      "zpráva",
+      "vykázat"
+    ],
+    "source": "tbx",
+    "status": "tbx-chosen"
+  },
+  "report-type": {
+    "term": "typ sestavy",
+    "forms": [
+      "typ sestavy",
+      "typu sestavy",
+      "typy sestav"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "resource": {
+    "term": "zdroj",
+    "forms": [
+      "zdroj",
+      "zdroje",
+      "zdrojů",
+      "zdrojem"
+    ],
+    "avoid": [
+      "prostředek"
+    ],
+    "source": "tbx",
+    "status": "tbx-chosen"
+  },
+  "resource-library": {
+    "term": "knihovna zdrojů",
+    "forms": [
+      "knihovna zdrojů",
+      "knihovny zdrojů",
+      "knihovnu zdrojů"
+    ],
+    "avoid": [
+      "fond"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "resource-panel": {
+    "term": "panel zdrojů",
+    "forms": [
+      "panel zdrojů",
+      "panelu zdrojů"
+    ],
+    "source": "existing-ui",
+    "status": "arbitrated"
+  },
+  "resource-type": {
+    "term": "typ zdroje",
+    "forms": [
+      "typ zdroje",
+      "typu zdroje",
+      "typy zdrojů"
+    ],
+    "avoid": [
+      "typ prostředku"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "ribbon": {
+    "term": "pás karet",
+    "forms": [
+      "pás karet",
+      "pásu karet",
+      "pásem karet"
+    ],
+    "source": "tbx",
+    "status": "tbx-chosen"
+  },
+  "ribbon-tab": {
+    "term": "záložka pásu karet",
+    "forms": [
+      "záložka pásu karet",
+      "záložky pásu karet",
+      "záložku pásu karet"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "round-trip": {
+    "term": "uložení bez ztráty dat",
+    "forms": [
+      "uložení bez ztráty dat",
+      "uložením bez ztráty dat"
+    ],
+    "avoid": [
+      "bezeztrátový cyklus"
+    ],
+    "source": "model",
+    "status": "arbitrated"
+  },
+  "schedule": {
+    "term": "plán",
+    "forms": [
+      "plán",
+      "plánu",
+      "plány"
+    ],
+    "source": "tbx",
+    "status": "tbx-chosen"
+  },
+  "schedule-error": {
+    "term": "chyba plánu",
+    "forms": [
+      "chyba plánu",
+      "chyby plánu",
+      "chybu plánu"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "secondary-constraint": {
+    "term": "sekundární omezení",
+    "forms": [
+      "sekundární omezení",
+      "sekundárního omezení",
+      "sekundárním omezení"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "shift": {
+    "term": "směna",
+    "forms": [
+      "směna",
+      "směny",
+      "směnu",
+      "směnou"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "source-task": {
+    "term": "zdrojový úkol",
+    "forms": [
+      "zdrojový úkol",
+      "zdrojového úkolu",
+      "zdrojovému úkolu",
+      "zdrojovým úkolem",
+      "zdrojové úkoly",
+      "zdrojových úkolů"
+    ],
+    "avoid": [
+      "zdrojová úloha"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "split-task": {
+    "term": "rozdělený úkol",
+    "forms": [
+      "rozdělený úkol",
+      "rozděleného úkolu",
+      "rozdělenému úkolu",
+      "rozděleným úkolem",
+      "rozdělené úkoly",
+      "rozdělených úkolů"
+    ],
+    "avoid": [
+      "rozdělená úloha"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "split-view": {
+    "term": "rozdělené zobrazení",
+    "forms": [
+      "rozdělené zobrazení",
+      "rozděleném zobrazení"
+    ],
+    "source": "existing-ui",
+    "status": "arbitrated"
+  },
+  "start-driver": {
+    "term": "hnací vazba zahájení",
+    "forms": [
+      "hnací vazba zahájení",
+      "hnací vazby zahájení",
+      "hnací vazbě zahájení",
+      "hnací vazbu zahájení",
+      "hnací vazbou zahájení"
+    ],
+    "avoid": [
+      "hnací vazba začátku",
+      "řídicí vazba"
+    ],
+    "source": "model",
+    "status": "arbitrated"
+  },
+  "start-float": {
+    "term": "časová rezerva zahájení",
+    "forms": [
+      "časová rezerva zahájení",
+      "časové rezervy zahájení",
+      "časové rezervě zahájení",
+      "časovou rezervu zahájení",
+      "časovou rezervou zahájení"
+    ],
+    "avoid": [
+      "časová rezerva začátku"
+    ],
+    "source": "model",
+    "status": "arbitrated"
+  },
+  "start-no-earlier-than": {
+    "term": "zahájit nejdříve",
+    "forms": [
+      "zahájit nejdříve"
+    ],
+    "avoid": [
+      "začít nejdříve"
+    ],
+    "source": "model",
+    "status": "arbitrated"
+  },
+  "start-no-later-than": {
+    "term": "zahájit nejpozději",
+    "forms": [
+      "zahájit nejpozději"
+    ],
+    "avoid": [
+      "začít nejpozději"
+    ],
+    "source": "model",
+    "status": "arbitrated"
+  },
+  "start-to-finish": {
+    "term": "zahájení-dokončení",
+    "forms": [
+      "zahájení-dokončení"
+    ],
+    "avoid": [
+      "začátek-konec",
+      "konec-začátek"
+    ],
+    "source": "model",
+    "status": "arbitrated"
+  },
+  "start-to-start": {
+    "term": "zahájení-zahájení",
+    "forms": [
+      "zahájení-zahájení"
+    ],
+    "avoid": [
+      "začátek-začátek"
+    ],
+    "source": "model",
+    "status": "arbitrated"
+  },
+  "start-variance": {
+    "term": "odchylka zahájení",
+    "forms": [
+      "odchylka zahájení",
+      "odchylky zahájení",
+      "odchylce zahájení",
+      "odchylku zahájení",
+      "odchylkou zahájení"
+    ],
+    "avoid": [
+      "odchylka začátku"
+    ],
+    "source": "model",
+    "status": "arbitrated"
+  },
+  "status-bar": {
+    "term": "stavový řádek",
+    "forms": [
+      "stavový řádek",
+      "stavového řádku",
+      "stavovém řádku"
+    ],
+    "source": "tbx",
+    "status": "arbitrated"
+  },
+  "status-date": {
+    "term": "datum stavu",
+    "forms": [
+      "datum stavu",
+      "data stavu",
+      "datu stavu",
+      "datem stavu"
+    ],
+    "avoid": [
+      "aktuální datum"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "subtask": {
+    "term": "dílčí úkol",
+    "forms": [
+      "dílčí úkol",
+      "dílčího úkolu",
+      "dílčímu úkolu",
+      "dílčím úkolem",
+      "dílčí úkoly",
+      "dílčích úkolů"
+    ],
+    "avoid": [
+      "podúkol"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "successor": {
+    "term": "následník",
+    "forms": [
+      "následník",
+      "následníka",
+      "následníkem",
+      "následníci",
+      "následníků"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "summary-task": {
+    "term": "souhrnný úkol",
+    "forms": [
+      "souhrnný úkol",
+      "souhrnného úkolu",
+      "souhrnnému úkolu",
+      "souhrnným úkolem",
+      "souhrnné úkoly",
+      "souhrnných úkolů"
+    ],
+    "avoid": [
+      "shrnutí"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "table-column": {
+    "term": "sloupec",
+    "forms": [
+      "sloupec",
+      "sloupce",
+      "sloupci",
+      "sloupcem",
+      "sloupců"
+    ],
+    "source": "existing-ui",
+    "status": "arbitrated"
+  },
+  "task": {
+    "term": "úkol",
+    "forms": [
+      "úkol",
+      "úkolu",
+      "úkolem",
+      "úkoly",
+      "úkolů"
+    ],
+    "avoid": [
+      "úloha",
+      "aktivita"
+    ],
+    "source": "tbx",
+    "status": "tbx-chosen"
+  },
+  "task-grid": {
+    "term": "tabulka úkolů",
+    "forms": [
+      "tabulka úkolů",
+      "tabulky úkolů",
+      "tabulku úkolů",
+      "tabulce úkolů"
+    ],
+    "avoid": [
+      "mřížka úkolů"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "task-type": {
+    "term": "typ úkolu",
+    "forms": [
+      "typ úkolu",
+      "typu úkolu",
+      "typem úkolu",
+      "typy úkolů"
+    ],
+    "avoid": [
+      "druh úkolu"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "threshold": {
+    "term": "prahová hodnota",
+    "forms": [
+      "prahová hodnota",
+      "prahové hodnoty",
+      "prahovou hodnotu",
+      "prahovou hodnotou",
+      "prahových hodnot"
+    ],
+    "avoid": [
+      "mezní hodnota"
+    ],
+    "source": "tbx",
+    "status": "tbx-chosen"
+  },
+  "time-scale": {
+    "term": "časová osa",
+    "forms": [
+      "časová osa",
+      "časové osy",
+      "časové ose",
+      "časovou osu"
+    ],
+    "source": "existing-ui",
+    "status": "arbitrated"
+  },
+  "total-float": {
+    "term": "celková časová rezerva",
+    "forms": [
+      "celková časová rezerva",
+      "celkové časové rezervy",
+      "celkovou časovou rezervu",
+      "celkové časové rezervě",
+      "celkovou časovou rezervou",
+      "celkových časových rezerv"
+    ],
+    "avoid": [
+      "volná rezerva"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "tutorial": {
+    "term": "kurz",
+    "forms": [
+      "kurz",
+      "kurzu",
+      "kurzem",
+      "kurzy",
+      "kurzů"
+    ],
+    "avoid": [
+      "tutoriál"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "units": {
+    "term": "jednotky přiřazení",
+    "forms": [
+      "jednotky přiřazení",
+      "jednotek přiřazení",
+      "jednotkám přiřazení",
+      "jednotkami přiřazení",
+      "jednotkách přiřazení"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "variance": {
+    "term": "odchylka",
+    "forms": [
+      "odchylka",
+      "odchylky",
+      "odchylce",
+      "odchylku",
+      "odchylkou",
+      "odchylek"
+    ],
+    "avoid": [
+      "variance",
+      "rozptyl"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "variance-report": {
+    "term": "sestava odchylek",
+    "forms": [
+      "sestava odchylek",
+      "sestavy odchylek",
+      "sestavu odchylek",
+      "sestavě odchylek",
+      "sestavou odchylek",
+      "sestav odchylek"
+    ],
+    "avoid": [
+      "variance report"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "violated-constraint": {
+    "term": "porušené omezení",
+    "forms": [
+      "porušené omezení",
+      "porušeného omezení",
+      "porušeným omezením",
+      "porušená omezení"
+    ],
+    "avoid": [
+      "překročené omezení"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "wbs": {
+    "term": "WBS",
+    "forms": [
+      "WBS"
+    ],
+    "avoid": [
+      "strukturovaný rozpis prací",
+      "hierarchická struktura činností"
+    ],
+    "source": "tbx",
+    "status": "tbx-chosen"
+  },
+  "wbs-element": {
+    "term": "prvek WBS",
+    "forms": [
+      "prvek WBS",
+      "prvku WBS",
+      "prvkem WBS",
+      "prvky WBS",
+      "prvků WBS"
+    ],
+    "avoid": [
+      "element WBS"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "work": {
+    "term": "práce",
+    "forms": [
+      "práce",
+      "práci"
+    ],
+    "avoid": [
+      "zaměstnání"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "work-block": {
+    "term": "blok",
+    "forms": [
+      "blok",
+      "bloku",
+      "bloky",
+      "blokem",
+      "bloků"
+    ],
+    "source": "existing-ui",
+    "status": "arbitrated"
+  },
+  "work-break": {
+    "term": "přestávka",
+    "forms": [
+      "přestávka",
+      "přestávky",
+      "přestávce",
+      "přestávku",
+      "přestávkou",
+      "přestávek"
+    ],
+    "source": "existing-ui",
+    "status": "arbitrated"
+  },
+  "work-calendar": {
+    "term": "pracovní kalendář",
+    "forms": [
+      "pracovní kalendář",
+      "pracovního kalendáře",
+      "pracovnímu kalendáři",
+      "pracovním kalendářem",
+      "pracovní kalendáře",
+      "pracovních kalendářů"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "work-hours": {
+    "term": "pracovní hodiny",
+    "forms": [
+      "pracovní hodiny",
+      "pracovních hodin",
+      "pracovním hodinám",
+      "pracovními hodinami"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "work-rule": {
+    "term": "pravidlo pevné veličiny",
+    "forms": [
+      "pravidlo pevné veličiny",
+      "pravidla pevné veličiny",
+      "pravidlu pevné veličiny",
+      "pravidlem pevné veličiny"
+    ],
+    "avoid": [
+      "pracovní pravidlo"
+    ],
+    "source": "model",
+    "status": "arbitrated"
+  },
+  "workday": {
+    "term": "pracovní den",
+    "forms": [
+      "pracovní den",
+      "pracovního dne",
+      "pracovnímu dni",
+      "pracovním dni",
+      "pracovním dnem",
+      "pracovní dny",
+      "pracovních dnů"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "working-time": {
+    "term": "pracovní doba",
+    "forms": [
+      "pracovní doba",
+      "pracovní doby",
+      "pracovní dobu",
+      "pracovní době",
+      "pracovní dobou",
+      "pracovních dob"
+    ],
+    "avoid": [
+      "pracovní čas"
+    ],
+    "source": "model",
+    "status": "model"
+  }
+}

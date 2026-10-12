@@ -1,0 +1,2002 @@
+{
+  "_style": {
+    "address": "formal",
+    "note": "Formal address with Ön or the impersonal imperative; never the informal te. Quotation marks are „…”, also around placeholders („{{name}}”); never straight or English quotes. Fallback (a safe default value) is 'alapértelmezés', never 'tartalék', which collides with tartalékidő (float). Hints and tooltips that tell the user to do something use the formal imperative (Válassza ki…, kapcsolja be…); never mix it with another form in one sentence. Commands (buttons, menu items) follow `commands`.",
+    "commands": "Commands use a noun of action, like Hungarian Microsoft software: Mentés, Megnyitás, Törlés, Számítás.",
+    "quotes": "„…”",
+    "docs": "Guides: Formal Ön forms (third person), never te. A UI label stays exactly as in the UI, in italics and in the nominative; a carrier word (window, tab, button, column) takes the case. Step: 'Choose *Save*.' → 'Válassza a *Mentés* lehetőséget.'; 'in the *Relation type* window' → 'a *Kapcsolattípus* ablakban'. Explanation: 'The app moves the successor to the next workday.' → 'Az alkalmazás a következő munkanapra helyezi az utódot.' Address: 'If you change the duration, your schedule is out of date.' → 'Ha módosítja az időtartamot, az ütemezése már nem naprakész.'"
+  },
+  "activity-code": {
+    "term": "tevékenységkód",
+    "forms": [
+      "tevékenységkód",
+      "tevékenységkódok"
+    ],
+    "source": "existing-ui",
+    "status": "arbitrated"
+  },
+  "actual-date": {
+    "term": "tényleges dátum",
+    "forms": [
+      "tényleges dátum",
+      "tényleges dátumot",
+      "tényleges dátumok"
+    ],
+    "avoid": [
+      "aktuális dátum",
+      "valós dátum"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "actual-duration": {
+    "term": "tényleges időtartam",
+    "forms": [
+      "tényleges időtartam",
+      "tényleges időtartamot",
+      "tényleges időtartamok"
+    ],
+    "avoid": [
+      "aktuális időtartam"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "actual-finish": {
+    "term": "tényleges befejezés",
+    "forms": [
+      "tényleges befejezés",
+      "tényleges befejezést",
+      "tényleges befejezések"
+    ],
+    "avoid": [
+      "aktuális befejezés"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "actual-start": {
+    "term": "tényleges kezdés",
+    "forms": [
+      "tényleges kezdés",
+      "tényleges kezdést",
+      "tényleges kezdések"
+    ],
+    "avoid": [
+      "aktuális kezdés"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "actual-work": {
+    "term": "tényleges munka",
+    "forms": [
+      "tényleges munka",
+      "tényleges munkát",
+      "tényleges munkák"
+    ],
+    "avoid": [
+      "aktuális munka"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "ai-assistant": {
+    "term": "AI-segítőtárs",
+    "forms": [
+      "AI-segítőtárs",
+      "AI-segítőtársat",
+      "AI-segítőtársak"
+    ],
+    "avoid": [
+      "AI-asszisztens"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "as-late-as-possible": {
+    "term": "lehető legkésőbb",
+    "forms": [
+      "lehető legkésőbb"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "as-soon-as-possible": {
+    "term": "lehető legkorábban",
+    "forms": [
+      "lehető legkorábban"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "assignment": {
+    "term": "hozzárendelés",
+    "forms": [
+      "hozzárendelés",
+      "hozzárendelést",
+      "hozzárendelések"
+    ],
+    "avoid": [
+      "feladat",
+      "labor"
+    ],
+    "source": "tbx",
+    "status": "tbx-chosen"
+  },
+  "assignment-curve": {
+    "term": "eloszlási görbe",
+    "forms": [
+      "eloszlási görbe",
+      "eloszlási görbét",
+      "eloszlási görbék"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "assignment-units": {
+    "term": "napi hozzárendelt mennyiség",
+    "forms": [
+      "napi hozzárendelt mennyiség",
+      "napi hozzárendelt mennyiséget",
+      "napi hozzárendelt mennyiségek"
+    ],
+    "avoid": [
+      "napi egység"
+    ],
+    "source": "model",
+    "status": "arbitrated"
+  },
+  "baseline": {
+    "term": "alapterv",
+    "forms": [
+      "alapterv",
+      "alaptervet",
+      "alaptervek"
+    ],
+    "avoid": [
+      "alapvonal"
+    ],
+    "source": "tbx",
+    "status": "tbx-chosen"
+  },
+  "bei": {
+    "term": "alapterv-végrehajtási index",
+    "forms": [
+      "alapterv-végrehajtási index",
+      "alapterv-végrehajtási indexet",
+      "alapterv-végrehajtási indexek"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "calculate": {
+    "term": "ütemezés-számítás",
+    "forms": [
+      "ütemezés-számítás",
+      "ütemezés-számítást",
+      "ütemezés-számítások"
+    ],
+    "avoid": [
+      "kalkulálás"
+    ],
+    "source": "model",
+    "status": "arbitrated"
+  },
+  "calculate-automatically": {
+    "term": "automatikus ütemezés-számítás",
+    "forms": [
+      "automatikus ütemezés-számítás",
+      "automatikus ütemezés-számítást"
+    ],
+    "source": "model",
+    "status": "arbitrated"
+  },
+  "calculation-profile": {
+    "term": "számítási profil",
+    "forms": [
+      "számítási profil",
+      "számítási profilt",
+      "számítási profilok"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "calendar": {
+    "term": "naptár",
+    "forms": [
+      "naptár",
+      "naptárat",
+      "naptárak"
+    ],
+    "avoid": [
+      "naptárprogram",
+      "Outlook Naptár"
+    ],
+    "source": "tbx",
+    "status": "tbx-chosen"
+  },
+  "capacity": {
+    "term": "kapacitás",
+    "forms": [
+      "kapacitás",
+      "kapacitást",
+      "kapacitások"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "completion": {
+    "term": "elkészültség",
+    "forms": [
+      "elkészültség",
+      "elkészültséget"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "constraint": {
+    "term": "korlátozás",
+    "forms": [
+      "korlátozás",
+      "korlátozást",
+      "korlátozások"
+    ],
+    "avoid": [
+      "constraint"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "constraint-type": {
+    "term": "korlátozástípus",
+    "forms": [
+      "korlátozástípus",
+      "korlátozástípust",
+      "korlátozástípusok"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "construction-holiday": {
+    "term": "építőipari szabadság",
+    "forms": [
+      "építőipari szabadság",
+      "építőipari szabadságot",
+      "építőipari szabadságok"
+    ],
+    "avoid": [
+      "bouwvak"
+    ],
+    "source": "model",
+    "status": "arbitrated"
+  },
+  "contour": {
+    "term": "eloszlás",
+    "forms": [
+      "eloszlás",
+      "eloszlást",
+      "eloszlások"
+    ],
+    "avoid": [
+      "elosztás"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "convention": {
+    "term": "ütemezési szabály",
+    "forms": [
+      "ütemezési szabály",
+      "ütemezési szabályt",
+      "ütemezési szabályok"
+    ],
+    "avoid": [
+      "konvenció"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "cost": {
+    "term": "költség",
+    "forms": [
+      "költség",
+      "költséget",
+      "költségek"
+    ],
+    "avoid": [
+      "önköltségi ár"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "crash-recovery": {
+    "term": "visszaállás összeomlás után",
+    "forms": [
+      "visszaállás összeomlás után"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "critical": {
+    "term": "kritikus",
+    "forms": [
+      "kritikus",
+      "kritikussá"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "critical-chains": {
+    "term": "kritikus láncok",
+    "forms": [
+      "kritikus lánc",
+      "kritikus láncot",
+      "kritikus láncok"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "critical-path": {
+    "term": "kritikus út",
+    "forms": [
+      "kritikus út",
+      "kritikus utat",
+      "kritikus utak"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "critical-task": {
+    "term": "kritikus tevékenység",
+    "forms": [
+      "kritikus tevékenység",
+      "kritikus tevékenységet",
+      "kritikus tevékenységek"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "current-finish": {
+    "term": "jelenlegi befejezés",
+    "forms": [
+      "jelenlegi befejezés",
+      "jelenlegi befejezést",
+      "jelenlegi befejezések"
+    ],
+    "source": "model",
+    "status": "arbitrated"
+  },
+  "custom-field": {
+    "term": "egyéni mező",
+    "forms": [
+      "egyéni mező",
+      "egyéni mezőt",
+      "egyéni mezők"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "cycle": {
+    "term": "ciklus",
+    "forms": [
+      "ciklus",
+      "ciklust",
+      "ciklusok"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "day-task": {
+    "term": "napalapú tevékenység",
+    "forms": [
+      "napalapú tevékenység",
+      "napalapú tevékenységek",
+      "napalapú tevékenységet"
+    ],
+    "source": "model",
+    "status": "arbitrated"
+  },
+  "dcma-assessment": {
+    "term": "DCMA 14 pontos értékelés",
+    "forms": [
+      "DCMA 14 pontos értékelés",
+      "DCMA 14 pontos értékelést"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "deadline": {
+    "term": "határidő",
+    "forms": [
+      "határidő",
+      "határidőt",
+      "határidők"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "default-value": {
+    "term": "alapértelmezett",
+    "forms": [
+      "alapértelmezett",
+      "alapértelmezés"
+    ],
+    "source": "existing-ui",
+    "status": "arbitrated"
+  },
+  "distribution": {
+    "term": "eloszlás",
+    "forms": [
+      "eloszlás",
+      "eloszlást",
+      "eloszlások"
+    ],
+    "avoid": [
+      "elosztás"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "driving-relationship": {
+    "term": "meghatározó kapcsolat",
+    "forms": [
+      "meghatározó kapcsolat",
+      "meghatározó kapcsolatot",
+      "meghatározó kapcsolatok"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "duration": {
+    "term": "időtartam",
+    "forms": [
+      "időtartam",
+      "időtartamot",
+      "időtartamok"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "early-finish": {
+    "term": "korai befejezés",
+    "forms": [
+      "korai befejezés",
+      "korai befejezést",
+      "korai befejezések"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "early-start": {
+    "term": "korai kezdés",
+    "forms": [
+      "korai kezdés",
+      "korai kezdést",
+      "korai kezdések"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "effort-driven": {
+    "term": "munkamennyiség alapú",
+    "forms": [
+      "munkamennyiség alapú",
+      "munkamennyiség alapú ütemezés"
+    ],
+    "avoid": [
+      "erőforrás-vezérelt",
+      "munkaigény-vezérelt"
+    ],
+    "source": "tbx",
+    "status": "arbitrated"
+  },
+  "elapsed-time": {
+    "term": "eltelt időtartam",
+    "forms": [
+      "eltelt időtartam",
+      "eltelt időtartamot",
+      "eltelt időtartamok"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "extension": {
+    "term": "bővítmény",
+    "forms": [
+      "bővítmény",
+      "bővítményt",
+      "bővítmények"
+    ],
+    "avoid": [
+      "kiterjesztés",
+      "böngészőbővítmény"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "external-relation": {
+    "term": "projektközi kapcsolat",
+    "forms": [
+      "projektközi kapcsolat",
+      "projektközi kapcsolatot",
+      "projektközi kapcsolatok"
+    ],
+    "avoid": [
+      "külső függőség"
+    ],
+    "source": "tbx",
+    "status": "tbx-chosen"
+  },
+  "file": {
+    "term": "fájl",
+    "forms": [
+      "fájl",
+      "fájlt",
+      "fájlok",
+      "fájlban",
+      "fájlból"
+    ],
+    "source": "existing-ui",
+    "status": "arbitrated"
+  },
+  "finish": {
+    "term": "befejezés",
+    "forms": [
+      "befejezés",
+      "befejezést",
+      "befejezések"
+    ],
+    "avoid": [
+      "vége"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "finish-driver": {
+    "term": "befejezést meghatározó kapcsolat",
+    "forms": [
+      "befejezést meghatározó kapcsolat",
+      "befejezést meghatározó kapcsolatot",
+      "befejezést meghatározó kapcsolatok"
+    ],
+    "avoid": [
+      "befejezés-meghatározó kapcsolat"
+    ],
+    "source": "model",
+    "status": "arbitrated"
+  },
+  "finish-no-earlier-than": {
+    "term": "nem korábban befejeződő",
+    "forms": [
+      "nem korábban befejeződő"
+    ],
+    "avoid": [
+      "nem korábbi befejezés",
+      "befejezés nem korábban"
+    ],
+    "source": "model",
+    "status": "arbitrated"
+  },
+  "finish-no-later-than": {
+    "term": "nem később befejeződő",
+    "forms": [
+      "nem később befejeződő"
+    ],
+    "avoid": [
+      "nem későbbi befejezés",
+      "befejezés nem később"
+    ],
+    "source": "model",
+    "status": "arbitrated"
+  },
+  "finish-to-finish": {
+    "term": "befejezés-befejezés",
+    "forms": [
+      "befejezés-befejezés"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "finish-to-start": {
+    "term": "befejezés-kezdés",
+    "forms": [
+      "befejezés-kezdés"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "finish-variance": {
+    "term": "befejezési eltérés",
+    "forms": [
+      "befejezési eltérés",
+      "befejezési eltérést",
+      "befejezési eltérések"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "fixed-duration": {
+    "term": "rögzített időtartam",
+    "forms": [
+      "rögzített időtartam",
+      "rögzített időtartamot",
+      "rögzített időtartamok"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "fixed-units": {
+    "term": "rögzített egységek",
+    "forms": [
+      "rögzített egységek",
+      "rögzített egységet"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "fixed-work": {
+    "term": "rögzített munka",
+    "forms": [
+      "rögzített munka",
+      "rögzített munkát",
+      "rögzített munkák"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "float": {
+    "term": "tartalékidő",
+    "forms": [
+      "tartalékidő",
+      "tartalékidőt",
+      "tartalékidők"
+    ],
+    "avoid": [
+      "lebegőpontos",
+      "lebegés"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "float-path": {
+    "term": "tartalékidő-útvonal",
+    "forms": [
+      "tartalékidő-útvonal",
+      "tartalékidő-útvonalat",
+      "tartalékidő-útvonalak"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "forecast-finish": {
+    "term": "előrejelzett befejezés",
+    "forms": [
+      "előrejelzett befejezés",
+      "előrejelzett befejezést",
+      "előrejelzett befejezések"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "free-float": {
+    "term": "szabad tartalékidő",
+    "forms": [
+      "szabad tartalékidő",
+      "szabad tartalékidőt",
+      "szabad tartalékidők"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "gantt-bar": {
+    "term": "sáv",
+    "forms": [
+      "sáv",
+      "sávok",
+      "sávot",
+      "sávja",
+      "tevékenységsáv"
+    ],
+    "source": "existing-ui",
+    "status": "arbitrated"
+  },
+  "hammock": {
+    "term": "hangmat",
+    "forms": [
+      "hangmat",
+      "hangmatot",
+      "hangmatok"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "hard-constraint": {
+    "term": "kötelező korlátozás",
+    "forms": [
+      "kötelező korlátozás",
+      "kötelező korlátozást",
+      "kötelező korlátozások",
+      "kötelező korlátozásnak"
+    ],
+    "avoid": [
+      "kötött kényszer",
+      "kemény kényszer"
+    ],
+    "source": "model",
+    "status": "arbitrated"
+  },
+  "histogram": {
+    "term": "hisztogram",
+    "forms": [
+      "hisztogram",
+      "hisztogramot",
+      "hisztogramok"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "holiday": {
+    "term": "ünnepnap",
+    "forms": [
+      "ünnepnap",
+      "ünnepnapot",
+      "ünnepnapok"
+    ],
+    "avoid": [
+      "szabadnap"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "holiday-set": {
+    "term": "ünnepnaplista",
+    "forms": [
+      "ünnepnaplista",
+      "ünnepnaplistát",
+      "ünnepnaplisták"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "hour-distribution-in-phases": {
+    "term": "óraeloszlás fázisonként",
+    "forms": [
+      "óraeloszlás fázisonként",
+      "óraeloszlást fázisonként"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "hour-planning": {
+    "term": "óraalapú tervezés",
+    "forms": [
+      "óraalapú tervezés",
+      "óraalapú tervezést",
+      "óraalapú tervezésben"
+    ],
+    "avoid": [
+      "óratervezés"
+    ],
+    "source": "model",
+    "status": "arbitrated"
+  },
+  "hour-task": {
+    "term": "óraalapú tevékenység",
+    "forms": [
+      "óraalapú tevékenység",
+      "óraalapú tevékenységet",
+      "óraalapú tevékenységek",
+      "óraalapú tevékenységnek"
+    ],
+    "avoid": [
+      "óraalapú feladat"
+    ],
+    "source": "model",
+    "status": "arbitrated"
+  },
+  "indent": {
+    "term": "behúz",
+    "forms": [
+      "behúz",
+      "behúzza"
+    ],
+    "avoid": [
+      "behúzás"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "interruption": {
+    "term": "szünet",
+    "forms": [
+      "szünet",
+      "szünetet",
+      "szünetek"
+    ],
+    "avoid": [
+      "megszakít"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "lag": {
+    "term": "késleltetés",
+    "forms": [
+      "késleltetés",
+      "késleltetést",
+      "késleltetések"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "late-dates": {
+    "term": "legkésőbbi dátumok",
+    "forms": [
+      "legkésőbbi dátumok",
+      "legkésőbbi dátumokat"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "late-finish": {
+    "term": "legkésőbbi befejezés",
+    "forms": [
+      "legkésőbbi befejezés",
+      "legkésőbbi befejezést",
+      "legkésőbbi befejezések"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "late-start": {
+    "term": "legkésőbbi kezdés",
+    "forms": [
+      "legkésőbbi kezdés",
+      "legkésőbbi kezdést",
+      "legkésőbbi kezdések"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "layout": {
+    "term": "elrendezés",
+    "forms": [
+      "elrendezés",
+      "elrendezést",
+      "elrendezések"
+    ],
+    "avoid": [
+      "tárolási elrendezés",
+      "Navigáció"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "lead": {
+    "term": "átfedés",
+    "forms": [
+      "átfedés",
+      "átfedést",
+      "átfedések"
+    ],
+    "avoid": [
+      "érdeklődő"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "leveling": {
+    "term": "kiegyenlítés",
+    "forms": [
+      "kiegyenlítés",
+      "kiegyenlítést",
+      "kiegyenlítése",
+      "kiegyenlítési",
+      "kiegyenlítéssel",
+      "erőforrás-kiegyenlítés"
+    ],
+    "avoid": [
+      "simítás",
+      "simítási",
+      "simítása",
+      "simítást"
+    ],
+    "source": "model",
+    "status": "arbitrated"
+  },
+  "leveling-delay": {
+    "term": "kiegyenlítési késleltetés",
+    "forms": [
+      "kiegyenlítési késleltetés",
+      "kiegyenlítési késleltetést",
+      "kiegyenlítési késleltetése"
+    ],
+    "avoid": [
+      "simítási késleltetés"
+    ],
+    "source": "model",
+    "status": "arbitrated"
+  },
+  "link-tasks": {
+    "term": "összekapcsol",
+    "forms": [
+      "összekapcsol",
+      "összekapcsolja",
+      "összekapcsolás"
+    ],
+    "avoid": [
+      "csatol",
+      "csatolás"
+    ],
+    "source": "tbx",
+    "status": "tbx-chosen"
+  },
+  "longest-path": {
+    "term": "leghosszabb útvonal",
+    "forms": [
+      "leghosszabb útvonal",
+      "leghosszabb útvonalat",
+      "leghosszabb útvonalak"
+    ],
+    "avoid": [
+      "kritikus útvonal"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "manually-scheduled": {
+    "term": "kézzel ütemezett",
+    "forms": [
+      "kézzel ütemezett",
+      "kézzel ütemezettek"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "max-units": {
+    "term": "maximális mennyiség",
+    "forms": [
+      "maximális mennyiség",
+      "maximális mennyiséget",
+      "maximális mennyisége"
+    ],
+    "avoid": [
+      "max. egység"
+    ],
+    "source": "tbx",
+    "status": "arbitrated"
+  },
+  "milestone": {
+    "term": "mérföldkő",
+    "forms": [
+      "mérföldkő",
+      "mérföldkövet",
+      "mérföldkőnek",
+      "mérföldkövek",
+      "mérföldköveket"
+    ],
+    "avoid": [
+      "milestone"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "milestone-kind": {
+    "term": "mérföldkőtípus",
+    "forms": [
+      "mérföldkőtípus",
+      "mérföldkőtípust",
+      "mérföldkőtípusa",
+      "mérföldkőtípusok"
+    ],
+    "avoid": [
+      "mérföldkő típusa"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "mini-map": {
+    "term": "mini-térkép",
+    "forms": [
+      "mini-térkép",
+      "mini-térképen"
+    ],
+    "source": "existing-ui",
+    "status": "arbitrated"
+  },
+  "missed-task": {
+    "term": "lekésett tevékenység",
+    "forms": [
+      "lekésett tevékenység",
+      "lekésett tevékenységet",
+      "lekésett tevékenységek"
+    ],
+    "avoid": [
+      "lekésett feladat",
+      "elmaradt feladat"
+    ],
+    "source": "model",
+    "status": "arbitrated"
+  },
+  "must-finish-on": {
+    "term": "kötelező befejezés",
+    "forms": [
+      "kötelező befejezés",
+      "kötelező befejezést",
+      "kötelező befejezése",
+      "kötelező befejezések"
+    ],
+    "avoid": [
+      "kötelező végzés"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "must-start-on": {
+    "term": "kötelező kezdés",
+    "forms": [
+      "kötelező kezdés",
+      "kötelező kezdést",
+      "kötelező kezdése",
+      "kötelező kezdések"
+    ],
+    "avoid": [
+      "kötelező indulás"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "near-critical": {
+    "term": "közel kritikus",
+    "forms": [
+      "közel kritikus",
+      "közel kritikust",
+      "közel kritikusnak",
+      "közel kritikusak"
+    ],
+    "avoid": [
+      "majdnem kritikus"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "negative-float": {
+    "term": "negatív tartalékidő",
+    "forms": [
+      "negatív tartalékidő",
+      "negatív tartalékidőt",
+      "negatív tartalékideje"
+    ],
+    "source": "model",
+    "status": "arbitrated"
+  },
+  "non-working-day": {
+    "term": "nem munkanap",
+    "forms": [
+      "nem munkanap",
+      "nem munkanapot",
+      "nem munkanapja",
+      "nem munkanapok"
+    ],
+    "avoid": [
+      "munkaszüneti nap"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "occupancy": {
+    "term": "foglaltság",
+    "forms": [
+      "foglaltság",
+      "foglaltságot"
+    ],
+    "source": "existing-ui",
+    "status": "arbitrated"
+  },
+  "out-of-sequence-progress": {
+    "term": "sorrenden kívüli előrehaladás",
+    "forms": [
+      "sorrenden kívüli előrehaladás",
+      "sorrenden kívüli előrehaladást",
+      "sorrenden kívüli előrehaladása"
+    ],
+    "avoid": [
+      "out-of-sequence"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "outdent": {
+    "term": "kihúz",
+    "forms": [
+      "kihúz",
+      "kihúzza",
+      "kihúzás",
+      "kihúzzák"
+    ],
+    "avoid": [
+      "negatív behúzás"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "overallocation": {
+    "term": "túlterhelés",
+    "forms": [
+      "túlterhelés",
+      "túlterhelést",
+      "túlterhelése",
+      "túlterhelések"
+    ],
+    "avoid": [
+      "dupla foglalás"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "path-tracing": {
+    "term": "útvonalkövetés",
+    "forms": [
+      "útvonalkövetés",
+      "útvonalkövetést",
+      "útvonalkövetése"
+    ],
+    "avoid": [
+      "útvonal nyomon követése"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "percent-complete": {
+    "term": "készültségi szint",
+    "forms": [
+      "készültségi szint",
+      "készültségi szintet",
+      "készültségi szintje",
+      "készültségi szintek"
+    ],
+    "avoid": [
+      "% kész"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "period": {
+    "term": "időszak",
+    "forms": [
+      "időszak",
+      "időszakot",
+      "időszaknak",
+      "időszakok"
+    ],
+    "avoid": [
+      "periódus"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "planned": {
+    "term": "tervezett",
+    "forms": [
+      "tervezett",
+      "tervezettet",
+      "tervezetten",
+      "tervezettek"
+    ],
+    "avoid": [
+      "előirányzott"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "planned-work": {
+    "term": "tervezett munka",
+    "forms": [
+      "tervezett munka",
+      "tervezett munkát",
+      "tervezett munkája",
+      "tervezett munkák"
+    ],
+    "avoid": [
+      "tervezett ráfordítás"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "predecessor": {
+    "term": "előd",
+    "forms": [
+      "előd",
+      "elődöt",
+      "elődje",
+      "elődök",
+      "elődöket"
+    ],
+    "avoid": [
+      "előzmény"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "progress": {
+    "term": "előrehaladás",
+    "forms": [
+      "előrehaladás",
+      "előrehaladást",
+      "előrehaladása",
+      "előrehaladások"
+    ],
+    "avoid": [
+      "állapot"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "progress-line": {
+    "term": "előrehaladási vonal",
+    "forms": [
+      "előrehaladási vonal",
+      "előrehaladási vonalat"
+    ],
+    "source": "existing-ui",
+    "status": "arbitrated"
+  },
+  "progress-mode": {
+    "term": "előrehaladási mód",
+    "forms": [
+      "előrehaladási mód",
+      "előrehaladási módot",
+      "előrehaladási módja",
+      "előrehaladási módok"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "project-finish": {
+    "term": "projektbefejezés",
+    "forms": [
+      "projektbefejezés",
+      "projektbefejezést",
+      "projektbefejezése",
+      "projektbefejezések"
+    ],
+    "avoid": [
+      "projekt vége"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "project-info": {
+    "term": "projektinfó",
+    "forms": [
+      "projektinfó",
+      "projektinformáció"
+    ],
+    "source": "existing-ui",
+    "status": "arbitrated"
+  },
+  "project-start": {
+    "term": "projektkezdés",
+    "forms": [
+      "projektkezdés",
+      "projektkezdést",
+      "projektkezdése",
+      "projektkezdések"
+    ],
+    "avoid": [
+      "projekt kezdete"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "properties-panel": {
+    "term": "tulajdonságok panel",
+    "forms": [
+      "tulajdonságok panel",
+      "tulajdonságok panelen",
+      "tulajdonságok panelt"
+    ],
+    "source": "existing-ui",
+    "status": "arbitrated"
+  },
+  "rate": {
+    "term": "alapdíj",
+    "forms": [
+      "alapdíj",
+      "alapdíjat",
+      "alapdíja",
+      "alapdíjak"
+    ],
+    "avoid": [
+      "ráta",
+      "értékel"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "read-only": {
+    "term": "csak olvasható",
+    "forms": [
+      "csak olvasható",
+      "csak olvashatót",
+      "csak olvashatóvá",
+      "csak olvashatók"
+    ],
+    "avoid": [
+      "csak olvasó"
+    ],
+    "source": "tbx",
+    "status": "tbx-chosen"
+  },
+  "recalculate": {
+    "term": "újraszámít",
+    "forms": [
+      "újraszámít",
+      "újraszámítja",
+      "újraszámítsa",
+      "újraszámítás",
+      "újraszámítását"
+    ],
+    "avoid": [
+      "újraberekenez"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "relation": {
+    "term": "kapcsolat",
+    "forms": [
+      "kapcsolat",
+      "kapcsolatot",
+      "kapcsolata",
+      "kapcsolatok",
+      "kapcsolatokat"
+    ],
+    "avoid": [
+      "reláció",
+      "objektumkapcsolat"
+    ],
+    "source": "tbx",
+    "status": "tbx-chosen"
+  },
+  "relationship-type": {
+    "term": "kapcsolattípus",
+    "forms": [
+      "kapcsolattípus",
+      "kapcsolattípust",
+      "kapcsolattípusa",
+      "kapcsolattípusok"
+    ],
+    "avoid": [
+      "kapcsolat típusa"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "remaining-duration": {
+    "term": "hátralévő időtartam",
+    "forms": [
+      "hátralévő időtartam",
+      "hátralévő időtartamot",
+      "hátralévő időtartama",
+      "hátralévő időtartamok"
+    ],
+    "avoid": [
+      "hátralevő"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "remaining-work": {
+    "term": "hátralévő munka",
+    "forms": [
+      "hátralévő munka",
+      "hátralévő munkát",
+      "hátralévő munkája",
+      "hátralévő munkák"
+    ],
+    "avoid": [
+      "hátralevő"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "report": {
+    "term": "jelentés",
+    "forms": [
+      "jelentés",
+      "jelentést",
+      "jelentése",
+      "jelentések",
+      "jelentéseket"
+    ],
+    "avoid": [
+      "riport",
+      "report"
+    ],
+    "source": "tbx",
+    "status": "tbx-chosen"
+  },
+  "report-type": {
+    "term": "jelentés típusa",
+    "forms": [
+      "jelentés típusa",
+      "jelentés típusát",
+      "jelentés típusai"
+    ],
+    "avoid": [
+      "riport típusa"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "resource": {
+    "term": "erőforrás",
+    "forms": [
+      "erőforrás",
+      "erőforrást",
+      "erőforrása",
+      "erőforrások",
+      "erőforrásokat"
+    ],
+    "avoid": [
+      "resource"
+    ],
+    "source": "tbx",
+    "status": "tbx-chosen"
+  },
+  "resource-library": {
+    "term": "erőforrástár",
+    "forms": [
+      "erőforrástár",
+      "erőforrástárat",
+      "erőforrástára",
+      "erőforrástárak"
+    ],
+    "avoid": [
+      "könyvtár",
+      "pool"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "resource-panel": {
+    "term": "erőforráspanel",
+    "forms": [
+      "erőforráspanel",
+      "erőforráspanelen"
+    ],
+    "source": "existing-ui",
+    "status": "arbitrated"
+  },
+  "resource-type": {
+    "term": "erőforrástípus",
+    "forms": [
+      "erőforrástípus",
+      "erőforrástípust",
+      "erőforrástípusa",
+      "erőforrástípusok"
+    ],
+    "avoid": [
+      "erőforrás típusa"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "ribbon": {
+    "term": "menüszalag",
+    "forms": [
+      "menüszalag",
+      "menüszalagot",
+      "menüszalagja",
+      "menüszalagok",
+      "menüszalagon"
+    ],
+    "avoid": [
+      "ribbon"
+    ],
+    "source": "tbx",
+    "status": "arbitrated"
+  },
+  "ribbon-tab": {
+    "term": "menüszalag-lap",
+    "forms": [
+      "menüszalag-lap",
+      "menüszalag-lapot",
+      "menüszalag-lapja",
+      "menüszalag-lapok"
+    ],
+    "avoid": [
+      "ribbon-tab"
+    ],
+    "source": "model",
+    "status": "arbitrated"
+  },
+  "round-trip": {
+    "term": "veszteségmentes visszaalakítás",
+    "forms": [
+      "veszteségmentes visszaalakítás",
+      "veszteségmentes visszaalakítást",
+      "veszteségmentes visszaalakítása"
+    ],
+    "avoid": [
+      "round-trip",
+      "körút"
+    ],
+    "source": "model",
+    "status": "arbitrated"
+  },
+  "schedule": {
+    "term": "ütemezés",
+    "forms": [
+      "ütemezés",
+      "ütemezést",
+      "ütemezése",
+      "ütemezések",
+      "ütemezésnek"
+    ],
+    "avoid": [
+      "időbeosztás",
+      "menetrend",
+      "schedule"
+    ],
+    "source": "tbx",
+    "status": "tbx-chosen"
+  },
+  "schedule-error": {
+    "term": "ütemezési hiba",
+    "forms": [
+      "ütemezési hiba",
+      "ütemezési hibát",
+      "ütemezési hibája",
+      "ütemezési hibák"
+    ],
+    "avoid": [
+      "tervezési hiba"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "secondary-constraint": {
+    "term": "másodlagos korlátozás",
+    "forms": [
+      "másodlagos korlátozás",
+      "másodlagos korlátozást",
+      "másodlagos korlátozások"
+    ],
+    "avoid": [
+      "másodlagos kényszer"
+    ],
+    "source": "model",
+    "status": "arbitrated"
+  },
+  "shift": {
+    "term": "műszak",
+    "forms": [
+      "műszak",
+      "műszakot",
+      "műszakja",
+      "műszakok",
+      "műszakban"
+    ],
+    "avoid": [
+      "ploeg",
+      "váltás"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "source-task": {
+    "term": "forrástevékenység",
+    "forms": [
+      "forrástevékenység",
+      "forrástevékenységet",
+      "forrástevékenységek",
+      "forrástevékenységeket"
+    ],
+    "avoid": [
+      "forrásfeladat"
+    ],
+    "source": "model",
+    "status": "arbitrated"
+  },
+  "split-task": {
+    "term": "megszakított tevékenység",
+    "forms": [
+      "megszakított tevékenység",
+      "megszakított tevékenységet",
+      "megszakított tevékenységek",
+      "megszakított tevékenységeket"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "split-view": {
+    "term": "osztott nézet",
+    "forms": [
+      "osztott nézet",
+      "osztott nézetben"
+    ],
+    "source": "existing-ui",
+    "status": "arbitrated"
+  },
+  "start-driver": {
+    "term": "kezdést meghatározó kapcsolat",
+    "forms": [
+      "kezdést meghatározó kapcsolat",
+      "kezdést meghatározó kapcsolatot",
+      "kezdést meghatározó kapcsolatok"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "start-float": {
+    "term": "kezdési tartalékidő",
+    "forms": [
+      "kezdési tartalékidő",
+      "kezdési tartalékidőt",
+      "kezdési tartalékidők"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "start-no-earlier-than": {
+    "term": "nem korábban kezdődő",
+    "forms": [
+      "nem korábban kezdődő"
+    ],
+    "avoid": [
+      "nem korábbi kezdés"
+    ],
+    "source": "model",
+    "status": "arbitrated"
+  },
+  "start-no-later-than": {
+    "term": "nem később kezdődő",
+    "forms": [
+      "nem később kezdődő"
+    ],
+    "avoid": [
+      "nem későbbi kezdés"
+    ],
+    "source": "model",
+    "status": "arbitrated"
+  },
+  "start-to-finish": {
+    "term": "kezdés-befejezés",
+    "forms": [
+      "kezdés-befejezés",
+      "kezdés-befejezési"
+    ],
+    "avoid": [
+      "kezdés-befejezési kapcsolat"
+    ],
+    "source": "model",
+    "status": "arbitrated"
+  },
+  "start-to-start": {
+    "term": "kezdés-kezdés",
+    "forms": [
+      "kezdés-kezdés",
+      "kezdés-kezdési"
+    ],
+    "avoid": [
+      "kezdés-kezdési kapcsolat"
+    ],
+    "source": "model",
+    "status": "arbitrated"
+  },
+  "start-variance": {
+    "term": "kezdési eltérés",
+    "forms": [
+      "kezdési eltérés",
+      "kezdési eltérést",
+      "kezdési eltérések"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "status-bar": {
+    "term": "állapotsor",
+    "forms": [
+      "állapotsor",
+      "állapotsorban"
+    ],
+    "source": "tbx",
+    "status": "arbitrated"
+  },
+  "status-date": {
+    "term": "állapotdátum",
+    "forms": [
+      "állapotdátum",
+      "állapotdátumot",
+      "állapotdátumok"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "subtask": {
+    "term": "altevékenység",
+    "forms": [
+      "altevékenység",
+      "altevékenységet",
+      "altevékenységek",
+      "altevékenységeket"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "successor": {
+    "term": "utód",
+    "forms": [
+      "utód",
+      "utódot",
+      "utódok",
+      "utódokat"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "summary-task": {
+    "term": "összefoglaló tevékenység",
+    "forms": [
+      "összefoglaló tevékenység",
+      "összefoglaló tevékenységet",
+      "összefoglaló tevékenységek",
+      "összefoglaló tevékenységeket"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "table-column": {
+    "term": "oszlop",
+    "forms": [
+      "oszlop",
+      "oszlopok",
+      "oszlopot",
+      "oszlopban"
+    ],
+    "source": "existing-ui",
+    "status": "arbitrated"
+  },
+  "task": {
+    "term": "tevékenység",
+    "forms": [
+      "tevékenység",
+      "tevékenységet",
+      "tevékenységek",
+      "tevékenységeket"
+    ],
+    "avoid": [
+      "feladat",
+      "teendő"
+    ],
+    "source": "tbx",
+    "status": "tbx-chosen"
+  },
+  "task-grid": {
+    "term": "tevékenységtáblázat",
+    "forms": [
+      "tevékenységtáblázat",
+      "tevékenységtáblázatot",
+      "tevékenységtáblázatok",
+      "tevékenységtáblázatokat"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "task-type": {
+    "term": "tevékenységtípus",
+    "forms": [
+      "tevékenységtípus",
+      "tevékenységtípust",
+      "tevékenységtípusok",
+      "tevékenységtípusokat"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "threshold": {
+    "term": "küszöbérték",
+    "forms": [
+      "küszöbérték",
+      "küszöbértéket",
+      "küszöbértékek",
+      "küszöbértékeket"
+    ],
+    "source": "tbx",
+    "status": "tbx-chosen"
+  },
+  "time-scale": {
+    "term": "időskála",
+    "forms": [
+      "időskála",
+      "időskálán"
+    ],
+    "source": "existing-ui",
+    "status": "arbitrated"
+  },
+  "total-float": {
+    "term": "teljes tartalékidő",
+    "forms": [
+      "teljes tartalékidő",
+      "teljes tartalékidőt",
+      "teljes tartalékidők"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "tutorial": {
+    "term": "oktatóanyag",
+    "forms": [
+      "oktatóanyag",
+      "oktatóanyagot",
+      "oktatóanyagok",
+      "oktatóanyagokat"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "units": {
+    "term": "hozzárendelt mennyiség",
+    "forms": [
+      "hozzárendelt mennyiség",
+      "hozzárendelt mennyiséget",
+      "hozzárendelt mennyiségek",
+      "hozzárendelt mennyiségeket"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "variance": {
+    "term": "eltérés",
+    "forms": [
+      "eltérés",
+      "eltérést",
+      "eltérések",
+      "eltéréseket"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "variance-report": {
+    "term": "eltérésjelentés",
+    "forms": [
+      "eltérésjelentés",
+      "eltérésjelentést",
+      "eltérésjelentések",
+      "eltérésjelentéseket"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "violated-constraint": {
+    "term": "megsértett korlátozás",
+    "forms": [
+      "megsértett korlátozás",
+      "megsértett korlátozást",
+      "megsértett korlátozások"
+    ],
+    "avoid": [
+      "megsértett kötöttség",
+      "megsértett kényszer"
+    ],
+    "source": "model",
+    "status": "arbitrated"
+  },
+  "wbs": {
+    "term": "WBS",
+    "forms": [
+      "WBS",
+      "WBS-t",
+      "WBS-ek"
+    ],
+    "source": "tbx",
+    "status": "tbx-chosen"
+  },
+  "wbs-element": {
+    "term": "WBS-elem",
+    "forms": [
+      "WBS-elem",
+      "WBS-elemet",
+      "WBS-elemek",
+      "WBS-elemeket"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "work": {
+    "term": "munka",
+    "forms": [
+      "munka",
+      "munkát",
+      "munkák",
+      "munkákat"
+    ],
+    "avoid": [
+      "munkahely"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "work-block": {
+    "term": "idősáv",
+    "forms": [
+      "idősáv",
+      "idősávok",
+      "idősávot"
+    ],
+    "source": "existing-ui",
+    "status": "arbitrated"
+  },
+  "work-break": {
+    "term": "szünet",
+    "forms": [
+      "szünet",
+      "szünetet",
+      "szünetek",
+      "szünetben"
+    ],
+    "source": "existing-ui",
+    "status": "arbitrated"
+  },
+  "work-calendar": {
+    "term": "munkanaptár",
+    "forms": [
+      "munkanaptár",
+      "munkanaptárat",
+      "munkanaptárak",
+      "munkanaptárakat"
+    ],
+    "source": "model",
+    "status": "model"
+  },
+  "work-hours": {
+    "term": "munkaórák",
+    "forms": [
+      "munkaórák",
+      "munkaórákat",
+      "munkaórákban",
+      "munkaóra"
+    ],
+    "avoid": [
+      "munkarend"
+    ],
+    "source": "model",
+    "status": "arbitrated"
+  },
+  "work-rule": {
+    "term": "munkaszabály",
+    "forms": [
+      "munkaszabály",
+      "munkaszabályt",
+      "munkaszabályok",
+      "munkaszabályokat"
+    ],
+    "source": "model",
+    "status": "arbitrated"
+  },
+  "workday": {
+    "term": "munkanap",
+    "forms": [
+      "munkanap",
+      "munkanapot",
+      "munkanapok",
+      "munkanapokat"
+    ],
+    "source": "tbx",
+    "status": "tbx"
+  },
+  "working-time": {
+    "term": "munkaidő",
+    "forms": [
+      "munkaidő",
+      "munkaidőt",
+      "munkaidők",
+      "munkaidőket"
+    ],
+    "source": "model",
+    "status": "model"
+  }
+}

@@ -19,11 +19,11 @@
 // categorieën die het Nederlands niet kent. Een puur nl-gedreven scan zou die
 // nooit eisen. Per locale wordt daarom de eigen categorielijst opgevraagd.
 //
-// Besluit B5 (2026-10-10): een nieuwe of gewijzigde tekst vraagt alleen nl + en; de andere talen mogen
-// later volgen. Daarom drie soorten uitkomst:
+// Besluit B5 (2026-10-10): een nieuwe of gewijzigde tekst vraagt alleen nl + en; de andere talen vult
+// de vertaalstraat. Daarom drie soorten uitkomst:
 //  - `en` mist een sleutel (of een meervoudsvorm): FOUT — en is de terugvaltaal van de app.
 //  - een andere taal mist een sleutel of een hele meervoudsfamilie: RAPPORT (exit 0). De app valt daar
-//    terug op en.
+//    terug op en; de releasepoort `npm run verify:translations` eist dat de straat hem aanvult.
 //  - een andere taal heeft een HALVE meervoudsfamilie (een deel van haar CLDR-categorieën): FOUT —
 //    i18next valt voor de ontbrekende getallen terug op en, midden in een vertaalde zin.
 import fs from 'node:fs';
@@ -184,11 +184,11 @@ for (const locale of others) {
   }
 }
 
-// Rapport (B5): één regel per taal; de sleutels zelf met --verbose.
+// Rapport (B5): één regel per taal; de sleutels zelf met --verbose of via `npm run translate -- status <taal>`.
 const reported = others.filter((l) => absent[l]);
 if (reported.length) {
   console.log('\n.. Rapport (geen fout): sleutels die in een taal nog helemaal ontbreken. De app valt daar terug op en;');
-  console.log('   vul ze aan met `npm run i18n:add`.');
+  console.log('   de vertaalstraat vult ze aan, en een release eist ze (`npm run verify:translations`).');
   for (const locale of reported) {
     const files = absent[locale];
     const perFile = Object.entries(files).map(([f, keys]) => `${f.replace(/\.json$/, '')} ${keys.length}`).join(', ');

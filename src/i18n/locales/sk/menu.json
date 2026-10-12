@@ -321,6 +321,8 @@
     "helpDocsLang": "Jazyk dokumentácie",
     "helpDocsLangAuto": "Podľa jazyka aplikácie",
     "helpLangFallback": "Tento článok ešte nie je dostupný vo vašom jazyku. Čítate anglickú verziu.",
+    "helpTranslatedNote": "Táto príručka bola preložená z angličtiny a môže zaostávať za anglickou a holandskou verziou.",
+    "helpReadIn": "Čítať v:",
     "unapplied": {
       "title": "Zmeny nie sú použité",
       "body": "Informácie o projekte ste zmenili, ale ešte ste ich nepoužili. Čo chcete so zmenami urobiť?",

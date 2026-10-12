@@ -35,7 +35,7 @@ de `verify:i18n`-poort. De overige scripts draaien via hun npm-script in de kete
 | `i18n-diff.mjs` | `verify:i18n` | ontbrekende vertaalsleutels t.o.v. `nl`, met CLDR-pluralcategorieën. Fout: een gat in `en`, of een halve meervoudsfamilie in welke taal ook. Rapport (exit 0, één regel per taal; `--verbose` noemt de sleutels): een sleutel die in een andere taal helemaal ontbreekt (besluit B5) |
 | `verify-i18n-keys.mjs` | `verify:i18n` | geen cast (`as 'a.b'`) op een vertaalsleutel in `src/`: zo'n cast zet de typecheck van die sleutel uit (`as const` mag); bewezen door `tests/planning/check-i18n-keys.ts` |
 | `i18n-fmt.ts` | `verify:i18n` (met `--check`) en `npm run i18n:fmt` (schrijven) | de vaste opmaak van alle 112 locale-bestanden: één sleutel per regel, volgorde van `nl`, meervoudsfamilies in CLDR-volgorde |
-| `i18n-add.ts` | `npm run i18n:add` | zet één tekst (of meervoudsfamilie) in `nl` + `en` (verplicht) en in elke opgegeven locale, na validatie van CLDR-categorieën en `{{invulplekken}}`; `--update` wijzigt, `--after` plaatst (besluit B5) |
+| `i18n-add.ts` | `npm run i18n:add` | zet één tekst (of meervoudsfamilie) in `nl` + `en` (verplicht) en in elke opgegeven locale, na validatie van CLDR-categorieën en `{{invulplekken}}`; `--update` wijzigt, `--after` plaatst; werkt de bron-hash in `i18n/ui-sources/` bij voor wat het schrijft en haalt hem weg voor de rest, zodat de vertaalstraat die talen oppakt (besluit B5) |
 | `i18n-resolve.ts` | `npm run i18n:resolve` | voegt na `git merge` alle locale-bestanden per sleutel samen (merge-base, HEAD, MERGE_HEAD; of de merge-commit achteraf), maakt ze op en doet `git add`; een echte botsing blijft open met exit 1 |
 | `i18n-tools.ts` | de drie hierboven, en `tests/planning/check-i18n-tools.ts` | de pure kern (ordenen, serialiseren, valideren, plaatsen, per sleutel samenvoegen) |
 | `verify-text-roles.mjs` | `verify:text-roles` | tekstgroottes lopen uitsluitend via de zes tekstrollen (`text-caption` … `text-title` / `var(--text-…)`); keurt kale px/rem-font-sizes, `text-[Npx]`, Tailwinds eigen schaal en inline `fontSize` in `src/` af (niet in `engine/`/`services/`) |
@@ -45,11 +45,53 @@ de `verify:i18n`-poort. De overige scripts draaien via hun npm-script in de kete
 | `lib/ts-imports.mjs` | de twee grenspoorten hierboven | hun gedeelde AST-steiger: bronbestanden verzamelen, parsen, `@/`-/relatieve imports naar een modulepad vertalen, runtimebindings van een importclause |
 | `lib/agent-skills-check.ts` | `verify:docs` (poort 9), `tests/mcp/cases-planning-guide.ts` | pure toetsen op de agent-skills: frontmatter (`name` = mapnaam, niet-lege `description`), `.gitignore` deelt elke skill, geen wees in `.claude/skills/` |
 | `lib/agent-guide-coupling.ts` | `verify:docs` (poort 11), `tests/mcp/cases-planning-guide.ts` | de koppeltabel principe-van-`gids-goed-plannen` (nl, en) ↔ sectie van de agentgids, plus de pure toets erop (ook het mutatiebewijs in de MCP-suite) |
-| `lib/docs-structure.ts` | `verify:docs`, wie docs vertaalt | contract C1: secties (`splitSections`), `sectionHash`, `structureOf`/`structureHash` en de mini-Markdown-subset (`subsetErrors`); puur, alleen `node:crypto`, geen `@/` |
+| `lib/docs-structure.ts` | `verify:docs`, de docs-straat | contract C1 van de vertaalstraat: secties (`splitSections`), `sectionHash`, `structureOf`/`structureHash` en de mini-Markdown-subset (`subsetErrors`); puur, alleen `node:crypto`, geen `@/` |
 | `lib/docs-translations.ts` | `verify:docs` (poort 12) | de optionele docstalen: `index.json` ↔ bestanden, indextitel = H1, subset en structuur tegen `i18n/docs-sources/<taal>.json` zijn fouten; ontbrekend, verouderd, wees en een onbekende link zijn een rapport |
 | `verify-docs.ts` | `verify:docs` | de in-app gidsen in `public/docs/`: manifest v2 (`kind`, `draft`, `aliases`), nl en en verplicht (de andere taalmappen via poort 12), manifest-dekking, weesbestanden, `docs://`/`examples://`-links (incl. `#anker`), afbeeldingen (alt-tekst, bestand bestaat), of de inhoud binnen de mini-Markdown-subset blijft, en (poort 10) of elk artikel-id uit `src/state/helpArticles.ts` en de release-hoogtepunten bestaat; bewaakt daarnaast dat elke skill onder `public/skills/<naam>/SKILL.md` byte-identiek in `.claude/skills/<naam>/` staat (poort 9) en dat elk principe van `gids-goed-plannen` (nl én en) via de koppeltabel in `scripts/lib/agent-guide-coupling.ts` een tegenhanger heeft in de agentgids `public/agent/planning-guide.md` (poort 11) |
 | `verify-examples.ts` | `verify:examples` | de gebundelde voorbeeldprojecten laden en rekenen door zoals verwacht |
 | `verify-conventions.mjs` | `verify:conventions` | AST-poort van de rekenprofielen (ook aangeroepen door `tests/planning/check-conventions-boundary.ts`): de motor (`src/engine/` plus de motorhelper `src/utils/p6SuspendResume.ts`) leest geen bronformaat (`p6Source`/`importFormat`/`readFormat`/`xerSourceProjectId`/`xerSourceArchive`/`xerImportMetadata`, ook via string-index, `in` of destructuring; geen lezer-, `formatRegistry`- of `xerSourceArchive`-imports en geen niet-letterlijke dynamische imports); opties-sleutels alleen uit het register (`convention('…')` in `CONVENTIONS` plus de projectopties uit `interface SchedulingOptions`): een onbekende of niet-letterlijke sleutel op een opties-object, `Reflect.get`/`Object.keys|values|entries` op een opties-object (ook via hernoemde imports, type-aliassen en `import('…')`-typen), een registerconventie die in geen vanuit `solveProject.ts` bereikbaar bestand gelezen wordt, en een ongepind herkomstveld (`p6…`/`xer…`/`mpp…`/`msp…`/`mpx…` dat geen eigen lid op `this` of op een in hetzelfde bestand gedeclareerd object is) zijn rood (Fable-critreview PR #169, bevinding 4 + critreview 2e ronde). Grens: syntactisch, dus een opties-object dat via een helper in een ander bestand onder een neutrale naam binnenkomt, of een waarde die al als `any` binnenkomt, ziet de poort niet; herkomst-datagates (ook via destructuring en `in`) gepind in `verify-conventions.datagates.json`, alleen omlaag (`--write-baseline` herpint, alleen als alles groen is). Een optionele `verify-conventions.allowlist.json` kan overgangscode tijdelijk vrijstellen (alleen namen, alleen bestaande bestanden, reden met de overgangsmarkering); in de eindstand bestaat hij niet |
+
+## Vertaalstraat (`npm run translate`)
+
+Termbase, UI- en docsvertaling door kleine Haiku-agents per werkpakket; ontwerp
+`docs/superpowers/specs/2026-10-09-vertaalstraat-design.md`. Logica in pure modules (getoetst in
+`tests/planning/check-translate-*.ts`), I/O alleen in `cli.ts`. Werkmap `build/translate/` en cache
+`build/cache/` staan in `.gitignore`.
+
+| script | aangeroepen door | doet |
+|---|---|---|
+| `translate/cli.ts` | `npm run translate -- <commando>` | `validate-termbase`, `concepts-candidates`, `concepts-merge`, `terms-lookup <taal>`, `apply-terms <taal>`, `prepare ui <taal> [--missing\|--stale\|--all\|--avoid [--stale]\|--keys <bestand>]`, `bundle-check`, `apply ui <taal>`, `apply-findings <taal> <bestand>`, `packages ui\|docs <taal…> [--red]` (open pakketten als JSON, invoer voor `translate/workflows/`), `seed-sources <taal…>` (eenmalig, weigert als er al bronhashes zijn), `status [taal] [--strict]`, `prepare docs <taal> [--missing\|--stale\|--ids a,b] [--max-words N]`, `apply docs <taal>`, `check-docs <taal> [id…]` (pakketpoort op gepubliceerde artikelen), `rename-doc <oud> <nieuw>`, `remove-doc <id>`, `docs-budget <taal…>`, `docs-literal`; `status --strict` is de releasepoort `npm run verify:translations` (exit 1 bij elke ontbrekende, verouderde of hashloze UI-vertaling; achterlopende docs worden alleen gemeld, besluit 2026-10-12). `apply ui` keurt elk pakket ook tegen de huidige nl en de taal |
+| `translate/workflows/*.js` | de Workflow-tool (skills `update-ui-lang`, `update-docs-lang`) | `stations.js` (vertalen → nalezen → herstellen per pakket, Haiku), `docs-spotcheck.js` (steekproef, Sonnet), `docs-spotcheck-fix.js` (herstel na de steekproef, Haiku) |
+| `translate/check.ts` | gebundeld tot `build/translate/check.mjs` (door `prepare`, `terms-lookup`, `concepts-candidates`) | de poort die een agent zelf draait: `node build/translate/check.mjs <pakket>`; zelfstandig, zonder `node_modules`. Staat `<pakket>.src.md` ernaast, dan is het een docs-pakket en leest hij `<pakket>.out.md` |
+| `translate/gates.ts` | `check.ts`, `apply.ts`, `cli.ts` | de harde en zachte poorten (§7) en de schema's van concepten-, termen- en blinde-controle-uitvoer; `checkDocs` (per sectie: opbouw, subset, dubbele kop, labels a/b/c, inline code behalve display, cijfers alleen ASCII, geen "getal + punt" vooraan, tokens/keep; zacht: termen, avoid als los woord, lengte) en `checkDocsArticle` (het samengevoegde artikel) |
+| `translate/docs.ts` | `cli.ts`, `gates.ts` | docs-straat: labelkaart uit de en-UI (a: UI-label, b: patroon met `{{…}}`, c: `i18n/docs-literal.json`), pakketten per artikel of per reeks hele `##`-secties (±2.500 woorden), `--stale` per sectie gekoppeld op inhoud (en-hash of label-hash veranderd, `previous` erbij), samenvoegen, `public/docs/<taal>/index.json` (C2), `i18n/docs-sources/<taal>.json` (C3), status en releasegaten. Secties en hashes uit `lib/docs-structure.ts` (C1) |
+| `translate/ui.ts`, `apply.ts` | `cli.ts`, `i18n-add.ts` | UI-pakketten (`--missing`, `--stale`, `--avoid`, `--keys`), samenvoegen (alleen groen), bron-hashes `i18n/ui-sources/<taal>.json`, status |
+| `translate/findings.ts` | `cli.ts` | `apply-findings`: een lijst `[{ "key": "ns:pad", "fix": … }]` per regel door de harde poorten en dan in de locale; een rode of onleesbare regel wordt overgeslagen en gemeld (exit 1); bron-hashes blijven staan, want nl veranderde niet |
+| `translate/termbase.ts`, `tbx.ts`, `candidates.ts`, `common.ts` | `cli.ts` | termbase-schema en samenvoegen, Microsoft-terminologie (TBX, map `OPS_MSTERMS_DIR`, standaard `build/cache/msterms`), kandidaat-termen |
+| `translate/prompts/*.md` | de orkestrator | de vaste opdrachten voor de agents (Engels); plekhouders in `prompts/README.md` |
+
+**Docs-straat.** `prepare docs <taal>` schrijft per pakket `<id>[-NN].src.md` (de Engelse bron) en
+`<id>[-NN].json` (termen, tokens, keep, labels, `style` met `_style.docs`, display-voorbeelden en bij
+`--stale` de oude vertaling per sectie); de agent schrijft `<id>[-NN].out.md` (`prompts/docs.md`).
+`apply docs <taal>` voegt alleen groene pakketten samen (alle pakketten van een artikel groen), controleert
+het artikel opnieuw en schrijft het artikel, C2 en C3; een verouderde sectie zonder pakket houdt zijn oude
+hash. Een artikel waarin en alleen secties verwijderde of verplaatste, herschikt `apply docs` zonder agent.
+Bestandskolommen (CSV, voortgangsblad) staan in de bron als inline code; inline code die de app per taal
+anders toont, staat per artikel onder `display` in `i18n/docs-literal.json`. `docs-budget <taal…>` meet
+het grootste pakket (tekens en geschatte tokens).
+
+**Termbase veranderd?** `prepare ui <taal> --avoid` vindt precies de vertalingen waarin een `avoid`-variant
+van een term staat (zelfde regel als de zachte poort: eerst de vormen van de term wegstrepen,
+hoofdletterongevoelig). Zet de oude term als `avoid` in `i18n/termbase/<taal>.json`; het pakket krijgt
+`reason: "avoid"`, per item `previous` en `avoidHits`, en gaat naar de opdracht `prompts/ui-termfix.md`
+(alleen die woorden vervangen). Met `--stale` erbij komen ook de verouderde sleutels mee. `--keys <bestand>`
+kiest precies de sleutels uit een JSON-lijst `["ns:pad", …]`, met de huidige tekst als `previous`.
+
+**Labelpoort.** `prepare ui` geeft een item `labels` als zijn nl-tekst een andere UI-tekst letterlijk
+noemt (een knop, tab of blok: begint met een hoofdletter, ≥ 2 woorden of ≥ 10 tekens, geen invulplekken,
+niet aan het begin van een zin; bij overlap telt het langste). De check eist dan dat de huidige vertaling
+van dat label letterlijk in de vertaling staat (hard); is het label nog niet vertaald, dan alleen een
+waarschuwing. `apply-findings` gebruikt dezelfde poort.
 
 ## Voorbeeldprojecten genereren
 

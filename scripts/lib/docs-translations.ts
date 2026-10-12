@@ -1,5 +1,5 @@
 // De poort voor de optionele docstalen (alles behalve nl en en), deel van `npm run verify:docs`.
-// Contracten C1–C3 (zie ook `scripts/lib/docs-structure.ts`).
+// Ontwerp: `docs/superpowers/specs/2026-10-09-vertaalstraat-design.md` §9/§10, contracten C1–C3.
 //
 // nl en en zijn de bron: verplicht en streng (zie verify-docs.ts). Een andere taal is optioneel: wat er
 // staat, moet kloppen, maar wat ontbreekt of verouderd is, is een RAPPORT (exit 0) — anders blokkeert

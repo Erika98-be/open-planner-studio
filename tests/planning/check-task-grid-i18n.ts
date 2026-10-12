@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { hasUiBaseline } from '../../scripts/translate/common';
 import { REQUIRED_LOCALES } from '../../scripts/i18n-tools';
 
 const LOCALES = [
@@ -175,8 +176,8 @@ const variables = (text: string): string[] => [...text.matchAll(/{{\s*([A-Za-z0-
   .map(match => match[1]).sort();
 
 // Besluit B5 (2026-10-10): een nieuwe tekst vraagt alleen nl + en. In een andere taal mag een sleutel
-// (of een hele meervoudsfamilie) nog ontbreken — de app valt terug op en, en vertalen volgt
-// later. Wat er wél staat, moet kloppen.
+// (of een hele meervoudsfamilie) nog ontbreken — de app valt terug op en, en de vertaalstraat vult hem
+// aan vóór een release (`npm run verify:translations`). Wat er wél staat, moet kloppen.
 const optional = (locale: string): boolean => !(REQUIRED_LOCALES as readonly string[]).includes(locale);
 const taskByLocale = new Map(LOCALES.map(locale => [locale, readJson(locale, 'task')] as const));
 const dutch = taskByLocale.get('nl')!;
@@ -283,9 +284,15 @@ for (const key of [
 }
 
 const english = taskByLocale.get('en')!;
-// De dertien talen die al vóór de uitbreiding bestonden moeten deze sleutels echt vertalen. Een nieuwe taal
-// mag voorlopig Engels als vulling hebben; die controle komt per taal erbij zodra de vertaling klaar is.
-const TRANSLATED_LOCALES = ['fr', 'de', 'es', 'zh', 'it', 'pt', 'pl', 'tr', 'ar', 'ja', 'ko', 'lo', 'fa', 'nl'];
+// Een nieuwe taal (geen basislijn in de vertaalstraat) staat eerst met Engels als vulling. Daar geldt
+// "niet stil Engels" pas voor een sleutel die de straat vertaalde, dus die een bron-hash heeft in
+// i18n/ui-sources/<taal>.json. Zo wordt de controle per sleutel strenger naarmate de straat vult.
+const translatedByStraat = (locale: string, ns: string, key: string): boolean => {
+  const file = path.join(root, 'i18n/ui-sources', `${locale}.json`);
+  if (!fs.existsSync(file)) return false;
+  const sources = JSON.parse(fs.readFileSync(file, 'utf8')) as Record<string, Record<string, string>>;
+  return sources[ns]?.[key] !== undefined;
+};
 for (const key of [
   'taskGrid.history.addColumn',
   'taskGrid.history.autoFitColumn',
@@ -299,7 +306,7 @@ for (const key of [
 ] as const) {
   const englishValue = at(english, key);
   for (const locale of LOCALES.filter(candidate => candidate !== 'en')) {
-    if (!TRANSLATED_LOCALES.includes(locale)) continue;
+    if (!hasUiBaseline(locale) && !translatedByStraat(locale, 'task', key)) continue;
     ok(`${locale}: ${key} valt niet stil terug op Engels`, at(taskByLocale.get(locale), key) !== englishValue);
   }
 }

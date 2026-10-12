@@ -12,7 +12,7 @@ Dva pojmy. **Maximálny počet jednotiek** je kapacita za pracovný deň: 1 je j
 
 ### Vytvorenie zdroja
 
-1. Vyberte *Zdroje › Zostava › Nový zdroj*. Panel zdrojov prevezme pracovný priestor a na spodku tabuľky sa objaví prázdny riadok. Panel môžete otvoriť aj cez *Zdroje › Zostava › Zdroje* a potom vyberte *Nový zdroj v projekte*.
+1. Vyberte *Zdroje › Zostava › Vytvoriť zdroj*. Panel zdrojov prevezme pracovný priestor a na spodku tabuľky sa objaví prázdny riadok. Panel môžete otvoriť aj cez *Zdroje › Zostava › Zdroje* a potom vyberte *Nový zdroj v projekte*.
 2. Zadajte názov, napríklad *Bricklayer*.
 3. Vyberte *Typ*: *Práca* (predvolená), *Zariadenie*, *Materiál*, *Subdodávateľ* alebo *Pracovná zmena*.
 4. Vyplňte ostatné polia, ak treba. Všetko má predvolenú hodnotu: *Maximálny počet jednotiek* je 1 a *Kalendár* je *Kalendár projektu*. *Štandardná sadzba/hod* je prázdna. Pole *Jednotka* môžete vyplniť iba pri type *Materiál*, napríklad m³.

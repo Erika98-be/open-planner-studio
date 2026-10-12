@@ -319,6 +319,8 @@
     "helpDocsLang": "Jezik dokumentacije",
     "helpDocsLangAuto": "Prati jezik aplikacije",
     "helpLangFallback": "Ovaj članak još nije dostupan na vašem jeziku; čitate englesku verziju.",
+    "helpTranslatedNote": "Ovaj vodič preveden je s engleskog i može zaostajati za engleskom i nizozemskom verzijom.",
+    "helpReadIn": "Čitajte na:",
     "unapplied": {
       "title": "Promjene nisu primijenjene",
       "body": "Promijenili ste podatke o projektu, ali ih još niste primijenili. Što želite učiniti s ovim promjenama?",
