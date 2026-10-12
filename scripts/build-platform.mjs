@@ -60,8 +60,14 @@ export function validateBase(base) {
   return null;
 }
 
+// `OPS_DEV_INSTANCE` is de slug van een dev- of testinstantie; `vite.config.ts` bakt hem in de bundel
+// (`__OPS_DEV_INSTANCE__`, voorvoegsel van de herstelbestanden). Een platformbundel heeft er nooit een,
+// ook niet als het script vanuit een dev- of testomgeving start.
+const BUILD_ENV = { ...process.env };
+delete BUILD_ENV.OPS_DEV_INSTANCE;
+
 function run(bin, args) {
-  const result = spawnSync(path.join(ROOT, 'node_modules', '.bin', bin), args, { cwd: ROOT, stdio: 'inherit' });
+  const result = spawnSync(path.join(ROOT, 'node_modules', '.bin', bin), args, { cwd: ROOT, stdio: 'inherit', env: BUILD_ENV });
   if (result.error) {
     console.error(`[build:platform] ${bin} starten mislukt: ${result.error.message}`);
     process.exit(1);
