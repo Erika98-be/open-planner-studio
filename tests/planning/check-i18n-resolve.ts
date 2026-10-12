@@ -147,6 +147,39 @@ try {
   ok('6b de nieuwe taal blijft zoals hij binnenkwam', read('lo').a === 'A lo', JSON.stringify(read('lo')));
   ok('6c de andere kant blijft ook staan', read('nl').z === 'Z nl');
   git('merge', '--abort');
+
+  // 7. Bronhashes (i18n/ui-sources): tijdens de merge valt een botsende hash weg; achteraf blijft de
+  //    hash die de merge-commit koos staan (knownbugs #101).
+  const src = join(repo, 'i18n', 'ui-sources', 'de.json');
+  const readSrc = () => JSON.parse(readFileSync(src, 'utf8')) as { common: Record<string, string> };
+  const writeSrc = (h: string) => writeFileSync(src, serialize({ common: { a: h, c: 'c0' } }));
+  git('checkout', '-q', '-b', 'h0', 'basis');
+  mkdirSync(dirname(src), { recursive: true });
+  writeSrc('h0');
+  git('add', '-A');
+  git('commit', '-q', '-m', 'hashes');
+  git('checkout', '-q', '-b', 'h1', 'h0');
+  writeSrc('h1');
+  git('commit', '-q', '-am', 'h1');
+  git('checkout', '-q', '-b', 'h2', 'h0');
+  writeSrc('h2');
+  git('commit', '-q', '-am', 'h2');
+  git('merge', '--no-commit', 'h1');
+  r = resolveRun();
+  ok('7a botsende hash tijdens de merge: exit 0, weggelaten en genoemd', r.status === 0 && !('a' in readSrc().common)
+    && readSrc().common.c === 'c0' && r.out.includes('de common.a'), r.out);
+  writeSrc('h1');
+  git('add', '-A');
+  git('commit', '-q', '-m', 'merge h1, hash met de hand gekozen');
+  r = resolveRun();
+  ok('7b achteraf: de gekozen hash blijft staan', r.status === 0 && readSrc().common.a === 'h1'
+    && r.out.includes('keuze in de merge-commit blijft') && git('status', '--porcelain', '--', 'i18n').out.trim() === '', r.out);
+  // Een niet-gecommitte wijziging in ui-sources overschrijft het script niet stil (review #323).
+  writeSrc('h3');
+  r = resolveRun();
+  ok('7c achteraf met een open wijziging in ui-sources: weigeren, niets overschreven',
+    r.status === 1 && r.out.includes('i18n/ui-sources') && readSrc().common.a === 'h3', r.out);
+  git('checkout', '--', 'i18n');
 } catch (err) {
   diffs.push(`onverwachte fout: ${err instanceof Error ? err.message : String(err)}`);
 } finally {
