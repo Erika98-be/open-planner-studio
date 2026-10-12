@@ -84,6 +84,7 @@
   <!-- Project B: het project dat de lezer moet inlezen. -->
   <Project>
     <ActivityDefaultCalendarObjectId>10</ActivityDefaultCalendarObjectId>
+    <CurrentBaselineProjectObjectId>201</CurrentBaselineProjectObjectId>
     <DataDate>2026-04-20T08:00:00</DataDate>
     <Id>B-BOUW</Id>
     <Name><![CDATA[Project B & bouw]]></Name>
@@ -239,11 +240,13 @@
       <Type>Finish to Start</Type>
     </Relationship>
   </Project>
-  <!-- Een baseline van B: wordt nooit gelezen. -->
+  <!-- Twee baselines van B: nooit een eigen document; wel baselines van B. 201 is de actieve. -->
   <BaselineProject>
     <Id>B-BOUW-BL1</Id>
+    <LastBaselineUpdateDate>2026-04-01T09:00:00</LastBaselineUpdateDate>
     <Name>Baseline B</Name>
     <ObjectId>201</ObjectId>
+    <OriginalProjectObjectId>200</OriginalProjectObjectId>
     <Activity>
       <Id>B1000</Id>
       <Name>Grondwerk (baseline)</Name>
@@ -251,6 +254,20 @@
       <PlannedDuration>40</PlannedDuration>
       <PlannedStartDate>2026-04-06T08:00:00</PlannedStartDate>
       <PlannedFinishDate>2026-04-10T17:00:00</PlannedFinishDate>
+    </Activity>
+  </BaselineProject>
+  <BaselineProject>
+    <Id>B-BOUW-BL0</Id>
+    <Name>Eerste baseline B</Name>
+    <ObjectId>202</ObjectId>
+    <OriginalProjectObjectId>200</OriginalProjectObjectId>
+    <Activity>
+      <Id>B1000</Id>
+      <Name>Grondwerk (eerste baseline)</Name>
+      <ObjectId>2902</ObjectId>
+      <PlannedDuration>40</PlannedDuration>
+      <PlannedStartDate>2026-03-30T08:00:00</PlannedStartDate>
+      <PlannedFinishDate>2026-04-03T17:00:00</PlannedFinishDate>
     </Activity>
   </BaselineProject>
 </APIBusinessObjects>

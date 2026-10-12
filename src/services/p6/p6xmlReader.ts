@@ -12,7 +12,9 @@ import { normalizeImportedProgress, deriveImportedWorkRules, reconstructResource
 import { flattenOrder } from '@/utils/wbs';
 import { emptyMissingScheduleDates, importDateTime, isoDatePrefixOrToday, parseImportedInstant, resolveMissingScheduleDates } from '@/services/importDates';
 import { directChildText, toInt, toFloat } from '@/services/xmlDom';
-import type { ImportResult, P6XmlEmptyReason } from '@/services/importTypes';
+import type { ImportResult, OpenedImport, P6XmlEmptyReason, P6XmlImportReport } from '@/services/importTypes';
+import type { Baseline } from '@/types/baseline';
+import { baselineTasksFromSource } from '@/services/importBaselines';
 import type { CustomTaskType } from '@/types/taskType';
 import type { TaskTimephasedContour } from '@/types/task';
 import { CalendarEngine } from '@/engine/scheduler/CalendarEngine';
@@ -334,23 +336,13 @@ function scopedElements(scope: P6XmlScope, localName: string): Element[] {
   return results;
 }
 
-/**
- * Kies het project. Eén bestand kan meerdere `<Project>`-elementen dragen (bv. een reeks updates van
- * hetzelfde project). Net als MPXJ (`PrimaveraPMFileReader.read`: het eerste project) nemen we het
- * eerste, met één uitzondering: het eerste project MET activiteiten wint van lege projecten ervóór
- * (een leeg projectomhulsel openen geeft de gebruiker een leeg document zonder uitleg).
- */
-function selectP6Project(root: Element): P6XmlScope {
-  const projects = directChildrenByLocalName(root, 'Project');
-  const scopeOf = (project: Element | null): P6XmlScope => {
-    const objId = project ? getElementInt(project, 'ObjectId', -1) : -1;
-    return { root, project, projectObjectId: objId >= 0 ? objId : null };
-  };
-  for (const project of projects) {
-    const scope = scopeOf(project);
-    if (scopedElements(scope, 'Activity').length > 0) return scope;
-  }
-  return scopeOf(projects[0] ?? null);
+function scopeOf(root: Element, project: Element | null): P6XmlScope {
+  const objId = project ? getElementInt(project, 'ObjectId', -1) : -1;
+  return { root, project, projectObjectId: objId >= 0 ? objId : null };
+}
+
+function hasActivities(scope: P6XmlScope): boolean {
+  return scopedElements(scope, 'Activity').length > 0;
 }
 
 function parseP6XmlDocument(content: string): Element {
@@ -367,8 +359,9 @@ function parseP6XmlDocument(content: string): Element {
 /** Wat het lezen van één project oplevert naast het `ImportResult` zelf (voor het verslag). */
 interface P6XmlProjectRead {
   result: ImportResult;
-  /** Relaties waarvan een kant in een ander project ligt (`Predecessor/SuccessorProjectObjectId`). */
-  crossProjectRelations: number;
+  /** Relaties waarvan een kant in een ander project ligt (`Predecessor/SuccessorProjectObjectId`),
+   *  als sleutel (ObjectId, anders voorganger→opvolger): dezelfde relatie in twee projecten telt één keer. */
+  crossProjectRelations: Set<string>;
   /** Ingelezen activiteiten (zonder WBS-samenvattingen). */
   activitiesRead: number;
 }
@@ -391,24 +384,92 @@ function emptyReasonOf(root: Element): P6XmlEmptyReason {
 }
 
 /**
- * Lees één P6 XML-bestand als één project: het eerste project mét activiteiten (zie
- * `selectP6Project`). Voor tests en de eigen round-trip; de open-pijplijn gebruikt
- * `readP6XMLDocuments`, die elk project als eigen document opent.
+ * Lees een P6 XML-bestand zoals de open-pijplijn het opent — dezelfde lijn als XER
+ * (`xerMultiProject.ts`):
+ * - elk `<Project>` MET activiteiten wordt een eigen document; lege projecten worden overgeslagen.
+ *   Heeft geen enkel project activiteiten, dan opent het eerste (leeg, met melding);
+ * - elk `<BaselineProject>` wordt een baseline van zijn eigenaar (`OriginalProjectObjectId`); de
+ *   baseline waar het project naar wijst (`CurrentBaselineProjectObjectId`) wordt de actieve.
+ *   XER kent alleen die ene (`sum_base_proj_id`); PMXML noemt elke baseline expliciet;
+ * - een relatie tussen twee projecten wordt geen relatie (XER: nooit solverinvoer). Het verslag telt ze;
+ * - het actieve document is het document met de meeste activiteiten (XER: meeste bladtaken).
+ * Eén document ⇒ een gewoon `ImportResult`, meer ⇒ een `MultiDocumentImport`.
+ */
+export function readP6XMLDocuments(content: string): OpenedImport {
+  const results = readAllP6XmlProjects(content);
+  if (results.length === 1) return results[0];
+  let active = 0;
+  results.forEach((result, i) => {
+    if (leafCount(result) > leafCount(results[active])) active = i;
+  });
+  return { kind: 'multi-document', results, activeDocumentIndex: active };
+}
+
+/**
+ * Lees één P6 XML-bestand als één project: het eerste project mét activiteiten, met zijn baselines.
+ * Voor tests, de eigen round-trip en afnemers die één project verwachten; de open-pijplijn gebruikt
+ * `readP6XMLDocuments`.
  */
 export function readP6XML(content: string): ImportResult {
+  return readAllP6XmlProjects(content)[0];
+}
+
+function leafCount(result: ImportResult): number {
+  return result.tasks.filter(t => t.childIds.length === 0).length;
+}
+
+/** Alle documenten van het bestand, in bestandsvolgorde, elk met baselines en hetzelfde verslag. */
+function readAllP6XmlProjects(content: string): ImportResult[] {
   const root = parseP6XmlDocument(content);
-  const scope = selectP6Project(root);
-  const { result, crossProjectRelations, activitiesRead } = readP6XmlProject(scope);
-  const projectsSeen = directChildrenByLocalName(root, 'Project').length;
-  result.p6xmlReport = {
-    projectsSeen,
-    documentsOpened: 1,
-    emptyProjectsSkipped: 0,
-    baselinesMaterialized: 0,
-    crossProjectRelations,
-    ...(activitiesRead === 0 ? { emptyReason: emptyReasonOf(root) } : {}),
+  const projects = directChildrenByLocalName(root, 'Project');
+  const nonEmpty = projects.map(project => scopeOf(root, project)).filter(hasActivities);
+  const scopes = nonEmpty.length > 0 ? nonEmpty : [scopeOf(root, projects[0] ?? null)];
+  const reads = scopes.map(readP6XmlProject);
+
+  const baselineElements = directChildrenByLocalName(root, 'BaselineProject');
+  let baselinesMaterialized = 0;
+  reads.forEach((read, i) => {
+    const owner = scopes[i];
+    if (owner.projectObjectId == null || !owner.project) return;
+    const own = baselineElements.filter(el => getElementInt(el, 'OriginalProjectObjectId', -1) === owner.projectObjectId);
+    if (own.length === 0) return;
+    const baselines = own.map(el => p6BaselineFrom(root, el, owner.projectObjectId!, read.result));
+    const currentObjId = getElementInt(owner.project, 'CurrentBaselineProjectObjectId', -1);
+    read.result.baselines = [...(read.result.baselines ?? []), ...baselines];
+    read.result.activeBaselineId = baselines.find(b => b.sourceProjectId === String(currentObjId))?.id ?? null;
+    baselinesMaterialized += baselines.length;
+  });
+
+  const crossProjectRelations = new Set(reads.flatMap(read => [...read.crossProjectRelations]));
+  const anyActivity = reads.some(read => read.activitiesRead > 0);
+  const report: P6XmlImportReport = {
+    projectsSeen: projects.length,
+    documentsOpened: reads.length,
+    emptyProjectsSkipped: nonEmpty.length > 0 ? projects.length - nonEmpty.length : 0,
+    baselinesMaterialized,
+    crossProjectRelations: crossProjectRelations.size,
+    ...(anyActivity ? {} : { emptyReason: emptyReasonOf(root) }),
   };
-  return result;
+  for (const read of reads) read.result.p6xmlReport = { ...report };
+  return reads.map(read => read.result);
+}
+
+/** Eén `<BaselineProject>` → baseline van het eigenaarproject (gedeelde regel `baselineTasksFromSource`). */
+function p6BaselineFrom(root: Element, el: Element, ownerObjId: number, owner: ImportResult): Baseline {
+  const objId = getElementInt(el, 'ObjectId', -1);
+  const source = readP6XmlProject(scopeOf(root, el)).result;
+  const { tasks, projectEnd } = baselineTasksFromSource(owner.tasks, source.tasks);
+  const name = getElementText(el, 'Name');
+  const code = getElementText(el, 'Id');
+  return {
+    id: `p6xml-baseline:${ownerObjId}:${objId}`,
+    sourceProjectId: String(objId),
+    name: name && code && name !== code ? `${name} (${code})` : name || code || String(objId),
+    createdAt: getElementText(el, 'LastBaselineUpdateDate') || owner.project.modifiedAt || owner.project.createdAt,
+    tasks,
+    projectEnd,
+    projectDuration: 0,
+  };
 }
 
 function readP6XmlProject(scope: P6XmlScope): P6XmlProjectRead {
@@ -857,7 +918,7 @@ function readP6XmlProject(scope: P6XmlScope): P6XmlProjectRead {
 
   // Een relatie met een kant in een ANDER project wordt geen Sequence: zoals bij XER (externe
   // relaties zijn daar nooit solverinvoer). Hij telt mee in het verslag.
-  let crossProjectRelations = 0;
+  const crossProjectRelations = new Set<string>();
   const ownProjectObjId = scope.projectObjectId;
   for (const relEl of relElements) {
     const predObjId = getElementInt(relEl, 'PredecessorActivityObjectId', -1);
@@ -870,7 +931,9 @@ function readP6XmlProject(scope: P6XmlScope): P6XmlProjectRead {
       const predProj = getElementInt(relEl, 'PredecessorProjectObjectId', -1);
       const succProj = getElementInt(relEl, 'SuccessorProjectObjectId', -1);
       if (ownProjectObjId != null && ((predProj >= 0 && predProj !== ownProjectObjId)
-        || (succProj >= 0 && succProj !== ownProjectObjId))) crossProjectRelations++;
+        || (succProj >= 0 && succProj !== ownProjectObjId))) {
+        crossProjectRelations.add(getElementText(relEl, 'ObjectId') || `${predObjId}>${succObjId}`);
+      }
       continue;
     }
 

@@ -158,7 +158,11 @@
     "tutorialOfferUnavailable": "De tutorials konden nu niet worden geïnstalleerd of gestart. In Help › Tutorials kun je het later opnieuw proberen.",
     "p6xmlImportEmpty": "In dit bestand staan geen activiteiten die de app kan lezen.",
     "p6xmlImportEmptyNoObjectIds": "De activiteiten hebben geen ObjectId. Daardoor kan de app ze niet koppelen. Dit is geen gewone Primavera P6 XML.",
-    "p6xmlImportEmptyXerColumns": "Het bestand gebruikt XER-kolomnamen (zoals task_code) in plaats van P6 XML-velden. Open de .xer zelf."
+    "p6xmlImportEmptyXerColumns": "Het bestand gebruikt XER-kolomnamen (zoals task_code) in plaats van P6 XML-velden. Open de .xer zelf.",
+    "p6xmlImportOpened_one": "P6 XML-bestand geopend: {{count}} projectdocument.",
+    "p6xmlImportOpened_other": "P6 XML-bestand geopend: {{count}} projectdocumenten.",
+    "p6xmlImportCrossProjectRelations_one": "{{count}} relatie tussen projecten is niet als relatie overgenomen.",
+    "p6xmlImportCrossProjectRelations_other": "{{count}} relaties tussen projecten zijn niet als relatie overgenomen."
   },
   "scheduleErrors": {
     "cycle": "Kringverwijzing tussen taken: {{path}}",

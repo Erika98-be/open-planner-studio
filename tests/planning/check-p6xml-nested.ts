@@ -8,9 +8,9 @@
 // externe relatie. Alle aantallen met ===. Mutatiebewijs: met de oude top-level-zoekfunctie geeft
 // de fixture 0 taken en wordt deze check rood.
 import { readFileSync } from 'node:fs';
-import { readP6XML } from '@/services/p6/p6xmlReader';
+import { readP6XML, readP6XMLDocuments } from '@/services/p6/p6xmlReader';
 import { writeP6XML } from '@/services/p6/p6xmlWriter';
-import type { ImportResult } from '@/services/importTypes';
+import { isMultiDocumentImport, type ImportResult } from '@/services/importTypes';
 import { installDOMParser } from './xmldom-shim';
 
 declare const process: { exitCode?: number };
@@ -126,6 +126,39 @@ eq('9f geen soort ⇒ Physical', near(completionOf(`${started}${cols}`)), 0.4);
 eq('9g onbekende soort ⇒ Duration', near(completionOf(`${started}<PercentCompleteType>Foo</PercentCompleteType>${cols}`)), 0.7);
 eq('9h status Completed leidt', near(completionOf(`<Status>Completed</Status><ActualStartDate>2026-03-02T08:00:00</ActualStartDate><ActualFinishDate>2026-03-06T17:00:00</ActualFinishDate><PercentCompleteType>Physical</PercentCompleteType><PhysicalPercentComplete>0.1</PhysicalPercentComplete>`)), 1);
 eq('9i status Not Started leidt', near(completionOf(`<Status>Not Started</Status><PercentCompleteType>Physical</PercentCompleteType><PhysicalPercentComplete>0.5</PhysicalPercentComplete>`)), 0);
+
+// (10) Meerdere projecten zoals XER: elk project mét activiteiten wordt een document, lege worden
+//      overgeslagen, <BaselineProject> wordt baseline van zijn eigenaar, relaties tussen projecten
+//      worden geen Sequence, het document met de meeste activiteiten is actief.
+const opened = readP6XMLDocuments(xml);
+eq('10a meervoudige import', isMultiDocumentImport(opened), true);
+const docs = isMultiDocumentImport(opened) ? opened.results : [opened];
+eq('10b documenten (B en C, niet A, niet de baselines)', docs.map(d => d.project.name), ['Project B & bouw', 'Project C']);
+eq('10c actief document = B (meeste activiteiten)', isMultiDocumentImport(opened) ? opened.activeDocumentIndex : 0, 0);
+eq('10d C: activiteiten (2 binnen <Project> + 1 plat met ProjectObjectId 300)',
+  docs[1].tasks.filter(t => t.childIds.length === 0).map(t => t.wbsCode).sort(), ['C-PLAT', 'C1000', 'C1010']);
+eq('10e C: eigen relatie', docs[1].sequences.length, 1);
+eq('10f verslag', docs[0].p6xmlReport, {
+  projectsSeen: 3, documentsOpened: 2, emptyProjectsSkipped: 1, baselinesMaterialized: 2, crossProjectRelations: 1,
+});
+eq('10g zelfde verslag op elk document', JSON.stringify(docs[1].p6xmlReport), JSON.stringify(docs[0].p6xmlReport));
+const bls = docs[0].baselines ?? [];
+eq('10h B: twee baselines', bls.map(b => b.name), ['Baseline B (B-BOUW-BL1)', 'Eerste baseline B (B-BOUW-BL0)']);
+eq('10i B: actieve baseline = CurrentBaselineProjectObjectId 201', docs[0].activeBaselineId, bls[0]?.id);
+const blTask = bls[0]?.tasks.find(t => t.sourceTaskCode === 'B1000');
+eq('10j baseline gekoppeld aan de B-taak met dezelfde code', blTask?.taskId, docs[0].tasks.find(t => t.wbsCode === 'B1000')?.id);
+eq('10k baselinedatum B1000', blTask?.start.slice(0, 10), '2026-04-06');
+eq('10l baseline-aanmaakdatum uit LastBaselineUpdateDate', bls[0]?.createdAt, '2026-04-01T09:00:00');
+eq('10m C: geen baselines', docs[1].baselines, undefined);
+eq('10n readP6XML = het eerste document (B), mét baselines', [r.project.name, (r.baselines ?? []).length], ['Project B & bouw', 2]);
+// Actief document = meeste activiteiten, ook als dat niet het eerste is (XER-regel).
+const act = (id: number) => `<Activity><ObjectId>${id}</ObjectId><Id>A${id}</Id><Name>A${id}</Name><PlannedDuration>8</PlannedDuration>
+  <PlannedStartDate>2026-03-02T08:00:00</PlannedStartDate><PlannedFinishDate>2026-03-02T17:00:00</PlannedFinishDate></Activity>`;
+const twoProjects = readP6XMLDocuments(`<?xml version="1.0"?><APIBusinessObjects>
+  <Project><ObjectId>1</ObjectId><Name>Klein</Name>${act(11)}</Project>
+  <Project><ObjectId>2</ObjectId><Name>Groot</Name>${act(21)}${act(22)}${act(23)}</Project></APIBusinessObjects>`);
+eq('10o actief = het grootste project, niet het eerste',
+  isMultiDocumentImport(twoProjects) ? twoProjects.results[twoProjects.activeDocumentIndex].project.name : 'geen meervoud', 'Groot');
 
 if (fails.length > 0) {
   for (const f of fails) console.log(`XX  p6xml-nested: ${f}`);

@@ -229,7 +229,8 @@ export function xerImportNotice(
 /**
  * De ene openingsmelding van een verse P6 XML-import, uit het verslag dat de lezer bestandsbreed op
  * elk resultaat hangt (`ImportResult.p6xmlReport`). Bestand zonder leesbare activiteit ⇒ een
- * foutmelding met de reden, als die bekend is. Een gewoon bestand ⇒ geen melding.
+ * foutmelding met de reden, als die bekend is. Meerdere projecten, baselines of relaties tussen
+ * projecten ⇒ één verslag (zoals `xerImportNotice`). Een gewoon bestand met één project ⇒ geen melding.
  */
 export function p6xmlImportNotice(results: readonly ImportResult[]): NotifyInput | undefined {
   const report = results.find(result => result.p6xmlReport)?.p6xmlReport;
@@ -245,7 +246,25 @@ export function p6xmlImportNotice(results: readonly ImportResult[]): NotifyInput
       helpArticleId: P6XML_IMPORT_HELP_ARTICLE_ID,
     };
   }
-  return undefined;
+  // Meerdere projecten, baselines of relaties tussen projecten: één verslag, zoals bij XER (de
+  // telregels zijn formaatneutraal verwoord en worden hergebruikt).
+  if (report.projectsSeen <= 1 && report.baselinesMaterialized === 0 && report.crossProjectRelations === 0) return undefined;
+  const detailLines: NotificationDetailLine[] = [
+    { messageKey: 'notifications.xerImportProjectsSeen', params: { count: report.projectsSeen } },
+  ];
+  const addCount = (count: number, messageKey: NotificationDetailLine['messageKey']) => {
+    if (count > 0) detailLines.push({ messageKey, params: { count } });
+  };
+  addCount(report.emptyProjectsSkipped, 'notifications.xerImportEmptyProjectsSkipped');
+  addCount(report.baselinesMaterialized, 'notifications.xerImportBaselinesMaterialized');
+  addCount(report.crossProjectRelations, 'notifications.p6xmlImportCrossProjectRelations');
+  return {
+    severity: 'info',
+    messageKey: 'notifications.p6xmlImportOpened',
+    params: { count: report.documentsOpened },
+    detailLines,
+    helpArticleId: P6XML_IMPORT_HELP_ARTICLE_ID,
+  };
 }
 
 // `ExportFormat` woont in de formatRegistry; hier her-exporteren voor bestaande importeurs

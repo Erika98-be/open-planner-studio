@@ -4,20 +4,24 @@
 // (`OPS_MPP_CRAWL`). De corpusloze CI-poort voor hetzelfde gedrag is `check-p6xml-nested.ts`.
 //
 // Pins per bestandsINHOUD (SHA-256, eerste 16 tekens; geen bestandsnamen in de repo). Elke pin is
-// het resultaat van `readP6XML` ná de fix "lezer leest echte P6 XML" (2026-10-12); daarvoor gaf
-// elk bestand 0 taken. Twee bestanden zijn geen schema-PMXML en blijven bewust 0 (zie `note`).
+// het resultaat van `readP6XMLDocuments` (de open-pijplijn: één document per project mét
+// activiteiten, baselines gekoppeld) ná de fix "lezer leest echte P6 XML" (2026-10-12); daarvoor gaf
+// elk bestand 0 taken. Twee bestanden zijn geen schema-PMXML en blijven bewust 0 (zie `note`); hun
+// `emptyReason` voedt de openingsmelding.
 // Rapport met bestandsnamen (alleen lokaal): `OPS_P6XML_REPORT=1`.
 import { createHash } from 'node:crypto';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { readP6XML } from '@/services/p6/p6xmlReader';
+import { readP6XMLDocuments } from '@/services/p6/p6xmlReader';
+import { isMultiDocumentImport } from '@/services/importTypes';
 import { installDOMParser } from './xmldom-shim';
 
 declare const process: { env: Record<string, string | undefined>; exitCode?: number };
 installDOMParser();
 
-interface Pin {
-  /** Ingelezen taken (WBS-samenvattingen + activiteiten van het gekozen project). */
+/** Eén geopend document (één P6-project). */
+interface DocPin {
+  /** Ingelezen taken (WBS-samenvattingen + activiteiten). */
   tasks: number;
   /** Bladtaken: taken zonder kinderen (activiteiten plus eventuele lege WBS-elementen). */
   leaves: number;
@@ -25,24 +29,108 @@ interface Pin {
   resources: number;
   assignments: number;
   libraryCalendars: number;
+  baselines: number;
+}
+
+interface Pin {
+  /** Per geopend document, in bestandsvolgorde. */
+  docs: DocPin[];
+  /** Index van het actieve document. */
+  active: number;
+  /** Bestandsverslag (`p6xmlReport`) zonder `documentsOpened` (= docs.length). */
+  projectsSeen: number;
+  emptyProjectsSkipped: number;
+  crossProjectRelations: number;
+  emptyReason?: string;
   note?: string;
 }
 
 const PINS: Readonly<Record<string, Pin>> = {
-  // Meerdere projecten ⇒ alleen het eerste project mét activiteiten (`selectP6Project`); baselines
-  // (`<BaselineProject>`) worden nooit gelezen. `<Activity>` in het hele bestand staat in het rapport.
-  '19d272bfb4ba6d2a': { tasks: 2, leaves: 2, sequences: 0, resources: 10, assignments: 4, libraryCalendars: 4, note: '1 project + 2 baselines (6 Activity in bestand)' },
-  '2484b7e46d5849db': { tasks: 1, leaves: 1, sequences: 0, resources: 3, assignments: 0, libraryCalendars: 0, note: '2 projecten; de enige relatie zit in het tweede' },
-  '8159ad929ead0c47': { tasks: 12, leaves: 5, sequences: 0, resources: 0, assignments: 0, libraryCalendars: 0, note: '2 projecten van elk 5 activiteiten' },
-  'df16d97e190289ce': { tasks: 2, leaves: 2, sequences: 0, resources: 0, assignments: 0, libraryCalendars: 2 },
-  '2ea223e8fca95b01': { tasks: 42, leaves: 35, sequences: 33, resources: 9, assignments: 24, libraryCalendars: 2, note: '33 activiteiten + 2 lege WBS' },
-  'b616f936fd6edda9': { tasks: 0, leaves: 0, sequences: 0, resources: 0, assignments: 0, libraryCalendars: 0, note: 'geen schema-PMXML: geen ObjectId, relaties via ActivityId' },
-  '2dc3c997fd310ea7': { tasks: 0, leaves: 0, sequences: 0, resources: 0, assignments: 0, libraryCalendars: 0, note: 'geen PMXML: XER-kolomnamen in XML' },
-  '946291e38feb2b03': { tasks: 18, leaves: 15, sequences: 0, resources: 7, assignments: 0, libraryCalendars: 3, note: '15 projecten + 12 baselines; eerste met activiteiten heeft geen relaties' },
-  '598477da2157b02a': { tasks: 13, leaves: 10, sequences: 5, resources: 0, assignments: 0, libraryCalendars: 0 },
-  '7a1a2297ba53f29e': { tasks: 4, leaves: 4, sequences: 0, resources: 0, assignments: 0, libraryCalendars: 2 },
-  'bce21aa2b7c04995': { tasks: 2, leaves: 2, sequences: 1, resources: 0, assignments: 0, libraryCalendars: 2 },
-  'bcd339e71d0d866e': { tasks: 2, leaves: 2, sequences: 1, resources: 0, assignments: 0, libraryCalendars: 2 },
+  '19d272bfb4ba6d2a': {
+    docs: [
+      { tasks: 2, leaves: 2, sequences: 0, resources: 10, assignments: 4, libraryCalendars: 4, baselines: 2 },
+    ],
+    active: 0, projectsSeen: 1, emptyProjectsSkipped: 0, crossProjectRelations: 0, note: '1 project + 2 baselines (beide gekoppeld)',
+  },
+  '2484b7e46d5849db': {
+    docs: [
+      { tasks: 1, leaves: 1, sequences: 0, resources: 3, assignments: 0, libraryCalendars: 0, baselines: 0 },
+      { tasks: 2, leaves: 2, sequences: 0, resources: 3, assignments: 0, libraryCalendars: 1, baselines: 0 },
+    ],
+    active: 1, projectsSeen: 2, emptyProjectsSkipped: 0, crossProjectRelations: 1, note: '2 projecten; de relatie tussen de projecten wordt geen relatie',
+  },
+  '2dc3c997fd310ea7': {
+    docs: [
+      { tasks: 0, leaves: 0, sequences: 0, resources: 0, assignments: 0, libraryCalendars: 0, baselines: 0 },
+    ],
+    active: 0, projectsSeen: 1, emptyProjectsSkipped: 0, crossProjectRelations: 0, emptyReason: 'xer-columns', note: 'geen PMXML: XER-kolomnamen in XML',
+  },
+  '2ea223e8fca95b01': {
+    docs: [
+      { tasks: 42, leaves: 35, sequences: 33, resources: 9, assignments: 24, libraryCalendars: 2, baselines: 0 },
+    ],
+    active: 0, projectsSeen: 1, emptyProjectsSkipped: 0, crossProjectRelations: 0, note: '33 activiteiten + 2 lege WBS',
+  },
+  '598477da2157b02a': {
+    docs: [
+      { tasks: 13, leaves: 10, sequences: 5, resources: 0, assignments: 0, libraryCalendars: 0, baselines: 0 },
+    ],
+    active: 0, projectsSeen: 1, emptyProjectsSkipped: 0, crossProjectRelations: 0,
+  },
+  '7a1a2297ba53f29e': {
+    docs: [
+      { tasks: 4, leaves: 4, sequences: 0, resources: 0, assignments: 0, libraryCalendars: 2, baselines: 0 },
+    ],
+    active: 0, projectsSeen: 1, emptyProjectsSkipped: 0, crossProjectRelations: 0,
+  },
+  '8159ad929ead0c47': {
+    docs: [
+      { tasks: 12, leaves: 5, sequences: 0, resources: 0, assignments: 0, libraryCalendars: 0, baselines: 0 },
+      { tasks: 12, leaves: 5, sequences: 0, resources: 0, assignments: 0, libraryCalendars: 0, baselines: 0 },
+    ],
+    active: 0, projectsSeen: 2, emptyProjectsSkipped: 0, crossProjectRelations: 0, note: '2 projecten van elk 5 activiteiten',
+  },
+  '946291e38feb2b03': {
+    docs: [
+      { tasks: 18, leaves: 15, sequences: 0, resources: 7, assignments: 0, libraryCalendars: 3, baselines: 0 },
+      { tasks: 17, leaves: 14, sequences: 15, resources: 7, assignments: 0, libraryCalendars: 3, baselines: 0 },
+      { tasks: 17, leaves: 14, sequences: 15, resources: 7, assignments: 0, libraryCalendars: 3, baselines: 0 },
+      { tasks: 17, leaves: 14, sequences: 15, resources: 7, assignments: 0, libraryCalendars: 3, baselines: 2 },
+      { tasks: 17, leaves: 14, sequences: 15, resources: 7, assignments: 19, libraryCalendars: 3, baselines: 1 },
+      { tasks: 17, leaves: 14, sequences: 15, resources: 7, assignments: 0, libraryCalendars: 3, baselines: 1 },
+      { tasks: 17, leaves: 14, sequences: 15, resources: 7, assignments: 0, libraryCalendars: 3, baselines: 2 },
+      { tasks: 17, leaves: 14, sequences: 15, resources: 7, assignments: 0, libraryCalendars: 3, baselines: 1 },
+      { tasks: 17, leaves: 14, sequences: 15, resources: 7, assignments: 0, libraryCalendars: 3, baselines: 2 },
+      { tasks: 17, leaves: 14, sequences: 15, resources: 7, assignments: 20, libraryCalendars: 3, baselines: 1 },
+      { tasks: 17, leaves: 14, sequences: 15, resources: 7, assignments: 20, libraryCalendars: 3, baselines: 1 },
+      { tasks: 17, leaves: 14, sequences: 15, resources: 7, assignments: 20, libraryCalendars: 3, baselines: 1 },
+    ],
+    active: 0, projectsSeen: 15, emptyProjectsSkipped: 3, crossProjectRelations: 0, note: '15 projecten (3 leeg) + 12 baselines',
+  },
+  'b616f936fd6edda9': {
+    docs: [
+      { tasks: 0, leaves: 0, sequences: 0, resources: 0, assignments: 0, libraryCalendars: 0, baselines: 0 },
+    ],
+    active: 0, projectsSeen: 1, emptyProjectsSkipped: 0, crossProjectRelations: 0, emptyReason: 'no-object-ids', note: 'geen schema-PMXML: geen ObjectId, relaties via ActivityId',
+  },
+  'bcd339e71d0d866e': {
+    docs: [
+      { tasks: 2, leaves: 2, sequences: 1, resources: 0, assignments: 0, libraryCalendars: 2, baselines: 0 },
+    ],
+    active: 0, projectsSeen: 1, emptyProjectsSkipped: 0, crossProjectRelations: 0,
+  },
+  'bce21aa2b7c04995': {
+    docs: [
+      { tasks: 2, leaves: 2, sequences: 1, resources: 0, assignments: 0, libraryCalendars: 2, baselines: 0 },
+    ],
+    active: 0, projectsSeen: 1, emptyProjectsSkipped: 0, crossProjectRelations: 0,
+  },
+  'df16d97e190289ce': {
+    docs: [
+      { tasks: 2, leaves: 2, sequences: 0, resources: 0, assignments: 0, libraryCalendars: 2, baselines: 0 },
+    ],
+    active: 0, projectsSeen: 1, emptyProjectsSkipped: 0, crossProjectRelations: 0,
+  },
 };
 
 const crawl = process.env.OPS_P6XML_CRAWL ?? process.env.OPS_MPP_CRAWL ?? '/home/nozzit/open-aec/voor claude/testdata-crawl';
@@ -63,14 +151,24 @@ if (dirs.length === 0) {
       seen.add(key);
       let got: Pin;
       try {
-        const r = readP6XML(xml);
+        const opened = readP6XMLDocuments(xml);
+        const docs = isMultiDocumentImport(opened) ? opened.results : [opened];
+        const fileReport = docs[0].p6xmlReport;
         got = {
-          tasks: r.tasks.length,
-          leaves: r.tasks.filter(t => t.childIds.length === 0).length,
-          sequences: r.sequences.length,
-          resources: r.resources.length,
-          assignments: r.assignments.length,
-          libraryCalendars: (r.resourceCalendars ?? []).length,
+          docs: docs.map(r => ({
+            tasks: r.tasks.length,
+            leaves: r.tasks.filter(t => t.childIds.length === 0).length,
+            sequences: r.sequences.length,
+            resources: r.resources.length,
+            assignments: r.assignments.length,
+            libraryCalendars: (r.resourceCalendars ?? []).length,
+            baselines: (r.baselines ?? []).length,
+          })),
+          active: isMultiDocumentImport(opened) ? opened.activeDocumentIndex : 0,
+          projectsSeen: fileReport?.projectsSeen ?? -1,
+          emptyProjectsSkipped: fileReport?.emptyProjectsSkipped ?? -1,
+          crossProjectRelations: fileReport?.crossProjectRelations ?? -1,
+          ...(fileReport?.emptyReason ? { emptyReason: fileReport.emptyReason } : {}),
         };
       } catch (e) {
         fails.push(`${key}: uitzondering ${(e as Error).message}`);
@@ -78,11 +176,13 @@ if (dirs.length === 0) {
       }
       if (report) {
         const count = (tag: string) => (xml.match(new RegExp(`<${tag}>`, 'g')) ?? []).length;
-        console.log(`.   ${key}  ${join(dir, name).slice(crawl.length + 1)}  XML: Activity ${count('Activity')}, Relationship ${count('Relationship')}, Project ${count('Project')}  ⇒  ${JSON.stringify(got)}`);
+        console.log(`.   ${key}  ${join(dir, name).slice(crawl.length + 1)}  XML: Activity ${count('Activity')}, Relationship ${count('Relationship')}, Project ${count('Project')}, BaselineProject ${count('BaselineProject')}`);
+        console.log(`  '${key}': ${JSON.stringify(got)},`);
       }
       const pin = PINS[key];
       if (!pin) { fails.push(`${key}: geen pin (nieuw corpusbestand?) — gemeten ${JSON.stringify(got)}`); continue; }
       const { note: _note, ...want } = pin;
+      if (want.emptyReason === undefined) delete want.emptyReason;
       if (JSON.stringify(got) !== JSON.stringify(want)) fails.push(`${key}: verwacht ${JSON.stringify(want)}, kreeg ${JSON.stringify(got)}`);
     }
   }

@@ -77,10 +77,30 @@ async function main(): Promise<void> {
   eq('4b geen melding', noticeOf(parsed), undefined);
   eq('4c geen p6xml-melding in de store', S().ui.notifications.some(n => n.messageKey.startsWith('notifications.p6xml')), false);
 
+  // (6) Meerdere projecten: één tabblad per project mét activiteiten, actief = meeste activiteiten,
+  //     één verslag (geen melding per document).
+  const fixture = readFileSync(new URL('./fixtures/p6xml-genest-meerdere-projecten.xml', import.meta.url), 'utf8');
+  useAppStore.setState(st => { st.ui.notifications = []; });
+  S().newProject();
+  const docsBefore = S().documents.length;
+  const multi = await parseOpenedFile({ name: 'meerdere.xml', text: fixture });
+  const outcome = S().applyOpenedImport(multi, { filePath: null, recompute: true, fit: false, hourDataNotice: false, linkedOpen: true });
+  eq('6a twee documenten geopend (leeg tabblad hergebruikt)', [outcome.documentIds.length, S().documents.length - docsBefore], [2, 1]);
+  eq('6b actief document = B', S().project.name, 'Project B & bouw');
+  eq('6c B: actieve baseline', S().activeBaselineId?.startsWith('p6xml-baseline:200:201'), true);
+  const p6Notices = S().ui.notifications.filter(n => n.messageKey.startsWith('notifications.p6xml'));
+  eq('6d één verslag', p6Notices.map(n => [n.severity, n.messageKey, n.params]), [['info', 'notifications.p6xmlImportOpened', { count: 2 }]]);
+  eq('6e detailregels', p6Notices[0]?.detailLines?.map(l => [l.messageKey, l.params?.count]), [
+    ['notifications.xerImportProjectsSeen', 3],
+    ['notifications.xerImportEmptyProjectsSkipped', 1],
+    ['notifications.xerImportBaselinesMaterialized', 2],
+    ['notifications.p6xmlImportCrossProjectRelations', 1],
+  ]);
+
   // (5) De sleutels bestaan in nl en en (geen lege toast).
   for (const loc of ['nl', 'en']) {
     const json = JSON.parse(readFileSync(new URL(`../../src/i18n/locales/${loc}/common.json`, import.meta.url), 'utf8')) as { notifications: Record<string, string> };
-    for (const key of ['p6xmlImportEmpty', 'p6xmlImportEmptyNoObjectIds', 'p6xmlImportEmptyXerColumns']) {
+    for (const key of ['p6xmlImportEmpty', 'p6xmlImportEmptyNoObjectIds', 'p6xmlImportEmptyXerColumns', 'p6xmlImportOpened_one', 'p6xmlImportOpened_other', 'p6xmlImportCrossProjectRelations_one', 'p6xmlImportCrossProjectRelations_other']) {
       eq(`5 ${loc}: ${key}`, typeof json.notifications[key], 'string');
     }
   }

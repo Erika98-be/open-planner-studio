@@ -271,6 +271,8 @@ export type NotificationMessageKey =
   | 'notifications.p6xmlImportEmpty'
   | 'notifications.p6xmlImportEmptyNoObjectIds'
   | 'notifications.p6xmlImportEmptyXerColumns'
+  | 'notifications.p6xmlImportOpened'
+  | 'notifications.p6xmlImportCrossProjectRelations'
   // Dezelfde twee regels, formaatneutraal,
   // voor P6 XML/MSPDI/.mpp/CSV/IFC — één melding per geopend bestand (`applyOpenedImport`).
   | 'notifications.importDatesAsRecorded'

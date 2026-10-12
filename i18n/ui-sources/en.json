@@ -117,6 +117,8 @@
     "notifications.p6xmlImportEmpty": "673ae79fa93c2e64",
     "notifications.p6xmlImportEmptyNoObjectIds": "a814220675ae3bf7",
     "notifications.p6xmlImportEmptyXerColumns": "b600ebb77f86c6b0",
+    "notifications.p6xmlImportOpened": "befb50170f071af0",
+    "notifications.p6xmlImportCrossProjectRelations": "f5242e453aa163a0",
     "scheduleErrors.cycle": "add6dec1772d91f1",
     "scheduleErrors.noWorkingDays": "f99738f50f5271ea",
     "scheduleErrors.invalidDayDuration": "9570c6555e03a9f4",
