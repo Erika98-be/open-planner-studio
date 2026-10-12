@@ -70,7 +70,8 @@ export type ActiveDocument = Pick<AppState,
   'project' | 'tasks' | 'sequences' | 'calendars' | 'baselines' | 'activeBaselineId' | 'activityCodeTypes' | 'customFieldDefs' | 'ifcGlobalIds'>;
 
 export function retainActiveDocument(ext: ExtImportResult, loaded: ImportResult, active: ActiveDocument): ImportResult {
-  if (loaded.project.id !== active.project.id) return cleanDanglingReferences(loaded);
+  // Ander id: een nieuw project; het resultaat gaat ongewijzigd door, precies zoals vóór deze stap.
+  if (loaded.project.id !== active.project.id) return loaded;
 
   // Reken-opties: die van het document, met de publieke sleutels vervangen door die van de extensie.
   const options: Record<string, unknown> = { ...active.project.schedulingOptions };
@@ -110,8 +111,10 @@ export function retainActiveDocument(ext: ExtImportResult, loaded: ImportResult,
   });
 }
 
-/** Een resource of taak met een `calendarId` naar een kalender die er na de load niet is, valt terug
- *  op de projectkalender (zoals `removeCalendar`). De solver deed dat al (`resolveCalendar`). */
+/** Alleen bij hetzelfde id: een resource of taak met een `calendarId` naar een kalender die niet in
+ *  het geladen resultaat staat (de extensie wees naar een onbekend id), krijgt geen `calendarId` meer
+ *  en rekent dus op de projectkalender. De berekening verandert daardoor niet: de solver viel bij een
+ *  onbekend id al terug op de projectkalender (`resolveCalendar`). */
 export function cleanDanglingReferences(loaded: ImportResult): ImportResult {
   const calendarIds = new Set([loaded.calendar.id, ...(loaded.resourceCalendars ?? []).map((c) => c.id)]);
   const known = (id: string | undefined) => !id || calendarIds.has(id);

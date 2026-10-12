@@ -1215,7 +1215,7 @@ for (const [naam, ext, bron, sleutels] of [
 // ── 9. N3-fixronde: documentdata die `ExtImportResult` niet draagt, blijft bij hetzelfde id ──
 // `retainActiveDocument` (src/extensions/retainActiveDocument.ts). Mutatiebewijs per check staat in
 // de PR (#329): elke regel in de return van `retainActiveDocument` weghalen kleurt de bijbehorende
-// N3D-check rood; `cleanDanglingReferences` laten teruggeven wat hij krijgt kleurt N3D-08 en N3D-10.
+// N3D-check rood; `cleanDanglingReferences` laten teruggeven wat hij krijgt kleurt N3D-10.
 {
   const api = createExtensionApi('n3-loadproject-document', [], undefined, appStoreContext, {
     app: appStoreContext,
@@ -1315,9 +1315,9 @@ for (const [naam, ext, bron, sleutels] of [
     ander.baselines.length, ander.activeBaselineId, ander.calendars.some((c) => c.id === 'cal-ploeg'),
     ander.activityCodeTypes.length, ander.customFieldDefs.length, ander.ifcGlobalIds,
   ], [0, null, false, 0, 0, null]);
-  eq('N3D-08 ander id ⇒ verwijzingen naar de verdwenen ploegkalender vallen terug op de projectkalender', [
+  eq('N3D-08 ander id ⇒ geen opschoning: de verwijzingen blijven zoals op main', [
     ander.resources[0]?.calendarId, ander.tasks.find((t) => t.id === anderTaakId)?.calendarId,
-  ], [undefined, undefined]);
+  ], ['cal-ploeg', 'cal-ploeg']);
 }
 
 // ── 10. Review #329 punt 1: een P6-project rekent na een ONGEWIJZIGDE lees-wijzig-laad hetzelfde ──
