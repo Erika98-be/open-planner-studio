@@ -174,6 +174,37 @@ eq('12a Not Started: geen voortgang en geen actuals', [fTask('N')?.status, fTask
   ['NOT_STARTED', 0, undefined, undefined]);
 eq('12b In Progress houdt zijn werkelijke start', [fTask('S')?.status, fTask('S')?.time.actualStart], ['STARTED', '2026-03-02T08:00']);
 
+// (13) Randen van het meerdere-projecten-pad (testgaten uit de review van #330).
+{
+  const rel = `<Relationship><Lag>0</Lag><ObjectId>77</ObjectId><PredecessorActivityObjectId>11</PredecessorActivityObjectId><PredecessorProjectObjectId>1</PredecessorProjectObjectId>
+    <SuccessorActivityObjectId>21</SuccessorActivityObjectId><SuccessorProjectObjectId>2</SuccessorProjectObjectId><Type>Finish to Start</Type></Relationship>`;
+  // 13a: een gelijk aantal activiteiten ⇒ het EERSTE project is actief (XER: de eerste met de meeste).
+  const tie = readP6XMLDocuments(`<?xml version="1.0"?><APIBusinessObjects>
+    <Project><Id>P1</Id><ObjectId>1</ObjectId><Name>Eerste</Name>${act(11)}${rel}</Project>
+    <Project><Id>P2</Id><ObjectId>2</ObjectId><Name>Tweede</Name>${act(21)}${rel}</Project></APIBusinessObjects>`);
+  eq('13a gelijkspel ⇒ het eerste project actief', isMultiDocumentImport(tie) ? tie.activeDocumentIndex : -1, 0);
+  // 13b: dezelfde externe relatie staat onder BEIDE projecten ⇒ één keer geteld.
+  eq('13b externe relatie onder beide projecten telt één keer',
+    isMultiDocumentImport(tie) ? tie.results[0].p6xmlReport?.crossProjectRelations : -1, 1);
+}
+{
+  // 13c: baseline-koppeling op code alleen bij een UNIEKE code in het eigenaarproject. Twee eigenaartaken
+  //      met code DUP ⇒ de baselinetaak met code DUP koppelt aan geen van beide (blijft bij haar eigen id).
+  const owner = readP6XML(`<?xml version="1.0"?><APIBusinessObjects>
+    <Project><Id>E</Id><ObjectId>1</ObjectId><Name>E</Name><CurrentBaselineProjectObjectId>9</CurrentBaselineProjectObjectId>
+      <Activity><Id>DUP</Id><Name>a</Name><ObjectId>11</ObjectId><PlannedDuration>8</PlannedDuration><PlannedStartDate>2026-03-02T08:00:00</PlannedStartDate><PlannedFinishDate>2026-03-02T17:00:00</PlannedFinishDate></Activity>
+      <Activity><Id>DUP</Id><Name>b</Name><ObjectId>12</ObjectId><PlannedDuration>8</PlannedDuration><PlannedStartDate>2026-03-03T08:00:00</PlannedStartDate><PlannedFinishDate>2026-03-03T17:00:00</PlannedFinishDate></Activity>
+      <Activity><Id>UNI</Id><Name>c</Name><ObjectId>13</ObjectId><PlannedDuration>8</PlannedDuration><PlannedStartDate>2026-03-04T08:00:00</PlannedStartDate><PlannedFinishDate>2026-03-04T17:00:00</PlannedFinishDate></Activity>
+    </Project>
+    <BaselineProject><Id>E-BL</Id><ObjectId>9</ObjectId><Name>E</Name><OriginalProjectObjectId>1</OriginalProjectObjectId>
+      <Activity><Id>DUP</Id><Name>a</Name><ObjectId>91</ObjectId><PlannedDuration>8</PlannedDuration><PlannedStartDate>2026-03-02T08:00:00</PlannedStartDate><PlannedFinishDate>2026-03-02T17:00:00</PlannedFinishDate></Activity>
+      <Activity><Id>UNI</Id><Name>c</Name><ObjectId>93</ObjectId><PlannedDuration>8</PlannedDuration><PlannedStartDate>2026-03-04T08:00:00</PlannedStartDate><PlannedFinishDate>2026-03-04T17:00:00</PlannedFinishDate></Activity>
+    </BaselineProject></APIBusinessObjects>`);
+  const ownerIds = new Set(owner.tasks.map(t => t.id));
+  const blTasks = owner.baselines?.[0]?.tasks ?? [];
+  eq('13c dubbele code koppelt niet, unieke code wel', blTasks.map(b => [b.sourceTaskCode, ownerIds.has(b.taskId)]), [['DUP', false], ['UNI', true]]);
+}
+
 // (11) Documentnaam zoals XER: "Naam (Id)". OZB-14 heeft twaalf updates met dezelfde naam; de tabbladen
 //      moeten onderscheidbaar zijn. De eigen export zet de code terug in <Id>, heropenen geeft dezelfde naam.
 const sameName = readP6XMLDocuments(`<?xml version="1.0"?><APIBusinessObjects>

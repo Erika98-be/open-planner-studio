@@ -97,6 +97,15 @@ async function main(): Promise<void> {
     ['notifications.p6xmlImportCrossProjectRelations', 1],
   ]);
 
+  // (7) Eén project mét baseline: toch een verslag (niet alleen bij meerdere projecten).
+  const withBaseline = wrap(`<Project><Id>E</Id><ObjectId>1</ObjectId><Name>Een</Name><CurrentBaselineProjectObjectId>9</CurrentBaselineProjectObjectId>
+    <Activity><Id>A1</Id><Name>a</Name><ObjectId>11</ObjectId><PlannedDuration>8</PlannedDuration><PlannedStartDate>2026-03-02T08:00:00</PlannedStartDate><PlannedFinishDate>2026-03-02T17:00:00</PlannedFinishDate></Activity></Project>
+    <BaselineProject><Id>E-BL</Id><ObjectId>9</ObjectId><Name>Een</Name><OriginalProjectObjectId>1</OriginalProjectObjectId>
+    <Activity><Id>A1</Id><Name>a</Name><ObjectId>91</ObjectId><PlannedDuration>8</PlannedDuration><PlannedStartDate>2026-03-02T08:00:00</PlannedStartDate><PlannedFinishDate>2026-03-02T17:00:00</PlannedFinishDate></Activity></BaselineProject>`);
+  parsed = await open('baseline.xml', withBaseline);
+  eq('7 één project + baseline ⇒ verslag met baselineregel', [noticeOf(parsed)?.messageKey, noticeOf(parsed)?.detailLines?.map(l => l.messageKey)],
+    ['notifications.p6xmlImportOpened', ['notifications.xerImportProjectsSeen', 'notifications.xerImportBaselinesMaterialized']]);
+
   // (5) De sleutels bestaan in nl en en (geen lege toast).
   for (const loc of ['nl', 'en']) {
     const json = JSON.parse(readFileSync(new URL(`../../src/i18n/locales/${loc}/common.json`, import.meta.url), 'utf8')) as { notifications: Record<string, string> };
