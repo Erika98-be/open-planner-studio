@@ -109,6 +109,11 @@ Node 22 (see CI). Rust stable only for the `tauri:*` commands.
   Detail: `docs/platformbouw.md`.
 - **Rust is thin.** Exactly three commands (`install_kind`, `mcp_bridge_start`, `mcp_bridge_stop`); every new
   command is public surface. File I/O: extend `src/services/fileAccess/`, not a Rust command.
+- **Storage via the site.** `FileRef` has three kinds: `path` (Tauri), `handle` (Chromium web) and `site`. When the
+  page that hosts the tool sets `window.openaecHost` (contract in `src/services/fileAccess/siteHost.ts`), Open, Save,
+  Save As, Recent, AutoSave and crash recovery also work against the site; without a host nothing changes, and the
+  desktop app never has one. A document carries `siteFileId` next to `filePath`/`fileHandle`; derive the save
+  target only via `saveTargetRef`. Dev: `?fakeSite=1` installs a fake site. Detail: `docs/platformbouw.md`.
 - **IFC 4.3 is the native format**; there is no JSON project format. New domain data must round-trip through
   `ifcWriter`/`ifcReader`, or it is gone after saving. CSV/MSPDI/P6/`.mpp`/`.xer` are adapters. Route:
   `docs/ifc-round-trip.md`.
@@ -235,7 +240,7 @@ scheduling convention) and `docs/ifc-round-trip.md`. Self-test: `docs/self-test-
 | CPM solver / calendar engine | `src/engine/scheduler/`, `src/engine/calendar/` |
 | Canvas renderer | `src/engine/renderer/` |
 | IFC read/write | `src/services/ifc/ifcReader`, `ifcWriter` |
-| File I/O (Tauri↔web) | `src/services/fileAccess/` (+ `recentFiles.ts`) |
+| File I/O (Tauri↔web↔site) | `src/services/fileAccess/` (+ `recentFiles.ts`; site contract `siteHost.ts`) |
 | Auto-save / recovery | `src/hooks/useAutoSave.ts`, `src/services/recovery/recoveryStore.ts` |
 | Rust commands (thin) | `src-tauri/src/commands/mod.rs` (`install_kind`), `src-tauri/src/mcp_bridge.rs` (`mcp_bridge_start`/`mcp_bridge_stop`) |
 | Tauri config | `src-tauri/tauri.conf.json` (app id `org.openaec.planner`) |

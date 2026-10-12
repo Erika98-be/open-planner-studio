@@ -204,6 +204,22 @@ en noem het in je rapport of PR-tekst.
 46. **`.mpp` neemt de kritiek-drempel uit MS Project niet over als projectinstelling** (wel voor *Datums zoals
     opgeslagen*; MSPDI doet het wel). Gevolg: drempel 0 na openen. — B
 
+95. **Twee tabbladen op hetzelfde site-bestand delen één `baseVersion`.** De site-backend houdt de laatst
+    bekende versie per bestand-id bij (`src/services/fileAccess/siteBackend.ts`), niet per document. Slaat het
+    ene tabblad op, dan geldt die versie ook als basis voor het andere, en ziet de conflictcontrole van de site
+    het verschil niet. Gemeld door de bouwer van #309. — S
+96. **Een site-bestand verdwijnt uit Recent bij elke leesfout**, ook bij een tijdelijke (netwerk, sessie
+    verlopen). Zelfde gedrag als bij een web-handle (`openRecentFile` in `fileSlice.ts`). Voorstel: alleen
+    verwijderen als de site zegt dat het bestand niet bestaat. Gemeld door de bouwer van #309. — S
+97. **Recent opent een site-bestand met de bewaarde naam.** Is het bestand op de site hernoemd, dan zie je de
+    nieuwe naam pas na openen via *Openen van de site*. Gemeld door de bouwer van #309. — S
+98. **Het herstelmanifest schrijft een `version`, maar niemand controleert die** (`recoveryStore.ts`). Een
+    oudere build leest een nieuwer manifest dus zonder waarschuwing. Gemeld door de bouwer van #309. — S
+99. **De sluitvraag van een tabblad ligt op een vaste z-index 80**, de gewone dialogen op 50/60. Elke vraag die
+    vanuit *Opslaan* in die sluitvraag opent, valt eronder en lijkt te hangen. De twee site-dialogen liggen
+    daarom op `z-[90]`; een volgende vraag op die route moet hetzelfde doen. Gezien bij #309 met een
+    browsertest. — B
+
 ## Rondleiding, Help en extensie-gidsen
 
 51. **Histogram-tooltip "0 taken dragen bij"** op de startdag van een urentaak: `contributingTaskNames` in
@@ -265,6 +281,12 @@ en noem het in je rapport of PR-tekst.
     `/opt/pw-browsers/chromium-1194` draaien de tests wel, maar elke test eindigt rood op één
     "Failed to load resource: 404" in de console, ook de bestaande `table-reports.spec.ts` (gedraaid op de
     branch van de DCMA-PR, die dat rapport niet raakt). Welke URL dat is, is niet vastgesteld. — S
+
+100. **Tailwind v4 scant ook bestanden buiten `src/`**, zoals `scripts/`. Een token als `[a:b]` in een
+    logtekst wordt dan een CSS-regel in de bundel. Gezien bij #308 met `[build:platform]` (+36 bytes CSS);
+    de logtekst is daarom aangepast. Voorstel: de bronnen van Tailwind beperken tot `src/` en `index.html`. — B
+101. **AGENTS.md zegt "Fourteen locales" en "14 locales"**, maar er zijn er vijftien (`lo` erbij); de
+    codelijst in hetzelfde punt noemt er wel vijftien. Ook `docs/recepten/i18n-sleutel.md` zegt veertien. — B
 
 ## Wensen en open taken (geen bug)
 
