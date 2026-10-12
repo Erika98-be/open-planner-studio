@@ -1425,7 +1425,8 @@
     },
     "requires": {
       "xerOrigin": "alleen taken uit .xer",
-      "hourPlanning": "alleen bij uurplanning"
+      "hourPlanning": "alleen bij uurplanning",
+      "hourPlanningTitle": "Werkt alleen bij uurplanning: een kalender met werkblokken, een taak in uren, of de lag-kalender op 24-uurs."
     }
   },
   "dialogHelp": {

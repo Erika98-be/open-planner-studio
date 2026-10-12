@@ -319,7 +319,8 @@ export function SchedulingProfileSection({ mode, value, onChange }: SchedulingPr
                       {/* Waar de motor de conventie op poort (`requires` in het register, N2): kort label
                           naast het vinkje, zodat zichtbaar is dat de regel op dit project niets kan doen. */}
                       {c.requires?.hourPlanning && (
-                        <span className="badge badge--blue shrink-0" data-ops-convention-requires="hourPlanning">
+                        <span className="badge badge--blue shrink-0" data-ops-convention-requires="hourPlanning"
+                          title={t('schedulingProfile.requires.hourPlanningTitle')}>
                           {t('schedulingProfile.requires.hourPlanning')}
                         </span>
                       )}

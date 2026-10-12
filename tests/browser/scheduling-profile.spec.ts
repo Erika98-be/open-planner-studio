@@ -572,6 +572,8 @@ test('rekenprofiel: poortlabels, SS-lag zonder urenkalender en sjabloonmeldingen
   await expect(page.locator('[data-ops-convention-requires="xerOrigin"]')).toHaveCount(8);
   await expect(page.locator('[data-ops-convention-row="p6LateFinishOnOwnCalendar"] [data-ops-convention-requires="hourPlanning"]'))
     .toHaveText(/(alleen bij uurplanning|hour planning only)/i);
+  await expect(page.locator('[data-ops-convention-row="p6LateFinishOnOwnCalendar"] [data-ops-convention-requires="hourPlanning"]'))
+    .toHaveAttribute('title', /24/);
   await expect(page.locator('[data-ops-convention-row="p6PreserveActualInstants"] [data-ops-convention-requires="xerOrigin"]'))
     .toHaveText(/(alleen taken uit \.xer|\.xer tasks only)/i);
   await expect(page.locator('[data-ops-convention-row="p6UseRemainingStartForProgress"] [data-ops-convention-requires]')).toHaveCount(0);

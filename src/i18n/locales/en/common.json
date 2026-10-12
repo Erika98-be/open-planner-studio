@@ -1425,7 +1425,8 @@
     },
     "requires": {
       "xerOrigin": ".xer tasks only",
-      "hourPlanning": "hour planning only"
+      "hourPlanning": "hour planning only",
+      "hourPlanningTitle": "Only works with hour planning: a calendar with working blocks, a task in hours, or the lag calendar set to 24-hour."
     }
   },
   "dialogHelp": {
