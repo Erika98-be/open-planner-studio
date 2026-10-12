@@ -100,8 +100,13 @@ export function retainActiveDocument(loaded: ImportResult, active: ActiveDocumen
   const options: Record<string, unknown> = { ...active.project.schedulingOptions };
   for (const key of PUBLIC_SCHEDULING_OPTION_KEYS) delete options[key];
   Object.assign(options, loaded.project.schedulingOptions);
+  // Projectkalender: laat de extensie `project.calendarId` ongemoeid maar stuurt zij een `calendar` met
+  // een ander id mee, dan IS die kalender de nieuwe projectkalender (`calendar` is per contract de
+  // projectkalender). Wijzigt zij `project.calendarId` wél, dan telt die keuze.
+  const calendarId = loaded.project.calendarId === active.project.calendarId ? loaded.calendar.id : loaded.project.calendarId;
   const project = {
     ...loaded.project,
+    calendarId,
     schedulingProfile: active.project.schedulingProfile,
     schedulingOptions: Object.keys(options).length > 0 ? options as ProjectSchedulingOptions : undefined,
   };

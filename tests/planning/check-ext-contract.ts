@@ -1320,6 +1320,31 @@ for (const [naam, ext, bron, sleutels] of [
     wissel.tasks.find((t) => t.id === expliciet)?.calendarId,
   ], ['cal-ploeg', 'cal-ploeg', [oudeKalender, 'cal-ploeg'].sort(), oudeKalender]);
 
+  // Een meegestuurde projectkalender met een ANDER id, terwijl `project.calendarId` ongewijzigd is
+  // (reviewproef probe-e E2): die kalender wordt de projectkalender; de oude blijft in de bibliotheek.
+  // Mutatiebewijs: `project.calendarId` altijd van de extensie ⇒ N3D-20 rood.
+  zetDocument();
+  const vorigeKalender = useAppStore.getState().project.calendarId;
+  const vierdaags = herladen((r) => {
+    r.calendar = { ...getExtensionSdk().factory.createCalendar(), id: 'cal-vierdaags', workDays: [1, 2, 3, 4] };
+  });
+  eq('N3D-20 meegestuurde kalender met ander id wordt de projectkalender', [
+    vierdaags.project.calendarId, vierdaags.calendar.id, vierdaags.calendar.workDays,
+    vierdaags.calendars.map((c) => c.id).sort(),
+  ], ['cal-vierdaags', 'cal-vierdaags', [1, 2, 3, 4], [vorigeKalender, 'cal-ploeg', 'cal-vierdaags'].sort()]);
+
+  // Wisselt de extensie via `project.calendarId` én stuurt ze een nieuwe kalender mee, dan gaat die
+  // nieuwe kalender niet stil verloren: hij komt in de bibliotheek. Mutatiebewijs: de tak
+  // `...(own ? [] : [sent])` weg (X8) ⇒ N3D-21 rood.
+  zetDocument();
+  const beide = herladen((r) => {
+    r.project = { ...r.project, calendarId: 'cal-ploeg' };
+    r.calendar = { ...getExtensionSdk().factory.createCalendar(), id: 'cal-nieuw' };
+  });
+  eq('N3D-21 wissel plus nieuwe kalender: projectkalender is de gekozen, de nieuwe staat in de bibliotheek', [
+    beide.project.calendarId, beide.calendars.some((c) => c.id === 'cal-nieuw'),
+  ], ['cal-ploeg', true]);
+
   // Eigen taaktypes (reviewproef probe-b B1): ongebruikte documententries blijven; bij een botsing op
   // id of naam wint de extensie. Mutatiebewijs: `customTaskTypes`-regel weg ⇒ N3D-17 rood.
   zetDocument();
