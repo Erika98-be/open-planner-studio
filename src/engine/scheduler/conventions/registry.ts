@@ -63,7 +63,51 @@ export interface ConventionDescriptor {
   labelKey: string;
   /** ISO-datum waarop de conventie in het register kwam (documentatie bij `legacyValue`). */
   since: string;
+  /** BESCHRIJVEND: op welke data de conventie in de motor alleen iets doet (zie `ConventionRequires`).
+   *  Afwezig ⇒ geen van beide poorten. De UI toont er een kort label naast het vinkje mee. */
+  requires?: ConventionRequires;
 }
+
+/**
+ * Waar een conventie in de motor op poort (critreview #169, N2). Alleen weergave: de motor leest dit
+ * nooit, hij poort zelf. Afgeleid uit de motorcode, niet uit de gids:
+ *  - `hourCalendar`: ELKE werkende lezing van de conventie staat achter een `isHourMode`-poort (of, bij
+ *    B1, achter een relatievlag die de XER-lezer alleen op een urenkalender zet). Op een dagkalender
+ *    doet de conventie dus niets. `check-conventions-registry` §9 legt dit mechanisch naast de motor.
+ *  - `xerOrigin`: de conventie werkt alleen op taken (of relaties) met P6-herkomst uit een `.xer`
+ *    (`p6ProjectId`/`p6TaskId`, of de relatievlag van B1). De herkomstpoort per conventie staat bij
+ *    `CONVENTION_REQUIRES` hieronder en is gepind in dezelfde check.
+ */
+export interface ConventionRequires {
+  hourCalendar?: true;
+  xerOrigin?: true;
+}
+
+const HOUR = { hourCalendar: true } as const;
+const XER = { xerOrigin: true } as const;
+const HOUR_XER = { hourCalendar: true, xerOrigin: true } as const;
+/** Per conventie de poort uit de motor (bron: de regel in `CPMSolver.ts`/`scheduleAnalysis.ts`/de
+ *  beslisfuncties). Niet genoemd ⇒ werkt ook op een dagkalender en op data zonder P6-herkomst. */
+const CONVENTION_REQUIRES: Partial<Record<ConventionKey, ConventionRequires>> = {
+  p6ZeroDurationUsesPlannedBoundary: HOUR,           // A15 p6ZeroDurationUsesFinishBoundary/…BoundaryPair: `!eng.isHourMode`
+  p6PreserveActualInstants: XER,                     // A18 forwardPass: `task.p6ProjectId !== undefined`
+  p6PreserveZeroDurationConstraintInstants: HOUR,    // A20 backwardBoundOf: `eng.isHourMode`
+  p6RelationFinishBoundary: HOUR_XER,                // B1 de relatievlag: alleen de XER-lezer, alleen bij `predecessorCalendar.isHourMode`
+  p6BackwardLagFinishBoundary: HOUR,                 // B2 binnen `if (predEng.isHourMode)`
+  p6CompletedDataDateWindow: XER,                    // B3 provenancepoort (`p6ProjectId`/`p6TaskId`)
+  p6CompletedLoeActualFinish: XER,                   // B4 `missingProjectProvenance`/`missingTaskProvenance`
+  p6OpenLoeTargetSpan: HOUR_XER,                     // B5 `cal.isHourMode` (anders NaN ⇒ geweigerd) + provenance
+  p6CompletedPredecessorAtDataDate: HOUR,            // C1 `!progressCal.isHourMode`
+  p6FreeFloatOnOwnCalendar: HOUR,                    // C2 `cal.isHourMode`
+  p6CompletedRemainingLag: HOUR,                     // C3 `!lagEng.isHourMode`
+  p6CompletedOutOfSequenceWindow: HOUR_XER,          // C4 `!progressCal.isHourMode` + de B3-route (provenance)
+  p6CompletedPhysicalAtDataDate: HOUR_XER,           // C5 recordCompletedPhysicalPoint `!progressCal.isHourMode` + provenance
+  p6InProgressStartLagElapsed: HOUR,                 // C6 `!lagEng.isHourMode`
+  p6FinishFinishStartMilestoneLateFinish: HOUR,      // C7 `predEng.isHourMode && succEng.isHourMode`
+  p6LateFinishOnOwnCalendar: HOUR,                   // C9 `!eng.isHourMode`
+  p6FinishNotBeforeFinishFinishBound: HOUR,          // C12 `!cal.isHourMode` / `cal.isHourMode`
+  p6AlapPositionedFromSuccessors: HOUR,              // C14 isUnstartedAlapPositionedFromSuccessors: `cal.isHourMode`
+};
 
 /** `since`-datums van groep C (C1–C9, C11, C12, C14). */
 const SINCE_X12_BROK2 = '2026-09-23';
@@ -82,9 +126,10 @@ function convention(
   id: ConventionKey, group: 'A' | 'B' | 'C', theme: ConventionTheme, builtIn: Record<BuiltInProfileId, boolean>,
   gatedByP6Source: boolean, since = SINCE,
 ): ConventionDescriptor {
+  const requires = CONVENTION_REQUIRES[id];
   return {
     id, kind: 'boolean', builtIn, group, theme, legacyValue: builtIn.ops, gatedByP6Source,
-    labelKey: `conventions.${id}`, since,
+    labelKey: `conventions.${id}`, since, ...(requires ? { requires } : {}),
   };
 }
 

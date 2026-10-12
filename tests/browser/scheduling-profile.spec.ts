@@ -168,11 +168,14 @@ test('rekenprofiel: in "datums zoals opgeslagen" is Toepassen zonder wijziging e
 // XER met `sched_lag_early_start_flag` = N opent op "Werkelijke start"; de keuze is in Projectinfo met
 // echte klikken te wijzigen en landt na Toepassen in de projectopties. Onder een profiel zonder C6
 // (MS Project) of zonder A19 (sinds 2026-09-24 aan in de P6-basis; `rem_target_link_flag` stuurt niets
-// meer) is het veld uitgeschakeld: daar doet de optie niets.
+// meer) is het veld uitgeschakeld: daar doet de optie niets. De motor eist ook een urenkalender
+// (`lagEng.isHourMode`, critreview #169 N2): de kalender van deze fixture heeft daarom werkblokken.
+const WORKWEEK = `(0||CalendarData()((0||DaysOfWeek()(${[1, 2, 3, 4, 5, 6, 7]
+  .map(n => `(0||${n}()(${n >= 2 && n <= 6 ? '(0||0(s|08:00|f|17:00)())' : ''}))`).join('')}))(0||Exceptions()())))`;
 const SS_LAG_XER = [
   'ERMHDR\t23.12\t2026-01-01\t\t\t\t\t\tEUR',
   '%T\tCALENDAR', '%F\tclndr_id\tclndr_name\tclndr_type\tday_hr_cnt\tweek_hr_cnt\tclndr_data',
-  '%R\tC1\tStandaard 8u\tCA_Base\t8\t40\t',
+  `%R\tC1\tWerkweek\tCA_Base\t9\t45\t${WORKWEEK}`,
   '%T\tPROJECT', '%F\tproj_id\tproj_short_name\tclndr_id\tlast_recalc_date\tplan_start_date\trem_target_link_flag',
   '%R\tP1\tSsLagBrowser\tC1\t2026-03-02\t2026-01-05\tY',
   '%T\tSCHEDOPTIONS', '%F\tproj_id\tsched_lag_early_start_flag', '%R\tP1\tN',
@@ -193,11 +196,11 @@ test('rekenprofiel: de SS-lag-variant komt uit de XER en is in Projectinfo te wi
   await page.getByRole('button', { name: /^(File|Bestand)$/ }).first().click();
   await page.getByRole('button', { name: /^(Project info|Projectinfo)$/ }).first().click();
   const ssLag = page.getByRole('button', { name: /^(SS-lag van een lopende voorganger rekenen vanaf|Calculate SS lag from an in-progress predecessor from)$/ });
-  await expect(ssLag).toHaveText(/(Werkelijke start|Actual start)/);
+  await expect(ssLag).toHaveText(/(Statusdatum|Data date) \(P6: Actual Start\)/);
   await expect(ssLag).toBeEnabled();
   await ssLag.click();
-  await page.getByRole('option', { name: /^(Vroege start|Early start)/ }).click();
-  await expect(ssLag).toHaveText(/(Vroege start|Early start)/);
+  await page.getByRole('option', { name: /^(Start van het restwerk|Remaining start)/ }).click();
+  await expect(ssLag).toHaveText(/(Start van het restwerk|Remaining start) \(P6: Early Start\)/);
   await page.getByRole('button', { name: /^(Apply|Toepassen)$/ }).click();
   await expect.poll(option).toBe('earlyStart');
 
@@ -226,8 +229,6 @@ test('rekenprofiel: de SS-lag-variant komt uit de XER en is in Projectinfo te wi
 // handafleiding: de wissel verschuift A2, A4 en M1, heen én terug; A1 (voltooid) sinds eigenaarsvraag 7
 // niet meer, want B3 staat in P6 uit; A2 (lopend) sinds 2026-09-24 wel, want A19 zit nu in de P6-basis
 // en gaat bij de wissel niet meer als afwijking mee naar OPS).
-const WORKWEEK = `(0||CalendarData()((0||DaysOfWeek()(${[1, 2, 3, 4, 5, 6, 7]
-  .map(n => `(0||${n}()(${n >= 2 && n <= 6 ? '(0||0(s|08:00|f|17:00)())' : ''}))`).join('')}))(0||Exceptions()())))`;
 const SWITCH_XER = [
   'ERMHDR\t23.12\t2026-09-01\t\t\t\t\t\tEUR',
   '%T\tCALENDAR', '%F\tclndr_id\tclndr_name\tproj_id\tclndr_type\tday_hr_cnt\tweek_hr_cnt\tclndr_data',
@@ -435,4 +436,64 @@ test('rekenprofiel: na Ctrl+Z en Ctrl+Y volgt het profielblok de store, ook in d
     await expect.poll(async () => (await dialogSelect.inputValue()) === (await storeChoice())).toBe(true);
   }
   await expect(dialog.locator('[data-ops-scheduling-store-changed]')).toHaveCount(0);
+});
+
+// Critreview #169 N2 en B9 op een nieuw project (dagkalender): de conventies tonen waar de motor op
+// poort ("alleen urenkalender" / "alleen taken uit .xer"), de SS-lag-keuzelijst staat uit omdat er geen
+// urenkalender is, en sjablonen opslaan/verwijderen melden zich en vragen bevestiging.
+test('rekenprofiel: poortlabels, SS-lag zonder urenkalender en sjabloonmeldingen (N2, B9)', async ({ page, ops: _ops }) => {
+  const hasHourCalendar = await page.evaluate(() => {
+    const s = window.__OPS__!.store.getState();
+    return !!s.calendar.workTime || s.calendars.some(c => !!c.workTime);
+  });
+  expect(hasHourCalendar).toBe(false);
+  await page.getByRole('button', { name: /^(File|Bestand)$/ }).first().click();
+  await page.getByRole('button', { name: /^(Project info|Projectinfo)$/ }).first().click();
+  const select = page.locator('[data-ops-scheduling-profile-select]');
+  await select.selectOption('builtin:p6');
+
+  // Labels volgen het register: 15 conventies alleen op een urenkalender, 7 alleen op .xer-taken.
+  await expect(page.locator('[data-ops-convention-requires="hourCalendar"]')).toHaveCount(15);
+  await expect(page.locator('[data-ops-convention-requires="xerOrigin"]')).toHaveCount(7);
+  await expect(page.locator('[data-ops-convention-row="p6LateFinishOnOwnCalendar"] [data-ops-convention-requires="hourCalendar"]'))
+    .toHaveText(/(alleen urenkalender|hour calendar only)/i);
+  await expect(page.locator('[data-ops-convention-row="p6PreserveActualInstants"] [data-ops-convention-requires="xerOrigin"]'))
+    .toHaveText(/(alleen taken uit \.xer|\.xer tasks only)/i);
+  await expect(page.locator('[data-ops-convention-row="p6UseRemainingStartForProgress"] [data-ops-convention-requires]')).toHaveCount(0);
+
+  // Onder P6 staan C6 en A19 aan, maar zonder urenkalender doet de SS-lag-optie niets.
+  const ssLag = page.getByRole('button', { name: /^(SS-lag van een lopende voorganger rekenen vanaf|Calculate SS lag from an in-progress predecessor from)$/ });
+  await expect(ssLag).toBeDisabled();
+  await expect(page.locator('[data-ops-ss-lag-needs-convention]')).toHaveCount(0);
+  await expect(page.locator('[data-ops-ss-lag-needs-hour-calendar]')).toBeVisible();
+
+  // Een conventie aanzetten maakt een eigen profiel; Opslaan als sjabloon meldt zich.
+  await page.locator('[data-ops-convention="p6CompletedPredecessorAtDataDate"]').check();
+  await page.locator('[data-ops-scheduling-profile-name]').fill('Mijn sjabloon');
+  await page.locator('[data-ops-scheduling-save-template]').click();
+  await expect(page.locator('.ops-toast').filter({ hasText: /(Sjabloon „Mijn sjabloon” opgeslagen|Template “Mijn sjabloon” saved)/ })).toHaveCount(1);
+  const storedNames = () => page.evaluate(() =>
+    (JSON.parse(localStorage.getItem('ops-schedulingProfiles') ?? '[]') as { name: string }[]).map(p => p.name));
+  expect(await storedNames()).toEqual(['Mijn sjabloon']);
+
+  // Verwijderen vraagt bevestiging in de app; Annuleren laat het sjabloon staan.
+  const deleteButton = page.locator('[data-ops-scheduling-delete-template]');
+  await deleteButton.click();
+  const confirm = page.getByText(/(Sjabloon „Mijn sjabloon” verwijderen\?|Delete template “Mijn sjabloon”\?)/);
+  await expect(confirm).toBeVisible();
+  await page.getByRole('button', { name: /^(Annuleren|Cancel)$/ }).click();
+  await expect(confirm).toHaveCount(0);
+  expect(await storedNames()).toEqual(['Mijn sjabloon']);
+  await deleteButton.click();
+  await page.getByRole('button', { name: /^(Verwijderen|Delete)$/ }).click();
+  await expect(confirm).toHaveCount(0);
+  expect(await storedNames()).toEqual([]);
+  await expect(page.locator('[data-ops-scheduling-save-template]')).toBeVisible();
+
+  // Een volle opslag (fixture: setItem gooit QuotaExceededError) geeft een foutmelding, geen stilte.
+  await page.evaluate(() => {
+    Storage.prototype.setItem = () => { throw new DOMException('vol', 'QuotaExceededError'); };
+  });
+  await page.locator('[data-ops-scheduling-save-template]').click();
+  await expect(page.locator('.ops-toast').filter({ hasText: /(opslag van de app is vol|app storage is full)/ })).toHaveCount(1);
 });

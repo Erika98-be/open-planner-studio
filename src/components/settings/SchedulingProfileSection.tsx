@@ -8,7 +8,10 @@ import {
   BUILT_IN_PROFILE_IDS, CONVENTIONS, CONVENTION_THEMES, builtInConventions, isOffInEveryBuiltIn,
   resolveConventions, type ConventionDescriptor, type ConventionTheme,
 } from '@/engine/scheduler/conventions/registry';
-import { deleteCustomProfile, loadCustomProfiles, upsertCustomProfile } from '@/services/schedulingProfiles/profileStore';
+import {
+  MAX_CUSTOM_PROFILES, deleteCustomProfile, loadCustomProfiles, upsertCustomProfileResult,
+} from '@/services/schedulingProfiles/profileStore';
+import { ConfirmDialog } from '@/components/dialogs/ConfirmDialog';
 import type { BuiltInProfileId, ConventionKey, ProjectSchedulingOptions, SchedulingProfile } from '@/types/project';
 import { generateId } from '@/utils/id';
 import { isHourCalendar } from '@/services/subdayIo';
@@ -87,14 +90,35 @@ export function SchedulingProfileSection({ mode, value, onChange }: SchedulingPr
     if (next.has(id)) next.delete(id); else next.add(id);
     return next;
   });
+  const notify = useAppStore(s => s.notify);
+  // Sjabloon opslaan of bijwerken meldt de uitkomst via het meldingskanaal (critreview #169, B9): een
+  // bevestiging, of een foutmelding bij de limiet of een volle/ontbrekende opslag — nooit stil.
   const saveTemplate = (p: SchedulingProfile) => {
     // Een sjabloon zonder naam is niet te kiezen; de knop staat dan uit, dit is de vangrail.
     if (!hasValidProfileName(p)) return;
-    if (upsertCustomProfile({ ...p, name: p.name.trim() })) setTemplates(loadCustomProfiles());
+    const name = p.name.trim();
+    const result = upsertCustomProfileResult({ ...p, name });
+    if (result === 'saved') {
+      setTemplates(loadCustomProfiles());
+      notify({ severity: 'info', messageKey: 'notifications.schedulingTemplateSaved', params: { name }, dedupeKey: `scheduling-template-saved:${p.id}` });
+    } else if (result === 'limit') {
+      notify({ severity: 'error', messageKey: 'notifications.schedulingTemplateLimit', params: { max: MAX_CUSTOM_PROFILES }, dedupeKey: 'scheduling-template-limit' });
+    } else if (result === 'storage') {
+      notify({ severity: 'error', messageKey: 'notifications.schedulingTemplateStorageFailed', dedupeKey: 'scheduling-template-storage' });
+    } else {
+      // 'invalid': via de UI niet bereikbaar (geldige naam, gegenereerd id); de sanitizer weigert.
+      console.warn('[rekenprofielen] sjabloon niet opgeslagen: ongeldig profiel', p.id);
+    }
   };
-  const deleteTemplate = (id: string) => {
-    deleteCustomProfile(id);
+  // Verwijderen vraagt eerst bevestiging via de in-app ConfirmDialog (geen `confirm()`).
+  const [pendingDelete, setPendingDelete] = useState<SchedulingProfile | null>(null);
+  const confirmDeleteTemplate = () => {
+    if (!pendingDelete) return;
+    if (!deleteCustomProfile(pendingDelete.id)) {
+      notify({ severity: 'error', messageKey: 'notifications.schedulingTemplateDeleteFailed', dedupeKey: 'scheduling-template-storage' });
+    }
     setTemplates(loadCustomProfiles());
+    setPendingDelete(null);
   };
   const durationDisplay = useAppStore(s => s.ui.durationDisplay);
   const enableHourPlanning = useAppStore(s => s.ui.enableHourPlanning);
@@ -109,6 +133,13 @@ export function SchedulingProfileSection({ mode, value, onChange }: SchedulingPr
   // De SS-lag-projectoptie werkt alleen met C6 én A19 aan (`CPMSolver.inProgressStartLag`).
   const ssLagMissing: ConventionKey | null = !conventions.p6InProgressStartLagElapsed ? 'p6InProgressStartLagElapsed'
     : !conventions.p6UseRemainingStartForProgress ? 'p6UseRemainingStartForProgress' : null;
+  // …en alleen als de lag-kalender een urenkalender is (`lagEng.isHourMode`, ook in
+  // `inProgressStartLag`). De lag-kalender is per relatie (voorganger, opvolger, project of 24 uur);
+  // projectbreed is hij zeker geen urenkalender als geen enkele kalender van het project dat is en de
+  // lag niet in de interne 24-uurskalender telt (critreview #169, N2).
+  const libraryCalendars = useAppStore(s => s.calendars);
+  const ssLagNoHourCalendar = so.lagCalendar !== '24hour'
+    && !isHourCalendar(projectCal) && !libraryCalendars.some(isHourCalendar);
   const label = profileLabel(profile);
   const relation = templateRelation(profile, templates);
   const brand = (id: BuiltInProfileId) => t(builtInNameKey(id));
@@ -227,11 +258,20 @@ export function SchedulingProfileSection({ mode, value, onChange }: SchedulingPr
             </>
           )}
           {relation !== 'none' && (
-            <button type="button" className={btnCls} onClick={() => deleteTemplate(profile.id)} data-ops-scheduling-delete-template>
+            <button type="button" className={btnCls}
+              onClick={() => setPendingDelete(templates.find(tp => tp.id === profile.id) ?? profile)} data-ops-scheduling-delete-template>
               {t('schedulingProfile.deleteTemplate')}
             </button>
           )}
         </div>
+      )}
+      {pendingDelete && (
+        <ConfirmDialog
+          message={t('schedulingProfile.deleteTemplateConfirm', { name: pendingDelete.name })}
+          onConfirm={confirmDeleteTemplate}
+          onCancel={() => setPendingDelete(null)}
+          danger
+        />
       )}
 
       <div className="flex flex-col gap-2" data-ops-scheduling-conventions>
@@ -279,6 +319,18 @@ export function SchedulingProfileSection({ mode, value, onChange }: SchedulingPr
                         />
                         <span className={deviates ? 'font-semibold' : undefined} data-ops-convention-label>{name}</span>
                       </label>
+                      {/* Waar de motor de conventie op poort (`requires` in het register, N2): kort label
+                          naast het vinkje, zodat zichtbaar is dat de regel op dit project niets kan doen. */}
+                      {c.requires?.hourCalendar && (
+                        <span className="badge badge--blue shrink-0" data-ops-convention-requires="hourCalendar">
+                          {t('schedulingProfile.requires.hourCalendar')}
+                        </span>
+                      )}
+                      {c.requires?.xerOrigin && (
+                        <span className="badge badge--blue shrink-0" data-ops-convention-requires="xerOrigin">
+                          {t('schedulingProfile.requires.xerOrigin')}
+                        </span>
+                      )}
                       <span className="shrink-0 whitespace-nowrap text-text-secondary" data-ops-convention-base>
                         {t('schedulingProfile.baseValue', { value: base[c.id] ? t('schedulingProfile.on') : t('schedulingProfile.off') })}
                       </span>
@@ -437,7 +489,7 @@ export function SchedulingProfileSection({ mode, value, onChange }: SchedulingPr
         <div className="flex flex-col gap-1">
           <label className={labelCls}>{tMenu('projectInfo.calc.ssLagFrom')}</label>
           <Select aria-label={tMenu('projectInfo.calc.ssLagFrom')} value={so.startToStartLagFrom ?? 'earlyStart'}
-            disabled={ssLagMissing !== null}
+            disabled={ssLagMissing !== null || ssLagNoHourCalendar}
             onChange={v => patchOptions({ ...so, startToStartLagFrom: v as ProjectSchedulingOptions['startToStartLagFrom'] })}
             options={[
               { value: 'earlyStart', label: tMenu('projectInfo.calc.ssLagEarlyStart') },
@@ -446,6 +498,11 @@ export function SchedulingProfileSection({ mode, value, onChange }: SchedulingPr
           {ssLagMissing && (
             <div className="alert alert--info" data-ops-ss-lag-needs-convention>
               {tMenu('projectInfo.calc.ssLagNeedsConvention', { convention: t(conventionLabelKey(ssLagMissing)) })}
+            </div>
+          )}
+          {!ssLagMissing && ssLagNoHourCalendar && (
+            <div className="alert alert--info" data-ops-ss-lag-needs-hour-calendar>
+              {tMenu('projectInfo.calc.ssLagNeedsHourCalendar')}
             </div>
           )}
         </div>

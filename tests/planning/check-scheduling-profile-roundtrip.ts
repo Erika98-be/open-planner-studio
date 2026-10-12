@@ -28,7 +28,7 @@ import {
 } from '@/services/ifc/schedulingOptionsRead';
 import {
   SCHEDULING_PROFILES_KEY, deleteCustomProfile, loadCustomProfiles, saveCustomProfiles,
-  upsertCustomProfile, type ProfileStorage,
+  upsertCustomProfile, upsertCustomProfileResult, MAX_CUSTOM_PROFILES, type ProfileStorage,
 } from '@/services/schedulingProfiles/profileStore';
 
 const diffs: string[] = [];
@@ -310,6 +310,15 @@ function diffAgainstLegacyForP6(): Partial<Record<string, boolean>> {
     eq('74 upsert bij QuotaExceeded: false', upserted, false);
     eq('75 save bij QuotaExceeded: false', saveCustomProfiles([CUSTOM], quota), false);
     eq('76 delete bij QuotaExceeded: false', deleteCustomProfile('eigen-1', quota), false);
+    // Critreview #169 B9: de UI meldt WAAROM opslaan mislukt. Mutant: 'limit' als 'storage' teruggeven ⇒ 76b rood.
+    eq('76a uitkomst bij QuotaExceeded: storage', upsertCustomProfileResult({ ...CUSTOM, id: 'nieuw' }, quota), 'storage');
+    {
+      const full = memory(JSON.stringify(Array.from({ length: MAX_CUSTOM_PROFILES }, (_, i) => ({ ...CUSTOM, id: `p-${i}` }))));
+      eq('76b uitkomst bij de limiet: limit', upsertCustomProfileResult({ ...CUSTOM, id: 'nieuw' }, full), 'limit');
+      eq('76c bijwerken van een bestaand sjabloon mag op de limiet', upsertCustomProfileResult({ ...CUSTOM, id: 'p-3', name: 'X' }, full), 'saved');
+      eq('76d ingebouwde id: invalid', upsertCustomProfileResult({ ...CUSTOM, id: 'ops' }, full), 'invalid');
+      eq('76e geen opslag: storage', upsertCustomProfileResult(CUSTOM, undefined), 'storage');
+    }
     const blocked: ProfileStorage = {
       getItem: () => { throw new DOMException('geblokkeerd', 'SecurityError'); },
       setItem: () => { throw new DOMException('geblokkeerd', 'SecurityError'); },
