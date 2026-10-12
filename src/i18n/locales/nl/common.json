@@ -162,7 +162,9 @@
     "p6xmlImportOpened_one": "P6 XML-bestand geopend: {{count}} projectdocument.",
     "p6xmlImportOpened_other": "P6 XML-bestand geopend: {{count}} projectdocumenten.",
     "p6xmlImportCrossProjectRelations_one": "{{count}} relatie tussen projecten is niet als relatie overgenomen.",
-    "p6xmlImportCrossProjectRelations_other": "{{count}} relaties tussen projecten zijn niet als relatie overgenomen."
+    "p6xmlImportCrossProjectRelations_other": "{{count}} relaties tussen projecten zijn niet als relatie overgenomen.",
+    "p6xmlImportUnassignedActivities_one": "{{count}} activiteit zonder project is niet ingelezen.",
+    "p6xmlImportUnassignedActivities_other": "{{count}} activiteiten zonder project zijn niet ingelezen."
   },
   "scheduleErrors": {
     "cycle": "Kringverwijzing tussen taken: {{path}}",

@@ -11,6 +11,7 @@ import { isSiteConflict, isSiteNotFound, siteErrorMessage, siteStorageAvailable 
 import { openSiteFile, saveNewSiteFile, saveSiteFileVersion } from '@/services/fileAccess/siteBackend';
 import { askSiteOpen, askSiteSave, type SiteOpenChoice } from '@/services/fileAccess/siteDialogs';
 import { withXerArchiveIssueNotice } from '@/state/xerArchiveIssueNotice';
+import { P6XmlImportError } from '@/services/p6/p6xmlErrors';
 import { P6XML_IMPORT_HELP_ARTICLE_ID, RECORDED_DATES_HELP_ARTICLE_ID, XER_IMPORT_HELP_ARTICLE_ID } from '@/state/helpArticles';
 import { openDialogFilters, binaryExtensions, readFormatForFile, parseOpenedFile, importErrorMessageKey, saveTargetFor, readFormatInput, readIFCWithXerReconstruction, type ExportFormat } from '@/services/formatRegistry';
 import { loadRecents, addRecent, removeRecent, type RecentEntry } from '@/services/fileAccess/recentFiles';
@@ -227,17 +228,14 @@ export function xerImportNotice(
 }
 
 /**
- * De ene openingsmelding van een verse P6 XML-import, uit het verslag dat de lezer bestandsbreed op
- * elk resultaat hangt (`ImportResult.p6xmlReport`). Bestand zonder leesbare activiteit ⇒ een
- * foutmelding met de reden, als die bekend is. Meerdere projecten, baselines of relaties tussen
- * projecten ⇒ één verslag (zoals `xerImportNotice`). Een gewoon bestand met één project ⇒ geen melding.
+ * De melding bij een MISLUKTE import (elk open-pad). Een P6 XML-bestand zonder leesbare activiteit
+ * (`P6XmlImportError`) krijgt `notifications.p6xmlImportEmpty` met de reden als detailregel; elke
+ * andere fout de bestaande sleutel (`importErrorMessageKey`) met de technische tekst als detail.
  */
-export function p6xmlImportNotice(results: readonly ImportResult[]): NotifyInput | undefined {
-  const report = results.find(result => result.p6xmlReport)?.p6xmlReport;
-  if (!report) return undefined;
-  if (report.emptyReason) {
-    const reasonKey = report.emptyReason === 'no-object-ids' ? 'notifications.p6xmlImportEmptyNoObjectIds' as const
-      : report.emptyReason === 'xer-columns' ? 'notifications.p6xmlImportEmptyXerColumns' as const
+export function importFailureNotice(err: unknown, detail: string): NotifyInput {
+  if (err instanceof P6XmlImportError) {
+    const reasonKey = err.reason === 'no-object-ids' ? 'notifications.p6xmlImportEmptyNoObjectIds' as const
+      : err.reason === 'xer-columns' ? 'notifications.p6xmlImportEmptyXerColumns' as const
       : undefined;
     return {
       severity: 'error',
@@ -246,9 +244,22 @@ export function p6xmlImportNotice(results: readonly ImportResult[]): NotifyInput
       helpArticleId: P6XML_IMPORT_HELP_ARTICLE_ID,
     };
   }
-  // Meerdere projecten, baselines of relaties tussen projecten: één verslag, zoals bij XER (de
-  // telregels zijn formaatneutraal verwoord en worden hergebruikt).
-  if (report.projectsSeen <= 1 && report.baselinesMaterialized === 0 && report.crossProjectRelations === 0) return undefined;
+  return { severity: 'error', messageKey: importErrorMessageKey(err), detail };
+}
+
+/**
+ * De ene openingsmelding van een verse P6 XML-import, uit het verslag dat de lezer bestandsbreed op
+ * elk resultaat hangt (`ImportResult.p6xmlReport`). Meerdere projecten, baselines, relaties tussen
+ * projecten of iets dat niet is ingelezen ⇒ één verslag (zoals `xerImportNotice`). Een gewoon
+ * bestand met één project ⇒ geen melding. Een bestand zonder leesbare activiteit opent niet
+ * (`importFailureNotice`).
+ */
+export function p6xmlImportNotice(results: readonly ImportResult[]): NotifyInput | undefined {
+  const report = results.find(result => result.p6xmlReport)?.p6xmlReport;
+  if (!report) return undefined;
+  // Één verslag, zoals bij XER (de telregels zijn formaatneutraal verwoord en worden hergebruikt).
+  if (report.projectsSeen <= 1 && report.baselinesMaterialized === 0 && report.crossProjectRelations === 0
+    && report.danglingBaselineReferences === 0 && report.unassignedActivities === 0) return undefined;
   const detailLines: NotificationDetailLine[] = [
     { messageKey: 'notifications.xerImportProjectsSeen', params: { count: report.projectsSeen } },
   ];
@@ -257,7 +268,9 @@ export function p6xmlImportNotice(results: readonly ImportResult[]): NotifyInput
   };
   addCount(report.emptyProjectsSkipped, 'notifications.xerImportEmptyProjectsSkipped');
   addCount(report.baselinesMaterialized, 'notifications.xerImportBaselinesMaterialized');
+  addCount(report.danglingBaselineReferences, 'notifications.xerImportDanglingBaselineReferences');
   addCount(report.crossProjectRelations, 'notifications.p6xmlImportCrossProjectRelations');
+  addCount(report.unassignedActivities, 'notifications.p6xmlImportUnassignedActivities');
   return {
     severity: 'info',
     messageKey: 'notifications.p6xmlImportOpened',
@@ -576,7 +589,7 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
         get().notify({ severity: 'error', messageKey: 'notifications.siteFileGone', params: { name: entry.name } });
         return;
       }
-      get().notify({ severity: 'error', messageKey: importErrorMessageKey(err), detail: siteErrorMessage(err) });
+      get().notify(importFailureNotice(err, siteErrorMessage(err)));
     }
   };
 
@@ -979,7 +992,7 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
         await pushRecent(opened.ref, opened.name);
       } catch (err) {
         console.error('Failed to open file:', err);
-        get().notify({ severity: 'error', messageKey: importErrorMessageKey(err), detail: (err as Error).message });
+        get().notify(importFailureNotice(err, (err as Error).message));
       }
     },
 
@@ -1372,7 +1385,7 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
         await pushRecent(entry.ref, entry.name);
       } catch (err) {
         console.error('Failed to open recent file:', err);
-        get().notify({ severity: 'error', messageKey: importErrorMessageKey(err), detail: (err as Error).message });
+        get().notify(importFailureNotice(err, (err as Error).message));
       }
     },
 
@@ -1382,7 +1395,7 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
         return true;
       } catch (err) {
         console.error('Openen van de site mislukt:', err);
-        get().notify({ severity: 'error', messageKey: importErrorMessageKey(err), detail: siteErrorMessage(err) });
+        get().notify(importFailureNotice(err, siteErrorMessage(err)));
         return false;
       }
     },

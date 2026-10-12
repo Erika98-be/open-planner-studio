@@ -62,11 +62,11 @@ Per file format: whether you can open, save and export it, what does and does no
 
 **Open** — yes. The app recognises an `.xml` file as P6 XML by the root element `APIBusinessObjects`. Calculation profile: *Open Planner Studio*.
 
-**Several projects in one file.** Each project with activities opens in its own tab, named *Project name (Project ID)*. The app skips a project without activities. The active tab is the project with the most activities. The app does not carry over a relation to another project. After opening, the app reports how many projects it opened.
+**Several projects in one file.** Each project with activities opens in its own tab, named *Project name (Project ID)*. The app skips a project without activities. The active tab is the project with the most activities. The app does not carry over a relation to another project, nor an activity that belongs to no project. After opening, the app reports how many projects it opened.
 
 **Baselines.** A `<BaselineProject>` in the file becomes a baseline of its project. The baseline that P6 marks as active is also active in the app.
 
-**No readable activities.** If the app finds no activity it can read, it reports this, with the reason when it is known. Examples: activities without an `ObjectId`, or XER column names in an XML file. Then export the project from P6 again as P6 XML, or open it as `.xer`.
+**No readable activities.** If the app finds no activity it can read, it does not open a tab. It reports this, with the reason when it is known. Examples: activities without an `ObjectId`, or XER column names in an XML file. Then export the project from P6 again as P6 XML, or open it as `.xer`.
 
 **Save** — no.
 

@@ -140,6 +140,7 @@ eq('10d C: activiteiten (2 binnen <Project> + 1 plat met ProjectObjectId 300)',
 eq('10e C: eigen relatie', docs[1].sequences.length, 1);
 eq('10f verslag', docs[0].p6xmlReport, {
   projectsSeen: 3, documentsOpened: 2, emptyProjectsSkipped: 1, baselinesMaterialized: 2, crossProjectRelations: 1,
+  danglingBaselineReferences: 0, unassignedActivities: 0,
 });
 eq('10g zelfde verslag op elk document', JSON.stringify(docs[1].p6xmlReport), JSON.stringify(docs[0].p6xmlReport));
 const bls = docs[0].baselines ?? [];

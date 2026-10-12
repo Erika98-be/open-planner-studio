@@ -162,7 +162,9 @@
     "p6xmlImportOpened_one": "P6 XML file opened: {{count}} project document.",
     "p6xmlImportOpened_other": "P6 XML file opened: {{count}} project documents.",
     "p6xmlImportCrossProjectRelations_one": "{{count}} relationship between projects was not imported as a relationship.",
-    "p6xmlImportCrossProjectRelations_other": "{{count}} relationships between projects were not imported as relationships."
+    "p6xmlImportCrossProjectRelations_other": "{{count}} relationships between projects were not imported as relationships.",
+    "p6xmlImportUnassignedActivities_one": "{{count}} activity without a project was not read.",
+    "p6xmlImportUnassignedActivities_other": "{{count}} activities without a project were not read."
   },
   "scheduleErrors": {
     "cycle": "Circular dependency between tasks: {{path}}",

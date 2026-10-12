@@ -1,5 +1,6 @@
 import { nameWithProjectCode } from '@/utils/projectCodeName';
 import { P6_ID_MAX_LENGTH } from './p6xmlSchemaOrder';
+import { P6XmlImportError } from './p6xmlErrors';
 import { Task, TaskConstraint, ConstraintType } from '@/types/task';
 import type { P6CompletePctType, P6DurationType } from '@/types/task';
 import { createDefaultTaskTime } from '@/utils/taskDefaults';
@@ -383,7 +384,15 @@ interface P6XmlScope {
   project: Element | null;
   /** `<ObjectId>` van het gekozen project; null als het ontbreekt (dan geen filter). */
   projectObjectId: number | null;
+  /** Mag een plat projectobject ZONDER `ProjectObjectId` bij dit project horen? Alleen als het het
+   *  enige `<Project>` van het bestand is (of er geen is). Anders hoort zo'n object bij geen enkel
+   *  project; `readAllP6XmlProjects` telt de activiteiten in het verslag. */
+  ownsUnassigned: boolean;
 }
+
+/** Objecten die bij één project horen. Globale objecten (kalenders, UDF-typen, notitieonderwerpen)
+ *  hebben geen `ProjectObjectId` en horen bij elk project. */
+const PROJECT_OBJECT_TAGS = new Set(['WBS', 'Activity', 'Relationship', 'ResourceAssignment', 'ActivityNote', 'UDFValue']);
 
 /** Elementen van één soort voor het gekozen project: eerst de directe kinderen van het hoogste
  *  niveau (platte vorm en globale objecten), dan die binnen het gekozen `<Project>`. Een plat element
@@ -393,6 +402,7 @@ function scopedElements(scope: P6XmlScope, localName: string): Element[] {
   for (const el of directChildrenByLocalName(scope.root, localName)) {
     const owner = getElementInt(el, 'ProjectObjectId', -1);
     if (owner >= 0 && scope.projectObjectId != null && owner !== scope.projectObjectId) continue;
+    if (owner < 0 && !scope.ownsUnassigned && PROJECT_OBJECT_TAGS.has(localName)) continue;
     results.push(el);
   }
   if (scope.project) results.push(...directChildrenByLocalName(scope.project, localName));
@@ -401,7 +411,9 @@ function scopedElements(scope: P6XmlScope, localName: string): Element[] {
 
 function scopeOf(root: Element, project: Element | null): P6XmlScope {
   const objId = project ? getElementInt(project, 'ObjectId', -1) : -1;
-  return { root, project, projectObjectId: objId >= 0 ? objId : null };
+  const ownsUnassigned = !project
+    || (project.localName === 'Project' && directChildrenByLocalName(root, 'Project').length === 1);
+  return { root, project, projectObjectId: objId >= 0 ? objId : null, ownsUnassigned };
 }
 
 function hasActivities(scope: P6XmlScope): boolean {
@@ -459,7 +471,7 @@ function emptyReasonOf(root: Element): P6XmlEmptyReason {
  * Eén document ⇒ een gewoon `ImportResult`, meer ⇒ een `MultiDocumentImport`.
  */
 export function readP6XMLDocuments(content: string): OpenedImport {
-  const results = readAllP6XmlProjects(content);
+  const results = readAllP6XmlProjects(content, true);
   if (results.length === 1) return results[0];
   let active = 0;
   results.forEach((result, i) => {
@@ -482,7 +494,7 @@ function leafCount(result: ImportResult): number {
 }
 
 /** Alle documenten van het bestand, in bestandsvolgorde, elk met baselines en hetzelfde verslag. */
-function readAllP6XmlProjects(content: string): ImportResult[] {
+function readAllP6XmlProjects(content: string, throwWhenEmpty = false): ImportResult[] {
   const root = parseP6XmlDocument(content);
   const projects = directChildrenByLocalName(root, 'Project');
   const nonEmpty = projects.map(project => scopeOf(root, project)).filter(hasActivities);
@@ -491,17 +503,32 @@ function readAllP6XmlProjects(content: string): ImportResult[] {
 
   const baselineElements = directChildrenByLocalName(root, 'BaselineProject');
   let baselinesMaterialized = 0;
+  // Losse baselineverwijzingen (zoals XER `danglingBaselineReferences`): een `<BaselineProject>` waarvan
+  // de eigenaar niet als document opent (niet in het bestand, of leeg), en een
+  // `CurrentBaselineProjectObjectId` die naar geen `<BaselineProject>` in het bestand wijst.
+  const usedBaselines = new Set<Element>();
+  let danglingBaselineReferences = 0;
   reads.forEach((read, i) => {
     const owner = scopes[i];
     if (owner.projectObjectId == null || !owner.project) return;
+    const currentObjId = getElementInt(owner.project, 'CurrentBaselineProjectObjectId', -1);
+    if (currentObjId >= 0 && !baselineElements.some(el => getElementInt(el, 'ObjectId', -1) === currentObjId)) {
+      danglingBaselineReferences++;
+    }
     const own = baselineElements.filter(el => getElementInt(el, 'OriginalProjectObjectId', -1) === owner.projectObjectId);
     if (own.length === 0) return;
+    own.forEach(el => usedBaselines.add(el));
     const baselines = own.map(el => p6BaselineFrom(root, el, owner.projectObjectId!, read.result));
-    const currentObjId = getElementInt(owner.project, 'CurrentBaselineProjectObjectId', -1);
     read.result.baselines = [...(read.result.baselines ?? []), ...baselines];
     read.result.activeBaselineId = baselines.find(b => b.sourceProjectId === String(currentObjId))?.id ?? null;
     baselinesMaterialized += baselines.length;
   });
+  danglingBaselineReferences += baselineElements.filter(el => !usedBaselines.has(el)).length;
+  // Platte activiteiten zonder `ProjectObjectId` in een bestand met meerdere projecten: bij geen
+  // enkel project ingelezen (`P6XmlScope.ownsUnassigned`), wel geteld.
+  const unassignedActivities = projects.length > 1
+    ? directChildrenByLocalName(root, 'Activity').filter(el => getElementInt(el, 'ProjectObjectId', -1) < 0).length
+    : 0;
 
   const crossProjectRelations = new Set(reads.flatMap(read => [...read.crossProjectRelations]));
   const anyActivity = reads.some(read => read.activitiesRead > 0);
@@ -511,8 +538,12 @@ function readAllP6XmlProjects(content: string): ImportResult[] {
     emptyProjectsSkipped: nonEmpty.length > 0 ? projects.length - nonEmpty.length : 0,
     baselinesMaterialized,
     crossProjectRelations: crossProjectRelations.size,
-    ...(anyActivity ? {} : { emptyReason: emptyReasonOf(root) }),
+    danglingBaselineReferences,
+    unassignedActivities,
   };
+  // Geen enkele leesbare activiteit: de import mislukt, zoals een lege XER (`XER_EMPTY_PROJECT`).
+  // Geen leeg tabblad; de melding draagt de reden (`importFailureNotice` in fileSlice).
+  if (!anyActivity && throwWhenEmpty) throw new P6XmlImportError(emptyReasonOf(root));
   for (const read of reads) read.result.p6xmlReport = { ...report };
   return reads.map(read => read.result);
 }

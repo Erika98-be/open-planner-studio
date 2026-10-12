@@ -1,13 +1,17 @@
 // P6 XML openen via de echte open-pijplijn: `parseOpenedFile` (formatRegistry) → `applyOpenedImport`
-// (store). Bewaakt de ene openingsmelding van een P6 XML-bestand (`p6xmlImportNotice`):
-// - geen leesbare activiteit ⇒ foutmelding "geen activiteiten", met de reden als die bekend is
+// (store). Bewaakt de meldingen van een P6 XML-bestand:
+// - geen leesbare activiteit ⇒ de import MISLUKT (`P6XmlImportError`, geen tabblad, zoals een lege
+//   XER) en `importFailureNotice` geeft "geen activiteiten", met de reden als die bekend is
 //   (activiteiten zonder ObjectId; XER-kolomnamen in XML);
+// - meerdere projecten, baselines, losse baselineverwijzingen, activiteiten zonder project ⇒ één
+//   verslag (`p6xmlImportNotice`);
 // - een gewoon bestand met één project ⇒ geen melding.
 // Corpusloos (CI). Fixtures: inline, zelf geschreven.
 import { readFileSync } from 'node:fs';
 import { parseOpenedFile } from '@/services/formatRegistry';
 import { useAppStore } from '@/state/appStore';
-import { p6xmlImportNotice } from '@/state/slices/fileSlice';
+import { importFailureNotice, p6xmlImportNotice } from '@/state/slices/fileSlice';
+import { P6XmlImportError } from '@/services/p6/p6xmlErrors';
 import { activeImportResult, isMultiDocumentImport, type OpenedImport } from '@/services/importTypes';
 import { installDOMParser } from './xmldom-shim';
 
@@ -50,26 +54,29 @@ async function open(name: string, text: string): Promise<OpenedImport> {
   S().applyOpenedImport(parsed, { filePath: null, recompute: true, fit: false, hourDataNotice: false, linkedOpen: true });
   return parsed;
 }
-const lastNotice = () => S().ui.notifications[S().ui.notifications.length - 1];
 const noticeOf = (parsed: OpenedImport) => p6xmlImportNotice(isMultiDocumentImport(parsed) ? parsed.results : [parsed]);
 
 async function main(): Promise<void> {
-  // (1) Activiteiten zonder ObjectId.
-  let parsed = await open('zonder-objectid.xml', NO_OBJECT_IDS);
-  eq('1a geen taken', activeImportResult(parsed).tasks.filter(t => t.childIds.length === 0).length, 0);
-  eq('1b reden', activeImportResult(parsed).p6xmlReport?.emptyReason, 'no-object-ids');
-  eq('1c melding (store)', [lastNotice()?.severity, lastNotice()?.messageKey, lastNotice()?.detailLines?.map(l => l.messageKey)],
-    ['error', 'notifications.p6xmlImportEmpty', ['notifications.p6xmlImportEmptyNoObjectIds']]);
-
-  // (2) XER-kolomnamen in XML.
-  parsed = await open('xer-in-xml.xml', XER_COLUMNS);
-  eq('2a reden', activeImportResult(parsed).p6xmlReport?.emptyReason, 'xer-columns');
-  eq('2b melding (store)', [lastNotice()?.messageKey, lastNotice()?.detailLines?.map(l => l.messageKey)],
-    ['notifications.p6xmlImportEmpty', ['notifications.p6xmlImportEmptyXerColumns']]);
-
-  // (3) Geen activiteiten: melding zonder reden-regel.
-  parsed = await open('leeg.xml', NO_ACTIVITIES);
-  eq('3 melding zonder detailregel', [noticeOf(parsed)?.messageKey, noticeOf(parsed)?.detailLines], ['notifications.p6xmlImportEmpty', undefined]);
+  // (1)–(3) Geen leesbare activiteit: `parseOpenedFile` faalt (dus geen `openAsDocument`, geen tabblad),
+  //         en de fout geeft via `importFailureNotice` de melding met reden. De open-paden in
+  //         fileSlice melden elke importfout via `importFailureNotice`.
+  const failure = async (name: string, text: string): Promise<unknown> => {
+    try { await parseOpenedFile({ name, text }); return undefined; } catch (e) { return e; }
+  };
+  for (const [label, text, reason, reasonKey] of [
+    ['1 zonder ObjectId', NO_OBJECT_IDS, 'no-object-ids', ['notifications.p6xmlImportEmptyNoObjectIds']],
+    ['2 XER-kolommen', XER_COLUMNS, 'xer-columns', ['notifications.p6xmlImportEmptyXerColumns']],
+    ['3 geen activiteiten', NO_ACTIVITIES, 'no-activities', undefined],
+  ] as const) {
+    const err = await failure(`${label}.xml`, text);
+    eq(`${label}: import mislukt met reden`, [err instanceof P6XmlImportError, (err as P6XmlImportError | undefined)?.reason], [true, reason]);
+    const notice = importFailureNotice(err, (err as Error).message);
+    eq(`${label}: melding`, [notice.severity, notice.messageKey, notice.detailLines?.map(l => l.messageKey), notice.detail],
+      ['error', 'notifications.p6xmlImportEmpty', reasonKey, undefined]);
+  }
+  eq('3b andere fout houdt de gewone sleutel en tekst', [importFailureNotice(new Error('kapot'), 'kapot').messageKey, importFailureNotice(new Error('kapot'), 'kapot').detail],
+    ['notifications.openFailed', 'kapot']);
+  let parsed: OpenedImport;
 
   // (4) Gewoon bestand met één project: geen P6 XML-melding.
   parsed = await open('gewoon.xml', ONE_PROJECT);
@@ -106,10 +113,31 @@ async function main(): Promise<void> {
   eq('7 één project + baseline ⇒ verslag met baselineregel', [noticeOf(parsed)?.messageKey, noticeOf(parsed)?.detailLines?.map(l => l.messageKey)],
     ['notifications.p6xmlImportOpened', ['notifications.xerImportProjectsSeen', 'notifications.xerImportBaselinesMaterialized']]);
 
+  // (8) Losse baselineverwijzing en een platte activiteit zonder project (twee projecten).
+  const edges = wrap(`<Activity><Id>LOS</Id><Name>los</Name><ObjectId>99</ObjectId><PlannedDuration>8</PlannedDuration><PlannedStartDate>2026-03-02T08:00:00</PlannedStartDate><PlannedFinishDate>2026-03-02T17:00:00</PlannedFinishDate></Activity>
+    <Project><Id>P1</Id><ObjectId>1</ObjectId><Name>Een</Name><CurrentBaselineProjectObjectId>55</CurrentBaselineProjectObjectId>
+      <Activity><Id>A1</Id><Name>a</Name><ObjectId>11</ObjectId><PlannedDuration>8</PlannedDuration><PlannedStartDate>2026-03-02T08:00:00</PlannedStartDate><PlannedFinishDate>2026-03-02T17:00:00</PlannedFinishDate></Activity></Project>
+    <Project><Id>P2</Id><ObjectId>2</ObjectId><Name>Twee</Name>
+      <Activity><Id>B1</Id><Name>b</Name><ObjectId>21</ObjectId><PlannedDuration>8</PlannedDuration><PlannedStartDate>2026-03-02T08:00:00</PlannedStartDate><PlannedFinishDate>2026-03-02T17:00:00</PlannedFinishDate></Activity></Project>
+    <BaselineProject><Id>WEES</Id><ObjectId>77</ObjectId><Name>Wees</Name><OriginalProjectObjectId>404</OriginalProjectObjectId></BaselineProject>`);
+  parsed = await parseOpenedFile({ name: 'randen.xml', text: edges });
+  const edgeDocs = isMultiDocumentImport(parsed) ? parsed.results : [parsed];
+  eq('8a de losse activiteit zit in geen enkel document', edgeDocs.map(d => d.tasks.map(t => t.wbsCode)), [['A1'], ['B1']]);
+  eq('8b verslag telt losse baselineverwijzingen (2) en de activiteit zonder project (1)',
+    noticeOf(parsed)?.detailLines?.map(l => [l.messageKey, l.params?.count]), [
+      ['notifications.xerImportProjectsSeen', 2],
+      ['notifications.xerImportDanglingBaselineReferences', 2],
+      ['notifications.p6xmlImportUnassignedActivities', 1],
+    ]);
+  // Eén project: een platte activiteit zonder ProjectObjectId hoort gewoon bij dat project.
+  parsed = await parseOpenedFile({ name: 'een.xml', text: wrap(`<Activity><Id>LOS</Id><Name>los</Name><ObjectId>99</ObjectId><PlannedDuration>8</PlannedDuration><PlannedStartDate>2026-03-02T08:00:00</PlannedStartDate><PlannedFinishDate>2026-03-02T17:00:00</PlannedFinishDate></Activity>
+    <Project><Id>P1</Id><ObjectId>1</ObjectId><Name>Een</Name></Project>`) });
+  eq('8c één project: de platte activiteit hoort erbij, geen melding', [activeImportResult(parsed).tasks.map(t => t.wbsCode), noticeOf(parsed)], [['LOS'], undefined]);
+
   // (5) De sleutels bestaan in nl en en (geen lege toast).
   for (const loc of ['nl', 'en']) {
     const json = JSON.parse(readFileSync(new URL(`../../src/i18n/locales/${loc}/common.json`, import.meta.url), 'utf8')) as { notifications: Record<string, string> };
-    for (const key of ['p6xmlImportEmpty', 'p6xmlImportEmptyNoObjectIds', 'p6xmlImportEmptyXerColumns', 'p6xmlImportOpened_one', 'p6xmlImportOpened_other', 'p6xmlImportCrossProjectRelations_one', 'p6xmlImportCrossProjectRelations_other']) {
+    for (const key of ['p6xmlImportEmpty', 'p6xmlImportEmptyNoObjectIds', 'p6xmlImportEmptyXerColumns', 'p6xmlImportOpened_one', 'p6xmlImportOpened_other', 'p6xmlImportCrossProjectRelations_one', 'p6xmlImportCrossProjectRelations_other', 'p6xmlImportUnassignedActivities_one', 'p6xmlImportUnassignedActivities_other']) {
       eq(`5 ${loc}: ${key}`, typeof json.notifications[key], 'string');
     }
   }

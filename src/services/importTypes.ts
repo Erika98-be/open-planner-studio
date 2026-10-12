@@ -392,8 +392,12 @@ export interface P6XmlImportReport {
   baselinesMaterialized: number;
   /** Relaties tussen projecten: niet als relatie overgenomen (zoals bij XER). */
   crossProjectRelations: number;
-  /** Alleen als er geen enkele activiteit leesbaar was. */
-  emptyReason?: P6XmlEmptyReason;
+  /** Losse baselineverwijzingen (zoals XER): een `<BaselineProject>` zonder geopend eigenaarproject,
+   *  of een `CurrentBaselineProjectObjectId` zonder `<BaselineProject>`. */
+  danglingBaselineReferences: number;
+  /** Platte activiteiten zonder `ProjectObjectId` in een bestand met meerdere projecten: bij geen
+   *  project ingelezen. */
+  unassignedActivities: number;
 }
 
 export interface MultiDocumentImport {

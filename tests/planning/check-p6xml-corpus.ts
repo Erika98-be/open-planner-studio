@@ -7,12 +7,13 @@
 // het resultaat van `readP6XMLDocuments` (de open-pijplijn: één document per project mét
 // activiteiten, baselines gekoppeld) ná de fix "lezer leest echte P6 XML" (2026-10-12); daarvoor gaf
 // elk bestand 0 taken. Twee bestanden zijn geen schema-PMXML en blijven bewust 0 (zie `note`); hun
-// `emptyReason` voedt de openingsmelding.
+// `emptyReason`: de import mislukt met die reden (`P6XmlImportError`, melding zonder tabblad).
 // Rapport met bestandsnamen (alleen lokaal): `OPS_P6XML_REPORT=1`.
 import { createHash } from 'node:crypto';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { readP6XMLDocuments } from '@/services/p6/p6xmlReader';
+import { P6XmlImportError } from '@/services/p6/p6xmlErrors';
 import { isMultiDocumentImport } from '@/services/importTypes';
 import { installDOMParser } from './xmldom-shim';
 
@@ -41,6 +42,10 @@ interface Pin {
   projectsSeen: number;
   emptyProjectsSkipped: number;
   crossProjectRelations: number;
+  /** Alleen als > 0: losse baselineverwijzingen en activiteiten zonder project. */
+  danglingBaselineReferences?: number;
+  unassignedActivities?: number;
+  /** De import mislukt (`P6XmlImportError`, geen tabblad): `docs` leeg, `active` -1, tellers 0. */
   emptyReason?: string;
   note?: string;
 }
@@ -60,10 +65,8 @@ const PINS: Readonly<Record<string, Pin>> = {
     active: 1, projectsSeen: 2, emptyProjectsSkipped: 0, crossProjectRelations: 1, note: '2 projecten; de relatie tussen de projecten wordt geen relatie',
   },
   '2dc3c997fd310ea7': {
-    docs: [
-      { tasks: 0, leaves: 0, sequences: 0, resources: 0, assignments: 0, libraryCalendars: 0, baselines: 0 },
-    ],
-    active: 0, projectsSeen: 1, emptyProjectsSkipped: 0, crossProjectRelations: 0, emptyReason: 'xer-columns', note: 'geen PMXML: XER-kolomnamen in XML',
+    docs: [],
+    active: -1, projectsSeen: 0, emptyProjectsSkipped: 0, crossProjectRelations: 0, emptyReason: 'xer-columns', note: 'geen PMXML: XER-kolomnamen in XML',
   },
   '2ea223e8fca95b01': {
     docs: [
@@ -108,10 +111,8 @@ const PINS: Readonly<Record<string, Pin>> = {
     active: 0, projectsSeen: 15, emptyProjectsSkipped: 3, crossProjectRelations: 0, note: '15 projecten (3 leeg) + 12 baselines',
   },
   'b616f936fd6edda9': {
-    docs: [
-      { tasks: 0, leaves: 0, sequences: 0, resources: 0, assignments: 0, libraryCalendars: 0, baselines: 0 },
-    ],
-    active: 0, projectsSeen: 1, emptyProjectsSkipped: 0, crossProjectRelations: 0, emptyReason: 'no-object-ids', note: 'geen schema-PMXML: geen ObjectId, relaties via ActivityId',
+    docs: [],
+    active: -1, projectsSeen: 0, emptyProjectsSkipped: 0, crossProjectRelations: 0, emptyReason: 'no-object-ids', note: 'geen schema-PMXML: geen ObjectId, relaties via ActivityId',
   },
   'bcd339e71d0d866e': {
     docs: [
@@ -168,11 +169,16 @@ if (dirs.length === 0) {
           projectsSeen: fileReport?.projectsSeen ?? -1,
           emptyProjectsSkipped: fileReport?.emptyProjectsSkipped ?? -1,
           crossProjectRelations: fileReport?.crossProjectRelations ?? -1,
-          ...(fileReport?.emptyReason ? { emptyReason: fileReport.emptyReason } : {}),
+          ...(fileReport?.danglingBaselineReferences ? { danglingBaselineReferences: fileReport.danglingBaselineReferences } : {}),
+          ...(fileReport?.unassignedActivities ? { unassignedActivities: fileReport.unassignedActivities } : {}),
         };
       } catch (e) {
-        fails.push(`${key}: uitzondering ${(e as Error).message}`);
-        continue;
+        if (e instanceof P6XmlImportError) {
+          got = { docs: [], active: -1, projectsSeen: 0, emptyProjectsSkipped: 0, crossProjectRelations: 0, emptyReason: e.reason };
+        } else {
+          fails.push(`${key}: uitzondering ${(e as Error).message}`);
+          continue;
+        }
       }
       if (report) {
         const count = (tag: string) => (xml.match(new RegExp(`<${tag}>`, 'g')) ?? []).length;
