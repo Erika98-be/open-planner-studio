@@ -35,6 +35,14 @@ Under the ribbon there is a bar: *You're viewing the dates as recorded in the fi
 
 There is also a message: *4 tasks show the dates as recorded in the file (not recalculated).* Only with an `.xer` it says *1 task shows the dates as Primavera recorded them (not recalculated).* Every task for which the file recorded dates shows a marker in the *Properties* panel: *Shows Primavera’s own recorded dates for this task* with a Primavera source, or *Shows the dates as recorded in the file for this task* with another source. The Gantt, the task grid and the status bar show the dates from the file.
 
+### Tasks that have started or are complete
+
+A task that is complete sits on the days on which it really happened: from the actual start to the actual finish. A task that is in progress starts on the day on which it really started. It finishes on the calculated finish. This applies in this view, after recalculating and with every calculation profile, as in Primavera and MS Project.
+
+For such a task the file often records other early dates. Primavera puts the early start of a task that is in progress or complete on the status date. You see those dates in the columns *Early start* and *Early finish*, not in *Start* and *Finish*. A task that is complete therefore never counts as a difference. A task that is in progress only counts when its finish differs.
+
+For a task that has started, you can no longer type the start. In the task grid, in the *Properties* panel and in *Edit task* the start is then read-only. For a task that is complete, this also applies to the finish in the task grid. Change the *Actual start* or the *Actual finish* instead, with the progress. In the Gantt the bar of such a task does not move; you then get a message.
+
 ### What stays empty in this view
 
 In this view the app calculates nothing. It only shows what the file recorded. So you only see float and critical path if the file contains them. If the file records no critical tasks, the status bar reports 0 critical tasks. That says nothing about the critical path in the package itself. What only comes out of a calculation does not exist in this view: which relations drive the schedule, violated constraints, tasks that run out of sequence and near-critical tasks.
@@ -77,6 +85,7 @@ What if it is different?
 - You save in the view and open the IFC file again, without editing: Metselwerk is back on 17 through 28 May.
 - You recalculate, save without editing further and open the IFC file again: the view is on again and Metselwerk is on 17 through 28 May.
 - You edit, save and open again: the app offers the view with *Recalculation moved 1 of 2 tasks away from the dates in the file.* Metselwerk shows *Deviates from the recorded dates*.
+- Fundering is already complete in the file: it actually started on 3 May and actually finished on 7 May. The file records the status date as its early start. The bar of Fundering still sits on 3 to 7 May, in the view and after recalculating. Fundering does not count as a difference.
 
 ## Consequences and misunderstandings
 
