@@ -1,5 +1,5 @@
 import { Task, TaskConstraint, ConstraintType } from '@/types/task';
-import type { P6DurationType } from '@/types/task';
+import type { P6CompletePctType, P6DurationType } from '@/types/task';
 import { createDefaultTaskTime } from '@/utils/taskDefaults';
 import { Sequence, SequenceType } from '@/types/sequence';
 import { Resource, ResourceAssignment, ResourceType, ResourceCurve } from '@/types/resource';
@@ -78,6 +78,62 @@ function parseP6Date(s: string): string {
 function p6PercentToPercent(raw: number, writtenByOps: boolean): number {
   if (writtenByOps || raw > 1) return raw;
   return raw * 100;
+}
+
+/** PMXML `<PercentCompleteType>`-label → XER-token (zelfde drie P6-soorten). */
+const P6_XML_PERCENT_TYPE: Readonly<Record<string, P6CompletePctType>> = {
+  Physical: 'CP_Phys',
+  Duration: 'CP_Drtn',
+  Units: 'CP_Units',
+};
+
+/** Een getal-element, of null als het ontbreekt of leeg/`xsi:nil` is (anders dan `getElementFloat`,
+ *  dat 0 teruggeeft: een ontbrekende kolom is geen 0 %). */
+function optionalFloat(parent: Element, tagName: string): number | null {
+  const raw = getElementText(parent, tagName).trim();
+  if (!raw) return null;
+  const n = Number.parseFloat(raw);
+  return Number.isFinite(n) ? n : null;
+}
+
+/**
+ * Voortgang (procent, 0..100) van één activiteit — dezelfde lijn als de XER-lezer
+ * (`xerReader.ts`, `complete_pct_type`):
+ * - De status leidt: `Completed` ⇒ 100, `Not Started` ⇒ 0. Alleen een actieve taak leest een
+ *   percentage. Uitzondering: een OPS-export (`writtenByOps`), waar de status niet de bron is.
+ * - `<PercentCompleteType>` kiest de kolom en er is geen terugval op de kolom van een andere soort:
+ *   Physical ⇒ `PhysicalPercentComplete`; Duration ⇒ `DurationPercentComplete`, zonder die kolom
+ *   `1 − RemainingDuration/PlannedDuration` (zoals XER bij CP_Drtn); Units ⇒ `UnitsPercentComplete`.
+ *   PMXML heeft een eigen Units-kolom; XER kent die niet en leest daar `complete_pct`.
+ * - Ontbreekt de soort (eigen writer vóór 2026-10, andere tools), dan geldt Physical, net als XER
+ *   bij een lege `complete_pct_type`. Een onbekend label valt terug op Duration (XER: CP_Drtn), met
+ *   een waarschuwing.
+ * Het getal zelf is een P6-fractie of een OPS-procent: zie `p6PercentToPercent`.
+ */
+function p6ActivityCompletionPercent(actEl: Element, writtenByOps: boolean): number {
+  // Een OPS-export draagt de status alleen ter informatie: in OPS volgt de status uit voortgang en
+  // actuals (`normalizeImportedProgress`), en een taak kan op 100 % staan met een oude status.
+  const status = writtenByOps ? '' : getElementText(actEl, 'Status').trim();
+  if (status === 'Completed') return 100;
+  if (status === 'Not Started') return 0;
+  const label = getElementText(actEl, 'PercentCompleteType').trim();
+  const type: P6CompletePctType = label ? P6_XML_PERCENT_TYPE[label] ?? 'CP_Drtn' : 'CP_Phys';
+  if (label && !P6_XML_PERCENT_TYPE[label]) {
+    console.warn(`P6-XML-import: onbekende <PercentCompleteType>-waarde '${label}' — Duration aangenomen.`);
+  }
+  const pct = (tag: string): number | null => {
+    const raw = optionalFloat(actEl, tag);
+    return raw == null ? null : p6PercentToPercent(raw, writtenByOps);
+  };
+  if (type === 'CP_Phys') return pct('PhysicalPercentComplete') ?? 0;
+  if (type === 'CP_Units') return pct('UnitsPercentComplete') ?? 0;
+  const duration = pct('DurationPercentComplete');
+  if (duration != null) return duration;
+  const remaining = optionalFloat(actEl, 'RemainingDuration');
+  const planned = optionalFloat(actEl, 'PlannedDuration');
+  return remaining != null && planned != null && planned > 0
+    ? Math.max(0, Math.min(100, (1 - remaining / planned) * 100))
+    : 0;
 }
 
 const SEQUENCE_TYPE_BY_P6: Partial<Record<string, SequenceType>> = invertRecord(P6_LINK_TYPE);
@@ -580,7 +636,7 @@ export function readP6XML(content: string): ImportResult {
     const plannedDuration = getElementFloat(actEl, 'PlannedDuration');
     const plannedStartRaw = getElementText(actEl, 'PlannedStartDate');
     const plannedFinishRaw = getElementText(actEl, 'PlannedFinishDate');
-    const percentComplete = p6PercentToPercent(getElementFloat(actEl, 'PhysicalPercentComplete'), writtenByOps);
+    const percentComplete = p6ActivityCompletionPercent(actEl, writtenByOps);
     const description = getElementText(actEl, 'Description');
     const customTaskType = customTaskTypeByActivityObjectId.get(objId);
     if (customTaskType?.name && !customTaskTypes.has(customTaskType.id)) {

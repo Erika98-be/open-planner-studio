@@ -102,6 +102,31 @@ eq('8d round-trip bibliotheekkalenders', (rt.resourceCalendars ?? []).length, (r
 eq('8e round-trip voortgang B1010 (OPS-export schrijft procenten)', rt.tasks.find(t => t.wbsCode === 'B1010')?.time.completion, 0.5);
 eq('8f round-trip projectkalender', [rt.calendar.name, rt.calendar.workDays], [r.calendar.name, r.calendar.workDays]);
 
+// (9) Percentagesoort — zelfde lijn als de XER-lezer (`complete_pct_type`): de status leidt, de
+//     soort kiest de kolom, geen terugval op de kolom van een andere soort. P6-fracties (0..1).
+function completionOf(fields: string): number | undefined {
+  const doc = `<?xml version="1.0"?><APIBusinessObjects><Project><ObjectId>1</ObjectId><Name>P</Name>
+    <PlannedStartDate>2026-03-02T08:00:00</PlannedStartDate>
+    <Activity><ObjectId>1</ObjectId><Id>X</Id><Name>X</Name><PlannedDuration>40</PlannedDuration>
+      <PlannedStartDate>2026-03-02T08:00:00</PlannedStartDate><PlannedFinishDate>2026-03-06T17:00:00</PlannedFinishDate>
+      ${fields}</Activity></Project></APIBusinessObjects>`;
+  const warn = console.warn;
+  console.warn = () => {};
+  try { return readP6XML(doc).tasks[0]?.time.completion; } finally { console.warn = warn; }
+}
+const started = '<Status>In Progress</Status><ActualStartDate>2026-03-02T08:00:00</ActualStartDate>';
+const cols = '<PhysicalPercentComplete>0.4</PhysicalPercentComplete><DurationPercentComplete>0.7</DurationPercentComplete><UnitsPercentComplete>0.2</UnitsPercentComplete>';
+const near = (v: number | undefined) => (v === undefined ? v : Math.round(v * 1000) / 1000);
+eq('9a Physical ⇒ PhysicalPercentComplete', near(completionOf(`${started}<PercentCompleteType>Physical</PercentCompleteType>${cols}`)), 0.4);
+eq('9b Duration ⇒ DurationPercentComplete', near(completionOf(`${started}<PercentCompleteType>Duration</PercentCompleteType>${cols}`)), 0.7);
+eq('9c Units ⇒ UnitsPercentComplete', near(completionOf(`${started}<PercentCompleteType>Units</PercentCompleteType>${cols}`)), 0.2);
+eq('9d Duration zonder kolom ⇒ 1 − rest/gepland', near(completionOf(`${started}<PercentCompleteType>Duration</PercentCompleteType><RemainingDuration>30</RemainingDuration>`)), 0.25);
+eq('9e Units zonder kolom ⇒ 0 (geen terugval op Physical)', near(completionOf(`${started}<PercentCompleteType>Units</PercentCompleteType><PhysicalPercentComplete>0.4</PhysicalPercentComplete>`)), 0);
+eq('9f geen soort ⇒ Physical', near(completionOf(`${started}${cols}`)), 0.4);
+eq('9g onbekende soort ⇒ Duration', near(completionOf(`${started}<PercentCompleteType>Foo</PercentCompleteType>${cols}`)), 0.7);
+eq('9h status Completed leidt', near(completionOf(`<Status>Completed</Status><ActualStartDate>2026-03-02T08:00:00</ActualStartDate><ActualFinishDate>2026-03-06T17:00:00</ActualFinishDate><PercentCompleteType>Physical</PercentCompleteType><PhysicalPercentComplete>0.1</PhysicalPercentComplete>`)), 1);
+eq('9i status Not Started leidt', near(completionOf(`<Status>Not Started</Status><PercentCompleteType>Physical</PercentCompleteType><PhysicalPercentComplete>0.5</PhysicalPercentComplete>`)), 0);
+
 if (fails.length > 0) {
   for (const f of fails) console.log(`XX  p6xml-nested: ${f}`);
   console.log(`XX  p6xml-nested: ${fails.length} van ${checks} controles rood`);
