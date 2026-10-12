@@ -1,0 +1,256 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Zelf geschreven fixture (geen corpusbestand) in de vorm van echte Primavera P6 XML (PMXML):
+     globale objecten op het hoogste niveau, projectobjecten BINNEN <Project>. Gebruikt door
+     tests/planning/check-p6xml-nested.ts. Elk getal hier is daar met === vastgezet. -->
+<APIBusinessObjects xmlns="http://xmlns.oracle.com/Primavera/P6/V8.3/API/BusinessObjects" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <!-- Bewust EERST: de projectkalender volgt uit ActivityDefaultCalendarObjectId, niet uit de volgorde. -->
+  <Calendar>
+    <HoursPerDay>6</HoursPerDay>
+    <Name>Ongebruikt globaal</Name>
+    <ObjectId>12</ObjectId>
+    <Type>Global</Type>
+  </Calendar>
+  <Calendar>
+    <BaseCalendarObjectId xsi:nil="true" />
+    <HoursPerDay>8</HoursPerDay>
+    <Name>Globaal 5 dagen</Name>
+    <ObjectId>10</ObjectId>
+    <ProjectObjectId xsi:nil="true" />
+    <Type>Global</Type>
+    <StandardWorkWeek>
+      <StandardWorkHours><DayOfWeek>Sunday</DayOfWeek><WorkTime xsi:nil="true" /></StandardWorkHours>
+      <StandardWorkHours><DayOfWeek>Monday</DayOfWeek>
+        <WorkTime><Start>08:00:00</Start><Finish>11:59:00</Finish></WorkTime>
+        <WorkTime><Start>13:00:00</Start><Finish>16:59:00</Finish></WorkTime></StandardWorkHours>
+      <StandardWorkHours><DayOfWeek>Tuesday</DayOfWeek>
+        <WorkTime><Start>08:00:00</Start><Finish>11:59:00</Finish></WorkTime>
+        <WorkTime><Start>13:00:00</Start><Finish>16:59:00</Finish></WorkTime></StandardWorkHours>
+      <StandardWorkHours><DayOfWeek>Wednesday</DayOfWeek>
+        <WorkTime><Start>08:00:00</Start><Finish>11:59:00</Finish></WorkTime>
+        <WorkTime><Start>13:00:00</Start><Finish>16:59:00</Finish></WorkTime></StandardWorkHours>
+      <StandardWorkHours><DayOfWeek>Thursday</DayOfWeek>
+        <WorkTime><Start>08:00:00</Start><Finish>11:59:00</Finish></WorkTime>
+        <WorkTime><Start>13:00:00</Start><Finish>16:59:00</Finish></WorkTime></StandardWorkHours>
+      <StandardWorkHours><DayOfWeek>Friday</DayOfWeek>
+        <WorkTime><Start>08:00:00</Start><Finish>11:59:00</Finish></WorkTime>
+        <WorkTime><Start>13:00:00</Start><Finish>16:59:00</Finish></WorkTime></StandardWorkHours>
+      <StandardWorkHours><DayOfWeek>Saturday</DayOfWeek><WorkTime xsi:nil="true" /></StandardWorkHours>
+    </StandardWorkWeek>
+    <HolidayOrExceptions>
+      <HolidayOrException><Date>2026-04-27T00:00:00</Date><WorkTime xsi:nil="true" /></HolidayOrException>
+      <HolidayOrException><Date>2026-05-05T00:00:00</Date>
+        <WorkTime><Start>00:00:00</Start><Finish>23:59:00</Finish></WorkTime></HolidayOrException>
+      <HolidayOrException><Date>2026-05-09T00:00:00</Date>
+        <WorkTime><Start>08:00:00</Start><Finish>11:59:00</Finish></WorkTime></HolidayOrException>
+    </HolidayOrExceptions>
+  </Calendar>
+  <Calendar>
+    <HoursPerDay>8</HoursPerDay>
+    <Name>Globaal 4 dagen</Name>
+    <ObjectId>11</ObjectId>
+    <Type>Global</Type>
+    <StandardWorkWeek>
+      <StandardWorkHours><DayOfWeek>Monday</DayOfWeek><WorkTime><Start>08:00:00</Start><Finish>16:59:00</Finish></WorkTime></StandardWorkHours>
+      <StandardWorkHours><DayOfWeek>Tuesday</DayOfWeek><WorkTime><Start>08:00:00</Start><Finish>16:59:00</Finish></WorkTime></StandardWorkHours>
+      <StandardWorkHours><DayOfWeek>Wednesday</DayOfWeek><WorkTime><Start>08:00:00</Start><Finish>16:59:00</Finish></WorkTime></StandardWorkHours>
+      <StandardWorkHours><DayOfWeek>Thursday</DayOfWeek><WorkTime><Start>08:00:00</Start><Finish>16:59:00</Finish></WorkTime></StandardWorkHours>
+    </StandardWorkWeek>
+  </Calendar>
+  <Resource>
+    <CalendarObjectId>11</CalendarObjectId>
+    <MaxUnitsPerTime>1</MaxUnitsPerTime>
+    <Name>Timmerploeg</Name>
+    <ObjectId>500</ObjectId>
+    <ResourceType>Labor</ResourceType>
+  </Resource>
+  <!-- Een plat object van een ANDER project mag niet meelekken. -->
+  <Activity>
+    <Id>C-PLAT</Id>
+    <Name>Plat object van project C</Name>
+    <ObjectId>3999</ObjectId>
+    <ProjectObjectId>300</ProjectObjectId>
+    <PlannedDuration>8</PlannedDuration>
+    <PlannedStartDate>2026-06-01T08:00:00</PlannedStartDate>
+    <PlannedFinishDate>2026-06-01T17:00:00</PlannedFinishDate>
+  </Activity>
+  <!-- Project A: leeg omhulsel (geen activiteiten). De lezer slaat het over. -->
+  <Project>
+    <Id>A-LEEG</Id>
+    <Name><![CDATA[Project A (leeg)]]></Name>
+    <ObjectId>100</ObjectId>
+    <PlannedStartDate>2026-01-05T08:00:00</PlannedStartDate>
+    <WBS><Code>A</Code><Name>Leeg</Name><ObjectId>1100</ObjectId><ParentObjectId>100</ParentObjectId><ProjectObjectId>100</ProjectObjectId></WBS>
+  </Project>
+  <!-- Project B: het project dat de lezer moet inlezen. -->
+  <Project>
+    <ActivityDefaultCalendarObjectId>10</ActivityDefaultCalendarObjectId>
+    <DataDate>2026-04-20T08:00:00</DataDate>
+    <Id>B-BOUW</Id>
+    <Name><![CDATA[Project B & bouw]]></Name>
+    <ObjectId>200</ObjectId>
+    <PlannedStartDate>2026-04-13T08:00:00</PlannedStartDate>
+    <Calendar>
+      <HoursPerDay>10</HoursPerDay>
+      <Name>Projectkalender B 10 uur</Name>
+      <ObjectId>13</ObjectId>
+      <ProjectObjectId>200</ProjectObjectId>
+      <Type>Project</Type>
+      <StandardWorkWeek>
+        <StandardWorkHours><DayOfWeek>Monday</DayOfWeek><WorkTime><Start>07:00:00</Start><Finish>16:59:00</Finish></WorkTime></StandardWorkHours>
+        <StandardWorkHours><DayOfWeek>Tuesday</DayOfWeek><WorkTime><Start>07:00:00</Start><Finish>16:59:00</Finish></WorkTime></StandardWorkHours>
+        <StandardWorkHours><DayOfWeek>Wednesday</DayOfWeek><WorkTime><Start>07:00:00</Start><Finish>16:59:00</Finish></WorkTime></StandardWorkHours>
+        <StandardWorkHours><DayOfWeek>Thursday</DayOfWeek><WorkTime><Start>07:00:00</Start><Finish>16:59:00</Finish></WorkTime></StandardWorkHours>
+        <StandardWorkHours><DayOfWeek>Friday</DayOfWeek><WorkTime><Start>07:00:00</Start><Finish>16:59:00</Finish></WorkTime></StandardWorkHours>
+      </StandardWorkWeek>
+    </Calendar>
+    <WBS><Code>1</Code><Name>Ruwbouw</Name><ObjectId>2100</ObjectId><ParentObjectId>200</ParentObjectId><ProjectObjectId>200</ProjectObjectId><SequenceNumber>1</SequenceNumber></WBS>
+    <WBS><Code>1.1</Code><Name>Fundering</Name><ObjectId>2101</ObjectId><ParentObjectId>2100</ParentObjectId><ProjectObjectId>200</ProjectObjectId><SequenceNumber>1</SequenceNumber></WBS>
+    <Activity>
+      <ActualFinishDate>2026-04-17T17:00:00</ActualFinishDate>
+      <ActualStartDate>2026-04-13T08:00:00</ActualStartDate>
+      <CalendarObjectId>10</CalendarObjectId>
+      <Id>B1000</Id>
+      <Name>Grondwerk</Name>
+      <ObjectId>2001</ObjectId>
+      <PhysicalPercentComplete>1</PhysicalPercentComplete>
+      <PlannedDuration>40</PlannedDuration>
+      <PlannedFinishDate>2026-04-17T17:00:00</PlannedFinishDate>
+      <PlannedStartDate>2026-04-13T08:00:00</PlannedStartDate>
+      <ProjectObjectId>200</ProjectObjectId>
+      <Type>Task Dependent</Type>
+      <WBSObjectId>2101</WBSObjectId>
+    </Activity>
+    <Activity>
+      <ActualStartDate>2026-04-20T08:00:00</ActualStartDate>
+      <CalendarObjectId>10</CalendarObjectId>
+      <Id>B1010</Id>
+      <Name>Funderingsbalken</Name>
+      <ObjectId>2002</ObjectId>
+      <PhysicalPercentComplete>0.5</PhysicalPercentComplete>
+      <PlannedDuration>80</PlannedDuration>
+      <PlannedFinishDate>2026-05-01T17:00:00</PlannedFinishDate>
+      <PlannedStartDate>2026-04-20T08:00:00</PlannedStartDate>
+      <ProjectObjectId>200</ProjectObjectId>
+      <Type>Task Dependent</Type>
+      <WBSObjectId>2101</WBSObjectId>
+    </Activity>
+    <Activity>
+      <CalendarObjectId>11</CalendarObjectId>
+      <Id>B1020</Id>
+      <Name>Bekisting (4-daagse week)</Name>
+      <ObjectId>2003</ObjectId>
+      <PhysicalPercentComplete>0</PhysicalPercentComplete>
+      <PlannedDuration>32</PlannedDuration>
+      <PlannedFinishDate>2026-05-07T17:00:00</PlannedFinishDate>
+      <PlannedStartDate>2026-05-04T08:00:00</PlannedStartDate>
+      <ProjectObjectId>200</ProjectObjectId>
+      <Type>Task Dependent</Type>
+      <WBSObjectId>2100</WBSObjectId>
+    </Activity>
+    <Activity>
+      <CalendarObjectId>13</CalendarObjectId>
+      <Id>B1030</Id>
+      <Name>Ruwbouw gereed</Name>
+      <ObjectId>2004</ObjectId>
+      <PhysicalPercentComplete>0</PhysicalPercentComplete>
+      <PlannedDuration>0</PlannedDuration>
+      <PlannedFinishDate>2026-05-11T17:00:00</PlannedFinishDate>
+      <PlannedStartDate>2026-05-11T17:00:00</PlannedStartDate>
+      <ProjectObjectId>200</ProjectObjectId>
+      <Type>Finish Milestone</Type>
+      <WBSObjectId>2100</WBSObjectId>
+    </Activity>
+    <ResourceAssignment>
+      <ActivityObjectId>2003</ActivityObjectId>
+      <ObjectId>7001</ObjectId>
+      <PlannedUnitsPerTime>1</PlannedUnitsPerTime>
+      <ProjectObjectId>200</ProjectObjectId>
+      <ResourceObjectId>500</ResourceObjectId>
+    </ResourceAssignment>
+    <Relationship>
+      <Lag>0</Lag>
+      <ObjectId>8001</ObjectId>
+      <PredecessorActivityObjectId>2001</PredecessorActivityObjectId>
+      <PredecessorProjectObjectId>200</PredecessorProjectObjectId>
+      <SuccessorActivityObjectId>2002</SuccessorActivityObjectId>
+      <SuccessorProjectObjectId>200</SuccessorProjectObjectId>
+      <Type>Finish to Start</Type>
+    </Relationship>
+    <Relationship>
+      <Lag>0</Lag>
+      <ObjectId>8002</ObjectId>
+      <PredecessorActivityObjectId>2002</PredecessorActivityObjectId>
+      <PredecessorProjectObjectId>200</PredecessorProjectObjectId>
+      <SuccessorActivityObjectId>2003</SuccessorActivityObjectId>
+      <SuccessorProjectObjectId>200</SuccessorProjectObjectId>
+      <Type>Finish to Start</Type>
+    </Relationship>
+    <Relationship>
+      <Lag>0</Lag>
+      <ObjectId>8003</ObjectId>
+      <PredecessorActivityObjectId>2003</PredecessorActivityObjectId>
+      <PredecessorProjectObjectId>200</PredecessorProjectObjectId>
+      <SuccessorActivityObjectId>2004</SuccessorActivityObjectId>
+      <SuccessorProjectObjectId>200</SuccessorProjectObjectId>
+      <Type>Finish to Start</Type>
+    </Relationship>
+    <!-- Externe relatie naar project C: de opvolger zit niet in dit project en valt weg. -->
+    <Relationship>
+      <Lag>0</Lag>
+      <ObjectId>8004</ObjectId>
+      <PredecessorActivityObjectId>2004</PredecessorActivityObjectId>
+      <PredecessorProjectObjectId>200</PredecessorProjectObjectId>
+      <SuccessorActivityObjectId>3001</SuccessorActivityObjectId>
+      <SuccessorProjectObjectId>300</SuccessorProjectObjectId>
+      <Type>Finish to Start</Type>
+    </Relationship>
+  </Project>
+  <!-- Project C: een tweede project met activiteiten. Niets hiervan mag in B terechtkomen. -->
+  <Project>
+    <Id>C-AFBOUW</Id>
+    <Name>Project C</Name>
+    <ObjectId>300</ObjectId>
+    <PlannedStartDate>2026-06-01T08:00:00</PlannedStartDate>
+    <WBS><Code>9</Code><Name>Afbouw</Name><ObjectId>3100</ObjectId><ParentObjectId>300</ParentObjectId><ProjectObjectId>300</ProjectObjectId></WBS>
+    <Activity>
+      <Id>C1000</Id>
+      <Name>Afbouw</Name>
+      <ObjectId>3001</ObjectId>
+      <PlannedDuration>16</PlannedDuration>
+      <PlannedFinishDate>2026-06-02T17:00:00</PlannedFinishDate>
+      <PlannedStartDate>2026-06-01T08:00:00</PlannedStartDate>
+      <ProjectObjectId>300</ProjectObjectId>
+      <WBSObjectId>3100</WBSObjectId>
+    </Activity>
+    <Activity>
+      <Id>C1010</Id>
+      <Name>Oplevering</Name>
+      <ObjectId>3002</ObjectId>
+      <PlannedDuration>8</PlannedDuration>
+      <PlannedFinishDate>2026-06-03T17:00:00</PlannedFinishDate>
+      <PlannedStartDate>2026-06-03T08:00:00</PlannedStartDate>
+      <ProjectObjectId>300</ProjectObjectId>
+      <WBSObjectId>3100</WBSObjectId>
+    </Activity>
+    <Relationship>
+      <ObjectId>9001</ObjectId>
+      <PredecessorActivityObjectId>3001</PredecessorActivityObjectId>
+      <SuccessorActivityObjectId>3002</SuccessorActivityObjectId>
+      <Type>Finish to Start</Type>
+    </Relationship>
+  </Project>
+  <!-- Een baseline van B: wordt nooit gelezen. -->
+  <BaselineProject>
+    <Id>B-BOUW-BL1</Id>
+    <Name>Baseline B</Name>
+    <ObjectId>201</ObjectId>
+    <Activity>
+      <Id>B1000</Id>
+      <Name>Grondwerk (baseline)</Name>
+      <ObjectId>2901</ObjectId>
+      <PlannedDuration>40</PlannedDuration>
+      <PlannedStartDate>2026-04-06T08:00:00</PlannedStartDate>
+      <PlannedFinishDate>2026-04-10T17:00:00</PlannedFinishDate>
+    </Activity>
+  </BaselineProject>
+</APIBusinessObjects>
