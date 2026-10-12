@@ -7,6 +7,7 @@ import { saveRibbonCompact } from '@/utils/settingsStore';
 import { RibbonTab } from '@/state/slices/types';
 import { RibbonTabContent } from './RibbonTabContent';
 import { ExtensionRibbonGroups } from './ribbonWidgets';
+import { EXTENSIONS_ENABLED } from '@/utils/buildFlags';
 import { RibbonDensity, RibbonDensityContext } from './ribbonDensity';
 import './Ribbon.css';
 import { applySetting } from '@/components/settings/applySetting';
@@ -345,7 +346,7 @@ export function Ribbon() {
           <RibbonDensityContext.Provider value={density}>
             <div ref={scrollRef} className="ribbon-content-scroll">
               <RibbonTabContent tab={activeTab} />
-              <ExtensionRibbonGroups tab={activeTab} />
+              {EXTENSIONS_ENABLED && <ExtensionRibbonGroups tab={activeTab} />}
             </div>
           </RibbonDensityContext.Provider>
           {/* Compacte-modus-toggle rechtsonder (Word-web-stijl): ↑ = inklappen, ↓ = uitklappen.

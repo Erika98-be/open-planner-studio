@@ -5,6 +5,7 @@ import { useResolvedUITheme, useSystemColorSchemeSync } from '@/hooks/useResolve
 import { appLog } from '@/services/debug/appLog';
 import { installConsentDialogAsker } from '@/extensions/consentBridge';
 import { getGuideView, subscribeGuideView } from '@/extensions/guideRuntime';
+import { EXTENSIONS_ENABLED } from '@/utils/buildFlags';
 import { TitleBar } from '@/components/layout/TitleBar/TitleBar';
 import '@/components/layout/TitleBar/TitleBar.css';
 import { Ribbon } from '@/components/layout/Ribbon/Ribbon';
@@ -60,7 +61,11 @@ const CalendarDialog = lazy(() => import('@/components/dialogs/CalendarDialog').
 const StructureDialog = lazy(() => import('@/components/dialogs/StructureDialog').then(m => ({ default: m.StructureDialog })));
 const UpdateDialog = lazy(() => import('@/components/dialogs/UpdateDialog').then(m => ({ default: m.UpdateDialog })));
 const JustUpdatedDialog = lazy(() => import('@/components/dialogs/JustUpdatedDialog').then(m => ({ default: m.JustUpdatedDialog })));
-const ExtensionConsentDialog = lazy(() => import('@/components/dialogs/ExtensionConsentDialog').then(m => ({ default: m.ExtensionConsentDialog })));
+// Platformbouw (#311): de extensiedialogen bestaan daar niet. De voorwaarde staat hier (en niet alleen
+// bij het renderen) zodat de bundelaar ook de dynamische import en de catalogusfuncties weglaat.
+const ExtensionConsentDialog = EXTENSIONS_ENABLED
+  ? lazy(() => import('@/components/dialogs/ExtensionConsentDialog').then(m => ({ default: m.ExtensionConsentDialog })))
+  : () => null;
 const ActualStartDialog = lazy(() => import('@/components/dialogs/ActualStartDialog').then(m => ({ default: m.ActualStartDialog })));
 const FeedbackDialog = lazy(() => import('@/components/dialogs/FeedbackDialog').then(m => ({ default: m.FeedbackDialog })));
 const LevelingDialog = lazy(() => import('@/components/dialogs/LevelingDialog').then(m => ({ default: m.LevelingDialog })));
@@ -78,7 +83,9 @@ const LibraryLinkDialog = lazy(() => import('@/components/dialogs/LibraryLinkDia
 const RecoveryDialog = lazy(() => import('@/components/dialogs/RecoveryDialog').then(m => ({ default: m.RecoveryDialog })));
 const WelcomeDialog = lazy(() => import('@/components/dialogs/WelcomeDialog').then(m => ({ default: m.WelcomeDialog })));
 const TourOverlay = lazy(() => import('@/components/tour/TourOverlay').then(m => ({ default: m.TourOverlay })));
-const TutorialOfferDialog = lazy(() => import('@/components/dialogs/TutorialOfferDialog').then(m => ({ default: m.TutorialOfferDialog })));
+const TutorialOfferDialog = EXTENSIONS_ENABLED
+  ? lazy(() => import('@/components/dialogs/TutorialOfferDialog').then(m => ({ default: m.TutorialOfferDialog })))
+  : () => null;
 const Backstage = lazy(() => import('@/components/backstage/Backstage').then(m => ({ default: m.Backstage })));
 const GuidePanel = lazy(() => import('@/components/guide/GuidePanel').then(m => ({ default: m.GuidePanel })));
 
@@ -147,7 +154,8 @@ function AppContent() {
   // Toestemmingsvraag bij extensie-installatie bedraden. MOET eager en vroeg: de
   // faalstand van `askExtensionConsent` is WEIGEREN, dus zonder deze registratie zou een installatie
   // stilzwijgend afketsen. De dialoog zelf blijft lazy; alleen de bedrading is eager.
-  useEffect(() => { installConsentDialogAsker(); }, []);
+  // Platformbouw (#311): geen extensies; de faalstand (weigeren) blijft dan staan.
+  useEffect(() => { if (EXTENSIONS_ENABLED) installConsentDialogAsker(); }, []);
 
   // Bedrijfsbibliotheek laden bij opstarten: zet de opgeslagen bibliotheek in de store en
   // hijst `libraryLoaded`, zodat latere mutaties persisteren (vóór dit punt is persist een no-op).
@@ -399,7 +407,7 @@ function AppContent() {
         {showTourOverlay && <TourOverlay />}
         {/* Tutorialvraag na een voltooide rondleiding (eenmalig, `state/onboarding.ts`). Vóór de
             toestemmingsdialoog gemount: die stapelt er bij "Ja" bovenop. */}
-        {showTutorialOffer && <TutorialOfferDialog />}
+        {EXTENSIONS_ENABLED && showTutorialOffer && <TutorialOfferDialog />}
         <UpdateDialog />
         <PoolImportDialog />
         {/* Voorwaardelijk gemount — anders dan PoolImportDialog, die permanent
@@ -411,7 +419,7 @@ function AppContent() {
             `ui.showProgressImportDialog`-vlag, niet op deze mount, dus de documentwissel-
             blokkade blijft werken. */}
         {showProgressImportDialog && <ProgressImportDialog />}
-        <ExtensionConsentDialog />
+        {EXTENSIONS_ENABLED && <ExtensionConsentDialog />}
         {/* De startvraag (voortgang op een taak die pas na de statusdatum
             zou beginnen). Rendert alleen bij `ui.pendingActualStartQuestion`; stapelt boven
             "Taak bewerken". */}
