@@ -1,4 +1,5 @@
 import type { XerImportMetadata } from '@/services/importTypes';
+import { nameWithProjectCode } from '@/utils/projectCodeName';
 
 /**
  * Documentnaam na een XER-import: de projectnaam met
@@ -8,11 +9,7 @@ import type { XerImportMetadata } from '@/services/importTypes';
  * Bladmodule: puur, alleen type-imports.
  */
 export function xerDocumentName(name: string | null | undefined, id: string | null | undefined): string {
-  const n = (name ?? '').trim();
-  const code = (id ?? '').trim();
-  if (!n) return code;
-  if (!code || n === code) return n;
-  return `${n} (${code})`;
+  return nameWithProjectCode(name, id);
 }
 
 /**

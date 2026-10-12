@@ -14,7 +14,7 @@ import { isLeafTask, isSummaryTask } from '@/utils/taskHierarchy';
 import { flattenOrder } from '@/utils/wbs';
 import type { CustomTaskType } from '@/types/taskType';
 import { encodeCustomTaskType, OPS_DURATION_UNIT_NAME, toXmlDateTime } from '@/services/xmlInterchange';
-import { leaf, node, renderP6Xml, type P6Node } from './p6xmlSchemaOrder';
+import { leaf, node, renderP6Xml, P6_ID_MAX_LENGTH, type P6Node } from './p6xmlSchemaOrder';
 import { taskDurationUnit } from '@/engine/scheduler/duration';
 import { shownStart, shownFinish } from '@/utils/taskDates';
 import { P6_DURATION_TYPE_NAME, XER_DURATION_TYPE_TOKEN } from '@/engine/work/workRuleMapping';
@@ -634,14 +634,15 @@ export function writeP6XML(
   // Project. Zelfde afweging als in mspdiWriter: een leeg <Name> gaf P6 een naamloos project, terwijl
   // de projectnaam in P6 juist een dragend, verplicht ingevuld veld is. Dezelfde neutrale,
   // taalonafhankelijke terugval als de bestandsnaam en de STEP-header.
+  const projectIdentity = p6ProjectIdentity(projectFileBase(project.name));
   top.push(node('Project', [
     ...leaf('ActivityDefaultCalendarObjectId', 1),
     // Data date — P6's peildatum. Alleen wanneer gezet (golden rule).
     ...(project.statusDate ? leaf('DataDate', toXmlDateTime(project.statusDate)) : []),
     ...leaf('Description', project.description),
-    ...leaf('Id', project.id),
+    ...leaf('Id', projectIdentity.id),
     ...(project.endDate ? leaf('MustFinishByDate', toXmlDateTime(project.endDate)) : []),
-    ...leaf('Name', projectFileBase(project.name)),
+    ...leaf('Name', projectIdentity.name),
     ...leaf('ObjectId', 1),
     ...leaf('PlannedStartDate', toXmlDateTime(project.startDate)),
     ...leaf('Status', project.endDate ? 'Active' : 'Planned'),
@@ -652,4 +653,18 @@ export function writeP6XML(
     node('APIBusinessObjects', top),
     'xmlns="http://xmlns.oracle.com/Primavera/P6/V23.12/API/BusinessObjects" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"',
   );
+}
+
+/**
+ * Naam en `Id` van het P6-project. Een geïmporteerd P6-project heet "Naam (Id)" (zie
+ * `nameWithProjectCode`); die code gaat terug naar `<Id>` en de naam zonder code naar `<Name>`, zodat
+ * heropenen dezelfde naam geeft. Zonder code is het Id de naam, afgekapt op de schemagrens. Vroeger
+ * stond hier het interne project-id (`proj-…`), dat P6 als projectcode toonde.
+ */
+export function p6ProjectIdentity(displayName: string): { name: string; id: string } {
+  const match = / \(([^()]+)\)$/.exec(displayName);
+  if (match && match[1].trim().length <= P6_ID_MAX_LENGTH && match.index > 0) {
+    return { name: displayName.slice(0, match.index), id: match[1].trim() };
+  }
+  return { name: displayName, id: displayName.slice(0, P6_ID_MAX_LENGTH).trim() };
 }

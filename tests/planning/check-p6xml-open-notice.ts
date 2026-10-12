@@ -86,7 +86,7 @@ async function main(): Promise<void> {
   const multi = await parseOpenedFile({ name: 'meerdere.xml', text: fixture });
   const outcome = S().applyOpenedImport(multi, { filePath: null, recompute: true, fit: false, hourDataNotice: false, linkedOpen: true });
   eq('6a twee documenten geopend (leeg tabblad hergebruikt)', [outcome.documentIds.length, S().documents.length - docsBefore], [2, 1]);
-  eq('6b actief document = B', S().project.name, 'Project B & bouw');
+  eq('6b actief document = B', S().project.name, 'Project B & bouw (B-BOUW)');
   eq('6c B: actieve baseline', S().activeBaselineId?.startsWith('p6xml-baseline:200:201'), true);
   const p6Notices = S().ui.notifications.filter(n => n.messageKey.startsWith('notifications.p6xml'));
   eq('6d één verslag', p6Notices.map(n => [n.severity, n.messageKey, n.params]), [['info', 'notifications.p6xmlImportOpened', { count: 2 }]]);

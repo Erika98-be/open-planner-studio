@@ -16,6 +16,9 @@
 
 import { escapeXml } from '@/services/xmlInterchange';
 
+/** Schemagrenzen (Oracle P6 API, `xs:maxLength`) voor velden die de writer vult. */
+export const P6_ID_MAX_LENGTH = 40;
+
 const ORDER: Readonly<Record<string, readonly string[]>> = {
   APIBusinessObjects: ['UDFType', 'NotebookTopic', 'Calendar', 'ResourceCurve', 'Resource', 'ResourceRate', 'Project'],
   Project: [

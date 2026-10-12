@@ -1,3 +1,5 @@
+import { nameWithProjectCode } from '@/utils/projectCodeName';
+import { P6_ID_MAX_LENGTH } from './p6xmlSchemaOrder';
 import { Task, TaskConstraint, ConstraintType } from '@/types/task';
 import type { P6CompletePctType, P6DurationType } from '@/types/task';
 import { createDefaultTaskTime } from '@/utils/taskDefaults';
@@ -494,7 +496,7 @@ function p6BaselineFrom(root: Element, el: Element, ownerObjId: number, owner: I
   return {
     id: `p6xml-baseline:${ownerObjId}:${objId}`,
     sourceProjectId: String(objId),
-    name: name && code && name !== code ? `${name} (${code})` : name || code || String(objId),
+    name: p6ProjectName(name, code) || String(objId),
     createdAt: getElementText(el, 'LastBaselineUpdateDate') || owner.project.modifiedAt || owner.project.createdAt,
     tasks,
     projectEnd,
@@ -1145,6 +1147,17 @@ function readP6XmlProject(scope: P6XmlScope): P6XmlProjectRead {
   return { result, crossProjectRelations, activitiesRead: leafTasks.length };
 }
 
+/**
+ * Weergavenaam van een P6-project: "Naam (Id)" (`nameWithProjectCode`). De eigen writer zet een
+ * project zonder code onder `Id` = de naam, afgekapt op 40 tekens (schemagrens); dat Id is geen
+ * eigen code en komt er niet achter.
+ */
+function p6ProjectName(name: string, id: string): string {
+  const n = name.trim();
+  const code = id.trim();
+  return nameWithProjectCode(n, code && code === n.slice(0, P6_ID_MAX_LENGTH).trim() ? '' : code);
+}
+
 function parseProject(projEl: Element | null): Project {
 
   if (!projEl) {
@@ -1167,7 +1180,11 @@ function parseProject(projEl: Element | null): Project {
   const mustFinishRaw = getElementText(projEl, 'MustFinishByDate');
   const project: Project = {
     id: generateId('proj'),
-    name: getElementText(projEl, 'Name') || 'P6 Import',
+    // "Naam (Id)", zoals een XER-document: een bestand met meerdere projecten (OZB: twaalf updates
+    // met dezelfde naam) geeft zo onderscheidbare tabbladen. P6 XML heeft geen documentmetadata
+    // zoals de XER-broncache, dus de code staat in de projectnaam zelf; `nameWithProjectCode`
+    // voegt hem niet dubbel toe als een heropende export hem al draagt.
+    name: p6ProjectName(getElementText(projEl, 'Name'), getElementText(projEl, 'Id')) || 'P6 Import',
     description: getElementText(projEl, 'Description'),
     startDate: parseP6Date(getElementText(projEl, 'PlannedStartDate')),
     endDate: mustFinishRaw ? parseP6Date(mustFinishRaw) : '',
