@@ -3,7 +3,7 @@ import { idbGetAll, idbPut, idbDelete } from '@/utils/idb';
 import { generateId } from '@/utils/id';
 import { basename } from '@/utils/filePath';
 
-/** Recent-bestand-entry. `ref` is herbruikbaar (Tauri-pad of Chromium-handle). */
+/** Recent-bestand-entry. `ref` is herbruikbaar (Tauri-pad, Chromium-handle of site-bestand). */
 export interface RecentEntry {
   id: string;
   name: string;
@@ -16,9 +16,11 @@ const STORE = 'recents';
 const MAX = 10;
 const LEGACY_KEY = 'open-planner-studio-recent-files';
 
-/** Ref-identiteit voor dedupe: paden op string, handles op isSameEntry. */
-async function sameRef(a: FileRef, b: FileRef): Promise<boolean> {
+/** Ref-identiteit voor dedupe: paden op string, handles op isSameEntry, site-bestanden op id. */
+export async function sameRef(a: FileRef, b: FileRef): Promise<boolean> {
   if (a.kind === 'path' && b.kind === 'path') return a.path === b.path;
+  // Een site-bestand houdt zijn id over alle versies heen: één entry per bestand, niet per versie.
+  if (a.kind === 'site' && b.kind === 'site') return a.id === b.id;
   if (a.kind === 'handle' && b.kind === 'handle') {
     try { return await a.handle.isSameEntry(b.handle); } catch { return false; }
   }
