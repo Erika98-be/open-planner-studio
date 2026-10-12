@@ -288,8 +288,6 @@ en noem het in je rapport of PR-tekst.
 100. **Tailwind v4 scant ook bestanden buiten `src/`**, zoals `scripts/`. Een token als `[a:b]` in een
     logtekst wordt dan een CSS-regel in de bundel. Gezien bij #308 met `[build:platform]` (+36 bytes CSS);
     de logtekst is daarom aangepast. Voorstel: de bronnen van Tailwind beperken tot `src/` en `index.html`. — B
-101. **AGENTS.md zegt "Fourteen locales" en "14 locales"**, maar er zijn er vijftien (`lo` erbij); de
-    codelijst in hetzelfde punt noemt er wel vijftien. Ook `docs/recepten/i18n-sleutel.md` zegt veertien. — B
 
 ## Wensen en open taken (geen bug)
 

@@ -29,8 +29,8 @@ test('solverfouten verschijnen in de gekozen UI-taal, in de melding en in het wa
   const ribbon = page.locator('.ribbon-content');
   await ribbon.getByRole('button', { name: /^Berechnen$/ }).click();
   const toast = page.locator('.ops-toast.toast-error');
-  await expect(toast.locator('.ops-toast-message')).toHaveText('Zeitplan konnte nicht berechnet werden');
-  await expect(toast.locator('.ops-toast-detail')).toHaveText("Ungültiges Startdatum für Aufgabe 'Erdarbeiten'");
+  await expect(toast.locator('.ops-toast-message')).toHaveText('Terminplan konnte nicht berechnet werden');
+  await expect(toast.locator('.ops-toast-detail')).toHaveText("Ungültiges Startdatum für Vorgang 'Erdarbeiten'");
 
   await page.evaluate(([a, b]) => {
     window.__OPS__!.store.setState((s) => {
@@ -40,12 +40,12 @@ test('solverfouten verschijnen in de gekozen UI-taal, in de melding en in het wa
     });
   }, [first, second]);
   await ribbon.getByRole('button', { name: /^Berechnen$/ }).click();
-  const cycleText = /^Zirkelbezug zwischen Aufgaben: (Erdarbeiten → Rohbau → Erdarbeiten|Rohbau → Erdarbeiten → Rohbau)$/;
+  const cycleText = /^Zirkelbezug zwischen Vorgängen: (Erdarbeiten → Rohbau → Erdarbeiten|Rohbau → Erdarbeiten → Rohbau)$/;
   await expect(toast.locator('.ops-toast-detail')).toHaveText(cycleText);
 
   await ribbon.getByRole('button', { name: /^Warnungen$/ }).click();
   const panel = page.locator('[data-ops-warnings-panel]');
-  await expect(panel).toContainText('Der Terminplan konnte nicht berechnet werden: Zirkelbezug zwischen Aufgaben:');
+  await expect(panel).toContainText('Der Terminplan konnte nicht berechnet werden: Zirkelbezug zwischen Vorgängen:');
   await expect(panel).not.toContainText('Circular dependency');
   await expect(toast).not.toContainText(/Ongeldige|Circular dependency/);
 });

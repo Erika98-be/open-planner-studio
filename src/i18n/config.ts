@@ -1,19 +1,18 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import { readLocal, syncSettingToLocalStorage } from '@/utils/settingsStore';
+import { LOCALES, RTL_LOCALES, localeDirection, type Locale } from './locales';
 
-// --- Alleen de fallback-taal (en) wordt eager geïmporteerd. De overige 15 talen
+// --- Alleen de fallback-taal (en) wordt eager geïmporteerd. De overige 27 talen
 // laden lazy via loadLocale() (Vite splitst per taal een eigen async chunk). ---
 import enCommon from './locales/en/common.json';
 import enTask from './locales/en/task.json';
 import enReport from './locales/en/report.json';
 import enMenu from './locales/en/menu.json';
 
-export type Locale =
-  | 'nl' | 'en' | 'fr' | 'de' | 'es' | 'zh'
-  | 'it' | 'pt' | 'pl' | 'tr' | 'ar' | 'ja' | 'ko' | 'lo' | 'fa';
-
-export const RTL_LOCALES: Locale[] = ['ar', 'fa'];
+// De talenlijst zelf staat in `./locales.ts` (contract C4, zonder i18next); hier opnieuw
+// geëxporteerd zodat bestaande imports uit `@/i18n/config` blijven werken.
+export { LOCALES, RTL_LOCALES, localeDirection, type Locale };
 
 export const LANGUAGE_LABELS: Record<Locale, [string, string]> = {
   nl: ['NL', 'Nederlands'],
@@ -31,9 +30,36 @@ export const LANGUAGE_LABELS: Record<Locale, [string, string]> = {
   ko: ['KO', '한국어'],
   lo: ['LO', 'ລາວ'],
   fa: ['FA', 'فارسی'],
+  ru: ['RU', 'Русский'],
+  uk: ['UK', 'Українська'],
+  cs: ['CS', 'Čeština'],
+  sk: ['SK', 'Slovenčina'],
+  // Servisch in Cyrillisch schrift (besluit B1). Een overstap naar Latijns schrift (`sr-Latn`)
+  // raakt `load: 'languageOnly'` en de taalsplitsing hieronder; houd sr-werk op deze plek.
+  sr: ['SR', 'Српски'],
+  hr: ['HR', 'Hrvatski'],
+  bg: ['BG', 'Български'],
+  hu: ['HU', 'Magyar'],
+  ro: ['RO', 'Română'],
+  sv: ['SV', 'Svenska'],
+  nb: ['NB', 'Norsk bokmål'],
+  da: ['DA', 'Dansk'],
+  fi: ['FI', 'Suomi'],
 };
 
-export const supportedLanguages = Object.keys(LANGUAGE_LABELS) as Locale[];
+/** Browsertalen die geen eigen locale hebben maar wel een vaste keuze: Noors (`no`) en
+ *  Nynorsk (`nn`) krijgen Bokmål (`nb`). */
+const BROWSER_LANGUAGE_ALIASES: Record<string, Locale> = { no: 'nb', nn: 'nb' };
+
+/** Kies de locale voor een browser/OS-taalcode (`nb-NO`, `no`, `ru-RU`, …), of `null`. */
+export function localeFromBrowserLanguage(tag: string | undefined): Locale | null {
+  const base = tag?.split('-')[0]?.toLowerCase();
+  if (!base) return null;
+  const lng = BROWSER_LANGUAGE_ALIASES[base] ?? base;
+  return supportedLanguages.includes(lng as Locale) ? (lng as Locale) : null;
+}
+
+export const supportedLanguages: Locale[] = [...LOCALES];
 
 const resources = {
   en: { common: enCommon, task: enTask, report: enReport, menu: enMenu },
@@ -52,14 +78,6 @@ void i18n
     interpolation: { escapeValue: false },
     react: { useSuspense: false },
   });
-
-/** Schrijfrichting van de shell in taal `lng`: `rtl` voor ar/fa. Zet `<html dir>` hieronder, en is
- *  de bron voor wie tijdens het renderen al moet weten dat de shell gespiegeld is (bv. aan welke kant
- *  de takenlijst en dus de histogramkiezer staat) — een component die `useTranslation` gebruikt,
- *  rendert bij een taalwissel opnieuw. */
-export function localeDirection(lng: string): 'ltr' | 'rtl' {
-  return RTL_LOCALES.includes(lng as Locale) ? 'rtl' : 'ltr';
-}
 
 // Set document direction + lang on language change (RTL support; <html lang> volgt de
 // taalkeuze i.p.v. de hardcoded "nl" uit index.html — TODO-quick-win)
@@ -114,8 +132,8 @@ export async function initLocale(): Promise<void> {
   }
 
   // No saved preference — detect from browser/OS
-  const browserLang = navigator.language?.split('-')[0]?.toLowerCase() as Locale;
-  if (browserLang && supportedLanguages.includes(browserLang)) {
+  const browserLang = localeFromBrowserLanguage(navigator.language);
+  if (browserLang) {
     await loadLocale(browserLang);
     await i18n.changeLanguage(browserLang);
     return;

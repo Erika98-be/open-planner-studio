@@ -51,7 +51,8 @@ and `npm run verify:release-highlights` (separate: local update highlights and s
 its own commit). `npm run measure:profiles` (separate) measures the cell baseline per scheduling profile (rule A:
 no exact cell may become inexact); the P6 part needs `OPS_XER_CORPUS`.
 
-Translations: `npm run i18n:add` puts one string in all 14 locales at once (recipe `docs/recepten/i18n-sleutel.md`),
+Translations: `npm run i18n:add` puts one string in `nl` + `en` (required) and any other locale you give
+(recipe `docs/recepten/i18n-sleutel.md`); missing locales fall back to `en`,
 `npm run i18n:fmt` puts the locale files in the fixed format (one key per line, `nl` order),
 `npm run i18n:resolve` merges them per key after a `git merge` — run it even when git reports no conflict.
 
@@ -143,7 +144,8 @@ Node 22 (see CI). Rust stable only for the `tauri:*` commands.
   `workdayAxis.ts`); interaction in `src/components/canvas/hooks/`. Change visual Gantt behaviour in the
   renderer, not in components.
 - **Notifications go through one channel** from the store — no `alert()` or ad-hoc toasts.
-- **Text:** always via `t(...)`, never hard-coded, in all fourteen locales. Text sizes only via the six roles
+- **Text:** always via `t(...)`, never hard-coded; a PR needs `nl` + `en`; the other 26 locales
+  may follow later (they fall back to English). Text sizes only via the six roles
   (`text-caption`…`text-title`); `text-xs`/`text-sm` no longer exist and silently do nothing.
 - **Settings:** `localStorage` under `ops-` keys (no store plugin: the npm dependency `@tauri-apps/plugin-store`
   is gone; the Rust side still registers `tauri-plugin-store`, unused), declared in `settingsRegistry.ts`.
@@ -162,8 +164,8 @@ Node 22 (see CI). Rust stable only for the `tauri:*` commands.
   `ifc`, `report`, `ai` (only with `ui.aiMode`). Source: `slices/types.ts`.
 - Backstage sections (`BackstageSection`): `recent`, `examples`, `export`, `import`, `print`, `project-info`,
   `settings`, `extensions`, `library`, `help`.
-- Fourteen locales (`nl, en, fr, de, es, zh, it, pt, pl, tr, ar, ja, ko, lo, fa`), each with four namespaces;
-  `ar`/`fa` are RTL. A missing plural form falls back to English, not to `_other`.
+- 28 locales (`nl, en, fr, de, es, zh, it, pt, pl, tr, ar, ja, ko, fa, ru, uk, cs, sk, sr, hr, bg, hu, ro, sv, nb, da, fi, lo`), each with four namespaces;
+  `ar`/`fa` are RTL; `sr` is Serbian in Cyrillic script; `no`/`nn` in the browser pick `nb`. A missing plural form falls back to English, not to `_other`.
 - MCP: The 41 `planner_*` tools live in `src/services/mcp/tools/`. New tool: `docs/recepten/mcp-tool.md`.
 
 ## Worktrees and self-testing
@@ -187,8 +189,10 @@ Node 22 (see CI). Rust stable only for the `tauri:*` commands.
   S (reported only); do not quietly fix it in an unrelated PR. A PR that fixes an entry removes it. Check the file
   before reporting a "new" bug.
 - **User-visible feature ⇒ guide** in `public/docs/{nl,en}/` plus a manifest entry (recipe
-  `docs/recepten/in-app-gids.md`). The docs exist in `nl` + `en` only, organised by Diátaxis (`kind`: how-to,
-  explanation, reference; the tutorials ship as an extension); other UI languages read English with a notice.
+  `docs/recepten/in-app-gids.md`). You write `nl` + `en` (the sources, required), organised by Diátaxis (`kind`:
+  how-to, explanation, reference; the tutorials ship as an extension); the other locales live in
+  `public/docs/<locale>/` (+ a generated `index.json`, structure hashes in `i18n/docs-sources/`), and an
+  article missing in a locale reads English with a notice.
   Renaming an article needs an alias in the manifest; ids the app uses live in `src/state/helpArticles.ts`.
   Those guides use a limited Markdown subset (no tables/blockquotes/h4/HTML). The GitHub wiki is generated,
   never edited by hand (`wiki` skill).
