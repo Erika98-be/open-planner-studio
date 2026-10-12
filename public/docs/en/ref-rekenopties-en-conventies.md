@@ -90,7 +90,7 @@ These conventions are off in every built-in profile, including Primavera P6. Tur
 
 **Completed predecessor does not hold past the data date** — If a completed predecessor ends after the status date according to its actual finish, finish-to-start and finish-to-finish relations calculate from the boundary of the status-date window instead of from that actual finish. Start-to-start relations stay on the actual start. Conditions: Only on an hour calendar and with a status date. Default: off in every built-in profile.
 
-**Completed out-of-sequence task waits for its predecessors** — A completed task of which a predecessor is not yet finished (out of sequence) gets its zero-remaining window not at the status date but at the later of the status date and the ordinary relation boundary of that predecessor. Conditions: Only on an hour calendar. Works on the status-date route of *Completed task in the data-date window*, so also only for tasks from a `.xer` file. Not with *Progress Override*. Default: off in every built-in profile.
+**Completed out-of-sequence task waits for its predecessors** — A completed task of which a predecessor is not yet finished (out of sequence) gets its zero-remaining window not at the status date but at the later of the status date and the ordinary relation boundary of that predecessor. Conditions: Only on an hour calendar. Works on the status-date route of *Completed task in the data-date window*, so also only for tasks from a `.xer` file. That convention and *In-progress task: early start = start of remaining work* must therefore also be on. Not with *Progress Override*. Default: off in every built-in profile.
 
 ## Calculation options of this project
 

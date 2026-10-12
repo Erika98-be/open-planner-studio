@@ -1341,7 +1341,7 @@
     },
     "p6CompletedOutOfSequenceWindow": {
       "label": "Voltooide taak buiten volgorde wacht op haar voorgangers",
-      "help": "Een voltooide taak waarvan een voorganger nog niet klaar is, krijgt haar nulvenster ná die voorganger in plaats van op de statusdatum (P6: Retained Logic)."
+      "help": "Een voltooide taak waarvan een voorganger nog niet klaar is, krijgt haar nulvenster ná die voorganger in plaats van op de statusdatum (P6: Retained Logic). Werkt alleen als ook ‘Voltooide taak in het statusdatumvenster’ en ‘Lopende taak: vroege start = begin van het restwerk’ aanstaan."
     },
     "p6CompletedPhysicalAtDataDate": {
       "label": "Voltooide fysieke-voortgangstaak staat op de statusdatum",

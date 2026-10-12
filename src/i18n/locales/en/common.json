@@ -1341,7 +1341,7 @@
     },
     "p6CompletedOutOfSequenceWindow": {
       "label": "Completed out-of-sequence task waits for its predecessors",
-      "help": "A completed task whose predecessor is not yet finished gets its zero window after that predecessor instead of at the data date (Retained Logic)."
+      "help": "A completed task whose predecessor is not yet finished gets its zero window after that predecessor instead of at the data date (Retained Logic). Only works when ‘Completed task in the data-date window’ and ‘In-progress task: early start = start of remaining work’ are also on."
     },
     "p6CompletedPhysicalAtDataDate": {
       "label": "Completed physical-progress task sits at the data date",

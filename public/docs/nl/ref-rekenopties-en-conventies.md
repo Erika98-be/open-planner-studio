@@ -90,7 +90,7 @@ Deze conventies staan in elk ingebouwd profiel uit, ook onder Primavera P6. Zet 
 
 **Voltooide voorganger houdt niet vast na de statusdatum** — Eindigt een voltooide voorganger volgens haar werkelijke einde ná de statusdatum, dan rekenen eind-start- en eind-eindrelaties vanaf de grens van het statusdatumvenster in plaats van vanaf dat werkelijke einde. Start-startrelaties blijven op de werkelijke start. Voorwaarden: Alleen op een urenkalender en met een statusdatum. Standaard: uit in elk ingebouwd profiel.
 
-**Voltooide taak buiten volgorde wacht op haar voorgangers** — Een voltooide taak waarvan een voorganger nog niet klaar is (buiten volgorde), krijgt haar nul-restvenster niet op de statusdatum maar op het latere van de statusdatum en de gewone relatiegrens van die voorganger. Voorwaarden: Alleen op een urenkalender. Werkt op de statusdatumroute van *Voltooide taak in het statusdatumvenster*, dus ook alleen voor taken uit een `.xer`-bestand. Niet bij *Progress Override*. Standaard: uit in elk ingebouwd profiel.
+**Voltooide taak buiten volgorde wacht op haar voorgangers** — Een voltooide taak waarvan een voorganger nog niet klaar is (buiten volgorde), krijgt haar nul-restvenster niet op de statusdatum maar op het latere van de statusdatum en de gewone relatiegrens van die voorganger. Voorwaarden: Alleen op een urenkalender. Werkt op de statusdatumroute van *Voltooide taak in het statusdatumvenster*, dus ook alleen voor taken uit een `.xer`-bestand. Die conventie en *Lopende taak: vroege start = begin van het restwerk* moeten dus ook aanstaan. Niet bij *Progress Override*. Standaard: uit in elk ingebouwd profiel.
 
 ## Reken-opties van dit project
 
