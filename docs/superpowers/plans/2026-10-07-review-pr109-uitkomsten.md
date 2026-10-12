@@ -128,3 +128,9 @@ http://localhost:3049/.
 1. Voltooide/lopende taken: welke datums tonen Start/Einde/balk (hierboven).
 2. V1: kalenderverversing uit de bibliotheek in de modus.
 3. Meldingen verdwijnen na 5 s zonder geschiedenis (openingsmelding met vervangen datums).
+- #317 (duur-eenheidkeuze: opvulling gelijk aan de andere velden, breedte per taal, niets afgekapt): open (niet
+  gemerged), CI groen, in de testversie. Restpunt uit die PR: het Kalender-keuzeveld in hetzelfde paneel gebruikt
+  nog de grotere standaardmaat.
+- **Toasts (eigenaar, 2026-10-12):** "Relatie aangemaakt" ⇒ **weg** (eigenaarsbesluit). Voorgelegd: ook
+  "Start vastgelegd als constraint" (SNET) weg, "Toewijzingen verplaatst", "Mijlpaalmarkering verwijderd"
+  (eigenaarsbesluit "B met melding" 25-09), "Statusdatum op vandaag", "Projectstart verzet" houden — antwoord open.
