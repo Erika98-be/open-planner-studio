@@ -25,6 +25,7 @@ import {
 } from '@/services/extensionEvents';
 import { applyPermissionGuards } from './permissions';
 import { retainActiveDocument } from './retainActiveDocument';
+import { markDocumentEdited } from '@/state/documentEdited';
 import { createHelpApi } from './helpApi';
 import {
   assertNoImportSourceDrift,
@@ -302,10 +303,22 @@ export function createExtensionApi(
       ),
       loadProject: (result: ExtImportResult) => {
         const store = document.store.getState();
+        const loaded = fromExtImportResult(result);
+        const sameProject = loaded.project.id === store.project.id;
         // Zelfde project-id ⇒ wat het contract niet draagt, blijft van het document (N3, B29); zie
-        // `retainActiveDocument`.
-        store.loadState(retainActiveDocument(result, fromExtImportResult(result), store));
-        store.runCPM();
+        // `retainActiveDocument`. Ander id ⇒ een NIEUW project: het krijgt geen opslagdoel, zodat
+        // opslaan om een nieuwe plek vraagt in plaats van het bestand van het vorige project te
+        // overschrijven (verder de loadState-semantiek: in place, zonder fit of uur-melding).
+        store.applyLoadedProject(retainActiveDocument(result, loaded, store), {
+          recompute: true,
+          fit: false,
+          hourDataNotice: false,
+          ...(sameProject ? {} : { filePath: null, fileHandle: null, siteFileId: null }),
+        });
+        document.store.getState().runCPM();
+        // Het geladen document is gewijzigd ten opzichte van wat er bewaard is: de afsluitcontrole en
+        // AutoSave moeten het zien. `applyLoadedProject` zet `isDirty` op false (een geopend bestand).
+        document.store.setState((s) => { markDocumentEdited(s); });
       },
       recalculate: () => document.store.getState().runCPM(),
       // Eén snapshot voor de hele reeks i.p.v. één per mutatie — lineair in plaats van

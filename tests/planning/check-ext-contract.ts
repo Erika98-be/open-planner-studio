@@ -1403,6 +1403,42 @@ for (const [naam, ext, bron, sleutels] of [
     useAppStore.getState().sequences.find((x) => x.id === relatie)?.p6StartAtPredecessorFinishBoundary, true);
 }
 
+// ── 11. Review #329 punt 6: na een extensie-load is het document gewijzigd ──────
+// Zelfde id: het opslagdoel blijft, maar het document is vuil (afsluitcontrole en AutoSave zien het).
+// Ander id: een nieuw project zonder opslagdoel, zodat opslaan het bestand van het vorige project niet
+// overschrijft, en vuil, zodat sluiten waarschuwt. Mutatiebewijs: `markDocumentEdited` weg ⇒ N3D-18
+// en N3D-19 rood; het wissen van het opslagdoel weg ⇒ N3D-19 rood.
+{
+  const api = createExtensionApi('n3d-dirty', [], undefined, appStoreContext, {
+    app: appStoreContext,
+    showNotification: () => {},
+  });
+  const lees = (): ExtImportResult => ({
+    project: api.data.getProject(), calendar: api.data.getCalendar(), tasks: api.data.getTasks(),
+    sequences: api.data.getSequences(), resources: api.data.getResources(), assignments: api.data.getAssignments(),
+  });
+  const opgeslagen = () => {
+    useAppStore.getState().newProject();
+    api.data.addTask({ name: 'Bewaard' });
+    useAppStore.setState((s) => { s.filePath = 'bewaard.ifc'; s.isDirty = false; });
+  };
+
+  opgeslagen();
+  api.data.loadProject(lees());
+  eq('N3D-18 zelfde id ⇒ opslagdoel blijft, document is gewijzigd', [
+    useAppStore.getState().filePath, useAppStore.getState().isDirty,
+  ], ['bewaard.ifc', true]);
+
+  opgeslagen();
+  const ander = lees();
+  ander.project = { ...ander.project, id: 'nieuw-project-n3d-19' };
+  api.data.loadProject(ander);
+  eq('N3D-19 ander id ⇒ geen opslagdoel, document is gewijzigd', [
+    useAppStore.getState().filePath, useAppStore.getState().fileHandle, useAppStore.getState().siteFileId,
+    useAppStore.getState().isDirty,
+  ], [null, null, null, true]);
+}
+
 // ── Uitslag ──────────────────────────────────────────────────────────────────
 if (diffs.length === 0) {
   console.log(`OK: extensie-contract — ${checks} checks groen`);
