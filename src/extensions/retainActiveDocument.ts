@@ -46,6 +46,7 @@
 import type { AppState, AppStore } from '@/state/appStore';
 import { markDocumentEdited } from '@/state/documentEdited';
 import type { ExtImportResult } from './extTypes';
+import type { ImporterDefinition } from './types';
 import type { ImportResult } from '@/services/importTypes';
 import type { ProjectSchedulingOptions } from '@/types/project';
 import type { Task } from '@/types/task';
@@ -196,4 +197,31 @@ export function loadExtensionProject(store: AppStore, result: ExtImportResult): 
  */
 export function openExtensionImport(store: AppStore, result: ExtImportResult, fileName: string): void {
   store.getState().openAsDocument(fromExtImportResult(result), { name: fileName, ref: null, saveTarget: false });
+}
+
+/**
+ * Backstage → Importeren: draai de importer van een extensie en open het resultaat
+ * (`openExtensionImport`). Gooit de importer (of de omzetting van zijn resultaat), dan ziet de gebruiker
+ * een foutmelding via het meldingenkanaal, met de naam van de importer en de foutboodschap als detail —
+ * zoals een mislukte open-actie van de ingebouwde formaten (`notifications.openFailed` + `detail`). Het
+ * actieve document blijft dan ongemoeid. Geeft `true` terug als het resultaat geopend is.
+ */
+export async function importWithExtension(
+  store: AppStore,
+  importer: Pick<ImporterDefinition, 'name' | 'handler'>,
+  file: File,
+): Promise<boolean> {
+  try {
+    openExtensionImport(store, await importer.handler(file), file.name);
+    return true;
+  } catch (err) {
+    console.error('[Extensies] Import mislukt:', err);
+    store.getState().notify({
+      severity: 'error',
+      messageKey: 'notifications.extImportFailed',
+      params: { name: importer.name },
+      detail: err instanceof Error ? err.message : String(err),
+    });
+    return false;
+  }
 }

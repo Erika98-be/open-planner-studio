@@ -63,7 +63,7 @@ import { isMultiDocumentImport } from '@/services/importTypes';
 import { decodeXerSourceArchive, sha256Hex } from '@/services/xerSourceArchive';
 import { ExtImportSourceDriftError } from '@/extensions/extImportSource';
 import { builtInProfile } from '@/engine/scheduler/conventions/registry';
-import { TASK_SOURCE_FIELDS, SEQUENCE_SOURCE_FIELDS, CALENDAR_SOURCE_FIELDS, openExtensionImport } from '@/extensions/retainActiveDocument';
+import { TASK_SOURCE_FIELDS, SEQUENCE_SOURCE_FIELDS, CALENDAR_SOURCE_FIELDS, openExtensionImport, importWithExtension } from '@/extensions/retainActiveDocument';
 import type { CalendarGeneration } from '@/types/calendar';
 
 const diffs: string[] = [];
@@ -1523,10 +1523,28 @@ for (const [naam, ext, bron, sleutels] of [
   ], [null, null, null, false]);
 
   const backstage = readFileSync(join(process.cwd(), 'src/components/backstage/Backstage.tsx'), 'utf8');
-  eq('N3D-25 Backstage → Importeren opent via openExtensionImport, niet via loadState', [
-    /openExtensionImport\(useAppStore, await imp\.handler\(file\), file\.name\)/.test(backstage),
+  eq('N3D-25 Backstage → Importeren opent via importWithExtension, niet via loadState', [
+    /importWithExtension\(useAppStore, imp, file\)/.test(backstage),
     /\bloadState\b/.test(backstage),
   ], [true, false]);
+
+  // Mini-ronde 5: een importer die gooit, geeft een foutmelding in het meldingenkanaal, met de naam
+  // van de importer en de foutboodschap; het actieve document blijft gelijk. Mutatiebewijs: de
+  // `notify` in `importWithExtension` weg ⇒ N3D-26 rood.
+  const voorFout = useAppStore.getState();
+  const importFouten = (s: typeof voorFout) => s.ui.notifications.filter((n) => n.messageKey === 'notifications.extImportFailed');
+  const meldingenVoor = importFouten(voorFout).length;
+  const gelukt = await importWithExtension(useAppStore, {
+    name: 'Kapotte importer',
+    handler: async () => { throw new Error('Kolom "Start" ontbreekt'); },
+  }, new File(['x'], 'kapot.foo'));
+  const naFout = useAppStore.getState();
+  const melding = importFouten(naFout).at(-1);
+  eq('N3D-26 mislukte importer ⇒ foutmelding met naam en boodschap; document ongemoeid', [
+    gelukt, importFouten(naFout).length - meldingenVoor, melding?.severity, melding?.messageKey,
+    melding?.params, melding?.detail, naFout.activeDocumentId === voorFout.activeDocumentId,
+    naFout.documents.length === voorFout.documents.length,
+  ], [false, 1, 'error', 'notifications.extImportFailed', { name: 'Kapotte importer' }, 'Kolom "Start" ontbreekt', true, true]);
 }
 
 // ── Uitslag ──────────────────────────────────────────────────────────────────

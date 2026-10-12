@@ -306,7 +306,8 @@ Een importer (Bestand → Importeren) werkt anders: die opent een vreemd bestand
 daarom als nieuw document in een eigen tabblad, net als de ingebouwde formaten, en wordt het actieve
 document. Het document dat open stond, blijft ongemoeid, ook met niet-opgeslagen werk; er komt dus
 geen vraag. Het nieuwe document rekent als OPS, staat niet op "gewijzigd" (zoals na elke import) en
-heeft geen opslagdoel: opslaan vraagt om een plek.
+heeft geen opslagdoel: opslaan vraagt om een plek. Gooit de handler van de importer een fout, dan
+ziet de gebruiker een foutmelding met de naam van de importer en jouw foutboodschap; er opent dan niets.
 
 Het id is het enige signaal. Twee documenten van hetzelfde project delen hetzelfde id, en een
 extensie die een "nieuw" project bouwt vanuit `{ ...getProject() }` houdt dus het id én de data van

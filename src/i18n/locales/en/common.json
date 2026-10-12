@@ -15,6 +15,7 @@
     "openFailed": "Failed to open file",
     "extGuideCallbackFailed": "A step from the extension {{name}} failed. The guide continues.",
     "extHelpProjectOpenFailed": "The project file {{file}} from the extension {{name}} could not be opened.",
+    "extImportFailed": "Importing with {{name}} failed.",
     "extensionMessage": "Extension {{name}}: {{message}}",
     "xerInvalidInput": "XER import requires the original file bytes.",
     "xerInvalidFile": "This is not a valid or supported XER file.",

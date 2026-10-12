@@ -140,7 +140,8 @@ An importer (File → Import) works differently: it opens a foreign file. Its re
 a new document in its own tab, like the built-in formats, and becomes the active document. The
 document that was open stays untouched, also with unsaved work, so there is no question. The new
 document calculates as OPS, is not marked as changed (as after every import) and has no save target:
-saving asks for a location.
+saving asks for a location. If the importer's handler throws, the user sees an error notification with
+the importer's name and your error message; nothing opens.
 
 The id is the only signal. Two documents of the same project share the same id, and an extension that
 builds a "new" project from `{ ...getProject() }` keeps the id and the data of the active document.

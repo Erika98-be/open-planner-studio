@@ -15,6 +15,7 @@
     "openFailed": "Bestand openen mislukt",
     "extGuideCallbackFailed": "Een stap van de extensie {{name}} gaf een fout. De begeleiding gaat door.",
     "extHelpProjectOpenFailed": "Het projectbestand {{file}} van de extensie {{name}} kon niet worden geopend.",
+    "extImportFailed": "Importeren met {{name}} is mislukt.",
     "extensionMessage": "Extensie {{name}}: {{message}}",
     "xerInvalidInput": "XER-import vereist de oorspronkelijke bestandsbytes.",
     "xerInvalidFile": "Dit bestand is geen geldig of ondersteund XER-bestand.",
