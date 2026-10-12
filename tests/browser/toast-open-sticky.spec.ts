@@ -20,11 +20,9 @@ async function openXer(page: Page, name: string): Promise<void> {
 
 const openToast = (page: Page) => page.locator('.ops-toast', { hasText: /XER file opened/ });
 
-// Wacht op PR #296: pas die laat de XER-lezer een ontbrekende geplande start melden
-// (`notifications.xerImportMissingPlannedStarts`, al opgenomen in `openNoticeSticky.ts`). Op main
-// zonder #296 heeft deze melding geen regel die data noemt, dus verdwijnt hij na 5 s. Zet `fixme` om
-// naar `test` zodra #296 op main staat.
-test.fixme('XER met een ontbrekende geplande start: de openingsmelding blijft staan tot het kruisje', async ({ page, ops: _ops }) => {
+// PR #296 (op main) laat de XER-lezer een ontbrekende geplande start melden
+// (`notifications.xerImportMissingPlannedStarts`, opgenomen in `openNoticeSticky.ts`).
+test('XER met een ontbrekende geplande start: de openingsmelding blijft staan tot het kruisje', async ({ page, ops: _ops }) => {
   await openXer(page, 'zonder-geplande-start.xer');
   const toast = openToast(page);
   await expect(toast).toBeVisible();
