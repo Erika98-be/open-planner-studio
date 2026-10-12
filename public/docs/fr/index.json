@@ -71,6 +71,8 @@
 "ref-contextmenus": {"title": "Menus du clic droit"},
 "ref-instellingen": {"title": "Paramètres"},
 "ref-projectinfo": {"title": "Nouveau projet et Info projet"},
+"ref-rekenopties-en-conventies": {"title": "Options de calcul et conventions"},
 "ref-import-exportformaten": {"title": "Formats d'import et d'export"},
+"ref-rapporttypes": {"title": "Types de rapports"},
 "ref-extensiepermissies": {"title": "Permissions des extensions"}
 }

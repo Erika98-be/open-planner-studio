@@ -73,5 +73,6 @@
 "ref-projectinfo": {"title": "Nuevo proyecto e Info del proyecto"},
 "ref-rekenopties-en-conventies": {"title": "Opciones de cálculo y convenciones"},
 "ref-import-exportformaten": {"title": "Formatos de importación y exportación"},
+"ref-rapporttypes": {"title": "Tipos de informe"},
 "ref-extensiepermissies": {"title": "Permisos de las extensiones"}
 }
