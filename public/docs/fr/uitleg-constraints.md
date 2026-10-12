@@ -32,7 +32,7 @@ Si une date tombe un samedi, un dimanche ou un jour non ouvré, l'application la
 
 ### Ce que signifie une marge négative
 
-Une limite supérieure travaille à rebours. Si la contrainte place la date au plus tard d'une tâche avant sa date au plus tôt, la marge totale devient négative. C'est aussi le cas pour les tâches qui la précèdent : si la maçonnerie doit commencer au plus tard le vendredi 11 juin ... les tâches qui précèdent la maçonnerie et ne peut pas commencer avant le lundi 14 juin, les tâches qui précèdent le brickwork ont aussi un jour ouvré de retard. Toutes les tâches à marge négative sont critiques ; leur fonctionnement est expliqué dans [Chemin critique et marge](docs://uitleg-kritiek-pad).
+Une limite supérieure travaille à rebours. Si la contrainte place la date au plus tard d'une tâche avant sa date au plus tôt, la marge totale devient négative. C'est aussi le cas pour les tâches qui la précèdent : si la maçonnerie doit commencer au plus tard le vendredi 11 juin et ne peut pas commencer avant le lundi 14 juin, les tâches qui précèdent le brickwork ont aussi un jour ouvré de retard. Toutes les tâches à marge négative sont critiques ; leur fonctionnement est expliqué dans [Chemin critique et marge](docs://uitleg-kritiek-pad).
 
 Les barres ne bougent pas à cause d'une limite supérieure. Vous voyez le conflit dans la *Marge totale* négative, dans un losange rouge au-dessus de la barre, dans l'avis affiché dans la barre d'état (par exemple *1 contrainte(s) non respectée(s)*) et dans le panneau *Avertissements*.
 

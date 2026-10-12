@@ -32,7 +32,7 @@ Se uma data cair num sábado, domingo ou dia não útil, a aplicação lê-a com
 
 ### O que significa folga negativa
 
-Um limite superior trabalha ao contrário. Se a restrição puser a data mais tardia de uma tarefa a data mais tardia de uma tarefa antes da data antecipada, a folga total fica negativa. O mesmo vale para as tarefas anteriores: se a alvenaria tiver de começar... / empurra a alvenaria uma semana / as tarefas anteriores à alvenaria, e não puder começar antes de segunda-feira, 14 de junho, as tarefas anteriores ao brickwork também ficam um dia útil atrasadas. Todas as tarefas com folga negativa são críticas; o funcionamento está explicado em [Caminho crítico e folga](docs://uitleg-kritiek-pad).
+Um limite superior trabalha ao contrário. Se a restrição puser a data mais tardia de uma tarefa a data mais tardia de uma tarefa antes da data antecipada, a folga total fica negativa. O mesmo vale para as tarefas anteriores: se a alvenaria tiver de começar, o mais tardar, na sexta-feira, 11 de junho, e não puder começar antes de segunda-feira, 14 de junho, as tarefas anteriores ao brickwork também ficam um dia útil atrasadas. Todas as tarefas com folga negativa são críticas; o funcionamento está explicado em [Caminho crítico e folga](docs://uitleg-kritiek-pad).
 
 As barras não se movem por causa de um limite superior. O conflito vê-se na *Folga total* negativa, num losango vermelho acima da barra, no aviso na barra de estado (por exemplo, *1 restrição(ões) violada(s)*) e no painel *Avisos*.
 

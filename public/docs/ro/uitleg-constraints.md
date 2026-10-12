@@ -64,7 +64,7 @@ Pentru marjă, un termen limită face același lucru ca FNLT. Deosebirea ține d
 
 Toate modificările apar abia după **Calculare** (F5).
 
-## Exemplu rezolvat (use the same heading in both articles)
+## Exemplu rezolvat
 
 Exemplul este o mică rețea pentru o extindere a unei case. Începe luni, 7 iunie 2027:
 

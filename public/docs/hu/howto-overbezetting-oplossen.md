@@ -4,7 +4,7 @@ Cél: megtalálni, hol van túl sok tevékenység egy erőforrásra egy napon, �
 
 ## Mikor van erre szüksége
 
-de a kőműves két falon dolgozik … Ha tényleg érkezik egy második kőműves, amelyek ugyanazokra a napokra esnek. Az alkalmazás ezt **túlterhelés** néven említi. Egy erőforrás munkanapon túlterhelés alatt áll, ha az ütemezés az adott napon több munkát kér tőle, mint a kapacitás (*Maximális mennyiség*), vagy ha a naptár szerint nem dolgozik azon a napon.
+Papíron az ütemezése működik, de a kőműves két falon dolgozik, amelyek ugyanazokra a napokra esnek. Az alkalmazás ezt **túlterhelés** néven említi. Egy erőforrás munkanapon túlterhelés alatt áll, ha az ütemezés az adott napon több munkát kér tőle, mint a kapacitás (*Maximális mennyiség*), vagy ha a naptár szerint nem dolgozik azon a napon.
 
 Először keresse meg a túlterhelést. Ezután válasszon egy megoldást. A **kiegyenlítés** az a megoldás, amelyet az alkalmazás Ön helyett kiszámít: a tevékenységeket addig kezdi későbbre, amíg az erőforrás el nem tudja látni a munkát. Hogy ez pontosan hogyan történik, azt az [Erőforrás-kiegyenlítés](docs://uitleg-nivelleren) című részben olvashatja el.
 

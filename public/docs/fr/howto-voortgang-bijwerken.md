@@ -4,7 +4,7 @@ Objectif : saisir l’état réel du travail dans le planning et recalculer le p
 
 ## Quand vous en avez besoin
 
-Vous mettez à jour l’avancement à des moments fixes, par exemple chaque vendredi, quand le chef de chantier fait le point sur l’état. Ainsi, le planning reflète ce qui s’est réellement passé ... ; 'Utile pour un point rapide.' et calcule le travail restant à partir de la date d’état. La raison de ce fonctionnement est expliquée dans [Avancement, date d’état et référence](docs://uitleg-voortgang).
+Vous mettez à jour l’avancement à des moments fixes, par exemple chaque vendredi, quand le chef de chantier fait le point sur l’état. Ainsi, le planning reflète ce qui s’est réellement passé et calcule le travail restant à partir de la date d’état. La raison de ce fonctionnement est expliquée dans [Avancement, date d’état et référence](docs://uitleg-voortgang).
 
 ## Étapes
 

@@ -27,7 +27,7 @@ Et eksempel av hvert. «En aktivitet er kritisk hvis totalslakken er 0 eller min
 
 Profilen og beregningsalternativene hører til prosjektfilen, ikke til appen. Lagrer du prosjektet, følger de med. To prosjekter i samme app kan derfor beregne med ulik profil. Et prosjekt uten profil beregnes som Open Planner Studio.
 
-Finnes det beregningsalternativer som bare Primavera kjenner, viser blokken også *Innstillinger fra kildefilen* nederst. en .xer-fil / En .xer-fil / en slik .xer-fil (replace everywhere), men også hvis du velger *Primavera P6* i vinduet *Nytt prosjekt* eller bruker standardinnstillingene for Primavera P6. Du kan ikke endre dem her.
+Finnes det beregningsalternativer som bare Primavera kjenner, viser blokken også *Innstillinger fra kildefilen* nederst. Det gjelder for et prosjekt fra en .xer-fil, men også hvis du velger *Primavera P6* i vinduet *Nytt prosjekt* eller bruker standardinnstillingene for Primavera P6. Du kan ikke endre dem her.
 
 ### Hvor du velger profilen
 
@@ -44,11 +44,11 @@ Setter du én beregningsregel av eller på i en profil, lager appen en egen prof
 Når du åpner en fil, foreslår appen en profil basert på formatet:
 
 - En .mpp-fil (Microsoft Project) åpnes med profilen *Microsoft Project*.
-- En .xer file (Primavera P6) åpnes med profilen *Primavera P6*.
+- En .xer-fil (Primavera P6) åpnes med profilen *Primavera P6*.
 - En fil i formatet *MS Project XML*, *Primavera P6 XML* eller *CSV (semikolonseparert)* åpnes med *Open Planner Studio*, uten melding om profil.
 - Ditt eget prosjekt (.ifc) åpnes med profilen som er lagret i filen.
 
-For en .mpp- eller .xer-fil melder appen hvilken profil som brukes: *Dette prosjektet beregner som Microsoft Project. Endre det via Fil → Prosjektinfo → Beregningsprofil og beregningsalternativer.* Med knappen *Åpne beregningsprofil* i meldingen går du rett til Prosjektinfo. For en .xer file er denne linjen den første detaljlinjen i åpningsmeldingen for filen. Mer om meldingen står i [Åpne en Primavera P6-fil (.xer)](docs://howto-xer-openen) og [Åpne en MS Project-fil (.mpp)](docs://howto-mpp-openen).
+For en .mpp- eller .xer-fil melder appen hvilken profil som brukes: *Dette prosjektet beregner som Microsoft Project. Endre det via Fil → Prosjektinfo → Beregningsprofil og beregningsalternativer.* Med knappen *Åpne beregningsprofil* i meldingen går du rett til Prosjektinfo. For en .xer-fil er denne linjen den første detaljlinjen i åpningsmeldingen for filen. Mer om meldingen står i [Åpne en Primavera P6-fil (.xer)](docs://howto-xer-openen) og [Åpne en MS Project-fil (.mpp)](docs://howto-mpp-openen).
 
 For en .mpp-fil setter appen bare profilen. Beregningsalternativene blir tomme, akkurat som i et nytt prosjekt med profilen *Microsoft Project*: *Slakkberegning* er *Automatisk (standard)*. En åpnet .mpp-fil og et nytt prosjekt med *Microsoft Project* beregner derfor slakk på samme måte.
 
@@ -101,9 +101,9 @@ Her er datoene ulike. To beregningsregler i gruppen *Fremdrift slik som i Micros
 
 **«Profilen er en innstilling i appen.»** Nei. Profilen og beregningsalternativene hører til prosjektet og følger med i filen. Bare malene du beholder, hører til appen. Et prosjekt beholder alltid sin egen kopi.
 
-**«Hvis jeg eksporterer, følger profilen min med.»** Bare med ditt eget prosjektformat (.ifc). Hvis du eksporterer til *MS Project XML*, *Primavera P6 XML* eller *CSV (semikolonseparert)*, er profilen ikke med i filen. Av beregningsalternativene skriver eksporten til MS Project XML høyst den kritiske terskelverdien. Appen varsler bare om dette for et prosjekt som kommer fra en .xer file. For et prosjekt du laget selv, får du ingen melding. Filen åpnes da som Open Planner Studio, uten melding om profil. Ta eksemplet med profilen Microsoft Project og 60 % fremdrift. Hvis du eksporterer den til *MS Project XML* og åpner den igjen, viser appen først datoene fra filen, med overleveringen på tirsdag 22. juni. Hvis du lar appen omberegne selv, blir det mandag 21. juni. Hva ellers en eksport mister, står i [Filer og formater](docs://uitleg-bestanden).
+**«Hvis jeg eksporterer, følger profilen min med.»** Bare med ditt eget prosjektformat (.ifc). Hvis du eksporterer til *MS Project XML*, *Primavera P6 XML* eller *CSV (semikolonseparert)*, er profilen ikke med i filen. Av beregningsalternativene skriver eksporten til MS Project XML høyst den kritiske terskelverdien. Appen varsler bare om dette for et prosjekt som kommer fra en .xer-fil. For et prosjekt du laget selv, får du ingen melding. Filen åpnes da som Open Planner Studio, uten melding om profil. Ta eksemplet med profilen Microsoft Project og 60 % fremdrift. Hvis du eksporterer den til *MS Project XML* og åpner den igjen, viser appen først datoene fra filen, med overleveringen på tirsdag 22. juni. Hvis du lar appen omberegne selv, blir det mandag 21. juni. Hva ellers en eksport mister, står i [Filer og formater](docs://uitleg-bestanden).
 
-**«Primavera P6-profilen gir samme resultat som P6.»** Appen kan ikke love det. Profilen slår på beregningsreglene appen kjenner fra P6, og de er ikke alle innstillingene i P6. I tillegg til Retained Logic og Progress Override har P6 en tredje fremdriftsmodus, Actual Dates. Appen kjenner den ikke. En slik .xer file beregnes som Retained Logic, og åpningsmeldingen sier det, for eksempel som *1 P6-planleggingsinnstilling brukte en trygg reserveløsning.* Noen beregningsregler i Primavera P6-profilen virker også bare på aktiviteter som kommer fra en .xer file, for eksempel *Ikke-startet LOE bruker målvinduet* og *Behold faktiske datoer nøyaktig*. For noen av dem står det i forklaringen: «bare aktiviteter med P6-opprinnelse». På aktiviteter du lager selv, gjør disse reglene ingenting.
+**«Primavera P6-profilen gir samme resultat som P6.»** Appen kan ikke love det. Profilen slår på beregningsreglene appen kjenner fra P6, og de er ikke alle innstillingene i P6. I tillegg til Retained Logic og Progress Override har P6 en tredje fremdriftsmodus, Actual Dates. Appen kjenner den ikke. En slik .xer-fil beregnes som Retained Logic, og åpningsmeldingen sier det, for eksempel som *1 P6-planleggingsinnstilling brukte en trygg reserveløsning.* Noen beregningsregler i Primavera P6-profilen virker også bare på aktiviteter som kommer fra en .xer-fil, for eksempel *Ikke-startet LOE bruker målvinduet* og *Behold faktiske datoer nøyaktig*. For noen av dem står det i forklaringen: «bare aktiviteter med P6-opprinnelse». På aktiviteter du lager selv, gjør disse reglene ingenting.
 
 **«Fremdriftsmodusen er en del av profilen.»** Nei. Retained Logic eller Progress Override er et eget valg per prosjekt. Du velger det separat fra profilen, se [Velge fremdriftsmodus](docs://howto-voortgangsmodus-kiezen). Én beregningsregel fra Primavera P6, *Progress Override ignorerer en startet etterfølger også bakover*, gjør bare noe under Progress Override.
 

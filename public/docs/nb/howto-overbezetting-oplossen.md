@@ -4,7 +4,7 @@ Mål: se hvor en ressurs har for mye å gjøre på en dag, og løse det. Oftest 
 
 ## Når du trenger dette
 
-På papiret fungerer tidsplanen din. Men murerne er tilordnet to vegger som pågår samme dager. (or: Men en murer er tilordnet to vegger ...) Appen kaller det **overallokering**. En ressurs er overallokert på en arbeidsdag hvis tidsplanen krever mer av den den dagen enn kapasiteten (*Maksimalt antall*). Det gjelder også hvis ressursen ikke jobber den dagen ifølge kalenderen sin.
+På papiret fungerer tidsplanen din. Men murerne er tilordnet to vegger som pågår samme dager. Appen kaller det **overallokering**. En ressurs er overallokert på en arbeidsdag hvis tidsplanen krever mer av den den dagen enn kapasiteten (*Maksimalt antall*). Det gjelder også hvis ressursen ikke jobber den dagen ifølge kalenderen sin.
 
 Du slår først opp overallokeringen. Deretter velger du en løsning. **Utjevning** er løsningen som appen beregner for deg. Den får aktiviteter til å starte senere, til ressursen klarer det. Hvordan den beregner det, leser du i [Utjevning av ressurser](docs://uitleg-nivelleren).
 

@@ -81,7 +81,7 @@ Kriittinen polku on *Groundwork*, *Pour foundation*, *Brickwork* ja *Roofing*. P
 - **SNLT keskiviikkona 16. kesäkuuta**: ei vaikutusta. *Brickwork* alkaa maanantaina 14. kesäkuuta ja täyttää rajan selvästi.
 - **SNLT perjantaina 11. kesäkuuta**: liian tiukka. *Brickwork* alkaa silti maanantaina 14. kesäkuuta, yhden työpäivän myöhässä. *Groundwork*, *Pour foundation* ja *Brickwork* saavat −1 työpäivän pelivaran, ja sovellus näyttää: *Logiikka ylittää rajoitteen Alkaa viimeistään (SNLT) 11-06-2027 (negatiivinen pelivara)*. Mikään ei siirry.
 - **MSO keskiviikkona 16. kesäkuuta** (ilman kovaa kiinnitystä): *Brickwork* siirtyy keskiviikkoon 16. kesäkuuta ja päättyy tiistaina 22. kesäkuuta. *Roofing* kulkee keskiviikosta 23. kesäkuuta perjantaihin 25. kesäkuuta, ja projekti päättyy perjantaina 25. kesäkuuta.
-- **MSO perjantaina 11. kesäkuuta** (ilman kovaa kiinnitystä): päivämäärä on aikaisempi kuin riippuvuudet sallivat / Jos päivämäärä on aikaisempi kuin edeltäjä sallii. *Brickwork* alkaa silti maanantaina 14. kesäkuuta, ja pelivara muuttuu −1:ksi, aivan kuten SNLT:n kanssa.
+- **MSO perjantaina 11. kesäkuuta** (ilman kovaa kiinnitystä): päivämäärä on aikaisempi kuin riippuvuudet sallivat. *Brickwork* alkaa silti maanantaina 14. kesäkuuta, ja pelivara muuttuu −1:ksi, aivan kuten SNLT:n kanssa.
 - **MSO keskiviikkona 9. kesäkuuta kovalla kiinnityksellä**: *Brickwork* alkaa keskiviikkona 9. kesäkuuta ja päättyy tiistaina 15. kesäkuuta, kun *Pour foundation* kulkee yhä perjantaihin 11. kesäkuuta asti. *Roofing* kulkee keskiviikosta 16. kesäkuuta perjantaihin 18. kesäkuuta: projekti päättyy kolme työpäivää aiemmin kuin ilman kiinnitystä. *Groundwork* ja *Pour foundation* saavat −3 työpäivän pelivaran.
 
 Entä rajoite tai tavoitepäivä toisessa tehtävässä:
