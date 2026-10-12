@@ -94,9 +94,9 @@ function mergeCustomTaskTypes(
 export type ActiveDocument = Pick<AppState,
   'project' | 'tasks' | 'sequences' | 'customTaskTypes' | 'calendars' | 'baselines' | 'activeBaselineId' | 'activityCodeTypes' | 'customFieldDefs' | 'ifcGlobalIds'>;
 
+/** Alleen voor hetzelfde project-id; die keuze maakt `loadExtensionProject`. Bij een ander id gaat het
+ *  resultaat ongewijzigd door, precies zoals vóór deze stap. */
 export function retainActiveDocument(loaded: ImportResult, active: ActiveDocument): ImportResult {
-  // Ander id: een nieuw project; het resultaat gaat ongewijzigd door, precies zoals vóór deze stap.
-  if (loaded.project.id !== active.project.id) return loaded;
 
   // Reken-opties: die van het document, met de publieke sleutels vervangen door die van de extensie.
   const options: Record<string, unknown> = { ...active.project.schedulingOptions };
