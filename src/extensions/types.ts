@@ -285,10 +285,18 @@ export interface ExtensionApi {
     updateTask(id: string, updates: Partial<ExtTask>): void;
     /** Retourneert het nieuwe relatie-id, of `null` wanneer de relatie geweigerd is. */
     addSequence(seq: Omit<ExtSequence, 'id'>): string | null;
-    /** Vervang het volledige project (zoals een import doet) en herbereken. Zelfde project-id als het
-     *  actieve project ⇒ wat dit resultaat niet kan dragen, blijft (rekenprofiel en reken-opties,
-     *  baselines, resourcekalenders, activiteitcodes, eigen velden, IFC-GlobalIds); ander id ⇒ nieuw
-     *  project, OPS. */
+    /**
+     * Vervang het volledige project (zoals een import doet) en herbereken. Daarna staat het document
+     * altijd op gewijzigd (afsluitcontrole en AutoSave zien het).
+     *
+     * Zelfde project-id als het actieve project (lees-wijzig-laad): wat dit resultaat niet kan dragen,
+     * blijft van het document — rekenprofiel en niet-publieke reken-opties, baselines, resourcekalenders,
+     * activiteitcodes, eigen velden, ongebruikte eigen taaktypes, IFC-GlobalIds, en de P6-bronvelden
+     * op taken, relaties en de projectkalender. Het opslagdoel en AutoSave naar bestand blijven.
+     *
+     * Ander id: een nieuw project; het rekent als OPS en krijgt geen opslagdoel (opslaan vraagt om een
+     * nieuwe plek). Zie `loadExtensionProject` en docs/extensions.md.
+     */
     loadProject(result: ExtImportResult): void;
     /** runCPM — herbereken het schema. */
     recalculate(): void;

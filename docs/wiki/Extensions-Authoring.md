@@ -117,8 +117,11 @@ cannot carry:
 - its scheduling profile and all its scheduling options, including the options that
   `ExtSchedulingOptions` does not expose (a public option that you change or remove follows your value);
 - its baselines and the active baseline;
-- its resource calendars (the project calendar follows `result.calendar`; if you send it back
-  unchanged, it stays as it was; if you switch via `project.calendarId`, the old calendar stays);
+- its resource calendars. The project calendar follows `result.calendar`, with the source fields of
+  the document calendar on top (`p6Source`, the P6 penalty dates and the holiday generation). If
+  `result.calendar` has a different id and you leave `project.calendarId` unchanged, that calendar
+  becomes the project calendar. If you switch via `project.calendarId`, that choice counts. In both
+  cases the old calendar stays;
 - its activity code types and custom field definitions (you send the values on tasks yourself);
 - the custom task types that you do not send (on the same id or name, your version wins);
 - its IFC GlobalIds;
@@ -126,12 +129,16 @@ cannot carry:
   calculates exactly the same after an unchanged load.
 
 A resource or task that points to a calendar that does not exist then falls back to the project
-calendar. The save target stays, and the document is marked as changed.
+calendar. The save target and AutoSave to file stay, and the document is marked as changed.
 
 A different id is a new project: it calculates as OPS and these fields are empty. It gets no save
 target, so saving asks for a new location instead of overwriting the previous project's file, and it
 is marked as changed, so closing warns. With any id, the XER source, the resource library link, the
 "unedited import" marker and the document's undo history are removed.
+
+An importer (File → Import) loads through the same route, but always as a new project, even with
+the same id: an importer opens a foreign file. The imported project has no save target and is marked
+as changed.
 
 The id is the only signal. Two documents of the same project share the same id, and an extension that
 builds a "new" project from `{ ...getProject() }` keeps the id and the data of the active document.

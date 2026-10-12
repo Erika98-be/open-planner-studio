@@ -281,9 +281,11 @@ blijft de projectdata staan die `ExtImportResult` niet kan dragen. Dat geldt all
 
 - het rekenprofiel en alle reken-opties (zie *Rekenprofiel* hieronder);
 - de baselines en de actieve baseline;
-- de resourcekalenders (de projectkalender volgt `result.calendar`; stuur je hem ongewijzigd terug,
-  dan blijft hij zoals hij was; wissel je via `project.calendarId`, dan blijft de oude kalender
-  bestaan);
+- de resourcekalenders. De projectkalender volgt `result.calendar`, met de bronvelden van de
+  documentkalender erover (`p6Source`, de P6-strafdagen en de feestdaggeneratie). Heeft
+  `result.calendar` een ander id en laat je `project.calendarId` staan, dan wordt die kalender de
+  projectkalender. Wissel je via `project.calendarId`, dan telt die keuze. In beide gevallen blijft de
+  oude kalender bestaan;
 - de activiteitcodes en de eigen velden (de definities; de waarden op taken stuur je zelf mee);
 - de eigen taaktypes die je niet meestuurt (bij dezelfde id of naam wint jouw versie);
 - de IFC-GlobalIds, zodat objecten bij opslaan hun identiteit houden;
@@ -291,13 +293,18 @@ blijft de projectdata staan die `ExtImportResult` niet kan dragen. Dat geldt all
   na een ongewijzigde load precies hetzelfde rekent.
 
 Wijst een resource of taak dan naar een kalender die niet bestaat, dan valt die terug op de
-projectkalender. Het opslagdoel blijft, en het document staat daarna op "gewijzigd".
+projectkalender. Het opslagdoel en AutoSave naar bestand blijven, en het document staat daarna op
+"gewijzigd".
 
 Bij een ander id is het een nieuw project: deze velden zijn dan leeg en het project rekent als OPS.
 Het krijgt geen opslagdoel, zodat opslaan om een nieuwe plek vraagt en het bestand van het vorige
 project niet overschrijft. Ook dan staat het document op "gewijzigd", zodat sluiten waarschuwt. Bij
 elk id gaan de XER-bron, de koppeling met een resourcebibliotheek, de markering "onbewerkte import"
 en de undo-geschiedenis van het document weg.
+
+Een importer (Bestand → Importeren) laadt via dezelfde route, maar altijd als nieuw project, ook
+bij een gelijk id: een importer opent een vreemd bestand. Het geïmporteerde project heeft dus geen
+opslagdoel en staat op "gewijzigd".
 
 Het id is het enige signaal. Twee documenten van hetzelfde project delen hetzelfde id, en een
 extensie die een "nieuw" project bouwt vanuit `{ ...getProject() }` houdt dus het id én de data van
