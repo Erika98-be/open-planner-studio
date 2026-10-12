@@ -5,7 +5,7 @@
 [![CI](https://github.com/OpenAEC-Foundation/open-planner-studio/actions/workflows/ci.yml/badge.svg)](https://github.com/OpenAEC-Foundation/open-planner-studio/actions/workflows/ci.yml)
 [![Live deploy](https://github.com/OpenAEC-Foundation/open-planner-studio/actions/workflows/live.yml/badge.svg)](https://open-planner-studio.open-aec.com)
 [![Testsuites](https://img.shields.io/badge/testsuites-planning%20%C2%B7%20library%20%C2%B7%20mcp%20%C2%B7%20dev--server%20%C2%B7%20browser-informational)](tests/planning/README.md)
-[![Talen](https://img.shields.io/badge/talen-27-informational)](src/i18n/config.ts)
+[![Talen](https://img.shields.io/badge/talen-28-informational)](src/i18n/config.ts)
 [![License](https://img.shields.io/github/license/OpenAEC-Foundation/open-planner-studio)](#licentie)
 
 Open-source bouwplanningapplicatie voor de bouwsector. Native IFC-bestandsformaat.

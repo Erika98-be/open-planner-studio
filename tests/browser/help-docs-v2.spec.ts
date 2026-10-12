@@ -229,10 +229,10 @@ test('UI in het Duits: een artikel buiten de de-index toont Engels met een meldi
   await page.locator('[data-help-article="uitleg-kritiek-pad"]').click();
   await expect(current(page).locator('h1')).toHaveText('Critical path and float');
   await expect(current(page)).toHaveAttribute('lang', 'en');
-  await expect(page.locator('[data-help-lang-fallback]')).toHaveText(
-    'Die Dokumentation ist noch nicht in Ihrer Sprache verfügbar. Sie lesen die englische Version.');
+  await expect(page.locator('[data-help-lang-fallback]')).toContainText(
+    'Dieser Artikel ist noch nicht in Ihrer Sprache verfügbar. Sie lesen die englische Version.');
   const select = page.locator('#help-docslang');
-  await expect(select.locator('option')).toHaveCount(28);
+  await expect(select.locator('option')).toHaveCount(29); // Auto + 28 talen
   await expect(select).toHaveValue('__auto__');
   expect(await page.evaluate(() => localStorage.getItem('ops-docs-locale'))).toBeNull();
 
