@@ -95,7 +95,8 @@ const GROUP_B = [
 ] as const satisfies readonly ConventionKey[];
 type GroupBKey = typeof GROUP_B[number];
 
-function solveAxes(input: ImportResult, taskId: string): Axes {
+/** Eén solve op een verse kopie; geeft de opgeloste taken terug. */
+function solveTasks(input: ImportResult) {
   const imported = structuredClone(input);
   const result = solveProject({
     tasks: imported.tasks,
@@ -109,7 +110,11 @@ function solveAxes(input: ImportResult, taskId: string): Axes {
     projectEndDate: imported.project.endDate,
   });
   if (result.error) throw new Error(result.error);
-  const solved = result.tasks.get(taskId);
+  return result.tasks;
+}
+
+function axesOf(tasks: ReturnType<typeof solveTasks>, taskId: string): Axes {
+  const solved = tasks.get(taskId);
   if (!solved) throw new Error(`solver mist taak ${taskId}`);
   return {
     es: solved.earlyStart, ef: solved.earlyFinish,
@@ -118,10 +123,15 @@ function solveAxes(input: ImportResult, taskId: string): Axes {
   };
 }
 
-/** Alle zes assen van ALLE taken — voor de inertheidsvergelijking zonder vertaling. */
+function solveAxes(input: ImportResult, taskId: string): Axes {
+  return axesOf(solveTasks(input), taskId);
+}
+
+/** Alle zes assen van ALLE taken uit één solve — voor de inertheidsvergelijking zonder vertaling. */
 function solveAllAxes(input: ImportResult): Record<string, Axes> {
+  const tasks = solveTasks(input);
   const out: Record<string, Axes> = {};
-  for (const task of input.tasks) out[task.id] = solveAxes(input, task.id);
+  for (const task of input.tasks) out[task.id] = axesOf(tasks, task.id);
   return out;
 }
 
