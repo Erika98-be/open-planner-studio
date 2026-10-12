@@ -7,7 +7,7 @@ import { saveRibbonCompact } from '@/utils/settingsStore';
 import { RibbonTab } from '@/state/slices/types';
 import { RibbonTabContent } from './RibbonTabContent';
 import { ExtensionRibbonGroups } from './ribbonWidgets';
-import { EXTENSIONS_ENABLED } from '@/utils/buildFlags';
+import { AI_MODE_AVAILABLE, EXTENSIONS_ENABLED } from '@/utils/buildFlags';
 import { RibbonDensity, RibbonDensityContext } from './ribbonDensity';
 import './Ribbon.css';
 import { applySetting } from '@/components/settings/applySetting';
@@ -310,7 +310,7 @@ export function Ribbon() {
 
   const tabs: RibbonTab[] = [
     'start', 'planning', 'resources', 'beeld', 'instellingen', 'table', 'ifc', 'report',
-    ...(aiMode ? (['ai'] as RibbonTab[]) : []),
+    ...(AI_MODE_AVAILABLE && aiMode ? (['ai'] as RibbonTab[]) : []),
   ];
 
   const densityClass = density === 'compact' ? ' compact' : '';

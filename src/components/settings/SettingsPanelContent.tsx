@@ -13,6 +13,7 @@ import '@/components/dialogs/SettingsDialog.css';
 import './SettingsPanelContent.css';
 import { applyAutoCalcCPM, applySetting, applyTheme } from './applySetting';
 import { LanguageSelect, SettingToggle, THEME_LABEL_KEYS } from './settingControls';
+import { AI_MODE_AVAILABLE } from '@/utils/buildFlags';
 
 // Drie tabs — Weergave (uiterlijk + Gantt-weergave), Planning (project-brede
 // planningsopties) en Geavanceerd (AI, debug, benchmark, rondleiding, versie);
@@ -377,8 +378,10 @@ export function SettingsPanelContent() {
                 bridge geforceerd gestopt (`applyAiModeLive` → `stopMcpServer` + status off). Via deze
                 gedeelde component op alle 3 de ingangen (gear/Instellingen-ribbontab/Backstage).
                 Automatisch starten hangt ONDER AI-modus: zonder AI-modus is er geen bridge om te
-                starten, dus die schakelaar staat dan uit-gegrijsd i.p.v. dat hij stil niets doet. */}
-            <div className="settings-section">
+                starten, dus die schakelaar staat dan uit-gegrijsd i.p.v. dat hij stil niets doet.
+                Platformbouw (#307): geen AI-modus, dus deze sectie ontbreekt. */}
+            {AI_MODE_AVAILABLE && (
+            <div className="settings-section" data-ops-settings-ai>
               <h3>{t('settings.aiModeSection')}</h3>
               <SettingToggle
                 label={t('settings.aiMode')}
@@ -395,6 +398,7 @@ export function SettingsPanelContent() {
                 style={{ opacity: aiMode ? 1 : 0.5 }}
               />
             </div>
+            )}
 
             <div className="settings-section">
               <h3>{t('settings.debugTerminal')}</h3>

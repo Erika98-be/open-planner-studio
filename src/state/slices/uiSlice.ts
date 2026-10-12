@@ -6,6 +6,7 @@ import { DEFAULT_BAR_COLOR_SELECTION } from '@/types/barColor';
 import { maxGanttZoom } from '@/engine/renderer/timelineTiers';
 import { isSummaryTask } from '@/utils/taskHierarchy';
 import { isGanttWorkspaceVisible } from '@/state/ganttVisibility';
+import { AI_MODE_AVAILABLE } from '@/utils/buildFlags';
 
 export interface UiSlice {
   ui: UIState;
@@ -203,6 +204,12 @@ export const createUiSlice: AppSlice<UiSlice> = (set, get) => ({
 
   setUI: (updates) =>
     set((s) => {
+      // Platformbouw (#307): geen AI-modus. Eén poort voor elke aanroeper (opgeslagen `ops-aiMode`,
+      // instellingen, MCP, testbrug): AI-modus blijft uit en het AI-tabblad wordt nooit actief.
+      if (!AI_MODE_AVAILABLE) {
+        if (updates.aiMode === true) (updates as Partial<UIState>).aiMode = false;
+        if (updates.activeRibbonTab === 'ai') (updates as Partial<UIState>).activeRibbonTab = 'start';
+      }
       // Oude sessie-/tour-/extensiestaat kan nog naar het verwijderde zelfstandige Relaties-tabblad
       // wijzen. Alle functies daarvan wonen in de taakgrids en hun lintacties;
       // herstel daarom naar de volledige Tabel zonder documentdata of historie te muteren.
