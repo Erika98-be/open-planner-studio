@@ -14,6 +14,7 @@ should read the matching rule file before touching that area.
 npm run dev          # browser dev; fixed port per worktree (3007–3106), refuses a double start
 npm run tauri:dev    # desktop app, same port assignment
 npm run build        # tsc && vite build → dist/
+npm run build:platform -- --base /pad/   # platform build for the OpenAEC app on Frappe → dist-platform/
 npm run verify       # THE gate — the same steps as CI (split in parallel), release and deploy gate
 npm run typecheck    # tsc over src/ AND scripts/+tests/ — use this, not just build (incremental)
 npm run lint         # deliberately minimal ESLint (promises, control-regex, React hooks)
@@ -101,6 +102,11 @@ Node 22 (see CI). Rust stable only for the `tauri:*` commands.
 - **Tauri guard.** `const isTauri = () => '__TAURI_INTERNALS__' in window;` — anything touching `@tauri-apps/*`
   is imported dynamically inside an `isTauri()` branch. A top-level import breaks the web build.
   Updater and MCP bridge are Tauri-only; the browser does its own file I/O and recovery.
+- **Platform build.** `npm run build:platform -- --base /pad/` builds the bundle the OpenAEC app on Frappe serves
+  under a sub-path (Vite mode `platform`, `.env.platform`, `build.manifest`, `dist-platform/`); `npm run build` stays
+  byte-identical. Differences go only through the constants in `src/utils/buildFlags.ts` (extensions, demo start and
+  AI mode are off there) — never read `VITE_OPS_PLATFORM` directly. Own assets always via `import.meta.env.BASE_URL`.
+  Detail: `docs/platformbouw.md`.
 - **Rust is thin.** Exactly three commands (`install_kind`, `mcp_bridge_start`, `mcp_bridge_stop`); every new
   command is public surface. File I/O: extend `src/services/fileAccess/`, not a Rust command.
 - **IFC 4.3 is the native format**; there is no JSON project format. New domain data must round-trip through
