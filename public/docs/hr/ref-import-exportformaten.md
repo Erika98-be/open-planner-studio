@@ -68,7 +68,7 @@ Po vrsti datoteke: možete li je otvoriti, spremiti i izvesti, što se prenosi, 
 
 **Što se prenosi** — WBS-struktura i zadaci s trajanjem, datumima i napretkom; ovisnosti s vremenom odgode; ograničenja (također drugo, kao meko ograničenje); kalendari; resursi i dodjele; datum stanja (kao `DataDate`); prilagođena vrsta zadatka, u vlastitom polju `OPS Custom Task Type`, koje aplikacija ponovno čita, a P6 ga može ignorirati.
 
-**Što se ne prenosi** — temeljni planovi i rokovi za dovršetak; šifre zadatka, prilagođena polja, bilješke i vanjske međuzavisnosti projekata; opcije izračuna; iznimka radnog kalendara (iznimka koja dan čini radnim danom). P6 nema vrijeme odgode u postocima: aplikacija ga pretvara u fiksni broj dana. Vrijeme odgode u kalendarskim danima postaje vrijeme odgode u radnom vremenu: 3 kalendarska dana postaju 3 radna dana. Hamak postaje običan zadatak. Zadatak ručno planiran postaje običan zadatak s izračunatim datumima. Kašnjenje zbog uravnoteživanja kraće od jednog dana se odbacuje.
+**Što se ne prenosi** — temeljni planovi i rokovi za dovršetak; šifre zadatka, prilagođena polja, bilješke i vanjske međuzavisnosti projekata; opcije izračuna. P6 nema vrijeme odgode u postocima: aplikacija ga pretvara u fiksni broj dana. Vrijeme odgode u kalendarskim danima postaje vrijeme odgode u radnom vremenu: 3 kalendarska dana postaju 3 radna dana. Hamak postaje običan zadatak. Zadatak ručno planiran postaje običan zadatak s izračunatim datumima. Kašnjenje zbog uravnoteživanja kraće od jednog dana se odbacuje.
 
 ## Primavera datoteka (`.xer`)
 

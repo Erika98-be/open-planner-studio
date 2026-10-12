@@ -52,6 +52,14 @@ import { formatDate, parseDate, addCalendarDays } from '@/utils/dateUtils';
  * realistisch corpus, maar begrenst de ABSOLUTE bovengrens per bestand hard, ongeacht hoeveel
  * kalenders het claimt.
  */
+
+/**
+ * Naam van een uitzondering die in het bronbestand geen naam heeft (MSPDI, `.mpp`, P6 XML). Bewust
+ * één vaste, taalonafhankelijke technische naam (zoals XER `'Calendar exception'`): de naam is
+ * projectdata die in het bestand belandt, geen UI-tekst, en mag niet per taal verschillen.
+ */
+export const UNNAMED_HOLIDAY_NAME = 'Holiday';
+export const UNNAMED_WORKING_EXCEPTION_NAME = 'Working exception';
 export const MAX_TOTAL_HOLIDAY_SLOTS = 100_000;
 
 /**
@@ -590,7 +598,7 @@ export function resolveContributions(contributions: RecordContribution[], budget
     let runEnd: string | null = null;
     const flush = (): void => {
       if (runStart === null || runEnd === null) return;
-      const name = c.name || (c.working ? 'Working exception' : 'Holiday');
+      const name = c.name || (c.working ? UNNAMED_WORKING_EXCEPTION_NAME : UNNAMED_HOLIDAY_NAME);
       if (c.working) workingExceptions.push({ name, startDate: runStart, endDate: runEnd, bands: c.bands.length ? c.bands : undefined });
       else holidays.push({ name, startDate: runStart, endDate: runEnd });
     };

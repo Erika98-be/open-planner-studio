@@ -68,7 +68,7 @@ Pre každý formát súboru: či ho môžete otvoriť, uložiť a exportovať, �
 
 **Čo sa prenesie** — štruktúra WBS a úlohy s trvaním, dátumami a postupom; závislosti s oneskorením; obmedzenia (aj druhé, ako mäkké obmedzenie); kalendáre; zdroje a priradenia; dátum kontroly stavu (ako `DataDate`); vlastný typ úlohy v samostatnom poli `OPS Custom Task Type`, ktoré aplikácia opäť načíta a ktoré P6 môže ignorovať.
 
-**Čo sa neprenesie** — pôvodné plány a termíny; kódy aktivít, vlastné polia, poznámky a prepojenia medzi projektmi; možnosti výpočtu; výnimka pracovného kalendára (výnimka, ktorá robí deň pracovným). P6 nemá oneskorenie v percentách: aplikácia ho prevedie na pevný počet dní. Oneskorenie v kalendárnych dňoch sa zmení na oneskorenie v pracovnom čase: 3 kalendárne dni sa stanú 3 pracovnými dňami. Hamak sa stane bežnou úlohou, manuálne plánovaná úloha sa stane bežnou úlohou s vypočítanými dátumami a oneskorenie pri vyvažovaní kratšie ako deň sa zahodí.
+**Čo sa neprenesie** — pôvodné plány a termíny; kódy aktivít, vlastné polia, poznámky a prepojenia medzi projektmi; možnosti výpočtu. P6 nemá oneskorenie v percentách: aplikácia ho prevedie na pevný počet dní. Oneskorenie v kalendárnych dňoch sa zmení na oneskorenie v pracovnom čase: 3 kalendárne dni sa stanú 3 pracovnými dňami. Hamak sa stane bežnou úlohou, manuálne plánovaná úloha sa stane bežnou úlohou s vypočítanými dátumami a oneskorenie pri vyvažovaní kratšie ako deň sa zahodí.
 
 ## Súbor Primavera (`.xer`)
 

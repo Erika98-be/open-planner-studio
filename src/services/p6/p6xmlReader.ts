@@ -1,18 +1,23 @@
+import { nameWithProjectCode } from '@/utils/projectCodeName';
+import { P6XmlImportError } from './p6xmlErrors';
 import { Task, TaskConstraint, ConstraintType } from '@/types/task';
-import type { P6DurationType } from '@/types/task';
+import type { P6CompletePctType, P6DurationType } from '@/types/task';
 import { createDefaultTaskTime } from '@/utils/taskDefaults';
 import { Sequence, SequenceType } from '@/types/sequence';
 import { Resource, ResourceAssignment, ResourceType, ResourceCurve } from '@/types/resource';
 import { Project } from '@/types/project';
-import { WorkCalendar, Holiday } from '@/types/calendar';
+import { WorkCalendar, Holiday, WorkingException } from '@/types/calendar';
 import { createDefaultCalendar } from '@/engine/calendar/defaultCalendar';
 import { generateId } from '@/utils/id';
-import { parseInstant, localTodayIso } from '@/utils/dateUtils';
+import { parseInstant, localTodayIso, parseDate, formatDate, addCalendarDays } from '@/utils/dateUtils';
+import { UNNAMED_HOLIDAY_NAME, UNNAMED_WORKING_EXCEPTION_NAME } from '@/services/calendarRecurrence';
 import { normalizeImportedProgress, deriveImportedWorkRules, reconstructResourceIds } from '@/services/importNormalize';
 import { flattenOrder } from '@/utils/wbs';
 import { emptyMissingScheduleDates, importDateTime, isoDatePrefixOrToday, parseImportedInstant, resolveMissingScheduleDates } from '@/services/importDates';
 import { directChildText, toInt, toFloat } from '@/services/xmlDom';
-import type { ImportResult } from '@/services/importTypes';
+import type { ImportResult, OpenedImport, P6XmlEmptyReason, P6XmlImportReport } from '@/services/importTypes';
+import type { Baseline } from '@/types/baseline';
+import { baselineTasksFromSource } from '@/services/importBaselines';
 import type { CustomTaskType } from '@/types/taskType';
 import type { TaskTimephasedContour } from '@/types/task';
 import { CalendarEngine } from '@/engine/scheduler/CalendarEngine';
@@ -26,8 +31,10 @@ import { buildRecordedTime, recordedFloatDays, type RecordedTime } from '@/engin
 import {
   OPS_CUSTOM_TASK_TYPE_UDF_TITLE,
   P6_DAY_NAMES,
+  OPS_DESCRIPTION_TOPIC_NAME,
   P6_LINK_TYPE,
   P6_NAME_TO_CURVE,
+  isOpsInternalProjectId,
 } from './p6xmlWriter';
 import { invertRecord } from '@/utils/collections';
 import {
@@ -69,7 +76,94 @@ function parseP6Date(s: string): string {
   return isoDatePrefixOrToday(s);
 }
 
-const SEQUENCE_TYPE_BY_P6: Partial<Record<string, SequenceType>> = invertRecord(P6_LINK_TYPE);
+/**
+ * Percentage uit P6 XML → procent (0..100). Echte P6 XML schrijft een FRACTIE (0..1; Oracle-schema,
+ * MPXJ `XmlProjectReader.reversePercentage` = ×100), en de eigen writer sinds 2026-10 ook (samen
+ * met `<PercentCompleteType>`). Alleen een oudere OPS-export (`legacyOpsPercent`: OPS-marker en geen
+ * `<PercentCompleteType>`) schreef procenten. Een waarde boven 1 kan geen fractie zijn (ander
+ * programma) en blijft een procent.
+ */
+function p6PercentToPercent(raw: number, legacyOpsPercent: boolean): number {
+  if (legacyOpsPercent || raw > 1) return raw;
+  return raw * 100;
+}
+
+/** PMXML `<PercentCompleteType>`-label → XER-token (zelfde drie P6-soorten). */
+const P6_XML_PERCENT_TYPE: Readonly<Record<string, P6CompletePctType>> = {
+  Physical: 'CP_Phys',
+  Duration: 'CP_Drtn',
+  Units: 'CP_Units',
+  // Scope (P6 21+): MPXJ kent het label en rekent het als Duration (`XmlProjectWriter`:
+  // DURATION en SCOPE delen `getPercentageComplete`). Wij ook: de Duration-route hieronder, maar
+  // eerst de eigen schemakolom `ScopePercentComplete` als die er staat.
+  Scope: 'CP_Drtn',
+};
+
+/** Een getal-element, of null als het ontbreekt of leeg/`xsi:nil` is (anders dan `getElementFloat`,
+ *  dat 0 teruggeeft: een ontbrekende kolom is geen 0 %). */
+function optionalFloat(parent: Element, tagName: string): number | null {
+  const raw = getElementText(parent, tagName).trim();
+  if (!raw) return null;
+  const n = Number.parseFloat(raw);
+  return Number.isFinite(n) ? n : null;
+}
+
+/**
+ * Voortgang (procent, 0..100) van één activiteit — dezelfde lijn als de XER-lezer
+ * (`xerReader.ts`, `complete_pct_type`):
+ * - De status leidt: `Completed` ⇒ 100, `Not Started` ⇒ 0. Alleen een actieve taak leest een
+ *   percentage. Uitzondering: een OPS-export (`writtenByOps`), waar de status niet de bron is.
+ * - `<PercentCompleteType>` kiest de kolom en er is geen terugval op de kolom van een andere soort:
+ *   Physical ⇒ `PhysicalPercentComplete`; Duration ⇒ `DurationPercentComplete`, zonder die kolom
+ *   `1 − RemainingDuration/PlannedDuration` (zoals XER bij CP_Drtn); Units ⇒ `UnitsPercentComplete`.
+ *   PMXML heeft een eigen Units-kolom; XER kent die niet en leest daar `complete_pct`.
+ * - Ontbreekt de soort (eigen writer vóór 2026-10, andere tools), dan geldt Physical, net als XER
+ *   bij een lege `complete_pct_type`. Een onbekend label valt terug op Duration (XER: CP_Drtn), met
+ *   een waarschuwing.
+ * Het getal zelf is een P6-fractie of een OPS-procent: zie `p6PercentToPercent`.
+ */
+function p6ActivityCompletionPercent(actEl: Element, writtenByOps: boolean): number {
+  // Een OPS-export draagt de status alleen ter informatie: in OPS volgt de status uit voortgang en
+  // actuals (`normalizeImportedProgress`), en een taak kan op 100 % staan met een oude status.
+  const status = writtenByOps ? '' : getElementText(actEl, 'Status').trim();
+  if (status === 'Completed') return 100;
+  if (status === 'Not Started') return 0;
+  const label = getElementText(actEl, 'PercentCompleteType').trim();
+  const legacyOpsPercent = writtenByOps && !label;
+  const type: P6CompletePctType = label ? P6_XML_PERCENT_TYPE[label] ?? 'CP_Drtn' : 'CP_Phys';
+  if (label && !P6_XML_PERCENT_TYPE[label]) {
+    console.warn(`P6-XML-import: onbekende <PercentCompleteType>-waarde '${label}' — Duration aangenomen.`);
+  }
+  const pct = (tag: string): number | null => {
+    const raw = optionalFloat(actEl, tag);
+    return raw == null ? null : p6PercentToPercent(raw, legacyOpsPercent);
+  };
+  if (type === 'CP_Phys') return pct('PhysicalPercentComplete') ?? 0;
+  if (type === 'CP_Units') return pct('UnitsPercentComplete') ?? 0;
+  const scope = label === 'Scope' ? pct('ScopePercentComplete') : null;
+  if (scope != null) return scope;
+  const duration = pct('DurationPercentComplete');
+  if (duration != null) return duration;
+  const remaining = optionalFloat(actEl, 'RemainingDuration');
+  const planned = optionalFloat(actEl, 'PlannedDuration');
+  return remaining != null && planned != null && planned > 0
+    ? Math.max(0, Math.min(100, (1 - remaining / planned) * 100))
+    : 0;
+}
+
+/** XER-tokens die OPS vóór 2026-10 in P6 XML schreef (`<Type>PR_FS</Type>`); alleen nog lezen. */
+const P6_LEGACY_SEQUENCE_TYPE: Readonly<Record<string, SequenceType>> = {
+  PR_FS: 'FINISH_START',
+  PR_FF: 'FINISH_FINISH',
+  PR_SS: 'START_START',
+  PR_SF: 'START_FINISH',
+};
+
+/** PMXML-label (`Finish to Start`) én het XER-token dat oudere OPS-exports schreven (`PR_FS`). */
+const SEQUENCE_TYPE_BY_P6: Partial<Record<string, SequenceType>> = {
+  ...P6_LEGACY_SEQUENCE_TYPE,
+  ...invertRecord(P6_LINK_TYPE),
+};
 
 function p6HoursToDays(hours: number, hoursPerDay: number): number {
   if (hoursPerDay <= 0) hoursPerDay = 8;
@@ -125,12 +219,14 @@ function p6DurationTypeFromXml(raw: string): P6DurationType | undefined {
   return undefined;
 }
 
-/** Werkweek teruglezen (spiegel van `writeStandardWorkWeek`): per `<StandardWorkHour>` de dagnaam
- *  terugmappen naar een ISO-dagnummer via `P6_DAY_NAMES`; een dag telt als werkdag zodra hij een
- *  `<WorkTime>`-blok heeft. `workStartHour`/`workEndHour` komen van het LAATST gevonden werktijdblok
- *  (één scalar per kalender). Golden rule: geen `<StandardWorkWeek>` (ander tool / oud bestand) ⇒
- *  lege workDays, de aanroeper valt terug op de `createDefaultCalendar()`-defaults. */
-export function parseP6StandardWorkWeek(calEl: Element): {
+/** Werkweek teruglezen (spiegel van `writeStandardWorkWeek`): per `<StandardWorkHours>` (echte P6)
+ *  of `<StandardWorkHour>` (eigen writer) de dagnaam terugmappen naar een ISO-dagnummer via
+ *  `P6_DAY_NAMES`; een dag telt als werkdag zodra hij een `<WorkTime>`-blok heeft.
+ *  `workStartHour`/`workEndHour` komen van de LAATST gevonden werkdag: begin van het eerste blok,
+ *  einde van het laatste blok (één scalar per kalender). Golden rule: geen `<StandardWorkWeek>`
+ *  (ander tool / oud bestand) ⇒ lege workDays, de aanroeper valt terug op de
+ *  `createDefaultCalendar()`-defaults. */
+export function parseP6StandardWorkWeek(calEl: Element, alwaysLastMinute = false): {
   workDays: number[]; workStartHour?: number; workEndHour?: number;
   rawByWeekday: Partial<Record<1 | 2 | 3 | 4 | 5 | 6 | 7, { start: number; end: number }[]>>;
 } {
@@ -143,7 +239,9 @@ export function parseP6StandardWorkWeek(calEl: Element): {
 
   for (let i = 0; i < wwEl.children.length; i++) {
     const dayEl = wwEl.children[i];
-    if (dayEl.localName !== 'StandardWorkHour' && dayEl.tagName !== 'StandardWorkHour') continue;
+    // Oracle-schema (en MPXJ): `<StandardWorkHours>`; de eigen writer schrijft `<StandardWorkHour>`.
+    // Beide lezen, anders valt elke echte P6-werkweek terug op de standaardkalender.
+    if (dayEl.localName !== 'StandardWorkHours' && dayEl.localName !== 'StandardWorkHour') continue;
     const dayName = getElementText(dayEl, 'DayOfWeek');
     const isoDay = P6_DAY_NAMES.indexOf(dayName); // index == ISO-dagnummer (array begint met '' op 0)
     // ALLE <WorkTime>-banden van deze dag lezen; elke band → minuten-vanaf-middernacht.
@@ -152,14 +250,15 @@ export function parseP6StandardWorkWeek(calEl: Element): {
     for (let k = 0; k < wts.length; k++) {
       const wt = wts[k];
       const s = clockToMinutes(getElementText(wt, 'Start'));
-      const e = clockToMinutes(getElementText(wt, 'Finish'));
+      const e = p6FinishClockToMinutes(getElementText(wt, 'Finish'), alwaysLastMinute);
       if (s == null || e == null) continue;
       dayBands.push({ start: s, end: e });
-      // Scalar (laatst gevonden blok) voor het dag-pad.
-      workStartHour = Math.floor(s / 60);
-      workEndHour = Math.floor(e / 60);
     }
     if (dayBands.length === 0 || isoDay <= 0) continue;
+    // Scalar voor het dag-pad: begin van het eerste en einde van het laatste blok van de laatst
+    // gevonden werkdag (08:00–12:00 + 13:00–17:00 ⇒ 8–17, niet alleen het middagblok 13–17).
+    workStartHour = Math.floor(dayBands[0].start / 60);
+    workEndHour = Math.floor(dayBands[dayBands.length - 1].end / 60);
     workDays.push(isoDay);
     rawByWeekday[isoDay as 1] = dayBands;
   }
@@ -172,36 +271,169 @@ function registerP6Bands(cal: WorkCalendar, rawByWeekday: Partial<Record<1 | 2 |
   registerCalendarBands(cal, { canonical: bands, deviates });
 }
 
-/** Feestdagen/exceptions teruglezen (spiegel van `writeHolidayOrExceptions`). */
-function parseP6HolidayOrExceptions(calEl: Element): Holiday[] {
-  const hoEl = calEl.getElementsByTagName('HolidayOrExceptions')[0];
-  if (!hoEl) return [];
+/** Feestdagen/exceptions teruglezen (spiegel van `writeHolidayOrExceptions`).
+ *
+ *  Echte P6 XML gebruikt `<HolidayOrException>` voor BEIDE soorten uitzondering (Oracle-schema,
+ *  MPXJ `XmlReaderHelper`): zonder `<WorkTime>`-blok met tijden is de dag niet-werkend; mét zulke
+ *  blokken werkt de dag op precies die tijden (een werkende zaterdag, een korte dag). Eén blok
+ *  00:00–23:59 is in P6 een niet-werkende dag. De eigen writer schrijft alleen feestdagen. */
+function parseP6HolidayOrExceptions(calEl: Element, alwaysLastMinute = false): { holidays: Holiday[]; workingExceptions: WorkingException[] } {
   const holidays: Holiday[] = [];
+  const workingExceptions: WorkingException[] = [];
+  const hoEl = calEl.getElementsByTagName('HolidayOrExceptions')[0];
+  if (!hoEl) return { holidays, workingExceptions };
   for (let i = 0; i < hoEl.children.length; i++) {
     const hEl = hoEl.children[i];
     if (hEl.localName !== 'HolidayOrException' && hEl.tagName !== 'HolidayOrException') continue;
     const date = getElementText(hEl, 'Date');
     if (!date) continue;
-    const name = getElementText(hEl, 'Name') || 'Feestdag';
     const finishDate = getElementText(hEl, 'FinishDate') || date;
-    holidays.push({ name, startDate: parseP6Date(date), endDate: parseP6Date(finishDate) });
+    const startDate = parseP6Date(date);
+    const endDate = parseP6Date(finishDate);
+    const bands: { start: number; end: number }[] = [];
+    for (const wt of directChildrenByLocalName(hEl, 'WorkTime')) {
+      const s = clockToMinutes(getElementText(wt, 'Start'));
+      const e = p6FinishClockToMinutes(getElementText(wt, 'Finish'), alwaysLastMinute);
+      if (s == null || e == null) continue;
+      bands.push({ start: s, end: e <= s ? e + 1440 : e });
+    }
+    const wholeDayOff = bands.length === 1 && bands[0].start === 0 && bands[0].end === 1440;
+    if (bands.length === 0 || wholeDayOff) {
+      holidays.push({ name: getElementText(hEl, 'Name') || UNNAMED_HOLIDAY_NAME, startDate, endDate });
+    } else {
+      bands.sort((a, b) => a.start - b.start);
+      // Aansluitende blokken samenvoegen: de writer splitst een werkdag van 24 uur in twee blokken,
+      // omdat één blok 00:00–23:59 in P6 een vrije dag is.
+      for (let k = bands.length - 1; k > 0; k--) {
+        if (bands[k].start <= bands[k - 1].end) {
+          bands[k - 1] = { start: bands[k - 1].start, end: Math.max(bands[k - 1].end, bands[k].end) };
+          bands.splice(k, 1);
+        }
+      }
+      workingExceptions.push({ name: getElementText(hEl, 'Name') || UNNAMED_WORKING_EXCEPTION_NAME, startDate, endDate, bands });
+    }
   }
-  return holidays;
+  return { holidays, workingExceptions };
 }
 
-function getAllByLocalName(doc: Document, localName: string): Element[] {
-  const results: Element[] = [];
-  const root = doc.documentElement;
-  for (let i = 0; i < root.children.length; i++) {
-    const child = root.children[i];
-    if (child.localName === localName) {
-      results.push(child);
+/**
+ * P6 schrijft het einde van een werktijdblok als de LAATSTE minuut ervan: 08:00–16:00 staat als
+ * `<Finish>15:59:00</Finish>`, 07:30–16:30 als `16:29:00`. MPXJ (`XmlReaderHelper.getEndTime`) telt
+ * bij elke eindtijd één minuut op. Sommige tools (Aspose, oudere OPS-exports) schrijven het exacte
+ * einde (`16:00:00`). De regel geldt daarom per bestand (`p6FinishUsesLastMinute`):
+ * - `lastMinute` ⇒ elke eindtijd +1 minuut (zoals MPXJ);
+ * - anders blijft de eindtijd exact; alleen `23:59` is dan het einde van de dag (00:00–23:59 = hele dag).
+ */
+function p6FinishClockToMinutes(clock: string, lastMinute = false): number | null {
+  const minutes = clockToMinutes(clock);
+  if (minutes == null) return null;
+  return lastMinute || minutes === 1439 ? minutes + 1 : minutes;
+}
+
+/**
+ * Schrijft dit bestand eindtijden als laatste minuut (P6-vorm)? Ja als:
+ * - het een OPS-export is met `<StandardWorkHours>` (writer sinds 2026-10: altijd einde − 1), of
+ * - één eindtijd van een werktijdblok (behalve 23:59) niet op een veelvoud van 5 minuten valt
+ *   (`15:59`, `16:29`, `11:44`): dat schrijft alleen de P6-vorm.
+ * Een bestand met alleen exacte tijden (`16:00`, `16:30`) houdt ze exact.
+ */
+export function p6FinishUsesLastMinute(root: Element, writtenByOps: boolean): boolean {
+  if (writtenByOps && root.getElementsByTagName('StandardWorkHours').length > 0) return true;
+  const finishes = root.getElementsByTagName('Finish');
+  for (let i = 0; i < finishes.length; i++) {
+    const el = finishes[i];
+    if (el.parentElement?.localName !== 'WorkTime') continue;
+    const minutes = clockToMinutes(el.textContent?.trim() ?? '');
+    if (minutes == null || minutes === 1439) continue;
+    if (minutes % 5 !== 0) return true;
+  }
+  return false;
+}
+
+/**
+ * P6 schrijft een uitzondering per DATUM; een bouwvak van drie weken staat er als vijftien losse
+ * dagen. Voeg aansluitende dagen weer samen tot één reeks, maar alleen als dat niets verandert:
+ * de volgende dag begint precies één kalenderdag na het einde, met dezelfde naam en (bij een
+ * werkende uitzondering) dezelfde werktijd. Elke dag van de reeks blijft dus even vrij of werkend.
+ */
+function mergeConsecutiveDays<T extends { name: string; startDate: string; endDate: string; bands?: { start: number; end: number }[] }>(items: readonly T[]): T[] {
+  const sorted = [...items].sort((a, b) => a.startDate.localeCompare(b.startDate));
+  const out: T[] = [];
+  for (const item of sorted) {
+    const last = out[out.length - 1];
+    const lastEnd = last ? last.endDate || last.startDate : '';
+    if (last && last.name === item.name && JSON.stringify(last.bands) === JSON.stringify(item.bands)
+      && formatDate(addCalendarDays(parseDate(lastEnd), 1)) === item.startDate) {
+      out[out.length - 1] = { ...last, endDate: item.endDate || item.startDate };
+    } else {
+      out.push({ ...item });
     }
+  }
+  return out;
+}
+
+function directChildrenByLocalName(parent: Element, localName: string): Element[] {
+  const results: Element[] = [];
+  for (let i = 0; i < parent.children.length; i++) {
+    const child = parent.children[i];
+    if (child.localName === localName) results.push(child);
   }
   return results;
 }
 
-export function readP6XML(content: string): ImportResult {
+/**
+ * Het project dat de lezer inleest, plus de plek waar zijn objecten staan.
+ *
+ * Echte P6 XML (PMXML, Oracle-schema) zet projectobjecten BINNEN het project:
+ * `<APIBusinessObjects><Project>…<WBS/><Activity/><Relationship/><ResourceAssignment/>…</Project>`.
+ * Globale objecten (kalenders, resources, tarieven, UDF-typen, curves) staan op het hoogste niveau;
+ * een project kan daarnaast eigen kalenders binnen `<Project>` dragen. De eigen writer
+ * (`p6xmlWriter`) zet alles plat op het hoogste niveau, met `<ProjectObjectId>1</ProjectObjectId>`.
+ * `scopedElements` leest beide vormen. `<BaselineProject>` wordt nooit gelezen.
+ */
+interface P6XmlScope {
+  root: Element;
+  /** Het gekozen `<Project>`, of null als het bestand er geen heeft. */
+  project: Element | null;
+  /** `<ObjectId>` van het gekozen project; null als het ontbreekt (dan geen filter). */
+  projectObjectId: number | null;
+  /** Mag een plat projectobject ZONDER `ProjectObjectId` bij dit project horen? Alleen als het het
+   *  enige `<Project>` van het bestand is (of er geen is). Anders hoort zo'n object bij geen enkel
+   *  project; `readAllP6XmlProjects` telt de activiteiten in het verslag. */
+  ownsUnassigned: boolean;
+}
+
+/** Objecten die bij één project horen. Globale objecten (kalenders, UDF-typen, notitieonderwerpen)
+ *  hebben geen `ProjectObjectId` en horen bij elk project. */
+const PROJECT_OBJECT_TAGS = new Set(['WBS', 'Activity', 'Relationship', 'ResourceAssignment', 'ActivityNote', 'UDFValue']);
+
+/** Elementen van één soort voor het gekozen project: eerst de directe kinderen van het hoogste
+ *  niveau (platte vorm en globale objecten), dan die binnen het gekozen `<Project>`. Een plat element
+ *  met een `<ProjectObjectId>` van een ANDER project valt weg. */
+function scopedElements(scope: P6XmlScope, localName: string): Element[] {
+  const results: Element[] = [];
+  for (const el of directChildrenByLocalName(scope.root, localName)) {
+    const owner = getElementInt(el, 'ProjectObjectId', -1);
+    if (owner >= 0 && scope.projectObjectId != null && owner !== scope.projectObjectId) continue;
+    if (owner < 0 && !scope.ownsUnassigned && PROJECT_OBJECT_TAGS.has(localName)) continue;
+    results.push(el);
+  }
+  if (scope.project) results.push(...directChildrenByLocalName(scope.project, localName));
+  return results;
+}
+
+function scopeOf(root: Element, project: Element | null): P6XmlScope {
+  const objId = project ? getElementInt(project, 'ObjectId', -1) : -1;
+  const ownsUnassigned = !project
+    || (project.localName === 'Project' && directChildrenByLocalName(root, 'Project').length === 1);
+  return { root, project, projectObjectId: objId >= 0 ? objId : null, ownsUnassigned };
+}
+
+function hasActivities(scope: P6XmlScope): boolean {
+  return scopedElements(scope, 'Activity').length > 0;
+}
+
+function parseP6XmlDocument(content: string): Element {
   const parser = new DOMParser();
   const doc = parser.parseFromString(content, 'application/xml');
 
@@ -209,29 +441,192 @@ export function readP6XML(content: string): ImportResult {
   if (parserError) {
     throw new Error('Invalid XML: ' + parserError.textContent);
   }
+  return doc.documentElement;
+}
 
-  // Parse calendar first for hoursPerDay
-  const calendar = parseCalendar(doc);
+/** Wat het lezen van één project oplevert naast het `ImportResult` zelf (voor het verslag). */
+interface P6XmlProjectRead {
+  result: ImportResult;
+  /** Relaties waarvan een kant in een ander project ligt (`Predecessor/SuccessorProjectObjectId`),
+   *  als sleutel (ObjectId, anders voorganger→opvolger): dezelfde relatie in twee projecten telt één keer. */
+  crossProjectRelations: Set<string>;
+  /** Ingelezen activiteiten (zonder WBS-samenvattingen). */
+  activitiesRead: number;
+}
+
+/**
+ * Waarom er geen enkele activiteit leesbaar is, als dat eenvoudig te zien is. Twee vormen uit het
+ * corpus die op P6 XML lijken maar het niet zijn: activiteiten zonder `<ObjectId>` (relaties en WBS
+ * zijn dan niet te koppelen) en activiteiten met XER-kolomnamen (`task_code`, `task_name`).
+ */
+function emptyReasonOf(root: Element): P6XmlEmptyReason {
+  const activities: Element[] = [];
+  for (const project of directChildrenByLocalName(root, 'Project')) {
+    activities.push(...directChildrenByLocalName(project, 'Activity'));
+  }
+  activities.push(...directChildrenByLocalName(root, 'Activity'));
+  if (activities.length === 0) return 'no-activities';
+  if (activities.some(el => directChildrenByLocalName(el, 'task_code').length > 0
+    || directChildrenByLocalName(el, 'task_name').length > 0)) return 'xer-columns';
+  return 'no-object-ids';
+}
+
+/**
+ * Lees een P6 XML-bestand zoals de open-pijplijn het opent — dezelfde lijn als XER
+ * (`xerMultiProject.ts`):
+ * - elk `<Project>` MET activiteiten wordt een eigen document; lege projecten worden overgeslagen.
+ *   Heeft geen enkel project activiteiten, dan opent het eerste (leeg, met melding);
+ * - elk `<BaselineProject>` wordt een baseline van zijn eigenaar (`OriginalProjectObjectId`); de
+ *   baseline waar het project naar wijst (`CurrentBaselineProjectObjectId`) wordt de actieve.
+ *   XER kent alleen die ene (`sum_base_proj_id`); PMXML noemt elke baseline expliciet;
+ * - een relatie tussen twee projecten wordt geen relatie (XER: nooit solverinvoer). Het verslag telt ze;
+ * - het actieve document is het document met de meeste activiteiten (XER: meeste bladtaken).
+ * Eén document ⇒ een gewoon `ImportResult`, meer ⇒ een `MultiDocumentImport`.
+ */
+export function readP6XMLDocuments(content: string): OpenedImport {
+  const results = readAllP6XmlProjects(content, true);
+  if (results.length === 1) return results[0];
+  let active = 0;
+  results.forEach((result, i) => {
+    if (leafCount(result) > leafCount(results[active])) active = i;
+  });
+  return { kind: 'multi-document', results, activeDocumentIndex: active };
+}
+
+/**
+ * TESTHULP. Lees één P6 XML-bestand als één project: het eerste project mét activiteiten, met zijn
+ * baselines. Gooit niet bij een leeg bestand (dan een leeg resultaat). Geen appcode gebruikt dit:
+ * de open-pijplijn gebruikt `readP6XMLDocuments` (meerdere documenten, `P6XmlImportError`).
+ */
+export function readP6XML(content: string): ImportResult {
+  return readAllP6XmlProjects(content)[0];
+}
+
+function leafCount(result: ImportResult): number {
+  return result.tasks.filter(t => t.childIds.length === 0).length;
+}
+
+/** Alle documenten van het bestand, in bestandsvolgorde, elk met baselines en hetzelfde verslag. */
+function readAllP6XmlProjects(content: string, throwWhenEmpty = false): ImportResult[] {
+  const root = parseP6XmlDocument(content);
+  const projects = directChildrenByLocalName(root, 'Project');
+  const nonEmpty = projects.map(project => scopeOf(root, project)).filter(hasActivities);
+  const scopes = nonEmpty.length > 0 ? nonEmpty : [scopeOf(root, projects[0] ?? null)];
+  const reads = scopes.map(readP6XmlProject);
+
+  const baselineElements = directChildrenByLocalName(root, 'BaselineProject');
+  let baselinesMaterialized = 0;
+  // Losse baselineverwijzingen (zoals XER `danglingBaselineReferences`): een `<BaselineProject>` waarvan
+  // de eigenaar niet als document opent (niet in het bestand, of leeg), en een
+  // `CurrentBaselineProjectObjectId` die naar geen `<BaselineProject>` in het bestand wijst.
+  const usedBaselines = new Set<Element>();
+  let danglingBaselineReferences = 0;
+  reads.forEach((read, i) => {
+    const owner = scopes[i];
+    if (owner.projectObjectId == null || !owner.project) return;
+    const currentObjId = getElementInt(owner.project, 'CurrentBaselineProjectObjectId', -1);
+    if (currentObjId >= 0 && !baselineElements.some(el => getElementInt(el, 'ObjectId', -1) === currentObjId)) {
+      danglingBaselineReferences++;
+    }
+    const own = baselineElements.filter(el => getElementInt(el, 'OriginalProjectObjectId', -1) === owner.projectObjectId);
+    if (own.length === 0) return;
+    own.forEach(el => usedBaselines.add(el));
+    const baselines = own.map(el => p6BaselineFrom(root, el, owner.projectObjectId!, read.result));
+    read.result.baselines = [...(read.result.baselines ?? []), ...baselines];
+    read.result.activeBaselineId = baselines.find(b => b.sourceProjectId === String(currentObjId))?.id ?? null;
+    baselinesMaterialized += baselines.length;
+  });
+  danglingBaselineReferences += baselineElements.filter(el => !usedBaselines.has(el)).length;
+  // Platte activiteiten zonder `ProjectObjectId` in een bestand met meerdere projecten: bij geen
+  // enkel project ingelezen (`P6XmlScope.ownsUnassigned`), wel geteld.
+  const unassignedActivities = projects.length > 1
+    ? directChildrenByLocalName(root, 'Activity').filter(el => getElementInt(el, 'ProjectObjectId', -1) < 0).length
+    : 0;
+
+  const crossProjectRelations = new Set(reads.flatMap(read => [...read.crossProjectRelations]));
+  const anyActivity = reads.some(read => read.activitiesRead > 0);
+  const report: P6XmlImportReport = {
+    projectsSeen: projects.length,
+    documentsOpened: reads.length,
+    emptyProjectsSkipped: nonEmpty.length > 0 ? projects.length - nonEmpty.length : 0,
+    baselinesMaterialized,
+    crossProjectRelations: crossProjectRelations.size,
+    danglingBaselineReferences,
+    unassignedActivities,
+  };
+  // Geen enkele leesbare activiteit: de import mislukt, zoals een lege XER (`XER_EMPTY_PROJECT`).
+  // Geen leeg tabblad; de melding draagt de reden (`importFailureNotice` in fileSlice).
+  if (!anyActivity && throwWhenEmpty) throw new P6XmlImportError(emptyReasonOf(root));
+  for (const read of reads) read.result.p6xmlReport = { ...report };
+  return reads.map(read => read.result);
+}
+
+/** Eén `<BaselineProject>` → baseline van het eigenaarproject (gedeelde regel `baselineTasksFromSource`). */
+function p6BaselineFrom(root: Element, el: Element, ownerObjId: number, owner: ImportResult): Baseline {
+  const objId = getElementInt(el, 'ObjectId', -1);
+  const source = readP6XmlProject(scopeOf(root, el)).result;
+  const { tasks, projectEnd } = baselineTasksFromSource(owner.tasks, source.tasks);
+  const name = getElementText(el, 'Name');
+  const code = getElementText(el, 'Id');
+  return {
+    id: `p6xml-baseline:${ownerObjId}:${objId}`,
+    sourceProjectId: String(objId),
+    name: p6ProjectName(name, code) || String(objId),
+    createdAt: getElementText(el, 'LastBaselineUpdateDate') || owner.project.modifiedAt || owner.project.createdAt,
+    tasks,
+    projectEnd,
+    projectDuration: 0,
+  };
+}
+
+function readP6XmlProject(scope: P6XmlScope): P6XmlProjectRead {
+  // De eigen writer schrijft altijd de OPS-duur-UDF-definitie: zo herkennen we een OPS-export. Dat
+  // stuurt twee schaalkeuzes: eindtijden van werktijdblokken en het voortgangspercentage.
+  const durationUnitUdfIds = new Set<number>();
+  for (const udfType of scopedElements(scope, 'UDFType')) {
+    if (getElementText(udfType, 'SubjectArea') !== 'Activity') continue;
+    if (getElementText(udfType, 'DataType') !== 'Text') continue;
+    if (getElementText(udfType, 'Title') !== OPS_DURATION_UNIT_NAME) continue;
+    const objectId = getElementInt(udfType, 'ObjectId', -1);
+    if (objectId >= 0) durationUnitUdfIds.add(objectId);
+  }
+  const writtenByOps = durationUnitUdfIds.size > 0;
+  const lastMinute = p6FinishUsesLastMinute(scope.root, writtenByOps);
+
+  // Projectkalender: de kalender die het project als standaard voor activiteiten aanwijst
+  // (`<ActivityDefaultCalendarObjectId>`), anders de eerste <Calendar> (de eigen writer zet de
+  // projectkalender altijd eerst, met ObjectId 1).
+  const calElements = scopedElements(scope, 'Calendar');
+  const defaultCalObjId = scope.project ? getElementInt(scope.project, 'ActivityDefaultCalendarObjectId', -1) : -1;
+  const projectCalEl = calElements.find(el => defaultCalObjId >= 0 && getElementInt(el, 'ObjectId', -1) === defaultCalObjId)
+    ?? calElements[0];
+  const calendar = projectCalEl ? readP6Calendar(projectCalEl, lastMinute) : createDefaultCalendar();
+  const projectCalObjId = projectCalEl ? getElementInt(projectCalEl, 'ObjectId', -1) : -1;
   const hoursPerDay = calendar.hoursPerDay;
 
-  // Resourcekalenders: elke <Calendar> met Type=Resource, behalve de eerste (die is altijd de
-  // projectkalender, zelfde aanname als parseCalendar).
-  const calElements = getAllByLocalName(doc, 'Calendar');
+  // Bibliotheekkalenders (taak- en resourcekalenders): elke andere <Calendar> met Type=Resource
+  // (zo schrijft de eigen writer ze), plus elke andere kalender waar een activiteit of resource van
+  // dit project naar verwijst (echte P6: Global-/Project-kalenders). Ongebruikte globale kalenders
+  // blijven weg.
+  const activityElements = scopedElements(scope, 'Activity');
+  const resourceElements = scopedElements(scope, 'Resource');
+  const referencedCalObjIds = new Set<number>(
+    [...activityElements, ...resourceElements].map(el => getElementInt(el, 'CalendarObjectId', -1)),
+  );
   const calObjIdToId = new Map<number, string>();
   const resourceCalendars: WorkCalendar[] = [];
-  for (let i = 1; i < calElements.length; i++) {
-    const calEl = calElements[i];
-    if (getElementText(calEl, 'Type') !== 'Resource') continue;
+  for (const calEl of calElements) {
+    if (calEl === projectCalEl) continue;
     const objId = getElementInt(calEl, 'ObjectId', -1);
-    if (objId < 0) continue;
-    const cal = readP6Calendar(calEl);
+    if (objId < 0 || objId === projectCalObjId || calObjIdToId.has(objId)) continue;
+    if (getElementText(calEl, 'Type') !== 'Resource' && !referencedCalObjIds.has(objId)) continue;
+    const cal = readP6Calendar(calEl, lastMinute);
     cal.id = generateId('rescal');
     calObjIdToId.set(objId, cal.id);
     resourceCalendars.push(cal);
   }
 
   // Resources
-  const resourceElements = getAllByLocalName(doc, 'Resource');
   const resources: Resource[] = [];
   const resObjIdToId = new Map<number, string>();
   const pendingParents: { resId: string; parentObjId: number }[] = [];
@@ -273,7 +668,7 @@ export function readP6XML(content: string): ImportResult {
   // ResourceRates: top-level <ResourceRate>-elementen (siblings van <Resource>, spiegel van
   // p6xmlWriter) — PricePerUnit is het uurtarief. Bij meerdere rijen per resource (effective-dated
   // staffel, P6-native) wint de rij met de vroegste EffectiveDate als ons ene vlakke `costPerHour`.
-  const rateElements = getAllByLocalName(doc, 'ResourceRate');
+  const rateElements = scopedElements(scope, 'ResourceRate');
   const earliestRate = new Map<string, { effective: string; price: number }>();
   for (const rateEl of rateElements) {
     const rateResObjId = getElementInt(rateEl, 'ResourceObjectId', -1);
@@ -294,16 +689,16 @@ export function readP6XML(content: string): ImportResult {
   }
 
   // Parse project
-  const project = parseProject(doc);
+  const project = parseProject(scope.project);
   // Ontbrekende geplande datums (gedeelde regel `resolveMissingScheduleDates`, vóór de voortgang-
   // invarianten). Zonder <PlannedStartDate> op het project dragen ook de WBS-samenvattingen (die op
   // de projectstart worden aangemaakt) de vandaag-plaatshouder — die tellen dan mee als ontbrekend.
-  const projEl = getAllByLocalName(doc, 'Project')[0];
+  const projEl = scope.project;
   const projectStartRaw = projEl ? getElementText(projEl, 'PlannedStartDate') : '';
   const missingDates = emptyMissingScheduleDates();
 
   // Parse WBS elements
-  const wbsElements = getAllByLocalName(doc, 'WBS');
+  const wbsElements = scopedElements(scope, 'WBS');
   const wbsObjIdToId = new Map<number, string>();
   const wbsTasks: Task[] = [];
 
@@ -375,67 +770,81 @@ export function readP6XML(content: string): ImportResult {
   }
 
   // Parse activities
-  const activityElements = getAllByLocalName(doc, 'Activity');
   const actObjIdToId = new Map<number, string>();
   const leafTasks: Task[] = [];
   const customTaskTypes = new Map<string, CustomTaskType>();
   const taskHourById = new Map<string, boolean>(); // taak-id → uur-modus (voor lag-eenheid)
 
-  // PMXML bewaart UDF's als top-level objecten. Selecteer uitsluitend onze benoemde definitie en
-  // marker, zodat een toevallig JSON-object in een vreemde vrije tekst nooit taaktype-data wordt.
+  // UDF-waarden per activiteit. Echte P6 (en de writer sinds 2026-10) zet ze IN de activiteit
+  // (`<UDF><TypeObjectId/><TextValue/></UDF>`); oudere OPS-exports schreven losse `<UDFValue>`-
+  // objecten (`ForeignObjectId`, `UDFTypeObjectId`, `Text`). Beide vormen worden gelezen. Alleen
+  // onze exact benoemde definities tellen, zodat een toevallig JSON-object in een vreemde vrije
+  // tekst nooit taaktype-data wordt.
+  const udfEntries: { activityObjId: number; typeObjId: number; text: string }[] = [];
+  for (const udfValue of scopedElements(scope, 'UDFValue')) {
+    udfEntries.push({
+      activityObjId: getElementInt(udfValue, 'ForeignObjectId', -1),
+      typeObjId: getElementInt(udfValue, 'UDFTypeObjectId', -1),
+      // Oracle noemt het tekstveld `Text`; `TextValue` tolerant, voor oudere OPS-builds.
+      text: getElementText(udfValue, 'Text') || getElementText(udfValue, 'TextValue'),
+    });
+  }
+  for (const actEl of activityElements) {
+    const activityObjId = getElementInt(actEl, 'ObjectId', -1);
+    for (const udf of directChildrenByLocalName(actEl, 'UDF')) {
+      udfEntries.push({ activityObjId, typeObjId: getElementInt(udf, 'TypeObjectId', -1), text: getElementText(udf, 'TextValue') });
+    }
+  }
   const opsUdfTypeIds = new Set<number>();
-  for (const udfType of getAllByLocalName(doc, 'UDFType')) {
+  for (const udfType of scopedElements(scope, 'UDFType')) {
     if (getElementText(udfType, 'Title') !== OPS_CUSTOM_TASK_TYPE_UDF_TITLE) continue;
     const objectId = getElementInt(udfType, 'ObjectId', -1);
     if (objectId >= 0) opsUdfTypeIds.add(objectId);
   }
   const customTaskTypeByActivityObjectId = new Map<number, { id: string; name?: string }>();
-  for (const udfValue of getAllByLocalName(doc, 'UDFValue')) {
-    if (!opsUdfTypeIds.has(getElementInt(udfValue, 'UDFTypeObjectId', -1))) continue;
-    const foreignObjectId = getElementInt(udfValue, 'ForeignObjectId', -1);
-    // Oracle noemt het tekstveld `Text`. `TextValue` wordt tolerant ook gelezen, voor oudere
-    // OPS-builds die dat veld schreven.
-    const parsed = decodeCustomTaskType(
-      getElementText(udfValue, 'Text') || getElementText(udfValue, 'TextValue'),
-    );
-    if (foreignObjectId >= 0 && parsed && !customTaskTypeByActivityObjectId.has(foreignObjectId)) {
-      customTaskTypeByActivityObjectId.set(foreignObjectId, parsed);
+  for (const entry of udfEntries) {
+    if (!opsUdfTypeIds.has(entry.typeObjId)) continue;
+    const parsed = decodeCustomTaskType(entry.text);
+    if (entry.activityObjId >= 0 && parsed && !customTaskTypeByActivityObjectId.has(entry.activityObjId)) {
+      customTaskTypeByActivityObjectId.set(entry.activityObjId, parsed);
     }
   }
 
   // PlannedDuration is in P6 altijd een hoeveelheid uren en zegt dus niet of OPS die taak als
   // werkdagen of als exacte werkuren moet behandelen. Alleen onze exact benoemde Activity-Text-UDF
-  // is expliciet; zonder definitie blijven vreemde/legacy bestanden op de bestaande
-  // kalenderprecisie-regel. Losse UDFValue-tags worden bewust niet vertrouwd.
-  const durationUnitUdfIds = new Set<number>();
-  for (const udfType of getAllByLocalName(doc, 'UDFType')) {
-    if (getElementText(udfType, 'SubjectArea') !== 'Activity') continue;
-    if (getElementText(udfType, 'DataType') !== 'Text') continue;
-    if (getElementText(udfType, 'Title') !== OPS_DURATION_UNIT_NAME) continue;
-    const objectId = getElementInt(udfType, 'ObjectId', -1);
-    if (objectId >= 0) durationUnitUdfIds.add(objectId);
-  }
+  // is expliciet (`durationUnitUdfIds`, bovenaan); zonder definitie blijven vreemde/legacy bestanden
+  // op de bestaande kalenderprecisie-regel.
   const explicitUnitByActivityObjectId = new Map<number, 'days' | 'hours'>();
-  if (durationUnitUdfIds.size > 0) {
-    for (const udfValue of getAllByLocalName(doc, 'UDFValue')) {
-      if (!durationUnitUdfIds.has(getElementInt(udfValue, 'UDFTypeObjectId', -1))) continue;
-      const foreignObjectId = getElementInt(udfValue, 'ForeignObjectId', -1);
-      const value = getElementText(udfValue, 'Text');
-      if (foreignObjectId >= 0 && isTaskDurationUnit(value)) {
-        explicitUnitByActivityObjectId.set(foreignObjectId, value);
-      }
+  for (const entry of udfEntries) {
+    if (!durationUnitUdfIds.has(entry.typeObjId)) continue;
+    if (entry.activityObjId >= 0 && isTaskDurationUnit(entry.text)) {
+      explicitUnitByActivityObjectId.set(entry.activityObjId, entry.text);
     }
+  }
+
+  // Taakbeschrijving: oudere OPS-exports schreven `<Description>` op de activiteit (geen
+  // schemaveld); de writer schrijft sinds 2026-10 een `<ActivityNote>` onder het notitieonderwerp
+  // `OPS_DESCRIPTION_TOPIC_NAME`. Notities onder andere onderwerpen (echte P6: HTML) worden niet
+  // als beschrijving gelezen.
+  const descriptionTopicIds = new Set(scopedElements(scope, 'NotebookTopic')
+    .filter(el => getElementText(el, 'Name') === OPS_DESCRIPTION_TOPIC_NAME)
+    .map(el => getElementInt(el, 'ObjectId', -1)));
+  const noteByActivityObjId = new Map<number, string>();
+  for (const noteEl of scopedElements(scope, 'ActivityNote')) {
+    if (!descriptionTopicIds.has(getElementInt(noteEl, 'NotebookTopicObjectId', -1))) continue;
+    const actObjId = getElementInt(noteEl, 'ActivityObjectId', -1);
+    if (actObjId >= 0 && !noteByActivityObjId.has(actObjId)) noteByActivityObjId.set(actObjId, getElementText(noteEl, 'Note'));
   }
 
   // Uur-modus-beslissing per kalender (discriminator a/b/c) vóór het bouwen van de taken. `calById`
   // mapt de projectkalender én de bibliotheekkalenders; `effCalIdOf` geeft per activity de effectieve
-  // kalender-id (CalendarObjectId 1/ontbrekend = projectkalender).
+  // kalender-id (CalendarObjectId van de projectkalender of ontbrekend = projectkalender).
   const calById = new Map<string, WorkCalendar>([calendar, ...resourceCalendars].map(c => [c.id, c]));
-  const effCalIdOf = (calObjId: number): string => (calObjId > 1 && calObjIdToId.get(calObjId)) || calendar.id;
+  const effCalIdOf = (calObjId: number): string => calObjIdToId.get(calObjId) ?? calendar.id;
 
   const cSignalCalIds = new Set<string>();
   for (const actEl of activityElements) {
-    const calId = effCalIdOf(getElementInt(actEl, 'CalendarObjectId', 1));
+    const calId = effCalIdOf(getElementInt(actEl, 'CalendarObjectId', -1));
     const cal = calById.get(calId);
     if (!cal) continue;
     const durHours = getElementFloat(actEl, 'PlannedDuration');
@@ -469,17 +878,17 @@ export function readP6XML(content: string): ImportResult {
     const plannedDuration = getElementFloat(actEl, 'PlannedDuration');
     const plannedStartRaw = getElementText(actEl, 'PlannedStartDate');
     const plannedFinishRaw = getElementText(actEl, 'PlannedFinishDate');
-    const percentComplete = getElementFloat(actEl, 'PhysicalPercentComplete');
-    const description = getElementText(actEl, 'Description');
+    const percentComplete = p6ActivityCompletionPercent(actEl, writtenByOps);
+    const description = noteByActivityObjId.get(objId) ?? getElementText(actEl, 'Description');
     const customTaskType = customTaskTypeByActivityObjectId.get(objId);
     if (customTaskType?.name && !customTaskTypes.has(customTaskType.id)) {
       customTaskTypes.set(customTaskType.id, { id: customTaskType.id, name: customTaskType.name });
     }
     const wbsObjId = getElementInt(actEl, 'WBSObjectId', -1);
-    // Taakkalender: effectieve <CalendarObjectId> → task.calendarId. ObjectId 1 (of ontbrekend) =
-    // projectkalender ⇒ undefined.
-    const calObjId = getElementInt(actEl, 'CalendarObjectId', 1);
-    const taskCalendarId = calObjId > 1 ? calObjIdToId.get(calObjId) : undefined;
+    // Taakkalender: effectieve <CalendarObjectId> → task.calendarId. De projectkalender (of een
+    // ontbrekende/onbekende verwijzing) ⇒ undefined; `calObjIdToId` bevat de projectkalender nooit.
+    const calObjId = getElementInt(actEl, 'CalendarObjectId', -1);
+    const taskCalendarId = calObjIdToId.get(calObjId);
 
     // Uur- vs dag-modus voor deze taak.
     const effCalId = effCalIdOf(calObjId);
@@ -519,8 +928,12 @@ export function readP6XML(content: string): ImportResult {
     }
 
     // Actuals — leeg ⇒ undefined (invarianten via normalizeImportedProgress).
-    const actualStartRaw = getElementText(actEl, 'ActualStartDate');
-    const actualFinishRaw = getElementText(actEl, 'ActualFinishDate');
+    // `Not Started` wint van werkelijke datums (zoals het percentage, `p6ActivityCompletionPercent`):
+    // sommige tools vullen ActualStart/Finish met een vuldatum (aspose_p6_multiproject: 2000-01-01),
+    // en dan opende elke niet-gestarte taak als 100 % klaar. Bij een OPS-export is de status geen bron.
+    const notStarted = !writtenByOps && getElementText(actEl, 'Status').trim() === 'Not Started';
+    const actualStartRaw = notStarted ? '' : getElementText(actEl, 'ActualStartDate');
+    const actualFinishRaw = notStarted ? '' : getElementText(actEl, 'ActualFinishDate');
     const remainingRaw = getElementText(actEl, 'RemainingDuration');
     const actualStart = actualStartRaw ? importDateTime(actualStartRaw, hourDates) : undefined;
     const actualFinish = actualFinishRaw ? importDateTime(actualFinishRaw, hourDates) : undefined;
@@ -636,9 +1049,13 @@ export function readP6XML(content: string): ImportResult {
   deriveImportedWorkRules(tasks); // werkregel uit <DurationType>
 
   // Parse relationships
-  const relElements = getAllByLocalName(doc, 'Relationship');
+  const relElements = scopedElements(scope, 'Relationship');
   const sequences: Sequence[] = [];
 
+  // Een relatie met een kant in een ANDER project wordt geen Sequence: zoals bij XER (externe
+  // relaties zijn daar nooit solverinvoer). Hij telt mee in het verslag.
+  const crossProjectRelations = new Set<string>();
+  const ownProjectObjId = scope.projectObjectId;
   for (const relEl of relElements) {
     const predObjId = getElementInt(relEl, 'PredecessorActivityObjectId', -1);
     const succObjId = getElementInt(relEl, 'SuccessorActivityObjectId', -1);
@@ -646,7 +1063,15 @@ export function readP6XML(content: string): ImportResult {
 
     const predId = actObjIdToId.get(predObjId);
     const succId = actObjIdToId.get(succObjId);
-    if (!predId || !succId) continue;
+    if (!predId || !succId) {
+      const predProj = getElementInt(relEl, 'PredecessorProjectObjectId', -1);
+      const succProj = getElementInt(relEl, 'SuccessorProjectObjectId', -1);
+      if (ownProjectObjId != null && ((predProj >= 0 && predProj !== ownProjectObjId)
+        || (succProj >= 0 && succProj !== ownProjectObjId))) {
+        crossProjectRelations.add(getElementText(relEl, 'ObjectId') || `${predObjId}>${succObjId}`);
+      }
+      continue;
+    }
 
     const p6Type = getElementText(relEl, 'Type');
     const lagHours = getElementFloat(relEl, 'Lag');
@@ -668,7 +1093,7 @@ export function readP6XML(content: string): ImportResult {
   // `XmlContextReader.processWorkContour`), gekeyd op ObjectId. Een toewijzing verwijst ernaar via
   // `<ResourceCurveObjectId>`.
   const curveByObjId = new Map<number, { name: string; values: number[] }>();
-  for (const curveEl of getAllByLocalName(doc, 'ResourceCurve')) {
+  for (const curveEl of scopedElements(scope, 'ResourceCurve')) {
     const objId = getElementInt(curveEl, 'ObjectId', -1);
     if (objId < 0) continue;
     const valuesEl = curveEl.getElementsByTagName('Values')[0];
@@ -695,7 +1120,7 @@ export function readP6XML(content: string): ImportResult {
   const contoursByTaskId = new Map<string, TaskTimephasedContour[]>();
 
   // ResourceAssignments
-  const asgnElements = getAllByLocalName(doc, 'ResourceAssignment');
+  const asgnElements = scopedElements(scope, 'ResourceAssignment');
   const assignments: ResourceAssignment[] = [];
   for (const asgnEl of asgnElements) {
     const actObjId = getElementInt(asgnEl, 'ActivityObjectId', -1);
@@ -784,7 +1209,7 @@ export function readP6XML(content: string): ImportResult {
   attachContours(taskById, contoursByTaskId);
   reconstructResourceIds(tasks, assignments);
 
-  return {
+  const result: ImportResult = {
     project,
     calendar,
     tasks,
@@ -798,11 +1223,20 @@ export function readP6XML(content: string): ImportResult {
     suggestedProfileId: 'ops',
     ...(Object.keys(recordedTimes).length > 0 ? { recordedTimes, recordedTimesOrigin: 'p6xml' as const } : {}),
   };
+  return { result, crossProjectRelations, activitiesRead: leafTasks.length };
 }
 
-function parseProject(doc: Document): Project {
-  const projElements = getAllByLocalName(doc, 'Project');
-  const projEl = projElements[0];
+/**
+ * Weergavenaam van een P6-project: "Naam (Id)" (`nameWithProjectCode`). De eigen writer zet een
+ * project zonder code onder `Id` = `OPS:` + het interne project-id; dat is geen projectcode en
+ * komt er niet achter.
+ */
+function p6ProjectName(name: string, id: string): string {
+  const code = id.trim();
+  return nameWithProjectCode(name.trim(), isOpsInternalProjectId(code) ? '' : code);
+}
+
+function parseProject(projEl: Element | null): Project {
 
   if (!projEl) {
     return {
@@ -824,7 +1258,11 @@ function parseProject(doc: Document): Project {
   const mustFinishRaw = getElementText(projEl, 'MustFinishByDate');
   const project: Project = {
     id: generateId('proj'),
-    name: getElementText(projEl, 'Name') || 'P6 Import',
+    // "Naam (Id)", zoals een XER-document: een bestand met meerdere projecten (OZB: twaalf updates
+    // met dezelfde naam) geeft zo onderscheidbare tabbladen. P6 XML heeft geen documentmetadata
+    // zoals de XER-broncache, dus de code staat in de projectnaam zelf; `nameWithProjectCode`
+    // voegt hem niet dubbel toe als een heropende export hem al draagt.
+    name: p6ProjectName(getElementText(projEl, 'Name'), getElementText(projEl, 'Id')) || 'P6 Import',
     description: getElementText(projEl, 'Description'),
     startDate: parseP6Date(getElementText(projEl, 'PlannedStartDate')),
     endDate: mustFinishRaw ? parseP6Date(mustFinishRaw) : '',
@@ -840,14 +1278,11 @@ function parseProject(doc: Document): Project {
   return project;
 }
 
-/** De projectkalender is altijd de eerste <Calendar> van het bestand. */
-function parseCalendar(doc: Document): WorkCalendar {
-  const calElements = getAllByLocalName(doc, 'Calendar');
-  return calElements.length === 0 ? createDefaultCalendar() : readP6Calendar(calElements[0]);
-}
-
-/** Eén P6-<Calendar> → WorkCalendar (project- of resourcekalender; de id kiest de aanroeper). */
-function readP6Calendar(calEl: Element): WorkCalendar {
+/**
+ * Eén P6-<Calendar> → WorkCalendar. `lastMinute`: de eindtijdregel van het hele bestand
+ * (`p6FinishUsesLastMinute`).
+ */
+function readP6Calendar(calEl: Element, lastMinute = false): WorkCalendar {
   const calendar = createDefaultCalendar();
   calendar.name = getElementText(calEl, 'Name') || calendar.name;
   // P6 kent geen regelset-herkomst — createDefaultCalendar() zet 'm altijd; een uit P6 gelezen
@@ -859,14 +1294,23 @@ function readP6Calendar(calEl: Element): WorkCalendar {
 
   // Werkweek + feestdagen — golden rule: geen <StandardWorkWeek>/<HolidayOrExceptions> (ander tool /
   // oud bestand) ⇒ createDefaultCalendar()-defaults blijven staan.
-  const ww = parseP6StandardWorkWeek(calEl);
+  const ww = parseP6StandardWorkWeek(calEl, lastMinute);
   if (ww.workDays.length > 0) calendar.workDays = ww.workDays.sort((a, b) => a - b);
   if (ww.workStartHour !== undefined) calendar.workStartHour = ww.workStartHour;
   if (ww.workEndHour !== undefined) calendar.workEndHour = ww.workEndHour;
   registerP6Bands(calendar, ww.rawByWeekday);
 
-  const holidays = parseP6HolidayOrExceptions(calEl);
-  if (holidays.length > 0) calendar.holidays = holidays;
+  // Een kalender met een eigen werkweek is een volledige P6-kalender: zonder uitzonderingen heeft hij
+  // géén feestdagen. De NL-feestdagen van `createDefaultCalendar()` blijven alleen staan bij een kale
+  // kalender zonder werkweek (ander tool / oud bestand).
+  if (ww.workDays.length > 0) calendar.holidays = [];
+  const { holidays, workingExceptions } = parseP6HolidayOrExceptions(calEl, lastMinute);
+  // Invariant (`WorkCalendar.workingExceptions`): een datum staat nooit in beide lijsten. Draagt P6
+  // dezelfde dag dubbel, dan wint de werkende uitzondering (die is specifieker).
+  const workingDates = new Set(workingExceptions.map(w => w.startDate));
+  const offDays = holidays.filter(h => !(h.startDate === h.endDate && workingDates.has(h.startDate)));
+  if (offDays.length > 0) calendar.holidays = mergeConsecutiveDays(offDays);
+  if (workingExceptions.length > 0) calendar.workingExceptions = mergeConsecutiveDays(workingExceptions);
 
   return calendar;
 }

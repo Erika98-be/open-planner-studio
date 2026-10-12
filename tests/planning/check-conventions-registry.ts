@@ -233,7 +233,12 @@ const same = (label: string, got: unknown, want: unknown) => eq(label, canon(got
 // Sinds C3 draagt XER_SCHEDULING_DEFAULTS alleen projectopties; de conventies komen uit het profiel
 // dat de lezer zet (check-import-profile.ts bewijst dat een gelezen XER builtInProfile('p6') draagt).
 {
-  eq('70 XER-defaults: opties == defaultOptionsFor(p6) (incl. volgorde)', XER_SCHEDULING_DEFAULTS.schedulingOptions, defaultOptionsFor('p6'));
+  // Review #331 punt 4: defaultOptionsFor(p6) kent de twee bronsignalen niet; de XER-lezer zaait ze zelf.
+  same('70 XER-defaults: opties == defaultOptionsFor(p6) + de twee bronsignalen uit p6OptionDefaults',
+    XER_SCHEDULING_DEFAULTS.schedulingOptions,
+    { ...defaultOptionsFor('p6'), useExpectedFinishDates: true, p6CompletedLateFromRemainingWindow: true });
+  eq('70a defaultOptionsFor(p6) zonder bronsignalen', ['useExpectedFinishDates', 'p6CompletedLateFromRemainingWindow']
+    .filter(k => k in defaultOptionsFor('p6')), []);
   ok('71 XER-defaults: geen conventiesleutels en geen bronmarkering',
     Object.keys(XER_SCHEDULING_DEFAULTS.schedulingOptions).every(k => !(CONVENTION_KEYS as readonly string[]).includes(k) && k !== 'p6Source'));
   same('72 een blob mét bronmarkering en de XER-defaults ⇒ P6-profiel zonder afwijkingen',
@@ -386,7 +391,7 @@ const same = (label: string, got: unknown, want: unknown) => eq(label, canon(got
       conventions?: Record<string, { label?: unknown; help?: unknown }>;
       profiles?: { builtIn?: Record<string, unknown>; modified?: unknown; copyOf?: unknown };
       notifications?: { schedulingProfileApplied?: unknown; schedulingProfileShifted_other?: unknown; actions?: { openProjectInfo?: unknown } };
-      schedulingProfile?: { title?: unknown; themes?: Record<string, unknown> };
+      schedulingProfile?: { title?: unknown; themes?: Record<string, unknown>; requires?: Record<string, unknown> };
     };
     // Besluit B5 (2026-10-10): een andere taal dan nl/en mag een sleutel nog missen (de app valt terug op
     // en, de vertaalstraat vult hem vóór een release); wat er wél staat, moet kloppen.
@@ -400,6 +405,10 @@ const same = (label: string, got: unknown, want: unknown) => eq(label, canon(got
       isText(`i18n ${locale} schedulingProfile.themes.${theme}`, common.schedulingProfile?.themes?.[theme]);
     }
     for (const id of BUILT_IN_PROFILE_IDS) isText(`i18n ${locale} profiles.builtIn.${id}`, common.profiles?.builtIn?.[id]);
+    // N2: het korte label naast het vinkje, per soort poort in `ConventionDescriptor.requires`.
+    for (const gate of ['hourPlanning', 'xerOrigin']) {
+      isText(`i18n ${locale} schedulingProfile.requires.${gate}`, common.schedulingProfile?.requires?.[gate]);
+    }
     isText(`i18n ${locale} profiles.modified`, common.profiles?.modified);
     isText(`i18n ${locale} profiles.copyOf`, common.profiles?.copyOf);
     isText(`i18n ${locale} notifications.schedulingProfileApplied`, common.notifications?.schedulingProfileApplied);
@@ -428,6 +437,13 @@ const same = (label: string, got: unknown, want: unknown) => eq(label, canon(got
       same(`i18n ${locale} conventions == register`, conventionKeys, [...CONVENTION_KEYS].sort());
     }
   }
+}
+
+// ── 9) `requires` (critreview #169 N2): het GEDRAG toetst `check-conventions-p6-flags` (sectie
+// "`requires` als gedrag": aan/uit per conventie op elke fixture, met en zonder uurplanning en
+// P6-herkomst). Hier alleen de vorm: alleen bekende poorten.
+for (const d of CONVENTIONS) {
+  same(`9 ${d.id}: requires kent alleen hourPlanning/xerOrigin`, Object.keys(d.requires ?? {}).filter(k => k !== 'hourPlanning' && k !== 'xerOrigin'), []);
 }
 
 if (diffs.length > 0) {

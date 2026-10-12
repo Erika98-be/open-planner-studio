@@ -189,7 +189,12 @@ console.log('-- (d) P6 XML round-trip --');
     assign('a2', 'plain', 'r1', 0.5),
   ];
   const xml = writeP6XML(project, CAL, [...tasks, tToken, tPlain], [], [r1], assignments, []);
-  const actXml = (name: string): string => xml.slice(xml.indexOf(`<Name>${name}</Name>`), xml.indexOf('</Activity>', xml.indexOf(`<Name>${name}</Name>`)));
+  // Het hele <Activity>-blok rond de naam: de writer schrijft in schemavolgorde (sinds 2026-10), en
+  // daarin staat <DurationType> vóór <Name>.
+  const actXml = (name: string): string => {
+    const at = xml.indexOf(`<Name>${name}</Name>`);
+    return xml.slice(xml.lastIndexOf('<Activity>', at), xml.indexOf('</Activity>', at));
+  };
   eq('d1 writer: <DurationType>-label per regel', WORK_RULES.map((r) => (actXml(r).match(/<DurationType>([^<]*)<\/DurationType>/) ?? [])[1]), WORK_RULES.map((r) => P6_DURATION_TYPE_NAME[r]));
   ok('d2 writer: bewaard XER-token zonder regel ⇒ label via de datamap', actXml('token').includes('<DurationType>Fixed Duration and Units</DurationType>'));
   ok('d3 writer: geen regel/token ⇒ geen <DurationType>', !actXml('plain').includes('<DurationType>'));

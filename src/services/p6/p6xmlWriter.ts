@@ -1,5 +1,6 @@
 import { Task, TaskConstraint } from '@/types/task';
 import { Sequence, SequenceType } from '@/types/sequence';
+import { isoDayOfWeek, parseDate } from '@/utils/dateUtils';
 import { Resource, ResourceAssignment, ResourceType, ResourceCurve } from '@/types/resource';
 import {
   CONTOUR_SHAPE_VALUES, CURVE_TO_SHAPE, isFlatCurveValues, matchContoursToAssignments,
@@ -13,7 +14,8 @@ import { projectFileBase } from '@/utils/documents';
 import { isLeafTask, isSummaryTask } from '@/utils/taskHierarchy';
 import { flattenOrder } from '@/utils/wbs';
 import type { CustomTaskType } from '@/types/taskType';
-import { encodeCustomTaskType, escapeXml, OPS_DURATION_UNIT_NAME, toXmlDateTime } from '@/services/xmlInterchange';
+import { encodeCustomTaskType, OPS_DURATION_UNIT_NAME, toXmlDateTime } from '@/services/xmlInterchange';
+import { leaf, node, renderP6XmlWithReport, P6_ID_MAX_LENGTH, type P6Node } from './p6xmlSchemaOrder';
 import { taskDurationUnit } from '@/engine/scheduler/duration';
 import { shownStart, shownFinish } from '@/utils/taskDates';
 import { P6_DURATION_TYPE_NAME, XER_DURATION_TYPE_TOKEN } from '@/engine/work/workRuleMapping';
@@ -71,13 +73,19 @@ function resourceTypeToP6(type: ResourceType): 'Labor' | 'Nonlabor' | 'Material'
   }
 }
 
-/** P6-relatietype per OPS-relatietype; de reader leest de inverse. */
+/** P6-relatietype per OPS-relatietype, zoals PMXML het schrijft (`<Type>Finish to Start</Type>`;
+ *  MPXJ `RelationTypeHelper`). De reader leest de inverse, plus de XER-tokens (`PR_FS` …) die
+ *  oudere OPS-exports in P6 XML schreven. */
 export const P6_LINK_TYPE: Record<SequenceType, string> = {
-  FINISH_START: 'PR_FS',
-  FINISH_FINISH: 'PR_FF',
-  START_START: 'PR_SS',
-  START_FINISH: 'PR_SF',
+  FINISH_START: 'Finish to Start',
+  FINISH_FINISH: 'Finish to Finish',
+  START_START: 'Start to Start',
+  START_FINISH: 'Start to Finish',
 };
+
+/** NotebookTopic voor de taakbeschrijving (`<ActivityNote>`); de reader herkent hem aan de naam. */
+export const OPS_DESCRIPTION_TOPIC_NAME = 'OPS Description';
+const OPS_DESCRIPTION_TOPIC_OBJECT_ID = 900000002;
 
 /**
  * OPS-constraint → P6 `CS_*`-code. Soft-typen mappen 1-op-1 op P6's soft constraints
@@ -100,9 +108,11 @@ function p6ConstraintCode(c: TaskConstraint): string | undefined {
   }
 }
 
+/** Status zoals P6 hem leest: in lijn met voortgang en actuals (in OPS kan `task.status` achterlopen
+ *  op een gewijzigd percentage; P6 laat de status leiden). */
 function taskStatusToP6(task: Task): string {
-  if (task.status === 'COMPLETED') return 'Completed';
-  if (task.status === 'STARTED') return 'In Progress';
+  if (task.status === 'COMPLETED' || task.time.actualFinish || task.time.completion >= 1) return 'Completed';
+  if (task.status === 'STARTED' || task.time.actualStart || task.time.completion > 0) return 'In Progress';
   return 'Not Started';
 }
 
@@ -132,59 +142,95 @@ function durationToP6Hours(days: number, hoursPerDay: number): number {
 // terug naar een ISO-dagnummer kan resolven.
 export const P6_DAY_NAMES = ['', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
-/** Werkweek: `<StandardWorkWeek>` met per dag een `<StandardWorkHour>` — alleen werkdagen
- *  (`cal.workDays`) krijgen een `<WorkTime>`-blok, niet-werkdagen blijven leeg (P6 leest afwezigheid
- *  van `WorkTime` als niet-werkend). Altijd geschreven. */
-function writeStandardWorkWeek(
-  lines: string[], indent: (level: number) => string, cal: WorkCalendar, includeEffectiveScalarBands = false,
-): void {
+/** P6-eindtijd = de LAATSTE minuut van een blok (08:00–16:00 ⇒ `15:59:00`), zoals P6 en MPXJ
+ *  (`XmlWriter`: einde − 1 minuut). De reader telt er bij een OPS-export weer één minuut bij op. */
+function p6FinishClock(endMinutes: number): string {
+  return minutesToClock(endMinutes - 1);
+}
+
+function workTimeNodes(bands: readonly { start: number; end: number }[]): P6Node[] {
+  return bands.map(b => node('WorkTime', [...leaf('Start', minutesToClock(b.start)), ...leaf('Finish', p6FinishClock(b.end))]));
+}
+
+/** De banden van één weekdag: de uurbanden, anders het scalaire blok op een werkdag. */
+function weekdayBands(cal: WorkCalendar, workTime: ReturnType<typeof effectiveWorkTimeBands> | undefined, day: number): { start: number; end: number }[] {
+  if (workTime) return [...(workTime.byWeekday[day as 1] ?? [])];
+  return cal.workDays.includes(day) ? [{ start: cal.workStartHour * 60, end: cal.workEndHour * 60 }] : [];
+}
+
+/** Werkweek: `<StandardWorkWeek>` met per dag een `<StandardWorkHours>` (Oracle-schema). Een
+ *  niet-werkdag krijgt `<WorkTime xsi:nil="true"/>` (WorkTime is verplicht in het schema). Een
+ *  wrap-band (`end > 1440`) emitteert het eind als tijd-van-de-dag; de reader herkent de wrap. */
+function standardWorkWeekNode(cal: WorkCalendar, includeEffectiveScalarBands: boolean): P6Node {
   const workTime = cal.workTime ?? (includeEffectiveScalarBands ? effectiveWorkTimeBands(cal) : undefined);
-  lines.push(`${indent(2)}<StandardWorkWeek>`);
+  const days: P6Node[] = [];
   for (let day = 1; day <= 7; day++) {
-    lines.push(`${indent(3)}<StandardWorkHour>`);
-    lines.push(`${indent(4)}<DayOfWeek>${P6_DAY_NAMES[day]}</DayOfWeek>`);
-    if (workTime) {
-      // UUR-kalender ⇒ ALLE banden van deze weekdag als aparte <WorkTime>-blokken (pauze/split-shift/
-      // nachtploeg). Een wrap-band (`end > 1440`) emitteert het eind als tijd-van-de-dag
-      // (`end % 1440`, via `minutesToClock`), waaruit de reader de wrap herkent.
-      for (const b of workTime.byWeekday[day as 1] ?? []) {
-        lines.push(`${indent(4)}<WorkTime>`);
-        lines.push(`${indent(5)}<Start>${minutesToClock(b.start)}</Start>`);
-        lines.push(`${indent(5)}<Finish>${minutesToClock(b.end)}</Finish>`);
-        lines.push(`${indent(4)}</WorkTime>`);
-      }
-    } else if (cal.workDays.includes(day)) {
-      lines.push(`${indent(4)}<WorkTime>`);
-      lines.push(`${indent(5)}<Start>${String(cal.workStartHour).padStart(2, '0')}:00:00</Start>`);
-      lines.push(`${indent(5)}<Finish>${String(cal.workEndHour).padStart(2, '0')}:00:00</Finish>`);
-      lines.push(`${indent(4)}</WorkTime>`);
-    }
-    lines.push(`${indent(3)}</StandardWorkHour>`);
+    const bands = weekdayBands(cal, workTime, day);
+    days.push(node('StandardWorkHours', [
+      ...leaf('DayOfWeek', P6_DAY_NAMES[day]),
+      ...(bands.length > 0 ? workTimeNodes(bands) : [{ tag: 'WorkTime', nil: true }]),
+    ]));
   }
-  lines.push(`${indent(2)}</StandardWorkWeek>`);
+  return node('StandardWorkWeek', days);
 }
 
-/** Feestdagen/exceptions: `<HolidayOrExceptions>` — golden rule: geen feestdagen ⇒ geen element.
- *
- *  `cal.workingExceptions` (dag-uitzonderingen die een dag WERKEND maken) wordt bewust NIET
- *  geschreven: `<HolidayOrException>` heeft geen `DayWorking`-achtig veld (alleen
- *  `Name`/`Date`/`FinishDate`; `parseP6HolidayOrExceptions` in `p6xmlReader.ts` leest elk element als
- *  niet-werkend). P6 modelleert een extra werkdag via `<StandardWorkWeek>` — een weekpatroon voor
- *  ALLE datums, dus niet veilig automatisch te vertalen. Zie de `console.warn` in `writeP6XML`. */
-function writeHolidayOrExceptions(lines: string[], indent: (level: number) => string, cal: WorkCalendar): void {
-  if (cal.holidays.length === 0) return;
-  lines.push(`${indent(2)}<HolidayOrExceptions>`);
+/** Eén blok van 00:00 tot 24:00 schrijft P6 als `00:00`–`23:59`, en dat betekent in P6 (en in onze
+ *  lezer) een VRIJE dag. Een werkende uitzondering van 24 uur gaat daarom als twee blokken
+ *  (00:00–11:59 en 12:00–23:59); de lezer voegt aansluitende blokken weer samen. */
+function splitWholeDay(bands: readonly { start: number; end: number }[]): { start: number; end: number }[] {
+  if (bands.length === 1 && bands[0].start === 0 && bands[0].end >= 1440) {
+    return [{ start: 0, end: 720 }, { start: 720, end: bands[0].end }];
+  }
+  return [...bands];
+}
+
+/** Alle ISO-datums van `start` t/m `end` (UTC-rekenen, tijdzone-onafhankelijk; begrensd). */
+function isoDaysInclusive(start: string, end: string): string[] {
+  const out: string[] = [];
+  let d = Date.parse(`${start.slice(0, 10)}T00:00:00Z`);
+  const last = Date.parse(`${end.slice(0, 10)}T00:00:00Z`);
+  while (Number.isFinite(d) && d <= last && out.length < 3660) {
+    out.push(new Date(d).toISOString().slice(0, 10));
+    d += 86_400_000;
+  }
+  return out;
+}
+
+/** Uitzonderingen: `<HolidayOrExceptions>` zoals P6 ze schrijft — één `<HolidayOrException>` per
+ *  DATUM (het schema kent geen naam en geen einddatum). Een vrije dag ⇒ `<WorkTime xsi:nil="true"/>`;
+ *  een werkende uitzondering ⇒ haar banden, of zonder eigen banden de banden van die weekdag
+ *  (anders van de eerste werkdag; zelfde terugval als `WorkingException.bands`). Geen
+ *  uitzonderingen ⇒ geen element. Verlies: de naam van een feestdag (P6 kent er geen). */
+function holidayOrExceptionsNode(cal: WorkCalendar, includeEffectiveScalarBands: boolean): P6Node[] {
+  const workTime = cal.workTime ?? (includeEffectiveScalarBands ? effectiveWorkTimeBands(cal) : undefined);
+  const byDate = new Map<string, P6Node>();
   for (const h of cal.holidays) {
-    lines.push(`${indent(3)}<HolidayOrException>`);
-    lines.push(`${indent(4)}<Name>${escapeXml(h.name)}</Name>`);
-    lines.push(`${indent(4)}<Date>${toXmlDateTime(h.startDate)}</Date>`);
-    lines.push(`${indent(4)}<FinishDate>${toXmlDateTime(holidayEndDate(h))}</FinishDate>`);
-    lines.push(`${indent(3)}</HolidayOrException>`);
+    for (const date of isoDaysInclusive(h.startDate, holidayEndDate(h))) {
+      byDate.set(date, node('HolidayOrException', [...leaf('Date', toXmlDateTime(date)), { tag: 'WorkTime', nil: true }]));
+    }
   }
-  lines.push(`${indent(2)}</HolidayOrExceptions>`);
+  const firstWorkday = [...cal.workDays].sort((a, b) => a - b)[0] ?? 1;
+  for (const w of cal.workingExceptions ?? []) {
+    for (const date of isoDaysInclusive(w.startDate, w.endDate || w.startDate)) {
+      let bands = w.bands && w.bands.length > 0 ? w.bands : weekdayBands(cal, workTime, isoDayOfWeek(parseDate(date)));
+      if (bands.length === 0) bands = weekdayBands(cal, workTime, firstWorkday);
+      if (bands.length === 0) bands = [{ start: cal.workStartHour * 60, end: cal.workEndHour * 60 }];
+      byDate.set(date, node('HolidayOrException', [...leaf('Date', toXmlDateTime(date)), ...workTimeNodes(splitWholeDay(bands))]));
+    }
+  }
+  if (byDate.size === 0) return [];
+  return [node('HolidayOrExceptions', [...byDate.keys()].sort().map(date => byDate.get(date)!))];
 }
 
-export function writeP6XML(
+export function writeP6XML(...args: Parameters<typeof writeP6XMLWithReport>): string {
+  return writeP6XMLWithReport(...args).xml;
+}
+
+/**
+ * Als `writeP6XML`, plus het aantal namen en codes dat tot de schemagrens is ingekort
+ * (`renderP6XmlWithReport`; de exportmelding `exportP6TruncatedNotice` gebruikt dit getal).
+ */
+export function writeP6XMLWithReport(
   project: Project,
   calendar: WorkCalendar,
   tasks: Task[],
@@ -193,10 +239,7 @@ export function writeP6XML(
   assignments: ResourceAssignment[],
   resourceCalendars: WorkCalendar[] = [],
   customTaskTypes: readonly CustomTaskType[] = [],
-): string {
-  const lines: string[] = [];
-  const indent = (level: number) => '  '.repeat(level);
-
+): { xml: string; truncated: number } {
   // Externe (cross-project) dependencies zijn in P6-XML niet uitdrukbaar buiten de
   // master/subproject-context ⇒ weggelaten (de ghost-weergave blijft in-app). Één warn.
   const extLinkCount = tasks.reduce((n, t) => n + (t.externalLinks?.length ?? 0), 0);
@@ -231,13 +274,6 @@ export function writeP6XML(
     console.warn(`P6-export: ${elapsedTaskCount} taak/taken met ELAPSEDTIME-duur (24/7-klokrekenen) geëxporteerd als gewone werktijd-duur — geen P6-equivalent (§6).`);
   }
 
-  // Werkende uitzonderingen zijn niet uitdrukbaar (zie `writeHolidayOrExceptions`). Geteld over de
-  // projectkalender én alle bibliotheekkalenders die geschreven worden.
-  const workingExcCount = [calendar, ...resourceCalendars].reduce((n, c) => n + (c.workingExceptions?.length ?? 0), 0);
-  if (workingExcCount > 0) {
-    console.warn(`P6-export: ${workingExcCount} werkende kalenderuitzondering(en) weggelaten — niet uitdrukbaar in P6-XML (geen DayWorking-vlag op HolidayOrException, §6).`);
-  }
-
   // Velden zonder geverifieerde P6-representatie: weglaten-met-warn i.p.v. gokken op een P6-veldnaam.
   const manualCount = tasks.filter(t => t.manuallyScheduled).length;
   if (manualCount > 0) {
@@ -265,9 +301,6 @@ export function writeP6XML(
   // TODO(X9/P6XML): pas na een gevalideerde Oracle-schema-/corpusmapping eventueel individuele
   // DurationType/ActivityType/progressvelden lezen/schrijven, met een nieuwe parity-test.
 
-  lines.push('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>');
-  lines.push('<APIBusinessObjects xmlns="http://xmlns.oracle.com/Primavera/P6/V23.12/API/BusinessObjects" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">');
-
   // Build object ID maps
   const taskObjMap = new Map<string, number>();
   let nextObjId = 1;
@@ -283,7 +316,8 @@ export function writeP6XML(
   for (const res of resources) {
     resObjMap.set(res.id, nextResObjId++);
   }
-  // Kalender-ObjectIds: 1 = projectkalender (zie hieronder <Calendar><ObjectId>1</ObjectId>).
+  // Kalender-ObjectIds: 1 = projectkalender; het project wijst hem aan via
+  // `<ActivityDefaultCalendarObjectId>`.
   const {
     libraryCalendars, calendarNumber: calObjMap, effCalByTask, hourTaskCalendarIds,
   } = exportCalendarLayout(tasks, calendar, resourceCalendars);
@@ -297,55 +331,67 @@ export function writeP6XML(
   const leafTasks = tasks.filter(isLeafTask);
   const sequenceNumberByTask = new Map(tasks.map((t, i) => [t.id, i + 1]));
 
-  // Project
-  lines.push(`${indent(1)}<Project>`);
-  lines.push(`${indent(2)}<ObjectId>1</ObjectId>`);
-  lines.push(`${indent(2)}<Id>${escapeXml(project.id)}</Id>`);
-  // Zelfde afweging als in mspdiWriter: een leeg <Name> gaf P6 een naamloos project, terwijl de
-  // projectnaam in P6 juist een dragend, verplicht ingevuld veld is. Dezelfde neutrale,
-  // taalonafhankelijke terugval als de bestandsnaam en de STEP-header.
-  lines.push(`${indent(2)}<Name>${escapeXml(projectFileBase(project.name))}</Name>`);
-  lines.push(`${indent(2)}<Description>${escapeXml(project.description)}</Description>`);
-  lines.push(`${indent(2)}<PlannedStartDate>${toXmlDateTime(project.startDate)}</PlannedStartDate>`);
-  if (project.endDate) {
-    lines.push(`${indent(2)}<MustFinishByDate>${toXmlDateTime(project.endDate)}</MustFinishByDate>`);
-  }
-  lines.push(`${indent(2)}<Status>${project.endDate ? 'Active' : 'Planned'}</Status>`);
-  // Data date — P6's peildatum. Alleen wanneer gezet (golden rule).
-  if (project.statusDate) {
-    lines.push(`${indent(2)}<DataDate>${toXmlDateTime(project.statusDate)}</DataDate>`);
-  }
-  lines.push(`${indent(1)}</Project>`);
+  // Structuur zoals echte P6 XML: globale objecten (UDF-typen, notitieonderwerp, kalenders, curves,
+  // resources, tarieven) op het hoogste niveau; alle projectobjecten (WBS, activiteiten,
+  // toewijzingen, notities, relaties) BINNEN <Project>. Elementvolgorde: `p6xmlSchemaOrder.ts`.
+  const top: P6Node[] = [];
+  const inProject: P6Node[] = [];
 
   // P6 heeft geen native dag/uur-vlag per activity: PlannedDuration staat altijd in uren. Een
   // Text-UDF is een officiële uitbreidingsroute. De reader vertrouwt deze waarden alleen wanneer ook
   // deze exacte definitie aanwezig is; andere P6-bestanden houden de kalenderprecisie-classificatie.
-  lines.push(`${indent(1)}<UDFType>`);
-  lines.push(`${indent(2)}<ObjectId>${OPS_P6_DURATION_UNIT_UDF_OBJECT_ID}</ObjectId>`);
-  lines.push(`${indent(2)}<SubjectArea>Activity</SubjectArea>`);
-  lines.push(`${indent(2)}<Title>${OPS_DURATION_UNIT_NAME}</Title>`);
-  lines.push(`${indent(2)}<DataType>Text</DataType>`);
-  lines.push(`${indent(1)}</UDFType>`);
-
-  // Calendar. Bibliotheekkalenders: zelfde element als de projectkalender maar met Type="Resource" en
-  // een eigen ObjectId; ná de projectkalender, zodat de eerste <Calendar> in het bestand altijd de
-  // projectkalender is (reader-aanname).
-  for (const cal of [calendar, ...libraryCalendars]) {
-    lines.push(`${indent(1)}<Calendar>`);
-    lines.push(`${indent(2)}<ObjectId>${calObjMap.get(cal.id)!}</ObjectId>`);
-    lines.push(`${indent(2)}<Name>${escapeXml(cal.name)}</Name>`);
-    lines.push(`${indent(2)}<Type>${cal === calendar ? 'Global' : 'Resource'}</Type>`);
-    lines.push(`${indent(2)}<HoursPerDay>${cal.hoursPerDay}</HoursPerDay>`);
-    lines.push(`${indent(2)}<HoursPerWeek>${cal.hoursPerDay * cal.workDays.length}</HoursPerWeek>`);
-    lines.push(`${indent(2)}<HoursPerMonth>${cal.hoursPerDay * 20}</HoursPerMonth>`);
-    writeStandardWorkWeek(lines, indent, cal, hourTaskCalendarIds.has(cal.id));
-    writeHolidayOrExceptions(lines, indent, cal);
-    lines.push(`${indent(1)}</Calendar>`);
+  // De definitie is ook de herkenning "OPS-export" in de reader.
+  top.push(node('UDFType', [
+    ...leaf('DataType', 'Text'),
+    ...leaf('ObjectId', OPS_P6_DURATION_UNIT_UDF_OBJECT_ID),
+    ...leaf('SubjectArea', 'Activity'),
+    ...leaf('Title', OPS_DURATION_UNIT_NAME),
+  ]));
+  const customTasks = leafTasks.filter(task => task.customTaskTypeId);
+  if (customTasks.length > 0) {
+    top.push(node('UDFType', [
+      ...leaf('DataType', 'Text'),
+      ...leaf('ObjectId', OPS_CUSTOM_TASK_TYPE_UDF_OBJECT_ID),
+      ...leaf('SubjectArea', 'Activity'),
+      ...leaf('Title', OPS_CUSTOM_TASK_TYPE_UDF_TITLE),
+    ]));
+  }
+  // Taakbeschrijving: P6 kent geen beschrijvingsveld op een activiteit; een notitie
+  // (`<ActivityNote>`) onder een eigen notitieonderwerp is de P6-vorm.
+  const describedTasks = leafTasks.filter(task => task.description);
+  if (describedTasks.length > 0) {
+    top.push(node('NotebookTopic', [
+      ...leaf('AvailableForActivity', 1),
+      ...leaf('AvailableForEPS', 0),
+      ...leaf('AvailableForProject', 0),
+      ...leaf('AvailableForWBS', 0),
+      ...leaf('Name', OPS_DESCRIPTION_TOPIC_NAME),
+      ...leaf('ObjectId', OPS_DESCRIPTION_TOPIC_OBJECT_ID),
+    ]));
   }
 
-  // `<ResourceCurve>`-catalogus (schemavolgorde: ná Calendar, vóór Resource — MPXJ
-  // `APIBusinessObjects` propOrder). Eén object per UNIEKE 21-waardenlijst die een toewijzing
-  // gebruikt: `curveValues` (exacte P6-/MSPDI-data) of anders de tabel van `curve`.
+  // Calendar. Een activiteit mag in P6 alleen een Global- of Project-kalender hebben; een
+  // Resource-kalender is voor resources. Een kalender die een taak gebruikt gaat daarom als Global
+  // (die mag ook een resource gebruiken); een kalender die alleen resources gebruiken, of geen enkel
+  // object, als Resource (de reader neemt een Resource-kalender altijd mee in de bibliotheek, en een
+  // gebruikte Global-kalender ook).
+  const taskCalendarIds = new Set(tasks.map(t => t.calendarId).filter((id): id is string => !!id));
+  for (const cal of [calendar, ...libraryCalendars]) {
+    const hourBands = hourTaskCalendarIds.has(cal.id);
+    top.push(node('Calendar', [
+      ...leaf('HoursPerDay', cal.hoursPerDay),
+      ...leaf('HoursPerMonth', cal.hoursPerDay * 20),
+      ...leaf('HoursPerWeek', cal.hoursPerDay * cal.workDays.length),
+      ...leaf('Name', cal.name),
+      ...leaf('ObjectId', calObjMap.get(cal.id)!),
+      ...leaf('Type', cal === calendar || taskCalendarIds.has(cal.id) ? 'Global' : 'Resource'),
+      standardWorkWeekNode(cal, hourBands),
+      ...holidayOrExceptionsNode(cal, hourBands),
+    ]));
+  }
+
+  // `<ResourceCurve>`-catalogus. Eén object per UNIEKE 21-waardenlijst die een toewijzing gebruikt:
+  // `curveValues` (exacte P6-/MSPDI-data) of anders de tabel van `curve`.
   const curveObjIdByKey = new Map<string, number>();
   const curveDefs: { objId: number; name: string; values: readonly number[] }[] = [];
   const curveObjIdFor = (a: ResourceAssignment): number | undefined => {
@@ -367,185 +413,131 @@ export function writeP6XML(
     if (objId !== undefined) curveObjIdByAssignment.set(a.id, objId);
   }
   for (const def of curveDefs) {
-    lines.push(`${indent(1)}<ResourceCurve>`);
-    lines.push(`${indent(2)}<Name>${escapeXml(def.name)}</Name>`);
-    lines.push(`${indent(2)}<ObjectId>${def.objId}</ObjectId>`);
-    lines.push(`${indent(2)}<Values>`);
-    def.values.forEach((v, i) => {
-      lines.push(`${indent(3)}<Value${i * 5}>${v}</Value${i * 5}>`);
-    });
-    lines.push(`${indent(2)}</Values>`);
-    lines.push(`${indent(1)}</ResourceCurve>`);
+    top.push(node('ResourceCurve', [
+      ...leaf('Name', def.name),
+      ...leaf('ObjectId', def.objId),
+      node('Values', def.values.flatMap((v, i) => leaf(`Value${i * 5}`, v))),
+    ]));
   }
 
   // Resources
   for (const res of resources) {
-    const objId = resObjMap.get(res.id)!;
-    lines.push(`${indent(1)}<Resource>`);
-    lines.push(`${indent(2)}<ObjectId>${objId}</ObjectId>`);
-    lines.push(`${indent(2)}<Id>${escapeXml(res.id)}</Id>`);
-    lines.push(`${indent(2)}<Name>${escapeXml(res.name)}</Name>`);
-    lines.push(`${indent(2)}<ResourceType>${resourceTypeToP6(res.type)}</ResourceType>`);
-    const calObjId = (res.calendarId && calObjMap.get(res.calendarId)) || 1;
-    lines.push(`${indent(2)}<CalendarObjectId>${calObjId}</CalendarObjectId>`);
-    // MaxUnitsPerTime: in P6-XML een dimensieloze FRACTIE (1.0 = 100% = één volle eenheid), GEEN
-    // uren/dag (MPXJ: XmlContextWriter.writeResource schrijft `getDefaultUnits() / 100.0`, en
-    // MPXJ-intern is 100 = 100%; zie ook PmxmlUnitsHelper.java + AbstractUnitsHelper.getPercentage).
-    // Ons `maxUnits` is al een fractie, dus 1:1.
-    lines.push(`${indent(2)}<MaxUnitsPerTime>${res.maxUnits}</MaxUnitsPerTime>`);
-    if (res.type === 'MATERIAL' && res.unitOfMeasure) {
-      lines.push(`${indent(2)}<UnitOfMeasureAbbreviation>${escapeXml(res.unitOfMeasure)}</UnitOfMeasureAbbreviation>`);
-    }
-    if (res.parentId && resObjMap.has(res.parentId)) {
-      lines.push(`${indent(2)}<ParentObjectId>${resObjMap.get(res.parentId)}</ParentObjectId>`);
-    }
-    lines.push(`${indent(1)}</Resource>`);
+    top.push(node('Resource', [
+      ...leaf('CalendarObjectId', (res.calendarId && calObjMap.get(res.calendarId)) || 1),
+      ...leaf('Id', res.id),
+      // MaxUnitsPerTime: in P6-XML een dimensieloze FRACTIE (1.0 = 100% = één volle eenheid), GEEN
+      // uren/dag (MPXJ: XmlContextWriter.writeResource schrijft `getDefaultUnits() / 100.0`). Ons
+      // `maxUnits` is al een fractie, dus 1:1.
+      ...leaf('MaxUnitsPerTime', res.maxUnits),
+      ...leaf('Name', res.name),
+      ...leaf('ObjectId', resObjMap.get(res.id)!),
+      ...(res.parentId && resObjMap.has(res.parentId) ? leaf('ParentObjectId', resObjMap.get(res.parentId)) : []),
+      ...leaf('ResourceType', resourceTypeToP6(res.type)),
+      ...(res.type === 'MATERIAL' && res.unitOfMeasure ? leaf('UnitOfMeasureAbbreviation', res.unitOfMeasure) : []),
+    ]));
   }
 
   // ResourceRates: P6-XML draagt het tarief NIET op <Resource> maar in aparte top-level
-  // <ResourceRate>-elementen (siblings van <Resource> onder APIBusinessObjects), met
-  // ResourceObjectId + PricePerUnit (tarief per uur) + EffectiveDate — zoals MPXJ
-  // (XmlContextWriter.writeResourceRates). OPS heeft één vlak tarief, dus één rate-rij per resource,
-  // effectief vanaf de projectstart.
+  // <ResourceRate>-elementen met ResourceObjectId + PricePerUnit (tarief per uur) + EffectiveDate —
+  // zoals MPXJ (XmlContextWriter.writeResourceRates). OPS heeft één vlak tarief, dus één rate-rij
+  // per resource, effectief vanaf de projectstart.
   let rateObjId = 1;
   for (const res of resources) {
     if (res.costPerHour === undefined) continue;
-    const rateResObjId = resObjMap.get(res.id)!;
-    lines.push(`${indent(1)}<ResourceRate>`);
-    lines.push(`${indent(2)}<ObjectId>${rateObjId++}</ObjectId>`);
-    lines.push(`${indent(2)}<ResourceObjectId>${rateResObjId}</ResourceObjectId>`);
-    lines.push(`${indent(2)}<EffectiveDate>${toXmlDateTime(project.startDate)}</EffectiveDate>`);
-    lines.push(`${indent(2)}<PricePerUnit>${res.costPerHour}</PricePerUnit>`);
-    lines.push(`${indent(1)}</ResourceRate>`);
+    top.push(node('ResourceRate', [
+      ...leaf('EffectiveDate', toXmlDateTime(project.startDate)),
+      ...leaf('ObjectId', rateObjId++),
+      ...leaf('PricePerUnit', res.costPerHour),
+      ...leaf('ResourceObjectId', resObjMap.get(res.id)!),
+    ]));
   }
 
   // WBS elements
   for (const wbsTask of wbsTasks) {
-    const objId = taskObjMap.get(wbsTask.id)!;
     const parentObjId = wbsTask.parentId ? taskObjMap.get(wbsTask.parentId) : undefined;
-
-    lines.push(`${indent(1)}<WBS>`);
-    lines.push(`${indent(2)}<ObjectId>${objId}</ObjectId>`);
-    lines.push(`${indent(2)}<Code>${escapeXml(wbsTask.wbsCode)}</Code>`);
-    lines.push(`${indent(2)}<Name>${escapeXml(wbsTask.name)}</Name>`);
-    lines.push(`${indent(2)}<ProjectObjectId>1</ProjectObjectId>`);
-    lines.push(`${indent(2)}<SequenceNumber>${sequenceNumberByTask.get(wbsTask.id)}</SequenceNumber>`);
-    if (parentObjId !== undefined) {
-      lines.push(`${indent(2)}<ParentObjectId>${parentObjId}</ParentObjectId>`);
-    }
-    lines.push(`${indent(1)}</WBS>`);
+    inProject.push(node('WBS', [
+      ...leaf('Code', wbsTask.wbsCode),
+      ...leaf('Name', wbsTask.name),
+      ...leaf('ObjectId', taskObjMap.get(wbsTask.id)!),
+      ...(parentObjId !== undefined ? leaf('ParentObjectId', parentObjId) : []),
+      ...leaf('ProjectObjectId', 1),
+      ...leaf('SequenceNumber', sequenceNumberByTask.get(wbsTask.id)),
+    ]));
   }
 
   // Activities (leaf tasks only in P6)
+  let noteObjId = 1;
   for (const task of leafTasks) {
     const objId = taskObjMap.get(task.id)!;
     const wbsObjId = task.parentId ? taskObjMap.get(task.parentId) : undefined;
-
-    lines.push(`${indent(1)}<Activity>`);
-    lines.push(`${indent(2)}<ObjectId>${objId}</ObjectId>`);
-    lines.push(`${indent(2)}<Id>${escapeXml(task.wbsCode || task.id)}</Id>`);
-    lines.push(`${indent(2)}<Name>${escapeXml(task.name)}</Name>`);
-    lines.push(`${indent(2)}<ProjectObjectId>1</ProjectObjectId>`);
-    if (wbsObjId !== undefined) {
-      lines.push(`${indent(2)}<WBSObjectId>${wbsObjId}</WBSObjectId>`);
-    }
-    lines.push(`${indent(2)}<Type>${taskTypeToP6(task)}</Type>`);
-    lines.push(`${indent(2)}<Status>${taskStatusToP6(task)}</Status>`);
     // <DurationType> uit de werkregel; zonder werkregel valt een taak met alleen een bewaard P6-token
     // op dat token terug. Zonder beide schrijft de export niets.
     const durationTypeLabel = task.workRule
       ? P6_DURATION_TYPE_NAME[task.workRule]
       : task.p6DurationType ? p6LabelForToken(task.p6DurationType) : undefined;
-    if (durationTypeLabel && !task.isMilestone) {
-      lines.push(`${indent(2)}<DurationType>${durationTypeLabel}</DurationType>`);
-    }
     // Uur-taak ⇒ PlannedDuration in fractionele uren uit de minuten (geen dag-afronding); dag-taak ⇒
     // `dagen × hpd`.
     const effCal = effCalByTask.get(task.id);
     const isHour = taskDurationUnit(task) === 'hours';
     const effHpd = effCal?.hoursPerDay ?? calendar.hoursPerDay;
     const plannedDur = isHour ? taskMinutesForWrite(task, effHpd) / 60 : durationToP6Hours(task.time.scheduleDuration, effHpd);
-    lines.push(`${indent(2)}<PlannedDuration>${plannedDur}</PlannedDuration>`);
-    lines.push(`${indent(2)}<PlannedStartDate>${toXmlDateTime(shownStart(task))}</PlannedStartDate>`);
-    lines.push(`${indent(2)}<PlannedFinishDate>${toXmlDateTime(shownFinish(task))}</PlannedFinishDate>`);
-    if (task.time.completion > 0) {
-      lines.push(`${indent(2)}<PhysicalPercentComplete>${Math.round(task.time.completion * 100)}</PhysicalPercentComplete>`);
-    }
-    // Actuals — alleen wanneer gezet (golden rule). RemainingDuration in uren.
-    if (task.time.actualStart) {
-      lines.push(`${indent(2)}<ActualStartDate>${toXmlDateTime(task.time.actualStart)}</ActualStartDate>`);
-    }
-    if (task.time.actualFinish) {
-      lines.push(`${indent(2)}<ActualFinishDate>${toXmlDateTime(task.time.actualFinish)}</ActualFinishDate>`);
-    }
-    if (isHour && task.time.remainingMinutes != null) {
-      lines.push(`${indent(2)}<RemainingDuration>${task.time.remainingMinutes / 60}</RemainingDuration>`);
-    } else if (task.time.remainingTime != null) {
-      // Zelfde `effHpd` als PlannedDuration: P6 rekent de restduur op de activity-kalender; met de
-      // projectkalender stond naast 168 u gepland een restduur van 56 u.
-      lines.push(`${indent(2)}<RemainingDuration>${durationToP6Hours(task.time.remainingTime, effHpd)}</RemainingDuration>`);
-    }
+    // RemainingDuration in uren; zelfde `effHpd` als PlannedDuration (P6 rekent de restduur op de
+    // activity-kalender).
+    const remainingHours = isHour && task.time.remainingMinutes != null ? task.time.remainingMinutes / 60
+      : task.time.remainingTime != null ? durationToP6Hours(task.time.remainingTime, effHpd) : undefined;
+    // Datumconstraints: primair + secundair als P6 `CS_*`-codes. ASAP ⇒ geen element. Secundair is
+    // altijd soft (P6 native `SecondaryConstraintType`).
+    const code = task.constraint ? p6ConstraintCode(task.constraint) : undefined;
+    const code2 = task.constraint2 ? p6ConstraintCode(task.constraint2) : undefined;
+    const udfs: P6Node[] = [
+      // De duurwaarde in P6 is altijd uren. Deze Activity-Text-UDF bewaart apart of OPS de taak als
+      // werkdag of als exacte werkuren moet herlezen. P6 zet de UDF-waarde van een activiteit IN de
+      // activiteit (`<UDF><TypeObjectId/><TextValue/></UDF>`).
+      node('UDF', [...leaf('TypeObjectId', OPS_P6_DURATION_UNIT_UDF_OBJECT_ID), ...leaf('TextValue', taskDurationUnit(task))]),
+      ...(task.customTaskTypeId
+        ? [node('UDF', [
+          ...leaf('TypeObjectId', OPS_CUSTOM_TASK_TYPE_UDF_OBJECT_ID),
+          ...leaf('TextValue', encodeCustomTaskType(task.customTaskTypeId, customTaskTypes)),
+        ])]
+        : []),
+    ];
+    inProject.push(node('Activity', [
+      // Actuals — alleen wanneer gezet (golden rule).
+      ...leaf('ActualFinishDate', task.time.actualFinish ? toXmlDateTime(task.time.actualFinish) : undefined),
+      ...leaf('ActualStartDate', task.time.actualStart ? toXmlDateTime(task.time.actualStart) : undefined),
+      // Taakkalender: effectieve kalender-ObjectId; onbekende/verwijderde calendarId valt terug op 1
+      // (projectkalender).
+      ...leaf('CalendarObjectId', (task.calendarId && calObjMap.get(task.calendarId)) || 1),
+      ...(durationTypeLabel && !task.isMilestone ? leaf('DurationType', durationTypeLabel) : []),
+      ...leaf('Id', task.wbsCode || task.id),
+      ...leaf('Name', task.name),
+      ...leaf('ObjectId', objId),
+      // Voortgang zoals P6: soort Physical en het percentage als FRACTIE (0.5 = 50 %).
+      ...leaf('PercentCompleteType', 'Physical'),
+      ...(task.time.completion > 0 ? leaf('PhysicalPercentComplete', task.time.completion) : []),
+      ...leaf('PlannedDuration', plannedDur),
+      ...leaf('PlannedFinishDate', toXmlDateTime(shownFinish(task))),
+      ...leaf('PlannedStartDate', toXmlDateTime(shownStart(task))),
+      ...(code && task.constraint?.date ? leaf('PrimaryConstraintDate', toXmlDateTime(task.constraint.date)) : []),
+      ...leaf('PrimaryConstraintType', code),
+      ...leaf('ProjectObjectId', 1),
+      ...leaf('RemainingDuration', remainingHours),
+      ...(code2 && task.constraint2?.date ? leaf('SecondaryConstraintDate', toXmlDateTime(task.constraint2.date)) : []),
+      ...leaf('SecondaryConstraintType', code2),
+      ...leaf('Status', taskStatusToP6(task)),
+      ...leaf('Type', taskTypeToP6(task)),
+      ...(wbsObjId !== undefined ? leaf('WBSObjectId', wbsObjId) : []),
+      ...udfs,
+    ]));
     if (task.description) {
-      lines.push(`${indent(2)}<Description>${escapeXml(task.description)}</Description>`);
+      inProject.push(node('ActivityNote', [
+        ...leaf('ActivityObjectId', objId),
+        ...leaf('Note', task.description),
+        ...leaf('NotebookTopicObjectId', OPS_DESCRIPTION_TOPIC_OBJECT_ID),
+        ...leaf('ObjectId', noteObjId++),
+        ...leaf('ProjectObjectId', 1),
+      ]));
     }
-    // Datumconstraints: primair + secundair als P6 `CS_*`-codes. ASAP ⇒ leeg (geen element).
-    // Secundair is altijd soft (P6 native `SecondaryConstraintType`).
-    if (task.constraint) {
-      const code = p6ConstraintCode(task.constraint);
-      if (code) {
-        lines.push(`${indent(2)}<PrimaryConstraintType>${code}</PrimaryConstraintType>`);
-        if (task.constraint.date) {
-          lines.push(`${indent(2)}<PrimaryConstraintDate>${toXmlDateTime(task.constraint.date)}</PrimaryConstraintDate>`);
-        }
-      }
-    }
-    if (task.constraint2) {
-      const code2 = p6ConstraintCode(task.constraint2);
-      if (code2) {
-        lines.push(`${indent(2)}<SecondaryConstraintType>${code2}</SecondaryConstraintType>`);
-        if (task.constraint2.date) {
-          lines.push(`${indent(2)}<SecondaryConstraintDate>${toXmlDateTime(task.constraint2.date)}</SecondaryConstraintDate>`);
-        }
-      }
-    }
-    // Taakkalender: effectieve kalender-ObjectId; onbekende/verwijderde calendarId valt terug op 1
-    // (projectkalender).
-    const taskCalObjId = (task.calendarId && calObjMap.get(task.calendarId)) || 1;
-    lines.push(`${indent(2)}<CalendarObjectId>${taskCalObjId}</CalendarObjectId>`);
-    lines.push(`${indent(1)}</Activity>`);
-  }
-
-  // P6 PMXML modelleert UDF-definities en -waarden als losse top-level objecten. De activity houdt
-  // dus geen verzonnen genest element; ForeignObjectId koppelt de vrije tekst aan de taak. Andere
-  // clients mogen dit veld negeren zonder dat we een verkeerd native P6-activitytype claimen.
-  const customTasks = leafTasks.filter(task => task.customTaskTypeId);
-  if (customTasks.length > 0) {
-    lines.push(`${indent(1)}<UDFType>`);
-    lines.push(`${indent(2)}<ObjectId>${OPS_CUSTOM_TASK_TYPE_UDF_OBJECT_ID}</ObjectId>`);
-    lines.push(`${indent(2)}<SubjectArea>Activity</SubjectArea>`);
-    lines.push(`${indent(2)}<Title>${OPS_CUSTOM_TASK_TYPE_UDF_TITLE}</Title>`);
-    lines.push(`${indent(2)}<DataType>Text</DataType>`);
-    lines.push(`${indent(1)}</UDFType>`);
-    for (const task of customTasks) {
-      const value = encodeCustomTaskType(task.customTaskTypeId!, customTaskTypes);
-      lines.push(`${indent(1)}<UDFValue>`);
-      lines.push(`${indent(2)}<ForeignObjectId>${taskObjMap.get(task.id)}</ForeignObjectId>`);
-      lines.push(`${indent(2)}<UDFTypeObjectId>${OPS_CUSTOM_TASK_TYPE_UDF_OBJECT_ID}</UDFTypeObjectId>`);
-      lines.push(`${indent(2)}<Text>${escapeXml(value)}</Text>`);
-      lines.push(`${indent(1)}</UDFValue>`);
-    }
-  }
-
-  // De duurwaarde in P6 is altijd uren. Deze officiële Activity-Text-UDF bewaart daarom apart
-  // of OPS de taak als werkdag of als exacte werkuren moet herlezen.
-  for (const task of leafTasks) {
-    const foreignObjectId = taskObjMap.get(task.id)!;
-    lines.push(`${indent(1)}<UDFValue>`);
-    lines.push(`${indent(2)}<ProjectObjectId>1</ProjectObjectId>`);
-    lines.push(`${indent(2)}<ForeignObjectId>${foreignObjectId}</ForeignObjectId>`);
-    lines.push(`${indent(2)}<UDFTypeObjectId>${OPS_P6_DURATION_UNIT_UDF_OBJECT_ID}</UDFTypeObjectId>`);
-    lines.push(`${indent(2)}<Text>${taskDurationUnit(task)}</Text>`);
-    lines.push(`${indent(1)}</UDFValue>`);
   }
 
   // Relationships (sequences). P6 kent geen procent-lag en geen lag-eenheid per relatie
@@ -576,14 +568,15 @@ export function writeP6XML(
       && !(typeof seq.lagPercent === 'number' && Number.isFinite(seq.lagPercent));
     const lagHours = hourLag ? seq.lagMinutes! / 60 : durationToP6Hours(lagDays, calendar.hoursPerDay);
 
-    lines.push(`${indent(1)}<Relationship>`);
-    lines.push(`${indent(2)}<ObjectId>${relObjId++}</ObjectId>`);
-    lines.push(`${indent(2)}<PredecessorActivityObjectId>${predObjId}</PredecessorActivityObjectId>`);
-    lines.push(`${indent(2)}<SuccessorActivityObjectId>${succObjId}</SuccessorActivityObjectId>`);
-    lines.push(`${indent(2)}<Type>${P6_LINK_TYPE[seq.type]}</Type>`);
-    lines.push(`${indent(2)}<Lag>${lagHours}</Lag>`);
-    lines.push(`${indent(2)}<ProjectObjectId>1</ProjectObjectId>`);
-    lines.push(`${indent(1)}</Relationship>`);
+    inProject.push(node('Relationship', [
+      ...leaf('Lag', lagHours),
+      ...leaf('ObjectId', relObjId++),
+      ...leaf('PredecessorActivityObjectId', predObjId),
+      ...leaf('PredecessorProjectObjectId', 1),
+      ...leaf('SuccessorActivityObjectId', succObjId),
+      ...leaf('SuccessorProjectObjectId', 1),
+      ...leaf('Type', P6_LINK_TYPE[seq.type]),
+    ]));
   }
 
   // ResourceAssignments: alleen bladtaken dragen assignments, dus taskObjMap/leafTasks dekt alle
@@ -627,39 +620,74 @@ export function writeP6XML(
     const anchorIso = taskStartIso ? toXmlDateTime(taskStartIso) : '';
     const curveObjId = curveObjIdByAssignment.get(a.id);
 
-    // Elementvolgorde volgt het PMXML-schema (MPXJ `ResourceAssignmentType` propOrder).
-    lines.push(`${indent(1)}<ResourceAssignment>`);
-    lines.push(`${indent(2)}<ActivityObjectId>${actObjId}</ActivityObjectId>`);
-    if (actualSpread && anchorIso) {
-      lines.push(`${indent(2)}<ActualCurve>${escapeXml(actualSpread)}</ActualCurve>`);
-      lines.push(`${indent(2)}<ActualStartDate>${anchorIso}</ActualStartDate>`);
-    }
-    // De drie werkvelden in UREN, alleen wanneer gezet; op hun alfabetische plek in de
-    // PMXML-sequence (ActualUnits, PlannedUnits, RemainingUnits).
-    if (a.actualWorkMinutes !== undefined) lines.push(`${indent(2)}<ActualUnits>${a.actualWorkMinutes / 60}</ActualUnits>`);
-    lines.push(`${indent(2)}<ObjectId>${asgnObjId++}</ObjectId>`);
-    if (plannedSpread && anchorIso) {
-      lines.push(`${indent(2)}<PlannedCurve>${escapeXml(plannedSpread)}</PlannedCurve>`);
-      if (taskFinishIso) lines.push(`${indent(2)}<PlannedFinishDate>${toXmlDateTime(taskFinishIso)}</PlannedFinishDate>`);
-      lines.push(`${indent(2)}<PlannedStartDate>${anchorIso}</PlannedStartDate>`);
-    }
-    // PlannedUnitsPerTime: fractie, 1.0 = 100% (zelfde semantiek als MaxUnitsPerTime hierboven).
-    // Ons `unitsPerDay` is al een fractie, dus 1:1.
-    if (a.plannedWorkMinutes !== undefined) lines.push(`${indent(2)}<PlannedUnits>${a.plannedWorkMinutes / 60}</PlannedUnits>`);
-    lines.push(`${indent(2)}<PlannedUnitsPerTime>${a.unitsPerDay}</PlannedUnitsPerTime>`);
-    if (remainingSpread && anchorIso) {
-      lines.push(`${indent(2)}<RemainingCurve>${escapeXml(remainingSpread)}</RemainingCurve>`);
-      lines.push(`${indent(2)}<RemainingStartDate>${anchorIso}</RemainingStartDate>`);
-    }
-    if (a.remainingWorkMinutes !== undefined) lines.push(`${indent(2)}<RemainingUnits>${a.remainingWorkMinutes / 60}</RemainingUnits>`);
-    if (curveObjId !== undefined) {
-      lines.push(`${indent(2)}<ResourceCurveObjectId>${curveObjId}</ResourceCurveObjectId>`);
-    }
-    lines.push(`${indent(2)}<ResourceObjectId>${resObjId}</ResourceObjectId>`);
-    lines.push(`${indent(1)}</ResourceAssignment>`);
+    inProject.push(node('ResourceAssignment', [
+      ...leaf('ActivityObjectId', actObjId),
+      ...(actualSpread && anchorIso ? [...leaf('ActualCurve', actualSpread), ...leaf('ActualStartDate', anchorIso)] : []),
+      // De drie werkvelden in UREN, alleen wanneer gezet.
+      ...(a.actualWorkMinutes !== undefined ? leaf('ActualUnits', a.actualWorkMinutes / 60) : []),
+      ...leaf('ObjectId', asgnObjId++),
+      ...(plannedSpread && anchorIso
+        ? [
+          ...leaf('PlannedCurve', plannedSpread),
+          ...(taskFinishIso ? leaf('PlannedFinishDate', toXmlDateTime(taskFinishIso)) : []),
+          ...leaf('PlannedStartDate', anchorIso),
+        ]
+        : []),
+      ...(a.plannedWorkMinutes !== undefined ? leaf('PlannedUnits', a.plannedWorkMinutes / 60) : []),
+      // PlannedUnitsPerTime: fractie, 1.0 = 100% (zelfde semantiek als MaxUnitsPerTime hierboven).
+      ...leaf('PlannedUnitsPerTime', a.unitsPerDay),
+      ...leaf('ProjectObjectId', 1),
+      ...(remainingSpread && anchorIso ? [...leaf('RemainingCurve', remainingSpread), ...leaf('RemainingStartDate', anchorIso)] : []),
+      ...(a.remainingWorkMinutes !== undefined ? leaf('RemainingUnits', a.remainingWorkMinutes / 60) : []),
+      ...(curveObjId !== undefined ? leaf('ResourceCurveObjectId', curveObjId) : []),
+      ...leaf('ResourceObjectId', resObjId),
+    ]));
   }
 
-  lines.push('</APIBusinessObjects>');
+  // Project. Zelfde afweging als in mspdiWriter: een leeg <Name> gaf P6 een naamloos project, terwijl
+  // de projectnaam in P6 juist een dragend, verplicht ingevuld veld is. Dezelfde neutrale,
+  // taalonafhankelijke terugval als de bestandsnaam en de STEP-header.
+  const projectIdentity = p6ProjectIdentity(projectFileBase(project.name), project.id);
+  top.push(node('Project', [
+    ...leaf('ActivityDefaultCalendarObjectId', 1),
+    // Data date — P6's peildatum. Alleen wanneer gezet (golden rule).
+    ...(project.statusDate ? leaf('DataDate', toXmlDateTime(project.statusDate)) : []),
+    ...leaf('Description', project.description),
+    ...leaf('Id', projectIdentity.id),
+    ...(project.endDate ? leaf('MustFinishByDate', toXmlDateTime(project.endDate)) : []),
+    ...leaf('Name', projectIdentity.name),
+    ...leaf('ObjectId', 1),
+    ...leaf('PlannedStartDate', toXmlDateTime(project.startDate)),
+    ...leaf('Status', project.endDate ? 'Active' : 'Planned'),
+    ...inProject,
+  ]));
 
-  return lines.join('\n');
+  return renderP6XmlWithReport(
+    node('APIBusinessObjects', top),
+    'xmlns="http://xmlns.oracle.com/Primavera/P6/V23.12/API/BusinessObjects" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"',
+  );
+}
+
+/**
+ * Naam en `Id` van het P6-project. Een geïmporteerd P6-project heet "Naam (Id)" (zie
+ * `nameWithProjectCode`); die code gaat terug naar `<Id>` en de naam zonder code naar `<Name>`, zodat
+ * heropenen dezelfde naam geeft. Alleen een CODE splitst: tekst tussen haakjes zonder spatie, ≤ 40
+ * tekens ("Kantoor (OZB-05)"). "Nieuwbouw (fase 2)" blijft de naam. Zonder code is het Id
+ * `OPS:` + het interne project-id: uniek, ook als twee projecten dezelfde naam hebben. De lezer zet
+ * zo'n Id niet achter de naam (`isOpsInternalProjectId`). Het voorvoegsel maakt hem herkenbaar,
+ * ongeacht de vorm van het interne id (`proj-…`, een IFC-id, een test-id).
+ */
+export function p6ProjectIdentity(displayName: string, internalId: string): { name: string; id: string } {
+  const match = / \(([^()\s]+)\)$/.exec(displayName);
+  if (match && match[1].length <= P6_ID_MAX_LENGTH && match.index > 0) {
+    return { name: displayName.slice(0, match.index), id: match[1] };
+  }
+  return { name: displayName, id: `${OPS_INTERNAL_PROJECT_ID_PREFIX}${internalId}`.slice(0, P6_ID_MAX_LENGTH) };
+}
+
+const OPS_INTERNAL_PROJECT_ID_PREFIX = 'OPS:';
+
+/** Een project-Id dat de OPS-writer zelf maakte (geen code van de gebruiker; `p6ProjectIdentity`). */
+export function isOpsInternalProjectId(id: string): boolean {
+  return id.startsWith(OPS_INTERNAL_PROJECT_ID_PREFIX);
 }

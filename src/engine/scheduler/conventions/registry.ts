@@ -63,7 +63,52 @@ export interface ConventionDescriptor {
   labelKey: string;
   /** ISO-datum waarop de conventie in het register kwam (documentatie bij `legacyValue`). */
   since: string;
+  /** BESCHRIJVEND: op welke data de conventie in de motor alleen iets doet (zie `ConventionRequires`).
+   *  Afwezig ⇒ geen van beide poorten. De UI toont er een kort label naast het vinkje mee. */
+  requires?: ConventionRequires;
 }
+
+/**
+ * Waar een conventie in de motor op poort (critreview #169, N2). Alleen weergave: de motor leest dit
+ * nooit (`verify:conventions` verbiedt dat), hij poort zelf. Afgeleid uit de motorcode, niet uit de gids,
+ * en als GEDRAG getoetst in `check-conventions-p6-flags` (sectie "`requires` als gedrag"):
+ *  - `hourPlanning`: de conventie doet alleen iets bij uurplanning. De motor rekent een taak in uren
+ *    als haar kalender werkblokken heeft (`workTime`) óf als de taak zelf in uren staat
+ *    (`engineForTaskCalendar`); ook de interne 24-uurs lag-kalender is uurplanning. Zonder dat alles
+ *    (dagkalender, taken in dagen) verandert aan/uit niets.
+ *  - `xerOrigin`: de conventie werkt alleen op taken (of relaties) met P6-herkomst uit een `.xer`
+ *    (`p6ProjectId`/`p6TaskId` en verwante velden, of de B1-relatievlag).
+ */
+export interface ConventionRequires {
+  hourPlanning?: true;
+  xerOrigin?: true;
+}
+
+const HOUR = { hourPlanning: true } as const;
+const XER = { xerOrigin: true } as const;
+const HOUR_XER = { hourPlanning: true, xerOrigin: true } as const;
+/** Per conventie de poort uit de motor (bron: de regel in `CPMSolver.ts`/`scheduleAnalysis.ts`/de
+ *  beslisfuncties). Niet genoemd ⇒ werkt ook op een dagkalender en op data zonder P6-herkomst. */
+const CONVENTION_REQUIRES: Partial<Record<ConventionKey, ConventionRequires>> = {
+  p6ZeroDurationUsesPlannedBoundary: HOUR,           // A15 p6ZeroDurationUsesFinishBoundary/…BoundaryPair: `!eng.isHourMode`
+  p6PreserveActualInstants: XER,                     // A18 forwardPass: `task.p6ProjectId !== undefined`
+  p6PreserveZeroDurationConstraintInstants: HOUR,    // A20 backwardBoundOf: `eng.isHourMode`
+  p6RelationFinishBoundary: HOUR_XER,                // B1 de relatievlag zet alleen de XER-lezer, en alleen bij `predecessorCalendar.isHourMode`
+  p6BackwardLagFinishBoundary: HOUR,                 // B2 binnen `if (predEng.isHourMode)`
+  p6CompletedDataDateWindow: XER,                    // B3 provenancepoort (`p6ProjectId`/`p6TaskId`)
+  p6CompletedLoeActualFinish: XER,                   // B4 `missingProjectProvenance`/`missingTaskProvenance`
+  p6OpenLoeTargetSpan: HOUR_XER,                     // B5 `cal.isHourMode` (anders NaN ⇒ geweigerd) + provenance
+  p6CompletedPredecessorAtDataDate: HOUR,            // C1 `!progressCal.isHourMode`
+  p6FreeFloatOnOwnCalendar: HOUR,                    // C2 `cal.isHourMode`
+  p6CompletedRemainingLag: HOUR_XER,                 // C3 `!lagEng.isHourMode`; alle vier aanroepers zitten achter een route met herkomstpoort (C4/C5/A21-venster)
+  p6CompletedOutOfSequenceWindow: HOUR_XER,          // C4 `!progressCal.isHourMode` + de B3-route (provenance)
+  p6CompletedPhysicalAtDataDate: HOUR_XER,           // C5 recordCompletedPhysicalPoint `!progressCal.isHourMode` + provenance
+  p6InProgressStartLagElapsed: HOUR,                 // C6 `!lagEng.isHourMode`
+  p6FinishFinishStartMilestoneLateFinish: HOUR,      // C7 `predEng.isHourMode && succEng.isHourMode`
+  p6LateFinishOnOwnCalendar: HOUR,                   // C9 `!eng.isHourMode`
+  p6FinishNotBeforeFinishFinishBound: HOUR,          // C12 `!cal.isHourMode` / `cal.isHourMode`
+  p6AlapPositionedFromSuccessors: HOUR,              // C14 isUnstartedAlapPositionedFromSuccessors: `cal.isHourMode`
+};
 
 /** `since`-datums van groep C (C1–C9, C11, C12, C14). */
 const SINCE_X12_BROK2 = '2026-09-23';
@@ -82,9 +127,10 @@ function convention(
   id: ConventionKey, group: 'A' | 'B' | 'C', theme: ConventionTheme, builtIn: Record<BuiltInProfileId, boolean>,
   gatedByP6Source: boolean, since = SINCE,
 ): ConventionDescriptor {
+  const requires = CONVENTION_REQUIRES[id];
   return {
     id, kind: 'boolean', builtIn, group, theme, legacyValue: builtIn.ops, gatedByP6Source,
-    labelKey: `conventions.${id}`, since,
+    labelKey: `conventions.${id}`, since, ...(requires ? { requires } : {}),
   };
 }
 
@@ -255,18 +301,26 @@ export function p6OptionDefaults(): {
 }
 
 /** Standaard-PROJECTOPTIES voor een nieuw of bronloos project per basis. P6 = de optie-defaults
- *  van de XER-lezer (`XER_SCHEDULING_DEFAULTS` zonder bronmarkering en zonder conventies; die
- *  gelijkheid is gepind in `check-conventions-registry.ts`); MS Project en OPS = niets (afwezig ≡
- *  het huidige gedrag). Voor MS Project bewust ook geen `totalFloatMode` (eigenaarsbesluit
- *  2026-10-02, spec §3.1): afwezig = *Automatisch* = finish-speling bij statusdatum én gestarte taak,
- *  anders de kleinste. Dat is MSP's regel (voor een gestarte taak de finish slack) zodra er een
- *  statusdatum is; zonder statusdatum telt voortgang hier niet mee en krijgt ook een gestarte taak de
- *  kleinste. Het is ook wat een geopend `.mpp` draagt (de `.mpp`-lezer zet geen optie). *Kleinste*
- *  (altijd min) is de P6-modus. Levert steeds een verse kopie. */
+ *  van de XER-lezer (`p6OptionDefaults`) ZONDER de twee bronsignalen `useExpectedFinishDates` en
+ *  `p6CompletedLateFromRemainingWindow`: die horen bij een `.xer`-bestand (SCHEDOPTIONS), de UI toont ze
+ *  alleen-lezen als "uit het bronbestand", en een profiel voegt ze dus niet toe (critreview #169 N5,
+ *  review #331 punt 4). De XER-lezer neemt ze zelf uit `p6OptionDefaults`; dat
+ *  `XER_SCHEDULING_DEFAULTS` = deze set + die twee is, pint `check-conventions-registry.ts`.
+ *  MS Project en OPS = niets (afwezig ≡ het huidige gedrag). Voor MS Project bewust ook geen
+ *  `totalFloatMode` (eigenaarsbesluit 2026-10-02, spec §3.1): afwezig = *Automatisch* = finish-speling
+ *  bij statusdatum én gestarte taak, anders de kleinste. Dat is MSP's regel (voor een gestarte taak de
+ *  finish slack) zodra er een statusdatum is; zonder statusdatum telt voortgang hier niet mee en krijgt
+ *  ook een gestarte taak de kleinste. Het is ook wat een geopend `.mpp` draagt (de `.mpp`-lezer zet
+ *  geen optie). *Kleinste* (altijd min) is de P6-modus. Levert steeds een verse kopie. */
 export function defaultOptionsFor(baseId: BuiltInProfileId): ProjectSchedulingOptions {
   switch (baseId) {
-    case 'p6':
-      return p6OptionDefaults();
+    case 'p6': {
+      const d = p6OptionDefaults();
+      return {
+        lagCalendar: d.lagCalendar, criticalDefinition: d.criticalDefinition, totalFloatMode: d.totalFloatMode,
+        makeOpenEndedCritical: d.makeOpenEndedCritical, startToStartLagFrom: d.startToStartLagFrom,
+      };
+    }
     case 'msproject':
     case 'ops':
       return {};

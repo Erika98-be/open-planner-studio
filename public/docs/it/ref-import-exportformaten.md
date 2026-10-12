@@ -68,7 +68,7 @@ Per formato di file: se puoi aprirlo, salvarlo ed esportarlo, cosa viene incluso
 
 **Cosa viene incluso** — struttura WBS e attività con durata, date e avanzamento; relazioni con ritardo; vincoli (anche un secondo, come vincolo soft); calendari; risorse e assegnazioni; la data di stato (come `DataDate`); un tipo di attività personalizzato, in un campo proprio, `OPS Custom Task Type`, che l'app legge di nuovo e che P6 può ignorare.
 
-**Cosa non viene incluso** — baseline e scadenze; codici attività, campi personalizzati, note e relazioni esterne; le opzioni di calcolo; un'eccezione del calendario lavorativo (un'eccezione che rende un giorno un giorno lavorativo). P6 non ha ritardi in percentuale: l'app li converte in un numero fisso di giorni. Un ritardo in giorni di calendario diventa un ritardo in orari di lavoro: 3 giorni di calendario diventano 3 giorni lavorativi. Un hammock diventa un'attività normale. Un'attività pianificata manualmente diventa un'attività normale con date calcolate. Un ritardo di livellamento di meno di un giorno viene eliminato.
+**Cosa non viene incluso** — baseline e scadenze; codici attività, campi personalizzati, note e relazioni esterne; le opzioni di calcolo. P6 non ha ritardi in percentuale: l'app li converte in un numero fisso di giorni. Un ritardo in giorni di calendario diventa un ritardo in orari di lavoro: 3 giorni di calendario diventano 3 giorni lavorativi. Un hammock diventa un'attività normale. Un'attività pianificata manualmente diventa un'attività normale con date calcolate. Un ritardo di livellamento di meno di un giorno viene eliminato.
 
 ## File Primavera (`.xer`)
 

@@ -8,7 +8,7 @@ import {
 } from '@/services/xerSourceArchive';
 import { readCSV } from '@/services/csv/csvReader';
 import { readMSPDI } from '@/services/msproject/mspdiReader';
-import { readP6XML } from '@/services/p6/p6xmlReader';
+import { readP6XMLDocuments } from '@/services/p6/p6xmlReader';
 import type { ImportLabels, ImportResult, OpenedImport } from '@/services/importTypes';
 import type { FileFilter, FileRef } from '@/services/fileAccess';
 import { extensionOf } from '@/utils/filePath';
@@ -96,7 +96,7 @@ export function detectXmlFlavor(content: string): 'p6' | 'mspdi' | null {
  *  aanroeper is de xml-entry hieronder. */
 function parseProjectXml(content: string): OpenedImport {
   const flavor = detectXmlFlavor(content);
-  if (flavor === 'p6') return readP6XML(content);
+  if (flavor === 'p6') return readP6XMLDocuments(content);
   if (flavor === 'mspdi') return readMSPDI(content);
   throw new Error('Onbekend XML-formaat: het root-element is geen MS Project- (Project) of Primavera P6-planning (APIBusinessObjects)');
 }

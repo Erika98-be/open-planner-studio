@@ -24,6 +24,7 @@ import {
   type ExtEventListener,
 } from '@/services/extensionEvents';
 import { applyPermissionGuards } from './permissions';
+import { loadExtensionProject } from './retainActiveDocument';
 import { createHelpApi } from './helpApi';
 import {
   assertNoImportSourceDrift,
@@ -41,7 +42,6 @@ import {
   fromExtTaskAddInput,
   fromExtTaskUpdates,
   fromExtSequenceInput,
-  fromExtImportResult,
   fromExtRibbonTab,
   fromExtFontProvider,
 } from './extMappers';
@@ -299,11 +299,8 @@ export function createExtensionApi(
       addSequence: (seq) => batch.withTransaction(
         () => document.store.getState().addSequence(fromExtSequenceInput(seq)),
       ),
-      loadProject: (result: ExtImportResult) => {
-        const store = document.store.getState();
-        store.loadState(fromExtImportResult(result));
-        store.runCPM();
-      },
+      // Zie `loadExtensionProject`: hetzelfde project-id houdt vast wat het contract niet draagt.
+      loadProject: (result: ExtImportResult) => loadExtensionProject(document.store, result),
       recalculate: () => document.store.getState().runCPM(),
       // Eén snapshot voor de hele reeks i.p.v. één per mutatie — lineair in plaats van
       // kwadratisch, en één undo-stap voor wat de gebruiker als één handeling ziet.

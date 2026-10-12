@@ -33,7 +33,7 @@ import type { Sequence } from '@/types/sequence';
 import type { Resource, ResourceAssignment } from '@/types/resource';
 import type {
   ExtProject, ExtCalendar, ExtTask, ExtTaskTime, ExtSequence, ExtResource, ExtAssignment,
-  ExtRibbonTab, ExtFontProvider, ExtImportSourceInfo,
+  ExtRibbonTab, ExtFontProvider, ExtImportSourceInfo, ExtImportResult,
 } from '@/extensions/extTypes';
 import { EXT_IMPORT_SOURCE_PAGE_SIZE_MAX } from '@/extensions/extTypes';
 import type { ExtensionApi, ExtensionPermission } from '@/extensions/types';
@@ -63,6 +63,8 @@ import { isMultiDocumentImport } from '@/services/importTypes';
 import { decodeXerSourceArchive, sha256Hex } from '@/services/xerSourceArchive';
 import { ExtImportSourceDriftError } from '@/extensions/extImportSource';
 import { builtInProfile } from '@/engine/scheduler/conventions/registry';
+import { TASK_SOURCE_FIELDS, SEQUENCE_SOURCE_FIELDS, CALENDAR_SOURCE_FIELDS, openExtensionImport, importWithExtension } from '@/extensions/retainActiveDocument';
+import type { CalendarGeneration } from '@/types/calendar';
 
 const diffs: string[] = [];
 let checks = 0;
@@ -349,7 +351,7 @@ eq('X12 extensie leest de P6-relatievlag uit maar voert haar niet generiek terug
   // Taaktypes (PR #101): workRule/defaultWorkRule/werkvelden zijn een MINOR-toevoeging ⇒ 1.3.0;
   // Help & begeleiding (`api.help.*`, permissie `help`) is de volgende MINOR ⇒ 1.4.0
   // (tests/planning/check-ext-help.ts).
-  eq('C8-04 contractversie 1.4.0 (1.2.0 profiel + 1.3.0 taaktypes + 1.4.0 help)', EXTENSION_API_VERSION, '1.4.0');
+  eq('C8-04 contractversie 1.4.1 (1.2.0 profiel + 1.3.0 taaktypes + 1.4.0 help + 1.4.1 loadProject-fix)', EXTENSION_API_VERSION, '1.4.1');
   // Host-events horen bij het contract (namen via `sdk.hostEvents`). `tutorialRequested` kwam erbij
   // in 1.4.0, dat nog niet was uitgebracht — dus geen nieuwe contractversie. Een naam wijzigen of
   // weghalen breekt extensies: dan hoort hier (en in apiVersion.ts) een MAJOR bij.
@@ -1129,6 +1131,420 @@ for (const [naam, ext, bron, sleutels] of [
   const notifierSource = readFileSync(join(process.cwd(), 'src/extensions/extensionNotifications.ts'), 'utf8');
   eq('39a de notifier importeert geen app-singleton',
     /^import[^;]*\b(useAppStore|appStoreContext)\b[^;]*from/m.test(notifierSource), false);
+}
+
+// ── 8. N3 (review #169): lees-wijzig-laad van HETZELFDE project houdt profiel en opties vast ──
+// Het gedocumenteerde pad om toewijzingen te zetten is `loadProject(…getProject()…)`. Mutatiebewijs:
+// laat `retainActiveScheduling` `loaded` teruggeven en N3-01, -02, -04, -05 en -06 kleuren rood
+// (profiel afwezig = OPS, de vier P6-opties en `leveling` weg).
+{
+  const p6Options: Project['schedulingOptions'] = {
+    p6CompletedLateFromRemainingWindow: true,
+    startToStartLagFrom: 'actualStart',
+    useExpectedFinishDates: true,
+    useProjectEndDateForFloat: true,
+    leveling: { preserveScheduledDates: true },
+    totalFloatMode: 'smallest',
+    criticalDefinition: { mode: 'totalFloat', threshold: 0, thresholdHours: 8 },
+  };
+  const zetP6 = () => {
+    useAppStore.getState().newProject();
+    useAppStore.setState((s) => {
+      s.project.schedulingProfile = builtInProfile('p6');
+      s.project.schedulingOptions = structuredClone(p6Options);
+    });
+  };
+  const api = createExtensionApi('n3-loadproject-profiel', [], undefined, appStoreContext, {
+    app: appStoreContext,
+    showNotification: () => {},
+  });
+  const herladen = (wijzig?: (project: ReturnType<typeof api.data.getProject>) => void) => {
+    const project = api.data.getProject();
+    wijzig?.(project);
+    api.data.loadProject({
+      project, calendar: api.data.getCalendar(), tasks: api.data.getTasks(), sequences: api.data.getSequences(),
+      resources: api.data.getResources(), assignments: api.data.getAssignments(),
+    });
+    return useAppStore.getState().project;
+  };
+
+  zetP6();
+  const na = herladen();
+  eq('N3-01 loadProject(getProject()) houdt het P6-profiel', na.schedulingProfile, builtInProfile('p6'));
+  eq('N3-02 de vier P6-opties en leveling blijven', [
+    na.schedulingOptions?.p6CompletedLateFromRemainingWindow, na.schedulingOptions?.startToStartLagFrom,
+    na.schedulingOptions?.useExpectedFinishDates, na.schedulingOptions?.useProjectEndDateForFloat,
+    na.schedulingOptions?.leveling,
+  ], [true, 'actualStart', true, true, { preserveScheduledDates: true }]);
+  eq('N3-04 het opgeloste profiel via getProject blijft p6', api.data.getProject().schedulingProfile?.id, 'p6');
+
+  // Een publieke optie die de extensie wél wijzigt, volgt de extensie; de rest blijft staan.
+  zetP6();
+  const gewijzigd = herladen((project) => {
+    project.schedulingOptions = { ...project.schedulingOptions, totalFloatMode: 'finish', nearCriticalThreshold: 5 };
+  });
+  eq('N3-05 gewijzigde publieke opties volgen de extensie, P6-opties blijven', [
+    gewijzigd.schedulingOptions?.totalFloatMode, gewijzigd.schedulingOptions?.nearCriticalThreshold,
+    gewijzigd.schedulingOptions?.useExpectedFinishDates, gewijzigd.schedulingProfile?.id,
+  ], ['finish', 5, true, 'p6']);
+
+  // Een meegegeven profiel neemt de app nooit over (B29), ook niet op hetzelfde id.
+  zetP6();
+  const vreemdProfiel = herladen((project) => {
+    (project as unknown as { schedulingProfile: unknown }).schedulingProfile = builtInProfile('msproject');
+  });
+  eq('N3-06 een profiel van de extensie wint niet van het documentprofiel', vreemdProfiel.schedulingProfile?.id, 'p6');
+
+  // Een publieke optie die de extensie WEGHAALT, is daarna weg; ze valt niet terug op het document.
+  // Mutatiebewijs: laat de publieke sleutels niet uit de documentopties halen ⇒ N3-08a rood.
+  zetP6();
+  const weggehaald = herladen((project) => {
+    const { totalFloatMode: _weg, ...rest } = project.schedulingOptions ?? {};
+    project.schedulingOptions = rest;
+  });
+  eq('N3-08a een weggehaalde publieke optie is weg; P6-opties blijven', [
+    weggehaald.schedulingOptions?.totalFloatMode, weggehaald.schedulingOptions?.useExpectedFinishDates,
+  ], [undefined, true]);
+
+  // Ander project-id ⇒ nieuw project ⇒ OPS, zonder de niet-publieke opties van het vorige document.
+  zetP6();
+  const ander = herladen((project) => { project.id = 'ander-project'; });
+  eq('N3-08 ander project-id ⇒ OPS en alleen publieke opties', [
+    ander.id, ander.schedulingProfile, ander.schedulingOptions?.useExpectedFinishDates,
+    ander.schedulingOptions?.leveling, ander.schedulingOptions?.totalFloatMode,
+  ], ['ander-project', undefined, undefined, undefined, 'smallest']);
+}
+
+// ── 9. N3-fixronde: documentdata die `ExtImportResult` niet draagt, blijft bij hetzelfde id ──
+// `retainActiveDocument` (src/extensions/retainActiveDocument.ts). Mutatiebewijs per check staat in
+// de PR (#329): elke regel in de return van `retainActiveDocument` weghalen kleurt de bijbehorende
+// N3D-check rood; `cleanDanglingReferences` laten teruggeven wat hij krijgt kleurt N3D-10.
+{
+  const api = createExtensionApi('n3-loadproject-document', [], undefined, appStoreContext, {
+    app: appStoreContext,
+    showNotification: () => {},
+  });
+  const herladen = (wijzig?: (r: ExtImportResult) => void) => {
+    const r: ExtImportResult = {
+      project: api.data.getProject(), calendar: api.data.getCalendar(), tasks: api.data.getTasks(),
+      sequences: api.data.getSequences(), resources: api.data.getResources(), assignments: api.data.getAssignments(),
+    };
+    wijzig?.(r);
+    api.data.loadProject(r);
+    return useAppStore.getState();
+  };
+  const zetDocument = () => {
+    useAppStore.getState().newProject();
+    const taakId = api.data.addTask({ name: 'Op ploegkalender' });
+    const basis = useAppStore.getState().calendar;
+    const ploeg: WorkCalendar = { ...structuredClone(basis), id: 'cal-ploeg', name: 'Ploeg' };
+    useAppStore.setState((s) => {
+      s.calendars = [
+        ...s.calendars.map((c) => (c.id === s.project.calendarId ? { ...c, p6NonWorkPenaltyDates: ['2026-01-05'] } : c)),
+        ploeg,
+      ];
+      s.calendar = s.calendars.find((c) => c.id === s.project.calendarId)!;
+      s.resources = [{ ...VOL_RESOURCE, parentId: undefined, libraryOrigin: undefined, calendarId: 'cal-ploeg' }];
+      const taak = s.tasks.find((t) => t.id === taakId);
+      if (taak) taak.calendarId = 'cal-ploeg';
+      s.baselines = [{ id: 'bl-1', name: 'Start', createdAt: '2026-01-01T00:00:00Z', tasks: [], projectEnd: '2026-02-01', projectDuration: 20 }];
+      s.activeBaselineId = 'bl-1';
+      s.activityCodeTypes = [{ id: 'act-fase', name: 'Fase', values: [{ id: 'v-ruw', code: 'RUW' }] }];
+      s.customFieldDefs = [{ id: 'cf-kosten', name: 'Kosten', type: 'cost' }];
+      s.ifcGlobalIds = { 'task:x': '0123456789abcdefghijkl' };
+    });
+    return taakId;
+  };
+
+  const taakId = zetDocument();
+  const voor = useAppStore.getState();
+  const na = herladen();
+  // Geen kopie nodig: de gedeelde documentobjecten zijn bevroren, dus een mutatie in place in het
+  // laadpad zou gooien. De load slaagt en de objecten zijn dezelfde referenties.
+  eq('N3D-12 vastgehouden documentobjecten zijn bevroren en gaan zonder kopie mee', [
+    Object.isFrozen(voor.baselines[0]), Object.isFrozen(voor.activityCodeTypes[0]), Object.isFrozen(voor.customFieldDefs[0]),
+    Object.isFrozen(voor.calendars.find((c) => c.id === 'cal-ploeg')),
+    na.baselines[0] === voor.baselines[0], na.activityCodeTypes[0] === voor.activityCodeTypes[0],
+  ], [true, true, true, true, true, true]);
+  eq('N3D-01 baselines blijven', na.baselines.map((b) => b.id), ['bl-1']);
+  eq('N3D-02 activeBaselineId blijft', na.activeBaselineId, 'bl-1');
+  eq('N3D-03 resourcekalenders blijven, zonder dubbele projectkalender',
+    na.calendars.map((c) => c.id).sort(), [na.project.calendarId, 'cal-ploeg'].sort());
+  eq('N3D-04 activityCodeTypes blijven', na.activityCodeTypes.map((t) => t.id), ['act-fase']);
+  eq('N3D-05 customFieldDefs blijven', na.customFieldDefs.map((d) => d.id), ['cf-kosten']);
+  eq('N3D-06 ifcGlobalIds blijven', na.ifcGlobalIds, { 'task:x': '0123456789abcdefghijkl' });
+  eq('N3D-07 resource en taak houden hun verwijzing naar de ploegkalender', [
+    na.resources[0]?.calendarId, na.tasks.find((t) => t.id === taakId)?.calendarId,
+  ], ['cal-ploeg', 'cal-ploeg']);
+  eq('N3D-07a ongewijzigde projectkalender houdt velden die ExtCalendar niet naar binnen draagt',
+    na.calendar.p6NonWorkPenaltyDates, ['2026-01-05']);
+
+  // De extensie wijzigt de projectkalender: die wijziging wint van de bibliotheek-entry, en de
+  // bronvelden van de documentkalender blijven erop staan (reviewproef probe-e E1). Mutatiebewijs:
+  // `withSourceFields` voor de kalender weglaten ⇒ N3D-22 en N3D-07a rood.
+  zetDocument();
+  useAppStore.setState((s) => {
+    const meta = {
+      p6Source: 'XER' as const, p6NonWorkPenaltyDatesState: 'VALID_VALUES' as const,
+      generation: { ruleSetId: 'NL', generatedFromYear: 2026, generatedToYear: 2026 } as CalendarGeneration,
+    };
+    s.calendars = s.calendars.map((c) => (c.id === s.project.calendarId ? { ...c, ...meta } : c));
+    s.calendar = s.calendars.find((c) => c.id === s.project.calendarId)!;
+  });
+  const kalender = herladen((r) => {
+    r.calendar = { ...r.calendar, holidays: [...r.calendar.holidays, { name: 'Extensievrij', startDate: '2026-07-01', endDate: '2026-07-01' }] };
+  });
+  eq('N3D-09 een gewijzigde projectkalender volgt de extensie (cache én bibliotheek)', [
+    kalender.calendar.holidays.some((h) => h.name === 'Extensievrij'),
+    kalender.calendars.find((c) => c.id === kalender.project.calendarId)?.holidays.some((h) => h.name === 'Extensievrij'),
+    kalender.calendars.map((c) => c.id).sort(),
+  ], [true, true, [kalender.project.calendarId, 'cal-ploeg'].sort()]);
+  eq('N3D-22 een gewijzigde projectkalender houdt de bronvelden van de documentkalender', [
+    kalender.calendar.p6Source, kalender.calendar.p6NonWorkPenaltyDates, kalender.calendar.p6NonWorkPenaltyDatesState,
+    kalender.calendar.generation?.ruleSetId,
+  ], ['XER', ['2026-01-05'], 'VALID_VALUES', 'NL']);
+
+  // Kalenderwissel via `project.calendarId` (reviewproef probe-d): de oude projectkalender blijft
+  // bestaan, en een taak die er expliciet naar wijst, houdt die verwijzing. Mutatiebewijs: filter op
+  // het OUDE `project.calendarId` (M11) en N3D-16 kleurt rood.
+  zetDocument();
+  const oudeKalender = useAppStore.getState().project.calendarId;
+  const expliciet = api.data.addTask({ name: 'Expliciet op projectkalender' });
+  useAppStore.setState((s) => {
+    const t = s.tasks.find((x) => x.id === expliciet);
+    if (t) t.calendarId = oudeKalender;
+  });
+  const wissel = herladen((r) => { r.project = { ...r.project, calendarId: 'cal-ploeg' }; });
+  eq('N3D-16 kalenderwissel houdt de oude projectkalender en de verwijzing ernaar', [
+    wissel.project.calendarId, wissel.calendar.id, wissel.calendars.map((c) => c.id).sort(),
+    wissel.tasks.find((t) => t.id === expliciet)?.calendarId,
+  ], ['cal-ploeg', 'cal-ploeg', [oudeKalender, 'cal-ploeg'].sort(), oudeKalender]);
+
+  // Een meegestuurde projectkalender met een ANDER id, terwijl `project.calendarId` ongewijzigd is
+  // (reviewproef probe-e E2): die kalender wordt de projectkalender; de oude blijft in de bibliotheek.
+  // Mutatiebewijs: `project.calendarId` altijd van de extensie ⇒ N3D-20 rood.
+  zetDocument();
+  const vorigeKalender = useAppStore.getState().project.calendarId;
+  const vierdaags = herladen((r) => {
+    r.calendar = { ...getExtensionSdk().factory.createCalendar(), id: 'cal-vierdaags', workDays: [1, 2, 3, 4] };
+  });
+  eq('N3D-20 meegestuurde kalender met ander id wordt de projectkalender', [
+    vierdaags.project.calendarId, vierdaags.calendar.id, vierdaags.calendar.workDays,
+    vierdaags.calendars.map((c) => c.id).sort(),
+  ], ['cal-vierdaags', 'cal-vierdaags', [1, 2, 3, 4], [vorigeKalender, 'cal-ploeg', 'cal-vierdaags'].sort()]);
+
+  // Wisselt de extensie via `project.calendarId` én stuurt ze een nieuwe kalender mee, dan gaat die
+  // nieuwe kalender niet stil verloren: hij komt in de bibliotheek. Mutatiebewijs: de tak
+  // `...(own ? [] : [sent])` weg (X8) ⇒ N3D-21 rood.
+  zetDocument();
+  const beide = herladen((r) => {
+    r.project = { ...r.project, calendarId: 'cal-ploeg' };
+    r.calendar = { ...getExtensionSdk().factory.createCalendar(), id: 'cal-nieuw' };
+  });
+  eq('N3D-21 wissel plus nieuwe kalender: projectkalender is de gekozen, de nieuwe staat in de bibliotheek', [
+    beide.project.calendarId, beide.calendars.some((c) => c.id === 'cal-nieuw'),
+  ], ['cal-ploeg', true]);
+
+  // Eigen taaktypes (reviewproef probe-b B1): ongebruikte documententries blijven; bij een botsing op
+  // id of naam wint de extensie. Mutatiebewijs: `customTaskTypes`-regel weg ⇒ N3D-17 rood.
+  zetDocument();
+  useAppStore.setState((s) => {
+    s.customTaskTypes = [
+      { id: 'ops-ongebruikt', name: 'Ongebruikt' },
+      { id: 'zelfde-id', name: 'Oude naam' },
+      { id: 'doc-ruwbouw', name: 'Ruwbouw' },
+    ];
+  });
+  const typen = herladen((r) => {
+    r.customTaskTypes = [{ id: 'zelfde-id', name: 'Nieuwe naam' }, { id: 'ext-ruwbouw', name: 'ruwbouw' }];
+  });
+  eq('N3D-17 ongebruikte eigen taaktypes blijven; de extensie wint bij een botsing op id of naam',
+    typen.customTaskTypes, [
+      { id: 'zelfde-id', name: 'Nieuwe naam' }, { id: 'ext-ruwbouw', name: 'ruwbouw' }, { id: 'ops-ongebruikt', name: 'Ongebruikt' },
+    ]);
+
+  // Hetzelfde id, maar de extensie wijst naar een kalender die niet bestaat ⇒ terugval op de projectkalender.
+  const onbekendTaakId = zetDocument();
+  const onbekend = herladen((r) => {
+    r.resources = r.resources.map((x) => ({ ...x, calendarId: 'bestaat-niet' }));
+    r.tasks = r.tasks.map((x) => (x.id === onbekendTaakId ? { ...x, calendarId: 'bestaat-niet' } : x));
+  });
+  eq('N3D-10 onbekende kalender op resource en taak valt terug op de projectkalender', [
+    onbekend.resources[0]?.calendarId, onbekend.tasks.find((t) => t.id === onbekendTaakId)?.calendarId,
+  ], [undefined, undefined]);
+
+  // Ander id ⇒ nieuw project: de velden gaan zoals voorheen weg, verwijzingen vallen terug.
+  const anderTaakId = zetDocument();
+  const ander = herladen((r) => { r.project = { ...r.project, id: 'ander-project-2' }; });
+  eq('N3D-11 ander id ⇒ baselines, resourcekalenders, codes, velden en GlobalIds weg', [
+    ander.baselines.length, ander.activeBaselineId, ander.calendars.some((c) => c.id === 'cal-ploeg'),
+    ander.activityCodeTypes.length, ander.customFieldDefs.length, ander.ifcGlobalIds,
+  ], [0, null, false, 0, 0, null]);
+  eq('N3D-08 ander id ⇒ geen opschoning: de verwijzingen blijven zoals op main', [
+    ander.resources[0]?.calendarId, ander.tasks.find((t) => t.id === anderTaakId)?.calendarId,
+  ], ['cal-ploeg', 'cal-ploeg']);
+}
+
+// ── 10. Review #329 punt 1: een P6-project rekent na een ONGEWIJZIGDE lees-wijzig-laad hetzelfde ──
+// Fixture uit de reviewproef `probe-a`: een lopende CP_Phys-taak met een verwacht einde. Mutatiebewijs:
+// laat `withSourceFields` zijn invoer teruggeven en N3D-13 kleurt rood (earlyFinish 2026-08-10T10:00).
+{
+  eq('N3D-14 de bronveldlijsten zijn precies de velden die niet naar binnen oversteken', [
+    [...TASK_SOURCE_FIELDS], [...SEQUENCE_SOURCE_FIELDS], [...CALENDAR_SOURCE_FIELDS].sort(),
+  ], [
+    LEES_ALLEEN_EXT.task, LEES_ALLEEN_EXT.sequence,
+    // `libraryOrigin` niet: elke niet-gekoppelde load wist hem (`stripLibraryOrigins`).
+    [...LEES_ALLEEN_EXT.calendar, ...NIET_PUBLIEK.calendar.filter((k) => k !== 'libraryOrigin')].sort(),
+  ]);
+
+  const xer = [
+    'ERMHDR\t23.12\t2026-08-01\t\t\t\t\t\tEUR',
+    '%T\tPROJECT',
+    '%F\tproj_id\tproj_short_name\tclndr_id\tlast_recalc_date',
+    '%R\tP1\tVoortgang\tC1\t2026-08-10 08:00',
+    '%T\tCALENDAR',
+    '%F\tclndr_id\tclndr_name\tproj_id\tclndr_type\tday_hr_cnt\tweek_hr_cnt\tclndr_data',
+    '%R\tC1\tWerkweek\tP1\tCA_Project\t8\t40\t',
+    '%T\tTASK',
+    '%F\ttask_id\tproj_id\tclndr_id\ttask_code\ttask_name\ttask_type\tstatus_code\tcomplete_pct_type\tcomplete_pct\tphys_complete_pct\ttarget_drtn_hr_cnt\tremain_drtn_hr_cnt\ttarget_start_date\ttarget_end_date\tact_start_date\tact_end_date\tsuspend_date\tresume_date\texpect_end_date',
+    '%R\tA\tP1\tC1\tA\tVerwacht einde\tTT_Task\tTK_Active\tCP_Phys\t10\t75\t8\t2\t2026-08-03 08:00\t2026-08-03 16:00\t2026-08-03 08:00\t\t\t\t2026-08-12 16:00',
+    '%E',
+  ].join('\n');
+  const parsedXer = readXER(new TextEncoder().encode(xer));
+  if (isMultiDocumentImport(parsedXer)) throw new Error('N3D-13: verwacht één XER-project');
+  useAppStore.getState().newProject();
+  useAppStore.getState().openAsDocument(parsedXer, { name: 'n3d-13.xer', ref: null });
+  useAppStore.getState().runCPM();
+  const api = createExtensionApi('n3d-p6-bronvelden', [], undefined, appStoreContext, {
+    app: appStoreContext,
+    showNotification: () => {},
+  });
+  const taak = () => useAppStore.getState().tasks.find((t) => t.name === 'Verwacht einde');
+  const voor = { earlyFinish: taak()?.time.earlyFinish, p6ExpectedFinish: taak()?.p6ExpectedFinish };
+  api.data.loadProject({
+    project: api.data.getProject(), calendar: api.data.getCalendar(), tasks: api.data.getTasks(),
+    sequences: api.data.getSequences(), resources: api.data.getResources(), assignments: api.data.getAssignments(),
+  });
+  eq('N3D-13 earlyFinish en P6-bronvelden blijven exact gelijk na loadProject(get*())', [
+    taak()?.time.earlyFinish, taak()?.p6ExpectedFinish, taak()?.p6CompletePctType, taak()?.p6ProjectId,
+  ], [voor.earlyFinish, voor.p6ExpectedFinish, 'CP_Phys', 'P1']);
+  eq('N3D-13a de fixture zelf rekent met het verwachte einde', voor.earlyFinish, '2026-08-12T16:00');
+
+  // Relatie: de alleen-lezen P6-grensvlag blijft op de relatie met hetzelfde id.
+  useAppStore.getState().newProject();
+  const a = api.data.addTask({ name: 'A' });
+  const b = api.data.addTask({ name: 'B' });
+  const relatie = api.data.addSequence({ predecessorId: a, successorId: b, type: 'FINISH_START', lagDays: 0 });
+  useAppStore.setState((s) => {
+    const seq = s.sequences.find((x) => x.id === relatie);
+    if (seq) seq.p6StartAtPredecessorFinishBoundary = true;
+  });
+  api.data.loadProject({
+    project: api.data.getProject(), calendar: api.data.getCalendar(), tasks: api.data.getTasks(),
+    sequences: api.data.getSequences(), resources: api.data.getResources(), assignments: api.data.getAssignments(),
+  });
+  eq('N3D-15 p6StartAtPredecessorFinishBoundary blijft op de relatie',
+    useAppStore.getState().sequences.find((x) => x.id === relatie)?.p6StartAtPredecessorFinishBoundary, true);
+}
+
+// ── 11. Review #329 punt 6: na een extensie-load is het document gewijzigd ──────
+// Zelfde id: het opslagdoel blijft, maar het document is vuil (afsluitcontrole en AutoSave zien het).
+// Ander id: een nieuw project zonder opslagdoel, zodat opslaan het bestand van het vorige project niet
+// overschrijft, en vuil, zodat sluiten waarschuwt. Mutatiebewijs: `markDocumentEdited` weg ⇒ N3D-18
+// en N3D-19 rood; het wissen van het opslagdoel weg ⇒ N3D-19 rood.
+{
+  const api = createExtensionApi('n3d-dirty', [], undefined, appStoreContext, {
+    app: appStoreContext,
+    showNotification: () => {},
+  });
+  const lees = (): ExtImportResult => ({
+    project: api.data.getProject(), calendar: api.data.getCalendar(), tasks: api.data.getTasks(),
+    sequences: api.data.getSequences(), resources: api.data.getResources(), assignments: api.data.getAssignments(),
+  });
+  const opgeslagen = () => {
+    useAppStore.getState().newProject();
+    api.data.addTask({ name: 'Bewaard' });
+    useAppStore.setState((s) => { s.filePath = 'bewaard.ifc'; s.isDirty = false; s.autoSaveToFile = true; });
+  };
+
+  opgeslagen();
+  api.data.loadProject(lees());
+  eq('N3D-18 zelfde id ⇒ opslagdoel blijft, document is gewijzigd', [
+    useAppStore.getState().filePath, useAppStore.getState().isDirty,
+  ], ['bewaard.ifc', true]);
+  // Reviewproef probe-f F1: het laden zette AutoSave naar bestand stil uit. Mutatiebewijs: het
+  // herstel van `autoSaveToFile` weg ⇒ N3D-23 rood.
+  eq('N3D-23 zelfde id ⇒ AutoSave naar bestand blijft aan', useAppStore.getState().autoSaveToFile, true);
+
+  opgeslagen();
+  const ander = lees();
+  ander.project = { ...ander.project, id: 'nieuw-project-n3d-19' };
+  api.data.loadProject(ander);
+  eq('N3D-19 ander id ⇒ geen opslagdoel, document is gewijzigd', [
+    useAppStore.getState().filePath, useAppStore.getState().fileHandle, useAppStore.getState().siteFileId,
+    useAppStore.getState().isDirty,
+  ], [null, null, null, true]);
+  eq('N3D-23a ander id ⇒ geen AutoSave naar bestand (er is geen bestand)', useAppStore.getState().autoSaveToFile, false);
+}
+
+// ── 12. Backstage → Importeren opent een NIEUW document (review #329 fixronde 3 punt 2 en 4) ──────
+// Een importer opent een vreemd bestand en volgt dus de route van de ingebouwde formaten
+// (`openAsDocument`): een eigen tabblad, het actieve document ongemoeid (ook met niet-opgeslagen werk),
+// het nieuwe document actief, niet gewijzigd zoals na elke verse import, en zonder opslagdoel ook als
+// de bestandsnaam op IFC zou terugvallen. Mutatiebewijs: `openExtensionImport` via `loadState` over het
+// actieve document ⇒ N3D-24 rood; `saveTarget: false` weg ⇒ N3D-24a rood; Backstage terug naar
+// `loadState` ⇒ N3D-25 rood.
+{
+  const api = createExtensionApi('n3d-importer', [], undefined, appStoreContext, {
+    app: appStoreContext,
+    showNotification: () => {},
+  });
+  useAppStore.getState().newProject();
+  api.data.addTask({ name: 'Niet-opgeslagen werk' });
+  useAppStore.setState((s) => { s.filePath = 'eigen-project.ifc'; });
+  const voor = useAppStore.getState();
+  const oudDocument = voor.activeDocumentId;
+  const oudeTaken = voor.tasks.map((t) => t.name);
+  const aantalDocumenten = voor.documents.length;
+
+  const importResultaat = getExtensionSdk().factory.emptyImportResult();
+  importResultaat.project = { ...importResultaat.project, id: 'import-vreemd', name: 'Uit importer' };
+  importResultaat.tasks = [getExtensionSdk().factory.createTask({ name: 'Geïmporteerd' })];
+  openExtensionImport(useAppStore, importResultaat, 'planning.foo');
+
+  const na = useAppStore.getState();
+  const oud = na.documents.find((d) => d.id === oudDocument);
+  eq('N3D-24 importer ⇒ nieuw actief document; het actieve document met niet-opgeslagen werk blijft gelijk', [
+    na.documents.length, na.activeDocumentId !== oudDocument, na.project.id, na.tasks.map((t) => t.name),
+    oud?.payload?.tasks.map((t) => t.name), oud?.payload?.isDirty, oud?.payload?.filePath,
+  ], [aantalDocumenten + 1, true, 'import-vreemd', ['Geïmporteerd'], oudeTaken, true, 'eigen-project.ifc']);
+  eq('N3D-24a nieuw document zoals na een verse import: geen opslagdoel, niet gewijzigd', [
+    na.filePath, na.fileHandle, na.siteFileId, na.isDirty,
+  ], [null, null, null, false]);
+
+  const backstage = readFileSync(join(process.cwd(), 'src/components/backstage/Backstage.tsx'), 'utf8');
+  eq('N3D-25 Backstage → Importeren opent via importWithExtension, niet via loadState', [
+    /importWithExtension\(useAppStore, imp, file\)/.test(backstage),
+    /\bloadState\b/.test(backstage),
+  ], [true, false]);
+
+  // Mini-ronde 5: een importer die gooit, geeft een foutmelding in het meldingenkanaal, met de naam
+  // van de importer en de foutboodschap; het actieve document blijft gelijk. Mutatiebewijs: de
+  // `notify` in `importWithExtension` weg ⇒ N3D-26 rood.
+  const voorFout = useAppStore.getState();
+  const importFouten = (s: typeof voorFout) => s.ui.notifications.filter((n) => n.messageKey === 'notifications.extImportFailed');
+  const meldingenVoor = importFouten(voorFout).length;
+  const gelukt = await importWithExtension(useAppStore, {
+    name: 'Kapotte importer',
+    handler: async () => { throw new Error('Kolom "Start" ontbreekt'); },
+  }, new File(['x'], 'kapot.foo'));
+  const naFout = useAppStore.getState();
+  const melding = importFouten(naFout).at(-1);
+  eq('N3D-26 mislukte importer ⇒ foutmelding met naam en boodschap; document ongemoeid', [
+    gelukt, importFouten(naFout).length - meldingenVoor, melding?.severity, melding?.messageKey,
+    melding?.params, melding?.detail, naFout.activeDocumentId === voorFout.activeDocumentId,
+    naFout.documents.length === voorFout.documents.length,
+  ], [false, 1, 'error', 'notifications.extImportFailed', { name: 'Kapotte importer' }, 'Kolom "Start" ontbreekt', true, true]);
 }
 
 // ── Uitslag ──────────────────────────────────────────────────────────────────

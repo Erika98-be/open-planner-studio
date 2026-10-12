@@ -68,7 +68,7 @@ Pro Dateiformat: ob Sie es öffnen, speichern und exportieren können, was mitko
 
 **Was mitkommt** — PSP-Struktur und Vorgänge mit Dauer, Terminen und Fortschritt; Beziehungen mit Zeitabstand; Einschränkungen, auch eine zweite als weiche Einschränkung; Kalender; Ressourcen und Zuweisungen; das Statusdatum (als `DataDate`); eine benutzerdefinierte Vorgangsart in einem eigenen Feld, `OPS Custom Task Type`, das die App zurückliest und das P6 eventuell ignoriert.
 
-**Was nicht mitkommt** — Baselines und Stichtage; Aktivitätscodes, benutzerdefinierte Felder, Notizen und externe Beziehungen; die Berechnungsoptionen; eine Ausnahme im Arbeitskalender (eine Ausnahme, die einen Tag zu einem Arbeitstag macht). P6 kennt keinen Zeitabstand in Prozent. Die App rechnet ihn in eine feste Anzahl Tage um. Ein Zeitabstand in Kalendertagen wird ein Zeitabstand in Arbeitszeit: 3 Kalendertage werden 3 Arbeitstage. Ein Hammock wird zu einem normalen Vorgang. Ein manuell geplanter Vorgang wird zu einem normalen Vorgang mit berechneten Terminen. Eine Abgleichsverzögerung von weniger als einem Tag entfällt.
+**Was nicht mitkommt** — Baselines und Stichtage; Aktivitätscodes, benutzerdefinierte Felder, Notizen und externe Beziehungen; die Berechnungsoptionen. P6 kennt keinen Zeitabstand in Prozent. Die App rechnet ihn in eine feste Anzahl Tage um. Ein Zeitabstand in Kalendertagen wird ein Zeitabstand in Arbeitszeit: 3 Kalendertage werden 3 Arbeitstage. Ein Hammock wird zu einem normalen Vorgang. Ein manuell geplanter Vorgang wird zu einem normalen Vorgang mit berechneten Terminen. Eine Abgleichsverzögerung von weniger als einem Tag entfällt.
 
 ## Primavera-Datei (`.xer`)
 

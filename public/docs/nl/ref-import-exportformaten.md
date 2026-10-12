@@ -62,13 +62,21 @@ Per bestandsformaat: of je het kunt openen, opslaan en exporteren, wat er wel en
 
 **Openen** — ja. De app herkent een `.xml`-bestand als P6 XML aan het hoofdelement `APIBusinessObjects`. Rekenprofiel: *Open Planner Studio*.
 
+**Meerdere projecten in één bestand.** Elk project met activiteiten opent in een eigen tabblad, met de naam *Projectnaam (Project-ID)*. Een project zonder activiteiten slaat de app over. Het actieve tabblad is het project met de meeste activiteiten. Een relatie naar een ander project neemt de app niet mee, en ook geen activiteit die bij geen project hoort. Na het openen meldt de app hoeveel projecten ze opende.
+
+**Baselines.** Een `<BaselineProject>` in het bestand wordt een baseline van zijn project. De baseline die P6 als actief aanwijst, is ook in de app actief.
+
+**Geen leesbare activiteiten.** Vindt de app geen activiteit die ze kan lezen, dan opent ze geen tabblad. Ze meldt dat, met de reden als die bekend is. Voorbeelden: activiteiten zonder `ObjectId`, of XER-kolomnamen in een XML-bestand. Exporteer het project dan opnieuw uit P6 als P6 XML, of open het als `.xer`.
+
 **Opslaan** — nee.
 
 **Exporteren** — ja, als *Primavera P6 XML* (*Voor Oracle Primavera P6.*). Standaardnaam: de projectnaam met `.xml`, dus dezelfde naam als een MS Project XML-export: geef ze zelf een verschillende naam.
 
+**Projectnaam en project-ID.** Eindigt de projectnaam op een code tussen haakjes zonder spatie, zoals *Kantoor (OZB-05)*, dan wordt *OZB-05* het project-ID in P6 en *Kantoor* de naam. Zo komt een project uit P6 na heropenen met dezelfde naam terug. Tekst met een spatie, zoals *Nieuwbouw (fase 2)*, blijft in de naam. Zonder code krijgt het project een eigen, uniek ID van de app, dat begint met *OPS:*.
+
 **Wat meegaat** — WBS-structuur en taken met duur, datums en voortgang; relaties met lag; constraints (ook een tweede, als zachte constraint); kalenders; resources en toewijzingen; de statusdatum (als `DataDate`); een eigen taaktype, in een eigen veld `OPS Custom Task Type` dat de app terugleest en dat P6 mag negeren.
 
-**Wat niet meegaat** — baselines en deadlines; activiteitcodes, eigen velden, aantekeningen en externe koppelingen; de reken-opties; een werkende kalenderuitzondering (een uitzondering die van een dag een werkdag maakt). P6 kent geen lag in procenten: de app rekent die om naar een vast aantal dagen. Een lag in kalenderdagen wordt een lag in werktijd: 3 kalenderdagen worden 3 werkdagen. Een hammock wordt een gewone taak, een handmatig geplande taak een gewone taak met berekende datums en een nivelleervertraging van minder dan een dag valt weg.
+**Wat niet meegaat** — baselines en deadlines; activiteitcodes, eigen velden, aantekeningen en externe koppelingen; de reken-opties; de namen van feestdagen. P6 kent per vrije dag geen naam: na heropenen heet een feestdag *Holiday* en een werkende uitzondering *Working exception*. Aansluitende vrije dagen komen terug als één reeks. Een naam of code die langer is dan P6 toestaat, kort de app in: een activiteitnaam tot 120 tekens, een activiteit-ID of WBS-code tot 40, een WBS- of projectnaam tot 100. Ze meldt hoeveel namen en codes ze inkortte. P6 kent geen lag in procenten: de app rekent die om naar een vast aantal dagen. Een lag in kalenderdagen wordt een lag in werktijd: 3 kalenderdagen worden 3 werkdagen. Een hammock wordt een gewone taak, een handmatig geplande taak een gewone taak met berekende datums en een nivelleervertraging van minder dan een dag valt weg.
 
 ## Primavera-bestand (`.xer`)
 

@@ -119,7 +119,10 @@ toevoegingen vallen onder dezelfde minor `1.2`. `1.3.0` — taaktypes (#170): `E
 `ExtProject.defaultWorkRule` en de drie optionele werkvelden op de toewijzing
 (`plannedWorkMinutes`/`actualWorkMinutes`/`remainingWorkMinutes`). `1.4.0` — Help & begeleiding: de
 permissie `help` en `api.help.*` (Help-artikelen registreren, meegeleverd projectbestand openen,
-begeleidingspaneel), plus de generieke ankers in het lint (zie *Help & begeleiding*).
+begeleidingspaneel), plus de generieke ankers in het lint (zie *Help & begeleiding*). `1.4.1` — patch,
+geen contractwijziging: `loadProject` met hetzelfde project-id houdt de projectdata vast die het
+resultaat niet kan dragen, een ander id krijgt geen opslagdoel, en na elke load is het document
+gewijzigd; een importer-resultaat opent als nieuw document (zie *API-overzicht*).
 
 > **Migratie (audit P16):**
 > - De permissie `commands` is verwijderd — die had nooit een API-oppervlak. Een nieuwe installatie met een manifest dat haar (of een andere onbekende waarde) noemt, wordt geweigerd. Alleen al opgeslagen legacy-installaties blijven werken: daar worden onbekende permissies weggefilterd met een waarschuwing.
@@ -271,6 +274,45 @@ negeert een `resourceIds` die gelijk is aan de huidige waarde (bijvoorbeeld een 
 fout** vóór er iets gewijzigd is — ook de overige velden uit dezelfde aanroep worden dan niet toegepast.
 Toewijzingen zet een extensie mee via `loadProject(result)` (`result.assignments`); losse
 toewijzingsmutaties kent de API niet.
+
+Laad je zo hetzelfde project terug (lees met `getProject()` en de andere getters, wijzig, laad), dan
+blijft de projectdata staan die `ExtImportResult` niet kan dragen. Dat geldt alleen als
+`result.project.id` gelijk is aan het id van het actieve project:
+
+- het rekenprofiel en alle reken-opties (zie *Rekenprofiel* hieronder);
+- de baselines en de actieve baseline;
+- de resourcekalenders. De projectkalender volgt `result.calendar`, met de bronvelden van de
+  documentkalender erover (`p6Source`, de P6-strafdagen en de feestdaggeneratie). Heeft
+  `result.calendar` een ander id en laat je `project.calendarId` staan, dan wordt die kalender de
+  projectkalender. Wissel je via `project.calendarId`, dan telt die keuze. In beide gevallen blijft de
+  oude kalender bestaan;
+- de activiteitcodes en de eigen velden (de definities; de waarden op taken stuur je zelf mee);
+- de eigen taaktypes die je niet meestuurt (bij dezelfde id of naam wint jouw versie);
+- de IFC-GlobalIds, zodat objecten bij opslaan hun identiteit houden;
+- de P6-bronvelden op taken en relaties met hetzelfde id (`p6*`, alleen-lezen), zodat een P6-project
+  na een ongewijzigde load precies hetzelfde rekent.
+
+Wijst een resource of taak dan naar een kalender die niet bestaat, dan valt die terug op de
+projectkalender. Het opslagdoel en AutoSave naar bestand blijven, en het document staat daarna op
+"gewijzigd".
+
+Bij een ander id is het een nieuw project: deze velden zijn dan leeg en het project rekent als OPS.
+Het krijgt geen opslagdoel, zodat opslaan om een nieuwe plek vraagt en het bestand van het vorige
+project niet overschrijft. Ook dan staat het document op "gewijzigd", zodat sluiten waarschuwt. Bij
+elk id gaan de XER-bron, de koppeling met een resourcebibliotheek, de markering "onbewerkte import"
+en de undo-geschiedenis van het document weg.
+
+Een importer (Bestand → Importeren) werkt anders: die opent een vreemd bestand. Zijn resultaat opent
+daarom als nieuw document in een eigen tabblad, net als de ingebouwde formaten, en wordt het actieve
+document. Het document dat open stond, blijft ongemoeid, ook met niet-opgeslagen werk; er komt dus
+geen vraag. Het nieuwe document rekent als OPS, staat niet op "gewijzigd" (zoals na elke import) en
+heeft geen opslagdoel: opslaan vraagt om een plek. Gooit de handler van de importer een fout, dan
+ziet de gebruiker een foutmelding met de naam van de importer en jouw foutboodschap; er opent dan niets.
+
+Het id is het enige signaal. Twee documenten van hetzelfde project delen hetzelfde id, en een
+extensie die een "nieuw" project bouwt vanuit `{ ...getProject() }` houdt dus het id én de data van
+het actieve document. Bouw je een nieuw project, geef het dan een nieuw id (bijvoorbeeld
+`crypto.randomUUID()`).
 
 Belangrijk: na het muteren van taken/relaties zelf `api.data.recalculate()` aanroepen — het schema wordt niet reactief herberekend. `loadProject()` doet dat automatisch.
 
@@ -479,8 +521,18 @@ module.exports = {
 `data.getProject()` levert sinds contractversie `1.2.0` het veld `schedulingProfile`: het rekenprofiel
 van het project (`id`, `baseId` ∈ `p6`/`msproject`/`ops`, `name` — leeg bij een ingebouwd profiel —
 en `conventions`, de opgeloste conventies — sinds X12 brok 2 zevenentwintig). Het veld is **alleen-lezen**: de app neemt het
-nooit over uit wat een extensie teruggeeft. Een importer-resultaat van een extensie opent daarom altijd
-als OPS; het profiel kiest de gebruiker in Bestand → Projectinfo.
+nooit over uit wat een extensie teruggeeft. Het profiel kiest de gebruiker in Bestand → Projectinfo.
+
+Wat `loadProject(result)` met het profiel doet, hangt af van `result.project.id`:
+
+- **Zelfde id als het actieve project** (lees-wijzig-laad): het profiel van het project blijft staan.
+  Ook de reken-opties die niet in `ExtSchedulingOptions` staan (bijvoorbeeld de P6-opties uit een
+  XER-bestand en de nivelleerinstellingen) blijven staan. Een publieke optie die je wijzigt of weghaalt,
+  volgt jouw waarde; een publieke optie die je ongewijzigd terugstuurt, blijft zoals hij was.
+- **Ander id** (een nieuw project, ook een importer-resultaat): het project rekent als OPS, met alleen
+  de publieke opties uit `result.project.schedulingOptions`.
+
+Een `schedulingProfile` in `result.project` negeert de app in beide gevallen.
 
 ### Read-only XER-bronroute (permissie `importSource`, `apiVersion` ≥ 1.1)
 

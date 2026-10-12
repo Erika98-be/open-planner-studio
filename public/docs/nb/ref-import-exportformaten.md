@@ -68,7 +68,7 @@ Per filformat: om du kan åpne, lagre og eksportere det, hva som følger med og 
 
 **Hva følger med** — WBS-struktur og aktiviteter med varighet, datoer og fremdrift; avhengigheter med forsinkelse; begrensninger (også en andre, som en myk begrensning); kalendere; ressurser og tilordninger; statusdatoen (som `DataDate`); en egen aktivitetstype, i et separat felt, `OPS Custom Task Type`, som appen leser tilbake, og som P6 kan ignorere.
 
-**Hva følger ikke med** — grunnlinjer og tidsfrister; aktivitetskoder, egendefinerte felt, notater og koblinger mellom prosjekter; beregningsalternativene; et unntak i arbeidskalenderen (et unntak som gjør en dag til arbeidsdag). P6 har ingen forsinkelse i prosent: appen gjør den om til et fast antall dager. En forsinkelse i kalenderdager blir en forsinkelse i arbeidstid: 3 kalenderdager blir 3 arbeidsdager. En hengekøye blir en vanlig aktivitet. En manuelt planlagt aktivitet blir en vanlig aktivitet med beregnede datoer. En utjevningsforsinkelse på mindre enn en dag faller bort.
+**Hva følger ikke med** — grunnlinjer og tidsfrister; aktivitetskoder, egendefinerte felt, notater og koblinger mellom prosjekter; beregningsalternativene. P6 har ingen forsinkelse i prosent: appen gjør den om til et fast antall dager. En forsinkelse i kalenderdager blir en forsinkelse i arbeidstid: 3 kalenderdager blir 3 arbeidsdager. En hengekøye blir en vanlig aktivitet. En manuelt planlagt aktivitet blir en vanlig aktivitet med beregnede datoer. En utjevningsforsinkelse på mindre enn en dag faller bort.
 
 ## Primavera-fil (`.xer`)
 

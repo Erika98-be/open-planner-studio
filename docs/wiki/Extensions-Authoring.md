@@ -23,13 +23,15 @@ block. Extensions are entirely frontend; there is no Rust involved.
 Categories: `Import/Export`, `Planning`, `Reporting`, `Utility`, `Fonts`, `Other`.
 
 The optional `apiVersion` field names the extension contract version the extension was built against
-(current: `1.4.0`, readable via `require('open-planner-studio').apiVersion`). History: `1.1.0` —
+(current: `1.4.1`, readable via `require('open-planner-studio').apiVersion`). History: `1.1.0` —
 read-only XER source route (`data.getImportSource*`); `1.2.0` — calculation profile
 (`ExtProject.schedulingProfile`) + `getImportSourceIssue()`; `1.3.0` — task types (`ExtTask.workRule`,
 `ExtProject.defaultWorkRule` and the optional work fields `plannedWorkMinutes`/`actualWorkMinutes`/
 `remainingWorkMinutes` on an assignment); `1.4.0` — Help & guidance: the `help` permission and
 `api.help.*` (register Help articles, open a bundled project file, guide panel) plus the generic
-ribbon anchors.
+ribbon anchors; `1.4.1` — patch, no contract change: `loadProject` with the same project id keeps the
+project data that the result cannot carry, a different id gets no save target, and the document is
+marked as changed after every load; an importer result opens as a new document.
 
 ### Permissions
 
@@ -107,6 +109,43 @@ per ten seconds — the rest only goes to the debug log. Every call is also writ
 
 Important: after mutating tasks or relations yourself, call `api.data.recalculate()` — the schedule is
 not recalculated reactively. `loadProject()` does this automatically.
+
+`loadProject(result)` never takes a scheduling profile from the extension. If `result.project.id` equals
+the id of the active project (read, change, load), the project keeps the data that `ExtImportResult`
+cannot carry:
+
+- its scheduling profile and all its scheduling options, including the options that
+  `ExtSchedulingOptions` does not expose (a public option that you change or remove follows your value);
+- its baselines and the active baseline;
+- its resource calendars. The project calendar follows `result.calendar`, with the source fields of
+  the document calendar on top (`p6Source`, the P6 penalty dates and the holiday generation). If
+  `result.calendar` has a different id and you leave `project.calendarId` unchanged, that calendar
+  becomes the project calendar. If you switch via `project.calendarId`, that choice counts. In both
+  cases the old calendar stays;
+- its activity code types and custom field definitions (you send the values on tasks yourself);
+- the custom task types that you do not send (on the same id or name, your version wins);
+- its IFC GlobalIds;
+- the read-only P6 source fields (`p6*`) on tasks and relationships with the same id, so a P6 project
+  calculates exactly the same after an unchanged load.
+
+A resource or task that points to a calendar that does not exist then falls back to the project
+calendar. The save target and AutoSave to file stay, and the document is marked as changed.
+
+A different id is a new project: it calculates as OPS and these fields are empty. It gets no save
+target, so saving asks for a new location instead of overwriting the previous project's file, and it
+is marked as changed, so closing warns. With any id, the XER source, the resource library link, the
+"unedited import" marker and the document's undo history are removed.
+
+An importer (File → Import) works differently: it opens a foreign file. Its result therefore opens as
+a new document in its own tab, like the built-in formats, and becomes the active document. The
+document that was open stays untouched, also with unsaved work, so there is no question. The new
+document calculates as OPS, is not marked as changed (as after every import) and has no save target:
+saving asks for a location. If the importer's handler throws, the user sees an error notification with
+the importer's name and your error message; nothing opens.
+
+The id is the only signal. Two documents of the same project share the same id, and an extension that
+builds a "new" project from `{ ...getProject() }` keeps the id and the data of the active document.
+When you build a new project, give it a new id (for example `crypto.randomUUID()`).
 
 ### Binary assets & font providers
 

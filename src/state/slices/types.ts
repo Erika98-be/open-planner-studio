@@ -179,6 +179,9 @@ export type NotificationMessageKey =
   | 'notifications.openFailed'
   | 'notifications.extGuideCallbackFailed'
   | 'notifications.extHelpProjectOpenFailed'
+  // Een extensie-importer (Backstage → Importeren) gooide een fout. Parameter `name` (de naam van de
+  // importer zoals op de kaart); `detail` is de foutboodschap. Zie `importWithExtension`.
+  | 'notifications.extImportFailed'
   // `api.ui.showNotification` van een extensie — zie `src/extensions/extensionNotifications.ts`.
   // Parameters `name` (extensienaam) en `message` (onvertaalde extensietekst, als platte tekst).
   | 'notifications.extensionMessage'
@@ -268,6 +271,12 @@ export type NotificationMessageKey =
   // projecten — zie `xerImportNotice`/`applyOpenedImport`).
   | 'notifications.xerImportDatesAsRecorded'
   | 'notifications.xerImportDatesAsRecordedOffer'
+  | 'notifications.p6xmlImportEmpty'
+  | 'notifications.p6xmlImportEmptyNoObjectIds'
+  | 'notifications.p6xmlImportEmptyXerColumns'
+  | 'notifications.p6xmlImportOpened'
+  | 'notifications.p6xmlImportCrossProjectRelations'
+  | 'notifications.p6xmlImportUnassignedActivities'
   // Dezelfde twee regels, formaatneutraal,
   // voor P6 XML/MSPDI/.mpp/CSV/IFC — één melding per geopend bestand (`applyOpenedImport`).
   | 'notifications.importDatesAsRecorded'
@@ -286,6 +295,12 @@ export type NotificationMessageKey =
   // telling "N taken verschoven" na een profielwissel (`count`).
   | 'notifications.schedulingProfileApplied'
   | 'notifications.schedulingProfileShifted'
+  // Eigen rekenprofielen als sjabloon (critreview #169, B9): opgeslagen (param `name`), de limiet
+  // (`max`), en een opslag die mislukt (quota of geen opslag) bij opslaan of verwijderen.
+  | 'notifications.schedulingTemplateSaved'
+  | 'notifications.schedulingTemplateLimit'
+  | 'notifications.schedulingTemplateStorageFailed'
+  | 'notifications.schedulingTemplateDeleteFailed'
   // Het geladen bestand draagt taaktypedata terwijl "Toon taaktypes"
   // uit staat — de werkregel-UI is voor dit document ontsloten; zie `src/state/taskTypesNotice.ts`.
   | 'notifications.taskTypesUnlocked'
@@ -297,6 +312,7 @@ export type NotificationMessageKey =
   // Onderbroken taken zonder urenverdeling verliezen hun onderbrekingen bij een
   // MSPDI-/P6-export — zie `fileSlice.ts`s `exportSplitsLostNotice`. Meervoud, `count`.
   | 'notifications.exportSplitsLost'
+  | 'notifications.exportP6Truncated'
   // Een onbruikbaar XER-bronarchief is bij het
   // openen weggelaten — zie `src/state/xerArchiveIssueNotice.ts`. Bewust geen meervoud (ook bij
   // crashherstel van meerdere documenten één zin); `xerArchiveUnusableLine` is de kopregel wanneer

@@ -68,7 +68,7 @@ Por formato de ficheiro: se pode abrir, guardar e exportar, o que é e o que nã
 
 **O que é incluído** — estrutura WBS e tarefas com duração, datas e progresso; relações com desfasamento; restrições (também uma segunda, como restrição flexível); calendários; recursos e atribuições; a data de estado (como `DataDate`); um tipo de tarefa personalizado, num campo próprio, `OPS Custom Task Type`, que a aplicação volta a ler e que o P6 pode ignorar.
 
-**O que não é incluído** — linhas de base e prazos; códigos de atividade, campos personalizados, notas e relações externas; as opções de cálculo; uma exceção ao calendário de trabalho (uma exceção que torna um dia um dia útil). O P6 não tem desfasamento em percentagem: a aplicação converte-o num número fixo de dias. Um desfasamento em dias de calendário passa a ser um desfasamento em tempo de trabalho: 3 dias de calendário passam a ser 3 dias úteis. Uma hammock passa a ser uma tarefa normal, uma tarefa agendada manualmente passa a ser uma tarefa normal com datas calculadas, e um atraso de nivelamento inferior a um dia é eliminado.
+**O que não é incluído** — linhas de base e prazos; códigos de atividade, campos personalizados, notas e relações externas; as opções de cálculo. O P6 não tem desfasamento em percentagem: a aplicação converte-o num número fixo de dias. Um desfasamento em dias de calendário passa a ser um desfasamento em tempo de trabalho: 3 dias de calendário passam a ser 3 dias úteis. Uma hammock passa a ser uma tarefa normal, uma tarefa agendada manualmente passa a ser uma tarefa normal com datas calculadas, e um atraso de nivelamento inferior a um dia é eliminado.
 
 ## Ficheiro Primavera (`.xer`)
 

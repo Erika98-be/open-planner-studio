@@ -15,6 +15,7 @@
     "openFailed": "Failed to open file",
     "extGuideCallbackFailed": "A step from the extension {{name}} failed. The guide continues.",
     "extHelpProjectOpenFailed": "The project file {{file}} from the extension {{name}} could not be opened.",
+    "extImportFailed": "Importing with {{name}} failed.",
     "extensionMessage": "Extension {{name}}: {{message}}",
     "xerInvalidInput": "XER import requires the original file bytes.",
     "xerInvalidFile": "This is not a valid or supported XER file.",
@@ -99,6 +100,8 @@
     "mppSourceScheduleNotes_other": "This MS Project file contains {{count}} tasks with a split, leveled, or resource-driven schedule. They are imported and shown as such.",
     "exportSplitsLost_one": "{{count}} task with breaks was exported without its breaks: MS Project/P6 only know breaks as a work distribution.",
     "exportSplitsLost_other": "{{count}} tasks with breaks were exported without their breaks: MS Project/P6 only know breaks as a work distribution.",
+    "exportP6Truncated_one": "{{count}} name or code was shortened to the length P6 allows.",
+    "exportP6Truncated_other": "{{count}} names or codes were shortened to the length P6 allows.",
     "projectStartAnchorsClamped_one": "Project start moved: {{count}} task anchor without a predecessor or constraint was shifted to the new start date.",
     "projectStartAnchorsClamped_other": "Project start moved: {{count}} task anchors without a predecessor or constraint were shifted to the new start date.",
     "mppTimephasedSteeringLost_one": "MS Project's date window no longer drives {{count}} task after this edit; the hour distribution itself still applies and stays in the file.",
@@ -137,6 +140,10 @@
     "phaseRefusedNoAssignableChild": "'{{phase}}' cannot become a summary task: its assignments have nowhere to go, because none of the new subtasks can carry assignments (a milestone or summary task). Nothing was changed.",
     "phaseRefusedDuplicateResource": "'{{phase}}' cannot become a summary task: the assignment of {{resource}} cannot move to the new subtask '{{child}}', because it already has {{resource}}. Nothing was changed.",
     "schedulingProfileApplied": "This project calculates as {{profile}}. Change it via File → Project info → Calculation profile and options.",
+    "schedulingTemplateSaved": "Template “{{name}}” saved.",
+    "schedulingTemplateLimit": "Template not saved: there are already {{max}} templates. Delete a template first.",
+    "schedulingTemplateStorageFailed": "Template not saved: the app storage is full or not available.",
+    "schedulingTemplateDeleteFailed": "Template not deleted: the app storage is full or not available.",
     "schedulingProfileShifted_one": "After applying, {{count}} task moved.",
     "schedulingProfileShifted_other": "After applying, {{count}} tasks moved.",
     "actions": {
@@ -155,7 +162,16 @@
     "statusDateSetToday": "There was no status date yet: it is now set to today ({{date}}), because progress is measured up to the status date. You can change it under Planning → Status date.",
     "durationBelowDoneWork": "‘{{name}}’ is already {{percent}}% done: a duration shorter than the work already done isn't possible. The duration was not changed.",
     "tutorialOfferLater": "You can always find the tutorials in Help › Tutorials.",
-    "tutorialOfferUnavailable": "The tutorials could not be installed or started right now. You can try again later in Help › Tutorials."
+    "tutorialOfferUnavailable": "The tutorials could not be installed or started right now. You can try again later in Help › Tutorials.",
+    "p6xmlImportEmpty": "This file contains no activities the app can read.",
+    "p6xmlImportEmptyNoObjectIds": "The activities have no ObjectId, so the app cannot link them. This is not standard Primavera P6 XML.",
+    "p6xmlImportEmptyXerColumns": "The file uses XER column names (such as task_code) instead of P6 XML fields. Open the .xer file itself.",
+    "p6xmlImportOpened_one": "P6 XML file opened: {{count}} project document.",
+    "p6xmlImportOpened_other": "P6 XML file opened: {{count}} project documents.",
+    "p6xmlImportCrossProjectRelations_one": "{{count}} relationship between projects was not imported as a relationship.",
+    "p6xmlImportCrossProjectRelations_other": "{{count}} relationships between projects were not imported as relationships.",
+    "p6xmlImportUnassignedActivities_one": "{{count}} activity without a project was not read.",
+    "p6xmlImportUnassignedActivities_other": "{{count}} activities without a project were not read."
   },
   "scheduleErrors": {
     "cycle": "Circular dependency between tasks: {{path}}",
@@ -1273,7 +1289,7 @@
     },
     "p6ZeroDurationUsesPlannedBoundary": {
       "label": "Milestone follows the planned calendar boundary",
-      "help": "A zero-duration milestone stays on the calendar boundary the file planned: a day start stays a start milestone, a band end may land on the predecessor's finish."
+      "help": "A zero-duration milestone stays on the calendar boundary the file planned: a day start stays a start milestone, a working-block end may land on the predecessor's finish."
     },
     "p6UseTaskPlannedStartFloor": {
       "label": "Planned start as an extra floor",
@@ -1281,11 +1297,11 @@
     },
     "p6FinishMilestoneBoundaryWindow": {
       "label": "Finish milestone as a boundary window",
-      "help": "A finish milestone may sit on two adjacent calendar boundaries: early start at the start of a band, early finish at the end of the previous band."
+      "help": "A finish milestone may sit on two adjacent calendar boundaries: early start at the start of a working block, early finish at the end of the previous working block."
     },
     "p6PreserveActualInstants": {
       "label": "Keep actual dates exact",
-      "help": "Recorded actual start and finish dates are not moved to a working-time band."
+      "help": "Recorded actual start and finish dates are not moved to the edge of a working block."
     },
     "p6UseRemainingStartForProgress": {
       "label": "In-progress task: early start = start of remaining work",
@@ -1293,7 +1309,7 @@
     },
     "p6PreserveZeroDurationConstraintInstants": {
       "label": "Exact constraint moment on a milestone",
-      "help": "A date-and-time constraint on a zero-duration milestone is an exact point, also at the start of a working band."
+      "help": "A date-and-time constraint on a zero-duration milestone is an exact point, also at the start of a working block."
     },
     "resumeFromActualElapsed": {
       "label": "Remaining work resumes after the elapsed duration",
@@ -1305,23 +1321,23 @@
     },
     "p6RelationFinishBoundary": {
       "label": "Successor starts on the finish boundary",
-      "help": "For a finish-to-start relation without lag on a shared band boundary, the successor starts at the predecessor's finish (only relations the file marks this way). Calculating backward, the successor shows its late start simply as the start of a work band."
+      "help": "For a finish-to-start relationship without lag where the file has the successor start exactly at the predecessor's finish, at the end of a working block, the successor starts at that finish rather than at the start of the next working block. The file does not mark this: the app recognises such a relationship itself when it opens a .xer file. A relationship you add yourself is not covered. Calculating backward, the successor shows its late start simply as the start of a working block."
     },
     "p6BackwardLagFinishBoundary": {
       "label": "Backward lag from a finish boundary",
-      "help": "When the backward pass subtracts a working-time lag from a finish boundary and lands exactly on a band start, it lands on the previous finish boundary. With a finish-to-finish relationship without lag, a late finish on a band end also stays on that finish boundary."
+      "help": "When the backward pass subtracts a working-time lag from a finish boundary and lands exactly on the start of a working block, it lands on the previous finish boundary. With a finish-to-finish relationship without lag, a late finish on a working-block end also stays on that finish boundary."
     },
     "p6CompletedDataDateWindow": {
       "label": "Completed task in the data-date window",
-      "help": "A completed task gets early dates in the data-date window, and its finish counts toward the project finish (only tasks with P6 provenance)."
+      "help": "A completed task gets early dates in the data-date window, and its finish counts toward the project finish."
     },
     "p6CompletedLoeActualFinish": {
       "label": "Completed LOE via its actual finish",
-      "help": "A completed level-of-effort activity with only a start-to-start input follows the route through its actual finish (only tasks with P6 provenance)."
+      "help": "A completed level-of-effort activity with only a start-to-start input follows the route through its actual finish."
     },
     "p6OpenLoeTargetSpan": {
       "label": "Unstarted LOE uses the target window",
-      "help": "A level-of-effort activity that has not started takes its target window as its span (only tasks with P6 provenance)."
+      "help": "A level-of-effort activity that has not started takes its target window as its span."
     },
     "p6CompletedPredecessorAtDataDate": {
       "label": "Completed predecessor does not hold past the data date",
@@ -1337,7 +1353,7 @@
     },
     "p6CompletedOutOfSequenceWindow": {
       "label": "Completed out-of-sequence task waits for its predecessors",
-      "help": "A completed task whose predecessor is not yet finished gets its zero window after that predecessor instead of at the data date (Retained Logic)."
+      "help": "A completed task whose predecessor is not yet finished gets its zero window after that predecessor instead of at the data date (Retained Logic). Only works when ‘Completed task in the data-date window’ and ‘In-progress task: early start = start of remaining work’ are also on."
     },
     "p6CompletedPhysicalAtDataDate": {
       "label": "Completed physical-progress task sits at the data date",
@@ -1369,7 +1385,7 @@
     },
     "p6AlapPositionedFromSuccessors": {
       "label": "ALAP tasks as late as the successors allow",
-      "help": "An unstarted task with the 'as late as possible' constraint finishes at the minute its successors need it, successors first, so a chain closes up. Its own planned start does not count; a task without a predecessor then starts no earlier than the status date. Applies only on an hourly calendar."
+      "help": "An unstarted task with the 'as late as possible' constraint finishes at the minute its successors need it, successors first, so a chain closes up. Its own planned start does not count; a task without a predecessor then starts no earlier than the status date."
     }
   },
   "profiles": {
@@ -1391,6 +1407,7 @@
     "updateTemplate": "Update template from this project",
     "applyTemplate": "Update from template",
     "deleteTemplate": "Delete template",
+    "deleteTemplateConfirm": "Delete template “{{name}}”? Projects with this profile keep their own copy.",
     "templateDeviates": "This profile differs from the template “{{name}}”.",
     "applyDefaultOptions": "Apply this profile's default options",
     "themes": {
@@ -1408,6 +1425,7 @@
     "on": "on",
     "off": "off",
     "resetToBase": "back to base",
+    "storeChangedUnderDraft": "The project's calculation profile changed in the meantime, for example through Undo. Below is still your own choice. {{apply}} puts that choice back into the project.",
     "showHelp": "Explanation of “{{name}}”",
     "sourceOptions": {
       "title": "Settings from the source file",
@@ -1416,6 +1434,11 @@
       "useProjectEndDateForFloat": "Calculate float up to the project finish date",
       "p6CompletedLateFromRemainingWindow": "Completed task: late dates from the data date",
       "needsConvention": "Only works together with the convention “{{convention}}”, which is currently off."
+    },
+    "requires": {
+      "xerOrigin": ".xer tasks only",
+      "hourPlanning": "hour planning only",
+      "hourPlanningTitle": "Only works with hour planning: a calendar with working blocks, a task in hours, or the lag calendar set to 24-hour."
     }
   },
   "dialogHelp": {

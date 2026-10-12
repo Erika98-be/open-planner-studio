@@ -68,7 +68,7 @@ Per filformat: om du kan öppna, spara och exportera det, vad som följer med oc
 
 **Vad följer med** — WBS-struktur och uppgifter med varaktighet, datum och framdrift; samband med fördröjning; restriktioner (även en andra, som mjuk restriktion); kalendrar; resurser och tilldelningar; rapportdatumet (som `DataDate`); en egen uppgiftstyp, i ett eget fält, `OPS Custom Task Type`, som appen läser tillbaka och som P6 kan ignorera.
 
-**Vad följer inte med** — baslinjer och måldatum; uppgiftskoder, egna fält, anteckningar och externa samband; beräkningsalternativen; ett undantag i arbetskalendern (ett undantag som gör en dag till en arbetsdag). P6 har ingen fördröjning i procent: appen omvandlar den till ett fast antal dagar. En fördröjning i kalenderdagar blir en fördröjning i arbetstid: 3 kalenderdagar blir 3 arbetsdagar. En hängmatta blir en vanlig uppgift, en manuellt schemalagd uppgift blir en vanlig uppgift med beräknade datum, och en förskjutning pga utjämning på mindre än en dag tas bort.
+**Vad följer inte med** — baslinjer och måldatum; uppgiftskoder, egna fält, anteckningar och externa samband; beräkningsalternativen. P6 har ingen fördröjning i procent: appen omvandlar den till ett fast antal dagar. En fördröjning i kalenderdagar blir en fördröjning i arbetstid: 3 kalenderdagar blir 3 arbetsdagar. En hängmatta blir en vanlig uppgift, en manuellt schemalagd uppgift blir en vanlig uppgift med beräknade datum, och en förskjutning pga utjämning på mindre än en dag tas bort.
 
 ## Primavera-fil (`.xer`)
 
