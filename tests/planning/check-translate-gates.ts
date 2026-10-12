@@ -11,7 +11,7 @@ import { checkPackage, checkUi, formatResult } from '../../scripts/translate/gat
 import { sharesStem, validateLangTermbase } from '../../scripts/translate/termbase';
 import type { UiPackage } from '../../scripts/translate/ui';
 import type { TermsPackage } from '../../scripts/translate/tbx';
-import type { Concept } from '../../scripts/translate/common';
+import { countToken, type Concept } from '../../scripts/translate/common';
 
 let checks = 0;
 const diffs: string[] = [];
@@ -219,6 +219,11 @@ const has = (errs: string[], part: string) => errs.some(e => e.includes(part));
   }, concepts).errors;
   ok('termbase: avoid mag geen term van een ander concept zijn', has(clash, 'avoid "Basisplan" is een term van baseline'));
 }
+
+// ── 9. Tokens en namen als los woord ───────────────────────────────────────────────────────
+eq('9a ko-partikel aan een Latijnse naam telt', countToken('*Microsoft Project에서 열 수 있습니다.*', 'Microsoft Project'), 1);
+eq('9b Latijnse letter erachter telt niet', countToken('FSx en FS', 'FS'), 1);
+eq('9c Cyrillisch en cijfer blijven grenzen bij een Cyrillische naam', countToken('ГантаX Ганта Ганта1', 'Ганта'), 1);
 
 if (diffs.length === 0) {
   console.log(`OK  translate-gates: alle checks groen (${checks})`);

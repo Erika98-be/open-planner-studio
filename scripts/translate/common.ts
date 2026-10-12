@@ -218,7 +218,10 @@ export const findAvoid = (text: string, forms: string[], avoid: string[]): strin
 
 /** Aantal keer dat een token (hoofdlettergevoelig, los woord) in de tekst staat. */
 export function countToken(text: string, token: string): number {
-  const re = new RegExp(`(?<![\\p{L}\\p{N}])${escapeRe(token)}(?![\\p{L}\\p{N}])`, 'gu');
+  // Een grens telt alleen tegen letters van hetzelfde schrift: ko "Microsoft Project에서" (partikel eraan vast)
+  // bevat de naam, "FSx" niet.
+  const edge = (c: string) => /\p{Script=Latin}/u.test(c) ? '\\p{Script=Latin}\\p{N}' : '\\p{L}\\p{N}';
+  const re = new RegExp(`(?<![${edge(token[0] ?? '')}])${escapeRe(token)}(?![${edge(token.at(-1) ?? '')}])`, 'gu');
   return (text.match(re) ?? []).length;
 }
 
