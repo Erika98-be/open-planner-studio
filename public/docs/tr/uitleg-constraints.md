@@ -1,6 +1,6 @@
 # Kısıtlamalar ve son tarihler
 
-Tuğlalar yalnızca 21 Haziran'da teslim edilir. İzin henüz gelmedi. Çatı, inşaat tatilinden önce kapatılmalıdır. İlişkiler, bir görevin başka bir görevi beklediğini kaydeder. Ama bir tarih hakkındaki anlaşmalar, görevlerin sırasından çıkmaz. Kısıtlamalar ve son tarihler bunun içindir. Bu makalede her türün ne yaptığını okursunuz: bir görev ne zaman taşınır, ne zaman yalnızca bolluk değişir, sert sabitleme nedir ve uygulama bir çakışmayı nasıl bildirir.
+Tuğlalar yalnızca 21 Haziran'da teslim edilir. Ruhsat henüz çıkmadı. Çatı, inşaat tatilinden önce kapatılmalıdır. İlişkiler, bir görevin başka bir görevi beklediğini kaydeder. Ama bir tarih hakkındaki anlaşmalar, görevlerin sırasından çıkmaz. Kısıtlamalar ve son tarihler bunun içindir. Bu makalede her türün ne yaptığını okursunuz: bir görev ne zaman taşınır, ne zaman yalnızca bolluk değişir, sert sabitleme nedir ve uygulama bir çakışmayı nasıl bildirir.
 
 Kurallar ve örnekler yeni bir projeye uygulanır. Hesaplama profili *Open Planner Studio* ve iş haftası Pazartesiden Cumaya kadardır.
 
@@ -25,7 +25,7 @@ Türü *Özellikler* panelinde, *Kısıtlama* alanında seçersiniz. Her türün
 - *Mümkün olduğunca geç (ALAP)*: görev, bir ardılının daha geç başlamak zorunda kalmadan olabildiğince geç taşınır. Bu nedenle serbest bolluğunu kullanır. Ardılları kendi alanlarına sahipse ve görevin hâlâ toplam bolluğu kalıyorsa, kritik olmaz. O da kullanılırsa kritik sayılır.
 - *Şu tarihten önce başlamaz (SNET)*: başlangıç için alt sınır. Görev daha erken başlayacaksa, tarihe taşınır. Tarih ilişkilerin izin verdiğinden daha erkense, kısıtlama hiçbir şey yapmaz.
 - *Şu tarihten önce bitmez (FNET)*: aynısı, ama görevin bitişi için.
-- *Şu tarihten sonra başlamaz (SNLT)* ve *Şu tarihten sonra bitmez (FNLT)*: başlangıç veya bitiş için üst sınır. Bunlar hiçbir şeyi taşımaz. Sınır karşılanmazsa, uygulama ihlal edilen kısıt bildirir ve bolluk negatif olur.
+- *Şu tarihten sonra başlamaz (SNLT)* ve *Şu tarihten sonra bitmez (FNLT)*: başlangıç veya bitiş için üst sınır. Bunlar hiçbir şeyi taşımaz. Sınır karşılanmazsa, uygulama ihlal edilen kısıtlama bildirir ve bolluk negatif olur.
 - *Şu tarihte başlamalı (MSO)* ve *Şu tarihte bitmeli (MFO)*: aynı anda bir alt ve bir üst sınır. Tarih, ilişkilerin istediğinden daha geç olursa, görev tarihe taşınır. Tarih ilişkilerin izin verdiğinden daha erkense, görev ilişkilerin yerleştirdiği yerde kalır ve bolluk negatif olur.
 
 Bir tarih cumartesi, pazar veya izin gününe denk gelirse, uygulama onu iş günü olarak okur. Alt sınır (SNET, FNET) bir sonraki iş günü olur. Üst sınır (SNLT, FNLT) bir önceki iş günü olur.
@@ -41,7 +41,7 @@ Bir üst sınır yüzünden çubuklar taşınmaz. Çakışmayı negatif *Toplam 
 MSO ve MFO seçildiğinde *Zorunlu (sabitleme mantığı)* onay kutusu görünür. Bu kutuyu işaretlerseniz, öncülleri o zamana kadar bitmemiş olsa bile görevi tarihe sabitlersiniz. İlişkilerin üzerine yazılır:
 
 - Görev tarihtedir (MSO ile orada başlar, MFO ile orada biter) ve öncülleriyle çakışır.
-- Öncüller negatif bolluk alır. İlişkiler görevin sabitlemeden daha geç başlamasına izin verecekse, uygulama ihlal edilen kısıt bildirir. Sabitlenmiş görevin kendisi 0 bolluğunu korur.
+- Öncüller negatif bolluk alır. İlişkiler görevin sabitlemeden daha geç başlamasına izin verecekse, uygulama ihlal edilen kısıtlama bildirir. Sabitlenmiş görevin kendisi 0 bolluğunu korur.
 - Ardıllar sabitlenmiş görevden hesaplanır. Bu yüzden, ondan önceki mantık bitmemiş olsa bile, sabitleme olmadığındakinden daha erken başlayabilirler. Aşağıdaki örnekte projenin sonu bu yüzden üç iş günü öne gelir.
 
 Sabitlemeyi ilk kez açtığınızda uygulama kısa bir açıklama gösterir: sert sabitleme ilişkilerin üzerine yazar, çubuk öncüllerinden önce bile tarihe sabitlenir.

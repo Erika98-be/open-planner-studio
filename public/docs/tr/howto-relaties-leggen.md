@@ -84,7 +84,7 @@ Yeni bir ilişki henüz hiçbir çubuğu taşımaz. Durum çubuğu şunu göster
 
 **Sütuna yazmak, mevcut olanı siler.** Hücrede `3.4 FS; 3.2 FS` varsa ve yalnızca `3.2 FS` yazarsanız, 3.4 ile olan ilişki bir mesaj olmadan kaybolur. Tüm öncülleri yazın, eklemek için Enter veya F2 kullanın ya da Ctrl+Z ile geri alın.
 
-**Bir döngü.** Görevlerin zinciri içinde daha önce gelen bir göreve geri dönen bir ilişki eklerseniz, program asla başlayamaz. Uygulama böyle bir ilişkiyi reddeder: *Bu ilişki programda bir döngü oluşturur (…); ilişki oluşturulmadı*. Döngüdeki görevler parantez içinde gösterilir. Önce döngüyü kapatan ilişkiyi silin.
+**Bir döngü.** Görevlerin zinciri içinde daha önce gelen bir göreve geri dönen bir ilişki eklerseniz, planlama asla başlayamaz. Uygulama böyle bir ilişkiyi reddeder: *Bu ilişki programda bir döngü oluşturur (…); ilişki oluşturulmadı*. Döngüdeki görevler parantez içinde gösterilir. Önce döngüyü kapatan ilişkiyi silin.
 
 **Bir görevi kendi özet görevine bağlamak.** Bir görev ile altında bulunduğu özet görev arasında ilişki mümkün değildir. Uygulama şunu bildirir: *Bir görev ile kendi üst özet görevi arasında ilişki kurulmasına izin verilmez.*
 
@@ -100,4 +100,4 @@ Yeni bir ilişki henüz hiçbir çubuğu taşımaz. Durum çubuğu şunu göster
 - [İlişkiler ve gecikme](docs://uitleg-relaties): dört ilişki türünün ve bir gecikmenin tarihleri nasıl etkilediği.
 - [Bir yolu izlemek](docs://howto-pad-traceren): öncüller ve ardıllar zincirini görünür hale getirmek.
 - [Görev penceresi ve özellikler paneli](docs://ref-taak-eigenschappen): panelde ve pencerede ilişkiler ve gecikme için alanlar.
-- [Refurbishment & Extension of a Family Home](examples://showcase-verbouwing-eengezinswoning.ifc): bir zincir bitiş-başlangıç ilişkisi, bir başlangıç-başlangıç ilişkisi (duvarlar ve çatı, gecikme 2 gün) ve bir bitiş-bitiş ilişkisi (kaplama ve boyama, gecikme 1 gün).
+- [Refurbishment & Extension of a Family Home](examples://showcase-verbouwing-eengezinswoning.ifc): bitiş-başlangıç ilişkilerinden oluşan bir zincir, bir başlangıç-başlangıç ilişkisi (duvarlar ve çatı, gecikme 2 gün) ve bir bitiş-bitiş ilişkisi (kaplama ve boyama, gecikme 1 gün).

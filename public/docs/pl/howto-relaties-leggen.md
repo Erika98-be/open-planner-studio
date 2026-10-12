@@ -36,7 +36,7 @@ Przydatne, gdy dodajesz wiele relacji po kolei.
 4. Jeśli trzeba, zmień typ lub opóźnienie i naciśnij Enter albo kliknij poza oknem. Relacja zostaje utworzona.
 5. Dodaj od razu następną: tryb pozostaje włączony. Kończysz klawiszem Esc, przyciskiem *Zakończ* w komunikacie albo ponownie wybierając *Rysuj relację*.
 
-Jeśli naciśniesz Esc w oknie *Typ relacji*, nic nie zostaje zapisane. Dla pojedynczej relacji nie musisz włączać trybu: przytrzymaj Shift, gdy przeciągasz od paska do paska. *Rozpocznij relację stąd* w menu kontekstowym paska włącza tryb połączeń; przeciąganie wykonujesz nadal sam. Na karcie *Tabela*, bez widoku Gantt, *Rysuj relację* jest wyłączone.
+Jeśli naciśniesz Esc w oknie *Typ relacji*, nic nie zostaje zapisane. Dla pojedynczej relacji nie musisz włączać trybu: przytrzymaj Shift, gdy przeciągasz od paska do paska. *Rozpocznij relację stąd* w menu kontekstowym paska włącza tryb połączeń; przeciąganie nadal wykonujesz samodzielnie. Na karcie *Tabela*, bez widoku Gantt, *Rysuj relację* jest wyłączone.
 
 ### Dodawanie relacji w panelu właściwości
 
@@ -72,7 +72,7 @@ Opóźnienie wpisujesz w polu obok typu, przy każdej z opisanych wyżej metod. 
 - `4h`: 4 godziny pracy; aplikacja pokazuje to jako `+4u`. Jeśli poprzednik jest zadaniem w dniach w kalendarzu bez własnych pasm godzin pracy, na przykład w kalendarzu standardowym, aplikacja zamienia to na pełne dni robocze, zaokrąglone do najbliższego dnia: `4h` działa jak 1 dzień, `2h` jak 0. Przy kalendarzu z własnymi pasmami albo po zadaniu godzinowym opóźnienie liczy się dokładnie w godzinach.
 - `50%`: połowa czasu trwania poprzednika.
 
-Przykład: beton fundamentu musi dojrzeć, zanim murarz może na nim pracować. Dlatego *Pour foundation → Foundation brickwork* dostaje relację FS z opóźnieniem `3`. Jeśli wylewanie jest w piątek 18 czerwca 2027 r., murowanie zaczyna się w czwartek 24 czerwca, po naciśnięciu **Oblicz**: od poniedziałku do środy to czas oczekiwania. Przy `3ed` wlicza się weekend i murowanie zaczyna się we wtorek 22 czerwca.
+Przykład: beton fundamentu musi dojrzeć, zanim murarz może na nim pracować. Dlatego *Pour foundation → Foundation brickwork* dostaje relację FS z opóźnieniem `3`. Jeśli wylewanie fundamentu wypada w piątek 18 czerwca 2027 r., murowanie zaczyna się w czwartek 24 czerwca, po naciśnięciu **Oblicz**: od poniedziałku do środy to czas oczekiwania. Przy `3ed` wlicza się weekend i murowanie zaczyna się we wtorek 22 czerwca.
 
 ### Na koniec: przeliczenie
 
@@ -82,7 +82,7 @@ Nowa relacja jeszcze nie przesuwa żadnych pasków. Pasek stanu pokazuje *Nieakt
 
 **Odwrócona kolejność.** Przy *Połącz zaznaczone zadania* liczy się kolejność, w jakiej klikasz, nie kolejność na liście. Jeśli najpierw klikniesz późniejsze zadanie, relacja jest odwrócona. Usuń ją w bloku *Zależności* ikoną kosza i dodaj ponownie.
 
-**Wpisywanie w kolumnie usuwa to, co było.** Jeśli komórka zawiera `3.4 FS; 3.2 FS`, a Ty wpiszesz tylko `3.2 FS`, relacja z 3.4 znika bez komunikatu. Wpisz wszystkich poprzedników, użyj Enter albo F2, aby dopisać, albo cofnij Ctrl+Z.
+**Wpisywanie w kolumnie usuwa to, co było.** Jeśli komórka zawiera `3.4 FS; 3.2 FS`, a Ty wpiszesz tylko `3.2 FS`, relacja z 3.4 znika bez komunikatu. Wpisz wszystkie poprzedniki, użyj Enter albo F2, aby dopisać, albo cofnij Ctrl+Z.
 
 **Cykl.** Jeśli dodasz relację, która prowadzi z powrotem do zadania wcześniej w łańcuchu, harmonogram nigdy nie mógłby się zacząć. Aplikacja takiej relacji nie przyjmuje: *Ta relacja utworzyłaby cykl w harmonogramie (…) i nie została utworzona*, z zadaniami cyklu w nawiasie. Najpierw usuń relację, która zamyka cykl.
 
@@ -90,7 +90,7 @@ Nowa relacja jeszcze nie przesuwa żadnych pasków. Pasek stanu pokazuje *Nieakt
 
 **Duplikat.** Jeśli relacja już istnieje, aplikacja pisze *Taka relacja już istnieje* i nic się nie zmienia.
 
-**Krótsze komunikaty w kolumnie.** Kolumna *Poprzedniki* pokazuje te same odmowy, z krótszym tekstem pod komórką: *Ta zmiana utworzyłaby cykl w harmonogramie.*, *Ta relacja już istnieje.* albo *Zadanie nie może mieć relacji z własnym zadaniem sumarycznym.* Jeśli wpiszesz tylko numer WBS, na przykład `3.1`, typ jest brakujący i komórka pokazuje *Użyj na przykład 1.2 FS+2d.* Komórka pozostaje otwarta; popraw wpis albo naciśnij Esc, aby anulować.
+**Krótsze komunikaty w kolumnie.** Kolumna *Poprzedniki* pokazuje te same odmowy, z krótszym tekstem pod komórką: *Ta zmiana utworzyłaby cykl w harmonogramie.*, *Ta relacja już istnieje.* albo *Zadanie nie może mieć relacji z własnym zadaniem sumarycznym.* Jeśli wpiszesz tylko numer WBS, na przykład `3.1`, brakuje typu i komórka pokazuje *Użyj na przykład 1.2 FS+2d.* Komórka pozostaje otwarta; popraw wpis albo naciśnij Esc, aby anulować.
 
 **Brak połówek dni w opóźnieniu.** Opóźnienie w dniach jest zawsze liczbą całkowitą: `1.5` staje się `+2d`. Opóźnienie w godzinach po zadaniu w dniach na kalendarzu bez własnych pasm zaokrągla się do pełnych dni roboczych. Niezrozumiały wpis, na przykład słowo, nie zostaje zapisany: pole wraca do poprzedniej wartości.
 

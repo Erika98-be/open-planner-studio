@@ -48,7 +48,7 @@
 
 **جابه‌جایی پروژه.** در پنجرهٔ *جابه‌جایی پروژه…* به محض اینکه خط مبنا وجود داشته باشد، کادر *خطوط مبنا هم جابه‌جا شوند* هست. به‌طور پیش‌فرض خاموش است: خطوط مبنا سر جای خود می‌مانند، بنابراین جابه‌جایی به‌صورت انحراف دیده می‌شود. ببینید [جابه‌جایی پروژه](docs://howto-project-verplaatsen).
 
-**در فایل پروژه ذخیره می‌شود.** خط مبنا‌ها و انتخاب فعال با پروژه ذخیره می‌شوند و وقتی فایل را باز می‌کنید، برمی‌گردند.
+**در فایل پروژه ذخیره می‌شود.** خطوط مبنا و انتخاب فعال با پروژه ذخیره می‌شوند و وقتی فایل را باز می‌کنید، برمی‌گردند.
 
 ## همچنین ببینید
 
@@ -56,4 +56,4 @@
 - [جابه‌جایی پروژه](docs://howto-project-verplaatsen): کادر *خطوط مبنا هم جابه‌جا شوند*.
 - [به‌روزرسانی پیشرفت](docs://howto-voortgang-bijwerken): ثبت وضعیت واقعی‌ای که با خط مبنا مقایسه می‌کنید.
 - [6 New Terraced Houses, De Akkers](examples://showcase-rijwoningen-de-akkers.ifc): یک خط مبنا (*Baseline at start*) پیش از شروع، با پیشرفت و تاریخ وضعیت 20 مه 2027.
-- [De Vaart Apartment Complex](examples://showcase-appartementencomplex.ifc): دو خط مبنا، *Contract* و *Re-baseline (variation order)*، با پیشرفت و تاریخ وضعیت 5 جولای 2027.
+- [De Vaart Apartment Complex](examples://showcase-appartementencomplex.ifc): دو خط مبنا، *Contract* و *Re-baseline (variation order)*، با پیشرفت و تاریخ وضعیت 5 ژوئیه 2027.

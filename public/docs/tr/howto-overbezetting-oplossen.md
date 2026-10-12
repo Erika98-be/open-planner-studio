@@ -36,7 +36,7 @@ Bir görev seçiliyse, histogram yalnızca o görevin yükünü ve yalnızca o g
 4. *Kaynaklar* altında, dengelenecek kaynaklar bulunur. Varsayılan olarak tüm kaynaklar işaretlidir, malzeme hariç. Dokunulmasını istemediğiniz kaynağın işaretini kaldırın.
 5. *Hesapla* düğmesine tıklayın. Hesaplarken *Hesaplanıyor…* yazar ve *Durdur* ile durdurabilirsiniz. Planlama henüz değişmez: bu bir öneridir.
 6. Öneriyi okuyun. En üstte bitiş tarihi yer alır, örneğin *Proje bitiş tarihi: değişmedi (30-08-2027)* veya *Proje bitiş tarihi: 25-08-2027 → 30-08-2027*. Bunun altında, her görev için *Eski başlangıç*, *Yeni başlangıç* ve *Kaydırılan gün* değerlerini gösteren bir tablo bulunur, örneğin *Build outer cavity leaf*, 29-06-2027, 06-07-2027 ve *5 g*.
-7. *Uygula* öğesini seçin. Uygulama ertelemeleri görevlere yazar ve planlama hemen yeniden hesaplanır. F5 tuşuna basmanız gerekmez. *İptal* pencereyi değişiklik yapmadan kapatır.
+7. *Uygula* öğesini seçin. Uygulama dengeleme gecikmelerini görevlere yazar ve planlama hemen yeniden hesaplanır. F5 tuşuna basmanız gerekmez. *İptal* pencereyi değişiklik yapmadan kapatır.
 8. *Kaynaklar › Aşırı atama* öğesini kontrol edin. Artık *Yok* yazar.
 
 Pencerede *Hesapla* düğmesine tıkladıktan sonra bir seçeneği değiştirirseniz, öneri kaybolur. Bu durumda yeniden *Hesapla* düğmesine tıklayın. Uygulama hesaplarken plan değişirse, *Hesaplama sırasında plan değişti. Hesapla'ya yeniden tıklayın.* yazar.
@@ -45,7 +45,7 @@ Pencerede *Hesapla* düğmesine tıkladıktan sonra bir seçeneği değiştirirs
 
 Uygulama görevleri teker teker yerleştirir. Önce işlenen görevler yerlerinde kalır. En yüksek önceliğe sahip görevler önce gelir. Öncelik eşitse, en az bolluğa sahip görev önce gelir.
 
-Kendiniz karar vermek istiyorsanız hangi görevin yerinde kalacağına, o göreve daha yüksek öncelik verin. Gantt'taki görev çubuğuna sağ tıklayın, *Öncelik* öğesini seçin, ardından *Düşük* (100), *Normal* (500) veya *Yüksek* (900) seçin. *Normal* varsayılandır. Ayrıca *Dengeleme önceliği* sütununa 0 ile 1000 arasında bir sayıyı kendiniz de yazabilirsiniz: görev tablosu başlığının sağındaki **+** öğesine tıklayın (*Sütun ekle*) ve *Planlama* altında bu sütunu seçin. Daha yüksek bir sayı, görevin yerinde kalma olasılığının daha yüksek olduğu anlamına gelir. Uygulama 1000'den büyük bir sayıyı kabul etmez. Öncelik 1000 olan bir görev kapasite için asla taşınmaz.
+Hangi görevin yerinde kalacağına kendiniz karar vermek istiyorsanız, o göreve daha yüksek öncelik verin. Gantt'taki görev çubuğuna sağ tıklayın, *Öncelik* öğesini seçin, ardından *Düşük* (100), *Normal* (500) veya *Yüksek* (900) seçin. *Normal* varsayılandır. Ayrıca *Dengeleme önceliği* sütununa 0 ile 1000 arasında bir sayıyı kendiniz de yazabilirsiniz: görev tablosu başlığının sağındaki **+** öğesine tıklayın (*Sütun ekle*) ve *Planlama* altında bu sütunu seçin. Daha yüksek bir sayı, görevin yerinde kalma olasılığının daha yüksek olduğu anlamına gelir. Uygulama 1000'den büyük bir sayıyı kabul etmez. Öncelik 1000 olan bir görev kapasite için asla taşınmaz.
 
 ### Geri alma ve yineleme
 

@@ -1,6 +1,6 @@
 # Zapisywanie i zarządzanie planem bazowym
 
-Cel: zapisać harmonogram jako ustalenie (plan bazowy), żebyś później mógł zobaczyć, jak bardzo wykonanie odbiega, oraz zachować, zmienić nazwę, wybrać i usunąć kilka planów bazowych.
+Cel: zapisać harmonogram jako ustalenie (plan bazowy), żeby później zobaczyć, jak bardzo wykonanie odbiega, oraz zachować, zmienić nazwę, wybrać i usunąć kilka planów bazowych.
 
 ## Kiedy tego potrzebujesz
 

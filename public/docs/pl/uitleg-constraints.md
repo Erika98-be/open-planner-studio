@@ -1,6 +1,6 @@
 # Ograniczenia i terminy ostateczne
 
-Cegły przyjadą dopiero 21 czerwca. Pozwolenie jeszcze nie przyszło. Dach musi być zamknięty przed świętem budowlanym. Relacje zapisują, że zadanie czeka na inne zadanie, ale uzgodnienia o dacie nie wynikają z kolejności prac. Do tego właśnie służą ograniczenia i terminy ostateczne. W tym artykule przeczytasz, co robi każdy typ, kiedy zadanie się przesuwa, a kiedy zmienia się tylko zapas, czym jest twarde przypięcie i jak aplikacja zgłasza konflikt.
+Cegły przyjadą dopiero 21 czerwca. Pozwolenie jeszcze nie przyszło. Dach musi być zamknięty przed urlopem budowlanym. Relacje zapisują, że zadanie czeka na inne zadanie, ale uzgodnienia o dacie nie wynikają z kolejności prac. Do tego właśnie służą ograniczenia i terminy ostateczne. W tym artykule przeczytasz, co robi każdy typ, kiedy zadanie się przesuwa, a kiedy zmienia się tylko zapas, czym jest twarde przypięcie i jak aplikacja zgłasza konflikt.
 
 Reguły i przykłady dotyczą nowego projektu z profilem obliczeń *Open Planner Studio* i tygodniem roboczym od poniedziałku do piątku.
 
@@ -9,7 +9,7 @@ Reguły i przykłady dotyczą nowego projektu z profilem obliczeń *Open Planner
 **Ograniczenie** to granica daty dla jednego zadania, niezależna od jego relacji. Taka granica może działać na dwa sposoby:
 
 - **Przesuwa**: zadanie nie może zacząć się ani zakończyć wcześniej niż ta data. Jeśli relacje sprawiłyby, że zadanie zacznie się wcześniej, przesuwa się na tę datę.
-- **Pilnuje**: zadanie musi zacząć się lub zakończyć najpóźniej w tej dacie. Aplikacja niczego nie przesuwa. Jeśli harmonogram nie spełnia tej daty, **zapas** zadania i łańcucha przed nim staje się ujemny. Zapas to miejsce, które zadanie ma, zanim przesunie się termin zakończenia projektu. Ujemny zapas oznacza, że na papierze jesteś już spóźniony (zobacz [Ścieżka krytyczna i zapas](docs://uitleg-kritiek-pad)).
+- **Pilnuje**: zadanie musi zacząć się lub zakończyć najpóźniej w tej dacie. Aplikacja niczego nie przesuwa. Jeśli harmonogram nie spełnia tej daty, **zapas** zadania i łańcucha przed nim staje się ujemny. Zapas to czas, o który zadanie może się przesunąć, zanim przesunie się termin zakończenia projektu. Ujemny zapas oznacza, że na papierze jesteś już spóźniony (zobacz [Ścieżka krytyczna i zapas](docs://uitleg-kritiek-pad)).
 
 **Termin ostateczny** to prostsza forma pilnowania. Jest to docelowa data zakończenia zadania. Termin nie przesuwa zadania.
 
@@ -22,7 +22,7 @@ Wszystkie ograniczenia są **miękkie**: obliczenie idzie dalej, nawet jeśli da
 Typ wybierzesz w polu *Ograniczenie* w panelu *Właściwości*. Tak oblicza każdy typ:
 
 - *Jak najwcześniej (ASAP)*: brak granicy. To jest ustawienie domyślne: zadanie zaczyna się tak wcześnie, jak pozwalają relacje.
-- *Jak najpóźniej (ALAP)*: zadanie przesuwa się tak późno, jak może, bez tego, że jego następnik musi zacząć się później. Zużywa więc swój zapas swobodny. Jeśli po tym zostaje mu zapas całkowity, bo jego następniki mają własne miejsce, zostaje niekrytyczne. Jeśli i ten zapas się wyczerpie, liczy się jako krytyczne.
+- *Jak najpóźniej (ALAP)*: zadanie przesuwa się tak późno, jak może, bez opóźniania jego następnika. Zużywa więc swój zapas swobodny. Jeśli po tym zostaje mu zapas całkowity, bo jego następniki mają własne miejsce, zostaje niekrytyczne. Jeśli i ten zapas się wyczerpie, liczy się jako krytyczne.
 - *Rozpocznij nie wcześniej niż (SNET)*: dolna granica dla startu. Jeśli zadanie zaczęłoby się wcześniej, przesuwa się na tę datę. Jeśli data jest wcześniejsza, niż pozwalają relacje, ograniczenie nic nie robi.
 - *Zakończ nie wcześniej niż (FNET)*: tak samo, ale dla zakończenia zadania.
 - *Rozpocznij nie później niż (SNLT)* i *Zakończ nie później niż (FNLT)*: górna granica dla startu albo zakończenia. Nic nie przesuwają. Jeśli granica nie jest spełniona, aplikacja zgłasza naruszone ograniczenie, a zapas staje się ujemny.

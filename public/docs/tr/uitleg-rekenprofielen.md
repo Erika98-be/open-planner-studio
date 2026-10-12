@@ -12,7 +12,7 @@ Uygulama böyle bir seçime bir **kural** adını verir. Bir **hesaplama profili
 - *Primavera P6*: Uygulamanın P6'dan bildiği kurallar.
 - *Microsoft Project*: Uygulamanın Microsoft Project'ten bildiği kurallar.
 
-Profil dolayısıyla bir yazılımın nasıl hesaplandığını belirtir. Projenizden istediğiniz şey profilin parçası değildir. Bunlar **hesaplama seçenekleridir**: örneğin, bir görevin kritik sayılması için ne kadar bolluk gerektiği ya da bir gecikmenin hangi takvimde sayıldığı gibi seçimler. Bunları proje bazında siz ayarlarsınız.
+Profil dolayısıyla bir yazılımın nasıl hesapladığını belirtir. Projenizden istediğiniz şey profilin parçası değildir. Bunlar **hesaplama seçenekleridir**: örneğin, bir görevin kritik sayılması için en fazla ne kadar bolluk olması gerektiği ya da bir gecikmenin hangi takvimde sayıldığı gibi seçimler. Bunları proje bazında siz ayarlarsınız.
 
 ## Uygulama nasıl hesaplar
 
@@ -44,7 +44,7 @@ Bir profilde bir kuralı açar veya kapatırsanız, uygulama bunu özel bir prof
 Bir dosya açtığınızda, uygulama biçime göre bir profil önerir:
 
 - Bir .mpp dosyası (Microsoft Project) *Microsoft Project* profiliyle açılır.
-- Bir .xer file (Primavera P6) *Primavera P6* profiliyle açılır.
+- Bir .xer dosyası (Primavera P6) *Primavera P6* profiliyle açılır.
 - *MS Project XML*, *Primavera P6 XML* veya *CSV (noktalı virgülle ayrılmış)* biçimindeki bir dosya, profil mesajı olmadan *Open Planner Studio* ile açılır.
 - Kendi projeniz (.ifc) kendi içinde kayıtlı profille açılır.
 
@@ -83,7 +83,7 @@ Burada tarihler farklıdır. *Microsoft Project gibi ilerleme* grubundaki iki ku
 
 *Başlamamış görevleri durum tarihine taşıma*: *Order window frames* Pazartesi 7'den Çarşamba 9 Haziran'a kadar kalır. Bu, kısmen durum tarihinden öncesine denk gelse de böyle kalır. Toplam bolluk 7 iş günüdür.
 
-*Kalan iş geçen süreden sonra devam eder*: kalan iş şu tarihten önce başlamaz; bu tarih durum tarihi ile gerçek başlangıç artı zaten geçen süreden sonra gelen tarihtir. 5 iş gününün %60'ı 3 iş günüdür ve tamamlanmıştır. Pazartesi 7 Haziran artı 3 iş günü Perşembe 10 Haziran'dır. Bu durum tarihinden sonradır, bu yüzden kalan iş Perşembe 10 ve Cuma 11 Haziran'da sürer. *Lay walls* Pazartesi 14'ten Cuma 18 Haziran'a kadar sürer. *Fit roof* Pazartesi 21 ve Salı 22 Haziran'da sürer. Teslim Salı 22 Haziran'dır: diğer iki profilden bir iş günü sonra.
+*Kalan iş geçen süreden sonra devam eder*: kalan iş, durum tarihinden önce ve gerçek başlangıç artı zaten geçen süreden önce başlamaz. 5 iş gününün %60'ı 3 iş günüdür ve tamamlanmıştır. Pazartesi 7 Haziran artı 3 iş günü Perşembe 10 Haziran'dır. Bu durum tarihinden sonradır, bu yüzden kalan iş Perşembe 10 ve Cuma 11 Haziran'da sürer. *Lay walls* Pazartesi 14'ten Cuma 18 Haziran'a kadar sürer. *Fit roof* Pazartesi 21 ve Salı 22 Haziran'da sürer. Teslim Salı 22 Haziran'dır: diğer iki profilden bir iş günü sonra.
 
 ### Ya olursa?
 
@@ -101,15 +101,15 @@ Burada tarihler farklıdır. *Microsoft Project gibi ilerleme* grubundaki iki ku
 
 **“Profil uygulamanın bir ayarıdır.”** Hayır. Profil ve hesaplama seçenekleri projeye aittir ve dosyayla birlikte taşınır. Yalnızca sakladığınız şablonlar uygulamaya aittir. Bir proje ise her zaman kendi kopyasını saklar.
 
-**“Dışa aktarırsam profilim de onunla gider.”** Yalnızca kendi proje biçiminizde (.ifc) gider. *MS Project XML*, *Primavera P6 XML* veya *CSV (noktalı virgülle ayrılmış)* olarak dışa aktarırsanız profil dosyada yer almaz. Hesaplama seçeneklerinden MS Project XML dışa aktarımı en fazla kritik eşiği yazar. Uygulama bunu yalnızca .xer file'dan gelen bir proje için uyarır. Kendiniz oluşturduğunuz bir proje için hiçbir ileti almazsınız. Dosya bunun ardından Open Planner Studio olarak açılır, profil iletisi olmadan. Bir örneğe bakın: Microsoft Project profili ve %60 ilerleme. Bunu *MS Project XML* olarak dışa aktarıp yeniden açarsanız uygulama önce dosyadaki tarihleri gösterir; devir Salı 22 Haziran'dır. Uygulamanın kendisini yeniden hesaplamasına izin verirseniz bu Pazartesi 21 Haziran olur. Dışa aktarmanın başka neyi kaybettiği, [Dosyalar ve biçimler](docs://uitleg-bestanden) sayfasında yer alır.
+**“Dışa aktarırsam profilim de onunla gider.”** Yalnızca kendi proje biçiminizde (.ifc) gider. *MS Project XML*, *Primavera P6 XML* veya *CSV (noktalı virgülle ayrılmış)* olarak dışa aktarırsanız profil dosyada yer almaz. Hesaplama seçeneklerinden MS Project XML dışa aktarımı en fazla kritik eşiği yazar. Uygulama bunu yalnızca .xer dosyasından gelen bir proje için uyarır. Kendiniz oluşturduğunuz bir proje için hiçbir ileti almazsınız. Dosya bunun ardından Open Planner Studio olarak açılır, profil iletisi olmadan. Bir örneğe bakın: Microsoft Project profili ve %60 ilerleme. Bunu *MS Project XML* olarak dışa aktarıp yeniden açarsanız uygulama önce dosyadaki tarihleri gösterir; teslim Salı 22 Haziran'dır. Uygulamanın kendisini yeniden hesaplamasına izin verirseniz bu Pazartesi 21 Haziran olur. Dışa aktarmanın başka neyi kaybettiği, [Dosyalar ve biçimler](docs://uitleg-bestanden) sayfasında yer alır.
 
-**“Primavera P6 profili, P6 ile aynı sonucu verir.”** Uygulama bunu garanti edemez. Profil, uygulamanın P6'dan bildiği kuralları açar; bunlar P6'nın tüm ayarları değildir. Retained Logic ve Progress Override'a ek olarak P6'da üçüncü bir ilerleme modu vardır: Gerçek Tarihler. Uygulama bunu bilmez: böyle bir .xer file Retained Logic olarak hesaplanır ve açılış iletisi bunu bildirir; örneğin *1 P6 planlama ayarı güvenli geri dönüş kullandı.* Primavera P6 profilinin bazı kuralları da yalnızca .xer file'dan gelen görevlerde çalışır; örneğin *Başlamamış LOE hedef pencereyi alır* ve *Gerçek tarihleri aynen al*. Bazıları için açıklama bunu belirtir: “yalnızca P6 kökenli görevler”. Kendiniz oluşturduğunuz görevlerde bu kurallar hiçbir şey yapmaz.
+**“Primavera P6 profili, P6 ile aynı sonucu verir.”** Uygulama bunu garanti edemez. Profil, uygulamanın P6'dan bildiği kuralları açar; bunlar P6'nın tüm ayarları değildir. Retained Logic ve Progress Override'a ek olarak P6'da üçüncü bir ilerleme modu vardır: Gerçek Tarihler. Uygulama bunu bilmez: böyle bir .xer dosyası Retained Logic olarak hesaplanır ve açılış iletisi bunu bildirir; örneğin *1 P6 planlama ayarı güvenli geri dönüş kullandı.* Primavera P6 profilinin bazı kuralları da yalnızca .xer dosyasından gelen görevlerde çalışır; örneğin *Başlamamış LOE hedef pencereyi alır* ve *Gerçek tarihleri aynen al*. Bazıları için açıklama bunu belirtir: “yalnızca P6 kökenli görevler”. Kendiniz oluşturduğunuz görevlerde bu kurallar hiçbir şey yapmaz.
 
 **“İlerleme modu profilin bir parçasıdır.”** Hayır. Retained Logic veya Progress Override, proje başına ayrı bir seçimdir. Bunu profilden ayrı ayarlarsınız, bkz. [İlerleme modunu seçme](docs://howto-voortgangsmodus-kiezen). Bir Primavera P6 kuralı, *Progress Override başlamış bir ardılı geriye doğru da yok sayar*, yalnızca Progress Override modunda bir şey yapar.
 
 **“Profili değiştirip ne olduğuna bakarım.”** Bunu yapabilirsiniz, çünkü *Uygula* tek bir adımdır ve *Geri al* ile geri alınabilir: profil ve tarihler birlikte geri döner. Tarihler yine de gerçekten kayabilir. Örnekte, Open Planner Studio'dan Microsoft Project'e geçmek 4 görevin tümünü kaydırır. İleti bu görevleri sizin için sayar. Devam etmeden önce planlamaya bakın. Bir .xer veya .mpp dosyasını açtıktan sonra uygulama hâlâ dosyadaki tarihleri gösteriyorsa, profil değişikliği bu görünümden çıkarır ve uygulama kendisi hesaplar. Bunun nasıl çalıştığı [Kaydedildiği gibi tarihler](docs://uitleg-datums-zoals-opgeslagen) sayfasında yer alır.
 
-**Örnekte dört kural var, uygulamadaki liste ise daha uzun.** Bloktaki her satırın kendi açıklaması vardır. Önce onu okuyun. Ayrıca *Yalnızca özel profiller için* gruba bakın: bu kurallar her yerleşik profilde, Primavera P6 dahil, kapalıdır. Birini açarsanız, profil bir özel profile dönüşür.
+**Örnekte dört kural var, uygulamadaki liste ise daha uzun.** Bloktaki her satırın kendi açıklaması vardır. Önce onu okuyun. Ayrıca *Yalnızca özel profiller için* grubuna bakın: bu kurallar her yerleşik profilde, Primavera P6 dahil, kapalıdır. Birini açarsanız, profil bir özel profile dönüşür.
 
 ## Ayrıca bakın
 

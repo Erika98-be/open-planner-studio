@@ -4,7 +4,7 @@ Cel: zobaczyć, w którym dniu zasób ma za dużo do zrobienia, i to rozwiązać
 
 ## Kiedy tego potrzebujesz
 
-Na papierze harmonogram działa, ale bricklayer pracuje przy dwóch ścianach, które trwają w tych samych dniach. Aplikacja nazywa to **przeciążeniem**. Zasób jest przeciążony w dniu roboczym, jeśli harmonogram wymaga od niego tego dnia więcej, niż wynosi jego zdolność (*Maks. jednostki*), albo jeśli tego dnia według swojego kalendarza nie pracuje.
+Na papierze harmonogram działa, ale murarz pracuje przy dwóch ścianach, które trwają w tych samych dniach. Aplikacja nazywa to **przeciążeniem**. Zasób jest przeciążony w dniu roboczym, jeśli harmonogram wymaga od niego tego dnia więcej, niż wynosi jego zdolność (*Maks. jednostki*), albo jeśli tego dnia według swojego kalendarza nie pracuje.
 
 Najpierw sprawdzasz przeciążenie. Potem wybierasz rozwiązanie. **Bilansowanie** to rozwiązanie, które aplikacja oblicza za Ciebie: sprawia, że zadania zaczynają się później, aż zasób da radę. Jak to się oblicza, przeczytasz w [Bilansowanie zasobów](docs://uitleg-nivelleren).
 
@@ -23,7 +23,7 @@ Jeśli zadanie jest zaznaczone, histogram pokazuje tylko obciążenie tego zadan
 
 ### 2. Wybierz rozwiązanie
 
-- **Większa zdolność.** Jeśli naprawdę przyjdzie drugi bricklayer, ustaw *Maks. jednostki* na 2 (zobacz [Zarządzanie zasobami](docs://howto-resources-beheren)). Przeciążenie wtedy znika.
+- **Większa zdolność.** Jeśli naprawdę przyjdzie drugi murarz, ustaw *Maks. jednostki* na 2 (zobacz [Zarządzanie zasobami](docs://howto-resources-beheren)). Przeciążenie wtedy znika.
 - **Mniej jednostek dziennie.** Obniż *Jedn./dzień* albo wybierz inną krzywą dla przydziału (zobacz [Przydzielanie zasobów z krzywą](docs://howto-resource-toewijzen)).
 - **Ustaw zadania jedno po drugim.** Dodaj relację między dwoma zadaniami, tak aby drugie zaczynało się dopiero po zakończeniu pierwszego (zobacz [Dodawanie relacji](docs://howto-relaties-leggen)).
 - **Bilansowanie.** Aplikacja sprawia, że zadanie zaczyna się później.
@@ -50,8 +50,8 @@ Jeśli chcesz sam zdecydować, które zadanie zostaje, nadaj mu wyższy prioryte
 ### Cofanie i ponawianie
 
 - *Cofnij* (Ctrl+Z) cofa *Zastosuj* jednym krokiem.
-- *Zasoby › Bilansowanie › Wyczyść bilansowanie* usuwa całe bilansowanie z zadań. Przycisk jest szary, dopóki nie ma bilansowania. Przeciążenie, które w ten sposób wraca, po prostu znów jest.
-- Jeśli od tego czasu zmieniłeś harmonogram, wybierz po prostu ponownie *Bilansuj…*. Aplikacja wtedy zaczyna od nowa: stare przesunięcia się nie liczą.
+- *Zasoby › Bilansowanie › Wyczyść bilansowanie* usuwa całe bilansowanie z zadań. Przycisk jest szary, dopóki nie ma bilansowania. Przeciążenie, które w ten sposób wraca, po prostu pojawia się ponownie.
+- Jeśli od tego czasu harmonogram się zmienił, wybierz po prostu ponownie *Bilansuj…*. Aplikacja wtedy zaczyna od nowa: stare przesunięcia się nie liczą.
 
 ## Pułapki i co wtedy robi aplikacja
 
@@ -61,13 +61,13 @@ Jeśli chcesz sam zdecydować, które zadanie zostaje, nadaj mu wyższy prioryte
 
 - *Za mało wolnej zdolności w ramach zapasu, aby rozwiązać ten konflikt.* Widzisz to przy *wygładzaniu*: w zapasie zadania nie ma żadnego wolnego momentu. Odznacz pole wyboru, a data zakończenia może się przesunąć.
 - *Zasób nie pracuje we wszystkie dni potrzebne temu zadaniu — przesunięcie tego nie rozwiąże.* Zasób ma dni wolne w swoim kalendarzu w środku zadania. Zmień kalendarz albo zadanie.
-- *Bricklayer: szczyt 2 jedn./dzień, zdolność to 1 — nie da się tego rozwiązać przesunięciem.* Przez swoją krzywą samo zadanie żąda w jednym dniu więcej, niż zasób może dać. Wybierz inną krzywą albo zmniejsz jednostki.
+- *Bricklayer: szczyt 2 jedn./dzień, zdolność to 1 — nie da się tego rozwiązać przesunięciem.* Przez swoją krzywą samo zadanie wymaga w jednym dniu więcej, niż zasób może dać. Wybierz inną krzywą albo zmniejsz jednostki.
 
 **Okno pokazuje** *Żadne zadania nie wymagają przesunięcia — harmonogram jest już wolny od konfliktów.* Jeśli ta linia pojawia się razem z listą *Pozostałe konflikty* w propozycji, zaufaj liście. Ta linia mówi tylko, że nic nie trzeba przesunąć. Jeśli ta linia pojawia się bez listy, a *Zasoby › Nadmierne przydzielenie* nadal pokazuje zasób, to wszystkie kolidujące zadania mają priorytet 1000 albo już się rozpoczęły. Nie przesuwają się i okno nie pokazuje ich jako konfliktu. Dlatego po zastosowaniu zawsze sprawdź *Nadmierne przydzielenie*.
 
 **Zadania, które się nie przesuwają.** Zadanie, które już się rozpoczęło albo jest zakończone, nigdy się nie przesuwa. Jego obciążenie się jednak liczy. Kamienie milowe i fazy też się nie przesuwają.
 
-**Materiał nie jest bilansowany.** Jeśli zasób materiałowy żąda na dzień więcej niż jego *Maks. jednostki*, liczy się jako przeciążony w *Nadmierne przydzielenie*, ale nie ma go w oknie bilansowania.
+**Materiał nie jest bilansowany.** Jeśli zasób materiałowy wymaga na dzień więcej niż jego *Maks. jednostki*, liczy się jako przeciążony w *Nadmierne przydzielenie*, ale nie ma go w oknie bilansowania.
 
 **Bilansowanie się nie dostosowuje.** Przesunięcia zostają takie, jak zostały obliczone. Jeśli później zmienisz czas trwania zadania, zbilansowane zadanie zostaje tam, gdzie jest, nawet jeśli to miejsce nie jest już potrzebne. Wtedy zbilansuj ponownie.
 
@@ -79,5 +79,5 @@ Jeśli chcesz sam zdecydować, które zadanie zostaje, nadaj mu wyższy prioryte
 - [Zarządzanie zasobami](docs://howto-resources-beheren): zmiana zdolności i kalendarza zasobu.
 - [Dodawanie relacji](docs://howto-relaties-leggen): ustawianie zadań jedno po drugim.
 - [Komunikaty i ostrzeżenia](docs://ref-meldingen): ostrzeżenie o przeciążeniu w panelu Ostrzeżenia.
-- [6 New Terraced Houses, De Akkers](examples://showcase-rijwoningen-de-akkers.ifc): plasterers są przeciążeni przez 5 dni. Jeśli *Bilansuj tylko w ramach zapasu (wygładzanie) — data zakończenia projektu pozostaje bez zmian* jest włączone, data zakończenia pozostaje na 17 sierpnia 2027 i zostaje jeden konflikt. Gdy pole wyboru jest wyłączone (domyślnie), wszystko jest rozwiązane, a zakończenie przesuwa się na 24 sierpnia 2027.
+- [6 New Terraced Houses, De Akkers](examples://showcase-rijwoningen-de-akkers.ifc): zasób plasterers jest przeciążony przez 5 dni. Jeśli *Bilansuj tylko w ramach zapasu (wygładzanie) — data zakończenia projektu pozostaje bez zmian* jest włączone, data zakończenia pozostaje na 17 sierpnia 2027 i zostaje jeden konflikt. Gdy pole wyboru jest wyłączone (domyślnie), wszystko jest rozwiązane, a zakończenie przesuwa się na 24 sierpnia 2027.
 - [De Vaart Apartment Complex](examples://showcase-appartementencomplex.ifc): tower crane jest przeciążony przez 65 dni, a plasterers przez 15 dni. Bilansowanie przy wyłączonym polu wyboru *Bilansuj tylko w ramach zapasu (wygładzanie) — data zakończenia projektu pozostaje bez zmian* przesuwa zakończenie z 9 maja na 12 października 2028.
