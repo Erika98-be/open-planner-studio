@@ -7,7 +7,7 @@
 // Deze batterij pint vast:
 //   1. elke guard in `solve()` levert de juiste code (+ taak/kring) én nog steeds letterlijk de oude
 //      `error`-tekst — MCP-tools, extensies en `mapTransactionError` lezen die;
-//   2. elke code heeft in alle veertien talen een niet-lege tekst met de juiste placeholder;
+//   2. elke code heeft in alle talen een niet-lege tekst met de juiste placeholder;
 //   3. de melding en het waarschuwingenpaneel dragen de code, en vertalen naar de gekozen taal.
 import i18next from 'i18next';
 import ar from '@/i18n/locales/ar/common.json';
@@ -24,6 +24,21 @@ import pl from '@/i18n/locales/pl/common.json';
 import pt from '@/i18n/locales/pt/common.json';
 import tr from '@/i18n/locales/tr/common.json';
 import zh from '@/i18n/locales/zh/common.json';
+import { LOCALES } from '../../scripts/i18n-tools';
+import ru_ from '@/i18n/locales/ru/common.json';
+import uk_ from '@/i18n/locales/uk/common.json';
+import cs_ from '@/i18n/locales/cs/common.json';
+import sk_ from '@/i18n/locales/sk/common.json';
+import sr_ from '@/i18n/locales/sr/common.json';
+import hr_ from '@/i18n/locales/hr/common.json';
+import bg_ from '@/i18n/locales/bg/common.json';
+import hu_ from '@/i18n/locales/hu/common.json';
+import ro_ from '@/i18n/locales/ro/common.json';
+import sv_ from '@/i18n/locales/sv/common.json';
+import nb_ from '@/i18n/locales/nb/common.json';
+import da_ from '@/i18n/locales/da/common.json';
+import fi_ from '@/i18n/locales/fi/common.json';
+import lo from '@/i18n/locales/lo/common.json';
 import { createAppStoreContext } from '@/state/appStore';
 import { solveProject } from '@/engine/scheduler/solveProject';
 import { opsSolveInput } from './legacySolveOptions';
@@ -96,16 +111,21 @@ eq('1 cycle: de oude error-tekst is letterlijk ongewijzigd', cyc.error, `Circula
 truthy('1 cycle: MCP herkent de kring nog aan de tekst', /circular dependency/i.test(cyc.error ?? ''));
 eq('1 geen fout ⇒ geen errorInfo', solve([task('a', 'Fundering')]).errorInfo, undefined);
 
-// ── 2. Elke code heeft in alle veertien talen een tekst met de juiste placeholder ──────────────
+// ── 2. Elke code heeft in alle talen een tekst met de juiste placeholder ──────────────
 const COMMON: Record<string, { scheduleErrors?: Record<string, unknown> }> = {
   nl, en, fr, de, es, zh, it, pt, pl, tr, ar, ja, ko, fa,
+  ru: ru_, uk: uk_, cs: cs_, sk: sk_, sr: sr_, hr: hr_, bg: bg_,
+  hu: hu_, ro: ro_, sv: sv_, nb: nb_, da: da_, fi: fi_, lo,
 };
 const locales = Object.keys(COMMON);
-eq('2.0 veertien talen', locales.length, 14);
+eq('2.0 alle talen uit LOCALES', [...locales].sort(), [...LOCALES].sort());
 for (const l of locales) {
   const block = COMMON[l].scheduleErrors ?? {};
   for (const code of SCHEDULE_ERROR_CODES) {
     const text: unknown = block[code];
+    // Besluit B5 (2026-10-10): een andere taal dan nl/en mag de tekst nog missen (de app valt terug op en,
+    // de vertaalstraat vult hem vóór een release); wat er wél staat, moet kloppen.
+    if (text === undefined && l !== 'nl' && l !== 'en') continue;
     truthy(`2 ${l}: scheduleErrors.${code} bestaat`, typeof text === 'string' && text.trim() !== '');
     const want = code === 'cycle' ? ['{{path}}'] : code === 'noWorkingDays' ? [] : ['{{task}}'];
     eq(`2 ${l}: scheduleErrors.${code} placeholders`, (String(text).match(/\{\{\w+\}\}/g) ?? []), want);
@@ -134,11 +154,11 @@ eq('3a de melding draagt de sleutel', notice?.detailKey, 'scheduleErrors.invalid
 eq('3b en de taak als parameter', notice?.detailParams, { task: 'Grondwerk', path: '' });
 eq('3c geen rauwe (Nederlandse) tekst meer in de melding', notice?.detail, undefined);
 eq('3d Engels', t('en')(notice!.detailKey!, notice!.detailParams), "Invalid start date for task 'Grondwerk'");
-eq('3e Duits', t('de')(notice!.detailKey!, notice!.detailParams), "Ungültiges Startdatum für Aufgabe 'Grondwerk'");
+eq('3e Duits', t('de')(notice!.detailKey!, notice!.detailParams), "Ungültiges Startdatum für Vorgang 'Grondwerk'");
 eq('3f Nederlands', t('nl')(notice!.detailKey!, notice!.detailParams), "Ongeldige startdatum voor taak 'Grondwerk'");
 
 eq('3g kring in het Engels', scheduleErrorText(cyc, t('en')), `Circular dependency between tasks: ${names.join(' → ')}`);
-eq('3h kring in het Duits', scheduleErrorText(cyc, t('de')), `Zirkelbezug zwischen Aufgaben: ${names.join(' → ')}`);
+eq('3h kring in het Duits', scheduleErrorText(cyc, t('de')), `Zirkelbezug zwischen Vorgängen: ${names.join(' → ')}`);
 eq('3i een resultaat zonder code valt terug op de vaste tekst', scheduleErrorText({ error: 'Circular dependency detected: A → B → A' }, t('en')), 'Circular dependency detected: A → B → A');
 eq('3j geen fout ⇒ lege tekst', scheduleErrorText(null, t('en')), '');
 eq('3k resultaat zonder code ⇒ melding met rauwe tekst', scheduleFailedNotice({ error: 'x' })?.detail, 'x');
