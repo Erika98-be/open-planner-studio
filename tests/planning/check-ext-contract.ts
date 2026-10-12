@@ -63,7 +63,7 @@ import { isMultiDocumentImport } from '@/services/importTypes';
 import { decodeXerSourceArchive, sha256Hex } from '@/services/xerSourceArchive';
 import { ExtImportSourceDriftError } from '@/extensions/extImportSource';
 import { builtInProfile } from '@/engine/scheduler/conventions/registry';
-import { TASK_SOURCE_FIELDS, SEQUENCE_SOURCE_FIELDS, CALENDAR_SOURCE_FIELDS } from '@/extensions/retainActiveDocument';
+import { TASK_SOURCE_FIELDS, SEQUENCE_SOURCE_FIELDS, CALENDAR_SOURCE_FIELDS, loadExtensionProject } from '@/extensions/retainActiveDocument';
 import type { CalendarGeneration } from '@/types/calendar';
 
 const diffs: string[] = [];
@@ -1485,6 +1485,42 @@ for (const [naam, ext, bron, sleutels] of [
     useAppStore.getState().isDirty,
   ], [null, null, null, true]);
   eq('N3D-23a ander id ⇒ geen AutoSave naar bestand (er is geen bestand)', useAppStore.getState().autoSaveToFile, false);
+}
+
+// ── 12. Review #329 fixronde 3 punt 2: de Backstage-importer laadt via dezelfde route ──────────
+// Reviewproef probe-e E3: `Backstage.tsx` riep `loadState` direct aan; daarna stond het oude pad er nog
+// en was het document schoon. Een importer opent een vreemd bestand en is dus altijd een nieuw project,
+// ook bij een toevallig gelijk id. Mutatiebewijs: in `loadExtensionProject` ook voor de importer
+// `retainActiveDocument` gebruiken ⇒ N3D-24 rood; Backstage terug naar `loadState` ⇒ N3D-25 rood.
+{
+  const api = createExtensionApi('n3d-importer', [], undefined, appStoreContext, {
+    app: appStoreContext,
+    showNotification: () => {},
+  });
+  const lees = (): ExtImportResult => ({
+    project: api.data.getProject(), calendar: api.data.getCalendar(), tasks: api.data.getTasks(),
+    sequences: api.data.getSequences(), resources: api.data.getResources(), assignments: api.data.getAssignments(),
+  });
+  useAppStore.getState().newProject();
+  api.data.addTask({ name: 'Oud project' });
+  useAppStore.setState((s) => {
+    s.filePath = 'oud-project.ifc';
+    s.isDirty = false;
+    s.autoSaveToFile = true;
+    s.baselines = [{ id: 'bl-oud', name: 'Oud', createdAt: '2026-01-01T00:00:00Z', tasks: [], projectEnd: '2026-02-01', projectDuration: 20 }];
+  });
+  // Zelfde id als het document: voor een importer telt dat niet als lees-wijzig-laad.
+  loadExtensionProject(useAppStore, lees(), 'importer');
+  const st = useAppStore.getState();
+  eq('N3D-24 importer ⇒ nieuw project: geen opslagdoel, gewijzigd, geen AutoSave, niets vastgehouden', [
+    st.filePath, st.isDirty, st.autoSaveToFile, st.baselines.length,
+  ], [null, true, false, 0]);
+
+  const backstage = readFileSync(join(process.cwd(), 'src/components/backstage/Backstage.tsx'), 'utf8');
+  eq('N3D-25 Backstage → Importeren laadt via loadExtensionProject(…, \'importer\'), niet via loadState', [
+    /loadExtensionProject\(useAppStore, await imp\.handler\(file\), 'importer'\)/.test(backstage),
+    /\bloadState\b/.test(backstage),
+  ], [true, false]);
 }
 
 // ── Uitslag ──────────────────────────────────────────────────────────────────

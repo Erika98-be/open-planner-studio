@@ -18,7 +18,7 @@ import { ExtensionIcon } from '@/components/common/ExtensionIcon';
 import type { ExtensionImporter } from '@/state/slices/extensionSlice';
 import { supportsRecentFiles } from '@/services/fileAccess';
 import { siteStorageAvailable } from '@/services/fileAccess/siteHost';
-import { fromExtImportResult } from '@/extensions/extMappers';
+import { loadExtensionProject } from '@/extensions/retainActiveDocument';
 import { applyDemoLibraryToShowcaseProject } from '@/state/demoLibraryShowcase';
 import { buildImportLabels } from '@/i18n/importLabels';
 import type { ImportLabels } from '@/services/importTypes';
@@ -593,12 +593,11 @@ function SettingsSection() {
 function ImportSection() {
   const { t: tMenu } = useTranslation('menu');
   const importers = useAppStore(s => s.extensionImporters);
-  const loadState = useAppStore(s => s.loadState);
   const setUI = useAppStore(s => s.setUI);
   const hasTasks = useAppStore(s => s.tasks.length > 0);
 
   // "Voortgang bijwerken uit een blad" krijgt een EIGEN kaart bovenaan,
-  // boven de extensie-importerlijst (los van diens `loadState`-gedrag). Sluit
+  // boven de extensie-importerlijst (los van diens laadgedrag). Sluit
   // Backstage mee (`activeRibbonTab: 'start'`), naar hetzelfde patroon als `ExportSection` na een
   // geslaagde export, zodat het resultaat meteen tegen de planning zichtbaar is.
   const openProgressImport = () => setUI({ activeRibbonTab: 'start', showProgressImportDialog: true });
@@ -614,9 +613,10 @@ function ImportSection() {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (!file) { input.remove(); return; }
       try {
-        // De importer levert een EXT-facing resultaat; map het naar de interne loadState-vorm.
-        const result = fromExtImportResult(await imp.handler(file));
-        loadState(result);
+        // De importer levert een EXT-facing resultaat. Dezelfde laadroute als `api.data.loadProject`,
+        // als nieuw project: geen opslagdoel (Ctrl+S overschrijft het vorige bestand niet) en
+        // gewijzigd (sluiten waarschuwt). Zie `loadExtensionProject`.
+        loadExtensionProject(useAppStore, await imp.handler(file), 'importer');
         setUI({ activeRibbonTab: 'start' });
       } catch (err) {
         console.error('[Extensies] Import mislukt:', err);
