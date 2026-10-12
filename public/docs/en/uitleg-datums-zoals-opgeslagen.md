@@ -33,7 +33,7 @@ With a Primavera file the app calculates with the calculation profile *Primavera
 
 Under the ribbon there is a bar: *You're viewing the dates as recorded in the file; recalculating would shift 4 tasks.* With a Primavera source (an `.xer` or Primavera P6 XML) it says *You're viewing the schedule as Primavera recorded it; recalculating would shift 1 task.* On the right of the bar is the button *Recalculate*. The bar has no cross.
 
-There is also a message: *4 tasks show the dates as recorded in the file (not recalculated).* Only with an `.xer` it says *1 task shows the dates as Primavera recorded them (not recalculated).* Every task for which the file recorded dates shows a marker in the *Properties* panel: *Shows Primavera’s own recorded dates for this task* with a Primavera source, or *Shows the dates as recorded in the file for this task* with another source. The Gantt, the task grid and the status bar show the dates from the file.
+There is also a message: *12 tasks show the dates as recorded in the file (not recalculated).* Only with an `.xer` it says *12 tasks show the dates as Primavera recorded them (not recalculated).* That number counts every task for which the file recorded dates, including the tasks that do not differ. The number of tasks that differ after recalculating is in the strip. Every task for which the file recorded dates shows a marker in the *Properties* panel: *Shows Primavera’s own recorded dates for this task* with a Primavera source, or *Shows the dates as recorded in the file for this task* with another source. The Gantt, the task grid and the status bar show the dates from the file.
 
 ### What stays empty in this view
 

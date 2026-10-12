@@ -112,13 +112,13 @@ The list below is a selection, grouped by topic. Where it does not say otherwise
 ### Primavera (XER)
 
 - **XER file opened** (info) — *XER file opened: N project documents.* One notification per file, even if the file opens several projects, with a *Read more* link and detail lines below it. Always *N projects found.* Only when the number is above 0: *N empty projects skipped.*, *N baseline projects excluded.*, *N baselines materialized.*, *N dangling baseline references ignored.*, *A protective baseline fallback was used.* and *N external links preserved.* Only for an encoding other than UTF-8: *Text encoding selected: {encoding}.* Further, when the number is above 0: *N parser findings.*, *N calendar findings.*, *N number-format findings.*, *N enum fallbacks.* and *N P6 scheduling settings used safe fallbacks.*
-- **Dates as Primavera recorded them** (detail line in the same notification) — *N tasks show the dates as Primavera recorded them (not recalculated).*, or, if the mode did not turn on, *N tasks differ from the dates in the file — you can show them.*
+- **Dates as Primavera recorded them** (detail line in the same notification) — *N tasks show the dates as Primavera recorded them (not recalculated).* N counts every task for which the file recorded dates, including the ones that do not differ. Or, if the mode did not turn on, *N tasks differ from the dates in the file — you can show them.*
 - **XER source archive unusable** (info) — *The XER source archive in this file is unusable and was left out; the project itself opened in full.* with the reason (for example *Reason: the checksum does not match the source bytes — the archive is damaged.*) and the consequence (*The schedule, the calculation profile and all project data from the IFC are complete. …*). When opening an IFC file in which a previously stored XER source archive cannot be used.
 - **Export loses XER information** (info) — *Exporting to {format} loses XER source information.* After a successful export to a format other than IFC of a project with data that only exists in an XER file. With a *Read more* link.
 
 ### Importing, exporting and calculation profile
 
-- **Dates as in the file** (info) — *N tasks show the dates as recorded in the file (not recalculated).* or *N tasks differ from the dates in the file — you can show them.* When opening a file with recorded dates.
+- **Dates as in the file** (info) — *N tasks show the dates as recorded in the file (not recalculated).* (N counts every task with recorded dates) or *N tasks differ from the dates in the file — you can show them.* When opening a file with recorded dates.
 - **Work and work rules visible** (info) — *This file contains stored work or custom work rules; the work rule and remaining work are shown for this project.*
 - **MS Project schedule read** (info) — *This MS Project file contains N tasks with a split, leveled, or resource-driven schedule. They are imported and shown as such.*
 - **Breaks not exported** (info) — *N tasks with breaks were exported without their breaks: MS Project/P6 only know breaks as a work distribution.* When exporting to MS Project or Primavera.
