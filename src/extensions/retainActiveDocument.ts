@@ -43,13 +43,15 @@
  * nieuwe objecten maakt; een mutatie in place zou in strict mode gooien. check-ext-contract N3D-12
  * pint dat de gedeelde objecten bevroren zijn en de load slaagt.
  */
-import type { AppState } from '@/state/appStore';
+import type { AppState, AppStore } from '@/state/appStore';
+import { markDocumentEdited } from '@/state/documentEdited';
+import type { ExtImportResult } from './extTypes';
 import type { ImportResult } from '@/services/importTypes';
 import type { ProjectSchedulingOptions } from '@/types/project';
 import type { Task } from '@/types/task';
 import type { Sequence } from '@/types/sequence';
 import type { WorkCalendar } from '@/types/calendar';
-import { PUBLIC_SCHEDULING_OPTION_KEYS } from './extMappers';
+import { PUBLIC_SCHEDULING_OPTION_KEYS, fromExtImportResult } from './extMappers';
 
 /** Alleen-lezen bronvelden: `toExt*` geeft ze door, `fromExt*` neemt ze niet over. */
 export const TASK_SOURCE_FIELDS = [
@@ -151,4 +153,37 @@ export function cleanDanglingReferences(loaded: ImportResult): ImportResult {
     resources: loaded.resources.map((r) => (known(r.calendarId) ? r : { ...r, calendarId: undefined })),
     tasks: loaded.tasks.map((t) => (known(t.calendarId) ? t : { ...t, calendarId: undefined })),
   };
+}
+
+/**
+ * Laad een extensie-resultaat over het actieve document. Eén route voor `api.data.loadProject`
+ * (`origin: 'api'`) en de extensie-importer in Backstage → Importeren (`origin: 'importer'`).
+ *
+ *  - `api` met hetzelfde project-id (lees-wijzig-laad): `retainActiveDocument`; het opslagdoel blijft,
+ *    en ook AutoSave naar bestand (`autoSaveToFile`), dat het laden anders stil uitzet (`freshPayload`).
+ *  - `api` met een ander id, en ELKE importer-load: een nieuw project. Een importer opent een vreemd
+ *    bestand; ook bij een toevallig gelijk id is er niets van het document om te bewaren. Het krijgt
+ *    geen opslagdoel, zodat opslaan om een nieuwe plek vraagt in plaats van het bestand van het
+ *    vorige project te overschrijven.
+ *  - Altijd: het document staat daarna op gewijzigd (`markDocumentEdited`), zodat de afsluitcontrole
+ *    en AutoSave het zien; het laden zelf zet `isDirty` op false, zoals voor een geopend bestand.
+ */
+export function loadExtensionProject(store: AppStore, result: ExtImportResult, origin: 'api' | 'importer'): void {
+  const before = store.getState();
+  const loaded = fromExtImportResult(result);
+  const sameProject = origin === 'api' && loaded.project.id === before.project.id;
+  const autoSaveToFile = before.autoSaveToFile;
+  before.loadState(sameProject ? retainActiveDocument(loaded, before) : loaded);
+  if (origin === 'api') store.getState().runCPM();
+  store.setState((s) => {
+    markDocumentEdited(s);
+    if (sameProject) {
+      s.autoSaveToFile = autoSaveToFile;
+    } else {
+      s.filePath = null;
+      s.fileHandle = null;
+      s.siteFileId = null;
+      s.siteFileVersion = null;
+    }
+  });
 }

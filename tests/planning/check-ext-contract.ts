@@ -1464,7 +1464,7 @@ for (const [naam, ext, bron, sleutels] of [
   const opgeslagen = () => {
     useAppStore.getState().newProject();
     api.data.addTask({ name: 'Bewaard' });
-    useAppStore.setState((s) => { s.filePath = 'bewaard.ifc'; s.isDirty = false; });
+    useAppStore.setState((s) => { s.filePath = 'bewaard.ifc'; s.isDirty = false; s.autoSaveToFile = true; });
   };
 
   opgeslagen();
@@ -1472,6 +1472,9 @@ for (const [naam, ext, bron, sleutels] of [
   eq('N3D-18 zelfde id ⇒ opslagdoel blijft, document is gewijzigd', [
     useAppStore.getState().filePath, useAppStore.getState().isDirty,
   ], ['bewaard.ifc', true]);
+  // Reviewproef probe-f F1: het laden zette AutoSave naar bestand stil uit. Mutatiebewijs: het
+  // herstel van `autoSaveToFile` weg ⇒ N3D-23 rood.
+  eq('N3D-23 zelfde id ⇒ AutoSave naar bestand blijft aan', useAppStore.getState().autoSaveToFile, true);
 
   opgeslagen();
   const ander = lees();
@@ -1481,6 +1484,7 @@ for (const [naam, ext, bron, sleutels] of [
     useAppStore.getState().filePath, useAppStore.getState().fileHandle, useAppStore.getState().siteFileId,
     useAppStore.getState().isDirty,
   ], [null, null, null, true]);
+  eq('N3D-23a ander id ⇒ geen AutoSave naar bestand (er is geen bestand)', useAppStore.getState().autoSaveToFile, false);
 }
 
 // ── Uitslag ──────────────────────────────────────────────────────────────────

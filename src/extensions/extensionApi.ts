@@ -24,8 +24,7 @@ import {
   type ExtEventListener,
 } from '@/services/extensionEvents';
 import { applyPermissionGuards } from './permissions';
-import { retainActiveDocument } from './retainActiveDocument';
-import { markDocumentEdited } from '@/state/documentEdited';
+import { loadExtensionProject } from './retainActiveDocument';
 import { createHelpApi } from './helpApi';
 import {
   assertNoImportSourceDrift,
@@ -43,7 +42,6 @@ import {
   fromExtTaskAddInput,
   fromExtTaskUpdates,
   fromExtSequenceInput,
-  fromExtImportResult,
   fromExtRibbonTab,
   fromExtFontProvider,
 } from './extMappers';
@@ -301,28 +299,8 @@ export function createExtensionApi(
       addSequence: (seq) => batch.withTransaction(
         () => document.store.getState().addSequence(fromExtSequenceInput(seq)),
       ),
-      loadProject: (result: ExtImportResult) => {
-        const store = document.store.getState();
-        const loaded = fromExtImportResult(result);
-        const sameProject = loaded.project.id === store.project.id;
-        // Zelfde project-id ⇒ wat het contract niet draagt, blijft van het document (N3, B29); zie
-        // `retainActiveDocument`.
-        store.loadState(retainActiveDocument(loaded, store));
-        document.store.getState().runCPM();
-        document.store.setState((s) => {
-          // Het geladen document wijkt af van wat er bewaard is: de afsluitcontrole en AutoSave moeten
-          // het zien (`applyLoadedProject` zet `isDirty` op false, zoals voor een geopend bestand).
-          markDocumentEdited(s);
-          // Ander id ⇒ een NIEUW project zonder opslagdoel: opslaan vraagt om een nieuwe plek in plaats
-          // van het bestand van het vorige project te overschrijven.
-          if (!sameProject) {
-            s.filePath = null;
-            s.fileHandle = null;
-            s.siteFileId = null;
-            s.siteFileVersion = null;
-          }
-        });
-      },
+      // Zie `loadExtensionProject`: hetzelfde project-id houdt vast wat het contract niet draagt.
+      loadProject: (result: ExtImportResult) => loadExtensionProject(document.store, result, 'api'),
       recalculate: () => document.store.getState().runCPM(),
       // Eén snapshot voor de hele reeks i.p.v. één per mutatie — lineair in plaats van
       // kwadratisch, en één undo-stap voor wat de gebruiker als één handeling ziet.
