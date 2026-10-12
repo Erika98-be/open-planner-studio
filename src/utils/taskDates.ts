@@ -8,7 +8,7 @@ import { MS_PER_DAY, parseDate, parseInstant } from '@/utils/dateUtils';
  * datum op het scherm: het anker van een externe koppeling (`externalLinks.sourceAnchorDate`, voedt de
  * berekening van een ander document), de geplande datums en de spreidingsankers van de P6 XML-export,
  * de contour-tijdfasering van de MSPDI-export en de histogramtooltip (de resourcebelasting rekent
- * vanaf `earlyStart`, `ResourceLoad.taskWorkDayIsos`). De kolommen *Vroege start* en *Vroeg einde*
+ * vanaf `earlyStart`, `ResourceLoad.taskWorkDayIsos`). De kolommen *Vroegste start* en *Vroegste einde*
  * lezen `earlyStart`/`earlyFinish` rauw, zoals P6.
  */
 export function computedStart(task: Task): string {
@@ -36,7 +36,7 @@ function actualStartOf(task: Task): string {
  * berekende start ({@link computedStart}). De motor verandert daarvoor niet: in het P6-profiel zet A19
  * (`p6UseRemainingStartForProgress`) de vroege start van een lopende taak op de statusdatum en C5
  * (`p6CompletedPhysicalAtDataDate`) die van een voltooide taak ook — dat blijft de rekendatum (kolom
- * *Vroege start*), het scherm toont de werkelijke start. In het OPS-profiel pint de solver de vroege
+ * *Vroegste start*), het scherm toont de werkelijke start. In het OPS-profiel pint de solver de vroege
  * start al op de werkelijke start.
  *
  * VERZAMELTAAK: de vroegste van haar werkelijke start (de rollup van haar bladen,

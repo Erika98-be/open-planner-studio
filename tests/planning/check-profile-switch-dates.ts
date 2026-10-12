@@ -19,9 +19,12 @@
 // is onder P6 al weg, dus P6 en OPS geven A1 dezelfde datums. A3 (niet gestart, statusdatum) houdt
 // zijn datums. A2 (lopend) schuift sinds 2026-09-24 WEL: A19 staat nu in de P6-basis in plaats van als
 // per-bestand-afwijking die bij de wissel mee naar OPS ging, dus onder OPS is A19 uit en toont A2 haar
-// werkelijke start (23-02) i.p.v. de restwerkstart (02-03). Samen 3 verschoven (A2, A4, M1); tot
-// 2026-09-24 waren het er 2 (A4, M1), vóór vraag 7 3 (met A1).
-// Terug naar P6 draait dezelfde 3 terug, en ELK tijdveld van elke taak is weer byte-gelijk aan de
+// werkelijke start (23-02) i.p.v. de restwerkstart (02-03). Dat is een verschuiving van de REKENdatum
+// (kolom Vroegste start); de telling vergelijkt sinds 2026-10-12 (eigenaarsbesluit optie 1) de GETOONDE
+// datums (`recordedDatesDeviate`), en de getoonde start van A2 is in beide profielen haar werkelijke
+// start 23-02. Dus 2 verschoven (A4, M1). Eerder: 3 (A2, A4, M1) van 2026-09-24 tot 2026-10-12, 2 (A4,
+// M1) tot 2026-09-24, vóór vraag 7 3 (met A1).
+// Terug naar P6 draait dezelfde 2 terug, en ELK tijdveld van elke taak is weer byte-gelijk aan de
 // verse opening.
 //
 // Mutatiebewijs: `task.time.scheduleFinish = r.earlyFinish;` terugzetten in applyCpmResult.ts
@@ -35,6 +38,7 @@ import { writeIFC } from '@/services/ifc/ifcWriter';
 import { buildWriteIFCInput } from '@/state/ifcSaveInput';
 import { readXerArchiveIFC } from './xerArchiveTestReader';
 import type { Task } from '@/types/task';
+import { shownStart } from '@/utils/taskDates';
 
 const diffs: string[] = [];
 let checks = 0;
@@ -118,10 +122,14 @@ for (const other of ['ops', 'msproject'] as const) {
   S().runCPM();
   eq(`07 ${other}: Bereken daarna verandert niets`, JSON.stringify(timesOf(S().tasks)), fresh);
 }
-// De telling met de hand afgeleid (kop): A2, A4 en M1 (A1 sinds vraag 7 niet meer; A2 sinds 2026-09-24 wel).
+// De telling met de hand afgeleid (kop): A4 en M1 (A1 sinds vraag 7 niet meer; A2 sinds 2026-10-12 niet
+// meer: alleen haar rekenstart verschuift, de getoonde start blijft de werkelijke start).
 S().undo(); S().undo(); // terug naar P6 vóór de MS Project-ronde
+const a2 = () => S().tasks.find(task => task.wbsCode === 'A2')!;
+eq('08- onder P6 toont A2 haar werkelijke start, haar rekenstart is de restwerkstart (A19)',
+  [shownStart(a2()), a2().time.earlyStart], ['2026-02-23T08:00', '2026-03-02T08:00']);
 const toOps = switchTo(ctx, 'ops');
-eq('08 P6 → OPS: 3 taken verschoven (A2, A4, M1)', toOps.shifted, 3);
+eq('08 P6 → OPS: 2 taken verschoven (A4, M1)', toOps.shifted, 2);
 // Onder OPS (A19, C6 en A16 uit): A2 op haar werkelijke start 23-02 08:00; A4 SS 40 u (9-urige dagen)
 // ⇒ 27-02 12:00, maar A4 is niet gestart en onder OPS begint een niet-gestarte taak niet vóór de
 // statusdatum (A23 is alleen MS Project) ⇒ 02-03 08:00, plus 90 u (10 dagen) ⇒ 13-03 17:00. A3 eindigt
@@ -130,7 +138,8 @@ eq('08a …en onder OPS staat M1 eerder, niet omgekeerd', [m1(ctx).earlyStart, m
   ['2026-03-13T17:00', '2026-03-13T17:00']);
 eq('08b onder OPS staat A2 op haar werkelijke start (A19 uit)',
   S().tasks.find(task => task.wbsCode === 'A2')!.time.earlyStart, '2026-02-23T08:00');
-eq('09 OPS → P6: 3 taken terug', switchTo(ctx, 'p6').shifted, 3);
+eq('08c …en dus is haar GETOONDE start in beide profielen gelijk', shownStart(a2()), '2026-02-23T08:00');
+eq('09 OPS → P6: 2 taken terug', switchTo(ctx, 'p6').shifted, 2);
 
 // 3. "Gaat zo het IFC in": opslaan ná een berekening onder OPS, heropenen, terug naar P6.
 switchTo(ctx, 'ops');

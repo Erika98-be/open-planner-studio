@@ -738,10 +738,11 @@ eq('35 secundair: eigen scrollX', optsSecondary.view.scrollX, 400);
   // `computeEffectiveViewStart`) valt hier alsnog om.
   const { execSync } = await import('node:child_process');
   const { relative } = await import('node:path');
-  // De DRIE-schakelige keten, met `lateStart` als anker. Twee schakels (`… || scheduleStart || ''`)
-  // is iets anders: dat is de datumloos-guard in `GanttRenderer.barGeometry`/`dragDurationText`,
-  // geen oorsprongsberekening. Zonder dat anker vlagt deze check die twee ten onrechte.
-  const chain = String.raw`earlyStart \|\| [a-zA-Z_.]*scheduleStart \|\| [a-zA-Z_.]*lateStart`;
+  // De keten met `lateStart` als anker: de getoonde start (`shownStart`, sinds 2026-10-12 de
+  // werkelijke start van een gestarte taak, anders early → schedule) en dan de late start. Zonder
+  // het `lateStart`-anker vlagt deze check ten onrechte de datumloos-guard in
+  // `GanttRenderer.barGeometry`/`dragDurationText` (`shownStart(task) || ''`), geen oorsprongsberekening.
+  const chain = String.raw`shownStart\([a-zA-Z_.]*\) \|\| [a-zA-Z_.]*lateStart`;
   const hits = execSync(
     `grep -rlE ${JSON.stringify(chain)} ${JSON.stringify(join(root, 'src'))} || true`,
     { encoding: 'utf8' },

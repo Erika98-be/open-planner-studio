@@ -380,7 +380,7 @@ export function useGanttPointerCoordinator(
         segmentCount: grip.segmentCount,
         startX: event.clientX,
         startY: event.clientY,
-        // De datums van de balk zelf (`GanttRenderer.barGeometry`): de rechterrand van een lopende
+        // De datums waarop de renderer de balk tekent (`shownStart`/`shownFinish`): de rechterrand van een lopende
         // taak rekent zo de duur vanaf haar werkelijke start, net als de Tabel-kolom Einde
         // (`taskEditPlan.durationForShownFinish`).
         originalStart: shownStart(hit.task),

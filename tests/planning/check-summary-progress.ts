@@ -198,12 +198,17 @@ function reset() {
   S().setTaskProgress(ids.K3, 1);
   S().setTaskProgress(ids.L1, 1);
   S().runCPM();
-  // Een "oud" bestand: de fase draagt een bevroren 62% "gestart", en K3 staat later opgeslagen dan
-  // de berekening geeft (zodat openen een verschuiving vindt en "datums zoals opgeslagen" aanbiedt).
-  // Sinds de fase ook afgeleide werkelijke datums krijgt, draagt ze na de rollup een werkelijk einde;
-  // een bevroren 62%-fase heeft dat niet (de lezer zou haar daarop naar 100% normaliseren), dus weg.
+  // Een "oud" bestand: de fase draagt een bevroren 62% "gestart", en K3 en de fase staan later
+  // opgeslagen dan de berekening geeft (zodat openen een verschuiving vindt en "datums zoals
+  // opgeslagen" aanbiedt). Sinds de fase ook afgeleide werkelijke datums krijgt, draagt ze na de rollup
+  // een werkelijk einde; een bevroren 62%-fase heeft dat niet (de lezer zou haar daarop naar 100%
+  // normaliseren), dus weg.
+  // Sinds 2026-10-12 (eigenaarsbesluit optie 1) telt alleen een verschil in de GETOONDE datums: K3 is
+  // voltooid en staat dus in de modus én na herberekenen op zijn werkelijke datums — zijn verzette
+  // vroege datums tellen niet. De fase wél: in het bestand is ze niet voltooid (62%), dus toont ze
+  // daar haar opgeslagen einde 20-03; herberekend is ze voltooid en eindigt ze op haar werkelijke einde.
   S().updateTask(ids.P, { status: 'STARTED' });
-  setTime(ids.P, { completion: 0.62, actualFinish: undefined });
+  setTime(ids.P, { completion: 0.62, actualFinish: undefined, earlyFinish: '2026-03-20' });
   setTime(ids.K3, { earlyStart: '2026-03-16', earlyFinish: '2026-03-20' });
   const oldFile = writeIFC(buildWriteIFCInput(S()));
   const rawOld = readIFC(oldFile).tasks.find(t => t.name === 'Fase')!;
