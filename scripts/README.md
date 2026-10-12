@@ -471,6 +471,24 @@ het geval van `ops-test-client.mjs` nergens). Daarmee wijken ze af van de regel 
 | `verify-task-grid-spreadsheet.mjs` | `node scripts/verify-task-grid-spreadsheet.mjs <absoluut-soffice-pad>` | klembordcontract van het taakraster tegen een echte spreadsheet: bouwt TSV met de productie-serializer, laat LibreOffice Calc die naar XLSX en terug converteren en controleert met de productieparser dat alle cellen (incl. OPS-EXT/1-suffix) exact terugkomen. Vereist LibreOffice |
 | `ops-test-client.mjs` | `node scripts/ops-test-client.mjs <ops-test-map> '<json-opdracht met id>'` | stuurt één opdracht naar het dev-only Tauri-testkanaal van `src/utils/devBridge.ts` (`<appDataDir>/ops-test/cmd.json`, atomair geschreven) en wacht maximaal 15 s op een `res.json` met hetzelfde id; exit 0 bij `ok: true`. Werkt alleen tegen een draaiende `npm run tauri:dev` |
 
+## Platformbouw (OpenAEC-app op Frappe)
+
+De OpenAEC-app serveert de tool als statische bestanden onder een subpad van de site (issue #307).
+Daarvoor is er een aparte bouw:
+
+```bash
+npm run build:platform -- --base /assets/openaec/planner/
+```
+
+| script | npm-script | doet |
+|---|---|---|
+| `build-platform.mjs` | `npm run build:platform` | eist `--base /pad/` (begint en eindigt met `/`; anders exit 2 met een voorbeeld), draait `tsc` zoals `npm run build`, en bouwt dan `vite build --mode platform --base <pad>`. De modus `platform` leest `.env.platform` (bouwvlag `VITE_OPS_PLATFORM=1`, zie `src/utils/buildFlags.ts`: geen demo-start, geen extensies, geen AI-modus), zet `build.manifest` aan en schrijft naar `dist-platform/` (met `dist-platform/.vite/manifest.json`). `OPS_DEV_INSTANCE` wordt gewist, zodat geen dev-slug in de bundel komt. De gewone `npm run build` blijft ongewijzigd |
+
+Getest door `tests/browser/platform-build.spec.ts` (draait in `npm run test:browser`): die bouwt één
+keer met `--base /tools/planner/` en laadt de app vanaf dat subpad.
+Let op in Git Bash op Windows: die zet een argument als `/pad/` om naar een Windows-pad; gebruik daar
+`MSYS_NO_PATHCONV=1`.
+
 ## Release en publicatie
 
 | script | aangeroepen door | doet |
