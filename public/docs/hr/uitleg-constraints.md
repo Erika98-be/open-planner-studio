@@ -1,6 +1,6 @@
 # Ograničenja i rokovi za dovršetak
 
-Opeka se isporučuje tek 21. lipnja. Dozvola još nije stigla. prije kolektivnog godišnjeg odmora u građevinarstvu Ovisnosti bilježe da zadatak čeka drugi zadatak, ali dogovori o datumu ne proizlaze iz redoslijeda radova. Za to služe ograničenja i rokovi za dovršetak. U ovom članku čitate što radi svaka vrsta, kada se zadatak pomakne, a kada se mijenja samo vremenska rezerva, što je tvrdo fiksiranje i kako aplikacija prijavljuje sukob.
+Opeka se isporučuje tek 21. lipnja. Dozvola još nije stigla. prije kolektivnog godišnjeg odmora u građevinarstvu Ovisnosti bilježe da zadatak čeka drugi zadatak, ali dogovori o datumu ne proizlaze iz redoslijeda radova. Za to služe ograničenja i rokovi za dovršetak. U ovom članku čitate što radi svaka vrsta, kada se zadatak pomakne, a kada se mijenja samo vremenska rezerva, što je čvrsto fiksiranje i kako aplikacija prijavljuje sukob.
 
 Pravila i primjeri vrijede za novi projekt s profilom izračuna *Open Planner Studio* i radnim tjednom od ponedjeljka do petka.
 
@@ -13,7 +13,7 @@ Pravila i primjeri vrijede za novi projekt s profilom izračuna *Open Planner St
 
 **Rok za dovršetak** je jednostavniji oblik čuvanja: ciljni datum za završetak zadatka, a da ga ništa ne pomiče.
 
-Sva ograničenja su **popustljiva**: izračun se nastavlja, čak i kad datum nije ispunjen. Jedina iznimka je **tvrdo fiksiranje**, koje nadjačava ovisnosti. Više o tome slijedi u nastavku.
+Sva ograničenja su **meka**: izračun se nastavlja, čak i kad datum nije ispunjen. Jedina iznimka je **čvrsto fiksiranje**, koje nadjačava ovisnosti. Više o tome slijedi u nastavku.
 
 ## Kako aplikacija izračunava
 
@@ -44,11 +44,11 @@ Uz MSO i MFO pojavljuje se potvrdni okvir *Obvezno (logika fiksiranja)*. Ako ga 
 - Prethodnici dobivaju negativnu vremensku rezervu, a aplikacija prijavljuje prekršeno ograničenje čim bi ovisnosti dopustile da zadatak počne kasnije od fiksiranja. Sam fiksirani zadatak zadržava vremensku rezervu 0.
 - Nasljednici se izračunavaju iz fiksiranog zadatka. Zato mogu početi ranije nego bez fiksiranja, iako logika prije njega nije završena. U primjeru u nastavku završetak projekta se zbog toga pomakne unaprijed za tri radna dana.
 
-Prvi put kad uključite fiksiranje, aplikacija prikaže kratko objašnjenje: tvrdo fiksiranje nadjačava ovisnosti, traka je fiksirana na datumu, čak i prije svojih prethodnika.
+Prvi put kad uključite fiksiranje, aplikacija prikaže kratko objašnjenje: čvrsto fiksiranje nadjačava ovisnosti, traka je fiksirana na datumu, čak i prije svojih prethodnika.
 
 ### Sekundarno ograničenje
 
-Zadatak ima jedno primarno ograničenje. Ako želite i drugu granicu, na primjer zadatak koji ne smije početi prije 14. lipnja i mora biti završen najkasnije 17. lipnja, dodajte **sekundarno ograničenje**. Mora biti prava granica (SNET, FNET, SNLT ili FNLT) i mora graničiti u suprotnom smjeru od primarnog: donja granica (SNET ili FNET) s gornjom granicom (SNLT ili FNLT). SNET sa SNLT je zato dopušten, SNET s FNET nije. Aplikacija druge kombinacije označava crveno, s razlogom, na primjer *Primarno i sekundarno ograničenje ne smiju ograničavati istu stranu.* Uz ASAP, ALAP, MSO, MFO i tvrdo fiksiranje sekundarno ograničenje nije dopušteno.
+Zadatak ima jedno primarno ograničenje. Ako želite i drugu granicu, na primjer zadatak koji ne smije početi prije 14. lipnja i mora biti završen najkasnije 17. lipnja, dodajte **sekundarno ograničenje**. Mora biti prava granica (SNET, FNET, SNLT ili FNLT) i mora graničiti u suprotnom smjeru od primarnog: donja granica (SNET ili FNET) s gornjom granicom (SNLT ili FNLT). SNET sa SNLT je zato dopušten, SNET s FNET nije. Aplikacija druge kombinacije označava crveno, s razlogom, na primjer *Primarno i sekundarno ograničenje ne smiju ograničavati istu stranu.* Uz ASAP, ALAP, MSO, MFO i čvrsto fiksiranje sekundarno ograničenje nije dopušteno.
 
 ### Rok za dovršetak
 
@@ -80,9 +80,9 @@ Kritični put čine *Groundwork*, *Pour foundation*, *Brickwork* i *Roofing*. Pr
 - **SNET srijeda, 9. lipnja**: bez učinka. Ovisnosti svejedno dopuštaju da *Brickwork* počne tek u ponedjeljak, 14. lipnja.
 - **SNLT srijeda, 16. lipnja**: bez učinka. *Brickwork* počinje u ponedjeljak, 14. lipnja i lako ispunjava granicu.
 - **SNLT petak, 11. lipnja**: previše usko. *Brickwork* ipak počinje u ponedjeljak, 14. lipnja, jedan radni dan kasnije. *Groundwork*, *Pour foundation* i *Brickwork* dobivaju −1 radni dan vremenske rezerve, a aplikacija prijavljuje *Logika nadjačava ograničenje Ne početi kasnije od (SNLT) 11-06-2027 (negativna vremenska rezerva)*. Ništa se ne pomiče.
-- **MSO srijeda, 16. lipnja** (bez tvrdog fiksiranja): *Brickwork* se pomakne na srijedu, 16. lipnja i završava u utorak, 22. lipnja. *Roofing* teče od srijede, 23. do petka, 25. lipnja, projekt je gotov u petak, 25. lipnja.
-- **MSO petak, 11. lipnja** (bez tvrdog fiksiranja): datum je raniji od onoga što dopuštaju ovisnosti. *Brickwork* ipak počinje u ponedjeljak, 14. lipnja, a vremenska rezerva postaje −1, kao i kod SNLT.
-- **MSO srijeda, 9. lipnja s tvrdim fiksiranjem**: *Brickwork* počinje u srijedu, 9. lipnja i završava u utorak, 15. lipnja, dok *Pour foundation* i dalje traje do petka, 11. lipnja. *Roofing* teče od srijede, 16. do petka, 18. lipnja: projekt je gotov tri radna dana ranije nego bez fiksiranja. *Groundwork* i *Pour foundation* dobivaju −3 radna dana vremenske rezerve.
+- **MSO srijeda, 16. lipnja** (bez čvrstog fiksiranja): *Brickwork* se pomakne na srijedu, 16. lipnja i završava u utorak, 22. lipnja. *Roofing* teče od srijede, 23. do petka, 25. lipnja, projekt je gotov u petak, 25. lipnja.
+- **MSO petak, 11. lipnja** (bez čvrstog fiksiranja): datum je raniji od onoga što dopuštaju ovisnosti. *Brickwork* ipak počinje u ponedjeljak, 14. lipnja, a vremenska rezerva postaje −1, kao i kod SNLT.
+- **MSO srijeda, 9. lipnja s čvrstim fiksiranjem**: *Brickwork* počinje u srijedu, 9. lipnja i završava u utorak, 15. lipnja, dok *Pour foundation* i dalje traje do petka, 11. lipnja. *Roofing* teče od srijede, 16. do petka, 18. lipnja: projekt je gotov tri radna dana ranije nego bez fiksiranja. *Groundwork* i *Pour foundation* dobivaju −3 radna dana vremenske rezerve.
 
 Isto tako, s ograničenjem ili rokom za dovršetak na drugom zadatku:
 
@@ -112,5 +112,5 @@ U lekciji 3 sami postavljate ograničenje i rok za dovršetak u projektu za lekc
 - [Postavljanje ograničenja ili roka za dovršetak](docs://howto-constraint-deadline-zetten): koraci za postavljanje ograničenja ili roka za dovršetak.
 - [Ovisnosti i vrijeme odgode](docs://uitleg-relaties): ovisnosti uz koje stoje ograničenja.
 - [Kritični put i vremenska rezerva](docs://uitleg-kritiek-pad): kako nastaje negativna vremenska rezerva i što ona čini s kritičnim putem.
-- [De Vaart Apartment Complex](examples://showcase-appartementencomplex.ifc): tvrdo fiksiranje (*Mora započeti na*) na *Municipal road closure (permitted closure period)* i sekundarno ograničenje (*Ne početi kasnije od*) na *Lift supply & installation — Tower A*.
+- [De Vaart Apartment Complex](examples://showcase-appartementencomplex.ifc): čvrsto fiksiranje (*Mora započeti na*) na *Municipal road closure (permitted closure period)* i sekundarno ograničenje (*Ne početi kasnije od*) na *Lift supply & installation — Tower A*.
 - [6 New Terraced Houses, De Akkers](examples://showcase-rijwoningen-de-akkers.ifc): rok za dovršetak koji nije ispunjen, s negativnom vremenskom rezervom.

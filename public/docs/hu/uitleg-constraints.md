@@ -32,7 +32,7 @@ Ha a dátum szombatra, vasárnapra vagy nem munkanapra esik, az alkalmazás munk
 
 ### Mit jelent a negatív tartalékidő
 
-Egy felső korlát visszafelé működik. Ha a korlátozás a tevékenység legkésőbbi dátumát a legkorábbi dátuma elé teszi, a teljes tartalékidő negatív lesz. Ez az előtte álló tevékenységekre is érvényes: ha a brickwork tevékenységnek legkésőbb péntek, június 11-én kell kezdődnie, de hétfő, június 14-e előtt nem kezdhető, akkor a brickwork előtti tevékenységek is egy munkanappal késnek. Minden negatív tartalékidejű tevékenység kritikus. Hogy ez hogyan működik, a [Kritikus út és tartalékidő](docs://uitleg-kritiek-pad) cikkben olvashat.
+Egy felső korlát visszafelé működik. Ha a korlátozás a tevékenység legkésőbbi dátumát a legkorábbi dátuma elé teszi, a teljes tartalékidő negatív lesz. Ez az előtte álló tevékenységekre is érvényes: ha a falazásnak legkésőbb péntek, június 11-én kell kezdődnie, de hétfő, június 14-e előtt nem kezdhető, akkor a falazás előtti tevékenységek is egy munkanappal késnek. Minden negatív tartalékidejű tevékenység kritikus. Hogy ez hogyan működik, a [Kritikus út és tartalékidő](docs://uitleg-kritiek-pad) cikkben olvashat.
 
 Egy felső korlát miatt a sávok nem mozdulnak el. Az ütközést a negatív *Teljes tartalékidő* értékben látja, a sáv fölött megjelenő piros rombuszban, az állapotsor üzenetében (például *1 korlátozás megsértve*), és a *Figyelmeztetések* panelen.
 
@@ -89,7 +89,7 @@ A kritikus utat a *Groundwork*, a *Pour foundation*, a *Brickwork* és a *Roofin
 - **ALAP** a *Scaffolding* tevékenységen: a tevékenység június 17., csütörtökre és június 18., péntekre tolódik, a *Roofing* előtti legkésőbbi pillanatra. A *Roofing* az egyetlen utódja, és pontosan 3 munkanapnyi mozgástere volt. Ez most elfogy, és a *Scaffolding* kritikus lesz.
 - **SNET június 19., szombat** a *Scaffolding* tevékenységen: a korlát június 21., hétfőnek számít. A *Scaffolding* június 21-én, hétfőn és június 22-én, kedden fut, a *Roofing* pedig együtt tolódik: június 23., szerdától június 25., péntekig.
 - **Határidő június 18., péntek** a *Roofing* tevékenységen: semmi sem mozdul, a *Roofing* június 21., hétfőtől június 23., szerdáig marad. A *Groundwork*, a *Pour foundation*, a *Brickwork* és a *Roofing* −3 munkanap tartalékidőt kap, és az alkalmazás ezt jelzi: *A 18-06-2027 határidő lekésve — korai befejezés: 23-06-2027*. A *Scaffolding* tartalékideje 0 munkanap marad, és ő is kritikus lesz.
-- **SNET június 21., hétfő** a *Brickwork* tevékenységen, **határidő június 25., péntek** a *Roofing* tevékenységen: a korlátozás egy héttel hátrébb tolja a brickwork tevékenységet, a határidő pedig jelzi, hogy a *Roofing* június 30-án, szerdán késik. A *Brickwork* és a *Roofing* −3 munkanap tartalékidőt kap. A *Groundwork* és a *Pour foundation* 2 munkanapot tart meg.
+- **SNET június 21., hétfő** a *Brickwork* tevékenységen, **határidő június 25., péntek** a *Roofing* tevékenységen: a korlátozás egy héttel hátrébb tolja a falazást, a határidő pedig jelzi, hogy a *Roofing* június 30-án, szerdán késik. A *Brickwork* és a *Roofing* −3 munkanap tartalékidőt kap. A *Groundwork* és a *Pour foundation* 2 munkanapot tart meg.
 
 A 3. oktatóanyagban korlátozást és határidőt állít be az oktatóanyag projektjében, és figyelheti, hogyan mozdul el az ütemezés.
 

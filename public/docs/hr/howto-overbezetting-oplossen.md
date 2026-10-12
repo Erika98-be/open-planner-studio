@@ -4,7 +4,7 @@ Cilj: vidjeti gdje resurs na nekom danu ima previše posla i riješiti to, obič
 
 ## Kada vam ovo treba
 
-Na papiru vaš raspored funkcionira, ali bricklayer je na dva zida koji se izvode istim danima. Aplikacija to naziva **preopterećenje resursa**. Resurs je preopterećen na radni dan ako ga raspored tog dana traži više nego što iznosi njegov kapacitet (*Maksimalan postotak jedinica*), ili ako prema svom kalendaru tog dana ne radi.
+Na papiru vaš raspored funkcionira, ali zidar je na dva zida koji se izvode istim danima. Aplikacija to naziva **preopterećenje resursa**. Resurs je preopterećen na radni dan ako ga raspored tog dana traži više nego što iznosi njegov kapacitet (*Maksimalan postotak jedinica*), ili ako prema svom kalendaru tog dana ne radi.
 
 Najprije pogledajte preopterećenje. Zatim odaberite rješenje. **Uravnoteživanje** je rješenje koje za vas izračunava aplikacija: zadatke pomiče tako da počinju kasnije, kako bi resurs mogao sve obaviti. Kako to aplikacija računa, pročitajte u članku [Uravnoteživanje resursa](docs://uitleg-nivelleren).
 
@@ -23,7 +23,7 @@ Ako je odabran zadatak, histogram prikazuje samo opterećenje tog zadatka i samo
 
 ### 2. Odaberite rješenje
 
-- **Više kapaciteta.** Ako zaista dolazi drugi bricklayer, postavite *Maksimalan postotak jedinica* na 2 (vidi [Upravljanje resursima](docs://howto-resources-beheren)). Preopterećenje tada nestaje.
+- **Više kapaciteta.** Ako zaista dolazi drugi zidar, postavite *Maksimalan postotak jedinica* na 2 (vidi [Upravljanje resursima](docs://howto-resources-beheren)). Preopterećenje tada nestaje.
 - **Manje jedinica po danu.** Smanjite *Jed./dan* ili za dodjelu odaberite drugu krivulju (vidi [Dodjela resursa s krivuljom](docs://howto-resource-toewijzen)).
 - **Zadatke postavite jedan za drugim.** Dodajte ovisnost između dva zadatka, tako da drugi počinje tek kad se prvi završi (vidi [Dodavanje ovisnosti](docs://howto-relaties-leggen)).
 - **Uravnoteživanje.** Aplikacija pomiče zadatak tako da počinje kasnije.

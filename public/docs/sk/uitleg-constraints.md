@@ -9,7 +9,7 @@ Pravidlá a príklady platia pre nový projekt s profilom výpočtu *Open Planne
 **Obmedzenie** je dátumová hranica pre jednu úlohu, nezávislá od jej závislostí. Takáto hranica môže fungovať dvoma spôsobmi:
 
 - Obmedzenie **posúva**: úloha nesmie začať ani skončiť skôr ako dátum. Ak by úloha kvôli svojim závislostiam začala skôr, presunie sa na tento dátum.
-- Obmedzenie **stráží**: úloha musí začať alebo skončiť najneskôr v tomto dátume. Aplikácia nič nepresúva. Ak plán tento dátum nespĺňa, **časová rezerva** úlohy a reťazca pred ňou sa stane záporná. Časová rezerva je priestor, ktorý má úloha, kým sa posunie dátum dokončenia projektu. Záporná hodnota znamená, že na papieri už meškáte (pozri [Kritická cesta a časová rezerva](docs://uitleg-kritiek-pad)).
+- Obmedzenie **stráží**: úloha musí začať alebo skončiť najneskôr v tomto dátume. Aplikácia nič nepresúva. Ak plán tento dátum nespĺňa, **časová rezerva** úlohy a reťazca pred ňou sa stane zápornou. Časová rezerva je priestor, ktorý má úloha, kým sa posunie dátum dokončenia projektu. Záporná hodnota znamená, že na papieri už meškáte (pozri [Kritická cesta a časová rezerva](docs://uitleg-kritiek-pad)).
 
 Termín je jednoduchšia forma stráženia: cieľový dátum dokončenia úlohy, bez toho, aby ju niečo presúvalo.
 
@@ -25,14 +25,14 @@ Typ zvolíte pomocou poľa *Obmedzenie* v paneli *Vlastnosti*. Takto počíta ka
 - *Čo najneskôr (ALAP)*: úloha sa posunie čo najneskôr, bez toho, aby nasledujúca úloha musela začať neskôr. Preto využije svoju voľnú časovú rezervu. Ak jej po tom zostane celková časová rezerva, pretože nasledujúce úlohy majú vlastný priestor, zostane nekritická. Ak sa vyčerpá aj táto rezerva, úloha sa počíta ako kritická.
 - *Začiatok nie skôr ako (SNET)*: dolná hranica pre začiatok. Ak by úloha začala skôr, presunie sa na dátum. Ak je dátum skorší, než dovoľujú závislosti, obmedzenie nič nerobí.
 - *Dokončiť nie skôr ako (FNET)*: rovnako, ale pre dokončenie úlohy.
-- *Začiatok nie neskôr ako (SNLT)* a *Dokončiť nie neskôr ako (FNLT)*: horná hranica pre začiatok alebo dokončenie. Nepresúvajú nič. Ak sa hranica nesplní, aplikácia nahlási porušené obmedzenie a časová rezerva sa stane záporná.
-- *Musí začať dňa (MSO)* a *Musí skončiť dňa (MFO)*: dolná a horná hranica zároveň. Úloha sa presunie na dátum, ak je neskorší, než vyžadujú závislosti. Ak je dátum skorší, než dovoľujú závislosti, úloha ostane tam, kam ju postavili závislosti, a časová rezerva sa stane záporná.
+- *Začiatok nie neskôr ako (SNLT)* a *Dokončiť nie neskôr ako (FNLT)*: horná hranica pre začiatok alebo dokončenie. Nepresúvajú nič. Ak sa hranica nesplní, aplikácia nahlási porušené obmedzenie a časová rezerva sa stane zápornou.
+- *Musí začať dňa (MSO)* a *Musí skončiť dňa (MFO)*: dolná a horná hranica zároveň. Úloha sa presunie na dátum, ak je neskorší, než vyžadujú závislosti. Ak je dátum skorší, než dovoľujú závislosti, úloha ostane tam, kam ju postavili závislosti, a časová rezerva sa stane zápornou.
 
 Ak dátum pripadne na sobotu, nedeľu alebo nepracovný deň, aplikácia ho číta ako pracovný deň: dolnú hranicu (SNET, FNET) ako nasledujúci pracovný deň, hornú hranicu (SNLT, FNLT) ako predchádzajúci pracovný deň.
 
 ### Čo znamená záporná časová rezerva
 
-Horná hranica pôsobí spätne. Ak obmedzenie položí neskorý dátum úlohy pred jej skorý dátum, celková časová rezerva sa stane záporná. Platí to aj pre úlohy pred ňou. Ak musí brickwork začať najneskôr v piatok 11. júna a nemôže začať skôr ako v pondelok 14. júna, úlohy pred brickwork tiež meškajú o jeden pracovný deň. Všetky úlohy so zápornou časovou rezervou sú kritické. Ako to funguje, vysvetľuje [Kritická cesta a časová rezerva](docs://uitleg-kritiek-pad).
+Horná hranica pôsobí spätne. Ak obmedzenie položí neskorý dátum úlohy pred jej skorý dátum, celková časová rezerva sa stane zápornou. Platí to aj pre úlohy pred ňou. Ak musia murárske práce začať najneskôr v piatok 11. júna a nemôžu začať skôr ako v pondelok 14. júna, úlohy pred murárskymi prácami tiež meškajú o jeden pracovný deň. Všetky úlohy so zápornou časovou rezervou sú kritické. Ako to funguje, vysvetľuje [Kritická cesta a časová rezerva](docs://uitleg-kritiek-pad).
 
 Horná hranica nepresúva pruhy. Konflikt uvidíte v poli *Celková časová rezerva*, ktoré má zápornú hodnotu, v červenom kosoštvorci nad pruhom, v hlásení na stavovom riadku (napríklad *Porušené obmedzenia: 1*) a v paneli *Upozornenia*.
 
@@ -52,7 +52,7 @@ Keď prvýkrát zapnete ukotvenie, aplikácia zobrazí krátke vysvetlenie: pevn
 
 ### Termín
 
-Termín je samostatný dátum úlohy, popri obmedzení. Je to horná hranica dokončenia: nič nepresúva, ale ak úloha nie je dokončená včas, časová rezerva sa stane záporná. Aplikácia potom v paneli *Upozornenia* uvedie *Termín … zmeškaný — skoré dokončenie …* a stavový riadok spočíta zmeškané termíny. V diagrame Gantt je na dátume termínu šípka smerom nadol: zelená, kým je úloha dokončená včas, a červená, keď mešká. Termín na sobotu sa počíta až do piatku pred ním vrátane.
+Termín je samostatný dátum úlohy, popri obmedzení. Je to horná hranica dokončenia: nič nepresúva, ale ak úloha nie je dokončená včas, časová rezerva sa stane zápornou. Aplikácia potom v paneli *Upozornenia* uvedie *Termín … zmeškaný — skoré dokončenie …* a stavový riadok spočíta zmeškané termíny. V diagrame Gantt je na dátume termínu šípka smerom nadol: zelená, kým je úloha dokončená včas, a červená, keď mešká. Termín na sobotu sa počíta až do piatku pred ním vrátane.
 
 Pre časovú rezervu robí termín to isté ako FNLT. Rozdiel je v tom, ako ho používate. Termín je cieľový dátum, ktorý chcete strážiť. Stojí mimo obmedzenia, takže úloha môže mať obmedzenie aj termín. FNLT je obmedzenie: porušenie sa zobrazí ako porušené obmedzenie, nie ako zmeškaný termín.
 
@@ -88,7 +88,7 @@ A pri obmedzení alebo termíne na inej úlohe:
 
 - **ALAP** pri úlohe *Scaffolding*: úloha sa presunie na štvrtok 17. a piatok 18. júna, čo je najneskorší okamih pred *Roofing*. *Roofing* je jej jediná nasledujúca úloha a mala priestor presne na 3 pracovné dni časovej rezervy. Tie sú teraz vyčerpané a *Scaffolding* je kritická.
 - **SNET sobota 19. júna** pri úlohe *Scaffolding*: hranica sa počíta ako pondelok 21. júna. *Scaffolding* beží v pondelok 21. a v utorok 22. júna a *Roofing* sa posunie na stredu 23. až piatok 25. júna.
-- **Termín piatok 18. júna** pri úlohe *Roofing*: nič sa nepresunie. *Roofing* zostane od pondelka 21. do stredy 23. júna. *Groundwork*, *Pour foundation*, *Brickwork* a *Roofing* dostanú −3 pracovné dni časovej rezervy a aplikácia hlási *Termín 18-06-2027 zmeškaný — skoré dokončenie 23-06-2027*. *Scaffolding* si ponechá 0 pracovných dní časovej rezervy a tiež sa stane kritická.
+- **Termín piatok 18. júna** pri úlohe *Roofing*: nič sa nepresunie. *Roofing* zostane od pondelka 21. do stredy 23. júna. *Groundwork*, *Pour foundation*, *Brickwork* a *Roofing* dostanú −3 pracovné dni časovej rezervy a aplikácia hlási *Termín 18-06-2027 zmeškaný — skoré dokončenie 23-06-2027*. *Scaffolding* si ponechá 0 pracovných dní časovej rezervy a tiež sa stane kritickou.
 - **SNET pondelok 21. júna** pri úlohe *Brickwork*, **termín piatok 25. júna** pri úlohe *Roofing*: obmedzenie posunie *Brickwork* o týždeň neskôr a aplikácia hlási, že *Roofing* mešká v stredu 30. júna. *Brickwork* a *Roofing* dostanú −3 pracovné dni časovej rezervy; *Groundwork* a *Pour foundation* si ponechajú 2 pracovné dni časovej rezervy.
 
 V návode 3 nastavíte sami obmedzenie a termín v projekte návodu a uvidíte, ako sa plán posunie.

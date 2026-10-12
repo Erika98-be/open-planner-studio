@@ -4,7 +4,7 @@ Cieľ: zistiť, kde má zdroj v jeden deň priveľa práce, a to odstrániť, zv
 
 ## Kedy to potrebujete
 
-Na papieri váš plán funguje, ale bricklayer pracuje na dvoch stenách, ktoré sa stavajú v tých istých dňoch. Aplikácia to nazýva **preťaženie**. Zdroj je v pracovnom dni preťažený, ak mu plán v ten deň žiada viac, než je jeho kapacita (*Maximálny počet jednotiek*), alebo ak podľa svojho kalendára v ten deň nepracuje.
+Na papieri váš plán funguje, ale murár pracuje na dvoch stenách, ktoré sa stavajú v tých istých dňoch. Aplikácia to nazýva **preťaženie**. Zdroj je v pracovnom dni preťažený, ak mu plán v ten deň žiada viac, než je jeho kapacita (*Maximálny počet jednotiek*), alebo ak podľa svojho kalendára v ten deň nepracuje.
 
 Najprv zistite preťaženie. Potom vyberiete riešenie. **Vyvažovanie** je riešenie, ktoré aplikácia vypočíta za vás: úlohy začínajú neskôr, kým ich zdroj zvládne. Ako to presne počíta, si prečítajte v článku [Vyvažovanie zdrojov](docs://uitleg-nivelleren).
 
@@ -23,7 +23,7 @@ Ak je vybraná úloha, histogram zobrazí len zaťaženie tej úlohy a len zdroj
 
 ### 2. Vyberte riešenie
 
-- **Vyššia kapacita.** Ak naozaj príde druhý bricklayer, nastavte *Maximálny počet jednotiek* na 2 (pozri [Správa zdrojov](docs://howto-resources-beheren)). Preťaženie potom zmizne.
+- **Vyššia kapacita.** Ak naozaj príde druhý murár, nastavte *Maximálny počet jednotiek* na 2 (pozri [Správa zdrojov](docs://howto-resources-beheren)). Preťaženie potom zmizne.
 - **Menej jednotiek za deň.** Znížte *Jedn./deň* alebo vyberte pre priradenie inú krivku (pozri [Priradenie zdrojov s krivkou](docs://howto-resource-toewijzen)).
 - **Úlohy za sebou.** Pridajte závislosť medzi dvoma úlohami, aby druhá začala až po dokončení prvej (pozri [Pridávanie závislostí](docs://howto-relaties-leggen)).
 - **Vyvažovanie.** Aplikácia nechá úlohu začať neskôr.

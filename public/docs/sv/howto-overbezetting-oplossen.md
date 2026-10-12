@@ -4,7 +4,7 @@ Mål: se var en resurs har för mycket att göra en dag, och lös det. Oftast g�
 
 ## När du behöver detta
 
-På papper fungerar din tidsplan. Men bricklayer är inplanerad på två väggar som körs samma dagar. Appen kallar det **överbeläggning**. En resurs har överbeläggning på en arbetsdag om tidsplanen kräver mer av den den dagen än dess kapacitet (*Max enheter*). Det gäller också om resursen inte arbetar den dagen enligt sin kalender.
+På papper fungerar din tidsplan. Men muraren är inplanerad på två väggar som körs samma dagar. Appen kallar det **överbeläggning**. En resurs har överbeläggning på en arbetsdag om tidsplanen kräver mer av den den dagen än dess kapacitet (*Max enheter*). Det gäller också om resursen inte arbetar den dagen enligt sin kalender.
 
 Du letar först upp överbeläggningen. Sedan väljer du en lösning. **Utjämning** är den lösning som appen beräknar åt dig: den låter uppgifter starta senare tills resursen klarar det. Hur det beräknas läser du i [Resursutjämning](docs://uitleg-nivelleren).
 
@@ -23,7 +23,7 @@ Om en uppgift är markerad visar histogrammet bara belastningen för den uppgift
 
 ### 2. Välj en lösning
 
-- **Mer kapacitet.** Om en andra bricklayer verkligen kommer, ställ in *Max enheter* på 2 (se [Hantera resurser](docs://howto-resources-beheren)). Då är överbeläggningen borta.
+- **Mer kapacitet.** Om en andra murare verkligen kommer, ställ in *Max enheter* på 2 (se [Hantera resurser](docs://howto-resources-beheren)). Då är överbeläggningen borta.
 - **Färre tilldelningsenheter per dag.** Sänk *Enh./dag* eller välj en annan kurva för tilldelningen (se [Tilldela resurser med en kurva](docs://howto-resource-toewijzen)).
 - **Lägg uppgifterna efter varandra.** Lägg till ett samband mellan de två uppgifterna, så att den andra uppgiften bara startar när den första är klar (se [Lägga till samband](docs://howto-relaties-leggen)).
 - **Utjämning.** Appen låter en uppgift starta senare.
@@ -79,5 +79,5 @@ Vill du själv bestämma vilken uppgift som stannar kvar, ge den en högre prior
 - [Hantera resurser](docs://howto-resources-beheren): justera resursens kapacitet och kalender.
 - [Lägga till samband](docs://howto-relaties-leggen): lägga uppgifter efter varandra.
 - [Meddelanden och varningar](docs://ref-meldingen): varningen om överbeläggning i panelen *Varningar*.
-- [6 New Terraced Houses, De Akkers](examples://showcase-rijwoningen-de-akkers.ifc): plasterers har överbeläggning på 5 dagar. Med rutan *Jämna ut endast inom slack (utjämning) — projektets slutdatum ligger fast* på ligger slutet kvar den 17 augusti 2027 och en konflikt finns kvar. Med rutan av (standard) är allt löst och slutet flyttas till den 24 augusti 2027.
-- [De Vaart Apartment Complex](examples://showcase-appartementencomplex.ifc): tower crane har överbeläggning på 65 dagar och plasterers på 15 dagar. Utjämning med rutan *Jämna ut endast inom slack (utjämning) — projektets slutdatum ligger fast* av flyttar slutet från 9 maj till 12 oktober 2028.
+- [6 New Terraced Houses, De Akkers](examples://showcase-rijwoningen-de-akkers.ifc): putsarna har överbeläggning på 5 dagar. Med rutan *Jämna ut endast inom slack (utjämning) — projektets slutdatum ligger fast* på ligger slutet kvar den 17 augusti 2027 och en konflikt finns kvar. Med rutan av (standard) är allt löst och slutet flyttas till den 24 augusti 2027.
+- [De Vaart Apartment Complex](examples://showcase-appartementencomplex.ifc): tornkranen har överbeläggning på 65 dagar och putsarna på 15 dagar. Utjämning med rutan *Jämna ut endast inom slack (utjämning) — projektets slutdatum ligger fast* av flyttar slutet från 9 maj till 12 oktober 2028.

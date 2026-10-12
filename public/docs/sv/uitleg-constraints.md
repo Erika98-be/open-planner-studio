@@ -22,7 +22,7 @@ Alla restriktioner är **mjuka**: beräkningen fortsätter även om ett datum in
 Du väljer typen vid *Restriktion* i panelen *Egenskaper*. Så beräknar varje typ:
 
 - *Så tidigt som möjligt (ASAP)*: ingen gräns. Det här är standardvärdet: uppgiften startar så snart sambanden tillåter.
-- *Så sent som möjligt (ALAP)*: uppgiften flyttas så sent den kan utan att en efterföljande uppgift måste starta senare. Den förbrukar alltså sitt fritt slack. Har den därefter ännu totalt slack, eftersom de efterföljande uppgifterna själva har utrymme, är den inte kritisk. Är även det förbrukat, räknas den som kritisk.
+- *Så sent som möjligt (ALAP)*: uppgiften flyttas så sent den kan utan att en efterföljande uppgift måste starta senare. Den förbrukar alltså sitt fria slack. Har den därefter ännu totalt slack, eftersom de efterföljande uppgifterna själva har utrymme, är den inte kritisk. Är även det förbrukat, räknas den som kritisk.
 - *Starta tidigast (SNET)*: en undre gräns för starten. Om uppgiften annars skulle starta tidigare flyttas den till datumet. Ligger datumet tidigare än vad sambanden tillåter, gör restriktionen ingenting.
 - *Avsluta tidigast (FNET)*: samma sak, men för uppgiftens slut.
 - *Starta senast (SNLT)* och *Avsluta senast (FNLT)*: en övre gräns för start eller slut. De flyttar ingenting. Om gränsen inte nås rapporterar appen en överträdd restriktion och slacket blir negativt.
@@ -48,7 +48,7 @@ Första gången du slår på fixeringen visar appen en kort förklaring: en hår
 
 ### Den sekundära restriktionen
 
-En uppgift har en primär restriktion. Vill du också en andra gräns, till exempel en uppgift som inte får starta före 14 juni och måste vara avslutad senast 17 juni, lägger du till en **sekundär restriktion**. Det måste vara en riktig gräns (SNET, FNET, SNLT eller FNLT) och den ska begränsa åt andra hållet än den primära: en undre gräns (SNET eller FNET) med en övre gräns (SNLT eller FNLT). SNET med SNLT är alltså tillåtet, SNET med FNET är det inte. Appen markerar andra kombinationer i rött och anger skälet, till exempel *Primär och sekundär får inte begränsa samma sida.* Med ASAP, ALAP, MSO, MFO och en hård fixering är ingen sekundär restriktion tillåten.
+En uppgift har en primär restriktion. Vill du också ha en andra gräns, till exempel för en uppgift som inte får starta före 14 juni och som måste vara avslutad senast 17 juni, lägger du till en **sekundär restriktion**. Det måste vara en riktig gräns (SNET, FNET, SNLT eller FNLT) och den ska begränsa åt andra hållet än den primära: en undre gräns (SNET eller FNET) med en övre gräns (SNLT eller FNLT). SNET med SNLT är alltså tillåtet, SNET med FNET är det inte. Appen markerar andra kombinationer i rött och anger skälet, till exempel *Primär och sekundär får inte begränsa samma sida.* Med ASAP, ALAP, MSO, MFO och en hård fixering är ingen sekundär restriktion tillåten.
 
 ### Måldatumet
 
@@ -95,7 +95,7 @@ I självstudie 3 lägger du själv en restriktion och ett måldatum i självstud
 
 ## Konsekvenser och missförstånd
 
-**”En restriktion flyttar uppgiften.”** Bara SNET, FNET, MSO och MFO kan placera en uppgift senare än dess samband gör, och ALAP kan flytta den senare inom dess fritt slack. SNLT och FNLT flyttar aldrig något: de varnar bara. Att nå datumet betyder då att kedjan före det måste kortas.
+**”En restriktion flyttar uppgiften.”** Bara SNET, FNET, MSO och MFO kan placera en uppgift senare än dess samband gör, och ALAP kan flytta den senare inom dess fria slack. SNLT och FNLT flyttar aldrig något: de varnar bara. Att nå datumet betyder då att kedjan före det måste kortas.
 
 **”Negativt slack är ett fel i appen.”** Det är signalen att tidsplanen krockar med din datumöverenskommelse. Du löser det genom att korta kedjan, mjuka upp överenskommelsen eller medvetet acceptera konflikten.
 

@@ -32,7 +32,7 @@ Pokud termín připadne na sobotu, neděli nebo na volný den, aplikace ho čte 
 
 ### Co znamená záporná časová rezerva
 
-Horní omezení působí zpětně. Pokud omezení posune pozdní termín úkolu před jeho nejdřívější termín, celková časová rezerva se stane zápornou. Totéž platí pro úkoly před ním: pokud musí brickwork zahájit nejpozději v pátek 11. června a nemůže začít dříve než v pondělí 14. června, jsou i úkoly před brickwork o jeden pracovní den pozdě. Všechny úkoly se zápornou časovou rezervou jsou kritické. Jak to funguje, je vysvětleno v [Kritická cesta a časová rezerva](docs://uitleg-kritiek-pad).
+Horní omezení působí zpětně. Pokud omezení posune pozdní termín úkolu před jeho nejdřívější termín, celková časová rezerva se stane zápornou. Totéž platí pro úkoly před ním: pokud musí zdění začít nejpozději v pátek 11. června a nemůže začít dříve než v pondělí 14. června, jsou i úkoly před zděním o jeden pracovní den pozdě. Všechny úkoly se zápornou časovou rezervou jsou kritické. Jak to funguje, je vysvětleno v [Kritická cesta a časová rezerva](docs://uitleg-kritiek-pad).
 
 Pruhy se kvůli hornímu omezení nepřesouvají. Konflikt uvidíte v záporné hodnotě v poli *Celková časová rezerva*, v červeném kosočtverci nad pruhem, v hlášení na stavovém řádku (například *Porušená omezení: 1*) a v panelu *Varování*.
 
@@ -89,7 +89,7 @@ A s omezením nebo konečným termínem u jiného úkolu:
 - **ALAP na** *Scaffolding*: úkol se přesune na čtvrtek 17. a pátek 18. června, což je nejpozdější okamžik před *Roofing*. *Roofing* je jeho jediný následník a měl prostor přesně pro svou časovou rezervu, 3 pracovní dny. Ta je nyní vyčerpána a *Scaffolding* je kritický.
 - **SNET sobota 19. června na** *Scaffolding*: omezení se počítá jako pondělí 21. června. *Scaffolding* běží v pondělí 21. a v úterý 22. června a *Roofing* se posune s ním na středu 23. až pátek 25. června.
 - **Konečný termín pátek 18. června na** *Roofing*: nic se nepřesune, *Roofing* zůstává od pondělí 21. do středy 23. června. *Groundwork*, *Pour foundation*, *Brickwork* a *Roofing* dostanou −3 pracovní dny časové rezervy a aplikace hlásí *Konečný termín 18-06-2027 nesplněn — nejdřívější dokončení 23-06-2027*. *Scaffolding* si zachová 0 pracovních dnů časové rezervy a také se stane kritický.
-- **SNET pondělí 21. června na** *Brickwork*, **konečný termín pátek 25. června na** *Roofing*: omezení posune brickwork o týden později a konečný termín hlásí, že *Roofing* má zpoždění: dokončí se ve středu 30. června. *Brickwork* a *Roofing* dostanou −3 pracovní dny časové rezervy. *Groundwork* a *Pour foundation* si zachovají 2 pracovní dny.
+- **SNET pondělí 21. června na** *Brickwork*, **konečný termín pátek 25. června na** *Roofing*: omezení posune zdění o týden později a konečný termín hlásí, že *Roofing* má zpoždění: dokončí se ve středu 30. června. *Brickwork* a *Roofing* dostanou −3 pracovní dny časové rezervy. *Groundwork* a *Pour foundation* si zachovají 2 pracovní dny.
 
 V kurzu 3 nastavíte omezení a konečný termín v projektu kurzu sami a uvidíte, jak se plán posune.
 

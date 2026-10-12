@@ -27,7 +27,7 @@ Je ein Beispiel. „Ein Vorgang ist kritisch, wenn sein Gesamtpuffer 0 oder weni
 
 Das Profil und die Berechnungsoptionen gehören zur Projektdatei, nicht zur App. Wenn Sie das Projekt speichern, wandern sie mit. Zwei Projekte in derselben App können daher mit unterschiedlichen Profilen berechnen. Ein Projekt ohne Profil berechnet als Open Planner Studio.
 
-Gibt es Berechnungsoptionen, die nur Primavera P6 kennt, zeigt der Block unten auch *Einstellungen aus der Quelldatei*: bei einem Projekt aus einer .xer file, aber auch wenn Sie *Primavera P6* in *Neues Projekt* wählen oder die Standardoptionen von Primavera P6 anwenden. Hier können Sie sie nicht ändern.
+Gibt es Berechnungsoptionen, die nur Primavera P6 kennt, zeigt der Block unten auch *Einstellungen aus der Quelldatei*: bei einem Projekt aus einer .xer-Datei, aber auch wenn Sie *Primavera P6* in *Neues Projekt* wählen oder die Standardoptionen von Primavera P6 anwenden. Hier können Sie sie nicht ändern.
 
 ### Wo Sie das Profil wählen
 
@@ -44,11 +44,11 @@ Schalten Sie in einem Profil eine Konvention ein oder aus, macht die App daraus 
 Wenn Sie eine Datei öffnen, schlägt die App ein Profil anhand des Formats vor:
 
 - Eine .mpp-Datei (Microsoft Project) wird mit dem Profil *Microsoft Project* geöffnet.
-- Eine .xer file (Primavera P6) öffnet mit dem Profil *Primavera P6*.
+- Eine .xer-Datei (Primavera P6) öffnet mit dem Profil *Primavera P6*.
 - Eine Datei im Format *MS Project XML*, *Primavera P6 XML* oder *CSV (semikolon-getrennt)* öffnet mit *Open Planner Studio*, ohne Meldung zum Profil.
 - Ihr eigenes Projekt (.ifc) öffnet mit dem Profil, das darin gespeichert ist.
 
-Bei einer .mpp-Datei oder einer .xer file meldet die App das Profil: *Dieses Projekt rechnet als Microsoft Project. Ändern über Datei → Projektinfo → Berechnungsprofil und Berechnungsoptionen.* Mit der Schaltfläche *Berechnungsprofil öffnen* in der Meldung gelangen Sie direkt zu Projektinfo. Bei einer .xer file ist diese Zeile die erste Detailzeile der Meldung beim Öffnen. Mehr zur Meldung finden Sie in [Öffnen einer Datei von Primavera P6 (.xer)](docs://howto-xer-openen) und [Öffnen einer Datei von MS Project (.mpp)](docs://howto-mpp-openen).
+Bei einer .mpp-Datei oder einer .xer-Datei meldet die App das Profil: *Dieses Projekt rechnet als Microsoft Project. Ändern über Datei → Projektinfo → Berechnungsprofil und Berechnungsoptionen.* Mit der Schaltfläche *Berechnungsprofil öffnen* in der Meldung gelangen Sie direkt zu Projektinfo. Bei einer .xer-Datei ist diese Zeile die erste Detailzeile der Meldung beim Öffnen. Mehr zur Meldung finden Sie in [Öffnen einer Datei von Primavera P6 (.xer)](docs://howto-xer-openen) und [Öffnen einer Datei von MS Project (.mpp)](docs://howto-mpp-openen).
 
 Bei einer .mpp-Datei setzt die App nur das Profil. Die Berechnungsoptionen bleiben leer, wie bei einem neuen Projekt mit dem Profil *Microsoft Project*: *Pufferberechnung* ist *Automatisch (Standard)*. Eine geöffnete .mpp-Datei und ein neues Projekt mit *Microsoft Project* berechnen den Puffer daher gleich.
 
@@ -65,7 +65,7 @@ Die Zahlen hat das Berechnungsmodul der App berechnet. Sie lesen sie im Bereich 
 
 **Ohne Statusdatum und ohne Fortschritt berechnen die drei Profile diesen Netzplan gleich.** *Pour foundation* läuft von Montag, 7. bis Freitag, 11. Juni, *Lay walls* von Montag, 14. bis Freitag, 18. Juni und *Fit roof* am Montag, 21. und Dienstag, 22. Juni. Die Übergabe ist Dienstag, 22. Juni. *Order window frames* (Montag, 7. bis Mittwoch, 9. Juni) hat 7 Arbeitstage Gesamtpuffer.
 
-Jetzt erfassen Sie den Status. Das Statusdatum ist Mittwoch, 9. Juni. Das Fundament hat am Montag, 7. Juni begonnen und steht bei 60 %. Die Restarbeit beträgt daher 2 Arbeitstage (5 × 40 %). *Order window frames* hat noch nicht begonnen. Wie [Fortschritt und Statusdatum](docs://uitleg-voortgang) funktionieren, steht in jenem Artikel. Hier geht es um die Frage, was das Profil damit macht.
+Jetzt erfassen Sie den Status. Das Statusdatum ist Mittwoch, 9. Juni. Das Fundament hat am Montag, 7. Juni begonnen und steht bei 60 %. Die Restarbeit beträgt daher 2 Arbeitstage (5 × 40 %). *Order window frames* hat noch nicht begonnen. Wie Fortschritt und Statusdatum funktionieren, steht in diesem Artikel: [Fortschritt und Statusdatum](docs://uitleg-voortgang). Hier geht es um die Frage, was das Profil damit macht.
 
 ### Open Planner Studio
 
@@ -75,7 +75,7 @@ Die Restarbeit des Fundaments beginnt am Statusdatum: Mittwoch, 9. und Donnersta
 
 ### Primavera P6
 
-Alles ist gleich wie bei Open Planner Studio, außer einem Punkt: Der früheste Anfang von *Pour foundation* ist Mittwoch, 9. Juni. Das ist der Beginn der Restarbeit, nicht der Ist-Anfang. Das geschieht durch die Konvention *Laufender Vorgang: frühester Anfang = Beginn der Restarbeit* in der Gruppe *Fortschritt und abgeschlossene Arbeit*. Das Ende und der Puffer ändern sich dadurch nicht. Die Übergabe ist Montag, 21. Juni.
+Alles ist wie bei Open Planner Studio, außer einem Punkt: Der früheste Anfang von *Pour foundation* ist Mittwoch, 9. Juni. Das ist der Beginn der Restarbeit, nicht der Ist-Anfang. Das geschieht durch die Konvention *Laufender Vorgang: frühester Anfang = Beginn der Restarbeit* in der Gruppe *Fortschritt und abgeschlossene Arbeit*. Das Ende und der Puffer ändern sich dadurch nicht. Die Übergabe ist Montag, 21. Juni.
 
 ### Microsoft Project
 
@@ -101,15 +101,15 @@ Hier unterscheiden sich die Termine. Zwei Konventionen in der Gruppe *Fortschrit
 
 **„Das Profil ist eine Einstellung der App.“** Nein. Das Profil und die Berechnungsoptionen gehören zum Projekt und stecken in der Datei. Nur die Vorlagen, die Sie behalten, gehören zur App. Ein Projekt behält immer seine eigene Kopie.
 
-**„Wenn ich exportiere, geht mein Profil mit.“** Nur bei Ihrem eigenen Projektformat (.ifc). Wenn Sie in *MS Project XML*, *Primavera P6 XML* oder *CSV (semikolon-getrennt)* exportieren, steht das Profil nicht in der Datei. Von den Berechnungsoptionen schreibt der Export nach *MS Project XML* höchstens die kritische Schwelle. Die App warnt dafür nur bei einem Projekt, das aus einer .xer file stammt. Bei einem Projekt, das Sie selbst erstellt haben, erhalten Sie keine Meldung. Die Datei wird dann als Open Planner Studio geöffnet, ohne Profilmeldung. Nehmen Sie das Beispiel mit dem Profil Microsoft Project und 60 % Fortschritt. Wenn Sie es nach *MS Project XML* exportieren und wieder öffnen, zeigt die App zuerst die Termine aus der Datei, mit der Übergabe am Dienstag, 22. Juni. Wenn Sie die App die Termine selbst neu berechnen lassen, wird daraus Montag, 21. Juni. Was ein Export sonst noch verliert, steht unter [Dateien und Formate](docs://uitleg-bestanden).
+**„Wenn ich exportiere, geht mein Profil mit.“** Nur bei Ihrem eigenen Projektformat (.ifc). Wenn Sie in *MS Project XML*, *Primavera P6 XML* oder *CSV (semikolon-getrennt)* exportieren, steht das Profil nicht in der Datei. Von den Berechnungsoptionen schreibt der Export nach *MS Project XML* höchstens die kritische Schwelle. Die App warnt dafür nur bei einem Projekt, das aus einer .xer-Datei stammt. Bei einem Projekt, das Sie selbst erstellt haben, erhalten Sie keine Meldung. Die Datei wird dann als Open Planner Studio geöffnet, ohne Profilmeldung. Nehmen Sie das Beispiel mit dem Profil Microsoft Project und 60 % Fortschritt. Wenn Sie es nach *MS Project XML* exportieren und wieder öffnen, zeigt die App zuerst die Termine aus der Datei, mit der Übergabe am Dienstag, 22. Juni. Wenn Sie die App die Termine selbst neu berechnen lassen, wird daraus Montag, 21. Juni. Was ein Export sonst noch verliert, steht unter [Dateien und Formate](docs://uitleg-bestanden).
 
-**„Das Profil Primavera P6 liefert dasselbe Ergebnis wie P6.“** Das kann die App nicht zusagen. Das Profil schaltet die Konventionen ein, die die App von P6 kennt. Diese Konventionen sind aber nicht alle Einstellungen von P6. Neben Retained Logic und Progress Override hat P6 einen dritten Fortschrittsmodus, Actual Dates. Die App kennt ihn nicht. Eine solche .xer file rechnet deshalb mit Retained Logic. Die Meldung beim Öffnen sagt das, zum Beispiel als *1 P6-Planungseinstellung mit sicherem Rückfall*. Einige Konventionen des Profils Primavera P6 wirken außerdem nur bei Vorgängen aus einer .xer file, etwa *Nicht begonnene LOE übernimmt das Zielfenster* und *Istdaten exakt übernehmen*. Bei einigen steht in der Erklärung dazu: „nur Vorgänge mit P6-Herkunft“. Bei Vorgängen, die Sie selbst erstellen, bewirken diese Konventionen nichts.
+**„Das Profil Primavera P6 liefert dasselbe Ergebnis wie P6.“** Das kann die App nicht zusagen. Das Profil schaltet die Konventionen ein, die die App von P6 kennt. Diese Konventionen sind aber nicht alle Einstellungen von P6. Neben Retained Logic und Progress Override hat P6 einen dritten Fortschrittsmodus, Actual Dates. Die App kennt ihn nicht. Eine solche .xer-Datei rechnet deshalb mit Retained Logic. Die Meldung beim Öffnen sagt das, zum Beispiel als *1 P6-Planungseinstellung mit sicherem Rückfall*. Einige Konventionen des Profils Primavera P6 wirken außerdem nur bei Vorgängen aus einer .xer-Datei, etwa *Nicht begonnene LOE übernimmt das Zielfenster* und *Istdaten exakt übernehmen*. Bei einigen steht in der Erklärung dazu: „nur Vorgänge mit P6-Herkunft“. Bei Vorgängen, die Sie selbst erstellen, bewirken diese Konventionen nichts.
 
 **„Der Fortschrittsmodus gehört zum Profil.“** Nein. Retained Logic oder Progress Override wählen Sie pro Projekt separat. Sie stellen ihn unabhängig vom Profil ein, siehe [Fortschrittsmodus wählen](docs://howto-voortgangsmodus-kiezen). Eine Konvention des Profils Primavera P6, *Progress Override ignoriert einen begonnenen Nachfolger auch rückwärts*, wirkt nur bei Progress Override.
 
 **„Ich wechsle einfach das Profil, dann sehe ich, was passiert.“** Das können Sie, denn *Anwenden* lässt sich mit *Rückgängig* in einem Schritt zurücknehmen: Profil und Termine gehen gemeinsam zurück. Aber die Termine können sich wirklich verschieben. Im Beispiel verschiebt der Wechsel von Open Planner Studio zu Microsoft Project alle 4 Vorgänge. Die Meldung zählt sie für Sie. Prüfen Sie danach den Terminplan, bevor Sie weitermachen. Zeigt die App nach dem Öffnen einer .xer- oder .mpp-Datei noch die Termine aus der Datei, dann verlässt ein Profilwechsel diese Ansicht, und die App berechnet selbst. Wie das funktioniert, steht unter [Termine wie gespeichert](docs://uitleg-datums-zoals-opgeslagen).
 
-**„Das Beispiel zeigt vier Konventionen, die Liste in der App ist länger.“** Jede Zeile im Block hat eine eigene Erklärung. Lesen Sie sie zuerst. Schauen Sie sich außerdem die Gruppe *Nur für eigene Profile* an. Diese Konventionen sind in jedem eingebauten Profil ausgeschaltet, auch im Profil Primavera P6. Wenn Sie eine davon einschalten, wird daraus ein eigenes Profil.
+**Das Beispiel zeigt vier Konventionen, die Liste in der App ist länger.** Jede Zeile im Block hat eine eigene Erklärung. Lesen Sie sie zuerst. Schauen Sie sich außerdem die Gruppe *Nur für eigene Profile* an. Diese Konventionen sind in jedem eingebauten Profil ausgeschaltet, auch im Profil Primavera P6. Wenn Sie eine davon einschalten, wird daraus ein eigenes Profil.
 
 ## Siehe auch
 
