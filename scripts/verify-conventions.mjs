@@ -32,6 +32,12 @@
 //     een klasselid gelezen op `this`, of een eigenschap van een in dat bestand gedeclareerd object-literal
 //     of `new EigenKlasse()`, gelezen op die variabele. Zo is een nieuw bronveld (bv.
 //     `calendar.p6NonWorkPenaltyDates`) geen gratis formaat-if meer.
+//  7. De uitlegvelden van een registerconventie (`requires`: "alleen bij uurplanning/.xer-taken", en
+//     `theme`: de groep in Projectinfo) zijn tekst voor de gebruiker, geen rekengedrag. Een vanuit de
+//     solver bereikbaar bestand leest ze dus niet: als eigenschap, via string-index, via `'…' in` of via
+//     destructuring is rood. Wat een conventie nodig heeft, staat in haar eigen code; check-conventions-
+//     p6-flags bewijst dat het label daarmee klopt. Bestanden buiten de solver (de Gantt-renderer met zijn
+//     eigen `theme`) vallen hier niet onder.
 //  Wat deze syntactische poort NIET ziet (bewust, geen typechecker): een opties-object dat via een helper
 //  in een ANDER bestand wordt doorgegeven onder een naam die daar geen opties-naam of -type draagt; een
 //  waarde die al als `any`/onbekend type binnenkomt en daarna gelezen wordt; aliassen worden per bestand
@@ -293,6 +299,8 @@ const solverReachable = new Set();
   }
 }
 const knownSourceName = (name) => OPTION_KEYS.has(name) || DATAGATES.includes(name);
+// Regel 7: uitlegvelden van een registerconventie die de solver niet leest.
+const DESCRIPTOR_TEXT_FIELDS = new Set(['requires', 'theme']);
 
 const allowedHits = [];
 for (const file of files) {
@@ -445,6 +453,23 @@ for (const file of files) {
       else if (ts.isIdentifier(key) && Object.hasOwn(counts, key.text)) counts[key.text]++;
     }
     if (ts.isPropertyAccessExpression(node) && Object.hasOwn(counts, node.name.text)) counts[node.name.text]++;
+    // Regel 7: `requires`/`theme` van een registerconventie in de solver.
+    const textField = (name, how) => {
+      if (solverReachable.has(file) && DESCRIPTOR_TEXT_FIELDS.has(name)) {
+        report(node, `registerveld '${name}' ${how} in de solver — dat is uitleg voor de gebruiker, geen rekengedrag`
+          + ' (wat een conventie nodig heeft, staat in haar eigen code)');
+      }
+    };
+    if (ts.isPropertyAccessExpression(node)) textField(node.name.text, 'als eigenschap');
+    if (ts.isElementAccessExpression(node) && ts.isStringLiteralLike(node.argumentExpression)) {
+      textField(node.argumentExpression.text, 'via string-index');
+    }
+    if (ts.isBinaryExpression(node) && node.operatorToken.kind === ts.SyntaxKind.InKeyword
+        && ts.isStringLiteralLike(node.left)) textField(node.left.text, "via 'in'");
+    if (ts.isBindingElement(node) && ts.isObjectBindingPattern(node.parent)) {
+      const key = node.propertyName ?? node.name;
+      if (ts.isIdentifier(key) || ts.isStringLiteralLike(key)) textField(key.text, 'via destructuring');
+    }
     ts.forEachChild(node, visit);
   };
   visit(sourceFile);

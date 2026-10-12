@@ -5,10 +5,13 @@ import type {
   BuiltInProfileId, ConventionKey, ProjectSchedulingOptions, SchedulingConventions, SchedulingProfile,
 } from '@/types/project';
 import {
-  CONVENTION_KEYS, builtInProfile, defaultOptionsFor, diffAgainstBase, isBuiltInProfileId,
+  CONVENTION_KEYS, builtInConventions, builtInProfile, defaultOptionsFor, diffAgainstBase, isBuiltInProfileId,
   isDefaultProfile, resolveConventions, switchProfile,
 } from '@/engine/scheduler/conventions/registry';
 import { MAX_PROFILE_ID_LENGTH, MAX_PROFILE_NAME_LENGTH } from '@/services/ifc/schedulingOptionsRead';
+import { fileHasHourData, isHourCalendar } from '@/services/subdayIo';
+import type { Task } from '@/types/task';
+import type { WorkCalendar } from '@/types/calendar';
 
 /** Wat het blok bewerkt: het profiel en de projectopties van één project. */
 export interface SchedulingSettingsDraft {
@@ -74,13 +77,17 @@ function validCustomId(id: string): boolean {
 
 /** Handmatige conventiewijziging. Op een ingebouwd id maakt dat automatisch een eigen profiel
  *  ("Kopie van P6") met álle huidige waarden (ook die uit het bestand); op een eigen
- *  profiel blijft het id. Een ongewijzigde waarde, of een ongeldig kopie-id, geeft hetzelfde object terug. */
+ *  profiel blijft het id. Een ongewijzigde waarde, of een ongeldig kopie-id, geeft hetzelfde object terug.
+ *  Zet de wijziging een conventie op een ingebouwd id terug op de waarde van de basis, dan is dat
+ *  dezelfde handeling als "terug naar basis" (`resetConventionToBase`): geen kopie zonder afwijkingen
+ *  (critreview #169, N7). */
 export function editConvention(
   current: SchedulingProfile | undefined, key: ConventionKey, value: boolean, copy: { id: string; name: string },
 ): SchedulingProfile | undefined {
   const p = current ?? builtInProfile('ops');
   const values = resolveConventions(p);
   if (values[key] === value) return current;
+  if (isBuiltInProfileId(p.id) && builtInConventions(p.baseId)[key] === value) return resetConventionToBase(current, key);
   values[key] = value;
   const overrides = diffAgainstBase(p.baseId, values);
   if (isBuiltInProfileId(p.id)) {
@@ -167,17 +174,19 @@ export function withCriticalThreshold(
 }
 
 /**
- * Projectopties die uitsluitend een BRONSIGNAAL zijn: ze komen alleen uit het bestand (de XER-lezer),
- * geen profiel kent er een standaardwaarde voor en de UI biedt ze niet aan. "Standaardopties" (en een
- * profielwissel in de wizard) mag ze daarom niet wissen: dat zou stil bestandsdata weggooien die de
- * gebruiker nergens terug kan zetten. `useProjectEndDateForFloat` (SCHEDOPTIONS
- * `sched_use_project_end_date_for_float`) en `leveling` (SCHEDOPTIONS/RSRCLEVELLIST) volgen hetzelfde
- * patroon: gelezen, bewaard, niet door een profiel bepaald.
+ * Projectopties die uitsluitend een BRONSIGNAAL zijn: ze komen alleen uit het bestand (de XER-lezer
+ * zet ze uit SCHEDOPTIONS/RSRCLEVELLIST), geen profiel kent er een standaard voor (`defaultOptionsFor`)
+ * en de UI biedt ze niet ter bewerking aan. Eén lijst voor het bewerkmodel én het alleen-lezenblok
+ * *Instellingen uit het bronbestand* (`SchedulingProfileSection`; critreview #169, N5).
  */
-const SOURCE_ONLY_OPTION_KEYS = ['useProjectEndDateForFloat', 'leveling'] as const;
+export const SOURCE_ONLY_OPTION_KEYS = [
+  'useExpectedFinishDates', 'useProjectEndDateForFloat', 'p6CompletedLateFromRemainingWindow', 'leveling',
+] as const satisfies readonly (keyof ProjectSchedulingOptions)[];
+export type SourceOnlyOptionKey = typeof SOURCE_ONLY_OPTION_KEYS[number];
 
 /** De standaard-projectopties van de basis van dit profiel; OPS ⇒ afwezig. De bronsignalen uit
- *  `current` (`SOURCE_ONLY_OPTION_KEYS`) blijven staan. */
+ *  `current` (`SOURCE_ONLY_OPTION_KEYS`) blijven staan: "Standaardopties" en een profielkeuze in de
+ *  wizard gooien geen bestandsdata weg. */
 export function withDefaultOptions(
   profile: SchedulingProfile | undefined, current?: ProjectSchedulingOptions,
 ): ProjectSchedulingOptions | undefined {
@@ -216,4 +225,22 @@ function sameProfile(a: SchedulingProfile | undefined, b: SchedulingProfile | un
 export function sameSettings(a: SchedulingSettingsDraft, b: SchedulingSettingsDraft): boolean {
   return sameProfile(a.profile, b.profile)
     && canonicalJson(normalizeOptions(a.options)) === canonicalJson(normalizeOptions(b.options));
+}
+
+/**
+ * Kan de SS-lag-projectoptie (`startToStartLagFrom`) in dit project iets doen? De motor eist een
+ * lag-kalender in uurmodus (`lagEng.isHourMode` in `CPMSolver.inProgressStartLag`). Welke kalender dat
+ * is, kiest `lagCalendar` per relatie; projectbreed volgen we hetzelfde criterium als de motor
+ * (critreview #169 N2, review #331 punt 1):
+ *  - `'24hour'`: de interne 24-uurs lag-kalender is altijd uurmodus;
+ *  - `'projectDefault'`: de projectkalender, alleen met werkblokken (`workTime`);
+ *  - voorganger/opvolger (standaard): de kalender van die taak, in uurmodus zodra de kalender
+ *    werkblokken heeft óf de taak zelf in uren staat (`engineForTaskCalendar`) — `fileHasHourData`.
+ */
+export function ssLagHasHourPlanning(
+  options: ProjectSchedulingOptions | undefined, tasks: Task[], calendar: WorkCalendar, calendars: readonly WorkCalendar[],
+): boolean {
+  if (options?.lagCalendar === '24hour') return true;
+  if (options?.lagCalendar === 'projectDefault') return isHourCalendar(calendar);
+  return fileHasHourData(tasks, [calendar, ...calendars]);
 }

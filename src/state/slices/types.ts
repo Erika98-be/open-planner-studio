@@ -286,6 +286,12 @@ export type NotificationMessageKey =
   // telling "N taken verschoven" na een profielwissel (`count`).
   | 'notifications.schedulingProfileApplied'
   | 'notifications.schedulingProfileShifted'
+  // Eigen rekenprofielen als sjabloon (critreview #169, B9): opgeslagen (param `name`), de limiet
+  // (`max`), en een opslag die mislukt (quota of geen opslag) bij opslaan of verwijderen.
+  | 'notifications.schedulingTemplateSaved'
+  | 'notifications.schedulingTemplateLimit'
+  | 'notifications.schedulingTemplateStorageFailed'
+  | 'notifications.schedulingTemplateDeleteFailed'
   // Het geladen bestand draagt taaktypedata terwijl "Toon taaktypes"
   // uit staat — de werkregel-UI is voor dit document ontsloten; zie `src/state/taskTypesNotice.ts`.
   | 'notifications.taskTypesUnlocked'

@@ -24,7 +24,7 @@
 // rood (B3 arm 2 en 5); een `p6Source`-vermelding in scheduleAnalysis.ts ⇒ rood (bronscan).
 import { solveProject } from '@/engine/scheduler/solveProject';
 import { solveOptionsFor } from '@/engine/scheduler/solveInput';
-import { diffAgainstBase, resolveConventions } from '@/engine/scheduler/conventions/registry';
+import { CONVENTIONS, diffAgainstBase, resolveConventions } from '@/engine/scheduler/conventions/registry';
 import { setConvention, withoutP6Semantics } from './p6SemanticsOff';
 import { explainP6CompletedDataDateWindow } from '@/engine/scheduler/p6CompletedTargetWindow';
 import {
@@ -71,7 +71,10 @@ const SPLIT_DAY = calendarData([['08:00', '12:00'], ['13:00', '17:00']]);
  *  rekenen op de B3-route), dus de import draagt ze als expliciete afwijking aan op het P6-profiel. */
 const P6_OFF_GROUP_B: readonly ConventionKey[] = ['p6CompletedDataDateWindow', 'p6CompletedLoeActualFinish'];
 
+/** Elke XER-tekst die deze check opent; de gedragscheck van `requires` onderaan draait op deze pool. */
+const FIXTURE_POOL: string[][] = [];
 function importXerAsRead(lines: string[]): ImportResult {
+  FIXTURE_POOL.push([...lines]);
   const opened = readXER(new TextEncoder().encode(lines.join('\n')));
   if (isMultiDocumentImport(opened)) throw new Error('conventiefixture moet één project openen');
   return opened;
@@ -92,7 +95,8 @@ const GROUP_B = [
 ] as const satisfies readonly ConventionKey[];
 type GroupBKey = typeof GROUP_B[number];
 
-function solveAxes(input: ImportResult, taskId: string): Axes {
+/** Eén solve op een verse kopie; geeft de opgeloste taken terug. */
+function solveTasks(input: ImportResult) {
   const imported = structuredClone(input);
   const result = solveProject({
     tasks: imported.tasks,
@@ -106,7 +110,11 @@ function solveAxes(input: ImportResult, taskId: string): Axes {
     projectEndDate: imported.project.endDate,
   });
   if (result.error) throw new Error(result.error);
-  const solved = result.tasks.get(taskId);
+  return result.tasks;
+}
+
+function axesOf(tasks: ReturnType<typeof solveTasks>, taskId: string): Axes {
+  const solved = tasks.get(taskId);
   if (!solved) throw new Error(`solver mist taak ${taskId}`);
   return {
     es: solved.earlyStart, ef: solved.earlyFinish,
@@ -115,10 +123,15 @@ function solveAxes(input: ImportResult, taskId: string): Axes {
   };
 }
 
-/** Alle zes assen van ALLE taken — voor de inertheidsvergelijking zonder vertaling. */
+function solveAxes(input: ImportResult, taskId: string): Axes {
+  return axesOf(solveTasks(input), taskId);
+}
+
+/** Alle zes assen van ALLE taken uit één solve — voor de inertheidsvergelijking zonder vertaling. */
 function solveAllAxes(input: ImportResult): Record<string, Axes> {
+  const tasks = solveTasks(input);
   const out: Record<string, Axes> = {};
-  for (const task of input.tasks) out[task.id] = solveAxes(input, task.id);
+  for (const task of input.tasks) out[task.id] = axesOf(tasks, task.id);
   return out;
 }
 
@@ -1932,6 +1945,128 @@ const lateOf = (input: ImportResult, id: string) => {
     solveAxes(withProfile(input, copy => setConvention(copy, 'p6FreeFloatOnOwnCalendar', on)), 'T').ff;
   eq('gestarte taak, FS0: oude C2 blijft, ff = vr 9 jan op de eigen kalender = 1 dag', [ffS(started(0), true), ffS(started(0), false)], [1, 0]);
   eq('gestarte taak, FS+4 u: buiten de verbreding, ff met C2 = ff zonder C2', ffS(started(4), true), ffS(started(4), false));
+}
+
+// ── `requires` als gedrag (critreview #169 N2, review #331 punt 3) ───────────────────────────────
+// Het register belooft per conventie: `requires.hourPlanning` ⇒ zonder uurplanning doet ze niets;
+// `requires.xerOrigin` ⇒ zonder P6-herkomst doet ze niets. Dat toetsen we hier aan het GEDRAG van de
+// motor, niet aan de broncode: op elke XER-fixture van deze check (de pool, aangevuld met drie kleine
+// fixtures voor A15, A17 en A20) zetten we per conventie de conventie aan en uit, onder een P6-basis
+// (met B3/B4 aan) én een OPS-basis, met de voortgangsmodus van het bestand en met Progress Override.
+//   - origineel                    : zoals de XER-lezer hem opent (uurkalender, uurtaken, P6-herkomst);
+//   - dag                          : geen enkele uurplanning meer — kalenders zonder werkblokken, taken in
+//                                    dagen, geen 24-uurs lag-kalender, en zonder de B1-relatievlag (die zet
+//                                    de lezer alleen bij een urenkalender van de voorganger, hieronder gepind);
+//   - zonder herkomst              : het origineel zonder elk `p6…`/`xer…`-veld op taken en relaties.
+// Eisen per conventie:
+//   - gelabeld `hourPlanning`  ⇒ op GEEN dag-variant verschil, en op minstens één origineel wel;
+//   - niet gelabeld            ⇒ op minstens één dag-variant verschil (anders: `NO_DAY_TRIGGER`, met reden);
+//   - gelabeld `xerOrigin`     ⇒ op GEEN variant zonder herkomst verschil, en op minstens één origineel wel;
+//   - niet gelabeld            ⇒ op minstens één variant zonder herkomst verschil (anders: `NO_PLAIN_TRIGGER`).
+// Zo vangt de check ook de RICHTING van een poort (een omgekeerde `isHourMode`) en een poort die erbij komt.
+{
+  const pool = [...new Map(FIXTURE_POOL.map(lines => [lines.join('\n'), lines])).values()];
+  const header = ['ERMHDR\t23.12\t2026-01-05\t\t\t\t\t\tEUR',
+    '%T\tCALENDAR', '%F\tclndr_id\tclndr_name\tproj_id\tclndr_type\tday_hr_cnt\tweek_hr_cnt\tclndr_data',
+    `%R\tC1\tWerkweek\tP1\tCA_Project\t9\t45\t${calendarData([['08:00', '17:00']])}`,
+    '%T\tPROJECT', '%F\tproj_id\tproj_short_name\tclndr_id\tlast_recalc_date\tplan_start_date\tplan_end_date',
+    '%R\tP1\tRequires\tC1\t2026-01-05 08:00\t2026-01-05 08:00\t2026-02-27 17:00',
+    '%T\tTASK',
+    '%F\ttask_id\tproj_id\tclndr_id\ttask_code\ttask_name\ttask_type\tduration_type\tstatus_code\tcomplete_pct_type\ttarget_drtn_hr_cnt\tremain_drtn_hr_cnt\ttarget_start_date\ttarget_end_date\tcstr_type\tcstr_date'];
+  const relations = (...rows: string[]) => ['%T\tTASKPRED', '%F\ttask_pred_id\ttask_id\tpred_task_id\tproj_id\tpred_proj_id\tpred_type\tlag_hr_cnt', ...rows, '%E'];
+  const pre = '%R\tT1\tP1\tC1\tT1\tVoorganger\tTT_Task\tDT_FixedDUR2\tTK_NotStart\tCP_Drtn\t9\t9\t2026-01-05 08:00\t2026-01-05 17:00\t\t';
+  // A15: startmijlpaal gepland op het blokeinde van ma 17:00, direct na T1.
+  pool.push([...header, pre, '%R\tM1\tP1\tC1\tM1\tMijlpaal\tTT_Mile\tDT_FixedDUR2\tTK_NotStart\tCP_Drtn\t0\t0\t2026-01-05 17:00\t2026-01-05 17:00\t\t',
+    ...relations('%R\tR1\tM1\tT1\tP1\tP1\tPR_FS\t0')]);
+  // A17: eindmijlpaal met het geïnverteerde venster di 08:00 / ma 17:00.
+  pool.push([...header, pre, '%R\tM1\tP1\tC1\tM1\tEinde\tTT_FinMile\tDT_FixedDUR2\tTK_NotStart\tCP_Drtn\t0\t0\t2026-01-06 08:00\t2026-01-05 17:00\t\t',
+    ...relations('%R\tR1\tM1\tT1\tP1\tP1\tPR_FS\t0')]);
+  // A20: eindmijlpaal met FNLT op een blokSTART (wo 08:00): aan de late kant een exact punt. De losse
+  // taak T3 (vijf dagen) legt het projecteinde op vrijdag, zodat de constraint de late finish bepaalt.
+  pool.push([...header, pre, '%R\tT3\tP1\tC1\tT3\tLang\tTT_Task\tDT_FixedDUR2\tTK_NotStart\tCP_Drtn\t45\t45\t2026-01-05 08:00\t2026-01-09 17:00\t\t',
+    '%R\tM1\tP1\tC1\tM1\tUiterlijk\tTT_FinMile\tDT_FixedDUR2\tTK_NotStart\tCP_Drtn\t0\t0\t2026-01-05 17:00\t2026-01-05 17:00\tCS_MEOB\t2026-01-07 08:00',
+    ...relations('%R\tR1\tM1\tT1\tP1\tP1\tPR_FS\t0')]);
+
+  const readPlain = (lines: string[]): ImportResult => {
+    const opened = readXER(new TextEncoder().encode(lines.join('\n')));
+    if (isMultiDocumentImport(opened)) throw new Error('pool: één project verwacht');
+    return opened;
+  };
+  /** Geen enkele uurplanning: geen werkblokken, taken in dagen, geen 24-uurs lag-kalender, geen B1-vlag. */
+  const withoutHourPlanning = (input: ImportResult): ImportResult => {
+    const copy = structuredClone(input);
+    for (const cal of [copy.calendar, ...(copy.resourceCalendars ?? [])]) delete (cal as { workTime?: unknown }).workTime;
+    const hpd = copy.calendar.hoursPerDay || 8;
+    for (const task of copy.tasks) {
+      const time = task.time as Task['time'] & { durationUnit?: 'days' | 'hours' };
+      if (time.remainingMinutes != null) time.remainingTime = time.remainingMinutes / (hpd * 60);
+      delete time.remainingMinutes;
+      delete time.durationMinutes;
+      time.durationUnit = 'days';
+    }
+    for (const seq of copy.sequences) delete seq.p6StartAtPredecessorFinishBoundary;
+    if (copy.project.schedulingOptions?.lagCalendar === '24hour') copy.project.schedulingOptions = { ...copy.project.schedulingOptions, lagCalendar: undefined };
+    return copy;
+  };
+  /** Zonder P6-herkomst: elk `p6…`/`xer…`-veld van taken en relaties weg. */
+  const withoutProvenance = (input: ImportResult): ImportResult => {
+    const copy = structuredClone(input);
+    for (const task of copy.tasks) for (const key of Object.keys(task)) if (/^(p6|xer)[A-Z]/.test(key)) delete (task as unknown as Record<string, unknown>)[key];
+    for (const seq of copy.sequences) for (const key of Object.keys(seq)) if (/^p6[A-Z]/.test(key)) delete (seq as unknown as Record<string, unknown>)[key];
+    return copy;
+  };
+  const fingerprint = (input: ImportResult): string => {
+    try { return JSON.stringify(solveAllAxes(input)); } catch (error) { return `fout: ${(error as Error).message}`; }
+  };
+  /** Verandert aan/uit van `key` iets? P6-basis (met B3/B4 aan) en OPS-basis, met de voortgangsmodus van
+   *  het bestand en met Progress Override. */
+  const toggles = (input: ImportResult, key: ConventionKey): boolean => {
+    for (const progressMode of [input.project.progressMode, 'PROGRESS_OVERRIDE' as const]) {
+      const moded = structuredClone(input);
+      moded.project.progressMode = progressMode;
+      for (const baseId of ['p6', 'ops'] as const) {
+        const values = resolveConventions({ baseId, id: baseId, name: '', overrides: {} });
+        if (baseId === 'p6') for (const k of P6_OFF_GROUP_B) values[k] = true;
+        if (fingerprint(withConventions(moded, baseId, { ...values, [key]: true }))
+          !== fingerprint(withConventions(moded, baseId, { ...values, [key]: false }))) return true;
+      }
+    }
+    return false;
+  };
+  const variants = pool.map(lines => {
+    const orig = readPlain(lines);
+    return { orig, day: withoutHourPlanning(orig), plain: withoutProvenance(orig) };
+  });
+  /** Niet gelabelde conventies zonder trigger in een variant: met reden, en een vermelding die niet meer
+   *  nodig is, is rood (opruimen). */
+  const NO_DAY_TRIGGER: Partial<Record<ConventionKey, string>> = {};
+  const NO_PLAIN_TRIGGER: Partial<Record<ConventionKey, string>> = {};
+  const count = (key: ConventionKey, pick: (v: typeof variants[number]) => ImportResult) =>
+    variants.filter(v => toggles(pick(v), key)).length;
+  for (const d of CONVENTIONS) {
+    const orig = count(d.id, v => v.orig);
+    const day = count(d.id, v => v.day);
+    const plain = count(d.id, v => v.plain);
+    if (process.env.OPS_REQUIRES_MATRIX) console.log(d.id.padEnd(45), 'orig', orig, 'dag', day, 'zonderHerkomst', plain, JSON.stringify(d.requires ?? {}));
+    if (d.requires?.hourPlanning) {
+      eq(`requires ${d.id}: alleen uurplanning ⇒ geen verschil zonder uurplanning (fixtures met verschil)`, day, 0);
+      eq(`requires ${d.id}: alleen uurplanning ⇒ wel een fixture met verschil`, orig > 0, true);
+    } else {
+      eq(`requires ${d.id}: zonder label ⇒ verschil zonder uurplanning (of NO_DAY_TRIGGER)`, day > 0 || d.id in NO_DAY_TRIGGER, true);
+      if (d.id in NO_DAY_TRIGGER) eq(`requires ${d.id}: NO_DAY_TRIGGER nog nodig`, day, 0);
+    }
+    if (d.requires?.xerOrigin) {
+      eq(`requires ${d.id}: alleen .xer ⇒ geen verschil zonder P6-herkomst (fixtures met verschil)`, plain, 0);
+      eq(`requires ${d.id}: alleen .xer ⇒ wel een fixture met verschil`, orig > 0, true);
+    } else {
+      eq(`requires ${d.id}: zonder label ⇒ verschil zonder P6-herkomst (of NO_PLAIN_TRIGGER)`, plain > 0 || d.id in NO_PLAIN_TRIGGER, true);
+      if (d.id in NO_PLAIN_TRIGGER) eq(`requires ${d.id}: NO_PLAIN_TRIGGER nog nodig`, plain, 0);
+    }
+  }
+  // B1: de dag-variant laat de relatievlag weg, omdat de lezer hem alleen bij een urenkalender zet.
+  const xerReaderSource = readFileSync(join(fileURLToPath(new URL('../../src/services/xer/xerReader.ts', import.meta.url))), 'utf8');
+  eq('requires B1: de XER-lezer zet de relatievlag alleen bij predecessorCalendar.isHourMode',
+    /const p6StartAtPredecessorFinishBoundary = [^;]*predecessorCalendar\.isHourMode/.test(xerReaderSource), true);
 }
 
 if (diffs.length > 0) {

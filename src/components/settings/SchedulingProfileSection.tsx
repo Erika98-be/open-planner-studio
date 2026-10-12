@@ -8,16 +8,19 @@ import {
   BUILT_IN_PROFILE_IDS, CONVENTIONS, CONVENTION_THEMES, builtInConventions, isOffInEveryBuiltIn,
   resolveConventions, type ConventionDescriptor, type ConventionTheme,
 } from '@/engine/scheduler/conventions/registry';
-import { deleteCustomProfile, loadCustomProfiles, upsertCustomProfile } from '@/services/schedulingProfiles/profileStore';
+import {
+  MAX_CUSTOM_PROFILES, deleteCustomProfile, loadCustomProfiles, upsertCustomProfileResult,
+} from '@/services/schedulingProfiles/profileStore';
+import { ConfirmDialog } from '@/components/dialogs/ConfirmDialog';
 import type { BuiltInProfileId, ConventionKey, ProjectSchedulingOptions, SchedulingProfile } from '@/types/project';
 import { generateId } from '@/utils/id';
 import { isHourCalendar } from '@/services/subdayIo';
 import { effHoursPerDay } from '@/utils/taskDuration';
 import {
-  choiceOf, editConvention, hasValidProfileName, profileLabel, renameProfile, resetConventionToBase, selectProfile, templateRelation,
+  choiceOf, editConvention, hasValidProfileName, ssLagHasHourPlanning, profileLabel, renameProfile, resetConventionToBase, selectProfile, templateRelation,
   totalFloatModeFromUi,
   totalFloatModeToUi, withCriticalMode, withCriticalThreshold, withDefaultOptions,
-  type ProfileChoice, type SchedulingSettingsDraft, type TotalFloatModeUi,
+  SOURCE_ONLY_OPTION_KEYS, type ProfileChoice, type SchedulingSettingsDraft, type SourceOnlyOptionKey, type TotalFloatModeUi,
 } from '@/state/schedulingProfileDraft';
 
 interface SchedulingProfileSectionProps {
@@ -48,11 +51,12 @@ const CONVENTION_GROUPS: readonly { id: ConventionGroupId; items: readonly Conve
   { id: 'ownProfilesOnly' as const, items: CONVENTIONS.filter(isOffInEveryBuiltIn) },
 ].filter(g => g.items.length > 0);
 
-/** De drie projectopties die alleen uit een P6-bestand komen en in het blok niet te wijzigen zijn:
- *  alleen-lezen getoond, zodat zichtbaar is waarom twee projecten met hetzelfde
- *  profiel anders rekenen. */
-const SOURCE_ONLY_OPTIONS = ['useExpectedFinishDates', 'useProjectEndDateForFloat', 'p6CompletedLateFromRemainingWindow'] as const;
-const sourceOptionKey = (key: typeof SOURCE_ONLY_OPTIONS[number]): ParseKeys<'common'> =>
+/** De bronsignalen (`SOURCE_ONLY_OPTION_KEYS`, één lijst met het bewerkmodel) die het blok alleen-lezen
+ *  toont, zodat zichtbaar is waarom twee projecten met hetzelfde profiel anders rekenen. `leveling` is
+ *  alleen data (geen aan/uit) en staat er niet bij. */
+type ShownSourceOptionKey = Exclude<SourceOnlyOptionKey, 'leveling'>;
+const SHOWN_SOURCE_OPTIONS = SOURCE_ONLY_OPTION_KEYS.filter((key): key is ShownSourceOptionKey => key !== 'leveling');
+const sourceOptionKey = (key: ShownSourceOptionKey): ParseKeys<'common'> =>
   `schedulingProfile.sourceOptions.${key}`;
 const themeTitleKey = (id: ConventionGroupId): ParseKeys<'common'> => `schedulingProfile.themes.${id}`;
 
@@ -63,13 +67,12 @@ const themeTitleKey = (id: ConventionGroupId): ParseKeys<'common'> => `schedulin
  * elf projectopties (kritiek-definitie met drempel, speling-berekening, open-eind kritiek, bijna-
  * kritiek, meerdere speling-paden, lag-kalender, SS-lag-variant van C6). De andere vier — `useExpectedFinishDates`,
  * `useProjectEndDateForFloat`, `p6CompletedLateFromRemainingWindow` en het nivelleerblok `leveling`
- * (alleen data) — zijn bewust NIET bewerkbaar:
+ * (alleen data) — zijn bewust NIET bewerkbaar (`SOURCE_ONLY_OPTION_KEYS`):
  * het zijn P6-bronsignalen die de XER-lezer uit SCHEDOPTIONS zet (of die aan de P6-herkomstketen van
  * B3/B4 hangen), zonder betekenis voor een project dat niet uit P6 komt. Het blok toont ze onderaan alleen-lezen
- * en laat ze verder ongemoeid
- * (elke optiewijziging spreidt de bestaande opties); alleen "Standaardopties van dit profiel
- * toepassen" vervangt alle opties door `defaultOptionsFor` (onder P6 zet dat de eerste en de laatste
- * aan; `useProjectEndDateForFloat` en `leveling` vallen dan weg, want die komen alleen uit het bestand). Commit gebeurt pas op Toepassen via `applySchedulingSettings` (één undo-stap,
+ * en laat ze ongemoeid, ook "Standaardopties van dit profiel toepassen" (`withDefaultOptions`: de
+ * standaard van het profiel voor de bewerkbare opties, de bronsignalen blijven zoals het bestand ze
+ * gaf, en een profiel voegt er geen toe). Commit gebeurt pas op Toepassen via `applyProjectInfo` (één undo-stap,
  * herberekenen, melding "N taken verschoven"). Alleen sjablonen opslaan/verwijderen gaat direct: dat
  * is app-data, geen projectdata.
  */
@@ -87,14 +90,35 @@ export function SchedulingProfileSection({ mode, value, onChange }: SchedulingPr
     if (next.has(id)) next.delete(id); else next.add(id);
     return next;
   });
+  const notify = useAppStore(s => s.notify);
+  // Sjabloon opslaan of bijwerken meldt de uitkomst via het meldingskanaal (critreview #169, B9): een
+  // bevestiging, of een foutmelding bij de limiet of een volle/ontbrekende opslag — nooit stil.
   const saveTemplate = (p: SchedulingProfile) => {
     // Een sjabloon zonder naam is niet te kiezen; de knop staat dan uit, dit is de vangrail.
     if (!hasValidProfileName(p)) return;
-    if (upsertCustomProfile({ ...p, name: p.name.trim() })) setTemplates(loadCustomProfiles());
+    const name = p.name.trim();
+    const result = upsertCustomProfileResult({ ...p, name });
+    if (result === 'saved') {
+      setTemplates(loadCustomProfiles());
+      notify({ severity: 'info', messageKey: 'notifications.schedulingTemplateSaved', params: { name }, dedupeKey: `scheduling-template-saved:${p.id}` });
+    } else if (result === 'limit') {
+      notify({ severity: 'error', messageKey: 'notifications.schedulingTemplateLimit', params: { max: MAX_CUSTOM_PROFILES }, dedupeKey: 'scheduling-template-limit' });
+    } else if (result === 'storage') {
+      notify({ severity: 'error', messageKey: 'notifications.schedulingTemplateStorageFailed', dedupeKey: 'scheduling-template-storage' });
+    } else {
+      // 'invalid': via de UI niet bereikbaar (geldige naam, gegenereerd id); de sanitizer weigert.
+      console.warn('[rekenprofielen] sjabloon niet opgeslagen: ongeldig profiel', p.id);
+    }
   };
-  const deleteTemplate = (id: string) => {
-    deleteCustomProfile(id);
+  // Verwijderen vraagt eerst bevestiging via de in-app ConfirmDialog (geen `confirm()`).
+  const [pendingDelete, setPendingDelete] = useState<SchedulingProfile | null>(null);
+  const confirmDeleteTemplate = () => {
+    if (!pendingDelete) return;
+    if (!deleteCustomProfile(pendingDelete.id)) {
+      notify({ severity: 'error', messageKey: 'notifications.schedulingTemplateDeleteFailed', dedupeKey: 'scheduling-template-storage' });
+    }
     setTemplates(loadCustomProfiles());
+    setPendingDelete(null);
   };
   const durationDisplay = useAppStore(s => s.ui.durationDisplay);
   const enableHourPlanning = useAppStore(s => s.ui.enableHourPlanning);
@@ -109,6 +133,10 @@ export function SchedulingProfileSection({ mode, value, onChange }: SchedulingPr
   // De SS-lag-projectoptie werkt alleen met C6 én A19 aan (`CPMSolver.inProgressStartLag`).
   const ssLagMissing: ConventionKey | null = !conventions.p6InProgressStartLagElapsed ? 'p6InProgressStartLagElapsed'
     : !conventions.p6UseRemainingStartForProgress ? 'p6UseRemainingStartForProgress' : null;
+  // …en alleen bij uurplanning op de lag-kalender (`ssLagHasHourPlanning`, hetzelfde criterium als de motor).
+  const libraryCalendars = useAppStore(s => s.calendars);
+  const tasks = useAppStore(s => s.tasks);
+  const ssLagNoHourPlanning = !ssLagHasHourPlanning(so, tasks, projectCal, libraryCalendars);
   const label = profileLabel(profile);
   const relation = templateRelation(profile, templates);
   const brand = (id: BuiltInProfileId) => t(builtInNameKey(id));
@@ -173,12 +201,12 @@ export function SchedulingProfileSection({ mode, value, onChange }: SchedulingPr
   const templateName = templates.find(tp => tp.id === profile?.id)?.name ?? '';
   const nameValid = hasValidProfileName(profile);
   // Alleen de opties die het project echt draagt; een project zonder P6-bron toont het blok niet.
-  const sourceOptions = SOURCE_ONLY_OPTIONS.filter(key => so[key] !== undefined);
+  const sourceOptions = SHOWN_SOURCE_OPTIONS.filter(key => so[key] !== undefined);
 
   return (
     <div className="flex flex-col gap-3" data-ops-scheduling-profile-section>
       <div className="h-px" style={{ background: 'var(--theme-border-light)' }} />
-      <span className="text-body leading-5 font-semibold" style={{ fontFamily: 'var(--font-heading)' }}>
+      <span className="text-body leading-5 font-semibold" style={{ fontFamily: 'var(--font-heading)' }} data-ops-scheduling-title>
         {t('schedulingProfile.title')}
       </span>
       {profileSelect}
@@ -227,11 +255,20 @@ export function SchedulingProfileSection({ mode, value, onChange }: SchedulingPr
             </>
           )}
           {relation !== 'none' && (
-            <button type="button" className={btnCls} onClick={() => deleteTemplate(profile.id)} data-ops-scheduling-delete-template>
+            <button type="button" className={btnCls}
+              onClick={() => setPendingDelete(templates.find(tp => tp.id === profile.id) ?? profile)} data-ops-scheduling-delete-template>
               {t('schedulingProfile.deleteTemplate')}
             </button>
           )}
         </div>
+      )}
+      {pendingDelete && (
+        <ConfirmDialog
+          message={t('schedulingProfile.deleteTemplateConfirm', { name: pendingDelete.name })}
+          onConfirm={confirmDeleteTemplate}
+          onCancel={() => setPendingDelete(null)}
+          danger
+        />
       )}
 
       <div className="flex flex-col gap-2" data-ops-scheduling-conventions>
@@ -279,6 +316,19 @@ export function SchedulingProfileSection({ mode, value, onChange }: SchedulingPr
                         />
                         <span className={deviates ? 'font-semibold' : undefined} data-ops-convention-label>{name}</span>
                       </label>
+                      {/* Waar de motor de conventie op poort (`requires` in het register, N2): kort label
+                          naast het vinkje, zodat zichtbaar is dat de regel op dit project niets kan doen. */}
+                      {c.requires?.hourPlanning && (
+                        <span className="badge badge--blue shrink-0" data-ops-convention-requires="hourPlanning"
+                          title={t('schedulingProfile.requires.hourPlanningTitle')}>
+                          {t('schedulingProfile.requires.hourPlanning')}
+                        </span>
+                      )}
+                      {c.requires?.xerOrigin && (
+                        <span className="badge badge--blue shrink-0" data-ops-convention-requires="xerOrigin">
+                          {t('schedulingProfile.requires.xerOrigin')}
+                        </span>
+                      )}
                       <span className="shrink-0 whitespace-nowrap text-text-secondary" data-ops-convention-base>
                         {t('schedulingProfile.baseValue', { value: base[c.id] ? t('schedulingProfile.on') : t('schedulingProfile.off') })}
                       </span>
@@ -437,7 +487,7 @@ export function SchedulingProfileSection({ mode, value, onChange }: SchedulingPr
         <div className="flex flex-col gap-1">
           <label className={labelCls}>{tMenu('projectInfo.calc.ssLagFrom')}</label>
           <Select aria-label={tMenu('projectInfo.calc.ssLagFrom')} value={so.startToStartLagFrom ?? 'earlyStart'}
-            disabled={ssLagMissing !== null}
+            disabled={ssLagMissing !== null || ssLagNoHourPlanning}
             onChange={v => patchOptions({ ...so, startToStartLagFrom: v as ProjectSchedulingOptions['startToStartLagFrom'] })}
             options={[
               { value: 'earlyStart', label: tMenu('projectInfo.calc.ssLagEarlyStart') },
@@ -446,6 +496,11 @@ export function SchedulingProfileSection({ mode, value, onChange }: SchedulingPr
           {ssLagMissing && (
             <div className="alert alert--info" data-ops-ss-lag-needs-convention>
               {tMenu('projectInfo.calc.ssLagNeedsConvention', { convention: t(conventionLabelKey(ssLagMissing)) })}
+            </div>
+          )}
+          {!ssLagMissing && ssLagNoHourPlanning && (
+            <div className="alert alert--info" data-ops-ss-lag-needs-hour-planning>
+              {tMenu('projectInfo.calc.ssLagNeedsHourPlanning')}
             </div>
           )}
         </div>

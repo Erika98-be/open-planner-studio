@@ -27,6 +27,13 @@ const DEFAULT_WIZARD_CALENDAR: WizardCalendarState = {
 /** Pseudo-waarde voor de "+ Nieuwe resourcebibliotheek…"-optie in de bibliotheek-select. */
 const NEW_COMPANY_OPTION = '__new__';
 
+/** De metadatavelden van de draft die undo/redo volgen (zie vangnet (c)). */
+interface MetaDraft {
+  name: string; description: string; author: string; company: string;
+  startDate: string; endDate: string; defaultTaskDurationUnit: 'days' | 'hours';
+}
+const META_KEYS = ['name', 'description', 'author', 'company', 'startDate', 'endDate', 'defaultTaskDurationUnit'] as const satisfies readonly (keyof MetaDraft)[];
+
 export interface ProjectInfoPanelContentHandle {
   /** Committeert de huidige draft — wizard ⇒ createNewProject + bibliotheek-koppeling; edit ⇒
    *  setProject + bibliotheek-(ont)koppeling (+ applySchedulingSettings als het blok Rekenprofiel en
@@ -96,9 +103,15 @@ export interface ProjectInfoPanelContentProps {
  *      aangeraakt — dus zelfs als (a) een scenario zou missen, kan een stale draft nooit stilletjes
  *      een bibliotheek los- of vastkoppelen (het destructieve pad: `unbindProject()` strip ALLE
  *      `libraryOrigin`-stempels).
- *  Undo is geen vector: het `project`-object (op `wbsAutoNumber` na) staat BEWUST NIET in de
- *  undo/redo-snapshot (`src/state/snapshot.ts`). (b) is de generieke vangrail, los van WELK
- *  mechanisme de staleness veroorzaakt.
+ *  (c) Undo/redo IS een vector: `project` staat in de undo/redo-snapshot (`src/state/snapshot.ts`), en
+ *      een Toepassen van Projectinfo is één undo-stap. Daarom volgt elk metadataveld dat nog gelijk is
+ *      aan de vorige store-waarde de nieuwe store-waarde (een veld dat de gebruiker wijzigde, blijft
+ *      staan), en volgt de rekenprofiel-draft de store: verandert `project.schedulingProfile`/`schedulingOptions` terwijl de draft schoon is (niet
+ *      aangeraakt, of gelijk aan wat de store vóór de wijziging had), dan vult hij zich opnieuw. Is
+ *      hij wél vuil, dan blijft de keuze van de gebruiker staan en toont het blok
+ *      `data-ops-scheduling-store-changed`: Toepassen zet die keuze dan bewust terug, nooit stil
+ *      (critreview #169, N1). (b) blijft de generieke vangrail, los van WELK mechanisme de
+ *      staleness veroorzaakt.
  */
 export const ProjectInfoPanelContent = forwardRef<ProjectInfoPanelContentHandle, ProjectInfoPanelContentProps>(
   function ProjectInfoPanelContent({ mode, onDone, autoFocusName, onValidityChange, onDirtyChange }, ref) {
@@ -186,6 +199,7 @@ export const ProjectInfoPanelContent = forwardRef<ProjectInfoPanelContentHandle,
       setDefaultTaskDurationUnit(p.defaultTaskDurationUnit ?? 'days');
       setSchedulingRaw({ profile: p.schedulingProfile, options: p.schedulingOptions });
       setCalcTouched(false);
+      setStoreChangedUnderDraft(false);
       setLinkedCompanyId(p.companyId ?? '');
       setCompanyTouched(false);
       setCreatingCompany(false);
@@ -193,20 +207,73 @@ export const ProjectInfoPanelContent = forwardRef<ProjectInfoPanelContentHandle,
       setNewCompanyName('');
     }, []);
 
-    // Her-initialiseer de VOLLEDIGE draft zodra het ACTIEVE document verandert
-    // (Ctrl+1..9 kan vuren terwijl deze component gemount blijft — zie de JSDoc hierboven). Alléén
-    // relevant in edit-modus (de wizard heeft geen "vorig document" om stale te worden). Bewust
-    // GEEN afhankelijkheid op losse `project`-velden: elke store-mutatie die toevallig een nieuwe
-    // `project`-referentie oplevert zou anders de tekst die de gebruiker nog aan het intypen is
-    // wegvegen; `activeDocumentId` is het precieze identiteitssignaal (zie de JSDoc hierboven —
-    // undo raakt geen projectvelden, dus er is daar niets te herinitialiseren).
-    const draftDocIdRef = useRef(activeDocumentId);
+    // De store-waarden die de draft volgt. Undo/redo zet het oude `project`-object terug (structureel
+    // gedeeld), dus een nieuwe referentie van het rekenprofielblok betekent: iets anders dan deze draft
+    // wijzigde profiel of opties (Ctrl+Z/Ctrl+Y, of ons eigen Toepassen). De metadata vergelijken we per
+    // veld op waarde.
+    const storeScheduling = useMemo<SchedulingSettingsDraft>(
+      () => ({ profile: project.schedulingProfile, options: project.schedulingOptions }),
+      [project.schedulingProfile, project.schedulingOptions],
+    );
+    const storeMeta = useMemo<MetaDraft>(() => ({
+      name: project.name, description: project.description, author: project.author, company: project.company,
+      startDate: project.startDate, endDate: project.endDate,
+      defaultTaskDurationUnit: project.defaultTaskDurationUnit ?? 'days',
+    }), [project.name, project.description, project.author, project.company, project.startDate, project.endDate,
+      project.defaultTaskDurationUnit]);
+    const draftMeta = useMemo<MetaDraft>(
+      () => ({ name, description, author, company, startDate, endDate, defaultTaskDurationUnit }),
+      [name, description, author, company, startDate, endDate, defaultTaskDurationUnit],
+    );
+    const metaSetters = useMemo<Record<keyof MetaDraft, (value: never) => void>>(() => ({
+      name: setName, description: setDescription, author: setAuthor, company: setCompany,
+      startDate: setStartDate, endDate: setEndDate, defaultTaskDurationUnit: setDefaultTaskDurationUnit,
+    }), []);
+    // Wijzigde de store onder een VUILE rekenprofiel-draft? Dan zegt het blok dat eerlijk (Toepassen
+    // draait die wijziging terug). Gewist zodra de draft weer gelijk is aan de store.
+    const [storeChangedUnderDraft, setStoreChangedUnderDraft] = useState(false);
+
+    // Wat deze draft het laatst van de store zag: document, metadata en rekenprofiel. EÉN layout-effect
+    // leest en schrijft deze ref, zodat een documentwissel en de store-synchronisatie in dezelfde commit
+    // geen verouderde waarden van elkaar lezen.
+    const seenStoreRef = useRef({ docId: activeDocumentId, meta: storeMeta, scheduling: storeScheduling });
     useLayoutEffect(() => {
       if (isNew) return;
-      if (activeDocumentId === draftDocIdRef.current) return;
-      draftDocIdRef.current = activeDocumentId;
-      resetDraftFromProject();
-    }, [isNew, activeDocumentId, resetDraftFromProject]);
+      const seen = seenStoreRef.current;
+      // (a) Documentwissel (Ctrl+1..9 kan vuren terwijl deze component gemount blijft): de VOLLEDIGE
+      // draft komt van het nieuwe document. `activeDocumentId` is het precieze identiteitssignaal.
+      if (activeDocumentId !== seen.docId) {
+        seenStoreRef.current = { docId: activeDocumentId, meta: storeMeta, scheduling: storeScheduling };
+        resetDraftFromProject();
+        return;
+      }
+      // (c) Metadata: een veld dat nog gelijk is aan de vorige store-waarde volgt de nieuwe. Een veld
+      // dat de gebruiker wijzigde, blijft staan.
+      if (seen.meta !== storeMeta) {
+        const previous = seen.meta;
+        seenStoreRef.current = { ...seenStoreRef.current, meta: storeMeta };
+        for (const key of META_KEYS) {
+          if (previous[key] !== storeMeta[key] && draftMeta[key] === previous[key]) (metaSetters[key] as (value: MetaDraft[typeof key]) => void)(storeMeta[key]);
+        }
+      }
+      // (c) Rekenprofiel: een schone draft (niet aangeraakt, gelijk aan de vorige of aan de nieuwe
+      // store-waarde) volgt de store; een vuile draft blijft staan en krijgt de waarschuwing.
+      if (seen.scheduling !== storeScheduling) {
+        const previous = seen.scheduling;
+        seenStoreRef.current = { ...seenStoreRef.current, scheduling: storeScheduling };
+        if (!calcTouched || sameSettings(previous, scheduling) || sameSettings(storeScheduling, scheduling)) {
+          setSchedulingRaw(storeScheduling);
+          setCalcTouched(false);
+          setStoreChangedUnderDraft(false);
+        } else {
+          setStoreChangedUnderDraft(true);
+        }
+        return;
+      }
+      // De gebruiker zette de draft zelf weer gelijk aan de store: dan is er niets meer te melden.
+      if (storeChangedUnderDraft && sameSettings(storeScheduling, scheduling)) setStoreChangedUnderDraft(false);
+    }, [isNew, activeDocumentId, storeMeta, storeScheduling, storeChangedUnderDraft, scheduling, calcTouched, draftMeta,
+      metaSetters, resetDraftFromProject]);
 
 
     // Generatie-spanne bij aanmaak: nog geen projecteinde bekend ⇒ startjaar−1..+3.
@@ -380,7 +447,7 @@ export const ProjectInfoPanelContent = forwardRef<ProjectInfoPanelContentHandle,
           <label className="text-text-secondary font-medium">{tMenu('projectInfo.name')}</label>
           {/* Leeg laten mag: het project blijft dan naamloos in de data en toont overal de
               vertaalde weergavenaam — die staat daarom als placeholder in het veld. */}
-          <input value={name} onChange={e => setName(e.target.value)} placeholder={tCommon('project.untitled')} className={inputCls} autoFocus={autoFocusName} />
+          <input data-ops-project-name value={name} onChange={e => setName(e.target.value)} placeholder={tCommon('project.untitled')} className={inputCls} autoFocus={autoFocusName} />
         </div>
 
         <div className="flex flex-col gap-1">
@@ -542,6 +609,13 @@ export const ProjectInfoPanelContent = forwardRef<ProjectInfoPanelContentHandle,
         {/* Rekenprofiel en reken-opties: in de wizard alleen de keuzelijst (die de
             standaardopties van het profiel toepast), bij bewerken het volledige blok — identiek op
             beide edit-oppervlakken (dialoog én Backstage). onChange markeert calcTouched. */}
+        {storeChangedUnderDraft && dirty && (
+          // Vangnet (c): het rekenprofiel is gewijzigd (bijv. Ongedaan maken) terwijl dit blok een
+          // eigen, niet-toegepaste keuze had. Geen stille terugdraai: zeg wat Toepassen doet.
+          <div className="alert alert--warning" role="status" data-ops-scheduling-store-changed>
+            {tCommon('schedulingProfile.storeChangedUnderDraft', { apply: tCommon('apply') })}
+          </div>
+        )}
         <SchedulingProfileSection mode={isNew ? 'wizard' : 'edit'} value={scheduling} onChange={setScheduling} />
       </div>
     );

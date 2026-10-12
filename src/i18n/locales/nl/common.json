@@ -137,6 +137,10 @@
     "phaseRefusedNoAssignableChild": "'{{phase}}' kan geen samenvattingstaak worden: de toewijzingen ervan kunnen nergens heen, want geen van de nieuwe subtaken mag toewijzingen dragen (een mijlpaal of samenvattingstaak). Er is niets gewijzigd.",
     "phaseRefusedDuplicateResource": "'{{phase}}' kan geen samenvattingstaak worden: de toewijzing van {{resource}} kan niet naar de nieuwe subtaak '{{child}}', want die heeft {{resource}} al. Er is niets gewijzigd.",
     "schedulingProfileApplied": "Dit project rekent als {{profile}}. Aanpassen via Bestand → Projectinfo → Rekenprofiel en reken-opties.",
+    "schedulingTemplateSaved": "Sjabloon „{{name}}” opgeslagen.",
+    "schedulingTemplateLimit": "Sjabloon niet opgeslagen: er zijn al {{max}} sjablonen. Verwijder eerst een sjabloon.",
+    "schedulingTemplateStorageFailed": "Sjabloon niet opgeslagen: de opslag van de app is vol of niet beschikbaar.",
+    "schedulingTemplateDeleteFailed": "Sjabloon niet verwijderd: de opslag van de app is vol of niet beschikbaar.",
     "schedulingProfileShifted_one": "Na het toepassen is {{count}} taak verschoven.",
     "schedulingProfileShifted_other": "Na het toepassen zijn {{count}} taken verschoven.",
     "actions": {
@@ -1273,7 +1277,7 @@
     },
     "p6ZeroDurationUsesPlannedBoundary": {
       "label": "Mijlpaal volgt de geplande kalendergrens",
-      "help": "Een mijlpaal zonder duur blijft op de kalendergrens die het bestand plande: een dagstart blijft een startmijlpaal, een bandeinde mag op de finish van de voorganger landen."
+      "help": "Een mijlpaal zonder duur blijft op de kalendergrens die het bestand plande: een dagstart blijft een startmijlpaal, een blokeinde mag op het einde van de voorganger landen."
     },
     "p6UseTaskPlannedStartFloor": {
       "label": "Geplande start als extra ondergrens",
@@ -1281,11 +1285,11 @@
     },
     "p6FinishMilestoneBoundaryWindow": {
       "label": "Eindmijlpaal als grensvenster",
-      "help": "Een eindmijlpaal mag op twee aangrenzende kalendergrenzen staan: vroege start aan het begin van een band, vroeg einde aan het einde van de vorige band."
+      "help": "Een eindmijlpaal mag op twee aangrenzende kalendergrenzen staan: vroege start aan het begin van een werkblok, vroeg einde aan het einde van het vorige werkblok."
     },
     "p6PreserveActualInstants": {
       "label": "Werkelijke datums exact overnemen",
-      "help": "Geregistreerde werkelijke start- en einddatums worden niet naar een werktijdband verschoven."
+      "help": "Vastgelegde werkelijke start- en einddatums worden niet naar de rand van een werkblok verschoven."
     },
     "p6UseRemainingStartForProgress": {
       "label": "Lopende taak: vroege start = begin van het restwerk",
@@ -1293,7 +1297,7 @@
     },
     "p6PreserveZeroDurationConstraintInstants": {
       "label": "Constraintmoment op een mijlpaal exact",
-      "help": "Een datum-en-tijdconstraint op een mijlpaal zonder duur is een exact punt, ook aan het begin van een werkband."
+      "help": "Een datum-en-tijdconstraint op een mijlpaal zonder duur is een exact punt, ook aan het begin van een werkblok."
     },
     "resumeFromActualElapsed": {
       "label": "Restwerk hervat na de al verstreken duur",
@@ -1304,24 +1308,24 @@
       "help": "Een taak die nog niet begonnen is, schuift niet vanzelf naar op of na de statusdatum."
     },
     "p6RelationFinishBoundary": {
-      "label": "Opvolger start op de finishgrens",
-      "help": "Bij een eind-start-relatie zonder lag op een gedeelde bandgrens begint de opvolger op de finish van de voorganger (alleen relaties die het bestand zo markeert). Terugrekenend toont de opvolger haar late start gewoon als begin van een werkband."
+      "label": "Opvolger start op de eindgrens",
+      "help": "Bij een eind-start-relatie zonder lag waarvan de opvolger in het bestand precies op het einde van de voorganger begint, aan het eind van een werkblok, begint de opvolger op dat einde en niet aan het begin van het volgende werkblok. Het bestand markeert dat niet: de app herkent zo'n relatie zelf bij het openen van een .xer-bestand. Een relatie die je zelf legt, valt er niet onder. Terugrekenend toont de opvolger haar late start gewoon als begin van een werkblok."
     },
     "p6BackwardLagFinishBoundary": {
-      "label": "Lag terugrekenen vanaf een finishgrens",
-      "help": "Trekt de terugwaartse berekening een werktijd-lag af vanaf een finishgrens en komt ze precies op een bandstart uit, dan landt ze op de vorige finishgrens. Ook bij een eind-eind-relatie zonder lag blijft een late finish op een bandeinde die finishgrens."
+      "label": "Lag terugrekenen vanaf een eindgrens",
+      "help": "Trekt de terugwaartse berekening een lag in werktijd af vanaf een eindgrens en komt ze precies op de start van een werkblok uit, dan landt ze op de vorige eindgrens. Ook bij een eind-eind-relatie zonder lag blijft een laat einde op een blokeinde op die eindgrens."
     },
     "p6CompletedDataDateWindow": {
       "label": "Voltooide taak in het statusdatumvenster",
-      "help": "Een voltooide taak krijgt vroege datums in het venster van de statusdatum, en haar einde telt mee voor het projecteinde (alleen taken met P6-herkomst)."
+      "help": "Een voltooide taak krijgt vroege datums in het venster van de statusdatum, en haar einde telt mee voor het projecteinde."
     },
     "p6CompletedLoeActualFinish": {
       "label": "Voltooide LOE via het werkelijke einde",
-      "help": "Een voltooide level-of-effort-activiteit met alleen een start-start-ingang volgt de route via haar werkelijke einde (alleen taken met P6-herkomst)."
+      "help": "Een voltooide level-of-effort-activiteit met alleen een start-start-ingang volgt de route via haar werkelijke einde."
     },
     "p6OpenLoeTargetSpan": {
       "label": "Niet-gestarte LOE neemt het doelvenster",
-      "help": "Een level-of-effort-activiteit die nog niet begonnen is, neemt haar doelvenster als looptijd (alleen taken met P6-herkomst)."
+      "help": "Een level-of-effort-activiteit die nog niet begonnen is, neemt haar doelvenster als looptijd."
     },
     "p6CompletedPredecessorAtDataDate": {
       "label": "Voltooide voorganger houdt niet vast na de statusdatum",
@@ -1337,7 +1341,7 @@
     },
     "p6CompletedOutOfSequenceWindow": {
       "label": "Voltooide taak buiten volgorde wacht op haar voorgangers",
-      "help": "Een voltooide taak waarvan een voorganger nog niet klaar is, krijgt haar nulvenster ná die voorganger in plaats van op de statusdatum (P6: Retained Logic)."
+      "help": "Een voltooide taak waarvan een voorganger nog niet klaar is, krijgt haar nulvenster ná die voorganger in plaats van op de statusdatum (P6: Retained Logic). Werkt alleen als ook ‘Voltooide taak in het statusdatumvenster’ en ‘Lopende taak: vroege start = begin van het restwerk’ aanstaan."
     },
     "p6CompletedPhysicalAtDataDate": {
       "label": "Voltooide fysieke-voortgangstaak staat op de statusdatum",
@@ -1349,27 +1353,27 @@
     },
     "p6FinishFinishStartMilestoneLateFinish": {
       "label": "Eind-eind-relatie naar een startmijlpaal bindt aan de mijlpaal zelf",
-      "help": "Een eind-eind-relatie naar een startmijlpaal telt tot de mijlpaal zelf, niet tot het begin van de mijlpaaldag: de late finish van de voorganger mag tot de late finish van de mijlpaal lopen."
+      "help": "Een eind-eind-relatie naar een startmijlpaal telt tot de mijlpaal zelf, niet tot het begin van de mijlpaaldag: het late einde van de voorganger mag tot het late einde van de mijlpaal lopen."
     },
     "p6StartedTaskIgnoresPlannedStartFloor": {
       "label": "Geplande start is geen vloer voor een lopende taak",
       "help": "Het resterende werk van een gestarte taak begint op de statusdatum en direct na haar voorgangers, ook als haar geplande start later ligt."
     },
     "p6LateFinishOnOwnCalendar": {
-      "label": "Late finish op de eigen kalender",
-      "help": "Valt de late finish die een opvolger oplegt buiten de werktijd van de taak, dan wordt hij het einde van de vorige werkperiode op de eigen kalender."
+      "label": "Laat einde op de eigen kalender",
+      "help": "Valt het late einde dat een opvolger oplegt buiten de werktijd van de taak, dan wordt het het einde van de vorige werkperiode op de eigen kalender."
     },
     "p6ProgressOverrideIgnoresStartedSuccessor": {
       "label": "Progress Override negeert een gestarte opvolger ook achterwaarts",
       "help": "Onder Progress Override telt de relatie naar een opvolger die al gestart is niet mee in de late datums en de vrije speling van een voorganger die nog niet klaar is."
     },
     "p6FinishNotBeforeFinishFinishBound": {
-      "label": "Vroege finish niet vóór een eind-eind-grens",
-      "help": "Bij een eind-eind-relatie ligt de vroege finish van de opvolger in kloktijd nooit vóór de grens die de voorganger stelt. Valt die grens in vrije tijd van de opvolger, dan wordt de finish het begin van de volgende werkperiode."
+      "label": "Vroeg einde niet vóór een eind-eind-grens",
+      "help": "Bij een eind-eind-relatie ligt het vroege einde van de opvolger in kloktijd nooit vóór de grens die de voorganger stelt. Valt die grens in vrije tijd van de opvolger, dan wordt het einde het begin van de volgende werkperiode."
     },
     "p6AlapPositionedFromSuccessors": {
       "label": "ALAP-taken zo laat als de opvolgers toestaan",
-      "help": "Een niet-gestarte taak met de beperking 'zo laat mogelijk' eindigt op de minuut waarop haar opvolgers haar nodig hebben, opvolgers eerst, zodat een keten aaneensluit. Haar eigen geplande start telt niet; een taak zonder voorganger begint dan niet vóór de statusdatum. Geldt alleen op een urenkalender."
+      "help": "Een niet-gestarte taak met de beperking 'zo laat mogelijk' eindigt op de minuut waarop haar opvolgers haar nodig hebben, opvolgers eerst, zodat een keten aaneensluit. Haar eigen geplande start telt niet; een taak zonder voorganger begint dan niet vóór de statusdatum."
     }
   },
   "profiles": {
@@ -1391,6 +1395,7 @@
     "updateTemplate": "Sjabloon bijwerken vanuit dit project",
     "applyTemplate": "Bijwerken vanuit sjabloon",
     "deleteTemplate": "Sjabloon verwijderen",
+    "deleteTemplateConfirm": "Sjabloon „{{name}}” verwijderen? Projecten met dit profiel houden hun eigen kopie.",
     "templateDeviates": "Dit profiel wijkt af van het sjabloon “{{name}}”.",
     "applyDefaultOptions": "Standaardopties van dit profiel toepassen",
     "themes": {
@@ -1408,6 +1413,7 @@
     "on": "aan",
     "off": "uit",
     "resetToBase": "terug naar basis",
+    "storeChangedUnderDraft": "Het rekenprofiel van het project is intussen gewijzigd, bijvoorbeeld met Ongedaan maken. Hieronder staat nog je eigen keuze. Met {{apply}} zet je die keuze terug in het project.",
     "showHelp": "Uitleg over „{{name}}”",
     "sourceOptions": {
       "title": "Instellingen uit het bronbestand",
@@ -1416,6 +1422,11 @@
       "useProjectEndDateForFloat": "Speling rekenen tot de einddatum van het project",
       "p6CompletedLateFromRemainingWindow": "Voltooide taak: late datums vanaf de statusdatum",
       "needsConvention": "Werkt alleen samen met de conventie „{{convention}}”, die nu uit staat."
+    },
+    "requires": {
+      "xerOrigin": "alleen taken uit .xer",
+      "hourPlanning": "alleen bij uurplanning",
+      "hourPlanningTitle": "Werkt alleen bij uurplanning: een kalender met werkblokken, een taak in uren, of de lag-kalender op 24-uurs."
     }
   },
   "dialogHelp": {

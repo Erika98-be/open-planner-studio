@@ -56,7 +56,8 @@ export interface NewProjectOptions {
    *  niet bij een losse undo-stap erna: het nieuwe project begint zonder historie, dus Ctrl+Z kan niet
    *  terugvallen naar OPS. Afwezig of standaardprofiel ⇒ afwezig (≡ ops). */
   schedulingProfile?: SchedulingProfile;
-  /** De standaard-reken-opties van dat profiel (`defaultOptionsFor`); leeg ⇒ afwezig. */
+  /** De reken-opties uit de wizard (`withDefaultOptions`: de standaard van het profiel, zonder
+   *  bronsignalen); leeg ⇒ afwezig. */
   schedulingOptions?: ProjectSchedulingOptions;
 }
 

@@ -168,11 +168,14 @@ test('rekenprofiel: in "datums zoals opgeslagen" is Toepassen zonder wijziging e
 // XER met `sched_lag_early_start_flag` = N opent op "Werkelijke start"; de keuze is in Projectinfo met
 // echte klikken te wijzigen en landt na Toepassen in de projectopties. Onder een profiel zonder C6
 // (MS Project) of zonder A19 (sinds 2026-09-24 aan in de P6-basis; `rem_target_link_flag` stuurt niets
-// meer) is het veld uitgeschakeld: daar doet de optie niets.
+// meer) is het veld uitgeschakeld: daar doet de optie niets. De motor eist ook een urenkalender
+// (`lagEng.isHourMode`, critreview #169 N2): de kalender van deze fixture heeft daarom werkblokken.
+const WORKWEEK = `(0||CalendarData()((0||DaysOfWeek()(${[1, 2, 3, 4, 5, 6, 7]
+  .map(n => `(0||${n}()(${n >= 2 && n <= 6 ? '(0||0(s|08:00|f|17:00)())' : ''}))`).join('')}))(0||Exceptions()())))`;
 const SS_LAG_XER = [
   'ERMHDR\t23.12\t2026-01-01\t\t\t\t\t\tEUR',
   '%T\tCALENDAR', '%F\tclndr_id\tclndr_name\tclndr_type\tday_hr_cnt\tweek_hr_cnt\tclndr_data',
-  '%R\tC1\tStandaard 8u\tCA_Base\t8\t40\t',
+  `%R\tC1\tWerkweek\tCA_Base\t9\t45\t${WORKWEEK}`,
   '%T\tPROJECT', '%F\tproj_id\tproj_short_name\tclndr_id\tlast_recalc_date\tplan_start_date\trem_target_link_flag',
   '%R\tP1\tSsLagBrowser\tC1\t2026-03-02\t2026-01-05\tY',
   '%T\tSCHEDOPTIONS', '%F\tproj_id\tsched_lag_early_start_flag', '%R\tP1\tN',
@@ -193,11 +196,11 @@ test('rekenprofiel: de SS-lag-variant komt uit de XER en is in Projectinfo te wi
   await page.getByRole('button', { name: /^(File|Bestand)$/ }).first().click();
   await page.getByRole('button', { name: /^(Project info|Projectinfo)$/ }).first().click();
   const ssLag = page.getByRole('button', { name: /^(SS-lag van een lopende voorganger rekenen vanaf|Calculate SS lag from an in-progress predecessor from)$/ });
-  await expect(ssLag).toHaveText(/(Werkelijke start|Actual start)/);
+  await expect(ssLag).toHaveText(/(Statusdatum|Data date) \(P6: Actual Start\)/);
   await expect(ssLag).toBeEnabled();
   await ssLag.click();
-  await page.getByRole('option', { name: /^(Vroege start|Early start)/ }).click();
-  await expect(ssLag).toHaveText(/(Vroege start|Early start)/);
+  await page.getByRole('option', { name: /^(Start van het restwerk|Remaining start)/ }).click();
+  await expect(ssLag).toHaveText(/(Start van het restwerk|Remaining start) \(P6: Early Start\)/);
   await page.getByRole('button', { name: /^(Apply|Toepassen)$/ }).click();
   await expect.poll(option).toBe('earlyStart');
 
@@ -226,8 +229,6 @@ test('rekenprofiel: de SS-lag-variant komt uit de XER en is in Projectinfo te wi
 // handafleiding: de wissel verschuift A2, A4 en M1, heen én terug; A1 (voltooid) sinds eigenaarsvraag 7
 // niet meer, want B3 staat in P6 uit; A2 (lopend) sinds 2026-09-24 wel, want A19 zit nu in de P6-basis
 // en gaat bij de wissel niet meer als afwijking mee naar OPS).
-const WORKWEEK = `(0||CalendarData()((0||DaysOfWeek()(${[1, 2, 3, 4, 5, 6, 7]
-  .map(n => `(0||${n}()(${n >= 2 && n <= 6 ? '(0||0(s|08:00|f|17:00)())' : ''}))`).join('')}))(0||Exceptions()())))`;
 const SWITCH_XER = [
   'ERMHDR\t23.12\t2026-09-01\t\t\t\t\t\tEUR',
   '%T\tCALENDAR', '%F\tclndr_id\tclndr_name\tproj_id\tclndr_type\tday_hr_cnt\tweek_hr_cnt\tclndr_data',
@@ -353,4 +354,274 @@ test('rekenprofiel: conventies per thema met basiswaarde, terug naar basis en ui
 
   // De P6-opties uit het bestand staan alleen-lezen onderaan.
   await expect(page.locator('[data-ops-scheduling-source-option="useExpectedFinishDates"]')).toBeVisible();
+});
+
+// Critreview #169 N1: na Ctrl+Z toonde Projectinfo een ander profiel dan de store (de draft volgde
+// alleen een documentwissel), en één optiewijziging + Toepassen draaide de undo stil terug. Echte
+// klikken en toetsen; `__OPS__` alleen om te lezen.
+test('rekenprofiel: na Ctrl+Z en Ctrl+Y volgt het profielblok de store, ook in de dialoog (N1)', async ({ page, ops: _ops }) => {
+  await openXer(page);
+  await expect.poll(() => profileOf(page)).toEqual({ id: 'p6', baseId: 'p6', name: '' });
+  const select = page.locator('[data-ops-scheduling-profile-select]');
+  const storeChoice = () => profileOf(page).then(p => `builtin:${p?.id ?? 'ops'}`);
+  const toBackstageInfo = async () => {
+    await page.getByRole('button', { name: /^(File|Bestand)$/ }).first().click();
+    await page.getByRole('button', { name: /^(Project info|Projectinfo)$/ }).first().click();
+    await expect(select).toBeVisible();
+  };
+  const apply = () => page.getByRole('button', { name: /^(Apply|Toepassen)$/ }).click();
+  // Een klik op de kop haalt de focus uit een invoerveld, zodat Ctrl+Z/Y de sneltoets is.
+  const pressOutsideField = async (combo: string) => {
+    await page.locator('.backstage-title').first().click();
+    await page.keyboard.press(combo);
+  };
+  const unapplied = page.locator('[data-ops-project-info-unapplied]');
+  const storeChanged = page.locator('[data-ops-scheduling-store-changed]');
+
+  // P6 → MS Project toepassen; Projectinfo opnieuw open.
+  await toBackstageInfo();
+  await select.selectOption('builtin:msproject');
+  await apply();
+  await expect.poll(storeChoice).toBe('builtin:msproject');
+  await toBackstageInfo();
+  await expect(select).toHaveValue('builtin:msproject');
+
+  // Ctrl+Z: de store gaat terug naar P6, de keuzelijst volgt, niets "niet toegepast".
+  await pressOutsideField('Control+z');
+  await expect.poll(storeChoice).toBe('builtin:p6');
+  await expect(select).toHaveValue('builtin:p6');
+  await expect(unapplied).toHaveCount(0);
+  await expect(storeChanged).toHaveCount(0);
+
+  // Ctrl+Y: terug naar MS Project, de keuzelijst volgt weer.
+  await pressOutsideField('Control+y');
+  await expect.poll(storeChoice).toBe('builtin:msproject');
+  await expect(select).toHaveValue('builtin:msproject');
+  await expect(unapplied).toHaveCount(0);
+
+  // Nog eens Ctrl+Z, dan alleen een optie wijzigen en toepassen: het profiel blijft P6.
+  await pressOutsideField('Control+z');
+  await expect.poll(storeChoice).toBe('builtin:p6');
+  await expect(select).toHaveValue('builtin:p6');
+  await page.locator('[data-ops-near-critical-enable]').check();
+  await apply();
+  await expect.poll(() => page.evaluate(() => window.__OPS__!.store.getState().project.schedulingOptions?.nearCriticalThreshold)).toBe(2);
+  expect(await storeChoice()).toBe('builtin:p6');
+
+  // Een VUILE draft (MS Project gekozen, niet toegepast) en dan Ctrl+Z: de keuze blijft staan, maar het
+  // blok zegt eerlijk dat de store onder de draft veranderde, en "niet toegepast" staat er.
+  await toBackstageInfo();
+  await select.selectOption('builtin:msproject');
+  await pressOutsideField('Control+z');
+  await expect.poll(() => page.evaluate(() => window.__OPS__!.store.getState().project.schedulingOptions?.nearCriticalThreshold)).toBeUndefined();
+  await expect(select).toHaveValue('builtin:msproject');
+  await expect(storeChanged).toBeVisible();
+  await expect(unapplied).toBeVisible();
+  // Verwerpen neemt de stand van de store over.
+  await page.locator('[data-ops-project-info-discard]').click();
+  await expect(select).toHaveValue(await storeChoice());
+  await expect(storeChanged).toHaveCount(0);
+  await expect(unapplied).toHaveCount(0);
+
+  // De dialoogvariant (Instellingen → Projectinfo): ook daar is de keuzelijst gelijk aan de store na
+  // Ctrl+Y en Ctrl+Z.
+  await page.locator('button.ribbon-tab').filter({ hasText: /^(Settings|Instellingen)$/ }).click();
+  await page.locator('button.ribbon-btn').filter({ hasText: /^(Project info|Projectinfo)$/ }).click();
+  const dialog = page.locator('[data-ops-project-dialog="info"]');
+  await expect(dialog).toBeVisible();
+  const dialogSelect = dialog.locator('[data-ops-scheduling-profile-select]');
+  for (const combo of ['Control+y', 'Control+z', 'Control+z', 'Control+y']) {
+    await dialog.locator('[data-ops-scheduling-title]').click();
+    await page.keyboard.press(combo);
+    await expect.poll(async () => (await dialogSelect.inputValue()) === (await storeChoice())).toBe(true);
+  }
+  await expect(dialog.locator('[data-ops-scheduling-store-changed]')).toHaveCount(0);
+});
+
+// Review #331 punt 5: Ctrl+Z van één Projectinfo-stap (naam plus profiel) zet ook de naam in de
+// draft terug, niet alleen het profiel. Een veld dat nog gelijk is aan de vorige store-waarde volgt de
+// store; een veld dat de gebruiker wijzigde, blijft staan.
+test('rekenprofiel: Ctrl+Z van naam plus profiel zet beide velden terug (N1, metadata)', async ({ page, ops: _ops }) => {
+  await openXer(page);
+  await expect.poll(() => profileOf(page)).toEqual({ id: 'p6', baseId: 'p6', name: '' });
+  const storeName = () => page.evaluate(() => window.__OPS__!.store.getState().project.name);
+  const originalName = await storeName();
+  const select = page.locator('[data-ops-scheduling-profile-select]');
+  const nameInput = page.locator('[data-ops-project-name]');
+  const toBackstageInfo = async () => {
+    await page.getByRole('button', { name: /^(File|Bestand)$/ }).first().click();
+    await page.getByRole('button', { name: /^(Project info|Projectinfo)$/ }).first().click();
+    await expect(select).toBeVisible();
+  };
+  const pressOutsideField = async (combo: string) => {
+    await page.locator('.backstage-title').first().click();
+    await page.keyboard.press(combo);
+  };
+  const unapplied = page.locator('[data-ops-project-info-unapplied]');
+
+  // Eén stap: naam én profiel wijzigen, dan Toepassen.
+  await toBackstageInfo();
+  await nameInput.fill('Gewijzigde naam');
+  await select.selectOption('builtin:msproject');
+  await page.getByRole('button', { name: /^(Apply|Toepassen)$/ }).click();
+  await expect.poll(storeName).toBe('Gewijzigde naam');
+  await toBackstageInfo();
+  await expect(nameInput).toHaveValue('Gewijzigde naam');
+
+  // Ctrl+Z: de naam en het profiel gaan samen terug, niets staat "niet toegepast".
+  await pressOutsideField('Control+z');
+  await expect.poll(storeName).toBe(originalName);
+  await expect(nameInput).toHaveValue(originalName);
+  await expect(select).toHaveValue('builtin:p6');
+  await expect(unapplied).toHaveCount(0);
+
+  // Ctrl+Y: beide velden volgen weer.
+  await pressOutsideField('Control+y');
+  await expect.poll(storeName).toBe('Gewijzigde naam');
+  await expect(nameInput).toHaveValue('Gewijzigde naam');
+  await expect(select).toHaveValue('builtin:msproject');
+  await expect(unapplied).toHaveCount(0);
+
+  // Een naam die de gebruiker zelf typte, blijft staan bij Ctrl+Z; het profiel volgt wel.
+  await nameInput.fill('Eigen invoer');
+  await pressOutsideField('Control+z');
+  await expect.poll(storeName).toBe(originalName);
+  await expect(nameInput).toHaveValue('Eigen invoer');
+  await expect(select).toHaveValue('builtin:p6');
+  await expect(unapplied).toBeVisible();
+});
+
+// Review #331 punt 6: de waarschuwing "de store veranderde onder je draft" klopt na terugzetten en na
+// een documentwissel. De documentwissel zelf komt via de brug: met een vuile draft blokkeert Ctrl+1..9
+// hem, dus dit is het vangnet voor een wissel die van elders komt.
+test('rekenprofiel: aangeraakt, teruggezet en Ctrl+Z, en een documentwissel geven geen valse waarschuwing (N1)', async ({ page, ops: _ops }) => {
+  await openXer(page);
+  await expect.poll(() => profileOf(page)).toEqual({ id: 'p6', baseId: 'p6', name: '' });
+  const select = page.locator('[data-ops-scheduling-profile-select]');
+  const toBackstageInfo = async () => {
+    await page.getByRole('button', { name: /^(File|Bestand)$/ }).first().click();
+    await page.getByRole('button', { name: /^(Project info|Projectinfo)$/ }).first().click();
+    await expect(select).toBeVisible();
+  };
+  const pressOutsideField = async (combo: string) => {
+    await page.locator('.backstage-title').first().click();
+    await page.keyboard.press(combo);
+  };
+  const storeChanged = page.locator('[data-ops-scheduling-store-changed]');
+  const unapplied = page.locator('[data-ops-project-info-unapplied]');
+
+  await toBackstageInfo();
+  await select.selectOption('builtin:msproject');
+  await page.getByRole('button', { name: /^(Apply|Toepassen)$/ }).click();
+  await expect.poll(() => profileOf(page).then(p => p?.id)).toBe('msproject');
+  await toBackstageInfo();
+
+  // Aanraken en terugzetten: de draft is aangeraakt maar gelijk aan de store. Ctrl+Z volgt de store.
+  await select.selectOption('builtin:ops');
+  await select.selectOption('builtin:msproject');
+  await expect(unapplied).toHaveCount(0);
+  await pressOutsideField('Control+z');
+  await expect.poll(() => profileOf(page).then(p => p?.id)).toBe('p6');
+  await expect(select).toHaveValue('builtin:p6');
+  await expect(storeChanged).toHaveCount(0);
+  await expect(unapplied).toHaveCount(0);
+
+  // Vuile draft, Ctrl+Y geeft de waarschuwing; zet de gebruiker de draft gelijk aan de store, dan
+  // verdwijnt de waarschuwing.
+  await select.selectOption('builtin:ops');
+  await pressOutsideField('Control+y');
+  await expect.poll(() => profileOf(page).then(p => p?.id)).toBe('msproject');
+  await expect(storeChanged).toBeVisible();
+  await select.selectOption('builtin:msproject');
+  await expect(storeChanged).toHaveCount(0);
+  await expect(unapplied).toHaveCount(0);
+  // De vlag is echt gewist: een nieuwe eigen keuze is vuil, maar geeft geen oude waarschuwing terug.
+  await select.selectOption('builtin:ops');
+  await expect(unapplied).toBeVisible();
+  await expect(storeChanged).toHaveCount(0);
+
+  // Vuile draft, dan een documentwissel: de draft komt van het nieuwe document, zonder waarschuwing,
+  // ook niet nadat de gebruiker daar iets kiest.
+  await select.selectOption('builtin:p6');
+  await expect(unapplied).toBeVisible();
+  await page.evaluate(() => { window.__OPS__!.store.getState().newDocument(); });
+  await toBackstageInfo();
+  await expect(select).toHaveValue(await profileOf(page).then(p => `builtin:${p?.id ?? 'ops'}`));
+  await expect(unapplied).toHaveCount(0);
+  await select.selectOption('builtin:p6');
+  await expect(unapplied).toBeVisible();
+  await expect(storeChanged).toHaveCount(0);
+});
+
+// Critreview #169 N2 en B9 op een nieuw project (dagkalender): de conventies tonen waar de motor op
+// poort ("alleen urenkalender" / "alleen taken uit .xer"), de SS-lag-keuzelijst staat uit omdat er geen
+// uurplanning is, en sjablonen opslaan/verwijderen melden zich en vragen bevestiging.
+test('rekenprofiel: poortlabels, SS-lag zonder urenkalender en sjabloonmeldingen (N2, B9)', async ({ page, ops: _ops }) => {
+  const hasHourPlanning = await page.evaluate(() => {
+    const s = window.__OPS__!.store.getState();
+    return !!s.calendar.workTime || s.calendars.some(c => !!c.workTime) || s.tasks.some(t => t.time.durationMinutes != null);
+  });
+  expect(hasHourPlanning).toBe(false);
+  await page.getByRole('button', { name: /^(File|Bestand)$/ }).first().click();
+  await page.getByRole('button', { name: /^(Project info|Projectinfo)$/ }).first().click();
+  const select = page.locator('[data-ops-scheduling-profile-select]');
+  await select.selectOption('builtin:p6');
+
+  // Labels volgen het register: 15 conventies alleen bij uurplanning, 8 alleen op .xer-taken.
+  await expect(page.locator('[data-ops-convention-requires="hourPlanning"]')).toHaveCount(15);
+  await expect(page.locator('[data-ops-convention-requires="xerOrigin"]')).toHaveCount(8);
+  await expect(page.locator('[data-ops-convention-row="p6LateFinishOnOwnCalendar"] [data-ops-convention-requires="hourPlanning"]'))
+    .toHaveText(/(alleen bij uurplanning|hour planning only)/i);
+  await expect(page.locator('[data-ops-convention-row="p6LateFinishOnOwnCalendar"] [data-ops-convention-requires="hourPlanning"]'))
+    .toHaveAttribute('title', /24/);
+  await expect(page.locator('[data-ops-convention-row="p6PreserveActualInstants"] [data-ops-convention-requires="xerOrigin"]'))
+    .toHaveText(/(alleen taken uit \.xer|\.xer tasks only)/i);
+  await expect(page.locator('[data-ops-convention-row="p6UseRemainingStartForProgress"] [data-ops-convention-requires]')).toHaveCount(0);
+
+  // Onder P6 staan C6 en A19 aan, maar zonder uurplanning (dagkalender, geen uurtaken) doet de
+  // SS-lag-optie niets.
+  const ssLag = page.getByRole('button', { name: /^(SS-lag van een lopende voorganger rekenen vanaf|Calculate SS lag from an in-progress predecessor from)$/ });
+  await expect(ssLag).toBeDisabled();
+  await expect(page.locator('[data-ops-ss-lag-needs-convention]')).toHaveCount(0);
+  await expect(page.locator('[data-ops-ss-lag-needs-hour-planning]')).toBeVisible();
+  // Review #331 punt 1: een taak in UREN op dezelfde dagkalender rekent de motor in uurmodus
+  // (`engineForTaskCalendar`), dus dan is de keuzelijst aan. (Fixture via de brug; daarna lezen we de UI.)
+  await page.evaluate(() => {
+    const state = window.__OPS__!.store.getState();
+    const id = state.addTask({ name: 'Uurtaak' });
+    const current = window.__OPS__!.store.getState().tasks.find(task => task.id === id)!;
+    state.updateTask(id, { time: { ...current.time, durationUnit: 'hours', scheduleDuration: 0.5, durationMinutes: 240 } });
+  });
+  await expect(ssLag).toBeEnabled();
+  await expect(page.locator('[data-ops-ss-lag-needs-hour-planning]')).toHaveCount(0);
+
+  // Een conventie aanzetten maakt een eigen profiel; Opslaan als sjabloon meldt zich.
+  await page.locator('[data-ops-convention="p6CompletedPredecessorAtDataDate"]').check();
+  await page.locator('[data-ops-scheduling-profile-name]').fill('Mijn sjabloon');
+  await page.locator('[data-ops-scheduling-save-template]').click();
+  await expect(page.locator('.ops-toast').filter({ hasText: /(Sjabloon „Mijn sjabloon” opgeslagen|Template “Mijn sjabloon” saved)/ })).toHaveCount(1);
+  const storedNames = () => page.evaluate(() =>
+    (JSON.parse(localStorage.getItem('ops-schedulingProfiles') ?? '[]') as { name: string }[]).map(p => p.name));
+  expect(await storedNames()).toEqual(['Mijn sjabloon']);
+
+  // Verwijderen vraagt bevestiging in de app; Annuleren laat het sjabloon staan.
+  const deleteButton = page.locator('[data-ops-scheduling-delete-template]');
+  await deleteButton.click();
+  const confirm = page.getByText(/(Sjabloon „Mijn sjabloon” verwijderen\?|Delete template “Mijn sjabloon”\?)/);
+  await expect(confirm).toBeVisible();
+  await page.getByRole('button', { name: /^(Annuleren|Cancel)$/ }).click();
+  await expect(confirm).toHaveCount(0);
+  expect(await storedNames()).toEqual(['Mijn sjabloon']);
+  await deleteButton.click();
+  await page.getByRole('button', { name: /^(Verwijderen|Delete)$/ }).click();
+  await expect(confirm).toHaveCount(0);
+  expect(await storedNames()).toEqual([]);
+  await expect(page.locator('[data-ops-scheduling-save-template]')).toBeVisible();
+
+  // Een volle opslag (fixture: setItem gooit QuotaExceededError) geeft een foutmelding, geen stilte.
+  await page.evaluate(() => {
+    Storage.prototype.setItem = () => { throw new DOMException('vol', 'QuotaExceededError'); };
+  });
+  await page.locator('[data-ops-scheduling-save-template]').click();
+  await expect(page.locator('.ops-toast').filter({ hasText: /(opslag van de app is vol|app storage is full)/ })).toHaveCount(1);
 });

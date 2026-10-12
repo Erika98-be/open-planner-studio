@@ -101,18 +101,22 @@ export function saveCustomProfiles(
   }
 }
 
-/** Voegt een eigen profiel toe of vervangt het profiel met dezelfde `id`. Een ongeldig profiel
- *  (bijv. een ingebouwde id) wordt niet opgeslagen; de functie meldt of het gelukt is. */
-export function upsertCustomProfile(
+/** Uitkomst van `upsertCustomProfileResult`: opgeslagen, ongeldig profiel (bijv. een ingebouwde id),
+ *  de limiet van `MAX_CUSTOM_PROFILES` bereikt, of de opslag ontbreekt/weigert (bijv. QuotaExceededError).
+ *  De UI meldt de laatste twee (critreview #169, B9: niet meer stil falen). */
+export type UpsertProfileResult = 'saved' | 'invalid' | 'limit' | 'storage';
+
+/** Voegt een eigen profiel toe of vervangt het profiel met dezelfde `id`, en zegt waarom het mislukte. */
+export function upsertCustomProfileResult(
   profile: SchedulingProfile, storage: ProfileStorage | undefined = defaultStorage(),
-): boolean {
-  if (!sanitizeStoredSchedulingProfile(profile)) return false;
+): UpsertProfileResult {
+  if (!sanitizeStoredSchedulingProfile(profile)) return 'invalid';
   const list = loadCustomProfiles(storage);
   const index = list.findIndex(p => p.id === profile.id);
   if (index >= 0) list[index] = profile;
-  else if (list.length >= MAX_CUSTOM_PROFILES) return false;
+  else if (list.length >= MAX_CUSTOM_PROFILES) return 'limit';
   else list.push(profile);
-  return saveCustomProfiles(list, storage);
+  return saveCustomProfiles(list, storage) ? 'saved' : 'storage';
 }
 
 /** Verwijdert het eigen profiel met deze id. Geeft `false` als het wegschrijven mislukt. */
