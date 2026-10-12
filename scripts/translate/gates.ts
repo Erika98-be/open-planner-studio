@@ -221,23 +221,29 @@ function withoutLabelSpans(text: string, labels: DocsPackage['labels'], side: 's
 /**
  * Staat een label met cijfers ("DCMA 14-point assessment") in de bron ook buiten cursief, en schrijft de vertaling
  * het label cursief (of andersom), dan telt het cijfer aan één kant niet mee. De labelregel controleert het label zelf.
- * Haalt daarom de gewone (niet-cursieve) voorkomens van zulke labels weg, aan beide kanten; in de vertaling niet
- * vaker dan het en-label in de bron staat.
+ * Haalt daarom de gewone (niet-cursieve) voorkomens van zulke labels weg, aan beide kanten. In de vertaling hooguit
+ * zo vaak als het label in de bron voorkomt (gewoon + cursief) min de cursieve voorkomens in de vertaling: twee
+ * en-labels met dezelfde vertaling (cs "(F5)" in knop én tooltip) strepen anders de vertaling twee keer weg, en een
+ * label dat in de vertaling vet staat in plaats van cursief mag geen weggelaten getal elders afdekken. Grens: staat
+ * de labeltekst in de vertaling één keer extra, dan is dat niet te onderscheiden van het F5-geval.
+ * `src`/`out` zijn al zonder cursieve labels (`withoutLabelSpans`); `srcRaw`/`outRaw` zijn de teksten ervoor.
  */
-function withoutPlainLabelNumbers(src: string, out: string, labels: DocsPackage['labels']): [string, string] {
-  const re = (f: string) => new RegExp(`(?<![0-9])${f.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?![0-9])`, 'gu');
+function withoutPlainLabelNumbers(
+  src: string, out: string, labels: DocsPackage['labels'], srcRaw: string, outRaw: string,
+): [string, string] {
+  const esc = (f: string) => f.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const re = (f: string) => new RegExp(`(?<![0-9])${esc(f)}(?![0-9])`, 'gu');
+  const italics = (text: string, f: string) => (text.match(new RegExp(`(?<!\\*)\\*${esc(f)}\\*(?!\\*)`, 'gu')) ?? []).length;
   const withDigits = (f: string) => /[0-9]/.test(f) && placeholders(f).length === 0;
   const byLength = [...labels].filter(l => withDigits(l.en)).sort((a, b) => b.en.length - a.en.length);
   let s = src;
   let o = out;
   for (const l of byLength) {
-    // Zoveel keer als het en-label in de bron staat, zoveel keer mag een doelvorm weg: twee en-labels met
-    // dezelfde vertaling (cs "(F5)" in knop én tooltip) strepen anders de vertaling twee keer weg.
-    let budget = (s.match(re(l.en)) ?? []).length;
+    const targets = [...new Set(l.targets ?? [])].filter(withDigits).sort((a, b) => b.length - a.length);
+    let budget = (s.match(re(l.en)) ?? []).length + italics(srcRaw, l.en)
+      - targets.reduce((n, f) => n + italics(outRaw, f), 0);
     s = s.replace(re(l.en), ' ');
-    for (const f of [...new Set(l.targets ?? [])].filter(withDigits).sort((a, b) => b.length - a.length)) {
-      o = o.replace(re(f), m => (budget-- > 0 ? ' ' : m));
-    }
+    for (const f of targets) o = o.replace(re(f), m => (budget-- > 0 ? ' ' : m));
   }
   return [s, o];
 }
@@ -301,7 +307,7 @@ function checkDocsSection(pkg: DocsPackage, idx: number, src: DocSection, out: D
   // (de ar-vorm van "1 task shows …" schrijft het getal uit).
   const sectionLabelsHere = pkg.labels.filter(x => x.section === idx && (x.kind === 'a' || x.kind === 'b'));
   const [sPlain, oPlain] = withoutPlainLabelNumbers(
-    withoutLabelSpans(s, sectionLabelsHere, 'src'), withoutLabelSpans(o, sectionLabelsHere, 'out'), sectionLabelsHere);
+    withoutLabelSpans(s, sectionLabelsHere, 'src'), withoutLabelSpans(o, sectionLabelsHere, 'out'), sectionLabelsHere, s, o);
   const sd = bag(sPlain.match(/[0-9]+/g) ?? []);
   const od = bag(oPlain.match(/[0-9]+/g) ?? []);
   for (const [d, n] of sd) if ((od.get(d) ?? 0) < n) errors.push(`${at}: getal ${d} staat ${n}× in de bron, ${od.get(d) ?? 0}× in de vertaling`);

@@ -26,7 +26,7 @@ export function applyUiBatch(
   readTarget: (ns: string) => JsonObject,
   nl: Record<string, JsonObject>,
   sources: UiSources,
-  lang?: string,
+  lang: string,
 ): BatchResult {
   const targets = new Map<string, JsonObject>();
   const applied: string[] = [];
@@ -49,11 +49,11 @@ export function applyUiBatch(
   return { targets, applied, red };
 }
 
-/** Waarom een pakket niet (meer) bij de huidige nl en de taal past; leeg = past. */
-function packageMismatch(pkg: UiPackage, nlNs: JsonObject, lang: string | undefined): string[] {
+/** Waarom een pakket niet (meer) bij de huidige nl en de taal past; leeg = past. Ook voor `packages ui --red`. */
+export function packageMismatch(pkg: UiPackage, nlNs: JsonObject, lang: string): string[] {
   const lines: string[] = [];
   if (pkg.kind !== 'ui') lines.push(`XX geen UI-pakket (kind ${String(pkg.kind)})`);
-  if (lang !== undefined && pkg.lang !== lang) lines.push(`XX pakket is voor taal ${pkg.lang}, niet ${lang}`);
+  if (pkg.lang !== lang) lines.push(`XX pakket is voor taal ${pkg.lang}, niet ${lang}`);
   const current = new Map(unitsOf(nlNs).map(u => [u.key, u.text]));
   for (const item of pkg.items) {
     const text = current.get(item.key);

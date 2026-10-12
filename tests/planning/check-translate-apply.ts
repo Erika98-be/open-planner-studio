@@ -44,7 +44,7 @@ const en: JsonObject = {
   // Omgekeerde volgorde van toepassen: het resultaat volgt toch nl.
   const batch = [...packs].reverse().map(pkg => ({ pkg, out: outs[pkg.id] }));
   const sources: UiSources = {};
-  const res = applyUiBatch(batch, () => ({}), { common: nl }, sources);
+  const res = applyUiBatch(batch, () => ({}), { common: nl }, sources, 'cs');
   eq('beide pakketten groen toegepast', [...res.applied].sort(), ['ui-common-01', 'ui-common-02']);
   const cs = res.targets.get('common')!;
   eq('volgorde van nl, familie in CLDR-volgorde', serialize(cs), serialize({
@@ -71,7 +71,7 @@ const en: JsonObject = {
     items: [{ key: 'a', nl: 'Eerste', en: 'First', previous: 'Erste' }],
   };
   const red: UiPackage = { ...green, id: 'ui-common-02', items: [{ key: 'z', nl: 'Laatste {{n}}', en: 'Last {{n}}' }] };
-  const res = applyUiBatch([{ pkg: green, out: { a: 'Erstes' } }, { pkg: red, out: { z: 'Letzte' } }], () => structuredClone(existing), { common: nl }, sources);
+  const res = applyUiBatch([{ pkg: green, out: { a: 'Erstes' } }, { pkg: red, out: { z: 'Letzte' } }], () => structuredClone(existing), { common: nl }, sources, 'de');
   eq('alleen het groene pakket', res.applied, ['ui-common-01']);
   eq('rood pakket gemeld met zijn foutregel', res.red.map(r => [r.id, r.lines[0]]), [['ui-common-02', 'XX z: invulplekken (geen) ≠ nl {{n}}']]);
   const de = res.targets.get('common')!;
@@ -79,7 +79,7 @@ const en: JsonObject = {
   eq('niet in een pakket: onaangeroerd', [de.z, (de.grp as JsonObject).x, de.extra], ['Letzte', 'X-de', 'bleibt']);
   eq('onbekende sleutel blijft achteraan', Object.keys(de), ['a', 'grp', 'z', 'extra']);
   eq('hash van a bijgewerkt, van z niet', [sources.common.a, sources.common.z], [hashUnit('Eerste'), hashUnit('Laatste')]);
-  eq('niets toegepast → geen doelobject', applyUiBatch([{ pkg: red, out: {} }], () => ({}), { common: nl }, {}).targets.size, 0);
+  eq('niets toegepast → geen doelobject', applyUiBatch([{ pkg: red, out: {} }], () => ({}), { common: nl }, {}, 'de').targets.size, 0);
 
   // Het pakket ligt waar de agents schrijven: apply toetst het aan de huidige nl en de taal (review PR 2).
   const forged: UiPackage = { ...green, id: 'ui-common-03', items: [{ key: 'z', nl: 'Laatste', en: 'Last' }, { key: 'weg', nl: 'Weg', en: 'Gone' }] };

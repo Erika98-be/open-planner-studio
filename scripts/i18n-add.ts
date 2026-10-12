@@ -88,7 +88,7 @@ for (const loc of LOCALES) {
     setTranslation(data, path, input[loc]);
     writeFileSync(join(dir, loc, `${ns}.json`), formatLocale(serialize(data), nlOrdered));
     written.push(loc);
-    // Een taal zonder basislijn (ru, cs, …) krijgt hier geen hash: alleen `translate apply ui` zet die.
+    // Een taal zonder basislijn (een nieuwe taal buiten UI_BASELINE) krijgt hier geen hash: alleen `translate apply ui` zet die.
     sourcesChanged = updateSourceHashForAdd(sources, loc, ns, path, input.nl);
   } else {
     // Niet opgegeven (B5): geen tekst schrijven. Een oude tekst van het verkeerde soort (tekst waar nu

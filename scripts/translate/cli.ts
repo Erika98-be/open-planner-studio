@@ -40,7 +40,7 @@ import { dirname, join, resolve } from 'node:path';
 import { NAMESPACES, type JsonObject } from '../i18n-tools';
 import { EXISTING_TARGETS, TBX_FILES, hasUiBaseline, toJson, type Concept, type LangTermbase } from './common';
 import { chunk, collectCandidates } from './candidates';
-import { applyUiBatch } from './apply';
+import { applyUiBatch, packageMismatch } from './apply';
 import { applyFindings } from './findings';
 import { checkDocs, checkDocsArticle, checkPackage, formatResult } from './gates';
 import {
@@ -408,7 +408,10 @@ function packagesCmd(args: string[]): void {
           const result = what === 'ui'
             ? checkPackage(pkg, JSON.parse(readFileSync(out, 'utf8')) as unknown)
             : checkDocs(pkg as DocsPackage, readFileSync(join(dir, `${base}.src.md`), 'utf8'), readFileSync(out, 'utf8'));
-          green = result.errors.length === 0;
+          // UI: ook de toets van apply (nl veranderd na prepare, andere taal); dan helpt alleen een nieuwe prepare.
+          const ui = pkg as UiPackage;
+          const stale = what === 'ui' ? packageMismatch(ui, nlByNs()[ui.namespace] ?? {}, lang) : [];
+          green = result.errors.length === 0 && stale.length === 0;
         } catch { /* onleesbaar = rood */ }
         if (green) continue;
       }

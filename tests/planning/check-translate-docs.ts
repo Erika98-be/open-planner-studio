@@ -515,6 +515,11 @@ const run = (out: string) => checkDocs(PKG.pkg, PKG.src, out);
   const [fp] = buildDocsPackages({ lang: 'cs', articles: [{ id: 's', md: F5_MD }], mode: 'missing', sources: {}, index: f5Idx, literal, concepts });
   eq('17f twee labels, één vertaling: het getal buiten het label telt aan beide kanten even vaak', checkDocs(fp.pkg, fp.src,
     '# S\n\n**Plán je zastaralý — přepočítejte (F5)** (bublina: *Plán je zastaralý — přepočítejte (F5)*).\n').errors, []);
+  // Tegentest (review PR 2): het label vet in plaats van cursief mag een weggelaten getal elders niet afdekken.
+  const F5_MD2 = '# S\n\nClick *Schedule out of date — recalculate (F5)*. Then press F5 again.\n';
+  const [fp2] = buildDocsPackages({ lang: 'cs', articles: [{ id: 's2', md: F5_MD2 }], mode: 'missing', sources: {}, index: f5Idx, literal, concepts });
+  has('17g label vet in plaats van cursief + getal weggelaten: rood', checkDocs(fp2.pkg, fp2.src,
+    '# S\n\nKlikněte na **Plán je zastaralý — přepočítejte (F5)**. Pak stiskněte klávesu znovu.\n').errors, /getal 5 staat 1× in de bron, 0×/);
 }
 
 // ── 18. Randgevallen van de cijfer-, plekhouder- en avoid-regel bij labels ───────────────────

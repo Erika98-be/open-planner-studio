@@ -77,7 +77,9 @@ for l in <talen>; do npm run translate -- apply ui $l; done
 npm run translate -- packages ui <talen> --red        # rode pakketten met uitvoer
 npm run translate -- packages ui <talen>              # alles wat nog open staat (ook zonder uitvoer)
 ```
-Stuur de open pakketten nog één keer door de stations (stap 3) en draai `apply` opnieuw. Blijft een
+Zegt `apply` "nl-tekst in het pakket ≠ huidige nl" of "staat niet (meer) in nl", dan veranderde nl na
+`prepare`: maak die pakketten opnieuw (stap 2). Stuur de andere open pakketten nog één keer door de
+stations (stap 3) en draai `apply` opnieuw. Blijft een
 pakket na twee rondes rood, stop dan en meld de taal, het pakket en de foutregel aan de user.
 
 ### 5. Daarna `--stale`
