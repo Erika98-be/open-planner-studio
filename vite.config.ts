@@ -72,7 +72,7 @@ export default defineConfig(({ mode }) => ({
     fs: { allow: allowedFsRoots() },
     watch: {
       // Sibling git worktrees under .claude/worktrees/ each carry a full src
-      // tree (27 locales × 4 namespaces + all components). Watching them
+      // tree (28 locales × 4 namespaces + all components). Watching them
       // recursively multiplies inotify usage ~10× and blows past
       // fs.inotify.max_user_watches (ENOSPC) once a second dev server starts —
       // the main dev server has no business watching other worktrees. Appended
@@ -106,7 +106,7 @@ export default defineConfig(({ mode }) => ({
         // app-code edit) only invalidates the chunk it touches, not everything.
         manualChunks(id) {
           // Translation JSON: één chunk per taal. Alleen 'en' is statisch
-          // geïmporteerd (blijft dus eager); de overige 26 talen worden enkel
+          // geïmporteerd (blijft dus eager); de overige 27 talen worden enkel
           // dynamisch via loadLocale() geïmporteerd en worden daardoor async
           // chunks die pas bij een taalwissel/-detectie geladen worden.
           if (id.includes('/src/i18n/locales/')) {

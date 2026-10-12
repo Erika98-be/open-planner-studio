@@ -19,7 +19,7 @@ Open-source bouwplanningapplicatie voor de bouwsector. Native IFC-bestandsformaa
 - **Work Breakdown Structure (WBS)** — hierarchische taakstructuur met inklapbare hoofdstukken
 - **IFC-native** — opslaan en openen in IFC 4.3 (buildingSMART standaard)
 - **Ribbon toolbar** — Microsoft Office-achtige ribbon met tabbladen
-- **Meertalig** — 27 talen: Nederlands, English, Français, Deutsch, Español, 中文, Italiano, Português, Polski, Türkçe, العربية, 日本語, 한국어, فارسی, Русский, Українська, Čeština, Slovenčina, Српски, Hrvatski, Български, Magyar, Română, Svenska, Norsk bokmål, Dansk, Suomi (incl. RTL voor Arabisch en Perzisch)
+- **Meertalig** — 28 talen: Nederlands, English, Français, Deutsch, Español, 中文, Italiano, Português, Polski, Türkçe, العربية, 日本語, 한국어, فارسی, Русский, Українська, Čeština, Slovenčina, Српски, Hrvatski, Български, Magyar, Română, Svenska, Norsk bokmål, Dansk, Suomi, ລາວ (incl. RTL voor Arabisch en Perzisch)
 - **Tabelweergave** — spreadsheet-achtige editor: één klik op een cel bewerkt hem direct
 - **Resourcebibliotheken** — resources en kalenders in een gedeelde, bedrijfsbrede bibliotheek waar meerdere projecten uit putten, met herkomststempels per item
 - **AI-assistent (MCP)** — de app kan zichzelf openstellen als MCP-server, zodat een AI-assistent live met de open planning meewerkt, met veiligheidsvlaggen (pauze/alleen-lezen/auto-backup) en een activiteitenlog
@@ -57,7 +57,7 @@ Meebouwen? Zie [CONTRIBUTING.md](CONTRIBUTING.md).
 | Rendering | HTML5 Canvas 2D |
 | State | Zustand + Immer |
 | Styling | TailwindCSS 4 + component-CSS |
-| i18n | react-i18next (27 talen) |
+| i18n | react-i18next (28 talen) |
 | Build | Vite 7 |
 
 ## Projectstructuur
@@ -71,7 +71,7 @@ src/
                      # · feedback/ · library/ · mcp/ · benchmark/ · debug/
   state/             # Zustand+Immer store: slices/ + het documentcontract
   extensions/        # Extensiesysteem (types, api, loader, service)
-  i18n/              # Vertalingen, 27 talen × 4 namespaces
+  i18n/              # Vertalingen, 28 talen × 4 namespaces
   hooks/  types/  utils/  styles/
 public/docs/         # In-app handleiding: 76 artikelen in nl+en (bron), andere talen via de vertaalstraat (how-to, uitleg, referentie; voedt ook de wiki)
 examples/            # Voorbeeldplanningen in IFC
