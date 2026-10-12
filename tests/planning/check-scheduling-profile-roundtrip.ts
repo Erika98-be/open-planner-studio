@@ -28,7 +28,7 @@ import {
 } from '@/services/ifc/schedulingOptionsRead';
 import {
   SCHEDULING_PROFILES_KEY, deleteCustomProfile, loadCustomProfiles, saveCustomProfiles,
-  upsertCustomProfile, upsertCustomProfileResult, MAX_CUSTOM_PROFILES, type ProfileStorage,
+  upsertCustomProfileResult, MAX_CUSTOM_PROFILES, type ProfileStorage,
 } from '@/services/schedulingProfiles/profileStore';
 
 const diffs: string[] = [];
@@ -290,9 +290,9 @@ function diffAgainstLegacyForP6(): Partial<Record<string, boolean>> {
       CUSTOM, { baseId: 'ops', id: 'w', name: 'Wel', overrides: {} },
     ]);
     const store = memory();
-    ok('67 upsert nieuw', upsertCustomProfile(CUSTOM, store));
-    ok('68 upsert ingebouwde id geweigerd', !upsertCustomProfile({ ...CUSTOM, id: 'ops' }, store));
-    ok('69 upsert vervangt op id', upsertCustomProfile({ ...CUSTOM, name: 'Hernoemd' }, store));
+    ok('67 upsert nieuw', upsertCustomProfileResult(CUSTOM, store) === 'saved');
+    ok('68 upsert ingebouwde id geweigerd', upsertCustomProfileResult({ ...CUSTOM, id: 'ops' }, store) !== 'saved');
+    ok('69 upsert vervangt op id', upsertCustomProfileResult({ ...CUSTOM, name: 'Hernoemd' }, store) === 'saved');
     same('70 na upserts', loadCustomProfiles(store), [{ ...CUSTOM, name: 'Hernoemd' }]);
     deleteCustomProfile('eigen-1', store);
     eq('71 na verwijderen leeg', loadCustomProfiles(store), []);
@@ -305,7 +305,7 @@ function diffAgainstLegacyForP6(): Partial<Record<string, boolean>> {
     };
     let threw = false;
     let upserted: boolean | undefined;
-    try { upserted = upsertCustomProfile({ ...CUSTOM, id: 'nieuw' }, quota); } catch { threw = true; }
+    try { upserted = upsertCustomProfileResult({ ...CUSTOM, id: 'nieuw' }, quota) === 'saved'; } catch { threw = true; }
     eq('73 upsert bij QuotaExceeded: geen throw', threw, false);
     eq('74 upsert bij QuotaExceeded: false', upserted, false);
     eq('75 save bij QuotaExceeded: false', saveCustomProfiles([CUSTOM], quota), false);

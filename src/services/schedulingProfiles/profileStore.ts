@@ -119,14 +119,6 @@ export function upsertCustomProfileResult(
   return saveCustomProfiles(list, storage) ? 'saved' : 'storage';
 }
 
-/** Voegt een eigen profiel toe of vervangt het profiel met dezelfde `id`. Een ongeldig profiel
- *  (bijv. een ingebouwde id) wordt niet opgeslagen; de functie meldt of het gelukt is. */
-export function upsertCustomProfile(
-  profile: SchedulingProfile, storage: ProfileStorage | undefined = defaultStorage(),
-): boolean {
-  return upsertCustomProfileResult(profile, storage) === 'saved';
-}
-
 /** Verwijdert het eigen profiel met deze id. Geeft `false` als het wegschrijven mislukt. */
 export function deleteCustomProfile(id: string, storage: ProfileStorage | undefined = defaultStorage()): boolean {
   const list = loadCustomProfiles(storage);
