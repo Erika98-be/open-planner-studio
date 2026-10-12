@@ -25,9 +25,14 @@ export const STICKY_OPEN_NOTICE_KEYS: ReadonlySet<string> = new Set<Notification
   'notifications.xerImportUnsupportedSemantics',
   'notifications.xerImportBaselineFallback',
   'notifications.xerImportDanglingBaselineReferences',
-  // XER: activiteit zonder geplande start kreeg het projectanker. De sleutel komt met PR #296; tot
-  // die op main staat, komt hij niet voor en doet deze regel niets.
+  // XER: activiteit zonder geplande start kreeg de statusdatum of projectstart (PR #296).
   'notifications.xerImportMissingPlannedStarts',
+  // P6 XML (PR #330, `p6xmlImportNotice`): relaties tussen projecten zijn niet als relatie
+  // overgenomen, activiteiten zonder project zijn niet ingelezen. Losse baselineverwijzingen
+  // gebruiken `xerImportDanglingBaselineReferences` hierboven; het aantal projecten, lege
+  // projecten en gekoppelde baselines veranderen niets en blijven dus buiten deze lijst (zoals bij XER).
+  'notifications.p6xmlImportCrossProjectRelations',
+  'notifications.p6xmlImportUnassignedActivities',
   // IFC: een onbruikbaar XER-bronarchief is weggelaten (als regel of als eigen melding).
   'notifications.xerArchiveUnusableLine',
   'notifications.xerArchiveUnusable',
