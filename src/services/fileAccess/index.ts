@@ -5,9 +5,7 @@ import {
 import {
   openFileDialogWeb, saveFileDialogWeb, saveBytesDialogWeb, saveToRefWeb, saveToRefWithoutPromptWeb, canWriteToRefWithoutPromptWeb, readFromRefWeb, readBytesFromRefWeb,
 } from './webBackend';
-import {
-  saveToRefSite, canWriteToRefWithoutPromptSite, readFromRefSite, readBytesFromRefSite,
-} from './siteBackend';
+import { readFromRefSite, readBytesFromRefSite } from './siteBackend';
 import { siteStorageAvailable } from './siteHost';
 
 /** Bestandsfilter (naam + extensies zonder punt), zoals de bestaande dialoog-aanroepen. */
@@ -38,8 +36,9 @@ export interface SaveTargetFields {
 
 /**
  * HET opslagdoel van een document als `FileRef`, of `null` als er geen bestaand doel is (dan wordt
- * opslaan "opslaan als"). Eén afleiding voor Opslaan, de echte AutoSave, de AutoSave-knop in de
- * titelbalk en de dev-brug — vroeger stond dezelfde ternary op vier plekken.
+ * opslaan "opslaan als"). Eén afleiding voor Opslaan, de echte AutoSave en de AutoSave-knop in de
+ * titelbalk. Die laatste twee laten een site-doel bewust links liggen: automatisch opslaan staat voor
+ * een site-bestand uit (zie `siteHost.ts`).
  *
  *  - `siteFileId` → site-bestand (alleen gezet als het document van de site kwam of erheen ging);
  *  - `fileHandle` → Chromium-handle;
@@ -134,39 +133,41 @@ export function saveBytesDialog(
     : saveBytesDialogWeb(defaultName, bytes, filters, opts);
 }
 
-// Elke functie hieronder stuurt een site-ref EERST naar de site-backend, vóór de Tauri/web-keuze:
-// een site-bestand heeft niets met het platform te maken. Zonder site-refs verandert er niets.
+// Een site-ref gaat hieronder NOOIT naar de Tauri- of webbackend. Schrijven naar de site kan via
+// deze algemene functies niet: dat vraagt de basisversie van het document dat opslaat, en die kent
+// alleen de opslaanroute van de store (`saveSiteFileVersion` in `siteBackend.ts`). Ze geven voor een
+// site-ref dus `false`. Lezen mag wel. Zonder site-refs verandert er niets.
 
 /** In-place opslaan naar een bestaande ref. `false` als onmogelijk (fallback-web of geweigerde
- *  permissie, of geen site-opslag meer) → de aanroeper valt terug op `saveFileDialog`.
- *  Een fout van de SITE (ook een conflict, `isSiteConflict`) gooit door: die meldt de aanroeper.
- *  `name` (de bestandsnaam van het document) gebruikt alleen de site-backend. */
-export function saveToRef(ref: FileRef, content: string, name?: string): Promise<boolean> {
-  if (ref.kind === 'site') return saveToRefSite(ref, content, name);
+ *  permissie) → de aanroeper valt terug op `saveFileDialog`. Een site-ref: altijd `false` (zie boven). */
+export function saveToRef(ref: FileRef, content: string): Promise<boolean> {
+  if (ref.kind === 'site') return Promise.resolve(false);
   return isTauri() ? saveToRefTauri(ref, content) : saveToRefWeb(ref, content);
 }
 
-/** Stille precheck voor timerwerk: browser-FSA mag hier nooit permissie vragen. Een site kent geen
- *  permissieprompt: schrijfbaar zolang de site-opslag er is. */
+/** Stille precheck voor timerwerk: browser-FSA mag hier nooit permissie vragen. Een site-ref: `false`
+ *  — automatisch opslaan naar de site staat uit (elke ronde zou een nieuwe versie maken). */
 export function canWriteToRefWithoutPrompt(ref: FileRef): Promise<boolean> {
-  if (ref.kind === 'site') return Promise.resolve(canWriteToRefWithoutPromptSite(ref));
+  if (ref.kind === 'site') return Promise.resolve(false);
   return isTauri() ? Promise.resolve(ref.kind === 'path') : canWriteToRefWithoutPromptWeb(ref);
 }
 
-/** Schrijf naar een bestaand doel zonder dialoog, download-terugval of permissieprompt. */
-export function saveToRefWithoutPrompt(ref: FileRef, content: string, name?: string): Promise<boolean> {
-  if (ref.kind === 'site') return saveToRefSite(ref, content, name);
+/** Schrijf naar een bestaand doel zonder dialoog, download-terugval of permissieprompt. Een site-ref:
+ *  altijd `false` (zie boven). */
+export function saveToRefWithoutPrompt(ref: FileRef, content: string): Promise<boolean> {
+  if (ref.kind === 'site') return Promise.resolve(false);
   return isTauri() ? saveToRefTauri(ref, content) : saveToRefWithoutPromptWeb(ref, content);
 }
 
-/** Inhoud van een bewaarde ref herlezen (recents heropenen). `null` bij fout/geweigerd. */
+/** Inhoud van een bewaarde ref herlezen. `null` bij fout/geweigerd. Een site-ref leest de nieuwste
+ *  versie, zonder basis; recente bestanden van de site heropent de store via `openSiteFile`. */
 export function readFromRef(ref: FileRef): Promise<string | null> {
-  if (ref.kind === 'site') return readFromRefSite(ref);
+  if (ref.kind === 'site') return readFromRefSite(ref.id);
   return isTauri() ? readFromRefTauri(ref) : readFromRefWeb(ref);
 }
 
 /** Bytes van een bewaarde ref herlezen (recents met een binair formaat). `null` bij fout/geweigerd. */
 export function readBytesFromRef(ref: FileRef): Promise<Uint8Array | null> {
-  if (ref.kind === 'site') return readBytesFromRefSite(ref);
+  if (ref.kind === 'site') return readBytesFromRefSite(ref.id);
   return isTauri() ? readBytesFromRefTauri(ref) : readBytesFromRefWeb(ref);
 }

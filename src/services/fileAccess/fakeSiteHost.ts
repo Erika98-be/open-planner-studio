@@ -16,7 +16,7 @@
  */
 import { openDb, idbGetAll } from '@/utils/idb';
 import {
-  SITE_CONFLICT_CODE, SITE_HOST_READY_EVENT,
+  SITE_CONFLICT_CODE, SITE_HOST_READY_EVENT, SITE_NOT_FOUND_CODE,
   type OpenAECHost, type SiteFileInfo, type SiteStorage, type SiteVersionInfo,
 } from './siteHost';
 import { extensionOf } from '@/utils/filePath';
@@ -36,7 +36,10 @@ async function allFiles(): Promise<FakeFile[]> {
 
 async function findFile(id: string): Promise<FakeFile> {
   const file = (await allFiles()).find((f) => f.id === id);
-  if (!file) throw new Error(`Bestand ${id} bestaat niet op de nep-site.`);
+  if (!file) {
+    // Zoals het contract het vraagt: "bestaat niet" met een eigen code, zodat Recent het opruimt.
+    throw Object.assign(new Error(`Bestand ${id} bestaat niet op de nep-site.`), { code: SITE_NOT_FOUND_CODE });
+  }
   return file;
 }
 

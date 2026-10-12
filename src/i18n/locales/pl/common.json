@@ -6,7 +6,8 @@
     "label": "Automatyczny zapis",
     "noFile": "Najpierw zapisz ten projekt, aby użyć automatycznego zapisu.",
     "onHint": "Automatyczny zapis jest włączony: zmiany są zapisywane w tym pliku.",
-    "offHint": "Automatyczny zapis jest wyłączony. Odzyskiwanie po awarii pozostaje aktywne."
+    "offHint": "Automatyczny zapis jest wyłączony. Odzyskiwanie po awarii pozostaje aktywne.",
+    "siteDisabled": "W witrynie polecenie Zapisz (Ctrl+S) zapisuje nową wersję. Automatyczny zapis jest tu wyłączony; odzyskiwanie po awarii pozostaje aktywne."
   },
   "notifications": {
     "dismiss": "Zamknij powiadomienie",
@@ -101,6 +102,7 @@
     "mppEncrypted": "Ten plik .mpp jest zabezpieczony hasłem. Wyeksportuj go w MS Project jako XML (Plik → Zapisz jako → XML) i otwórz ten plik.",
     "saveFailed": "Nie udało się zapisać",
     "siteSaveConflict": "Nie zapisano: '{{name}}' został w międzyczasie zmieniony w witrynie przez kogoś innego. Twoje zmiany nadal są w aplikacji. Wybierz Zapisz jako, aby zachować je jako nowy plik.",
+    "siteFileGone": "'{{name}}' nie ma już w witrynie. Plik został usunięty z listy Ostatnie.",
     "savedViaDownload": "Zapisano jako pobrany plik: '{{name}}' znajduje się teraz w folderze pobierania. To środowisko nie pozwala aplikacji zapisywać bezpośrednio w wybranej lokalizacji.",
     "browserCannotOverwrite": "Ta przeglądarka nie pozwala aplikacji zapisać ponownie do „{{name}}”. Dlatego przy każdym zapisie aplikacja ponownie pyta, gdzie zapisać plik. W Chrome, Edge ani w aplikacji desktopowej tak się nie dzieje.",
     "browserSavesAsDownload": "Zapisano jako pobieranie: „{{name}}” jest w folderze pobranych plików. Ta przeglądarka nie pozwala aplikacji zapisywać we własnym miejscu, więc każdy zapis tworzy nowe pobieranie. W Chrome, Edge lub aplikacji desktopowej Zapisz po prostu aktualizuje ten sam plik.",

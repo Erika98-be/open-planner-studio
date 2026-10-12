@@ -6,7 +6,8 @@
     "label": "Guardar automaticamente",
     "noFile": "Guarde primeiro este projeto para usar a gravação automática.",
     "onHint": "A gravação automática está ativa: as alterações são gravadas neste ficheiro.",
-    "offHint": "A gravação automática está desativada. A recuperação continua ativa."
+    "offHint": "A gravação automática está desativada. A recuperação continua ativa.",
+    "siteDisabled": "No site, Guardar (Ctrl+S) guarda uma nova versão. A gravação automática está desativada aqui; a recuperação continua ativa."
   },
   "notifications": {
     "dismiss": "Fechar notificação",
@@ -85,6 +86,7 @@
     "mppEncrypted": "Este arquivo .mpp está protegido por senha. Exporte-o no MS Project como XML (Arquivo → Salvar como → XML) e abra esse arquivo.",
     "saveFailed": "Falha ao salvar",
     "siteSaveConflict": "Não guardado: '{{name}}' foi entretanto alterado no site por outra pessoa. As suas alterações continuam na aplicação. Escolha Guardar como para as manter num novo ficheiro.",
+    "siteFileGone": "'{{name}}' já não está no site. O ficheiro foi removido de Recentes.",
     "savedViaDownload": "Guardado como transferência: '{{name}}' está agora na sua pasta de transferências. Este ambiente não permite que a aplicação escreva diretamente no local escolhido.",
     "browserCannotOverwrite": "Este navegador não permite que a aplicação volte a gravar em «{{name}}». Por isso, a aplicação pergunta novamente onde guardar o ficheiro sempre que guarda. Isto não acontece no Chrome, no Edge nem na aplicação de ambiente de trabalho.",
     "browserSavesAsDownload": "Guardado como transferência: «{{name}}» está na sua pasta de transferências. Este navegador não permite que a aplicação grave num local próprio, por isso cada gravação cria uma nova transferência. No Chrome, no Edge ou na aplicação de ambiente de trabalho, Guardar atualiza simplesmente o mesmo ficheiro.",

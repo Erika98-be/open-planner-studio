@@ -7,8 +7,8 @@ import { writeMSPDI } from '@/services/msproject/mspdiWriter';
 import { writeP6XML } from '@/services/p6/p6xmlWriter';
 import { countSplitTasksWithoutContour } from '@/services/contourIo';
 import { openFileDialog, saveFileDialog, saveBytesDialog, saveToRef, readFromRef, readBytesFromRef, saveTargetRef, type FileRef, type SaveOutcome } from '@/services/fileAccess';
-import { isSiteConflict, siteErrorMessage, siteStorageAvailable } from '@/services/fileAccess/siteHost';
-import { openSiteFile, saveNewSiteFile } from '@/services/fileAccess/siteBackend';
+import { isSiteConflict, isSiteNotFound, siteErrorMessage, siteStorageAvailable } from '@/services/fileAccess/siteHost';
+import { openSiteFile, saveNewSiteFile, saveSiteFileVersion } from '@/services/fileAccess/siteBackend';
 import { askSiteOpen, askSiteSave, type SiteOpenChoice } from '@/services/fileAccess/siteDialogs';
 import { withXerArchiveIssueNotice } from '@/state/xerArchiveIssueNotice';
 import { RECORDED_DATES_HELP_ARTICLE_ID, XER_IMPORT_HELP_ARTICLE_ID } from '@/state/helpArticles';
@@ -279,6 +279,10 @@ export interface ApplyLoadedProjectOpts {
   /** Site-opslaan-doel (issue #309), zelfde semantiek als `fileHandle`: undefined = ongemoeid
    *  (loadState), null = geen site-doel, een id = het bestand op de site. */
   siteFileId?: string | null;
+  /** De site-versie waarop het geladen document rust (de `baseVersion` van zijn volgende opslag).
+   *  undefined = ongemoeid als ook `siteFileId` undefined is; geeft de aanroeper wél een `siteFileId`
+   *  maar geen versie, dan `null` (een nieuw doel erft nooit de basis van het vorige). */
+  siteFileVersion?: string | null;
   /** Direct doorrekenen op de geïsoleerde laadpayload, vóór publicatie. */
   recompute?: boolean;
   /** Canvas op het hele project passen (requestFitToProject). Open-paden: true; loadState: false. */
@@ -305,6 +309,8 @@ export interface ApplyLoadedProjectOpts {
 export interface OpenedFileSource {
   name: string;
   ref: FileRef | null;
+  /** Alleen bij een site-ref: de gelezen (nieuwste) versie, de basis voor de volgende opslag. */
+  siteFileVersion?: string | null;
 }
 
 /** Feitelijke uitkomst van de centrale opennaad; gebruikt door DevBridge en MCP voor eerlijke ids.
@@ -374,6 +380,15 @@ export interface FileSlice {
   openAsDocument: (parsed: OpenedImport, source: OpenedFileSource) => AppliedOpenedImport;
 }
 
+/** Het opslagdoel van een document na een geslaagde opslag (zie `commitSavedDocument`). */
+interface SaveDestination {
+  filePath: string;
+  fileHandle: FileSystemFileHandle | null;
+  siteFileId: string | null;
+  /** De net geschreven site-versie (de nieuwe basis); `null` zonder site-doel. */
+  siteFileVersion: string | null;
+}
+
 export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, get) => {
   // Voeg een geopend/opgeslagen bestand toe aan de recents (elke herbruikbare ref).
   const pushRecent = async (ref: FileRef | null, name: string) => {
@@ -405,43 +420,46 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
     return state.documents.find(document => document.id === documentId)?.payload ?? null;
   };
 
-  // Een nieuw opslagdoel zet ALLE drie de doelvelden: wie naar een lokaal bestand opslaat, verliest
-  // zijn site-doel, en omgekeerd. Anders schreef de volgende Ctrl+S naar het oude doel.
+  // Een opslagdoel zet ALLE vier de doelvelden: wie naar een lokaal bestand opslaat, verliest zijn
+  // site-doel, en omgekeerd. Anders schreef de volgende Ctrl+S naar het oude doel. Bij een site-doel
+  // is `siteFileVersion` de net geschreven versie: de nieuwe basis van DIT document. Een site-doel
+  // zet ook AutoSave uit (automatisch opslaan naar de site bestaat niet).
   const commitSavedDocument = (
     documentId: string,
     savedSource: AppState,
-    destination?: { filePath: string; fileHandle: FileSystemFileHandle | null; siteFileId: string | null },
+    destination?: SaveDestination,
   ): boolean => {
     const currentSource = saveSourceForDocument(get(), documentId);
     if (!currentSource) return false;
     const unchanged = sameIFCSource(savedSource, currentSource);
+    const applyDestination = (target: Pick<AppState, keyof SaveDestination | 'autoSaveToFile'>) => {
+      if (!destination) return;
+      target.filePath = destination.filePath;
+      target.fileHandle = destination.fileHandle;
+      target.siteFileId = destination.siteFileId;
+      target.siteFileVersion = destination.siteFileId ? destination.siteFileVersion : null;
+      if (destination.siteFileId) target.autoSaveToFile = false;
+    };
     set((state) => {
       if (state.activeDocumentId === documentId) {
-        if (destination) {
-          state.filePath = destination.filePath;
-          state.fileHandle = destination.fileHandle;
-          state.siteFileId = destination.siteFileId;
-        }
+        applyDestination(state);
         if (unchanged) state.isDirty = false;
         return;
       }
       const entry = state.documents.find(document => document.id === documentId);
       if (!entry?.payload) return;
-      if (destination) {
-        entry.payload.filePath = destination.filePath;
-        entry.payload.fileHandle = destination.fileHandle;
-        entry.payload.siteFileId = destination.siteFileId;
-      }
+      applyDestination(entry.payload);
       if (unchanged) entry.payload.isDirty = false;
     });
     return unchanged;
   };
 
   /** Het opslagdoel van een lokale opslaan-als-uitkomst (Tauri-pad, handle of alleen een naam). */
-  const localDestination = (outcome: SaveOutcome) => ({
+  const localDestination = (outcome: SaveOutcome): SaveDestination => ({
     filePath: outcome.ref?.kind === 'path' ? outcome.ref.path : outcome.name,
     fileHandle: outcome.ref?.kind === 'handle' ? outcome.ref.handle : null,
     siteFileId: null,
+    siteFileVersion: null,
   });
 
   /**
@@ -465,7 +483,9 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
    *  een fout van de site (de aanroeper meldt hem). */
   const saveAsNewSiteFile = async (documentId: string, state: AppState, content: string, name: string): Promise<boolean> => {
     const info = await saveNewSiteFile(name, content);
-    const saved = commitSavedDocument(documentId, state, { filePath: info.name, fileHandle: null, siteFileId: info.id });
+    const saved = commitSavedDocument(documentId, state, {
+      filePath: info.name, fileHandle: null, siteFileId: info.id, siteFileVersion: info.version,
+    });
     await pushRecent({ kind: 'site', id: info.id }, info.name);
     return saved;
   };
@@ -480,11 +500,35 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
     const opened = await openSiteFile(choice.id, { binaryExtensions: binaryExtensions(), version: choice.version });
     const parsed = await parseOpenedFile({ name: opened.name, text: opened.content, bytes: opened.bytes }, labels);
     if (choice.version === undefined) {
-      get().openAsDocument(parsed, { name: opened.name, ref: opened.ref });
+      // De gelezen versie wordt pas NA een geslaagde parse de basis, en alleen van dít document.
+      get().openAsDocument(parsed, { name: opened.name, ref: opened.ref, siteFileVersion: opened.version });
       await pushRecent(opened.ref, opened.name);
       return;
     }
     get().openAsDocument(parsed, { name: siteVersionCopyName(opened.name, choice.version, choice.copyName), ref: null });
+  };
+
+  /**
+   * Heropen een recent bestand van de site: de nieuwste versie, met de site als doel en de gelezen
+   * versie als basis. Zegt de site dat het bestand niet meer bestaat (`code === 'not-found'`), dan gaat
+   * het uit Recent, met een melding. Elke andere fout (netwerk, rechten, een storing, een bestand dat
+   * niet te lezen is) geeft een melding met de tekst van de site en laat het bestand in Recent staan:
+   * de volgende poging kan gewoon lukken.
+   */
+  const openRecentSiteFile = async (entry: RecentEntry, labels?: ImportLabels) => {
+    if (entry.ref.kind !== 'site') return;
+    try {
+      await openSiteChoice({ kind: 'site', id: entry.ref.id }, labels);
+    } catch (err) {
+      console.error('Openen van de site mislukt:', err);
+      if (isSiteNotFound(err)) {
+        const list = await removeRecent(entry.id);
+        set((s) => { s.recentFiles = list; });
+        get().notify({ severity: 'error', messageKey: 'notifications.siteFileGone', params: { name: entry.name } });
+        return;
+      }
+      get().notify({ severity: 'error', messageKey: importErrorMessageKey(err), detail: siteErrorMessage(err) });
+    }
   };
 
   /** Staat er al een site-vraag open? Dan start Opslaan/Openen geen tweede ronde: Ctrl+S in het
@@ -503,12 +547,20 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
 
     try {
       const ref = saveTargetRef(state);
-      if (ref?.kind === 'site') siteName = documentFileName(state);
-
-      if (ref && await saveToRef(ref, content, siteName ?? undefined)) {
+      // Een site-doel: een nieuwe versie van dat bestand, met de basis van DIT document. De net
+      // geschreven versie wordt zijn nieuwe basis. Is de site-opslag weg (bijv. een hersteld
+      // site-document buiten de site), dan geldt het als "geen doel" en loopt de gewone route.
+      if (ref?.kind === 'site' && siteStorageAvailable()) {
+        siteName = documentFileName(state);
+        const saved = await saveSiteFileVersion(ref.id, siteName, content, state.siteFileVersion);
+        return commitSavedDocument(documentId, state, {
+          filePath: state.filePath ?? saved.name, fileHandle: null, siteFileId: ref.id, siteFileVersion: saved.version,
+        });
+      }
+      // Een site-ref geeft hier altijd `false` (zie `saveToRef`): dan loopt de route hieronder.
+      if (ref && await saveToRef(ref, content)) {
         return commitSavedDocument(documentId, state);
       }
-      siteName = null;
 
       // Geen (bruikbaar) doel en wel site-opslag: eerst "Opslaan op de site" met de keuze voor deze
       // pc. Zonder site-opslag komt deze vraag nooit en blijft alles hieronder zoals het was.
@@ -607,6 +659,11 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
       payload.collapsedTaskIds = current.ui.collapsedTaskIds;
       payload.fileHandle = opts.fileHandle !== undefined ? opts.fileHandle : current.fileHandle;
       payload.siteFileId = opts.siteFileId !== undefined ? opts.siteFileId : current.siteFileId;
+      payload.siteFileVersion = !payload.siteFileId
+        ? null
+        : opts.siteFileVersion !== undefined
+          ? opts.siteFileVersion
+          : (opts.siteFileId !== undefined ? null : current.siteFileVersion);
       if (!opts.linkedOpen) {
         payload.project = { ...payload.project, companyId: undefined, companyName: undefined };
         stripLibraryOrigins(payload);
@@ -830,6 +887,7 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
         filePath: target.filePath,
         fileHandle: target.fileHandle,
         siteFileId: target.siteFileId,
+        siteFileVersion: target.siteFileId ? source.siteFileVersion ?? null : null,
         recompute: true,
         fit: true,
         hourDataNotice: true,
@@ -1227,6 +1285,10 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
     openRecentFile: async (id: string, labels) => {
       const entry = get().recentFiles.find((e) => e.id === id);
       if (!entry) return;
+      if (entry.ref.kind === 'site') {
+        await openRecentSiteFile(entry, labels);
+        return;
+      }
       // `kind` bepaalt de lees-tak (bytes vs tekst); de opslagdoel-guard zit in `openAsDocument`.
       const isBinary = readFormatForFile(entry.name).kind === 'binary';
       const content = isBinary ? null : await readFromRef(entry.ref);

@@ -6,7 +6,8 @@
     "label": "Salvataggio automatico",
     "noFile": "Salva prima questo progetto per usare il salvataggio automatico.",
     "onHint": "Il salvataggio automatico è attivo: le modifiche vengono scritte in questo file.",
-    "offHint": "Il salvataggio automatico è disattivato. Il recupero rimane attivo."
+    "offHint": "Il salvataggio automatico è disattivato. Il recupero rimane attivo.",
+    "siteDisabled": "Sul sito, Salva (Ctrl+S) salva una nuova versione. Il salvataggio automatico qui è disattivato; il recupero rimane attivo."
   },
   "notifications": {
     "dismiss": "Chiudi notifica",
@@ -85,6 +86,7 @@
     "mppEncrypted": "Questo file .mpp è protetto da password. Esportalo da MS Project come XML (File → Salva con nome → XML) e apri quel file.",
     "saveFailed": "Salvataggio non riuscito",
     "siteSaveConflict": "Non salvato: '{{name}}' è stato modificato nel frattempo sul sito da qualcun altro. Le tue modifiche sono ancora nell'applicazione. Scegli Salva come per conservarle in un nuovo file.",
+    "siteFileGone": "'{{name}}' non è più sul sito. Il file è stato rimosso da Recenti.",
     "savedViaDownload": "Salvato come download: '{{name}}' si trova ora nella cartella dei download. Questo ambiente non consente all'applicazione di scrivere direttamente nella posizione scelta.",
     "browserCannotOverwrite": "Questo browser non consente all'app di riscrivere su «{{name}}». Per questo l'app chiede di nuovo dove salvare il file a ogni salvataggio. Questo non accade in Chrome, Edge o nell'app desktop.",
     "browserSavesAsDownload": "Salvato come download: «{{name}}» si trova nella cartella dei download. Questo browser non consente all'app di scrivere in una posizione propria, quindi ogni salvataggio crea un nuovo download. In Chrome, Edge o nell'app desktop, Salva aggiorna semplicemente lo stesso file.",

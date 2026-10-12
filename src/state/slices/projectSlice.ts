@@ -101,6 +101,9 @@ export interface ProjectSlice {
   /** Opslaan-doel op de site (issue #309): id van het bestand op de site, of `null`. Zie
    *  `DocumentPayload.siteFileId`. */
   siteFileId: string | null;
+  /** De site-versie waarop dit document rust (de `baseVersion` van de volgende opslag), of `null`.
+   *  Zie `DocumentPayload.siteFileVersion`. */
+  siteFileVersion: string | null;
   /** Persoonlijke sessiekeuze voor echte bestands-AutoSave; per document via DOCUMENT_FIELDS. */
   autoSaveToFile: boolean;
   /** XER-herkomst van het actieve document; externe relaties blijven solverloze brondata. */
@@ -191,6 +194,7 @@ export const createProjectSlice: AppSliceFactory<ProjectSlice> = (runtime) => (s
   filePath: null,
   fileHandle: null,
   siteFileId: null,
+  siteFileVersion: null,
   autoSaveToFile: false,
   xerImportMetadata: null,
   xerSourceArchive: null,
