@@ -34,9 +34,24 @@ import pl from '@/i18n/locales/pl/common.json';
 import pt from '@/i18n/locales/pt/common.json';
 import tr from '@/i18n/locales/tr/common.json';
 import zh from '@/i18n/locales/zh/common.json';
+import ru_ from '@/i18n/locales/ru/common.json';
+import uk_ from '@/i18n/locales/uk/common.json';
+import cs_ from '@/i18n/locales/cs/common.json';
+import sk_ from '@/i18n/locales/sk/common.json';
+import sr_ from '@/i18n/locales/sr/common.json';
+import hr_ from '@/i18n/locales/hr/common.json';
+import bg_ from '@/i18n/locales/bg/common.json';
+import hu_ from '@/i18n/locales/hu/common.json';
+import ro_ from '@/i18n/locales/ro/common.json';
+import sv_ from '@/i18n/locales/sv/common.json';
+import nb_ from '@/i18n/locales/nb/common.json';
+import da_ from '@/i18n/locales/da/common.json';
+import fi_ from '@/i18n/locales/fi/common.json';
 
 const LOCALES: Record<string, Record<string, unknown>> = {
   nl, en, fr, de, es, zh, it, pt, pl, tr, ar, ja, ko, fa,
+  ru: ru_, uk: uk_, cs: cs_, sk: sk_, sr: sr_, hr: hr_, bg: bg_,
+  hu: hu_, ro: ro_, sv: sv_, nb: nb_, da: da_, fi: fi_,
 };
 
 /** Sleutels die met een `count` worden aangeroepen en dus per taal alle categorieën nodig hebben. */
@@ -59,6 +74,12 @@ const PROBE_COUNTS = [0, 1, 2, 3, 5, 11, 21, 100];
 
 const diffs: string[] = [];
 let checks = 0;
+// Besluit B5 (2026-10-10): een andere taal dan nl/en mag een sleutel of een hele familie nog missen (de app
+// valt terug op en, de vertaalstraat vult hem vóór een release). Wat er wél staat, moet kloppen; een
+// halve familie blijft fout.
+const optional = (loc: string) => loc !== 'nl' && loc !== 'en';
+const familyAbsent = (mp: Record<string, string>, key: string) =>
+  !Object.keys(mp).some(k => k === key || k.startsWith(`${key}_`));
 
 const fail = (msg: string) => diffs.push(msg);
 const moveProjectOf = (loc: string) =>
@@ -73,6 +94,7 @@ for (const loc of Object.keys(LOCALES)) {
 
   for (const key of PLURAL_KEYS) {
     checks++;
+    if (optional(loc) && familyAbsent(mp, key)) continue;
     const found = new Set(
       Object.keys(mp)
         .filter(k => k === key || k.startsWith(`${key}_`))
@@ -99,6 +121,7 @@ for (const loc of Object.keys(LOCALES)) {
   for (const key of LABEL_KEYS) {
     checks++;
     const v = mp[key];
+    if (v === undefined && optional(loc)) continue;
     if (typeof v !== 'string' || v.trim() === '') fail(`${loc}/${key}: ontbreekt of leeg`);
   }
 
@@ -117,7 +140,7 @@ const baseKeys = (loc: string) =>
   ));
 const nlBase = baseKeys('nl');
 for (const loc of Object.keys(LOCALES)) {
-  if (loc === 'nl') continue;
+  if (loc === 'nl' || optional(loc)) continue; // B5: alleen en moet compleet zijn
   checks++;
   const mine = baseKeys(loc);
   const missing = [...nlBase].filter(k => !mine.has(k));
@@ -139,6 +162,7 @@ for (const loc of Object.keys(LOCALES)) {
   });
 
   for (const key of PLURAL_KEYS) {
+    if (optional(loc) && familyAbsent(moveProjectOf(loc), key)) continue;
     for (const n of PROBE_COUNTS) {
       checks++;
       const path = `moveProject.${key}`;
@@ -153,6 +177,7 @@ for (const loc of Object.keys(LOCALES)) {
   }
 
   for (const key of LABEL_KEYS) {
+    if (optional(loc) && moveProjectOf(loc)[key] === undefined) continue;
     checks++;
     const path = `moveProject.${key}`;
     const out = inst.t(path, { items: 'x: 1' });
