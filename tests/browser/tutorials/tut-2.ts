@@ -72,7 +72,7 @@ export const TUTORIAL_2: TutorialScript = {
         ) } },
         { dragBar: { from: T.site, to: T.garden } },
         { waitFor: { text: l('Type relatie', 'Relation type') } },
-        // De melding van stap 2 staat er nog; wegklikken zou ook dit venstertje sluiten.
+        // Staat er nog een melding, dan zou het kruisje aanklikken ook dit venstertje sluiten.
         { shot: { name: 'tut-2-type-relatie', of: { text: l('Type relatie', 'Relation type') }, pad: 120, keepToasts: true } },
         { press: 'Enter' },
         { dragBar: { from: T.garden, to: T.setout } },

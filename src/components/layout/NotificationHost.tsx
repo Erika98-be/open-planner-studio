@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useState, type CSSProperties } from 'react';
 import { useTranslation } from 'react-i18next';
+import { X } from 'lucide-react';
 import { useAppStore } from '@/state/appStore';
 import type { AppNotification } from '@/state/slices/types';
 import { notificationDetailText } from '@/utils/notificationDetail';
@@ -109,7 +110,7 @@ export function NotificationHost() {
   const placement = useToastPlacement(notifications.length > 0);
 
   // Auto-dismiss uitsluitend voor `info`-meldingen (5 s, of `durationMs`); `error` blijft staan tot
-  // wegklikken.
+  // de gebruiker op het kruisje klikt.
   // Bekend en geaccepteerd neveneffect: bij elke lijstwijziging herstart dit effect álle lopende
   // info-timers — een nieuwe melding verlengt de zichtbaarheid van reeds zichtbare info's met 5 s.
   // Dat is bewust: meldingen zijn kort (max. 3 tegelijk) en zo voorkomen we dat een net verschenen
@@ -131,10 +132,21 @@ export function NotificationHost() {
           key={n.id}
           className={`ops-toast ${n.severity === 'error' ? 'toast-error' : 'toast-info'}`}
           role={n.severity === 'error' ? 'alert' : 'status'}
-          onClick={() => dismissNotification(n.id)}
-          title={t('notifications.dismiss')}
-          style={{ cursor: 'pointer' }}
         >
+          {/* Sluiten alleen met het kruisje (eigenaarsbesluit 2026-10-12): een klik op de tekst doet
+              niets, zodat je een melding kunt lezen of selecteren zonder dat hij verdwijnt. Info
+              verdwijnt daarnaast vanzelf (timer hierboven); een fout blijft staan tot het kruisje.
+              `inset-inline-end` in de CSS zet het kruisje in RTL (ar/fa) links. */}
+          <button
+            type="button"
+            className="ops-toast-close"
+            aria-label={t('notifications.dismiss')}
+            title={t('notifications.dismiss')}
+            data-ops-toast-close=""
+            onClick={() => dismissNotification(n.id)}
+          >
+            <X size={14} aria-hidden="true" />
+          </button>
           <div className="ops-toast-message">
             {t(n.messageKey, { ...n.params })}
             {n.count > 1 && <span className="ops-toast-count">{`×${n.count}`}</span>}
@@ -152,8 +164,7 @@ export function NotificationHost() {
                   type="button"
                   className="ops-textlink ops-toast-readmore"
                   data-ops-toast-detail-link={line.helpArticleId}
-                  onClick={(e) => {
-                    e.stopPropagation();
+                  onClick={() => {
                     const articleId = line.helpArticleId!;
                     leaveBackstageGuarded(() => openHelpArticle(articleId));
                   }}
@@ -165,13 +176,11 @@ export function NotificationHost() {
           ))}
           {n.helpArticleId && (
             // "Lees meer": hergebruikt de Backstage →
-            // Help-navigatie (`openHelpArticle`), geen nieuw linkmechanisme. `stopPropagation` zodat
-            // de klik niet OOK de toast se eigen wegklik-handler (op de omringende div) triggert.
+            // Help-navigatie (`openHelpArticle`), geen nieuw linkmechanisme. De melding blijft staan.
             <button
               type="button"
               className="ops-textlink ops-toast-readmore"
-              onClick={(e) => {
-                e.stopPropagation();
+              onClick={() => {
                 // Wegnavigeren uit Backstage → Projectinfo loopt via de bewaker (keuzedialoog
                 // bij een niet-toegepaste draft), net als de zijbalk en het lint.
                 const articleId = n.helpArticleId!;
@@ -182,14 +191,12 @@ export function NotificationHost() {
             </button>
           )}
           {n.action && (
-            // De serialiseerbare actie uit de store (o.a. rekenprofielen). `stopPropagation`
-            // zodat de klik niet ook de wegklik-handler van de toast triggert (zelfde als "Lees meer").
+            // De serialiseerbare actie uit de store (o.a. rekenprofielen); sluit de melding na de actie.
             <button
               type="button"
               className="ops-textlink ops-toast-readmore"
               data-ops-notification-action={n.action.kind}
-              onClick={(e) => {
-                e.stopPropagation();
+              onClick={() => {
                 const action = n.action!;
                 const go = () => {
                   setUI({ activeRibbonTab: 'file', backstageSection: action.section });

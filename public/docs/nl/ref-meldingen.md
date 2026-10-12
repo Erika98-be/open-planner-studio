@@ -56,7 +56,7 @@ De balk onderaan toont van links naar rechts:
 
 ## Meldingen
 
-De meldingen verschijnen onderin het scherm, ook in de tabel, in Backstage en in de presentatiemodus. Een melding is een *fout* of *info*. Een fout blijft staan tot je hem wegklikt; een info verdwijnt na 5 seconden, en die timers beginnen opnieuw zodra de stapel verandert. Een klik op een melding sluit hem (tooltip *Melding sluiten*). Er staan er hooguit drie tegelijk: komt er een vierde, dan verdwijnt eerst de oudste info, en is er geen info, dan de oudste melding, zodat een fout nooit door een info wordt verdrongen. De stapel schuift weg van de knoppen van een open dialoog en van plakkende actiebalken.
+De meldingen verschijnen onderin het scherm, ook in de tabel, in Backstage en in de presentatiemodus. Een melding is een *fout* of *info*. Een fout blijft staan tot je op het kruisje klikt; een info verdwijnt na 5 seconden, en die timers beginnen opnieuw zodra de stapel verandert. Elke melding heeft rechtsboven een kruisje (tooltip *Melding sluiten*) waarmee je hem meteen sluit. Een klik op de tekst van de melding doet niets. Er staan er hooguit drie tegelijk: komt er een vierde, dan verdwijnt eerst de oudste info, en is er geen info, dan de oudste melding, zodat een fout nooit door een info wordt verdrongen. De stapel schuift weg van de knoppen van een open dialoog en van plakkende actiebalken.
 
 - **Teller ×N** — een melding met een vaste sleutel vouwt een herhaling samen tot één regel met een teller, bijvoorbeeld een opslagfout die steeds terugkomt of een geweigerde relatie die je herhaalt. Niet elke melding doet dat.
 - **Lees meer** — sommige meldingen hebben een link *Lees meer* of een eigen onderwerp (bijvoorbeeld *Werkregels uitgelegd*) naar de gids in Backstage › Help.

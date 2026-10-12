@@ -56,7 +56,7 @@ The bar at the bottom shows, from left to right:
 
 ## Notifications
 
-Notifications appear at the bottom of the screen, also in the table, in Backstage and in presentation mode. A notification is an *error* or *info*. An error stays until you click it away; an info disappears after 5 seconds, and those timers start again as soon as the stack changes. A click on a notification closes it (tooltip *Close notification*). At most three are shown at once: if a fourth comes, the oldest info goes first, and if there is no info, the oldest notification, so an error is never pushed out by an info. The stack moves away from the buttons of an open dialog and from sticky action bars.
+Notifications appear at the bottom of the screen, also in the table, in Backstage and in presentation mode. A notification is an *error* or *info*. An error stays until you click the cross; an info disappears after 5 seconds, and those timers start again as soon as the stack changes. Each notification has a cross at the top right (tooltip *Close notification*) that closes it at once. A click on the text of the notification does nothing. At most three are shown at once: if a fourth comes, the oldest info goes first, and if there is no info, the oldest notification, so an error is never pushed out by an info. The stack moves away from the buttons of an open dialog and from sticky action bars.
 
 - **Counter ×N** — a notification with a fixed key folds a repeat into one line with a counter, for example a save error that keeps coming back or a refused relation that you repeat. Not every notification does that.
 - **Read more** — some notifications have a *Read more* link or a topic of their own (for example *Work rules explained*) to the guide in Backstage › Help.
