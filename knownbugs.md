@@ -263,12 +263,6 @@ en noem het in je rapport of PR-tekst.
     nl-interface bij *Bestand › Voorbeelden*; de Help-artikelen noemen daarom de Engelse namen. Niet
     nagegaan of dat voor alle voorbeelden geldt. Voorstel: bewust laten, of per taal vertalen. — B
 
-101. **`i18n:resolve` overschrijft een met de hand gekozen bronhash in `i18n/ui-sources/`.** De samenvoeging
-     van ui-sources (`scripts/i18n-resolve.ts`) geeft geen `chosen` mee, dus een keuze in de merge-commit
-     gaat bij een latere run verloren. Het commentaar daar ("telt als zonder hash (actueel)") geldt ook niet
-     voor een taal zonder basislijn: daar wordt zo'n sleutel "ontbreekt". Gevonden in de review van de
-     vertaalstraat (Opus, 2026-10-12), in de code aangewezen, niet nagespeeld. — S
-
 ## Tests
 
 50. **`check-ifc-roundtrip` faalde op 30-09-2026** omdat het aanmaaktijdstempel toevallig de gezochte datum

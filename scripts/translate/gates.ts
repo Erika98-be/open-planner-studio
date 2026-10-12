@@ -2,7 +2,7 @@
 // Hard (rood, exit 1) en zacht (waarschuwing voor de nalezer). check.ts is de dunne I/O-schil
 // eromheen; `translate prepare` bundelt die tot build/translate/check.mjs.
 import {
-  countToken, containsTerm, findAvoid, nestings, placeholders, pluralCategories, textsOf, type UnitText,
+  countToken, containsTerm, escapeRe, nestings, placeholders, pluralCategories, textsOf, type UnitText,
 } from './common';
 import { conceptErrors, styleErrors, termEntryErrors } from './termbase';
 import type { UiLabel, UiPackage } from './ui';
@@ -61,7 +61,7 @@ function softText(at: string, text: string, nl: string[], en: string, pkg: UiPac
     if (!inSource) continue;
     const forms = t.forms.length ? t.forms : [t.target];
     if (!forms.some(f => low.includes(f.toLocaleLowerCase()))) warnings.push(`${at}: term "${t.target}" (${t.id}) niet gevonden`);
-    for (const a of findAvoid(text, forms, t.avoid ?? [])) warnings.push(`${at}: vermijd "${a}" (${t.id})`);
+    for (const a of avoidWords(text, forms, t.avoid ?? [])) warnings.push(`${at}: vermijd "${a}" (${t.id})`);
   }
   for (const k of pkg.keep) {
     if (nl.some(s => countToken(s, k) > 0) && countToken(text, k) === 0) warnings.push(`${at}: eigennaam "${k}" niet letterlijk overgenomen`);
@@ -212,8 +212,7 @@ function withoutLabelSpans(text: string, labels: DocsPackage['labels'], side: 's
     // Alleen het hele cursieve stuk (`*span*`), lange stukken eerst: een kort label als "Critical" mag niet
     // binnen een langer stuk ("Critical path: 21 tasks") wegvallen. Niet binnen vet (`**span**`): dat is
     // geen cursief label.
-    const esc = span.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    if (parts.some(hit)) rest = rest.replace(new RegExp(`(?<!\\*)\\*${esc}\\*(?!\\*)`, 'gu'), ' ');
+    if (parts.some(hit)) rest = rest.replace(new RegExp(`(?<!\\*)\\*${escapeRe(span)}\\*(?!\\*)`, 'gu'), ' ');
   }
   return rest;
 }
@@ -231,9 +230,8 @@ function withoutLabelSpans(text: string, labels: DocsPackage['labels'], side: 's
 function withoutPlainLabelNumbers(
   src: string, out: string, labels: DocsPackage['labels'], srcRaw: string, outRaw: string,
 ): [string, string] {
-  const esc = (f: string) => f.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const re = (f: string) => new RegExp(`(?<![0-9])${esc(f)}(?![0-9])`, 'gu');
-  const italics = (text: string, f: string) => (text.match(new RegExp(`(?<!\\*)\\*${esc(f)}\\*(?!\\*)`, 'gu')) ?? []).length;
+  const re = (f: string) => new RegExp(`(?<![0-9])${escapeRe(f)}(?![0-9])`, 'gu');
+  const italics = (text: string, f: string) => (text.match(new RegExp(`(?<!\\*)\\*${escapeRe(f)}\\*(?!\\*)`, 'gu')) ?? []).length;
   const withDigits = (f: string) => /[0-9]/.test(f) && placeholders(f).length === 0;
   const byLength = [...labels].filter(l => withDigits(l.en)).sort((a, b) => b.en.length - a.en.length);
   let s = src;

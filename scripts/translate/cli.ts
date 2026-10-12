@@ -27,18 +27,17 @@
 //   docs-budget <taal…> [--max-words N] grootste docs-pakket per taal in tekens en geschatte tokens (§ contextbudget)
 //   docs-literal                       voorbeeldnamen (soort c) opnieuw uit scripts/tutorial-project.ts en
 //                                      public/examples/*.ifc → i18n/docs-literal.json (sources)
-//   seed-sources <taal…>               eenmalige basislijn (huidige nl-hashes) voor een taal zónder
-//                                      i18n/ui-sources/<taal>.json; weigert als dat bestand er al is
 //   status [taal] [--strict]           per taal en namespace (en docs): ontbreekt / verouderd / actueel;
 //                                      --strict = releasepoort `npm run verify:translations` (exit 1 bij elk UI-gat;
 //                                      docsgaten alleen gemeld)
 //
 // Alle I/O staat hier; de logica zit in de pure modules ernaast (getoetst in tests/planning/check-translate-*.ts).
 import { spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { NAMESPACES, type JsonObject } from '../i18n-tools';
-import { EXISTING_TARGETS, TBX_FILES, hasUiBaseline, toJson, type Concept, type LangTermbase } from './common';
+import { EXISTING_TARGETS, TBX_FILES, escapeRe, toJson, type Concept, type LangTermbase } from './common';
 import { chunk, collectCandidates } from './candidates';
 import { applyUiBatch, packageMismatch } from './apply';
 import { applyFindings } from './findings';
@@ -53,7 +52,7 @@ import {
 } from './termbase';
 import { buildTermsPackages, indexTbx, parseTbx, uiExamplesFor, type TermsCheckPackage, type TermsPackage } from './tbx';
 import {
-  avoidRules, buildUiPackages, orderSources, packageText, resolveKeyList, seedSources, uiReleaseGaps, uiStatus,
+  avoidRules, buildUiPackages, orderSources, packageText, resolveKeyList, uiReleaseGaps, uiStatus,
   type NsInput, type ReleaseGap, type Selection, type UiPackage, type UiSources,
 } from './ui';
 
@@ -62,6 +61,32 @@ const LOCALES_DIR = join(ROOT, 'src/i18n/locales');
 const TERMBASE_DIR = join(ROOT, 'i18n/termbase');
 const SOURCES_DIR = join(ROOT, 'i18n/ui-sources');
 const WORK = join(ROOT, 'build/translate');
+/**
+ * Zegels: per taal de sha-256 van elk pakketbestand zoals `prepare` het schreef. De agents schrijven in
+ * `build/translate/`, deze map ligt daarbuiten. `apply` en `packages --red` keuren een pakket rood als het
+ * na `prepare` veranderde (review PR #321): het pakket bepaalt wat `apply` als vertaald en actueel wegschrijft.
+ */
+const SEAL_DIR = join(ROOT, 'build/translate-seal');
+const sealPath = (lang: string) => join(SEAL_DIR, `${lang}.json`);
+const sha = (text: string) => createHash('sha256').update(text, 'utf8').digest('hex');
+
+/** Leg de zegels vast van deze pakketbestanden (namen in `build/translate/<taal>/`). */
+function seal(lang: string, files: string[]): void {
+  const seals = readJsonOr<Record<string, string>>(sealPath(lang), {});
+  for (const f of files) seals[f] = sha(readFileSync(join(WORK, lang, f), 'utf8'));
+  mkdirSync(SEAL_DIR, { recursive: true });
+  writeFileSync(sealPath(lang), toJson(seals));
+}
+
+/** Waarom deze pakketbestanden niet meer kloppen met hun zegel; leeg = in orde. */
+function sealErrors(lang: string, files: string[]): string[] {
+  const seals = readJsonOr<Record<string, string>>(sealPath(lang), {});
+  return files.flatMap(f => {
+    const want = seals[f];
+    if (want === undefined) return [`XX ${f}: geen zegel van prepare; maak het pakket opnieuw`];
+    return sha(readFileSync(join(WORK, lang, f), 'utf8')) === want ? [] : [`XX ${f}: veranderd na prepare; maak het pakket opnieuw`];
+  });
+}
 const CONCEPTS = join(TERMBASE_DIR, 'concepts.json');
 
 function fail(msg: string): never {
@@ -318,6 +343,7 @@ function prepare(args: string[]): void {
   archive(dir, 'ui-');
   mkdirSync(dir, { recursive: true });
   for (const p of packs) writeFileSync(join(dir, `${p.id}.json`), packageText(p));
+  seal(lang, packs.map(p => `${p.id}.json`));
   bundleCheck();
   const items = packs.reduce((s, p) => s + p.items.length, 0);
   const sizes = packs.map(p => packageText(p).length);
@@ -351,12 +377,14 @@ function applyUi(args: string[]): void {
   const nl = nlByNs();
   const batch: { pkg: UiPackage; out: unknown }[] = [];
   const fileOf = new Map<string, string>();
-  let unreadable = 0;
+  let refused = 0;
   for (const f of files) {
     const outFile = join(dir, f.replace('.json', '.out.json'));
     if (!existsSync(outFile)) { console.log(`..  ${f}: nog geen uitvoer`); continue; }
     const read = tryReadPackage(join(dir, f), outFile);
-    if ('error' in read) { console.log(`XX  ${f}: ${read.error}`); unreadable++; continue; }
+    if ('error' in read) { console.log(`XX  ${f}: ${read.error}`); refused++; continue; }
+    const tampered = sealErrors(lang, [f]);
+    if (tampered.length) { for (const line of tampered) console.log(`${line.replace(/^XX /, 'XX  ')}`); refused++; continue; }
     fileOf.set(read.pkg.id, f);
     batch.push({ pkg: read.pkg as UiPackage, out: read.out });
   }
@@ -366,7 +394,7 @@ function applyUi(args: string[]): void {
     for (const line of r.lines) console.log(`    ${line}`);
   }
   const applied = ids.map(id => fileOf.get(id)!);
-  const red = redList.length + unreadable;
+  const red = redList.length + refused;
   for (const [ns, obj] of targets) writeJson(join(LOCALES_DIR, lang, `${ns}.json`), obj);
   if (applied.length) {
     writeJson(sourcesPath(lang), orderSources(sources, nl));
@@ -411,7 +439,8 @@ function packagesCmd(args: string[]): void {
           // UI: ook de toets van apply (nl veranderd na prepare, andere taal); dan helpt alleen een nieuwe prepare.
           const ui = pkg as UiPackage;
           const stale = what === 'ui' ? packageMismatch(ui, nlByNs()[ui.namespace] ?? {}, lang) : [];
-          green = result.errors.length === 0 && stale.length === 0;
+          const files = what === 'ui' ? [`${base}.json`] : [`${base}.json`, `${base}.src.md`];
+          green = result.errors.length === 0 && stale.length === 0 && sealErrors(lang, files).length === 0;
         } catch { /* onleesbaar = rood */ }
         if (green) continue;
       }
@@ -444,30 +473,6 @@ function applyFindingsCmd(args: string[]): void {
   for (const [ns, obj] of res.targets) writeJson(join(LOCALES_DIR, lang, `${ns}.json`), obj);
   console.log(`${res.skipped.length ? 'XX' : 'OK'}  apply-findings ${lang}: ${res.applied.length} toegepast, ${res.skipped.length} overgeslagen`);
   if (res.skipped.length) process.exit(1);
-}
-
-function seed(args: string[]): void {
-  // Eenmalig: de basislijn van een taal zonder bronhashes. Een hash zegt "deze tekst hoort bij déze
-  // nl-tekst"; over een bestaand bestand heen zou hij een verouderde vertaling als actueel markeren en de
-  // releasepoort vals groen maken. Daarom alleen talen met basislijn (zie hasUiBaseline), alleen
-  // expliciet genoemd, en nooit over een bestaand `i18n/ui-sources/<taal>.json` heen.
-  const langs = positional(args).map(checkLang);
-  if (!langs.length) fail('seed-sources <taal…>: noem de talen; alleen voor een taal zonder i18n/ui-sources/<taal>.json');
-  const without = langs.filter(l => !hasUiBaseline(l));
-  if (without.length) fail(`seed-sources: ${without.join(', ')} heeft geen basislijn (Engelse vulling); vul via prepare/apply ui`);
-  const existing = langs.filter(l => existsSync(sourcesPath(l)));
-  if (existing.length) {
-    fail(`seed-sources: ${existing.join(', ')} heeft al bronhashes; overschrijven zou verouderde tekst als actueel markeren. `
-      + 'Een sleutel zonder hash: `prepare ui <taal> --stale` (doeltaal) of `npm run i18n:add -- <ns>:<sleutel> <json> --update` (nl + en)');
-  }
-  const nl = nlByNs();
-  for (const lang of langs) {
-    if (!existsSync(join(LOCALES_DIR, lang))) { console.log(`..  ${lang}: geen locale-map, overgeslagen`); continue; }
-    const s = orderSources(seedSources(lang, nsInputs(lang)), nl);
-    writeJson(sourcesPath(lang), s);
-    const n = Object.values(s).reduce((t, h) => t + Object.keys(h).length, 0);
-    console.log(`OK  seed-sources ${lang}: ${n} sleutel(s)`);
-  }
 }
 
 // ── Docs-straat ──────────────────────────────────────────────────────────────────────────────
@@ -527,7 +532,7 @@ const docsPackageBases = (dir: string): string[] =>
 function archiveDocs(dir: string, onlyIds?: string[]): void {
   // Met --ids alleen de pakketten van die artikelen (een artikel kan `<id>-NN` heten); andere
   // pakketten en hun vertaling blijven staan (anders verdwijnt lopend werk naar archive/).
-  const bases = docsPackageBases(dir).filter(b => !onlyIds || onlyIds.some(id => b === id || new RegExp(`^${id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}-\\d+$`).test(b)));
+  const bases = docsPackageBases(dir).filter(b => !onlyIds || onlyIds.some(id => b === id || new RegExp(`^${escapeRe(id)}-\\d+$`).test(b)));
   if (bases.length === 0) return;
   const to = join(dir, 'archive', stamp());
   mkdirSync(to, { recursive: true });
@@ -585,6 +590,7 @@ function prepareDocs(args: string[], lang: string): void {
     writeFileSync(join(dir, `${pkg.id}.src.md`), src);
     writeFileSync(join(dir, `${pkg.id}.json`), packageText(pkg));
   }
+  seal(lang, packs.flatMap(({ pkg }) => [`${pkg.id}.src.md`, `${pkg.id}.json`]));
   writeFileSync(join(dir, 'pitfalls.md'), pitfallsFor(lang));
   bundleCheck();
   for (const { pkg, src } of packs) {
@@ -609,14 +615,23 @@ function checkDocsCmd(args: string[]): void {
   const ids = given.length ? given : translated;
   const missing = ids.filter(id => !translated.includes(id));
   if (missing.length) fail(`check-docs ${lang}: geen vertaling van ${missing.join(', ')}`);
+  // Een verouderd artikel (en veranderde na de vertaling) zou de oude vertaling tegen de nieuwe en-bron
+  // keuren: rood zonder vertaalfout. Die noemt het commando apart; `update-docs-lang` (--stale) werkt ze bij.
+  const stale = new Set(docsStates(lang).filter(a => a.state === 'stale').map(a => a.id));
+  const skipped = ids.filter(id => stale.has(id));
+  if (skipped.length) {
+    console.log(`..  check-docs ${lang}: ${skipped.length} verouderd artikel(en) overgeslagen (eerst bijwerken met --stale): ${skipped.join(', ')}`);
+  }
+  const checked = ids.filter(id => !stale.has(id));
   let red = 0;
-  for (const { pkg, src } of buildDocsFor(lang, 'ids', ids, Number.MAX_SAFE_INTEGER)) {
+  for (const { pkg, src } of checked.length ? buildDocsFor(lang, 'ids', checked, Number.MAX_SAFE_INTEGER) : []) {
     const r = checkDocs(pkg, src, readFileSync(docPath(lang, pkg.article), 'utf8'));
     if (!r.errors.length) continue;
     red++;
     for (const line of formatResult(pkg.article, r).filter(l => !l.startsWith('WW'))) console.log(`    ${line}`);
   }
-  console.log(`${red ? 'XX' : 'OK'}  check-docs ${lang}: ${ids.length - red} groen, ${red} rood`);
+  console.log(`${red ? 'XX' : 'OK'}  check-docs ${lang}: ${checked.length - red} groen, ${red} rood`
+    + (skipped.length ? `, ${skipped.length} verouderd overgeslagen` : ''));
   if (red) process.exit(1);
 }
 
@@ -688,6 +703,13 @@ function applyDocs(lang: string): void {
     const art = inputs.get(id);
     if (!art) { console.log(`XX  ${id}: staat niet (meer) in het manifest, overgeslagen`); red++; continue; }
     if (list.some(x => x.out === undefined)) { console.log(`..  ${id}: nog geen uitvoer voor ${list.filter(x => x.out === undefined).map(x => x.base).join(', ')}`); continue; }
+    const tampered = sealErrors(lang, list.flatMap(x => [`${x.base}.json`, `${x.base}.src.md`]));
+    if (tampered.length) {
+      red++;
+      for (const line of tampered) console.log(`    ${line}`);
+      console.log(`XX  ${id}: rood, niet samengevoegd`);
+      continue;
+    }
     const reds = list.map(x => ({ x, r: checkDocs(x.pkg, x.src, x.out!) })).filter(({ r }) => r.errors.length > 0);
     if (reds.length) {
       red++;
@@ -883,7 +905,6 @@ switch (cmd) {
   case 'apply-findings': applyFindingsCmd(rest); break;
   case 'packages': packagesCmd(rest); break;
   case 'check-docs': checkDocsCmd(rest); break;
-  case 'seed-sources': seed(rest); break;
   case 'status': status(rest); break;
   case 'rename-doc': renameDoc(rest); break;
   case 'remove-doc': removeDoc(rest); break;
@@ -892,7 +913,7 @@ switch (cmd) {
   default:
     console.log('gebruik: npm run translate -- <validate-termbase | concepts-candidates | concepts-merge | terms-lookup <taal> | '
       + 'apply-terms <taal> | prepare ui <taal> [--missing|--stale|--all|--avoid [--stale]|--keys <bestand>] | bundle-check | '
-      + 'apply ui <taal> | apply-findings <taal> <bestand> | packages ui|docs <taal…> [--red] | check-docs <taal> [id…] | seed-sources <taal…> | status [taal] [--strict] | '
+      + 'apply ui <taal> | apply-findings <taal> <bestand> | packages ui|docs <taal…> [--red] | check-docs <taal> [id…] | status [taal] [--strict] | '
       + 'prepare docs <taal> [--missing|--stale|--ids a,b] [--max-words N] | apply docs <taal> | rename-doc <oud> <nieuw> | '
       + 'remove-doc <id> | docs-budget <taal…> | docs-literal>');
     process.exit(cmd ? 1 : 0);

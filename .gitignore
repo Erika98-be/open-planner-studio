@@ -24,6 +24,7 @@ temp/
 
 # Vertaalstraat: werkpakketten en lokale cache (Microsoft-terminologie, nooit committen; ontwerp §13)
 /build/translate/
+/build/translate-seal/
 /build/cache/
 
 # Tauri
