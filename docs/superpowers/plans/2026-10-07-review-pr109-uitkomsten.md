@@ -234,3 +234,7 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   projecten zoals XER (`xerMultiProject.ts`), eigen schrijver P6-conform.
 - #329 fixronde klaar: CI groen op ff9501739 (nieuw `src/extensions/retainActiveDocument.ts`, N3D-01…11 met
   mutatietabel). Review door reviewer (Opus 5.5) gestart vóór merge.
+- #331 (N1/N2/N5/N7/N8, `claude/fix-169-profiel-ui`): open (niet gemerged), concept, CI groen op 294a0b527.
+  Labels "alleen urenkalender" (15) / "alleen taken uit .xer" (7) via registereigenschap `requires`; C4 bleek ook
+  uren-only. Keuze worker: nieuw P6-project krijgt `useExpectedFinishDates`/A21-optie niet meer (volgens worker geen
+  rekenverschil). Screenshots bekeken. Review door reviewer (Opus 5.5) gestart vóór merge.
