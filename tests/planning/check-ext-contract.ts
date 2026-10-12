@@ -1131,6 +1131,86 @@ for (const [naam, ext, bron, sleutels] of [
     /^import[^;]*\b(useAppStore|appStoreContext)\b[^;]*from/m.test(notifierSource), false);
 }
 
+// ── 8. N3 (review #169): lees-wijzig-laad van HETZELFDE project houdt profiel en opties vast ──
+// Het gedocumenteerde pad om toewijzingen te zetten is `loadProject(…getProject()…)`. Mutatiebewijs:
+// laat `retainActiveScheduling` in `extensionApi.loadProject` weg (of laat hem `loaded` teruggeven)
+// en N3-01 t/m N3-04 kleuren rood (profiel afwezig = OPS, de vier P6-opties en `leveling` weg).
+{
+  const p6Options: Project['schedulingOptions'] = {
+    p6CompletedLateFromRemainingWindow: true,
+    startToStartLagFrom: 'actualStart',
+    useExpectedFinishDates: true,
+    useProjectEndDateForFloat: true,
+    leveling: { preserveScheduledDates: true },
+    totalFloatMode: 'smallest',
+    criticalDefinition: { mode: 'totalFloat', threshold: 0, thresholdHours: 8 },
+  };
+  const zetP6 = () => {
+    useAppStore.getState().newProject();
+    useAppStore.setState((s) => {
+      s.project.schedulingProfile = builtInProfile('p6');
+      s.project.schedulingOptions = structuredClone(p6Options);
+    });
+  };
+  const api = createExtensionApi('n3-loadproject-profiel', [], undefined, appStoreContext, {
+    app: appStoreContext,
+    showNotification: () => {},
+  });
+  const herladen = (wijzig?: (project: ReturnType<typeof api.data.getProject>) => void) => {
+    const project = api.data.getProject();
+    wijzig?.(project);
+    api.data.loadProject({
+      project, calendar: api.data.getCalendar(), tasks: api.data.getTasks(), sequences: api.data.getSequences(),
+      resources: api.data.getResources(), assignments: api.data.getAssignments(),
+    });
+    return useAppStore.getState().project;
+  };
+
+  zetP6();
+  const na = herladen();
+  eq('N3-01 loadProject(getProject()) houdt het P6-profiel', na.schedulingProfile, builtInProfile('p6'));
+  eq('N3-02 de vier P6-opties en leveling blijven', [
+    na.schedulingOptions?.p6CompletedLateFromRemainingWindow, na.schedulingOptions?.startToStartLagFrom,
+    na.schedulingOptions?.useExpectedFinishDates, na.schedulingOptions?.useProjectEndDateForFloat,
+    na.schedulingOptions?.leveling,
+  ], [true, 'actualStart', true, true, { preserveScheduledDates: true }]);
+  eq('N3-03 een ongewijzigd teruggestuurde publieke optie houdt de volledige waarde',
+    na.schedulingOptions?.criticalDefinition, { mode: 'totalFloat', threshold: 0, thresholdHours: 8 });
+  eq('N3-04 het opgeloste profiel via getProject blijft p6', api.data.getProject().schedulingProfile?.id, 'p6');
+
+  // Een publieke optie die de extensie wél wijzigt, volgt de extensie; de rest blijft staan.
+  zetP6();
+  const gewijzigd = herladen((project) => {
+    project.schedulingOptions = { ...project.schedulingOptions, totalFloatMode: 'finish', nearCriticalThreshold: 5 };
+  });
+  eq('N3-05 gewijzigde publieke opties volgen de extensie, P6-opties blijven', [
+    gewijzigd.schedulingOptions?.totalFloatMode, gewijzigd.schedulingOptions?.nearCriticalThreshold,
+    gewijzigd.schedulingOptions?.useExpectedFinishDates, gewijzigd.schedulingProfile?.id,
+  ], ['finish', 5, true, 'p6']);
+
+  // Een meegegeven profiel neemt de app nooit over (B29), ook niet op hetzelfde id.
+  zetP6();
+  const vreemdProfiel = herladen((project) => {
+    (project as unknown as { schedulingProfile: unknown }).schedulingProfile = builtInProfile('msproject');
+  });
+  eq('N3-06 een profiel van de extensie wint niet van het documentprofiel', vreemdProfiel.schedulingProfile?.id, 'p6');
+
+  // Een OPS-document blijft OPS, ook als de extensie een profiel meestuurt.
+  useAppStore.getState().newProject();
+  const ops = herladen((project) => {
+    (project as unknown as { schedulingProfile: unknown }).schedulingProfile = builtInProfile('p6');
+  });
+  eq('N3-07 OPS-document blijft OPS bij lees-wijzig-laad', ops.schedulingProfile, undefined);
+
+  // Ander project-id ⇒ nieuw project ⇒ OPS, zonder de niet-publieke opties van het vorige document.
+  zetP6();
+  const ander = herladen((project) => { project.id = 'ander-project'; });
+  eq('N3-08 ander project-id ⇒ OPS en alleen publieke opties', [
+    ander.id, ander.schedulingProfile, ander.schedulingOptions?.useExpectedFinishDates,
+    ander.schedulingOptions?.leveling, ander.schedulingOptions?.totalFloatMode,
+  ], ['ander-project', undefined, undefined, undefined, 'smallest']);
+}
+
 // ── Uitslag ──────────────────────────────────────────────────────────────────
 if (diffs.length === 0) {
   console.log(`OK: extensie-contract — ${checks} checks groen`);

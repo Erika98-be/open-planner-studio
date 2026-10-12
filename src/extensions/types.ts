@@ -285,7 +285,8 @@ export interface ExtensionApi {
     updateTask(id: string, updates: Partial<ExtTask>): void;
     /** Retourneert het nieuwe relatie-id, of `null` wanneer de relatie geweigerd is. */
     addSequence(seq: Omit<ExtSequence, 'id'>): string | null;
-    /** Vervang het volledige project (zoals een import doet) en herbereken. */
+    /** Vervang het volledige project (zoals een import doet) en herbereken. Zelfde project-id als het
+     *  actieve project ⇒ rekenprofiel en niet-publieke reken-opties blijven; ander id ⇒ OPS. */
     loadProject(result: ExtImportResult): void;
     /** runCPM — herbereken het schema. */
     recalculate(): void;

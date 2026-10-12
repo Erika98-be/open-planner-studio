@@ -108,6 +108,11 @@ per ten seconds — the rest only goes to the debug log. Every call is also writ
 Important: after mutating tasks or relations yourself, call `api.data.recalculate()` — the schedule is
 not recalculated reactively. `loadProject()` does this automatically.
 
+`loadProject(result)` never takes a scheduling profile from the extension. If `result.project.id` equals
+the id of the active project (read, change, load), the project keeps its scheduling profile and all its
+scheduling options, including the options that `ExtSchedulingOptions` does not expose. A public option
+that you change or remove follows your value. A different id is a new project: it calculates as OPS.
+
 ### Binary assets & font providers
 
 Files you place next to `manifest.json` and `main.js` in the install ZIP are kept as **assets** and can

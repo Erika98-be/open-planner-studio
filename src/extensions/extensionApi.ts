@@ -42,6 +42,7 @@ import {
   fromExtTaskUpdates,
   fromExtSequenceInput,
   fromExtImportResult,
+  retainActiveScheduling,
   fromExtRibbonTab,
   fromExtFontProvider,
 } from './extMappers';
@@ -301,7 +302,8 @@ export function createExtensionApi(
       ),
       loadProject: (result: ExtImportResult) => {
         const store = document.store.getState();
-        store.loadState(fromExtImportResult(result));
+        // Zelfde project-id ⇒ profiel en reken-opties van het document blijven (N3, B29).
+        store.loadState(retainActiveScheduling(fromExtImportResult(result), store.project));
         store.runCPM();
       },
       recalculate: () => document.store.getState().runCPM(),
