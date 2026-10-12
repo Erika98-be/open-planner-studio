@@ -282,13 +282,27 @@ blijft de projectdata staan die `ExtImportResult` niet kan dragen. Dat geldt all
 - het rekenprofiel en alle reken-opties (zie *Rekenprofiel* hieronder);
 - de baselines en de actieve baseline;
 - de resourcekalenders (de projectkalender volgt `result.calendar`; stuur je hem ongewijzigd terug,
-  dan blijft hij zoals hij was);
+  dan blijft hij zoals hij was; wissel je via `project.calendarId`, dan blijft de oude kalender
+  bestaan);
 - de activiteitcodes en de eigen velden (de definities; de waarden op taken stuur je zelf mee);
-- de IFC-GlobalIds, zodat objecten bij opslaan hun identiteit houden.
+- de eigen taaktypes die je niet meestuurt (bij dezelfde id of naam wint jouw versie);
+- de IFC-GlobalIds, zodat objecten bij opslaan hun identiteit houden;
+- de P6-bronvelden op taken en relaties met hetzelfde id (`p6*`, alleen-lezen), zodat een P6-project
+  na een ongewijzigde load precies hetzelfde rekent.
 
-Bij een ander id is het een nieuw project: deze velden zijn dan leeg. Wijst een resource of taak dan
-naar een kalender die er niet meer is, dan valt die terug op de projectkalender. Bij elk id gaan de
-XER-bron, de koppeling met een resourcebibliotheek en de markering "onbewerkte import" weg.
+Wijst een resource of taak dan naar een kalender die niet bestaat, dan valt die terug op de
+projectkalender. Het opslagdoel blijft, en het document staat daarna op "gewijzigd".
+
+Bij een ander id is het een nieuw project: deze velden zijn dan leeg en het project rekent als OPS.
+Het krijgt geen opslagdoel, zodat opslaan om een nieuwe plek vraagt en het bestand van het vorige
+project niet overschrijft. Ook dan staat het document op "gewijzigd", zodat sluiten waarschuwt. Bij
+elk id gaan de XER-bron, de koppeling met een resourcebibliotheek, de markering "onbewerkte import"
+en de undo-geschiedenis van het document weg.
+
+Het id is het enige signaal. Twee documenten van hetzelfde project delen hetzelfde id, en een
+extensie die een "nieuw" project bouwt vanuit `{ ...getProject() }` houdt dus het id én de data van
+het actieve document. Bouw je een nieuw project, geef het dan een nieuw id (bijvoorbeeld
+`crypto.randomUUID()`).
 
 Belangrijk: na het muteren van taken/relaties zelf `api.data.recalculate()` aanroepen — het schema wordt niet reactief herberekend. `loadProject()` doet dat automatisch.
 

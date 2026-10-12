@@ -118,13 +118,24 @@ cannot carry:
   `ExtSchedulingOptions` does not expose (a public option that you change or remove follows your value);
 - its baselines and the active baseline;
 - its resource calendars (the project calendar follows `result.calendar`; if you send it back
-  unchanged, it stays as it was);
+  unchanged, it stays as it was; if you switch via `project.calendarId`, the old calendar stays);
 - its activity code types and custom field definitions (you send the values on tasks yourself);
-- its IFC GlobalIds.
+- the custom task types that you do not send (on the same id or name, your version wins);
+- its IFC GlobalIds;
+- the read-only P6 source fields (`p6*`) on tasks and relationships with the same id, so a P6 project
+  calculates exactly the same after an unchanged load.
 
-A different id is a new project: it calculates as OPS and these fields are empty. A resource or task
-that points to a calendar that no longer exists falls back to the project calendar. With any id, the
-XER source, the resource library link and the "unedited import" marker are removed.
+A resource or task that points to a calendar that does not exist then falls back to the project
+calendar. The save target stays, and the document is marked as changed.
+
+A different id is a new project: it calculates as OPS and these fields are empty. It gets no save
+target, so saving asks for a new location instead of overwriting the previous project's file, and it
+is marked as changed, so closing warns. With any id, the XER source, the resource library link, the
+"unedited import" marker and the document's undo history are removed.
+
+The id is the only signal. Two documents of the same project share the same id, and an extension that
+builds a "new" project from `{ ...getProject() }` keeps the id and the data of the active document.
+When you build a new project, give it a new id (for example `crypto.randomUUID()`).
 
 ### Binary assets & font providers
 
