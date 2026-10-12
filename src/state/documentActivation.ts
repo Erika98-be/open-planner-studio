@@ -132,6 +132,9 @@ export function materializeBehindOnlyRefresh(input: {
     syncProjectCalendar(payload);
     workRuleSettle = settleCalendarLibraryChangeOnPayload(payload, previous);
     markScheduleStale(payload);
+    // In "datums zoals opgeslagen" is `markScheduleStale` een no-op; de strook moet dan wel het
+    // getal tonen dat F5 met de NIEUWE kalender verschuift. Ook bij heropenen: dit telt ná de verversing.
+    payload.recordedDates = recountShiftedAfterLibraryRefresh(payload);
   }
 
   return {
@@ -141,6 +144,36 @@ export function materializeBehindOnlyRefresh(input: {
     workRuleSettle,
     invalidateRedoScope: calendarsChanged + resourcesChanged > 0,
   };
+}
+
+/**
+ * Een kalenderverversing uit de resourcebibliotheek (eigenaarsbesluit 2026-10-12, V1).
+ *
+ * In "datums zoals opgeslagen" blijft de modus aan en blijven de getoonde datums die uit het
+ * bestand: de verversing is geen bewerking van de gebruiker (`markScheduleStale` is in de modus een
+ * no-op, en dat blijft zo). Alleen het getal in de strook ("N taken verschuiven") moet kloppen met
+ * wat Berekenen (F5) met de nieuwe kalender echt doet. Daarom één doorrekening op een KOPIE
+ * (`cloneTasksForSolve`, dezelfde volledige invoer als F5 via `solveInputFor`) en dan
+ * `countShiftedTasks` tegen de vastlegging. De taken, het `cpmResult` en de solverinvoer van het
+ * document veranderen niet.
+ *
+ * Geldt ook voor het AANBOD (`recordedDates` gevuld, modus uit): dat getal komt in de modus terecht
+ * zodra de gebruiker "Opgeslagen datums tonen" kiest.
+ *
+ * Geen `recordedDates` ⇒ niets te tellen, geen doorrekening. Een solverfout ⇒ geen teller (de strook
+ * valt terug op zijn tellerloze tekst); een verzonnen getal is verboden (contract in `recordedDates.ts`).
+ */
+export function recountShiftedAfterLibraryRefresh(
+  doc: Readonly<Pick<DocumentPayload, 'project' | 'tasks' | 'sequences' | 'calendar' | 'calendars' | 'recordedDates'>>,
+): RecordedDatesState | null {
+  const recorded = doc.recordedDates;
+  if (!recorded) return null;
+  const tasks = cloneTasksForSolve(doc.tasks);
+  const result = solveProject(solveInputFor(doc.project, tasks, doc.sequences, doc.calendar, doc.calendars));
+  const next: RecordedDatesState = { ...recorded };
+  if (result.error) delete next.shifted;
+  else next.shifted = countShiftedTasks(tasks, recorded.times);
+  return next;
 }
 
 function countOpenBoundarySignals(

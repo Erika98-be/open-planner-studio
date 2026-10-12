@@ -48,6 +48,8 @@ A nézetet kétféleképpen hagyja el:
 - Kattintson a sávban az *Újraszámítás* gombra, vagy válassza a *Számítás* lehetőséget (F5). Az alkalmazás a saját szabályai szerint számol.
 - Ha olyasmit módosít, ami változtathat a dátumokon, például egy tevékenység időtartamát vagy egy új tevékenységet, az alkalmazás azonnal elhagyja a nézetet és újraszámít, akkor is, ha az *Automatikus ütemezés-számítás* ki van kapcsolva. Egy név módosítása nem vált ki ezt: a nézet bekapcsolva marad.
 
+Az erőforrástárból érkező naptármódosítás bekapcsolva hagyja a nézetet és a fájl dátumait, de frissíti a sávban látható számot.
+
 A nézet elhagyása után nincs gomb, amellyel visszakapcsolhatja a nézetet. A Ctrl+Z viszont visszahozza, közvetlenül az újraszámítás vagy egy ilyen módosítás után. Egyéb módon újra megnyithatja a forrásfájlt. `.xer` forrás esetén az is visszakapcsolja a nézetet, ha megnyit egy IFC-fájlt, amelyet újraszámítás után mentett, de utána nem szerkesztett.
 
 ### Visszaállás összeomlás után

@@ -48,6 +48,8 @@ Je verlaat de weergave op twee manieren:
 - Klik in de strook op *Herberekenen*, of kies *Bereken* (F5). De app rekent door met haar eigen regels.
 - Wijzig iets waardoor de datums kunnen veranderen, zoals de duur van een taak of een nieuwe taak. De app verlaat de weergave en rekent meteen door, ook als *Automatisch berekenen* uit staat. Een naam wijzigen doet dat niet: dan blijft de weergave aan.
 
+Een kalenderwijziging uit de resourcebibliotheek laat de weergave aan en de datums uit het bestand staan, maar werkt het getal in de strook bij.
+
 Na het verlaten is er geen knop meer om naar de weergave terug te schakelen. Ctrl+Z brengt hem wel terug, direct na het herberekenen of direct na zo'n bewerking. Verder kun je het bronbestand opnieuw openen. Bij een `.xer` zet ook het heropenen van een IFC-bestand dat je na het herberekenen opsloeg, maar niet bewerkte, de weergave weer aan.
 
 ### Crashherstel

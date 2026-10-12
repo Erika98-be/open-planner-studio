@@ -48,6 +48,8 @@ Zobrazenie opustíte dvoma spôsobmi:
 - Kliknite na tlačidlo *Prepočítať* na lište alebo vyberte *Prepočítať* (F5). Aplikácia počíta podľa vlastných pravidiel.
 - Zmeňte niečo, čo môže zmeniť dátumy, napríklad trvanie úlohy alebo novú úlohu. Aplikácia zobrazenie opustí a hneď prepočíta, aj keď je *Automatický prepočet* vypnutý. Zmena názvu to nespôsobí: zobrazenie zostane zapnuté.
 
+Zmena kalendára z knižnice zdrojov nechá zobrazenie zapnuté a dátumy zo súboru bez zmeny, ale aktualizuje číslo na lište.
+
 Po opustení nie je tlačidlo, ktorým by ste sa do zobrazenia vrátili. Ctrl+Z ho vráti späť, hneď po prepočítaní alebo hneď po takej úprave. Inak môžete znovu otvoriť zdrojový súbor. Pri súbore `.xer` otvorenie súboru IFC, ktorý ste uložili po prepočítaní, ale neupravili, takisto zapne zobrazenie znovu.
 
 ### Zotavenie zo zlyhania

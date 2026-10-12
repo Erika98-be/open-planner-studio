@@ -48,6 +48,8 @@ Iz prikaza izlazite na dva načina:
 - Kliknite *Ponovno izračunaj* na traci ili odaberite *Izračunaj* (F5). Aplikacija izračunava vlastitim pravilima.
 - Promijenite nešto što može promijeniti datume, na primjer trajanje zadatka ili novi zadatak. Aplikacija napušta prikaz i odmah ponovno izračunava, čak i ako je *Automatsko izračunavanje* isključeno. Promjena naziva to ne čini: prikaz ostaje uključen.
 
+Promjena kalendara iz biblioteke resursa ostavlja prikaz uključenim i datume iz datoteke nepromijenjenima, ali ažurira broj na traci.
+
 Nakon izlaska nema gumba za povratak u prikaz. Ctrl+Z ga vraća, ali samo odmah nakon ponovnog izračunavanja ili takve izmjene. Inače možete ponovno otvoriti izvornu datoteku. Uz `.xer` otvaranje IFC datoteke koju ste spremili nakon ponovnog izračunavanja, ali je niste uređivali, također ponovno uključuje prikaz.
 
 ### Oporavak od pada

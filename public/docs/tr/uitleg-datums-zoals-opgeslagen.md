@@ -48,6 +48,8 @@ Görünümden iki şekilde çıkarsınız:
 - Bilgi çubuğundaki *Yeniden hesapla* düğmesine tıklayın veya *Hesapla* (F5) seçin. Uygulama kendi kurallarıyla hesaplar.
 - Tarihleri değiştirebilecek bir şeyi değiştirin, bir görevin süresi veya yeni bir görev gibi. Uygulama görünümden çıkar ve hemen yeniden hesaplar, *Otomatik hesapla* kapalı olsa bile. Bir adı değiştirmek bunu yapmaz: görünüm açık kalır.
 
+Kaynak kitaplığından gelen bir takvim değişikliği görünümü açık ve dosyadaki tarihleri olduğu gibi bırakır, ancak bilgi çubuğundaki sayıyı günceller.
+
 Görünümden çıktıktan sonra görünüme geri dönmek için bir düğme yoktur. Ctrl+Z görünümü geri getirir, ama yalnızca hemen yeniden hesaplamadan veya hemen böyle bir düzenlemeden sonra. Aksi halde kaynak dosyayı yeniden açabilirsiniz. Bir `.xer` ile, yeniden hesaplamadan sonra kaydettiğiniz ama düzenlemediğiniz bir IFC dosyasını açmak da görünümü yeniden açar.
 
 ### Çökme kurtarma

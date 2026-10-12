@@ -48,6 +48,8 @@ Puede salir de la vista de dos maneras:
 - Pulse *Recalcular* en la barra, o elija *Calcular* (F5). La aplicación calcula con sus propias reglas.
 - Cambie algo que pueda alterar las fechas, como la duración de una tarea o una tarea nueva. La aplicación sale de la vista y recalcula de inmediato, aunque *Calcular automáticamente* esté desactivado. Cambiar un nombre no hace eso: la vista sigue activa.
 
+Un cambio de calendario desde la biblioteca de recursos deja la vista activa y las fechas del archivo tal como están, pero actualiza el número de la barra.
+
 Después de salir no hay ningún botón para volver a la vista. Ctrl+Z sí la devuelve, justo después de recalcular o justo después de una edición de ese tipo. Si no, puede abrir de nuevo el archivo de origen. Con un `.xer`, abrir un archivo IFC que guardó después de recalcular, pero que no editó, también vuelve a activar la vista.
 
 ### Recuperación tras un fallo

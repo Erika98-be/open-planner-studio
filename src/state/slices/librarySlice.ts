@@ -1,5 +1,5 @@
 import { castDraft, current } from 'immer';
-import type { AppSliceFactory, NotifyInput } from './types';
+import type { AppSlice, AppSliceFactory, NotifyInput } from './types';
 import type { Company, CompanyPool, CompanyLibrary } from '@/types/library';
 import { createDefaultLibrary, createEmptyPool, DEFAULT_COMPANY_ID } from '@/types/library';
 import { generateId } from '@/utils/id';
@@ -25,7 +25,7 @@ import {
 } from '../sessionHistory';
 import { snapshotOfPayload, type Snapshot } from '../snapshot';
 import { capturePayload, hydratePayload, type DocumentPayload } from '../documentContract';
-import { materializeLibraryBoundary } from '../documentActivation';
+import { materializeLibraryBoundary, recountShiftedAfterLibraryRefresh } from '../documentActivation';
 import { markDocumentEdited } from '@/state/documentEdited';
 import {
   applyCalendarLibraryChange, mergeCalendarLibrarySettle, notifyCalendarLibrarySettle, NO_CALENDAR_LIBRARY_SETTLE,
@@ -355,6 +355,37 @@ export async function persistLibrary(
 /** Fire-and-forget-oproep voor de synchronische slice-acties. */
 function persist(get: () => LibraryPersistenceState): void {
   void persistLibrary(get);
+}
+
+type LibrarySliceSet = Parameters<AppSlice<LibrarySlice>>[0];
+type LibrarySliceGet = Parameters<AppSlice<LibrarySlice>>[1];
+
+/** Strookgetal "datums zoals opgeslagen" na een kalenderverversing uit de bibliotheek
+ *  (`recountShiftedAfterLibraryRefresh`), voor het actieve én slapende documenten. Rekent BUITEN de
+ *  producer op de bevroren staat, zodat de doorrekening geen Immer-proxy's per taak maakt; daarna één
+ *  `set` met alleen de nieuwe tellers. Geen undo, geen isDirty: de verversing zelf is dat ook niet. */
+function recountRecordedShift(set: LibrarySliceSet, get: LibrarySliceGet, documentIds: readonly string[]): void {
+  const st = get();
+  const updates: Array<[string, ReturnType<typeof recountShiftedAfterLibraryRefresh>]> = [];
+  for (const id of documentIds) {
+    if (id === st.activeDocumentId) {
+      if (st.recordedDates) updates.push([id, recountShiftedAfterLibraryRefresh(st)]);
+      continue;
+    }
+    const payload = st.documents.find((d) => d.id === id)?.payload;
+    if (payload?.recordedDates) updates.push([id, recountShiftedAfterLibraryRefresh(payload)]);
+  }
+  if (updates.length === 0) return;
+  set((s) => {
+    for (const [id, recorded] of updates) {
+      if (id === s.activeDocumentId) {
+        s.recordedDates = castDraft(recorded);
+        continue;
+      }
+      const doc = s.documents.find((d) => d.id === id);
+      if (doc?.payload) doc.payload.recordedDates = castDraft(recorded);
+    }
+  });
 }
 
 export const createLibrarySlice: AppSliceFactory<LibrarySlice> = (runtime) => (set, get) => ({
@@ -969,6 +1000,9 @@ export const createLibrarySlice: AppSliceFactory<LibrarySlice> = (runtime) => (s
   refreshAllDocumentsFromPool: (companyId) => {
     let changed = 0;
     let activeSettle = NO_CALENDAR_LIBRARY_SETTLE;
+    // Documenten waarvan een kalender ververste: hun strookgetal ("datums zoals opgeslagen") telt
+    // ná de producer opnieuw (`recountRecordedShift`), ook voor slapende documenten.
+    const calendarRefreshed: string[] = [];
     set((s) => {
       if (!s.companies.some((c) => c.id === companyId)) return;
       const draftPool = s.pools[companyId];
@@ -1032,7 +1066,10 @@ export const createLibrarySlice: AppSliceFactory<LibrarySlice> = (runtime) => (s
             });
           }
           refreshProjectCalendarCache(s);
-          if (cals.calChanged > 0) markScheduleStale(s); // kalenderwijziging raakt datums (geen isDirty, geen runCPM)
+          if (cals.calChanged > 0) {
+            markScheduleStale(s); // kalenderwijziging raakt datums (geen isDirty, geen runCPM)
+            calendarRefreshed.push(s.activeDocumentId);
+          }
           changed += docChanged;
         }
       }
@@ -1069,11 +1106,13 @@ export const createLibrarySlice: AppSliceFactory<LibrarySlice> = (runtime) => (s
               doc.pendingWorkRuleSettle = mergeCalendarLibrarySettle(doc.pendingWorkRuleSettle ?? NO_CALENDAR_LIBRARY_SETTLE, settled);
             }
             markScheduleStale(payload); // zichtbaar bij switchDocument/activering
+            calendarRefreshed.push(doc.id);
           }
           changed += docChanged;
         }
       }
     });
+    recountRecordedShift(set, get, calendarRefreshed);
     notifyCalendarLibrarySettle(get().notify, get().activeDocumentId, activeSettle);
     if (changed > 0) {
       get().recomputeResourceLoad();
@@ -1200,6 +1239,7 @@ export const createLibrarySlice: AppSliceFactory<LibrarySlice> = (runtime) => (s
     if (choice === 'company') {
       // Neem poolwaarde over: gerichte niet-undoable verversing van dit ene item.
       let settled = NO_CALENDAR_LIBRARY_SETTLE;
+      let calendarRefreshed = false;
       set((s) => {
         const draftPool = s.pools[companyId];
         if (!draftPool) return;
@@ -1218,9 +1258,11 @@ export const createLibrarySlice: AppSliceFactory<LibrarySlice> = (runtime) => (s
           });
           // Kalenderwaarden gewijzigd ⇒ scheduleStale (geen isDirty, geen runCPM).
           markScheduleStale(s);
+          calendarRefreshed = true;
         }
         invalidateDocumentRedo(s, s.activeDocumentId);
       });
+      if (calendarRefreshed) recountRecordedShift(set, get, [get().activeDocumentId]);
       notifyCalendarLibrarySettle(get().notify, get().activeDocumentId, settled);
       get().recomputeResourceLoad();
       get().recomputeViewRows();

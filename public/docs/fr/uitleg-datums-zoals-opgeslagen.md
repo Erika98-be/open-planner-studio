@@ -48,6 +48,8 @@ Vous quittez la vue de deux façons :
 - Cliquez sur *Recalculer* dans le bandeau, ou choisissez *Calculer* (F5). L'application calcule avec ses propres règles.
 - Modifiez un élément qui peut changer les dates, comme la durée d'une tâche ou une nouvelle tâche. L'application quitte la vue et recalcule tout de suite, même si *Calculer automatiquement* est désactivé. Changer un nom ne fait pas cela : la vue reste active.
 
+Une modification de calendrier depuis la bibliothèque de ressources laisse la vue active et les dates du fichier en place, mais met à jour le nombre dans le bandeau.
+
 Après la sortie, il n'y a pas de bouton pour revenir à la vue. Ctrl+Z la rétablit toutefois, juste après un recalcul ou juste après une telle modification. Sinon, vous pouvez rouvrir le fichier source. Avec un `.xer`, ouvrir un fichier IFC que vous avez enregistré après un recalcul, mais sans le modifier, réactive aussi la vue.
 
 ### Récupération après un plantage
