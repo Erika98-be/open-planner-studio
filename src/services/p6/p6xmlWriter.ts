@@ -132,7 +132,8 @@ function durationToP6Hours(days: number, hoursPerDay: number): number {
 // terug naar een ISO-dagnummer kan resolven.
 export const P6_DAY_NAMES = ['', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
-/** Werkweek: `<StandardWorkWeek>` met per dag een `<StandardWorkHour>` — alleen werkdagen
+/** Werkweek: `<StandardWorkWeek>` met per dag een `<StandardWorkHour>` (let op: het Oracle-schema
+ *  noemt dit element `<StandardWorkHours>`; de lezer leest beide, deze writer is nog niet aangepast) — alleen werkdagen
  *  (`cal.workDays`) krijgen een `<WorkTime>`-blok, niet-werkdagen blijven leeg (P6 leest afwezigheid
  *  van `WorkTime` als niet-werkend). Altijd geschreven. */
 function writeStandardWorkWeek(
@@ -166,11 +167,11 @@ function writeStandardWorkWeek(
 
 /** Feestdagen/exceptions: `<HolidayOrExceptions>` — golden rule: geen feestdagen ⇒ geen element.
  *
- *  `cal.workingExceptions` (dag-uitzonderingen die een dag WERKEND maken) wordt bewust NIET
- *  geschreven: `<HolidayOrException>` heeft geen `DayWorking`-achtig veld (alleen
- *  `Name`/`Date`/`FinishDate`; `parseP6HolidayOrExceptions` in `p6xmlReader.ts` leest elk element als
- *  niet-werkend). P6 modelleert een extra werkdag via `<StandardWorkWeek>` — een weekpatroon voor
- *  ALLE datums, dus niet veilig automatisch te vertalen. Zie de `console.warn` in `writeP6XML`. */
+ *  `cal.workingExceptions` (dag-uitzonderingen die een dag WERKEND maken) wordt NIET geschreven.
+ *  Let op (2026-10-12): echte P6 XML drukt een werkende uitzondering wél uit, als
+ *  `<HolidayOrException>` mét `<WorkTime>`-blokken; `parseP6HolidayOrExceptions` in `p6xmlReader.ts`
+ *  leest die sindsdien als werkende uitzondering. Deze writer schrijft ze nog niet (open punt). Zie
+ *  de `console.warn` in `writeP6XML`. */
 function writeHolidayOrExceptions(lines: string[], indent: (level: number) => string, cal: WorkCalendar): void {
   if (cal.holidays.length === 0) return;
   lines.push(`${indent(2)}<HolidayOrExceptions>`);
