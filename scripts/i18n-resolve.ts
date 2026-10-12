@@ -62,8 +62,8 @@ if (!merging) {
     fail('er is geen `git merge` bezig en HEAD is geen merge-commit — draai dit tijdens of direct na '
       + '`git merge <branch>` (niet bij rebase of cherry-pick)');
   }
-  if ((git('status', '--porcelain', '--', 'src/i18n/locales') ?? '').trim() !== '') {
-    fail('HEAD is een merge-commit, maar src/i18n/locales heeft niet-gecommitte wijzigingen — commit of stash die eerst');
+  if ((git('status', '--porcelain', '--', 'src/i18n/locales', 'i18n/ui-sources') ?? '').trim() !== '') {
+    fail('HEAD is een merge-commit, maar src/i18n/locales of i18n/ui-sources heeft niet-gecommitte wijzigingen — commit of stash die eerst');
   }
   [ours, theirs] = ['HEAD^1', 'HEAD^2'];
 }
@@ -125,9 +125,15 @@ for (const ns of NAMESPACES) {
 
 // Vertaalstraat: de bron-hashes in i18n/ui-sources/<taal>.json per sleutel samenvoegen, net als de
 // locales (anders botsen twee PR's die elk een sleutel toevoegen op dezelfde slotregel). Een hash die
-// aan beide kanten anders werd, valt weg: de sleutel telt dan als "zonder hash" (actueel) in
-// `translate status`. Dat blokkeert de merge niet; het script noemt de sleutel wel.
+// aan beide kanten anders werd, valt tijdens de merge weg. De sleutel heet dan "zonder hash": in een taal
+// van UI_BASELINE pakt `prepare ui --stale` hem op en houdt de releasepoort hem tegen; in een nieuwe taal
+// (buiten UI_BASELINE) telt hij als ontbrekend. Dat blokkeert de merge niet; het script noemt de sleutel
+// wel. Achteraf (op de merge-commit) blijft de hash uit de merge-commit staan, net als bij de locales.
+// Afweging: die keuze controleert niemand tegen de vertaling. Wie de merge met de hand oplost zonder
+// dit script, kan zo een hash van de ene kant bij de tekst van de andere kant zetten. Daarom tijdens de
+// merge altijd `npm run i18n:resolve` (dan valt een botsende hash weg en houdt de releasepoort hem tegen).
 const sourceDrops: string[] = [];
+const sourceKept: string[] = [];
 const nlMerged = Object.fromEntries(NAMESPACES.map(ns => [ns, parse(
   readFileSync(join(root, `src/i18n/locales/nl/${ns}.json`), 'utf8'), `nl/${ns}.json`)]));
 for (const loc of LOCALES) {
@@ -137,10 +143,12 @@ for (const loc of LOCALES) {
   const t = git('show', `${theirs}:${rel}`);
   if (o === null && t === null) continue;
   const b = git('show', `${base}:${rel}`);
+  const chosenText = merging ? null : git('show', `HEAD:${rel}`);
   const result = mergeLocale(b === null ? {} : parse(b, `${rel} (merge-base)`), o === null ? {} : parse(o, `${rel} (${ours})`),
-    t === null ? {} : parse(t, `${rel} (${theirs})`));
+    t === null ? {} : parse(t, `${rel} (${theirs})`), chosenText === null ? undefined : parse(chosenText, `${rel} (HEAD)`));
   const merged = result.merged as unknown as UiSources;
   for (const c of result.conflicts) {
+    if (!merging) { sourceKept.push(`${loc} ${c.path}`); continue; }
     const [ns, ...rest] = c.path.split('.');
     if (merged[ns]) delete merged[ns][rest.join('.')];
     sourceDrops.push(`${loc} ${c.path}`);
@@ -151,6 +159,10 @@ for (const loc of LOCALES) {
 if (sourceDrops.length > 0) {
   console.log(`!!  i18n:resolve: ${sourceDrops.length} bron-hash(es) aan beide kanten anders; weggelaten (de vertaalstraat ziet ze als "zonder hash"):`);
   for (const d of sourceDrops.slice(0, 20)) console.log(`   - ${d}`);
+}
+if (sourceKept.length > 0) {
+  console.log(`!!  i18n:resolve: ${sourceKept.length} bron-hash(es) waren aan beide kanten anders; de keuze in de merge-commit blijft staan:`);
+  for (const d of sourceKept.slice(0, 20)) console.log(`   - ${d}`);
 }
 
 if (clean.length > 0 && git('add', '--', ...clean) === null) fail('`git add` van de samengevoegde bestanden mislukte');

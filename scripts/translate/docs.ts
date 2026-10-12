@@ -3,7 +3,7 @@
 // structuurregels komen uit het gedeelde contract C1 (`scripts/lib/docs-structure.ts`).
 import { sectionHash, splitSections, structureHash, type DocSection } from '../lib/docs-structure';
 import {
-  ARABIC, L, NO_SPACE, avoidWords, countToken, hasWord, placeholders, nestings, termEntries, textsOf, unitMap, unitsOf,
+  ARABIC, L, NO_SPACE, avoidWords, countToken, escapeRe, hasWord, placeholders, nestings, termEntries, textsOf, unitMap, unitsOf,
   type Concept, type LangTermbase, type Style,
 } from './common';
 import { avoidHitsIn, isTranslated, type AvoidRule, type NsInput, type ReleaseGap, type UiSources } from './ui';
@@ -211,7 +211,6 @@ export function titleOf(md: string): string | undefined {
 
 // ── Tekst zoeken op stam ─────────────────────────────────────────────────────────────────────
 
-const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 /** Schriften zonder spaties tussen woorden: daar zoeken we de hele woordgroep als deeltekst. */
 
 /** De stam van één woord: korte woorden heel, langere zonder hun laatste ±30 %. */
