@@ -88,7 +88,7 @@ Gedrag dat alleen bij Primavera hoort, staat in dat rekenprofiel en niet in de g
 
 Openen rekent nu met dezelfde invoer als F5 (orkestrator, 24 september). Eerst veranderden in het Hotel-bestand 4.217 late datums bij de eerste F5, zonder dat je iets bewerkte. Een fout met een verzonnen projecteinde is apart opgelost in PR #169 (eigenaar, 24 september: "eigen PR").
 
-De instelling voor de kalender van de wachttijd tussen taken werkt nu in elk formaat. De eigenaar accepteerde dat op 22 september, met een releasenotitie. Die notitie is er nog niet; dat punt ligt nog bij de eigenaar.
+De instelling voor de kalender van de wachttijd tussen taken werkt nu in elk formaat. De eigenaar accepteerde dat op 22 september, met een releasenotitie. Die notitie komt in de tekst van deze release.
 
 Twee regels rusten op weinig bewijs. Het herstel van weekenddagen in kalenders steunt op één bestand en is niet apart door de eigenaar bekrachtigd. De regel die voltooide taken echte speling geeft, liet de eigenaar staan ("laten", 24 september), maar in het profiel Primavera P6 werkt hij feitelijk niet. (B32–B41)
 
