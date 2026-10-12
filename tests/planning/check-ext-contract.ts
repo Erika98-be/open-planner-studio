@@ -1287,6 +1287,22 @@ for (const [naam, ext, bron, sleutels] of [
     kalender.calendars.map((c) => c.id).sort(),
   ], [true, true, [kalender.project.calendarId, 'cal-ploeg'].sort()]);
 
+  // Kalenderwissel via `project.calendarId` (reviewproef probe-d): de oude projectkalender blijft
+  // bestaan, en een taak die er expliciet naar wijst, houdt die verwijzing. Mutatiebewijs: filter op
+  // het OUDE `project.calendarId` (M11) en N3D-16 kleurt rood.
+  zetDocument();
+  const oudeKalender = useAppStore.getState().project.calendarId;
+  const expliciet = api.data.addTask({ name: 'Expliciet op projectkalender' });
+  useAppStore.setState((s) => {
+    const t = s.tasks.find((x) => x.id === expliciet);
+    if (t) t.calendarId = oudeKalender;
+  });
+  const wissel = herladen((r) => { r.project = { ...r.project, calendarId: 'cal-ploeg' }; });
+  eq('N3D-16 kalenderwissel houdt de oude projectkalender en de verwijzing ernaar', [
+    wissel.project.calendarId, wissel.calendar.id, wissel.calendars.map((c) => c.id).sort(),
+    wissel.tasks.find((t) => t.id === expliciet)?.calendarId,
+  ], ['cal-ploeg', 'cal-ploeg', [oudeKalender, 'cal-ploeg'].sort(), oudeKalender]);
+
   // Hetzelfde id, maar de extensie wijst naar een kalender die niet bestaat ⇒ terugval (removeCalendar).
   zetDocument();
   const onbekend = herladen((r) => { r.resources = r.resources.map((x) => ({ ...x, calendarId: 'bestaat-niet' })); });

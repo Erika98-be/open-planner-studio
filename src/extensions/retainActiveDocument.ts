@@ -82,13 +82,18 @@ export function retainActiveDocument(ext: ExtImportResult, loaded: ImportResult,
     schedulingOptions: Object.keys(options).length > 0 ? options as ProjectSchedulingOptions : undefined,
   };
 
-  // Resourcekalenders blijven, ZONDER de projectkalender: die gaat als `calendar` mee en wordt bij het
-  // laden weer bibliotheek-entry (`promoteProjectCalendarToLibrary`). Stond hij ook in
-  // `resourceCalendars`, dan hernoemde `ensureUniqueImportIds` hem als dubbel id (`…-dup-2`). Stuurt de
-  // extensie de projectkalender ongewijzigd terug, dan blijft de entry van het document, met de velden
-  // die `ExtCalendar` niet naar binnen draagt (`p6Source`, `p6NonWorkPenaltyDates`, …).
+  // Kalenders. Eerst gaat de kalender die de extensie meestuurt (`calendar`) de bibliotheek in: stuurt
+  // zij hem ongewijzigd terug, dan blijft de entry van het document, met de velden die `ExtCalendar`
+  // niet naar binnen draagt (`p6Source`, `p6NonWorkPenaltyDates`, …). Daarna is de projectkalender de
+  // entry met `project.calendarId`: wisselt de extensie daarmee van kalender, dan blijft de oude
+  // gewoon in de bibliotheek. De projectkalender staat NIET ook in `resourceCalendars`: dan hernoemde
+  // `ensureUniqueImportIds` hem als dubbel id (`…-dup-2`); het laden zet hem zelf weer in de
+  // bibliotheek (`promoteProjectCalendarToLibrary`).
   const own = active.calendars.find((c) => c.id === loaded.calendar.id);
-  const calendar = own && sameValue(ext.calendar, toExtCalendar(own)) ? own : loaded.calendar;
+  const sent = own && sameValue(ext.calendar, toExtCalendar(own)) ? own : loaded.calendar;
+  const library = [...active.calendars.map((c) => (c.id === sent.id ? sent : c)), ...(own ? [] : [sent])];
+  const calendar = library.find((c) => c.id === project.calendarId) ?? sent;
+  const resourceCalendars = library.filter((c) => c.id !== calendar.id);
 
   return cleanDanglingReferences({
     ...loaded,
@@ -96,7 +101,7 @@ export function retainActiveDocument(ext: ExtImportResult, loaded: ImportResult,
     tasks: withSourceFields(loaded.tasks, active.tasks, TASK_SOURCE_FIELDS),
     sequences: withSourceFields(loaded.sequences, active.sequences, SEQUENCE_SOURCE_FIELDS),
     calendar,
-    resourceCalendars: active.calendars.filter((c) => c.id !== calendar.id),
+    resourceCalendars,
     baselines: active.baselines,
     activeBaselineId: active.activeBaselineId,
     activityCodeTypes: active.activityCodeTypes,
