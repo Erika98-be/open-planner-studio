@@ -1303,6 +1303,24 @@ for (const [naam, ext, bron, sleutels] of [
     wissel.tasks.find((t) => t.id === expliciet)?.calendarId,
   ], ['cal-ploeg', 'cal-ploeg', [oudeKalender, 'cal-ploeg'].sort(), oudeKalender]);
 
+  // Eigen taaktypes (reviewproef probe-b B1): ongebruikte documententries blijven; bij een botsing op
+  // id of naam wint de extensie. Mutatiebewijs: `customTaskTypes`-regel weg ⇒ N3D-17 rood.
+  zetDocument();
+  useAppStore.setState((s) => {
+    s.customTaskTypes = [
+      { id: 'ops-ongebruikt', name: 'Ongebruikt' },
+      { id: 'zelfde-id', name: 'Oude naam' },
+      { id: 'doc-ruwbouw', name: 'Ruwbouw' },
+    ];
+  });
+  const typen = herladen((r) => {
+    r.customTaskTypes = [{ id: 'zelfde-id', name: 'Nieuwe naam' }, { id: 'ext-ruwbouw', name: 'ruwbouw' }];
+  });
+  eq('N3D-17 ongebruikte eigen taaktypes blijven; de extensie wint bij een botsing op id of naam',
+    typen.customTaskTypes, [
+      { id: 'zelfde-id', name: 'Nieuwe naam' }, { id: 'ext-ruwbouw', name: 'ruwbouw' }, { id: 'ops-ongebruikt', name: 'Ongebruikt' },
+    ]);
+
   // Hetzelfde id, maar de extensie wijst naar een kalender die niet bestaat ⇒ terugval (removeCalendar).
   zetDocument();
   const onbekend = herladen((r) => { r.resources = r.resources.map((x) => ({ ...x, calendarId: 'bestaat-niet' })); });

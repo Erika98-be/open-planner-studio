@@ -13,6 +13,11 @@
  *    de projectkalender zelf volgt de extensie, tenzij zij hem ongewijzigd terugstuurt;
  *  - `activityCodeTypes` en `customFieldDefs`: niet (taken dragen alleen de waarden) ⇒ van het document;
  *  - `ifcGlobalIds`: niet ⇒ van het document;
+ *  - `customTaskTypes`: alleen wat de extensie meestuurt (lijst plus de typen op haar taken) ⇒ de
+ *    documententries die zij niet meestuurt, komen erbij. Botst een documententry met een entry van de
+ *    extensie op id of op naam (dezelfde sleutels als `fromExtImportResult`: id getrimd, naam
+ *    hoofdletterongevoelig), dan wint de extensie en valt de documententry weg; `fromExtImportResult`
+ *    gooit alleen bij botsingen BINNEN de invoer van de extensie;
  *  - bronvelden op taken en relaties (`TASK_SOURCE_FIELDS`, `SEQUENCE_SOURCE_FIELDS`): zichtbaar maar
  *    alleen-lezen (`fromExtTask`/`fromExtSequence` nemen ze niet over) ⇒ van de taak of relatie met
  *    hetzelfde id in het document. De solver leest ze (P6-route), dus zonder dit rekent een P6-project
@@ -65,9 +70,22 @@ function withSourceFields<T extends { id: string }>(items: T[], own: readonly T[
   });
 }
 
+/** Documententries die de extensie niet meestuurt, achter die van de extensie (zie de kop). */
+function mergeCustomTaskTypes(
+  fromExtension: readonly { id: string; name: string }[],
+  own: readonly { id: string; name: string }[],
+): { id: string; name: string }[] {
+  const ids = new Set(fromExtension.map((t) => t.id.trim()));
+  const names = new Set(fromExtension.map((t) => t.name.trim().toLocaleLowerCase()));
+  return [
+    ...fromExtension,
+    ...own.filter((t) => !ids.has(t.id.trim()) && !names.has(t.name.trim().toLocaleLowerCase())),
+  ];
+}
+
 /** Het deel van het actieve document dat deze stap leest. */
 export type ActiveDocument = Pick<AppState,
-  'project' | 'tasks' | 'sequences' | 'calendars' | 'baselines' | 'activeBaselineId' | 'activityCodeTypes' | 'customFieldDefs' | 'ifcGlobalIds'>;
+  'project' | 'tasks' | 'sequences' | 'customTaskTypes' | 'calendars' | 'baselines' | 'activeBaselineId' | 'activityCodeTypes' | 'customFieldDefs' | 'ifcGlobalIds'>;
 
 export function retainActiveDocument(ext: ExtImportResult, loaded: ImportResult, active: ActiveDocument): ImportResult {
   // Ander id: een nieuw project; het resultaat gaat ongewijzigd door, precies zoals vóór deze stap.
@@ -107,6 +125,7 @@ export function retainActiveDocument(ext: ExtImportResult, loaded: ImportResult,
     activeBaselineId: active.activeBaselineId,
     activityCodeTypes: active.activityCodeTypes,
     customFieldDefs: active.customFieldDefs,
+    customTaskTypes: mergeCustomTaskTypes(loaded.customTaskTypes ?? [], active.customTaskTypes),
     ...(active.ifcGlobalIds ? { ifcGlobalIds: active.ifcGlobalIds } : {}),
   });
 }
