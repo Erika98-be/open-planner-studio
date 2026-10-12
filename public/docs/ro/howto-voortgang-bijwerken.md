@@ -4,7 +4,7 @@ Scop: introduceți starea reală a lucrării în planificare și recalculați pl
 
 ## Când aveți nevoie de acest lucru
 
-Dumneavoastră actualizați progresul la momente fixe, de exemplu în fiecare vineri, când conducătorul șantierului raportează starea. Astfel planificarea vede ce s-a întâmplat efectiv și calculează lucrul rămas de la data raportului de stare. De ce aplicația funcționează în acest fel este explicat în [Progres, data raportului de stare și referința](docs://uitleg-voortgang).
+Actualizați progresul la momente fixe, de exemplu în fiecare vineri, când șeful de șantier raportează starea., de exemplu în fiecare vineri, când conducătorul șantierului raportează starea. Astfel planificarea vede ce s-a întâmplat efectiv și calculează lucrul rămas de la data raportului de stare. De ce aplicația funcționează în acest fel este explicat în [Progres, data raportului de stare și referința](docs://uitleg-voortgang).
 
 ## Pași
 
@@ -55,7 +55,7 @@ Fiecare modificare a progresului sau a datei raportului de stare face planificar
 
 ## Verificarea rezultatului
 
-- La data raportului de stare, diagrama Gantt afișează o linie punctată cu data în antet. La activitățile în curs, linia se curbează până la procentul din bară. Le activați sau dezactivați cu *Vizualizare › Referințe și progres › Linia de progres* și *Linia datei raportului de stare*.
+- La data raportului de stare, diagrama Gantt afișează o linie întreruptă cu data în antet. La activitățile în curs, linia se curbează până la procentul din bară. Le activați sau dezactivați cu *Vizualizare › Referințe și progres › Linia de progres* și *Linia datei raportului de stare*.
 - Activitățile finalizate nu sunt niciodată roșii: cu o dată a raportului de stare, o activitate finalizată nu este critică.
 - Fazele arată un procent calculat, iar sfârșitul planificării s-ar putea să se fi mutat.
 - Dacă ați salvat o referință, planificarea originală apare sub fiecare bară, iar tipul de raport *Varianță* arată varianța.
@@ -68,7 +68,7 @@ Fiecare modificare a progresului sau a datei raportului de stare face planificar
 
 **100% fără date.** Dacă setați o activitate la 100% fără sfârșit efectiv, sfârșitul efectiv devine data raportului de stare, chiar dacă activitatea a fost finalizată mai devreme. Completați apoi sfârșitul efectiv dumneavoastră.
 
-**Un procent sub 100%.** Dacă reduceți o activitate finalizată sub 100%, sfârșitul efectiv se elimină. Dacă ștergeți numai sfârșitul efectiv, procentul devine 0, iar activitatea rămâne *În curs*. Dacă vreți ca activitatea să fie din nou nepornită, ștergeți și începutul efectiv sau alegeți *Nepornită* la *Stare* în tabel.
+**Un procent sub 100%.** Dacă setați o activitate finalizată la un procent sub 100%, sfârșitul efectiv este șters. Dacă ștergeți numai sfârșitul efectiv, procentul devine 0, iar activitatea rămâne *În curs*. Dacă vreți ca activitatea să fie din nou nepornită, ștergeți și începutul efectiv sau alegeți *Nepornită* la *Stare* în tabel.
 
 **Modificarea duratei unei activități în curs.** Lucrul deja făcut rămâne făcut, iar procentul se ajustează. O activitate de 5 zile lucrătoare la 60%, pe care o setați la 10 zile lucrătoare, ajunge la 30%. Aplicația refuză o durată mai scurtă decât lucrul deja făcut: *Activitatea „Build inner cavity leaf” este deja realizată în proporție de 60%: o durată mai scurtă decât lucrul deja efectuat nu este posibilă. Durata nu a fost modificată.* În tabel, celula afișează *Această durată este mai scurtă decât lucrul deja efectuat.*
 

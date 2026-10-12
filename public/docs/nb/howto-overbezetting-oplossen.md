@@ -4,7 +4,7 @@ Mål: se hvor en ressurs har for mye å gjøre på en dag, og løse det. Oftest 
 
 ## Når du trenger dette
 
-På papiret fungerer tidsplanen din. Men murer er tilordnet to vegger som pågår samme dager. Appen kaller det **overallokering**. En ressurs er overallokert på en arbeidsdag hvis tidsplanen krever mer av den den dagen enn kapasiteten (*Maksimalt antall*). Det gjelder også hvis ressursen ikke jobber den dagen ifølge kalenderen sin.
+På papiret fungerer tidsplanen din. Men murerne er tilordnet to vegger som pågår samme dager. (or: Men en murer er tilordnet to vegger ...) Appen kaller det **overallokering**. En ressurs er overallokert på en arbeidsdag hvis tidsplanen krever mer av den den dagen enn kapasiteten (*Maksimalt antall*). Det gjelder også hvis ressursen ikke jobber den dagen ifølge kalenderen sin.
 
 Du slår først opp overallokeringen. Deretter velger du en løsning. **Utjevning** er løsningen som appen beregner for deg. Den får aktiviteter til å starte senere, til ressursen klarer det. Hvordan den beregner det, leser du i [Utjevning av ressurser](docs://uitleg-nivelleren).
 
@@ -23,7 +23,7 @@ Hvis en aktivitet er valgt, viser histogrammet bare belastningen for den aktivit
 
 ### 2. Velg en løsning
 
-- **Mer kapasitet.** Hvis en andre murer virkelig kommer, sett *Maksimalt antall* til 2 (se [Administrere ressurser](docs://howto-resources-beheren)). Overallokeringen er da borte.
+- **Mer kapasitet.** Hvis en annen murer virkelig kommer, sett *Maksimalt antall* til 2 (se [Administrere ressurser](docs://howto-resources-beheren)). Overallokeringen er da borte.
 - **Færre tildelingsenheter per dag.** Senk *Enh./dag*, eller velg en annen kurve for tilordningen (se [Tilordne ressurser med en kurve](docs://howto-resource-toewijzen)).
 - **Sett aktivitetene etter hverandre.** Legg til en avhengighet mellom de to aktivitetene, slik at den andre bare starter når den første er ferdig (se [Legge til avhengigheter](docs://howto-relaties-leggen)).
 - **Utjevning.** Appen får en aktivitet til å starte senere.
@@ -50,8 +50,8 @@ Vil du selv bestemme hvilken aktivitet som blir stående, gi den en høyere prio
 ### Angre og gjøre om
 
 - *Angre* (Ctrl+Z) angrer *Bruk* i ett trinn.
-- *Ressurser › Utjevning › Fjern utjevning* fjerner all utjevning fra aktivitetene. Knappen er grå så lenge det ikke finnes noen utjevning. Overallokering du får tilbake på den måten, er da bare der igjen.
-- Hvis du har endret tidsplanen siden, velg bare *Utjevn…* igjen. Appen starter da på nytt. De gamle forskyvningene telles ikke med.
+- *Ressurser › Utjevning › Fjern utjevning* fjerner all utjevning fra aktivitetene. Knappen er grå så lenge det ikke finnes noen utjevning. Overallokering som kommer tilbake på den måten, er bare den samme som før.
+- Har du endret tidsplanen siden, velger du bare *Utjevn…* igjen. Appen starter da på nytt. De gamle forskyvningene telles ikke med.
 
 ## Fallgruver og hva appen gjør da
 

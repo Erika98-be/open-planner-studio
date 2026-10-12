@@ -1,6 +1,6 @@
 # Vincoli e scadenze
 
-I mattoni arrivano solo il 21 giugno. Il permesso non è ancora arrivato. Il tetto deve essere chiuso prima della festività di cantiere. Le relazioni registrano che un'attività aspetta un'altra attività, ma gli accordi su una data non seguono dall'ordine del lavoro. Per questo esistono vincoli e scadenze. In questo articolo leggi che cosa fa ogni tipo, quando un'attività si sposta e quando cambia solo il margine, che cos'è un blocco rigido e come l'app segnala un conflitto.
+I mattoni arrivano solo il 21 giugno. Il permesso non è ancora arrivato. Il tetto deve essere chiuso prima delle ferie edili. Le relazioni registrano che un'attività aspetta un'altra attività, ma gli accordi su una data non seguono dall'ordine del lavoro. Per questo esistono vincoli e scadenze. In questo articolo leggi che cosa fa ogni tipo, quando un'attività si sposta e quando cambia solo il margine, che cos'è un blocco rigido e come l'app segnala un conflitto.
 
 Le regole e gli esempi valgono per un nuovo progetto, con il profilo di calcolo *Open Planner Studio* e una settimana lavorativa dal lunedì al venerdì.
 
@@ -13,7 +13,7 @@ Un **vincolo** è un limite di data su una singola attività, indipendente dalle
 
 Una scadenza è una forma più semplice di sorveglianza: una data obiettivo per la fine di un'attività, senza che qualcosa sposti l'attività.
 
-Tutti i vincoli sono **flessibili**: il calcolo prosegue anche se una data non è rispettata. Fa eccezione un solo caso, il **blocco rigido**, che annulla le relazioni. Di seguito ne parliamo meglio.
+Tutti i vincoli sono **flessibili**: il calcolo prosegue anche se una data non è rispettata. Fa eccezione un solo caso, il **blocco rigido**, che annulla le relazioni. Più avanti lo approfondiamo. oppure: Maggiori dettagli più sotto.
 
 ## Come calcola l'app
 
@@ -32,7 +32,7 @@ Se una data cade di sabato, di domenica o in un giorno non lavorativo, l'app la 
 
 ### Che cosa significa margine negativo
 
-Un limite superiore lavora all'indietro. Se il vincolo mette la data più tarda di un'attività prima della sua data più presto possibile, il margine totale diventa negativo. Lo stesso vale per le attività che la precedono: se la muratura deve iniziare al più tardi venerdì 11 giugno e non può iniziare prima di lunedì 14 giugno, anche le attività prima della muratura hanno un margine negativo di un giorno lavorativo. Tutte le attività con margine negativo sono critiche; come funziona è spiegato in [Percorso critico e margine](docs://uitleg-kritiek-pad).
+Un limite superiore lavora all'indietro. Se il vincolo mette la data più tarda di un'attività prima della sua data anticipata, il margine totale diventa negativo. Lo stesso vale per le attività che la precedono: se la muratura deve iniziare al più tardi venerdì 11 giugno e non può iniziare prima di lunedì 14 giugno, anche le attività prima della muratura hanno un margine negativo di un giorno lavorativo. Tutte le attività con margine negativo sono critiche; come funziona è spiegato in [Percorso critico e margine](docs://uitleg-kritiek-pad).
 
 Le barre non si spostano per un limite superiore. Il conflitto si vede nel *Margine totale* negativo, in un rombo rosso sopra la barra, nell'avviso nella barra di stato (per esempio *Vincoli violati: 1*) e nel pannello *Avvisi*.
 
@@ -103,7 +103,7 @@ Nel tutorial 3 imposti tu stesso un vincolo e una scadenza nel progetto del tuto
 
 **«Digito solo una data di inizio.»** Con un'attività che ha un predecessore, questa diventa un SNET. Se quella data è prima di quanto permette il predecessore, non fa nulla.
 
-**«Scadenza o FNLT?»** Scegli una scadenza per una data obiettivo che vuoi sorvegliare, e un vincolo per una data che è davvero una condizione di confine per la pianificazione.
+**«Scadenza o FNLT?»** Scegli una scadenza per una data obiettivo che vuoi sorvegliare, e un vincolo per una data che è davvero un requisito vincolante per la pianificazione.
 
 **«Un vincolo sulla fase.»** Non conta. Mettilo sull'attività stessa.
 

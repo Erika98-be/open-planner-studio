@@ -27,7 +27,7 @@ Válassza ki a helyzetének megfelelő módot. Mindegyik ugyanazt az eredményt 
 **Egy tevékenység a tulajdonságok panelen.** Hasznos, ha egyetlen tevékenységet frissít.
 
 1. Kattintson a tevékenységre. Ha nem látja a *Tulajdonságok* panelt, kapcsolja be a *Nézet › Panelek › Tulajdonságok* menüponttal.
-2. Húzza a(z) *Előrehaladás (%)* csúszkát a kész százalékra.
+2. Húzza az *Előrehaladás (%)* csúszkát az elkészült munkának megfelelő százalékra.
 3. Ha szükséges, töltse ki a *Tényleges kezdés* és a *Tényleges befejezés* mezőt, ugyanúgy, mint az állapotdátumnál. Az alkalmazás a *Hátralévő* mezőt maga számítja ki; ezt itt nem módosíthatja.
 
 Egy mérföldkőnek egy mezője van: a *Tényleges dátum*.

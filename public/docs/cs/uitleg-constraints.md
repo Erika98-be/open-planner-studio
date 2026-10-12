@@ -1,6 +1,6 @@
 # Omezení a konečné termíny
 
-Cihly se dodají až 21. června. Stavební povolení ještě nedorazilo. Střecha musí být zakrytá před stavebním svátkem. Závislosti zaznamenávají, že úkol čeká na jiný úkol. Dohody o termínu ale z pořadí prací nevyplývají. Právě k tomu slouží omezení a konečné termíny. V tomto článku se dozvíte, co dělá každý typ, kdy se úkol posune a kdy se mění jen časová rezerva. Dozvíte se také, co je pevné ukotvení a jak aplikace hlásí konflikt.
+Cihly se dodají až 21. června. Stavební povolení ještě nedorazilo. Střecha musí být zakrytá před letní stavební uzávěrou. Závislosti zaznamenávají, že úkol čeká na jiný úkol. Dohody o termínu ale z pořadí prací nevyplývají. Právě k tomu slouží omezení a konečné termíny. V tomto článku se dozvíte, co dělá každý typ, kdy se úkol posune a kdy se mění jen časová rezerva. Dozvíte se také, co je pevné ukotvení a jak aplikace hlásí konflikt.
 
 Pravidla a příklady platí pro nový projekt s profilem výpočtu *Open Planner Studio* a pracovním týdnem od pondělí do pátku.
 
@@ -32,7 +32,7 @@ Pokud termín připadne na sobotu, neděli nebo na volný den, aplikace ho čte 
 
 ### Co znamená záporná časová rezerva
 
-Horní omezení působí zpětně. Pokud omezení postaví pozdní termín úkolu před jeho dřívější termín, celková časová rezerva se stane zápornou. Totéž platí pro úkoly před ním: pokud musí brickwork zahájit nejpozději v pátek 11. června a nemůže začít dříve než v pondělí 14. června, jsou i úkoly před brickwork o jeden pracovní den pozdě. Všechny úkoly se zápornou časovou rezervou jsou kritické. Jak to funguje, je vysvětleno v [Kritická cesta a časová rezerva](docs://uitleg-kritiek-pad).
+Horní omezení působí zpětně. Pokud omezení posune pozdní termín úkolu před jeho nejdřívější termín, celková časová rezerva se stane zápornou. Totéž platí pro úkoly před ním: pokud musí brickwork zahájit nejpozději v pátek 11. června a nemůže začít dříve než v pondělí 14. června, jsou i úkoly před brickwork o jeden pracovní den pozdě. Všechny úkoly se zápornou časovou rezervou jsou kritické. Jak to funguje, je vysvětleno v [Kritická cesta a časová rezerva](docs://uitleg-kritiek-pad).
 
 Pruhy se kvůli hornímu omezení nepřesouvají. Konflikt uvidíte v záporné hodnotě v poli *Celková časová rezerva*, v červeném kosočtverci nad pruhem, v hlášení na stavovém řádku (například *Porušená omezení: 1*) a v panelu *Varování*.
 
@@ -64,7 +64,7 @@ Pro časovou rezervu dělá konečný termín totéž co FNLT. Rozdíl je v tom,
 
 Všechny změny se zobrazí až po spuštění příkazu **Přepočítat** (F5).
 
-## Ukázkový příklad
+## Řešený příklad
 
 Příklad je malá síť pro přístavbu domu. Začíná v pondělí 7. června 2027:
 

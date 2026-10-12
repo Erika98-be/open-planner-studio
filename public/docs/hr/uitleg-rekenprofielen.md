@@ -37,7 +37,7 @@ Za postojeći projekt profil odaberete pod *Postavke › Projekt › Podaci o pr
 
 Dok ne pritisnete *Primijeni*, promjena postoji samo u obrascu. Pritiskom na *Primijeni* aplikacija odmah ponovno izračunava raspored, čak i ako *Automatsko izračunavanje* nije uključeno. Ako su se zadaci pomaknuli, aplikacija kaže koliko, na primjer *Nakon primjene pomaknuta su 4 zadatka.* Cijelu promjenu možete poništiti jednim korakom pomoću *Poništi*.
 
-Ako u profilu uključite ili isključite jedno pravilo izračuna, aplikacija ga pretvara u prilagođeni profil. Zove se *Kopija profila Open Planner Studio*, ili *Kopija* profila s kojim ste počeli. Možete mu dati drugi naziv i spremiti ga s *Spremi kao predložak* za druge projekte u ovoj aplikaciji. Projekt uvijek nosi vlastitu kopiju: ako kasnije promijenite predložak, projekt se s njim ne mijenja.
+Ako u profilu uključite ili isključite jedno pravilo izračuna, aplikacija profil pretvara u prilagođeni profil. Zove se *Kopija profila Open Planner Studio*, ili *Kopija* profila s kojim ste počeli. Možete mu dati drugi naziv i spremiti ga s *Spremi kao predložak* za druge projekte u ovoj aplikaciji. Projekt uvijek nosi vlastitu kopiju: ako kasnije promijenite predložak, projekt se s njim ne mijenja.
 
 ### Kada aplikacija sama odabire profil
 
@@ -95,7 +95,7 @@ Ovdje se datumi razlikuju. Dva pravila izračuna u grupi *Napredak kao u program
 
 **Opcija izračuna umjesto pravila.** Ako u profilu Open Planner Studio postavite *Definicija kritičnosti* (*Ukupan slobodni hod ≤ prag*) s *Prag (radni dani)* na 4, *Order window frames* postaje kritičan, jer mu je ukupan slobodni hod točno 4. Nijedan datum se ne mijenja. Opcija izračuna je vaš izbor za projekt i neovisna je o profilu.
 
-**Rok za dovršetak koji je prošao.** Zadatku *Fit roof* dodijelite rok za dovršetak u petak, 18. lipnja. U Open Planner Studio je ukupan slobodni hod zadatka *Fit roof* tada −1 radni dan, a slobodni hod je također −1. U Primavera P6 ukupan slobodni hod ostaje −1, ali slobodni hod postaje 0. To čini pravilo izračuna *Slobodni hod nikad nije negativan*, u grupi *Vremenska rezerva i kasni datumi*. U Microsoft Project oba iznose −2, jer tamo predaja pada dan kasnije. Kako rok za dovršetak radi, objašnjeno je u [Ograničenja i rokovi za dovršetak](docs://uitleg-constraints).
+**Propušteni rok za dovršetak.** Zadatku *Fit roof* dodijelite rok za dovršetak u petak, 18. lipnja. U Open Planner Studio je ukupan slobodni hod zadatka *Fit roof* tada −1 radni dan, a slobodni hod je također −1. U Primavera P6 ukupan slobodni hod ostaje −1, ali slobodni hod postaje 0. To čini pravilo izračuna *Slobodni hod nikad nije negativan*, u grupi *Vremenska rezerva i kasni datumi*. U Microsoft Project oba iznose −2, jer tamo predaja pada dan kasnije. Kako rok za dovršetak radi, objašnjeno je u [Ograničenja i rokovi za dovršetak](docs://uitleg-constraints).
 
 ## Posljedice i pogrešna shvaćanja
 

@@ -59,7 +59,7 @@ Esimerkki on pieni verkko. Kalenterissa on työviikko maanantaista perjantaihin,
 - *Pour foundation*: 5 työpäivää, suunniteltu alkamaan maanantaina 7. kesäkuuta.
 - *Lay walls*: 5 työpäivää, edeltäjänä *Pour foundation* (lopusta alkuun).
 - *Order window frames*: 3 työpäivää, ilman edeltäjää, suunniteltu alkamaan maanantaina 7. kesäkuuta.
-- *Fit roof*: 2 työpäivää, edeltäjinä *Lay walls* ja *Order window frames* (lopusta alkuun). Tämän tehtävän loppu on luovutus.
+- *Fit roof*: 2 työpäivää, edeltäjinä *Lay walls* ja *Order window frames*. Tämän tehtävän loppu on luovutus.
 
 Luvut on laskenut sovelluksen laskentamoottori. Ne näkyvät paneelissa *Ominaisuudet*, kohdassa *CPM-tulos*.
 
@@ -81,7 +81,7 @@ Kaikki on sama kuin Open Planner Studio -ohjelmassa, paitsi yksi kohta: varhaisi
 
 Tässä päivämäärät eroavat. Kaksi laskentasääntöä ryhmässä *Edistyminen Microsoft Project -tavalla* aiheuttaa sen.
 
-*Aloittamattomia tehtäviä ei siirretä raportointipäivään*: *Order window frames* pysyy maanantaista 7. kesäkuuta keskiviikkoon 9. kesäkuuta, vaikka osa jaksosta on raportointipäivää ennen. Kokonaispelivara on 7 työpäivää.
+*Aloittamattomia tehtäviä ei siirretä raportointipäivään*: *Order window frames* pysyy maanantaista 7. kesäkuuta keskiviikkoon 9. kesäkuuta, vaikka osa ajasta on ennen raportointipäivää. Kokonaispelivara on 7 työpäivää.
 
 *Jäljellä oleva työ jatkuu kuluneen ajan jälkeen*: jäljellä oleva työ alkaa aikaisintaan raportointipäivästä, ja aikaisintaan toteutuneesta alkamispäivästä lisättynä jo kuluneella ajalla. 60 %:sta 5 työpäivästä on tehty 3 työpäivää. Maanantai 7. kesäkuuta lisättynä 3 työpäivällä on torstai 10. kesäkuuta. Se on raportointipäivän jälkeen, joten jäljellä oleva työ kulkee torstaina 10. ja perjantaina 11. kesäkuuta. *Lay walls* kulkee maanantaista 14. kesäkuuta perjantaihin 18. kesäkuuta ja *Fit roof* maanantaina 21. ja tiistaina 22. kesäkuuta. Luovutus on tiistaina 22. kesäkuuta: yksi työpäivä myöhemmin kuin kahdessa muussa profiilissa.
 
@@ -109,7 +109,7 @@ Tässä päivämäärät eroavat. Kaksi laskentasääntöä ryhmässä *Edistymi
 
 **"Vaihdan profiilia vain nähdäkseni, mitä tapahtuu."** Se onnistuu, sillä *Käytä* kumotaan yhdellä askeleella: *Kumoa* palauttaa profiilin ja päivämäärät yhdessä. Päivämäärät voivat kuitenkin todella siirtyä. Esimerkissä profiilin vaihto Open Planner Studio -profiilista Microsoft Project -profiiliin siirtää kaikki 4 tehtävää. Viesti kertoo tehtävien määrän. Aikataulu kannattaa tarkistaa vaihdon jälkeen, ennen jatkamista. Jos sovellus näyttää vielä tiedoston päivämäärät .xer- tai .mpp-tiedoston avaamisen jälkeen, profiilin vaihto poistaa tämän näkymän ja sovellus laskee itse. Miten tämä toimii, on kuvattu kohdassa [Tallennetut päivämäärät](docs://uitleg-datums-zoals-opgeslagen).
 
-**Esimerkissä on neljä laskentasääntöä, ja sovelluksen luettelo on pidempi.** Esimerkin jokaisella rivillä on oma selitys. Se kannattaa lukea ensin. Myös ryhmä *Vain omat profiilit* kannattaa katsoa: nämä laskentasäännöt ovat pois päältä kaikissa sisäänrakennetuissa profiileissa, myös Primavera P6:ssa. Jos yksi niistä otetaan käyttöön, siitä tulee oma profiili.
+**Esimerkissä on neljä laskentasääntöä, ja sovelluksen luettelo on pidempi.** Lohkon jokaisella rivillä on oma selitys. Se kannattaa lukea ensin. Myös ryhmä *Vain omat profiilit* kannattaa katsoa: nämä laskentasäännöt ovat pois päältä kaikissa sisäänrakennetuissa profiileissa, myös Primavera P6:ssa. Jos yksi niistä otetaan käyttöön, siitä tulee oma profiili.
 
 ## Katso myös
 

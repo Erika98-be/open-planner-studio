@@ -1,6 +1,6 @@
 # Begrænsninger og deadlines
 
-Murstenene leveres først den 21. juni. Tilladelsen er endnu ikke kommet. Taget skal være tæt, inden byggehelligdagen. Afhængigheder viser, at en opgave venter på en anden opgave. Aftaler om en dato følger dog ikke af rækkefølgen i arbejdet. Det er netop det, begrænsninger og deadlines er til for. I denne artikel læser du, hvad hver type gør, hvornår en opgave flytter sig, og hvornår kun slækken ændrer sig. Du læser også, hvad en hård pin er, og hvordan appen melder en konflikt.
+Murstenene leveres først den 21. juni. Tilladelsen er endnu ikke kommet. Taget skal være tæt, inden byggeferien. Afhængigheder viser, at en opgave venter på en anden opgave. Aftaler om en dato følger dog ikke af rækkefølgen i arbejdet. Det er netop det, begrænsninger og deadlines er til for. I denne artikel læser du, hvad hver type gør, hvornår en opgave flytter sig, og hvornår kun slækken ændrer sig. Du læser også, hvad en hård pin er, og hvordan appen melder en konflikt.
 
 Reglerne og eksemplerne gælder for et nyt projekt med beregningsprofilen *Open Planner Studio* og en arbejdsuge fra mandag til fredag.
 
@@ -32,7 +32,7 @@ Falder en dato på en lørdag, en søndag eller en fridag, læser appen den som 
 
 ### Hvad negativ slæk betyder
 
-En øvre grænse virker baglæns. Sætter begrænsningen en opgaves seneste dato før dens tidligste dato, bliver den samlede slæk negativ. Det gælder også for opgaverne før den: Skal brickwork senest starte fredag den 11. juni, og kan det ikke starte før mandag den 14. juni, er opgaverne før brickwork også en arbejdsdag forsinket. Alle opgaver med negativ slæk er kritiske. Hvordan det virker, forklares i [Kritisk vej og slæk](docs://uitleg-kritiek-pad).
+En øvre grænse virker baglæns. Sætter begrænsningen en opgaves seneste dato før dens tidligste dato, bliver den samlede slæk negativ. Det gælder også for opgaverne før den: Skal murerarbejdet senest starte fredag den 11. juni, og kan det ikke starte før mandag den 14. juni, er opgaverne før murerarbejdet også en arbejdsdag forsinket. Alle opgaver med negativ slæk er kritiske. Hvordan det virker, forklares i [Kritisk vej og slæk](docs://uitleg-kritiek-pad).
 
 Bjælkerne flytter sig ikke på grund af en øvre grænse. Du ser konflikten i den negative *Samlet slæk*, i en rød rombe over bjælken, i meddelelsen i statuslinjen (for eksempel *1 begrænsning(er) overtrådt*) og i panelet *Advarsler*.
 

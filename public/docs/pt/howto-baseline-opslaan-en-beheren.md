@@ -46,7 +46,7 @@ Cada linha de base tem seis colunas na tabela de tarefas. Clique no **+** à dir
 
 **Tarefas novas e eliminadas.** Uma tarefa que acrescenta depois de guardar não tem barra de linha de base. No relatório de variance aparece como *Nova*. Uma tarefa que elimina aparece como *Eliminada*.
 
-**Mover projeto.** Na janela *Mover projeto…*, assim que existirem linhas de base, existe a caixa de verificação *Deslocar também as linhas de base*. Por padrão está desligada: as linhas de base mantêm-se onde estão, pelo que o deslocamento aparece como desvio. Veja [Mover um projeto](docs://howto-project-verplaatsen).
+**Mover projeto.** Na janela *Mover projeto…*, assim que existirem linhas de base, existe a caixa de verificação *Deslocar também as linhas de base*. Por padrão está desligada: as linhas de base mantêm-se onde estão, pelo que a deslocação aparece como desvio. Veja [Mover um projeto](docs://howto-project-verplaatsen).
 
 **Guardado no ficheiro do projeto.** As linhas de base e a escolha ativa são guardadas com o projeto e voltam quando abre o ficheiro.
 

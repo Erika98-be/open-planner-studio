@@ -1,6 +1,6 @@
 # Korlátozások és határidők
 
-A téglát csak június 21-én szállítják ki. Az engedély még nem érkezett meg. A tetőt az építési ünnepnap előtt le kell zárni. A kapcsolatok azt rögzítik, hogy egy tevékenység egy másikra vár, de a dátumokra vonatkozó megállapodások nem következnek a munkálatok sorrendjéből. Erre valók a korlátozások és a határidők. Ebben a cikkben megismeri, mit tesz az egyes típus, mikor mozdul el egy tevékenység, és mikor változik csak a tartalékidő. Azt is megtudja, mi a merev rögzítés, és hogyan jelzi az alkalmazás az ütközést.
+A téglát csak június 21-én szállítják ki. Az engedély még nem érkezett meg. A tetőt az építőipari szabadság előtt le kell zárni. A kapcsolatok azt rögzítik, hogy egy tevékenység egy másikra vár, de a dátumokra vonatkozó megállapodások nem következnek a munkálatok sorrendjéből. Erre valók a korlátozások és a határidők. Ebben a cikkben megismeri, mit tesz az egyes típus (korlátozástípus) – vagy: mit csinálnak az egyes típusok, mikor mozdul el egy tevékenység, és mikor változik csak a tartalékidő. Azt is megtudja, mi a merev rögzítés, és hogyan jelzi az alkalmazás az ütközést.
 
 A szabályok és a példák új projektre vonatkoznak, az *Open Planner Studio* számítási profillal és hétfőtől péntekig tartó munkahéttel.
 
@@ -11,7 +11,7 @@ A **korlátozás** dátumkorlát egyetlen tevékenységen, a kapcsolatoktól fü
 - **Tolja**: a tevékenység nem kezdődhet és nem fejeződhet be a dátumnál korábban. Ha a kapcsolatai miatt korábban kezdődne, a dátumra tolódik.
 - **Őrzi**: a tevékenységnek legkésőbb a dátumon kell kezdődnie vagy befejeződnie. Az alkalmazás semmit sem mozdít el. Ha az ütemezés nem teljesíti a dátumot, a tevékenység **tartalékideje** és az előtte álló lánc tartalékideje negatív lesz. A tartalékidő az a mozgástér, amely egy tevékenységnek megmarad, mielőtt a projekt befejezési dátuma elmozdul. A negatív azt jelenti, hogy papíron már késésben van (lásd: [Kritikus út és tartalékidő](docs://uitleg-kritiek-pad)).
 
-A **határidő** az őrzés egyszerűbb formája: egy tevékenység befejezésére kitűzött célra szánt dátum, anélkül hogy a tevékenységet bármi elmozdítaná.
+A **határidő** az őrzés egyszerűbb formája: egy tevékenység befejezésére kitűzött célnap, amelyet semmi sem mozdít el, anélkül hogy a tevékenységet bármi elmozdítaná.
 
 Minden korlátozás **rugalmas**: a számítás akkor is folytatódik, ha valamelyik dátum nem teljesül. Egyetlen kivétel van, a **merev rögzítés**, amely felülírja a kapcsolatokat. Erről alább olvashat bővebben.
 

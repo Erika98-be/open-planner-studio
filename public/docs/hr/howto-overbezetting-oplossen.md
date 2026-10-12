@@ -35,7 +35,7 @@ Ako je odabran zadatak, histogram prikazuje samo opterećenje tog zadatka i samo
 3. Odlučite smije li se datum završetka projekta pomaknuti. Ako kućicu *Uravnoteživanje samo unutar vremenske rezerve (smoothing) — datum završetka projekta ostaje nepromijenjen* ostavite isključenu, datum završetka se može pomaknuti. Ako je uključite, aplikacija pomiče samo zadatke unutar njihove vremenske rezerve.
 4. Ispod odjeljka *Resursi* nalaze se resursi koji će biti uključeni u uravnoteživanje. Zadano su označeni svi resursi, osim materijala. Odznačite resurs koji želite ostaviti netaknut.
 5. Kliknite *Izračunaj*. Dok se izračunava, piše *Izračunavanje…*, a možete zaustaviti pomoću gumba *Zaustavi*. Raspored se još ne mijenja: ovo je prijedlog.
-6. Pročitajte prijedlog. Na vrhu je datum završetka, na primjer *Datum završetka projekta: nepromijenjen (30-08-2027)* ili *Datum završetka projekta: 25-08-2027 → 30-08-2027*. Ispod toga je tablica s po zadatku: *Stari početak*, *Novi početak* i *Pomaknuti dani*, na primjer za *Build outer cavity leaf*, 29-06-2027, 06-07-2027 i *5 d*.
+6. Pročitajte prijedlog. Na vrhu je datum završetka, na primjer *Datum završetka projekta: nepromijenjen (30-08-2027)* ili *Datum završetka projekta: 25-08-2027 → 30-08-2027*. Ispod toga je tablica koja za svaki zadatak prikazuje *Stari početak*, *Novi početak* i *Pomaknuti dani*, na primjer za *Build outer cavity leaf*, 29-06-2027, 06-07-2027 i *5 d*.
 7. Odaberite *Primijeni*. Aplikacija upisuje odgode u zadatke i odmah ponovno izračunava raspored. Pritiskanje tipke F5 nije potrebno. *Odustani* zatvara prozor bez promjene.
 8. Provjerite *Resursi › Preopterećenje*. Sada piše *Nema*.
 

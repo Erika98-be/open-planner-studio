@@ -62,7 +62,7 @@ Jede Änderung am Fortschritt oder am Statusdatum macht den Terminplan veraltet:
 
 ## Fallstricke und was die App tut
 
-**Ein Datum nach dem Statusdatum.** Die App lehnt einen Ist-Anfang oder ein Ist-Ende nach dem Statusdatum ab. Im Eigenschaftenbereich steht unter den Feldern *Ist-Werte dürfen nicht nach dem Statusdatum liegen*; in der Tabelle meldet die Zelle *Das Ist-Datum liegt nach dem Statusdatum.* Setzen Sie zuerst das Statusdatum später oder korrigieren Sie das Datum.
+**Ein Datum nach dem Statusdatum.** Die App lehnt einen Ist-Anfang oder ein Ist-Ende nach dem Statusdatum ab. Im Eigenschaftenbereich steht unter den Feldern *Ist-Werte dürfen nicht nach dem Statusdatum liegen*; in der Tabelle meldet die Zelle *Das Ist-Datum liegt nach dem Statusdatum.* Setzen Sie zuerst das Statusdatum auf einen späteren Tag oder korrigieren Sie das Datum.
 
 **Ein Vorgang, der laut Terminplan erst nach dem Statusdatum beginnen würde.** Wenn Sie Fortschritt für einen Vorgang eingeben, der laut Terminplan noch nicht begonnen hätte, öffnet sich das Fenster *Ist-Anfang angeben*. Es fragt, wann der Vorgang tatsächlich begonnen hat. Der Vorschlag ist das Statusdatum. Mit *Fortschritt übernehmen* speichern Sie den Wert, mit *Abbrechen* ändert sich nichts.
 

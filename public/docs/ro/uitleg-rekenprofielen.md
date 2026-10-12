@@ -27,7 +27,7 @@ Un exemplu din fiecare. "O activitate este critică dacă marja ei totală este 
 
 Profilul și opțiunile de calcul aparțin fișierului proiectului, nu aplicației. Dacă salvați proiectul, ele merg împreună cu el. Două proiecte din aceeași aplicație pot deci calcula cu profiluri diferite. Un proiect fără profil calculează ca Open Planner Studio.
 
-Dacă există opțiuni de calcul pe care le cunoaște numai Primavera, blocul afișează jos și *Setări din fișierul sursă*. Asta se întâmplă pentru un proiect dintr-un .xer file, dar și dacă alegeți *Primavera P6* în *Creare proiect nou* sau aplicați opțiunile implicite ale Primavera P6. Aici nu le puteți modifica.
+Dacă există opțiuni de calcul pe care le cunoaște numai Primavera, blocul afișează jos și *Setări din fișierul sursă*. Asta se întâmplă pentru un proiect dintr-un fișier .xer (and likewise: "Un fișier .xer (Primavera P6)", "Pentru un fișier .xer", "un astfel de fișier .xer"), dar și dacă alegeți *Primavera P6* în *Creare proiect nou* sau aplicați opțiunile implicite ale Primavera P6. Aici nu le puteți modifica.
 
 ### Unde alegeți profilul
 
@@ -35,7 +35,7 @@ Pentru un proiect nou, profilul se află în fereastra *Creare proiect nou*, pe 
 
 Pentru un proiect existent alegeți profilul sub *Setări › Proiect › Informații proiect*, în blocul *Profil de calcul și opțiuni de calcul*, în lista derulantă *Profil de calcul*. Același loc îl puteți deschide și prin *Fișier › Informații proiect*. Schimbarea profilului aici modifică doar convențiile. Opțiunile dumneavoastră de calcul rămân cum sunt. Dacă doriți și opțiunile implicite de calcul ale noului profil, alegeți *Aplicare opțiuni implicite ale acestui profil*.
 
-Până apăsați *Aplicare*, modificarea există doar în formular. Cu *Aplicare*, aplicația recalculează planificarea imediat, chiar dacă *Calculare automată* este dezactivată. Dacă au fost mutate activități, aplicația arată câte, de exemplu *După aplicare, 4 activități au fost deplasate.* Întreaga schimbare se anulează dintr-un singur pas cu *Anulare*.
+Până când apăsați *Aplicare*, modificarea există doar în formular. Cu *Aplicare*, aplicația recalculează planificarea imediat, chiar dacă *Calculare automată* este dezactivată. Dacă au fost mutate activități, aplicația arată câte, de exemplu *După aplicare, 4 activități au fost deplasate.* Întreaga schimbare se anulează dintr-un singur pas cu *Anulare*.
 
 Dacă activați sau dezactivați o convenție într-un profil, aplicația îl transformă într-un profil propriu. Acesta se numește *Copie a Open Planner Studio*, sau *Copie a* profilului de la care ați pornit. Îi puteți da alt nume și îl puteți păstra cu *Salvare ca șablon*, pentru alte proiecte din această aplicație. Proiectul are întotdeauna propria lui copie: dacă modificați șablonul mai târziu, proiectul nu se schimbă odată cu el.
 

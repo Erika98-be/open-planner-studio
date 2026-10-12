@@ -4,9 +4,9 @@ Cíl: zjistit, kde má zdroj v jednom dni příliš mnoho práce, a to odstranit
 
 ## Kdy to potřebujete
 
-Na papíře váš plán funguje, ale Bricklayer pracuje na dvou stěnách, které běží ve stejných dnech. Aplikace tomu říká **přetížení**. Zdroj je v pracovním dni přetížen, když od něj plán ten den žádá víc, než je jeho kapacita (*Maximální počet jednotek*), nebo když ten den podle svého kalendáře nepracuje.
+Na papíře váš plán funguje, ale zedník pracuje na dvou stěnách, které běží ve stejných dnech. Aplikace tomu říká **přetížení**. Zdroj je v pracovním dni přetížen, když od něj plán ten den žádá víc, než je jeho kapacita (*Maximální počet jednotek*), nebo když ten den podle svého kalendáře nepracuje.
 
-Nejdřív přetížení vyhledáte. Potom zvolíte řešení. **Vyrovnání** je řešení, které za vás spočítá aplikace: úkoly začnou později, dokud zdroj práci zvládne. Jak se to počítá, přečtete v článku [Vyrovnání zdrojů](docs://uitleg-nivelleren).
+Nejdřív přetížení vyhledáte. Potom zvolíte řešení. **Vyrovnání** je řešení, které za vás spočítá aplikace: úkoly se posunou na pozdější začátek tak, aby je zdroj zvládl. Jak se to počítá, přečtete v článku [Vyrovnání zdrojů](docs://uitleg-nivelleren).
 
 ## Postup
 
@@ -19,7 +19,7 @@ Nejdřív přetížení vyhledáte. Potom zvolíte řešení. **Vyrovnání** je
 
 Histogram můžete zapnout i sami. Zvolte *Zdroje › Histogram › Histogram*. Vyberte zdroj v seznamu vlevo, nebo procházejte zdroje tlačítky *Předchozí* a *Další*. Červená tečka v seznamu znamená, že je zdroj přetížen. Řádek *Všechny zdroje* sečte zdroje dohromady, bez materiálu.
 
-Když je úkol označen, histogram ukazuje jen práci tohoto úkolu a jen zdroje, které na něm jsou. Stiskněte klávesu Esc, zrušte výběr a zobrazte celý projekt znovu.
+Když je úkol označen, histogram ukazuje jen práci tohoto úkolu a jen zdroje, které na něm jsou. Klávesou Esc zrušíte výběr a znovu uvidíte celý projekt.
 
 ### 2. Zvolte řešení
 
@@ -43,14 +43,14 @@ Když v okně po kliknutí na *Přepočítat* změníte nějakou možnost, návr
 
 ### Který úkol zůstane na místě
 
-Aplikace umísťuje úkoly jeden po druhém. Úkoly, které jdou jako první, zůstanou na místě. Nejdřív jdou úkoly s nejvyšší prioritou. Při stejné prioritě jde nejdřív úkol s nejmenší časovou rezervou.
+Aplikace umísťuje úkoly jeden po druhém. Úkoly, které se umístí jako první, zůstanou na místě. Nejdřív jdou úkoly s nejvyšší prioritou. Při stejné prioritě jde nejdřív úkol s nejmenší časovou rezervou.
 
 Když chcete sami rozhodnout, který úkol zůstane, dejte mu vyšší prioritu. Klikněte pravým tlačítkem na pruh úkolu v diagramu Gantt a zvolte položku *Priorita*, potom úroveň *Nízká* (100), *Normální* (500) nebo *Vysoká* (900). *Normální* je výchozí. Číslo od 0 do 1000 můžete zadat i sami do sloupce *Priorita vyrovnání*: klikněte na **+** vpravo v záhlaví tabulky úkolů (*Přidat sloupec*) a zvolte tento sloupec v nabídce *Plánování*. Vyšší číslo znamená, že úkol spíše zůstane na místě. Aplikace nepřijme číslo nad 1000. Úkol s prioritou 1000 se kvůli kapacitě nikdy nepřesune.
 
 ### Vrácení zpět a zrušení vyrovnání
 
 - *Vrátit zpět* (Ctrl+Z) zruší *Použít* jedním krokem.
-- *Zdroje › Vyrovnání › Zrušit vyrovnání* odstraní všechno vyrovnání z úkolů. Tlačítko je šedé, dokud není žádné vyrovnání. Přetížení, které tak získáte zpět, je pak prostě zase tam.
+- *Zdroje › Vyrovnání › Zrušit vyrovnání* odstraní všechno vyrovnání z úkolů. Tlačítko je šedé, dokud není žádné vyrovnání. Přetížení, které tak vrátíte, se prostě znovu objeví.
 - Pokud jste plán mezitím změnili, zvolte znovu *Vyrovnat…*. Aplikace pak začne znovu od nuly: staré zpoždění se nezohlední.
 
 ## Úskalí a co aplikace potom udělá

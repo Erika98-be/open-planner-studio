@@ -62,7 +62,7 @@ Každá zmena postupu alebo dátumu kontroly stavu urobí plán zastaralým: sta
 
 ## Úskalia a čo aplikácia robí
 
-**Dátum neskorší ako dátum kontroly stavu.** Aplikácia neprijme skutočný začiatok ani skutočné dokončenie neskorší ako dátum kontroly stavu. V paneli je pod poľami text *Skutočné hodnoty nemôžu byť po dátume kontroly stavu*; v tabuľke bunka hlási *Skutočný dátum je neskorší ako dátum kontroly stavu.* Najprv nastavte dátum kontroly stavu neskôr, alebo opravte dátum.
+**Dátum neskorší ako dátum kontroly stavu.** Aplikácia neprijme skutočný začiatok ani skutočné dokončenie po dátume kontroly stavu. V paneli je pod poľami text *Skutočné hodnoty nemôžu byť po dátume kontroly stavu*; v tabuľke bunka hlási *Skutočný dátum je neskorší ako dátum kontroly stavu.* Najprv nastavte dátum kontroly stavu neskôr, alebo opravte dátum.
 
 **Úloha, ktorá by mala začať až po dátume kontroly stavu.** Ak zadáte postup úlohy, ktorá podľa plánu ešte nemala začať, otvorí sa okno *Zadajte skutočný začiatok*. Pýta sa, kedy sa úloha skutočne začala; návrh je dátum kontroly stavu. Tlačidlom *Použiť postup* ho zaznamenáte, tlačidlom *Zrušiť* sa nič nezmení.
 

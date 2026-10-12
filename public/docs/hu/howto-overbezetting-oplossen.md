@@ -4,9 +4,9 @@ Cél: megtalálni, hol van túl sok tevékenység egy erőforrásra egy napon, �
 
 ## Mikor van erre szüksége
 
-Papíron az ütemezése működik, de a bricklayer két falon dolgozik, amelyek ugyanazokra a napokra esnek. Az alkalmazás ezt **túlterhelés** néven említi. Egy erőforrás munkanapon túlterhelés alatt áll, ha az ütemezés az adott napon több munkát kér tőle, mint a kapacitás (*Maximális mennyiség*), vagy ha a naptár szerint nem dolgozik azon a napon.
+de a kőműves két falon dolgozik … Ha tényleg érkezik egy második kőműves, amelyek ugyanazokra a napokra esnek. Az alkalmazás ezt **túlterhelés** néven említi. Egy erőforrás munkanapon túlterhelés alatt áll, ha az ütemezés az adott napon több munkát kér tőle, mint a kapacitás (*Maximális mennyiség*), vagy ha a naptár szerint nem dolgozik azon a napon.
 
-Először keresse meg a túlterhelést. Ezután válasszon egy megoldást. A **kiegyenlítés** az a megoldás, amelyet az alkalmazás Ön helyett kiszámít: a tevékenységek később kezdődnek, amíg az erőforrás már el tudja látni a munkát. Hogy ez pontosan hogyan történik, azt a [Erőforrás-kiegyenlítés](docs://uitleg-nivelleren) című részben olvashatja el.
+Először keresse meg a túlterhelést. Ezután válasszon egy megoldást. A **kiegyenlítés** az a megoldás, amelyet az alkalmazás Ön helyett kiszámít: a tevékenységeket addig kezdi későbbre, amíg az erőforrás el nem tudja látni a munkát. Hogy ez pontosan hogyan történik, azt az [Erőforrás-kiegyenlítés](docs://uitleg-nivelleren) című részben olvashatja el.
 
 ## Lépések
 
@@ -36,7 +36,7 @@ Ha egy tevékenység ki van jelölve, a hisztogram csak annak a tevékenységnek
 4. Az *Erőforrások* alatt találhatók azok az erőforrások, amelyeket ki fognak egyenlíteni. Alapértelmezés szerint minden erőforrás be van jelölve, az anyag típusú erőforrások kivételével. Törölje a jelölést annál az erőforrásnál, amelyet nem szeretne módosítani.
 5. Kattintson a *Számítás* gombra. Számítás közben a *Számítás*… felirat jelenik meg, és a *Leállítás* lehetőséggel leállíthatja. Az ütemezés még nem változik: ez egy javaslat.
 6. Olvassa el a javaslatot. Felül a befejezési dátum látható, például *Projekt befejezése: változatlan (30-08-2027)* vagy *Projekt befejezése: 25-08-2027 → 30-08-2027*. Alatta egy táblázat látható, amelyben tevékenységenként szerepel a *Régi kezdés*, az *Új kezdés* és az *Eltolt napok*, például *Build outer cavity leaf*, 29-06-2027, 06-07-2027 és *5 nap*.
-7. Válassza az *Alkalmazás* lehetőséget. Az alkalmazás a késleltetéseket írja a tevékenységekhez, és azonnal újraszámítja az ütemezést. Az F5 billentyű megnyomására nincs szükség. A *Mégse* lehetőség bezárja az ablakot módosítás nélkül.
+7. Válassza az *Alkalmazás* lehetőséget. Az alkalmazás rögzíti a késleltetéseket a tevékenységeknél, és azonnal újraszámítja az ütemezést. Az F5 billentyű megnyomására nincs szükség. A *Mégse* lehetőség bezárja az ablakot módosítás nélkül.
 8. Ellenőrizze az *Erőforrások › Túlterhelés* menüpontot. Most a *Nincs* szöveg jelenik meg.
 
 Ha az ablakban a *Számítás* gomb megnyomása után módosít egy beállítást, a javaslat eltűnik. Ekkor kattintson újra a *Számítás* gombra. Ha az ütemezés módosul, amíg az alkalmazás számol, ez jelenik meg: *Az ütemezés módosult a számítás közben. Kattintson újra a Számítás gombra.*

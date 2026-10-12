@@ -1,6 +1,6 @@
 # Edistymisen päivittäminen
 
-Tavoite: vie työn todellinen tila aikatauluun ja laske aikataulu uudelleen. Selvitä, mitkä tehtävät ovat valmiita, mitkä ovat käynnissä ja kuinka paljon työtä on vielä jäljellä.
+Tavoite: vie työn todellinen tila aikatauluun ja laske aikataulu uudelleen: mitkä tehtävät ovat valmiita, mitkä käynnissä ja kuinka paljon työtä on vielä jäljellä., mitkä ovat käynnissä ja kuinka paljon työtä on vielä jäljellä.
 
 ## Milloin tätä tarvitaan
 

@@ -18,24 +18,24 @@ Profilen sier altså hvordan et program beregner. Det du vil ha for prosjektet, 
 
 ### Beregningsregler og beregningsalternativer
 
-En beregningsregel er en bryter: på eller av. Profilen bestemmer hvilke bryterne som er på. Et beregningsalternativ er et valg du gjør selv. Du ser forskjellen i appen selv, i blokken *Beregningsprofil og beregningsalternativer*:
+En beregningsregel er en bryter: på eller av. Profilen bestemmer hvilke brytere som er på. Et beregningsalternativ er et valg du gjør selv. Du ser forskjellen i appen selv, i blokken *Beregningsprofil og beregningsalternativer*:
 
 - **Beregningsregler** står under *Beregningsregler i denne profilen*, gruppert per emne, for eksempel *Fremdrift og fullført arbeid*, *Avhengigheter og forsinkelse* og *Slakk og seneste datoer*. Hver linje er et avkrysningsfelt med verdien til profilen etter den (*grunnlag: på* eller *grunnlag: av*). Hvis valget ditt avviker fra det, skiller linjen seg ut, og *Tilbakestill til grunnlag* vises. Pilen foran en linje åpner forklaringen av den beregningsregelen. Les den først hvis du vil endre en beregningsregel.
 - **Beregningsalternativer** står under *Beregningsalternativer for dette prosjektet*: blant annet *Definisjon av kritisk*, *Slakkberegning*, *Åpne-ende aktiviteter er kritiske*, *Marker nesten kritisk* og *Forsinkelseskalender*. De sier hva du vil ha for dette prosjektet, ikke hvordan et program beregner. Hva de gjør, står i [Kritisk linje og slakk](docs://uitleg-kritiek-pad) og [Avhengigheter og forsinkelse](docs://uitleg-relaties).
 
-Et eksempel av hvert. «En aktivitet er kritisk hvis totalslakken er 0 eller mindre» er et beregningsalternativ: du kan sette terskelverdien til 4, og da er alt med 4 arbeidsdager eller mindre slakk kritisk. «Aktiviteter som ikke er startet, flyttes til statusdatoen» er en beregningsregel: Open Planner Studio og Primavera P6 gjør det, Microsoft Project gjør ikke det.
+Et eksempel av hvert. «En aktivitet er kritisk hvis totalslakken er 0 eller mindre» er et beregningsalternativ: du kan sette terskelverdien til 4, og da er alt med 4 arbeidsdager eller mindre slakk kritisk. «Aktiviteter som ikke er startet, flyttes til statusdatoen» er en beregningsregel: Open Planner Studio og Primavera P6 gjør det, Microsoft Project gjør det ikke.
 
 Profilen og beregningsalternativene hører til prosjektfilen, ikke til appen. Lagrer du prosjektet, følger de med. To prosjekter i samme app kan derfor beregne med ulik profil. Et prosjekt uten profil beregnes som Open Planner Studio.
 
-Finnes det beregningsalternativer som bare Primavera kjenner, viser blokken også *Innstillinger fra kildefilen* nederst. Det gjelder for et prosjekt fra en .xer file, men også hvis du velger *Primavera P6* i vinduet *Nytt prosjekt* eller bruker standardinnstillingene for Primavera P6. Du kan ikke endre dem her.
+Finnes det beregningsalternativer som bare Primavera kjenner, viser blokken også *Innstillinger fra kildefilen* nederst. en .xer-fil / En .xer-fil / en slik .xer-fil (replace everywhere), men også hvis du velger *Primavera P6* i vinduet *Nytt prosjekt* eller bruker standardinnstillingene for Primavera P6. Du kan ikke endre dem her.
 
 ### Hvor du velger profilen
 
-For et nytt prosjekt står beregningsprofilen i vinduet *Nytt prosjekt*, som du åpner via *Hjem › Fil › Ny*. Der er *Beregningsprofil* en nedtrekksliste. Velger du en profil der, erstatter appen beregningsalternativene du allerede har fylt inn, med standardverdiene for den profilen. Bare innstillinger fra en kildefil blir. Med *Primavera P6* er *Slakkberegning* da *Sluttslakk*. Med *Microsoft Project* og *Open Planner Studio* står hvert beregningsalternativ på standard, så *Slakkberegning* er *Automatisk (standard)*. Med en statusdato er det også slik Microsoft Project selv beregner: en påbegynt aktivitet får sluttslakk, og alle andre aktiviteter får den minste av startslakk og sluttslakk.
+For et nytt prosjekt står beregningsprofilen i vinduet *Nytt prosjekt*, som du åpner via *Hjem › Fil › Ny*. Der er *Beregningsprofil* en nedtrekksliste. Velger du en profil der, erstatter appen beregningsalternativene du allerede har fylt inn, med standardverdiene for den profilen. Bare innstillinger fra en kildefil blir stående. Med *Primavera P6* er *Slakkberegning* da *Sluttslakk*. Med *Microsoft Project* og *Open Planner Studio* står hvert beregningsalternativ på standard, så *Slakkberegning* er *Automatisk (standard)*. Med en statusdato er det også slik Microsoft Project selv beregner: en påbegynt aktivitet får sluttslakk, og alle andre aktiviteter får den minste av startslakk og sluttslakk.
 
 For et eksisterende prosjekt velger du profilen under *Innstillinger › Prosjekt › Prosjektinfo*, i blokken *Beregningsprofil og beregningsalternativer*, i nedtrekkslisten *Beregningsprofil*. Du kommer også til samme sted via *Fil › Prosjektinfo*. Å bytte profil her endrer bare beregningsreglene. Beregningsalternativene dine blir som de er. Vil du også ha standardberegningsalternativene for den nye profilen, velger du *Bruk standardinnstillingene i denne profilen*.
 
-Til du trykker *Bruk*, finnes en endring bare i skjemaet. Med *Bruk* omberegner appen tidsplanen med en gang, også når *Beregne automatisk* er av. Har aktiviteter flyttet seg, sier appen hvor mange, for eksempel *Etter bruk er 4 aktiviteter forskjøvet.* Hele endringen angres i ett steg med *Angre*.
+Frem til du trykker *Bruk*, ligger endringen bare i skjemaet. Med *Bruk* omberegner appen tidsplanen med en gang, også når *Beregne automatisk* er av. Har aktiviteter flyttet seg, sier appen hvor mange, for eksempel *Etter bruk er 4 aktiviteter forskjøvet.* Hele endringen angres i ett steg med *Angre*.
 
 Setter du én beregningsregel av eller på i en profil, lager appen en egen profil. Den heter *Kopi av Open Planner Studio*, eller *Kopi av* og navnet på profilen du startet fra. Du kan gi den et annet navn og lagre den med *Lagre som mal* for andre prosjekter i denne appen. Prosjektet har alltid sin egen kopi: endrer du malen senere, endres ikke prosjektet med den.
 
@@ -48,7 +48,7 @@ Når du åpner en fil, foreslår appen en profil basert på formatet:
 - En fil i formatet *MS Project XML*, *Primavera P6 XML* eller *CSV (semikolonseparert)* åpnes med *Open Planner Studio*, uten melding om profil.
 - Ditt eget prosjekt (.ifc) åpnes med profilen som er lagret i filen.
 
-For en .mpp- eller .xer file meldes profilen av appen: *Dette prosjektet beregner som Microsoft Project. Endre det via Fil → Prosjektinfo → Beregningsprofil og beregningsalternativer.* Med knappen *Åpne beregningsprofil* i meldingen går du rett til Prosjektinfo. For en .xer file er denne linjen den første detaljlinjen i åpningsmeldingen for filen. Mer om meldingen står i [Åpne en Primavera P6-fil (.xer)](docs://howto-xer-openen) og [Åpne en MS Project-fil (.mpp)](docs://howto-mpp-openen).
+For en .mpp- eller .xer-fil melder appen hvilken profil som brukes: *Dette prosjektet beregner som Microsoft Project. Endre det via Fil → Prosjektinfo → Beregningsprofil og beregningsalternativer.* Med knappen *Åpne beregningsprofil* i meldingen går du rett til Prosjektinfo. For en .xer file er denne linjen den første detaljlinjen i åpningsmeldingen for filen. Mer om meldingen står i [Åpne en Primavera P6-fil (.xer)](docs://howto-xer-openen) og [Åpne en MS Project-fil (.mpp)](docs://howto-mpp-openen).
 
 For en .mpp-fil setter appen bare profilen. Beregningsalternativene blir tomme, akkurat som i et nytt prosjekt med profilen *Microsoft Project*: *Slakkberegning* er *Automatisk (standard)*. En åpnet .mpp-fil og et nytt prosjekt med *Microsoft Project* beregner derfor slakk på samme måte.
 

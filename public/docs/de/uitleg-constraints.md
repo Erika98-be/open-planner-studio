@@ -1,6 +1,6 @@
 # Einschränkungen und Stichtage
 
-Die Ziegel werden erst am 21. Juni geliefert. Die Genehmigung ist noch nicht eingegangen. Das Dach muss vor dem Feiertag der Bauarbeiter geschlossen sein. Beziehungen legen fest, dass ein Vorgang auf einen anderen Vorgang wartet. Vereinbarungen über ein Datum folgen aber nicht aus der Reihenfolge der Arbeiten. Dafür gibt es Einschränkungen und Stichtage. In diesem Artikel lesen Sie, was jeder Typ bewirkt, wann ein Vorgang sich verschiebt und wann nur der Puffer sich ändert, was ein harter Pin ist und wie die App einen Konflikt meldet.
+Die Ziegel werden erst am 21. Juni geliefert. Die Genehmigung ist noch nicht eingegangen. Das Dach muss vor den Bauferien geschlossen sein. Beziehungen legen fest, dass ein Vorgang auf einen anderen Vorgang wartet. Vereinbarungen über ein Datum folgen aber nicht aus der Reihenfolge der Arbeiten. Dafür gibt es Einschränkungen und Stichtage. In diesem Artikel lesen Sie, was jeder Typ bewirkt, wann ein Vorgang sich verschiebt und wann nur der Puffer sich ändert, was ein harter Pin ist und wie die App einen Konflikt meldet.
 
 Die Regeln und Beispiele gelten für ein neues Projekt, mit dem Berechnungsprofil *Open Planner Studio* und einer Arbeitswoche von Montag bis Freitag.
 
@@ -28,7 +28,7 @@ Den Typ wählen Sie im Feld *Einschränkung* im Bereich *Eigenschaften*. So bere
 - *Anfang nicht später als (SNLT)* und *Ende nicht später als (FNLT)*: eine obere Grenze für Anfang oder Ende. Sie verschieben nichts. Wird die Grenze nicht erreicht, meldet die App eine verletzte Einschränkung, und der Puffer wird negativ.
 - *Muss anfangen am (MSO)* und *Muss enden am (MFO)*: eine untere und eine obere Grenze zugleich. Der Vorgang verschiebt sich auf das Datum, wenn es später ist, als die Beziehungen verlangen. Liegt das Datum vor dem, was die Beziehungen erlauben, bleibt der Vorgang dort, wohin die Beziehungen ihn setzen, und der Puffer wird negativ.
 
-Fällt ein Datum auf einen Samstag, Sonntag oder freien Tag, liest die App es als Arbeitstag: eine untere Grenze (SNET, FNET) als nächsten Arbeitstag, eine obere Grenze (SNLT, FNLT) als vorherigen.
+Fällt ein Datum auf einen Samstag, Sonntag oder arbeitsfreien Tag, liest die App es als Arbeitstag: eine untere Grenze (SNET, FNET) als nächsten Arbeitstag, eine obere Grenze (SNLT, FNLT) als vorherigen.
 
 ### Was ein negativer Puffer bedeutet
 
@@ -52,7 +52,7 @@ Ein Vorgang hat eine primäre Einschränkung. Wenn Sie zusätzlich eine zweite G
 
 ### Der Stichtag
 
-Ein Stichtag ist ein eigenes Datum an einem Vorgang, neben der Einschränkung. Er ist eine obere Grenze für das Ende: Er verschiebt nichts, macht den Puffer aber negativ, wenn der Vorgang nicht rechtzeitig fertig ist. Die App meldet dann im Bereich *Warnungen* *Stichtag … überschritten — frühestes Ende …*, und die Statusleiste zählt die überschrittenen Stichtage. In der Gantt-Ansicht steht ein Pfeil nach unten am Stichtag: grün, solange der Vorgang rechtzeitig fertig ist, rot, sobald er zu spät ist. Ein Stichtag an einem Samstag zählt bis einschließlich dem Freitag davor.
+Ein Stichtag ist ein eigenes Datum an einem Vorgang, neben der Einschränkung. Er ist eine obere Grenze für das Ende: Er verschiebt nichts, macht den Puffer aber negativ, wenn der Vorgang nicht rechtzeitig fertig ist. Die App meldet dann im Bereich *Warnungen* *Stichtag … überschritten — frühestes Ende …*, und die Statusleiste zählt die überschrittenen Stichtage. In der Gantt-Ansicht steht ein Pfeil nach unten am Stichtag: grün, solange der Vorgang rechtzeitig fertig ist, rot, sobald er zu spät ist. Ein Stichtag an einem Samstag zählt als der Freitag davor.
 
 Für den Puffer wirkt ein Stichtag wie FNLT. Der Unterschied liegt in der Verwendung. Ein Stichtag ist ein Zieldatum, das Sie bewachen wollen. Er steht getrennt von der Einschränkung, daher kann ein Vorgang sowohl eine Einschränkung als auch einen Stichtag haben. FNLT ist eine Einschränkung: Eine Verletzung erscheint als verletzte Einschränkung statt als überschrittener Stichtag.
 

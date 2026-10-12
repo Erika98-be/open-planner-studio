@@ -16,7 +16,7 @@ Du registrerer en grunnlinje når tidsplanen er godkjent og arbeidet ennå ikke 
 4. Klikk på *Lagre*. Grunnlinjen står nå i listen og blir med en gang den aktive grunnlinjen.
 5. Klikk på *Lukk*.
 
-Under hver aktivitetsstolpe i Gantt-diagrammet finnes nå en tynn stolpe med grunnlinjedatoene. En milepæl får et lite rombe. Du slår overlegget av eller på med *Visning › Grunnlinjer og fremdrift › Grunnlinjeoverlegg*.
+Under hver aktivitetsstolpe i Gantt-diagrammet finnes nå en tynn stolpe med grunnlinjedatoene. En milepæl får en liten diamant. Du slår overlegget av eller på med *Visning › Grunnlinjer og fremdrift › Grunnlinjeoverlegg*.
 
 ### Velge den aktive grunnlinjen
 
@@ -36,7 +36,7 @@ Hver grunnlinje har seks kolonner i aktivitetstabellen. Klikk på **+** til høy
 
 ## Fallgruver og hva appen gjør
 
-**En utdatert tidsplan.** Hvis tidsplanen er utdatert, står det i vinduet *Tidsplanen er utdatert — omberegn først (F5)*. Det er en advarsel. Lagring er fortsatt mogelig, men da lagrer du de gamle datoene. Lukk vinduet, trykk **Beregn** og lagre først etter det.
+**En utdatert tidsplan.** Hvis tidsplanen er utdatert, står det i vinduet *Tidsplanen er utdatert — omberegn først (F5)*. Det er en advarsel. Lagring er fortsatt mulig, men da lagrer du de gamle datoene. Lukk vinduet, trykk **Beregn** og lagre først etter det.
 
 **En grunnlinje med fremdrift.** Lagrer du en grunnlinje etter at du har registrert fremdrift, registrerer den tilstanden med de faktiske datoene. Avviket er da null, og det sier ikke lenger noe om utførelsen. Registrer grunnlinjen før arbeidet starter.
 

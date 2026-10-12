@@ -4,7 +4,7 @@ Cíl: zaznamenat plán jako dohodu (směrný plán), abyste později viděli, ja
 
 ## Kdy to potřebujete
 
-Směrný plán zaznamenáte tehdy, když je plán schválen a stavební práce ještě nemají začít. Pokud se plán později formálně upraví, například po změnovém příkazu, uložíte druhý směrný plán a první si ponecháte. Díky tomu měříte provádění vůči první dohodě i vůči upravené. Co směrný plán přesně zaznamená a jak aplikace počítá odchylku, je vysvětleno v [Průběh, datum stavu a směrný plán](docs://uitleg-voortgang).
+Směrný plán zaznamenáte tehdy, když je plán schválen a práce ještě nezačaly. Pokud se plán později formálně upraví, například po změnovém příkazu, uložíte druhý směrný plán a první si ponecháte. Díky tomu měříte provádění vůči první dohodě i vůči upravené. Co směrný plán přesně zaznamená a jak aplikace počítá odchylku, je vysvětleno v [Průběh, datum stavu a směrný plán](docs://uitleg-voortgang).
 
 ## Postup
 

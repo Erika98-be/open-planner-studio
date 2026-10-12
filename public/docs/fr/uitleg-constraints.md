@@ -1,6 +1,6 @@
 # Contraintes et échéances
 
-Les briques ne sont livrées que le 21 juin. Le permis n'est pas encore arrivé. Le toit doit être fermé avant les jours fériés du bâtiment. Les relations indiquent qu'une tâche attend une autre tâche, mais un accord sur une date ne découle pas de l'ordre des travaux. C'est à cela que servent les contraintes et les échéances. Dans cet article, vous découvrez ce que fait chaque type, quand une tâche bouge et quand seule la marge change, ce qu'est un verrouillage strict et comment l'application signale un conflit.
+Les briques ne sont livrées que le 21 juin. Le permis n'est pas encore arrivé. Le toit doit être fermé avant les congés du bâtiment. Les relations indiquent qu'une tâche attend une autre tâche, mais un accord sur une date ne découle pas de l'ordre des travaux. C'est à cela que servent les contraintes et les échéances. Dans cet article, vous découvrez ce que fait chaque type, quand une tâche bouge et quand seule la marge change, ce qu'est un verrouillage strict et comment l'application signale un conflit.
 
 Les règles et les exemples s'appliquent à un nouveau projet, avec le profil de calcul *Open Planner Studio* et une semaine ouvrée du lundi au vendredi.
 
@@ -23,7 +23,7 @@ Vous choisissez le type dans le champ *Contrainte* du panneau *Propriétés*. Vo
 
 - *Dès que possible (ASAP)* : aucune limite. C'est la valeur par défaut : la tâche commence dès que ses relations le permettent.
 - *Le plus tard possible (ALAP)* : la tâche se déplace le plus tard possible, sans qu'un successeur doive commencer plus tard. Elle consomme donc sa marge libre. Si elle a encore une marge totale après cela, parce que ses successeurs ont eux-mêmes de la place, elle reste non critique ; si celle-ci est aussi épuisée, elle devient critique.
-- *Début au plus tôt le (SNET)* : une limite inférieure pour le début. Si la tâche commencerait plus tôt, elle se déplace à la date ; si la date est plus tôt que ce que les relations permettent, la contrainte ne fait rien.
+- *Début au plus tôt le (SNET)* : une limite inférieure pour le début. Si la tâche commencerait plus tôt, elle se déplace à la date ; si la date est antérieure à ce que les relations permettent, la contrainte ne fait rien.
 - *Fin au plus tôt le (FNET)* : la même chose, mais pour la fin de la tâche.
 - *Début au plus tard le (SNLT)* et *Fin au plus tard le (FNLT)* : une limite supérieure pour le début ou la fin. Elles ne déplacent rien. Si la limite n'est pas respectée, l'application signale une contrainte violée et la marge devient négative.
 - *Doit commencer le (MSO)* et *Doit finir le (MFO)* : une limite inférieure et une limite supérieure à la fois. La tâche se déplace à la date si celle-ci est plus tardive que ce que ses relations exigent. Si la date est plus tôt que ce que les relations permettent, la tâche reste là où les relations la placent, et la marge devient négative.
@@ -32,7 +32,7 @@ Si une date tombe un samedi, un dimanche ou un jour non ouvré, l'application la
 
 ### Ce que signifie une marge négative
 
-Une limite supérieure travaille à rebours. Si la contrainte place la date au plus tard d'une tâche avant sa date au plus tôt, la marge totale devient négative. C'est aussi le cas pour les tâches qui la précèdent : si le brickwork doit commencer au plus tard le vendredi 11 juin et ne peut pas commencer avant le lundi 14 juin, les tâches qui précèdent le brickwork ont aussi un jour ouvré de retard. Toutes les tâches à marge négative sont critiques ; leur fonctionnement est expliqué dans [Chemin critique et marge](docs://uitleg-kritiek-pad).
+Une limite supérieure travaille à rebours. Si la contrainte place la date au plus tard d'une tâche avant sa date au plus tôt, la marge totale devient négative. C'est aussi le cas pour les tâches qui la précèdent : si la maçonnerie doit commencer au plus tard le vendredi 11 juin ... les tâches qui précèdent la maçonnerie et ne peut pas commencer avant le lundi 14 juin, les tâches qui précèdent le brickwork ont aussi un jour ouvré de retard. Toutes les tâches à marge négative sont critiques ; leur fonctionnement est expliqué dans [Chemin critique et marge](docs://uitleg-kritiek-pad).
 
 Les barres ne bougent pas à cause d'une limite supérieure. Vous voyez le conflit dans la *Marge totale* négative, dans un losange rouge au-dessus de la barre, dans l'avis affiché dans la barre d'état (par exemple *1 contrainte(s) non respectée(s)*) et dans le panneau *Avertissements*.
 

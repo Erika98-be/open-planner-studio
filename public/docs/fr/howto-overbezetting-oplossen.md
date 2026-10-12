@@ -2,7 +2,7 @@
 
 Objectif : voir à quel jour une ressource a trop à faire et résoudre ce problème, en général en nivelant les tâches.
 
-## Quand en avez-vous besoin
+## Quand vous en avez besoin
 
 Sur le papier, votre planning fonctionne. Mais le maçon est affecté à deux murs qui se font les mêmes jours. L'application appelle cela une **surallocation**. Une ressource est en surallocation un jour ouvré si le planning lui demande, ce jour-là, plus que sa capacité (*Unités max*). Elle est aussi en surallocation si elle ne travaille pas ce jour-là selon son calendrier.
 
@@ -45,12 +45,12 @@ Si vous modifiez une option dans la fenêtre après avoir cliqué sur *Calculer*
 
 L'application place les tâches une par une. Les tâches placées en premier restent à leur place. Les tâches avec la priorité la plus haute passent en premier. À priorité égale, la tâche avec la marge la plus petite passe en premier.
 
-Si vous voulez décider vous-même quelle tâche reste en place, donnez-lui une priorité plus haute. Faites un clic droit sur la barre de la tâche dans le Gantt et choisissez *Priorité*, puis *Basse* (100), *Normale* (500) ou *Haute* (900). *Normale* est la valeur par défaut. Vous pouvez aussi saisir vous-même un nombre de 0 à 1000 dans la colonne *Priorité de nivellement* : cliquez sur le **+** à droite de l'en-tête du tableau des tâches (*Ajouter une colonne*) et choisissez cette colonne sous *Planification*. Plus le nombre est élevé, plus la tâche a de chances de rester en place. L'application n'accepte pas un nombre supérieur à 1000. Une tâche avec la priorité 1000 ne bouge jamais pour la capacité.
+Si vous voulez décider vous-même quelle tâche reste en place, donnez-lui une priorité plus haute. Faites un clic droit sur la barre de la tâche dans le Gantt et choisissez *Priorité*, puis *Basse* (100), *Normale* (500) ou *Haute* (900). *Normale* est la valeur par défaut. Vous pouvez aussi saisir vous-même un nombre de 0 à 1000 dans la colonne *Priorité de nivellement* : cliquez sur le **+** à droite de l'en-tête du tableau des tâches (*Ajouter une colonne*) et choisissez cette colonne sous *Planification*. Plus le nombre est élevé, plus la tâche a de chances de rester en place. L'application n'accepte pas un nombre supérieur à 1000. Une tâche de priorité 1000 ne bouge jamais à cause de la capacité.
 
 ### Annuler et rétablir
 
 - *Annuler* (Ctrl+Z) annule *Appliquer* en une seule étape.
-- *Ressources › Nivellement › Effacer le nivellement* supprime tout le nivellement des tâches. Le bouton est gris tant qu'il n'y a pas de nivellement. Une surallocation qui revient ainsi est simplement de nouveau présente.
+- *Ressources › Nivellement › Effacer le nivellement* supprime tout le nivellement des tâches. Le bouton est gris tant qu'il n'y a pas de nivellement. La surallocation qui réapparaît ainsi est normale : elle était simplement masquée par le nivellement.
 - Si vous avez modifié le planning depuis, choisissez simplement *Niveler…* à nouveau. L'application repart alors de zéro : les anciens retards ne comptent pas.
 
 ## Pièges et ce que fait l'application alors

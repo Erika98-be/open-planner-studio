@@ -43,7 +43,7 @@ Un cardine ha un solo campo, *Data effettiva*.
 2. Fai doppio clic su una cella, scrivi il valore e premi Invio. Scrivi una percentuale come `50` o `50%`, una data come `25-06-2027`, una durata rimanente come `1`.
 3. Per *Stato*, dopo un doppio clic premi Invio e scegli *Non iniziata*, *In corso* o *Completata*.
 
-Se scrivi una durata rimanente, l'app calcola a ritroso la percentuale: per un'attività di 2 giorni lavorativi, un residuo di 1 dà una percentuale di 50. Un residuo di 0 completa l'attività. Se scegli *Non iniziata* in *Stato*, la percentuale va a 0 e le date effettive scompaiono.
+Se scrivi una durata rimanente, l'app calcola a ritroso la percentuale: per un'attività di 2 giorni lavorativi, una durata rimanente di 1 dà una percentuale di 50. Un residuo di 0 completa l'attività. Se scegli *Non iniziata* in *Stato*, la percentuale va a 0 e le date effettive scompaiono.
 
 **Tutti i dati di un'attività nella finestra di modifica.** Fai clic destro sull'attività e scegli *Modifica...*. Anche i campi dell'avanzamento sono lì. Si applicano solo quando fai clic su *Salva*.
 
@@ -55,7 +55,7 @@ Ogni modifica dell'avanzamento o della data di stato rende la pianificazione non
 
 ## Controlla il risultato
 
-- Alla data di stato il Gantt mostra una linea tratteggiata con la data nell'intestazione. Sulle attività in corso la linea si allarga fino alla percentuale nella barra. Accendi o spegni queste linee con *Vista › Baseline e progresso › Linea di avanzamento* e *Linea data di stato*.
+- Alla data di stato il Gantt mostra una linea tratteggiata con la data nell'intestazione. Sulle attività in corso la linea si sposta fino alla percentuale raggiunta nella barra. Accendi o spegni queste linee con *Vista › Baseline e progresso › Linea di avanzamento* e *Linea data di stato*.
 - Le attività completate non sono mai rosse: con una data di stato, un'attività completata non è critica.
 - Le fasi mostrano una percentuale derivata e la fine della pianificazione può essersi spostata.
 - Se hai salvato una baseline, la pianificazione originale si trova sotto ogni barra e il tipo di report *Variance* mostra lo scostamento.

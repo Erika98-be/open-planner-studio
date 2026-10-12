@@ -4,7 +4,7 @@ Obiettivo: vedere dove una risorsa ha troppo da fare in un giorno e risolverlo, 
 
 ## Quando ti serve questo
 
-Sulla carta la tua pianificazione funziona, ma il Bricklayer è assegnato a due muri che si costruiscono negli stessi giorni. L'app dice che la risorsa è **sovrassegnata**. Una risorsa è sovrassegnata in un giorno lavorativo se la pianificazione le chiede più della sua capacità in quel giorno (*Unità max*), oppure se quel giorno non lavora secondo il suo calendario.
+Sulla carta la tua pianificazione funziona, ma il muratore è assegnato a due muri che si costruiscono negli stessi giorni. L'app dice che la risorsa è **sovrassegnata**. Una risorsa è sovrassegnata in un giorno lavorativo se la pianificazione le chiede più della sua capacità in quel giorno (*Unità max*), oppure se quel giorno non lavora secondo il suo calendario.
 
 Cerca prima dove una risorsa è sovrassegnata. Scegli poi una soluzione. Il **livellamento** è la soluzione che l'app calcola per te: fa iniziare le attività più tardi, finché la risorsa riesce a farcela. Come funziona il calcolo, lo leggi in [Livellamento risorse](docs://uitleg-nivelleren).
 
@@ -45,7 +45,7 @@ Se cambi un'opzione nella finestra dopo aver fatto clic su *Calcola*, la propost
 
 L'app colloca le attività una per una. Le attività che vengono prima restano dove sono. Prima vanno le attività con la priorità più alta. Con la stessa priorità, prima va l'attività con il margine minore.
 
-Se vuoi decidere tu quale attività resta ferma, dalle una priorità più alta. Fai clic destro sulla barra dell'attività nel Gantt e scegli *Priorità*, poi *Bassa* (100), *Normale* (500) o *Alta* (900). *Normale* è il valore predefinito. Puoi anche scrivere tu stesso un numero da 0 a 1000 nella colonna *Priorità di livellamento*: fai clic sul **+** a destra dell'intestazione della tabella attività (*Aggiungi colonna*) e scegli quella colonna sotto *Pianificazione*. Un numero più alto significa che l'attività è più probabile che resti ferma. L'app non accetta un numero sopra 1000. Un'attività con priorità 1000 non si sposta mai per la capacità.
+Se vuoi decidere tu quale attività resta ferma, dalle una priorità più alta. Fai clic destro sulla barra dell'attività nel Gantt e scegli *Priorità*, poi *Bassa* (100), *Normale* (500) o *Alta* (900). *Normale* è il valore predefinito. Puoi anche scrivere tu stesso un numero da 0 a 1000 nella colonna *Priorità di livellamento*: fai clic sul **+** a destra dell'intestazione della tabella attività (*Aggiungi colonna*) e scegli quella colonna sotto *Pianificazione*. Più alto è il numero, più è probabile che l'attività resti ferma. L'app non accetta un numero sopra 1000. Un'attività con priorità 1000 non si sposta mai per la capacità.
 
 ### Annullare e ripetere
 
@@ -53,7 +53,7 @@ Se vuoi decidere tu quale attività resta ferma, dalle una priorità più alta. 
 - *Risorse › Livellamento › Cancella livellamento* rimuove tutto il livellamento dalle attività. Il pulsante è grigio finché non c'è livellamento. Così la risorsa torna sovrassegnata, come prima.
 - Se da allora hai cambiato la pianificazione, scegli di nuovo *Livella…*. L'app riparte da zero: i vecchi slittamenti non contano.
 
-## Punti critici e cosa fa l'app allora
+## Problemi e cosa fa l'app
 
 **Non ancora calcolata.** Se la pianificazione non è stata calcolata, la finestra mostra *Calcola la pianificazione (F5) prima di livellare.* e *Calcola* non è disponibile.
 
@@ -69,7 +69,7 @@ Se vuoi decidere tu quale attività resta ferma, dalle una priorità più alta. 
 
 **I materiali non vengono livellati.** Se una risorsa materiale chiede più delle sue *Unità max* in un giorno, risulta sovrassegnata in *Sovrallocazione*, ma non compare nella finestra di livellamento.
 
-**Il livellamento non si adatta.** Gli slittamenti restano come sono stati calcolati. Se cambi più tardi la durata di un'attività, un'attività livellata resta dov'è, anche se quel posto non serve più. Livella allora di nuovo.
+**Il livellamento non si adatta.** I ritardi di livellamento restano come sono stati calcolati. Se cambi più tardi la durata di un'attività, un'attività livellata resta dov'è, anche se quel posto non serve più. Livella allora di nuovo.
 
 **Sovrassegnata a causa del calendario.** Se la risorsa non lavora in un giorno secondo il suo calendario, il pannello *Avvisi* dice per esempio *Sovrassegnata per 5 giorno/i (29-06-2027 – 05-07-2027), di cui 1 giorno/i in cui la risorsa non lavora secondo il suo calendario*. Se un'attività attraversa sempre un giorno così, cioè il secondo motivo sopra, il livellamento non lo risolve.
 

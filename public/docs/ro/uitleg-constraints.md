@@ -1,6 +1,6 @@
 # Restricții și termene limită
 
-Cărămizile sunt livrate abia pe 21 iunie. Autorizația nu a sosit încă. Acoperișul trebuie închis înainte de sărbătoarea de construcție. Dependențele înregistrează că o activitate așteaptă o altă activitate, dar înțelegerile despre o dată nu decurg din ordinea lucrărilor. Pentru asta sunt restricțiile și termenele limită. În acest articol citiți ce face fiecare tip, când se mută o activitate și când se modifică doar marja, ce este o fixare strictă și cum raportează aplicația un conflict.
+Cărămizile sunt livrate abia pe 21 iunie. Autorizația nu a sosit încă. Acoperișul trebuie închis înainte de concediul colectiv din construcții. Dependențele înregistrează că o activitate așteaptă o altă activitate, dar acordurile privind o anumită dată nu decurg din ordinea lucrărilor. Pentru asta sunt restricțiile și termenele limită. În acest articol citiți ce face fiecare tip, când se mută o activitate și când se modifică doar marja, ce este o fixare strictă și cum raportează aplicația un conflict.
 
 Regulile și exemplele se aplică unui proiect nou, cu profilul de calcul *Open Planner Studio* și o săptămână de lucru de luni până vineri.
 
@@ -8,7 +8,7 @@ Regulile și exemplele se aplică unui proiect nou, cu profilul de calcul *Open 
 
 O **restricție** este o limită de dată pentru o singură activitate, independentă de dependențele ei. O astfel de limită poate funcționa în două moduri:
 
-- Ea **împinge**: activitatea nu poate începe sau să se încheie mai devreme de dată. Dacă activitatea ar începe mai devreme din cauza dependențelor, se mută la dată.
+- Ea **împinge**: activitatea nu poate începe și nici nu se poate încheia mai devreme de dată. Dacă activitatea ar începe mai devreme din cauza dependențelor, se mută la dată.
 - Ea **verifică**: activitatea trebuie să înceapă sau să se încheie cel mai târziu la dată. Aplicația nu mută nimic. Dacă planificarea nu respectă data, **marja** activității și a lanțului dinaintea ei devine negativă. Marja este spațiul pe care îl are o activitate înainte ca data de sfârșit a proiectului să se mute; negativ înseamnă că, pe hârtie, sunteți deja în întârziere (vezi [Drumul critic și marja](docs://uitleg-kritiek-pad)).
 
 Un **termen limită** este o formă mai simplă de verificare: o dată țintă pentru sfârșitul unei activități, fără ca activitatea să fie mutată de ceva.
@@ -32,7 +32,7 @@ Dacă o dată cade sâmbătă, duminică sau într-o zi liberă, aplicația o ci
 
 ### Ce înseamnă marja negativă
 
-O limită superioară funcționează invers. Dacă restricția pune data târzie a unei activități înaintea datei devreme, marja totală devine negativă. Același lucru se aplică și activităților dinaintea ei: dacă zidăria trebuie să înceapă cel mai târziu vineri 11 iunie și nu poate începe înainte de luni 14 iunie, activitățile dinaintea zidăriei sunt și ele cu o zi lucrătoare în întârziere. Toate activitățile cu marjă negativă sunt critice; modul în care funcționează aceasta este explicat în [Drumul critic și marja](docs://uitleg-kritiek-pad).
+O limită superioară funcționează invers. Dacă restricția pune data de sfârșit sau de început târzie a unei activități înaintea celei mai devreme, marja totală devine negativă. Același lucru se aplică și activităților dinaintea ei: dacă zidăria trebuie să înceapă cel mai târziu vineri 11 iunie și nu poate începe înainte de luni 14 iunie, activitățile dinaintea zidăriei sunt și ele cu o zi lucrătoare în întârziere. Toate activitățile cu marjă negativă sunt critice; modul în care funcționează aceasta este explicat în [Drumul critic și marja](docs://uitleg-kritiek-pad).
 
 Barele nu se mută din cauza unei limite superioare. Conflictul îl vedeți în *Marjă totală* cu valoare negativă, într-un romb roșu deasupra barei, în mesajul din bara de stare (de exemplu *1 restricție(i) încălcată(e)*) și în panoul *Avertismente*.
 
@@ -64,7 +64,7 @@ Pentru marjă, un termen limită face același lucru ca FNLT. Deosebirea ține d
 
 Toate modificările apar abia după **Calculare** (F5).
 
-## Exemplu lucrat
+## Exemplu rezolvat (use the same heading in both articles)
 
 Exemplul este o mică rețea pentru o extindere a unei case. Începe luni, 7 iunie 2027:
 
@@ -76,7 +76,7 @@ Exemplul este o mică rețea pentru o extindere a unei case. Începe luni, 7 iun
 
 Drumul critic este *Groundwork*, *Pour foundation*, *Brickwork* și *Roofing*. Proiectul se încheie miercuri 23 iunie. Ce se schimbă cu o restricție pe *Brickwork*?
 
-- **SNET luni 21 iunie** (cărămizile sosesc abia atunci): *Brickwork* rulează de luni 21 până vineri 25 iunie, *Roofing* de luni 28 până miercuri 30 iunie. Proiectul se încheie miercuri 30 iunie. *Groundwork* și *Pour foundation* au acum 5 zile lucrătoare de marjă și nu mai sunt critice, *Scaffolding* are 8.
+- **SNET luni 21 iunie** (cărămizile sosesc abia atunci): *Brickwork* se desfășoară de luni 21 până vineri 25 iunie, *Roofing* de luni 28 până miercuri 30 iunie. Proiectul se încheie miercuri 30 iunie. *Groundwork* și *Pour foundation* au acum 5 zile lucrătoare de marjă și nu mai sunt critice, *Scaffolding* are 8.
 - **SNET miercuri 9 iunie**: fără efect. Dependențele îl lasă oricum pe *Brickwork* să înceapă abia luni 14 iunie.
 - **SNLT miercuri 16 iunie**: fără efect. *Brickwork* începe luni 14 iunie și respectă limita fără probleme.
 - **SNLT vineri 11 iunie**: prea strâns. *Brickwork* începe totuși luni 14 iunie, cu o zi lucrătoare întârziere. *Groundwork*, *Pour foundation* și *Brickwork* primesc −1 zi lucrătoare de marjă, iar aplicația raportează *Restricția Nu începe după (SNLT) 11-06-2027 este suprascrisă de logică (marjă negativă)*. Nimic nu se mută.
@@ -87,7 +87,7 @@ Drumul critic este *Groundwork*, *Pour foundation*, *Brickwork* și *Roofing*. P
 Și cu o restricție sau un termen limită pe o altă activitate:
 
 - **ALAP pe** *Scaffolding*: activitatea se mută joi 17 și vineri 18 iunie, cel mai târziu moment înaintea lui *Roofing*. *Roofing* este singurul ei succesor și avea loc exact pentru cele 3 zile lucrătoare de marjă; acestea sunt consumate acum, iar *Scaffolding* este critică.
-- **SNET sâmbătă 19 iunie pe** *Scaffolding*: limita se socotește ca luni 21 iunie. *Scaffolding* rulează luni 21 și marți 22 iunie, iar *Roofing* se mută odată cu el, la miercuri 23 până vineri 25 iunie.
+- **SNET sâmbătă 19 iunie pe** *Scaffolding*: limita se socotește ca luni 21 iunie. *Scaffolding* rulează luni 21 și marți 22 iunie, iar *Roofing* se mută odată cu ea, de miercuri 23 până vineri 25 iunie.
 - **Termen limită vineri 18 iunie pe** *Roofing*: nimic nu se mută, *Roofing* rămâne de luni 21 până miercuri 23 iunie. *Groundwork*, *Pour foundation*, *Brickwork* și *Roofing* primesc −3 zile lucrătoare de marjă, iar aplicația raportează *Termen limită 18-06-2027 depășit — sfârșit cel mai devreme 23-06-2027*. *Scaffolding* păstrează 0 zile lucrătoare de marjă și devine și ea critică.
 - **SNET luni 21 iunie pe** *Brickwork*, **termen limită vineri 25 iunie pe** *Roofing*: restricția împinge zidăria cu o săptămână mai târziu, iar termenul limită arată că *Roofing* este în întârziere miercuri 30 iunie. *Brickwork* și *Roofing* primesc −3 zile lucrătoare de marjă; *Groundwork* și *Pour foundation* păstrează 2 zile lucrătoare.
 
@@ -95,7 +95,7 @@ Drumul critic este *Groundwork*, *Pour foundation*, *Brickwork* și *Roofing*. P
 
 ## Consecințe și concepții greșite
 
-**"O restricție mută activitatea."** Doar SNET, FNET, MSO și MFO pot pune o activitate mai târziu decât cer dependențele ei, iar ALAP o poate muta mai târziu, în limita marjei libere. SNLT și FNLT nu mută niciodată nimic: ele doar avertizează. Respectarea datei înseamnă atunci să scurtați lanțul dinaintea ei.
+**„O restricție mută activitatea."** Doar SNET, FNET, MSO și MFO pot pune o activitate mai târziu decât cer dependențele ei, iar ALAP o poate muta mai târziu, în limita marjei libere. SNLT și FNLT nu mută niciodată nimic: ele doar avertizează. Respectarea datei înseamnă atunci să scurtați lanțul dinaintea ei.
 
 **"Marja negativă este o eroare a aplicației."** Este semnalul că planificarea intră în conflict cu înțelegerea dumneavoastră despre date. Îl rezolvați prin scurtarea lanțului, prin relaxarea înțelegerii sau prin acceptarea conflictului în mod intenționat.
 
@@ -103,7 +103,7 @@ Drumul critic este *Groundwork*, *Pour foundation*, *Brickwork* și *Roofing*. P
 
 **"Pur și simplu introduc o dată de început."** La o activitate cu predecesor, aceasta devine un SNET. Dacă data este mai devreme decât permite predecesorul, nu face nimic.
 
-**"Termen limită sau FNLT?"** Alegeți un termen limită pentru o dată țintă pe care doriți să o verificați, și o restricție pentru o dată care este cu adevărat o condiție de limită pentru planificare.
+**"Termen limită sau FNLT?"** Alegeți un termen limită pentru o dată țintă pe care doriți să o verificați, și o restricție pentru o dată care este cu adevărat o condiție-limită a planificării.
 
 **"O restricție pe fază."** Asta nu contează. Puneți-o pe activitatea însăși.
 

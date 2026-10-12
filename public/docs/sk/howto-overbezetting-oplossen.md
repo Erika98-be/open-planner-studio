@@ -43,7 +43,7 @@ Ak zmeníte možnosť v okne po tom, ako ste kliknuli na *Prepočítať*, návrh
 
 ### Rozhodnutie, ktorá úloha ostane na mieste
 
-Aplikácia umiestňuje úlohy jednu po druhej. Úlohy, ktoré sú v pláne skôr, ostanú tam, kde sú. Najprv idú úlohy s najvyššou prioritou. Pri rovnakej priorite ide prvá úloha s najmenšou časovou rezervou.
+Aplikácia umiestňuje úlohy jednu po druhej. Úlohy, ktoré sú v pláne skôr, ostanú tam, kde sú. Najprv idú úlohy s najvyššou prioritou. Pri rovnakej priorite sa ako prvá umiestni úloha s najmenšou časovou rezervou.
 
 Ak chcete sami určiť, ktorá úloha ostane na mieste, dajte jej vyššiu prioritu. Kliknite pravým tlačidlom na pruh úlohy v diagrame Gantt a vyberte *Priorita*, potom *Nízka* (100), *Normálna* (500) alebo *Vysoká* (900). *Normálna* je predvolená hodnota. Číslo od 0 do 1000 môžete zadať aj sami v stĺpci *Priorita vyvažovania*: kliknite na **+** vpravo v hlavičke tabuľky úloh (*Pridať stĺpec*) a vyberte tento stĺpec v skupine *Plánovanie*. Vyššie číslo znamená, že úloha pravdepodobnejšie ostane na mieste. Aplikácia neprijme číslo nad 1000. Úloha s prioritou 1000 sa kvôli kapacite nikdy nepresunie.
 
@@ -63,7 +63,7 @@ Ak chcete sami určiť, ktorá úloha ostane na mieste, dajte jej vyššiu prior
 - *Zdroj v niektoré dni, ktoré táto úloha potrebuje, nepracuje — posunutie to nevyrieši.* Zdroj má vo svojom kalendári uprostred úlohy dni voľna. Zmeňte kalendár alebo úlohu.
 - *Bricklayer má v špičke 2 jedn./deň, kapacita je 1 — posunutím sa to nedá vyriešiť.* Podľa svojej krivky úloha sama žiada v jeden deň viac, než zdroj dokáže dodať. Vyberte inú krivku alebo znížte jednotky.
 
-**Okno zobrazí** *Žiadne úlohy sa nemusia posunúť — plán je už bez konfliktov.* Ak sa tento riadok objaví spolu so zoznamom *Zostávajúce konflikty* v návrhu, verte zoznamu. Riadok len hovorí, že nie je čo posúvať. Ak sa riadok objaví bez zoznamu, hoci *Zdroje › Preťaženie* stále hlási zdroj, potom sú všetky kolidujúce úlohy s prioritou 1000 alebo sa už začali. Nehýbu sa a okno ich nehlási ako konflikt. Preto po použití vždy pozrite na *Preťaženie*.
+**Okno zobrazí** *Žiadne úlohy sa nemusia posunúť — plán je už bez konfliktov.* Ak sa tento riadok objaví spolu so zoznamom *Zostávajúce konflikty* v návrhu, verte zoznamu. Riadok len hovorí, že nie je čo posúvať. Ak sa riadok objaví bez zoznamu, hoci *Zdroje › Preťaženie* stále hlási zdroj, potom majú všetky kolidujúce úlohy prioritu 1000 alebo sa už začali. Nehýbu sa a okno ich nehlási ako konflikt. Preto po použití vždy pozrite na *Preťaženie*.
 
 **Úlohy, ktoré sa neposúvajú.** Úloha, ktorá sa už začala alebo je dokončená, sa nikdy neposúva. Jej zaťaženie sa však počíta. Medzníky a fázy sa tiež neposúvajú.
 

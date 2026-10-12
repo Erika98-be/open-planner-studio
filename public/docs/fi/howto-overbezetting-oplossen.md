@@ -1,6 +1,6 @@
 # Ylikuormituksen ratkaiseminen
 
-Tavoite: selvitetään, missä päivässä resurssilla on liikaa työtä, ja ratkaistaan tilanne. Yleensä tehtävät tasataan.
+Tavoite: selvitetään, minä päivinä resurssilla on liikaa työtä, ja ratkaistaan tilanne, ja ratkaistaan tilanne. Yleensä tehtävät tasataan.
 
 ## Milloin tätä tarvitaan
 
@@ -61,7 +61,7 @@ Jos halutaan itse päättää, mikä tehtävä pysyy, sille annetaan korkeampi p
 
 - *Vapaa kapasiteetti pelivaran sisällä ei riitä tämän ristiriidan ratkaisemiseen.* Tämän näkee, kun tasataan vain pelivaran sisällä: tehtävän pelivarassa ei ole vapaata hetkeä. Poista ruudun valinta, jolloin päättymispäivä voi siirtyä.
 - *Resurssi ei työskentele kaikkina päivinä, joita tämä tehtävä tarvitsee. Siirtäminen ei ratkaise tätä*. Resurssilla on oman kalenterinsa mukaan vapaapäiviä tehtävän keskellä. Muuta kalenteria tai tehtävää.
-- *Bricklayer vaatii huipussa 2 kuormitusastetta/päivä, kapasiteetti on 1. Tätä ei voi ratkaista siirtämällä*. Käyrän kautta tehtävä yksin vaatii yhdeltä päivältä enemmän kuin resurssi voi antaa. Valitse toinen käyrä tai pienennä kuormitusastetta.
+- *Bricklayer vaatii huipussa 2 kuormitusastetta/päivä, kapasiteetti on 1. Tätä ei voi ratkaista siirtämällä*. Käyrän vuoksi tehtävä yksinään vaatii yhtenä päivänä enemmän kuin resurssi pystyy antamaan. Valitse toinen käyrä tai pienennä kuormitusastetta.
 
 **Siinä lukee** *Yhtään tehtävää ei tarvitse siirtää — aikataulu on jo ristiriidaton.* Jos tämä rivi näkyy yhdessä ehdotuksen luettelon *Jäljellä olevat ristiriidat* kanssa, luota luetteloon. Rivi kertoo vain, ettei mitään tarvitse siirtää. Jos rivi näkyy ilman luetteloa, vaikka *Resurssit › Ylikuormitus* näyttää vielä yhden resurssin, niin kaikki ristiriitaiset tehtävät on kiinnitetty prioriteetilla 1000 tai ne ovat jo alkaneet. Ne eivät siirry, eikä ikkuna ilmoita niitä ristiriitana. Tarkista sen vuoksi aina käytön jälkeen *Ylikuormitus*.
 

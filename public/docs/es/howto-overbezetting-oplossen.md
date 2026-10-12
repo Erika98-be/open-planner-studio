@@ -50,7 +50,7 @@ Si quiere decidir usted mismo qué tarea se queda donde está, dé a la tarea un
 ### Deshacer y rehacer
 
 - *Deshacer* (Ctrl+Z) anula *Aplicar* en un solo paso.
-- *Recursos › Nivelación › Borrar nivelación* quita toda la nivelación de las tareas. El botón está gris mientras no haya nivelación. La sobreasignación que vuelve así está otra vez ahí.
+- *Recursos › Nivelación › Borrar nivelación* quita toda la nivelación de las tareas. El botón está gris mientras no haya nivelación. La sobreasignación que reaparece de este modo vuelve a estar presente, sin más.
 - Si ha cambiado la planificación desde entonces, elija otra vez *Nivelar…*. La aplicación empieza entonces desde cero: los retrasos anteriores no cuentan.
 
 ## Problemas habituales y qué hace entonces la aplicación

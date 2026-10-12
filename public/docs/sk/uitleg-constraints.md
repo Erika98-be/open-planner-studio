@@ -1,6 +1,6 @@
 # Obmedzenia a termíny
 
-Tehly sa dodajú až 21. júna. Povolenie ešte neprišlo. Strecha musí byť uzavretá pred stavebným sviatkom. Závislosti zaznamenávajú, že úloha čaká na inú úlohu. Dohody o dátume však nevyplývajú z poradia prác. Na to slúžia obmedzenia a termíny. V tomto článku sa dozviete, čo robí každý typ, kedy sa úloha posunie a kedy sa mení iba časová rezerva, čo je pevné ukotvenie a ako aplikácia hlási konflikt.
+Tehly sa dodajú až 21. júna. Povolenie ešte neprišlo. Strecha musí byť uzavretá pred stavebnou dovolenkou. Závislosti zaznamenávajú, že úloha čaká na inú úlohu. Dohody o dátume však nevyplývajú z poradia prác. Na to slúžia obmedzenia a termíny. V tomto článku sa dozviete, čo robí každý typ, kedy sa úloha posunie a kedy sa mení iba časová rezerva, čo je pevné ukotvenie a ako aplikácia hlási konflikt.
 
 Pravidlá a príklady platia pre nový projekt s profilom výpočtu *Open Planner Studio* a pracovným týždňom od pondelka do piatka.
 

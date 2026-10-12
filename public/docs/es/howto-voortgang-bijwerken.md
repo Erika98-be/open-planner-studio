@@ -4,7 +4,7 @@ Objetivo: introducir el estado real del trabajo en la planificación y recalcula
 
 ## Cuándo lo necesita
 
-Actualiza el avance en momentos fijos, por ejemplo cada viernes, cuando el jefe de obra informa del estado. Así la planificación ve lo que ha pasado realmente y calcula el trabajo restante desde la fecha de estado. Por qué la aplicación funciona así se explica en [Avance, fecha de estado y línea base](docs://uitleg-voortgang).
+Actualice el avance en momentos fijos, por ejemplo cada viernes, cuando el jefe de obra informa del estado., por ejemplo cada viernes, cuando el jefe de obra informa del estado. Así la planificación ve lo que ha pasado realmente y calcula el trabajo restante desde la fecha de estado. Por qué la aplicación funciona así se explica en [Avance, fecha de estado y línea base](docs://uitleg-voortgang).
 
 ## Pasos
 

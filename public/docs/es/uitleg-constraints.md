@@ -1,6 +1,6 @@
 # Restricciones y fechas límite
 
-Los ladrillos solo se entregan el 21 de junio. El permiso todavía no ha llegado. El tejado tiene que estar cerrado antes del festivo de obra. Las relaciones indican que una tarea espera a otra tarea, pero los acuerdos sobre una fecha no se derivan del orden de la obra. Para eso sirven las restricciones y las fechas límite. En este artículo aprende qué hace cada tipo, cuándo se mueve una tarea y cuándo cambia solo la holgura, qué es una fijación forzada y cómo indica la aplicación un conflicto.
+Los ladrillos solo se entregan el 21 de junio. El permiso todavía no ha llegado. El tejado tiene que estar cerrado antes de las vacaciones de construcción. Las relaciones indican que una tarea espera a otra tarea, pero los acuerdos sobre una fecha no se derivan del orden de la obra. Para eso sirven las restricciones y las fechas límite. En este artículo aprende qué hace cada tipo, cuándo se mueve una tarea y cuándo cambia solo la holgura, qué es una fijación forzada y cómo indica la aplicación un conflicto.
 
 Las reglas y los ejemplos se aplican a un proyecto nuevo, con el perfil de cálculo *Open Planner Studio* y una semana laboral de lunes a viernes.
 
@@ -32,7 +32,7 @@ Si una fecha cae en sábado, domingo o día no laborable, la aplicación la lee 
 
 ### Qué significa la holgura negativa
 
-Un límite superior calcula hacia atrás. Si la restricción pone la fecha tardía de una tarea antes de su fecha temprana, la holgura total se vuelve negativa. Lo mismo pasa con las tareas anteriores. Si Brickwork debe comenzar el viernes 11 de junio como máximo y no puede comenzar antes del lunes 14 de junio, las tareas anteriores también se retrasan un día laborable. Todas las tareas con holgura negativa son críticas. En [Ruta crítica y holgura](docs://uitleg-kritiek-pad) se explica cómo funciona.
+Un límite superior calcula hacia atrás. Si la restricción pone la fecha tardía de una tarea antes de su fecha temprana, la holgura total se vuelve negativa. Lo mismo pasa con las tareas anteriores. Si la mampostería debe comenzar el viernes 11 de junio como máximo y no puede comenzar antes del lunes 14 de junio, las tareas anteriores a la mampostería también se retrasan un día laborable. y no puede comenzar antes del lunes 14 de junio, las tareas anteriores también se retrasan un día laborable. Todas las tareas con holgura negativa son críticas. En [Ruta crítica y holgura](docs://uitleg-kritiek-pad) se explica cómo funciona.
 
 Las barras no se mueven por un límite superior. Usted ve el conflicto en la *Holgura total* negativa, en un rombo rojo encima de la barra, en el aviso de la barra de estado (por ejemplo *1 restricción(es) incumplida(s)*) y en el panel *Advertencias*.
 

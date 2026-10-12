@@ -1,6 +1,6 @@
 # Eine Baseline speichern und verwalten
 
-Ziel: Den Terminplan als Vereinbarung festhalten (eine Baseline), damit Sie später sehen, wie stark die Ausführung abweicht. Außerdem behalten, umbenennen, auswählen und löschen Sie mehrere Baselines.
+Ziel: Den Terminplan als Vereinbarung festhalten (eine Baseline), damit Sie später sehen, wie stark die Ausführung abweicht. Außerdem behalten, benennen, wählen und löschen Sie mehrere Baselines. -> besser: Ziel: Den Terminplan als Vereinbarung (Baseline) festhalten, um später die Abweichung der Ausführung zu sehen, und mehrere Baselines verwalten (behalten, umbenennen, auswählen, löschen).
 
 ## Wann Sie das brauchen
 
@@ -28,7 +28,7 @@ Unter jedem Vorgangsbalken im Gantt-Diagramm liegt jetzt ein dünner Balken mit 
 
 ### Eine Baseline löschen
 
-Klicken Sie auf den kleinen Papierkorb neben der Baseline in der Liste. Wenn Sie die aktive Baseline löschen, fragt die App *Aktive Baseline löschen?*. Danach wird die neueste übrige Baseline die aktive. Gibt es keine andere, ist danach keine Baseline mehr aktiv und die Überlagerung verschwindet. Mit Ctrl+Z holen Sie eine gelöschte Baseline zurück.
+Klicken Sie auf den kleinen Papierkorb neben der Baseline in der Liste. Wenn Sie die aktive Baseline löschen, fragt die App *Aktive Baseline löschen?*. Danach wird die neueste übrige Baseline die aktive. Gibt es keine andere, ist danach keine Baseline mehr aktiv und die Überlagerung verschwindet. Mit Strg+Z holen Sie eine gelöschte Baseline zurück.
 
 ### Abweichungen in der Vorgangstabelle
 
@@ -42,7 +42,7 @@ Jede Baseline hat sechs Spalten in der Vorgangstabelle. Klicken Sie rechts in de
 
 **Eine Baseline lässt sich nicht aktualisieren.** Wenn Sie die Vereinbarung überarbeiten wollen, speichern Sie eine neue Baseline. Löschen Sie die alte bei Bedarf.
 
-**Nur Vorgänge ohne Teilvorgänge.** Eine Phase steht nicht in der Baseline. Sie hat keinen Baseline-Balken und keine Abweichung. Die Phase ergibt sich aus den Vorgängen darunter.
+**Nur Vorgänge ohne Teilvorgänge.** Ein Sammelvorgang steht nicht in der Baseline. (einheitlich 'Sammelvorgang', ggf. beim ersten Auftreten 'Phase (Sammelvorgang)') Sie hat keinen Baseline-Balken und keine Abweichung. Die Phase ergibt sich aus den Vorgängen darunter.
 
 **Neue und gelöschte Vorgänge.** Ein Vorgang, den Sie nach dem Speichern hinzufügen, hat keinen Baseline-Balken. Im Variance-Bericht erscheint er als *Neu*. Ein Vorgang, den Sie löschen, erscheint als *Entfallen*.
 

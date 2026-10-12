@@ -1,6 +1,6 @@
 # Begrensninger og tidsfrister
 
-Murstein leveres først 21. juni. Tillatelsen er ikke kommet inn ennå. Taket må være lukket før byggehelligdagen. Avhengigheter viser at én aktivitet venter på en annen. Avtaler om en dato følger likevel ikke av rekkefølgen i arbeidet. Begrensninger og tidsfrister er til for det. I denne artikkelen leser du hva hver type gjør. Du leser når en aktivitet flytter seg, og når bare slakken endrer seg. Du leser hva en hard fastlåsing er, og hvordan appen melder en konflikt.
+Murstein leveres først 21. juni. Tillatelsen er ikke kommet inn ennå. Taket må være lukket før byggferien. Avhengigheter viser at én aktivitet venter på en annen. Avtaler om en dato følger likevel ikke av rekkefølgen i arbeidet. Begrensninger og tidsfrister er til for det. I denne artikkelen leser du hva hver type gjør. Du leser når en aktivitet flytter seg, og når bare slakken endrer seg. Du leser hva en hard fastlåsing er, og hvordan appen melder en konflikt.
 
 Reglene og eksemplene gjelder for et nytt prosjekt, med beregningsprofilen *Open Planner Studio* og en arbeidsuke fra mandag til fredag.
 
@@ -32,7 +32,7 @@ Faller en dato på en lørdag, søndag eller fridag, leser appen den som en arbe
 
 ### Hva negativ slakk betyr
 
-En øvre grense virker baklengs. Er den seneste datoen fra begrensningen for en aktivitet tidligere enn den tidligste datoen, blir totalslakken negativ. Det gjelder også for aktivitetene før den. Må brickwork starte senest fredag 11. juni og kan det ikke starte før mandag 14. juni, er også aktivitetene før brickwork én arbeidsdag forsinket. Alle aktiviteter med negativ slakk er kritiske. Hvordan det virker, forklares i [Kritisk linje og slakk](docs://uitleg-kritiek-pad).
+En øvre grense virker baklengs. Er den seneste datoen fra begrensningen for en aktivitet tidligere enn den tidligste datoen, blir totalslakken negativ. Det gjelder også for aktivitetene før den. Må murarbeidet starte senest fredag 11. juni og kan det ikke starte før mandag 14. juni, er også aktivitetene før murarbeidet én arbeidsdag forsinket. Alle aktiviteter med negativ slakk er kritiske. Hvordan det virker, forklares i [Kritisk linje og slakk](docs://uitleg-kritiek-pad).
 
 Stolpene flytter seg ikke på grunn av en øvre grense. Du ser konflikten i den negative *Totalslakk*, i en rød diamant over stolpen, i meldingen i statuslinjen (for eksempel *1 begrensning(er) brutt*) og i panelet *Advarsler*.
 
@@ -93,7 +93,7 @@ Og med en begrensning eller tidsfrist på en annen aktivitet:
 
 I opplæring 3 setter du selv en begrensning og en tidsfrist i opplæringsprosjektet, og du ser hvordan tidsplanen flytter seg.
 
-## Gevolgen og misforståelser
+## Konsekvenser og misforståelser
 
 **«En begrensning flytter aktiviteten.»** Bare SNET, FNET, MSO og MFO kan sette en aktivitet senere enn avhengighetene gjør. ALAP kan flytte den senere innenfor den frie slakken. SNLT og FNLT flytter aldri noe: de varsler bare. Å nå datoen betyr da at du må forkorte kjeden før den.
 

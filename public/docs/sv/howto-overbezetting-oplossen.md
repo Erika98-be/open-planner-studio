@@ -43,7 +43,7 @@ Om du ändrar en inställning i fönstret efter att du har klickat på *Beräkna
 
 ### Bestäm vilken uppgift som stannar kvar
 
-Appen placerar uppgifterna en för en, och de uppgifter som kommer först stannar kvar där de är. Uppgifterna med högst prioritet går först. Har uppgifterna lika hög prioritet går den uppgift med minst slack först.
+Appen placerar uppgifterna en för en, och de uppgifter som kommer först stannar kvar där de är. Uppgifterna med högst prioritet går först. Har uppgifterna lika hög prioritet går uppgiften med minst slack först.
 
 Vill du själv bestämma vilken uppgift som stannar kvar, ge den en högre prioritet. Högerklicka på uppgiftens balk i Gantt-diagrammet och välj *Prioritet*, sedan *Låg* (100), *Normal* (500) eller *Hög* (900). *Normal* är standard. Du kan också skriva ett tal från 0 till 1000 själv i kolumnen *Utjämningsprioritet*: klicka på **+** till höger i uppgiftstabellens rubrik (*Lägga till kolumn*) och välj den kolumnen under *Tidsplan*. Ett högre tal betyder att uppgiften har större chans att stanna kvar. Appen accepterar inget tal över 1000. En uppgift med prioritet 1000 flyttas aldrig för kapacitetens skull.
 
@@ -61,7 +61,7 @@ Vill du själv bestämma vilken uppgift som stannar kvar, ge den en högre prior
 
 - *För lite ledig kapacitet inom slacken för att lösa konflikten.* Du ser detta när rutan *Jämna ut endast inom slack (utjämning) — projektets slutdatum ligger fast* är på: inom uppgiftens slack finns inget ledigt ögonblick. Ta bort krysset i rutan, så kan slutdatumet flyttas.
 - *Resursen arbetar inte alla dagar som uppgiften behöver — att flytta löser inte detta.* Resursen har lediga dagar i sin egen kalender mitt i uppgiften. Ändra kalendern eller uppgiften.
-- *Bricklayer kräver 2 tilldelningsenheter/dag vid toppen, kapaciteten är 1 — går inte att lösa genom att flytta.* Genom sin kurva begär uppgiften ensam mer en dag än resursen kan leverera. Välj en annan kurva eller sänk tilldelningsenheterna.
+- *Bricklayer kräver 2 tilldelningsenheter/dag vid toppen, kapaciteten är 1 — går inte att lösa genom att flytta.* Genom sin kurva begär uppgiften ensam mer en viss dag än resursen kan leverera. Välj en annan kurva eller sänk tilldelningsenheterna.
 
 **Det står** *Inga uppgifter behöver flyttas — tidsplanen är redan konfliktfri.* Visas den raden tillsammans med listan *Kvarvarande konflikter* i förslaget, lita då på listan. Raden betyder bara att det inte finns något att flytta. Visas raden utan lista, men *Resurser › Överbeläggning* visar ändå en resurs, så är alla uppgifter som krockar låsta på prioritet 1000 eller har redan startat. De flyttas inte och fönstret visar dem inte som konflikt. Kontrollera därför alltid *Överbeläggning* efter att du har tillämpat.
 

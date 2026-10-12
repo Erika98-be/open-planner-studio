@@ -1,6 +1,6 @@
 # Ograničenja i rokovi za dovršetak
 
-Opeka se isporučuje tek 21. lipnja. Dozvola još nije stigla. Krov mora biti zatvoren prije građevinskog praznika. Ovisnosti bilježe da zadatak čeka drugi zadatak, ali dogovori o datumu ne proizlaze iz redoslijeda radova. Za to služe ograničenja i rokovi za dovršetak. U ovom članku čitate što radi svaka vrsta, kada se zadatak pomakne, a kada se mijenja samo vremenska rezerva, što je tvrdo fiksiranje i kako aplikacija prijavljuje sukob.
+Opeka se isporučuje tek 21. lipnja. Dozvola još nije stigla. prije kolektivnog godišnjeg odmora u građevinarstvu Ovisnosti bilježe da zadatak čeka drugi zadatak, ali dogovori o datumu ne proizlaze iz redoslijeda radova. Za to služe ograničenja i rokovi za dovršetak. U ovom članku čitate što radi svaka vrsta, kada se zadatak pomakne, a kada se mijenja samo vremenska rezerva, što je tvrdo fiksiranje i kako aplikacija prijavljuje sukob.
 
 Pravila i primjeri vrijede za novi projekt s profilom izračuna *Open Planner Studio* i radnim tjednom od ponedjeljka do petka.
 
@@ -11,7 +11,7 @@ Pravila i primjeri vrijede za novi projekt s profilom izračuna *Open Planner St
 - Ona **potiskuje**: zadatak ne smije početi ili završiti ranije od datuma. Ako bi zadatak zbog svojih ovisnosti počeo ranije, pomakne se na datum.
 - Ona **čuva**: zadatak mora početi ili završiti najkasnije na datum. Aplikacija ništa ne pomiče. Ako raspored ne ispunjava datum, **vremenska rezerva** zadatka i lanca prije njega postaje negativna. Vremenska rezerva je prostor koji zadatak ima prije nego se datum završetka projekta pomakne. Negativna znači da ste na papiru već kasni (vidi [Kritični put i vremenska rezerva](docs://uitleg-kritiek-pad)).
 
-**Rok za dovršetak** je jednostavniji oblik čuvanja: ciljni datum za završetak zadatka, bez da ga išta pomakne.
+**Rok za dovršetak** je jednostavniji oblik čuvanja: ciljni datum za završetak zadatka, a da ga ništa ne pomiče.
 
 Sva ograničenja su **popustljiva**: izračun se nastavlja, čak i kad datum nije ispunjen. Jedina iznimka je **tvrdo fiksiranje**, koje nadjačava ovisnosti. Više o tome slijedi u nastavku.
 
@@ -52,13 +52,13 @@ Zadatak ima jedno primarno ograničenje. Ako želite i drugu granicu, na primjer
 
 ### Rok za dovršetak
 
-Rok za dovršetak je zaseban datum zadatka, uz ograničenje. To je gornja granica za završetak: ništa ne pomiče, ali vremensku rezervu čini negativnom ako zadatak nije završen na vrijeme. Aplikacija tada na panelu *Upozorenja* prijavljuje *Rok za dovršetak … propušten — najraniji završetak …*, a traka stanja broji propuštene rokove. U prikazu Gantt nalazi se strelica prema dolje na datumu roka: zelena dok je zadatak završen na vrijeme, crvena čim kasni. Rok za dovršetak u subotu računa se do uključivo prethodnog petka.
+Rok za dovršetak je zaseban datum zadatka, uz ograničenje. To je gornja granica za završetak: ništa ne pomiče, ali vremensku rezervu čini negativnom ako zadatak nije završen na vrijeme. Aplikacija tada na panelu *Upozorenja* prijavljuje *Rok za dovršetak … propušten — najraniji završetak …*, a traka stanja broji propuštene rokove. U prikazu Gantt nalazi se strelica prema dolje na datumu roka: zelena dok je zadatak završen na vrijeme, crvena čim kasni. Rok za dovršetak u subotu računa se kao prethodni petak.
 
 Za vremensku rezervu rok za dovršetak radi isto kao FNLT. Razlika je u načinu upotrebe. Rok za dovršetak je ciljni datum koji želite čuvati. Stoji odvojeno od ograničenja, pa zadatak može imati i ograničenje i rok za dovršetak. FNLT je ograničenje: kršenje se pojavljuje kao prekršeno ograničenje, a ne kao propušten rok za dovršetak.
 
 ### Što ograničenje ne radi
 
-- Na **fazi** (zadatak sažetka) ograničenje ili rok za dovršetak se ne računa: aplikacija izračunava s zadacima u fazi. Stavite ga na sam zadatak.
+- Na **fazi** (zadatak sažetka) ograničenje ili rok za dovršetak se ne računa: aplikacija izračunava sa zadacima u fazi. Stavite ga na sam zadatak.
 - Zadatak koji već ima stvarni početak ili napredak zadržava taj početak. SNET s kasnijim datumom ga ne pomiče.
 - **Upisivanje datuma početka** kod zadatka s prethodnikom ne funkcionira kao fiksni početak: prethodnik i dalje odlučuje. Zato aplikacija to pretvara u SNET na datum koji ste upisali, na panelu *Svojstva*, u dijalogu *Uredi zadatak*, u tablici i kad pomaknete traku u prikazu Gantt. Aplikacija vas o tome obavještava. Ako zadatak već ima neko drugo ograničenje (na primjer ALAP ili MSO), aplikacija novi početak ne primjenjuje i o tome vas također obavještava; zatim promijenite to ograničenje.
 

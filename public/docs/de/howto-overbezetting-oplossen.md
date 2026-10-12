@@ -4,7 +4,7 @@ Ziel: Sehen Sie, wo eine Ressource an einem Tag zu viel zu tun hat, und lösen S
 
 ## Wann Sie das brauchen
 
-Auf dem Papier funktioniert Ihr Terminplan, aber der bricklayer ist an zwei Wänden eingeplant, die an denselben Tagen laufen. Die App nennt das **Überlastung**. Eine Ressource ist an einem Arbeitstag überlastet, wenn der Terminplan an diesem Tag mehr von ihr verlangt als ihre Kapazität (*Max. Einheiten*), oder wenn sie laut ihrem Kalender an diesem Tag nicht arbeitet.
+Auf dem Papier funktioniert Ihr Terminplan, aber der Maurer ist an zwei Wänden eingeplant, die an denselben Tagen laufen. Die App nennt das **Überlastung**. Eine Ressource ist an einem Arbeitstag überlastet, wenn der Terminplan an diesem Tag mehr von ihr verlangt als ihre Kapazität (*Max. Einheiten*), oder wenn sie laut ihrem Kalender an diesem Tag nicht arbeitet.
 
 Zuerst prüfen Sie die Überlastung. Dann wählen Sie eine Lösung. **Kapazitätsabgleich** ist die Lösung, die die App für Sie berechnet: Sie lässt Vorgänge später starten, bis die Ressource es schafft. Wie die App das berechnet, lesen Sie in [Kapazitätsabgleich](docs://uitleg-nivelleren).
 
@@ -79,5 +79,5 @@ Wenn Sie selbst bestimmen wollen, welcher Vorgang bleibt, geben Sie ihm eine hö
 - [Ressourcen verwalten](docs://howto-resources-beheren): das Anpassen der Kapazität und des Kalenders einer Ressource.
 - [Beziehungen hinzufügen](docs://howto-relaties-leggen): Vorgänge nacheinander legen.
 - [Meldungen und Warnungen](docs://ref-meldingen): die Warnung zur Überlastung im Bereich *Warnungen*.
-- [6 New Terraced Houses, De Akkers](examples://showcase-rijwoningen-de-akkers.ifc): die plasterers sind an 5 Tagen überlastet. Mit eingeschaltetem Kästchen *Nur innerhalb des Puffers abgleichen (Glättung) — Projektende bleibt unverändert* bleibt das Ende am 17. August 2027, und ein verbleibender Konflikt bleibt bestehen. Ist das Kästchen aus (Standard), ist alles gelöst und das Ende verschiebt sich auf den 24. August 2027.
+- [6 New Terraced Houses, De Akkers](examples://showcase-rijwoningen-de-akkers.ifc): die Putzer sind an 5 Tagen überlastet / der Turmdrehkran ist an 65 Tagen überlastet und die Putzer an 15 Tagen. Mit eingeschaltetem Kästchen *Nur innerhalb des Puffers abgleichen (Glättung) — Projektende bleibt unverändert* bleibt das Ende am 17. August 2027, und ein verbleibender Konflikt bleibt bestehen. Ist das Kästchen aus (Standard), ist alles gelöst und das Ende verschiebt sich auf den 24. August 2027.
 - [De Vaart Apartment Complex](examples://showcase-appartementencomplex.ifc): der tower crane ist an 65 Tagen überlastet und die plasterers an 15 Tagen. Der Kapazitätsabgleich ohne Haken im Kästchen *Nur innerhalb des Puffers abgleichen (Glättung) — Projektende bleibt unverändert* verschiebt das Ende vom 9. Mai auf den 12. Oktober 2028.

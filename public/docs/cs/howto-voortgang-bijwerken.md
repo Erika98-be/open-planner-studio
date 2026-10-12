@@ -4,7 +4,7 @@ Cíl: zapsat do plánu skutečný stav práce a plán přepočítat: které úko
 
 ## Kdy to potřebujete
 
-Průběh aktualizujete v pevných okamžicích, například každý pátek, kdy stavbyvedoucí hlásí stav. Plán tak vidí, co se skutečně stalo, a zbývající práci vypočítává od data stavu. Proč aplikace funguje takto, je vysvětleno v [Průběh, datum stavu a směrný plán](docs://uitleg-voortgang).
+Průběh aktualizujete v pevných okamžicích, například každý pátek, kdy stavbyvedoucí hlásí stav. Plán tak vidí, co se skutečně stalo, a zbývající práci přepočítává od data stavu. Proč aplikace funguje takto, je vysvětleno v [Průběh, datum stavu a směrný plán](docs://uitleg-voortgang).
 
 ## Postup
 
@@ -68,7 +68,7 @@ Každá změna průběhu nebo data stavu způsobí, že plán je zastaralý: sta
 
 **100 % bez dat.** Když nastavíte úkol na 100 % bez skutečného dokončení, skutečné dokončení se stane datem stavu, i když byl úkol dokončen dříve. Potom skutečné dokončení doplňte sami.
 
-**Procento pod 100 %.** Když vrátíte dokončený úkol pod 100 %, skutečné dokončení se zruší. Když vymažete jen skutečné dokončení, procento přejde na 0 % a úkol zůstane *Probíhá*. Chcete-li, aby úkol znovu počítal jako nezahájený, vymažte také skutečné zahájení, nebo v tabulce u sloupce *Stav* zvolte *Nezahájeno*.
+**Procento pod 100 %.** Když vrátíte dokončený úkol pod 100 %, skutečné dokončení se zruší. Když vymažete jen skutečné dokončení, procento přejde na 0 % a úkol zůstane *Probíhá*. Chcete-li, aby se úkol znovu bral jako nezahájený, vymažte také skutečné zahájení, nebo v tabulce u sloupce *Stav* zvolte *Nezahájeno*.
 
 **Změna doby trvání probíhajícího úkolu.** Hotová práce zůstane hotová a procento se upraví. Úkol s dobou trvání 5 pracovních dnů na 60 %, který nastavíte na 10 pracovních dnů, skončí na 30 %. Aplikace nepřijme dobu trvání kratší než práce, která je už hotová: *Úkol „Build inner cavity leaf“ je již dokončen z 60 %: doba trvání nemůže být kratší než již provedená práce. Doba trvání nebyla změněna.* V tabulce buňka hlásí *Tato doba trvání je kratší než práce, která je už hotová.*
 

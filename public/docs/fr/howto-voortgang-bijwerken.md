@@ -4,7 +4,7 @@ Objectif : saisir l’état réel du travail dans le planning et recalculer le p
 
 ## Quand vous en avez besoin
 
-Vous mettez à jour l’avancement à des moments fixes, par exemple chaque vendredi, quand le chef de chantier fait le point sur l’état. Ainsi, le planning voit ce qui s’est réellement passé et calcule le travail restant à partir de la date d’état. La raison de ce fonctionnement est expliquée dans [Avancement, date d’état et référence](docs://uitleg-voortgang).
+Vous mettez à jour l’avancement à des moments fixes, par exemple chaque vendredi, quand le chef de chantier fait le point sur l’état. Ainsi, le planning reflète ce qui s’est réellement passé ... ; 'Utile pour un point rapide.' et calcule le travail restant à partir de la date d’état. La raison de ce fonctionnement est expliquée dans [Avancement, date d’état et référence](docs://uitleg-voortgang).
 
 ## Étapes
 
@@ -14,7 +14,7 @@ La date d’état est le jour où vous faites le point. Définissez-la avant de 
 
 1. Allez dans *Planification › Références et avancement › Date d’état*.
 2. Saisissez la date dans les trois cases pour le jour, le mois et l’année (dans l’ordre de votre notation de date), par exemple 28, 06 et 2027, puis appuyez sur Entrée. L’application passe seule à la case suivante.
-3. Avec la petite croix à côté du champ, vous videz de nouveau la date d’état.
+3. La petite croix à côté du champ efface à nouveau la date d’état.
 
 Si vous faites le point le vendredi après les horaires de travail, définissez la date d’état au jour ouvré suivant, le lundi. L’application planifie le travail restant à partir du début de la date d’état.
 

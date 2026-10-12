@@ -32,7 +32,7 @@ Haga clic en la pequeña papelera junto a la línea base en la lista. Si elimina
 
 ### Variaciones en la tabla de tareas
 
-Cada línea base tiene seis columnas en la tabla de tareas. Haga clic en el **+** a la derecha del encabezado de la tabla de tareas (*Añadir columna*) y abra la categoría *Línea base*. Por cada línea base hay *Inicio programado*, *Fin programado*, *Duración*, *Variación de inicio*, *Variación de finalización* y *Variación de duración*, con el nombre de la línea base delante, por ejemplo *Línea base — Variación de finalización*. Las variaciones están en días laborables. Un signo más significa más tarde; un signo menos, más temprano. Una tarea que no está en la línea base muestra un guion (—) en esas columnas.
+Cada línea base tiene seis columnas en la tabla de tareas. Haga clic en el **+** a la derecha del encabezado de la tabla de tareas (*Añadir columna*) y abra la categoría *Línea base*. Por cada línea base hay *Inicio programado*, *Fin programado*, *Duración*, *Variación de inicio*, *Variación de finalización* y *Variación de duración*, con el nombre de la línea base delante, por ejemplo *Línea base — Variación de finalización*. Las variaciones están en días laborables. Un signo más significa después; un signo menos, antes. Una tarea que no está en la línea base muestra un guion (—) en esas columnas.
 
 ## Errores frecuentes y qué hace la aplicación
 

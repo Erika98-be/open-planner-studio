@@ -1,6 +1,6 @@
 # Oppdatere fremdrift
 
-Mål: legg den faktiske tilstanden til arbeidet inn i tidsplanen, og omberegn tidsplanen. Finn ut hvilke aktiviteter som er ferdige, hvilke som pågår, og hvor mye som gjenstår.
+Mål: legg den faktiske tilstanden til arbeidet inn i tidsplanen, og omberegn tidsplanen. Dette gjelder hvilke aktiviteter som er ferdige, hvilke som pågår, og hvor mye som gjenstår.
 
 ## Når du trenger dette
 

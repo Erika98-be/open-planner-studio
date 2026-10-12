@@ -1,6 +1,6 @@
 # Atualizar o progresso
 
-Objetivo: introduzir o estado real do trabalho no planeamento e recalcular o planeamento: quais as tarefas concluídas, quais as que estão em andamento e quanto trabalho ainda falta.
+Objetivo: introduzir o estado real do trabalho no planeamento e recalcular o planeamento: quais as tarefas concluídas, quais quais as que estão em curso / Nas tarefas em curso e quanto trabalho ainda falta.
 
 ## Quando precisa disto
 

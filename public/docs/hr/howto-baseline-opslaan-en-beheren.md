@@ -1,6 +1,6 @@
 # Spremanje i upravljanje temeljnim planom
 
-Cilj: raspored zabilježiti kao dogovor (temeljni plan), zato da kasnije vidite koliko izvršenje odstupa. I čuvate, preimenujete, birate i brišete više temeljnih planova.
+Cilj: raspored zabilježiti kao dogovor (temeljni plan), zato da kasnije vidite koliko izvršenje odstupa, te čuvati, preimenovati, birati i brisati više temeljnih planova.
 
 ## Kada to trebate
 

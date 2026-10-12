@@ -27,7 +27,7 @@ Un ejemplo de cada una. «Una tarea es crítica si su holgura total es 0 o menos
 
 El perfil y las opciones de cálculo pertenecen al archivo del proyecto, no a la aplicación. Si guarda el proyecto, viajan con él. Dos proyectos en la misma aplicación pueden, por tanto, calcular con un perfil distinto. Un proyecto sin perfil calcula como Open Planner Studio.
 
-Si hay opciones de cálculo que solo conoce Primavera, el bloque muestra además, al final, *Ajustes del archivo de origen*: en un proyecto de un .xer file, pero también si elige *Primavera P6* en *Nuevo proyecto* o aplica las opciones predeterminadas de Primavera P6. Aquí no puede cambiarlas.
+Si hay opciones de cálculo que solo conoce Primavera, el bloque muestra además, al final, *Ajustes del archivo de origen*: en un proyecto de un archivo .xer (and: 'que viene de un archivo .xer'; 'un archivo .xer así se calcula'; 'que vienen de un archivo .xer'), pero también si elige *Primavera P6* en *Nuevo proyecto* o aplica las opciones predeterminadas de Primavera P6. Aquí no puede cambiarlas.
 
 ### Dónde elige el perfil
 
@@ -54,7 +54,7 @@ Con un archivo .mpp, la aplicación solo fija el perfil. Las opciones de cálcul
 
 ## Ejemplo práctico: una red, tres perfiles
 
-El ejemplo es una red pequeña. El calendario tiene una semana laborable de lunes a viernes y ningún día libre en estas semanas. El modo de progreso es Retained Logic (el predeterminado). El inicio del proyecto es el lunes 7 de junio de 2027. Todas las tareas se expresan en días laborables.
+El ejemplo es una red pequeña. El calendario tiene una semana laborable de lunes a viernes y ningún día no laborable en estas semanas (and: 'días no laborables en su propio calendario'). El modo de progreso es Retained Logic (el predeterminado). El inicio del proyecto es el lunes 7 de junio de 2027. Todas las tareas se expresan en días laborables.
 
 - *Pour foundation*: 5 días laborables, planificada desde el lunes 7 de junio.
 - *Lay walls*: 5 días laborables, después de *Pour foundation* (fin-comienzo).
@@ -83,7 +83,7 @@ Aquí las fechas son distintas. Dos convenciones del grupo *Avance como en Micro
 
 *No mover las tareas no iniciadas a la fecha de estado*: *Order window frames* se queda del lunes 7 al miércoles 9 de junio, aunque eso queda en parte antes de la fecha de estado. La holgura total es de 7 días laborables.
 
-*El trabajo restante se reanuda tras la duración transcurrida*: el trabajo restante empieza como muy pronto en la fecha de estado, y como muy pronto en el inicio real más el tiempo transcurrido. Con el 60 % de 5 días laborables, 3 días laborables ya están hechos. El lunes 7 de junio más 3 días laborables es el jueves 10 de junio. Eso es posterior a la fecha de estado, así que el trabajo restante va el jueves 10 y el viernes 11 de junio. *Lay walls* va del lunes 14 al viernes 18 de junio y *Fit roof* el lunes 21 y el martes 22 de junio. La entrega es el martes 22 de junio: un día laborable más tarde que en los otros dos perfiles.
+*El trabajo restante se reanuda tras la duración transcurrida*: el trabajo restante empieza como muy pronto en la fecha de estado, y como muy pronto en el inicio real el inicio real más la duración transcurrida. Con el 60 % de 5 días laborables, 3 días laborables ya están hechos. El lunes 7 de junio más 3 días laborables es el jueves 10 de junio. Eso es posterior a la fecha de estado, así que el trabajo restante va el jueves 10 y el viernes 11 de junio. *Lay walls* va del lunes 14 al viernes 18 de junio y *Fit roof* el lunes 21 y el martes 22 de junio. La entrega es el martes 22 de junio: un día laborable más tarde que en los otros dos perfiles.
 
 ### ¿Qué pasa si?
 
@@ -101,7 +101,7 @@ Aquí las fechas son distintas. Dos convenciones del grupo *Avance como en Micro
 
 **«El perfil es una configuración de la aplicación.»** No. El perfil y las opciones de cálculo pertenecen al proyecto y viajan en el archivo. Solo las plantillas que guarda pertenecen a la aplicación, y un proyecto siempre guarda su propia copia.
 
-**«Si exporto, mi perfil sale con él.»** Solo con su propio formato de proyecto (.ifc). Si exporta a *MS Project XML*, *Primavera P6 XML* o *CSV (separado por punto y coma)*, el perfil no está en el archivo. De las opciones de cálculo, la exportación a MS Project XML escribe como máximo el umbral crítico. La aplicación solo avisa de esto en un proyecto que viene de un .xer file. Para un proyecto que usted mismo creó, no recibe ningún mensaje. El archivo se abre entonces como Open Planner Studio, sin mensaje de perfil. Tome el ejemplo con el perfil Microsoft Project y 60 % de avance. Si lo exporta a *MS Project XML* y lo vuelve a abrir, la aplicación muestra primero las fechas del archivo, con el traspaso el martes 22 de junio. Si deja que la aplicación recalcule por sí misma, la fecha pasa a ser el lunes 21 de junio. Lo demás que pierde una exportación está en [Archivos y formatos](docs://uitleg-bestanden).
+**«Si exporto, mi perfil sale con él.»** Solo con su propio formato de proyecto (.ifc). Si exporta a *MS Project XML*, *Primavera P6 XML* o *CSV (separado por punto y coma)*, el perfil no está en el archivo. De las opciones de cálculo, la exportación a MS Project XML escribe como máximo el umbral crítico. La aplicación solo avisa de esto en un proyecto que viene de un .xer file. Para un proyecto que usted mismo creó, no recibe ningún mensaje. El archivo se abre entonces como Open Planner Studio, sin mensaje de perfil. Tome el ejemplo con el perfil Microsoft Project y 60 % de avance. Si lo exporta a *MS Project XML* y lo vuelve a abrir, la aplicación muestra primero las fechas del archivo, con la entrega el martes 22 de junio. Si deja que la aplicación recalcule por sí misma, la fecha pasa a ser el lunes 21 de junio. Lo demás que pierde una exportación está en [Archivos y formatos](docs://uitleg-bestanden).
 
 **«El perfil Primavera P6 da el mismo resultado que P6.»** La aplicación no puede garantizarlo. El perfil activa las convenciones que la aplicación conoce de P6, y no son todas las configuraciones de P6. Además de Retained Logic y Progress Override, P6 tiene un tercer modo de progreso, Actual Dates. La aplicación no lo conoce: un .xer file así se calcula como Retained Logic, y el mensaje de apertura lo indica, por ejemplo como *1 ajuste de planificación P6 usó una alternativa segura.* Algunas convenciones del perfil Primavera P6 solo funcionan en tareas que vienen de un .xer file, como *LOE no iniciada toma la ventana objetivo* y *Mantener exactas las fechas reales*. Para algunas de ellas, la explicación lo dice: «solo tareas con procedencia P6». En las tareas que usted crea, esas convenciones no hacen nada.
 

@@ -6,7 +6,7 @@ Objetivo: veja em que dia um recurso tem demasiado para fazer e resolva isso, no
 
 No papel, o seu planeamento funciona, mas o pedreiro está em duas paredes que se executam nos mesmos dias. A aplicação chama a este estado **sobrealocado**. Um recurso fica sobrealocado num dia útil se o planeamento lhe pedir mais do que a sua capacidade nesse dia (*Unidades máx*), ou se o recurso não trabalhar nesse dia, segundo o seu calendário.
 
-Procure primeiro os recursos sobrealocados. Depois, escolha uma solução. **Nivelamento** é a solução que a aplicação calcula por si: faz as tarefas começarem mais tarde até o recurso conseguir dar conta do trabalho. Como a aplicação faz esse cálculo, leia [Nivelamento de recursos](docs://uitleg-nivelleren).
+Procure primeiro os recursos sobrealocados. Depois, escolha uma solução. **Nivelamento** é a solução que a aplicação calcula por si: faz as tarefas começarem mais tarde até o recurso conseguir dar conta do trabalho. Como o nivelamento é calculado está explicado em [Nivelamento de recursos](docs://uitleg-nivelleren).
 
 ## Passos
 
@@ -36,7 +36,7 @@ Se uma tarefa estiver selecionada, o histograma mostra só a carga dessa tarefa 
 4. Em *Recursos* estão os recursos que vão ser nivelados. Por padrão, estão todos marcados, exceto os materiais. Desmarque um recurso que queira deixar de fora.
 5. Clique em *Calcular*. Enquanto calcula, aparece *A calcular…* e pode parar com *Parar*. O planeamento ainda não muda: isto é uma proposta.
 6. Leia a proposta. No topo está a data de fim, por exemplo *Data de fim do projeto: inalterada (30-08-2027)* ou *Data de fim do projeto: 25-08-2027 → 30-08-2027*. Por baixo está uma tabela com, para cada tarefa, o *Início anterior*, o *Novo início* e os *Dias deslocados*, por exemplo *Build outer cavity leaf*, 29-06-2027, 06-07-2027 e *5 d*.
-7. Escolha *Aplicar*. A aplicação aplica os atrasos às tarefas, e o planeamento é recalculado logo. Não é preciso premir F5. *Cancelar* fecha a janela sem alterar nada.
+7. Escolha *Aplicar*. A aplicação grava os atrasos nas tarefas e recalcula o planeamento de imediato. Não é preciso premir F5. *Cancelar* fecha a janela sem alterar nada.
 8. Verifique *Recursos › Superalocação*. Agora aparece *Nenhuma*.
 
 Se mudar uma opção na janela depois de clicar em *Calcular*, a proposta desaparece. Clique então novamente em *Calcular*. Se o planeamento mudar enquanto a aplicação calcula, aparece *O planeamento mudou durante o cálculo. Clique novamente em Calcular*.

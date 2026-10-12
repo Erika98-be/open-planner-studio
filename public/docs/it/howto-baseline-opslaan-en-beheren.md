@@ -13,7 +13,7 @@ Registri una baseline quando la pianificazione è stata approvata e il lavoro de
 1. Premi **Calcola** (F5), per esempio tramite *Pianificazione › Pianificazione › Calcola*. La baseline registra le date calcolate in quel momento.
 2. Scegli *Pianificazione › Baseline e progresso › Gestisci baseline…*. Si apre la finestra *Baseline*.
 3. Sotto *Salva nuova baseline* c'è un nome suggerito, per esempio *Baseline 1 — (data di oggi)*. Scrivi un nome tuo che riconoscerai più tardi, per esempio *Baseline*.
-4. Clicca su *Salva*. La baseline è ora nell'elenco e diventa subito la baseline attiva.
+4. Fai clic su *Salva*. La baseline è ora nell'elenco e diventa subito la baseline attiva.
 5. Clicca su *Chiudi*.
 
 Sotto ogni barra attività nel Gantt c'è ora una barra sottile con le date della baseline; un cardine riceve un piccolo rombo. Attivi o disattivi quella sovrapposizione con *Vista › Baseline e progresso › Sovrapposizione della baseline*.
@@ -42,7 +42,7 @@ Ogni baseline ha sei colonne nella tabella attività. Clicca sul **+** a destra 
 
 **Una baseline non si può aggiornare.** Se vuoi rivedere l'accordo, salva una nuova baseline ed elimina quella vecchia, se serve.
 
-**Solo attività senza sottoattività.** Una fase non è nella baseline: non ha una barra baseline né uno scostamento. La fase deriva dalle attività che sono sotto di lei.
+**Solo attività senza sottoattività.** Una fase non è nella baseline: non ha una barra baseline né uno scostamento. La fase deriva dalle attività che contiene.
 
 **Attività nuove ed eliminate.** Un'attività che aggiungi dopo il salvataggio non ha una barra baseline. Nel rapporto variance appare come *Nuova*. Un'attività che elimini appare come *Eliminata*.
 

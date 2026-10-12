@@ -4,7 +4,7 @@ Mål: find ud af, hvor en ressource har for meget at lave på en dag, og løs de
 
 ## Hvornår du har brug for dette
 
-På papiret virker din tidsplan, men murer er på to vægge, der kører på de samme dage. Appen kalder det **overallokering**. En ressource er overallokeret på en arbejdsdag, hvis tidsplanen kræver mere af den den dag, end dens kapacitet (*Maksimalt antal enheder*) tillader. Det gælder også, hvis den ikke arbejder den dag ifølge sin kalender.
+På papiret virker din tidsplan, men murerne arbejder på to vægge, som begge ligger på de samme dage. Appen kalder det **overallokering**. En ressource er overallokeret på en arbejdsdag, hvis tidsplanen kræver mere af den den dag, end dens kapacitet (*Maksimalt antal enheder*) tillader. Det gælder også, hvis den ikke arbejder den dag ifølge sin kalender.
 
 Først finder du overallokeringen. Derefter vælger du en løsning. **Udjævning** er den løsning, appen beregner for dig: den får opgaver til at starte senere, indtil ressourcen kan klare det. Hvordan den beregner det, læser du i [Ressourceudjævning](docs://uitleg-nivelleren).
 
@@ -69,7 +69,7 @@ Vil du selv bestemme, hvilken opgave der bliver stående, så giv den en højere
 
 **Materiale udjævnes ikke.** Kræver en materialeressource på en dag mere end sit *Maksimalt antal enheder*, tæller den som overallokeret i *Overallokering*. Men den står ikke i udjævningsvinduet.
 
-**Udjævning tilpasser sig ikke.** Forskydningerne bliver, som de blev beregnet. Ændrer du senere en opgaves varighed, bliver en udjævnet opgave, hvor den er. Det gælder også, hvis stedet ikke længere er nødvendigt. Udjævn så igen.
+**Udjævning tilpasser sig ikke.** Forskydningerne bliver, som de blev beregnet. Ændrer du senere en opgaves varighed, bliver en udjævnet opgave, hvor den er. Det gælder også, hvis den placering ikke længere er nødvendig. Udjævn så igen.
 
 **Overallokeret på grund af kalenderen.** Arbejder ressourcen ikke på en dag ifølge sin kalender, står der i panelet *Advarsler*, for eksempel *Overallokeret på 5 dag(e) (29-06-2027 – 05-07-2027), heraf 1 dag(e), hvor ressourcen ikke arbejder ifølge sin kalender*. Går en opgave altid hen over en sådan dag, hvilket er den anden årsag ovenfor, løser udjævning det ikke.
 

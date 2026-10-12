@@ -10,7 +10,7 @@ Akkor rögzít alaptervet, amikor az ütemezést jóváhagyták, de a munka még
 
 ### Alapterv mentése
 
-1. Nyomja meg a **Számítás** gombot (F5), például a *Ütemezés › Ütemezés › Számítás* menüponton keresztül. Az alapterv a számítás pillanatában kiszámított dátumokat rögzíti.
+1. Nyomja meg a **Számítás** gombot (F5), például az *Ütemezés › Ütemezés › Számítás* menüponton keresztül. Az alapterv a számítás pillanatában kiszámított dátumokat rögzíti.
 2. Válassza az *Ütemezés › Alaptervek és előrehaladás › Alapterv kezelése…* lehetőséget. Megnyílik az *Alaptervek* ablak.
 3. Az *Új alapterv mentése* alatt egy javasolt név látható, például *Alapterv 1 — (mai dátum)*. Írjon be saját nevet, amelyet később is felismer, például *Alapterv*.
 4. Kattintson a *Mentés* gombra. Az alapterv most már a listában van, és azonnal ez lesz az aktív alapterv.

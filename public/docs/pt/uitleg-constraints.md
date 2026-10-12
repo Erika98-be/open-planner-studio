@@ -1,6 +1,6 @@
 # Restrições e prazos
 
-Os tijolos só são entregues a 21 de junho. A licença ainda não chegou. O telhado tem de estar fechado antes do feriado da construção. As relações registam que uma tarefa espera por outra tarefa, mas os acordos sobre uma data não resultam da ordem do trabalho. Para isso servem as restrições e os prazos. Neste artigo fica a saber o que faz cada tipo, quando uma tarefa se desloca e quando só muda a folga, o que é uma fixação rígida e como a aplicação comunica um conflito.
+Os tijolos só são entregues a 21 de junho. A licença ainda não chegou. O telhado tem de estar fechado antes das férias da construção. As relações registam que uma tarefa espera por outra tarefa, mas os acordos sobre uma data não resultam da ordem do trabalho. Para isso servem as restrições e os prazos. Neste artigo fica a saber o que faz cada tipo, quando uma tarefa se desloca e quando só muda a folga, o que é uma fixação rígida e como a aplicação comunica um conflito.
 
 As regras e os exemplos aplicam-se a um projeto novo, com o perfil de cálculo *Open Planner Studio* e uma semana de trabalho de segunda a sexta-feira.
 
@@ -32,7 +32,7 @@ Se uma data cair num sábado, domingo ou dia não útil, a aplicação lê-a com
 
 ### O que significa folga negativa
 
-Um limite superior trabalha ao contrário. Se a restrição puser a data mais tardia de uma tarefa antes da data mais cedo, a folga total fica negativa. O mesmo vale para as tarefas anteriores: se o brickwork tiver de começar, o mais tardar, na sexta-feira, 11 de junho, e não puder começar antes de segunda-feira, 14 de junho, as tarefas anteriores ao brickwork também ficam um dia útil atrasadas. Todas as tarefas com folga negativa são críticas; o funcionamento está explicado em [Caminho crítico e folga](docs://uitleg-kritiek-pad).
+Um limite superior trabalha ao contrário. Se a restrição puser a data mais tardia de uma tarefa a data mais tardia de uma tarefa antes da data antecipada, a folga total fica negativa. O mesmo vale para as tarefas anteriores: se a alvenaria tiver de começar... / empurra a alvenaria uma semana / as tarefas anteriores à alvenaria, e não puder começar antes de segunda-feira, 14 de junho, as tarefas anteriores ao brickwork também ficam um dia útil atrasadas. Todas as tarefas com folga negativa são críticas; o funcionamento está explicado em [Caminho crítico e folga](docs://uitleg-kritiek-pad).
 
 As barras não se movem por causa de um limite superior. O conflito vê-se na *Folga total* negativa, num losango vermelho acima da barra, no aviso na barra de estado (por exemplo, *1 restrição(ões) violada(s)*) e no painel *Avisos*.
 
@@ -87,7 +87,7 @@ O caminho crítico é *Groundwork*, *Pour foundation*, *Brickwork* e *Roofing*. 
 E com uma restrição ou um prazo noutra tarefa:
 
 - **ALAP em** *Scaffolding*: a tarefa move-se para quinta-feira, 17, e sexta-feira, 18 de junho, o momento mais tardio antes de *Roofing*. *Roofing* é a sua única sucessora e tinha espaço para exatamente os seus 3 dias úteis de folga. Esse espaço fica agora esgotado, e *Scaffolding* é crítica.
-- **SNET sábado, 19 de junho** em *Scaffolding*: o limite conta como segunda-feira, 21 de junho. *Scaffolding* decorre na segunda-feira, 21, e na terça-feira, 22 de junho, e *Roofing* passa para quarta-feira, 23, a sexta-feira, 25 de junho.
+- **SNET sábado, 19 de junho** em *Scaffolding*: o limite conta como segunda-feira, 21 de junho. *Scaffolding* decorre na segunda-feira, 21, e na terça-feira, 22 de junho, e *Roofing* passa a decorrer de quarta-feira, 23, a sexta-feira, 25 de junho.
 - **Prazo sexta-feira, 18 de junho** em *Roofing*: nada se move, *Roofing* fica de segunda-feira, 21, a quarta-feira, 23 de junho. *Groundwork*, *Pour foundation*, *Brickwork* e *Roofing* ficam com −3 dias úteis de folga, e a aplicação comunica *Prazo 18-06-2027 ultrapassado — fim antecipado 23-06-2027*. *Scaffolding* fica com 0 dias úteis de folga e também fica crítica.
 - **SNET segunda-feira, 21 de junho** em *Brickwork*, **prazo sexta-feira, 25 de junho** em *Roofing*: a restrição empurra o brickwork uma semana para trás, e o prazo indica que *Roofing* está atrasada na quarta-feira, 30 de junho. *Brickwork* e *Roofing* ficam com −3 dias úteis de folga. *Groundwork* e *Pour foundation* mantêm 2 dias úteis.
 

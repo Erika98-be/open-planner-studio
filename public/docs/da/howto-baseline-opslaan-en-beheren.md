@@ -36,7 +36,7 @@ Hver oprindelig plan har seks kolonner i opgavetabellen. Klik på **+** til høj
 
 ## Faldgruber og hvad appen gør
 
-**En forældet tidsplan.** Hvis tidsplanen er forældet, viser vinduet *Tidsplanen er forældet. Beregn først igen (F5)*. Det er en advarsel. Gemning er stadig mulig. Men så gemmer du de gamle datoer. Luk vinduet, tryk på **Beregn**, og gem først derefter.
+**En forældet tidsplan.** Hvis tidsplanen er forældet, viser vinduet *Tidsplanen er forældet. Beregn først igen (F5)*. Det er en advarsel. Du kan stadig gemme. Men så gemmer du de gamle datoer. Luk vinduet, tryk på **Beregn**, og gem først derefter.
 
 **En oprindelig plan med fremdrift.** Gemmer du en oprindelig plan, efter at du har indtastet fremdrift, registrerer den tilstanden med de faktiske datoer. Afvigelsen er så nul, og den siger ikke længere noget om udførelsen. Gem den oprindelige plan, før arbejdet går i gang.
 

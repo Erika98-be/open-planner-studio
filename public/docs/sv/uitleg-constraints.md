@@ -1,6 +1,6 @@
 # Restriktioner och måldatum
 
-Tegelstenarna levereras först den 21 juni. Bygglovet har ännu inte kommit. Taket måste vara klart före byggarnas helgdag. Samband anger att en uppgift väntar på en annan uppgift, men överenskommelser om ett datum följer inte av arbetets ordning. Där kommer restriktioner och måldatum in. I den här artikeln läser du vad varje typ gör, när en uppgift flyttas och när bara slacket ändras, vad en hård fixering är och hur appen rapporterar en konflikt.
+Tegelstenarna levereras först den 21 juni. Bygglovet har ännu inte kommit. Taket måste vara klart före byggsemestern. Samband anger att en uppgift väntar på en annan uppgift, men överenskommelser om ett datum följer inte av arbetets ordning. Där kommer restriktioner och måldatum in. I den här artikeln läser du vad varje typ gör, när en uppgift flyttas och när bara slacket ändras, vad en hård fixering är och hur appen rapporterar en konflikt.
 
 Reglerna och exemplen gäller för ett nytt projekt med beräkningsprofilen *Open Planner Studio* och en arbetsvecka från måndag till fredag.
 
@@ -9,7 +9,7 @@ Reglerna och exemplen gäller för ett nytt projekt med beräkningsprofilen *Ope
 En **restriktion** är en datumgräns för en enskild uppgift, oberoende av uppgiftens samband. En sådan gräns kan fungera på två sätt:
 
 - Den **skjuter**: uppgiften får inte starta eller avslutas tidigare än datumet. Om uppgiften annars skulle starta tidigare på grund av sina samband flyttas den till datumet.
-- Den **bevakar**: uppgiften måste starta eller avslutas senast på datumet. Appen flyttar ingenting. Om tidsplanen inte klarar datumet blir **slacket** för uppgiften, och för kedjan före den, negativt. Slack är utrymmet en uppgift har innan projektets slutdatum flyttas; negativt betyder att du på papperet redan är försenad (se [Kritisk linje och slack](docs://uitleg-kritiek-pad)).
+- Den **bevakar**: uppgiften måste starta eller avslutas senast på datumet. Appen flyttar ingenting. Om tidsplanen inte klarar datumet blir **slacket** för uppgiften, och för kedjan före den, negativt. Slack är utrymmet en uppgift har innan projektets slutdatum flyttas; negativt betyder att du enligt planen på pappret redan är försenad (se [Kritisk linje och slack](docs://uitleg-kritiek-pad)).
 
 Ett **måldatum** är en enklare form av bevakning: ett datum för när en uppgift ska avslutas, utan att något flyttar uppgiften.
 
