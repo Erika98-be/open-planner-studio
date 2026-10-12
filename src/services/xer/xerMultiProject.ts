@@ -9,6 +9,7 @@ import { XerImportError, type XerRow, type XerTables } from './xerTables';
 import type { Baseline } from '@/types/baseline';
 import type { Task } from '@/types/task';
 import { isLeafTask } from '@/utils/taskHierarchy';
+import { shownFinish, shownStart } from '@/utils/taskDates';
 
 export interface XerMultiProjectDocument {
   projectId: string;
@@ -177,8 +178,11 @@ function materializeBaseline(
       taskId: matched?.id ?? task.id,
       sourceTaskId: task.id,
       sourceTaskCode: task.wbsCode,
-      start: task.time.earlyStart || task.time.scheduleStart,
-      finish: task.time.earlyFinish || task.time.scheduleFinish,
+      // Zoals P6's BL Project Start/Finish: de geplande datums tot de basislijntaak gestart is, daarna
+      // de werkelijke start (en bij voltooid het werkelijke einde) — de getoonde datums, dezelfde
+      // bron als `saveBaseline` en de afwijking (`variance.ts`).
+      start: shownStart(task),
+      finish: shownFinish(task),
       duration: task.time.scheduleDuration,
       isMilestone: task.isMilestone,
       ...(task.milestoneKind ? { milestoneKind: task.milestoneKind } : {}),

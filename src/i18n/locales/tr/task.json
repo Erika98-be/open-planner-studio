@@ -153,6 +153,7 @@
       "scheduleFinishNotManual": "Planlanan bitiş yalnızca elle planlanan bir görev için geçerlidir. Bitişi Bitiş sütunundan veya süreden değiştirin.",
       "finishFromDuration": "Bu görevde bitiş, başlangıç ve süreden elde edilir. Başlangıcı veya süreyi değiştirin.",
       "finishBeforeStart": "Bitiş, başlangıçtan önce.",
+      "startIsActual": "Bu görev başladı; başlangıcı gerçek başlangıçtır. Bunu ilerleme üzerinden değiştirin.",
       "finishIsActual": "Bu görev tamamlandı; bitişi gerçek bitiştir. Bunu ilerleme üzerinden değiştirin.",
       "invalid": "Girilen değer geçerli değil.",
       "relationToken": "Örneğin 1.2 FS+2d kullanın.",

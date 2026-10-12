@@ -153,6 +153,7 @@
       "scheduleFinishNotManual": "计划完成日期仅适用于手动计划的任务。请通过“完成”列或工期更改完成日期。",
       "finishFromDuration": "此任务的完成日期由开始日期和工期决定。请更改开始日期或工期。",
       "finishBeforeStart": "完成早于开始。",
+      "startIsActual": "此任务已开始；其开始日期为实际开始日期。请通过进度进行更改。",
       "finishIsActual": "此任务已完成；其完成日期为实际完成日期。请通过进度进行更改。",
       "invalid": "输入的值无效。",
       "relationToken": "请使用类似 1.2 FS+2d 的格式。",

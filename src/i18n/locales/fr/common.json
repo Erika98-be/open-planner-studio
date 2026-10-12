@@ -148,6 +148,8 @@
     "startBlockedByConstraintMany_one": "Le nouveau début de {{count}} tâche n'a pas été appliqué : elle a un prédécesseur et une contrainte autre que Début au plus tôt le (SNET). Modifiez cette contrainte pour déplacer le début.",
     "startBlockedByConstraintMany_many": "Les nouveaux débuts de {{count}} tâches n'ont pas été appliqués : elles ont un prédécesseur et une contrainte autre que Début au plus tôt le (SNET). Modifiez ces contraintes pour déplacer les débuts.",
     "startBlockedByConstraintMany_other": "Les nouveaux débuts de {{count}} tâches n'ont pas été appliqués : elles ont un prédécesseur et une contrainte autre que Début au plus tôt le (SNET). Modifiez ces contraintes pour déplacer les débuts.",
+    "dragStartIsActual": "'{{name}}' a commencé : son début est le début réel et ne se déplace pas. Modifiez-le via l’avancement.",
+    "dragDatesAreActual": "'{{name}}' est terminée : son début et sa fin sont les dates réelles et ne se déplacent pas. Modifiez-les via l’avancement.",
     "referencesClearedOnPaste_one": "{{count}} référence n'existait pas dans ce document et a été effacée (un calendrier de tâche, type de tâche personnalisé, code d'activité ou champ personnalisé du document source).",
     "referencesClearedOnPaste_many": "{{count}} références n'existaient pas dans ce document et ont été effacées (calendriers de tâche, types de tâche personnalisés, codes d'activité ou champs personnalisés du document source).",
     "referencesClearedOnPaste_other": "{{count}} références n'existaient pas dans ce document et ont été effacées (calendriers de tâche, types de tâche personnalisés, codes d'activité ou champs personnalisés du document source).",

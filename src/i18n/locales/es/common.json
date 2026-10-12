@@ -148,6 +148,8 @@
     "startBlockedByConstraintMany_one": "El nuevo comienzo de {{count}} tarea no se aplicó: tiene una predecesora y una restricción distinta de No comenzar antes del (SNET). Cambie esa restricción para mover el comienzo.",
     "startBlockedByConstraintMany_many": "Los nuevos comienzos de {{count}} tareas no se aplicaron: tienen una predecesora y una restricción distinta de No comenzar antes del (SNET). Cambie esas restricciones para mover los comienzos.",
     "startBlockedByConstraintMany_other": "Los nuevos comienzos de {{count}} tareas no se aplicaron: tienen una predecesora y una restricción distinta de No comenzar antes del (SNET). Cambie esas restricciones para mover los comienzos.",
+    "dragStartIsActual": "'{{name}}' ha comenzado: su comienzo es el comienzo real y no se mueve. Cámbielo mediante el progreso.",
+    "dragDatesAreActual": "'{{name}}' está completada: su comienzo y su fin son las fechas reales y no se mueven. Cámbielas mediante el progreso.",
     "referencesClearedOnPaste_one": "{{count}} referencia no existía en este documento y se ha borrado (un calendario de tarea, tipo de tarea personalizado, código de actividad o campo personalizado del documento de origen).",
     "referencesClearedOnPaste_many": "{{count}} referencias no existían en este documento y se han borrado (calendarios de tarea, tipos de tarea personalizados, códigos de actividad o campos personalizados del documento de origen).",
     "referencesClearedOnPaste_other": "{{count}} referencias no existían en este documento y se han borrado (calendarios de tarea, tipos de tarea personalizados, códigos de actividad o campos personalizados del documento de origen).",

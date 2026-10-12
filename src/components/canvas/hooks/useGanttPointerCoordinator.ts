@@ -18,6 +18,7 @@ import type {
   GanttRelationPopoverState,
   GanttTooltipState,
 } from './ganttCoordinatorTypes';
+import { finishIsActual, shownFinish, shownStart, startIsActual } from '@/utils/taskDates';
 
 /**
  * Enige eigenaar van de pointerprioriteit op het primaire tijdlijncanvas. De DOM-grid links bezit
@@ -151,8 +152,15 @@ export function useGanttPointerCoordinator(
    * splitsbaar, of een onzichtbare pauze — zie `editableSplitPieces`) sleept als ÉÉN balk: de
    * rechterrand van een tussenstuk is dan gewoon body, alleen het laatste stuk houdt de duurgreep.
    * Zo belooft de cursor nooit een greep die de sleep daarna weigert.
+   *
+   * Werkelijke datums (eigenaarsbesluit 2026-10-12): een VOLTOOIDE balk heeft geen enkele duur- of
+   * stukgreep (begin en einde zijn werkelijke datums, `finishIsActual`); van een GESTARTE balk is de
+   * linkerrand geen greep (`startIsActual`). Zo'n rand is gewoon body: verticaal blijft de rijsleep
+   * werken, horizontaal verschuift de balk niet (`useBarDrag`, met één melding).
    */
   const dragHit = useCallback((hit: NonNullable<ReturnType<GanttRenderer['getTaskBarBounds']>>) => {
+    if (finishIsActual(hit.task)) return { ...hit, edge: 'body' as const, segmentIndex: 0, segmentCount: 1 };
+    if (hit.edge === 'left' && startIsActual(hit.task)) hit = { ...hit, edge: 'body' as const };
     if (hit.segmentCount <= 1) return hit;
     const cal = effectiveCalendarByTaskId.get(hit.task.id) ?? calendar;
     if (editableSplitPieces(hit.task, cal, hit.segmentCount)) return hit;
@@ -372,8 +380,11 @@ export function useGanttPointerCoordinator(
         segmentCount: grip.segmentCount,
         startX: event.clientX,
         startY: event.clientY,
-        originalStart: hit.task.time.earlyStart || hit.task.time.scheduleStart,
-        originalFinish: hit.task.time.earlyFinish || hit.task.time.scheduleFinish,
+        // De datums van de balk zelf (`GanttRenderer.barGeometry`): de rechterrand van een lopende
+        // taak rekent zo de duur vanaf haar werkelijke start, net als de Tabel-kolom Einde
+        // (`taskEditPlan.durationForShownFinish`).
+        originalStart: shownStart(hit.task),
+        originalFinish: shownFinish(hit.task),
         originalDuration: hit.task.time.scheduleDuration,
         originalDurationMinutes: hit.task.time.durationMinutes,
       });

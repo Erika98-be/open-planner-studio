@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { useAppStore } from '@/state/appStore';
 import type { WorkCalendar } from '@/types/calendar';
 import { effectiveCalendarOf } from '@/utils/taskDuration';
-import { shownStart, startAnchorAfterEdit } from '@/utils/taskDates';
+import { shownStart, startAnchorAfterEdit, startIsActual } from '@/utils/taskDates';
 import {
   constraintBlockingStart,
   predecessorDrivenTaskIds,
@@ -44,6 +44,9 @@ export function TaskTimeFields({ task, onChange }: {
   // (`startAnchorAfterEdit`, gedeeld met het Opslaan van TaskDialog in state/taskDialogSave.ts en de Tabel) — anders zou elke render/commit-
   // cyclus het anker naar de berekende datum laten meeschuiven.
   const shown = shownStart(task);
+  // Een gestarte taak begint op haar werkelijke start (eigenaarsbesluit 2026-10-12): dan is Start
+  // alleen-lezen en wijst de tooltip naar de werkelijke start onder Voortgang.
+  const actualLocked = startIsActual(task);
   // Start is verplicht (`required`): een leeggemaakt veld valt terug i.p.v. `''` als anker te
   // schrijven — een lege start maakt het hele project onberekenbaar ("Ongeldige startdatum").
 
@@ -60,11 +63,12 @@ export function TaskTimeFields({ task, onChange }: {
           <DateTextInput
             className="input !text-small !leading-4 !px-2.5 !py-1.5"
             ariaLabel={t('properties.start')}
-            title={t('properties.scheduleStartHint')}
+            title={actualLocked ? t('taskGrid.validation.startIsActual') : t('properties.scheduleStartHint')}
             value={shown}
             required
+            disabled={actualLocked}
             onCommit={v => {
-              if (!v) return;
+              if (!v || actualLocked) return;
               const anchor = startAnchorAfterEdit(task, v);
               if (anchor === undefined) return;
               const state = useAppStore.getState();

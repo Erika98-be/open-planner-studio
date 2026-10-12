@@ -9,7 +9,7 @@ import { createDefaultTaskTime } from '@/utils/taskDefaults';
 import { localTodayIso } from '@/utils/dateUtils';
 import { planProgressEntry, type ProgressEdit, type ProgressEntryResult } from '@/engine/progressEntry';
 import { saveTaskDialog } from '@/state/taskDialogSave';
-import { shownStart } from '@/utils/taskDates';
+import { shownStart, startIsActual } from '@/utils/taskDates';
 import { milestoneRefusal } from '@/engine/taskMilestoneTransition';
 import { milestoneRefusalNotices } from '@/state/structuralTransition';
 import { Select } from '@/components/common/Select';
@@ -210,6 +210,11 @@ export function TaskDialog() {
 
   if (!showTaskDialog) return null;
 
+  // Een gestarte taak (ook als de werkelijke start in deze dialoog net is ingevuld) begint op haar
+  // werkelijke start: dan toont Startdatum die datum, alleen-lezen (eigenaarsbesluit 2026-10-12).
+  // Opslaan legt dan geen anker vast (`saveTaskDialog`).
+  const startLocked = startIsActual(draft);
+
   const inputCls =
     'px-2 py-1.5 bg-surface border-[1.5px] border-[var(--theme-control-border)] rounded-[8px] text-text-primary focus:outline-none focus:border-accent focus:shadow-[0_0_0_3px_rgba(217,119,6,0.2)] transition-[border-color,box-shadow]';
 
@@ -302,8 +307,10 @@ export function TaskDialog() {
           <div className="grid grid-cols-2 gap-3">
             <Field label={t('dialog.startDate')}>
               <DateTextInput
-                value={startDate}
+                value={startLocked ? shownStart(draft) : startDate}
                 required
+                disabled={startLocked}
+                title={startLocked ? t('taskGrid.validation.startIsActual') : undefined}
                 onCommit={setStartDate}
                 className="input !text-small !leading-4 !px-2.5 !py-1.5"
                 ariaLabel={t('dialog.startDate')}

@@ -1,7 +1,7 @@
 import type { Sequence } from '@/types/sequence';
 import type { Task, TaskConstraint } from '@/types/task';
 import { expandSummaryRelations } from '@/engine/scheduler/expandSummaryRelations';
-import { shownStart } from '@/utils/taskDates';
+import { computedStart } from '@/utils/taskDates';
 import { isManuallyScheduled } from '@/utils/manualScheduling';
 
 /**
@@ -111,6 +111,9 @@ export function constraintForDraggedStart(
   start: string,
   drivenByPredecessor: boolean,
 ): StartConstraintEdit | undefined {
-  if (start === shownStart(original)) return undefined;
+  // Tegen de REKENstart. De startregel geldt alleen voor een niet-gestarte taak (`startRuleApplies`),
+  // en daar is de getoonde start gelijk aan de rekenstart; een gestarte balk verschuift niet
+  // (`startIsActual`, `useGanttPointerCoordinator.dragHit`/`useBarDrag`).
+  if (start === computedStart(original)) return undefined;
   return startConstraintAfterEdit(original, start, drivenByPredecessor);
 }

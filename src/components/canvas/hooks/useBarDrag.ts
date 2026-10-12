@@ -25,6 +25,8 @@ import { notifyStartEdit, type StartEditNotice } from '@/state/startConstraintNo
 import { ROW_DRAG_THRESHOLD } from './constants';
 import { hourSnapMinutesFor, snapTimelineDate } from './timelineSnap';
 import { listenWindowDrag } from '@/hooks/listenWindowDrag';
+import { finishIsActual, startIsActual } from '@/utils/taskDates';
+import { BASELINES_PROGRESS_HELP_ARTICLE_ID } from '@/state/helpArticles';
 
 // Monotone teller: geeft élk sleep-gebaar een UNIEKE coalesce-key (`bardrag:<taskId>:<n>`). Zo vloeit
 // een reeks per-mousemove `updateTask`-commits samen tot ÉÉN undo-stap, terwijl twee opeenvolgende
@@ -67,6 +69,20 @@ interface StartRuleGesture {
   blockedTried: boolean;
   /** De SNET die de laatst toegepaste beweging zette, of niets. */
   snet?: StartConstraintEdit;
+}
+
+/**
+ * Werkelijke datums verschuiven niet (eigenaarsbesluit 2026-10-12): van een VOLTOOIDE taak staan
+ * begin en einde vast, van een GESTARTE taak de start (`finishIsActual`/`startIsActual`). De
+ * coördinator maakt van zo'n rand al body (`dragHit`); een horizontale sleep van die body doet dan
+ * niets — geen datum, geen anker, geen constraint — en na het loslaten volgt één melding. Verticaal
+ * blijft de rijsleep gewoon werken.
+ */
+interface ActualDatesLock {
+  name: string;
+  kind: 'start' | 'finish';
+  /** Ooit horizontaal geprobeerd (voor de melding na loslaten). */
+  tried: boolean;
 }
 
 /** Het sleeplabel van een stuk-/stukrandsleep (DOM, zie `GanttCanvas`), in canvascoördinaten. */
@@ -201,6 +217,8 @@ export function useBarDrag({
   // De startregel van dit gebaar (zie `StartRuleGesture`). Net als de refs hierboven hoort hij bij
   // het GEBAAR: een effectherstart halverwege mag hem niet resetten.
   const startRuleRef = useRef<StartRuleGesture | null>(null);
+  // Werkelijke datums van dit gebaar (zie `ActualDatesLock`); hoort net zo bij het GEBAAR.
+  const actualLockRef = useRef<ActualDatesLock | null>(null);
   const hourSnapMinutes = hourSnapMinutesFor(zoom, enableQuarterHourZoom, enableHourPlanning);
   const snapAt = useCallback(
     (x: number, hourMode: boolean) => snapTimelineDate(axis, x, hourMode, hourSnapMinutes),
@@ -237,11 +255,16 @@ export function useBarDrag({
     const canvas = canvasRef.current;
     const rect = canvas?.getBoundingClientRect();
     const pointerStart = rect ? axis.xToDate(next.startX - rect.left) : undefined;
-    const split = prepareSplitDrag(next, rect ? next.startX - rect.left : null);
+    const original = getTask(next.taskId);
+    const completed = !!original && finishIsActual(original);
+    // Een voltooide balk heeft geen stukgrepen: zijn pauzes liggen in het verleden.
+    const split = completed ? undefined : prepareSplitDrag(next, rect ? next.startX - rect.left : null);
+    actualLockRef.current = original && (completed || (!split && next.edge !== 'right' && startIsActual(original)))
+      ? { name: original.name, kind: completed ? 'finish' : 'start', tried: false }
+      : null;
     undoKeyRef.current = split ? split.coalesceKey : `bardrag:${next.taskId}:${++dragSeq}`;
     // Alleen body en linkerrand verzetten de start; een stuksleep en de rechterrand niet.
-    const original = getTask(next.taskId);
-    const driven = !split && next.edge !== 'right' && !!original
+    const driven = !split && next.edge !== 'right' && !!original && !actualLockRef.current
       && (isStartDrivenByPredecessor?.(next.taskId) ?? false);
     startRuleRef.current = original && driven
       ? { original, driven, blocking: constraintBlockingStart(original, driven), blockedTried: false }
@@ -414,6 +437,7 @@ export function useBarDrag({
           });
           undoKeyRef.current = null;
           startRuleRef.current = null;
+          actualLockRef.current = null;
           setDragState(null);
           return;
         }
@@ -423,6 +447,12 @@ export function useBarDrag({
         directionRef.current = 'horizontal';
       }
       const pixelDelta = e.clientX - dragState.startX;
+      // Werkelijke datums: horizontaal verschuift er niets (zie `ActualDatesLock`).
+      const lock = actualLockRef.current;
+      if (lock) {
+        if (Math.abs(pixelDelta) >= ROW_DRAG_THRESHOLD) lock.tried = true;
+        return;
+      }
       if (isHourDrag) {
         handleHourDrag(e);
         return;
@@ -502,6 +532,16 @@ export function useBarDrag({
 
     const handleMouseUp = () => {
       undoKeyRef.current = null;
+      const lock = actualLockRef.current;
+      actualLockRef.current = null;
+      if (lock?.tried && notify) {
+        notify({
+          severity: 'info',
+          messageKey: lock.kind === 'finish' ? 'notifications.dragDatesAreActual' : 'notifications.dragStartIsActual',
+          params: { name: lock.name },
+          helpArticleId: BASELINES_PROGRESS_HELP_ARTICLE_ID,
+        });
+      }
       // Eén melding per gebaar, over het netto-resultaat: de gezette SNET, of de constraint die de
       // start tegenhield. Dezelfde meldingen als bij typen (`startEditNotifications`).
       const rule = startRuleRef.current;

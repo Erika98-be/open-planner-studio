@@ -92,6 +92,8 @@
     "startBlockedByConstraint": "「{{name}}」の新しい開始日は適用されませんでした。このタスクには先行タスクと制約「$t(task:constraintType.{{type}})」{{date}} があり、それらが開始日を決めます。開始日を移動するには、その制約を変更してください。",
     "startBlockedByConstraintNoDate": "「{{name}}」の新しい開始日は適用されませんでした。このタスクには先行タスクと制約「$t(task:constraintType.{{type}})」があり、それらが開始日を決めます。開始日を移動するには、その制約を変更してください。",
     "startBlockedByConstraintMany_other": "タスク {{count}} 件の新しい開始日は適用されませんでした。これらのタスクには先行タスクと「指定日以降に開始 (SNET)」以外の制約があります。開始日を移動するには、それらの制約を変更してください。",
+    "dragStartIsActual": "「{{name}}」は開始しています。開始は実績開始のため移動しません。進捗から変更してください。",
+    "dragDatesAreActual": "「{{name}}」は完了しています。開始と終了は実績日付のため移動しません。進捗から変更してください。",
     "referencesClearedOnPaste_other": "この文書に存在しない参照 {{count}} 件をクリアしました（元の文書のタスクカレンダー、カスタムタスク種類、アクティビティコード、カスタムフィールド）。",
     "milestoneRefusedAssignments_other": "リソースの割り当てがあるタスク {{count}} 件はマイルストーンにできません。先に割り当てを削除してください。",
     "milestoneRefusedSummary_other": "サブタスクを持つサマリータスク {{count}} 件はマイルストーンにできません。",

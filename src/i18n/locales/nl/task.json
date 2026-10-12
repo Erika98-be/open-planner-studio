@@ -153,6 +153,7 @@
       "scheduleFinishNotManual": "Gepland einde telt alleen bij een handmatig geplande taak. Wijzig het einde via de kolom Einde of via de duur.",
       "finishFromDuration": "Bij deze taak volgt het einde uit de start en de duur. Wijzig de start of de duur.",
       "finishBeforeStart": "Het einde ligt vóór de start.",
+      "startIsActual": "Deze taak is gestart; de start is de werkelijke start. Wijzig die via de voortgang.",
       "finishIsActual": "Deze taak is gereed; het einde is het werkelijke einde. Wijzig dat via de voortgang.",
       "invalid": "De ingevoerde waarde is niet geldig.",
       "relationToken": "Gebruik bijvoorbeeld 1.2 FS+2d.",

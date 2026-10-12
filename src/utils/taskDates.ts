@@ -1,18 +1,84 @@
 import type { Task } from '@/types/task';
+import { isPinnedComplete } from '@/engine/scheduler/duration';
 import { MS_PER_DAY, parseDate, parseInstant } from '@/utils/dateUtils';
 
 /**
- * De getoonde start van een taak: de CPM-datum (`earlyStart`), en vóór de eerste berekening de
- * opgeslagen `scheduleStart`. Dezelfde keuze in Gantt, raster, filters, rapporten en variance.
- * (De Gantt-viewport kent daarnaast nog een terugval op de late datum: `resolveTaskStart`.)
+ * De BEREKENDE start (rekendatum): de CPM-datum (`earlyStart`), en vóór de eerste berekening de
+ * opgeslagen `scheduleStart`. Voor wie juist de uitkomst van de berekening nodig heeft en niet de
+ * datum op het scherm: het anker van een externe koppeling (`externalLinks.sourceAnchorDate`, voedt de
+ * berekening van een ander document), de geplande datums en de spreidingsankers van de P6 XML-export,
+ * de contour-tijdfasering van de MSPDI-export en de histogramtooltip (de resourcebelasting rekent
+ * vanaf `earlyStart`, `ResourceLoad.taskWorkDayIsos`). De kolommen *Vroege start* en *Vroeg einde*
+ * lezen `earlyStart`/`earlyFinish` rauw, zoals P6.
  */
-export function shownStart(task: Task): string {
+export function computedStart(task: Task): string {
   return task.time.earlyStart || task.time.scheduleStart;
 }
 
-/** Het getoonde einde van een taak: `earlyFinish`, anders de opgeslagen `scheduleFinish`. */
-export function shownFinish(task: Task): string {
+/** Het BEREKENDE einde: `earlyFinish`, anders de opgeslagen `scheduleFinish`. Zie {@link computedStart}. */
+export function computedFinish(task: Task): string {
   return task.time.earlyFinish || task.time.scheduleFinish;
+}
+
+/** De werkelijke start die de getoonde start vastlegt, of `''`. Een voltooide taak zonder eigen
+ *  werkelijke start (rauwe of externe data) begint op haar werkelijke einde — dezelfde terugval als
+ *  de VOLTOOID-tak van `CPMSolver.forwardPass` (`actualStart ?? actualFinish`). */
+function actualStartOf(task: Task): string {
+  return task.time.actualStart || (isPinnedComplete(task.time) ? task.time.actualFinish : '') || '';
+}
+
+/**
+ * De GETOONDE start van een taak — één bron voor Gantt-balk, raster, tooltip, paneel, filters,
+ * rapporten, afdruk, minimap, variance, basislijn en de exports (CSV, MSPDI, voortgangsblad).
+ *
+ * Zoals Primavera P6 en MS Project (eigenaarsbesluit 2026-10-12, optie 1): een GESTARTE taak begint
+ * op haar werkelijke start (`actualStart`), ook ná herberekenen en in elk rekenprofiel; anders de
+ * berekende start ({@link computedStart}). De motor verandert daarvoor niet: in het P6-profiel zet A19
+ * (`p6UseRemainingStartForProgress`) de vroege start van een lopende taak op de statusdatum en C5
+ * (`p6CompletedPhysicalAtDataDate`) die van een voltooide taak ook — dat blijft de rekendatum (kolom
+ * *Vroege start*), het scherm toont de werkelijke start. In het OPS-profiel pint de solver de vroege
+ * start al op de werkelijke start.
+ *
+ * VERZAMELTAAK: de vroegste van haar werkelijke start (de rollup van haar bladen,
+ * `summaryProgressOf`) en haar berekende start (de rollup van hun vroege starts). Zo omsluit de
+ * fasebalk elke kindbalk: een nog niet gestart kind kan (zonder statusdatum) vóór de werkelijke
+ * start van een gestart broertje liggen. Datums als tekst vergelijken mag hier, net als in
+ * `rollupSummaryTasks`: een start zonder tijd (middernacht) sorteert vóór dezelfde dag mét tijd.
+ *
+ * (De Gantt-viewport kent daarnaast nog een terugval op de late datum: `resolveTaskStart`.)
+ */
+export function shownStart(task: Task): string {
+  const actual = actualStartOf(task);
+  const computed = computedStart(task);
+  if (!actual) return computed;
+  if (task.childIds.length > 0 && computed && computed < actual) return computed;
+  return actual;
+}
+
+/**
+ * Het GETOONDE einde: het werkelijke einde zodra de taak voltooid is (`isPinnedComplete`, dezelfde
+ * grens als de solver: werkelijk einde én voortgang 100 %), anders het berekende einde
+ * ({@link computedFinish}). Een lopende taak eindigt dus op haar berekende (rest)einde, zoals in P6.
+ */
+export function shownFinish(task: Task): string {
+  return isPinnedComplete(task.time) ? task.time.actualFinish : computedFinish(task);
+}
+
+/**
+ * Staat de start van deze BLADtaak vast als werkelijke start? Gestart (`actualStart`) of voltooid.
+ * Dan is de getoonde start een feit: Start is alleen-lezen in raster, paneel en Taak bewerken, en de
+ * Gantt-balk verschuift niet; de gebruiker past de werkelijke start aan. Een verzameltaak valt erbuiten
+ * (haar datums volgen uit de kinderen, zie `derivedDatesTask`), net als een taak met alleen voortgang
+ * zonder werkelijke start: daar is de getoonde start nog de berekende.
+ */
+export function startIsActual(task: Task): boolean {
+  return task.childIds.length === 0 && actualStartOf(task) !== '';
+}
+
+/** Staat het einde van deze BLADtaak vast als werkelijk einde? Alleen bij een voltooide taak
+ *  (`isPinnedComplete`). Zie {@link startIsActual}. */
+export function finishIsActual(task: Task): boolean {
+  return task.childIds.length === 0 && isPinnedComplete(task.time);
 }
 
 /**
@@ -21,6 +87,12 @@ export function shownFinish(task: Task): string {
  * `undefined` en het anker blijft staan. Anders legde elke commit van een ongewijzigd veld de
  * berekende start vast als nieuw anker — precies de drift die `applyCpmResult` ("BEWUST GEEN
  * scheduleStart-ANKER-drift") voorkomt.
+ *
+ * BEWUST tegen de GETOONDE start, niet tegen {@link computedStart}: de vraag is "veranderde de
+ * gebruiker wat hij zag?". Voor een niet-gestarte taak zijn beide gelijk. Voor een gestarte taak is
+ * het veld alleen-lezen ({@link startIsActual}); komt de ongewijzigde werkelijke start toch langs
+ * (Opslaan van Taak bewerken), dan zou een vergelijking met de rekendatum hem stil als anker
+ * vastleggen.
  */
 export function startAnchorAfterEdit(task: Task, value: string): string | undefined {
   return value !== shownStart(task) ? value : undefined;

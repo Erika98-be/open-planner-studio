@@ -15,7 +15,7 @@ import { flattenOrder } from '@/utils/wbs';
 import type { CustomTaskType } from '@/types/taskType';
 import { encodeCustomTaskType, escapeXml, OPS_DURATION_UNIT_NAME, toXmlDateTime } from '@/services/xmlInterchange';
 import { taskDurationUnit } from '@/engine/scheduler/duration';
-import { shownStart, shownFinish } from '@/utils/taskDates';
+import { computedStart, computedFinish } from '@/utils/taskDates';
 import { P6_DURATION_TYPE_NAME, XER_DURATION_TYPE_TOKEN } from '@/engine/work/workRuleMapping';
 
 /** P6-UDF die de OPS-taaktypemarker draagt; geëxporteerd voor de reader. */
@@ -466,8 +466,10 @@ export function writeP6XML(
     const effHpd = effCal?.hoursPerDay ?? calendar.hoursPerDay;
     const plannedDur = isHour ? taskMinutesForWrite(task, effHpd) / 60 : durationToP6Hours(task.time.scheduleDuration, effHpd);
     lines.push(`${indent(2)}<PlannedDuration>${plannedDur}</PlannedDuration>`);
-    lines.push(`${indent(2)}<PlannedStartDate>${toXmlDateTime(shownStart(task))}</PlannedStartDate>`);
-    lines.push(`${indent(2)}<PlannedFinishDate>${toXmlDateTime(shownFinish(task))}</PlannedFinishDate>`);
+    // BEWUST de rekendatums (`computedStart`/`computedFinish`), niet de getoonde: P6's geplande
+    // datums zijn niet de werkelijke; die staan apart in ActualStartDate/ActualFinishDate hieronder.
+    lines.push(`${indent(2)}<PlannedStartDate>${toXmlDateTime(computedStart(task))}</PlannedStartDate>`);
+    lines.push(`${indent(2)}<PlannedFinishDate>${toXmlDateTime(computedFinish(task))}</PlannedFinishDate>`);
     if (task.time.completion > 0) {
       lines.push(`${indent(2)}<PhysicalPercentComplete>${Math.round(task.time.completion * 100)}</PhysicalPercentComplete>`);
     }
@@ -613,8 +615,10 @@ export function writeP6XML(
     if (actObjId === undefined || resObjId === undefined) continue;
     const task = taskById.get(a.taskId);
     const contour = task ? contourOf(task, a) : undefined;
-    const taskStartIso = task ? shownStart(task) : '';
-    const taskFinishIso = task ? shownFinish(task) : '';
+    // Rekendatums, zoals PlannedStartDate van de activiteit en de resourcebelasting
+    // (`ResourceLoad.taskWorkDayIsos` legt de contour vanaf `earlyStart`).
+    const taskStartIso = task ? computedStart(task) : '';
+    const taskFinishIso = task ? computedFinish(task) : '';
     // Spreidingsstrings (MPXJ `TimephasedHelper.write`): actual/remaining apart, en `PlannedCurve`
     // als de volledige as. Alle drie ankeren op de TAAKSTART, en de bijbehorende ankervelden
     // (`PlannedStartDate`/`RemainingStartDate`/`ActualStartDate`) worden meegeschreven — zonder

@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useDisplayDate } from '@/hooks/displayDate';
 import type { Task } from '@/types/task';
 import type { CPMResult } from '@/engine/scheduler/CPMSolver';
+import { shownStart } from '@/utils/taskDates';
 
 /**
  * Mijlpalen-overzicht: tabelrapport over alle mijlpalen — soort,
@@ -42,7 +43,8 @@ export function computeMilestoneRows(tasks: readonly Task[], cpmResult: CPMResul
         wbs: t.wbsCode,
         name: t.name,
         kind: (t.milestoneKind ?? 'AUTO') as MilestoneRow['kind'],
-        date: t.time.earlyStart || t.time.scheduleStart,
+        // De getoonde datum, zoals de ruit in de Gantt: een behaalde mijlpaal staat op zijn werkelijke datum.
+        date: shownStart(t),
         guardDate: t.constraint?.date ?? t.deadline ?? '',
         float: tf,
         mandatory: !!t.mandatory,

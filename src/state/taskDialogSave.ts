@@ -4,7 +4,7 @@ import {
   applyActualDateEdit, applyCompletionEdit, applyProgressInvariants, isActualPastStatusDate,
 } from '@/engine/taskMutationRules';
 import { taskMilestoneTransition } from '@/engine/taskMilestoneTransition';
-import { startAnchorAfterEdit } from '@/utils/taskDates';
+import { startAnchorAfterEdit, startIsActual } from '@/utils/taskDates';
 import {
   constraintBlockingStart, predecessorDrivenTaskIds, startConstraintAfterEdit,
 } from '@/engine/startEditConstraint';
@@ -185,7 +185,9 @@ export function createTaskDialogSave(context: AppStoreContext): (input: TaskDial
       // daadwerkelijk wijzigde — anders zou opslaan de berekende start als nieuw anker vastleggen
       // en de drift na herberekenen herintroduceren.
       // Start is verplicht: het veld weigert leeg al (`required`), dit is het vangnet.
-      const anchor = startDate ? startAnchorAfterEdit(editingTask, startDate) : undefined;
+      // Een gestarte taak (in de opgeslagen draft) begint op haar werkelijke start: het veld was
+      // alleen-lezen en er komt geen anker bij (eigenaarsbesluit 2026-10-12).
+      const anchor = startDate && !startIsActual(draft) ? startAnchorAfterEdit(editingTask, startDate) : undefined;
       // Een getypte start op een taak met voorganger wordt een beperking "Start niet eerder dan"
       // (dezelfde regel als Tabel, paneel en Gantt-sleep), in dezelfde `updateTask` en dus
       // dezelfde undo-stap. Houdt een andere constraint de start tegen, dan wordt de start niet
