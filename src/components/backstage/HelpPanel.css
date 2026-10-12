@@ -216,6 +216,16 @@
   border-radius: var(--radius-md);
 }
 
+.help-read-in {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  font-size: var(--text-small);
+  color: var(--theme-text-muted, var(--theme-text));
+}
+
 /* Blokafbeelding: een afbeelding die alleen op een eigen regel staat (miniMarkdown). */
 .help-figure {
   margin: var(--sp-3, 10px) 0;

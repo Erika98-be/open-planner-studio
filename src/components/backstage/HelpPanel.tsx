@@ -291,6 +291,12 @@ export function HelpPanel() {
   // er nog niet), dan volgt de melding — net als voor een UI-taal zonder docs.
   const selectedLang: HelpDocLang = selectedMeta ? shownLangOf(selectedMeta) : lang;
   const showLangFallback = uiLangFallback || (!!selectedMeta && selectedContent !== undefined && selectedLang !== lang);
+  // Besluit eigenaar 2026-10-12: een artikel in een andere taal dan nl of en krijgt altijd een melding,
+  // met knoppen om alleen de docs naar Engels of Nederlands te zetten.
+  const showTranslatedNote = !showLangFallback && !!selectedMeta && selectedContent !== undefined
+    && selectedLang !== 'nl' && selectedLang !== 'en';
+  const showLangNote = showLangFallback || showTranslatedNote;
+  const readInLangs = (['en', 'nl'] as const).filter(l => l !== selectedLang);
   const tutorialRoute = useMemo(() => tutorialsInOrder(registeredArticles), [registeredArticles]);
   const neighbours = selectedMeta?.kind === 'tutorial' ? tutorialNeighbours(tutorialRoute, selectedMeta.id) : null;
 
@@ -441,9 +447,27 @@ export function HelpPanel() {
       </aside>
 
       <main className="help-article">
-        {showLangFallback && (
-          <div className="help-lang-fallback" role="note" data-help-lang-fallback>
-            {tMenu('backstage.helpLangFallback')}
+        {showLangNote && (
+          <div
+            className="help-lang-fallback"
+            role="note"
+            {...(showLangFallback ? { 'data-help-lang-fallback': true } : { 'data-help-translated-note': true })}
+          >
+            <span>{tMenu(showLangFallback ? 'backstage.helpLangFallback' : 'backstage.helpTranslatedNote')}</span>
+            <span className="help-read-in">
+              <span>{tMenu('backstage.helpReadIn')}</span>
+              {readInLangs.map(l => (
+                <button
+                  key={l}
+                  type="button"
+                  className="btn btn--sm"
+                  data-help-read-in={l}
+                  onClick={() => changeDocsLang(l)}
+                >
+                  {LANGUAGE_LABELS[l][1]}
+                </button>
+              ))}
+            </span>
           </div>
         )}
         {!manifest ? null : !selectedMeta || selectedFailed ? (

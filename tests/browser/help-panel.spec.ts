@@ -53,7 +53,7 @@ test('Help volgt de UI-taal automatisch, behoudt een expliciete override en valt
   // geen vertaling, dus Engels met de melding in het Arabisch, in een RTL-interface.
   await docsLanguage.selectOption('__auto__');
   await expect(heading).toHaveText('Adding relations');
-  await expect(fallback).toHaveText('هذه المقالة غير متوفرة بلغتك بعد. أنت تقرأ النسخة الإنجليزية.');
+  await expect(fallback).toContainText('هذه المقالة غير متوفرة بلغتك بعد. أنت تقرأ النسخة الإنجليزية.');
   await expect.poll(() => page.evaluate(() => document.documentElement.dir)).toBe('rtl');
 
   // De Engelse tekst blijft links-naar-rechts in de RTL-interface (anders springen leestekens naar
@@ -116,9 +116,64 @@ test('Arabische vertaling uit de index: rtl in het Arabisch, Engelse terugval lt
   await expect(body).toHaveAttribute('dir', 'ltr');
   await expect(body).toHaveAttribute('lang', 'en');
   expect(await body.evaluate(el => getComputedStyle(el).direction)).toBe('ltr');
-  await expect(fallback).toHaveText('هذه المقالة غير متوفرة بلغتك بعد. أنت تقرأ النسخة الإنجليزية.');
+  await expect(fallback).toContainText('هذه المقالة غير متوفرة بلغتك بعد. أنت تقرأ النسخة الإنجليزية.');
   await expect(panel.locator('[data-help-article="howto-taken-en-mijlpalen-toevoegen"] .help-toc-title')).toHaveAttribute('lang', 'en');
 
   // Alleen het artikel uit de index is in het Arabisch opgevraagd.
   expect([...new Set(arArticleRequests)]).toEqual([`${AR_ID}.md`]);
+});
+
+// Besluit eigenaar 2026-10-12: een artikel in een andere taal dan nl of en heeft altijd een melding
+// boven het artikel, met knoppen om alleen de docs naar Engels of Nederlands te zetten.
+async function openHelp(page: Page) {
+  await page.locator('.ribbon-tab--file').click();
+  await page.getByRole('button', { name: 'Help', exact: true }).click();
+  const panel = page.locator('.help-panel');
+  await expect(panel).toBeVisible();
+  return panel;
+}
+
+test('Vertaald artikel (fr): melding met knoppen English en Nederlands; English zet alleen de docs om', async ({ page, ops: _ops }) => {
+  await page.evaluate(() => localStorage.removeItem('ops-docs-locale'));
+  const panel = await openHelp(page);
+  await changeUiLocale(page, 'FR — Français', 'fr');
+  const heading = panel.locator('.help-article-body h1');
+  const note = panel.locator('[data-help-translated-note]');
+  await expect(note).toBeVisible();
+  await expect(note).toHaveAttribute('role', 'note');
+  await expect(panel.locator('.help-article-body')).toHaveAttribute('lang', 'fr');
+  await expect(note.locator('[data-help-read-in]')).toHaveCount(2);
+  await expect(note.locator('[data-help-read-in="en"]')).toHaveText('English');
+  await expect(note.locator('[data-help-read-in="nl"]')).toHaveText('Nederlands');
+
+  await note.locator('[data-help-read-in="en"]').click();
+  await expect(heading).toHaveText('Adding relations');
+  await expect(panel.locator('.help-article-body')).toHaveAttribute('lang', 'en');
+  await expect(panel.locator('[data-help-translated-note]')).toHaveCount(0);
+  await expect(panel.locator('#help-docslang')).toHaveValue('en');
+  expect(await page.evaluate(() => document.documentElement.lang)).toBe('fr');
+});
+
+test('Nederlandse UI: geen vertaalmelding', async ({ page, ops: _ops }) => {
+  await page.evaluate(() => localStorage.removeItem('ops-docs-locale'));
+  const panel = await openHelp(page);
+  await changeUiLocale(page, 'NL — Nederlands', 'nl');
+  await expect(panel.locator('.help-article-body h1')).toHaveText('Relaties leggen');
+  await expect(panel.locator('[data-help-translated-note]')).toHaveCount(0);
+  await expect(panel.locator('[data-help-lang-fallback]')).toHaveCount(0);
+});
+
+test('Terugval op Engels toont de terugvalmelding met alleen de knop Nederlands', async ({ page, ops: _ops }) => {
+  await page.evaluate(() => localStorage.removeItem('ops-docs-locale'));
+  await page.route('**/docs/ar/index.json', route => route.fulfill({ status: 200, contentType: 'application/json', body: '{}' }));
+  const panel = await openHelp(page);
+  await changeUiLocale(page, 'AR — العربية', 'ar');
+  const fallback = panel.locator('[data-help-lang-fallback]');
+  await expect(fallback).toBeVisible();
+  await expect(panel.locator('[data-help-translated-note]')).toHaveCount(0);
+  await expect(fallback.locator('[data-help-read-in="en"]')).toHaveCount(0);
+  await expect(fallback.locator('[data-help-read-in="nl"]')).toHaveText('Nederlands');
+  await fallback.locator('[data-help-read-in="nl"]').click();
+  await expect(panel.locator('.help-article-body h1')).toHaveText('Relaties leggen');
+  await expect(panel.locator('#help-docslang')).toHaveValue('nl');
 });
