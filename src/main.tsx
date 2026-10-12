@@ -28,6 +28,12 @@ if (import.meta.env.DEV || import.meta.env.VITE_OPS_BENCH_BRIDGE === '1') {
   void import('@/utils/devBridge').then(({ installDevBridge }) => installDevBridge());
 }
 
+// Nep-site voor opslag via de site (issue #309), alleen in DEV en met `?fakeSite=1`: valt uit elke
+// productiebouw, net als de zelftesthaak hierboven.
+if (import.meta.env.DEV && new URLSearchParams(window.location.search).get('fakeSite') === '1') {
+  void import('@/services/fileAccess/fakeSiteHost').then(({ installFakeSiteHost }) => installFakeSiteHost());
+}
+
 // Wacht tot de actieve taal geladen is voordat we renderen (voorkomt een Engelse flits).
 // Faalt de taal-load, dan valt i18next terug op de eager 'en'-resources en renderen we alsnog.
 initLocale()
