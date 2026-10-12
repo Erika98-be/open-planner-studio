@@ -131,7 +131,7 @@ export function TitleBar() {
     <div ref={rootRef} className="title-bar" data-tauri-drag-region style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}>
       <div ref={leftRef} className="title-bar-left">
         <div className="quick-access-toolbar">
-          <img src="/icon.png" className="title-bar-app-icon" alt="Open Planner Studio" />
+          <img src={`${import.meta.env.BASE_URL}icon.png`} className="title-bar-app-icon" alt="Open Planner Studio" />
           <div className="quick-access-separator" />
 
           {/* Nieuw/Openen/Opslaan staan hier bewust niet (review 2026-10-06): ze staan al op Start en in

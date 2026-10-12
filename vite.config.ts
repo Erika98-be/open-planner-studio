@@ -29,7 +29,17 @@ function allowedFsRoots(): string[] {
 // @ts-expect-error — dev-port.mjs is plain JS zonder types
 import { worktreeRoot, readRecordedPort } from './scripts/dev-port.mjs';
 
-export default defineConfig({
+/**
+ * Vite-modus van de platformbouw voor de OpenAEC-app op Frappe (issue #307). Alleen
+ * `scripts/build-platform.mjs` (`npm run build:platform -- --base /pad/`) bouwt in deze modus; Vite
+ * leest dan ook `.env.platform` (bouwvlag `VITE_OPS_PLATFORM`, zie `src/utils/buildFlags.ts`).
+ * Alleen in deze modus: `build.manifest` (de site voegt de entry uit `.vite/manifest.json` in) en een
+ * eigen uitvoermap, zodat de gewone `npm run build` en de live-deploy ongewijzigd blijven.
+ */
+const PLATFORM_MODE = 'platform';
+const PLATFORM_OUT_DIR = 'dist-platform';
+
+export default defineConfig(({ mode }) => ({
   plugins: [react()],
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version),
@@ -74,12 +84,15 @@ export default defineConfig({
       ignored: [
         path.resolve(__dirname, '.claude/worktrees') + '/**',
         path.resolve(__dirname, 'dist') + '/**',
+        path.resolve(__dirname, PLATFORM_OUT_DIR) + '/**',
       ],
     },
   },
   build: {
     target: 'es2020',
-    outDir: 'dist',
+    outDir: mode === PLATFORM_MODE ? PLATFORM_OUT_DIR : 'dist',
+    // Alleen in de platformbouw: de site leest hieruit welke entry (JS + CSS) hij invoegt.
+    manifest: mode === PLATFORM_MODE,
     rollupOptions: {
       output: {
         // Split large, stable code out of the main entry chunk into separate
@@ -128,4 +141,4 @@ export default defineConfig({
       },
     },
   },
-});
+}));
