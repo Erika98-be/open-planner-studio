@@ -354,5 +354,28 @@ withFixture({ [REGISTRY]: miniRegistry, [TYPES]: miniTypes, [PIN]: '{}', [SOLVER
   ok('30b via een echte import bereikbaar ⇒ groen', r.status === 0, `${r.stdout}${r.stderr}`.trim());
 });
 
+// 31. Regel 7: de solver leest de uitlegvelden `requires`/`theme` van een registerconventie niet; een
+// bestand buiten de solver (zoals de Gantt-renderer met zijn eigen `theme`) mag dat wel.
+const solverBase = `import { g } from './diag';\nexport const h = g;\n${solverReadsA}`;
+for (const [label, read, needle] of [
+  ['31a eigenschap', 'export const r = (d: { requires?: { hourPlanning?: true } }) => d.requires?.hourPlanning === true;', "registerveld 'requires' als eigenschap"],
+  ['31b string-index', "export const r = (d: Record<string, unknown>) => d['theme'] === 'progress';", "registerveld 'theme' via string-index"],
+  ['31c in', "export const r = (d: object) => 'requires' in d;", "registerveld 'requires' via 'in'"],
+  ['31d destructuring', 'export const r = ({ theme }: { theme: string }) => theme;', "registerveld 'theme' via destructuring"],
+] as const) {
+  withFixture({ [REGISTRY]: miniRegistry, [TYPES]: miniTypes, [PIN]: '{}', [SOLVER]: `${solverBase}\n${read}`, [DIAG]: diagSource }, dir => {
+    const r = run(dir);
+    const out = `${r.stdout}${r.stderr}`;
+    ok(`${label} in de solver ⇒ rood`, r.status !== 0 && out.includes(needle), out.trim());
+  });
+}
+withFixture({
+  [REGISTRY]: miniRegistry, [TYPES]: miniTypes, [PIN]: '{}', [SOLVER]: solverBase, [DIAG]: diagSource,
+  'src/engine/renderer/palette.ts': 'export const p = (o: { theme: string }) => o.theme;',
+}, dir => {
+  const r = run(dir);
+  ok('31e theme buiten de solver ⇒ groen', r.status === 0, `${r.stdout}${r.stderr}`.trim());
+});
+
 if (diffs.length === 0) console.log(`OK: conventiegrens — ${checks} checks groen`);
 else { console.log(`XX conventiegrens — ${diffs.length} van ${checks} checks rood:`); for (const d of diffs) console.log(`  - ${d}`); process.exit(1); }
