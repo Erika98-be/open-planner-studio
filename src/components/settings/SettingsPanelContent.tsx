@@ -3,7 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { useAppStore } from '@/state/appStore';
 import { useResolvedUITheme } from '@/hooks/useResolvedUITheme';
 import { ResolvedUITheme, UI_THEMES, DocumentChromeStyle, DateNotation, DurationDisplay, BarSplitMode, UIFontFamily, UI_FONT_FAMILIES, UI_FONT_SCALES, type UIState } from '@/state/slices/types';
-import { saveZoomSettings, saveDebugTerminalEnabled, saveDocumentChromeStyle, saveShowClassicViewControls, saveConstructionMode, saveDateNotation, saveEnableHourPlanning, saveShowTaskTypes, saveAllowMixedDayHour, saveDurationDisplay, saveBarSplitMode, saveCompressNonWorkdays, saveUIFontFamily, saveUIFontScale, saveAiAutostart } from '@/utils/settingsStore';
+import { saveZoomSettings, saveDebugTerminalEnabled, saveDocumentChromeStyle, saveShowClassicViewControls, saveConstructionMode, saveDateNotation, saveEnableHourPlanning, saveShowTaskTypes, saveAllowMixedDayHour, saveDurationDisplay, saveBarSplitMode, saveCompressNonWorkdays, saveUIFontFamily, saveUIFontScale, saveAiAutostart, saveFormatNoticeHidden } from '@/utils/settingsStore';
+import { FORMAT_NOTICE_KINDS, withFormatNoticeShown } from '@/services/formatNoticeKinds';
 import { applyAiModeLive } from '@/services/mcp/server';
 import { isTauri } from '@/utils/platform';
 import { Select } from '@/components/common/Select';
@@ -64,6 +65,7 @@ export function SettingsPanelContent() {
   const dateNotation = useAppStore(s => s.ui.dateNotation);
   const enableHourPlanning = useAppStore(s => s.ui.enableHourPlanning);
   const showTaskTypes = useAppStore(s => s.ui.showTaskTypes);
+  const formatNoticeHidden = useAppStore(s => s.ui.formatNoticeHidden);
   const allowMixedDayHour = useAppStore(s => s.ui.allowMixedDayHour);
   const durationDisplay = useAppStore(s => s.ui.durationDisplay);
   const barSplitMode = useAppStore(s => s.ui.barSplitMode);
@@ -373,6 +375,26 @@ export function SettingsPanelContent() {
 
         {activeTab === 'advanced' && (
           <div className="settings-section-list">
+            {/* Uitleg na het openen van een ander formaat dan IFC (`FormatNoticeDialog`): per formaat
+                aan/uit. "Niet meer tonen" in die dialoog zet hier het vinkje uit; hier zet je hem
+                weer aan. Via deze gedeelde component op alle 3 de ingangen. */}
+            <div className="settings-section" data-ops-setting-format-notice>
+              <h3>{t('formatNotice.settingsSection')}</h3>
+              {FORMAT_NOTICE_KINDS.map(kind => (
+                <SettingToggle
+                  key={kind}
+                  label={t(`formatNotice.formats.${kind}.name`)}
+                  checked={!formatNoticeHidden.includes(kind)}
+                  onChange={checked => applySetting(
+                    'formatNoticeHidden',
+                    withFormatNoticeShown(useAppStore.getState().ui.formatNoticeHidden, kind, checked),
+                    saveFormatNoticeHidden,
+                  )}
+                  inputProps={{ 'data-ops-setting-format-notice-kind': kind }}
+                />
+              ))}
+            </div>
+
             {/* AI-modus + automatisch starten: de enige twee AI-instellingen hier — de rest van
                 de bediening leeft op het AI-tabblad. AAN ⇒ tabblad verschijnt; UIT ⇒ tabblad weg +
                 bridge geforceerd gestopt (`applyAiModeLive` → `stopMcpServer` + status off). Via deze

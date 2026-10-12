@@ -1471,5 +1471,44 @@
     "saveHint": "Het project komt als nieuw IFC-bestand op de site. Daarna slaat Opslaan (Ctrl+S) daar een nieuwe versie op.",
     "saveToSite": "Op de site opslaan",
     "toThisPc": "Op deze pc…"
+  },
+  "formatNotice": {
+    "title": "{{format}} geopend",
+    "readMore": "Lees meer",
+    "dontShowAgain": "Niet meer tonen voor {{format}}",
+    "close": "Begrepen",
+    "settingsSection": "Uitleg tonen na het openen van",
+    "formats": {
+      "xer": {
+        "name": "Primavera-bestand (.xer)",
+        "kept": "De app nam de WBS en de activiteiten over, met relaties, kalenders, resources, voortgang, activiteitcodes en eigen velden. Een baselineproject wordt de baseline van het project dat ernaar verwijst.",
+        "limited": "Een relatie tussen twee projecten wordt geen relatie in je planning. Wijkt de berekening af, dan zie je eerst de datums zoals Primavera ze opsloeg.",
+        "save": "Opslaan schrijft een nieuw IFC-bestand, met het oorspronkelijke .xer erin. Terugschrijven naar .xer kan niet: je .xer verandert nooit."
+      },
+      "mpp": {
+        "name": "MS Project-bestand (.mpp)",
+        "kept": "De app nam taken met structuur, duur en constraints over, plus relaties, kalenders, resources, toewijzingen en voortgang.",
+        "limited": "Baselines, kosten en tarieven, aantekeningen en de eigen velden van MS Project komen niet mee. Wijkt de berekening af, dan zie je eerst de datums zoals MS Project ze opsloeg.",
+        "save": "Opslaan schrijft een nieuw IFC-bestand: je .mpp verandert nooit. Terugschrijven naar .mpp kan niet. Exporteren naar MS Project XML kan wel."
+      },
+      "mspdi": {
+        "name": "MS Project XML",
+        "kept": "De app nam taken met structuur over, plus relaties, constraints, kalenders, resources, toewijzingen, voortgang, de statusdatum en baseline 0.",
+        "limited": "Aantekeningen, activiteitcodes en eigen velden komen niet mee. Het project rekent met het profiel Open Planner Studio, niet als Microsoft Project.",
+        "save": "Opslaan schrijft een nieuw IFC-bestand: je XML-bestand verandert niet. Terugschrijven kan met Exporteren › MS Project XML."
+      },
+      "p6xml": {
+        "name": "Primavera P6 XML",
+        "kept": "De app nam de WBS en de taken over, met relaties, constraints, kalenders, resources, toewijzingen, voortgang en de statusdatum.",
+        "limited": "Baselines, deadlines, activiteitcodes, eigen velden en aantekeningen komen niet mee. Het project rekent met het profiel Open Planner Studio, niet als Primavera P6.",
+        "save": "Opslaan schrijft een nieuw IFC-bestand: je XML-bestand verandert niet. Terugschrijven kan met Exporteren › Primavera P6 XML."
+      },
+      "csv": {
+        "name": "CSV-bestand",
+        "kept": "De app las per regel één taak: naam, WBS-code, duur, datums, voorgangers en voortgang.",
+        "limited": "Een CSV bevat geen resources, kalenders, constraints, deadlines of baselines. Het project heet CSV Import.",
+        "save": "Opslaan schrijft een nieuw IFC-bestand: je CSV verandert niet. Terugschrijven kan met Exporteren › CSV (puntkomma-gescheiden)."
+      }
+    }
   }
 }

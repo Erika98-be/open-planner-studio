@@ -58,6 +58,8 @@ A change takes effect immediately. There is no *Apply* button and no *Cancel*.
 
 ## Advanced tab
 
+**Show an explanation after opening** — one checkbox per format: *Primavera file (.xer)*, *MS Project file (.mpp)*, *MS Project XML*, *Primavera P6 XML* and *CSV file*. Default: all on. Effect: on shows a window with a short explanation of the format after you open such a file: what the app took over, what it did not, and how saving and writing back work. *Don't show again for …* in that window clears the checkbox here; here you turn it back on. An IFC file, an example and a project that an AI assistant or an extension opens never get this explanation. Where: *Advanced*, under *Show an explanation after opening*. See [Opening and saving a file](docs://howto-bestand-openen-en-opslaan).
+
 **Enable AI mode** — lets an AI assistant work with your schedule. Default: off. Effect: on shows the *AI* tab with the MCP bridge, so an AI assistant can work with your schedule over the Model Context Protocol. Off hides the tab and stops the bridge. Where: *Advanced*, under *AI mode*. See [Connecting an AI assistant (MCP)](docs://howto-ai-assistent-koppelen).
 
 **Start bridge automatically** — starts the MCP bridge when the app starts. Can only be switched on when *Enable AI mode* is on. Default: off. Effect: the bridge is live straight away, so an AI client can connect without you first opening the *AI* tab. This only works in the desktop app, and once per start: if you switch the bridge off yourself afterwards, it does not start again. Where: *Advanced*, under *AI mode*.

@@ -9,7 +9,7 @@ A client or main contractor works in Primavera and delivers their schedule as an
 ## Steps
 
 1. Choose *Home › File › Open* or press Ctrl+O. Choose the `.xer` file.
-2. The app opens one tab for each project that has tasks. The project with the most tasks is the active tab. A tab is called *Project name (Project ID)* if the P6 project ID differs from the name.
+2. The app opens one tab for each project that has tasks. The project with the most tasks is the active tab. A tab is called *Project name (Project ID)* if the P6 project ID differs from the name. A window then briefly explains what the app took over from the file and how saving works; see [Opening and saving a file](docs://howto-bestand-openen-en-opslaan).
 3. Read the message at the bottom. For a file with three projects it can look like this: *XER file opened: 3 project documents.* Below it are lines that explain what the app did. See the heading below.
 4. Check whether there is a bar under the ribbon: *You're viewing the schedule as Primavera recorded it; recalculating would shift 1 task.* Primavera records its own calculated dates in the file. If the app's calculation differs from them, the app shows Primavera's dates as long as you change nothing. What that means and how you switch to the app's own calculation is in [Dates as recorded](docs://uitleg-datums-zoals-opgeslagen). The message *This file contains hour-based planning.* can also appear, with the button *Enable hour planning*. See [Turning on hour planning](docs://howto-urenplanning-aanzetten).
 5. Save your project with Ctrl+S. Because an `.xer` is never overwritten, the app asks where the new IFC file should go. It suggests *Project name (Project ID)* as the file name.

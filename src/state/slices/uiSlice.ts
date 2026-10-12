@@ -167,6 +167,8 @@ export function createDefaultUI(): UIState {
     pendingActualStartQuestion: null,
     pendingSiteOpen: null,
     pendingSiteSave: null,
+    pendingFormatNotice: null,
+    formatNoticeHidden: [],
     showPoolImportDialog: false,
     poolImportCompanyId: null,
     showLibraryLinkDialog: false,

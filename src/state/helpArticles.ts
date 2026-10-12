@@ -118,3 +118,14 @@ export const RECOVERY_HELP_ARTICLE_ID = 'howto-herstellen-na-een-crash';
 /** Opslaan in een browser die niet kan terugschrijven. Bewust zonder anker: `verify:docs` eist dat
  *  een anker in nl én en bestaat, en de kop "Desktop en browser" heeft per taal een ander anker. */
 export const BROWSER_SAVE_HELP_ARTICLE_ID = 'uitleg-bestanden';
+
+// ── Uitleg na het openen van een ander formaat dan IFC (FormatNoticeDialog) ─────────────────────────
+
+/** MS Project XML: het kopje in de formatenreferentie. */
+export const FORMAT_NOTICE_MSPDI_HELP_ARTICLE_ID = 'ref-import-exportformaten#ms-project-xml-mspdi';
+
+/** Primavera P6 XML: het kopje in de formatenreferentie. */
+export const FORMAT_NOTICE_P6XML_HELP_ARTICLE_ID = 'ref-import-exportformaten#primavera-p6-xml';
+
+/** CSV: het kopje in de formatenreferentie. */
+export const FORMAT_NOTICE_CSV_HELP_ARTICLE_ID = 'ref-import-exportformaten#csv';

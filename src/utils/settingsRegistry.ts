@@ -22,6 +22,7 @@
 import { snapToChoice } from '@/utils/numberChoice';
 import { parseBoolean, parseClampedInt as clampedInt, parseEnum as parseEnumValue } from '@/utils/settingParsers';
 import { loadBarColorSelection } from '@/utils/barColorSettings';
+import { parseFormatNoticeHidden } from '@/services/formatNoticeKinds';
 import type { UIState } from '@/state/slices/types';
 import type { PersistedTaskGridPreferencesV1 } from '@/types/taskGrid';
 import {
@@ -196,6 +197,9 @@ export const SETTINGS: SettingDescriptor[] = [
   // paneelinstelling (er valt niets te kiezen), wél in de store: het einde van de rondleiding
   // beslist synchroon of de vraag komt (`tourFinishPatch` in `state/onboarding.ts`).
   setting({ key: 'tutorialOfferAnswered', field: 'tutorialOfferAnswered', parse: parseBoolean }),
+
+  // Uitleg na het openen van een ander formaat dan IFC: de formaten waarvoor hij uit staat.
+  setting({ key: 'formatNoticeHidden', field: 'formatNoticeHidden', parse: parseFormatNoticeHidden }),
 ];
 
 /** Hydrateert álle opstart-instellingen uit localStorage tot één `setUI`-patch voor

@@ -14,6 +14,7 @@ import type {
   UIFontFamily,
 } from '@/state/slices/types';
 import type { PersistedTaskGridPreferencesV1 } from '@/types/taskGrid';
+import type { FormatNoticeKind } from '@/services/formatNoticeKinds';
 import type { LayoutOverlays } from '@/types/view';
 import { migrateSavedFilters } from '@/engine/view/layoutPresets';
 import { AI_MODE_AVAILABLE } from '@/utils/buildFlags';
@@ -678,4 +679,9 @@ export function loadMcpToken(): string | null {
 export function saveMcpToken(value: string): void {
   if (!AI_MODE_AVAILABLE || typeof localStorage === 'undefined') return;
   writeLocal('ops-mcpToken', value);
+}
+
+/** Formaten waarvoor de uitleg na het openen uit staat (`FormatNoticeDialog`, Instellingen). */
+export async function saveFormatNoticeHidden(value: readonly FormatNoticeKind[]): Promise<void> {
+  await setSetting('formatNoticeHidden', [...value]);
 }
