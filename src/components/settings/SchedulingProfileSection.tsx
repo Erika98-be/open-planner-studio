@@ -17,7 +17,7 @@ import { generateId } from '@/utils/id';
 import { isHourCalendar } from '@/services/subdayIo';
 import { effHoursPerDay } from '@/utils/taskDuration';
 import {
-  choiceOf, editConvention, hasValidProfileName, profileLabel, renameProfile, resetConventionToBase, selectProfile, templateRelation,
+  choiceOf, editConvention, hasValidProfileName, ssLagHasHourPlanning, profileLabel, renameProfile, resetConventionToBase, selectProfile, templateRelation,
   totalFloatModeFromUi,
   totalFloatModeToUi, withCriticalMode, withCriticalThreshold, withDefaultOptions,
   SOURCE_ONLY_OPTION_KEYS, type ProfileChoice, type SchedulingSettingsDraft, type SourceOnlyOptionKey, type TotalFloatModeUi,
@@ -133,13 +133,10 @@ export function SchedulingProfileSection({ mode, value, onChange }: SchedulingPr
   // De SS-lag-projectoptie werkt alleen met C6 én A19 aan (`CPMSolver.inProgressStartLag`).
   const ssLagMissing: ConventionKey | null = !conventions.p6InProgressStartLagElapsed ? 'p6InProgressStartLagElapsed'
     : !conventions.p6UseRemainingStartForProgress ? 'p6UseRemainingStartForProgress' : null;
-  // …en alleen als de lag-kalender een urenkalender is (`lagEng.isHourMode`, ook in
-  // `inProgressStartLag`). De lag-kalender is per relatie (voorganger, opvolger, project of 24 uur);
-  // projectbreed is hij zeker geen urenkalender als geen enkele kalender van het project dat is en de
-  // lag niet in de interne 24-uurskalender telt (critreview #169, N2).
+  // …en alleen bij uurplanning op de lag-kalender (`ssLagHasHourPlanning`, hetzelfde criterium als de motor).
   const libraryCalendars = useAppStore(s => s.calendars);
-  const ssLagNoHourCalendar = so.lagCalendar !== '24hour'
-    && !isHourCalendar(projectCal) && !libraryCalendars.some(isHourCalendar);
+  const tasks = useAppStore(s => s.tasks);
+  const ssLagNoHourPlanning = !ssLagHasHourPlanning(so, tasks, projectCal, libraryCalendars);
   const label = profileLabel(profile);
   const relation = templateRelation(profile, templates);
   const brand = (id: BuiltInProfileId) => t(builtInNameKey(id));
@@ -321,9 +318,9 @@ export function SchedulingProfileSection({ mode, value, onChange }: SchedulingPr
                       </label>
                       {/* Waar de motor de conventie op poort (`requires` in het register, N2): kort label
                           naast het vinkje, zodat zichtbaar is dat de regel op dit project niets kan doen. */}
-                      {c.requires?.hourCalendar && (
-                        <span className="badge badge--blue shrink-0" data-ops-convention-requires="hourCalendar">
-                          {t('schedulingProfile.requires.hourCalendar')}
+                      {c.requires?.hourPlanning && (
+                        <span className="badge badge--blue shrink-0" data-ops-convention-requires="hourPlanning">
+                          {t('schedulingProfile.requires.hourPlanning')}
                         </span>
                       )}
                       {c.requires?.xerOrigin && (
@@ -489,7 +486,7 @@ export function SchedulingProfileSection({ mode, value, onChange }: SchedulingPr
         <div className="flex flex-col gap-1">
           <label className={labelCls}>{tMenu('projectInfo.calc.ssLagFrom')}</label>
           <Select aria-label={tMenu('projectInfo.calc.ssLagFrom')} value={so.startToStartLagFrom ?? 'earlyStart'}
-            disabled={ssLagMissing !== null || ssLagNoHourCalendar}
+            disabled={ssLagMissing !== null || ssLagNoHourPlanning}
             onChange={v => patchOptions({ ...so, startToStartLagFrom: v as ProjectSchedulingOptions['startToStartLagFrom'] })}
             options={[
               { value: 'earlyStart', label: tMenu('projectInfo.calc.ssLagEarlyStart') },
@@ -500,9 +497,9 @@ export function SchedulingProfileSection({ mode, value, onChange }: SchedulingPr
               {tMenu('projectInfo.calc.ssLagNeedsConvention', { convention: t(conventionLabelKey(ssLagMissing)) })}
             </div>
           )}
-          {!ssLagMissing && ssLagNoHourCalendar && (
-            <div className="alert alert--info" data-ops-ss-lag-needs-hour-calendar>
-              {tMenu('projectInfo.calc.ssLagNeedsHourCalendar')}
+          {!ssLagMissing && ssLagNoHourPlanning && (
+            <div className="alert alert--info" data-ops-ss-lag-needs-hour-planning>
+              {tMenu('projectInfo.calc.ssLagNeedsHourPlanning')}
             </div>
           )}
         </div>

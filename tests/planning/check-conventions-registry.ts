@@ -4,11 +4,9 @@
 // neerwaartse optieblob, de profielwissel en de typegrens van EffectiveSchedulingOptions.
 //
 // Draait via run.sh (esbuild-bundel). Exit 0 = alles groen; faalregels beginnen met "XX".
-import { readFileSync, readdirSync } from 'node:fs';
-import { dirname, join, relative } from 'node:path';
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { createRequire } from 'node:module';
-import type * as TS from 'typescript';
 import type { ConventionKey, EffectiveSchedulingOptions, LegacySchedulingOptions, ProjectSchedulingOptions, SchedulingOptions, SchedulingProfile } from '@/types/project';
 import {
   BUILT_IN_PROFILE_IDS, CONVENTIONS, CONVENTION_KEYS, CONVENTION_THEMES, isOffInEveryBuiltIn, builtInConventions, builtInProfile, defaultOptionsFor, diffAgainstBase, effectiveSchedulingOptions, isConventionKey, isDefaultProfile, legacyConventions, resolveConventions, switchProfile,
@@ -403,7 +401,7 @@ const same = (label: string, got: unknown, want: unknown) => eq(label, canon(got
     }
     for (const id of BUILT_IN_PROFILE_IDS) isText(`i18n ${locale} profiles.builtIn.${id}`, common.profiles?.builtIn?.[id]);
     // N2: het korte label naast het vinkje, per soort poort in `ConventionDescriptor.requires`.
-    for (const gate of ['hourCalendar', 'xerOrigin']) {
+    for (const gate of ['hourPlanning', 'xerOrigin']) {
       isText(`i18n ${locale} schedulingProfile.requires.${gate}`, common.schedulingProfile?.requires?.[gate]);
     }
     isText(`i18n ${locale} profiles.modified`, common.profiles?.modified);
@@ -436,163 +434,11 @@ const same = (label: string, got: unknown, want: unknown) => eq(label, canon(got
   }
 }
 
-// ── 9) `requires` naast de motor (critreview #169, N2) ───────────────────────────────────────────
-// Het label "alleen urenkalender" belooft: op een dagkalender doet deze conventie niets. Dat leggen we
-// mechanisch naast de motor. Elke LEZING van een conventiesleutel in src/engine (property-toegang
-// `.<sleutel>`) is "uurgepoort" als:
-//   (a) de logische keten (&&/||) of de if-/?:-voorwaarde waarin of waaronder hij staat `isHourMode` noemt, of
-//   (b) hij in een vroege-terugkeerwacht staat (`if (…) return …`) en dezelfde functie op het hoogste
-//       niveau ook een wacht `if (…isHourMode…) return …` heeft.
-// Lezingen die buiten die vorm vallen maar toch alleen op een urenkalender werken, staan met reden in
-// `HOUR_GATE_ELSEWHERE`. Eis per conventie: `requires.hourCalendar` ⇔ elke lezing is uurgepoort.
-// Zo draagt elke conventie met alleen uurgepoorte lezingen het label, en geen conventie met een
-// ongepoorte lezing (A19: deels uur, dus geen label).
-{
-  const ts = createRequire(import.meta.url)('typescript') as typeof TS;
-  const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
-  const files: string[] = [];
-  const walk = (dir: string) => {
-    for (const entry of readdirSync(dir, { withFileTypes: true })) {
-      const target = join(dir, entry.name);
-      if (entry.isDirectory()) walk(target);
-      else if (/\.tsx?$/.test(entry.name)) files.push(target);
-    }
-  };
-  walk(join(ROOT, 'src', 'engine'));
-  files.push(join(ROOT, 'src', 'utils', 'p6SuspendResume.ts'));
-  const keySet: ReadonlySet<string> = new Set(CONVENTION_KEYS);
-  const mentionsHour = (node: TS.Node): boolean => {
-    let found = false;
-    const visit = (n: TS.Node) => {
-      if (found) return;
-      if (ts.isPropertyAccessExpression(n) && n.name.text === 'isHourMode') { found = true; return; }
-      ts.forEachChild(n, visit);
-    };
-    visit(node);
-    return found;
-  };
-  const isEarlyExit = (stmt: TS.Statement): boolean => {
-    if (ts.isReturnStatement(stmt) || ts.isContinueStatement(stmt) || ts.isThrowStatement(stmt)) return true;
-    return ts.isBlock(stmt) && stmt.statements.length === 1 && isEarlyExit(stmt.statements[0]);
-  };
-  const functionName = (fn: TS.Node): string => {
-    if (ts.isConstructorDeclaration(fn)) return 'constructor';
-    if ((ts.isMethodDeclaration(fn) || ts.isFunctionDeclaration(fn) || ts.isGetAccessorDeclaration(fn)) && fn.name) return fn.name.getText();
-    if (ts.isVariableDeclaration(fn.parent)) return fn.parent.name.getText();
-    if (ts.isPropertyAssignment(fn.parent) || ts.isPropertyDeclaration(fn.parent)) return fn.parent.name.getText();
-    return '<anoniem>';
-  };
-  /** Is deze lezing uurgepoort volgens (a) of (b)? Plus de naam van de omsluitende functie. */
-  const classify = (read: TS.Node): { gated: boolean; fn: string } => {
-    let child: TS.Node = read;
-    let cur: TS.Node | undefined = read.parent;
-    while (cur && !ts.isFunctionLike(cur) && !ts.isSourceFile(cur)) {
-      if (ts.isBinaryExpression(cur)
-        && (cur.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken || cur.operatorToken.kind === ts.SyntaxKind.BarBarToken)
-        && mentionsHour(cur)) return { gated: true, fn: enclosingName(cur) };
-      if (ts.isIfStatement(cur)) {
-        if (child === cur.thenStatement && mentionsHour(cur.expression)) return { gated: true, fn: enclosingName(cur) };
-        if (child === cur.expression && isEarlyExit(cur.thenStatement) && ts.isBlock(cur.parent) && ts.isFunctionLike(cur.parent.parent)) {
-          const guard = cur.parent.statements.some(st => st !== cur && ts.isIfStatement(st)
-            && isEarlyExit(st.thenStatement) && mentionsHour(st.expression));
-          if (guard) return { gated: true, fn: enclosingName(cur) };
-        }
-      }
-      if (ts.isConditionalExpression(cur) && child === cur.whenTrue && mentionsHour(cur.condition)) return { gated: true, fn: enclosingName(cur) };
-      child = cur;
-      cur = cur.parent;
-    }
-    return { gated: false, fn: enclosingName(read) };
-  };
-  function enclosingName(node: TS.Node): string {
-    let cur: TS.Node | undefined = node.parent;
-    while (cur && !ts.isFunctionLike(cur)) cur = cur.parent;
-    return cur ? functionName(cur) : '<module>';
-  }
-  type Read = { key: string; where: string; gated: boolean };
-  const reads: Read[] = [];
-  for (const file of files) {
-    const rel = relative(ROOT, file).split('\\').join('/');
-    if (rel === 'src/engine/scheduler/conventions/registry.ts') continue;
-    const source = ts.createSourceFile(file, readFileSync(file, 'utf8'), ts.ScriptTarget.Latest, true);
-    const visit = (n: TS.Node) => {
-      if (ts.isPropertyAccessExpression(n) && keySet.has(n.name.text)) {
-        const { gated, fn } = classify(n);
-        reads.push({ key: n.name.text, where: `${rel}#${fn}`, gated });
-      }
-      ts.forEachChild(n, visit);
-    };
-    visit(source);
-  }
-  /** Lezingen buiten vorm (a)/(b) waarvan het EFFECT toch alleen op een urenkalender bestaat. Sleutel:
-   *  `<conventie> <bestand>#<functie>`. Een vermelding die niet meer voorkomt, is rood (opruimen). */
-  const HOUR_GATE_ELSEWHERE: Record<string, string> = {
-    'p6RelationFinishBoundary src/engine/scheduler/CPMSolver.ts#constructor':
-      'houdt alleen de relatievlag p6StartAtPredecessorFinishBoundary; die zet de XER-lezer alleen bij een urenkalender van de voorganger (hieronder gepind)',
-    'p6OpenLoeTargetSpan src/engine/scheduler/p6OpenLoeTargetSpanTrace.ts#explainOpenXerLoeTargetSpanEligibilityResolved':
-      'beslisfunctie; de enige aanroeper geeft het doelvenster alleen op een urenkalender (`cal.isHourMode`), anders NaN ⇒ geweigerd',
-    'p6CompletedPhysicalAtDataDate src/engine/scheduler/p6CompletedTargetWindow.ts#explainP6CompletedPhysicalPoint':
-      'beslisfunctie; de enige effectaanroeper recordCompletedPhysicalPoint stopt op `!progressCal.isHourMode`',
-    'p6AlapPositionedFromSuccessors src/engine/scheduler/CPMSolver.ts#applyAlap':
-      '`fromSuccessors` werkt alleen samen met isUnstartedAlapPositionedFromSuccessors (`cal.isHourMode`)',
-  };
-  const usedElsewhere = new Set<string>();
-  for (const d of CONVENTIONS) {
-    const own = reads.filter(r => r.key === d.id);
-    const ungated = own.filter(r => {
-      if (r.gated) return false;
-      const k = `${d.id} ${r.where}`;
-      if (HOUR_GATE_ELSEWHERE[k]) { usedElsewhere.add(k); return false; }
-      return true;
-    });
-    ok(`9 ${d.id}: gelezen in de motor`, own.length > 0);
-    const allHourGated = own.length > 0 && ungated.length === 0;
-    eq(`9 ${d.id}: requires.hourCalendar ⇔ elke lezing uurgepoort (ongepoort: ${[...new Set(ungated.map(r => r.where))].join(', ') || '—'})`,
-      d.requires?.hourCalendar === true, allHourGated);
-  }
-  for (const k of Object.keys(HOUR_GATE_ELSEWHERE)) ok(`9 HOUR_GATE_ELSEWHERE nog in gebruik: ${k}`, usedElsewhere.has(k));
-  // Bewijs dat de classificatie iets onderscheidt: A19 heeft uurgepoorte én ongepoorte lezingen.
-  ok('9 A19 heeft een uurgepoorte lezing', reads.some(r => r.key === 'p6UseRemainingStartForProgress' && r.gated));
-  ok('9 A19 heeft een ongepoorte lezing (geen label)', reads.some(r => r.key === 'p6UseRemainingStartForProgress' && !r.gated));
-
-  // B1: de uurpoort zit in de lezer — de relatievlag ontstaat alleen bij een urenkalender.
-  const xerReader = readFileSync(join(ROOT, 'src/services/xer/xerReader.ts'), 'utf8');
-  ok('9 B1: XER-lezer zet de relatievlag alleen bij predecessorCalendar.isHourMode',
-    /const p6StartAtPredecessorFinishBoundary = [^;]*predecessorCalendar\.isHourMode/.test(xerReader));
-
-  // `xerOrigin`: per conventie de herkomstpoort uit de motor, gepind op de bron (functie + tekst).
-  const fnText = (rel: string, name: string): string => {
-    const source = ts.createSourceFile(rel, readFileSync(join(ROOT, rel), 'utf8'), ts.ScriptTarget.Latest, true);
-    let out = '';
-    const visit = (n: TS.Node) => {
-      if (out) return;
-      if (ts.isFunctionLike(n) && functionName(n) === name) { out = n.getText(); return; }
-      ts.forEachChild(n, visit);
-    };
-    visit(source);
-    return out;
-  };
-  const solver = 'src/engine/scheduler/CPMSolver.ts';
-  const window = 'src/engine/scheduler/p6CompletedTargetWindow.ts';
-  const XER_EVIDENCE: Partial<Record<ConventionKey, () => boolean>> = {
-    p6PreserveActualInstants: () => /p6ProjectId !== undefined\s*&& this\.options\.schedulingOptions\?\.p6PreserveActualInstants === true/
-      .test(fnText(solver, 'forwardPass')),
-    p6RelationFinishBoundary: () => xerReader.includes('p6StartAtPredecessorFinishBoundary: true')
-      && /schedulingOptions\?\.p6RelationFinishBoundary === true\s*\? kept/.test(readFileSync(join(ROOT, solver), 'utf8')),
-    p6CompletedDataDateWindow: () => fnText(window, 'explainP6CompletedDataDateWindowResolved').includes('provenanceRejection(task, fields)')
-      && fnText(window, 'provenanceRejection').includes("'missingProjectProvenance'"),
-    p6CompletedLoeActualFinish: () => fnText('src/engine/scheduler/p6CompletedRouteTrace.ts', 'explainCompletedXerLoeActualFinishEligibilityResolved')
-      .includes("task.p6ProjectId === undefined || task.p6ProjectId === ''"),
-    p6OpenLoeTargetSpan: () => fnText('src/engine/scheduler/p6OpenLoeTargetSpanTrace.ts', 'explainOpenXerLoeTargetSpanEligibilityResolved')
-      .includes("task.p6ProjectId === undefined || task.p6ProjectId === ''"),
-    p6CompletedOutOfSequenceWindow: () => fnText(solver, 'recordCompletedOutOfSequenceWindow').includes('this.p6CompletedDataDateWindowDecision(task).eligible'),
-    p6CompletedPhysicalAtDataDate: () => fnText(window, 'explainP6CompletedPhysicalPoint').includes('provenanceRejection(task, fields)'),
-  };
-  for (const d of CONVENTIONS) {
-    const evidence = XER_EVIDENCE[d.id];
-    eq(`9 ${d.id}: requires.xerOrigin ⇔ een gepinde herkomstpoort`, d.requires?.xerOrigin === true, evidence !== undefined);
-    if (evidence) ok(`9 ${d.id}: herkomstpoort staat nog in de motor`, evidence());
-  }
+// ── 9) `requires` (critreview #169 N2): het GEDRAG toetst `check-conventions-p6-flags` (sectie
+// "`requires` als gedrag": aan/uit per conventie op elke fixture, met en zonder uurplanning en
+// P6-herkomst). Hier alleen de vorm: alleen bekende poorten.
+for (const d of CONVENTIONS) {
+  same(`9 ${d.id}: requires kent alleen hourPlanning/xerOrigin`, Object.keys(d.requires ?? {}).filter(k => k !== 'hourPlanning' && k !== 'xerOrigin'), []);
 }
 
 if (diffs.length > 0) {

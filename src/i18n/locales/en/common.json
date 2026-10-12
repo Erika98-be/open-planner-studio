@@ -1424,8 +1424,8 @@
       "needsConvention": "Only works together with the convention “{{convention}}”, which is currently off."
     },
     "requires": {
-      "hourCalendar": "hour calendar only",
-      "xerOrigin": ".xer tasks only"
+      "xerOrigin": ".xer tasks only",
+      "hourPlanning": "hour planning only"
     }
   },
   "dialogHelp": {

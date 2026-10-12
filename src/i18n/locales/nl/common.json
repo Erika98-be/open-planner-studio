@@ -1424,8 +1424,8 @@
       "needsConvention": "Werkt alleen samen met de conventie „{{convention}}”, die nu uit staat."
     },
     "requires": {
-      "hourCalendar": "alleen urenkalender",
-      "xerOrigin": "alleen taken uit .xer"
+      "xerOrigin": "alleen taken uit .xer",
+      "hourPlanning": "alleen bij uurplanning"
     }
   },
   "dialogHelp": {

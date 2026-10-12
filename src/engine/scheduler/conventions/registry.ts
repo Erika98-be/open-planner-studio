@@ -70,36 +70,37 @@ export interface ConventionDescriptor {
 
 /**
  * Waar een conventie in de motor op poort (critreview #169, N2). Alleen weergave: de motor leest dit
- * nooit, hij poort zelf. Afgeleid uit de motorcode, niet uit de gids:
- *  - `hourCalendar`: ELKE werkende lezing van de conventie staat achter een `isHourMode`-poort (of, bij
- *    B1, achter een relatievlag die de XER-lezer alleen op een urenkalender zet). Op een dagkalender
- *    doet de conventie dus niets. `check-conventions-registry` §9 legt dit mechanisch naast de motor.
+ * nooit (`verify:conventions` verbiedt dat), hij poort zelf. Afgeleid uit de motorcode, niet uit de gids,
+ * en als GEDRAG getoetst in `check-conventions-p6-flags` (sectie "`requires` als gedrag"):
+ *  - `hourPlanning`: de conventie doet alleen iets bij uurplanning. De motor rekent een taak in uren
+ *    als haar kalender werkblokken heeft (`workTime`) óf als de taak zelf in uren staat
+ *    (`engineForTaskCalendar`); ook de interne 24-uurs lag-kalender is uurplanning. Zonder dat alles
+ *    (dagkalender, taken in dagen) verandert aan/uit niets.
  *  - `xerOrigin`: de conventie werkt alleen op taken (of relaties) met P6-herkomst uit een `.xer`
- *    (`p6ProjectId`/`p6TaskId`, of de relatievlag van B1). De herkomstpoort per conventie staat bij
- *    `CONVENTION_REQUIRES` hieronder en is gepind in dezelfde check.
+ *    (`p6ProjectId`/`p6TaskId` en verwante velden, of de B1-relatievlag).
  */
 export interface ConventionRequires {
-  hourCalendar?: true;
+  hourPlanning?: true;
   xerOrigin?: true;
 }
 
-const HOUR = { hourCalendar: true } as const;
+const HOUR = { hourPlanning: true } as const;
 const XER = { xerOrigin: true } as const;
-const HOUR_XER = { hourCalendar: true, xerOrigin: true } as const;
+const HOUR_XER = { hourPlanning: true, xerOrigin: true } as const;
 /** Per conventie de poort uit de motor (bron: de regel in `CPMSolver.ts`/`scheduleAnalysis.ts`/de
  *  beslisfuncties). Niet genoemd ⇒ werkt ook op een dagkalender en op data zonder P6-herkomst. */
 const CONVENTION_REQUIRES: Partial<Record<ConventionKey, ConventionRequires>> = {
   p6ZeroDurationUsesPlannedBoundary: HOUR,           // A15 p6ZeroDurationUsesFinishBoundary/…BoundaryPair: `!eng.isHourMode`
   p6PreserveActualInstants: XER,                     // A18 forwardPass: `task.p6ProjectId !== undefined`
   p6PreserveZeroDurationConstraintInstants: HOUR,    // A20 backwardBoundOf: `eng.isHourMode`
-  p6RelationFinishBoundary: HOUR_XER,                // B1 de relatievlag: alleen de XER-lezer, alleen bij `predecessorCalendar.isHourMode`
+  p6RelationFinishBoundary: HOUR_XER,                // B1 de relatievlag zet alleen de XER-lezer, en alleen bij `predecessorCalendar.isHourMode`
   p6BackwardLagFinishBoundary: HOUR,                 // B2 binnen `if (predEng.isHourMode)`
   p6CompletedDataDateWindow: XER,                    // B3 provenancepoort (`p6ProjectId`/`p6TaskId`)
   p6CompletedLoeActualFinish: XER,                   // B4 `missingProjectProvenance`/`missingTaskProvenance`
   p6OpenLoeTargetSpan: HOUR_XER,                     // B5 `cal.isHourMode` (anders NaN ⇒ geweigerd) + provenance
   p6CompletedPredecessorAtDataDate: HOUR,            // C1 `!progressCal.isHourMode`
   p6FreeFloatOnOwnCalendar: HOUR,                    // C2 `cal.isHourMode`
-  p6CompletedRemainingLag: HOUR,                     // C3 `!lagEng.isHourMode`
+  p6CompletedRemainingLag: HOUR_XER,                 // C3 `!lagEng.isHourMode`; alle vier aanroepers zitten achter een route met herkomstpoort (C4/C5/A21-venster)
   p6CompletedOutOfSequenceWindow: HOUR_XER,          // C4 `!progressCal.isHourMode` + de B3-route (provenance)
   p6CompletedPhysicalAtDataDate: HOUR_XER,           // C5 recordCompletedPhysicalPoint `!progressCal.isHourMode` + provenance
   p6InProgressStartLagElapsed: HOUR,                 // C6 `!lagEng.isHourMode`

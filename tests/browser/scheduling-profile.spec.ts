@@ -440,32 +440,43 @@ test('rekenprofiel: na Ctrl+Z en Ctrl+Y volgt het profielblok de store, ook in d
 
 // Critreview #169 N2 en B9 op een nieuw project (dagkalender): de conventies tonen waar de motor op
 // poort ("alleen urenkalender" / "alleen taken uit .xer"), de SS-lag-keuzelijst staat uit omdat er geen
-// urenkalender is, en sjablonen opslaan/verwijderen melden zich en vragen bevestiging.
+// uurplanning is, en sjablonen opslaan/verwijderen melden zich en vragen bevestiging.
 test('rekenprofiel: poortlabels, SS-lag zonder urenkalender en sjabloonmeldingen (N2, B9)', async ({ page, ops: _ops }) => {
-  const hasHourCalendar = await page.evaluate(() => {
+  const hasHourPlanning = await page.evaluate(() => {
     const s = window.__OPS__!.store.getState();
-    return !!s.calendar.workTime || s.calendars.some(c => !!c.workTime);
+    return !!s.calendar.workTime || s.calendars.some(c => !!c.workTime) || s.tasks.some(t => t.time.durationMinutes != null);
   });
-  expect(hasHourCalendar).toBe(false);
+  expect(hasHourPlanning).toBe(false);
   await page.getByRole('button', { name: /^(File|Bestand)$/ }).first().click();
   await page.getByRole('button', { name: /^(Project info|Projectinfo)$/ }).first().click();
   const select = page.locator('[data-ops-scheduling-profile-select]');
   await select.selectOption('builtin:p6');
 
-  // Labels volgen het register: 15 conventies alleen op een urenkalender, 7 alleen op .xer-taken.
-  await expect(page.locator('[data-ops-convention-requires="hourCalendar"]')).toHaveCount(15);
-  await expect(page.locator('[data-ops-convention-requires="xerOrigin"]')).toHaveCount(7);
-  await expect(page.locator('[data-ops-convention-row="p6LateFinishOnOwnCalendar"] [data-ops-convention-requires="hourCalendar"]'))
-    .toHaveText(/(alleen urenkalender|hour calendar only)/i);
+  // Labels volgen het register: 15 conventies alleen bij uurplanning, 8 alleen op .xer-taken.
+  await expect(page.locator('[data-ops-convention-requires="hourPlanning"]')).toHaveCount(15);
+  await expect(page.locator('[data-ops-convention-requires="xerOrigin"]')).toHaveCount(8);
+  await expect(page.locator('[data-ops-convention-row="p6LateFinishOnOwnCalendar"] [data-ops-convention-requires="hourPlanning"]'))
+    .toHaveText(/(alleen bij uurplanning|hour planning only)/i);
   await expect(page.locator('[data-ops-convention-row="p6PreserveActualInstants"] [data-ops-convention-requires="xerOrigin"]'))
     .toHaveText(/(alleen taken uit \.xer|\.xer tasks only)/i);
   await expect(page.locator('[data-ops-convention-row="p6UseRemainingStartForProgress"] [data-ops-convention-requires]')).toHaveCount(0);
 
-  // Onder P6 staan C6 en A19 aan, maar zonder urenkalender doet de SS-lag-optie niets.
+  // Onder P6 staan C6 en A19 aan, maar zonder uurplanning (dagkalender, geen uurtaken) doet de
+  // SS-lag-optie niets.
   const ssLag = page.getByRole('button', { name: /^(SS-lag van een lopende voorganger rekenen vanaf|Calculate SS lag from an in-progress predecessor from)$/ });
   await expect(ssLag).toBeDisabled();
   await expect(page.locator('[data-ops-ss-lag-needs-convention]')).toHaveCount(0);
-  await expect(page.locator('[data-ops-ss-lag-needs-hour-calendar]')).toBeVisible();
+  await expect(page.locator('[data-ops-ss-lag-needs-hour-planning]')).toBeVisible();
+  // Review #331 punt 1: een taak in UREN op dezelfde dagkalender rekent de motor in uurmodus
+  // (`engineForTaskCalendar`), dus dan is de keuzelijst aan. (Fixture via de brug; daarna lezen we de UI.)
+  await page.evaluate(() => {
+    const state = window.__OPS__!.store.getState();
+    const id = state.addTask({ name: 'Uurtaak' });
+    const current = window.__OPS__!.store.getState().tasks.find(task => task.id === id)!;
+    state.updateTask(id, { time: { ...current.time, durationUnit: 'hours', scheduleDuration: 0.5, durationMinutes: 240 } });
+  });
+  await expect(ssLag).toBeEnabled();
+  await expect(page.locator('[data-ops-ss-lag-needs-hour-planning]')).toHaveCount(0);
 
   // Een conventie aanzetten maakt een eigen profiel; Opslaan als sjabloon meldt zich.
   await page.locator('[data-ops-convention="p6CompletedPredecessorAtDataDate"]').check();

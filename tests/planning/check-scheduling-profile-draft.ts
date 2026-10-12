@@ -3,10 +3,13 @@
 import {
   choiceOf, selectProfile, editConvention, renameProfile, resetConventionToBase, profileLabel, templateRelation,
   totalFloatModeToUi, totalFloatModeFromUi, withCriticalMode, withCriticalThreshold, withDefaultOptions, sameSettings,
-  hasValidProfileName, SOURCE_ONLY_OPTION_KEYS,
+  hasValidProfileName, SOURCE_ONLY_OPTION_KEYS, ssLagHasHourPlanning,
 } from '@/state/schedulingProfileDraft';
 import { builtInProfile, defaultOptionsFor, resolveConventions } from '@/engine/scheduler/conventions/registry';
 import type { SchedulingProfile } from '@/types/project';
+import type { Task } from '@/types/task';
+import type { WorkCalendar } from '@/types/calendar';
+import { createDefaultCalendar } from '@/engine/calendar/defaultCalendar';
 
 const diffs: string[] = [];
 let checks = 0;
@@ -174,6 +177,25 @@ eq('36c ingebouwd id als kopie-id ⇒ no-op', editConvention(xerP6, 'clampNegati
   eq('37c afwezig profiel ⇒ afwezig', resetConventionToBase(undefined, 'clampNegativeFreeFloat'), undefined);
   const ownReset = resetConventionToBase(own, 'clampNegativeFreeFloat');
   eq('37d eigen profiel houdt id en verliest de afwijking', [ownReset?.id, ownReset?.overrides], [own.id, {}]);
+}
+
+// Review #331 punt 1: de SS-lag-poort volgt het criterium van de motor (`lagEng.isHourMode`), per
+// lag-kalender. Mutanten: elke tak weg ⇒ een van 38a–38f rood.
+{
+  const day = createDefaultCalendar();
+  delete (day as { workTime?: unknown }).workTime;
+  const hour = { ...createDefaultCalendar(), id: 'uren', workTime: { byWeekday: { 1: [{ start: 480, end: 1020 }] } } } as WorkCalendar;
+  const dayTask = { time: { scheduleDuration: 1 } } as unknown as Task;
+  const hourTask = { time: { scheduleDuration: 1, durationMinutes: 480 } } as unknown as Task;
+  eq('38a dagkalender, dagtaken: geen uurplanning', ssLagHasHourPlanning(undefined, [dayTask], day, []), false);
+  eq('38b dagkalender, een uurtaak: uurplanning (motor: engineForTaskCalendar)', ssLagHasHourPlanning(undefined, [dayTask, hourTask], day, []), true);
+  eq('38c bibliotheekkalender met werkblokken', ssLagHasHourPlanning({ lagCalendar: 'successor' }, [dayTask], day, [hour]), true);
+  eq('38d 24-uurs lag-kalender is altijd uurplanning', ssLagHasHourPlanning({ lagCalendar: '24hour' }, [dayTask], day, []), true);
+  eq('38e projectkalender als lag-kalender: alleen met werkblokken', [
+    ssLagHasHourPlanning({ lagCalendar: 'projectDefault' }, [hourTask], day, [hour]),
+    ssLagHasHourPlanning({ lagCalendar: 'projectDefault' }, [dayTask], hour, []),
+  ], [false, true]);
+  eq('38f projectkalender met werkblokken (voorganger)', ssLagHasHourPlanning({ lagCalendar: 'predecessor' }, [dayTask], hour, []), true);
 }
 
 if (diffs.length === 0) console.log(`OK: bewerkmodel rekenprofiel — ${checks} checks groen`);

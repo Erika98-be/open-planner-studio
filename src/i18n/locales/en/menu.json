@@ -235,7 +235,7 @@
       "ssLagEarlyStart": "Remaining start (P6: Early Start)",
       "ssLagActualStart": "Data date (P6: Actual Start)",
       "ssLagNeedsConvention": "Only applies when the convention “{{convention}}” is on.",
-      "ssLagNeedsHourCalendar": "Only applies on an hour calendar. This project has no hour calendar.",
+      "ssLagNeedsHourPlanning": "Only applies with hour planning: a calendar with working blocks or tasks in hours. This project has neither on the chosen lag calendar.",
       "criticalDefinition": "Critical definition",
       "critTotalFloat": "Total float ≤ threshold",
       "critLongestPath": "Longest path",

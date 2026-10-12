@@ -9,6 +9,9 @@ import {
   isDefaultProfile, resolveConventions, switchProfile,
 } from '@/engine/scheduler/conventions/registry';
 import { MAX_PROFILE_ID_LENGTH, MAX_PROFILE_NAME_LENGTH } from '@/services/ifc/schedulingOptionsRead';
+import { fileHasHourData, isHourCalendar } from '@/services/subdayIo';
+import type { Task } from '@/types/task';
+import type { WorkCalendar } from '@/types/calendar';
 
 /** Wat het blok bewerkt: het profiel en de projectopties van één project. */
 export interface SchedulingSettingsDraft {
@@ -230,4 +233,22 @@ function sameProfile(a: SchedulingProfile | undefined, b: SchedulingProfile | un
 export function sameSettings(a: SchedulingSettingsDraft, b: SchedulingSettingsDraft): boolean {
   return sameProfile(a.profile, b.profile)
     && canonicalJson(normalizeOptions(a.options)) === canonicalJson(normalizeOptions(b.options));
+}
+
+/**
+ * Kan de SS-lag-projectoptie (`startToStartLagFrom`) in dit project iets doen? De motor eist een
+ * lag-kalender in uurmodus (`lagEng.isHourMode` in `CPMSolver.inProgressStartLag`). Welke kalender dat
+ * is, kiest `lagCalendar` per relatie; projectbreed volgen we hetzelfde criterium als de motor
+ * (critreview #169 N2, review #331 punt 1):
+ *  - `'24hour'`: de interne 24-uurs lag-kalender is altijd uurmodus;
+ *  - `'projectDefault'`: de projectkalender, alleen met werkblokken (`workTime`);
+ *  - voorganger/opvolger (standaard): de kalender van die taak, in uurmodus zodra de kalender
+ *    werkblokken heeft óf de taak zelf in uren staat (`engineForTaskCalendar`) — `fileHasHourData`.
+ */
+export function ssLagHasHourPlanning(
+  options: ProjectSchedulingOptions | undefined, tasks: Task[], calendar: WorkCalendar, calendars: readonly WorkCalendar[],
+): boolean {
+  if (options?.lagCalendar === '24hour') return true;
+  if (options?.lagCalendar === 'projectDefault') return isHourCalendar(calendar);
+  return fileHasHourData(tasks, [calendar, ...calendars]);
 }
