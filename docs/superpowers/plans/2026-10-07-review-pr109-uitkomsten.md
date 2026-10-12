@@ -155,3 +155,5 @@ http://localhost:3049/.
 - **Toasts, eigenaarsbesluit 2026-10-12:** "ik vind het ook erg raar dat een toast verdwijnt wanneer je erop klikt.
   hij moet verdwijnen met een kruisje of automatisch." Nu sluit een klik op de hele toast hem
   (`NotificationHost.tsx` onClick op de container), er is geen kruisje. ⇒ meegegeven aan de worker op `claude/toasts-kort`.
+- Checkstap 5 (Roads, echte P6-export: WBS-boom, inklappen, samenvattingsbalken): **akkoord** ("prima").
+  Check van de zichtbare reparaties klaar; besluitenrij begint.
