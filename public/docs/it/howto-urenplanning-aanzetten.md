@@ -20,7 +20,7 @@ Questo cambia più della sola durata di un'attività: in *Vista › Scala tempor
 
 1. Seleziona l'attività e guarda nel pannello *Proprietà*, sotto *Tempo*, il campo *Durata*.
 2. Digita la durata con un'unità e premi Invio: `12h` (`12u`, l'abbreviazione olandese, funziona anche) per dodici ore, `1h 30m` per un'ora e mezza. Anche `1.5h` va bene. Un numero senza unità conta nell'unità che l'attività ha già.
-3. Se vuoi convertire un'attività esistente, scegli l'unità *Ore* sotto *Unità di durata*. L'app determina la durata per te e la propone, ad esempio *Proposta di conversione esatta: 16h. Applicala o mantieni l'unità corrente.* Scegli *Applica proposta* o *Mantieni*.
+3. Se vuoi convertire un'attività esistente, scegli l'unità *Ore* sotto *Unità di durata*. L'app converte subito la durata, ad esempio da `2` giorni a `16` ore. Per tornare indietro, usa *Annulla*.
 4. Tornare ai giorni si può fare con `2d` o con l'unità *Giorni*.
 5. Premi **Calcola** (F5), ad esempio tramite *Home › Pianificazione › Calcola*. L'attività ha ora un inizio e una fine con un orario.
 6. Se vuoi vedere le ore nel Gantt, scegli la scala *Ora* nell'elenco sotto *Vista › Scala temporale*.

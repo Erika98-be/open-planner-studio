@@ -36,7 +36,7 @@ En dag är nettotimmarna per dag i uppgiftens kalender. Appen använder det på 
 
 - För *Visning av varaktighet*. Under *Inställningar › Projekt › Inställningar*, fliken *Utseende*, väljer du *Automatiskt (egen enhet per uppgift)*, *Alltid dagar* eller *Alltid timmar*. En uppgift på 18 timmar visas under *Alltid dagar* som `2.25d(18h)`: den egna enheten står inom parentes.
 - För en fördröjning i timmar efter en daguppgift (se *Avrundning*).
-- När du byter enhet för en uppgift. Appen räknar då dagarna från uppgiftens start, där varje dag har sina egna timmar. Den gör bara ett förslag om resultatet är exakt. Två dagar blir `16h`. I en kalender där fredagen har 5 timmar blir 5 dagar från måndag `37h`. Tolv timmar kan inte göras om till hela dagar i en kalender med dagar på 8 timmar: då lämnar appen enheten som den är.
+- När du byter enhet för en uppgift. Appen räknar då dagarna från uppgiftens start, där varje dag har sina egna timmar. Den omvandlar varaktigheten direkt om resultatet är exakt. Två dagar blir `16h`. I en kalender där fredagen har 5 timmar blir 5 dagar från måndag `37h`. Tolv timmar kan inte göras om till hela dagar i en kalender med dagar på 8 timmar: då lämnar appen enheten som den är.
 
 ### Daguppgifter och timuppgifter tillsammans
 

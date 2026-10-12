@@ -15,8 +15,17 @@ deze lijst verwijderd — wat klaar is, staat in de changelog en git-historie.
   P6-doorgerekende orakels — HarbourPointe-opvolgers van verouderde P6-uitvoer (nieuw P6-bewijs nodig),
   mijlpaalvloer (n=1), Sample SF-lag-0-minuut (n=1). Eigenaarsbesluiten 2026-09-24: A19 in P6 aan en
   per-bestand vervallen ("a", branch `claude/x12-a19-basis`); C5 smal. Zie `docs/superpowers/plans/2026-09-22-rekenprofielen-overdracht.md` §1d.
-- [ ] **P6-nivellering (motoretappe):** fundament (data) ligt; vijf eigenaarsbesluiten in
-  `docs/superpowers/plans/2026-09-24-nivellering-etappe-onderzoek.md` §8.
+- [ ] **P6-nivellering (motoretappe, na de release; eigenaar 2026-10-12: "dit moet ergens opgeschreven worden
+  dat wij dit ook gaan doen"):** fundament (data) ligt; vijf eigenaarsbesluiten in
+  `docs/superpowers/plans/2026-09-24-nivellering-etappe-onderzoek.md` §8. De drie verschillen met P6 die dicht moeten:
+  - **Volgorde:** onze nivelleerder kiest prioriteit → minste totale speling → vroegste start
+    (`ResourceLeveler.ts`); P6 volgt de instelbare prioriteitenlijst (`levelprioritylist`, wel gelezen en
+    opgeslagen, `resolveLevelingPriority` wordt nergens aangeroepen).
+  - **Instellingen:** `level_within_float_flag` + `level_float_thrs_cnt` (alleen binnen speling, met drempel) en
+    `level_over_alloc_pct` (toegestane overbelasting) staan in `xerScheduleOptions.ts` op `ignored`;
+    `level_keep_sched_date_flag`/`level_all_rsrc_flag` worden gelezen maar niet gebruikt.
+  - **Werkwijze:** P6 loopt door de tijd en herrekent daarna de late datums met behoud van de volgorde; wij plaatsen
+    taken één voor één (serieel). Op OZB-project 9033 komt onze motor op 9 van 14 vroege starts gelijk aan P6.
 - [ ] **Datums zoals opgeslagen (PR #167) vervolg:** een taak zonder enige vastlegging telt na opslaan-in-modus
   bij heropenen als vastgelegd (geen vals aanbod, wel in de telling).
 
@@ -630,8 +639,13 @@ met de dwingende volgorde, en het werkt alléén zolang de oude sleutel er nog i
   zesassige meting, gepinde baseline, suite rood zolang niet nul. Beginnen met P6 XML (meeste
   materiaal, grootste overlap met XER); `.mpp` uitbreiden van twee naar zes assen. CSV krijgt
   geen meetlat (geen bronpakket dat het antwoord geeft).
-- [ ] **XER: het bronarchief heeft geen bytegrens en gaat mee in élke auto-save-serialisatie**
-  (eindreview 2026-09-07, bevinding 1). Gemeten op `rehab-2.xer` (17,7 MB): IFC 50 MB, volledige
+- [x] **XER: het bronarchief heeft geen bytegrens en gaat mee in élke auto-save-serialisatie**
+  (eindreview 2026-09-07, bevinding 1). *Opgelost 2026-10-07 (branch `claude/xer-archief-eenmalig`,
+  ontwerp `docs/superpowers/plans/2026-10-07-xer-archief-eenmalig.md`):* crashherstel schrijft het
+  archief één keer als content-adressed blob; snapshots verwijzen ernaar; budgetpoort in
+  `check-xer-archive-recovery-once.ts` en `check-xer-archive-recovery-corpus.ts`. rehab-2-bewerkingstick
+  60,5 MB → 35,7 MB (de rest is de planning zelf), OZB eerste tick 12 kopieën → 1 blob.
+  Oorspronkelijke bevinding: Gemeten op `rehab-2.xer` (17,7 MB): IFC 50 MB, volledige
   herstelronde 73 s / 3,1 GB piek-RSS, ±3,6 s hoofdthread per 10-secondentick; bij twaalf documenten
   uit één bestand 26× amplificatie (OZB). Geen cap, geen opt-out, geen worker. Eigenaarsbesluit
   (plan §10.f): bytegrens waarboven het archief niet in de recovery-snapshot meegaat, óf het

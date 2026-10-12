@@ -20,7 +20,7 @@ Daarmee verandert er meer dan alleen de duur van een taak: onder *Beeld › Tijd
 
 1. Selecteer de taak en kijk in het paneel *Eigenschappen* bij *Tijd* naar het veld *Duur*.
 2. Typ de duur met een eenheid en druk op Enter: `12h` (of `12u`) voor twaalf uur, `1h 30m` voor anderhalf uur. Ook `1.5h` mag. Een getal zonder eenheid telt in de eenheid die de taak al heeft.
-3. Wil je een bestaande taak omzetten, kies dan bij *Duureenheid* de eenheid *Uren*. De app rekent de duur voor je om en stelt die voor, bijvoorbeeld *Exact omzetvoorstel: 16h. Pas dit voorstel toe of behoud de huidige eenheid.* Kies *Voorstel toepassen* of *Behouden*.
+3. Wil je een bestaande taak omzetten, kies dan bij *Duureenheid* de eenheid *Uren*. De app rekent de duur meteen om, bijvoorbeeld van `2` dagen naar `16` uur. Wil je terug, gebruik dan *Ongedaan maken*.
 4. Terug naar dagen kan met `2d` of met de eenheid *Dagen*.
 5. Druk op **Bereken** (F5), bijvoorbeeld via *Start › Planning › Bereken*. De taak heeft nu een start en einde met een kloktijd.
 6. Wil je de uren in de Gantt zien, kies dan in de keuzelijst bij *Beeld › Tijdschaal* de schaal *Uur*.

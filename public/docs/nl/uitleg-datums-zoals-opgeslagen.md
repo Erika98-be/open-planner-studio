@@ -33,7 +33,7 @@ Bij een Primavera-bestand rekent de app met het rekenprofiel *Primavera P6*. Dat
 
 Onder het lint staat een strook: *Je ziet de datums zoals ze in het bestand staan; bij herberekenen wijken 4 taken af.* Bij een Primavera-bron (een `.xer` of Primavera P6 XML) staat er *Je ziet de planning zoals Primavera hem opsloeg; bij herberekenen wijkt 1 taak af.* Rechts in de strook staat de knop *Herberekenen*. Die strook heeft geen kruisje.
 
-Daarnaast komt er een melding: *4 taken tonen de datums zoals ze in het bestand staan (niet herberekend).* Alleen bij een `.xer` staat er *1 taak toont de datums zoals Primavera ze opsloeg (niet herberekend).* Elke taak waarvan het bestand datums vastlegde, toont in het paneel *Eigenschappen* een markering: *Toont Primavera’s eigen opgeslagen datums voor deze taak* bij een Primavera-bron, of *Toont de datums zoals ze in het bestand staan voor deze taak* bij een andere bron. De Gantt, het taakraster en de statusbalk tonen de datums uit het bestand.
+Daarnaast komt er een melding: *12 taken tonen de datums zoals ze in het bestand staan (niet herberekend).* Alleen bij een `.xer` staat er *12 taken tonen de datums zoals Primavera ze opsloeg (niet herberekend).* Dat getal telt alle taken waarvan het bestand datums vastlegde, ook de taken die niet afwijken. Het aantal taken dat bij herberekenen afwijkt, staat in de strook. Elke taak waarvan het bestand datums vastlegde, toont in het paneel *Eigenschappen* een markering: *Toont Primavera’s eigen opgeslagen datums voor deze taak* bij een Primavera-bron, of *Toont de datums zoals ze in het bestand staan voor deze taak* bij een andere bron. De Gantt, het taakraster en de statusbalk tonen de datums uit het bestand.
 
 ### Wat er in deze weergave leeg blijft
 
@@ -47,6 +47,8 @@ Je verlaat de weergave op twee manieren:
 
 - Klik in de strook op *Herberekenen*, of kies *Bereken* (F5). De app rekent door met haar eigen regels.
 - Wijzig iets waardoor de datums kunnen veranderen, zoals de duur van een taak of een nieuwe taak. De app verlaat de weergave en rekent meteen door, ook als *Automatisch berekenen* uit staat. Een naam wijzigen doet dat niet: dan blijft de weergave aan.
+
+Een kalenderwijziging uit de resourcebibliotheek laat de weergave aan en de datums uit het bestand staan, maar werkt het getal in de strook bij.
 
 Na het verlaten is er geen knop meer om naar de weergave terug te schakelen. Ctrl+Z brengt hem wel terug, direct na het herberekenen of direct na zo'n bewerking. Verder kun je het bronbestand opnieuw openen. Bij een `.xer` zet ook het heropenen van een IFC-bestand dat je na het herberekenen opsloeg, maar niet bewerkte, de weergave weer aan.
 

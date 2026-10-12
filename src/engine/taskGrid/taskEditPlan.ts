@@ -31,7 +31,7 @@ import type {
 } from '@/types/taskGrid';
 import { parseDate, parseInstant } from '@/utils/dateUtils';
 import {
-  proposeTaskDurationConversion,
+  convertTaskDurationUnit,
   type ParsedTaskDuration,
 } from '@/utils/taskDurationInput';
 import {
@@ -412,7 +412,7 @@ function applyScheduleEdit(
       return failure('hourPlanningDisabled', edit);
     }
     if (!environment.effectiveCalendar) return failure('calendarNotFound', edit);
-    const proposal = proposeTaskDurationConversion(task, target, environment.effectiveCalendar);
+    const proposal = convertTaskDurationUnit(task, target, environment.effectiveCalendar);
     if (!proposal) return failure('durationConversionNotExact', edit);
     task.time.durationUnit = proposal.unit;
     if (proposal.unit === 'days') {

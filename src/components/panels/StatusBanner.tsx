@@ -28,15 +28,18 @@ const TONES = {
  * Banner met driehoek-icoon boven een resourcetabel (Bibliotheek- en Bezettingsweergave).
  * `warning` is een waarschuwing (`role="alert"`), `dim` een melding (`role="status"`).
  */
-export function StatusBanner({ tone, children, bannerProps }: {
+export function StatusBanner({ tone, children, bannerProps, inline = false }: {
   tone: keyof typeof TONES;
   children: ReactNode;
+  /** Zonder de buitenmarge (`mx-2 mt-2`): voor een blok binnen een formulierveld. */
+  inline?: boolean;
   /** Data-attribuut voor de self-test-harness. */
   bannerProps?: Record<string, unknown>;
 }) {
   const { className, style, role } = TONES[tone];
+  const classes = inline ? className.replace('mx-2 mt-2 ', '') : className;
   return (
-    <div className={className} style={style} role={role} {...bannerProps}>
+    <div className={classes} style={style} role={role} {...bannerProps}>
       <AlertTriangle size={14} className="shrink-0" aria-hidden />
       <span>{children}</span>
     </div>

@@ -36,7 +36,7 @@ Dzień to godziny netto na dzień w kalendarzu zadania. Aplikacja z tego korzyst
 
 - Dla ustawienia *Wyświetlanie czasu trwania*. W *Ustawienia › Projekt › Ustawienia*, na karcie *Wygląd* wybierasz *Automatycznie (własna jednostka dla zadania)*, *Zawsze w dniach* albo *Zawsze w godzinach*. Zadanie na 18 godzin pokazuje się przy *Zawsze w dniach* jako `2.25d(18h)`: własna jednostka zostaje w nawiasie.
 - Dla opóźnienia w godzinach po zadaniu w dniach (zobacz *Zaokrąglanie*).
-- Gdy zmieniasz jednostkę zadania. Aplikacja liczy wtedy dni od początku zadania, każdy dzień z jego własnymi godzinami, i podaje propozycję tylko wtedy, gdy wynik jest dokładny. Dwa dni zamieniają się w `16h`. W kalendarzu, w którym piątek ma 5 godzin, 5 dni od poniedziałku zamieniają się w `37h`. Dwunastu godzin nie można zamienić na pełne dni w kalendarzu z dniami po 8 godzin: aplikacja wtedy zostawia jednostkę bez zmian.
+- Gdy zmieniasz jednostkę zadania. Aplikacja liczy wtedy dni od początku zadania, każdy dzień z jego własnymi godzinami, i od razu przelicza czas trwania, gdy wynik jest dokładny. Dwa dni zamieniają się w `16h`. W kalendarzu, w którym piątek ma 5 godzin, 5 dni od poniedziałku zamieniają się w `37h`. Dwunastu godzin nie można zamienić na pełne dni w kalendarzu z dniami po 8 godzin: aplikacja wtedy zostawia jednostkę bez zmian.
 
 ### Zadania w dniach i zadania godzinowe razem
 

@@ -149,6 +149,56 @@ function taskRowNames(state: AppState): string[] {
     payload: { ...payload, datesAsRecorded: true }, companies, pools, mode: 'silent-switch',
   });
   eq('Behind-kalender respecteert datums-als-opgeslagen', recorded.payload.scheduleStale, false);
+  eq('Behind-kalender laat datums-als-opgeslagen aan', recorded.payload.datesAsRecorded, true);
+}
+
+// V1 (eigenaarsbesluit 2026-10-12): een kalenderverversing aan de activatiegrens laat de modus aan en
+// de getoonde datums staan, maar het strookgetal telt opnieuw tegen de NIEUWE kalender — precies wat
+// F5 daarna verschuift.
+{
+  const store = createAppStore();
+  store.getState().setProject({ startDate: '2026-06-01' });
+  const five = store.getState().addTask({ name: 'Vijf dagen', time: createDefaultTaskTime('2026-06-01', 5) });
+  const two = store.getState().addTask({ name: 'Twee dagen', time: createDefaultTaskTime('2026-06-01', 2) });
+  store.getState().runCPM();
+  const payload = capturePayload(store.getState());
+  const times = Object.fromEntries(payload.tasks.map(task => [task.id, { start: task.time.earlyStart!, finish: task.time.earlyFinish! }]));
+  const companyId = 'recorded-boundary-company';
+  const projectCalendar = {
+    ...payload.calendar,
+    libraryOrigin: { companyId, libraryItemId: 'recorded-pool', poolVersion: 1, syncedHash: computeCalendarHash(payload.calendar) },
+  };
+  const input = {
+    ...payload,
+    project: { ...payload.project, companyId, companyName: 'Strookgrens BV' },
+    calendar: projectCalendar,
+    calendars: [projectCalendar],
+    scheduleStale: false,
+    datesAsRecorded: true,
+    recordedDates: { times, total: 2, shifted: 0 },
+  };
+  const pools = {
+    [companyId]: {
+      companyId, companyName: 'Strookgrens BV', poolVersion: 2, modifiedAt: '2026-10-12T00:00:00.000Z',
+      calendars: [{ ...payload.calendar, id: 'recorded-pool', workDays: [1, 2, 3, 4] }], resources: [],
+    },
+  };
+  const out = materializeLibraryBoundary({
+    payload: input, companies: [{ id: companyId, name: 'Strookgrens BV' }], pools, mode: 'silent-switch',
+  }).payload;
+  eq('V1 kalender ververst (vrijdag vrij)', out.calendar.workDays, [1, 2, 3, 4]);
+  eq('V1 modus blijft aan, niet verouderd', [out.datesAsRecorded, out.scheduleStale], [true, false]);
+  eq('V1 getoonde datums blijven staan', out.tasks.map(task => [task.time.earlyStart, task.time.earlyFinish]),
+    input.tasks.map(task => [task.time.earlyStart, task.time.earlyFinish]));
+  eq('V1 strookgetal: alleen de vijfdaagse taak verschuift', out.recordedDates?.shifted, 1);
+  // Onafhankelijke F5 op het resultaat: dezelfde store-actie als de knop Berekenen.
+  const f5 = createAppStore();
+  f5.setState(state => { Object.assign(state, { ...out, datesAsRecorded: false, recordedDates: null }); });
+  f5.getState().runCPM();
+  const moved = f5.getState().tasks.filter(task =>
+    task.time.earlyStart !== times[task.id].start || task.time.earlyFinish !== times[task.id].finish).map(task => task.id);
+  eq('V1 strookgetal = wat F5 echt verschuift', moved, [five]);
+  eq('V1 de tweedaagse taak verschuift niet', moved.includes(two), false);
 }
 
 // Nieuw document: nooit één render met de rijen van het uitgaande document.

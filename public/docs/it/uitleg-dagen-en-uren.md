@@ -36,7 +36,7 @@ Un giorno sono le ore nette al giorno del calendario dell'attività. L'app lo us
 
 - Per la *Visualizzazione della durata*. Sotto *Impostazioni › Progetto › Impostazioni*, scheda *Aspetto*, scegli *Automatica (unità propria per attività)*, *Sempre giorni* o *Sempre ore*. Un'attività di 18 ore si mostra con *Sempre giorni* come `2.25d(18h)`: l'unità propria resta tra parentesi.
 - Per un ritardo in ore dopo un'attività in giorni (vedi *Arrotondamento*).
-- Quando cambi l'unità di un'attività. L'app conta allora i giorni dall'inizio dell'attività, ogni giorno con le proprie ore, e fa una proposta solo se il risultato è esatto. Due giorni diventano `16h`. Su un calendario dove il venerdì ha 5 ore, 5 giorni dal lunedì diventano `37h`. Dodici ore non si possono convertire in giorni interi su un calendario con giorni di 8 ore: in quel caso l'app lascia l'unità com'è.
+- Quando cambi l'unità di un'attività. L'app conta allora i giorni dall'inizio dell'attività, ogni giorno con le proprie ore, e converte subito la durata se il risultato è esatto. Due giorni diventano `16h`. Su un calendario dove il venerdì ha 5 ore, 5 giorni dal lunedì diventano `37h`. Dodici ore non si possono convertire in giorni interi su un calendario con giorni di 8 ore: in quel caso l'app lascia l'unità com'è.
 
 ### Attività in giorni e attività in ore insieme
 

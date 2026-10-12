@@ -2,6 +2,7 @@
 paths:
   - "src/services/xer/**"
   - "src/services/xerSourceArchive.ts"
+  - "src/services/recovery/recoverySnapshot.ts"
   - "src/services/xerExportLoss.ts"
   - "src/state/xerArchiveIssueNotice.ts"
   - "src/utils/xerDocumentName.ts"
@@ -23,7 +24,10 @@ paths:
 
 `src/services/xer/` leest het native `.xer`-uitwisselingsformaat van Primavera P6 rechtstreeks
 (geen Rust, geen externe bibliotheek): `xerTables.ts` (tabelparser, getalnotatie uit `CURRTYPE`,
-tekencodering BOM → UTF-8 → Windows-1252), `xerReader.ts` (entry point `readXER()`, hetzelfde
+tekencodering BOM → UTF-8 → enkelbyte (besluit B17): Windows-1252, tenzij de tekst eenduidig Cyrillisch/Grieks/Arabisch
+is ⇒ Windows-1251/-1253/-1256 (`detectSingleByteEncoding`, review PR #109 N3; Latijnse 1250/1254 zijn niet te
+onderscheiden en blijven 1252; de openingsmelding noemt de keuze); een `%R` die door een rauw regeleinde in een cel te kort is, wordt met
+de volgende markerloze regels samengevoegd als dat het veldental exact haalt, max. 8 regels — P6 zelf schrijft DEL-DEL), `xerReader.ts` (entry point `readXER()`, hetzelfde
 `ImportResult`-contract als de andere lezers, via `formatRegistry.ts` achter een dynamic import),
 `xerMultiProject.ts` (één bestand ⇒ meerdere documenten; baselineprojecten worden bij hun huidige
 project gematerialiseerd), `xerCalendarData.ts` (de `clndr_data`-decoder incl. herstelcodes),
@@ -35,14 +39,25 @@ de overdrachtsstand staat in `docs/superpowers/plans/2026-08-20-plan-xer-p6-leze
 Drie architectuurregels die je moet kennen. (1) **Het bronarchief.** De volledige oorspronkelijke
 `.xer`-bytes reizen als `xerSourceArchive` (+ `xerImportMetadata`, `xerSourceProjectId`) mee in
 `DOCUMENT_FIELDS` én in `IFC_SAVE_KEYS` (`src/state/ifcSaveInput.ts`; de archiefvelden zelf in `src/services/xerSourceArchive.ts`): het IFC-projectbestand
-en elke crashherstel-snapshot dragen het archief, zonder bovengrens — gemeten 17,7 MB `.xer` ⇒ ±50 MB
-IFC, ±3,6 s hoofdthread per auto-save-tick (`docs/xer-recovery-guardrails.md`; eigenaarsbesluit,
-plan §10.f). De MCP-tool `planner_inspect_xer_provenance` en de extensie-API `data.getImportSource*` (achter
-de permissie `importSource`, default-deny) lezen eruit. Een onbruikbaar archief (corrupt, afgeknot of door
+draagt het archief volledig (pset-schema 2). Crashherstel schrijft het één keer (eigenaarsbesluit plan
+(9), sinds 2026-10-07): een snapshot draagt alleen een verwijzing (schema 3, `recovery-reference-v1`,
+via `serializeRecoverySnapshot` in `src/services/recovery/recoverySnapshot.ts`), de bytes staan als
+content-adressed blob (sha256) naast de snapshots en verdwijnen als geen manifestregel ze nog noemt;
+een ontbrekende blob ⇒ openen met `xerArchiveIssue` `bytes-missing` (`docs/xer-recovery-guardrails.md`,
+ontwerp in `docs/superpowers/plans/2026-10-07-xer-archief-eenmalig.md`). De MCP-tool `planner_inspect_xer_provenance` en de extensie-API `data.getImportSource*` (achter
+de permissie `importSource`, default-deny) lezen eruit. De MCP-tool toont resourcenamen alleen met
+`includeResourceNames: true` (ook vereist voor `rawSource`; RSRC-bronrijcellen vragen dat naast `includeRawRows`);
+de toolbeschrijving laat de AI-client eerst de gebruiker om toestemming vragen. Codes (`code` = `rsrc_short_name`)
+blijven altijd zichtbaar (eigenaarsbesluit 22-09, bevestigd 2026-10-07). De extensie-API filtert géén namen: daar is
+de door de gebruiker verleende `importSource`-permissie de toestemming. Een onbruikbaar archief (corrupt, afgeknot of door
 een ander IFC-programma herschreven) wordt bij openen WEGGELATEN met één in-app melding — nooit stil
 (eigenaarsbesluit 2026-09-24, "openen met melding"): `readIFC` zet `ImportResult.xerArchiveIssue` (zes
 codes), `src/state/xerArchiveIssueNotice.ts` maakt er de melding van, `data.getImportSourceIssue()` en
 de MCP-provenance tonen het signaal; `xerOrigin` blijft dan afwezig (geen archief, geen archiefherkomst).
+Een activiteit zonder `target_start_date` volgt de gedeelde regel `resolveMissingScheduleDates`
+(`services/importDates.ts`): anker = statusdatum (`last_recalc_date`, of `data_date` als die kolom ontbreekt), dan
+`PROJECT.plan_start_date`, dan de vroegste aanwezige taakstart; nooit meer 1970. De openingsmelding telt ze
+(`ImportResult.xerMissingPlannedStarts`, transient; review PR #109 N1).
 De documentnaam na een XER-import is de projectnaam, met het P6 Project-ID tussen haakjes als dat afwijkt
 (`src/utils/xerDocumentName.ts`). (2) **Bak 4 — opgeslagen rekenuitvoer is
 weergave, nooit solverinvoer.** De zes P6-uitvoerkolommen (`early_/late_start/end_date`,

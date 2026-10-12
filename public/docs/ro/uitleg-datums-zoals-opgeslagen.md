@@ -48,6 +48,8 @@ Ieșiți din vizualizare în două moduri:
 - Faceți clic pe *Recalculare* în bară, sau alegeți *Calculare* (F5). Aplicația calculează cu propriile reguli.
 - Modificați ceva ce poate schimba datele, de exemplu durata unei activități sau o activitate nouă. Aplicația iese din vizualizare și recalculează imediat, chiar dacă *Calculare automată* este dezactivată. Schimbarea unui nume nu face asta: vizualizarea rămâne activă.
 
+O modificare de calendar din biblioteca de resurse lasă vizualizarea activă și datele din fișier neschimbate, dar actualizează numărul din bară.
+
 După ce ieșiți, nu există niciun buton pentru a reveni la vizualizare. Ctrl+Z o readuce, chiar după recalculare sau chiar după o astfel de modificare. Altfel puteți deschide din nou fișierul sursă. Cu un `.xer`, deschiderea unui fișier IFC pe care l-ați salvat după recalculare, dar fără să-l modificați, activează și ea din nou vizualizarea.
 
 ### Refacere în urma unei căderi

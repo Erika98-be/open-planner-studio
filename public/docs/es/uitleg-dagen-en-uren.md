@@ -36,7 +36,7 @@ Un día equivale a las horas netas por día del calendario de la tarea. La aplic
 
 - Para *Visualización de la duración*. En *Configuración › Proyecto › Configuración*, en la pestaña *Apariencia*, usted elige *Automática (unidad propia por tarea)*, *Siempre días* o *Siempre horas*. Una tarea de 18 horas se muestra con *Siempre días* como `2.25d(18h)`: la unidad propia queda entre paréntesis.
 - Para un desfase en horas después de una tarea en días (véase *Redondeo*).
-- Al cambiar la unidad de una tarea. La aplicación cuenta entonces los días desde el inicio de la tarea, cada día con sus propias horas, y solo hace una propuesta si el resultado es exacto. Dos días pasan a ser `16h`. En un calendario en el que el viernes tiene 5 horas, 5 días desde el lunes pasan a ser `37h`. Doce horas no se pueden convertir en días completos en un calendario con días de 8 horas: en ese caso la aplicación deja la unidad como está.
+- Al cambiar la unidad de una tarea. La aplicación cuenta entonces los días desde el inicio de la tarea, cada día con sus propias horas, y convierte la duración de inmediato si el resultado es exacto. Dos días pasan a ser `16h`. En un calendario en el que el viernes tiene 5 horas, 5 días desde el lunes pasan a ser `37h`. Doce horas no se pueden convertir en días completos en un calendario con días de 8 horas: en ese caso la aplicación deja la unidad como está.
 
 ### Tareas en días y tareas horarias juntas
 

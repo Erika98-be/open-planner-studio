@@ -29,6 +29,7 @@ import type {
   TaskStatus,
 } from '@/types/task';
 import { createDefaultTaskTime } from '@/utils/taskDefaults';
+import { flattenOrder } from '@/utils/wbs';
 import { formatInstant, parseInstant } from '@/utils/dateUtils';
 import { hasValidP6SuspendResume } from '@/utils/p6SuspendResume';
 import {
@@ -40,6 +41,7 @@ import {
 } from '@/services/xerSourceArchive';
 import type { RecordedTime } from '@/engine/scheduler/recordedDates';
 import { deriveImportedWorkRules } from '@/services/importNormalize';
+import { emptyMissingScheduleDates, resolveMissingScheduleDates } from '@/services/importDates';
 import { taskWorkMinutes as activityWorkMinutesOf } from '@/engine/contour/contourEngine';
 import { readXerCalendars } from './xerCalendarData';
 import { sourceInstant } from './xerInstant';
@@ -237,6 +239,10 @@ function projectStatusDate(tables: XerTables, projectRow: XerRow, hourMode: bool
       : '';
   return sourceInstant(raw, hourMode);
 }
+
+/** Plaatshouder voor een ontbrekende geplande start zonder enig projectanker; leeft alleen tussen de
+ *  activiteitenlus en `resolveMissingScheduleDates`, die hem altijd vervangt (missing.start). */
+const MISSING_START_PLACEHOLDER = '0001-01-01';
 
 function clockMinute(raw: string): number | undefined {
   const match = raw.trim().match(/^\d{4}-\d{2}-\d{2}[ T](\d{1,2}):(\d{2})/);
@@ -471,18 +477,54 @@ export function xerProjectName(projectRow: XerRow, wbsRows: readonly XerRow[]): 
   return roots.length === 1 ? (roots[0].cells.wbs_name ?? '').trim() : '';
 }
 
-function stableWbsRows(rows: readonly XerRow[], projectId: string): XerRow[] {
+/**
+ * Volgorde van twee P6-sleutels (`wbs_id`, `parent_wbs_id`). P6 nummert die als gehele getallen, dus
+ * vergelijken we ze numeriek: `'2'` vóór `'10'`, zoals MPXJ's `WbsRowComparatorXER` (INTEGER-
+ * kolommen). Op tekst stond `'10'` vóór `'2'`, en kwam MER.W10 bij gelijke `seq_num` vóór MER.W02.
+ * Een niet-numerieke sleutel (handgemaakt bestand) volgt de codepuntvolgorde, ná de numerieke.
+ * Lengte-dan-tekst vergelijkt willekeurig lange getallen exact, zonder afronding door `Number`.
+ */
+function compareP6Keys(left: string, right: string): number {
+  const leftNumeric = /^\d+$/.test(left);
+  const rightNumeric = /^\d+$/.test(right);
+  if (leftNumeric && rightNumeric) {
+    const a = left.replace(/^0+(?=\d)/, '');
+    const b = right.replace(/^0+(?=\d)/, '');
+    return a.length - b.length || compareCodePoints(a, b) || compareCodePoints(left, right);
+  }
+  if (leftNumeric !== rightNumeric) return leftNumeric ? -1 : 1;
+  return compareCodePoints(left, right);
+}
+
+/**
+ * De ouder van een PROJWBS-rij binnen dit project, of `null` als die ouder geen WBS-rij van dit
+ * project is. Dat laatste is het normale geval voor de bovenste rij: in een P6-export wijst de
+ * projectknoop (`proj_node_flag = Y`) naar een EPS-knoop die niet in het bestand staat, en andere
+ * generatoren gebruiken `0`. Zo'n ouder is geen taak; de rij is dan een wortel, net als bij MPXJ
+ * (`TableProjectReader`: ouder onvindbaar ⇒ topniveau).
+ */
+function localParentWbsId(row: XerRow, localWbsIds: ReadonlySet<string>): string | null {
+  const parent = row.cells.parent_wbs_id;
+  return parent && localWbsIds.has(parent) ? parent : null;
+}
+
+/**
+ * Siblingvolgorde van de WBS: per ouder op `seq_num`, bij gelijke `seq_num` op `wbs_id` (numeriek,
+ * {@link compareP6Keys}), en pas daarna op bronregel. Alle wortels delen één groep. De volgorde hangt
+ * zo niet af van de rijvolgorde in het bestand.
+ */
+function stableWbsRows(rows: readonly XerRow[], projectId: string, localWbsIds: ReadonlySet<string>): XerRow[] {
   return rows
     .filter(row => row.cells.proj_id === projectId)
     .sort((left, right) => {
-      const parentOrder = compareCodePoints(
-        left.cells.parent_wbs_id ?? '', right.cells.parent_wbs_id ?? '',
+      const parentOrder = compareP6Keys(
+        localParentWbsId(left, localWbsIds) ?? '', localParentWbsId(right, localWbsIds) ?? '',
       );
       const leftSeq = Number(left.cells.seq_num) || 0;
       const rightSeq = Number(right.cells.seq_num) || 0;
       return parentOrder
         || leftSeq - rightSeq
-        || compareCodePoints(left.cells.wbs_id ?? '', right.cells.wbs_id ?? '')
+        || compareP6Keys(left.cells.wbs_id ?? '', right.cells.wbs_id ?? '')
         || left.line - right.line;
     });
 }
@@ -539,6 +581,10 @@ function readXerProject(
 
   // Identiteit en lokale eindpunten moeten vaststaan vóór maps, WBS-boom of relaties ontstaan.
   assertUniqueId(rawWbsRows, 'PROJWBS', 'wbs_id');
+  // De WBS-rijen van dít project: alleen daarnaar mag een `parentId` wijzen (zie `localParentWbsId`).
+  const localWbsIds = new Set(
+    rawWbsRows.filter(row => row.cells.proj_id === projectId).map(row => row.cells.wbs_id),
+  );
   assertUniqueId(activityRows, 'TASK', 'task_id');
   assertUniqueId(relationRows, 'TASKPRED', 'task_pred_id');
   const localTaskIds = new Set(activityRows.map(row => row.cells.task_id));
@@ -627,6 +673,15 @@ function readXerProject(
   );
   const mappedActivities: Task[] = [];
   let hasExplicitTaskFinish = false;
+  // Ontbrekende geplande start/finish (review PR #109, N1): vroeger '1970-01-01' en daarmee ook
+  // projectstart 1970, zonder melding. Nu de gedeelde regel van alle lezers
+  // (`resolveMissingScheduleDates`). Het projectstart-anker is voor XER de statusdatum
+  // (`last_recalc_date`, of `data_date` als die kolom ontbreekt — P6 plant onbegonnen werk vanaf de
+  // data date, en dit was al de terugval), anders `PROJECT.plan_start_date`. Dat anker zetten we hier
+  // zelf, met de tijd-van-de-dag in uurmodus (de gedeelde functie kent alleen het datumdeel); zonder
+  // enig anker kiest de gedeelde functie de vroegste aanwezige taakstart, anders vandaag.
+  const missingDates = emptyMissingScheduleDates();
+  let missingPlannedStarts = 0;
   for (const row of activityRows) {
     const effectiveCalendar = calendarById.get(row.cells.clndr_id) ?? projectCalendar;
     const hourMode = effectiveCalendar.workTime !== undefined;
@@ -634,9 +689,17 @@ function readXerProject(
     const explicitTargetFinish = sourceInstant(row.cells.target_end_date ?? '', hourMode);
     const hasExplicitTargetWindow = explicitTargetStart !== undefined && explicitTargetFinish !== undefined;
     if (explicitTargetFinish !== undefined) hasExplicitTaskFinish = true;
-    let start = explicitTargetStart
-      ?? sourceInstant(projectRow.cells.last_recalc_date ?? '', hourMode)
-      ?? '1970-01-01';
+    const anchorStart = explicitTargetStart === undefined
+      ? projectStatusDate(tables, projectRow, hourMode)
+        ?? sourceInstant(projectRow.cells.plan_start_date ?? '', hourMode)
+      : undefined;
+    if (explicitTargetStart === undefined) {
+      missingPlannedStarts += 1;
+      if (anchorStart === undefined) missingDates.start.add(row.cells.task_id);
+    }
+    if (explicitTargetFinish === undefined) missingDates.finish.add(row.cells.task_id);
+    // Plaatshouder alleen voor het geval zonder anker; `resolveMissingScheduleDates` vervangt hem.
+    let start = explicitTargetStart ?? anchorStart ?? MISSING_START_PLACEHOLDER;
     let finish = explicitTargetFinish ?? start;
     // P6 XER kan een TT_FinMile op de eerste minuut ná een werkbandgrens serialiseren met gelijke
     // target start/finish. Voor deze nulduur-activiteit is die minuut een grenscodering, geen werk:
@@ -695,7 +758,11 @@ function readXerProject(
       : statusToken === 'tk_notstart'
         ? 0
         : Math.max(0, Math.min(1, completionPercent / 100));
-    const parentId = row.cells.wbs_id ? wbsTaskId(projectId, row.cells.wbs_id) : null;
+    // Een activiteit onder een WBS die dit project niet heeft, hangt op topniveau (MPXJ doet hetzelfde):
+    // een `parentId` naar een niet-bestaande taak maakt de boom in raster en rollup onvindbaar.
+    const parentId = row.cells.wbs_id && localWbsIds.has(row.cells.wbs_id)
+      ? wbsTaskId(projectId, row.cells.wbs_id)
+      : null;
     const plannedWindowMinutes = hourMode && plannedWindowCalendarIds.has(effectiveCalendar.id)
       ? calendarEngines.get(effectiveCalendar.id)?.workMinutesBetween(
         parseInstant(start), parseInstant(finish),
@@ -800,6 +867,9 @@ function readXerProject(
     });
   }
 
+  resolveMissingScheduleDates(mappedActivities, missingDates, '', task =>
+    calendarById.get(task.calendarId ?? '') ?? projectCalendar);
+
   const projectHourMode = projectCalendar.workTime !== undefined;
   const sourceProjectEnd = sourceInstant(projectRow.cells.plan_end_date ?? '', projectHourMode);
   const derivedSchedule = deriveXerScheduleOptions(scheduleOptionsIndex, projectId, {
@@ -857,12 +927,11 @@ function readXerProject(
     : taskDerivedProjectEnd;
   const statusDate = projectStatusDate(tables, projectRow, projectHourMode);
 
-  const wbsRows = stableWbsRows(rawWbsRows, projectId);
+  const wbsRows = stableWbsRows(rawWbsRows, projectId, localWbsIds);
   const wbsTasks: Task[] = wbsRows.map(row => {
     const id = wbsTaskId(projectId, row.cells.wbs_id);
-    const parentId = row.cells.parent_wbs_id
-      ? wbsTaskId(projectId, row.cells.parent_wbs_id)
-      : null;
+    const localParent = localParentWbsId(row, localWbsIds);
+    const parentId = localParent ? wbsTaskId(projectId, localParent) : null;
     return {
       id,
       name: row.cells.wbs_name || row.cells.wbs_short_name || 'WBS',
@@ -879,7 +948,10 @@ function readXerProject(
       resourceIds: [],
     };
   });
-  const allTasks = [...wbsTasks, ...mappedActivities];
+  // BOOMVOLGORDE (diepte-eerst), zoals de P6 XML-lezer: elke activiteit staat direct onder haar WBS.
+  // Per ouder blijft de volgorde gelijk (eerst de WBS-kinderen, dan de activiteiten in bestandsvolgorde),
+  // dus `childIds` hieronder is dezelfde als bij "eerst alle WBS, dan alle activiteiten".
+  const allTasks = [...flattenOrder([...wbsTasks, ...mappedActivities])];
   deriveImportedWorkRules(mappedActivities); // werkregel uit duration_type
   const taskById = new Map(allTasks.map(task => [task.id, task]));
   for (const task of allTasks) {
@@ -1012,6 +1084,7 @@ function readXerProject(
     recordedTimes,
     recordedTimesOrigin: 'xer',
     suggestedProfileId: 'p6',
+    ...(missingPlannedStarts > 0 ? { xerMissingPlannedStarts: missingPlannedStarts } : {}),
     xer: {
       sourceProjectId: projectId,
       defaultCurrencyCode: tables.header.defaultCurrencyCode,

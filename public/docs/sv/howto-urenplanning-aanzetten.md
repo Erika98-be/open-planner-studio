@@ -20,7 +20,7 @@ Det ändrar mer än varaktigheten för en uppgift. Under *Visa › Tidsskala* ka
 
 1. Markera uppgiften och titta i panelen *Egenskaper*, under *Tid*, på fältet *Varaktighet*.
 2. Skriv varaktigheten med en enhet och tryck på Retur: `12h` (`12u`, den nederländska förkortningen, fungerar också) för tolv timmar, `1h 30m` för en och en halv timme. `1.5h` fungerar också. Ett tal utan enhet räknas i den enhet som uppgiften redan har.
-3. Om du vill omvandla en befintlig uppgift väljer du enheten *Timmar* under *Varaktighetsenhet*. Appen räknar ut varaktigheten åt dig och föreslår den, till exempel *Exakt omvandlingsförslag: 16h. Tillämpa förslaget eller behåll den nuvarande enheten.* Välj *Tillämpa förslaget* eller *Behålla*.
+3. Om du vill omvandla en befintlig uppgift väljer du enheten *Timmar* under *Varaktighetsenhet*. Appen omvandlar varaktigheten direkt, till exempel från `2` dagar till `16` timmar. Vill du gå tillbaka, använd *Ångra*.
 4. Tillbaka till dagar går det med `2d` eller med enheten *Dagar*.
 5. Tryck på **Beräkna** (F5), till exempel via *Start › Tidsplan › Beräkna*. Uppgiften har nu en start och ett slut med ett klockslag.
 6. Om du vill se timmarna i Gantt väljer du skalan *Timme* i listan under *Visa › Tidsskala*.

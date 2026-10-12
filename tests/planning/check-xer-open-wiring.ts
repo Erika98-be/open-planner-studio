@@ -393,6 +393,42 @@ eq('8f recovery-inputoverdracht herstelt links per document zonder solverdoorwer
       .filter((n) => n.messageKey === 'notifications.xerImportOpened').length, 0);
 }
 
+// ── Review #109 — de openingsmelding telt de TONENDE taken, niet de afwijkende ────────────────────
+// In de modus tonen ALLE taken met een vastlegging de opgeslagen datums. De regel
+// "N taken tonen de datums zoals Primavera ze opsloeg" noemt dus `recordedDates.total`; het aantal
+// dat bij herberekenen verschuift (`recordedDates.shifted`) staat in de strook. rehab-2 meldde
+// 2882 (de afwijkers) waar alle 6976 de vastgelegde datums tonen. Fixture: twee taken, één met een
+// vastlegging die exact op de eigen berekening valt, één ver ernaast ⇒ shifted 1, total 2.
+// MUTATIEBEWIJS: tel in `applyOpenedImport` weer `shifted` i.p.v. `total` ⇒ R109-3 rood (1 i.p.v. 2).
+{
+  const bytes = new TextEncoder().encode([
+    'ERMHDR\t23.12\t2026-01-01\t\t\t\t\t\tEUR',
+    '%T\tCALENDAR',
+    '%F\tclndr_id\tclndr_name\tclndr_type\tday_hr_cnt\tweek_hr_cnt\tclndr_data',
+    '%R\tC1\tStandaard\tCA_Base\t8\t40\t',
+    '%T\tPROJECT',
+    '%F\tproj_id\tproj_short_name\tclndr_id\tlast_recalc_date',
+    '%R\tPR\tTelling\tC1\t2026-01-01',
+    '%T\tTASK',
+    '%F\ttask_id\tproj_id\tclndr_id\ttask_code\ttask_name\ttask_type\tduration_type\tstatus_code\ttarget_drtn_hr_cnt\tremain_drtn_hr_cnt\ttarget_start_date\ttarget_end_date\tearly_start_date\tearly_end_date\tlate_start_date\tlate_end_date\ttotal_float_hr_cnt\tfree_float_hr_cnt',
+    `%R\tRS\tPR\tC1\tRS\tWijktAf\tTT_Task\tDT_FixedDUR\tTK_NotStart\t40\t40\t2026-01-02\t2026-01-09\t2026-02-01\t2026-02-08\t2026-02-01\t2026-02-08\t0\t0`,
+    `%R\tRG\tPR\tC1\tRG\tGelijk\tTT_Task\tDT_FixedDUR\tTK_NotStart\t40\t40\t2026-01-02\t2026-01-09\t2026-01-02\t2026-01-08\t2026-01-02\t2026-01-08\t0\t0`,
+    '%E',
+  ].join('\n'));
+  const opened = await parseOpenedFile({ name: 'r109-telling.xer', bytes });
+  if (isMultiDocumentImport(opened)) throw new Error('R109-fixture moet enkelproject zijn');
+  useAppStore.getState().newDocument();
+  const notifBefore = new Set(useAppStore.getState().ui.notifications.map((n) => n.id));
+  useAppStore.getState().applyOpenedImport(opened, { filePath: null, recompute: true });
+  const st = useAppStore.getState();
+  eq('R109-1 voorwaarde: de modus staat aan', st.datesAsRecorded, true);
+  eq('R109-2 voorwaarde: één van de twee vastgelegde taken wijkt af', [st.recordedDates?.shifted, st.recordedDates?.total], [1, 2]);
+  const line = st.ui.notifications.filter((n) => !notifBefore.has(n.id))
+    .flatMap((n) => n.detailLines ?? [])
+    .find((d) => d.messageKey === 'notifications.xerImportDatesAsRecorded');
+  eq('R109-3 de melding telt alle taken die de opgeslagen datums tonen (2), niet de afwijkers (1)', line?.params?.count, 2);
+}
+
 const corpusRoot = process.env.OPS_XER_CORPUS;
 if (corpusRoot && existsSync(corpusRoot)) {
   const openPublicXer = async (relativePath: string) => {

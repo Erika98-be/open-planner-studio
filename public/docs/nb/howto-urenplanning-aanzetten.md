@@ -20,7 +20,7 @@ Dette endrer mer enn varigheten til en aktivitet: under *Visning › Tidsskala* 
 
 1. Velg aktiviteten, og se i panelet *Egenskaper*, under *Tid*, på feltet *Varighet*.
 2. Skriv inn varigheten med en enhet, og trykk på Enter: `12h` (`12u`, den nederlandske forkortelsen, fungerer også) for tolv timer, `1h 30m` for halvannen time. `1.5h` går også bra. Et tall uten enhet telles i enheten aktiviteten allerede har.
-3. Hvis du vil konvertere en eksisterende aktivitet, velg enheten *Timer* under *Varighetsenhet*. Appen regner ut varigheten for deg og foreslår den, for eksempel *Eksakt konverteringsforslag: 16h. Bruk forslaget, eller behold gjeldende enhet.* Velg *Bruk forslaget* eller *Behold*.
+3. Hvis du vil konvertere en eksisterende aktivitet, velg enheten *Timer* under *Varighetsenhet*. Appen konverterer varigheten med en gang, for eksempel fra `2` dager til `16` timer. Vil du tilbake, bruk *Angre*.
 4. Tilbake til dager kan du gjøre med `2d` eller med enheten *Dager*.
 5. Trykk på **Beregn** (F5), for eksempel via *Hjem › Tidsplan › Beregn*. Aktiviteten har nå en start og en slutt med klokkeslett.
 6. Hvis du vil se timene i Gantt-diagrammet, velg skalaen *Time* i listen under *Visning › Tidsskala*.

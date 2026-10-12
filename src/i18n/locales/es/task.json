@@ -333,10 +333,7 @@
     "enableHourPlanningFirst": "Activa la planificación por horas para editar esta tarea horaria.",
     "enableHourPlanning": "Activar planificación por horas",
     "requiresWorkBlocks": "Este calendario no tiene horarios de trabajo válidos. Comprueba sus días y horarios laborables.",
-    "conversionNotExact": "Esta duración no se puede convertir exactamente en días enteros con el calendario actual. Se conserva la unidad existente; introduce tú un valor nuevo válido.",
-    "conversionProposal": "Propuesta de conversión exacta: {{value}}. Aplícala o conserva la unidad actual.",
-    "applyProposal": "Aplicar propuesta",
-    "keepCurrent": "Conservar",
+    "conversionNotExact": "{{value}} no equivale a días completos en este calendario. La unidad no ha cambiado.",
     "unitInfo": "La unidad elegida pertenece a esta tarea. Los días cuentan días laborables; las horas cuentan horas de trabajo dentro del calendario. Otro calendario no cambia la unidad ni la duración introducida, pero puede cambiar la fecha de fin."
   },
   "dialog": {

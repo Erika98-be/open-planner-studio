@@ -95,8 +95,10 @@ export function siteVersionCopyName(sourceName: string, version: string, copyLab
  * verdringen: zodra er een andere melding is, bv. de rekenprofielmelding bij een `.mpp`, zou de
  * regel dan stil wegvallen.
  *
- *  - Geen verse verschillen (`freshShifted`/`freshOffer` beide 0, o.a. elke HEROPENING van een eigen
- *    IFC) ⇒ `notice` ongewijzigd.
+ *  - `freshShown` = taken die in een vers geopend document IN de modus de opgeslagen datums tonen
+ *    (`recordedDates.total`); `freshOffer` = afwijkende taken in een document dat de modus alleen
+ *    aanbiedt (`recordedDates.shifted`).
+ *  - Beide 0 (o.a. elke HEROPENING van een eigen IFC) ⇒ `notice` ongewijzigd.
  *  - De melding draagt al een eigen datumregel (de XER-openingsmelding, `xerImportDatesAsRecorded*`)
  *    ⇒ ongewijzigd, anders stond het er twee keer.
  *  - Er is een andere melding ⇒ de regel komt er als detailregel onder.
@@ -106,14 +108,14 @@ export function siteVersionCopyName(sourceName: string, version: string, copyLab
  */
 export function withRecordedDatesNotice(
   notice: NotifyInput | undefined,
-  freshShifted: number,
+  freshShown: number,
   freshOffer: number,
 ): NotifyInput | undefined {
-  if (freshShifted <= 0 && freshOffer <= 0) return notice;
-  const shifted = freshShifted > 0;
+  if (freshShown <= 0 && freshOffer <= 0) return notice;
+  const inMode = freshShown > 0;
   const line: NotificationDetailLine = {
-    messageKey: shifted ? 'notifications.importDatesAsRecorded' : 'notifications.importDatesAsRecordedOffer',
-    params: { count: shifted ? freshShifted : freshOffer },
+    messageKey: inMode ? 'notifications.importDatesAsRecorded' : 'notifications.importDatesAsRecordedOffer',
+    params: { count: inMode ? freshShown : freshOffer },
   };
   if (!notice) {
     return { severity: 'info', ...line, helpArticleId: RECORDED_DATES_HELP_ARTICLE_ID };
@@ -130,9 +132,9 @@ export function withRecordedDatesNotice(
  */
 export function xerImportNotice(
   results: readonly ImportResult[],
-  /** Som van `recordedDates.shifted` over alle zojuist geopende
-   *  documenten van dit bestand, GESPLITST naar wat er werkelijk gebeurde. Bewust aparte
-   *  parameters i.p.v. iets uit `results` zelf afgeleid: het aantal afwijkende taken bestaat pas
+  /** Som van `recordedDates.total` (taken die de opgeslagen datums TONEN) over de zojuist geopende
+   *  documenten waar de modus aanging, GESPLITST naar wat er werkelijk gebeurde. Bewust aparte
+   *  parameters i.p.v. iets uit `results` zelf afgeleid: het aantal vastgelegde taken bestaat pas
    *  ná de solve op elk document (`applyLoadedProject` → `applyRecordedDatesOnLoad`), en
    *  `ImportResult` draagt zelf geen `shifted`-veld (dat is documentstate, geen import-resultaat).
    *
@@ -141,7 +143,7 @@ export function xerImportNotice(
    *  verse XER waarvan de modus niet aanging telt in `offerTotal` en krijgt een eigen, aanbiedende
    *  regel. (Een heropende IFC met XER-archief meldt hier niets.) Beide `0` ⇒
    *  geen detailregel. */
-  datesAsRecordedShiftedTotal = 0,
+  datesAsRecordedShownTotal = 0,
   /** Som van `recordedDates.shifted` over de documenten die de modus alléén AANBIEDEN. */
   datesAsRecordedOfferTotal = 0,
 ): NotifyInput | undefined {
@@ -202,11 +204,17 @@ export function xerImportNotice(
   addCount(calendarIssues, 'notifications.xerImportCalendarIssues');
   addCount(numberIssues, 'notifications.xerImportNumberIssues');
   addCount(enumFallbacks, 'notifications.xerImportEnumFallbacks');
+  // Activiteiten zonder `target_start_date` kregen het projectanker (review PR #109, N1) — dat is
+  // geen bestandsfeit maar een keuze van de lezer, dus de melding noemt het.
+  addCount(
+    results.reduce((total, result) => total + (result.xerMissingPlannedStarts ?? 0), 0),
+    'notifications.xerImportMissingPlannedStarts',
+  );
   addCount(unsupportedSemantics, 'notifications.xerImportUnsupportedSemantics');
   // "Datums zoals opgeslagen" staat standaard aan zodra
   // er restverschillen zijn. Eén regel voor het HELE bestand, ook bij twaalf documenten — de teller
   // is de som over alle zojuist geopende documenten (zie `applyOpenedImport`), niet per document.
-  addCount(datesAsRecordedShiftedTotal, 'notifications.xerImportDatesAsRecorded');
+  addCount(datesAsRecordedShownTotal, 'notifications.xerImportDatesAsRecorded');
   addCount(datesAsRecordedOfferTotal, 'notifications.xerImportDatesAsRecordedOffer');
 
   return {
@@ -779,10 +787,11 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
 
       const reusedActiveTab = isActivePristine(get());
       const openedDocumentIds: string[] = [];
-      // Som van `recordedDates.shifted` over alle zojuist geopende
-      // documenten — per document eigen vlag/eigen vastlegging (elk document leest zijn eigen
-      // `recordedTimes` uit zijn eigen `ImportResult`), maar de MELDING blijft er één per bestand.
-      let datesAsRecordedShiftedTotal = 0;
+      // Som over alle zojuist geopende documenten in de modus van `recordedDates.total` (het aantal
+      // taken dat de opgeslagen datums TOONT) — per document eigen vlag/eigen vastlegging (elk
+      // document leest zijn eigen `recordedTimes` uit zijn eigen `ImportResult`), maar de MELDING
+      // blijft er één per bestand.
+      let datesAsRecordedShownTotal = 0;
       // Apart tellen, want de twee uitkomsten zijn verschillende
       // beweringen. Alleen een document waar de modus ECHT aanging is "niet herberekend".
       let datesAsRecordedOfferTotal = 0;
@@ -792,7 +801,7 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
       // Een heropend eigen IFC ('ifc-own'/'xer-archive') krijgt de strook (die zegt het al), maar geen
       // openingsmelding — dat is het eigen projectbestand, geen import; ook niet als `importPristine`
       // de modus bij een ongewijzigd bestand automatisch weer aanzet.
-      let freshShiftedTotal = 0;
+      let freshShownTotal = 0;
       let freshOfferTotal = 0;
       for (const result of results) {
         // De eerste payload mag het lege starttabblad hergebruiken; elk volgend project krijgt
@@ -818,8 +827,13 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
         const shifted = get().recordedDates?.shifted ?? 0;
         const fresh = isFreshImportOrigin(get().recordedDates?.origin);
         if (get().datesAsRecorded) {
-          datesAsRecordedShiftedTotal += shifted;
-          if (fresh) freshShiftedTotal += shifted;
+          // In de modus tonen ALLE taken met een vastlegging de opgeslagen datums, niet alleen de
+          // afwijkende: de regel "N taken tonen de datums zoals opgeslagen" telt dus `total`, niet
+          // `shifted` (review #109: rehab-2 meldde 2882 waar alle 6976 de vastgelegde datums tonen).
+          // Het aantal dat bij herberekenen verschuift noemt de strook (`recordedDates.shifted`).
+          const shown = get().recordedDates?.total ?? 0;
+          datesAsRecordedShownTotal += shown;
+          if (fresh) freshShownTotal += shown;
         } else {
           datesAsRecordedOfferTotal += shifted;
           if (fresh) freshOfferTotal += shifted;
@@ -841,10 +855,10 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
         withRecordedDatesNotice(
           withSchedulingProfileNotice(
             results,
-            xerImportNotice(results, datesAsRecordedShiftedTotal, datesAsRecordedOfferTotal),
+            xerImportNotice(results, datesAsRecordedShownTotal, datesAsRecordedOfferTotal),
             openedDocumentIds[0] ?? '',
           ),
-          freshShiftedTotal,
+          freshShownTotal,
           freshOfferTotal,
         ),
         results.map(result => result.xerArchiveIssue),

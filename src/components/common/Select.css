@@ -39,14 +39,15 @@
   cursor: not-allowed;
 }
 
-/* Een taakeenheid is een kort suffix naast een waardeveld. Houd de trigger daarom compact zonder
-   de normale controlhoogte of leesbaarheid van het gekozen woord op te offeren. */
+/* Een taakeenheid is een kort suffix naast een waardeveld. Zelfde opvulling, tekstrol en hoogte als
+   de kleine panelvelden ernaast (`.input !px-2.5 !text-small` en het Type-keuzeveld), zodat woord
+   en pijltje niet tegen de rand zitten. De breedte volgt het langste label (`fitWidestOption`). */
 .ops-select__trigger.ops-select__trigger--duration {
-  gap: var(--sp-1);
   height: 2.25rem;
   padding-block: 0;
-  padding-inline: var(--sp-1);
+  padding-inline: calc(var(--spacing) * 2.5);
   font-size: var(--text-small);
+  line-height: 1rem;
 }
 
 /* Compacte trigger voor dichte rijen (relatietype in paneel, tabelcel en Gantt-popover): even
@@ -75,6 +76,29 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* `fitWidestOption`: gekozen label en onzichtbare maatvoerders liggen in één gridcel; de cel is zo
+   breed als het langste label. */
+.ops-select__value.ops-select__value--fit {
+  display: grid;
+}
+
+.ops-select__value--fit > .ops-select__value-text,
+.ops-select__value--fit > .ops-select__sizer {
+  grid-area: 1 / 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ops-select__sizer {
+  visibility: hidden;
+}
+
+.ops-select__sizer::before {
+  content: attr(data-label);
 }
 
 .ops-select__value.is-placeholder {

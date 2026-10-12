@@ -12,6 +12,7 @@ import { saveAllowMixedDayHour } from '@/utils/settingsStore';
 import {
   formatTaskDurationInput,
   parseTaskDurationInput,
+  convertTaskDurationUnit,
   proposeTaskDurationConversion,
 } from '@/utils/taskDurationInput';
 import { hasConcreteWorkBlocks } from '@/services/subdayIo';
@@ -217,6 +218,10 @@ deepEq('2d op H8 krijgt exact 16h als voorstel', proposeTaskDurationConversion(d
 deepEq('0h wordt exact 0d en niet stil een werkdag', proposeTaskDurationConversion(task('hours', 0), 'days', h8), { unit: 'days', scheduleDuration: 0, explicitUnit: true });
 eq('12h wordt niet stil naar 1,5d afgerond', proposeTaskDurationConversion(hour12, 'days', h8), null);
 deepEq('16h wordt exact naar 2d voorgesteld', proposeTaskDurationConversion(task('hours', 16), 'days', h8), { unit: 'days', scheduleDuration: 2, explicitUnit: true });
+// Gedeelde ingang voor paneel, dialoog en raster: exact ⇒ meteen de omgezette duur; niet exact ⇒ null (eenheid blijft).
+deepEq('eenheidswissel 16h → dagen geeft meteen 2d', convertTaskDurationUnit(task('hours', 16), 'days', h8), { unit: 'days', scheduleDuration: 2, explicitUnit: true });
+deepEq('eenheidswissel 2d → uren geeft meteen 16h', convertTaskDurationUnit(day2, 'hours', h8), { unit: 'hours', durationMinutes: 960, explicitUnit: true });
+eq('eenheidswissel 12h → dagen op H8 is niet exact en wijzigt niets', convertTaskDurationUnit(hour12, 'days', h8), null);
 
 // Storecontract: projectdefault, normale mutatie, undo/redo, clipboard en documentwissel.
 const context = createAppStoreContext();

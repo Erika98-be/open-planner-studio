@@ -20,7 +20,7 @@ Ce réglage change plus que la durée d'une tâche : sous *Affichage › Échell
 
 1. Sélectionnez la tâche et regardez dans le panneau *Propriétés*, sous *Temps*, le champ *Durée*.
 2. Saisissez la durée avec une unité, puis appuyez sur Entrée : `12h` (`12u`, l'abréviation néerlandaise, fonctionne aussi) pour douze heures, `1h 30m` pour une heure et demie. `1.5h` convient aussi. Un nombre sans unité est pris dans l'unité déjà utilisée par la tâche.
-3. Si vous voulez convertir une tâche existante, choisissez l'unité *Heures* sous *Unité de durée*. L'application détermine la durée pour vous et la propose, par exemple *Proposition de conversion exacte : 16h. Appliquez-la ou conservez l'unité actuelle.* Choisissez *Appliquer la proposition* ou *Conserver*.
+3. Si vous voulez convertir une tâche existante, choisissez l'unité *Heures* sous *Unité de durée*. L'application convertit la durée immédiatement, par exemple de `2` jours en `16` heures. Pour revenir en arrière, utilisez *Annuler*.
 4. Revenir aux jours est possible avec `2d` ou avec l'unité *Jours*.
 5. Appuyez sur **Calculer** (F5), par exemple via *Accueil › Planification › Calculer*. La tâche a maintenant un début et une fin avec une heure précise.
 6. Si vous voulez voir les heures dans le Gantt, choisissez l'échelle *Heure* dans la liste sous *Affichage › Échelle de temps*.

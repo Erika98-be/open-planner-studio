@@ -36,7 +36,7 @@ Een dag is de netto-uren per dag van de kalender van de taak. De app gebruikt da
 
 - Bij *Duurweergave*. Onder *Instellingen › Project › Instellingen*, tabblad *Weergave*, kies je *Automatisch (eigen eenheid per taak)*, *Altijd dagen* of *Altijd uren*. Een taak van 18 uur toont bij *Altijd dagen* als `2,25d(18h)`: de eigen eenheid blijft tussen haakjes staan.
 - Bij een lag in uren na een dagtaak (zie *Afronden*).
-- Als je de eenheid van een taak wisselt. De app telt dan de dagen vanaf de start van de taak, elke dag met zijn eigen uren, en doet alleen een voorstel als de uitkomst exact klopt. Twee dagen worden `16h`. Op een kalender waar de vrijdag 5 uur heeft, worden 5 dagen vanaf maandag `37h`. Twaalf uur kan op een kalender met dagen van 8 uur niet in hele dagen: de app houdt de eenheid dan zoals hij is.
+- Als je de eenheid van een taak wisselt. De app telt dan de dagen vanaf de start van de taak, elke dag met zijn eigen uren, en zet de duur meteen om als de uitkomst exact klopt. Twee dagen worden `16h`. Op een kalender waar de vrijdag 5 uur heeft, worden 5 dagen vanaf maandag `37h`. Twaalf uur kan op een kalender met dagen van 8 uur niet in hele dagen: de app houdt de eenheid dan zoals hij is.
 
 ### Dagtaken en urentaken door elkaar
 

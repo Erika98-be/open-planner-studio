@@ -49,11 +49,25 @@ g.localStorage = {
   getItem: () => null, setItem: () => undefined, removeItem: () => undefined,
 };
 
-/** Kleine IndexedDB-dubbel: per database een eigen Map, één object-store met keyPath `id`. */
-const databases = new Map<string, Map<string, unknown>>();
+/**
+ * Kleine IndexedDB-dubbel: per database en per object-store een eigen Map, keyPath `id`. Crashherstel
+ * gebruikt twee stores in één transactie (`records` en `xer-archives`, PR #295) en leest per ronde
+ * alleen sleutels (`getAllKeys`) en de manifesten (`get`).
+ */
+const databases = new Map<string, Map<string, Map<string, unknown>>>();
+function storeRecords(dbName: string, storeName: string): Map<string, unknown> {
+  let stores = databases.get(dbName);
+  if (!stores) { stores = new Map(); databases.set(dbName, stores); }
+  let records = stores.get(storeName);
+  if (!records) { records = new Map(); stores.set(storeName, records); }
+  return records;
+}
+function fakeRequest(compute: () => unknown) {
+  const request = { result: undefined as unknown, error: null, onsuccess: null as (() => void) | null, onerror: null as (() => void) | null };
+  queueMicrotask(() => { request.result = compute(); request.onsuccess?.(); });
+  return request;
+}
 function fakeDb(name: string) {
-  if (!databases.has(name)) databases.set(name, new Map());
-  const records = databases.get(name)!;
   return {
     objectStoreNames: { contains: () => true },
     createObjectStore: () => undefined,
@@ -65,15 +79,16 @@ function fakeDb(name: string) {
         onerror: null as (() => void) | null,
         onabort: null as (() => void) | null,
         error: null,
-        objectStore: () => ({
-          getAll: () => {
-            const request = { result: [] as unknown[], error: null, onsuccess: null as (() => void) | null, onerror: null as (() => void) | null };
-            queueMicrotask(() => { request.result = [...records.values()].map((r) => structuredClone(r)); request.onsuccess?.(); });
-            return request;
-          },
-          put: (value: { id: string }) => { records.set(value.id, structuredClone(value)); queueMicrotask(() => tx.oncomplete?.()); },
-          delete: (id: string) => { records.delete(id); queueMicrotask(() => tx.oncomplete?.()); },
-        }),
+        objectStore: (storeName: string) => {
+          const records = storeRecords(name, storeName);
+          return {
+            getAll: () => fakeRequest(() => [...records.values()].map((r) => structuredClone(r))),
+            getAllKeys: () => fakeRequest(() => [...records.keys()]),
+            get: (key: string) => fakeRequest(() => structuredClone(records.get(key))),
+            put: (value: { id: string }) => { records.set(value.id, structuredClone(value)); queueMicrotask(() => tx.oncomplete?.()); },
+            delete: (id: string) => { records.delete(id); queueMicrotask(() => tx.oncomplete?.()); },
+          };
+        },
       };
       return tx;
     },
@@ -406,10 +421,11 @@ const sameOriginParent = (extra: AnyRecord = {}): AnyRecord => ({ addEventListen
   eq('F1 web: siteFileId komt terug', byId.get('A')?.siteFileId, 'site-a');
   eq('F1 web: siteFileVersion komt terug', byId.get('A')?.siteFileVersion, 'v7');
   eq('F1 web: zonder site geen veld', 'siteFileId' in (byId.get('B') ?? {}), false);
-  // Het manifestrecord zelf: zonder site is de regel gelijk aan vóór #309, en de versie blijft 4.
-  const manifestRecord = [...databases.get('ops-recovery')?.values() ?? databases.values().next().value!.values()]
+  // Het manifestrecord zelf: zonder site is de regel gelijk aan vóór #309. De site-velden zijn
+  // optioneel en kregen geen eigen versienummer; 5 komt van de XER-archiefverwijzing (PR #295).
+  const manifestRecord = [...databases.get('ops-recovery')?.get('records')?.values() ?? []]
     .find((r) => (r as AnyRecord).kind === 'manifest') as { version: number; documents: AnyRecord[] } | undefined;
-  eq('F2 manifestversie blijft 4 (de site-velden zijn optioneel)', manifestRecord?.version, 4);
+  eq('F2 manifestversie is 5 (XER-archiefverwijzing; de site-velden zijn optioneel)', manifestRecord?.version, 5);
   eq('F2 manifestregel zonder site heeft geen site-velden',
     Object.keys(manifestRecord?.documents.find((d) => d.id === 'B') ?? {}).sort(),
     ['datesAsRecorded', 'filePath', 'id', 'ifc', 'isDirty']);

@@ -48,6 +48,8 @@ Zobrazení opustíte dvěma způsoby:
 - Klikněte na tlačítko *Přepočítat* v liště, nebo zvolte *Přepočítat* (F5). Aplikace vypočítává podle vlastních pravidel.
 - Změňte něco, co může změnit data, například dobu trvání úkolu nebo nový úkol. Aplikace zobrazení opustí a přepočítá hned, i když je vypnuto *Automaticky přepočítat*. Změna názvu to nedělá: zobrazení zůstane zapnuté.
 
+Změna kalendáře z knihovny zdrojů nechá zobrazení zapnuté a data ze souboru beze změny, ale aktualizuje číslo v liště.
+
 Po opuštění není žádné tlačítko, kterým se zobrazení znovu zapne. Ctrl+Z zobrazení obnoví, hned po přepočítání nebo hned po takové úpravě. Jinak můžete zdrojový soubor znovu otevřít. U `.xer` znovu zapne zobrazení také otevření IFC souboru, který jste uložili po přepočítání, ale neupravili.
 
 ### Zotavení systému po chybě

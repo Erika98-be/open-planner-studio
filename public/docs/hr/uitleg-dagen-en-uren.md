@@ -36,7 +36,7 @@ Dan je neto sati po danu kalendara zadatka. Aplikacija to koristi na tri mjesta:
 
 - Za *Prikaz trajanja*. Pod *Postavke › Projekt › Postavke*, na kartici *Prikaz*, odaberete *Automatski (vlastita jedinica po zadatku)*, *Uvijek dani* ili *Uvijek sati*. Zadatak od 18 sati pod *Uvijek dani* prikazuje se kao `2.25d(18h)`: vlastita jedinica ostaje u zagradama.
 - Za vrijeme odgode u satima nakon zadatka u danima (vidi *Zaokruživanje*).
-- Kada promijenite jedinicu zadatka. Aplikacija tada broji dane od početka zadatka, pri čemu svaki dan ima svoje sate, i predlaže promjenu samo ako je rezultat točan. Dva dana postaju `16h`. Na kalendaru u kojem petak ima 5 sati postaju 5 dana od ponedjeljka `37h`. Dvanaest sati ne može se pretvoriti u cijele dane na kalendaru s danima od 8 sati: aplikacija tada ostavlja jedinicu kakva jest.
+- Kada promijenite jedinicu zadatka. Aplikacija tada broji dane od početka zadatka, pri čemu svaki dan ima svoje sate, i odmah pretvori trajanje ako je rezultat točan. Dva dana postaju `16h`. Na kalendaru u kojem petak ima 5 sati postaju 5 dana od ponedjeljka `37h`. Dvanaest sati ne može se pretvoriti u cijele dane na kalendaru s danima od 8 sati: aplikacija tada ostavlja jedinicu kakva jest.
 
 ### Zadaci u danima i zadaci u satima zajedno
 

@@ -48,6 +48,8 @@ Sie verlassen die Ansicht auf zwei Arten:
 - Klicken Sie in der Leiste auf *Neu berechnen* oder wählen Sie *Berechnen* (F5). Die App berechnet nach ihren eigenen Regeln.
 - Ändern Sie etwas, das die Termine ändern kann, zum Beispiel die Dauer eines Vorgangs oder einen neuen Vorgang. Die App verlässt die Ansicht und berechnet sofort neu, auch wenn *Automatisch berechnen* ausgeschaltet ist. Das Ändern eines Namens bewirkt das nicht: Die Ansicht bleibt eingeschaltet.
 
+Eine Kalenderänderung aus der Ressourcenbibliothek lässt die Ansicht eingeschaltet und die Termine aus der Datei stehen, aktualisiert aber die Zahl in der Leiste.
+
 Nach dem Verlassen gibt es keine Schaltfläche, um zur Ansicht zurückzukehren. *Strg+Z* bringt sie aber zurück, direkt nach dem Neuberechnen oder direkt nach einer solchen Änderung. Sonst können Sie die Quelldatei erneut öffnen. Bei einer `.xer`-Datei schaltet auch das erneute Öffnen einer IFC-Datei die Ansicht wieder ein, die Sie nach dem Neuberechnen gespeichert, aber nicht geändert haben.
 
 ### Wiederherstellung nach einem Absturz

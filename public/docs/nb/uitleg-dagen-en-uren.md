@@ -36,7 +36,7 @@ En dag er netto timer per dag i aktivitetens kalender. Appen bruker det på tre 
 
 - For *Varighetsvisning*. Under *Innstillinger › Prosjekt › Innstillinger*, fanen *Utseende*, velger du *Automatisk (egen enhet per aktivitet)*, *Alltid dager* eller *Alltid timer*. En aktivitet på 18 timer vises under *Alltid dager* som `2.25d(18h)`: den opprinnelige enheten blir stående i parentes.
 - For forsinkelser i timer etter en dagbasert aktivitet (se *Avrunding*).
-- Når du bytter enhet for en aktivitet. Appen teller da dagene fra starten av aktiviteten, hver dag med sine egne timer, og foreslår bare noe hvis resultatet blir eksakt. To dager blir `16h`. På en kalender der fredag har 5 timer, blir 5 dager fra mandag `37h`. Tolv timer kan ikke gjøres om til hele dager på en kalender med dager på 8 timer: da lar appen enheten stå som den er.
+- Når du bytter enhet for en aktivitet. Appen teller da dagene fra starten av aktiviteten, hver dag med sine egne timer, og konverterer varigheten med en gang hvis resultatet blir eksakt. To dager blir `16h`. På en kalender der fredag har 5 timer, blir 5 dager fra mandag `37h`. Tolv timer kan ikke gjøres om til hele dager på en kalender med dager på 8 timer: da lar appen enheten stå som den er.
 
 ### Dagbaserte og timebaserte aktiviteter sammen
 

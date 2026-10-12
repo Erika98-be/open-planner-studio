@@ -48,6 +48,8 @@ Du lämnar vyn på två sätt:
 - Klicka på *Beräkna om* i fältet, eller välj *Beräkna* (F5). Appen beräknar med sina egna regler.
 - Ändra något som kan ändra datumen, till exempel varaktigheten för en uppgift eller en ny uppgift. Appen lämnar vyn och beräknar om direkt, även om *Beräkna automatiskt* är avstängt. Att ändra ett namn gör inte det: vyn står kvar.
 
+En kalenderändring från resursbiblioteket låter vyn och datumen från filen stå kvar, men uppdaterar talet i fältet.
+
 Efter att du har lämnat vyn finns ingen knapp för att gå tillbaka till den. Ctrl+Z tar tillbaka den, direkt efter en omberäkning eller direkt efter en sådan ändring. Annars kan du öppna källfilen igen. Med en `.xer` slår också en IFC-fil som du sparade efter omberäkningen, men inte redigerade, på vyn igen.
 
 ### Kraschskydd

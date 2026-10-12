@@ -36,7 +36,7 @@ Päivä on tehtävän kalenterin nettotunnit päivässä. Sovellus käyttää t�
 
 - Kohtaan *Keston näyttö*. Valikossa *Asetukset › Projekti › Asetukset* valitaan välilehdellä *Ulkonäkö* vaihtoehto *Automaattinen (oma mitta kullekin tehtävälle)*, *Aina päivinä* tai *Aina tunteina*. Tehtävä, jonka kesto on 18 tuntia, näkyy vaihtoehdolla *Aina päivinä* muodossa `2.25d(18h)`: alkuperäinen mitta jää sulkuihin.
 - Viive tunteina päivätehtävän jälkeen (katso *Pyöristys*).
-- Kun tehtävän mitta vaihdetaan. Sovellus laskee silloin päivät tehtävän alusta, kukin päivä omilla tunneillaan. Se ehdottaa muutosta vain, jos tulos on tarkka. Kaksi päivää muuttuu muotoon `16h`. Kalenterissa, jossa perjantaissa on 5 tuntia, 5 päivää maanantaista muuttuu muotoon `37h`. Kaksitoista tuntia ei muutu kokonaisiksi päiviksi kalenterissa, jossa päivä on 8 tuntia: sovellus jättää silloin mitan ennalleen.
+- Kun tehtävän mitta vaihdetaan. Sovellus laskee silloin päivät tehtävän alusta, kukin päivä omilla tunneillaan. Se muuntaa keston heti, jos tulos on tarkka. Kaksi päivää muuttuu muotoon `16h`. Kalenterissa, jossa perjantaissa on 5 tuntia, 5 päivää maanantaista muuttuu muotoon `37h`. Kaksitoista tuntia ei muutu kokonaisiksi päiviksi kalenterissa, jossa päivä on 8 tuntia: sovellus jättää silloin mitan ennalleen.
 
 ### Päivätehtävät ja tuntitehtävät yhdessä
 

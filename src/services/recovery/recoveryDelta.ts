@@ -1,5 +1,9 @@
 import { sameIFCSource, type IFCSaveSource } from '@/state/ifcSaveInput';
-import { sameRecoverySiteMeta, siteMetaFields, type RecoveryDocContent, type RecoveryDocMetadata, type RecoverySaveInput } from './recoveryStore';
+import {
+  sameRecoverySiteMeta, siteMetaFields,
+  type RecoveryArchiveSupplier, type RecoveryDocContent, type RecoveryDocMetadata, type RecoverySaveInput,
+} from './recoveryStore';
+import { decodeXerSourceArchive } from '@/services/xerSourceArchive';
 
 /** Eén open document, precies zoals de auto-save het aan de recoverylaag aanbiedt. */
 export interface RecoverySourceDocument extends RecoveryDocMetadata {
@@ -22,6 +26,35 @@ export interface RecoveryDelta {
   needsPersist: boolean;
 }
 
+/**
+ * De manifestmetadata van één document. `xerArchive` volgt uit de bron zelf (de sha256 van het
+ * bronarchief), zodat manifest en referentiesnapshot per constructie naar dezelfde blob wijzen.
+ * Het site-doel staat er alleen in als er een is: zonder site heeft de metadata exact dezelfde
+ * velden als vóór issue #309.
+ */
+function metadataOf(document: RecoverySourceDocument): RecoveryDocMetadata {
+  const { id, filePath, isDirty, datesAsRecorded } = document;
+  const sha = document.source.xerSourceArchive?.sha256;
+  return {
+    id, filePath, isDirty, datesAsRecorded,
+    ...(sha ? { xerArchive: sha } : {}),
+    ...siteMetaFields(document),
+  };
+}
+
+/**
+ * Per verwezen archief een LAZY leverancier van de bronbytes. Een closure kost niets; de opslaglaag
+ * roept hem alleen aan als de blob nog ontbreekt.
+ */
+function archiveSuppliers(documents: readonly RecoverySourceDocument[]): Map<string, RecoveryArchiveSupplier> {
+  const out = new Map<string, RecoveryArchiveSupplier>();
+  for (const document of documents) {
+    const archive = document.source.xerSourceArchive;
+    if (archive?.sha256 && !out.has(archive.sha256)) out.set(archive.sha256, () => decodeXerSourceArchive(archive));
+  }
+  return out;
+}
+
 function sameMetadata(a: readonly RecoveryDocMetadata[], b: readonly RecoveryDocMetadata[]): boolean {
   return a.length === b.length && a.every((value, index) => {
     const other = b[index];
@@ -32,17 +65,11 @@ function sameMetadata(a: readonly RecoveryDocMetadata[], b: readonly RecoveryDoc
       // De modusvlag hoort bij de manifestmetadata: een documentwissel in of
       // uit "datums zoals opgeslagen" moet ook zónder inhoudswijziging een manifestschrijf geven.
       && value.datesAsRecorded === other.datesAsRecorded
+      && (value.xerArchive ?? null) === (other.xerArchive ?? null)
       // Het site-doel en zijn basisversie zijn ook manifestmetadata: een opslag op de site (nieuwe
       // versie) of een nieuw doel geeft zonder inhoudswijziging een manifest-only schrijfactie.
       && sameRecoverySiteMeta(value, other);
   });
-}
-
-/** De manifestmetadata van één document. Het site-doel staat er alleen in als er een is: zonder
- *  site is de metadata exact dezelfde als vóór issue #309. */
-function metadataOf(document: RecoveryDocMetadata): RecoveryDocMetadata {
-  const { id, filePath, isDirty, datesAsRecorded } = document;
-  return { id, filePath, isDirty, datesAsRecorded, ...siteMetaFields(document) };
 }
 
 /**
@@ -111,10 +138,12 @@ export class RecoveryDeltaTracker {
       this.serialized.set(document.id, { source: document.source, ifc });
       return { ...metadataOf(document), ifc };
     });
+    const archives = archiveSuppliers(documents);
     return {
       activeDocumentId,
       documents: documents.map(metadataOf),
       upserts,
+      ...(archives.size > 0 ? { archives } : {}),
     };
   }
 

@@ -20,7 +20,7 @@ Tämä muuttaa enemmän kuin tehtävän keston: kohdassa *Näkymä › Aikaskaal
 
 1. Valitse tehtävä ja katso paneelista *Ominaisuudet*, kohdasta *Aika*, kenttää *Kesto*.
 2. Kirjoita kesto mitan kanssa ja paina Enter: `12h` (`12u`, hollanninkielinen lyhenne, toimii myös) tarkoittaa kaksitoista tuntia ja `1h 30m` tuntia ja puolta. `1.5h` käy myös. Luku ilman mittaa lasketaan tehtävän nykyisessä mitassa.
-3. Jos olemassa oleva tehtävä halutaan muuntaa, valitse kohdasta *Kestomitta* mitta *Tunnit*. Sovellus laskee keston itse ja ehdottaa sitä, esimerkiksi *Tarkka muunnosehdotus: 16h. Käytä ehdotusta tai säilytä nykyinen mitta.* Valitse *Käytä ehdotusta* tai *Säilytä*.
+3. Jos olemassa oleva tehtävä halutaan muuntaa, valitse kohdasta *Kestomitta* mitta *Tunnit*. Sovellus muuntaa keston heti, esimerkiksi `2` päivästä `16` tuntiin. Jos haluat palata, käytä toimintoa *Kumoa*.
 4. Paluu päiviin onnistuu merkinnällä `2d` tai mitalla *Päivät*.
 5. Paina **Laske** (F5), esimerkiksi kohdasta *Aloitus › Aikataulu › Laske*. Tehtävällä on nyt alku- ja loppuaika kellonajoin.
 6. Jos tunnit halutaan nähdä Gantt-kaaviossa, valitse asteikko *Tunti* luettelosta kohdassa *Näkymä › Aikaskaala*.

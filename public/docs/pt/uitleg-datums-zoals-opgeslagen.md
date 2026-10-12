@@ -48,6 +48,8 @@ Sai desta vista de duas formas:
 - Clique em *Recalcular* na barra, ou escolha *Calcular* (F5). A aplicação calcula com as suas próprias regras.
 - Altere algo que possa alterar as datas, como a duração de uma tarefa ou uma tarefa nova. A aplicação sai da vista e recalcula de imediato, mesmo que *Calcular automaticamente* esteja desligado. Alterar um nome não faz isso: a vista continua ativa.
 
+Uma alteração de calendário a partir da biblioteca de recursos mantém a vista ativa e as datas do ficheiro, mas atualiza o número na barra.
+
 Depois de sair, não há botão para voltar à vista. Ctrl+Z traz a vista de volta, logo após o recálculo ou logo após essa edição. Caso contrário, pode abrir de novo o ficheiro de origem. Com um `.xer`, abrir um ficheiro IFC que guardou depois de recalcular, mas sem o editar, também volta a ativar a vista.
 
 ### Recuperação após uma falha
