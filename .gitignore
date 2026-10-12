@@ -12,6 +12,7 @@ dist/
 !.claude/skills/release/
 !.claude/skills/wiki/
 !.claude/skills/docs-update/
+!.claude/skills/docs-audit/
 !.claude/skills/goed-plannen/
 !.claude/skills/progress-update/
 temp/
