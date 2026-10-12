@@ -16,6 +16,8 @@ import {
 } from '@/engine/reports';
 import { solveOptionsFor } from '@/engine/scheduler/solveInput';
 import type { Task } from '@/types/task';
+import { readXER } from '@/services/xer/xerReader';
+import type { ImportResult } from '@/services/importTypes';
 
 const S = () => useAppStore.getState();
 const diffs: string[] = [];
@@ -41,7 +43,7 @@ const ctxFromStore = (): ReportContext => {
     tasks: s.tasks, sequences: s.sequences, resources: s.resources, assignments: s.assignments,
     calendar: s.calendar, calendars: s.calendars, cpmResult: s.cpmResult,
     baseline: s.baselines.find(b => b.id === s.activeBaselineId) ?? null,
-    statusDate: s.project.statusDate, today: '2026-09-07',
+    statusDate: s.project.statusDate, today: '2026-09-07', datesAsRecorded: s.datesAsRecorded,
     solveOptions: solveOptionsFor(s.project),
   };
 };
@@ -233,6 +235,39 @@ const summary = (m: DcmaMetric) => (m.result === 'na' ? [m.result, m.naReason] :
   const nb = dcmaOf({ ...ctx, baseline: null });
   eq('s4: zonder baseline — 11, 13, 14', [summary(metric(nb, 'missedTasks')), metric(nb, 'cpli').value, metric(nb, 'cpli').cpli?.floatBasis, summary(metric(nb, 'bei'))],
     [['na', 'noBaseline'], 1, 'schedule', ['na', 'noBaseline']]);
+}
+
+// ── Scenario 5: "datums zoals opgeslagen" — punt 12 rekent niet ──────────────────────────────────
+// Een XER waarin P6 andere datums vastlegde dan OPS berekent: R1 Fundering (5) →FS→ R2 Ruwbouw (5),
+// los R3 Vergunning (5) die P6 later legde (2/2–2/6) en dus als eindtaak toont. Het laden opent de
+// modus: het scherm toont P6's datums (Fundering TF 15 wd, niet kritiek). De kritiek-padtest zou op
+// kopieën met de OPS-regels doorrekenen en "Fundering +100 wd: Ruwbouw schuift op" melden — dat
+// spreekt de rapportmelding ("datums uit het bronbestand, niet een berekening") tegen. In de modus
+// is punt 12 daarom n.v.t. (niet berekend). Na Herberekenen (modus uit) draait de test weer.
+{
+  const TF = ['task_id', 'proj_id', 'clndr_id', 'task_code', 'task_name', 'task_type', 'duration_type', 'status_code',
+    'target_drtn_hr_cnt', 'remain_drtn_hr_cnt', 'target_start_date', 'target_end_date',
+    'early_start_date', 'early_end_date', 'late_start_date', 'late_end_date', 'total_float_hr_cnt', 'free_float_hr_cnt'].join('\t');
+  const bytes = new TextEncoder().encode([
+    'ERMHDR\t23.12\t2026-01-01\t\t\t\t\t\tEUR',
+    '%T\tCALENDAR', '%F\tclndr_id\tclndr_name\tclndr_type\tday_hr_cnt\tweek_hr_cnt\tclndr_data', '%R\tC1\tS\tCA_Base\t8\t40\t',
+    '%T\tPROJECT', '%F\tproj_id\tproj_short_name\tclndr_id\tlast_recalc_date\tplan_start_date', '%R\tP1\tDCMA5\tC1\t2026-01-01\t2026-01-05',
+    '%T\tTASK', `%F\t${TF}`,
+    '%R\tR1\tP1\tC1\tA1\tFundering\tTT_Task\tDT_FixedDUR\tTK_NotStart\t40\t40\t2026-01-05\t2026-01-09\t2026-01-05\t2026-01-09\t2026-01-26\t2026-01-30\t120\t0',
+    '%R\tR2\tP1\tC1\tA2\tRuwbouw\tTT_Task\tDT_FixedDUR\tTK_NotStart\t40\t40\t2026-01-12\t2026-01-16\t2026-01-12\t2026-01-16\t2026-02-02\t2026-02-06\t120\t120',
+    '%R\tR3\tP1\tC1\tA3\tVergunning\tTT_Task\tDT_FixedDUR\tTK_NotStart\t40\t40\t2026-01-05\t2026-01-09\t2026-02-02\t2026-02-06\t2026-02-02\t2026-02-06\t0\t0',
+    '%T\tTASKPRED', '%F\ttask_pred_id\ttask_id\tpred_task_id\tproj_id\tpred_proj_id\tpred_type\tlag_hr_cnt',
+    '%R\tL1\tR2\tR1\tP1\tP1\tPR_FS\t0',
+    '%E',
+  ].join('\r\n'));
+  S().newProject();
+  S().applyOpenedImport(readXER(bytes) as ImportResult, { filePath: null, recompute: true, fit: false, hourDataNotice: false, linkedOpen: true });
+  const fund = () => S().tasks.find(t => t.name === 'Fundering')!;
+  eq('s5: laden opent de modus; Fundering toont P6-speling, niet kritiek', [S().datesAsRecorded, fund().time.totalFloat, fund().time.isCritical], [true, 15, false]);
+  eq('s5: in de modus is punt 12 n.v.t. (niet berekend)', summary(metric(dcmaOf(ctxFromStore()), 'criticalPathTest')), ['na', 'notCalculated']);
+  S().runCPM();
+  const cp = metric(dcmaOf(ctxFromStore()), 'criticalPathTest');
+  eq('s5: na Herberekenen draait punt 12 weer', [S().datesAsRecorded, cp.result, cp.test?.name], [false, 'pass', 'Fundering']);
 }
 
 // ── Uitslag ──────────────────────────────────────────────────────────────────────────────────────
