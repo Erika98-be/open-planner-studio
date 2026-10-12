@@ -181,6 +181,16 @@ function standardWorkWeekNode(cal: WorkCalendar, includeEffectiveScalarBands: bo
   return node('StandardWorkWeek', days);
 }
 
+/** Eén blok van 00:00 tot 24:00 schrijft P6 als `00:00`–`23:59`, en dat betekent in P6 (en in onze
+ *  lezer) een VRIJE dag. Een werkende uitzondering van 24 uur gaat daarom als twee blokken
+ *  (00:00–11:59 en 12:00–23:59); de lezer voegt aansluitende blokken weer samen. */
+function splitWholeDay(bands: readonly { start: number; end: number }[]): { start: number; end: number }[] {
+  if (bands.length === 1 && bands[0].start === 0 && bands[0].end >= 1440) {
+    return [{ start: 0, end: 720 }, { start: 720, end: bands[0].end }];
+  }
+  return [...bands];
+}
+
 /** Alle ISO-datums van `start` t/m `end` (UTC-rekenen, tijdzone-onafhankelijk; begrensd). */
 function isoDaysInclusive(start: string, end: string): string[] {
   const out: string[] = [];
@@ -214,7 +224,7 @@ function holidayOrExceptionsNode(cal: WorkCalendar, includeEffectiveScalarBands:
       let bands = w.bands && w.bands.length > 0 ? w.bands : weekdayBands(cal, workTime, isoWeekdayOf(date));
       if (bands.length === 0) bands = weekdayBands(cal, workTime, firstWorkday);
       if (bands.length === 0) bands = [{ start: cal.workStartHour * 60, end: cal.workEndHour * 60 }];
-      byDate.set(date, node('HolidayOrException', [...leaf('Date', toXmlDateTime(date)), ...workTimeNodes(bands)]));
+      byDate.set(date, node('HolidayOrException', [...leaf('Date', toXmlDateTime(date)), ...workTimeNodes(splitWholeDay(bands))]));
     }
   }
   if (byDate.size === 0) return [];

@@ -287,6 +287,14 @@ function parseP6HolidayOrExceptions(calEl: Element, alwaysLastMinute = false): {
       holidays.push({ name: getElementText(hEl, 'Name') || 'Feestdag', startDate, endDate });
     } else {
       bands.sort((a, b) => a.start - b.start);
+      // Aansluitende blokken samenvoegen: de writer splitst een werkdag van 24 uur in twee blokken,
+      // omdat één blok 00:00–23:59 in P6 een vrije dag is.
+      for (let k = bands.length - 1; k > 0; k--) {
+        if (bands[k].start <= bands[k - 1].end) {
+          bands[k - 1] = { start: bands[k - 1].start, end: Math.max(bands[k - 1].end, bands[k].end) };
+          bands.splice(k, 1);
+        }
+      }
       workingExceptions.push({ name: getElementText(hEl, 'Name') || 'Werkende uitzondering', startDate, endDate, bands });
     }
   }

@@ -3,7 +3,11 @@
 // (1) Eindtijdregel per bestand: P6 schrijft de LAATSTE minuut (`16:29` = tot 16:30); MPXJ telt bij
 //     elke eindtijd één minuut op. Een bestand met exacte tijden (Aspose: `16:00`) blijft exact.
 //     Bewijs met de einddatum ná herberekenen: een halve-uurkalender mag geen minuut per dag kosten.
+// (3) Een werkende uitzondering van 24 uur blijft na export en heropenen een werkdag (P6 leest één
+//     blok 00:00–23:59 als vrije dag; de writer splitst, de lezer voegt samen).
 import { readP6XML } from '@/services/p6/p6xmlReader';
+import { writeP6XML } from '@/services/p6/p6xmlWriter';
+import type { ImportResult } from '@/services/importTypes';
 import { solveProject } from '@/engine/scheduler/solveProject';
 import { opsSolveInput } from './legacySolveOptions';
 import { installDOMParser } from './xmldom-shim';
@@ -71,6 +75,29 @@ function solvedFinish(xml: string): { band: unknown; finish: string | undefined;
 {
   const r = readP6XML(p6File({ start: '07:30:00', finish: '16:30:00', hpd: 9, hours: 9, plannedFinish: '2026-03-02T16:30:00' }));
   eq('1e exact 16:30 blijft 16:30', r.calendar.workTime?.byWeekday[1], [{ start: 450, end: 990 }]);
+}
+
+function roundTrip(r: ImportResult): { xml: string; back: ImportResult } {
+  const warn = console.warn;
+  console.warn = () => {};
+  try {
+    const xml = writeP6XML(r.project, r.calendar, r.tasks, r.sequences, r.resources, r.assignments, r.resourceCalendars ?? []);
+    return { xml, back: readP6XML(xml) };
+  } finally { console.warn = warn; }
+}
+
+// (3) Werkende uitzondering van 24 uur (bijv. een doorwerkdag bij een betonstort).
+{
+  const src = readP6XML(p6File({ start: '08:00:00', finish: '15:59:00', hpd: 8, hours: 8, plannedFinish: '2026-03-02T16:00:00' }));
+  src.calendar.workingExceptions = [
+    { name: 'Doorwerken', startDate: '2026-03-07', endDate: '2026-03-07', bands: [{ start: 0, end: 1440 }] },
+    { name: 'Lange dag', startDate: '2026-03-08', endDate: '2026-03-08', bands: [{ start: 360, end: 720 }, { start: 720, end: 1320 }] },
+  ];
+  const { xml, back } = roundTrip(src);
+  eq('3a geen blok 00:00–23:59 in de export', /<Start>00:00:00<\/Start>\s*<Finish>23:59:00<\/Finish>/.test(xml), false);
+  eq('3b 24 uur blijft een werkende uitzondering', (back.calendar.workingExceptions ?? []).map(w => [w.startDate, w.bands]),
+    [['2026-03-07', [{ start: 0, end: 1440 }]], ['2026-03-08', [{ start: 360, end: 1320 }]]]);
+  eq('3c en wordt geen feestdag', back.calendar.holidays.map(h => h.startDate), []);
 }
 
 if (fails.length > 0) {
