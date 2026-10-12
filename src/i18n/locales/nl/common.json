@@ -1525,8 +1525,8 @@
       },
       "p6xml": {
         "name": "Primavera P6 XML",
-        "kept": "De app nam de WBS en de taken over, met relaties, constraints, kalenders, resources, toewijzingen, voortgang en de statusdatum.",
-        "limited": "Baselines, deadlines, activiteitcodes, eigen velden en aantekeningen komen niet mee. Het project rekent met het profiel Open Planner Studio, niet als Primavera P6.",
+        "kept": "De app nam de WBS en de taken over, met relaties, constraints, kalenders, resources, toewijzingen, voortgang en de statusdatum. Een baselineproject wordt een baseline van het project waar het bij hoort.",
+        "limited": "Deadlines, activiteitcodes, eigen velden en aantekeningen komen niet mee. Het project rekent met het profiel Open Planner Studio, niet als Primavera P6.",
         "save": "Opslaan schrijft een nieuw IFC-bestand: je XML-bestand verandert niet. Terugschrijven kan met Exporteren › Primavera P6 XML."
       },
       "csv": {
