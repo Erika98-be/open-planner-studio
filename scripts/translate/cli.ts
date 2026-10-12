@@ -93,6 +93,7 @@ function readSeals(lang: string): Record<string, string> {
   try {
     return readJsonOr<Record<string, string>>(sealPath(lang), {});
   } catch {
+    console.log(`!!  ${sealPath(lang).slice(ROOT.length + 1)} is niet te lezen; alle pakketten van ${lang} gelden als "geen zegel"`);
     return {};
   }
 }
