@@ -438,6 +438,121 @@ test('rekenprofiel: na Ctrl+Z en Ctrl+Y volgt het profielblok de store, ook in d
   await expect(dialog.locator('[data-ops-scheduling-store-changed]')).toHaveCount(0);
 });
 
+// Review #331 punt 5: Ctrl+Z van één Projectinfo-stap (naam plus profiel) zet ook de naam in de
+// draft terug, niet alleen het profiel. Een veld dat nog gelijk is aan de vorige store-waarde volgt de
+// store; een veld dat de gebruiker wijzigde, blijft staan.
+test('rekenprofiel: Ctrl+Z van naam plus profiel zet beide velden terug (N1, metadata)', async ({ page, ops: _ops }) => {
+  await openXer(page);
+  await expect.poll(() => profileOf(page)).toEqual({ id: 'p6', baseId: 'p6', name: '' });
+  const storeName = () => page.evaluate(() => window.__OPS__!.store.getState().project.name);
+  const originalName = await storeName();
+  const select = page.locator('[data-ops-scheduling-profile-select]');
+  const nameInput = page.locator('[data-ops-project-name]');
+  const toBackstageInfo = async () => {
+    await page.getByRole('button', { name: /^(File|Bestand)$/ }).first().click();
+    await page.getByRole('button', { name: /^(Project info|Projectinfo)$/ }).first().click();
+    await expect(select).toBeVisible();
+  };
+  const pressOutsideField = async (combo: string) => {
+    await page.locator('.backstage-title').first().click();
+    await page.keyboard.press(combo);
+  };
+  const unapplied = page.locator('[data-ops-project-info-unapplied]');
+
+  // Eén stap: naam én profiel wijzigen, dan Toepassen.
+  await toBackstageInfo();
+  await nameInput.fill('Gewijzigde naam');
+  await select.selectOption('builtin:msproject');
+  await page.getByRole('button', { name: /^(Apply|Toepassen)$/ }).click();
+  await expect.poll(storeName).toBe('Gewijzigde naam');
+  await toBackstageInfo();
+  await expect(nameInput).toHaveValue('Gewijzigde naam');
+
+  // Ctrl+Z: de naam en het profiel gaan samen terug, niets staat "niet toegepast".
+  await pressOutsideField('Control+z');
+  await expect.poll(storeName).toBe(originalName);
+  await expect(nameInput).toHaveValue(originalName);
+  await expect(select).toHaveValue('builtin:p6');
+  await expect(unapplied).toHaveCount(0);
+
+  // Ctrl+Y: beide velden volgen weer.
+  await pressOutsideField('Control+y');
+  await expect.poll(storeName).toBe('Gewijzigde naam');
+  await expect(nameInput).toHaveValue('Gewijzigde naam');
+  await expect(select).toHaveValue('builtin:msproject');
+  await expect(unapplied).toHaveCount(0);
+
+  // Een naam die de gebruiker zelf typte, blijft staan bij Ctrl+Z; het profiel volgt wel.
+  await nameInput.fill('Eigen invoer');
+  await pressOutsideField('Control+z');
+  await expect.poll(storeName).toBe(originalName);
+  await expect(nameInput).toHaveValue('Eigen invoer');
+  await expect(select).toHaveValue('builtin:p6');
+  await expect(unapplied).toBeVisible();
+});
+
+// Review #331 punt 6: de waarschuwing "de store veranderde onder je draft" klopt na terugzetten en na
+// een documentwissel. De documentwissel zelf komt via de brug: met een vuile draft blokkeert Ctrl+1..9
+// hem, dus dit is het vangnet voor een wissel die van elders komt.
+test('rekenprofiel: aangeraakt, teruggezet en Ctrl+Z, en een documentwissel geven geen valse waarschuwing (N1)', async ({ page, ops: _ops }) => {
+  await openXer(page);
+  await expect.poll(() => profileOf(page)).toEqual({ id: 'p6', baseId: 'p6', name: '' });
+  const select = page.locator('[data-ops-scheduling-profile-select]');
+  const toBackstageInfo = async () => {
+    await page.getByRole('button', { name: /^(File|Bestand)$/ }).first().click();
+    await page.getByRole('button', { name: /^(Project info|Projectinfo)$/ }).first().click();
+    await expect(select).toBeVisible();
+  };
+  const pressOutsideField = async (combo: string) => {
+    await page.locator('.backstage-title').first().click();
+    await page.keyboard.press(combo);
+  };
+  const storeChanged = page.locator('[data-ops-scheduling-store-changed]');
+  const unapplied = page.locator('[data-ops-project-info-unapplied]');
+
+  await toBackstageInfo();
+  await select.selectOption('builtin:msproject');
+  await page.getByRole('button', { name: /^(Apply|Toepassen)$/ }).click();
+  await expect.poll(() => profileOf(page).then(p => p?.id)).toBe('msproject');
+  await toBackstageInfo();
+
+  // Aanraken en terugzetten: de draft is aangeraakt maar gelijk aan de store. Ctrl+Z volgt de store.
+  await select.selectOption('builtin:ops');
+  await select.selectOption('builtin:msproject');
+  await expect(unapplied).toHaveCount(0);
+  await pressOutsideField('Control+z');
+  await expect.poll(() => profileOf(page).then(p => p?.id)).toBe('p6');
+  await expect(select).toHaveValue('builtin:p6');
+  await expect(storeChanged).toHaveCount(0);
+  await expect(unapplied).toHaveCount(0);
+
+  // Vuile draft, Ctrl+Y geeft de waarschuwing; zet de gebruiker de draft gelijk aan de store, dan
+  // verdwijnt de waarschuwing.
+  await select.selectOption('builtin:ops');
+  await pressOutsideField('Control+y');
+  await expect.poll(() => profileOf(page).then(p => p?.id)).toBe('msproject');
+  await expect(storeChanged).toBeVisible();
+  await select.selectOption('builtin:msproject');
+  await expect(storeChanged).toHaveCount(0);
+  await expect(unapplied).toHaveCount(0);
+  // De vlag is echt gewist: een nieuwe eigen keuze is vuil, maar geeft geen oude waarschuwing terug.
+  await select.selectOption('builtin:ops');
+  await expect(unapplied).toBeVisible();
+  await expect(storeChanged).toHaveCount(0);
+
+  // Vuile draft, dan een documentwissel: de draft komt van het nieuwe document, zonder waarschuwing,
+  // ook niet nadat de gebruiker daar iets kiest.
+  await select.selectOption('builtin:p6');
+  await expect(unapplied).toBeVisible();
+  await page.evaluate(() => { window.__OPS__!.store.getState().newDocument(); });
+  await toBackstageInfo();
+  await expect(select).toHaveValue(await profileOf(page).then(p => `builtin:${p?.id ?? 'ops'}`));
+  await expect(unapplied).toHaveCount(0);
+  await select.selectOption('builtin:p6');
+  await expect(unapplied).toBeVisible();
+  await expect(storeChanged).toHaveCount(0);
+});
+
 // Critreview #169 N2 en B9 op een nieuw project (dagkalender): de conventies tonen waar de motor op
 // poort ("alleen urenkalender" / "alleen taken uit .xer"), de SS-lag-keuzelijst staat uit omdat er geen
 // uurplanning is, en sjablonen opslaan/verwijderen melden zich en vragen bevestiging.
