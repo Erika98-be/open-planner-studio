@@ -48,6 +48,8 @@ Z widoku wychodzisz na dwa sposoby:
 - Kliknij *Przelicz* na pasku informacji albo wybierz *Oblicz* (F5). Aplikacja oblicza według własnych reguł.
 - Zmień coś, co może zmienić daty, na przykład czas trwania zadania albo nowe zadanie. Aplikacja opuszcza widok i od razu przelicza, nawet gdy *Oblicz automatycznie* jest wyłączone. Zmiana nazwy tego nie robi: widok zostaje włączony.
 
+Zmiana kalendarza z biblioteki zasobów pozostawia widok włączony i daty z pliku bez zmian, ale aktualizuje liczbę na pasku informacji.
+
 Po wyjściu nie ma przycisku, który wraca do widoku. Ctrl+Z przywraca widok zaraz po przeliczeniu albo zaraz po takiej zmianie. Inaczej możesz ponownie otworzyć plik źródłowy. Przy pliku `.xer` włącza widok ponownie także otwarcie pliku IFC, który zapisałeś po przeliczeniu, ale nie edytowałeś.
 
 ### Odzyskiwanie po awarii

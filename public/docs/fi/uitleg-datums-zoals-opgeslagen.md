@@ -48,6 +48,8 @@ Näkymästä poistutaan kahdella tavalla:
 - Valitse ilmoitusrivillä *Laske uudelleen*, tai valitse *Laske* (F5). Sovellus laskee omilla säännöillään.
 - Tehdään muutos, joka voi muuttaa päivämääriä, esimerkiksi tehtävän kestoon tai uuteen tehtävään. Sovellus poistuu näkymästä ja laskee heti uudelleen, vaikka *Laske automaattisesti* on pois päältä. Nimen muuttaminen ei tee sitä: näkymä jää päälle.
 
+Resurssikirjastosta tuleva kalenterin muutos pitää näkymän päällä ja tiedoston päivämäärät ennallaan, mutta päivittää ilmoitusrivin luvun.
+
 Poistumisen jälkeen ei ole painiketta, jolla palataan näkymään. Ctrl+Z palauttaa sen kuitenkin heti uudelleenlaskennan tai muokkauksen jälkeen. Muuten lähdetiedoston voi avata uudelleen. Myös `.xer`-tiedoston kohdalla IFC-tiedoston avaaminen kytkee näkymän taas päälle, jos tiedosto on tallennettu uudelleenlaskennan jälkeen eikä sitä ole muokattu.
 
 ### Palautus kaatumisen jälkeen

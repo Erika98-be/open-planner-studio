@@ -48,6 +48,8 @@ Du forlader visningen på to måder:
 - Klik på *Genberegn* i meddelelseslinjen, eller vælg *Beregn* (F5). Appen beregner med sine egne regler.
 - Ændr noget, der kan ændre datoerne, fx varigheden af en opgave eller en ny opgave. Appen forlader visningen og genberegner med det samme, også selv om *Beregn automatisk* er slået fra. Ændrer du et navn, sker det ikke: visningen forbliver aktiv.
 
+En kalenderændring fra ressourcebiblioteket lader visningen være aktiv og datoerne fra filen stå, men opdaterer tallet i meddelelseslinjen.
+
 Når du har forladt visningen, er der ingen knap til at skifte tilbage. Ctrl+Z bringer den dog tilbage, lige efter at du har genberegnet, eller lige efter en sådan ændring. Ellers kan du åbne kildefilen igen. Ved en `.xer` slår det også visningen til igen, når du åbner en IFC-fil, som du gemte efter genberegningen, men ikke redigerede.
 
 ### Genoprettelse efter nedbrud

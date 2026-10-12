@@ -48,6 +48,8 @@ Esci dalla vista in due modi:
 - Fai clic su *Ricalcola* nella striscia, oppure scegli *Calcola* (F5). L'app calcola con le proprie regole.
 - Modifica qualcosa che può cambiare le date, per esempio la durata di un'attività o una nuova attività. L'app esce dalla vista e ricalcola subito, anche se *Calcola automaticamente* è disattivato. Cambiare un nome non ha questo effetto: la vista resta attiva.
 
+Una modifica del calendario dalla libreria di risorse lascia attiva la vista e invariate le date del file, ma aggiorna il numero nella striscia.
+
 Dopo l'uscita non c'è un pulsante per tornare alla vista. Ctrl+Z la riporta, subito dopo il ricalcolo o subito dopo una modifica di questo tipo. Altrimenti puoi aprire di nuovo il file di origine. Con un `.xer`, anche aprire un file IFC che hai salvato dopo il ricalcolo, ma non hai modificato, attiva di nuovo la vista.
 
 ### Recupero dopo un arresto anomalo

@@ -48,6 +48,8 @@ Du forlater visningen på to måter:
 - Klikk på *Omberegn* i meldingsraden, eller velg *Beregn* (F5). Appen beregner med sine egne regler.
 - Endre noe som kan endre datoene, for eksempel varigheten til en aktivitet eller en ny aktivitet. Appen forlater visningen og beregner med én gang, også når *Beregne automatisk* er av. Å endre et navn gjør det ikke: visningen blir stående.
 
+En kalenderendring fra ressursbiblioteket lar visningen og datoene fra filen bli stående, men oppdaterer tallet i meldingsraden.
+
 Etter at du har forlatt visningen, finnes det ingen knapp for å gå tilbake. Ctrl+Z gir den tilbake rett etter omberegning eller rett etter en slik redigering. Ellers kan du åpne kildefilen på nytt. Med en `.xer` slår også det å åpne en IFC-fil som du lagret etter omberegning, men ikke redigerte, visningen på igjen.
 
 ### Gjenoppretting ved brudd
