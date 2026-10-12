@@ -22,7 +22,7 @@ The first line of the message names the number of opened tabs. Below it are only
 - *1 baseline project excluded.* and *1 baseline materialized.* If a project in P6 designates another project as its baseline, that other project does not open as a tab of its own. It becomes the active baseline of the project that refers to it.
 - *A protective baseline fallback was used.* If designating baselines would mean that no project opens at all, if a project refers to itself or if projects refer to each other in a loop, the app simply opens all projects and makes no baselines.
 - *1 external link preserved.* A relation between two projects. The app keeps it as source data, but does not turn it into a relation in your schedule.
-- *1 task shows the dates as Primavera recorded them (not recalculated).* The number of tasks you see in the view *Dates as recorded*.
+- *12 tasks show the dates as Primavera recorded them (not recalculated).* The number of tasks for which the view *Dates as recorded* shows Primavera's dates: every task for which the file recorded dates, not only the ones that differ.
 
 The other lines are diagnostics of the reading itself: the number of projects found, a skipped empty project, an ignored dangling baseline reference, a text encoding other than plain UTF-8 and counters for findings in the tables, the calendars and the numbers, for unknown field values and for P6 scheduling settings that the app replaced by a safe choice. They ask nothing of you. *Read more* opens the Help about opening Primavera files.
 
@@ -32,13 +32,24 @@ The other lines are diagnostics of the reading itself: the number of projects fo
 
 **Every tab is a project of its own.** If you save one, the IFC file keeps the complete original `.xer` along. If you reopen that IFC file later, the app still knows Primavera's dates. If that source archive is damaged, or another IFC program rewrote the file, the app reports: *The XER source archive in this file is unusable and was left out; the project itself opened in full.* The schedule, the calculation profile and all project data are complete. What is missing: the dates as Primavera stored them and the source provenance for AI and extensions. Open the original `.xer` again to get the archive back.
 
+**The IFC file gets bigger.** Because the IFC file carries the whole original `.xer`, it is bigger than an IFC file without an archive. With a large `.xer` you notice that in the file size and in the time saving takes. If an `.xer` opens several projects, every tab you save carries the whole `.xer`, not only its own project.
+
 **An export to CSV, MS Project XML or P6 XML loses data.** The app warns: *Exporting to CSV loses XER source information.* IFC loses nothing.
+
+**A free Saturday or Sunday that is not in the file.** Some P6 exports move a free weekend day inside a block of several free days to the Friday before or the Monday after. If the calendar works on Saturday or Sunday, that day would wrongly become a working day. If the app sees that pattern in a block of at least three free days, it makes that weekend day free after all. In the calendar the day is called *Calendar exception (weekend reconstruction)*, and it counts in the line *N calendar findings.* of the message. On a calendar that does not work at the weekend, nothing changes.
+
+**Float up to the project finish, without a finish date.** Is the P6 option on to calculate float up to the project finish, but does the file have no finish date for the project and no planned finish date for any activity? Then the app turns off the option *Calculate float up to the project finish date*. It then calculates the late dates back from the latest early finish. That counts in the line *N P6 scheduling settings used safe fallbacks.*
+
+**Completed activities on the data date.** Some files do not record the actual dates of a completed activity, but a window on the data date. In the view *Dates as recorded* such an activity is then a narrow bar on the data date. If recalculating puts it in a different place, it counts in the number of tasks that the strip gives. The convention *Completed task in the data-date window* calculates such a window, and only with that convention does a completed task get a real float through the calculation option *Completed task: late dates from the data date*. This convention is an approximation: the app saw this behaviour only in P3 output, and Primavera does not confirm it anywhere. That is why it is off in every built-in profile, also under *Primavera P6*. You turn it on in the block *Calculation profile and options*; the project then gets a custom profile. See [Calculation options and conventions](docs://ref-rekenopties-en-conventies).
+
+**Numbers with a comma as decimal separator.** P6 records the decimal separator and the thousands separator in the table `CURRTYPE`. The app reads those characters before it converts durations, work and float. If that information is missing, the app uses a point as decimal separator. If the file still contains numbers with a decimal comma, the app opens nothing. That way a schedule with wrongly read numbers never opens.
 
 **A file the app cannot read.** You get an error message, with the reason. A few examples:
 
 - *This is not a valid or supported XER file.*
 - *An XER table is missing required columns.*
 - *The P6 project in this XER file contains no activities.*
+- *The decimal notation in this XER file cannot be determined reliably.*
 
 Nothing opens then. Check the file in P6, or ask the sender for a new export.
 
