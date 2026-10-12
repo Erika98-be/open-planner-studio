@@ -884,8 +884,12 @@ function readP6XmlProject(scope: P6XmlScope): P6XmlProjectRead {
     }
 
     // Actuals — leeg ⇒ undefined (invarianten via normalizeImportedProgress).
-    const actualStartRaw = getElementText(actEl, 'ActualStartDate');
-    const actualFinishRaw = getElementText(actEl, 'ActualFinishDate');
+    // `Not Started` wint van werkelijke datums (zoals het percentage, `p6ActivityCompletionPercent`):
+    // sommige tools vullen ActualStart/Finish met een vuldatum (aspose_p6_multiproject: 2000-01-01),
+    // en dan opende elke niet-gestarte taak als 100 % klaar. Bij een OPS-export is de status geen bron.
+    const notStarted = !writtenByOps && getElementText(actEl, 'Status').trim() === 'Not Started';
+    const actualStartRaw = notStarted ? '' : getElementText(actEl, 'ActualStartDate');
+    const actualFinishRaw = notStarted ? '' : getElementText(actEl, 'ActualFinishDate');
     const remainingRaw = getElementText(actEl, 'RemainingDuration');
     const actualStart = actualStartRaw ? importDateTime(actualStartRaw, hourDates) : undefined;
     const actualFinish = actualFinishRaw ? importDateTime(actualFinishRaw, hourDates) : undefined;

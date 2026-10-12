@@ -160,6 +160,20 @@ const twoProjects = readP6XMLDocuments(`<?xml version="1.0"?><APIBusinessObjects
 eq('10o actief = het grootste project, niet het eerste',
   isMultiDocumentImport(twoProjects) ? twoProjects.results[twoProjects.activeDocumentIndex].project.name : 'geen meervoud', 'Groot');
 
+// (12) `Not Started` met (vul)datums als werkelijk begin/einde (aspose_p6_multiproject: 2000-01-01):
+//      geen voortgang, geen actuals. Een gestarte taak houdt haar actuals.
+const filler = readP6XML(`<?xml version="1.0"?><APIBusinessObjects><Project><Id>F</Id><ObjectId>1</ObjectId><Name>F</Name>
+  <PlannedStartDate>2026-03-02T08:00:00</PlannedStartDate>
+  <Activity><ActualFinishDate>2000-01-01T00:00:00</ActualFinishDate><ActualStartDate>2000-01-01T00:00:00</ActualStartDate><Id>N</Id><Name>N</Name><ObjectId>1</ObjectId>
+    <PlannedDuration>8</PlannedDuration><PlannedFinishDate>2026-03-02T17:00:00</PlannedFinishDate><PlannedStartDate>2026-03-02T08:00:00</PlannedStartDate><Status>Not Started</Status></Activity>
+  <Activity><ActualStartDate>2026-03-02T08:00:00</ActualStartDate><Id>S</Id><Name>S</Name><ObjectId>2</ObjectId>
+    <PlannedDuration>16</PlannedDuration><PlannedFinishDate>2026-03-03T17:00:00</PlannedFinishDate><PlannedStartDate>2026-03-02T08:00:00</PlannedStartDate><Status>In Progress</Status></Activity>
+</Project></APIBusinessObjects>`);
+const fTask = (code: string) => filler.tasks.find(t => t.wbsCode === code);
+eq('12a Not Started: geen voortgang en geen actuals', [fTask('N')?.status, fTask('N')?.time.completion, fTask('N')?.time.actualStart, fTask('N')?.time.actualFinish],
+  ['NOT_STARTED', 0, undefined, undefined]);
+eq('12b In Progress houdt zijn werkelijke start', [fTask('S')?.status, fTask('S')?.time.actualStart], ['STARTED', '2026-03-02T08:00']);
+
 // (11) Documentnaam zoals XER: "Naam (Id)". OZB-14 heeft twaalf updates met dezelfde naam; de tabbladen
 //      moeten onderscheidbaar zijn. De eigen export zet de code terug in <Id>, heropenen geeft dezelfde naam.
 const sameName = readP6XMLDocuments(`<?xml version="1.0"?><APIBusinessObjects>
