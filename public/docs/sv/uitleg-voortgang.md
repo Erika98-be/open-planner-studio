@@ -28,7 +28,7 @@ För det andra kan uppgifter som inte har startat inte ligga i det förflutna. �
 
 För det tredje startar det återstående arbetet för en uppgift som redan pågår på rapportdatumet självt. Appen behandlar rapportdatumet som början på den dagen. Gör du en lägesbedömning på fredag efter arbetstid, sätt rapportdatumet då till måndag. Sätter du det till fredag, planerar appen det återstående arbetet ändå den fredagen.
 
-Har du ännu inget rapportdatum och anger du framdrift, sätter appen rapportdatumet till idag och meddelar dig. Utan rapportdatum räknar appen en pågående uppgift framåt med dess återstående varaktighet, men bakåt med dess hela varaktighet. Slacket blir då negativt och uppgiften ser kritisk ut utan anledning.
+Har du ännu inget rapportdatum och anger du framdrift, sätter appen rapportdatumet till idag och meddelar dig. Ett annat datum anger du under *Tidsplan › Baslinjer & framdrift › Rapportdatum*. Utan rapportdatum räknar appen en pågående uppgift framåt med dess återstående varaktighet, men bakåt med dess hela varaktighet. Slacket blir då negativt och uppgiften ser kritisk ut utan anledning.
 
 ### Slutförandegrad, verkliga datum och återstående varaktighet
 

@@ -24,7 +24,7 @@ Utile quando lavori nella tabella attività.
 2. Tieni premuto Ctrl (⌘ su un Mac) e fai clic sull'attività che viene dopo: il successore.
 3. Scegli *Home › Attività › Collega ▾ › Collega le attività selezionate*. Lo stesso pulsante è anche in *Pianificazione › Relazioni*.
 
-L'app crea una relazione fine-inizio senza ritardo e mostra, ad esempio, *Relazione creata: Foundation brickwork → Lay hollow-core floor*. Il pulsante funziona solo con esattamente due attività selezionate.
+L'app crea una relazione fine-inizio senza ritardo. La vedi come una freccia nel Gantt e nella colonna *Predecessori*; una notifica compare solo se l'app rifiuta la relazione. Il pulsante funziona solo con esattamente due attività selezionate.
 
 ### Disegnare una relazione nel Gantt
 

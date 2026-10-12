@@ -56,7 +56,7 @@ Statuslinjen nederst viser, fra venstre mot høyre:
 
 ## Meldinger
 
-Meldinger vises nederst på skjermen, også i tabellen, i Backstage og i presentasjonsmodus. En melding er en *feil* eller *info*. En feil blir stående til du klikker den bort. En info forsvinner etter 5 sekunder. Tidtakerne starter på nytt så snart stabelen endrer seg. Et klikk på en melding lukker den (verktøytips *Lukk melding*). Det vises høyst tre meldinger om gangen. Kommer det en fjerde, går den eldste info først. Finnes det ingen info, går den eldste meldingen. En feil blir derfor aldri skjøvet ut av en info. Stabelen flytter seg vekk fra knappene i en åpen dialog og fra faste handlingslinjer.
+Meldinger vises nederst på skjermen, også i tabellen, i Backstage og i presentasjonsmodus. En melding er en *feil* eller *info*. En feil blir stående til du klikker på krysset. En info forsvinner etter 5 sekunder. Tidtakerne starter på nytt så snart stabelen endrer seg. Hver melding har et kryss øverst til høyre (verktøytips *Lukk melding*) som lukker den med en gang. Et klikk på teksten i meldingen gjør ingenting. Det vises høyst tre meldinger om gangen. Kommer det en fjerde, går den eldste info først. Finnes det ingen info, går den eldste meldingen. En feil blir derfor aldri skjøvet ut av en info. Stabelen flytter seg vekk fra knappene i en åpen dialog og fra faste handlingslinjer.
 
 - **Teller ×N** — en melding med en fast nøkkel slår en gjentakelse sammen til én linje med en teller. For eksempel en lagringsfeil som stadig kommer tilbake, eller en avvist avhengighet som du gjentar. Ikke alle meldinger gjør dette.
 - **Les mer** — noen meldinger har en lenke *Les mer* eller et eget emne, for eksempel *Arbeidsregler forklart*, til veiledningen i Backstage › Hjelp.
@@ -84,12 +84,11 @@ Listen under er et utvalg, gruppert etter emne. Der det ikke sier noe annet, er 
 ### Beregning
 
 - **Tidsplanen kunne ikke beregnes** (feil) — *Tidsplanen kunne ikke beregnes* med årsaken under (se *Årsaker til en tidsplanfeil*). Gjelder ved *Beregn*, når du bytter dokument og når du åpner en fil.
-- **Statusdato satt til i dag** (info) — *Det fantes ingen statusdato ennå. Den er nå satt til i dag ({date}), fordi fremdrift måles fram til statusdatoen. Du kan endre den under Tidsplan → Statusdato.* Når du registrerer fremdrift i et prosjekt uten statusdato.
+- **Statusdato satt til i dag** (info) — *Statusdato satt til i dag ({date}).* Når du registrerer fremdrift i et prosjekt uten statusdato. Appen måler fremdrift fram til statusdatoen, så uten statusdato kan den ikke behandle fremdrift. En annen dato setter du under *Tidsplan › Grunnlinjer og fremdrift › Statusdato*. Med en lenke *Les mer* til [Fremdrift, statusdato og grunnlinje](docs://uitleg-voortgang).
 - **Varighet kortere enn utført arbeid** (info) — *‘{name}’ er allerede {N} % ferdig: en varighet kortere enn arbeidet som er utført, er ikke mulig. Varigheten er ikke endret.*
 
 ### Avhengigheter og hierarki
 
-- **Avhengighet opprettet** (info) — *Avhengighet opprettet: {predecessor} → {successor}*.
 - **Avhengighet avvist** (info) — *Denne avhengigheten finnes allerede*, *En avhengighet mellom en aktivitet og dens egen overordnede hovedaktivitet er ikke tillatt.* eller *Denne avhengigheten ville skape en syklus i tidsplanen ({cycle}) og er ikke opprettet.* Syklusen viser aktivitetene, så du vet hvilken avhengighet du må fjerne eller snu først.
 - **Flytting avvist** (info) — *Denne flyttingen ville skape en syklus i tidsplanen ({cycle}): avhengighetene til en hovedaktivitet gjelder også for delaktivitetene. Ingenting er flyttet.*
 - **Avhengigheter faller ut etter flytting** (info) — *Etter flyttingen kobler N avhengigheter en aktivitet til sin egen hovedaktivitet; de telles ikke lenger med i beregningen.*
@@ -99,11 +98,11 @@ Listen under er et utvalg, gruppert etter emne. Der det ikke sier noe annet, er 
 
 ### Redigere aktiviteter
 
-- **Start registrert som begrensning** (info) — *'{name}' har en forgjenger: den nye starten er satt som begrensningen Start ikke tidligere enn (SNET) {date}. Etter omberegning (F5) starter aktiviteten ikke før den datoen.* Når du endrer starten på en aktivitet med en forgjenger. Hadde aktiviteten allerede en slik begrensning, sier meldingen at den er flyttet. For flere aktiviteter samtidig viser meldingen et antall.
+- **Start registrert som begrensning** (info) — *'{name}' starter tidligst {date} (SNET).* Når du endrer starten på en aktivitet med en forgjenger. Forgjengeren bestemmer starten, så appen registrerer datoen din som begrensningen *Start ikke tidligere enn* (SNET). Etter omberegning (F5) starter aktiviteten ikke før den datoen. Hadde aktiviteten allerede en slik begrensning, står det *'{name}' starter nå tidligst {date} (SNET).* For flere aktiviteter samtidig viser meldingen et antall. Med en lenke *Les mer* til [Begrensninger og tidsfrister](docs://uitleg-constraints).
 - **Start ikke brukt** (info) — *Den nye starten på '{name}' ble ikke brukt: aktiviteten har en forgjenger, og både forgjengeren og begrensningen {type} {date} bestemmer starten. Endre den begrensningen for å flytte starten.*
 - **Milepæl avvist** (info) — *'{task}' har ressurstilordninger og kan ikke bli en milepæl. Fjern tilordningene først.* eller *'{task}' er en hovedaktivitet med delaktiviteter og kan ikke bli en milepæl.* Ved konvertering i aktivitetsdialogen, i egenskapspanelet, i hurtigmenyen og i tabellen.
-- **Tilordninger flyttet til en delaktivitet** (info) — *Tilordningen av {resources} er flyttet fra '{phase}' til den nye delaktiviteten '{child}': en hovedaktivitet har ikke egne tilordninger.* Når en aktivitet med tilordninger får delaktiviteter.
-- **Milepælmarkering fjernet** (info) — *Milepælen '{phase}' har nå delaktiviteter og er blitt en hovedaktivitet; milepælmarkeringen er fjernet.*
+- **Tilordninger flyttet til en delaktivitet** (info) — *Tilordningen er flyttet til delaktiviteten '{child}'.* eller *N tilordninger er flyttet til delaktiviteten '{child}'.* Når en aktivitet med tilordninger får delaktiviteter. Den aktiviteten blir en hovedaktivitet, og en hovedaktivitet har ikke egne tilordninger. Derfor flyttes de til den første nye delaktiviteten. Med en lenke *Les mer* til [Justere strukturen](docs://howto-structuur-aanpassen).
+- **Milepælmarkering fjernet** (info) — *'{phase}' er ikke lenger en milepæl.* Når en milepæl får delaktiviteter. En milepæl er et tidspunkt uten delaktiviteter; med delaktiviteter blir den en hovedaktivitet. Med en lenke *Les mer* til [Justere strukturen](docs://howto-structuur-aanpassen).
 - **Hovedaktivitet avvist** (info) — *'{phase}' kan ikke bli en hovedaktivitet: …* med årsaken, og *Ingenting er endret.*
 - **Celler hoppet over ved liming** (info) — *N celler hoppet over: de er skrivebeskyttede (f.eks. automatisk nummererte WBS-koder eller beregnede kolonner).*
 - **Referanser tømt ved liming** (info) — *N referanser fantes ikke i dette dokumentet og er tømt (aktivitetskalendere, egne aktivitetstyper, aktivitetskoder eller egendefinerte felt fra kildedokumentet).*
@@ -122,7 +121,7 @@ Listen under er et utvalg, gruppert etter emne. Der det ikke sier noe annet, er 
 - **Arbeid og arbeidsregler synlige** (info) — *Denne filen inneholder lagret arbeid eller egne arbeidsregler; arbeidsregelen og gjenstående arbeid vises for dette prosjektet.*
 - **MS Project-tidsplan lest** (info) — *Denne MS Project-filen inneholder N aktiviteter med en delt, utjevnet eller ressursdrevet tidsplan. De leses inn og vises slik.*
 - **Avbrudd ikke eksportert** (info) — *N aktiviteter med avbrudd er eksportert uten avbrudd: MS Project og P6 kjenner bare avbrudd som en arbeidsfordeling.* Ved eksport til MS Project eller Primavera.
-- **Prosjektstart flyttet** (info) — *Prosjektstart flyttet: N aktivitetsankere uten forgjenger eller begrensning er forskjøvet til den nye startdatoen.*
+- **Prosjektstart flyttet** (info) — *N aktiviteter ble flyttet med prosjektstarten.* Når du setter prosjektstarten senere. Bare aktiviteter uten forgjenger og uten en begrensning som ville ligge før den nye startdatoen, flyttes til den datoen. Med en lenke *Les mer* til [Opprett nytt prosjekt og prosjektinfo](docs://ref-projectinfo).
 - **Datovindu styrer ikke lenger** (info) — *Datovinduet i MS Project styrer ikke lenger N aktiviteter etter denne redigeringen; …* Én gang per dokument.
 - **Utjevningsforsinkelse avrundet** (info) — *Utjevning runder MS Projects minuttnøyaktige utjevningsforsinkelser for N aktiviteter av til hele arbeidsdager.* Én gang per dokument.
 - **Beregningsprofil brukt** (info) — *Dette prosjektet beregner som {profile}. Endre det via Fil → Prosjektinfo → Beregningsprofil og beregningsalternativer.* Med knappen *Åpne beregningsprofil*. Etter at du har brukt en profil, kommer *Etter bruk er N aktiviteter forskjøvet.* ved behov.

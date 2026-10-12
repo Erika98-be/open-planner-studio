@@ -56,7 +56,7 @@ A barra em baixo mostra, da esquerda para a direita:
 
 ## Notificações
 
-As notificações aparecem na parte inferior do ecrã, também na tabela, no Backstage e no modo de apresentação. Uma notificação é um *erro* ou uma *info*. Um erro fica visível até o fechar com um clique. Uma info desaparece após 5 segundos. Esses temporizadores recomeçam logo que a pilha muda. Um clique numa notificação fecha-a (dica *Fechar notificação*). No máximo, são mostradas três ao mesmo tempo: se chegar uma quarta, sai primeiro a info mais antiga; se não houver info, sai a notificação mais antiga. Assim, um erro nunca é retirado por uma info. A pilha desloca-se para longe dos botões de uma caixa de diálogo aberta e das barras de ação fixas.
+As notificações aparecem na parte inferior do ecrã, também na tabela, no Backstage e no modo de apresentação. Uma notificação é um *erro* ou uma *info*. Um erro fica visível até clicar na cruz. Uma info desaparece após 5 segundos. Esses temporizadores recomeçam logo que a pilha muda. Cada notificação tem uma cruz no canto superior direito (dica *Fechar notificação*) que a fecha de imediato. Um clique no texto da notificação não faz nada. No máximo, são mostradas três ao mesmo tempo: se chegar uma quarta, sai primeiro a info mais antiga; se não houver info, sai a notificação mais antiga. Assim, um erro nunca é retirado por uma info. A pilha desloca-se para longe dos botões de uma caixa de diálogo aberta e das barras de ação fixas.
 
 - **Contador ×N** — uma notificação com uma chave fixa agrupa uma repetição numa só linha, com um contador, por exemplo um erro ao guardar que volta sempre ou uma relação recusada que volta a tentar. Nem todas as notificações fazem isso.
 - **Saiba mais** — algumas notificações têm uma ligação *Saiba mais* ou um tema próprio (por exemplo, *Regras de trabalho explicadas*) que leva ao guia em Backstage › Ajuda.
@@ -84,12 +84,11 @@ A lista seguinte é uma seleção, agrupada por tema. Quando não diz outra cois
 ### Cálculo
 
 - **Não foi possível calcular o planeamento** (erro) — *Não foi possível calcular o planeamento* com o motivo por baixo (ver *Motivos de um erro de planeamento*). Ao *Calcular*, ao mudar de documento e ao abrir um ficheiro.
-- **Data de estado definida para hoje** (info) — *Ainda não havia data de estado: foi definida para hoje ({date}), porque o progresso é medido até à data de estado. Pode alterá-la em Planeamento → Data de estado.* Ao introduzir o progresso num projeto sem data de estado.
+- **Data de estado definida para hoje** (info) — *Data de estado definida para hoje ({date}).* Ao introduzir o progresso num projeto sem data de estado. A aplicação mede o progresso até à data de estado; sem data de estado, não consegue processar o progresso. Pode definir outra data em *Planeamento › Linhas de base e progresso › Data de estado*. Com uma ligação *Saiba mais* para [Progresso, data de estado e linha de base](docs://uitleg-voortgang).
 - **Duração inferior ao trabalho já feito** (info) — *«{name}» já está {percent}% feita: uma duração inferior ao trabalho já realizado não é possível. A duração não foi alterada.*
 
 ### Relações e hierarquia
 
-- **Relação criada** (info) — *Relação criada: {predecessor} → {successor}*.
 - **Relação recusada** (info) — *Essa relação já existe*, *Não é permitida uma relação entre uma tarefa e a sua própria tarefa de resumo ancestral.* ou *Esta relação criaria um ciclo no planeamento ({cycle}) e não foi criada.* O ciclo indica as tarefas, para saber qual a relação a remover ou inverter primeiro.
 - **Mudança recusada** (info) — *Esta mudança criaria um ciclo no planeamento ({cycle}): as relações de uma tarefa de resumo também se aplicam às suas subtarefas. Nada foi movido.*
 - **Relações que deixam de contar após uma mudança** (info) — *Após a mudança, {count} relações ligam uma tarefa à sua própria tarefa de resumo ancestral; deixam de contar no cálculo.*
@@ -99,11 +98,11 @@ A lista seguinte é uma seleção, agrupada por tema. Quando não diz outra cois
 
 ### Editar tarefas
 
-- **Início registado como restrição** (info) — *'{name}' tem uma predecessora: o novo início passou a ser a restrição Não começar antes de (SNET) {date}. Após recalcular (F5), a tarefa não começa antes dessa data.* Ao alterar o início de uma tarefa com predecessora. Se a tarefa já tinha essa restrição, a notificação diz que foi movida. Para várias tarefas de uma vez, indica um número.
+- **Início registado como restrição** (info) — *«{name}» não começa antes de {date} (SNET).* Ao alterar o início de uma tarefa com predecessora. A predecessora determina o início, por isso a aplicação regista a sua data como restrição *Não começar antes de* (SNET). Após recalcular (F5), a tarefa não começa antes dessa data. Se a tarefa já tinha essa restrição, a notificação diz *«{name}» agora não começa antes de {date} (SNET).*; para várias tarefas de uma vez, indica um número. Com uma ligação *Saiba mais* para [Restrições e prazos](docs://uitleg-constraints).
 - **Início não aplicado** (info) — *O novo início de '{name}' não foi aplicado: a tarefa tem uma predecessora e a restrição {type} {date}, e estas determinam o seu início. Altere essa restrição para mudar o início.*
 - **Marco recusado** (info) — *«{task}» tem atribuições de recursos e não pode tornar-se um marco. Remova primeiro as atribuições.* ou *«{task}» é uma tarefa de resumo com subtarefas e não pode tornar-se um marco.* Ao converter na caixa de diálogo da tarefa, no painel de propriedades, no menu de contexto e na tabela.
-- **Atribuições movidas para uma subtarefa** (info) — *A atribuição de {resources} foi movida de «{phase}» para a nova subtarefa «{child}»: uma tarefa de resumo não tem atribuições próprias.* Quando uma tarefa com atribuições recebe subtarefas.
-- **Marcação de marco removida** (info) — *O marco «{phase}» tem agora subtarefas e tornou-se uma tarefa de resumo; a marcação de marco foi removida.*
+- **Atribuições movidas para uma subtarefa** (info) — *Atribuição movida para a subtarefa «{child}».* ou *N atribuições movidas para a subtarefa «{child}».* Quando uma tarefa com atribuições recebe subtarefas. Essa tarefa torna-se uma tarefa de resumo, e uma tarefa de resumo não tem atribuições próprias. Por isso passam para a primeira subtarefa nova. Com uma ligação *Saiba mais* para [Ajustar a estrutura](docs://howto-structuur-aanpassen).
+- **Marcação de marco removida** (info) — *«{phase}» já não é um marco.* Quando um marco recebe subtarefas. Um marco é um momento sem subtarefas; com subtarefas torna-se uma tarefa de resumo. Com uma ligação *Saiba mais* para [Ajustar a estrutura](docs://howto-structuur-aanpassen).
 - **Tarefa de resumo recusada** (info) — *'{phase}' não pode tornar-se uma tarefa de resumo: …* com o motivo, e *Nada foi alterado.*
 - **Células ignoradas ao colar** (info) — *{count} células ignoradas: são só leitura (por exemplo, um código WBS numerado automaticamente ou uma coluna calculada).*
 - **Referências limpas ao colar** (info) — *{count} referências não existiam neste documento e foram limpas (calendários de tarefa, tipos de tarefa personalizados, códigos de atividade ou campos personalizados do documento de origem).*
@@ -122,7 +121,7 @@ A lista seguinte é uma seleção, agrupada por tema. Quando não diz outra cois
 - **Trabalho e regras de trabalho visíveis** (info) — *Este ficheiro contém trabalho guardado ou regras de trabalho próprias; a regra de trabalho e o trabalho restante são mostrados para este projeto.*
 - **Planeamento do MS Project lido** (info) — *Este ficheiro do MS Project contém {count} tarefas com um cronograma dividido, nivelado ou controlado por recursos. Elas são importadas e exibidas como estão.*
 - **Interrupções não exportadas** (info) — *{count} tarefas com interrupções foram exportadas sem as suas interrupções: o MS Project/P6 só as conhece como distribuição do trabalho.* Ao exportar para MS Project ou Primavera.
-- **Início do projeto alterado** (info) — *Início do projeto alterado: {count} âncoras de tarefa sem predecessora nem restrição foram movidas para a nova data de início.*
+- **Início do projeto alterado** (info) — *N tarefas acompanharam o início do projeto.* Quando adia o início do projeto. Só as tarefas sem predecessora e sem restrição que ficariam antes da nova data de início passam para essa data. Com uma ligação *Saiba mais* para [Novo projeto e Info do projeto](docs://ref-projectinfo).
 - **Janela de datas deixa de orientar** (info) — *A janela de datas do MS Project deixa de controlar {count} tarefas após esta edição; …* Uma vez por documento.
 - **Atraso de nivelamento arredondado** (info) — *O nivelamento arredonda o atraso de nivelamento do MS Project, com precisão de minutos, de {count} tarefas para dias úteis inteiros.* Uma vez por documento.
 - **Perfil de cálculo aplicado** (info) — *Este projeto calcula como {profile}. Altere em Ficheiro → Info do projeto → Perfil de cálculo e opções.* Com o botão *Abrir perfil de cálculo*. Após aplicar um perfil, aparece, se necessário, *Após aplicar, {count} tarefas foram deslocadas.*

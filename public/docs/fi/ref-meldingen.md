@@ -56,7 +56,7 @@ Alareunan tilarivi näyttää vasemmalta oikealle:
 
 ## Ilmoitukset
 
-Ilmoitukset näkyvät ruudun alareunassa, myös taulukossa, Backstagessa ja esitystilassa. Ilmoitus on *virhe* tai *tieto*. Virhe pysyy näkyvissä, kunnes se suljetaan. Tieto häviää 5 sekunnin kuluttua. Nämä ajastimet alkavat alusta heti, kun pino muuttuu. Ilmoitusta napsautettaessa se suljetaan (ohjeteksti *Sulje ilmoitus*). Kerralla näkyy enintään kolme ilmoitusta: kun neljäs tulee, poistuu ensin vanhin tieto. Jos tietoa ei ole, poistuu vanhin ilmoitus. Tieto ei koskaan työnnä virhettä pois. Pino siirtyy pois avoimen valintaikkunan painikkeiden ja kiinteiden toimintapalkkien tieltä.
+Ilmoitukset näkyvät ruudun alareunassa, myös taulukossa, Backstagessa ja esitystilassa. Ilmoitus on *virhe* tai *tieto*. Virhe pysyy näkyvissä, kunnes sen rastia napsautetaan. Tieto häviää 5 sekunnin kuluttua. Nämä ajastimet alkavat alusta heti, kun pino muuttuu. Jokaisen ilmoituksen oikeassa yläkulmassa on rasti (ohjeteksti *Sulje ilmoitus*), joka sulkee ilmoituksen heti. Ilmoituksen tekstin napsauttaminen ei tee mitään. Kerralla näkyy enintään kolme ilmoitusta: kun neljäs tulee, poistuu ensin vanhin tieto. Jos tietoa ei ole, poistuu vanhin ilmoitus. Tieto ei koskaan työnnä virhettä pois. Pino siirtyy pois avoimen valintaikkunan painikkeiden ja kiinteiden toimintapalkkien tieltä.
 
 - **Laskuri ×N** — ilmoitus, jolla on kiinteä avain, kokoaa toiston yhdeksi riviksi laskurilla. Esimerkiksi tallennusvirhe, joka toistuu, tai hylätty riippuvuus, jota yritetään uudelleen. Kaikki ilmoitukset eivät tee näin.
 - **Lue lisää** — joillakin ilmoituksilla on linkki *Lue lisää* tai oma aihe (esimerkiksi *Työsäännöt selitettynä*) opastukseen kohdassa Backstage › Ohje.
@@ -84,12 +84,11 @@ Alla oleva luettelo on valikoima, ryhmiteltynä aiheittain. Ellei toisin mainita
 ### Laskeminen
 
 - **Aikataulua ei voitu laskea** (virhe) — *Aikataulua ei voitu laskea*, syy näkyy sen alla (katso *Aikataulun virheen syyt*). Kun *Laske* valitaan, kun vaihdetaan asiakirjaa ja kun tiedosto avataan.
-- **Raportointipäivä asetettiin tähän päivään** (tieto) — *Raportointipäivää ei ollut vielä asetettu: se on nyt asetettu tähän päivään ({date}), koska edistyminen mitataan raportointipäivään asti. Sen voi muuttaa kohdassa Aikataulu → Raportointipäivä.* Kun edistys kirjataan projektiin, jolla ei ole raportointipäivää.
+- **Raportointipäivä asetettiin tähän päivään** (tieto) — *Raportointipäivä asetettu tähän päivään ({date}).* Kun edistys kirjataan projektiin, jolla ei ole raportointipäivää. Sovellus mittaa edistymistä raportointipäivään asti, joten ilman raportointipäivää se ei voi käsitellä edistymistä. Toisen päivän voi asettaa kohdassa *Aikataulu › Perustasot ja edistyminen › Raportointipäivä*. Siinä on linkki *Lue lisää* artikkeliin [Edistyminen, raportointipäivä ja perustaso](docs://uitleg-voortgang).
 - **Kesto on lyhyempi kuin tehty työ** (tieto) — *‘{name}’ on jo {N} % tehty: kesto, joka on lyhyempi kuin tehty työ, ei ole mahdollinen. Kestoa ei muutettu.*
 
 ### Riippuvuudet ja hierarkia
 
-- **Riippuvuus luotu** (tieto) — *Riippuvuus luotu: {predecessor} → {successor}*.
 - **Riippuvuus hylättiin** (tieto) — *Tämä riippuvuus on jo olemassa*, *Riippuvuus tehtävän ja sen oman tai sen yläpuolisen yhteenvetotehtävän välillä ei ole sallittu.* tai *Tämä riippuvuus loisi aikatauluun kehän ({cycle}), joten sitä ei luotu.* Kehä nimeää tehtävät, joten nähdään, mikä riippuvuus on ensin poistettava tai käännettävä.
 - **Siirtymä hylättiin** (tieto) — *Tämä siirtymä loisi aikatauluun kehän ({cycle}): yhteenvetotehtävän riippuvuudet koskevat myös sen alitehtäviä. Mitään ei siirretty.*
 - **Riippuvuudet putoavat pois siirron jälkeen** (tieto) — *Siirron jälkeen N riippuvuutta liittää tehtävän sen omaan yhteenvetotehtävään. Ne eivät enää ole mukana laskennassa.*
@@ -99,11 +98,11 @@ Alla oleva luettelo on valikoima, ryhmiteltynä aiheittain. Ellei toisin mainita
 
 ### Tehtävien muokkaus
 
-- **Alku tallennettiin rajoitteeksi** (tieto) — *Tehtävällä '{name}' on edeltäjä: uusi aloitus on tallennettu rajoitteeksi Alkaa aikaisintaan (SNET) {date}. Laske uudelleen (F5), niin tehtävä ei ala ennen tätä päivää.* Kun tehtävän alkua muutetaan ja sillä on edeltäjä. Jos tehtävällä oli jo tällainen rajoite, ilmoitus kertoo, että se siirtyi. Usean tehtävän kohdalla ilmoitetaan määrä.
+- **Alku tallennettiin rajoitteeksi** (tieto) — *'{name}' alkaa aikaisintaan {date} (SNET).* Kun tehtävän alkua muutetaan ja sillä on edeltäjä. Edeltäjä määrää alun, joten sovellus tallentaa päivämäärän rajoitteeksi *Alkaa aikaisintaan* (SNET). Laske uudelleen (F5), niin tehtävä ei ala ennen tätä päivää. Jos tehtävällä oli jo tällainen rajoite, ilmoitus on *'{name}' alkaa nyt aikaisintaan {date} (SNET).* Usean tehtävän kohdalla ilmoitetaan määrä. Siinä on linkki *Lue lisää* artikkeliin [Rajoitteet ja tavoitepäivät](docs://uitleg-constraints).
 - **Alkua ei otettu käyttöön** (tieto) — *Tehtävän '{name}' uutta alkua ei otettu käyttöön: tehtävällä on edeltäjä ja rajoite {type} {date}, ja ne määrittävät sen alun. Alkua siirretään muuttamalla tätä rajoitetta.*
 - **Välitavoitetta ei voi muuntaa** (tieto) — *'{task}' on resurssikohdistuksia, eikä siitä voi tulla välitavoitetta. Poista ensin resurssikohdistukset.* tai *'{task}' on yhteenvetotehtävä, jolla on alitehtäviä, eikä siitä voi tulla välitavoitetta.* Kun muunnetaan tehtävän valintaikkunassa, ominaisuuspaneelissa, pikavalikossa tai taulukossa.
-- **Resurssikohdistus siirrettiin alitehtävään** (tieto) — *Resurssikohdistus ({resources}) on siirretty tehtävästä '{phase}' uuteen alitehtävään '{child}'. Yhteenvetotehtävä ei kanna itse resurssikohdistuksia.* Kun tehtävällä, jolla on resurssikohdistuksia, tulee alitehtäviä.
-- **Välitavoitemerkintä poistettiin** (tieto) — *Välitavoite '{phase}' on nyt saanut alitehtäviä ja on muuttunut yhteenvetotehtäväksi; välitavoitemerkintä on poistettu.*
+- **Resurssikohdistus siirrettiin alitehtävään** (tieto) — *Kohdistus siirrettiin alitehtävään '{child}'.* tai *N kohdistusta siirrettiin alitehtävään '{child}'.* Kun tehtävällä, jolla on resurssikohdistuksia, tulee alitehtäviä. Tehtävästä tulee yhteenvetotehtävä, eikä yhteenvetotehtävä kanna itse resurssikohdistuksia. Siksi kohdistukset siirtyvät ensimmäiseen uuteen alitehtävään. Siinä on linkki *Lue lisää* artikkeliin [Rakenteen muokkaaminen](docs://howto-structuur-aanpassen).
+- **Välitavoitemerkintä poistettiin** (tieto) — *'{phase}' ei ole enää välitavoite.* Kun välitavoite saa alitehtäviä. Välitavoite on hetki ilman alitehtäviä; alitehtävien kanssa siitä tulee yhteenvetotehtävä. Siinä on linkki *Lue lisää* artikkeliin [Rakenteen muokkaaminen](docs://howto-structuur-aanpassen).
 - **Yhteenvetotehtävä hylättiin** (tieto) — *'{phase}' ei voi muuttua yhteenvetotehtäväksi: …* Syy näkyy myös, ja *Mitään ei muutettu.*
 - **Soluja ohitettiin liitettäessä** (tieto) — *Ohitettiin N solua: ne ovat vain luku -tilassa (esimerkiksi automaattisesti numeroitu WBS-koodi tai laskettu sarake).*
 - **Viittauksia tyhjennettiin liitettäessä** (tieto) — *N viittausta eivät olleet tässä dokumentissa, ja ne tyhjennettiin (tehtäväkalenterit, mukautetut tehtävätyypit, activity codet tai mukautetut kentät lähdedokumentista).*
@@ -122,7 +121,7 @@ Alla oleva luettelo on valikoima, ryhmiteltynä aiheittain. Ellei toisin mainita
 - **Työ ja työsäännöt näkyvät** (tieto) — *Tämä tiedosto sisältää tallennettua työtä tai omia työsääntöjä. Työsääntö ja jäljellä oleva työ näkyvät tälle projektille.*
 - **MS Project -aikataulu luettu** (tieto) — *Tämä MS Project -tiedosto sisältää N tehtävää, joiden aikataulu on tauotettu, tasattu tai resurssiohjattu. Ne tuodaan ja näytetään sellaisina.*
 - **Taukoja ei viedä** (tieto) — *N tehtävää, joissa on taukoja, vietiin ilman taukoja: MS Project ja P6 tuntevat tauot vain työn jakautumisena.* Kun viedään MS Projectiin tai Primaveraan.
-- **Projektin aloituspäivä siirrettiin** (tieto) — *Projektin aloituspäivä siirrettiin: N tehtävän ankkuria ilman edeltäjää tai rajoitetta siirtyi uuteen aloituspäivään.*
+- **Projektin aloituspäivä siirrettiin** (tieto) — *N tehtävää siirtyi projektin aloituksen mukana.* Kun projektin aloitusta siirretään myöhemmäksi. Vain ne tehtävät, joilla ei ole edeltäjää eikä rajoitetta, joka olisi ennen uutta aloituspäivää, siirtyvät siihen päivään. Siinä on linkki *Lue lisää* artikkeliin [Uusi projekti ja Projektitiedot](docs://ref-projectinfo).
 - **Päivämääräikkuna ei enää ohjaa** (tieto) — *MS Projectin päivämääräikkuna ei enää ohjaa N tehtävää tämän muokkauksen jälkeen; …* Kerran asiakirjaa kohden.
 - **Tasaamisviive pyöristetty** (tieto) — *Tasaaminen pyöristää N tehtävän MS Projectin minuuttitarkan tasaamisviiveen kokonaisiin työpäiviin.* Kerran asiakirjaa kohden.
 - **Laskentaprofiili otettiin käyttöön** (tieto) — *Tämä projekti lasketaan tavalla {profile}. Muuta sitä kohdassa Tiedosto → Projektitiedot → Laskentaprofiili ja laskentavaihtoehdot.* Mukana on painike *Avaa laskentaprofiili*. Kun profiili on otettu käyttöön, seuraa tarvittaessa *Soveltamisen jälkeen N tehtävää siirtyi.*

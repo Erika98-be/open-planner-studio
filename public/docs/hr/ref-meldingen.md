@@ -56,7 +56,7 @@ Traka na dnu prikazuje, s lijeva na desno:
 
 ## Obavijesti
 
-Obavijesti se prikazuju dolje na ekranu, ali i u tablici, u Backstageu i u načinu prezentacije. Obavijest je *greška* ili *info*. Greška ostaje dok je ne kliknete. Info nestaje nakon 5 sekundi. Ti mjerači vremena kreću ispočetka čim se gomila obavijesti promijeni. Klik na obavijest zatvara je (opis alata *Zatvori obavijest*). Najviše tri obavijesti prikazuju se istodobno. Ako dođe četvrta, prvo ide najstariji info. Ako infa nema, ide najstarija obavijest. Tako greška nikad ne ispadne zbog infa. Gomila se pomiče od gumba otvorenog dijaloga i od fiksnih traka s radnjama.
+Obavijesti se prikazuju dolje na ekranu, ali i u tablici, u Backstageu i u načinu prezentacije. Obavijest je *greška* ili *info*. Greška ostaje dok ne kliknete križić. Info nestaje nakon 5 sekundi. Ti mjerači vremena kreću ispočetka čim se gomila obavijesti promijeni. Svaka obavijest ima križić gore desno (opis alata *Zatvori obavijest*) koji je odmah zatvara. Klik na tekst obavijesti ne radi ništa. Najviše tri obavijesti prikazuju se istodobno. Ako dođe četvrta, prvo ide najstariji info. Ako infa nema, ide najstarija obavijest. Tako greška nikad ne ispadne zbog infa. Gomila se pomiče od gumba otvorenog dijaloga i od fiksnih traka s radnjama.
 
 - **Brojač ×N** — obavijest s fiksnim ključem spaja ponavljanje u jedan redak s brojačem, na primjer greška pri spremanju koja se stalno vraća ili odbijena ovisnost koju ponavljate. Ne radi to svaka obavijest.
 - **Pročitaj više** — neke obavijesti imaju vezu *Pročitaj više* ili vlastitu temu (na primjer *Objašnjenje pravila rada*) koja vodi do vodiča u Backstageu › Pomoć.
@@ -84,12 +84,11 @@ Popis u nastavku je izbor, razvrstan po temi. Ako tekst ne kaže drugačije, oba
 ### Izračunavanje
 
 - **Raspored nije bilo moguće izračunati** (greška) — *Raspored nije bilo moguće izračunati* s razlogom ispod (vidi *Razlozi pogreške u rasporedu*). Pri *Izračunaj*, pri prebacivanju dokumenata i pri otvaranju datoteke.
-- **Datum stanja postavljen na danas** (info) — *Datum stanja još nije bio postavljen: sada je postavljen na danas ({date}), jer se napredak mjeri do datuma stanja. Promijenite ga u Raspored → Datum stanja.* Pri unosu napretka u projektu bez datuma stanja.
+- **Datum stanja postavljen na danas** (info) — *Datum stanja postavljen na danas ({date}).* Pri unosu napretka u projektu bez datuma stanja. Aplikacija mjeri napredak do datuma stanja, pa bez datuma stanja ne može obraditi napredak. Drugi datum postavljate u *Raspored › Temeljni planovi i napredak › Datum stanja*. S vezom *Pročitaj više* na [Napredak, datum stanja i temeljni plan](docs://uitleg-voortgang).
 - **Trajanje kraće od obavljenog rada** (info) — *'{name}' je već {N}% završen: trajanje kraće od već obavljenog rada nije moguće. Trajanje nije promijenjeno.*
 
 ### Ovisnosti i hijerarhija
 
-- **Ovisnost stvorena** (info) — *Ovisnost je stvorena: {predecessor} → {successor}*.
 - **Ovisnost odbijena** (info) — *Ta ovisnost već postoji*, *Ovisnost između zadatka i njegovog vlastitog (pra)nadređenog zadatka sažetka nije dopuštena.* ili *Ova ovisnost bi stvorila ciklus u rasporedu ({cycle}) i nije stvorena.* Ciklus navodi zadatke. Tako znate koju ovisnost prvo treba ukloniti ili obrnuti.
 - **Premještanje odbijeno** (info) — *Ovo premještanje bi stvorilo ciklus u rasporedu ({cycle}): ovisnosti zadatka sažetka vrijede i za njegove podzadatke. Ništa nije premješteno.*
 - **Ovisnosti otpadaju nakon premještanja** (info) — *Nakon premještanja N ovisnosti povezuju zadatak s njegovim vlastitim zadatkom sažetka; one se više ne uzimaju u izračun.*
@@ -99,11 +98,11 @@ Popis u nastavku je izbor, razvrstan po temi. Ako tekst ne kaže drugačije, oba
 
 ### Uređivanje zadataka
 
-- **Početak zabilježen kao ograničenje** (info) — *'{name}' ima prethodnika: novi početak je postavljen kao ograničenje „ne početi prije“ (SNET) {date}. Nakon ponovnog izračunavanja (F5) zadatak ne počinje prije tog datuma.* Pri promjeni početka zadatka s prethodnikom. Ako je zadatak već imao takvo ograničenje, obavijest kaže da je ograničenje pomaknuto. Za više zadataka odjednom daje broj.
+- **Početak zabilježen kao ograničenje** (info) — *'{name}' počinje najranije {date} (SNET).* Pri promjeni početka zadatka s prethodnikom. Prethodnik određuje početak, pa aplikacija bilježi vaš datum kao ograničenje „ne početi prije“ (SNET). Nakon ponovnog izračunavanja (F5) zadatak ne počinje prije tog datuma. Ako je zadatak već imao takvo ograničenje, obavijest glasi *'{name}' sada počinje najranije {date} (SNET).* Za više zadataka odjednom daje broj. S vezom *Pročitaj više* na [Ograničenja i rokovi za dovršetak](docs://uitleg-constraints).
 - **Početak nije primijenjen** (info) — *Novi početak '{name}' nije primijenjen: zadatak ima prethodnika i ograničenje {type} {date}, a ti određuju njegov početak. Promijenite to ograničenje da biste pomaknuli početak.*
 - **Kontrolna točka odbijena** (info) — *'{task}' ima dodjele resursa i ne može postati kontrolna točka. Prvo uklonite dodjele.* ili *'{task}' je zadatak sažetka s podzadacima i ne može postati kontrolna točka.* Pri pretvaranju u dijalogu zadatka, u oknu svojstava, u kontekstnom izborniku i u tablici.
-- **Dodjele premještene u podzadatak** (info) — *Dodjela za {resources} premještena je iz '{phase}' u novi podzadatak '{child}': zadatak sažetka sam po sebi ne nosi dodjele.* Kada zadatak s dodjelama dobije podzadatke.
-- **Oznaka kontrolne točke uklonjena** (info) — *Kontrolna točka '{phase}' sada ima podzadatke: to je zadatak sažetka, a oznaka kontrolne točke uklonjena je.*
+- **Dodjele premještene u podzadatak** (info) — *1 dodjela premještena u podzadatak '{child}'.* ili *N dodjela premješteno u podzadatak '{child}'.* Kada zadatak s dodjelama dobije podzadatke. Taj zadatak postaje zadatak sažetka, a zadatak sažetka sam po sebi ne nosi dodjele. Zato prelaze u prvi novi podzadatak. S vezom *Pročitaj više* na [Prilagođavanje strukture](docs://howto-structuur-aanpassen).
+- **Oznaka kontrolne točke uklonjena** (info) — *'{phase}' više nije kontrolna točka.* Kada kontrolna točka dobije podzadatke. Kontrolna točka je trenutak bez podzadataka; s podzadacima postaje zadatak sažetka. S vezom *Pročitaj više* na [Prilagođavanje strukture](docs://howto-structuur-aanpassen).
 - **Zadatak sažetka odbijen** (info) — *'{phase}' ne može postati zadatak sažetka: …* s razlogom, i *Ništa nije promijenjeno.*
 - **Ćelije preskočene pri lijepljenju** (info) — *Preskočeno je N ćelija: one su samo za čitanje (na primjer automatski numerirana oznaka WBS-a ili izračunati stupac).*
 - **Reference uklonjene pri lijepljenju** (info) — *N referenci nije postojalo u ovom dokumentu i uklonjeno je (kalendari zadataka, prilagođene vrste zadataka, šifre zadatka ili prilagođena polja iz izvornog dokumenta).*
@@ -122,7 +121,7 @@ Popis u nastavku je izbor, razvrstan po temi. Ako tekst ne kaže drugačije, oba
 - **Rad i pravila rada vidljivi** (info) — *Ova datoteka sadrži spremljeni rad ili vlastita pravila rada; pravilo rada i preostali posao vidljivi su za ovaj projekt.*
 - **MS Project raspored pročitan** (info) — *Ova MS Project datoteka sadrži N zadataka s prekinutim, razriješenim ili rasporedom vođenim resursima. Tako se uvoze i prikazuju.*
 - **Prekidi nisu izvezeni** (info) — *N zadataka s prekidima izvezeno je bez prekida: MS Project i P6 poznaju prekide samo kao raspodjelu rada.* Pri izvozu u MS Project ili Primavera.
-- **Datum početka projekta pomaknut** (info) — *Datum početka projekta pomaknut: N sidara zadataka bez prethodnika ili ograničenja pomaknuto je na novi datum.*
+- **Datum početka projekta pomaknut** (info) — *N zadataka pomaknuto je s početkom projekta.* Kada početak projekta postavite na kasniji datum. Na novi datum početka prelaze samo zadaci bez prethodnika i bez ograničenja koji bi bili prije tog datuma. S vezom *Pročitaj više* na [Novi projekt i Podaci o projektu](docs://ref-projectinfo).
 - **Prozor datuma više ne upravlja** (info) — *Prozor datuma iz MS Projecta više ne određuje datume N zadataka nakon ove izmjene; …* Jednom po dokumentu.
 - **Kašnjenje zbog uravnoteživanja zaokruženo** (info) — *Uravnoteživanje zaokružuje minutno precizno kašnjenje zbog uravnoteživanja iz MS Projecta na cijele radne dane za N zadataka.* Jednom po dokumentu.
 - **Profil izračuna primijenjen** (info) — *Ovaj projekt izračunava se kao {profile}. Promijenite u Datoteka → Podaci o projektu → Profil izračuna i opcije izračuna.* S gumbom *Otvori profil izračuna*. Nakon primjene profila, ako je potrebno, slijedi *Nakon primjene pomaknuto je N zadataka.*

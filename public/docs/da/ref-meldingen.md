@@ -56,7 +56,7 @@ Statuslinjen nederst viser fra venstre mod højre:
 
 ## Meddelelser
 
-Meddelelser vises nederst på skærmen, også i tabellen, i Backstage og i præsentationstilstand. En meddelelse er en *fejl* eller *info*. En fejl forbliver, til du klikker den væk. En info forsvinder efter 5 sekunder. Timerne starter forfra, så snart stakken ændrer sig. Et klik på en meddelelse lukker den (hjælpetekst *Luk meddelelse*). Der vises højst tre ad gangen. Kommer der en fjerde, forsvinder den ældste info først. Er der ingen info, forsvinder den ældste meddelelse. Så skubbes en fejl aldrig væk af en info. Stakken flytter sig væk fra knapperne i en åben dialog og fra faste handlingslinjer.
+Meddelelser vises nederst på skærmen, også i tabellen, i Backstage og i præsentationstilstand. En meddelelse er en *fejl* eller *info*. En fejl forbliver, til du klikker på krydset. En info forsvinder efter 5 sekunder. Timerne starter forfra, så snart stakken ændrer sig. Hver meddelelse har et kryds øverst til højre (hjælpetekst *Luk meddelelse*), der lukker den med det samme. Et klik på teksten i meddelelsen gør ingenting. Der vises højst tre ad gangen. Kommer der en fjerde, forsvinder den ældste info først. Er der ingen info, forsvinder den ældste meddelelse. Så skubbes en fejl aldrig væk af en info. Stakken flytter sig væk fra knapperne i en åben dialog og fra faste handlingslinjer.
 
 - **Tæller ×N** — en meddelelse med en fast nøgle samler gentagelser i én linje med en tæller, fx en gemmefejl, der bliver ved med at komme igen, eller en afvist afhængighed, som du gentager. Ikke alle meddelelser gør det.
 - **Læs mere** — nogle meddelelser har et link *Læs mere* eller et eget emne (fx *Arbejdsregler forklaret*) til vejledningen i Backstage › Hjælp.
@@ -84,12 +84,11 @@ Listen nedenfor er et udvalg, grupperet efter emne. Hvor der ikke står andet, e
 ### Beregning
 
 - **Tidsplanen kunne ikke beregnes** (fejl) — *Tidsplanen kunne ikke beregnes* med årsagen under den (se *Årsager til tidsplanfejl*). Ved *Beregn*, når du skifter dokument, og når du åbner en fil.
-- **Statusdato sat til i dag** (info) — *Der var endnu ingen statusdato. Den er nu sat til i dag ({date}), fordi fremdrift måles op til statusdatoen. Du kan ændre den under Tidsplan → Statusdato.* Når du angiver fremdrift i et projekt uden statusdato.
+- **Statusdato sat til i dag** (info) — *Statusdato sat til i dag ({date}).* Når du angiver fremdrift i et projekt uden statusdato. Appen måler fremdrift op til statusdatoen, så uden statusdato kan den ikke behandle fremdrift. En anden dato sætter du under *Tidsplan › Oprindelige planer & fremdrift › Statusdato*. Med et link *Læs mere* til [Fremdrift, statusdato og oprindelig plan](docs://uitleg-voortgang).
 - **Varighed kortere end det udførte arbejde** (info) — *‘{name}’ er allerede {N}% gennemført. En varighed, der er kortere end det gennemførte arbejde, er ikke mulig. Varigheden er ikke ændret.*
 
 ### Afhængigheder og hierarki
 
-- **Afhængighed oprettet** (info) — *Afhængighed oprettet: {predecessor} → {successor}*.
 - **Afhængighed afvist** (info) — *Denne afhængighed findes allerede*, *En afhængighed mellem en opgave og dens egen (over)ordnede hovedopgave er ikke tilladt.* eller *Denne afhængighed ville skabe en cyklus i tidsplanen ({cycle}), og den er ikke oprettet.* Cyklussen nævner opgaverne, så du ved, hvilken afhængighed du skal fjerne eller vende først.
 - **Flytning afvist** (info) — *Denne flytning ville skabe en cyklus i tidsplanen ({cycle}): afhængighederne for en hovedopgave gælder også for dens underopgaver. Der er ikke ændret noget.*
 - **Afhængigheder falder ud efter en flytning** (info) — *Efter flytningen forbinder N afhængigheder en opgave med sin egen hovedopgave; de tæller ikke længere med i beregningen.*
@@ -99,11 +98,11 @@ Listen nedenfor er et udvalg, grupperet efter emne. Hvor der ikke står andet, e
 
 ### Redigering af opgaver
 
-- **Start gemt som begrænsning** (info) — *'{name}' har en foregående opgave: den nye start er nu begrænsningen Start ikke tidligere end (SNET) {date}. Efter genberegning (F5) starter opgaven ikke før den dato.* Når du ændrer starten på en opgave med en foregående opgave. Havde opgaven allerede en sådan begrænsning, siger meddelelsen, at den er flyttet. Ved flere opgaver på én gang vises et antal.
+- **Start gemt som begrænsning** (info) — *'{name}' starter tidligst {date} (SNET).* Når du ændrer starten på en opgave med en foregående opgave. Den foregående opgave bestemmer starten, så appen gemmer din dato som begrænsningen *Start ikke tidligere end* (SNET). Efter genberegning (F5) starter opgaven ikke før den dato. Havde opgaven allerede en sådan begrænsning, står der *'{name}' starter nu tidligst {date} (SNET).* Ved flere opgaver på én gang vises et antal. Med et link *Læs mere* til [Begrænsninger og deadlines](docs://uitleg-constraints).
 - **Start ikke anvendt** (info) — *Den nye start for '{name}' blev ikke anvendt: opgaven har en foregående opgave, og begrænsningen {type} {date} bestemmer dens start. Ændr begrænsningen, hvis starten skal ændres.*
 - **Milepæl afvist** (info) — *'{task}' har ressource-tildelinger og kan ikke blive en milepæl. Slet tildelingerne først.* eller *'{task}' er en hovedopgave med underopgaver og kan ikke blive en milepæl.* Ved omdannelse i opgavedialogen, i egenskabspanelet, i genvejsmenuen og i tabellen.
-- **Tildelinger flyttet til en underopgave** (info) — *Tildelingen af {resources} er overført fra '{phase}' til den nye underopgave '{child}'. En hovedopgave har selv ingen tildelinger.* Når en opgave med tildelinger får underopgaver.
-- **Milepælsmarkering fjernet** (info) — *Milepælen '{phase}' har nu underopgaver og er blevet en hovedopgave. Milepælsmarkeringen er fjernet.*
+- **Tildelinger flyttet til en underopgave** (info) — *Tildelingen er flyttet til underopgaven '{child}'.* eller *N tildelinger er flyttet til underopgaven '{child}'.* Når en opgave med tildelinger får underopgaver. Den opgave bliver en hovedopgave, og en hovedopgave har selv ingen tildelinger. Derfor flyttes de til den første nye underopgave. Med et link *Læs mere* til [Tilpasse strukturen](docs://howto-structuur-aanpassen).
+- **Milepælsmarkering fjernet** (info) — *'{phase}' er ikke længere en milepæl.* Når en milepæl får underopgaver. En milepæl er et tidspunkt uden underopgaver; med underopgaver bliver den en hovedopgave. Med et link *Læs mere* til [Tilpasse strukturen](docs://howto-structuur-aanpassen).
 - **Hovedopgave afvist** (info) — *'{phase}' kan ikke blive en hovedopgave: …* med årsagen, og *Der er ikke ændret noget.*
 - **Celler sprunget over ved indsættelse** (info) — *N celler sprunget over: de er skrivebeskyttede (fx en automatisk nummereret WBS-kode eller en beregnet kolonne).*
 - **Referencer ryddet ved indsættelse** (info) — *N referencer fandtes ikke i dette dokument og er ryddet (opgavekalendere, egne opgavetyper, activity codes eller brugerdefinerede felter fra kildedokumentet).*
@@ -122,7 +121,7 @@ Listen nedenfor er et udvalg, grupperet efter emne. Hvor der ikke står andet, e
 - **Arbejde og arbejdsregler synlige** (info) — *Denne fil indeholder gemt arbejde eller egne arbejdsregler; arbejdsreglen og det resterende arbejde vises for dette projekt.*
 - **MS Project-tidsplan læst** (info) — *Denne MS Project-fil indeholder N opgaver med afbrydelser, udjævning eller ressourcestyret tidsplan. De indlæses og vises sådan.*
 - **Afbrydelser ikke eksporteret** (info) — *N opgaver med afbrydelser er eksporteret uden afbrydelser: MS Project og P6 kender afbrydelser kun som fordeling af arbejde.* Ved eksport til MS Project eller Primavera.
-- **Projektstartdato forskudt** (info) — *Projektstartdato forskudt: N opgaveankre uden foregående opgave eller begrænsning er forskudt med til den nye startdato.*
+- **Projektstartdato forskudt** (info) — *N opgaver flyttede med projektstarten.* Når du sætter projektstarten senere. Kun opgaver uden foregående opgave og uden en begrænsning, der ville ligge før den nye startdato, flyttes til den dato. Med et link *Læs mere* til [Opret nyt projekt og Projektinfo](docs://ref-projectinfo).
 - **Datovindue styrer ikke længere** (info) — *MS Projects datovindue styrer ikke længere N opgaver efter denne redigering; …* Én gang pr. dokument.
 - **Udjævningsforskydning afrundet** (info) — *Udjævning runder MS Projects minutpræcise udjævningsforskydning for N opgaver af til hele arbejdsdage.* Én gang pr. dokument.
 - **Beregningsprofil anvendt** (info) — *Dette projekt beregnes som {profile}. Ændr det via Fil → Projektinfo → Beregningsprofil og beregningsindstillinger.* Med knappen *Åbn beregningsprofil*. Efter anvendelse af en profil følger *Efter anvendelsen er N opgaver forskudt.*, hvis det er nødvendigt.

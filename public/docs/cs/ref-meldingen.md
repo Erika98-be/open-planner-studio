@@ -56,7 +56,7 @@ Stavový řádek dole zobrazuje zleva doprava:
 
 ## Oznámení
 
-Oznámení se zobrazují v dolní části obrazovky, také v tabulce, v Backstage a v režimu prezentace. Oznámení je *chyba* nebo *informace*. Chyba zůstane, dokud ji kliknutím nezavřete. Informace zmizí po 5 sekundách. Časovače začnou znovu, jakmile se seznam oznámení změní. Kliknutím na oznámení ho zavřete (popisek *Zavřít oznámení*). Najednou se zobrazí nejvýše tři oznámení. Když přijde čtvrté, nejdřív zmizí nejstarší informace. Pokud žádná informace není, zmizí nejstarší oznámení. Chyba tak nikdy nezmizí kvůli informaci. Seznam oznámení se posune mimo tlačítka otevřeného dialogu a mimo pevné lišty s akcemi.
+Oznámení se zobrazují v dolní části obrazovky, také v tabulce, v Backstage a v režimu prezentace. Oznámení je *chyba* nebo *informace*. Chyba zůstane, dokud nekliknete na křížek. Informace zmizí po 5 sekundách. Časovače začnou znovu, jakmile se seznam oznámení změní. Každé oznámení má vpravo nahoře křížek (popisek *Zavřít oznámení*), který ho hned zavře. Kliknutí na text oznámení nic neudělá. Najednou se zobrazí nejvýše tři oznámení. Když přijde čtvrté, nejdřív zmizí nejstarší informace. Pokud žádná informace není, zmizí nejstarší oznámení. Chyba tak nikdy nezmizí kvůli informaci. Seznam oznámení se posune mimo tlačítka otevřeného dialogu a mimo pevné lišty s akcemi.
 
 - **Počítadlo ×N** — oznámení s pevným klíčem spojí opakování do jednoho řádku s počítadlem. Například chyba při ukládání, která se stále vrací, nebo závislost, kterou aplikace odmítla a vy ji opakovaně zkoušíte vytvořit. Ne každé oznámení to dělá.
 - **Číst více** — některá oznámení mají volbu *Číst více* nebo vlastní téma (například *Vysvětlení pravidel pevné veličiny*), které vede do průvodce v Backstage › Nápověda.
@@ -84,12 +84,11 @@ Seznam níže je výběr seskupený podle témat. Pokud není uvedeno jinak, jde
 ### Výpočet
 
 - **Plán nelze přepočítat** (chyba) — *Plán nelze přepočítat* a pod tím důvod (viz *Důvody chyby plánu*). Zobrazí se po kliknutí na *Přepočítat*, při přepnutí dokumentu a při otevření souboru.
-- **Datum stavu nastaveno na dnešek** (informace) — *Datum stavu zatím nebylo nastaveno: nyní je nastaveno na dnešek ({date}), protože průběh se měří až do data stavu. Změnit ho lze na kartě Plán → Datum stavu.* Zobrazí se při zadávání průběhu v projektu bez data stavu.
+- **Datum stavu nastaveno na dnešek** (informace) — *Datum stavu nastaveno na dnešek ({date}).* Zobrazí se při zadávání průběhu v projektu bez data stavu. Aplikace měří průběh až do data stavu, takže bez data stavu průběh nedokáže zpracovat. Jiné datum nastavíte na kartě *Plán › Směrné plány a průběh › Datum stavu*. S volbou *Číst více*, která vede na [Průběh, datum stavu a směrný plán](docs://uitleg-voortgang).
 - **Doba trvání kratší než provedená práce** (informace) — *Úkol „{name}“ je již dokončen z {N} %: doba trvání nemůže být kratší než již provedená práce. Doba trvání nebyla změněna.*
 
 ### Závislosti a hierarchie
 
-- **Závislost vytvořena** (informace) — *Závislost vytvořena: {predecessor} → {successor}*.
 - **Závislost odmítnuta** (informace) — *Tato závislost již existuje*, *Závislost mezi úkolem a jeho vlastním nadřazeným souhrnným úkolem (i vyšším) není povolena.* nebo *Tato závislost by v plánu vytvořila cyklus ({cycle}) a nebyla vytvořena.* Cyklus uvádí úkoly, takže víte, kterou závislost nejdřív odstranit nebo obrátit.
 - **Přesun odmítnut** (informace) — *Toto přesunutí by vytvořilo cyklus v plánu ({cycle}): závislosti souhrnného úkolu platí také pro jeho dílčí úkoly. Nic nebylo přesunuto.*
 - **Závislosti po přesunu vypadnou** (informace) — *Po přesunutí spojují N závislosti úkol s jeho vlastním souhrnným úkolem; ty se již do výpočtu nezapočítávají.*
@@ -99,11 +98,11 @@ Seznam níže je výběr seskupený podle témat. Pokud není uvedeno jinak, jde
 
 ### Úprava úkolů
 
-- **Začátek zapsán jako omezení** (informace) — *„{name}“ má předchůdce: nový začátek je zapsán jako omezení Zahájit nejdříve (SNET) {date}. Po přepočítání (F5) úkol nezačne před tímto datem.* Zobrazí se, když změníte začátek úkolu s předchůdcem. Pokud úkol už takové omezení měl, oznámení říká, že se omezení přesunulo. U několika úkolů najednou uvádí počet.
+- **Začátek zapsán jako omezení** (informace) — *„{name}“ nezačne před {date} (SNET).* Zobrazí se, když změníte začátek úkolu s předchůdcem. Začátek určuje předchůdce, proto aplikace zapíše vaše datum jako omezení Zahájit nejdříve (SNET). Po přepočítání (F5) úkol nezačne před tímto datem. Pokud úkol už takové omezení měl, oznámení říká *„{name}“ nyní nezačne před {date} (SNET).* U několika úkolů najednou uvádí počet. S volbou *Číst více*, která vede na [Omezení a konečné termíny](docs://uitleg-constraints).
 - **Začátek nebyl použit** (informace) — *Nový začátek úkolu „{name}“ nebyl použit: úkol má předchůdce a omezení {type} {date}, a tyto určují jeho začátek. Změňte toto omezení, abyste začátek posunuli.*
 - **Úkol nelze převést na milník** (informace) — *'{task}' má přiřazení zdrojů a nemůže se stát milníkem. Nejprve odeberte přiřazení.* nebo *'{task}' je souhrnný úkol s dílčími úkoly a nemůže se stát milníkem.* Zobrazí se při převodu v dialogu úkolu, v panelu vlastností, v kontextové nabídce a v tabulce.
-- **Přiřazení přesunuta do dílčího úkolu** (informace) — *Přiřazení {resources} bylo přesunuto z úkolu '{phase}' do nového dílčího úkolu '{child}': souhrnný úkol sám žádná přiřazení nenese.* Zobrazí se, když úkol s přiřazeními dostane dílčí úkoly.
-- **Označení milníku odstraněno** (informace) — *Milník '{phase}' má nyní dílčí úkoly a stal se souhrnným úkolem; označení milníku bylo odstraněno.*
+- **Přiřazení přesunuta do dílčího úkolu** (informace) — *Přiřazení přesunuto do dílčího úkolu „{child}“.* nebo *N přiřazení přesunuto do dílčího úkolu „{child}“.* Zobrazí se, když úkol s přiřazeními dostane dílčí úkoly. Tento úkol se stane souhrnným úkolem a souhrnný úkol sám žádná přiřazení nenese. Proto se přesunou do prvního nového dílčího úkolu. S volbou *Číst více*, která vede na [Úprava struktury](docs://howto-structuur-aanpassen).
+- **Označení milníku odstraněno** (informace) — *„{phase}“ už není milník.* Zobrazí se, když milník dostane dílčí úkoly. Milník je okamžik bez dílčích úkolů; s dílčími úkoly se stane souhrnným úkolem. S volbou *Číst více*, která vede na [Úprava struktury](docs://howto-structuur-aanpassen).
 - **Souhrnný úkol odmítnut** (informace) — *„{phase}“ nemůže být souhrnným úkolem: …* s důvodem a *Nic nebylo změněno.*
 - **Buňky přeskočeny při vložení** (informace) — *Přeskočeno N buněk: jsou jen pro čtení (například automaticky číslovaný kód WBS nebo vypočítaný sloupec).*
 - **Odkazy vymazány při vložení** (informace) — *N propojení v tomto dokumentu neexistovalo a bylo vymazáno (kalendáře úkolů, vlastní typy úkolů, kódy aktivit nebo vlastní pole ze zdrojového dokumentu).*
@@ -122,7 +121,7 @@ Seznam níže je výběr seskupený podle témat. Pokud není uvedeno jinak, jde
 - **Práce a pravidla pevné veličiny jsou vidět** (informace) — *Tento soubor obsahuje uloženou práci nebo vlastní pravidla pevné veličiny; pravidlo pevné veličiny a zbývající práce jsou v tomto projektu viditelné.*
 - **Plán z MS Projectu načten** (informace) — *Tento soubor MS Project obsahuje N úkolů s přerušením práce, vyrovnáním nebo plánováním řízeným zdroji. Jsou takto načteny a zobrazeny.*
 - **Přerušení nebyla exportována** (informace) — *N úkolů s přerušeními práce bylo exportováno bez přerušení práce: MS Project a P6 znají přerušení pouze jako rozložení práce.* Zobrazí se při exportu do MS Projectu nebo Primavery.
-- **Zahájení projektu posunuto** (informace) — *Zahájení projektu posunuto: N kotev úkolů bez předchůdce nebo omezení bylo posunuto na nové datum zahájení.*
+- **Zahájení projektu posunuto** (informace) — *N úkolů se posunulo se zahájením projektu.* Zobrazí se, když nastavíte zahájení projektu na pozdější datum. Na nové datum zahájení se posunou jen úkoly bez předchůdce a bez omezení, které by ležely před tímto datem. S volbou *Číst více*, která vede na [Nový projekt a Info o projektu](docs://ref-projectinfo).
 - **Časové okno už neřídí** (informace) — *Časové okno MS Projectu po této úpravě už neřídí N úkolů; …* Jednou za dokument.
 - **Zpoždění vyrovnání zaokrouhleno** (informace) — *Vyrovnání zaokrouhluje zpoždění vyrovnání z MS Project (přesné na minuty) na celé pracovní dny. Týká se N úkolů.* Jednou za dokument.
 - **Profil výpočtu použit** (informace) — *Tento projekt se počítá jako {profile}. Změnit to lze v Soubor → Informace o projektu → Profil výpočtu a možnosti výpočtu.* S tlačítkem *Otevřít profil výpočtu*. Po použití profilu následuje, pokud je potřeba, *Po použití se posunulo N úkolů.*
