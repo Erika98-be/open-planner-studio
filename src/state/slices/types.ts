@@ -186,6 +186,7 @@ export type NotificationMessageKey =
   // Opslag via de site (issue #309): de site weigerde omdat het bestand intussen verder is
   // (`code === 'conflict'`). Parameter `name`. Het document blijft gewijzigd.
   | 'notifications.siteSaveConflict'
+  | 'notifications.siteFileGone'
   | 'notifications.librarySaveFailed'
   | 'notifications.savedViaDownload'
   // Opslaan in een browser die niet terugschrijft — zie `browserSaveNotice.ts` (één keer per sessie).

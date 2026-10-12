@@ -110,15 +110,22 @@ export function TitleBar() {
 
   // Een naamloos document heeft geen bestaand doel dat veilig overschreven mag worden. Recovery
   // draait onafhankelijk hiervan door; de schakelaar belooft uitsluitend échte bestandsopslag.
-  // Eén afleiding van het opslagdoel (`saveTargetRef`), dezelfde als Opslaan en de AutoSave-timer —
-  // dus ook een document op de site heeft hier een bruikbaar doel.
-  const autoSaveRef = useMemo(
+  // Eén afleiding van het opslagdoel (`saveTargetRef`), dezelfde als Opslaan en de AutoSave-timer.
+  // Een site-bestand telt hier NIET als doel: automatisch opslaan naar de site staat uit, want elke
+  // ronde zou een nieuwe versie maken (besluit #309). De knop is dan grijs, met een eigen uitleg.
+  const autoSaveTarget = useMemo(
     () => saveTargetRef({ filePath, fileHandle, siteFileId }),
     [fileHandle, filePath, siteFileId],
   );
-  const autoSaveTitle = !autoSaveRef
-    ? tCommon('autosave.noFile')
-    : tCommon(autoSaveToFile ? 'autosave.onHint' : 'autosave.offHint');
+  const autoSaveOnSite = autoSaveTarget?.kind === 'site';
+  const autoSaveRef = autoSaveOnSite ? null : autoSaveTarget;
+  // Zonder site-doel precies zoals vroeger: de knop volgt `autoSaveToFile`.
+  const autoSaveActive = autoSaveToFile && !autoSaveOnSite;
+  const autoSaveTitle = autoSaveOnSite
+    ? tCommon('autosave.siteDisabled')
+    : !autoSaveRef
+      ? tCommon('autosave.noFile')
+      : tCommon(autoSaveToFile ? 'autosave.onHint' : 'autosave.offHint');
   const toggleAutoSave = useCallback(() => {
     if (!autoSaveRef) return;
     if (autoSaveToFile) { setAutoSaveToFile(false); return; }
@@ -139,9 +146,9 @@ export function TitleBar() {
           {/* Nieuw/Openen/Opslaan staan hier bewust niet (review 2026-10-06): ze staan al op Start en in
               Bestand, en de oude Opslaan-knop droeg het misleidende label "Opslaan als…". */}
           <button
-            className={`title-bar-autosave${autoSaveToFile ? ' active' : ''}`}
+            className={`title-bar-autosave${autoSaveActive ? ' active' : ''}`}
             role="switch"
-            aria-checked={autoSaveToFile}
+            aria-checked={autoSaveActive}
             aria-label={tCommon('autosave.label')}
             disabled={!autoSaveRef}
             title={autoSaveTitle}

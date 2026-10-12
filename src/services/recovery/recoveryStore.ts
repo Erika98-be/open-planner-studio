@@ -61,7 +61,7 @@ export interface RecoveryDocMetadata {
   datesAsRecorded: boolean;
   /**
    * Het site-opslagdoel (`DocumentPayload.siteFileId`, issue #309) en de versie waarop het document
-   * rust (`siteBackend.knownSiteVersion`). Optioneel: zonder site blijven ze weg of `null`, en een
+   * rust (`DocumentPayload.siteFileVersion`). Optioneel: zonder site blijven ze weg of `null`, en een
    * ouder manifest kent ze niet. Zie `RecoveryManifestDoc.siteFileId`.
    */
   siteFileId?: string | null;
@@ -115,11 +115,12 @@ const legacyFile = names.legacy;
 const TMP_SUFFIX = recoveryTmpSuffix;
 
 /** Manifestversie mét eigenaarschapsvelden. Zie `RecoveryManifest` voor de migratieregel. */
-export const RECOVERY_MANIFEST_VERSION = 5;
+export const RECOVERY_MANIFEST_VERSION = 4;
 
 /**
  * De site-velden zoals ze in een manifestregel horen: weggelaten als er geen site-doel is. Zo blijft
- * een manifest zonder site byte-gelijk aan vóór issue #309 (behalve het versienummer).
+ * een manifest zonder site byte-gelijk aan vóór issue #309. De velden zijn optioneel en het
+ * versienummer is nooit een leespoort, dus het blijft 4.
  */
 export function siteMetaFields(record: object | null | undefined):
   { siteFileId?: string; siteFileVersion?: string } {

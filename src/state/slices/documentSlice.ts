@@ -391,7 +391,7 @@ export const createDocumentSlice: AppSliceFactory<DocumentSlice> = (runtime) => 
 
     // Bouw de kopie-payload EXPLICIET — geen stilzwijgende afhankelijkheid van Immer-copy-on-write.
     // 'clone'-rolvelden + view/collapsedTaskIds worden diep gekloond; selectie start vers;
-    // filePath/fileHandle/siteFileId genuld; cpmResult/resourceLoadResult ('ref') mogen per referentie mee.
+    // filePath/fileHandle/siteFileId/siteFileVersion genuld; cpmResult/resourceLoadResult ('ref') mogen per referentie mee.
     const copy: DocumentPayload = {
       project: { ...deepClone(src.project), name: copyName },
       calendar: deepClone(src.calendar),
@@ -420,6 +420,7 @@ export const createDocumentSlice: AppSliceFactory<DocumentSlice> = (runtime) => 
       fileHandle: null,
       // Ook het site-doel niet: anders schrijft Ctrl+S in de kopie een nieuwe versie van de bron.
       siteFileId: null,
+      siteFileVersion: null,
       autoSaveToFile: false,
       isDirty: true,
       xerImportMetadata: src.xerImportMetadata

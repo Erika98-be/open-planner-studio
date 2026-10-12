@@ -77,6 +77,12 @@ export interface DocumentPayload {
    *  `null`. Net als `fileHandle` ALLEEN het doel — identiteit/titel blijft `filePath` (de naam). Gaat
    *  niet mee in IFC of undo; crashherstel bewaart hem in het manifest. */
   siteFileId: string | null;
+  /** De versie van het site-bestand waarop DIT document rust: de versie die dit document het laatst
+   *  las (nieuwste versie geopend) of schreef. Gaat als `baseVersion` mee bij de volgende opslag, zodat
+   *  de site een conflict herkent. Bewust per document en niet per bestand-id: twee tabbladen op
+   *  hetzelfde site-bestand hebben elk hun eigen basis. `null` zonder site-doel. Niet in IFC of undo;
+   *  crashherstel bewaart hem in het manifest. */
+  siteFileVersion: string | null;
   /** Persoonlijke sessiekeuze: echte bestands-AutoSave, geen IFC-data en geen crashherstel. */
   autoSaveToFile: boolean;
   isDirty: boolean;
@@ -122,6 +128,8 @@ export type RecoveryDocInput = ImportResult & {
   filePath: string | null;
   /** Zie `RecoveryDocMeta.siteFileId`. */
   siteFileId?: string | null;
+  /** Zie `RecoveryDocMeta.siteFileVersion`. */
+  siteFileVersion?: string | null;
   isDirty: boolean;
   /** Zie `RecoveryDocMeta.datesAsRecorded`. */
   datesAsRecorded: boolean;
@@ -138,6 +146,9 @@ export interface RecoveryDocMeta {
    * niet en leveren `null`.
    */
   siteFileId?: string | null;
+  /** De versie waarop het document rustte (`DocumentPayload.siteFileVersion`). Zonder deze basis
+   *  stuurt Ctrl+S na herstel geen `baseVersion` mee en ziet de site geen conflict. */
+  siteFileVersion?: string | null;
   isDirty: boolean;
   /**
    * Stond het document in "datums zoals opgeslagen" toen de snapshot geschreven werd? Komt uit
@@ -271,6 +282,7 @@ export const DOCUMENT_FIELDS = [
   field({ key: 'fileHandle', get: (s) => s.fileHandle, set: (s, v) => { s.fileHandle = v; }, fresh: () => null, snapshot: 'none', fromPayload: (p) => p.fileHandle ?? null }),
   // Opslaan-doel op de site — zelfde rol als `fileHandle`: niet in undo, niet in IFC.
   field({ key: 'siteFileId', get: (s) => s.siteFileId, set: (s, v) => { s.siteFileId = v; }, fresh: () => null, snapshot: 'none', fromPayload: (p) => p.siteFileId ?? null }),
+  field({ key: 'siteFileVersion', get: (s) => s.siteFileVersion, set: (s, v) => { s.siteFileVersion = v; }, fresh: () => null, snapshot: 'none', fromPayload: (p) => p.siteFileVersion ?? null }),
   // Runtime-only: rijdt mee tussen open tabbladen, maar nooit door IFC of recoverymetadata.
   field({ key: 'autoSaveToFile', get: (s) => s.autoSaveToFile, set: (s, v) => { s.autoSaveToFile = v; }, fresh: () => false, snapshot: 'none', fromPayload: (p) => p.autoSaveToFile ?? false }),
   field({ key: 'isDirty', get: (s) => s.isDirty, set: (s, v) => { s.isDirty = v; }, fresh: () => false, snapshot: 'none' }),
@@ -432,7 +444,14 @@ export function freshPayload(): DocumentPayload {
  *     `applyRecordedDatesOnLoad`/`applyRestoredRecordedMode` in `documentActivation.ts`.
  */
 export function payloadFromInput(d: RecoveryDocInput): DocumentPayload {
-  return { ...payloadFromImport(d, d.filePath), siteFileId: d.siteFileId ?? null, isDirty: d.isDirty, scheduleStale: true };
+  const siteFileId = d.siteFileId ?? null;
+  return {
+    ...payloadFromImport(d, d.filePath),
+    siteFileId,
+    siteFileVersion: siteFileId ? d.siteFileVersion ?? null : null,
+    isDirty: d.isDirty,
+    scheduleStale: true,
+  };
 }
 
 

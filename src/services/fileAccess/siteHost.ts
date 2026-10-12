@@ -16,26 +16,39 @@
  * cross-origin parent is niet bereikbaar en telt als "geen site".
  *
  * Gebruikt de site `initialFileId` en zet ze de host pas ná het laden, dan stuurt ze daarna één keer
- * het event `openaec-host-ready` op `window` (zie `SITE_HOST_READY_EVENT`). Anders mist de tool het
- * startbestand als zijn opstartcontrole al voorbij is.
+ * het event `openaec-host-ready` (zie `SITE_HOST_READY_EVENT`) op het venster waar de host staat: op
+ * het eigen `window` van de tool, of op `window.parent` als de host daar staat. De tool luistert op
+ * beide (de parent alleen als die same-origin is). Anders mist de tool het startbestand als zijn
+ * opstartcontrole al voorbij is.
  *
  * ## De vier functies
  *
  * - `list({ extensions })` — de bestanden die de tool kan openen. `extensions` zijn extensies zonder
  *   punt, in kleine letters (`['ifc', 'csv', 'xml', 'mpp', 'xer']`); de site mag erop filteren (de
  *   tool filtert daarna zelf ook op de extensie van `name`).
- * - `open(id, version?)` — de inhoud van een bestand. Zonder `version` de nieuwste versie. `data` mag
- *   een `Blob`, `ArrayBuffer`, `Uint8Array` of tekst zijn; tekstformaten leest de tool als UTF-8
- *   (zoals `File.text()`).
+ * - `open(id, version?)` — de inhoud van een bestand. Zonder `version` de nieuwste versie; dan MOET
+ *   `file.version` de gelezen versie zijn (anders weigert de tool het bestand: zonder versie kan hij
+ *   bij de volgende opslag geen `baseVersion` meesturen). `data` mag een `Blob`, `ArrayBuffer`,
+ *   `Uint8Array` of tekst zijn; tekstformaten leest de tool als UTF-8 (zoals `File.text()`).
  * - `save({ id?, name, data, baseVersion? })` — opslaan. ZONDER `id` maakt dit een NIEUW bestand; MET
- *   `id` schrijft het een nieuwe versie van dat bestand en geeft het hetzelfde `id` terug.
- *   `baseVersion` is de versie die de tool van dat bestand het laatst las of schreef. Is het bestand
- *   intussen verder (iemand anders sloeg op), dan mag de site weigeren met een fout waarvan
- *   `code === 'conflict'`; de tool meldt dat dan apart en het document blijft gewijzigd. Elke andere
- *   fout meldt de tool met de tekst (`message`) van de site erbij.
+ *   `id` schrijft het een nieuwe versie van dat bestand. Het antwoord MOET altijd een `id` en de
+ *   net geschreven `version` hebben, en bij een opslag met `id` hetzelfde `id`. Klopt het antwoord
+ *   niet, dan behandelt de tool de opslag als mislukt (melding, het document blijft gewijzigd).
+ *   `baseVersion` is de versie waarop het DOCUMENT in de tool rust: de versie die dát document het
+ *   laatst las of schreef (twee tabbladen op hetzelfde bestand hebben elk hun eigen basis). Is het
+ *   bestand intussen verder (iemand anders sloeg op), dan weigert de site met een fout waarvan
+ *   `code === 'conflict'`; de tool meldt dat apart en het document blijft gewijzigd.
  * - `versions(id)` — de versies van een bestand, nieuwste eerst.
  *
- * Alle vier geven een Promise terug. Een geweigerde Promise is een fout; de tool vangt hem af.
+ * Alle vier geven een Promise terug. Een geweigerde Promise is een fout; de tool vangt hem af en
+ * toont de tekst (`message`) van de site erbij. Twee foutcodes (`code`) hebben een eigen betekenis:
+ *  - `'conflict'` bij `save`: zie hierboven.
+ *  - `'not-found'` bij `open`: het bestand bestaat niet (meer). Alleen dan haalt de tool het uit de
+ *    recente bestanden; bij elke andere fout (netwerk, rechten, storing) blijft het daar staan.
+ *
+ * De tool schrijft ALLEEN naar de site als de gebruiker opslaat (Opslaan of Opslaan als). Automatisch
+ * opslaan staat voor een site-bestand uit: elke ronde zou een nieuwe versie maken. Crashherstel blijft
+ * lokaal in de browser.
  *
  * Staat de host op `window.parent`, dan komen objecten uit twee vensters. De tool controleert de
  * inhoud daarom zonder `instanceof`; de site doet er goed aan hetzelfde te doen met de `Blob` die de
@@ -50,7 +63,8 @@ export interface SiteFileInfo {
   id: string;
   /** Bestandsnaam inclusief extensie (bijv. `Planning.ifc`). De extensie bepaalt het formaat. */
   name: string;
-  /** De versie die deze info beschrijft (na `open`/`save`: de gelezen of net geschreven versie). */
+  /** De versie die deze info beschrijft. VERPLICHT in het antwoord van `save` (de net geschreven
+   *  versie) en van `open` zonder `version` (de gelezen versie); in `list` optioneel. */
   version?: string;
   /** Laatst gewijzigd, bij voorkeur ISO 8601. Alleen voor weergave. */
   modified?: string;
@@ -84,11 +98,15 @@ export interface OpenAECHost {
   initialFileId?: string;
 }
 
-/** Event op `window` waarmee een site meldt dat `window.openaecHost` er nu staat. */
+/** Event waarmee een site meldt dat `openaecHost` er nu staat; op het venster waar de host staat
+ *  (het eigen venster van de tool of een same-origin `window.parent`). */
 export const SITE_HOST_READY_EVENT = 'openaec-host-ready';
 
 /** De `code` waarmee een site een opslag weigert omdat het bestand intussen verder is. */
 export const SITE_CONFLICT_CODE = 'conflict';
+
+/** De `code` waarmee een site meldt dat een bestand niet (meer) bestaat. */
+export const SITE_NOT_FOUND_CODE = 'not-found';
 
 declare global {
   interface Window {
@@ -165,9 +183,36 @@ export function siteInitialFileId(): string | null {
   return null;
 }
 
+function siteErrorCode(err: unknown): unknown {
+  return typeof err === 'object' && err !== null ? (err as { code?: unknown }).code : undefined;
+}
+
 /** Weigerde de site een opslag omdat het bestand intussen verder is? (`code === 'conflict'`) */
 export function isSiteConflict(err: unknown): boolean {
-  return typeof err === 'object' && err !== null && (err as { code?: unknown }).code === SITE_CONFLICT_CODE;
+  return siteErrorCode(err) === SITE_CONFLICT_CODE;
+}
+
+/** Meldde de site dat het bestand niet (meer) bestaat? (`code === 'not-found'`) */
+export function isSiteNotFound(err: unknown): boolean {
+  return siteErrorCode(err) === SITE_NOT_FOUND_CODE;
+}
+
+/**
+ * De vensters waarop een site `openaec-host-ready` kan sturen: het eigen venster en, in een iframe,
+ * een same-origin parent. Een cross-origin parent valt weg (hij gooit al bij het lezen van een
+ * eigenschap); Tauri heeft nooit een site.
+ */
+export function siteHostWindows(): Window[] {
+  if (typeof window === 'undefined' || '__TAURI_INTERNALS__' in window) return [];
+  const windows: Window[] = [window];
+  try {
+    const p = window.parent;
+    // Lees één eigenschap om same-origin af te dwingen: cross-origin gooit hier een SecurityError.
+    if (p && p !== window && typeof p.addEventListener === 'function') windows.push(p);
+  } catch {
+    /* cross-origin parent: geen host bereikbaar */
+  }
+  return windows;
 }
 
 /** De tekst van een fout van de site, voor het detail van een melding. */
