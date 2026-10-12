@@ -31,7 +31,7 @@ read-only XER source route (`data.getImportSource*`); `1.2.0` — calculation pr
 `api.help.*` (register Help articles, open a bundled project file, guide panel) plus the generic
 ribbon anchors; `1.4.1` — patch, no contract change: `loadProject` with the same project id keeps the
 project data that the result cannot carry, a different id gets no save target, and the document is
-marked as changed after every load.
+marked as changed after every load; an importer result opens as a new document.
 
 ### Permissions
 
@@ -136,9 +136,11 @@ target, so saving asks for a new location instead of overwriting the previous pr
 is marked as changed, so closing warns. With any id, the XER source, the resource library link, the
 "unedited import" marker and the document's undo history are removed.
 
-An importer (File → Import) loads through the same route, but always as a new project, even with
-the same id: an importer opens a foreign file. The imported project has no save target and is marked
-as changed.
+An importer (File → Import) works differently: it opens a foreign file. Its result therefore opens as
+a new document in its own tab, like the built-in formats, and becomes the active document. The
+document that was open stays untouched, also with unsaved work, so there is no question. The new
+document calculates as OPS, is not marked as changed (as after every import) and has no save target:
+saving asks for a location.
 
 The id is the only signal. Two documents of the same project share the same id, and an extension that
 builds a "new" project from `{ ...getProject() }` keeps the id and the data of the active document.

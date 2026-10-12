@@ -156,25 +156,24 @@ export function cleanDanglingReferences(loaded: ImportResult): ImportResult {
 }
 
 /**
- * Laad een extensie-resultaat over het actieve document. Eén route voor `api.data.loadProject`
- * (`origin: 'api'`) en de extensie-importer in Backstage → Importeren (`origin: 'importer'`).
+ * `api.data.loadProject`: laad een extensie-resultaat over het ACTIEVE document.
  *
- *  - `api` met hetzelfde project-id (lees-wijzig-laad): `retainActiveDocument`; het opslagdoel blijft,
- *    en ook AutoSave naar bestand (`autoSaveToFile`), dat het laden anders stil uitzet (`freshPayload`).
- *  - `api` met een ander id, en ELKE importer-load: een nieuw project. Een importer opent een vreemd
- *    bestand; ook bij een toevallig gelijk id is er niets van het document om te bewaren. Het krijgt
- *    geen opslagdoel, zodat opslaan om een nieuwe plek vraagt in plaats van het bestand van het
- *    vorige project te overschrijven.
+ *  - Hetzelfde project-id (lees-wijzig-laad): `retainActiveDocument`; het opslagdoel blijft, en ook
+ *    AutoSave naar bestand (`autoSaveToFile`), dat het laden anders stil uitzet (`freshPayload`).
+ *  - Ander id: een nieuw project zonder opslagdoel, zodat opslaan om een nieuwe plek vraagt in plaats
+ *    van het bestand van het vorige project te overschrijven.
  *  - Altijd: het document staat daarna op gewijzigd (`markDocumentEdited`), zodat de afsluitcontrole
  *    en AutoSave het zien; het laden zelf zet `isDirty` op false, zoals voor een geopend bestand.
+ *
+ * De extensie-importer (Backstage → Importeren) loopt hier NIET door: zie `openExtensionImport`.
  */
-export function loadExtensionProject(store: AppStore, result: ExtImportResult, origin: 'api' | 'importer'): void {
+export function loadExtensionProject(store: AppStore, result: ExtImportResult): void {
   const before = store.getState();
   const loaded = fromExtImportResult(result);
-  const sameProject = origin === 'api' && loaded.project.id === before.project.id;
+  const sameProject = loaded.project.id === before.project.id;
   const autoSaveToFile = before.autoSaveToFile;
   before.loadState(sameProject ? retainActiveDocument(loaded, before) : loaded);
-  if (origin === 'api') store.getState().runCPM();
+  store.getState().runCPM();
   store.setState((s) => {
     markDocumentEdited(s);
     if (sameProject) {
@@ -186,4 +185,15 @@ export function loadExtensionProject(store: AppStore, result: ExtImportResult, o
       s.siteFileVersion = null;
     }
   });
+}
+
+/**
+ * Backstage → Importeren: open het resultaat van een extensie-importer als NIEUW document, via dezelfde
+ * route als de ingebouwde formaten (`openAsDocument`): een eigen tabblad (of het lege, ongewijzigde
+ * actieve tabblad), doorrekenen en passend zoomen. Het actieve document blijft ongemoeid, dus er is
+ * geen bevestigingsvraag. Zoals na elke verse import is het nieuwe document niet gewijzigd. Het heeft
+ * geen opslagdoel (`saveTarget: false`): de bron is geen IFC, dus opslaan vraagt om een plek.
+ */
+export function openExtensionImport(store: AppStore, result: ExtImportResult, fileName: string): void {
+  store.getState().openAsDocument(fromExtImportResult(result), { name: fileName, ref: null, saveTarget: false });
 }

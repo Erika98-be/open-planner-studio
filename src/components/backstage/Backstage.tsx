@@ -18,7 +18,7 @@ import { ExtensionIcon } from '@/components/common/ExtensionIcon';
 import type { ExtensionImporter } from '@/state/slices/extensionSlice';
 import { supportsRecentFiles } from '@/services/fileAccess';
 import { siteStorageAvailable } from '@/services/fileAccess/siteHost';
-import { loadExtensionProject } from '@/extensions/retainActiveDocument';
+import { openExtensionImport } from '@/extensions/retainActiveDocument';
 import { applyDemoLibraryToShowcaseProject } from '@/state/demoLibraryShowcase';
 import { buildImportLabels } from '@/i18n/importLabels';
 import type { ImportLabels } from '@/services/importTypes';
@@ -613,10 +613,9 @@ function ImportSection() {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (!file) { input.remove(); return; }
       try {
-        // De importer levert een EXT-facing resultaat. Dezelfde laadroute als `api.data.loadProject`,
-        // als nieuw project: geen opslagdoel (Ctrl+S overschrijft het vorige bestand niet) en
-        // gewijzigd (sluiten waarschuwt). Zie `loadExtensionProject`.
-        loadExtensionProject(useAppStore, await imp.handler(file), 'importer');
+        // De importer opent een vreemd bestand: als NIEUW document, zoals de ingebouwde formaten.
+        // Het actieve document blijft ongemoeid. Zie `openExtensionImport`.
+        openExtensionImport(useAppStore, await imp.handler(file), file.name);
         setUI({ activeRibbonTab: 'start' });
       } catch (err) {
         console.error('[Extensies] Import mislukt:', err);

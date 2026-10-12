@@ -300,7 +300,7 @@ export function createExtensionApi(
         () => document.store.getState().addSequence(fromExtSequenceInput(seq)),
       ),
       // Zie `loadExtensionProject`: hetzelfde project-id houdt vast wat het contract niet draagt.
-      loadProject: (result: ExtImportResult) => loadExtensionProject(document.store, result, 'api'),
+      loadProject: (result: ExtImportResult) => loadExtensionProject(document.store, result),
       recalculate: () => document.store.getState().runCPM(),
       // Eén snapshot voor de hele reeks i.p.v. één per mutatie — lineair in plaats van
       // kwadratisch, en één undo-stap voor wat de gebruiker als één handeling ziet.

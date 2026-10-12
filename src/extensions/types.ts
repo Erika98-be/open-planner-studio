@@ -225,7 +225,8 @@ export interface ExtGuide {
 export interface ExtensionApi {
   readonly extensionId: string;
 
-  /** Appbrede registratie van import-formaten (verschijnen in Backstage → Importeren). */
+  /** Appbrede registratie van import-formaten (verschijnen in Backstage → Importeren). Het resultaat
+   *  van een importer opent als NIEUW document, zoals de ingebouwde formaten (`openExtensionImport`). */
   importers: {
     register(def: ImporterDefinition): void;
     unregister(id: string): void;

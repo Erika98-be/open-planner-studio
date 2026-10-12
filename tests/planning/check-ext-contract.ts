@@ -63,7 +63,7 @@ import { isMultiDocumentImport } from '@/services/importTypes';
 import { decodeXerSourceArchive, sha256Hex } from '@/services/xerSourceArchive';
 import { ExtImportSourceDriftError } from '@/extensions/extImportSource';
 import { builtInProfile } from '@/engine/scheduler/conventions/registry';
-import { TASK_SOURCE_FIELDS, SEQUENCE_SOURCE_FIELDS, CALENDAR_SOURCE_FIELDS, loadExtensionProject } from '@/extensions/retainActiveDocument';
+import { TASK_SOURCE_FIELDS, SEQUENCE_SOURCE_FIELDS, CALENDAR_SOURCE_FIELDS, openExtensionImport } from '@/extensions/retainActiveDocument';
 import type { CalendarGeneration } from '@/types/calendar';
 
 const diffs: string[] = [];
@@ -1487,38 +1487,44 @@ for (const [naam, ext, bron, sleutels] of [
   eq('N3D-23a ander id ⇒ geen AutoSave naar bestand (er is geen bestand)', useAppStore.getState().autoSaveToFile, false);
 }
 
-// ── 12. Review #329 fixronde 3 punt 2: de Backstage-importer laadt via dezelfde route ──────────
-// Reviewproef probe-e E3: `Backstage.tsx` riep `loadState` direct aan; daarna stond het oude pad er nog
-// en was het document schoon. Een importer opent een vreemd bestand en is dus altijd een nieuw project,
-// ook bij een toevallig gelijk id. Mutatiebewijs: in `loadExtensionProject` ook voor de importer
-// `retainActiveDocument` gebruiken ⇒ N3D-24 rood; Backstage terug naar `loadState` ⇒ N3D-25 rood.
+// ── 12. Backstage → Importeren opent een NIEUW document (review #329 fixronde 3 punt 2 en 4) ──────
+// Een importer opent een vreemd bestand en volgt dus de route van de ingebouwde formaten
+// (`openAsDocument`): een eigen tabblad, het actieve document ongemoeid (ook met niet-opgeslagen werk),
+// het nieuwe document actief, niet gewijzigd zoals na elke verse import, en zonder opslagdoel ook als
+// de bestandsnaam op IFC zou terugvallen. Mutatiebewijs: `openExtensionImport` via `loadState` over het
+// actieve document ⇒ N3D-24 rood; `saveTarget: false` weg ⇒ N3D-24a rood; Backstage terug naar
+// `loadState` ⇒ N3D-25 rood.
 {
   const api = createExtensionApi('n3d-importer', [], undefined, appStoreContext, {
     app: appStoreContext,
     showNotification: () => {},
   });
-  const lees = (): ExtImportResult => ({
-    project: api.data.getProject(), calendar: api.data.getCalendar(), tasks: api.data.getTasks(),
-    sequences: api.data.getSequences(), resources: api.data.getResources(), assignments: api.data.getAssignments(),
-  });
   useAppStore.getState().newProject();
-  api.data.addTask({ name: 'Oud project' });
-  useAppStore.setState((s) => {
-    s.filePath = 'oud-project.ifc';
-    s.isDirty = false;
-    s.autoSaveToFile = true;
-    s.baselines = [{ id: 'bl-oud', name: 'Oud', createdAt: '2026-01-01T00:00:00Z', tasks: [], projectEnd: '2026-02-01', projectDuration: 20 }];
-  });
-  // Zelfde id als het document: voor een importer telt dat niet als lees-wijzig-laad.
-  loadExtensionProject(useAppStore, lees(), 'importer');
-  const st = useAppStore.getState();
-  eq('N3D-24 importer ⇒ nieuw project: geen opslagdoel, gewijzigd, geen AutoSave, niets vastgehouden', [
-    st.filePath, st.isDirty, st.autoSaveToFile, st.baselines.length,
-  ], [null, true, false, 0]);
+  api.data.addTask({ name: 'Niet-opgeslagen werk' });
+  useAppStore.setState((s) => { s.filePath = 'eigen-project.ifc'; });
+  const voor = useAppStore.getState();
+  const oudDocument = voor.activeDocumentId;
+  const oudeTaken = voor.tasks.map((t) => t.name);
+  const aantalDocumenten = voor.documents.length;
+
+  const importResultaat = getExtensionSdk().factory.emptyImportResult();
+  importResultaat.project = { ...importResultaat.project, id: 'import-vreemd', name: 'Uit importer' };
+  importResultaat.tasks = [getExtensionSdk().factory.createTask({ name: 'Geïmporteerd' })];
+  openExtensionImport(useAppStore, importResultaat, 'planning.foo');
+
+  const na = useAppStore.getState();
+  const oud = na.documents.find((d) => d.id === oudDocument);
+  eq('N3D-24 importer ⇒ nieuw actief document; het actieve document met niet-opgeslagen werk blijft gelijk', [
+    na.documents.length, na.activeDocumentId !== oudDocument, na.project.id, na.tasks.map((t) => t.name),
+    oud?.payload?.tasks.map((t) => t.name), oud?.payload?.isDirty, oud?.payload?.filePath,
+  ], [aantalDocumenten + 1, true, 'import-vreemd', ['Geïmporteerd'], oudeTaken, true, 'eigen-project.ifc']);
+  eq('N3D-24a nieuw document zoals na een verse import: geen opslagdoel, niet gewijzigd', [
+    na.filePath, na.fileHandle, na.siteFileId, na.isDirty,
+  ], [null, null, null, false]);
 
   const backstage = readFileSync(join(process.cwd(), 'src/components/backstage/Backstage.tsx'), 'utf8');
-  eq('N3D-25 Backstage → Importeren laadt via loadExtensionProject(…, \'importer\'), niet via loadState', [
-    /loadExtensionProject\(useAppStore, await imp\.handler\(file\), 'importer'\)/.test(backstage),
+  eq('N3D-25 Backstage → Importeren opent via openExtensionImport, niet via loadState', [
+    /openExtensionImport\(useAppStore, await imp\.handler\(file\), file\.name\)/.test(backstage),
     /\bloadState\b/.test(backstage),
   ], [true, false]);
 }

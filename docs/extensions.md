@@ -122,7 +122,7 @@ permissie `help` en `api.help.*` (Help-artikelen registreren, meegeleverd projec
 begeleidingspaneel), plus de generieke ankers in het lint (zie *Help & begeleiding*). `1.4.1` — patch,
 geen contractwijziging: `loadProject` met hetzelfde project-id houdt de projectdata vast die het
 resultaat niet kan dragen, een ander id krijgt geen opslagdoel, en na elke load is het document
-gewijzigd (zie *API-overzicht*).
+gewijzigd; een importer-resultaat opent als nieuw document (zie *API-overzicht*).
 
 > **Migratie (audit P16):**
 > - De permissie `commands` is verwijderd — die had nooit een API-oppervlak. Een nieuwe installatie met een manifest dat haar (of een andere onbekende waarde) noemt, wordt geweigerd. Alleen al opgeslagen legacy-installaties blijven werken: daar worden onbekende permissies weggefilterd met een waarschuwing.
@@ -302,9 +302,11 @@ project niet overschrijft. Ook dan staat het document op "gewijzigd", zodat slui
 elk id gaan de XER-bron, de koppeling met een resourcebibliotheek, de markering "onbewerkte import"
 en de undo-geschiedenis van het document weg.
 
-Een importer (Bestand → Importeren) laadt via dezelfde route, maar altijd als nieuw project, ook
-bij een gelijk id: een importer opent een vreemd bestand. Het geïmporteerde project heeft dus geen
-opslagdoel en staat op "gewijzigd".
+Een importer (Bestand → Importeren) werkt anders: die opent een vreemd bestand. Zijn resultaat opent
+daarom als nieuw document in een eigen tabblad, net als de ingebouwde formaten, en wordt het actieve
+document. Het document dat open stond, blijft ongemoeid, ook met niet-opgeslagen werk; er komt dus
+geen vraag. Het nieuwe document rekent als OPS, staat niet op "gewijzigd" (zoals na elke import) en
+heeft geen opslagdoel: opslaan vraagt om een plek.
 
 Het id is het enige signaal. Twee documenten van hetzelfde project delen hetzelfde id, en een
 extensie die een "nieuw" project bouwt vanuit `{ ...getProject() }` houdt dus het id én de data van
