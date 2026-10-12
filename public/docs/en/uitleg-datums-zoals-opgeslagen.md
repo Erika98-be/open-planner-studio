@@ -48,6 +48,8 @@ You leave the view in two ways:
 - Click *Recalculate* in the bar, or choose *Calculate* (F5). The app calculates with its own rules.
 - Change something that can alter the dates, such as the duration of a task or a new task. The app leaves the view and recalculates straight away, even if *Calculate automatically* is off. Changing a name does not do that: the view stays on.
 
+A calendar change from the resource library keeps the view on and the dates from the file in place, but updates the number in the bar.
+
 After leaving there is no button to switch back to the view. Ctrl+Z does bring it back, right after recalculating or right after such an edit. Otherwise you can open the source file again. With an `.xer`, opening an IFC file that you saved after recalculating, but did not edit, also switches the view on again.
 
 ### Crash recovery
