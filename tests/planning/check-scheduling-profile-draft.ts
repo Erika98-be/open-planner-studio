@@ -3,7 +3,7 @@
 import {
   choiceOf, selectProfile, editConvention, renameProfile, resetConventionToBase, profileLabel, templateRelation,
   totalFloatModeToUi, totalFloatModeFromUi, withCriticalMode, withCriticalThreshold, withDefaultOptions, sameSettings,
-  hasValidProfileName,
+  hasValidProfileName, SOURCE_ONLY_OPTION_KEYS,
 } from '@/state/schedulingProfileDraft';
 import { builtInProfile, defaultOptionsFor, resolveConventions } from '@/engine/scheduler/conventions/registry';
 import type { SchedulingProfile } from '@/types/project';
@@ -62,7 +62,15 @@ eq('20 modewissel houdt thresholdHours (A6)',
 eq('21 drempel in dagen zetten houdt thresholdHours',
   withCriticalThreshold({ criticalDefinition: { mode: 'totalFloat', thresholdHours: 8 } }, 'threshold', 2).criticalDefinition,
   { mode: 'totalFloat', thresholdHours: 8, threshold: 2 });
-eq('22 standaardopties van p6', withDefaultOptions(builtInProfile('p6')), defaultOptionsFor('p6'));
+// Bronsignalen (`SOURCE_ONLY_OPTION_KEYS`) voegt geen profiel toe: zonder bronbestand bestaan ze niet.
+const p6DefaultsWithoutSource = (() => {
+  const d: Record<string, unknown> = { ...defaultOptionsFor('p6') };
+  for (const key of SOURCE_ONLY_OPTION_KEYS) delete d[key];
+  return d;
+})();
+eq('22 standaardopties van p6 (zonder bronsignalen)', withDefaultOptions(builtInProfile('p6')), p6DefaultsWithoutSource);
+eq('22a de P6-standaard kent wel bronsignalen (XER-lezerdefaults), het profiel zet ze niet',
+  [defaultOptionsFor('p6').useExpectedFinishDates, withDefaultOptions(builtInProfile('p6'))?.useExpectedFinishDates], [true, undefined]);
 eq('23 standaardopties van ops = afwezig', withDefaultOptions(undefined), undefined);
 // Bronsignalen (alleen uit het bestand, geen profieldefault) overleven "Standaardopties"; de rest niet.
 // Mutant: SOURCE_ONLY_OPTION_KEYS leeg ⇒ 23a/23b rood.
@@ -70,10 +78,26 @@ eq('23 standaardopties van ops = afwezig', withDefaultOptions(undefined), undefi
   const leveling = { levelAllResources: false, priority: [{ field: 'early_start_date', direction: 'ASC' as const }] };
   const current = { lagCalendar: '24hour' as const, useProjectEndDateForFloat: true, leveling };
   eq('23a standaardopties p6 houden leveling en useProjectEndDateForFloat',
-    withDefaultOptions(builtInProfile('p6'), current), { ...defaultOptionsFor('p6'), useProjectEndDateForFloat: true, leveling });
+    withDefaultOptions(builtInProfile('p6'), current), { ...p6DefaultsWithoutSource, useProjectEndDateForFloat: true, leveling });
   eq('23b standaardopties ops houden alleen de bronsignalen',
     withDefaultOptions(undefined, current), { useProjectEndDateForFloat: true, leveling });
   eq('23c zonder bronsignalen blijft ops afwezig', withDefaultOptions(undefined, { lagCalendar: '24hour' }), undefined);
+}
+// Critreview #169 N5: "Standaardopties" overschreef bronwaarden die het blok "niet te wijzigen" noemt.
+// Mutant: de oude lijst ['useProjectEndDateForFloat', 'leveling'] ⇒ 23d–23g rood.
+{
+  const p6 = builtInProfile('p6');
+  eq('23d P6: useExpectedFinishDates uit het bestand (false) blijft false',
+    withDefaultOptions(p6, { useExpectedFinishDates: false })?.useExpectedFinishDates, false);
+  eq('23e P6: p6CompletedLateFromRemainingWindow uit het bestand (false) blijft false (A21)',
+    withDefaultOptions(p6, { p6CompletedLateFromRemainingWindow: false })?.p6CompletedLateFromRemainingWindow, false);
+  const fromXer = { useExpectedFinishDates: true, p6CompletedLateFromRemainingWindow: true, totalFloatMode: 'finish' as const };
+  eq('23f OPS: de bronwaarden verdwijnen niet (omgekeerde weg)',
+    withDefaultOptions(undefined, fromXer), { useExpectedFinishDates: true, p6CompletedLateFromRemainingWindow: true });
+  eq('23g MS Project: idem', withDefaultOptions(builtInProfile('msproject'), fromXer),
+    { useExpectedFinishDates: true, p6CompletedLateFromRemainingWindow: true });
+  eq('23h de vier bronsignalen', [...SOURCE_ONLY_OPTION_KEYS].sort(),
+    ['leveling', 'p6CompletedLateFromRemainingWindow', 'useExpectedFinishDates', 'useProjectEndDateForFloat']);
 }
 eq('24 sameSettings negeert sleutelvolgorde en normaliseert ops',
   sameSettings({ profile: builtInProfile('ops'), options: { lagCalendar: 'successor', totalFloatMode: 'finish' } },
@@ -125,6 +149,18 @@ eq('35b zelfde opgeloste set, ander id telt', sameSettings({ profile: { ...own, 
   { profile: builtInProfile('p6'), options: undefined }), false);
 eq('35c hernoemen telt', sameSettings({ profile: own, options: undefined }, { profile: { ...own, name: 'Anders' }, options: undefined }), false);
 // Punt 7: editConvention weigert een kopie-id dat de sanitizers niet zouden accepteren.
+// Critreview #169 N7: het vinkje terug naar de basiswaarde op een ingebouwd id is "terug naar basis",
+// geen kopie zonder afwijkingen. Mutant: de reset-tak in editConvention weg ⇒ 35d–35f rood.
+{
+  const back = editConvention(xerP6, 'p6UseRemainingStartForProgress', true, copy);
+  eq('35d vinkje terug naar de basis houdt het ingebouwde id', back?.id, 'p6');
+  eq('35e …zonder afwijking', back?.overrides, {});
+  eq('35f …gelijk aan resetConventionToBase', back, resetConventionToBase(xerP6, 'p6UseRemainingStartForProgress'));
+  const p6Two: SchedulingProfile = { ...builtInProfile('p6'), overrides: { p6UseRemainingStartForProgress: false, clampNegativeFreeFloat: false } };
+  eq('35g de andere afwijking blijft staan', editConvention(p6Two, 'clampNegativeFreeFloat', true, copy),
+    { ...builtInProfile('p6'), overrides: { p6UseRemainingStartForProgress: false } });
+  eq('35h weg van de basis forkt nog steeds', editConvention(builtInProfile('p6'), 'clampNegativeFreeFloat', false, copy)?.id, 'prof-new');
+}
 eq('36 kopie-id langer dan 64 ⇒ no-op', editConvention(xerP6, 'clampNegativeFreeFloat', false, { id: 'x'.repeat(65), name: 'K' }) === xerP6, true);
 eq('36a kopie-id van precies 64 mag', editConvention(xerP6, 'clampNegativeFreeFloat', false, { id: 'x'.repeat(64), name: 'K' })?.id.length, 64);
 eq('36b leeg kopie-id ⇒ no-op', editConvention(xerP6, 'clampNegativeFreeFloat', false, { id: '  ', name: 'K' }) === xerP6, true);

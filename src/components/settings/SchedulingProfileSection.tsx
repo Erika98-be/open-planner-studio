@@ -17,7 +17,7 @@ import {
   choiceOf, editConvention, hasValidProfileName, profileLabel, renameProfile, resetConventionToBase, selectProfile, templateRelation,
   totalFloatModeFromUi,
   totalFloatModeToUi, withCriticalMode, withCriticalThreshold, withDefaultOptions,
-  type ProfileChoice, type SchedulingSettingsDraft, type TotalFloatModeUi,
+  SOURCE_ONLY_OPTION_KEYS, type ProfileChoice, type SchedulingSettingsDraft, type SourceOnlyOptionKey, type TotalFloatModeUi,
 } from '@/state/schedulingProfileDraft';
 
 interface SchedulingProfileSectionProps {
@@ -48,11 +48,12 @@ const CONVENTION_GROUPS: readonly { id: ConventionGroupId; items: readonly Conve
   { id: 'ownProfilesOnly' as const, items: CONVENTIONS.filter(isOffInEveryBuiltIn) },
 ].filter(g => g.items.length > 0);
 
-/** De drie projectopties die alleen uit een P6-bestand komen en in het blok niet te wijzigen zijn:
- *  alleen-lezen getoond, zodat zichtbaar is waarom twee projecten met hetzelfde
- *  profiel anders rekenen. */
-const SOURCE_ONLY_OPTIONS = ['useExpectedFinishDates', 'useProjectEndDateForFloat', 'p6CompletedLateFromRemainingWindow'] as const;
-const sourceOptionKey = (key: typeof SOURCE_ONLY_OPTIONS[number]): ParseKeys<'common'> =>
+/** De bronsignalen (`SOURCE_ONLY_OPTION_KEYS`, één lijst met het bewerkmodel) die het blok alleen-lezen
+ *  toont, zodat zichtbaar is waarom twee projecten met hetzelfde profiel anders rekenen. `leveling` is
+ *  alleen data (geen aan/uit) en staat er niet bij. */
+type ShownSourceOptionKey = Exclude<SourceOnlyOptionKey, 'leveling'>;
+const SHOWN_SOURCE_OPTIONS = SOURCE_ONLY_OPTION_KEYS.filter((key): key is ShownSourceOptionKey => key !== 'leveling');
+const sourceOptionKey = (key: ShownSourceOptionKey): ParseKeys<'common'> =>
   `schedulingProfile.sourceOptions.${key}`;
 const themeTitleKey = (id: ConventionGroupId): ParseKeys<'common'> => `schedulingProfile.themes.${id}`;
 
@@ -63,13 +64,12 @@ const themeTitleKey = (id: ConventionGroupId): ParseKeys<'common'> => `schedulin
  * elf projectopties (kritiek-definitie met drempel, speling-berekening, open-eind kritiek, bijna-
  * kritiek, meerdere speling-paden, lag-kalender, SS-lag-variant van C6). De andere vier — `useExpectedFinishDates`,
  * `useProjectEndDateForFloat`, `p6CompletedLateFromRemainingWindow` en het nivelleerblok `leveling`
- * (alleen data) — zijn bewust NIET bewerkbaar:
+ * (alleen data) — zijn bewust NIET bewerkbaar (`SOURCE_ONLY_OPTION_KEYS`):
  * het zijn P6-bronsignalen die de XER-lezer uit SCHEDOPTIONS zet (of die aan de P6-herkomstketen van
  * B3/B4 hangen), zonder betekenis voor een project dat niet uit P6 komt. Het blok toont ze onderaan alleen-lezen
- * en laat ze verder ongemoeid
- * (elke optiewijziging spreidt de bestaande opties); alleen "Standaardopties van dit profiel
- * toepassen" vervangt alle opties door `defaultOptionsFor` (onder P6 zet dat de eerste en de laatste
- * aan; `useProjectEndDateForFloat` en `leveling` vallen dan weg, want die komen alleen uit het bestand). Commit gebeurt pas op Toepassen via `applySchedulingSettings` (één undo-stap,
+ * en laat ze ongemoeid, ook "Standaardopties van dit profiel toepassen" (`withDefaultOptions`: de
+ * standaard van het profiel voor de bewerkbare opties, de bronsignalen blijven zoals het bestand ze
+ * gaf, en een profiel voegt er geen toe). Commit gebeurt pas op Toepassen via `applyProjectInfo` (één undo-stap,
  * herberekenen, melding "N taken verschoven"). Alleen sjablonen opslaan/verwijderen gaat direct: dat
  * is app-data, geen projectdata.
  */
@@ -173,7 +173,7 @@ export function SchedulingProfileSection({ mode, value, onChange }: SchedulingPr
   const templateName = templates.find(tp => tp.id === profile?.id)?.name ?? '';
   const nameValid = hasValidProfileName(profile);
   // Alleen de opties die het project echt draagt; een project zonder P6-bron toont het blok niet.
-  const sourceOptions = SOURCE_ONLY_OPTIONS.filter(key => so[key] !== undefined);
+  const sourceOptions = SHOWN_SOURCE_OPTIONS.filter(key => so[key] !== undefined);
 
   return (
     <div className="flex flex-col gap-3" data-ops-scheduling-profile-section>

@@ -5,7 +5,7 @@ import type {
   BuiltInProfileId, ConventionKey, ProjectSchedulingOptions, SchedulingConventions, SchedulingProfile,
 } from '@/types/project';
 import {
-  CONVENTION_KEYS, builtInProfile, defaultOptionsFor, diffAgainstBase, isBuiltInProfileId,
+  CONVENTION_KEYS, builtInConventions, builtInProfile, defaultOptionsFor, diffAgainstBase, isBuiltInProfileId,
   isDefaultProfile, resolveConventions, switchProfile,
 } from '@/engine/scheduler/conventions/registry';
 import { MAX_PROFILE_ID_LENGTH, MAX_PROFILE_NAME_LENGTH } from '@/services/ifc/schedulingOptionsRead';
@@ -74,13 +74,17 @@ function validCustomId(id: string): boolean {
 
 /** Handmatige conventiewijziging. Op een ingebouwd id maakt dat automatisch een eigen profiel
  *  ("Kopie van P6") met álle huidige waarden (ook die uit het bestand); op een eigen
- *  profiel blijft het id. Een ongewijzigde waarde, of een ongeldig kopie-id, geeft hetzelfde object terug. */
+ *  profiel blijft het id. Een ongewijzigde waarde, of een ongeldig kopie-id, geeft hetzelfde object terug.
+ *  Zet de wijziging een conventie op een ingebouwd id terug op de waarde van de basis, dan is dat
+ *  dezelfde handeling als "terug naar basis" (`resetConventionToBase`): geen kopie zonder afwijkingen
+ *  (critreview #169, N7). */
 export function editConvention(
   current: SchedulingProfile | undefined, key: ConventionKey, value: boolean, copy: { id: string; name: string },
 ): SchedulingProfile | undefined {
   const p = current ?? builtInProfile('ops');
   const values = resolveConventions(p);
   if (values[key] === value) return current;
+  if (isBuiltInProfileId(p.id) && builtInConventions(p.baseId)[key] === value) return resetConventionToBase(current, key);
   values[key] = value;
   const overrides = diffAgainstBase(p.baseId, values);
   if (isBuiltInProfileId(p.id)) {
@@ -167,22 +171,32 @@ export function withCriticalThreshold(
 }
 
 /**
- * Projectopties die uitsluitend een BRONSIGNAAL zijn: ze komen alleen uit het bestand (de XER-lezer),
- * geen profiel kent er een standaardwaarde voor en de UI biedt ze niet aan. "Standaardopties" (en een
- * profielwissel in de wizard) mag ze daarom niet wissen: dat zou stil bestandsdata weggooien die de
- * gebruiker nergens terug kan zetten. `useProjectEndDateForFloat` (SCHEDOPTIONS
- * `sched_use_project_end_date_for_float`) en `leveling` (SCHEDOPTIONS/RSRCLEVELLIST) volgen hetzelfde
- * patroon: gelezen, bewaard, niet door een profiel bepaald.
+ * Projectopties die uitsluitend een BRONSIGNAAL zijn: ze komen alleen uit het bestand (de XER-lezer
+ * zet ze uit SCHEDOPTIONS/RSRCLEVELLIST) en de UI biedt ze niet ter bewerking aan. Eén lijst voor het
+ * bewerkmodel én het alleen-lezenblok *Instellingen uit het bronbestand* (`SchedulingProfileSection`);
+ * twee lijsten liepen uit elkaar (critreview #169, N5).
+ *  - "Standaardopties van dit profiel toepassen" en een profielkeuze in de wizard laten elke
+ *    bronwaarde staan die het project draagt: het blok noemt ze "niet te wijzigen", en de gebruiker kan
+ *    ze nergens terugzetten.
+ *  - Een profiel VOEGT ze ook niet toe. `defaultOptionsFor('p6')` kent `useExpectedFinishDates` en
+ *    `p6CompletedLateFromRemainingWindow` alleen omdat de XER-lezer er zijn defaults uit opbouwt; op
+ *    een project zonder bronbestand zouden ze in het blok staan alsof ze uit een `.xer` kwamen. In de
+ *    motor doen ze daar ook niets: `useExpectedFinishDates` werkt alleen op taken met P6-herkomst, en
+ *    `p6CompletedLateFromRemainingWindow` alleen samen met B3, dat in elk ingebouwd profiel uit staat.
  */
-const SOURCE_ONLY_OPTION_KEYS = ['useProjectEndDateForFloat', 'leveling'] as const;
+export const SOURCE_ONLY_OPTION_KEYS = [
+  'useExpectedFinishDates', 'useProjectEndDateForFloat', 'p6CompletedLateFromRemainingWindow', 'leveling',
+] as const satisfies readonly (keyof ProjectSchedulingOptions)[];
+export type SourceOnlyOptionKey = typeof SOURCE_ONLY_OPTION_KEYS[number];
 
-/** De standaard-projectopties van de basis van dit profiel; OPS ⇒ afwezig. De bronsignalen uit
- *  `current` (`SOURCE_ONLY_OPTION_KEYS`) blijven staan. */
+/** De standaard-projectopties van de basis van dit profiel, zonder bronsignalen; OPS ⇒ afwezig. De
+ *  bronsignalen uit `current` (`SOURCE_ONLY_OPTION_KEYS`) blijven staan. */
 export function withDefaultOptions(
   profile: SchedulingProfile | undefined, current?: ProjectSchedulingOptions,
 ): ProjectSchedulingOptions | undefined {
   const options: ProjectSchedulingOptions = { ...defaultOptionsFor((profile ?? builtInProfile('ops')).baseId) };
   for (const key of SOURCE_ONLY_OPTION_KEYS) {
+    delete options[key];
     if (current?.[key] !== undefined) Object.assign(options, { [key]: current[key] });
   }
   return Object.keys(options).length > 0 ? options : undefined;
