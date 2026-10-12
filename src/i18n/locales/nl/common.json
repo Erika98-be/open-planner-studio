@@ -155,7 +155,10 @@
     "statusDateSetToday": "Er stond nog geen statusdatum: die staat nu op vandaag ({{date}}), want voortgang wordt tot de statusdatum gemeten. Aanpassen kan via Planning → Statusdatum.",
     "durationBelowDoneWork": "‘{{name}}’ is al voor {{percent}}% gedaan: een duur korter dan het gedane werk kan niet. De duur is niet gewijzigd.",
     "tutorialOfferLater": "Je vindt de tutorials altijd in Help › Tutorials.",
-    "tutorialOfferUnavailable": "De tutorials konden nu niet worden geïnstalleerd of gestart. In Help › Tutorials kun je het later opnieuw proberen."
+    "tutorialOfferUnavailable": "De tutorials konden nu niet worden geïnstalleerd of gestart. In Help › Tutorials kun je het later opnieuw proberen.",
+    "p6xmlImportEmpty": "In dit bestand staan geen activiteiten die de app kan lezen.",
+    "p6xmlImportEmptyNoObjectIds": "De activiteiten hebben geen ObjectId. Daardoor kan de app ze niet koppelen. Dit is geen gewone Primavera P6 XML.",
+    "p6xmlImportEmptyXerColumns": "Het bestand gebruikt XER-kolomnamen (zoals task_code) in plaats van P6 XML-velden. Open de .xer zelf."
   },
   "scheduleErrors": {
     "cycle": "Kringverwijzing tussen taken: {{path}}",

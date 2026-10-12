@@ -12,7 +12,7 @@ import { normalizeImportedProgress, deriveImportedWorkRules, reconstructResource
 import { flattenOrder } from '@/utils/wbs';
 import { emptyMissingScheduleDates, importDateTime, isoDatePrefixOrToday, parseImportedInstant, resolveMissingScheduleDates } from '@/services/importDates';
 import { directChildText, toInt, toFloat } from '@/services/xmlDom';
-import type { ImportResult } from '@/services/importTypes';
+import type { ImportResult, P6XmlEmptyReason } from '@/services/importTypes';
 import type { CustomTaskType } from '@/types/taskType';
 import type { TaskTimephasedContour } from '@/types/task';
 import { CalendarEngine } from '@/engine/scheduler/CalendarEngine';
@@ -353,7 +353,7 @@ function selectP6Project(root: Element): P6XmlScope {
   return scopeOf(projects[0] ?? null);
 }
 
-export function readP6XML(content: string): ImportResult {
+function parseP6XmlDocument(content: string): Element {
   const parser = new DOMParser();
   const doc = parser.parseFromString(content, 'application/xml');
 
@@ -361,8 +361,57 @@ export function readP6XML(content: string): ImportResult {
   if (parserError) {
     throw new Error('Invalid XML: ' + parserError.textContent);
   }
+  return doc.documentElement;
+}
 
-  const scope = selectP6Project(doc.documentElement);
+/** Wat het lezen van één project oplevert naast het `ImportResult` zelf (voor het verslag). */
+interface P6XmlProjectRead {
+  result: ImportResult;
+  /** Relaties waarvan een kant in een ander project ligt (`Predecessor/SuccessorProjectObjectId`). */
+  crossProjectRelations: number;
+  /** Ingelezen activiteiten (zonder WBS-samenvattingen). */
+  activitiesRead: number;
+}
+
+/**
+ * Waarom er geen enkele activiteit leesbaar is, als dat eenvoudig te zien is. Twee vormen uit het
+ * corpus die op P6 XML lijken maar het niet zijn: activiteiten zonder `<ObjectId>` (relaties en WBS
+ * zijn dan niet te koppelen) en activiteiten met XER-kolomnamen (`task_code`, `task_name`).
+ */
+function emptyReasonOf(root: Element): P6XmlEmptyReason {
+  const activities: Element[] = [];
+  for (const project of directChildrenByLocalName(root, 'Project')) {
+    activities.push(...directChildrenByLocalName(project, 'Activity'));
+  }
+  activities.push(...directChildrenByLocalName(root, 'Activity'));
+  if (activities.length === 0) return 'no-activities';
+  if (activities.some(el => directChildrenByLocalName(el, 'task_code').length > 0
+    || directChildrenByLocalName(el, 'task_name').length > 0)) return 'xer-columns';
+  return 'no-object-ids';
+}
+
+/**
+ * Lees één P6 XML-bestand als één project: het eerste project mét activiteiten (zie
+ * `selectP6Project`). Voor tests en de eigen round-trip; de open-pijplijn gebruikt
+ * `readP6XMLDocuments`, die elk project als eigen document opent.
+ */
+export function readP6XML(content: string): ImportResult {
+  const root = parseP6XmlDocument(content);
+  const scope = selectP6Project(root);
+  const { result, crossProjectRelations, activitiesRead } = readP6XmlProject(scope);
+  const projectsSeen = directChildrenByLocalName(root, 'Project').length;
+  result.p6xmlReport = {
+    projectsSeen,
+    documentsOpened: 1,
+    emptyProjectsSkipped: 0,
+    baselinesMaterialized: 0,
+    crossProjectRelations,
+    ...(activitiesRead === 0 ? { emptyReason: emptyReasonOf(root) } : {}),
+  };
+  return result;
+}
+
+function readP6XmlProject(scope: P6XmlScope): P6XmlProjectRead {
 
   // Projectkalender: de kalender die het project als standaard voor activiteiten aanwijst
   // (`<ActivityDefaultCalendarObjectId>`), anders de eerste <Calendar> (de eigen writer zet de
@@ -806,6 +855,10 @@ export function readP6XML(content: string): ImportResult {
   const relElements = scopedElements(scope, 'Relationship');
   const sequences: Sequence[] = [];
 
+  // Een relatie met een kant in een ANDER project wordt geen Sequence: zoals bij XER (externe
+  // relaties zijn daar nooit solverinvoer). Hij telt mee in het verslag.
+  let crossProjectRelations = 0;
+  const ownProjectObjId = scope.projectObjectId;
   for (const relEl of relElements) {
     const predObjId = getElementInt(relEl, 'PredecessorActivityObjectId', -1);
     const succObjId = getElementInt(relEl, 'SuccessorActivityObjectId', -1);
@@ -813,7 +866,13 @@ export function readP6XML(content: string): ImportResult {
 
     const predId = actObjIdToId.get(predObjId);
     const succId = actObjIdToId.get(succObjId);
-    if (!predId || !succId) continue;
+    if (!predId || !succId) {
+      const predProj = getElementInt(relEl, 'PredecessorProjectObjectId', -1);
+      const succProj = getElementInt(relEl, 'SuccessorProjectObjectId', -1);
+      if (ownProjectObjId != null && ((predProj >= 0 && predProj !== ownProjectObjId)
+        || (succProj >= 0 && succProj !== ownProjectObjId))) crossProjectRelations++;
+      continue;
+    }
 
     const p6Type = getElementText(relEl, 'Type');
     const lagHours = getElementFloat(relEl, 'Lag');
@@ -951,7 +1010,7 @@ export function readP6XML(content: string): ImportResult {
   attachContours(taskById, contoursByTaskId);
   reconstructResourceIds(tasks, assignments);
 
-  return {
+  const result: ImportResult = {
     project,
     calendar,
     tasks,
@@ -965,6 +1024,7 @@ export function readP6XML(content: string): ImportResult {
     suggestedProfileId: 'ops',
     ...(Object.keys(recordedTimes).length > 0 ? { recordedTimes, recordedTimesOrigin: 'p6xml' as const } : {}),
   };
+  return { result, crossProjectRelations, activitiesRead: leafTasks.length };
 }
 
 function parseProject(projEl: Element | null): Project {

@@ -335,6 +335,8 @@ export interface ImportResult {
    *  vervangende start gaf (gedeelde regel `resolveMissingScheduleDates`, review PR #109 N1). Voedt
    *  één regel in de XER-openingsmelding. Transient: nooit opgeslagen, niet in het archief. */
   xerMissingPlannedStarts?: number;
+  /** Alleen een verse P6 XML-import: bestandsbreed verslag voor de openingsmelding (transient). */
+  p6xmlReport?: P6XmlImportReport;
 }
 
 /**
@@ -376,6 +378,24 @@ export interface XerArchiveIssue {
  * krijgt hier de extra informatie welke tab na het openen actief hoort te zijn. Zo blijven alle
  * enkelvoudige readers en hun bestaande laadpaden structureel ongewijzigd.
  */
+/** Waarom een P6 XML-bestand geen leesbare activiteit had (openingsmelding). */
+export type P6XmlEmptyReason = 'no-object-ids' | 'xer-columns' | 'no-activities';
+
+/** Bestandsbreed verslag van een verse P6 XML-import (transient, net als `xerMissingPlannedStarts`;
+ *  niet in DOCUMENT_FIELDS). Voedt de ene openingsmelding (`p6xmlImportNotice` in fileSlice). */
+export interface P6XmlImportReport {
+  /** `<Project>`-elementen in het bestand (baselines niet meegeteld). */
+  projectsSeen: number;
+  documentsOpened: number;
+  emptyProjectsSkipped: number;
+  /** `<BaselineProject>`-elementen die als baseline aan hun project zijn gekoppeld. */
+  baselinesMaterialized: number;
+  /** Relaties tussen projecten: niet als relatie overgenomen (zoals bij XER). */
+  crossProjectRelations: number;
+  /** Alleen als er geen enkele activiteit leesbaar was. */
+  emptyReason?: P6XmlEmptyReason;
+}
+
 export interface MultiDocumentImport {
   kind: 'multi-document';
   results: ImportResult[];

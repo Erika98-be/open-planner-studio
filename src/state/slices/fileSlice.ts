@@ -11,7 +11,7 @@ import { isSiteConflict, isSiteNotFound, siteErrorMessage, siteStorageAvailable 
 import { openSiteFile, saveNewSiteFile, saveSiteFileVersion } from '@/services/fileAccess/siteBackend';
 import { askSiteOpen, askSiteSave, type SiteOpenChoice } from '@/services/fileAccess/siteDialogs';
 import { withXerArchiveIssueNotice } from '@/state/xerArchiveIssueNotice';
-import { RECORDED_DATES_HELP_ARTICLE_ID, XER_IMPORT_HELP_ARTICLE_ID } from '@/state/helpArticles';
+import { P6XML_IMPORT_HELP_ARTICLE_ID, RECORDED_DATES_HELP_ARTICLE_ID, XER_IMPORT_HELP_ARTICLE_ID } from '@/state/helpArticles';
 import { openDialogFilters, binaryExtensions, readFormatForFile, parseOpenedFile, importErrorMessageKey, saveTargetFor, readFormatInput, readIFCWithXerReconstruction, type ExportFormat } from '@/services/formatRegistry';
 import { loadRecents, addRecent, removeRecent, type RecentEntry } from '@/services/fileAccess/recentFiles';
 import { HOST_EVENTS } from '@/services/extensionEvents';
@@ -224,6 +224,28 @@ export function xerImportNotice(
     detailLines,
     helpArticleId: XER_IMPORT_HELP_ARTICLE_ID,
   };
+}
+
+/**
+ * De ene openingsmelding van een verse P6 XML-import, uit het verslag dat de lezer bestandsbreed op
+ * elk resultaat hangt (`ImportResult.p6xmlReport`). Bestand zonder leesbare activiteit ⇒ een
+ * foutmelding met de reden, als die bekend is. Een gewoon bestand ⇒ geen melding.
+ */
+export function p6xmlImportNotice(results: readonly ImportResult[]): NotifyInput | undefined {
+  const report = results.find(result => result.p6xmlReport)?.p6xmlReport;
+  if (!report) return undefined;
+  if (report.emptyReason) {
+    const reasonKey = report.emptyReason === 'no-object-ids' ? 'notifications.p6xmlImportEmptyNoObjectIds' as const
+      : report.emptyReason === 'xer-columns' ? 'notifications.p6xmlImportEmptyXerColumns' as const
+      : undefined;
+    return {
+      severity: 'error',
+      messageKey: 'notifications.p6xmlImportEmpty',
+      ...(reasonKey ? { detailLines: [{ messageKey: reasonKey }] } : {}),
+      helpArticleId: P6XML_IMPORT_HELP_ARTICLE_ID,
+    };
+  }
+  return undefined;
 }
 
 // `ExportFormat` woont in de formatRegistry; hier her-exporteren voor bestaande importeurs
@@ -855,7 +877,8 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
         withRecordedDatesNotice(
           withSchedulingProfileNotice(
             results,
-            xerImportNotice(results, datesAsRecordedShownTotal, datesAsRecordedOfferTotal),
+            xerImportNotice(results, datesAsRecordedShownTotal, datesAsRecordedOfferTotal)
+              ?? p6xmlImportNotice(results),
             openedDocumentIds[0] ?? '',
           ),
           freshShownTotal,
