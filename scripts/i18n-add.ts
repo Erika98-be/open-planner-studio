@@ -1,20 +1,25 @@
 // `npm run i18n:add -- <ns>:<pad.naar.sleutel> <vertalingen.json> [--update] [--after <broer>]`
 //
-// Zet één tekst in alle 14 locales tegelijk, op dezelfde plek (de volgorde van nl) — in plaats van
-// 14 bestanden met de hand. <vertalingen.json> bevat per locale de tekst:
+// Zet één tekst in nl + en en in elke opgegeven locale tegelijk, op dezelfde plek (de volgorde van nl).
+// <vertalingen.json> bevat per locale de tekst; alleen nl en en zijn verplicht (besluit B5, 2026-10-10):
 //
-//   { "nl": "Onderbreking opheffen", "en": "Remove break", "fr": "…", … }            // gewone tekst
+//   { "nl": "Onderbreking opheffen", "en": "Remove break" }                          // gewone tekst
 //   { "nl": { "one": "{{count}} taak", "other": "{{count}} taken" },                 // meervoud:
-//     "pl": { "one": "…", "few": "…", "many": "…", "other": "…" }, "zh": { "other": "…" }, … }
+//     "en": { "one": "{{count}} task", "other": "{{count}} tasks" },
+//     "pl": { "one": "…", "few": "…", "many": "…", "other": "…" } }                   // (optioneel)
 //
-// Het script weigert (en schrijft dan niets) als een locale ontbreekt, een taal niet precies haar
-// CLDR-meervoudscategorieën heeft, of de {{invulplekken}} afwijken van nl. Een bestaande sleutel
+// Een locale die niet is opgegeven, krijgt geen tekst: de app valt daar terug op en. Een oude vertaling
+// blijft staan (behalve als de sleutel van soort verandert: tekst ↔ familie).
+//
+// Het script weigert (en schrijft dan niets) als nl of en ontbreekt, een opgegeven taal niet precies
+// haar CLDR-meervoudscategorieën heeft, of de {{invulplekken}} afwijken van nl. Een bestaande sleutel
 // wijzigen kan alleen met --update (bijv. een label inkorten: één commando i.p.v. 14 bestanden).
 // --after <broer> plaatst een nieuwe sleutel direct na die broer; anders achteraan in zijn object.
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
-  LOCALES, NAMESPACES, formatLocale, keyExists, serialize, setTranslation, validateTranslations,
+  LOCALES, NAMESPACES, formatLocale, keyExists, removeTranslation, serialize, setTranslation, translationKind,
+  validateTranslations,
   type JsonObject, type Namespace, type Translation,
 } from './i18n-tools';
 
@@ -51,7 +56,7 @@ const errors = validateTranslations(input);
 if (errors.length > 0) fail(`niets geschreven, want:\n    - ${errors.join('\n    - ')}`);
 
 const dir = join(process.cwd(), 'src/i18n/locales');
-const read = (loc: string) => JSON.parse(readFileSync(join(dir, loc, `${ns}.json`), 'utf8')) as JsonObject;
+const read = (loc: string, n: string = ns) => JSON.parse(readFileSync(join(dir, loc, `${n}.json`), 'utf8')) as JsonObject;
 
 const nl = read('nl');
 const exists = keyExists(nl, path);
@@ -62,10 +67,26 @@ setTranslation(nl, path, input.nl, exists ? undefined : after);
 const nlText = serialize(nl);
 const nlOrdered = formatLocale(nlText, nlText);
 writeFileSync(join(dir, 'nl', `${ns}.json`), nlOrdered);
+const written: string[] = ['nl'];
+const left: string[] = [];
 for (const loc of LOCALES) {
   if (loc === 'nl') continue;
   const data = read(loc);
-  setTranslation(data, path, input[loc]);
-  writeFileSync(join(dir, loc, `${ns}.json`), formatLocale(serialize(data), nlOrdered));
+  if (input[loc] !== undefined) {
+    setTranslation(data, path, input[loc]);
+    writeFileSync(join(dir, loc, `${ns}.json`), formatLocale(serialize(data), nlOrdered));
+    written.push(loc);
+  } else {
+    // Niet opgegeven (B5): geen tekst schrijven. Een oude tekst van het verkeerde soort (tekst waar nu
+    // een familie hoort, of omgekeerd) gaat weg; de app valt dan terug op en.
+    const kind = translationKind(data, path);
+    if (kind !== undefined && kind !== (typeof input.nl !== 'string') && removeTranslation(data, path)) {
+      writeFileSync(join(dir, loc, `${ns}.json`), formatLocale(serialize(data), nlOrdered));
+    }
+    left.push(loc);
+  }
 }
-console.log(`OK  i18n:add: ${ns}:${path} ${exists ? 'gewijzigd' : 'toegevoegd'} in ${LOCALES.length} locales`);
+console.log(`OK  i18n:add: ${ns}:${path} ${exists ? 'gewijzigd' : 'toegevoegd'} in ${written.length} locale(s) (${written.join(', ')})`);
+if (left.length) {
+  console.log(`..  ${left.length} locale(s) niet opgegeven (valt terug op en): ${left.join(', ')}`);
+}

@@ -36,7 +36,7 @@
     "relation": "پیوند",
     "taskTitle": "وظیفه جدید (Ctrl+N)",
     "milestoneTitle": "نقطه عطف جدید",
-    "relationTitle": "افزودن وابستگی",
+    "relationTitle": "افزودن رابطه",
     "schedule": "زمان‌بندی",
     "calculate": "محاسبه",
     "calculateTitle": "اجرای CPM (F5)",
@@ -185,7 +185,7 @@
     "splitTaskOffHint": "حالت تقسیم را خاموش کنید",
     "ganttOnlyHint": "فقط وقتی نمودار گانت نمایش داده می‌شود در دسترس است",
     "relationLinkSelected": "پیوند دادن وظایف انتخاب‌شده",
-    "relationLinkSelectedHint": "انتخاب اول پیش‌نیاز و انتخاب دوم پس‌نیاز می‌شود (پایان-شروع، تأخیر ۰)",
+    "relationLinkSelectedHint": "انتخاب اول پیش‌نیاز و انتخاب دوم پس‌نیاز می‌شود (پایان-شروع (FS)، تأخیر 0)",
     "relationSelectExactlyTwo": "دقیقاً دو وظیفه را انتخاب کنید",
     "relationAddExternal": "افزودن رابطه خارجی…",
     "relationAddExternalHint": "یک پیش‌نیاز یا پس‌نیاز خارجی به وظیفه انتخاب‌شده بیفزایید",
@@ -202,7 +202,7 @@
     "screenColors_critical": "مسیر بحرانی",
     "screenColors_auto": "به ازای هر کار — خودکار",
     "screenColors_category": "بر اساس دسته",
-    "screenColorsMissingField": "این فیلد در این پروژه وجود ندارد. نوع کار موقتاً استفاده می‌شود.",
+    "screenColorsMissingField": "این فیلد در این پروژه وجود ندارد. نوع وظیفه موقتاً استفاده می‌شود.",
     "screenColorsHint": "خارج از حالت مسیر بحرانی، حاشیه قرمز مسیر بحرانی را نشان می‌دهد.",
     "addLayout": "چیدمان جدید",
     "toggleRelations": "خطوط رابطه"
@@ -229,11 +229,11 @@
       "lagCalendar": "تقویم تأخیر",
       "lagPredecessor": "پیشنیاز",
       "lagSuccessor": "پسنیاز",
-      "lag24hour": "۲۴ ساعته",
+      "lag24hour": "24 ساعته",
       "lagProjectDefault": "تقویم پروژه",
-      "ssLagFrom": "محاسبهٔ تأخیر شروع-شروع پیش‌نیاز در حال اجرا از",
+      "ssLagFrom": "محاسبهٔ تأخیر شروع-شروع (SS) پیش‌نیاز در حال اجرا از",
       "ssLagEarlyStart": "شروع زودهنگام (شروع کار باقی‌مانده)",
-      "ssLagActualStart": "شروع واقعی (تاریخ داده)",
+      "ssLagActualStart": "شروع واقعی (تاریخ وضعیت)",
       "ssLagNeedsConvention": "فقط وقتی اعمال می‌شود که قرارداد «{{convention}}» روشن باشد.",
       "criticalDefinition": "تعریف بحرانی",
       "critTotalFloat": "شناوری کل ≤ آستانه",
@@ -316,7 +316,7 @@
     "library": "کتابخانه",
     "helpDocsLang": "زبان مستندات",
     "helpDocsLangAuto": "پیروی از زبان برنامه",
-    "helpLangFallback": "مستندات هنوز به زبان شما در دسترس نیست. نسخه انگلیسی را می‌خوانید.",
+    "helpLangFallback": "این مقاله هنوز به زبان شما در دسترس نیست. نسخه انگلیسی را می‌خوانید.",
     "unapplied": {
       "title": "تغییرات اعمال نشده است",
       "body": "اطلاعات پروژه را تغییر داده‌اید اما هنوز اعمال نکرده‌اید. با این تغییرات چه کنیم؟",
@@ -344,12 +344,12 @@
     "progressXlsxSheetName": "پیشرفت",
     "progressXlsxValidation": {
       "percentTitle": "درصد تکمیل (%)",
-      "percentError": "عددی بین ۰ تا ۱۰۰ وارد کنید.",
+      "percentError": "عددی بین 0 تا 100 وارد کنید.",
       "dateTitle": "تاریخ واقعی",
       "dateError": "تاریخ معتبری وارد کنید."
     },
     "progressXlsxNotes": {
-      "completion": "تکمیل کنید: بین ۰ تا ۱۰۰، اعشار مجاز است",
+      "completion": "تکمیل کنید: بین 0 تا 100، اعشار مجاز است",
       "actualStart": "تکمیل کنید: تاریخ شروع واقعی (به‌صورت تاریخ)",
       "actualFinish": "تکمیل کنید: تاریخ پایان واقعی (به‌صورت تاریخ)"
     },
@@ -359,7 +359,7 @@
     "progressCsvNotes": {
       "readOnly": "تغییر ندهید",
       "plannedReadOnly": "برنامه‌ریزی‌شده، تغییر ندهید",
-      "completion": "تکمیل کنید: عددی صحیح بین ۰ تا ۱۰۰",
+      "completion": "تکمیل کنید: عددی صحیح بین 0 تا 100",
       "actualStart": "تکمیل کنید: تاریخ شروع واقعی (روز-ماه-سال)",
       "actualFinish": "تکمیل کنید: تاریخ پایان واقعی (روز-ماه-سال)",
       "summaryRow": "— وظیفه خلاصه: پر نکنید"

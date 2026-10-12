@@ -1,7 +1,11 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { REQUIRED_LOCALES } from '../../scripts/i18n-tools';
 
-const LOCALES = ['ar', 'de', 'en', 'es', 'fa', 'fr', 'it', 'ja', 'ko', 'lo', 'nl', 'pl', 'pt', 'tr', 'zh'] as const;
+const LOCALES = [
+  'ar', 'bg', 'cs', 'da', 'de', 'en', 'es', 'fa', 'fi', 'fr', 'hr', 'hu', 'it', 'ja', 'ko', 'lo', 'nb', 'nl', 'pl', 'pt',
+  'ro', 'ru', 'sk', 'sr', 'sv', 'tr', 'uk', 'zh',
+] as const;
 
 /** Alle door de nieuwe taakgrid zelf gebruikte teksten; bestaande domeinlabels staan hier ook in,
  * zodat hergebruik niet stil terug kan vallen op de standaardtaal. */
@@ -170,6 +174,10 @@ const at = (value: unknown, dotted: string): unknown => dotted.split('.').reduce
 const variables = (text: string): string[] => [...text.matchAll(/{{\s*([A-Za-z0-9_]+)\s*}}/g)]
   .map(match => match[1]).sort();
 
+// Besluit B5 (2026-10-10): een nieuwe tekst vraagt alleen nl + en. In een andere taal mag een sleutel
+// (of een hele meervoudsfamilie) nog ontbreken — de app valt terug op en, en vertalen volgt
+// later. Wat er wél staat, moet kloppen.
+const optional = (locale: string): boolean => !(REQUIRED_LOCALES as readonly string[]).includes(locale);
 const taskByLocale = new Map(LOCALES.map(locale => [locale, readJson(locale, 'task')] as const));
 const dutch = taskByLocale.get('nl')!;
 for (const key of REQUIRED_KEYS) {
@@ -178,6 +186,7 @@ for (const key of REQUIRED_KEYS) {
   const expectedVariables = typeof dutchValue === 'string' ? variables(dutchValue) : [];
   for (const locale of LOCALES) {
     const value = at(taskByLocale.get(locale), key);
+    if (value === undefined && optional(locale)) continue;
     ok(`${locale}: ${key} bestaat en is niet leeg`, typeof value === 'string' && value.trim().length > 0);
     ok(`${locale}: ${key} heeft exact dezelfde interpolatievariabelen`,
       typeof value === 'string' && JSON.stringify(variables(value)) === JSON.stringify(expectedVariables));
@@ -204,6 +213,9 @@ for (const key of COUNTED_TASK_GRID_KEYS) {
     ok(`${locale}: ${key} gebruikt geen kale sleutel die CLDR-selectie omzeilt`,
       at(taskLocale, key) === undefined);
     const categories = new Intl.PluralRules(locale).resolvedOptions().pluralCategories;
+    const familyKey = (category: string) => key.replace(/([^.]+)$/, `$1_${category}`);
+    // Een helemaal ontbrekende familie mag (B5); een halve familie niet.
+    if (optional(locale) && categories.every(category => at(taskLocale, familyKey(category)) === undefined)) continue;
     for (const category of categories) {
       const pluralKey = key.replace(/([^.]+)$/, `$1_${category}`);
       const value = at(taskLocale, pluralKey);
@@ -232,9 +244,23 @@ const relationColumnWords: Record<(typeof LOCALES)[number], readonly [string, st
   pt: ['Predecessoras', 'Sucessoras'],
   tr: ['Öncüller', 'Ardıllar'],
   zh: ['前置任务', '后续任务'],
+  cs: ['Předchůdci', 'Následníci'],
+  ru: ['Предшественники', 'Последователи'],
+  sv: ['Föregående', 'Efterföljande'],
+  sr: ['Претходници', 'Наследници'],
+  uk: ['Попередники', 'Наступники'],
+  sk: ['Predchádzajúce úlohy', 'Nasledujúce úlohy'],
+  hr: ['Prethodnici', 'Nasljednici'],
+  bg: ['Предшественици', 'Последователи'],
+  hu: ['Elődök', 'Utódok'],
+  ro: ['Predecesori', 'Succesori'],
+  nb: ['Forgjengere', 'Etterfølgere'],
+  da: ['Foregående opgaver', 'Efterfølgende opgaver'],
+  fi: ['Edeltäjät', 'Seuraajat'],
 };
 for (const locale of LOCALES) {
   const value = at(commonByLocale.get(locale), 'notifications.summaryRelationsDropped');
+  if (value === undefined && optional(locale)) continue;
   const [predecessor, successor] = relationColumnWords[locale];
   ok(`${locale}: importwaarschuwing verwijst naar beide relatiekolommen`,
     typeof value === 'string' && value.includes(predecessor) && value.includes(successor));
@@ -251,11 +277,15 @@ for (const key of [
 ] as const) {
   for (const locale of LOCALES) {
     const value = at(commonByLocale.get(locale), key);
+    if (value === undefined && optional(locale)) continue;
     ok(`${locale}: ${key} bestaat en is niet leeg`, typeof value === 'string' && value.trim().length > 0);
   }
 }
 
 const english = taskByLocale.get('en')!;
+// De dertien talen die al vóór de uitbreiding bestonden moeten deze sleutels echt vertalen. Een nieuwe taal
+// mag voorlopig Engels als vulling hebben; die controle komt per taal erbij zodra de vertaling klaar is.
+const TRANSLATED_LOCALES = ['fr', 'de', 'es', 'zh', 'it', 'pt', 'pl', 'tr', 'ar', 'ja', 'ko', 'lo', 'fa', 'nl'];
 for (const key of [
   'taskGrid.history.addColumn',
   'taskGrid.history.autoFitColumn',
@@ -269,6 +299,7 @@ for (const key of [
 ] as const) {
   const englishValue = at(english, key);
   for (const locale of LOCALES.filter(candidate => candidate !== 'en')) {
+    if (!TRANSLATED_LOCALES.includes(locale)) continue;
     ok(`${locale}: ${key} valt niet stil terug op Engels`, at(taskByLocale.get(locale), key) !== englishValue);
   }
 }
