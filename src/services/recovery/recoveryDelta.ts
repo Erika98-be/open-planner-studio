@@ -1,5 +1,5 @@
 import { sameIFCSource, type IFCSaveSource } from '@/state/ifcSaveInput';
-import type { RecoveryDocContent, RecoveryDocMetadata, RecoverySaveInput } from './recoveryStore';
+import { sameRecoverySiteMeta, siteMetaFields, type RecoveryDocContent, type RecoveryDocMetadata, type RecoverySaveInput } from './recoveryStore';
 
 /** Eén open document, precies zoals de auto-save het aan de recoverylaag aanbiedt. */
 export interface RecoverySourceDocument extends RecoveryDocMetadata {
@@ -31,8 +31,18 @@ function sameMetadata(a: readonly RecoveryDocMetadata[], b: readonly RecoveryDoc
       && value.isDirty === other.isDirty
       // De modusvlag hoort bij de manifestmetadata: een documentwissel in of
       // uit "datums zoals opgeslagen" moet ook zónder inhoudswijziging een manifestschrijf geven.
-      && value.datesAsRecorded === other.datesAsRecorded;
+      && value.datesAsRecorded === other.datesAsRecorded
+      // Het site-doel en zijn basisversie zijn ook manifestmetadata: een opslag op de site (nieuwe
+      // versie) of een nieuw doel geeft zonder inhoudswijziging een manifest-only schrijfactie.
+      && sameRecoverySiteMeta(value, other);
   });
+}
+
+/** De manifestmetadata van één document. Het site-doel staat er alleen in als er een is: zonder
+ *  site is de metadata exact dezelfde als vóór issue #309. */
+function metadataOf(document: RecoveryDocMetadata): RecoveryDocMetadata {
+  const { id, filePath, isDirty, datesAsRecorded } = document;
+  return { id, filePath, isDirty, datesAsRecorded, ...siteMetaFields(document) };
 }
 
 /**
@@ -45,9 +55,7 @@ export function planRecoveryDelta(
   documents: readonly RecoverySourceDocument[],
   persisted: PersistedRecoveryState | null,
 ): RecoveryDelta {
-  const metadata = documents.map(({ id, filePath, isDirty, datesAsRecorded }) => ({
-    id, filePath, isDirty, datesAsRecorded,
-  }));
+  const metadata = documents.map(metadataOf);
   const changedDocuments = documents.filter((document) => {
     const previous = persisted?.sources.get(document.id);
     return previous === undefined || !sameIFCSource(previous, document.source);
@@ -69,9 +77,7 @@ export function persistedRecoveryState(
 ): PersistedRecoveryState {
   return {
     activeDocumentId,
-    documents: documents.map(({ id, filePath, isDirty, datesAsRecorded }) => ({
-      id, filePath, isDirty, datesAsRecorded,
-    })),
+    documents: documents.map(metadataOf),
     sources: new Map(documents.map((document) => [document.id, document.source])),
   };
 }
@@ -103,16 +109,11 @@ export class RecoveryDeltaTracker {
         ? cached.ifc
         : serialize(document.source);
       this.serialized.set(document.id, { source: document.source, ifc });
-      return {
-        id: document.id, ifc, filePath: document.filePath, isDirty: document.isDirty,
-        datesAsRecorded: document.datesAsRecorded,
-      };
+      return { ...metadataOf(document), ifc };
     });
     return {
       activeDocumentId,
-      documents: documents.map(({ id, filePath, isDirty, datesAsRecorded }) => ({
-        id, filePath, isDirty, datesAsRecorded,
-      })),
+      documents: documents.map(metadataOf),
       upserts,
     };
   }

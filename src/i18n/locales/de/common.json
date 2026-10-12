@@ -6,7 +6,8 @@
     "label": "Automatisch speichern",
     "noFile": "Speichern Sie dieses Projekt zuerst, um AutoSave zu verwenden.",
     "onHint": "AutoSave ist aktiv: Änderungen werden in diese Datei geschrieben.",
-    "offHint": "AutoSave ist aus. Die Wiederherstellung bleibt aktiv."
+    "offHint": "AutoSave ist aus. Die Wiederherstellung bleibt aktiv.",
+    "siteDisabled": "Auf der Website speichert Speichern (Strg+S) eine neue Version. AutoSave ist hier aus; die Wiederherstellung bleibt aktiv."
   },
   "notifications": {
     "dismiss": "Benachrichtigung schließen",
@@ -68,6 +69,8 @@
     "mppLegacy": "Diese .mpp-Datei verwendet ein altes Format (Project 2007 oder älter). Exportieren Sie sie in MS Project als XML (Datei → Speichern unter → XML) und öffnen Sie diese Datei.",
     "mppEncrypted": "Diese .mpp-Datei ist passwortgeschützt. Exportieren Sie sie in MS Project als XML (Datei → Speichern unter → XML) und öffnen Sie diese Datei.",
     "saveFailed": "Speichern fehlgeschlagen",
+    "siteSaveConflict": "Nicht gespeichert: '{{name}}' wurde inzwischen auf der Website von jemand anderem geändert. Ihre Änderungen sind noch in der App. Wählen Sie Speichern unter, um sie als neue Datei zu behalten.",
+    "siteFileGone": "'{{name}}' ist nicht mehr auf der Website. Die Datei wurde aus „Zuletzt verwendet“ entfernt.",
     "savedViaDownload": "Als Download gespeichert: '{{name}}' liegt jetzt in Ihrem Download-Ordner. Diese Umgebung erlaubt der App nicht, direkt an den gewählten Ort zu schreiben.",
     "browserCannotOverwrite": "Dieser Browser lässt die App nicht in „{{name}}“ zurückschreiben. Deshalb fragt die App bei jedem Speichern erneut, wohin die Datei soll. In Chrome, Edge oder der Desktop-App passiert das nicht.",
     "browserSavesAsDownload": "Als Download gespeichert: „{{name}}“ liegt in deinem Download-Ordner. Dieser Browser lässt die App nicht an einen eigenen Ort schreiben, daher erzeugt jedes Speichern einen neuen Download. In Chrome, Edge oder der Desktop-App aktualisiert Speichern einfach dieselbe Datei.",
@@ -1443,5 +1446,30 @@
     "yes": "Ja",
     "no": "Nein",
     "busy": "Tutorials werden vorbereitet…"
+  },
+  "siteFiles": {
+    "openTitle": "Von der Website öffnen",
+    "loading": "Dateien werden geladen…",
+    "loadFailed": "Die Dateien auf der Website konnten nicht geladen werden.",
+    "retry": "Erneut versuchen",
+    "empty": "Auf der Website gibt es noch keine Terminpläne.",
+    "showVersions": "Versionen anzeigen",
+    "hideVersions": "Versionen ausblenden",
+    "open": "Öffnen",
+    "versionsLoading": "Versionen werden geladen…",
+    "versionsFailed": "Die Versionen konnten nicht geladen werden.",
+    "versionsEmpty": "Keine Versionen gefunden.",
+    "versionLabel": "Version {{version}}",
+    "versionLatest": "neueste",
+    "byAuthor": "von {{author}}",
+    "openCopy": "Als Kopie öffnen",
+    "copyHint": "Eine ältere Version wird als Kopie geöffnet. Beim Speichern entsteht dann eine neue Datei; die neueste Version bleibt unverändert.",
+    "versionCopyName": "{{name}} (Version {{version}})",
+    "fromThisPc": "Von diesem Computer…",
+    "saveTitle": "Auf der Website speichern",
+    "nameLabel": "Name",
+    "saveHint": "Das Projekt wird als neue IFC-Datei auf der Website gespeichert. Danach speichert Speichern (Strg+S) dort eine neue Version.",
+    "saveToSite": "Auf der Website speichern",
+    "toThisPc": "Auf diesem Computer…"
   }
 }

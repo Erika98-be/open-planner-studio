@@ -98,6 +98,7 @@ export async function openFromPathWithIO(path: string, io: FormatIO) {
   const opened = useAppStore.getState().applyOpenedImport(parsed, {
     filePath: target.filePath,
     fileHandle: target.fileHandle,
+    siteFileId: target.siteFileId,
     recompute: true,
     fit: true,
     hourDataNotice: true,
