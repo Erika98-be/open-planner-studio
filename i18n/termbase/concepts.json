@@ -2279,7 +2279,6 @@
     "kind": "keep",
     "nl": "XER",
     "en": [
-      "xer file",
       "XER"
     ],
     "definition": "The P6 export file format that holds schedule data in tables."

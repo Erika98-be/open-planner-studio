@@ -7,7 +7,7 @@
  * taal (geen basislijn, Engelse vulling) telt tekst zonder hash als ontbrekend, ook bij i18n:add.
  */
 import { applyUiBatch } from '../../scripts/translate/apply';
-import { hashUnit } from '../../scripts/translate/common';
+import { hashUnit, hasUiBaseline } from '../../scripts/translate/common';
 import {
   buildUiPackages, orderSources, seedSources, selectUnits, setSourceHash, uiReleaseGaps, uiStatus, updateSourceHashForAdd,
   type UiPackage, type UiSources,
@@ -80,6 +80,23 @@ const en: JsonObject = {
   eq('onbekende sleutel blijft achteraan', Object.keys(de), ['a', 'grp', 'z', 'extra']);
   eq('hash van a bijgewerkt, van z niet', [sources.common.a, sources.common.z], [hashUnit('Eerste'), hashUnit('Laatste')]);
   eq('niets toegepast → geen doelobject', applyUiBatch([{ pkg: red, out: {} }], () => ({}), { common: nl }, {}).targets.size, 0);
+
+  // Het pakket ligt waar de agents schrijven: apply toetst het aan de huidige nl en de taal (review PR 2).
+  const forged: UiPackage = { ...green, id: 'ui-common-03', items: [{ key: 'z', nl: 'Laatste', en: 'Last' }, { key: 'weg', nl: 'Weg', en: 'Gone' }] };
+  const edited: UiPackage = { ...green, id: 'ui-common-04', items: [{ key: 'a', nl: 'Eerste (oud)', en: 'First' }] };
+  const otherLang: UiPackage = { ...green, id: 'ui-common-05', lang: 'fr' };
+  const guard = applyUiBatch([
+    { pkg: forged, out: { z: 'KAPUTT', weg: 'Weg' } },
+    { pkg: edited, out: { a: 'Erstes' } },
+    { pkg: otherLang, out: { a: 'Premier' } },
+  ], () => structuredClone(existing), { common: nl }, {}, 'de');
+  eq('bewerkt pakket, verdwenen sleutel en andere taal: alle drie rood', [guard.applied, guard.red.map(r => r.id)],
+    [[], ['ui-common-03', 'ui-common-04', 'ui-common-05']]);
+  eq('rood met reden', guard.red.map(r => r.lines[0]), [
+    'XX weg: staat niet (meer) in nl',
+    'XX a: nl-tekst in het pakket ≠ huidige nl (veranderd na prepare, of pakket bewerkt); opnieuw prepare',
+    'XX pakket is voor taal fr, niet de',
+  ]);
 }
 
 // ── 3. Basislijn en status ───────────────────────────────────────────────────────────────────
@@ -116,17 +133,19 @@ const en: JsonObject = {
 
 // ── 5. Nieuwe taal met Engelse vulling (geen basislijn) ─────────────────────────────────────
 {
-  // ru staat in de app eerst met Engels als tijdelijke inhoud: tekst zonder hash is geen vertaling.
+  ok('ru heeft sinds PR #316 een basislijn', hasUiBaseline('ru') && hasUiBaseline('sv') && !hasUiBaseline('be'));
+  // Een nieuwe taal (hier `be`, niet in UI_BASELINE; meervoud als ru) staat in de app eerst met Engels als
+  // tijdelijke inhoud: tekst zonder hash is geen vertaling.
   const ruFill: JsonObject = { a: 'First', grp: { x: 'X', n_one: '{{count}} task', n_few: '{{count}} tasks', n_many: '{{count}} tasks', n_other: '{{count}} tasks' }, z: 'Last' };
   const inputs = [{ ns: 'common', nl, en, target: ruFill }];
   eq('nieuwe taal, vulling zonder hash: --missing pakt alles op',
-    selectUnits(inputs[0], 'ru', 'missing', {}).map(s => s.unit.key), ['a', 'grp.x', 'grp.n', 'z']);
-  const st = uiStatus('ru', inputs, {})[0];
+    selectUnits(inputs[0], 'be', 'missing', {}).map(s => s.unit.key), ['a', 'grp.x', 'grp.n', 'z']);
+  const st = uiStatus('be', inputs, {})[0];
   eq('nieuwe taal, vulling zonder hash: status = alles ontbreekt', [st.missing, st.current, st.unhashed], [4, 0, 0]);
   const half: UiSources = { common: { a: hashUnit('Eerste') } };
   eq('nieuwe taal: alleen sleutels met hash gelden als vertaald',
-    selectUnits(inputs[0], 'ru', 'missing', half).map(s => s.unit.key), ['grp.x', 'grp.n', 'z']);
-  // Een bestaande taal houdt de oude regel: vertaald zonder hash telt als actueel.
+    selectUnits(inputs[0], 'be', 'missing', half).map(s => s.unit.key), ['grp.x', 'grp.n', 'z']);
+  // Een taal met basislijn houdt de oude regel: vertaald zonder hash telt niet als ontbrekend.
   const de: JsonObject = { a: 'Erste', grp: { x: 'X', n_one: '{{count}} Aufgabe', n_other: '{{count}} Aufgaben' }, z: 'Letzte' };
   eq('bestaande taal zonder hash: --missing laat vertaalde tekst staan',
     selectUnits({ ns: 'common', nl, en, target: de }, 'de', 'missing', {}).map(s => s.unit.key), []);
@@ -135,9 +154,9 @@ const en: JsonObject = {
   const deSrc: UiSources = {};
   eq('i18n:add, bestaande taal: hash gezet', [updateSourceHashForAdd(deSrc, 'de', 'common', 'a', 'Eerste'), deSrc.common?.a], [true, hashUnit('Eerste')]);
   const ruSrc: UiSources = { common: { a: hashUnit('Eerste'), z: 'x' } };
-  eq('i18n:add, nieuwe taal: hash weg', [updateSourceHashForAdd(ruSrc, 'ru', 'common', 'a', 'Eerste (nieuw)'), Object.keys(ruSrc.common)], [true, ['z']]);
+  eq('i18n:add, nieuwe taal: hash weg', [updateSourceHashForAdd(ruSrc, 'be', 'common', 'a', 'Eerste (nieuw)'), Object.keys(ruSrc.common)], [true, ['z']]);
   const none: UiSources = {};
-  eq('i18n:add, nieuwe taal zonder bronbestand: niets te schrijven', [updateSourceHashForAdd(none, 'sv', 'common', 'a', 'Eerste'), none], [false, {}]);
+  eq('i18n:add, nieuwe taal zonder bronbestand: niets te schrijven', [updateSourceHashForAdd(none, 'be', 'common', 'a', 'Eerste'), none], [false, {}]);
 }
 
 if (diffs.length === 0) {

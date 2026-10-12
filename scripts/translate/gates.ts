@@ -210,8 +210,10 @@ function withoutLabelSpans(text: string, labels: DocsPackage['labels'], side: 's
       ? normLabel(l.en) === p
       : (l.targets ?? []).some(t => (placeholders(t).length ? fillRe(t).test(p) : normLabel(t) === p)));
     // Alleen het hele cursieve stuk (`*span*`), lange stukken eerst: een kort label als "Critical" mag niet
-    // binnen een langer stuk ("Critical path: 21 tasks") wegvallen.
-    if (parts.some(hit)) rest = rest.split(`*${span}*`).join(' ');
+    // binnen een langer stuk ("Critical path: 21 tasks") wegvallen. Niet binnen vet (`**span**`): dat is
+    // geen cursief label.
+    const esc = span.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    if (parts.some(hit)) rest = rest.replace(new RegExp(`(?<!\\*)\\*${esc}\\*(?!\\*)`, 'gu'), ' ');
   }
   return rest;
 }
@@ -219,13 +221,25 @@ function withoutLabelSpans(text: string, labels: DocsPackage['labels'], side: 's
 /**
  * Staat een label met cijfers ("DCMA 14-point assessment") in de bron ook buiten cursief, en schrijft de vertaling
  * het label cursief (of andersom), dan telt het cijfer aan één kant niet mee. De labelregel controleert het label zelf.
- * Haalt daarom de gewone (niet-cursieve) voorkomens van zulke labels weg, aan beide kanten.
+ * Haalt daarom de gewone (niet-cursieve) voorkomens van zulke labels weg, aan beide kanten; in de vertaling niet
+ * vaker dan het en-label in de bron staat.
  */
-function withoutPlainLabelNumbers(text: string, labels: DocsPackage['labels'], side: 'src' | 'out'): string {
-  const forms = labels.flatMap(l => (side === 'src' ? [l.en] : l.targets ?? [])).filter(f => /[0-9]/.test(f) && placeholders(f).length === 0);
-  // Alleen los van andere cijfers: fr "2 dernières semaines" staat ook in "12 dernières semaines".
+function withoutPlainLabelNumbers(src: string, out: string, labels: DocsPackage['labels']): [string, string] {
   const re = (f: string) => new RegExp(`(?<![0-9])${f.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?![0-9])`, 'gu');
-  return [...new Set(forms)].sort((a, b) => b.length - a.length).reduce((t, f) => t.replace(re(f), ' '), text);
+  const withDigits = (f: string) => /[0-9]/.test(f) && placeholders(f).length === 0;
+  const byLength = [...labels].filter(l => withDigits(l.en)).sort((a, b) => b.en.length - a.en.length);
+  let s = src;
+  let o = out;
+  for (const l of byLength) {
+    // Zoveel keer als het en-label in de bron staat, zoveel keer mag een doelvorm weg: twee en-labels met
+    // dezelfde vertaling (cs "(F5)" in knop én tooltip) strepen anders de vertaling twee keer weg.
+    let budget = (s.match(re(l.en)) ?? []).length;
+    s = s.replace(re(l.en), ' ');
+    for (const f of [...new Set(l.targets ?? [])].filter(withDigits).sort((a, b) => b.length - a.length)) {
+      o = o.replace(re(f), m => (budget-- > 0 ? ' ' : m));
+    }
+  }
+  return [s, o];
 }
 
 /** Harde en zachte poorten voor één sectie: bron (en) tegen vertaling. */
@@ -286,8 +300,10 @@ function checkDocsSection(pkg: DocsPackage, idx: number, src: DocSection, out: D
   // Getallen binnen een herkend UI-label (soort a/b) tellen niet mee: de labelregel controleert het label zelf
   // (de ar-vorm van "1 task shows …" schrijft het getal uit).
   const sectionLabelsHere = pkg.labels.filter(x => x.section === idx && (x.kind === 'a' || x.kind === 'b'));
-  const sd = bag(withoutPlainLabelNumbers(withoutLabelSpans(s, sectionLabelsHere, 'src'), sectionLabelsHere, 'src').match(/[0-9]+/g) ?? []);
-  const od = bag(withoutPlainLabelNumbers(withoutLabelSpans(o, sectionLabelsHere, 'out'), sectionLabelsHere, 'out').match(/[0-9]+/g) ?? []);
+  const [sPlain, oPlain] = withoutPlainLabelNumbers(
+    withoutLabelSpans(s, sectionLabelsHere, 'src'), withoutLabelSpans(o, sectionLabelsHere, 'out'), sectionLabelsHere);
+  const sd = bag(sPlain.match(/[0-9]+/g) ?? []);
+  const od = bag(oPlain.match(/[0-9]+/g) ?? []);
   for (const [d, n] of sd) if ((od.get(d) ?? 0) < n) errors.push(`${at}: getal ${d} staat ${n}× in de bron, ${od.get(d) ?? 0}× in de vertaling`);
   const extra = [...od].filter(([d, n]) => n > (sd.get(d) ?? 0)).map(([d]) => d);
   if (extra.length) warnings.push(`${at}: getallen die de bron niet heeft: ${extra.join(', ')}`);

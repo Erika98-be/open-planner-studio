@@ -65,13 +65,23 @@ export const termEntries = (tb: LangTermbase): [string, TermEntry][] =>
 export const EXISTING_TARGETS = ['fr', 'de', 'es', 'zh', 'it', 'pt', 'pl', 'tr', 'ar', 'ja', 'ko', 'lo', 'fa'] as const;
 
 /**
- * Heeft deze taal een UI-basislijn (`seed-sources`, §9)? Alleen `en` en de bestaande doeltalen.
- * De nieuwe talen (ru, cs, sv, …) staan in de app eerst met Engels als tijdelijke inhoud; daar is
- * alleen een bron-hash (van `apply ui`) het bewijs van een vertaling. Een sleutel zonder hash telt
- * in zo'n taal dus als ontbrekend, ook als er tekst staat.
+ * De doeltalen met een UI-basislijn: hun tekst is door de straat gegaan of was er al vóór de straat.
+ * Sinds PR #316 (2026-10-12) zijn dat alle 26 doeltalen. Een nieuwe taal staat eerst met Engels als
+ * tijdelijke inhoud; zet hem hier pas bij als zijn eerste `prepare ui --missing` + `apply ui` klaar is.
+ */
+export const UI_BASELINE = [
+  ...EXISTING_TARGETS, 'ru', 'uk', 'cs', 'sk', 'sr', 'hr', 'bg', 'hu', 'ro', 'sv', 'nb', 'da', 'fi',
+] as const;
+
+/**
+ * Heeft deze taal een UI-basislijn (§9)? `en` en de talen in `UI_BASELINE`. In een taal zonder
+ * basislijn (een nieuwe taal met Engelse vulling) is alleen een bron-hash (van `apply ui`) het bewijs
+ * van een vertaling: een sleutel zonder hash telt daar als ontbrekend, ook als er tekst staat. In een
+ * taal met basislijn telt zo'n sleutel als "zonder hash": `--stale` pakt hem op mét de oude tekst, en
+ * de releasepoort laat hem niet door.
  */
 export const hasUiBaseline = (lang: string): boolean =>
-  lang === 'en' || (EXISTING_TARGETS as readonly string[]).includes(lang);
+  lang === 'en' || (UI_BASELINE as readonly string[]).includes(lang);
 
 /**
  * Taal → bestand in de Microsoft Terminology Collection. `pt` = Portugal: de bestaande pt-UI is

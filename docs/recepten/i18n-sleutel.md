@@ -76,7 +76,7 @@ faalt `verify:i18n` op de opmaak.
 
 ## De vaste opmaak (`npm run i18n:fmt`)
 
-Alle 108 locale-bestanden hebben één opmaak: één sleutel per regel (JSON, twee spaties), in precies de
+Alle 112 locale-bestanden hebben één opmaak: één sleutel per regel (JSON, twee spaties), in precies de
 volgorde van `nl`; een meervoudsfamilie staat op de plek van haar `nl`-familie met de categorieën van
 de eigen taal in CLDR-volgorde (`zero`, `one`, `two`, `few`, `many`, `other`). Daardoor valt een
 mergeconflict op één regel in plaats van op een blok (vroeger stonden in zes talen 70 kolomnamen op één
@@ -87,7 +87,7 @@ de inhoud — `tests/planning/check-i18n-tools.ts` bewijst dat op alle echte bes
 ## Mergen (`npm run i18n:resolve`)
 
 Draai na elke `git merge` waarbij aan beide kanten locale-bestanden veranderden `npm run i18n:resolve`,
-óók als git daar geen conflict meldde. Het script voegt alle 108 bestanden per sleutel samen uit de drie
+óók als git daar geen conflict meldde. Het script voegt alle 112 bestanden per sleutel samen uit de drie
 versies die git kent (merge-base, jouw kant, de andere kant), zet ze in de vaste opmaak en doet
 `git add`. Wat maar één kant toevoegde, wijzigde of verwijderde, gaat mee.
 

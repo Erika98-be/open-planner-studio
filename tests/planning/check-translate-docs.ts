@@ -129,7 +129,7 @@ eq('02i normLabel', [normLabel('Save…'), normLabel('Link ▾'), normLabel('Don
   eq('03f dubbelzinnig: alle doelteksten met sleutelpad', [link?.targets, link?.keys], [['Závislost', 'Propojit'], ['common:dlg.link', 'common:dlg.linkVerb']]);
   eq('03g eenduidig: geen sleutels in het pakket', r.labels.find(l => l.en === 'Relation type')?.keys, undefined);
   ok('03h sleutels met doeltekst-hash voor C3', r.keys['common:dlg.relType'] === sectionHash('Typ závislosti'));
-  const fresh = buildEnLabelIndex([{ ns: 'common', nl, en, target: cs }], 'cs', {});
+  const fresh = buildEnLabelIndex([{ ns: 'common', nl, en, target: cs }], 'be', {}); // be: nieuwe taal, geen basislijn
   eq('03i nieuwe taal zonder bron-hash: geen doeltekst (Engelse vulling)', fresh.exact.get('Relation type')?.[0].target, undefined);
   // Een invulplek slokt geen menupad op (zh: *Resources › Manage › New resource* werd "{{count}} 个资源").
   const pathIdx = buildEnLabelIndex([{ ns: 'menu',
@@ -504,6 +504,17 @@ const run = (out: string) => checkDocs(PKG.pkg, PKG.src, out);
   const AR_MD = '# A\n\nOpen the file; *1 task shows the lag*.\n';
   const [ap] = buildDocsPackages({ lang: 'ar', articles: [{ id: 'a', md: AR_MD }], mode: 'missing', sources: {}, index: arIdx, literal, concepts });
   eq('17e ar-label met uitgeschreven getal: geen cijferfout', checkDocs(ap.pkg, ap.src, '# A\n\nافتح الملف؛ *مهمة واحدة تعرض التأخير*.\n').errors, []);
+
+  // Twee en-labels met dezelfde vertaling (cs ref-meldingen): knop "Out of date — recalculate (F5)" en tooltip
+  // "Schedule out of date — recalculate (F5)". De vertaling van de cursieve tooltip mag niet ook de knoptekst wegstrepen.
+  const f5En: JsonObject = { sb: { stale: 'Out of date — recalculate (F5)', staleTip: 'Schedule out of date — recalculate (F5)' } };
+  const f5Nl: JsonObject = { sb: { stale: 'Verouderd — herbereken (F5)', staleTip: 'Planning verouderd — herbereken (F5)' } };
+  const f5Cs: JsonObject = { sb: { stale: 'Plán je zastaralý — přepočítejte (F5)', staleTip: 'Plán je zastaralý — přepočítejte (F5)' } };
+  const f5Idx = buildEnLabelIndex([{ ns: 'common', nl: f5Nl, en: f5En, target: f5Cs }], 'cs', {});
+  const F5_MD = '# S\n\n**Out of date — recalculate (F5)** (tooltip: *Schedule out of date — recalculate (F5)*).\n';
+  const [fp] = buildDocsPackages({ lang: 'cs', articles: [{ id: 's', md: F5_MD }], mode: 'missing', sources: {}, index: f5Idx, literal, concepts });
+  eq('17f twee labels, één vertaling: het getal buiten het label telt aan beide kanten even vaak', checkDocs(fp.pkg, fp.src,
+    '# S\n\n**Plán je zastaralý — přepočítejte (F5)** (bublina: *Plán je zastaralý — přepočítejte (F5)*).\n').errors, []);
 }
 
 // ── 18. Randgevallen van de cijfer-, plekhouder- en avoid-regel bij labels ───────────────────

@@ -41,7 +41,7 @@ en vullen de plekhouders hierboven zelf in. De invoer (`items`) komt uit
 
 | script | wat |
 |---|---|
-| `stations.js` | per pakket vertalen → nalezen → herstellen, Haiku (`kind`: `ui` of `docs`) |
+| `stations.js` | per pakket vertalen → nalezen → herstellen, Haiku (`kind`: `ui`, `docs`, of `ui-termfix` voor pakketten van `prepare ui --avoid`) |
 | `docs-spotcheck.js` | steekproef op gepubliceerde artikelen door een sterker model (standaard Sonnet) |
 | `docs-spotcheck-fix.js` | Haiku past de gekozen bevindingen uit de steekproef toe |
 

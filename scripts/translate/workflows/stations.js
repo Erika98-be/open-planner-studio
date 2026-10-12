@@ -6,10 +6,11 @@ export const meta = {
 // De drie stations van de vertaalstraat, per pakket achter elkaar; de pakketten lopen naast elkaar.
 // Gestart door de skills update-ui-lang en update-docs-lang (Workflow-tool, scriptPath = dit bestand).
 // args: {
-//   kind:  'ui' | 'docs'                  welke opdrachten: prompts/<kind>.md, <kind>-review.md, <kind>-fix.md
+//   kind:  'ui' | 'docs' | 'ui-termfix'   welke opdrachten: prompts/<kind>.md, daarna <soort>-review.md en
+//                                         <soort>-fix.md; 'ui-termfix' = pakketten van `prepare ui <taal> --avoid`
 //   repo:  absoluut pad van de worktree   (pakketten in <repo>/build/translate/<taal>/)
 //   node:  absoluut pad van node          (agent-shells laden nvm niet)
-//   items: [[taal, pakket-id], …]         uitvoer van `npm run translate -- packages <kind> <taal…> [--red]`
+//   items: [[taal, pakket-id], …]         uitvoer van `npm run translate -- packages ui|docs <taal…> [--red]`
 // }
 const ROOT = `${args.repo}/build/translate`
 const PROMPTS = `${args.repo}/scripts/translate/prompts`
@@ -25,15 +26,16 @@ const task = (file, lang, id) =>
   + `${vars(lang, id)}\nYou may read that instruction file in addition to the files it names.`
 const tail = (s) => (typeof s === 'string' ? s.slice(-150) : s)
 const k = args.kind
-if (k !== 'ui' && k !== 'docs') throw new Error(`kind moet "ui" of "docs" zijn, niet ${k}`)
+if (k !== 'ui' && k !== 'docs' && k !== 'ui-termfix') throw new Error(`kind moet "ui", "docs" of "ui-termfix" zijn, niet ${k}`)
+const base = k === 'ui-termfix' ? 'ui' : k
 const res = await pipeline(args.items,
   ([lang, id]) => agent(task(`${k}.md`, lang, id), { label: `${k}:${lang}:${id}`, phase: 'Vertalen', model: 'haiku' })
     .then((t) => ({ t: tail(t) })),
-  (prev, [lang, id]) => agent(`${task(`${k}-review.md`, lang, id)}\n\nReturn the number of problems you wrote as \`problems\`.`,
+  (prev, [lang, id]) => agent(`${task(`${base}-review.md`, lang, id)}\n\nReturn the number of problems you wrote as \`problems\`.`,
     { label: `review:${lang}:${id}`, phase: 'Nalezen', model: 'haiku', schema: SCHEMA })
     .then((r) => ({ ...prev, problems: r ? r.problems : null })),
   (prev, [lang, id]) => (!prev || !prev.problems) ? prev
-    : agent(task(`${k}-fix.md`, lang, id), { label: `fix:${lang}:${id}`, phase: 'Herstellen', model: 'haiku' })
+    : agent(task(`${base}-fix.md`, lang, id), { label: `fix:${lang}:${id}`, phase: 'Herstellen', model: 'haiku' })
       .then((f) => ({ ...prev, fix: tail(f) })),
 )
 const out = res.map((r, i) => ({ lang: args.items[i][0], id: args.items[i][1], problems: r ? r.problems : null, failed: !r }))

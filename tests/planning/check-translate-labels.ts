@@ -55,7 +55,7 @@ const sources = { common: hashes(nlCommon, ['title', 'profile', 'restore']), men
   ok('invulplek is geen label', !texts.some(t => t.includes('{{')));
   eq('doeltekst en sleutel', idx.find(l => l.nl === 'Projectinfo')?.targets, ['Відомості про проєкт']);
   eq('sleutel als ns:pad', idx.find(l => l.nl === 'Projectinfo')?.keys, ['menu:projectInfo']);
-  const fresh = buildLabelIndex(inputs(uk), 'uk', {});
+  const fresh = buildLabelIndex(inputs(uk), 'be', {}); // be: nieuwe taal zonder basislijn
   eq('nieuwe taal zonder hash: Engelse vulling telt niet als doeltekst', fresh.find(l => l.nl === 'Projectinfo')?.targets, []);
   const many: JsonObject = { w: 'Instellingen' };
   for (let i = 0; i <= LABEL_COMMON_WORD_MAX; i++) many[`s${i}`] = `Open de instellingen ${i}.`;

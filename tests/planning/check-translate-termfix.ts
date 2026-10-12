@@ -84,7 +84,7 @@ const input = { ns: 'task', nl, en, target: hr };
   const both = selectAvoid(input, 'hr', sources, rules, true);
   eq('--avoid --stale: vereniging in nl-volgorde', both.map(s => [s.unit.key, s.avoidHits ?? null, s.stale ?? null]),
     [['a', ['ključni put'], null], ['c', null, true], ['f', ['ključni put'], null]]);
-  const noHash = selectAvoid(input, 'hr', { task: {} }, rules, false);
+  const noHash = selectAvoid(input, 'be', { task: {} }, rules, false); // be: nieuwe taal zonder basislijn
   eq('nieuwe taal: tekst zonder hash = Engelse vulling, niet geselecteerd', noHash.map(s => s.unit.key), []);
   const stale = selectAvoid({ ...input }, 'de', { task: { a: hashUnit('anders') } }, rules, false);
   eq('verouderde eenheid met avoid krijgt stale', stale.filter(s => s.unit.key === 'a').map(s => s.stale), [true]);

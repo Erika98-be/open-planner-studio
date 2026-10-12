@@ -40,8 +40,9 @@ over alle talen is groot (honderden agents).
 for l in <talen>; do npm run translate -- prepare docs $l --missing; done   # of --stale, of --ids a,b
 npm run translate -- packages docs <talen>     # JSON [[taal, pakket-id], …]
 ```
-`--stale` vertaalt alleen de veranderde secties, met de vorige vertaling erbij. `prepare docs` zet
-oude pakketten van dezelfde artikelen opzij in `archive/`; pas eerst toe wat er al ligt.
+`--stale` vertaalt alleen de veranderde secties, met de vorige vertaling erbij. Met `--missing` of
+`--stale` zet `prepare docs` **alle** open docs-pakketten van die taal opzij in `archive/`; met `--ids`
+alleen die van de genoemde artikelen. Pas dus eerst toe wat er al ligt.
 
 ### 2. De stations draaien
 Start de workflow met de Workflow-tool (deze skill geeft daar toestemming voor):
@@ -53,11 +54,13 @@ Controleer daarna met `git status --short` dat niets buiten `build/translate/` v
 ### 3. Toepassen
 ```bash
 for l in <talen>; do npm run translate -- apply docs $l; done
-npm run translate -- packages docs <talen> --red   # rode pakketten: nog één keer door stap 2
+npm run translate -- packages docs <talen> --red   # rode pakketten met uitvoer
+npm run translate -- packages docs <talen>         # alles wat nog open staat (ook zonder uitvoer)
 npm run verify:docs; echo "exit=$?"
 ```
-Meldt `apply docs` dat een UI-label veranderde na `prepare`, maak dan voor die artikelen nieuwe
-pakketten (`prepare docs <taal> --ids <ids>`) en stuur ze opnieuw door de stations. Blijft een pakket
+Stuur de open pakketten nog één keer door de stations (stap 2). Meldt `apply docs` dat een UI-label
+veranderde na `prepare`, maak dan voor die artikelen nieuwe pakketten (`prepare docs <taal> --ids <ids>`)
+en stuur ze opnieuw door de stations. Blijft een pakket
 na twee rondes rood, stop dan en meld het aan de user.
 
 ### 4. Steekproef
@@ -72,14 +75,16 @@ de duidelijke `matig`). Start dan:
 - `scriptPath`: `<worktree>/scripts/translate/workflows/docs-spotcheck-fix.js`
 - `args`: `{ "repo": "<worktree>", "fixdir": "<map>", "langs": [...] }`
 
-Controleer het herstel zelf:
+Controleer het herstel zelf. Het herstel gaat buiten de stations om, dus de pakketpoort moet er alsnog
+overheen (inline code, getallen, labels, links, termen):
 ```bash
+for l in <talen>; do npm run translate -- check-docs $l <herstelde ids>; done   # moet OK zijn
 npm run verify:docs; echo "exit=$?"
 git diff -U0 public/docs | grep '^+' | grep -niE 'replace|idem|\(→| / |use one term'   # geen notities in de tekst
 ```
-Een herstelde regel mag geen uitleg, alternatief of instructie bevatten. `verify:docs` vangt een
-gebroken structuur (koppen, lijsten, links). Klopt het aantal cursieve labels niet meer met de bron,
-zet dat bestand dan terug (`git checkout --`) en meld het.
+Een herstelde regel mag geen uitleg, alternatief of instructie bevatten. Is een artikel rood in
+`check-docs`, zet het dan terug (`git checkout -- <bestand>`) en stuur het via `prepare docs <taal>
+--ids <id>` door de stations; die krijgen de huidige vertaling mee als `previous`.
 
 Een patroon dat terug kan komen, schrijf je kort in `scripts/translate/prompts/pitfalls/<taal>.md`
 (fout → goed). De nalezer leest die lijst bij de volgende run.

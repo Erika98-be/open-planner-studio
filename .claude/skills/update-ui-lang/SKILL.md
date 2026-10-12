@@ -42,9 +42,10 @@ npm run verify:translations; echo "exit=$?"
 Exit 0: klaar, niets te doen. Anders noemt de poort per taal de sleutels: `ontbreekt`, `verouderd` of
 `zonder hash`. Meer detail: `npm run translate -- status [taal]`.
 
-Staat `en` in de lijst? Dan voegde iemand een sleutel toe zonder `npm run i18n:add`. Controleer met
-`npm run translate -- status en` dat `en` niets `verouderd` heeft, en zet dan de hashes:
-`npm run translate -- seed-sources en`. `en` gaat nooit door de stations.
+Staat `en` in de lijst? Dan veranderde iemand `nl` of `en` zonder `npm run i18n:add`. `en` gaat nooit door
+de stations. Zet de sleutel opnieuw met nl + en (dat zet de hash; zie `docs/recepten/i18n-sleutel.md`):
+`npm run i18n:add -- <ns>:<sleutel> <json met nl en en> --update`. Gebruik geen `seed-sources`: dat
+weigert over bestaande bronhashes heen, omdat het een verouderde vertaling als actueel zou markeren.
 
 ### 2. Pakketten maken — eerst `--missing`
 ```bash
@@ -83,6 +84,10 @@ pakket na twee rondes rood, stop dan en meld de taal, het pakket en de foutregel
 Herhaal stap 2 tot en met 4 met `--stale` voor de talen met `verouderd` of `zonder hash`. `--stale`
 geeft de agent de vorige vertaling mee, zodat hij alleen aanpast wat in de bron veranderde.
 
+Veranderde er een term in de termbase (een `avoid`-variant erbij)? Maak dan pakketten met
+`prepare ui <taal> --avoid` en start de stations met `"kind": "ui-termfix"`. Die vervangen alleen de
+oude term.
+
 ### 6. Poorten en commit
 ```bash
 npm run verify:translations; echo "exit=$?"   # moet 0 zijn
@@ -100,8 +105,10 @@ Los: push de branch, open een PR en wacht op de CI. In de release: ga verder met
 
 ## Valkuilen
 - Een `prepare` op een taal met open pakketten archiveert die. Pas eerst toe.
-- Een nieuwe taal (Engels als vulling, geen hashes) gaat altijd via `--missing`; `seed-sources` weigert
-  die terecht.
+- Een nieuwe taal (Engels als vulling, geen hashes) gaat altijd via `--missing`. Zet hem pas in
+  `UI_BASELINE` (`scripts/translate/common.ts`) als zijn eerste ronde is toegepast.
+- `apply ui` keurt elk pakket ook tegen de huidige nl en de taal. Veranderde nl na `prepare`, dan is het
+  pakket rood: maak het opnieuw.
 - Relatiecodes (`FS`, `SS`, `FF`, `SF`) en duurinvoer (`3ed`) blijven altijd zoals ze zijn; de poort
   controleert dat.
 - Vind je een fout in een termbase-term, pas dan `i18n/termbase/<taal>.json` aan via de straat

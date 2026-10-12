@@ -19,6 +19,7 @@
 //                                      + pitfalls.md voor de nalezer uit prompts/pitfalls/)
 //   packages ui|docs <taal…> [--red]   open pakketten als JSON [[taal, id]] (invoer voor scripts/translate/workflows/);
 //                                      --red = alleen pakketten met uitvoer die niet groen keurt
+//   check-docs <taal> [id…]            pakketpoort op gepubliceerde artikelen (na herstel buiten de stations)
 //   apply docs <taal>                  groene docs-pakketten → public/docs/<taal>/<id>.md + index.json (C2)
 //                                      + i18n/docs-sources/<taal>.json (C3); herschikt ook artikelen zonder pakket
 //   rename-doc <oud> <nieuw>           hernoem een artikel in alle docstalen (bestand, links, C2, C3)
@@ -26,7 +27,8 @@
 //   docs-budget <taal…> [--max-words N] grootste docs-pakket per taal in tekens en geschatte tokens (§ contextbudget)
 //   docs-literal                       voorbeeldnamen (soort c) opnieuw uit scripts/tutorial-project.ts en
 //                                      public/examples/*.ifc → i18n/docs-literal.json (sources)
-//   seed-sources [taal…]               basislijn: huidige nl-hashes voor en + de bestaande talen (niet de nieuwe)
+//   seed-sources <taal…>               eenmalige basislijn (huidige nl-hashes) voor een taal zónder
+//                                      i18n/ui-sources/<taal>.json; weigert als dat bestand er al is
 //   status [taal] [--strict]           per taal en namespace (en docs): ontbreekt / verouderd / actueel;
 //                                      --strict = releasepoort `npm run verify:translations` (exit 1 bij elk UI-gat;
 //                                      docsgaten alleen gemeld)
@@ -35,7 +37,7 @@
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
-import { LOCALES, NAMESPACES, type JsonObject } from '../i18n-tools';
+import { NAMESPACES, type JsonObject } from '../i18n-tools';
 import { EXISTING_TARGETS, TBX_FILES, hasUiBaseline, toJson, type Concept, type LangTermbase } from './common';
 import { chunk, collectCandidates } from './candidates';
 import { applyUiBatch } from './apply';
@@ -75,10 +77,14 @@ function writeJson(p: string, v: unknown): void {
 }
 const stamp = () => new Date().toISOString().replace(/[:.]/g, '-');
 
-/** Zet oude bestanden met dit voorvoegsel opzij in `archive/<tijd>/` (niets gaat verloren). */
+/**
+ * Zet oude bestanden met dit voorvoegsel opzij in `archive/<tijd>/` (niets gaat verloren), met hun
+ * nalees-bestand (`review-<pakket>.json`): anders kan de hersteller van een nieuw pakket met dezelfde naam
+ * de bevindingen van de vorige ronde lezen.
+ */
 function archive(dir: string, prefix: string): void {
   if (!existsSync(dir)) return;
-  const old = readdirSync(dir).filter(f => f.startsWith(prefix) && f.endsWith('.json'));
+  const old = readdirSync(dir).filter(f => (f.startsWith(prefix) || f.startsWith(`review-${prefix}`)) && f.endsWith('.json'));
   if (old.length === 0) return;
   const to = join(dir, 'archive', stamp());
   mkdirSync(to, { recursive: true });
@@ -320,6 +326,20 @@ function prepare(args: string[]): void {
     + (packs.length ? `, grootste ${Math.max(...sizes)} tekens` : ''));
 }
 
+/** Lees pakket + uitvoer; een onleesbaar of ongeldig bestand is een fout met naam, geen crash. */
+function tryReadPackage(pkgFile: string, outFile: string): { pkg: { id: string }; out: unknown } | { error: string } {
+  const parse = (p: string): unknown => JSON.parse(readFileSync(p, 'utf8')) as unknown;
+  try {
+    const pkg = parse(pkgFile);
+    if (typeof pkg !== 'object' || pkg === null || typeof (pkg as { id?: unknown }).id !== 'string') {
+      return { error: 'pakket zonder id' };
+    }
+    return { pkg: pkg as { id: string }, out: parse(outFile) };
+  } catch (err) {
+    return { error: `niet te lezen (${err instanceof Error ? err.message : String(err)})` };
+  }
+}
+
 function applyUi(args: string[]): void {
   const [what, langArg] = positional(args);
   if (what === 'docs') { applyDocs(checkLang(langArg)); return; }
@@ -331,17 +351,22 @@ function applyUi(args: string[]): void {
   const nl = nlByNs();
   const batch: { pkg: UiPackage; out: unknown }[] = [];
   const fileOf = new Map<string, string>();
+  let unreadable = 0;
   for (const f of files) {
     const outFile = join(dir, f.replace('.json', '.out.json'));
     if (!existsSync(outFile)) { console.log(`..  ${f}: nog geen uitvoer`); continue; }
-    const pkg = readJson<UiPackage>(join(dir, f));
-    fileOf.set(pkg.id, f);
-    batch.push({ pkg, out: readJson<unknown>(outFile) });
+    const read = tryReadPackage(join(dir, f), outFile);
+    if ('error' in read) { console.log(`XX  ${f}: ${read.error}`); unreadable++; continue; }
+    fileOf.set(read.pkg.id, f);
+    batch.push({ pkg: read.pkg as UiPackage, out: read.out });
   }
-  const { targets, applied: ids, red: redList } = applyUiBatch(batch, ns => readLocale(lang, ns), nl, sources);
-  for (const r of redList) for (const line of r.lines) console.log(`    ${line}`);
+  const { targets, applied: ids, red: redList } = applyUiBatch(batch, ns => readLocale(lang, ns), nl, sources, lang);
+  for (const r of redList) {
+    console.log(`XX  ${fileOf.get(r.id) ?? r.id}:`);
+    for (const line of r.lines) console.log(`    ${line}`);
+  }
   const applied = ids.map(id => fileOf.get(id)!);
-  const red = redList.length;
+  const red = redList.length + unreadable;
   for (const [ns, obj] of targets) writeJson(join(LOCALES_DIR, lang, `${ns}.json`), obj);
   if (applied.length) {
     writeJson(sourcesPath(lang), orderSources(sources, nl));
@@ -377,11 +402,15 @@ function packagesCmd(args: string[]): void {
       if (onlyRed) {
         const out = join(dir, what === 'ui' ? `${base}.out.json` : `${base}.out.md`);
         if (!existsSync(out)) continue;
-        const pkg = readJson<unknown>(join(dir, `${base}.json`));
-        const result = what === 'ui'
-          ? checkPackage(pkg, readJson<unknown>(out))
-          : checkDocs(pkg as DocsPackage, readFileSync(join(dir, `${base}.src.md`), 'utf8'), readFileSync(out, 'utf8'));
-        if (!result.errors.length) continue;
+        let green = false;
+        try {
+          const pkg = JSON.parse(readFileSync(join(dir, `${base}.json`), 'utf8')) as unknown;
+          const result = what === 'ui'
+            ? checkPackage(pkg, JSON.parse(readFileSync(out, 'utf8')) as unknown)
+            : checkDocs(pkg as DocsPackage, readFileSync(join(dir, `${base}.src.md`), 'utf8'), readFileSync(out, 'utf8'));
+          green = result.errors.length === 0;
+        } catch { /* onleesbaar = rood */ }
+        if (green) continue;
       }
       items.push([lang, base]);
     }
@@ -415,11 +444,19 @@ function applyFindingsCmd(args: string[]): void {
 }
 
 function seed(args: string[]): void {
-  // Alleen talen met een basislijn: in een nieuwe taal staat Engels als vulling, en een hash zou die
-  // als "actueel" markeren (zie hasUiBaseline).
-  const langs = positional(args).length ? positional(args).map(checkLang) : LOCALES.filter(l => hasUiBaseline(l));
+  // Eenmalig: de basislijn van een taal zonder bronhashes. Een hash zegt "deze tekst hoort bij déze
+  // nl-tekst"; over een bestaand bestand heen zou hij een verouderde vertaling als actueel markeren en de
+  // releasepoort vals groen maken. Daarom alleen talen met basislijn (zie hasUiBaseline), alleen
+  // expliciet genoemd, en nooit over een bestaand `i18n/ui-sources/<taal>.json` heen.
+  const langs = positional(args).map(checkLang);
+  if (!langs.length) fail('seed-sources <taal…>: noem de talen; alleen voor een taal zonder i18n/ui-sources/<taal>.json');
   const without = langs.filter(l => !hasUiBaseline(l));
   if (without.length) fail(`seed-sources: ${without.join(', ')} heeft geen basislijn (Engelse vulling); vul via prepare/apply ui`);
+  const existing = langs.filter(l => existsSync(sourcesPath(l)));
+  if (existing.length) {
+    fail(`seed-sources: ${existing.join(', ')} heeft al bronhashes; overschrijven zou verouderde tekst als actueel markeren. `
+      + 'Een sleutel zonder hash: `prepare ui <taal> --stale` (doeltaal) of `npm run i18n:add -- <ns>:<sleutel> <json> --update` (nl + en)');
+  }
   const nl = nlByNs();
   for (const lang of langs) {
     if (!existsSync(join(LOCALES_DIR, lang))) { console.log(`..  ${lang}: geen locale-map, overgeslagen`); continue; }
@@ -493,6 +530,8 @@ function archiveDocs(dir: string, onlyIds?: string[]): void {
   mkdirSync(to, { recursive: true });
   for (const b of bases) {
     for (const ext of ['.src.md', '.json', '.out.md']) if (existsSync(join(dir, b + ext))) renameSync(join(dir, b + ext), join(to, b + ext));
+    const review = `review-${b}.json`; // zie archive(): geen oude bevindingen voor een nieuw pakket
+    if (existsSync(join(dir, review))) renameSync(join(dir, review), join(to, review));
   }
   console.log(`..  ${bases.length} oud(e) docs-pakket(ten) verplaatst naar ${to.slice(ROOT.length + 1)}`);
 }
@@ -552,6 +591,30 @@ function prepareDocs(args: string[], lang: string): void {
   }
   const arts = new Set(packs.map(p => p.pkg.article)).size;
   console.log(`OK  prepare docs ${lang} --${mode}${ids ? ` ${ids.join(',')}` : ''}: ${arts} artikel(en) in ${packs.length} pakket(ten) in build/translate/${lang}/`);
+}
+
+/**
+ * `check-docs <taal> [id…]`: de pakketpoort (`checkDocs`) op gepubliceerde artikelen, tegen de huidige
+ * en-bron. Voor herstel buiten de stations om (steekproef, skill update-docs-lang): `verify:docs` ziet
+ * alleen de opbouw, deze poort ook inline code, getallen, labels en links per sectie.
+ */
+function checkDocsCmd(args: string[]): void {
+  const [langArg, ...given] = positional(args);
+  const lang = checkLang(langArg);
+  if (lang === 'nl' || lang === 'en') fail('check-docs: nl en en zijn de bron');
+  const translated = Object.keys(readDocsIndex(lang));
+  const ids = given.length ? given : translated;
+  const missing = ids.filter(id => !translated.includes(id));
+  if (missing.length) fail(`check-docs ${lang}: geen vertaling van ${missing.join(', ')}`);
+  let red = 0;
+  for (const { pkg, src } of buildDocsFor(lang, 'ids', ids, Number.MAX_SAFE_INTEGER)) {
+    const r = checkDocs(pkg, src, readFileSync(docPath(lang, pkg.article), 'utf8'));
+    if (!r.errors.length) continue;
+    red++;
+    for (const line of formatResult(pkg.article, r).filter(l => !l.startsWith('WW'))) console.log(`    ${line}`);
+  }
+  console.log(`${red ? 'XX' : 'OK'}  check-docs ${lang}: ${ids.length - red} groen, ${red} rood`);
+  if (red) process.exit(1);
 }
 
 /** De en-UI-teksten, genormaliseerd zoals labels (een voorbeeldnaam die ook UI-tekst is, is soort a). */
@@ -742,9 +805,7 @@ function docsBudget(args: string[]): void {
  * moeten bij zijn (dat zijn de bronnen), de andere talen mogen achterlopen. De poort meldt de docsgaten
  * wel, zodat je kunt kiezen of je `update-docs-lang` eerst draait.
  */
-const RELEASE_GAP_SOURCES: ((lang: string) => ReleaseGap[])[] = [
-  lang => uiReleaseGaps(lang, nsInputs(lang), readJsonOr<UiSources>(sourcesPath(lang), {})),
-];
+const uiGaps = (lang: string): ReleaseGap[] => uiReleaseGaps(lang, nsInputs(lang), readJsonOr<UiSources>(sourcesPath(lang), {}));
 /** De docsgaten per taal: alleen een melding (`where` = `docs:<id>` of `docs:<id>#<sectie>`). */
 const docsGaps = (lang: string): ReleaseGap[] =>
   (lang !== 'en' && docsLangs().includes(lang) ? docsReleaseGaps(lang, docsStates(lang)) : []);
@@ -756,7 +817,7 @@ function strictStatus(langs: string[]): void {
   let total = 0;
   const red: string[] = [];
   for (const lang of langs) {
-    const gaps = RELEASE_GAP_SOURCES.flatMap(source => source(lang));
+    const gaps = uiGaps(lang);
     if (gaps.length === 0) { console.log(`OK  ${lang}: UI vertaald en actueel`); continue; }
     total += gaps.length;
     red.push(lang);
@@ -818,6 +879,7 @@ switch (cmd) {
   case 'apply': applyUi(rest); break;
   case 'apply-findings': applyFindingsCmd(rest); break;
   case 'packages': packagesCmd(rest); break;
+  case 'check-docs': checkDocsCmd(rest); break;
   case 'seed-sources': seed(rest); break;
   case 'status': status(rest); break;
   case 'rename-doc': renameDoc(rest); break;
@@ -827,7 +889,7 @@ switch (cmd) {
   default:
     console.log('gebruik: npm run translate -- <validate-termbase | concepts-candidates | concepts-merge | terms-lookup <taal> | '
       + 'apply-terms <taal> | prepare ui <taal> [--missing|--stale|--all|--avoid [--stale]|--keys <bestand>] | bundle-check | '
-      + 'apply ui <taal> | apply-findings <taal> <bestand> | packages ui|docs <taal…> [--red] | seed-sources [taal…] | status [taal] [--strict] | '
+      + 'apply ui <taal> | apply-findings <taal> <bestand> | packages ui|docs <taal…> [--red] | check-docs <taal> [id…] | seed-sources <taal…> | status [taal] [--strict] | '
       + 'prepare docs <taal> [--missing|--stale|--ids a,b] [--max-words N] | apply docs <taal> | rename-doc <oud> <nieuw> | '
       + 'remove-doc <id> | docs-budget <taal…> | docs-literal>');
     process.exit(cmd ? 1 : 0);
