@@ -16,8 +16,7 @@
  *   (b) hernoem je een INTERN veld → dat duikt alléén hier op, nooit in extensie-code.
  */
 import { localTodayIso } from '@/utils/dateUtils';
-import type { Project, ProjectSchedulingOptions } from '@/types/project';
-import { sameValue } from '@/utils/sameValue';
+import type { Project } from '@/types/project';
 import { resolveConventions } from '@/engine/scheduler/conventions/registry';
 import type { WorkCalendar, Holiday, WorkTimeBands, WorkingException } from '@/types/calendar';
 import type { Task, TaskTime, TaskConstraint, ExternalLink } from '@/types/task';
@@ -50,20 +49,30 @@ import type {
 
 // ── Kleine helpers (diepe kopie van geneste, mogelijk bevroren, waarden) ──
 
-/** Publieke scheduling-options worden veld-voor-veld gereconstrueerd. Dit is tegelijk een
+/** De zes publieke reken-opties: de ENE sleutellijst. `toExtProject`/`fromExtProject` kopiëren alleen
+ *  deze sleutels, en `retainActiveDocument` vervangt bij lees-wijzig-laad precies deze sleutels. De
+ *  typeregel eronder faalt te compileren zodra `ExtSchedulingOptions` een sleutel krijgt die hier
+ *  ontbreekt. */
+export const PUBLIC_SCHEDULING_OPTION_KEYS = [
+  'lagCalendar', 'criticalDefinition', 'totalFloatMode', 'makeOpenEndedCritical', 'nearCriticalThreshold', 'floatPaths',
+] as const satisfies readonly (keyof ExtSchedulingOptions)[];
+const _publicOptionKeysComplete: [Exclude<keyof ExtSchedulingOptions, (typeof PUBLIC_SCHEDULING_OPTION_KEYS)[number]>] extends [never]
+  ? true : never = true;
+void _publicOptionKeysComplete;
+
+/** Publieke scheduling-options worden sleutel-voor-sleutel gereconstrueerd. Dit is tegelijk een
  *  mutabiliteitsgrens en een beveiligingsgrens: runtime-objecten van JS-extensies kunnen extra
  *  interne `p6*`-sleutels dragen die niet in `ExtSchedulingOptions` staan. Een spread zou die
  *  ongemerkt als solverinvoer activeren. De native XER-lezer zet zulke bronopties rechtstreeks op
- *  het interne model en loopt dus niet door deze generieke extensie-invoer. */
-function publicSchedulingOptions(o: ExtSchedulingOptions): ExtSchedulingOptions {
-  return {
-    lagCalendar: o.lagCalendar,
-    criticalDefinition: o.criticalDefinition ? { ...o.criticalDefinition } : undefined,
-    totalFloatMode: o.totalFloatMode,
-    makeOpenEndedCritical: o.makeOpenEndedCritical,
-    nearCriticalThreshold: o.nearCriticalThreshold,
-    floatPaths: o.floatPaths ? { ...o.floatPaths } : undefined,
-  };
+ *  het interne model en loopt dus niet door deze generieke extensie-invoer. Geneste objecten
+ *  (`criticalDefinition`, `floatPaths`) worden ondiep gekopieerd, zoals voorheen. */
+export function publicSchedulingOptions(o: ExtSchedulingOptions): ExtSchedulingOptions {
+  const out: Record<string, unknown> = {};
+  for (const key of PUBLIC_SCHEDULING_OPTION_KEYS) {
+    const value = o[key];
+    if (value !== undefined) out[key] = typeof value === 'object' && value !== null ? { ...value } : value;
+  }
+  return out as ExtSchedulingOptions;
 }
 
 function copyConstraint(c: TaskConstraint): ExtTaskConstraint {
@@ -203,7 +212,7 @@ export function fromExtProject(p: ExtProject): Project {
     defaultWorkRule: p.defaultWorkRule,
     schedulingOptions: p.schedulingOptions ? publicSchedulingOptions(p.schedulingOptions) : undefined,
     // Bewust géén `schedulingProfile` (B29): een extensie zet de rekenregels nooit zelf. Laadt ze
-    // hetzelfde project terug, dan houdt `retainActiveScheduling` het profiel van het document vast.
+    // hetzelfde project terug, dan houdt `retainActiveDocument` het profiel van het document vast.
   };
 }
 
@@ -767,50 +776,6 @@ export function fromExtImportResult(r: ExtImportResult): ImportResult {
     assignments: r.assignments.map(fromExtAssignment),
     customTaskTypes: [...catalog.values()],
   };
-}
-
-/** De zes publieke opties; de `Record` over `keyof ExtSchedulingOptions` dwingt af dat een nieuwe
- *  publieke optie hier meekomt. */
-const PUBLIC_SCHEDULING_OPTION_KEYS = Object.keys({
-  lagCalendar: true,
-  criticalDefinition: true,
-  totalFloatMode: true,
-  makeOpenEndedCritical: true,
-  nearCriticalThreshold: true,
-  floatPaths: true,
-} satisfies Record<keyof ExtSchedulingOptions, true>) as (keyof ExtSchedulingOptions)[];
-
-/**
- * Lees-wijzig-laad van HETZELFDE project (N3, review #169). Het gedocumenteerde pad om toewijzingen
- * te zetten is `loadProject(…getProject()…)`. Zonder deze stap zette dat het rekenprofiel stil terug
- * naar OPS en vielen de niet-publieke projectopties weg (`useExpectedFinishDates`,
- * `startToStartLagFrom`, `leveling`, …), want `ExtProject` draagt ze niet naar binnen.
- *
- * Regel, alleen als `loaded.project.id === active.id`:
- *  - het profiel komt van het actieve document, nooit van de extensie (B29: een extensie zet de
- *    rekenregels van een project niet stil om — ook niet stil naar OPS);
- *  - de niet-publieke opties komen van het actieve document;
- *  - een publieke optie die de extensie ongewijzigd terugstuurt, houdt de volledige waarde van het
- *    document (ook velden die de publieke vorm niet kent); een gewijzigde of weggehaalde publieke
- *    optie volgt de extensie.
- * Een ander project-id is een nieuw project: dat rekent als OPS, zonder opties buiten de publieke.
- */
-export function retainActiveScheduling(loaded: ImportResult, active: Project): ImportResult {
-  if (loaded.project.id !== active.id) return loaded;
-  const activeOptions = active.schedulingOptions;
-  const activePublic: ExtSchedulingOptions = activeOptions ? publicSchedulingOptions(activeOptions) : {};
-  const incoming: ExtSchedulingOptions = loaded.project.schedulingOptions ?? {};
-  const merged: Record<string, unknown> = activeOptions ? structuredClone(activeOptions) : {};
-  for (const key of PUBLIC_SCHEDULING_OPTION_KEYS) {
-    if (sameValue(incoming[key], activePublic[key])) continue;
-    if (incoming[key] === undefined) delete merged[key];
-    else merged[key] = structuredClone(incoming[key]);
-  }
-  const schedulingOptions = Object.keys(merged).length > 0 ? merged as ProjectSchedulingOptions : undefined;
-  const project: Project = { ...loaded.project, schedulingOptions };
-  if (active.schedulingProfile) project.schedulingProfile = structuredClone(active.schedulingProfile);
-  else delete project.schedulingProfile;
-  return { ...loaded, project };
 }
 
 // ── UI-grens: ribbontabblad ──

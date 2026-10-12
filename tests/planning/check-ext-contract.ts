@@ -1253,7 +1253,15 @@ for (const [naam, ext, bron, sleutels] of [
   };
 
   const taakId = zetDocument();
+  const voor = useAppStore.getState();
   const na = herladen();
+  // Geen kopie nodig: de gedeelde documentobjecten zijn bevroren, dus een mutatie in place in het
+  // laadpad zou gooien. De load slaagt en de objecten zijn dezelfde referenties.
+  eq('N3D-12 vastgehouden documentobjecten zijn bevroren en gaan zonder kopie mee', [
+    Object.isFrozen(voor.baselines[0]), Object.isFrozen(voor.activityCodeTypes[0]), Object.isFrozen(voor.customFieldDefs[0]),
+    Object.isFrozen(voor.calendars.find((c) => c.id === 'cal-ploeg')),
+    na.baselines[0] === voor.baselines[0], na.activityCodeTypes[0] === voor.activityCodeTypes[0],
+  ], [true, true, true, true, true, true]);
   eq('N3D-01 baselines blijven', na.baselines.map((b) => b.id), ['bl-1']);
   eq('N3D-02 activeBaselineId blijft', na.activeBaselineId, 'bl-1');
   eq('N3D-03 resourcekalenders blijven, zonder dubbele projectkalender',
