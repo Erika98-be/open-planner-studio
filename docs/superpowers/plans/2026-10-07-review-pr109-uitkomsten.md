@@ -316,3 +316,7 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
 - Testversie poort 3049 bijgewerkt (2026-10-13): worktree `release-check` staat nu op lokale branch
   `claude/release-check-2` = #333 (33e91b1ec, dus main 55461d2b2 + ronde 2) + de twee lokale QA-commits; geen
   upstream, nooit pushen. Checklink nagelopen: pop-up en openingsmeldingen verschijnen.
+- Diagnose MSPDI-lopende-taak (expert Opus 5.5): **geen bug**. De solver rekent onder OPS vanaf de werkelijke start
+  (24-02); de 23-02 komt uit de modus "datums zoals opgeslagen" (`recordedDates.ts:486`), bewust en zo in de gids.
+  Kunstmatige fixture (in echte MSPDI: Start = ActualStart, 32/32). Open klein punt, niet onderzocht: onder P6 op de
+  MSPDI-fixture valt de rekenstart op 07:00 terwijl de taken op 08:00 beginnen.
