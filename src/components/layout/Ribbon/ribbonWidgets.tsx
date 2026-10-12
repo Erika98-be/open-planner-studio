@@ -18,7 +18,8 @@ import { applySetting } from '@/components/settings/applySetting';
 import { ExportFormat } from '@/state/appStore';
 import { EXPORT_FORMATS } from '@/services/formatRegistry';
 import { addTaskNearSelection } from '@/state/taskInsertActions';
-import { supportsHandles } from '@/services/fileAccess';
+import { supportsRecentFiles } from '@/services/fileAccess';
+import { siteStorageAvailable } from '@/services/fileAccess/siteHost';
 import { DateTextInput } from '@/components/common/DateTextInput';
 import { ExtensionIcon } from '@/components/common/ExtensionIcon';
 import { isLeafTask } from '@/utils/taskHierarchy';
@@ -428,11 +429,13 @@ export function RecentFilesDropdown() {
   const { t: tMenu } = useTranslation('menu');
   const { t: tCommon } = useTranslation('common');
   const [open, setOpen] = useState(false);
-  const recentFiles = useAppStore(s => s.recentFiles);
+  const allRecentFiles = useAppStore(s => s.recentFiles);
   const openRecentFile = useAppStore(s => s.openRecentFile);
 
-  // Fallback-web (Firefox/Safari): geen herbruikbare refs → geen (dode) recents tonen.
-  if (!supportsHandles()) return null;
+  // Fallback-web (Firefox/Safari) zonder site: geen herbruikbare refs → geen (dode) recents tonen.
+  if (!supportsRecentFiles()) return null;
+  // Een site-bestand is alleen te openen zolang de site er is; anders tonen we het niet.
+  const recentFiles = siteStorageAvailable() ? allRecentFiles : allRecentFiles.filter(e => e.ref.kind !== 'site');
 
   return (
     <Popover
@@ -455,8 +458,9 @@ export function RecentFilesDropdown() {
         </div>
       ) : (
         recentFiles.map(e => {
-          // Subregel: het echte pad (Tauri) of de bestandsnaam (web-handle, geen pad beschikbaar).
-          const sub = e.ref.kind === 'path' ? e.ref.path : e.name;
+          // Subregel: het echte pad (Tauri), een label voor een site-bestand, of de bestandsnaam
+          // (web-handle, geen pad beschikbaar).
+          const sub = e.ref.kind === 'path' ? e.ref.path : e.ref.kind === 'site' ? tMenu('backstage.recentOnSite') : e.name;
           return (
             <RibbonMenuItem
               key={e.id}

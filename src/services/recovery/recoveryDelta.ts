@@ -1,6 +1,7 @@
 import { sameIFCSource, type IFCSaveSource } from '@/state/ifcSaveInput';
-import type {
-  RecoveryArchiveSupplier, RecoveryDocContent, RecoveryDocMetadata, RecoverySaveInput,
+import {
+  sameRecoverySiteMeta, siteMetaFields,
+  type RecoveryArchiveSupplier, type RecoveryDocContent, type RecoveryDocMetadata, type RecoverySaveInput,
 } from './recoveryStore';
 import { decodeXerSourceArchive } from '@/services/xerSourceArchive';
 
@@ -28,11 +29,17 @@ export interface RecoveryDelta {
 /**
  * De manifestmetadata van één document. `xerArchive` volgt uit de bron zelf (de sha256 van het
  * bronarchief), zodat manifest en referentiesnapshot per constructie naar dezelfde blob wijzen.
+ * Het site-doel staat er alleen in als er een is: zonder site heeft de metadata exact dezelfde
+ * velden als vóór issue #309.
  */
 function metadataOf(document: RecoverySourceDocument): RecoveryDocMetadata {
   const { id, filePath, isDirty, datesAsRecorded } = document;
   const sha = document.source.xerSourceArchive?.sha256;
-  return { id, filePath, isDirty, datesAsRecorded, ...(sha ? { xerArchive: sha } : {}) };
+  return {
+    id, filePath, isDirty, datesAsRecorded,
+    ...(sha ? { xerArchive: sha } : {}),
+    ...siteMetaFields(document),
+  };
 }
 
 /**
@@ -58,7 +65,10 @@ function sameMetadata(a: readonly RecoveryDocMetadata[], b: readonly RecoveryDoc
       // De modusvlag hoort bij de manifestmetadata: een documentwissel in of
       // uit "datums zoals opgeslagen" moet ook zónder inhoudswijziging een manifestschrijf geven.
       && value.datesAsRecorded === other.datesAsRecorded
-      && (value.xerArchive ?? null) === (other.xerArchive ?? null);
+      && (value.xerArchive ?? null) === (other.xerArchive ?? null)
+      // Het site-doel en zijn basisversie zijn ook manifestmetadata: een opslag op de site (nieuwe
+      // versie) of een nieuw doel geeft zonder inhoudswijziging een manifest-only schrijfactie.
+      && sameRecoverySiteMeta(value, other);
   });
 }
 

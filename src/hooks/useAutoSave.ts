@@ -6,7 +6,7 @@ import { buildWriteIFCInput } from '@/state/ifcSaveInput';
 import { RecoveryDeltaTracker, type RecoverySourceDocument } from '@/services/recovery/recoveryDelta';
 import { runRecoveryTick } from '@/services/recovery/recoverySnapshot';
 import { registerRecoveryFlush } from '@/services/recovery/recoveryFlush';
-import { canWriteToRefWithoutPrompt, saveToRefWithoutPrompt, type FileRef } from '@/services/fileAccess';
+import { canWriteToRefWithoutPrompt, saveTargetRef, saveToRefWithoutPrompt } from '@/services/fileAccess';
 import { actualAutoSaveDelay, createActualAutoSaveController, type ActualAutoSaveCandidate } from '@/services/actualAutosave/actualAutoSave';
 import { isProjectFileWriteBusy, runProjectFileWrite } from '@/services/fileAccess/writeCoordinator';
 import { sameIFCSource } from '@/state/ifcSaveInput';
@@ -55,6 +55,10 @@ export function useAutoSave(autoSaveEnabled: MutableRefObject<boolean>): void {
           id,
           source: payload,
           filePath: payload.filePath,
+          // Het site-doel en de versie waarop DIT document rust: crashherstel zet ze terug, zodat
+          // Ctrl+S na herstel weer naar de site schrijft mét conflictcontrole.
+          siteFileId: payload.siteFileId,
+          siteFileVersion: payload.siteFileId ? payload.siteFileVersion : null,
           isDirty: payload.isDirty,
           // "Datums zoals opgeslagen" is een weergavestand, geen IFC-inhoud: hij reist als
           // manifestmetadata mee zodat crashherstel hem terugzet i.p.v. hem te raden.
@@ -118,9 +122,11 @@ export function useAutoSave(autoSaveEnabled: MutableRefObject<boolean>): void {
         // documenten. Geen bestand overschrijven vóór die blokkerende fase klaar is.
         if (!autoSaveEnabled.current || isProjectFileWriteBusy()) return [];
         return useAppStore.getState().getOpenDocumentPayloads().map(({ id, payload }) => {
-          const ref: FileRef | null = payload.fileHandle
-            ? { kind: 'handle', handle: payload.fileHandle }
-            : (isTauri() && payload.filePath ? { kind: 'path', path: payload.filePath } : null);
+          // Eén afleiding van het opslagdoel, dezelfde als Opslaan. Een site-bestand valt hier
+          // bewust af: automatisch opslaan naar de site staat uit (elke ronde zou een nieuwe versie
+          // maken, besluit #309). Alleen Opslaan schrijft naar de site; crashherstel loopt gewoon door.
+          const target = saveTargetRef(payload);
+          const ref = target?.kind === 'site' ? null : target;
           return { id, enabled: payload.autoSaveToFile, dirty: payload.isDirty, ref, source: payload };
         });
       },

@@ -73,6 +73,7 @@ eq('2 XER staat in openfilters en binaire extensies', {
 eq('3 XER is nooit een opslagdoel', saveTargetFor(format, null, 'bron.xer'), {
   filePath: null,
   fileHandle: null,
+  siteFileId: null,
 });
 
 const ioCalls: string[] = [];

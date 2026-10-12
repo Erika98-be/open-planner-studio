@@ -35,6 +35,8 @@ import { ContextMenu } from './ContextMenu';
 // Reikwijdte (aangeklikte taak = handgreep, selectie = bereik) + de bulk-uitvoering
 // als ÉÉN undo-stap. DOM-vrij afgezonderd zodat de regressiebatterij dezelfde functies draait.
 import { contextMenuOutlineScope, contextMenuBulk } from './contextMenuScope';
+import { addTaskAtEnd } from '@/state/taskInsertActions';
+import { createDefaultTaskTime } from '@/utils/taskDefaults';
 import { RelationTypePopover } from './RelationTypePopover';
 import { createRelationDraftWithFeedback } from '@/state/relationActions';
 // Hover-tooltip die zichzelf binnen het venster houdt (nodig zodra de titel wrapt).
@@ -62,12 +64,13 @@ import { useGanttPointerCoordinator } from './hooks/useGanttPointerCoordinator';
 import { editableSplitPieces } from './hooks/useBarDrag';
 import { removeGap } from '@/engine/scheduler/splitEdit';
 import { useGanttRowDragBridge } from './ganttRowDragBridge';
+import { TASK_ROW_HEIGHT } from '@/engine/taskGrid/rowHeight';
 import type { HistogramRenderInput } from './hooks/ganttCoordinatorTypes';
 
 // Basisgeometrie op Tekengrootte 100%: de component leidt hieruit de EFFECTIEVE
 // `rowHeight`/`headerHeight` af (× ui.uiFontScale/100) — gebruik binnen de component die geschaalde
 // waarden, nooit deze constanten direct, anders lopen tekenen en hit-testen uit de pas.
-const ROW_HEIGHT = 28;
+const ROW_HEIGHT = TASK_ROW_HEIGHT; // gedeeld met FullTaskGrid (`taskGrid/rowHeight.ts`)
 const HEADER_HEIGHT = 50;
 // Dikte van de ZWEVENDE scrollbalken over de panes (horizontaal en verticaal).
 // Exact de `::-webkit-scrollbar`-maat uit globals.css (8px) — NIET ruimer: meer levert een dode
@@ -181,7 +184,7 @@ export function GanttCanvas({
   // De Tekengrootte-instelling (ui.uiFontScale). De DOM-chrome schaalt via de rem-basis
   // (`--ui-font-scale` in App.tsx), maar een canvas leest geen CSS — de factor gaat daarom als
   // `fontScale` mee naar de renderer, en schaalt hier óók de rij-/headerhoogte: zonder dat zou
-  // grotere tekst in de vaste 28px-rij clippen. Alle hit-tests, overlays en scrollgrenzen hieronder
+  // grotere tekst in de vaste basisrij clippen. Alle hit-tests, overlays en scrollgrenzen hieronder
   // rekenen met dezelfde geschaalde waarden, zodat tekenen en aanwijzen op de pixel blijven kloppen.
   const uiFontScale = useAppStore(s => s.ui.uiFontScale);
   const fontScale = uiFontScale / 100;
@@ -388,6 +391,17 @@ export function GanttCanvas({
 
   const defaultTaskName = tTask('defaultTask');
   const defaultMilestoneName = tTask('defaultMilestone');
+  // Rechtsklik op lege ruimte → "Nieuwe taak"/"Nieuwe mijlpaal": onderaan de lijst, beginnend op
+  // de datum onder de cursor (review 2026-10-06, punt 1). Zonder voorganger is `scheduleStart` het
+  // anker van de solver, dus de taak blijft na Berekenen op die datum staan.
+  const addAtClickedDate = (milestone: boolean) => {
+    const date = pointer.contextMenu?.clickDate;
+    addTaskAtEnd({
+      name: milestone ? defaultMilestoneName : defaultTaskName,
+      ...(milestone ? { isMilestone: true, taskType: 'ATTENDANCE' as const } : {}),
+      ...(date ? { time: createDefaultTaskTime(date, milestone ? 0 : 5, 'days', calendar) } : {}),
+    });
+  };
   const revealTaskIfOffscreen = useCallback((task: Task) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -993,6 +1007,7 @@ export function GanttCanvas({
             });
           }}
           onAddMilestone={() => {
+            if (!contextMenu.task) { addAtClickedDate(true); return; }
             addTask({
               name: defaultMilestoneName,
               isMilestone: true,
@@ -1038,7 +1053,8 @@ export function GanttCanvas({
             if (contextMenu.task) contextMenuBulk.remove(contextMenu.task.id);
           }}
           onAddTask={() => {
-            contextMenuBulk.addNearSelection(defaultTaskName);
+            // Alleen in het menu op lege ruimte: onderaan, op de aangeklikte datum.
+            addAtClickedDate(false);
           }}
           onInsertAbove={() => {
             if (contextMenu.task) contextMenuBulk.insert(contextMenu.task.id, 'above', defaultTaskName);

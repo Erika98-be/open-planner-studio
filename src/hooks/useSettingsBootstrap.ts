@@ -3,6 +3,7 @@ import { useAppStore } from '@/state/appStore';
 import { loadWelcomeSeen, welcomeSeenAtStartup } from '@/utils/settingsStore';
 import { loadAllSettings } from '@/utils/settingsRegistry';
 import { loadAllExtensions } from '@/extensions';
+import { EXTENSIONS_ENABLED } from '@/utils/buildFlags';
 import type { RecoveryState } from './useRecoveryRestore';
 import { bootstrapTaskGridPreferences } from '@/state/taskGridBootstrap';
 
@@ -25,9 +26,12 @@ export function useSettingsBootstrap(recoveryResolved: boolean, recovery: Recove
     void loadAllSettings().then(patch => setUI(patch)).catch(error => {
       console.error('Instellingen laden mislukt; de app draait op de standaardwaarden:', error);
     });
-    void loadAllExtensions().catch(error => {
-      console.error('Extensies laden mislukt:', error);
-    });
+    // Platformbouw (#311): geen extensies, dus ook niets uit IndexedDB laden of uitvoeren.
+    if (EXTENSIONS_ENABLED) {
+      void loadAllExtensions().catch(error => {
+        console.error('Extensies laden mislukt:', error);
+      });
+    }
     // Recente bestanden leven in IndexedDB (async, met eenmalige localStorage-migratie) —
     // één keer bij opstart in de store hydrateren.
     void useAppStore.getState().hydrateRecentFiles();

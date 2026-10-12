@@ -6,7 +6,8 @@
     "label": "Guardado automático",
     "noFile": "Guarde primero este proyecto para usar el guardado automático.",
     "onHint": "El guardado automático está activo: los cambios se escriben en este archivo.",
-    "offHint": "El guardado automático está desactivado. La recuperación sigue activa."
+    "offHint": "El guardado automático está desactivado. La recuperación sigue activa.",
+    "siteDisabled": "En el sitio, Guardar (Ctrl+S) guarda una nueva versión. El guardado automático está desactivado aquí; la recuperación sigue activa."
   },
   "notifications": {
     "dismiss": "Cerrar notificación",
@@ -84,7 +85,11 @@
     "mppLegacy": "Este archivo .mpp usa un formato antiguo (Project 2007 o anterior). Expórtalo en MS Project como XML (Archivo → Guardar como → XML) y abre ese archivo.",
     "mppEncrypted": "Este archivo .mpp está protegido con contraseña. Expórtalo en MS Project como XML (Archivo → Guardar como → XML) y abre ese archivo.",
     "saveFailed": "No se pudo guardar",
+    "siteSaveConflict": "No guardado: '{{name}}' fue modificado en el sitio por otra persona mientras tanto. Tus cambios siguen en la aplicación. Elige Guardar como para conservarlos como un archivo nuevo.",
+    "siteFileGone": "'{{name}}' ya no está en el sitio. El archivo se ha quitado de Recientes.",
     "savedViaDownload": "Guardado como descarga: '{{name}}' está ahora en tu carpeta de descargas. Este entorno no permite que la aplicación escriba directamente en la ubicación elegida.",
+    "browserCannotOverwrite": "Este navegador no permite que la aplicación vuelva a escribir en «{{name}}». Por eso la aplicación pregunta de nuevo dónde guardar el archivo cada vez que guardas. Esto no ocurre en Chrome, Edge ni en la aplicación de escritorio.",
+    "browserSavesAsDownload": "Guardado como descarga: «{{name}}» está en tu carpeta de descargas. Este navegador no permite que la aplicación escriba en una ubicación propia, así que cada guardado crea una descarga nueva. En Chrome, Edge o la aplicación de escritorio, Guardar simplemente actualiza el mismo archivo.",
     "autoSaveFailed": "Error de guardado automático",
     "recoveryReadFailed": "No se pudo leer el archivo recuperado",
     "recoveryRestoreFailed": "No se pudo restaurar",
@@ -1491,5 +1496,30 @@
     "yes": "Sí",
     "no": "No",
     "busy": "Preparando los tutoriales…"
+  },
+  "siteFiles": {
+    "openTitle": "Abrir desde el sitio",
+    "loading": "Cargando archivos…",
+    "loadFailed": "No se pudieron cargar los archivos del sitio.",
+    "retry": "Reintentar",
+    "empty": "Todavía no hay planificaciones en el sitio.",
+    "showVersions": "Mostrar versiones",
+    "hideVersions": "Ocultar versiones",
+    "open": "Abrir",
+    "versionsLoading": "Cargando versiones…",
+    "versionsFailed": "No se pudieron cargar las versiones.",
+    "versionsEmpty": "No se encontraron versiones.",
+    "versionLabel": "Versión {{version}}",
+    "versionLatest": "la más reciente",
+    "byAuthor": "por {{author}}",
+    "openCopy": "Abrir como copia",
+    "copyHint": "Una versión anterior se abre como copia. Al guardar se crea un archivo nuevo; la versión más reciente no cambia.",
+    "versionCopyName": "{{name}} (versión {{version}})",
+    "fromThisPc": "Desde este equipo…",
+    "saveTitle": "Guardar en el sitio",
+    "nameLabel": "Nombre",
+    "saveHint": "El proyecto se guarda en el sitio como un nuevo archivo IFC. Después, Guardar (Ctrl+S) guarda allí una nueva versión.",
+    "saveToSite": "Guardar en el sitio",
+    "toThisPc": "En este equipo…"
   }
 }

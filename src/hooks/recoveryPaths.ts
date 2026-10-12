@@ -129,6 +129,14 @@ export interface RecoveryManifestDoc {
    * hem noemt.
    */
   xerArchive?: string;
+  /**
+   * Het site-opslagdoel van dit document (`DocumentPayload.siteFileId`, issue #309) en de versie
+   * van dat site-bestand waarop het document rust (`DocumentPayload.siteFileVersion`). Herstel zet het doel terug, zodat Ctrl+S weer naar
+   * de site schrijft, en de versie als basis voor de conflictcontrole. Optioneel zoals
+   * `datesAsRecorded`: een ouder manifest kent ze niet en levert `null` (geen site-doel).
+   */
+  siteFileId?: string | null;
+  siteFileVersion?: string | null;
 }
 
 export interface RecoveryManifest {
@@ -137,7 +145,10 @@ export interface RecoveryManifest {
    * `heartbeatAt`, 3 = immutable generatie-snapshots met het manifest als commitpoint, 4 = per
    * document de modusvlag `datesAsRecorded` als manifestmetadata (een oud manifest zonder vlag
    * leest als `false` = alleen aanbieden), 5 = per document de archiefverwijzing `xerArchive`
-   * (een oud manifest zonder verwijzing heeft ingebedde archieven in zijn snapshots).
+   * (een oud manifest zonder verwijzing heeft ingebedde archieven in zijn snapshots). Sinds issue
+   * #309 mag een documentregel ook het site-opslagdoel dragen (`siteFileId`/`siteFileVersion`); die
+   * velden zijn optioneel (ontbreken = geen site-doel), dus zonder eigen versienummer: ze kunnen in
+   * een v4- en in een v5-manifest staan.
    * Een v1/v2-manifest MOET leesbaar blijven: het staat op de schijf van iedereen die een oudere
    * versie draaide, en dat weigeren betekent dataverlies bij de eerste start na de update.
    * Beide eigenaarschapsvelden zijn daarom optioneel getypeerd en het versienummer wordt nergens

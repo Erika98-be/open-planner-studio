@@ -378,6 +378,15 @@
       "kind": "howto"
     },
     {
+      "id": "howto-openen-en-opslaan-via-de-site",
+      "title": {
+        "nl": "Openen en opslaan via de site",
+        "en": "Opening and saving through the site"
+      },
+      "kind": "howto",
+      "draft": true
+    },
+    {
       "id": "howto-automatisch-opslaan",
       "title": {
         "nl": "Automatisch opslaan aanzetten",

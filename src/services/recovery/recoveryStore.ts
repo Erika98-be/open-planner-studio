@@ -17,6 +17,35 @@ export interface RecoveryDocContent {
   datesAsRecorded: boolean;
   /** Zie `RecoveryDocMetadata.xerArchive`. */
   xerArchive?: string;
+  /** Zie `RecoveryDocMetadata.siteFileId`. */
+  siteFileId?: string | null;
+  siteFileVersion?: string | null;
+}
+
+/**
+ * Het site-opslagdoel uit een (mogelijk oud of vreemd) manifestrecord: alleen een niet-lege string
+ * telt, anders `null`. Het manifest wordt soepel gelezen (`parseRecoveryManifest`), dus de vorm van
+ * deze optionele velden is niet gegarandeerd.
+ */
+export function recoverySiteMeta(record: object | null | undefined): {
+  siteFileId: string | null;
+  siteFileVersion: string | null;
+} {
+  const d = (record ?? {}) as { siteFileId?: unknown; siteFileVersion?: unknown };
+  const siteFileId = typeof d.siteFileId === 'string' && d.siteFileId.length > 0 ? d.siteFileId : null;
+  const siteFileVersion = siteFileId && typeof d.siteFileVersion === 'string' && d.siteFileVersion.length > 0
+    ? d.siteFileVersion
+    : null;
+  return { siteFileId, siteFileVersion };
+}
+
+/** Zijn twee recordmetadata gelijk wat het site-doel betreft? `undefined` telt als `null`. */
+export function sameRecoverySiteMeta(
+  a: { siteFileId?: string | null; siteFileVersion?: string | null },
+  b: { siteFileId?: string | null; siteFileVersion?: string | null },
+): boolean {
+  return (a.siteFileId ?? null) === (b.siteFileId ?? null)
+    && (a.siteFileVersion ?? null) === (b.siteFileVersion ?? null);
 }
 
 /** Metadata die bij élke recoveryronde in het manifest hoort, ook zonder nieuwe IFC-payload. */
@@ -38,6 +67,13 @@ export interface RecoveryDocMetadata {
    * `RecoveryManifestDoc.xerArchive`). Afwezig: geen archief, of een ingebed archief (oude vorm).
    */
   xerArchive?: string;
+  /**
+   * Het site-opslagdoel (`DocumentPayload.siteFileId`, issue #309) en de versie waarop het document
+   * rust (`DocumentPayload.siteFileVersion`). Optioneel: zonder site blijven ze weg of `null`, en een
+   * ouder manifest kent ze niet. Zie `RecoveryManifestDoc.siteFileId`.
+   */
+  siteFileId?: string | null;
+  siteFileVersion?: string | null;
 }
 
 /**
@@ -73,8 +109,9 @@ export function fullRecoverySave(
 ): RecoverySaveInput {
   return {
     activeDocumentId,
-    documents: docs.map(({ id, filePath, isDirty, datesAsRecorded, xerArchive }) => ({
+    documents: docs.map(({ id, filePath, isDirty, datesAsRecorded, xerArchive, siteFileId, siteFileVersion }) => ({
       id, filePath, isDirty, datesAsRecorded, ...(xerArchive ? { xerArchive } : {}),
+      ...siteMetaFields({ siteFileId, siteFileVersion }),
     })),
     upserts: docs,
     ...(archives ? { archives } : {}),
@@ -134,6 +171,19 @@ const TMP_SUFFIX = recoveryTmpSuffix;
 
 /** Manifestversie mét eigenaarschapsvelden. Zie `RecoveryManifest` voor de migratieregel. */
 export const RECOVERY_MANIFEST_VERSION = 5;
+
+/**
+ * De site-velden zoals ze in een manifestregel horen: weggelaten als er geen site-doel is. Zo heeft
+ * een manifestregel zonder site exact dezelfde velden als vóór issue #309. De velden zijn optioneel
+ * en het versienummer is nooit een leespoort, dus ze kregen geen eigen versienummer (issue #309
+ * hield 4 aan; de huidige 5 komt van de XER-archiefverwijzing `xerArchive`).
+ */
+export function siteMetaFields(record: object | null | undefined):
+  { siteFileId?: string; siteFileVersion?: string } {
+  const { siteFileId, siteFileVersion } = recoverySiteMeta(record);
+  if (!siteFileId) return {};
+  return siteFileVersion ? { siteFileId, siteFileVersion } : { siteFileId };
+}
 
 /**
  * Id van DEZE app-instantie (proces/realm). Wordt in het manifest gezet zodat een volgende
@@ -297,6 +347,7 @@ export function planRecoveryCleanup(input: RecoveryCleanupInput): RecoveryCleanu
         id: d.id, ifc: d.ifc, filePath: d.filePath ?? null, isDirty: d.isDirty ?? true,
         datesAsRecorded: d.datesAsRecorded ?? false,
         ...(typeof d.xerArchive === 'string' ? { xerArchive: d.xerArchive } : {}),
+        ...siteMetaFields(d),
       });
     }
   }
@@ -431,7 +482,8 @@ function checkedUpserts(input: RecoverySaveInput): Map<string, RecoveryDocConten
     const metadata = input.documents.find((candidate) => candidate.id === document.id)!;
     if (document.filePath !== metadata.filePath || document.isDirty !== metadata.isDirty
       || document.datesAsRecorded !== metadata.datesAsRecorded
-      || (document.xerArchive ?? null) !== (metadata.xerArchive ?? null)) {
+      || (document.xerArchive ?? null) !== (metadata.xerArchive ?? null)
+      || !sameRecoverySiteMeta(document, metadata)) {
       throw new Error(`Recovery: upsertmetadata voor ${JSON.stringify(document.id)} wijkt af van het manifest.`);
     }
     upserts.set(document.id, document);
@@ -469,6 +521,7 @@ export function planTauriV3RecoverySave(
         id: metadata.id, ifc, filePath: metadata.filePath, isDirty: metadata.isDirty,
         datesAsRecorded: metadata.datesAsRecorded,
         ...(metadata.xerArchive ? { xerArchive: metadata.xerArchive } : {}),
+        ...siteMetaFields(metadata),
       });
       writes.push({ name: ifc, ifc: changed.ifc });
       continue;
@@ -484,6 +537,7 @@ export function planTauriV3RecoverySave(
       id: metadata.id, ifc: previousDocument.ifc, filePath: metadata.filePath,
       isDirty: metadata.isDirty, datesAsRecorded: metadata.datesAsRecorded,
       ...(metadata.xerArchive ? { xerArchive: metadata.xerArchive } : {}),
+      ...siteMetaFields(metadata),
     });
   }
 
@@ -671,6 +725,8 @@ async function loadTauri(): Promise<LoadedRecovery> {
             // v1–v3-manifest kent het veld niet ⇒ `false` (aanbod, geen modus).
             datesAsRecorded: d.datesAsRecorded ?? false, mtime,
             ...(typeof d.xerArchive === 'string' ? { xerArchive: d.xerArchive } : {}),
+            // Een manifest van vóór issue #309 kent het site-doel niet ⇒ weggelaten (geen site-doel).
+            ...siteMetaFields(d),
           });
         } catch (err) {
           console.error('Recovery: kon documentsnapshot niet lezen:', d.id, err);
@@ -1072,6 +1128,7 @@ async function saveWeb(input: RecoverySaveInput): Promise<void> {
               isDirty: document.isDirty,
               datesAsRecorded: document.datesAsRecorded,
               ...(document.xerArchive ? { xerArchive: document.xerArchive } : {}),
+              ...siteMetaFields(document),
             })),
             addedAt: now,
           };
@@ -1170,6 +1227,8 @@ async function loadWeb(): Promise<LoadedRecovery> {
         isDirty: document.isDirty ?? rec.isDirty ?? true,
         // v1–v3-webrecord kent het veld niet ⇒ `false` (aanbod, geen modus).
         datesAsRecorded: document.datesAsRecorded ?? false,
+        // Een webrecord van vóór issue #309 kent het site-doel niet ⇒ weggelaten (geen site-doel).
+        ...siteMetaFields(document),
         mtime: new Date(rec.addedAt),
         ...(typeof document.xerArchive === 'string' ? { xerArchive: document.xerArchive } : {}),
       });

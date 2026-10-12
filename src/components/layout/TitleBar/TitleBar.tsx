@@ -4,12 +4,11 @@ import { xerDocumentName, xerProjectCode } from '@/utils/xerDocumentName';
 import { useTranslation } from 'react-i18next';
 import { isTauri } from '@/utils/platform';
 import {
-  FileText, FolderOpen, Save, Undo2, Redo2, Minus, Square, Copy, X, Settings,
+  Undo2, Redo2, Minus, Square, Copy, X, Settings,
 } from 'lucide-react';
 import { SwitcherPill } from '@/components/layout/DocumentChrome/SwitcherPill';
-import { buildImportLabels } from '@/i18n/importLabels';
 import { canRedo, canUndo } from '@/state/sessionHistory';
-import { canWriteToRefWithoutPrompt, type FileRef } from '@/services/fileAccess';
+import { canWriteToRefWithoutPrompt, saveTargetRef } from '@/services/fileAccess';
 
 // Het label van de feedback-knop roteert elke 10 minuten door deze drie.
 const FEEDBACK_LABEL_KEYS = ['feedback.rotateFeedback', 'feedback.rotateBug', 'feedback.rotateFeature'] as const;
@@ -35,10 +34,9 @@ export function TitleBar() {
   const redoAvailable = useAppStore(canRedo);
   const isDirty = useAppStore(s => s.isDirty);
   const setUI = useAppStore(s => s.setUI);
-  const saveFile = useAppStore(s => s.saveFile);
-  const openFile = useAppStore(s => s.openFile);
   const filePath = useAppStore(s => s.filePath);
   const fileHandle = useAppStore(s => s.fileHandle);
+  const siteFileId = useAppStore(s => s.siteFileId);
   const autoSaveToFile = useAppStore(s => s.autoSaveToFile);
   const setAutoSaveToFile = useAppStore(s => s.setAutoSaveToFile);
   const documentChromeStyle = useAppStore(s => s.ui.documentChromeStyle);
@@ -112,14 +110,22 @@ export function TitleBar() {
 
   // Een naamloos document heeft geen bestaand doel dat veilig overschreven mag worden. Recovery
   // draait onafhankelijk hiervan door; de schakelaar belooft uitsluitend échte bestandsopslag.
-  const autoSaveRef = useMemo<FileRef | null>(() => (
-    fileHandle
-      ? { kind: 'handle', handle: fileHandle }
-      : (isTauri() && filePath ? { kind: 'path', path: filePath } : null)
-  ), [fileHandle, filePath]);
-  const autoSaveTitle = !autoSaveRef
-    ? tCommon('autosave.noFile')
-    : tCommon(autoSaveToFile ? 'autosave.onHint' : 'autosave.offHint');
+  // Eén afleiding van het opslagdoel (`saveTargetRef`), dezelfde als Opslaan en de AutoSave-timer.
+  // Een site-bestand telt hier NIET als doel: automatisch opslaan naar de site staat uit, want elke
+  // ronde zou een nieuwe versie maken (besluit #309). De knop is dan grijs, met een eigen uitleg.
+  const autoSaveTarget = useMemo(
+    () => saveTargetRef({ filePath, fileHandle, siteFileId }),
+    [fileHandle, filePath, siteFileId],
+  );
+  const autoSaveOnSite = autoSaveTarget?.kind === 'site';
+  const autoSaveRef = autoSaveOnSite ? null : autoSaveTarget;
+  // Zonder site-doel precies zoals vroeger: de knop volgt `autoSaveToFile`.
+  const autoSaveActive = autoSaveToFile && !autoSaveOnSite;
+  const autoSaveTitle = autoSaveOnSite
+    ? tCommon('autosave.siteDisabled')
+    : !autoSaveRef
+      ? tCommon('autosave.noFile')
+      : tCommon(autoSaveToFile ? 'autosave.onHint' : 'autosave.offHint');
   const toggleAutoSave = useCallback(() => {
     if (!autoSaveRef) return;
     if (autoSaveToFile) { setAutoSaveToFile(false); return; }
@@ -134,23 +140,15 @@ export function TitleBar() {
     <div ref={rootRef} className="title-bar" data-tauri-drag-region style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}>
       <div ref={leftRef} className="title-bar-left">
         <div className="quick-access-toolbar">
-          <img src="/icon.png" className="title-bar-app-icon" alt="Open Planner Studio" />
+          <img src={`${import.meta.env.BASE_URL}icon.png`} className="title-bar-app-icon" alt="Open Planner Studio" />
           <div className="quick-access-separator" />
 
-          <button className="quick-access-btn" title={tMenu('ribbon.newProjectTitle')} onClick={() => setUI({ showNewProjectDialog: true })}>
-            <FileText size={16} />
-          </button>
-          <button className="quick-access-btn" title={tMenu('ribbon.open')} onClick={() => { void openFile(buildImportLabels(tCommon)); }}>
-            <FolderOpen size={16} />
-          </button>
-          <button className="quick-access-btn" title={tMenu('ribbon.saveTitle')} onClick={() => { void saveFile(); }}>
-            <Save size={16} />
-          </button>
-
+          {/* Nieuw/Openen/Opslaan staan hier bewust niet (review 2026-10-06): ze staan al op Start en in
+              Bestand, en de oude Opslaan-knop droeg het misleidende label "Opslaan als…". */}
           <button
-            className={`title-bar-autosave${autoSaveToFile ? ' active' : ''}`}
+            className={`title-bar-autosave${autoSaveActive ? ' active' : ''}`}
             role="switch"
-            aria-checked={autoSaveToFile}
+            aria-checked={autoSaveActive}
             aria-label={tCommon('autosave.label')}
             disabled={!autoSaveRef}
             title={autoSaveTitle}
