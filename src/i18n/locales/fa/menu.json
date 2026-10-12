@@ -185,7 +185,7 @@
     "splitTaskOffHint": "حالت تقسیم را خاموش کنید",
     "ganttOnlyHint": "فقط وقتی نمودار گانت نمایش داده می‌شود در دسترس است",
     "relationLinkSelected": "پیوند دادن وظایف انتخاب‌شده",
-    "relationLinkSelectedHint": "انتخاب اول پیش‌نیاز و انتخاب دوم پس‌نیاز می‌شود (پایان-شروع (FS)، تأخیر ۰)",
+    "relationLinkSelectedHint": "انتخاب اول پیش‌نیاز و انتخاب دوم پس‌نیاز می‌شود (پایان-شروع (FS)، تأخیر 0)",
     "relationSelectExactlyTwo": "دقیقاً دو وظیفه را انتخاب کنید",
     "relationAddExternal": "افزودن رابطه خارجی…",
     "relationAddExternalHint": "یک پیش‌نیاز یا پس‌نیاز خارجی به وظیفه انتخاب‌شده بیفزایید",
@@ -229,7 +229,7 @@
       "lagCalendar": "تقویم تأخیر",
       "lagPredecessor": "پیشنیاز",
       "lagSuccessor": "پسنیاز",
-      "lag24hour": "۲۴ ساعته",
+      "lag24hour": "24 ساعته",
       "lagProjectDefault": "تقویم پروژه",
       "ssLagFrom": "محاسبهٔ تأخیر شروع-شروع (SS) پیش‌نیاز در حال اجرا از",
       "ssLagEarlyStart": "شروع زودهنگام (شروع کار باقی‌مانده)",
@@ -343,12 +343,12 @@
     "progressXlsxSheetName": "پیشرفت",
     "progressXlsxValidation": {
       "percentTitle": "درصد تکمیل (%)",
-      "percentError": "عددی بین ۰ تا ۱۰۰ وارد کنید.",
+      "percentError": "عددی بین 0 تا 100 وارد کنید.",
       "dateTitle": "تاریخ واقعی",
       "dateError": "تاریخ معتبری وارد کنید."
     },
     "progressXlsxNotes": {
-      "completion": "تکمیل کنید: بین ۰ تا ۱۰۰، اعشار مجاز است",
+      "completion": "تکمیل کنید: بین 0 تا 100، اعشار مجاز است",
       "actualStart": "تکمیل کنید: تاریخ شروع واقعی (به‌صورت تاریخ)",
       "actualFinish": "تکمیل کنید: تاریخ پایان واقعی (به‌صورت تاریخ)"
     },
@@ -358,7 +358,7 @@
     "progressCsvNotes": {
       "readOnly": "تغییر ندهید",
       "plannedReadOnly": "برنامه‌ریزی‌شده، تغییر ندهید",
-      "completion": "تکمیل کنید: عددی صحیح بین ۰ تا ۱۰۰",
+      "completion": "تکمیل کنید: عددی صحیح بین 0 تا 100",
       "actualStart": "تکمیل کنید: تاریخ شروع واقعی (روز-ماه-سال)",
       "actualFinish": "تکمیل کنید: تاریخ پایان واقعی (روز-ماه-سال)",
       "summaryRow": "— وظیفه خلاصه: پر نکنید"
