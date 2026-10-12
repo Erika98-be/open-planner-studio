@@ -96,9 +96,14 @@ export interface ProjectInfoPanelContentProps {
  *      aangeraakt — dus zelfs als (a) een scenario zou missen, kan een stale draft nooit stilletjes
  *      een bibliotheek los- of vastkoppelen (het destructieve pad: `unbindProject()` strip ALLE
  *      `libraryOrigin`-stempels).
- *  Undo is geen vector: het `project`-object (op `wbsAutoNumber` na) staat BEWUST NIET in de
- *  undo/redo-snapshot (`src/state/snapshot.ts`). (b) is de generieke vangrail, los van WELK
- *  mechanisme de staleness veroorzaakt.
+ *  (c) Undo/redo IS een vector: `project` staat in de undo/redo-snapshot (`src/state/snapshot.ts`), en
+ *      een Toepassen van het rekenprofielblok is één undo-stap. Daarom volgt de rekenprofiel-draft de
+ *      store: verandert `project.schedulingProfile`/`schedulingOptions` terwijl de draft schoon is (niet
+ *      aangeraakt, of gelijk aan wat de store vóór de wijziging had), dan vult hij zich opnieuw. Is
+ *      hij wél vuil, dan blijft de keuze van de gebruiker staan en toont het blok
+ *      `data-ops-scheduling-store-changed`: Toepassen zet die keuze dan bewust terug, nooit stil
+ *      (critreview #169, N1). (b) blijft de generieke vangrail, los van WELK mechanisme de
+ *      staleness veroorzaakt.
  */
 export const ProjectInfoPanelContent = forwardRef<ProjectInfoPanelContentHandle, ProjectInfoPanelContentProps>(
   function ProjectInfoPanelContent({ mode, onDone, autoFocusName, onValidityChange, onDirtyChange }, ref) {
@@ -186,6 +191,7 @@ export const ProjectInfoPanelContent = forwardRef<ProjectInfoPanelContentHandle,
       setDefaultTaskDurationUnit(p.defaultTaskDurationUnit ?? 'days');
       setSchedulingRaw({ profile: p.schedulingProfile, options: p.schedulingOptions });
       setCalcTouched(false);
+      setStoreChangedUnderDraft(false);
       setLinkedCompanyId(p.companyId ?? '');
       setCompanyTouched(false);
       setCreatingCompany(false);
@@ -198,8 +204,8 @@ export const ProjectInfoPanelContent = forwardRef<ProjectInfoPanelContentHandle,
     // relevant in edit-modus (de wizard heeft geen "vorig document" om stale te worden). Bewust
     // GEEN afhankelijkheid op losse `project`-velden: elke store-mutatie die toevallig een nieuwe
     // `project`-referentie oplevert zou anders de tekst die de gebruiker nog aan het intypen is
-    // wegvegen; `activeDocumentId` is het precieze identiteitssignaal (zie de JSDoc hierboven —
-    // undo raakt geen projectvelden, dus er is daar niets te herinitialiseren).
+    // wegvegen; `activeDocumentId` is het precieze identiteitssignaal. Undo/redo van het
+    // rekenprofiel volgt hieronder apart (vangnet (c) in de JSDoc).
     const draftDocIdRef = useRef(activeDocumentId);
     useLayoutEffect(() => {
       if (isNew) return;
@@ -207,6 +213,31 @@ export const ProjectInfoPanelContent = forwardRef<ProjectInfoPanelContentHandle,
       draftDocIdRef.current = activeDocumentId;
       resetDraftFromProject();
     }, [isNew, activeDocumentId, resetDraftFromProject]);
+
+    // Vangnet (c): de store-waarde van het rekenprofielblok, op referentie. Undo/redo zet het oude
+    // `project`-object terug (structureel gedeeld), dus een nieuwe referentie betekent: iets anders dan
+    // deze draft heeft het profiel of de opties gewijzigd (Ctrl+Z/Ctrl+Y, of ons eigen Toepassen).
+    const storeScheduling = useMemo<SchedulingSettingsDraft>(
+      () => ({ profile: project.schedulingProfile, options: project.schedulingOptions }),
+      [project.schedulingProfile, project.schedulingOptions],
+    );
+    const seenStoreSchedulingRef = useRef(storeScheduling);
+    // Wijzigde de store onder een VUILE draft? Dan zegt het blok dat eerlijk (Toepassen draait die
+    // wijziging terug). Gewist zodra de draft weer de store volgt.
+    const [storeChangedUnderDraft, setStoreChangedUnderDraft] = useState(false);
+    useLayoutEffect(() => {
+      if (isNew) return;
+      const previous = seenStoreSchedulingRef.current;
+      if (previous === storeScheduling) return;
+      seenStoreSchedulingRef.current = storeScheduling;
+      if (!calcTouched || sameSettings(previous, scheduling) || sameSettings(storeScheduling, scheduling)) {
+        setSchedulingRaw(storeScheduling);
+        setCalcTouched(false);
+        setStoreChangedUnderDraft(false);
+      } else {
+        setStoreChangedUnderDraft(true);
+      }
+    }, [isNew, storeScheduling, calcTouched, scheduling]);
 
 
     // Generatie-spanne bij aanmaak: nog geen projecteinde bekend ⇒ startjaar−1..+3.
@@ -542,6 +573,13 @@ export const ProjectInfoPanelContent = forwardRef<ProjectInfoPanelContentHandle,
         {/* Rekenprofiel en reken-opties: in de wizard alleen de keuzelijst (die de
             standaardopties van het profiel toepast), bij bewerken het volledige blok — identiek op
             beide edit-oppervlakken (dialoog én Backstage). onChange markeert calcTouched. */}
+        {storeChangedUnderDraft && dirty && (
+          // Vangnet (c): het rekenprofiel is gewijzigd (bijv. Ongedaan maken) terwijl dit blok een
+          // eigen, niet-toegepaste keuze had. Geen stille terugdraai: zeg wat Toepassen doet.
+          <div className="alert alert--warning" role="status" data-ops-scheduling-store-changed>
+            {tCommon('schedulingProfile.storeChangedUnderDraft', { apply: tCommon('apply') })}
+          </div>
+        )}
         <SchedulingProfileSection mode={isNew ? 'wizard' : 'edit'} value={scheduling} onChange={setScheduling} />
       </div>
     );

@@ -178,7 +178,7 @@ export function SchedulingProfileSection({ mode, value, onChange }: SchedulingPr
   return (
     <div className="flex flex-col gap-3" data-ops-scheduling-profile-section>
       <div className="h-px" style={{ background: 'var(--theme-border-light)' }} />
-      <span className="text-body leading-5 font-semibold" style={{ fontFamily: 'var(--font-heading)' }}>
+      <span className="text-body leading-5 font-semibold" style={{ fontFamily: 'var(--font-heading)' }} data-ops-scheduling-title>
         {t('schedulingProfile.title')}
       </span>
       {profileSelect}

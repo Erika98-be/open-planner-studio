@@ -1408,6 +1408,7 @@
     "on": "on",
     "off": "off",
     "resetToBase": "back to base",
+    "storeChangedUnderDraft": "The project's calculation profile changed in the meantime, for example through Undo. Below is still your own choice. {{apply}} puts that choice back into the project.",
     "showHelp": "Explanation of “{{name}}”",
     "sourceOptions": {
       "title": "Settings from the source file",

@@ -1408,6 +1408,7 @@
     "on": "aan",
     "off": "uit",
     "resetToBase": "terug naar basis",
+    "storeChangedUnderDraft": "Het rekenprofiel van het project is intussen gewijzigd, bijvoorbeeld met Ongedaan maken. Hieronder staat nog je eigen keuze. Met {{apply}} zet je die keuze terug in het project.",
     "showHelp": "Uitleg over „{{name}}”",
     "sourceOptions": {
       "title": "Instellingen uit het bronbestand",

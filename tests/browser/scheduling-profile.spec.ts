@@ -354,3 +354,85 @@ test('rekenprofiel: conventies per thema met basiswaarde, terug naar basis en ui
   // De P6-opties uit het bestand staan alleen-lezen onderaan.
   await expect(page.locator('[data-ops-scheduling-source-option="useExpectedFinishDates"]')).toBeVisible();
 });
+
+// Critreview #169 N1: na Ctrl+Z toonde Projectinfo een ander profiel dan de store (de draft volgde
+// alleen een documentwissel), en één optiewijziging + Toepassen draaide de undo stil terug. Echte
+// klikken en toetsen; `__OPS__` alleen om te lezen.
+test('rekenprofiel: na Ctrl+Z en Ctrl+Y volgt het profielblok de store, ook in de dialoog (N1)', async ({ page, ops: _ops }) => {
+  await openXer(page);
+  await expect.poll(() => profileOf(page)).toEqual({ id: 'p6', baseId: 'p6', name: '' });
+  const select = page.locator('[data-ops-scheduling-profile-select]');
+  const storeChoice = () => profileOf(page).then(p => `builtin:${p?.id ?? 'ops'}`);
+  const toBackstageInfo = async () => {
+    await page.getByRole('button', { name: /^(File|Bestand)$/ }).first().click();
+    await page.getByRole('button', { name: /^(Project info|Projectinfo)$/ }).first().click();
+    await expect(select).toBeVisible();
+  };
+  const apply = () => page.getByRole('button', { name: /^(Apply|Toepassen)$/ }).click();
+  // Een klik op de kop haalt de focus uit een invoerveld, zodat Ctrl+Z/Y de sneltoets is.
+  const pressOutsideField = async (combo: string) => {
+    await page.locator('.backstage-title').first().click();
+    await page.keyboard.press(combo);
+  };
+  const unapplied = page.locator('[data-ops-project-info-unapplied]');
+  const storeChanged = page.locator('[data-ops-scheduling-store-changed]');
+
+  // P6 → MS Project toepassen; Projectinfo opnieuw open.
+  await toBackstageInfo();
+  await select.selectOption('builtin:msproject');
+  await apply();
+  await expect.poll(storeChoice).toBe('builtin:msproject');
+  await toBackstageInfo();
+  await expect(select).toHaveValue('builtin:msproject');
+
+  // Ctrl+Z: de store gaat terug naar P6, de keuzelijst volgt, niets "niet toegepast".
+  await pressOutsideField('Control+z');
+  await expect.poll(storeChoice).toBe('builtin:p6');
+  await expect(select).toHaveValue('builtin:p6');
+  await expect(unapplied).toHaveCount(0);
+  await expect(storeChanged).toHaveCount(0);
+
+  // Ctrl+Y: terug naar MS Project, de keuzelijst volgt weer.
+  await pressOutsideField('Control+y');
+  await expect.poll(storeChoice).toBe('builtin:msproject');
+  await expect(select).toHaveValue('builtin:msproject');
+  await expect(unapplied).toHaveCount(0);
+
+  // Nog eens Ctrl+Z, dan alleen een optie wijzigen en toepassen: het profiel blijft P6.
+  await pressOutsideField('Control+z');
+  await expect.poll(storeChoice).toBe('builtin:p6');
+  await expect(select).toHaveValue('builtin:p6');
+  await page.locator('[data-ops-near-critical-enable]').check();
+  await apply();
+  await expect.poll(() => page.evaluate(() => window.__OPS__!.store.getState().project.schedulingOptions?.nearCriticalThreshold)).toBe(2);
+  expect(await storeChoice()).toBe('builtin:p6');
+
+  // Een VUILE draft (MS Project gekozen, niet toegepast) en dan Ctrl+Z: de keuze blijft staan, maar het
+  // blok zegt eerlijk dat de store onder de draft veranderde, en "niet toegepast" staat er.
+  await toBackstageInfo();
+  await select.selectOption('builtin:msproject');
+  await pressOutsideField('Control+z');
+  await expect.poll(() => page.evaluate(() => window.__OPS__!.store.getState().project.schedulingOptions?.nearCriticalThreshold)).toBeUndefined();
+  await expect(select).toHaveValue('builtin:msproject');
+  await expect(storeChanged).toBeVisible();
+  await expect(unapplied).toBeVisible();
+  // Verwerpen neemt de stand van de store over.
+  await page.locator('[data-ops-project-info-discard]').click();
+  await expect(select).toHaveValue(await storeChoice());
+  await expect(storeChanged).toHaveCount(0);
+  await expect(unapplied).toHaveCount(0);
+
+  // De dialoogvariant (Instellingen → Projectinfo): ook daar is de keuzelijst gelijk aan de store na
+  // Ctrl+Y en Ctrl+Z.
+  await page.locator('button.ribbon-tab').filter({ hasText: /^(Settings|Instellingen)$/ }).click();
+  await page.locator('button.ribbon-btn').filter({ hasText: /^(Project info|Projectinfo)$/ }).click();
+  const dialog = page.locator('[data-ops-project-dialog="info"]');
+  await expect(dialog).toBeVisible();
+  const dialogSelect = dialog.locator('[data-ops-scheduling-profile-select]');
+  for (const combo of ['Control+y', 'Control+z', 'Control+z', 'Control+y']) {
+    await dialog.locator('[data-ops-scheduling-title]').click();
+    await page.keyboard.press(combo);
+    await expect.poll(async () => (await dialogSelect.inputValue()) === (await storeChoice())).toBe(true);
+  }
+  await expect(dialog.locator('[data-ops-scheduling-store-changed]')).toHaveCount(0);
+});
