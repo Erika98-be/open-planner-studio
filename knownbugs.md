@@ -204,13 +204,27 @@ en noem het in je rapport of PR-tekst.
 46. **`.mpp` neemt de kritiek-drempel uit MS Project niet over als projectinstelling** (wel voor *Datums zoals
     opgeslagen*; MSPDI doet het wel). Gevolg: drempel 0 na openen. — B
 
+95. **Recent opent een site-bestand met de bewaarde naam.** Is het bestand op de site hernoemd, dan zie je de
+    nieuwe naam pas na openen via *Openen van de site*. Gemeld door de bouwer van #309. — S
+96. **Het herstelmanifest schrijft een `version`, maar niemand controleert die** (`recoveryStore.ts`). Een
+    oudere build leest een nieuwer manifest dus zonder waarschuwing. Gemeld door de bouwer van #309. — S
+97. **De sluitvraag van een tabblad ligt op een vaste z-index 80**, de gewone dialogen op 50/60. Elke vraag die
+    vanuit *Opslaan* in die sluitvraag opent, valt eronder en lijkt te hangen. De twee site-dialogen liggen
+    daarom op `z-[90]`; een volgende vraag op die route moet hetzelfde doen. Gezien bij #309 met een
+    browsertest. — B
+
+98. **Browseropslag hangt niet aan de ingelogde gebruiker van de site.** Crashherstel (`ops-recovery`, met
+    `siteFileId`) en de recente bestanden staan per browserprofiel, niet per gebruiker. Logt gebruiker A uit en B in
+    op dezelfde browser, dan krijgt B de herstelvraag van A, en schrijft Ctrl+S na herstel naar het bestand van A
+    met de rechten van B. Voorstel: de host levert een gebruikers-id en de tool sleutelt zijn opslag daarop.
+    Gemeld door de review van #312. — S
+99. **Crashherstel gebruikt `crypto.randomUUID` zonder terugval op twee plekken** (`recoveryStore.ts`, het nemen
+    van een nieuwe sessie-id na een bezet tabblad). Die functie bestaat alleen in een veilige context (https of
+    localhost); op een gewoon http-adres gooit hij. Gezien bij #309 in de nep-site op de dev-server via
+    Tailscale (daar hersteld). Productie draait op https; de dev-server via een IP-adres niet. — S
+
 ## Rondleiding, Help en extensie-gidsen
 
-54. **Rondleiding slaat stap 6 (*Voorbeelden*) over als de Backstage nog niet geladen is.** `Backstage` is
-    lazy (`App.tsx:81`); `TourOverlay` zoekt het anker na twee rAF's en gaat bij een ontbrekend anker meteen
-    door. Op een trage verbinding of machine mist de gebruiker die stap. Gezien in CI (#278) en lokaal
-    nagespeeld met een vertraagde module. Voorstel: het anker kort laten afwachten voordat de stap wordt
-    overgeslagen. — B
 51. **Histogram-tooltip "0 taken dragen bij"** op de startdag van een urentaak: `contributingTaskNames` in
     `useGanttHistogramInteraction.ts` vergelijkt "2027-06-28" met "2027-06-28T07:00". Voorstel: vergelijken
     op `.slice(0,10)`. De balken zelf kloppen. — S
@@ -258,11 +272,6 @@ en noem het in je rapport of PR-tekst.
     496–499 ms (5-10-2026); rood (535–790 ms) in `npm run verify` zodra de container druk is (meerdere agents
     tegelijk). In CI steeds groen. De grens meet de machine mee. Voorstel: grens relatief aan een
     referentiemeting in dezelfde run, of alleen in CI hard. — B
-80. **Rondleidingstests soms rood in CI: de knop *Close* van de laatste stap is "not visible"**
-    (`tests/browser/first-start-tutorial.spec.ts`, 3 tests tegelijk; CI-job 112313353930 op #285, 6-10-2026).
-    De herhaalde job was groen, lokaal 20/20 groen; de diff van #285 raakte de rondleiding niet. Oorzaak
-    onbekend; mogelijk verwant aan 54 (stap overslaan bij een nog niet geladen Backstage). — B (gezien),
-    oorzaak onbekend
 90. **`check-xer-tables` is rood als de `TextDecoder` van Node byte 0x80 (CP1252) niet naar € vertaalt**
     ("Café €" wordt "Café "; 6 asserties in deel 5). Gezien 7-10-2026 in een cloudcontainer (Node 22.22.0,
     ICU 77.1), óók op de onaangeraakte commit `c00163a`; daar geeft `new TextDecoder('windows-1252')` voor
@@ -275,6 +284,12 @@ en noem het in je rapport of PR-tekst.
     `/opt/pw-browsers/chromium-1194` draaien de tests wel, maar elke test eindigt rood op één
     "Failed to load resource: 404" in de console, ook de bestaande `table-reports.spec.ts` (gedraaid op de
     branch van de DCMA-PR, die dat rapport niet raakt). Welke URL dat is, is niet vastgesteld. — S
+
+100. **Tailwind v4 scant ook bestanden buiten `src/`**, zoals `scripts/`. Een token als `[a:b]` in een
+    logtekst wordt dan een CSS-regel in de bundel. Gezien bij #308 met `[build:platform]` (+36 bytes CSS);
+    de logtekst is daarom aangepast. Voorstel: de bronnen van Tailwind beperken tot `src/` en `index.html`. — B
+101. **AGENTS.md zegt "Fourteen locales" en "14 locales"**, maar er zijn er vijftien (`lo` erbij); de
+    codelijst in hetzelfde punt noemt er wel vijftien. Ook `docs/recepten/i18n-sleutel.md` zegt veertien. — B
 
 ## Wensen en open taken (geen bug)
 
@@ -293,3 +308,8 @@ en noem het in je rapport of PR-tekst.
     Projectinformatie (besluit eigenaar: zes vensters, de wizard hoort er niet bij). Voorstel: als de eigenaar
     dat wil, `help` ook in de wizard zetten, met `confirmLeave` zonder `dirty` (de wizard kent geen
     "niet toegepast"). — B
+94. **Tab in een open tabelcel legt niets vast.** De cel-editor van het taakraster (`GridEditorHost`) kent
+    alleen Enter en Escape; Tab verplaatst de browserfocus uit het invoerveld, zonder vast te leggen en
+    zonder naar de volgende kolom te gaan. Bij snel invoeren via de spookregel (typ naam, Tab, typ duur)
+    verwacht je het Excel-gedrag: vastleggen en een kolom verder (Shift+Tab terug). Gezien bij review
+    vader, punt 1. — B

@@ -27,6 +27,7 @@ het bouwen, niet "even meenemen" na een commit, niet als opruimreflex na een mer
 | Skill | Wanneer | Scope |
 |-------|---------|-------|
 | **`docs-update`** (deze) | tijdens de rit, na één afgerond onderdeel | alleen wat dat onderdeel raakt |
+| **`docs-audit`** | op verzoek, periodiek | alle docs: meten en inhoud toetsen tegen de code, eindigt in een rapport |
 | **`wiki`** | bij release, of een losse wiki-actie | alle docs tegen alle commits sinds de vorige tag; is óók de bron voor de generator-mechanica |
 | **`release`** | alleen bij `/release` | roept `wiki` aan als stap 5 |
 
