@@ -152,3 +152,6 @@ http://localhost:3049/.
   Geen besluit over het voorstelgedrag gevonden (spec 2026-07-06 §6.4 noemt alleen "invoer = hele eenheden").
   ⇒ worker op `claude/duureenheid-direct`: exacte omzetting meteen toepassen. **Open besluit na de check:** wat
   bij een niet-exacte omzetting (bijv. 12 u op 8-urige kalender ⇒ dagen).
+- **Toasts, eigenaarsbesluit 2026-10-12:** "ik vind het ook erg raar dat een toast verdwijnt wanneer je erop klikt.
+  hij moet verdwijnen met een kruisje of automatisch." Nu sluit een klik op de hele toast hem
+  (`NotificationHost.tsx` onClick op de container), er is geen kruisje. ⇒ meegegeven aan de worker op `claude/toasts-kort`.
