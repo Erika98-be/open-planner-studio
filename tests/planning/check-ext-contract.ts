@@ -1175,8 +1175,6 @@ for (const [naam, ext, bron, sleutels] of [
     na.schedulingOptions?.useExpectedFinishDates, na.schedulingOptions?.useProjectEndDateForFloat,
     na.schedulingOptions?.leveling,
   ], [true, 'actualStart', true, true, { preserveScheduledDates: true }]);
-  eq('N3-03 een ongewijzigd teruggestuurde publieke optie houdt de volledige waarde',
-    na.schedulingOptions?.criticalDefinition, { mode: 'totalFloat', threshold: 0, thresholdHours: 8 });
   eq('N3-04 het opgeloste profiel via getProject blijft p6', api.data.getProject().schedulingProfile?.id, 'p6');
 
   // Een publieke optie die de extensie wél wijzigt, volgt de extensie; de rest blijft staan.
@@ -1196,12 +1194,16 @@ for (const [naam, ext, bron, sleutels] of [
   });
   eq('N3-06 een profiel van de extensie wint niet van het documentprofiel', vreemdProfiel.schedulingProfile?.id, 'p6');
 
-  // Een OPS-document blijft OPS, ook als de extensie een profiel meestuurt.
-  useAppStore.getState().newProject();
-  const ops = herladen((project) => {
-    (project as unknown as { schedulingProfile: unknown }).schedulingProfile = builtInProfile('p6');
+  // Een publieke optie die de extensie WEGHAALT, is daarna weg; ze valt niet terug op het document.
+  // Mutatiebewijs: laat de publieke sleutels niet uit de documentopties halen ⇒ N3-08a rood.
+  zetP6();
+  const weggehaald = herladen((project) => {
+    const { totalFloatMode: _weg, ...rest } = project.schedulingOptions ?? {};
+    project.schedulingOptions = rest;
   });
-  eq('N3-07 OPS-document blijft OPS bij lees-wijzig-laad', ops.schedulingProfile, undefined);
+  eq('N3-08a een weggehaalde publieke optie is weg; P6-opties blijven', [
+    weggehaald.schedulingOptions?.totalFloatMode, weggehaald.schedulingOptions?.useExpectedFinishDates,
+  ], [undefined, true]);
 
   // Ander project-id ⇒ nieuw project ⇒ OPS, zonder de niet-publieke opties van het vorige document.
   zetP6();
@@ -1321,10 +1323,15 @@ for (const [naam, ext, bron, sleutels] of [
       { id: 'zelfde-id', name: 'Nieuwe naam' }, { id: 'ext-ruwbouw', name: 'ruwbouw' }, { id: 'ops-ongebruikt', name: 'Ongebruikt' },
     ]);
 
-  // Hetzelfde id, maar de extensie wijst naar een kalender die niet bestaat ⇒ terugval (removeCalendar).
-  zetDocument();
-  const onbekend = herladen((r) => { r.resources = r.resources.map((x) => ({ ...x, calendarId: 'bestaat-niet' })); });
-  eq('N3D-10 onbekende resourcekalender valt terug op de projectkalender', onbekend.resources[0]?.calendarId, undefined);
+  // Hetzelfde id, maar de extensie wijst naar een kalender die niet bestaat ⇒ terugval op de projectkalender.
+  const onbekendTaakId = zetDocument();
+  const onbekend = herladen((r) => {
+    r.resources = r.resources.map((x) => ({ ...x, calendarId: 'bestaat-niet' }));
+    r.tasks = r.tasks.map((x) => (x.id === onbekendTaakId ? { ...x, calendarId: 'bestaat-niet' } : x));
+  });
+  eq('N3D-10 onbekende kalender op resource en taak valt terug op de projectkalender', [
+    onbekend.resources[0]?.calendarId, onbekend.tasks.find((t) => t.id === onbekendTaakId)?.calendarId,
+  ], [undefined, undefined]);
 
   // Ander id ⇒ nieuw project: de velden gaan zoals voorheen weg, verwijzingen vallen terug.
   const anderTaakId = zetDocument();
