@@ -105,3 +105,18 @@ export function proposeTaskDurationConversion(
   }
   return null;
 }
+
+/**
+ * Eén ingang voor een bewuste eenheidswissel, gedeeld door eigenschappenpaneel, taakdialoog en
+ * taakraster: de gekozen eenheid wordt meteen toegepast (geen voorstel om doorheen te klikken).
+ * `null` betekent: niet exact om te zetten, de eenheid blijft. Wat er bij niet-exact moet gebeuren
+ * (bijv. afronden op hele dagen of een decimale duur toestaan) is een open eigenaarsbesluit; dat
+ * besluit landt alléén hier, zodat alle drie de routes vanzelf gelijk blijven.
+ */
+export function convertTaskDurationUnit(
+  task: Task,
+  target: TaskDurationUnit,
+  calendar: WorkCalendar,
+): ParsedTaskDuration | null {
+  return proposeTaskDurationConversion(task, target, calendar);
+}

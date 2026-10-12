@@ -20,7 +20,7 @@ That changes more than the duration of a task: under *View › Time Scale* you c
 
 1. Select the task and look in the *Properties* panel, under *Time*, at the *Duration* field.
 2. Type the duration with a unit and press Enter: `12h` (`12u`, the Dutch abbreviation, also works) for twelve hours, `1h 30m` for an hour and a half. `1.5h` is fine too. A number without a unit counts in the unit the task already has.
-3. If you want to convert an existing task, choose the unit *Hours* under *Duration unit*. The app works out the duration for you and proposes it, for example *Exact conversion proposal: 16h. Apply it or retain the current unit.* Choose *Apply proposal* or *Retain*.
+3. If you want to convert an existing task, choose the unit *Hours* under *Duration unit*. The app converts the duration immediately, for example from `2` days to `16` hours. To go back, use *Undo*.
 4. Back to days is possible with `2d` or with the unit *Days*.
 5. Press **Calculate** (F5), for example via *Home › Schedule › Calculate*. The task now has a start and finish with a clock time.
 6. If you want to see the hours in the Gantt, choose the scale *Hour* in the list under *View › Time Scale*.

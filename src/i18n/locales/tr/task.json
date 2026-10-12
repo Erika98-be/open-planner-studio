@@ -330,9 +330,6 @@
     "enableHourPlanning": "Saat planlamasını etkinleştir",
     "requiresWorkBlocks": "Bu takvimde geçerli çalışma saatleri yok. Çalışma günlerini ve saatlerini kontrol edin.",
     "conversionNotExact": "Bu süre mevcut takvimde tam günlere kesin olarak dönüştürülemiyor. Mevcut birim korunur; yeni ve geçerli bir değer girin.",
-    "conversionProposal": "Kesin dönüşüm önerisi: {{value}}. Öneriyi uygulayın veya mevcut birimi koruyun.",
-    "applyProposal": "Öneriyi uygula",
-    "keepCurrent": "Koru",
     "unitInfo": "Seçilen birim bu göreve aittir. Günler iş günlerini, saatler takvim içindeki çalışma saatlerini sayar. Farklı bir takvim birimi veya girilen süreyi değiştirmez, ancak bitiş tarihini değiştirebilir."
   },
   "dialog": {

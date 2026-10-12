@@ -9,7 +9,7 @@ import { applySetting } from '@/components/settings/applySetting';
 import {
   formatTaskDurationInput,
   parseTaskDurationInput,
-  proposeTaskDurationConversion,
+  convertTaskDurationUnit,
   type ParsedTaskDuration,
 } from '@/utils/taskDurationInput';
 import { hasConcreteWorkBlocks } from '@/services/subdayIo';
@@ -17,14 +17,6 @@ import { effHoursPerDay } from '@/utils/taskDuration';
 import { isZeroDurationMilestone } from '@/engine/scheduler/duration';
 import type { WorkCalendar } from '@/types/calendar';
 import type { Task, TaskDurationUnit } from '@/types/task';
-
-function proposalText(proposal: ParsedTaskDuration): string {
-  if (proposal.unit === 'days') return `${proposal.scheduleDuration ?? 0}d`;
-  const minutes = proposal.durationMinutes ?? 0;
-  const hours = Math.floor(minutes / 60);
-  const rest = minutes % 60;
-  return rest === 0 ? `${hours}h` : `${hours}h ${rest}m`;
-}
 
 export function TaskDurationField({ task, calendar, onChange }: {
   task: Task;
@@ -37,7 +29,6 @@ export function TaskDurationField({ task, calendar, onChange }: {
   const seed = formatTaskDurationInput(task);
   const [value, setValue] = useState(seed);
   const [message, setMessage] = useState<string | null>(null);
-  const [proposal, setProposal] = useState<ParsedTaskDuration | null>(null);
   const [infoVisible, setInfoVisible] = useState(false);
   const [infoAnchor, setInfoAnchor] = useState<{ left: number; top: number; width: number } | null>(null);
   const infoButtonRef = useRef<HTMLButtonElement>(null);
@@ -59,9 +50,7 @@ export function TaskDurationField({ task, calendar, onChange }: {
 
   useEffect(() => {
     setValue(seed);
-    // Een conversievoorstel hoort bij precies deze taak én kalenderwandeling. Zonder reset kon
-    // een voorstel van taak A na selectie- of kalenderwissel nog op taak B worden toegepast.
-    setProposal(null);
+    // Een melding hoort bij precies deze taak en kalender; na een selectie- of kalenderwissel weg.
     setMessage(null);
   }, [task.id, seed, calendar]);
 
@@ -77,7 +66,6 @@ export function TaskDurationField({ task, calendar, onChange }: {
       time.scheduleDuration = hpd > 0 ? minutes / (hpd * 60) : 0;
     }
     onChange({ time });
-    setProposal(null);
     setMessage(null);
   };
 
@@ -107,14 +95,14 @@ export function TaskDurationField({ task, calendar, onChange }: {
       setMessage(t('duration.requiresWorkBlocks'));
       return;
     }
-    const next = proposeTaskDurationConversion(task, target, calendar);
+    // De gekozen eenheid geldt meteen: een exacte omzetting wordt direct toegepast, als één
+    // wijziging (één undo-stap), net als in het taakraster. Niet exact ⇒ melding, eenheid blijft.
+    const next = convertTaskDurationUnit(task, target, calendar);
     if (!next) {
-      setProposal(null);
       setMessage(t('duration.conversionNotExact'));
       return;
     }
-    setProposal(next);
-    setMessage(t('duration.conversionProposal', { value: proposalText(next) }));
+    apply(next);
   };
 
   const enableHours = () => {
@@ -237,12 +225,6 @@ export function TaskDurationField({ task, calendar, onChange }: {
       {message && (
         <div className="!text-small text-text-secondary" role="status" data-ops-duration-message>
           {message}
-          {proposal && (
-            <span className="ml-1.5 inline-flex gap-1">
-              <button type="button" className="underline" onClick={() => apply(proposal)}>{t('duration.applyProposal')}</button>
-              <button type="button" className="underline" onClick={() => { setProposal(null); setMessage(null); }}>{t('duration.keepCurrent')}</button>
-            </span>
-          )}
         </div>
       )}
     </div>

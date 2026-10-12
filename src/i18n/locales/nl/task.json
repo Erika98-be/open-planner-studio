@@ -330,9 +330,6 @@
     "enableHourPlanning": "Urenplanning inschakelen",
     "requiresWorkBlocks": "Deze kalender heeft geen geldige werktijden. Controleer de werkdagen en werktijden.",
     "conversionNotExact": "Deze duur kan op de huidige kalender niet exact naar gehele dagen worden omgezet. De bestaande eenheid blijft behouden; voer zelf een nieuwe geldige waarde in.",
-    "conversionProposal": "Exact omzetvoorstel: {{value}}. Pas dit voorstel toe of behoud de huidige eenheid.",
-    "applyProposal": "Voorstel toepassen",
-    "keepCurrent": "Behouden",
     "unitInfo": "De gekozen eenheid hoort bij deze taak. Dagen tellen werkdagen; uren tellen werkuren binnen de kalender. Een andere kalender verandert de eenheid of ingevoerde duur niet, maar kan wel de einddatum veranderen."
   },
   "dialog": {

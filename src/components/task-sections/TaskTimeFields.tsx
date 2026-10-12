@@ -16,7 +16,7 @@ import { TaskDurationField } from './TaskDurationField';
 
 /**
  * Start + gedeelde taakduur — sectie van `TaskPropertiesPanel`. Dialoog en paneel monteren
- * allebei `TaskDurationField`, zodat parser, validatie, omzetvoorstel en toegankelijkheid identiek
+ * allebei `TaskDurationField`, zodat parser, validatie, eenheidswissel en toegankelijkheid identiek
  * blijven. Het Start-veld toont, net als Gantt, tooltip en TaskDialog, de getoonde start
  * (`shownStart`, `utils/taskDates.ts`), niet het rauwe `scheduleStart`-anker. De Tabel-kolom **Start** toont en schrijft via
  * dezelfde twee helpers; de kiesbare kolom **Geplande start** toont bewust het rauwe anker.
