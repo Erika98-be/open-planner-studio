@@ -62,6 +62,12 @@ Per bestandsformaat: of je het kunt openen, opslaan en exporteren, wat er wel en
 
 **Openen** — ja. De app herkent een `.xml`-bestand als P6 XML aan het hoofdelement `APIBusinessObjects`. Rekenprofiel: *Open Planner Studio*.
 
+**Meerdere projecten in één bestand.** Elk project met activiteiten opent in een eigen tabblad, met de naam *Projectnaam (Project-ID)*. Een project zonder activiteiten slaat de app over. Het actieve tabblad is het project met de meeste activiteiten. Een relatie naar een ander project neemt de app niet mee. Na het openen meldt de app hoeveel projecten ze opende.
+
+**Baselines.** Een `<BaselineProject>` in het bestand wordt een baseline van zijn project. De baseline die P6 als actief aanwijst, is ook in de app actief.
+
+**Geen leesbare activiteiten.** Vindt de app geen activiteit die ze kan lezen, dan meldt ze dat, met de reden als die bekend is. Voorbeelden: activiteiten zonder `ObjectId`, of XER-kolomnamen in een XML-bestand. Exporteer het project dan opnieuw uit P6 als P6 XML, of open het als `.xer`.
+
 **Opslaan** — nee.
 
 **Exporteren** — ja, als *Primavera P6 XML* (*Voor Oracle Primavera P6.*). Standaardnaam: de projectnaam met `.xml`, dus dezelfde naam als een MS Project XML-export: geef ze zelf een verschillende naam.
