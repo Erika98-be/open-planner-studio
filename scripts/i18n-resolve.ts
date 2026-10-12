@@ -91,15 +91,19 @@ for (const ns of NAMESPACES) {
     const rel = `src/i18n/locales/${loc}/${ns}.json`;
     const oursText = git('show', `${ours}:${rel}`);
     const theirsText = git('show', `${theirs}:${rel}`);
-    if (oursText === null || theirsText === null) fail(`${rel} ontbreekt aan één kant van de merge — los dit bestand met de hand op`);
     const baseText = git('show', `${base}:${rel}`);
+    // Een nieuwe taal aan één kant (niet in de merge-base) is gewoon toegevoegd: de lege kant telt als
+    // ongewijzigd. Alleen een bestand dat aan één kant verdween, vraagt om een keuze met de hand.
+    if ((oursText === null || theirsText === null) && (baseText !== null || (oursText === null && theirsText === null))) {
+      fail(`${rel} ontbreekt aan één kant van de merge — los dit bestand met de hand op`);
+    }
     // Achteraf is de merge-commit zelf de eerder gemaakte keuze: een botsing die daar al (met de
     // hand) is opgelost, blijft zo staan in plaats van terug te vallen op HEAD^1.
     const chosenText = merging ? null : git('show', `HEAD:${rel}`);
     const result = mergeLocale(
       baseText === null ? {} : parse(baseText, `${rel} (merge-base)`),
-      parse(oursText, `${rel} (${ours})`),
-      parse(theirsText, `${rel} (${theirs})`),
+      oursText === null ? {} : parse(oursText, `${rel} (${ours})`),
+      theirsText === null ? {} : parse(theirsText, `${rel} (${theirs})`),
       chosenText === null ? undefined : parse(chosenText, `${rel} (HEAD)`),
     );
     for (const c of result.conflicts) conflicts.push({ file: `${loc}/${ns}.json`, ...c });

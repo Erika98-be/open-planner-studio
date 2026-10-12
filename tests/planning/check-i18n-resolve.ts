@@ -130,6 +130,23 @@ try {
   r = resolveRun();
   ok('5a geen merge ⇒ exit 1 met uitleg', r.status === 1 && r.out.includes('geen `git merge` bezig'), r.out);
   ok('5b geen merge ⇒ niets geschreven', readFileSync(file('en', 'common'), 'utf8') === before);
+
+  // 6. Een nieuwe taal aan één kant (niet in de merge-base): overnemen, niet stoppen.
+  git('checkout', '-q', '-b', 'oud', 'basis');
+  git('rm', '-q', '-r', 'src/i18n/locales/lo');
+  git('commit', '-q', '-m', 'zonder lo');
+  git('checkout', '-q', '-b', 'metlo', 'oud');
+  git('checkout', 'basis', '--', 'src/i18n/locales/lo');
+  git('commit', '-q', '-m', 'lo erbij');
+  git('checkout', '-q', '-b', 'ander', 'oud');
+  for (const ns of NAMESPACES) write('nl', ns, { ...read('nl', ns), z: 'Z nl' });
+  git('commit', '-q', '-am', 'nl z');
+  git('merge', '--no-commit', '--no-ff', 'metlo');
+  r = resolveRun();
+  ok('6a nieuwe taal aan één kant ⇒ exit 0', r.status === 0, r.out);
+  ok('6b de nieuwe taal blijft zoals hij binnenkwam', read('lo').a === 'A lo', JSON.stringify(read('lo')));
+  ok('6c de andere kant blijft ook staan', read('nl').z === 'Z nl');
+  git('merge', '--abort');
 } catch (err) {
   diffs.push(`onverwachte fout: ${err instanceof Error ? err.message : String(err)}`);
 } finally {
