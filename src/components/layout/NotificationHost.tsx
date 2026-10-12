@@ -109,8 +109,9 @@ export function NotificationHost() {
   const { t } = useTranslation();
   const placement = useToastPlacement(notifications.length > 0);
 
-  // Auto-dismiss uitsluitend voor `info`-meldingen (5 s, of `durationMs`); `error` blijft staan tot
-  // de gebruiker op het kruisje klikt.
+  // Auto-dismiss uitsluitend voor `info`-meldingen (5 s, of `durationMs`); `error` en een `sticky`
+  // info (openingsmelding met gewijzigde data, `state/openNoticeSticky.ts`) blijven staan tot de
+  // gebruiker op het kruisje klikt.
   // Bekend en geaccepteerd neveneffect: bij elke lijstwijziging herstart dit effect álle lopende
   // info-timers — een nieuwe melding verlengt de zichtbaarheid van reeds zichtbare info's met 5 s.
   // Dat is bewust: meldingen zijn kort (max. 3 tegelijk) en zo voorkomen we dat een net verschenen
@@ -118,7 +119,7 @@ export function NotificationHost() {
   useEffect(() => {
     if (notifications.length === 0) return;
     const timers = notifications
-      .filter((n) => n.severity === 'info')
+      .filter((n) => n.severity === 'info' && !n.sticky)
       .map((n) => setTimeout(() => dismissNotification(n.id), n.durationMs ?? 5000));
     return () => { for (const tm of timers) clearTimeout(tm); };
   }, [notifications, dismissNotification]);

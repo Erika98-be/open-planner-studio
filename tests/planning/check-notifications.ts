@@ -29,6 +29,7 @@ import type { PreparedGridMutation } from '@/state/gridTransaction';
 import type { Sequence } from '@/types/sequence';
 import type { ImportResult, MultiDocumentImport, XerImportMetadata, XerImportReport } from '@/services/importTypes';
 import { notificationDetailText } from '@/utils/notificationDetail';
+import { isStickyOpenNotice, withOpenNoticeSticky } from '@/state/openNoticeSticky';
 
 const S = () => useAppStore.getState();
 const N = () => S().ui.notifications;
@@ -719,6 +720,36 @@ eq('123 eerste gridpublicatie bevat data en history zonder melding', gridStates[
 });
 eq('124 gridmelding volgt in een aparte publicatie', gridStates.map(state => state.notifications), [0, 1]);
 eq('125 uitgestelde gridmelding gebruikt het normale app-globale kanaal', N()[0]?.messageKey, 'notifications.relationDuplicate');
+
+// ── Openingsmelding blijft staan bij gewijzigde data (eigenaarsbesluit 2026-10-12, optie 1) ──
+// Regel in `state/openNoticeSticky.ts`: een openingsmelding met een regel over ingevulde, vervangen,
+// gerepareerde of weggelaten data krijgt `sticky`; zonder zo'n regel niet.
+{
+  const opened = { severity: 'info' as const, messageKey: 'notifications.xerImportOpened' as const, params: { count: 1 } };
+  eq('S1 alleen "projecten gezien" en codering: niet blijvend', isStickyOpenNotice({
+    ...opened, detailLines: [
+      { messageKey: 'notifications.xerImportProjectsSeen', params: { count: 1 } },
+      { messageKey: 'notifications.xerImportEncoding', params: { encoding: 'windows-1252' } },
+    ],
+  }), false);
+  eq('S2 enum-terugval: blijvend', isStickyOpenNotice({
+    ...opened, detailLines: [{ messageKey: 'notifications.xerImportEnumFallbacks', params: { count: 2 } }],
+  }), true);
+  eq('S3 dubbele id\'s hernummerd (eigen melding): blijvend',
+    isStickyOpenNotice({ messageKey: 'notifications.duplicateIdsRenamed' }), true);
+  eq('S4 withOpenNoticeSticky zet de vlag, laat severity info',
+    withOpenNoticeSticky({ ...opened, detailLines: [{ messageKey: 'notifications.xerImportParserIssues', params: { count: 1 } }] }),
+    { ...opened, detailLines: [{ messageKey: 'notifications.xerImportParserIssues', params: { count: 1 } }], sticky: true });
+  eq('S5 withOpenNoticeSticky laat een gewone melding ongemoeid', withOpenNoticeSticky(opened), opened);
+  eq('S6 undefined blijft undefined', withOpenNoticeSticky(undefined), undefined);
+
+  // Bij een volle stapel gaat eerst een gewone info weg, niet de blijvende.
+  clearAll();
+  S().notify({ ...opened, sticky: true });
+  for (let i = 0; i < MAX_NOTIFICATIONS; i++) S().notify({ severity: 'info', messageKey: 'notifications.relationDuplicate', dedupeKey: `x${i}` });
+  eq('S7 de blijvende melding blijft bij een volle stapel', N().some(n => n.sticky === true), true);
+  eq('S8 de stapel blijft begrensd', N().length, MAX_NOTIFICATIONS);
+}
 
 // ── Uitkomst ────────────────────────────────────────────────────────────────
 if (diffs.length) {
