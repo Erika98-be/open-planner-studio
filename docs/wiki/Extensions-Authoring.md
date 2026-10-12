@@ -23,13 +23,15 @@ block. Extensions are entirely frontend; there is no Rust involved.
 Categories: `Import/Export`, `Planning`, `Reporting`, `Utility`, `Fonts`, `Other`.
 
 The optional `apiVersion` field names the extension contract version the extension was built against
-(current: `1.4.0`, readable via `require('open-planner-studio').apiVersion`). History: `1.1.0` —
+(current: `1.4.1`, readable via `require('open-planner-studio').apiVersion`). History: `1.1.0` —
 read-only XER source route (`data.getImportSource*`); `1.2.0` — calculation profile
 (`ExtProject.schedulingProfile`) + `getImportSourceIssue()`; `1.3.0` — task types (`ExtTask.workRule`,
 `ExtProject.defaultWorkRule` and the optional work fields `plannedWorkMinutes`/`actualWorkMinutes`/
 `remainingWorkMinutes` on an assignment); `1.4.0` — Help & guidance: the `help` permission and
 `api.help.*` (register Help articles, open a bundled project file, guide panel) plus the generic
-ribbon anchors.
+ribbon anchors; `1.4.1` — patch, no contract change: `loadProject` with the same project id keeps the
+project data that the result cannot carry, a different id gets no save target, and the document is
+marked as changed after every load.
 
 ### Permissions
 

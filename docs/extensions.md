@@ -119,7 +119,10 @@ toevoegingen vallen onder dezelfde minor `1.2`. `1.3.0` — taaktypes (#170): `E
 `ExtProject.defaultWorkRule` en de drie optionele werkvelden op de toewijzing
 (`plannedWorkMinutes`/`actualWorkMinutes`/`remainingWorkMinutes`). `1.4.0` — Help & begeleiding: de
 permissie `help` en `api.help.*` (Help-artikelen registreren, meegeleverd projectbestand openen,
-begeleidingspaneel), plus de generieke ankers in het lint (zie *Help & begeleiding*).
+begeleidingspaneel), plus de generieke ankers in het lint (zie *Help & begeleiding*). `1.4.1` — patch,
+geen contractwijziging: `loadProject` met hetzelfde project-id houdt de projectdata vast die het
+resultaat niet kan dragen, een ander id krijgt geen opslagdoel, en na elke load is het document
+gewijzigd (zie *API-overzicht*).
 
 > **Migratie (audit P16):**
 > - De permissie `commands` is verwijderd — die had nooit een API-oppervlak. Een nieuwe installatie met een manifest dat haar (of een andere onbekende waarde) noemt, wordt geweigerd. Alleen al opgeslagen legacy-installaties blijven werken: daar worden onbekende permissies weggefilterd met een waarschuwing.

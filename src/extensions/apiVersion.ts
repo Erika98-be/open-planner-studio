@@ -31,8 +31,13 @@
  * 1.4.0 — Help & begeleiding: permissie `help` en `api.help.*` (Help-artikelen registreren,
  * meegeleverd projectbestand openen als nieuw document, begeleidingspaneel met stappen en ankers) en
  * het host-event `host:tutorial-requested` (de app vraagt een tutorialextensie een tutorial te starten).
+ * 1.4.1 — PATCH, geen contractwijziging: `data.loadProject` met hetzelfde project-id als het actieve
+ * project houdt vast wat `ExtImportResult` niet draagt (rekenprofiel en reken-opties, baselines,
+ * resourcekalenders, activiteitcodes, eigen velden, eigen taaktypes, IFC-GlobalIds, P6-bronvelden op
+ * taken en relaties); een ander id krijgt geen opslagdoel; na elke load is het document gewijzigd
+ * (review #169 N3, PR #329). Een manifest met `"apiVersion": "1.4"` blijft passen.
  */
-export const EXTENSION_API_VERSION = '1.4.0';
+export const EXTENSION_API_VERSION = '1.4.1';
 
 export interface ApiCompatibility {
   ok: boolean;

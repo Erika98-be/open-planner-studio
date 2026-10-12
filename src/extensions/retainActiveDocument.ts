@@ -4,7 +4,7 @@
  * bij elke extensie-load (review #169, N3 en de fixrondes van 2026-10-12). Reden, net als B29: een
  * extensie mag het project niet stil veranderen.
  *
- * Wat het contract (`ExtImportResult`, contract 1.4.0) draagt en wat niet:
+ * Wat het contract (`ExtImportResult`, contract 1.4.x) draagt en wat niet:
  *  - rekenprofiel: niet (alleen-lezen, B29) ⇒ van het document;
  *  - reken-opties: alleen de zes publieke (`PUBLIC_SCHEDULING_OPTION_KEYS`) ⇒ die volgen de extensie
  *    (ook weglaten), de rest komt van het document;
