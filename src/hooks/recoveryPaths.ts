@@ -112,6 +112,14 @@ export interface RecoveryManifestDoc {
    * veld, dan geldt `false` — alleen het aanbod, niet de modus.
    */
   datesAsRecorded?: boolean;
+  /**
+   * Het site-opslagdoel van dit document (`DocumentPayload.siteFileId`, issue #309) en de versie
+   * van dat site-bestand waarop het document rust (`DocumentPayload.siteFileVersion`). Herstel zet het doel terug, zodat Ctrl+S weer naar
+   * de site schrijft, en de versie als basis voor de conflictcontrole. Optioneel zoals
+   * `datesAsRecorded`: een ouder manifest kent ze niet en levert `null` (geen site-doel).
+   */
+  siteFileId?: string | null;
+  siteFileVersion?: string | null;
 }
 
 export interface RecoveryManifest {
@@ -119,7 +127,9 @@ export interface RecoveryManifest {
    * 1 = zonder eigenaarschapsvelden (t/m de multi-document-release), 2 = met `ownerId`/
    * `heartbeatAt`, 3 = immutable generatie-snapshots met het manifest als commitpoint, 4 = per
    * document de modusvlag `datesAsRecorded` als manifestmetadata (een oud manifest zonder vlag
-   * leest als `false` = alleen aanbieden).
+   * leest als `false` = alleen aanbieden). Sinds issue #309 mag een documentregel ook het
+   * site-opslagdoel dragen (`siteFileId`/`siteFileVersion`); die velden zijn optioneel (ontbreken =
+   * geen site-doel), dus zonder nieuw versienummer.
    * Een v1/v2-manifest MOET leesbaar blijven: het staat op de schijf van iedereen die een oudere
    * versie draaide, en dat weigeren betekent dataverlies bij de eerste start na de update.
    * Beide eigenaarschapsvelden zijn daarom optioneel getypeerd en het versienummer wordt nergens

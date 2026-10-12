@@ -38,6 +38,7 @@ import { applyDemoLibraryToShowcaseProject } from '@/state/demoLibraryShowcase';
 import { buildImportLabels } from '@/i18n/importLabels';
 import './HelpPanel.css';
 import { readLocal, removeLocal, writeLocal } from '@/utils/settingsStore';
+import { EXTENSIONS_ENABLED } from '@/utils/buildFlags';
 
 // De documentatietaal wordt persistent los van de UI-taal bewaard, zodat een gebruiker de docs in
 // bv. Engels kan lezen terwijl de rest van de app in zijn eigen taal blijft.
@@ -345,6 +346,7 @@ export function HelpPanel() {
   }, [pendingHelpSection, manifest, renderedContent, setUI]);
 
   const openTutorialCatalog = () => {
+    if (!EXTENSIONS_ENABLED) return;
     setUI({ backstageSection: 'extensions', pendingExtensionsTab: 'browse' });
   };
 
@@ -419,7 +421,8 @@ export function HelpPanel() {
                 const list = tutorialRoute.filter(inSearch);
                 if (list.length > 0) return renderTocSection('kind-tutorial', tMenu('backstage.helpKind.tutorial'), list, true);
                 // Geen tutorial geregistreerd: wijs de weg naar de catalogus (niet tijdens zoeken).
-                if (tutorialRoute.length > 0 || query) return null;
+                // Platformbouw (#311): geen catalogus, dus ook geen lege Tutorials-sectie met installeerknop.
+                if (!EXTENSIONS_ENABLED || tutorialRoute.length > 0 || query) return null;
                 return (
                   <div className="help-toc-layer" key="kind-tutorial" data-help-section="kind-tutorial">
                     <h4 className="help-toc-layer-title">{tMenu('backstage.helpKind.tutorial')}</h4>

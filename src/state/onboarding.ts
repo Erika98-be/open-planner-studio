@@ -15,6 +15,7 @@
  *     moment waarop "alles dicht" lijkt.
  */
 import type { TourUiSnapshot, UIState } from './slices/types';
+import { EXTENSIONS_ENABLED } from '@/utils/buildFlags';
 
 /** Loopt de eerste-startervaring nog? Zie regel 2. */
 export function isOnboardingActive(
@@ -40,6 +41,7 @@ export function tourFinishPatch(
     ...restore,
     tourSnapshot: null,
     showTourOverlay: false,
-    ...(end === 'completed' && !ui.tutorialOfferAnswered ? { showTutorialOffer: true } : {}),
+    // Platformbouw (#311): geen tutorialvraag, want die installeert een extensie uit de catalogus.
+    ...(EXTENSIONS_ENABLED && end === 'completed' && !ui.tutorialOfferAnswered ? { showTutorialOffer: true } : {}),
   };
 }

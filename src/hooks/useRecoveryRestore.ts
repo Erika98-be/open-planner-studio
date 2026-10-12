@@ -78,6 +78,11 @@ export function useRecoveryRestore(): RecoveryRestore {
             restored.push(recoveryInputFromParsed(parsed, {
               id: d.id,
               filePath: d.filePath,
+              // Het site-opslagdoel van vóór de crash (issue #309) en de versie waarop dit document
+              // rustte: Ctrl+S schrijft na herstel weer naar de site, mét conflictcontrole. Ouder
+              // manifest ⇒ `null`.
+              siteFileId: d.siteFileId ?? null,
+              siteFileVersion: d.siteFileVersion ?? null,
               isDirty: d.isDirty,
               datesAsRecorded: d.datesAsRecorded,
             }));
