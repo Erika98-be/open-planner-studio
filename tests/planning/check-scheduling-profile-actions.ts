@@ -147,7 +147,7 @@ eq('13 zonder verschoven taak geen melding', [r2.changed, r2.shifted, count()], 
     schedulingProfile: builtInProfile('p6'), schedulingOptions: defaultOptionsFor('p6'),
   });
   eq('15 wizard: profiel staat op het nieuwe project', W().project.schedulingProfile?.id, 'p6');
-  eq('15a wizard: standaardopties van het profiel', W().project.schedulingOptions, defaultOptionsFor('p6'));
+  eq('15a wizard: de meegegeven reken-opties staan op het nieuwe project', W().project.schedulingOptions, defaultOptionsFor('p6'));
   const wApplied = W().historyEvents.filter(event => event.state === 'applied').length;
   W().undo();
   eq('15b geen undo-stap naar OPS', [wApplied, W().project.schedulingProfile?.id], [0, 'p6']);

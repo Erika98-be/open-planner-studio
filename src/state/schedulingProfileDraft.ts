@@ -175,31 +175,23 @@ export function withCriticalThreshold(
 
 /**
  * Projectopties die uitsluitend een BRONSIGNAAL zijn: ze komen alleen uit het bestand (de XER-lezer
- * zet ze uit SCHEDOPTIONS/RSRCLEVELLIST) en de UI biedt ze niet ter bewerking aan. Eén lijst voor het
- * bewerkmodel én het alleen-lezenblok *Instellingen uit het bronbestand* (`SchedulingProfileSection`);
- * twee lijsten liepen uit elkaar (critreview #169, N5).
- *  - "Standaardopties van dit profiel toepassen" en een profielkeuze in de wizard laten elke
- *    bronwaarde staan die het project draagt: het blok noemt ze "niet te wijzigen", en de gebruiker kan
- *    ze nergens terugzetten.
- *  - Een profiel VOEGT ze ook niet toe. `defaultOptionsFor('p6')` kent `useExpectedFinishDates` en
- *    `p6CompletedLateFromRemainingWindow` alleen omdat de XER-lezer er zijn defaults uit opbouwt; op
- *    een project zonder bronbestand zouden ze in het blok staan alsof ze uit een `.xer` kwamen. In de
- *    motor doen ze daar ook niets: `useExpectedFinishDates` werkt alleen op taken met P6-herkomst, en
- *    `p6CompletedLateFromRemainingWindow` alleen samen met B3, dat in elk ingebouwd profiel uit staat.
+ * zet ze uit SCHEDOPTIONS/RSRCLEVELLIST), geen profiel kent er een standaard voor (`defaultOptionsFor`)
+ * en de UI biedt ze niet ter bewerking aan. Eén lijst voor het bewerkmodel én het alleen-lezenblok
+ * *Instellingen uit het bronbestand* (`SchedulingProfileSection`; critreview #169, N5).
  */
 export const SOURCE_ONLY_OPTION_KEYS = [
   'useExpectedFinishDates', 'useProjectEndDateForFloat', 'p6CompletedLateFromRemainingWindow', 'leveling',
 ] as const satisfies readonly (keyof ProjectSchedulingOptions)[];
 export type SourceOnlyOptionKey = typeof SOURCE_ONLY_OPTION_KEYS[number];
 
-/** De standaard-projectopties van de basis van dit profiel, zonder bronsignalen; OPS ⇒ afwezig. De
- *  bronsignalen uit `current` (`SOURCE_ONLY_OPTION_KEYS`) blijven staan. */
+/** De standaard-projectopties van de basis van dit profiel; OPS ⇒ afwezig. De bronsignalen uit
+ *  `current` (`SOURCE_ONLY_OPTION_KEYS`) blijven staan: "Standaardopties" en een profielkeuze in de
+ *  wizard gooien geen bestandsdata weg. */
 export function withDefaultOptions(
   profile: SchedulingProfile | undefined, current?: ProjectSchedulingOptions,
 ): ProjectSchedulingOptions | undefined {
   const options: ProjectSchedulingOptions = { ...defaultOptionsFor((profile ?? builtInProfile('ops')).baseId) };
   for (const key of SOURCE_ONLY_OPTION_KEYS) {
-    delete options[key];
     if (current?.[key] !== undefined) Object.assign(options, { [key]: current[key] });
   }
   return Object.keys(options).length > 0 ? options : undefined;

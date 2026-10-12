@@ -301,18 +301,26 @@ export function p6OptionDefaults(): {
 }
 
 /** Standaard-PROJECTOPTIES voor een nieuw of bronloos project per basis. P6 = de optie-defaults
- *  van de XER-lezer (`XER_SCHEDULING_DEFAULTS` zonder bronmarkering en zonder conventies; die
- *  gelijkheid is gepind in `check-conventions-registry.ts`); MS Project en OPS = niets (afwezig ≡
- *  het huidige gedrag). Voor MS Project bewust ook geen `totalFloatMode` (eigenaarsbesluit
- *  2026-10-02, spec §3.1): afwezig = *Automatisch* = finish-speling bij statusdatum én gestarte taak,
- *  anders de kleinste. Dat is MSP's regel (voor een gestarte taak de finish slack) zodra er een
- *  statusdatum is; zonder statusdatum telt voortgang hier niet mee en krijgt ook een gestarte taak de
- *  kleinste. Het is ook wat een geopend `.mpp` draagt (de `.mpp`-lezer zet geen optie). *Kleinste*
- *  (altijd min) is de P6-modus. Levert steeds een verse kopie. */
+ *  van de XER-lezer (`p6OptionDefaults`) ZONDER de twee bronsignalen `useExpectedFinishDates` en
+ *  `p6CompletedLateFromRemainingWindow`: die horen bij een `.xer`-bestand (SCHEDOPTIONS), de UI toont ze
+ *  alleen-lezen als "uit het bronbestand", en een profiel voegt ze dus niet toe (critreview #169 N5,
+ *  review #331 punt 4). De XER-lezer neemt ze zelf uit `p6OptionDefaults`; dat
+ *  `XER_SCHEDULING_DEFAULTS` = deze set + die twee is, pint `check-conventions-registry.ts`.
+ *  MS Project en OPS = niets (afwezig ≡ het huidige gedrag). Voor MS Project bewust ook geen
+ *  `totalFloatMode` (eigenaarsbesluit 2026-10-02, spec §3.1): afwezig = *Automatisch* = finish-speling
+ *  bij statusdatum én gestarte taak, anders de kleinste. Dat is MSP's regel (voor een gestarte taak de
+ *  finish slack) zodra er een statusdatum is; zonder statusdatum telt voortgang hier niet mee en krijgt
+ *  ook een gestarte taak de kleinste. Het is ook wat een geopend `.mpp` draagt (de `.mpp`-lezer zet
+ *  geen optie). *Kleinste* (altijd min) is de P6-modus. Levert steeds een verse kopie. */
 export function defaultOptionsFor(baseId: BuiltInProfileId): ProjectSchedulingOptions {
   switch (baseId) {
-    case 'p6':
-      return p6OptionDefaults();
+    case 'p6': {
+      const d = p6OptionDefaults();
+      return {
+        lagCalendar: d.lagCalendar, criticalDefinition: d.criticalDefinition, totalFloatMode: d.totalFloatMode,
+        makeOpenEndedCritical: d.makeOpenEndedCritical, startToStartLagFrom: d.startToStartLagFrom,
+      };
+    }
     case 'msproject':
     case 'ops':
       return {};

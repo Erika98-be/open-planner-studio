@@ -233,7 +233,12 @@ const same = (label: string, got: unknown, want: unknown) => eq(label, canon(got
 // Sinds C3 draagt XER_SCHEDULING_DEFAULTS alleen projectopties; de conventies komen uit het profiel
 // dat de lezer zet (check-import-profile.ts bewijst dat een gelezen XER builtInProfile('p6') draagt).
 {
-  eq('70 XER-defaults: opties == defaultOptionsFor(p6) (incl. volgorde)', XER_SCHEDULING_DEFAULTS.schedulingOptions, defaultOptionsFor('p6'));
+  // Review #331 punt 4: defaultOptionsFor(p6) kent de twee bronsignalen niet; de XER-lezer zaait ze zelf.
+  same('70 XER-defaults: opties == defaultOptionsFor(p6) + de twee bronsignalen uit p6OptionDefaults',
+    XER_SCHEDULING_DEFAULTS.schedulingOptions,
+    { ...defaultOptionsFor('p6'), useExpectedFinishDates: true, p6CompletedLateFromRemainingWindow: true });
+  eq('70a defaultOptionsFor(p6) zonder bronsignalen', ['useExpectedFinishDates', 'p6CompletedLateFromRemainingWindow']
+    .filter(k => k in defaultOptionsFor('p6')), []);
   ok('71 XER-defaults: geen conventiesleutels en geen bronmarkering',
     Object.keys(XER_SCHEDULING_DEFAULTS.schedulingOptions).every(k => !(CONVENTION_KEYS as readonly string[]).includes(k) && k !== 'p6Source'));
   same('72 een blob mét bronmarkering en de XER-defaults ⇒ P6-profiel zonder afwijkingen',

@@ -65,15 +65,10 @@ eq('20 modewissel houdt thresholdHours (A6)',
 eq('21 drempel in dagen zetten houdt thresholdHours',
   withCriticalThreshold({ criticalDefinition: { mode: 'totalFloat', thresholdHours: 8 } }, 'threshold', 2).criticalDefinition,
   { mode: 'totalFloat', thresholdHours: 8, threshold: 2 });
-// Bronsignalen (`SOURCE_ONLY_OPTION_KEYS`) voegt geen profiel toe: zonder bronbestand bestaan ze niet.
-const p6DefaultsWithoutSource = (() => {
-  const d: Record<string, unknown> = { ...defaultOptionsFor('p6') };
-  for (const key of SOURCE_ONLY_OPTION_KEYS) delete d[key];
-  return d;
-})();
-eq('22 standaardopties van p6 (zonder bronsignalen)', withDefaultOptions(builtInProfile('p6')), p6DefaultsWithoutSource);
-eq('22a de P6-standaard kent wel bronsignalen (XER-lezerdefaults), het profiel zet ze niet',
-  [defaultOptionsFor('p6').useExpectedFinishDates, withDefaultOptions(builtInProfile('p6'))?.useExpectedFinishDates], [true, undefined]);
+// Bronsignalen (`SOURCE_ONLY_OPTION_KEYS`) kent geen profiel: `defaultOptionsFor('p6')` heeft ze niet.
+const p6DefaultsWithoutSource = defaultOptionsFor('p6');
+eq('22 standaardopties van p6', withDefaultOptions(builtInProfile('p6')), p6DefaultsWithoutSource);
+eq('22a een profiel voegt geen bronsignaal toe', SOURCE_ONLY_OPTION_KEYS.filter(k => withDefaultOptions(builtInProfile('p6'))?.[k] !== undefined), []);
 eq('23 standaardopties van ops = afwezig', withDefaultOptions(undefined), undefined);
 // Bronsignalen (alleen uit het bestand, geen profieldefault) overleven "Standaardopties"; de rest niet.
 // Mutant: SOURCE_ONLY_OPTION_KEYS leeg ⇒ 23a/23b rood.
