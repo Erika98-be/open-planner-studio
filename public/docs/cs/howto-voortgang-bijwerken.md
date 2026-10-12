@@ -18,7 +18,7 @@ Datum stavu je den, ke kterému zjišťujete stav. Nastavte ho dříve, než zad
 
 Pokud zjišťujete stav v pátek po pracovní době, nastavte datum stavu na další pracovní den, pondělí. Aplikace naplánuje zbývající práci od začátku data stavu.
 
-Pokud zadáte průběh, když ještě není nastaveno datum stavu, aplikace ho nastaví na dnešek a zobrazí hlášení: *Datum stavu zatím nebylo nastaveno: nyní je nastaveno na dnešek (…), protože průběh se měří až do data stavu. Změnit ho lze na kartě Plán → Datum stavu*. Raději to proto udělejte nejdřív sami.
+Pokud zadáte průběh, když ještě není nastaveno datum stavu, aplikace ho nastaví na dnešek a zobrazí hlášení: *Datum stavu nastaveno na dnešek (…).* Raději to proto udělejte nejdřív sami.
 
 ### 2. Zadejte průběh
 

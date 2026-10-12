@@ -18,7 +18,7 @@ La fecha de estado es el día en que hace balance. Establézcala antes de introd
 
 Si hace balance el viernes fuera de los horarios de trabajo, establezca la fecha de estado en el siguiente día laborable, el lunes. La aplicación planifica el trabajo restante desde el inicio de la fecha de estado.
 
-Si introduce avance mientras aún no hay fecha de estado, la aplicación la establece en hoy y muestra este aviso: *Aún no había fecha de estado: ahora es hoy (…), porque el avance se mide hasta la fecha de estado. Puede cambiarla en Planificación → Fecha de estado.* Por eso es mejor que lo haga usted antes.
+Si introduce avance mientras aún no hay fecha de estado, la aplicación la establece en hoy y muestra este aviso: *Fecha de estado fijada en hoy (…).* Por eso es mejor que lo haga usted antes.
 
 ### 2. Introduzca el avance
 

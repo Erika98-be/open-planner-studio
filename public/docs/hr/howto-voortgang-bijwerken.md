@@ -18,7 +18,7 @@ Datum stanja je dan na koji procjenjujete stanje. Postavite ga prije nego što u
 
 Ako procjenjujete stanje u petak nakon radnog vremena, postavite datum stanja na sljedeći radni dan, ponedjeljak. Aplikacija planira preostali posao od početka datuma stanja.
 
-Ako unesete napredak dok još nema datuma stanja, aplikacija ga postavlja na danas i prijavljuje: *Datum stanja još nije bio postavljen: sada je postavljen na danas (…), jer se napredak mjeri do datuma stanja. Promijenite ga u Raspored → Datum stanja.* Zato to bolje prvo sami postavite.
+Ako unesete napredak dok još nema datuma stanja, aplikacija ga postavlja na danas i prijavljuje: *Datum stanja postavljen na danas (…).* Zato to bolje prvo sami postavite.
 
 ### 2. Unesite napredak
 
