@@ -287,6 +287,24 @@ siteTest('sluiten met Opslaan: de site-vraag ligt boven de sluitvraag en het tab
   await expect.poll(() => page.evaluate((id) => window.__OPS__!.store.getState().documents.some((d) => d.id === id), closing)).toBe(false);
 });
 
+siteTest('AutoSave schrijft naar het site-bestand, met baseVersion en zonder dialoog', async ({ page, ops: _ops }) => {
+  const toggle = page.locator('[data-ops-autosave]');
+  await expect(toggle).toBeDisabled();
+  await openFromSiteDialog(page, 'p1');
+  // Een site-bestand is een opslagdoel zonder vraag: de schakelaar gaat aan.
+  await expect(toggle).toBeEnabled();
+  await toggle.click();
+  await expect(toggle).toHaveAttribute('aria-checked', 'true');
+
+  await makeDirty(page, 'Automatisch bewaard');
+  await expect.poll(() => saves(page).then((s) => s.length), { timeout: 25_000 }).toBe(1);
+  expect((await saves(page))[0]).toEqual({
+    fn: 'save', id: 'p1', name: 'Planning.ifc', baseVersion: '2', type: 'application/x-step',
+  });
+  await expect.poll(() => doc(page).then((d) => d.isDirty)).toBe(false);
+  await expect(saveDialog(page)).toHaveCount(0);
+});
+
 siteTest('conflict: iemand anders sloeg op; eigen melding en het document blijft gewijzigd', async ({ page, ops }) => {
   ops.acceptError('Opslaan op de site mislukt');
   await openFromSiteDialog(page, 'p1');
