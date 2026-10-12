@@ -78,3 +78,6 @@ http://localhost:3049/.
 
 - Checkstap 1 (rehab-2: Arabische namen, paneel < 1 s, F5 ~3 s, doorgetrokken relatielijnen): **geslaagd** —
   eigenaar: "wow, dit is echt duizendmaal beter".
+- Checkstap 2 (#293: "+" direct na het laatste tabblad, vierkante sluitknop op de projectoverzichtkaart): **akkoord**.
+  Eigenaar: "voortaan zet je bestanden zelf klaar" ⇒ testversie heeft een lokaal hulpje `?qa=<bestand>` (alleen
+  `claude/release-check`, niet naar main; bestanden in `public/qa-files/`).
