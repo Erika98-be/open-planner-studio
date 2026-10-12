@@ -6,7 +6,8 @@
     "label": "Automatisk lagring",
     "noFile": "Lagre prosjektet først for å bruke automatisk lagring.",
     "onHint": "Automatisk lagring er på: endringer skrives til denne filen.",
-    "offHint": "Automatisk lagring er av. Gjenoppretting ved brudd er alltid aktiv."
+    "offHint": "Automatisk lagring er av. Gjenoppretting ved brudd er alltid aktiv.",
+    "siteDisabled": "En ny versjon lagres på siten med Lagre (Ctrl+S). Automatisk lagring er av her; gjenoppretting ved brudd er fortsatt aktiv."
   },
   "notifications": {
     "dismiss": "Lukk melding",
@@ -68,6 +69,8 @@
     "mppLegacy": "Denne .mpp-filen bruker et eldre format (Project 2007 eller eldre). Eksporter den fra MS Project som XML (Fil → Lagre som → XML), og åpne den filen.",
     "mppEncrypted": "Denne .mpp-filen er beskyttet med et passord. Eksporter den fra MS Project som XML (Fil → Lagre som → XML), og åpne den filen.",
     "saveFailed": "Kunne ikke lagre",
+    "siteSaveConflict": "Ikke lagret: '{{name}}' er i mellomtiden endret av noen andre på siten. Endringene dine står fortsatt i appen. Velg «Lagre som» for å lagre dem som en ny fil.",
+    "siteFileGone": "'{{name}}' finnes ikke lenger på siten. Filen er fjernet fra Nylige.",
     "savedViaDownload": "Lagret som nedlasting: '{{name}}' ligger nå i nedlastingsmappen din. Dette miljøet tillater ikke at appen skriver direkte til stedet du valgte.",
     "browserCannotOverwrite": "Denne nettleseren lar ikke appen skrive tilbake til '{{name}}'. Derfor spør appen hver gang du lagrer hvor filen skal lagres. Dette skjer ikke i Chrome, Edge eller skrivebordsappen.",
     "browserSavesAsDownload": "Lagret som nedlasting: '{{name}}' ligger i nedlastingsmappen din. Denne nettleseren lar ikke appen skrive til et eget sted, så hver lagring lager en ny nedlasting. I Chrome, Edge eller skrivebordsappen oppdaterer Lagre bare samme fil.",
@@ -1443,5 +1446,30 @@
     "yes": "Ja",
     "no": "Nei",
     "busy": "Klargjør opplæringene…"
+  },
+  "siteFiles": {
+    "openTitle": "Åpne fra siten",
+    "loading": "Laster filer…",
+    "loadFailed": "Filene på siten kunne ikke lastes.",
+    "retry": "Prøv igjen",
+    "empty": "Det finnes ingen tidsplaner på siten ennå.",
+    "showVersions": "Vis versjoner",
+    "hideVersions": "Skjul versjoner",
+    "open": "Åpne",
+    "versionsLoading": "Laster versjoner…",
+    "versionsFailed": "Versjonene kunne ikke lastes.",
+    "versionsEmpty": "Fant ingen versjoner.",
+    "versionLabel": "Versjon {{version}}",
+    "versionLatest": "nyeste",
+    "byAuthor": "av {{author}}",
+    "openCopy": "Åpne som kopi",
+    "copyHint": "En eldre versjon åpnes som kopi. Når du lagrer, lages en ny fil; den nyeste versjonen forblir uendret.",
+    "versionCopyName": "{{name}} (versjon {{version}})",
+    "fromThisPc": "Fra denne PC-en…",
+    "saveTitle": "Lagre på siten",
+    "nameLabel": "Navn",
+    "saveHint": "Prosjektet lagres på siten som en ny IFC-fil. Deretter lagres en ny versjon der med Lagre (Ctrl+S).",
+    "saveToSite": "Lagre på siten",
+    "toThisPc": "Til denne PC-en…"
   }
 }

@@ -6,7 +6,8 @@
     "label": "Automatické ukládání",
     "noFile": "Nejprve uložte tento projekt, abyste mohli použít automatické ukládání.",
     "onHint": "Automatické ukládání je zapnuté: změny se zapisují do tohoto souboru.",
-    "offHint": "Automatické ukládání je vypnuté. Zotavení systému po chybě zůstává vždy aktivní."
+    "offHint": "Automatické ukládání je vypnuté. Zotavení systému po chybě zůstává vždy aktivní.",
+    "siteDisabled": "Na webu Uložit (Ctrl+S) uloží novou verzi. Automatické ukládání je zde vypnuto; zotavení systému po chybě zůstává aktivní."
   },
   "notifications": {
     "dismiss": "Zavřít oznámení",
@@ -100,6 +101,8 @@
     "mppLegacy": "Tento soubor .mpp používá starý formát (Project 2007 nebo starší). Exportujte jej v MS Project jako XML (Soubor → Uložit jako → XML) a otevřete tento soubor.",
     "mppEncrypted": "Tento soubor .mpp je chráněn heslem. Exportujte jej v MS Project jako XML (Soubor → Uložit jako → XML) a otevřete tento soubor.",
     "saveFailed": "Uložení se nezdařilo",
+    "siteSaveConflict": "Neuloženo: někdo jiný mezitím změnil „{{name}}“ na webu. Vaše změny jsou stále v aplikaci. Zvolte „Uložit jako“, pokud je chcete uložit jako nový soubor.",
+    "siteFileGone": "„{{name}}“ už na webu není. Aplikace odebrala soubor ze seznamu Nedávné.",
     "savedViaDownload": "Uloženo jako stažený soubor: „{{name}}“ je nyní ve složce Stažené. Toto prostředí neumožňuje aplikaci zapisovat přímo na zvolené místo.",
     "browserCannotOverwrite": "Tento prohlížeč neumožňuje aplikaci zapisovat zpět do „{{name}}“. Proto se aplikace při každém uložení znovu ptá, kam má soubor uložit. V prohlížečích Chrome a Edge nebo v desktopové aplikaci k tomu nedochází.",
     "browserSavesAsDownload": "Uloženo jako stažený soubor: „{{name}}“ je ve složce Stažené. Tento prohlížeč neumožňuje aplikaci zapisovat na vlastní místo, takže každé uložení vytvoří nové stažení. V prohlížečích Chrome a Edge nebo v desktopové aplikaci příkaz Uložit jen aktualizuje stejný soubor.",
@@ -1543,5 +1546,30 @@
     "yes": "Ano",
     "no": "Ne",
     "busy": "Kurzy se připravují…"
+  },
+  "siteFiles": {
+    "openTitle": "Otevřít z webu",
+    "loading": "Načítání souborů…",
+    "loadFailed": "Soubory na webu se nepodařilo načíst.",
+    "retry": "Zkusit znovu",
+    "empty": "Na webu zatím nejsou žádné plány.",
+    "showVersions": "Zobrazit verze",
+    "hideVersions": "Skrýt verze",
+    "open": "Otevřít",
+    "versionsLoading": "Načítání verzí…",
+    "versionsFailed": "Verze se nepodařilo načíst.",
+    "versionsEmpty": "Nebyly nalezeny žádné verze.",
+    "versionLabel": "Verze {{version}}",
+    "versionLatest": "nejnovější",
+    "byAuthor": "od {{author}}",
+    "openCopy": "Otevřít jako kopii",
+    "copyHint": "Starší verze se otevře jako kopie. Uložit pak vytvoří nový soubor; nejnovější verze zůstane beze změny.",
+    "versionCopyName": "{{name}} (verze {{version}})",
+    "fromThisPc": "Otevřít z tohoto počítače…",
+    "saveTitle": "Uložit na web",
+    "nameLabel": "Název",
+    "saveHint": "Projekt se uloží na web jako nový soubor IFC. Potom Uložit (Ctrl+S) uloží na webu novou verzi.",
+    "saveToSite": "Uložit na web",
+    "toThisPc": "Uložit do tohoto počítače…"
   }
 }

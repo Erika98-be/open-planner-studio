@@ -6,7 +6,8 @@
     "label": "Automatsko spremanje",
     "noFile": "Spremite ovaj projekt prvo da biste mogli koristiti automatsko spremanje.",
     "onHint": "Automatsko spremanje je uključeno: promjene se zapisuju u ovu datoteku.",
-    "offHint": "Automatsko spremanje je isključeno. Oporavak od pada ostaje uvijek aktivan."
+    "offHint": "Automatsko spremanje je isključeno. Oporavak od pada ostaje uvijek aktivan.",
+    "siteDisabled": "Na lokaciji Spremi (Ctrl+S) sprema novu verziju. Automatsko spremanje je ovdje isključeno; oporavak od pada ostaje aktivan."
   },
   "notifications": {
     "dismiss": "Zatvori obavijest",
@@ -84,6 +85,8 @@
     "mppLegacy": "Ova .mpp datoteka koristi stariji format (Project 2007 ili stariji). Izvezite je u MS Project kao XML (Datoteka → Spremi kao → XML) i otvorite tu datoteku.",
     "mppEncrypted": "Ova .mpp datoteka zaštićena je lozinkom. Izvezite je u MS Project kao XML (Datoteka → Spremi kao → XML) i otvorite tu datoteku.",
     "saveFailed": "Spremanje nije uspjelo",
+    "siteSaveConflict": "Nije spremljeno: „{{name}}“ na lokaciji je u međuvremenu promijenila druga osoba. Vaše promjene su još u aplikaciji. Odaberite Spremi kao da biste ih spremili kao novu datoteku.",
+    "siteFileGone": "„{{name}}“ više nije na lokaciji. Datoteka je uklonjena s popisa „Nedavno“.",
     "savedViaDownload": "Spremljeno kao preuzimanje: '{{name}}' sada je u vašoj mapi za preuzimanja. Ovo okruženje ne dopušta aplikaciji da izravno zapisuje na odabrano mjesto.",
     "browserCannotOverwrite": "Ovaj preglednik ne dopušta aplikaciji da zapisuje natrag u '{{name}}'. Zato aplikacija pri svakom spremanju ponovno pita gdje datoteka treba biti. U Chromeu, Edgeu ili desktop aplikaciji to se ne događa.",
     "browserSavesAsDownload": "Spremljeno kao preuzimanje: '{{name}}' je u vašoj mapi za preuzimanja. Ovaj preglednik ne dopušta aplikaciji da piše na vlastito mjesto, pa svako spremanje stvara novo preuzimanje. U Chromeu, Edgeu ili desktop aplikaciji Spremi jednostavno ažurira istu datoteku.",
@@ -1493,5 +1496,30 @@
     "yes": "Da",
     "no": "Ne",
     "busy": "Priprema lekcija…"
+  },
+  "siteFiles": {
+    "openTitle": "Otvaranje s lokacije",
+    "loading": "Učitavanje datoteka…",
+    "loadFailed": "Datoteke na lokaciji nije bilo moguće učitati.",
+    "retry": "Pokušaj ponovo",
+    "empty": "Na lokaciji još nema nijednog rasporeda.",
+    "showVersions": "Prikaži verzije",
+    "hideVersions": "Sakrij verzije",
+    "open": "Otvori",
+    "versionsLoading": "Učitavanje verzija…",
+    "versionsFailed": "Verzije nije bilo moguće učitati.",
+    "versionsEmpty": "Nisu pronađene verzije.",
+    "versionLabel": "Verzija {{version}}",
+    "versionLatest": "najnovija",
+    "byAuthor": "od {{author}}",
+    "openCopy": "Otvori kao kopiju",
+    "copyHint": "Starija verzija otvara se kao kopija. Spremi tada stvara novu datoteku; najnovija verzija ostaje nepromijenjena.",
+    "versionCopyName": "{{name}} (verzija {{version}})",
+    "fromThisPc": "S ovog računala…",
+    "saveTitle": "Spremanje na lokaciju",
+    "nameLabel": "Naziv",
+    "saveHint": "Projekt se sprema na lokaciju kao nova IFC datoteka. Nakon toga Spremi (Ctrl+S) tamo sprema novu verziju.",
+    "saveToSite": "Spremi na lokaciju",
+    "toThisPc": "Na ovo računalo…"
   }
 }

@@ -6,7 +6,8 @@
     "label": "Automaattitallennus",
     "noFile": "Tallenna projekti ensin, jotta automaattitallennus toimii.",
     "onHint": "Automaattitallennus on päällä: muutokset kirjoitetaan tähän tiedostoon.",
-    "offHint": "Automaattitallennus on pois päältä. Kaatumispalautus on aina käytössä."
+    "offHint": "Automaattitallennus on pois päältä. Kaatumispalautus on aina käytössä.",
+    "siteDisabled": "Sivustolla Tallenna (Ctrl+S) tallentaa uuden version. Automaattinen tallennus on täällä pois käytöstä; kaatumisen jälkeinen palautus on edelleen käytössä."
   },
   "notifications": {
     "dismiss": "Sulje ilmoitus",
@@ -68,6 +69,8 @@
     "mppLegacy": "Tämä .mpp-tiedosto on vanhassa muodossa (Project 2007 tai vanhempi). Vie se MS Projectissa XML-muodossa (Tiedosto → Tallenna nimellä → XML) ja avaa se.",
     "mppEncrypted": "Tämä .mpp-tiedosto on suojattu salasanalla. Vie se MS Projectissa XML-muodossa (Tiedosto → Tallenna nimellä → XML) ja avaa se.",
     "saveFailed": "Tallennus epäonnistui",
+    "siteSaveConflict": "Ei tallennettu: ”{{name}}” on sivustolla muuttunut toisen käyttäjän toimesta. Muutokset ovat yhä sovelluksessa. Valitse Tallenna nimellä, jos haluat tallentaa ne uutena tiedostona.",
+    "siteFileGone": "”{{name}}” ei ole enää sivustolla. Tiedosto poistettiin Viimeisimmät-kohdasta.",
     "savedViaDownload": "Tallennettu latauksena: '{{name}}' on nyt lataukset-kansiossa. Tämä ympäristö ei salli sovelluksen kirjoittaa suoraan valittuun paikkaan.",
     "browserCannotOverwrite": "Tämä selain ei salli sovelluksen kirjoittaa takaisin tiedostoon '{{name}}'. Siksi sovellus kysyy joka kerta tallennettaessa, mihin tiedosto tallennetaan. Chromessa, Edgessä tai työpöytäsovelluksessa tätä ei tapahdu.",
     "browserSavesAsDownload": "Tallennettu latauksena: '{{name}}' on lataukset-kansiossa. Tämä selain ei salli sovelluksen kirjoittaa omaan paikkaansa, joten jokainen tallennus luo uuden latauksen. Chromessa, Edgessä tai työpöytäsovelluksessa Tallenna päivittää saman tiedoston.",
@@ -1443,5 +1446,30 @@
     "yes": "Kyllä",
     "no": "Ei",
     "busy": "Opetusohjelmat laitetaan valmiiksi…"
+  },
+  "siteFiles": {
+    "openTitle": "Avaa sivustolta",
+    "loading": "Ladataan tiedostoja…",
+    "loadFailed": "Sivuston tiedostoja ei voitu ladata.",
+    "retry": "Yritä uudelleen",
+    "empty": "Sivustolla ei ole vielä aikatauluja.",
+    "showVersions": "Näytä versiot",
+    "hideVersions": "Piilota versiot",
+    "open": "Avaa",
+    "versionsLoading": "Ladataan versioita…",
+    "versionsFailed": "Versioita ei voitu ladata.",
+    "versionsEmpty": "Versioita ei löytynyt.",
+    "versionLabel": "Versio {{version}}",
+    "versionLatest": "uusin",
+    "byAuthor": "tekijältä {{author}}",
+    "openCopy": "Avaa kopiona",
+    "copyHint": "Vanhempi versio avautuu kopiona. Tallennus luo silloin uuden tiedoston; uusin versio pysyy ennallaan.",
+    "versionCopyName": "{{name}} (versio {{version}})",
+    "fromThisPc": "Tästä tietokoneesta…",
+    "saveTitle": "Tallenna sivustolle",
+    "nameLabel": "Nimi",
+    "saveHint": "Projekti tallentuu sivustolle uutena IFC-tiedostona. Sen jälkeen Tallenna (Ctrl+S) tallentaa sinne uuden version.",
+    "saveToSite": "Tallenna sivustolle",
+    "toThisPc": "Tähän tietokoneeseen…"
   }
 }

@@ -6,7 +6,8 @@
     "label": "Automatisk sparning",
     "noFile": "Spara projektet först för att använda automatisk sparning.",
     "onHint": "Automatisk sparning är på: ändringar skrivs till den här filen.",
-    "offHint": "Automatisk sparning är av. Kraschskyddet förblir alltid aktivt."
+    "offHint": "Automatisk sparning är av. Kraschskyddet förblir alltid aktivt.",
+    "siteDisabled": "På webbplatsen sparar Spara (Ctrl+S) en ny version. Automatisk sparning är av här; kraschskydd är fortfarande aktivt."
   },
   "notifications": {
     "dismiss": "Stänga meddelandet",
@@ -68,6 +69,8 @@
     "mppLegacy": "Den här .mpp-filen använder ett äldre format (Project 2007 eller äldre). Exportera den från MS Project som XML (Arkiv → Spara som → XML) och öppna den filen.",
     "mppEncrypted": "Den här .mpp-filen är lösenordsskyddad. Exportera den från MS Project som XML (Arkiv → Spara som → XML) och öppna den filen.",
     "saveFailed": "Kunde inte spara",
+    "siteSaveConflict": "Inte sparat: ”{{name}}” har ändrats på webbplatsen av någon annan under tiden. Dina ändringar finns fortfarande i appen. Välj Spara som för att spara dem som en ny fil.",
+    "siteFileGone": "”{{name}}” finns inte längre på webbplatsen. Filen har tagits bort från Senaste.",
     "savedViaDownload": "Sparad som nedladdning: '{{name}}' finns nu i din nedladdningsmapp. Den här miljön tillåter inte att appen skriver direkt till platsen du valde.",
     "browserCannotOverwrite": "Den här webbläsaren tillåter inte att appen skriver tillbaka till '{{name}}'. Därför frågar appen varje gång du sparar var filen ska sparas. I Chrome, Edge eller skrivbordsappen händer detta inte.",
     "browserSavesAsDownload": "Sparad som nedladdning: '{{name}}' finns i din nedladdningsmapp. Den här webbläsaren tillåter inte att appen skriver till en egen plats, så varje gång du sparar skapas en ny nedladdning. I Chrome, Edge eller skrivbordsappen uppdaterar Spara samma fil helt enkelt.",
@@ -1443,5 +1446,30 @@
     "yes": "Ja",
     "no": "Nej",
     "busy": "Förbereder självstudierna…"
+  },
+  "siteFiles": {
+    "openTitle": "Öppna från webbplatsen",
+    "loading": "Läser in filer…",
+    "loadFailed": "Filerna på webbplatsen kunde inte läsas in.",
+    "retry": "Försök igen",
+    "empty": "Det finns ännu inga tidsplaner på webbplatsen.",
+    "showVersions": "Visa versioner",
+    "hideVersions": "Dölj versioner",
+    "open": "Öppna",
+    "versionsLoading": "Läser in versioner…",
+    "versionsFailed": "Versionerna kunde inte läsas in.",
+    "versionsEmpty": "Inga versioner hittades.",
+    "versionLabel": "Version {{version}}",
+    "versionLatest": "senaste",
+    "byAuthor": "av {{author}}",
+    "openCopy": "Öppna som kopia",
+    "copyHint": "En äldre version öppnas som kopia. Spara skapar då en ny fil; den senaste versionen förblir oförändrad.",
+    "versionCopyName": "{{name}} (version {{version}})",
+    "fromThisPc": "Från den här datorn…",
+    "saveTitle": "Spara på webbplatsen",
+    "nameLabel": "Namn",
+    "saveHint": "Projektet sparas på webbplatsen som en ny IFC-fil. Därefter sparar Spara (Ctrl+S) en ny version där.",
+    "saveToSite": "Spara på webbplatsen",
+    "toThisPc": "Till den här datorn…"
   }
 }

@@ -6,7 +6,8 @@
     "label": "Automatisk gem",
     "noFile": "Gem projektet først for at bruge automatisk gem.",
     "onHint": "Automatisk gem er til: ændringer skrives til denne fil.",
-    "offHint": "Automatisk gem er fra. Genoprettelse efter nedbrud forbliver altid aktiv."
+    "offHint": "Automatisk gem er fra. Genoprettelse efter nedbrud forbliver altid aktiv.",
+    "siteDisabled": "På webstedet gemmer Gem (Ctrl+S) en ny version. Automatisk gemning er slået fra her; genoprettelse efter nedbrud forbliver aktiv."
   },
   "notifications": {
     "dismiss": "Luk meddelelse",
@@ -68,6 +69,8 @@
     "mppLegacy": "Denne .mpp-fil har et gammelt format (Project 2007 eller ældre). Eksportér den i MS Project som XML (Fil → Gem som → XML), og åbn den fil.",
     "mppEncrypted": "Denne .mpp-fil er beskyttet med en adgangskode. Eksportér den i MS Project som XML (Fil → Gem som → XML), og åbn den fil.",
     "saveFailed": "Kunne ikke gemme",
+    "siteSaveConflict": "Ikke gemt: '{{name}}' er i mellemtiden ændret på webstedet af en anden. Dine ændringer findes stadig i appen. Vælg Gem som for at gemme dem som ny fil.",
+    "siteFileGone": "'{{name}}' findes ikke længere på webstedet. Filen er fjernet fra Seneste.",
     "savedViaDownload": "Gemt som download: '{{name}}' ligger nu i din downloadmappe. Dette miljø tillader ikke, at appen skriver direkte til den valgte placering.",
     "browserCannotOverwrite": "Denne browser tillader ikke appen at skrive tilbage til '{{name}}'. Derfor spørger appen hver gang du gemmer, hvor filen skal ligge. I Chrome, Edge eller desktop-appen sker det ikke.",
     "browserSavesAsDownload": "Gemt som download: '{{name}}' ligger i din downloadmappe. Denne browser tillader ikke appen at skrive til en egen placering, så hver gemning laver en ny download. I Chrome, Edge eller desktop-appen opdaterer Gem blot den samme fil.",
@@ -1443,5 +1446,30 @@
     "yes": "Ja",
     "no": "Nej",
     "busy": "Gør selvstudierne klar…"
+  },
+  "siteFiles": {
+    "openTitle": "Åbn fra webstedet",
+    "loading": "Indlæser filer…",
+    "loadFailed": "Filerne på webstedet kunne ikke indlæses.",
+    "retry": "Prøv igen",
+    "empty": "Der er endnu ingen tidsplaner på webstedet.",
+    "showVersions": "Vis versioner",
+    "hideVersions": "Skjul versioner",
+    "open": "Åbn",
+    "versionsLoading": "Indlæser versioner…",
+    "versionsFailed": "Versionerne kunne ikke indlæses.",
+    "versionsEmpty": "Ingen versioner fundet.",
+    "versionLabel": "Version {{version}}",
+    "versionLatest": "nyeste",
+    "byAuthor": "af {{author}}",
+    "openCopy": "Åbn som kopi",
+    "copyHint": "En ældre version åbnes som kopi. Gem opretter så en ny fil; den nyeste version forbliver uændret.",
+    "versionCopyName": "{{name}} (version {{version}})",
+    "fromThisPc": "Fra denne pc…",
+    "saveTitle": "Gem på webstedet",
+    "nameLabel": "Navn",
+    "saveHint": "Projektet gemmes på webstedet som ny IFC-fil. Derefter gemmer Gem (Ctrl+S) en ny version der.",
+    "saveToSite": "Gem på webstedet",
+    "toThisPc": "På denne pc…"
   }
 }

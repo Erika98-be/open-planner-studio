@@ -6,7 +6,8 @@
     "label": "Automatikus mentés",
     "noFile": "Mentse előbb ezt a projektet. Az automatikus mentés csak mentett projektnél használható.",
     "onHint": "Az automatikus mentés be van kapcsolva: a módosítások ebbe a fájlba kerülnek.",
-    "offHint": "Az automatikus mentés ki van kapcsolva. A visszaállás összeomlás után továbbra is aktív."
+    "offHint": "Az automatikus mentés ki van kapcsolva. A visszaállás összeomlás után továbbra is aktív.",
+    "siteDisabled": "A webhelyen a Mentés (Ctrl+S) új verziót ment. Az automatikus mentés itt ki van kapcsolva; a visszaállás összeomlás után aktív marad."
   },
   "notifications": {
     "dismiss": "Bezárás",
@@ -68,6 +69,8 @@
     "mppLegacy": "Ez a .mpp-fájl régi formátumot használ (Project 2007 vagy korábbi). Exportálja MS Project-ben XML-ként (Fájl → Mentés másként → XML), és nyissa meg azt a fájlt.",
     "mppEncrypted": "Ez a .mpp-fájl jelszóval védett. Exportálja MS Project-ben XML-ként (Fájl → Mentés másként → XML), és nyissa meg azt a fájlt.",
     "saveFailed": "Mentés sikertelen",
+    "siteSaveConflict": "Nem mentve: „{{name}}” közben valaki más módosította a webhelyen. A módosításai még benne vannak az alkalmazásban. Válassza a „Mentés másként” parancsot, ha új fájlként szeretné megőrizni őket.",
+    "siteFileGone": "A(z) „{{name}}” már nincs a webhelyen. Az alkalmazás eltávolította a fájlt a Legutóbbi listából.",
     "savedViaDownload": "Letöltésként mentve: a(z) „{{name}}” most a letöltési mappában van. Ebben a környezetben az alkalmazás nem írhat közvetlenül a kiválasztott helyre.",
     "browserCannotOverwrite": "Ez a böngésző nem engedi, hogy az alkalmazás visszaírjon a(z) „{{name}}” fájlba. Ezért az alkalmazás minden mentéskor újra megkérdezi, hova kerüljön a fájl. Chrome-ban, Edge-ben vagy az asztali alkalmazásban ez nem fordul elő.",
     "browserSavesAsDownload": "Letöltésként mentve: a(z) „{{name}}” a letöltési mappában van. Ez a böngésző nem engedi, hogy az alkalmazás saját helyre írjon, ezért minden mentés új letöltést hoz létre. Chrome-ban, Edge-ben vagy az asztali alkalmazásban a Mentés ugyanazt a fájlt frissíti.",
@@ -1443,5 +1446,30 @@
     "yes": "Igen",
     "no": "Nem",
     "busy": "Oktatóanyagok előkészítése…"
+  },
+  "siteFiles": {
+    "openTitle": "Megnyitás a webhelyről",
+    "loading": "Fájlok betöltése…",
+    "loadFailed": "A fájlokat a webhelyről nem lehetett betölteni.",
+    "retry": "Újrapróbálkozás",
+    "empty": "Még nincsenek ütemezések a webhelyen.",
+    "showVersions": "Verziók mutatása",
+    "hideVersions": "Verziók elrejtése",
+    "open": "Megnyitás",
+    "versionsLoading": "Verziók betöltése…",
+    "versionsFailed": "A verziókat nem lehetett betölteni.",
+    "versionsEmpty": "Nem található verzió.",
+    "versionLabel": "Verzió {{version}}",
+    "versionLatest": "legújabb",
+    "byAuthor": "szerző: {{author}}",
+    "openCopy": "Másolat megnyitása",
+    "copyHint": "Egy régebbi verzió másolatként nyílik meg. Mentéskor ekkor új fájl jön létre; a legújabb verzió változatlan marad.",
+    "versionCopyName": "{{name}} ({{version}}. verzió)",
+    "fromThisPc": "Erről a számítógépről…",
+    "saveTitle": "Mentés a webhelyre",
+    "nameLabel": "Név",
+    "saveHint": "A projekt új IFC-fájlként kerül a webhelyre. Ezután a Mentés (Ctrl+S) ott új verziót ment.",
+    "saveToSite": "Mentés a webhelyre",
+    "toThisPc": "Erre a számítógépre…"
   }
 }

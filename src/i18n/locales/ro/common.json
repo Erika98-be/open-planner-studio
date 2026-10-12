@@ -6,7 +6,8 @@
     "label": "Salvare automată",
     "noFile": "Salvați mai întâi acest proiect pentru a utiliza salvarea automată.",
     "onHint": "Salvarea automată este activată: modificările se scriu în acest fișier.",
-    "offHint": "Salvarea automată este dezactivată. Refacerea în urma unei căderi rămâne mereu activă."
+    "offHint": "Salvarea automată este dezactivată. Refacerea în urma unei căderi rămâne mereu activă.",
+    "siteDisabled": "Pe site, Salvare (Ctrl+S) salvează o versiune nouă. Salvarea automată este dezactivată aici; refacerea în urma unei căderi rămâne activă."
   },
   "notifications": {
     "dismiss": "Închidere notificare",
@@ -84,6 +85,8 @@
     "mppLegacy": "Acest fișier .mpp are un format mai vechi (Project 2007 sau anterior). În MS Project, exportați-l ca XML (Fișier → Salvare ca → XML) și deschideți acel fișier.",
     "mppEncrypted": "Acest fișier .mpp este protejat cu parolă. În MS Project, exportați-l ca XML (Fișier → Salvare ca → XML) și deschideți acel fișier.",
     "saveFailed": "Salvarea a eșuat",
+    "siteSaveConflict": "Nesalvat: „{{name}}” a fost modificat între timp pe site de altcineva. Modificările dvs. există încă în aplicație. Selectați „Salvare ca” pentru a le păstra ca fișier nou.",
+    "siteFileGone": "„{{name}}” nu mai există pe site. Fișierul a fost scos din Recente.",
     "savedViaDownload": "Salvat ca descărcare: „{{name}}” se află acum în folderul de descărcări. Acest mediu nu permite aplicației să scrie direct în locația aleasă.",
     "browserCannotOverwrite": "Acest browser nu permite aplicației să scrie înapoi în „{{name}}”. De aceea aplicația întreabă din nou, la fiecare salvare, unde trebuie pus fișierul. În Chrome, Edge sau aplicația desktop nu se întâmplă acest lucru.",
     "browserSavesAsDownload": "Salvat ca descărcare: „{{name}}” se află în folderul de descărcări. Acest browser nu permite aplicației să scrie într-o locație proprie, deci fiecare salvare creează o nouă descărcare. În Chrome, Edge sau aplicația desktop, Salvare actualizează pur și simplu același fișier.",
@@ -1493,5 +1496,30 @@
     "yes": "Da",
     "no": "Nu",
     "busy": "Pregătire tutoriale…"
+  },
+  "siteFiles": {
+    "openTitle": "Deschidere de pe site",
+    "loading": "Se încarcă fișierele…",
+    "loadFailed": "Fișierele de pe site nu au putut fi încărcate.",
+    "retry": "Reîncercare",
+    "empty": "Nu există încă planificări pe site.",
+    "showVersions": "Afișare versiuni",
+    "hideVersions": "Ascundere versiuni",
+    "open": "Deschidere",
+    "versionsLoading": "Se încarcă versiunile…",
+    "versionsFailed": "Versiunile nu au putut fi încărcate.",
+    "versionsEmpty": "Nu s-au găsit versiuni.",
+    "versionLabel": "Versiunea {{version}}",
+    "versionLatest": "cea mai recentă",
+    "byAuthor": "de {{author}}",
+    "openCopy": "Deschidere ca copie",
+    "copyHint": "O versiune mai veche se deschide ca copie. Salvarea creează apoi un fișier nou; cea mai recentă versiune rămâne neschimbată.",
+    "versionCopyName": "{{name}} (versiunea {{version}})",
+    "fromThisPc": "De pe acest computer…",
+    "saveTitle": "Salvare pe site",
+    "nameLabel": "Nume",
+    "saveHint": "Proiectul ajunge pe site ca fișier IFC nou. Apoi, Salvare (Ctrl+S) salvează acolo o versiune nouă.",
+    "saveToSite": "Salvare pe site",
+    "toThisPc": "Pe acest computer…"
   }
 }
