@@ -329,7 +329,7 @@
     "enableHourPlanningFirst": "Enable hour planning to edit this hour task.",
     "enableHourPlanning": "Enable hour planning",
     "requiresWorkBlocks": "This calendar has no valid working times. Check its working days and times.",
-    "conversionNotExact": "This duration cannot be converted exactly to whole days on the current calendar. The existing unit is retained; enter a new valid value yourself.",
+    "conversionNotExact": "{{value}} does not fit into whole days on this calendar. The unit has not changed.",
     "unitInfo": "The selected unit belongs to this task. Days count working days; hours count working hours within the calendar. A different calendar does not change the unit or entered duration, but it may change the finish date."
   },
   "dialog": {

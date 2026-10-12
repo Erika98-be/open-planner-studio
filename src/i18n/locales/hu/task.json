@@ -329,7 +329,7 @@
     "enableHourPlanningFirst": "Kapcsolja be az óraalapú tervezést, hogy szerkeszthesse ezt az óraalapú tevékenységet.",
     "enableHourPlanning": "Óraalapú tervezés bekapcsolása",
     "requiresWorkBlocks": "Ennek a naptárnak nincsenek érvényes munkaidői. Ellenőrizze a munkanapokat és a munkaidőket.",
-    "conversionNotExact": "Ez az időtartam a jelenlegi naptárral nem alakítható át pontosan egész napokra. A meglévő egység megmarad. Adjon meg maga új, érvényes értéket.",
+    "conversionNotExact": "{{value}} ebben a naptárban nem ad ki egész napokat. Az egység nem változott.",
     "unitInfo": "A kiválasztott mértékegység ehhez a tevékenységhez tartozik. A napok munkanapokat, az órák a naptáron belüli munkaórákat jelentenek. Egy másik naptár nem változtatja meg a mértékegységet vagy a megadott időtartamot, de megváltoztathatja a befejezési dátumot."
   },
   "dialog": {

@@ -3,6 +3,7 @@ import { Info } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Select } from '@/components/common/Select';
 import { HoverTooltip } from '@/components/canvas/HoverTooltip';
+import { StatusBanner } from '@/components/panels/StatusBanner';
 import { useAppStore } from '@/state/appStore';
 import { saveEnableHourPlanning } from '@/utils/settingsStore';
 import { applySetting } from '@/components/settings/applySetting';
@@ -18,6 +19,15 @@ import { isZeroDurationMilestone } from '@/engine/scheduler/duration';
 import type { WorkCalendar } from '@/types/calendar';
 import type { Task, TaskDurationUnit } from '@/types/task';
 
+/** De duur zoals het duurveld hem noemt, bijv. `12h` of `12h 30m`; voor de niet-exactmelding. */
+function durationText(task: Task): string {
+  if (task.time.durationUnit === 'days') return `${task.time.scheduleDuration}d`;
+  const minutes = task.time.durationMinutes ?? 0;
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  return rest === 0 ? `${hours}h` : `${hours}h ${rest}m`;
+}
+
 export function TaskDurationField({ task, calendar, onChange }: {
   task: Task;
   calendar: WorkCalendar;
@@ -29,6 +39,10 @@ export function TaskDurationField({ task, calendar, onChange }: {
   const seed = formatTaskDurationInput(task);
   const [value, setValue] = useState(seed);
   const [message, setMessage] = useState<string | null>(null);
+  // Eigenaar (2026-10-12): een niet-exacte omzetting is een duidelijk gekleurd blok, geen toast en
+  // geen kleine grijze tekst. Het blok verdwijnt bij een andere taak, een nieuwe waarde of een
+  // geslaagde omzetting.
+  const [notExact, setNotExact] = useState<string | null>(null);
   const [infoVisible, setInfoVisible] = useState(false);
   const [infoAnchor, setInfoAnchor] = useState<{ left: number; top: number; width: number } | null>(null);
   const infoButtonRef = useRef<HTMLButtonElement>(null);
@@ -52,6 +66,7 @@ export function TaskDurationField({ task, calendar, onChange }: {
     setValue(seed);
     // Een melding hoort bij precies deze taak en kalender; na een selectie- of kalenderwissel weg.
     setMessage(null);
+    setNotExact(null);
   }, [task.id, seed, calendar]);
 
   const apply = (parsed: ParsedTaskDuration) => {
@@ -67,10 +82,12 @@ export function TaskDurationField({ task, calendar, onChange }: {
     }
     onChange({ time });
     setMessage(null);
+    setNotExact(null);
   };
 
   const commitInput = () => {
     if (derived || hourEditBlocked) return;
+    setNotExact(null);
     const parsed = parseTaskDurationInput(value, task.time.durationUnit);
     if (!parsed) {
       setMessage(t('duration.invalid'));
@@ -87,6 +104,7 @@ export function TaskDurationField({ task, calendar, onChange }: {
 
   const requestUnit = (target: TaskDurationUnit) => {
     if (target === task.time.durationUnit) return;
+    setNotExact(null);
     if (target === 'hours' && !enableHourPlanning) {
       setMessage(t('duration.enableHourPlanningFirst'));
       return;
@@ -99,7 +117,8 @@ export function TaskDurationField({ task, calendar, onChange }: {
     // wijziging (één undo-stap), net als in het taakraster. Niet exact ⇒ melding, eenheid blijft.
     const next = convertTaskDurationUnit(task, target, calendar);
     if (!next) {
-      setMessage(t('duration.conversionNotExact'));
+      setMessage(null);
+      setNotExact(durationText(task));
       return;
     }
     apply(next);
@@ -221,6 +240,11 @@ export function TaskDurationField({ task, calendar, onChange }: {
           {t('duration.enableHourPlanningFirst')}{' '}
           <button type="button" className="underline" onClick={enableHours}>{t('duration.enableHourPlanning')}</button>
         </div>
+      )}
+      {notExact && (
+        <StatusBanner tone="warning" inline bannerProps={{ 'data-ops-duration-not-exact': true }}>
+          <span className="!text-small">{t('duration.conversionNotExact', { value: notExact })}</span>
+        </StatusBanner>
       )}
       {message && (
         <div className="!text-small text-text-secondary" role="status" data-ops-duration-message>

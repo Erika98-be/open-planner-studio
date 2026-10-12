@@ -329,7 +329,7 @@
     "enableHourPlanningFirst": "Ota tuntisuunnittelu käyttöön, jotta tätä tuntitehtävää voi muokata.",
     "enableHourPlanning": "Ota tuntisuunnittelu käyttöön",
     "requiresWorkBlocks": "Tällä kalenterilla ei ole kelvollisia työaikoja. Tarkista työpäivät ja työajat.",
-    "conversionNotExact": "Tätä kestoa ei voi muuntaa tämänhetkisellä kalenterilla tarkasti kokonaisiksi päiviksi. Nykyinen yksikkö säilyy; syötä itse uusi kelvollinen arvo.",
+    "conversionNotExact": "{{value}} ei vastaa kokonaisia päiviä tässä kalenterissa. Mittaa ei muutettu.",
     "unitInfo": "Valittu yksikkö kuuluu tähän tehtävään. Päivät lasketaan työpäivinä; tunnit lasketaan työtunteina kalenterin sisällä. Toinen kalenteri ei muuta yksikköä eikä syötettyä kestoa, mutta se voi muuttaa loppupäivää."
   },
   "dialog": {

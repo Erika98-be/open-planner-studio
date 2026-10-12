@@ -337,7 +337,7 @@
     "enableHourPlanningFirst": "Na úpravu hodinovej úlohy zapnite plánovanie v hodinách.",
     "enableHourPlanning": "Zapnúť plánovanie v hodinách",
     "requiresWorkBlocks": "Tento kalendár nemá platné pracovné časy. Skontrolujte pracovné dni a pracovné časy.",
-    "conversionNotExact": "Toto trvanie sa na aktuálnom kalendári nedá presne previesť na celé dni. Existujúca jednotka sa zachová; zadajte novú platnú hodnotu sami.",
+    "conversionNotExact": "{{value}} v tomto kalendári nevychádza na celé dni. Jednotka sa nezmenila.",
     "unitInfo": "Zvolená jednotka patrí k tejto úlohe. Dni sa počítajú ako pracovné dni; hodiny sa počítajú ako pracovné hodiny v rámci kalendára. Iný kalendár nemení jednotku ani zadané trvanie, ale môže zmeniť dátum dokončenia."
   },
   "dialog": {
