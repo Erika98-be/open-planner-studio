@@ -220,6 +220,11 @@ en noem het in je rapport of PR-tekst.
     daarom op `z-[90]`; een volgende vraag op die route moet hetzelfde doen. Gezien bij #309 met een
     browsertest. — B
 
+102. **Crashherstel gebruikt `crypto.randomUUID` zonder terugval op twee plekken** (`recoveryStore.ts`, het nemen
+    van een nieuwe sessie-id na een bezet tabblad). Die functie bestaat alleen in een veilige context (https of
+    localhost); op een gewoon http-adres gooit hij. Gezien bij #309 in de nep-site op de dev-server via
+    Tailscale (daar hersteld). Productie draait op https; de dev-server via een IP-adres niet. — S
+
 ## Rondleiding, Help en extensie-gidsen
 
 51. **Histogram-tooltip "0 taken dragen bij"** op de startdag van een urentaak: `contributingTaskNames` in

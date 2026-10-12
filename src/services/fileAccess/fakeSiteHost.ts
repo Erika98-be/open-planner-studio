@@ -20,6 +20,7 @@ import {
   type OpenAECHost, type SiteFileInfo, type SiteStorage, type SiteVersionInfo,
 } from './siteHost';
 import { extensionOf } from '@/utils/filePath';
+import { generateId } from '@/utils/id';
 
 const DB = 'ops-fake-site';
 const STORE = 'files';
@@ -59,7 +60,9 @@ function infoOf(file: FakeFile, version = latest(file)): SiteFileInfo {
 }
 
 function newId(): string {
-  return `fake-${crypto.randomUUID()}`;
+  // Geen `crypto.randomUUID`: dat bestaat alleen in een veilige context (https of localhost), en de
+  // dev-server draait ook op een gewoon http-adres (Tailscale).
+  return generateId('fake');
 }
 
 function flag(name: string): boolean {
