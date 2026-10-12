@@ -5,7 +5,6 @@ import {
 import {
   openFileDialogWeb, saveFileDialogWeb, saveBytesDialogWeb, saveToRefWeb, saveToRefWithoutPromptWeb, canWriteToRefWithoutPromptWeb, readFromRefWeb, readBytesFromRefWeb,
 } from './webBackend';
-import { readFromRefSite, readBytesFromRefSite } from './siteBackend';
 import { siteStorageAvailable } from './siteHost';
 
 /** Bestandsfilter (naam + extensies zonder punt), zoals de bestaande dialoog-aanroepen. */
@@ -159,15 +158,15 @@ export function saveToRefWithoutPrompt(ref: FileRef, content: string): Promise<b
   return isTauri() ? saveToRefTauri(ref, content) : saveToRefWithoutPromptWeb(ref, content);
 }
 
-/** Inhoud van een bewaarde ref herlezen. `null` bij fout/geweigerd. Een site-ref leest de nieuwste
- *  versie, zonder basis; recente bestanden van de site heropent de store via `openSiteFile`. */
+/** Inhoud van een bewaarde ref herlezen. `null` bij fout/geweigerd. Een site-ref: altijd `null`; een
+ *  site-bestand heropent de store via `openSiteFile`, dat ook de basisversie en de foutcodes kent. */
 export function readFromRef(ref: FileRef): Promise<string | null> {
-  if (ref.kind === 'site') return readFromRefSite(ref.id);
+  if (ref.kind === 'site') return Promise.resolve(null);
   return isTauri() ? readFromRefTauri(ref) : readFromRefWeb(ref);
 }
 
 /** Bytes van een bewaarde ref herlezen (recents met een binair formaat). `null` bij fout/geweigerd. */
 export function readBytesFromRef(ref: FileRef): Promise<Uint8Array | null> {
-  if (ref.kind === 'site') return readBytesFromRefSite(ref.id);
+  if (ref.kind === 'site') return Promise.resolve(null);
   return isTauri() ? readBytesFromRefTauri(ref) : readBytesFromRefWeb(ref);
 }

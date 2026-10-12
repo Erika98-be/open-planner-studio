@@ -151,24 +151,3 @@ export async function saveSiteFileVersion(
   });
   return checkedSaveAnswer(answer, name, id);
 }
-
-// ── Lezen voor `fileAccess/index.ts` ───────────────────────────────────────────────────────────
-
-/** Lees de nieuwste versie als tekst; `null` bij een fout of zonder opslag. Zonder basis: wie een
- *  site-bestand opent als document, gebruikt `openSiteFile`. */
-export async function readFromRefSite(id: string): Promise<string | null> {
-  try {
-    return await siteDataToText((await requireStorage().open(id)).data);
-  } catch {
-    return null;
-  }
-}
-
-/** Lees de nieuwste versie als bytes; `null` bij een fout of zonder opslag. */
-export async function readBytesFromRefSite(id: string): Promise<Uint8Array | null> {
-  try {
-    return await siteDataToBytes((await requireStorage().open(id)).data);
-  } catch {
-    return null;
-  }
-}

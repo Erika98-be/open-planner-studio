@@ -92,7 +92,8 @@ interface SiteVersionInfo { version: string; modified?: string; author?: string;
 Afspraken:
 
 - De tool kijkt op het moment van gebruik, eerst naar `window.openaecHost`, dan naar `window.parent.openaecHost`
-  (alleen dezelfde origin). Een host zonder de vier functies telt als "geen site". In de desktop-app is er
+  (alleen dezelfde origin). Staan er meer tools op één pagina, zet de host dan per tool op het venster van zijn
+  iframe: een host op de pagina zelf (met `initialFileId` en het ready-event) geldt voor elke tool eronder. Een host zonder de vier functies telt als "geen site". In de desktop-app is er
   nooit een site.
 - Zet de site de host pas na het laden en gebruikt ze `initialFileId`, stuur dan één keer het event
   `openaec-host-ready` op het venster waar de host staat (het eigen venster van de tool, of de pagina eromheen).

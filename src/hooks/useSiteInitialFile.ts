@@ -34,18 +34,27 @@ export function useSiteInitialFile(recoveryResolved: boolean, recovery: Recovery
     };
 
     if (tryOpen()) return;
-    const onReady = () => {
-      if (started.current) return;
-      tryOpen();
-    };
     // Eigen venster en een same-origin parent (een cross-origin parent laat `siteHostWindows` weg).
-    // Het afmelden staat ook in een try: de parent kan intussen weg of van origin gewisseld zijn.
+    // Het afmelden staat in een try: de parent kan intussen weg of van origin gewisseld zijn.
+    // Een luisteraar op de PARENT verdwijnt niet met dit iframe: de pagina van de site leeft door
+    // (Frappe desk is een single-page-app) en zou via de closure deze hele app vasthouden. Daarom
+    // afmelden zodra het startbestand gevonden is, én bij `pagehide` van het eigen venster (iframe weg
+    // of herladen), niet alleen bij de React-cleanup.
     const targets = siteHostWindows();
-    for (const target of targets) target.addEventListener(SITE_HOST_READY_EVENT, onReady);
-    return () => {
+    let attached = true;
+    const detach = () => {
+      if (!attached) return;
+      attached = false;
       for (const target of targets) {
         try { target.removeEventListener(SITE_HOST_READY_EVENT, onReady); } catch { /* parent weg */ }
       }
+      window.removeEventListener('pagehide', detach);
     };
+    const onReady = () => {
+      if (started.current || tryOpen()) detach();
+    };
+    for (const target of targets) target.addEventListener(SITE_HOST_READY_EVENT, onReady);
+    window.addEventListener('pagehide', detach);
+    return detach;
   }, [recoveryResolved, recovery, t]);
 }

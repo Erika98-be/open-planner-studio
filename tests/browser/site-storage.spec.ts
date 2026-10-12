@@ -570,6 +570,53 @@ for (const [label, lateMs] of [['meteen', undefined], ['pas na het laden', 3_000
   });
 }
 
+/** Wacht tot de tool in de (nieuwe) iframe klaar is en sluit het welkomstvenster. */
+async function readyToolFrame(page: Page, previous: Frame | null): Promise<Frame> {
+  await expect.poll(() => page.frames().some((f) => f !== page.mainFrame() && f !== previous && !f.isDetached())).toBe(true);
+  const frame = page.frames().find((f) => f !== page.mainFrame() && f !== previous && !f.isDetached())!;
+  await expect.poll(() => frame.evaluate(() => window.__OPS__ !== undefined).catch(() => false), { timeout: 15_000 }).toBe(true);
+  await frame.locator('[data-ops-welcome-dialog]').waitFor({ state: 'attached', timeout: 15_000 });
+  await frame.evaluate(() => window.__OPS__!.store.getState().setUI({ showWelcomeDialog: false, showTourOverlay: false }));
+  return frame;
+}
+
+test('iframe: geen luisteraar blijft op de parent achter (iframe weg, of startbestand gevonden)', async ({ page }) => {
+  // Een luisteraar op de PARENT verdwijnt niet vanzelf met de iframe: de pagina van de site leeft door
+  // en zou via de closure de hele oude app vasthouden. Tel de luisteraars via het DevTools-protocol.
+  const first = await openToolInIframe(page, {});
+  const cdp = await page.context().newCDPSession(page);
+  const readyListeners = async (): Promise<number> => {
+    const { result } = await cdp.send('Runtime.evaluate', { expression: 'window' });
+    const { listeners } = await cdp.send('DOMDebugger.getEventListeners', { objectId: result.objectId! });
+    return listeners.filter((l) => l.type === 'openaec-host-ready').length;
+  };
+  // Zonder startbestand wacht de tool op het event, ook op de parent.
+  await expect.poll(readyListeners).toBe(1);
+
+  // De site haalt de iframe weg (bijv. navigatie in Frappe desk): de luisteraar moet mee weg.
+  await page.evaluate(() => document.getElementById('tool')!.remove());
+  await expect.poll(readyListeners).toBe(0);
+
+  // Een nieuwe iframe; daarna meldt de site alsnog een startbestand.
+  await page.evaluate(() => {
+    const iframe = document.createElement('iframe');
+    iframe.id = 'tool';
+    iframe.src = '/';
+    iframe.style.cssText = 'border:0;width:100vw;height:100vh';
+    document.body.appendChild(iframe);
+  });
+  const second = await readyToolFrame(page, first);
+  await expect.poll(readyListeners).toBe(1);
+  await page.evaluate(() => {
+    (window as unknown as { openaecHost: { initialFileId?: string } }).openaecHost.initialFileId = 'p1';
+    window.dispatchEvent(new Event('openaec-host-ready'));
+  });
+  await expect.poll(() => doc(second).then((d) => d.siteFileId), { timeout: 20_000 }).toBe('p1');
+  // Gevonden ⇒ afgemeld; precies één `open` van het startbestand.
+  await expect.poll(readyListeners).toBe(0);
+  expect((await hostCalls(page)).filter((c) => c.fn === 'open' && c.id === 'p1')).toHaveLength(1);
+});
+
 for (const [label, lateMs] of [['meteen', undefined], ['pas na het laden', 3_000]] as const) {
   test(`startbestand van de host (${label}) opent als site-bestand`, async ({ page }) => {
     await installSiteHost(page, SEED, { initialFileId: 'p1', lateMs });

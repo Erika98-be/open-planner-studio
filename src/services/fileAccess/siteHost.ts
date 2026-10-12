@@ -14,6 +14,8 @@
  * tool kijkt pas op het moment van gebruik (`getSiteStorage()`), niet één keer bij de start. Draait de
  * tool in een iframe van dezelfde origin, dan mag het object ook op `window.parent` staan. Een
  * cross-origin parent is niet bereikbaar en telt als "geen site".
+ * Toont één pagina meer tools, zet de host dan per tool op het venster van zijn iframe: een host op de
+ * pagina zelf (met `initialFileId` en het ready-event) geldt voor elke tool eronder.
  *
  * Gebruikt de site `initialFileId` en zet ze de host pas ná het laden, dan stuurt ze daarna één keer
  * het event `openaec-host-ready` (zie `SITE_HOST_READY_EVENT`) op het venster waar de host staat: op

@@ -289,9 +289,12 @@ const sameOriginParent = (extra: AnyRecord = {}): AnyRecord => ({ addEventListen
   eq('B3 saveToRefWithoutPrompt(site) ⇒ false (geen AutoSave naar de site)', await saveToRefWithoutPrompt(ref, 'x'), false);
   eq('B3 canWriteToRefWithoutPrompt(site) ⇒ false', await canWriteToRefWithoutPrompt(ref), false);
   eq('B3 geen enkele save-aanroep', site.saves().length, 0);
-  eq('B4 readFromRef(site) leest de nieuwste versie als tekst', await readFromRef(ref), 'twee');
-  eq('B4 leest via open(id) zonder versie', site.calls.at(-1), { fn: 'open', args: ['f1', undefined] });
-  eq('B5 readBytesFromRef(site) ⇒ bytes', [...(await readBytesFromRef(ref))!], [...new TextEncoder().encode('twee')]);
+  // Een site-bestand heropent de store via `openSiteFile` (basisversie, foutcodes); de algemene
+  // leesfuncties lezen een site-ref nooit, net zoals `saveToRef` er nooit naar schrijft.
+  const callsBefore = site.calls.length;
+  eq('B4 readFromRef(site) ⇒ null', await readFromRef(ref), null);
+  eq('B5 readBytesFromRef(site) ⇒ null', await readBytesFromRef(ref), null);
+  eq('B4/B5 roepen de site niet aan', site.calls.length, callsBefore);
   // Een handle-ref blijft bij de webbackend (die leest via getFile).
   const handle = {
     kind: 'file', name: 'h.ifc', isSameEntry: async () => false,
