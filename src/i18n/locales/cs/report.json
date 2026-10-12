@@ -60,7 +60,7 @@
     "milestone": "Milník",
     "summary": "Souhrnný úkol",
     "float": "Časová rezerva",
-    "completion": "Procento dokončení",
+    "completion": "Dokončeno",
     "relationStyle": "Hnací vazba / nehnací",
     "categoriesMore_one": "… a ještě {{count}} kategorie",
     "categoriesMore_few": "… a ještě {{count}} kategorie",

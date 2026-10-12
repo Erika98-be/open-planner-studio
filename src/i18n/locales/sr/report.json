@@ -58,7 +58,7 @@
     "milestone": "Контролна тачка",
     "summary": "Збирни задатак",
     "float": "Временска резерва",
-    "completion": "Завршеност",
+    "completion": "Завршено",
     "relationStyle": "Одлучујућа / неодлучујућа",
     "categoriesMore_one": "… и још {{count}} категорија",
     "categoriesMore_few": "… и још {{count}} категорије",

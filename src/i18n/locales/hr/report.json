@@ -58,7 +58,7 @@
     "milestone": "Kontrolna točka",
     "summary": "Zadatak sažetka",
     "float": "Vremenska rezerva",
-    "completion": "Dovršenost",
+    "completion": "Dovršeno",
     "relationStyle": "Odlučujuća / neodlučujuća ovisnost",
     "categoriesMore_one": "… i još {{count}} kategorija",
     "categoriesMore_few": "… i još {{count}} kategorije",

@@ -56,7 +56,7 @@
     "milestone": "Milepæl",
     "summary": "Hovedaktivitet",
     "float": "Slakk",
-    "completion": "Fullføringsgrad",
+    "completion": "Fullført",
     "relationStyle": "Styrende / ikke-styrende",
     "categoriesMore_one": "… og {{count}} kategori til",
     "categoriesMore_other": "… og {{count}} kategorier til"

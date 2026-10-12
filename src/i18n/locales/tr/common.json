@@ -7,7 +7,7 @@
     "noFile": "Otomatik kaydetmeyi kullanmak için önce bu projeyi kaydedin.",
     "onHint": "Otomatik kaydet açık: değişiklikler bu dosyaya yazılır.",
     "offHint": "Otomatik kaydet kapalı. Çökme kurtarma etkin kalır.",
-    "siteDisabled": "Sitede Kaydet (Ctrl+S) yeni bir sürüm kaydeder. Otomatik kaydet burada kapalı; çökme kurtarma etkin kalır."
+    "siteDisabled": "Sitede Kaydet (Ctrl+S) yeni bir sürüm kaydeder. Otomatik kaydet burada kapalıdır; çökme kurtarma etkin kalır."
   },
   "notifications": {
     "dismiss": "Bildirimi kapat",
@@ -69,7 +69,7 @@
     "mppLegacy": "Bu .mpp dosyası eski bir biçim kullanıyor (Project 2007 veya daha eski). MS Project'te XML olarak dışa aktarın (Dosya → Farklı Kaydet → XML) ve o dosyayı açın.",
     "mppEncrypted": "Bu .mpp dosyası parola ile korunuyor. MS Project'te XML olarak dışa aktarın (Dosya → Farklı Kaydet → XML) ve o dosyayı açın.",
     "saveFailed": "Kaydetme başarısız",
-    "siteSaveConflict": "Kaydedilmedi: '{{name}}' bu arada sitede başka biri tarafından değiştirildi. Değişiklikleriniz hâlâ uygulamada. Yeni bir dosya olarak saklamak için Farklı kaydet'i seçin.",
+    "siteSaveConflict": "Kaydedilmedi: '{{name}}' bu arada sitede başka biri tarafından değiştirildi. Değişiklikleriniz hâlâ uygulamada. Yeni bir dosya olarak saklamak için Farklı kaydet komutunu kullanın.",
     "siteFileGone": "'{{name}}' artık sitede yok. Dosya Son açılanlar listesinden kaldırıldı.",
     "savedViaDownload": "İndirme olarak kaydedildi: '{{name}}' artık indirmeler klasörünüzde. Bu ortam uygulamanın seçtiğiniz konuma doğrudan yazmasına izin vermiyor.",
     "browserCannotOverwrite": "Bu tarayıcı, uygulamanın '{{name}}' dosyasına geri yazmasına izin vermiyor. Bu yüzden uygulama her kaydetmede dosyanın nereye kaydedileceğini yeniden sorar. Chrome, Edge veya masaüstü uygulamasında bu olmaz.",
@@ -1452,7 +1452,7 @@
     "loading": "Dosyalar yükleniyor…",
     "loadFailed": "Sitedeki dosyalar yüklenemedi.",
     "retry": "Yeniden dene",
-    "empty": "Sitede henüz plan yok.",
+    "empty": "Sitede henüz planlama yok.",
     "showVersions": "Sürümleri göster",
     "hideVersions": "Sürümleri gizle",
     "open": "Aç",
@@ -1463,12 +1463,12 @@
     "versionLatest": "en yeni",
     "byAuthor": "{{author}} tarafından",
     "openCopy": "Kopya olarak aç",
-    "copyHint": "Eski bir sürüm kopya olarak açılır. Kaydetmek yeni bir dosya oluşturur; en yeni sürüm değişmez.",
+    "copyHint": "Eski bir sürüm kopya olarak açılır. Kaydet yeni bir dosya oluşturur; en yeni sürüm değişmez.",
     "versionCopyName": "{{name}} (sürüm {{version}})",
     "fromThisPc": "Bu bilgisayardan…",
     "saveTitle": "Siteye kaydet",
     "nameLabel": "Ad",
-    "saveHint": "Proje sitede yeni bir IFC dosyası olarak kaydedilir. Ardından Kaydet (Ctrl+S) orada yeni bir sürüm kaydeder.",
+    "saveHint": "Proje sitede yeni bir IFC dosyası olarak kaydedilir. Daha sonra Kaydet (Ctrl+S) orada yeni bir sürüm kaydeder.",
     "saveToSite": "Siteye kaydet",
     "toThisPc": "Bu bilgisayara…"
   }

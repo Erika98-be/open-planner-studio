@@ -60,7 +60,7 @@
     "milestone": "Веха",
     "summary": "Суммарная задача",
     "float": "Резерв времени",
-    "completion": "Процент завершения",
+    "completion": "Завершено",
     "relationStyle": "Определяющая / неопределяющая связь",
     "categoriesMore_one": "… и еще {{count}} категория",
     "categoriesMore_few": "… и еще {{count}} категории",

@@ -85,7 +85,7 @@
     "mppLegacy": "Este archivo .mpp usa un formato antiguo (Project 2007 o anterior). Expórtalo en MS Project como XML (Archivo → Guardar como → XML) y abre ese archivo.",
     "mppEncrypted": "Este archivo .mpp está protegido con contraseña. Expórtalo en MS Project como XML (Archivo → Guardar como → XML) y abre ese archivo.",
     "saveFailed": "No se pudo guardar",
-    "siteSaveConflict": "No guardado: '{{name}}' fue modificado en el sitio por otra persona mientras tanto. Tus cambios siguen en la aplicación. Elige Guardar como para conservarlos como un archivo nuevo.",
+    "siteSaveConflict": "No guardado: '{{name}}' fue modificado en el sitio por otra persona mientras tanto. Sus cambios siguen en la aplicación. Elija Guardar como para conservarlos como un archivo nuevo.",
     "siteFileGone": "'{{name}}' ya no está en el sitio. El archivo se ha quitado de Recientes.",
     "savedViaDownload": "Guardado como descarga: '{{name}}' está ahora en tu carpeta de descargas. Este entorno no permite que la aplicación escriba directamente en la ubicación elegida.",
     "browserCannotOverwrite": "Este navegador no permite que la aplicación vuelva a escribir en «{{name}}». Por eso la aplicación pregunta de nuevo dónde guardar el archivo cada vez que guardas. Esto no ocurre en Chrome, Edge ni en la aplicación de escritorio.",

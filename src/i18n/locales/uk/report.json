@@ -60,7 +60,7 @@
     "milestone": "Віха",
     "summary": "Зведене завдання",
     "float": "Резерв часу",
-    "completion": "Відсоток виконання",
+    "completion": "Завершено",
     "relationStyle": "Визначальна / невизначальна залежність",
     "categoriesMore_one": "… і ще {{count}} категорія",
     "categoriesMore_few": "… і ще {{count}} категорії",

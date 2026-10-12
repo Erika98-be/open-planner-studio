@@ -56,7 +56,7 @@
     "milestone": "Контролна точка",
     "summary": "Обобщаваща задача",
     "float": "Резерв",
-    "completion": "Завършеност",
+    "completion": "Завършено",
     "relationStyle": "Определяща / неопределяща връзка",
     "categoriesMore_one": "… и още {{count}} категория",
     "categoriesMore_other": "… и още {{count}} категории"

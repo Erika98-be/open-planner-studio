@@ -60,7 +60,7 @@
     "milestone": "Medzník",
     "summary": "Súhrnná úloha",
     "float": "Časová rezerva",
-    "completion": "Percento dokončenia",
+    "completion": "Dokončené",
     "relationStyle": "Určujúca / neurčujúca závislosť",
     "categoriesMore_one": "… a ešte {{count}} kategória",
     "categoriesMore_few": "… a ešte {{count}} kategórie",

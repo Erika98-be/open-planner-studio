@@ -56,7 +56,7 @@
     "milestone": "Välitavoite",
     "summary": "Yhteenvetotehtävä",
     "float": "Pelivara",
-    "completion": "Valmiusaste",
+    "completion": "Valmis",
     "relationStyle": "Ohjaava riippuvuus / ei-ohjaava",
     "categoriesMore_one": "… ja {{count}} luokka lisää",
     "categoriesMore_other": "… ja {{count}} luokkaa lisää"

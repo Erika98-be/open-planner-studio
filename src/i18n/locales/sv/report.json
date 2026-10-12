@@ -56,7 +56,7 @@
     "milestone": "Milstolpe",
     "summary": "Sammanfattningsuppgift",
     "float": "Slack",
-    "completion": "Slutförandegrad",
+    "completion": "Slutförd",
     "relationStyle": "Drivande samband / övriga",
     "categoriesMore_one": "… och {{count}} kategori till",
     "categoriesMore_other": "… och {{count}} kategorier till"

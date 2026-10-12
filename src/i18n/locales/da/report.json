@@ -56,7 +56,7 @@
     "milestone": "Milepæl",
     "summary": "Hovedopgave",
     "float": "Slæk",
-    "completion": "Færdiggørelsesgrad",
+    "completion": "Afsluttet",
     "relationStyle": "Bestemmende afhængighed / ikke-bestemmende",
     "categoriesMore_one": "… og {{count}} kategori mere",
     "categoriesMore_other": "… og {{count}} kategorier mere"

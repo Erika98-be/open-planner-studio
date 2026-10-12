@@ -58,7 +58,7 @@
     "milestone": "Jalon",
     "summary": "Activitate rezumat",
     "float": "Marjă",
-    "completion": "Procent de finalizare",
+    "completion": "Finalizat",
     "relationStyle": "Legătură determinantă / nedeterminantă",
     "categoriesMore_one": "… și încă {{count}} categorie",
     "categoriesMore_few": "… și încă {{count}} categorii",

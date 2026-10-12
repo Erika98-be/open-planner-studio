@@ -1402,7 +1402,7 @@
     "loading": "파일을 불러오는 중…",
     "loadFailed": "사이트의 파일을 불러올 수 없습니다.",
     "retry": "다시 시도",
-    "empty": "사이트에 아직 일정표가 없습니다.",
+    "empty": "사이트에 아직 일정이 없습니다.",
     "showVersions": "버전 보기",
     "hideVersions": "버전 숨기기",
     "open": "열기",

@@ -56,7 +56,7 @@
     "milestone": "Mérföldkő",
     "summary": "Összefoglaló tevékenység",
     "float": "Tartalékidő",
-    "completion": "Elkészültség",
+    "completion": "Befejezett",
     "relationStyle": "Meghatározó / nem meghatározó kapcsolat",
     "categoriesMore_one": "… és {{count}} további kategória",
     "categoriesMore_other": "… és még {{count}} kategória"
