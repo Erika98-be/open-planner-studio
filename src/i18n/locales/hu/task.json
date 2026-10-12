@@ -330,9 +330,6 @@
     "enableHourPlanning": "Óraalapú tervezés bekapcsolása",
     "requiresWorkBlocks": "Ennek a naptárnak nincsenek érvényes munkaidői. Ellenőrizze a munkanapokat és a munkaidőket.",
     "conversionNotExact": "Ez az időtartam a jelenlegi naptárral nem alakítható át pontosan egész napokra. A meglévő egység megmarad. Adjon meg maga új, érvényes értéket.",
-    "conversionProposal": "Pontos átszámítási javaslat: {{value}}. Alkalmazza ezt a javaslatot, vagy tartsa meg a jelenlegi mértékegységet.",
-    "applyProposal": "Javaslat alkalmazása",
-    "keepCurrent": "Megtartás",
     "unitInfo": "A kiválasztott mértékegység ehhez a tevékenységhez tartozik. A napok munkanapokat, az órák a naptáron belüli munkaórákat jelentenek. Egy másik naptár nem változtatja meg a mértékegységet vagy a megadott időtartamot, de megváltoztathatja a befejezési dátumot."
   },
   "dialog": {

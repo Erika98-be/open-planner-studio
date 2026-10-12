@@ -330,9 +330,6 @@
     "enableHourPlanning": "Slå på timeplanlegging",
     "requiresWorkBlocks": "Denne kalenderen har ingen gyldige arbeidstider. Kontroller arbeidsdagene og arbeidstidene.",
     "conversionNotExact": "Denne varigheten kan ikke regnes nøyaktig om til hele dager i den gjeldende kalenderen. Den eksisterende enheten beholdes; skriv inn en ny gyldig verdi selv.",
-    "conversionProposal": "Eksakt konverteringsforslag: {{value}}. Bruk forslaget, eller behold gjeldende enhet.",
-    "applyProposal": "Bruk forslaget",
-    "keepCurrent": "Behold",
     "unitInfo": "Den valgte enheten gjelder for denne aktiviteten. Dager teller arbeidsdager. Timer teller arbeidstimer i kalenderen. En annen kalender endrer ikke enheten eller den angitte varigheten, men den kan endre sluttdatoen."
   },
   "dialog": {

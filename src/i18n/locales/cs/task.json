@@ -338,9 +338,6 @@
     "enableHourPlanning": "Zapnout plánování v hodinách",
     "requiresWorkBlocks": "Tento kalendář nemá platné pracovní hodiny. Zkontrolujte pracovní dny a pracovní hodiny.",
     "conversionNotExact": "Tuto dobu trvání nelze v aktuálním kalendáři přesně převést na celé dny. Stávající jednotka se zachová; zadejte novou platnou hodnotu sami.",
-    "conversionProposal": "Přesný návrh převodu: {{value}}. Použijte tento návrh, nebo ponechte stávající jednotku.",
-    "applyProposal": "Použít návrh",
-    "keepCurrent": "Ponechat",
     "unitInfo": "Zvolená jednotka patří k tomuto úkolu. Dny se počítají jako pracovní dny; hodiny se počítají jako pracovní hodiny v rámci kalendáře. Jiný kalendář nezmění jednotku ani zadanou dobu trvání, ale může změnit datum dokončení."
   },
   "dialog": {

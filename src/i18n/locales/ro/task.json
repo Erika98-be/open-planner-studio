@@ -334,9 +334,6 @@
     "enableHourPlanning": "Activare planificare pe ore",
     "requiresWorkBlocks": "Acest calendar nu are ore de lucru valide. Verificați zilele lucrătoare și orele de lucru.",
     "conversionNotExact": "Această durată nu poate fi convertită exact în zile întregi în calendarul curent. Unitatea existentă rămâne; introduceți o nouă valoare validă.",
-    "conversionProposal": "Propunere de conversie exactă: {{value}}. Aplicați propunerea sau păstrați unitatea curentă.",
-    "applyProposal": "Aplicare propunere",
-    "keepCurrent": "Păstrare",
     "unitInfo": "Unitatea aleasă aparține acestei activități. Zilele numără zile lucrătoare; orele numără ore de lucru din calendar. Un alt calendar nu modifică unitatea sau durata introdusă, dar poate modifica data de sfârșit."
   },
   "dialog": {
