@@ -36,7 +36,7 @@ Um dia é igual às horas líquidas por dia do calendário da tarefa. A aplicaç
 
 - Para a *Exibição da duração*. Em *Definições › Projeto › Definições*, no separador *Aparência*, escolhe *Automática (unidade própria por tarefa)*, *Sempre dias* ou *Sempre horas*. Uma tarefa de 18 horas aparece em *Sempre dias* como `2.25d(18h)`: a unidade própria fica entre parênteses.
 - Para um desfasamento em horas depois de uma tarefa em dias (veja *Arredondamento*).
-- Ao alterar a unidade de uma tarefa. A aplicação conta então os dias a partir do início da tarefa, cada dia com as suas próprias horas, e só faz uma proposta se o resultado for exato. Dois dias passam a `16h`. Num calendário em que a sexta-feira tem 5 horas, 5 dias a partir de segunda-feira passam a `37h`. Doze horas não podem ser convertidas em dias completos num calendário com dias de 8 horas: a aplicação deixa então a unidade como está.
+- Ao alterar a unidade de uma tarefa. A aplicação conta então os dias a partir do início da tarefa, cada dia com as suas próprias horas, e converte a duração de imediato se o resultado for exato. Dois dias passam a `16h`. Num calendário em que a sexta-feira tem 5 horas, 5 dias a partir de segunda-feira passam a `37h`. Doze horas não podem ser convertidas em dias completos num calendário com dias de 8 horas: a aplicação deixa então a unidade como está.
 
 ### Tarefas em dias e tarefas horárias juntas
 

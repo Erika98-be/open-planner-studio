@@ -333,10 +333,7 @@
     "enableHourPlanningFirst": "Uključite planiranje u satima da biste uredili ovaj zadatak u satima.",
     "enableHourPlanning": "Uključi planiranje u satima",
     "requiresWorkBlocks": "Ovaj kalendar nema ispravna radna vremena. Provjerite radne dane i radno vrijeme.",
-    "conversionNotExact": "Ovo trajanje na trenutačnom kalendaru ne može se točno pretvoriti u cijele dane. Postojeća jedinica ostaje. Unesite sami novu ispravnu vrijednost.",
-    "conversionProposal": "Točan prijedlog pretvorbe: {{value}}. Primijenite prijedlog ili zadržite trenutačnu jedinicu.",
-    "applyProposal": "Primijeni prijedlog",
-    "keepCurrent": "Zadrži",
+    "conversionNotExact": "{{value}} ne odgovara cijelim danima u ovom kalendaru. Jedinica nije promijenjena.",
     "unitInfo": "Odabrana jedinica pripada ovom zadatku. Dani se broje kao radni dani, a sati kao radni sati unutar kalendara. Drugi kalendar ne mijenja jedinicu ni uneseno trajanje, ali može promijeniti datum završetka."
   },
   "dialog": {

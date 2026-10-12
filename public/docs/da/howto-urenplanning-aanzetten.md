@@ -20,7 +20,7 @@ Det ændrer mere end varigheden af en opgave: under *Visning › Tidsskala* kan 
 
 1. Vælg opgaven, og se i panelet *Egenskaber* under *Tid* på feltet *Varighed*.
 2. Skriv varigheden med en enhed, og tryk på Enter: `12h` (`12u`, den nederlandske forkortelse, virker også) for tolv timer, `1h 30m` for halvanden time. `1.5h` virker også. Et tal uden enhed tæller i den enhed, opgaven allerede har.
-3. Vil du omregne en eksisterende opgave, vælger du enheden *Timer* under *Varighedsenhed*. Appen regner varigheden ud for dig og foreslår den, for eksempel *Præcist konverteringsforslag: 16h. Anvend forslaget, eller behold den nuværende enhed.* Vælg *Anvend forslag* eller *Behold*.
+3. Vil du omregne en eksisterende opgave, vælger du enheden *Timer* under *Varighedsenhed*. Appen omregner varigheden med det samme, for eksempel fra `2` dage til `16` timer. Vil du tilbage, så brug *Fortryd*.
 4. Du kan gå tilbage til dage med `2d` eller med enheden *Dage*.
 5. Tryk på **Beregn** (F5), for eksempel via *Start › Tidsplan › Beregn*. Opgaven har nu en start og en slutdato med et klokkeslæt.
 6. Vil du se timerne i Gantt-diagrammet, så vælg skalaen *Time* i listen under *Visning › Tidsskala*.

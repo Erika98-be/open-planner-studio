@@ -20,7 +20,7 @@ To zmienia więcej niż czas trwania zadania: w *Widok › Skala czasu* możesz 
 
 1. Wybierz zadanie i spójrz w panel *Właściwości*, pod *Czas*, na pole *Czas trwania*.
 2. Wpisz czas trwania z jednostką i naciśnij Enter: `12h` (`12u`, niderlandzki skrót, też działa) to dwanaście godzin, `1h 30m` to półtorej godziny. `1.5h` też jest poprawne. Liczba bez jednostki liczy się w jednostce, którą zadanie już ma.
-3. Jeśli chcesz istniejące zadanie przeliczyć, wybierz jednostkę *Godziny* pod *Jednostka czasu trwania*. Aplikacja sama wylicza czas trwania i go proponuje, na przykład komunikatem *Dokładna propozycja przeliczenia: 16h. Zastosuj ją lub zachowaj bieżącą jednostkę.* Wybierz *Zastosuj propozycję* albo *Zachowaj*.
+3. Jeśli chcesz istniejące zadanie przeliczyć, wybierz jednostkę *Godziny* pod *Jednostka czasu trwania*. Aplikacja od razu przelicza czas trwania, na przykład z `2` dni na `16` godzin. Aby wrócić, użyj *Cofnij*.
 4. Powrót do dni jest możliwy z `2d` albo z jednostką *Dni*.
 5. Naciśnij **Oblicz** (F5), na przykład przez *Start › Harmonogram › Oblicz*. Zadanie ma teraz początek i zakończenie o konkretnej godzinie.
 6. Gdy chcesz zobaczyć godziny w Gantt, wybierz skalę *Godzina* na liście pod *Widok › Skala czasu*.

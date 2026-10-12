@@ -20,7 +20,7 @@ Această setare schimbă mai mult decât durata unei activități: sub *Vizualiz
 
 1. Selectați activitatea și uitați-vă în panoul *Proprietăți*, sub *Timp*, la câmpul *Durată*.
 2. Introduceți durata cu o unitate și apăsați Enter: `12h` (`12u`, abrevierea olandeză, funcționează și ea) pentru douăsprezece ore, `1h 30m` pentru o oră și jumătate. Și `1.5h` este corect. Un număr fără unitate se numără în unitatea pe care o are deja activitatea.
-3. Dacă doriți să convertiți o activitate existentă, alegeți unitatea *Ore* sub *Unitate de durată*. Aplicația calculează durata și o propune, de exemplu *Propunere de conversie exactă: 16h. Aplicați propunerea sau păstrați unitatea curentă.* Alegeți *Aplicare propunere* sau *Păstrare*.
+3. Dacă doriți să convertiți o activitate existentă, alegeți unitatea *Ore* sub *Unitate de durată*. Aplicația convertește durata imediat, de exemplu din `2` zile în `16` ore. Pentru a reveni, folosiți *Anulare*.
 4. Trecerea înapoi la zile este posibilă cu `2d` sau cu unitatea *Zile*.
 5. Apăsați **Calculare** (F5), de exemplu prin *Acasă › Planificare › Calculare*. Activitatea primește acum o oră de început și una de sfârșit.
 6. Dacă doriți să vedeți orele în Gantt, alegeți scara *Oră* din lista de sub *Vizualizare › Scară de timp*.

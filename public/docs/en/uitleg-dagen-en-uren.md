@@ -36,7 +36,7 @@ A day is the net hours per day of the task's calendar. The app uses that in thre
 
 - For *Duration display*. Under *Settings › Project › Settings*, tab *Appearance*, you choose *Automatic (native unit per task)*, *Always days* or *Always hours*. A task of 18 hours shows under *Always days* as `2.25d(18h)`: the native unit stays in brackets.
 - For a lag in hours after a day task (see *Rounding*).
-- When you switch the unit of a task. The app then counts the days from the start of the task, each day with its own hours, and only makes a proposal if the outcome is exact. Two days become `16h`. On a calendar where Friday has 5 hours, 5 days from Monday become `37h`. Twelve hours cannot be turned into whole days on a calendar with days of 8 hours: the app then leaves the unit as it is.
+- When you switch the unit of a task. The app then counts the days from the start of the task, each day with its own hours, and converts the duration immediately if the outcome is exact. Two days become `16h`. On a calendar where Friday has 5 hours, 5 days from Monday become `37h`. Twelve hours cannot be turned into whole days on a calendar with days of 8 hours: the app then leaves the unit as it is.
 
 ### Day tasks and hour tasks together
 

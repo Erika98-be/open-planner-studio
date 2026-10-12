@@ -268,8 +268,9 @@ test('scalaire standaardkalender converteert naar uren met middagpauze; ongeldig
   const duration = page.locator('[data-ops-task-duration]').first();
   await duration.getByRole('button', { name: /^(Duration unit|Duureenheid)$/ }).click();
   await page.getByRole('option', { name: /^(Hours|Uren)$/ }).click();
-  await expect(duration.locator('[data-ops-duration-message]')).toContainText(/16h/i);
-  await duration.getByRole('button', { name: /^(Apply proposal|Voorstel toepassen)$/ }).click();
+  // De keuze geldt meteen: geen voorstel om doorheen te klikken.
+  await expect(duration.locator('[data-ops-duration-value]')).toHaveValue('16');
+  await expect(duration.locator('[data-ops-duration-message]')).toBeHidden();
   await duration.locator('[data-ops-duration-value]').fill('12h');
   await duration.locator('[data-ops-duration-value]').blur();
   await expect.poll(() => page.evaluate((id) => {
@@ -308,26 +309,109 @@ test('scalaire standaardkalender converteert naar uren met middagpauze; ongeldig
   await expect(hourDuration.locator('[data-ops-duration-value]')).toBeEnabled();
   await hourDuration.getByRole('button', { name: /^(Duration unit|Duureenheid)$/ }).click();
   await page.getByRole('option', { name: /^(Days|Dagen)$/ }).click();
-  await expect(hourDuration.locator('[data-ops-duration-message]')).toContainText(/(cannot be converted exactly|niet exact)/i);
+  await expect(hourDuration.locator('[data-ops-duration-not-exact]')).toContainText(/(whole days|hele dagen)/i);
   await expect.poll(() => page.evaluate((id) => {
     const task = window.__OPS__!.store.getState().tasks.find(candidate => candidate.id === id)!;
     return { unit: task.time.durationUnit, minutes: task.time.durationMinutes };
   }, hourTaskId)).toEqual({ unit: 'hours', minutes: 720 });
 });
 
-test('een conversievoorstel lekt niet naar een andere geselecteerde taak', async ({ page, ops: _ops }) => {
-  await seedDurationTask(page, 'hours', 16);
+test('eenheid kiezen zet een exacte duur meteen om en undo zet het in één stap terug', async ({ page, ops: _ops }) => {
+  const taskId = await seedDurationTask(page, 'hours', 16);
+  const readTime = () => page.evaluate((id) => {
+    const task = window.__OPS__!.store.getState().tasks.find(candidate => candidate.id === id)!;
+    return { unit: task.time.durationUnit, days: task.time.scheduleDuration, minutes: task.time.durationMinutes ?? null };
+  }, taskId);
+  const historyLength = () => page.evaluate(() => window.__OPS__!.store.getState().historyEvents.length);
+  const historyBefore = await historyLength();
   const duration = page.locator('[data-ops-task-duration]').first();
   await duration.getByRole('button', { name: /^(Duration unit|Duureenheid)$/ }).click();
   await page.getByRole('option', { name: /^(Days|Dagen)$/ }).click();
-  await expect(duration.locator('[data-ops-duration-message]')).toContainText(/(2d)/i);
-  await expect(duration.getByRole('button', { name: /^(Apply proposal|Voorstel toepassen)$/ })).toBeVisible();
 
+  await expect.poll(readTime).toEqual({ unit: 'days', days: 2, minutes: null });
+  // Eén keuze is precies één geschiedenisstap: eenheid en duur landen samen.
+  expect(await historyLength()).toBe(historyBefore + 1);
+  await expect(duration.locator('[data-ops-duration-value]')).toHaveValue('2');
+  await expect(duration.getByRole('button', { name: /^(Duration unit|Duureenheid)$/ })).toContainText(/^(Days|Dagen)$/);
+  await expect(duration.locator('[data-ops-duration-message]')).toBeHidden();
+  await expect(duration.getByRole('button', { name: /(proposal|voorstel|Retain|Behouden)/i })).toHaveCount(0);
+
+  // Eén undo-stap zet eenheid én duur samen terug; een tussenstand (alleen eenheid) mag niet bestaan.
+  await page.keyboard.press('ControlOrMeta+z');
+  await expect.poll(readTime).toEqual({ unit: 'hours', days: 2, minutes: 960 });
+  await expect(duration.locator('[data-ops-duration-value]')).toHaveValue('16');
+
+  // De taakdialoog deelt hetzelfde veld en gedraagt zich gelijk: keuze ⇒ meteen omgezet in het concept.
+  await openDialog(page, taskId);
+  const dialogDuration = page.getByRole('dialog').locator('[data-ops-task-duration]');
+  await dialogDuration.getByRole('button', { name: /^(Duration unit|Duureenheid)$/ }).click();
+  await page.getByRole('option', { name: /^(Days|Dagen)$/ }).click();
+  await expect(dialogDuration.locator('[data-ops-duration-value]')).toHaveValue('2');
+  await expect(dialogDuration.getByRole('button', { name: /^(Duration unit|Duureenheid)$/ })).toContainText(/^(Days|Dagen)$/);
+  await expect(dialogDuration.locator('[data-ops-duration-message]')).toBeHidden();
+});
+
+test('niet exact: duidelijk waarschuwingsblok, eenheid blijft, geen toast; blok verdwijnt bij nieuwe waarde en andere taak', async ({ page, ops: _ops }) => {
+  const hourTaskId = await seedDurationTask(page, 'hours', 12);
+  const notificationCount = () => page.evaluate(() => window.__OPS__!.store.getState().ui.notifications.length);
+  const notificationsBefore = await notificationCount();
+  const duration = page.locator('[data-ops-task-duration]').first();
+  await duration.getByRole('button', { name: /^(Duration unit|Duureenheid)$/ }).click();
+  await page.getByRole('option', { name: /^(Days|Dagen)$/ }).click();
+
+  const block = duration.locator('[data-ops-duration-not-exact]');
+  await expect(block).toBeVisible();
+  await expect(block).toHaveAttribute('role', 'alert');
+  await expect(block).toContainText('12h');
+  await expect(block).toContainText(/(whole days|hele dagen)/i);
+  // Waarschuwingskleur uit de --warning-token, geen grijze bijschrifttekst.
+  const colors = await block.evaluate((el) => {
+    const css = getComputedStyle(el);
+    const probe = document.createElement('span');
+    probe.style.color = 'var(--theme-warning-text)';
+    document.body.appendChild(probe);
+    const warning = getComputedStyle(probe).color;
+    probe.remove();
+    return { text: css.color, warning, border: css.borderTopColor, borderWidth: css.borderTopWidth };
+  });
+  expect(colors.text).toBe(colors.warning);
+  expect(colors.borderWidth).not.toBe('0px');
+  await expect(duration.locator('[data-ops-duration-message]')).toHaveCount(0);
+  await expect.poll(() => page.evaluate((id) => {
+    const task = window.__OPS__!.store.getState().tasks.find(candidate => candidate.id === id)!;
+    return { unit: task.time.durationUnit, minutes: task.time.durationMinutes };
+  }, hourTaskId)).toEqual({ unit: 'hours', minutes: 720 });
+  await expect(duration.getByRole('button', { name: /^(Duration unit|Duureenheid)$/ })).toContainText(/^(Hours|Uren)$/);
+  // Geen toast: de store krijgt geen melding en er staat geen toast in beeld.
+  expect(await notificationCount()).toBe(notificationsBefore);
+  await expect(page.locator('.ops-toast')).toHaveCount(0);
+
+  // Een nieuwe waarde haalt het blok weg.
+  await duration.locator('[data-ops-duration-value]').fill('16h');
+  await duration.locator('[data-ops-duration-value]').blur();
+  await expect(block).toHaveCount(0);
+
+  // Opnieuw niet exact, daarna een andere taak: het blok lekt niet mee.
+  await duration.locator('[data-ops-duration-value]').fill('12h');
+  await duration.locator('[data-ops-duration-value]').blur();
+  await duration.getByRole('button', { name: /^(Duration unit|Duureenheid)$/ }).click();
+  await page.getByRole('option', { name: /^(Days|Dagen)$/ }).click();
+  await expect(block).toBeVisible();
   const nextTaskId = await seedDurationTask(page, 'hours', 24);
   await expect(duration.locator('[data-ops-duration-value]')).toHaveValue('24');
-  await expect(duration.locator('[data-ops-duration-message]')).toBeHidden();
+  await expect(block).toHaveCount(0);
   await expect.poll(() => page.evaluate((id) => {
     const task = window.__OPS__!.store.getState().tasks.find(candidate => candidate.id === id)!;
     return { unit: task.time.durationUnit, minutes: task.time.durationMinutes };
   }, nextTaskId)).toEqual({ unit: 'hours', minutes: 1440 });
+
+  // De taakdialoog toont hetzelfde blok.
+  const dialogTaskId = await seedDurationTask(page, 'hours', 12);
+  await openDialog(page, dialogTaskId);
+  const dialogDuration = page.getByRole('dialog').locator('[data-ops-task-duration]');
+  await dialogDuration.getByRole('button', { name: /^(Duration unit|Duureenheid)$/ }).click();
+  await page.getByRole('option', { name: /^(Days|Dagen)$/ }).click();
+  await expect(dialogDuration.locator('[data-ops-duration-not-exact]')).toContainText('12h');
+  await expect(dialogDuration.locator('[data-ops-duration-value]')).toHaveValue('12');
+  expect(await notificationCount()).toBe(notificationsBefore);
 });

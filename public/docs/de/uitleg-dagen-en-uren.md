@@ -36,7 +36,7 @@ Ein Tag entspricht den Nettostunden pro Tag im Kalender des Vorgangs. Die App ve
 
 - Für die *Daueranzeige*. Unter *Einstellungen › Projekt › Einstellungen*, auf der Registerkarte *Darstellung*, wählen Sie *Automatisch (eigene Einheit je Vorgang)*, *Immer Tage* oder *Immer Stunden*. Ein Vorgang von 18 Stunden wird unter *Immer Tage* als `2.25d(18h)` angezeigt: Die eigene Einheit steht in Klammern.
 - Für einen Zeitabstand in Stunden nach einem Tagesvorgang (siehe *Rundung*).
-- Wenn Sie die Einheit eines Vorgangs wechseln. Die App zählt dann die Tage ab dem Beginn des Vorgangs, jeden Tag mit seinen eigenen Stunden, und macht nur dann einen Vorschlag, wenn das Ergebnis genau ist. Zwei Tage werden `16h`. In einem Kalender, in dem der Freitag 5 Stunden hat, werden 5 Tage ab Montag `37h`. Zwölf Stunden lassen sich in einem Kalender mit Tagen zu 8 Stunden nicht in ganze Tage umrechnen. Die App lässt die Einheit dann unverändert.
+- Wenn Sie die Einheit eines Vorgangs wechseln. Die App zählt dann die Tage ab dem Beginn des Vorgangs, jeden Tag mit seinen eigenen Stunden, und rechnet die Dauer sofort um, wenn das Ergebnis genau ist. Zwei Tage werden `16h`. In einem Kalender, in dem der Freitag 5 Stunden hat, werden 5 Tage ab Montag `37h`. Zwölf Stunden lassen sich in einem Kalender mit Tagen zu 8 Stunden nicht in ganze Tage umrechnen. Die App lässt die Einheit dann unverändert.
 
 ### Tagesvorgänge und Stundenvorgänge zusammen
 

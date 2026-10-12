@@ -20,7 +20,7 @@ Ez több annál, mint a tevékenység időtartamának megváltoztatása. A *Néz
 
 1. Jelölje ki a tevékenységet, és nézze meg a *Tulajdonságok* panelt. Az *Idő* alatt találja az *Időtartam* mezőt.
 2. Írja be az időtartamot mértékegységgel, és nyomjon Entert: `12h` tizenkét órához, `1h 30m` másfél órához. A `12u` (a holland rövidítés) is működik. Az `1.5h` is megfelelő. Egység nélküli szám a tevékenység már meglévő egységében számít.
-3. Ha egy meglévő tevékenységet szeretne átalakítani, válassza az *Órák* egységet az *Időtartam-egység* alatt. Az alkalmazás kiszámítja az időtartamot, és javaslatot tesz, például: *Pontos átszámítási javaslat: 16h. Alkalmazza ezt a javaslatot, vagy tartsa meg a jelenlegi mértékegységet.* Válassza a *Javaslat alkalmazása* gombot vagy a *Megtartás* gombot.
+3. Ha egy meglévő tevékenységet szeretne átalakítani, válassza az *Órák* egységet az *Időtartam-egység* alatt. Az alkalmazás azonnal átszámítja az időtartamot, például `2` napról `16` órára. Ha vissza szeretne lépni, használja a *Visszavonás* parancsot.
 4. Napokra a `2d` megadásával vagy a *Napok* egység kiválasztásával térhet vissza.
 5. Nyomja meg a **Számítás** gombot (F5), például a *Kezdőlap › Ütemezés › Számítás* útvonalon. Ezután a tevékenységnek óraidőben megadott kezdési és befejezési időpontja van.
 6. Ha az órákat látni szeretné a Gantt-diagramban, válassza az *Óra* skálát a *Nézet › Időskála* listában.

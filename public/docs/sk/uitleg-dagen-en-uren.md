@@ -36,7 +36,7 @@ Deň je čistý počet hodín za deň v kalendári úlohy. Aplikácia to použí
 
 - Pre *Zobrazenie trvania*. V *Nastavenia › Projekt › Nastavenia*, na karte *Vzhľad*, vyberiete *Automaticky (vlastná jednotka každej úlohy)*, *Vždy dni* alebo *Vždy hodiny*. Úloha s 18 hodinami sa pri *Vždy dni* zobrazí ako `2.25d(18h)`: pôvodná jednotka zostane v zátvorkách.
 - Pre oneskorenie v hodinách za úlohou v dňoch (pozri *Zaokrúhľovanie*).
-- Pri zmene jednotky úlohy. Aplikácia potom počíta dni od začiatku úlohy, každý deň s vlastnými hodinami, a navrhne zmenu len vtedy, ak je výsledok presný. Dva dni sa zmenia na `16h`. V kalendári, kde má piatok 5 hodín, sa 5 dní od pondelka zmení na `37h`. Dvanásť hodín sa nedá previesť na celé dni v kalendári s dňami po 8 hodín: aplikácia potom jednotku nezmení.
+- Pri zmene jednotky úlohy. Aplikácia potom počíta dni od začiatku úlohy, každý deň s vlastnými hodinami, a trvanie hneď prevedie, ak je výsledok presný. Dva dni sa zmenia na `16h`. V kalendári, kde má piatok 5 hodín, sa 5 dní od pondelka zmení na `37h`. Dvanásť hodín sa nedá previesť na celé dni v kalendári s dňami po 8 hodín: aplikácia potom jednotku nezmení.
 
 ### Úlohy v dňoch a hodinové úlohy spolu
 

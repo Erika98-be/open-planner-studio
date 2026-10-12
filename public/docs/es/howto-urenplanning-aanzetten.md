@@ -20,7 +20,7 @@ Esto cambia más que la duración de una tarea: en *Vista › Escala de tiempo* 
 
 1. Seleccione la tarea y mire en el panel *Propiedades*, bajo *Tiempo*, el campo *Duración*.
 2. Escriba la duración con una unidad y pulse Intro: `12h` (`12u`, la abreviatura neerlandesa, también funciona) para doce horas, `1h 30m` para una hora y media. `1.5h` también es correcto. Un número sin unidad cuenta en la unidad que la tarea ya tiene.
-3. Si quiere convertir una tarea existente, elija la unidad *Horas* en *Unidad de duración*. La aplicación calcula la duración por usted y la propone, por ejemplo *Propuesta de conversión exacta: 16h. Aplícala o conserva la unidad actual.* Elija *Aplicar propuesta* o *Conservar*.
+3. Si quiere convertir una tarea existente, elija la unidad *Horas* en *Unidad de duración*. La aplicación convierte la duración de inmediato, por ejemplo de `2` días a `16` horas. Para volver, use *Deshacer*.
 4. Volver a días es posible con `2d` o con la unidad *Días*.
 5. Pulse **Calcular** (F5), por ejemplo mediante *Inicio › Programación › Calcular*. La tarea tiene ahora un inicio y un fin con hora concreta.
 6. Si quiere ver las horas en el Gantt, elija la escala *Hora* en la lista que aparece en *Vista › Escala de tiempo*.
