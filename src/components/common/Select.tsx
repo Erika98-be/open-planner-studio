@@ -28,6 +28,11 @@ interface SelectProps {
   autoOpen?: boolean;
   'aria-invalid'?: true;
   'aria-describedby'?: string;
+  /** Maak de trigger zo breed als het LANGSTE optielabel (plus opvulling en pijltje), zodat het
+   *  gekozen woord in geen enkele taal wordt afgekapt en de breedte niet verspringt bij een andere
+   *  keuze. Voor korte suffix-kiezers naast een invoerveld (duur-eenheid). De wrapper moet de
+   *  breedte dan niet vastzetten (`shrink-0`, geen `w-*`). */
+  fitWidestOption?: boolean;
 }
 
 interface MenuRect {
@@ -53,6 +58,7 @@ export function Select({
   autoOpen = false,
   'aria-invalid': ariaInvalid,
   'aria-describedby': ariaDescribedBy,
+  fitWidestOption = false,
 }: SelectProps) {
   const reactId = useId();
   const listboxId = `${id ?? reactId}-listbox`;
@@ -341,10 +347,28 @@ export function Select({
       >
         <span
           className={
-            'ops-select__value' + (selectedLabel === undefined ? ' is-placeholder' : '')
+            'ops-select__value' +
+            (selectedLabel === undefined ? ' is-placeholder' : '') +
+            (fitWidestOption ? ' ops-select__value--fit' : '')
           }
         >
-          {selectedLabel ?? placeholder ?? ''}
+          {fitWidestOption ? (
+            <>
+              <span className="ops-select__value-text">{selectedLabel ?? placeholder ?? ''}</span>
+              {/* Onzichtbare maatvoerders: het label staat in een `::before` uit `data-label`, dus de
+                  tekstinhoud (en `toHaveText`) van de trigger blijft alleen het gekozen woord. */}
+              {options.map(opt => (
+                <span
+                  key={opt.value}
+                  className="ops-select__sizer"
+                  data-label={opt.label}
+                  aria-hidden="true"
+                />
+              ))}
+            </>
+          ) : (
+            selectedLabel ?? placeholder ?? ''
+          )}
         </span>
         <ChevronDown size={16} className="ops-select__chevron" aria-hidden="true" />
       </button>

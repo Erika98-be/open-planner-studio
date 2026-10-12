@@ -183,10 +183,11 @@ export function TaskDurationField({ task, calendar, onChange }: {
         />
         {showUnitControls && (
           <>
-            <div className="w-20 shrink-0">
+            <div className="shrink-0">
               <Select
                 aria-label={t('duration.unit')}
                 className="ops-select__trigger--duration"
+                fitWidestOption
                 value={task.time.durationUnit}
                 onChange={(next) => requestUnit(next as TaskDurationUnit)}
                 disabled={derived || hourEditBlocked}
