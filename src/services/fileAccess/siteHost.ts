@@ -63,7 +63,8 @@ export interface SiteFileInfo {
   id: string;
   /** Bestandsnaam inclusief extensie (bijv. `Planning.ifc`). De extensie bepaalt het formaat. */
   name: string;
-  /** De versie die deze info beschrijft (na `open`/`save`: de gelezen of net geschreven versie). */
+  /** De versie die deze info beschrijft. VERPLICHT in het antwoord van `save` (de net geschreven
+   *  versie) en van `open` zonder `version` (de gelezen versie); in `list` optioneel. */
   version?: string;
   /** Laatst gewijzigd, bij voorkeur ISO 8601. Alleen voor weergave. */
   modified?: string;
@@ -97,7 +98,8 @@ export interface OpenAECHost {
   initialFileId?: string;
 }
 
-/** Event op `window` waarmee een site meldt dat `window.openaecHost` er nu staat. */
+/** Event waarmee een site meldt dat `openaecHost` er nu staat; op het venster waar de host staat
+ *  (het eigen venster van de tool of een same-origin `window.parent`). */
 export const SITE_HOST_READY_EVENT = 'openaec-host-ready';
 
 /** De `code` waarmee een site een opslag weigert omdat het bestand intussen verder is. */
