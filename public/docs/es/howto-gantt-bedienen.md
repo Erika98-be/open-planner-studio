@@ -11,9 +11,9 @@ Ve en el Gantt que la mampostería debe empezar dos días más tarde, o que el h
 ### Mover una barra
 
 1. Pulse en el centro de una barra de tarea y arrástrela en horizontal. El inicio y el fin se mueven juntos, en días enteros. La duración no cambia.
-2. Suelte el botón del ratón. La barra se queda en su nueva posición. La planificación queda entonces desactualizada. Pulse *Calcular* (F5), o, si *Calcular automáticamente* está activado, la aplicación lo hace sola.
+2. Suelte el botón. La barra se queda en su nueva posición. La planificación queda entonces desactualizada. Pulse *Calcular* (F5), o, si *Calcular automáticamente* está activado, la aplicación lo hace sola.
 
-Si la tarea tiene un predecesor, la aplicación registra el nuevo inicio como la restricción *No comenzar antes del (SNET)*. Lo indica al soltar. Por qué ocurre eso, y qué pasa con otra restricción, está en [Restricciones y fechas límite](docs://uitleg-constraints). Si arrastra de nuevo hasta el inicio original, también vuelve la restricción original.
+Si la tarea tiene un predecesor, la aplicación registra el nuevo inicio como la restricción *No comenzar antes del (SNET)*. Lo indica después de soltar. Por qué ocurre eso, y qué pasa con otra restricción, está en [Restricciones y fechas límite](docs://uitleg-constraints). Si arrastra de nuevo hasta el inicio original, también vuelve la restricción original.
 
 Si arrastra sobre todo hacia arriba o hacia abajo, en lugar de hacia los lados, mueve la tarea a otra fila y las fechas no cambian. La dirección que elige en los primeros píxeles vale para todo el arrastre. Así, un solo gesto nunca cambia fechas y estructura al mismo tiempo. Vea [Ajustar la estructura](docs://howto-structuur-aanpassen).
 
@@ -50,11 +50,13 @@ Más sobre seleccionar está en [Seleccionar, eliminar y deshacer tareas](docs:/
 
 ### Acercar y alejar
 
-1. Use *Zoom +* y *Zoom -* (*Inicio › Zoom*), o las teclas + y -. La rueda también hace zoom. Cuándo lo hace depende de su modo de desplazamiento (vea [Configuración](docs://ref-instellingen)).
+1. Utilice *Zoom +* y *Zoom -* (*Inicio › Zoom*), o las teclas + y -. La rueda también hace zoom. Cuándo lo hace depende de su modo de desplazamiento (vea [Configuración](docs://ref-instellingen)).
 2. Si quiere ver todo el proyecto, elija *Vista › Escala de tiempo › Ajustar al proyecto* o pulse Ctrl+0. *Restablecer* (en la pestaña *Vista*) o la tecla 0 devuelve el zoom al valor predeterminado.
 3. En la esquina inferior derecha de la barra de estado aparece el zoom en píxeles por día, por ejemplo *Zoom: 15px/día*.
 
-Cuanto más aleja la vista, menos líneas de cuadrícula hay. A partir de 8 píxeles por día o más, hay una línea por cada día, con una línea más gruesa en el límite de semana. Entre 2 y 8 píxeles por día solo queda el límite de semana. Por debajo de 2 píxeles por día, a nivel de año, solo quedan los límites de mes. Si no, el lienzo sería un patrón de rayas uniforme en el que las barras desaparecen. Los fines de semana y los días no laborables son grises. Las bandas de semana alternan su color. Se mantienen en todos los niveles y llevan la estructura semanal cuando desaparecen las líneas. En el encabezado de la escala de tiempo, los números de semana y de día solo aparecen cuando hay sitio. Desde 40 píxeles por día, también se muestra el día de la semana delante del número.
+Cuanto más aleja la vista, menos líneas de cuadrícula hay. A partir de 8 píxeles por día o más, hay una línea por cada día, con una línea más gruesa en el límite de semana. Entre 2 y 8 píxeles por día solo queda el límite de semana. Por debajo de 2 píxeles por día, a nivel de año, solo quedan los límites de mes. Si no, el lienzo sería un patrón de rayas uniforme en el que las barras desaparecen. Los fines de semana y los días no laborables son grises. Las franjas de semana alternan su color. Se mantienen en todos los niveles y llevan la estructura semanal cuando desaparecen las líneas. En el encabezado de la escala de tiempo, los números de semana y de día solo aparecen cuando hay sitio. Desde 40 píxeles por día, también se muestra el día de la semana delante del número.
+
+El nombre de la tarea se muestra en la barra si cabe completo. Si no cabe, por ejemplo al alejar la vista, el nombre completo aparece a la derecha de la barra.
 
 ## Problemas frecuentes y qué hace entonces la aplicación
 

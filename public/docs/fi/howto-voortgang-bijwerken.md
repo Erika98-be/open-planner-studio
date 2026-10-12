@@ -55,10 +55,11 @@ Jokainen muutos edistymiseen tai raportointipäivään tekee aikataulusta vanhen
 
 ## Tuloksen tarkistaminen
 
-- Raportointipäivällä Gantt-kaavio näyttää katkoviivan, jossa on päivämäärä otsikkorivillä. Käynnissä olevien tehtävien kohdalla viiva pullistuu palkin prosenttiosuuteen asti. Ota nämä viivat käyttöön tai pois käytöstä kohdissa *Näkymä › Perustasot ja edistyminen › Edistymisviiva* ja *Raportointipäivän viiva*.
-- Suoritetut tehtävät eivät ole koskaan punaisia: raportointipäivän kanssa suoritettu tehtävä ei ole kriittinen.
+- Raportointipäivällä Gantt-kaaviossa näkyy katkoviiva, jonka päivämäärä on otsikkorivillä. Käynnissä olevien tehtävien kohdalla viiva pullistuu palkin prosenttiosuuteen asti. Ota nämä viivat käyttöön tai pois käytöstä kohdissa *Näkymä › Perustasot ja edistyminen › Edistymisviiva* ja *Raportointipäivän viiva*.
+- Palkin suoritettu osa muuttuu harmaaksi, jäljellä oleva osa säilyttää värinsä. Kokonaan suoritettu tehtävä on kokonaan harmaa, nimen edessä on rasti ja siinä ei ole pelivaranauhaa. Vaiheen palkki muuttuu harmaaksi myös johdettuun prosenttiosuuteen asti, joten vaiheittain nähdään, kuinka pitkällä kukin vaihe on. Jos tehtävän edeltäjät tai seuraajat näytetään, niiden palkit säilyttävät korostusvärinsä, myös kun ne on suoritettu.
+- Suoritetut tehtävät eivät ole koskaan punaisia: kun raportointipäivä on asetettu, suoritettu tehtävä ei ole kriittinen.
 - Vaiheet näyttävät johdetun prosenttiosuuden, ja aikataulun loppu on voinut siirtyä.
-- Jos perustaso on tallennettu, kunkin palkin alla näkyy perustason mukainen aikataulu. Raporttityyppi *Ero* näyttää eron.
+- Jos perustaso on tallennettu, kunkin palkin alla näkyy perustason mukainen aikataulu, ja raporttityyppi *Ero* näyttää eron.
 
 ## Sudenkuopat ja sovelluksen toiminta
 

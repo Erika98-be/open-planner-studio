@@ -2966,7 +2966,7 @@
     ]
   },
   "howto-voortgang-bijwerken": {
-    "structure": "a69d2f79d6dc9667",
+    "structure": "a43ae49e94f27891",
     "sections": [
       {
         "hash": "d1758ea47eab37c4",
@@ -3053,7 +3053,7 @@
         }
       },
       {
-        "hash": "b41aa755b7360b67",
+        "hash": "837937517733adbe",
         "labels": {
           "common:shortcuts.category.view": "17efc6654ed280c7",
           "menu:ribbon.baselines": "b20605f9fa0d9bed",
@@ -3962,7 +3962,7 @@
         "labels": {}
       },
       {
-        "hash": "f1793be37b4de7f6",
+        "hash": "263098530534e3dd",
         "labels": {
           "common:context.fitToProject": "6a19a8deb8c67710",
           "common:feedback.tools.undo": "dc65bd3603e8227e",
@@ -7699,7 +7699,7 @@
         }
       },
       {
-        "hash": "cb1689edcc128447",
+        "hash": "dd148bf528abc225",
         "labels": {
           "common:resource.compact.title": "14fc3fccd11eba35",
           "common:resource.leveling.resourceSelect": "14fc3fccd11eba35",
@@ -8023,7 +8023,7 @@
           "common:schedulingProfile.resetToBase": "be442c0946da7128",
           "common:schedulingProfile.sourceOptions.useProjectEndDateForFloat": "affaf0705402da0b",
           "menu:projectInfo.calc.lagPredecessor": "0e1d90e606fdf156",
-          "menu:projectInfo.calc.ssLagFrom": "dbda3e4df7e2a280",
+          "menu:projectInfo.calc.ssLagFrom": "d91384b940ecdf19",
           "menu:ribbon.progressModeOverride": "c5e21585bcb83ed1",
           "report:milestoneReport.kind_START": "cc147e162c82bbc7",
           "report:projectStart": "fb2dd264ffa20cef",
@@ -8081,7 +8081,7 @@
           "menu:projectInfo.calc.nearCriticalThreshold": "d677a372143c0ee4",
           "menu:projectInfo.calc.ssLagActualStart": "f24713fd37c13a26",
           "menu:projectInfo.calc.ssLagEarlyStart": "5bf99e582cde1bbd",
-          "menu:projectInfo.calc.ssLagFrom": "dbda3e4df7e2a280",
+          "menu:projectInfo.calc.ssLagFrom": "d91384b940ecdf19",
           "menu:projectInfo.calc.ssLagNeedsConvention": "4d1a9720efae2224",
           "menu:projectInfo.calc.tfAuto": "8d38491fa0f46048",
           "menu:projectInfo.calc.tfFinish": "b7f56d21a61a001f",
@@ -8321,7 +8321,7 @@
         }
       },
       {
-        "hash": "79625d856baba2fb",
+        "hash": "21918b31da808f10",
         "labels": {
           "common:apply": "52ac6fb621acbc95",
           "common:benchmark.summaryTasks": "bfde2580bd828333",

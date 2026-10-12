@@ -50,7 +50,7 @@ Tidsplanen som stolpediagram, med en tabell til venstre og en tidslinje til høy
 
 **Aktivitetsnavn på stolper** — Standard: på. Effekt: navnet på aktiviteten på stolpen, der det er plass.
 
-**Vis fullføringsgrad** — Standard: på. Effekt: en mørkere del i stolpen opp til fremdriften av aktiviteten, og kolonnen *Fullf.* i tabellen.
+**Vis fullføringsgrad** — Standard: på. Effekt: den fullførte delen av stolpen blir grå, som i Gantt-diagrammet, og kolonnen *Fullf.* vises i tabellen. En fullført aktivitet får ingen slakkbånd.
 
 **Kutt av aktivitetsnavn** — Standard: på. Effekt: på kutter navn i tabellen ved bredden på *Navnekolonne:*. Av lar kolonnen vokse med det lengste navnet. Da står det *Navnekolonnen tilpasses det lengste aktivitetsnavnet*.
 

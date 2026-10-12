@@ -2966,7 +2966,7 @@
     ]
   },
   "howto-voortgang-bijwerken": {
-    "structure": "a69d2f79d6dc9667",
+    "structure": "a43ae49e94f27891",
     "sections": [
       {
         "hash": "d1758ea47eab37c4",
@@ -3053,7 +3053,7 @@
         }
       },
       {
-        "hash": "b41aa755b7360b67",
+        "hash": "837937517733adbe",
         "labels": {
           "common:shortcuts.category.view": "a725bda1f33e4ca0",
           "menu:ribbon.baselines": "ba46264ee4aeea89",
@@ -3962,7 +3962,7 @@
         "labels": {}
       },
       {
-        "hash": "f1793be37b4de7f6",
+        "hash": "263098530534e3dd",
         "labels": {
           "common:context.fitToProject": "3b9f5400e5fb6450",
           "common:feedback.tools.undo": "b6cde424c9efcb24",
@@ -7699,7 +7699,7 @@
         }
       },
       {
-        "hash": "cb1689edcc128447",
+        "hash": "dd148bf528abc225",
         "labels": {
           "common:resource.compact.title": "5ebcc819d0519268",
           "common:resource.leveling.resourceSelect": "5ebcc819d0519268",
@@ -8321,7 +8321,7 @@
         }
       },
       {
-        "hash": "79625d856baba2fb",
+        "hash": "21918b31da808f10",
         "labels": {
           "common:apply": "597b5537d8f91afa",
           "common:benchmark.summaryTasks": "5383bb6a819dba51",

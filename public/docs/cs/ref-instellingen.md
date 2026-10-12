@@ -90,17 +90,17 @@ Aplikace si tyto volby také uchovává na tomto zařízení. Nastavíte je ale 
 
 **Zvýraznění zdrojů** — tenký proužek v barvě zdroje pod pruhem úkolu. Výchozí: vypnuto. Kde: *Zobrazení › Směrné plány a průběh › Zvýraznění zdrojů*.
 
-**Pás časové rezervy** — časová rezerva jako pás za pruhy úkolů, které nejsou kritické. Výchozí: zapnuto. Kde: *Zobrazení › Směrné plány a průběh › Pás časové rezervy*.
+**Pás časové rezervy** — časová rezerva jako pás za pruhy úkolů, které nejsou kritické. U dokončených úkolů se nezobrazuje. Výchozí: zapnuto. Kde: *Zobrazení › Směrné plány a průběh › Pás časové rezervy*.
 
 **Barvy pruhů** — podle čeho závisí barva pruhu. Zvolte jednu z těchto možností: *Kritická cesta*, *Podle úkolu — automaticky* a *Podle kategorie*. Výchozí: *Kritická cesta*. Účinek: platí současně pro diagram Gantt a pro sestavu. Kde: *Zobrazení › Směrné plány a průběh › Barvy pruhů*.
 
 **Histogram** — pás histogramu pod diagramem Gantt. Výchozí: vypnuto. Kde: *Zdroje › Histogram › Histogram*, *Zobrazení › Panely › Histogram* nebo Ctrl+Shift+H. Výšku pásu (výchozí 160 pixelů, v rozmezí 80 až 480) nastavíte tažením jeho okraje.
 
-**Minimapa** — přehled celé časové osy. Výchozí: vypnuto. Kde: *Zobrazení › Prezentace › Minimapa*.
+**Minimapa** — přehledová mapa časové osy. Výchozí: vypnuto. Kde: *Zobrazení › Prezentace › Minimapa*.
 
 **Sbalení pásu karet** — kompaktní pás karet. Výchozí: vypnuto. Kde: tlačítko se šipkou vpravo dole na pásu karet.
 
-**Šířka tabulky úkolů** — výchozí 350 pixelů, v rozmezí 150 až 800. Nastavíte ji tažením dělicí čáry vedle tabulky, nebo šipkami doleva a doprava, když je dělicí čára vybraná.
+**Šířka tabulky úkolů** — výchozí 350 pixelů, v rozmezí 150 až 800. Nastavíte ji tažením dělicí čáry vedle tabulky, nebo šipkami doleva a doprava, když má dělicí čára fokus.
 
 **Šířka pravého panelu** — výchozí 280 pixelů, v rozmezí 200 až 900. Nastavíte ji tažením okraje panelu.
 

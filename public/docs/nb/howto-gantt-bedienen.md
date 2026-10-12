@@ -23,7 +23,7 @@ Drar du mest opp eller ned i stedet for til siden, flytter du aktiviteten til en
 2. Dra kanten. Mens du drar, viser en liten etikett i temaets aksentfarge (oransje som standard) varigheten aktiviteten får nå, for eksempel *4d*. Den følger med, så du ser den nye varigheten før du slipper. Ved høyre kant står etiketten inni stolpen, ved venstre kant rett til venstre for den. Etiketten viser varigheten på samme måte som varighetskolonnen viser den.
 3. Slipp. Varigheten er den som etiketten viste.
 
-Venstre kant flytter starten og lar sluttet stå, så aktiviteten blir kortere eller lengre foran. Den samme SNET-regelen gjelder som ved flytting. Drar du midten av stolpen, vises ikke etiketten: varigheten endres ikke.
+Venstre kant flytter starten og lar slutten stå, så aktiviteten blir kortere eller lengre foran. Den samme SNET-regelen gjelder som ved flytting. Drar du midten av stolpen, vises ikke etiketten: varigheten endres ikke.
 
 Varigheten teller arbeidsdager i kalenderen til aktiviteten. Helger og fridager teller ikke, og en aktivitet i dager kan ikke bli kortere enn én arbeidsdag. For en aktivitet i timer runder appen av til trinnet på tidslinjen under musepekeren: minst én time, eller et kvarter hvis du zoomer langt nok inn og *Vis kvarter når du zoomer mye inn* er på.
 
@@ -55,6 +55,8 @@ Mer om å velge er i [Velge, slette og angre aktiviteter](docs://howto-taken-sel
 3. Nederst til høyre i statuslinjen står zoomen i piksler per dag, for eksempel *Zoom: 15px/dag*.
 
 Jo lenger du zoomer ut, jo færre rutelinjer er det. Ved 8 piksler per dag eller mer er det en linje for hver dag, med en tykkere linje ved skillet mellom ukene. Mellom 2 og 8 piksler per dag står bare skillet mellom ukene igjen. Under 2 piksler per dag, på årsnivå, er bare skillene mellom månedene igjen. Ellers ville lerretet bli et jevnt stripemønster der stolpene forsvinner. De grå helgene og fridagene, og ukebåndene som er farget annenhver gang, vises på alle nivåer; de viser ukestrukturen når linjene forsvinner. I tidslinjehodet vises ukenumrene og dagnumrene bare når det er plass til dem, og fra 40 piksler per dag vises også ukedagen før dagnummeret.
+
+Aktivitetsnavnet vises i stolpen hvis det får plass helt. Får det ikke plass, for eksempel når du zoomer ut, vises hele navnet til høyre for stolpen.
 
 ## Fallgruver og hva appen gjør da
 

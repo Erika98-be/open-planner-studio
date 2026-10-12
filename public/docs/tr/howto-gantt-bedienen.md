@@ -20,7 +20,7 @@ Yanlara değil de çoğunlukla yukarı veya aşağı sürüklerseniz, görevi ba
 ### Süreyi değiştirmek
 
 1. Fareyi çubuğun sağ kenarına getirin. İmleç sola ve sağa işaret eden bir ok olur.
-2. Kenarı sürükleyin. Sürüklerken, temanın vurgu renginde (varsayılan olarak turuncu) küçük bir etiket görünür. Bu etiket, görevin şimdi alacağı süreyi gösterir, örneğin *4d*. Etiket sürüklemeyi anında izler. Bırakmadan önce yeni süreyi görürsünüz. Sağ kenarda etiket çubuğun içinde kalır. Sol kenarda ise etiket hemen solunda durur. Etiket süreyi, süre sütununun gösterdiği biçimde gösterir.
+2. Kenarı sürükleyin. Sürüklerken, temanın vurgu renginde (varsayılan olarak turuncu) küçük bir etiket görünür. Etiket, görevin şimdi alacağı süreyi gösterir, örneğin *4d*. Etiket sürüklemeyi anında izler. Bırakmadan önce yeni süreyi görürsünüz. Sağ kenarda etiket çubuğun içinde kalır; sol kenarda ise hemen solunda durur. Etiket süreyi, süre sütununun gösterdiği biçimde gösterir.
 3. Bırakın. Süre, etiketin gösterdiği süredir.
 
 Sol kenar başlangıcı taşır ve bitişi yerinde bırakır. Görev böylece önden kısalır veya uzar. Taşımadaki SNET kuralı burada da geçerlidir. Çubuğun ortasını sürüklediğinizde etiket görünmez: süre değişmez.
@@ -54,7 +54,9 @@ Seçme hakkında daha fazlası [Görevleri seçmek, silmek ve geri almak](docs:/
 2. Tüm projeyi görmek istiyorsanız *Görünüm › Zaman ölçeği › Projeye sığdır* seçin veya Ctrl+0 tuşuna basın. *Sıfırla* (*Görünüm* sekmesinde) ya da 0 tuşu, yakınlaştırmayı varsayılan değere geri ayarlar.
 3. Durum çubuğunun sağ altında, gün başına piksel cinsinden yakınlaştırma yer alır. Örneğin *Yakınlaştırma: 15px/gün*.
 
-Ne kadar uzaklaştırırsanız, o kadar az ızgara çizgisi olur. Gün başına 8 piksel veya daha fazlasında her gün için bir çizgi vardır. Hafta sınırında ise daha kalın bir çizgi. Gün başına 2 ile 8 piksel arasında yalnızca hafta sınırı kalır. Gün başına 2 pikselin altında, yıl düzeyinde yalnızca ay sınırları kalır. Aksi halde tuval, çubukların kaybolduğu düz bir çizgi desenine dönüşür. Gri hafta sonları ve tatil günleri ile dönüşümlü renklendirilmiş hafta bantları her düzeyde kalır. Çizgiler kaybolduğunda hafta yapısını onlar taşır. Zaman çizelgesi başlığında hafta numaraları ve gün numaraları yalnızca yer olduğunda görünür. Gün başına 40 pikselden itibaren ise haftanın günü, gün numarasından önce de gösterilir.
+Ne kadar uzaklaştırırsanız, o kadar az ızgara çizgisi olur. Gün başına 8 piksel veya daha fazlasında her gün için bir çizgi vardır; hafta sınırında ise daha kalın bir çizgi. Gün başına 2 ile 8 piksel arasında yalnızca hafta sınırı kalır. Gün başına 2 pikselin altında, yıl düzeyinde yalnızca ay sınırları kalır. Aksi halde tuval, çubukların kaybolduğu düz bir çizgi desenine dönüşür. Gri hafta sonları ve tatil günleri ile dönüşümlü renklendirilmiş hafta şeritleri her düzeyde kalır. Çizgiler kaybolduğunda hafta yapısını onlar taşır. Zaman çizelgesi başlığında hafta numaraları ve gün numaraları yalnızca yer olduğunda görünür. Gün başına 40 pikselden itibaren ise haftanın günü, gün numarasından önce de gösterilir.
+
+Görevin adı çubuğun içine tam sığarsa orada gösterilir. Sığmazsa, örneğin uzaklaştırdığınızda, tam ad çubuğun sağında gösterilir.
 
 ## Sorunlar ve uygulamanın o durumda yaptıkları
 

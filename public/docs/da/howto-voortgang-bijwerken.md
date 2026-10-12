@@ -56,6 +56,7 @@ Elke ændring af fremdrift eller statusdatoen gør tidsplanen forældet: statusl
 ## Kontrol af resultatet
 
 - På statusdatoen viser Gantt en stiplet linje med datoen i overskriften. Ved opgaver, der er i gang, buler linjen ud til procentdelen i bjælken. Du slår dem til eller fra med *Visning › Oprindelige planer & fremdrift › Fremdriftslinje* og *Statusdatolinje*.
+- Den fuldførte del af en bjælke bliver grå; resten beholder sin farve. En opgave, der er fuldt færdig, er helt grå, med et flueben foran navnet og uden slækbjælke. Bjælken for en fase bliver også grå op til dens afledte procentdel, så du ser pr. fase, hvor langt arbejdet er. Hvis du viser de foregående opgaver eller de efterfølgende opgaver for en opgave, beholder disse bjælker deres fremhævningsfarve, også når de er fuldført.
 - Fuldførte opgaver er aldrig røde: med en statusdato er en fuldført opgave ikke kritisk.
 - Faser viser en afledt procentdel, og slutdatoen for tidsplanen kan være flyttet.
 - Hvis du har gemt en oprindelig plan, står den oprindelige tidsplan under hver bjælke, og rapporttypen *Afvigelse* viser afvigelsen.

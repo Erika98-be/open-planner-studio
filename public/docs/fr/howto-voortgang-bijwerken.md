@@ -56,8 +56,9 @@ Chaque modification de l’avancement ou de la date d’état rend le planning o
 ## Vérifier le résultat
 
 - À la date d’état, le Gantt affiche une ligne en tirets avec la date dans l’en-tête. Sur les tâches en cours, la ligne se courbe vers le pourcentage dans la barre. Vous les activez ou désactivez avec *Affichage › Références et avancement › Ligne d’avancement* et *Ligne de date d’état*.
+- La partie terminée d’une barre devient grise ; le reste garde sa couleur. Une tâche entièrement terminée est entièrement grise, avec une coche devant le nom et sans bande de marge. La barre d’une phase devient aussi grise jusqu’à son pourcentage dérivé, ce qui montre par phase où en est le travail. Si vous affichez les prédécesseurs ou les successeurs d’une tâche, leurs barres gardent leur couleur de mise en évidence, même lorsqu’elles sont terminées.
 - Les tâches terminées ne sont jamais rouges : avec une date d’état, une tâche terminée n’est pas critique.
-- Les phases affichent un pourcentage dérivé, et la fin du planning peut avoir été décalée.
+- Les phases affichent un pourcentage dérivé, et la fin du planning peut avoir changé.
 - Si vous avez enregistré une référence, le planning d’origine se trouve sous chaque barre, et le type de rapport *Variance* affiche l’écart.
 
 ## Pièges et ce que fait l’application

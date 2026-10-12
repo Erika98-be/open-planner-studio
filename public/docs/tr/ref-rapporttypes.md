@@ -50,7 +50,7 @@ Planlama bir çubuk grafiği olarak gösterilir: solda bir tablo, sağda bir zam
 
 **Görev adları çubuklarda** — Varsayılan: açık. Etkisi: görevin adı, yer varsa çubukta yazılır.
 
-**Tamamlanmayı göster** — Varsayılan: açık. Etkisi: çubukta görevin ilerlemesine kadar uzanan koyu bir bölüm ve tabloda *Tamam.* sütunu.
+**Tamamlanmayı göster** — Varsayılan: açık. Etkisi: çubuğun tamamlanan kısmı Gantt şemasındaki gibi gri olur ve tabloda *Tamam.* sütunu görünür. Tamamlanmış bir görevde bolluk bandı çizilmez.
 
 **Görev adlarını kısalt** — Varsayılan: açık. Etkisi: açıkken tablodaki adlar *Ad sütunu:* genişliğinde kesilir. Kapalıyken sütun en uzun ada göre büyür; bu durumda şu metin görünür: *Ad sütunu en uzun görev adına göre ayarlanır.*
 

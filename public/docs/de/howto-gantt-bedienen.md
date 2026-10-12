@@ -56,6 +56,8 @@ Mehr über Auswählen steht unter [Vorgänge auswählen, löschen und rückgäng
 
 Je weiter Sie herauszoomen, desto weniger Rasterlinien gibt es. Ab 8 Pixeln pro Tag gibt es für jeden Tag eine Linie, mit einer dickeren Linie an der Wochengrenze. Zwischen 2 und 8 Pixeln pro Tag bleibt nur die Wochengrenze. Unter 2 Pixeln pro Tag, auf Jahresebene, bleiben nur die Monatsgrenzen übrig. Sonst würde die Zeichenfläche zu einem gleichmäßigen Streifenmuster, in dem die Balken verschwinden. Die grauen Wochenenden und arbeitsfreien Tage sowie die abwechselnd getönten Wochenbänder bleiben auf jeder Stufe sichtbar. Sie tragen die Wochenstruktur, wenn die Linien wegfallen. In der Kopfzeile der Zeitskala erscheinen die Wochennummern und Tageszahlen nur, wenn dafür Platz ist. Ab 40 Pixeln pro Tag wird außerdem der Wochentag vor der Tageszahl angezeigt.
 
+Der Vorgangsname steht im Balken, wenn er ganz hineinpasst. Passt er nicht, etwa beim Herauszoomen, steht der vollständige Name rechts neben dem Balken.
+
 ## Probleme und was die App dann tut
 
 **Der Anfang bewegt sich nicht.** Hat der Vorgang einen Vorgänger und eine andere Einschränkung als SNET, zum Beispiel *So spät wie möglich (ALAP)*, dann übernimmt die App den gezogenen Anfang nicht. Nachdem Sie losgelassen haben, meldet die App, welche Einschränkung den Anfang festhält. Ändern Sie diese Einschränkung, damit sich der Anfang bewegt. Die rechte Kante funktioniert dagegen, weil sie nur die Dauer ändert.

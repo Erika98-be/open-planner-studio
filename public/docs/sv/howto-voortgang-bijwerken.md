@@ -56,6 +56,7 @@ Varje ändring av framdrift eller rapportdatum gör tidsplanen inaktuell. Status
 ## Kontrollera resultatet
 
 - På rapportdatumet visar Gantt en streckad linje med datumet i rubriken. Vid uppgifter som pågår buktar linjen ut till procentsatsen i balken. Du slår på eller av dessa med *Visa › Baslinjer & framdrift › Framdriftslinje* och *Rapportdatumlinje*.
+- Den klara delen av en balk blir grå. Resten behåller sin färg. En uppgift som är helt klar är helt grå, med en bock före namnet och utan slackband. Balken för en fas blir också grå upp till dess härledda procentsats, så du ser per fas hur långt arbetet är. Om du visar föregående uppgifter eller efterföljande uppgifter för en uppgift, behåller de balkarna sin markeringsfärg, även när de är klara.
 - Klara uppgifter är aldrig röda: med ett rapportdatum är en klar uppgift inte kritisk.
 - Faser visar en härledd procentsats och tidsplanens slut kan ha flyttats.
 - Om du har sparat en baslinje visas den ursprungliga tidsplanen under varje balk. Rapporttypen *Avvikelse* visar avvikelsen.

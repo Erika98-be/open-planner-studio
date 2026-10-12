@@ -90,7 +90,7 @@ Appen sparar också dessa val på den här enheten. Men du ställer in dem vid o
 
 **Resursaccent** — en tunn remsa i resursens färg under uppgiftsbalken. Standard: av. Var: *Visa › Baslinjer & framdrift › Resursaccent*.
 
-**Slackband** — slacket som ett område bakom icke-kritiska balkar. Standard: på. Var: *Visa › Baslinjer & framdrift › Slackband*.
+**Slackband** — slacket som ett område bakom icke-kritiska balkar. Gäller inte för slutförda uppgifter. Standard: på. Var: *Visa › Baslinjer & framdrift › Slackband*.
 
 **Stapelfärger** — vad färgen på en balk beror på. Välj bland *Kritisk linje*, *Per uppgift — automatiskt* och *Efter kategori*. Standard: *Kritisk linje*. Effekt: gäller för Gantt och för rapporten samtidigt. Var: *Visa › Baslinjer & framdrift › Stapelfärger*.
 

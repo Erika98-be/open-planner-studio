@@ -36,7 +36,7 @@ Harmonogram jako wykres słupkowy, z tabelą po lewej i osią czasu po prawej, n
 
 **Linia statusu:** — linia przy dacie statusu. Wybierz z *Brak*, *Linia daty statusu* i *Linia postępu*. Domyślnie: *Brak*. Skutek: *Linia daty statusu* rysuje linię przy dacie statusu; *Linia postępu* rysuje zygzakowatą linię, która wybrzusza się do postępu każdego zadania. Jeśli projekt nie ma daty statusu, pojawia się *Najpierw ustaw datę statusu* i raport nic nie rysuje.
 
-**Podążaj za widokiem (filtr, grupowanie, sortowanie)** — tylko dla wykresu Gantt. Domyślnie: wyłączone. Skutek: wyłączone umieszcza na papierze całe drzewo zadań. Włączone rysuje dokładnie wiersze z ekranu: z twoim filtrem, grupowaniem, sortowaniem i zwiniętymi fazami.
+**Podążaj za widokiem (filtr, grupowanie, sortowanie)** — tylko dla wykresu Gantta. Domyślnie: wyłączone. Skutek: wyłączone umieszcza na papierze całe drzewo zadań. Włączone rysuje dokładnie wiersze z ekranu: z Twoim filtrem, grupowaniem, sortowaniem i zwiniętymi fazami.
 
 **Dopasuj do papieru** — skaluje oś czasu do szerokości strony. Domyślnie: włączone. Skutek: włączone skaluje oś czasu do szerokości strony; liczba stron wynika z wysokości. Wyłączone używa stałej skali (*Powiększenie*:) i dzieli oś czasu także na szerokość, co szybko daje wiele stron.
 
@@ -50,7 +50,7 @@ Harmonogram jako wykres słupkowy, z tabelą po lewej i osią czasu po prawej, n
 
 **Nazwy zadań na paskach** — Domyślnie: włączone. Skutek: nazwa zadania na pasku, tam gdzie jest miejsce.
 
-**Pokaż ukończenie** — Domyślnie: włączone. Skutek: ciemniejsza część paska do postępu zadania oraz kolumna *Post* w tabeli.
+**Pokaż ukończenie** — Domyślnie: włączone. Skutek: ukończona część paska jest szara, jak na wykresie Gantta, a w tabeli pojawia się kolumna *Post*. Ukończone zadanie nie ma pasa zapasu.
 
 **Skracaj nazwy zadań** — Domyślnie: włączone. Skutek: włączone skraca nazwy w tabeli do szerokości *Kolumna nazwy*:. Wyłączone: kolumna rośnie z najdłuższą nazwą; pojawia się *Kolumna nazwy dopasowuje się do najdłuższej nazwy zadania*.
 
@@ -58,13 +58,13 @@ Harmonogram jako wykres słupkowy, z tabelą po lewej i osią czasu po prawej, n
 
 **Pokaż nakładkę planu bazowego** — aktywny plan bazowy przy paskach. Domyślnie: wyłączone. Skutek: cienki pasek w kolorze planu bazowego pod paskiem zadania, tylko dla zadań, które są w planie bazowym.
 
-**Ścieżka krytyczna** — Domyślnie: włączone. Skutek: steruje tylko czerwonymi liniami relacji między dwoma zadaniami krytycznymi i wierszem legendy. Same paski zależą od ustawienia *Kolory słupków*:, niezależnie od tego pola wyboru.
+**Ścieżka krytyczna** — Domyślnie: włączone. Skutek: steruje tylko czerwonymi liniami relacji między dwoma zadaniami krytycznymi i wierszem legendy. Same paski zależą od ustawienia *Kolory słupków:*, niezależnie od tego pola wyboru.
 
 **Pokaż zapas** — Domyślnie: włączone. Skutek: zapas jako pas za paskami zadań niekrytycznych.
 
 **Zależności** — linie relacji. Domyślnie: włączone. Skutek: rysuje strzałki między paskami.
 
-**Pokazuj tylko dni robocze** — skraca oś czasu w tym raporcie. Domyślnie: wyłączone. Skutek: weekendy i święta są pomijane, a pasy tygodni zastępują zacienienie weekendów. Niezależne od tego samego ustawienia dla wykresu Gantt na ekranie.
+**Pokazuj tylko dni robocze** — skraca oś czasu w tym raporcie. Domyślnie: wyłączone. Skutek: weekendy i święta są pomijane, a pasy tygodni zastępują zacienienie weekendów. Niezależne od tego samego ustawienia dla wykresu Gantta na ekranie.
 
 **Weekendy** — Domyślnie: włączone. Skutek: zacienia weekendy i święta na osi czasu, dopóki skala pozwala odróżnić dni. Na skróconej osi (*Pokazuj tylko dni robocze*) to pole wyboru nie ma skutku.
 

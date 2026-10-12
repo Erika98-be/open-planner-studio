@@ -90,7 +90,7 @@ Appen gemmer også disse valg på denne enhed. Men du angiver dem ved selve elem
 
 **Ressourceaccent** — en tynd stribe i ressourcens farve under opgavebjælken. Standard: fra. Hvor: *Visning › Oprindelige planer & fremdrift › Ressourceaccent*.
 
-**Slækbånd** — slækken som et bånd bag ikke-kritiske bjælker. Standard: til. Hvor: *Visning › Oprindelige planer & fremdrift › Slækbånd*.
+**Slækbånd** — slækken som et bånd bag ikke-kritiske bjælker. Ikke for afsluttede opgaver. Standard: til. Hvor: *Visning › Oprindelige planer & fremdrift › Slækbånd*.
 
 **Bjælkefarver** — hvad farven på en bjælke afhænger af. Vælg mellem *Kritisk vej*, *Pr. opgave — automatisk* og *Efter kategori*. Standard: *Kritisk vej*. Effekt: gælder samtidig for Gantt-diagrammet og rapporten. Hvor: *Visning › Oprindelige planer & fremdrift › Bjælkefarver*.
 

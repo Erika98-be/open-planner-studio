@@ -56,6 +56,7 @@ Fiecare modificare a progresului sau a datei raportului de stare face planificar
 ## Verificarea rezultatului
 
 - La data raportului de stare, diagrama Gantt afișează o linie întreruptă cu data în antet. La activitățile în curs, linia se curbează până la procentul din bară. Le activați sau dezactivați cu *Vizualizare › Referințe și progres › Linia de progres* și *Linia datei raportului de stare*.
+- Partea finalizată a unei bare devine gri; restul păstrează culoarea. O activitate complet finalizată este complet gri, cu o bifă înaintea numelui și fără banda de marjă. Bara unei faze devine, de asemenea, gri până la procentul calculat al ei, astfel vedeți pentru fiecare fază cât lucru este realizat. Dacă afișați predecesorii sau succesorii unei activități, aceste bare păstrează culoarea de evidențiere, chiar și atunci când sunt finalizate.
 - Activitățile finalizate nu sunt niciodată roșii: cu o dată a raportului de stare, o activitate finalizată nu este critică.
 - Fazele arată un procent calculat, iar sfârșitul planificării s-ar putea să se fi mutat.
 - Dacă ați salvat o referință, planificarea originală apare sub fiecare bară, iar tipul de raport *Varianță* arată varianța.

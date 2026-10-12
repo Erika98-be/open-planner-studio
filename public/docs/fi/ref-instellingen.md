@@ -90,7 +90,7 @@ Sovellus tallentaa nämä valinnat myös tälle laitteelle. Ne asetetaan kuitenk
 
 **Resurssikorostus** — ohut raita resurssin värillä tehtäväpalkin alla. Oletus: pois. Missä: *Näkymä › Perustasot ja edistyminen › Resurssikorostus*.
 
-**Pelivaranauha** — pelivara ei-kriittisten palkkien takana nauhana. Oletus: päällä. Missä: *Näkymä › Perustasot ja edistyminen › Pelivaranauha*.
+**Pelivaranauha** — pelivara ei-kriittisten palkkien takana nauhana; ei valmiille tehtäville. Oletus: päällä. Missä: *Näkymä › Perustasot ja edistyminen › Pelivaranauha*.
 
 **Palkkien värit** — tekijä, josta palkin väri riippuu. Valitse *Kriittinen polku*, *Tehtäväkohtainen — automaattinen* tai *Luokittain*. Oletus: *Kriittinen polku*. Vaikutus: koskee samanaikaisesti Gantt-kaaviota ja raporttia. Missä: *Näkymä › Perustasot ja edistyminen › Palkkien värit*.
 
@@ -100,7 +100,7 @@ Sovellus tallentaa nämä valinnat myös tälle laitteelle. Ne asetetaan kuitenk
 
 **Valintanauhan tiivistys** — kompakti valintanauha. Oletus: pois. Missä: nuolipainike valintanauhan oikeassa alakulmassa.
 
-**Tehtävätaulukon leveys** — oletus 350 pikseliä, sallittu alue 150–800 pikseliä. Leveys asetetaan vetämällä tehtävätaulukon vieressä olevaa jakajaa. Se voidaan asettaa myös vasemmalla ja oikealla nuolinäppäimellä, kun jakaja on kohdistettuna.
+**Tehtävätaulukon leveys** — oletus 350 pikseliä, sallittu alue 150–800 pikseliä. Leveys asetetaan vetämällä tehtävätaulukon vieressä olevaa jakajaa. Se voidaan asettaa myös vasemman ja oikean nuolinäppäimen avulla, kun jakaja on kohdistettuna.
 
 **Oikean paneelin leveys** — oletus 280 pikseliä, sallittu alue 200–900 pikseliä. Leveys asetetaan vetämällä paneelin reunaa.
 

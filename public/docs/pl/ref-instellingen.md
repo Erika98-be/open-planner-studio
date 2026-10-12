@@ -90,7 +90,7 @@ Aplikacja zapisuje te wybory także na tym urządzeniu. Ustawiasz je jednak bezp
 
 **Akcent zasobu** — cienka linia w kolorze zasobu pod paskiem zadania. Domyślnie: wyłączone. Gdzie: *Widok › Plan bazowy i postęp › Akcent zasobu*.
 
-**Pas zapasu** — zapas jako pas za paskami zadań niekrytycznych. Domyślnie: włączone. Gdzie: *Widok › Plan bazowy i postęp › Pas zapasu*.
+**Pas zapasu** — zapas jako pas za paskami zadań niekrytycznych; nie dotyczy zadań ukończonych. Domyślnie: włączone. Gdzie: *Widok › Plan bazowy i postęp › Pas zapasu*.
 
 **Kolory słupków** — od czego zależy kolor paska. Wybierz jedną opcję: *Ścieżka krytyczna*, *Na zadanie — automatycznie* lub *Według kategorii*. Domyślnie: *Ścieżka krytyczna*. Efekt: dotyczy jednocześnie wykresu Gantt i raportu. Gdzie: *Widok › Plan bazowy i postęp › Kolory słupków*.
 

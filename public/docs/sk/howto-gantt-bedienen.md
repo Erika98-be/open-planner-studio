@@ -56,6 +56,8 @@ Viac o výbere je v článku [Výber, odstránenie a vrátenie úloh späť](doc
 
 Čím viac oddialite, tým menej mriežkových čiar je. Pri 8 pixeloch na deň alebo viac je čiara pre každý deň, s hrubšou čiarou na hranici týždňa. Medzi 2 a 8 pixelmi na deň zostáva len hranica týždňa. Pod 2 pixelmi na deň, na úrovni roka, zostávajú len hranice mesiacov. Inak by plátno bolo rovnomerným pásikovým vzorom a pruhy úloh by v ňom zanikli. Sivé víkendy a dni voľna a pásy týždňov, ktoré sa striedajú vo farbe, zostávajú na každej úrovni; nesú štruktúru týždňov, keď čiary zmiznú. V hlavičke časovej osi sa čísla týždňov a čísla dní zobrazia len vtedy, keď je na ne miesto. Od 40 pixelov na deň sa pred číslo dňa zobrazí aj deň v týždni.
 
+Názov úlohy sa zobrazí v pruhu, ak sa tam celý zmestí. Ak sa nezmestí, napríklad pri oddialení, celý názov sa zobrazí napravo od pruhu.
+
 ## Nástrahy a čo aplikácia vtedy urobí
 
 **Začiatok sa nepresunie.** Ak má úloha predchádzajúcu úlohu a iné obmedzenie než SNET, napríklad *Čo najneskôr (ALAP)*, aplikácia nepoužije ťahaný začiatok. Po pustení tlačidla myši aplikácia oznámi, ktoré obmedzenie drží začiatok. Ak chcete začiatok presunúť, zmeňte toto obmedzenie. Pravý okraj funguje, lebo mení len trvanie.

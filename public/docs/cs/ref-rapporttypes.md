@@ -24,9 +24,9 @@ Otevřete kartu *Sestava* (nebo stiskněte Ctrl+P). Vlevo je sloupec *Sestava* s
 
 ## Gantt-diagram
 
-Plán jako pruhový graf, s tabulkou vlevo a časovou osou vpravo, případně přes více stránek. Náhled ukazuje papír se záhlavím stránky, tabulkou, časovou osou a legendou. Blok *Přehled* počítá *Úkoly:*, *Koncové úkoly:*, *Kritické:* a *Závislosti:*. Všechny možnosti jsou pod *Nastavení*.
+Plán jako pruhový graf, s tabulkou vlevo a časovou osou vpravo, případně přes více stránek. Náhled ukazuje papír se záhlavím stránky, tabulkou, časovou osou a legendou. Panel *Přehled* počítá *Úkoly:*, *Koncové úkoly:*, *Kritické:* a *Závislosti:*. Všechny možnosti najdete na kartě *Nastavení*.
 
-**Společnost:** — společnost v záhlaví stránky. Výchozí: společnost z informací o projektu. Účinek: jen záhlaví sestavy. Co zde napíšete, se neukládá. Změňte společnost v *Nastavení › Projekt › Info o projektu*, v poli *Objednatel/organizace*, a potvrďte tlačítkem *Použít*.
+**Společnost:** — společnost v záhlaví stránky. Výchozí: společnost z informací o projektu. Účinek: jen záhlaví sestavy. Co zde napíšete, se neukládá. Změňte společnost na kartě *Nastavení › Projekt › Info o projektu*, v poli *Objednatel/organizace*, a potvrďte tlačítkem *Použít*.
 
 **Autor:** — autor v záhlaví stránky. Jen pro čtení: aplikace ho bere z informací o projektu.
 
@@ -50,7 +50,7 @@ Plán jako pruhový graf, s tabulkou vlevo a časovou osou vpravo, případně p
 
 **Názvy úkolů na pruzích** — Výchozí: zapnuto. Účinek: název úkolu na pruhu, kde je na něj místo.
 
-**Zobrazit procento dokončení** — Výchozí: zapnuto. Účinek: tmavší část pruhu až do průběhu úkolu a sloupec *Dokonč* v tabulce.
+**Zobrazit procento dokončení** — Výchozí: zapnuto. Účinek: dokončená část pruhu se zbarví šedě, jako v Gantt-diagramu na obrazovce, a v tabulce se objeví sloupec *Dokonč*. Dokončený úkol nemá pás časové rezervy.
 
 **Zkrátit názvy úkolů** — Výchozí: zapnuto. Účinek: zapnuto zkrátí názvy v tabulce na šířku *Sloupec názvů:*. Vypnuto nechá sloupec růst s nejdelším názvem. Pak se zobrazí *Sloupec názvů se přizpůsobí nejdelšímu názvu úkolu*.
 

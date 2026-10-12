@@ -56,6 +56,7 @@ Každá zmena postupu alebo dátumu kontroly stavu urobí plán zastaralým: sta
 ## Kontrola výsledku
 
 - Na dátume kontroly stavu diagram Gantt zobrazí prerušovanú čiaru s dátumom v záhlaví. Pri bežiacich úlohách sa čiara vyklenie k percentu v pruhu. Tieto čiary zapínate alebo vypínate pomocou *Zobrazenie › Smerné plány a postup › Čiara postupu* a *Čiara dátumu kontroly stavu*.
+- Dokončená časť pruhu sa sfarbí sivo; zvyšok si zachová svoju farbu. Úloha, ktorá je úplne hotová, je celá sivá, pred názvom má značku začiarknutia a nemá pruh časovej rezervy. Pruh fázy sa tiež sfarbí sivo až do jej odvodeného percenta, takže vidíte pri každej fáze, aká časť práce je hotová. Ak zobrazíte predchádzajúce úlohy alebo nasledujúce úlohy danej úlohy, tieto pruhy si zachovajú zvýraznenú farbu, aj keď sú hotové.
 - Dokončené úlohy nikdy nie sú červené: pri dátume kontroly stavu dokončená úloha nie je kritická.
 - Fázy zobrazujú odvodené percento a dátum dokončenia plánu sa mohol posunúť.
 - Ak ste uložili pôvodný plán, pod každým pruhom je pôvodný plán a typ zostavy *Odchýlky* zobrazuje odchýlku.

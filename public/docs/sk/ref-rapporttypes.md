@@ -24,15 +24,15 @@ Otvorte kartu *Zostava* (alebo stlačte Ctrl+P). Vľavo je stĺpec *Zostava* s r
 
 ## Gantt-zostava
 
-Plán ako pruhový graf, s tabuľkou vľavo a časovou osou vpravo, podľa potreby cez viac strán. Náhľad ukazuje papier s hlavičkou strany, tabuľkou, časovou osou a legendou. Časť *Súhrn* počíta *Úlohy:*, *Listové úlohy:*, *Kritické:* a *Závislosti:*. Všetky možnosti sú pod *Nastavenia*.
+Plán ako pruhový graf, s tabuľkou vľavo a časovou osou vpravo, podľa potreby cez viac strán. Náhľad ukazuje papier s hlavičkou strany, tabuľkou, časovou osou a legendou. Časť *Súhrn* počíta *Úlohy:*, *Listové úlohy:*, *Kritické:* a *Závislosti:*. Všetky možnosti sú na karte *Nastavenia*.
 
-**Spoločnosť:** — spoločnosť v hlavičke strany. Predvolené: spoločnosť z info o projekte. Účinok: iba hlavička zostavy; čo tu napíšete, sa neukladá. Zmeňte spoločnosť v *Nastavenia › Projekt › Info o projekte*, v poli *Objednávateľ/organizácia*, a potvrďte tlačidlom *Použiť*.
+**Spoločnosť:** — spoločnosť v hlavičke strany. Predvolené: spoločnosť z info o projekte. Účinok: iba hlavička zostavy; čo tu napíšete, sa neukladá. Zmeňte spoločnosť na karte *Nastavenia › Projekt › Info o projekte*, v poli *Objednávateľ/organizácia*, a potvrďte tlačidlom *Použiť*.
 
 **Autor:** — autor v hlavičke strany. Iba na čítanie: aplikácia ho prevezme z info o projekte.
 
-**Veľkosť písma:** — veľkosť textu a tabuľky v zostave. Na výber sú 90%, 100%, 110% a 125%. Predvolené: 100%. Účinok: pri väčšom písme rastú text, riadky a tabuľka a časová os stratí šírku. Nezávisí od *Veľkosť textu* v nastaveniach.
+**Veľkosť písma:** — veľkosť textu a tabuľky v zostave. Na výber sú 90%, 100%, 110% a 125%. Predvolené: 100%. Účinok: pri väčšom písme rastú text, riadky a tabuľka a časová os stratí šírku. Nezávisí od voľby *Veľkosť textu* v nastaveniach.
 
-**Farby pruhov:** — od čoho závisí farba pruhu. Na výber sú *Kritická cesta*, *Podľa úlohy — automaticky* a *Podľa kategórie*, s rozbaľovacím zoznamom *Pole kategórie* pre *Podľa kategórie*. Predvolené: *Kritická cesta*. Účinok: je to rovnaká voľba ako *Farby pruhov* na karte *Zobrazenie*: ak ju tu zmeníte, zmení sa aj Gantt na obrazovke. Ak vybrané pole v tomto projekte neexistuje, zobrazí sa *Toto pole v tomto projekte neexistuje. Dočasne sa používa typ úlohy.*
+**Farby pruhov:** — od čoho závisí farba pruhu. Na výber sú *Kritická cesta*, *Podľa úlohy — automaticky* a *Podľa kategórie*, s rozbaľovacím zoznamom *Pole kategórie* pre voľbu *Podľa kategórie*. Predvolené: *Kritická cesta*. Účinok: je to rovnaká voľba ako *Farby pruhov* na karte *Zobrazenie*: ak ju tu zmeníte, zmení sa aj Gantt na obrazovke. Ak vybrané pole v tomto projekte neexistuje, zobrazí sa *Toto pole v tomto projekte neexistuje. Dočasne sa používa typ úlohy.*
 
 **Čiara stavu:** — čiara pri dátume kontroly stavu. Na výber sú *Žiadna*, *Čiara dátumu kontroly stavu* a *Čiara postupu*. Predvolené: *Žiadna*. Účinok: *Čiara dátumu kontroly stavu* nakreslí čiaru pri dátume kontroly stavu; *Čiara postupu* nakreslí klikatú čiaru, ktorá sa vychyľuje k postupu každej úlohy. Ak projekt nemá dátum kontroly stavu, zobrazí sa *Najprv nastavte dátum kontroly stavu* a zostava nenakreslí nič.
 
@@ -42,7 +42,7 @@ Plán ako pruhový graf, s tabuľkou vľavo a časovou osou vpravo, podľa potre
 
 **Priblíženie:** — pevná mierka časovej osi. Viditeľné len, keď je *Prispôsobiť papieru* vypnuté. Posuvník od 1 do 40. Predvolené: 22. Účinok: väčšia hodnota urobí časovú os širšou, takže cez šírku bude viac strán.
 
-**Časová os cez:** — rozloží časovú os na viac šírok strany. Výber od 1 do 8 strán. Predvolené: 1 strana. Účinok: iba pri *Prispôsobiť papieru*; inak je voľba vypnutá a zobrazí sa *Len pri auto-prispôsobení*. Hodí sa pre dlhý plán, ktorý chcete vytlačiť v čitateľnej veľkosti.
+**Časová os cez:** — rozloží časovú os na viac šírok strany. Výber od 1 do 8 strán. Predvolené: 1 strana. Účinok: iba keď je zapnutá voľba *Prispôsobiť papieru*; inak je voľba vypnutá a zobrazí sa *Len pri auto-prispôsobení*. Hodí sa pre dlhý plán, ktorý chcete vytlačiť v čitateľnej veľkosti.
 
 **Opakovať hlavičku na každej strane** — Predvolené: zapnuté. Účinok: zapnuté dá hlavičku strany na každú stranu; vypnuté iba na prvú.
 
@@ -50,7 +50,7 @@ Plán ako pruhový graf, s tabuľkou vľavo a časovou osou vpravo, podľa potre
 
 **Názvy úloh na pruhoch** — Predvolené: zapnuté. Účinok: názov úlohy na pruhu, kde je na to dosť miesta.
 
-**Zobraziť percento dokončenia** — Predvolené: zapnuté. Účinok: tmavšia časť pruhu až po postup úlohy a stĺpec *Dok* v tabuľke.
+**Zobraziť percento dokončenia** — Predvolené: zapnuté. Účinok: dokončená časť pruhu sa sfarbí na sivo, ako v Gantt-diagrame, a v tabuľke sa objaví stĺpec *Dok*. Dokončená úloha nemá pás časovej rezervy.
 
 **Skrátiť názvy úloh** — Predvolené: zapnuté. Účinok: zapnuté skráti názvy v tabuľke na šírku *Stĺpec názvov:*. Vypnuté nechá stĺpec rásť podľa najdlhšieho názvu; potom sa zobrazí *Stĺpec názvov sa prispôsobí najdlhšiemu názvu úlohy*.
 

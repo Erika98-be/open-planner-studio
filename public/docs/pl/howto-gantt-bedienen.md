@@ -11,11 +11,11 @@ W wykresie Gantt widzisz, że murowanie musi zacząć się dwa dni później, al
 ### Przesuwanie paska
 
 1. Naciśnij środek paska zadania i przeciągnij poziomo. Początek i zakończenie przesuwają się razem, w całych dniach. Czas trwania się nie zmienia.
-2. Puść przycisk. Pasek zostaje na nowym miejscu. Harmonogram jest wtedy nieaktualny: naciśnij *Oblicz* (F5), albo pozwól aplikacji zrobić to samej, jeśli opcja *Oblicz automatycznie* jest włączona.
+2. Puść przycisk. Pasek zostaje na nowym miejscu. Harmonogram jest wtedy nieaktualny: naciśnij *Oblicz* (F5) albo pozwól, aby aplikacja zrobiła to sama, jeśli opcja *Oblicz automatycznie* jest włączona.
 
 Jeśli zadanie ma poprzednika, aplikacja zapisuje nowy początek jako ograniczenie *Rozpocznij nie wcześniej niż (SNET)* i informuje o tym po puszczeniu. Dlaczego tak jest i co się dzieje przy innym ograniczeniu, znajdziesz w [Ograniczenia i terminy ostateczne](docs://uitleg-constraints). Jeśli przeciągniesz z powrotem na pierwotny początek, wraca także pierwotne ograniczenie.
 
-Jeśli przeciągasz głównie w górę lub w dół zamiast w bok, przesuwasz zadanie do innego wiersza, a daty zostają. Kierunek, który wybierzesz w pierwszych pikselach, obowiązuje dla całego przeciągania, więc jeden gest nigdy nie zmienia jednocześnie dat i struktury. Zobacz [Dostosowywanie struktury](docs://howto-structuur-aanpassen).
+Jeśli przeciągasz głównie w górę lub w dół zamiast w bok, przesuwasz zadanie do innego wiersza, a daty zostają. Kierunek, który wybierzesz w pierwszych pikselach, obowiązuje dla całego przeciągania. Dzięki temu jeden gest nigdy nie zmienia jednocześnie dat i struktury. Zobacz [Dostosowywanie struktury](docs://howto-structuur-aanpassen).
 
 ### Zmienianie czasu trwania
 
@@ -27,7 +27,7 @@ Lewa krawędź przesuwa początek i zostawia zakończenie, więc zadanie skraca 
 
 Czas trwania liczy dni robocze z kalendarza zadania. Weekendy i dni wolne się nie liczą. Zadanie w dniach nie może być krótsze niż jeden dzień roboczy. Dla zadania w godzinach aplikacja zaokrągla do kroku osi czasu pod myszą: co najmniej godzinę, albo ćwierć godziny, jeśli powiększysz wystarczająco i włączona jest opcja *Pokazuj ćwierćgodziny przy dużym powiększeniu*.
 
-Jedno przeciągnięcie to jeden krok w *Cofnij*, niezależnie od długości przeciągania. Na podzielonym pasku krawędzie działają inaczej; zobacz [Dzielenie zadania](docs://howto-taak-splitsen).
+Jedno przeciągnięcie to jeden krok w *Cofnij*, niezależnie od długości przeciągania. Na podzielonym pasku krawędzie działają inaczej. Zobacz [Dzielenie zadania](docs://howto-taak-splitsen).
 
 ### Przesuwanie osi czasu
 
@@ -42,7 +42,7 @@ Co robi przeciągnięcie po pustym tle, zależy od trybu przewijania. Wybierasz 
 
 Ramka zaznacza wszystkie zadania w wierszach, których dotyka. Liczy się tylko wysokość ramki, nie skala czasu.
 
-1. Zacznij na pustym tle. W trybie *Zoom + przeciąganie* przytrzymaj Ctrl (⌘ na Macu) podczas tego; w trybie *Pozycja* i *Klawisze* nie trzeba tego robić.
+1. Zacznij na pustym tle. W trybie *Zoom + przeciąganie* przytrzymaj Ctrl (⌘ na Macu) podczas tego. W trybie *Pozycja* i *Klawisze* nie trzeba tego robić.
 2. Przeciągnij po wierszach, które chcesz zaznaczyć. Zaznaczenie dostaje ramkę.
 3. Puść przycisk. Klawisz Esc podczas przeciągania anuluje ramkę, a zaznaczenie zostaje takie, jakie było.
 
@@ -50,11 +50,13 @@ Więcej o zaznaczaniu znajdziesz w [Zaznaczanie, usuwanie i cofanie zadań](docs
 
 ### Powiększanie i pomniejszanie
 
-1. Użyj *Zoom +* i *Zoom -* (*Start › Powiększenie*) albo klawiszy + i -. Kółko myszy też powiększa; kiedy, zależy od trybu przewijania (zobacz [Ustawienia](docs://ref-instellingen)).
+1. Użyj *Zoom +* i *Zoom -* (*Start › Powiększenie*) albo klawiszy + i -. Kółko myszy też powiększa. To, kiedy kółko powiększa, zależy od trybu przewijania (zobacz [Ustawienia](docs://ref-instellingen)).
 2. Jeśli chcesz, aby cały projekt był widoczny, wybierz *Widok › Skala czasu › Dopasuj do projektu* albo naciśnij Ctrl+0. *Resetuj* (na karcie *Widok*) albo klawisz 0 ustawia powiększenie z powrotem na domyślne.
 3. W prawym dolnym rogu paska stanu jest powiększenie w pikselach na dzień, na przykład *Zoom: 15px/dzień*.
 
-Im dalej pomniejszasz, tym mniej linii siatki jest widocznych. Przy 8 pikselach na dzień lub więcej jest linia dla każdego dnia, z grubszą linią na granicy tygodnia. Między 2 a 8 pikselami na dzień zostaje tylko granica tygodnia. Poniżej 2 pikseli na dzień, na poziomie roku, zostają tylko granice miesięcy. Inaczej płótno zamieniłoby się w równomierny wzór pasków, w którym paski zadań znikają. Szare weekendy i dni wolne oraz naprzemiennie zabarwione pasy tygodni zostają na każdym poziomie; niosą strukturę tygodnia, gdy linie znikają. W nagłówku osi czasu numery tygodni i dni pojawiają się tylko wtedy, gdy jest na nie miejsce, a od 40 pikseli na dzień dzień tygodnia pokazywany jest także przed numerem dnia.
+Im dalej pomniejszasz, tym mniej linii siatki jest widocznych. Przy 8 pikselach na dzień lub więcej jest linia dla każdego dnia, z grubszą linią na granicy tygodnia. Między 2 a 8 pikselami na dzień zostaje tylko granica tygodnia. Poniżej 2 pikseli na dzień, na poziomie roku, zostają tylko granice miesięcy. Inaczej płótno zamieniłoby się w równomierny wzór pasków, w którym paski zadań znikają. Szare weekendy i dni wolne oraz naprzemiennie zabarwione pasy tygodni zostają na każdym poziomie. Niosą strukturę tygodnia, gdy linie znikają. W nagłówku osi czasu numery tygodni i dni pojawiają się tylko wtedy, gdy jest na nie miejsce. Od 40 pikseli na dzień przed numerem dnia pokazywany jest także dzień tygodnia.
+
+Nazwa zadania jest pokazana w pasku, jeśli się w nim zmieści w całości. Jeśli się nie mieści, na przykład gdy pomniejszasz, pełna nazwa pojawia się po prawej stronie paska.
 
 ## Pułapki i co robi wtedy aplikacja
 

@@ -24,7 +24,7 @@ Abra o separador *Relatório* (ou prima Ctrl+P). À esquerda está a coluna *Rel
 
 ## Gráfico de Gantt
 
-O planeamento em forma de gráfico de barras, com uma tabela à esquerda e uma linha de tempo à direita, em várias páginas se for necessário. A pré-visualização mostra o papel com cabeçalho da página, tabela, linha de tempo e legenda. O bloco *Resumo* conta *Tarefas*, *Tarefas folha*, *Crítica* e *Relações*. Todas as opções estão em *Definições*.
+O planeamento em forma de gráfico de barras, com uma tabela à esquerda e uma linha de tempo à direita, em várias páginas se for necessário. A pré-visualização mostra o papel com cabeçalho da página, tabela, linha de tempo e legenda. O bloco *Resumo* conta *Tarefas:*, *Tarefas folha:*, *Crítica:* e *Relações:*. Todas as opções estão em *Definições*.
 
 **Empresa:** — a empresa no cabeçalho da página. Padrão: a empresa das informações do projeto. Efeito: só o cabeçalho do relatório; o que escrever aqui não é guardado. Altere a empresa em *Definições › Projeto › Info do projeto*, no campo *Cliente/organização*, e confirme com *Aplicar*.
 
@@ -38,7 +38,7 @@ O planeamento em forma de gráfico de barras, com uma tabela à esquerda e uma l
 
 **Seguir a vista (filtro, agrupamento, ordenação)** — só para o Gráfico de Gantt. Padrão: desligado. Efeito: desligado põe toda a árvore de tarefas no papel. Ligado desenha exatamente as linhas do ecrã: com o seu filtro, agrupamento, ordenação e fases recolhidas.
 
-**Ajustar ao papel automaticamente** — ajusta a linha de tempo à largura da página. Padrão: ligado. Efeito: ligado ajusta a linha de tempo à largura da página; o número de páginas depende da altura. Desligado usa uma escala fixa (*Zoom*) e também se estende por várias páginas na largura, o que depressa dá muitas páginas.
+**Ajustar ao papel automaticamente** — ajusta a linha de tempo à largura da página. Padrão: ligado. Efeito: ligado ajusta a linha de tempo à largura da página; o número de páginas depende da altura. Desligado usa uma escala fixa (*Zoom:*) e também se estende por várias páginas na largura, o que depressa dá muitas páginas.
 
 **Zoom:** — a escala fixa da linha de tempo. Só visível quando *Ajustar ao papel automaticamente* está desligado. Controlo deslizante de 1 a 40. Padrão: 22. Efeito: um valor maior alarga a linha de tempo, por isso ficam mais páginas na largura.
 
@@ -50,15 +50,15 @@ O planeamento em forma de gráfico de barras, com uma tabela à esquerda e uma l
 
 **Nomes das tarefas nas barras** — Padrão: ligado. Efeito: o nome da tarefa na barra, onde houver espaço.
 
-**Mostrar conclusão** — Padrão: ligado. Efeito: uma parte mais escura na barra, até ao progresso da tarefa, e a coluna *Concl* na tabela.
+**Mostrar conclusão** — Padrão: ligado. Efeito: a parte concluída da barra fica cinzenta, como no Gantt, e aparece a coluna *Concl* na tabela. Uma tarefa concluída não recebe faixa de folga.
 
-**Truncar nomes de tarefas** — Padrão: ligado. Efeito: ligado corta os nomes na tabela à largura de *Coluna de nome*. Desligado deixa a coluna crescer com o nome mais longo; aparece então *A coluna de nome adapta-se ao nome de tarefa mais longo*.
+**Truncar nomes de tarefas** — Padrão: ligado. Efeito: ligado corta os nomes na tabela à largura de *Coluna de nome:*. Desligado deixa a coluna crescer com o nome mais longo; aparece então *A coluna de nome adapta-se ao nome de tarefa mais longo*.
 
 **Coluna de nome:** — a largura da coluna de nome. Só visível quando *Truncar nomes de tarefas* está ligado. Controlo deslizante de 60 a 400. Padrão: 130.
 
 **Mostrar sobreposição da linha de base** — a linha de base ativa ao lado das barras. Padrão: desligado. Efeito: uma barra fina na cor da linha de base, por baixo da barra da tarefa, só para as tarefas que estão na linha de base.
 
-**Caminho crítico** — Padrão: ligado. Efeito: só controla as linhas vermelhas de relação entre duas tarefas críticas e a linha da legenda. As próprias barras seguem *Cores das barras*, independentemente desta caixa de verificação.
+**Caminho crítico** — Padrão: ligado. Efeito: controla só as linhas vermelhas de relação entre duas tarefas críticas e a linha da legenda. As próprias barras seguem *Cores das barras:*, independentemente desta caixa de verificação.
 
 **Mostrar folga** — Padrão: ligado. Efeito: a folga como uma faixa atrás das barras não críticas.
 

@@ -90,7 +90,7 @@ A aplicação também guarda estas escolhas neste dispositivo, mas define-as no 
 
 **Acento de recurso** — uma listra fina na cor do recurso por baixo da barra de tarefa. Padrão: desativado. Onde: *Visualização › Linhas de base e progresso › Acento de recurso*.
 
-**Faixa de folga** — a folga como faixa atrás das barras não críticas. Padrão: ativado. Onde: *Visualização › Linhas de base e progresso › Faixa de folga*.
+**Faixa de folga** — a folga como faixa atrás das barras não críticas, não para tarefas concluídas. Padrão: ativado. Onde: *Visualização › Linhas de base e progresso › Faixa de folga*.
 
 **Cores das barras** — de que depende a cor de uma barra. Escolha entre *Caminho crítico*, *Por tarefa — automático* e *Por categoria*. Padrão: *Caminho crítico*. Efeito: aplica-se ao Gantt e ao relatório ao mesmo tempo. Onde: *Visualização › Linhas de base e progresso › Cores das barras*.
 

@@ -56,7 +56,8 @@ Cada cambio en el avance o en la fecha de estado deja la planificación desactua
 ## Compruebe el resultado
 
 - En la fecha de estado, el diagrama Gantt muestra una línea discontinua con la fecha en el encabezado. En las tareas en curso, la línea sobresale hasta el porcentaje de la barra. Puede activar o desactivar estas líneas en *Vista › Líneas base y progreso › Línea de progreso* y *Línea de fecha de estado*.
-- Las tareas completadas nunca aparecen en rojo: con fecha de estado, una tarea completada no es crítica.
+- La parte finalizada de una barra se vuelve gris; el resto conserva su color. Una tarea totalmente terminada aparece completamente gris, con una marca de verificación delante del nombre y sin franja de holgura. La barra de una fase también se vuelve gris hasta su porcentaje derivado, así que puede ver por fase cuánto trabajo se ha hecho. Si muestra los predecesores o sucesores de una tarea, esas barras conservan su color de resaltado, también cuando están terminadas.
+- Las tareas finalizadas nunca aparecen en rojo: con fecha de estado, una tarea finalizada no es crítica.
 - Las fases muestran un porcentaje derivado, y el fin de la planificación puede haber cambiado.
 - Si guardó una línea base, la planificación original aparece debajo de cada barra, y el tipo de informe *Variance* muestra la variación.
 

@@ -90,7 +90,7 @@ Aplicația păstrează și aceste alegeri pe acest dispozitiv, dar le setați di
 
 **Accent resursă** — o fâșie subțire în culoarea resursei sub bara activității. Implicit: dezactivat. Unde: *Vizualizare › Referințe și progres › Accent resursă*.
 
-**Zonă de marjă** — marja ca o zonă în spatele barelor necritice. Implicit: activat. Unde: *Vizualizare › Referințe și progres › Zonă de marjă*.
+**Zonă de marjă** — marja ca o zonă în spatele barelor necritice; nu pentru activitățile finalizate. Implicit: activat. Unde: *Vizualizare › Referințe și progres › Zonă de marjă*.
 
 **Culori bare** — de ce depinde culoarea unei bare. Alegeți dintre *Drum critic*, *Per activitate — automat* și *Pe categorie*. Implicit: *Drum critic*. Efect: se aplică în același timp la diagrama Gantt și la raport. Unde: *Vizualizare › Referințe și progres › Culori bare*.
 

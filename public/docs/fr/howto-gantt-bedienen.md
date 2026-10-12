@@ -56,6 +56,8 @@ Plus d'informations sur la sélection : [Sélectionner, supprimer et annuler des
 
 Plus vous dézoomez, moins il y a de lignes de grille. À partir de 8 pixels par jour ou plus, il y a une ligne par jour, avec une ligne plus épaisse à la limite de semaine. Entre 2 et 8 pixels par jour, seule la limite de semaine reste. En dessous de 2 pixels par jour, au niveau de l'année, seules les limites de mois restent. Sinon, le canevas deviendrait une bande rayée uniforme dans laquelle les barres disparaissent. Les week-ends et les jours de congé en gris, ainsi que les bandes de semaine teintées en alternance, restent à chaque niveau. Ils montrent la structure des semaines quand les lignes disparaissent. Dans l'en-tête de l'échelle de temps, les numéros de semaine et les numéros de jour n'apparaissent que s'il y a assez de place. À partir de 40 pixels par jour, le jour de la semaine s'affiche aussi, avant le numéro du jour.
 
+Le nom de la tâche s'affiche dans la barre s'il y tient entièrement. S'il n'y tient pas, par exemple quand vous dézoomez, le nom complet s'affiche à droite de la barre.
+
 ## Pièges et ce que fait alors l'application
 
 **Le début ne bouge pas.** Si la tâche a un prédécesseur et une contrainte autre que SNET, par exemple *Le plus tard possible (ALAP)*, l'application n'applique pas le début glissé. Après que vous avez relâché, l'application indique quelle contrainte retient le début. Modifiez cette contrainte pour déplacer le début. Le bord droit fonctionne, parce qu'il ne change que la durée.

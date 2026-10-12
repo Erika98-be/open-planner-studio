@@ -2966,7 +2966,7 @@
     ]
   },
   "howto-voortgang-bijwerken": {
-    "structure": "a69d2f79d6dc9667",
+    "structure": "a43ae49e94f27891",
     "sections": [
       {
         "hash": "d1758ea47eab37c4",
@@ -3053,7 +3053,7 @@
         }
       },
       {
-        "hash": "b41aa755b7360b67",
+        "hash": "837937517733adbe",
         "labels": {
           "common:shortcuts.category.view": "1c5c067138704dda",
           "menu:ribbon.baselines": "8a7c9c644e3afdf1",
@@ -3962,7 +3962,7 @@
         "labels": {}
       },
       {
-        "hash": "f1793be37b4de7f6",
+        "hash": "263098530534e3dd",
         "labels": {
           "common:context.fitToProject": "c9267536fe2b2cc7",
           "common:feedback.tools.undo": "926a50b98ece2667",
@@ -7699,7 +7699,7 @@
         }
       },
       {
-        "hash": "cb1689edcc128447",
+        "hash": "dd148bf528abc225",
         "labels": {
           "common:resource.compact.title": "daa6d02a55bc3de9",
           "common:resource.leveling.resourceSelect": "daa6d02a55bc3de9",
@@ -8011,7 +8011,7 @@
           "common:conventions.p6CompletedOutOfSequenceWindow.label": "bbbfe981dfd955df",
           "common:conventions.p6CompletedPhysicalAtDataDate.label": "195b567a3eee26ff",
           "common:conventions.p6FreeFloatOnOwnCalendar.label": "13346c7df50b2503",
-          "common:conventions.p6InProgressStartLagElapsed.label": "80c6fde69f5d6b5a",
+          "common:conventions.p6InProgressStartLagElapsed.label": "6c625d1f63aa448f",
           "common:conventions.p6PreserveActualInstants.label": "324e2d5465155783",
           "common:conventions.p6StartedTaskIgnoresPlannedStartFloor.label": "c2d5457b8ba9cfcb",
           "common:conventions.p6UseRemainingStartForProgress.label": "c7c07810e2d4e24a",
@@ -8023,7 +8023,7 @@
           "common:schedulingProfile.resetToBase": "4b9f2cab85ca6ed6",
           "common:schedulingProfile.sourceOptions.useProjectEndDateForFloat": "bc12fbaf162a3a77",
           "menu:projectInfo.calc.lagPredecessor": "2f191177ecf92344",
-          "menu:projectInfo.calc.ssLagFrom": "a372c982af16a5eb",
+          "menu:projectInfo.calc.ssLagFrom": "dc02b6ee8d020aa4",
           "menu:ribbon.progressModeOverride": "c5e21585bcb83ed1",
           "report:milestoneReport.kind_START": "d2bb025a2e51c410",
           "report:projectStart": "cd439134e8942569",
@@ -8044,7 +8044,7 @@
           "common:calendar.library.project": "f5625aae8f788e07",
           "common:context.calendarProjectDefault": "f5625aae8f788e07",
           "common:conventions.p6CompletedDataDateWindow.label": "547d602c9e17fc40",
-          "common:conventions.p6InProgressStartLagElapsed.label": "80c6fde69f5d6b5a",
+          "common:conventions.p6InProgressStartLagElapsed.label": "6c625d1f63aa448f",
           "common:conventions.p6UseRemainingStartForProgress.label": "c7c07810e2d4e24a",
           "common:documents.newProject": "0e1a7040390fb03e",
           "common:hourData.enable": "9ef63a2f37c90689",
@@ -8081,7 +8081,7 @@
           "menu:projectInfo.calc.nearCriticalThreshold": "d35480d7d7afc67e",
           "menu:projectInfo.calc.ssLagActualStart": "5c66310f94f9c428",
           "menu:projectInfo.calc.ssLagEarlyStart": "65b9baa342711dc6",
-          "menu:projectInfo.calc.ssLagFrom": "a372c982af16a5eb",
+          "menu:projectInfo.calc.ssLagFrom": "dc02b6ee8d020aa4",
           "menu:projectInfo.calc.ssLagNeedsConvention": "33a0f3e9537c3ac5",
           "menu:projectInfo.calc.tfAuto": "a1e62909904e5f08",
           "menu:projectInfo.calc.tfFinish": "34f41b81c238257a",
@@ -8321,7 +8321,7 @@
         }
       },
       {
-        "hash": "79625d856baba2fb",
+        "hash": "21918b31da808f10",
         "labels": {
           "common:apply": "63c73c4730f4473e",
           "common:benchmark.summaryTasks": "5253040db8643c85",

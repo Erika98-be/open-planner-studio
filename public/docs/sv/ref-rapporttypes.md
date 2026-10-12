@@ -22,9 +22,9 @@ Varje rapport på fliken *Rapport* har egna alternativ. För varje alternativ st
 
 **Orientering:** — liggande eller stående. Välj mellan *Liggande* och *Stående*. Standard: *Liggande*. Effekt: som för *Papper:*. Var: samma ställe som *Papper:*.
 
-## Gantt-utskrift
+## Gantt-diagram
 
-Tidsplanen visas som ett diagram med balkar, med en tabell till vänster och en tidslinje till höger. Vid behov över flera sidor. Förhandsvisningen visar papperet med sidhuvud, tabell, tidslinje och förklaring. Blocket *Översikt* räknar *Uppgifter:*, *Lövuppgifter:*, *Kritisk:* och *Samband:*. Alla alternativ står under *Inställningar*.
+Tidsplanen visas som ett diagram med balkar, med en tabell till vänster och en tidslinje till höger. Vid behov visas den över flera sidor. Förhandsvisningen visar papperet med sidhuvud, tabell, tidslinje och förklaring. Blocket *Översikt* räknar *Uppgifter:*, *Lövuppgifter:*, *Kritisk:* och *Samband:*. Alla alternativ står under *Inställningar*.
 
 **Företag:** — företaget i sidhuvudet. Standard: företaget från projektinfo. Effekt: bara sidhuvudet i rapporten. Det du skriver här sparas inte. Ändra företaget i *Inställningar › Projekt › Projektinfo*, i fältet *Beställare/organisation*, och bekräfta med *Tillämpa*.
 
@@ -36,7 +36,7 @@ Tidsplanen visas som ett diagram med balkar, med en tabell till vänster och en 
 
 **Statuslinje:** — en linje vid rapportdatumet. Välj mellan *Ingen*, *Rapportdatumlinje* och *Framdriftslinje*. Standard: *Ingen*. Effekt: *Rapportdatumlinje* ritar en linje vid rapportdatumet. *Framdriftslinje* ritar den sicksackade linjen som bugtar mot framdriften för varje uppgift. Har projektet inget rapportdatum, står det *Ange först ett rapportdatum* och rapporten ritar ingenting.
 
-**Följa vyn (filter, gruppering, sortering)** — bara för Gantt-utskrift. Standard: av. Effekt: av lägger hela uppgiftsträdet på papper. På ritar exakt de rader som syns på skärmen: med ditt filter, din gruppering, sortering och ihopfällda faser.
+**Följa vyn (filter, gruppering, sortering)** — bara för Gantt-diagrammet. Standard: av. Effekt: av lägger hela uppgiftsträdet på papper. På ritar exakt de rader som syns på skärmen: med ditt filter, din gruppering, din sortering och ihopfällda faser.
 
 **Anpassa till papper** — skala tidslinjen till sidans bredd. Standard: på. Effekt: på skalar tidslinjen till sidans bredd. Antalet sidor följer av höjden. Av använder en fast skala (*Zoom:*) och delar också upp tidslinjen över bredden, vilket snabbt ger många sidor.
 
@@ -50,7 +50,7 @@ Tidsplanen visas som ett diagram med balkar, med en tabell till vänster och en 
 
 **Uppgiftsnamn på balkar** — Standard: på. Effekt: namnet på uppgiften står på balken, där det finns plats.
 
-**Visa slutförandegrad** — Standard: på. Effekt: en mörkare del i balken upp till uppgiftens framdrift, och kolumnen *Slutf*.
+**Visa slutförandegrad** — Standard: på. Effekt: den färdiga delen av balken blir grå, som i Gantt-diagrammet, och kolumnen *Slutf* syns i tabellen. En färdig uppgift får inget slackband.
 
 **Korta av uppgiftsnamn** — Standard: på. Effekt: på kortar av namnen i tabellen vid bredden för *Namnkolumn:*. Av låter kolumnen växa med det längsta namnet. Då står det *Namnkolumnen anpassar sig efter det längsta uppgiftsnamnet*.
 

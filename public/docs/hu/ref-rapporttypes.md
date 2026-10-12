@@ -26,7 +26,7 @@ Nyissa meg a *Jelentés* lapot (vagy nyomja meg a Ctrl+P billentyűkombinációt
 
 Az ütemezés sáv-diagramként: balra egy táblázat, jobbra egy idővonal, szükség esetén több oldalon. Az előnézet a papírt mutatja, oldalfejléccel, táblázattal, idővonallal és jelmagyarázattal. Az *Áttekintés* blokk ezeket számolja: *Tevékenységek:*, *Alsó szintű tevékenységek:*, *Kritikus:* és *Kapcsolatok:*. Minden beállítás a *Beállítások* alatt található.
 
-**Cég:** — a cég az oldalfejlécben. Alapértelmezett: a cég a projektinfóból. Hatás: csak a jelentés fejlécét érinti; amit itt beír, nem marad meg. A céget a *Beállítások › Projekt › Projektinfó* menüpontban módosíthatja, a *Megrendelő/szervezet* mezőben, majd az *Alkalmazás* gombbal erősítse meg.
+**Cég:** — a cég az oldalfejlécben. Alapértelmezett: a cég a projektinfóból. Hatás: csak a jelentés fejlécét érinti; amit itt beír, nem marad meg. A céget a *Beállítások › Projekt › Projektinfó* menüpontban, a *Megrendelő/szervezet* mezőben módosítsa, majd az *Alkalmazás* gombbal erősítse meg.
 
 **Szerző:** — a szerző az oldalfejlécben. Csak olvasható: az alkalmazás a projektinfóból veszi.
 
@@ -34,7 +34,7 @@ Az ütemezés sáv-diagramként: balra egy táblázat, jobbra egy idővonal, sz�
 
 **Sávszínek:** — attól függ, mi határozza meg a sáv színét. Válasszon a *Kritikus út*, a *Tevékenységenként — automatikus* és a *Kategória szerint* közül; a *Kategória szerint* beállításhoz a *Kategóriamező* legördülő listában válasszon mezőt. Alapértelmezett: *Kritikus út*. Hatás: ez ugyanaz a választás, mint a *Nézet* lap *Sávszínek* beállítása: ha itt módosítja, a képernyőn látható Gantt is változik. Ha a kiválasztott mező nincs ebben a projektben, a következő üzenet jelenik meg: *Ez a mező nincs ebben a projektben. Ideiglenesen a tevékenységtípus használatos.*
 
-**Állapotvonal:** — egy vonal az állapotdátumnál. Válasszon a *Nincs*, az *Állapotdátum-vonal* és az *Előrehaladási vonal* közül. Alapértelmezett: *Nincs*. Hatás: az *Állapotdátum-vonal* egy vonalat húz az állapotdátumnál; az *Előrehaladási vonal* cikkcakkos vonalat rajzol, amely minden tevékenység előrehaladásának megfelelően kitér. Ha a projektnek nincs állapotdátuma, a következő üzenet jelenik meg: *Állítsa be először az állapotdátumot.* A jelentés ilyenkor nem rajzol semmit.
+**Állapotvonal:** — egy vonal az állapotdátumnál. Válasszon a *Nincs*, az *Állapotdátum-vonal* és az *Előrehaladási vonal* közül. Alapértelmezett: *Nincs*. Hatás: az *Állapotdátum-vonal* egy vonalat húz az állapotdátumnál; az *Előrehaladási vonal* cikkcakkos vonalat rajzol, amely minden tevékenység előrehaladásának megfelelően kitér. Ha a projektnek nincs állapotdátuma, a következő üzenet jelenik meg: *Állítsa be először az állapotdátumot*, és a jelentés nem rajzol semmit.
 
 **Nézet követése (szűrő, csoportosítás, rendezés)** — csak a Gantt-nyomtatványnál. Alapértelmezett: ki. Hatás: ki állapotban a teljes tevékenységfa kerül a papírra. Be állapotban pontosan a képernyő sorai kerülnek rá: a szűrővel, csoportosítással, rendezéssel és összecsukott szakaszokkal.
 
@@ -42,7 +42,7 @@ Az ütemezés sáv-diagramként: balra egy táblázat, jobbra egy idővonal, sz�
 
 **Nagyítás:** — az idővonal rögzített méretaránya. Csak akkor látszik, ha az *Automatikus illesztés papírra* ki van kapcsolva. Csúszka 1-től 40-ig. Alapértelmezett: 22. Hatás: nagyobb érték szélesebb idővonalat ad, így egymás mellett több oldal lesz.
 
-**Idővonal több oldalon:** — az idővonal több oldalszélességre oszlik. Választás 1-től 8 oldalig. Alapértelmezett: 1 oldal. Hatás: csak az *Automatikus illesztés papírra* beállítással működik; különben a választás nem használható, és a következő üzenet jelenik meg: *Csak automatikus illesztés esetén.* Hasznos hosszú ütemezésnél, ha olvasható méretben szeretné nyomtatni.
+**Idővonal több oldalon:** — az idővonal több oldalszélességre oszlik. Választás 1-től 8 oldalig. Alapértelmezett: 1 oldal. Hatás: csak az *Automatikus illesztés papírra* beállítással működik; különben a választás nem használható, és a következő üzenet jelenik meg: *Csak automatikus illesztés esetén*. Hasznos hosszú ütemezésnél, ha olvasható méretben szeretné nyomtatni.
 
 **Fejléc ismétlése minden oldalon** — Alapértelmezett: be. Hatás: be állapotban az oldalfejléc minden oldalon megjelenik; ki állapotban csak az elsőn.
 
@@ -50,9 +50,9 @@ Az ütemezés sáv-diagramként: balra egy táblázat, jobbra egy idővonal, sz�
 
 **Tevékenységnevek a sávokon** — Alapértelmezett: be. Hatás: a tevékenység neve a sávon jelenik meg, ahol van hely.
 
-**Elkészültség megjelenítése** — Alapértelmezett: be. Hatás: a sáv sötétebb része mutatja a tevékenység előrehaladását, és a táblázatban megjelenik az *Elk* oszlop.
+**Elkészültség megjelenítése** — Alapértelmezett: be. Hatás: a sáv kész része szürkére vált, ahogy a Gantt-ban, és a táblázatban megjelenik az *Elk* oszlop. Egy kész tevékenységnél nincs tartalékidő-sáv.
 
-**Tevékenységnevek csonkítása** — Alapértelmezett: be. Hatás: be állapotban a nevek a táblázatban a *Névoszlop:* szélességénél vágódnak le. Ki állapotban az oszlop a leghosszabb névig nő, és a következő üzenet jelenik meg: *A névoszlop a leghosszabb tevékenységnévhez igazodik.*
+**Tevékenységnevek csonkítása** — Alapértelmezett: be. Hatás: be állapotban a nevek a táblázatban a *Névoszlop:* szélességénél vágódnak le. Ki állapotban az oszlop a leghosszabb névig nő, és a következő üzenet jelenik meg: *A névoszlop a leghosszabb tevékenységnévhez igazodik*.
 
 **Névoszlop:** — a névoszlop szélessége. Csak akkor látszik, ha a *Tevékenységnevek csonkítása* be van kapcsolva. Csúszka 60-tól 400-ig. Alapértelmezett: 130.
 

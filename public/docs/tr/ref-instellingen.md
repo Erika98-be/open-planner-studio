@@ -90,7 +90,7 @@ Uygulama bu seçimleri ayrıca bu cihazda saklar, ancak bunları ayarlar panelin
 
 **Kaynak vurgusu** — görev çubuğunun altında, kaynağın renginde ince bir çizgi. Varsayılan: kapalı. Yer: *Görünüm › Temel plan ve ilerleme › Kaynak vurgusu*.
 
-**Bolluk bandı** — kritik olmayan çubukların arkasında bir bant olarak gösterilen bolluk. Varsayılan: açık. Yer: *Görünüm › Temel plan ve ilerleme › Bolluk bandı*.
+**Bolluk bandı** — kritik olmayan çubukların arkasında bir bant olarak gösterilen bolluk; tamamlanmış görevler için değil. Varsayılan: açık. Yer: *Görünüm › Temel plan ve ilerleme › Bolluk bandı*.
 
 **Çubuk renkleri** — bir çubuğun renginin neye bağlı olduğu. Şunlardan birini seçin: *Kritik yol*, *Görev başına — otomatik* veya *Kategoriye göre*. Varsayılan: *Kritik yol*. Etki: renk hem Gantt'ta hem de raporda aynı anda uygulanır. Yer: *Görünüm › Temel plan ve ilerleme › Çubuk renkleri*.
 

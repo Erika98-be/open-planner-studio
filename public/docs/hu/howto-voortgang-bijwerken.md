@@ -55,7 +55,8 @@ Minden változás az előrehaladásban vagy az állapotdátumban elavulttá tesz
 
 ## Az eredmény ellenőrzése
 
-- Az állapotdátumnál a Gantt szaggatott vonalat mutat, a fejlécben a dátummal. Futó tevékenységeknél a vonal kidudorodik a sávban látható százalékig. Ezeket a *Nézet › Alaptervek és előrehaladás › Előrehaladási vonal* és az *Állapotdátum-vonal* menüponttal kapcsolhatja be vagy ki.
+- Az állapotdátumnál a Gantt szaggatott vonalat mutat, a fejlécben a dátummal. Futó tevékenységeknél a vonal kidudorodik a sávban látható százalékig. Ezeket a *Nézet › Alaptervek és előrehaladás › Előrehaladási vonal* és az *Állapotdátum-vonal* menüponttal kapcsolja be vagy ki.
+- A sáv kész része szürke lesz; a többi megtartja a színét. Egy teljesen kész tevékenység teljesen szürke, a neve előtt pipa áll, és nincs tartalékidő-sáv. A fázis sávja is szürke lesz a származtatott százalékig, így fázisonként látja, mennyire halad a kivitelezés. Ha megjeleníti egy tevékenység elődjeit vagy utódjait, ezek sávjai megtartják a kiemelő színüket, akkor is, ha készek.
 - Befejezett tevékenységek sosem pirosak: ha van állapotdátum, a befejezett tevékenység nem kritikus.
 - A fázisok származtatott százalékot mutatnak, és az ütemezés befejezése eltolódhatott.
 - Ha mentett egy alaptervet, az eredeti ütemezés minden sáv alatt látható, és az *Eltérés* jelentés típusa mutatja az eltéréseket.

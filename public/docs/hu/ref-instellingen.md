@@ -90,7 +90,7 @@ Az alkalmazás ezeket a beállításokat is ezen az eszközön tárolja. Ön azo
 
 **Erőforrás-kiemelés** — vékony csík az erőforrás színében a tevékenységsáv alatt. Alapértelmezett: ki. Hol: *Nézet › Alaptervek és előrehaladás › Erőforrás-kiemelés*.
 
-**Tartalékidő-sáv** — a tartalékidő sávként jelenik meg a nem kritikus sávok mögött. Alapértelmezett: be. Hol: *Nézet › Alaptervek és előrehaladás › Tartalékidő-sáv*.
+**Tartalékidő-sáv** — a tartalékidő sávként jelenik meg a nem kritikus sávok mögött; a befejezett tevékenységeknél nem. Alapértelmezett: be. Hol: *Nézet › Alaptervek és előrehaladás › Tartalékidő-sáv*.
 
 **Sávszínek** — attól függ, milyen színű a sáv. Válasszon ezek közül: *Kritikus út*, *Tevékenységenként — automatikus* vagy *Kategória szerint*. Alapértelmezett: *Kritikus út*. Hatás: egyszerre vonatkozik a Gantt-diagramra és a jelentésre. Hol: *Nézet › Alaptervek és előrehaladás › Sávszínek*.
 
@@ -106,7 +106,7 @@ Az alkalmazás ezeket a beállításokat is ezen az eszközön tárolja. Ön azo
 
 **A *Tulajdonságok* és a *Figyelmeztetések* magassága a jobb oldali panelen** — alapértelmezett: 240, illetve 220 pixel, 120 és 2000 között. A *Tulajdonságok* akkor is ezt a magasságot kapja, ha az erőforráslista nyitva van. Ön a szakaszok közötti fogantyúval állítja be a magasságot. Az alkalmazás nem jegyzi meg, hogy a szakaszok nyitva vagy zárva vannak.
 
-**Szintén megjegyezve, máshol leírva** — a tevékenységtáblázat oszlopai ([Oszlopok beállítása a tevékenységtáblázatban](docs://howto-tabelkolommen-aanpassen)), az elrendezései ([Elrendezés létrehozása és használata](docs://howto-layouts-gebruiken)), a jelentések beállításai ([A jelentés típusai](docs://ref-rapporttypes)), a saját számítási profilsablonjai ([Számítási beállítások és ütemezési szabályok](docs://ref-rekenopties-en-conventies)) és a *Dokumentáció nyelve* a Súgóban (*Fájl › Súgó*) is az alkalmazás tárolja ezen az eszközön, nem a projektfájlban.
+**Szintén megjegyezve, máshol leírva** — ezeket is az alkalmazás tárolja ezen az eszközön, nem a projektfájlban: a tevékenységtáblázat oszlopai ([Oszlopok beállítása a tevékenységtáblázatban](docs://howto-tabelkolommen-aanpassen)), az elrendezései ([Elrendezés létrehozása és használata](docs://howto-layouts-gebruiken)), a jelentések beállításai ([A jelentés típusai](docs://ref-rapporttypes)), a saját számítási profilsablonjai ([Számítási beállítások és ütemezési szabályok](docs://ref-rekenopties-en-conventies)) és a *Dokumentáció nyelve* a Súgóban (*Fájl › Súgó*).
 
 ## Lásd még
 

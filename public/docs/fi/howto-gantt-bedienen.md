@@ -25,7 +25,7 @@ Jos palkkia vedetään enimmäkseen ylös tai alas eikä sivulle, tehtävä siir
 
 Vasen reuna siirtää alkua ja jättää lopun paikalleen, joten tehtävä lyhenee tai pitenee alusta. Sama SNET-sääntö koskee tätä kuin siirtämistä. Kun palkin keskikohtaa vedetään, tunniste ei näy, koska kesto ei muutu.
 
-Kesto lasketaan tehtävän kalenterin työpäivinä. Viikonloput ja vapaapäivät eivät lasken mukaan. Päivissä mitattu tehtävä ei voi lyhentyä alle yhden työpäivän. Tunneissa mitatulle tehtävälle sovellus pyöristää keston aikajanan askeleeseen hiiren kohdalla: vähintään tuntiin, tai varttiin, jos lähennetään riittävästi ja *Näytä vartit lähennettäessä paljon* on päällä.
+Kesto lasketaan tehtävän kalenterin työpäivinä. Viikonloput ja vapaapäivät eivät laske mukaan. Päivissä mitattu tehtävä ei voi lyhentyä alle yhden työpäivän. Tunneissa mitatulle tehtävälle sovellus pyöristää keston aikajanan askeleeseen hiiren kohdalla: vähintään tuntiin, tai varttiin, jos lähennetään riittävästi ja *Näytä vartit lähennettäessä paljon* on päällä.
 
 Yksi veto on yksi askel *Kumoa*-toiminnossa, pituudesta riippumatta. Jaetun palkin reunat toimivat eri tavalla. Katso [Tehtävän jakaminen](docs://howto-taak-splitsen).
 
@@ -42,7 +42,7 @@ Mitä vetäminen tyhjällä taustalla tekee, riippuu vierityksen tilasta. Valits
 
 Laatikko valitsee kaikki tehtävät, joiden rivejä se koskettaa. Vain laatikon korkeus lasketaan, ei aikaskaala.
 
-1. Aloita tyhjältä taustalta. Kun tilaa *Zoomaus + vetäminen* käytetään, pidä Ctrl-näppäintä pohjassa (⌘ Macilla) samalla kun vetäminen aloitetaan. Tilassa *Sijainti* ja *Näppäimet* sitä ei tarvita.
+1. Aloita tyhjältä taustalta. Kun tila on *Zoomaus + vetäminen*, pidä Ctrl-näppäintä pohjassa (⌘ Macilla) samalla kun vetäminen aloitetaan. Tilassa *Sijainti* ja *Näppäimet* sitä ei tarvita.
 2. Vedä niiden rivien yli, jotka halutaan valita. Valinta saa kehyksen.
 3. Vapauta hiiren painike. Jos Esc painetaan vedettäessä, laatikko peruuntuu ja valinta pysyy ennallaan.
 
@@ -55,6 +55,8 @@ Lisätietoja valitsemisesta on kohdassa [Tehtävien valitseminen, poistaminen ja
 3. Tilarivin oikeassa alakulmassa on zoomaus pikseleinä päivässä, esimerkiksi *Zoom: 15 px/päivä*.
 
 Mitä pidemmälle loitonnetaan, sitä vähemmän ruudukkoviivoja on. Vähintään 8 pikseliä päivässä: jokaiselle päivälle on viiva, ja viikon rajalla on paksumpi viiva. Kun zoomaus on 2–8 pikseliä päivässä, jäljelle jää vain viikon raja. Alle 2 pikseliä päivässä, vuositasolla, jäävät jäljelle vain kuukausirajat. Muuten piirtoalue muuttuisi tasaiseksi raidoitukseksi, jossa palkit häviävät. Harmaat viikonloput ja vapaapäivät sekä vuorotellen värjätyt viikkokaistat näkyvät joka tasolla. Ne kantavat viikkorakennetta, kun viivat häviävät. Aikaskaalan otsikkorivillä viikkonumerot ja päivänumerot näkyvät vain, kun niille on tilaa. Alkaen 40 pikselistä päivässä näytetään myös viikonpäivä päivänumeron edessä.
+
+Tehtävän nimi näkyy palkissa, jos se mahtuu kokonaan. Jos ei mahdu, esimerkiksi kun loitonnetaan, koko nimi näkyy palkin oikealla puolella.
 
 ## Ongelmatilanteet ja mitä sovellus silloin tekee
 

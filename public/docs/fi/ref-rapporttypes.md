@@ -26,7 +26,7 @@ Avaa *Raportti*-välilehti (tai paina Ctrl+P). Vasemmalla on *Raportti*-sarake. 
 
 Aikataulu palkkikaaviona, taulukko vasemmalla ja aikajana oikealla. Tarvittaessa kaavio jakautuu useammalle sivulle. Esikatselussa näkyvät paperi, sivun ylätunniste, taulukko, aikajana ja selite. Osio *Yhteenveto* laskee *Tehtävät:*, *Lehtitehtävät:*, *Kriittinen:* ja *Riippuvuudet:*. Kaikki valinnat ovat kohdassa *Asetukset*.
 
-**Yritys:** — yritys sivun ylätunnisteessa. Oletus: yritys projektitiedoista. Vaikutus: vain raportin ylätunniste. Sitä, mitä tähän kirjoitetaan, ei muisteta. Muuta yritys kohdassa *Asetukset › Projekti › Projektitiedot*, kentässä *Tilaaja/organisaatio*, ja vahvista painikkeella *Käytä*.
+**Yritys:** — yritys sivun ylätunnisteessa. Oletus: yritys projektitiedoista. Vaikutus: vain raportin ylätunniste. Sitä, mitä tähän kirjoitetaan, ei tallenneta. Muuta yritys kohdassa *Asetukset › Projekti › Projektitiedot*, kentässä *Tilaaja/organisaatio*, ja vahvista painikkeella *Käytä*.
 
 **Tekijä:** — tekijä sivun ylätunnisteessa. Vain luku: sovellus ottaa sen projektitiedoista.
 
@@ -38,7 +38,7 @@ Aikataulu palkkikaaviona, taulukko vasemmalla ja aikajana oikealla. Tarvittaessa
 
 **Seuraa näkymää (suodatin, ryhmittely, järjestys)** — vain Gantt-tulostuksessa. Oletus: pois. Vaikutus: pois: tulostuu koko tehtäväpuu. Päällä: tulostuvat täsmälleen ruudun rivit, suodattimen, ryhmittelyn, järjestyksen ja supistettujen vaiheiden mukaan.
 
-**Automaattinen sovitus** — skaalaa aikajanan sivun leveyteen. Oletus: päällä. Vaikutus: päällä aikajana skaalataan sivun leveyteen. Sivujen määrä seuraa korkeudesta. Pois: käytetään kiinteää mittakaavaa (*Zoomaus:*), ja aikajana jakautuu myös leveyssuunnassa useammalle sivulle, mikä antaa nopeasti monta sivua.
+**Automaattinen sovitus** — skaalaa aikajanan sivun leveyteen. Oletus: päällä. Vaikutus: päällä aikajana skaalataan sivun leveyteen. Sivujen määrä riippuu korkeudesta. Pois: käytetään kiinteää mittakaavaa (*Zoomaus:*), ja aikajana jakautuu myös leveyssuunnassa useammalle sivulle, mikä antaa nopeasti monta sivua.
 
 **Zoomaus:** — kiinteä mittakaava aikajanalle. Näkyy vain, kun *Automaattinen sovitus* on pois. Liukusäätimen alue: 1–40. Oletus: 22. Vaikutus: suurempi arvo tekee aikajanasta leveämmän, joten leveyssuunnassa tulee enemmän sivuja.
 
@@ -50,7 +50,7 @@ Aikataulu palkkikaaviona, taulukko vasemmalla ja aikajana oikealla. Tarvittaessa
 
 **Tehtävien nimet palkeilla** — Oletus: päällä. Vaikutus: tehtävän nimi palkin päällä, missä on tilaa.
 
-**Näytä valmiusaste** — Oletus: päällä. Vaikutus: palkissa on tummempi osa tehtävän edistymiseen asti, ja taulukossa on sarake *Valm*.
+**Näytä valmiusaste** — Oletus: päällä. Vaikutus: valmis osa palkista muuttuu harmaaksi kuten Gantt-näkymässä, ja taulukkoon tulee sarake *Valm*. Valmiilla tehtävällä ei ole pelivaran nauhaa.
 
 **Katkaise tehtävien nimet** — Oletus: päällä. Vaikutus: päällä nimet katkaistaan taulukossa sarakkeen *Nimisarake:* leveyden mukaan. Pois: sarake kasvaa pisimmän nimen mukaan, ja silloin näkyy *Nimisarake mukautuu pisimpään tehtävän nimeen*.
 

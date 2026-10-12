@@ -50,7 +50,7 @@ Raspored prikazan kao trakasti dijagram, s tablicom lijevo i vremenskom osi desn
 
 **Nazivi zadataka na trakama** — Zadano: uključeno. Učinak: naziv zadatka na traci, tamo gdje ima mjesta.
 
-**Prikaži dovršenost** — Zadano: uključeno. Učinak: tamniji dio trake do napretka zadatka i stupac *Dovr* u tablici.
+**Prikaži dovršenost** — Zadano: uključeno. Učinak: sivi dio trake do napretka zadatka, kao u Ganttu, i stupac *Dovr* u tablici. Dovršeni zadatak nema pojas vremenske rezerve.
 
 **Skrati nazive zadataka** — Zadano: uključeno. Učinak: uključeno skraćuje nazive u tablici na širinu *Stupac naziva:*. Isključeno pušta stupac da raste s najdužim nazivom; tada piše *Stupac naziva prilagođava se najdužem nazivu zadatka*.
 

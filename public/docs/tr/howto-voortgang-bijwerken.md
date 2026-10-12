@@ -56,9 +56,10 @@ Her ilerleme veya durum tarihi değişikliği planlamayı güncel olmaktan çık
 ## Sonucu kontrol etme
 
 - Durum tarihinde Gantt, başlıkta tarihle birlikte kesik bir çizgi gösterir. Devam eden görevlerde çizgi, çubuktaki yüzdeye doğru dışa kabarır. Bunları *Görünüm › Temel plan ve ilerleme › İlerleme çizgisi* ve *Durum tarihi çizgisi* yollarından açıp kapatırsınız.
+- Çubuğun tamamlanan kısmı griye döner; kalan kısım rengini korur. Tamamen bitmiş bir görev tamamen gri olur; adının önünde bir onay işareti vardır ve bolluk şeridi yoktur. Bir aşamanın çubuğu da türetilmiş yüzdesine kadar griye döner; böylece her aşamada işin ne kadarının bittiğini görürsünüz. Bir görevin öncüllerini veya ardıllarını gösterirseniz, bu çubuklar tamamlanmış olsalar bile vurgu renklerini korur.
 - Tamamlanmış görevler asla kırmızı olmaz: durum tarihiyle tamamlanmış bir görev kritik değildir.
-- Özet görevler türetilmiş bir yüzde gösterir ve planlamanın bitişi kaymış olabilir.
-- Bir temel plan kaydettiyseniz, özgün planlama her çubuğun altında görünür. Rapor türü *Variance* sapmayı gösterir.
+- Aşamalar türetilmiş bir yüzde gösterir ve planlamanın bitişi kaymış olabilir.
+- Bir temel plan kaydettiyseniz, özgün planlama her çubuğun altında görünür ve *Variance* rapor türü sapmayı gösterir.
 
 ## Sorunlar ve uygulamanın yaptıkları
 

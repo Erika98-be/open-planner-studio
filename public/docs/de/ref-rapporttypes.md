@@ -46,15 +46,15 @@ Der Terminplan als Balkendiagramm, mit einer Tabelle links und einer Zeitachse r
 
 **Kopfzeile auf jeder Seite wiederholen** — Standard: ein. Wirkung: Ein setzt den Seitenkopf auf jede Seite; Aus nur auf die erste Seite.
 
-**Fußzeile auf jeder Seite wiederholen** — Standard: ein. Wirkung: Ein setzt die Fußzeile (Projektname, Druckdatum und Legende) auf jede Seite; Aus nur auf die letzte Seite. Ein Ausdruck ohne Legende ist unlesbar, daher steht sie auf ein.
+**Fußzeile auf jeder Seite wiederholen** — Standard: ein. Wirkung: Ein setzt die Fußzeile (Projektname, Druckdatum und Legende) auf jede Seite; Aus nur auf die letzte Seite. Ein Ausdruck ohne Legende ist unlesbar, daher ist sie eingeschaltet.
 
 **Vorgangsnamen auf Balken** — Standard: ein. Wirkung: der Name des Vorgangs auf dem Balken, wo Platz ist.
 
-**Fertigstellung anzeigen** — Standard: ein. Wirkung: ein dunklerer Teil im Balken bis zum Fortschritt des Vorgangs und die Spalte *Fertigst* in der Tabelle.
+**Fertigstellung anzeigen** — Standard: ein. Wirkung: Der abgeschlossene Teil des Balkens wird grau, wie im Gantt-Diagramm, und die Spalte *Fertigst* erscheint in der Tabelle. Ein abgeschlossener Vorgang zeigt keinen Puffer.
 
 **Vorgangsnamen kürzen** — Standard: ein. Wirkung: Ein kürzt die Namen in der Tabelle auf die Breite von *Namensspalte:*. Aus lässt die Spalte mit dem längsten Namen wachsen; dann steht dort *Die Namensspalte passt sich dem längsten Vorgangsnamen an*.
 
-**Namensspalte:** — die Breite der Namensspalte. Nur sichtbar, wenn *Vorgangsnamen kürzen* auf ein steht. Schieberegler von 60 bis 400. Standard: 130.
+**Namensspalte:** — die Breite der Namensspalte. Nur sichtbar, wenn *Vorgangsnamen kürzen* eingeschaltet ist. Schieberegler von 60 bis 400. Standard: 130.
 
 **Baseline-Überlagerung anzeigen** — die aktive Baseline neben den Balken. Standard: aus. Wirkung: ein dünner Balken in der Baseline-Farbe unter dem Vorgangsbalken, nur für Vorgänge, die in der Baseline stehen.
 
@@ -62,7 +62,7 @@ Der Terminplan als Balkendiagramm, mit einer Tabelle links und einer Zeitachse r
 
 **Puffer anzeigen** — Standard: ein. Wirkung: der Puffer als Streifen hinter nicht kritischen Balken.
 
-**Abhängigkeiten** — die Beziehungslinien. Standard: ein. Wirkung: zeichnet Pfeile zwischen den Balken.
+**Beziehungen** — die Beziehungslinien. Standard: ein. Wirkung: zeichnet Pfeile zwischen den Balken.
 
 **Nur Arbeitstage anzeigen** — komprimiert die Zeitachse in diesem Bericht. Standard: aus. Wirkung: Wochenenden und Feiertage werden übersprungen, und Wochenstreifen ersetzen dann die Wochenendschattierung. Unabhängig von derselben Einstellung für das Gantt-Diagramm auf dem Bildschirm.
 

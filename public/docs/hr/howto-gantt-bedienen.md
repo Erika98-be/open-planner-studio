@@ -27,11 +27,11 @@ Lijevi rub pomiče početak, a završetak ostaje, pa zadatak postaje kraći ili 
 
 Trajanje se broji u radnim danima kalendara zadatka. Vikendi i neradni dani se ne broje, a zadatak u danima ne može biti kraći od jednog radnog dana. Za zadatak u satima aplikacija zaokružuje na korak vremenske linije ispod miša: najmanje jedan sat, ili četvrt sata ako dovoljno uvećate prikaz i uključen je *Prikaži četvrt sata pri jakom zoomu*.
 
-Jedno povlačenje je jedan korak za *Poništi*, bez obzira koliko dugo povlačite. Na traci podijeljenog zadatka rubovi rade drugačije. Pogledajte [Dijeljenje zadatka](docs://howto-taak-splitsen).
+Jedno povlačenje je jedan korak za naredbu *Poništi*, bez obzira koliko dugo povlačite. Na traci podijeljenog zadatka rubovi rade drugačije. Pogledajte [Dijeljenje zadatka](docs://howto-taak-splitsen).
 
 ### Pomicanje vremenske linije
 
-Što čini povlačenje po praznoj pozadini, ovisi o načinu pomicanja. Odaberete ga u prozoru *Postavke*, na kartici *Prikaz*, pod *Gantt › Pomicanje i zumiranje*, kod *Način*:
+Što čini povlačenje po praznoj pozadini, ovisi o načinu pomicanja. Odaberete ga u prozoru *Postavke*, na kartici *Prikaz*, u grupi *Gantt › Pomicanje i zumiranje*, u postavci *Način*:
 
 - **Zumiranje + povlačenje** (zadano): ako povlačite po praznoj pozadini lijevom tipkom miša, vremenska linija se pomiče zajedno s mišem, kao karta. Kursor je ruka. Na traci povlačenje samo pokreće gestu trake.
 - **Položaj** i **Tipke**: isto povlačenje stvara okvir za odabir. Vremensku liniju pomičete kotačićem (pogledajte [Postavke](docs://ref-instellingen)) ili srednjom tipkom miša.
@@ -50,11 +50,13 @@ Više o odabiru je u [Odabir, brisanje i poništavanje zadataka](docs://howto-ta
 
 ### Uvećavanje i umanjivanje
 
-1. Upotrijebite *Uvećaj +* i *Umanji -* (*Početak › Zumiranje*) ili tipke + i -. Kotačić također zumira. Kada to radi, ovisi o načinu pomicanja (pogledajte [Postavke](docs://ref-instellingen)).
+1. Upotrijebite *Uvećaj +* i *Umanji -* (*Početak › Zumiranje*) ili tipke + i -. Kotačić također zumira. Kada se to događa, ovisi o načinu pomicanja (pogledajte [Postavke](docs://ref-instellingen)).
 2. Ako želite cijeli projekt u prikazu, odaberite *Prikaz › Vremenska skala › Prilagodi projektu* ili pritisnite Ctrl+0. *Vrati zadano* (na kartici *Prikaz*) ili tipka 0 vraća zumiranje na zadanu vrijednost.
 3. Desno dolje u traci stanja je zumiranje u pikselima po danu, na primjer *Zumiranje: 15px/dan*.
 
 Što dalje umanjujete, to je manje linija mreže. Pri 8 piksela po danu ili više svaki dan ima liniju, a na granici tjedna deblju liniju. Između 2 i 8 piksela po danu ostaje samo granica tjedna. Ispod 2 piksela po danu, na razini godine, ostaju samo granice mjeseci. Inače bi platno postalo jednolika pruga u kojoj nestaju trake. Sivi vikendi i neradni dani te naizmjenično obojene trake tjedana ostaju na svakoj razini. One nose strukturu tjedna kad linije nestanu. U zaglavlju vremenske linije brojevi tjedana i dana pojavljuju se samo kad ima mjesta za njih. Od 40 piksela po danu prikazuje se i dan u tjednu ispred broja dana.
+
+Ime zadatka prikazuje se u traci ako cijelo stane. Ako ne stane, na primjer kad umanjujete, puno ime prikazuje se desno od trake.
 
 ## Problemi i što aplikacija tada radi
 

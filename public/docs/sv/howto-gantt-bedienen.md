@@ -10,8 +10,8 @@ Du ser i Gantt att murverket måste börja två dagar senare, eller att gjutning
 
 ### Flytta en balk
 
-1. Håll ned musknappen på mitten av en uppgiftsbalk och dra horisontellt. Start och slut flyttas tillsammans, i hela dagar. Varaktigheten blir densamma.
-2. Släpp musknappen. Balken stannar på sin nya plats. Tidsplanen är då inte längre aktuell. Välj *Beräkna* (F5), eller låt appen göra det själv om *Beräkna automatiskt* är på.
+1. Tryck på mitten av en uppgiftsbalk och dra vågrätt. Start och slut flyttas tillsammans, i hela dagar. Varaktigheten blir densamma.
+2. Släpp musknappen. Balken stannar på sin nya plats. Tidsplanen är då inte längre aktuell. Tryck på *Beräkna* (F5), eller låt appen göra det själv om *Beräkna automatiskt* är på.
 
 Om uppgiften har en föregående uppgift registrerar appen den nya starten som restriktionen *Starta tidigast (SNET)*. Appen säger det när du släpper musknappen. Varför det sker, och vad som händer med en annan restriktion, står i [Restriktioner och måldatum](docs://uitleg-constraints). Drar du tillbaka till den ursprungliga starten, så kommer även den ursprungliga restriktionen tillbaka.
 
@@ -20,12 +20,12 @@ Drar du mest uppåt eller nedåt i stället för åt sidan, flyttar du uppgiften
 ### Justera varaktigheten
 
 1. Flytta musen till balkens högra kant. Markören blir en pil som pekar åt vänster och höger.
-2. Dra i kanten. Medan du drar visar en liten etikett i temats accentfärg (som standard orange) den varaktighet uppgiften får nu, till exempel *4d*. Etiketten följer med direkt, så du ser den nya varaktigheten innan du släpper musknappen. Vid den högra kanten ligger etiketten inne i balken. Vid den vänstra kanten ligger den precis till vänster om balken. Etiketten visar varaktigheten på samma sätt som kolumnen varaktighet.
+2. Dra i kanten. Medan du drar visar en liten etikett i temats accentfärg (som standard orange) den varaktighet uppgiften får nu, till exempel *4d*. Etiketten följer med direkt, så du ser den nya varaktigheten innan du släpper musknappen. Vid den högra kanten ligger etiketten inne i balken. Vid den vänstra kanten ligger den precis till vänster om balken. Etiketten visar varaktigheten på samma sätt som varaktighetskolumnen.
 3. Släpp musknappen. Varaktigheten är den som etiketten visade.
 
 Den vänstra kanten flyttar starten och lämnar slutet kvar. Uppgiften blir därmed kortare eller längre i början. Samma SNET-regel gäller som när du flyttar. Drar du i mitten av balken syns etiketten inte. Varaktigheten ändras inte.
 
-Varaktigheten räknar arbetsdagar i uppgiftens kalender. Helger och helgdagar räknas inte. En uppgift i dagar kan inte bli kortare än en arbetsdag. För en uppgift i timmar avrundar appen till det steg på tidslinjen som finns under musen. Det är minst en timme, eller ett kvarter om du zoomar in tillräckligt långt och *Visa kvarter när du zoomar in mycket* är på.
+Varaktigheten räknar arbetsdagar i uppgiftens kalender. Helger och lediga dagar räknas inte. En uppgift i dagar kan inte bli kortare än en arbetsdag. För en uppgift i timmar avrundar appen till det steg på tidslinjen som finns under musen. Det är minst en timme, eller ett kvarter om du zoomar in tillräckligt långt och *Visa kvarter när du zoomar in mycket* är på.
 
 Ett drag är ett enda steg i *Ångra*, hur länge du än drar. På en delad balk fungerar kanterna på ett annat sätt. Se [Dela en uppgift](docs://howto-taak-splitsen).
 
@@ -54,7 +54,9 @@ Mer om markering finns i [Markera, ta bort och ångra uppgifter](docs://howto-ta
 2. Vill du se hela projektet, välj *Visa › Tidsskala › Anpassa till projekt* eller tryck på Ctrl+0. *Återställ* (på fliken *Visa*) eller tangenten 0 ställer zoomen tillbaka till standardnivån.
 3. Längst ned till höger i statusfältet står zoomen i pixlar per dag, till exempel *Zoom: 15 px/dag*.
 
-Ju längre du zoomar ut, desto färre rutnätslinjer finns det. Vid 8 pixlar per dag eller mer finns det en linje för varje dag, med en tjockare linje vid veckogränsen. Mellan 2 och 8 pixlar per dag finns bara veckogränsen kvar. Under 2 pixlar per dag, på årsnivå, finns bara månadsgränserna kvar. Annars blir ritytan ett jämnt randmönster där balkarna försvinner. De grå helgerna och helgdagarna, och veckobanden som är färgade om varandra, finns kvar på varje nivå. De bär veckostrukturen när linjerna försvinner. I tidslinjens rubrik visas veckonummer och dagnummer bara när det finns plats för dem. Från 40 pixlar per dag visas också veckodagen före dagnumret.
+Ju längre du zoomar ut, desto färre rutnätslinjer finns det. Vid 8 pixlar per dag eller mer finns det en linje för varje dag, med en tjockare linje vid veckogränsen. Mellan 2 och 8 pixlar per dag finns bara veckogränsen kvar. Under 2 pixlar per dag, på årsnivå, finns bara månadsgränserna kvar. Annars skulle ritytan bli ett jämnt randmönster där balkarna försvinner. De grå helgerna och lediga dagarna, och veckobanden som är färgade växelvis, finns kvar på varje nivå. De bär veckostrukturen när linjerna försvinner. I tidslinjens rubrik visas veckonummer och dagnummer bara när det finns plats för dem. Från 40 pixlar per dag visas också veckodagen före dagnumret.
+
+Uppgiftens namn visas i balken om det får plats helt. Om det inte får plats, till exempel när du zoomar ut, visas hela namnet till höger om balken.
 
 ## Fallgropar och vad appen gör då
 

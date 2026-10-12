@@ -90,9 +90,9 @@ Aplikacija također čuva ove izbore na ovom uređaju. Postavljate ih na samom e
 
 **Naglasak resursa** — tanka pruga u boji resursa ispod trake zadatka. Zadano: isključeno. Gdje: *Prikaz › Temeljni planovi i napredak › Naglasak resursa*.
 
-**Traka vremenske rezerve** — vremenska rezerva kao pojas iza nekritičnih traka. Zadano: uključeno. Gdje: *Prikaz › Temeljni planovi i napredak › Traka vremenske rezerve*.
+**Traka vremenske rezerve** — vremenska rezerva kao pojas iza nekritičnih traka, ne za dovršene zadatke. Zadano: uključeno. Gdje: *Prikaz › Temeljni planovi i napredak › Traka vremenske rezerve*.
 
-**Boje traka** — o čemu ovisi boja trake. Odaberite između *Kritični put*, *Po zadatku — automatski* i *Po kategoriji*. Zadano: *Kritični put*. Učinak: vrijedi za dijagram Gantt i za izvješće istodobno. Gdje: *Prikaz › Temeljni planovi i napredak › Boje traka*.
+**Boje traka** — o čemu ovisi boja trake. Odaberite jednu od opcija *Kritični put*, *Po zadatku — automatski* i *Po kategoriji*. Zadano: *Kritični put*. Učinak: vrijedi za dijagram Gantt i za izvješće istodobno. Gdje: *Prikaz › Temeljni planovi i napredak › Boje traka*.
 
 **Histogram** — pruga s histogramom ispod dijagrama Gantt. Zadano: isključeno. Gdje: *Resursi › Histogram › Histogram*, *Prikaz › Paneli › Histogram* ili Ctrl+Shift+H. Visinu pruge (zadano 160 piksela, između 80 i 480) postavljate povlačenjem njezina ruba.
 
@@ -104,7 +104,7 @@ Aplikacija također čuva ove izbore na ovom uređaju. Postavljate ih na samom e
 
 **Širina desnog panela** — zadano 280 piksela, između 200 i 900. Postavljate je povlačenjem ruba panela.
 
-**Visina *Svojstava* i *Upozorenja* u desnom panelu** — zadano 240 i 220 piksela, između 120 i 2000. *Svojstva* imaju tu visinu i kada je popis resursa otvoren. Visinu postavljate hvatištem za povlačenje između odjeljaka. Aplikacija ne pamti jesu li odjeljci otvoreni ili zatvoreni.
+**Visina *Svojstva* i *Upozorenja* u desnom panelu** — zadano 240 i 220 piksela, između 120 i 2000. *Svojstva* imaju tu visinu i kada je popis resursa također otvoren. Visinu postavljate hvatištem za povlačenje između odjeljaka. Aplikacija ne pamti jesu li odjeljci otvoreni ili zatvoreni.
 
 **Također se pamti, opisano drugdje** — aplikacija na ovom uređaju, a ne u datoteci projekta, također čuva: stupce tablice ([Prilagođavanje stupaca tablice](docs://howto-tabelkolommen-aanpassen)), vaše izglede ([Stvaranje i upotreba izgleda](docs://howto-layouts-gebruiken)), mogućnosti izvješća ([Vrste izvješća](docs://ref-rapporttypes)), vaše vlastite predloške profila izračuna ([Mogućnosti izračuna i pravila izračuna](docs://ref-rekenopties-en-conventies)) i *Jezik dokumentacije* u pomoći (*Datoteka › Pomoć*).
 

@@ -50,7 +50,7 @@ Tidsplanen vist som bjælkediagram, med en tabel til venstre og en tidslinje til
 
 **Opgavenavne på bjælker** — Standard: til. Effekt: navnet på opgaven på bjælken, hvor der er plads.
 
-**Vis færdiggørelsesgrad** — Standard: til. Effekt: en mørkere del af bjælken op til opgavens fremdrift, og kolonnen *Færd* i tabellen.
+**Vis færdiggørelsesgrad** — Standard: til. Effekt: den udfyldte del af bjælken bliver grå, som i Gantt-diagrammet, op til opgavens fremdrift, og kolonnen *Færd* vises i tabellen. En færdig opgave viser ingen slæk.
 
 **Forkort opgavenavne** — Standard: til. Effekt: til skærer navnene i tabellen af ved bredden af *Navnekolonne:*. Fra lader kolonnen vokse med det længste navn; der står så *Navnekolonnen tilpasses det længste opgavenavn*.
 

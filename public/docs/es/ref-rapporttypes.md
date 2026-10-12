@@ -24,7 +24,7 @@ Abra la pestaña *Informe* (o pulse Ctrl+P). A la izquierda está la columna *In
 
 ## Diagrama de Gantt
 
-La planificación como gráfico de barras, con una tabla a la izquierda y una escala de tiempo a la derecha, en varias páginas si hace falta. La vista previa muestra el papel con encabezado de página, tabla, escala de tiempo y leyenda. El bloque *Resumen* cuenta *Tareas*, *Tareas hoja*, *Críticas* y *Relaciones*. Todas las opciones están en *Configuración*.
+La planificación como gráfico de barras, con una tabla a la izquierda y una escala de tiempo a la derecha, en varias páginas si hace falta. La vista previa muestra el papel con encabezado de página, tabla, escala de tiempo y leyenda. El bloque *Resumen* cuenta *Tareas:*, *Tareas hoja:*, *Críticas:* y *Relaciones:*. Todas las opciones están en *Configuración*.
 
 **Empresa:** — la empresa en el encabezado de página. Predeterminado: la empresa de la información del proyecto. Efecto: solo el encabezado del informe; lo que escribe aquí no se guarda. Cambie la empresa en *Configuración › Proyecto › Info del proyecto*, en el campo *Cliente/organización*, y confirme con *Aplicar*.
 
@@ -42,7 +42,7 @@ La planificación como gráfico de barras, con una tabla a la izquierda y una es
 
 **Zoom:** — el valor fijo de la escala. Solo visible si *Ajuste automático al papel* está desactivado. Control deslizante de 1 a 40. Predeterminado: 22. Efecto: un valor mayor hace la escala de tiempo más ancha, así que caben más páginas a lo ancho.
 
-**Escala de tiempo en:** — reparte la escala de tiempo en más anchos de página. Opción de 1 a 8 páginas. Predeterminado: 1 página. Efecto: solo con *Ajuste automático al papel*; si no, la opción está desactivada y dice *Solo con ajuste automático*. Útil para una planificación larga que quiere imprimir en un tamaño legible.
+**Escala de tiempo en:** — reparte la escala de tiempo en más anchos de página. Opción de 1 a 8 páginas. Predeterminado: 1 página. Efecto: solo con *Ajuste automático al papel*; si no, la opción está desactivada y dice *Solo con ajuste automático*. Útil para una planificación larga que usted quiere imprimir en un tamaño legible.
 
 **Repetir encabezado en cada página** — Predeterminado: activado. Efecto: activado pone el encabezado de página en cada página; desactivado solo en la primera.
 
@@ -50,7 +50,7 @@ La planificación como gráfico de barras, con una tabla a la izquierda y una es
 
 **Nombres de tarea en las barras** — Predeterminado: activado. Efecto: el nombre de la tarea en la barra, donde hay espacio.
 
-**Mostrar finalización** — Predeterminado: activado. Efecto: una parte más oscura en la barra hasta el avance de la tarea, y la columna *Av* en la tabla.
+**Mostrar finalización** — Predeterminado: activado. Efecto: la parte completada de la barra se vuelve gris, como en el diagrama de Gantt, y aparece la columna *Av* en la tabla. Una tarea completada no tiene banda de holgura.
 
 **Truncar nombres de tarea** — Predeterminado: activado. Efecto: activado corta los nombres en la tabla al ancho de *Columna de nombre*. Desactivado deja crecer la columna con el nombre más largo; entonces dice *La columna de nombre se adapta al nombre de tarea más largo*.
 
@@ -60,11 +60,11 @@ La planificación como gráfico de barras, con una tabla a la izquierda y una es
 
 **Ruta crítica** — Predeterminado: activado. Efecto: solo controla las líneas rojas de relación entre dos tareas críticas y la línea de la leyenda. Las barras mismas siguen a *Colores de barras*, sin importar esta casilla.
 
-**Mostrar holgura** — Predeterminado: activado. Efecto: la holgura como una banda detrás de las barras no críticas.
+**Mostrar holgura** — Predeterminado: activado. Efecto: la holgura como una franja detrás de las barras no críticas.
 
 **Relaciones** — las líneas de relación. Predeterminado: activado. Efecto: dibuja flechas entre las barras.
 
-**Mostrar solo días laborables** — comprime la escala de tiempo de este informe. Predeterminado: desactivado. Efecto: se omiten fines de semana y festivos, y las bandas de semana sustituyen el sombreado de fin de semana. Es independiente de la misma opción del diagrama de Gantt en pantalla.
+**Mostrar solo días laborables** — comprime la escala de tiempo de este informe. Predeterminado: desactivado. Efecto: se omiten fines de semana y festivos, y las franjas de semana sustituyen el sombreado de fin de semana. Es independiente de la misma opción del diagrama de Gantt en pantalla.
 
 **Fines de semana** — Predeterminado: activado. Efecto: sombrea los fines de semana y los festivos en la escala de tiempo, siempre que la escala permita distinguir los días. En la escala comprimida (*Mostrar solo días laborables*) esta casilla no tiene efecto.
 

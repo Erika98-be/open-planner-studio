@@ -90,7 +90,7 @@ Die App speichert diese Anzeigeeinstellungen auch auf diesem Gerät. Sie stellen
 
 **Ressourcen-Akzent** — ein dünner Streifen in der Ressourcenfarbe unter dem Vorgangsbalken. Standard: aus. Wo: *Ansicht › Baselines & Fortschritt › Ressourcen-Akzent*.
 
-**Pufferband** — der Puffer als Band hinter nicht kritischen Balken. Standard: ein. Wo: *Ansicht › Baselines & Fortschritt › Pufferband*.
+**Pufferband** — der Puffer als Band hinter nicht kritischen Balken, nicht bei abgeschlossenen Vorgängen. Standard: ein. Wo: *Ansicht › Baselines & Fortschritt › Pufferband*.
 
 **Balkenfarben** — wovon die Farbe eines Balkens abhängt. Wählen Sie aus *Kritischer Pfad*, *Pro Vorgang — automatisch* und *Nach Kategorie*. Standard: *Kritischer Pfad*. Wirkung: Gilt gleichzeitig für das Gantt-Diagramm und den Bericht. Wo: *Ansicht › Baselines & Fortschritt › Balkenfarben*.
 

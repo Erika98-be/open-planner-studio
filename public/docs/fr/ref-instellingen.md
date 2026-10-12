@@ -90,7 +90,7 @@ L'application conserve aussi ces choix sur cet appareil, mais vous les réglez s
 
 **Accent ressource** — une fine bande de la couleur de la ressource sous la barre de tâche. Par défaut : désactivé. Emplacement : *Affichage › Références et avancement › Accent ressource*.
 
-**Bande de marge** — la marge sous forme de bande derrière les barres non critiques. Par défaut : activé. Emplacement : *Affichage › Références et avancement › Bande de marge*.
+**Bande de marge** — la marge sous forme de bande derrière les barres non critiques, sauf pour les tâches terminées. Par défaut : activé. Emplacement : *Affichage › Références et avancement › Bande de marge*.
 
 **Couleurs des barres** — ce dont dépend la couleur d'une barre. Choisissez parmi *Chemin critique*, *Par tâche — automatique* et *Par catégorie*. Par défaut : *Chemin critique*. Effet : s'applique en même temps au Gantt et au rapport. Emplacement : *Affichage › Références et avancement › Couleurs des barres*.
 

@@ -55,10 +55,11 @@ Každá změna průběhu nebo data stavu způsobí, že plán je zastaralý: sta
 
 ## Kontrola výsledku
 
-- Na datu stavu ukazuje Gantt přerušovanou čáru s datem v záhlaví. U probíhajících úkolů se čára vyboulí k procentu v pruhu. Zapínáte je nebo vypínáte na kartě *Zobrazení › Směrné plány a průběh › Čára průběhu* a *Čára datumu stavu*.
+- Na datu stavu ukazuje Gantt přerušovanou čáru s datem v záhlaví. U probíhajících úkolů se čára vyboulí k procentu v pruhu. Tyto čáry zapínáte nebo vypínáte na kartě *Zobrazení › Směrné plány a průběh › Čára průběhu* a *Čára datumu stavu*.
+- Dokončená část pruhu zešedne, zbytek si zachová barvu. Úkol, který je zcela hotový, je celý šedý, má fajfku před názvem a nemá pruh časové rezervy. Pruh fáze také zešedne až k jejímu odvozenému procentu, takže u každé fáze vidíte, jak daleko je práce. Pokud zobrazíte předchůdce nebo následníky úkolu, jejich pruhy si zachovají barvu zvýraznění, i když jsou hotové.
 - Dokončené úkoly nejsou nikdy červené: při nastaveném datu stavu není dokončený úkol kritický.
 - Fáze ukazují odvozené procento a dokončení plánu se mohlo posunout.
-- Pokud jste uložili směrný plán, pod každým pruhem je původní plán a typ sestavy *Odchylka* ukazuje odchylku.
+- Pokud jste uložili směrný plán, je pod každým pruhem původní plán a typ sestavy *Odchylka* ukazuje odchylku.
 
 ## Úskalí a co aplikace dělá
 

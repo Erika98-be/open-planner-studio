@@ -15,7 +15,7 @@ Nel Gantt vedi che la muratura deve iniziare due giorni dopo, o che il getto ric
 
 Se l'attività ha un predecessore, l'app registra il nuovo inizio come vincolo *Iniziare non prima del (SNET)* e lo indica dopo che hai rilasciato il mouse. Il motivo e cosa succede con un altro vincolo sono spiegati in [Vincoli e scadenze](docs://uitleg-constraints). Se trascini di nuovo fino all'inizio originale, torna anche il vincolo originale.
 
-Se trascini soprattutto verso l'alto o verso il basso invece che di lato, sposti l'attività su un'altra riga e le date restano. La direzione che scegli nei primi pixel vale per tutto il trascinamento, quindi un solo gesto non cambia mai date e struttura insieme. Vedi [Modificare la struttura](docs://howto-structuur-aanpassen).
+Se trascini soprattutto verso l'alto o verso il basso invece che di lato, sposti l'attività su un'altra riga e le date restano. La direzione che scegli nei primi pochi pixel vale per tutto il trascinamento, quindi un solo gesto non cambia mai date e struttura insieme. Vedi [Modificare la struttura](docs://howto-structuur-aanpassen).
 
 ### Modificare la durata
 
@@ -54,7 +54,9 @@ Più informazioni sulla selezione sono in [Selezionare, eliminare e annullare at
 2. Se vuoi vedere tutto il progetto, scegli *Vista › Scala temporale › Adatta al progetto* oppure premi Ctrl+0. *Reimposta* (nella scheda *Vista*) oppure il tasto 0 riporta lo zoom al valore predefinito.
 3. In basso a destra nella barra di stato c'è lo zoom in pixel per giorno, per esempio *Zoom: 15px/giorno*.
 
-Più rimpicciolisci, meno linee della griglia ci sono. Da 8 pixel per giorno in su c'è una linea per ogni giorno, con una linea più spessa al limite della settimana. Tra 2 e 8 pixel per giorno resta solo il limite della settimana. Sotto 2 pixel per giorno, a livello anno, restano solo i limiti dei mesi. Altrimenti l'area del Gantt diventerebbe un motivo a strisce uniforme in cui le barre scompaiono. I fine settimana e i giorni liberi in grigio, e le fasce settimanali con colore alternato, restano a ogni livello; reggono la struttura della settimana quando le linee spariscono. Nell'intestazione della linea temporale i numeri di settimana e di giorno compaiono solo quando c'è spazio per loro, e da 40 pixel per giorno compare anche il giorno della settimana prima del numero del giorno.
+Più rimpicciolisci, meno linee della griglia ci sono. Da 8 pixel per giorno in su c'è una linea per ogni giorno, con una linea più spessa al limite della settimana. Tra 2 e 8 pixel per giorno resta solo il limite della settimana. Sotto 2 pixel per giorno, a livello anno, restano solo i limiti dei mesi. Altrimenti l'area del Gantt diventerebbe un motivo a strisce uniforme in cui le barre scompaiono. I fine settimana e i giorni liberi in grigio, e le strisce settimanali con colore alternato, restano a ogni livello; reggono la struttura della settimana quando le linee spariscono. Nell'intestazione della linea temporale i numeri di settimana e di giorno compaiono solo quando c'è spazio per loro, e da 40 pixel per giorno compare anche il giorno della settimana prima del numero del giorno.
+
+Il nome dell'attività è mostrato nella barra, se ci sta tutto. Se non ci sta, per esempio quando rimpicciolisci, il nome completo è mostrato a destra della barra.
 
 ## Problemi frequenti e cosa fa l'app allora
 

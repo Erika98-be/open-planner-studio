@@ -26,9 +26,9 @@ Beispiel: *Site cabin* bekommt SS von *Groundwork* (Montag, 7. Juni 2027) und FF
 
 ## Fallstricke und was die App tut
 
-**Kein Ende-Treiber.** Wenn der Hammock keine Beziehung FF oder SF hat, kann die App sein Ende nicht ableiten. Der Bereich *Eigenschaften* zeigt *Kein Ende-Treiber (FF/SF) — die Spanne fällt auf Länge null zurück.* und der Bereich *Warnungen* zeigt *Hammock ohne Ende-Treiber (kein EE/AE-Vorgänger): die Dauer fällt auf null zurück*. Der Hammock beginnt und endet dann am selben Tag. Fügen Sie eine Beziehung FF oder SF hinzu.
+**Kein Ende-Treiber.** Wenn der Hammock keine Beziehung FF oder SF hat, kann die App sein Ende nicht ableiten. Der Bereich *Eigenschaften* zeigt *Kein Ende-Treiber (FF/SF) — die Spanne fällt auf Länge null zurück.* und der Bereich *Warnungen* zeigt *Hammock ohne Ende-Treiber (kein FF/SF-Vorgänger): die Dauer fällt auf null zurück*. Der Hammock beginnt und endet dann am selben Tag. Fügen Sie eine Beziehung FF oder SF hinzu.
 
-**Ein Hammock, der nach dem letzten Vorgang endet.** Wenn der Hammock bis nach dem letzten Vorgang weiterläuft, zum Beispiel mit FF und einem Zeitabstand von 2 Arbeitstagen, verschiebt sich das Enddatum des Projekts mit. Die Vorgänge, die tatsächlich ausgeführt werden, erhalten dann Puffer; keiner davon ist mehr kritisch.
+**Ein Hammock, der nach dem letzten Vorgang endet.** Wenn der Hammock bis nach dem letzten Vorgang weiterläuft, zum Beispiel mit FF und einem Zeitabstand von 2 Arbeitstagen, verschiebt sich das Enddatum des Projekts mit. Die Vorgänge, die Sie tatsächlich ausführen, erhalten dann Puffer; keiner davon ist mehr kritisch.
 
 **Vorgänge, die auf einen Hammock warten.** Wenn Sie eine Beziehung vom Hammock zu einem anderen Vorgang hinzufügen, beginnt dieser Vorgang erst nach dem Ende des Hammocks. Die ganze Kette vor dem Hammock, einschließlich der Vorgänge, von denen der Hammock Start und Ende übernimmt, erhält dann Puffer und ist nicht mehr kritisch, weil der Hammock keinen Druck zurückgibt. Lassen Sie Vorgänge deshalb nicht auf einen Hammock warten. Hängen Sie solche Vorgänge lieber an den Ende-Treiber des Hammocks.
 

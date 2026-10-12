@@ -50,7 +50,7 @@ La pianificazione come grafico a barre, con una tabella a sinistra e un asse tem
 
 **Nomi delle attività sulle barre** — Predefinito: attivato. Effetto: il nome dell'attività sulla barra, dove c'è spazio.
 
-**Mostra completamento** — Predefinito: attivato. Effetto: una parte più scura nella barra fino all'avanzamento dell'attività, e la colonna *Compl.* nella tabella.
+**Mostra completamento** — Predefinito: attivato. Effetto: la parte completata della barra diventa grigia, come nel diagramma di Gantt, e compare la colonna *Compl.* nella tabella. Un'attività completata non mostra la striscia del margine.
 
 **Tronca i nomi delle attività** — Predefinito: attivato. Effetto: attivato taglia i nomi nella tabella alla larghezza di *Colonna nome:*. Disattivato lascia crescere la colonna con il nome più lungo; compare *La colonna del nome si adatta al nome attività più lungo.*
 
@@ -62,7 +62,7 @@ La pianificazione come grafico a barre, con una tabella a sinistra e un asse tem
 
 **Mostra margine** — Predefinito: attivato. Effetto: il margine come striscia dietro le barre non critiche.
 
-**Dipendenze** — le linee delle relazioni. Predefinito: attivato. Effetto: disegna frecce tra le barre.
+**Relazioni** — le linee delle relazioni. Predefinito: attivato. Effetto: disegna frecce tra le barre.
 
 **Mostra solo i giorni lavorativi** — comprime l'asse temporale in questo report. Predefinito: disattivato. Effetto: fine settimana e festività vengono saltati, e poi strisce settimanali sostituiscono l'ombreggiatura dei fine settimana. Indipendente dalla stessa impostazione per il diagramma di Gantt a schermo.
 

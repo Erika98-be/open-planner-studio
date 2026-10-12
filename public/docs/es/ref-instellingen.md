@@ -90,7 +90,7 @@ La aplicación también guarda estas opciones en este dispositivo. Pero usted la
 
 **Acento de recurso** — una franja fina en el color del recurso debajo de la barra de tarea. Predeterminado: desactivado. Dónde: *Vista › Líneas base y progreso › Acento de recurso*.
 
-**Banda de holgura** — la holgura como banda detrás de las barras no críticas. Predeterminado: activado. Dónde: *Vista › Líneas base y progreso › Banda de holgura*.
+**Banda de holgura** — la holgura como banda detrás de las barras no críticas; no para tareas finalizadas. Predeterminado: activado. Dónde: *Vista › Líneas base y progreso › Banda de holgura*.
 
 **Colores de barras** — de qué depende el color de una barra. Elija entre *Ruta crítica*, *Por tarea — automático* y *Por categoría*. Predeterminado: *Ruta crítica*. Efecto: se aplica al diagrama de Gantt y al informe al mismo tiempo. Dónde: *Vista › Líneas base y progreso › Colores de barras*.
 
@@ -106,7 +106,7 @@ La aplicación también guarda estas opciones en este dispositivo. Pero usted la
 
 **Altura de *Propiedades* y *Advertencias* en el panel derecho** — predeterminado: 240 y 220 píxeles, entre 120 y 2000. *Propiedades* tiene esa altura también cuando la lista de recursos está abierta. Usted ajusta la altura con el tirador entre las secciones. La aplicación no recuerda si las secciones están abiertas o cerradas.
 
-**También guardadas, descritas en otro lugar** — las columnas de la tabla ([Ajustar las columnas de la tabla](docs://howto-tabelkolommen-aanpassen)), sus diseños ([Crear y usar un diseño](docs://howto-layouts-gebruiken)), las opciones de informe ([Tipos de informe](docs://ref-rapporttypes)), sus propias plantillas de perfil de cálculo ([Opciones de cálculo y convenciones](docs://ref-rekenopties-en-conventies)) y el *Idioma de la documentación* de la Ayuda (*Archivo › Ayuda*) también las guarda la aplicación en este dispositivo, no en el archivo del proyecto.
+**También guardadas, descritas en otro lugar** — las columnas de la tabla ([Ajustar las columnas de la tabla](docs://howto-tabelkolommen-aanpassen)), sus diseños ([Crear y usar un diseño](docs://howto-layouts-gebruiken)), las opciones de informe ([Tipos de informe](docs://ref-rapporttypes)), sus propias plantillas de perfil de cálculo ([Opciones de cálculo y convenciones](docs://ref-rekenopties-en-conventies)) y el *Idioma de la documentación* de la Ayuda (*Archivo › Ayuda*) se guardan también en este dispositivo, no en el archivo del proyecto.
 
 ## Véase también
 

@@ -10,7 +10,7 @@ Du ser i Gantt-diagrammet, at murværket skal starte to dage senere, eller at st
 
 ### Rykke en bjælke
 
-1. Tryk midt på en opgavebjælke, og træk vandret. Start og slutdato rykkes sammen, i hele dage; varigheden bliver den samme.
+1. Tryk midt på en opgavebjælke, og træk vandret. Start og slutdato flyttes lige langt, i hele dage; varigheden bliver den samme.
 2. Slip museknappen. Bjælken bliver på sit nye sted. Tidsplanen er da forældet: tryk på *Beregn* (F5), eller lad appen gøre det selv, hvis *Beregn automatisk* er slået til.
 
 Hvis opgaven har en foregående opgave, registrerer appen den nye start som begrænsningen *Start ikke tidligere end (SNET)*, og den meddeler det, når du slipper. Hvorfor det er sådan, og hvad der sker med en anden begrænsning, står i [Begrænsninger og deadlines](docs://uitleg-constraints). Trækker du tilbage til den oprindelige start, kommer den oprindelige begrænsning også tilbage.
@@ -55,6 +55,8 @@ Mere om markering findes i [Markere, slette og fortryde opgaver](docs://howto-ta
 3. Nederst til højre i statuslinjen står zoomen i pixels pr. dag, fx *Zoom: 15px/dag*.
 
 Jo længere du zoomer ud, jo færre gitterlinjer er der. Ved 8 pixels pr. dag eller mere er der en linje for hver dag, med en tykkere linje ved skellet mellem ugerne. Mellem 2 og 8 pixels pr. dag er kun ugeskellet tilbage. Under 2 pixels pr. dag, på årsniveau, er kun månedsskellene tilbage. Ellers ville tegnefladen blive et jævnt stribemønster, hvor bjælkerne forsvinder. De grå weekender og fridage og de ugebånd, der skiftevis har en farvetone, bliver på alle niveauer; de bærer ugestrukturen, når linjerne forsvinder. I tidslinjens hoved vises ugenumre og dagnumre kun, når der er plads til dem, og fra 40 pixels pr. dag vises ugedagen også før dagnummeret.
+
+Opgavens navn vises i bjælken, hvis det passer helt. Passer det ikke, fx når du zoomer ud, vises det fulde navn til højre for bjælken.
 
 ## Faldgruber og hvad appen gør da
 

@@ -25,7 +25,7 @@ Ha inkább fel vagy le húzza, és nem oldalra, akkor a tevékenységet egy más
 
 A bal szél a kezdést mozgatja, a befejezést pedig helyben hagyja. Így a tevékenység elején lesz rövidebb vagy hosszabb. Ugyanaz az SNET-szabály érvényes, mint a mozgatásnál. Ha a sáv közepét húzza, a címke nem jelenik meg, mert az időtartam nem változik.
 
-Az időtartam a tevékenység naptárának munkanapjait számolja. A hétvégék és az ünnepnapok nem számítanak, és napban megadott tevékenység nem lehet egy munkanapnál rövidebb. Órában megadott tevékenységnél az alkalmazás az egér alatti idővonal lépésközéhez kerekít: legalább egy órára, vagy negyedórára, ha elég erősen nagyít, és a *Negyedórák megjelenítése erős nagyításnál* be van kapcsolva.
+Az időtartam a tevékenység naptárának munkanapjait számolja. A hétvégék és a nem munkanapok nem számítanak, és napban megadott tevékenység nem lehet egy munkanapnál rövidebb. Órában megadott tevékenységnél az alkalmazás az egér alatti idővonal lépésközéhez kerekít: legalább egy órára, vagy negyedórára, ha elég erősen nagyít, és a *Negyedórák megjelenítése erős nagyításnál* be van kapcsolva.
 
 Egy húzás egy lépésnek számít a *Visszavonás* funkcióban, bármilyen hosszú is a húzás. Megszakított tevékenység sávján a szélek másként működnek. Lásd: [Tevékenység megszakítása](docs://howto-taak-splitsen).
 
@@ -33,7 +33,7 @@ Egy húzás egy lépésnek számít a *Visszavonás* funkcióban, bármilyen hos
 
 Hogy mit tesz a húzás az üres háttéren, az a görgetési módtól függ. A *Beállítások* ablakban, a *Megjelenés* lapon, a *Gantt › Görgetés és nagyítás* alatt, a *Mód* beállításnál választhatja ki:
 
-- **Nagyítás + húzás** (alapértelmezett): ha az üres háttéren a bal egérgombbal húz, az idővonal az egérrel együtt mozog, mint egy térképen. A kurzor kéz lesz. Egy sávon a húzás egyszerűen sávmozgatást kezd.
+- **Nagyítás + húzás** (alapértelmezett): ha az üres háttéren a bal egérgombbal húz, az idővonal az egérrel együtt mozog, mint egy térképen. A kurzor kéz lesz. Egy sávon a húzás egyszerűen sávműveletet indít.
 - **Pozíció** és **Billentyűk**: ugyanez a húzás kijelölő keretet hoz létre. Az idővonalat a görgővel (lásd: [Beállítások](docs://ref-instellingen)) vagy az egér középső gombjával tolja el.
 
 **Az egér középső gombja** (a lenyomott görgő) minden módban eltolja az idővonalat, akkor is, ha egy sávon kezdi. Nem működik, ha már másik mozdulat zajlik, például sáv húzása közben.
@@ -54,7 +54,9 @@ Többet a kijelölésről itt olvashat: [Tevékenységek kijelölése, törlése
 2. Ha az egész projektet látni szeretné, válassza a *Nézet › Időskála › Illesztés a projekthez* lehetőséget, vagy nyomja meg a Ctrl+0 billentyűt. A *Visszaállítás* (a *Nézet* lapon) vagy a 0 billentyű visszaállítja a nagyítást az alapértelmezettre.
 3. Az állapotsor jobb alsó sarkában látja a nagyítást pixel/napban, például *Nagyítás: 15 px/nap*.
 
-Minél jobban kicsinyít, annál kevesebb a rácsvonal. 8 pixel/nap vagy több esetén minden naphoz tartozik vonal, a hét határán vastagabb vonallal. 2 és 8 pixel/nap között csak a hét határa marad meg. 2 pixel/nap alatt, év szinten, csak a hónapok határai maradnak. Különben a vászon egyenletes csíkmintává válna, amelyben a sávok eltűnnének. A szürke hétvégék és ünnepnapok, valamint a váltakozva színezett hétsávok minden szinten megmaradnak. Ha a vonalak eltűnnek, ezek mutatják a hetek szerkezetét. Az idővonal fejlécében a hétszámok és a napszámok csak akkor jelennek meg, ha van hely rájuk. 40 pixel/nap felett a hét napja is megjelenik a napszám előtt.
+Minél jobban kicsinyít, annál kevesebb a rácsvonal. 8 pixel/nap vagy több esetén minden naphoz tartozik vonal, a hét határán vastagabb vonallal. 2 és 8 pixel/nap között csak a hét határa marad meg. 2 pixel/nap alatt, év szinten, csak a hónapok határai maradnak. Különben a vászon egyenletes csíkmintává válna, amelyben a sávok eltűnnének. A szürke hétvégék és nem munkanapok, valamint a váltakozva színezett hétsávok minden szinten megmaradnak. Ha a vonalak eltűnnek, ezek mutatják a hetek szerkezetét. Az idővonal fejlécében a hétszámok és a napszámok csak akkor jelennek meg, ha van hely rájuk. 40 pixel/nap felett a hét napja is megjelenik a napszám előtt.
+
+A tevékenység neve akkor látszik a sávban, ha teljesen elfér. Ha nem fér el, például kicsinyítéskor, a teljes név a sáv jobb oldalán jelenik meg.
 
 ## Buktatók és az alkalmazás reakciója
 

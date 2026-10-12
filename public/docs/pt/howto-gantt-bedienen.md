@@ -56,6 +56,8 @@ Mais sobre seleção está em [Selecionar, eliminar e desfazer tarefas](docs://h
 
 Quanto mais reduz o zoom, menos linhas da grelha há. A partir de 8 pixels por dia há uma linha por cada dia, com uma linha mais grossa na fronteira da semana. Entre 2 e 8 pixels por dia, só permanece a fronteira da semana. Abaixo de 2 pixels por dia, ao nível do ano, só ficam as fronteiras dos meses. Caso contrário, a área de desenho passaria a ser um padrão uniforme de riscas, em que as barras desapareciam. Os fins de semana e dias de folga a cinzento, e as bandas semanais com tom alternado, mantêm-se em todos os níveis; continuam a mostrar a estrutura semanal quando as linhas desaparecem. No cabeçalho da linha temporal, os números das semanas e dos dias só aparecem quando há espaço para eles. A partir de 40 pixels por dia, o dia da semana também aparece antes do número do dia.
 
+O nome da tarefa aparece na barra se couber completamente. Se não couber, por exemplo ao reduzir o zoom, o nome completo aparece à direita da barra.
+
 ## Problemas comuns e o que a aplicação faz nesse caso
 
 **O início não se move.** Se a tarefa tiver uma predecessora e uma restrição diferente de SNET, por exemplo *O mais tarde possível (ALAP)*, a aplicação não aplica o início arrastado. Depois de soltar, a aplicação indica qual restrição retém o início. Altere essa restrição para mover o início. A extremidade direita funciona, porque só altera a duração.

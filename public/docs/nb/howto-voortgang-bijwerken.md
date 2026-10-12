@@ -56,6 +56,7 @@ Elke endring av fremdrift eller statusdato gjør tidsplanen utdatert: statuslinj
 ## Kontrollere resultatet
 
 - På statusdatoen viser Gantt-diagrammet en stiplet linje med datoen i overskriften. Ved aktiviteter som pågår, bøyer linjen seg ut til prosenten i stolpen. Du slår disse av eller på med *Visning › Grunnlinjer og fremdrift › Fremdriftslinje* og *Statusdatolinje*.
+- Den fullførte delen av en stolpe blir grå. Resten beholder fargen sin. En fullført aktivitet er helt grå, med en hake foran navnet og uten slakkområde. Stolpen for en fase blir også grå opp til den utledede prosenten, slik at du ser per fase hvor langt den er kommet. Hvis du viser forgjengerne eller etterfølgerne til en aktivitet, beholder stolpene deres markeringsfargen, også når de er ferdige.
 - Fullførte aktiviteter er aldri røde: når du har en statusdato, er en fullført aktivitet ikke kritisk.
 - Faser viser en utledet prosent, og slutten på tidsplanen kan ha flyttet seg.
 - Hvis du har lagret en grunnlinje, ligger den opprinnelige tidsplanen under hver stolpe. Rapporttypen *Avvik* viser avviket.

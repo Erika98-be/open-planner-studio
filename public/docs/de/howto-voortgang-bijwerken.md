@@ -56,6 +56,7 @@ Jede Änderung am Fortschritt oder am Statusdatum macht den Terminplan veraltet:
 ## Das Ergebnis prüfen
 
 - Am Statusdatum zeigt das Gantt eine gestrichelte Linie mit dem Datum in der Kopfzeile. Bei laufenden Vorgängen wölbt sich die Linie bis zum Prozentwert im Balken. Sie schalten diese Linien über *Ansicht › Baselines & Fortschritt › Fortschrittslinie* und *Statusdatumslinie* ein oder aus.
+- Der abgeschlossene Teil eines Balkens wird grau. Der restliche Teil behält seine Farbe. Ein vollständig fertiger Vorgang ist ganz grau, mit einem Häkchen vor dem Namen und ohne Pufferanzeige. Der Balken eines Sammelvorgangs wird ebenfalls bis zu seinem abgeleiteten Prozentwert grau, damit Sie je Sammelvorgang sehen, wie weit die Ausführung ist. Wenn Sie die Vorgänger oder Nachfolger eines Vorgangs anzeigen, behalten diese Balken ihre Hervorhebungsfarbe, auch wenn sie fertig sind.
 - Abgeschlossene Vorgänge sind nie rot: Mit einem Statusdatum ist ein abgeschlossener Vorgang nicht kritisch.
 - Sammelvorgänge zeigen einen abgeleiteten Prozentwert, und das Ende des Terminplans kann sich verschoben haben.
 - Wenn Sie eine Baseline gespeichert haben, liegt der ursprüngliche Terminplan unter jedem Balken, und der Berichtstyp *Variance* zeigt die Abweichung.

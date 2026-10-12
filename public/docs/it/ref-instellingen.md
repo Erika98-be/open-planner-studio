@@ -90,7 +90,7 @@ L'app conserva anche queste scelte su questo dispositivo, ma le imposti sull'ele
 
 **Accento risorsa** — una striscia sottile nel colore della risorsa sotto la barra attività. Predefinito: disattivato. Dove: *Vista › Baseline e progresso › Accento risorsa*.
 
-**Banda di slack** — il margine come banda dietro le barre non critiche. Predefinito: attivo. Dove: *Vista › Baseline e progresso › Banda di slack*.
+**Banda di slack** — il margine come banda dietro le barre non critiche. Non vale per le attività completate. Predefinito: attivo. Dove: *Vista › Baseline e progresso › Banda di slack*.
 
 **Colori barre** — da che cosa dipende il colore di una barra. Scegli tra *Percorso critico*, *Per attività — automatico* e *Per categoria*. Predefinito: *Percorso critico*. Effetto: vale per il Gantt e per il report nello stesso momento. Dove: *Vista › Baseline e progresso › Colori barre*.
 
@@ -100,7 +100,7 @@ L'app conserva anche queste scelte su questo dispositivo, ma le imposti sull'ele
 
 **Comprimi la barra multifunzione** — una barra multifunzione compatta. Predefinito: disattivato. Dove: il pulsante a freccia in basso a destra della barra multifunzione.
 
-**Larghezza della tabella attività** — predefinita 350 pixel, tra 150 e 800. La imposti trascinando il divisore accanto alla tabella, oppure con i tasti freccia sinistra e freccia destra quando il divisore ha il focus.
+**Larghezza della tabella attività** — predefinita 350 pixel, tra 150 e 800. La imposti trascinando il divisore accanto alla tabella, oppure con i tasti freccia sinistra e freccia destra quando il divisore è attivo.
 
 **Larghezza del pannello destro** — predefinita 280 pixel, tra 200 e 900. La imposti trascinando il bordo del pannello.
 

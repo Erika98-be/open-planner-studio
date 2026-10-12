@@ -55,7 +55,8 @@ Ogni modifica dell'avanzamento o della data di stato rende la pianificazione non
 
 ## Controlla il risultato
 
-- Alla data di stato il Gantt mostra una linea tratteggiata con la data nell'intestazione. Sulle attività in corso la linea si sposta fino alla percentuale raggiunta nella barra. Accendi o spegni queste linee con *Vista › Baseline e progresso › Linea di avanzamento* e *Linea data di stato*.
+- Alla data di stato il Gantt mostra una linea tratteggiata con la data nell'intestazione. Sulle attività in corso la linea sporge fino alla percentuale raggiunta nella barra. Accendi o spegni queste linee con *Vista › Baseline e progresso › Linea di avanzamento* e *Linea data di stato*.
+- La parte completata di una barra diventa grigia. Il resto mantiene il suo colore. Un'attività completata del tutto è tutta grigia, con un segno di spunta prima del nome e senza la banda del margine. Anche la barra di una fase diventa grigia fino alla sua percentuale derivata, così vedi per fase quanto lavoro è stato fatto. Se mostri i predecessori o i successori di un'attività, le loro barre mantengono il colore di evidenziazione, anche quando sono completate.
 - Le attività completate non sono mai rosse: con una data di stato, un'attività completata non è critica.
 - Le fasi mostrano una percentuale derivata e la fine della pianificazione può essersi spostata.
 - Se hai salvato una baseline, la pianificazione originale si trova sotto ogni barra e il tipo di report *Variance* mostra lo scostamento.

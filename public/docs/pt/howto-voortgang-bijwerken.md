@@ -56,6 +56,7 @@ Cada alteração ao progresso ou à data de estado deixa o planeamento desatuali
 ## Verificar o resultado
 
 - Na data de estado, o Gantt mostra uma linha a tracejado com a data no cabeçalho. Nas tarefas em andamento, a linha faz uma saliência até à percentagem na barra. Pode ativar ou desativar estas linhas em *Visualização › Linhas de base e progresso › Linha de progresso* e *Linha de data de estado*.
+- A parte concluída de uma barra fica cinzenta; o resto mantém a cor. Uma tarefa totalmente concluída fica totalmente cinzenta, com um visto antes do nome e sem zona de folga. A barra de uma fase também fica cinzenta até à sua percentagem derivada, por isso vê, por fase, o avanço do trabalho. Se mostrar as predecessoras ou as sucessoras de uma tarefa, essas barras mantêm a cor de destaque, também quando estão concluídas.
 - Tarefas concluídas nunca aparecem a vermelho: com uma data de estado, uma tarefa concluída não é crítica.
 - As fases mostram uma percentagem derivada, e o fim do planeamento pode ter mudado.
 - Se guardou uma linha de base, o planeamento original fica por baixo de cada barra, e o tipo de relatório *Variance* mostra o desvio.

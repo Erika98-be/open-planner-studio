@@ -50,7 +50,7 @@ Le planning sous forme de diagramme à barres, avec un tableau à gauche et une 
 
 **Noms des tâches sur les barres** — Par défaut : activé. Effet : le nom de la tâche sur la barre, s'il y a de la place.
 
-**Afficher l'avancement** — Par défaut : activé. Effet : une partie plus foncée dans la barre, jusqu'à l'avancement de la tâche, et la colonne *Avanc* dans le tableau.
+**Afficher l'avancement** — Par défaut : activé. Effet : la partie terminée de la barre devient grise, comme dans le diagramme de Gantt, et la colonne *Avanc* apparaît dans le tableau. Une tâche terminée n'a pas de bande de marge.
 
 **Tronquer les noms de tâches** — Par défaut : activé. Effet : activé, les noms du tableau sont coupés à la largeur de *Colonne nom*. Désactivé, la colonne s'élargit avec le nom le plus long ; il est alors écrit *La colonne des noms s'adapte au nom de tâche le plus long*.
 
@@ -62,7 +62,7 @@ Le planning sous forme de diagramme à barres, avec un tableau à gauche et une 
 
 **Afficher la marge** — Par défaut : activé. Effet : la marge sous forme de bande derrière les barres non critiques.
 
-**Dépendances** — les lignes de relation. Par défaut : activé. Effet : trace des flèches entre les barres.
+**Relations** — les lignes de relation. Par défaut : activé. Effet : trace des flèches entre les barres.
 
 **Afficher uniquement les jours ouvrables** — compresse l'axe de la frise dans ce rapport. Par défaut : désactivé. Effet : les week-ends et les jours fériés sont sautés, et des bandes de semaine remplacent alors l'ombrage des week-ends. Indépendant du même réglage pour le diagramme de Gantt à l'écran.
 

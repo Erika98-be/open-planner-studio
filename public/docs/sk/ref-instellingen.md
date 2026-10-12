@@ -90,7 +90,7 @@ Aplikácia tiež uchováva tieto voľby na tomto zariadení. Nastavíte ich vša
 
 **Zvýraznenie zdrojov** — tenký pásik vo farbe zdroja pod pruhom úlohy. Predvolené: vypnuté. Kde: *Zobrazenie › Smerné plány a postup › Zvýraznenie zdrojov*.
 
-**Pás časovej rezervy** — časová rezerva ako pás za pruhmi úloh, ktoré nie sú kritické. Predvolené: zapnuté. Kde: *Zobrazenie › Smerné plány a postup › Pás časovej rezervy*.
+**Pás časovej rezervy** — časová rezerva ako pás za pruhmi úloh, ktoré nie sú kritické. Dokončené úlohy pás nemajú. Predvolené: zapnuté. Kde: *Zobrazenie › Smerné plány a postup › Pás časovej rezervy*.
 
 **Farby pruhov** — od čoho závisí farba pruhu. Vyberte jednu z možností *Kritická cesta*, *Podľa úlohy — automaticky* a *Podľa kategórie*. Predvolené: *Kritická cesta*. Účinok: platí súčasne pre diagram Gantt a zostavu. Kde: *Zobrazenie › Smerné plány a postup › Farby pruhov*.
 

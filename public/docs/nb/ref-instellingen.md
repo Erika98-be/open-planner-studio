@@ -90,7 +90,7 @@ Appen lagrer også disse valgene på denne enheten. Du velger dem likevel direkt
 
 **Ressursmarkering** — en tynn stripe i ressursfargen under aktivitetsstolpen. Standard: av. Hvor: *Visning › Grunnlinjer og fremdrift › Ressursmarkering*.
 
-**Slakkbånd** — slakken som et bånd bak ikke-kritiske stolper. Standard: på. Hvor: *Visning › Grunnlinjer og fremdrift › Slakkbånd*.
+**Slakkbånd** — slakken som et bånd bak ikke-kritiske stolper. Ikke for fullførte aktiviteter. Standard: på. Hvor: *Visning › Grunnlinjer og fremdrift › Slakkbånd*.
 
 **Stolpefarger** — hva fargen på en stolpe avhenger av. Velg blant *Kritisk linje*, *Per aktivitet — automatisk* og *Etter kategori*. Standard: *Kritisk linje*. Effekt: gjelder samtidig for Gantt og rapporten. Hvor: *Visning › Grunnlinjer og fremdrift › Stolpefarger*.
 

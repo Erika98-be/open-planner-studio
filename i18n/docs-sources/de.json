@@ -1331,7 +1331,7 @@
         "labels": {
           "common:properties": "aa1d68e81b372666",
           "common:sidebar.properties": "aa1d68e81b372666",
-          "common:warnings.kind.hammockNoFinishDriver": "9af15e8609ab0787",
+          "common:warnings.kind.hammockNoFinishDriver": "4780cbfcc3210eb6",
           "common:warnings.title": "a9cad0d78eb96150",
           "menu:ribbon.properties": "aa1d68e81b372666",
           "menu:ribbon.warningsPanel": "a9cad0d78eb96150",
@@ -2966,7 +2966,7 @@
     ]
   },
   "howto-voortgang-bijwerken": {
-    "structure": "a69d2f79d6dc9667",
+    "structure": "a43ae49e94f27891",
     "sections": [
       {
         "hash": "d1758ea47eab37c4",
@@ -3053,7 +3053,7 @@
         }
       },
       {
-        "hash": "b41aa755b7360b67",
+        "hash": "837937517733adbe",
         "labels": {
           "common:shortcuts.category.view": "a6d6105cf99c1b52",
           "menu:ribbon.baselines": "d0714df7ff49e58d",
@@ -3962,7 +3962,7 @@
         "labels": {}
       },
       {
-        "hash": "f1793be37b4de7f6",
+        "hash": "263098530534e3dd",
         "labels": {
           "common:context.fitToProject": "89cd944bc725a4d8",
           "common:feedback.tools.undo": "dd7bd2f68c4d4dc3",
@@ -7699,7 +7699,7 @@
         }
       },
       {
-        "hash": "cb1689edcc128447",
+        "hash": "dd148bf528abc225",
         "labels": {
           "common:resource.compact.title": "dcc7103e143d3e0b",
           "common:resource.leveling.resourceSelect": "dcc7103e143d3e0b",
@@ -8011,7 +8011,7 @@
           "common:conventions.p6CompletedOutOfSequenceWindow.label": "1062499ce6162eae",
           "common:conventions.p6CompletedPhysicalAtDataDate.label": "b3d4348bcbf80165",
           "common:conventions.p6FreeFloatOnOwnCalendar.label": "235dfd59cd4928c0",
-          "common:conventions.p6InProgressStartLagElapsed.label": "90e545627168f74e",
+          "common:conventions.p6InProgressStartLagElapsed.label": "751e51d875723236",
           "common:conventions.p6PreserveActualInstants.label": "79972f460dfb187a",
           "common:conventions.p6StartedTaskIgnoresPlannedStartFloor.label": "4810c7e27c15674c",
           "common:conventions.p6UseRemainingStartForProgress.label": "5c8628a9fea8f9d5",
@@ -8044,7 +8044,7 @@
           "common:calendar.library.project": "e98ea0e3ccf4a867",
           "common:context.calendarProjectDefault": "e98ea0e3ccf4a867",
           "common:conventions.p6CompletedDataDateWindow.label": "28bb537fbd365893",
-          "common:conventions.p6InProgressStartLagElapsed.label": "90e545627168f74e",
+          "common:conventions.p6InProgressStartLagElapsed.label": "751e51d875723236",
           "common:conventions.p6UseRemainingStartForProgress.label": "5c8628a9fea8f9d5",
           "common:documents.newProject": "d41a7a057bafec7b",
           "common:hourData.enable": "65176039b81017ea",
@@ -8321,7 +8321,7 @@
         }
       },
       {
-        "hash": "79625d856baba2fb",
+        "hash": "21918b31da808f10",
         "labels": {
           "common:apply": "53a7eab117f2d1ce",
           "common:benchmark.summaryTasks": "46edfda98697f49b",

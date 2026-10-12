@@ -50,7 +50,7 @@ Planificarea ca diagramă cu bare, cu un tabel în stânga și o axă de timp î
 
 **Nume activități pe bare** — Implicit: activat. Efect: numele activității pe bară, acolo unde este loc.
 
-**Afișare procent de finalizare** — Implicit: activat. Efect: o parte mai închisă a barei, până la progresul activității, și coloana *Proc. fin* din tabel.
+**Afișare procent de finalizare** — Implicit: activat. Efect: partea finalizată a barei devine gri, ca în Diagrama Gantt, și apare coloana *Proc. fin* în tabel. O activitate finalizată nu are bandă de marjă.
 
 **Trunchiere nume activități** — Implicit: activat. Efect: activat, taie numele din tabel la lățimea *Coloană nume:*. Dezactivat, coloana crește odată cu cel mai lung nume; apoi apare *Coloana de nume se adaptează la cel mai lung nume de activitate*.
 

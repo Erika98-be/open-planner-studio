@@ -55,7 +55,8 @@ Każda zmiana postępu lub daty statusu sprawia, że harmonogram jest nieaktualn
 
 ## Sprawdzenie wyniku
 
-- W dniu statusu wykres Gantt pokazuje przerywaną linię z datą w nagłówku. Przy zadaniach w toku linia wybrzusza się do procentu na pasku. Włączasz je lub wyłączasz w *Widok › Plan bazowy i postęp › Linia postępu* oraz *Linia daty statusu*.
+- W dacie statusu wykres Gantt pokazuje przerywaną linię z datą w nagłówku. Przy zadaniach w toku linia wybrzusza się do procentu na pasku. Włączasz je lub wyłączasz w *Widok › Plan bazowy i postęp › Linia postępu* oraz *Linia daty statusu*.
+- Ukończona część paska staje się szara; reszta zachowuje swój kolor. Zadanie w pełni ukończone jest całkowicie szare, z ptaszkiem przed nazwą i bez obszaru zapasu. Pasek fazy także szarzeje do wyliczonego procentu, więc widzisz dla każdej fazy, jak bardzo jest ukończona. Jeśli pokazujesz poprzedników lub następników zadania, te paski zachowują kolor wyróżnienia, także wtedy, gdy są ukończone.
 - Ukończone zadania nigdy nie są czerwone: przy dacie statusu ukończone zadanie nie jest krytyczne.
 - Fazy pokazują wyliczony procent, a zakończenie harmonogramu mogło się przesunąć.
 - Jeśli zapisałeś plan bazowy, pod każdym paskiem widać pierwotny harmonogram, a typ raportu *Variance* pokazuje odchylenie.

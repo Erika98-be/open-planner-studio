@@ -54,7 +54,9 @@ Mai multe despre selectare: [Selectarea, ștergerea și anularea activităților
 2. Dacă vreți să vedeți tot proiectul, alegeți *Vizualizare › Scară de timp › Potrivire la proiect* sau apăsați Ctrl+0. *Resetare* (pe fila *Vizualizare*) sau tasta 0 readuce zoom-ul la valoarea implicită.
 3. În colțul din dreapta jos, în bara de stare, vedeți zoom-ul în pixeli pe zi, de exemplu *Zoom: 15 px/zi*.
 
-Cu cât micșorați mai mult, cu atât sunt mai puține linii de grilă. La 8 pixeli pe zi sau mai mult există o linie pentru fiecare zi, cu o linie mai groasă la limita săptămânii. Între 2 și 8 pixeli pe zi rămâne doar limita săptămânii. Sub 2 pixeli pe zi, la nivel de an, rămân doar limitele lunilor. În caz contrar, canvasul ar deveni un model uniform de dungi, în care barele dispar. Weekendurile gri și zilele libere, precum și benzile de săptămână colorate alternativ, rămân la orice nivel. Ele păstrează structura săptămânilor când liniile dispar. În antetul liniei de timp, numerele săptămânilor și ale zilelor apar doar când este loc pentru ele. De la 40 de pixeli pe zi, ziua din săptămână se afișează și înaintea numărului zilei.
+Cu cât micșorați mai mult, cu atât sunt mai puține linii de grilă. La 8 pixeli pe zi sau mai mult există o linie pentru fiecare zi, cu o linie mai groasă la limita săptămânii. Între 2 și 8 pixeli pe zi rămâne doar limita săptămânii. Sub 2 pixeli pe zi, la nivel de an, rămân doar limitele lunilor. În caz contrar, suprafața de desen ar deveni un model uniform de dungi, în care barele dispar. Weekendurile gri și zilele libere, precum și benzile de săptămână colorate alternativ, rămân la orice nivel. Ele păstrează structura săptămânilor când liniile dispar. În antetul liniei de timp, numerele săptămânilor și ale zilelor apar doar când este loc pentru ele. De la 40 de pixeli pe zi, ziua din săptămână se afișează și înaintea numărului zilei.
+
+Numele activității este afișat în bară dacă încape complet. Dacă nu încape, de exemplu când micșorați, numele complet este afișat în dreapta barei.
 
 ## Capcane și ce face aplicația atunci
 

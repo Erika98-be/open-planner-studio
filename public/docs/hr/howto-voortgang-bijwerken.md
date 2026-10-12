@@ -56,8 +56,9 @@ Svaka promjena napretka ili datuma stanja čini raspored zastarjelim. Traka stan
 ## Provjera rezultata
 
 - Na datumu stanja Gantt prikazuje isprekidanu liniju, s datumom u zaglavlju. Kod zadataka u tijeku linija se na mjestu postotka izbočuje u traci. Ove linije uključujete ili isključujete u *Prikaz › Temeljni planovi i napredak › Linija napretka* i *Linija datuma stanja*.
+- Dovršeni dio trake postaje siv, a ostatak zadržava svoju boju. Zadatak koji je potpuno dovršen potpuno je siv, s kvačicom ispred naziva i bez prikaza vremenske rezerve. Traka faze također postaje siva do svog izvedenog postotka, pa po fazi vidite koliko je posla gotovo. Ako prikažete prethodnike ili nasljednike zadatka, te trake zadržavaju istaknutu boju, čak i kad su dovršene.
 - Dovršeni zadaci nikada nisu crveni: uz datum stanja dovršeni zadatak nije kritičan.
-- Faze prikazuju izvedeni postotak, a završetak rasporeda se možda već pomaknuo.
+- Faze prikazuju izvedeni postotak, a završetak rasporeda se možda pomaknuo.
 - Ako ste spremili temeljni plan, izvorni raspored nalazi se ispod svake trake, a vrsta izvješća *Odstupanja* prikazuje odstupanje.
 
 ## Zamke i što aplikacija radi

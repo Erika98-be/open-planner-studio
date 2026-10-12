@@ -23,7 +23,7 @@ Když táhnete hlavně nahoru nebo dolů místo do strany, přesunete úkol na j
 2. Táhněte okrajem. Během tažení ukazuje malý štítek ve zvýrazňovací barvě motivu (výchozí je oranžová) dobu trvání, kterou by úkol nyní dostal, například *4d*. Štítek se průběžně aktualizuje, takže novou dobu trvání vidíte ještě před uvolněním tlačítka myši. Na pravém okraji je štítek uvnitř pruhu, na levém okraji těsně vlevo od něj. Štítek ukazuje dobu trvání stejně, jako ji ukazuje sloupec doby trvání.
 3. Pusťte tlačítko myši. Doba trvání je ta, kterou ukazoval štítek.
 
-Levý okraj posouvá začátek a dokončení nechává, takže úkol se zkrátí nebo prodlouží na začátku. Pro něj platí stejné pravidlo SNET jako při přesunu. Když táhnete za střed pruhu, štítek se nezobrazí: doba trvání se nemění.
+Levý okraj posouvá začátek a dokončení nechává beze změny, takže úkol se zkrátí nebo prodlouží na začátku. Pro něj platí stejné pravidlo SNET jako při přesunu. Když táhnete za střed pruhu, štítek se nezobrazí: doba trvání se nemění.
 
 Doba trvání se počítá v pracovních dnech kalendáře úkolu. Víkendy a dny volna se nepočítají. Úkol v dnech nemůže být kratší než jeden pracovní den. U úkolu v hodinách aplikace zaokrouhluje na krok časové osy pod myší: nejméně na hodinu, nebo na čtvrthodinu, pokud přiblížíte dostatečně a je zapnuté *Zobrazit čtvrthodiny při větším přiblížení*.
 
@@ -55,6 +55,8 @@ Více o výběru je v [Výběr, odstranění a vrácení úkolů](docs://howto-t
 3. V pravém dolním rohu stavového řádku je přiblížení v pixelech na den, například *Přiblížení: 15 px/den*.
 
 Čím dále oddalujete, tím méně mřížkových čar je vidět. Při 8 pixelech na den nebo více je čára pro každý den, s tlustší čarou na hranici týdne. Mezi 2 a 8 pixely na den zůstane jen hranice týdne. Pod 2 pixely na den, na úrovni roku, zůstanou jen hranice měsíců. Jinak by plátno bylo jen rovnoměrný pruhovaný vzor, ve kterém by pruhy úkolů zmizely. Šedé víkendy a dny volna a střídavě podbarvené pásy týdnů zůstávají na každé úrovni; nesou strukturu týdnů, když čáry vypadnou. V záhlaví časové osy se čísla týdnů a čísla dnů zobrazí jen tehdy, je-li pro ně místo, a od 40 pixelů na den se před číslo dne zobrazuje i den v týdnu.
+
+Název úkolu se v pruhu zobrazí, pokud se celý vejde. Pokud se nevejde, například když oddalujete, zobrazí se celý název vpravo od pruhu.
 
 ## Časté problémy a co aplikace potom dělá
 
