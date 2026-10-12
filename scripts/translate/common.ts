@@ -210,7 +210,8 @@ export function hasWord(text: string, word: string): boolean {
  * De avoid-varianten die als los woord in `text` staan, nadat de vormen van de term zelf zijn
  * weggestreept (een avoid-variant kan in de eigen term zitten). Een vorm verdwijnt alleen als los woord
  * (anders maakt "na" van "nakonec" een los "konec"); in schriften zonder spaties en in Arabisch schrift
- * (voorvoegsels plakken vast) als deeltekst.
+ * (voorvoegsels plakken vast) als deeltekst. Dezelfde regel voor de docs-poort, de zachte UI-poort en
+ * `prepare ui --avoid`.
  */
 export function avoidWords(text: string, forms: string[], avoid: string[]): string[] {
   const rest = forms.map(f => f.trim()).filter(f => f !== '').sort((a, b) => b.length - a.length)
@@ -219,12 +220,6 @@ export function avoidWords(text: string, forms: string[], avoid: string[]): stri
       : s.replace(new RegExp(`(?<![${L}])${escapeRe(f.toLocaleLowerCase())}(?![${L}])`, 'gu'), ' \u0000 ')), text.toLocaleLowerCase());
   return avoid.filter(a => hasWord(rest, a));
 }
-
-/**
- * De avoid-varianten van één term die als los woord in `text` staan (hoofdletterongevoelig; zonder spaties
- * als deeltekst), nadat de vormen van de term zelf zijn weggestreept. Dezelfde regel voor de docs-poort,
- * de zachte UI-poort en `prepare ui --avoid`.
- */
 
 /** Aantal keer dat een token (hoofdlettergevoelig, los woord) in de tekst staat. */
 export function countToken(text: string, token: string): number {

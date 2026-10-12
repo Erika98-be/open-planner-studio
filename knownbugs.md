@@ -263,6 +263,11 @@ en noem het in je rapport of PR-tekst.
     nl-interface bij *Bestand › Voorbeelden*; de Help-artikelen noemen daarom de Engelse namen. Niet
     nagegaan of dat voor alle voorbeelden geldt. Voorstel: bewust laten, of per taal vertalen. — B
 
+102. **`apply-terms` vertrouwt `terms-NN.json` en `terms-check-01.map.json` zonder zegel.** De UI- en
+     docs-pakketten hebben sinds #323 een zegel (`build/translate-seal/`); de termbase-pakketten niet, terwijl
+     agents in dezelfde map schrijven. Voorstel: dezelfde `seal`/`sealErrors` in `prepare`/`apply-terms`.
+     Gevonden in de review van #323 (Opus, 2026-10-12), in de code aangewezen. — S
+
 ## Tests
 
 50. **`check-ifc-roundtrip` faalde op 30-09-2026** omdat het aanmaaktijdstempel toevallig de gezochte datum
@@ -288,6 +293,9 @@ en noem het in je rapport of PR-tekst.
 100. **Tailwind v4 scant ook bestanden buiten `src/`**, zoals `scripts/`. Een token als `[a:b]` in een
     logtekst wordt dan een CSS-regel in de bundel. Gezien bij #308 met `[build:platform]` (+36 bytes CSS);
     de logtekst is daarom aangepast. Voorstel: de bronnen van Tailwind beperken tot `src/` en `index.html`. — B
+
+103. **`scripts/run-ts.mjs` ruimt zijn tijdelijke map niet op.** Op de server stonden 1432 mappen
+     `ops-runts-*` in `/tmp`. Gezien door de reviewer van #323 (2026-10-12), niet verder nagegaan. — S
 
 ## Wensen en open taken (geen bug)
 

@@ -59,7 +59,7 @@ npm run translate -- packages docs <talen>         # alles wat nog open staat (o
 npm run verify:docs; echo "exit=$?"
 ```
 Stuur de open pakketten nog één keer door de stations (stap 2). Meldt `apply docs` dat een UI-label
-veranderde na `prepare`, of dat een pakketbestand "veranderd na prepare" is (het zegel klopt niet), maak dan voor die artikelen nieuwe pakketten (`prepare docs <taal> --ids <ids>`)
+veranderde na `prepare`, of dat een pakketbestand "veranderd na prepare" is of "geen zegel van prepare" heeft, maak dan voor die artikelen nieuwe pakketten (`prepare docs <taal> --ids <ids>`)
 en stuur ze opnieuw door de stations. Blijft een pakket
 na twee rondes rood, stop dan en meld het aan de user.
 
@@ -78,7 +78,7 @@ de duidelijke `matig`). Start dan:
 Controleer het herstel zelf. Het herstel gaat buiten de stations om, dus de pakketpoort moet er alsnog
 overheen (inline code, getallen, labels, links, termen):
 ```bash
-for l in <talen>; do npm run translate -- check-docs $l <herstelde ids>; done   # moet OK zijn; verouderde artikelen slaat hij over
+for l in <talen>; do npm run translate -- check-docs $l <herstelde ids>; done   # moet OK zijn; een verouderd artikel is hier rood
 npm run verify:docs; echo "exit=$?"
 git diff -U0 public/docs | grep '^+' | grep -niE 'replace|idem|\(→| / |use one term'   # geen notities in de tekst
 ```

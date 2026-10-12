@@ -76,10 +76,15 @@ for l in <talen>; do npm run translate -- apply ui $l; done
 npm run translate -- packages ui <talen> --red        # rode pakketten met uitvoer
 npm run translate -- packages ui <talen>              # alles wat nog open staat (ook zonder uitvoer)
 ```
-Zegt `apply` "nl-tekst in het pakket ≠ huidige nl", "staat niet (meer) in nl" of "veranderd na prepare"
-(het zegel klopt niet), dan helpt een nieuwe ronde stations niet: maak die pakketten opnieuw (stap 2). Stuur de andere open pakketten nog één keer door de
-stations (stap 3) en draai `apply` opnieuw. Blijft een
-pakket na twee rondes rood, stop dan en meld de taal, het pakket en de foutregel aan de user.
+Wat je met een rood pakket doet, hangt af van de foutregel:
+1. **Vertaalfout** (invulplek, term, meervoud, …): stuur de open pakketten van die taal nog één keer door
+   de stations (stap 3) en draai `apply` opnieuw.
+2. **Pakket past niet meer** ("nl-tekst in het pakket ≠ huidige nl", "staat niet (meer) in nl",
+   "veranderd na prepare", "geen zegel van prepare"): de stations helpen niet. Rond eerst geval 1 af voor
+   die taal, en maak daarna nieuwe pakketten (stap 2). `prepare ui` zet namelijk álle open
+   `ui-*`-pakketten van die taal opzij. `packages --red` noemt ook deze pakketten.
+
+Blijft een pakket na twee rondes rood, stop dan en meld de taal, het pakket en de foutregel aan de user.
 
 ### 5. Daarna `--stale`
 Herhaal stap 2 tot en met 4 met `--stale` voor de talen met `verouderd` of `zonder hash`. `--stale`

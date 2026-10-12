@@ -198,7 +198,7 @@ const QUOTE_CHARS = `'"‘’‚‛“”„‟«»‹›`;
  * schrijven een enkele accolade); aanhalingstekens rond de plek mogen typografisch anders zijn.
  */
 const fillRe = (target: string): RegExp =>
-  new RegExp(target.split(/\{\{\s*[\w.-]+\s*\}\}/).map(p => [...p].map(ch => (QUOTE_CHARS.includes(ch) ? `[${QUOTE_CHARS}]` : ch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))).join('')).join('.+?'), 'u');
+  new RegExp(target.split(/\{\{\s*[\w.-]+\s*\}\}/).map(p => [...p].map(ch => (QUOTE_CHARS.includes(ch) ? `[${QUOTE_CHARS}]` : escapeRe(ch))).join('')).join('.+?'), 'u');
 
 /** Cursieve stukken die een a/b-label zijn (bron: de en-tekst; vertaling: een doelkandidaat) uit de tekst halen. */
 function withoutLabelSpans(text: string, labels: DocsPackage['labels'], side: 'src' | 'out'): string {

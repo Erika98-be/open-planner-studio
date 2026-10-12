@@ -72,7 +72,7 @@ const sha = (text: string) => createHash('sha256').update(text, 'utf8').digest('
 
 /** Leg de zegels vast van deze pakketbestanden (namen in `build/translate/<taal>/`). */
 function seal(lang: string, files: string[]): void {
-  const seals = readJsonOr<Record<string, string>>(sealPath(lang), {});
+  const seals = readSeals(lang);
   for (const f of files) seals[f] = sha(readFileSync(join(WORK, lang, f), 'utf8'));
   mkdirSync(SEAL_DIR, { recursive: true });
   writeFileSync(sealPath(lang), toJson(seals));
@@ -80,12 +80,21 @@ function seal(lang: string, files: string[]): void {
 
 /** Waarom deze pakketbestanden niet meer kloppen met hun zegel; leeg = in orde. */
 function sealErrors(lang: string, files: string[]): string[] {
-  const seals = readJsonOr<Record<string, string>>(sealPath(lang), {});
+  const seals = readSeals(lang);
   return files.flatMap(f => {
     const want = seals[f];
-    if (want === undefined) return [`XX ${f}: geen zegel van prepare; maak het pakket opnieuw`];
-    return sha(readFileSync(join(WORK, lang, f), 'utf8')) === want ? [] : [`XX ${f}: veranderd na prepare; maak het pakket opnieuw`];
+    if (want === undefined) return [`${f}: geen zegel van prepare; maak het pakket opnieuw`];
+    return sha(readFileSync(join(WORK, lang, f), 'utf8')) === want ? [] : [`${f}: veranderd na prepare; maak het pakket opnieuw`];
   });
+}
+
+/** De zegels van een taal; een onleesbaar zegelbestand telt als leeg (dan is elk pakket "zonder zegel"). */
+function readSeals(lang: string): Record<string, string> {
+  try {
+    return readJsonOr<Record<string, string>>(sealPath(lang), {});
+  } catch {
+    return {};
+  }
 }
 const CONCEPTS = join(TERMBASE_DIR, 'concepts.json');
 
@@ -384,7 +393,7 @@ function applyUi(args: string[]): void {
     const read = tryReadPackage(join(dir, f), outFile);
     if ('error' in read) { console.log(`XX  ${f}: ${read.error}`); refused++; continue; }
     const tampered = sealErrors(lang, [f]);
-    if (tampered.length) { for (const line of tampered) console.log(`${line.replace(/^XX /, 'XX  ')}`); refused++; continue; }
+    if (tampered.length) { for (const line of tampered) console.log(`XX  ${line}`); refused++; continue; }
     fileOf.set(read.pkg.id, f);
     batch.push({ pkg: read.pkg as UiPackage, out: read.out });
   }
@@ -616,22 +625,27 @@ function checkDocsCmd(args: string[]): void {
   const missing = ids.filter(id => !translated.includes(id));
   if (missing.length) fail(`check-docs ${lang}: geen vertaling van ${missing.join(', ')}`);
   // Een verouderd artikel (en veranderde na de vertaling) zou de oude vertaling tegen de nieuwe en-bron
-  // keuren: rood zonder vertaalfout. Die noemt het commando apart; `update-docs-lang` (--stale) werkt ze bij.
+  // keuren: rood zonder vertaalfout. Zonder id's (alle artikelen) noemt het commando die apart. Met id's
+  // (na een herstel) is zo'n artikel rood: ongekeurd mag het niet de commit in; eerst `prepare docs --ids`.
   const stale = new Set(docsStates(lang).filter(a => a.state === 'stale').map(a => a.id));
   const skipped = ids.filter(id => stale.has(id));
-  if (skipped.length) {
+  if (skipped.length && !given.length) {
     console.log(`..  check-docs ${lang}: ${skipped.length} verouderd artikel(en) overgeslagen (eerst bijwerken met --stale): ${skipped.join(', ')}`);
   }
+  for (const id of given.length ? skipped : []) {
+    console.log(`    XX ${id}: verouderd (en veranderde na de vertaling), niet te keuren; maak het opnieuw met prepare docs ${lang} --ids ${id}`);
+  }
   const checked = ids.filter(id => !stale.has(id));
-  let red = 0;
+  let red = given.length ? skipped.length : 0;
   for (const { pkg, src } of checked.length ? buildDocsFor(lang, 'ids', checked, Number.MAX_SAFE_INTEGER) : []) {
     const r = checkDocs(pkg, src, readFileSync(docPath(lang, pkg.article), 'utf8'));
     if (!r.errors.length) continue;
     red++;
     for (const line of formatResult(pkg.article, r).filter(l => !l.startsWith('WW'))) console.log(`    ${line}`);
   }
-  console.log(`${red ? 'XX' : 'OK'}  check-docs ${lang}: ${checked.length - red} groen, ${red} rood`
-    + (skipped.length ? `, ${skipped.length} verouderd overgeslagen` : ''));
+  const redChecked = red - (given.length ? skipped.length : 0);
+  console.log(`${red ? 'XX' : 'OK'}  check-docs ${lang}: ${checked.length - redChecked} groen, ${red} rood`
+    + (skipped.length && !given.length ? `, ${skipped.length} verouderd overgeslagen` : ''));
   if (red) process.exit(1);
 }
 
@@ -682,14 +696,24 @@ function applyDocs(lang: string): void {
   const literals = new Set(literalNames(loadLiteral()));
   const labelsOf = (i: number, text: string) => sectionLabels(i, text, index, literals).keys;
   const byArticle = new Map<string, { base: string; pkg: DocsPackage; src: string; out?: string }[]>();
+  let unreadable = 0;
+  const brokenArticles = new Set<string>(); // een onleesbaar pakket: het hele artikel blijft staan
   for (const base of docsPackageBases(dir)) {
-    const pkg = readJson<DocsPackage>(join(dir, `${base}.json`));
+    let pkg: DocsPackage;
+    try {
+      pkg = readJson<DocsPackage>(join(dir, `${base}.json`));
+    } catch (err) {
+      console.log(`XX  ${base}.json: niet te lezen (${err instanceof Error ? err.message : String(err)})`);
+      unreadable++;
+      brokenArticles.add(base.replace(/-\d+$/, ''));
+      continue;
+    }
     const out = existsSync(join(dir, `${base}.out.md`)) ? readFileSync(join(dir, `${base}.out.md`), 'utf8') : undefined;
     const list = byArticle.get(pkg.article) ?? [];
     list.push({ base, pkg, src: readFileSync(join(dir, `${base}.src.md`), 'utf8'), ...(out !== undefined ? { out } : {}) });
     byArticle.set(pkg.article, list);
   }
-  let red = 0;
+  let red = unreadable;
   const applied: string[] = [];
   let written = 0;
   let rearranged = 0;
@@ -700,13 +724,14 @@ function applyDocs(lang: string): void {
     titles[id] = titleOf(md) ?? id;
   };
   for (const [id, list] of byArticle) {
+    if (brokenArticles.has(id)) { console.log(`XX  ${id}: een pakket is niet te lezen, niet samengevoegd`); continue; }
     const art = inputs.get(id);
     if (!art) { console.log(`XX  ${id}: staat niet (meer) in het manifest, overgeslagen`); red++; continue; }
     if (list.some(x => x.out === undefined)) { console.log(`..  ${id}: nog geen uitvoer voor ${list.filter(x => x.out === undefined).map(x => x.base).join(', ')}`); continue; }
     const tampered = sealErrors(lang, list.flatMap(x => [`${x.base}.json`, `${x.base}.src.md`]));
     if (tampered.length) {
       red++;
-      for (const line of tampered) console.log(`    ${line}`);
+      for (const line of tampered) console.log(`    XX ${line}`);
       console.log(`XX  ${id}: rood, niet samengevoegd`);
       continue;
     }

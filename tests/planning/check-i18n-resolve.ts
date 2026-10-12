@@ -174,6 +174,12 @@ try {
   r = resolveRun();
   ok('7b achteraf: de gekozen hash blijft staan', r.status === 0 && readSrc().common.a === 'h1'
     && r.out.includes('keuze in de merge-commit blijft') && git('status', '--porcelain', '--', 'i18n').out.trim() === '', r.out);
+  // Een niet-gecommitte wijziging in ui-sources overschrijft het script niet stil (review #323).
+  writeSrc('h3');
+  r = resolveRun();
+  ok('7c achteraf met een open wijziging in ui-sources: weigeren, niets overschreven',
+    r.status === 1 && r.out.includes('i18n/ui-sources') && readSrc().common.a === 'h3', r.out);
+  git('checkout', '--', 'i18n');
 } catch (err) {
   diffs.push(`onverwachte fout: ${err instanceof Error ? err.message : String(err)}`);
 } finally {

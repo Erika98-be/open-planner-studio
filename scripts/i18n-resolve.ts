@@ -62,8 +62,8 @@ if (!merging) {
     fail('er is geen `git merge` bezig en HEAD is geen merge-commit — draai dit tijdens of direct na '
       + '`git merge <branch>` (niet bij rebase of cherry-pick)');
   }
-  if ((git('status', '--porcelain', '--', 'src/i18n/locales') ?? '').trim() !== '') {
-    fail('HEAD is een merge-commit, maar src/i18n/locales heeft niet-gecommitte wijzigingen — commit of stash die eerst');
+  if ((git('status', '--porcelain', '--', 'src/i18n/locales', 'i18n/ui-sources') ?? '').trim() !== '') {
+    fail('HEAD is een merge-commit, maar src/i18n/locales of i18n/ui-sources heeft niet-gecommitte wijzigingen — commit of stash die eerst');
   }
   [ours, theirs] = ['HEAD^1', 'HEAD^2'];
 }
@@ -129,6 +129,9 @@ for (const ns of NAMESPACES) {
 // van UI_BASELINE pakt `prepare ui --stale` hem op en houdt de releasepoort hem tegen; in een nieuwe taal
 // (buiten UI_BASELINE) telt hij als ontbrekend. Dat blokkeert de merge niet; het script noemt de sleutel
 // wel. Achteraf (op de merge-commit) blijft de hash uit de merge-commit staan, net als bij de locales.
+// Afweging: die keuze controleert niemand tegen de vertaling. Wie de merge met de hand oplost zonder
+// dit script, kan zo een hash van de ene kant bij de tekst van de andere kant zetten. Daarom tijdens de
+// merge altijd `npm run i18n:resolve` (dan valt een botsende hash weg en houdt de releasepoort hem tegen).
 const sourceDrops: string[] = [];
 const sourceKept: string[] = [];
 const nlMerged = Object.fromEntries(NAMESPACES.map(ns => [ns, parse(
