@@ -1,5 +1,4 @@
 import { nameWithProjectCode } from '@/utils/projectCodeName';
-import { P6_ID_MAX_LENGTH } from './p6xmlSchemaOrder';
 import { P6XmlImportError } from './p6xmlErrors';
 import { Task, TaskConstraint, ConstraintType } from '@/types/task';
 import type { P6CompletePctType, P6DurationType } from '@/types/task';
@@ -35,6 +34,7 @@ import {
   OPS_DESCRIPTION_TOPIC_NAME,
   P6_LINK_TYPE,
   P6_NAME_TO_CURVE,
+  isOpsInternalProjectId,
 } from './p6xmlWriter';
 import { invertRecord } from '@/utils/collections';
 import {
@@ -1228,13 +1228,12 @@ function readP6XmlProject(scope: P6XmlScope): P6XmlProjectRead {
 
 /**
  * Weergavenaam van een P6-project: "Naam (Id)" (`nameWithProjectCode`). De eigen writer zet een
- * project zonder code onder `Id` = de naam, afgekapt op 40 tekens (schemagrens); dat Id is geen
- * eigen code en komt er niet achter.
+ * project zonder code onder `Id` = `OPS:` + het interne project-id; dat is geen projectcode en
+ * komt er niet achter.
  */
 function p6ProjectName(name: string, id: string): string {
-  const n = name.trim();
   const code = id.trim();
-  return nameWithProjectCode(n, code && code === n.slice(0, P6_ID_MAX_LENGTH).trim() ? '' : code);
+  return nameWithProjectCode(name.trim(), isOpsInternalProjectId(code) ? '' : code);
 }
 
 function parseProject(projEl: Element | null): Project {

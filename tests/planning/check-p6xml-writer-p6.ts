@@ -11,7 +11,8 @@
 // Corpusloos (CI).
 import { readFileSync } from 'node:fs';
 import { readP6XML } from '@/services/p6/p6xmlReader';
-import { writeP6XML, countP6Truncations } from '@/services/p6/p6xmlWriter';
+import { writeP6XML, writeP6XMLWithReport } from '@/services/p6/p6xmlWriter';
+import { nameWithProjectCode } from '@/utils/projectCodeName';
 import { exportP6TruncatedNotice } from '@/state/slices/fileSlice';
 import type { ImportResult } from '@/services/importTypes';
 import type { Sequence } from '@/types/sequence';
@@ -151,10 +152,37 @@ eq('7e oud: <Description>', old.tasks.find(t => t.wbsCode === 'A')?.description,
   eq('8b activiteit-Id ingekort tot 40', out.includes(`<Id>${'C'.repeat(40)}</Id>`) && !out.includes('C'.repeat(41)), true);
   eq('8c WBS-naam ingekort tot 100', out.includes(`<Name>${'W'.repeat(100)}</Name>`) && !out.includes('W'.repeat(101)), true);
   eq('8d projectnaam ingekort tot 100', out.includes(`<Name>${'P'.repeat(100)}</Name>`) && !out.includes('P'.repeat(101)), true);
-  eq('8e telling = 4 (zelfde regels als de writer)', countP6Truncations(big.project, big.tasks), 4);
-  eq('8f melding alleen bij P6-export', [exportP6TruncatedNotice('p6', big.project, big.tasks)?.params, exportP6TruncatedNotice('mspdi', big.project, big.tasks)],
-    [{ count: 4 }, null]);
-  eq('8g geen telling bij korte namen', countP6Truncations(src.project, src.tasks), 0);
+  const counted = (r: ImportResult) => {
+    const warn = console.warn;
+    console.warn = () => {};
+    try {
+      return writeP6XMLWithReport(r.project, r.calendar, r.tasks, r.sequences, r.resources, r.assignments, r.resourceCalendars ?? [], r.customTaskTypes ?? []).truncated;
+    } finally { console.warn = warn; }
+  };
+  eq('8e telling = 4 (de render telt zelf)', counted(big), 4);
+  eq('8f melding alleen bij P6-export', [exportP6TruncatedNotice('p6', 4)?.params, exportP6TruncatedNotice('mspdi', 4), exportP6TruncatedNotice('p6', 0)],
+    [{ count: 4 }, null, null]);
+  eq('8g geen telling bij korte namen', counted(src), 0);
+  // 8h (review C): een LEGE WBS-regel (samenvatting zonder kinderen) gaat als WBS; een te lange naam
+  //     daarvan telt één keer, op dezelfde plek als het inkorten.
+  const emptyWbs = readP6XML(readFileSync(new URL('./fixtures/p6xml-genest-meerdere-projecten.xml', import.meta.url), 'utf8'));
+  const summary = emptyWbs.tasks.find(t => t.childIds.length > 0)!;
+  const lonely = { ...structuredClone(summary), id: 'wbs-leeg', isSummary: true, childIds: [], name: 'L'.repeat(110), wbsCode: 'LEEG', parentId: null };
+  emptyWbs.tasks.push(lonely);
+  const lonelyXml = write(emptyWbs);
+  eq('8h lege WBS-regel gaat als WBS, naam tot 100, telling 1', [/<WBS>\s*<Code>LEEG<\/Code>\s*<Name>L{100}<\/Name>/.test(lonelyXml), counted(emptyWbs)], [true, 1]);
+  // 8j (review D): twee activiteit-Id's die na inkorten gelijk zijn ⇒ volgnummer binnen 40 tekens.
+  const clash = readP6XML(readFileSync(new URL('./fixtures/p6xml-genest-meerdere-projecten.xml', import.meta.url), 'utf8'));
+  const leaves2 = clash.tasks.filter(t => t.childIds.length === 0);
+  leaves2[0].wbsCode = `${'X'.repeat(40)}-1`;
+  leaves2[1].wbsCode = `${'X'.repeat(40)}-2`;
+  leaves2[2].wbsCode = 'X'.repeat(40);  // bestaat al precies zo: de ingekorte mogen hem niet raken
+  const clashXml = write(clash);
+  const actIds = [...clashXml.matchAll(/<Activity>[\s\S]*?<Id>([^<]*)<\/Id>/g)].map(m => m[1]);
+  const xIds = actIds.filter(id => id.startsWith('XXXX'));
+  eq('8j unieke activiteit-Id\'s na inkorten, ≤ 40 tekens', [xIds.length, new Set(xIds).size, xIds.every(id => id.length <= 40)], [3, 3, true]);
+  eq('8k volgnummer als achtervoegsel', xIds.filter(id => /-\d+$/.test(id)).sort(), [`${'X'.repeat(38)}-2`, `${'X'.repeat(38)}-3`]);
+  eq('8l telling = 2 (beide ingekort)', counted(clash), 2);
 }
 
 // (9) Kalendertype: een kalender die een taak gebruikt is Global (P6: een activiteit mag geen
@@ -183,6 +211,32 @@ eq('7e oud: <Description>', old.tasks.find(t => t.wbsCode === 'A')?.description,
   } finally { console.warn = warn; }
   eq('10c geen waarschuwing over een onbekende soort', warns.some(w => w.includes('PercentCompleteType')), false);
 }
+
+// (11) Projectnaam en P6-Id (review A): alleen een CODE tussen haakjes (zonder spatie) wordt het Id.
+{
+  const named = readP6XML(readFileSync(new URL('./fixtures/p6xml-genest-meerdere-projecten.xml', import.meta.url), 'utf8'));
+  const idAndName = (name: string): [string, string, string] => {
+    named.project.name = name;
+    const out = write(named);
+    const project = /<Project>[\s\S]*?<Id>([^<]*)<\/Id>[\s\S]*?<Name>([^<]*)<\/Name>/.exec(out.replace(/<WBS>[\s\S]*<\/ResourceAssignment>/, ''));
+    return [project?.[1] ?? '', project?.[2] ?? '', readP6XML(out).project.name];
+  };
+  const [codeId, codeName, codeBack] = idAndName('Kantoor (OZB-05)');
+  eq('11a code zonder spatie ⇒ Id', [codeId, codeName, codeBack], ['OZB-05', 'Kantoor', 'Kantoor (OZB-05)']);
+  const [faseId, faseName, faseBack] = idAndName('Nieuwbouw (fase 2)');
+  eq('11b "(fase 2)" blijft in de naam; Id = OPS: + intern project-id', [faseName, faseId === `OPS:${named.project.id}`.slice(0, 40), faseBack], ['Nieuwbouw (fase 2)', true, 'Nieuwbouw (fase 2)']);
+  // Twee projecten met dezelfde naam zonder code krijgen een verschillend Id.
+  named.project.id = 'proj-aaa1';
+  const [idA] = idAndName('Renovatie');
+  named.project.id = 'proj-bbb2';
+  const [idB, , backB] = idAndName('Renovatie');
+  eq('11c zelfde naam zonder code ⇒ uniek Id, naam ongewijzigd terug', [idA !== idB, backB], [true, 'Renovatie']);
+}
+
+// (12) nameWithProjectCode (review E): de code komt er niet dubbel achter.
+eq('12a al "Naam (Id)" ⇒ niet nog eens', nameWithProjectCode('Kantoor (OZB-05)', 'OZB-05'), 'Kantoor (OZB-05)');
+eq('12b naam = Id ⇒ één keer', nameWithProjectCode('OZB-05', 'OZB-05'), 'OZB-05');
+eq('12c anders ⇒ "Naam (Id)"', nameWithProjectCode('Kantoor', 'OZB-05'), 'Kantoor (OZB-05)');
 
 if (fails.length > 0) {
   for (const f of fails) console.log(`XX  p6xml-writer-p6: ${f}`);

@@ -15,7 +15,7 @@ import { isLeafTask, isSummaryTask } from '@/utils/taskHierarchy';
 import { flattenOrder } from '@/utils/wbs';
 import type { CustomTaskType } from '@/types/taskType';
 import { encodeCustomTaskType, OPS_DURATION_UNIT_NAME, toXmlDateTime } from '@/services/xmlInterchange';
-import { leaf, node, renderP6Xml, P6_ID_MAX_LENGTH, P6_MAX_LENGTH, type P6Node } from './p6xmlSchemaOrder';
+import { leaf, node, renderP6XmlWithReport, P6_ID_MAX_LENGTH, type P6Node } from './p6xmlSchemaOrder';
 import { taskDurationUnit } from '@/engine/scheduler/duration';
 import { shownStart, shownFinish } from '@/utils/taskDates';
 import { P6_DURATION_TYPE_NAME, XER_DURATION_TYPE_TOKEN } from '@/engine/work/workRuleMapping';
@@ -222,7 +222,15 @@ function holidayOrExceptionsNode(cal: WorkCalendar, includeEffectiveScalarBands:
   return [node('HolidayOrExceptions', [...byDate.keys()].sort().map(date => byDate.get(date)!))];
 }
 
-export function writeP6XML(
+export function writeP6XML(...args: Parameters<typeof writeP6XMLWithReport>): string {
+  return writeP6XMLWithReport(...args).xml;
+}
+
+/**
+ * Als `writeP6XML`, plus het aantal namen en codes dat tot de schemagrens is ingekort
+ * (`renderP6XmlWithReport`; de exportmelding `exportP6TruncatedNotice` gebruikt dit getal).
+ */
+export function writeP6XMLWithReport(
   project: Project,
   calendar: WorkCalendar,
   tasks: Task[],
@@ -231,7 +239,7 @@ export function writeP6XML(
   assignments: ResourceAssignment[],
   resourceCalendars: WorkCalendar[] = [],
   customTaskTypes: readonly CustomTaskType[] = [],
-): string {
+): { xml: string; truncated: number } {
   // Externe (cross-project) dependencies zijn in P6-XML niet uitdrukbaar buiten de
   // master/subproject-context ⇒ weggelaten (de ghost-weergave blijft in-app). Één warn.
   const extLinkCount = tasks.reduce((n, t) => n + (t.externalLinks?.length ?? 0), 0);
@@ -639,7 +647,7 @@ export function writeP6XML(
   // Project. Zelfde afweging als in mspdiWriter: een leeg <Name> gaf P6 een naamloos project, terwijl
   // de projectnaam in P6 juist een dragend, verplicht ingevuld veld is. Dezelfde neutrale,
   // taalonafhankelijke terugval als de bestandsnaam en de STEP-header.
-  const projectIdentity = p6ProjectIdentity(projectFileBase(project.name));
+  const projectIdentity = p6ProjectIdentity(projectFileBase(project.name), project.id);
   top.push(node('Project', [
     ...leaf('ActivityDefaultCalendarObjectId', 1),
     // Data date — P6's peildatum. Alleen wanneer gezet (golden rule).
@@ -654,7 +662,7 @@ export function writeP6XML(
     ...inProject,
   ]));
 
-  return renderP6Xml(
+  return renderP6XmlWithReport(
     node('APIBusinessObjects', top),
     'xmlns="http://xmlns.oracle.com/Primavera/P6/V23.12/API/BusinessObjects" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"',
   );
@@ -663,38 +671,23 @@ export function writeP6XML(
 /**
  * Naam en `Id` van het P6-project. Een geïmporteerd P6-project heet "Naam (Id)" (zie
  * `nameWithProjectCode`); die code gaat terug naar `<Id>` en de naam zonder code naar `<Name>`, zodat
- * heropenen dezelfde naam geeft. Zonder code is het Id de naam, afgekapt op de schemagrens. Vroeger
- * stond hier het interne project-id (`proj-…`), dat P6 als projectcode toonde.
+ * heropenen dezelfde naam geeft. Alleen een CODE splitst: tekst tussen haakjes zonder spatie, ≤ 40
+ * tekens ("Kantoor (OZB-05)"). "Nieuwbouw (fase 2)" blijft de naam. Zonder code is het Id
+ * `OPS:` + het interne project-id: uniek, ook als twee projecten dezelfde naam hebben. De lezer zet
+ * zo'n Id niet achter de naam (`isOpsInternalProjectId`). Het voorvoegsel maakt hem herkenbaar,
+ * ongeacht de vorm van het interne id (`proj-…`, een IFC-id, een test-id).
  */
-export function p6ProjectIdentity(displayName: string): { name: string; id: string } {
-  const match = / \(([^()]+)\)$/.exec(displayName);
-  if (match && match[1].trim().length <= P6_ID_MAX_LENGTH && match.index > 0) {
-    return { name: displayName.slice(0, match.index), id: match[1].trim() };
+export function p6ProjectIdentity(displayName: string, internalId: string): { name: string; id: string } {
+  const match = / \(([^()\s]+)\)$/.exec(displayName);
+  if (match && match[1].length <= P6_ID_MAX_LENGTH && match.index > 0) {
+    return { name: displayName.slice(0, match.index), id: match[1] };
   }
-  return { name: displayName, id: displayName.slice(0, P6_ID_MAX_LENGTH).trim() };
+  return { name: displayName, id: `${OPS_INTERNAL_PROJECT_ID_PREFIX}${internalId}`.slice(0, P6_ID_MAX_LENGTH) };
 }
 
-/** Velden die bij export worden ingekort tot hun schemagrens (`P6_MAX_LENGTH`). */
-function overLimit(value: string | undefined, max: number): boolean {
-  return (value ?? '').length > max;
-}
+const OPS_INTERNAL_PROJECT_ID_PREFIX = 'OPS:';
 
-/**
- * Hoeveel namen en codes de P6 XML-export inkort tot de schemagrens (Oracle P6 API `xs:maxLength`,
- * zie `P6_MAX_LENGTH`): projectnaam, activiteit-Id en -naam, WBS-code en -naam. Dezelfde regels als
- * `writeP6XML`; de export meldt het aantal (`exportP6TruncatedNotice` in fileSlice).
- */
-export function countP6Truncations(project: Pick<Project, 'name'>, tasks: readonly Task[]): number {
-  const isParent = new Set(tasks.filter(t => t.childIds.length > 0).map(t => t.id));
-  let count = overLimit(p6ProjectIdentity(projectFileBase(project.name)).name, P6_MAX_LENGTH.Project.Name) ? 1 : 0;
-  for (const task of tasks) {
-    if (isParent.has(task.id)) {
-      if (overLimit(task.wbsCode, P6_MAX_LENGTH.WBS.Code)) count++;
-      if (overLimit(task.name, P6_MAX_LENGTH.WBS.Name)) count++;
-    } else {
-      if (overLimit(task.wbsCode || task.id, P6_MAX_LENGTH.Activity.Id)) count++;
-      if (overLimit(task.name, P6_MAX_LENGTH.Activity.Name)) count++;
-    }
-  }
-  return count;
+/** Een project-Id dat de OPS-writer zelf maakte (geen code van de gebruiker; `p6ProjectIdentity`). */
+export function isOpsInternalProjectId(id: string): boolean {
+  return id.startsWith(OPS_INTERNAL_PROJECT_ID_PREFIX);
 }

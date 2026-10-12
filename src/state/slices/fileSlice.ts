@@ -4,7 +4,7 @@ import { writeIFC } from '@/services/ifc/ifcWriter';
 import { writeCSV, writeProgressSheetCSV } from '@/services/csv/csvWriter';
 import { flattenOrder } from '@/utils/wbs';
 import { writeMSPDI } from '@/services/msproject/mspdiWriter';
-import { writeP6XML, countP6Truncations } from '@/services/p6/p6xmlWriter';
+import { writeP6XMLWithReport } from '@/services/p6/p6xmlWriter';
 import { countSplitTasksWithoutContour } from '@/services/contourIo';
 import { openFileDialog, saveFileDialog, saveBytesDialog, saveToRef, readFromRef, readBytesFromRef, saveTargetRef, type FileRef, type SaveOutcome } from '@/services/fileAccess';
 import { isSiteConflict, isSiteNotFound, siteErrorMessage, siteStorageAvailable } from '@/services/fileAccess/siteHost';
@@ -20,7 +20,6 @@ import type { AppSliceFactory, NotifyInput, NotificationDetailLine } from './typ
 import type { AppState } from '../appStore';
 import { isTauri } from '@/utils/platform';
 import type { Task } from '@/types/task';
-import type { Project } from '@/types/project';
 import { refreshProjectCalendarCache } from '../syncProjectCalendar';
 import { stripLibraryOrigins } from '@/services/library/libraryOps';
 import { activeImportResult, isMultiDocumentImport, type ImportLabels, type ImportResult, type OpenedImport } from '@/services/importTypes';
@@ -322,13 +321,12 @@ export function exportSplitsLostNotice(format: ExportFormat, tasks: readonly Tas
 
 /**
  * P6 weigert een XML-import met een te lange naam of code (schema `xs:maxLength`). De P6 XML-export
- * kort ze daarom in (`renderP6Xml`) en meldt hier het aantal, als `info` zoals de andere
- * verliesmeldingen. Telling: `countP6Truncations`, dezelfde regels als de writer.
+ * kort ze daarom in en telt dat zelf (`renderP6XmlWithReport`, de enige telling); hier wordt dat
+ * aantal een `info`-melding, zoals de andere verliesmeldingen.
  */
-export function exportP6TruncatedNotice(format: ExportFormat, project: Pick<Project, 'name'>, tasks: readonly Task[]): NotifyInput | null {
-  if (format !== 'p6') return null;
-  const count = countP6Truncations(project, tasks);
-  return count > 0 ? { severity: 'info', messageKey: 'notifications.exportP6Truncated', params: { count } } : null;
+export function exportP6TruncatedNotice(format: ExportFormat, truncated: number): NotifyInput | null {
+  if (format !== 'p6' || truncated <= 0) return null;
+  return { severity: 'info', messageKey: 'notifications.exportP6Truncated', params: { count: truncated } };
 }
 
 /** Resultaat van `exportAs`: bij een cyclische planning wordt de export afgebroken vóór de
@@ -1049,6 +1047,7 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
       // meldingsafhandeling voor beide vormen letterlijk dezelfde regels zijn.
       let payload: string | Uint8Array;
       let ext: string;
+      let p6Truncated = 0;
       let filters: { name: string; extensions: string[] }[];
       let mime: string | undefined;
       // Het slanke voortgangsblad krijgt een eigen bestandsnaamsuffix
@@ -1136,10 +1135,14 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
           filters = [{ name: 'XML Files', extensions: ['xml'] }];
           break;
         case 'p6':
-          payload = writeP6XML(
-            state.project, state.calendar, state.tasks,
-            state.sequences, state.resources, state.assignments, state.calendars, state.customTaskTypes,
-          );
+          {
+            const written = writeP6XMLWithReport(
+              state.project, state.calendar, state.tasks,
+              state.sequences, state.resources, state.assignments, state.calendars, state.customTaskTypes,
+            );
+            payload = written.xml;
+            p6Truncated = written.truncated;
+          }
           ext = 'xml';
           filters = [{ name: 'XML Files', extensions: ['xml'] }];
           break;
@@ -1176,7 +1179,7 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
       // Alleen na een GESLAAGDE export (geannuleerde dialoog ⇒ hierboven al teruggekeerd).
       const splitsLost = exportSplitsLostNotice(format, state.tasks);
       if (splitsLost) get().notify(splitsLost);
-      const truncated = exportP6TruncatedNotice(format, state.project, state.tasks);
+      const truncated = exportP6TruncatedNotice(format, p6Truncated);
       if (truncated) get().notify(truncated);
       return { ok: true, warnings };
     },
