@@ -111,8 +111,10 @@ Node 22 (see CI). Rust stable only for the `tauri:*` commands.
   command is public surface. File I/O: extend `src/services/fileAccess/`, not a Rust command.
 - **Storage via the site.** `FileRef` has three kinds: `path` (Tauri), `handle` (Chromium web) and `site`. When the
   page that hosts the tool sets `window.openaecHost` (contract in `src/services/fileAccess/siteHost.ts`), Open, Save,
-  Save As, Recent, AutoSave and crash recovery also work against the site; without a host nothing changes, and the
-  desktop app never has one. A document carries `siteFileId` next to `filePath`/`fileHandle`; derive the save
+  Save As, Recent and crash recovery also work against the site (AutoSave deliberately not: every round would be a
+  new site version); without a host nothing changes, and the
+  desktop app never has one. A document carries `siteFileId` and `siteFileVersion` (the base for conflict detection) next to
+  `filePath`/`fileHandle`; derive the save
   target only via `saveTargetRef`. Dev: `?fakeSite=1` installs a fake site. Detail: `docs/platformbouw.md`.
 - **IFC 4.3 is the native format**; there is no JSON project format. New domain data must round-trip through
   `ifcWriter`/`ifcReader`, or it is gone after saving. CSV/MSPDI/P6/`.mpp`/`.xer` are adapters. Route:

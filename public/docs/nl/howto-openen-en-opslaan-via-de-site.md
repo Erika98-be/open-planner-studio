@@ -9,7 +9,7 @@ Je gebruikt de planner binnen de OpenAEC-omgeving op een site waar je al bent in
 ## Stappen
 
 1. Kies *Start › Bestand › Openen* (Ctrl+O). Het venster *Openen van de site* toont de planningen op de site.
-2. Klik bij een planning op *Openen*. De nieuwste versie opent, en de planning staat daarna bij de recente bestanden met het label *Op de site*.
+2. Klik op een planning. De nieuwste versie opent, en de planning staat daarna bij de recente bestanden met het label *Op de site*.
 3. Werk aan de planning en druk op Ctrl+S. De app slaat een nieuwe versie op de site op, zonder venster.
 4. Een nieuw project sla je op met Ctrl+S of *Opslaan als*. Het venster *Opslaan op de site* vraagt een naam. Klik op *Op de site opslaan*. Vanaf dan slaat Ctrl+S daar een nieuwe versie op.
 5. Wil je een bestand van je eigen pc gebruiken, klik dan op *Van deze pc…* in het venster om te openen, of op *Op deze pc…* in het venster om op te slaan.
@@ -22,10 +22,12 @@ Je gebruikt de planner binnen de OpenAEC-omgeving op een site waar je al bent in
 
 **De site is niet bereikbaar.** Dan verschijnt *Opslaan mislukt* met de reden van de site erbij. Je wijzigingen blijven in de app staan en crashherstel bewaart ze ook.
 
+**Een bestand uit Recent staat niet meer op de site.** Dan meldt de app *'…' staat niet meer op de site* en haalt ze het uit de recente bestanden. Bij een andere fout blijft het bestand in de lijst staan.
+
 **Exporteren gaat altijd naar je eigen pc.** Een export (CSV, Excel, MS Project, P6, PDF) komt als download of via de bestandskiezer, niet op de site.
 
 ## Zie ook
 
 - [Een bestand openen en opslaan](docs://howto-bestand-openen-en-opslaan): openen en opslaan op je eigen pc.
-- [Automatisch opslaan aanzetten](docs://howto-automatisch-opslaan): werkt ook voor een planning op de site.
+- [Automatisch opslaan aanzetten](docs://howto-automatisch-opslaan): staat uit voor een planning op de site; daar maakt elke opslag een nieuwe versie.
 - [Herstellen na een crash](docs://howto-herstellen-na-een-crash): na herstel slaat Ctrl+S weer op dezelfde plek op de site op.

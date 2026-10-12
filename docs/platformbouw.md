@@ -95,13 +95,17 @@ Afspraken:
   (alleen dezelfde origin). Een host zonder de vier functies telt als "geen site". In de desktop-app is er
   nooit een site.
 - Zet de site de host pas na het laden en gebruikt ze `initialFileId`, stuur dan één keer het event
-  `openaec-host-ready` op `window`.
+  `openaec-host-ready` op het venster waar de host staat (het eigen venster van de tool, of de pagina eromheen).
 - `list` krijgt de extensies zonder punt (`ifc`, `csv`, `xml`, `mpp`, `xer`). De site mag erop filteren; de
   tool filtert daarna zelf ook.
-- `open` zonder `version` geeft de nieuwste versie. Tekstformaten leest de tool als UTF-8.
+- `open` zonder `version` geeft de nieuwste versie, met `file.version` erbij; zonder versie weigert de tool het
+  bestand. Bestaat het bestand niet (meer), weiger dan met `code === 'not-found'`: alleen dan haalt de tool het
+  uit de recente bestanden. Tekstformaten leest de tool als UTF-8.
 - `save` zonder `id` maakt een nieuw bestand. Met `id` schrijft het een nieuwe versie en geeft hetzelfde `id`
-  terug, met de nieuwe `version`. De tool slaat altijd IFC op (`.ifc`).
-- `baseVersion` is de versie die de tool het laatst las of schreef. Is het bestand intussen verder, weiger dan
+  terug. Het antwoord heeft altijd een `id` en een `version`; ontbreekt er een, of is het `id` anders, dan telt de
+  opslag als mislukt. De tool slaat altijd IFC op (`.ifc`).
+- `baseVersion` is de versie waarop het document in de tool rust: per document, gezet na een geslaagde open of
+  opslag van dat document. Is het bestand intussen verder, weiger dan
   met een fout waarvan `code === 'conflict'`. De tool meldt dat apart, en het document blijft gewijzigd. Elke
   andere fout meldt de tool met de `message` van de site.
 - `versions` geeft de versies, nieuwste eerst.
@@ -119,16 +123,18 @@ Alleen als er een site is; zonder site verandert er niets.
 - **Opslaan** (Ctrl+S) schrijft een site-bestand zonder dialoog terug als nieuwe versie. Een document zonder
   doel, en **Opslaan als**, tonen "Opslaan op de site" met een naamveld en een knop "Op deze pc…".
 - **Recente bestanden** tonen site-bestanden met het label "Op de site". Heropenen haalt de nieuwste versie.
-- **Automatisch opslaan** en **crashherstel** werken met een site-bestand: na herstel schrijft Ctrl+S weer
-  naar dezelfde plek op de site (het herstelmanifest bewaart `siteFileId` en `siteFileVersion`).
+- **Crashherstel** werkt met een site-bestand: na herstel schrijft Ctrl+S weer naar dezelfde plek op de site,
+  met dezelfde basisversie (het herstelmanifest bewaart `siteFileId` en `siteFileVersion`).
+- **Automatisch opslaan** staat uit voor een site-bestand: elke ronde zou een nieuwe versie op de site maken. De
+  knop in de titelbalk is grijs en zegt waarom; crashherstel blijft actief.
 - Exporteren blijft altijd een download of bestandskiezer.
 
 ### In de code
 
 - `FileRef` heeft drie soorten: `path` (Tauri), `handle` (Chromium-web) en `site`. Elke functie in
   `src/services/fileAccess/index.ts` stuurt `site` naar `siteBackend.ts`, vóór de keuze tussen Tauri en web.
-- Een document draagt `siteFileId` naast `filePath` en `fileHandle` (`DOCUMENT_FIELDS`, snapshotrol `none`,
-  niet in het IFC). Het opslagdoel komt uit één helper (`saveTargetRef`).
+- Een document draagt `siteFileId` en `siteFileVersion` naast `filePath` en `fileHandle` (`DOCUMENT_FIELDS`,
+  snapshotrol `none`, niet in het IFC). Het opslagdoel komt uit één helper (`saveTargetRef`).
 - De twee dialogen (`SiteOpenDialog`, `SiteSaveDialog`) worden via `src/state/siteDialogBridge.ts` gevraagd,
   zodat de store geen componenten importeert. Ze liggen op `z-[90]`, boven de sluitvraag van een tabblad.
 - Toetsen: `tests/planning/check-site-storage.ts` (contract, dispatch, opslagdoel, herstelmanifest) en
