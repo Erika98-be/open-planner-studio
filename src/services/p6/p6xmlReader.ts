@@ -293,14 +293,36 @@ function parseP6HolidayOrExceptions(calEl: Element, alwaysLastMinute = false): {
 
 /**
  * P6 schrijft het einde van een werktijdblok als de LAATSTE minuut ervan: 08:00–16:00 staat als
- * `<Finish>15:59:00</Finish>` (MPXJ `XmlReaderHelper.getEndTime` telt er één minuut bij op). Onze
- * eigen writer schrijft het exacte einde (`16:00:00`). Een eindtijd op minuut 59 is dus de P6-vorm
- * en wordt hier +1 minuut; andere eindtijden blijven exact, zodat de eigen round-trip gelijk blijft.
+ * `<Finish>15:59:00</Finish>`, 07:30–16:30 als `16:29:00`. MPXJ (`XmlReaderHelper.getEndTime`) telt
+ * bij elke eindtijd één minuut op. Sommige tools (Aspose, oudere OPS-exports) schrijven het exacte
+ * einde (`16:00:00`). De regel geldt daarom per bestand (`p6FinishUsesLastMinute`):
+ * - `lastMinute` ⇒ elke eindtijd +1 minuut (zoals MPXJ);
+ * - anders blijft de eindtijd exact; alleen `23:59` is dan het einde van de dag (00:00–23:59 = hele dag).
  */
-function p6FinishClockToMinutes(clock: string, alwaysLastMinute = false): number | null {
+function p6FinishClockToMinutes(clock: string, lastMinute = false): number | null {
   const minutes = clockToMinutes(clock);
   if (minutes == null) return null;
-  return alwaysLastMinute || minutes % 60 === 59 ? minutes + 1 : minutes;
+  return lastMinute || minutes === 1439 ? minutes + 1 : minutes;
+}
+
+/**
+ * Schrijft dit bestand eindtijden als laatste minuut (P6-vorm)? Ja als:
+ * - het een OPS-export is met `<StandardWorkHours>` (writer sinds 2026-10: altijd einde − 1), of
+ * - één eindtijd van een werktijdblok (behalve 23:59) niet op een veelvoud van 5 minuten valt
+ *   (`15:59`, `16:29`, `11:44`): dat schrijft alleen de P6-vorm.
+ * Een bestand met alleen exacte tijden (`16:00`, `16:30`) houdt ze exact.
+ */
+export function p6FinishUsesLastMinute(root: Element, writtenByOps: boolean): boolean {
+  if (writtenByOps && root.getElementsByTagName('StandardWorkHours').length > 0) return true;
+  const finishes = root.getElementsByTagName('Finish');
+  for (let i = 0; i < finishes.length; i++) {
+    const el = finishes[i];
+    if (el.parentElement?.localName !== 'WorkTime') continue;
+    const minutes = clockToMinutes(el.textContent?.trim() ?? '');
+    if (minutes == null || minutes === 1439) continue;
+    if (minutes % 5 !== 0) return true;
+  }
+  return false;
 }
 
 function directChildrenByLocalName(parent: Element, localName: string): Element[] {
@@ -492,6 +514,7 @@ function readP6XmlProject(scope: P6XmlScope): P6XmlProjectRead {
     if (objectId >= 0) durationUnitUdfIds.add(objectId);
   }
   const writtenByOps = durationUnitUdfIds.size > 0;
+  const lastMinute = p6FinishUsesLastMinute(scope.root, writtenByOps);
 
   // Projectkalender: de kalender die het project als standaard voor activiteiten aanwijst
   // (`<ActivityDefaultCalendarObjectId>`), anders de eerste <Calendar> (de eigen writer zet de
@@ -500,7 +523,7 @@ function readP6XmlProject(scope: P6XmlScope): P6XmlProjectRead {
   const defaultCalObjId = scope.project ? getElementInt(scope.project, 'ActivityDefaultCalendarObjectId', -1) : -1;
   const projectCalEl = calElements.find(el => defaultCalObjId >= 0 && getElementInt(el, 'ObjectId', -1) === defaultCalObjId)
     ?? calElements[0];
-  const calendar = projectCalEl ? readP6Calendar(projectCalEl, writtenByOps) : createDefaultCalendar();
+  const calendar = projectCalEl ? readP6Calendar(projectCalEl, lastMinute) : createDefaultCalendar();
   const projectCalObjId = projectCalEl ? getElementInt(projectCalEl, 'ObjectId', -1) : -1;
   const hoursPerDay = calendar.hoursPerDay;
 
@@ -520,7 +543,7 @@ function readP6XmlProject(scope: P6XmlScope): P6XmlProjectRead {
     const objId = getElementInt(calEl, 'ObjectId', -1);
     if (objId < 0 || objId === projectCalObjId || calObjIdToId.has(objId)) continue;
     if (getElementText(calEl, 'Type') !== 'Resource' && !referencedCalObjIds.has(objId)) continue;
-    const cal = readP6Calendar(calEl, writtenByOps);
+    const cal = readP6Calendar(calEl, lastMinute);
     cal.id = generateId('rescal');
     calObjIdToId.set(objId, cal.id);
     resourceCalendars.push(cal);
@@ -1161,15 +1184,10 @@ function parseProject(projEl: Element | null): Project {
 }
 
 /**
- * Eén P6-<Calendar> → WorkCalendar. `writtenByOps`: het bestand is een OPS-export. Schrijft die de
- * werkweek als `<StandardWorkHours>` (writer sinds 2026-10), dan staat elke eindtijd op de laatste
- * minuut (einde − 1) en telt de lezer er altijd één minuut bij op — ook bij 16:29 (= tot 16:30).
- * Een oudere OPS-export (`<StandardWorkHour>`) schreef het exacte einde. Echte P6: alleen `:59`.
+ * Eén P6-<Calendar> → WorkCalendar. `lastMinute`: de eindtijdregel van het hele bestand
+ * (`p6FinishUsesLastMinute`).
  */
-function readP6Calendar(calEl: Element, writtenByOps = false): WorkCalendar {
-  const wwEl = calEl.getElementsByTagName('StandardWorkWeek')[0];
-  const opsLastMinute = writtenByOps && !!wwEl
-    && Array.from(wwEl.children).some(child => child.localName === 'StandardWorkHours');
+function readP6Calendar(calEl: Element, lastMinute = false): WorkCalendar {
   const calendar = createDefaultCalendar();
   calendar.name = getElementText(calEl, 'Name') || calendar.name;
   // P6 kent geen regelset-herkomst — createDefaultCalendar() zet 'm altijd; een uit P6 gelezen
@@ -1181,7 +1199,7 @@ function readP6Calendar(calEl: Element, writtenByOps = false): WorkCalendar {
 
   // Werkweek + feestdagen — golden rule: geen <StandardWorkWeek>/<HolidayOrExceptions> (ander tool /
   // oud bestand) ⇒ createDefaultCalendar()-defaults blijven staan.
-  const ww = parseP6StandardWorkWeek(calEl, opsLastMinute);
+  const ww = parseP6StandardWorkWeek(calEl, lastMinute);
   if (ww.workDays.length > 0) calendar.workDays = ww.workDays.sort((a, b) => a - b);
   if (ww.workStartHour !== undefined) calendar.workStartHour = ww.workStartHour;
   if (ww.workEndHour !== undefined) calendar.workEndHour = ww.workEndHour;
@@ -1191,7 +1209,7 @@ function readP6Calendar(calEl: Element, writtenByOps = false): WorkCalendar {
   // géén feestdagen. De NL-feestdagen van `createDefaultCalendar()` blijven alleen staan bij een kale
   // kalender zonder werkweek (ander tool / oud bestand).
   if (ww.workDays.length > 0) calendar.holidays = [];
-  const { holidays, workingExceptions } = parseP6HolidayOrExceptions(calEl, opsLastMinute);
+  const { holidays, workingExceptions } = parseP6HolidayOrExceptions(calEl, lastMinute);
   // Invariant (`WorkCalendar.workingExceptions`): een datum staat nooit in beide lijsten. Draagt P6
   // dezelfde dag dubbel, dan wint de werkende uitzondering (die is specifieker).
   const workingDates = new Set(workingExceptions.map(w => w.startDate));
