@@ -80,13 +80,14 @@ eq('vreemde CSV-classificatie', foreign.tasks[0]?.taskType, 'USERDEFINED');
 eq('vreemde CSV-catalogusnaam', foreign.customTaskTypes?.[0]?.name, 'Vendor activity');
 
 // De adapteruitbreidingen blijven identificeerbaar en schema-eerlijk: MSPDI gebruikt zijn vrije
-// ExtendedAttribute; P6 gebruikt top-level UDFType/UDFValue met ForeignObjectId, nooit een
-// verzonnen genest Activity-kind.
+// ExtendedAttribute; P6 definieert de UDF top-level (<UDFType>) en zet de WAARDE in de activiteit
+// (`<UDF><TypeObjectId/><TextValue/></UDF>`, Oracle-schema UDFAssignmentType), zoals echte P6 XML
+// (sinds 2026-10; oudere exports met top-level <UDFValue> leest de reader nog).
 eq('MSPDI marker', mspdi.includes('OpenPlannerStudio.CustomTaskType.v1'), true);
-eq('P6 top-level UDF-koppeling', p6.includes('<ForeignObjectId>1</ForeignObjectId>'), true);
-eq('P6 UDF staat niet in Activity', /<Activity>([\s\S]*?)<\/Activity>/.exec(p6)?.[1].includes('<UDFValue>'), false);
-eq('P6 gebruikt het officiële Text-veld', p6.includes('<Text>{&quot;ops&quot;:'), true);
-eq('P6 verzint geen los UDFValue-ObjectId', /<UDFValue>\s*<ObjectId>/.test(p6), false);
+const p6Activity = /<Activity>([\s\S]*?)<\/Activity>/.exec(p6)?.[1] ?? '';
+eq('P6 UDF-waarde staat in de Activity', /<UDF>\s*<TypeObjectId>900000001<\/TypeObjectId>\s*<TextValue>\{&quot;ops&quot;:/.test(p6Activity), true);
+eq('P6 UDF-definitie top-level', /<UDFType>[\s\S]*?<Title>OPS Custom Task Type<\/Title>[\s\S]*?<\/UDFType>/.test(p6), true);
+eq('P6 schrijft geen losse UDFValue meer', p6.includes('<UDFValue>'), false);
 
 // Beschadigde catalogus: de stabiele taak-id blijft behouden, terwijl de naam eerlijk ontbreekt.
 const orphanCsv = readCSV('Name;Task Type;OPS Custom Task Type ID\nZonder naam;USERDEFINED;ops-orphan\n');

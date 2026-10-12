@@ -68,7 +68,7 @@ Pentru fiecare format de fișier: dacă puteți să deschideți, să salvați ș
 
 **Ce se transferă** — structura WBS și activități cu durată, date și progres; dependențe cu decalaj; restricții (și o a doua, ca restricție moale); calendare; resurse și atribuiri; data raportului de stare (ca `DataDate`); un tip de activitate particularizat, într-un câmp propriu, `OPS Custom Task Type`, pe care aplicația îl citește la loc și pe care P6 îl poate ignora.
 
-**Ce nu se transferă** — referințele și termenele limită; codurile de activitate, câmpurile particularizate, notele și legăturile între proiecte; opțiunile de calcul; o excepție din calendarul de lucru (o excepție care face o zi lucrătoare). P6 nu are decalaj în procente: aplicația îl convertește într-un număr fix de zile. Un decalaj în zile calendaristice devine un decalaj în timp de lucru: 3 zile calendaristice devin 3 zile lucrătoare. Un hamac devine o activitate obișnuită, o activitate planificată manual devine o activitate obișnuită cu date calculate, iar o întârziere prin redistribuire de mai puțin de o zi se elimină.
+**Ce nu se transferă** — referințele și termenele limită; codurile de activitate, câmpurile particularizate, notele și legăturile între proiecte; opțiunile de calcul. P6 nu are decalaj în procente: aplicația îl convertește într-un număr fix de zile. Un decalaj în zile calendaristice devine un decalaj în timp de lucru: 3 zile calendaristice devin 3 zile lucrătoare. Un hamac devine o activitate obișnuită, o activitate planificată manual devine o activitate obișnuită cu date calculate, iar o întârziere prin redistribuire de mai puțin de o zi se elimină.
 
 ## Fișier Primavera (`.xer`)
 

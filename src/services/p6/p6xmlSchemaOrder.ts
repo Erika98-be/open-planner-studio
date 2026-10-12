@@ -1,0 +1,107 @@
+// Elementvolgorde van Primavera P6 XML (PMXML) voor precies de elementen die `p6xmlWriter` schrijft.
+//
+// Het Oracle-schema (P6 EPPM API BusinessObjects) definieert elk type als `xs:sequence`: de volgorde
+// van de kindelementen ligt vast, en P6 valideert zijn import tegen dat schema. De volgordes hieronder
+// zijn deelverzamelingen (alleen wat wij schrijven, in schemavolgorde) van de `propOrder` in de door
+// JAXB gegenereerde schemaklassen van MPXJ (`org.mpxj.primavera.schema`, schema V25.12):
+// APIBusinessObjects, ProjectType, CalendarType (+ StandardWorkWeek/StandardWorkHours/
+// HolidayOrExceptions/HolidayOrException), WorkTimeType, ResourceCurveType (+ Values),
+// ResourceType, ResourceRateType, UDFTypeType, UDFAssignmentType, NotebookTopicType, WBSType,
+// ActivityType, ActivityNoteType, RelationshipType en ResourceAssignmentType.
+// Gecontroleerd (2026-10-12) met een structuurcontrole over die klassen: onze export en echte
+// P6-exports uit het corpus.
+//
+// `renderP6Xml` sorteert de kinderen van elk element op deze tabel. Een kind zonder plek in de
+// tabel is een programmeerfout en geeft een exception (de round-trip-checks vangen dat).
+
+import { escapeXml } from '@/services/xmlInterchange';
+
+const ORDER: Readonly<Record<string, readonly string[]>> = {
+  APIBusinessObjects: ['UDFType', 'NotebookTopic', 'Calendar', 'ResourceCurve', 'Resource', 'ResourceRate', 'Project'],
+  Project: [
+    'ActivityDefaultCalendarObjectId', 'DataDate', 'Description', 'Id', 'MustFinishByDate', 'Name', 'ObjectId',
+    'PlannedStartDate', 'Status',
+    'WBS', 'Activity', 'ResourceAssignment', 'ActivityNote', 'Relationship',
+  ],
+  Calendar: ['HoursPerDay', 'HoursPerMonth', 'HoursPerWeek', 'HoursPerYear', 'Name', 'ObjectId', 'Type', 'StandardWorkWeek', 'HolidayOrExceptions'],
+  StandardWorkWeek: ['StandardWorkHours'],
+  StandardWorkHours: ['DayOfWeek', 'WorkTime'],
+  HolidayOrExceptions: ['HolidayOrException'],
+  HolidayOrException: ['Date', 'WorkTime'],
+  WorkTime: ['Start', 'Finish'],
+  ResourceCurve: ['Name', 'ObjectId', 'Values'],
+  Values: Array.from({ length: 21 }, (_, i) => `Value${i * 5}`),
+  Resource: ['CalendarObjectId', 'Id', 'MaxUnitsPerTime', 'Name', 'ObjectId', 'ParentObjectId', 'ResourceType', 'UnitOfMeasureAbbreviation'],
+  ResourceRate: ['EffectiveDate', 'ObjectId', 'PricePerUnit', 'ResourceObjectId'],
+  UDFType: ['DataType', 'ObjectId', 'SubjectArea', 'Title'],
+  UDF: ['TypeObjectId', 'TextValue'],
+  NotebookTopic: ['AvailableForActivity', 'AvailableForEPS', 'AvailableForProject', 'AvailableForWBS', 'Name', 'ObjectId'],
+  WBS: ['Code', 'Name', 'ObjectId', 'ParentObjectId', 'ProjectObjectId', 'SequenceNumber'],
+  Activity: [
+    'ActualFinishDate', 'ActualStartDate', 'CalendarObjectId', 'DurationType', 'Id', 'Name', 'ObjectId',
+    'PercentCompleteType', 'PhysicalPercentComplete', 'PlannedDuration', 'PlannedFinishDate', 'PlannedStartDate',
+    'PrimaryConstraintDate', 'PrimaryConstraintType', 'ProjectObjectId', 'RemainingDuration',
+    'SecondaryConstraintDate', 'SecondaryConstraintType', 'Status', 'Type', 'WBSObjectId', 'UDF',
+  ],
+  ActivityNote: ['ActivityObjectId', 'Note', 'NotebookTopicObjectId', 'ObjectId', 'ProjectObjectId'],
+  Relationship: [
+    'Lag', 'ObjectId', 'PredecessorActivityObjectId', 'PredecessorProjectObjectId',
+    'SuccessorActivityObjectId', 'SuccessorProjectObjectId', 'Type',
+  ],
+  ResourceAssignment: [
+    'ActivityObjectId', 'ActualCurve', 'ActualStartDate', 'ActualUnits', 'ObjectId', 'PlannedCurve',
+    'PlannedFinishDate', 'PlannedStartDate', 'PlannedUnits', 'PlannedUnitsPerTime', 'ProjectObjectId',
+    'RemainingCurve', 'RemainingStartDate', 'RemainingUnits', 'ResourceCurveObjectId', 'ResourceObjectId',
+  ],
+};
+
+/** Eén XML-element: tekst (al als ruwe tekst, wordt hier ge-escaped), kinderen, of `xsi:nil`. */
+export interface P6Node {
+  tag: string;
+  text?: string;
+  nil?: boolean;
+  children?: P6Node[];
+}
+
+/** Bladelement met tekst; `undefined`/leeg ⇒ geen element (golden rule: niets verzinnen). */
+export function leaf(tag: string, value: string | number | undefined | null): P6Node[] {
+  if (value === undefined || value === null || value === '') return [];
+  return [{ tag, text: String(value) }];
+}
+
+export function node(tag: string, children: P6Node[]): P6Node {
+  return { tag, children };
+}
+
+/** Kinderen in schemavolgorde (stabiel: gelijke tags houden hun volgorde). */
+export function orderedChildren(parent: string, children: readonly P6Node[]): P6Node[] {
+  const order = ORDER[parent];
+  if (!order) throw new Error(`P6-XML: geen schemavolgorde voor <${parent}>`);
+  const indexOf = (tag: string): number => {
+    const i = order.indexOf(tag);
+    if (i < 0) throw new Error(`P6-XML: <${tag}> heeft geen plek in de schemavolgorde van <${parent}>`);
+    return i;
+  };
+  return children
+    .map((child, position) => ({ child, position, rank: indexOf(child.tag) }))
+    .sort((a, b) => a.rank - b.rank || a.position - b.position)
+    .map(entry => entry.child);
+}
+
+/** Serialiseer een boom met inspringing van twee spaties per niveau. */
+export function renderP6Xml(root: P6Node, rootAttributes: string): string {
+  const lines: string[] = ['<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'];
+  const render = (n: P6Node, depth: number, attrs = ''): void => {
+    const pad = '  '.repeat(depth);
+    if (n.nil) { lines.push(`${pad}<${n.tag} xsi:nil="true" />`); return; }
+    if (n.children) {
+      lines.push(`${pad}<${n.tag}${attrs}>`);
+      for (const child of orderedChildren(n.tag, n.children)) render(child, depth + 1);
+      lines.push(`${pad}</${n.tag}>`);
+      return;
+    }
+    lines.push(`${pad}<${n.tag}>${escapeXml(n.text ?? '')}</${n.tag}>`);
+  };
+  render(root, 0, rootAttributes ? ` ${rootAttributes}` : '');
+  return lines.join('\n');
+}

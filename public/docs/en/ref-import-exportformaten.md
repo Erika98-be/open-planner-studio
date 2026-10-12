@@ -68,7 +68,7 @@ Per file format: whether you can open, save and export it, what does and does no
 
 **What goes along** — WBS structure and tasks with duration, dates and progress; relations with lag; constraints (also a second one, as a soft constraint); calendars; resources and assignments; the status date (as `DataDate`); a custom task type, in a field of its own, `OPS Custom Task Type`, that the app reads back and that P6 may ignore.
 
-**What does not go along** — baselines and deadlines; activity codes, custom fields, notes and external links; the calculation options; a working calendar exception (an exception that makes a day a working day). P6 has no lag in percentages: the app converts it to a fixed number of days. A lag in calendar days becomes a lag in working time: 3 calendar days become 3 work days. A hammock becomes an ordinary task, a manually scheduled task an ordinary task with calculated dates, and a leveling delay of less than a day is dropped.
+**What does not go along** — baselines and deadlines; activity codes, custom fields, notes and external links; the calculation options. P6 has no lag in percentages: the app converts it to a fixed number of days. A lag in calendar days becomes a lag in working time: 3 calendar days become 3 work days. A hammock becomes an ordinary task, a manually scheduled task an ordinary task with calculated dates, and a leveling delay of less than a day is dropped.
 
 ## Primavera file (`.xer`)
 

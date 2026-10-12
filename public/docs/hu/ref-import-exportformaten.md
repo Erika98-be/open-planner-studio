@@ -68,7 +68,7 @@ Fájlformátumonként: megnyitható-e, menthető-e és exportálható-e, mi megy
 
 **Mi megy át** — WBS-szerkezet és tevékenységek időtartammal, dátumokkal és előrehaladással; kapcsolatok késleltetéssel; korlátozások (egy második is, lágy korlátozásként); naptárak; erőforrások és hozzárendelések; az állapotdátum (`DataDate`-ként); egy egyéni tevékenységtípus saját mezőben, `OPS Custom Task Type` néven, amelyet az alkalmazás visszaolvas, és amelyet a P6 esetleg figyelmen kívül hagy.
 
-**Mi nem megy át** — alaptervek és határidők; tevékenységkódok, egyéni mezők, megjegyzések és projektközi kapcsolatok; a számítási beállítások; egy munkanaptári kivétel (kivétel, amely egy napot munkanappá tesz). A P6-ban nincs százalékos késleltetés: az alkalmazás ezt rögzített számú napra alakítja. A naptári napokban megadott késleltetés munkaidőben megadott késleltetés lesz: 3 naptári nap 3 munkanap lesz. Egy hangmat normál tevékenység lesz, egy kézzel ütemezett tevékenység normál tevékenység lesz, számított dátumokkal, és az egy napnál rövidebb kiegyenlítési késleltetés elvész.
+**Mi nem megy át** — alaptervek és határidők; tevékenységkódok, egyéni mezők, megjegyzések és projektközi kapcsolatok; a számítási beállítások. A P6-ban nincs százalékos késleltetés: az alkalmazás ezt rögzített számú napra alakítja. A naptári napokban megadott késleltetés munkaidőben megadott késleltetés lesz: 3 naptári nap 3 munkanap lesz. Egy hangmat normál tevékenység lesz, egy kézzel ütemezett tevékenység normál tevékenység lesz, számított dátumokkal, és az egy napnál rövidebb kiegyenlítési késleltetés elvész.
 
 ## Primavera-fájl (`.xer`)
 

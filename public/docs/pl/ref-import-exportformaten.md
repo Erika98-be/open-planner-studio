@@ -68,7 +68,7 @@ Dla każdego formatu pliku: czy można go otworzyć, zapisać i wyeksportować, 
 
 **Co zostaje zachowane** — struktura WBS i zadania z czasem trwania, datami i postępem; relacje z opóźnieniem; ograniczenia (także drugie, jako miękkie ograniczenie); kalendarze; zasoby i przydziały; datę statusu (jako `DataDate`); własny typ zadania w osobnym polu `OPS Custom Task Type`, które aplikacja odczytuje z powrotem i które P6 może zignorować.
 
-**Co się nie zachowuje** — plany bazowe i terminy ostateczne; kody czynności, pola niestandardowe, notatki i relacje zewnętrzne; opcje obliczeń; wyjątek w kalendarzu pracy (wyjątek, który czyni dzień dniem roboczym). P6 nie ma opóźnienia w procentach: aplikacja zamienia je na stałą liczbę dni. Opóźnienie w dniach kalendarzowych staje się opóźnieniem w czasie pracy: 3 dni kalendarzowe stają się 3 dniami roboczymi. Hamak staje się zwykłym zadaniem, zadanie planowane ręcznie zwykłym zadaniem z obliczonymi datami, a opóźnienie bilansowania krótsze niż jeden dzień zostaje pominięte.
+**Co się nie zachowuje** — plany bazowe i terminy ostateczne; kody czynności, pola niestandardowe, notatki i relacje zewnętrzne; opcje obliczeń. P6 nie ma opóźnienia w procentach: aplikacja zamienia je na stałą liczbę dni. Opóźnienie w dniach kalendarzowych staje się opóźnieniem w czasie pracy: 3 dni kalendarzowe stają się 3 dniami roboczymi. Hamak staje się zwykłym zadaniem, zadanie planowane ręcznie zwykłym zadaniem z obliczonymi datami, a opóźnienie bilansowania krótsze niż jeden dzień zostaje pominięte.
 
 ## Plik Primavera (`.xer`)
 

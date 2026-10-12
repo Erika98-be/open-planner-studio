@@ -68,7 +68,7 @@ U každého formátu souboru vidíte, zda ho můžete otevřít, uložit a expor
 
 **Co se přenese** — struktura WBS a úkoly s dobou trvání, daty a průběhem; závislosti s prodlevou; omezení (také druhé, jako měkké omezení); kalendáře; zdroje a přiřazení; datum stavu (jako `DataDate`); vlastní typ úkolu v samostatném poli `OPS Custom Task Type`, který aplikace načte zpět a který P6 může ignorovat.
 
-**Co se nepřenese** — směrné plány a konečné termíny; kódy aktivit, vlastní pole, poznámky a vazby mezi projekty; možnosti výpočtu; výjimka pracovního kalendáře (výjimka, která z dne udělá pracovní den). P6 nemá prodlevu v procentech: aplikace ji převede na pevný počet dnů. Prodleva v kalendářních dnech se stane prodlevou v pracovní době: 3 kalendářní dny se stanou 3 pracovními dny. Překlenovací úkol se změní na běžný úkol, ručně plánovaný úkol na běžný úkol s vypočítanými daty a zpoždění vyrovnání kratší než jeden den se zahodí.
+**Co se nepřenese** — směrné plány a konečné termíny; kódy aktivit, vlastní pole, poznámky a vazby mezi projekty; možnosti výpočtu. P6 nemá prodlevu v procentech: aplikace ji převede na pevný počet dnů. Prodleva v kalendářních dnech se stane prodlevou v pracovní době: 3 kalendářní dny se stanou 3 pracovními dny. Překlenovací úkol se změní na běžný úkol, ručně plánovaný úkol na běžný úkol s vypočítanými daty a zpoždění vyrovnání kratší než jeden den se zahodí.
 
 ## Soubor Primavera (`.xer`)
 
