@@ -205,7 +205,6 @@ export type NotificationMessageKey =
   | 'notifications.scheduleFailed'
   | 'notifications.ifcParseFailed'
   | 'notifications.templateSaved'
-  | 'notifications.relationCreated'
   | 'notifications.relationDuplicate'
   | 'notifications.relationAncestorEndpoint'
   // De store-route weigert een relatie die een kring sluit (net als raster en MCP). Parameter
@@ -405,6 +404,10 @@ export interface AppNotification {
   /** Alleen voor `info`: hoe lang de melding blijft staan, in ms (standaard 5000). Voor uitleg
    *  die je echt moet kunnen lezen, zoals de browseruitleg bij opslaan. */
   durationMs?: number;
+  /** Alleen voor `info`: de melding verdwijnt niet vanzelf maar blijft staan tot het kruisje. Voor
+   *  een openingsmelding waarbij de app data invulde, verving, repareerde of wegliet — zie
+   *  `state/openNoticeSticky.ts` voor de regel. Geen fout: de kleur blijft die van een info. */
+  sticky?: boolean;
 }
 
 /** Wat een aanroeper meegeeft; `id` en `count` vult de store. */

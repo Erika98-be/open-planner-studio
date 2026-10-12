@@ -24,7 +24,7 @@ Användbart när du arbetar i uppgiftstabellen.
 2. Håll ned Ctrl (⌘ på Mac) och klicka på den uppgift som kommer härnäst: den efterföljande uppgiften.
 3. Välj *Start › Uppgifter › Länka ▾ › Länka valda uppgifter*. Samma knapp finns också under *Tidsplan › Samband*.
 
-Appen skapar ett samband av typen slut-till-start utan fördröjning. Appen visar till exempel *Samband skapat: Foundation brickwork → Lay hollow-core floor*. Knappen fungerar bara med exakt två valda uppgifter.
+Appen skapar ett samband av typen slut-till-start utan fördröjning. Du ser det som en pil i Gantt och i kolumnen *Föregående*; en notis visas bara om appen avvisar sambandet. Knappen fungerar bara med exakt två valda uppgifter.
 
 ### Rita ett samband i Gantt-diagrammet
 

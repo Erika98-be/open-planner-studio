@@ -2021,7 +2021,7 @@ body {
 
 
 /* Toast notification — gecentraliseerde gebruikersmeldingen (bevinding K8). De stapel-container
-   positioneert; de losse melding verzorgt alleen inhoud + klik. De naam is ops-toast (was
+   positioneert; de losse melding verzorgt alleen inhoud + kruisje. De naam is ops-toast (was
    gantt-toast): de meldingen komen ook uit Backstage/tabel/rapport, waar geen canvas is. */
 .ops-toast-stack {
   position: fixed;
@@ -2037,10 +2037,12 @@ body {
 }
 
 .ops-toast {
-  pointer-events: auto;   /* … de losse melding wél (klik = wegklikken) */
+  pointer-events: auto;   /* … de losse melding wél (tekst selecteren, links, het kruisje) */
+  position: relative;     /* anker voor het kruisje */
   background: var(--error);
   color: #ffffff;
   padding: var(--sp-3) var(--sp-6);
+  padding-inline-end: calc(var(--sp-6) + 20px); /* ruimte voor het kruisje, ook in RTL */
   border-radius: var(--radius-md);
   font-family: var(--font-body);
   font-size: var(--text-large);
@@ -2048,6 +2050,37 @@ body {
   box-shadow: var(--shadow-lg);
   max-width: min(500px, 100%);
   animation: toast-in 0.3s ease-out;
+}
+
+/* Het kruisje rechtsboven (in RTL linksboven via inset-inline-end): de enige manier om een melding
+   met de hand te sluiten (eigenaarsbesluit 2026-10-12). Erft de witte tekstkleur van de toast. */
+.ops-toast-close {
+  position: absolute;
+  inset-block-start: var(--sp-2);
+  inset-inline-end: var(--sp-2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: inherit;
+  opacity: 0.85;
+  cursor: pointer;
+}
+
+.ops-toast-close:hover {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.ops-toast-close:focus-visible {
+  opacity: 1;
+  outline: 2px solid #ffffff;
+  outline-offset: 1px;
 }
 
 .ops-toast.toast-info {

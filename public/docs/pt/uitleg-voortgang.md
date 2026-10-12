@@ -28,7 +28,7 @@ Segundo, uma tarefa que ainda não começou não pode ficar no passado. Se essa 
 
 Terceiro, o trabalho restante de uma tarefa que já está em curso começa na própria data de estado. A aplicação trata a data de estado como o início desse dia. Se fizer o balanço na sexta-feira depois do horário de trabalho, defina a data de estado para segunda-feira. Se a definir para sexta-feira, a aplicação continua a planear o trabalho restante nessa sexta-feira.
 
-Se ainda não tiver uma data de estado e introduzir progresso, a aplicação define a data de estado para hoje e avisa-o. Sem data de estado, a aplicação calcula uma tarefa em curso para a frente com a sua duração restante, mas para trás com a sua duração total. A folga fica então negativa e a tarefa parece crítica sem motivo.
+Se ainda não tiver uma data de estado e introduzir progresso, a aplicação define a data de estado para hoje e avisa-o. Pode definir outra data em *Planeamento › Linhas de base e progresso › Data de estado*. Sem data de estado, a aplicação calcula uma tarefa em curso para a frente com a sua duração restante, mas para trás com a sua duração total. A folga fica então negativa e a tarefa parece crítica sem motivo.
 
 ### Percentagem, datas reais e duração restante
 

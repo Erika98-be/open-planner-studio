@@ -24,7 +24,7 @@ Useful when you work in the task list.
 2. Hold Ctrl (⌘ on a Mac) and click the task that comes next: the successor.
 3. Choose *Home › Tasks › Link ▾ › Link selected tasks*. The same button is also on *Planning › Relations*.
 
-The app creates a Finish-Start relation without lag and reports, for example, *Relation created: Foundation brickwork → Lay hollow-core floor*. The button only works with exactly two selected tasks.
+The app creates a Finish-Start relation without lag. You see it as an arrow in the Gantt and in the *Predecessors* column; a notification only appears if the app refuses the relation. The button only works with exactly two selected tasks.
 
 ### Drawing a relation in the Gantt
 

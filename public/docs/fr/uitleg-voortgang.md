@@ -28,7 +28,7 @@ Deuxièmement, un travail qui n'a pas commencé ne peut pas se situer dans le pa
 
 Troisièmement, le travail restant d'une tâche déjà en cours commence le jour même de la date d'état. L'application traite la date d'état comme le début de ce jour. Si vous faites le point le vendredi après les heures de travail, vous réglez donc la date d'état sur le lundi. Si vous la réglez sur le vendredi, l'application planifie quand même le travail restant ce vendredi-là.
 
-Si vous n'avez pas encore de date d'état et que vous saisissez un avancement, l'application règle la date d'état sur aujourd'hui et vous le signale. Sans date d'état, l'application calcule une tâche en cours en avant avec sa durée restante, mais en arrière avec sa durée complète. La marge devient alors négative, et la tâche semble critique sans raison.
+Si vous n'avez pas encore de date d'état et que vous saisissez un avancement, l'application règle la date d'état sur aujourd'hui et vous le signale. Vous fixez une autre date sous *Planification › Références et avancement › Date d’état*. Sans date d'état, l'application calcule une tâche en cours en avant avec sa durée restante, mais en arrière avec sa durée complète. La marge devient alors négative, et la tâche semble critique sans raison.
 
 ### Pourcentage, dates réelles et durée restante
 

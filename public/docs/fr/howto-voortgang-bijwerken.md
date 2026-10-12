@@ -18,7 +18,7 @@ La date d’état est le jour où vous faites le point. Définissez-la avant de 
 
 Si vous faites le point le vendredi après les horaires de travail, définissez la date d’état au jour ouvré suivant, le lundi. L’application planifie le travail restant à partir du début de la date d’état.
 
-Si vous saisissez l’avancement alors qu’il n’y a pas encore de date d’état, l’application la fixe à aujourd’hui et affiche ce message : *Il n’y avait pas encore de date d’état : elle est maintenant fixée à aujourd’hui (…), car l’avancement est mesuré jusqu’à la date d’état. Vous pouvez la modifier sous Planification → Date d’état.* Faites donc plutôt cette étape vous-même en premier.
+Si vous saisissez l’avancement alors qu’il n’y a pas encore de date d’état, l’application la fixe à aujourd’hui et affiche ce message : *Date d’état fixée à aujourd’hui (…).* Faites donc plutôt cette étape vous-même en premier.
 
 ### 2. Saisir l’avancement
 

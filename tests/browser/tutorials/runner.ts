@@ -340,10 +340,11 @@ async function capture(page: Page, shot: Shot, lang: Lang, dir: string, quality:
   x = Math.round(x); y = Math.round(y);
   const clip = { x, y, width: Math.round(right) - x, height: Math.round(bottom) - y };
   if (!shot.keepToasts) {
-    // Een melding van een eerdere handeling hoort niet in het beeld: wegklikken, zoals de lezer dat kan.
+    // Een melding van een eerdere handeling hoort niet in het beeld: sluiten met het kruisje, zoals
+    // de lezer dat kan (een klik op de melding zelf sluit hem niet meer, eigenaarsbesluit 2026-10-12).
     const toasts = page.locator('.ops-toast-stack > *');
     for (let i = 0; i < 10 && (await toasts.count()) > 0; i++) {
-      await toasts.first().click({ position: { x: 4, y: 4 } });
+      await toasts.first().locator('[data-ops-toast-close]').click();
     }
     await expect(toasts).toHaveCount(0);
   }

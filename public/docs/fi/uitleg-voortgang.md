@@ -28,7 +28,7 @@ Toiseksi työ, jota ei ole aloitettu, ei voi olla menneisyydessä. Jos tällaine
 
 Kolmanneksi jäljellä oleva työ tehtävässä, joka on jo käynnissä, alkaa itse raportointipäivänä. Sovellus pitää raportointipäivää kyseisen päivän alkuna. Jos arvio tehdään perjantaina työajan jälkeen, raportointipäiväksi asetetaan siis maanantai. Jos raportointipäiväksi asetetaan perjantai, sovellus suunnittelee jäljellä olevan työn silti sille perjantaille.
 
-Jos raportointipäivää ei ole vielä asetettu ja edistymistä syötetään, sovellus asettaa raportointipäiväksi tämän päivän ja kertoo siitä. Ilman raportointipäivää sovellus laskee käynnissä olevan tehtävän eteenpäin jäljellä olevalla kestolla, mutta taaksepäin koko kestolla. Pelivara tulee silloin negatiiviseksi, ja tehtävä näyttää kriittiseltä ilman syytä.
+Jos raportointipäivää ei ole vielä asetettu ja edistymistä syötetään, sovellus asettaa raportointipäiväksi tämän päivän ja kertoo siitä. Toisen päivän voi asettaa kohdassa *Aikataulu › Perustasot ja edistyminen › Raportointipäivä*. Ilman raportointipäivää sovellus laskee käynnissä olevan tehtävän eteenpäin jäljellä olevalla kestolla, mutta taaksepäin koko kestolla. Pelivara tulee silloin negatiiviseksi, ja tehtävä näyttää kriittiseltä ilman syytä.
 
 ### Prosentti, toteutuneet päivät ja jäljellä oleva kesto
 

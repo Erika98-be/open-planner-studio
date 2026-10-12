@@ -12,6 +12,7 @@ import { openSiteFile, saveNewSiteFile, saveSiteFileVersion } from '@/services/f
 import { askSiteOpen, askSiteSave, type SiteOpenChoice } from '@/services/fileAccess/siteDialogs';
 import { withXerArchiveIssueNotice } from '@/state/xerArchiveIssueNotice';
 import { P6XmlImportError } from '@/services/p6/p6xmlErrors';
+import { withOpenNoticeSticky } from '@/state/openNoticeSticky';
 import { P6XML_IMPORT_HELP_ARTICLE_ID, RECORDED_DATES_HELP_ARTICLE_ID, XER_IMPORT_HELP_ARTICLE_ID } from '@/state/helpArticles';
 import { openDialogFilters, binaryExtensions, readFormatForFile, parseOpenedFile, importErrorMessageKey, saveTargetFor, readFormatInput, readIFCWithXerReconstruction, type ExportFormat } from '@/services/formatRegistry';
 import { loadRecents, addRecent, removeRecent, type RecentEntry } from '@/services/fileAccess/recentFiles';
@@ -814,6 +815,7 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
           messageKey: 'notifications.duplicateIdsRenamed',
           params: { total: duplicateIds },
           dedupeKey: 'duplicate-ids-renamed',
+          sticky: true, // hernummerd bij het openen: blijft staan (openNoticeSticky.ts)
         });
       }
       const dropped = expandSummaryRelations(parsed.tasks, parsed.sequences).droppedSequenceIds.length;
@@ -823,6 +825,7 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
           messageKey: 'notifications.summaryRelationsDropped',
           params: { total: dropped },
           dedupeKey: 'summary-relations-dropped',
+          sticky: true, // relaties rekenen niet mee: blijft staan (openNoticeSticky.ts)
         });
       }
       // Een `.mpp`-bestand met aantoonbaar onderbroken, genivelleerde of resource-gedreven
@@ -919,7 +922,9 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
       // actie naar Bestand → Projectinfo. Een onbruikbaar XER-bronarchief is weggelaten door
       // `readIFC`; dat meldt zich als BUITENSTE laag, als detailregels in de bestandsmelding als
       // die er is, anders als eigen melding. Nooit stil — zie `withXerArchiveIssueNotice`.
-      const notice = withXerArchiveIssueNotice(
+      // Laatste stap: heeft de app bij het openen data ingevuld, vervangen, gerepareerd of weggelaten,
+      // dan blijft de melding staan tot het kruisje (`withOpenNoticeSticky`, eigenaarsbesluit 2026-10-12).
+      const notice = withOpenNoticeSticky(withXerArchiveIssueNotice(
         withRecordedDatesNotice(
           withSchedulingProfileNotice(
             results,
@@ -931,7 +936,7 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
           freshOfferTotal,
         ),
         results.map(result => result.xerArchiveIssue),
-      );
+      ));
       // De taaktypes-melding is een
       // detailregel in díe ene bestandsmelding — geen extra toast — met een EIGEN gidslink naar
       // `uitleg-werkregels` (`TASK_TYPES_DETAIL_LINE`; de "Lees meer" van de melding zelf gaat naar het
@@ -1442,7 +1447,7 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
           fit: true,
           hourDataNotice: true,
         });
-        const archiveNotice = withXerArchiveIssueNotice(undefined, [parsed.xerArchiveIssue]);
+        const archiveNotice = withOpenNoticeSticky(withXerArchiveIssueNotice(undefined, [parsed.xerArchiveIssue]));
         if (archiveNotice) get().notify(archiveNotice);
         return true;
       } catch (err) {
