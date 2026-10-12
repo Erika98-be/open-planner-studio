@@ -489,6 +489,11 @@ const run = (out: string) => checkDocs(PKG.pkg, PKG.src, out);
   eq('17b cs "1 položka aktualizována z knihovny": groen', lRun('# L\n\nNa konci uvidíte *1 položka aktualizována z knihovny* po 3 krocích.\n').errors, []);
   has('17c verkeerd label blijft rood', lRun('# L\n\nNa konci uvidíte *něco jiného* po 3 krocích.\n').errors, /moet letterlijk/);
   has('17d een getal buiten het label blijft verplicht', lRun('# L\n\nNa konci uvidíte *1 položka aktualizována z knihovny* po třech krocích.\n').errors, /getal 3 staat 1× in de bron/);
+  // fr "2 dernières semaines" zit in "12 dernières semaines": wegstrepen mag het getal 12 niet halveren.
+  const MD2 = '# L\n\nSee *1 item updated from the library* or 11 items updated from the library.\n';
+  const [lp2] = buildDocsPackages({ lang: 'cs', articles: [{ id: 'l2', md: MD2 }], mode: 'missing', sources: {}, index: csIdx, literal, concepts });
+  eq('17e label als deel van een langer getal: 11 blijft 11', checkDocs(lp2.pkg, lp2.src,
+    '# L\n\nViz *1 položka aktualizována z knihovny* nebo 11 položka aktualizována z knihovny.\n').errors, []);
 
   const arEn: JsonObject = { m: { shows_one: '1 task shows the lag', shows_other: '{{count}} tasks show the lag' } };
   const arNl: JsonObject = { m: { shows_one: '1 taak toont de vertraging', shows_other: '{{count}} taken tonen de vertraging' } };

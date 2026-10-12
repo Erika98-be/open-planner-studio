@@ -223,7 +223,9 @@ function withoutLabelSpans(text: string, labels: DocsPackage['labels'], side: 's
  */
 function withoutPlainLabelNumbers(text: string, labels: DocsPackage['labels'], side: 'src' | 'out'): string {
   const forms = labels.flatMap(l => (side === 'src' ? [l.en] : l.targets ?? [])).filter(f => /[0-9]/.test(f) && placeholders(f).length === 0);
-  return [...new Set(forms)].sort((a, b) => b.length - a.length).reduce((t, f) => t.split(f).join(' '), text);
+  // Alleen los van andere cijfers: fr "2 dernières semaines" staat ook in "12 dernières semaines".
+  const re = (f: string) => new RegExp(`(?<![0-9])${f.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?![0-9])`, 'gu');
+  return [...new Set(forms)].sort((a, b) => b.length - a.length).reduce((t, f) => t.replace(re(f), ' '), text);
 }
 
 /** Harde en zachte poorten voor één sectie: bron (en) tegen vertaling. */
