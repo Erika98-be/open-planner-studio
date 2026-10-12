@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite';
+import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 import fs from 'fs';
@@ -46,6 +46,10 @@ export default defineConfig(({ mode }) => ({
     // Per-worktree instance slug (set by scripts/tauri-dev.mjs); '' in a plain
     // build. Used to isolate the auto-save recovery file across worktrees.
     __OPS_DEV_INSTANCE__: JSON.stringify(process.env.OPS_DEV_INSTANCE ?? ''),
+    // Bouwvlag van de platformbouw (`src/utils/buildFlags.ts`), in ELKE modus als letterlijke waarde
+    // (uit `.env.platform`, anders ''). Vite vervangt `import.meta.env?.X` alleen als X een define is;
+    // zonder deze regel blijft de vlag in de gewone bouw een runtime-check en snoeit de bundelaar niets.
+    'import.meta.env.VITE_OPS_PLATFORM': JSON.stringify(loadEnv(mode, __dirname, 'VITE_OPS_').VITE_OPS_PLATFORM ?? ''),
   },
   resolve: {
     alias: {

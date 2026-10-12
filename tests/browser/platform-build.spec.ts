@@ -189,7 +189,6 @@ test('Backstage: geen Extensies, geen extensie-importers, geen AI-instellingen',
   await navItem(page, 'Settings').click();
   await page.locator('.backstage-main .settings-tab', { hasText: 'Advanced' }).click();
   await expect(page.locator('.backstage-main').getByText('Debug terminal', { exact: true })).toBeVisible();
-  await expect(page.locator('[data-ops-settings-ai]')).toHaveCount(0);
   await expect(page.locator('.backstage-main').getByText('AI mode', { exact: true })).toHaveCount(0);
 
   expect(seen.sameOriginOutsideBase).toEqual([]);

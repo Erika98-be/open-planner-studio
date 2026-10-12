@@ -381,7 +381,7 @@ export function SettingsPanelContent() {
                 starten, dus die schakelaar staat dan uit-gegrijsd i.p.v. dat hij stil niets doet.
                 Platformbouw (#307): geen AI-modus, dus deze sectie ontbreekt. */}
             {AI_MODE_AVAILABLE && (
-            <div className="settings-section" data-ops-settings-ai>
+            <div className="settings-section">
               <h3>{t('settings.aiModeSection')}</h3>
               <SettingToggle
                 label={t('settings.aiMode')}

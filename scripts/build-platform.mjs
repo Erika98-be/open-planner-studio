@@ -21,8 +21,8 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const EXAMPLE = 'npm run build:platform -- --base /assets/openaec/planner/';
 
 function usageError(message) {
-  console.error(`[build:platform] ${message}`);
-  console.error(`[build:platform] Voorbeeld: ${EXAMPLE}`);
+  console.error(`build-platform: ${message}`);
+  console.error(`build-platform: Voorbeeld: ${EXAMPLE}`);
   process.exit(2);
 }
 
@@ -69,11 +69,11 @@ delete BUILD_ENV.OPS_DEV_INSTANCE;
 function run(bin, args) {
   const result = spawnSync(path.join(ROOT, 'node_modules', '.bin', bin), args, { cwd: ROOT, stdio: 'inherit', env: BUILD_ENV });
   if (result.error) {
-    console.error(`[build:platform] ${bin} starten mislukt: ${result.error.message}`);
+    console.error(`build-platform: ${bin} starten mislukt: ${result.error.message}`);
     process.exit(1);
   }
   if (result.status !== 0) {
-    console.error(`[build:platform] ${bin} faalde (exit ${result.status ?? result.signal}).`);
+    console.error(`build-platform: ${bin} faalde (exit ${result.status ?? result.signal}).`);
     process.exit(result.status ?? 1);
   }
 }
@@ -84,11 +84,11 @@ function main() {
   const problem = validateBase(parsed.base);
   if (problem) usageError(problem);
 
-  console.log(`[build:platform] typecheck (tsc)…`);
+  console.log(`build-platform: typecheck (tsc)…`);
   run('tsc', []);
-  console.log(`[build:platform] vite build --mode platform --base ${parsed.base} → dist-platform/`);
+  console.log(`build-platform: vite build --mode platform --base ${parsed.base} → dist-platform/`);
   run('vite', ['build', '--mode', 'platform', '--base', parsed.base]);
-  console.log(`[build:platform] klaar: dist-platform/ (manifest: dist-platform/.vite/manifest.json)`);
+  console.log(`build-platform: klaar: dist-platform/ (manifest: dist-platform/.vite/manifest.json)`);
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main();
