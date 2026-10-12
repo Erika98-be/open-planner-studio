@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useAppStore } from '@/state/appStore';
 import { isActivePristine } from '@/state/slices/fileSlice';
 import { buildImportLabels } from '@/i18n/importLabels';
-import { SITE_HOST_READY_EVENT, siteInitialFileId } from '@/services/fileAccess/siteHost';
+import { SITE_HOST_READY_EVENT, siteHostWindows, siteInitialFileId } from '@/services/fileAccess/siteHost';
 import type { RecoveryState } from './useRecoveryRestore';
 
 /**
@@ -13,7 +13,9 @@ import type { RecoveryState } from './useRecoveryRestore';
  * van de gebruiker, ook niet een net hersteld document.
  *
  * Zet de site de host pas na het laden, dan wacht de hook één keer op het event
- * `openaec-host-ready` (`SITE_HOST_READY_EVENT`). Zonder site gebeurt er niets.
+ * `openaec-host-ready` (`SITE_HOST_READY_EVENT`). De site stuurt dat op het venster waar de host
+ * staat; de hook luistert daarom op het eigen venster én, in een iframe, op een same-origin parent.
+ * Zonder site gebeurt er niets.
  */
 export function useSiteInitialFile(recoveryResolved: boolean, recovery: RecoveryState | null): void {
   const { t } = useTranslation('common');
@@ -32,12 +34,18 @@ export function useSiteInitialFile(recoveryResolved: boolean, recovery: Recovery
     };
 
     if (tryOpen()) return;
-    if (typeof window === 'undefined') return;
     const onReady = () => {
       if (started.current) return;
       tryOpen();
     };
-    window.addEventListener(SITE_HOST_READY_EVENT, onReady);
-    return () => window.removeEventListener(SITE_HOST_READY_EVENT, onReady);
+    // Eigen venster en een same-origin parent (een cross-origin parent laat `siteHostWindows` weg).
+    // Het afmelden staat ook in een try: de parent kan intussen weg of van origin gewisseld zijn.
+    const targets = siteHostWindows();
+    for (const target of targets) target.addEventListener(SITE_HOST_READY_EVENT, onReady);
+    return () => {
+      for (const target of targets) {
+        try { target.removeEventListener(SITE_HOST_READY_EVENT, onReady); } catch { /* parent weg */ }
+      }
+    };
   }, [recoveryResolved, recovery, t]);
 }
