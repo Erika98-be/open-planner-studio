@@ -12,7 +12,13 @@
  *  - resourcekalenders (`calendars`): niet (alleen de projectkalender `calendar`) ⇒ van het document;
  *    de projectkalender zelf volgt de extensie, tenzij zij hem ongewijzigd terugstuurt;
  *  - `activityCodeTypes` en `customFieldDefs`: niet (taken dragen alleen de waarden) ⇒ van het document;
- *  - `ifcGlobalIds`: niet ⇒ van het document.
+ *  - `ifcGlobalIds`: niet ⇒ van het document;
+ *  - bronvelden op taken en relaties (`TASK_SOURCE_FIELDS`, `SEQUENCE_SOURCE_FIELDS`): zichtbaar maar
+ *    alleen-lezen (`fromExtTask`/`fromExtSequence` nemen ze niet over) ⇒ van de taak of relatie met
+ *    hetzelfde id in het document. De solver leest ze (P6-route), dus zonder dit rekent een P6-project
+ *    na een ONGEWIJZIGDE lees-wijzig-laad anders. De lijsten zijn gelijk aan `LEES_ALLEEN_EXT` in
+ *    check-ext-contract; daar staat ook dat er geen niet-publieke taak-/relatievelden zijn
+ *    (`NIET_PUBLIEK`). De .mpp-/MSP-velden (`mspTaskType`, `timephased*`, …) reizen al gewoon mee.
  * Draagt een latere contractversie een van deze velden wél, dan hoort die waarde hier de extensie te
  * volgen (ook leeg) in plaats van het document.
  *
@@ -34,13 +40,34 @@
 import type { AppState } from '@/state/appStore';
 import type { ImportResult } from '@/services/importTypes';
 import type { ProjectSchedulingOptions } from '@/types/project';
+import type { Task } from '@/types/task';
+import type { Sequence } from '@/types/sequence';
 import { sameValue } from '@/utils/sameValue';
 import type { ExtImportResult } from './extTypes';
 import { PUBLIC_SCHEDULING_OPTION_KEYS, toExtCalendar } from './extMappers';
 
+/** Alleen-lezen bronvelden: `toExt*` geeft ze door, `fromExt*` neemt ze niet over. */
+export const TASK_SOURCE_FIELDS = [
+  'p6DurationType', 'p6ActivityType', 'p6ProjectId', 'p6TaskId', 'p6ExplicitTargetWindow',
+  'p6CompletePctType', 'p6ExpectedFinish', 'p6SuspendResume',
+] as const satisfies readonly (keyof Task)[];
+export const SEQUENCE_SOURCE_FIELDS = ['p6StartAtPredecessorFinishBoundary'] as const satisfies readonly (keyof Sequence)[];
+
+/** Zet de bronvelden van het documentitem met hetzelfde id terug op het geladen item. */
+function withSourceFields<T extends { id: string }>(items: T[], own: readonly T[], fields: readonly (keyof T)[]): T[] {
+  const byId = new Map(own.map((item) => [item.id, item]));
+  return items.map((item) => {
+    const source = byId.get(item.id);
+    if (!source) return item;
+    const extra: Partial<T> = {};
+    for (const field of fields) if (source[field] !== undefined) extra[field] = source[field];
+    return Object.keys(extra).length > 0 ? { ...item, ...extra } : item;
+  });
+}
+
 /** Het deel van het actieve document dat deze stap leest. */
 export type ActiveDocument = Pick<AppState,
-  'project' | 'calendars' | 'baselines' | 'activeBaselineId' | 'activityCodeTypes' | 'customFieldDefs' | 'ifcGlobalIds'>;
+  'project' | 'tasks' | 'sequences' | 'calendars' | 'baselines' | 'activeBaselineId' | 'activityCodeTypes' | 'customFieldDefs' | 'ifcGlobalIds'>;
 
 export function retainActiveDocument(ext: ExtImportResult, loaded: ImportResult, active: ActiveDocument): ImportResult {
   if (loaded.project.id !== active.project.id) return cleanDanglingReferences(loaded);
@@ -66,6 +93,8 @@ export function retainActiveDocument(ext: ExtImportResult, loaded: ImportResult,
   return cleanDanglingReferences({
     ...loaded,
     project,
+    tasks: withSourceFields(loaded.tasks, active.tasks, TASK_SOURCE_FIELDS),
+    sequences: withSourceFields(loaded.sequences, active.sequences, SEQUENCE_SOURCE_FIELDS),
     calendar,
     resourceCalendars: active.calendars.filter((c) => c.id !== calendar.id),
     baselines: active.baselines,

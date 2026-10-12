@@ -63,6 +63,7 @@ import { isMultiDocumentImport } from '@/services/importTypes';
 import { decodeXerSourceArchive, sha256Hex } from '@/services/xerSourceArchive';
 import { ExtImportSourceDriftError } from '@/extensions/extImportSource';
 import { builtInProfile } from '@/engine/scheduler/conventions/registry';
+import { TASK_SOURCE_FIELDS, SEQUENCE_SOURCE_FIELDS } from '@/extensions/retainActiveDocument';
 
 const diffs: string[] = [];
 let checks = 0;
@@ -1301,6 +1302,64 @@ for (const [naam, ext, bron, sleutels] of [
   eq('N3D-08 ander id ⇒ verwijzingen naar de verdwenen ploegkalender vallen terug op de projectkalender', [
     ander.resources[0]?.calendarId, ander.tasks.find((t) => t.id === anderTaakId)?.calendarId,
   ], [undefined, undefined]);
+}
+
+// ── 10. Review #329 punt 1: een P6-project rekent na een ONGEWIJZIGDE lees-wijzig-laad hetzelfde ──
+// Fixture uit de reviewproef `probe-a`: een lopende CP_Phys-taak met een verwacht einde. Mutatiebewijs:
+// laat `withSourceFields` zijn invoer teruggeven en N3D-13 kleurt rood (earlyFinish 2026-08-10T10:00).
+{
+  eq('N3D-14 de bronveldlijsten zijn precies de alleen-lezen velden uit het contract', [
+    [...TASK_SOURCE_FIELDS], [...SEQUENCE_SOURCE_FIELDS],
+  ], [LEES_ALLEEN_EXT.task, LEES_ALLEEN_EXT.sequence]);
+
+  const xer = [
+    'ERMHDR\t23.12\t2026-08-01\t\t\t\t\t\tEUR',
+    '%T\tPROJECT',
+    '%F\tproj_id\tproj_short_name\tclndr_id\tlast_recalc_date',
+    '%R\tP1\tVoortgang\tC1\t2026-08-10 08:00',
+    '%T\tCALENDAR',
+    '%F\tclndr_id\tclndr_name\tproj_id\tclndr_type\tday_hr_cnt\tweek_hr_cnt\tclndr_data',
+    '%R\tC1\tWerkweek\tP1\tCA_Project\t8\t40\t',
+    '%T\tTASK',
+    '%F\ttask_id\tproj_id\tclndr_id\ttask_code\ttask_name\ttask_type\tstatus_code\tcomplete_pct_type\tcomplete_pct\tphys_complete_pct\ttarget_drtn_hr_cnt\tremain_drtn_hr_cnt\ttarget_start_date\ttarget_end_date\tact_start_date\tact_end_date\tsuspend_date\tresume_date\texpect_end_date',
+    '%R\tA\tP1\tC1\tA\tVerwacht einde\tTT_Task\tTK_Active\tCP_Phys\t10\t75\t8\t2\t2026-08-03 08:00\t2026-08-03 16:00\t2026-08-03 08:00\t\t\t\t2026-08-12 16:00',
+    '%E',
+  ].join('\n');
+  const parsedXer = readXER(new TextEncoder().encode(xer));
+  if (isMultiDocumentImport(parsedXer)) throw new Error('N3D-13: verwacht één XER-project');
+  useAppStore.getState().newProject();
+  useAppStore.getState().openAsDocument(parsedXer, { name: 'n3d-13.xer', ref: null });
+  useAppStore.getState().runCPM();
+  const api = createExtensionApi('n3d-p6-bronvelden', [], undefined, appStoreContext, {
+    app: appStoreContext,
+    showNotification: () => {},
+  });
+  const taak = () => useAppStore.getState().tasks.find((t) => t.name === 'Verwacht einde');
+  const voor = { earlyFinish: taak()?.time.earlyFinish, p6ExpectedFinish: taak()?.p6ExpectedFinish };
+  api.data.loadProject({
+    project: api.data.getProject(), calendar: api.data.getCalendar(), tasks: api.data.getTasks(),
+    sequences: api.data.getSequences(), resources: api.data.getResources(), assignments: api.data.getAssignments(),
+  });
+  eq('N3D-13 earlyFinish en P6-bronvelden blijven exact gelijk na loadProject(get*())', [
+    taak()?.time.earlyFinish, taak()?.p6ExpectedFinish, taak()?.p6CompletePctType, taak()?.p6ProjectId,
+  ], [voor.earlyFinish, voor.p6ExpectedFinish, 'CP_Phys', 'P1']);
+  eq('N3D-13a de fixture zelf rekent met het verwachte einde', voor.earlyFinish, '2026-08-12T16:00');
+
+  // Relatie: de alleen-lezen P6-grensvlag blijft op de relatie met hetzelfde id.
+  useAppStore.getState().newProject();
+  const a = api.data.addTask({ name: 'A' });
+  const b = api.data.addTask({ name: 'B' });
+  const relatie = api.data.addSequence({ predecessorId: a, successorId: b, type: 'FS', lagDays: 0 });
+  useAppStore.setState((s) => {
+    const seq = s.sequences.find((x) => x.id === relatie);
+    if (seq) seq.p6StartAtPredecessorFinishBoundary = true;
+  });
+  api.data.loadProject({
+    project: api.data.getProject(), calendar: api.data.getCalendar(), tasks: api.data.getTasks(),
+    sequences: api.data.getSequences(), resources: api.data.getResources(), assignments: api.data.getAssignments(),
+  });
+  eq('N3D-15 p6StartAtPredecessorFinishBoundary blijft op de relatie',
+    useAppStore.getState().sequences.find((x) => x.id === relatie)?.p6StartAtPredecessorFinishBoundary, true);
 }
 
 // ── Uitslag ──────────────────────────────────────────────────────────────────
