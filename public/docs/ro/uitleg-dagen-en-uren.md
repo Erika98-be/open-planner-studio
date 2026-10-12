@@ -36,7 +36,7 @@ O zi este orele nete pe zi din calendarul activității. Aplicația folosește a
 
 - Pentru *Afișare durată*. În *Setări › Proiect › Setări*, fila *Afișare*, alegeți *Automat (unitatea proprie a fiecărei activități)*, *Întotdeauna zile* sau *Întotdeauna ore*. O activitate de 18 ore apare sub *Întotdeauna zile* ca `2.25d(18h)`: unitatea proprie rămâne între paranteze.
 - Pentru un decalaj în ore după o activitate pe zile (vezi *Rotunjirea*).
-- Când modificați unitatea unei activități. Aplicația numără atunci zilele de la începutul activității, fiecare zi cu orele ei, și face o propunere doar dacă rezultatul este exact. Două zile devin `16h`. Într-un calendar în care vinerea are 5 ore, 5 zile de la luni devin `37h`. Douăsprezece ore nu pot fi transformate în zile întregi într-un calendar cu zile de 8 ore: aplicația lasă atunci unitatea cum este.
+- Când modificați unitatea unei activități. Aplicația numără atunci zilele de la începutul activității, fiecare zi cu orele ei, și convertește durata imediat dacă rezultatul este exact. Două zile devin `16h`. Într-un calendar în care vinerea are 5 ore, 5 zile de la luni devin `37h`. Douăsprezece ore nu pot fi transformate în zile întregi într-un calendar cu zile de 8 ore: aplicația lasă atunci unitatea cum este.
 
 ### Activități pe zile și activități pe ore împreună
 

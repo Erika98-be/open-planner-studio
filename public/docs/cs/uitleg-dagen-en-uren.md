@@ -36,7 +36,7 @@ Den odpovídá čistým hodinám za den v kalendáři úkolu. Aplikace to použ�
 
 - Pro *Zobrazení doby trvání*. V nabídce *Nastavení › Projekt › Nastavení*, na kartě *Zobrazení*, zvolíte *Automaticky (vlastní jednotka každého úkolu)*, *Vždy dny* nebo *Vždy hodiny*. Úkol na 18 hodin se při *Vždy dny* zobrazí jako `2.25d(18h)`: vlastní jednotka zůstane v závorce.
 - Pro prodlevu v hodinách za úkolem ve dnech (viz *Zaokrouhlení*).
-- Když přepnete jednotku úkolu. Aplikace pak počítá dny od začátku úkolu, každý den s vlastními hodinami, a navrhne změnu jen tehdy, když je výsledek přesný. Dva dny se změní na `16h`. V kalendáři, kde má pátek 5 hodin, se 5 dnů od pondělí změní na `37h`. Dvanáct hodin nejde převést na celé dny v kalendáři s dny po 8 hodinách: aplikace pak jednotku nechá beze změny.
+- Když přepnete jednotku úkolu. Aplikace pak počítá dny od začátku úkolu, každý den s vlastními hodinami, a dobu trvání hned převede, když je výsledek přesný. Dva dny se změní na `16h`. V kalendáři, kde má pátek 5 hodin, se 5 dnů od pondělí změní na `37h`. Dvanáct hodin nejde převést na celé dny v kalendáři s dny po 8 hodinách: aplikace pak jednotku nechá beze změny.
 
 ### Úkol ve dnech a hodinový úkol dohromady
 

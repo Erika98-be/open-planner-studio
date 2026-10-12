@@ -20,7 +20,7 @@ To mijenja više od trajanja zadatka: na kartici *Prikaz*, u popisu *Vremenska s
 
 1. Odaberite zadatak i u panelu *Svojstva*, u odjeljku *Vrijeme*, pogledajte polje *Trajanje*.
 2. Upišite trajanje s jedinicom i pritisnite Enter: `12h` (`12u`, nizozemska kratica, također radi) za dvanaest sati, `1h 30m` za sat i pol. `1.5h` je također u redu. Broj bez jedinice vrijedi u jedinici koju zadatak već ima.
-3. Ako želite pretvoriti postojeći zadatak, odaberite jedinicu *Sati* na popisu *Jedinica trajanja*. Aplikacija za vas izračuna trajanje i predloži ga, na primjer *Točan prijedlog pretvorbe: 16h. Primijenite prijedlog ili zadržite trenutačnu jedinicu.* Odaberite *Primijeni prijedlog* ili *Zadrži*.
+3. Ako želite pretvoriti postojeći zadatak, odaberite jedinicu *Sati* na popisu *Jedinica trajanja*. Aplikacija odmah pretvori trajanje, na primjer iz `2` dana u `16` sati. Ako se želite vratiti, upotrijebite *Poništi*.
 4. Na dane se možete vratiti s `2d` ili s jedinicom *Dani*.
 5. Pritisnite **Izračunaj** (F5), na primjer preko *Početna › Raspored › Izračunaj*. Zadatak sada ima početak i završetak s točnim vremenom.
 6. Ako želite vidjeti sate u Gantt prikazu, odaberite skalu *Sat* na popisu *Vremenska skala* na kartici *Prikaz*.

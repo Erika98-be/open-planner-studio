@@ -36,7 +36,7 @@ Bir gün, görevin takviminin günlük net saatidir. Uygulama bunu üç yerde ku
 
 - *Süre gösterimi* için. *Ayarlar › Proje › Ayarlar* altında, *Görünüm* sekmesinde *Otomatik (göreve özgü birim)*, *Her zaman gün* veya *Her zaman saat* seçersiniz. 18 saatlik bir görev, *Her zaman gün* altında `2.25d(18h)` olarak görünür: özgün birim parantez içinde kalır.
 - Gün görevinden sonra saat cinsinden bir gecikme için (bkz. *Yuvarlama*).
-- Bir görevin birimini değiştirdiğinizde. Uygulama o zaman görevin başlangıcından itibaren günleri sayar, her gün kendi saatleriyle, ve yalnızca sonuç tam çıkarsa bir öneri yapar. İki gün `16h` olur. Cuma günü 5 saat olan bir takvimde, pazartesiden başlayan 5 gün `37h` olur. On iki saat, 8 saatlik günlere sahip bir takvimde tam günlere çevrilemez: uygulama birimi o zaman olduğu gibi bırakır.
+- Bir görevin birimini değiştirdiğinizde. Uygulama o zaman görevin başlangıcından itibaren günleri sayar, her gün kendi saatleriyle, ve sonuç tam çıkarsa süreyi hemen dönüştürür. İki gün `16h` olur. Cuma günü 5 saat olan bir takvimde, pazartesiden başlayan 5 gün `37h` olur. On iki saat, 8 saatlik günlere sahip bir takvimde tam günlere çevrilemez: uygulama birimi o zaman olduğu gibi bırakır.
 
 ### Gün görevleri ve saat görevleri birlikte
 

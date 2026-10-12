@@ -36,7 +36,7 @@ En dag er nettotimerne pr. dag i opgavens kalender. Appen bruger det de tre sted
 
 - Til *Varighedsvisning*. Under *Indstillinger › Projekt › Indstillinger*, fanen *Udseende*, vælger du *Automatisk (egen enhed pr. opgave)*, *Altid dage* eller *Altid timer*. En opgave på 18 timer vises under *Altid dage* som `2.25d(18h)`: den egne enhed står i parentes.
 - Til en forsinkelse i timer efter en dagopgave (se *Afrunding*).
-- Når du skifter enheden for en opgave. Appen tæller så dagene fra opgavens start, hver dag med sine egne timer, og foreslår kun én ændring, hvis resultatet er præcist. To dage bliver `16h`. På en kalender, hvor fredag har 5 timer, bliver 5 dage fra mandag `37h`. Tolv timer kan ikke omregnes til hele dage på en kalender med dage på 8 timer: appen lader enheden stå.
+- Når du skifter enheden for en opgave. Appen tæller så dagene fra opgavens start, hver dag med sine egne timer, og omregner varigheden med det samme, hvis resultatet er præcist. To dage bliver `16h`. På en kalender, hvor fredag har 5 timer, bliver 5 dage fra mandag `37h`. Tolv timer kan ikke omregnes til hele dage på en kalender med dage på 8 timer: appen lader enheden stå.
 
 ### Dagopgaver og timeopgaver sammen
 

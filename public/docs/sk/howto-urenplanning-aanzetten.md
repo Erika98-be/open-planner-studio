@@ -20,7 +20,7 @@ Zapnutie mení viac než trvanie úlohy. Na karte *Zobrazenie* môžete v zoznam
 
 1. Vyberte úlohu. V paneli *Vlastnosti* pozrite pod nadpisom *Čas* na pole *Trvanie*.
 2. Zadajte trvanie s jednotkou a stlačte Enter: `12h` (`12u`, holandská skratka, funguje tiež) na dvanásť hodín, `1h 30m` na hodinu a pol. Funguje aj `1.5h`. Číslo bez jednotky sa počíta v jednotke, ktorú úloha už má.
-3. Ak chcete previesť existujúcu úlohu, vyberte jednotku *Hodiny* v zozname *Jednotka trvania*. Aplikácia trvanie za vás vypočíta a navrhne ho, napríklad *Presný návrh prevodu: 16h. Použite tento návrh alebo ponechajte aktuálnu jednotku*. Vyberte *Použiť návrh* alebo *Ponechať*.
+3. Ak chcete previesť existujúcu úlohu, vyberte jednotku *Hodiny* v zozname *Jednotka trvania*. Aplikácia trvanie hneď prevedie, napríklad z `2` dní na `16` hodín. Ak sa chcete vrátiť, použite *Vrátiť späť*.
 4. Späť na dni môžete prejsť zadaním `2d` alebo jednotkou *Dni*.
 5. Stlačte **Prepočítať** (F5), napríklad cez *Domov › Plán › Prepočítať*. Úloha má teraz začiatok a dokončenie s časom dňa.
 6. Ak chcete vidieť hodiny v Gantt diagrame, vyberte mierku *Hodina* v zozname *Časová škála* na karte *Zobrazenie*.

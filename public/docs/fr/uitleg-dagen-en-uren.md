@@ -36,7 +36,7 @@ Un jour correspond aux heures nettes par jour du calendrier de la tâche. L'appl
 
 - Pour *Affichage de la durée*. Sous *Paramètres › Projet › Paramètres*, onglet *Apparence*, vous choisissez *Automatique (unité propre à chaque tâche)*, *Toujours en jours* ou *Toujours en heures*. Une tâche de 18 heures s'affiche sous *Toujours en jours* comme `2.25d(18h)` : l'unité d'origine reste entre parenthèses.
 - Pour un décalage en heures après une tâche en jours (voir *Arrondi*).
-- Quand vous changez l'unité d'une tâche. L'application compte alors les jours à partir du début de la tâche, chaque jour avec ses propres heures, et ne fait une proposition que si le résultat est exact. Deux jours deviennent `16h`. Sur un calendrier où le vendredi compte 5 heures, 5 jours à partir du lundi deviennent `37h`. Douze heures ne peuvent pas être converties en jours entiers sur un calendrier de jours de 8 heures : l'application laisse alors l'unité telle quelle.
+- Quand vous changez l'unité d'une tâche. L'application compte alors les jours à partir du début de la tâche, chaque jour avec ses propres heures, et convertit la durée immédiatement si le résultat est exact. Deux jours deviennent `16h`. Sur un calendrier où le vendredi compte 5 heures, 5 jours à partir du lundi deviennent `37h`. Douze heures ne peuvent pas être converties en jours entiers sur un calendrier de jours de 8 heures : l'application laisse alors l'unité telle quelle.
 
 ### Tâches en jours et tâches en heures ensemble
 

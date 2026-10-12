@@ -20,7 +20,7 @@ Bu, bir görevin süresinden fazlasını değiştirir: *Görünüm › Zaman öl
 
 1. Görevi seçin ve *Özellikler* panelinde, *Zaman* altındaki *Süre* alanına bakın.
 2. Süreyi birimiyle yazın ve Enter tuşuna basın: `12h` (`12u`, Hollandaca kısaltma, bu da çalışır) on iki saat için, `1h 30m` bir buçuk saat için. `1.5h` de olur. Birimi olmayan bir sayı, görevin zaten sahip olduğu birimde sayılır.
-3. Mevcut bir görevi dönüştürmek istiyorsanız *Süre birimi* altında *Saat* birimini seçin. Uygulama süreyi sizin için hesaplar ve bir öneri gösterir, örneğin *Kesin dönüşüm önerisi: 16h. Öneriyi uygulayın veya mevcut birimi koruyun.* *Öneriyi uygula* veya *Koru* seçin.
+3. Mevcut bir görevi dönüştürmek istiyorsanız *Süre birimi* altında *Saat* birimini seçin. Uygulama süreyi hemen dönüştürür, örneğin `2` günden `16` saate. Geri dönmek için *Geri al* kullanın.
 4. Gün cinsine geri dönebilirsiniz: `2d` yazın veya *Gün* birimini seçin.
 5. **Hesapla** (F5) çalıştırın, örneğin *Ana sayfa › Zamanlama › Hesapla* yolunu kullanarak. Görevin artık saat bilgisiyle bir başlangıcı ve bir bitişi vardır.
 6. Saatleri Gantt'ta görmek istiyorsanız *Görünüm › Zaman ölçeği* altındaki listeden *Saat* ölçeğini seçin.

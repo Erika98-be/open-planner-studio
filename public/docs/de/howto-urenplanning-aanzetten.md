@@ -20,7 +20,7 @@ Die Einstellung ändert mehr als die Dauer eines Vorgangs. Unter *Ansicht › Ze
 
 1. Wählen Sie den Vorgang. Schauen Sie im Bereich *Eigenschaften*, unter *Zeit*, in das Feld *Dauer*.
 2. Geben Sie die Dauer mit einer Einheit ein und drücken Sie Enter: `12h` (`12u`, die niederländische Abkürzung, funktioniert auch) für zwölf Stunden, `1h 30m` für eineinhalb Stunden. `1.5h` ist auch richtig. Eine Zahl ohne Einheit zählt in der Einheit, die der Vorgang schon hat.
-3. Wenn Sie einen bestehenden Vorgang umrechnen wollen, wählen Sie die Einheit *Stunden* unter *Dauereinheit*. Die App rechnet die Dauer für Sie aus und schlägt sie vor, zum Beispiel *Exakter Umrechnungsvorschlag: 16h. Vorschlag anwenden oder aktuelle Einheit beibehalten.* Wählen Sie *Vorschlag anwenden* oder *Beibehalten*.
+3. Wenn Sie einen bestehenden Vorgang umrechnen wollen, wählen Sie die Einheit *Stunden* unter *Dauereinheit*. Die App rechnet die Dauer sofort um, zum Beispiel von `2` Tagen in `16` Stunden. Wenn Sie zurück wollen, verwenden Sie *Rückgängig*.
 4. Zurück zu Tagen ist möglich mit `2d` oder mit der Einheit *Tage*.
 5. Drücken Sie **Berechnen** (F5), zum Beispiel über *Start › Terminplanung › Berechnen*. Der Vorgang hat dann einen Anfang und ein Ende, jeweils mit einer Uhrzeit.
 6. Wenn Sie die Stunden im Gantt-Diagramm sehen wollen, wählen Sie die Skala *Stunde* in der Liste unter *Ansicht › Zeitskala*.

@@ -20,7 +20,7 @@ To nemění jen dobu trvání úkolu. Na kartě *Zobrazení › Časová osa* m�
 
 1. Vyberte úkol a podívejte se do panelu *Vlastnosti*, v části *Čas*, na pole *Doba trvání*.
 2. Zadejte dobu trvání s jednotkou a stiskněte Enter: `12h` (`12u`, nizozemská zkratka, také funguje) pro dvanáct hodin, `1h 30m` pro hodinu a půl. Také `1.5h` je v pořádku. Číslo bez jednotky platí v jednotce, kterou úkol už má.
-3. Pokud chcete převést stávající úkol, zvolte v části *Jednotka doby trvání* jednotku *Hodiny*. Aplikace dobu trvání za vás určí a navrhne ji, například *Přesný návrh převodu: 16h. Použijte tento návrh, nebo ponechte stávající jednotku*. Zvolte *Použít návrh* nebo *Ponechat*.
+3. Pokud chcete převést stávající úkol, zvolte v části *Jednotka doby trvání* jednotku *Hodiny*. Aplikace dobu trvání hned převede, například ze `2` dnů na `16` hodin. Chcete-li se vrátit, použijte *Zpět*.
 4. Zpět na dny se dostanete pomocí `2d` nebo jednotky *Dny*.
 5. Stiskněte **Přepočítat** (F5), například na kartě *Domů › Plán › Přepočítat*. Úkol teď má začátek a dokončení s přesnou hodinou.
 6. Pokud chcete vidět hodiny v diagramu Gantt, zvolte měřítko *Hodina* na kartě *Zobrazení › Časová osa*.

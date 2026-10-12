@@ -36,7 +36,7 @@ Egy nap a tevékenység naptárának napi nettó órái. Az alkalmazás ezt hár
 
 - Az *Időtartam megjelenítése* beállításhoz. A *Beállítások › Projekt › Beállítások* menüben, a *Megjelenés* lapon választhat: *Automatikus (tevékenységenként saját egység)*, *Mindig napok* vagy *Mindig órák*. Egy 18 órás tevékenység a *Mindig napok* beállításnál `2.25d(18h)` formában jelenik meg: a saját egység zárójelben marad.
 - Órában megadott késleltetéshez napalapú tevékenység után (lásd *Kerekítés*).
-- Ha átvált egy tevékenység egységét. Az alkalmazás ekkor a tevékenység kezdetétől számolja a napokat, mindegyiket a saját óráival, és csak akkor tesz javaslatot, ha az eredmény pontos. Két nap `16h` lesz. Olyan naptárban, ahol a péntek 5 órás, a hétfőtől számított 5 nap `37h` lesz. Tizenkét óra nem alakítható egész napokká 8 órás munkanapokat tartalmazó naptárban: az alkalmazás ekkor az egységet változatlanul hagyja.
+- Ha átvált egy tevékenység egységét. Az alkalmazás ekkor a tevékenység kezdetétől számolja a napokat, mindegyiket a saját óráival, és azonnal átszámítja az időtartamot, ha az eredmény pontos. Két nap `16h` lesz. Olyan naptárban, ahol a péntek 5 órás, a hétfőtől számított 5 nap `37h` lesz. Tizenkét óra nem alakítható egész napokká 8 órás munkanapokat tartalmazó naptárban: az alkalmazás ekkor az egységet változatlanul hagyja.
 
 ### Napalapú és óraalapú tevékenységek együtt
 
