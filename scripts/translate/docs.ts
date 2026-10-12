@@ -351,7 +351,12 @@ export function classifyItalic(span: string, index: EnLabelIndex, literals: Read
     const tabHits = tab ? a.filter(h => TAB_KEYS.has(h.key)) : [];
     return [{ kind: 'a', en: n, hits: a, ...(tabHits.length ? { role: 'tab' as const, tabHits } : {}) }];
   }
-  const b = index.patterns.filter(p => n.includes(p.lit) && p.re.test(n));
+  // Een invulplek slokt nooit een stuk menupad op: *Resources › Manage › New resource* is een pad, niet
+  // "{{count}} resource" met count = "Resources › Manage › New".
+  const b = index.patterns.filter(p => {
+    const m = n.includes(p.lit) ? p.re.exec(n) : null;
+    return m !== null && !m.slice(1).some(v => v.includes('›'));
+  });
   if (b.length) {
     // De ingevulde plekken van een patroon kunnen zelf letterlijk zijn (taaknamen van het tutorialproject).
     const filled = (b[0].re.exec(n) ?? []).slice(1).flatMap(v => v.split(' → ')).map(v => v.trim()).filter(v => literals.has(v));

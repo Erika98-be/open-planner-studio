@@ -131,6 +131,14 @@ eq('02i normLabel', [normLabel('Save…'), normLabel('Link ▾'), normLabel('Don
   ok('03h sleutels met doeltekst-hash voor C3', r.keys['common:dlg.relType'] === sectionHash('Typ závislosti'));
   const fresh = buildEnLabelIndex([{ ns: 'common', nl, en, target: cs }], 'cs', {});
   eq('03i nieuwe taal zonder bron-hash: geen doeltekst (Engelse vulling)', fresh.exact.get('Relation type')?.[0].target, undefined);
+  // Een invulplek slokt geen menupad op (zh: *Resources › Manage › New resource* werd "{{count}} 个资源").
+  const pathIdx = buildEnLabelIndex([{ ns: 'menu',
+    nl: { m: { manage: 'Beheren', sel: '{{count}} geselecteerde resources' } },
+    en: { m: { manage: 'Manage', sel: '{{count}} selected resources' } },
+    target: { m: { manage: 'Spravovat', sel: '{{count}} vybraných zdrojů' } } }], 'cs', {});
+  eq('03j pad dat op een patroon eindigt: per deel, patroon alleen op het laatste deel',
+    classifyItalic('Home › Manage › Two selected resources', pathIdx, new Set()).map(c => `${c.kind}:${c.en}`),
+    ['a:Manage', 'b:Two selected resources']);
   // Meervoud: en one/other tegenover ar met zes vormen (en `one` schrijft het getal uit). Elke ar-vorm telt.
   const nlP: JsonObject = { cp: { summary_one: 'Kritiek pad: {{count}} taak, {{duration}} werkdagen', summary_other: 'Kritiek pad: {{count}} taken, {{duration}} werkdagen' } };
   const enP: JsonObject = { cp: { summary_one: 'Critical path: {{count}} task, {{duration}} work days', summary_other: 'Critical path: {{count}} tasks, {{duration}} work days' } };
