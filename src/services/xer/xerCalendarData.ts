@@ -4,6 +4,15 @@
  * Voor begrip van de structured-text-recordvorm en P6-kalendersemantiek is MPXJ geraadpleegd:
  * https://github.com/joniles/mpxj (`StructuredTextParser` en `TableContextReader`, LGPL-2.1,
  * Jon Iles e.a.). Er is geen MPXJ-code overgenomen; tokenizer, typen en mapping hieronder zijn eigen.
+ *
+ * Basiskalender (`base_clndr_id`): bewuste keuze. De decoder leest en koppelt de basiskalender
+ * (`baseCalendarId`, `linkBaseCalendar`), maar past hem NIET toe: een afgeleide kalender rekent
+ * alleen met zijn eigen `clndr_data`. Reden: P6 schrijft de geërfde werkweek en uitzonderingen al
+ * in de `clndr_data` van de afgeleide kalender. Een corpusscan (93 XER-bestanden, 8 met
+ * `base_clndr_id`, 157 afgeleide kalenders) vond 0 geërfde uitzonderingen of werkdagen die daar
+ * ontbraken. MPXJ past de basis wel toe (`ProjectCalendar.java:1330-1333`, terugval op de
+ * basiskalender); bij P6-export levert dat hetzelfde resultaat. Verschijnt er een bestand waarin de
+ * afgeleide kalender iets mist, dan is dat het moment om het toepassen alsnog te bouwen.
  */
 
 import {
