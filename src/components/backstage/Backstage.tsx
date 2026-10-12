@@ -16,7 +16,8 @@ import { LibrarySection } from './LibrarySection';
 import { useDocumentActions } from '@/components/layout/DocumentChrome/useDocumentCards';
 import { ExtensionIcon } from '@/components/common/ExtensionIcon';
 import type { ExtensionImporter } from '@/state/slices/extensionSlice';
-import { supportsHandles } from '@/services/fileAccess';
+import { supportsRecentFiles } from '@/services/fileAccess';
+import { siteStorageAvailable } from '@/services/fileAccess/siteHost';
 import { fromExtImportResult } from '@/extensions/extMappers';
 import { applyDemoLibraryToShowcaseProject } from '@/state/demoLibraryShowcase';
 import { buildImportLabels } from '@/i18n/importLabels';
@@ -247,11 +248,15 @@ function handleSaveAs() {
 function RecentSection() {
   const { t: tMenu } = useTranslation('menu');
   const { t: tCommon } = useTranslation('common');
-  const recentFiles = useAppStore(s => s.recentFiles);
+  const allRecentFiles = useAppStore(s => s.recentFiles);
   const openRecentFile = useAppStore(s => s.openRecentFile);
   const setUI = useAppStore(s => s.setUI);
 
-  if (!supportsHandles()) return null; // fallback-web: recents verbergen
+  // Fallback-web zonder site: geen herbruikbare refs → recents verbergen. Met site-opslag wél tonen.
+  if (!supportsRecentFiles()) return null;
+  // Een site-bestand is alleen te openen zolang de site er is; anders tonen we het niet.
+  const site = siteStorageAvailable();
+  const recentFiles = site ? allRecentFiles : allRecentFiles.filter(e => e.ref.kind !== 'site');
 
   return (
     <>
@@ -273,7 +278,10 @@ function RecentSection() {
               <span className="backstage-recent-thumb"><FileType size={20} /></span>
               <span className="backstage-recent-info">
                 <span className="backstage-recent-name">{e.name}</span>
-                <span className="backstage-recent-path">{e.ref.kind === 'path' ? e.ref.path : e.name}</span>
+                {/* Een site-bestand heeft geen pad: een herkenbaar label in plaats daarvan. */}
+                <span className="backstage-recent-path" data-ops-recent-site={e.ref.kind === 'site' || undefined}>
+                  {e.ref.kind === 'path' ? e.ref.path : e.ref.kind === 'site' ? tMenu('backstage.recentOnSite') : e.name}
+                </span>
               </span>
             </button>
           ))}
