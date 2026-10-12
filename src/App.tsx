@@ -4,7 +4,9 @@ import { setNoneLabelValue, setResourceTypeLabelsValue } from '@/utils/noneLabel
 import { useResolvedUITheme, useSystemColorSchemeSync } from '@/hooks/useResolvedUITheme';
 import { appLog } from '@/services/debug/appLog';
 import { installConsentDialogAsker } from '@/extensions/consentBridge';
+import { installSiteDialogAskers } from '@/state/siteDialogBridge';
 import { getGuideView, subscribeGuideView } from '@/extensions/guideRuntime';
+import { EXTENSIONS_ENABLED } from '@/utils/buildFlags';
 import { TitleBar } from '@/components/layout/TitleBar/TitleBar';
 import '@/components/layout/TitleBar/TitleBar.css';
 import { Ribbon } from '@/components/layout/Ribbon/Ribbon';
@@ -22,6 +24,8 @@ import { ProjectOverview } from '@/components/layout/DocumentChrome/ProjectOverv
 import { CloseDocumentDialog } from '@/components/layout/DocumentChrome/CloseDocumentDialog';
 import { useKeyboardShortcuts } from '@/hooks/keyboard/useKeyboardShortcuts';
 import { useSettingsBootstrap } from '@/hooks/useSettingsBootstrap';
+import { useDemoStartExample } from '@/hooks/useDemoStartExample';
+import { useSiteInitialFile } from '@/hooks/useSiteInitialFile';
 import { useAutoCalcCPM } from '@/hooks/useAutoCalcCPM';
 import { useExitRecordedDates } from '@/hooks/useExitRecordedDates';
 import { useAutoSave } from '@/hooks/useAutoSave';
@@ -59,8 +63,14 @@ const CalendarDialog = lazy(() => import('@/components/dialogs/CalendarDialog').
 const StructureDialog = lazy(() => import('@/components/dialogs/StructureDialog').then(m => ({ default: m.StructureDialog })));
 const UpdateDialog = lazy(() => import('@/components/dialogs/UpdateDialog').then(m => ({ default: m.UpdateDialog })));
 const JustUpdatedDialog = lazy(() => import('@/components/dialogs/JustUpdatedDialog').then(m => ({ default: m.JustUpdatedDialog })));
-const ExtensionConsentDialog = lazy(() => import('@/components/dialogs/ExtensionConsentDialog').then(m => ({ default: m.ExtensionConsentDialog })));
+// Platformbouw (#311): de extensiedialogen bestaan daar niet. De voorwaarde staat hier (en niet alleen
+// bij het renderen) zodat de bundelaar ook de dynamische import en de catalogusfuncties weglaat.
+const ExtensionConsentDialog = EXTENSIONS_ENABLED
+  ? lazy(() => import('@/components/dialogs/ExtensionConsentDialog').then(m => ({ default: m.ExtensionConsentDialog })))
+  : () => null;
 const ActualStartDialog = lazy(() => import('@/components/dialogs/ActualStartDialog').then(m => ({ default: m.ActualStartDialog })));
+const SiteOpenDialog = lazy(() => import('@/components/dialogs/SiteOpenDialog').then(m => ({ default: m.SiteOpenDialog })));
+const SiteSaveDialog = lazy(() => import('@/components/dialogs/SiteSaveDialog').then(m => ({ default: m.SiteSaveDialog })));
 const FeedbackDialog = lazy(() => import('@/components/dialogs/FeedbackDialog').then(m => ({ default: m.FeedbackDialog })));
 const LevelingDialog = lazy(() => import('@/components/dialogs/LevelingDialog').then(m => ({ default: m.LevelingDialog })));
 const BaselineDialog = lazy(() => import('@/components/dialogs/BaselineDialog').then(m => ({ default: m.BaselineDialog })));
@@ -77,7 +87,9 @@ const LibraryLinkDialog = lazy(() => import('@/components/dialogs/LibraryLinkDia
 const RecoveryDialog = lazy(() => import('@/components/dialogs/RecoveryDialog').then(m => ({ default: m.RecoveryDialog })));
 const WelcomeDialog = lazy(() => import('@/components/dialogs/WelcomeDialog').then(m => ({ default: m.WelcomeDialog })));
 const TourOverlay = lazy(() => import('@/components/tour/TourOverlay').then(m => ({ default: m.TourOverlay })));
-const TutorialOfferDialog = lazy(() => import('@/components/dialogs/TutorialOfferDialog').then(m => ({ default: m.TutorialOfferDialog })));
+const TutorialOfferDialog = EXTENSIONS_ENABLED
+  ? lazy(() => import('@/components/dialogs/TutorialOfferDialog').then(m => ({ default: m.TutorialOfferDialog })))
+  : () => null;
 const Backstage = lazy(() => import('@/components/backstage/Backstage').then(m => ({ default: m.Backstage })));
 const GuidePanel = lazy(() => import('@/components/guide/GuidePanel').then(m => ({ default: m.GuidePanel })));
 
@@ -140,11 +152,21 @@ function AppContent() {
   // Settings-bootstrap: hydrateert ~20 instellingen + extensies bij mount, en toont de
   // welkomstdialoog zodra de recovery-flow is afgehandeld.
   useSettingsBootstrap(recoveryResolved, recovery);
+  // Demo-start (issue #276): de live browserbouw opent met een voorbeeldplanning; zie de hook.
+  useDemoStartExample(recoveryResolved, recovery);
 
   // Toestemmingsvraag bij extensie-installatie bedraden. MOET eager en vroeg: de
   // faalstand van `askExtensionConsent` is WEIGEREN, dus zonder deze registratie zou een installatie
   // stilzwijgend afketsen. De dialoog zelf blijft lazy; alleen de bedrading is eager.
-  useEffect(() => { installConsentDialogAsker(); }, []);
+  // Platformbouw (#311): geen extensies; de faalstand (weigeren) blijft dan staan.
+  useEffect(() => { if (EXTENSIONS_ENABLED) installConsentDialogAsker(); }, []);
+
+  // Opslag via de site (issue #309): de vragen "Openen van de site" / "Opslaan op de site" aan hun
+  // dialogen koppelen. Zonder deze registratie valt de vraag terug op "van/op deze pc" (veilig).
+  useEffect(() => { installSiteDialogAskers(); }, []);
+  // Bestand van de host bij de start: na de herstelkeuze, alleen in een leeg document. Zonder site
+  // gebeurt er niets.
+  useSiteInitialFile(recoveryResolved, recovery);
 
   // Bedrijfsbibliotheek laden bij opstarten: zet de opgeslagen bibliotheek in de store en
   // hijst `libraryLoaded`, zodat latere mutaties persisteren (vóór dit punt is persist een no-op).
@@ -396,7 +418,7 @@ function AppContent() {
         {showTourOverlay && <TourOverlay />}
         {/* Tutorialvraag na een voltooide rondleiding (eenmalig, `state/onboarding.ts`). Vóór de
             toestemmingsdialoog gemount: die stapelt er bij "Ja" bovenop. */}
-        {showTutorialOffer && <TutorialOfferDialog />}
+        {EXTENSIONS_ENABLED && showTutorialOffer && <TutorialOfferDialog />}
         <UpdateDialog />
         <PoolImportDialog />
         {/* Voorwaardelijk gemount — anders dan PoolImportDialog, die permanent
@@ -408,11 +430,14 @@ function AppContent() {
             `ui.showProgressImportDialog`-vlag, niet op deze mount, dus de documentwissel-
             blokkade blijft werken. */}
         {showProgressImportDialog && <ProgressImportDialog />}
-        <ExtensionConsentDialog />
+        {EXTENSIONS_ENABLED && <ExtensionConsentDialog />}
         {/* De startvraag (voortgang op een taak die pas na de statusdatum
             zou beginnen). Rendert alleen bij `ui.pendingActualStartQuestion`; stapelt boven
             "Taak bewerken". */}
         <ActualStartDialog />
+        {/* Opslag via de site: renderen alleen bij `ui.pendingSiteOpen` / `ui.pendingSiteSave`. */}
+        <SiteOpenDialog />
+        <SiteSaveDialog />
         <LibraryLinkDialog />
         {recovery && !(recoveryInHelp && helpOpen) && (
           <RecoveryDialog

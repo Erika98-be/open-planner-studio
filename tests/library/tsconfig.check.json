@@ -17,8 +17,11 @@
   // (check-distribute.ts ontbrak hier, dus draaide wél maar werd nooit getypecheckt). Een glob
   // over alle check-*.ts in deze map kan per definitie niet meer afwijken van wat run.sh's eigen
   // map-glob oppikt.
+  // `src/vite-env.d.ts` levert `import.meta.env` (o.a. `src/utils/buildFlags.ts`), net als in
+  // tests/planning/tsconfig.check.json.
   "include": [
     "check-*.ts",
+    "../../src/vite-env.d.ts",
     "../../src/types/file-system-access.d.ts"
   ]
 }

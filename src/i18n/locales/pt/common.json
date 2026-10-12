@@ -6,7 +6,8 @@
     "label": "Guardar automaticamente",
     "noFile": "Guarde primeiro este projeto para usar a gravação automática.",
     "onHint": "A gravação automática está ativa: as alterações são gravadas neste ficheiro.",
-    "offHint": "A gravação automática está desativada. A recuperação continua ativa."
+    "offHint": "A gravação automática está desativada. A recuperação continua ativa.",
+    "siteDisabled": "No site, Guardar (Ctrl+S) guarda uma nova versão. A gravação automática está desativada aqui; a recuperação continua ativa."
   },
   "notifications": {
     "dismiss": "Fechar notificação",
@@ -84,7 +85,11 @@
     "mppLegacy": "Este arquivo .mpp usa um formato antigo (Project 2007 ou anterior). Exporte-o no MS Project como XML (Arquivo → Salvar como → XML) e abra esse arquivo.",
     "mppEncrypted": "Este arquivo .mpp está protegido por senha. Exporte-o no MS Project como XML (Arquivo → Salvar como → XML) e abra esse arquivo.",
     "saveFailed": "Falha ao salvar",
+    "siteSaveConflict": "Não guardado: '{{name}}' foi entretanto alterado no site por outra pessoa. As suas alterações continuam na aplicação. Escolha Guardar como para as manter num novo ficheiro.",
+    "siteFileGone": "'{{name}}' já não está no site. O ficheiro foi removido de Recentes.",
     "savedViaDownload": "Guardado como transferência: '{{name}}' está agora na sua pasta de transferências. Este ambiente não permite que a aplicação escreva diretamente no local escolhido.",
+    "browserCannotOverwrite": "Este navegador não permite que a aplicação volte a gravar em «{{name}}». Por isso, a aplicação pergunta novamente onde guardar o ficheiro sempre que guarda. Isto não acontece no Chrome, no Edge nem na aplicação de ambiente de trabalho.",
+    "browserSavesAsDownload": "Guardado como transferência: «{{name}}» está na sua pasta de transferências. Este navegador não permite que a aplicação grave num local próprio, por isso cada gravação cria uma nova transferência. No Chrome, no Edge ou na aplicação de ambiente de trabalho, Guardar atualiza simplesmente o mesmo ficheiro.",
     "autoSaveFailed": "Falha no salvamento automático",
     "recoveryReadFailed": "Não foi possível ler o arquivo recuperado",
     "recoveryRestoreFailed": "Falha na restauração",
@@ -1491,5 +1496,30 @@
     "yes": "Sim",
     "no": "Não",
     "busy": "A preparar os tutoriais…"
+  },
+  "siteFiles": {
+    "openTitle": "Abrir a partir do site",
+    "loading": "A carregar ficheiros…",
+    "loadFailed": "Não foi possível carregar os ficheiros do site.",
+    "retry": "Tentar novamente",
+    "empty": "Ainda não há planeamentos no site.",
+    "showVersions": "Mostrar versões",
+    "hideVersions": "Ocultar versões",
+    "open": "Abrir",
+    "versionsLoading": "A carregar versões…",
+    "versionsFailed": "Não foi possível carregar as versões.",
+    "versionsEmpty": "Nenhuma versão encontrada.",
+    "versionLabel": "Versão {{version}}",
+    "versionLatest": "mais recente",
+    "byAuthor": "por {{author}}",
+    "openCopy": "Abrir como cópia",
+    "copyHint": "Uma versão anterior abre como cópia. Ao guardar, é criado um novo ficheiro; a versão mais recente não é alterada.",
+    "versionCopyName": "{{name}} (versão {{version}})",
+    "fromThisPc": "A partir deste computador…",
+    "saveTitle": "Guardar no site",
+    "nameLabel": "Nome",
+    "saveHint": "O projeto é guardado no site como um novo ficheiro IFC. Depois, Guardar (Ctrl+S) guarda lá uma nova versão.",
+    "saveToSite": "Guardar no site",
+    "toThisPc": "Neste computador…"
   }
 }

@@ -71,6 +71,9 @@ export function hasBlockingDialogOpen(ui: UIState = useAppStore.getState().ui): 
     ui.pendingExtensionConsent !== null ||
     // De vraag naar de werkelijke start wacht op een antwoord; intussen verandert er niets.
     ui.pendingActualStartQuestion !== null ||
+    // Openen van/opslaan op de site wacht op een keuze; de opslaanroute houdt intussen de
+    // schrijfvergrendeling vast.
+    ui.pendingSiteOpen !== null || ui.pendingSiteSave !== null ||
     // Handmatig koppelwerk in de voortgangsimportdialoog hangt aan taak-id's van
     // ÉÉN document en leeft alleen in de dialoog — een documentwissel moet onmogelijk zijn zolang
     // hij openstaat, niet: dat werk over de wissel heen bewaren.

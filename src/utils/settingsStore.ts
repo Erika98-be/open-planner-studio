@@ -16,6 +16,7 @@ import type {
 import type { PersistedTaskGridPreferencesV1 } from '@/types/taskGrid';
 import type { LayoutOverlays } from '@/types/view';
 import { migrateSavedFilters } from '@/engine/view/layoutPresets';
+import { AI_MODE_AVAILABLE } from '@/utils/buildFlags';
 import {
   legacyLayoutColumnsToTaskGridPreferences,
   normalizePersistedTaskGridPreferences,
@@ -668,12 +669,13 @@ export function saveMcpPort(value: number): void {
 
 /** Bridge-Bearer-token. Default null (nog niet gegenereerd); `server.ensureMcpToken` vult 'm bij eerste start. */
 export function loadMcpToken(): string | null {
-  if (typeof localStorage === 'undefined') return null;
+  // Platformbouw (#307): geen token in de gedeelde browseropslag, ook niet een oud token lezen.
+  if (!AI_MODE_AVAILABLE || typeof localStorage === 'undefined') return null;
   const raw = readLocal('ops-mcpToken');
   return typeof raw === 'string' && raw ? raw : null;
 }
 
 export function saveMcpToken(value: string): void {
-  if (typeof localStorage === 'undefined') return;
+  if (!AI_MODE_AVAILABLE || typeof localStorage === 'undefined') return;
   writeLocal('ops-mcpToken', value);
 }
