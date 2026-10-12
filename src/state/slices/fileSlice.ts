@@ -319,6 +319,10 @@ export interface OpenedFileSource {
   ref: FileRef | null;
   /** Alleen bij een site-ref: de gelezen (nieuwste) versie, de basis voor de volgende opslag. */
   siteFileVersion?: string | null;
+  /** `false`: deze bron is nooit een opslagdoel, ongeacht de bestandsnaam. Voor een extensie-importer:
+   *  `readFormatForFile` valt bij een onbekende extensie terug op IFC, en dan zou Ctrl+S IFC-tekst naar
+   *  het bronbestand van de importer schrijven. */
+  saveTarget?: false;
 }
 
 /** Feitelijke uitkomst van de centrale opennaad; gebruikt door DevBridge en MCP voor eerlijke ids.
@@ -891,7 +895,9 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
       // IFC-TEKST, dus élk ANDER bronformaat (csv/xml/mpp/xer — niet uitsluitend binaire formaten)
       // zou bij een naïeve toewijzing zijn eigen bronbestand met IFC-inhoud laten overschrijven
       // door de eerstvolgende Ctrl+S. "Opslaan" wordt dan "opslaan-als".
-      const target = saveTargetFor(readFormatForFile(source.name), source.ref, source.name);
+      const target = source.saveTarget === false
+        ? { filePath: null, fileHandle: null, siteFileId: null }
+        : saveTargetFor(readFormatForFile(source.name), source.ref, source.name);
 
       // Gedeelde load-implementatie (`applyOpenedImport`: pristine tabblad of nieuwe documenten);
       // open-pad-semantiek: opslagdoel zetten, GEKOPPELD laden (opslagdoel en `linkedOpen` horen

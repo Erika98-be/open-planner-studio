@@ -179,6 +179,9 @@ export type NotificationMessageKey =
   | 'notifications.openFailed'
   | 'notifications.extGuideCallbackFailed'
   | 'notifications.extHelpProjectOpenFailed'
+  // Een extensie-importer (Backstage → Importeren) gooide een fout. Parameter `name` (de naam van de
+  // importer zoals op de kaart); `detail` is de foutboodschap. Zie `importWithExtension`.
+  | 'notifications.extImportFailed'
   // `api.ui.showNotification` van een extensie — zie `src/extensions/extensionNotifications.ts`.
   // Parameters `name` (extensienaam) en `message` (onvertaalde extensietekst, als platte tekst).
   | 'notifications.extensionMessage'
