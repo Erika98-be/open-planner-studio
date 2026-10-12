@@ -37,8 +37,12 @@ const SEED: HostFile[] = [{
 }];
 
 /** De nep-host. Draait in de pagina, vóór de app, bij elke (her)laadbeurt. */
-async function installSiteHost(page: Page, seed: HostFile[]): Promise<void> {
-  await page.addInitScript(({ key, seedFiles }) => {
+async function installSiteHost(
+  page: Page,
+  seed: HostFile[],
+  options: { initialFileId?: string; lateMs?: number } = {},
+): Promise<void> {
+  await page.addInitScript(({ key, seedFiles, initialFileId, lateMs }) => {
     interface V { version: string; data: string; author: string }
     interface F { id: string; name: string; versions: V[] }
     interface Db { files: F[]; seq: number; calls: Record<string, unknown>[] }
@@ -91,8 +95,17 @@ async function installSiteHost(page: Page, seed: HostFile[]): Promise<void> {
         return [...find(read(), id).versions].reverse().map((v) => ({ version: v.version, author: v.author }));
       },
     };
-    (window as unknown as { openaecHost: unknown }).openaecHost = { storage };
-  }, { key: HOST_KEY, seedFiles: seed });
+    const host = { storage, ...(initialFileId ? { initialFileId } : {}) };
+    if (lateMs === undefined) {
+      (window as unknown as { openaecHost: unknown }).openaecHost = host;
+      return;
+    }
+    // Een site die de host pas later zet, meldt dat met `openaec-host-ready` (zie siteHost.ts).
+    setTimeout(() => {
+      (window as unknown as { openaecHost: unknown }).openaecHost = host;
+      window.dispatchEvent(new Event('openaec-host-ready'));
+    }, lateMs);
+  }, { key: HOST_KEY, seedFiles: seed, initialFileId: options.initialFileId, lateMs: options.lateMs });
 }
 
 /** Testscenario "iemand anders slaat op": een nieuwe versie direct in de opslag van de host. */
@@ -387,6 +400,17 @@ siteTest('herstel na een crash houdt het site-doel en de basisversie', async ({ 
   await expect(saveDialog(page)).toHaveCount(0);
   await expect.poll(() => doc(page).then((d) => d.isDirty)).toBe(false);
 });
+
+for (const [label, lateMs] of [['meteen', undefined], ['pas na het laden', 3_000]] as const) {
+  test(`startbestand van de host (${label}) opent als site-bestand`, async ({ page }) => {
+    await installSiteHost(page, SEED, { initialFileId: 'p1', lateMs });
+    await page.goto('/');
+    await waitForOps(page);
+    await expect.poll(() => doc(page).then((d) => d.siteFileId), { timeout: 20_000 }).toBe('p1');
+    expect((await doc(page)).filePath).toBe('Planning.ifc');
+    expect((await hostCalls(page)).filter((c) => c.fn === 'open')).toEqual([{ fn: 'open', id: 'p1', version: null }]);
+  });
+}
 
 test('zonder site: Ctrl+O en Ctrl+S gaan als vanouds naar bestandskiezer en download', async ({ page, ops: _ops }) => {
   expect(await page.evaluate(() => 'openaecHost' in window)).toBe(false);
