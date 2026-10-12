@@ -1,6 +1,6 @@
 // UI-straat: werkpakketten maken (§5.1), samenvoegen (§9), basislijn en status. Pure functies.
 import {
-  containsTerm, countToken, findAvoid, hasUiBaseline, hashUnit, isComplete, nestings, placeholders, pluralExamples,
+  containsTerm, countToken, avoidWords, escapeRe, hasUiBaseline, hashUnit, isComplete, nestings, placeholders, pluralExamples,
   termEntries, textsOf, uiStyle, unitMap,
   unitsOf, type Concept, type LangTermbase, type Style, type Unit, type UnitText,
 } from './common';
@@ -106,7 +106,7 @@ export function avoidHitsIn(text: UnitText, rules: AvoidRule[]): { hits: string[
   const hits: string[] = [];
   const ids: string[] = [];
   for (const r of rules) {
-    const found = textsOf(text).flatMap(t => findAvoid(t, r.forms, r.avoid));
+    const found = textsOf(text).flatMap(t => avoidWords(t, r.forms, r.avoid));
     if (found.length === 0) continue;
     ids.push(r.id);
     for (const a of r.avoid) if (found.includes(a) && !hits.includes(a)) hits.push(a);
@@ -179,7 +179,6 @@ export interface LabelEntry extends UiLabel { re: RegExp }
 /** Hoe vaak een los woord in andere nl-teksten mag staan voor het nog als label telt. */
 export const LABEL_COMMON_WORD_MAX = 5;
 
-const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const wordRe = (s: string, flags = 'u') => new RegExp(`(?<![\\p{L}\\p{N}])${escapeRe(s)}(?![\\p{L}\\p{N}])`, flags);
 
 /**
@@ -423,18 +422,6 @@ export function orderSources(sources: UiSources, nlByNs: Record<string, JsonObje
     out[ns] = o;
   }
   for (const ns of Object.keys(sources)) if (!(ns in out)) out[ns] = sources[ns];
-  return out;
-}
-
-/** Basislijn (§9): de huidige nl-hash voor elke eenheid die in de doeltaal compleet is. */
-export function seedSources(lang: string, inputs: NsInput[]): UiSources {
-  const out: UiSources = {};
-  for (const { ns, nl, target } of inputs) {
-    const t = unitMap(target);
-    const h: Record<string, string> = {};
-    for (const u of unitsOf(nl)) if (isComplete(t.get(u.key), u, lang)) h[u.key] = hashUnit(u.text);
-    out[ns] = h;
-  }
   return out;
 }
 

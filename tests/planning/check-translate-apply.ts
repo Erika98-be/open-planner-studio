@@ -9,7 +9,7 @@
 import { applyUiBatch } from '../../scripts/translate/apply';
 import { hashUnit, hasUiBaseline } from '../../scripts/translate/common';
 import {
-  buildUiPackages, orderSources, seedSources, selectUnits, setSourceHash, uiReleaseGaps, uiStatus, updateSourceHashForAdd,
+  buildUiPackages, orderSources, selectUnits, setSourceHash, uiReleaseGaps, uiStatus, updateSourceHashForAdd,
   type UiPackage, type UiSources,
 } from '../../scripts/translate/ui';
 import { serialize, type JsonObject } from '../../scripts/i18n-tools';
@@ -103,8 +103,8 @@ const en: JsonObject = {
 {
   // ar: zero/one/two/few/many/other; een halve familie is niet compleet → geen hash.
   const ar: JsonObject = { a: 'الأول', grp: { x: 'س', n_one: 'مهمة', n_other: '{{count}} مهمة' } };
-  const seeded = seedSources('ar', [{ ns: 'common', nl, en, target: ar }]);
-  eq('basislijn: alleen complete eenheden', Object.keys(seeded.common), ['a', 'grp.x']);
+  // Hashes van de complete eenheden (de halve familie grp.n heeft er geen).
+  const seeded: UiSources = { common: { a: hashUnit('Eerste'), 'grp.x': hashUnit('Iks') } };
   const st = uiStatus('ar', [{ ns: 'common', nl, en, target: ar }], seeded)[0];
   eq('status: halve familie + ontbrekend = 2 ontbreekt', [st.missing, st.stale, st.current], [2, 0, 2]);
   const changed = { ...nl, a: 'Eerste (nieuw)' };
