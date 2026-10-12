@@ -1,6 +1,6 @@
 # Vertaalstraat — eerst de vaktermen, dan de UI en de docs
 
-*Ontwerp, 2026-10-09, versie 0.3. Status: **concept**. v0.1 kreeg van de reviewer (Opus, xhigh) "nee, nog
+*Ontwerp, 2026-10-09, versie 0.4 (2026-10-12: besluiten na de uitvoering, §16). Status: **uitgevoerd**. v0.1 kreeg van de reviewer (Opus, xhigh) "nee, nog
 niet klaar"; v0.2 verwerkte de 18 bevindingen (§14); v0.2 kreeg "ja voor PR 1, nee voor het docs-deel"; v0.3
 verwerkt die tweede ronde (§15). Aanleiding: verzoek van de eigenaar (2026-10-09):
 "alle talen uit de todo toevoegen, eerst de vaktermen goed vertalen, daarna alles, ook de docs; zoveel
@@ -340,9 +340,9 @@ deze klus (B4).
   `validateTranslations` (`i18n-tools.ts:102`) + `check-i18n-tools.ts`, en `check-task-grid-i18n.ts:157,174-184`
   (eist elke kolomsleutel in alle talen). Nadeel voor de eigenaar: de 12 bestaande talen lopen dan ook
   achter tot de straat draait, waar elke PR ze nu meteen vult. Besluit vóór PR 2.
-- **Release:** de release-skill draait `translate status`; bij ontbrekende of verouderde vertalingen
-  eerst `prepare --missing --stale` + de straat. Zo krijgt een gebruiker bij een release actuele
-  vertalingen, terwijl `main` tussendoor mag achterlopen.
+- **Release:** de release-skill draait `verify:translations`; bij ontbrekende of verouderde UI-vertalingen
+  eerst de skill `update-ui-lang`. Zo krijgt een gebruiker bij een release een complete UI, terwijl `main`
+  tussendoor mag achterlopen. De docs in andere talen dan nl/en mogen achterlopen (§16).
 - Recepten `i18n-sleutel.md` en `in-app-gids.md` krijgen de straat als stap; `AGENTS.md` krijgt
   `npm run translate` (`verify:docs` poort 7c eist dat elk npm-script daar staat, `verify-docs.ts:321`).
 
@@ -393,13 +393,13 @@ Voor de eigenaar (worden één voor één voorgelegd, met voorbeeld):
   (`config.ts:48`), de taalsplitsing (`config.ts:116`, `helpManifest.ts:45`) en `verify-docs.ts:341`. Wel
   staan de MS Project-termen in de TBX vooral in Latijns schrift (omzetten naar Cyrillisch is
   mechanisch). Voorstel: Cyrillisch.
-- **B2 — Verouderd docsartikel. BESLOTEN: (a), eigenaar, 2026-10-10 — de viewer toont de bestaande vertaling; bij elke release draait de straat (`--missing --stale`) voor UI én docs. De docs-vertaalrun start pas op uitdrukkelijk verzoek van de eigenaar.** (a) de viewer toont toch de vertaling; (b) de viewer toont het Engels met
+- **B2 — Verouderd docsartikel. BESLOTEN: (a), eigenaar, 2026-10-10 — de viewer toont de bestaande vertaling; bij elke release draait de straat (`--missing --stale`) voor UI én docs. Verfijnd 2026-10-12 (§16): bij een release alleen de UI; docs op verzoek. De docs-vertaalrun start pas op uitdrukkelijk verzoek van de eigenaar.** (a) de viewer toont toch de vertaling; (b) de viewer toont het Engels met
   een melding; (c) per sectie: actuele secties in de taal, verouderde in het Engels. Voorstel: (a) op `main`,
   en de release-regel uit §11 zorgt dat een release geen verouderde vertaling bevat.
-- **B3 — Melding "machinevertaling". BESLOTEN: geen melding (optie 2), eigenaar, 2026-10-10.** Geen moedertaalspreker in de keten. Voorstel: in Help een korte
+- **B3 — Melding "machinevertaling". BESLOTEN: geen melding (optie 2), eigenaar, 2026-10-10. TERUGGEDRAAID 2026-10-12 (§16): wel een melding in Help, met knoppen English/Nederlands.** Geen moedertaalspreker in de keten. Voorstel: in Help een korte
   melding in de nieuwe talen, tot iemand een taal nakijkt; in de UI geen melding.
 - **B4 — Tutorials.** Voorstel: aparte fase na deze klus.
-- **B5 — `i18n:add` met 27 talen. BESLOTEN: voorstel §11 (nl + en verplicht, rest via de straat), eigenaar, 2026-10-10 — met de eis dat een release volledig is: de releasepoort stopt bij elke ontbrekende of verouderde vertaling (UI en, zodra die bestaan, docs).** Voorstel: zie §11.
+- **B5 — `i18n:add` met 27 talen. BESLOTEN: voorstel §11 (nl + en verplicht, rest via de straat), eigenaar, 2026-10-10 — met de eis dat een release volledig is: de releasepoort stopt bij elke ontbrekende of verouderde vertaling (UI en, zodra die bestaan, docs). Verfijnd 2026-10-12 (§16): de poort stopt alleen op de UI.** Voorstel: zie §11.
 - **B6 — PR #301 (Lao, externe bijdrager).** Open (niet gemerged). Voorstel: eerst die PR afhandelen; `lo`
   krijgt daarna ook een termbase en een nalees-ronde door de straat.
 - **B7 — Verbruik.** Ruwe schatting ±4.500 Haiku-agentaanroepen voor alles. De proef meet het echte verbruik
@@ -469,3 +469,26 @@ docs-deel**. Verwerkt:
 Voorwaarden voor PR 1 (reviewer): alleen termbase + UI-straat (labelkaart, sectiehashes en `index.json` gaan
 naar PR 4); gebundelde check + absoluut node-pad; `ui-sources`-basislijn voor de bestaande talen; geen
 `tbx:msp`.
+
+## 16. Besluiten na de uitvoering (2026-10-12)
+
+Genomen door de eigenaar op 2026-10-12, na de controle van PR #316 in de app.
+
+- **Uitvoering in twee PR's in plaats van vijf.** PR #316 (gemerged in main) bevat alleen de vertalingen:
+  28 UI-talen, de Help-artikelen in 26 talen en de docs-controle (`verify:docs` poort 12, `i18n/docs-sources/`).
+  PR 2 bevat de straat zelf: scripts, termbase, bronhashes van de UI, opdrachten, tests, de releasepoort en
+  de twee skills hieronder. Reden van de eigenaar: de vertalingen kon hij in de app controleren, de straat niet.
+- **B3 teruggedraaid.** Boven een Help-artikel in een andere taal dan nl of en staat een melding:
+  "Deze handleiding is vertaald uit het Engels en kan achterlopen op de Engelse en Nederlandse versie",
+  met de knoppen *English* en *Nederlands*. Die zetten alleen de taal van de docs om, niet die van de UI.
+  De terugvalmelding (artikel nog niet vertaald) krijgt dezelfde knoppen. Waarom: zonder moedertaalspreker
+  in de keten moet een lezer kunnen zien dat het een vertaling is, en met één klik de bron kunnen lezen.
+- **B5 verfijnd: een release eist de UI, niet de docs.** Agents vertalen bij het bouwen alleen nl en en.
+  Voor een release moet elke UI-sleutel in elke taal vertaald en actueel zijn; `verify:translations`
+  (`status --strict`) faalt daarop. De docs in andere talen dan nl en en mogen achterlopen; de poort meldt
+  ze alleen (`docs (blokkeert niet): …`). Waarom: een halve UI ziet een gebruiker overal, een verouderd
+  artikel heeft al de melding hierboven, en een docs-run over alle talen kost honderden agents.
+- **Twee skills.** `update-ui-lang` draait de straat voor de UI tot de releasepoort groen is; hij is stap 6a
+  van de release-skill en kan ook los. `update-docs-lang` draait de straat voor de Help-artikelen, met een
+  steekproef door Sonnet en herstel door Haiku; alleen op verzoek. De workflows staan in
+  `scripts/translate/workflows/`; de invoer komt uit `npm run translate -- packages ui|docs <taal…> [--red]`.

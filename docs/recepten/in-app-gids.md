@@ -6,7 +6,8 @@
 (`public/docs/<taal>/` met een gegenereerde `index.json`) vult de vertaalstraat (`npm run translate`,
 ontwerp `docs/superpowers/specs/2026-10-09-vertaalstraat-design.md`); pas die mappen nooit met de hand
 aan. Tot de straat een nieuw of gewijzigd artikel vertaalt, leest een andere taal het Engels (of de
-vorige vertaling); bij een release moet alles actueel zijn. Manifest en artikelen worden runtime gefetcht (niet gebundeld), dus een
+vorige vertaling), met een melding. Dat mag ook bij een release: alleen `nl` en `en` moeten bij zijn
+(besluit eigenaar, 2026-10-12). Bijwerken op verzoek met de skill `update-docs-lang`. Manifest en artikelen worden runtime gefetcht (niet gebundeld), dus een
 nieuw artikel vraagt geen rebuild om zichtbaar te worden in dev — wel om hem in `dist/` te krijgen
 voor een echte deploy.
 

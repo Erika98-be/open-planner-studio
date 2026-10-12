@@ -145,32 +145,22 @@ achterloopt; laat het onaangeroerd als er niets architecturaal relevants is vera
 vorige release. Kan gecombineerd worden met de doc-subagent uit stap 5 (zelfde soort werk,
 zelfde soort dubbelcheck-tegen-de-commits), of los.
 
-### 6a. Vertalingen bijwerken met de straat (besluit B5 — een release is in elke taal compleet)
-Een PR vraagt alleen `nl` + `en`; `main` mag dus achterlopen, een release niet (B2/B5 in
-`docs/superpowers/specs/2026-10-09-vertaalstraat-design.md` §13). Draai de straat op een eigen branch,
-vóór de kwaliteitspoorten:
+### 6a. Vertalingen bijwerken met de straat (een release heeft de UI in elke taal)
+Een PR vraagt alleen `nl` + `en`; `main` mag dus achterlopen, een release niet (besluit B5, 2026-10-10,
+verfijnd 2026-10-12: de **UI** moet in elke taal compleet en actueel zijn; de Help-artikelen in andere
+talen dan `nl`/`en` mogen achterlopen). Draai vóór de kwaliteitspoorten:
 ```bash
-npm run translate -- status                      # per taal: ontbreekt / verouderd / actueel (zonder hash)
-npm run translate -- prepare ui <taal> --missing # voor elke taal met "ontbreekt"
-npm run translate -- prepare ui <taal> --stale   # voor elke taal met "verouderd" of "(zonder hash)"
+npm run verify:translations; echo "exit=$?"      # 0 = niets te doen
 ```
-`prepare` zet de pakketten opzij als het opnieuw draait: werk per taal eerst `--missing` helemaal af
-(stations + `apply ui`), daarna `--stale`. De **stations** (vertalen, nalezen, herstellen) zijn Haiku-agents
-die de orkestrator start met de vaste opdrachten uit `scripts/translate/prompts/` (`ui.md`, `ui-review.md`,
-`ui-fix.md`); hoe je de plekhouders invult en wat je na elke run controleert (alleen `build/translate/`
-mag veranderd zijn), staat in `scripts/translate/prompts/README.md`. Daarna:
-```bash
-npm run translate -- apply ui <taal>             # alleen groene pakketten; rood = opnieuw door de stations
-npm run verify:translations; echo "exit=$?"      # moet 0 zijn — dezelfde poort draait in release.yml
-```
-Commit de vertalingen (`src/i18n/locales/<taal>/`, `i18n/ui-sources/<taal>.json`) en merge ze vóór stap 9.
-Docs volgen dezelfde poort zodra de docs-straat er is (PR 4); start een docs-vertaalrun alleen op
-uitdrukkelijk verzoek van de user (B2).
+Niet 0: volg de skill **`update-ui-lang`** (pakketten, Haiku-stations, `apply ui`, commit) tot deze poort
+groen is, en merge die vertalingen vóór stap 9. De poort meldt ook hoeveel Help-artikelen per taal
+achterlopen (`docs (blokkeert niet): …`). Noem dat aantal in het releasevoorstel; een docs-run
+(`update-docs-lang`) start je alleen als de user daarom vraagt.
 
 ### 7. Kwaliteitspoorten (eind-poort — zelf draaien, alles groen)
 Reproduceer vooraf precies wat de release-gate in `.github/workflows/release.yml` draait:
 ```bash
-npm run verify:translations; echo "exit=$?"        # elke taal compleet en actueel (stap 6a)
+npm run verify:translations; echo "exit=$?"        # UI in elke taal compleet en actueel (stap 6a)
 npm run verify; echo "exit=$?"                     # typecheck (npm run typecheck), lint, alle vijf suites, verify:*-poorten
 npm run verify:release-highlights -- X.Y.Z; echo "exit=$?"   # = node scripts/release-highlights.mjs X.Y.Z
 npm run build                                      # beforeBuildCommand van tauri-action

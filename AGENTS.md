@@ -58,7 +58,7 @@ Translations: `npm run i18n:add` puts one string in `nl` + `en` (required) and a
 `npm run i18n:fmt` puts the locale files in the fixed format (one key per line, `nl` order),
 `npm run i18n:resolve` merges them per key after a `git merge` — run it even when git reports no conflict.
 `npm run translate -- <command>` is the translation pipeline (termbase `i18n/termbase/`, UI work packages in
-`build/translate/`, `apply ui`, `status`; run for all locales before every release; design
+`build/translate/`, `apply ui`, `status`; the UI for all locales before every release via the `update-ui-lang` skill; design
 `docs/superpowers/specs/2026-10-09-vertaalstraat-design.md`,
 overview `scripts/README.md`). `i18n:add` also updates the source hashes in `i18n/ui-sources/` (and drops them
 for locales it did not write, so `prepare ui <locale> --missing`/`--stale` picks them up).
@@ -236,7 +236,8 @@ Node 22 (see CI). Rust stable only for the `tauri:*` commands.
 | `ci-release` | `.github/`, release notes, bump |
 | `docs-index` | `docs/`, `PLAN.md`, `artifacts/` |
 
-Skills in `.claude/skills/`: `release`, `wiki`, `docs-update`, `docs-audit`, `goed-plannen`, `progress-update` (source of the
+Skills in `.claude/skills/`: `release`, `wiki`, `docs-update`, `docs-audit`, `update-ui-lang` (translation pipeline for the
+UI, a release step), `update-docs-lang` (pipeline for the guides, on request), `goed-plannen`, `progress-update` (source of the
 last two: `public/skills/<name>/SKILL.md`, copied byte-identically; they are the agent skills that
 `planner_get_planning_guide` hands out, next to the English agent guide `public/agent/planning-guide.md`).
 

@@ -17,6 +17,8 @@
 //   prepare docs <taal> [--missing|--stale|--ids a,b] [--max-words 2500]
 //                                      docs-pakketten → build/translate/<taal>/<id>[-NN].src.md + .json (+ check.mjs,
 //                                      + pitfalls.md voor de nalezer uit prompts/pitfalls/)
+//   packages ui|docs <taal…> [--red]   open pakketten als JSON [[taal, id]] (invoer voor scripts/translate/workflows/);
+//                                      --red = alleen pakketten met uitvoer die niet groen keurt
 //   apply docs <taal>                  groene docs-pakketten → public/docs/<taal>/<id>.md + index.json (C2)
 //                                      + i18n/docs-sources/<taal>.json (C3); herschikt ook artikelen zonder pakket
 //   rename-doc <oud> <nieuw>           hernoem een artikel in alle docstalen (bestand, links, C2, C3)
@@ -26,7 +28,8 @@
 //                                      public/examples/*.ifc → i18n/docs-literal.json (sources)
 //   seed-sources [taal…]               basislijn: huidige nl-hashes voor en + de bestaande talen (niet de nieuwe)
 //   status [taal] [--strict]           per taal en namespace (en docs): ontbreekt / verouderd / actueel;
-//                                      --strict = releasepoort `npm run verify:translations` (exit 1 bij elk gat)
+//                                      --strict = releasepoort `npm run verify:translations` (exit 1 bij elk UI-gat;
+//                                      docsgaten alleen gemeld)
 //
 // Alle I/O staat hier; de logica zit in de pure modules ernaast (getoetst in tests/planning/check-translate-*.ts).
 import { spawnSync } from 'node:child_process';
@@ -351,6 +354,39 @@ function applyUi(args: string[]): void {
   }
   console.log(`${red ? 'XX' : 'OK'}  apply ui ${lang}: ${applied.length} pakket(ten) samengevoegd, ${red} rood overgeslagen`);
   if (red) process.exit(1);
+}
+
+/**
+ * `packages ui|docs <taal…> [--red]`: de open pakketten als JSON `[[taal, id], …]`, de invoer (`items`) voor de
+ * workflows in `scripts/translate/workflows/`. Met `--red` alleen pakketten mét uitvoer die niet groen keurt
+ * (die gaan opnieuw door de stations).
+ */
+function packagesCmd(args: string[]): void {
+  const [what, ...langArgs] = positional(args);
+  if (what !== 'ui' && what !== 'docs') fail(`packages ${what ?? ''}: kies "ui" of "docs"`);
+  if (!langArgs.length) fail('packages ui|docs <taal…>: geef minstens één taal');
+  const onlyRed = flag(args, '--red');
+  const items: [string, string][] = [];
+  for (const lang of langArgs.map(checkLang)) {
+    const dir = join(WORK, lang);
+    if (!existsSync(dir)) continue;
+    const bases = what === 'ui'
+      ? readdirSync(dir).filter(f => /^ui-[a-z]+-\d+\.json$/.test(f)).sort().map(f => f.slice(0, -'.json'.length))
+      : docsPackageBases(dir);
+    for (const base of bases) {
+      if (onlyRed) {
+        const out = join(dir, what === 'ui' ? `${base}.out.json` : `${base}.out.md`);
+        if (!existsSync(out)) continue;
+        const pkg = readJson<unknown>(join(dir, `${base}.json`));
+        const result = what === 'ui'
+          ? checkPackage(pkg, readJson<unknown>(out))
+          : checkDocs(pkg as DocsPackage, readFileSync(join(dir, `${base}.src.md`), 'utf8'), readFileSync(out, 'utf8'));
+        if (!result.errors.length) continue;
+      }
+      items.push([lang, base]);
+    }
+  }
+  console.log(JSON.stringify(items));
 }
 
 function applyFindingsCmd(args: string[]): void {
@@ -701,25 +737,27 @@ function docsBudget(args: string[]): void {
 }
 
 /**
- * De releasepoort (besluit B5, 2026-10-10): één lijst van bronnen van gaten. Elke bron levert per taal
- * de eenheden die niet bij zijn (ontbreekt / verouderd / zonder hash). De docs (`where` = `docs:<id>` of
- * `docs:<id>#<sectie>`) tellen per taal mee zodra die taal docsvertalingen heeft.
+ * De releasepoort (besluit B5, 2026-10-10; verfijnd 2026-10-12): elke UI-sleutel in elke taal vertaald
+ * en actueel (ontbreekt / verouderd / zonder hash). De docs blokkeren de release niet: alleen nl en en
+ * moeten bij zijn (dat zijn de bronnen), de andere talen mogen achterlopen. De poort meldt de docsgaten
+ * wel, zodat je kunt kiezen of je `update-docs-lang` eerst draait.
  */
 const RELEASE_GAP_SOURCES: ((lang: string) => ReleaseGap[])[] = [
   lang => uiReleaseGaps(lang, nsInputs(lang), readJsonOr<UiSources>(sourcesPath(lang), {})),
-  // Docs tellen mee zodra een taal docsvertalingen heeft (besluit B5: "zodra die bestaan").
-  lang => (lang !== 'en' && docsLangs().includes(lang) ? docsReleaseGaps(lang, docsStates(lang)) : []),
 ];
+/** De docsgaten per taal: alleen een melding (`where` = `docs:<id>` of `docs:<id>#<sectie>`). */
+const docsGaps = (lang: string): ReleaseGap[] =>
+  (lang !== 'en' && docsLangs().includes(lang) ? docsReleaseGaps(lang, docsStates(lang)) : []);
 
 const GAP_LABEL: Record<ReleaseGap['state'], string> = { missing: 'ontbreekt', stale: 'verouderd', unhashed: 'zonder hash' };
 
-/** `status --strict` = `npm run verify:translations`: exit 1 bij elk gat in elke taal. */
+/** `status --strict` = `npm run verify:translations`: exit 1 bij elk UI-gat in elke taal; docsgaten alleen gemeld. */
 function strictStatus(langs: string[]): void {
   let total = 0;
   const red: string[] = [];
   for (const lang of langs) {
     const gaps = RELEASE_GAP_SOURCES.flatMap(source => source(lang));
-    if (gaps.length === 0) { console.log(`OK  ${lang}: alles vertaald en actueel`); continue; }
+    if (gaps.length === 0) { console.log(`OK  ${lang}: UI vertaald en actueel`); continue; }
     total += gaps.length;
     red.push(lang);
     const count = (state: ReleaseGap['state']) => gaps.filter(g => g.state === state).length;
@@ -727,13 +765,18 @@ function strictStatus(langs: string[]): void {
     for (const g of gaps.slice(0, 10)) console.log(`      ${g.where} (${GAP_LABEL[g.state]})`);
     if (gaps.length > 10) console.log(`      … en ${gaps.length - 10} meer (\`npm run translate -- status ${lang}\`)`);
   }
+  const docsBehind = langs.map(lang => ({ lang, n: new Set(docsGaps(lang).map(g => g.where.split('#')[0])).size }))
+    .filter(d => d.n > 0);
+  if (docsBehind.length) {
+    console.log(`..  docs (blokkeert niet): ${docsBehind.map(d => `${d.lang} ${d.n}`).join(', ')} artikel(en) achter`
+      + ' — bijwerken met de skill update-docs-lang');
+  }
   if (total) {
-    console.log(`XX  verify:translations: ${total} vertaling(en) niet bij in ${red.length} taal/talen (${red.join(', ')}).`);
-    console.log('    Draai de vertaalstraat: per taal `prepare ui|docs <taal> --missing` en `--stale`, de stations, `apply ui|docs <taal>`'
-      + ' (release-skill, stap "Vertalingen bijwerken met de straat").');
+    console.log(`XX  verify:translations: ${total} UI-vertaling(en) niet bij in ${red.length} taal/talen (${red.join(', ')}).`);
+    console.log('    Draai de skill update-ui-lang (de release-skill doet dat in stap "Vertalingen bijwerken met de straat").');
     process.exit(1);
   }
-  console.log(`OK  verify:translations: ${langs.length} talen compleet en actueel`);
+  console.log(`OK  verify:translations: UI in ${langs.length} talen compleet en actueel`);
 }
 
 function status(args: string[]): void {
@@ -774,6 +817,7 @@ switch (cmd) {
   case 'bundle-check': bundleCheck(); break;
   case 'apply': applyUi(rest); break;
   case 'apply-findings': applyFindingsCmd(rest); break;
+  case 'packages': packagesCmd(rest); break;
   case 'seed-sources': seed(rest); break;
   case 'status': status(rest); break;
   case 'rename-doc': renameDoc(rest); break;
@@ -783,7 +827,7 @@ switch (cmd) {
   default:
     console.log('gebruik: npm run translate -- <validate-termbase | concepts-candidates | concepts-merge | terms-lookup <taal> | '
       + 'apply-terms <taal> | prepare ui <taal> [--missing|--stale|--all|--avoid [--stale]|--keys <bestand>] | bundle-check | '
-      + 'apply ui <taal> | apply-findings <taal> <bestand> | seed-sources [taal…] | status [taal] [--strict] | '
+      + 'apply ui <taal> | apply-findings <taal> <bestand> | packages ui|docs <taal…> [--red] | seed-sources [taal…] | status [taal] [--strict] | '
       + 'prepare docs <taal> [--missing|--stale|--ids a,b] [--max-words N] | apply docs <taal> | rename-doc <oud> <nieuw> | '
       + 'remove-doc <id> | docs-budget <taal…> | docs-literal>');
     process.exit(cmd ? 1 : 0);

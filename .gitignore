@@ -13,6 +13,8 @@ dist/
 !.claude/skills/wiki/
 !.claude/skills/docs-update/
 !.claude/skills/docs-audit/
+!.claude/skills/update-ui-lang/
+!.claude/skills/update-docs-lang/
 !.claude/skills/goed-plannen/
 !.claude/skills/progress-update/
 temp/
