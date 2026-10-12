@@ -54,6 +54,10 @@ Hoe het in elkaar zit:
   dat het onderwerp van elk beeld in beeld is. Hulp bij schrijven: `OPS_TUTORIAL_ONLY=<id,…>` draait
   alleen die tutorials, `OPS_TUTORIAL_DEBUG_DIR=<map>` legt na elke stap een volledige schermafdruk vast.
   Duur: 14 tests, ±6 min in één job (gemeten 2026-10-07: 347 s lokaal).
+- **`platform-build.spec.ts`**: de platformbouw (#307). Bouwt in `beforeAll` één keer
+  `scripts/build-platform.mjs --base /tools/planner/` (±1 min, inclusief `tsc`) en serveert `dist-platform/`
+  met een eigen kleine server alleen onder dat subpad; de Vite-dev-server gebruikt hij niet. Geen
+  `window.__OPS__` (productiebouw): alle controles via de DOM.
 - **`helpers/ops-state.mjs`** hoort bij het X11-harnas hieronder, niet bij de spec-suite.
 
 Tests lopen via echte browser-events. De brug mag deterministische fixtures zetten en state of

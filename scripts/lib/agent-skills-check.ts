@@ -5,7 +5,7 @@
 // bestanden en roept deze functies aan.
 
 /** Skills die alleen voor wie aan deze repo werkt bestaan (geen agent-skill, geen `public/`-bron). */
-export const REPO_ONLY_SKILLS: readonly string[] = ['release', 'wiki', 'docs-update'];
+export const REPO_ONLY_SKILLS: readonly string[] = ['release', 'wiki', 'docs-update', 'docs-audit'];
 
 /**
  * De frontmatter van een SKILL.md: het blok tussen een `---`-regel op regel 1 en de volgende

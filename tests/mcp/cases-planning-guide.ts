@@ -329,7 +329,7 @@ test('poort 9: frontmatter-name alleen binnen de frontmatter, leeg of anders = f
 
 test('poort 9: een wees in .claude/skills/ en een niet-gedeelde agent-skill worden gemeld', () => {
   const real = sharedClaudeSkills(readFileSync(join(ROOT, '.gitignore'), 'utf8'));
-  for (const n of ['release', 'wiki', 'docs-update', 'goed-plannen', 'progress-update']) {
+  for (const n of ['release', 'wiki', 'docs-update', 'docs-audit', 'goed-plannen', 'progress-update']) {
     assert(real.includes(n), `.gitignore deelt ${n} niet`);
   }
   const base = { publicSkills: ['goed-plannen', 'progress-update'], claudeDirs: ['release', 'wiki', 'docs-update', 'goed-plannen', 'progress-update', 'lokaal'], shared: real };

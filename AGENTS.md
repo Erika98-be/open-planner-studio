@@ -14,6 +14,7 @@ should read the matching rule file before touching that area.
 npm run dev          # browser dev; fixed port per worktree (3007–3106), refuses a double start
 npm run tauri:dev    # desktop app, same port assignment
 npm run build        # tsc && vite build → dist/
+npm run build:platform -- --base /pad/   # platform build for the OpenAEC app on Frappe → dist-platform/
 npm run verify       # THE gate — the same steps as CI (split in parallel), release and deploy gate
 npm run typecheck    # tsc over src/ AND scripts/+tests/ — use this, not just build (incremental)
 npm run lint         # deliberately minimal ESLint (promises, control-regex, React hooks)
@@ -101,8 +102,20 @@ Node 22 (see CI). Rust stable only for the `tauri:*` commands.
 - **Tauri guard.** `const isTauri = () => '__TAURI_INTERNALS__' in window;` — anything touching `@tauri-apps/*`
   is imported dynamically inside an `isTauri()` branch. A top-level import breaks the web build.
   Updater and MCP bridge are Tauri-only; the browser does its own file I/O and recovery.
+- **Platform build.** `npm run build:platform -- --base /pad/` builds the bundle the OpenAEC app on Frappe serves
+  under a sub-path (Vite mode `platform`, `.env.platform`, `build.manifest`, `dist-platform/`); `npm run build` gets
+  none of the platform switches. Differences go only through the constants in `src/utils/buildFlags.ts` (extensions, demo start and
+  AI mode are off there) — never read `VITE_OPS_PLATFORM` directly. Own assets always via `import.meta.env.BASE_URL`.
+  Detail: `docs/platformbouw.md`.
 - **Rust is thin.** Exactly three commands (`install_kind`, `mcp_bridge_start`, `mcp_bridge_stop`); every new
   command is public surface. File I/O: extend `src/services/fileAccess/`, not a Rust command.
+- **Storage via the site.** `FileRef` has three kinds: `path` (Tauri), `handle` (Chromium web) and `site`. When the
+  page that hosts the tool sets `window.openaecHost` (contract in `src/services/fileAccess/siteHost.ts`), Open, Save,
+  Save As, Recent and crash recovery also work against the site (AutoSave deliberately not: every round would be a
+  new site version); without a host nothing changes, and the
+  desktop app never has one. A document carries `siteFileId` and `siteFileVersion` (the base for conflict detection) next to
+  `filePath`/`fileHandle`; derive the save
+  target only via `saveTargetRef`. Dev: `?fakeSite=1` installs a fake site. Detail: `docs/platformbouw.md`.
 - **IFC 4.3 is the native format**; there is no JSON project format. New domain data must round-trip through
   `ifcWriter`/`ifcReader`, or it is gone after saving. CSV/MSPDI/P6/`.mpp`/`.xer` are adapters. Route:
   `docs/ifc-round-trip.md`.
@@ -149,7 +162,7 @@ Node 22 (see CI). Rust stable only for the `tauri:*` commands.
   `ifc`, `report`, `ai` (only with `ui.aiMode`). Source: `slices/types.ts`.
 - Backstage sections (`BackstageSection`): `recent`, `examples`, `export`, `import`, `print`, `project-info`,
   `settings`, `extensions`, `library`, `help`.
-- Fourteen locales (`nl, en, fr, de, es, zh, it, pt, pl, tr, ar, ja, ko, fa`), each with four namespaces;
+- Fourteen locales (`nl, en, fr, de, es, zh, it, pt, pl, tr, ar, ja, ko, lo, fa`), each with four namespaces;
   `ar`/`fa` are RTL. A missing plural form falls back to English, not to `_other`.
 - MCP: The 41 `planner_*` tools live in `src/services/mcp/tools/`. New tool: `docs/recepten/mcp-tool.md`.
 
@@ -212,7 +225,7 @@ Node 22 (see CI). Rust stable only for the `tauri:*` commands.
 | `ci-release` | `.github/`, release notes, bump |
 | `docs-index` | `docs/`, `PLAN.md`, `artifacts/` |
 
-Skills in `.claude/skills/`: `release`, `wiki`, `docs-update`, `goed-plannen`, `progress-update` (source of the
+Skills in `.claude/skills/`: `release`, `wiki`, `docs-update`, `docs-audit`, `goed-plannen`, `progress-update` (source of the
 last two: `public/skills/<name>/SKILL.md`, copied byte-identically; they are the agent skills that
 `planner_get_planning_guide` hands out, next to the English agent guide `public/agent/planning-guide.md`).
 
@@ -229,7 +242,7 @@ scheduling convention) and `docs/ifc-round-trip.md`. Self-test: `docs/self-test-
 | CPM solver / calendar engine | `src/engine/scheduler/`, `src/engine/calendar/` |
 | Canvas renderer | `src/engine/renderer/` |
 | IFC read/write | `src/services/ifc/ifcReader`, `ifcWriter` |
-| File I/O (Tauri↔web) | `src/services/fileAccess/` (+ `recentFiles.ts`) |
+| File I/O (Tauri↔web↔site) | `src/services/fileAccess/` (+ `recentFiles.ts`; site contract `siteHost.ts`) |
 | Auto-save / recovery | `src/hooks/useAutoSave.ts`, `src/services/recovery/recoveryStore.ts` |
 | Rust commands (thin) | `src-tauri/src/commands/mod.rs` (`install_kind`), `src-tauri/src/mcp_bridge.rs` (`mcp_bridge_start`/`mcp_bridge_stop`) |
 | Tauri config | `src-tauri/tauri.conf.json` (app id `org.openaec.planner`) |

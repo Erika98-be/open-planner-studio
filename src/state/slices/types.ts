@@ -32,6 +32,8 @@ export type { BarColorSelection };
 // MCP-bridge: status-shape voor de AI-serverindicator in de ui-state. Type-only import →
 // geen runtime-cyclus (contracts.ts is dependency-vrij).
 import type { McpServerStatus } from '@/services/mcp/contracts';
+// Opslag via de site: de VRAAG van de twee site-dialogen. Type-only import, net als hierboven.
+import type { SiteOpenRequest, SiteSaveRequest } from '@/services/fileAccess/siteDialogs';
 export type { McpServerStatus };
 
 export type WeekStartDay = 'monday' | 'sunday';
@@ -181,8 +183,15 @@ export type NotificationMessageKey =
   // Parameters `name` (extensienaam) en `message` (onvertaalde extensietekst, als platte tekst).
   | 'notifications.extensionMessage'
   | 'notifications.saveFailed'
+  // Opslag via de site (issue #309): de site weigerde omdat het bestand intussen verder is
+  // (`code === 'conflict'`). Parameter `name`. Het document blijft gewijzigd.
+  | 'notifications.siteSaveConflict'
+  | 'notifications.siteFileGone'
   | 'notifications.librarySaveFailed'
   | 'notifications.savedViaDownload'
+  // Opslaan in een browser die niet terugschrijft — zie `browserSaveNotice.ts` (één keer per sessie).
+  | 'notifications.browserCannotOverwrite'
+  | 'notifications.browserSavesAsDownload'
   | 'notifications.autoSaveFailed'
   | 'notifications.recoveryReadFailed'
   | 'notifications.recoveryRestoreFailed'
@@ -377,6 +386,9 @@ export interface AppNotification {
   helpArticleId?: string;
   /** Optionele vervolgknop; zie `NotificationAction` (serialiseerbaar, nooit een functie). */
   action?: NotificationAction;
+  /** Alleen voor `info`: hoe lang de melding blijft staan, in ms (standaard 5000). Voor uitleg
+   *  die je echt moet kunnen lezen, zoals de browseruitleg bij opslaan. */
+  durationMs?: number;
 }
 
 /** Wat een aanroeper meegeeft; `id` en `count` vult de store. */
@@ -562,6 +574,13 @@ export interface UIState {
    *  `state/actualStartQuestion.ts` (een promise-resolver hoort niet in state thuis, zoals bij
    *  `pendingExtensionConsent`). Modaal: telt mee in `hasBlockingDialogOpen`. */
   pendingActualStartQuestion: ActualStartQuestionRequest | null;
+  /** session — de openstaande vraag "Openen van de site" (issue #309), of `null`. Draagt alleen de
+   *  VRAAG; het antwoord gaat via de resolver in `state/siteDialogBridge.ts` (zoals bij
+   *  `pendingExtensionConsent`). Modaal: telt mee in `hasBlockingDialogOpen`. */
+  pendingSiteOpen: SiteOpenRequest | null;
+  /** session — de openstaande vraag "Opslaan op de site", of `null`. Zelfde opzet als
+   *  `pendingSiteOpen`. */
+  pendingSiteSave: SiteSaveRequest | null;
   // --- Bedrijfsbibliotheken: Backstage-sectie Bibliotheek-dialogen ---
   /** session — pool-importdialoog open (met demping-waarschuwing). */
   showPoolImportDialog: boolean;
