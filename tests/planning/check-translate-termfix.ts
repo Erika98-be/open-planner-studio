@@ -9,7 +9,7 @@
  * slaat foute over (invulplekken, $t, categorieën, tokens, leeg, onleesbaar, onbekend, nog onvertaald),
  * leest meervoudsvormen die als tekst binnenkomen, en houdt de nl-volgorde aan.
  */
-import { findAvoid, hashUnit, type Concept, type LangTermbase } from '../../scripts/translate/common';
+import { avoidWords, hashUnit, type Concept, type LangTermbase } from '../../scripts/translate/common';
 import { applyFindings, parsePluralText } from '../../scripts/translate/findings';
 import { checkUi } from '../../scripts/translate/gates';
 import { styleErrors } from '../../scripts/translate/termbase';
@@ -39,14 +39,14 @@ const tb: LangTermbase = {
 
 // ── 1. Dezelfde avoid-regel als de zachte poort ──────────────────────────────────────────────
 {
-  eq('hoofdletterongevoelig', findAvoid('Prikaži Ključni put', ['kritični put'], ['ključni put']), ['ključni put']);
-  eq('vorm van de term eerst weggestreept ("fri slakk" ⊃ "slakk")', findAvoid('Vis fri slakk', ['fri slakk'], ['slakk']), []);
-  eq('losse avoid naast de term telt wel', findAvoid('Fri slakk og slakk', ['fri slakk'], ['slakk']), ['slakk']);
-  eq('geen treffer', findAvoid('Kritični put', ['kritični put'], ['ključni put']), []);
-  eq('alleen als los woord: sr "лаг" in "Прилагођено"', findAvoid('Прилагођено', ['кашњење'], ['лаг']), []);
-  eq('alleen als los woord: ro "actual" in "actualizați"', findAvoid('Vă rugăm să actualizați', ['curent'], ['actual']), []);
-  eq('echte treffer als los woord (Cyrillisch)', findAvoid('Прикажи лаг задатка', ['кашњење'], ['лаг']), ['лаг']);
-  eq('zh/ja/ko: deeltekst blijft', findAvoid('显示滞后时间', ['延迟'], ['滞后']), ['滞后']);
+  eq('hoofdletterongevoelig', avoidWords('Prikaži Ključni put', ['kritični put'], ['ključni put']), ['ključni put']);
+  eq('vorm van de term eerst weggestreept ("fri slakk" ⊃ "slakk")', avoidWords('Vis fri slakk', ['fri slakk'], ['slakk']), []);
+  eq('losse avoid naast de term telt wel', avoidWords('Fri slakk og slakk', ['fri slakk'], ['slakk']), ['slakk']);
+  eq('geen treffer', avoidWords('Kritični put', ['kritični put'], ['ključni put']), []);
+  eq('alleen als los woord: sr "лаг" in "Прилагођено"', avoidWords('Прилагођено', ['кашњење'], ['лаг']), []);
+  eq('alleen als los woord: ro "actual" in "actualizați"', avoidWords('Vă rugăm să actualizați', ['curent'], ['actual']), []);
+  eq('echte treffer als los woord (Cyrillisch)', avoidWords('Прикажи лаг задатка', ['кашњење'], ['лаг']), ['лаг']);
+  eq('zh/ja/ko: deeltekst blijft', avoidWords('显示滞后时间', ['延迟'], ['滞后']), ['滞后']);
   const pkg = {
     kind: 'ui' as const, lang: 'hr', namespace: 'task', id: 'x', mode: 'missing' as const, tokens: [], keep: [],
     terms: [{ id: 'critical-path', nl: 'kritiek pad', en: ['critical path'], target: 'kritični put', forms: ['kritični put'], avoid: ['ključni put'] }],

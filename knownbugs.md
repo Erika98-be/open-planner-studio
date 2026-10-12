@@ -269,11 +269,10 @@ en noem het in je rapport of PR-tekst.
     nl-interface bij *Bestand › Voorbeelden*; de Help-artikelen noemen daarom de Engelse namen. Niet
     nagegaan of dat voor alle voorbeelden geldt. Voorstel: bewust laten, of per taal vertalen. — B
 
-101. **`i18n:resolve` overschrijft een met de hand gekozen bronhash in `i18n/ui-sources/`.** De samenvoeging
-     van ui-sources (`scripts/i18n-resolve.ts`) geeft geen `chosen` mee, dus een keuze in de merge-commit
-     gaat bij een latere run verloren. Het commentaar daar ("telt als zonder hash (actueel)") geldt ook niet
-     voor een taal zonder basislijn: daar wordt zo'n sleutel "ontbreekt". Gevonden in de review van de
-     vertaalstraat (Opus, 2026-10-12), in de code aangewezen, niet nagespeeld. — S
+102. **`apply-terms` vertrouwt `terms-NN.json` en `terms-check-01.map.json` zonder zegel.** De UI- en
+     docs-pakketten hebben sinds #323 een zegel (`build/translate-seal/`); de termbase-pakketten niet, terwijl
+     agents in dezelfde map schrijven. Voorstel: dezelfde `seal`/`sealErrors` in `prepare`/`apply-terms`.
+     Gevonden in de review van #323 (Opus, 2026-10-12), in de code aangewezen. — S
 
 ## Tests
 
@@ -300,6 +299,12 @@ en noem het in je rapport of PR-tekst.
 100. **Tailwind v4 scant ook bestanden buiten `src/`**, zoals `scripts/`. Een token als `[a:b]` in een
     logtekst wordt dan een CSS-regel in de bundel. Gezien bij #308 met `[build:platform]` (+36 bytes CSS);
     de logtekst is daarom aangepast. Voorstel: de bronnen van Tailwind beperken tot `src/` en `index.html`. — B
+
+103. **`scripts/run-ts.mjs` ruimt zijn tijdelijke map niet op.** Op de server stonden 1432 mappen
+     `ops-runts-*` in `/tmp`. Gezien door de reviewer van #323 (2026-10-12), niet verder nagegaan. — S
+
+104. **Geen automatische test voor de zegels en `check-docs`** (`scripts/translate/cli.ts`). In #323 alleen met
+     de hand nagespeeld. De CLI werkt vanuit `process.cwd()`, dus een test in een tijdelijke map kan. — S
 
 ## Wensen en open taken (geen bug)
 
