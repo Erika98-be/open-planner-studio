@@ -1389,7 +1389,7 @@
       "help": "Une tâche terminée avec un pourcentage d'avancement physique apparaît comme un seul point à la date d'état, ou plus tard si un prédécesseur l'exige, au lieu de ses dates réelles. Mesuré uniquement pour l'avancement physique ; pour les autres types d'avancement (par défaut dans P6 : durée), ce comportement n'a pas été mesuré et reste désactivé."
     },
     "p6InProgressStartLagElapsed": {
-      "label": "Le décalage DD écoulé d'un prédécesseur en cours ne compte pas",
+      "label": "Le décalage SS écoulé d'un prédécesseur en cours ne compte pas",
       "help": "Pour une relation début-début depuis une tâche déjà commencée, seule la partie du décalage non encore écoulée depuis son début réel à la date d'état compte."
     },
     "p6FinishFinishStartMilestoneLateFinish": {

@@ -1389,7 +1389,7 @@
       "help": "Un'attività completata con percentuale di avanzamento fisico appare come un unico punto sulla data di stato, o più tardi se un predecessore lo richiede, invece che sulle sue date effettive. Misurato solo per l'avanzamento fisico; per gli altri tipi di avanzamento (predefinito in P6: durata) questo comportamento non è stato misurato e resta disattivato."
     },
     "p6InProgressStartLagElapsed": {
-      "label": "Il ritardo II trascorso di un predecessore in corso non conta",
+      "label": "Il ritardo SS trascorso di un predecessore in corso non conta",
       "help": "In una relazione inizio-inizio da un'attività già iniziata conta solo la parte del ritardo non ancora trascorsa dal suo inizio effettivo alla data di stato."
     },
     "p6FinishFinishStartMilestoneLateFinish": {

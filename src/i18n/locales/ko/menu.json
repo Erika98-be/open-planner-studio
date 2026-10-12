@@ -230,7 +230,7 @@
       "lagSuccessor": "후행",
       "lag24hour": "24시간",
       "lagProjectDefault": "프로젝트 달력",
-      "ssLagFrom": "진행 중인 선행 작업의 시작-시작 지연 계산 기준",
+      "ssLagFrom": "진행 중인 선행 작업의 시작-시작(SS) 지연 계산 기준",
       "ssLagEarlyStart": "빠른 시작(잔여 작업 시작)",
       "ssLagActualStart": "실제 시작(데이터 날짜)",
       "ssLagNeedsConvention": "규칙 “{{convention}}”이(가) 켜져 있을 때만 적용됩니다.",

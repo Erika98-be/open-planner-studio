@@ -1339,7 +1339,7 @@
       "help": "Fiziksel tamamlanma yüzdesine sahip tamamlanmış bir görev, gerçek tarihleri yerine durum tarihinde ya da bir öncül gerektiriyorsa daha sonra tek bir nokta olarak gösterilir. Yalnızca fiziksel ilerleme için ölçülmüştür; diğer ilerleme türleri için (P6 varsayılanı: süre) bu davranış ölçülmemiştir ve kapalı kalır."
     },
     "p6InProgressStartLagElapsed": {
-      "label": "Devam eden bir öncülden geçmiş BB gecikmesi sayılmaz",
+      "label": "Devam eden bir öncülden geçmiş SS gecikmesi sayılmaz",
       "help": "Zaten başlamış bir görevden başlangıç-başlangıç ilişkisinde, gecikmenin yalnızca gerçek başlangıcından durum tarihine kadar henüz geçmemiş kısmı sayılır."
     },
     "p6FinishFinishStartMilestoneLateFinish": {

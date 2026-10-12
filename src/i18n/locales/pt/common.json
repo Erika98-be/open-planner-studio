@@ -1389,7 +1389,7 @@
       "help": "Uma tarefa concluída com percentual de avanço físico aparece como um único ponto na data de estado, ou mais tarde se um predecessor o exigir, em vez de nas suas datas reais. Medido apenas para o progresso físico; para outros tipos de progresso (padrão do P6: duração) este comportamento não foi medido e permanece desativado."
     },
     "p6InProgressStartLagElapsed": {
-      "label": "O atraso II decorrido de um predecessor em andamento não conta",
+      "label": "O atraso SS decorrido de um predecessor em andamento não conta",
       "help": "Numa relação início-início a partir de uma tarefa já iniciada, só conta a parte do atraso que ainda não decorreu desde o seu início real na data de estado."
     },
     "p6FinishFinishStartMilestoneLateFinish": {
