@@ -264,6 +264,29 @@ siteTest('nieuw document: Ctrl+S vraagt een naam en maakt een nieuw bestand op d
   await expect(saveDialog(page)).toHaveCount(0);
 });
 
+siteTest('sluiten met Opslaan: de site-vraag ligt boven de sluitvraag en het tabblad sluit na opslaan', async ({ page, ops: _ops }) => {
+  // Twee documenten, zodat het sluiten van het actieve tabblad de app niet leeg achterlaat.
+  await page.evaluate(() => window.__OPS__!.store.getState().setProject({ name: 'Eerste' }));
+  await page.evaluate(() => window.__OPS__!.store.getState().newDocument());
+  await page.evaluate(() => window.__OPS__!.store.getState().setProject({ name: 'Te sluiten' }));
+  await makeDirty(page, 'Werk');
+  const closing = await page.evaluate(() => window.__OPS__!.store.getState().activeDocumentId);
+
+  await page.locator('.ops-tab-group').filter({ has: page.locator(`[data-ops-tab="${closing}"]`) }).locator('.ops-tab-close').click();
+  const close = page.locator('[data-ops-close-dialog]');
+  await expect(close).toBeVisible();
+  await close.locator('[data-ops-close-choice="save"]').click();
+  await expect(saveDialog(page)).toBeVisible();
+  await expect(saveDialog(page).locator('[data-ops-site-save-name]')).toHaveValue('Te sluiten.ifc');
+  await saveDialog(page).locator('[data-ops-site-save-confirm]').click();
+
+  await expect(saveDialog(page)).toHaveCount(0);
+  await expect(close).toHaveCount(0);
+  await expect.poll(() => saves(page).then((s) => s.length)).toBe(1);
+  expect((await saves(page))[0]).toMatchObject({ id: null, name: 'Te sluiten.ifc' });
+  await expect.poll(() => page.evaluate((id) => window.__OPS__!.store.getState().documents.some((d) => d.id === id), closing)).toBe(false);
+});
+
 siteTest('conflict: iemand anders sloeg op; eigen melding en het document blijft gewijzigd', async ({ page, ops }) => {
   ops.acceptError('Opslaan op de site mislukt');
   await openFromSiteDialog(page, 'p1');

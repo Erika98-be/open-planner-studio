@@ -55,6 +55,10 @@ function SiteSaveDialogBody({ defaultName }: { defaultName: string }) {
     <Dialog
       onCancel={cancel}
       onConfirm={submit}
+      // Deze vraag kan midden in een andere handeling komen, bijv. "Opslaan" in de sluitvraag van een
+      // tabblad (`data-ops-close-dialog`, z-index 80). Ze moet daar bovenop liggen, anders vangt die
+      // laag elke klik af en hangt het sluiten.
+      overlayClassName="bg-black/60 z-[90]"
       // Enter op een gefocuste knop activeert díé knop: Enter op "Op deze pc…" mag niet stil naar
       // de site opslaan.
       focusedButtonOwnsEnter

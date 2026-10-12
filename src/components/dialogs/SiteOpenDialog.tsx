@@ -96,6 +96,9 @@ function SiteOpenDialogBody({ extensions }: { extensions: string[] }) {
   return (
     <Dialog
       onCancel={cancel}
+      // Dezelfde laag als "Opslaan op de site": een vraag van een bestandshandeling ligt boven elke
+      // dialoog waaruit die handeling kwam (ook de sluitvraag van een tabblad, z-index 80).
+      overlayClassName="bg-black/60 z-[90]"
       panelClassName="bg-surface border border-border rounded-[14px] shadow-[var(--shadow-pop)] w-[560px] max-h-[88vh] flex flex-col overflow-hidden"
       panelProps={{ 'data-ops-site-open-dialog': true }}
     >
