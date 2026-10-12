@@ -24,6 +24,7 @@ import {
   type ExtEventListener,
 } from '@/services/extensionEvents';
 import { applyPermissionGuards } from './permissions';
+import { retainActiveDocument } from './retainActiveDocument';
 import { createHelpApi } from './helpApi';
 import {
   assertNoImportSourceDrift,
@@ -42,7 +43,6 @@ import {
   fromExtTaskUpdates,
   fromExtSequenceInput,
   fromExtImportResult,
-  retainActiveScheduling,
   fromExtRibbonTab,
   fromExtFontProvider,
 } from './extMappers';
@@ -302,8 +302,9 @@ export function createExtensionApi(
       ),
       loadProject: (result: ExtImportResult) => {
         const store = document.store.getState();
-        // Zelfde project-id ⇒ profiel en reken-opties van het document blijven (N3, B29).
-        store.loadState(retainActiveScheduling(fromExtImportResult(result), store.project));
+        // Zelfde project-id ⇒ wat het contract niet draagt, blijft van het document (N3, B29); zie
+        // `retainActiveDocument`.
+        store.loadState(retainActiveDocument(result, fromExtImportResult(result), store));
         store.runCPM();
       },
       recalculate: () => document.store.getState().runCPM(),

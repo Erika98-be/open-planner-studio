@@ -33,7 +33,7 @@ import type { Sequence } from '@/types/sequence';
 import type { Resource, ResourceAssignment } from '@/types/resource';
 import type {
   ExtProject, ExtCalendar, ExtTask, ExtTaskTime, ExtSequence, ExtResource, ExtAssignment,
-  ExtRibbonTab, ExtFontProvider, ExtImportSourceInfo,
+  ExtRibbonTab, ExtFontProvider, ExtImportSourceInfo, ExtImportResult,
 } from '@/extensions/extTypes';
 import { EXT_IMPORT_SOURCE_PAGE_SIZE_MAX } from '@/extensions/extTypes';
 import type { ExtensionApi, ExtensionPermission } from '@/extensions/types';
@@ -1133,8 +1133,8 @@ for (const [naam, ext, bron, sleutels] of [
 
 // ── 8. N3 (review #169): lees-wijzig-laad van HETZELFDE project houdt profiel en opties vast ──
 // Het gedocumenteerde pad om toewijzingen te zetten is `loadProject(…getProject()…)`. Mutatiebewijs:
-// laat `retainActiveScheduling` in `extensionApi.loadProject` weg (of laat hem `loaded` teruggeven)
-// en N3-01 t/m N3-04 kleuren rood (profiel afwezig = OPS, de vier P6-opties en `leveling` weg).
+// laat `retainActiveScheduling` `loaded` teruggeven en N3-01, -02, -04, -05 en -06 kleuren rood
+// (profiel afwezig = OPS, de vier P6-opties en `leveling` weg).
 {
   const p6Options: Project['schedulingOptions'] = {
     p6CompletedLateFromRemainingWindow: true,
@@ -1209,6 +1209,90 @@ for (const [naam, ext, bron, sleutels] of [
     ander.id, ander.schedulingProfile, ander.schedulingOptions?.useExpectedFinishDates,
     ander.schedulingOptions?.leveling, ander.schedulingOptions?.totalFloatMode,
   ], ['ander-project', undefined, undefined, undefined, 'smallest']);
+}
+
+// ── 9. N3-fixronde: documentdata die `ExtImportResult` niet draagt, blijft bij hetzelfde id ──
+// `retainActiveDocument` (src/extensions/retainActiveDocument.ts). Mutatiebewijs per check staat in
+// de PR (#329): elke regel in de return van `retainActiveDocument` weghalen kleurt de bijbehorende
+// N3D-check rood; `cleanDanglingReferences` laten teruggeven wat hij krijgt kleurt N3D-08 en N3D-10.
+{
+  const api = createExtensionApi('n3-loadproject-document', [], undefined, appStoreContext, {
+    app: appStoreContext,
+    showNotification: () => {},
+  });
+  const herladen = (wijzig?: (r: ExtImportResult) => void) => {
+    const r: ExtImportResult = {
+      project: api.data.getProject(), calendar: api.data.getCalendar(), tasks: api.data.getTasks(),
+      sequences: api.data.getSequences(), resources: api.data.getResources(), assignments: api.data.getAssignments(),
+    };
+    wijzig?.(r);
+    api.data.loadProject(r);
+    return useAppStore.getState();
+  };
+  const zetDocument = () => {
+    useAppStore.getState().newProject();
+    const taakId = api.data.addTask({ name: 'Op ploegkalender' });
+    const basis = useAppStore.getState().calendar;
+    const ploeg: WorkCalendar = { ...structuredClone(basis), id: 'cal-ploeg', name: 'Ploeg' };
+    useAppStore.setState((s) => {
+      s.calendars = [
+        ...s.calendars.map((c) => (c.id === s.project.calendarId ? { ...c, p6NonWorkPenaltyDates: ['2026-01-05'] } : c)),
+        ploeg,
+      ];
+      s.calendar = s.calendars.find((c) => c.id === s.project.calendarId)!;
+      s.resources = [{ ...VOL_RESOURCE, parentId: undefined, libraryOrigin: undefined, calendarId: 'cal-ploeg' }];
+      const taak = s.tasks.find((t) => t.id === taakId);
+      if (taak) taak.calendarId = 'cal-ploeg';
+      s.baselines = [{ id: 'bl-1', name: 'Start', createdAt: '2026-01-01T00:00:00Z', tasks: [], projectEnd: '2026-02-01', projectDuration: 20 }];
+      s.activeBaselineId = 'bl-1';
+      s.activityCodeTypes = [{ id: 'act-fase', name: 'Fase', values: [{ id: 'v-ruw', code: 'RUW' }] }];
+      s.customFieldDefs = [{ id: 'cf-kosten', name: 'Kosten', type: 'cost' }];
+      s.ifcGlobalIds = { 'task:x': '0123456789abcdefghijkl' };
+    });
+    return taakId;
+  };
+
+  const taakId = zetDocument();
+  const na = herladen();
+  eq('N3D-01 baselines blijven', na.baselines.map((b) => b.id), ['bl-1']);
+  eq('N3D-02 activeBaselineId blijft', na.activeBaselineId, 'bl-1');
+  eq('N3D-03 resourcekalenders blijven, zonder dubbele projectkalender',
+    na.calendars.map((c) => c.id).sort(), [na.project.calendarId, 'cal-ploeg'].sort());
+  eq('N3D-04 activityCodeTypes blijven', na.activityCodeTypes.map((t) => t.id), ['act-fase']);
+  eq('N3D-05 customFieldDefs blijven', na.customFieldDefs.map((d) => d.id), ['cf-kosten']);
+  eq('N3D-06 ifcGlobalIds blijven', na.ifcGlobalIds, { 'task:x': '0123456789abcdefghijkl' });
+  eq('N3D-07 resource en taak houden hun verwijzing naar de ploegkalender', [
+    na.resources[0]?.calendarId, na.tasks.find((t) => t.id === taakId)?.calendarId,
+  ], ['cal-ploeg', 'cal-ploeg']);
+  eq('N3D-07a ongewijzigde projectkalender houdt velden die ExtCalendar niet naar binnen draagt',
+    na.calendar.p6NonWorkPenaltyDates, ['2026-01-05']);
+
+  // De extensie wijzigt de projectkalender: die wijziging wint van de bibliotheek-entry.
+  zetDocument();
+  const kalender = herladen((r) => {
+    r.calendar = { ...r.calendar, holidays: [...r.calendar.holidays, { name: 'Extensievrij', startDate: '2026-07-01', endDate: '2026-07-01' }] };
+  });
+  eq('N3D-09 een gewijzigde projectkalender volgt de extensie (cache én bibliotheek)', [
+    kalender.calendar.holidays.some((h) => h.name === 'Extensievrij'),
+    kalender.calendars.find((c) => c.id === kalender.project.calendarId)?.holidays.some((h) => h.name === 'Extensievrij'),
+    kalender.calendars.map((c) => c.id).sort(),
+  ], [true, true, [kalender.project.calendarId, 'cal-ploeg'].sort()]);
+
+  // Hetzelfde id, maar de extensie wijst naar een kalender die niet bestaat ⇒ terugval (removeCalendar).
+  zetDocument();
+  const onbekend = herladen((r) => { r.resources = r.resources.map((x) => ({ ...x, calendarId: 'bestaat-niet' })); });
+  eq('N3D-10 onbekende resourcekalender valt terug op de projectkalender', onbekend.resources[0]?.calendarId, undefined);
+
+  // Ander id ⇒ nieuw project: de velden gaan zoals voorheen weg, verwijzingen vallen terug.
+  const anderTaakId = zetDocument();
+  const ander = herladen((r) => { r.project = { ...r.project, id: 'ander-project-2' }; });
+  eq('N3D-11 ander id ⇒ baselines, resourcekalenders, codes, velden en GlobalIds weg', [
+    ander.baselines.length, ander.activeBaselineId, ander.calendars.some((c) => c.id === 'cal-ploeg'),
+    ander.activityCodeTypes.length, ander.customFieldDefs.length, ander.ifcGlobalIds,
+  ], [0, null, false, 0, 0, null]);
+  eq('N3D-08 ander id ⇒ verwijzingen naar de verdwenen ploegkalender vallen terug op de projectkalender', [
+    ander.resources[0]?.calendarId, ander.tasks.find((t) => t.id === anderTaakId)?.calendarId,
+  ], [undefined, undefined]);
 }
 
 // ── Uitslag ──────────────────────────────────────────────────────────────────

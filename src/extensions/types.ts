@@ -286,7 +286,9 @@ export interface ExtensionApi {
     /** Retourneert het nieuwe relatie-id, of `null` wanneer de relatie geweigerd is. */
     addSequence(seq: Omit<ExtSequence, 'id'>): string | null;
     /** Vervang het volledige project (zoals een import doet) en herbereken. Zelfde project-id als het
-     *  actieve project ⇒ rekenprofiel en niet-publieke reken-opties blijven; ander id ⇒ OPS. */
+     *  actieve project ⇒ wat dit resultaat niet kan dragen, blijft (rekenprofiel en reken-opties,
+     *  baselines, resourcekalenders, activiteitcodes, eigen velden, IFC-GlobalIds); ander id ⇒ nieuw
+     *  project, OPS. */
     loadProject(result: ExtImportResult): void;
     /** runCPM — herbereken het schema. */
     recalculate(): void;

@@ -270,9 +270,22 @@ negeert een `resourceIds` die gelijk is aan de huidige waarde (bijvoorbeeld een 
 `getTasks()`; de volgorde telt niet) en `addTask` accepteert alleen `[]`. Een andere waarde **gooit een
 fout** vóór er iets gewijzigd is — ook de overige velden uit dezelfde aanroep worden dan niet toegepast.
 Toewijzingen zet een extensie mee via `loadProject(result)` (`result.assignments`); losse
-toewijzingsmutaties kent de API niet. Laad je zo hetzelfde project terug (lees met `getProject()` en de
-andere getters, wijzig, laad), dan blijven het rekenprofiel en alle reken-opties van het project staan;
-zie *Rekenprofiel* hieronder.
+toewijzingsmutaties kent de API niet.
+
+Laad je zo hetzelfde project terug (lees met `getProject()` en de andere getters, wijzig, laad), dan
+blijft de projectdata staan die `ExtImportResult` niet kan dragen. Dat geldt alleen als
+`result.project.id` gelijk is aan het id van het actieve project:
+
+- het rekenprofiel en alle reken-opties (zie *Rekenprofiel* hieronder);
+- de baselines en de actieve baseline;
+- de resourcekalenders (de projectkalender volgt `result.calendar`; stuur je hem ongewijzigd terug,
+  dan blijft hij zoals hij was);
+- de activiteitcodes en de eigen velden (de definities; de waarden op taken stuur je zelf mee);
+- de IFC-GlobalIds, zodat objecten bij opslaan hun identiteit houden.
+
+Bij een ander id is het een nieuw project: deze velden zijn dan leeg. Wijst een resource of taak dan
+naar een kalender die er niet meer is, dan valt die terug op de projectkalender. Bij elk id gaan de
+XER-bron, de koppeling met een resourcebibliotheek en de markering "onbewerkte import" weg.
 
 Belangrijk: na het muteren van taken/relaties zelf `api.data.recalculate()` aanroepen — het schema wordt niet reactief herberekend. `loadProject()` doet dat automatisch.
 

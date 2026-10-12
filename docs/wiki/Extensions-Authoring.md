@@ -109,9 +109,20 @@ Important: after mutating tasks or relations yourself, call `api.data.recalculat
 not recalculated reactively. `loadProject()` does this automatically.
 
 `loadProject(result)` never takes a scheduling profile from the extension. If `result.project.id` equals
-the id of the active project (read, change, load), the project keeps its scheduling profile and all its
-scheduling options, including the options that `ExtSchedulingOptions` does not expose. A public option
-that you change or remove follows your value. A different id is a new project: it calculates as OPS.
+the id of the active project (read, change, load), the project keeps the data that `ExtImportResult`
+cannot carry:
+
+- its scheduling profile and all its scheduling options, including the options that
+  `ExtSchedulingOptions` does not expose (a public option that you change or remove follows your value);
+- its baselines and the active baseline;
+- its resource calendars (the project calendar follows `result.calendar`; if you send it back
+  unchanged, it stays as it was);
+- its activity code types and custom field definitions (you send the values on tasks yourself);
+- its IFC GlobalIds.
+
+A different id is a new project: it calculates as OPS and these fields are empty. A resource or task
+that points to a calendar that no longer exists falls back to the project calendar. With any id, the
+XER source, the resource library link and the "unedited import" marker are removed.
 
 ### Binary assets & font providers
 
