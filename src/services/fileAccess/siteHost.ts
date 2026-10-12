@@ -22,7 +22,8 @@
  * ## De vier functies
  *
  * - `list({ extensions })` — de bestanden die de tool kan openen. `extensions` zijn extensies zonder
- *   punt, in kleine letters (`['ifc', 'csv', 'xml', 'mpp', 'xer']`); de site mag erop filteren.
+ *   punt, in kleine letters (`['ifc', 'csv', 'xml', 'mpp', 'xer']`); de site mag erop filteren (de
+ *   tool filtert daarna zelf ook op de extensie van `name`).
  * - `open(id, version?)` — de inhoud van een bestand. Zonder `version` de nieuwste versie. `data` mag
  *   een `Blob`, `ArrayBuffer`, `Uint8Array` of tekst zijn; tekstformaten leest de tool als UTF-8
  *   (zoals `File.text()`).

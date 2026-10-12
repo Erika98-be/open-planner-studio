@@ -127,10 +127,17 @@ export async function saveNewSiteFile(name: string, content: string): Promise<Si
   return { ...info, name: info.name || name };
 }
 
-/** De lijst van bestanden die de tool kan openen. Gooit bij een fout of zonder opslag. */
+/**
+ * De lijst van bestanden die de tool kan openen. De site MAG op `extensions` filteren; doet ze dat
+ * niet, dan filtert de tool zelf, zodat de lijst nooit bestanden toont die niet te openen zijn.
+ * Gooit bij een fout of zonder opslag.
+ */
 export async function listSiteFiles(extensions: string[]): Promise<SiteFileInfo[]> {
   const files = await requireStorage().list({ extensions });
-  return Array.isArray(files) ? files.filter((f) => f && typeof f.id === 'string' && typeof f.name === 'string') : [];
+  if (!Array.isArray(files)) return [];
+  const wanted = new Set(extensions.map((e) => e.toLowerCase()));
+  return files.filter((f) => f && typeof f.id === 'string' && typeof f.name === 'string'
+    && (wanted.size === 0 || wanted.has(extensionOf(f.name))));
 }
 
 /** De versies van één bestand, in de volgorde van de site. Gooit bij een fout of zonder opslag. */

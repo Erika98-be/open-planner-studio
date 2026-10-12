@@ -96,6 +96,7 @@ const {
 } = await import('@/services/fileAccess');
 const {
   knownSiteVersion, resetSiteVersionsForTests, openSiteFile, saveNewSiteFile, rememberSiteVersion, siteDataToText,
+  listSiteFiles,
 } = await import('@/services/fileAccess/siteBackend');
 const { addRecent, loadRecents, sameRef } = await import('@/services/fileAccess/recentFiles');
 const {
@@ -288,6 +289,11 @@ const clearHost = () => { delete win.openaecHost; win.parent = win; delete win._
   try { await saveToRef({ kind: 'site', id: 'f2' }, '6', 'B.ifc'); } catch (e) { err = e; }
   eq('C4 conflict gooit door met code', isSiteConflict(err), true);
   eq('C4 basis blijft v5 na een conflict', knownSiteVersion('f2'), 'v5');
+  // De site filtert niet: de tool toont alleen wat hij kan openen (extensie van de naam).
+  site.put('pdf', 'Tekening.PDF', ['x']);
+  site.put('xer', 'Bron.XER', ['x']);
+  eq('C4b lijst gefilterd op extensie (hoofdletterongevoelig)', (await listSiteFiles(['ifc', 'xer'])).map((f) => f.id), ['f2', 'xer']);
+  eq('C4b lijst vraagt de extensies aan de site', site.calls.at(-1), { fn: 'list', args: [{ extensions: ['ifc', 'xer'] }] });
   const created = await saveNewSiteFile('Nieuw.ifc', 'inhoud');
   eq('C5 nieuw bestand: save zonder id en zonder baseVersion', site.calls.at(-1), {
     fn: 'save', args: [{ id: undefined, name: 'Nieuw.ifc', baseVersion: undefined, type: 'application/x-step' }],
