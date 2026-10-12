@@ -68,3 +68,13 @@ van wat de eigenaar zag (wel 0,5–1,5 s per tick na een wijziging). ⇒ perf-PR
 5. Strooktekst "would shift 2882 tasks" (2036 voltooide taken tellen mee; melding te ruim).
 6. Relatielijnen op jaarschaal bij grote planningen (verbergen onder een zoomdrempel?).
 7. Overige fouten uit de critreview (VERMOED-punten, Fable 13/14) en de 50 geldende besluiten per groep.
+
+## Releasecheck (eigenaar, 2026-10-12)
+
+Eigenaarsregel voor deze release: "alles wat nieuw is doen we ernaa. alles wat gewoon hoort bij een goede
+implementatie van wat al gebouwd is doen we voor de release". Laadbolletje/rekenen op de achtergrond ⇒ na de release.
+Testversie: worktree `release-check` (branch `claude/release-check` = main 080c227e + #293 + #294 + #296),
+http://localhost:3049/.
+
+- Checkstap 1 (rehab-2: Arabische namen, paneel < 1 s, F5 ~3 s, doorgetrokken relatielijnen): **geslaagd** —
+  eigenaar: "wow, dit is echt duizendmaal beter".
