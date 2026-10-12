@@ -96,7 +96,7 @@ const back = readP6XML(xml);
 eq('6a aantallen', [back.tasks.length, back.sequences.length, back.assignments.length, back.resources.length],
   [src.tasks.length, src.sequences.length, src.assignments.length, src.resources.length]);
 eq('6b werkbanden (halve uren) exact terug', back.calendar.workTime?.byWeekday[1], [halfHour, afternoon]);
-eq('6c feestdagen per datum terug', back.calendar.holidays.map(h => h.startDate), ['2026-07-27', '2026-07-28', '2026-07-29']);
+eq('6c bouwvak komt terug als één reeks (naam gaat verloren: P6 kent er geen)', back.calendar.holidays.map(h => [h.name, h.startDate, h.endDate]), [['Holiday', '2026-07-27', '2026-07-29']]);
 eq('6d werkende uitzondering met banden terug', (back.calendar.workingExceptions ?? []).map(w => [w.startDate, w.bands]), [['2026-05-09', [{ start: 480, end: 750 }]]]);
 eq('6e voortgang terug', back.tasks.find(t => t.wbsCode === 'B1010')?.time.completion, 0.5);
 eq('6f relatietype terug', back.sequences.map(s => s.type).sort(), src.sequences.map(s => s.type).sort());

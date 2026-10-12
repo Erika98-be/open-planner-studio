@@ -9,7 +9,8 @@ import { Project } from '@/types/project';
 import { WorkCalendar, Holiday, WorkingException } from '@/types/calendar';
 import { createDefaultCalendar } from '@/engine/calendar/defaultCalendar';
 import { generateId } from '@/utils/id';
-import { parseInstant, localTodayIso } from '@/utils/dateUtils';
+import { parseInstant, localTodayIso, parseDate, formatDate, addCalendarDays } from '@/utils/dateUtils';
+import { UNNAMED_HOLIDAY_NAME, UNNAMED_WORKING_EXCEPTION_NAME } from '@/services/calendarRecurrence';
 import { normalizeImportedProgress, deriveImportedWorkRules, reconstructResourceIds } from '@/services/importNormalize';
 import { flattenOrder } from '@/utils/wbs';
 import { emptyMissingScheduleDates, importDateTime, isoDatePrefixOrToday, parseImportedInstant, resolveMissingScheduleDates } from '@/services/importDates';
@@ -284,7 +285,7 @@ function parseP6HolidayOrExceptions(calEl: Element, alwaysLastMinute = false): {
     }
     const wholeDayOff = bands.length === 1 && bands[0].start === 0 && bands[0].end === 1440;
     if (bands.length === 0 || wholeDayOff) {
-      holidays.push({ name: getElementText(hEl, 'Name') || 'Feestdag', startDate, endDate });
+      holidays.push({ name: getElementText(hEl, 'Name') || UNNAMED_HOLIDAY_NAME, startDate, endDate });
     } else {
       bands.sort((a, b) => a.start - b.start);
       // Aansluitende blokken samenvoegen: de writer splitst een werkdag van 24 uur in twee blokken,
@@ -295,7 +296,7 @@ function parseP6HolidayOrExceptions(calEl: Element, alwaysLastMinute = false): {
           bands.splice(k, 1);
         }
       }
-      workingExceptions.push({ name: getElementText(hEl, 'Name') || 'Werkende uitzondering', startDate, endDate, bands });
+      workingExceptions.push({ name: getElementText(hEl, 'Name') || UNNAMED_WORKING_EXCEPTION_NAME, startDate, endDate, bands });
     }
   }
   return { holidays, workingExceptions };
@@ -333,6 +334,28 @@ export function p6FinishUsesLastMinute(root: Element, writtenByOps: boolean): bo
     if (minutes % 5 !== 0) return true;
   }
   return false;
+}
+
+/**
+ * P6 schrijft een uitzondering per DATUM; een bouwvak van drie weken staat er als vijftien losse
+ * dagen. Voeg aansluitende dagen weer samen tot één reeks, maar alleen als dat niets verandert:
+ * de volgende dag begint precies één kalenderdag na het einde, met dezelfde naam en (bij een
+ * werkende uitzondering) dezelfde werktijd. Elke dag van de reeks blijft dus even vrij of werkend.
+ */
+function mergeConsecutiveDays<T extends { name: string; startDate: string; endDate: string; bands?: { start: number; end: number }[] }>(items: readonly T[]): T[] {
+  const sorted = [...items].sort((a, b) => a.startDate.localeCompare(b.startDate));
+  const out: T[] = [];
+  for (const item of sorted) {
+    const last = out[out.length - 1];
+    const lastEnd = last ? last.endDate || last.startDate : '';
+    if (last && last.name === item.name && JSON.stringify(last.bands) === JSON.stringify(item.bands)
+      && formatDate(addCalendarDays(parseDate(lastEnd), 1)) === item.startDate) {
+      out[out.length - 1] = { ...last, endDate: item.endDate || item.startDate };
+    } else {
+      out.push({ ...item });
+    }
+  }
+  return out;
 }
 
 function directChildrenByLocalName(parent: Element, localName: string): Element[] {
@@ -1239,8 +1262,8 @@ function readP6Calendar(calEl: Element, lastMinute = false): WorkCalendar {
   // dezelfde dag dubbel, dan wint de werkende uitzondering (die is specifieker).
   const workingDates = new Set(workingExceptions.map(w => w.startDate));
   const offDays = holidays.filter(h => !(h.startDate === h.endDate && workingDates.has(h.startDate)));
-  if (offDays.length > 0) calendar.holidays = offDays;
-  if (workingExceptions.length > 0) calendar.workingExceptions = workingExceptions;
+  if (offDays.length > 0) calendar.holidays = mergeConsecutiveDays(offDays);
+  if (workingExceptions.length > 0) calendar.workingExceptions = mergeConsecutiveDays(workingExceptions);
 
   return calendar;
 }

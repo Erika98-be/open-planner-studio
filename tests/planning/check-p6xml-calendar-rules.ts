@@ -5,6 +5,8 @@
 //     Bewijs met de einddatum ná herberekenen: een halve-uurkalender mag geen minuut per dag kosten.
 // (3) Een werkende uitzondering van 24 uur blijft na export en heropenen een werkdag (P6 leest één
 //     blok 00:00–23:59 als vrije dag; de writer splitst, de lezer voegt samen).
+// (4) P6 schrijft een uitzondering per datum: de lezer voegt aansluitende dagen weer samen tot één
+//     reeks (alleen bij gelijke naam en werktijd), met een vaste taalonafhankelijke naam.
 import { readP6XML } from '@/services/p6/p6xmlReader';
 import { writeP6XML } from '@/services/p6/p6xmlWriter';
 import type { ImportResult } from '@/services/importTypes';
@@ -98,6 +100,23 @@ function roundTrip(r: ImportResult): { xml: string; back: ImportResult } {
   eq('3b 24 uur blijft een werkende uitzondering', (back.calendar.workingExceptions ?? []).map(w => [w.startDate, w.bands]),
     [['2026-03-07', [{ start: 0, end: 1440 }]], ['2026-03-08', [{ start: 360, end: 1320 }]]]);
   eq('3c en wordt geen feestdag', back.calendar.holidays.map(h => h.startDate), []);
+}
+
+// (4) Per-datum-uitzonderingen samenvoegen.
+{
+  const day = (date: string, work = '') => `<HolidayOrException><Date>${date}T00:00:00</Date>${work || '<WorkTime xsi:nil="true" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"/>'}</HolidayOrException>`;
+  const wt = (s: string, f: string) => `<WorkTime><Start>${s}</Start><Finish>${f}</Finish></WorkTime>`;
+  const exceptions = '<HolidayOrExceptions>'
+    + day('2026-07-27') + day('2026-07-28') + day('2026-07-29')          // reeks
+    + day('2026-07-31')                                                   // los (30 ontbreekt)
+    + day('2026-08-01', wt('08:00:00', '12:59:00')) + day('2026-08-02', wt('08:00:00', '12:59:00')) // werkende reeks
+    + day('2026-08-03', wt('08:00:00', '15:59:00'))                      // andere werktijd: los
+    + '</HolidayOrExceptions>';
+  const r = readP6XML(p6File({ start: '08:00:00', finish: '15:59:00', hpd: 8, hours: 8, plannedFinish: '2026-03-02T16:00:00', exceptions }));
+  eq('4a vrije dagen: reeks + losse dag', r.calendar.holidays.map(h => [h.name, h.startDate, h.endDate]),
+    [['Holiday', '2026-07-27', '2026-07-29'], ['Holiday', '2026-07-31', '2026-07-31']]);
+  eq('4b werkende dagen: alleen bij gelijke werktijd samen', (r.calendar.workingExceptions ?? []).map(w => [w.name, w.startDate, w.endDate]),
+    [['Working exception', '2026-08-01', '2026-08-02'], ['Working exception', '2026-08-03', '2026-08-03']]);
 }
 
 if (fails.length > 0) {

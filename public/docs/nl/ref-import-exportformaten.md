@@ -68,7 +68,7 @@ Per bestandsformaat: of je het kunt openen, opslaan en exporteren, wat er wel en
 
 **Wat meegaat** — WBS-structuur en taken met duur, datums en voortgang; relaties met lag; constraints (ook een tweede, als zachte constraint); kalenders; resources en toewijzingen; de statusdatum (als `DataDate`); een eigen taaktype, in een eigen veld `OPS Custom Task Type` dat de app terugleest en dat P6 mag negeren.
 
-**Wat niet meegaat** — baselines en deadlines; activiteitcodes, eigen velden, aantekeningen en externe koppelingen; de reken-opties. P6 kent geen lag in procenten: de app rekent die om naar een vast aantal dagen. Een lag in kalenderdagen wordt een lag in werktijd: 3 kalenderdagen worden 3 werkdagen. Een hammock wordt een gewone taak, een handmatig geplande taak een gewone taak met berekende datums en een nivelleervertraging van minder dan een dag valt weg.
+**Wat niet meegaat** — baselines en deadlines; activiteitcodes, eigen velden, aantekeningen en externe koppelingen; de reken-opties; de namen van feestdagen. P6 kent per vrije dag geen naam: na heropenen heet een feestdag *Holiday* en een werkende uitzondering *Working exception*. Aansluitende vrije dagen komen terug als één reeks. P6 kent geen lag in procenten: de app rekent die om naar een vast aantal dagen. Een lag in kalenderdagen wordt een lag in werktijd: 3 kalenderdagen worden 3 werkdagen. Een hammock wordt een gewone taak, een handmatig geplande taak een gewone taak met berekende datums en een nivelleervertraging van minder dan een dag valt weg.
 
 ## Primavera-bestand (`.xer`)
 
