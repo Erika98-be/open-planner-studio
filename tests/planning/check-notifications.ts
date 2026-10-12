@@ -276,36 +276,36 @@ const naTaak = S();
 S().setUI({ rightPanelCollapsed: !S().ui.rightPanelCollapsed });
 truthy('63 een UI-wijziging telt niet als inhoudswijziging', sameIFCSource(naTaak, S()));
 
-// ── 9. Relatie leggen meldt zich (issue #40) ────────────────────────────────
+// ── 9. Relatie leggen: alleen een weigering meldt zich (issue #40, eigenaarsbesluit 2026-10-12) ──
 // De Relatie-knop legde bij 2 selecties wél een relatie aan, maar volstrekt geluidloos — en een
 // geweigerd duplicaat was helemaal niet van "de knop doet niets" te onderscheiden. Alle drie de
 // callsites (lint-knop, Relaties-paneel, slepen in de Gantt) lopen nu door deze ene wrapper.
+// Sinds 2026-10-12 meldt een GESLAAGDE relatie zich niet meer (toast "Relatie aangemaakt" weg,
+// eigenaarsbesluit): de pijl en de kolom Voorgangers tonen hem al. Een weigering meldt zich wel.
 clearAll();
 S().newProject();
 const rA = S().addTask({ name: 'Fundering' });
 const rB = S().addTask({ name: 'Wanden' });
 const rel1 = createRelationWithFeedback(rA, rB);
 truthy('64 de relatie is aangemaakt', !!rel1 && S().sequences.some(q => q.id === rel1));
-eq('65 en meldt zich', N().length, 1);
-eq('66 met de aanmaak-sleutel', N()[0]?.messageKey, 'notifications.relationCreated');
-eq('67 en de namen als parameters', N()[0]?.params, { predecessor: 'Fundering', successor: 'Wanden' });
+eq('65 en meldt zich NIET (geen toast "Relatie aangemaakt")', N().length, 0);
 
 // Exact hetzelfde nog eens: `addSequence` weigert het duplicaat stil — de wrapper doet dat niet.
 const rel2 = createRelationWithFeedback(rA, rB);
 eq('68 een duplicaat levert geen id op', rel2, null);
 eq('69 en geen tweede relatie', S().sequences.length, 1);
-eq('70 maar wél een melding', N().length, 2);
-eq('71 met de duplicaat-sleutel', N()[1]?.messageKey, 'notifications.relationDuplicate');
+eq('70 maar wél een melding', N().length, 1);
+eq('71 met de duplicaat-sleutel', N()[0]?.messageKey, 'notifications.relationDuplicate');
 
 // Herhalen vouwt samen (dedupeKey) i.p.v. de stapel vol te rammen.
 createRelationWithFeedback(rA, rB);
-eq('72 herhaald duplicaat vouwt samen', N().length, 2);
-eq('73 en telt', N()[1]?.count, 2);
+eq('72 herhaald duplicaat vouwt samen', N().length, 1);
+eq('73 en telt', N()[0]?.count, 2);
 
 // Verzameltaak-eindpunt (eigenaarsbesluit 2026-08-15): dit is het OMGEKEERDE regressie-anker van
 // vóór het besluit — toen weigerde `addSequence` dit stil (spec 2026-08-14). Sinds
 // `expandSummaryRelations` zulke relaties naar bladtaken doorrekent (MS Project-semantiek), MOET
-// dit gewoon slagen: de aanmaak-melding komt terug, geen weigering.
+// dit gewoon slagen, zonder weigering (en sinds 2026-10-12 zonder melding).
 // Mutatiebewijs (uitgevoerd): met de oude `relationVerdict` (die `summary-endpoint` nog weigerde)
 // gaf dit `rel3 === null` en `messageKey === 'notifications.relationSummaryEndpoint'` — precies het
 // omgekeerde van wat hieronder gepind staat. Zie ook `check-relation-rules.ts` voor de bladmodule-kant.
@@ -317,8 +317,7 @@ const rLos = S().addTask({ name: 'Los' });
 const rel3 = createRelationWithFeedback(rFase, rLos);
 truthy('74 een verzameltaak-eindpunt levert nu WEL een id op (2026-08-15 eigenaarsbesluit)',
   !!rel3 && S().sequences.some(q => q.id === rel3));
-eq('75 en meldt zich als gewone aanmaak, geen weigering', N().length, 1);
-eq('76 met de aanmaak-sleutel', N()[0]?.messageKey, 'notifications.relationCreated');
+eq('75 en geen weigering (en geen melding)', N().length, 0);
 
 // Alleen een relatie tussen een taak en zijn EIGEN (voor)ouder-samenvatting blijft geweigerd — dat
 // zou `expandSummaryRelations` een directe cyclus laten genereren (A→B én B→A).
@@ -710,7 +709,7 @@ const unsubscribeGrid = useAppStore.subscribe(state => gridStates.push({
 }));
 const gridWithNotification: PreparedGridMutation | null = gridPrepared.ok ? {
   ...gridPrepared.value,
-  notifications: [{ severity: 'info', messageKey: 'notifications.relationCreated' }],
+  notifications: [{ severity: 'info', messageKey: 'notifications.relationDuplicate' }],
 } : null;
 const gridCommit = gridWithNotification ? commitPreparedGridMutation(gridWithNotification) : null;
 unsubscribeGrid();
@@ -719,7 +718,7 @@ eq('123 eerste gridpublicatie bevat data en history zonder melding', gridStates[
   name: 'Grid na', history: 1, notifications: 0,
 });
 eq('124 gridmelding volgt in een aparte publicatie', gridStates.map(state => state.notifications), [0, 1]);
-eq('125 uitgestelde gridmelding gebruikt het normale app-globale kanaal', N()[0]?.messageKey, 'notifications.relationCreated');
+eq('125 uitgestelde gridmelding gebruikt het normale app-globale kanaal', N()[0]?.messageKey, 'notifications.relationDuplicate');
 
 // ── Uitkomst ────────────────────────────────────────────────────────────────
 if (diffs.length) {

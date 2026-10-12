@@ -28,7 +28,7 @@ Ten tweede kan werk dat nog niet begonnen is niet in het verleden liggen. Ligt z
 
 Ten derde begint het restwerk van een taak die al loopt op de statusdatum zelf. De app behandelt de statusdatum als het begin van die dag. Neem je de stand vrijdag na werktijd op, dan zet je de statusdatum dus op maandag. Zet je hem op vrijdag, dan plant de app het restwerk nog op die vrijdag.
 
-Heb je nog geen statusdatum en vul je voortgang in, dan zet de app de statusdatum op vandaag en meldt dat. Zonder statusdatum rekent de app een lopende taak vooruit met de restduur maar achteruit met de volle duur; de speling komt dan negatief uit en de taak lijkt onterecht kritiek.
+Heb je nog geen statusdatum en vul je voortgang in, dan zet de app de statusdatum op vandaag en meldt dat. Een andere datum zet je bij *Planning › Baselines & voortgang › Statusdatum*. Zonder statusdatum rekent de app een lopende taak vooruit met de restduur maar achteruit met de volle duur; de speling komt dan negatief uit en de taak lijkt onterecht kritiek.
 
 ### Percentage, werkelijke datums en restduur
 

@@ -202,7 +202,6 @@ export type NotificationMessageKey =
   | 'notifications.scheduleFailed'
   | 'notifications.ifcParseFailed'
   | 'notifications.templateSaved'
-  | 'notifications.relationCreated'
   | 'notifications.relationDuplicate'
   | 'notifications.relationAncestorEndpoint'
   // De store-route weigert een relatie die een kring sluit (net als raster en MCP). Parameter

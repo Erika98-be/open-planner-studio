@@ -32,6 +32,9 @@ export const HIERARCHY_RELATIONS_HELP_ARTICLE_ID = 'uitleg-relaties';
 /** Baselines en voortgang: statusdatum op vandaag gezet bij voortgang invoeren. */
 export const BASELINES_PROGRESS_HELP_ARTICLE_ID = 'uitleg-voortgang';
 
+/** Structuur aanpassen: een taak met toewijzingen of een mijlpaal die subtaken krijgt. */
+export const STRUCTURE_HELP_ARTICLE_ID = 'howto-structuur-aanpassen';
+
 /** MS Project-import: tijdgefaseerde gegevens (contouren) die niet meekwamen. */
 export const MPP_TIMEPHASED_HELP_ARTICLE_ID = 'howto-mpp-openen';
 
@@ -93,7 +96,8 @@ export const WARNINGS_HELP_ARTICLE_ID = 'ref-meldingen';
 
 // ── ?-knoppen in zes vensters (besluit eigenaar na fase 4) ──────────────────────────────────────────
 
-/** Projectinformatie (Instellingen › Project › Projectinfo): de referentie van het formulier. */
+/** Projectinformatie (Instellingen › Project › Projectinfo): de referentie van het formulier, en de
+ *  melding dat losse taken met een latere projectstart meeschoven. */
 export const PROJECT_INFO_HELP_ARTICLE_ID = 'ref-projectinfo';
 
 /** Project verplaatsen. */

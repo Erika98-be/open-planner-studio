@@ -84,12 +84,11 @@ The list below is a selection, grouped by topic. Where it does not say otherwise
 ### Calculating
 
 - **Schedule could not be calculated** (error) — *Schedule could not be calculated* with the reason below it (see *Reasons for a schedule error*). On *Calculate*, when switching documents and when opening a file.
-- **Status date set to today** (info) — *There was no status date yet: it is now set to today ({date}), because progress is measured up to the status date. You can change it under Planning → Status date.* When entering progress in a project without a status date.
+- **Status date set to today** (info) — *Status date set to today ({date}).* When entering progress in a project without a status date. The app measures progress up to the status date, so without a status date it cannot process progress. You set a different date under *Planning › Baselines & progress › Status date*. With a *Read more* link to [Progress, status date and baseline](docs://uitleg-voortgang).
 - **Duration shorter than the work done** (info) — *‘{name}’ is already {N}% done: a duration shorter than the work already done isn't possible. The duration was not changed.*
 
 ### Relations and hierarchy
 
-- **Relation created** (info) — *Relation created: {predecessor} → {successor}*.
 - **Relation refused** (info) — *That relation already exists*, *A relation between a task and its own (grand)parent summary task is not allowed.* or *This relation would create a cycle in the schedule ({cycle}) and was not created.* The cycle names the tasks, so you know which relation to remove or reverse first.
 - **Move refused** (info) — *This move would create a cycle in the schedule ({cycle}): a summary task's relations also apply to its subtasks. Nothing was moved.*
 - **Relations drop out after a move** (info) — *After the move, N relations link a task to its own summary task; they no longer count in the calculation.*
@@ -99,11 +98,11 @@ The list below is a selection, grouped by topic. Where it does not say otherwise
 
 ### Editing tasks
 
-- **Start recorded as a constraint** (info) — *'{name}' has a predecessor: the new start is now a Start no earlier than (SNET) constraint on {date}. After recalculating (F5) the task won't start before that date.* When you change the start of a task with a predecessor. If the task already had such a constraint, the notification says it moved; for several tasks at once it gives a count.
+- **Start recorded as a constraint** (info) — *'{name}' starts no earlier than {date} (SNET).* When you change the start of a task with a predecessor. The predecessor determines the start, so the app records your date as a *Start no earlier than* (SNET) constraint. After recalculating (F5) the task won't start before that date. If the task already had such a constraint, it says *'{name}' now starts no earlier than {date} (SNET).*; for several tasks at once it gives a count. With a *Read more* link to [Constraints and deadlines](docs://uitleg-constraints).
 - **Start not applied** (info) — *The new start of '{name}' was not applied: the task has a predecessor and the constraint {type} {date}, and those determine its start. Change that constraint to move the start.*
 - **Milestone refused** (info) — *'{task}' has resource assignments and cannot become a milestone. Remove the assignments first.* or *'{task}' is a summary task with subtasks and cannot become a milestone.* When converting in the task dialog, the properties panel, the context menu and the table.
-- **Assignments moved to a subtask** (info) — *The assignment of {resources} was moved from '{phase}' to the new subtask '{child}': a summary task carries no assignments itself.* When a task with assignments gets subtasks.
-- **Milestone flag removed** (info) — *Milestone '{phase}' now has subtasks and has become a summary task; the milestone flag was removed.*
+- **Assignments moved to a subtask** (info) — *Assignment moved to subtask '{child}'.* or *N assignments moved to subtask '{child}'.* When a task with assignments gets subtasks. That task becomes a summary task, and a summary task carries no assignments itself. That is why they move to the first new subtask. With a *Read more* link to [Adjusting the structure](docs://howto-structuur-aanpassen).
+- **Milestone flag removed** (info) — *'{phase}' is no longer a milestone.* When a milestone gets subtasks. A milestone is a moment without subtasks; with subtasks it becomes a summary task. With a *Read more* link to [Adjusting the structure](docs://howto-structuur-aanpassen).
 - **Summary task refused** (info) — *'{phase}' cannot become a summary task: …* with the reason, and *Nothing was changed.*
 - **Cells skipped on paste** (info) — *Skipped N cells: they are read-only (for example an auto-numbered WBS code or a calculated column).*
 - **References cleared on paste** (info) — *N references did not exist in this document and were cleared (task calendars, custom task types, activity codes or custom fields from the source document).*
@@ -122,7 +121,7 @@ The list below is a selection, grouped by topic. Where it does not say otherwise
 - **Work and work rules visible** (info) — *This file contains stored work or custom work rules; the work rule and remaining work are shown for this project.*
 - **MS Project schedule read** (info) — *This MS Project file contains N tasks with a split, leveled, or resource-driven schedule. They are imported and shown as such.*
 - **Breaks not exported** (info) — *N tasks with breaks were exported without their breaks: MS Project/P6 only know breaks as a work distribution.* When exporting to MS Project or Primavera.
-- **Project start moved** (info) — *Project start moved: N task anchors without a predecessor or constraint were shifted to the new start date.*
+- **Project start moved** (info) — *N tasks moved with the project start.* When you set the project start later. Only tasks without a predecessor and without a constraint that would lie before the new start date move to that date. With a *Read more* link to [New project and Project info](docs://ref-projectinfo).
 - **Date window no longer steers** (info) — *MS Project's date window no longer drives N tasks after this edit; …* Once per document.
 - **Leveling delay rounded** (info) — *Leveling rounds MS Project's minute-precise leveling delay for N tasks to whole workdays.* Once per document.
 - **Calculation profile applied** (info) — *This project calculates as {profile}. Change it via File → Project info → Calculation profile and options.* With the button *Open calculation profile*. After applying a profile, *After applying, N tasks moved.* follows if needed.

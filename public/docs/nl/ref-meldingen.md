@@ -84,12 +84,11 @@ De lijst hieronder is een keuze, gegroepeerd naar onderwerp. Waar het niet staat
 ### Berekenen
 
 - **Planning kon niet worden berekend** (fout) — *Planning kon niet worden berekend* met de reden eronder (zie *Redenen van een planningsfout*). Bij *Bereken*, bij het wisselen van document en bij het openen van een bestand.
-- **Statusdatum op vandaag gezet** (info) — *Er stond nog geen statusdatum: die staat nu op vandaag ({datum}), want voortgang wordt tot de statusdatum gemeten. Aanpassen kan via Planning → Statusdatum.* Bij het invoeren van voortgang in een project zonder statusdatum.
+- **Statusdatum op vandaag gezet** (info) — *Statusdatum op vandaag gezet ({datum}).* Bij het invoeren van voortgang in een project zonder statusdatum. De app meet voortgang tot de statusdatum, dus zonder statusdatum kan ze voortgang niet verwerken. Een andere datum zet je bij *Planning › Baselines & voortgang › Statusdatum*. Met een link *Lees meer* naar [Voortgang, statusdatum en baseline](docs://uitleg-voortgang).
 - **Duur korter dan het gedane werk** (info) — *‘{naam}’ is al voor {N}% gedaan: een duur korter dan het gedane werk kan niet. De duur is niet gewijzigd.*
 
 ### Relaties en hiërarchie
 
-- **Relatie aangemaakt** (info) — *Relatie aangemaakt: {voorganger} → {opvolger}*.
 - **Relatie geweigerd** (info) — *Deze relatie bestaat al*, *Een relatie tussen een taak en zijn eigen (voor)ouder-samenvattingstaak is niet toegestaan.* of *Deze relatie zou een kring in de planning maken ({kring}) en is niet aangemaakt.* De kring noemt de taken, zodat je weet welke relatie je eerst moet weghalen of omdraaien.
 - **Verplaatsing geweigerd** (info) — *Deze verplaatsing zou een kring in de planning maken ({kring}): de relaties van een samenvattingstaak gelden ook voor haar subtaken. Er is niets verplaatst.*
 - **Relaties vallen weg na verplaatsen** (info) — *Na het verplaatsen verbinden N relaties een taak met zijn eigen samenvattingstaak; die tellen niet meer mee in de berekening.*
@@ -99,11 +98,11 @@ De lijst hieronder is een keuze, gegroepeerd naar onderwerp. Waar het niet staat
 
 ### Taken bewerken
 
-- **Start vastgelegd als constraint** (info) — *'{naam}' heeft een voorganger: de nieuwe start is vastgelegd als constraint Start niet eerder dan (SNET) {datum}. Na herberekenen (F5) begint de taak niet vóór die datum.* Als je de start van een taak met voorganger verandert. Had de taak al zo'n constraint, dan zegt de melding dat hij is verzet; bij meer taken tegelijk staat er een aantal.
+- **Start vastgelegd als constraint** (info) — *'{naam}' start niet eerder dan {datum} (SNET).* Als je de start van een taak met voorganger verandert. De voorganger bepaalt de start, dus de app legt je datum vast als constraint *Start niet eerder dan* (SNET). Na herberekenen (F5) begint de taak niet vóór die datum. Had de taak al zo'n constraint, dan staat er *'{naam}' start nu niet eerder dan {datum} (SNET).*; bij meer taken tegelijk staat er een aantal. Met een link *Lees meer* naar [Constraints en deadlines](docs://uitleg-constraints).
 - **Start niet toegepast** (info) — *De nieuwe start van '{naam}' is niet toegepast: de taak heeft een voorganger en de constraint {type} {datum}, en die bepalen de start. Pas die constraint aan om de start te verplaatsen.*
 - **Mijlpaal geweigerd** (info) — *'{taak}' heeft resource-toewijzingen en kan geen mijlpaal worden. Verwijder eerst de toewijzingen.* of *'{taak}' is een samenvattingstaak met subtaken en kan geen mijlpaal worden.* Bij het omzetten in de taakdialoog, het eigenschappenpaneel, het contextmenu en de tabel.
-- **Toewijzingen verplaatst naar subtaak** (info) — *De toewijzing van {resources} is verplaatst van '{fase}' naar de nieuwe subtaak '{kind}': een samenvattingstaak draagt zelf geen toewijzingen.* Als een taak met toewijzingen subtaken krijgt.
-- **Mijlpaalmarkering verwijderd** (info) — *Mijlpaal '{fase}' heeft nu subtaken en is een samenvattingstaak geworden; de mijlpaalmarkering is eraf gehaald.*
+- **Toewijzingen verplaatst naar subtaak** (info) — *Toewijzing verplaatst naar subtaak '{kind}'.* of *N toewijzingen verplaatst naar subtaak '{kind}'.* Als een taak met toewijzingen subtaken krijgt. Die taak wordt een samenvattingstaak, en een samenvattingstaak draagt zelf geen toewijzingen. Daarom gaan ze naar de eerste nieuwe subtaak. Met een link *Lees meer* naar [Structuur aanpassen](docs://howto-structuur-aanpassen).
+- **Mijlpaalmarkering verwijderd** (info) — *'{fase}' is geen mijlpaal meer.* Als een mijlpaal subtaken krijgt. Een mijlpaal is een moment zonder subtaken; met subtaken wordt hij een samenvattingstaak. Met een link *Lees meer* naar [Structuur aanpassen](docs://howto-structuur-aanpassen).
 - **Samenvattingstaak geweigerd** (info) — *'{fase}' kan geen samenvattingstaak worden: …* met de reden, en *Er is niets gewijzigd.*
 - **Cellen overgeslagen bij plakken** (info) — *N cellen overgeslagen: ze zijn read-only (bijvoorbeeld een automatisch genummerde WBS-code of een berekende kolom).*
 - **Verwijzingen leeggemaakt bij plakken** (info) — *N verwijzingen bestonden niet in dit document en zijn leeggemaakt (taakkalenders, eigen taaktypes, activity codes of gebruikersvelden uit het brondocument).*
@@ -122,7 +121,7 @@ De lijst hieronder is een keuze, gegroepeerd naar onderwerp. Waar het niet staat
 - **Werk en werkregels zichtbaar** (info) — *Dit bestand bevat opgeslagen werk of eigen werkregels; de werkregel en het resterende werk zijn voor dit project zichtbaar.*
 - **MS Project-planning ingelezen** (info) — *Dit MS Project-bestand bevat N taken met een onderbroken, genivelleerde of resource-gedreven planning. Die worden als zodanig ingelezen en getoond.*
 - **Onderbrekingen niet geëxporteerd** (info) — *N taken met onderbrekingen zijn zonder onderbrekingen geëxporteerd: MS Project/P6 kennen die alleen als urenverdeling.* Bij export naar MS Project of Primavera.
-- **Projectstart verzet** (info) — *Projectstart verzet: N taakankers zonder voorganger of constraint zijn meegeschoven naar de nieuwe startdatum.*
+- **Projectstart verzet** (info) — *N taken schoven mee met de projectstart.* Als je de projectstart later zet. Alleen taken zonder voorganger en zonder constraint die vóór de nieuwe startdatum zouden liggen, schuiven naar die datum. Met een link *Lees meer* naar [Nieuw project en Projectinfo](docs://ref-projectinfo).
 - **Datumvenster stuurt niet meer** (info) — *Het datumvenster uit MS Project stuurt N taken niet meer na deze bewerking; …* Eén keer per document.
 - **Nivelleervertraging afgerond** (info) — *Nivelleren rondt de minuutprecieze nivelleervertraging van MS Project van N taken af op hele werkdagen.* Eén keer per document.
 - **Rekenprofiel toegepast** (info) — *Dit project rekent als {profiel}. Aanpassen via Bestand → Projectinfo → Rekenprofiel en reken-opties.* Met de knop *Rekenprofiel openen*. Na het toepassen van een profiel volgt zo nodig *Na het toepassen zijn N taken verschoven.*

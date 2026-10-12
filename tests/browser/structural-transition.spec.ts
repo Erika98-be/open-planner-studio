@@ -51,9 +51,10 @@ test('inspringen onder een taak met toewijzing verhuist de toewijzing naar de ni
   await expect.poll(() => page.evaluate((id) => window.__OPS__!.store.getState().tasks.find(t => t.id === id)!.parentId, N))
     .toBe(L);
   expect(await assignmentTaskIds(page)).toEqual([N]);
-  await expect(page.locator('.ops-toast', {
-    hasText: /The assignment of Metselaar was moved from 'Metselen' to the new subtask 'Voegen'/,
-  })).toBeVisible();
+  // Korte melding (eigenaarsbesluit 2026-10-12): alleen de mededeling, de uitleg staat in de gids.
+  const movedToast = page.locator('.ops-toast', { hasText: /Assignment moved to subtask 'Voegen'\./ });
+  await expect(movedToast).toBeVisible();
+  await expect(movedToast.locator('.ops-toast-readmore')).toBeVisible();
 
   // Na herberekenen (echte F5) telt de belasting weer mee: 5 werkdagen × 1 eenheid.
   await page.keyboard.press('F5');

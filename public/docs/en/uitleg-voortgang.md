@@ -28,7 +28,7 @@ Second, work that has not started cannot lie in the past. If such a task is plan
 
 Third, the remaining work of a task that is already running starts on the status date itself. The app treats the status date as the start of that day. If you take stock on Friday after working hours, you therefore set the status date to Monday. If you set it to Friday, the app still plans the remaining work on that Friday.
 
-If you have no status date yet and you enter progress, the app sets the status date to today and tells you. Without a status date the app calculates a running task forward with its remaining duration but backward with its full duration; the float then comes out negative and the task looks critical without reason.
+If you have no status date yet and you enter progress, the app sets the status date to today and tells you. You set a different date under *Planning › Baselines & progress › Status date*. Without a status date the app calculates a running task forward with its remaining duration but backward with its full duration; the float then comes out negative and the task looks critical without reason.
 
 ### Percentage, actual dates and remaining duration
 
