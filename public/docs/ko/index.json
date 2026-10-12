@@ -72,6 +72,7 @@
 "ref-instellingen": {"title": "설정"},
 "ref-projectinfo": {"title": "새 프로젝트 및 프로젝트 정보"},
 "ref-rekenopties-en-conventies": {"title": "계산 옵션과 규칙"},
+"ref-import-exportformaten": {"title": "가져오기 및 내보내기 형식"},
 "ref-rapporttypes": {"title": "보고서 유형"},
 "ref-extensiepermissies": {"title": "확장 프로그램 권한"}
 }
