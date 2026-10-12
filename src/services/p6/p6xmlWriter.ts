@@ -1,5 +1,6 @@
 import { Task, TaskConstraint } from '@/types/task';
 import { Sequence, SequenceType } from '@/types/sequence';
+import { isoDayOfWeek, parseDate } from '@/utils/dateUtils';
 import { Resource, ResourceAssignment, ResourceType, ResourceCurve } from '@/types/resource';
 import {
   CONTOUR_SHAPE_VALUES, CURVE_TO_SHAPE, isFlatCurveValues, matchContoursToAssignments,
@@ -74,20 +75,12 @@ function resourceTypeToP6(type: ResourceType): 'Labor' | 'Nonlabor' | 'Material'
 
 /** P6-relatietype per OPS-relatietype, zoals PMXML het schrijft (`<Type>Finish to Start</Type>`;
  *  MPXJ `RelationTypeHelper`). De reader leest de inverse, plus de XER-tokens (`PR_FS` …) die
- *  oudere OPS-exports in P6 XML schreven (`P6_LEGACY_LINK_TYPE`). */
+ *  oudere OPS-exports in P6 XML schreven. */
 export const P6_LINK_TYPE: Record<SequenceType, string> = {
   FINISH_START: 'Finish to Start',
   FINISH_FINISH: 'Finish to Finish',
   START_START: 'Start to Start',
   START_FINISH: 'Start to Finish',
-};
-
-/** XER-tokens die OPS vóór 2026-10 in P6 XML schreef; alleen voor de reader. */
-export const P6_LEGACY_LINK_TYPE: Record<SequenceType, string> = {
-  FINISH_START: 'PR_FS',
-  FINISH_FINISH: 'PR_FF',
-  START_START: 'PR_SS',
-  START_FINISH: 'PR_SF',
 };
 
 /** NotebookTopic voor de taakbeschrijving (`<ActivityNote>`); de reader herkent hem aan de naam. */
@@ -203,8 +196,6 @@ function isoDaysInclusive(start: string, end: string): string[] {
   return out;
 }
 
-const isoWeekdayOf = (iso: string): number => ((new Date(`${iso}T00:00:00Z`).getUTCDay() + 6) % 7) + 1;
-
 /** Uitzonderingen: `<HolidayOrExceptions>` zoals P6 ze schrijft — één `<HolidayOrException>` per
  *  DATUM (het schema kent geen naam en geen einddatum). Een vrije dag ⇒ `<WorkTime xsi:nil="true"/>`;
  *  een werkende uitzondering ⇒ haar banden, of zonder eigen banden de banden van die weekdag
@@ -221,7 +212,7 @@ function holidayOrExceptionsNode(cal: WorkCalendar, includeEffectiveScalarBands:
   const firstWorkday = [...cal.workDays].sort((a, b) => a - b)[0] ?? 1;
   for (const w of cal.workingExceptions ?? []) {
     for (const date of isoDaysInclusive(w.startDate, w.endDate || w.startDate)) {
-      let bands = w.bands && w.bands.length > 0 ? w.bands : weekdayBands(cal, workTime, isoWeekdayOf(date));
+      let bands = w.bands && w.bands.length > 0 ? w.bands : weekdayBands(cal, workTime, isoDayOfWeek(parseDate(date)));
       if (bands.length === 0) bands = weekdayBands(cal, workTime, firstWorkday);
       if (bands.length === 0) bands = [{ start: cal.workStartHour * 60, end: cal.workEndHour * 60 }];
       byDate.set(date, node('HolidayOrException', [...leaf('Date', toXmlDateTime(date)), ...workTimeNodes(splitWholeDay(bands))]));

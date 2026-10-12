@@ -85,7 +85,7 @@ eq('6g toewijzing op B1020', r.assignments[0]?.taskId, byCode('B1020')?.id);
 // (7) Rekenprofiel blijft OPS (besluit B28), ook voor echte P6 XML.
 eq('7 rekenprofiel', r.suggestedProfileId, 'ops');
 
-// (8) Eigen round-trip: schrijven (platte vorm) → lezen geeft dezelfde aantallen en voortgang.
+// (8) Eigen round-trip: schrijven (P6-vorm: objecten binnen <Project>) → lezen geeft dezelfde aantallen en voortgang.
 function roundTrip(src: ImportResult): ImportResult {
   const out = writeP6XML(src.project, src.calendar, src.tasks, src.sequences, src.resources,
     src.assignments, src.resourceCalendars ?? [], src.customTaskTypes ?? []);

@@ -33,7 +33,6 @@ import {
   OPS_CUSTOM_TASK_TYPE_UDF_TITLE,
   P6_DAY_NAMES,
   OPS_DESCRIPTION_TOPIC_NAME,
-  P6_LEGACY_LINK_TYPE,
   P6_LINK_TYPE,
   P6_NAME_TO_CURVE,
 } from './p6xmlWriter';
@@ -152,9 +151,17 @@ function p6ActivityCompletionPercent(actEl: Element, writtenByOps: boolean): num
     : 0;
 }
 
+/** XER-tokens die OPS vóór 2026-10 in P6 XML schreef (`<Type>PR_FS</Type>`); alleen nog lezen. */
+const P6_LEGACY_SEQUENCE_TYPE: Readonly<Record<string, SequenceType>> = {
+  PR_FS: 'FINISH_START',
+  PR_FF: 'FINISH_FINISH',
+  PR_SS: 'START_START',
+  PR_SF: 'START_FINISH',
+};
+
 /** PMXML-label (`Finish to Start`) én het XER-token dat oudere OPS-exports schreven (`PR_FS`). */
 const SEQUENCE_TYPE_BY_P6: Partial<Record<string, SequenceType>> = {
-  ...invertRecord(P6_LEGACY_LINK_TYPE),
+  ...P6_LEGACY_SEQUENCE_TYPE,
   ...invertRecord(P6_LINK_TYPE),
 };
 
@@ -487,9 +494,9 @@ export function readP6XMLDocuments(content: string): OpenedImport {
 }
 
 /**
- * Lees één P6 XML-bestand als één project: het eerste project mét activiteiten, met zijn baselines.
- * Voor tests, de eigen round-trip en afnemers die één project verwachten; de open-pijplijn gebruikt
- * `readP6XMLDocuments`.
+ * TESTHULP. Lees één P6 XML-bestand als één project: het eerste project mét activiteiten, met zijn
+ * baselines. Gooit niet bij een leeg bestand (dan een leeg resultaat). Geen appcode gebruikt dit:
+ * de open-pijplijn gebruikt `readP6XMLDocuments` (meerdere documenten, `P6XmlImportError`).
  */
 export function readP6XML(content: string): ImportResult {
   return readAllP6XmlProjects(content)[0];
