@@ -1,6 +1,6 @@
 # Omezení a konečné termíny
 
-Cihly se dodají až 21. června. Stavební povolení ještě nedorazilo. Střecha musí být zakrytá před letní stavební uzávěrou. Závislosti zaznamenávají, že úkol čeká na jiný úkol. Dohody o termínu ale z pořadí prací nevyplývají. Právě k tomu slouží omezení a konečné termíny. V tomto článku se dozvíte, co dělá každý typ, kdy se úkol posune a kdy se mění jen časová rezerva. Dozvíte se také, co je pevné ukotvení a jak aplikace hlásí konflikt.
+Cihly se dodají až 21. června. Stavební povolení ještě nedorazilo. Střecha musí být zakrytá před letním stavebním svátkem. Závislosti zaznamenávají, že úkol čeká na jiný úkol. Dohody o termínu ale z pořadí prací nevyplývají. Právě k tomu slouží omezení a konečné termíny. V tomto článku se dozvíte, co dělá každý typ, kdy se úkol posune a kdy se mění jen časová rezerva. Dozvíte se také, co je pevné ukotvení a jak aplikace hlásí konflikt.
 
 Pravidla a příklady platí pro nový projekt s profilem výpočtu *Open Planner Studio* a pracovním týdnem od pondělí do pátku.
 
@@ -28,11 +28,11 @@ Typ zvolíte v poli *Omezení* v panelu *Vlastnosti*. Každý typ počítá takt
 - *Zahájit nejpozději (SNLT)* a *Dokončit nejpozději (FNLT)*: horní omezení začátku nebo dokončení. Nic nepřesouvají. Pokud omezení není splněno, aplikace nahlásí porušené omezení a časová rezerva se stane zápornou.
 - *Musí začít (MSO)* a *Musí skončit (MFO)*: dolní a horní omezení zároveň. Úkol se přesune na tento termín, pokud je pozdější, než vyžadují jeho závislosti. Pokud je termín dříve, než dovolují závislosti, úkol zůstane tam, kam ho závislosti postavily, a časová rezerva se stane zápornou.
 
-Pokud termín připadne na sobotu, neděli nebo na volný den, aplikace ho čte jako pracovní den: dolní omezení (SNET, FNET) jako nejbližší následující pracovní den, horní omezení (SNLT, FNLT) jako předchozí.
+Pokud termín připadne na sobotu, neděli nebo na svátek, aplikace ho čte jako pracovní den: dolní omezení (SNET, FNET) jako nejbližší následující pracovní den, horní omezení (SNLT, FNLT) jako předchozí.
 
 ### Co znamená záporná časová rezerva
 
-Horní omezení působí zpětně. Pokud omezení posune pozdní termín úkolu před jeho nejdřívější termín, celková časová rezerva se stane zápornou. Totéž platí pro úkoly před ním: pokud musí zdění začít nejpozději v pátek 11. června a nemůže začít dříve než v pondělí 14. června, jsou i úkoly před zděním o jeden pracovní den pozdě. Všechny úkoly se zápornou časovou rezervou jsou kritické. Jak to funguje, je vysvětleno v [Kritická cesta a časová rezerva](docs://uitleg-kritiek-pad).
+Horní omezení působí zpětně. Pokud omezení posune pozdní termín úkolu před jeho nejdřívější termín, celková časová rezerva se stane zápornou. Totéž platí pro úkoly před ním: pokud musí zdění být zahájeno nejpozději v pátek 11. června a nemůže začít dříve než v pondělí 14. června, mají i úkoly před zděním zpoždění o jeden pracovní den. Všechny úkoly se zápornou časovou rezervou jsou kritické. Jak to funguje, je vysvětleno v [Kritická cesta a časová rezerva](docs://uitleg-kritiek-pad).
 
 Pruhy se kvůli hornímu omezení nepřesouvají. Konflikt uvidíte v záporné hodnotě v poli *Celková časová rezerva*, v červeném kosočtverci nad pruhem, v hlášení na stavovém řádku (například *Porušená omezení: 1*) a v panelu *Varování*.
 
@@ -44,7 +44,7 @@ U MSO a MFO se zobrazí zaškrtávací pole *Povinný (pevné ukotvení)*. Zašk
 - Předchůdci dostanou zápornou časovou rezervu. Aplikace nahlásí porušené omezení ve chvíli, kdy by závislosti dovolily úkolu začít později, než je pevné ukotvení. Úkol s pevným ukotvením si sám zachová časovou rezervu 0.
 - Následníci se počítají od úkolu s pevným ukotvením. Mohou proto začít dříve než bez pevného ukotvení, ačkoli logika před ním není dokončena. V příkladu níže se kvůli tomu dokončení projektu posune dříve o tři pracovní dny.
 
-Když poprvé zapnete pevné ukotvení, aplikace zobrazí krátké vysvětlení: pevné ukotvení přepisuje závislosti, pruh je upevněn na termínu, i dříve než jeho předchůdci.
+Když poprvé zapnete pevné ukotvení, aplikace zobrazí krátké vysvětlení: pevné ukotvení přepisuje závislosti, pruh je upevněn na termínu, i když jeho předchůdci ještě nejsou hotovi.
 
 ### Sekundární omezení
 
@@ -79,7 +79,7 @@ Kritická cesta je *Groundwork*, *Pour foundation*, *Brickwork* a *Roofing*. Pro
 - **SNET pondělí 21. června** (cihly dorazí až tehdy): *Brickwork* běží od pondělí 21. do pátku 25. června, *Roofing* od pondělí 28. do středy 30. června. Projekt je hotový ve středu 30. června. *Groundwork* a *Pour foundation* mají nyní 5 pracovních dnů časové rezervy a už nejsou kritické, *Scaffolding* má 8 pracovních dnů.
 - **SNET středa 9. června**: bez vlivu. Závislosti stejně dovolí začít *Brickwork* až v pondělí 14. června.
 - **SNLT středa 16. června**: bez vlivu. *Brickwork* začíná v pondělí 14. června a omezení splňuje s rezervou.
-- **SNLT pátek 11. června**: příliš těsné. *Brickwork* i tak začíná v pondělí 14. června, o jeden pracovní den pozdě. *Groundwork*, *Pour foundation* a *Brickwork* dostanou −1 pracovní den časové rezervy a aplikace hlásí *Omezení Zahájit nejpozději (SNLT) 11-06-2027 je přepsáno logikou (záporná časová rezerva)*. Nic se nepřesune.
+- **SNLT pátek 11. června**: příliš těsné. *Brickwork* i tak začíná v pondělí 14. června a má zpoždění o jeden pracovní den. *Groundwork*, *Pour foundation* a *Brickwork* dostanou −1 pracovní den časové rezervy a aplikace hlásí *Omezení Zahájit nejpozději (SNLT) 11-06-2027 je přepsáno logikou (záporná časová rezerva)*. Nic se nepřesune.
 - **MSO středa 16. června** (bez pevného ukotvení): *Brickwork* se přesune na středu 16. června a je hotový v úterý 22. června. *Roofing* běží od středy 23. do pátku 25. června, projekt je hotový v pátek 25. června.
 - **MSO pátek 11. června** (bez pevného ukotvení): termín je dříve, než dovolují závislosti. *Brickwork* i tak začíná v pondělí 14. června a časová rezerva se stane −1, stejně jako u SNLT.
 - **MSO středa 9. června s pevným ukotvením**: *Brickwork* začíná ve středu 9. června a je hotový v úterý 15. června, zatímco *Pour foundation* běží ještě do pátku 11. června. *Roofing* běží od středy 16. do pátku 18. června: projekt je hotový o tři pracovní dny dříve než bez pevného ukotvení. *Groundwork* a *Pour foundation* dostanou −3 pracovní dny časové rezervy.

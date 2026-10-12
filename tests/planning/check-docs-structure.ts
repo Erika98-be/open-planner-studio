@@ -1,5 +1,5 @@
 // Contract C1 van de vertaalstraat (`scripts/lib/docs-structure.ts`): secties, hashes, structuur en
-// de parser-subset. De vertaalgereedschappen en `verify-docs.ts` lezen exact deze functies; deze check pint het
+// de parser-subset. De docs-straat en `verify-docs.ts` lezen exact deze functies; deze check pint het
 // contract vast. Exit 0 = groen.
 //
 // Mutatiebewijs: in `splitSections` een `## ` binnen een codeblok wél als kop zien ⇒ 05 rood;

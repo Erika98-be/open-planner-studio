@@ -21,7 +21,7 @@
 
 - [ ] **Project data** — round-trips through the IFC layer, and tested?
 - [ ] **Scheduling logic** — case added to `tests/planning/`?
-- [ ] **User-visible text** — goes through `t(...)`, and `nl` and `en` filled in (the other 26 locales may follow)?
+- [ ] **User-visible text** — goes through `t(...)`, and `nl` and `en` filled in (the translation pipeline fills the other 26 locales before a release)?
 - [ ] **`@tauri-apps/*`** — behind `isTauri()` or a dynamic import, so the browser
       build keeps working?
 - [ ] **User-visible feature** — in-app guide in `public/docs/{nl,en}/` (plus manifest

@@ -319,6 +319,8 @@
     "helpDocsLang": "Limba documentației",
     "helpDocsLangAuto": "Urmează limba aplicației",
     "helpLangFallback": "Acest articol nu este încă disponibil în limba dumneavoastră; citiți versiunea în engleză.",
+    "helpTranslatedNote": "Acest ghid a fost tradus din engleză și poate fi mai vechi decât versiunile în engleză și în olandeză.",
+    "helpReadIn": "Citiți în:",
     "unapplied": {
       "title": "Modificări neaplicate",
       "body": "Ați modificat informațiile proiectului, dar încă nu le-ați aplicat. Ce doriți să faceți cu aceste modificări?",

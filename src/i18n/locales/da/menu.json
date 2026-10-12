@@ -317,6 +317,8 @@
     "helpDocsLang": "Dokumentationssprog",
     "helpDocsLangAuto": "Følg appens sprog",
     "helpLangFallback": "Denne artikel er endnu ikke tilgængelig på dit sprog; du læser den engelske version.",
+    "helpTranslatedNote": "Denne vejledning er oversat fra engelsk og kan halte efter den engelske og den hollandske version.",
+    "helpReadIn": "Læs på:",
     "unapplied": {
       "title": "Ændringer ikke anvendt",
       "body": "Du har ændret projektinfo, men ikke anvendt det endnu. Hvad vil du gøre med disse ændringer?",

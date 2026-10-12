@@ -8,8 +8,12 @@ daaruit. Alleen Engels wordt eager mee-gebundeld (`config.ts`); de rest laadt la
 **De werkwijze in het kort (besluit B5, eigenaar, 2026-10-10):**
 
 1. **Een PR vraagt alleen `nl` + `en`.** De andere talen mogen ontbreken; de app toont daar het Engels.
-2. **De andere talen volgen later.** Tot dan toont de app daar het Engels. `npm run verify:i18n`
-   meldt wat er per taal ontbreekt, als rapport.
+2. **De vertaalstraat vult de rest** (`npm run translate`, ontwerp
+   `docs/superpowers/specs/2026-10-09-vertaalstraat-design.md`), via de skill `update-ui-lang`.
+3. **Een release eist de hele UI.** `npm run verify:translations` faalt bij elke ontbrekende, verouderde
+   of nog niet door de straat gehaalde UI-vertaling. Die poort zit in `release.yml` en in de release-skill
+   (die `update-ui-lang` draait), bewust niet in `npm run verify` (anders wordt elke PR rood). De
+   Help-artikelen in andere talen mogen achterlopen; de poort meldt ze alleen (besluit 2026-10-12).
 
 **Dit is een toelichting, geen vervanging.** `npm run verify:i18n` (`scripts/i18n-diff.mjs`) is de
 poort; loopt dit document ooit achter, dan heeft die het gelijk.
@@ -22,7 +26,7 @@ poort; loopt dit document ooit achter, dan heeft die het gelijk.
    `report` voor rapport-/exportcontext, `menu` voor ribbon-/backstage-/menutekst. De vier bestanden
    staan naast elkaar per taal: `src/i18n/locales/<taal>/{common,task,report,menu}.json`.
 2. **Schrijf de vertalingen in één JSON-bestand**: `nl` en `en` zijn verplicht. Een andere taal mag je
-   erbij zetten als je hem zeker weet; anders laat je hem weg:
+   erbij zetten als je hem zeker weet; anders laat je hem weg en vult de straat hem:
    ```json
    { "nl": "Onderbreking opheffen", "en": "Remove break" }
    ```
@@ -44,12 +48,31 @@ poort; loopt dit document ooit achter, dan heeft die het gelijk.
    `other`), en mag `{{count}}` in woorden uitschrijven, zoals het Arabische "مهمة واحدة". De sleutel
    komt in elke locale op dezelfde plek, want alle bestanden volgen de volgorde van `nl`.
 
-   Voor een taal die je niet opgeeft, schrijft het script niets: een oude vertaling blijft bij `--update`
-   staan tot iemand haar bijwerkt.
+   Voor elke taal die je niet opgeeft, schrijft het script niets en haalt het de bron-hash van die
+   sleutel weg uit `i18n/ui-sources/<taal>.json`. Bij `--update` blijft de oude vertaling dan staan tot
+   de straat hem vervangt; `translate prepare ui <taal> --stale` pakt hem op, met de oude tekst erbij.
    Verandert de sleutel van soort (tekst ↔ meervoudsfamilie), dan haalt het script de oude tekst weg.
 4. **Roep hem aan met `t('namespace:pad.naar.sleutel')`** — nooit hardgecodeerde zichtbare tekst.
 5. **Draai `npm run verify:i18n`.** Zie hieronder wat hij precies controleert. Een regel als
    `.. sv: 1 sleutel(s) ontbreken (common 1)` is een rapport, geen fout.
+
+## Vóór een release: de straat en de releasepoort
+
+```bash
+npm run translate -- status                  # per taal: ontbreekt / verouderd / actueel (zonder hash)
+npm run translate -- prepare ui <taal> --missing   # en daarna --stale; stations en apply ui: skill update-ui-lang
+npm run translate -- prepare ui <taal> --avoid     # na een termwissel: teksten met de oude term (avoid in de termbase)
+npm run translate -- apply-findings <taal> f.json  # nagelezen verbeteringen [{ "key": "ns:pad", "fix": … }] direct toepassen
+npm run verify:translations; echo "exit=$?"  # releasepoort: exit 0 = UI in elke taal compleet en actueel
+```
+
+`verify:translations` (`translate status --strict`) telt per taal drie soorten gaten: **ontbreekt** (geen of
+een halve vertaling; in een nieuwe taal ook tekst zonder hash, want dat is Engelse vulling), **verouderd**
+(de nl-tekst veranderde na de vertaling) en **zonder hash** (vertaald, maar niet door de straat bijgehouden,
+bv. na een `i18n:add` die deze taal niet schreef). De skill `update-ui-lang` beschrijft de hele ronde.
+
+Met de hand bewerken mag nog steeds (het blijft gewone JSON); draai daarna `npm run i18n:fmt`, anders
+faalt `verify:i18n` op de opmaak.
 
 ## De vaste opmaak (`npm run i18n:fmt`)
 
@@ -152,4 +175,5 @@ geen generieke poort die elke `t(key, { count })`-aanroep in de hele codebase vi
 | test van die kern (inhoud blijft gelijk op alle echte bestanden) | `tests/planning/check-i18n-tools.ts` |
 | locale-bestanden per sleutel samenvoegen na `git merge` | `scripts/i18n-resolve.ts` (`npm run i18n:resolve`), end-to-end getest in `tests/planning/check-i18n-resolve.ts` |
 | domeincheck: taakgrid-registerlabels + echte `count`-aanroepen | `tests/planning/check-task-grid-i18n.ts` |
+| releasepoort: UI in elke taal compleet en actueel | `scripts/translate/cli.ts` (`status --strict`, `npm run verify:translations`), kern `uiReleaseGaps` in `scripts/translate/ui.ts` |
 | RTL-locales (`ar`, `fa`) | `RTL_LOCALES` in `src/i18n/config.ts` |

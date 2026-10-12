@@ -317,6 +317,8 @@
     "helpDocsLang": "Belge dili",
     "helpDocsLangAuto": "Uygulama dilini takip et",
     "helpLangFallback": "Bu belge henüz dilinizde mevcut değil. İngilizce sürümünü okuyorsunuz.",
+    "helpTranslatedNote": "Bu kılavuz İngilizceden çevrilmiştir ve İngilizce ile Hollandaca sürümlerin gerisinde kalabilir.",
+    "helpReadIn": "Şu dilde okuyun:",
     "unapplied": {
       "title": "Değişiklikler uygulanmadı",
       "body": "Proje bilgilerini değiştirdiniz ancak henüz uygulamadınız. Bu değişikliklerle ne yapmak istiyorsunuz?",

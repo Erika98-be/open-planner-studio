@@ -317,6 +317,8 @@
     "helpDocsLang": "Dokumentáció nyelve",
     "helpDocsLangAuto": "Az alkalmazás nyelvét követi",
     "helpLangFallback": "Ez a cikk még nem érhető el az Ön nyelvén; az angol változatot olvassa.",
+    "helpTranslatedNote": "Ez az útmutató angolból lett lefordítva, és elmaradhat az angol és a holland változat mögött.",
+    "helpReadIn": "Olvasás nyelve:",
     "unapplied": {
       "title": "Nem alkalmazott módosítások",
       "body": "Módosította a projektadatokat, de még nem alkalmazta őket. Mit szeretne tenni ezekkel a módosításokkal?",

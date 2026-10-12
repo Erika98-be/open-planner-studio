@@ -317,6 +317,8 @@
     "helpDocsLang": "Dokumentationsspråk",
     "helpDocsLangAuto": "Följ appens språk",
     "helpLangFallback": "Den här artikeln är ännu inte tillgänglig på ditt språk; du läser den engelska versionen.",
+    "helpTranslatedNote": "Den här guiden är översatt från engelska och kan ligga efter den engelska och den nederländska versionen.",
+    "helpReadIn": "Läs på:",
     "unapplied": {
       "title": "Ändringar inte tillämpade",
       "body": "Du har ändrat projektinfon men inte tillämpat den. Vad vill du göra med ändringarna?",
