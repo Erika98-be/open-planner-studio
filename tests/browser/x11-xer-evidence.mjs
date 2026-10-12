@@ -1263,6 +1263,8 @@ async function runBrowserSmallA(preflightResult, server) {
     localStorage.setItem('ops-docs-locale', 'en');
     localStorage.setItem('ops-documentChromeStyle', 'tabs');
     localStorage.setItem('ops-welcomeSeen', 'true');
+    // Uitleg na het openen van een ander formaat (FormatNoticeDialog) uit: hij is modaal.
+    localStorage.setItem('ops-formatNoticeHidden', JSON.stringify(['xer', 'mpp', 'mspdi', 'p6xml', 'csv']));
     const counts = { alert: 0, confirm: 0, prompt: 0 };
     window.__OPS_X11_DIALOG_COUNTS__ = counts;
     window.alert = () => { counts.alert += 1; };

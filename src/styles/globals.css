@@ -2266,6 +2266,16 @@ body {
 .ops-note--warning {
   --ops-note-accent: var(--theme-warning-text);
 }
+.ops-note--success {
+  --ops-note-accent: var(--theme-bar-float);
+}
+.ops-note--info {
+  --ops-note-accent: var(--info);
+}
+/* RTL: de accentbalk staat aan de beginkant van de regel, dus rechts. */
+[dir="rtl"] .ops-note {
+  box-shadow: inset -3px 0 0 var(--ops-note-accent, var(--theme-accent));
+}
 .ops-note-lines {
   display: flex;
   flex-direction: column;

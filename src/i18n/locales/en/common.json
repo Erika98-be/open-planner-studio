@@ -1495,5 +1495,44 @@
     "saveHint": "The project is stored on the site as a new IFC file. After that, Save (Ctrl+S) stores a new version there.",
     "saveToSite": "Save to site",
     "toThisPc": "On this computer…"
+  },
+  "formatNotice": {
+    "title": "{{format}} opened",
+    "readMore": "Read more",
+    "dontShowAgain": "Don't show again for {{format}}",
+    "close": "Got it",
+    "settingsSection": "Show an explanation after opening",
+    "formats": {
+      "xer": {
+        "name": "Primavera file (.xer)",
+        "kept": "The app took over the WBS and the activities, with relationships, calendars, resources, progress, activity codes and user-defined fields. A baseline project becomes the baseline of the project that refers to it.",
+        "limited": "A relationship between two projects does not become a relationship in your schedule. If the calculation differs, you first see the dates as Primavera saved them.",
+        "save": "Save writes a new IFC file, with the original .xer inside it. Writing back to .xer is not possible: your .xer never changes."
+      },
+      "mpp": {
+        "name": "MS Project file (.mpp)",
+        "kept": "The app took over tasks with their structure, duration and constraints, plus relationships, calendars, resources, assignments and progress.",
+        "limited": "Baselines, costs and rates, notes and MS Project's custom fields are not included. If the calculation differs, you first see the dates as MS Project saved them.",
+        "save": "Save writes a new IFC file: your .mpp never changes. Writing back to .mpp is not possible. Exporting to MS Project XML is."
+      },
+      "mspdi": {
+        "name": "MS Project XML",
+        "kept": "The app took over tasks with their structure, plus relationships, constraints, calendars, resources, assignments, progress, the status date and baseline 0.",
+        "limited": "Notes, activity codes and custom fields are not included. The project calculates with the Open Planner Studio profile, not as Microsoft Project.",
+        "save": "Save writes a new IFC file: your XML file does not change. You can write back with Export › MS Project XML."
+      },
+      "p6xml": {
+        "name": "Primavera P6 XML",
+        "kept": "The app took over the WBS and the tasks, with relationships, constraints, calendars, resources, assignments, progress and the status date.",
+        "limited": "Baselines, deadlines, activity codes, custom fields and notes are not included. The project calculates with the Open Planner Studio profile, not as Primavera P6.",
+        "save": "Save writes a new IFC file: your XML file does not change. You can write back with Export › Primavera P6 XML."
+      },
+      "csv": {
+        "name": "CSV file",
+        "kept": "The app read one task per row: name, WBS code, duration, dates, predecessors and progress.",
+        "limited": "A CSV contains no resources, calendars, constraints, deadlines or baselines. The project is called CSV Import.",
+        "save": "Save writes a new IFC file: your CSV does not change. You can write back with Export › CSV (semicolon-separated)."
+      }
+    }
   }
 }

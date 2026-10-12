@@ -34,6 +34,7 @@ export type { BarColorSelection };
 import type { McpServerStatus } from '@/services/mcp/contracts';
 // Opslag via de site: de VRAAG van de twee site-dialogen. Type-only import, net als hierboven.
 import type { SiteOpenRequest, SiteSaveRequest } from '@/services/fileAccess/siteDialogs';
+import type { FormatNoticeKind } from '@/services/formatNoticeKinds';
 export type { McpServerStatus };
 
 export type WeekStartDay = 'monday' | 'sunday';
@@ -600,6 +601,15 @@ export interface UIState {
   /** session — de openstaande vraag "Opslaan op de site", of `null`. Zelfde opzet als
    *  `pendingSiteOpen`. */
   pendingSiteSave: SiteSaveRequest | null;
+  /** session — de uitleg na het openen van een ander formaat dan IFC (`FormatNoticeDialog`), of
+   *  `null`. Alleen de open-routes van de gebruiker zetten hem (`fileSlice`, `formatNoticeToShow`).
+   *  Bewust NIET blokkerend in `hasBlockingDialogOpen`: het project staat er al achter, de uitleg
+   *  hangt aan geen document en een MCP-sessie hoeft er niet op te wachten. Sneltoetsen blokkeert hij
+   *  wel, via de dialoogstapel (`isShortcutBlockedByDialog`). */
+  pendingFormatNotice: FormatNoticeKind | null;
+  /** persisted (`ops-formatNoticeHidden`) — formaten waarvoor de gebruiker die uitleg uitzette
+   *  ("Niet meer tonen"); Instellingen zet hem per formaat weer aan. Default leeg: alles tonen. */
+  formatNoticeHidden: FormatNoticeKind[];
   // --- Bedrijfsbibliotheken: Backstage-sectie Bibliotheek-dialogen ---
   /** session — pool-importdialoog open (met demping-waarschuwing). */
   showPoolImportDialog: boolean;
