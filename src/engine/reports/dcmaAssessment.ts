@@ -333,7 +333,10 @@ export function computeDcmaAssessment(ctx: ReportContext, logic: LogicIndex): Dc
   }
 
   if (!solve) metrics.push(na(12, 'criticalPathTest', { kind: 'test' }, 'notCalculated'));
-  else if (!cpm) metrics.push(na(12, 'criticalPathTest', { kind: 'test' }, 'notCalculated'));
+  // In de modus "datums zoals opgeslagen" toont het rapport de datums uit het bronbestand, geen
+  // berekening. De kritiek-padtest rekent zelf door (met de OPS-regels), dus zijn uitkomst hoort niet
+  // bij die datums en zou de melding tegenspreken. Na herberekenen (modus uit) draait hij weer.
+  else if (!cpm || ctx.datesAsRecorded) metrics.push(na(12, 'criticalPathTest', { kind: 'test' }, 'notCalculated'));
   else metrics.push(criticalPathTest(ctx, solve));
 
   if (!statusDay) metrics.push(na(13, 'cpli', { kind: 'minIndex', value: MIN_INDEX }, 'noStatusDate'));
