@@ -1349,7 +1349,7 @@ for (const [naam, ext, bron, sleutels] of [
   useAppStore.getState().newProject();
   const a = api.data.addTask({ name: 'A' });
   const b = api.data.addTask({ name: 'B' });
-  const relatie = api.data.addSequence({ predecessorId: a, successorId: b, type: 'FS', lagDays: 0 });
+  const relatie = api.data.addSequence({ predecessorId: a, successorId: b, type: 'FINISH_START', lagDays: 0 });
   useAppStore.setState((s) => {
     const seq = s.sequences.find((x) => x.id === relatie);
     if (seq) seq.p6StartAtPredecessorFinishBoundary = true;
