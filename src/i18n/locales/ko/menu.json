@@ -315,6 +315,8 @@
     "helpDocsLang": "문서 언어",
     "helpDocsLangAuto": "앱 언어 따르기",
     "helpLangFallback": "문서가 아직 사용자의 언어로 제공되지 않습니다. 영어 버전을 보고 있습니다.",
+    "helpTranslatedNote": "이 안내서는 영어에서 번역되었습니다. 영어판과 네덜란드어판보다 내용이 뒤처질 수 있습니다.",
+    "helpReadIn": "다음 언어로 읽기:",
     "unapplied": {
       "title": "변경 사항이 적용되지 않음",
       "body": "프로젝트 정보를 변경했지만 아직 적용하지 않았습니다. 이 변경 사항을 어떻게 하시겠습니까?",

@@ -315,6 +315,8 @@
     "helpDocsLang": "文档语言",
     "helpDocsLangAuto": "跟随应用语言",
     "helpLangFallback": "此文章尚未提供你的语言版本。你正在阅读英文版。",
+    "helpTranslatedNote": "本指南由英文翻译而来，可能落后于英文版和荷兰文版。",
+    "helpReadIn": "阅读语言：",
     "unapplied": {
       "title": "更改尚未应用",
       "body": "您已修改项目信息，但尚未应用。要如何处理这些更改？",

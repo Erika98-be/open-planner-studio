@@ -317,6 +317,8 @@
     "helpDocsLang": "Dokumentaation kieli",
     "helpDocsLangAuto": "Seuraa sovelluksen kieltä",
     "helpLangFallback": "Tämä artikkeli ei ole vielä saatavilla suomeksi. Luettavana on englanninkielinen versio.",
+    "helpTranslatedNote": "Tämä opas on käännetty englannin kielestä. Se voi jäädä jälkeen englanninkielisestä ja hollanninkielisestä versiosta.",
+    "helpReadIn": "Lue kielellä:",
     "unapplied": {
       "title": "Muutoksia ei ole käytetty",
       "body": "Projektitietoja on muutettu, mutta muutoksia ei ole vielä käytetty. Mitä muutoksille tehdään?",
