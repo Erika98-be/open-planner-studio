@@ -10,7 +10,8 @@
  *    (ook weglaten), de rest komt van het document;
  *  - baselines en `activeBaselineId`: niet ⇒ van het document;
  *  - resourcekalenders (`calendars`): niet (alleen de projectkalender `calendar`) ⇒ van het document;
- *    de projectkalender zelf volgt de extensie, tenzij zij hem ongewijzigd terugstuurt;
+ *    de projectkalender zelf volgt de extensie, met de bronvelden (`CALENDAR_SOURCE_FIELDS`) van de
+ *    documentkalender met hetzelfde id erover, zoals de kalenderdialoog ze bij een bewerking laat staan;
  *  - `activityCodeTypes` en `customFieldDefs`: niet (taken dragen alleen de waarden) ⇒ van het document;
  *  - `ifcGlobalIds`: niet ⇒ van het document;
  *  - `customTaskTypes`: alleen wat de extensie meestuurt (lijst plus de typen op haar taken) ⇒ de
@@ -47,9 +48,8 @@ import type { ImportResult } from '@/services/importTypes';
 import type { ProjectSchedulingOptions } from '@/types/project';
 import type { Task } from '@/types/task';
 import type { Sequence } from '@/types/sequence';
-import { sameValue } from '@/utils/sameValue';
-import type { ExtImportResult } from './extTypes';
-import { PUBLIC_SCHEDULING_OPTION_KEYS, toExtCalendar } from './extMappers';
+import type { WorkCalendar } from '@/types/calendar';
+import { PUBLIC_SCHEDULING_OPTION_KEYS } from './extMappers';
 
 /** Alleen-lezen bronvelden: `toExt*` geeft ze door, `fromExt*` neemt ze niet over. */
 export const TASK_SOURCE_FIELDS = [
@@ -57,6 +57,11 @@ export const TASK_SOURCE_FIELDS = [
   'p6CompletePctType', 'p6ExpectedFinish', 'p6SuspendResume',
 ] as const satisfies readonly (keyof Task)[];
 export const SEQUENCE_SOURCE_FIELDS = ['p6StartAtPredecessorFinishBoundary'] as const satisfies readonly (keyof Sequence)[];
+/** Kalender: de alleen-lezen P6-velden plus de niet-publieke herkomst (`generation`,
+ *  `p6NonWorkPenaltyDatesState`). `libraryOrigin` hoort er niet bij: elke niet-gekoppelde load wist hem. */
+export const CALENDAR_SOURCE_FIELDS = [
+  'p6Source', 'p6NonWorkPenaltyDates', 'p6NonWorkPenaltyDatesState', 'generation',
+] as const satisfies readonly (keyof WorkCalendar)[];
 
 /** Zet de bronvelden van het documentitem met hetzelfde id terug op het geladen item. */
 function withSourceFields<T extends { id: string }>(items: T[], own: readonly T[], fields: readonly (keyof T)[]): T[] {
@@ -87,7 +92,7 @@ function mergeCustomTaskTypes(
 export type ActiveDocument = Pick<AppState,
   'project' | 'tasks' | 'sequences' | 'customTaskTypes' | 'calendars' | 'baselines' | 'activeBaselineId' | 'activityCodeTypes' | 'customFieldDefs' | 'ifcGlobalIds'>;
 
-export function retainActiveDocument(ext: ExtImportResult, loaded: ImportResult, active: ActiveDocument): ImportResult {
+export function retainActiveDocument(loaded: ImportResult, active: ActiveDocument): ImportResult {
   // Ander id: een nieuw project; het resultaat gaat ongewijzigd door, precies zoals vóór deze stap.
   if (loaded.project.id !== active.project.id) return loaded;
 
@@ -101,15 +106,14 @@ export function retainActiveDocument(ext: ExtImportResult, loaded: ImportResult,
     schedulingOptions: Object.keys(options).length > 0 ? options as ProjectSchedulingOptions : undefined,
   };
 
-  // Kalenders. Eerst gaat de kalender die de extensie meestuurt (`calendar`) de bibliotheek in: stuurt
-  // zij hem ongewijzigd terug, dan blijft de entry van het document, met de velden die `ExtCalendar`
-  // niet naar binnen draagt (`p6Source`, `p6NonWorkPenaltyDates`, …). Daarna is de projectkalender de
-  // entry met `project.calendarId`: wisselt de extensie daarmee van kalender, dan blijft de oude
-  // gewoon in de bibliotheek. De projectkalender staat NIET ook in `resourceCalendars`: dan hernoemde
-  // `ensureUniqueImportIds` hem als dubbel id (`…-dup-2`); het laden zet hem zelf weer in de
-  // bibliotheek (`promoteProjectCalendarToLibrary`).
-  const own = active.calendars.find((c) => c.id === loaded.calendar.id);
-  const sent = own && sameValue(ext.calendar, toExtCalendar(own)) ? own : loaded.calendar;
+  // Kalenders. Eerst gaat de kalender die de extensie meestuurt (`calendar`) de bibliotheek in, met de
+  // bronvelden van de documentkalender met hetzelfde id erover (`p6Source`, `generation`, …: die draagt
+  // `ExtCalendar` niet naar binnen). Daarna is de projectkalender de entry met `project.calendarId`:
+  // wisselt de extensie daarmee van kalender, dan blijft de oude gewoon in de bibliotheek. De
+  // projectkalender staat NIET ook in `resourceCalendars`: dan hernoemde `ensureUniqueImportIds` hem als
+  // dubbel id (`…-dup-2`); het laden zet hem zelf weer in de bibliotheek (`promoteProjectCalendarToLibrary`).
+  const [sent] = withSourceFields([loaded.calendar], active.calendars, CALENDAR_SOURCE_FIELDS);
+  const own = active.calendars.some((c) => c.id === sent.id);
   const library = [...active.calendars.map((c) => (c.id === sent.id ? sent : c)), ...(own ? [] : [sent])];
   const calendar = library.find((c) => c.id === project.calendarId) ?? sent;
   const resourceCalendars = library.filter((c) => c.id !== calendar.id);

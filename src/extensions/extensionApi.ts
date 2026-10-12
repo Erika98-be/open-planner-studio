@@ -307,7 +307,7 @@ export function createExtensionApi(
         const sameProject = loaded.project.id === store.project.id;
         // Zelfde project-id ⇒ wat het contract niet draagt, blijft van het document (N3, B29); zie
         // `retainActiveDocument`.
-        store.loadState(retainActiveDocument(result, loaded, store));
+        store.loadState(retainActiveDocument(loaded, store));
         document.store.getState().runCPM();
         document.store.setState((s) => {
           // Het geladen document wijkt af van wat er bewaard is: de afsluitcontrole en AutoSave moeten

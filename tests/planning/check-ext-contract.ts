@@ -63,7 +63,8 @@ import { isMultiDocumentImport } from '@/services/importTypes';
 import { decodeXerSourceArchive, sha256Hex } from '@/services/xerSourceArchive';
 import { ExtImportSourceDriftError } from '@/extensions/extImportSource';
 import { builtInProfile } from '@/engine/scheduler/conventions/registry';
-import { TASK_SOURCE_FIELDS, SEQUENCE_SOURCE_FIELDS } from '@/extensions/retainActiveDocument';
+import { TASK_SOURCE_FIELDS, SEQUENCE_SOURCE_FIELDS, CALENDAR_SOURCE_FIELDS } from '@/extensions/retainActiveDocument';
+import type { CalendarGeneration } from '@/types/calendar';
 
 const diffs: string[] = [];
 let checks = 0;
@@ -1278,8 +1279,18 @@ for (const [naam, ext, bron, sleutels] of [
   eq('N3D-07a ongewijzigde projectkalender houdt velden die ExtCalendar niet naar binnen draagt',
     na.calendar.p6NonWorkPenaltyDates, ['2026-01-05']);
 
-  // De extensie wijzigt de projectkalender: die wijziging wint van de bibliotheek-entry.
+  // De extensie wijzigt de projectkalender: die wijziging wint van de bibliotheek-entry, en de
+  // bronvelden van de documentkalender blijven erop staan (reviewproef probe-e E1). Mutatiebewijs:
+  // `withSourceFields` voor de kalender weglaten ⇒ N3D-22 en N3D-07a rood.
   zetDocument();
+  useAppStore.setState((s) => {
+    const meta = {
+      p6Source: 'XER' as const, p6NonWorkPenaltyDatesState: 'VALID_VALUES' as const,
+      generation: { ruleSetId: 'NL', generatedFromYear: 2026, generatedToYear: 2026 } as CalendarGeneration,
+    };
+    s.calendars = s.calendars.map((c) => (c.id === s.project.calendarId ? { ...c, ...meta } : c));
+    s.calendar = s.calendars.find((c) => c.id === s.project.calendarId)!;
+  });
   const kalender = herladen((r) => {
     r.calendar = { ...r.calendar, holidays: [...r.calendar.holidays, { name: 'Extensievrij', startDate: '2026-07-01', endDate: '2026-07-01' }] };
   });
@@ -1288,6 +1299,10 @@ for (const [naam, ext, bron, sleutels] of [
     kalender.calendars.find((c) => c.id === kalender.project.calendarId)?.holidays.some((h) => h.name === 'Extensievrij'),
     kalender.calendars.map((c) => c.id).sort(),
   ], [true, true, [kalender.project.calendarId, 'cal-ploeg'].sort()]);
+  eq('N3D-22 een gewijzigde projectkalender houdt de bronvelden van de documentkalender', [
+    kalender.calendar.p6Source, kalender.calendar.p6NonWorkPenaltyDates, kalender.calendar.p6NonWorkPenaltyDatesState,
+    kalender.calendar.generation?.ruleSetId,
+  ], ['XER', ['2026-01-05'], 'VALID_VALUES', 'NL']);
 
   // Kalenderwissel via `project.calendarId` (reviewproef probe-d): de oude projectkalender blijft
   // bestaan, en een taak die er expliciet naar wijst, houdt die verwijzing. Mutatiebewijs: filter op
@@ -1349,9 +1364,13 @@ for (const [naam, ext, bron, sleutels] of [
 // Fixture uit de reviewproef `probe-a`: een lopende CP_Phys-taak met een verwacht einde. Mutatiebewijs:
 // laat `withSourceFields` zijn invoer teruggeven en N3D-13 kleurt rood (earlyFinish 2026-08-10T10:00).
 {
-  eq('N3D-14 de bronveldlijsten zijn precies de alleen-lezen velden uit het contract', [
-    [...TASK_SOURCE_FIELDS], [...SEQUENCE_SOURCE_FIELDS],
-  ], [LEES_ALLEEN_EXT.task, LEES_ALLEEN_EXT.sequence]);
+  eq('N3D-14 de bronveldlijsten zijn precies de velden die niet naar binnen oversteken', [
+    [...TASK_SOURCE_FIELDS], [...SEQUENCE_SOURCE_FIELDS], [...CALENDAR_SOURCE_FIELDS].sort(),
+  ], [
+    LEES_ALLEEN_EXT.task, LEES_ALLEEN_EXT.sequence,
+    // `libraryOrigin` niet: elke niet-gekoppelde load wist hem (`stripLibraryOrigins`).
+    [...LEES_ALLEEN_EXT.calendar, ...NIET_PUBLIEK.calendar.filter((k) => k !== 'libraryOrigin')].sort(),
+  ]);
 
   const xer = [
     'ERMHDR\t23.12\t2026-08-01\t\t\t\t\t\tEUR',
