@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite';
+import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 import fs from 'fs';
@@ -29,13 +29,27 @@ function allowedFsRoots(): string[] {
 // @ts-expect-error — dev-port.mjs is plain JS zonder types
 import { worktreeRoot, readRecordedPort } from './scripts/dev-port.mjs';
 
-export default defineConfig({
+/**
+ * Vite-modus van de platformbouw voor de OpenAEC-app op Frappe (issue #307). Alleen
+ * `scripts/build-platform.mjs` (`npm run build:platform -- --base /pad/`) bouwt in deze modus; Vite
+ * leest dan ook `.env.platform` (bouwvlag `VITE_OPS_PLATFORM`, zie `src/utils/buildFlags.ts`).
+ * Alleen in deze modus: `build.manifest` (de site voegt de entry uit `.vite/manifest.json` in) en een
+ * eigen uitvoermap, zodat de gewone `npm run build` en de live-deploy ongewijzigd blijven.
+ */
+const PLATFORM_MODE = 'platform';
+const PLATFORM_OUT_DIR = 'dist-platform';
+
+export default defineConfig(({ mode }) => ({
   plugins: [react()],
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version),
     // Per-worktree instance slug (set by scripts/tauri-dev.mjs); '' in a plain
     // build. Used to isolate the auto-save recovery file across worktrees.
     __OPS_DEV_INSTANCE__: JSON.stringify(process.env.OPS_DEV_INSTANCE ?? ''),
+    // Bouwvlag van de platformbouw (`src/utils/buildFlags.ts`), in ELKE modus als letterlijke waarde
+    // (uit `.env.platform`, anders ''). Vite vervangt `import.meta.env?.X` alleen als X een define is;
+    // zonder deze regel blijft de vlag in de gewone bouw een runtime-check en snoeit de bundelaar niets.
+    'import.meta.env.VITE_OPS_PLATFORM': JSON.stringify(loadEnv(mode, __dirname, 'VITE_OPS_').VITE_OPS_PLATFORM ?? ''),
   },
   resolve: {
     alias: {
@@ -74,12 +88,15 @@ export default defineConfig({
       ignored: [
         path.resolve(__dirname, '.claude/worktrees') + '/**',
         path.resolve(__dirname, 'dist') + '/**',
+        path.resolve(__dirname, PLATFORM_OUT_DIR) + '/**',
       ],
     },
   },
   build: {
     target: 'es2020',
-    outDir: 'dist',
+    outDir: mode === PLATFORM_MODE ? PLATFORM_OUT_DIR : 'dist',
+    // Alleen in de platformbouw: de site leest hieruit welke entry (JS + CSS) hij invoegt.
+    manifest: mode === PLATFORM_MODE,
     rollupOptions: {
       output: {
         // Split large, stable code out of the main entry chunk into separate
@@ -128,4 +145,4 @@ export default defineConfig({
       },
     },
   },
-});
+}));
