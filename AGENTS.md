@@ -103,8 +103,8 @@ Node 22 (see CI). Rust stable only for the `tauri:*` commands.
   is imported dynamically inside an `isTauri()` branch. A top-level import breaks the web build.
   Updater and MCP bridge are Tauri-only; the browser does its own file I/O and recovery.
 - **Platform build.** `npm run build:platform -- --base /pad/` builds the bundle the OpenAEC app on Frappe serves
-  under a sub-path (Vite mode `platform`, `.env.platform`, `build.manifest`, `dist-platform/`); `npm run build` stays
-  byte-identical. Differences go only through the constants in `src/utils/buildFlags.ts` (extensions, demo start and
+  under a sub-path (Vite mode `platform`, `.env.platform`, `build.manifest`, `dist-platform/`); `npm run build` gets
+  none of the platform switches. Differences go only through the constants in `src/utils/buildFlags.ts` (extensions, demo start and
   AI mode are off there) — never read `VITE_OPS_PLATFORM` directly. Own assets always via `import.meta.env.BASE_URL`.
   Detail: `docs/platformbouw.md`.
 - **Rust is thin.** Exactly three commands (`install_kind`, `mcp_bridge_start`, `mcp_bridge_stop`); every new

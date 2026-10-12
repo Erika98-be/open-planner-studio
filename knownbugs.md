@@ -204,23 +204,21 @@ en noem het in je rapport of PR-tekst.
 46. **`.mpp` neemt de kritiek-drempel uit MS Project niet over als projectinstelling** (wel voor *Datums zoals
     opgeslagen*; MSPDI doet het wel). Gevolg: drempel 0 na openen. — B
 
-95. **Twee tabbladen op hetzelfde site-bestand delen één `baseVersion`.** De site-backend houdt de laatst
-    bekende versie per bestand-id bij (`src/services/fileAccess/siteBackend.ts`), niet per document. Slaat het
-    ene tabblad op, dan geldt die versie ook als basis voor het andere, en ziet de conflictcontrole van de site
-    het verschil niet. Gemeld door de bouwer van #309. — S
-96. **Een site-bestand verdwijnt uit Recent bij elke leesfout**, ook bij een tijdelijke (netwerk, sessie
-    verlopen). Zelfde gedrag als bij een web-handle (`openRecentFile` in `fileSlice.ts`). Voorstel: alleen
-    verwijderen als de site zegt dat het bestand niet bestaat. Gemeld door de bouwer van #309. — S
-97. **Recent opent een site-bestand met de bewaarde naam.** Is het bestand op de site hernoemd, dan zie je de
+95. **Recent opent een site-bestand met de bewaarde naam.** Is het bestand op de site hernoemd, dan zie je de
     nieuwe naam pas na openen via *Openen van de site*. Gemeld door de bouwer van #309. — S
-98. **Het herstelmanifest schrijft een `version`, maar niemand controleert die** (`recoveryStore.ts`). Een
+96. **Het herstelmanifest schrijft een `version`, maar niemand controleert die** (`recoveryStore.ts`). Een
     oudere build leest een nieuwer manifest dus zonder waarschuwing. Gemeld door de bouwer van #309. — S
-99. **De sluitvraag van een tabblad ligt op een vaste z-index 80**, de gewone dialogen op 50/60. Elke vraag die
+97. **De sluitvraag van een tabblad ligt op een vaste z-index 80**, de gewone dialogen op 50/60. Elke vraag die
     vanuit *Opslaan* in die sluitvraag opent, valt eronder en lijkt te hangen. De twee site-dialogen liggen
     daarom op `z-[90]`; een volgende vraag op die route moet hetzelfde doen. Gezien bij #309 met een
     browsertest. — B
 
-102. **Crashherstel gebruikt `crypto.randomUUID` zonder terugval op twee plekken** (`recoveryStore.ts`, het nemen
+98. **Browseropslag hangt niet aan de ingelogde gebruiker van de site.** Crashherstel (`ops-recovery`, met
+    `siteFileId`) en de recente bestanden staan per browserprofiel, niet per gebruiker. Logt gebruiker A uit en B in
+    op dezelfde browser, dan krijgt B de herstelvraag van A, en schrijft Ctrl+S na herstel naar het bestand van A
+    met de rechten van B. Voorstel: de host levert een gebruikers-id en de tool sleutelt zijn opslag daarop.
+    Gemeld door de review van #312. — S
+99. **Crashherstel gebruikt `crypto.randomUUID` zonder terugval op twee plekken** (`recoveryStore.ts`, het nemen
     van een nieuwe sessie-id na een bezet tabblad). Die functie bestaat alleen in een veilige context (https of
     localhost); op een gewoon http-adres gooit hij. Gezien bij #309 in de nep-site op de dev-server via
     Tailscale (daar hersteld). Productie draait op https; de dev-server via een IP-adres niet. — S

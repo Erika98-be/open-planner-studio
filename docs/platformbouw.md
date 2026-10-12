@@ -28,7 +28,9 @@ npm run build:platform -- --base /assets/openaec/planner/
   icoon) laadt de app via `import.meta.env.BASE_URL`.
 - Het script draait eerst `tsc`, net als `npm run build`, en bouwt daarna met `vite build --mode platform`.
 - De uitvoer staat in `dist-platform/`, met `dist-platform/.vite/manifest.json` (Vite `build.manifest`).
-- De gewone `npm run build` en de live-deploy veranderen niet: dezelfde bestanden, byte voor byte.
+- De gewone `npm run build` en de live-deploy krijgen geen van de schakelaars hieronder. De code voor opslag
+  via de site zit wel in elke bouw, maar doet alleen iets als een host aanwezig is; de desktop-app heeft nooit
+  een host.
 
 ### De bouwvlag
 
@@ -147,4 +149,5 @@ server die `dist-platform/` onder `/tools/planner/` serveert.
 
 - Er is nog geen echte site. Het contract is getoetst met een nep-host, niet met Frappe.
 - Het basispad op de site ligt nog niet vast; het script vraagt het daarom altijd.
-- Twee tabbladen op hetzelfde site-bestand delen één `baseVersion`.
+- Browseropslag (crashherstel, recente bestanden) hangt aan het browserprofiel, niet aan de ingelogde gebruiker
+  van de site (knownbugs 98). Een gebruikers-id van de host zou dat kunnen oplossen.

@@ -63,8 +63,12 @@ export function validateBase(base) {
 // `OPS_DEV_INSTANCE` is de slug van een dev- of testinstantie; `vite.config.ts` bakt hem in de bundel
 // (`__OPS_DEV_INSTANCE__`, voorvoegsel van de herstelbestanden). Een platformbundel heeft er nooit een,
 // ook niet als het script vanuit een dev- of testomgeving start.
+// Ook elke `VITE_*` uit de shell gaat eruit: Vite laat die vóór `.env.platform` gaan. Zo kan een
+// `VITE_OPS_BENCH_BRIDGE=1` geen testbrug (`window.__OPS__`) in de platformbundel zetten, en kan een
+// `VITE_OPS_PLATFORM` uit de shell de bouwvlag niet overschrijven. Alleen `.env.platform` telt.
 const BUILD_ENV = { ...process.env };
 delete BUILD_ENV.OPS_DEV_INSTANCE;
+for (const key of Object.keys(BUILD_ENV)) if (key.startsWith('VITE_')) delete BUILD_ENV[key];
 
 function run(bin, args) {
   const result = spawnSync(path.join(ROOT, 'node_modules', '.bin', bin), args, { cwd: ROOT, stdio: 'inherit', env: BUILD_ENV });
