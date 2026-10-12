@@ -42,6 +42,9 @@ You get ONE package: `{{PACKAGE}}` (`"kind": "docs"`, language `lang`) and its E
   exists, use exactly those quotation marks.
 - Names of example tasks, projects, calendars and resources stay in English exactly as in the source,
   everywhere (also in prose, not only in italics), and also as link text.
+  Only a name stays English: *Brickwork* (the task) stays, but "the bricklayer", "the brickwork" or
+  "a .xer file" as ordinary words are translated (".xer file" → your word for file, e.g. de
+  "eine .xer-Datei"). Leave no other English word in the running text.
 - `{{…}}` only where the source has it. Never copy a UI text with an open place (`{{n}}`) into the
   guide: write what the source shows.
 - Translate the meaning, sentence by sentence. Add no explanations or notes; leave nothing out.

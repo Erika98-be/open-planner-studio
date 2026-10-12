@@ -26,7 +26,8 @@ pitfalls for this language `{{PACKAGE_DIR}}/pitfalls.md` (made by `prepare docs`
 - Labels: a UI name in italics must be one of its label's `targets` letter for letter, in the
   nominative, with a carrier word for the case. A label with `"role": "tab"` is a ribbon or settings
   tab: only its `targets` are right. Names of example tasks, projects, calendars and resources stay in
-  English exactly as in the source, everywhere.
+  English exactly as in the source, everywhere. Any other English word left in the running text
+  ("a .xer file", "the bricklayer" as an ordinary word) is an error: report it.
 - Write only `{{REVIEW_FILE}}`: a JSON array, one object per problem:
   `{ "package": "{{ID}}", "section": <index>, "kind": "<kind>", "problem": "<short>", "quote": "<the whole wrong sentence, copied exactly from .out.md>", "proposal": "<the whole corrected sentence>" }`
   `kind` is one of: `term` (not the term from `terms`, a word from `avoid`, or a term in the wrong
