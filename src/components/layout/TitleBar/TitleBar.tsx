@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { SwitcherPill } from '@/components/layout/DocumentChrome/SwitcherPill';
 import { canRedo, canUndo } from '@/state/sessionHistory';
-import { canWriteToRefWithoutPrompt, type FileRef } from '@/services/fileAccess';
+import { canWriteToRefWithoutPrompt, saveTargetRef } from '@/services/fileAccess';
 
 // Het label van de feedback-knop roteert elke 10 minuten door deze drie.
 const FEEDBACK_LABEL_KEYS = ['feedback.rotateFeedback', 'feedback.rotateBug', 'feedback.rotateFeature'] as const;
@@ -36,6 +36,7 @@ export function TitleBar() {
   const setUI = useAppStore(s => s.setUI);
   const filePath = useAppStore(s => s.filePath);
   const fileHandle = useAppStore(s => s.fileHandle);
+  const siteFileId = useAppStore(s => s.siteFileId);
   const autoSaveToFile = useAppStore(s => s.autoSaveToFile);
   const setAutoSaveToFile = useAppStore(s => s.setAutoSaveToFile);
   const documentChromeStyle = useAppStore(s => s.ui.documentChromeStyle);
@@ -109,11 +110,12 @@ export function TitleBar() {
 
   // Een naamloos document heeft geen bestaand doel dat veilig overschreven mag worden. Recovery
   // draait onafhankelijk hiervan door; de schakelaar belooft uitsluitend échte bestandsopslag.
-  const autoSaveRef = useMemo<FileRef | null>(() => (
-    fileHandle
-      ? { kind: 'handle', handle: fileHandle }
-      : (isTauri() && filePath ? { kind: 'path', path: filePath } : null)
-  ), [fileHandle, filePath]);
+  // Eén afleiding van het opslagdoel (`saveTargetRef`), dezelfde als Opslaan en de AutoSave-timer —
+  // dus ook een document op de site heeft hier een bruikbaar doel.
+  const autoSaveRef = useMemo(
+    () => saveTargetRef({ filePath, fileHandle, siteFileId }),
+    [fileHandle, filePath, siteFileId],
+  );
   const autoSaveTitle = !autoSaveRef
     ? tCommon('autosave.noFile')
     : tCommon(autoSaveToFile ? 'autosave.onHint' : 'autosave.offHint');

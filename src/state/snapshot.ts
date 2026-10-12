@@ -25,7 +25,7 @@ import { sameValue } from '@/utils/sameValue';
  *      één undo de opgeslagen datums én de modus terug:
  *    cpmResult, scheduleStale, recordedDates, datesAsRecorded
  *  UIT ('none', undo raakt deze bewust NIET aan):
- *    selectedTaskIds, resourceLoadResult, view, collapsedTaskIds, filePath, fileHandle en isDirty
+ *    selectedTaskIds, resourceLoadResult, view, collapsedTaskIds, filePath, fileHandle, siteFileId en isDirty
  *    (data-undo/redo zet isDirty altijd op true; `importPristine` wist alleen een undo/redo van een
  *    echte bewerking, niet van een `nonEdit`-event — zie `restoreSnapshot`). De sessiehistorie is
  *    app-globaal en hoort niet bij `DocumentPayload`. resourceLoadResult en viewRows worden door

@@ -68,6 +68,7 @@
     "mppLegacy": "This .mpp file uses an older format (Project 2007 or earlier). In MS Project, export it as XML (File → Save As → XML) and open that file.",
     "mppEncrypted": "This .mpp file is password-protected. In MS Project, export it as XML (File → Save As → XML) and open that file.",
     "saveFailed": "Failed to save",
+    "siteSaveConflict": "Not saved: '{{name}}' was changed on the site by someone else in the meantime. Your changes are still in the app. Choose Save As to keep them as a new file.",
     "savedViaDownload": "Saved as a download: '{{name}}' is now in your downloads folder. This environment does not let the app write directly to the location you picked.",
     "browserCannotOverwrite": "This browser does not let the app write back to '{{name}}'. That is why the app asks again where to put the file every time you save. This does not happen in Chrome, Edge or the desktop app.",
     "browserSavesAsDownload": "Saved as a download: '{{name}}' is in your downloads folder. This browser does not let the app write to a place of its own, so every save creates a new download. In Chrome, Edge or the desktop app, Save simply updates the same file.",
@@ -1443,5 +1444,30 @@
     "yes": "Yes",
     "no": "No",
     "busy": "Getting the tutorials ready…"
+  },
+  "siteFiles": {
+    "openTitle": "Open from the site",
+    "loading": "Loading files…",
+    "loadFailed": "The files on the site could not be loaded.",
+    "retry": "Try again",
+    "empty": "There are no schedules on the site yet.",
+    "showVersions": "Show versions",
+    "hideVersions": "Hide versions",
+    "open": "Open",
+    "versionsLoading": "Loading versions…",
+    "versionsFailed": "The versions could not be loaded.",
+    "versionsEmpty": "No versions found.",
+    "versionLabel": "Version {{version}}",
+    "versionLatest": "latest",
+    "byAuthor": "by {{author}}",
+    "openCopy": "Open as copy",
+    "copyHint": "An older version opens as a copy. Saving then creates a new file; the latest version stays unchanged.",
+    "versionCopyName": "{{name}} (version {{version}})",
+    "fromThisPc": "From this computer…",
+    "saveTitle": "Save to the site",
+    "nameLabel": "Name",
+    "saveHint": "The project is stored on the site as a new IFC file. After that, Save (Ctrl+S) stores a new version there.",
+    "saveToSite": "Save to site",
+    "toThisPc": "On this computer…"
   }
 }

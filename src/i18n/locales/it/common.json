@@ -84,6 +84,7 @@
     "mppLegacy": "Questo file .mpp utilizza un formato precedente (Project 2007 o versioni precedenti). Esportalo da MS Project come XML (File → Salva con nome → XML) e apri quel file.",
     "mppEncrypted": "Questo file .mpp è protetto da password. Esportalo da MS Project come XML (File → Salva con nome → XML) e apri quel file.",
     "saveFailed": "Salvataggio non riuscito",
+    "siteSaveConflict": "Non salvato: '{{name}}' è stato modificato nel frattempo sul sito da qualcun altro. Le tue modifiche sono ancora nell'applicazione. Scegli Salva come per conservarle in un nuovo file.",
     "savedViaDownload": "Salvato come download: '{{name}}' si trova ora nella cartella dei download. Questo ambiente non consente all'applicazione di scrivere direttamente nella posizione scelta.",
     "browserCannotOverwrite": "Questo browser non consente all'app di riscrivere su «{{name}}». Per questo l'app chiede di nuovo dove salvare il file a ogni salvataggio. Questo non accade in Chrome, Edge o nell'app desktop.",
     "browserSavesAsDownload": "Salvato come download: «{{name}}» si trova nella cartella dei download. Questo browser non consente all'app di scrivere in una posizione propria, quindi ogni salvataggio crea un nuovo download. In Chrome, Edge o nell'app desktop, Salva aggiorna semplicemente lo stesso file.",
@@ -1493,5 +1494,30 @@
     "yes": "Sì",
     "no": "No",
     "busy": "Preparazione dei tutorial…"
+  },
+  "siteFiles": {
+    "openTitle": "Apri dal sito",
+    "loading": "Caricamento file…",
+    "loadFailed": "Impossibile caricare i file del sito.",
+    "retry": "Riprova",
+    "empty": "Non ci sono ancora pianificazioni sul sito.",
+    "showVersions": "Mostra versioni",
+    "hideVersions": "Nascondi versioni",
+    "open": "Apri",
+    "versionsLoading": "Caricamento versioni…",
+    "versionsFailed": "Impossibile caricare le versioni.",
+    "versionsEmpty": "Nessuna versione trovata.",
+    "versionLabel": "Versione {{version}}",
+    "versionLatest": "più recente",
+    "byAuthor": "di {{author}}",
+    "openCopy": "Apri come copia",
+    "copyHint": "Una versione precedente si apre come copia. Il salvataggio crea quindi un nuovo file; la versione più recente resta invariata.",
+    "versionCopyName": "{{name}} (versione {{version}})",
+    "fromThisPc": "Da questo computer…",
+    "saveTitle": "Salva sul sito",
+    "nameLabel": "Nome",
+    "saveHint": "Il progetto viene salvato sul sito come nuovo file IFC. Dopo, Salva (Ctrl+S) vi salva una nuova versione.",
+    "saveToSite": "Salva sul sito",
+    "toThisPc": "Su questo computer…"
   }
 }

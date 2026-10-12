@@ -100,6 +100,7 @@
     "mppLegacy": "Ten plik .mpp używa starszego formatu (Project 2007 lub starszy). Wyeksportuj go w MS Project jako XML (Plik → Zapisz jako → XML) i otwórz ten plik.",
     "mppEncrypted": "Ten plik .mpp jest zabezpieczony hasłem. Wyeksportuj go w MS Project jako XML (Plik → Zapisz jako → XML) i otwórz ten plik.",
     "saveFailed": "Nie udało się zapisać",
+    "siteSaveConflict": "Nie zapisano: '{{name}}' został w międzyczasie zmieniony w witrynie przez kogoś innego. Twoje zmiany nadal są w aplikacji. Wybierz Zapisz jako, aby zachować je jako nowy plik.",
     "savedViaDownload": "Zapisano jako pobrany plik: '{{name}}' znajduje się teraz w folderze pobierania. To środowisko nie pozwala aplikacji zapisywać bezpośrednio w wybranej lokalizacji.",
     "browserCannotOverwrite": "Ta przeglądarka nie pozwala aplikacji zapisać ponownie do „{{name}}”. Dlatego przy każdym zapisie aplikacja ponownie pyta, gdzie zapisać plik. W Chrome, Edge ani w aplikacji desktopowej tak się nie dzieje.",
     "browserSavesAsDownload": "Zapisano jako pobieranie: „{{name}}” jest w folderze pobranych plików. Ta przeglądarka nie pozwala aplikacji zapisywać we własnym miejscu, więc każdy zapis tworzy nowe pobieranie. W Chrome, Edge lub aplikacji desktopowej Zapisz po prostu aktualizuje ten sam plik.",
@@ -1543,5 +1544,30 @@
     "yes": "Tak",
     "no": "Nie",
     "busy": "Przygotowywanie samouczków…"
+  },
+  "siteFiles": {
+    "openTitle": "Otwórz z witryny",
+    "loading": "Ładowanie plików…",
+    "loadFailed": "Nie udało się załadować plików z witryny.",
+    "retry": "Spróbuj ponownie",
+    "empty": "W witrynie nie ma jeszcze harmonogramów.",
+    "showVersions": "Pokaż wersje",
+    "hideVersions": "Ukryj wersje",
+    "open": "Otwórz",
+    "versionsLoading": "Ładowanie wersji…",
+    "versionsFailed": "Nie udało się załadować wersji.",
+    "versionsEmpty": "Nie znaleziono wersji.",
+    "versionLabel": "Wersja {{version}}",
+    "versionLatest": "najnowsza",
+    "byAuthor": "autor: {{author}}",
+    "openCopy": "Otwórz jako kopię",
+    "copyHint": "Starsza wersja otwiera się jako kopia. Zapisanie tworzy wtedy nowy plik; najnowsza wersja pozostaje bez zmian.",
+    "versionCopyName": "{{name}} (wersja {{version}})",
+    "fromThisPc": "Z tego komputera…",
+    "saveTitle": "Zapisz w witrynie",
+    "nameLabel": "Nazwa",
+    "saveHint": "Projekt zostanie zapisany w witrynie jako nowy plik IFC. Potem polecenie Zapisz (Ctrl+S) zapisuje tam nową wersję.",
+    "saveToSite": "Zapisz w witrynie",
+    "toThisPc": "Na tym komputerze…"
   }
 }

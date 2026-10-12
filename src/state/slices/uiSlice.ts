@@ -164,6 +164,8 @@ export function createDefaultUI(): UIState {
     showStatsDialog: false,
     pendingExtensionConsent: null,
     pendingActualStartQuestion: null,
+    pendingSiteOpen: null,
+    pendingSiteSave: null,
     showPoolImportDialog: false,
     poolImportCompanyId: null,
     showLibraryLinkDialog: false,

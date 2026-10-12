@@ -68,6 +68,7 @@
     "mppLegacy": "Dit .mpp-bestand gebruikt een oud formaat (Project 2007 of ouder). Exporteer het in MS Project als XML (Bestand → Opslaan als → XML) en open dat bestand.",
     "mppEncrypted": "Dit .mpp-bestand is met een wachtwoord beveiligd. Exporteer het in MS Project als XML (Bestand → Opslaan als → XML) en open dat bestand.",
     "saveFailed": "Opslaan mislukt",
+    "siteSaveConflict": "Niet opgeslagen: '{{name}}' is op de site intussen door iemand anders gewijzigd. Je wijzigingen staan nog in de app. Kies Opslaan als om ze als nieuw bestand te bewaren.",
     "savedViaDownload": "Opgeslagen als download: '{{name}}' staat nu in je downloadmap. Deze omgeving staat de app niet toe rechtstreeks naar de gekozen locatie te schrijven.",
     "browserCannotOverwrite": "Deze browser laat de app niet terugschrijven naar '{{name}}'. Daarom vraagt de app bij elke keer opslaan opnieuw waar het bestand moet komen. In Chrome, Edge of de desktop-app gebeurt dit niet.",
     "browserSavesAsDownload": "Opgeslagen als download: '{{name}}' staat in je downloadmap. Deze browser laat de app niet naar een eigen plek schrijven, dus elke keer opslaan maakt een nieuwe download. In Chrome, Edge of de desktop-app werkt Opslaan hetzelfde bestand gewoon bij.",
@@ -1443,5 +1444,30 @@
     "yes": "Ja",
     "no": "Nee",
     "busy": "Tutorials klaarzetten…"
+  },
+  "siteFiles": {
+    "openTitle": "Openen van de site",
+    "loading": "Bestanden laden…",
+    "loadFailed": "De bestanden op de site konden niet worden geladen.",
+    "retry": "Opnieuw proberen",
+    "empty": "Er staan nog geen planningen op de site.",
+    "showVersions": "Versies tonen",
+    "hideVersions": "Versies verbergen",
+    "open": "Openen",
+    "versionsLoading": "Versies laden…",
+    "versionsFailed": "De versies konden niet worden geladen.",
+    "versionsEmpty": "Geen versies gevonden.",
+    "versionLabel": "Versie {{version}}",
+    "versionLatest": "nieuwste",
+    "byAuthor": "door {{author}}",
+    "openCopy": "Openen als kopie",
+    "copyHint": "Een oudere versie opent als kopie. Opslaan maakt dan een nieuw bestand; de nieuwste versie blijft ongewijzigd.",
+    "versionCopyName": "{{name}} (versie {{version}})",
+    "fromThisPc": "Van deze pc…",
+    "saveTitle": "Opslaan op de site",
+    "nameLabel": "Naam",
+    "saveHint": "Het project komt als nieuw IFC-bestand op de site. Daarna slaat Opslaan (Ctrl+S) daar een nieuwe versie op.",
+    "saveToSite": "Op de site opslaan",
+    "toThisPc": "Op deze pc…"
   }
 }

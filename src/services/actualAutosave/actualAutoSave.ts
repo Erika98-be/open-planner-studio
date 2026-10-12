@@ -15,6 +15,9 @@ export interface ActualAutoSaveCandidate {
   dirty: boolean;
   ref: FileRef | null;
   source: IFCSaveSource;
+  /** Bestandsnaam van het document; alleen de site-backend gebruikt hem (het `name`-veld van een
+   *  nieuwe versie). */
+  name?: string;
 }
 
 export interface ActualAutoSaveController {

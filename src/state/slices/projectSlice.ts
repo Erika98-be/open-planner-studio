@@ -98,6 +98,9 @@ export interface ProjectSlice {
   /** Web-opslaan-doel. ALLEEN het FSA-opslaan-doel — nooit voor identiteit/titel;
    *  die blijven bij `filePath` (echt pad in Tauri, bestandsnaam in web). `null` in Tauri/fallback-web. */
   fileHandle: FileSystemFileHandle | null;
+  /** Opslaan-doel op de site (issue #309): id van het bestand op de site, of `null`. Zie
+   *  `DocumentPayload.siteFileId`. */
+  siteFileId: string | null;
   /** Persoonlijke sessiekeuze voor echte bestands-AutoSave; per document via DOCUMENT_FIELDS. */
   autoSaveToFile: boolean;
   /** XER-herkomst van het actieve document; externe relaties blijven solverloze brondata. */
@@ -187,6 +190,7 @@ export const createProjectSlice: AppSliceFactory<ProjectSlice> = (runtime) => (s
   isDirty: false,
   filePath: null,
   fileHandle: null,
+  siteFileId: null,
   autoSaveToFile: false,
   xerImportMetadata: null,
   xerSourceArchive: null,

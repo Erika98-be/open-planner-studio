@@ -8,6 +8,7 @@ import type { RecoveryEntry } from '@/components/dialogs/RecoveryDialog';
 import { recoveryInputFromParsed, type RecoveryDocInput } from '@/state/documentContract';
 import { loadRecovery, clearRecovery, holdRecoveryForLater } from '@/services/recovery/recoveryStore';
 import { buildImportLabels } from '@/i18n/importLabels';
+import { rememberSiteVersion } from '@/services/fileAccess/siteBackend';
 
 // In-app herstel-dialoog (vervangt de native OS-`ask()`): de gedetecteerde
 // recovery-payload + de callbacks om te herstellen/verwerpen/uitstellen. Lokale
@@ -78,6 +79,9 @@ export function useRecoveryRestore(): RecoveryRestore {
             restored.push(recoveryInputFromParsed(parsed, {
               id: d.id,
               filePath: d.filePath,
+              // Het site-opslagdoel van vóór de crash (issue #309): Ctrl+S schrijft na herstel weer
+              // naar de site, net als bij een Tauri-pad. Ouder manifest ⇒ `null`.
+              siteFileId: d.siteFileId ?? null,
               isDirty: d.isDirty,
               datesAsRecorded: d.datesAsRecorded,
             }));
@@ -126,6 +130,13 @@ export function useRecoveryRestore(): RecoveryRestore {
           onRestore: () => {
             void (async () => {
               try {
+                // De versie waarop elk site-document rustte wordt weer de basis voor de
+                // conflictcontrole. Alleen als deze sessie nog niets over dat bestand weet.
+                for (const d of loaded.docs) {
+                  if (d.siteFileId && d.siteFileVersion) {
+                    rememberSiteVersion(d.siteFileId, d.siteFileVersion, { onlyIfUnknown: true });
+                  }
+                }
                 // `restoreDocuments` gooit niet op een corrupt-maar-parseerbaar document (bv. een
                 // cyclische WBS-relatie die de solver laat gooien) — het slaat zo'n document zelf
                 // over en geeft de overgeslagen id's terug.
