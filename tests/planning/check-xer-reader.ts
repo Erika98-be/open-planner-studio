@@ -291,12 +291,19 @@ eq('3k XER/P6 behoudt voltooide actual start/finish als minuutexacte broninstant
 });
 
 const byId = new Map(result.tasks.map(task => [task.id, task]));
-eq('4 WBS-rijen worden exact één samenvattingstaak, vóór activiteiten en stabiel gesorteerd',
-  result.tasks.slice(0, 3).map(task => ({ id: task.id, parent: task.parentId, children: task.childIds })),
+// Boomvolgorde (diepte-eerst): elke activiteit direct onder haar WBS, zoals de P6 XML-lezer. Tot
+// 2026-10-12 pinde deze check "alle WBS vóór alle activiteiten" (zie check-xer-wbs-tree.ts).
+eq('4 WBS-rijen worden exact één samenvattingstaak, in boomvolgorde en stabiel gesorteerd',
+  result.tasks.map(task => ({ id: task.id, parent: task.parentId, children: task.childIds })),
   [
     { id: 'xer-wbs:P1:W-ROOT', parent: null, children: ['xer-wbs:P1:W-CHILD', 'xer-wbs:P1:W-SIB'] },
     { id: 'xer-wbs:P1:W-CHILD', parent: 'xer-wbs:P1:W-ROOT', children: ['T1', 'T2'] },
+    { id: 'T1', parent: 'xer-wbs:P1:W-CHILD', children: [] },
+    { id: 'T2', parent: 'xer-wbs:P1:W-CHILD', children: [] },
     { id: 'xer-wbs:P1:W-SIB', parent: 'xer-wbs:P1:W-ROOT', children: ['T3', 'T4', 'T5'] },
+    { id: 'T3', parent: 'xer-wbs:P1:W-SIB', children: [] },
+    { id: 'T4', parent: 'xer-wbs:P1:W-SIB', children: [] },
+    { id: 'T5', parent: 'xer-wbs:P1:W-SIB', children: [] },
   ]);
 eq('5 er ontstaan geen extra fidelity-bladtaken voor WBS', {
   total: result.tasks.length,
