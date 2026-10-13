@@ -5,12 +5,14 @@
 import { useAppStore } from '@/state/appStore';
 
 type Scene = {
+  /** Eigen verloop zonder Projectinfo; geeft het doel-selector terug. */
+  run?: () => Promise<string>;
   /** Voorbereiding in de store vóór Projectinfo opengaat (alleen beginstand, geen geteste handeling). */
   setup?: () => void;
   /** Klikken binnen Projectinfo voordat het doel zichtbaar is. */
   steps?: () => Promise<void>;
   /** Het element dat de eigenaar moet zien. */
-  target: string;
+  target?: string;
 };
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -48,6 +50,17 @@ async function chooseProfile(value: string): Promise<void> {
   (await waitFor(`[role="option"][data-value="${value}"]`)).click();
 }
 
+/** Opent een bestand van een oudere app-versie (geen schemamarkering) met kop `schema`, en drukt Ctrl+S:
+ *  de schemavraag (#292) verschijnt. Het bestand is de fixture van de arity-test. */
+async function openOldFileAndSave(schema: 'IFC4' | 'IFC4X3'): Promise<string> {
+  const raw = await (await fetch('/tests/planning/fixtures/ifc-arity-oude-writer.ifc')).text();
+  const text = raw.replace("FILE_SCHEMA(('IFC4X3'));", `FILE_SCHEMA(('${schema}'));`);
+  await useAppStore.getState().openExampleFromString(text, schema === 'IFC4' ? 'bouwmodel-ifc4.ifc' : 'oude-planning-ifc43.ifc');
+  await sleep(500);
+  document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 's', code: 'KeyS', ctrlKey: true, bubbles: true }));
+  return '[data-ops-ifc-schema-question]';
+}
+
 const SCENES: Record<string, Scene> = {
   // Blauwe (nu oranje) infoblokken in Projectinfo › Rekenprofiel.
   'info-uitleg': {
@@ -71,6 +84,9 @@ const SCENES: Record<string, Scene> = {
   'label-uurplanning': { target: '[data-ops-convention-requires="hourPlanning"]' },
   // De IFC-schemakeuze (#292).
   'ifc-schema': { target: '[data-ops-project-ifc-schema]' },
+  // De schemavraag bij opslaan (#292): een IFC4-bestand, en een IFC 4.3-bestand van een oudere app.
+  'ifc-vraag-ifc4': { run: () => openOldFileAndSave('IFC4') },
+  'ifc-vraag-ifc43': { run: () => openOldFileAndSave('IFC4X3') },
 };
 
 export async function runQaScene(name: string): Promise<void> {
@@ -82,10 +98,16 @@ export async function runQaScene(name: string): Promise<void> {
   // Welkomstvenster (eerste start in een schone browser) wegklikken.
   await sleep(300);
   if (document.querySelector('[data-ops-welcome-dialog]')) await clickText('[data-ops-welcome-dialog]', ['Overslaan', 'Skip']);
-  scene.setup?.();
-  await openProjectInfo();
-  await scene.steps?.();
-  const el = await waitFor(scene.target);
+  let target: string;
+  if (scene.run) {
+    target = await scene.run();
+  } else {
+    scene.setup?.();
+    await openProjectInfo();
+    await scene.steps?.();
+    target = scene.target!;
+  }
+  const el = await waitFor(target);
   el.scrollIntoView({ block: 'center' });
   el.style.outline = '3px dashed var(--theme-accent)';
   el.style.outlineOffset = '3px';
