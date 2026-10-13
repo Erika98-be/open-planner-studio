@@ -546,3 +546,12 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   `WorkingTimes` niet meer, dus hij helpt niemand); review gestart (reviewer, Opus 5.5), inclusief combinatie met #343.
 - **#343 gemerged in main 2026-10-13: → 59794aa55**, kop fcb9928c3 (bevatte main 57f882fa4), CI 15/15,
   `--admin`. Geen motorwerk, dus geen `measure:profiles`.
+- **#344 review: nee** (reviewer, Opus 5.5). Nieuwe bestanden 0 fouten; oude OPS-bestanden 70/70 gelijk. Bevindingen:
+  B1 [hoog] v2026.9.0 leest `WorkingTimes` als `ExceptionTimes` ⇒ nep-feestdag op de openingsdag, alle feestdagen
+  weg, werkweek ma–vr 07–16, 1451/1818 taken andere datums (blijvend na opslaan); B2 projectstart uit
+  `IfcWorkPlan.StartTime` verschuift bSI-taken 3 dagen; B3 "0 fouten" alleen voor nieuwe GlobalIds (oude ongeldige
+  GlobalIds blijven, eigenaarsbesluit 2026-09-28); B4 poort mist GlobalId-vorm, verwijzingstypen, XER-archief e.a.;
+  B5 tijd zonder seconden. Fixronde 1 naar de maker. **Besluit orkestrator:** kalenderindeling achter één
+  schakelaar, voorlopig 8 attributen (twee stappen); TS-poort uitbreiden i.p.v. IfcOpenShell in CI; GlobalIds
+  niet opnieuw uitgeven (later besluit). **Voor de eigenaar (na checkstap 10):** nu alles geldig mét waarschuwing,
+  of in twee stappen.
