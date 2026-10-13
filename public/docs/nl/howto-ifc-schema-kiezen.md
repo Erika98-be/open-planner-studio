@@ -23,6 +23,8 @@ De drie keuzes:
 
 **De inhoud van het bestand verandert niet.** De drie schema's kennen de planningsgegevens die de app schrijft op dezelfde manier. Alleen de regel `FILE_SCHEMA` in de kop verschilt. Je verliest dus niets als je een ander schema kiest.
 
+**Een IFC 4.3-model uit IfcOpenShell of Bonsai** heeft meestal `IFC4X3_ADD2` in de kop. IfcOpenShell voegt een planning met `IFC4X3` daar niet mee samen. Kies dan *IFC 4.3 ADD2*. Kijk bij twijfel in de regel `FILE_SCHEMA` bovenaan het bestand van het model.
+
 **De keuze hoort bij het project.** Ze staat in het bestand zelf. Open je een IFC4-bestand, dan slaat de app het weer op als IFC4. Een nieuw project begint op *IFC 4.3 (standaard)*.
 
 **Een bestand in een ander schema**, zoals IFC2X3, opent de app wel. Bij opslaan schrijft ze het als IFC 4.3.

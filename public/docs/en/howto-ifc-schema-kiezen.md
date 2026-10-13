@@ -23,6 +23,8 @@ The three choices:
 
 **The content of the file does not change.** The three schemas know the scheduling data that the app writes in the same way. Only the `FILE_SCHEMA` line in the header differs. So you lose nothing when you choose another schema.
 
+**An IFC 4.3 model from IfcOpenShell or Bonsai** usually has `IFC4X3_ADD2` in the header. IfcOpenShell does not merge a schedule with `IFC4X3` into it. Then choose *IFC 4.3 ADD2*. If in doubt, look at the `FILE_SCHEMA` line at the top of the model file.
+
 **The choice belongs to the project.** It is stored in the file itself. If you open an IFC4 file, the app saves it as IFC4 again. A new project starts at *IFC 4.3 (default)*.
 
 **A file in another schema**, such as IFC2X3, opens in the app. When you save, the app writes it as IFC 4.3.
