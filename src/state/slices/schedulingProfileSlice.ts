@@ -40,7 +40,7 @@ export const createSchedulingProfileSlice: AppSliceFactory<SchedulingProfileSlic
   applyProjectInfo: (patch, next) => {
     if (next && !hasValidProfileName(next.profile)) return { changed: false, shifted: null };
     // Het schema hoort bij het bestand: eerst, buiten de undo-stap van de rest.
-    const { schema, rest: metadata } = splitIfcSchemaPatch(patch);
+    const { schema, rest: metadata } = splitIfcSchemaPatch(patch, get().project);
     const schemaChanged = schema ? get().setIfcSchema(schema) : false;
     const before = get();
     const hasMetadata = Object.keys(metadata).length > 0;

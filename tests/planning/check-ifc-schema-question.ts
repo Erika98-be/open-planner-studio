@@ -14,7 +14,8 @@
 //      schrijft.
 //   D. Ongedaan maken en opnieuw doen veranderen het schema nooit (review #336 punt 2): het schema is
 //      een eigenschap van het bestand, net als het antwoord. Anders schreef AutoSave na een undo binnen
-//      10 s weer het oude schema. Ook een keuze in Projectinfo is daarom geen undo-stap.
+//      10 s weer het oude schema. Ook een keuze in Projectinfo is daarom geen undo-stap. Alleen een
+//      echte keuze telt: een patch met hetzelfde schema of `undefined` laat de open vraag staan.
 //   E. Exporteren (review #336 punt 4): een export naar een nieuw bestand vraagt niets. Bij een schema
 //      dat de app niet schrijft (IFC2X3) wordt de export IFC 4.3 ADD2, zonder een markering
 //      "IfcSchemaUnconfirmed = IFC2X3" die niet bij de kop past. Het document zelf houdt zijn vraag.
@@ -314,6 +315,24 @@ truthy('0 oude fixture: geen schemamarkering', !hasProp(OLD_FILE, 'IfcSchemaConf
   eq('D6 undo: naam terug, schema blijft IFC4', [S().project.name, S().project.ifcSchema], [nameBefore, 'IFC4']);
   S().redo();
   eq('D6 redo: naam weer, schema IFC4', [S().project.name, S().project.ifcSchema], ['D6 naam', 'IFC4']);
+
+  // D7 — herbeoordeling #336: alleen een echte keuze telt. Een patch met hetzelfde schema (het hele
+  // project terug, met een andere naam) of met `ifcSchema: undefined` beantwoordt de open vraag niet.
+  await open(withHeader(OLD_FILE, 'IFC4'), 'model.ifc');
+  S().setProject({ ...S().project, name: 'D7 naam' });
+  eq('D7a setProject met het hele project: naam gewijzigd, vraag IFC4 blijft open',
+    [S().project.name, ...schemaState()], ['D7 naam', 'IFC4', 'IFC4']);
+  S().applyProjectInfo({ ...S().project, name: 'D7b naam' }, undefined);
+  eq('D7b applyProjectInfo met het hele project: vraag IFC4 blijft open',
+    [S().project.name, ...schemaState()], ['D7b naam', 'IFC4', 'IFC4']);
+  await open(withHeader(OLD_FILE, 'IFC2X3'), 'oud-2x3.ifc');
+  S().setProject({ ...S().project, ifcSchema: undefined, name: 'D7c naam' });
+  eq('D7c IFC2X3 met ifcSchema undefined in de patch: vraag en AutoSave-blokkade blijven',
+    [S().project.name, ...schemaState(), autoSave().blocked], ['D7c naam', undefined, 'IFC2X3', true]);
+  // Een ander schema blijft wél een keuze: ook ADD2 voor een document dat nog geen schema heeft.
+  S().setProject({ ifcSchema: 'IFC4X3_ADD2' });
+  eq('D7d IFC2X3 met een expliciete keuze ADD2: schema ADD2, vraag weg, niet meer geblokkeerd',
+    [...schemaState(), autoSave().blocked], ['IFC4X3_ADD2', undefined, false]);
 }
 
 // ═══ E. Exporteren naar een nieuw bestand (review #336 punt 4) ═══════════════════════════════

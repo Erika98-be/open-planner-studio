@@ -226,7 +226,7 @@ export const createProjectSlice: AppSliceFactory<ProjectSlice> = (runtime) => (s
 
   setProject: (patch) => {
     // Het schema gaat buiten de undo-stap (zie `setIfcSchema`); de rest is gewone metadata.
-    const { schema, rest: updates } = splitIfcSchemaPatch(patch);
+    const { schema, rest: updates } = splitIfcSchemaPatch(patch, get().project);
     if (schema) get().setIfcSchema(schema);
     // Telt de wortel-ankers die deze aanroep klemt, buiten de
     // Immer-`set()`-producer om — zelfde precedent als `moveProject` hieronder (een `let out`/

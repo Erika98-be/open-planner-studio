@@ -1,4 +1,4 @@
-import { projectIfcSchema, type IfcSchemaId, type Project } from '@/types/project';
+import { isIfcSchemaId, type IfcSchemaId, type Project } from '@/types/project';
 
 /**
  * Het IFC-schema is een eigenschap van het BESTAND, niet van de bewerkingsgeschiedenis (issue #292,
@@ -24,14 +24,19 @@ export function applyIfcSchemaChoice(project: Project, schema: IfcSchemaId): boo
   return true;
 }
 
-/** Haal het schema uit een projectpatch. `schema` is gezet als de patch `ifcSchema` bevat (een
- *  ongeldige of lege waarde ⇒ de standaard); `ifcSchemaUnconfirmed` gaat altijd uit `rest`: de open
- *  vraag vervalt alleen door een keuze. */
-export function splitIfcSchemaPatch(patch: Partial<Project>): { schema: IfcSchemaId | undefined; rest: Partial<Project> } {
+/** Haal het schema uit een projectpatch. `schema` is alleen gezet bij een echte keuze: een geldig
+ *  schema dat verschilt van het schema van het project nu (`current`). Dezelfde waarde, `undefined` of
+ *  een ongeldige waarde is geen keuze, zodat `setProject({ ...project, name })` de open vraag niet stil
+ *  beantwoordt (herbeoordeling #336). `ifcSchemaUnconfirmed` gaat altijd uit `rest`: de open vraag
+ *  vervalt alleen door een keuze. */
+export function splitIfcSchemaPatch(
+  patch: Partial<Project>,
+  current: Pick<Project, 'ifcSchema'>,
+): { schema: IfcSchemaId | undefined; rest: Partial<Project> } {
   if (!('ifcSchema' in patch) && !('ifcSchemaUnconfirmed' in patch)) return { schema: undefined, rest: patch };
   const { ifcSchema, ifcSchemaUnconfirmed: _question, ...rest } = patch;
   void _question;
-  return { schema: 'ifcSchema' in patch ? projectIfcSchema({ ifcSchema }) : undefined, rest };
+  return { schema: isIfcSchemaId(ifcSchema) && ifcSchema !== current.ifcSchema ? ifcSchema : undefined, rest };
 }
 
 /** Het herstelde project, met het schema en de open vraag van het bestand (de live state). Hetzelfde
