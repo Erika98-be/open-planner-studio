@@ -358,8 +358,9 @@ doorrekenen).
   de ingelezen taakdatums.
 - **Opslaan in v2026.9.0** maakt het verlies blijvend. Alle 36 bestanden geopend en opgeslagen met
   v2026.9.0, daarna gelezen met deze branch: 705 van 705 feestdagen weg, de extra feestdag op de dag
-  van openen staat nu als echte feestdag in het bestand (42 kalenders), 4 werkende uitzonderingen en 2
-  ploegen weg, 2027 van 2219 taken anders na doorrekenen. De kop is daarna weer `IFC4X3`.
+  van openen staat nu als echte feestdag in het bestand (42 feestdagen in 41 kalenders), 4 werkende
+  uitzonderingen en 2 ploegen weg, 2027 van 2219 taken anders na doorrekenen. De kop is daarna weer
+  `IFC4X3`.
 - **De omgekeerde richting** werkt: deze versie leest oude bestanden zoals main
   (`check-ifc-legacy-arity`, `check-ifc-schema-reader`).
 
