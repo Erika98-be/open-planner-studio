@@ -544,3 +544,5 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   werkende uitzonderingen en ploeg verloren (blijvend als ze opslaan). Wordt een besluit voor de eigenaar ná de
   review. **Besluit orkestrator:** de terugvalweek uit #340 gaat uit de schrijver (oudere versies lezen
   `WorkingTimes` niet meer, dus hij helpt niemand); review gestart (reviewer, Opus 5.5), inclusief combinatie met #343.
+- **#343 gemerged in main 2026-10-13: → 59794aa55**, kop fcb9928c3 (bevatte main 57f882fa4), CI 15/15,
+  `--admin`. Geen motorwerk, dus geen `measure:profiles`.
