@@ -355,3 +355,7 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   volgorde eerste werkdag, `inferredSimpleBreak` maandag-eerst, kalender zonder blokken) in mini-ronde 3. **Merge
   van #334 wacht op de eigenaar:** optie 2 (alleen-lezen velden + infoblok) is een orkestratorbesluit; samen met
   ronde 2 (#333) aanbieden.
+- #334 mini-ronde 3 klaar (9332c970d, CI groen): eigen blokken terug bij weer aanzetten; eerste werkdag zondag-eerst
+  overal; kalender zonder blokken krijgt blokken uit begin/einde/pauze. **#334 toegevoegd aan integratie #333**
+  (kop e69ed03f0; titel/tekst bijgewerkt); lichte checks exit 0; `measure:profiles` en CI lopen. Testversie 3049 nu
+  op lokale branch `claude/release-check-3` (= #333-kop + QA-commits, geen upstream); checklink nagelopen.
