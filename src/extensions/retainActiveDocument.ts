@@ -6,8 +6,8 @@
  *
  * Wat het contract (`ExtImportResult`, contract 1.4.x) draagt en wat niet:
  *  - rekenprofiel: niet (alleen-lezen, B29) ⇒ van het document;
- *  - P6 Project-ID van een P6 XML-import (`project.p6ProjectCode`): niet (niet publiek) ⇒ van het
- *    document, zodat een export naar P6 het project na een lees-wijzig-laad nog herkent;
+ *  - P6 Project-ID (`documentProjectCode`): niet (niet publiek) ⇒ van het document, als
+ *    `project.p6ProjectCode`; bij een XER-document uit de broncache, die hieronder vervalt;
  *  - reken-opties: alleen de zes publieke (`PUBLIC_SCHEDULING_OPTION_KEYS`) ⇒ die volgen de extensie
  *    (ook weglaten), de rest komt van het document;
  *  - baselines en `activeBaselineId`: niet ⇒ van het document;
@@ -55,6 +55,7 @@ import type { Task } from '@/types/task';
 import type { Sequence } from '@/types/sequence';
 import type { WorkCalendar } from '@/types/calendar';
 import { PUBLIC_SCHEDULING_OPTION_KEYS, fromExtImportResult } from './extMappers';
+import { documentProjectCode } from '@/utils/documentProjectCode';
 
 /** Alleen-lezen bronvelden: `toExt*` geeft ze door, `fromExt*` neemt ze niet over. */
 export const TASK_SOURCE_FIELDS = [
@@ -95,7 +96,8 @@ function mergeCustomTaskTypes(
 
 /** Het deel van het actieve document dat deze stap leest. */
 export type ActiveDocument = Pick<AppState,
-  'project' | 'tasks' | 'sequences' | 'customTaskTypes' | 'calendars' | 'baselines' | 'activeBaselineId' | 'activityCodeTypes' | 'customFieldDefs' | 'ifcGlobalIds'>;
+  'project' | 'tasks' | 'sequences' | 'customTaskTypes' | 'calendars' | 'baselines' | 'activeBaselineId' | 'activityCodeTypes' | 'customFieldDefs' | 'ifcGlobalIds'
+  | 'xerImportMetadata'>;
 
 /** Alleen voor hetzelfde project-id; die keuze maakt `loadExtensionProject`. Bij een ander id gaat het
  *  resultaat ongewijzigd door, precies zoals vóór deze stap. */
@@ -109,12 +111,13 @@ export function retainActiveDocument(loaded: ImportResult, active: ActiveDocumen
   // een ander id mee, dan IS die kalender de nieuwe projectkalender (`calendar` is per contract de
   // projectkalender). Wijzigt zij `project.calendarId` wél, dan telt die keuze.
   const calendarId = loaded.project.calendarId === active.project.calendarId ? loaded.calendar.id : loaded.project.calendarId;
+  const p6ProjectCode = documentProjectCode(active.project, active.xerImportMetadata);
   const project = {
     ...loaded.project,
     calendarId,
     schedulingProfile: active.project.schedulingProfile,
     schedulingOptions: Object.keys(options).length > 0 ? options as ProjectSchedulingOptions : undefined,
-    ...(active.project.p6ProjectCode ? { p6ProjectCode: active.project.p6ProjectCode } : {}),
+    ...(p6ProjectCode ? { p6ProjectCode } : {}),
   };
 
   // Kalenders. Eerst gaat de kalender die de extensie meestuurt (`calendar`) de bibliotheek in, met de

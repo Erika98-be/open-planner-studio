@@ -1,4 +1,3 @@
-import type { Project } from '@/types/project';
 import { castDraft } from 'immer';
 import type { AppState } from '../appStore';
 import type { AppSliceFactory } from './types';
@@ -188,18 +187,6 @@ export interface DocumentSlice {
   setAutoSaveToFile: (enabled: boolean) => void;
   /** Markeer uitsluitend de documentversie die de writer daadwerkelijk heeft weggeschreven schoon. */
   markAutoSaveVersionSaved: (id: string, source: IFCSaveSource) => void;
-}
-
-/**
- * Titel-afleiding voor `getOpenDocuments()`. Dezelfde regel als de tabbladen — daarom letterlijk
- * dezelfde pure helper uit `@/utils/documents`.
- *
- * Een naamloos project levert bewust een LEGE titel: de store is een datalaag, geen weergavelaag
- * (geen hardgecodeerde tekst). De weergaveplekken vullen de
- * vertaalde `common:project.untitled` in.
- */
-function docTitle(filePath: string | null, project: Project, projectCode?: string | null): string {
-  return documentTitle(filePath, project.name, projectCode);
 }
 
 /** Diepe JSON-kloon (de projectdata is JSON-veilig). */
@@ -565,7 +552,9 @@ export const createDocumentSlice: AppSliceFactory<DocumentSlice> = (runtime) => 
       const project = active ? s.project : d.payload!.project;
       const isDirty = active ? s.isDirty : d.payload!.isDirty;
       const xerMeta = active ? s.xerImportMetadata : d.payload!.xerImportMetadata;
-      return { id: d.id, title: docTitle(filePath, project, documentProjectCode(project, xerMeta)), isDirty, isActive: active };
+      // Dezelfde titelregel als de tabbladen (`documentTitle`). Een naamloos project levert bewust een
+      // LEGE titel: de store is een datalaag; de weergaveplekken vullen `common:project.untitled` in.
+      return { id: d.id, title: documentTitle(filePath, project.name, documentProjectCode(project, xerMeta)), isDirty, isActive: active };
     });
     // Naamloze documenten krijgen een volgnummer mee, zodat twee lege tabbladen (bv. na
     // `duplicateDocument` van een naamloos project) onderscheidbaar blijven zónder dat er een

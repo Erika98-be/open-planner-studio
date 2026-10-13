@@ -632,8 +632,7 @@ function writeStructure(
     projSettingProps.push(addLine(ctx, '_ps_companyname',
       `IFCPROPERTYSINGLEVALUE('CompanyName',$,IFCTEXT(${ifcStr(project.companyName)}),$)`));
   }
-  // P6 Project-ID van een P6 XML-import, los van de naam (eigenaarsbesluit 2026-10-13). Golden rule:
-  // alleen wanneer gezet, dus een bestand zonder P6-code blijft byte-identiek.
+  // P6 Project-ID (zie `documentProjectCode`). Golden rule: alleen wanneer gezet.
   if (project.p6ProjectCode) {
     projSettingProps.push(addLine(ctx, '_ps_p6projectcode',
       `IFCPROPERTYSINGLEVALUE('P6ProjectCode',$,IFCTEXT(${ifcStr(project.p6ProjectCode)}),$)`));

@@ -35,6 +35,7 @@ import {
   P6_LINK_TYPE,
   P6_NAME_TO_CURVE,
   isOpsInternalProjectId,
+  isLegacyOpsProjectId,
 } from './p6xmlWriter';
 import { invertRecord } from '@/utils/collections';
 import {
@@ -1227,12 +1228,13 @@ function readP6XmlProject(scope: P6XmlScope): P6XmlProjectRead {
 }
 
 /**
- * De P6 Project-ID (`<Id>`) van een `<Project>` of `<BaselineProject>`, of `''`. De eigen writer zet
- * een project zonder code onder `Id` = `OPS:` + het interne project-id; dat is geen projectcode.
+ * De P6 Project-ID (`<Id>`) van een `<Project>` of `<BaselineProject>`, of `''`. Geen code: het Id dat de
+ * eigen writer zonder code schrijft (`OPS:` + intern id) en het interne id van exports tot en met
+ * v2026.9.0 (`isLegacyOpsProjectId`); anders kreeg een heropende oude export een blijvende nepcode.
  */
 function p6ProjectCode(id: string): string {
   const code = id.trim();
-  return isOpsInternalProjectId(code) ? '' : code;
+  return isOpsInternalProjectId(code) || isLegacyOpsProjectId(code) ? '' : code;
 }
 
 /** Naam van een P6-baseline: "Naam (Id)" (`nameWithProjectCode`). Een baseline is geen document;
@@ -1261,11 +1263,7 @@ function parseProject(projEl: Element | null): Project {
   // MustFinishByDate is in P6 een optionele eis, geen berekend einde: ontbreekt hij, dan blijft de
   // einddatum leeg (zoals de writer hem voor een project zonder einddatum weglaat).
   const mustFinishRaw = getElementText(projEl, 'MustFinishByDate');
-  // De naam blijft de kale `<Name>`; de P6 Project-ID (`<Id>`) staat apart in `p6ProjectCode`
-  // (eigenaarsbesluit 2026-10-13, zoals XER). De weergave "Naam (Id)" maakt `nameWithProjectCode`
-  // (`documentProjectCode`), zodat een bestand met meerdere projecten (OZB: twaalf updates met
-  // dezelfde naam) onderscheidbare tabbladen geeft en hernoemen de code niet kwijtraakt.
-  // Geen naam ⇒ de code, zoals XER (`proj_short_name`).
+  // Naam kaal, code apart in `p6ProjectCode` (zie `documentProjectCode`). Geen naam ⇒ de code, zoals XER.
   const code = p6ProjectCode(getElementText(projEl, 'Id'));
   const project: Project = {
     id: generateId('proj'),

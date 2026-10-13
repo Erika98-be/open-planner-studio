@@ -4,7 +4,9 @@ import { useTranslation } from 'react-i18next';
 import { buildPrintRows, curveCellFont, measureCurveColumnWidth, measurePrintReport, measureTableColumnWidths, measureTaskNameColumnWidth, nameCellFont, NAME_COLUMN_WIDTH_DEFAULT, NAME_COLUMN_WIDTH_MAX, NAME_COLUMN_WIDTH_MIN, renderPrintCanvas, renderPrintPreviewPage, renderReport, REPORT_FONT_SCALES, REPORT_MAX_ZOOM, REPORT_MIN_ZOOM, PrintOptions, TableColumnWidths, TableHeaderLabels } from '@/services/print/printPreview';
 import { computePreviewRasterLimits } from '@/services/print/previewSafety';
 import { getLocalizedMonths, getLocalizedMonthsShort } from '@/i18n/dateFormat';
-import { projectFileBase } from '@/utils/documents';
+import { documentFileBase } from '@/utils/documents';
+import { documentProjectCode } from '@/utils/documentProjectCode';
+import { nameWithProjectCode } from '@/utils/projectCodeName';
 import { computeHighResScale } from '@/utils/miniPdf';
 import { paginateCanvasToPdfBytes, type PaginateOptions } from '@/services/print/paginate';
 import { computeTileLayout, footerLayoutWidthFor } from '@/services/print/tileLayout';
@@ -219,13 +221,16 @@ export function ReportPanel() {
   const sequences = useAppStore(s => s.sequences);
   const calendar = useAppStore(s => s.calendar);
   const project = useAppStore(s => s.project);
+  // Kop en PDF-naam dragen de documentnaam "Naam (code)", zoals tabblad en opslaan
+  // (`documentFileBase`; zie `documentProjectCode`).
+  const projectCode = useAppStore(s => documentProjectCode(s.project, s.xerImportMetadata));
   // Naamloos project ⇒ de vertaalde weergavenaam. De printlaag is een Canvas-renderer zonder
   // `t(...)`: die krijgt de al-vertaalde tekst dóórgegeven (zelfde patroon als `options.labels`).
   // Let op: dit is UITSLUITEND de tekst ÍN het rapport. Voor de BESTANDSNAAM van de export geldt de
   // neutrale, taalonafhankelijke terugval (`fileBase` hieronder), net als bij Bestand → Opslaan
   // (`project.ifc` in elke taal).
-  const projectName = project.name || tCommon('project.untitled');
-  const fileBase = projectFileBase(project.name);
+  const projectName = nameWithProjectCode(project.name, projectCode) || tCommon('project.untitled');
+  const fileBase = documentFileBase(project.name, projectCode);
   const dateNotation = useAppStore(s => s.ui.dateNotation);
   const weekStartDay = useAppStore(s => s.ui.weekStartDay);
   // Duur-kolom van de Gantt-afdruk: dezelfde tekst als taakraster en tooltip — Duurweergave, de

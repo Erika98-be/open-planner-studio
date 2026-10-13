@@ -1164,8 +1164,7 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
             const written = writeP6XMLWithReport(
               state.project, state.calendar, state.tasks,
               state.sequences, state.resources, state.assignments, state.calendars, state.customTaskTypes,
-              // De XER-broncache: een XER-document krijgt zijn P6 Project-ID als `<Id>` (documentProjectCode).
-              state.xerImportMetadata,
+              documentProjectCode(state.project, state.xerImportMetadata),
             );
             payload = written.xml;
             p6Truncated = written.truncated;
