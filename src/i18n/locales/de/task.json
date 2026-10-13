@@ -153,6 +153,7 @@
       "scheduleFinishNotManual": "Das geplante Ende gilt nur für einen manuell geplanten Vorgang. Ändern Sie das Ende über die Spalte Ende oder über die Dauer.",
       "finishFromDuration": "Bei diesem Vorgang ergibt sich das Ende aus Anfang und Dauer. Ändern Sie den Anfang oder die Dauer.",
       "finishBeforeStart": "Das Ende liegt vor dem Anfang.",
+      "startIsActual": "Dieser Vorgang hat begonnen; sein Anfang ist der Ist-Anfang. Ändern Sie ihn über den Fortschritt.",
       "finishIsActual": "Dieser Vorgang ist abgeschlossen; sein Ende ist das Ist-Ende. Ändern Sie es über den Fortschritt.",
       "invalid": "Der eingegebene Wert ist ungültig.",
       "relationToken": "Verwenden Sie zum Beispiel 1.2 FS+2d.",

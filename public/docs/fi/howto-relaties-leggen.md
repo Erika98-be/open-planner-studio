@@ -24,7 +24,7 @@ Hyödyllinen, kun työskennellään tehtävätaulukossa.
 2. Pidä Ctrl-näppäin alhaalla (macOS:ssä ⌘) ja napsauta seuraavaa tehtävää, eli seuraajaa.
 3. Valitse *Aloitus › Tehtävät › Riippuvuus ▾ › Linkitä valitut tehtävät*. Sama painike on myös kohdassa *Aikataulu › Riippuvuudet*.
 
-Sovellus luo FS-riippuvuuden (lopusta alkuun) ilman viivettä. Se näyttää esimerkiksi viestin *Riippuvuus luotu: Foundation brickwork → Lay hollow-core floor*. Painike toimii vain, kun valittuna on täsmälleen kaksi tehtävää.
+Sovellus luo FS-riippuvuuden (lopusta alkuun) ilman viivettä. Se näkyy nuolena Gantt-kaaviossa ja sarakkeessa *Edeltäjät*; ilmoitus näkyy vain, jos sovellus hylkää riippuvuuden. Painike toimii vain, kun valittuna on täsmälleen kaksi tehtävää.
 
 ### Riippuvuuden piirtäminen Gantt-kaaviossa
 

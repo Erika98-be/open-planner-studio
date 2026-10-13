@@ -18,7 +18,7 @@ Statusdatoen er den dag, hvor du gør status op. Angiv den, før du angiver frem
 
 Gør du status op fredag efter arbejdstid, så sæt statusdatoen til næste arbejdsdag, mandag. Appen lægger det resterende arbejde ind i tidsplanen fra starten af statusdatoen.
 
-Angiver du fremdrift, mens der endnu ikke er en statusdato, sætter appen den til i dag og viser en meddelelse: *Der var endnu ingen statusdato. Den er nu sat til i dag (…), fordi fremdrift måles op til statusdatoen. Du kan ændre den under Tidsplan → Statusdato.* Gør det derfor hellere selv først.
+Angiver du fremdrift, mens der endnu ikke er en statusdato, sætter appen den til i dag og viser en meddelelse: *Statusdato sat til i dag (…).* Gør det derfor hellere selv først.
 
 ### 2. Angiv fremdriften
 

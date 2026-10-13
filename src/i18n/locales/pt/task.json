@@ -153,6 +153,7 @@
       "scheduleFinishNotManual": "O fim planeado só se aplica a uma tarefa agendada manualmente. Altere o fim através da coluna Fim ou da duração.",
       "finishFromDuration": "Nesta tarefa, o fim resulta do início e da duração. Altere o início ou a duração.",
       "finishBeforeStart": "O fim é anterior ao início.",
+      "startIsActual": "Esta tarefa já começou; o seu início é o início real. Altere-o através do progresso.",
       "finishIsActual": "Esta tarefa está concluída; o seu fim é o fim real. Altere-o através do progresso.",
       "invalid": "O valor introduzido não é válido.",
       "relationToken": "Use, por exemplo, 1.2 FS+2d.",

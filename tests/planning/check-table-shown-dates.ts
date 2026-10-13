@@ -16,7 +16,15 @@ import { buildTaskColumnRegistry } from '@/engine/taskGrid/taskColumnRegistry';
 import { CalendarEngine } from '@/engine/scheduler/CalendarEngine';
 import { signedWorkDaysBetween } from '@/engine/variance';
 import { effectiveCalendarOf, effHoursPerDay } from '@/utils/taskDuration';
-import { shownFinish, shownStart, startAnchorAfterEdit } from '@/utils/taskDates';
+import {
+  computedStart, finishIsActual, shownFinish, shownStart, startAnchorAfterEdit, startIsActual,
+} from '@/utils/taskDates';
+import { readXER } from '@/services/xer/xerReader';
+import { isMultiDocumentImport, type ImportResult } from '@/services/importTypes';
+import { selectProfile } from '@/state/schedulingProfileDraft';
+import { saveTaskDialog } from '@/state/taskDialogSave';
+import { sourceAnchorDate } from '@/engine/externalLinks';
+import type { ExternalLink } from '@/types/task';
 import type { WorkCalendar } from '@/types/calendar';
 import type { Task } from '@/types/task';
 
@@ -221,6 +229,135 @@ function setup(): { a: string; b: string } {
   eq('Urentaak Einde → 02-06 10:00: 8 + 2 werkuren', task(h).time.durationMinutes, 600);
   S().runCPM();
   eq('Urentaak Einde na F5 = ingevoerde tijd', shownFinish(task(h)), '2026-06-02T10:00');
+}
+
+// ── 8–11. Werkelijke datums (eigenaarsbesluit 2026-10-12, optie 1) ──────────────────────────────
+// "Zoals Primavera. Een taak die klaar is, staat op de dagen waarop hij echt gebeurde. Een taak die
+// bezig is, begint op de dag waarop hij echt begon. Dat blijft zo, ook na opnieuw berekenen. Je kunt
+// dan voor zo'n taak geen nieuwe begindatum meer intypen." Een XER met een voltooide taak (C1,
+// fysiek %), een lopende (L1) en een niet-gestarte opvolger (N1); statusdatum ma 02-03 08:00.
+// Onder het P6-profiel zet A19 de rekenstart van L1 op de statusdatum en C5 die van C1 ook; onder
+// OPS pint de solver de rekenstart op de werkelijke start. De GETOONDE datums zijn in beide gelijk.
+function actualsCalendar(): string {
+  const day = (n: number) => `(0||${n}()(${n >= 2 && n <= 6 ? '(0||0(s|08:00|f|17:00)())' : ''}))`;
+  return `(0||CalendarData()((0||DaysOfWeek()(${[1, 2, 3, 4, 5, 6, 7].map(day).join('')}))(0||Exceptions()())))`;
+}
+const ACTUALS_XER = [
+  'ERMHDR\t23.12\t2026-09-01\t\t\t\t\t\tEUR',
+  '%T\tCALENDAR',
+  '%F\tclndr_id\tclndr_name\tproj_id\tclndr_type\tday_hr_cnt\tweek_hr_cnt\tclndr_data',
+  `%R\tC1\tWerkweek\tP1\tCA_Project\t9\t45\t${actualsCalendar()}`,
+  '%T\tPROJECT',
+  '%F\tproj_id\tproj_short_name\tclndr_id\tlast_recalc_date\tplan_start_date\tplan_end_date',
+  '%R\tP1\tVoortgang\tC1\t2026-03-02 08:00\t2026-01-05 08:00\t2026-06-30 17:00',
+  '%T\tTASK',
+  '%F\ttask_id\tproj_id\tclndr_id\ttask_code\ttask_name\ttask_type\tduration_type\tstatus_code\tcomplete_pct_type\ttarget_drtn_hr_cnt\tremain_drtn_hr_cnt\ttarget_start_date\ttarget_end_date\tact_start_date\tact_end_date',
+  '%R\tTC\tP1\tC1\tC1\tVoltooid\tTT_Task\tDT_FixedDUR2\tTK_Complete\tCP_Phys\t90\t0\t2026-01-05 08:00\t2026-01-16 17:00\t2026-01-05 08:00\t2026-01-16 17:00',
+  '%R\tTL\tP1\tC1\tL1\tLopend\tTT_Task\tDT_FixedDUR2\tTK_Active\tCP_Drtn\t90\t45\t2026-02-23 08:00\t2026-03-06 17:00\t2026-02-23 08:00\t',
+  '%R\tTN\tP1\tC1\tN1\tNiet gestart\tTT_Task\tDT_FixedDUR2\tTK_NotStart\tCP_Drtn\t45\t45\t2026-03-09 08:00\t2026-03-13 17:00\t\t',
+  '%T\tTASKPRED',
+  '%F\ttask_pred_id\ttask_id\tpred_task_id\tproj_id\tpred_proj_id\tpred_type\tlag_hr_cnt',
+  '%R\tR1\tTN\tTL\tP1\tP1\tPR_FS\t0',
+  '%E',
+].join('\n');
+function openActualsXer(): void {
+  const opened: ImportResult | ReturnType<typeof readXER> = readXER(new TextEncoder().encode(ACTUALS_XER));
+  if (isMultiDocumentImport(opened)) throw new Error('fixture moet één project openen');
+  S().newProject();
+  S().applyOpenedImport(opened, { filePath: null, recompute: true });
+}
+const byCode = (code: string): Task => S().tasks.find(candidate => candidate.wbsCode === code)!;
+function switchProfile(baseId: 'p6' | 'ops'): void {
+  const s = S();
+  s.applySchedulingSettings({
+    profile: selectProfile(s.project.schedulingProfile, `builtin:${baseId}`, []),
+    options: s.project.schedulingOptions,
+  });
+}
+
+for (const profile of ['p6', 'ops'] as const) {
+  openActualsXer();
+  if (profile === 'ops') switchProfile('ops');
+  const tag = profile === 'p6' ? 'P6' : 'OPS';
+  eq(`8.${tag} opzet: profiel`, S().project.schedulingProfile?.baseId ?? 'ops', profile);
+  eq(`8.${tag} opzet: niet in de modus "datums zoals opgeslagen"`, S().datesAsRecorded, false);
+  const c1 = byCode('C1');
+  const l1 = byCode('L1');
+  const n1 = byCode('N1');
+  // De rekendatums verschillen per profiel (motor ongewijzigd) …
+  if (profile === 'p6') {
+    eq('8.P6 rekenstart van de lopende taak = statusdatum (A19)', l1.time.earlyStart, '2026-03-02T08:00');
+    ok('8.P6 rekenstart van de voltooide taak ≠ werkelijke start (C5)', c1.time.earlyStart !== c1.time.actualStart);
+  } else {
+    eq('8.OPS rekenstart van de lopende taak = werkelijke start', l1.time.earlyStart, '2026-02-23T08:00');
+  }
+  // … de GETOONDE datums niet.
+  eq(`8.${tag} voltooid: Start = werkelijke start`, shownStart(c1), '2026-01-05T08:00');
+  eq(`8.${tag} voltooid: Einde = werkelijk einde`, shownFinish(c1), '2026-01-16T17:00');
+  eq(`8.${tag} lopend: Start = werkelijke start`, shownStart(l1), '2026-02-23T08:00');
+  eq(`8.${tag} lopend: Einde = berekend (rest)einde`, shownFinish(l1), l1.time.earlyFinish);
+  eq(`8.${tag} niet gestart: Start = rekenstart`, shownStart(n1), n1.time.earlyStart);
+  eq(`8.${tag} Tabel-kolom Start (voltooid) = werkelijke start`, cell(c1.id, 'task.time.start')?.value, '2026-01-05T08:00');
+  eq(`8.${tag} Tabel-kolom Einde (voltooid) = werkelijk einde`, cell(c1.id, 'task.time.finish')?.value, '2026-01-16T17:00');
+  eq(`8.${tag} Tabel-kolom Start (lopend) = werkelijke start`, cell(l1.id, 'task.time.start')?.value, '2026-02-23T08:00');
+  eq(`8.${tag} kolom Vroegste start blijft de rekenstart`, cell(l1.id, 'task.time.earlyStart')?.value, l1.time.earlyStart);
+  // Na herberekenen blijft het zo.
+  S().runCPM();
+  eq(`8.${tag} na F5: getoonde datums ongewijzigd`,
+    [shownStart(byCode('C1')), shownFinish(byCode('C1')), shownStart(byCode('L1'))],
+    ['2026-01-05T08:00', '2026-01-16T17:00', '2026-02-23T08:00']);
+
+  // ── 9. Bewerken: Start van een gestarte en Einde van een voltooide taak zijn alleen-lezen ──
+  eq(`9.${tag} predicaten`, [startIsActual(c1), finishIsActual(c1), startIsActual(l1), finishIsActual(l1), startIsActual(n1)],
+    [true, true, true, false, false]);
+  eq(`9.${tag} Start lopend: alleen-lezen`, cell(l1.id, 'task.time.start')?.readOnly, true);
+  eq(`9.${tag} Start lopend: met de reden startIsActual`, cell(l1.id, 'task.time.start')?.readOnlyReason, 'taskGrid.validation.startIsActual');
+  eq(`9.${tag} Einde lopend: bewerkbaar`, cell(l1.id, 'task.time.finish')?.readOnly, false);
+  eq(`9.${tag} Start voltooid: alleen-lezen`, cell(c1.id, 'task.time.start')?.readOnly, true);
+  eq(`9.${tag} Einde voltooid: alleen-lezen met de reden finishIsActual`,
+    [cell(c1.id, 'task.time.finish')?.readOnly, cell(c1.id, 'task.time.finish')?.readOnlyReason], [true, 'taskGrid.validation.finishIsActual']);
+  eq(`9.${tag} Start niet gestart: bewerkbaar`, cell(n1.id, 'task.time.start')?.readOnly, false);
+  const before = JSON.stringify(S().tasks);
+  eq(`9.${tag} typen in Start (lopend) wordt geweigerd`, type(l1.id, 'task.time.start', '16-02-2026').ok, false);
+  eq(`9.${tag} typen in Einde (voltooid) wordt geweigerd`, type(c1.id, 'task.time.finish', '23-01-2026').ok, false);
+  ok(`9.${tag} geweigerd typen verandert niets (geen anker, geen constraint)`, JSON.stringify(S().tasks) === before);
+  eq(`9.${tag} gedeelde helper: de getoonde werkelijke start is geen nieuw anker`, startAnchorAfterEdit(l1, shownStart(l1)), undefined);
+  // Taak bewerken → Opslaan met het (alleen-lezen) startveld: geen stil anker.
+  const anchorBefore = byCode('L1').time.scheduleStart;
+  saveTaskDialog({ editingTaskId: l1.id, draft: { ...byCode('L1'), name: 'Lopend (hernoemd)' }, startDate: shownStart(byCode('L1')) });
+  eq(`9.${tag} Taak bewerken → Opslaan: naam opgeslagen`, byCode('L1').name, 'Lopend (hernoemd)');
+  eq(`9.${tag} Taak bewerken → Opslaan: anker ongewijzigd`, byCode('L1').time.scheduleStart, anchorBefore);
+  eq(`9.${tag} Taak bewerken → Opslaan: geen constraint`, byCode('L1').constraint, l1.constraint);
+
+  // ── 10. Basislijn en afwijking volgen de getoonde datums; het koppelanker de rekendatum ──
+  S().saveBaseline('BL');
+  const bl = S().baselines[S().baselines.length - 1]!;
+  eq(`10.${tag} basislijn: lopende taak met haar werkelijke start`, bl.tasks.find(t => t.taskId === l1.id)?.start, '2026-02-23T08:00');
+  eq(`10.${tag} basislijn: voltooide taak op haar werkelijke datums`,
+    [bl.tasks.find(t => t.taskId === c1.id)?.start, bl.tasks.find(t => t.taskId === c1.id)?.finish], ['2026-01-05T08:00', '2026-01-16T17:00']);
+  const link: ExternalLink = {
+    id: 'x', direction: 'predecessor', relType: 'SS', anchorDate: '', sourceMissing: false,
+    sourceRef: { projectId: 'p', taskId: l1.id },
+  };
+  eq(`10.${tag} extern koppelanker = rekenstart (voedt een andere berekening)`, sourceAnchorDate(link, byCode('L1')), computedStart(byCode('L1')));
+}
+
+// ── 11. Verzameltaak: de fasebalk omsluit elk kind ─────────────────────────────────────────────
+// Zonder statusdatum kan een niet-gestart kind vóór de werkelijke start van een gestart broertje
+// liggen. De fase begint dan op het vroegste van beide, niet op haar (opgerolde) werkelijke start.
+{
+  S().newProject();
+  S().setCalendar({ ...S().calendar, workDays: [1, 2, 3, 4, 5], holidays: [] } as WorkCalendar);
+  S().setProject({ startDate: '2026-06-01', name: 'Fase' });
+  const phase = S().addTask({ name: 'Fase' });
+  const x = S().addTask({ name: 'X', parentId: phase, time: { scheduleDuration: 5, scheduleStart: '2026-06-08' } as Task['time'] });
+  const y = S().addTask({ name: 'Y', parentId: phase, time: { scheduleDuration: 3 } as Task['time'] });
+  S().setActualStart(x, '2026-06-10');
+  S().runCPM();
+  eq('11 opzet: X gestart op 10-06, Y begint 01-06', [shownStart(task(x)), shownStart(task(y))], ['2026-06-10', '2026-06-01']);
+  eq('11 opzet: de fase draagt de opgerolde werkelijke start 10-06', task(phase).time.actualStart, '2026-06-10');
+  eq('11 de fase begint op het vroegste kind (01-06), niet op haar werkelijke start', shownStart(task(phase)), '2026-06-01');
+  eq('11 de fase is geen blad: Start volgt de kinderen (derivedDates), niet startIsActual', startIsActual(task(phase)), false);
 }
 
 if (diffs.length) {

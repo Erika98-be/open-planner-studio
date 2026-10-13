@@ -24,7 +24,7 @@ Nyttig når du arbeider i aktivitetstabellen.
 2. Hold Ctrl (⌘ på Mac) nede og klikk på aktiviteten som kommer etter: etterfølgeren.
 3. Velg *Hjem › Aktiviteter › Koble ▾ › Koble valgte aktiviteter*. Den samme knappen finnes også under *Tidsplan › Avhengigheter*.
 
-Appen lager en slutt-til-start-avhengighet uten forsinkelse og melder for eksempel *Avhengighet opprettet: Foundation brickwork → Lay hollow-core floor*. Knappen virker bare med nøyaktig to valgte aktiviteter.
+Appen lager en slutt-til-start-avhengighet uten forsinkelse. Du ser den som en pil i Gantt og i kolonnen *Forgjengere*; en melding vises bare hvis appen avviser avhengigheten. Knappen virker bare med nøyaktig to valgte aktiviteter.
 
 ### Tegne en avhengighet i Gantt-diagrammet
 

@@ -70,6 +70,7 @@ const ExtensionConsentDialog = EXTENSIONS_ENABLED
   : () => null;
 const ActualStartDialog = lazy(() => import('@/components/dialogs/ActualStartDialog').then(m => ({ default: m.ActualStartDialog })));
 const SiteOpenDialog = lazy(() => import('@/components/dialogs/SiteOpenDialog').then(m => ({ default: m.SiteOpenDialog })));
+const FormatNoticeDialog = lazy(() => import('@/components/dialogs/FormatNoticeDialog').then(m => ({ default: m.FormatNoticeDialog })));
 const SiteSaveDialog = lazy(() => import('@/components/dialogs/SiteSaveDialog').then(m => ({ default: m.SiteSaveDialog })));
 const FeedbackDialog = lazy(() => import('@/components/dialogs/FeedbackDialog').then(m => ({ default: m.FeedbackDialog })));
 const LevelingDialog = lazy(() => import('@/components/dialogs/LevelingDialog').then(m => ({ default: m.LevelingDialog })));
@@ -123,6 +124,7 @@ function AppContent() {
   const showShortcutsDialog = useAppStore(s => s.ui.showShortcutsDialog);
   const showBenchmarkDialog = useAppStore(s => s.ui.showBenchmarkDialog);
   const showStatsDialog = useAppStore(s => s.ui.showStatsDialog);
+  const pendingFormatNotice = useAppStore(s => s.ui.pendingFormatNotice);
   const showWelcomeDialog = useAppStore(s => s.ui.showWelcomeDialog);
   const showTourOverlay = useAppStore(s => s.ui.showTourOverlay);
   const showTutorialOffer = useAppStore(s => s.ui.showTutorialOffer);
@@ -444,6 +446,8 @@ function AppContent() {
         {/* Opslag via de site: renderen alleen bij `ui.pendingSiteOpen` / `ui.pendingSiteSave`. */}
         <SiteOpenDialog />
         <SiteSaveDialog />
+        {/* Uitleg na het openen van een ander formaat dan IFC; `key` = vinkje leeg bij elke nieuwe uitleg. */}
+        {pendingFormatNotice && <FormatNoticeDialog key={pendingFormatNotice} kind={pendingFormatNotice} />}
         <LibraryLinkDialog />
         {recovery && !(recoveryInHelp && helpOpen) && (
           <RecoveryDialog

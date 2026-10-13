@@ -24,7 +24,7 @@ Korisno kad radite u tablici zadataka.
 2. Držite tipku Ctrl (⌘ na Macu) i kliknite zadatak koji dolazi poslije: nasljednik.
 3. Odaberite *Početna › Zadaci › Poveži ▾ › Poveži odabrane zadatke*. Isti gumb nalazi se i na *Raspored › Ovisnosti*.
 
-Aplikacija stvara ovisnost završetak-početak bez vremena odgode i javlja, na primjer: *Ovisnost je stvorena: Foundation brickwork → Lay hollow-core floor*. Gumb radi samo s točno dva odabrana zadatka.
+Aplikacija stvara ovisnost završetak-početak bez vremena odgode. Vidite je kao strelicu u Gantt-prikazu i u stupcu *Prethodnici*. Obavijest se pojavljuje samo ako aplikacija odbije ovisnost. Gumb radi samo s točno dva odabrana zadatka.
 
 ### Crtanje ovisnosti u Gantt-prikazu
 

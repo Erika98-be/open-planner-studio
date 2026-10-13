@@ -28,7 +28,7 @@ Zweitens kann Arbeit, die noch nicht begonnen hat, nicht in der Vergangenheit li
 
 Drittens beginnt die Restarbeit eines Vorgangs, der schon läuft, am Statusdatum selbst. Die App behandelt das Statusdatum als Beginn dieses Tages. Wenn Sie am Freitag nach Arbeitsschluss den Stand aufnehmen, stellen Sie das Statusdatum deshalb auf Montag. Stellen Sie es auf Freitag, dann plant die App die Restarbeit trotzdem an diesem Freitag.
 
-Wenn Sie noch kein Statusdatum haben und Fortschritt erfassen, setzt die App das Statusdatum auf heute und meldet dies. Ohne Statusdatum rechnet die App einen laufenden Vorgang vorwärts mit seiner Restdauer, aber rückwärts mit seiner vollen Dauer. Der Puffer wird dann negativ, und der Vorgang wirkt ohne Grund kritisch.
+Wenn Sie noch kein Statusdatum haben und Fortschritt erfassen, setzt die App das Statusdatum auf heute und meldet dies. Ein anderes Datum legen Sie unter *Planung › Baselines & Fortschritt › Statusdatum* fest. Ohne Statusdatum rechnet die App einen laufenden Vorgang vorwärts mit seiner Restdauer, aber rückwärts mit seiner vollen Dauer. Der Puffer wird dann negativ, und der Vorgang wirkt ohne Grund kritisch.
 
 ### Prozentsatz, Ist-Werte und Restdauer
 

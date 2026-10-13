@@ -35,6 +35,14 @@ Onder het lint staat een strook: *Je ziet de datums zoals ze in het bestand staa
 
 Daarnaast komt er een melding: *12 taken tonen de datums zoals ze in het bestand staan (niet herberekend).* Alleen bij een `.xer` staat er *12 taken tonen de datums zoals Primavera ze opsloeg (niet herberekend).* Dat getal telt alle taken waarvan het bestand datums vastlegde, ook de taken die niet afwijken. Het aantal taken dat bij herberekenen afwijkt, staat in de strook. Elke taak waarvan het bestand datums vastlegde, toont in het paneel *Eigenschappen* een markering: *Toont Primavera’s eigen opgeslagen datums voor deze taak* bij een Primavera-bron, of *Toont de datums zoals ze in het bestand staan voor deze taak* bij een andere bron. De Gantt, het taakraster en de statusbalk tonen de datums uit het bestand.
 
+### Taken die gestart of klaar zijn
+
+Een taak die klaar is, staat op de dagen waarop hij echt gebeurde: van de werkelijke start tot het werkelijke einde. Een taak die bezig is, begint op de dag waarop hij echt begon. Hij eindigt op het berekende einde. Dat geldt in deze weergave, na herberekenen en bij elk rekenprofiel, net als in Primavera en MS Project.
+
+Het bestand legt voor zo'n taak vaak andere vroege datums vast. Primavera zet de vroege start van een taak die bezig of klaar is op de statusdatum. Die datums zie je in de kolommen *Vroegste start* en *Vroegste einde*, niet in *Start* en *Einde*. Een taak die klaar is, telt daarom nooit mee als afwijking. Een taak die bezig is, telt alleen mee als het einde verschilt.
+
+Van een taak die gestart is, kun je de start niet meer intypen. In het taakraster, in het paneel *Eigenschappen* en in *Taak bewerken* is de start dan alleen-lezen. Bij een taak die klaar is, geldt dat ook voor het einde in het taakraster. Pas in plaats daarvan de *Werkelijke start* of het *Werkelijke einde* aan, bij de voortgang. In de Gantt verschuift de balk van zo'n taak niet; je krijgt dan een melding.
+
 ### Wat er in deze weergave leeg blijft
 
 De app rekent in deze weergave niets door. Ze toont alleen wat het bestand vastlegde. Speling en kritiek pad zie je dus alleen als het bestand ze bevat. Legt het bestand geen kritieke taken vast, dan meldt de statusbalk 0 kritieke taken. Dat zegt niets over het kritieke pad in het pakket zelf. Wat alleen uit een berekening komt, bestaat in deze weergave niet: welke relaties de planning bepalen, geschonden constraints, taken die buiten hun volgorde lopen en bijna-kritieke taken.
@@ -79,6 +87,7 @@ Wat als het anders is?
 - Je slaat op in de weergave en opent het IFC-bestand opnieuw, zonder bewerking: Metselwerk staat weer op 17 tot en met 28 mei.
 - Je herberekent, slaat op zonder verder te bewerken en opent het IFC-bestand opnieuw: de weergave staat weer aan en Metselwerk staat op 17 tot en met 28 mei.
 - Je bewerkt, slaat op en opent opnieuw: de app biedt de weergave aan met *Herberekening verschoof 1 van de 2 taken ten opzichte van de datums in het bestand.* Op Metselwerk staat *Wijkt af van de opgeslagen datums*.
+- Fundering is in het bestand al klaar: werkelijk gestart op 3 mei en werkelijk klaar op 7 mei. Het bestand legt als vroege start de statusdatum vast. De balk van Fundering staat toch op 3 tot en met 7 mei, in de weergave en na herberekenen. Fundering telt niet mee als afwijking.
 
 ## Gevolgen en misverstanden
 

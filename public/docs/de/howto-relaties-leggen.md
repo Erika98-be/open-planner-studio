@@ -24,7 +24,7 @@ Nützlich, wenn Sie in der Vorgangstabelle arbeiten.
 2. Halten Sie Strg (⌘ auf einem Mac) gedrückt und klicken Sie auf den Vorgang, der danach kommt: den Nachfolger.
 3. Wählen Sie *Start › Vorgänge › Verknüpfen ▾ › Ausgewählte Vorgänge verknüpfen*. Dieselbe Schaltfläche finden Sie auch unter *Planung › Beziehungen*.
 
-Die App erstellt eine Ende-Anfang-Beziehung ohne Zeitabstand und meldet zum Beispiel *Beziehung erstellt: Foundation brickwork → Lay hollow-core floor*. Die Schaltfläche funktioniert nur, wenn genau zwei Vorgänge ausgewählt sind.
+Die App erstellt eine Ende-Anfang-Beziehung ohne Zeitabstand. Sie sehen sie als Pfeil im Gantt und in der Spalte *Vorgänger*; eine Benachrichtigung erscheint nur, wenn die App die Beziehung ablehnt. Die Schaltfläche funktioniert nur, wenn genau zwei Vorgänge ausgewählt sind.
 
 ### Eine Beziehung im Gantt zeichnen
 

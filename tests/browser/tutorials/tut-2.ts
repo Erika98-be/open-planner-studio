@@ -56,7 +56,8 @@ export const TUTORIAL_2: TutorialScript = {
       ],
       expect: [
         { state: linksPresent([fs(T.start, T.site)]) },
-        { see: { css: 'body' }, text: l('Relatie aangemaakt: Start bouw → Bouwplaats inrichten', 'Relation created: Start of construction → Set up site') },
+        // Een geslaagde relatie meldt zich niet meer (eigenaarsbesluit 2026-10-12): de pijl toont hem al.
+        { notSee: { css: 'body' }, text: l('Relatie aangemaakt', 'Relation created') },
         { see: statusBar, text: l('Verouderd — herbereken (F5)', 'Out of date — recalculate (F5)') },
       ],
     },
@@ -71,7 +72,7 @@ export const TUTORIAL_2: TutorialScript = {
         ) } },
         { dragBar: { from: T.site, to: T.garden } },
         { waitFor: { text: l('Type relatie', 'Relation type') } },
-        // De melding van stap 2 staat er nog; wegklikken zou ook dit venstertje sluiten.
+        // Staat er nog een melding, dan zou het kruisje aanklikken ook dit venstertje sluiten.
         { shot: { name: 'tut-2-type-relatie', of: { text: l('Type relatie', 'Relation type') }, pad: 120, keepToasts: true } },
         { press: 'Enter' },
         { dragBar: { from: T.garden, to: T.setout } },

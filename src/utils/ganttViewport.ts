@@ -6,16 +6,20 @@
 // store aan React/DOM hangt. Headless (tests) blijft de breedte null → geen recenter.
 
 import { parseDate, diffCalendarDays, addCalendarDays, formatDate, localTodayIso } from '@/utils/dateUtils';
-import type { Task, TaskTime } from '@/types/task';
+import type { Task } from '@/types/task';
 import type { WorkCalendar } from '@/types/calendar';
 import { CalendarEngine } from '@/engine/scheduler/CalendarEngine';
 import { resolveGanttAxis } from '@/engine/renderer/workdayAxis';
 import { maxGanttZoom, TIMESCALE_ZOOM } from '@/engine/renderer/timelineTiers';
+import { shownFinish, shownStart } from '@/utils/taskDates';
 
-/** Start-keten: early → schedule (opgeslagen) → late. Gedeeld door {@link resolveTaskFinish},
- *  {@link computeFitToProject} hier en `computeContentSpanDays` (ganttRenderOptions.ts). */
-export function resolveTaskStart(time: TaskTime): string | undefined {
-  return time.earlyStart || time.scheduleStart || time.lateStart || undefined;
+/** Start-keten: de getoonde start (`shownStart`: werkelijke start van een gestarte taak, anders early
+ *  → schedule), met de late start als laatste terugval. Dezelfde datum als de balk
+ *  (`GanttRenderer.barGeometry`), zodat fit en scrolbreedte elke getekende balk omvatten. Gedeeld door
+ *  {@link resolveTaskFinish}, {@link computeFitToProject} hier en `computeContentSpanDays`
+ *  (ganttRenderOptions.ts). */
+export function resolveTaskStart(task: Task): string | undefined {
+  return shownStart(task) || task.time.lateStart || undefined;
 }
 
 /** Finish-keten: early → schedule → late, met een laatste terugval op {@link resolveTaskStart} —
@@ -27,8 +31,8 @@ export function resolveTaskStart(time: TaskTime): string | undefined {
  *  (IFC/CSV/MSPDI/P6/MPP) heeft elke taak altijd een niet-lege finish-keten; deze terugval dekt dus
  *  alleen corrupte documentdata of een externe adapter/MCP-payload die buiten de taak-fabrieken
  *  (`createDefaultTaskTime`/`mergeTaskTime`, `src/utils/taskDefaults.ts`) om schrijft. */
-export function resolveTaskFinish(time: TaskTime): string | undefined {
-  return time.earlyFinish || time.scheduleFinish || time.lateFinish || resolveTaskStart(time);
+export function resolveTaskFinish(task: Task): string | undefined {
+  return shownFinish(task) || task.time.lateFinish || resolveTaskStart(task);
 }
 
 /**
@@ -167,7 +171,7 @@ export function computeEffectiveViewStart(
 ): string {
   let earliest = parseDate(viewStartDate);
   for (const task of tasks) {
-    const start = resolveTaskStart(task.time);
+    const start = resolveTaskStart(task);
     if (start) {
       const d = parseDate(start);
       if (d.getTime() < earliest.getTime()) earliest = d;
@@ -221,8 +225,8 @@ export function computeFitToProject(
   for (const task of tasks) {
     // Start/finish via de gedeelde ketens hierboven — {@link resolveTaskFinish} valt terug op de
     // start, dus deze fit blijft in lockstep met `computeContentSpanDays` (ganttRenderOptions.ts).
-    const s = resolveTaskStart(task.time);
-    const f = resolveTaskFinish(task.time);
+    const s = resolveTaskStart(task);
+    const f = resolveTaskFinish(task);
     if (s && (!minStart || s < minStart)) minStart = s;
     if (f && (!maxFinish || f > maxFinish)) maxFinish = f;
   }

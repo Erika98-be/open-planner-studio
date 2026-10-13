@@ -18,7 +18,7 @@ Data raportului de stare este ziua în care faceți inventarul. Setați-o înain
 
 Dacă faceți inventarul vineri, după orele de lucru, setați data raportului de stare la următoarea zi lucrătoare, luni. Aplicația planifică lucrul rămas de la începutul datei raportului de stare.
 
-Dacă introduceți progres, dar încă nu există o dată a raportului de stare, aplicația o setează la azi și afișează: *Încă nu exista o dată a raportului de stare: a fost setată la azi (…), deoarece progresul se măsoară până la data raportului de stare. O puteți modifica din Planificare → Data raportului de stare.* Este mai bine să setați dumneavoastră data mai întâi.
+Dacă introduceți progres, dar încă nu există o dată a raportului de stare, aplicația o setează la azi și afișează: *Data raportului de stare a fost setată la azi (…).* Este mai bine să setați dumneavoastră data mai întâi.
 
 ### 2. Introduceți progresul
 

@@ -24,7 +24,7 @@ Handig als je in de takenlijst werkt.
 2. Houd Ctrl (op een Mac ⌘) ingedrukt en klik op de taak die daarna komt: de opvolger.
 3. Kies *Start › Taken › Relatie ▾ › Geselecteerde taken koppelen*. Dezelfde knop staat ook op *Planning › Relaties*.
 
-De app legt een Eind-Start-relatie zonder lag en meldt bijvoorbeeld *Relatie aangemaakt: Funderingsmetselwerk → Kanaalplaatvloer leggen*. De knop werkt alleen met precies twee geselecteerde taken.
+De app legt een Eind-Start-relatie zonder lag. Je ziet hem als pijl in de Gantt en in de kolom *Voorgangers*; een melding komt er alleen als de app de relatie weigert. De knop werkt alleen met precies twee geselecteerde taken.
 
 ### Een relatie tekenen in de Gantt
 

@@ -18,7 +18,7 @@ The status date is the day on which you take stock. Set it before you enter prog
 
 If you take stock on Friday after working hours, set the status date to the next working day, Monday. The app plans the remaining work from the start of the status date.
 
-If you enter progress while there is no status date yet, the app sets it to today and reports: *There was no status date yet: it is now set to today (…), because progress is measured up to the status date. You can change it under Planning → Status date.* So rather do this yourself first.
+If you enter progress while there is no status date yet, the app sets it to today and reports: *Status date set to today (…).* So rather do this yourself first.
 
 ### 2. Enter the progress
 

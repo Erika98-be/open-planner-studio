@@ -2,7 +2,7 @@ import { useAppStore } from '@/state/appStore';
 import { relationAddVerdict, type RelationAddRejection } from '@/state/relationRules';
 import type { Sequence, SequenceType } from '@/types/sequence';
 import type { NotificationMessageKey } from '@/state/slices/types';
-import { cycleLabel, shortTaskName } from '@/state/notificationLabels';
+import { cycleLabel } from '@/state/notificationLabels';
 
 /** Welke melding hoort bij een weigering? `self` is via de UI niet te maken: de selectie is een
  *  Set-unie en de Gantt-sleep guardt op een ander doel. `unknown-task` is wél bereikbaar, maar
@@ -22,7 +22,8 @@ const REJECTION_MESSAGE: Record<RelationAddRejection, NotificationMessageKey> = 
  * Relatie aanmaken MÉT gebruikerszichtbare terugkoppeling.
  *
  * Waarom deze wrapper bestaat: `addSequence` weigert stil (geen mutatie, geen undo-stap), dus zonder
- * wrapper gebeurt er bij een weigering zichtbaar niets. Alle callsites die met één gebaar een
+ * wrapper gebeurt er bij een weigering zichtbaar niets. Een geslaagde relatie meldt zich bewust niet
+ * (eigenaarsbesluit 2026-10-12): die is in de Gantt en de tabel al te zien. Alle callsites die met één gebaar een
  * Eind-Start-relatie leggen (de lint-knop bij 2 selecties, de knop in het Relaties-paneel, het
  * slepen in de Gantt) gaan hier door één deur, met het meldingenkanaal als uitgang.
  *
@@ -64,16 +65,7 @@ export function createRelationDraftWithFeedback(relation: Omit<Sequence, 'id'>):
     return null;
   }
 
-  const id = st.addSequence(relation);
-  if (id === null) return null; // de slice weigerde alsnog: geen succesmelding over een relatie die er niet is.
-  const after = useAppStore.getState();
-  after.notify({
-    severity: 'info',
-    messageKey: 'notifications.relationCreated',
-    params: {
-      predecessor: shortTaskName(after.tasks.find((t) => t.id === relation.predecessorId)?.name),
-      successor: shortTaskName(after.tasks.find((t) => t.id === relation.successorId)?.name),
-    },
-  });
-  return id;
+  // Een geslaagde relatie meldt zich niet: de pijl in de Gantt en de kolom Voorgangers tonen hem al
+  // (eigenaarsbesluit 2026-10-12, toast "Relatie aangemaakt" weg). Alleen een weigering meldt zich.
+  return st.addSequence(relation);
 }

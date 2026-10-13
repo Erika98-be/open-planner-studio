@@ -34,6 +34,7 @@ export type { BarColorSelection };
 import type { McpServerStatus } from '@/services/mcp/contracts';
 // Opslag via de site: de VRAAG van de twee site-dialogen. Type-only import, net als hierboven.
 import type { SiteOpenRequest, SiteSaveRequest } from '@/services/fileAccess/siteDialogs';
+import type { FormatNoticeKind } from '@/services/formatNoticeKinds';
 export type { McpServerStatus };
 
 export type WeekStartDay = 'monday' | 'sunday';
@@ -205,7 +206,6 @@ export type NotificationMessageKey =
   | 'notifications.scheduleFailed'
   | 'notifications.ifcParseFailed'
   | 'notifications.templateSaved'
-  | 'notifications.relationCreated'
   | 'notifications.relationDuplicate'
   | 'notifications.relationAncestorEndpoint'
   // De store-route weigert een relatie die een kring sluit (net als raster en MCP). Parameter
@@ -338,6 +338,10 @@ export type NotificationMessageKey =
   | 'notifications.startBlockedByConstraint'
   | 'notifications.startBlockedByConstraintNoDate'
   | 'notifications.startBlockedByConstraintMany'
+  // Gantt-sleep op een balk met werkelijke datums (eigenaarsbesluit 2026-10-12): de balk
+  // verschuift niet — `useBarDrag`. Parameter `name`.
+  | 'notifications.dragStartIsActual'
+  | 'notifications.dragDatesAreActual'
   // Voortgang ingevuld zonder statusdatum ⇒ de app zette hem op vandaag —
   // zie `engine/progressEntry.ts` en `state/progressEntryNotice.ts`. Parameter `date`.
   | 'notifications.statusDateSetToday'
@@ -405,6 +409,10 @@ export interface AppNotification {
   /** Alleen voor `info`: hoe lang de melding blijft staan, in ms (standaard 5000). Voor uitleg
    *  die je echt moet kunnen lezen, zoals de browseruitleg bij opslaan. */
   durationMs?: number;
+  /** Alleen voor `info`: de melding verdwijnt niet vanzelf maar blijft staan tot het kruisje. Voor
+   *  een openingsmelding waarbij de app data invulde, verving, repareerde of wegliet — zie
+   *  `state/openNoticeSticky.ts` voor de regel. Geen fout: de kleur blijft die van een info. */
+  sticky?: boolean;
 }
 
 /** Wat een aanroeper meegeeft; `id` en `count` vult de store. */
@@ -597,6 +605,15 @@ export interface UIState {
   /** session — de openstaande vraag "Opslaan op de site", of `null`. Zelfde opzet als
    *  `pendingSiteOpen`. */
   pendingSiteSave: SiteSaveRequest | null;
+  /** session — de uitleg na het openen van een ander formaat dan IFC (`FormatNoticeDialog`), of
+   *  `null`. Alleen de open-routes van de gebruiker zetten hem (`fileSlice`, `formatNoticeToShow`).
+   *  Bewust NIET blokkerend in `hasBlockingDialogOpen`: het project staat er al achter, de uitleg
+   *  hangt aan geen document en een MCP-sessie hoeft er niet op te wachten. Sneltoetsen blokkeert hij
+   *  wel, via de dialoogstapel (`isShortcutBlockedByDialog`). */
+  pendingFormatNotice: FormatNoticeKind | null;
+  /** persisted (`ops-formatNoticeHidden`) — formaten waarvoor de gebruiker die uitleg uitzette
+   *  ("Niet meer tonen"); Instellingen zet hem per formaat weer aan. Default leeg: alles tonen. */
+  formatNoticeHidden: FormatNoticeKind[];
   // --- Bedrijfsbibliotheken: Backstage-sectie Bibliotheek-dialogen ---
   /** session — pool-importdialoog open (met demping-waarschuwing). */
   showPoolImportDialog: boolean;

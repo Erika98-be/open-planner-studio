@@ -39,8 +39,8 @@ Standaard toont de tabel naast de Gantt *WBS*, *Taaknaam* en *Duur*. De tabel op
 - **Duurtype** — *Werktijd* (de duur telt in werkdagen of werkuren van de kalender) of *Verstreken tijd* (de duur telt in doorlopende kloktijd, zonder kalender). Bewerkbaar.
 - **Duureenheid** — *Dagen* of *Uren*. Bewerkbaar behalve bij een samenvattingstaak, hammock of mijlpaal; wisselen kan alleen als de omrekening exact klopt en *Urenplanning inschakelen* aan staat.
 - **Duur** — de duur van de taak, in de eenheid van de taak of volgens *Duurweergave*. Bewerkbaar: typ `5d`, `12h` of `1h 30m`; ook een getal in de eenheid van de taak. Alleen-lezen bij een samenvattingstaak, hammock en mijlpaal met duur 0.
-- **Start** — de getoonde start, dezelfde datum als de Gantt-balk. Bewerkbaar. Een taak met voorganger die je een nieuwe start geeft, krijgt de constraint *Start niet eerder dan (SNET)* op die datum. Alleen-lezen bij een samenvattingstaak of hammock, tenzij handmatig gepland.
-- **Einde** — het getoonde einde. Bewerkbaar: een nieuw einde wordt een nieuwe duur. De app weigert het bij een voltooide taak, een mijlpaal, een taak in verstreken tijd en een taak met onderbrekingen, en een einde vóór de start (*Het einde ligt vóór de start.*). Alleen-lezen bij een samenvattingstaak of hammock, tenzij handmatig gepland.
+- **Start** — de getoonde start, dezelfde datum als de Gantt-balk. Bij een gestarte taak is dat de werkelijke start. Bewerkbaar. Een taak met voorganger die je een nieuwe start geeft, krijgt de constraint *Start niet eerder dan (SNET)* op die datum. Alleen-lezen bij een samenvattingstaak of hammock, tenzij handmatig gepland, en bij een gestarte taak (*Deze taak is gestart; de start is de werkelijke start. Wijzig die via de voortgang.*).
+- **Einde** — het getoonde einde. Bij een voltooide taak is dat het werkelijke einde. Bewerkbaar: een nieuw einde wordt een nieuwe duur. De app weigert het bij een mijlpaal, een taak in verstreken tijd en een taak met onderbrekingen, en een einde vóór de start (*Het einde ligt vóór de start.*). Alleen-lezen bij een samenvattingstaak of hammock, tenzij handmatig gepland, en bij een voltooide taak (*Deze taak is gereed; het einde is het werkelijke einde. Wijzig dat via de voortgang.*).
 - **Geplande start** — het planningsanker waar de berekening van uitgaat (niet noodzakelijk de getoonde start). Bewerkbaar; hetzelfde effect als typen in *Start*.
 - **Gepland einde** — het ingevoerde einde. Alleen bewerkbaar bij een handmatig geplande taak; anders zegt de app *Gepland einde telt alleen bij een handmatig geplande taak. Wijzig het einde via de kolom Einde of via de duur.*
 
@@ -87,7 +87,7 @@ De voortgangskolommen volgen de voortgangsregels van de app: een werkelijke datu
 Alle kolommen in deze categorie zijn alleen-lezen.
 
 - **Nivelleervertraging** — hoeveel werkdagen nivelleren de taak vertraagde; een streepje als er geen nivellering is toegepast.
-- **Vroegste start** en **Vroegste einde** — de vroegste datums uit de berekening.
+- **Vroegste start** en **Vroegste einde** — de vroegste datums uit de berekening. Bij een gestarte taak kunnen die van *Start* en *Einde* verschillen: het rekenprofiel *Primavera P6* zet de vroegste start van een lopende of voltooide taak op de statusdatum.
 - **Laatste start** en **Laatste einde** — de laatste datums waarop de taak nog mag beginnen of eindigen zonder het project te vertragen.
 - **Vrije speling** — de werkdagen die de taak kan schuiven zonder een opvolger te vertragen.
 - **Totale speling** — de werkdagen die de taak kan schuiven zonder het projecteinde te vertragen. Negatief als een constraint of deadline niet haalbaar is.

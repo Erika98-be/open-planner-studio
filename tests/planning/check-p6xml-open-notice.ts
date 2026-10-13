@@ -5,13 +5,15 @@
 //   (activiteiten zonder ObjectId; XER-kolomnamen in XML);
 // - meerdere projecten, baselines, losse baselineverwijzingen, activiteiten zonder project ⇒ één
 //   verslag (`p6xmlImportNotice`);
-// - een gewoon bestand met één project ⇒ geen melding.
+// - een gewoon bestand met één project ⇒ geen melding;
+// - relaties tussen projecten of activiteiten zonder project ⇒ de melding blijft staan (`sticky`).
 // Corpusloos (CI). Fixtures: inline, zelf geschreven.
 import { readFileSync } from 'node:fs';
 import { parseOpenedFile } from '@/services/formatRegistry';
 import { useAppStore } from '@/state/appStore';
 import { importFailureNotice, p6xmlImportNotice } from '@/state/slices/fileSlice';
 import { P6XmlImportError } from '@/services/p6/p6xmlErrors';
+import { isStickyOpenNotice, withOpenNoticeSticky } from '@/state/openNoticeSticky';
 import { activeImportResult, isMultiDocumentImport, type OpenedImport } from '@/services/importTypes';
 import { installDOMParser } from './xmldom-shim';
 
@@ -103,6 +105,9 @@ async function main(): Promise<void> {
     ['notifications.xerImportBaselinesMaterialized', 2],
     ['notifications.p6xmlImportCrossProjectRelations', 1],
   ]);
+  // Integratie ronde 2 (#320 × #330): een relatie tussen projecten is niet overgenomen ⇒ de
+  // openingsmelding blijft staan tot het kruisje (`STICKY_OPEN_NOTICE_KEYS`), blijft wel `info`.
+  eq('6f relatie tussen projecten ⇒ melding blijft staan', p6Notices[0]?.sticky, true);
 
   // (7) Eén project mét baseline: toch een verslag (niet alleen bij meerdere projecten).
   const withBaseline = wrap(`<Project><Id>E</Id><ObjectId>1</ObjectId><Name>Een</Name><CurrentBaselineProjectObjectId>9</CurrentBaselineProjectObjectId>
@@ -112,6 +117,9 @@ async function main(): Promise<void> {
   parsed = await open('baseline.xml', withBaseline);
   eq('7 één project + baseline ⇒ verslag met baselineregel', [noticeOf(parsed)?.messageKey, noticeOf(parsed)?.detailLines?.map(l => l.messageKey)],
     ['notifications.p6xmlImportOpened', ['notifications.xerImportProjectsSeen', 'notifications.xerImportBaselinesMaterialized']]);
+  // Alleen "projecten gezien" en een gekoppelde baseline: niets ingevuld of weggelaten ⇒ na 5 s weg.
+  eq('7b alleen baseline gekoppeld ⇒ melding blijft niet staan',
+    S().ui.notifications.find(n => n.messageKey === 'notifications.p6xmlImportOpened')?.sticky, undefined);
 
   // (8) Losse baselineverwijzing en een platte activiteit zonder project (twee projecten).
   const edges = wrap(`<Activity><Id>LOS</Id><Name>los</Name><ObjectId>99</ObjectId><PlannedDuration>8</PlannedDuration><PlannedStartDate>2026-03-02T08:00:00</PlannedStartDate><PlannedFinishDate>2026-03-02T17:00:00</PlannedFinishDate></Activity>
@@ -129,6 +137,12 @@ async function main(): Promise<void> {
       ['notifications.xerImportDanglingBaselineReferences', 2],
       ['notifications.p6xmlImportUnassignedActivities', 1],
     ]);
+  eq('8b2 losse baselineverwijzing en activiteit zonder project ⇒ melding blijft staan',
+    withOpenNoticeSticky(noticeOf(parsed))?.sticky, true);
+  eq('8b3 alleen een activiteit zonder project ⇒ ook blijvend', isStickyOpenNotice({
+    messageKey: 'notifications.p6xmlImportOpened',
+    detailLines: [{ messageKey: 'notifications.p6xmlImportUnassignedActivities', params: { count: 1 } }],
+  }), true);
   // Eén project: een platte activiteit zonder ProjectObjectId hoort gewoon bij dat project.
   parsed = await parseOpenedFile({ name: 'een.xml', text: wrap(`<Activity><Id>LOS</Id><Name>los</Name><ObjectId>99</ObjectId><PlannedDuration>8</PlannedDuration><PlannedStartDate>2026-03-02T08:00:00</PlannedStartDate><PlannedFinishDate>2026-03-02T17:00:00</PlannedFinishDate></Activity>
     <Project><Id>P1</Id><ObjectId>1</ObjectId><Name>Een</Name></Project>`) });

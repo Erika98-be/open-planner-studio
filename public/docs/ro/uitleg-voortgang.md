@@ -28,7 +28,7 @@ Data raportului de stare face trei lucruri.
 
 În al treilea rând, lucrul rămas al unei activități care rulează deja începe chiar în data raportului de stare. Aplicația tratează data raportului de stare ca începutul acelei zile. Dacă faceți bilanțul vineri, după terminarea programului, setați deci data raportului de stare pe luni. Dacă o setați pe vineri, aplicația planifică lucrul rămas tot în acea vineri.
 
-Dacă nu aveți încă o dată a raportului de stare și introduceți progres, aplicația setează data raportului de stare pe azi și vă anunță. Fără dată a raportului de stare, aplicația calculează o activitate în curs înainte cu durata rămasă, dar înapoi cu durata completă; marja iese atunci negativă, iar activitatea pare critică fără motiv.
+Dacă nu aveți încă o dată a raportului de stare și introduceți progres, aplicația setează data raportului de stare pe azi și vă anunță. Setați o altă dată din *Planificare › Referințe și progres › Data raportului de stare*. Fără dată a raportului de stare, aplicația calculează o activitate în curs înainte cu durata rămasă, dar înapoi cu durata completă; marja iese atunci negativă, iar activitatea pare critică fără motiv.
 
 ### Procent de finalizare, date efective și durată rămasă
 

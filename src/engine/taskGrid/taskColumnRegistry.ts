@@ -45,7 +45,7 @@ import {
   parseTaskDurationInput,
   type ParsedTaskDuration,
 } from '@/utils/taskDurationInput';
-import { shownStart, shownFinish } from '@/utils/taskDates';
+import { finishIsActual, shownStart, shownFinish, startIsActual } from '@/utils/taskDates';
 import {
   formatRemainingDurationText, formatTaskDurationText, formatWorkDaysText, type DurationTextFormat,
 } from '@/utils/taskDuration';
@@ -889,13 +889,16 @@ function fixedTimeColumns(): TaskColumnDescriptor[] {
     editableColumn({ id: 'task.time.durationUnit', labelKey: 'duration.unit', category: 'planning', valueKind: 'enum', editorKind: 'enum', editorOptions: [{ value: 'days', labelKey: 'duration.days' }, { value: 'hours', labelKey: 'duration.hours' }], route: 'task-schedule', read: task => task.time.durationUnit, readOnly: task => task.isHammock === true || task.childIds.length > 0 || task.isMilestone, parse: enumParser(['days', 'hours']), validate: enumValidator(['days', 'hours']) }),
     editableColumn({ id: 'task.time.scheduleDuration', labelKey: 'taskGrid.columns.duration', category: 'planning', valueKind: 'duration', editorKind: 'duration', route: 'task-schedule', read: task => task.time.durationUnit === 'hours' ? task.time.durationMinutes : task.time.scheduleDuration, readOnly: task => task.isHammock === true || task.childIds.length > 0 || (task.isMilestone && task.time.scheduleDuration === 0), format: (_value, task, ctx) => durationCellText(task, ctx), copy: task => scheduledTaskDurationText(task), editText: task => formatTaskDurationInput(task), parse: parseScheduledTaskDuration, validate: validateScheduledTaskDuration }),
     readonlyColumn({ id: 'task.time.durationMinutes', labelKey: 'taskGrid.columns.durationMinutes', category: 'technical', valueKind: 'number', read: task => task.time.durationMinutes }),
-    // Start/Einde: de GETOONDE datums, dezelfde bron als Gantt-balk, tooltip, paneel, afdruk en MCP
-    // (`shownStart`/`shownFinish`). Het zijn berekende waarden (`scheduleDerived`: verouderd-
+    // Start/Einde: de GETOONDE datums, dezelfde bron als Gantt-balk, tooltip, paneel en afdruk
+    // (`shownStart`/`shownFinish`: een gestarte taak begint op haar werkelijke start, een voltooide
+    // eindigt op haar werkelijke einde). Het zijn berekende waarden (`scheduleDerived`: verouderd-
     // markering tot herberekenen); bewerken verzet alleen iets bij een echte wijziging, zie
     // `applyScheduleEdit`. De datums van een automatisch geplande verzameltaak of hangmat volgen uit
-    // andere taken — een invoer daar zou na herberekenen niets doen, dus alleen-lezen.
-    editableColumn({ id: 'task.time.start', labelKey: 'taskGrid.columns.start', category: 'planning', valueKind: 'datetime', editorKind: 'datetime', route: 'task-schedule', scheduleDerived: true, read: task => shownStart(task), readOnly: derivedDatesTask, parse: parseDate, validate: validateDate }),
-    editableColumn({ id: 'task.time.finish', labelKey: 'taskGrid.columns.finish', category: 'planning', valueKind: 'datetime', editorKind: 'datetime', route: 'task-schedule', scheduleDerived: true, read: task => shownFinish(task), readOnly: derivedDatesTask, parse: parseDate, validate: validateDate }),
+    // andere taken — een invoer daar zou na herberekenen niets doen, dus alleen-lezen. Een
+    // werkelijke datum staat vast (eigenaarsbesluit 2026-10-12): Start van een gestarte en Einde van
+    // een voltooide taak zijn alleen-lezen; de gebruiker past de werkelijke start/einde aan.
+    editableColumn({ id: 'task.time.start', labelKey: 'taskGrid.columns.start', category: 'planning', valueKind: 'datetime', editorKind: 'datetime', route: 'task-schedule', scheduleDerived: true, read: task => shownStart(task), readOnly: task => derivedDatesTask(task) || startIsActual(task), readOnlyReason: task => !derivedDatesTask(task) && startIsActual(task) ? 'startIsActual' : undefined, parse: parseDate, validate: validateDate }),
+    editableColumn({ id: 'task.time.finish', labelKey: 'taskGrid.columns.finish', category: 'planning', valueKind: 'datetime', editorKind: 'datetime', route: 'task-schedule', scheduleDerived: true, read: task => shownFinish(task), readOnly: task => derivedDatesTask(task) || finishIsActual(task), readOnlyReason: task => !derivedDatesTask(task) && finishIsActual(task) ? 'finishIsActual' : undefined, parse: parseDate, validate: validateDate }),
     // Geplande start/einde: de invoerankers zelf, kiesbaar voor wie ze wil zien. De solver leest
     // `scheduleFinish` alleen bij een handmatig geplande taak (`CPMSolver.forwardPass`); bij elke
     // andere taak zou een bewerking stil niets doen, dus daar alleen-lezen mét reden.

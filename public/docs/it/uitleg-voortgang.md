@@ -28,7 +28,7 @@ In secondo luogo, un'attività non ancora iniziata non può trovarsi nel passato
 
 In terzo luogo, il lavoro rimanente di un'attività già in corso inizia proprio alla data di stato. L'app tratta la data di stato come inizio di quel giorno. Se fai il bilancio venerdì dopo l'orario di lavoro, imposti quindi la data di stato a lunedì. Se la imposti a venerdì, l'app pianifica comunque il lavoro rimanente di quel venerdì.
 
-Se non hai ancora una data di stato e inserisci avanzamento, l'app imposta la data di stato a oggi e te lo segnala. Senza data di stato l'app calcola un'attività in corso in avanti con la sua durata rimanente, ma all'indietro con la sua durata completa; il margine risulta poi negativo e l'attività sembra critica senza motivo.
+Se non hai ancora una data di stato e inserisci avanzamento, l'app imposta la data di stato a oggi e te lo segnala. Imposti un'altra data in *Pianificazione › Baseline e progresso › Data di stato*. Senza data di stato l'app calcola un'attività in corso in avanti con la sua durata rimanente, ma all'indietro con la sua durata completa; il margine risulta poi negativo e l'attività sembra critica senza motivo.
 
 ### Percentuale, date effettive e durata rimanente
 

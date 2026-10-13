@@ -24,7 +24,7 @@ Nyttigt, når du arbejder i opgavetabellen.
 2. Hold Ctrl (⌘ på en Mac) nede, og klik på den opgave, der kommer efter: den efterfølgende opgave.
 3. Vælg *Start › Opgaver › Sammenkæd › Sammenkæd valgte opgaver*. Den samme knap findes også under *Tidsplan › Afhængigheder*.
 
-Appen opretter en afhængighed af typen slut til start uden forsinkelse og viser fx *Afhængighed oprettet: Foundation brickwork → Lay hollow-core floor*. Knappen virker kun, når du har valgt præcis to opgaver.
+Appen opretter en afhængighed af typen slut til start uden forsinkelse. Du ser den som en pil i Gantt-diagrammet og i kolonnen *Foregående opgaver*; en meddelelse vises kun, hvis appen afviser afhængigheden. Knappen virker kun, når du har valgt præcis to opgaver.
 
 ### Tegn en afhængighed i Gantt-diagrammet
 

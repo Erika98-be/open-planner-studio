@@ -48,7 +48,7 @@ import { seedScalarBands } from '@/utils/effectiveWorkTime';
 import { hourRemainingDays } from '@/engine/taskMutationRules';
 import {
   canonicalizeBands, clockToMinutes, getCalendarBands, hasNonAnchorTime, isoDurationToMinutes,
-  isSubDayMinutes, promoteHourCalendar, promoteHourCalendars, registerCalendarBands, scalarHourFromClock,
+  isSubDayMinutes, promoteHourCalendar, promoteHourCalendars, registerCalendarBands, scalarHourFromClock, workDayFromBlocks,
 } from '@/services/subdayIo';
 
 // IFC_TIME_ANCHOR (discriminator c) en DEFAULT_PRIORITY wonen in ./ifcConstants zodat reader en
@@ -2641,9 +2641,11 @@ function buildCalendarFromEntity(
       const e = clockToMinutes(stripQuotes(tp.args[1] || ''));
       if (s != null && e != null) periods.push({ start: s, end: e });
     }
-    // Scalar uit de EERSTE periode — houdt de dag-kalender scalair (de post-pass promoveert
-    // pas naar uur-modus bij een echte afwijking, discriminator a/b/c).
-    if (timePeriodRefs.length > 0) {
+    // Meer periodes: scalar = begin eerste / einde laatste periode (fix werkdag-einde, 2026-10) — zie
+    // hieronder, ná de lus. Eén periode: scalar uit die periode, de oude afleiding (ook voor oude
+    // klokken als '7.5:00:00'). Houdt de dag-kalender scalair (de post-pass promoveert pas naar
+    // uur-modus bij een echte afwijking, discriminator a/b/c).
+    if (timePeriodRefs.length === 1) {
       const tp = entityMap.get(timePeriodRefs[0]);
       if (tp && tp.type === 'IFCTIMEPERIOD') {
         const startHour = scalarHourFromClock(stripQuotes(tp.args[0] || ''));
@@ -2657,13 +2659,32 @@ function buildCalendarFromEntity(
     }
     break; // writer schrijft precies één werktijdslot in WorkingTimes
   }
+  // Meer periodes (een uurkalender, of de gematerialiseerde blokken van een scalaire kalender): begin
+  // van de eerste en einde van de laatste periode op begintijd, met de middernachtregel, en NETTO uren
+  // als tussenwaarde — één definitie met de MSPDI- en `.mpp`-lezer (`workDayFromBlocks`). Vroeger de
+  // eerste periode: MS Projects 08:00–12:00 + 13:00–17:00 werd 8–12, een drieploegenkalender 6–14.
+  // Een OPS-bestand dat die oude scalar bewaarde, draagt geen `WorkEndHour` (de schrijver bewaart hem
+  // alleen als hij afwijkt van de eerste periode) en herstelt dus hier vanzelf.
+  // Netto alleen als de kalender niet als SCALAIR gemarkeerd is (`IsHourCalendar = .F.`): daar zijn de
+  // periodes de afgeleide blokken van de scalar van de gebruiker, en geldt de oude afspraak met de
+  // schrijver (`HoursPerDay` ontbreekt ⇔ hpd = einde − begin, `needsHoursPerDayOverride`).
+  const blocked = periods.length > 1 ? workDayFromBlocks(periods) : undefined;
+  const netHours = blocked && hourMeta.hourMode !== false ? blocked.netHours : undefined;
+  if (blocked) {
+    calendar.workStartHour = blocked.startHour;
+    calendar.workEndHour = blocked.endHour;
+    calendar.hoursPerDay = netHours ?? (blocked.endHour > blocked.startHour ? blocked.endHour - blocked.startHour : calendar.hoursPerDay);
+  }
   // Expliciete scalar werktijd (alleen geschreven waar de eerste periode hem niet teruggeeft). De
   // afgeleide hpd volgt dan de echte scalar — precies de `workEndHour − workStartHour` waartegen de
   // writer `needsHoursPerDayOverride` toetst; een expliciete `HoursPerDay` wint hieronder nog steeds.
   if (hourMeta.workStartHour !== undefined || hourMeta.workEndHour !== undefined) {
     if (hourMeta.workStartHour !== undefined) calendar.workStartHour = hourMeta.workStartHour;
     if (hourMeta.workEndHour !== undefined) calendar.workEndHour = hourMeta.workEndHour;
-    if (calendar.workEndHour > calendar.workStartHour) {
+    // Bij meer periodes blijft de tussenwaarde netto (de som van de blokken); een expliciete
+    // `HoursPerDay` wint hieronder nog steeds.
+    if (netHours !== undefined) calendar.hoursPerDay = netHours;
+    else if (calendar.workEndHour > calendar.workStartHour) {
       calendar.hoursPerDay = calendar.workEndHour - calendar.workStartHour;
     }
   }

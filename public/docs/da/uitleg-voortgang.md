@@ -28,7 +28,7 @@ For det andet kan arbejde, der ikke er startet, ikke ligge i fortiden. Er en så
 
 For det tredje starter det resterende arbejde på en opgave, der allerede er i gang, på selve statusdatoen. Appen regner statusdatoen som begyndelsen af den dag. Opgør du fremdriften fredag efter arbejdstid, sætter du derfor statusdatoen til mandag. Sætter du den til fredag, planlægger appen stadig det resterende arbejde den fredag.
 
-Hvis du endnu ikke har en statusdato og indtaster fremdrift, sætter appen statusdatoen til i dag og meddeler dig det. Uden statusdato beregner appen en opgave, der er i gang, fremad med dens resterende varighed, men baglæns med dens fulde varighed. Slækken bliver da negativ, og opgaven ser kritisk ud uden grund.
+Hvis du endnu ikke har en statusdato og indtaster fremdrift, sætter appen statusdatoen til i dag og meddeler dig det. En anden dato sætter du under *Tidsplan › Oprindelige planer & fremdrift › Statusdato*. Uden statusdato beregner appen en opgave, der er i gang, fremad med dens resterende varighed, men baglæns med dens fulde varighed. Slækken bliver da negativ, og opgaven ser kritisk ud uden grund.
 
 ### Procent, faktiske datoer og resterende varighed
 

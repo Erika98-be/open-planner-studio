@@ -16,6 +16,7 @@ import { formatDate, formatInstant, parseDate, parseInstant } from '@/utils/date
 import { taskCalendarHoursPerDay } from '@/utils/taskDefaults';
 import type { Task } from '@/types/task';
 import type { WorkCalendar } from '@/types/calendar';
+import { shownFinish, shownStart } from '@/utils/taskDates';
 
 /** Eenheden met hooguit twee decimalen: een importgat van een kwartdag blijft zichtbaar
  *  zonder dat een float-staart als `4.999999` in het veld belandt. */
@@ -67,12 +68,12 @@ function SplitNumberInput({ value, onCommit, label, dataAttr }: {
 }
 
 /** Van–tot per werkstuk NA een pauze, op exact dezelfde as als de Gantt-balk: dezelfde datums
- *  (`earlyStart || scheduleStart`, zoals `GanttRenderer.barGeometry`), dezelfde kalender-engine
+ *  (`shownStart`/`shownFinish`, zoals `GanttRenderer.barGeometry`), dezelfde kalender-engine
  *  (`engineForAnyMode`) en dezelfde wandeling (`computeSplitSegments`). Tussengrenzen zijn daar
  *  EXCLUSIEF; in dag-modus wordt de einddag dus de werkdag vóór die grens. */
 function segmentRanges(task: Task, cal: WorkCalendar): { from: string; to: string }[] {
-  const startStr = task.time.earlyStart || task.time.scheduleStart || '';
-  const endStr = task.time.earlyFinish || task.time.scheduleFinish || '';
+  const startStr = shownStart(task) || '';
+  const endStr = shownFinish(task) || '';
   if (!startStr || !endStr) return [];
   const hourMode = startStr.includes('T') || endStr.includes('T');
   const start = hourMode ? parseInstant(startStr) : parseDate(startStr);

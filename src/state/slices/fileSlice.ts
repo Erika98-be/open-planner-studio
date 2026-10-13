@@ -12,7 +12,9 @@ import { openSiteFile, saveNewSiteFile, saveSiteFileVersion } from '@/services/f
 import { askSiteOpen, askSiteSave, type SiteOpenChoice } from '@/services/fileAccess/siteDialogs';
 import { withXerArchiveIssueNotice } from '@/state/xerArchiveIssueNotice';
 import { P6XmlImportError } from '@/services/p6/p6xmlErrors';
+import { withOpenNoticeSticky } from '@/state/openNoticeSticky';
 import { P6XML_IMPORT_HELP_ARTICLE_ID, RECORDED_DATES_HELP_ARTICLE_ID, XER_IMPORT_HELP_ARTICLE_ID } from '@/state/helpArticles';
+import { formatNoticeToShow } from '@/services/formatNotice';
 import { openDialogFilters, binaryExtensions, readFormatForFile, parseOpenedFile, importErrorMessageKey, saveTargetFor, readFormatInput, readIFCWithXerReconstruction, type ExportFormat } from '@/services/formatRegistry';
 import { loadRecents, addRecent, removeRecent, type RecentEntry } from '@/services/fileAccess/recentFiles';
 import { HOST_EVENTS } from '@/services/extensionEvents';
@@ -578,10 +580,12 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
     if (choice.version === undefined) {
       // De gelezen versie wordt pas NA een geslaagde parse de basis, en alleen van dít document.
       get().openAsDocument(parsed, { name: opened.name, ref: opened.ref, siteFileVersion: opened.version });
+      offerFormatNotice(opened.name, opened.content);
       await pushRecent(opened.ref, opened.name);
       return;
     }
     get().openAsDocument(parsed, { name: siteVersionCopyName(opened.name, choice.version, choice.copyName), ref: null });
+    offerFormatNotice(opened.name, opened.content);
   };
 
   /**
@@ -611,6 +615,16 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
    *  naamveld van "Opslaan op de site" zou anders na het antwoord nog een versie schrijven. Zonder
    *  site zijn beide vlaggen altijd `null`. */
   const siteQuestionOpen = () => get().ui.pendingSiteSave !== null || get().ui.pendingSiteOpen !== null;
+
+  /** Uitleg na het openen van een ander formaat dan IFC (`services/formatNotice.ts`). Alleen de
+   *  open-routes die de GEBRUIKER start roepen dit aan (Bestand → Openen, Recente bestanden, Openen
+   *  van de site), ná een geslaagde `openAsDocument`: één uitleg per open-actie, ook als een XER
+   *  drie tabbladen opent. MCP (`openAsDocument` rechtstreeks), extensies en voorbeelden
+   *  (`applyLoadedProject`) en crashherstel komen hier niet langs. */
+  const offerFormatNotice = (name: string, text: string | undefined) => {
+    const kind = formatNoticeToShow(name, text, get().ui.formatNoticeHidden);
+    if (kind) set((s) => { s.ui.pendingFormatNotice = kind; });
+  };
 
   const writeActiveDocument = (expectedDocumentId?: string): Promise<boolean> => runProjectFileWrite(async () => {
     const state = get();
@@ -814,6 +828,7 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
           messageKey: 'notifications.duplicateIdsRenamed',
           params: { total: duplicateIds },
           dedupeKey: 'duplicate-ids-renamed',
+          sticky: true, // hernummerd bij het openen: blijft staan (openNoticeSticky.ts)
         });
       }
       const dropped = expandSummaryRelations(parsed.tasks, parsed.sequences).droppedSequenceIds.length;
@@ -823,6 +838,7 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
           messageKey: 'notifications.summaryRelationsDropped',
           params: { total: dropped },
           dedupeKey: 'summary-relations-dropped',
+          sticky: true, // relaties rekenen niet mee: blijft staan (openNoticeSticky.ts)
         });
       }
       // Een `.mpp`-bestand met aantoonbaar onderbroken, genivelleerde of resource-gedreven
@@ -919,7 +935,9 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
       // actie naar Bestand → Projectinfo. Een onbruikbaar XER-bronarchief is weggelaten door
       // `readIFC`; dat meldt zich als BUITENSTE laag, als detailregels in de bestandsmelding als
       // die er is, anders als eigen melding. Nooit stil — zie `withXerArchiveIssueNotice`.
-      const notice = withXerArchiveIssueNotice(
+      // Laatste stap: heeft de app bij het openen data ingevuld, vervangen, gerepareerd of weggelaten,
+      // dan blijft de melding staan tot het kruisje (`withOpenNoticeSticky`, eigenaarsbesluit 2026-10-12).
+      const notice = withOpenNoticeSticky(withXerArchiveIssueNotice(
         withRecordedDatesNotice(
           withSchedulingProfileNotice(
             results,
@@ -931,7 +949,7 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
           freshOfferTotal,
         ),
         results.map(result => result.xerArchiveIssue),
-      );
+      ));
       // De taaktypes-melding is een
       // detailregel in díe ene bestandsmelding — geen extra toast — met een EIGEN gidslink naar
       // `uitleg-werkregels` (`TASK_TYPES_DETAIL_LINE`; de "Lees meer" van de melding zelf gaat naar het
@@ -1001,6 +1019,7 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
         // Eén open-semantiek voor elk echt open-pad (tabblad, opslagdoel, gekoppeld laden),
         // ook voor de meervoudige XER-vorm.
         get().openAsDocument(parsed, { name: opened.name, ref: opened.ref });
+        offerFormatNotice(opened.name, opened.content);
 
         // Recents: elke herbruikbare ref (Tauri-pad óf Chromium-handle) — óók bij een niet-IFC
         // bronformaat: heropenen via recents moet blijven werken, alleen het OPSLAGDOEL wordt niet
@@ -1402,6 +1421,7 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
         // Zelfde open-semantiek als openFile: tabblad, opslagdoel (`saveTargetFor`) en gekoppeld
         // laden komen uit de ene gedeelde actie, ook voor de meervoudige XER-vorm.
         get().openAsDocument(parsed, { name: entry.name, ref: entry.ref });
+        offerFormatNotice(entry.name, content ?? undefined);
 
         // MRU verversen: het net-geopende bestand naar boven (óók bij een niet-IFC bronformaat —
         // alleen het opslagdoel blijft leeg, zie `saveTargetFor` in `openAsDocument`).
@@ -1442,7 +1462,7 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
           fit: true,
           hourDataNotice: true,
         });
-        const archiveNotice = withXerArchiveIssueNotice(undefined, [parsed.xerArchiveIssue]);
+        const archiveNotice = withOpenNoticeSticky(withXerArchiveIssueNotice(undefined, [parsed.xerArchiveIssue]));
         if (archiveNotice) get().notify(archiveNotice);
         return true;
       } catch (err) {

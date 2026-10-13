@@ -2,6 +2,7 @@
 // projectopties zijn documentdata (`project`, rijdt mee in DOCUMENT_FIELDS/snapshot). Eigen sjablonen
 // zijn app-globaal en leven buiten de store (`services/schedulingProfiles/profileStore.ts`).
 import type { AppSliceFactory } from './types';
+import { PROJECT_INFO_HELP_ARTICLE_ID } from '@/state/helpArticles';
 import type { Project } from '@/types/project';
 import { countShiftedTasks, type RecordedTime } from '@/engine/scheduler/recordedDates';
 import { clampProjectStartAnchors } from '@/engine/scheduler/projectStartAnchorClamp';
@@ -78,6 +79,7 @@ export const createSchedulingProfileSlice: AppSliceFactory<SchedulingProfileSlic
         messageKey: 'notifications.projectStartAnchorsClamped',
         params: { count: clampedAnchors },
         dedupeKey: 'project-start-anchors-clamped',
+        helpArticleId: PROJECT_INFO_HELP_ARTICLE_ID,
       });
     }
     if (after.cpmResult?.error) return { changed: true, shifted: null };

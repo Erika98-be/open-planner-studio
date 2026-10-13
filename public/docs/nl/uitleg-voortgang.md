@@ -28,7 +28,7 @@ Ten tweede kan werk dat nog niet begonnen is niet in het verleden liggen. Ligt z
 
 Ten derde begint het restwerk van een taak die al loopt op de statusdatum zelf. De app behandelt de statusdatum als het begin van die dag. Neem je de stand vrijdag na werktijd op, dan zet je de statusdatum dus op maandag. Zet je hem op vrijdag, dan plant de app het restwerk nog op die vrijdag.
 
-Heb je nog geen statusdatum en vul je voortgang in, dan zet de app de statusdatum op vandaag en meldt dat. Zonder statusdatum rekent de app een lopende taak vooruit met de restduur maar achteruit met de volle duur; de speling komt dan negatief uit en de taak lijkt onterecht kritiek.
+Heb je nog geen statusdatum en vul je voortgang in, dan zet de app de statusdatum op vandaag en meldt dat. Een andere datum zet je bij *Planning › Baselines & voortgang › Statusdatum*. Zonder statusdatum rekent de app een lopende taak vooruit met de restduur maar achteruit met de volle duur; de speling komt dan negatief uit en de taak lijkt onterecht kritiek.
 
 ### Percentage, werkelijke datums en restduur
 
@@ -141,7 +141,7 @@ In de profielen Primavera P6 en Microsoft Project eindigt het schilderwerk in di
 
 - In het profiel Microsoft Project schuift werk dat niet begonnen is niet naar de statusdatum (conventie *Niet-gestarte taken niet naar de statusdatum*). Zet je in het voorbeeld hierboven alleen een statusdatum en vul je niets in, dan blijft de oplevering in dat profiel vrijdag 6 augustus.
 - In het profiel Microsoft Project begint het restwerk ook niet eerder dan de werkelijke start plus de al verstreken duur (conventie *Restwerk hervat na de al verstreken duur*). Dat is een extra ondergrens naast de statusdatum: de laatste van de twee telt. Neem *Binnenspouwblad metselen* (5 werkdagen), begonnen op dinsdag 29 juni en op woensdag 30 juni, de statusdatum, op 40 % (twee ploegen metselen tegelijk, dus na één dag is al 40 % klaar). Alles ervoor is klaar volgens planning. Open Planner Studio en Primavera P6 laten de taak eindigen op vrijdag 2 juli; Microsoft Project op maandag 5 juli, want dinsdag 29 juni plus 2 verstreken werkdagen is donderdag 1 juli, na de statusdatum.
-- Primavera P6 toont als vroegste start van een lopende taak het begin van het restwerk, niet de werkelijke start (in het voorbeeld met het binnenspouwblad woensdag 30 juni).
+- Primavera P6 toont als vroegste start van een lopende taak het begin van het restwerk, niet de werkelijke start (in het voorbeeld met het binnenspouwblad woensdag 30 juni). De kolom *Start* en de balk tonen in elk profiel wel de werkelijke start.
 - In het profiel Primavera P6 telt de relatie naar een opvolger die al gestart is onder Progress Override ook niet mee voor de voorganger: ze legt geen grens meer aan zijn laatste datums en zijn vrije speling (conventie *Progress Override negeert een gestarte opvolger ook achterwaarts*). In het voorbeeld met stucwerk en schilder zie je dat niet, omdat het stucwerk via de dekvloer toch al kritiek is: zijn laatste datums en vrije speling zijn onder Retained Logic en Progress Override gelijk.
 - Bij het openen van een .xer-bestand neemt de app de voortgangsmodus uit het bestand over. Actual Dates, de derde P6-modus, kent de app niet; zo'n bestand rekent als Retained Logic.
 

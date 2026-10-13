@@ -3,6 +3,7 @@ import type { KeyboardEvent as ReactKeyboardEvent, MouseEvent as ReactMouseEvent
 import type { HistogramRenderer } from '@/engine/renderer/HistogramRenderer';
 import type { Resource, ResourceAssignment } from '@/types/resource';
 import type { Task } from '@/types/task';
+import { computedFinish, computedStart } from '@/utils/taskDates';
 
 export interface GanttHistogramTooltip {
   x: number;
@@ -141,8 +142,10 @@ export function useGanttHistogramInteraction(
       }
       const task = tasks.find(candidate => candidate.id === assignment.taskId);
       if (!task) continue;
-      const start = task.time.earlyStart || task.time.scheduleStart;
-      const finish = task.time.earlyFinish || task.time.scheduleFinish;
+      // Rekendatums, niet de getoonde: het histogram boekt vanaf `earlyStart`
+      // (`ResourceLoad.taskWorkDayIsos`), dus de tooltip noemt de taken die dáár bijdragen.
+      const start = computedStart(task);
+      const finish = computedFinish(task);
       if (start && finish && isoDate >= start && isoDate <= finish) names.add(task.name || task.id);
     }
     return [...names];

@@ -18,7 +18,7 @@ La data di stato è il giorno in cui fai il punto della situazione. Impostala pr
 
 Se fai il punto della situazione il venerdì dopo l'orario di lavoro, imposta la data di stato sul giorno lavorativo successivo, lunedì. L'app pianifica il lavoro rimanente a partire dall'inizio della data di stato.
 
-Se inserisci l'avanzamento mentre non c'è ancora una data di stato, l'app la imposta a oggi e segnala: *Non c’era ancora una data di stato: ora è impostata a oggi (…), perché l’avanzamento si misura fino alla data di stato. Puoi modificarla in Pianificazione → Data di stato.* Quindi imposta tu prima la data di stato.
+Se inserisci l'avanzamento mentre non c'è ancora una data di stato, l'app la imposta a oggi e segnala: *Data di stato impostata a oggi (…).* Quindi imposta tu prima la data di stato.
 
 ### 2. Inserisci l'avanzamento
 

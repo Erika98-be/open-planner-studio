@@ -4,6 +4,7 @@ import { useDisplayDate } from '@/hooks/displayDate';
 import { useAppStore } from '@/state/appStore';
 import { durationSuffixesFrom, effectiveCalendarOf, formatTaskDurationDisplay, formatWorkDaysText } from '@/utils/taskDuration';
 import { Task } from '@/types/task';
+import { shownFinish, shownStart } from '@/utils/taskDates';
 
 /**
  * Eén label/waarde-regel van een hovertooltip. `colon={false}` voor een label dat zijn eigen
@@ -55,8 +56,8 @@ export function TaskTooltipContent({ task }: { task: Task }) {
       <div className="tooltip-title">{task.name}</div>
       <TooltipRow label={tTask('table.wbs')} value={task.wbsCode || '-'} />
       <TooltipRow label={tTask('table.duration')} value={duration} />
-      <TooltipRow label={tTask('table.start')} value={formatTooltipDate(task.time.earlyStart || task.time.scheduleStart)} />
-      <TooltipRow label={tTask('table.finish')} value={formatTooltipDate(task.time.earlyFinish || task.time.scheduleFinish)} />
+      <TooltipRow label={tTask('table.start')} value={formatTooltipDate(shownStart(task))} />
+      <TooltipRow label={tTask('table.finish')} value={formatTooltipDate(shownFinish(task))} />
       <TooltipRow label={tTask('tooltip.status')} value={tTask(`taskStatus.${task.status}`, { defaultValue: task.status })} />
       <TooltipRow
         label={tTask('table.critical')}

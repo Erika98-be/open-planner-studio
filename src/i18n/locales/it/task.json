@@ -153,6 +153,7 @@
       "scheduleFinishNotManual": "La fine pianificata vale solo per un’attività pianificata manualmente. Modifica la fine tramite la colonna Fine o la durata.",
       "finishFromDuration": "Per questa attività la fine deriva dall’inizio e dalla durata. Modifica l’inizio o la durata.",
       "finishBeforeStart": "La fine è precedente all’inizio.",
+      "startIsActual": "Questa attività è iniziata; il suo inizio è l’inizio effettivo. Modificalo tramite l’avanzamento.",
       "finishIsActual": "Questa attività è completata; la sua fine è la fine effettiva. Modificala tramite l’avanzamento.",
       "invalid": "Il valore inserito non è valido.",
       "relationToken": "Usa, ad esempio, 1.2 FS+2d.",

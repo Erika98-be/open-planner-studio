@@ -28,7 +28,7 @@ For det andre kan arbeid som ikke har startet, ikke ligge i fortiden. Hvis en sl
 
 For det tredje begynner det gjenstående arbeidet på en aktivitet som allerede kjører, på statusdatoen selv. Appen regner statusdatoen som starten av den dagen. Hvis du gjør status fredag etter arbeidstid, setter du statusdatoen til mandag. Setter du den til fredag, planlegger appen fortsatt det gjenstående arbeidet den fredagen.
 
-Hvis du ikke har en statusdato ennå og du registrerer fremdrift, setter appen statusdatoen til i dag og sier fra om det. Uten statusdato regner appen en kjørende aktivitet fremover med gjenstående varighet, men bakover med hele varigheten. Slakket blir da negativt, og aktiviteten ser kritisk ut uten grunn.
+Hvis du ikke har en statusdato ennå og du registrerer fremdrift, setter appen statusdatoen til i dag og sier fra om det. En annen dato setter du under *Tidsplan › Grunnlinjer og fremdrift › Statusdato*. Uten statusdato regner appen en kjørende aktivitet fremover med gjenstående varighet, men bakover med hele varigheten. Slakket blir da negativt, og aktiviteten ser kritisk ut uten grunn.
 
 ### Prosent, faktiske datoer og gjenstående varighet
 

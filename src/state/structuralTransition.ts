@@ -25,6 +25,7 @@ import type { Resource, ResourceAssignment } from '@/types/resource';
 import { taskMilestoneTransition, type MilestoneRefusal } from '@/engine/taskMilestoneTransition';
 import { relocateAssignment } from './assignmentMutations';
 import type { NotifyInput } from './slices/types';
+import { STRUCTURE_HELP_ARTICLE_ID } from '@/state/helpArticles';
 
 /** Namen in een melding blijven leesbaar (zelfde grens als `relationActions.ts`). */
 const MAX_NAME = 40;
@@ -234,9 +235,15 @@ export function phaseTransitionNotices(s: DescribeState, transitions: readonly P
         phase: shortName(taskName(s, only.phaseId)),
         child: shortName(taskName(s, only.targetTaskId)),
       },
+      helpArticleId: STRUCTURE_HELP_ARTICLE_ID,
     });
   } else if (moved.length > 1) {
-    notices.push({ severity: 'info', messageKey: 'notifications.assignmentsMovedToSubtasks', params: { count: moved.length } });
+    notices.push({
+      severity: 'info',
+      messageKey: 'notifications.assignmentsMovedToSubtasks',
+      params: { count: moved.length },
+      helpArticleId: STRUCTURE_HELP_ARTICLE_ID,
+    });
   }
   const cleared = transitions.filter(t => t.clearMilestone);
   if (cleared.length > 0) {
@@ -244,6 +251,7 @@ export function phaseTransitionNotices(s: DescribeState, transitions: readonly P
       severity: 'info',
       messageKey: 'notifications.milestoneClearedOnPhase',
       params: { count: cleared.length, phase: shortName(taskName(s, cleared[0].phaseId)) },
+      helpArticleId: STRUCTURE_HELP_ARTICLE_ID,
     });
   }
   return notices;

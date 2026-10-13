@@ -153,6 +153,7 @@
       "scheduleFinishNotManual": "예정 완료는 수동으로 예약된 작업에만 적용됩니다. 종료 열이나 기간으로 종료를 변경하세요.",
       "finishFromDuration": "이 작업의 종료는 시작과 기간에서 결정됩니다. 시작 또는 기간을 변경하세요.",
       "finishBeforeStart": "종료가 시작보다 앞섭니다.",
+      "startIsActual": "이 작업은 시작되었습니다. 시작은 실제 시작입니다. 진행률에서 변경하세요.",
       "finishIsActual": "이 작업은 완료되었습니다. 종료는 실제 종료입니다. 진행률에서 변경하세요.",
       "invalid": "입력한 값이 올바르지 않습니다.",
       "relationToken": "예: 1.2 FS+2d 형식으로 입력하세요.",
