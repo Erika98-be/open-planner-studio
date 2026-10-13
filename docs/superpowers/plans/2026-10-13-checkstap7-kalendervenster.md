@@ -13,3 +13,5 @@ Link: `http://localhost:3049/?qa=ms-project-kalender.xml&qa-dialog=kalender&qa-u
    niet terug te vinden.
 3. Vraag eigenaar bij het oranje blok: "en wat betekent dit?" ⇒ de tekst ("This calendar has work blocks. Start,
    end and break follow from those blocks; change them with hour planning on.") is niet duidelijk genoeg.
+4. Eigenaar: "volgens mij werkt het" ⇒ checkstap 7 functioneel akkoord. Open: tekst infoblok onduidelijk (3) en
+   vraag waarom de uitgebreide kalender aan urenplanning vastzit (2) — als keuze voorleggen.

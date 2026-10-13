@@ -367,3 +367,8 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   `<Exception>` krijgt de NL-feestdagen van `createDefaultCalendar()` ("golden rule", `mspdiReader.ts` ~r.977);
   `.mpp` en P6 XML doen dat bewust niet. Worker (Opus 5.5) gestart op `claude/fix-mspdi-feestdagen` (eerst bron
   van de regel nagaan; bij een eigenaarsbesluit stoppen).
+- **#333 gemerged in main (2026-10-13):** merge-commit 1e192b31a (ronde 2 #320/#325/#326 + #334). Vooraf CI 15/15
+  groen op 0501e7295 (bevat main 1f1271770), `measure:profiles` EXIT 0 op e69ed03f0 (#328 raakt alleen
+  `uiFont.ts`). Gemerged met `--admin`. GitHub toont #320 #325 #326 #334 als gemerged. Eigenaar: checkstap 6
+  ("perfect") en 7 ("volgens mij werkt het") akkoord. Netwerkstoring; feestdagen-worker hervat met gemeten stand
+  (055a787be, nog geen PR).
