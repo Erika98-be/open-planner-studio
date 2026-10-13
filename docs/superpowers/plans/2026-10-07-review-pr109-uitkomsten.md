@@ -448,3 +448,7 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   integratiebranch: de PR-kop 7e5182de6 bevatte main f922cae4e al, CI 15/15 en `measure:profiles` exit 0 liepen
   op precies die kop.
 - #338 fixronde 1 klaar (kop 3adaf582a, main erin, CI groen volgens maker; M1–M6 rood). Her-check gestart.
+- Tabstrook-pijlen klaar als **#339** (`claude/tabstrook-pijlen`, 8fa130ec8, CI groen, 8 mutanten rood; pijlen
+  `tabIndex=-1` volgens het WAI-ARIA-tabspatroon). Screenshots licht/donker/RTL bekeken door de orkestrator:
+  pijlen naast "+", zonder scrollbalk. Review gestart (reviewer, Opus 5.5). Bekend en al aanwezig vóór #339:
+  in RTL staat het sluitkruisje vast rechts en worden lange Latijnse namen aan de beginkant afgekapt.
