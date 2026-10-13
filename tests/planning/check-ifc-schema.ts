@@ -14,7 +14,8 @@
 //      toegestane literal, REAL met decimale punt, INTEGER zonder, tekst als string, een verwijzing
 //      die in het bestand bestaat, een getypte waarde die de select toestaat (met de juiste inhoud),
 //      SET/LIST met minimaal het vereiste aantal elementen en een SET zonder dubbele elementen.
-//   2. Een kleine set WHERE-regels uit IFC4X3_ADD2 die OPS kan raken (zie `checkRules`).
+//   2. Een kleine set WHERE-regels uit IFC4X3_ADD2 die OPS kan raken (zie `checkRules`), en de
+//      header `FILE_SCHEMA(('IFC4X3_ADD2'))`.
 //   3. Bronnen: de committe voorbeelden (`public/examples/*.ifc` — de acht publieke — en
 //      `examples/*.ifc`), een RIJK project dat hier met de echte writer wordt geschreven (alle
 //      resourcetypen, ploegen, baselines, werkende uitzonderingen, bibliotheekkalenders, alle
@@ -33,7 +34,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { writeIFC } from '@/services/ifc/ifcWriter';
 import { RESOURCE_TYPE_TO_IFC } from '@/services/ifc/ifcConstants';
-import { IFC_ENTITY_ATTRIBUTES, IFC_SELECTS, IFC_TYPED_VALUE_KIND } from './ifcSchemaTable';
+import { IFC_ENTITY_ATTRIBUTES, IFC_SCHEMA_TABLE_SOURCE, IFC_SELECTS, IFC_TYPED_VALUE_KIND } from './ifcSchemaTable';
 import { buildEmptySchemaProject, buildRichSchemaProject } from './ifcSchemaFixture';
 
 const HERE = fileURLToPath(new URL('.', import.meta.url));
@@ -249,6 +250,9 @@ function collectTyped(v: V, out: Set<string>): void {
 
 /** Toetst één bestand. `label` komt in elke foutmelding. */
 function checkFile(label: string, text: string, seen: Seen): void {
+  // De header noemt het schema waartegen de tabel is afgeleid (IFC 4.3.2.0, zie de kop van ifcWriter).
+  const schemaId = /FILE_SCHEMA\s*\(\s*\(\s*'([^']*)'/.exec(text)?.[1];
+  assert(schemaId === IFC_SCHEMA_TABLE_SOURCE, `${label}: FILE_SCHEMA is '${schemaId}', verwacht '${IFC_SCHEMA_TABLE_SOURCE}'`);
   let entities: StepEntity[];
   try {
     entities = parseStep(text);
