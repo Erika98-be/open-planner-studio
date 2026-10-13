@@ -98,6 +98,15 @@ export function DocumentTabBar() {
     return () => viewport.removeEventListener('wheel', onWheel);
   }, [direction, scroll.overflowing]);
 
+  // Iedere route kan een document activeren; alleen hier kennen we de horizontale viewport. Ook
+  // als de pijlknoppen verschijnen of verdwijnen: dan verandert de breedte van de viewport en kan
+  // het actieve tabblad er net buiten vallen.
+  useEffect(() => {
+    if (!activeId) return;
+    const tab = tabRefs.current.get(activeId);
+    if (tab) revealDocumentTab(tab);
+  }, [activeId, scroll.overflowing]);
+
   const scrollTabs = useCallback((towards: 'start' | 'end') => {
     const viewport = viewportRef.current;
     if (!viewport) return;
@@ -131,12 +140,6 @@ export function DocumentTabBar() {
     if (focusTarget) tabRefs.current.get(focusTarget)?.focus({ preventScroll: true });
   }, [cards, projectOverviewOpen]);
 
-  // Iedere route kan een document activeren; alleen hier kennen we de horizontale viewport.
-  useEffect(() => {
-    if (!activeId) return;
-    const tab = tabRefs.current.get(activeId);
-    if (tab) revealDocumentTab(tab);
-  }, [activeId]);
 
   const focusTab = useCallback((id: string) => {
     focusDocumentTab(tabRefs.current, id);
