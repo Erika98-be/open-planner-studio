@@ -514,3 +514,9 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
 - #340 fixronde 1 klaar (kop 681e29604, CI groen): terugvalweek herkend aan de datum, `LegacyWorkTimeIds` weg,
   datumgebonden `IfcWorkTime`'s uit de week, 63 controles (37 rood op main), 16 mutanten rood, `measure:profiles`
   exit 0, voorbeelden 8/8 byte-identiek. Her-check gestart.
+- **#340 her-check: ja** (reviewer, Opus 5.5). Hernummeren, andere volgorde en Night Shift exact; eigen OPS-bestanden
+  gaan nooit mis; datumregel raakt geen OPS-week of uitzonderingen; tussenwaarde geen risico voor OPS-bestanden.
+  **Gemerged in main 2026-10-13: #340 → 83b8be827**, met `--admin` (branchbeveiliging). Geen aparte
+  integratiebranch: de kop 681e29604 bevatte main 22f48e7bf al; CI 15/15 en `measure:profiles` exit 0 op die kop.
+  Twee restpunten (week met alleen gedateerde werktijden, toets StartDate-only) doorgegeven aan de schema-expert
+  voor fase 2.
