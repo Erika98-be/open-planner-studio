@@ -487,3 +487,17 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   een XER-document gaf na hernoemen bij export naar P6 XML `<Id>OPS:…</Id>`. Bekend: P6 XML-exports uit v2026.9.0
   hebben `<Id>proj-…</Id>` en tonen heropend "Naam (proj-…)" (sinds 56147b288). Proefmerge main + #338 + #340 +
   #343: geen tekstconflict. Review gestart (reviewer, Opus 5.5), inclusief de combinatie.
+- **#340 review: nee** (reviewer, Opus 5.5). Oudere versies lezen het nieuwe bestand gelijk (14/15), byte-identiek
+  voor alle voorbeelden en eigen projecten, combinatie met #338 groen. Blokkerend: markering van de terugvalweek via
+  STEP-id breekt na hernummeren (vr 08–17 zonder pauze, slechter dan main). Fixronde 1: herkennen aan de datum
+  1900-01-01, `LegacyWorkTimeIds` schrappen, dode tak weg, datumgebonden `IfcWorkTime`'s uit de weekopbouw,
+  testgaten, documentatie eerlijk.
+- **Nieuwe bevinding (reviewer #340, door de orkestrator nagemeten 2026-10-13): OPS schrijft schema-ongeldige IFC.**
+  IfcOpenShell 0.9.0 (`ifcopenshell.validate`, header `IFC4X3`): alle 8 voorbeelden 34–80 fouten. Soorten: REAL-
+  waarden in `IfcPropertySingleValue` (158), resources 9 i.p.v. 11 attributen (Labor/Subcontract/Equipment/Material/
+  Crew), IfcWorkPlan/IfcWorkSchedule 15 i.p.v. 14, IfcWorkCalendar 8 i.p.v. 9 (`Identification` ontbreekt). Gevolg:
+  externe tools zien geen werkdagen; OPS leest echte externe kalenders als de standaardkalender. Niet eerder bekend
+  (geen issue, geen doc). **Besluit orkestrator 2026-10-13:** vóór de release, volgens de releaseregel van de
+  eigenaar (fout in het native formaat van wat al gebouwd is). Expert (Opus 5.5) gestart op `claude/ifc-schemageldig`:
+  fase 1 (REAL, resources, werkplan/-schema, lezer voor beide indelingen, poort zonder Python), fase 2
+  (IfcWorkCalendar) pas na de merge van #340.
