@@ -26,7 +26,7 @@
 import './domStub';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import type { Project } from '@/types/project';
+import type { IfcSchemaId, Project } from '@/types/project';
 import type { WorkCalendar } from '@/types/calendar';
 import type { Task, TaskTime } from '@/types/task';
 import type { Sequence } from '@/types/sequence';
@@ -65,6 +65,7 @@ import { ExtImportSourceDriftError } from '@/extensions/extImportSource';
 import { builtInProfile } from '@/engine/scheduler/conventions/registry';
 import { TASK_SOURCE_FIELDS, SEQUENCE_SOURCE_FIELDS, CALENDAR_SOURCE_FIELDS, openExtensionImport, importWithExtension } from '@/extensions/retainActiveDocument';
 import type { CalendarGeneration } from '@/types/calendar';
+import { ifcSchemaBlocksSilentWrite } from '@/services/ifc/ifcSchemaQuestion';
 
 const diffs: string[] = [];
 let checks = 0;
@@ -146,6 +147,7 @@ const NIET_PUBLIEK = {
   // alsof hij uit een bibliotheek komt.
   // `ifcSchema` en `ifcSchemaUnconfirmed` (issue #292) zijn eigenschappen van het bestand (de kop bij
   // opslaan en de open schemavraag), geen planningsdata; het extensiecontract blijft ongewijzigd.
+  // Een lees-wijzig-laad op hetzelfde id houdt ze vast (`retainActiveDocument`, N3D-14).
   project: ['companyId', 'companyName', 'ifcSchema', 'ifcSchemaUnconfirmed'] as readonly string[],
   // De penaltydiagnose is een IFC-leesdiagnose, geen extensie-invoer of -uitvoer. De geldige
   // brongegevens zelf (`p6Source` + lijst) blijven wél rondtrippend beschikbaar.
@@ -1282,6 +1284,32 @@ for (const [naam, ext, bron, sleutels] of [
   ], ['cal-ploeg', 'cal-ploeg']);
   eq('N3D-07a ongewijzigde projectkalender houdt velden die ExtCalendar niet naar binnen draagt',
     na.calendar.p6NonWorkPenaltyDates, ['2026-01-05']);
+
+  // Review #336 punt 1: het IFC-schema en de open schemavraag horen bij het bestand, niet bij het
+  // contract (`NIET_PUBLIEK`). Een lees-wijzig-laad op hetzelfde id houdt ze vast; anders vroeg de app
+  // daarna niets meer en schreef ze een IFC4-bestand stil als ADD2. Mutatiebewijs: de twee regels in
+  // `retainActiveDocument` weghalen ⇒ N3D-14 rood. Ander id ⇒ een nieuw project: beide weg (N3D-15).
+  const schemaGevallen: [string, string | undefined, string | undefined][] = [
+    ['IFC4-bestand met open vraag', 'IFC4', 'IFC4'],
+    ['IFC2X3-bestand met open vraag', undefined, 'IFC2X3'],
+    ['bevestigd IFC 4.3', 'IFC4X3', undefined],
+  ];
+  for (const [label, schema, open] of schemaGevallen) {
+    zetDocument();
+    useAppStore.setState((s) => {
+      if (schema) s.project.ifcSchema = schema as IfcSchemaId; else delete s.project.ifcSchema;
+      if (open) s.project.ifcSchemaUnconfirmed = open; else delete s.project.ifcSchemaUnconfirmed;
+    });
+    const terug = herladen();
+    eq(`N3D-14 ${label}: schema en open vraag blijven na loadProject`,
+      [terug.project.ifcSchema, terug.project.ifcSchemaUnconfirmed, ifcSchemaBlocksSilentWrite(terug.project)],
+      [schema, open, open === 'IFC2X3']);
+  }
+  zetDocument();
+  useAppStore.setState((s) => { s.project.ifcSchema = 'IFC4'; s.project.ifcSchemaUnconfirmed = 'IFC4'; });
+  const nieuwId = herladen((r) => { r.project = { ...r.project, id: 'ander-project-schema' }; });
+  eq('N3D-15 ander id ⇒ nieuw project: geen schema en geen open vraag van het vorige bestand',
+    [nieuwId.project.ifcSchema, nieuwId.project.ifcSchemaUnconfirmed, nieuwId.filePath], [undefined, undefined, null]);
 
   // De extensie wijzigt de projectkalender: die wijziging wint van de bibliotheek-entry, en de
   // bronvelden van de documentkalender blijven erop staan (reviewproef probe-e E1). Mutatiebewijs:

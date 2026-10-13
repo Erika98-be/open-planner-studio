@@ -14,6 +14,10 @@
  *    documentkalender met hetzelfde id erover, zoals de kalenderdialoog ze bij een bewerking laat staan;
  *  - `activityCodeTypes` en `customFieldDefs`: niet (taken dragen alleen de waarden) ⇒ van het document;
  *  - `ifcGlobalIds`: niet ⇒ van het document;
+ *  - IFC-schema (`project.ifcSchema`) en de open schemavraag (`project.ifcSchemaUnconfirmed`): niet
+ *    (eigenschappen van het bestand, `NIET_PUBLIEK` in check-ext-contract) ⇒ van het document. Anders
+ *    vroeg de app na een extensie-load niets meer en schreef ze een IFC4-bestand stil als IFC 4.3 ADD2,
+ *    en viel de AutoSave-blokkade bij IFC2X3 weg (review #336, issue #292);
  *  - `customTaskTypes`: alleen wat de extensie meestuurt (lijst plus de typen op haar taken) ⇒ de
  *    documententries die zij niet meestuurt, komen erbij. Botst een documententry met een entry van de
  *    extensie op id of op naam (dezelfde sleutels als `fromExtImportResult`: id getrimd, naam
@@ -112,6 +116,8 @@ export function retainActiveDocument(loaded: ImportResult, active: ActiveDocumen
     calendarId,
     schedulingProfile: active.project.schedulingProfile,
     schedulingOptions: Object.keys(options).length > 0 ? options as ProjectSchedulingOptions : undefined,
+    ...(active.project.ifcSchema !== undefined ? { ifcSchema: active.project.ifcSchema } : {}),
+    ...(active.project.ifcSchemaUnconfirmed !== undefined ? { ifcSchemaUnconfirmed: active.project.ifcSchemaUnconfirmed } : {}),
   };
 
   // Kalenders. Eerst gaat de kalender die de extensie meestuurt (`calendar`) de bibliotheek in, met de
