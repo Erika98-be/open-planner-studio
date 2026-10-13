@@ -24,6 +24,8 @@ The project appears in its own tab and is active straight away. *New* and *Open*
 
 Each tab has a coloured dot that belongs to the project. A tab with a small dot behind it has unsaved changes.
 
+If the tabs do not all fit in the width, two arrows appear between the tabs and the plus (*Scroll tabs towards the start* and *Scroll tabs towards the end*). Each click moves the tabs by two. An arrow is grey when you are already at the start or the end. You can also scroll with the mouse wheel over the tabs. The tab you choose always moves into view by itself.
+
 ### Closing a project
 
 Click the cross next to the name on the tab (*Close*), or the cross on a card in the overview. A project without changes closes at once. If it has unsaved changes, the app asks *Unsaved changes* with three choices:

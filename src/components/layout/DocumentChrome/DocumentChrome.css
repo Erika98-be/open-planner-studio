@@ -22,21 +22,33 @@
   background: var(--theme-ribbon-tab-bg); border-bottom: 1px solid var(--theme-border);
   padding: 0 6px; gap: 3px;
 }
-.ops-tabstrip-menu { align-self: center; width: 30px; height: 26px; margin-right: 2px; }
-.ops-tabstrip-scroll-button { align-self: center; width: 24px; height: 26px; flex: none; }
+/* flex: none: de menuknop mag niet meekrimpen, anders klopt de meting van de vrije ruimte niet. */
+.ops-tabstrip-menu { align-self: center; width: 30px; height: 26px; margin-inline-end: 2px; flex: none; }
 .ops-tabstrip-viewport {
   /* Krimpt tot de inhoud: de "+" volgt direct na het laatste tabblad (zoals een browser). Bij overloop
-     krimpt de viewport tot min-width 0 en blijft de "+" aan de eindrand zichtbaar; RTL spiegelt via flex. */
+     krimpt de viewport tot min-width 0 en blijft de "+" aan de eindrand zichtbaar; RTL spiegelt via flex.
+     Geen zichtbare scrollbalk (ook geen hoogte): bij overloop schuif je met de pijlknoppen, het
+     scrollwiel of het touchpad. overflow-x blijft auto, zodat scrollIntoView en het touchpad werken.
+     scrollbar-width dekt Chromium (ook WebView2) en Firefox; ::-webkit-scrollbar dekt WebKit
+     (Tauri op Linux en macOS, Safari). Het schuiftempo kiest de code per actie, niet de CSS. */
   align-self: stretch; flex: 0 1 auto; min-width: 0; overflow-x: auto; overflow-y: hidden;
-  scrollbar-width: thin; scroll-behavior: smooth;
+  scrollbar-width: none;
 }
+.ops-tabstrip-viewport::-webkit-scrollbar { display: none; width: 0; height: 0; }
+/* Pijlknoppen < > tussen de tabbladen en de "+"; alleen bij overloop in de DOM. */
+.ops-tabstrip-scroll { display: flex; align-items: center; gap: 1px; flex: none; }
+.ops-tabstrip-scroll-button { width: 24px; height: 26px; flex: none; }
+.ops-tabstrip-scroll-button:disabled { opacity: 0.35; cursor: default; }
+.ops-tabstrip-scroll-button:disabled:hover { background: transparent; color: var(--theme-text-dim); }
 .ops-tabstrip-tabs { display: flex; align-items: stretch; gap: 3px; min-width: max-content; height: 100%; }
 .ops-tab-group {
   position: relative; align-self: flex-end; flex: none; min-width: 158px; max-width: 230px; height: 100%;
 }
 .ops-tab {
   position: relative; display: flex; align-items: center; gap: 8px; flex: none;
-  width: 100%; padding: 0 32px 0 11px; min-width: 0; max-width: none; align-self: flex-end;
+  /* Logische padding en inset: in RTL staat het sluitkruisje aan de linkerkant van zijn eigen
+     tabblad, niet naast de naam van het buurtabblad. */
+  width: 100%; padding-block: 0; padding-inline: 11px 32px; min-width: 0; max-width: none; align-self: flex-end;
   height: 31px; border-radius: 7px 7px 0 0; border: 1px solid transparent;
   border-bottom: none; background: transparent; cursor: pointer; overflow: hidden; outline: none;
   font-family: var(--font-body);
@@ -55,7 +67,7 @@
 .ops-tab.active .ops-tab-name { font-weight: 600; color: var(--theme-text); }
 .ops-dirty-dot { width: 7px; height: 7px; border-radius: 9999px; flex: none; background: var(--theme-warning-text); }
 .ops-tab-close {
-  position: absolute; right: 7px; bottom: 6px; z-index: 1;
+  position: absolute; inset-inline-end: 7px; bottom: 6px; z-index: 1;
   width: 18px; height: 18px; flex: none; display: flex; align-items: center; justify-content: center;
   background: transparent; border: none; border-radius: 5px; cursor: pointer; color: var(--theme-text-muted);
 }
