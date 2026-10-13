@@ -1,9 +1,10 @@
 // Kern van de IFC-schemapoort: een eigen STEP-parser (los van ifcReader: een poort leunt niet op de
-// code die hij toetst) en de toets van één bestand tegen de schematabel `ifcSchemaTable.ts`.
+// code die hij toetst) en de toets van één bestand tegen de schematabel `ifcSchemaTable.ts` van het
+// schema in zijn kop (IFC4X3_ADD2, IFC4X3 of IFC4).
 // Gebruikt door `check-ifc-schema.ts` (de poort, met zijn bronnen) en `check-ifc-roundtrip.ts` (de
 // round-trip-fixture als extra bron: splits, contouren, timephased, P6-voortgang). Geen check: dit
 // bestand draait niets. Toelichting: docs/ifc-round-trip.md, alinea "Schemageldigheid".
-import { IFC_ENTITY_ATTRIBUTES, IFC_SCHEMA_TABLE_SOURCE, IFC_SELECTS, IFC_TYPED_VALUE_KIND } from './ifcSchemaTable';
+import { IFC_SCHEMA_TABLES, type IfcSchemaTable, type IfcSchemaTableId } from './ifcSchemaTable';
 
 /**
  * BEKENDE AFWIJKING (bewust, gemeld): `IfcRelAssignsToProcess.RelatedObjects` is een SET, maar OPS
@@ -154,8 +155,10 @@ const SHAPED_STRINGS: Record<string, [RegExp, string]> = {
 };
 
 /** Toetst waarde `v` tegen typecode `code` (zonder `?`). `types`: STEP-id → entiteittype van het
- *  bestand. Geeft een foutomschrijving of ''. */
-function checkKind(v: V, code: string, types: ReadonlyMap<number, string>, allowDuplicates = false): string {
+ *  bestand; `table`: de schematabel uit de kop. Geeft een foutomschrijving of ''. */
+function checkKind(
+  v: V, code: string, types: ReadonlyMap<number, string>, table: IfcSchemaTable, allowDuplicates = false,
+): string {
   if (code === '*') return v.k === 'derived' ? '' : 'afgeleid attribuut moet * zijn';
   const agg = /^(SET|LIST|BAG|ARRAY)(\d+):(.*)$/.exec(code);
   if (agg) {
@@ -163,7 +166,7 @@ function checkKind(v: V, code: string, types: ReadonlyMap<number, string>, allow
     if (v.items.length < Number(agg[2])) return `${agg[1]} met minder dan ${agg[2]} element(en)`;
     for (const item of v.items) {
       if (item.k === 'null') return `$ als element in ${agg[1]}`;
-      const err = checkKind(item, agg[3], types);
+      const err = checkKind(item, agg[3], types, table);
       if (err) return `element ${show(item)}: ${err}`;
     }
     if (agg[1] === 'SET' && !allowDuplicates) {
@@ -190,7 +193,7 @@ function checkKind(v: V, code: string, types: ReadonlyMap<number, string>, allow
     return allowed.includes(v.v) ? '' : `enum-literal .${v.v}. niet toegestaan`;
   }
   if (code.startsWith('V=')) {
-    const sel = IFC_SELECTS[code.slice(2)];
+    const sel = table.selects[code.slice(2)];
     if (!sel) return `select ${code} niet in de tabel`;
     if (v.k === 'ref') {
       if (!sel.refs) return 'select staat geen verwijzing toe';
@@ -200,8 +203,8 @@ function checkKind(v: V, code: string, types: ReadonlyMap<number, string>, allow
     }
     if (v.k !== 'typed') return 'getypte waarde of verwijzing verwacht';
     if (!sel.types.includes(v.type)) return `${v.type} niet toegestaan in ${code.slice(2)}`;
-    const inner = IFC_TYPED_VALUE_KIND[v.type];
-    return inner ? checkKind(v.value, inner, types) : `${v.type} zonder typecode`;
+    const inner = table.typedValueKind[v.type];
+    return inner ? checkKind(v.value, inner, types, table) : `${v.type} zonder typecode`;
   }
   switch (code) {
     case 'S': return v.k === 'str' ? '' : 'tekst verwacht';
@@ -220,24 +223,37 @@ function checkKind(v: V, code: string, types: ReadonlyMap<number, string>, allow
 function attrName(spec: string): string { return spec.slice(0, spec.indexOf(':')); }
 
 /** Wat de getoetste bestanden samen bevatten (voor de dekkingstoets van de poort). */
-export interface Seen { entities: Set<string>; typed: Set<string> }
-export const newSeen = (): Seen => ({ entities: new Set(), typed: new Set() });
+export interface Seen { entities: Set<string>; typed: Set<string>; schemas: Set<string> }
+export const newSeen = (): Seen => ({ entities: new Set(), typed: new Set(), schemas: new Set() });
+
+const isTableSchema = (id: string | undefined): id is IfcSchemaTableId => !!id && Object.prototype.hasOwnProperty.call(IFC_SCHEMA_TABLES, id);
 
 function collectTyped(v: V, out: Set<string>): void {
   if (v.k === 'typed') { out.add(v.type); collectTyped(v.value, out); }
   else if (v.k === 'list') for (const item of v.items) collectTyped(item, out);
 }
 
-/** Toetst één bestand. `label` komt in elke foutmelding. Geeft het aantal toetsen en de fouten. */
+/**
+ * Toetst één bestand tegen de tabel van het schema in zijn kop (`FILE_SCHEMA`). `label` komt in elke
+ * foutmelding. `expectSchema`: als gegeven, moet de kop precies dat schema noemen. Geeft het aantal
+ * toetsen en de fouten.
+ */
 export function checkIfcSchema(
-  label: string, text: string, seen: Seen = newSeen(),
+  label: string, text: string, seen: Seen = newSeen(), expectSchema?: IfcSchemaTableId,
 ): { checks: number; failures: string[] } {
   let checks = 0;
   const failures: string[] = [];
   const assert = (cond: boolean, msg: string) => { checks++; if (!cond) failures.push(msg); };
-  // De header noemt het schema waartegen de tabel is afgeleid (IFC 4.3.2.0, zie de kop van ifcWriter).
+  // De kop kiest de tabel: elk schema heeft eigen enum-literals (IfcTaskTypeEnum.INSPECTION bestaat
+  // bijvoorbeeld niet in IFC4) en eigen getypeerde waarden.
   const schemaId = /FILE_SCHEMA\s*\(\s*\(\s*'([^']*)'/.exec(text)?.[1];
-  assert(schemaId === IFC_SCHEMA_TABLE_SOURCE, `${label}: FILE_SCHEMA is '${schemaId}', verwacht '${IFC_SCHEMA_TABLE_SOURCE}'`);
+  if (expectSchema) assert(schemaId === expectSchema, `${label}: FILE_SCHEMA is '${schemaId}', verwacht '${expectSchema}'`);
+  if (!isTableSchema(schemaId)) {
+    assert(false, `${label}: FILE_SCHEMA '${schemaId}' heeft geen schematabel (${Object.keys(IFC_SCHEMA_TABLES).join(', ')})`);
+    return { checks, failures };
+  }
+  const table = IFC_SCHEMA_TABLES[schemaId];
+  seen.schemas.add(schemaId);
   let entities: StepEntity[];
   try {
     entities = parseStep(text);
@@ -260,8 +276,8 @@ export function checkIfcSchema(
   for (const e of entities) {
     seen.entities.add(e.type);
     for (const a of e.args) collectTyped(a, seen.typed);
-    const spec = IFC_ENTITY_ATTRIBUTES[e.type];
-    if (!spec) { fail(e, 'entiteit staat niet in de schematabel (ifcSchemaTable.ts)'); continue; }
+    const spec = table.attributes[e.type];
+    if (!spec) { fail(e, `entiteit staat niet in de schematabel van ${schemaId} (ifcSchemaTable.ts)`); continue; }
     checks++;
     if (e.args.length !== spec.length) {
       fail(e, `${e.args.length} attributen, verwacht ${spec.length}`);
@@ -277,13 +293,13 @@ export function checkIfcSchema(
         if (!optional) fail(e, `${name} (index ${idx}) is verplicht maar $`);
         return;
       }
-      const err = checkKind(v, code, types, SET_DUPLICATES_ALLOWED.has(`${e.type}.${name}`));
+      const err = checkKind(v, code, types, table, SET_DUPLICATES_ALLOWED.has(`${e.type}.${name}`));
       if (err) fail(e, `${name} (index ${idx}): ${err}`, `waarde ${show(v)}`);
     });
     checkRules(e, spec, byId, fail);
   }
   for (const [key, { count, example }] of kinds) {
-    assert(false, `${label}: ${key} — ${count}× (bv. ${example})`);
+    assert(false, `${label} [${schemaId}]: ${key} — ${count}× (bv. ${example})`);
   }
   return { checks, failures };
 }

@@ -12,7 +12,7 @@
 //      feestdagen, werkende uitzonderingen) vallen onder A1.
 //   B. Een geldig bestand van een andere tool (indeling zoals bSI/xbim `construction-scheduling-task`):
 //      de projectstart komt uit IfcWorkPlan.StartTime (index 11), maar niet later dan de vroegste
-//      taakstart; taken onder een `.BASELINE.`-IfcWorkSchedule (index 13) zijn geen live taken.
+//      INGELEZEN taakstart (een taak zonder ScheduleStart telt niet mee); taken onder een `.BASELINE.`-IfcWorkSchedule (index 13) zijn geen live taken.
 //   C. Een IFC2X3-indeling (ook 15 attributen, maar de enum op index 13 en de tijden als verwijzing):
 //      geen verzonnen datum uit een verwijzing, en `.BASELINE.` op index 13 telt.
 //   D. De kalender uit dat bSI/xbim-bestand (IfcWorkCalendar met 9 attributen, ma–vr 08:00–16:00):
@@ -153,8 +153,11 @@ function firstDiff(a: unknown, b: unknown, path = ''): string | undefined {
   ok('A0 omzetting raakt de resources (9 attributen, .USERDEFINED.)', /IFCLABORRESOURCE\([^\n]*,\$,\$,\$,\$,\.USERDEFINED\.\);/.test(legacy));
   ok('A0 omzetting raakt de REAL-waarden (zonder punt)', /IFCREAL\(\d+\)/.test(legacy) && !/IFCREAL\(\d+\.\)/.test(legacy));
   ok('A0 omzetting raakt Completion (0.00)', legacy.includes(',0.00);'));
-  eq('A0 omzetting raakt de kalenders (8 attributen)', argCounts(legacy, 'IFCWORKCALENDAR'), [8, 8, 8, 8]);
-  eq('A0 de norm: kalenders met 9 attributen', argCounts(modern, 'IFCWORKCALENDAR'), [9, 9, 9, 9]);
+  // Eén IfcWorkCalendar per kalender: de projectkalender en de bibliotheekkalenders.
+  const calendarCount = 1 + (input.resourceCalendars ?? []).length;
+  ok('A0 setup: het rijke project heeft bibliotheekkalenders', calendarCount >= 4);
+  eq('A0 omzetting raakt de kalenders (8 attributen)', argCounts(legacy, 'IFCWORKCALENDAR'), Array(calendarCount).fill(8));
+  eq('A0 de norm: kalenders met 9 attributen', argCounts(modern, 'IFCWORKCALENDAR'), Array(calendarCount).fill(9));
   const readCalendars = (r: ImportResult) => [r.calendar, ...(r.resourceCalendars ?? [])];
   const richCalendars = readCalendars(readIFC(modern));
   ok('A0 setup: de kalenders dragen feestdagen, werkende uitzonderingen, ploegen en een uurweek',
@@ -226,6 +229,20 @@ function foreignFile(schema: string, plan: string, schedules: string[], nests: s
   const early = readIFC(ifc.replace("'P5D','2010-10-04T08:00:00','2010-10-08T16:00:00'", "'P5D','2010-09-20T08:00:00','2010-09-24T16:00:00'"));
   eq('B1 testvoorwaarde: de live taak begint nu 2010-09-20', early.tasks[0]?.time.scheduleStart.slice(0, 10), '2010-09-20');
   eq('B1 norm: StartTime ná de eerste taakstart wint niet (de vroegste taakstart)', early.project.startDate, '2010-09-20');
+  // Alleen een INGELEZEN taakstart telt. Een taak zonder ScheduleStart (`$`) krijgt bij het lezen eerst
+  // de plaatshouder "vandaag"; die mag StartTime niet verdringen. Daarom ligt StartTime hier ná vandaag
+  // (2099), en de taak met een start nog later: StartTime blijft staan.
+  const future = readIFC(ifc
+    .replace("'2010-09-23T00:00:00',$,.PLANNED.);", "'2099-01-05T00:00:00',$,.PLANNED.);")
+    .replace("'2010-09-23T00:00:00',$,$);", "'2099-01-05T00:00:00',$,$);")
+    .replace("'P5D','2010-10-04T08:00:00','2010-10-08T16:00:00'", "'P5D','2099-02-02T08:00:00','2099-02-06T16:00:00'")
+    .replace("#30=IFCRELNESTS('0aQgg3GdP0BB8_2Y5UbS6u',$,$,$,#11,(#21));", [
+      "#24=IFCTASKTIME('Zonder start',$,$,.WORKTIME.,'P5D',$,$,$,$,$,$,$,$,$,$,$,$,$,$,$);",
+      "#25=IFCTASK('0Xx2uJ8Rn5Bf0pMZp3wQ9k',$,'Taak zonder start',$,$,'C',$,$,$,.F.,$,#24,.CONSTRUCTION.);",
+      "#30=IFCRELNESTS('0aQgg3GdP0BB8_2Y5UbS6u',$,$,$,#11,(#21,#25));",
+    ].join('\n')));
+  eq('B1 testvoorwaarde: twee live taken, één zonder ingelezen start', future.tasks.map(t => t.name), ['Live taak', 'Taak zonder start']);
+  eq('B1 norm: een taak zonder ingelezen start verdringt StartTime niet', future.project.startDate, '2099-01-05');
   eq('B2 norm: taak onder het .BASELINE.-werkschema (index 13) is geen live taak', r.tasks.map(t => t.name), ['Live taak']);
   eq('B3 norm: werkschema-GlobalId is dat van het .PLANNED.-schema', r.ifcGlobalIds?.[`ws:${r.project.id}`], '2LoWUCZHr7YvZks8lmqjcw');
 }

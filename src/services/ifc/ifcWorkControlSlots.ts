@@ -54,9 +54,10 @@ export interface WorkCalendarSlots {
   predefinedType: number;
 }
 
+/** De slots van het schema. IFC2X3 heeft dezelfde posities (StartTime 11, FinishTime 12, de
+ *  enumeratie WorkControlType op 13); alleen het argumentaantal (15) en de inhoud verschillen. */
 const WORK_CONTROL_SCHEMA: WorkControlSlots = { startTime: 11, finishTime: 12, predefinedType: 13 };
 const WORK_CONTROL_LEGACY_OPS: WorkControlSlots = { startTime: 12, finishTime: 13, predefinedType: 14 };
-const WORK_CONTROL_IFC2X3: WorkControlSlots = { startTime: 11, finishTime: 12, predefinedType: 13 };
 /** Een STEP-enumeratie als `.BASELINE.`. */
 const isStepEnum = (arg: string | undefined): boolean => /^\.[A-Z0-9_]+\.$/i.test((arg ?? '').trim());
 const WORK_CALENDAR_SCHEMA: WorkCalendarSlots = { workingTimes: 6, exceptionTimes: 7, predefinedType: 8 };
@@ -70,7 +71,7 @@ const CALENDAR_IDENTIFICATION = 5;
  *  13 en niet op 14. Anders het schema. */
 export function workControlSlots(args: readonly string[]): WorkControlSlots {
   if (args.length === LEGACY_OPS_WORK_CONTROL_ARITY && isStepEnum(args[13]) && !isStepEnum(args[14])) {
-    return WORK_CONTROL_IFC2X3;
+    return WORK_CONTROL_SCHEMA; // IFC2X3: zelfde posities als het schema
   }
   if (args.length >= LEGACY_OPS_WORK_CONTROL_ARITY) return WORK_CONTROL_LEGACY_OPS;
   if (args.length === WORK_CONTROL_ARITY && (args[WORK_CONTROL_SCHEMA.predefinedType] ?? '').trim().startsWith("'")) {
