@@ -116,7 +116,7 @@ const isTaskTime = (name: string) => (args: string[]) => args[0] === `'${name} T
   const zonderPset = base.replace("'ProjectEndDate'", "'OnbekendVeld'");
   // FinishTime op de plek die bij het argumentaantal van de writer hoort (issue #292: 12 in het
   // schema, 13 in bestanden van oudere versies).
-  const ifc = blankSlots(zonderPset, 'IFCWORKPLAN', () => true, [workControlSlots(WORK_CONTROL_ARITY).finishTime]);
+  const ifc = blankSlots(zonderPset, 'IFCWORKPLAN', () => true, [workControlSlots(Array<string>(WORK_CONTROL_ARITY).fill('$')).finishTime]);
   eq('2a projecteinde bij leeg FinishTime-slot', readIFC(ifc).project.endDate, '');
   ok('2b zonder die bewerking levert de WORKPLAN nog gewoon zijn einde (controle)',
     readIFC(zonderPset).project.endDate.startsWith('2015'));

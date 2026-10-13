@@ -1052,10 +1052,10 @@ export function readFileSchema(content: string): IfcSchemaId | undefined {
   return isIfcSchemaId(name) ? name : undefined;
 }
 
-/** Is deze IFCWORKSCHEDULE een baseline (PredefinedType `.BASELINE.`)? De positie hangt af van het
- *  argumentaantal: 13 in het schema, 14 in bestanden van oudere OPS-versies (`workControlSlots`). */
+/** Is deze IFCWORKSCHEDULE een baseline (PredefinedType `.BASELINE.`)? De positie hangt af van de
+ *  argumenten: 13 in het schema, 14 in bestanden van oudere OPS-versies (`workControlSlots`). */
 function isBaselineSchedule(e: StepEntity): boolean {
-  return (e.args[workControlSlots(e.args.length).predefinedType] || '').includes('BASELINE');
+  return (e.args[workControlSlots(e.args).predefinedType] || '').includes('BASELINE');
 }
 
 /** Split IFC arguments respecting nested parentheses and quotes */
@@ -1320,7 +1320,7 @@ function extractProject(
 ): Project {
   const proj = entities.find(e => e.type === 'IFCPROJECT');
   const wp = entities.find(e => e.type === 'IFCWORKPLAN');
-  const wpSlots = workControlSlots(wp?.args.length ?? 0);
+  const wpSlots = workControlSlots(wp?.args ?? []);
   const projectGlobalId = proj ? ifcSlotText(proj.args[0]) : '';
 
   // Auteur/organisatie uit de owner-history-keten (IFCOWNERHISTORY → IFCPERSONANDORGANIZATION →
@@ -1365,8 +1365,8 @@ function extractProject(
     // vandaag). Direct "vandaag" zou verzonnen data zijn die via de projectstart-vloer taken mét
     // voorgangers naar de leesdatum tilt (check-recorded-dates 9A/9B). `parseDateFromIFC`
     // wordt bewust alleen op een niet-lege slottekst losgelaten — op '' levert hij zelf "vandaag".
-    // StartTime/FinishTime op de plek die bij het argumentaantal hoort: schema of oude OPS-lay-out
-    // (`workControlSlots`).
+    // StartTime/FinishTime op de plek die bij de argumenten hoort: schema of oude OPS-lay-out
+    // (`workControlSlots`, ook na IfcOpenShell MergeProjects).
     startDate: wp && ifcSlotText(wp.args[wpSlots.startTime]) ? parseDateFromIFC(wp.args[wpSlots.startTime]) : '',
     // Zelfde regel voor FinishTime: een leeg slot is "geen einde", niet vandaag. Het
     // OPS_ProjectSettings-pset wint hierna nog steeds als het er is.
@@ -2677,9 +2677,10 @@ function buildCalendarFromEntity(
   Object.assign(calendar, extractCalendarSimpleBreak(cal.id, entities, entityMap));
   const hourMeta = extractCalendarHourMeta(cal.id, entities, entityMap);
 
-  // Posities op het argumentaantal: 9 = het schema (WorkingTimes 6, ExceptionTimes 7, PredefinedType 8),
-  // 8 = oudere OPS-versies zonder Identification (5, 6, 7). Zie `workCalendarSlots`.
-  const calSlots = workCalendarSlots(cal.args.length);
+  // Posities op de argumenten: 9 = het schema (WorkingTimes 6, ExceptionTimes 7, PredefinedType 8),
+  // 8 = oudere OPS-versies zonder Identification (5, 6, 7), en 9 met een lijst op Identification = zo'n
+  // oud bestand na IfcOpenShell MergeProjects (ook 5, 6, 7). Zie `workCalendarSlots`.
+  const calSlots = workCalendarSlots(cal.args);
   // Werkweek + uren. WorkingTimes is een lijst met precies één ref (zo schrijft
   // de writer 'm) naar het "hoofd"-IFCWORKTIME; de holiday-IFCWORKTIME's zitten in ExceptionTimes
   // en hebben geen RecurrencePattern-ref (args[3] blijft `$` daar).
@@ -3199,8 +3200,9 @@ function remapLevelingResourceIds(
  * (`isBaselineSchedule`).
  *
  * Review #336 (sinds de herkenning ook bij 14 argumenten werkt, dus bij bestanden van andere pakketten):
- *  - Alleen uitsluiten als er óók een gewoon (niet-baseline) werkschema is. Anders is het
- *    baselineschema de enige planning in het bestand, en dan zijn die taken de taken.
+ *  - Alleen uitsluiten als er óók een gewoon (niet-baseline) werkschema is, met minstens één taak
+ *    eronder. Anders is het baselineschema de enige planning in het bestand, en dan zijn die taken
+ *    de taken (herbeoordeling #336: een leeg gewoon werkschema gaf anders een leeg project).
  *  - De hele boom onder het baselineschema gaat mee (kinderen via IFCRELNESTS, transitief), zoals
  *    Bonsai een werkschema opbouwt: één wortel per schema, de rest genest. Anders blijven de kinderen
  *    als losse dubbele taken over.
@@ -3246,6 +3248,7 @@ function collectBaselineTaskStepIds(entities: StepEntity[]): Set<string> {
     return seen;
   };
   const live = tree(liveRoots);
+  if (live.size === 0) return taskStepIds;
   for (const id of tree(baselineRoots)) if (!live.has(id)) taskStepIds.add(id);
   return taskStepIds;
 }

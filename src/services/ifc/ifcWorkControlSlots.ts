@@ -12,9 +12,17 @@
  * Oudere OPS-versies schreven beide verkeerd: het werkplan en de werkschema's met 15 argumenten (één `$`
  * te veel vóór StartTime, dus StartTime op 12, FinishTime op 13 en PredefinedType op 14) en de
  * kalender met 8 (Identification ontbrak, dus WorkingTimes op 5, ExceptionTimes op 6 en
- * PredefinedType op 7). De lezer kiest de lay-out op het ARGUMENTAANTAL van de entiteit zelf, niet op
- * de appversie: zo leest hij die oude bestanden zoals altijd, en een schemaconform bestand (de huidige
+ * PredefinedType op 7). De lezer kiest de lay-out op de ARGUMENTEN van de entiteit zelf, niet op de
+ * appversie: zo leest hij die oude bestanden zoals altijd, en een schemaconform bestand (de huidige
  * writer, of een ander pakket) op de juiste plek.
+ *
+ * Eén geval heeft het schema-aantal maar de oude indeling: IfcOpenShell (MergeProjects, 0.9.0) leest
+ * een oud bestand met het schema en schrijft het schema-aantal, maar laat de waarden op hun oude plek.
+ * De kalender krijgt dan 9 argumenten met de werkweek (een lijst) op Identification (5); het werkplan
+ * en de werkschema's krijgen 14 argumenten met de einddatum (tekst) op PredefinedType (13). Beide zijn
+ * nooit schemageldig: Identification is een `IfcIdentifier` (tekst), PredefinedType een enumeratie
+ * (`.X.`) of `$`. Daaraan herkent de lezer de oude indeling. Het oude PredefinedType zelf is dan al weg
+ * (IfcOpenShell laat het vallen); die slot is leeg, zoals in een bestand zonder type.
  *
  * Bladmodule: geen imports, zodat lezer en schrijver hem zonder cyclus delen.
  */
@@ -44,15 +52,27 @@ const WORK_CONTROL_SCHEMA: WorkControlSlots = { startTime: 11, finishTime: 12, p
 const WORK_CONTROL_LEGACY_OPS: WorkControlSlots = { startTime: 12, finishTime: 13, predefinedType: 14 };
 const WORK_CALENDAR_SCHEMA: WorkCalendarSlots = { workingTimes: 6, exceptionTimes: 7, predefinedType: 8 };
 const WORK_CALENDAR_LEGACY_OPS: WorkCalendarSlots = { workingTimes: 5, exceptionTimes: 6, predefinedType: 7 };
+/** Identification van IfcWorkCalendar in het schema: een `IfcIdentifier` (tekst), nooit een lijst. */
+const CALENDAR_IDENTIFICATION = 5;
 
-/** Slotposities van een IfcWorkPlan/IfcWorkSchedule met `argCount` argumenten. 15 of meer ⇒ de oude
- *  OPS-lay-out (zo las de lezer elk bestand vóór deze wijziging); anders het schema. */
-export function workControlSlots(argCount: number): WorkControlSlots {
-  return argCount >= LEGACY_OPS_WORK_CONTROL_ARITY ? WORK_CONTROL_LEGACY_OPS : WORK_CONTROL_SCHEMA;
+/** Slotposities van een IfcWorkPlan/IfcWorkSchedule met deze argumenten. Oude OPS-lay-out bij 15 of
+ *  meer argumenten (zo las de lezer elk bestand vóór #292), en bij 14 argumenten met tekst op
+ *  PredefinedType (13): een oud bestand na MergeProjects. Anders het schema. */
+export function workControlSlots(args: readonly string[]): WorkControlSlots {
+  if (args.length >= LEGACY_OPS_WORK_CONTROL_ARITY) return WORK_CONTROL_LEGACY_OPS;
+  if (args.length === WORK_CONTROL_ARITY && (args[WORK_CONTROL_SCHEMA.predefinedType] ?? '').trim().startsWith("'")) {
+    return WORK_CONTROL_LEGACY_OPS;
+  }
+  return WORK_CONTROL_SCHEMA;
 }
 
-/** Slotposities van een IfcWorkCalendar met `argCount` argumenten. 8 of minder ⇒ de oude OPS-lay-out
- *  (zo las de lezer elk bestand vóór deze wijziging); anders het schema. */
-export function workCalendarSlots(argCount: number): WorkCalendarSlots {
-  return argCount <= LEGACY_OPS_WORK_CALENDAR_ARITY ? WORK_CALENDAR_LEGACY_OPS : WORK_CALENDAR_SCHEMA;
+/** Slotposities van een IfcWorkCalendar met deze argumenten. Oude OPS-lay-out bij 8 of minder
+ *  argumenten (zo las de lezer elk bestand vóór #292), en bij 9 argumenten met een lijst op
+ *  Identification (5): een oud bestand na MergeProjects. Anders het schema. */
+export function workCalendarSlots(args: readonly string[]): WorkCalendarSlots {
+  if (args.length <= LEGACY_OPS_WORK_CALENDAR_ARITY) return WORK_CALENDAR_LEGACY_OPS;
+  if (args.length === WORK_CALENDAR_ARITY && (args[CALENDAR_IDENTIFICATION] ?? '').trim().startsWith('(')) {
+    return WORK_CALENDAR_LEGACY_OPS;
+  }
+  return WORK_CALENDAR_SCHEMA;
 }

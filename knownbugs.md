@@ -198,6 +198,12 @@ en noem het in je rapport of PR-tekst.
     website volgt de laatste deploy, terwijl een desktopversie zijn eigen kopie meelevert; een oudere app kan
     dus naar een gids wijzen die tools beschrijft die hij niet heeft. De gids zegt nu dat de kopie van de tool
     voorgaat. Voorstel: een versiepad (bv. `/agent/<versie>/planning-guide.md`) of de versie in de gids. — S
+113. **`planner_export_ifc` herkent het eigen bestand niet bij een ander hoofdlettergebruik op macOS.** De
+    weigering voor een stille schemawijziging (`fileTools.ts`, `refuseSilentSchemaChange`) vergelijkt paden
+    alleen hoofdletterongevoelig bij een Windows-station. Op macOS is het bestandssysteem meestal
+    hoofdletterongevoelig, dus `Model.ifc` tegenover `model.ifc` is hetzelfde bestand maar komt door de
+    vergelijking. Symbolische links worden ook niet opgelost. Afgeleid uit de code door de review van #336,
+    niet op een Mac nagespeeld. — S
 
 ## Bestanden en herstel
 
@@ -261,19 +267,17 @@ en noem het in je rapport of PR-tekst.
     waarschuwt daarom: samenvoegen als laatste stap. Voorstel: bij openen melden dat opslaan de
     modelinhoud niet bewaart, of vreemde entiteiten letterlijk meenemen. Gevonden bij de review van
     #336. — B
-111. **Een bestand van een oudere app-versie dat door IfcOpenShell `MergeProjects` is gehaald, leest de
-    lezer van #292 verkeerd.** IfcOpenShell herschrijft `IfcWorkCalendar` en `IfcWorkPlan`/
-    `IfcWorkSchedule` met het schema-aantal argumenten (9 en 14), maar laat de waarden op hun oude plek:
-    de werkweek staat dan op Identification, de uitzonderingen op WorkingTimes, en PredefinedType (ploeg,
-    `.BASELINE.`) valt weg. De lezer kiest de indeling op het argumentaantal en leest dus de
-    schema-indeling. Gemeten met het rijke testproject van de oude writer (origin/main 1e192b31a, kop met
-    de hand op IFC4, zoals in het issue) en een IFC4-model: vóór de merge 18 feestdagen, 1 werkende
-    uitzondering, werkuren 07–16 en drie ploegen in de bibliotheek; na de merge met de lezer van #292
-    0 feestdagen, 0 uitzonderingen, werkuren 07–12 en geen ploegen. De lezer van main geeft na de merge
-    19 feestdagen (de werkende uitzondering als feestdag), werkuren 07–16 en geen ploegen. Voor dit geval
-    is #292 dus slechter dan main. Taken (20), baselines (2) en de projectstart blijven gelijk (pset).
-    Voorstel: in een OPS-bestand de indeling ook op het soort waarde kiezen (een lijst op de plek van
-    Identification ⇒ oude indeling). Gevonden bij de review van #336, niet daar opgelost. — B
+112. **Na IfcOpenShell `MergeProjects` wordt een werkende uitzondering van een kalender een feestdag.** Het
+    pset `OPS_Calendar` bewaart de werkende uitzonderingen als STEP-nummers (`WorkingExceptionIds`,
+    `ifcWriter.ts` `writeCalendarGenerationMeta`). MergeProjects nummert alle regels opnieuw, dus die nummers
+    wijzen daarna naar iets anders. Nagemeten met het rijke testproject van de oude writer
+    (`tests/planning/fixtures/ifc-arity-oude-writer.ifc` en `…-merged.ifc`): `#37` (werkende uitzondering
+    *Inhaalzaterdag*) is na de merge een `IFCTASKTIME`, `#192` (*Zaterdagdienst*) een `IFCPROPERTYSET`. De
+    lezer leest beide daarna als feestdag: de projectkalender heeft 19 feestdagen en 0 werkende
+    uitzonderingen in plaats van 18 en 1, de bibliotheekkalender *Tweeploegen* 2 feestdagen in plaats van 1.
+    Zo ook met de lezer van main; de huidige writer bewaart de nummers op dezelfde manier. Voorstel: de
+    uitzonderingen herkennen op iets dat een merge overleeft (naam en datum, of een GlobalId-achtige
+    sleutel). Gevonden bij de herbeoordeling van #336. — B
 
 ## Rondleiding, Help en extensie-gidsen
 

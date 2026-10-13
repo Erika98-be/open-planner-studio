@@ -14,8 +14,10 @@
 //   4. Zonder OPS-pset komen projectstart en -einde uit IfcWorkPlan: gelijk in beide vormen.
 //   5. Het baselinewerkschema wordt in beide vormen herkend, ook als het vóór het gewone staat.
 //   6. Een schemaconform bestand van een ander pakket (14 argumenten) leest StartTime/FinishTime goed.
-//   7. Taken onder een baselinewerkschema van een ander pakket: alleen weg naast een gewoon schema, met de
-//      hele boom eronder (review #336).
+//   7. Taken onder een baselinewerkschema van een ander pakket: alleen weg naast een gewoon schema met
+//      taken, met de hele boom eronder (review #336).
+//   8. Een oud bestand na IfcOpenShell MergeProjects (9/14 argumenten, waarden nog op de oude plek)
+//      leest zoals op main (herbeoordeling #336).
 // Draait via run.sh. Exit 0 = alles groen.
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -229,6 +231,76 @@ for (const [label, ifc] of [['oud', OLD], ['nieuw', NEW]] as const) {
   // Een taak die óók onder het gewone schema hangt, is een live taak en blijft.
   const shared = bonsai.replace("(#10),$,#2);", "(#10,#21),$,#2);");
   eq('7d een taak die ook aan het gewone werkschema hangt, blijft', names(shared), ['R', 'T1', 'T2', 'T1-bl']);
+
+  // Een LEEG gewoon werkschema naast een gevuld baselineschema (herbeoordeling #336): het gewone schema
+  // heeft geen taken, dus de baselinetaken zijn de planning en blijven (zoals op main).
+  for (const arity of [14, 15] as const) {
+    const emptyPlanned = [...head,
+      schedule(2, '0sch0000000000000000001', 'PLANNED', arity), schedule(3, '0sch0000000000000000002', 'BASELINE', arity),
+      task(10, 'A'), task(11, 'B'),
+      "#31=IFCRELASSIGNSTOCONTROL('0rel0000000000000000002',$,$,$,(#10,#11),$,#3);", ...tail].join('\n');
+    eq(`7e leeg gewoon werkschema naast een gevuld baselineschema (${arity} argumenten): de taken blijven`,
+      names(emptyPlanned), ['A', 'B']);
+  }
+}
+
+// ── 8. Een oud bestand na IfcOpenShell MergeProjects (herbeoordeling #336) ─────────────────────────
+// IfcOpenShell 0.9.0 (`ifcpatch`, recept MergeProjects) leest een bestand van de oude writer met het
+// schema en schrijft het schema-aantal argumenten, maar laat de waarden op hun oude plek staan:
+//   - IfcWorkCalendar: 9 argumenten, met de werkweek (een LIJST) op Identification (5);
+//   - IfcWorkPlan/IfcWorkSchedule: 14 argumenten, met de einddatum (TEKST) op PredefinedType (13).
+// Beide zijn nooit schemageldig (Identification is tekst, PredefinedType een enumeratie of `$`), dus de
+// lezer herkent er de oude indeling aan (`ifcWorkControlSlots.ts`). Zonder die herkenning las de PR hier
+// 0 feestdagen en werkuren 07–12, en zonder pset een verkeerd projecteinde.
+//
+// Fixture `fixtures/ifc-arity-oude-writer-merged.ifc`: MergeProjects (IfcOpenShell 0.9.0) van een leeg
+// IFC4-model met `ifc-arity-oude-writer.ifc` (kop op IFC4 gezet), ongewijzigd. De verwachte waarden zijn
+// wat main (vóór #292) uit dit bestand leest. Wat er al bij het samenvoegen verloren gaat, valt buiten
+// de lezer: IfcOpenShell laat het oude PredefinedType vallen (de ploeg van de kalender en het type van
+// de werkschema's), en de werkende uitzondering wordt een feestdag omdat `WorkingExceptionIds`
+// STEP-nummers bewaart die MergeProjects vernummert (knownbugs).
+{
+  const MERGED = readFileSync(join(HERE, 'fixtures', 'ifc-arity-oude-writer-merged.ifc'), 'utf8');
+  const all = lines(MERGED);
+  const ofType = (...types: string[]) => all.filter(l => types.includes(l.type));
+  eq('8a fixture: elke kalender heeft 9 argumenten en een lijst op Identification (5)',
+    ofType('IFCWORKCALENDAR').map(l => [l.args.length, l.args[5].trim().startsWith('(')]), Array(4).fill([9, true]));
+  eq('8b fixture: werkplan en werkschema\'s hebben 14 argumenten en tekst op PredefinedType (13)',
+    ofType('IFCWORKPLAN', 'IFCWORKSCHEDULE').map(l => [l.args.length, l.args[13].trim().startsWith("'")]), Array(4).fill([14, true]));
+
+  const r = readIFC(MERGED);
+  const libByName = (res: ImportResult, name: string) => (res.resourceCalendars ?? []).find(c => c.name === name);
+  const LIB = ['Tweeploegen', 'Nachtploeg', 'Eigen rooster'];
+  eq('8c taken', r.tasks.length, rOld.tasks.length);
+  eq('8d projectkalender: 19 feestdagen (de 18 van het origineel plus de werkende uitzondering)', r.calendar.holidays.length, 19);
+  ok('8e projectkalender: elke feestdag van het origineel is er',
+    rOld.calendar.holidays.every(h => r.calendar.holidays.some(m => isDeepStrictEqual(m, h))));
+  eq('8f projectkalender: werkdagen, werkuren 07–16 en banden gelijk aan het origineel',
+    [r.calendar.workDays, r.calendar.workStartHour, r.calendar.workEndHour, r.calendar.workTime],
+    [rOld.calendar.workDays, 7, 16, rOld.calendar.workTime]);
+  eq('8g bibliotheek: feestdagen per kalender', LIB.map(n => libByName(r, n)?.holidays.length), [2, 1, 1]);
+  eq('8h bibliotheek: werkdagen en banden gelijk aan het origineel',
+    LIB.map(n => [libByName(r, n)?.workDays, libByName(r, n)?.workTime]),
+    LIB.map(n => [libByName(rOld, n)?.workDays, libByName(rOld, n)?.workTime]));
+  eq('8i baselines', (r.baselines ?? []).map(b => b.name), ['Baseline plan', 'Herplanning']);
+  eq('8j projectstart uit het pset', r.project.startDate, '2027-05-06');
+  const noPset = readIFC(withoutProjectDates(MERGED)).project;
+  eq('8k zonder pset: start en einde uit het werkplan, gelijk aan het origineel', [noPset.startDate, noPset.endDate], ['2027-05-06', '2027-05-13']);
+
+  // Dezelfde inhoud, met de hand teruggezet naar de schema-indeling: de lezer moet precies dat lezen.
+  const schemaForm = rewrite(
+    rewrite(MERGED, t => t === 'IFCWORKCALENDAR', a => [...a.slice(0, 5), '$', a[5], a[6], '$']),
+    t => t === 'IFCWORKPLAN' || t === 'IFCWORKSCHEDULE', a => [...a.slice(0, 11), a[12], a[13], '$']);
+  same('8l samengevoegd bestand leest gelijk aan dezelfde inhoud in schema-indeling', r, readIFC(schemaForm));
+
+  // IfcOpenShell schrijft voor een IFC4X3_ADD2-model dezelfde verschoven vorm; alleen de kop verschilt.
+  const add2 = readIFC(MERGED.replace("FILE_SCHEMA(('IFC4'));", "FILE_SCHEMA(('IFC4X3_ADD2'));"));
+  eq('8m ADD2-kop: zelfde kalenders en taken', [add2.calendar, add2.resourceCalendars, add2.tasks.length],
+    [r.calendar, r.resourceCalendars, r.tasks.length]);
+
+  // Tegenproef: een schemageldige kalender met een echte Identification (tekst) blijft in de schema-indeling.
+  const withIdentification = rewrite(NEW, t => t === 'IFCWORKCALENDAR', a => [...a.slice(0, 5), "'KAL-1'", ...a.slice(6)]);
+  same('8n tegenproef: tekst op Identification verandert niets', readIFC(withIdentification), readIFC(NEW));
 }
 
 if (diffs.length === 0) {
