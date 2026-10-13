@@ -474,3 +474,5 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   maker, RTL als aparte commit in dezelfde PR (zelfde CSS-bestand). Vloeiend schuiven blijft (eigenaar keurde
   het goed in checkstap 9). **Na de release voorleggen:** een error boundary bovenaan de app (nu wordt elk
   renderfout een leeg scherm).
+- #338 slotronde klaar: kop 3d80329f4 (main 14a23c1a2 erin, geen conflicten), N8/N9/MCP-mutant rood, MCP-cases §12
+  in `cases-uurkalender.ts`. Wacht op checkstap 10 van de eigenaar; daarna merge.
