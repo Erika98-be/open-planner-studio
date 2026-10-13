@@ -2249,7 +2249,7 @@ export class CPMSolver {
           // (1) VOLTOOID: volledig gepind op actuals — geen forward-drift voorbij actualFinish.
           // `snapActualForward` i.p.v. een kale parse — snapt BINNEN dezelfde dag (bv. 07:00 →
           // 08:00), maar verplaatst nooit naar een andere dag (bv. zaterdag → maandag). Zie die
-          // functie se docblock voor de twee corpusmetingen die dit reconcilieert.
+          // functie se docblock: alleen de dag-regel heeft corpusbewijs, de binnen-dag-snap niet.
           const preserveP6ActualInstants = task.p6ProjectId !== undefined
             && this.options.schedulingOptions?.p6PreserveActualInstants === true;
           const actualStart = this.parseIn(progressCal, t.actualStart ?? t.actualFinish);
