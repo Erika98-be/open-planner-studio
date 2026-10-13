@@ -84,8 +84,9 @@ jobs:
   # uit `npm run verify` in package.json en deelt ze alleen in; een stap die daar niet is ingedeeld
   # valt vanzelf in `static`, en het `static`-deel controleert dat deze matrix elk deel draait. Zo
   # blijft package.json de ene definitie (de reden dat hier eerst bewust één commando stond), terwijl
-  # de wandkloktijd de langste job wordt in plaats van de som. live.yml (de deploy-gate) heeft dezelfde
-  # matrix; release.yml draait `npm run verify` nog in één keer (zie de timeout daar).
+  # de wandkloktijd de langste job wordt in plaats van de som. live.yml draait zelf geen verify: die
+  # deployt pas als deze workflow op main geslaagd is. release.yml draait `npm run verify` nog in één
+  # keer (zie de timeout daar).
   verify:
     name: verify (${{ matrix.name }})
     timeout-minutes: 45

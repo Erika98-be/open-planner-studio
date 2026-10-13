@@ -34,9 +34,9 @@ multiple worktrees at the same time is fine for exactly that reason:
 npm run verify
 ```
 
-That is the same definition, in `package.json`, that the release and deploy gates
-run; CI runs exactly its steps, split over parallel jobs by `scripts/verify-parts.mjs`. If it is green locally, it is green in
-CI. The steps, in this order:
+That is the same definition, in `package.json`, that the release gate runs; CI runs
+exactly its steps, split over parallel jobs by `scripts/verify-parts.mjs`, and the site deploy waits for a green CI run on
+`main`. If it is green locally, it is green in CI. The steps, in this order:
 
 | component | what |
 |---|---|

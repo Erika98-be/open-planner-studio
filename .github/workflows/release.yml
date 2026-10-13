@@ -39,9 +39,9 @@ jobs:
   # STIL onzichtbaar. Bij verschil faalt deze job expliciet vóór create-release.
   gate:
     # De volledige verify in één job duurt ~45 min (typecheck + planning ~15, browser ~29, rest ~1)
-    # en raakte op 2026-10-13 in live.yml de grens van 45 min; live.yml draait de delen daarom
-    # parallel. Deze gate draait nog serieel (plus vertalingen en highlights), dus ruime marge
-    # tot het ook hier in delen gaat.
+    # en raakte op 2026-10-13 in live.yml de grens van 45 min; live.yml wacht daarom nu op ci.yml.
+    # Deze gate draait nog serieel (plus vertalingen en highlights), dus ruime marge tot het ook
+    # hier in delen gaat.
     timeout-minutes: 90
     permissions:
       contents: read

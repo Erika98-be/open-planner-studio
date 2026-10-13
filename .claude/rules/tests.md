@@ -25,7 +25,7 @@ Installeer de browser en Linux-systeemafhankelijkheden eenmalig met
 `npx playwright install --with-deps --only-shell chromium`. `npm run test:browser` reserveert daarna
 een afzonderlijke poort voor deze worktree, start en stopt zelf een bewaakte Vite-server en draait
 met één worker en nul retries. Gebruik bij falen `test-results/` voor screenshots en traces en
-`playwright-report/` voor het HTML-rapport; de CI-, live- en release-gates uploaden die mappen zeven
+`playwright-report/` voor het HTML-rapport; de CI- en release-gates uploaden die mappen zeven
 dagen als `playwright-*`-artefact. Testhandelingen lopen via echte browser-events. De dev-only
 `window.__OPS__`-brug mag deterministische fixtures zetten en domeinstate of Canvasgeometrie lezen,
 maar mag de geteste gebruikershandeling niet vervangen.

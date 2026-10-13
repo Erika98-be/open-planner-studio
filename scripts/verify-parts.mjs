@@ -5,19 +5,19 @@
 // `npm test` uitgeklapt tot zijn eigen stappen. Dit script deelt ze alleen in. Een stap die hier
 // niet expliciet is ingedeeld, valt in STATIC — een nieuwe stap in `verify` kan dus nooit buiten CI
 // vallen, en er is geen tweede lijst die kan achterlopen (de reden dat ci.yml tot nu toe bewust één
-// commando draaide). ci.yml en de deploy-gate in live.yml draaien de delen parallel; release.yml draait
-// `npm run verify` nog in één keer.
+// commando draaide). release.yml draait `npm run verify` nog in één keer; live.yml draait geen verify
+// meer maar deployt pas na een geslaagde ci.yml-run.
 //
 //   node scripts/verify-parts.mjs --list            # alle delen met hun stappen
 //   node scripts/verify-parts.mjs <deel> [-- args]  # draai één deel; args gaan naar de laatste stap
-//   node scripts/verify-parts.mjs --check-ci <workflow>  # elk deel staat in de matrix (ci.yml, live.yml), niets extra
+//   node scripts/verify-parts.mjs --check-ci <ci.yml>  # elk deel staat in de CI-matrix, niets extra
 //
 // Exit 0 = alle stappen van het deel groen, anders de exitcode van de eerste rode stap (zelfde
 // semantiek als de `&&`-keten van `verify`).
 import { readFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { basename, dirname, join } from 'node:path';
+import { dirname, join } from 'node:path';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const STATIC = 'static';
@@ -82,11 +82,11 @@ function main(argv) {
     const missing = Object.keys(parts).filter(p => !inCi.has(p));
     const extra = [...inCi].filter(p => !(p in parts));
     if (missing.length || extra.length) {
-      if (missing.length) console.log(`XX  ${basename(file)} draait deel/delen niet: ${missing.join(', ')} — voeg een matrixregel \`part: <naam>\` toe`);
-      if (extra.length) console.log(`XX  ${basename(file)} noemt onbekende delen: ${extra.join(', ')} (zie --list)`);
+      if (missing.length) console.log(`XX  ci.yml draait deel/delen niet: ${missing.join(', ')} — voeg een matrixregel \`part: <naam>\` toe`);
+      if (extra.length) console.log(`XX  ci.yml noemt onbekende delen: ${extra.join(', ')} (zie --list)`);
       return 1;
     }
-    console.log(`OK  verify-parts: ${basename(file)} draait alle ${Object.keys(parts).length} delen (${Object.keys(parts).join(', ')})`);
+    console.log(`OK  verify-parts: ci.yml draait alle ${Object.keys(parts).length} delen (${Object.keys(parts).join(', ')})`);
     return 0;
   }
 
