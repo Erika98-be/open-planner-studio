@@ -166,10 +166,12 @@ deze lijst verwijderd — wat klaar is, staat in de changelog en git-historie.
 > Gevonden tijdens het overzetbaar maken van uurkalenders via de MCP-bridge. Beide punten zijn
 > **beschreven** in de tool-descriptions en met tests vastgepind, dus niets gebeurt stil.
 
-- [ ] **Per weekdag verschillende uurbanden overleven een round-trip niet.** IFC draagt één
-      werkweek-patroon, dus alle werkdagen krijgen bij herladen de banden van de eerste werkdag —
-      een korte vrijdag komt terug als kopie van maandag (`ifcWriter.ts` schrijft nog alleen
-      `workTime.byWeekday[firstDay]`; H7/#239 loste de scalar-werktijd op, niet dit).
+- [x] **Per weekdag verschillende uurbanden overleven een round-trip niet.** *Opgelost in #340
+      (B7, 2026-10-13):* elke groep weekdagen met dezelfde banden krijgt een eigen `IfcWorkTime`;
+      zie `docs/ifc-round-trip.md` "Kalenders: werkblokken per weekdag". Oorspronkelijke bevinding:
+      alle werkdagen kregen bij herladen de banden van de eerste werkdag — een korte vrijdag kwam
+      terug als kopie van maandag (`ifcWriter.ts` schreef alleen `workTime.byWeekday[firstDay]`;
+      H7/#239 loste de scalar-werktijd op, niet dit).
 - [ ] **Wélke kalender de projectdefault is, kan de bridge niet wisselen** (de inhoud ervan wel, via
       het id uit `projectDefaultId`). `update_project.calendarId` weigert nu met die uitleg. Beoordeel
       of dat een echte beperking moet blijven of gewoon nog gebouwd moet worden.
