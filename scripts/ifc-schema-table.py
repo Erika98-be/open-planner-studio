@@ -40,8 +40,29 @@ SIMPLE_KIND = {
     'binary': 'X',
 }
 
+# Tekst-typen met een vaste vorm; de poort toetst die vorm (zie de legenda in de TS-module).
+SHAPED_STRING_KIND = {
+    'IfcGloballyUniqueId': 'G', 'IfcDateTime': 'DT', 'IfcDate': 'DA', 'IfcTime': 'TI', 'IfcDuration': 'DU',
+}
+
 schema = w.schema_by_name(SCHEMA)
 selects_used = {}
+OPS_DECLS = [schema.declaration_by_name(n) for n in OPS_ENTITIES]
+
+
+def is_subtype(ent, base):
+    """Is `ent` gelijk aan `base` of een subtype ervan (volgt de supertypeketen)?"""
+    while ent is not None:
+        if ent.name() == base.name():
+            return True
+        ent = ent.supertype()
+    return False
+
+
+def allowed_ops_entities(bases):
+    """De OPS-entiteiten die een verwijzing naar een van `bases` mag aanwijzen (het type of een subtype).
+    Alleen OPS-entiteiten: een andere entiteit in een OPS-bestand is voor de poort al een fout."""
+    return sorted({d.name().upper() for d in OPS_DECLS for b in bases if is_subtype(d, b)})
 
 
 def simple_kind(t):
@@ -59,6 +80,7 @@ def flatten_select(sel, out_types, flags):
     for m in sel.select_list():
         if isinstance(m, w.entity):
             flags['refs'] = True
+            flags['entities'].append(m)
         elif isinstance(m, w.select_type):
             flatten_select(m, out_types, flags)
         elif isinstance(m, w.type_declaration):
@@ -75,6 +97,8 @@ def aggregate_code(agg):
 
 
 def type_decl_kind(td):
+    if td.name() in SHAPED_STRING_KIND:
+        return SHAPED_STRING_KIND[td.name()]
     inner = td.declared_type()
     if isinstance(inner, w.aggregation_type):
         return aggregate_code(inner)
@@ -90,12 +114,12 @@ def kind_of(t):
     if isinstance(t, w.named_type):
         d = t.declared_type()
         if isinstance(d, w.entity):
-            return '#'
+            return '#=' + '|'.join(allowed_ops_entities([d]))
         if isinstance(d, w.enumeration_type):
             return 'E=' + '|'.join(d.enumeration_items())
         if isinstance(d, w.select_type):
             if d.name() not in selects_used:
-                types, flags = {}, {'refs': False, 'enums': False}
+                types, flags = {}, {'refs': False, 'enums': False, 'entities': []}
                 flatten_select(d, types, flags)
                 selects_used[d.name()] = (types, flags)
             return 'V=' + d.name()
@@ -130,15 +154,22 @@ for sel, (types, flags) in sorted(selects_used.items()):
     names = [repr(t) for t in sorted(types)]
     rows = [', '.join(names[i:i + 4]) for i in range(0, len(names), 4)]
     body = '' if not rows else '\n      ' + ',\n      '.join(rows) + ',\n    '
+    ents = [repr(e) for e in allowed_ops_entities(flags['entities'])]
+    erows = [', '.join(ents[i:i + 4]) for i in range(0, len(ents), 4)]
+    ebody = '' if not erows else '\n      ' + ',\n      '.join(erows) + ',\n    '
     select_lines.append(
-        f"  {sel}: {{\n    refs: {'true' if flags['refs'] else 'false'},\n    types: [{body}],\n  }},")
+        f"  {sel}: {{\n    refs: {'true' if flags['refs'] else 'false'},\n    entities: [{ebody}],\n    types: [{body}],\n  }},")
 
 print(f"""// GEGENEREERD door `scripts/ifc-schema-table.py` uit het EXPRESS-schema {SCHEMA}
 // (IFC 4.3.2.0, ISO 16739-1:2024) zoals IfcOpenShell {ifcopenshell.version} het meelevert. Niet met de hand
 // bewerken: pas `OPS_ENTITIES` in het script aan en genereer opnieuw (zie de kop van het script).
 //
 // Per entiteit de attributen in STEP-volgorde (supertypen eerst), als `Naam:code`. Codes:
-//   S tekst · R REAL · I INTEGER · N NUMBER · B BOOLEAN · L LOGICAL · X BINARY · # entiteitverwijzing
+//   S tekst · R REAL · I INTEGER · N NUMBER · B BOOLEAN · L LOGICAL · X BINARY
+//   #=A|B verwijzing naar een entiteit van type A of B (de OPS-entiteiten die het attribuuttype of een
+//   subtype ervan zijn; leeg = geen enkele OPS-entiteit mag hier staan)
+//   G GlobalId (22 tekens uit het IFC-base64-alfabet, eerste teken 0-3) · DT IfcDateTime (met
+//   seconden) · DA IfcDate · TI IfcTime · DU IfcDuration (ISO 8601)
 //   E=A|B enumeratie met de toegestane literals · V=Select een select (zie IFC_SELECTS)
 //   SET<min>:<code> / LIST<min>:<code> verzameling/lijst met minimaal <min> elementen (een SET
 //   zonder dubbele elementen) · R+ / I+ positief (`SELF > 0`, IfcPositive…) · * afgeleid (altijd `*`)
@@ -149,8 +180,9 @@ export const IFC_ENTITY_ATTRIBUTES: Record<string, readonly string[]> = {{
 {chr(10).join(lines)}
 }};
 
-/** Selects: mag een verwijzing (`refs`) en welke getypeerde waarden (`IFCxxx(...)`). */
-export const IFC_SELECTS: Record<string, {{ refs: boolean; types: readonly string[] }}> = {{
+/** Selects: mag een verwijzing (`refs`, naar welke OPS-entiteiten: `entities`) en welke getypeerde
+ *  waarden (`IFCxxx(...)`). */
+export const IFC_SELECTS: Record<string, {{ refs: boolean; entities: readonly string[]; types: readonly string[] }}> = {{
 {chr(10).join(select_lines)}
 }};
 

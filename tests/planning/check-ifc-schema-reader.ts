@@ -7,10 +7,11 @@
 //      IfcWorkCalendar 8 zonder `Identification`, REAL zonder punt, Completion `0.00`, header `IFC4X3`),
 //      leest exact gelijk. Ook zonder de OPS_ProjectSettings-datums, zodat de projectdatums echt uit het
 //      IfcWorkPlan-slot komen. De kalenders (project, bibliotheek, uurkalender, ploegen, feestdagen,
-//      werkende uitzonderingen) vallen onder A1.
+//      werkende uitzonderingen) vallen onder A1. A6: de standaardstand van de schakelaar
+//      `IFC_WORK_CALENDAR_ATTRIBUTES` leest gelijk aan de stand 9.
 //   B. Een geldig bestand van een andere tool (indeling zoals bSI/xbim `construction-scheduling-task`):
-//      de projectstart komt uit IfcWorkPlan.StartTime (index 11), en taken onder een `.BASELINE.`-
-//      IfcWorkSchedule (index 13) zijn geen live taken.
+//      de projectstart komt uit IfcWorkPlan.StartTime (index 11), maar niet later dan de vroegste
+//      taakstart; taken onder een `.BASELINE.`-IfcWorkSchedule (index 13) zijn geen live taken.
 //   C. Een IFC2X3-indeling (ook 15 attributen, maar de enum op index 13 en de tijden als verwijzing):
 //      geen verzonnen datum uit een verwijzing, en `.BASELINE.` op index 13 telt.
 //   D. De kalender uit dat bSI/xbim-bestand (IfcWorkCalendar met 9 attributen, ma–vr 08:00–16:00):
@@ -19,7 +20,7 @@
 // Draait via run.sh. Exit 0 = alles groen.
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { writeIFC } from '@/services/ifc/ifcWriter';
+import { IFC_WORK_CALENDAR_ATTRIBUTES, writeIFC } from '@/services/ifc/ifcWriter';
 import { readIFC } from '@/services/ifc/ifcReader';
 import type { ImportResult } from '@/services/importTypes';
 import { buildRichSchemaProject } from './ifcSchemaFixture';
@@ -141,7 +142,7 @@ function firstDiff(a: unknown, b: unknown, path = ''): string | undefined {
       return { ...t, customFields };
     }),
   };
-  const modern = writeIFC(input);
+  const modern = writeIFC(input, { workCalendarAttributes: 9 });
   const legacy = toLegacyOpsLayout(modern);
   const argCounts = (ifc: string, type: string) => {
     const counts: number[] = [];
@@ -185,6 +186,15 @@ function firstDiff(a: unknown, b: unknown, path = ''): string | undefined {
   ok('A5 setup: het niet-baseline-werkschema staat in het bestand', !!wsGuid);
   eq('A5 GlobalId van het werkschema (norm)', readModern.ifcGlobalIds?.[`ws:${readModern.project.id}`], wsGuid);
   eq('A5 GlobalId van het werkschema (oude indeling)', readLegacy.ifcGlobalIds?.[`ws:${readLegacy.project.id}`], wsGuid);
+  // A6. De schakelaar: beide standen schrijven dezelfde inhoud.
+  const other = IFC_WORK_CALENDAR_ATTRIBUTES === 9 ? 8 : 9;
+  const asDefault = writeIFC(input);
+  eq(`A6 standaardstand: kalenders met ${IFC_WORK_CALENDAR_ATTRIBUTES} attributen`, argCounts(asDefault, 'IFCWORKCALENDAR'),
+    [IFC_WORK_CALENDAR_ATTRIBUTES, IFC_WORK_CALENDAR_ATTRIBUTES, IFC_WORK_CALENDAR_ATTRIBUTES, IFC_WORK_CALENDAR_ATTRIBUTES]);
+  for (const [label, ifc] of [['standaardstand', asDefault], [`stand ${other}`, writeIFC(input, { workCalendarAttributes: other })]] as const) {
+    const d = firstDiff(JSON.parse(canon(readModern)), JSON.parse(canon(readIFC(ifc))));
+    ok(`A6 ${label} leest gelijk aan stand 9${d ? ` — eerste verschil ${d}` : ''}`, !d);
+  }
 }
 
 // ── B/C. Bestanden van andere tools ──────────────────────────────────────────────────────────────
@@ -219,7 +229,13 @@ function foreignFile(schema: string, plan: string, schedules: string[], nests: s
       "#31=IFCRELNESTS('3GmKhDwhD1i9mKk4jZ3h4R',$,$,$,#12,(#23));",
     ]);
   const r = readIFC(ifc);
-  eq('B1 norm: projectstart uit IfcWorkPlan.StartTime (index 11)', r.project.startDate, '2010-09-23');
+  // De live taak begint 2010-10-04, ná StartTime: StartTime wint (zoals de kubusbestanden van BlenderBIM).
+  eq('B1 norm: projectstart uit IfcWorkPlan.StartTime (index 11) als die vóór de eerste taak valt', r.project.startDate, '2010-09-23');
+  // Zoals het bSI/xbim-voorbeeld: StartTime (2010-09-23) valt ná de eerste taak (2010-09-20). Dan wint
+  // StartTime niet; anders begonnen de taken via de projectstart-vloer drie dagen later.
+  const early = readIFC(ifc.replace("'P5D','2010-10-04T08:00:00','2010-10-08T16:00:00'", "'P5D','2010-09-20T08:00:00','2010-09-24T16:00:00'"));
+  eq('B1 testvoorwaarde: de live taak begint nu 2010-09-20', early.tasks[0]?.time.scheduleStart.slice(0, 10), '2010-09-20');
+  eq('B1 norm: StartTime ná de eerste taakstart wint niet (de vroegste taakstart)', early.project.startDate, '2010-09-20');
   eq('B2 norm: taak onder het .BASELINE.-werkschema (index 13) is geen live taak', r.tasks.map(t => t.name), ['Live taak']);
   eq('B3 norm: werkschema-GlobalId is dat van het .PLANNED.-schema', r.ifcGlobalIds?.[`ws:${r.project.id}`], '2LoWUCZHr7YvZks8lmqjcw');
 }

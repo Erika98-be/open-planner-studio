@@ -99,6 +99,9 @@ function ifcDateTime(iso: string): string {
   if (!iso) return '$';
   // Ensure format: 'YYYY-MM-DDT07:00:00' (anker gedeeld met de reader via IFC_TIME_ANCHOR).
   if (iso.length === 10) return `'${iso}T${IFC_TIME_ANCHOR}'`;
+  // IfcDateTime vraagt seconden (`YYYY-MM-DDThh:mm:ss`): een tijd zonder seconden
+  // (`YYYY-MM-DDThh:mm`, zoals de store uur-instants bewaart) krijgt `:00`.
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(iso)) return `'${iso}:00'`;
   return `'${iso}'`;
 }
 
@@ -132,6 +135,9 @@ function ifcDayNumber(days: number): string {
 }
 
 function ifcDuration(days: number): string {
+  // ISO 8601 zet het minteken vóór de P (`-P0Y0M2D`), niet bij het getal (`P0Y0M-2D`, tot 2026-10).
+  // Beide lezers, ook die van v2026.9.0, lezen het voorloopteken (`parseDurationDays`).
+  if (days < 0) return `'-P0Y0M${ifcDayNumber(-days)}D'`;
   return `'P0Y0M${ifcDayNumber(days)}D'`;
 }
 
@@ -157,6 +163,8 @@ export interface WriteContext {
   reservedGuids: ReadonlySet<string>;
   /** Project-id: zout voor de GlobalIds van hulpentiteiten en de projectkalender (zie `guidOf`). */
   auxSalt: string;
+  /** Indeling van IfcWorkCalendar (zie `IFC_WORK_CALENDAR_ATTRIBUTES`). */
+  workCalendarAttributes: 8 | 9;
 }
 
 /**
@@ -250,7 +258,27 @@ export type WriteIFCInput = ImportResult & {
   xerSourceArchiveStorage?: 'embedded' | 'recovery-reference';
 };
 
-export function writeIFC(input: WriteIFCInput): string {
+/**
+ * Aantal attributen van IfcWorkCalendar dat de writer schrijft: 9 volgens IFC 4.3 (met
+ * `Identification`), of 8 zoals OPS t/m v2026.9.0 schreef (zonder `Identification`; een schemafout).
+ *
+ * OPEN BESLUIT VAN DE EIGENAAR (voorgelegd 2026-10-13, PR #344). Een uitgebrachte versie t/m v2026.9.0
+ * leest een kalender met 9 attributen verkeerd: geen feestdagen, de standaardweek, en een spookfeestdag
+ * op de dag van openen. Gemeten in docs/ifc-round-trip.md, alinea "Schemageldigheid".
+ *  - 8 (nu; aanbeveling van de orkestrator): deze versie leest beide indelingen en schrijft alles
+ *    geldig behalve IfcWorkCalendar. Een volgende release zet ook de kalender om (deze waarde op 9).
+ *  - 9: alles nu geldig, met een waarschuwing in de releasetekst.
+ * De lezer leest beide indelingen (`workCalendarSlots`). De poort `check-ifc-schema.ts` volgt deze
+ * waarde; de batterijen toetsen beide standen via `WriteIFCOptions.workCalendarAttributes`.
+ */
+export const IFC_WORK_CALENDAR_ATTRIBUTES: 8 | 9 = 8;
+
+export interface WriteIFCOptions {
+  /** Overschrijft `IFC_WORK_CALENDAR_ATTRIBUTES`; bedoeld om in de batterijen beide standen te toetsen. */
+  workCalendarAttributes?: 8 | 9;
+}
+
+export function writeIFC(input: WriteIFCInput, options: WriteIFCOptions = {}): string {
   const {
     project, calendar, tasks, sequences, resources, assignments,
     activityCodeTypes = [],
@@ -273,6 +301,7 @@ export function writeIFC(input: WriteIFCInput): string {
   const ctx: WriteContext = {
     lines: [], nextId: 1, idMap: new Map(), guids: new Map(), usedGuids: new Set(),
     preservedGuids, reservedGuids: new Set(preservedGuids.values()), auxSalt: project.id,
+    workCalendarAttributes: options.workCalendarAttributes ?? IFC_WORK_CALENDAR_ATTRIBUTES,
   };
   const now = new Date().toISOString().split('.')[0];
 
@@ -638,9 +667,11 @@ function writeStructure(
   // lezer terug op het WORKPLAN-slot en vult de afgeleide datum een bewust léég gelaten einddatum.
   // Codering: gezet ⇒ IFCDATE(...), leeg ⇒ NominalValue `$` ("aanwezig, maar geen waarde"), zodat
   // de lezer dat onderscheidt van "veld afwezig" (ouder bestand of ander tool ⇒ WORKPLAN-slot).
+  // IfcDate kent geen tijd: een projectstart met tijd (zoals na een XER-import) gaat als datum mee.
+  // Beide lezers, ook die van v2026.9.0, lezen hier alleen de eerste 10 tekens.
   const contractDateProp = (key: string, name: string, value: string): number =>
     addLine(ctx, key,
-      `IFCPROPERTYSINGLEVALUE(${ifcStr(name)},$,${value ? `IFCDATE(${ifcStr(value)})` : '$'},$)`);
+      `IFCPROPERTYSINGLEVALUE(${ifcStr(name)},$,${value ? `IFCDATE(${ifcStr(value.slice(0, 10))})` : '$'},$)`);
   projSettingProps.push(contractDateProp('_ps_projstart', 'ProjectStartDate', project.startDate));
   projSettingProps.push(contractDateProp('_ps_projend', 'ProjectEndDate', project.endDate));
 
@@ -957,7 +988,7 @@ interface WriteCalendarResult {
   materializedScalarBands: boolean;
   /** `WorkingTimes` draagt meer dan één weekgroep (werkblokken die per weekdag verschillen, zie
    *  `weekBandGroups`). Dan is de scalar werktijd niet eenduidig uit de periodes af te leiden: een
-   *  oudere lezer neemt de terugvalweek, deze lezer de eerste werkdag met blokken. */
+   *  oudere lezer neemt de eerste groep, deze lezer de eerste werkdag met blokken. */
   perDayWeek: boolean;
 }
 
@@ -972,22 +1003,6 @@ interface WeekBandGroup {
 const ISO_DAY_LABEL: Record<number, string> = { 1: 'Mon', 2: 'Tue', 3: 'Wed', 4: 'Thu', 5: 'Fri', 6: 'Sat', 7: 'Sun' };
 
 /**
- * StartDate = FinishDate van de terugvalweek voor oudere OPS-versies (zie `writeCalendar`).
- *  - Deze lezer herkent de terugvalweek aan die datum: een `IfcWorkTime` in `WorkingTimes` met een
- *    StartDate of FinishDate doet niet mee in de weekopbouw (`buildCalendarFromEntity`). Er is bewust
- *    geen markering met een STEP-id: een ander pakket mag de id's hernummeren, en dan wijst zo'n
- *    markering naar de verkeerde regel.
- *  - Uitgebrachte OPS-versies (t/m v2026.9.0) lezen de datums van `WorkingTimes` niet. Maar sinds OPS
- *    `IfcWorkCalendar` met 9 attributen schrijft (IFC 4.3, met `Identification`), lezen zij
- *    `WorkingTimes` helemaal niet meer: zij nemen het lege `Identification`-slot als WorkingTimes en
- *    krijgen hun standaardweek. Deze week helpt hen dus niet meer. Hij helpt nog wel een lezer die alleen
- *    de eerste `IfcWorkTime` neemt en de datums negeert.
- *  - Een lezer die IFC 4.3 volgt, past deze week alleen op 1 januari 1900 toe (`IfcWorkTime`: de datums
- *    "restrict never-ending recurrence patterns"); voor een planning na 1900 doet hij niets.
- */
-const LEGACY_WEEK_DATE = '1900-01-01';
-
-/**
  * Groepeert de werkdagen van een kalender op een identieke set blokken: één groep per
  * `IFCWORKTIME` in `WorkingTimes`, met een eigen `IFCRECURRENCEPATTERN(.WEEKLY.)` (WeekdayComponent +
  * TimePeriods). Zo modelleert IFC 4.3 zelf een week met een korte vrijdag (`IfcWorkCalendar`, figuur 1:
@@ -999,8 +1014,11 @@ const LEGACY_WEEK_DATE = '1900-01-01';
  *  - Twee dagen horen bij dezelfde groep als hun blokken (gesorteerd op begin) gelijk zijn; de groep
  *    schrijft de blokken in de volgorde van zijn eerste dag.
  *  - Volgorde: die van `cal.workDays` (eerste voorkomen). De eerste groep met blokken is die van de
- *    eerste werkdag; hij levert de blokken van de terugvalweek voor oudere OPS-versies
- *    (`writeCalendar`). Verder heeft de volgorde geen betekenis: `WorkingTimes` is een SET.
+ *    eerste werkdag. Verder heeft de volgorde geen betekenis: `WorkingTimes` is een SET.
+ *  - Een uitgebrachte OPS-versie (t/m v2026.9.0) leest alleen de EERSTE `IFCWORKTIME`. Bij meer groepen
+ *    ziet zij dus alleen de dagen van de eerste groep als werkdag (een korte vrijdag wordt daar een vrije
+ *    dag). Dat is bewust geaccepteerd: de terugvalweek die dat opving, is eruit (besluit orkestrator
+ *    2026-10-13, PR #344; hij zat in geen enkele release).
  *  - Eén groep (uniforme week) ⇒ het bestand is byte-identiek aan vroeger.
  */
 function weekBandGroups(workDays: readonly number[], workTime: WorkTimeBands): WeekBandGroup[] {
@@ -1042,14 +1060,15 @@ function writeCalendar(
   const groups = workTime ? weekBandGroups(cal.workDays, workTime) : [];
   const workTimeIds: number[] = [];
   /** Eén `IFCWORKTIME` met een WEEKLY-patroon; geeft zijn STEP-id terug. */
-  const writeWeek = (days: readonly number[], bands: WeekBandGroup['bands'], label: string, dates: string): number => {
+  // Alleen aangeroepen met een groep die blokken en dagen heeft (`written` hieronder): geen lege lijst.
+  const writeWeek = (days: readonly number[], bands: WeekBandGroup['bands'], label: string): number => {
     const ids = bands.map((b) =>
       addLine(ctx, '_timeperiod', `IFCTIMEPERIOD('${minutesToClock(b.start)}','${minutesToClock(b.end, true)}')`),
     );
     if (!firstPeriod && bands[0]) firstPeriod = [minutesToClock(bands[0].start), minutesToClock(bands[0].end, true)];
     const recurrenceId = addLine(ctx, '_recurrence',
       `IFCRECURRENCEPATTERN(.WEEKLY.,$,(${days.join(',')}),$,$,$,$,(${ids.map((i) => `#${i}`).join(',')}))`);
-    return addLine(ctx, '_worktime', `IFCWORKTIME(${ifcStr(label)},.PREDICTED.,$,#${recurrenceId},${dates})`);
+    return addLine(ctx, '_worktime', `IFCWORKTIME(${ifcStr(label)},.PREDICTED.,$,#${recurrenceId},$,$)`);
   };
   if (groups.length > 1) {
     // Een groep zonder blokken (de eerste werkdag heeft er geen) heeft geen werktijd; IFC kent geen
@@ -1057,24 +1076,9 @@ function writeCalendar(
     // niet mee — de lezer zou zo'n dag via `promoteHourCalendar` toch uit de werkdagen halen.
     const written = groups.filter((g) => g.bands.length > 0);
     perDayWeek = written.length > 1;
-    if (perDayWeek) {
-      // TERUGVALWEEK voor oudere lezers, VOORAAN in `WorkingTimes`: alle werkdagen met de blokken
-      // van de eerste werkdag — precies de week die de writer vóór deze wijziging schreef. Bedoeld voor
-      // een lezer die alleen de EERSTE `IFCWORKTIME` neemt en zijn datums negeert, zoals uitgebrachte
-      // OPS-versies (t/m v2026.9.0) bij een kalender met 8 attributen deden; zonder deze week zag zo'n
-      // lezer alleen de dagen van de eerste groep als werkdag (gemeten: een korte vrijdag werd een VRIJE
-      // dag). Een kalender met 9 attributen (IFC 4.3) lezen die versies niet meer goed; zie
-      // `LEGACY_WEEK_DATE`. Hij geldt alleen op `LEGACY_WEEK_DATE`; deze lezer herkent hem aan die datum
-      // en slaat hem over. (Heeft de eerste werkdag geen blokken — vroeger een lege
-      // `TimePeriods`-lijst — dan de eerste groep met blokken.)
-      const writtenDays = new Set(written.flatMap((g) => g.days));
-      workTimeIds.push(writeWeek(
-        cal.workDays.filter((d) => writtenDays.has(d)), written[0].bands,
-        'Standard work week (for older Open Planner Studio versions)', `'${LEGACY_WEEK_DATE}','${LEGACY_WEEK_DATE}'`));
-    }
     for (const group of written) {
       const label = `Standard work week (${group.days.map((d) => ISO_DAY_LABEL[d] ?? String(d)).join(', ')})`;
-      workTimeIds.push(writeWeek(group.days, group.bands, label, '$,$'));
+      workTimeIds.push(writeWeek(group.days, group.bands, label));
     }
   } else {
     const dayNums = cal.workDays.join(',');
@@ -1152,15 +1156,11 @@ function writeCalendar(
   const exceptStr = allExceptionRefs.length > 0 ? `(${allExceptionRefs.join(',')})` : '$';
   // ObjectType (arg 4): alleen een label bij USERDEFINED-ploeg; anders `$`.
   const objectType = cal.shift === 'USERDEFINED' ? ifcStr('USERDEFINED') : '$';
-  // Negen attributen volgens IFC 4.3: GlobalId, OwnerHistory, Name, Description, ObjectType,
-  // Identification (`$`, OPS heeft geen kalendercode), WorkingTimes, ExceptionTimes, PredefinedType.
-  // Tot 2026-10 ontbrak `Identification` (8 attributen); de lezer herkent beide indelingen aan het aantal
-  // (`workCalendarSlots` in `ifcReader.ts`). Een OPS-versie van vóór deze fix leest een kalender met 9
-  // attributen niet goed: zij leest `Identification` als WorkingTimes, `WorkingTimes` als ExceptionTimes
-  // en `ExceptionTimes` als PredefinedType. Zij krijgt dan haar standaardwerkdagen, geen feestdagen, geen
-  // werkende uitzonderingen en geen ploeg (gemeten, zie docs/ifc-round-trip.md).
+  // Indeling volgens `IFC_WORK_CALENDAR_ATTRIBUTES` (open besluit): 9 = IFC 4.3, met Identification
+  // (`$`, OPS heeft geen kalendercode) tussen ObjectType en WorkingTimes; 8 = zonder.
+  const identification = ctx.workCalendarAttributes === 9 ? '$,' : '';
   const calStepId = addLine(ctx, key,
-    `IFCWORKCALENDAR(${ifcStr(objectGuid(ctx, 'cal', cal.id))},#${ownerHistId},${ifcStr(cal.name)},${ifcStr(cal.description)},${objectType},$,(${workTimeIds.map((i) => `#${i}`).join(',')}),${exceptStr},${shiftToPredefinedType(cal.shift)})`);
+    `IFCWORKCALENDAR(${ifcStr(objectGuid(ctx, 'cal', cal.id))},#${ownerHistId},${ifcStr(cal.name)},${ifcStr(cal.description)},${objectType},${identification}(${workTimeIds.map((i) => `#${i}`).join(',')}),${exceptStr},${shiftToPredefinedType(cal.shift)})`);
   return {
     calStepId,
     workingExceptionStepIds,

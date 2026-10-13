@@ -295,6 +295,20 @@ export function readIFC(
   // regel voor alle lezers (`resolveMissingScheduleDates`), vóór de voortgang-invarianten: start ⇒ de
   // projectstart (zoals `addTask`), finish ⇒ start + duur waar eenduidig. Aanwezigheid komt uit
   // `recordedFields` (de slot-lezer zelf zet nog de vandaag-plaatshouder).
+  // Projectstart uit IfcWorkPlan.StartTime (dus niet uit OPS_ProjectSettings): valt die LATER dan de
+  // vroegste ingelezen taakstart, dan wint hij niet en geldt die taakstart. In het bSI/xbim-voorbeeld
+  // `construction-scheduling-task` is StartTime 2010-09-23 (de aanmaakdag), terwijl de taken op
+  // 2010-09-20 beginnen; als projectstart zou hij via de projectstart-vloer 63 van de 72 taken drie
+  // dagen later laten starten. Een StartTime vóór de eerste taak blijft staan (zoals de kubusbestanden
+  // van BlenderBIM). Alleen taken met een ingelezen ScheduleStart tellen (`recordedFields`).
+  if (project.startDate && !projectStartRecorded.value) {
+    const earliestTaskStart = tasks
+      .filter(t => (recordedFields[t.id] ?? []).includes('scheduleStart'))
+      .map(t => (t.time.scheduleStart ?? '').slice(0, 10))
+      .filter(Boolean)
+      .sort()[0];
+    if (earliestTaskStart && earliestTaskStart < project.startDate) project.startDate = earliestTaskStart;
+  }
   const missingDates = emptyMissingScheduleDates();
   for (const t of tasks) {
     const present = recordedFields[t.id] ?? [];
@@ -2699,11 +2713,10 @@ function buildCalendarFromEntity(
   //  - Een IFCWORKTIME met een StartDate of FinishDate (args[4]/args[5]) doet NIET mee. Datumgebonden
   //    werktijden (een zomer- en een winterweek, een losse werkzaterdag) worden (nog) niet gelezen; als
   //    gewone week zouden ze elke week gelden (07–16 en 08–17 werd 07–17, een losse zaterdag elke
-  //    zaterdag). Hieronder valt ook de terugvalweek die OPS vooraan schrijft voor oudere OPS-versies
-  //    (StartDate = FinishDate = 1900-01-01, `LEGACY_WEEK_DATE` in `ifcWriter.ts`). Bewust de datum en
-  //    geen markering met een STEP-id: een ander pakket mag de id's hernummeren. OPS schreef in
-  //    `WorkingTimes` vóór de terugvalweek nooit een datum (feestdagen en werkende uitzonderingen staan in
-  //    `ExceptionTimes`), dus oude OPS-bestanden lezen ongewijzigd.
+  //    zaterdag). Hieronder valt ook de terugvalweek (StartDate = FinishDate = 1900-01-01) die main tussen
+  //    #340 en #344 vooraan schreef; hij zat in geen release, maar zo'n bestand leest hiermee goed. Een
+  //    uitgebrachte OPS-versie schreef in `WorkingTimes` nooit een datum (feestdagen en werkende
+  //    uitzonderingen staan in `ExceptionTimes`), dus oude OPS-bestanden lezen ongewijzigd.
   //  - Blijft er zo geen patroon over (ALLE werktijden hebben een datum, bijv. één week 08–16 van
   //    2026-01-01 t/m 2027-12-31), dan het eerste patroon met een datum, zoals de lezer vóór de indeling
   //    per weekdag deed. Anders kreeg zo'n kalender de standaardweek (07–16).
@@ -2717,7 +2730,7 @@ function buildCalendarFromEntity(
   //    voor bestanden van oudere OPS-versies (één IFCWORKTIME) en voor één DAILY-patroon zonder weekdagen.
   const workTimeRefs = parseRefs(slots.workingTimes);
   const recurrences: StepEntity[] = [];
-  const datedRecurrences: StepEntity[] = []; // datumgebonden (ook de terugvalweek): zie hierboven
+  const datedRecurrences: StepEntity[] = []; // datumgebonden: zie hierboven
   for (const wtRef of workTimeRefs) {
     const wt = entityMap.get(wtRef);
     if (!wt || wt.type !== 'IFCWORKTIME') continue;
