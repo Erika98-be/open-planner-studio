@@ -23,10 +23,11 @@ export const DEFAULT_UI_FONT_STACK = '"Inter", system-ui, sans-serif';
  *
  * - Windows gebruikt standaard Segoe UI.
  * - macOS gebruikt de native Apple-systeemfont.
- * - Linux gebruikt `-webkit-system-font`. In WebKitGTK wordt deze waarde gekoppeld aan
- *   het GTK-interfacelettertype van de desktopomgeving. Daardoor wordt bijvoorbeeld het
- *   door de gebruiker ingestelde GNOME-interfacelettertype gebruikt in plaats van een
- *   hardgecodeerd Linux-lettertype zoals Ubuntu, Cantarell of Noto Sans.
+ * - Linux gebruikt `-webkit-system-font` met `system-ui` als tweede keus. In WebKitGTK wordt
+ *   `-webkit-system-font` gekoppeld aan het GTK-interfacelettertype van de desktopomgeving.
+ *   Daardoor wordt bijvoorbeeld het door de gebruiker ingestelde GNOME-interfacelettertype
+ *   gebruikt in plaats van een hardgecodeerd Linux-lettertype zoals Ubuntu, Cantarell of
+ *   Noto Sans. In een gewone browser doet `system-ui` hetzelfde.
  *
  * De fallback `sans-serif` wordt gebruikt wanneer het platform niet beschikbaar is,
  * bijvoorbeeld tijdens server-side verwerking of bepaalde testomgevingen.
@@ -42,8 +43,13 @@ function resolveSystemFontStack(): string {
   if (platform.includes('mac')) {
     return '-apple-system, BlinkMacSystemFont, sans-serif';
   }
-  // WebKitGTK haalt hiermee het systeemlettertype uit de GTK-desktopinstellingen.
-  return 'system-ui, -webkit-system-font, sans-serif';
+  // De VOLGORDE is hier de inhoud. WebKitGTK (de desktop-build) kent `system-ui` wél, maar lost het
+  // op naar een vast lettertype en niet naar het GTK-interfacelettertype; alleen
+  // `-webkit-system-font` volgt daar de desktopinstelling. Die moet dus vooraan staan, anders wint
+  // `system-ui` en komt de tweede naam nooit aan bod. Chromium en Firefox kennen
+  // `-webkit-system-font` niet, slaan hem over en nemen `system-ui`, dat bij hen het
+  // desktoplettertype is.
+  return '-webkit-system-font, system-ui, sans-serif';
 }
 
 /**
