@@ -256,6 +256,13 @@
       "maxPaths": "Max. paths",
       "tfAuto": "Automatic (default)",
       "critThresholdHours": "Threshold (hours, per task calendar)"
+    },
+    "ifcSchema": {
+      "label": "IFC schema when saving",
+      "optionIfc4x3": "IFC 4.3 (default)",
+      "optionIfc4x3Add2": "IFC 4.3 ADD2",
+      "optionIfc4": "IFC4",
+      "info": "The content of the file stays the same; only the header changes. Choose the schema of the building model you want to merge the schedule with, for example IFC4 for an IFC4 model in IfcOpenShell or Bonsai."
     }
   },
   "newProject": {

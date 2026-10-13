@@ -38,6 +38,10 @@ The fields of the *New project* window and of *Project info*: what each field do
 
 **Calculation profile and options** — in *Project info* the whole block, in *New project* only the drop-down *Calculation profile* with *Primavera P6*, *Microsoft Project* and *Open Planner Studio*. Default: *Open Planner Studio*. Choosing a profile also sets the default options of that profile. See [Calculation options and conventions](docs://ref-rekenopties-en-conventies).
 
+## Only in Project info
+
+**IFC schema when saving** — which IFC schema is in the header of the saved file. Choice of *IFC 4.3 (default)*, *IFC 4.3 ADD2* and *IFC4*. Default: *IFC 4.3 (default)*; for an opened IFC file, the schema of that file. Effect: only the header of the file changes, not the content. Use it to merge the schedule with a building model in the same schema. See [Choosing the IFC schema](docs://howto-ifc-schema-kiezen).
+
 ## Only in the New project window
 
 **Phasing template** — which phases the project starts with. Choose from *Empty*, *Residential construction* and *Commercial / renovation*. Default: *Empty*. Effect: *Empty* gives a project without tasks. The other two put eight phase tasks ready, each with a duration of 5 in the project's default unit (5 working days, or 5 hours if you choose *Hours* under *Default unit for new tasks*) and without relations; you rename, move and extend them yourself. For *Residential construction* these are: Bouwplaats & grondwerk, Fundering, Ruwbouw / casco, Dak, Gevel & afbouw, Installaties (W/E), Afwerking and Oplevering. For *Commercial / renovation*: Sloop & strip-out, Grondwerk & fundering, Hoofddraagconstructie, Gevel & dak, Installaties (W/E), Afbouw, Inregelen & testen and Oplevering. The names are data of your project and stay Dutch, also in another interface language. If *Enable construction mode* is off, only *Empty* exists. See [Settings](docs://ref-instellingen).
@@ -61,3 +65,4 @@ The start date is the anchor of the project. Three rules:
 - [Moving a project](docs://howto-project-verplaatsen): the whole schedule to another start.
 - [Adding tasks and milestones](docs://howto-taken-en-mijlpalen-toevoegen): starting on the first tasks.
 - [Generating holidays and the construction holiday](docs://howto-feestdagen-genereren): the holiday set in detail.
+- [Choosing the IFC schema](docs://howto-ifc-schema-kiezen): saving for a building model in IFC4.
