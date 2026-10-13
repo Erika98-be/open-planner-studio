@@ -457,6 +457,8 @@
     "newProject": "New project",
     "openExistingProject": "Open existing project",
     "allProjects": "All projects",
+    "scrollTabsStart": "Scroll tabs towards the start",
+    "scrollTabsEnd": "Scroll tabs towards the end",
     "active": "Active",
     "tasksWord": "tasks",
     "criticalWord": "critical",

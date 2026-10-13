@@ -457,6 +457,8 @@
     "newProject": "Nieuw project",
     "openExistingProject": "Bestaand project openen",
     "allProjects": "Alle projecten",
+    "scrollTabsStart": "Tabbladen naar het begin schuiven",
+    "scrollTabsEnd": "Tabbladen naar het eind schuiven",
     "active": "Actief",
     "tasksWord": "taken",
     "criticalWord": "kritiek",
