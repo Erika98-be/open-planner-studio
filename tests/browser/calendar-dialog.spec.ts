@@ -290,3 +290,46 @@ test('resourcekalender blokkeert lokaal ongeldige scalar-tijden zonder het model
   }, resourceCalendarId)).toBe(7);
   await dialog.getByRole('button', { name: 'Cancel' }).click();
 });
+
+// Fix werkdag-einde (2026-10): MS Projects standaardkalender (08:00–12:00 + 13:00–17:00) kwam binnen als
+// werkdag 08:00–12:00. Open een MSPDI via de knop Openen en de bestandskiezer; uurplanning staat uit
+// (standaard), dus de dialoog toont de enkelvoudige werkdag.
+const MSPDI_STANDARD = (() => {
+  const wt = '<WorkingTimes><WorkingTime><FromTime>08:00:00</FromTime><ToTime>12:00:00</ToTime></WorkingTime>'
+    + '<WorkingTime><FromTime>13:00:00</FromTime><ToTime>17:00:00</ToTime></WorkingTime></WorkingTimes>';
+  const days = [1, 2, 3, 4, 5, 6, 7].map(n => `<WeekDay><DayType>${n}</DayType><DayWorking>${n >= 2 && n <= 6 ? 1 : 0}</DayWorking>${n >= 2 && n <= 6 ? wt : ''}</WeekDay>`).join('');
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<Project xmlns="http://schemas.microsoft.com/project"><Name>MSP standaard</Name><StartDate>2026-01-05T08:00:00</StartDate>
+<MinutesPerDay>480</MinutesPerDay><CalendarUID>1</CalendarUID>
+<Calendars><Calendar><UID>1</UID><Name>Standard</Name><IsBaseCalendar>1</IsBaseCalendar><WeekDays>${days}</WeekDays></Calendar></Calendars>
+<Tasks><Task><UID>1</UID><ID>1</ID><Name>Taak</Name><OutlineLevel>1</OutlineLevel><Start>2026-01-05T08:00:00</Start><Finish>2026-01-09T17:00:00</Finish><Duration>PT40H0M0S</Duration></Task></Tasks>
+</Project>`;
+})();
+
+test('kalenderdialoog: MS Project-standaardkalender toont 08:00–17:00 met pauze 12:00 van 60 min en netto 8 uur',
+  async ({ page, ops: _ops }) => {
+    const openButton = page.locator('button.ribbon-btn').filter({ hasText: /^(Open|Openen)$/ });
+    await expect(openButton).toHaveCount(1);
+    const chooser = page.waitForEvent('filechooser');
+    await openButton.click();
+    await (await chooser).setFiles({ name: 'msp-standaard.xml', mimeType: 'application/xml', buffer: Buffer.from(MSPDI_STANDARD) });
+    await expect.poll(() => page.evaluate(() => window.__OPS__!.store.getState().calendar.name)).toBe('Standard');
+
+    await page.evaluate(() => window.__OPS__!.store.getState().setUI({ showCalendarDialog: true, enableHourPlanning: false }));
+    const dialog = page.locator('[data-ops-calendar-dialog]');
+    await expect(dialog).toBeVisible();
+    await expect(dialog.locator('#ops-work-start')).toHaveValue('08:00');
+    await expect(dialog.locator('#ops-work-end')).toHaveValue('17:00');
+    await expect(dialog.locator('#ops-simple-break-start')).toHaveValue('12:00');
+    await expect(dialog.locator('#ops-simple-break-duration')).toHaveValue('60');
+    await expect(dialog.locator('[data-ops-simple-break-net-hours]')).toHaveText(/^8[.,]00 h$/);
+    await expect(dialog.locator('[data-ops-simple-break-error]')).toHaveCount(0);
+
+    // Begin naar 07:00 is nu toegestaan; netto volgt uit werkdag − pauze.
+    const start = dialog.locator('#ops-work-start');
+    await start.fill('07:00');
+    await start.press('Enter');
+    await expect(dialog.locator('[data-ops-simple-break-error]')).toHaveCount(0);
+    await expect(dialog.locator('[data-ops-simple-break-net-hours]')).toHaveText(/^9[.,]00 h$/);
+    await dialog.locator('[data-ops-cal-cancel]').click();
+  });
