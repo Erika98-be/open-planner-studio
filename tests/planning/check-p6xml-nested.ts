@@ -11,6 +11,8 @@ import { readFileSync } from 'node:fs';
 import { readP6XML, readP6XMLDocuments } from '@/services/p6/p6xmlReader';
 import { writeP6XML } from '@/services/p6/p6xmlWriter';
 import { isMultiDocumentImport, type ImportResult } from '@/services/importTypes';
+import { documentTitle } from '@/utils/documents';
+import { documentProjectCode } from '@/utils/documentProjectCode';
 import { installDOMParser } from './xmldom-shim';
 
 declare const process: { exitCode?: number };
@@ -32,7 +34,8 @@ const byCode = (code: string) => r.tasks.find(t => t.wbsCode === code);
 const libByName = (name: string) => (r.resourceCalendars ?? []).find(c => c.name === name);
 
 // (1) Projectkeuze: A is leeg ⇒ B (het eerste project mét activiteiten). CDATA + entiteit in de naam.
-eq('1a projectnaam', r.project.name, 'Project B & bouw (B-BOUW)');
+// Eigenaarsbesluit 2026-10-13: de naam blijft kaal, de P6 Project-ID staat apart (zoals XER).
+eq('1a projectnaam en -code apart', [r.project.name, r.project.p6ProjectCode], ['Project B & bouw', 'B-BOUW']);
 eq('1b projectstart', r.project.startDate, '2026-04-13');
 eq('1c statusdatum uit DataDate', r.project.statusDate?.slice(0, 10), '2026-04-20');
 
@@ -133,7 +136,8 @@ eq('9i status Not Started leidt', near(completionOf(`<Status>Not Started</Status
 const opened = readP6XMLDocuments(xml);
 eq('10a meervoudige import', isMultiDocumentImport(opened), true);
 const docs = isMultiDocumentImport(opened) ? opened.results : [opened];
-eq('10b documenten (B en C, niet A, niet de baselines)', docs.map(d => d.project.name), ['Project B & bouw (B-BOUW)', 'Project C (C-AFBOUW)']);
+eq('10b documenten (B en C, niet A, niet de baselines)', docs.map(d => [d.project.name, d.project.p6ProjectCode]),
+  [['Project B & bouw', 'B-BOUW'], ['Project C', 'C-AFBOUW']]);
 eq('10c actief document = B (meeste activiteiten)', isMultiDocumentImport(opened) ? opened.activeDocumentIndex : 0, 0);
 eq('10d C: activiteiten (2 binnen <Project> + 1 plat met ProjectObjectId 300)',
   docs[1].tasks.filter(t => t.childIds.length === 0).map(t => t.wbsCode).sort(), ['C-PLAT', 'C1000', 'C1010']);
@@ -151,7 +155,7 @@ eq('10j baseline gekoppeld aan de B-taak met dezelfde code', blTask?.taskId, doc
 eq('10k baselinedatum B1000', blTask?.start.slice(0, 10), '2026-04-06');
 eq('10l baseline-aanmaakdatum uit LastBaselineUpdateDate', bls[0]?.createdAt, '2026-04-01T09:00:00');
 eq('10m C: geen baselines', docs[1].baselines, undefined);
-eq('10n readP6XML = het eerste document (B), mét baselines', [r.project.name, (r.baselines ?? []).length], ['Project B & bouw (B-BOUW)', 2]);
+eq('10n readP6XML = het eerste document (B), mét baselines', [r.project.name, (r.baselines ?? []).length], ['Project B & bouw', 2]);
 // Actief document = meeste activiteiten, ook als dat niet het eerste is (XER-regel).
 const act = (id: number) => `<Activity><ObjectId>${id}</ObjectId><Id>A${id}</Id><Name>A${id}</Name><PlannedDuration>8</PlannedDuration>
   <PlannedStartDate>2026-03-02T08:00:00</PlannedStartDate><PlannedFinishDate>2026-03-02T17:00:00</PlannedFinishDate></Activity>`;
@@ -207,18 +211,22 @@ eq('12b In Progress houdt zijn werkelijke start', [fTask('S')?.status, fTask('S'
 }
 
 // (11) Documentnaam zoals XER: "Naam (Id)". OZB-14 heeft twaalf updates met dezelfde naam; de tabbladen
-//      moeten onderscheidbaar zijn. De eigen export zet de code terug in <Id>, heropenen geeft dezelfde naam.
+//      moeten onderscheidbaar zijn. De naam blijft kaal, de code staat apart (eigenaarsbesluit
+//      2026-10-13); de eigen export zet de code terug in <Id>, heropenen geeft dezelfde naam én code.
 const sameName = readP6XMLDocuments(`<?xml version="1.0"?><APIBusinessObjects>
   <Project><Id>OZB-01</Id><ObjectId>1</ObjectId><Name>OZB Update</Name>${act(11)}</Project>
   <Project><Id>OZB-02</Id><ObjectId>2</ObjectId><Name>OZB Update</Name>${act(21)}</Project>
   <Project><Id>OZB Update</Id><ObjectId>3</ObjectId><Name>OZB Update</Name>${act(31)}</Project></APIBusinessObjects>`);
-const sameNames = isMultiDocumentImport(sameName) ? sameName.results.map(d => d.project.name) : [];
-eq('11a namen met Id, uniek', [sameNames, new Set(sameNames).size], [['OZB Update (OZB-01)', 'OZB Update (OZB-02)', 'OZB Update'], 3]);
+const sameDocs = isMultiDocumentImport(sameName) ? sameName.results : [];
+const sameTitles = sameDocs.map(d => documentTitle(null, d.project.name, documentProjectCode(d.project)));
+eq('11a documentnamen met Id, uniek', [sameTitles, new Set(sameTitles).size], [['OZB Update (OZB-01)', 'OZB Update (OZB-02)', 'OZB Update'], 3]);
+eq('11a2 projectnamen kaal, code apart', sameDocs.map(d => [d.project.name, d.project.p6ProjectCode]),
+  [['OZB Update', 'OZB-01'], ['OZB Update', 'OZB-02'], ['OZB Update', 'OZB Update']]);
 for (const name of ['Project B & bouw (B-BOUW)', 'Kantoor', 'Een heel lange projectnaam die langer is dan veertig tekens']) {
   const src = readP6XML(xml);
   src.project.name = name;
   const back = readP6XML(writeP6XML(src.project, src.calendar, src.tasks, src.sequences, src.resources, src.assignments, src.resourceCalendars ?? []));
-  eq(`11b naam round-trip: ${name}`, back.project.name, name);
+  eq(`11b naam en code round-trip: ${name}`, [back.project.name, back.project.p6ProjectCode], [name, 'B-BOUW']);
 }
 
 if (fails.length > 0) {

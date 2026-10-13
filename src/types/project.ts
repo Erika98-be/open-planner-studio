@@ -534,6 +534,9 @@ export interface Project {
    *  naam toont zonder de pool. */
   companyId?: string;
   companyName?: string;
+  /** P6 Project-ID (`<Project><Id>`), los van `name`. Afwezig ⇒ geen code. Lezen altijd via
+   *  `documentProjectCode` (daar staan het besluit en de XER-route). */
+  p6ProjectCode?: string;
 }
 
 export interface ProjectStats {

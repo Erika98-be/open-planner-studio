@@ -144,7 +144,10 @@ const NIET_PUBLIEK = {
   // Bibliotheekbinding (spec B1): de bibliotheek is app-globaal en wordt buiten het document
   // beheerd. Een extensie die deze stempels kon zetten zou een projectkopie kunnen laten dóén
   // alsof hij uit een bibliotheek komt.
-  project: ['companyId', 'companyName'] as readonly string[],
+  project: ['companyId', 'companyName',
+    // P6 Project-ID van een P6 XML-import (eigenaarsbesluit 2026-10-13): bronidentiteit voor de
+    // P6-export, geen extensie-invoer. `retainActiveDocument` houdt hem bij lees-wijzig-laad vast.
+    'p6ProjectCode'] as readonly string[],
   // De penaltydiagnose is een IFC-leesdiagnose, geen extensie-invoer of -uitvoer. De geldige
   // brongegevens zelf (`p6Source` + lijst) blijven wél rondtrippend beschikbaar.
   calendar: ['generation', 'libraryOrigin', 'p6NonWorkPenaltyDatesState'] as readonly string[],
@@ -279,6 +282,7 @@ const VOL_PROJECT = {
   },
   companyId: 'bedrijf-1', companyName: 'Bibliotheek BV',
   schedulingProfile: { baseId: 'msproject', id: 'eigen-1', name: 'Eigen', overrides: { clampNegativeFreeFloat: true } },
+  p6ProjectCode: 'OZB-05',
 } satisfies Required<Project>;
 
 const VOL_CALENDAR = {

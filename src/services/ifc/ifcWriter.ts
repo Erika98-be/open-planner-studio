@@ -632,6 +632,11 @@ function writeStructure(
     projSettingProps.push(addLine(ctx, '_ps_companyname',
       `IFCPROPERTYSINGLEVALUE('CompanyName',$,IFCTEXT(${ifcStr(project.companyName)}),$)`));
   }
+  // P6 Project-ID (zie `documentProjectCode`). Golden rule: alleen wanneer gezet.
+  if (project.p6ProjectCode) {
+    projSettingProps.push(addLine(ctx, '_ps_p6projectcode',
+      `IFCPROPERTYSINGLEVALUE('P6ProjectCode',$,IFCTEXT(${ifcStr(project.p6ProjectCode)}),$)`));
+  }
   if (projSettingProps.length > 0) {
     const setId = addLine(ctx, '_pset_projset',
       `IFCPROPERTYSET(${ifcStr(guidOf(ctx, 'pset_projset'))},#${ownerHistId},${ifcStr(PSET.ProjectSettings)},$,(${projSettingProps.map(i => `#${i}`).join(',')}))`);
