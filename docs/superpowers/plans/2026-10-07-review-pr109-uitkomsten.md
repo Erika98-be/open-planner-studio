@@ -565,3 +565,5 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   **Voor de releasetekst:** waarschuwing voorwaartse compatibiliteit (v2026.9.0 en ouder: feestdagen weg, vrije dag
   op de openingsdag, werkweek ma–vr 07–16, werkende uitzonderingen en ploeg weg, blijvend na opslaan).
 - #338 opnieuw bijgewerkt met main (4f5c73b2b); typecheck, `check-werkdag-einde`, `verify:i18n` exit 0; CI loopt.
+- #344 schakelaar weg (kop 86eb30d04, CI 15/15): schrijver altijd 9 attributen, lezer leest beide; docs en PR-tekst
+  met eigenaarsbesluit (#336), meting v2026.9.0 en een kopje "Voor de releasetekst" (nl/en). Her-check gestart.
