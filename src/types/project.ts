@@ -501,10 +501,11 @@ export interface SchedulingProfile {
  * verschil zit alleen in de kop, en die bepaalt of een ander pakket het bestand kan samenvoegen met
  * een model in hetzelfde schema (bijvoorbeeld IfcOpenShell `MergeProjects`).
  */
-export const IFC_SCHEMAS = ['IFC4X3', 'IFC4X3_ADD2', 'IFC4'] as const;
+export const IFC_SCHEMAS = ['IFC4X3_ADD2', 'IFC4X3', 'IFC4'] as const;
 export type IfcSchemaId = typeof IFC_SCHEMAS[number];
-/** Afwezig `Project.ifcSchema` ⇒ dit schema. */
-export const DEFAULT_IFC_SCHEMA: IfcSchemaId = 'IFC4X3';
+/** Afwezig `Project.ifcSchema` ⇒ dit schema. Besluit eigenaar 2026-10-13: IFC4X3_ADD2, de naam die
+ *  IfcOpenShell en Bonsai voor IFC 4.3 schrijven (voorheen `IFC4X3`). */
+export const DEFAULT_IFC_SCHEMA: IfcSchemaId = 'IFC4X3_ADD2';
 
 export function isIfcSchemaId(value: unknown): value is IfcSchemaId {
   return typeof value === 'string' && (IFC_SCHEMAS as readonly string[]).includes(value);
@@ -556,10 +557,19 @@ export interface Project {
    *  naam toont zonder de pool. */
   companyId?: string;
   companyName?: string;
-  /** Het IFC-schema in de kop van het opgeslagen bestand (issue #292). Afwezig ⇒ `IFC4X3`. De kop zelf
-   *  is de opslag: `readIFC` zet dit veld uit `FILE_SCHEMA` als dat een van de drie is, zodat een
-   *  geopend IFC4-bestand bij opslaan IFC4 blijft. Bewerkt in Projectinfo. */
+  /** Het IFC-schema in de kop van het opgeslagen bestand (issue #292). Afwezig ⇒ `IFC4X3_ADD2`
+   *  (`DEFAULT_IFC_SCHEMA`). De kop zelf is de opslag: `readIFC` zet dit veld uit `FILE_SCHEMA` als dat
+   *  een van de drie is, zodat een geopend IFC4-bestand bij opslaan IFC4 blijft. Bewerkt in Projectinfo. */
   ifcSchema?: IfcSchemaId;
+  /** Het schema in de kop van het geopende IFC-bestand zolang de gebruiker daar nog niet voor gekozen
+   *  heeft (besluit eigenaar 2026-10-13: "we veranderen niet zomaar bestandstypes"). Gezet ⇒ het eerste
+   *  EXPLICIETE opslaan vraagt eerst of het bestand naar IFC4X3_ADD2 gaat of zijn schema houdt
+   *  (`services/ifc/ifcSchemaQuestion.ts`). Bijvoorbeeld `IFC4`, `IFC4X3` of een schema dat de app niet
+   *  schrijft, zoals `IFC2X3`. Nooit `IFC4X3_ADD2`: dat is al de standaard, daar valt niets te kiezen.
+   *  Het antwoord, of een schemakeuze in Projectinfo, wist het veld. Round-tript via
+   *  `OPS_ProjectSettings` (`IfcSchemaUnconfirmed`, of `IfcSchemaConfirmed` als het veld leeg is), zodat
+   *  crashherstel de vraag bewaart en een beantwoorde vraag bij heropenen niet terugkomt. */
+  ifcSchemaUnconfirmed?: string;
 }
 
 export interface ProjectStats {

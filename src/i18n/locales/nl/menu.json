@@ -259,8 +259,8 @@
     },
     "ifcSchema": {
       "label": "IFC-schema bij opslaan",
-      "optionIfc4x3": "IFC 4.3 (standaard)",
-      "optionIfc4x3Add2": "IFC 4.3 ADD2",
+      "optionIfc4x3": "IFC 4.3",
+      "optionIfc4x3Add2": "IFC 4.3 ADD2 (standaard)",
       "optionIfc4": "IFC4"
     }
   },

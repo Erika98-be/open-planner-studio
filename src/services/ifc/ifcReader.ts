@@ -17,6 +17,7 @@ import { formatInstant, localTodayIso } from '@/utils/dateUtils';
 import { ifcGuid, ifcGuid128, ifcObjectSeed } from './ifcWriter';
 import { IfcParseError } from './ifcErrors';
 import { workCalendarSlots, workControlSlots } from './ifcWorkControlSlots';
+import { cleanIfcSchemaName, ifcSchemaUnconfirmedOnRead } from './ifcSchemaQuestion';
 import type { ImportLabels, ImportResult, RecordedSourceFormat, XerArchiveIssue, XerArchiveIssueCode } from '@/services/importTypes';
 import {
   DEFAULT_PRIORITY, IFC_TIME_ANCHOR, MEASURE_TO_FIELD, IFC_TO_RESOURCE_TYPE,
@@ -180,10 +181,11 @@ export function readIFC(
   // Extract project
   const project = extractProject(entities, entityMap, labels);
   // Het schema uit de kop (issue #292): de kop is de opslag van `Project.ifcSchema`, zodat een geopend
-  // IFC4- of IFC4X3_ADD2-bestand bij opslaan in zijn eigen schema blijft. Een ander schema (IFC2X3,
-  // IFC4X3_ADD1, …) laat het veld weg: dan schrijft opslaan de standaard.
-  const fileSchema = readFileSchema(content);
-  if (fileSchema) project.ifcSchema = fileSchema;
+  // IFC4- of IFC4X3-bestand bij opslaan in zijn eigen schema blijft. Een ander schema (IFC2X3,
+  // IFC4X3_ADD1, …) laat het veld weg: dan schrijft opslaan de standaard. Of het eerste opslaan eerst
+  // vraagt, volgt hieronder na de psets (`ifcSchemaUnconfirmed`).
+  const fileSchemaName = readFileSchemaName(content);
+  if (isIfcSchemaId(fileSchemaName)) project.ifcSchema = fileSchemaName;
   // "Openen met melding": het XER-bronarchief is een sidecar, geen
   // fundament. Is het onbruikbaar, dan vallen archief, selector, XER-metadata en de daaruit
   // gereconstrueerde `recordedTimes` SAMEN weg en opent het project gewoon — met een verplicht
@@ -262,9 +264,14 @@ export function readIFC(
   reconstructResourceIds(tasks, assignments);
   const libraryPoolOut: { value: import('@/types/library').CompanyPool | undefined } = { value: undefined };
   const projectStartRecorded = { value: false };
+  const ifcSchemaMarkers: IfcSchemaMarkers = { confirmed: false };
   const { activityCodeTypes, customFieldDefs } = extractStructure(
-    entities, entityMap, project, tasks, taskStepIdMap, libraryPoolOut, projectStartRecorded,
+    entities, entityMap, project, tasks, taskStepIdMap, libraryPoolOut, projectStartRecorded, ifcSchemaMarkers,
   );
+  // De schemavraag bij opslaan (besluit eigenaar 2026-10-13): staat er een andere kop dan de standaard
+  // en heeft de gebruiker nog niet gekozen, dan vraagt het eerste expliciete opslaan het eerst.
+  const ifcSchemaUnconfirmed = ifcSchemaUnconfirmedOnRead(fileSchemaName, ifcSchemaMarkers);
+  if (ifcSchemaUnconfirmed) project.ifcSchemaUnconfirmed = ifcSchemaUnconfirmed;
   for (const task of tasks) reconcileP6SuspendResume(task);
   const customTaskTypes = extractTaskTypeMeta(entities, entityMap, tasks, taskStepIdMap);
   // Kalenderwandelingen (`timephasedDurationWalks`), eigen pset (zie de functie zelf voor waarom dit
@@ -1019,12 +1026,13 @@ function parseSTEP(content: string): StepEntity[] {
 }
 
 /**
- * Het schema uit de kop: de eerste naam in `FILE_SCHEMA(('…'))`, alleen als het een van de drie is die
- * de writer kan schrijven (`IFC_SCHEMAS`); anders `undefined` (issue #292). Quote-bewust gezocht, want
- * een projectnaam in `FILE_NAME` kan die tekst bevatten. Oude eigen bestanden met een ongebalanceerde
- * apostrof in `FILE_NAME` (zie `indexOfDataSection`) vallen terug op een regel-verankerde match.
+ * Het schema uit de kop zoals het er staat: de eerste naam in `FILE_SCHEMA(('…'))`, in hoofdletters
+ * (`cleanIfcSchemaName`), ook als de app dat schema niet schrijft (IFC2X3); geen of een vreemde naam ⇒
+ * `undefined`. Quote-bewust gezocht, want een projectnaam in `FILE_NAME` kan die tekst bevatten. Oude
+ * eigen bestanden met een ongebalanceerde apostrof in `FILE_NAME` (zie `indexOfDataSection`) vallen
+ * terug op een regel-verankerde match.
  */
-export function readFileSchema(content: string): IfcSchemaId | undefined {
+export function readFileSchemaName(content: string): string | undefined {
   const dataAt = indexOfDataSection(content);
   const header = dataAt >= 0 ? content.slice(0, dataAt) : content;
   let name: string | undefined;
@@ -1034,8 +1042,14 @@ export function readFileSchema(content: string): IfcSchemaId | undefined {
     name = m?.[1];
   }
   if (name === undefined) name = /^[ \t]*FILE_SCHEMA\s*\(\s*\(\s*'([^']*)'/im.exec(header)?.[1];
-  const upper = name?.trim().toUpperCase();
-  return isIfcSchemaId(upper) ? upper : undefined;
+  return cleanIfcSchemaName(name);
+}
+
+/** Het schema uit de kop, alleen als het een van de drie is die de writer kan schrijven
+ *  (`IFC_SCHEMAS`); anders `undefined` (issue #292). Zie `readFileSchemaName`. */
+export function readFileSchema(content: string): IfcSchemaId | undefined {
+  const name = readFileSchemaName(content);
+  return isIfcSchemaId(name) ? name : undefined;
 }
 
 /** Is deze IFCWORKSCHEDULE een baseline (PredefinedType `.BASELINE.`)? De positie hangt af van het
@@ -1949,6 +1963,12 @@ function parseTypedValue(s: string): CustomFieldValue | undefined {
  * OPS_ActivityCodes-psets) worden per NAAM teruggemapt naar de definities; het
  * OPS_ProjectSettings-pset zet project.wbsAutoNumber.
  */
+/** Wat `OPS_ProjectSettings` over de schemavraag zegt (zie `ifcSchemaUnconfirmedOnRead`). */
+interface IfcSchemaMarkers {
+  confirmed: boolean;
+  unconfirmed?: string;
+}
+
 function extractStructure(
   entities: StepEntity[],
   entityMap: Map<string, StepEntity>,
@@ -1959,6 +1979,9 @@ function extractStructure(
   // Het OPS-pset kan "bewust leeg" zeggen — de aanroeper mag
   // de startdatum dan NIET alsnog afleiden. Presentie is een aparte uitspraak naast de waarde.
   projectStartRecorded: { value: boolean },
+  // Wat `OPS_ProjectSettings` over de schemavraag zegt (`IfcSchemaConfirmed`/`IfcSchemaUnconfirmed`);
+  // de aanroeper combineert het met de kop (`ifcSchemaUnconfirmedOnRead`).
+  ifcSchemaMarkers: IfcSchemaMarkers,
 ): { activityCodeTypes: ActivityCodeType[]; customFieldDefs: CustomFieldDef[] } {
   let activityCodeTypes: ActivityCodeType[] = [];
   let customFieldDefs: CustomFieldDef[] = [];
@@ -2092,6 +2115,10 @@ function extractStructure(
           if (typeof v === 'string' && v) project.companyId = v;
         } else if (name === 'CompanyName') {
           if (typeof v === 'string' && v) project.companyName = v;
+        } else if (name === 'IfcSchemaConfirmed') {
+          if (v === true) ifcSchemaMarkers.confirmed = true;
+        } else if (name === 'IfcSchemaUnconfirmed') {
+          if (typeof v === 'string' && v) ifcSchemaMarkers.unconfirmed = v;
         }
       }
       continue;

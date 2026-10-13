@@ -22,9 +22,12 @@ export function projectInfoPatch(current: Project, draft: ProjectInfoMetadata): 
   if ((current.defaultTaskDurationUnit ?? 'days') !== (draft.defaultTaskDurationUnit ?? 'days')) {
     patch.defaultTaskDurationUnit = draft.defaultTaskDurationUnit;
   }
-  // Afwezig ≡ IFC4X3 (issue #292): een project zonder veld dat op de standaard blijft, wijzigt niet.
+  // Afwezig ≡ IFC4X3_ADD2 (issue #292): een project zonder veld dat op de standaard blijft, wijzigt niet.
   if (draft.ifcSchema !== undefined && projectIfcSchema(current) !== draft.ifcSchema) {
     patch.ifcSchema = draft.ifcSchema;
+    // Een schema dat de gebruiker hier zelf kiest, is zijn antwoord op de schemavraag bij opslaan
+    // (besluit eigenaar 2026-10-13): de vraag vervalt, in dezelfde undo-stap.
+    if (current.ifcSchemaUnconfirmed !== undefined) patch.ifcSchemaUnconfirmed = undefined;
   }
   return patch;
 }

@@ -428,6 +428,8 @@ const project = {
   },
   // Issue #292: niet de standaard (IFC4X3), zodat de round-trip via FILE_SCHEMA iets bewijst.
   ifcSchema: 'IFC4',
+  // Een open schemavraag (bijv. door automatisch opslaan bewaard) blijft open na opslaan + openen.
+  ifcSchemaUnconfirmed: 'IFC4',
 } satisfies Required<Project> & { schedulingOptions: Required<ProjectSchedulingOptions> };
 
 // ── Baselines (round-trippen verliesloos via OPS_Baselines-JSON; taskId remapt via GlobalId) ──────
@@ -711,6 +713,7 @@ const PROJECT_CANON = {
   companyId: KEEP, companyName: KEEP,
   // Issue #292: het schema round-tript via de bestandskop (FILE_SCHEMA).
   ifcSchema: KEEP,
+  ifcSchemaUnconfirmed: KEEP,
 } satisfies CanonSpec<Project>;
 
 const BASELINE_TASK_CANON = {

@@ -74,6 +74,9 @@ export function hasBlockingDialogOpen(ui: UIState = useAppStore.getState().ui): 
     // Openen van/opslaan op de site wacht op een keuze; de opslaanroute houdt intussen de
     // schrijfvergrendeling vast.
     ui.pendingSiteOpen !== null || ui.pendingSiteSave !== null ||
+    // De schemavraag bij opslaan wacht op een keuze; de opslaanroute houdt intussen de
+    // schrijfvergrendeling vast.
+    ui.pendingIfcSchemaQuestion !== null ||
     // Handmatig koppelwerk in de voortgangsimportdialoog hangt aan taak-id's van
     // ÉÉN document en leeft alleen in de dialoog — een documentwissel moet onmogelijk zijn zolang
     // hij openstaat, niet: dat werk over de wissel heen bewaren.

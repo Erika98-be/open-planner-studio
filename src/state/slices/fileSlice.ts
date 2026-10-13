@@ -39,6 +39,7 @@ import { normalizeExternalSourcePath } from '@/engine/taskGrid/relationFormat';
 import { expandSummaryRelations } from '@/engine/scheduler/expandSummaryRelations';
 import { detectXerExportLoss, type XerExportLossWarning } from '@/services/xerExportLoss';
 import { runProjectFileWrite } from '@/services/fileAccess/writeCoordinator';
+import { askIfcSchema, ifcSchemaQuestionFor } from '@/services/ifc/ifcSchemaQuestion';
 import { withSchedulingProfileNotice } from '../schedulingProfileNotice';
 import type { ImportLabelT } from '@/i18n/importLabels';
 import { invalidateDocumentRedo, removeSessionHistoryForDocumentFromState } from '../sessionHistory';
@@ -613,8 +614,9 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
 
   /** Staat er al een site-vraag open? Dan start Opslaan/Openen geen tweede ronde: Ctrl+S in het
    *  naamveld van "Opslaan op de site" zou anders na het antwoord nog een versie schrijven. Zonder
-   *  site zijn beide vlaggen altijd `null`. */
-  const siteQuestionOpen = () => get().ui.pendingSiteSave !== null || get().ui.pendingSiteOpen !== null;
+   *  site zijn beide vlaggen altijd `null`. Ook de schemavraag bij opslaan telt mee (issue #292). */
+  const siteQuestionOpen = () => get().ui.pendingSiteSave !== null || get().ui.pendingSiteOpen !== null
+    || get().ui.pendingIfcSchemaQuestion !== null;
 
   /** Uitleg na het openen van een ander formaat dan IFC (`services/formatNotice.ts`). Alleen de
    *  open-routes die de GEBRUIKER start roepen dit aan (Bestand → Openen, Recente bestanden, Openen
@@ -626,7 +628,38 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
     if (kind) set((s) => { s.ui.pendingFormatNotice = kind; });
   };
 
+  /**
+   * De schemavraag bij het eerste EXPLICIETE opslaan (issue #292, besluit eigenaar 2026-10-13: "we
+   * veranderen niet zomaar bestandstypes"). Is het actieve document een geopend IFC-bestand met een
+   * ander schema dan de standaard, en heeft de gebruiker nog niet gekozen (`Project.ifcSchemaUnconfirmed`),
+   * dan vraagt de app eerst: naar IFC4X3_ADD2, of het schema van het bestand houden.
+   *
+   * Het antwoord hoort bij het opslaan, niet bij de bewerkingen: het zet `project.ifcSchema` en wist de
+   * open vraag ZONDER eigen undo-stap en zonder het document gewijzigd te maken. Beide velden staan op
+   * het project, dus een undo naar een stand van vóór de vraag zet ze samen terug en het volgende
+   * opslaan vraagt opnieuw; nooit schrijft de app daardoor stil een ander schema. Annuleren ⇒ `false`:
+   * er wordt niets opgeslagen. Alleen Opslaan en Opslaan als roepen dit aan; automatisch opslaan,
+   * crashherstel, export en MCP schrijven het huidige schema zonder vraag.
+   */
+  const settleIfcSchemaQuestion = async (): Promise<boolean> => {
+    const before = get();
+    const question = ifcSchemaQuestionFor(before.project);
+    if (!question) return true;
+    const documentId = before.activeDocumentId;
+    const answer = await askIfcSchema(question);
+    if (!answer) return false;
+    // De dialoog blokkeert een documentwissel; dit is het vangnet.
+    if (get().activeDocumentId !== documentId) return false;
+    set((s) => {
+      s.project.ifcSchema = answer;
+      delete s.project.ifcSchemaUnconfirmed;
+    });
+    return true;
+  };
+
   const writeActiveDocument = (expectedDocumentId?: string): Promise<boolean> => runProjectFileWrite(async () => {
+    if (expectedDocumentId && expectedDocumentId !== get().activeDocumentId) return false;
+    if (!(await settleIfcSchemaQuestion())) return false;
     const state = get();
     const documentId = state.activeDocumentId;
     if (expectedDocumentId && expectedDocumentId !== documentId) return false;
@@ -692,6 +725,7 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
 
   /** Opslaan als (Ctrl+Shift+S / Bestand → Opslaan als). */
   const saveActiveDocumentAs = (): Promise<void> => runProjectFileWrite(async () => {
+    if (!(await settleIfcSchemaQuestion())) return;
     const state = get();
     const documentId = state.activeDocumentId;
     // Gedeelde helper: één plek voor het state→IFC-options-object, zodat dit

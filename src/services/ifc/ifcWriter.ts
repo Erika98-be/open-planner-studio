@@ -19,6 +19,7 @@ import {
   IFC_TIME_ANCHOR, FIELD_MEASURE, RESOURCE_TYPE_TO_IFC,
 } from './ifcConstants';
 import { PSET, PER_TASK_PSETS, OPS_APP_VERSION, ifcStr, ifcJson, asciiJson } from './ifcPsets';
+import { ifcSchemaQuestionFor } from './ifcSchemaQuestion';
 import { isSummaryTask } from '@/utils/taskHierarchy';
 import { projectFileBase } from '@/utils/documents';
 import {
@@ -676,6 +677,18 @@ function writeStructure(
     projSettingProps.push(addLine(ctx, '_ps_companyname',
       `IFCPROPERTYSINGLEVALUE('CompanyName',$,IFCTEXT(${ifcStr(project.companyName)}),$)`));
   }
+  // De schemavraag bij opslaan (besluit eigenaar 2026-10-13, `services/ifc/ifcSchemaQuestion.ts`).
+  // Staat de vraag nog open (automatisch opslaan, crashherstel, MCP-backup), dan bewaart
+  // `IfcSchemaUnconfirmed` het schema van het geopende bestand: zo blijft de vraag na herstel staan,
+  // ook als dat schema niet in de kop past (IFC2X3). Anders zegt `IfcSchemaConfirmed` dat er niets te
+  // vragen valt, zodat een bewust als IFC4 bewaard bestand bij heropenen niet opnieuw vraagt. Een
+  // bestand zonder een van beide (oudere versie, ander pakket) vraagt het één keer.
+  const schemaQuestion = ifcSchemaQuestionFor(project);
+  projSettingProps.push(schemaQuestion
+    ? addLine(ctx, '_ps_ifcschemaunconfirmed',
+      `IFCPROPERTYSINGLEVALUE('IfcSchemaUnconfirmed',$,IFCLABEL(${ifcStr(schemaQuestion.fileSchema)}),$)`)
+    : addLine(ctx, '_ps_ifcschemaconfirmed',
+      `IFCPROPERTYSINGLEVALUE('IfcSchemaConfirmed',$,IFCBOOLEAN(.T.),$)`));
   if (projSettingProps.length > 0) {
     const setId = addLine(ctx, '_pset_projset',
       `IFCPROPERTYSET(${ifcStr(guidOf(ctx, 'pset_projset'))},#${ownerHistId},${ifcStr(PSET.ProjectSettings)},$,(${projSettingProps.map(i => `#${i}`).join(',')}))`);

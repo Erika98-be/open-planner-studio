@@ -580,8 +580,8 @@ export const ProjectInfoPanelContent = forwardRef<ProjectInfoPanelContentHandle,
         )}
 
         {/* Issue #292: het schema in de kop bij opslaan. Alleen bij bewerken; Toepassen zet het (één
-            undo-stap via applyProjectInfo/setProject, document gewijzigd). De uitleg staat in één
-            gekleurd blok, niet als los bijschrift. */}
+            undo-stap via applyProjectInfo/setProject, document gewijzigd) en telt als antwoord op de
+            schemavraag bij opslaan (`projectInfoPatch`). De standaard, IFC 4.3 ADD2, staat bovenaan. */}
         {!isNew && (
           <div className="flex flex-col gap-1" data-ops-project-ifc-schema>
             <label className="text-text-secondary font-medium">{tMenu('projectInfo.ifcSchema.label')}</label>
@@ -590,8 +590,8 @@ export const ProjectInfoPanelContent = forwardRef<ProjectInfoPanelContentHandle,
               value={ifcSchema}
               onChange={value => setIfcSchema(value as IfcSchemaId)}
               options={[
-                { value: 'IFC4X3', label: tMenu('projectInfo.ifcSchema.optionIfc4x3') },
                 { value: 'IFC4X3_ADD2', label: tMenu('projectInfo.ifcSchema.optionIfc4x3Add2') },
+                { value: 'IFC4X3', label: tMenu('projectInfo.ifcSchema.optionIfc4x3') },
                 { value: 'IFC4', label: tMenu('projectInfo.ifcSchema.optionIfc4') },
               ]}
             />

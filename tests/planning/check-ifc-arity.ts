@@ -29,7 +29,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { writeIFC } from '@/services/ifc/ifcWriter';
 import { readFileSchema, readIFC } from '@/services/ifc/ifcReader';
-import { IFC_SCHEMAS, type IfcSchemaId, type Project } from '@/types/project';
+import { DEFAULT_IFC_SCHEMA, IFC_SCHEMAS, type IfcSchemaId, type Project } from '@/types/project';
 import { buildRichIfcProject } from './fixtures/ifc-arity-rich';
 
 const ARITY: Readonly<Record<string, number>> = {
@@ -148,15 +148,17 @@ for (const schema of IFC_SCHEMAS) {
 const unseen = Object.keys(ARITY).filter(t => !seenTypes.has(t));
 eq('3 elk type uit ARITY komt in het rijke project voor', unseen, []);
 
-// (4) Standaard en onbekende waarde: afwezig ⇒ IFC4X3, een vrije tekst komt nooit in de kop.
+// (4) Standaard en onbekende waarde: afwezig ⇒ IFC4X3_ADD2 (besluit eigenaar 2026-10-13), een vrije
+// tekst komt nooit in de kop.
 {
+  eq('4 de standaard is IFC4X3_ADD2', DEFAULT_IFC_SCHEMA, 'IFC4X3_ADD2');
   const { ifcSchema: _drop, ...withoutSchema } = rich.project;
   void _drop;
   const plain = writeIFC({ ...rich, project: withoutSchema as Project });
-  eq('4a afwezig ifcSchema ⇒ IFC4X3 in de kop', readFileSchema(plain), 'IFC4X3');
+  eq('4a afwezig ifcSchema ⇒ de standaard in de kop', readFileSchema(plain), DEFAULT_IFC_SCHEMA);
   const bogus = writeIFC({ ...rich, project: { ...rich.project, ifcSchema: 'IFC2X3' as unknown as IfcSchemaId } });
-  ok('4b onbekende waarde ⇒ IFC4X3 in de kop, nooit de vrije tekst',
-    bogus.includes("FILE_SCHEMA(('IFC4X3'));") && !bogus.includes('IFC2X3'));
+  ok('4b onbekende waarde ⇒ de standaard in de kop, nooit de vrije tekst',
+    bogus.includes(`FILE_SCHEMA(('${DEFAULT_IFC_SCHEMA}'));`) && !bogus.includes('IFC2X3'));
 }
 
 // (5) Lezen van de kop: alleen de drie, quote-bewust, en een ander schema laat het veld weg.
