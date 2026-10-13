@@ -542,7 +542,7 @@ test('ongeldige banden binnen een batch: zachte weigering, de batch loopt door',
 // =================================================================================================
 // 11) IFC-ROUND-TRIP — IFC is het native formaat; wat de bridge schrijft moet het dragen
 // =================================================================================================
-test('IFC-round-trip: generation en shift overleven; workTime kent een gedocumenteerde beperking', async () => {
+test('IFC-round-trip: generation, shift en per-weekdag-verschillende banden overleven', async () => {
   reset();
   const projId = S().project.calendarId;
   S().ensureProjectCalendarInLibrary();
@@ -580,13 +580,15 @@ test('IFC-round-trip: generation en shift overleven; workTime kent een gedocumen
   assertEq(cal.workTime!.byWeekday[1], [{ start: 360, end: 840 }, { start: 840, end: 1320 }],
     'de banden van maandag komen exact terug');
   assertEq(cal.hoursPerDay, 16, 'de afgeleide netto uren komen terug');
-  // GEDOCUMENTEERDE BEPERKING (ifcWriter §7.1): IFC draagt ÉÉN recurrence voor alle DayComponent-dagen,
-  // dus de writer schrijft de banden van de EERSTE werkdag en de reader legt ze op élke werkdag.
-  // Per-weekdag VERSCHILLENDE banden overleven het native formaat dus NIET — vrijdag ging als korte
-  // dag het bestand in en komt terug als een kopie van maandag. Dit pint die bekende vlakslag vast
-  // zodat niemand hem stil verandert (en zodat de bridge-beschrijvingen eerlijk blijven).
-  assertEq(cal.workTime!.byWeekday[5], [{ start: 360, end: 840 }, { start: 840, end: 1320 }],
-    'IFC slaat per-weekdag-verschillen plat tot het patroon van de eerste werkdag (vrijdag ≠ origineel)');
+  // Per-weekdag VERSCHILLENDE banden overleven het native formaat (B7, zie docs/ifc-round-trip.md
+  // "Kalenders: werkblokken per weekdag"): elke groep weekdagen met dezelfde banden krijgt een eigen
+  // `IfcWorkTime`. Vóór B7 kwam vrijdag terug als een kopie van maandag. Dit pint het herstel vast,
+  // zodat de beschrijving van `planner_update_calendar` eerlijk blijft.
+  assertEq(cal.workTime!.byWeekday[5], [{ start: 360, end: 840 }],
+    'vrijdag komt terug als de korte dag die het bestand in ging');
+  assertEq(cal.workTime!.byWeekday[4], [{ start: 360, end: 840 }, { start: 840, end: 1320 }],
+    'donderdag houdt zijn twee banden');
+  assertEq(cal.workDays, [1, 2, 3, 4, 5], 'de werkdagen komen terug');
   assertEq(cal.workTime!.byWeekday[6], [], 'een niet-werkdag blijft niet-werkend');
 });
 

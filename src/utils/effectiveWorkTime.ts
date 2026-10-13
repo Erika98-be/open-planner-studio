@@ -141,8 +141,9 @@ export function legacySimpleBreakDurationMinutes(calendar: Pick<WorkCalendar, 'w
  * Volgorde waarin "de eerste werkdag met blokken" gezocht wordt: zondag eerst, dan maandag t/m zaterdag
  * (ISO-nummers). Dat is de volgorde waarin MS Project zijn weekdagen schrijft (DayType 1 = zondag) en
  * dus waarin de MSPDI- en `.mpp`-lezer hun scalaire werkdag kiezen. Eén regel voor de lezers, het
- * bibliotheekherstel en de werkdagknoppen van de kalenderdialoog. (IFC draagt op elke werkdag
- * dezelfde periodes, dus daar maakt de volgorde niet uit.)
+ * bibliotheekherstel en de werkdagknoppen van de kalenderdialoog. De IFC-lezer volgt hem bij werkblokken
+ * die per weekdag verschillen (meer `IfcWorkTime`'s); bij één `IfcWorkTime` draagt elke werkdag dezelfde
+ * periodes, en maakt de volgorde niet uit.
  */
 const SCALAR_DAY_ORDER = [7, 1, 2, 3, 4, 5, 6] as const;
 

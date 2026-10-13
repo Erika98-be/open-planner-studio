@@ -149,6 +149,8 @@ Positief: het lezen van vreemde bestanden werkt verder verrassend goed — multi
 
 ### B7 — Uur-kalenders: per-weekdag verschillende werktijdbanden round-trippen niet — **ERNST: MIDDEL**
 
+**Opgelost in #340.**
+
 `ifcWriter.ts:538-543` schrijft bewust alleen de banden van de **eerste werkdag** en repliceert die bij het lezen over alle werkdagen (`ifcReader.ts:983`). Gemeten met een korte vrijdag:
 
 | | ma | vr |
