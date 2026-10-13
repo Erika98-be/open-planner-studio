@@ -125,7 +125,8 @@ const OZB = `<?xml version="1.0"?><APIBusinessObjects>
   eq('2b tabblad zonder opslagdoel = "Naam (code)"', documentTitle(null, p.name, documentProjectCode(p)), 'Bid for Facility Extension (OZB-05)');
   eq('2c voorgestelde bestandsnaam = tabblad', documentFileBase(p.name, documentProjectCode(p)), 'Bid for Facility Extension (OZB-05)');
   eq('2d met opslagdoel blijft het de bestandsnaam', documentTitle('/x/plan.ifc', p.name, documentProjectCode(p)), 'plan');
-  eq('2e zonder code ongewijzigd', [documentProjectCode({ name: 'Nieuwbouw (fase 2)' }), documentTitle(null, 'Nieuwbouw (fase 2)', documentProjectCode({}))],
+  const fase: { name: string; p6ProjectCode?: string } = { name: 'Nieuwbouw (fase 2)' };
+  eq('2e zonder code ongewijzigd', [documentProjectCode(fase), documentTitle(null, fase.name, documentProjectCode(fase))],
     [undefined, 'Nieuwbouw (fase 2)']);
   eq('2f lege of witruimte-code telt niet', documentProjectCode({ p6ProjectCode: '  ' }), undefined);
 }
