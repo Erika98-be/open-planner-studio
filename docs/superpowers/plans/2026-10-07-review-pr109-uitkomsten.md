@@ -452,3 +452,10 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   `tabIndex=-1` volgens het WAI-ARIA-tabspatroon). Screenshots licht/donker/RTL bekeken door de orkestrator:
   pijlen naast "+", zonder scrollbalk. Review gestart (reviewer, Opus 5.5). Bekend en al aanwezig vóór #339:
   in RTL staat het sluitkruisje vast rechts en worden lange Latijnse namen aan de beginkant afgekapt.
+- **Eigenaarsbesluit 2026-10-13 (letterlijk "dit"): P6-projectcode los van de naam, zoals XER.** Projectinfo
+  toont alleen de naam; hernoemen houdt de code ("Uitbreiding hal (OZB-05)"); export naar P6 geeft de code terug
+  als `<Id>`; de code overleeft opslaan als IFC. Waarom: de code hoort bij P6, niet bij de naam; XER werkt al zo.
+  Expert (Opus 5.5) gestart op `claude/p6-projectcode`. Bestandsgrens met de B7-expert (`ifcWriter`/`ifcReader`
+  kalenderdelen) vastgelegd; de twee gaan samen in één integratieronde.
+- Toevoeging eigenaar: scrollwiel boven de tabbladen moet schuiven, zonder scrollbalk. Zit al in #339; gemeten in
+  de testversie (wiel 300 → scrollLeft 300, terug 0; scrollbalkhoogte 0).
