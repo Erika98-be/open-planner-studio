@@ -511,3 +511,6 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   wisselen, `flex: none` op de menuknop, pixel-sweep-test (rood op de oude kop), 17 mutanten rood, RTL-commit
   (kruisje `inset-inline-end`, `dir="auto"`), nieuwe screenshots (door de orkestrator bekeken). Extra: actief
   tabblad schuift in beeld na sluiten van het overzicht. Her-check gestart.
+- #340 fixronde 1 klaar (kop 681e29604, CI groen): terugvalweek herkend aan de datum, `LegacyWorkTimeIds` weg,
+  datumgebonden `IfcWorkTime`'s uit de week, 63 controles (37 rood op main), 16 mutanten rood, `measure:profiles`
+  exit 0, voorbeelden 8/8 byte-identiek. Her-check gestart.
