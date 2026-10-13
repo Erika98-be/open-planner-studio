@@ -536,3 +536,11 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   eist de echte vorm van `generateId` (8+4+cijfers), anders vielen codes als `proj-monument` weg; 10b/10d rood met de
   oude regex. PR-tekst over het restgeval rechtgezet (alleen browserbuild 25-09 t/m 13-10, niet v2026.9.0).
   Open vraag voor later (niet blokkerend): een duplicaat houdt dezelfde P6-`<Id>` (toets 9b).
+- **IFC-schemageldigheid klaar als #344** (`claude/ifc-schemageldig`, 0282f83c4, CI groen). Header `IFC4X3_ADD2`;
+  IfcOpenShell 0 fouten (ook `--rules`) op 8 voorbeelden en rijke/lege projecten; poort zonder Python
+  (`check-ifc-schema*`); lezer herkent oude en geldige indeling aan het aantal attributen; 45/45 oude bestanden
+  gelijk; 9 externe kalenders nu ma–vr 08–16 i.p.v. standaard; 21 mutanten rood; `measure:profiles` exit 0.
+  **Gevolg voor oudere OPS-versies (t/m v2026.9.0):** bij een nieuw bestand gaan feestdagen, afwijkende werkdagen,
+  werkende uitzonderingen en ploeg verloren (blijvend als ze opslaan). Wordt een besluit voor de eigenaar ná de
+  review. **Besluit orkestrator:** de terugvalweek uit #340 gaat uit de schrijver (oudere versies lezen
+  `WorkingTimes` niet meer, dus hij helpt niemand); review gestart (reviewer, Opus 5.5), inclusief combinatie met #343.
