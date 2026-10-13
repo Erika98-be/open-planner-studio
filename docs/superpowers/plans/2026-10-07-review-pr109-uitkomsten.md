@@ -403,3 +403,9 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   2026-10-13:** vóór de release oplossen. Het is dataverlies in iets wat al gebouwd is, en dus volgens de
   releaseregel van de eigenaar (2026-10-12) werk vóór de release. Expert (Opus 5.5) gestart op
   `claude/ifc-werktijd-per-dag`, met de IFC-eigen route uit B7 en meting van wat oudere versies lezen.
+- **Checkstap 8 (P6 XML, 12 projecten), bevinding eigenaar 2026-10-13:** "UI gaat raar doen als er een
+  scrollbar verschijnt, ik wil hier geen scrollbar maar pijltjes" (voorbeeld: `<  >` naast elkaar). De
+  tabstrook (`DocumentTabBar.tsx`, `.ops-tabstrip-viewport` met `overflow-x: auto`) toont bij overloop een
+  scrollbalk. Er stond al een ongebruikte CSS-regel `.ops-tabstrip-scroll-button` (d69e765a3, 2026-08-27);
+  er is geen eerder besluit tegen pijlen gevonden. Worker (Opus 5.5) gestart op `claude/tabstrook-pijlen`:
+  geen scrollbalk, pijlen alleen bij overloop, tussen tabbladen en "+", scrollwiel schuift horizontaal, RTL.
