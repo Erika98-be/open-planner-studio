@@ -1040,9 +1040,8 @@ const updateCalendar: BatchStepTool = {
     'are DERIVED from the bands as soon as you pass `workTime` (as the calendar dialog does); if you pass ' +
     'them anyway, `workDays` must not contradict the bands. KEEPING IN THE FILE (IFC): a newly created ' +
     'calendar to which NO task and no resource is attached does NOT survive save+reload — so attach tasks to ' +
-    'it right away with `update_tasks.calendarId`. Hour bands do survive IFC, but bands that DIFFER PER ' +
-    'WEEKDAY do not: the format carries one work-week pattern, so on reload all working days get the bands ' +
-    'of the first working day. A calendar in which tasks no longer fit (e.g. a long holiday block) gives no ' +
+    'it right away with `update_tasks.calendarId`. Hour bands survive IFC, also when they DIFFER PER ' +
+    'WEEKDAY (for example a short Friday). A calendar in which tasks no longer fit (e.g. a long holiday block) gives no ' +
     'error but a prominent warning with `cappedTaskIds`. If, on the other hand, NO working time at all is ' +
     'left (empty `workDays`, or `workTime` bands on no day at all), the recalculation fails and the whole ' +
     'call is rolled back — a half calendar never ends up in the document.',
