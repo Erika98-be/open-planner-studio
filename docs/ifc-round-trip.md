@@ -123,6 +123,8 @@ nieuw domeinveld dwingt twee expliciete keuzes af, allebei op de compiler.
 
 - **De fixtures zijn `satisfies Required<…>`.** Een nieuw veld op `Task`, `Resource`, `Sequence`,
   `WorkCalendar`, `Project` of `TaskTime` moet een waarde krijgen, anders compileert de test niet.
+  (`WorkCalendar` via een typegetuige: geen echte kalender draagt tegelijk een pauzepatroon en
+  `workTime`. `workTime` zelf loopt wél door de vergelijking, via de uurkalender `hourCal`.)
 - **De vergelijkingstabellen zijn `satisfies CanonSpec<X>`** — dat is `Record<keyof X, …>`, dus élk
   veld moet ook een expliciete cel krijgen in de vergelijking.
 
@@ -163,6 +165,51 @@ opnieuw berekent (`WRITTEN_PER_TASK_PSETS` in `ifcWriter.ts`); en `resource.avai
 `durationMinutes`/`remainingMinutes` zijn géén gap meer: ze doen gewoon mee in de vergelijking, en
 blok (3) bevestigt nog los dat ze exact terugkomen.
 
+## Kalenders: werkblokken per weekdag
+
+Een uurkalender (`workTime`) kan per weekdag andere blokken hebben, bijvoorbeeld een korte vrijdag
+(ma–do 07:00–15:00, vr 07:00–11:00). Tot bevinding B7 schreef de writer alleen de blokken van de
+eerste werkdag, en zette de reader die op elke werkdag. Zo staat het nu in het bestand:
+
+- **Eén `IfcWorkTime` per groep.** Weekdagen met dezelfde blokken vormen een groep. Elke groep krijgt
+  een eigen `IfcWorkTime` in `WorkingTimes`, met een eigen `IfcRecurrencePattern(.WEEKLY.)`
+  (WeekdayComponent + TimePeriods). Groepen overlappen niet. Dat is het model van IFC 4.3 zelf
+  (`IfcWorkCalendar`, figuur 1: ma–do 8:00–12:00 + 13:00–17:00, vr 8:00–14:00). De groepering staat in
+  `weekBandGroups` (`ifcWriter.ts`).
+- **Eén groep blijft byte-identiek.** Een uniforme week, een kalender zonder blokken en een scalaire
+  kalender met urentaak (die schrijft zijn afgeleide blokken, op elke werkdag dezelfde) geven
+  hetzelfde bestand als vóór B7.
+- **Een terugvalweek vooraan.** Bij meer groepen staat eerst een week met alle werkdagen en de blokken
+  van de eerste werkdag — de week die de writer vóór B7 schreef — met StartDate = FinishDate =
+  `1900-01-01`. Uitgebrachte versies (t/m v2026.9.0) lezen alleen de eerste `IfcWorkTime` en negeren
+  de datums. Zij zien zo precies wat ze vóór B7 zagen. Zonder terugvalweek zagen zij alleen de dagen
+  van de eerste groep als werkdag: een korte vrijdag werd daar een vrije dag (gemeten met de reader van
+  main 1e192b31a). De reader herkent de terugvalweek aan zijn datum. Er is bewust geen markering met een
+  STEP-id: een ander pakket mag de id's hernummeren, en dan wijst zo'n markering naar de verkeerde regel.
+- **De scalar staat altijd in `OPS_Calendar`.** Bij meer groepen schrijft de writer `WorkStartHour` en
+  `WorkEndHour` altijd: een oudere reader leidt ze af uit de terugvalweek, deze reader uit de eerste
+  werkdag met blokken.
+- **De reader** (`buildCalendarFromEntity`). Een `IfcWorkTime` met een StartDate of FinishDate doet niet
+  mee in de week. Datumgebonden werktijden (een zomer- en een winterweek, een losse werkzaterdag) leest
+  OPS dus (nog) niet; als gewone week zouden ze in elke week gelden. De terugvalweek valt hier ook onder.
+  OPS schreef vóór B7 nooit een datum in `WorkingTimes` (feestdagen en werkende uitzonderingen staan in
+  `ExceptionTimes`), dus oude OPS-bestanden lezen ongewijzigd. Twee of meer weekpatronen: elke dag
+  krijgt de tijdvakken van zijn eigen patroon; staat een dag in meer patronen, dan de vereniging;
+  `workDays` is de vereniging van alle patronen. De scalaire werkdag is de eerste werkdag met blokken
+  (zondag eerst, `firstBlockedDay`), afgeleid met `workDayFromBlocks` — dezelfde regel als de MSPDI- en
+  `.mpp`-lezer. Eén patroon: het oude pad, ongewijzigd.
+
+De bewaking staat in `tests/planning/check-ifc-werktijd-per-dag.ts` (round-trip per geval, de vorm van
+het bestand, wat een oudere versie leest, byte-identiek aan main, werktijden met een datum, hernummerde
+STEP-id's en een weggevallen `OPS_Calendar`) en in de uurkalender `hourCal` in de fixture van
+`check-ifc-roundtrip.ts`.
+
+**Externe bestanden.** OPS schrijft `IfcWorkCalendar` zonder `Identification` (van `IfcControl`): 8
+attributen, terwijl IFC4 en IFC 4.3 er 9 eisen. De reader leest dezelfde posities als de writer. Een
+kalender uit een bestand dat het schema volgt, bereikt de leestak hierboven daardoor nu niet: hij komt
+binnen zonder werktijden. Andersom kan een programma dat het schema volgt de kalender van OPS niet goed
+lezen. Dat is een aparte, nog open fout. Deze sectie zegt dus niets over interop met andere programma's.
+
 ## Wat dit niet dekt
 
 - **De CSV-, MS Project- en P6-adapters.** Dat zijn import/export-adapters, geen opslagformaat; ze
@@ -183,5 +230,6 @@ blok (3) bevestigt nog los dat ze exact terugkomen.
 | schrijven | `src/services/ifc/ifcWriter.ts` |
 | lezen | `src/services/ifc/ifcReader.ts` |
 | de poort, de fixture, de canon-tabellen en de `KNOWN_GAPS`-asserties (blok 3) | `tests/planning/check-ifc-roundtrip.ts` |
+| werkblokken per weekdag (B7): groepen, terugvalweek, byte-identiek aan main | `tests/planning/check-ifc-werktijd-per-dag.ts` |
 | welke velden een save meeschrijft | `src/state/ifcSaveInput.ts` |
 | wat een "document" ís (breder dan IFC) | `src/state/documentContract.ts` |
