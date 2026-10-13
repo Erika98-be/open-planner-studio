@@ -23,7 +23,7 @@
   padding: 0 6px; gap: 3px;
 }
 /* flex: none: de menuknop mag niet meekrimpen, anders klopt de meting van de vrije ruimte niet. */
-.ops-tabstrip-menu { align-self: center; width: 30px; height: 26px; margin-right: 2px; flex: none; }
+.ops-tabstrip-menu { align-self: center; width: 30px; height: 26px; margin-inline-end: 2px; flex: none; }
 .ops-tabstrip-viewport {
   /* Krimpt tot de inhoud: de "+" volgt direct na het laatste tabblad (zoals een browser). Bij overloop
      krimpt de viewport tot min-width 0 en blijft de "+" aan de eindrand zichtbaar; RTL spiegelt via flex.
@@ -46,7 +46,9 @@
 }
 .ops-tab {
   position: relative; display: flex; align-items: center; gap: 8px; flex: none;
-  width: 100%; padding: 0 32px 0 11px; min-width: 0; max-width: none; align-self: flex-end;
+  /* Logische padding en inset: in RTL staat het sluitkruisje aan de linkerkant van zijn eigen
+     tabblad, niet naast de naam van het buurtabblad. */
+  width: 100%; padding-block: 0; padding-inline: 11px 32px; min-width: 0; max-width: none; align-self: flex-end;
   height: 31px; border-radius: 7px 7px 0 0; border: 1px solid transparent;
   border-bottom: none; background: transparent; cursor: pointer; overflow: hidden; outline: none;
   font-family: var(--font-body);
@@ -65,7 +67,7 @@
 .ops-tab.active .ops-tab-name { font-weight: 600; color: var(--theme-text); }
 .ops-dirty-dot { width: 7px; height: 7px; border-radius: 9999px; flex: none; background: var(--theme-warning-text); }
 .ops-tab-close {
-  position: absolute; right: 7px; bottom: 6px; z-index: 1;
+  position: absolute; inset-inline-end: 7px; bottom: 6px; z-index: 1;
   width: 18px; height: 18px; flex: none; display: flex; align-items: center; justify-content: center;
   background: transparent; border: none; border-radius: 5px; cursor: pointer; color: var(--theme-text-muted);
 }
