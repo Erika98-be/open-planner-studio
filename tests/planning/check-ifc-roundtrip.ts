@@ -426,6 +426,8 @@ const project = {
     baseId: 'p6', id: 'prof-fixture', name: 'Fixtureprofiel',
     overrides: { clampNegativeFreeFloat: false, p6UseRemainingStartForProgress: true },
   },
+  // Issue #292: niet de standaard (IFC4X3), zodat de round-trip via FILE_SCHEMA iets bewijst.
+  ifcSchema: 'IFC4',
 } satisfies Required<Project> & { schedulingOptions: Required<ProjectSchedulingOptions> };
 
 // ── Baselines (round-trippen verliesloos via OPS_Baselines-JSON; taskId remapt via GlobalId) ──────
@@ -707,6 +709,8 @@ const PROJECT_CANON = {
   defaultWorkRule: KEEP, // taaktypes-etappe: OPS_ProjectSettings/DefaultWorkRule
   // B1.1: bedrijfsbinding round-trippt via OPS_CompanyBinding.
   companyId: KEEP, companyName: KEEP,
+  // Issue #292: het schema round-tript via de bestandskop (FILE_SCHEMA).
+  ifcSchema: KEEP,
 } satisfies CanonSpec<Project>;
 
 const BASELINE_TASK_CANON = {
