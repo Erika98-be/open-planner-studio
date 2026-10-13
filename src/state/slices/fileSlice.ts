@@ -33,7 +33,7 @@ import { unrecordedExportGate } from '../recordedDatesSelectors';
 import { buildWriteIFCInput, sameIFCSource } from '../ifcSaveInput';
 import { fileHasHourData } from '@/services/subdayIo';
 import { documentFileBase } from '@/utils/documents';
-import { xerProjectCode } from '@/utils/xerDocumentName';
+import { documentProjectCode } from '@/utils/documentProjectCode';
 import { refreshExternalAnchors, type ExternalSourceDoc } from '@/engine/externalLinks';
 import { normalizeExternalSourcePath } from '@/engine/taskGrid/relationFormat';
 import { expandSummaryRelations } from '@/engine/scheduler/expandSummaryRelations';
@@ -48,11 +48,11 @@ import { basename, ensureExtension } from '@/utils/filePath';
 import type { ScheduleErrorInfo } from '@/engine/scheduler/CPMSolver';
 
 /**
- * Voorgestelde bestandsnaambasis voor opslaan/exporteren: bij een XER-document "Projectnaam
- * (P6 Project-ID)", zodat tab en titelbalk na het opslaan dezelfde naam houden.
+ * Voorgestelde bestandsnaambasis voor opslaan/exporteren: bij een XER- of P6 XML-document
+ * "Projectnaam (P6 Project-ID)", zodat tab en titelbalk na het opslaan dezelfde naam houden.
  */
 export function suggestedFileBase(s: Pick<AppState, 'project' | 'xerImportMetadata'>): string {
-  return documentFileBase(s.project.name, xerProjectCode(s.xerImportMetadata));
+  return documentFileBase(s.project.name, documentProjectCode(s.project, s.xerImportMetadata));
 }
 
 /** Een vers, ongewijzigd, leeg document — dan mag de open-actie het hergebruiken
@@ -1164,6 +1164,8 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
             const written = writeP6XMLWithReport(
               state.project, state.calendar, state.tasks,
               state.sequences, state.resources, state.assignments, state.calendars, state.customTaskTypes,
+              // De XER-broncache: een XER-document krijgt zijn P6 Project-ID als `<Id>` (documentProjectCode).
+              state.xerImportMetadata,
             );
             payload = written.xml;
             p6Truncated = written.truncated;

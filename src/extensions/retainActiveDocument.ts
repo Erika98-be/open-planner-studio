@@ -6,6 +6,8 @@
  *
  * Wat het contract (`ExtImportResult`, contract 1.4.x) draagt en wat niet:
  *  - rekenprofiel: niet (alleen-lezen, B29) ⇒ van het document;
+ *  - P6 Project-ID van een P6 XML-import (`project.p6ProjectCode`): niet (niet publiek) ⇒ van het
+ *    document, zodat een export naar P6 het project na een lees-wijzig-laad nog herkent;
  *  - reken-opties: alleen de zes publieke (`PUBLIC_SCHEDULING_OPTION_KEYS`) ⇒ die volgen de extensie
  *    (ook weglaten), de rest komt van het document;
  *  - baselines en `activeBaselineId`: niet ⇒ van het document;
@@ -112,6 +114,7 @@ export function retainActiveDocument(loaded: ImportResult, active: ActiveDocumen
     calendarId,
     schedulingProfile: active.project.schedulingProfile,
     schedulingOptions: Object.keys(options).length > 0 ? options as ProjectSchedulingOptions : undefined,
+    ...(active.project.p6ProjectCode ? { p6ProjectCode: active.project.p6ProjectCode } : {}),
   };
 
   // Kalenders. Eerst gaat de kalender die de extensie meestuurt (`calendar`) de bibliotheek in, met de

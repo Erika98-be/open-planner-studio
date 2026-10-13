@@ -4,7 +4,7 @@ import { basename } from '@/utils/filePath';
 import { shownStart, shownFinish } from '@/utils/taskDates';
 import { parseInstant } from '@/utils/dateUtils';
 import { isLeafTask, isSummaryTask } from '@/utils/taskHierarchy';
-import { xerDocumentName } from '@/utils/xerDocumentName';
+import { nameWithProjectCode } from '@/utils/projectCodeName';
 import { maxOf, minOf } from '@/utils/collections';
 
 /**
@@ -40,17 +40,18 @@ export function documentCode(title: string): string {
   return (words[0][0] + words[1][0]).toUpperCase();
 }
 
-/** Afgeleide titel: bestandsnaam zonder extensie, anders de projectnaam. */
+/** Afgeleide titel: bestandsnaam zonder extensie, anders de projectnaam. `projectCode` is de P6
+ *  Project-ID van het document (`documentProjectCode`: XER of P6 XML). */
 export function documentTitle(
   filePath: string | null,
   projectName: string,
-  xerProjectCode?: string | null,
+  projectCode?: string | null,
 ): string {
   if (filePath) {
     return basename(filePath).replace(/\.[^.]+$/, '');
   }
-  // XER-import zonder opslagdoel: "Projectnaam (P6 Project-ID)" — zie `xerDocumentName`.
-  if (xerProjectCode) return xerDocumentName(projectName, xerProjectCode);
+  // P6-import (XER of P6 XML) zonder opslagdoel: "Projectnaam (P6 Project-ID)" — zie `nameWithProjectCode`.
+  if (projectCode) return nameWithProjectCode(projectName, projectCode);
   return projectName || '';
 }
 
@@ -73,12 +74,12 @@ export function projectFileBase(projectName: string): string {
 
 /**
  * Voorgestelde bestandsnaambasis bij opslaan/"Opslaan als"/exporteren: dezelfde naam als de tab en
- * de titelbalk vóór het opslaan. Bij een XER-document is dat "Projectnaam (P6 Project-ID)"
- * (`xerDocumentName`), zodat tab en titelbalk ná het opslaan — dan afgeleid van de bestandsnaam —
- * dezelfde naam houden. Zonder XER-code gelijk aan `projectFileBase(projectName)`.
+ * de titelbalk vóór het opslaan. Bij een XER- of P6 XML-document is dat "Projectnaam (P6 Project-ID)"
+ * (`nameWithProjectCode`), zodat tab en titelbalk ná het opslaan — dan afgeleid van de bestandsnaam —
+ * dezelfde naam houden. Zonder code gelijk aan `projectFileBase(projectName)`.
  */
-export function documentFileBase(projectName: string, xerProjectCode?: string | null): string {
-  return projectFileBase(xerProjectCode ? xerDocumentName(projectName, xerProjectCode) : projectName);
+export function documentFileBase(projectName: string, projectCode?: string | null): string {
+  return projectFileBase(projectCode ? nameWithProjectCode(projectName, projectCode) : projectName);
 }
 
 /**

@@ -419,6 +419,7 @@ const project = {
   defaultTaskDurationUnit: 'days',
   defaultWorkRule: 'FIXED_RATE', // taaktypes-etappe: OPS_ProjectSettings/DefaultWorkRule
   companyId: 'c-fixture', companyName: 'Fixture Bouw BV',
+  p6ProjectCode: 'OZB-14 1st Update', // P6 XML-projectcode: OPS_ProjectSettings/P6ProjectCode
   schedulingOptions: SCHED_OPTS,
   // Rekenprofiel (C2): een EIGEN profiel op p6-basis met twee afwijkingen (één uit, één per-bestand
   // aan) — onderscheidend van de default (afwezig ≡ ops) én van de kale p6-basis.
@@ -707,6 +708,7 @@ const PROJECT_CANON = {
   defaultWorkRule: KEEP, // taaktypes-etappe: OPS_ProjectSettings/DefaultWorkRule
   // B1.1: bedrijfsbinding round-trippt via OPS_CompanyBinding.
   companyId: KEEP, companyName: KEEP,
+  p6ProjectCode: KEEP, // P6 Project-ID los van de naam (eigen toetsen: check-p6xml-project-code)
 } satisfies CanonSpec<Project>;
 
 const BASELINE_TASK_CANON = {

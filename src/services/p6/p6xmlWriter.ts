@@ -11,6 +11,8 @@ import { holidayEndDate, WorkCalendar } from '@/types/calendar';
 import { exportCalendarLayout, minutesToClock, taskMinutesForWrite } from '@/services/subdayIo';
 import { effectiveWorkTimeBands } from '@/utils/effectiveWorkTime';
 import { projectFileBase } from '@/utils/documents';
+import { documentProjectCode } from '@/utils/documentProjectCode';
+import type { XerImportMetadata } from '@/services/importTypes';
 import { isLeafTask, isSummaryTask } from '@/utils/taskHierarchy';
 import { flattenOrder } from '@/utils/wbs';
 import type { CustomTaskType } from '@/types/taskType';
@@ -229,6 +231,10 @@ export function writeP6XML(...args: Parameters<typeof writeP6XMLWithReport>): st
 /**
  * Als `writeP6XML`, plus het aantal namen en codes dat tot de schemagrens is ingekort
  * (`renderP6XmlWithReport`; de exportmelding `exportP6TruncatedNotice` gebruikt dit getal).
+ *
+ * `xerImportMetadata`: de XER-broncache van het document, zodat een XER-document zijn P6 Project-ID
+ * (`proj_short_name`) als `<Id>` meekrijgt (`documentProjectCode`). Een P6 XML-document draagt zijn
+ * code zelf (`project.p6ProjectCode`).
  */
 export function writeP6XMLWithReport(
   project: Project,
@@ -239,6 +245,7 @@ export function writeP6XMLWithReport(
   assignments: ResourceAssignment[],
   resourceCalendars: WorkCalendar[] = [],
   customTaskTypes: readonly CustomTaskType[] = [],
+  xerImportMetadata: XerImportMetadata | null = null,
 ): { xml: string; truncated: number } {
   // Externe (cross-project) dependencies zijn in P6-XML niet uitdrukbaar buiten de
   // master/subproject-context ⇒ weggelaten (de ghost-weergave blijft in-app). Één warn.
@@ -651,7 +658,7 @@ export function writeP6XMLWithReport(
   // Project. Zelfde afweging als in mspdiWriter: een leeg <Name> gaf P6 een naamloos project, terwijl
   // de projectnaam in P6 juist een dragend, verplicht ingevuld veld is. Dezelfde neutrale,
   // taalonafhankelijke terugval als de bestandsnaam en de STEP-header.
-  const projectIdentity = p6ProjectIdentity(projectFileBase(project.name), project.id);
+  const projectIdentity = p6ProjectIdentity(project, documentProjectCode(project, xerImportMetadata));
   top.push(node('Project', [
     ...leaf('ActivityDefaultCalendarObjectId', 1),
     // Data date — P6's peildatum. Alleen wanneer gezet (golden rule).
@@ -673,20 +680,28 @@ export function writeP6XMLWithReport(
 }
 
 /**
- * Naam en `Id` van het P6-project. Een geïmporteerd P6-project heet "Naam (Id)" (zie
- * `nameWithProjectCode`); die code gaat terug naar `<Id>` en de naam zonder code naar `<Name>`, zodat
- * heropenen dezelfde naam geeft. Alleen een CODE splitst: tekst tussen haakjes zonder spatie, ≤ 40
- * tekens ("Kantoor (OZB-05)"). "Nieuwbouw (fase 2)" blijft de naam. Zonder code is het Id
- * `OPS:` + het interne project-id: uniek, ook als twee projecten dezelfde naam hebben. De lezer zet
- * zo'n Id niet achter de naam (`isOpsInternalProjectId`). Het voorvoegsel maakt hem herkenbaar,
- * ongeacht de vorm van het interne id (`proj-…`, een IFC-id, een test-id).
+ * Naam en `Id` van het P6-project. `<Name>` is altijd de projectnaam zoals hij in *Projectinfo* staat
+ * (met de neutrale terugval van `projectFileBase` voor een naamloos project); `<Id>` is de P6
+ * Project-ID van het document (`documentProjectCode`: een P6 XML- of XER-import), zodat P6 het
+ * project na hernoemen nog herkent (eigenaarsbesluit 2026-10-13).
+ *
+ * Zonder code is het Id `OPS:` + het interne project-id: uniek, ook als twee projecten dezelfde naam
+ * hebben. De lezer bewaart zo'n Id niet als code (`isOpsInternalProjectId`). Het voorvoegsel maakt hem
+ * herkenbaar, ongeacht de vorm van het interne id (`proj-…`, een IFC-id, een test-id).
+ *
+ * Bewust GEEN terugval die een code uit de naam haalt: die gokte bij elke naam die op "(…)" eindigt
+ * ("Renovatie (2027)" werd Id "2027"), en miste juist echte P6-codes met een spatie ("OZB-14 1st
+ * Update"). De code staat nu apart; de naam gaat ongewijzigd naar `<Name>`.
  */
-export function p6ProjectIdentity(displayName: string, internalId: string): { name: string; id: string } {
-  const match = / \(([^()\s]+)\)$/.exec(displayName);
-  if (match && match[1].length <= P6_ID_MAX_LENGTH && match.index > 0) {
-    return { name: displayName.slice(0, match.index), id: match[1] };
-  }
-  return { name: displayName, id: `${OPS_INTERNAL_PROJECT_ID_PREFIX}${internalId}`.slice(0, P6_ID_MAX_LENGTH) };
+export function p6ProjectIdentity(
+  project: Pick<Project, 'id' | 'name'>,
+  code: string | null | undefined,
+): { name: string; id: string } {
+  const id = (code ?? '').trim();
+  return {
+    name: projectFileBase(project.name),
+    id: id || `${OPS_INTERNAL_PROJECT_ID_PREFIX}${project.id}`.slice(0, P6_ID_MAX_LENGTH),
+  };
 }
 
 const OPS_INTERNAL_PROJECT_ID_PREFIX = 'OPS:';

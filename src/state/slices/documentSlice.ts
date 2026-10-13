@@ -13,7 +13,7 @@ import {
 } from '../documentContract';
 import { HOST_EVENTS } from '@/services/extensionEvents';
 import { documentTitle, untitledOrdinals } from '@/utils/documents';
-import { xerProjectCode } from '@/utils/xerDocumentName';
+import { documentProjectCode } from '@/utils/documentProjectCode';
 import { solveProject, cloneTasksForSolve } from '@/engine/scheduler/solveProject';
 import { solveInputFor } from '@/engine/scheduler/solveInput';
 import type { XerImportMetadata, XerResourceMetadata } from '@/services/importTypes';
@@ -198,8 +198,8 @@ export interface DocumentSlice {
  * (geen hardgecodeerde tekst). De weergaveplekken vullen de
  * vertaalde `common:project.untitled` in.
  */
-function docTitle(filePath: string | null, project: Project, xerCode?: string | null): string {
-  return documentTitle(filePath, project.name, xerCode);
+function docTitle(filePath: string | null, project: Project, projectCode?: string | null): string {
+  return documentTitle(filePath, project.name, projectCode);
 }
 
 /** Diepe JSON-kloon (de projectdata is JSON-veilig). */
@@ -565,7 +565,7 @@ export const createDocumentSlice: AppSliceFactory<DocumentSlice> = (runtime) => 
       const project = active ? s.project : d.payload!.project;
       const isDirty = active ? s.isDirty : d.payload!.isDirty;
       const xerMeta = active ? s.xerImportMetadata : d.payload!.xerImportMetadata;
-      return { id: d.id, title: docTitle(filePath, project, xerProjectCode(xerMeta)), isDirty, isActive: active };
+      return { id: d.id, title: docTitle(filePath, project, documentProjectCode(project, xerMeta)), isDirty, isActive: active };
     });
     // Naamloze documenten krijgen een volgnummer mee, zodat twee lege tabbladen (bv. na
     // `duplicateDocument` van een naamloos project) onderscheidbaar blijven zónder dat er een

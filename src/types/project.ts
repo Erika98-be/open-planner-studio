@@ -534,6 +534,12 @@ export interface Project {
    *  naam toont zonder de pool. */
   companyId?: string;
   companyName?: string;
+  /** P6 Project-ID uit een P6 XML-import (`<Project><Id>`), los van `name` bewaard (eigenaarsbesluit
+   *  2026-10-13): hernoemen houdt de code. De weergave is "Naam (code)" (`documentProjectCode` +
+   *  `nameWithProjectCode`); de P6 XML-writer schrijft hem terug als `<Id>`, zodat P6 het project
+   *  herkent. Afwezig ⇒ geen P6-code. Een XER-document draagt zijn code in de broncache
+   *  (`xerProjectCode`), niet hier. Round-tript via `OPS_ProjectSettings` (`P6ProjectCode`). */
+  p6ProjectCode?: string;
 }
 
 export interface ProjectStats {
