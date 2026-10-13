@@ -1,0 +1,240 @@
+{
+ "_uitleg": "Geschreven door main (55461d2b2, vóór fix werkdag-einde): MSPDI met MS Project-standaardkalender (08–12 + 13–17), kalender naar de resourcebibliotheek gepromoveerd. Pool en bestand dragen de oude scalar 8/12.",
+ "pool": {
+  "companyId": "company-mv5ydregeyzf8",
+  "companyName": "Bouwbedrijf",
+  "poolVersion": 1,
+  "modifiedAt": "2026-10-13T00:39:02.394Z",
+  "calendars": [
+   {
+    "id": "cal-mv5ydreh66dh9",
+    "name": "Standard",
+    "description": "Standaard bouwkalender: ma-vr 07:00-16:00",
+    "workDays": [
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "workStartHour": 8,
+    "workEndHour": 12,
+    "hoursPerDay": 8,
+    "holidays": [
+     {
+      "name": "Nieuwjaar",
+      "startDate": "2025-01-01",
+      "endDate": "2025-01-01"
+     },
+     {
+      "name": "Goede Vrijdag",
+      "startDate": "2025-04-18",
+      "endDate": "2025-04-18"
+     },
+     {
+      "name": "Pasen",
+      "startDate": "2025-04-20",
+      "endDate": "2025-04-21"
+     },
+     {
+      "name": "Koningsdag",
+      "startDate": "2025-04-26",
+      "endDate": "2025-04-26"
+     },
+     {
+      "name": "Bevrijdingsdag",
+      "startDate": "2025-05-05",
+      "endDate": "2025-05-05"
+     },
+     {
+      "name": "Hemelvaart",
+      "startDate": "2025-05-29",
+      "endDate": "2025-05-29"
+     },
+     {
+      "name": "Pinksteren",
+      "startDate": "2025-06-08",
+      "endDate": "2025-06-09"
+     },
+     {
+      "name": "Kerst",
+      "startDate": "2025-12-25",
+      "endDate": "2025-12-26"
+     },
+     {
+      "name": "Nieuwjaar",
+      "startDate": "2026-01-01",
+      "endDate": "2026-01-01"
+     },
+     {
+      "name": "Goede Vrijdag",
+      "startDate": "2026-04-03",
+      "endDate": "2026-04-03"
+     },
+     {
+      "name": "Pasen",
+      "startDate": "2026-04-05",
+      "endDate": "2026-04-06"
+     },
+     {
+      "name": "Koningsdag",
+      "startDate": "2026-04-27",
+      "endDate": "2026-04-27"
+     },
+     {
+      "name": "Hemelvaart",
+      "startDate": "2026-05-14",
+      "endDate": "2026-05-14"
+     },
+     {
+      "name": "Pinksteren",
+      "startDate": "2026-05-24",
+      "endDate": "2026-05-25"
+     },
+     {
+      "name": "Kerst",
+      "startDate": "2026-12-25",
+      "endDate": "2026-12-26"
+     },
+     {
+      "name": "Nieuwjaar",
+      "startDate": "2027-01-01",
+      "endDate": "2027-01-01"
+     },
+     {
+      "name": "Goede Vrijdag",
+      "startDate": "2027-03-26",
+      "endDate": "2027-03-26"
+     },
+     {
+      "name": "Pasen",
+      "startDate": "2027-03-28",
+      "endDate": "2027-03-29"
+     },
+     {
+      "name": "Koningsdag",
+      "startDate": "2027-04-27",
+      "endDate": "2027-04-27"
+     },
+     {
+      "name": "Hemelvaart",
+      "startDate": "2027-05-06",
+      "endDate": "2027-05-06"
+     },
+     {
+      "name": "Pinksteren",
+      "startDate": "2027-05-16",
+      "endDate": "2027-05-17"
+     },
+     {
+      "name": "Kerst",
+      "startDate": "2027-12-25",
+      "endDate": "2027-12-26"
+     },
+     {
+      "name": "Nieuwjaar",
+      "startDate": "2028-01-01",
+      "endDate": "2028-01-01"
+     },
+     {
+      "name": "Goede Vrijdag",
+      "startDate": "2028-04-14",
+      "endDate": "2028-04-14"
+     },
+     {
+      "name": "Pasen",
+      "startDate": "2028-04-16",
+      "endDate": "2028-04-17"
+     },
+     {
+      "name": "Koningsdag",
+      "startDate": "2028-04-27",
+      "endDate": "2028-04-27"
+     },
+     {
+      "name": "Hemelvaart",
+      "startDate": "2028-05-25",
+      "endDate": "2028-05-25"
+     },
+     {
+      "name": "Pinksteren",
+      "startDate": "2028-06-04",
+      "endDate": "2028-06-05"
+     },
+     {
+      "name": "Kerst",
+      "startDate": "2028-12-25",
+      "endDate": "2028-12-26"
+     }
+    ],
+    "workTime": {
+     "byWeekday": {
+      "1": [
+       {
+        "start": 480,
+        "end": 720
+       },
+       {
+        "start": 780,
+        "end": 1020
+       }
+      ],
+      "2": [
+       {
+        "start": 480,
+        "end": 720
+       },
+       {
+        "start": 780,
+        "end": 1020
+       }
+      ],
+      "3": [
+       {
+        "start": 480,
+        "end": 720
+       },
+       {
+        "start": 780,
+        "end": 1020
+       }
+      ],
+      "4": [
+       {
+        "start": 480,
+        "end": 720
+       },
+       {
+        "start": 780,
+        "end": 1020
+       }
+      ],
+      "5": [
+       {
+        "start": 480,
+        "end": 720
+       },
+       {
+        "start": 780,
+        "end": 1020
+       }
+      ],
+      "6": [],
+      "7": []
+     }
+    }
+   }
+  ],
+  "resources": []
+ },
+ "companies": [
+  {
+   "id": "company-default",
+   "name": "Mijn resourcebibliotheek"
+  },
+  {
+   "id": "company-mv5ydregeyzf8",
+   "name": "Bouwbedrijf"
+  }
+ ]
+}
