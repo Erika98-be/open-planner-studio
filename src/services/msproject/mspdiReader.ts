@@ -43,8 +43,8 @@ import {
 // uit de MPP-kalendermodule: dat zou de hele MPP-parser de main-chunk in trekken
 // (`tests/planning/check-mpp-chunk-boundary.ts`).
 import {
-  buildContributions, resolveContributions, newHolidayBudget, RECURRENCE_TYPES, RELATIVE_MAP,
-  MAX_CALENDAR_EXCEPTIONS,
+  buildContributions, resolveContributions, mergeInherited, newHolidayBudget, RECURRENCE_TYPES, RELATIVE_MAP,
+  MAX_CALENDAR_EXCEPTIONS, MAX_BASE_CHAIN_DEPTH,
 } from '@/services/calendarRecurrence';
 import type { RecurrenceSpec, RawException, HolidayBudget } from '@/services/calendarRecurrence';
 import { CalendarEngine } from '@/engine/scheduler/CalendarEngine';
@@ -240,33 +240,8 @@ export function readMSPDI(content: string): ImportResult {
   // Eén gedeeld `HolidayBudget` over ALLE kalenders in dit document (projectkalender + elke
   // resourcekalender) — zie `applyCalendarBody`.
   const holidayBudget = newHolidayBudget();
-  const calendar = parseCalendar(root, holidayBudget);
+  const { calendar, resourceCalendars, calUidToId } = readCalendars(root, holidayBudget);
   const hoursPerDay = calendar.hoursPerDay;
-
-  // Resourcekalenders: elk <Calendar>-element in <Calendars> behalve UID 1 (de projectkalender,
-  // altijd als eerste geschreven/gelezen — zelfde aanname als parseCalendar).
-  const calendarsRoot = root.getElementsByTagName('Calendars')[0];
-  const calUidToId = new Map<number, string>();
-  const resourceCalendars: WorkCalendar[] = [];
-  if (calendarsRoot) {
-    const calElements = calendarsRoot.getElementsByTagName('Calendar');
-    // MAX_MSPDI_CALENDARS begrenst het AANTAL gematerialiseerde kalenderobjecten.
-    for (let i = 0; i < calElements.length && resourceCalendars.length < MAX_MSPDI_CALENDARS; i++) {
-      const calEl = calElements[i];
-      if (calEl.parentElement !== calendarsRoot) continue;
-      const uid = getElementInt(calEl, 'UID', -1);
-      if (uid <= 1) continue; // UID 1 = projectkalender, al gelezen door parseCalendar
-      const cal = createDefaultCalendar();
-      cal.id = generateId('rescal');
-      cal.name = getElementText(calEl, 'Name') || cal.name;
-      // Werkweek/uren/feestdagen ook voor bibliotheekkalenders teruglezen. MSPDI kent geen
-      // regelset-herkomst — generation blijft altijd undefined.
-      applyCalendarBody(calEl, cal, holidayBudget);
-      delete cal.generation;
-      calUidToId.set(uid, cal.id);
-      resourceCalendars.push(cal);
-    }
-  }
 
   // Resources
   const resourcesRoot = root.getElementsByTagName('Resources')[0];
@@ -323,17 +298,17 @@ export function readMSPDI(content: string): ImportResult {
   const baselineEntries: BaselineTask[] = [];
 
   // Uur-modus-beslissing per kalender (discriminator a/b/c) vóór het bouwen van de taken.
-  // `effCalIdOfUid` geeft per taak de effectieve kalender-id (CalendarUID 1/ontbrekend =
+  // `effCalIdOfUid` geeft per taak de effectieve kalender-id (de projectkalender, -1 of ontbrekend =
   // projectkalender). `taskHourById` voedt de lag-eenheid-keuze verderop.
   const calById = new Map<string, WorkCalendar>([calendar, ...resourceCalendars].map(c => [c.id, c]));
-  const effCalIdOfUid = (calUid: number): string => (calUid > 1 && calUidToId.get(calUid)) || calendar.id;
+  const effCalIdOfUid = (calUid: number): string => calUidToId.get(calUid) ?? calendar.id;
   const taskHourById = new Map<string, boolean>();
 
   const cSignalCalIds = new Set<string>();
   for (let i = 0; i < taskElements.length; i++) {
     const te = taskElements[i];
     if (te.parentElement?.tagName !== 'Tasks') continue;
-    const calId = effCalIdOfUid(getElementInt(te, 'CalendarUID', 1));
+    const calId = effCalIdOfUid(getElementInt(te, 'CalendarUID', -1));
     const cal = calById.get(calId);
     if (!cal) continue;
     const durMin = mspDurationMinutes(getElementText(te, 'Duration'));
@@ -364,10 +339,10 @@ export function readMSPDI(content: string): ImportResult {
     const name = getElementText(te, 'Name') || 'Task';
     const wbs = getElementText(te, 'WBS') || `${uid}`;
     uidToWbs.set(uid, wbs);
-    // Taakkalender: effectieve <CalendarUID> → task.calendarId. UID 1 (of ontbrekend) =
-    // projectkalender ⇒ undefined.
-    const taskCalUid = getElementInt(te, 'CalendarUID', 1);
-    const taskCalendarId = taskCalUid > 1 ? calUidToId.get(taskCalUid) : undefined;
+    // Taakkalender: effectieve <CalendarUID> → task.calendarId. De projectkalender (of -1/ontbrekend)
+    // staat niet in `calUidToId` ⇒ undefined.
+    const taskCalUid = getElementInt(te, 'CalendarUID', -1);
+    const taskCalendarId = calUidToId.get(taskCalUid);
     // Uur- vs dag-modus voor deze taak.
     const effCalId = effCalIdOfUid(taskCalUid);
     const isHour = hourModeCalIds.has(effCalId);
@@ -843,6 +818,32 @@ function readMspdiRecurringData(exc: Element, fromDate: Date, toDate: Date | nul
   return { type, relative, startDate: fromDate, finishDate: toDate, occurrences, frequency, weeklyDayMask, dayNumber, dayOfWeekValue, monthNumber };
 }
 
+/** De banden (minuten) van een `<WorkingTimes><WorkingTime>`-lijst die DIRECT onder `parent` staat,
+ *  plus de tekst van het eerste `<WorkingTime>` (voor de scalaire uren van een weekdag). Gedeeld door
+ *  de werkweek, `<Exception>` en de oude `DayType 0`-vorm. */
+function readWorkingTimes(parent: Element): { bands: { start: number; end: number }[]; first?: { from: string; to: string } } {
+  const bands: { start: number; end: number }[] = [];
+  let first: { from: string; to: string } | undefined;
+  const roots = parent.getElementsByTagName('WorkingTimes');
+  for (let r = 0; r < roots.length; r++) {
+    const timesRoot = roots[r];
+    if (timesRoot.parentElement !== parent) continue;
+    const workingTimeEls = timesRoot.getElementsByTagName('WorkingTime');
+    for (let k = 0; k < workingTimeEls.length; k++) {
+      const wt = workingTimeEls[k];
+      if (wt.parentElement !== timesRoot) continue;
+      const fromText = getElementText(wt, 'FromTime');
+      const toText = getElementText(wt, 'ToTime');
+      if (!first) first = { from: fromText, to: toText };
+      const st = clockToMinutes(fromText);
+      const en = clockToMinutes(toText);
+      if (st != null && en != null) bands.push({ start: st, end: en });
+    }
+    break;
+  }
+  return { bands, first };
+}
+
 /** Leest alle `<Exception>`-elementen van één `<Calendar>` in RUWE vorm — geklemd op
  *  `MAX_CALENDAR_EXCEPTIONS` (gedeeld met de MPP-kant via `@/services/calendarRecurrence`). Spiegelt
  *  MSPDIReader.readException's guard: een record zonder BEIDE FromDate/ToDate wordt overgeslagen
@@ -855,7 +856,7 @@ function readMspdiRecurringData(exc: Element, fromDate: Date, toDate: Date | nul
  *  signaleren (zie de fallbackketen van `WorkingException` in `types/calendar.ts`), anders `0`. */
 function readRawMspdiExceptions(calEl: Element): RawException[] {
   const exceptionsRoot = calEl.getElementsByTagName('Exceptions')[0];
-  if (!exceptionsRoot) return [];
+  if (!exceptionsRoot) return readLegacyDayExceptions(calEl);
   const exceptionEls = exceptionsRoot.getElementsByTagName('Exception');
   const out: RawException[] = [];
   const limit = Math.min(exceptionEls.length, MAX_CALENDAR_EXCEPTIONS); // zie MAX_CALENDAR_EXCEPTIONS (calendarRecurrence.ts)
@@ -876,20 +877,7 @@ function readRawMspdiExceptions(calEl: Element): RawException[] {
     const dayWorking = getElementInt(exc, 'DayWorking', 0) === 1;
     const name = getElementText(exc, 'Name');
 
-    const bands: { start: number; end: number }[] = [];
-    if (dayWorking) {
-      const timesRoot = exc.getElementsByTagName('WorkingTimes')[0];
-      if (timesRoot) {
-        const workingTimeEls = timesRoot.getElementsByTagName('WorkingTime');
-        for (let k = 0; k < workingTimeEls.length; k++) {
-          const wt = workingTimeEls[k];
-          if (wt.parentElement !== timesRoot) continue;
-          const s = clockToMinutes(getElementText(wt, 'FromTime'));
-          const e = clockToMinutes(getElementText(wt, 'ToTime'));
-          if (s != null && e != null) bands.push({ start: s, end: e });
-        }
-      }
-    }
+    const bands = dayWorking ? readWorkingTimes(exc).bands : [];
 
     const recurring = readMspdiRecurringData(exc, fromDate, toDate);
     if (!recurring && !toDate) continue; // niet-recurrent bereik zonder einddatum: geen bruikbaar bereik
@@ -897,58 +885,74 @@ function readRawMspdiExceptions(calEl: Element): RawException[] {
     const periodCount = dayWorking ? Math.max(bands.length, 1) : 0;
     out.push({ fromDate, toDate, periodCount, bands, name, recurring });
   }
+  return out.length > 0 ? out : readLegacyDayExceptions(calEl);
+}
+
+/** Uitzonderingen in het oude MSPDI-formaat (Project 2003 en ouder): een `<WeekDays><WeekDay>` met
+ *  `DayType` 0 en een `<TimePeriod>`. Alleen gelezen als de kalender geen `<Exception>` oplevert,
+ *  zoals MPXJ `MSPDIReader.readDay`/`readExceptionDay` (`readExceptionsFromDays`). Net als daar is
+ *  zo'n dag werkend als hij `<WorkingTimes>` met banden heeft, anders vrij. Geen naam in dit formaat. */
+function readLegacyDayExceptions(calEl: Element): RawException[] {
+  const weekDays = calEl.getElementsByTagName('WeekDay');
+  const out: RawException[] = [];
+  for (let i = 0; i < weekDays.length && out.length < MAX_CALENDAR_EXCEPTIONS; i++) {
+    const wd = weekDays[i];
+    if (wd.parentElement?.tagName !== 'WeekDays' || wd.parentElement.parentElement !== calEl) continue;
+    if (getElementInt(wd, 'DayType', -1) !== 0) continue;
+    const timePeriod = wd.getElementsByTagName('TimePeriod')[0];
+    if (!timePeriod) continue;
+    const fromDateRaw = getElementText(timePeriod, 'FromDate');
+    const toDateRaw = getElementText(timePeriod, 'ToDate');
+    if (!fromDateRaw || !toDateRaw) continue;
+    const { bands } = readWorkingTimes(wd);
+    out.push({
+      fromDate: parseDate(parseMSPDate(fromDateRaw)),
+      toDate: parseDate(parseMSPDate(toDateRaw)),
+      periodCount: bands.length,
+      bands,
+      name: '',
+      recurring: null,
+    });
+  }
   return out;
 }
 
 /**
  * Werkdagen/uren/feestdagen uit een `<Calendar>`-element in `calendar` toepassen (spiegel van
- * `writeCalendarBlock`) — gedeeld tussen de projectkalender (`parseCalendar`) en elke
- * bibliotheekkalender. Golden rule: ontbrekende WeekDay/WorkingTime/Exception-elementen laten de
- * `createDefaultCalendar()`-defaults ongemoeid.
+ * `writeCalendarBlock`) — gedeeld tussen de projectkalender en elke bibliotheekkalender
+ * (`readCalendars`). `week` is de effectieve werkweek (`effectiveWeek`). Ontbrekende WeekDay/WorkingTime-elementen laten de werkweek en uren van
+ * `createDefaultCalendar()` ongemoeid. De feestdagen volgen de regel onderaan (basis, eigen
+ * uitzonderingen, eigen werkweek ⇒ leeg, alleen een kale kalender houdt de NL-standaard).
  *
  * `budget` is één gedeeld `HolidayBudget` over ALLE kalenders in één `readMSPDI`-aanroep (zoals
  * `MAX_TOTAL_HOLIDAY_SLOTS` in mppCalendars.ts): anders kunnen N kalenders elk binnen
  * `MAX_CALENDAR_EXCEPTIONS` blijven maar samen een onbegrensde materialisatie forceren.
  */
-function applyCalendarBody(calEl: Element, calendar: WorkCalendar, budget: HolidayBudget): void {
-  // Parse work days from WeekDay elements
-  const weekDays = calEl.getElementsByTagName('WeekDay');
+function applyCalendarBody(
+  calEl: Element, calendar: WorkCalendar, budget: HolidayBudget,
+  inherit: { declared: boolean; base: WorkCalendar | null }, week: WeekEntry[] | null,
+): void {
   const workDays: number[] = [];
   // ALLE <WorkingTime>-banden per weekdag lezen → rauwe banden voor de uur-modus-beslissing.
   const rawByWeekday: Partial<Record<1 | 2 | 3 | 4 | 5 | 6 | 7, { start: number; end: number }[]>> = {};
 
-  // Eerste werkdag van de standaardwerkweek (voor de scalaire uren hieronder): het eerste
-  // `WorkingTime`-element (één blok: de oude afleiding) en de leesbare blokken (meer blokken).
-  let firstWorkingTime: Element | undefined;
+  // Eerste werkdag van de standaardwerkweek (voor de scalaire uren hieronder): de tijden van het
+  // eerste `WorkingTime`-element (één blok: de oude afleiding) en de leesbare blokken (meer blokken).
+  let firstWorkingTime: { from: string; to: string } | undefined;
   let firstDayBands: { start: number; end: number }[] | undefined;
 
-  for (let i = 0; i < weekDays.length; i++) {
-    const wd = weekDays[i];
-    // Alleen de STANDAARDwerkweek: `<Calendar><WeekDays><WeekDay>`. Een tijdelijke werkweek
-    // (`<WorkWeeks><WorkWeek><WeekDays><WeekDay>`, bv. een zomerrooster met zaterdag) heeft óók een
-    // `WeekDays`-ouder; zonder de grootouder-check werden die dagen permanente werkdagen van het hele
-    // jaar en kromp de planning stil.
-    if (wd.parentElement?.tagName !== 'WeekDays' || wd.parentElement.parentElement !== calEl) continue;
-
-    const dayType = getElementInt(wd, 'DayType');
-    const dayWorking = getElementInt(wd, 'DayWorking');
-
-    if (dayWorking === 1 && dayType >= 1 && dayType <= 7) {
-      // Convert MSP day (1=Sun, 2=Mon, ..., 7=Sat) to ISO (1=Mon, ..., 7=Sun)
-      const isoDay = dayType === 1 ? 7 : dayType - 1;
-      workDays.push(isoDay);
-      const wts = wd.getElementsByTagName('WorkingTime');
-      const dayBands: { start: number; end: number }[] = [];
-      for (let k = 0; k < wts.length; k++) {
-        const s = clockToMinutes(getElementText(wts[k], 'FromTime'));
-        const e = clockToMinutes(getElementText(wts[k], 'ToTime'));
-        if (s != null && e != null) dayBands.push({ start: s, end: e });
-      }
-      if (dayBands.length > 0) rawByWeekday[isoDay as 1] = dayBands;
-      if (!firstWorkingTime && wts.length > 0) {
-        firstWorkingTime = wts[0];
-        firstDayBands = dayBands;
-      }
+  // `week` is de effectieve standaardwerkweek (eigen dagen, en bij een afgeleide kalender de rest van
+  // de basis — `effectiveWeek`). `null` ⇒ geen werkweek bekend: de werkweek en uren van
+  // `createDefaultCalendar()` blijven staan.
+  for (const day of week ?? []) {
+    if (!day.working) continue;
+    // Convert MSP day (1=Sun, 2=Mon, ..., 7=Sat) to ISO (1=Mon, ..., 7=Sun)
+    const isoDay = day.dayType === 1 ? 7 : day.dayType - 1;
+    workDays.push(isoDay);
+    if (day.bands.length > 0) rawByWeekday[isoDay as 1] = day.bands;
+    if (!firstWorkingTime && day.firstTime) {
+      firstWorkingTime = day.firstTime;
+      firstDayBands = day.bands;
     }
   }
 
@@ -971,8 +975,8 @@ function applyCalendarBody(calEl: Element, calendar: WorkCalendar, budget: Holid
     calendar.workEndHour = blocked.endHour;
     calendar.hoursPerDay = deriveHoursPerDay(bands, blocked.netHours);
   } else if (firstWorkingTime) {
-    const fromTime = getElementText(firstWorkingTime, 'FromTime');
-    const toTime = getElementText(firstWorkingTime, 'ToTime');
+    const fromTime = firstWorkingTime.from;
+    const toTime = firstWorkingTime.to;
     if (fromTime) {
       const h = parseInt(fromTime.split(':')[0]);
       if (!isNaN(h)) calendar.workStartHour = h;
@@ -990,41 +994,189 @@ function applyCalendarBody(calEl: Element, calendar: WorkCalendar, budget: Holid
   registerCalendarBands(calendar, { canonical: bands, deviates });
 
   // Uitzonderingen (holidays + werkende uitzonderingen + recurrente expansie) via
-  // `buildContributions` + `resolveContributions`. Golden rule: 0 `<Exception>`-elementen ⇒
-  // `createDefaultCalendar()`'s NL-feestdagen-default blijft ongemoeid. De beslissing hangt daarom
-  // af van `rawExceptions.length` (zag het bestand echte uitzonderingsdata), niet van de resolved
-  // lengte (die kan 0 zijn bij een kalender met uitsluitend werkende uitzonderingen).
+  // `buildContributions` + `resolveContributions`. Welke feestdagen een kalender krijgt:
+  //  1. Afgeleide kalender met een gevonden basis: de uitzonderingen van de basis, met de eigen
+  //     eroverheen (eigen wint per datum) — zoals MS Project. Altijd via `mergeInherited` onder het
+  //     gedeelde budget, zoals `.mpp`: ook een "lege" afgeleide kalender telt mee in
+  //     `MAX_TOTAL_HOLIDAY_SLOTS` (anders: N afgeleide kalenders × een grote basis zonder grens).
+  //  2. Een basis-UID die niet bestaat (`0` in Project 2013+, `-65533`, onbekend) maakt de kalender
+  //     een wortel: zijn eigen week en uitzonderingen (regels 3–4). Zit hij in een cyclus of ligt hij te
+  //     diep: idem, zonder overerving. In geen van beide een NL-terugval: zoals `.mpp` (besluit
+  //     orkestrator 2026-10-13, review #335) — "kaal" betekent "geen basis genoemd".
+  //  3. Eigen uitzonderingen: precies die. De beslissing hangt af van het AANTAL ruwe records, niet
+  //     van de resolved lengte (die is 0 bij een kalender met alleen werkende uitzonderingen).
+  //  4. Eigen werkweek zonder uitzonderingen: een volledige MS Project-kalender ⇒ GEEN feestdagen.
+  //     Zelfde regel als de P6 XML-lezer; `.mpp` begint altijd leeg.
+  //  5. Kale kalender (`<BaseCalendarUID>` -1 of ontbrekend, geen werkweek, geen uitzonderingen): de
+  //     NL-standaard van `createDefaultCalendar()` blijft staan.
   const rawExceptions = readRawMspdiExceptions(calEl);
-  if (rawExceptions.length > 0) {
-    const contributions = buildContributions(rawExceptions, budget);
-    const { holidays, workingExceptions } = resolveContributions(contributions, budget);
-    calendar.holidays = holidays;
+  let parsed: { holidays: WorkCalendar['holidays']; workingExceptions: NonNullable<WorkCalendar['workingExceptions']> } | null = null;
+  if (inherit.base) {
+    parsed = mergeInherited(
+      { holidays: inherit.base.holidays, workingExceptions: inherit.base.workingExceptions ?? [] },
+      buildContributions(rawExceptions, budget), budget);
+  } else if (inherit.declared || rawExceptions.length > 0) {
+    parsed = resolveContributions(buildContributions(rawExceptions, budget), budget);
+  } else if (week !== null) {
+    parsed = { holidays: [], workingExceptions: [] };
+  }
+  if (parsed) {
+    calendar.holidays = parsed.holidays;
     // `workingExceptions` blijft AFWEZIG (niet `[]`) wanneer leeg, zoals in mppCalendars.ts.
-    if (workingExceptions.length > 0) calendar.workingExceptions = workingExceptions;
+    if (parsed.workingExceptions.length > 0) calendar.workingExceptions = parsed.workingExceptions;
     else delete calendar.workingExceptions;
   }
 }
 
-function parseCalendar(root: Element, budget: HolidayBudget): WorkCalendar {
-  const calElements = root.getElementsByTagName('Calendar');
-  if (calElements.length === 0) return createDefaultCalendar();
+/** Eén dag van de standaardwerkweek (`<WeekDays><WeekDay>` met `DayType` 1–7). */
+interface WeekEntry {
+  /** MSP-dagcode: 1 = zondag … 7 = zaterdag. */
+  dayType: number;
+  working: boolean;
+  bands: { start: number; end: number }[];
+  /** Tekst van het eerste `<WorkingTime>` (voor de scalaire uren); afwezig zonder werktijden. */
+  firstTime?: { from: string; to: string };
+}
 
-  const cal = calElements[0];
-  const calName = getElementText(cal, 'Name') || 'Imported Calendar';
-  const calendar = createDefaultCalendar();
-  calendar.name = calName;
-  // MSPDI kent geen regelset-herkomst — createDefaultCalendar() zet 'm altijd (nieuwe projecten zijn
-  // per definitie gegenereerd); een uit MSPDI gelezen kalender is dat niet.
-  delete calendar.generation;
-
-  applyCalendarBody(cal, calendar, budget);
-
-  // Parse minutes per day from project level — authoritatief, overschrijft de
-  // WorkingTime-afgeleide waarde uit applyCalendarBody.
-  const minutesPerDay = getElementInt(root, 'MinutesPerDay');
-  if (minutesPerDay > 0) {
-    calendar.hoursPerDay = minutesPerDay / 60;
+/** De EIGEN standaardwerkweek van een `<Calendar>`, in documentvolgorde. Alleen
+ *  `<Calendar><WeekDays><WeekDay>`: een tijdelijke werkweek (`<WorkWeeks><WorkWeek><WeekDays>`, bv. een
+ *  zomerrooster met zaterdag) heeft óók een `WeekDays`-ouder; zonder de grootouder-check werden die
+ *  dagen permanente werkdagen van het hele jaar. `DayType` 0 is een uitzondering (oude vorm). */
+function readOwnWeek(calEl: Element): WeekEntry[] {
+  const weekDays = calEl.getElementsByTagName('WeekDay');
+  const out: WeekEntry[] = [];
+  for (let i = 0; i < weekDays.length; i++) {
+    const wd = weekDays[i];
+    if (wd.parentElement?.tagName !== 'WeekDays' || wd.parentElement.parentElement !== calEl) continue;
+    const dayType = getElementInt(wd, 'DayType');
+    if (dayType < 1 || dayType > 7) continue;
+    const working = getElementInt(wd, 'DayWorking') === 1;
+    const times = working ? readWorkingTimes(wd) : { bands: [] as { start: number; end: number }[], first: undefined };
+    out.push({ dayType, working, bands: times.bands, firstTime: times.first });
   }
+  return out;
+}
 
-  return calendar;
+/** Effectieve werkweek. Zonder (bekende) week van de basis: de eigen week (leeg ⇒ `null`, de
+ *  app-standaard blijft). Anders per weekdag: de eigen `<WeekDay>` wint, een niet-genoemde dag komt van
+ *  de basis — zoals MS Project en MPXJ (`DayType.DEFAULT` ⇒ ouderkalender). Volgorde zo → za. */
+function effectiveWeek(own: WeekEntry[], baseWeek: WeekEntry[] | null): WeekEntry[] | null {
+  if (!baseWeek) return own.length > 0 ? own : null;
+  const byDay = new Map<number, WeekEntry>();
+  for (const d of baseWeek) byDay.set(d.dayType, d);
+  for (const d of own) byDay.set(d.dayType, d);
+  return [...byDay.values()].sort((x, y) => x.dayType - y.dayType);
+}
+
+/** Leest alle `<Calendar>`-elementen. De projectkalender is die van `<Project><CalendarUID>`; ontbreekt
+ *  die of wijst hij naar niets, dan het eerste element (het oude gedrag). Alle andere kalenders worden
+ *  bibliotheekkalenders, ook UID 1 — zoals `.mpp` (`mppCalendars.ts`: projectkalender via de
+ *  project-UID, de rest wordt resourcekalender). `calUidToId` kent alleen de bibliotheekkalenders: een
+ *  verwijzing naar de projectkalender (of -1) blijft "projectkalender".
+ *
+ *  Een afgeleide kalender (`<BaseCalendarUID>` ≠ -1) erft in MS Project de werkweek en de
+ *  uitzonderingen van zijn basis. Of hij erft, hangt alleen van de structuur af, niet van de
+ *  documentvolgorde: de keten naar een wortel wordt eerst gemeten (`chainOk`). Een wortel is een
+ *  kalender waarvan de basis-UID niet in het bestand staat (`-1`, `0`, …). Alleen een keten die in een
+ *  cyclus eindigt (ook een zelfverwijzing) of langer is dan `MAX_BASE_CHAIN_DEPTH`, erft niet. */
+function readCalendars(root: Element, budget: HolidayBudget): {
+  calendar: WorkCalendar; resourceCalendars: WorkCalendar[]; calUidToId: Map<number, string>;
+} {
+  const calendarsRoot = root.getElementsByTagName('Calendars')[0];
+  const allEls = new Map<number, Element>();
+  if (calendarsRoot) {
+    const calElements = calendarsRoot.getElementsByTagName('Calendar');
+    for (let i = 0; i < calElements.length; i++) {
+      const calEl = calElements[i];
+      if (calEl.parentElement !== calendarsRoot) continue;
+      const uid = getElementInt(calEl, 'UID', -1);
+      if (uid < 0 || allEls.has(uid)) continue;
+      allEls.set(uid, calEl);
+    }
+  }
+  const calUidToId = new Map<number, string>();
+  const first = allEls.keys().next();
+  if (first.done) return { calendar: createDefaultCalendar(), resourceCalendars: [], calUidToId };
+
+  // `<CalendarUID>` als DIRECT kind van `<Project>` — taken en resources hebben hun eigen.
+  let declared = -1;
+  const uidEls = root.getElementsByTagName('CalendarUID');
+  for (let i = 0; i < uidEls.length; i++) {
+    if (uidEls[i].parentElement !== root) continue;
+    declared = toInt(uidEls[i].textContent ?? '', -1);
+    break;
+  }
+  const projectCalUid = allEls.has(declared) ? declared : first.value;
+
+  const baseUidOf = (uid: number): number => getElementInt(allEls.get(uid)!, 'BaseCalendarUID', -1);
+  /** Bereikt de keten vanaf `uid` binnen `MAX_BASE_CHAIN_DEPTH` stappen een WORTEL: een kalender
+   *  waarvan de `<BaseCalendarUID>` niet naar een `<Calendar>` in het bestand wijst? Dat is `-1`
+   *  (Project 2007/2010), `0` (Project 2013 en later: UID 0 bestaat niet), `-65533` of elk ander
+   *  onbekend nummer — zoals MPXJ (`map.get` geeft `null`: geen ouder) en `.mpp`
+   *  (`baseCalendarUniqueId <= 0` = basiskalender). Nee alleen bij een cyclus (ook een
+   *  zelfverwijzing) of een te lange keten: een cyclus bereikt nooit een wortel en loopt dus tegen de
+   *  stapgrens — dat is de cyclusbewaking. */
+  const chainMemo = new Map<number, boolean>();
+  const chainOk = (uid: number): boolean => {
+    const known = chainMemo.get(uid);
+    if (known !== undefined) return known;
+    let cur = uid;
+    let ok = false;
+    for (let steps = 0; steps <= MAX_BASE_CHAIN_DEPTH; steps++) {
+      const b = baseUidOf(cur);
+      if (!allEls.has(b)) { ok = true; break; }
+      cur = b;
+    }
+    chainMemo.set(uid, ok);
+    return ok;
+  };
+
+  const resolved = new Map<number, WorkCalendar>();
+  const weekOf = new Map<number, WeekEntry[] | null>();
+  // Recursie alleen langs een gemeten, eindige keten (`chainOk`): diepte ≤ MAX_BASE_CHAIN_DEPTH.
+  const resolve = (uid: number): WorkCalendar => {
+    const done = resolved.get(uid);
+    if (done) return done;
+    const calEl = allEls.get(uid)!;
+    const baseUid = baseUidOf(uid);
+    // `declaredBase`: het bestand noemt een basis (alles behalve -1/ontbrekend). Alleen voor de
+    // NL-terugval (regel 5 in `applyCalendarBody`): een kalender met een genoemde basis is nooit "kaal".
+    const declaredBase = baseUid !== -1;
+    const base = allEls.has(baseUid) && chainOk(uid) ? resolve(baseUid) : null;
+    const week = effectiveWeek(readOwnWeek(calEl), base ? weekOf.get(baseUid) ?? null : null);
+    const cal = createDefaultCalendar();
+    if (uid === projectCalUid) {
+      cal.name = getElementText(calEl, 'Name') || 'Imported Calendar';
+    } else {
+      cal.id = generateId('rescal');
+      cal.name = getElementText(calEl, 'Name') || cal.name;
+    }
+    // MSPDI kent geen regelset-herkomst — createDefaultCalendar() zet 'm altijd (nieuwe projecten zijn
+    // per definitie gegenereerd); een uit MSPDI gelezen kalender is dat niet.
+    delete cal.generation;
+    applyCalendarBody(calEl, cal, budget, { declared: declaredBase, base }, week);
+    if (uid === projectCalUid) {
+      // `<MinutesPerDay>` op projectniveau is authoritatief voor de projectkalender en overschrijft de
+      // WorkingTime-afgeleide waarde uit applyCalendarBody. Alleen voor de projectkalender: een
+      // afgeleide kalender rekent zijn `hoursPerDay` uit zijn eigen (geërfde) blokken, net als elke
+      // andere bibliotheekkalender.
+      const minutesPerDay = getElementInt(root, 'MinutesPerDay');
+      if (minutesPerDay > 0) cal.hoursPerDay = minutesPerDay / 60;
+    }
+    resolved.set(uid, cal);
+    weekOf.set(uid, week);
+    return cal;
+  };
+
+  const calendar = resolve(projectCalUid);
+  // MAX_MSPDI_CALENDARS begrenst het AANTAL bibliotheekkalenders; volgorde = documentvolgorde.
+  const resourceCalendars: WorkCalendar[] = [];
+  for (const uid of allEls.keys()) {
+    if (resourceCalendars.length >= MAX_MSPDI_CALENDARS) break;
+    if (uid === projectCalUid) continue;
+    const cal = resolve(uid);
+    calUidToId.set(uid, cal.id);
+    resourceCalendars.push(cal);
+  }
+  return { calendar, resourceCalendars, calUidToId };
 }
