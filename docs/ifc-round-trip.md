@@ -260,10 +260,10 @@ Nu geeft de validatie 0 fouten, met en zonder `--rules`, voor elk nieuw project 
 GlobalIds" voor de uitzondering).
 
 **Schema.** De kop is het schema van het project (`Project.ifcSchema`, issue #292): standaard
-`IFC4X3_ADD2` (IFC 4.3.2.0, ISO 16739-1:2024), in *Projectinfo* ook IFC 4.3 of IFC4. De inhoud is in de
-drie gelijk. De poort en de metingen met IfcOpenShell toetsen alleen `IFC4X3_ADD2`. Een bestand met de
-kop IFC4 of IFC4X3 is niet tegen dat schema gevalideerd; alleen het aantal argumenten
-(`check-ifc-arity`).
+`IFC4X3_ADD2` (IFC 4.3.2.0, ISO 16739-1:2024), in *Projectinfo* ook IFC 4.3 of IFC4. De writer schrijft in
+de drie dezelfde inhoud. De schema's verschillen wel in de toegestane enum-waarden: `INSPECTION` in
+IfcTaskTypeEnum bestaat bijvoorbeeld alleen in IFC 4.3. De poort toetst daarom elk bestand tegen het
+schema in zijn kop, en schrijft het rijke project in alle drie.
 
 **De poort** is `tests/planning/check-ifc-schema.ts` (de toets per bestand staat in `ifcSchemaCheck.ts`).
 Hij draait zonder Python, dus ook in CI. Hij toetst elke regel tegen een tabel uit het EXPRESS-schema:
@@ -275,19 +275,21 @@ minstens één element vraagt, een SET zonder dubbele elementen, en een paar WHE
 "USERDEFINED vraagt een ObjectType"). De bronnen:
 
 - de publieke en alle andere voorbeelden;
-- een rijk project (alle resourcetypen, ploegen, baselines,
-  ook een zonder taken, werkende uitzonderingen, bibliotheekkalenders, alle eigen-veldtypen);
+- een rijk project in elk van de drie schema's (alle resourcetypen, ploegen, baselines,
+  ook een zonder taken, werkende uitzonderingen, bibliotheekkalenders, alle eigen-veldtypen, een
+  negatieve speling); dit is de enige rijke fixture, ook voor `check-ifc-arity`;
 - een leeg project, kalenderrandgevallen en een XER-import met bronarchief (`OPS_XerSourceArchive`),
   zie `tests/planning/ifcSchemaFixture.ts`;
 - in `check-ifc-roundtrip.ts` (19) de round-trip-fixture (splits, contouren, timephased werk,
   P6-voortgang).
 
-Een entiteit die de writer gebruikt maar niet in de tabel staat, is rood. Een entiteit uit de tabel die
-in geen getoetst bestand voorkomt, ook.
+Een entiteit die de writer gebruikt maar niet in de tabel van elk schema staat, is rood. Een entiteit uit
+de tabel die in geen getoetst bestand voorkomt, ook.
 
 **De tabel** (`tests/planning/ifcSchemaTable.ts`) wordt gegenereerd door `scripts/ifc-schema-table.py`
-uit het schema `IFC4X3_ADD2` dat IfcOpenShell meelevert. Schrijft de writer een nieuwe entiteit, zet
-die dan in `OPS_ENTITIES` in het script en genereer de tabel opnieuw:
+uit de schema's `IFC4X3_ADD2`, `IFC4X3` en `IFC4` die IfcOpenShell meelevert: één tabel per schema.
+`check-ifc-arity` leest de argumentaantallen uit dezelfde tabel. Schrijft de writer een nieuwe entiteit,
+zet die dan in `OPS_ENTITIES` in het script en genereer de tabel opnieuw:
 
     source <venv met ifcopenshell>/bin/activate
     python -I scripts/ifc-schema-table.py > tests/planning/ifcSchemaTable.ts

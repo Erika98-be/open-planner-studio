@@ -1,13 +1,20 @@
 #!/usr/bin/env python3
-"""Leidt de schematabel van de IFC-schemapoort af uit het IFC4X3_ADD2-schema.
+"""Leidt de schematabellen van de IFC-schemapoort af uit de drie schema's die OPS schrijft.
 
     source /tmp/ifcvenv/bin/activate   # een venv met `pip install ifcopenshell` (getest: 0.9.0)
     python -I scripts/ifc-schema-table.py > tests/planning/ifcSchemaTable.ts
 
-Bron: het EXPRESS-schema IFC4X3_ADD2 (IFC 4.3.2.0, ISO 16739-1:2024) van buildingSMART, zoals
-IfcOpenShell het meelevert (`ifcopenshell_wrapper.schema_by_name('IFC4X3_ADD2')`, gecompileerd uit
-de officiële EXPRESS). Het script leest per entiteit alle attributen in STEP-volgorde (eerst die
-van de supertypen), met type en OPTIONAL-vlag, en schrijft daar een TypeScript-module van.
+Bron: de EXPRESS-schema's IFC4X3_ADD2 (IFC 4.3.2.0, ISO 16739-1:2024; de standaard), IFC4X3 en IFC4
+van buildingSMART, zoals IfcOpenShell ze meelevert (`ifcopenshell_wrapper.schema_by_name(...)`,
+gecompileerd uit de officiële EXPRESS). Een project kan in elk van de drie worden opgeslagen
+(`IFC_SCHEMAS` in src/types/project.ts). Het script leest per schema en per entiteit alle attributen
+in STEP-volgorde (eerst die van de supertypen), met type en OPTIONAL-vlag, en schrijft daar één
+TypeScript-module van met een tabel per schema.
+
+Waarom per schema: de attribuutaantallen van de OPS-entiteiten zijn in de drie gelijk, maar de
+toegestane enum-literals niet. IfcTaskTypeEnum kent bijvoorbeeld INSPECTION alleen in IFC 4.3; een
+IFC4-bestand met `.INSPECTION.` is ongeldig. Ook enkele getypeerde waarden verschillen
+(IFCURIREFERENCE mag in IFC4 en IFC4X3 niet in IfcValue staan, IFCCOUNTMEASURE is in IFC4 een NUMBER).
 
 Waarom een gegenereerde tabel: CI draait geen Python. De poort `tests/planning/check-ifc-schema.ts`
 toetst elke regel die de writer schrijft tegen deze tabel. Een nieuwe entiteit in de writer zet je
@@ -16,7 +23,8 @@ in `OPS_ENTITIES` hieronder en draai je dit script opnieuw; de poort weigert and
 import ifcopenshell
 import ifcopenshell.ifcopenshell_wrapper as w
 
-SCHEMA = 'IFC4X3_ADD2'
+# Volgorde: de standaard eerst, zoals `IFC_SCHEMAS` in src/types/project.ts.
+SCHEMAS = ['IFC4X3_ADD2', 'IFC4X3', 'IFC4']
 
 # Alle entiteiten die de OPS-writer kan schrijven (ifcWriter.ts, ifcPsets.ts, ifcTaskSlots.ts en
 # RESOURCE_TYPE_TO_IFC in ifcConstants.ts). De poort scant de writerbronnen en eist dat elke
@@ -45,9 +53,10 @@ SHAPED_STRING_KIND = {
     'IfcGloballyUniqueId': 'G', 'IfcDateTime': 'DT', 'IfcDate': 'DA', 'IfcTime': 'TI', 'IfcDuration': 'DU',
 }
 
-schema = w.schema_by_name(SCHEMA)
+# De functies hieronder lezen het schema dat `build` zet (één schema tegelijk).
+schema = None
 selects_used = {}
-OPS_DECLS = [schema.declaration_by_name(n) for n in OPS_ENTITIES]
+OPS_DECLS = []
 
 
 def is_subtype(ent, base):
@@ -133,62 +142,90 @@ def kind_of(t):
     raise ValueError(t)
 
 
-lines = []
-for name in OPS_ENTITIES:
-    ent = schema.declaration_by_name(name)
-    attrs = ent.all_attributes()
-    derived = ent.derived()
-    specs = []
-    for attr, is_derived in zip(attrs, derived):
-        if is_derived:
-            specs.append(f"'{attr.name()}:*'")
-            continue
-        code = kind_of(attr.type_of_attribute())
-        specs.append(f"'{attr.name()}:{code}{'?' if attr.optional() else ''}'")
-    lines.append(f"  {name.upper()}: [\n    " + ',\n    '.join(specs) + ',\n  ],')
 
-select_lines = []
-typed_kinds = {}
-for sel, (types, flags) in sorted(selects_used.items()):
-    typed_kinds.update(types)
-    names = [repr(t) for t in sorted(types)]
-    rows = [', '.join(names[i:i + 4]) for i in range(0, len(names), 4)]
-    body = '' if not rows else '\n      ' + ',\n      '.join(rows) + ',\n    '
-    ents = [repr(e) for e in allowed_ops_entities(flags['entities'])]
-    erows = [', '.join(ents[i:i + 4]) for i in range(0, len(ents), 4)]
-    ebody = '' if not erows else '\n      ' + ',\n      '.join(erows) + ',\n    '
-    select_lines.append(
-        f"  {sel}: {{\n    refs: {'true' if flags['refs'] else 'false'},\n    entities: [{ebody}],\n    types: [{body}],\n  }},")
+def ts_list(items, indent):
+    """Namen in rijen van vier, zoals de rest van de module."""
+    rows = [', '.join(items[i:i + 4]) for i in range(0, len(items), 4)]
+    pad = ' ' * indent
+    return '' if not rows else f'\n{pad}  ' + f',\n{pad}  '.join(rows) + f',\n{pad}'
 
-print(f"""// GEGENEREERD door `scripts/ifc-schema-table.py` uit het EXPRESS-schema {SCHEMA}
-// (IFC 4.3.2.0, ISO 16739-1:2024) zoals IfcOpenShell {ifcopenshell.version} het meelevert. Niet met de hand
-// bewerken: pas `OPS_ENTITIES` in het script aan en genereer opnieuw (zie de kop van het script).
+
+def build(schema_name):
+    """De TypeScript-tekst van de tabel van één schema (de waarde in IFC_SCHEMA_TABLES)."""
+    global schema, OPS_DECLS
+    schema = w.schema_by_name(schema_name)
+    selects_used.clear()
+    OPS_DECLS = [schema.declaration_by_name(n) for n in OPS_ENTITIES]
+
+    lines = []
+    for name in OPS_ENTITIES:
+        ent = schema.declaration_by_name(name)
+        specs = []
+        for attr, is_derived in zip(ent.all_attributes(), ent.derived()):
+            if is_derived:
+                specs.append(f"'{attr.name()}:*'")
+                continue
+            code = kind_of(attr.type_of_attribute())
+            specs.append(f"'{attr.name()}:{code}{'?' if attr.optional() else ''}'")
+        lines.append(f"      {name.upper()}: [\n        " + ',\n        '.join(specs) + ',\n      ],')
+
+    select_lines = []
+    typed_kinds = {}
+    for sel, (types, flags) in sorted(selects_used.items()):
+        typed_kinds.update(types)
+        names = ts_list([repr(t) for t in sorted(types)], 8)
+        ents = ts_list([repr(e) for e in allowed_ops_entities(flags['entities'])], 8)
+        select_lines.append(
+            f"      {sel}: {{\n        refs: {'true' if flags['refs'] else 'false'},\n"
+            f"        entities: [{ents}],\n        types: [{names}],\n      }},")
+    typed_lines = [f"      {k}: '{v}'," for k, v in sorted(typed_kinds.items())]
+    nl = chr(10)
+    return f"""  {schema_name}: {{
+    attributes: {{
+{nl.join(lines)}
+    }},
+    selects: {{
+{nl.join(select_lines)}
+    }},
+    typedValueKind: {{
+{nl.join(typed_lines)}
+    }},
+  }},"""
+
+
+tables = [build(name) for name in SCHEMAS]
+schema_union = ' | '.join(f"'{n}'" for n in SCHEMAS)
+
+print(f"""// GEGENEREERD door `scripts/ifc-schema-table.py` uit de EXPRESS-schema's {', '.join(SCHEMAS)}
+// zoals IfcOpenShell {ifcopenshell.version} ze meelevert (IFC4X3_ADD2 = IFC 4.3.2.0, ISO 16739-1:2024). Niet met
+// de hand bewerken: pas `OPS_ENTITIES` in het script aan en genereer opnieuw (zie de kop van het script).
 //
+// Eén tabel per schema; de poort kiest hem op `FILE_SCHEMA` in de kop van het bestand.
 // Per entiteit de attributen in STEP-volgorde (supertypen eerst), als `Naam:code`. Codes:
 //   S tekst · R REAL · I INTEGER · N NUMBER · B BOOLEAN · L LOGICAL · X BINARY
 //   #=A|B verwijzing naar een entiteit van type A of B (de OPS-entiteiten die het attribuuttype of een
 //   subtype ervan zijn; leeg = geen enkele OPS-entiteit mag hier staan)
 //   G GlobalId (22 tekens uit het IFC-base64-alfabet, eerste teken 0-3) · DT IfcDateTime (met
 //   seconden) · DA IfcDate · TI IfcTime · DU IfcDuration (ISO 8601)
-//   E=A|B enumeratie met de toegestane literals · V=Select een select (zie IFC_SELECTS)
+//   E=A|B enumeratie met de toegestane literals (in de volgorde van het schema) · V=Select een select
+//   (zie `selects`)
 //   SET<min>:<code> / LIST<min>:<code> verzameling/lijst met minimaal <min> elementen (een SET
 //   zonder dubbele elementen) · R+ / I+ positief (`SELF > 0`, IfcPositive…) · * afgeleid (altijd `*`)
 //   een `?` aan het eind = OPTIONAL (mag `$` zijn).
 
-/** Attributen per entiteit, in STEP-volgorde. */
-export const IFC_ENTITY_ATTRIBUTES: Record<string, readonly string[]> = {{
-{chr(10).join(lines)}
-}};
+export type IfcSchemaTableId = {schema_union};
 
-/** Selects: mag een verwijzing (`refs`, naar welke OPS-entiteiten: `entities`) en welke getypeerde
- *  waarden (`IFCxxx(...)`). */
-export const IFC_SELECTS: Record<string, {{ refs: boolean; entities: readonly string[]; types: readonly string[] }}> = {{
-{chr(10).join(select_lines)}
-}};
+export interface IfcSchemaTable {{
+  /** Attributen per entiteit, in STEP-volgorde. */
+  attributes: Record<string, readonly string[]>;
+  /** Selects: mag een verwijzing (`refs`, naar welke OPS-entiteiten: `entities`) en welke getypeerde
+   *  waarden (`IFCxxx(...)`). */
+  selects: Record<string, {{ refs: boolean; entities: readonly string[]; types: readonly string[] }}>;
+  /** Code van het onderliggende type per getypeerde waarde in een select (`IFCREAL` ⇒ `R`). */
+  typedValueKind: Record<string, string>;
+}}
 
-/** Code van het onderliggende type per getypeerde waarde in een select (`IFCREAL` ⇒ `R`). */
-export const IFC_TYPED_VALUE_KIND: Record<string, string> = {{
-{chr(10).join(f"  {k}: '{v}'," for k, v in sorted(typed_kinds.items()))}
-}};
-
-export const IFC_SCHEMA_TABLE_SOURCE = '{SCHEMA}';""")
+/** De tabel per schema, de standaard (IFC4X3_ADD2) eerst. */
+export const IFC_SCHEMA_TABLES: Record<IfcSchemaTableId, IfcSchemaTable> = {{
+{chr(10).join(tables)}
+}};""")

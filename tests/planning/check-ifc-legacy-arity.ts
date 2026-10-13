@@ -3,10 +3,12 @@
 // 9 en 11). De lezer kiest de slotposities op het argumentaantal per entiteit (`ifcWorkControlSlots.ts`),
 // niet op de appversie. Deze check bewijst dat beide vormen exact hetzelfde opleveren.
 //
-// De fixture `fixtures/ifc-arity-oude-writer.ifc` is het rijke project (`fixtures/ifc-arity-rich.ts`, op
-// basis van `showcase-verbouwing-eengezinswoning.ifc`), geschreven met de writer van origin/main
-// 1e192b31a, dus vóór deze fix: het basisvoorbeeld ingelezen en het rijke project geschreven met de
-// toenmalige `readIFC`/`writeIFC` (esbuild-bundel met `@` naar die `src/`).
+// De fixture `fixtures/ifc-arity-oude-writer.ifc` is het toenmalige rijke project
+// (`fixtures/ifc-arity-rich.ts`, op basis van `showcase-verbouwing-eengezinswoning.ifc`), geschreven met
+// de writer van origin/main 1e192b31a, dus vóór deze fix: het basisvoorbeeld ingelezen en het rijke
+// project geschreven met de toenmalige `readIFC`/`writeIFC` (esbuild-bundel met `@` naar die `src/`).
+// Dat rijke project is sindsdien opgegaan in `ifcSchemaFixture.ts` (één rijke fixture); de bron van
+// deze fixture staat in de geschiedenis: `git show 35c59df7d:tests/planning/fixtures/ifc-arity-rich.ts`.
 //
 //   1. De fixture heeft echt de oude ariteit (anders bewijst de rest niets).
 //   2. Oud bestand → lezen → schrijven met de huidige writer (nieuwe ariteit) → lezen: identiek.
@@ -26,7 +28,6 @@ import { isDeepStrictEqual } from 'node:util';
 import { writeIFC } from '@/services/ifc/ifcWriter';
 import { readIFC } from '@/services/ifc/ifcReader';
 import type { ImportResult } from '@/services/importTypes';
-import { RICH_CALENDAR_IDS } from './fixtures/ifc-arity-rich';
 
 const HERE = fileURLToPath(new URL('.', import.meta.url));
 const OLD = readFileSync(join(HERE, 'fixtures', 'ifc-arity-oude-writer.ifc'), 'utf8');
@@ -112,15 +113,16 @@ eq('1 fixture heeft de oude ariteit', arities(OLD, CONTROL), OLD_ARITY);
 const rOld = readIFC(OLD);
 // Het rijke project moet het ook echt zijn, anders vergelijken we lege lijsten met elkaar.
 {
-  const lib = (id: string) => (rOld.resourceCalendars ?? []).find(c => c.name === { [RICH_CALENDAR_IDS.twoShift]: 'Tweeploegen', [RICH_CALENDAR_IDS.night]: 'Nachtploeg', [RICH_CALENDAR_IDS.unused]: 'Eigen rooster' }[id]);
+  // De bibliotheekkalenders van de fixture, op naam (hun id's zijn bij inlezen nieuw).
+  const lib = (name: 'Tweeploegen' | 'Nachtploeg' | 'Eigen rooster') => (rOld.resourceCalendars ?? []).find(c => c.name === name);
   ok('1a projectkalender: feestdagen gelezen', rOld.calendar.holidays.length > 10);
   eq('1b projectkalender: werkende uitzondering met banden', rOld.calendar.workingExceptions,
     [{ name: 'Inhaalzaterdag', startDate: '2027-06-12', endDate: '2027-06-12', bands: [{ start: 420, end: 720 }] }]);
-  eq('1c bibliotheek: ploeg per kalender', [lib(RICH_CALENDAR_IDS.twoShift)?.shift, lib(RICH_CALENDAR_IDS.night)?.shift, lib(RICH_CALENDAR_IDS.unused)?.shift],
+  eq('1c bibliotheek: ploeg per kalender', [lib('Tweeploegen')?.shift, lib('Nachtploeg')?.shift, lib('Eigen rooster')?.shift],
     ['SECOND', 'THIRD', 'USERDEFINED']);
   ok('1d bibliotheek: tweeploegenkalender is een uurkalender met twee banden',
-    lib(RICH_CALENDAR_IDS.twoShift)?.workTime?.byWeekday[1]?.length === 2);
-  eq('1e bibliotheek: werkende uitzondering op de tweeploegenkalender', lib(RICH_CALENDAR_IDS.twoShift)?.workingExceptions?.map(e => e.name), ['Zaterdagdienst']);
+    lib('Tweeploegen')?.workTime?.byWeekday[1]?.length === 2);
+  eq('1e bibliotheek: werkende uitzondering op de tweeploegenkalender', lib('Tweeploegen')?.workingExceptions?.map(e => e.name), ['Zaterdagdienst']);
   eq('1f baselines', (rOld.baselines ?? []).map(b => b.name), ['Baseline plan', 'Herplanning']);
   eq('1g vijf resourcesoorten', [...new Set(rOld.resources.map(r => r.type))].sort(), ['CREW', 'EQUIPMENT', 'LABOR', 'MATERIAL', 'SUBCONTRACTOR']);
   ok('1h projectdatums uit het pset', rOld.project.startDate === '2027-05-06');
