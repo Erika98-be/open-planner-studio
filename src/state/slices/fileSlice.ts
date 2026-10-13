@@ -30,7 +30,7 @@ import { hydratePayload, isFreshImportOrigin, payloadFromImport, type DocumentPa
 import { applyRecordedDatesOnLoad, materializeLibraryBoundary, prepareLoadedPayload } from '../documentActivation';
 import { notifyCalendarLibrarySettle } from '../calendarTasks';
 import { unrecordedExportGate } from '../recordedDatesSelectors';
-import { buildWriteIFCInput, sameIFCSource } from '../ifcSaveInput';
+import { buildExportIFCInput, buildWriteIFCInput, sameIFCSource } from '../ifcSaveInput';
 import { fileHasHourData } from '@/services/subdayIo';
 import { documentFileBase } from '@/utils/documents';
 import { xerProjectCode } from '@/utils/xerDocumentName';
@@ -1206,7 +1206,8 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
           break;
         case 'ifc':
         default:
-          payload = writeIFC(buildWriteIFCInput(state));
+          // Een export vraagt niets; een open vraag die niet bij de kop past gaat niet mee (#336).
+          payload = writeIFC(buildExportIFCInput(state));
           ext = 'ifc';
           filters = [{ name: 'IFC Files', extensions: ['ifc'] }];
           break;
@@ -1250,8 +1251,8 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
       if (cpmFailure?.error) return { ok: false, error: cpmFailure.error, errorInfo: cpmFailure.errorInfo };
 
       const state = get();
-      // 1. Het project zelf (bevat altijd al alle gebruikte items).
-      const projectContent = writeIFC(buildWriteIFCInput(state));
+      // 1. Het project zelf (bevat altijd al alle gebruikte items). Een export: zie `buildExportIFCInput`.
+      const projectContent = writeIFC(buildExportIFCInput(state));
       const base = suggestedFileBase(state);
       const outcome = await saveFileDialog(`${base}.ifc`, projectContent, [{ name: 'IFC Files', extensions: ['ifc'] }]);
       if (!outcome) return { ok: true, warnings: [] }; // dialoog geannuleerd — geen fout

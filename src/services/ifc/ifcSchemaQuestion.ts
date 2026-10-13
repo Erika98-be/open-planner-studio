@@ -82,6 +82,22 @@ export function ifcSchemaBlocksSilentWrite(project: Pick<Project, 'ifcSchemaUnco
   return question !== null && question.keep === null;
 }
 
+/**
+ * Het project zoals een EXPORT naar een nieuw bestand het schrijft (Exporteren › IFC, de export met
+ * bibliotheek, `planner_export_ifc`). Een export vraagt niets. Staat de vraag open voor een schema dat de
+ * app niet schrijft (IFC2X3 e.d.), dan krijgt de export de kop van de standaard; een markering
+ * "IfcSchemaUnconfirmed = IFC2X3" past daar niet bij en liet het heropenen vragen naar een schema dat het
+ * bestand niet heeft (review #336 punt 4). Die vraag gaat dus niet mee: de export is gewoon een
+ * IFC 4.3 ADD2-bestand. Een open vraag over IFC4 of IFC 4.3 past wel bij de kop en gaat mee. Het
+ * document zelf houdt zijn vraag; crashherstel en de MCP-backup schrijven het project ongewijzigd.
+ */
+export function projectForIfcExport<P extends Pick<Project, 'ifcSchemaUnconfirmed'>>(project: P): P {
+  if (!ifcSchemaBlocksSilentWrite(project)) return project;
+  const { ifcSchemaUnconfirmed: _question, ...rest } = project;
+  void _question;
+  return rest as P;
+}
+
 const keepWhenWritable: IfcSchemaAsker = (question) => Promise.resolve(question.keep);
 
 let asker: IfcSchemaAsker = keepWhenWritable;

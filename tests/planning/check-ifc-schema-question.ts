@@ -15,6 +15,10 @@
 //   D. Ongedaan maken en opnieuw doen veranderen het schema nooit (review #336 punt 2): het schema is
 //      een eigenschap van het bestand, net als het antwoord. Anders schreef AutoSave na een undo binnen
 //      10 s weer het oude schema. Ook een keuze in Projectinfo is daarom geen undo-stap.
+//   E. Exporteren (review #336 punt 4): een export naar een nieuw bestand vraagt niets. Bij een schema
+//      dat de app niet schrijft (IFC2X3) wordt de export IFC 4.3 ADD2, zonder een markering
+//      "IfcSchemaUnconfirmed = IFC2X3" die niet bij de kop past. Het document zelf houdt zijn vraag.
+//      `planner_export_ifc` over het eigen pad weigert dan (tests/mcp/cases-doc-file.ts).
 //
 // Draait via run.sh (esbuild-bundel). Exit 0 = alles groen.
 
@@ -310,6 +314,29 @@ truthy('0 oude fixture: geen schemamarkering', !hasProp(OLD_FILE, 'IfcSchemaConf
   eq('D6 undo: naam terug, schema blijft IFC4', [S().project.name, S().project.ifcSchema], [nameBefore, 'IFC4']);
   S().redo();
   eq('D6 redo: naam weer, schema IFC4', [S().project.name, S().project.ifcSchema], ['D6 naam', 'IFC4']);
+}
+
+// ═══ E. Exporteren naar een nieuw bestand (review #336 punt 4) ═══════════════════════════════
+{
+  const exported = async (format: 'ifc' | 'pool') => {
+    const n = blobs.length;
+    const result = format === 'ifc' ? await S().exportAs('ifc') : await S().exportProjectWithPool();
+    return { ok: result.ok, ifc: blobs.length > n ? await blobs[n].text() : null };
+  };
+  for (const format of ['ifc', 'pool'] as const) {
+    await open(withHeader(OLD_FILE, 'IFC2X3'), 'oud-2x3.ifc');
+    asked.length = 0;
+    const e1 = await exported(format);
+    eq(`E1 ${format}: IFC2X3-document exporteren vraagt niets`, [e1.ok, asked.length], [true, 0]);
+    eq(`E1 ${format}: de export is IFC 4.3 ADD2`, e1.ifc && header(e1.ifc), 'IFC4X3_ADD2');
+    truthy(`E1 ${format}: geen markering IFC2X3 die niet bij de kop past`, !!e1.ifc && !hasProp(e1.ifc, 'IfcSchemaUnconfirmed'));
+    eq(`E1 ${format}: heropenen van de export vraagt niets`, e1.ifc && readIFC(e1.ifc).project.ifcSchemaUnconfirmed, undefined);
+    eq(`E1 ${format}: het document houdt zijn vraag`, S().project.ifcSchemaUnconfirmed, 'IFC2X3');
+  }
+  // Een open vraag over een schema dat de app wel schrijft, past bij de kop en gaat mee.
+  await open(withHeader(OLD_FILE, 'IFC4'), 'model.ifc');
+  const e2 = await exported('ifc');
+  eq('E2 IFC4-document: export met kop IFC4 en de open vraag IFC4', [e2.ifc && header(e2.ifc), e2.ifc && readIFC(e2.ifc).project.ifcSchemaUnconfirmed], ['IFC4', 'IFC4']);
 }
 
 resetIfcSchemaAsker();
