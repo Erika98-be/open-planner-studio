@@ -60,6 +60,76 @@
       "name": "area:interop",
       "color": "8b572a",
       "description": "import/export: MSPDI, MPP, XER, P6, IFC, CSV/XLSX"
+    },
+    {
+      "name": "needs-triage",
+      "color": "e99695",
+      "description": "Nog niet beoordeeld; de eerste stap voor elk nieuw issue van buiten"
+    },
+    {
+      "name": "needs-info",
+      "color": "fef2c0",
+      "description": "Wacht op meer informatie van de melder"
+    },
+    {
+      "name": "ready-for-agent",
+      "color": "c2e0c6",
+      "description": "Volledig beschreven; een agent kan het zelfstandig oppakken"
+    },
+    {
+      "name": "ready-for-human",
+      "color": "bfdadc",
+      "description": "Vraagt werk of een besluit van een mens"
+    },
+    {
+      "name": "wontfix",
+      "color": "ffffff",
+      "description": "Wordt niet opgepakt"
+    },
+    {
+      "name": "in-progress",
+      "color": "c5def5",
+      "description": "Iemand werkt eraan (claim); haal het label weg als het werk stopt"
+    },
+    {
+      "name": "agent-ticket",
+      "color": "d4c5f9",
+      "description": "Aangemaakt door een agent (to-spec, to-tickets, wayfinder), niet door een gebruiker"
+    },
+    {
+      "name": "wayfinder:map",
+      "color": "f9d0c4",
+      "description": "Wayfinder-kaart: bestemming, besluiten en open vragen van één onderzoek"
+    },
+    {
+      "name": "wayfinder:research",
+      "color": "f9d0c4",
+      "description": "Wayfinder-vraag: uitzoeken in code, docs of op het web"
+    },
+    {
+      "name": "wayfinder:prototype",
+      "color": "f9d0c4",
+      "description": "Wayfinder-vraag: beantwoorden met een snel prototype"
+    },
+    {
+      "name": "wayfinder:grilling",
+      "color": "f9d0c4",
+      "description": "Wayfinder-vraag: beantwoorden in een gesprek met de maintainer"
+    },
+    {
+      "name": "wayfinder:task",
+      "color": "f9d0c4",
+      "description": "Wayfinder-vraag: een kleine klus die het onderzoek verder helpt"
+    },
+    {
+      "name": "good first issue",
+      "color": "7057ff",
+      "description": "Geschikt als eerste bijdrage aan het project"
+    },
+    {
+      "name": "help wanted",
+      "color": "008672",
+      "description": "Hulp van buiten is welkom"
     }
   ]
 }
