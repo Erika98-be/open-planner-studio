@@ -295,10 +295,10 @@ test('resourcekalender blokkeert lokaal ongeldige scalar-tijden zonder het model
 // binnen als werkdag 08:00–12:00. Open een MSPDI via de knop Openen en de bestandskiezer. Met uurplanning
 // uit (standaard) toont de dialoog de werkdag die uit de blokken volgt, ALLEEN-LEZEN: de motor rekent met
 // de blokken, dus een wijziging hier zou niets doen (besluit orkestrator 2026-10-13, optie 2).
-function mspdiWithBlocks(blocks: [string, string][]): string {
-  const wt = '<WorkingTimes>' + blocks.map(([from, to]) =>
+function mspdiWithBlocks(blocks: [string, string][], fridayBlocks: [string, string][] = blocks): string {
+  const times = (list: [string, string][]) => '<WorkingTimes>' + list.map(([from, to]) =>
     `<WorkingTime><FromTime>${from}:00</FromTime><ToTime>${to}:00</ToTime></WorkingTime>`).join('') + '</WorkingTimes>';
-  const days = [1, 2, 3, 4, 5, 6, 7].map(n => `<WeekDay><DayType>${n}</DayType><DayWorking>${n >= 2 && n <= 6 ? 1 : 0}</DayWorking>${n >= 2 && n <= 6 ? wt : ''}</WeekDay>`).join('');
+  const days = [1, 2, 3, 4, 5, 6, 7].map(n => `<WeekDay><DayType>${n}</DayType><DayWorking>${n >= 2 && n <= 6 ? 1 : 0}</DayWorking>${n >= 2 && n <= 5 ? times(blocks) : n === 6 ? times(fridayBlocks) : ''}</WeekDay>`).join('');
   return `<?xml version="1.0" encoding="UTF-8"?>
 <Project xmlns="http://schemas.microsoft.com/project"><Name>Blokken</Name><StartDate>2026-01-05T08:00:00</StartDate>
 <MinutesPerDay>480</MinutesPerDay><CalendarUID>1</CalendarUID>
@@ -402,3 +402,19 @@ for (const hourPlanning of [false, true]) {
       });
     });
 }
+
+// Review #334, ronde 3: een korte vrijdag (08–12 + 13–15) die je in het venster uit en weer aan zet, krijgt
+// zijn eigen blokken terug zoals bij het openen van het venster, niet die van maandag.
+test('kalenderdialoog: korte vrijdag uit en weer aan krijgt zijn eigen blokken terug', async ({ page, ops: _ops }) => {
+  const dialog = await openMspdiAndCalendarDialog(page,
+    mspdiWithBlocks([['08:00', '12:00'], ['13:00', '17:00']], [['08:00', '12:00'], ['13:00', '15:00']]));
+  const fri = () => page.evaluate(() => window.__OPS__!.store.getState().calendar.workTime?.byWeekday[5] ?? null);
+  const shortFri = [{ start: 480, end: 720 }, { start: 780, end: 900 }];
+  await expect.poll(fri).toEqual(shortFri);
+  const button = dialog.getByRole('button', { name: 'Fri', exact: true });
+  await button.click();
+  await button.click();
+  await dialog.locator('[data-ops-cal-apply]').click();
+  await expect.poll(() => page.evaluate(() => window.__OPS__!.store.getState().calendar.workDays)).toEqual([1, 2, 3, 4, 5]);
+  await expect.poll(fri).toEqual(shortFri);
+});

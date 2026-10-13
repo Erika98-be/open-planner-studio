@@ -1,6 +1,6 @@
 import type { MilestoneKind, Task } from '@/types/task';
 import type { WorkCalendar, WorkTimeBands } from '@/types/calendar';
-import { effectiveWorkTimeBands } from '@/utils/effectiveWorkTime';
+import { effectiveWorkTimeBands, firstBlockedDay, seedScalarBands } from '@/utils/effectiveWorkTime';
 // Writers moeten ook door tests/extensies aangeleverde objecten zonder `durationUnit`
 // veilig kunnen bewaren — `taskDurationUnit` draagt dezelfde legacy-regel als de documentmigratie.
 import { taskDurationUnit } from '@/engine/scheduler/duration';
@@ -205,43 +205,37 @@ export function workDayFromBlocks(dayBlocks: ReadonlyArray<{ start: number; end:
   };
 }
 
-/**
- * Volgorde waarin "de eerste werkdag met blokken" gezocht wordt: zondag eerst, dan maandag t/m zaterdag
- * (ISO-nummers). Dat is de volgorde waarin MS Project zijn weekdagen schrijft (DayType 1 = zondag) en
- * dus waarin de MSPDI- en `.mpp`-lezer hun scalaire werkdag kiezen. Eén regel voor de lezers, het
- * bibliotheekherstel en de werkdagknoppen van de kalenderdialoog. (IFC draagt op elke werkdag
- * dezelfde periodes, dus daar maakt de volgorde niet uit.)
- */
-const SCALAR_DAY_ORDER = [7, 1, 2, 3, 4, 5, 6] as const;
-
-/** De blokken van de eerste werkdag met blokken (volgorde {@link SCALAR_DAY_ORDER}), of `undefined`. */
-export function firstBlockedDay(
-  bands: Pick<WorkTimeBands, 'byWeekday'> | undefined,
-): ReadonlyArray<{ start: number; end: number }> | undefined {
-  const byWeekday = bands?.byWeekday;
-  if (!byWeekday) return undefined;
-  for (const wd of SCALAR_DAY_ORDER) {
-    const day = byWeekday[wd];
-    if (Array.isArray(day) && day.length > 0) return day;
-  }
-  return undefined;
-}
+/** Zie `firstBlockedDay` in `@/utils/effectiveWorkTime` (daar, zodat ook `inferredSimpleBreak` hem
+ *  zonder importcyclus gebruikt); hier opnieuw geëxporteerd voor de lezers en de dialoog. */
+export { firstBlockedDay };
 
 /**
  * Wat een werkdagknop in de kalenderdialoog doet. Dagkalender: alleen `workDays`. Uurkalender: de
  * blokken gaan mee, want de motor gebruikt beide (het werkdagmasker voor de dagtelling, de blokken voor
- * de uren) en een `workDays` zonder blokken verdween na opslaan en heropenen. Een dag uit ⇒ zijn blokken
- * leeg; een dag aan ⇒ een kopie van de blokken van de eerste werkdag met blokken ({@link firstBlockedDay}).
+ * de uren) en een `workDays` zonder blokken verdween na opslaan en heropenen.
+ *  - Dag uit ⇒ zijn blokken leeg.
+ *  - Dag aan ⇒ in deze volgorde: (1) de eigen blokken van die dag in `initial` (de kalender zoals het
+ *    formulier hem opende — een korte vrijdag 08–12 + 13–15 komt zo terug als 08–12 + 13–15); (2) een
+ *    kopie van de eerste werkdag met blokken ({@link firstBlockedDay}); (3) heeft de kalender geen enkel
+ *    blok meer, de effectieve blokken van zijn enkelvoudige werkdag (begin, einde, pauze;
+ *    `seedScalarBands`), zodat een werkdag nooit zonder blokken ontstaat.
  * `hoursPerDay` volgt dan uit de blokken ({@link deriveHoursPerDay}).
  */
 export function workDayTogglePatch(
-  cal: Pick<WorkCalendar, 'workDays' | 'workTime' | 'hoursPerDay'>,
+  cal: Pick<WorkCalendar, 'workDays' | 'workTime' | 'hoursPerDay' | 'workStartHour' | 'workEndHour'
+    | 'simpleBreakStartMinute' | 'simpleBreakDurationMinutes'>,
   day: number,
+  initial?: WorkTimeBands,
 ): Partial<WorkCalendar> {
   const has = cal.workDays.includes(day);
   const workDays = has ? cal.workDays.filter((x) => x !== day) : [...cal.workDays, day].sort((a, b) => a - b);
   if (!cal.workTime || day < 1 || day > 7) return { workDays };
-  const source = has ? [] : (firstBlockedDay(cal.workTime) ?? []);
+  const own = initial?.byWeekday[day as 1];
+  const source = has
+    ? []
+    : (own && own.length > 0 ? own : firstBlockedDay(cal.workTime))
+      ?? seedScalarBands(cal.workStartHour * 60, cal.workEndHour * 60, cal.hoursPerDay,
+        cal.simpleBreakStartMinute, cal.simpleBreakDurationMinutes);
   const workTime: WorkTimeBands = {
     byWeekday: { ...cal.workTime.byWeekday, [day as 1]: source.map((b) => ({ ...b })) },
   };

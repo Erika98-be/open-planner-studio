@@ -138,6 +138,28 @@ export function legacySimpleBreakDurationMinutes(calendar: Pick<WorkCalendar, 'w
 }
 
 /**
+ * Volgorde waarin "de eerste werkdag met blokken" gezocht wordt: zondag eerst, dan maandag t/m zaterdag
+ * (ISO-nummers). Dat is de volgorde waarin MS Project zijn weekdagen schrijft (DayType 1 = zondag) en
+ * dus waarin de MSPDI- en `.mpp`-lezer hun scalaire werkdag kiezen. Eén regel voor de lezers, het
+ * bibliotheekherstel en de werkdagknoppen van de kalenderdialoog. (IFC draagt op elke werkdag
+ * dezelfde periodes, dus daar maakt de volgorde niet uit.)
+ */
+const SCALAR_DAY_ORDER = [7, 1, 2, 3, 4, 5, 6] as const;
+
+/** De blokken van de eerste werkdag met blokken (volgorde {@link SCALAR_DAY_ORDER}), of `undefined`. */
+export function firstBlockedDay(
+  bands: Pick<WorkTimeBands, 'byWeekday'> | undefined,
+): ReadonlyArray<{ start: number; end: number }> | undefined {
+  const byWeekday = bands?.byWeekday;
+  if (!byWeekday) return undefined;
+  for (const wd of SCALAR_DAY_ORDER) {
+    const day = byWeekday[wd];
+    if (Array.isArray(day) && day.length > 0) return day;
+  }
+  return undefined;
+}
+
+/**
  * De pauze die een kalender zonder pauzevelden impliciet heeft, als begin (minuut van de dag) en duur.
  *
  *  - Draagt de kalender weekbanden (`workTime`) en heeft de eerste werkdag precies twee blokken die
@@ -150,9 +172,9 @@ export function legacySimpleBreakDurationMinutes(calendar: Pick<WorkCalendar, 'w
 export function inferredSimpleBreak(
   calendar: Pick<WorkCalendar, 'workStartHour' | 'workEndHour' | 'hoursPerDay' | 'workTime'>,
 ): { startMinute: number; durationMinutes: number } {
-  const day = calendar.workTime
-    ? ISO_WEEK_DAYS.map((weekday) => calendar.workTime!.byWeekday[weekday] ?? []).find((bands) => bands.length > 0)
-    : undefined;
+  // Dezelfde dag als de lezers en het bibliotheekherstel (`firstBlockedDay`): de getoonde pauze hoort
+  // bij de dag waar begin en einde vandaan komen.
+  const day = firstBlockedDay(calendar.workTime);
   if (day && day.length === 2) {
     const [first, last] = [...day].sort((a, b) => a.start - b.start);
     const gap = last.start - first.end;

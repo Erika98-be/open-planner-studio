@@ -352,8 +352,10 @@ export function CalendarForm({
   };
 
   // Bij een uurkalender gaan de blokken mee (`workDayTogglePatch`), zodat `workDays` en `workTime`
-  // gelijk blijven — met urenplanning uit én aan.
-  const toggleWorkDay = (day: number) => onChange(workDayTogglePatch(draft, day));
+  // gelijk blijven — met urenplanning uit én aan. Een dag die weer aan gaat, krijgt eerst zijn eigen
+  // blokken terug zoals het formulier ze opende (`initialWorkTime`; CalendarDialog mount per kalender).
+  const [initialWorkTime] = useState(() => draft.workTime);
+  const toggleWorkDay = (day: number) => onChange(workDayTogglePatch(draft, day, initialWorkTime));
 
   // Het eenvoudige patroon is geen tweede engineformule: de netto uren worden alleen als
   // gebruikersfeedback uit hetzelfde effectieve-worktime-model afgeleid. Expliciete weekbanden

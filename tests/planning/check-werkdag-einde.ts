@@ -16,6 +16,8 @@
 //     (`scalarTimesValid`).
 //  §6 Werkdagknoppen: bij een uurkalender gaan de blokken mee (`workDayTogglePatch`); vrijdag uit en
 //     weer aan geeft de juiste blokken en taakeinddatum, ook na opslaan en heropenen.
+//  §6b/§6c Korte vrijdag krijgt zijn eigen blokken terug; kalender zonder blok ⇒ blokken uit de scalar.
+//  §7 Eerste werkdag met blokken: zondag eerst, voor lezer, pauze, bibliotheek en werkdagknoppen.
 //  §5 Resourcebibliotheek: een oud project met een MSP-kalender in de bibliotheek opent `in-sync`
 //     (geen afwijkingsdialoog); `behind` blijft `behind` en verversen zet geen 08:00–12:00 terug.
 import './domStub';
@@ -37,7 +39,7 @@ import {
   calendarScalarBreakIssue, inferredSimpleBreak, makeBands, scalarTimesValid,
 } from '@/utils/effectiveWorkTime';
 import { shiftPresetPatch } from '@/utils/shiftPresets';
-import { workDayTogglePatch } from '@/services/subdayIo';
+import { withRepairedFirstBlockScalar, workDayTogglePatch } from '@/services/subdayIo';
 import { parseOpenedFile } from '@/services/formatRegistry';
 import { applyCalendarUpdate, bumpPool, classifyCalendarOnOpen, normalizePoolShape } from '@/services/library/libraryOps';
 import { readFileSync } from 'node:fs';
@@ -336,7 +338,56 @@ const hourCal = (start: number, end: number): Partial<WorkCalendar> => ({
   // Zaterdag aan: krijgt de blokken van de eerste werkdag met blokken.
   same('§6 zaterdag aan: blokken van de eerste werkdag', workDayTogglePatch(S().calendar, 6).workTime?.byWeekday[6], MSP_DAY);
   // Dagkalender (geen blokken): alleen de werkdagen.
-  same('§6 dagkalender: alleen workDays', workDayTogglePatch({ workDays: [1, 2, 3, 4, 5], hoursPerDay: 8 }, 5), { workDays: [1, 2, 3, 4] });
+  same('§6 dagkalender: alleen workDays',
+    workDayTogglePatch({ workDays: [1, 2, 3, 4, 5], hoursPerDay: 8, workStartHour: 7, workEndHour: 16 }, 5), { workDays: [1, 2, 3, 4] });
+}
+
+// §6b. Een korte vrijdag (08–12 + 13–15) uit en weer aan krijgt zijn EIGEN blokken terug (de beginstand
+//      van het formulier), niet die van maandag.
+{
+  const shortFri = [{ start: 480, end: 720 }, { start: 780, end: 900 }];
+  const opened: WorkCalendar = {
+    ...readMSPDI(mspdi({ minutesPerDay: 480 })).calendar,
+  };
+  opened.workTime = { byWeekday: { ...opened.workTime!.byWeekday, 5: shortFri } };
+  const off = { ...opened, ...workDayTogglePatch(opened, 5, opened.workTime) };
+  const on = workDayTogglePatch(off, 5, opened.workTime);
+  same('§6b korte vrijdag uit en weer aan: 08–12 + 13–15 terug', on.workTime?.byWeekday[5], shortFri);
+  // Een dag die bij het openen geen blokken had (zaterdag): blokken van de eerste werkdag.
+  same('§6b zaterdag aan (had geen blokken): blokken van de eerste werkdag', workDayTogglePatch(off, 6, opened.workTime).workTime?.byWeekday[6], MSP_DAY);
+}
+
+// §6c. Een uurkalender zonder enig blok (alle dagen uitgezet): een dag aan krijgt de effectieve blokken
+//      van de enkelvoudige werkdag (07:00–16:00, 8 netto ⇒ 07–12 + 13–16), nooit een werkdag zonder blokken.
+{
+  const empty: WorkCalendar = {
+    ...readMSPDI(mspdi({ minutesPerDay: 480 })).calendar,
+    workDays: [], workTime: makeBands([], []), workStartHour: 7, workEndHour: 16, hoursPerDay: 8,
+  };
+  const on = workDayTogglePatch(empty, 1);
+  same('§6c geen enkel blok: maandag aan ⇒ 07–12 + 13–16, hpd 8', [on.workDays, on.workTime?.byWeekday[1], on.hoursPerDay],
+    [[1], [{ start: 420, end: 720 }, { start: 780, end: 960 }], 8]);
+}
+
+// ── §7 Eerste werkdag met blokken: zondag eerst (MS Project-volgorde), één regel overal ────────────
+// Kalender met zondag als werkdag (09–13 + 14–18) en maandag t/m vrijdag 08–12 + 13–17. De MSPDI-lezer
+// neemt zondag (DayType 1 staat eerst): 9/18. De getoonde pauze, het bibliotheekherstel en de
+// werkdagknoppen moeten dezelfde dag nemen.
+{
+  const sun = wt('09:00:00', '13:00:00') + wt('14:00:00', '18:00:00');
+  const days = [1, 2, 3, 4, 5, 6, 7].map(n => {
+    const times = n === 1 ? sun : n >= 2 && n <= 6 ? TWO_BLOCKS : '';
+    return `<WeekDay><DayType>${n}</DayType><DayWorking>${times ? 1 : 0}</DayWorking>${times ? `<WorkingTimes>${times}</WorkingTimes>` : ''}</WeekDay>`;
+  }).join('');
+  const cal = readMSPDI(mspdi({ minutesPerDay: 480 }).replace(weekDays(TWO_BLOCKS), days)).calendar;
+  const SUN_DAY = [{ start: 540, end: 780 }, { start: 840, end: 1080 }];
+  same('§7 fixture: zondag en maandag hebben verschillende blokken', [cal.workTime?.byWeekday[7], cal.workTime?.byWeekday[1]], [SUN_DAY, MSP_DAY]);
+  same('§7 lezer: scalar van zondag 9/18', [cal.workStartHour, cal.workEndHour], [9, 18]);
+  same('§7 getoonde pauze van zondag: 13:00, 60 min', inferredSimpleBreak(cal), { startMinute: 780, durationMinutes: 60 });
+  same('§7 bibliotheekherstel: oude scalar 9/13 (eerste zondagblok) ⇒ 9/18',
+    withRepairedFirstBlockScalar({ ...cal, workEndHour: 13 }).workEndHour, 18);
+  const sat = workDayTogglePatch(cal, 6);
+  same('§7 zaterdag aan: blokken van zondag (eerste werkdag)', sat.workTime?.byWeekday[6], SUN_DAY);
 }
 
 if (failures.length > 0) {
