@@ -1357,7 +1357,9 @@ function writeResource(ctx: WriteContext, res: Resource, ownerHistId: number): v
   // Name, Description, ObjectType, Identification, LongDescription, Usage, BaseCosts, BaseQuantity,
   // PredefinedType. Oudere versies schreven er 9, met het type op de plek van BaseCosts. De lezer leest
   // alleen GlobalId, Name en Description, dus voor hem maakt het aantal niet uit.
-  const entity = `${entityName}(${ifcStr(objectGuid(ctx, 'res', res.id))},#${ownerHistId},${ifcStr(res.name)},${ifcStr(res.description)},$,$,$,$,$,$,.USERDEFINED.)`;
+  // PredefinedType `.NOTDEFINED.`: `.USERDEFINED.` (wat oudere versies bedoelden) eist een ObjectType
+  // (regel CorrectPredefinedType), en OPS kent geen verfijning onder de vijf soorten.
+  const entity = `${entityName}(${ifcStr(objectGuid(ctx, 'res', res.id))},#${ownerHistId},${ifcStr(res.name)},${ifcStr(res.description)},$,$,$,$,$,$,.NOTDEFINED.)`;
   addLine(ctx, `res_${res.id}`, entity);
 }
 
