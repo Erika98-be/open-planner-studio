@@ -525,3 +525,9 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
 - **#339 her-check: ja** (reviewer, Opus 5.5). Crash weg (per pixel 1–12 tabbladen, geen fout). Slotronde (klein,
   vóór de merge): vangnet weg (liet pijlen staan terwijl alles past, en verborg lussen voor de test), RTL-test met
   een tabblad zonder wijzigingen, N5 (in beeld schuiven na sluiten overzicht) in de PR-tekst.
+- **#339 gemerged in main 2026-10-13: → 57f882fa4** (slotronde: vangnet weg, RTL-test met schoon tabblad, N5 in
+  PR-tekst; N7 en N9 rood; CI 15/15 op 7999ec5fb, die main 83b8be827 bevatte; `--admin`). Geen motorwerk, dus geen
+  `measure:profiles`.
+- #343 fixronde 1 klaar (maker): legacy-id-herkenning, extensie-fix, 11 mutanten rood, rapportkop/PDF-naam met code.
+  Orkestrator: `.claude/rules/xer.md` verwijzing rechtgezet, main (met #339/#340) erin → kop e15ad9bf0; lokaal
+  typecheck + checks exit 0. Her-check gestart.
