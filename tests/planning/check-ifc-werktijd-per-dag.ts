@@ -12,12 +12,15 @@
 //     eerste werkdag is de afwijkende), IFC 4.3 figuur 1; plus een tweede round-trip.
 //  §2 de vorm van het bestand: terugvalweek vooraan (datum 1900-01-01, geen STEP-id-markering), daarna
 //     de groepen zonder datum, in de volgorde van `workDays`.
-//  §3 wat een oudere OPS-versie ziet, volgens een MODEL van die lezer (zie daar): alleen de eerste
+//  §3 de inhoud van de terugvalweek, volgens een MODEL van de oudere lezer (zie daar): alleen de eerste
 //     `IFCWORKTIME`, datums genegeerd. Dit toetst de inhoud van de terugvalweek, niet de lezer van main.
+//     Sinds issue #292 (kalender met 9 attributen) lezen uitgebrachte versies `WorkingTimes` niet meer
+//     (zie §3); de week blijft staan zoals #340 hem schrijft.
 //  §4 byte-identiek aan main: een uniforme uurweek (ook met de blokken van één dag in een andere
 //     volgorde), een dagkalender zonder blokken en een scalaire kalender met urentaak (gematerialiseerde
 //     blokken). De verwachte regels zijn gemaakt met de writer van main 1e192b31a; een gewijzigde byte
-//     is een fout, geen reden om de verwachting bij te werken.
+//     is een fout, geen reden om de verwachting bij te werken. Eén bewuste uitzondering: de
+//     `IFCWORKCALENDAR`-regel heeft sinds issue #292 Identification (`$`) op plek 5 (zie §4).
 //  §5 de lezer op bestanden in de vorm die OPS schrijft, zonder `OPS_Calendar`: één `IFCWORKTIME` per
 //     tijdvak, overlap, de dag-modus (vereniging van werkdagen), de scalaire dag (eerste werkdag met
 //     blokken, zoals MSPDI/.mpp), en werktijden MET datum (zomer-/winterweek, losse werkzaterdag): die
@@ -104,11 +107,15 @@ function parseStep(ifc: string): Map<string, Entity> {
 const refs = (s: string): string[] => [...s.matchAll(/#(\d+)/g)].map((m) => m[1]);
 const ints = (s: string): number[] => s.replace(/[()]/g, '').split(',').filter(Boolean).map(Number);
 const unq = (s: string): string => s.replace(/^'|'$/g, '');
+/** Plek van `WorkingTimes` in een `IFCWORKCALENDAR` (issue #292): 6 in het schema (9 attributen, zo
+ *  schrijft de writer sinds #292), 5 in de oude vorm zonder Identification (8 attributen). Vóór #292
+ *  stond hier vast 5; de writer schrijft nu 9 attributen, dus die plek moest mee. */
+const workingTimesSlot = (calArgs: string[]): number => (calArgs.length >= 9 ? 6 : 5);
 /** De `IFCWORKTIME`'s in `WorkingTimes` van de (enige/eerste) kalender: naam, datums, weekdagen, tijdvakken. */
 function workingTimes(ifc: string) {
   const e = parseStep(ifc);
   const cal = [...e.values()].find((x) => x.type === 'IFCWORKCALENDAR')!;
-  return refs(cal.args[5]).map((id) => {
+  return refs(cal.args[workingTimesSlot(cal.args)]).map((id) => {
     const wt = e.get(id)!;
     const rec = e.get(refs(wt.args[3])[0])!;
     const periods = refs(rec.args[7]).map((p) => e.get(p)!.args.map(unq).join('-'));
@@ -190,7 +197,8 @@ function editWorkingTimes(ifc: string, edit: (ids: string[]) => string[]): strin
     const m = /^#(\d+)=IFCWORKCALENDAR\((.*)\);$/.exec(line.trim());
     if (!m) return line;
     const args = splitTop(m[2]);
-    args[5] = `(${edit(refs(args[5])).map((id) => `#${id}`).join(',')})`;
+    const slot = workingTimesSlot(args); // sinds #292 plek 6 (zie `workingTimesSlot`)
+    args[slot] = `(${edit(refs(args[slot])).map((id) => `#${id}`).join(',')})`;
     return `#${m[1]}=IFCWORKCALENDAR(${args.join(',')});`;
   }).join('\n');
 }
@@ -198,7 +206,14 @@ function editWorkingTimes(ifc: string, edit: (ids: string[]) => string[]): strin
  *  `IFCWORKTIME` van `WorkingTimes` en negeert zijn datums. Dat model is buiten deze test gemeten met de
  *  lezer van main zelf (39 kalenders uit het corpus, 39 gelijk); hier zit die lezer niet in. Het model
  *  laat alleen de eerste `IFCWORKTIME` staan, zonder datums. De huidige lezer leest één `IFCWORKTIME`
- *  langs het pad van main (ongewijzigd), dus het resultaat is wat een oudere versie ziet. */
+ *  langs het pad van main (ongewijzigd).
+ *
+ *  Sinds issue #292 is dit niet meer wat een uitgebrachte versie ziet: de kalender heeft nu 9 attributen,
+ *  en een oudere lezer zoekt `WorkingTimes` op plek 5, waar nu Identification (`$`) staat. Hij leest dus
+ *  geen werkweek, met of zonder terugvalweek (gemeten met de lezer van 1e192b31a, zie de PR-tekst van
+ *  #336; dat verlies is aanvaard, besluit eigenaar 2026-10-13). Het model toetst daarom alleen nog de
+ *  INHOUD van de terugvalweek zoals #340 hem schrijft: alle werkdagen met de blokken van de eerste
+ *  werkdag. */
 function asOlderVersionSees(ifc: string): string {
   const firstId = workingTimes(ifc)[0].id;
   return editWorkingTimes(ifc, (ids) => ids.slice(0, 1)).split('\n').map((line) => {
@@ -214,7 +229,8 @@ function flattenToFirstWorkDay(cal: WorkCalendar): WorkCalendar {
   return { ...cal, workTime: week(on(cal.workDays as Day[], first)) };
 }
 for (const [label, cal] of CASES) {
-  same(`§3 ${label}: een oudere versie ziet hetzelfde als in het bestand van main`,
+  // Label aangepast voor #292 (de assert zelf niet): zie `asOlderVersionSees`.
+  same(`§3 ${label}: de terugvalweek alleen is de week van main`,
     shape(readIFC(asOlderVersionSees(write(cal))).calendar), shape(readIFC(write(flattenToFirstWorkDay(cal))).calendar));
 }
 
@@ -246,12 +262,15 @@ const hourTask: Task = {
 };
 // Gemaakt door deze batterij met esbuild te bundelen tegen `src/` van main 1e192b31a (alias `@`) en de
 // §4-uitvoer over te nemen. Zie de kop: een afwijking is een fout in de writer, niet in deze lijst.
+// Eén bewuste afwijking van main, in elke `IFCWORKCALENDAR`-regel hieronder: sinds issue #292 schrijft
+// de writer de 9 attributen van het schema, dus na ObjectType (`$`) staat Identification (`$`) en schuift
+// `WorkingTimes` van plek 5 naar 6. Alle andere regels zijn ongewijzigd byte-identiek aan main.
 const UNIFORM_GOLDEN = [
     "#+0=IFCTIMEPERIOD('07:00:00','12:00:00');",
     "#+1=IFCTIMEPERIOD('12:30:00','16:00:00');",
     "#+2=IFCRECURRENCEPATTERN(.WEEKLY.,$,(1,2,3,4,5),$,$,$,$,(#+0,#+1));",
     "#+3=IFCWORKTIME('Standard work week',.PREDICTED.,$,#+2,$,$);",
-    "#+4=IFCWORKCALENDAR('2uNGXnRewWtJPOazG2o4_7',#<,'Uniforme uurweek',$,$,(#+3),$,.FIRSTSHIFT.);",
+    "#+4=IFCWORKCALENDAR('2uNGXnRewWtJPOazG2o4_7',#<,'Uniforme uurweek',$,$,$,(#+3),$,.FIRSTSHIFT.);", // #292: Identification
     "#+5=IFCPROPERTYSINGLEVALUE('WorkEndHour',$,IFCREAL(16),$);",
     "#+6=IFCPROPERTYSINGLEVALUE('IsHourCalendar',$,IFCBOOLEAN(.T.),$);",
     "#+7=IFCPROPERTYSET('263IQ2FKK_eiUDl$xw9qpv',#<,'OPS_Calendar',$,(#+5,#+6));",
@@ -264,7 +283,7 @@ const GOLDEN: [string, string, string[]][] = [
     "#+1=IFCRECURRENCEPATTERN(.WEEKLY.,$,(1,2,3,4,5),$,$,$,$,(#+0));",
     "#+2=IFCWORKTIME('Standard work week',.PREDICTED.,$,#+1,$,$);",
     "#+3=IFCWORKTIME('Kerst',.PREDICTED.,$,$,'2026-12-25','2026-12-26');",
-    "#+4=IFCWORKCALENDAR('2uNGXnRewWtJPOazG2o4_7',#<,'Dagkalender',$,$,(#+2),(#+3),.FIRSTSHIFT.);",
+    "#+4=IFCWORKCALENDAR('2uNGXnRewWtJPOazG2o4_7',#<,'Dagkalender',$,$,$,(#+2),(#+3),.FIRSTSHIFT.);", // #292: Identification
     "#+5=IFCPROPERTYSINGLEVALUE('HoursPerDay',$,IFCREAL(8),$);",
     "#+6=IFCPROPERTYSET('263IQ2FKK_eiUDl$xw9qpv',#<,'OPS_Calendar',$,(#+5));",
   ]],
@@ -274,7 +293,7 @@ const GOLDEN: [string, string, string[]][] = [
     "#+2=IFCRECURRENCEPATTERN(.WEEKLY.,$,(1,2,3,4,5),$,$,$,$,(#+0,#+1));",
     "#+3=IFCWORKTIME('Standard work week',.PREDICTED.,$,#+2,$,$);",
     "#+4=IFCWORKTIME('Kerst',.PREDICTED.,$,$,'2026-12-25','2026-12-26');",
-    "#+5=IFCWORKCALENDAR('2uNGXnRewWtJPOazG2o4_7',#<,'Dagkalender',$,$,(#+3),(#+4),.FIRSTSHIFT.);",
+    "#+5=IFCWORKCALENDAR('2uNGXnRewWtJPOazG2o4_7',#<,'Dagkalender',$,$,$,(#+3),(#+4),.FIRSTSHIFT.);", // #292: Identification
     "#+6=IFCPROPERTYSINGLEVALUE('HoursPerDay',$,IFCREAL(8),$);",
     "#+7=IFCPROPERTYSINGLEVALUE('WorkEndHour',$,IFCREAL(16),$);",
     "#+8=IFCPROPERTYSINGLEVALUE('IsHourCalendar',$,IFCBOOLEAN(.F.),$);",
@@ -289,8 +308,9 @@ for (const [label, ifc, want] of GOLDEN) {
 // §5 De lezer op bestanden in de vorm die OPS schrijft, zonder OPS_Calendar
 // ════════════════════════════════════════════════════════════════════════════════════════════════
 /** Een minimaal bestand: één `IFCWORKCALENDAR` met de gegeven `WorkingTimes` (weekdagen + tijdvakken
- *  als 'hh:mm', en optioneel StartDate/FinishDate). Let op: in de vorm die OPS schrijft (8 attributen,
- *  zonder `Identification`); een bestand dat het IFC 4.3-schema volgt, bereikt deze leestak nu niet. */
+ *  als 'hh:mm', en optioneel StartDate/FinishDate). Let op: in de oude vorm van OPS (8 attributen, zonder
+ *  `Identification`). Sinds issue #292 kiest de lezer de plek van `WorkingTimes` op de argumenten
+ *  (`workCalendarSlots`); de schemavorm (9 attributen) leest dezelfde tak, zie §1 (de writer schrijft 9). */
 function foreignIfc(groups: [number[], [string, string][], [string, string]?][], extra = ''): string {
   const lines: string[] = [];
   let id = 100;

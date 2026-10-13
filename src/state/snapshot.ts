@@ -8,6 +8,7 @@ import { createDefaultProject } from './defaults';
 import { createDefaultCalendar } from '@/engine/calendar/defaultCalendar';
 import { markDocumentEdited, markDocumentUnsaved } from '@/state/documentEdited';
 import { sameValue } from '@/utils/sameValue';
+import { withFileIfcSchema } from './ifcSchemaChoice';
 
 /**
  * De undo/redo-snapshot is een EXPLICIETE subset van het documentcontract.
@@ -188,7 +189,11 @@ export function documentDataChanged(before: Snapshot, after: Snapshot): boolean 
  *
  *  De herstelde waarden zijn dezelfde objecten als in de snapshot (zie `createSnapshot`): de live
  *  state en de snapshot aliassen dus na een undo. Dat is veilig om exact dezelfde reden — de
- *  eerstvolgende mutatie is een producer en die kopieert. */
+ *  eerstvolgende mutatie is een producer en die kopieert.
+ *
+ *  Uitzondering: het IFC-schema en de open schemavraag (`project.ifcSchema`/`ifcSchemaUnconfirmed`)
+ *  blijven die van de live state. Ze horen bij het bestand, niet bij de bewerkingsgeschiedenis
+ *  (`withFileIfcSchema`, review #336); alleen dan aliast het herstelde project niet met de snapshot. */
 export function restoreSnapshot(
   s: AppState,
   raw: Snapshot,
@@ -203,9 +208,11 @@ export function restoreSnapshot(
 ): void {
   const snap = migrateSnapshot(raw);
   const flat = snap as unknown as Record<string, unknown>;
+  const fileSchema = { ifcSchema: s.project.ifcSchema, ifcSchemaUnconfirmed: s.project.ifcSchemaUnconfirmed };
   for (const f of DOCUMENT_FIELDS) {
     if (f.snapshot === 'none') continue;
-    (f.set as (s: AppState, v: unknown) => void)(s, flat[f.key]);
+    const value = f.key === 'project' ? withFileIfcSchema(snap.project, fileSchema) : flat[f.key];
+    (f.set as (s: AppState, v: unknown) => void)(s, value);
   }
   // Cache gelijkzetten ná restore. `project.calendarId` én `calendars` komen allebei uit
   // DEZELFDE snapshot, dus de cache wordt consistent met het herstelde id afgeleid; de

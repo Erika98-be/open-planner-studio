@@ -5,6 +5,7 @@ import { useResolvedUITheme, useSystemColorSchemeSync } from '@/hooks/useResolve
 import { appLog } from '@/services/debug/appLog';
 import { installConsentDialogAsker } from '@/extensions/consentBridge';
 import { installSiteDialogAskers } from '@/state/siteDialogBridge';
+import { installIfcSchemaAsker } from '@/state/ifcSchemaQuestionBridge';
 import { getGuideView, subscribeGuideView } from '@/extensions/guideRuntime';
 import { EXTENSIONS_ENABLED } from '@/utils/buildFlags';
 import { TitleBar } from '@/components/layout/TitleBar/TitleBar';
@@ -72,6 +73,7 @@ const ActualStartDialog = lazy(() => import('@/components/dialogs/ActualStartDia
 const SiteOpenDialog = lazy(() => import('@/components/dialogs/SiteOpenDialog').then(m => ({ default: m.SiteOpenDialog })));
 const FormatNoticeDialog = lazy(() => import('@/components/dialogs/FormatNoticeDialog').then(m => ({ default: m.FormatNoticeDialog })));
 const SiteSaveDialog = lazy(() => import('@/components/dialogs/SiteSaveDialog').then(m => ({ default: m.SiteSaveDialog })));
+const IfcSchemaQuestionDialog = lazy(() => import('@/components/dialogs/IfcSchemaQuestionDialog').then(m => ({ default: m.IfcSchemaQuestionDialog })));
 const FeedbackDialog = lazy(() => import('@/components/dialogs/FeedbackDialog').then(m => ({ default: m.FeedbackDialog })));
 const LevelingDialog = lazy(() => import('@/components/dialogs/LevelingDialog').then(m => ({ default: m.LevelingDialog })));
 const BaselineDialog = lazy(() => import('@/components/dialogs/BaselineDialog').then(m => ({ default: m.BaselineDialog })));
@@ -166,6 +168,9 @@ function AppContent() {
   // Opslag via de site (issue #309): de vragen "Openen van de site" / "Opslaan op de site" aan hun
   // dialogen koppelen. Zonder deze registratie valt de vraag terug op "van/op deze pc" (veilig).
   useEffect(() => { installSiteDialogAskers(); }, []);
+  // De schemavraag bij opslaan (issue #292): zonder deze registratie houdt opslaan stil het schema van
+  // het bestand (de veilige terugval), maar dan krijgt de gebruiker de keuze niet.
+  useEffect(() => { installIfcSchemaAsker(); }, []);
   // Bestand van de host bij de start: na de herstelkeuze, alleen in een leeg document. Zonder site
   // gebeurt er niets.
   useSiteInitialFile(recoveryResolved, recovery);
@@ -446,6 +451,8 @@ function AppContent() {
         {/* Opslag via de site: renderen alleen bij `ui.pendingSiteOpen` / `ui.pendingSiteSave`. */}
         <SiteOpenDialog />
         <SiteSaveDialog />
+        {/* De schemavraag bij opslaan (issue #292): rendert alleen bij `ui.pendingIfcSchemaQuestion`. */}
+        <IfcSchemaQuestionDialog />
         {/* Uitleg na het openen van een ander formaat dan IFC; `key` = vinkje leeg bij elke nieuwe uitleg. */}
         {pendingFormatNotice && <FormatNoticeDialog key={pendingFormatNotice} kind={pendingFormatNotice} />}
         <LibraryLinkDialog />

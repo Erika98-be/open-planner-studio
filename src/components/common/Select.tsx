@@ -296,6 +296,7 @@ export function Select({
                     optionRefs.current[i] = el;
                   }}
                   role="option"
+                  data-value={opt.value}
                   aria-selected={isSelected}
                   aria-disabled={opt.disabled || undefined}
                   className={
@@ -328,6 +329,7 @@ export function Select({
         id={id}
         className={'ops-select__trigger' + (className ? ` ${className}` : '')}
         disabled={disabled}
+        data-value={value}
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-controls={open ? listboxId : undefined}

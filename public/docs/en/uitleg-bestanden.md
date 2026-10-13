@@ -4,7 +4,7 @@ What is actually in the file you save? And what happens to your schedule when yo
 
 ## The concept
 
-Open Planner Studio has one file format of its own: **IFC**, an open exchange format for construction information from buildingSMART. The app writes IFC 4.3; in the export list it is called *IFC 4x3*. There is no second, proprietary project file. *Save* writes your whole project as an IFC file (`.ifc`) and *Open* reads such a file back. Want to see what goes into the file? The *IFC* tab shows the IFC text of your project; *Generate IFC* refreshes that text.
+Open Planner Studio has one file format of its own: **IFC**, an open exchange format for construction information from buildingSMART. The app writes the IFC schema of the project, by default IFC 4.3 ADD2 (see [Choosing the IFC schema](docs://howto-ifc-schema-kiezen)); in the export list it is called *IFC*. There is no second, proprietary project file. *Save* writes your whole project as an IFC file (`.ifc`) and *Open* reads such a file back. Want to see what goes into the file? The *IFC* tab shows the IFC text of your project; *Generate IFC* refreshes that text.
 
 All other formats are **adapters**: translators between the model of another program and that of the app. The app reads CSV, MS Project XML, Primavera P6 XML, MS Project files (`.mpp`) and Primavera files (`.xer`). It writes CSV, MS Project XML, Primavera P6 XML and two progress sheets. You cannot export to `.mpp` or `.xer`.
 

@@ -1,8 +1,16 @@
 // Rekenprofielen in de echte gebruikersflow (spec v3.1 §8; plan taak D6). Een .xer via de ribbonknop
 // Openen en de bestandskiezer; daarna alleen echte klikken. `window.__OPS__` wordt uitsluitend gebruikt
 // om de uitkomst te LEZEN (patroon `recorded-dates.spec.ts`).
-import type { Page } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
 import { expect, test } from './fixtures/ops';
+
+// De profielkiezer is de eigen keuzelijst (`Select`), geen native <select>: de trigger draagt de
+// gekozen waarde in `data-value`, elke optie in de (naar <body> geportalde) lijst ook.
+const profileSelect = (scope: Page | Locator) => scope.locator('[data-ops-scheduling-profile-select] .ops-select__trigger');
+async function chooseProfile(trigger: Locator, value: string): Promise<void> {
+  await trigger.click();
+  await trigger.page().locator(`[role="option"][data-value="${value}"]`).click();
+}
 
 // Statusdatum (last_recalc_date) 2026-03-02, niet-gestarte taak gepland op 2026-01-05: onder P6 schuift
 // hij naar de statusdatum, onder MS Project (A23) niet ⇒ de wissel verschuift precies één taak.
@@ -44,13 +52,13 @@ test('rekenprofiel: XER opent als P6 met melding, wissel naar MS Project herbere
     await toast.locator('[data-ops-notification-action="openBackstageSection"]').click();
 
     // De actie opent Backstage → Projectinfo met het profielblok.
-    const select = page.locator('[data-ops-scheduling-profile-select]');
-    await expect(select).toHaveValue('builtin:p6');
+    const select = profileSelect(page);
+    await expect(select).toHaveAttribute('data-value', 'builtin:p6');
     // Een XER draagt de kritiekdrempel in uren (thresholdHours): de eenheid staat ZICHTBAAR bij het veld.
     await expect(page.locator('[data-ops-crit-threshold-unit]')).toHaveText(/(uren, per taakkalender|hours, per task calendar)/);
 
     // Wisselen naar MS Project en toepassen ⇒ herberekend, één taak verschoven, melding met de telling.
-    await select.selectOption('builtin:msproject');
+    await chooseProfile(select, 'builtin:msproject');
     await page.getByRole('button', { name: /^(Apply|Toepassen)$/ }).click();
     await expect.poll(() => profileOf(page)).toEqual({ id: 'msproject', baseId: 'msproject', name: '' });
     await expect.poll(() => earlyStart(page)).toBe('2026-01-05');
@@ -60,9 +68,9 @@ test('rekenprofiel: XER opent als P6 met melding, wissel naar MS Project herbere
     // Een conventie wijzigen op een ingebouwd profiel maakt "Kopie van Microsoft Project".
     await page.getByRole('button', { name: /^(File|Bestand)$/ }).first().click();
     await page.getByRole('button', { name: /^(Project info|Projectinfo)$/ }).first().click();
-    await expect(select).toHaveValue('builtin:msproject');
+    await expect(select).toHaveAttribute('data-value', 'builtin:msproject');
     await page.locator('[data-ops-convention="clampNegativeFreeFloat"]').check();
-    await expect(select).toHaveValue('current');
+    await expect(select).toHaveAttribute('data-value', 'current');
     const nameField = page.locator('[data-ops-scheduling-profile-name]');
     await expect(nameField).toHaveValue(/^(Kopie van|Copy of) Microsoft Project$/);
     // Het naamveld is te wissen; leeg is nog niet geldig: melding erbij, sjabloon opslaan uit.
@@ -152,7 +160,7 @@ test('rekenprofiel: in "datums zoals opgeslagen" is Toepassen zonder wijziging e
 
     // Wissel naar MS Project: één undo-stap, modus verlaten.
     await toBackstageInfo();
-    await page.locator('[data-ops-scheduling-profile-select]').selectOption('builtin:msproject');
+    await chooseProfile(profileSelect(page), 'builtin:msproject');
     await page.getByRole('button', { name: /^(Apply|Toepassen)$/ }).click();
     await expect.poll(() => snapshot().then(s => [s.profile, s.mode, s.undo])).toEqual(['msproject', false, opened.undo + 1]);
     await expect(strip).toHaveCount(0);
@@ -218,7 +226,7 @@ test('rekenprofiel: de SS-lag-variant komt uit de XER en is in Projectinfo te wi
   await expect(ssLag).toBeEnabled();
 
   // Onder MS Project staat C6 uit: het veld is uitgeschakeld (de waarde blijft staan).
-  await page.locator('[data-ops-scheduling-profile-select]').selectOption('builtin:msproject');
+  await chooseProfile(profileSelect(page), 'builtin:msproject');
   await expect(ssLag).toBeDisabled();
 });
 
@@ -278,7 +286,7 @@ test('rekenprofiel: P6 → OPS → P6 geeft dezelfde datums terug, ook na Bereke
   const applyProfile = async (choice: string) => {
     await page.getByRole('button', { name: /^(File|Bestand)$/ }).first().click();
     await page.getByRole('button', { name: /^(Project info|Projectinfo)$/ }).first().click();
-    await page.locator('[data-ops-scheduling-profile-select]').selectOption(choice);
+    await chooseProfile(profileSelect(page), choice);
     await page.getByRole('button', { name: /^(Apply|Toepassen)$/ }).click();
   };
 
@@ -333,9 +341,9 @@ test('rekenprofiel: conventies per thema met basiswaarde, terug naar basis en ui
   await expect(a19.locator('[data-ops-convention-base]')).toHaveText(/(basis|base): (aan|on)/);
   await expect(a19).not.toHaveAttribute('data-ops-convention-deviates', 'true');
   await expect(page.locator('[data-ops-convention-group="completedWork"] [data-ops-convention-group-deviating]')).toHaveCount(0);
-  const select = page.locator('[data-ops-scheduling-profile-select]');
-  await expect(select).toHaveValue('builtin:p6');
-  await expect(select.locator('option:checked')).toHaveText('Primavera P6');
+  const select = profileSelect(page);
+  await expect(select).toHaveAttribute('data-value', 'builtin:p6');
+  await expect(select).toHaveText('Primavera P6');
 
   // Uitleg uitklappen en weer inklappen.
   await a19.locator('[data-ops-convention-help-toggle]').click();
@@ -346,7 +354,7 @@ test('rekenprofiel: conventies per thema met basiswaarde, terug naar basis en ui
   // Een afwijking maakt een kopie en krijgt een eigen "terug naar basis"; die zet de basiswaarde terug.
   await page.locator('[data-ops-convention="p6UseRemainingStartForProgress"]').uncheck();
   await expect(a19).toHaveAttribute('data-ops-convention-deviates', 'true');
-  await expect(select).not.toHaveValue('builtin:p6');
+  await expect(select).not.toHaveAttribute('data-value', 'builtin:p6');
   await a19.locator('[data-ops-convention-reset]').click();
   await expect(page.locator('[data-ops-convention="p6UseRemainingStartForProgress"]')).toBeChecked();
   await expect(a19.locator('[data-ops-convention-reset]')).toHaveCount(0);
@@ -363,7 +371,7 @@ test('rekenprofiel: conventies per thema met basiswaarde, terug naar basis en ui
 test('rekenprofiel: na Ctrl+Z en Ctrl+Y volgt het profielblok de store, ook in de dialoog (N1)', async ({ page, ops: _ops }) => {
   await openXer(page);
   await expect.poll(() => profileOf(page)).toEqual({ id: 'p6', baseId: 'p6', name: '' });
-  const select = page.locator('[data-ops-scheduling-profile-select]');
+  const select = profileSelect(page);
   const storeChoice = () => profileOf(page).then(p => `builtin:${p?.id ?? 'ops'}`);
   const toBackstageInfo = async () => {
     await page.getByRole('button', { name: /^(File|Bestand)$/ }).first().click();
@@ -381,29 +389,29 @@ test('rekenprofiel: na Ctrl+Z en Ctrl+Y volgt het profielblok de store, ook in d
 
   // P6 → MS Project toepassen; Projectinfo opnieuw open.
   await toBackstageInfo();
-  await select.selectOption('builtin:msproject');
+  await chooseProfile(select, 'builtin:msproject');
   await apply();
   await expect.poll(storeChoice).toBe('builtin:msproject');
   await toBackstageInfo();
-  await expect(select).toHaveValue('builtin:msproject');
+  await expect(select).toHaveAttribute('data-value', 'builtin:msproject');
 
   // Ctrl+Z: de store gaat terug naar P6, de keuzelijst volgt, niets "niet toegepast".
   await pressOutsideField('Control+z');
   await expect.poll(storeChoice).toBe('builtin:p6');
-  await expect(select).toHaveValue('builtin:p6');
+  await expect(select).toHaveAttribute('data-value', 'builtin:p6');
   await expect(unapplied).toHaveCount(0);
   await expect(storeChanged).toHaveCount(0);
 
   // Ctrl+Y: terug naar MS Project, de keuzelijst volgt weer.
   await pressOutsideField('Control+y');
   await expect.poll(storeChoice).toBe('builtin:msproject');
-  await expect(select).toHaveValue('builtin:msproject');
+  await expect(select).toHaveAttribute('data-value', 'builtin:msproject');
   await expect(unapplied).toHaveCount(0);
 
   // Nog eens Ctrl+Z, dan alleen een optie wijzigen en toepassen: het profiel blijft P6.
   await pressOutsideField('Control+z');
   await expect.poll(storeChoice).toBe('builtin:p6');
-  await expect(select).toHaveValue('builtin:p6');
+  await expect(select).toHaveAttribute('data-value', 'builtin:p6');
   await page.locator('[data-ops-near-critical-enable]').check();
   await apply();
   await expect.poll(() => page.evaluate(() => window.__OPS__!.store.getState().project.schedulingOptions?.nearCriticalThreshold)).toBe(2);
@@ -412,15 +420,15 @@ test('rekenprofiel: na Ctrl+Z en Ctrl+Y volgt het profielblok de store, ook in d
   // Een VUILE draft (MS Project gekozen, niet toegepast) en dan Ctrl+Z: de keuze blijft staan, maar het
   // blok zegt eerlijk dat de store onder de draft veranderde, en "niet toegepast" staat er.
   await toBackstageInfo();
-  await select.selectOption('builtin:msproject');
+  await chooseProfile(select, 'builtin:msproject');
   await pressOutsideField('Control+z');
   await expect.poll(() => page.evaluate(() => window.__OPS__!.store.getState().project.schedulingOptions?.nearCriticalThreshold)).toBeUndefined();
-  await expect(select).toHaveValue('builtin:msproject');
+  await expect(select).toHaveAttribute('data-value', 'builtin:msproject');
   await expect(storeChanged).toBeVisible();
   await expect(unapplied).toBeVisible();
   // Verwerpen neemt de stand van de store over.
   await page.locator('[data-ops-project-info-discard]').click();
-  await expect(select).toHaveValue(await storeChoice());
+  await expect(select).toHaveAttribute('data-value', await storeChoice());
   await expect(storeChanged).toHaveCount(0);
   await expect(unapplied).toHaveCount(0);
 
@@ -430,11 +438,11 @@ test('rekenprofiel: na Ctrl+Z en Ctrl+Y volgt het profielblok de store, ook in d
   await page.locator('button.ribbon-btn').filter({ hasText: /^(Project info|Projectinfo)$/ }).click();
   const dialog = page.locator('[data-ops-project-dialog="info"]');
   await expect(dialog).toBeVisible();
-  const dialogSelect = dialog.locator('[data-ops-scheduling-profile-select]');
+  const dialogSelect = profileSelect(dialog);
   for (const combo of ['Control+y', 'Control+z', 'Control+z', 'Control+y']) {
     await dialog.locator('[data-ops-scheduling-title]').click();
     await page.keyboard.press(combo);
-    await expect.poll(async () => (await dialogSelect.inputValue()) === (await storeChoice())).toBe(true);
+    await expect.poll(async () => (await dialogSelect.getAttribute('data-value')) === (await storeChoice())).toBe(true);
   }
   await expect(dialog.locator('[data-ops-scheduling-store-changed]')).toHaveCount(0);
 });
@@ -447,7 +455,7 @@ test('rekenprofiel: Ctrl+Z van naam plus profiel zet beide velden terug (N1, met
   await expect.poll(() => profileOf(page)).toEqual({ id: 'p6', baseId: 'p6', name: '' });
   const storeName = () => page.evaluate(() => window.__OPS__!.store.getState().project.name);
   const originalName = await storeName();
-  const select = page.locator('[data-ops-scheduling-profile-select]');
+  const select = profileSelect(page);
   const nameInput = page.locator('[data-ops-project-name]');
   const toBackstageInfo = async () => {
     await page.getByRole('button', { name: /^(File|Bestand)$/ }).first().click();
@@ -463,7 +471,7 @@ test('rekenprofiel: Ctrl+Z van naam plus profiel zet beide velden terug (N1, met
   // Eén stap: naam én profiel wijzigen, dan Toepassen.
   await toBackstageInfo();
   await nameInput.fill('Gewijzigde naam');
-  await select.selectOption('builtin:msproject');
+  await chooseProfile(select, 'builtin:msproject');
   await page.getByRole('button', { name: /^(Apply|Toepassen)$/ }).click();
   await expect.poll(storeName).toBe('Gewijzigde naam');
   await toBackstageInfo();
@@ -473,14 +481,14 @@ test('rekenprofiel: Ctrl+Z van naam plus profiel zet beide velden terug (N1, met
   await pressOutsideField('Control+z');
   await expect.poll(storeName).toBe(originalName);
   await expect(nameInput).toHaveValue(originalName);
-  await expect(select).toHaveValue('builtin:p6');
+  await expect(select).toHaveAttribute('data-value', 'builtin:p6');
   await expect(unapplied).toHaveCount(0);
 
   // Ctrl+Y: beide velden volgen weer.
   await pressOutsideField('Control+y');
   await expect.poll(storeName).toBe('Gewijzigde naam');
   await expect(nameInput).toHaveValue('Gewijzigde naam');
-  await expect(select).toHaveValue('builtin:msproject');
+  await expect(select).toHaveAttribute('data-value', 'builtin:msproject');
   await expect(unapplied).toHaveCount(0);
 
   // Een naam die de gebruiker zelf typte, blijft staan bij Ctrl+Z; het profiel volgt wel.
@@ -488,7 +496,7 @@ test('rekenprofiel: Ctrl+Z van naam plus profiel zet beide velden terug (N1, met
   await pressOutsideField('Control+z');
   await expect.poll(storeName).toBe(originalName);
   await expect(nameInput).toHaveValue('Eigen invoer');
-  await expect(select).toHaveValue('builtin:p6');
+  await expect(select).toHaveAttribute('data-value', 'builtin:p6');
   await expect(unapplied).toBeVisible();
 });
 
@@ -498,7 +506,7 @@ test('rekenprofiel: Ctrl+Z van naam plus profiel zet beide velden terug (N1, met
 test('rekenprofiel: aangeraakt, teruggezet en Ctrl+Z, en een documentwissel geven geen valse waarschuwing (N1)', async ({ page, ops: _ops }) => {
   await openXer(page);
   await expect.poll(() => profileOf(page)).toEqual({ id: 'p6', baseId: 'p6', name: '' });
-  const select = page.locator('[data-ops-scheduling-profile-select]');
+  const select = profileSelect(page);
   const toBackstageInfo = async () => {
     await page.getByRole('button', { name: /^(File|Bestand)$/ }).first().click();
     await page.getByRole('button', { name: /^(Project info|Projectinfo)$/ }).first().click();
@@ -512,44 +520,44 @@ test('rekenprofiel: aangeraakt, teruggezet en Ctrl+Z, en een documentwissel geve
   const unapplied = page.locator('[data-ops-project-info-unapplied]');
 
   await toBackstageInfo();
-  await select.selectOption('builtin:msproject');
+  await chooseProfile(select, 'builtin:msproject');
   await page.getByRole('button', { name: /^(Apply|Toepassen)$/ }).click();
   await expect.poll(() => profileOf(page).then(p => p?.id)).toBe('msproject');
   await toBackstageInfo();
 
   // Aanraken en terugzetten: de draft is aangeraakt maar gelijk aan de store. Ctrl+Z volgt de store.
-  await select.selectOption('builtin:ops');
-  await select.selectOption('builtin:msproject');
+  await chooseProfile(select, 'builtin:ops');
+  await chooseProfile(select, 'builtin:msproject');
   await expect(unapplied).toHaveCount(0);
   await pressOutsideField('Control+z');
   await expect.poll(() => profileOf(page).then(p => p?.id)).toBe('p6');
-  await expect(select).toHaveValue('builtin:p6');
+  await expect(select).toHaveAttribute('data-value', 'builtin:p6');
   await expect(storeChanged).toHaveCount(0);
   await expect(unapplied).toHaveCount(0);
 
   // Vuile draft, Ctrl+Y geeft de waarschuwing; zet de gebruiker de draft gelijk aan de store, dan
   // verdwijnt de waarschuwing.
-  await select.selectOption('builtin:ops');
+  await chooseProfile(select, 'builtin:ops');
   await pressOutsideField('Control+y');
   await expect.poll(() => profileOf(page).then(p => p?.id)).toBe('msproject');
   await expect(storeChanged).toBeVisible();
-  await select.selectOption('builtin:msproject');
+  await chooseProfile(select, 'builtin:msproject');
   await expect(storeChanged).toHaveCount(0);
   await expect(unapplied).toHaveCount(0);
   // De vlag is echt gewist: een nieuwe eigen keuze is vuil, maar geeft geen oude waarschuwing terug.
-  await select.selectOption('builtin:ops');
+  await chooseProfile(select, 'builtin:ops');
   await expect(unapplied).toBeVisible();
   await expect(storeChanged).toHaveCount(0);
 
   // Vuile draft, dan een documentwissel: de draft komt van het nieuwe document, zonder waarschuwing,
   // ook niet nadat de gebruiker daar iets kiest.
-  await select.selectOption('builtin:p6');
+  await chooseProfile(select, 'builtin:p6');
   await expect(unapplied).toBeVisible();
   await page.evaluate(() => { window.__OPS__!.store.getState().newDocument(); });
   await toBackstageInfo();
-  await expect(select).toHaveValue(await profileOf(page).then(p => `builtin:${p?.id ?? 'ops'}`));
+  await expect(select).toHaveAttribute('data-value', await profileOf(page).then(p => `builtin:${p?.id ?? 'ops'}`));
   await expect(unapplied).toHaveCount(0);
-  await select.selectOption('builtin:p6');
+  await chooseProfile(select, 'builtin:p6');
   await expect(unapplied).toBeVisible();
   await expect(storeChanged).toHaveCount(0);
 });
@@ -565,8 +573,8 @@ test('rekenprofiel: poortlabels, SS-lag zonder urenkalender en sjabloonmeldingen
   expect(hasHourPlanning).toBe(false);
   await page.getByRole('button', { name: /^(File|Bestand)$/ }).first().click();
   await page.getByRole('button', { name: /^(Project info|Projectinfo)$/ }).first().click();
-  const select = page.locator('[data-ops-scheduling-profile-select]');
-  await select.selectOption('builtin:p6');
+  const select = profileSelect(page);
+  await chooseProfile(select, 'builtin:p6');
 
   // Labels volgen het register: 15 conventies alleen bij uurplanning, 8 alleen op .xer-taken.
   await expect(page.locator('[data-ops-convention-requires="hourPlanning"]')).toHaveCount(15);

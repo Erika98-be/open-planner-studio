@@ -22,11 +22,11 @@ De lijst op het tabblad *Start* en de kaarten in *Bestand › Exporteren* bieden
 - *CSV (;)*, op de kaart *CSV (puntkomma-gescheiden)*: een taaklijst die je in een spreadsheet opent.
 - *MS Project XML*: te openen in Microsoft Project.
 - *Primavera P6 XML*: voor Oracle Primavera P6.
-- *IFC 4x3*: het eigen formaat van de app, met alles erin.
+- *IFC*: het eigen formaat van de app, met alles erin, in het IFC-schema van het project (standaard IFC 4.3 ADD2).
 
 ### Een IFC-export met bibliotheekbestand
 
-Is je project gekoppeld aan een resourcebibliotheek, dan staat onder de kaarten in *Bestand › Exporteren* het vakje *Bibliotheekbestand ernaast opslaan*. Vink je het aan en kies je *IFC 4x3*, dan vraagt de app twee keer om een plek: eerst voor het project, daarna voor *projectnaam-bibliotheek.ifc*. Dit vakje staat alleen in *Bestand › Exporteren*, niet in de lijst op het tabblad *Start*.
+Is je project gekoppeld aan een resourcebibliotheek, dan staat onder de kaarten in *Bestand › Exporteren* het vakje *Bibliotheekbestand ernaast opslaan*. Vink je het aan en kies je *IFC*, dan vraagt de app twee keer om een plek: eerst voor het project, daarna voor *projectnaam-bibliotheek.ifc*. Dit vakje staat alleen in *Bestand › Exporteren*, niet in de lijst op het tabblad *Start*.
 
 ### Een voortgangsblad terugzetten
 

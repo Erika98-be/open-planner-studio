@@ -155,6 +155,8 @@ const PROJECT_VERDICTS = {
   defaultTaskDurationUnit: 'n/a',
   defaultWorkRule: 'n/a',          // projectstandaard-regel, geen datum
   companyId: 'n/a', companyName: 'n/a',  // statische bibliotheekbinding, geen planningsdatum
+  ifcSchema: 'n/a',               // schema van de bestandskop, geen datum
+  ifcSchemaUnconfirmed: 'n/a',    // open schemavraag bij opslaan, geen datum
   p6ProjectCode: 'n/a',            // P6 Project-ID, geen datum
 } satisfies Record<keyof Project, MoveVerdict>;
 

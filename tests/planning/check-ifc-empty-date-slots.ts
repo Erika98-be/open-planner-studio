@@ -19,6 +19,7 @@
 import { useAppStore } from '@/state/appStore';
 import { writeIFC } from '@/services/ifc/ifcWriter';
 import { readIFC } from '@/services/ifc/ifcReader';
+import { WORK_CONTROL_ARITY, workControlSlots } from '@/services/ifc/ifcWorkControlSlots';
 import { buildWriteIFCInput } from '@/state/ifcSaveInput';
 import { createDefaultTaskTime } from '@/utils/taskDefaults';
 import type { Task } from '@/types/task';
@@ -113,7 +114,9 @@ const isTaskTime = (name: string) => (args: string[]) => args[0] === `'${name} T
 {
   // Een extern bestand kent het OPS-pset niet: hernoem de eigenschap zodat alleen WORKPLAN overblijft.
   const zonderPset = base.replace("'ProjectEndDate'", "'OnbekendVeld'");
-  const ifc = blankSlots(zonderPset, 'IFCWORKPLAN', () => true, [13]);
+  // FinishTime op de plek die bij het argumentaantal van de writer hoort (issue #292: 12 in het
+  // schema, 13 in bestanden van oudere versies).
+  const ifc = blankSlots(zonderPset, 'IFCWORKPLAN', () => true, [workControlSlots(Array<string>(WORK_CONTROL_ARITY).fill('$')).finishTime]);
   eq('2a projecteinde bij leeg FinishTime-slot', readIFC(ifc).project.endDate, '');
   ok('2b zonder die bewerking levert de WORKPLAN nog gewoon zijn einde (controle)',
     readIFC(zonderPset).project.endDate.startsWith('2015'));

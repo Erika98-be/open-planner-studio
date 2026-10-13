@@ -195,6 +195,10 @@ eerste werkdag, en zette de reader die op elke werkdag. Zo staat het nu in het b
   van de eerste groep als werkdag: een korte vrijdag werd daar een vrije dag (gemeten met de reader van
   main 1e192b31a). De reader herkent de terugvalweek aan zijn datum. Er is bewust geen markering met een
   STEP-id: een ander pakket mag de id's hernummeren, en dan wijst zo'n markering naar de verkeerde regel.
+  Sinds issue #292 heeft `IfcWorkCalendar` 9 attributen. Uitgebrachte versies lezen `WorkingTimes` dan
+  op plek 5, waar nu Identification (`$`) staat: de terugvalweek helpt hen niet meer, en zij lezen hem
+  op plek 6 als een feestdag op 1900-01-01. Dat valt onder het aanvaarde verlies voor oudere versies
+  (PR #336, *Voorwaartse compatibiliteit*). De week blijft staan.
 - **De scalar staat altijd in `OPS_Calendar`.** Bij meer groepen schrijft de writer `WorkStartHour` en
   `WorkEndHour` altijd: een oudere reader leidt ze af uit de terugvalweek, deze reader uit de eerste
   werkdag met blokken.
@@ -213,11 +217,12 @@ het bestand, wat een oudere versie leest, byte-identiek aan main, werktijden met
 STEP-id's en een weggevallen `OPS_Calendar`) en in de uurkalender `hourCal` in de fixture van
 `check-ifc-roundtrip.ts`.
 
-**Externe bestanden.** OPS schrijft `IfcWorkCalendar` zonder `Identification` (van `IfcControl`): 8
-attributen, terwijl IFC4 en IFC 4.3 er 9 eisen. De reader leest dezelfde posities als de writer. Een
-kalender uit een bestand dat het schema volgt, bereikt de leestak hierboven daardoor nu niet: hij komt
-binnen zonder werktijden. Andersom kan een programma dat het schema volgt de kalender van OPS niet goed
-lezen. Dat is een aparte, nog open fout. Deze sectie zegt dus niets over interop met andere programma's.
+**Externe bestanden.** Sinds issue #292 schrijft OPS `IfcWorkCalendar` met de 9 attributen van het
+schema (Identification `$`, `WorkingTimes` op plek 6). De reader kiest de plekken op de argumenten van de
+kalender (`workCalendarSlots` in `ifcWorkControlSlots.ts`): 9 = het schema, 8 = de oude OPS-vorm zonder
+Identification. Een kalender uit een bestand dat het schema volgt, bereikt de leestak hierboven dus wel.
+Getoetst met bestanden van de eigen writer (`check-ifc-arity`, `check-ifc-legacy-arity`, ook na IfcOpenShell
+`MergeProjects`); met kalenders die andere programma's schrijven niet.
 
 ## Wat dit niet dekt
 
