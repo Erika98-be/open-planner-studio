@@ -372,3 +372,11 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   `uiFont.ts`). Gemerged met `--admin`. GitHub toont #320 #325 #326 #334 als gemerged. Eigenaar: checkstap 6
   ("perfect") en 7 ("volgens mij werkt het") akkoord. Netwerkstoring; feestdagen-worker hervat met gemeten stand
   (055a787be, nog geen PR).
+- #335 (`claude/fix-mspdi-feestdagen`): open (niet gemerged), concept, CI groen op e802e313b. Bron "golden rule":
+  onbewuste implementatiedefault (f7a53ea00, 2026-03-09), later door een agent zo genoemd; geen eigenaarsbesluit.
+  MSPDI-kalender met werkweek zonder uitzonderingen ⇒ geen NL-feestdagen; plus `<BaseCalendarUID>`-overerving van
+  uitzonderingen en Project 2003 `DayType 0`. Corpus: 1212 → 1 kalenders met NL-feestdagen; Aristocrat 218 → 3557
+  exacte taken; Woodscapes −10 door bestaande fout (projectkalender = eerste `<Calendar>` i.p.v. `<CalendarUID>`).
+  `measure:profiles` EXIT 0. Fixronde gestart: projectkalender via `CalendarUID` en werkweek-overerving.
+- Prototype optie 2 kalendervenster: worktree `prototype-optie2`, lokale branch `claude/prototype-kalender-optie2`
+  (niet pushen), dev-server poort 3061; vergelijkingsschermen in `/tmp/qa-kal/vergelijk/`. Keuze ligt bij eigenaar.
