@@ -544,12 +544,11 @@ function ProjectInfoSection({ panelRef, onApply, dirty, onDirtyChange, canSubmit
       <div className="backstage-form">
         <ProjectInfoPanelContent ref={panelRef} mode="edit" onDone={onApply} onValidityChange={onValidityChange} onDirtyChange={onDirtyChange} />
 
-        {/* De actiebalk plakt onderaan het zichtbare deel van de sectie —
-            Toepassen staat anders ver onder de eerste conventie. Wijkt de draft af, dan staat er
-            een gekleurd blok "niet toegepast" met Verwerpen naast Toepassen. `data-ops-toast-avoid`:
-            de meldingenstapel schuift boven deze balk. */}
+        {/* De actiebalk staat onderaan het formulier (plakt niet meer: eigenaar, 2026-10-13). Wijkt de
+            draft af, dan staat er een gekleurd blok "niet toegepast" met Verwerpen naast Toepassen.
+            `data-ops-toast-avoid`: staat de balk in beeld, dan schuift de meldingenstapel erboven. */}
         <div
-          className={`backstage-actions backstage-actions--sticky${dirty ? ' is-dirty' : ''}`}
+          className={`backstage-actions backstage-actions--stack${dirty ? ' is-dirty' : ''}`}
           data-ops-project-info-actions
           data-ops-toast-avoid
         >

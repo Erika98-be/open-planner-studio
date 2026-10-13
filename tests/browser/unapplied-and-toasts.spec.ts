@@ -36,19 +36,18 @@ test('B2: wegnavigeren met een niet-toegepaste wijziging vraagt Toepassen/Verwer
   await expect(dialog).toHaveCount(0);
   await expect.poll(() => activeTab(page)).toBe('start');
 
-  // Wijzigen ⇒ gekleurd blok "niet toegepast"; de actiebalk met Toepassen staat in beeld zonder scrollen.
+  // Wijzigen ⇒ gekleurd blok "niet toegepast" in de actiebalk. De balk plakt NIET (eigenaar,
+  // 2026-10-13): hij staat onder het formulier, dus het blok hangt niet over de inhoud.
   await toProjectInfo(page);
   expect(await conventionOverride(page)).toBeNull();
   await page.locator(CONVENTION).check();
   await expect(marker).toBeVisible();
+  expect(await bar.evaluate(el => getComputedStyle(el).position)).toBe('static');
+  await apply.scrollIntoViewIfNeeded();
   const viewport = page.viewportSize()!;
   const applyBox = (await apply.boundingBox())!;
   expect(applyBox.y + applyBox.height).toBeLessThanOrEqual(viewport.height);
   expect(applyBox.y).toBeGreaterThanOrEqual(0);
-  // De balk plakt tegen de onderrand van het scrollgebied (geen doorschemerende strook eronder).
-  const mainBox = (await page.locator('.backstage-main').boundingBox())!;
-  const barBox = (await bar.boundingBox())!;
-  expect(Math.abs(barBox.y + barBox.height - (mainBox.y + mainBox.height))).toBeLessThanOrEqual(1);
   if (SHOTS) await page.screenshot({ path: `${SHOTS}/b2-01-markering-niet-toegepast.png` });
 
   // Terug ⇒ dialoog; Annuleren houdt de sectie en de wijziging.
@@ -229,11 +228,13 @@ test('B5: meldingen bedekken geen knoppen van de Projectinfo-dialoog, de wizard 
   await page.locator('[data-ops-project-cancel]').click();
   await page.setViewportSize({ width: 1280, height: 720 });
 
-  // Backstage → Projectinfo met een niet-toegepaste wijziging: de stapel schuift boven de balk.
+  // Backstage → Projectinfo met een niet-toegepaste wijziging: staat de balk in beeld, dan schuift de
+  // stapel erboven. De balk plakt niet meer, dus eerst naar de balk scrollen.
   await toProjectInfo(page);
   await page.locator(CONVENTION).check();
-  await expect(page.locator('.ops-toast-stack')).toHaveAttribute('data-ops-toast-placement', 'above');
   const bar = page.locator('[data-ops-project-info-actions]');
+  await bar.scrollIntoViewIfNeeded();
+  await expect(page.locator('.ops-toast-stack')).toHaveAttribute('data-ops-toast-placement', 'above');
   await expectNotCovered(page, bar.getByRole('button', { name: /^(Apply|Toepassen)$/ }));
   await expectNotCovered(page, bar.locator('[data-ops-project-info-discard]'));
   if (SHOTS) await page.screenshot({ path: `${SHOTS}/b5-04-backstage-balk.png` });
