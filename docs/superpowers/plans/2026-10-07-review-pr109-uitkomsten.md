@@ -522,3 +522,6 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   voor fase 2.
 - #338 bijgewerkt met main (bb94a59d5, met #340) door de orkestrator; lokaal typecheck, `check-werkdag-einde` en
   `check-ifc-werktijd-per-dag` exit 0; CI loopt. Testversie (lokaal, `release-check-3`) heeft nu #338 + #340 + #339.
+- **#339 her-check: ja** (reviewer, Opus 5.5). Crash weg (per pixel 1–12 tabbladen, geen fout). Slotronde (klein,
+  vóór de merge): vangnet weg (liet pijlen staan terwijl alles past, en verborg lussen voor de test), RTL-test met
+  een tabblad zonder wijzigingen, N5 (in beeld schuiven na sluiten overzicht) in de PR-tekst.
