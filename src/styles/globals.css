@@ -2326,7 +2326,8 @@ body {
   color: var(--error);
 }
 
-/* Alerts (DESIGN-SYSTEM.md §3.5) */
+/* Alerts (DESIGN-SYSTEM.md §3.5). Alle varianten volgen het thema: een tint van hun signaalkleur over
+   --theme-surface met de gewone tekstkleur (eigenaar, 2026-10-13; vaste lichte kleuren vielen in donker op). */
 .alert {
   padding: var(--sp-4) var(--sp-6);
   border-radius: var(--radius-md);
@@ -2338,9 +2339,9 @@ body {
 /* Info gebruikt het oranje accent van de app (eigenaar, 2026-10-13) en volgt het thema: een tint van
    --theme-accent over --theme-surface, zoals de geselecteerde rij, met de gewone tekstkleur. */
 .alert--info    { background: color-mix(in srgb, var(--theme-accent) 12%, var(--theme-surface)); border-left-color: var(--theme-accent); color: var(--color-text-primary); }
-.alert--success { background: #F0FDF4; border-left-color: var(--success); color: #166534; }
-.alert--warning { background: #FFFBEB; border-left-color: #D97706;       color: #92400E; }
-.alert--error   { background: #FEF2F2; border-left-color: var(--error);   color: #991B1B; }
+.alert--success { background: color-mix(in srgb, var(--success) 12%, var(--theme-surface)); border-left-color: var(--success); color: var(--color-text-primary); }
+.alert--warning { background: color-mix(in srgb, var(--warning) 16%, var(--theme-surface)); border-left-color: var(--warning); color: var(--color-text-primary); }
+.alert--error   { background: color-mix(in srgb, var(--error) 12%, var(--theme-surface)); border-left-color: var(--error); color: var(--color-text-primary); }
 
 /* Badges (DESIGN-SYSTEM.md §3.6) */
 .badge {
@@ -2354,12 +2355,12 @@ body {
   border-radius: var(--radius-full);
   white-space: nowrap;
 }
-.badge--amber { background: #FEF3C7; color: #92400E; }
-.badge--green { background: #DCFCE7; color: #166534; }
-.badge--red   { background: #FEE2E2; color: #991B1B; }
+.badge--amber { background: color-mix(in srgb, var(--warning) 26%, var(--theme-surface)); color: var(--color-text-primary); }
+.badge--green { background: color-mix(in srgb, var(--success) 22%, var(--theme-surface)); color: var(--color-text-primary); }
+.badge--red   { background: color-mix(in srgb, var(--error) 22%, var(--theme-surface)); color: var(--color-text-primary); }
 /* Info-label: zelfde accent-tint als .alert--info (eigenaar, 2026-10-13). */
 .badge--blue  { background: color-mix(in srgb, var(--theme-accent) 22%, var(--theme-surface)); color: var(--color-text-primary); }
-.badge--gray  { background: #F4F4F5; color: #3F3F46; }
+.badge--gray  { background: color-mix(in srgb, var(--color-text-primary) 10%, var(--theme-surface)); color: var(--color-text-primary); }
 
 /* Tags (DESIGN-SYSTEM.md §3.7) */
 .tag {
