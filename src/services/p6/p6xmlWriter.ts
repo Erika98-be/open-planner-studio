@@ -705,14 +705,15 @@ export function isOpsInternalProjectId(id: string): boolean {
 /**
  * Het interne project-id dat de writer tot en met v2026.9.0 als `<Id>` schreef (`leaf('Id', project.id)`),
  * dus geen code van de gebruiker. Twee vormen:
- *  - `generateId('proj')`: `proj-` + `Date.now()` in base36 (8 tekens sinds 1972) + willekeurige
- *    base36-tekens + een teller. Herkend aan de tijdstempel: tussen 2026-01-01 (de app bestaat sinds
- *    februari 2026) en morgen. Zo blijven codes als `proj-benchmark`, `proj-zuidas2026` of
- *    `proj-abcdefghij` (tijdstempel in 1997, 2056, 1994) echte codes.
+ *  - `generateId('proj')`: `proj-` + `Date.now()` in base36 (8 tekens sinds 1972) + 4 willekeurige
+ *    base36-tekens + een teller in cijfers. Herkend aan die vorm én aan de tijdstempel: tussen
+ *    2026-01-01 (de app bestaat sinds februari 2026) en morgen. Zo blijven codes als `proj-benchmark`,
+ *    `proj-monument`, `proj-museumplein` of `proj-mozart123` echte codes (review #343 ronde 2: alleen
+ *    de tijdstempel liet woorden van 8+ letters wegvallen).
  *  - IFC-afgeleid (`ifcReader` `extractProject`): `proj-ifc-<GlobalId>` of `proj-ifc-step-<STEP-id>`.
  * Een kortere of andere vorm (`proj-01`, `proj-ext-hal`, `PROJ-001`) is altijd een code.
  */
-const LEGACY_OPS_PROJECT_ID = /^proj-(?:ifc-(?:step-)?[0-9A-Za-z_$]+|([0-9a-z]{8})[0-9a-z]*)$/;
+const LEGACY_OPS_PROJECT_ID = /^proj-(?:ifc-(?:step-)?[0-9A-Za-z_$]+|([0-9a-z]{8})[0-9a-z]{4}\d+)$/;
 const LEGACY_OPS_PROJECT_ID_FROM = Date.UTC(2026, 0, 1);
 export function isLegacyOpsProjectId(id: string, now: number = Date.now()): boolean {
   const m = LEGACY_OPS_PROJECT_ID.exec(id);

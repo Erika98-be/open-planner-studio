@@ -296,14 +296,15 @@ eq('8b code = naam ⇒ één keer', nameWithProjectCode('OZB-05', 'OZB-05'), 'OZ
   const NOW = Date.UTC(2026, 9, 13, 12);
   const stamp = (y: number, m: number, d: number) => `proj-${Date.UTC(y, m, d, 9).toString(36)}`;
   const intern = [
-    `${stamp(2026, 1, 23)}k3x91`, `${stamp(2026, 8, 15)}ab12`, `${stamp(2026, 9, 12)}zz7`, // feb, sep, okt 2026
+    `${stamp(2026, 1, 23)}k3x91`, `${stamp(2026, 8, 15)}ab1c2`, `${stamp(2026, 9, 12)}zz7q3`, // feb, sep, okt 2026
     'proj-mv70oeeg5neh1179', 'proj-ifc-3vB2YO$MX4xv5uCqZZG05x', 'proj-ifc-step-300T', 'proj-ifc-step-12',
   ];
   const codes = [
     'OZB-05', 'OZB-14 1st Update', 'MER-1-2026', '4408', 'PROJ-001', 'proj-01', 'Proj-2024-A', 'proj-ext-hal',
     'proj-2026-uitbreiding', 'proj-uitbreiding', 'proj-abcdefghij', 'proj-benchmark', 'proj-zuidas2026',
-    `${stamp(2025, 11, 30)}ab1`, // vóór de app bestond
-    `${stamp(2026, 9, 20)}ab1`,  // na morgen (t.o.v. NOW)
+    'proj-monument', 'proj-museumplein', 'proj-multiplex', 'proj-mozart123', 'proj-mrbouw2026', // woorden met een tijdstempel in 2026
+    `${stamp(2025, 11, 30)}ab1c1`, // vóór de app bestond
+    `${stamp(2026, 9, 20)}ab1c1`,  // na morgen (t.o.v. NOW)
   ];
   eq('10a intern project-id ⇒ herkend', intern.map(id => [id, isLegacyOpsProjectId(id, NOW)]), intern.map(id => [id, true]));
   eq('10a\' een id van generateId(\'proj\') van nu ⇒ herkend (echte klok)', isLegacyOpsProjectId(generateId('proj')), true);
@@ -315,7 +316,7 @@ eq('8b code = naam ⇒ één keer', nameWithProjectCode('OZB-05', 'OZB-05'), 'OZ
     return (isMultiDocumentImport(r) ? r.results : [r]).map(d => d.project.p6ProjectCode);
   };
   eq('10c lezer: intern id ⇒ geen code', read([...intern, generateId('proj')]), [...intern, 'nu'].map(() => undefined));
-  eq('10d lezer: echte code blijft', read(codes.slice(0, 13)), codes.slice(0, 13));
+  eq('10d lezer: echte code blijft', read(codes.slice(0, 18)), codes.slice(0, 18));
 
   // Zoals een export uit v2026.9.0 (de reviewer zag "Kantoor Zuidas (proj-mv70oeeg5neh1179)").
   const OLD = `<?xml version="1.0"?><APIBusinessObjects>
