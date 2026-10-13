@@ -22,9 +22,9 @@
  * `cal.hoursPerDay` van vóór promotie lezen, niet de door `deriveHoursPerDay` herberekende waarde.
  *
  * Twee bewuste verschillen met `mspdiReader.ts`:
- *  a. `WorkCalendar.holidays` begint hier ALTIJD als `[]`; mspdiReader start bij
- *     `createDefaultCalendar()` (met gegenereerde NL-feestdagen) en overschrijft die alleen bij ≥1
- *     `<Exception>`. MPP-kalenders zijn altijd letterlijke bestandsdata, nooit een stille default.
+ *  a. `WorkCalendar.holidays` begint hier ALTIJD als `[]`; mspdiReader houdt de NL-feestdagen van
+ *     `createDefaultCalendar()` alleen bij een kale `<Calendar>` (geen werkweek, geen uitzonderingen,
+ *     geen basiskalender). MPP-kalenders zijn altijd letterlijke bestandsdata, nooit een stille default.
  *  b. Naamloze kalenders krijgen hier `"Kalender <uid>"` (uniek per kalender); mspdiReader valt terug
  *     op `"Imported Calendar"`.
  *
