@@ -21,6 +21,8 @@ The three choices:
 
 ## Pitfalls and what the app does
 
+**Merge as the last step.** Do not open the merged 4D file (building model plus schedule) in the app to save it again. The app keeps only the schedule: the walls and the other parts of the building model are lost, also if you keep the schema. Change the schedule in your own file and merge again afterwards.
+
 **The app asks first when an opened file has another schema.** If you open, for example, an IFC4 file, or an IFC 4.3 file from an older version of the app, the app does not simply change the file type. The first time you use *Save* or *Save as*, it first asks whether you keep the schema of the file or go to IFC 4.3 ADD2. *Keep IFC4* (or *Keep IFC 4.3*) is the button that Enter chooses. If you close the question with Esc or the cross, the app saves nothing.
 
 **The app asks only once per file.** Your choice is stored in the file itself. If you open it again later, the app does not ask again. If you choose a schema yourself in *Project info* and click *Apply*, the app does not ask either.

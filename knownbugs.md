@@ -251,6 +251,29 @@ en noem het in je rapport of PR-tekst.
     (EarlyFinish/LateFinish) op 2027-12-01. Zo staat het ook op main (1e192b31a en later). Na
     `MergeProjects` neemt IfcOpenShell deze datums over. Voorstel: de getoonde datums gebruiken (werkelijk,
     anders early, anders invoer), zoals de baseline doet. Gevonden bij #292, niet daar opgelost. — B
+110. **Een samengevoegd 4D-bestand (bouwmodel plus planning) openen en weer opslaan wist het bouwmodel.** De
+    writer schrijft alleen wat de app zelf kent; vreemde entiteiten zoals `IFCWALL`, `IFCBUILDING` en
+    `IFCSITE` gaan niet mee (`ifcWriter.ts`). Nagemeten: `examples/10-villa-wassenaar.ifc` met ifcpatch
+    `MergeProjects` (IfcOpenShell 0.9.0) samengevoegd met een model met 3 muren, daarna `readIFC` →
+    `writeIFC`: 0 muren, 0 gebouwen, 0 terreinen; de 47 taken en 40 relaties blijven. Zo ook met de
+    lezer en writer van main. De schemavraag maakt dit niet erger, maar *IFC4 houden* op een
+    IFC4-bouwmodel kan doen denken dat het bestand heel blijft. De gids `howto-ifc-schema-kiezen`
+    waarschuwt daarom: samenvoegen als laatste stap. Voorstel: bij openen melden dat opslaan de
+    modelinhoud niet bewaart, of vreemde entiteiten letterlijk meenemen. Gevonden bij de review van
+    #336. — B
+111. **Een bestand van een oudere app-versie dat door IfcOpenShell `MergeProjects` is gehaald, leest de
+    lezer van #292 verkeerd.** IfcOpenShell herschrijft `IfcWorkCalendar` en `IfcWorkPlan`/
+    `IfcWorkSchedule` met het schema-aantal argumenten (9 en 14), maar laat de waarden op hun oude plek:
+    de werkweek staat dan op Identification, de uitzonderingen op WorkingTimes, en PredefinedType (ploeg,
+    `.BASELINE.`) valt weg. De lezer kiest de indeling op het argumentaantal en leest dus de
+    schema-indeling. Gemeten met het rijke testproject van de oude writer (origin/main 1e192b31a, kop met
+    de hand op IFC4, zoals in het issue) en een IFC4-model: vóór de merge 18 feestdagen, 1 werkende
+    uitzondering, werkuren 07–16 en drie ploegen in de bibliotheek; na de merge met de lezer van #292
+    0 feestdagen, 0 uitzonderingen, werkuren 07–12 en geen ploegen. De lezer van main geeft na de merge
+    19 feestdagen (de werkende uitzondering als feestdag), werkuren 07–16 en geen ploegen. Voor dit geval
+    is #292 dus slechter dan main. Taken (20), baselines (2) en de projectstart blijven gelijk (pset).
+    Voorstel: in een OPS-bestand de indeling ook op het soort waarde kiezen (een lijst op de plek van
+    Identification ⇒ oude indeling). Gevonden bij de review van #336, niet daar opgelost. — B
 
 ## Rondleiding, Help en extensie-gidsen
 
