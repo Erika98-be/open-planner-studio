@@ -14,7 +14,7 @@ TypeScript-module van met een tabel per schema.
 Waarom per schema: de attribuutaantallen van de OPS-entiteiten zijn in de drie gelijk, maar de
 toegestane enum-literals niet. IfcTaskTypeEnum kent bijvoorbeeld INSPECTION alleen in IFC 4.3; een
 IFC4-bestand met `.INSPECTION.` is ongeldig. Ook enkele getypeerde waarden verschillen
-(IFCURIREFERENCE bestaat niet in IFC4, IFCCOUNTMEASURE is daar een NUMBER).
+(IFCURIREFERENCE mag in IFC4 en IFC4X3 niet in IfcValue staan, IFCCOUNTMEASURE is in IFC4 een NUMBER).
 
 Waarom een gegenereerde tabel: CI draait geen Python. De poort `tests/planning/check-ifc-schema.ts`
 toetst elke regel die de writer schrijft tegen deze tabel. Een nieuwe entiteit in de writer zet je
