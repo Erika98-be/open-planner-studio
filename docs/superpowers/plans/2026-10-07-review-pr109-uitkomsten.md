@@ -476,3 +476,9 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   renderfout een leeg scherm).
 - #338 slotronde klaar: kop 3d80329f4 (main 14a23c1a2 erin, geen conflicten), N8/N9/MCP-mutant rood, MCP-cases §12
   in `cases-uurkalender.ts`. Wacht op checkstap 10 van de eigenaar; daarna merge.
+- **B7 klaar als #340** (`claude/ifc-werktijd-per-dag`, 1dde0dec6, CI groen na één fix in een MCP-case die de oude
+  fout vastpinde). Eén `IfcWorkTime` per groep weekdagen; vooraan een terugvalweek (oude vorm, alleen geldig op
+  1900-01-01, met pset-markering) zodat oudere app-versies het bestand lezen zoals nu. Byte-identiek voor een
+  gelijke week (482 van 499 corpusdocumenten; de 17 verschillen hebben echte verschillen per dag). 11 mutanten
+  rood; `measure:profiles` exit 0, cel-delta 0. Proefmerge met #338: geen tekstconflict. Review gestart
+  (reviewer, Opus 5.5), inclusief de combinatie met #338.
