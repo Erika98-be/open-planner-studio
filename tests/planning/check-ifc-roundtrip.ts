@@ -162,10 +162,30 @@ const libCal = {
   libraryOrigin: { companyId: 'c-fixture', libraryItemId: 'lib-libcal', poolVersion: 4 },
 } satisfies Omit<Required<WorkCalendar>, 'workTime' | 'simpleBreakStartMinute' | 'simpleBreakDurationMinutes'>;
 
-// Type-only VOLLEDIGHEIDSGETUIGE voor WorkCalendar: `workTime` aanwezig ⇒ UUR-kalender, wat de
-// dag-modus-round-trip zou ontsporen (durationMinutes/echte tijden). De veld-volledigheid van
-// WorkCalendar bewaken we daarom hier op typeniveau; de round-trip-fixtures blijven dag-modus. De
-// uur-modus-round-trip (workTime/banden) is gedekt door check-adapters-hours.ts.
+// B7 (rapport-ifc): een UUR-bibliotheekkalender met werkblokken die per weekdag verschillen — een
+// korte vrijdag. Geen taak gebruikt hem, dus de taken blijven dag-modus; `workTime` loopt wél door de
+// echte vergelijking (`CALENDAR_CANON.workTime`). Vóór B7 schreef de writer alleen de blokken van de
+// eerste werkdag en kwam vrijdag terug als 07:00–12:00 + 12:30–15:30. `workEndHour` 15.5 ≠ het einde
+// van de eerste periode (12): de `WorkEndHour`-property moet hem dragen. `hoursPerDay` 8 = de modale
+// dagsom (ma–do 8 u, vr 4 u), zoals de kalenderdialoog hem bij een uurkalender afleidt.
+const MA_DO = [{ start: 420, end: 720 }, { start: 750, end: 930 }];
+const hourCal = {
+  id: 'hourcal', name: 'Uurkalender korte vrijdag', description: 'Ma-do 07:00-12:00 + 12:30-15:30, vr 07:00-11:00',
+  workDays: [1, 2, 3, 4, 5], workStartHour: 7, workEndHour: 15.5, hoursPerDay: 8,
+  holidays: [{ name: 'Koningsdag', startDate: '2026-04-27', endDate: '2026-04-27' }],
+  workingExceptions: [],
+  p6Source: 'XER',
+  p6NonWorkPenaltyDates: [],
+  p6NonWorkPenaltyDatesState: 'VALID_EMPTY',
+  generation: LIB_GEN, shift: 'USERDEFINED',
+  libraryOrigin: { companyId: 'c-fixture', libraryItemId: 'lib-hourcal', poolVersion: 4 },
+  workTime: { byWeekday: { 1: MA_DO, 2: MA_DO, 3: MA_DO, 4: MA_DO, 5: [{ start: 420, end: 660 }], 6: [], 7: [] } },
+} satisfies Omit<Required<WorkCalendar>, 'simpleBreakStartMinute' | 'simpleBreakDurationMinutes'>;
+
+// Type-only VOLLEDIGHEIDSGETUIGE voor WorkCalendar: het eenvoudige pauzepatroon
+// (`simpleBreakStartMinute`/`simpleBreakDurationMinutes`) hoort bij een SCALAIRE kalender, `workTime`
+// bij een UURkalender — geen echte fixture draagt beide. De veld-volledigheid van WorkCalendar bewaken
+// we daarom hier op typeniveau. `workTime` zelf round-tript wél echt: zie `hourCal` hierboven.
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const _CALENDAR_FIELD_WITNESS = {
   id: 'w', name: 'w', description: 'w', workDays: [1, 2, 3, 4, 5],
@@ -444,7 +464,7 @@ const baselines = [{
 
 export const fixture: ImportResult = {
   project, calendar: projCal, tasks, sequences, resources, assignments,
-  resourceCalendars: [projCal, libCal], // projCal-entry wordt door de writer eruit gefilterd (b)
+  resourceCalendars: [projCal, libCal, hourCal], // projCal-entry wordt door de writer eruit gefilterd (b)
   activityCodeTypes, customFieldDefs, baselines, activeBaselineId: 'bl-1',
   // OPS_ImportProvenance (heropen-beleid optie B + eigenaarsbesluit 2026-09-24 "beperken"). Beide
   // onderscheidend: de defaults zijn `false`/afwezig, en een writer die niets schrijft valt zo op.
@@ -554,7 +574,13 @@ const CALENDAR_CANON = {
   p6NonWorkPenaltyDates: KEEP,
   p6NonWorkPenaltyDatesState: KEEP,
   generation: KEEP,
-  workTime: { skip: 'aanwezig ⇒ UUR-kalender; deze fixture is dag-modus. Uur-round-trip: check-adapters-hours.ts' },
+  // Per weekdag (B7): de blokken van élke dag, niet alleen die van de eerste werkdag. `undefined` blijft
+  // `undefined` (dag-kalender).
+  workTime: {
+    get: (c: WorkCalendar) => c.workTime
+      ? ([1, 2, 3, 4, 5, 6, 7] as const).map(d => (c.workTime!.byWeekday[d] ?? []).map(b => ({ start: b.start, end: b.end })))
+      : undefined,
+  },
   shift: KEEP,
   libraryOrigin: KEEP,   // B1.1: herkomststempel round-trippt via OPS_LibraryOrigin
 } satisfies CanonSpec<WorkCalendar>;

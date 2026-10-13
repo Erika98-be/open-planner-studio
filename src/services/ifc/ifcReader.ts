@@ -6,7 +6,7 @@ import { createDefaultTaskTime } from '@/utils/taskDefaults';
 import { Sequence, SequenceType } from '@/types/sequence';
 import { Resource, ResourceAssignment, AvailabilityStep, ResourceCurve, isResourceCurve } from '@/types/resource';
 import { Project, ProjectSchedulingOptions, SchedulingOptions, SchedulingProfile, isIfcSchemaId, type IfcSchemaId } from '@/types/project';
-import { WorkCalendar, Holiday, CalendarGeneration, WorkingException } from '@/types/calendar';
+import { WorkCalendar, Holiday, CalendarGeneration, WorkingException, type WorkTimeBands } from '@/types/calendar';
 import { DEFAULT_CALENDAR_ID, createDefaultCalendar } from '@/engine/calendar/defaultCalendar';
 import type { HolidayCountry } from '@/engine/calendar/holidays';
 import type { LibraryOrigin } from '@/types/library';
@@ -49,8 +49,9 @@ import { resolveCalendar } from '@/engine/scheduler/resolveCalendar';
 import { seedScalarBands } from '@/utils/effectiveWorkTime';
 import { hourRemainingDays } from '@/engine/taskMutationRules';
 import {
-  canonicalizeBands, clockToMinutes, getCalendarBands, hasNonAnchorTime, isoDurationToMinutes,
-  isSubDayMinutes, promoteHourCalendar, promoteHourCalendars, registerCalendarBands, scalarHourFromClock, workDayFromBlocks,
+  canonicalizeBands, clockToMinutes, firstBlockedDay, getCalendarBands, hasNonAnchorTime,
+  isoDurationToMinutes, isSubDayMinutes, minutesToClock, promoteHourCalendar, promoteHourCalendars,
+  registerCalendarBands, scalarHourFromClock, workDayFromBlocks,
 } from '@/services/subdayIo';
 
 // IFC_TIME_ANCHOR (discriminator c) en DEFAULT_PRIORITY wonen in ./ifcConstants zodat reader en
@@ -2651,13 +2652,35 @@ function extractCalendarExceptionMetadata(
   return {};
 }
 
+/** Vereniging van de tijdvakken die twee of meer `IFCWORKTIME`'s ZONDER datum aan dezelfde weekdag geven
+ *  (werktijden met een datum doen niet mee, zie `buildCalendarFromEntity`). IFC 4.3
+ *  legt overlap tussen werktijden niet vast en OPS schrijft hem nooit; een ander pakket kan wel één
+ *  `IFCWORKTIME` per tijdvak schrijven (ma–vr 08–12 en ma–vr 13–17). Canoniek (`end ≤ start` ⇒ wrap,
+ *  `+1440`), op begin gesorteerd; overlappende of dubbele tijdvakken worden één vak, aansluitende
+ *  (12:00–12:00) blijven twee. */
+function unionPeriods(list: ReadonlyArray<{ start: number; end: number }>): { start: number; end: number }[] {
+  const sorted = list
+    .map(p => ({ start: p.start, end: p.end <= p.start ? p.end + 24 * 60 : p.end }))
+    .sort((a, b) => a.start - b.start || a.end - b.end);
+  const out: { start: number; end: number }[] = [];
+  for (const p of sorted) {
+    const last = out[out.length - 1];
+    if (last && p.start < last.end) last.end = Math.max(last.end, p.end);
+    else out.push({ ...p });
+  }
+  return out;
+}
+
 /** Bouwt een `WorkCalendar` uit een `IFCWORKCALENDAR`-entiteit: naam/omschrijving/feestdagen,
- *  plus werkdagen/uren teruggelezen uit de `WorkingTimes`-keten (args[6], oud args[5] → IFCWORKTIME →
- *  RecurrencePattern-ref → IFCRECURRENCEPATTERN DayComponent (args[2]) + TimePeriods (args[7]) →
- *  IFCTIMEPERIOD start/eind-uur), spiegel van `ifcWriter.ts` `writeCalendar`. Golden rule:
+ *  plus werkdagen/uren teruggelezen uit de `WorkingTimes`-keten (args[6], oud args[5], zie
+ *  `workCalendarSlots` → IFCWORKTIME's → RecurrencePattern-ref → IFCRECURRENCEPATTERN WeekdayComponent
+ *  (args[2]) + TimePeriods (args[7]) → IFCTIMEPERIOD start/eind-uur), spiegel van `ifcWriter.ts`
+ *  `writeCalendar` (één IFCWORKTIME per groep weekdagen met dezelfde blokken). Golden rule:
  *  ontbreekt de keten (bestand van een ander tool, of geen worktime), dan blijven de
  *  `createDefaultCalendar()`-defaults (ma-vr 07-16) staan. Tot slot de
- *  `OPS_Calendar`-pset → `generation` (legacy/onvolledig ⇒ `undefined`, nooit gegokt). */
+ *  `OPS_Calendar`-pset → `generation` (legacy/onvolledig ⇒ `undefined`, nooit gegokt).
+ *  De argumentposities hangen af van de argumenten van de kalender (`workCalendarSlots`, issue #292):
+ *  9 = het schema (WorkingTimes 6), 8 = oudere OPS-versies zonder Identification (WorkingTimes 5). */
 function buildCalendarFromEntity(
   cal: StepEntity,
   entityMap: Map<string, StepEntity>,
@@ -2681,36 +2704,96 @@ function buildCalendarFromEntity(
   // 8 = oudere OPS-versies zonder Identification (5, 6, 7), en 9 met een lijst op Identification = zo'n
   // oud bestand na IfcOpenShell MergeProjects (ook 5, 6, 7). Zie `workCalendarSlots`.
   const calSlots = workCalendarSlots(cal.args);
-  // Werkweek + uren. WorkingTimes is een lijst met precies één ref (zo schrijft
-  // de writer 'm) naar het "hoofd"-IFCWORKTIME; de holiday-IFCWORKTIME's zitten in ExceptionTimes
-  // en hebben geen RecurrencePattern-ref (args[3] blijft `$` daar).
+  // Werkweek + uren. WorkingTimes (`calSlots.workingTimes`) is een SET van IFCWORKTIME's; de
+  // holiday-IFCWORKTIME's zitten in ExceptionTimes (`calSlots.exceptionTimes`). Elke IFCWORKTIME met een
+  // IFCRECURRENCEPATTERN (args[3]) draagt zijn weekdagen (WeekdayComponent, args[2]) en zijn tijdvakken
+  // (TimePeriods, args[7]).
+  //  - Een IFCWORKTIME met een StartDate of FinishDate (args[4]/args[5]) doet NIET mee. Datumgebonden
+  //    werktijden (een zomer- en een winterweek, een losse werkzaterdag) worden (nog) niet gelezen; als
+  //    gewone week zouden ze elke week gelden (07–16 en 08–17 werd 07–17, een losse zaterdag elke
+  //    zaterdag). Hieronder valt ook de terugvalweek die OPS vooraan schrijft voor oudere OPS-versies
+  //    (StartDate = FinishDate = 1900-01-01, `LEGACY_WEEK_DATE` in `ifcWriter.ts`). Bewust de datum en
+  //    geen markering met een STEP-id: een ander pakket mag de id's hernummeren. OPS schreef in
+  //    `WorkingTimes` vóór de terugvalweek nooit een datum (feestdagen en werkende uitzonderingen staan in
+  //    `ExceptionTimes`), dus oude OPS-bestanden lezen ongewijzigd.
+  //  - Twee of meer zulke patronen MET weekdagen: werkblokken die per weekdag verschillen (zo schrijft
+  //    `weekBandGroups` een korte vrijdag, en zo modelleert IFC 4.3 het zelf, `IfcWorkCalendar` figuur 1).
+  //    Elke dag krijgt de tijdvakken van zijn eigen patroon; `workDays` is de vereniging. Staat een
+  //    weekdag in meer patronen (IFC legt overlap niet vast; OPS schrijft het nooit), dan de vereniging
+  //    van hun tijdvakken (`unionPeriods`) — zo leest ook een bestand met één IFCWORKTIME per tijdvak
+  //    goed. Patronen zonder weekdagen doen dan niet mee.
+  //  - Anders het eerste patroon, op elke weekdag dezelfde tijdvakken: ongewijzigd t.o.v. vroeger, ook
+  //    voor bestanden van oudere OPS-versies (één IFCWORKTIME) en voor één DAILY-patroon zonder weekdagen.
   const workTimeRefs = parseRefs(cal.args[calSlots.workingTimes] || '');
-  let periods: { start: number; end: number }[] = []; // ALLE banden (minuten)
-  let calWorkDays: number[] = [];
+  const recurrences: StepEntity[] = [];
   for (const wtRef of workTimeRefs) {
     const wt = entityMap.get(wtRef);
     if (!wt || wt.type !== 'IFCWORKTIME') continue;
+    if (workTimeDateRange(wt)) continue; // datumgebonden (ook de terugvalweek): zie hierboven
     const recurrenceRef = parseRef(wt.args[3] || '');
     if (!recurrenceRef) continue;
     const rec = entityMap.get(recurrenceRef);
     if (!rec || rec.type !== 'IFCRECURRENCEPATTERN') continue;
-
-    const workDays = parseIntList(rec.args[2] || '');
-    if (workDays.length > 0) { calendar.workDays = workDays; calWorkDays = workDays; }
-
-    const timePeriodRefs = parseRefs(rec.args[7] || '');
-    // ALLE TimePeriods lezen (`TimePeriods` is native een lijst — pauze/split-shift).
+    recurrences.push(rec);
+  }
+  const weekRecurrences = recurrences.filter(rec => parseIntList(rec.args[2] || '').length > 0);
+  // ALLE TimePeriods van één patroon (`TimePeriods` is native een lijst — pauze/split-shift).
+  const readPeriods = (timePeriodRefs: string[]): { start: number; end: number }[] => {
+    const out: { start: number; end: number }[] = [];
     for (const tpRef of timePeriodRefs) {
       const tp = entityMap.get(tpRef);
       if (!tp || tp.type !== 'IFCTIMEPERIOD') continue;
       const s = clockToMinutes(stripQuotes(tp.args[0] || ''));
       const e = clockToMinutes(stripQuotes(tp.args[1] || ''));
-      if (s != null && e != null) periods.push({ start: s, end: e });
+      if (s != null && e != null) out.push({ start: s, end: e });
     }
+    return out;
+  };
+  let periods: { start: number; end: number }[] = []; // de banden van de scalaire dag (minuten)
+  const rawByWeekday: Partial<Record<1 | 2 | 3 | 4 | 5 | 6 | 7, { start: number; end: number }[]>> = {};
+  const perDayWeek = weekRecurrences.length > 1;
+  if (perDayWeek) {
+    const listsByDay = new Map<number, { start: number; end: number }[][]>();
+    for (const rec of weekRecurrences) {
+      const recPeriods = readPeriods(parseRefs(rec.args[7] || ''));
+      for (const d of parseIntList(rec.args[2] || '')) {
+        if (d < 1 || d > 7) continue;
+        const lists = listsByDay.get(d) ?? [];
+        lists.push(recPeriods);
+        listsByDay.set(d, lists);
+      }
+    }
+    const byWeekday = { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [] } as WorkTimeBands['byWeekday'];
+    for (const [d, lists] of listsByDay) {
+      const dayPeriods = lists.length === 1 ? lists[0].map(p => ({ ...p })) : unionPeriods(lists.flat());
+      byWeekday[d as 1] = dayPeriods;
+      rawByWeekday[d as 1] = dayPeriods;
+    }
+    const unionDays = [...listsByDay.keys()].sort((a, b) => a - b);
+    if (unionDays.length > 0) calendar.workDays = unionDays;
+    // De scalaire dag: de eerste werkdag met blokken in de volgorde van de MSPDI- en `.mpp`-lezer
+    // (`firstBlockedDay`: zondag, dan maandag t/m zaterdag) — onafhankelijk van de volgorde in de SET.
+    periods = (firstBlockedDay({ byWeekday }) ?? []).map(p => ({ ...p }));
+    if (periods.length === 1) {
+      // Eén blok: dezelfde afleiding als een enkele periode hieronder, via de klok die de schrijver
+      // voor dit blok schrijft.
+      const startHour = scalarHourFromClock(minutesToClock(periods[0].start));
+      const endHour = scalarHourFromClock(minutesToClock(periods[0].end, true));
+      calendar.workStartHour = startHour;
+      calendar.workEndHour = endHour;
+      if (endHour > startHour) calendar.hoursPerDay = endHour - startHour;
+    }
+  } else if (recurrences.length > 0) {
+    const rec = recurrences[0];
+    const workDays = parseIntList(rec.args[2] || '');
+    if (workDays.length > 0) calendar.workDays = workDays;
+
+    const timePeriodRefs = parseRefs(rec.args[7] || '');
+    periods = readPeriods(timePeriodRefs);
     // Meer periodes: scalar = begin eerste / einde laatste periode (fix werkdag-einde, 2026-10) — zie
-    // hieronder, ná de lus. Eén periode: scalar uit die periode, de oude afleiding (ook voor oude
-    // klokken als '7.5:00:00'). Houdt de dag-kalender scalair (de post-pass promoveert pas naar
-    // uur-modus bij een echte afwijking, discriminator a/b/c).
+    // hieronder. Eén periode: scalar uit die periode, de oude afleiding (ook voor oude klokken als
+    // '7.5:00:00'). Houdt de dag-kalender scalair (de post-pass promoveert pas naar uur-modus bij een
+    // echte afwijking, discriminator a/b/c).
     if (timePeriodRefs.length === 1) {
       const tp = entityMap.get(timePeriodRefs[0]);
       if (tp && tp.type === 'IFCTIMEPERIOD') {
@@ -2723,17 +2806,26 @@ function buildCalendarFromEntity(
         }
       }
     }
-    break; // writer schrijft precies één werktijdslot in WorkingTimes
+    // Dezelfde periodes op elke werkdag van het patroon (zonder weekdagen: de standaardwerkdagen).
+    const days = (workDays.length > 0 ? workDays : calendar.workDays).filter(d => d >= 1 && d <= 7);
+    for (const d of days) rawByWeekday[d as 1] = periods.map(p => ({ ...p }));
+  } else {
+    // Geen patroon: de standaardwerkdagen zonder blokken (zoals vroeger).
+    for (const d of calendar.workDays.filter(d => d >= 1 && d <= 7)) rawByWeekday[d as 1] = [];
   }
-  // Meer periodes (een uurkalender, of de gematerialiseerde blokken van een scalaire kalender): begin
-  // van de eerste en einde van de laatste periode op begintijd, met de middernachtregel, en NETTO uren
-  // als tussenwaarde — één definitie met de MSPDI- en `.mpp`-lezer (`workDayFromBlocks`). Vroeger de
-  // eerste periode: MS Projects 08:00–12:00 + 13:00–17:00 werd 8–12, een drieploegenkalender 6–14.
-  // Een OPS-bestand dat die oude scalar bewaarde, draagt geen `WorkEndHour` (de schrijver bewaart hem
-  // alleen als hij afwijkt van de eerste periode) en herstelt dus hier vanzelf.
-  // Netto alleen als de kalender niet als SCALAIR gemarkeerd is (`IsHourCalendar = .F.`): daar zijn de
-  // periodes de afgeleide blokken van de scalar van de gebruiker, en geldt de oude afspraak met de
-  // schrijver (`HoursPerDay` ontbreekt ⇔ hpd = einde − begin, `needsHoursPerDayOverride`).
+  // Rauwe banden per weekdag, gecanonicaliseerd + afwijking (a/b) — voor de uur-modus-post-pass.
+  const { bands, deviates } = canonicalizeBands(rawByWeekday);
+  // Meer periodes op de scalaire dag (een uurkalender, of de gematerialiseerde blokken van een
+  // scalaire kalender): begin van de eerste en einde van de laatste periode op begintijd, met de
+  // middernachtregel, en NETTO uren als tussenwaarde — één definitie met de MSPDI- en `.mpp`-lezer
+  // (`workDayFromBlocks`). Meer periodes op de scalaire dag ⇒ discriminator (a) ⇒ de post-pass promoveert
+  // de kalender en zet `hoursPerDay` op de modale dagsom (`promoteHourCalendar`); bij blokken die per
+  // weekdag verschillen is dat dus ook zo. Vroeger de eerste periode: MS Projects 08:00–12:00 + 13:00–17:00 werd
+  // 8–12, een drieploegenkalender 6–14. Een OPS-bestand dat die oude scalar bewaarde, draagt geen
+  // `WorkEndHour` (de schrijver bewaart hem alleen als hij afwijkt van de eerste periode) en herstelt dus
+  // hier vanzelf. Netto alleen als de kalender niet als SCALAIR gemarkeerd is (`IsHourCalendar = .F.`):
+  // daar zijn de periodes de afgeleide blokken van de scalar van de gebruiker, en geldt de oude afspraak
+  // met de schrijver (`HoursPerDay` ontbreekt ⇔ hpd = einde − begin, `needsHoursPerDayOverride`).
   const blocked = periods.length > 1 ? workDayFromBlocks(periods) : undefined;
   const netHours = blocked && hourMeta.hourMode !== false ? blocked.netHours : undefined;
   if (blocked) {
@@ -2755,12 +2847,7 @@ function buildCalendarFromEntity(
     }
   }
 
-  // Rauwe banden registreren (dezelfde periodes op elke werkdag — IFC's enkele recurrence-conventie)
-  // + afwijking (a/b) bepalen, voor de uur-modus-post-pass.
-  const days = (calWorkDays.length > 0 ? calWorkDays : calendar.workDays).filter(d => d >= 1 && d <= 7);
-  const rawByWeekday: Partial<Record<1 | 2 | 3 | 4 | 5 | 6 | 7, { start: number; end: number }[]>> = {};
-  for (const d of days) rawByWeekday[d as 1] = periods.map(p => ({ ...p }));
-  const { bands, deviates } = canonicalizeBands(rawByWeekday);
+  // Rauwe banden registreren (per weekdag, zie hierboven), voor de uur-modus-post-pass.
   registerCalendarBands(calendar, { canonical: bands, deviates });
 
   // Ploeg-classificatie uit `PredefinedType` → `shift`. `.FIRSTSHIFT.`/afwezig ⇒
