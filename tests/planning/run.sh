@@ -969,6 +969,11 @@ if [ "$RUN_HOLIDAYS" -eq 1 ]; then
   DTNCHECK="$DIR/.document-tab-navigation.mjs"
   if bundle_check "$DIR/check-document-tab-navigation.ts" "$DTNCHECK"; then node "$DTNCHECK" || STATUS=1; fi
 
+  # Documenttabstrook (#339): pijlen nodig (met marge, geen aan-uit-lus), randen en twee
+  # tabbladen per klik. De browserproef toetst daarnaast de echte DOM.
+  DTSCHECK="$DIR/.document-tab-scroll.mjs"
+  if bundle_check "$DIR/check-document-tab-scroll.ts" "$DTSCHECK"; then node "$DTSCHECK" || STATUS=1; fi
+
   # Gantt-cull-regressie: de speling-band mag niet verdwijnen zolang hij zichtbaar is. De cull in
   # drawTaskBar keek alleen naar de BALK-extent, terwijl de band ná de balk doorloopt — een band die
   # nog honderden pixels in beeld stond verdween daardoor mee. Draait de echte renderer met een
