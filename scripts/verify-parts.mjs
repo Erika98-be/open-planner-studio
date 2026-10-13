@@ -5,7 +5,8 @@
 // `npm test` uitgeklapt tot zijn eigen stappen. Dit script deelt ze alleen in. Een stap die hier
 // niet expliciet is ingedeeld, valt in STATIC — een nieuwe stap in `verify` kan dus nooit buiten CI
 // vallen, en er is geen tweede lijst die kan achterlopen (de reden dat ci.yml tot nu toe bewust één
-// commando draaide). release.yml en live.yml draaien `npm run verify` nog steeds in één keer.
+// commando draaide). release.yml draait `npm run verify` nog in één keer; live.yml draait geen verify
+// meer maar deployt pas na een geslaagde ci.yml-run.
 //
 //   node scripts/verify-parts.mjs --list            # alle delen met hun stappen
 //   node scripts/verify-parts.mjs <deel> [-- args]  # draai één deel; args gaan naar de laatste stap

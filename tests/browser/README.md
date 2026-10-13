@@ -64,7 +64,7 @@ Tests lopen via echte browser-events. De brug mag deterministische fixtures zett
 Canvasgeometrie lezen, maar de geteste gebruikershandeling nooit vervangen.
 
 In CI draait de suite als apart deel van `scripts/verify-parts.mjs` (`test:browser`), verdeeld over
-vier shards (`--shard=1/4` … `4/4`), elk met een eigen bewaakte Vite-server; de CI-, live- en release-workflows uploaden bij falen `playwright-report/`
+vier shards (`--shard=1/4` … `4/4`), elk met een eigen bewaakte Vite-server; de CI- en release-workflows uploaden bij falen `playwright-report/`
 en `test-results/` als `playwright-*`-artefact (zeven dagen).
 
 ## X11/XWayland-browserharnas voor XER (`npm run test:browser:x11`)
