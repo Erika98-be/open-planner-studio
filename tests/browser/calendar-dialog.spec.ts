@@ -518,3 +518,19 @@ test('kalenderdialoog: na een preset krijgt een dag die weer aan gaat de presetb
     [1, 2, 3, 4, 5], night, night, 8,
   ]);
 });
+
+// Ook Continu (24/7) bij de werkdagen is een preset (`applyPreset`, niet de ingebouwde presetrij): daarna
+// dinsdag uit en Ma–vr ⇒ dinsdag krijgt 00:00–24:00 terug, niet de blokken van vóór Continu.
+test('kalenderdialoog: na Continu krijgt een dag die weer aan gaat 00:00–24:00', async ({ page, ops: _ops }) => {
+  const dialog = await openMspdiAndCalendarDialog(page, mspdiWithBlocks([['08:00', '12:00'], ['13:00', '17:00']]));
+  await dialog.locator('[data-ops-calendar-preset-continuous]').click();
+  await dialog.getByRole('button', { name: 'Tue', exact: true }).click();
+  await expect.poll(() => blocksOf(dialog, 2)).toEqual([]);
+  await dialog.locator('[data-ops-calendar-preset-weekdays]').click();
+  await expect.poll(() => blocksOf(dialog, 2)).toEqual(['00:00', '00:00']);
+  await dialog.locator('[data-ops-cal-apply]').click();
+  const allDay = [{ start: 0, end: 1440 }];
+  await expect.poll(() => calendarBlocks(page).then(c => [c.workDays, c.byWeekday?.[2], c.byWeekday?.[6], c.hpd])).toEqual([
+    [1, 2, 3, 4, 5], allDay, [], 24,
+  ]);
+});

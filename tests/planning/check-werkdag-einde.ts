@@ -39,7 +39,7 @@ import {
   calendarScalarBreakIssue, inferredSimpleBreak, makeBands, scalarTimesValid,
 } from '@/utils/effectiveWorkTime';
 import { shiftPresetPatch } from '@/utils/shiftPresets';
-import { STANDARD_DAY_BLOCKS, withRepairedFirstBlockScalar, workDayTogglePatch, workDaysSetPatch } from '@/services/subdayIo';
+import { withRepairedFirstBlockScalar, workDayTogglePatch, workDaysSetPatch } from '@/services/subdayIo';
 import { parseOpenedFile } from '@/services/formatRegistry';
 import { applyCalendarUpdate, bumpPool, classifyCalendarOnOpen, normalizePoolShape } from '@/services/library/libraryOps';
 import { readFileSync } from 'node:fs';
@@ -401,6 +401,8 @@ const hourCal = (start: number, end: number): Partial<WorkCalendar> => ({
 //      blokken volgen (nachtscalar 22→06, of netto meer dan de spanne): de standaardwerkdag 07–12 + 13–16.
 {
   const opened = readMSPDI(mspdi({ minutesPerDay: 480 })).calendar;
+  // Letterlijk, zoals de gids het noemt: 07:00–12:00 en 13:00–16:00 (niet de constante zelf).
+  const STANDARD_DAY = [{ start: 420, end: 720 }, { start: 780, end: 960 }];
   for (const [label, scalar] of [
     ['nachtscalar 22→06', { workStartHour: 22, workEndHour: 6, hoursPerDay: 8 }],
     ['netto 10 h in 9 h spanne', { workStartHour: 7, workEndHour: 16, hoursPerDay: 10 }],
@@ -409,8 +411,8 @@ const hourCal = (start: number, end: number): Partial<WorkCalendar> => ({
       simpleBreakStartMinute: undefined, simpleBreakDurationMinutes: undefined };
     const p = workDaysSetPatch(empty, [1, 2, 3, 4, 5]);
     same(`§6e ${label}: ma–vr krijgen de standaardwerkdag, hpd 8`,
-      [p.workDays, [1, 2, 3, 4, 5].every(d => JSON.stringify(p.workTime?.byWeekday[d as 1]) === JSON.stringify(STANDARD_DAY_BLOCKS)), p.hoursPerDay],
-      [[1, 2, 3, 4, 5], true, 8]);
+      [p.workDays, [1, 2, 3, 4, 5].map(d => p.workTime?.byWeekday[d as 1]), p.hoursPerDay],
+      [[1, 2, 3, 4, 5], Array(5).fill(STANDARD_DAY), 8]);
   }
 }
 

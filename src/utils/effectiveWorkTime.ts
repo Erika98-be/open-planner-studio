@@ -161,9 +161,11 @@ export function firstBlockedDay(
 
 /**
  * De pauze die een kalender zonder pauzevelden impliciet heeft, als begin (minuut van de dag) en duur:
- * begin 12:00, duur = klokspanne − netto uren ({@link legacySimpleBreakDurationMinutes}). Alleen voor een
- * kalender zonder werkblokken: bij werkblokken toont het kalendervenster het blok Werktijden en geen
- * pauzevelden (besluit eigenaar 2026-10-13, optie 2), en MCP raakt de pauze van een uurkalender niet.
+ * begin 12:00, duur = klokspanne − netto uren ({@link legacySimpleBreakDurationMinutes}). Werkblokken tellen
+ * hier niet mee. Het kalendervenster toont bij werkblokken het blok Werktijden en geen pauzevelden (besluit
+ * eigenaar 2026-10-13, optie 2). MCP komt hier wel met een uurkalender: `planner_update_calendar` met
+ * `workTime: null` plus een pauzeveld maakt er een dagkalender van, en de pauze die het item niet noemt,
+ * volgt dan uit deze regel (12:00), niet uit het gat tussen de oude blokken.
  */
 export function inferredSimpleBreak(
   calendar: Pick<WorkCalendar, 'workStartHour' | 'workEndHour' | 'hoursPerDay'>,

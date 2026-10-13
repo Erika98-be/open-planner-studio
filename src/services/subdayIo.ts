@@ -210,6 +210,15 @@ export function workDayFromBlocks(dayBlocks: ReadonlyArray<{ start: number; end:
 export { firstBlockedDay };
 
 /**
+ * Laatste terugval voor een werkdag die aan gaat zonder bron voor zijn blokken: de standaardwerkdag van
+ * een nieuwe kalender (`createDefaultCalendar`: 07:00–16:00, 8 netto uur, pauze 12:00–13:00). Dezelfde
+ * werkdag als de knop *Ma–vr* bij een eenvoudige kalender, dus voor de gebruiker herkenbaar.
+ */
+export const STANDARD_DAY_BLOCKS: ReadonlyArray<{ start: number; end: number }> = [
+  { start: 7 * 60, end: 12 * 60 }, { start: 13 * 60, end: 16 * 60 },
+];
+
+/**
  * Wat een werkdagknop in de kalenderdialoog doet. Dagkalender: alleen `workDays`. Uurkalender: de
  * blokken gaan mee, want de motor gebruikt beide (het werkdagmasker voor de dagtelling, de blokken voor
  * de uren) en een `workDays` zonder blokken verdween na opslaan en heropenen.
@@ -223,15 +232,6 @@ export { firstBlockedDay };
  *    blokken.
  * `hoursPerDay` volgt dan uit de blokken ({@link deriveHoursPerDay}).
  */
-/**
- * Laatste terugval voor een werkdag die aan gaat zonder bron voor zijn blokken: de standaardwerkdag van
- * een nieuwe kalender (`createDefaultCalendar`: 07:00–16:00, 8 netto uur, pauze 12:00–13:00). Dezelfde
- * werkdag als de knop *Ma–vr* bij een eenvoudige kalender, dus voor de gebruiker herkenbaar.
- */
-export const STANDARD_DAY_BLOCKS: ReadonlyArray<{ start: number; end: number }> = [
-  { start: 7 * 60, end: 12 * 60 }, { start: 13 * 60, end: 16 * 60 },
-];
-
 export function workDayTogglePatch(
   cal: Pick<WorkCalendar, 'workDays' | 'workTime' | 'hoursPerDay' | 'workStartHour' | 'workEndHour'
     | 'simpleBreakStartMinute' | 'simpleBreakDurationMinutes'>,
