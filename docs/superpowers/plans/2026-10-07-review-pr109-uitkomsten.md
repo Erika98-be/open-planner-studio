@@ -411,3 +411,11 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   geen scrollbalk, pijlen alleen bij overloop, tussen tabbladen en "+", scrollwiel schuift horizontaal, RTL.
   **Eigenaarsbesluit 2026-10-13:** één klik op een pijl schuift **twee tabbladen** op ("tuurlijk niet, dat is
   toch veel te veel, ik zou zeggen twee projecten"), niet een schermbreedte. Doorgegeven aan de worker.
+- **#335 her-check (reviewer, Opus 5.5): nee.** Eisen 1–4 opgelost (budget: vijandig bestand precies 100.000,
+  `mergeInherited` oud=nieuw in 16.000 gevallen, `.mpp` 216 bestanden 0 wijzigingen; R1–R4 rood; PR-tekst klopt;
+  diagnose 20 cellen `snapOnOrBefore` bevestigd; showcase-IFC: geen dag verloren). **Nieuwe fout [BEVESTIGD · hoog]:**
+  `chainOk` keurt alleen ketens goed die op `-1` eindigen; Project 2013+ schrijft `<BaseCalendarUID>0` op
+  "Standard" ⇒ afgeleide kalenders erven niets (18 bestanden, 270 kalenders; week 08–17 wordt 07–16). Fixronde 3
+  naar de maker: onbestaande basis = wortel (zoals MPXJ en `.mpp`), alleen cyclus/te diep blokkeert, geen NL.
+  Na de release: Miraya-afwijking stijgt licht (355 taken op kalender Sector 43; vermoedelijk houden de Asta-datums
+  geen rekening met het bouwverbod), past bij de Asta-vraag; vereenvoudiging `mergeInherited` (`take`/`room`).
