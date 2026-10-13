@@ -574,3 +574,6 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   leest geen IFC). Vervolg-PR gestart (worker, Opus 5.5, `claude/ifc-poort-enums`): IFC4-enums in de poort (N5),
   negatieve duur (N4), klem-filter (N2), dubbele tabellen weg.
   **Releasetekst:** de waarschuwing staat in de PR-tekst van #344 onder "Voor de releasetekst" (nl/en).
+- Vervolg-PR **#345** (`claude/ifc-poort-enums`, 84ee07969, CI groen): poort per schema (enum-literals IFC4/IFC4X3/
+  ADD2), negatieve duur, klem-filter, één rijke fixture, één constante in `ifcWorkControlSlots.ts`; N2/N4/N5 en drie
+  eigen mutanten rood; voorbeelden byte-gelijk. Review gestart (reviewer, Opus 5.5).
