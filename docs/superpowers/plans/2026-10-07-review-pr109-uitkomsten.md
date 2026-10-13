@@ -426,3 +426,7 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   `inferredSimpleBreak`. Fixronde 1 naar de maker met alles erin (releaseregel). **Besluit orkestrator
   2026-10-13:** géén valkuilregel over B7 in de gids, omdat B7 vóór de release wordt opgelost (expert loopt);
   #338 en de B7-PR gaan dus allebei vóór de release naar main.
+- **Checkstap 8 goedgekeurd door de eigenaar (2026-10-13), letterlijk: "8 is goedgekeurd afgezien die pijltjes,
+  we kunnen door".** Open punt daarna: de afgekapte tabnamen (alle 12 tonen "Bid for Facility Extension (O…";
+  het verschil zit in de code tussen haakjes). Voorgelegd als besluit; achtergrond B21 (eigenaar 24-09,
+  "projectnaam", `nameWithProjectCode`/`xerDocumentName`).
