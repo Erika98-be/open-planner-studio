@@ -461,3 +461,8 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   de testversie (wiel 300 → scrollLeft 300, terug 0; scrollbalkhoogte 0).
 - **Checkstap 9 (tabstrook-pijlen en scrollwiel, testversie) goedgekeurd door de eigenaar 2026-10-13,
   letterlijk: "mooi, heel netjes".** Review van #339 loopt nog.
+- **#338 her-check: ja** (reviewer, Opus 5.5). M1–M4 rood, gidsen goed. MCP-randgeval (`workTime: null` + pauze)
+  aanvaardbaar: netto gelijk, pauze volgt de regel van 12:00, zachte weigering bij een pauze buiten de spanne.
+  Slotronde naar de maker (vóór de release, klein): §6e letterlijke blokken (N9), toets beginstand na eigen
+  preset/*Continu* (N8), JSDoc, commentaar MCP, MCP-case. Merge pas na checkstap 10 van de eigenaar (testversie)
+  en groene CI. Checkstap 10 gemeten: *Vr* uit → Einde 25-09-2006 wordt 26-09-2006; *Continu* → 22-09-2006.
