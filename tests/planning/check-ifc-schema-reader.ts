@@ -1,11 +1,13 @@
-// De IFC-lezer leest BEIDE indelingen: de oude OPS-indeling (tot 2026-10) en de norm (IFC 4.3, zoals OPS
-// nu schrijft en zoals andere tools schrijven). Herkenning op het aantal attributen, niet op een gok.
+// De IFC-lezer leest BEIDE indelingen: de oude OPS-indeling (zie docs/ifc-round-trip.md, alinea
+// Schemageldigheid) en het schema (zoals OPS nu schrijft en zoals andere tools schrijven). Herkenning op
+// de argumenten (`ifcWorkControlSlots.ts`), niet op een gok.
 // Tegenhanger van de schemapoort `check-ifc-schema.ts`; toelichting in docs/ifc-round-trip.md.
 //
 //   A. Hetzelfde rijke project, eenmaal in de norm geschreven en eenmaal omgezet naar de oude
 //      OPS-indeling (IfcWorkPlan/IfcWorkSchedule 15 attributen, resources 9 met `.USERDEFINED.`,
-//      IfcWorkCalendar 8 zonder `Identification`, REAL zonder punt, Completion `0.00`, header `IFC4X3`),
-//      leest exact gelijk. Ook zonder de OPS_ProjectSettings-datums, zodat de projectdatums echt uit het
+//      IfcWorkCalendar 8 zonder `Identification`, REAL zonder punt, Completion `0.00`), leest exact
+//      gelijk. De kop blijft staan: sinds #292 is hij projectdata (`Project.ifcSchema`, eigen toets in
+//      check-ifc-schema-question.ts). Ook zonder de OPS_ProjectSettings-datums, zodat de projectdatums echt uit het
 //      IfcWorkPlan-slot komen. De kalenders (project, bibliotheek, uurkalender, ploegen, feestdagen,
 //      werkende uitzonderingen) vallen onder A1. A6: de standaardstand van de schakelaar
 //      `IFC_WORK_CALENDAR_ATTRIBUTES` leest gelijk aan de stand 9.
@@ -77,8 +79,8 @@ const RESOURCES = new Set([
 ]);
 
 /**
- * Zet een bestand van de huidige writer om naar de indeling die OPS tot 2026-10 schreef (zie de
- * geschiedenis van ifcWriter.ts; de initiële release schreef al zo). Alleen wat de fix veranderde.
+ * Zet een bestand van de huidige writer om naar de indeling die OPS t/m v2026.9.0 schreef (de initiële
+ * release schreef al zo). Alleen de attributen; de kop blijft (zie de kop van dit bestand).
  */
 function toLegacyOpsLayout(ifc: string): string {
   const out = mapEntities(ifc, (type, args) => {
@@ -106,9 +108,7 @@ function toLegacyOpsLayout(ifc: string): string {
     }
     return undefined;
   });
-  return out
-    .replace(/\b(IFCREAL|IFCMONETARYMEASURE|IFCRATIOMEASURE)\((-?\d+)\.\)/g, '$1($2)')
-    .replace("FILE_SCHEMA(('IFC4X3_ADD2'));", "FILE_SCHEMA(('IFC4X3'));");
+  return out.replace(/\b(IFCREAL|IFCMONETARYMEASURE|IFCRATIOMEASURE)\((-?\d+)\.\)/g, '$1($2)');
 }
 
 /** Leesresultaat zonder wat per keer lezen verschilt (toewijzings-id's komen uit `generateId`). */
@@ -131,8 +131,8 @@ function firstDiff(a: unknown, b: unknown, path = ''): string | undefined {
 // ── A. Oude OPS-indeling en de norm lezen gelijk ─────────────────────────────────────────────────
 {
   const rich = buildRichSchemaProject(ROOT);
-  // Een lege tekstwaarde schrijft de writer sinds 2026-10 als `IFCTEXT('')` (vroeger het ongeldige
-  // `IFCTEXT($)`, dat als "geen waarde" las): een bewuste verbetering, dus hier niet in de vergelijking.
+  // Een lege tekstwaarde schrijft de writer als `IFCTEXT('')`; de oude writer schreef het ongeldige
+  // `IFCTEXT($)`, dat als "geen waarde" las. Een bewuste verbetering, dus hier niet in de vergelijking.
   const input: ImportResult = {
     ...rich,
     tasks: rich.tasks.map(t => {

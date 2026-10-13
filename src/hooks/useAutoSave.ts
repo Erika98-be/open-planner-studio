@@ -2,6 +2,7 @@ import { useEffect, type MutableRefObject } from 'react';
 import { useAppStore } from '@/state/appStore';
 import { isTauri } from '@/utils/platform';
 import { writeIFC } from '@/services/ifc/ifcWriter';
+import { ifcSchemaBlocksSilentWrite } from '@/services/ifc/ifcSchemaQuestion';
 import { buildWriteIFCInput } from '@/state/ifcSaveInput';
 import { RecoveryDeltaTracker, type RecoverySourceDocument } from '@/services/recovery/recoveryDelta';
 import { runRecoveryTick } from '@/services/recovery/recoverySnapshot';
@@ -127,7 +128,11 @@ export function useAutoSave(autoSaveEnabled: MutableRefObject<boolean>): void {
           // maken, besluit #309). Alleen Opslaan schrijft naar de site; crashherstel loopt gewoon door.
           const target = saveTargetRef(payload);
           const ref = target?.kind === 'site' ? null : target;
-          return { id, enabled: payload.autoSaveToFile, dirty: payload.isDirty, ref, source: payload };
+          // Schemavraag (issue #292): staat die open voor een schema dat de app niet schrijft (IFC2X3),
+          // dan zou automatisch opslaan het bestandstype stil veranderen. Dan wacht het bestand op het
+          // eerste expliciete opslaan, met de vraag. Crashherstel loopt gewoon door.
+          const enabled = payload.autoSaveToFile && !ifcSchemaBlocksSilentWrite(payload.project);
+          return { id, enabled, dirty: payload.isDirty, ref, source: payload };
         });
       },
       serialize: candidate => writeIFC(buildWriteIFCInput(candidate.source)),

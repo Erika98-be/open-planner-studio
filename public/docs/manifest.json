@@ -419,6 +419,14 @@
       "kind": "howto"
     },
     {
+      "id": "howto-ifc-schema-kiezen",
+      "title": {
+        "nl": "Het IFC-schema kiezen",
+        "en": "Choosing the IFC schema"
+      },
+      "kind": "howto"
+    },
+    {
       "id": "howto-herstellen-na-een-crash",
       "title": {
         "nl": "Herstellen na een crash",

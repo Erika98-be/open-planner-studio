@@ -3,12 +3,13 @@
 // `defaultTaskDurationUnit` (afwezig ≡ 'days'). Zonder deze vergelijking maakt "Toepassen zonder
 // wijziging" een eigen undo-stap, markeert de planning verouderd (want `startDate` zit altijd in de
 // patch) en verlaat "datums zoals opgeslagen".
-import type { Project } from '@/types/project';
+import { projectIfcSchema, type Project } from '@/types/project';
 
-/** De metadatavelden die het formulier bewerkt. */
+/** De metadatavelden die het formulier bewerkt. `ifcSchema` alleen bij bewerken (de wizard maakt een
+ *  nieuw project, dat op de standaard begint). */
 export type ProjectInfoMetadata = Pick<
   Project, 'name' | 'description' | 'author' | 'company' | 'startDate' | 'endDate' | 'defaultTaskDurationUnit'
->;
+> & Partial<Pick<Project, 'ifcSchema'>>;
 
 const FIELDS = ['name', 'description', 'author', 'company', 'startDate', 'endDate'] as const;
 
@@ -20,6 +21,13 @@ export function projectInfoPatch(current: Project, draft: ProjectInfoMetadata): 
   }
   if ((current.defaultTaskDurationUnit ?? 'days') !== (draft.defaultTaskDurationUnit ?? 'days')) {
     patch.defaultTaskDurationUnit = draft.defaultTaskDurationUnit;
+  }
+  // Afwezig ≡ IFC4X3_ADD2 (issue #292): een project zonder veld dat op de standaard blijft, wijzigt niet.
+  if (draft.ifcSchema !== undefined && projectIfcSchema(current) !== draft.ifcSchema) {
+    patch.ifcSchema = draft.ifcSchema;
+    // Een schema dat de gebruiker hier zelf kiest, is zijn antwoord op de schemavraag bij opslaan
+    // (besluit eigenaar 2026-10-13): de vraag vervalt, in dezelfde undo-stap.
+    if (current.ifcSchemaUnconfirmed !== undefined) patch.ifcSchemaUnconfirmed = undefined;
   }
   return patch;
 }

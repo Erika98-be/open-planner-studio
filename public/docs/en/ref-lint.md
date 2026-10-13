@@ -213,7 +213,7 @@ The *Table* tab shows the tasks as a full table instead of the Gantt. The groups
 
 ## IFC
 
-The tab shows the IFC panel in the workspace. The ribbon has no buttons here, only the line of text *IFC 4x3 - Industry Foundation Classes*.
+The tab shows the IFC panel in the workspace. The ribbon has no buttons here, only the line of text *IFC - Industry Foundation Classes, in the schema of the project (default IFC 4.3 ADD2)*.
 
 ## Report
 

@@ -270,11 +270,11 @@ export function checkIfcSchema(
     for (const a of e.args) collectTyped(a, seen.typed);
     let spec = IFC_ENTITY_ATTRIBUTES[e.type];
     if (!spec) { fail(e, 'entiteit staat niet in de schematabel (ifcSchemaTable.ts)'); continue; }
-    // OPEN BESLUIT VAN DE EIGENAAR (PR #344, zie `IFC_WORK_CALENDAR_ATTRIBUTES` in ifcWriter.ts): staat
-    // de schakelaar op 8, dan schrijft OPS IfcWorkCalendar nog zonder `Identification`, zodat versies
-    // t/m v2026.9.0 hem goed lezen. Alleen voor deze ene entiteit, en alleen in die stand, toetst de
-    // poort dan de oude indeling (de 9 attributen zonder `Identification`). Alle andere entiteiten,
-    // en IfcWorkCalendar in stand 9, blijven streng.
+    // Schakelaar `IFC_WORK_CALENDAR_ATTRIBUTES` (ifcWriter.ts; besluit eigenaar 2026-10-13 = 9, de
+    // stand 8 is voorgelegd in PR #344): staat hij op 8, dan schrijft OPS IfcWorkCalendar zonder
+    // `Identification`, zodat versies t/m v2026.9.0 hem goed lezen. Alleen voor deze ene entiteit, en
+    // alleen in die stand, toetst de poort dan de oude indeling (de 9 attributen zonder
+    // `Identification`). Alle andere entiteiten, en IfcWorkCalendar in stand 9, blijven streng.
     if (e.type === 'IFCWORKCALENDAR' && calendarAttributes === 8) spec = spec.filter(a => attrName(a) !== 'Identification');
     checks++;
     if (e.args.length !== spec.length) {

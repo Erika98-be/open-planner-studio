@@ -2,7 +2,7 @@ import { Task } from '@/types/task';
 import { Sequence } from '@/types/sequence';
 import { Resource } from '@/types/resource';
 import { ResourceAssignment } from '@/types/resource';
-import { Project, SchedulingOptions, SchedulingProfile } from '@/types/project';
+import { Project, SchedulingOptions, SchedulingProfile, projectIfcSchema } from '@/types/project';
 import { carriesProfile, schedulingProfileToJson } from '@/services/ifc/schedulingOptionsRead';
 import { legacyOptionsBlobFor } from '@/services/ifc/schedulingProfileMigration';
 import { holidayEndDate, WorkCalendar, type WorkTimeBands } from '@/types/calendar';
@@ -19,6 +19,7 @@ import {
   IFC_TIME_ANCHOR, FIELD_MEASURE, RESOURCE_TYPE_TO_IFC,
 } from './ifcConstants';
 import { PSET, PER_TASK_PSETS, OPS_APP_VERSION, ifcStr, ifcJson, asciiJson, ifcTypedReal, stepReal } from './ifcPsets';
+import { ifcSchemaQuestionFor } from './ifcSchemaQuestion';
 import { isSummaryTask } from '@/utils/taskHierarchy';
 import { projectFileBase } from '@/utils/documents';
 import {
@@ -135,7 +136,7 @@ function ifcDayNumber(days: number): string {
 }
 
 function ifcDuration(days: number): string {
-  // ISO 8601 zet het minteken vóór de P (`-P0Y0M2D`), niet bij het getal (`P0Y0M-2D`, tot 2026-10).
+  // ISO 8601 zet het minteken vóór de P (`-P0Y0M2D`), niet bij het getal (`P0Y0M-2D`, zoals v2026.9.0).
   // Beide lezers, ook die van v2026.9.0, lezen het voorloopteken (`parseDurationDays`).
   if (days < 0) return `'-P0Y0M${ifcDayNumber(-days)}D'`;
   return `'P0Y0M${ifcDayNumber(days)}D'`;
@@ -146,6 +147,39 @@ function ifcDuration(days: number): string {
  *  ruis- of exponentrisico zoals bij `ifcDayNumber`: `minutesToIsoDuration` rondt op hele minuten. */
 function ifcDurationHour(minutes: number): string {
   return `'${minutesToIsoDuration(minutes)}'`;
+}
+
+/**
+ * De argumenten van een IfcWorkPlan/IfcWorkSchedule (`IfcWorkControl`), precies de 14 van het schema
+ * (IFC4/IFC4X3/IFC4X3_ADD2 gelijk): GlobalId, OwnerHistory, Name, Description, ObjectType,
+ * Identification, CreationDate, Creators, Purpose, Duration, TotalFloat, StartTime, FinishTime,
+ * PredefinedType. Oudere versies schreven er 15 (één `$` te veel vóór StartTime); de lezer kent beide
+ * (`ifcWorkControlSlots.ts`), `check-ifc-arity` bewaakt het aantal.
+ */
+function workControlArgs(a: {
+  guid: string; ownerHistId: number; name: string; description: string;
+  creationDate: string; startTime: string; finishTime: string; predefinedType: 'PLANNED' | 'BASELINE';
+}): string {
+  return [
+    ifcStr(a.guid), `#${a.ownerHistId}`, ifcStr(a.name), ifcStr(a.description),
+    '$', // ObjectType
+    '$', // Identification
+    ifcDateTime(a.creationDate),
+    '$', // Creators
+    '$', // Purpose
+    '$', // Duration
+    '$', // TotalFloat
+    ifcDateTime(a.startTime),
+    ifcDateTime(a.finishTime),
+    `.${a.predefinedType}.`,
+  ].join(',');
+}
+
+/** De vroegste start in een baseline (ISO, lexicaal te vergelijken); '' bij een lege baseline. */
+function baselineStart(b: Baseline): string {
+  let first = '';
+  for (const t of b.tasks ?? []) if (t.start && (!first || t.start < first)) first = t.start;
+  return first;
 }
 
 export interface WriteContext {
@@ -259,19 +293,21 @@ export type WriteIFCInput = ImportResult & {
 };
 
 /**
- * Aantal attributen van IfcWorkCalendar dat de writer schrijft: 9 volgens IFC 4.3 (met
+ * Aantal attributen van IfcWorkCalendar dat de writer schrijft: 9 volgens het schema (met
  * `Identification`), of 8 zoals OPS t/m v2026.9.0 schreef (zonder `Identification`; een schemafout).
  *
- * OPEN BESLUIT VAN DE EIGENAAR (voorgelegd 2026-10-13, PR #344). Een uitgebrachte versie t/m v2026.9.0
- * leest een kalender met 9 attributen verkeerd: geen feestdagen, de standaardweek, en een spookfeestdag
- * op de dag van openen. Gemeten in docs/ifc-round-trip.md, alinea "Schemageldigheid".
- *  - 8 (nu; aanbeveling van de orkestrator): deze versie leest beide indelingen en schrijft alles
- *    geldig behalve IfcWorkCalendar. Een volgende release zet ook de kalender om (deze waarde op 9).
- *  - 9: alles nu geldig, met een waarschuwing in de releasetekst.
- * De lezer leest beide indelingen (`workCalendarSlots`). De poort `check-ifc-schema.ts` volgt deze
- * waarde; de batterijen toetsen beide standen via `WriteIFCOptions.workCalendarAttributes`.
+ * Een uitgebrachte versie t/m v2026.9.0 leest een kalender met 9 attributen verkeerd: geen feestdagen,
+ * de standaardweek, en een extra feestdag op de dag van openen. Een kalender met 8 attributen leest zij
+ * goed. Gemeten in docs/ifc-round-trip.md, alinea "Oudere OPS-versies".
+ *  - 9 (nu): besluit eigenaar 2026-10-13, "alles in één keer" (PR #336, alinea "Besluit: voorwaartse
+ *    compatibiliteit"): alles geldig, met een waarschuwing in de releasetekst.
+ *  - 8: twee stappen. Deze versie leest beide indelingen en schrijft alles geldig behalve
+ *    IfcWorkCalendar; een volgende release zet de kalender om. Voorgelegd in PR #344 (fixronde 1).
+ * Wisselen is deze ene waarde plus `npm run gen:examples`. De lezer leest beide indelingen
+ * (`workCalendarSlots`). De poort `check-ifc-schema.ts` volgt deze waarde; de batterijen toetsen beide
+ * standen via `WriteIFCOptions.workCalendarAttributes`.
  */
-export const IFC_WORK_CALENDAR_ATTRIBUTES: 8 | 9 = 8;
+export const IFC_WORK_CALENDAR_ATTRIBUTES: 8 | 9 = 9;
 
 export interface WriteIFCOptions {
   /** Overschrijft `IFC_WORK_CALENDAR_ATTRIBUTES`; bedoeld om in de batterijen beide standen te toetsen. */
@@ -333,11 +369,11 @@ export function writeIFC(input: WriteIFCInput, options: WriteIFCOptions = {}): s
     'HEADER;',
     "FILE_DESCRIPTION(('ViewDefinition [SchedulingView]'),'2;1');",
     `FILE_NAME(${ifcStr(headerFileName)},${ifcStr(now)},(${ifcStr(headerText(project.author || 'Open Planner Studio'))}),(${ifcStr(headerText(project.company || 'OpenAEC Foundation'))}),'Open Planner Studio 0.1','Open Planner Studio','');`,
-    // Schema-identifier van IFC 4.3.2.0 (ISO 16739-1:2024), de huidige officiële IFC 4.3-versie.
-    // Tot 2026-10 stond hier 'IFC4X3' zonder suffix; IfcOpenShell valideert dat tegen een ouder,
-    // apart 4.3-schema. Voor alle entiteiten die OPS schrijft, zijn beide gelijk in aantal en
-    // volgorde van attributen. De lezer kijkt niet naar deze header. Zie docs/ifc-round-trip.md.
-    "FILE_SCHEMA(('IFC4X3_ADD2'));",
+    // Het schema van het project (issue #292, `Project.ifcSchema`; afwezig ⇒ `DEFAULT_IFC_SCHEMA`,
+    // IFC4X3_ADD2 = IFC 4.3.2.0, ISO 16739-1:2024). Voor alle entiteiten die OPS schrijft, zijn de drie
+    // schema's gelijk in aantal en volgorde van attributen (zie `IFC_SCHEMAS`); `projectIfcSchema` laat
+    // nooit een vrije tekst in de kop toe.
+    `FILE_SCHEMA(('${projectIfcSchema(project)}'));`,
     'ENDSEC;',
     'DATA;',
     '',
@@ -387,32 +423,35 @@ export function writeIFC(input: WriteIFCInput, options: WriteIFCOptions = {}): s
   const planStart = startDates[0] || project.startDate;
   const planEnd = endDates[endDates.length - 1] || project.endDate;
 
-  // IfcWorkPlan en IfcWorkSchedule (IFC 4.3, IfcWorkControl) tellen 14 attributen: GlobalId,
-  // OwnerHistory, Name, Description, ObjectType, Identification, CreationDate, Creators, Purpose,
-  // Duration, TotalFloat, StartTime, FinishTime, PredefinedType. StartTime is VERPLICHT. Tot 2026-10
-  // schreef OPS er 15 (één `$` te veel vóór StartTime, dus StartTime/FinishTime/PredefinedType op
-  // index 12/13/14); de lezer herkent die oude indeling nog (`workControlSlots` in ifcReader).
-  // Een project zonder taken en zonder startdatum heeft geen planstart; dan het schrijfmoment, zodat
-  // StartTime nooit `$` is. De OPS-lezer gebruikt dit slot dan niet: OPS_ProjectSettings draagt
-  // `ProjectStartDate` altijd (ook leeg) en wint.
+  // IfcWorkPlan en IfcWorkSchedule: de 14 argumenten van het schema (`workControlArgs`). StartTime is
+  // VERPLICHT. Een project zonder taken en zonder startdatum heeft geen planstart; dan het
+  // schrijfmoment, zodat StartTime nooit `$` is. De OPS-lezer gebruikt dit slot dan niet:
+  // OPS_ProjectSettings draagt `ProjectStartDate` altijd (ook leeg) en wint.
   const workControlStart = planStart || now;
-  const workPlanId = addLine(ctx, '_workplan',
-    `IFCWORKPLAN(${ifcStr(objectGuid(ctx, 'wp', project.id))},#${ownerHistId},${ifcStr(project.name)},${ifcStr(project.description)},$,$,${ifcDateTime(now)},$,$,$,$,${ifcDateTime(workControlStart)},${ifcDateTime(planEnd)},.PLANNED.)`);
+  const workPlanId = addLine(ctx, '_workplan', `IFCWORKPLAN(${workControlArgs({
+    guid: objectGuid(ctx, 'wp', project.id), ownerHistId, name: project.name, description: project.description,
+    creationDate: now, startTime: workControlStart, finishTime: planEnd, predefinedType: 'PLANNED',
+  })})`);
 
-  const workSchedId = addLine(ctx, '_worksched',
-    `IFCWORKSCHEDULE(${ifcStr(objectGuid(ctx, 'ws', project.id))},#${ownerHistId},${ifcStr('Construction schedule v1.0')},$,$,$,${ifcDateTime(now)},$,$,$,$,${ifcDateTime(workControlStart)},${ifcDateTime(planEnd)},.PLANNED.)`);
+  const workSchedId = addLine(ctx, '_worksched', `IFCWORKSCHEDULE(${workControlArgs({
+    guid: objectGuid(ctx, 'ws', project.id), ownerHistId, name: 'Construction schedule v1.0', description: '',
+    creationDate: now, startTime: workControlStart, finishTime: planEnd, predefinedType: 'PLANNED',
+  })})`);
 
   // Baselines — per baseline één `.BASELINE.`-IfcWorkSchedule-header (Name +
   // CreationDate, ZONDER taak-duplicatie: de datums leven verliesloos in het OPS_Baselines-JSON
   // hieronder). Puur een interop-signaal "deze baselines bestaan" voor externe IFC-tools.
   // Golden rule: geen baselines ⇒ geen extra IfcWorkSchedule (de lus doet niets).
-  // StartTime (verplicht) = de vroegste taakstart in de baseline; zonder taken de planstart van het
-  // werkschema hierboven. Geen lezer gebruikt dit slot (de datums staan in OPS_Baselines).
+  // StartTime en CreationDate zijn in het schema verplicht: de vroegste start in de baseline, anders de
+  // planstart van het werkschema hierboven; een baseline zonder aanmaakdatum krijgt het schrijfmoment.
+  // De OPS-lezer leest deze slots niet (de datums staan in het JSON); ze zijn er voor andere pakketten.
   const baselineSchedRefs: string[] = [];
   for (const b of baselines) {
-    const baselineStart = (b.tasks ?? []).map(t => t.start).filter(Boolean).sort()[0] || workControlStart;
-    const bId = addLine(ctx, `_baseline_ws_${b.id}`,
-      `IFCWORKSCHEDULE(${ifcStr(guidOf(ctx, 'baseline_ws_' + b.id))},#${ownerHistId},${ifcStr(b.name)},$,$,$,${ifcDateTime(b.createdAt || now)},$,$,$,$,${ifcDateTime(baselineStart)},${ifcDateTime(b.projectEnd)},.BASELINE.)`);
+    const bId = addLine(ctx, `_baseline_ws_${b.id}`, `IFCWORKSCHEDULE(${workControlArgs({
+      guid: guidOf(ctx, 'baseline_ws_' + b.id), ownerHistId, name: b.name, description: '',
+      creationDate: b.createdAt || now, startTime: baselineStart(b) || workControlStart, finishTime: b.projectEnd,
+      predefinedType: 'BASELINE',
+    })})`);
     baselineSchedRefs.push(`#${bId}`);
   }
 
@@ -692,6 +731,18 @@ function writeStructure(
     projSettingProps.push(addLine(ctx, '_ps_companyname',
       `IFCPROPERTYSINGLEVALUE('CompanyName',$,IFCTEXT(${ifcStr(project.companyName)}),$)`));
   }
+  // De schemavraag bij opslaan (besluit eigenaar 2026-10-13, `services/ifc/ifcSchemaQuestion.ts`).
+  // Staat de vraag nog open (automatisch opslaan, crashherstel, MCP-backup), dan bewaart
+  // `IfcSchemaUnconfirmed` het schema van het geopende bestand: zo blijft de vraag na herstel staan,
+  // ook als dat schema niet in de kop past (IFC2X3). Anders zegt `IfcSchemaConfirmed` dat er niets te
+  // vragen valt, zodat een bewust als IFC4 bewaard bestand bij heropenen niet opnieuw vraagt. Een
+  // bestand zonder een van beide (oudere versie, ander pakket) vraagt het één keer.
+  const schemaQuestion = ifcSchemaQuestionFor(project);
+  projSettingProps.push(schemaQuestion
+    ? addLine(ctx, '_ps_ifcschemaunconfirmed',
+      `IFCPROPERTYSINGLEVALUE('IfcSchemaUnconfirmed',$,IFCLABEL(${ifcStr(schemaQuestion.fileSchema)}),$)`)
+    : addLine(ctx, '_ps_ifcschemaconfirmed',
+      `IFCPROPERTYSINGLEVALUE('IfcSchemaConfirmed',$,IFCBOOLEAN(.T.),$)`));
   // P6 Project-ID (zie `documentProjectCode`). Golden rule: alleen wanneer gezet.
   if (project.p6ProjectCode) {
     projSettingProps.push(addLine(ctx, '_ps_p6projectcode',
@@ -1015,10 +1066,11 @@ const ISO_DAY_LABEL: Record<number, string> = { 1: 'Mon', 2: 'Tue', 3: 'Wed', 4:
  *    schrijft de blokken in de volgorde van zijn eerste dag.
  *  - Volgorde: die van `cal.workDays` (eerste voorkomen). De eerste groep met blokken is die van de
  *    eerste werkdag. Verder heeft de volgorde geen betekenis: `WorkingTimes` is een SET.
- *  - Een uitgebrachte OPS-versie (t/m v2026.9.0) leest alleen de EERSTE `IFCWORKTIME`. Bij meer groepen
- *    ziet zij dus alleen de dagen van de eerste groep als werkdag (een korte vrijdag wordt daar een vrije
- *    dag). Dat is bewust geaccepteerd: de terugvalweek die dat opving, is eruit (besluit orkestrator
- *    2026-10-13, PR #344; hij zat in geen enkele release).
+ *  - Een uitgebrachte OPS-versie (t/m v2026.9.0) leest bij 9 attributen `WorkingTimes` helemaal niet
+ *    (zie `IFC_WORK_CALENDAR_ATTRIBUTES`). Bij 8 leest zij alleen de EERSTE `IFCWORKTIME`, en ziet zij bij
+ *    meer groepen alleen de dagen van de eerste groep als werkdag (een korte vrijdag wordt een vrije
+ *    dag). De terugvalweek die dat bij 8 opving, is eruit (besluit orkestrator 2026-10-13, PR #344; hij
+ *    zat in geen enkele release).
  *  - Eén groep (uniforme week) ⇒ het bestand is byte-identiek aan vroeger.
  */
 function weekBandGroups(workDays: readonly number[], workTime: WorkTimeBands): WeekBandGroup[] {
@@ -1156,8 +1208,10 @@ function writeCalendar(
   const exceptStr = allExceptionRefs.length > 0 ? `(${allExceptionRefs.join(',')})` : '$';
   // ObjectType (arg 4): alleen een label bij USERDEFINED-ploeg; anders `$`.
   const objectType = cal.shift === 'USERDEFINED' ? ifcStr('USERDEFINED') : '$';
-  // Indeling volgens `IFC_WORK_CALENDAR_ATTRIBUTES` (open besluit): 9 = IFC 4.3, met Identification
-  // (`$`, OPS heeft geen kalendercode) tussen ObjectType en WorkingTimes; 8 = zonder.
+  // Indeling volgens `IFC_WORK_CALENDAR_ATTRIBUTES`. 9 = het schema: GlobalId, OwnerHistory, Name,
+  // Description, ObjectType, Identification (`$`, OPS heeft geen kalendercode), WorkingTimes,
+  // ExceptionTimes, PredefinedType. 8 = de vorm van v2026.9.0 en ouder, zonder Identification. De lezer
+  // kent beide (`workCalendarSlots` in `ifcWorkControlSlots.ts`).
   const identification = ctx.workCalendarAttributes === 9 ? '$,' : '';
   const calStepId = addLine(ctx, key,
     `IFCWORKCALENDAR(${ifcStr(objectGuid(ctx, 'cal', cal.id))},#${ownerHistId},${ifcStr(cal.name)},${ifcStr(cal.description)},${objectType},${identification}(${workTimeIds.map((i) => `#${i}`).join(',')}),${exceptStr},${shiftToPredefinedType(cal.shift)})`);
@@ -1478,12 +1532,12 @@ function writeResource(ctx: WriteContext, res: Resource, ownerHistId: number): v
   // Entiteitnaam uit de gedeelde RESOURCE_TYPE_TO_IFC-map (reader leidt de inverse eruit af);
   // onbekend type ⇒ MATERIAL.
   const entityName = RESOURCE_TYPE_TO_IFC[res.type] ?? 'IFCCONSTRUCTIONMATERIALRESOURCE';
-  // IFC 4.3 (IfcConstructionResource en subtypen) telt 11 attributen: GlobalId, OwnerHistory, Name,
-  // Description, ObjectType, Identification, LongDescription, Usage, BaseCosts, BaseQuantity,
-  // PredefinedType. Tot 2026-10 schreef OPS er 9 (`…,$,$,$,$,.USERDEFINED.`), met de enum op de plek
-  // van BaseCosts. De lezer gebruikt alleen GlobalId, Name en Description en leest beide indelingen
-  // dus gelijk. PredefinedType is `.NOTDEFINED.`: OPS kent geen soortindeling binnen een resourcetype,
-  // en `.USERDEFINED.` eist een ObjectType (WHERE-regel CorrectPredefinedType).
+  // De 11 argumenten van het schema (alle vijf soorten, IFC4/IFC4X3 gelijk): GlobalId, OwnerHistory,
+  // Name, Description, ObjectType, Identification, LongDescription, Usage, BaseCosts, BaseQuantity,
+  // PredefinedType. Oudere versies schreven er 9, met het type op de plek van BaseCosts. De lezer leest
+  // alleen GlobalId, Name en Description, dus voor hem maakt het aantal niet uit.
+  // PredefinedType `.NOTDEFINED.`: `.USERDEFINED.` (wat oudere versies bedoelden) eist een ObjectType
+  // (regel CorrectPredefinedType), en OPS kent geen verfijning onder de vijf soorten.
   const entity = `${entityName}(${ifcStr(objectGuid(ctx, 'res', res.id))},#${ownerHistId},${ifcStr(res.name)},${ifcStr(res.description)},$,$,$,$,$,$,.NOTDEFINED.)`;
   addLine(ctx, `res_${res.id}`, entity);
 }

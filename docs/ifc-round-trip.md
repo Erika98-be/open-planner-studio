@@ -188,21 +188,20 @@ eerste werkdag, en zette de reader die op elke werkdag. Zo staat het nu in het b
 - **Eén groep blijft byte-identiek.** Een uniforme week, een kalender zonder blokken en een scalaire
   kalender met urentaak (die schrijft zijn afgeleide blokken, op elke werkdag dezelfde) geven
   hetzelfde bestand als vóór B7.
-- **Een terugvalweek vooraan.** Bij meer groepen staat eerst een week met alle werkdagen en de blokken
-  van de eerste werkdag — de week die de writer vóór B7 schreef — met StartDate = FinishDate =
-  `1900-01-01`. Uitgebrachte versies (t/m v2026.9.0) lazen alleen de eerste `IfcWorkTime` en negeerden
-  de datums. Zonder terugvalweek zagen zij alleen de dagen van de eerste groep als werkdag: een korte
-  vrijdag werd daar een vrije dag (gemeten met de reader van main 1e192b31a). Sinds IfcWorkCalendar 9
-  attributen heeft (zie "Schemageldigheid"), lezen die versies `WorkingTimes` helemaal niet meer; de
-  terugvalweek helpt nu alleen nog een lezer die de eerste `IfcWorkTime` neemt en de datums negeert. De
-  reader herkent de terugvalweek aan zijn datum. Er is bewust geen markering met een STEP-id: een ander
-  pakket mag de id's hernummeren, en dan wijst zo'n markering naar de verkeerde regel.
+- **Geen terugvalweek.** Main schreef tussen #340 en #344 bij meer groepen eerst een extra week met
+  StartDate = FinishDate = `1900-01-01`, voor oudere OPS-versies. Die week zat in geen release en is
+  weer weg (besluit orkestrator 2026-10-13, fixronde 1 van PR #344). Bij 9 attributen lezen oudere
+  versies `WorkingTimes` toch niet. Bij 8 ziet een oudere versie bij meer groepen nu alleen de dagen van
+  de eerste groep als werkdag: een korte vrijdag wordt daar een vrije dag. Meer onder "Oudere
+  OPS-versies" (alinea Schemageldigheid). Een bestand met zo'n week leest deze reader goed (zie "De
+  reader" hieronder).
 - **De scalar staat altijd in `OPS_Calendar`.** Bij meer groepen schrijft de writer `WorkStartHour` en
-  `WorkEndHour` altijd: een oudere reader leidt ze af uit de terugvalweek, deze reader uit de eerste
-  werkdag met blokken.
+  `WorkEndHour` altijd. Zonder die eigenschappen zou een oudere reader ze afleiden uit de eerste
+  `IfcWorkTime`, en deze reader uit de eerste werkdag met blokken.
 - **De reader** (`buildCalendarFromEntity`). Een `IfcWorkTime` met een StartDate of FinishDate doet niet
   mee in de week. Datumgebonden werktijden (een zomer- en een winterweek, een losse werkzaterdag) leest
-  OPS dus (nog) niet; als gewone week zouden ze in elke week gelden. De terugvalweek valt hier ook onder.
+  OPS dus (nog) niet; als gewone week zouden ze in elke week gelden. De terugvalweek van main valt hier
+  ook onder.
   OPS schreef vóór B7 nooit een datum in `WorkingTimes` (feestdagen en werkende uitzonderingen staan in
   `ExceptionTimes`), dus oude OPS-bestanden lezen ongewijzigd. Hebben ALLE werktijden een datum (bijv.
   één week 08–16 van 2026-01-01 t/m 2027-12-31), dan neemt de reader het eerste patroon met een datum,
@@ -217,14 +216,15 @@ het bestand, wat een oudere versie leest, byte-identiek aan main, werktijden met
 STEP-id's en een weggevallen `OPS_Calendar`) en in de uurkalender `hourCal` in de fixture van
 `check-ifc-roundtrip.ts`.
 
-**Externe bestanden.** Tot 2026-10 schreef OPS `IfcWorkCalendar` zonder `Identification` (8
-attributen; IFC4 en IFC 4.3 eisen er 9), en las de reader dezelfde posities. Een kalender uit een
-bestand dat het schema volgt, kwam daardoor binnen zonder werktijden, en zijn `WorkingTimes` werd als
-`ExceptionTimes` gelezen (een werktijd met een datum werd een feestdag). Nu schrijft OPS 9 attributen
-en herkent de reader beide indelingen (`workCalendarSlots`, zie "Schemageldigheid"). Gemeten op het
-corpus: de 9 kalenders van bSI, xbim, IfcOpenShell en ifcwebserver (allemaal ma–vr 08:00–16:00) kwamen
-binnen als een uurkalender zonder blokken met 07:00–16:00, en komen nu binnen als ma–vr 08:00–16:00.
-Interop met andere programma's is daarmee nog niet getest.
+**Externe bestanden.** De reader kiest de plekken in `IfcWorkCalendar` op zijn argumenten
+(`workCalendarSlots` in `ifcWorkControlSlots.ts`): 9 = het schema (Identification op 5, `WorkingTimes` op
+6), 8 = de oude OPS-vorm zonder Identification, en 9 met een lijst op Identification = zo'n oud bestand na
+IfcOpenShell `MergeProjects`. Een kalender uit een bestand dat het schema volgt, bereikt de leestak
+hierboven dus. Gemeten op het corpus: de 9 kalenders van bSI, xbim, IfcOpenShell en ifcwebserver
+(allemaal ma–vr 08:00–16:00) komen binnen als ma–vr 08:00–16:00; met de reader van vóór #292 kwamen ze
+binnen als een uurkalender zonder blokken met 07:00–16:00. Verder getoetst met bestanden van de eigen
+writer (`check-ifc-arity`, `check-ifc-legacy-arity`, ook na `MergeProjects`). Interop met andere
+programma's is daarmee nog niet getest.
 
 ## Wat dit niet dekt
 

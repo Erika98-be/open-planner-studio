@@ -1,4 +1,5 @@
 import type { WriteIFCInput } from '@/services/ifc/ifcWriter';
+import { projectForIfcExport } from '@/services/ifc/ifcSchemaQuestion';
 import type { WithheldTaskTimeField } from '@/services/ifc/ifcTaskSlots';
 import type { DocumentPayload } from './documentContract';
 import { unrecordedExportFields } from './recordedDatesSelectors';
@@ -96,6 +97,14 @@ export function buildWriteIFCInput(src: IFCSaveSource): WriteIFCInput {
     ...(src.datesAsRecorded && src.recordedDates?.sourceFormat
       ? { recordedSourceFormat: src.recordedDates.sourceFormat } : {}),
   };
+}
+
+/** De writer-invoer voor een EXPORT naar een nieuw bestand: als `buildWriteIFCInput`, maar zonder een open
+ *  schemavraag die niet bij de kop van de export past (`projectForIfcExport`, review #336 punt 4).
+ *  Opslaan, AutoSave, crashherstel en de MCP-backup gebruiken `buildWriteIFCInput`. */
+export function buildExportIFCInput(src: IFCSaveSource): WriteIFCInput {
+  const input = buildWriteIFCInput(src);
+  return { ...input, project: projectForIfcExport(input.project) };
 }
 
 /** De sleutels van `IFCSaveSource` op WAARDE-niveau. Twee compile-time asserts hieronder koppelen

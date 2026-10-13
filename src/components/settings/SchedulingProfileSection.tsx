@@ -172,15 +172,14 @@ export function SchedulingProfileSection({ mode, value, onChange }: SchedulingPr
   const profileSelect = (
     <div className="flex flex-col gap-1">
       <label className={labelCls} htmlFor="ops-scheduling-profile">{t('schedulingProfile.profile')}</label>
-      <select
-        id="ops-scheduling-profile"
-        value={choice}
-        onChange={e => onChoose(e.target.value as ProfileChoice)}
-        className={inputCls}
-        data-ops-scheduling-profile-select
-      >
-        {choices.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
-      </select>
+      <div data-ops-scheduling-profile-select>
+        <Select
+          id="ops-scheduling-profile"
+          value={choice}
+          onChange={next => onChoose(next as ProfileChoice)}
+          options={choices}
+        />
+      </div>
     </div>
   );
 

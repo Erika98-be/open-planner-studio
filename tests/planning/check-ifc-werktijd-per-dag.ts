@@ -6,8 +6,9 @@
 // krijgt elke groep weekdagen met dezelfde blokken een eigen `IFCWORKTIME` (het model van IFC 4.3,
 // `IfcWorkCalendar` figuur 1). Een `IFCWORKTIME` met een datum doet niet mee in de week.
 //
-// Elke writertoets draait in beide standen van `IFC_WORK_CALENDAR_ATTRIBUTES` (8 en 9 attributen,
-// open besluit van de eigenaar; zie ifcWriter.ts en docs/ifc-round-trip.md, "Schemageldigheid").
+// Elke writertoets draait in beide standen van `IFC_WORK_CALENDAR_ATTRIBUTES` (9 = besluit eigenaar
+// 2026-10-13, 8 = voorgelegd in PR #344; zie ifcWriter.ts en docs/ifc-round-trip.md, "Oudere
+// OPS-versies").
 //
 //  §1 round-trip per geval: korte vrijdag, zaterdag, drie groepen, nachtploeg per dag, blok tot 24:00,
 //     zondag die afwijkt (de scalaire dag is niet de eerste groep), de nachtploeg van MS Project (de
