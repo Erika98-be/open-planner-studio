@@ -3197,28 +3197,56 @@ function remapLevelingResourceIds(
  * = het schema) of IFCRELASSIGNSTOCONTROL (control = het schema). PredefinedType `.BASELINE.` staat
  * op arg-index 13 van IFCWORKSCHEDULE (schema), of 14 in bestanden van oudere OPS-versies
  * (`isBaselineSchedule`).
+ *
+ * Review #336 (sinds de herkenning ook bij 14 argumenten werkt, dus bij bestanden van andere pakketten):
+ *  - Alleen uitsluiten als er óók een gewoon (niet-baseline) werkschema is. Anders is het
+ *    baselineschema de enige planning in het bestand, en dan zijn die taken de taken.
+ *  - De hele boom onder het baselineschema gaat mee (kinderen via IFCRELNESTS, transitief), zoals
+ *    Bonsai een werkschema opbouwt: één wortel per schema, de rest genest. Anders blijven de kinderen
+ *    als losse dubbele taken over.
+ *  - Een taak die (ook) onder het gewone schema hangt, is een live taak en blijft.
  */
 function collectBaselineTaskStepIds(entities: StepEntity[]): Set<string> {
-  const baselineSchedIds = new Set(
-    entities
-      .filter(e => e.type === 'IFCWORKSCHEDULE' && isBaselineSchedule(e))
-      .map(e => e.id),
-  );
+  const baselineSchedIds = new Set<string>();
+  const liveSchedIds = new Set<string>();
+  for (const e of entities) {
+    if (e.type === 'IFCWORKSCHEDULE') (isBaselineSchedule(e) ? baselineSchedIds : liveSchedIds).add(e.id);
+  }
   const taskStepIds = new Set<string>();
-  if (baselineSchedIds.size === 0) return taskStepIds;
+  if (baselineSchedIds.size === 0 || liveSchedIds.size === 0) return taskStepIds;
+
+  const baselineRoots: string[] = [];
+  const liveRoots: string[] = [];
+  const nestedUnder = new Map<string, string[]>();
   for (const e of entities) {
     if (e.type === 'IFCRELNESTS') {
       const relating = parseRef(e.args[4] || '');
-      if (relating && baselineSchedIds.has(relating)) {
-        for (const r of parseRefs(e.args[5] || '')) taskStepIds.add(r);
-      }
+      if (!relating) continue;
+      const related = parseRefs(e.args[5] || '');
+      if (baselineSchedIds.has(relating)) baselineRoots.push(...related);
+      else if (liveSchedIds.has(relating)) liveRoots.push(...related);
+      else nestedUnder.set(relating, [...(nestedUnder.get(relating) ?? []), ...related]);
     } else if (e.type === 'IFCRELASSIGNSTOCONTROL') {
       const control = parseRef(e.args[6] || '');
-      if (control && baselineSchedIds.has(control)) {
-        for (const r of parseRefs(e.args[4] || '')) taskStepIds.add(r);
-      }
+      if (!control) continue;
+      const related = parseRefs(e.args[4] || '');
+      if (baselineSchedIds.has(control)) baselineRoots.push(...related);
+      else if (liveSchedIds.has(control)) liveRoots.push(...related);
     }
   }
+  const tree = (roots: string[]): Set<string> => {
+    const seen = new Set<string>();
+    const todo = [...roots];
+    while (todo.length > 0) {
+      const id = todo.pop()!;
+      if (seen.has(id)) continue;
+      seen.add(id);
+      todo.push(...(nestedUnder.get(id) ?? []));
+    }
+    return seen;
+  };
+  const live = tree(liveRoots);
+  for (const id of tree(baselineRoots)) if (!live.has(id)) taskStepIds.add(id);
   return taskStepIds;
 }
 

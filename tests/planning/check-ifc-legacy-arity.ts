@@ -14,6 +14,8 @@
 //   4. Zonder OPS-pset komen projectstart en -einde uit IfcWorkPlan: gelijk in beide vormen.
 //   5. Het baselinewerkschema wordt in beide vormen herkend, ook als het vóór het gewone staat.
 //   6. Een schemaconform bestand van een ander pakket (14 argumenten) leest StartTime/FinishTime goed.
+//   7. Taken onder een baselinewerkschema van een ander pakket: alleen weg naast een gewoon schema, met de
+//      hele boom eronder (review #336).
 // Draait via run.sh. Exit 0 = alles groen.
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -176,6 +178,57 @@ for (const [label, ifc] of [['oud', OLD], ['nieuw', NEW]] as const) {
   const p = readIFC(ext).project;
   eq('6a 14-argument-IfcWorkPlan: StartTime en FinishTime op hun schemaplek', [p.startDate, p.endDate], ['2026-03-02', '2026-04-30']);
   eq('6b het schema uit de kop', p.ifcSchema, 'IFC4');
+}
+
+// ── 7. Taken onder een baselinewerkschema van een ander pakket ────────────────────────────────────
+// Review #336: sinds de schemaplek op het argumentaantal ligt, herkent de lezer `.BASELINE.` ook in een
+// bestand met 14 argumenten. Dan mag hij niet meer taken weggooien dan nodig: alleen als er óók een
+// gewoon werkschema is (anders is het baselineschema de enige planning), en dan de hele boom eronder
+// (wortel én kinderen via IfcRelNests), maar nooit een taak die ook onder het gewone schema hangt.
+{
+  const head = [
+    'ISO-10303-21;', 'HEADER;', "FILE_DESCRIPTION((''),'2;1');", "FILE_NAME('x.ifc','',(''),(''),'','','');",
+    "FILE_SCHEMA(('IFC4'));", 'ENDSEC;', 'DATA;',
+    "#1=IFCPROJECT('0proj000000000000000001',$,'Extern',$,$,$,$,$,$);",
+  ];
+  const tail = ['ENDSEC;', 'END-ISO-10303-21;', ''];
+  const schedule = (id: number, guid: string, type: string, arity: 14 | 15) =>
+    `#${id}=IFCWORKSCHEDULE('${guid}',$,'${type}',$,$,$,'2026-01-01T00:00:00',$,$,$,$,${arity === 15 ? '$,' : ''}'2026-03-02T08:00:00','2026-04-30T17:00:00',.${type}.);`;
+  const task = (id: number, name: string) =>
+    `#${id}=IFCTASK('0tsk00000000000000000${id}',$,'${name}',$,$,'${name}',$,$,$,.F.,$,$,.CONSTRUCTION.);`;
+  const names = (ifc: string) => readIFC(ifc).tasks.map(t => t.name);
+
+  // Alleen een baselineschema (geen gewoon schema): de taken zijn de planning en blijven.
+  for (const arity of [14, 15] as const) {
+    const only = [...head, schedule(2, '0sch0000000000000000001', 'BASELINE', arity), task(10, 'A'), task(11, 'B'),
+      "#20=IFCRELASSIGNSTOCONTROL('0rel0000000000000000001',$,$,$,(#10,#11),$,#2);", ...tail].join('\n');
+    eq(`7a alleen een .BASELINE.-werkschema (${arity} argumenten): de taken blijven`, names(only), ['A', 'B']);
+  }
+
+  // De vorm van Bonsai: per werkschema één wortel (IfcRelAssignsToControl) met kinderen (IfcRelNests).
+  const bonsai = [...head,
+    schedule(2, '0sch0000000000000000001', 'PLANNED', 14), schedule(3, '0sch0000000000000000002', 'BASELINE', 14),
+    task(10, 'R'), task(11, 'T1'), task(12, 'T2'), task(20, 'R-bl'), task(21, 'T1-bl'), task(22, 'T2-bl'), task(23, 'T3-bl'),
+    "#30=IFCRELASSIGNSTOCONTROL('0rel0000000000000000001',$,$,$,(#10),$,#2);",
+    "#31=IFCRELASSIGNSTOCONTROL('0rel0000000000000000002',$,$,$,(#20),$,#3);",
+    "#32=IFCRELNESTS('0rel0000000000000000003',$,$,$,#10,(#11,#12));",
+    "#33=IFCRELNESTS('0rel0000000000000000004',$,$,$,#20,(#21,#22));",
+    // Een kleinkind: de uitsluiting gaat de hele boom door.
+    "#34=IFCRELNESTS('0rel0000000000000000005',$,$,$,#22,(#23));",
+    ...tail].join('\n');
+  eq('7b Bonsai-vorm: alleen de boom van het gewone werkschema, zonder losse baselinekinderen',
+    names(bonsai), ['R', 'T1', 'T2']);
+  for (const arity of [14, 15] as const) {
+    eq(`7c dezelfde vorm met ${arity} argumenten per werkschema`,
+      names(bonsai.replace(/#(2|3)=IFCWORKSCHEDULE\([^\n]*/g, (line) => {
+        const id = Number(/^#(\d+)/.exec(line)![1]);
+        return schedule(id, id === 2 ? '0sch0000000000000000001' : '0sch0000000000000000002', id === 2 ? 'PLANNED' : 'BASELINE', arity);
+      })), ['R', 'T1', 'T2']);
+  }
+
+  // Een taak die óók onder het gewone schema hangt, is een live taak en blijft.
+  const shared = bonsai.replace("(#10),$,#2);", "(#10,#21),$,#2);");
+  eq('7d een taak die ook aan het gewone werkschema hangt, blijft', names(shared), ['R', 'T1', 'T2', 'T1-bl']);
 }
 
 if (diffs.length === 0) {
