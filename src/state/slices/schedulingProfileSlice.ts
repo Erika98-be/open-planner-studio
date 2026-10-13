@@ -4,6 +4,7 @@
 import type { AppSliceFactory } from './types';
 import { PROJECT_INFO_HELP_ARTICLE_ID } from '@/state/helpArticles';
 import type { Project } from '@/types/project';
+import { splitIfcSchemaPatch } from '@/state/ifcSchemaChoice';
 import { countShiftedTasks, type RecordedTime } from '@/engine/scheduler/recordedDates';
 import { clampProjectStartAnchors } from '@/engine/scheduler/projectStartAnchorClamp';
 import { isLeafTask } from '@/utils/taskHierarchy';
@@ -28,21 +29,25 @@ export interface SchedulingProfileSlice {
    *  eigen no-op-guard en projectstart-klem). Wijzigt het profiel wél, dan landen metadata én profiel
    *  in ÉÉN producer met één undo-stap "Projectinfo" (of "Rekenprofiel" zonder metadata) — zodat één
    *  Ctrl+Z profiel, naam, datums en "datums zoals opgeslagen" samen terugzet. Leeg + ongewijzigd ⇒
-   *  niets: geen undo-stap, niet vuil, de modus blijft. */
+   *  niets: geen undo-stap, niet vuil, de modus blijft. Het IFC-schema gaat apart, zonder undo-stap
+   *  (`setIfcSchema`, review #336); telt wel als wijziging (`changed`). */
   applyProjectInfo: (metadata: Partial<Project>, scheduling: SchedulingSettings | undefined) => ApplyResult;
 }
 
 export const createSchedulingProfileSlice: AppSliceFactory<SchedulingProfileSlice> = (runtime) => (set, get) => ({
   applySchedulingSettings: (next) => get().applyProjectInfo({}, next),
 
-  applyProjectInfo: (metadata, next) => {
+  applyProjectInfo: (patch, next) => {
+    if (next && !hasValidProfileName(next.profile)) return { changed: false, shifted: null };
+    // Het schema hoort bij het bestand: eerst, buiten de undo-stap van de rest.
+    const { schema, rest: metadata } = splitIfcSchemaPatch(patch);
+    const schemaChanged = schema ? get().setIfcSchema(schema) : false;
     const before = get();
     const hasMetadata = Object.keys(metadata).length > 0;
-    if (next && !hasValidProfileName(next.profile)) return { changed: false, shifted: null };
     const profileChanges = !!next
       && !sameSettings({ profile: before.project.schedulingProfile, options: before.project.schedulingOptions }, next);
     if (!profileChanges) {
-      if (!hasMetadata) return { changed: false, shifted: null };
+      if (!hasMetadata) return { changed: schemaChanged, shifted: null };
       get().setProject(metadata);
       return { changed: true, shifted: null };
     }

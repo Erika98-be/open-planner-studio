@@ -44,7 +44,7 @@ async function saveAndReadSchemaLine(page: Page): Promise<string> {
   return text.split('\n').find(line => line.startsWith('FILE_SCHEMA(')) ?? '(geen FILE_SCHEMA-regel)';
 }
 
-test('IFC-schema: kiezen in Projectinfo, toepassen, opslaan schrijft het in de kop; ongedaan maken zet het terug',
+test('IFC-schema: kiezen in Projectinfo, toepassen, opslaan schrijft het in de kop; ongedaan maken verandert het niet',
   async ({ page, ops: _ops }) => {
     // Beginstand: een nieuw project met één taak, nog op de standaard.
     await page.evaluate(() => {
@@ -80,11 +80,16 @@ test('IFC-schema: kiezen in Projectinfo, toepassen, opslaan schrijft het in de k
     // Opslaan (echte Ctrl+S) schrijft het gekozen schema in de kop.
     expect(await saveAndReadSchemaLine(page)).toBe("FILE_SCHEMA(('IFC4'));");
 
-    // Ongedaan maken zet de keuze terug (één stap), opnieuw doen zet hem weer.
+    // Het schema hoort bij het bestand (review #336): ongedaan maken en opnieuw doen raken alleen de
+    // bewerking ervoor (de taak), nooit het schema. Anders schreef AutoSave na Ctrl+Z stil het oude schema.
+    const taskCount = () => page.evaluate(() => window.__OPS__!.store.getState().tasks.length);
+    const tasksBefore = await taskCount();
     await page.keyboard.press('Control+z');
-    await expect.poll(() => schemaOf(page)).toBeNull();
+    await expect.poll(taskCount).toBe(tasksBefore - 1);
+    expect(await schemaOf(page)).toBe('IFC4');
     await page.keyboard.press('Control+y');
-    await expect.poll(() => schemaOf(page)).toBe('IFC4');
+    await expect.poll(taskCount).toBe(tasksBefore);
+    expect(await schemaOf(page)).toBe('IFC4');
 
     // Het formulier toont de opgeslagen keuze; IFC 4.3 kiezen en opslaan.
     await toProjectInfo(page);

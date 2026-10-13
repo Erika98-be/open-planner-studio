@@ -10,8 +10,11 @@
 //   C. De opslaanroute in de store: nieuw project zonder vraag; annuleren slaat niets op; houden en
 //      ADD2 schrijven de juiste kop en wissen de vraag; heropenen vraagt niet opnieuw; Opslaan als vraagt
 //      ook; een IFC2X3-bestand zonder vrager wordt niet opgeslagen; een schemakeuze in Projectinfo telt
-//      als antwoord (en undo zet de vraag terug); automatisch opslaan naar het bestand wacht alleen bij
-//      een schema dat de app niet schrijft.
+//      als antwoord; automatisch opslaan naar het bestand wacht alleen bij een schema dat de app niet
+//      schrijft.
+//   D. Ongedaan maken en opnieuw doen veranderen het schema nooit (review #336 punt 2): het schema is
+//      een eigenschap van het bestand, net als het antwoord. Anders schreef AutoSave na een undo binnen
+//      10 s weer het oude schema. Ook een keuze in Projectinfo is daarom geen undo-stap.
 //
 // Draait via run.sh (esbuild-bundel). Exit 0 = alles groen.
 
@@ -216,7 +219,7 @@ truthy('0 oude fixture: geen schemamarkering', !hasProp(OLD_FILE, 'IfcSchemaConf
   eq('C7 IFC4 zonder vrager: houdt IFC4', c7 && header(c7), 'IFC4');
   setIfcSchemaAsker(async (question) => { asked.push(question); return answers.shift() ?? null; });
 
-  // C8 — Projectinfo: een schemakeuze is het antwoord; undo zet de vraag terug.
+  // C8 — Projectinfo: een schemakeuze is het antwoord; undo brengt de vraag niet terug (zie D).
   await open(ifc4File, 'model-ifc4.ifc');
   const patch = projectInfoPatch(S().project, { ...S().project, ifcSchema: 'IFC4X3_ADD2' });
   eq('C8 patch: schema ADD2 en de vraag vervalt', [patch.ifcSchema, 'ifcSchemaUnconfirmed' in patch, patch.ifcSchemaUnconfirmed], ['IFC4X3_ADD2', true, undefined]);
@@ -228,7 +231,7 @@ truthy('0 oude fixture: geen schemamarkering', !hasProp(OLD_FILE, 'IfcSchemaConf
   eq('C8 Ctrl+S na Projectinfo: geen vraag', asked.length, 0);
   eq('C8 Ctrl+S na Projectinfo: kop IFC4X3_ADD2', c8 && header(c8), 'IFC4X3_ADD2');
   S().undo();
-  eq('C8 undo: schema en vraag samen terug', [S().project.ifcSchema, S().project.ifcSchemaUnconfirmed], ['IFC4', 'IFC4']);
+  eq('C8 undo: het schema blijft ADD2 en de vraag komt niet terug', [S().project.ifcSchema, S().project.ifcSchemaUnconfirmed], ['IFC4X3_ADD2', undefined]);
 
   // C9 — crashherstel en MCP-backup schrijven via dezelfde invoer zonder vraag; de vraag blijft bewaard.
   await open(withHeader(OLD_FILE, 'IFC2X3'), 'oud-2x3.ifc');
@@ -237,6 +240,76 @@ truthy('0 oude fixture: geen schemamarkering', !hasProp(OLD_FILE, 'IfcSchemaConf
   eq('C9 herstelsnapshot: geen vraag gesteld', asked.length, 0);
   eq('C9 herstelsnapshot: kop is de standaard', header(snapshot), 'IFC4X3_ADD2');
   eq('C9 herstelsnapshot: de vraag IFC2X3 blijft bewaard', readIFC(snapshot).project.ifcSchemaUnconfirmed, 'IFC2X3');
+}
+
+// ═══ D. Ongedaan maken verandert het schema nooit (review #336 punt 2) ═══════════════════════
+{
+  // Wat AutoSave naar het bestand zou schrijven (`useAutoSave` gebruikt dezelfde invoer).
+  const autoSave = () => ({ header: header(writeIFC(buildWriteIFCInput(S()))), blocked: ifcSchemaBlocksSilentWrite(S().project) });
+  const schemaState = () => [S().project.ifcSchema, S().project.ifcSchemaUnconfirmed];
+  const hasTask = (name: string) => S().tasks.some(t => t.name === name);
+
+  // D1 — de reviewproef probe1 P1: een oud OPS-bestand (IFC4X3), bewerken, opslaan met ADD2, undo, redo.
+  await open(OLD_FILE, 'oud.ifc');
+  S().addTask({ name: 'D1 taak' });
+  asked.length = 0; answers = ['IFC4X3_ADD2'];
+  const d1 = await save();
+  eq('D1 antwoord ADD2: kop ADD2', d1 && header(d1), 'IFC4X3_ADD2');
+  S().undo();
+  eq('D1 undo: de bewerking is terug', hasTask('D1 taak'), false);
+  eq('D1 undo: schema ADD2, geen vraag', schemaState(), ['IFC4X3_ADD2', undefined]);
+  eq('D1 undo: AutoSave schrijft ADD2', autoSave(), { header: 'IFC4X3_ADD2', blocked: false });
+  S().redo();
+  eq('D1 redo: de bewerking is er weer', hasTask('D1 taak'), true);
+  eq('D1 redo: schema ADD2, geen vraag', schemaState(), ['IFC4X3_ADD2', undefined]);
+  asked.length = 0;
+  const d1b = await save();
+  eq('D1 Ctrl+S na undo en redo: geen vraag, kop ADD2', [asked.length, d1b && header(d1b)], [0, 'IFC4X3_ADD2']);
+
+  // D2 — probe1 P2: een IFC4-bestand, bewerken, opslaan met ADD2, undo voorbij het opslaan.
+  await open(withHeader(OLD_FILE, 'IFC4'), 'model.ifc');
+  S().addTask({ name: 'D2 taak' });
+  answers = ['IFC4X3_ADD2'];
+  await save();
+  S().undo();
+  eq('D2 undo: schema ADD2, geen vraag', schemaState(), ['IFC4X3_ADD2', undefined]);
+
+  // D3 — houden: undo laat het gehouden schema staan, zonder vraag.
+  await open(withHeader(OLD_FILE, 'IFC4'), 'model.ifc');
+  S().addTask({ name: 'D3 taak' });
+  answers = ['IFC4'];
+  await save();
+  S().undo();
+  eq('D3 undo na houden: IFC4, geen vraag', schemaState(), ['IFC4', undefined]);
+  eq('D3 undo na houden: AutoSave schrijft IFC4', autoSave(), { header: 'IFC4', blocked: false });
+
+  // D4 — IFC2X3: na het antwoord brengt undo de blokkade en de vraag niet terug.
+  await open(withHeader(OLD_FILE, 'IFC2X3'), 'oud-2x3.ifc');
+  S().addTask({ name: 'D4 taak' });
+  answers = ['IFC4X3'];
+  await save();
+  S().undo();
+  eq('D4 undo na IFC2X3 → IFC 4.3: schema IFC4X3, geen vraag', schemaState(), ['IFC4X3', undefined]);
+  eq('D4 undo: AutoSave schrijft IFC4X3', autoSave(), { header: 'IFC4X3', blocked: false });
+
+  // D5 — Projectinfo: een schemakeuze is geen undo-stap. Undo daarna raakt alleen de vorige bewerking.
+  await open(withHeader(OLD_FILE, 'IFC4'), 'model.ifc');
+  S().addTask({ name: 'D5 taak' });
+  const events = S().historyEvents.length;
+  S().applyProjectInfo(projectInfoPatch(S().project, { ...S().project, ifcSchema: 'IFC4X3_ADD2' }), undefined);
+  eq('D5 schemakeuze: geen nieuw undo-event', S().historyEvents.length, events);
+  eq('D5 schemakeuze: schema ADD2, vraag weg, document gewijzigd', [...schemaState(), S().isDirty], ['IFC4X3_ADD2', undefined, true]);
+  S().undo();
+  eq('D5 undo: de taak is weg, het schema blijft ADD2', [hasTask('D5 taak'), ...schemaState()], [false, 'IFC4X3_ADD2', undefined]);
+
+  // D6 — Projectinfo met naam én schema: één undo-stap voor de naam; undo zet de naam terug, niet het schema.
+  const nameBefore = S().project.name;
+  S().applyProjectInfo(projectInfoPatch(S().project, { ...S().project, name: 'D6 naam', ifcSchema: 'IFC4' }), undefined);
+  eq('D6 naam en schema toegepast', [S().project.name, S().project.ifcSchema], ['D6 naam', 'IFC4']);
+  S().undo();
+  eq('D6 undo: naam terug, schema blijft IFC4', [S().project.name, S().project.ifcSchema], [nameBefore, 'IFC4']);
+  S().redo();
+  eq('D6 redo: naam weer, schema IFC4', [S().project.name, S().project.ifcSchema], ['D6 naam', 'IFC4']);
 }
 
 resetIfcSchemaAsker();

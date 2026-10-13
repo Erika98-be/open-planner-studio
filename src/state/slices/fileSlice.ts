@@ -40,6 +40,7 @@ import { expandSummaryRelations } from '@/engine/scheduler/expandSummaryRelation
 import { detectXerExportLoss, type XerExportLossWarning } from '@/services/xerExportLoss';
 import { runProjectFileWrite } from '@/services/fileAccess/writeCoordinator';
 import { askIfcSchema, ifcSchemaQuestionFor } from '@/services/ifc/ifcSchemaQuestion';
+import { applyIfcSchemaChoice } from '../ifcSchemaChoice';
 import { withSchedulingProfileNotice } from '../schedulingProfileNotice';
 import type { ImportLabelT } from '@/i18n/importLabels';
 import { invalidateDocumentRedo, removeSessionHistoryForDocumentFromState } from '../sessionHistory';
@@ -634,10 +635,11 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
    * ander schema dan de standaard, en heeft de gebruiker nog niet gekozen (`Project.ifcSchemaUnconfirmed`),
    * dan vraagt de app eerst: naar IFC4X3_ADD2, of het schema van het bestand houden.
    *
-   * Het antwoord hoort bij het opslaan, niet bij de bewerkingen: het zet `project.ifcSchema` en wist de
-   * open vraag ZONDER eigen undo-stap en zonder het document gewijzigd te maken. Beide velden staan op
-   * het project, dus een undo naar een stand van vóór de vraag zet ze samen terug en het volgende
-   * opslaan vraagt opnieuw; nooit schrijft de app daardoor stil een ander schema. Annuleren ⇒ `false`:
+   * Het antwoord hoort bij het bestand, niet bij de bewerkingen: het zet `project.ifcSchema` en wist de
+   * open vraag ZONDER eigen undo-stap en zonder het document gewijzigd te maken. Ongedaan maken en
+   * opnieuw doen veranderen het schema daarna niet meer: `restoreSnapshot` houdt het schema van het
+   * bestand aan (`state/ifcSchemaChoice.ts`, review #336). Anders schreef AutoSave na een undo stil
+   * weer het oude schema. Annuleren ⇒ `false`:
    * er wordt niets opgeslagen. Alleen Opslaan en Opslaan als roepen dit aan; automatisch opslaan,
    * crashherstel, export en MCP schrijven het huidige schema zonder vraag.
    */
@@ -650,10 +652,7 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
     if (!answer) return false;
     // De dialoog blokkeert een documentwissel; dit is het vangnet.
     if (get().activeDocumentId !== documentId) return false;
-    set((s) => {
-      s.project.ifcSchema = answer;
-      delete s.project.ifcSchemaUnconfirmed;
-    });
+    set((s) => { applyIfcSchemaChoice(s.project, answer); });
     return true;
   };
 

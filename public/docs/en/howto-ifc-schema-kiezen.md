@@ -35,7 +35,7 @@ The three choices:
 
 **An IFC 4.3 model from IfcOpenShell or Bonsai** usually has `IFC4X3_ADD2` in the header, like the default of the app. IfcOpenShell does not merge a schedule with `IFC4X3` into it. If in doubt, look at the `FILE_SCHEMA` line at the top of the model file.
 
-**Undo reverts a choice in Project info**, like any other change in *Project info*. The answer to the question when saving is not a step of its own. If you undo changes from before that question, the app asks again the next time you save.
+**Undo does not change the schema.** The schema belongs to the file, like the place where it is stored. A choice in *Project info* and the answer to the question when saving are therefore not a step in *Undo*. To go back, choose the other schema in *Project info*. That way *AutoSave* never silently writes another schema after you undo an edit.
 
 ## See also
 

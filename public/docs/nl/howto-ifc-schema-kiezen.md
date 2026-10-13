@@ -35,7 +35,7 @@ De drie keuzes:
 
 **Een IFC 4.3-model uit IfcOpenShell of Bonsai** heeft meestal `IFC4X3_ADD2` in de kop, net als de standaard van de app. IfcOpenShell voegt een planning met `IFC4X3` daar niet mee samen. Kijk bij twijfel in de regel `FILE_SCHEMA` bovenaan het bestand van het model.
 
-**Ongedaan maken zet een keuze in Projectinfo terug**, net als elke andere wijziging in *Projectinfo*. Het antwoord op de vraag bij opslaan is geen eigen stap. Maak je wijzigingen van vóór die vraag ongedaan, dan vraagt de app bij het volgende opslaan opnieuw.
+**Ongedaan maken verandert het schema niet.** Het schema hoort bij het bestand, net als de plek waar het staat. Een keuze in *Projectinfo* en het antwoord op de vraag bij opslaan zijn daarom geen stap in *Ongedaan*. Wil je terug, kies dan het andere schema in *Projectinfo*. Zo schrijft *AutoSave* na een ongedaan gemaakte bewerking nooit stil een ander schema.
 
 ## Zie ook
 
