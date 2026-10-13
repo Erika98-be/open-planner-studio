@@ -213,6 +213,25 @@ Node 22 (see CI). Rust stable only for the `tauri:*` commands.
 - Screen evidence in a PR: `artifacts/<topic>/`, PNG ≤ ~150 KB, a handful; local QA screenshots in `qa/`.
 - Changing the architecture, a command or a fact above? Update this file in the same PR.
 
+## Agent skills
+
+Configuration for the engineering skills (`mattpocock-skills`: `to-spec`, `to-tickets`, `triage`, `wayfinder`, …).
+
+### Issue tracker
+
+GitHub Issues in this repo, via `gh`; every issue an agent creates gets the label `agent-ticket`, and the
+label `in-progress` (not the assignee) marks a claim. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+The five default roles under their default names (`needs-triage`, `needs-info`, `ready-for-agent`,
+`ready-for-human`, `wontfix`), plus `bug`/`enhancement` as category; all labels live in `.github/labels.json`.
+See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: one `GLOSSARY.md` and `docs/adr/` at the root, created lazily. See `docs/agents/domain.md`.
+
 ## Where the depth lives
 
 `.claude/rules/` (Dutch, loaded per path by Claude Code; other agents read the matching file before working there):
