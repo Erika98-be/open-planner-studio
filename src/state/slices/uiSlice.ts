@@ -167,6 +167,8 @@ export function createDefaultUI(): UIState {
     pendingActualStartQuestion: null,
     pendingSiteOpen: null,
     pendingSiteSave: null,
+    pendingFormatNotice: null,
+    formatNoticeHidden: [],
     showPoolImportDialog: false,
     poolImportCompanyId: null,
     showLibraryLinkDialog: false,
@@ -350,6 +352,7 @@ export const createUiSlice: AppSlice<UiSlice> = (set, get) => ({
           if (n.helpArticleId !== undefined) existing.helpArticleId = n.helpArticleId;
           // Rekenprofielen: de serialiseerbare vervolgactie volgt dezelfde regel.
           if (n.action !== undefined) existing.action = { ...n.action };
+          if (n.sticky !== undefined) existing.sticky = n.sticky;
           existing.detailKey = n.detailKey;
           existing.detailParams = n.detailParams;
           return;
@@ -366,7 +369,10 @@ export const createUiSlice: AppSlice<UiSlice> = (set, get) => ({
       //    `info`, en pas als die er niet is de oudste melding overall — een fout mag nooit door een
       //    info verdrongen worden (de cyclus-/opslaafout is juist degene die moet blijven staan).
       if (s.ui.notifications.length > MAX_NOTIFICATIONS) {
-        const idx = s.ui.notifications.findIndex((x) => x.severity === 'info');
+        // Een blijvende info (`sticky`, openingsmelding met gewijzigde data) gaat pas weg als er
+        // geen gewone info meer is.
+        let idx = s.ui.notifications.findIndex((x) => x.severity === 'info' && !x.sticky);
+        if (idx < 0) idx = s.ui.notifications.findIndex((x) => x.severity === 'info');
         if (idx >= 0) s.ui.notifications.splice(idx, 1);
         else s.ui.notifications.shift();
       }

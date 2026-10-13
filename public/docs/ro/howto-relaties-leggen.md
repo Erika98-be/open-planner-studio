@@ -24,7 +24,7 @@ Util când lucrați în tabelul de activități.
 2. Țineți apăsat Ctrl (⌘ pe Mac) și faceți clic pe activitatea care urmează: succesorul.
 3. Alegeți *Acasă › Activități › Dependență ▾ › Legare activități selectate*. Același buton se află și în *Planificare › Dependențe*.
 
-Aplicația creează o dependență sfârșit-început fără decalaj și afișează, de exemplu, *Dependență creată: Foundation brickwork → Lay hollow-core floor*. Butonul funcționează doar dacă sunt selectate exact două activități.
+Aplicația creează o dependență sfârșit-început fără decalaj. O vedeți ca săgeată în Gantt și în coloana *Predecesori*; o notificare apare doar dacă aplicația refuză dependența. Butonul funcționează doar dacă sunt selectate exact două activități.
 
 ### Trasarea unei dependențe în Gantt
 

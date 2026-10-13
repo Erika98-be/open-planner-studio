@@ -3,6 +3,7 @@ import type { Resource } from '@/types/resource';
 import type { Company, CompanyPool, LibraryOrigin } from '@/types/library';
 import { DEFAULT_COMPANY_ID } from '@/types/library';
 import { DEMO_COMPANY_ID } from './demoLibrary';
+import { firstBlockScalarVariant, withRepairedFirstBlockScalar } from '@/services/subdayIo';
 
 /**
  * Reserved companyId's die op ELKE installatie hetzelfde zijn:
@@ -130,7 +131,13 @@ export function normalizePoolShape(cid: string, raw: Partial<CompanyPool> | null
     // `Array.isArray` i.p.v. `??`: een object i.p.v. array (bijv. `calendars: {...}` in een
     // hand-gemaakt OPS_Library-bestand) is niet-nullish, en een latere `.push`/`.filter`/`.find` op
     // zo'n object crasht.
-    calendars: Array.isArray(p.calendars) ? p.calendars : [],
+    // Kalenders met weekbanden die een MSPDI-/`.mpp`-lezer van vóór 2026-10 importeerde, dragen nog de
+    // eerste-blok-scalar (08:00–12:00 bij blokken 08–12 + 13–17). De lezers leiden nu 8–17 af, dus
+    // zonder dit herstel stond een ongewijzigde projectkopie na openen op 'deviated'. Dezelfde regel als
+    // de lezers (`withRepairedFirstBlockScalar`), alleen bij precies dat patroon.
+    calendars: Array.isArray(p.calendars)
+      ? p.calendars.map((c) => (c && typeof c === 'object' ? withRepairedFirstBlockScalar(c) : c))
+      : [],
     resources: Array.isArray(p.resources) ? p.resources : [],
   };
 }
@@ -208,6 +215,16 @@ export interface CalendarCopyResult {
 }
 
 /**
+ * Een pool-kalender op id, met de oude eerste-blok-scalar hersteld (`withRepairedFirstBlockScalar`).
+ * Het laden van de bibliotheek herstelt al (`normalizePoolShape`); dit vangt een pool die buiten die
+ * route in de store kwam, zodat vergelijken, kopiëren en verversen nooit 08:00–12:00 terugzetten.
+ */
+function poolCalendarById(pool: CompanyPool, id: string | undefined): WorkCalendar | undefined {
+  const cal = id ? pool.calendars.find((c) => c.id === id) : undefined;
+  return cal ? withRepairedFirstBlockScalar(cal) : undefined;
+}
+
+/**
  * Kopieer een pool-kalender naar het project met stempel. Bestaat er al een kopie met
  * dezelfde herkomst, dan wordt die hergebruikt (`reused: true`), nooit gedupliceerd. `genId` mint
  * een verse project-lokale id (injecteerbaar voor deterministische tests). `null` ⇒ de pool bevat
@@ -219,7 +236,7 @@ export function copyCalendarToProject(
   existingCalendars: WorkCalendar[],
   genId: (prefix: string) => string,
 ): CalendarCopyResult | null {
-  const source = pool.calendars.find((c) => c.id === poolCalendarId);
+  const source = poolCalendarById(pool, poolCalendarId);
   if (!source) return null;
   const existing = findCopyByOrigin(existingCalendars, pool.companyId, poolCalendarId);
   if (existing) return { calendar: existing, reused: true };
@@ -385,10 +402,15 @@ export function computeCalendarHash(cal: WorkCalendar): string {
  * kant ('deviated', dezelfde keuze als voor een stempel zonder hash).
  */
 function calendarMatchesStamp(projectCal: WorkCalendar, source: WorkCalendar | undefined, syncedHash: string): boolean {
-  if (computeCalendarHash(projectCal) === syncedHash) return true;
-  return source !== undefined
-    && hashFields(projectCal, CALENDAR_HASH_V1_FIELDS) === syncedHash
-    && CALENDAR_FIELDS_AFTER_V1.every((f) => diffKey(projectCal[f]) === diffKey(source[f]));
+  const matches = (cal: WorkCalendar) => computeCalendarHash(cal) === syncedHash
+    || (source !== undefined
+      && hashFields(cal, CALENDAR_HASH_V1_FIELDS) === syncedHash
+      && CALENDAR_FIELDS_AFTER_V1.every((f) => diffKey(cal[f]) === diffKey(source[f])));
+  if (matches(projectCal)) return true;
+  // Een stempel uit een bestand van vóór 2026-10 dekt de oude eerste-blok-scalar (08:00–12:00 bij
+  // blokken 08–12 + 13–17); de lezer geeft nu 8–17. Onbewerkt is onbewerkt: toets ook die vorm.
+  const legacy = firstBlockScalarVariant(projectCal);
+  return legacy !== undefined && matches(legacy);
 }
 
 /** syncedHash van een pool-/projectresource. */
@@ -448,7 +470,7 @@ export function resolveUniqueCompanyName(rawName: string, existingNames: string[
 
 export function diffCalendarVsPool(projectCal: WorkCalendar, pool: CompanyPool): ItemDiff {
   const id = projectCal.libraryOrigin?.libraryItemId;
-  const source = id ? pool.calendars.find((c) => c.id === id) : undefined;
+  const source = poolCalendarById(pool, id);
   if (!source) return { status: 'removed' };
   const fields = diffFields(projectCal, source, CALENDAR_DIFF_FIELDS);
   return fields.length === 0 ? { status: 'up-to-date' } : { status: 'changed', fields };
@@ -489,7 +511,7 @@ function classifyOnOpen(
  *  samenvallen (een puur project-eigen item is niet "uit het bedrijf verwijderd"). */
 export function classifyCalendarOnOpen(projectCal: WorkCalendar, pool: CompanyPool): OnOpenStatus {
   if (!projectCal.libraryOrigin) return 'unbound';
-  const source = pool.calendars.find((c) => c.id === projectCal.libraryOrigin!.libraryItemId);
+  const source = poolCalendarById(pool, projectCal.libraryOrigin.libraryItemId);
   return classifyOnOpen(diffCalendarVsPool(projectCal, pool).status, projectCal.libraryOrigin.syncedHash,
     (synced) => calendarMatchesStamp(projectCal, source, synced));
 }
@@ -547,7 +569,7 @@ function applyDiffFields<T>(target: T, source: T, fields: readonly (keyof T)[]):
  *  test (zie `CALENDAR_DIFF_FIELDS`). */
 export function applyCalendarUpdate(projectCal: WorkCalendar, pool: CompanyPool): WorkCalendar {
   const id = projectCal.libraryOrigin?.libraryItemId;
-  const source = id ? pool.calendars.find((c) => c.id === id) : undefined;
+  const source = poolCalendarById(pool, id);
   // Vangnet tegen stille corruptie. Ontbreekt het pool-origineel (of de herkomststempel),
   // dan zou `structuredClone(undefined)` een leeg object opleveren (`{...undefined}`) en de kalender
   // op alleen id+herkomst terugbrengen — alle inhoud weg. Gooi in plaats daarvan expliciet. De enige

@@ -153,6 +153,7 @@
       "scheduleFinishNotManual": "Scheduled finish only applies to a manually scheduled task. Change the finish through the Finish column or the duration.",
       "finishFromDuration": "For this task the finish follows from the start and the duration. Change the start or the duration.",
       "finishBeforeStart": "The finish lies before the start.",
+      "startIsActual": "This task has started; its start is the actual start. Change it through the progress.",
       "finishIsActual": "This task is complete; its finish is the actual finish. Change it through the progress.",
       "invalid": "The entered value is not valid.",
       "relationToken": "Use a value such as 1.2 FS+2d.",

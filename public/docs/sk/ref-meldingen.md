@@ -56,7 +56,7 @@ Riadok dole ukazuje, zľava doprava:
 
 ## Oznámenia
 
-Oznámenia sa zobrazujú v dolnej časti obrazovky, aj v tabuľke, v Backstage a v režime prezentácie. Oznámenie je *chyba* alebo *info*. Chyba zostane zobrazená, kým na ňu nekliknete. Info zmizne po 5 sekundách. Tieto časovače sa znova spustia, hneď ako sa zmení zásobník. Kliknutím na oznámenie ho zavriete (popisok *Zavrieť oznámenie*). Naraz sa zobrazia najviac tri oznámenia. Ak príde štvrté, najskôr zmizne najstaršie info. Ak žiadne info nie je, zmizne najstaršie oznámenie. Chyba preto nikdy nezmizne kvôli info. Zásobník sa posunie preč od tlačidiel otvoreného dialógového okna a od pevných panelov s akciami.
+Oznámenia sa zobrazujú v dolnej časti obrazovky, aj v tabuľke, v Backstage a v režime prezentácie. Oznámenie je *chyba* alebo *info*. Chyba zostane zobrazená, kým nekliknete na krížik. Info zmizne po 5 sekundách. Tieto časovače sa znova spustia, hneď ako sa zmení zásobník. Každé oznámenie má vpravo hore krížik (popisok *Zavrieť oznámenie*), ktorý ho hneď zavrie. Kliknutie na text oznámenia nič neurobí. Naraz sa zobrazia najviac tri oznámenia. Ak príde štvrté, najskôr zmizne najstaršie info. Ak žiadne info nie je, zmizne najstaršie oznámenie. Chyba preto nikdy nezmizne kvôli info. Zásobník sa posunie preč od tlačidiel otvoreného dialógového okna a od pevných panelov s akciami. Oznámenie pri otváraní súboru tiež zostane zobrazené, kým nekliknete na krížik, ak aplikácia pri otváraní doplnila, nahradila, opravila alebo vynechala údaje: riadok o nálezoch analyzátora alebo kalendára, problémoch so zápisom čísel, záložných hodnotách výčtu, nastaveniach plánu P6 s bezpečnou záložnou hodnotou, ochrannej zálohe pôvodného plánu, ignorovaných osamelých odkazoch na pôvodný plán alebo nepoužiteľnom zdrojovom archíve XER, a tiež oznámenia o duplicitných ID a nezapočítaných závislostiach. Ak obsahuje len informácie bez takejto zmeny (napríklad počet projektov, dokumentov alebo kódovanie textu), oznámenie zmizne po 5 sekundách.
 
 - **Počítadlo ×N** — oznámenie s pevným kľúčom spojí opakovanie do jedného riadku s počítadlom. Príklad: chyba pri ukladaní, ktorá sa stále vracia, alebo odmietnutá závislosť, ktorú zopakujete. Nie každé oznámenie to robí.
 - **Čítať viac** — niektoré oznámenia majú odkaz *Čítať viac* alebo vlastnú tému (napríklad *Pravidlá práce vysvetlené*). Ten vedie do sprievodcu v Backstage › Pomocník.
@@ -84,12 +84,11 @@ Zoznam nižšie je výber, zoskupený podľa témy. Ak nie je uvedené inak, ide
 ### Výpočet
 
 - **Plán sa nepodarilo prepočítať** (chyba) — *Plán sa nepodarilo prepočítať* s dôvodom pod ním (pozrite *Príčiny chyby plánu*). Pri *Prepočítať*, pri prepínaní dokumentov a pri otváraní súboru.
-- **Dátum kontroly stavu nastavený na dnešok** (info) — *Dátum stavu ešte nebol nastavený: teraz je nastavený na dnešok ({date}), pretože postup sa meria do dátumu stavu. Zmeniť ho môžete na karte Plán → Dátum stavu.* Pri zadávaní postupu v projekte bez dátumu kontroly stavu.
+- **Dátum kontroly stavu nastavený na dnešok** (info) — *Dátum stavu nastavený na dnešok ({date}).* Pri zadávaní postupu v projekte bez dátumu kontroly stavu. Aplikácia meria postup do dátumu kontroly stavu, takže bez neho postup nedokáže spracovať. Iný dátum nastavíte v *Plán › Smerné plány a postup › Dátum kontroly stavu*. S odkazom *Čítať viac* na [Postup, dátum kontroly stavu a pôvodný plán](docs://uitleg-voortgang).
 - **Trvanie kratšie ako vykonaná práca** (info) — *Úloha „{name}“ je už hotová na {N} %: trvanie kratšie ako už vykonaná práca nie je možné. Trvanie nebolo zmenené.*
 
 ### Závislosti a hierarchia
 
-- **Závislosť vytvorená** (info) — *Závislosť vytvorená: {predecessor} → {successor}*.
 - **Závislosť odmietnutá** (info) — *Táto závislosť už existuje*, *Závislosť medzi úlohou a jej vlastnou súhrnnou úlohou (aj vyššou) nie je povolená.* alebo *Táto závislosť by v pláne vytvorila cyklus ({cycle}) a nebola vytvorená.* Cyklus uvádza názvy úloh. Zistíte tak, ktorú závislosť najskôr odstrániť alebo obrátiť.
 - **Presun odmietnutý** (info) — *Toto presunutie by v pláne vytvorilo cyklus ({cycle}): závislosti súhrnnej úlohy platia aj pre jej čiastkové úlohy. Nič sa nepresunulo.*
 - **Závislosti po presune prestanú platiť** (info) — *Po presune spája N závislostí úlohu s jej vlastnou súhrnnou úlohou; už sa nezapočítavajú do výpočtu.*
@@ -99,11 +98,11 @@ Zoznam nižšie je výber, zoskupený podľa témy. Ak nie je uvedené inak, ide
 
 ### Úprava úloh
 
-- **Začiatok zapísaný ako obmedzenie** (info) — *„{name}“ má predchádzajúcu úlohu: nový začiatok je nastavený ako obmedzenie Začiatok nie skôr ako (SNET) {date}. Po prepočítaní (F5) sa úloha nezačne pred týmto dátumom.* Keď zmeníte začiatok úlohy s predchádzajúcou úlohou. Ak úloha už mala takéto obmedzenie, oznámenie uvádza, že sa presunulo. Pri viacerých úlohách naraz uvádza počet.
+- **Začiatok zapísaný ako obmedzenie** (info) — *„{name}“ sa nezačne pred {date} (SNET).* Keď zmeníte začiatok úlohy s predchádzajúcou úlohou. Začiatok určuje predchádzajúca úloha, preto aplikácia zapíše váš dátum ako obmedzenie Začiatok nie skôr ako (SNET). Po prepočítaní (F5) sa úloha nezačne pred týmto dátumom. Ak úloha už mala takéto obmedzenie, oznámenie znie *„{name}“ sa teraz nezačne pred {date} (SNET).* Pri viacerých úlohách naraz uvádza počet. S odkazom *Čítať viac* na [Obmedzenia a termíny](docs://uitleg-constraints).
 - **Začiatok sa neuplatnil** (info) — *Nový začiatok úlohy „{name}“ sa neuplatnil: úloha má predchádzajúcu úlohu a obmedzenie {type} {date}, a tie určujú jej začiatok. Zmeňte to obmedzenie, aby sa začiatok posunul.*
 - **Medzník odmietnutý** (info) — *'{task}' má priradenia zdrojov a nemôže sa stať medzníkom. Najprv odstráňte priradenia.* alebo *'{task}' je súhrnná úloha s čiastkovými úlohami a nemôže sa stať medzníkom.* Pri zmene na medzník v dialógovom okne úlohy, na paneli vlastností, v kontextovej ponuke a v tabuľke.
-- **Priradenia presunuté do čiastkovej úlohy** (info) — *Priradenie pre {resources} bolo presunuté z '{phase}' do novej čiastkovej úlohy '{child}': súhrnná úloha sama nenesie priradenia.* Pri úlohe s priradeniami, ktorá dostane čiastkové úlohy.
-- **Príznak medzníka odstránený** (info) — *Medzník '{phase}' má teraz čiastkové úlohy a stal sa súhrnnou úlohou; označenie medzníka bolo odstránené.*
+- **Priradenia presunuté do čiastkovej úlohy** (info) — *Priradenie presunuté do čiastkovej úlohy „{child}“.* alebo *N priradení presunutých do čiastkovej úlohy „{child}“.* Pri úlohe s priradeniami, ktorá dostane čiastkové úlohy. Táto úloha sa stane súhrnnou úlohou a súhrnná úloha sama nenesie priradenia. Preto sa presunú do prvej novej čiastkovej úlohy. S odkazom *Čítať viac* na [Úprava štruktúry](docs://howto-structuur-aanpassen).
+- **Príznak medzníka odstránený** (info) — *„{phase}“ už nie je medzník.* Keď medzník dostane čiastkové úlohy. Medzník je okamih bez čiastkových úloh; s čiastkovými úlohami sa stane súhrnnou úlohou. S odkazom *Čítať viac* na [Úprava štruktúry](docs://howto-structuur-aanpassen).
 - **Súhrnná úloha odmietnutá** (info) — *„{phase}“ nemôže sa stať súhrnnou úlohou: …* s dôvodom a *Nič sa nezmenilo.*
 - **Bunky pri vložení preskočené** (info) — *N buniek preskočených: sú iba na čítanie (napríklad automaticky číslované kódy WBS alebo vypočítané stĺpce).*
 - **Odkazy pri vložení vymazané** (info) — *N odkazov v tomto dokumente neexistovalo a bolo vymazaných (kalendárov úloh, vlastných typov úloh, kódov aktivít alebo vlastných polí zo zdrojového dokumentu).*
@@ -122,7 +121,7 @@ Zoznam nižšie je výber, zoskupený podľa témy. Ak nie je uvedené inak, ide
 - **Práca a pravidlá práce viditeľné** (info) — *Tento súbor obsahuje uloženú prácu alebo vlastné pravidlá práce; pravidlo práce a zostávajúca práca sú pre tento projekt viditeľné.*
 - **Plán MS Project načítaný** (info) — *Tento súbor MS Project obsahuje N úloh s prestávkami, vyvažovaním alebo plánom riadeným zdrojmi. Načítajú sa a zobrazia sa takto.*
 - **Prestávky sa neexportovali** (info) — *N úloh s prestávkami bolo exportovaných bez prestávok: MS Project a P6 ich poznajú len ako rozloženie práce.* Pri exporte do MS Project alebo Primavery.
-- **Začiatok projektu zmenený** (info) — *Začiatok projektu zmenený: N úloh bez predchádzajúcej úlohy alebo obmedzenia sa posunulo na nový dátum začiatku.*
+- **Začiatok projektu zmenený** (info) — *N úloh sa posunulo so začiatkom projektu.* Keď nastavíte začiatok projektu na neskorší dátum. Na nový dátum začiatku sa posunú len úlohy bez predchádzajúcej úlohy a bez obmedzenia, ktoré by ležali pred týmto dátumom. S odkazom *Čítať viac* na [Nový projekt a Info o projekte](docs://ref-projectinfo).
 - **Okno dátumov už neriadi úlohy** (info) — *Okno dátumov z MS Project už po tejto úprave neriadi N úloh; …* Raz za dokument.
 - **Oneskorenie pri vyvažovaní zaokrúhlené** (info) — *Vyvažovanie zaokrúhľuje minútovo presné oneskorenie pri vyvažovaní z MS Project na celé pracovné dni. Týka sa to N úloh.* Raz za dokument.
 - **Profil výpočtu použitý** (info) — *Tento projekt sa počíta ako {profile}. Zmeniť ho môžete v ponuke Súbor → Informácie o projekte → Profil výpočtu a možnosti výpočtu.* S tlačidlom *Otvoriť profil výpočtu*. Po použití profilu nasleduje, ak je to potrebné, *Po použití bolo posunutých N úloh.*

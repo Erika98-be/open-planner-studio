@@ -28,7 +28,7 @@ Drugo, posao koji nije počeo ne može ležati u prošlosti. Ako je takav zadata
 
 Treće, preostali posao zadatka koji je već u tijeku počinje baš na datumu stanja. Aplikacija datum stanja tretira kao početak tog dana. Ako procjenjujete stanje u petak nakon radnog vremena, zato datum stanja postavite na ponedjeljak. Ako ga postavite na petak, aplikacija i dalje planira preostali posao za taj petak.
 
-Ako još nemate datum stanja, a unesete napredak, aplikacija postavlja datum stanja na danas i to vam javlja. Bez datuma stanja aplikacija računa zadatak koji je u tijeku unaprijed s njegovim preostalim trajanjem, ali unatrag s punim trajanjem. Vremenska rezerva tada ispadne negativna, i zadatak izgleda kritičan bez razloga.
+Ako još nemate datum stanja, a unesete napredak, aplikacija postavlja datum stanja na danas i to vam javlja. Drugi datum postavljate u *Raspored › Temeljni planovi i napredak › Datum stanja*. Bez datuma stanja aplikacija računa zadatak koji je u tijeku unaprijed s njegovim preostalim trajanjem, ali unatrag s punim trajanjem. Vremenska rezerva tada ispadne negativna, i zadatak izgleda kritičan bez razloga.
 
 ### Postotak, stvarni datumi i preostalo trajanje
 

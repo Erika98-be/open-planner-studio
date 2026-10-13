@@ -24,7 +24,7 @@ Utile lorsque vous travaillez dans le tableau des tâches.
 2. Maintenez Ctrl (⌘ sur un Mac) et cliquez sur la tâche qui vient ensuite : le successeur.
 3. Choisissez *Accueil › Tâches › Lien ▾ › Lier les tâches sélectionnées*. Le même bouton se trouve aussi dans *Planification › Relations*.
 
-L'application crée une relation fin-début sans décalage et affiche par exemple *Relation créée : Foundation brickwork → Lay hollow-core floor*. Le bouton ne fonctionne qu'avec exactement deux tâches sélectionnées.
+L'application crée une relation fin-début sans décalage. Vous la voyez comme une flèche dans le Gantt et dans la colonne *Prédécesseurs* ; une notification n'apparaît que si l'application refuse la relation. Le bouton ne fonctionne qu'avec exactement deux tâches sélectionnées.
 
 ### Tracer une relation dans le Gantt
 

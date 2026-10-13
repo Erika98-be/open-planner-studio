@@ -28,7 +28,7 @@ Po druhé, práca, ktorá sa ešte nezačala, nemôže ležať v minulosti. Ak j
 
 Po tretie, zostávajúca práca úlohy, ktorá už prebieha, začína priamo na dátume kontroly stavu. Aplikácia berie dátum kontroly stavu ako začiatok tohto dňa. Ak si v piatok urobíte prehľad po skončení pracovnej doby, nastavte dátum kontroly stavu na pondelok. Ak ho nastavíte na piatok, aplikácia zostávajúcu prácu naplánuje aj na tento piatok.
 
-Ak ešte nemáte dátum kontroly stavu a zadáte postup, aplikácia nastaví dátum kontroly stavu na dnešný deň a oznámi vám to. Bez dátumu kontroly stavu aplikácia počíta prebiehajúcu úlohu dopredu so zostávajúcim trvaním, ale dozadu s celým trvaním. Časová rezerva potom vyjde záporná a úloha vyzerá kritická bez dôvodu.
+Ak ešte nemáte dátum kontroly stavu a zadáte postup, aplikácia nastaví dátum kontroly stavu na dnešný deň a oznámi vám to. Iný dátum nastavíte v *Plán › Smerné plány a postup › Dátum kontroly stavu*. Bez dátumu kontroly stavu aplikácia počíta prebiehajúcu úlohu dopredu so zostávajúcim trvaním, ale dozadu s celým trvaním. Časová rezerva potom vyjde záporná a úloha vyzerá kritická bez dôvodu.
 
 ### Percento, skutočné dátumy a zostávajúce trvanie
 

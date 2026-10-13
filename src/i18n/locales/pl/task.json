@@ -153,6 +153,7 @@
       "scheduleFinishNotManual": "Planowane zakończenie dotyczy tylko zadania planowanego ręcznie. Zmień koniec w kolumnie Koniec lub przez czas trwania.",
       "finishFromDuration": "W tym zadaniu koniec wynika z początku i czasu trwania. Zmień początek lub czas trwania.",
       "finishBeforeStart": "Koniec przypada przed początkiem.",
+      "startIsActual": "To zadanie zostało rozpoczęte; jego początek to rzeczywiste rozpoczęcie. Zmień je przez postęp.",
       "finishIsActual": "To zadanie jest ukończone; jego koniec to rzeczywiste zakończenie. Zmień je przez postęp.",
       "invalid": "Wprowadzona wartość jest nieprawidłowa.",
       "relationToken": "Użyj na przykład 1.2 FS+2d.",

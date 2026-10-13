@@ -39,8 +39,8 @@ By default the table next to the Gantt shows *WBS*, *Task name* and *Duration*. 
 - **Duration type** — *Work time* (the duration counts in working days or working hours of the calendar) or *Elapsed time* (the duration counts in continuous clock time, without a calendar). Editable.
 - **Duration unit** — *Days* or *Hours*. Editable except on a summary task, hammock or milestone; switching only works if the conversion is exact and *Enable hour planning* is on.
 - **Duration** — the duration of the task, in the unit of the task or according to *Duration display*. Editable: type `5d`, `12h` or `1h 30m`; also a number in the unit of the task. Read-only on a summary task, a hammock and a milestone with duration 0.
-- **Start** — the displayed start, the same date as the Gantt bar. Editable. A task with a predecessor that you give a new start gets the constraint *Start no earlier than (SNET)* on that date. Read-only on a summary task or hammock, unless manually scheduled.
-- **Finish** — the displayed finish. Editable: a new finish becomes a new duration. The app refuses it for a completed task, a milestone, a task in elapsed time and a task with breaks, and for a finish before the start (*The finish lies before the start.*). Read-only on a summary task or hammock, unless manually scheduled.
+- **Start** — the displayed start, the same date as the Gantt bar. For a task that has started, that is the actual start. Editable. A task with a predecessor that you give a new start gets the constraint *Start no earlier than (SNET)* on that date. Read-only on a summary task or hammock, unless manually scheduled, and on a task that has started (*This task has started; its start is the actual start. Change it through the progress.*).
+- **Finish** — the displayed finish. For a completed task, that is the actual finish. Editable: a new finish becomes a new duration. The app refuses it for a milestone, a task in elapsed time and a task with breaks, and for a finish before the start (*The finish lies before the start.*). Read-only on a summary task or hammock, unless manually scheduled, and on a completed task (*This task is complete; its finish is the actual finish. Change it through the progress.*).
 - **Scheduled start** — the scheduling anchor the calculation starts from (not necessarily the displayed start). Editable; same effect as typing in *Start*.
 - **Scheduled finish** — the entered finish. Only editable on a manually scheduled task; otherwise the app says *Scheduled finish only applies to a manually scheduled task. Change the finish through the Finish column or the duration.*
 
@@ -87,7 +87,7 @@ The progress columns follow the progress rules of the app: an actual date after 
 All columns in this category are read-only.
 
 - **Leveling delay** — how many working days leveling delayed the task; a dash if no leveling has been applied.
-- **Early start** and **Early finish** — the earliest dates from the calculation.
+- **Early start** and **Early finish** — the earliest dates from the calculation. For a task that has started, they can differ from *Start* and *Finish*: the calculation profile *Primavera P6* puts the early start of a task that is in progress or complete on the status date.
 - **Late start** and **Late finish** — the latest dates on which the task may still begin or end without delaying the project.
 - **Free float** — the working days the task can slip without delaying a successor.
 - **Total float** — the working days the task can slip without delaying the project finish. Negative if a constraint or deadline cannot be met.

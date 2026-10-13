@@ -35,6 +35,7 @@ import type {
   GanttViewportCoordinatorInput,
   GanttViewportCoordinatorOutput,
 } from './ganttCoordinatorTypes';
+import { shownFinish, shownStart } from '@/utils/taskDates';
 
 /**
  * Bezit de volledige Gantt-viewport: afleidingen, DOM-scrollsync, wheel/zoom, fit/focus, minimaps
@@ -267,8 +268,9 @@ export function useGanttViewportCoordinator(
       current.clearPendingFocusTask();
       return;
     }
-    const startString = task.time.earlyStart || task.time.scheduleStart;
-    const finishString = task.time.earlyFinish || task.time.scheduleFinish;
+    // Dezelfde datums als de balk (`GanttRenderer.barGeometry`).
+    const startString = shownStart(task);
+    const finishString = shownFinish(task);
     if (!startString || !finishString) {
       current.clearPendingFocusTask();
       return;

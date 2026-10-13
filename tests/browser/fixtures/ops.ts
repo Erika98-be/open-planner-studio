@@ -1,5 +1,6 @@
 import { expect, test as base, type ConsoleMessage, type Page } from '@playwright/test';
 import type { OpsDevBridge } from '@/utils/devBridge';
+import { FORMAT_NOTICE_KINDS } from '@/services/formatNoticeKinds';
 
 declare global {
   interface Window {
@@ -208,6 +209,15 @@ export const test = base.extend<{ ops: OpsHarness }>({
     page.on('pageerror', onPageError);
     page.on('console', onConsole);
 
+    // De uitleg na het openen van een ander formaat dan IFC (`FormatNoticeDialog`) staat in de
+    // suite standaard UIT: hij is modaal en zou elke spec die een .xer/.mpp/.xml/.csv opent
+    // blokkeren. Alleen als de sleutel nog ontbreekt, zodat een spec die hem zelf zet
+    // (`format-notice.spec.ts`) dat ook na een reload houdt.
+    await page.addInitScript((kinds) => {
+      if (localStorage.getItem('ops-formatNoticeHidden') === null) {
+        localStorage.setItem('ops-formatNoticeHidden', JSON.stringify(kinds));
+      }
+    }, [...FORMAT_NOTICE_KINDS]);
     await page.goto('/');
     await waitForOps(page);
     // Een verse context heeft `welcomeSeen` nooit gezien, dus de dialoog KOMT — de vraag is alleen

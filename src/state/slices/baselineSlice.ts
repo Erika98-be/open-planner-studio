@@ -2,6 +2,7 @@ import type { Baseline } from '@/types/baseline';
 import { generateId } from '@/utils/id';
 import type { AppSliceFactory } from './types';
 import { isLeafTask } from '@/utils/taskHierarchy';
+import { shownFinish, shownStart } from '@/utils/taskDates';
 
 export interface BaselineSlice {
   baselines: Baseline[];
@@ -24,8 +25,11 @@ export const createBaselineSlice: AppSliceFactory<BaselineSlice> = (runtime) => 
     const id = generateId('baseline');
     set((s) => {
       runtime.beginUndoable(s);
-      // Snapshot de CPM-early-datums (= de balk zoals getekend) per leaf-taak; fallback op
-      // de schedule-datums voor het geval er nog nooit een runCPM is geweest.
+      // Snapshot de GETOONDE datums (= de balk zoals getekend, `shownStart`/`shownFinish`) per
+      // leaf-taak: een gestarte taak met haar werkelijke start, een voltooide met haar werkelijke
+      // einde — zoals MS Project (Start → Baseline Start) en P6 (BL Project Start). Zo is de
+      // afwijking (`variance.ts`, ook op de getoonde datums) direct na opslaan nul. Vóór de eerste
+      // runCPM vallen ze terug op de schedule-datums.
       const leaves = s.tasks.filter(isLeafTask);
       s.baselines.push({
         id,
@@ -33,8 +37,8 @@ export const createBaselineSlice: AppSliceFactory<BaselineSlice> = (runtime) => 
         createdAt: new Date().toISOString(),
         tasks: leaves.map((t) => ({
           taskId: t.id,
-          start: t.time.earlyStart || t.time.scheduleStart,
-          finish: t.time.earlyFinish || t.time.scheduleFinish,
+          start: shownStart(t),
+          finish: shownFinish(t),
           duration: t.time.scheduleDuration,
           isMilestone: t.isMilestone,
           ...(t.milestoneKind ? { milestoneKind: t.milestoneKind } : {}),

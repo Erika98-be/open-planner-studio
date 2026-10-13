@@ -4,6 +4,7 @@ import { useAppStore } from '@/state/appStore';
 import { useDisplayDate } from '@/hooks/displayDate';
 import { effectiveCalendarOf } from '@/utils/taskDuration';
 import { findLongFreePeriods } from '@/engine/scheduler/freePeriods';
+import { shownFinish, shownStart } from '@/utils/taskDates';
 
 /**
  * Waarschuwing "deze taak loopt over een lange vrije periode".
@@ -21,10 +22,10 @@ export function TaskFreePeriodWarning({ taskId }: { taskId: string }) {
   const calendars = useAppStore(s => s.calendars);
   const projectCal = useAppStore(s => s.calendar);
 
-  // Zelfde "berekende start/finish"-bron als `TaskTimeFields`/Gantt/tooltip
-  // (`earlyStart || scheduleStart`, analoog voor finish) — niet de rauwe plan-ankers.
-  const start = task && !task.isMilestone ? (task.time.earlyStart || task.time.scheduleStart) : undefined;
-  const finish = task && !task.isMilestone ? (task.time.earlyFinish || task.time.scheduleFinish) : undefined;
+  // Zelfde getoonde start/einde als `TaskTimeFields`/Gantt/tooltip (`shownStart`/`shownFinish`) —
+  // niet de rauwe plan-ankers.
+  const start = task && !task.isMilestone ? shownStart(task) : undefined;
+  const finish = task && !task.isMilestone ? shownFinish(task) : undefined;
   const cal = task ? effectiveCalendarOf(task, projectCal, calendars) : undefined;
 
   // Review vóór de merge (aanbeveling): memoïseren — de scan is O(taakduur in kalenderdagen) en

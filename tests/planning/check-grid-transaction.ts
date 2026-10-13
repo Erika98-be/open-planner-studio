@@ -898,7 +898,7 @@ function observed(state: AppState): unknown {
   const unsubscribe = useAppStore.subscribe(state => states.push(state));
   const withNotification: PreparedGridMutation | null = prepared.ok ? {
     ...prepared.value,
-    notifications: [{ severity: 'info', messageKey: 'notifications.relationCreated' }],
+    notifications: [{ severity: 'info', messageKey: 'notifications.relationDuplicate' }],
   } : null;
   const result = withNotification ? commitPreparedGridMutation(withNotification) : null;
   unsubscribe();

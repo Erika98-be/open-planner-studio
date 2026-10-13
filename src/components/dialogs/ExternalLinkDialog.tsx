@@ -10,6 +10,7 @@ import { effectiveCalendarOf } from '@/utils/taskDuration';
 import { isHourCalendar } from '@/services/subdayIo';
 import { buildImportLabels } from '@/i18n/importLabels';
 import { EXTERNAL_LINKS_HELP_ARTICLE_ID } from '@/state/helpArticles';
+import { computedFinish, computedStart } from '@/utils/taskDates';
 
 type Direction = ExternalLink['direction'];
 type RelType = ExternalLink['relType'];
@@ -167,10 +168,11 @@ export function ExternalLinkDialog({ taskId, linkId, onClose }: { taskId: string
   }, [existing, manual, openedDocumentId, parseExternalSource, sourceFile, tCommon]);
 
   const srcTask = source?.tasks.find((x) => x.id === sourceTaskId) ?? null;
+  // Dezelfde rekendatum als `sourceAnchorDate` (externalLinks.ts), niet de getoonde start.
   const anchorPreview = srcTask
     ? (externalSourceSide(direction, relType) === 'finish'
-        ? srcTask.time.earlyFinish || srcTask.time.scheduleFinish
-        : srcTask.time.earlyStart || srcTask.time.scheduleStart)
+        ? computedFinish(srcTask)
+        : computedStart(srcTask))
     : manualAnchor;
 
   const parsedLag = parseExternalLagInput(lag);

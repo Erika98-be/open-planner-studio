@@ -8,8 +8,8 @@ export interface BaselineTask {
    *  `taskId` blijft bewust de koppeling naar de huidige OPS-taak voor varianceweergave. */
   sourceTaskId?: string;
   sourceTaskCode?: string;
-  start: string;           // ISO 8601 — snapshot van task.time.earlyStart t.t.v. opslaan (fallback: scheduleStart)
-  finish: string;          // ISO 8601 — snapshot van task.time.earlyFinish (fallback: scheduleFinish)
+  start: string;           // ISO 8601 — snapshot van de getoonde start t.t.v. opslaan (`shownStart`: werkelijke start, anders earlyStart, anders scheduleStart)
+  finish: string;          // ISO 8601 — snapshot van het getoonde einde (`shownFinish`: werkelijk einde bij voltooid, anders earlyFinish, anders scheduleFinish)
   duration: number;        // werkdagen (task.time.scheduleDuration)
   isMilestone: boolean;
   milestoneKind?: MilestoneKind;

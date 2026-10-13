@@ -153,6 +153,7 @@
       "scheduleFinishNotManual": "El fin programado solo se aplica a una tarea programada manualmente. Cambie el fin mediante la columna Fin o la duración.",
       "finishFromDuration": "En esta tarea, el fin se deriva del inicio y la duración. Cambie el inicio o la duración.",
       "finishBeforeStart": "El fin es anterior al inicio.",
+      "startIsActual": "Esta tarea ha comenzado; su comienzo es el comienzo real. Cámbielo mediante el progreso.",
       "finishIsActual": "Esta tarea está completada; su fin es el fin real. Cámbielo mediante el progreso.",
       "invalid": "El valor introducido no es válido.",
       "relationToken": "Use, por ejemplo, 1.2 FS+2d.",

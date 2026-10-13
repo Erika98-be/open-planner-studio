@@ -24,7 +24,7 @@ Przydatne, gdy pracujesz w tabeli zadań.
 2. Przytrzymaj Ctrl (⌘ na Macu) i kliknij zadanie, które jest następne: następnik.
 3. Wybierz *Start › Zadania › Połącz ▾ › Połącz zaznaczone zadania*. Ten sam przycisk jest też w *Planowanie › Relacje*.
 
-Aplikacja tworzy relację FS bez opóźnienia i pokazuje na przykład komunikat *Utworzono relację: Foundation brickwork → Lay hollow-core floor*. Przycisk działa tylko wtedy, gdy zaznaczone są dokładnie dwa zadania.
+Aplikacja tworzy relację FS bez opóźnienia. Widzisz ją jako strzałkę w widoku Gantt i w kolumnie *Poprzedniki*; powiadomienie pojawia się tylko wtedy, gdy aplikacja odrzuci relację. Przycisk działa tylko wtedy, gdy zaznaczone są dokładnie dwa zadania.
 
 ### Rysowanie relacji w widoku Gantt
 

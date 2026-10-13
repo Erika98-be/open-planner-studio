@@ -18,7 +18,7 @@ Data statusu to dzień, w którym robisz podsumowanie. Ustaw ją, zanim wpiszesz
 
 Jeśli robisz podsumowanie w piątek po godzinach pracy, ustaw datę statusu na następny dzień roboczy, poniedziałek. Aplikacja planuje pozostałą pracę od początku daty statusu.
 
-Jeśli wpiszesz postęp, zanim jest jakakolwiek data statusu, aplikacja ustawi ją na dziś i pokaże komunikat: *Nie było jeszcze daty statusu: ustawiono ją na dziś (…), ponieważ postęp jest mierzony do daty statusu. Możesz ją zmienić w Planowanie → Data statusu.* Lepiej więc najpierw ustaw ją samodzielnie.
+Jeśli wpiszesz postęp, zanim jest jakakolwiek data statusu, aplikacja ustawi ją na dziś i pokaże komunikat: *Datę statusu ustawiono na dziś (…).* Lepiej więc najpierw ustaw ją samodzielnie.
 
 ### 2. Wpisz postęp
 

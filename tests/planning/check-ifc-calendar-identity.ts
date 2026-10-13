@@ -227,16 +227,17 @@ same('§9 fixture: oude writer schreef geen H7-markering', ['WorkStartHour', 'Wo
   }
 
   // §9b. Echte uurkalenders uit hetzelfde oude bestand blijven uurkalenders (IsHourCalendar .T.): de
-  //      herkenning raakt ze niet. Hun scalar werktijd stond niet in het oude bestand; die blijft de
-  //      bekende oude afleiding uit de eerste periode (06-14, 07-12) — niet te herstellen, niet geraden.
-  for (const [name, firstBand] of [['Tweeploegen', [6, 14]], ['Bandeditor', [7, 12]]] as const) {
+  //      herkenning raakt ze niet. Hun scalar werktijd stond niet in het oude bestand; de lezer neemt
+  //      begin eerste / einde laatste periode (fix werkdag-einde, 2026-10) en geeft zo precies de
+  //      scalar van vóór opslaan terug (06-22, 07-16) — vroeger de eerste periode (06-14, 07-12).
+  for (const [name, scalarDay] of [['Tweeploegen', [6, 22]], ['Bandeditor', [7, 16]]] as const) {
     const got = calendarShape(libCal(parsed, name));
     const want = legacy.libraryCalendars[name];
     same(`§9b oud bestand: uurkalender "${name}" blijft uurkalender`, {
       workTime: got.workTime, hoursPerDay: got.hoursPerDay, shift: got.shift, workDays: got.workDays,
     }, { workTime: want.workTime, hoursPerDay: want.hoursPerDay, shift: want.shift, workDays: want.workDays });
     same(`§9b oud bestand: uurkalender "${name}" houdt de oude scalarafleiding`,
-      [got.workStartHour, got.workEndHour], firstBand);
+      [got.workStartHour, got.workEndHour], scalarDay);
   }
   same('§9b oud bestand: urentaak op de uurkalender ongewijzigd',
     legacyTask(byName(parsed.tasks, 'Urentaak bandeditor')), legacy.tasks['Urentaak bandeditor']);
@@ -264,9 +265,10 @@ same('§9 fixture: oude writer schreef geen H7-markering', ['WorkStartHour', 'Wo
     legacy.libraryCalendars.Bandeditor.workTime);
   // Zonder OPS-scalarkenmerk (zoals een bestand van een ander pakket): oud pad, dus uurkalender.
   const noMarks = readIFC(legacyIfc.split("'HoursPerDay'").join("'GeenKenmerk'"));
+  // Einde = einde van de laatste band (16), niet van de eerste (12): fix werkdag-einde.
   same('§9d twee banden zonder OPS-kenmerk volgen het oude pad', [
     noMarks.calendar.workTime !== undefined, noMarks.calendar.workEndHour,
-  ], [true, 12]);
+  ], [true, 16]);
   // Kenmerk aanwezig maar de banden passen niet bij de gereconstrueerde scalar: niet raden.
   const mismatch = readIFC(legacyIfc.replace(/(#81=IFCTIMEPERIOD\(')13:00:00'/, "$113:30:00'"));
   same('§9d banden die niet uit de scalar volgen worden niet als scalair gelezen',

@@ -18,7 +18,7 @@ Rapportdatumet är dagen då du gör en lägesbedömning. Ange det innan du ange
 
 Om du gör lägesbedömningen på fredag efter arbetstid anger du rapportdatumet till nästa arbetsdag, måndag. Appen planerar det återstående arbetet från början av rapportdatumet.
 
-Om du anger framdrift när det ännu inte finns något rapportdatum sätter appen det till idag och visar: *Det fanns inget rapportdatum ännu. Det är nu satt till idag (…), eftersom framdrift mäts fram till rapportdatumet. Du kan ändra det under Tidsplan → Rapportdatum.* Gör därför hellre det själv först.
+Om du anger framdrift när det ännu inte finns något rapportdatum sätter appen det till idag och visar: *Rapportdatum satt till idag (…).* Gör därför hellre det själv först.
 
 ### 2. Ange framdriften
 

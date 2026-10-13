@@ -83,7 +83,7 @@ export function computeContentSpanDays(
   if (tasks.length === 0 && navigationEndDates.length === 0) return null;
   let maxDays = 365;
   for (const task of tasks) {
-    const end = resolveTaskFinish(task.time);
+    const end = resolveTaskFinish(task);
     if (end) {
       // Eenheden-consistentie: bij compressie telt de
       // contentbreedte in WERKDAG-eenheden (`axis.daySpan`) i.p.v. kalenderdagen — anders is de

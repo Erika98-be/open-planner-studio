@@ -28,7 +28,7 @@ Birincisi, uygulama durum tarihinden sonraki bir gerçek tarihi kabul etmez. Dur
 
 Üçüncüsü, zaten devam eden bir görevin kalan işi durum tarihinin kendisinde başlar. Uygulama durum tarihini o günün başlangıcı olarak ele alır. Cuma günü çalışma saatleri bittikten sonra değerlendirme yaparsanız, durum tarihini Pazartesi olarak ayarlayın. Bunu Cuma olarak ayarlarsanız, uygulama kalan işi yine o Cuma planlar.
 
-Henüz bir durum tarihiniz yoksa ve ilerleme girerseniz, uygulama durum tarihini bugüne ayarlar ve bunu size bildirir. Durum tarihi olmadan uygulama devam eden bir görevi ileriye doğru kalan süresiyle, geriye doğru ise tüm süresiyle hesaplar. Bolluk o zaman negatif çıkar ve görev sebepsiz yere kritik görünür.
+Henüz bir durum tarihiniz yoksa ve ilerleme girerseniz, uygulama durum tarihini bugüne ayarlar ve bunu size bildirir. Başka bir tarihi *Planlama › Temel plan ve ilerleme › Durum tarihi* altından ayarlarsınız. Durum tarihi olmadan uygulama devam eden bir görevi ileriye doğru kalan süresiyle, geriye doğru ise tüm süresiyle hesaplar. Bolluk o zaman negatif çıkar ve görev sebepsiz yere kritik görünür.
 
 ### Yüzde, gerçek tarihler ve kalan süre
 

@@ -28,7 +28,7 @@ Segundo, el trabajo que no ha empezado no puede quedar en el pasado. Si una tare
 
 Tercero, el trabajo restante de una tarea que ya está en curso empieza en la fecha de estado. La aplicación trata la fecha de estado como el inicio de ese día. Si hace balance el viernes después del horario de trabajo, debe poner la fecha de estado en el lunes. Si la pone en el viernes, la aplicación sigue planificando el trabajo restante para ese viernes.
 
-Si todavía no tiene fecha de estado y registra avance, la aplicación pone la fecha de estado en hoy y se lo indica. Sin fecha de estado, la aplicación calcula una tarea en curso hacia delante con su duración restante, pero hacia atrás con su duración total; la holgura sale entonces negativa y la tarea parece crítica sin motivo.
+Si todavía no tiene fecha de estado y registra avance, la aplicación pone la fecha de estado en hoy y se lo indica. Puede fijar otra fecha en *Planificación › Líneas base y progreso › Fecha de estado*. Sin fecha de estado, la aplicación calcula una tarea en curso hacia delante con su duración restante, pero hacia atrás con su duración total; la holgura sale entonces negativa y la tarea parece crítica sin motivo.
 
 ### Porcentaje, fechas reales y duración restante
 
