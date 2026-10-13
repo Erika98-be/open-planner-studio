@@ -190,11 +190,9 @@ eerste werkdag, en zette de reader die op elke werkdag. Zo staat het nu in het b
   hetzelfde bestand als vóór B7.
 - **Geen terugvalweek.** Main schreef tussen #340 en #344 bij meer groepen eerst een extra week met
   StartDate = FinishDate = `1900-01-01`, voor oudere OPS-versies. Die week zat in geen release en is
-  weer weg (besluit orkestrator 2026-10-13, fixronde 1 van PR #344). Bij 9 attributen lezen oudere
-  versies `WorkingTimes` toch niet. Bij 8 ziet een oudere versie bij meer groepen nu alleen de dagen van
-  de eerste groep als werkdag: een korte vrijdag wordt daar een vrije dag. Meer onder "Oudere
-  OPS-versies" (alinea Schemageldigheid). Een bestand met zo'n week leest deze reader goed (zie "De
-  reader" hieronder).
+  weer weg (besluit orkestrator 2026-10-13, fixronde 1 van PR #344). IfcWorkCalendar heeft nu 9
+  attributen, en oudere versies lezen `WorkingTimes` dan toch niet (zie "Oudere OPS-versies", alinea
+  Schemageldigheid). Een bestand met zo'n week leest deze reader goed (zie "De reader" hieronder).
 - **De scalar staat altijd in `OPS_Calendar`.** Bij meer groepen schrijft de writer `WorkStartHour` en
   `WorkEndHour` altijd. Zonder die eigenschappen zou een oudere reader ze afleiden uit de eerste
   `IfcWorkTime`, en deze reader uit de eerste werkdag met blokken.
@@ -212,8 +210,8 @@ eerste werkdag, en zette de reader die op elke werkdag. Zo staat het nu in het b
   `.mpp`-lezer. Eén patroon: het oude pad, ongewijzigd.
 
 De bewaking staat in `tests/planning/check-ifc-werktijd-per-dag.ts` (round-trip per geval, de vorm van
-het bestand, wat een oudere versie leest, byte-identiek aan main, werktijden met een datum, hernummerde
-STEP-id's en een weggevallen `OPS_Calendar`) en in de uurkalender `hourCal` in de fixture van
+het bestand, byte-identiek aan main, de lezer in beide indelingen van `IfcWorkCalendar`, werktijden met
+een datum, hernummerde STEP-id's en een weggevallen `OPS_Calendar`) en in de uurkalender `hourCal` in de fixture van
 `check-ifc-roundtrip.ts`.
 
 **Externe bestanden.** De reader kiest de plekken in `IfcWorkCalendar` op zijn argumenten
@@ -277,12 +275,12 @@ minstens één element vraagt, een SET zonder dubbele elementen, en een paar WHE
 "USERDEFINED vraagt een ObjectType"). De bronnen:
 
 - de publieke en alle andere voorbeelden;
-- een rijk project in beide standen van de kalenderschakelaar (alle resourcetypen, ploegen, baselines,
+- een rijk project (alle resourcetypen, ploegen, baselines,
   ook een zonder taken, werkende uitzonderingen, bibliotheekkalenders, alle eigen-veldtypen);
 - een leeg project, kalenderrandgevallen en een XER-import met bronarchief (`OPS_XerSourceArchive`),
   zie `tests/planning/ifcSchemaFixture.ts`;
 - in `check-ifc-roundtrip.ts` (19) de round-trip-fixture (splits, contouren, timephased werk,
-  P6-voortgang), in beide standen.
+  P6-voortgang).
 
 Een entiteit die de writer gebruikt maar niet in de tabel staat, is rood. Een entiteit uit de tabel die
 in geen getoetst bestand voorkomt, ook.
@@ -294,12 +292,12 @@ die dan in `OPS_ENTITIES` in het script en genereer de tabel opnieuw:
     source <venv met ifcopenshell>/bin/activate
     python -I scripts/ifc-schema-table.py > tests/planning/ifcSchemaTable.ts
 
-**De kalenderschakelaar.** `IFC_WORK_CALENDAR_ATTRIBUTES` in `ifcWriter.ts` kiest 9 of 8 attributen
-voor IfcWorkCalendar. Standaard 9: besluit eigenaar 2026-10-13, "alles in één keer" (PR #336, alinea
-"Besluit: voorwaartse compatibiliteit"). Stand 8 is de route in twee stappen die in PR #344 is
-voorgelegd: deze versie leest beide en schrijft de kalender nog zoals v2026.9.0, een volgende release
-zet hem om. Wisselen is die ene waarde plus `npm run gen:examples`. In stand 8 laat de poort voor
-IfcWorkCalendar, en alleen daar, de oude indeling toe. De batterijen toetsen beide standen.
+**Besluit: alles in één keer.** De writer schrijft IfcWorkCalendar altijd met de 9 attributen van het
+schema. Een OPS-versie t/m v2026.9.0 leest zo'n kalender verkeerd (zie "Oudere OPS-versies"). Dat
+verlies is aanvaard. Bron: PR #336, alinea "Besluit: voorwaartse compatibiliteit": "Eigenaar (Nozzit),
+2026-10-13: **alles in één keer**. Geen overgangsrelease waarin de reader eerst beide indelingen leert."
+De releasetekst moet daarvoor waarschuwen. De lezer leest wel beide indelingen, dus deze versie opent
+oude bestanden zonder verlies.
 
 **De lezer** leest elke indeling. `ifcWorkControlSlots.ts` kiest de plekken op de argumenten van de
 regel:
@@ -340,32 +338,33 @@ opslaan ongeldig. Gemeten op vijf eigen OPS-bestanden, ingelezen en teruggeschre
 #344 mat 6 tot 123 fouten. Het gedrag is bewust niet veranderd. Nieuwe GlobalIds uitgeven voor
 ongeldige bewaarde id's is een apart, later besluit.
 
-**Oudere OPS-versies en een nieuw bestand.** Gemeten met de lezer van de uitgebrachte tag v2026.9.0
-zelf, in Node (niet in de desktopapp). Oud = hetzelfde project in de oude indeling: de 32 voorbeelden
-van main 59794aa55, en vier extra gevallen geschreven met de writer van 59794aa55 (het rijke project en
-villa Wassenaar met een zesdaagse week 08–17 met werkende uitzondering, een urenkalender met pauze, en
-een korte vrijdag met werkende uitzondering). Nieuw = de writer van deze branch, in beide standen.
-Controle: de lezer van deze branch leest oud en nieuw gelijk (kalenders en 2219 taken na doorrekenen).
+**Oudere OPS-versies en een nieuw bestand.** Gemeten met de lezer en de writer van de uitgebrachte tag
+v2026.9.0 zelf, in Node (niet in de desktopapp). Oud = hetzelfde project in de oude indeling: de 32
+voorbeelden van main 59794aa55, en vier extra gevallen geschreven met de writer van 59794aa55 (het
+rijke project, en villa Wassenaar met een zesdaagse week 08–17 met werkende uitzondering, een
+urenkalender met pauze, en een korte vrijdag met werkende uitzondering). Nieuw = de writer van deze
+branch. Controle: de lezer van deze branch leest oud en nieuw gelijk (kalenders en 2219 taken na
+doorrekenen).
 
-- **Stand 8.** De 32 voorbeelden leest v2026.9.0 precies als het oude bestand: alle 614 feestdagen, 0
-  van 1818 taken anders na doorrekenen. Het rijke project, de zesdaagse week en de urenkalender ook,
-  met één verschil: een taak zonder naam heet "Naamloze taak" in plaats van "$". De korte vrijdag niet:
-  v2026.9.0 leest alleen de eerste `IfcWorkTime` en ziet dus alleen ma–do als werkdag (46 van 47 taken
-  anders). Dat komt doordat de terugvalweek weg is (alinea "Kalenders: werkblokken per weekdag"); met
-  die week las v2026.9.0 ma–vr 07–15.
-- **Stand 9** (de standaard). v2026.9.0 leest `WorkingTimes` op plek 5 (nu Identification),
-  `ExceptionTimes` op plek 6 (nu de werkweken) en de ploeg op plek 7. In alle 32 voorbeelden: alle 614
-  feestdagen weg, een extra feestdag "Standard work week" op de dag van openen (34 kalenders), zesdaagse
-  weken terug naar ma–vr (7 kalenders), 1451 van 1818 taken anders na doorrekenen. In de vier extra
-  gevallen: 91 van 91 feestdagen weg, 4 werkende uitzonderingen en 2 ploegen weg, werkuren terug naar
-  07–16, 347 van 401 taken anders. Slaat iemand zo'n bestand in v2026.9.0 op, dan blijft dat verlies.
-- **In beide standen gelijk:** projectstart en -einde, het aantal taken, relaties, resources en
-  toewijzingen, en de ingelezen taakdatums.
+- **Oorzaak.** v2026.9.0 leest `WorkingTimes` op plek 5 (nu Identification), `ExceptionTimes` op plek 6
+  (nu de werkweken) en de ploeg op plek 7 (nu de uitzonderingen). Een werkweek zonder datum wordt bij
+  haar een feestdag op de dag van inlezen.
+- **Openen.** In alle 32 voorbeelden: alle 614 feestdagen weg, een extra feestdag "Standard work week"
+  op de dag van openen (34 kalenders), werkweek en werkuren terug naar de standaard ma–vr 07–16 (onder
+  meer 7 zesdaagse weken), 1451 van 1818 taken anders na doorrekenen. In de vier extra gevallen: 91 van
+  91 feestdagen weg, 4 werkende uitzonderingen en 2 ploegen weg, werkuren terug naar 07–16 (ook 08–17,
+  de urenkalender met pauze en de korte vrijdag), 347 van 401 taken anders.
+- **Gelijk** blijven: projectstart en -einde, het aantal taken, relaties, resources en toewijzingen, en
+  de ingelezen taakdatums.
+- **Opslaan in v2026.9.0** maakt het verlies blijvend. Alle 36 bestanden geopend en opgeslagen met
+  v2026.9.0, daarna gelezen met deze branch: 705 van 705 feestdagen weg, de extra feestdag op de dag
+  van openen staat nu als echte feestdag in het bestand (42 kalenders), 4 werkende uitzonderingen en 2
+  ploegen weg, 2027 van 2219 taken anders na doorrekenen. De kop is daarna weer `IFC4X3`.
 - **De omgekeerde richting** werkt: deze versie leest oude bestanden zoals main
   (`check-ifc-legacy-arity`, `check-ifc-schema-reader`).
 
 **Lokaal valideren met IfcOpenShell.** `OPS_IFC_SCHEMA_DUMP=/tmp/map bash tests/planning/run.sh
-check-ifc-schema.ts` schrijft het rijke project (beide standen), het lege project, de
+check-ifc-schema.ts` schrijft het rijke project, het lege project, de
 kalenderrandgevallen en de XER-import naar die map. Daarna
 `python -m ifcopenshell.validate --rules <bestand>`; `--rules` toetst ook alle WHERE-regels.
 
@@ -385,6 +384,6 @@ eigen besluit.
 | plekken per indeling (schema, oud, MergeProjects, IFC2X3) | `src/services/ifc/ifcWorkControlSlots.ts` |
 | schemageldigheid: de poort, de toets per bestand, de tabel, de bronnen | `tests/planning/check-ifc-schema.ts`, `ifcSchemaCheck.ts`, `ifcSchemaTable.ts`, `ifcSchemaFixture.ts` |
 | de poort, de fixture, de canon-tabellen en de `KNOWN_GAPS`-asserties (blok 3) | `tests/planning/check-ifc-roundtrip.ts` |
-| werkblokken per weekdag (B7): groepen, beide kalenderstanden, byte-identiek aan main | `tests/planning/check-ifc-werktijd-per-dag.ts` |
+| werkblokken per weekdag (B7): groepen, geen terugvalweek, byte-identiek aan main, de lezer in beide indelingen | `tests/planning/check-ifc-werktijd-per-dag.ts` |
 | welke velden een save meeschrijft | `src/state/ifcSaveInput.ts` |
 | wat een "document" ís (breder dan IFC) | `src/state/documentContract.ts` |

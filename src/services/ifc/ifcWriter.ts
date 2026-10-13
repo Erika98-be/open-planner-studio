@@ -197,8 +197,6 @@ export interface WriteContext {
   reservedGuids: ReadonlySet<string>;
   /** Project-id: zout voor de GlobalIds van hulpentiteiten en de projectkalender (zie `guidOf`). */
   auxSalt: string;
-  /** Indeling van IfcWorkCalendar (zie `IFC_WORK_CALENDAR_ATTRIBUTES`). */
-  workCalendarAttributes: 8 | 9;
 }
 
 /**
@@ -292,29 +290,7 @@ export type WriteIFCInput = ImportResult & {
   xerSourceArchiveStorage?: 'embedded' | 'recovery-reference';
 };
 
-/**
- * Aantal attributen van IfcWorkCalendar dat de writer schrijft: 9 volgens het schema (met
- * `Identification`), of 8 zoals OPS t/m v2026.9.0 schreef (zonder `Identification`; een schemafout).
- *
- * Een uitgebrachte versie t/m v2026.9.0 leest een kalender met 9 attributen verkeerd: geen feestdagen,
- * de standaardweek, en een extra feestdag op de dag van openen. Een kalender met 8 attributen leest zij
- * goed. Gemeten in docs/ifc-round-trip.md, alinea "Oudere OPS-versies".
- *  - 9 (nu): besluit eigenaar 2026-10-13, "alles in één keer" (PR #336, alinea "Besluit: voorwaartse
- *    compatibiliteit"): alles geldig, met een waarschuwing in de releasetekst.
- *  - 8: twee stappen. Deze versie leest beide indelingen en schrijft alles geldig behalve
- *    IfcWorkCalendar; een volgende release zet de kalender om. Voorgelegd in PR #344 (fixronde 1).
- * Wisselen is deze ene waarde plus `npm run gen:examples`. De lezer leest beide indelingen
- * (`workCalendarSlots`). De poort `check-ifc-schema.ts` volgt deze waarde; de batterijen toetsen beide
- * standen via `WriteIFCOptions.workCalendarAttributes`.
- */
-export const IFC_WORK_CALENDAR_ATTRIBUTES: 8 | 9 = 9;
-
-export interface WriteIFCOptions {
-  /** Overschrijft `IFC_WORK_CALENDAR_ATTRIBUTES`; bedoeld om in de batterijen beide standen te toetsen. */
-  workCalendarAttributes?: 8 | 9;
-}
-
-export function writeIFC(input: WriteIFCInput, options: WriteIFCOptions = {}): string {
+export function writeIFC(input: WriteIFCInput): string {
   const {
     project, calendar, tasks, sequences, resources, assignments,
     activityCodeTypes = [],
@@ -337,7 +313,6 @@ export function writeIFC(input: WriteIFCInput, options: WriteIFCOptions = {}): s
   const ctx: WriteContext = {
     lines: [], nextId: 1, idMap: new Map(), guids: new Map(), usedGuids: new Set(),
     preservedGuids, reservedGuids: new Set(preservedGuids.values()), auxSalt: project.id,
-    workCalendarAttributes: options.workCalendarAttributes ?? IFC_WORK_CALENDAR_ATTRIBUTES,
   };
   const now = new Date().toISOString().split('.')[0];
 
@@ -1066,11 +1041,10 @@ const ISO_DAY_LABEL: Record<number, string> = { 1: 'Mon', 2: 'Tue', 3: 'Wed', 4:
  *    schrijft de blokken in de volgorde van zijn eerste dag.
  *  - Volgorde: die van `cal.workDays` (eerste voorkomen). De eerste groep met blokken is die van de
  *    eerste werkdag. Verder heeft de volgorde geen betekenis: `WorkingTimes` is een SET.
- *  - Een uitgebrachte OPS-versie (t/m v2026.9.0) leest bij 9 attributen `WorkingTimes` helemaal niet
- *    (zie `IFC_WORK_CALENDAR_ATTRIBUTES`). Bij 8 leest zij alleen de EERSTE `IFCWORKTIME`, en ziet zij bij
- *    meer groepen alleen de dagen van de eerste groep als werkdag (een korte vrijdag wordt een vrije
- *    dag). De terugvalweek die dat bij 8 opving, is eruit (besluit orkestrator 2026-10-13, PR #344; hij
- *    zat in geen enkele release).
+ *  - Een uitgebrachte OPS-versie (t/m v2026.9.0) leest `WorkingTimes` niet, want zij verwacht de
+ *    kalender met 8 attributen (zie `writeCalendar` en docs/ifc-round-trip.md, "Oudere OPS-versies").
+ *    Daarom is er geen terugvalweek meer (besluit orkestrator 2026-10-13, PR #344; hij zat in geen
+ *    enkele release).
  *  - Eén groep (uniforme week) ⇒ het bestand is byte-identiek aan vroeger.
  */
 function weekBandGroups(workDays: readonly number[], workTime: WorkTimeBands): WeekBandGroup[] {
@@ -1208,13 +1182,13 @@ function writeCalendar(
   const exceptStr = allExceptionRefs.length > 0 ? `(${allExceptionRefs.join(',')})` : '$';
   // ObjectType (arg 4): alleen een label bij USERDEFINED-ploeg; anders `$`.
   const objectType = cal.shift === 'USERDEFINED' ? ifcStr('USERDEFINED') : '$';
-  // Indeling volgens `IFC_WORK_CALENDAR_ATTRIBUTES`. 9 = het schema: GlobalId, OwnerHistory, Name,
-  // Description, ObjectType, Identification (`$`, OPS heeft geen kalendercode), WorkingTimes,
-  // ExceptionTimes, PredefinedType. 8 = de vorm van v2026.9.0 en ouder, zonder Identification. De lezer
-  // kent beide (`workCalendarSlots` in `ifcWorkControlSlots.ts`).
-  const identification = ctx.workCalendarAttributes === 9 ? '$,' : '';
+  // De 9 attributen van het schema: GlobalId, OwnerHistory, Name, Description, ObjectType,
+  // Identification (`$`, OPS heeft geen kalendercode), WorkingTimes, ExceptionTimes, PredefinedType.
+  // OPS t/m v2026.9.0 schreef er 8, zonder Identification; de lezer kent beide (`workCalendarSlots` in
+  // `ifcWorkControlSlots.ts`). Zo'n oudere versie leest deze kalender verkeerd: aanvaard, besluit eigenaar
+  // 2026-10-13 ("alles in één keer", PR #336). Gemeten in docs/ifc-round-trip.md, "Oudere OPS-versies".
   const calStepId = addLine(ctx, key,
-    `IFCWORKCALENDAR(${ifcStr(objectGuid(ctx, 'cal', cal.id))},#${ownerHistId},${ifcStr(cal.name)},${ifcStr(cal.description)},${objectType},${identification}(${workTimeIds.map((i) => `#${i}`).join(',')}),${exceptStr},${shiftToPredefinedType(cal.shift)})`);
+    `IFCWORKCALENDAR(${ifcStr(objectGuid(ctx, 'cal', cal.id))},#${ownerHistId},${ifcStr(cal.name)},${ifcStr(cal.description)},${objectType},$,(${workTimeIds.map((i) => `#${i}`).join(',')}),${exceptStr},${shiftToPredefinedType(cal.shift)})`);
   return {
     calStepId,
     workingExceptionStepIds,

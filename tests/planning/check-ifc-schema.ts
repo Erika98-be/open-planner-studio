@@ -15,10 +15,10 @@
 //   3. Bronnen: de committe voorbeelden (`public/examples/*.ifc` — de acht publieke — en
 //      `examples/*.ifc`); een RIJK project dat hier met de echte writer wordt geschreven (alle
 //      resourcetypen, ploegen, baselines (ook een zonder taken), werkende uitzonderingen,
-//      bibliotheekkalenders, alle eigen-veldtypen, procent-lag, voortgang, …), in BEIDE standen van de
-//      schakelaar `IFC_WORK_CALENDAR_ATTRIBUTES`; een leeg project; kalenderrandgevallen; en een
-//      XER-import met bronarchief (`OPS_XerSourceArchive`). Zie ifcSchemaFixture.ts. De round-trip-
-//      fixture (splits, contouren, timephased, P6-voortgang) toetst `check-ifc-roundtrip.ts` (19).
+//      bibliotheekkalenders, alle eigen-veldtypen, procent-lag, voortgang, …); een leeg project;
+//      kalenderrandgevallen; en een XER-import met bronarchief (`OPS_XerSourceArchive`). Zie
+//      ifcSchemaFixture.ts. De round-trip-fixture (splits, contouren, timephased, P6-voortgang) toetst
+//      `check-ifc-roundtrip.ts` (19).
 //   4. Dekking: elke entiteit uit de tabel en elke getypte waarde die de writer gebruikt, komt minstens
 //      één keer voor in wat hier getoetst wordt. Zo kan het rijke project niet stil verarmen.
 //   5. Volledigheid van de tabel: de writerbronnen worden gescand op `IFCXXX(`; elke naam moet in de
@@ -31,10 +31,10 @@
 import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { IFC_WORK_CALENDAR_ATTRIBUTES, writeIFC } from '@/services/ifc/ifcWriter';
+import { writeIFC } from '@/services/ifc/ifcWriter';
 import { RESOURCE_TYPE_TO_IFC } from '@/services/ifc/ifcConstants';
 import { IFC_ENTITY_ATTRIBUTES, IFC_TYPED_VALUE_KIND } from './ifcSchemaTable';
-import { checkIfcSchema, newSeen, type SchemaCheckOptions, type Seen } from './ifcSchemaCheck';
+import { checkIfcSchema, newSeen, type Seen } from './ifcSchemaCheck';
 import {
   buildEdgeCalendarProject, buildEmptySchemaProject, buildRichSchemaProject, buildXerSchemaProject,
 } from './ifcSchemaFixture';
@@ -48,13 +48,13 @@ function assert(cond: boolean, msg: string): void {
   checks++;
   if (!cond) fails.push(msg);
 }
-function checkFile(label: string, text: string, seen: Seen, opts?: SchemaCheckOptions): void {
-  const result = checkIfcSchema(label, text, seen, opts);
+function checkFile(label: string, text: string, seen: Seen): void {
+  const result = checkIfcSchema(label, text, seen);
   checks += result.checks;
   fails.push(...result.failures);
 }
 
-// ── 1. De committe voorbeelden (geschreven in de standaardstand van de schakelaar) ───────────────
+// ── 1. De committe voorbeelden ───────────────────────────────────────────────────────────────────
 
 const seen = newSeen();
 const ifcFiles = (dir: string) => readdirSync(join(ROOT, dir)).filter(f => f.endsWith('.ifc')).sort();
@@ -67,17 +67,12 @@ for (const f of ifcFiles('examples')) checkFile(`examples/${f}`, readFileSync(jo
 // Inhoud: zie tests/planning/ifcSchemaFixture.ts. Het lege project dekt de verplichte attributen
 // zonder bronwaarde: IfcWorkPlan/IfcWorkSchedule.StartTime, IfcOrganization.Name, en de WHERE-regels
 // HasName (IfcProject) en IdentifiablePerson (IfcPerson). De kalenderrandgevallen dekken lege
-// WeekdayComponent/TimePeriods (`$`, geen `()`). Het rijke project draait in beide standen van de
-// schakelaar: de standaardstand zoals de app schrijft, en de andere stand streng op zijn eigen
-// indeling.
+// WeekdayComponent/TimePeriods (`$`, geen `()`).
 const rich = buildRichSchemaProject(ROOT);
 const written: [string, string][] = [];
-for (const layout of [IFC_WORK_CALENDAR_ATTRIBUTES, IFC_WORK_CALENDAR_ATTRIBUTES === 8 ? 9 : 8] as const) {
-  const label = layout === IFC_WORK_CALENDAR_ATTRIBUTES ? 'rijk project' : `rijk project (kalender ${layout})`;
-  const ifc = writeIFC(rich, { workCalendarAttributes: layout });
-  checkFile(label, ifc, seen, { workCalendarAttributes: layout });
-  written.push([`schema-${label.replace(/[^a-z0-9]+/g, '-').replace(/-$/, '')}.ifc`, ifc]);
-}
+const richIfc = writeIFC(rich);
+checkFile('rijk project', richIfc, seen);
+written.push(['schema-rijk-project.ifc', richIfc]);
 const emptyIfc = writeIFC(buildEmptySchemaProject(rich));
 checkFile('leeg project', emptyIfc, seen);
 written.push(['schema-leeg-project.ifc', emptyIfc]);

@@ -7,10 +7,9 @@
 //      OPS-indeling (IfcWorkPlan/IfcWorkSchedule 15 attributen, resources 9 met `.USERDEFINED.`,
 //      IfcWorkCalendar 8 zonder `Identification`, REAL zonder punt, Completion `0.00`), leest exact
 //      gelijk. De kop blijft staan: sinds #292 is hij projectdata (`Project.ifcSchema`, eigen toets in
-//      check-ifc-schema-question.ts). Ook zonder de OPS_ProjectSettings-datums, zodat de projectdatums echt uit het
-//      IfcWorkPlan-slot komen. De kalenders (project, bibliotheek, uurkalender, ploegen, feestdagen,
-//      werkende uitzonderingen) vallen onder A1. A6: de standaardstand van de schakelaar
-//      `IFC_WORK_CALENDAR_ATTRIBUTES` leest gelijk aan de stand 9.
+//      check-ifc-schema-question.ts). Ook zonder de OPS_ProjectSettings-datums, zodat de projectdatums
+//      echt uit het IfcWorkPlan-slot komen. De kalenders (project, bibliotheek, uurkalender, ploegen,
+//      feestdagen, werkende uitzonderingen) vallen onder A1.
 //   B. Een geldig bestand van een andere tool (indeling zoals bSI/xbim `construction-scheduling-task`):
 //      de projectstart komt uit IfcWorkPlan.StartTime (index 11), maar niet later dan de vroegste
 //      taakstart; taken onder een `.BASELINE.`-IfcWorkSchedule (index 13) zijn geen live taken.
@@ -22,7 +21,7 @@
 // Draait via run.sh. Exit 0 = alles groen.
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { IFC_WORK_CALENDAR_ATTRIBUTES, writeIFC } from '@/services/ifc/ifcWriter';
+import { writeIFC } from '@/services/ifc/ifcWriter';
 import { readIFC } from '@/services/ifc/ifcReader';
 import type { ImportResult } from '@/services/importTypes';
 import { buildRichSchemaProject } from './ifcSchemaFixture';
@@ -142,7 +141,7 @@ function firstDiff(a: unknown, b: unknown, path = ''): string | undefined {
       return { ...t, customFields };
     }),
   };
-  const modern = writeIFC(input, { workCalendarAttributes: 9 });
+  const modern = writeIFC(input);
   const legacy = toLegacyOpsLayout(modern);
   const argCounts = (ifc: string, type: string) => {
     const counts: number[] = [];
@@ -186,15 +185,6 @@ function firstDiff(a: unknown, b: unknown, path = ''): string | undefined {
   ok('A5 setup: het niet-baseline-werkschema staat in het bestand', !!wsGuid);
   eq('A5 GlobalId van het werkschema (norm)', readModern.ifcGlobalIds?.[`ws:${readModern.project.id}`], wsGuid);
   eq('A5 GlobalId van het werkschema (oude indeling)', readLegacy.ifcGlobalIds?.[`ws:${readLegacy.project.id}`], wsGuid);
-  // A6. De schakelaar: beide standen schrijven dezelfde inhoud.
-  const other = IFC_WORK_CALENDAR_ATTRIBUTES === 9 ? 8 : 9;
-  const asDefault = writeIFC(input);
-  eq(`A6 standaardstand: kalenders met ${IFC_WORK_CALENDAR_ATTRIBUTES} attributen`, argCounts(asDefault, 'IFCWORKCALENDAR'),
-    [IFC_WORK_CALENDAR_ATTRIBUTES, IFC_WORK_CALENDAR_ATTRIBUTES, IFC_WORK_CALENDAR_ATTRIBUTES, IFC_WORK_CALENDAR_ATTRIBUTES]);
-  for (const [label, ifc] of [['standaardstand', asDefault], [`stand ${other}`, writeIFC(input, { workCalendarAttributes: other })]] as const) {
-    const d = firstDiff(JSON.parse(canon(readModern)), JSON.parse(canon(readIFC(ifc))));
-    ok(`A6 ${label} leest gelijk aan stand 9${d ? ` — eerste verschil ${d}` : ''}`, !d);
-  }
 }
 
 // ── B/C. Bestanden van andere tools ──────────────────────────────────────────────────────────────

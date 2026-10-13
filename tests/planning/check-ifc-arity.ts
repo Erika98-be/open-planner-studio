@@ -120,9 +120,7 @@ if (outDir) mkdirSync(outDir, { recursive: true });
 
 const seenTypes = new Set<string>();
 for (const schema of IFC_SCHEMAS) {
-  // De schema-ariteit, dus de kalender altijd met 9 argumenten, ook als de schakelaar
-  // `IFC_WORK_CALENDAR_ATTRIBUTES` op 8 staat. De standaardstand toetst check-ifc-schema.ts.
-  const ifc = writeIFC({ ...rich, project: { ...rich.project, ifcSchema: schema } }, { workCalendarAttributes: 9 });
+  const ifc = writeIFC({ ...rich, project: { ...rich.project, ifcSchema: schema } });
   if (outDir) writeFileSync(join(outDir, `rijk-${schema}.ifc`), ifc, 'utf8');
 
   // (1) De kop draagt precies het gekozen schema, en het leest terug.

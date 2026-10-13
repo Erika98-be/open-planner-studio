@@ -2523,13 +2523,12 @@ const hasP6BoundarySequence = (input: ImportResult) =>
 // ════════════════════════════════════════════════════════════════════════════════════════════════
 // (19) Schemageldig. De fixture is een bron van de IFC-schemapoort (`check-ifc-schema.ts`): hij
 //      draagt wat de voorbeelden en het rijke schemaproject niet hebben (splits, contouren,
-//      timephased werk, P6-voortgang, …). Beide standen van de kalenderschakelaar. De poort toetst
-//      tegen IFC4X3_ADD2; de fixture kiest IFC4 (zie `project` hierboven), dus hier met de standaard.
-//      De inhoud is in de drie schema's gelijk, alleen de kop verschilt (`IFC_SCHEMAS`).
-const fixtureAdd2 = { ...fixture, project: { ...fixture.project, ifcSchema: 'IFC4X3_ADD2' as const } };
-for (const layout of [8, 9] as const) {
-  const result = checkIfcSchema(`round-trip-fixture (kalender ${layout})`, writeIFC(fixtureAdd2, { workCalendarAttributes: layout }),
-    undefined, { workCalendarAttributes: layout });
+//      timephased werk, P6-voortgang, …). De poort toetst tegen IFC4X3_ADD2; de fixture kiest IFC4
+//      (zie `project` hierboven), dus hier met de standaard. De inhoud is in de drie schema's gelijk,
+//      alleen de kop verschilt (`IFC_SCHEMAS`).
+{
+  const fixtureAdd2 = { ...fixture, project: { ...fixture.project, ifcSchema: 'IFC4X3_ADD2' as const } };
+  const result = checkIfcSchema('round-trip-fixture', writeIFC(fixtureAdd2));
   assert(result.checks > 100, `(19) testvoorwaarde: de schematoets liep (${result.checks} entiteiten getoetst)`);
   for (const failure of result.failures) assert(false, `(19) ${failure}`);
   if (result.failures.length === 0) assert(true, '(19) schemageldig');

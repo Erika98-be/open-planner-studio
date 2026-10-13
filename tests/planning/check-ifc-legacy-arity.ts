@@ -127,10 +127,7 @@ const rOld = readIFC(OLD);
 }
 
 // ── 2. Lezen → schrijven (nieuwe ariteit) → lezen: identiek ────────────────────────────────────────
-// De schema-ariteit, dus de kalender altijd met 9 argumenten, ook als de schakelaar
-// `IFC_WORK_CALENDAR_ATTRIBUTES` op 8 staat (die stand toetsen check-ifc-schema-reader en
-// check-ifc-werktijd-per-dag).
-const NEW = writeIFC(rOld, { workCalendarAttributes: 9 });
+const NEW = writeIFC(rOld);
 eq('2a de huidige writer schrijft de schema-ariteit', arities(NEW, CONTROL), NEW_ARITY);
 same('2b oud bestand en nieuw equivalent lezen identiek', readIFC(NEW), rOld);
 

@@ -3,7 +3,6 @@
 // Gebruikt door `check-ifc-schema.ts` (de poort, met zijn bronnen) en `check-ifc-roundtrip.ts` (de
 // round-trip-fixture als extra bron: splits, contouren, timephased, P6-voortgang). Geen check: dit
 // bestand draait niets. Toelichting: docs/ifc-round-trip.md, alinea "Schemageldigheid".
-import { IFC_WORK_CALENDAR_ATTRIBUTES } from '@/services/ifc/ifcWriter';
 import { IFC_ENTITY_ATTRIBUTES, IFC_SCHEMA_TABLE_SOURCE, IFC_SELECTS, IFC_TYPED_VALUE_KIND } from './ifcSchemaTable';
 
 /**
@@ -224,12 +223,6 @@ function attrName(spec: string): string { return spec.slice(0, spec.indexOf(':')
 export interface Seen { entities: Set<string>; typed: Set<string> }
 export const newSeen = (): Seen => ({ entities: new Set(), typed: new Set() });
 
-export interface SchemaCheckOptions {
-  /** Indeling van IfcWorkCalendar die de writer volgens de schakelaar schreef; standaard
-   *  `IFC_WORK_CALENDAR_ATTRIBUTES`. */
-  workCalendarAttributes?: 8 | 9;
-}
-
 function collectTyped(v: V, out: Set<string>): void {
   if (v.k === 'typed') { out.add(v.type); collectTyped(v.value, out); }
   else if (v.k === 'list') for (const item of v.items) collectTyped(item, out);
@@ -237,12 +230,11 @@ function collectTyped(v: V, out: Set<string>): void {
 
 /** Toetst één bestand. `label` komt in elke foutmelding. Geeft het aantal toetsen en de fouten. */
 export function checkIfcSchema(
-  label: string, text: string, seen: Seen = newSeen(), opts: SchemaCheckOptions = {},
+  label: string, text: string, seen: Seen = newSeen(),
 ): { checks: number; failures: string[] } {
   let checks = 0;
   const failures: string[] = [];
   const assert = (cond: boolean, msg: string) => { checks++; if (!cond) failures.push(msg); };
-  const calendarAttributes = opts.workCalendarAttributes ?? IFC_WORK_CALENDAR_ATTRIBUTES;
   // De header noemt het schema waartegen de tabel is afgeleid (IFC 4.3.2.0, zie de kop van ifcWriter).
   const schemaId = /FILE_SCHEMA\s*\(\s*\(\s*'([^']*)'/.exec(text)?.[1];
   assert(schemaId === IFC_SCHEMA_TABLE_SOURCE, `${label}: FILE_SCHEMA is '${schemaId}', verwacht '${IFC_SCHEMA_TABLE_SOURCE}'`);
@@ -268,18 +260,11 @@ export function checkIfcSchema(
   for (const e of entities) {
     seen.entities.add(e.type);
     for (const a of e.args) collectTyped(a, seen.typed);
-    let spec = IFC_ENTITY_ATTRIBUTES[e.type];
+    const spec = IFC_ENTITY_ATTRIBUTES[e.type];
     if (!spec) { fail(e, 'entiteit staat niet in de schematabel (ifcSchemaTable.ts)'); continue; }
-    // Schakelaar `IFC_WORK_CALENDAR_ATTRIBUTES` (ifcWriter.ts; besluit eigenaar 2026-10-13 = 9, de
-    // stand 8 is voorgelegd in PR #344): staat hij op 8, dan schrijft OPS IfcWorkCalendar zonder
-    // `Identification`, zodat versies t/m v2026.9.0 hem goed lezen. Alleen voor deze ene entiteit, en
-    // alleen in die stand, toetst de poort dan de oude indeling (de 9 attributen zonder
-    // `Identification`). Alle andere entiteiten, en IfcWorkCalendar in stand 9, blijven streng.
-    if (e.type === 'IFCWORKCALENDAR' && calendarAttributes === 8) spec = spec.filter(a => attrName(a) !== 'Identification');
     checks++;
     if (e.args.length !== spec.length) {
-      const why = e.type === 'IFCWORKCALENDAR' && calendarAttributes === 8 ? ' (schakelaar IFC_WORK_CALENDAR_ATTRIBUTES = 8)' : '';
-      fail(e, `${e.args.length} attributen, verwacht ${spec.length}${why}`);
+      fail(e, `${e.args.length} attributen, verwacht ${spec.length}`);
       continue;
     }
     spec.forEach((attr, idx) => {
