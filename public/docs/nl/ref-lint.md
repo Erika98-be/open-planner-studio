@@ -213,7 +213,7 @@ Het tabblad *Tabel* toont de taken als volledige tabel in plaats van de Gantt. D
 
 ## IFC
 
-Het tabblad toont in de werkruimte het IFC-paneel. Het lint heeft hier geen knoppen, alleen de tekstregel *IFC 4x3 - Industry Foundation Classes*.
+Het tabblad toont in de werkruimte het IFC-paneel. Het lint heeft hier geen knoppen, alleen de tekstregel *IFC - Industry Foundation Classes, in het schema van het project (standaard IFC 4.3 ADD2)*.
 
 ## Rapport
 

@@ -571,6 +571,67 @@ test('export_ifc: bestaand bestand zonder overwrite ⇒ nette fout; mét overwri
   assert(files.get(path)!.startsWith('ISO-10303-21'), 'met overwrite:true wordt het bestand vervangen');
 });
 
+// Review #336 punt 4 (issue #292): de app verandert een bestandstype nooit stil. Een document dat als
+// IFC2X3 is geopend (een schema dat de app niet schrijft) heeft een open schemavraag; exporteren over
+// zijn EIGEN bestand zou dat bestand stil IFC 4.3 ADD2 maken ⇒ geweigerd, ook met overwrite:true. Naar
+// een ander pad mag het; dan meldt het antwoord welk schema het werd, en de export draagt geen markering
+// "IFC2X3" die niet bij zijn kop past.
+const zetSchemaVraag = (path: string | null, schema: 'IFC4' | undefined, open: string) => {
+  useAppStore.setState((s) => {
+    s.filePath = path;
+    if (schema) s.project.ifcSchema = schema; else delete s.project.ifcSchema;
+    s.project.ifcSchemaUnconfirmed = open;
+  });
+};
+test('export_ifc: IFC2X3-document over zijn eigen pad ⇒ VALIDATION; het bestand blijft ongemoeid', async () => {
+  installFakeFs();
+  resetToSingleEmptyDocument();
+  loadSmallProject('Export');
+  const own = `${HOME}/modellen/model-2x3.ifc`;
+  files.set(own, 'ORIGINEEL IFC2X3');
+  zetSchemaVraag(own, undefined, 'IFC2X3');
+
+  const err = await callErr('planner_export_ifc', { path: own, overwrite: true });
+  assertEq(err.code, 'VALIDATION', 'over het eigen bestand met een niet-schrijfbaar schema ⇒ geweigerd');
+  assert(err.error.includes('IFC2X3') && err.error.includes('IFC4X3_ADD2'), 'de fout noemt het schema van het bestand en wat het zou worden');
+  assertEq(files.get(own), 'ORIGINEEL IFC2X3', 'het eigen bestand is ONgemoeid');
+  // Dezelfde map, maar via ~ en een omweg geschreven: ook het eigen pad.
+  const viaTilde = await callErr('planner_export_ifc', { path: '~/modellen/../modellen/model-2x3.ifc', overwrite: true });
+  assertEq(viaTilde.code, 'VALIDATION', 'het eigen pad wordt herkend na normaliseren');
+  assertEq(S().project.ifcSchemaUnconfirmed, 'IFC2X3', 'het document houdt zijn vraag');
+});
+
+test('export_ifc: IFC2X3-document naar een ander pad ⇒ ok, het antwoord meldt het schema, geen valse markering', async () => {
+  installFakeFs();
+  resetToSingleEmptyDocument();
+  loadSmallProject('Export');
+  zetSchemaVraag(`${HOME}/model-2x3.ifc`, undefined, 'IFC2X3');
+  const other = `${HOME}/kopie.ifc`;
+
+  const data = await callOk('planner_export_ifc', { path: other });
+  assertEq(data.ifcSchema, 'IFC4X3_ADD2', 'het antwoord meldt het geschreven schema');
+  assert(typeof data.schemaNotice === 'string' && data.schemaNotice.includes('IFC2X3'), 'en dat het bestand als IFC2X3 geopend was');
+  const written = files.get(other)!;
+  assert(written.includes("FILE_SCHEMA(('IFC4X3_ADD2'));"), 'de kop is IFC4X3_ADD2');
+  assert(!written.includes("'IfcSchemaUnconfirmed'"), 'geen markering IFC2X3 die niet bij de kop past');
+  assertEq(S().project.ifcSchemaUnconfirmed, 'IFC2X3', 'het document houdt zijn vraag');
+});
+
+test('export_ifc: meldt het schema; een IFC4-document mag over zijn eigen pad (het type blijft IFC4)', async () => {
+  installFakeFs();
+  resetToSingleEmptyDocument();
+  loadSmallProject('Export');
+  const plain = await callOk('planner_export_ifc', { path: `${HOME}/gewoon.ifc` });
+  assertEq([plain.ifcSchema, plain.schemaNotice], ['IFC4X3_ADD2', undefined], 'een gewoon project: de standaard, zonder melding');
+
+  const own = `${HOME}/model-ifc4.ifc`;
+  files.set(own, 'ORIGINEEL IFC4');
+  zetSchemaVraag(own, 'IFC4', 'IFC4');
+  const data = await callOk('planner_export_ifc', { path: own, overwrite: true });
+  assertEq([data.ifcSchema, data.overwritten], ['IFC4', true], 'het eigen IFC4-bestand blijft IFC4');
+  assert(files.get(own)!.includes("FILE_SCHEMA(('IFC4'));"), 'de kop is IFC4');
+});
+
 // =================================================================================================
 // 9. import_schedule
 // =================================================================================================

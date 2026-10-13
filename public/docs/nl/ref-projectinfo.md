@@ -38,6 +38,10 @@ De velden van het venster *Nieuw project* en van *Projectinfo*: wat elk veld doe
 
 **Rekenprofiel en reken-opties** — in *Projectinfo* het hele blok, in *Nieuw project* alleen de keuzelijst *Rekenprofiel* met *Primavera P6*, *Microsoft Project* en *Open Planner Studio*. Standaard: *Open Planner Studio*. Een profiel kiezen zet ook de standaardopties van dat profiel. Zie [Rekenopties en conventies](docs://ref-rekenopties-en-conventies).
 
+## Alleen in Projectinfo
+
+**IFC-schema bij opslaan** — welk IFC-schema in de kop van het opgeslagen bestand staat. Keuze uit *IFC 4.3 ADD2 (standaard)*, *IFC 4.3* en *IFC4*. Standaard: *IFC 4.3 ADD2 (standaard)*; bij een geopend IFC-bestand het schema van dat bestand. Effect: alleen de kop van het bestand verandert, niet de inhoud. Gebruik het om de planning samen te voegen met een bouwmodel in hetzelfde schema. Heeft een geopend bestand een ander schema dan de standaard, dan vraagt de app bij de eerste keer opslaan of je dat schema houdt; een keuze hier telt als antwoord. Een andere keuze hier is geen stap in *Ongedaan*: het schema hoort bij het bestand. Zie [Het IFC-schema kiezen](docs://howto-ifc-schema-kiezen).
+
 ## Alleen in het venster Nieuw project
 
 **Fasering-template** — met welke fasen het project begint. Keuze uit *Leeg*, *Woningbouw* en *Utiliteitsbouw / renovatie*. Standaard: *Leeg*. Effect: *Leeg* geeft een project zonder taken. De andere twee zetten acht fasetaken klaar, elk met een duur van 5 in de standaardeenheid van het project (5 werkdagen, of 5 uur als je bij *Standaardeenheid voor nieuwe taken* *Uren* kiest) en zonder relaties; je hernoemt, verplaatst en vult ze zelf aan. Bij *Woningbouw* zijn dat: Bouwplaats & grondwerk, Fundering, Ruwbouw / casco, Dak, Gevel & afbouw, Installaties (W/E), Afwerking en Oplevering. Bij *Utiliteitsbouw / renovatie*: Sloop & strip-out, Grondwerk & fundering, Hoofddraagconstructie, Gevel & dak, Installaties (W/E), Afbouw, Inregelen & testen en Oplevering. De namen zijn gegevens van je project en blijven dus Nederlands, ook in een andere interfacetaal. Staat *Bouwmodus inschakelen* uit, dan bestaat alleen *Leeg*. Zie [Instellingen](docs://ref-instellingen).
@@ -61,3 +65,4 @@ De startdatum is het anker van het project. Drie regels:
 - [Project verplaatsen](docs://howto-project-verplaatsen): de hele planning naar een andere start.
 - [Taken en mijlpalen toevoegen](docs://howto-taken-en-mijlpalen-toevoegen): beginnen met de eerste taken.
 - [Feestdagen genereren](docs://howto-feestdagen-genereren): de feestdagenset in detail.
+- [Het IFC-schema kiezen](docs://howto-ifc-schema-kiezen): opslaan voor een bouwmodel in IFC4.

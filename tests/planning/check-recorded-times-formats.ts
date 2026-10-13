@@ -136,7 +136,12 @@ const recordedOf = (r: ImportResult, wbs: string): RecordedTime | undefined => {
   truthy('4f met vlag exact één OPS_ImportProvenance-pset met UnchangedSinceImport .T.',
     pristine.split("'OPS_ImportProvenance'").length === 2 && pristine.includes("IFCPROPERTYSINGLEVALUE('UnchangedSinceImport',$,IFCBOOLEAN(.T.),$)"));
   eq('4g …en die leest terug als true', readIFC(pristine).importPristine, true);
-  const tampered = pristine.replace('IFCBOOLEAN(.T.)', 'IFCBOOLEAN(.F.)');
+  // Precies deze eigenschap: het bestand heeft meer IFCBOOLEAN(.T.)-waarden (o.a. IfcSchemaConfirmed in
+  // OPS_ProjectSettings, #292), en de eerste daarvan is niet de herkomstvlag.
+  const tampered = pristine.replace(
+    "IFCPROPERTYSINGLEVALUE('UnchangedSinceImport',$,IFCBOOLEAN(.T.),$)",
+    "IFCPROPERTYSINGLEVALUE('UnchangedSinceImport',$,IFCBOOLEAN(.F.),$)");
+  truthy('4h0 de vervanging raakt de herkomstvlag', tampered !== pristine);
   eq('4h .F. leest als false', readIFC(tampered).importPristine, false);
   // Herkomstdetectie via alleen de IFCAPPLICATION-regel: strip alle OPS_-psets uit het eigen
   // bestand ⇒ nog steeds 'ifc-own' (twee onafhankelijke sporen, elk voldoende).

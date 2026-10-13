@@ -30,15 +30,17 @@ import { hydratePayload, isFreshImportOrigin, payloadFromImport, type DocumentPa
 import { applyRecordedDatesOnLoad, materializeLibraryBoundary, prepareLoadedPayload } from '../documentActivation';
 import { notifyCalendarLibrarySettle } from '../calendarTasks';
 import { unrecordedExportGate } from '../recordedDatesSelectors';
-import { buildWriteIFCInput, sameIFCSource } from '../ifcSaveInput';
+import { buildExportIFCInput, buildWriteIFCInput, sameIFCSource } from '../ifcSaveInput';
 import { fileHasHourData } from '@/services/subdayIo';
 import { documentFileBase } from '@/utils/documents';
-import { xerProjectCode } from '@/utils/xerDocumentName';
+import { documentProjectCode } from '@/utils/documentProjectCode';
 import { refreshExternalAnchors, type ExternalSourceDoc } from '@/engine/externalLinks';
 import { normalizeExternalSourcePath } from '@/engine/taskGrid/relationFormat';
 import { expandSummaryRelations } from '@/engine/scheduler/expandSummaryRelations';
 import { detectXerExportLoss, type XerExportLossWarning } from '@/services/xerExportLoss';
 import { runProjectFileWrite } from '@/services/fileAccess/writeCoordinator';
+import { askIfcSchema, ifcSchemaQuestionFor } from '@/services/ifc/ifcSchemaQuestion';
+import { applyIfcSchemaChoice } from '../ifcSchemaChoice';
 import { withSchedulingProfileNotice } from '../schedulingProfileNotice';
 import type { ImportLabelT } from '@/i18n/importLabels';
 import { invalidateDocumentRedo, removeSessionHistoryForDocumentFromState } from '../sessionHistory';
@@ -48,11 +50,11 @@ import { basename, ensureExtension } from '@/utils/filePath';
 import type { ScheduleErrorInfo } from '@/engine/scheduler/CPMSolver';
 
 /**
- * Voorgestelde bestandsnaambasis voor opslaan/exporteren: bij een XER-document "Projectnaam
- * (P6 Project-ID)", zodat tab en titelbalk na het opslaan dezelfde naam houden.
+ * Voorgestelde bestandsnaambasis voor opslaan/exporteren: bij een XER- of P6 XML-document
+ * "Projectnaam (P6 Project-ID)", zodat tab en titelbalk na het opslaan dezelfde naam houden.
  */
 export function suggestedFileBase(s: Pick<AppState, 'project' | 'xerImportMetadata'>): string {
-  return documentFileBase(s.project.name, xerProjectCode(s.xerImportMetadata));
+  return documentFileBase(s.project.name, documentProjectCode(s.project, s.xerImportMetadata));
 }
 
 /** Een vers, ongewijzigd, leeg document — dan mag de open-actie het hergebruiken
@@ -613,8 +615,9 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
 
   /** Staat er al een site-vraag open? Dan start Opslaan/Openen geen tweede ronde: Ctrl+S in het
    *  naamveld van "Opslaan op de site" zou anders na het antwoord nog een versie schrijven. Zonder
-   *  site zijn beide vlaggen altijd `null`. */
-  const siteQuestionOpen = () => get().ui.pendingSiteSave !== null || get().ui.pendingSiteOpen !== null;
+   *  site zijn beide vlaggen altijd `null`. Ook de schemavraag bij opslaan telt mee (issue #292). */
+  const siteQuestionOpen = () => get().ui.pendingSiteSave !== null || get().ui.pendingSiteOpen !== null
+    || get().ui.pendingIfcSchemaQuestion !== null;
 
   /** Uitleg na het openen van een ander formaat dan IFC (`services/formatNotice.ts`). Alleen de
    *  open-routes die de GEBRUIKER start roepen dit aan (Bestand → Openen, Recente bestanden, Openen
@@ -626,7 +629,36 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
     if (kind) set((s) => { s.ui.pendingFormatNotice = kind; });
   };
 
+  /**
+   * De schemavraag bij het eerste EXPLICIETE opslaan (issue #292, besluit eigenaar 2026-10-13: "we
+   * veranderen niet zomaar bestandstypes"). Is het actieve document een geopend IFC-bestand met een
+   * ander schema dan de standaard, en heeft de gebruiker nog niet gekozen (`Project.ifcSchemaUnconfirmed`),
+   * dan vraagt de app eerst: naar IFC4X3_ADD2, of het schema van het bestand houden.
+   *
+   * Het antwoord hoort bij het bestand, niet bij de bewerkingen: het zet `project.ifcSchema` en wist de
+   * open vraag ZONDER eigen undo-stap en zonder het document gewijzigd te maken. Ongedaan maken en
+   * opnieuw doen veranderen het schema daarna niet meer: `restoreSnapshot` houdt het schema van het
+   * bestand aan (`state/ifcSchemaChoice.ts`, review #336). Anders schreef AutoSave na een undo stil
+   * weer het oude schema. Annuleren ⇒ `false`:
+   * er wordt niets opgeslagen. Alleen Opslaan en Opslaan als roepen dit aan; automatisch opslaan,
+   * crashherstel, export en MCP schrijven het huidige schema zonder vraag.
+   */
+  const settleIfcSchemaQuestion = async (): Promise<boolean> => {
+    const before = get();
+    const question = ifcSchemaQuestionFor(before.project);
+    if (!question) return true;
+    const documentId = before.activeDocumentId;
+    const answer = await askIfcSchema(question);
+    if (!answer) return false;
+    // De dialoog blokkeert een documentwissel; dit is het vangnet.
+    if (get().activeDocumentId !== documentId) return false;
+    set((s) => { applyIfcSchemaChoice(s.project, answer); });
+    return true;
+  };
+
   const writeActiveDocument = (expectedDocumentId?: string): Promise<boolean> => runProjectFileWrite(async () => {
+    if (expectedDocumentId && expectedDocumentId !== get().activeDocumentId) return false;
+    if (!(await settleIfcSchemaQuestion())) return false;
     const state = get();
     const documentId = state.activeDocumentId;
     if (expectedDocumentId && expectedDocumentId !== documentId) return false;
@@ -692,6 +724,7 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
 
   /** Opslaan als (Ctrl+Shift+S / Bestand → Opslaan als). */
   const saveActiveDocumentAs = (): Promise<void> => runProjectFileWrite(async () => {
+    if (!(await settleIfcSchemaQuestion())) return;
     const state = get();
     const documentId = state.activeDocumentId;
     // Gedeelde helper: één plek voor het state→IFC-options-object, zodat dit
@@ -1164,6 +1197,7 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
             const written = writeP6XMLWithReport(
               state.project, state.calendar, state.tasks,
               state.sequences, state.resources, state.assignments, state.calendars, state.customTaskTypes,
+              documentProjectCode(state.project, state.xerImportMetadata),
             );
             payload = written.xml;
             p6Truncated = written.truncated;
@@ -1173,7 +1207,8 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
           break;
         case 'ifc':
         default:
-          payload = writeIFC(buildWriteIFCInput(state));
+          // Een export vraagt niets; een open vraag die niet bij de kop past gaat niet mee (#336).
+          payload = writeIFC(buildExportIFCInput(state));
           ext = 'ifc';
           filters = [{ name: 'IFC Files', extensions: ['ifc'] }];
           break;
@@ -1217,8 +1252,8 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
       if (cpmFailure?.error) return { ok: false, error: cpmFailure.error, errorInfo: cpmFailure.errorInfo };
 
       const state = get();
-      // 1. Het project zelf (bevat altijd al alle gebruikte items).
-      const projectContent = writeIFC(buildWriteIFCInput(state));
+      // 1. Het project zelf (bevat altijd al alle gebruikte items). Een export: zie `buildExportIFCInput`.
+      const projectContent = writeIFC(buildExportIFCInput(state));
       const base = suggestedFileBase(state);
       const outcome = await saveFileDialog(`${base}.ifc`, projectContent, [{ name: 'IFC Files', extensions: ['ifc'] }]);
       if (!outcome) return { ok: true, warnings: [] }; // dialoog geannuleerd — geen fout

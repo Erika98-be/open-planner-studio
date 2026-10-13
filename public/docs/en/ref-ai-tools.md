@@ -72,7 +72,7 @@ All tools an AI assistant can call through the bridge, by group, with what they 
 - `planner_duplicate_document` — copy the active document to a new tab, for a what-if or a tender variant. The copy is detached and has no file path.
 - `planner_switch_document` — make another document active. Also the way to confirm, after you switched tabs, which document the assistant works on.
 - `planner_import_schedule` — open a schedule file from disk as a document: `.ifc`, `.xml` (Primavera P6 or MS Project, recognized by content), `.csv`, `.xer` and `.mpp` (MS Project 2010 through 2021). Nothing is merged with the current plan. A CSV has no calendar, so dates can shift. Only inside your user folder. After a CSV, XML or `.mpp` import the document has no save target; only an IFC takes over its path.
-- `planner_export_ifc` — write the active document as an IFC 4.3 file. Only inside your user folder, and an existing file is only overwritten on explicit request. The project stays unsaved.
+- `planner_export_ifc` — write the active document as an IFC file, in the IFC schema of the project (default IFC 4.3 ADD2). Only inside your user folder, and an existing file is only overwritten on explicit request. If the document was opened in a schema the app cannot write (such as IFC2X3), the tool refuses to write over that file itself. The project stays unsaved.
 
 ## Guide and source provenance
 

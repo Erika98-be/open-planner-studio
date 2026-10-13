@@ -457,6 +457,8 @@
     "newProject": "Nieuw project",
     "openExistingProject": "Bestaand project openen",
     "allProjects": "Alle projecten",
+    "scrollTabsStart": "Tabbladen naar het begin schuiven",
+    "scrollTabsEnd": "Tabbladen naar het eind schuiven",
     "active": "Actief",
     "tasksWord": "taken",
     "criticalWord": "kritiek",
@@ -1536,5 +1538,12 @@
         "save": "Opslaan schrijft een nieuw IFC-bestand: je CSV verandert niet. Terugschrijven kan met Exporteren › CSV (puntkomma-gescheiden)."
       }
     }
+  },
+  "ifcSchemaQuestion": {
+    "title": "In welk IFC-schema opslaan?",
+    "body": "Dit bestand is opgeslagen als {{schema}}. De app slaat standaard op als IFC 4.3 ADD2, het schema van IfcOpenShell en Bonsai. Wil je dit bestand als {{schema}} houden? Je kunt dit later wijzigen in Projectinfo.",
+    "bodyUnwritable": "Dit bestand is opgeslagen als {{schema}}. Dat schema kan de app niet schrijven. Kies het schema waarin de app het opslaat. Je kunt dit later wijzigen in Projectinfo.",
+    "keep": "{{schema}} houden",
+    "toDefault": "Opslaan als IFC 4.3 ADD2"
   }
 }

@@ -1,5 +1,5 @@
 /**
- * Plaatsing van de meldingenstapel naast open dialogen en plakkende actiebalken. De stapel staat
+ * Plaatsing van de meldingenstapel naast open dialogen en actiebalken. De stapel staat
  * standaard onderaan in het midden en zou zo over de voetknoppen (Annuleren/Toepassen) van bv. de
  * Projectinfo-dialoog vallen: een modale dialoog staat ook gecentreerd en reikt tot 5 vh van de
  * onderrand.
@@ -9,7 +9,7 @@
  *     naast de dialoog, aan de kant met de meeste ruimte — mits daar een bruikbare breedte over is.
  *  2. Is die ruimte er niet (smal venster), dan zakt de stapel ONDER de dialoogbackdrop (z-laag):
  *     dan is hij gedimd zichtbaar en komt hij terug zodra de dialoog sluit, maar dekt hij niets af.
- *  3. Zonder dialoog maar met een zichtbare `[data-ops-toast-avoid]`-balk (de plakkende actiebalk van
+ *  3. Zonder dialoog maar met een zichtbare `[data-ops-toast-avoid]`-balk (de actiebalk van
  *     Backstage → Projectinfo) schuift de stapel boven die balk.
  * Puur rekenwerk op rechthoeken, zodat het los van de DOM te redeneren is; de host meet.
  */

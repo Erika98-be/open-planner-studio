@@ -439,6 +439,7 @@ const project = {
   defaultTaskDurationUnit: 'days',
   defaultWorkRule: 'FIXED_RATE', // taaktypes-etappe: OPS_ProjectSettings/DefaultWorkRule
   companyId: 'c-fixture', companyName: 'Fixture Bouw BV',
+  p6ProjectCode: 'OZB-14 1st Update', // P6 XML-projectcode: OPS_ProjectSettings/P6ProjectCode
   schedulingOptions: SCHED_OPTS,
   // Rekenprofiel (C2): een EIGEN profiel op p6-basis met twee afwijkingen (één uit, één per-bestand
   // aan) — onderscheidend van de default (afwezig ≡ ops) én van de kale p6-basis.
@@ -446,6 +447,10 @@ const project = {
     baseId: 'p6', id: 'prof-fixture', name: 'Fixtureprofiel',
     overrides: { clampNegativeFreeFloat: false, p6UseRemainingStartForProgress: true },
   },
+  // Issue #292: niet de standaard (IFC4X3), zodat de round-trip via FILE_SCHEMA iets bewijst.
+  ifcSchema: 'IFC4',
+  // Een open schemavraag (bijv. door automatisch opslaan bewaard) blijft open na opslaan + openen.
+  ifcSchemaUnconfirmed: 'IFC4',
 } satisfies Required<Project> & { schedulingOptions: Required<ProjectSchedulingOptions> };
 
 // ── Baselines (round-trippen verliesloos via OPS_Baselines-JSON; taskId remapt via GlobalId) ──────
@@ -733,6 +738,10 @@ const PROJECT_CANON = {
   defaultWorkRule: KEEP, // taaktypes-etappe: OPS_ProjectSettings/DefaultWorkRule
   // B1.1: bedrijfsbinding round-trippt via OPS_CompanyBinding.
   companyId: KEEP, companyName: KEEP,
+  // Issue #292: het schema round-tript via de bestandskop (FILE_SCHEMA).
+  ifcSchema: KEEP,
+  ifcSchemaUnconfirmed: KEEP,
+  p6ProjectCode: KEEP, // P6 Project-ID los van de naam (eigen toetsen: check-p6xml-project-code)
 } satisfies CanonSpec<Project>;
 
 const BASELINE_TASK_CANON = {

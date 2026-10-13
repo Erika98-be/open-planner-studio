@@ -457,6 +457,8 @@
     "newProject": "New project",
     "openExistingProject": "Open existing project",
     "allProjects": "All projects",
+    "scrollTabsStart": "Scroll tabs towards the start",
+    "scrollTabsEnd": "Scroll tabs towards the end",
     "active": "Active",
     "tasksWord": "tasks",
     "criticalWord": "critical",
@@ -1536,5 +1538,12 @@
         "save": "Save writes a new IFC file: your CSV does not change. You can write back with Export › CSV (semicolon-separated)."
       }
     }
+  },
+  "ifcSchemaQuestion": {
+    "title": "Which IFC schema to save in?",
+    "body": "This file was saved as {{schema}}. The app saves as IFC 4.3 ADD2 by default, the schema of IfcOpenShell and Bonsai. Do you want to keep this file as {{schema}}? You can change this later in Project info.",
+    "bodyUnwritable": "This file was saved as {{schema}}. The app cannot write that schema. Choose the schema in which the app saves it. You can change this later in Project info.",
+    "keep": "Keep {{schema}}",
+    "toDefault": "Save as IFC 4.3 ADD2"
   }
 }

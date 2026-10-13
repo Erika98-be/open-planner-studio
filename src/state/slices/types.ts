@@ -34,6 +34,7 @@ export type { BarColorSelection };
 import type { McpServerStatus } from '@/services/mcp/contracts';
 // Opslag via de site: de VRAAG van de twee site-dialogen. Type-only import, net als hierboven.
 import type { SiteOpenRequest, SiteSaveRequest } from '@/services/fileAccess/siteDialogs';
+import type { IfcSchemaQuestion } from '@/services/ifc/ifcSchemaQuestion';
 import type { FormatNoticeKind } from '@/services/formatNoticeKinds';
 export type { McpServerStatus };
 
@@ -605,6 +606,10 @@ export interface UIState {
   /** session — de openstaande vraag "Opslaan op de site", of `null`. Zelfde opzet als
    *  `pendingSiteOpen`. */
   pendingSiteSave: SiteSaveRequest | null;
+  /** session — de openstaande schemavraag bij opslaan (issue #292, `services/ifc/ifcSchemaQuestion.ts`),
+   *  of `null`. Draagt alleen de VRAAG; het antwoord gaat via de resolver in
+   *  `state/ifcSchemaQuestionBridge.ts`. Modaal: telt mee in `hasBlockingDialogOpen`. */
+  pendingIfcSchemaQuestion: IfcSchemaQuestion | null;
   /** session — de uitleg na het openen van een ander formaat dan IFC (`FormatNoticeDialog`), of
    *  `null`. Alleen de open-routes van de gebruiker zetten hem (`fileSlice`, `formatNoticeToShow`).
    *  Bewust NIET blokkerend in `hasBlockingDialogOpen`: het project staat er al achter, de uitleg

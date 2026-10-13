@@ -72,7 +72,7 @@ Alle tools die een AI-assistent via de bridge kan aanroepen, per groep, met wat 
 - `planner_duplicate_document` — het actieve document kopiëren naar een nieuw tabblad, voor een wat-als of een tendervariant. De kopie is losgekoppeld en heeft geen bestandspad.
 - `planner_switch_document` — een ander document actief maken. Ook de manier om na een wissel van tabblad door jou te bevestigen op welk document de assistent werkt.
 - `planner_import_schedule` — een planningsbestand van schijf openen als document: `.ifc`, `.xml` (Primavera P6 of MS Project, herkend op inhoud), `.csv`, `.xer` en `.mpp` (MS Project 2010 tot en met 2021). Er wordt niets samengevoegd met het huidige plan. Een CSV heeft geen kalender, dus datums kunnen verschuiven. Alleen binnen je gebruikersmap. Na een CSV-, XML- of `.mpp`-import heeft het document geen opslagdoel; alleen een IFC neemt zijn pad over.
-- `planner_export_ifc` — het actieve document als IFC 4.3-bestand wegschrijven. Alleen binnen je gebruikersmap, en een bestaand bestand wordt alleen overschreven op uitdrukkelijk verzoek. Het project blijft als niet opgeslagen staan.
+- `planner_export_ifc` — het actieve document als IFC-bestand wegschrijven, in het IFC-schema van het project (standaard IFC 4.3 ADD2). Alleen binnen je gebruikersmap, en een bestaand bestand wordt alleen overschreven op uitdrukkelijk verzoek. Is het document geopend als een schema dat de app niet kan schrijven (zoals IFC2X3), dan weigert de tool om over dat eigen bestand te schrijven. Het project blijft als niet opgeslagen staan.
 
 ## Gids en bronherkomst
 

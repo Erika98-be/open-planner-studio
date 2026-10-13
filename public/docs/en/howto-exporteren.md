@@ -22,11 +22,11 @@ The list on the *Home* tab and the cards in *File › Export* offer the same for
 - *CSV (;)*, on the card *CSV (semicolon-separated)*: a task list that you open in a spreadsheet.
 - *MS Project XML*: can be opened in Microsoft Project.
 - *Primavera P6 XML*: for Oracle Primavera P6.
-- *IFC 4x3*: the app's own format, with everything in it.
+- *IFC*: the app's own format, with everything in it, in the IFC schema of the project (default IFC 4.3 ADD2).
 
 ### An IFC export with a library file
 
-If your project is linked to a resource library, the checkbox *Save library file alongside* is below the cards in *File › Export*. If you tick it and choose *IFC 4x3*, the app asks for a place twice: first for the project, then for *projectname-bibliotheek.ifc*. This checkbox is only in *File › Export*, not in the list on the *Home* tab.
+If your project is linked to a resource library, the checkbox *Save library file alongside* is below the cards in *File › Export*. If you tick it and choose *IFC*, the app asks for a place twice: first for the project, then for *projectname-bibliotheek.ifc*. This checkbox is only in *File › Export*, not in the list on the *Home* tab.
 
 ### Restoring a progress sheet
 

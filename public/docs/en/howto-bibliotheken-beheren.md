@@ -64,7 +64,7 @@ A project file contains its own copies of the resources. If you also want to han
 
 1. Open a project that is linked to a library and choose *File › Export*.
 2. Tick *Save library file alongside*. The checkbox is only there for a linked project.
-3. Choose the card *IFC 4x3* and save the file. The app then also asks for a second file. It is named like the project with `-bibliotheek` after it, and contains the library.
+3. Choose the card *IFC* and save the file. The app then also asks for a second file. It is named like the project with `-bibliotheek` after it, and contains the library.
 
 The checkbox only works for the IFC export, not for the other export formats. Your colleague imports the second file as described above.
 

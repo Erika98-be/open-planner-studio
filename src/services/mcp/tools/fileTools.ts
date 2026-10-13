@@ -33,12 +33,14 @@
 import { isTauri } from '@/utils/platform';
 import { writeIFC } from '@/services/ifc/ifcWriter';
 import { detectXmlFlavor, parseOpenedFile, readFormatInput, type FormatInput } from '@/services/formatRegistry';
-import { buildWriteIFCInput } from '@/state/ifcSaveInput';
+import { buildExportIFCInput } from '@/state/ifcSaveInput';
+import { ifcSchemaBlocksSilentWrite, ifcSchemaQuestionFor } from '@/services/ifc/ifcSchemaQuestion';
+import { DEFAULT_IFC_SCHEMA, projectIfcSchema } from '@/types/project';
 import { extensionOf } from '@/utils/filePath';
 import type { OpenedImport } from '@/services/importTypes';
 import { bindExpectedDoc, buildEnvelope, guardNonTransactional, postAwaitGuards, toolError } from './runtime';
 import { guardBridgeFlags } from './documentTools';
-import type { McpToolAnnotations, McpToolDef, McpToolResult } from '../contracts';
+import type { McpContext, McpToolAnnotations, McpToolDef, McpToolResult } from '../contracts';
 import { writeUserTextFileTauri } from '@/services/fileAccess/atomicWrite';
 
 // --- fs-naad -------------------------------------------------------------------------------------
@@ -187,19 +189,45 @@ const IMPORT_ANNOTATIONS: McpToolAnnotations = {
   openWorldHint: true,
 };
 
+/**
+ * Review #336 punt 4 (issue #292): de app verandert een bestandstype nooit stil. Is het actieve document
+ * geopend uit een IFC-bestand in een schema dat de app niet schrijft (IFC2X3 e.d., een open schemavraag
+ * zonder "houden"), dan zou een export over DAT bestand het stil IFC 4.3 ADD2 maken. Dat weigert de tool,
+ * ook met `overwrite: true`; de gebruiker slaat het in de app op en kiest daar. Een ander pad mag.
+ */
+function refuseSilentSchemaChange(ctx: McpContext, home: string, path: string): McpToolResult | null {
+  const state = ctx.app.store.getState();
+  if (!ifcSchemaBlocksSilentWrite(state.project) || !state.filePath) return null;
+  const own = checkScope(home, state.filePath);
+  const key = (p: string) => (/^[A-Za-z]:/.test(p) ? p.toLowerCase() : p);
+  if (!own.ok || key(own.path) !== key(path)) return null;
+  const fileSchema = ifcSchemaQuestionFor(state.project)?.fileSchema ?? '?';
+  return toolError(
+    ctx,
+    'VALIDATION',
+    `'${path}' is the document's own file, opened as ${fileSchema}. The app cannot write ${fileSchema}; ` +
+    `writing here would silently change the file type to ${DEFAULT_IFC_SCHEMA}. Ask the user to save the ` +
+    'document in the app (Save asks which schema to use), or export to another path.',
+  );
+}
+
 // --- Tooldefinities ------------------------------------------------------------------------------
 
 export const fileTools: McpToolDef[] = [
   {
     name: 'planner_export_ifc',
     description:
-      'Write the ACTIVE document as an IFC 4.3 file to `path` (the native format: tasks, relationships, ' +
-      'calendars, resources, assignments, baselines and structure are all included). FILE SCOPE: only paths ' +
+      'Write the ACTIVE document as an IFC file to `path`, in the IFC schema of the project (default IFC 4.3 ' +
+      'ADD2; the response reports it as `ifcSchema`). It is the native format: tasks, relationships, ' +
+      'calendars, resources, assignments, baselines and structure are all included. FILE SCOPE: only paths ' +
       'inside the user\'s home folder; outside it a SCOPE error follows. An existing file is NOT overwritten ' +
       'unless you explicitly pass `overwrite: true`. This does not change the schedule, nor the document\'s ' +
       'save target: it stays "not saved" in the app — it is an export, not a "save as". Note: the path comes ' +
       'from your arguments, not from a file dialog of the user; so always mention the chosen path in your ' +
-      'answer.',
+      'answer. If the document was opened from an IFC file in a schema the app cannot write (such as ' +
+      'IFC2X3), writing over that same file is refused (it would silently change its file type); the user ' +
+      'saves it in the app and chooses the schema. To another path it is written as IFC 4.3 ADD2 and the ' +
+      'response says so in `schemaNotice`.',
     kind: 'other',
     batchable: false, // export_ifc/import_schedule zijn uitgesloten van batch
     inputSchema: {
@@ -233,13 +261,17 @@ export const fileTools: McpToolDef[] = [
       }
 
       let path: string;
+      let home: string;
       // `existed` wordt ALTIJD bepaald, ook met `overwrite: true` — de respons moet melden wat er
       // werkelijk gebeurde (vervangen of nieuw aangemaakt), niet welke vlag de aanroeper meestuurde.
       let existed: boolean;
       try {
-        const scope = checkScope(await fs.homeDir(), raw.path);
+        home = await fs.homeDir();
+        const scope = checkScope(home, raw.path);
         if (!scope.ok) return toolError(ctx, 'SCOPE', scope.reason);
         path = scope.path;
+        const refused = refuseSilentSchemaChange(ctx, home, path);
+        if (refused) return refused;
         existed = await fs.exists(path);
         if (existed && !overwrite) {
           return toolError(
@@ -256,12 +288,16 @@ export const fileTools: McpToolDef[] = [
       // Na de fs-awaits opnieuw: de gebruiker kan intussen gepauzeerd, alleen-lezen gezet, een
       // dialoog geopend of van tabblad gewisseld hebben — dan zou hier een ander document of een
       // half-bewerkte staat weggeschreven worden.
-      const lateBlocked = postAwaitGuards(ctx) ?? guardNonTransactional(ctx);
+      const lateBlocked = postAwaitGuards(ctx) ?? guardNonTransactional(ctx)
+        ?? refuseSilentSchemaChange(ctx, home, path);
       if (lateBlocked) return lateBlocked;
       const state = ctx.app.store.getState();
       // Gedeelde state→writer-invoer (dezelfde bron als opslaan/auto-save), zodat deze route nooit
-      // stil velden kan laten vallen.
-      const content = writeIFC(buildWriteIFCInput(state));
+      // stil velden kan laten vallen. Een export: zonder een open schemavraag die niet bij de kop past.
+      const input = buildExportIFCInput(state);
+      const content = writeIFC(input);
+      const ifcSchema = projectIfcSchema(input.project);
+      const question = ifcSchemaQuestionFor(state.project);
       try {
         await fs.writeTextFile(path, content);
       } catch (e) {
@@ -278,6 +314,13 @@ export const fileTools: McpToolDef[] = [
           tasks: state.tasks.length,
           /** Werkelijke uitkomst: stond er al een bestand op dit pad dat nu vervangen is? */
           overwritten: existed,
+          /** Het schema in de kop van het geschreven bestand (issue #292). */
+          ifcSchema,
+          // Alleen als het document als een ander schema geopend was dan dit bestand nu heeft.
+          ...(question && question.fileSchema !== ifcSchema ? {
+            schemaNotice: `The document was opened from a ${question.fileSchema} file. The app cannot write ` +
+              `that schema, so this file is ${ifcSchema}. The document itself keeps its open schema question.`,
+          } : {}),
         },
       };
     },

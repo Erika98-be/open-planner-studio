@@ -64,7 +64,7 @@ Een projectbestand bevat zijn eigen kopieën van de resources. Wil je ook de hel
 
 1. Open een project dat aan een bibliotheek gekoppeld is en kies *Bestand › Exporteren*.
 2. Zet het vinkje *Bibliotheekbestand ernaast opslaan* aan. Dat vinkje staat er alleen bij een gekoppeld project.
-3. Kies de kaart *IFC 4x3* en bewaar het bestand. De app vraagt daarna ook om een tweede bestand. Dat heet zoals het project met `-bibliotheek` erachter, en bevat de bibliotheek.
+3. Kies de kaart *IFC* en bewaar het bestand. De app vraagt daarna ook om een tweede bestand. Dat heet zoals het project met `-bibliotheek` erachter, en bevat de bibliotheek.
 
 Het vinkje werkt alleen voor de IFC-export, niet voor de andere exportformaten. Je collega importeert het tweede bestand zoals hierboven.
 

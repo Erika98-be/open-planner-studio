@@ -8,7 +8,7 @@ Per file format: whether you can open, save and export it, what does and does no
 
 **Saving** always writes IFC. Only an opened IFC file becomes the save target; a project from another format has no file after opening, and *Save* then asks where the IFC file should go.
 
-**Exporting** works to IFC 4x3, MS Project XML, Primavera P6 XML, CSV and two progress sheets (Excel and CSV). An export does not change your project.
+**Exporting** works to IFC, MS Project XML, Primavera P6 XML, CSV and two progress sheets (Excel and CSV). An export does not change your project.
 
 **Read-only** are `.mpp` and `.xer`: the app can open them, not write them.
 
@@ -20,11 +20,11 @@ Per file format: whether you can open, save and export it, what does and does no
 
 ## IFC
 
-**Open** — yes, `.ifc`. The app reads IFC 4.3. Calculation profile: the one in the file.
+**Open** — yes, `.ifc`. The app reads IFC4 and IFC 4.3 (also ADD2). Calculation profile: the one in the file.
 
 **Save** — yes, and it is the only format that saves. *Save* writes your whole project as an IFC file. The file becomes the save target.
 
-**Export** — yes, as *IFC 4x3* (described as *BuildingSMART standard. 4D link with BIM models.*). Default name: the project name with the extension `.ifc`. If your project is linked to a resource library, the checkbox *Save library file alongside* is below the cards in *File › Export*. Ticked, the app asks for a place for *projectname-bibliotheek.ifc* after the project. The checkbox is not in the list on the *Home* tab.
+**Export** — yes, as *IFC*, in the IFC schema of the project (default IFC 4.3 ADD2). Default name: the project name with the extension `.ifc`. If your project is linked to a resource library, the checkbox *Save library file alongside* is below the cards in *File › Export*. Ticked, the app asks for a place for *projectname-bibliotheek.ifc* after the project. The checkbox is not in the list on the *Home* tab.
 
 **What goes along** — everything that belongs to the project: tasks with structure, duration, dates and progress; relations with lag; constraints and deadlines; calendars; resources and assignments, including the hour distribution; baselines; activity codes and custom fields; notes; external links to other projects; interruptions; work rules and task types; the project settings such as the status date, the progress mode, the calculation profile and the calculation options; the link with a resource library. For a project from a `.xer`, the original source file goes along too. A custom task type is stored as the IFC type `USERDEFINED` with its name in the ObjectType field, so other IFC programs read the task normally; the app also keeps the fixed id of the type, so renaming does not break the link. If someone opens the file on another computer, the type appears there under *From this project*, not in their own *My task types*.
 
@@ -70,9 +70,9 @@ Per file format: whether you can open, save and export it, what does and does no
 
 **Save** — no.
 
-**Export** — yes, as *Primavera P6 XML* (*For Oracle Primavera P6.*). Default name: the project name with `.xml`, so the same name as an MS Project XML export: give them different names yourself.
+**Export** — yes, as *Primavera P6 XML* (*For Oracle Primavera P6.*). Default name: the project name with `.xml`, with the project ID in brackets if the project has one. An MS Project XML export gets the same name: give them different names yourself.
 
-**Project name and project ID.** If the project name ends with a code in brackets without a space, such as *Office (OZB-05)*, then *OZB-05* becomes the project ID in P6 and *Office* the name. That way a project from P6 comes back with the same name after reopening. Text with a space, such as *New build (phase 2)*, stays in the name. Without a code, the project gets a unique ID of its own from the app, starting with *OPS:*.
+**Project name and project ID.** The app keeps the project ID from P6 separate from the project name, as with an `.xer`. *Project info* shows only the name, for example *Bid for Facility Extension*. The tab shows *Bid for Facility Extension (OZB-05)*. If you rename the project to *Hall extension*, the tab is called *Hall extension (OZB-05)*. An export to P6 XML writes *OZB-05* back as the project ID and *Hall extension* as the name. That way P6 recognises the project. A project from an `.xer` also takes its project ID along. The project ID stays when you save the project as IFC. Brackets in the name itself, such as *New build (phase 2)*, stay in the name. A project without a project ID gets a unique ID of its own from the app at export, starting with *OPS:*.
 
 **What goes along** — WBS structure and tasks with duration, dates and progress; relations with lag; constraints (also a second one, as a soft constraint); calendars; resources and assignments; the status date (as `DataDate`); a custom task type, in a field of its own, `OPS Custom Task Type`, that the app reads back and that P6 may ignore.
 

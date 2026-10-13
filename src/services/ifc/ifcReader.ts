@@ -5,7 +5,7 @@ import type { CustomTaskType } from '@/types/taskType';
 import { createDefaultTaskTime } from '@/utils/taskDefaults';
 import { Sequence, SequenceType } from '@/types/sequence';
 import { Resource, ResourceAssignment, AvailabilityStep, ResourceCurve, isResourceCurve } from '@/types/resource';
-import { Project, ProjectSchedulingOptions, SchedulingOptions, SchedulingProfile } from '@/types/project';
+import { Project, ProjectSchedulingOptions, SchedulingOptions, SchedulingProfile, isIfcSchemaId, type IfcSchemaId } from '@/types/project';
 import { WorkCalendar, Holiday, CalendarGeneration, WorkingException, type WorkTimeBands } from '@/types/calendar';
 import { DEFAULT_CALENDAR_ID, createDefaultCalendar } from '@/engine/calendar/defaultCalendar';
 import type { HolidayCountry } from '@/engine/calendar/holidays';
@@ -16,6 +16,8 @@ import { generateId } from '@/utils/id';
 import { formatInstant, localTodayIso } from '@/utils/dateUtils';
 import { ifcGuid, ifcGuid128, ifcObjectSeed } from './ifcWriter';
 import { IfcParseError } from './ifcErrors';
+import { workCalendarSlots, workControlSlots } from './ifcWorkControlSlots';
+import { cleanIfcSchemaName, ifcSchemaUnconfirmedOnRead } from './ifcSchemaQuestion';
 import type { ImportLabels, ImportResult, RecordedSourceFormat, XerArchiveIssue, XerArchiveIssueCode } from '@/services/importTypes';
 import {
   DEFAULT_PRIORITY, IFC_TIME_ANCHOR, MEASURE_TO_FIELD, IFC_TO_RESOURCE_TYPE,
@@ -179,6 +181,12 @@ export function readIFC(
 
   // Extract project
   const project = extractProject(entities, entityMap, labels);
+  // Het schema uit de kop (issue #292): de kop is de opslag van `Project.ifcSchema`, zodat een geopend
+  // IFC4- of IFC4X3-bestand bij opslaan in zijn eigen schema blijft. Een ander schema (IFC2X3,
+  // IFC4X3_ADD1, …) laat het veld weg: dan schrijft opslaan de standaard. Of het eerste opslaan eerst
+  // vraagt, volgt hieronder na de psets (`ifcSchemaUnconfirmed`).
+  const fileSchemaName = readFileSchemaName(content);
+  if (isIfcSchemaId(fileSchemaName)) project.ifcSchema = fileSchemaName;
   // "Openen met melding": het XER-bronarchief is een sidecar, geen
   // fundament. Is het onbruikbaar, dan vallen archief, selector, XER-metadata en de daaruit
   // gereconstrueerde `recordedTimes` SAMEN weg en opent het project gewoon — met een verplicht
@@ -257,9 +265,14 @@ export function readIFC(
   reconstructResourceIds(tasks, assignments);
   const libraryPoolOut: { value: import('@/types/library').CompanyPool | undefined } = { value: undefined };
   const projectStartRecorded = { value: false };
+  const ifcSchemaMarkers: IfcSchemaMarkers = { confirmed: false };
   const { activityCodeTypes, customFieldDefs } = extractStructure(
-    entities, entityMap, project, tasks, taskStepIdMap, libraryPoolOut, projectStartRecorded,
+    entities, entityMap, project, tasks, taskStepIdMap, libraryPoolOut, projectStartRecorded, ifcSchemaMarkers,
   );
+  // De schemavraag bij opslaan (besluit eigenaar 2026-10-13): staat er een andere kop dan de standaard
+  // en heeft de gebruiker nog niet gekozen, dan vraagt het eerste expliciete opslaan het eerst.
+  const ifcSchemaUnconfirmed = ifcSchemaUnconfirmedOnRead(fileSchemaName, ifcSchemaMarkers);
+  if (ifcSchemaUnconfirmed) project.ifcSchemaUnconfirmed = ifcSchemaUnconfirmed;
   for (const task of tasks) reconcileP6SuspendResume(task);
   const customTaskTypes = extractTaskTypeMeta(entities, entityMap, tasks, taskStepIdMap);
   // Kalenderwandelingen (`timephasedDurationWalks`), eigen pset (zie de functie zelf voor waarom dit
@@ -375,7 +388,7 @@ function collectIfcGlobalIds(
   const plan = entities.find(e => e.type === 'IFCWORKPLAN');
   const planGuid = plan ? ifcSlotText(plan.args[0]) : '';
   if (planGuid) out[ifcObjectSeed('wp', projectId)] = planGuid;
-  const schedule = entities.find(e => e.type === 'IFCWORKSCHEDULE' && !(e.args[14] || '').includes('BASELINE'));
+  const schedule = entities.find(e => e.type === 'IFCWORKSCHEDULE' && !isBaselineSchedule(e));
   const scheduleGuid = schedule ? ifcSlotText(schedule.args[0]) : '';
   if (scheduleGuid) out[ifcObjectSeed('ws', projectId)] = scheduleGuid;
   return Object.keys(out).length > 0 ? out : undefined;
@@ -1013,6 +1026,39 @@ function parseSTEP(content: string): StepEntity[] {
   return entities;
 }
 
+/**
+ * Het schema uit de kop zoals het er staat: de eerste naam in `FILE_SCHEMA(('…'))`, in hoofdletters
+ * (`cleanIfcSchemaName`), ook als de app dat schema niet schrijft (IFC2X3); geen of een vreemde naam ⇒
+ * `undefined`. Quote-bewust gezocht, want een projectnaam in `FILE_NAME` kan die tekst bevatten. Oude
+ * eigen bestanden met een ongebalanceerde apostrof in `FILE_NAME` (zie `indexOfDataSection`) vallen
+ * terug op een regel-verankerde match.
+ */
+export function readFileSchemaName(content: string): string | undefined {
+  const dataAt = indexOfDataSection(content);
+  const header = dataAt >= 0 ? content.slice(0, dataAt) : content;
+  let name: string | undefined;
+  const at = indexOfCode(header, 'FILE_SCHEMA', 0);
+  if (at >= 0) {
+    const m = /^FILE_SCHEMA\s*\(\s*\(\s*'([^']*)'/i.exec(header.slice(at));
+    name = m?.[1];
+  }
+  if (name === undefined) name = /^[ \t]*FILE_SCHEMA\s*\(\s*\(\s*'([^']*)'/im.exec(header)?.[1];
+  return cleanIfcSchemaName(name);
+}
+
+/** Het schema uit de kop, alleen als het een van de drie is die de writer kan schrijven
+ *  (`IFC_SCHEMAS`); anders `undefined` (issue #292). Zie `readFileSchemaName`. */
+export function readFileSchema(content: string): IfcSchemaId | undefined {
+  const name = readFileSchemaName(content);
+  return isIfcSchemaId(name) ? name : undefined;
+}
+
+/** Is deze IFCWORKSCHEDULE een baseline (PredefinedType `.BASELINE.`)? De positie hangt af van de
+ *  argumenten: 13 in het schema, 14 in bestanden van oudere OPS-versies (`workControlSlots`). */
+function isBaselineSchedule(e: StepEntity): boolean {
+  return (e.args[workControlSlots(e.args).predefinedType] || '').includes('BASELINE');
+}
+
 /** Split IFC arguments respecting nested parentheses and quotes */
 function splitArgs(argsStr: string): string[] {
   // Elk argument is een aaneengesloten deel van `argsStr` (tekens worden nooit omgezet, ook `''` niet),
@@ -1275,6 +1321,7 @@ function extractProject(
 ): Project {
   const proj = entities.find(e => e.type === 'IFCPROJECT');
   const wp = entities.find(e => e.type === 'IFCWORKPLAN');
+  const wpSlots = workControlSlots(wp?.args ?? []);
   const projectGlobalId = proj ? ifcSlotText(proj.args[0]) : '';
 
   // Auteur/organisatie uit de owner-history-keten (IFCOWNERHISTORY → IFCPERSONANDORGANIZATION →
@@ -1319,10 +1366,12 @@ function extractProject(
     // vandaag). Direct "vandaag" zou verzonnen data zijn die via de projectstart-vloer taken mét
     // voorgangers naar de leesdatum tilt (check-recorded-dates 9A/9B). `parseDateFromIFC`
     // wordt bewust alleen op een niet-lege slottekst losgelaten — op '' levert hij zelf "vandaag".
-    startDate: wp && ifcSlotText(wp.args[12]) ? parseDateFromIFC(wp.args[12]) : '',
+    // StartTime/FinishTime op de plek die bij de argumenten hoort: schema of oude OPS-lay-out
+    // (`workControlSlots`, ook na IfcOpenShell MergeProjects).
+    startDate: wp && ifcSlotText(wp.args[wpSlots.startTime]) ? parseDateFromIFC(wp.args[wpSlots.startTime]) : '',
     // Zelfde regel voor FinishTime: een leeg slot is "geen einde", niet vandaag. Het
     // OPS_ProjectSettings-pset wint hierna nog steeds als het er is.
-    endDate: wp && ifcSlotText(wp.args[13]) ? parseDateFromIFC(wp.args[13]) : '',
+    endDate: wp && ifcSlotText(wp.args[wpSlots.finishTime]) ? parseDateFromIFC(wp.args[wpSlots.finishTime]) : '',
     calendarId: 'cal-default',
     // createdAt/modifiedAt: default = nu; overschreven door het OPS_ProjectSettings-pset in
     // extractStructure als het bestand ze draagt (oude bestanden ⇒ deze default blijft staan).
@@ -1850,14 +1899,14 @@ function extractP6BoundarySequenceGuids(
     if (entity.type === 'IFCRELNESTS') {
       const scheduleId = parseRef(entity.args[4] || '');
       const schedule = scheduleId ? entityMap.get(scheduleId) : undefined;
-      if (schedule?.type === 'IFCWORKSCHEDULE' && !(schedule.args[14] || '').includes('BASELINE')
+      if (schedule?.type === 'IFCWORKSCHEDULE' && !isBaselineSchedule(schedule)
         && parseRefs(entity.args[5] || '').some(id => liveTaskStepIds.has(id))) {
         relevantScheduleIds.add(scheduleId!);
       }
     } else if (entity.type === 'IFCRELASSIGNSTOCONTROL') {
       const scheduleId = parseRef(entity.args[6] || '');
       const schedule = scheduleId ? entityMap.get(scheduleId) : undefined;
-      if (schedule?.type === 'IFCWORKSCHEDULE' && !(schedule.args[14] || '').includes('BASELINE')
+      if (schedule?.type === 'IFCWORKSCHEDULE' && !isBaselineSchedule(schedule)
         && parseRefs(entity.args[4] || '').some(id => liveTaskStepIds.has(id))) {
         relevantScheduleIds.add(scheduleId!);
       }
@@ -1915,6 +1964,12 @@ function parseTypedValue(s: string): CustomFieldValue | undefined {
  * OPS_ActivityCodes-psets) worden per NAAM teruggemapt naar de definities; het
  * OPS_ProjectSettings-pset zet project.wbsAutoNumber.
  */
+/** Wat `OPS_ProjectSettings` over de schemavraag zegt (zie `ifcSchemaUnconfirmedOnRead`). */
+interface IfcSchemaMarkers {
+  confirmed: boolean;
+  unconfirmed?: string;
+}
+
 function extractStructure(
   entities: StepEntity[],
   entityMap: Map<string, StepEntity>,
@@ -1925,6 +1980,9 @@ function extractStructure(
   // Het OPS-pset kan "bewust leeg" zeggen — de aanroeper mag
   // de startdatum dan NIET alsnog afleiden. Presentie is een aparte uitspraak naast de waarde.
   projectStartRecorded: { value: boolean },
+  // Wat `OPS_ProjectSettings` over de schemavraag zegt (`IfcSchemaConfirmed`/`IfcSchemaUnconfirmed`);
+  // de aanroeper combineert het met de kop (`ifcSchemaUnconfirmedOnRead`).
+  ifcSchemaMarkers: IfcSchemaMarkers,
 ): { activityCodeTypes: ActivityCodeType[]; customFieldDefs: CustomFieldDef[] } {
   let activityCodeTypes: ActivityCodeType[] = [];
   let customFieldDefs: CustomFieldDef[] = [];
@@ -2058,6 +2116,13 @@ function extractStructure(
           if (typeof v === 'string' && v) project.companyId = v;
         } else if (name === 'CompanyName') {
           if (typeof v === 'string' && v) project.companyName = v;
+        } else if (name === 'IfcSchemaConfirmed') {
+          if (v === true) ifcSchemaMarkers.confirmed = true;
+        } else if (name === 'IfcSchemaUnconfirmed') {
+          if (typeof v === 'string' && v) ifcSchemaMarkers.unconfirmed = v;
+        } else if (name === 'P6ProjectCode') {
+          // P6 Project-ID (spiegel van writeStructure).
+          if (typeof v === 'string' && v) project.p6ProjectCode = v;
         }
       }
       continue;
@@ -2610,16 +2675,15 @@ function unionPeriods(list: ReadonlyArray<{ start: number; end: number }>): { st
 }
 
 /** Bouwt een `WorkCalendar` uit een `IFCWORKCALENDAR`-entiteit: naam/omschrijving/feestdagen,
- *  plus werkdagen/uren teruggelezen uit de `WorkingTimes`-keten (args[5] → IFCWORKTIME's →
- *  RecurrencePattern-ref → IFCRECURRENCEPATTERN WeekdayComponent (args[2]) + TimePeriods (args[7]) →
- *  IFCTIMEPERIOD start/eind-uur), spiegel van `ifcWriter.ts` `writeCalendar` (één IFCWORKTIME per
- *  groep weekdagen met dezelfde blokken). Golden rule:
+ *  plus werkdagen/uren teruggelezen uit de `WorkingTimes`-keten (args[6], oud args[5], zie
+ *  `workCalendarSlots` → IFCWORKTIME's → RecurrencePattern-ref → IFCRECURRENCEPATTERN WeekdayComponent
+ *  (args[2]) + TimePeriods (args[7]) → IFCTIMEPERIOD start/eind-uur), spiegel van `ifcWriter.ts`
+ *  `writeCalendar` (één IFCWORKTIME per groep weekdagen met dezelfde blokken). Golden rule:
  *  ontbreekt de keten (bestand van een ander tool, of geen worktime), dan blijven de
  *  `createDefaultCalendar()`-defaults (ma-vr 07-16) staan. Tot slot de
  *  `OPS_Calendar`-pset → `generation` (legacy/onvolledig ⇒ `undefined`, nooit gegokt).
- *  Let op: de argumentposities volgen de writer, die `IfcWorkCalendar` zonder `Identification` schrijft
- *  (8 i.p.v. 9 attributen). In een bestand dat het IFC 4.3-schema volgt staat `WorkingTimes` op args[6];
- *  zo'n kalender komt hier nu zonder werktijden binnen (aparte, nog open fout). */
+ *  De argumentposities hangen af van de argumenten van de kalender (`workCalendarSlots`, issue #292):
+ *  9 = het schema (WorkingTimes 6), 8 = oudere OPS-versies zonder Identification (WorkingTimes 5). */
 function buildCalendarFromEntity(
   cal: StepEntity,
   entityMap: Map<string, StepEntity>,
@@ -2639,9 +2703,14 @@ function buildCalendarFromEntity(
   Object.assign(calendar, extractCalendarSimpleBreak(cal.id, entities, entityMap));
   const hourMeta = extractCalendarHourMeta(cal.id, entities, entityMap);
 
-  // Werkweek + uren. WorkingTimes (args[5]) is een SET van IFCWORKTIME's; de holiday-IFCWORKTIME's
-  // zitten in ExceptionTimes (args[6]). Elke IFCWORKTIME met een IFCRECURRENCEPATTERN (args[3]) draagt
-  // zijn weekdagen (WeekdayComponent, args[2]) en zijn tijdvakken (TimePeriods, args[7]).
+  // Posities op de argumenten: 9 = het schema (WorkingTimes 6, ExceptionTimes 7, PredefinedType 8),
+  // 8 = oudere OPS-versies zonder Identification (5, 6, 7), en 9 met een lijst op Identification = zo'n
+  // oud bestand na IfcOpenShell MergeProjects (ook 5, 6, 7). Zie `workCalendarSlots`.
+  const calSlots = workCalendarSlots(cal.args);
+  // Werkweek + uren. WorkingTimes (`calSlots.workingTimes`) is een SET van IFCWORKTIME's; de
+  // holiday-IFCWORKTIME's zitten in ExceptionTimes (`calSlots.exceptionTimes`). Elke IFCWORKTIME met een
+  // IFCRECURRENCEPATTERN (args[3]) draagt zijn weekdagen (WeekdayComponent, args[2]) en zijn tijdvakken
+  // (TimePeriods, args[7]).
   //  - Een IFCWORKTIME met een StartDate of FinishDate (args[4]/args[5]) doet NIET mee. Datumgebonden
   //    werktijden (een zomer- en een winterweek, een losse werkzaterdag) worden (nog) niet gelezen; als
   //    gewone week zouden ze elke week gelden (07–16 en 08–17 werd 07–17, een losse zaterdag elke
@@ -2658,7 +2727,7 @@ function buildCalendarFromEntity(
   //    goed. Patronen zonder weekdagen doen dan niet mee.
   //  - Anders het eerste patroon, op elke weekdag dezelfde tijdvakken: ongewijzigd t.o.v. vroeger, ook
   //    voor bestanden van oudere OPS-versies (één IFCWORKTIME) en voor één DAILY-patroon zonder weekdagen.
-  const workTimeRefs = parseRefs(cal.args[5] || '');
+  const workTimeRefs = parseRefs(cal.args[calSlots.workingTimes] || '');
   const recurrences: StepEntity[] = [];
   for (const wtRef of workTimeRefs) {
     const wt = entityMap.get(wtRef);
@@ -2784,14 +2853,14 @@ function buildCalendarFromEntity(
   // Rauwe banden registreren (per weekdag, zie hierboven), voor de uur-modus-post-pass.
   registerCalendarBands(calendar, { canonical: bands, deviates });
 
-  // Ploeg-classificatie uit `PredefinedType` (arg 7) → `shift`. `.FIRSTSHIFT.`/afwezig ⇒
+  // Ploeg-classificatie uit `PredefinedType` → `shift`. `.FIRSTSHIFT.`/afwezig ⇒
   // undefined (de schrijver emitteert `.FIRSTSHIFT.` voor undefined).
-  const predef = (cal.args[7] || '').toUpperCase();
+  const predef = (cal.args[calSlots.predefinedType] || '').toUpperCase();
   if (predef.includes('SECONDSHIFT')) calendar.shift = 'SECOND';
   else if (predef.includes('THIRDSHIFT')) calendar.shift = 'THIRD';
   else if (predef.includes('USERDEFINED')) calendar.shift = 'USERDEFINED';
 
-  // ExceptionTimes (args[6]) draagt zowel feestdagen als werkende uitzonderingen. Het onderscheid is de
+  // ExceptionTimes draagt zowel feestdagen als werkende uitzonderingen. Het onderscheid is de
   // OPS-pset-markering (`extractWorkingExceptionStepIds`), NIET de aanwezigheid van een gevulde
   // RecurrencePattern-ref (args[3]): een spec-conforme externe tool kan een RECURRENTE FEESTDAG
   // ("elke 25 december") met precies zo'n gevulde ref schrijven, en die zou dan zonder deze
@@ -2800,7 +2869,7 @@ function buildCalendarFromEntity(
   // is een feestdag, óók met een gevulde recurrence-ref.
   const calendarExceptionMetadata = extractCalendarExceptionMetadata(cal.id, entities, entityMap);
   const workingExceptionIds = calendarExceptionMetadata.workingExceptionIds;
-  const exceptionRefs = parseRefs(cal.args[6] || '');
+  const exceptionRefs = parseRefs(cal.args[calSlots.exceptionTimes] || '');
   const holidays: Holiday[] = [];
   const workingExceptions: WorkingException[] = [];
   for (const ref of exceptionRefs) {
@@ -3217,29 +3286,60 @@ function remapLevelingResourceIds(
  * JSON), maar externe tools kunnen dat wél doen; die taken zijn baseline-snapshots, geen live
  * taken, en mogen niet als echte taak worden ingeladen. Koppeling via IFCRELNESTS (RelatingObject
  * = het schema) of IFCRELASSIGNSTOCONTROL (control = het schema). PredefinedType `.BASELINE.` staat
- * op arg-index 14 van IFCWORKSCHEDULE.
+ * op arg-index 13 van IFCWORKSCHEDULE (schema), of 14 in bestanden van oudere OPS-versies
+ * (`isBaselineSchedule`).
+ *
+ * Review #336 (sinds de herkenning ook bij 14 argumenten werkt, dus bij bestanden van andere pakketten):
+ *  - Alleen uitsluiten als er óók een gewoon (niet-baseline) werkschema is, met minstens één taak
+ *    eronder. Anders is het baselineschema de enige planning in het bestand, en dan zijn die taken
+ *    de taken (herbeoordeling #336: een leeg gewoon werkschema gaf anders een leeg project).
+ *  - De hele boom onder het baselineschema gaat mee (kinderen via IFCRELNESTS, transitief), zoals
+ *    Bonsai een werkschema opbouwt: één wortel per schema, de rest genest. Anders blijven de kinderen
+ *    als losse dubbele taken over.
+ *  - Een taak die (ook) onder het gewone schema hangt, is een live taak en blijft.
  */
 function collectBaselineTaskStepIds(entities: StepEntity[]): Set<string> {
-  const baselineSchedIds = new Set(
-    entities
-      .filter(e => e.type === 'IFCWORKSCHEDULE' && (e.args[14] || '').includes('BASELINE'))
-      .map(e => e.id),
-  );
+  const baselineSchedIds = new Set<string>();
+  const liveSchedIds = new Set<string>();
+  for (const e of entities) {
+    if (e.type === 'IFCWORKSCHEDULE') (isBaselineSchedule(e) ? baselineSchedIds : liveSchedIds).add(e.id);
+  }
   const taskStepIds = new Set<string>();
-  if (baselineSchedIds.size === 0) return taskStepIds;
+  if (baselineSchedIds.size === 0 || liveSchedIds.size === 0) return taskStepIds;
+
+  const baselineRoots: string[] = [];
+  const liveRoots: string[] = [];
+  const nestedUnder = new Map<string, string[]>();
   for (const e of entities) {
     if (e.type === 'IFCRELNESTS') {
       const relating = parseRef(e.args[4] || '');
-      if (relating && baselineSchedIds.has(relating)) {
-        for (const r of parseRefs(e.args[5] || '')) taskStepIds.add(r);
-      }
+      if (!relating) continue;
+      const related = parseRefs(e.args[5] || '');
+      if (baselineSchedIds.has(relating)) baselineRoots.push(...related);
+      else if (liveSchedIds.has(relating)) liveRoots.push(...related);
+      else nestedUnder.set(relating, [...(nestedUnder.get(relating) ?? []), ...related]);
     } else if (e.type === 'IFCRELASSIGNSTOCONTROL') {
       const control = parseRef(e.args[6] || '');
-      if (control && baselineSchedIds.has(control)) {
-        for (const r of parseRefs(e.args[4] || '')) taskStepIds.add(r);
-      }
+      if (!control) continue;
+      const related = parseRefs(e.args[4] || '');
+      if (baselineSchedIds.has(control)) baselineRoots.push(...related);
+      else if (liveSchedIds.has(control)) liveRoots.push(...related);
     }
   }
+  const tree = (roots: string[]): Set<string> => {
+    const seen = new Set<string>();
+    const todo = [...roots];
+    while (todo.length > 0) {
+      const id = todo.pop()!;
+      if (seen.has(id)) continue;
+      seen.add(id);
+      todo.push(...(nestedUnder.get(id) ?? []));
+    }
+    return seen;
+  };
+  const live = tree(liveRoots);
+  if (live.size === 0) return taskStepIds;
+  for (const id of tree(baselineRoots)) if (!live.has(id)) taskStepIds.add(id);
   return taskStepIds;
 }
 

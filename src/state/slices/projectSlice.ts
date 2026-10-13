@@ -1,4 +1,4 @@
-import type { Project, ProgressMode, ProjectSchedulingOptions, SchedulingProfile } from '@/types/project';
+import type { IfcSchemaId, Project, ProgressMode, ProjectSchedulingOptions, SchedulingProfile } from '@/types/project';
 import { createDefaultCalendar } from '@/engine/calendar/defaultCalendar';
 import type { WorkCalendar } from '@/types/calendar';
 import type { Task } from '@/types/task';
@@ -16,6 +16,8 @@ import { CPMSolver, type CPMResult } from '@/engine/scheduler/CPMSolver';
 import { solveOptionsFor } from '@/engine/scheduler/solveInput';
 import { expandSummaryRelations } from '@/engine/scheduler/expandSummaryRelations';
 import { applyProjectPatch } from '../projectPatch';
+import { applyIfcSchemaChoice, splitIfcSchemaPatch } from '../ifcSchemaChoice';
+import { markDocumentUnsaved } from '../documentEdited';
 import {
   computeMoveDelta, computeMoveImpact, computeHolidayGaps, shiftIso, shiftTask,
   shiftProjectDates, shiftResource, shiftBaseline,
@@ -121,7 +123,14 @@ export interface ProjectSlice {
   xerArchiveIssue: XerArchiveIssue | null;
   /** Zie `DocumentPayload.ifcGlobalIds`. */
   ifcGlobalIds: Readonly<Record<string, string>> | null;
+  /** Metadata van het project, als één undo-stap. Een `ifcSchema` in de patch gaat eerst via
+   *  `setIfcSchema` (geen undo-stap, zie `state/ifcSchemaChoice.ts`). */
   setProject: (project: Partial<Project>) => void;
+  /** Het IFC-schema van het bestand kiezen (Projectinfo). Wist de open schemavraag. Geen undo-stap:
+   *  het schema hoort bij het bestand, niet bij de bewerkingsgeschiedenis (review #336). Het document
+   *  staat daarna op gewijzigd ("Niet opgeslagen"); "ongewijzigd sinds import" blijft, want de
+   *  planning verandert niet. `false` als er niets verandert. */
+  setIfcSchema: (schema: IfcSchemaId) => boolean;
   /** Zet WBS-autonummering aan/uit; bij aanzetten wordt de hele boom direct hernummerd. */
   setWbsAutoNumber: (on: boolean) => void;
   setCalendar: (calendar: WorkCalendar) => void;
@@ -206,7 +215,19 @@ export const createProjectSlice: AppSliceFactory<ProjectSlice> = (runtime) => (s
   xerArchiveIssue: null,
   ifcGlobalIds: null,
 
-  setProject: (updates) => {
+  setIfcSchema: (schema) => {
+    let changed = false;
+    set((s) => {
+      changed = applyIfcSchemaChoice(s.project, schema);
+      if (changed) markDocumentUnsaved(s);
+    });
+    return changed;
+  },
+
+  setProject: (patch) => {
+    // Het schema gaat buiten de undo-stap (zie `setIfcSchema`); de rest is gewone metadata.
+    const { schema, rest: updates } = splitIfcSchemaPatch(patch, get().project);
+    if (schema) get().setIfcSchema(schema);
     // Telt de wortel-ankers die deze aanroep klemt, buiten de
     // Immer-`set()`-producer om — zelfde precedent als `moveProject` hieronder (een `let out`/
     // teller die de producer vult, waarna de aanroeper ná `set()` op de VOLTOOIDE state reageert;

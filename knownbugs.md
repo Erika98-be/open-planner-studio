@@ -198,6 +198,12 @@ en noem het in je rapport of PR-tekst.
     website volgt de laatste deploy, terwijl een desktopversie zijn eigen kopie meelevert; een oudere app kan
     dus naar een gids wijzen die tools beschrijft die hij niet heeft. De gids zegt nu dat de kopie van de tool
     voorgaat. Voorstel: een versiepad (bv. `/agent/<versie>/planning-guide.md`) of de versie in de gids. — S
+113. **`planner_export_ifc` herkent het eigen bestand niet bij een ander hoofdlettergebruik op macOS.** De
+    weigering voor een stille schemawijziging (`fileTools.ts`, `refuseSilentSchemaChange`) vergelijkt paden
+    alleen hoofdletterongevoelig bij een Windows-station. Op macOS is het bestandssysteem meestal
+    hoofdletterongevoelig, dus `Model.ifc` tegenover `model.ifc` is hetzelfde bestand maar komt door de
+    vergelijking. Symbolische links worden ook niet opgelost. Afgeleid uit de code door de review van #336,
+    niet op een Mac nagespeeld. — S
 
 ## Bestanden en herstel
 
@@ -228,6 +234,50 @@ en noem het in je rapport of PR-tekst.
     van een nieuwe sessie-id na een bezet tabblad). Die functie bestaat alleen in een veilige context (https of
     localhost); op een gewoon http-adres gooit hij. Gezien bij #309 in de nep-site op de dev-server via
     Tailscale (daar hersteld). Productie draait op https; de dev-server via een IP-adres niet. — S
+107. **`IfcTaskTime.Completion` krijgt `0.00` bij een taak zonder voortgang.** Het attribuut is een
+    `IfcPositiveRatioMeasure`, en die moet groter dan 0 zijn (regel WR1). `ifcTaskSlots.ts`, slot `completion`
+    (`ifcCompletionReal(... ?? 0)`). IfcOpenShell 0.9.0 (`ifcopenshell.validate`) geeft één melding per taak
+    zonder voortgang: 1155 in de 24 voorbeelden, 17 in het rijke testproject van `check-ifc-arity.ts`. Voorstel:
+    `$` bij 0 (de reader leest `$` al als 0); niet uitgezocht of de aanwezigheidsregistratie in hetzelfde
+    bestand dat toelaat. Gevonden bij #292, niet daar opgelost. — B
+108. **Gehele getallen in `IFCREAL(...)` en `IFCMONETARYMEASURE(...)` zonder decimale punt.** STEP vraagt voor
+    een REAL een punt (`8.`), de writer schrijft `8`. IfcOpenShell meldt dan
+    `IfcPropertySingleValue :: NominalValue: Not valid`: 210 keer in de 24 voorbeelden, 17 keer in het rijke
+    testproject (precies de 17 gehele waarden). Met `8.` in plaats van `8` verdwijnen de meldingen (met een
+    script nagemeten). Plekken: `ifcWriter.ts`: eigen velden `number`/`cost` (`case 'number'`), de
+    kalender-pset (`HoursPerDay`, `WorkStartHour`, `WorkEndHour`) en de resource-pset (`MaxUnits`,
+    `CostPerHour`). Voorstel: één hulpfunctie voor een STEP-REAL, zoals `ifcCompletionReal`. Gevonden bij
+    #292, niet daar opgelost. — B
+109. **`StartTime`/`FinishTime` van `IfcWorkPlan` en `IfcWorkSchedule` komen uit de invoerdatums, niet uit de
+    berekende planning.** `ifcWriter.ts` (blok `// Work plan & schedule`) neemt het minimum en maximum van
+    `time.scheduleStart`/`time.scheduleFinish`. Dat zijn invoervelden (`ifcTaskSlots.ts`,
+    `RECORDED_INPUT_SLOT_KEYS`). Het commentaar bij `ProjectStartDate` zegt dat deze plekken "de afgeleide
+    plan-omvang (min/max van de taak-span)" dragen. Gezien in `examples/10-villa-wassenaar.ifc`: het
+    werkschema eindigt op 2027-03-16, maar de laatste taak (Handover) eindigt volgens `IfcTaskTime`
+    (EarlyFinish/LateFinish) op 2027-12-01. Zo staat het ook op main (1e192b31a en later). Na
+    `MergeProjects` neemt IfcOpenShell deze datums over. Voorstel: de getoonde datums gebruiken (werkelijk,
+    anders early, anders invoer), zoals de baseline doet. Gevonden bij #292, niet daar opgelost. — B
+110. **Een samengevoegd 4D-bestand (bouwmodel plus planning) openen en weer opslaan wist het bouwmodel.** De
+    writer schrijft alleen wat de app zelf kent; vreemde entiteiten zoals `IFCWALL`, `IFCBUILDING` en
+    `IFCSITE` gaan niet mee (`ifcWriter.ts`). Nagemeten: `examples/10-villa-wassenaar.ifc` met ifcpatch
+    `MergeProjects` (IfcOpenShell 0.9.0) samengevoegd met een model met 3 muren, daarna `readIFC` →
+    `writeIFC`: 0 muren, 0 gebouwen, 0 terreinen; de 47 taken en 40 relaties blijven. Zo ook met de
+    lezer en writer van main. De schemavraag maakt dit niet erger, maar *IFC4 houden* op een
+    IFC4-bouwmodel kan doen denken dat het bestand heel blijft. De gids `howto-ifc-schema-kiezen`
+    waarschuwt daarom: samenvoegen als laatste stap. Voorstel: bij openen melden dat opslaan de
+    modelinhoud niet bewaart, of vreemde entiteiten letterlijk meenemen. Gevonden bij de review van
+    #336. — B
+112. **Na IfcOpenShell `MergeProjects` wordt een werkende uitzondering van een kalender een feestdag.** Het
+    pset `OPS_Calendar` bewaart de werkende uitzonderingen als STEP-nummers (`WorkingExceptionIds`,
+    `ifcWriter.ts` `writeCalendarGenerationMeta`). MergeProjects nummert alle regels opnieuw, dus die nummers
+    wijzen daarna naar iets anders. Nagemeten met het rijke testproject van de oude writer
+    (`tests/planning/fixtures/ifc-arity-oude-writer.ifc` en `…-merged.ifc`): `#37` (werkende uitzondering
+    *Inhaalzaterdag*) is na de merge een `IFCTASKTIME`, `#192` (*Zaterdagdienst*) een `IFCPROPERTYSET`. De
+    lezer leest beide daarna als feestdag: de projectkalender heeft 19 feestdagen en 0 werkende
+    uitzonderingen in plaats van 18 en 1, de bibliotheekkalender *Tweeploegen* 2 feestdagen in plaats van 1.
+    Zo ook met de lezer van main; de huidige writer bewaart de nummers op dezelfde manier. Voorstel: de
+    uitzonderingen herkennen op iets dat een merge overleeft (naam en datum, of een GlobalId-achtige
+    sleutel). Gevonden bij de herbeoordeling van #336. — B
 
 ## Rondleiding, Help en extensie-gidsen
 
