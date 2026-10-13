@@ -361,3 +361,9 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   op lokale branch `claude/release-check-3` (= #333-kop + QA-commits, geen upstream); checklink nagelopen.
 - #333 (ronde 2 + #334) klaar voor merge na akkoord eigenaar: CI 15/15 groen op e69ed03f0 (bevat main 55461d2b2);
   `measure:profiles` EXIT 0, regel A gehouden, P6 nieuw=0 verslechterd=0 (`/tmp/measure-333.log`).
+- **Eigenaar 2026-10-13: checkstap 6 akkoord** ("perfect, we kunnen door"). Main kreeg intussen #328 (externe
+  bijdrager, systeemlettertype Linux) ⇒ main 1f1271770 in #333 gemerged (kop 0501e7295), CI loopt opnieuw.
+- Bijvangst bij het klaarzetten van checkstap 7 (kalendervenster): een MSPDI-kalender met eigen werkweek en zonder
+  `<Exception>` krijgt de NL-feestdagen van `createDefaultCalendar()` ("golden rule", `mspdiReader.ts` ~r.977);
+  `.mpp` en P6 XML doen dat bewust niet. Worker (Opus 5.5) gestart op `claude/fix-mspdi-feestdagen` (eerst bron
+  van de regel nagaan; bij een eigenaarsbesluit stoppen).
