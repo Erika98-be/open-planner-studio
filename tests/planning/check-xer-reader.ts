@@ -888,12 +888,13 @@ eq('28 unieke wbs_id is tie-breaker, onafhankelijk van bronhussel',
   const fileSliceSrc = readFileSync(new URL('../../src/state/slices/fileSlice.ts', import.meta.url), 'utf8');
   eq('47 fileSlice: geen kale projectFileBase(project.name) als opslaanvoorstel',
     /projectFileBase\(\s*state\.project\.name/.test(fileSliceSrc) || !/suggestedFileBase\(state\)/.test(fileSliceSrc)
-      || !/documentFileBase\(s\.project\.name,\s*xerProjectCode\(s\.xerImportMetadata\)\)/.test(fileSliceSrc),
+      || !/documentFileBase\(s\.project\.name,\s*documentProjectCode\(s\.project,\s*s\.xerImportMetadata\)\)/.test(fileSliceSrc),
     false);
   // Critreview documentnaam (b): het bezettingsoverzicht leidt de titel af zoals de tabbalk (met ID-code).
+  // Sinds 2026-10-13 via de gedeelde `documentProjectCode` (XER of P6 XML; check-p6xml-project-code).
   const occupancySrc = readFileSync(new URL('../../src/components/panels/ResourceOccupancyView.tsx', import.meta.url), 'utf8');
   eq('48 bezettingsoverzicht: documentTitle krijgt de XER-code mee',
-    /documentTitle\(payload\.filePath,\s*payload\.project\.name,\s*xerProjectCode\(payload\.xerImportMetadata\)\)/.test(occupancySrc)
+    /documentTitle\(payload\.filePath,\s*payload\.project\.name,\s*documentProjectCode\(payload\.project,\s*payload\.xerImportMetadata\)\)/.test(occupancySrc)
       && /xerImportMetadata: activeXerImportMetadata/.test(occupancySrc),
     true);
 }
