@@ -1,6 +1,7 @@
 import { useState, useEffect, useLayoutEffect, useCallback, useMemo, useRef } from 'react';
 import { useAppStore } from '@/state/appStore';
-import { xerDocumentName, xerProjectCode } from '@/utils/xerDocumentName';
+import { nameWithProjectCode } from '@/utils/projectCodeName';
+import { documentProjectCode } from '@/utils/documentProjectCode';
 import { useTranslation } from 'react-i18next';
 import { isTauri } from '@/utils/platform';
 import {
@@ -27,7 +28,7 @@ export function TitleBar() {
   const { t: tMenu } = useTranslation('menu');
   const { t: tCommon } = useTranslation('common');
   const project = useAppStore(s => s.project);
-  const activeXerCode = useAppStore(s => xerProjectCode(s.xerImportMetadata));
+  const activeCode = useAppStore(s => documentProjectCode(s.project, s.xerImportMetadata));
   const undo = useAppStore(s => s.undo);
   const redo = useAppStore(s => s.redo);
   const undoAvailable = useAppStore(canUndo);
@@ -212,7 +213,7 @@ export function TitleBar() {
             {/* Een naamloos project blijft in de data naamloos; de weergave valt terug op de
                 vertaalde tekst (i.p.v. hier niets te tonen). */}
             <span className="title-bar-file-name" data-ops-title-file-name>
-              {isDirty ? '* ' : ''}{xerDocumentName(project.name, activeXerCode) || tCommon('project.untitled')}
+              {isDirty ? '* ' : ''}{nameWithProjectCode(project.name, activeCode) || tCommon('project.untitled')}
             </span>
           </>
         )}

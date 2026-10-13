@@ -157,6 +157,7 @@ const PROJECT_VERDICTS = {
   companyId: 'n/a', companyName: 'n/a',  // statische bibliotheekbinding, geen planningsdatum
   ifcSchema: 'n/a',               // schema van de bestandskop, geen datum
   ifcSchemaUnconfirmed: 'n/a',    // open schemavraag bij opslaan, geen datum
+  p6ProjectCode: 'n/a',            // P6 Project-ID, geen datum
 } satisfies Record<keyof Project, MoveVerdict>;
 
 const RESOURCE_VERDICTS = {

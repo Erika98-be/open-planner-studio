@@ -86,6 +86,15 @@ Twee dingen om te weten:
   en dán wordt er ook niets geschreven. Een taak zonder constraint en zonder deadline levert geen
   leeg `OPS_Constraints`-pset op (de deadline is daar een property van, geen eigen pset). Dat houdt bestaande bestanden bit-gelijk en voorkomt dat elk project met lege psets volloopt.
 
+**Voorbeeld op het project: de P6 Project-ID.** `Project.p6ProjectCode` is de P6 Project-ID uit een
+P6 XML-import (`<Project><Id>`), los van de naam bewaard (eigenaarsbesluit 2026-10-13). Hij staat als
+`P6ProjectCode` in `OPS_ProjectSettings` op het `IfcProject`, naast `CompanyId`/`CompanyName`, en
+alleen wanneer gezet. De gewone poort dekt hem (fixture en `KEEP`-cel in `check-ifc-roundtrip.ts`); de
+eigen toetsen (openen, hernoemen, export, crashherstel, XER) staan in
+`tests/planning/check-p6xml-project-code.ts`. Een XER-document bewaart zijn code hier niet: die komt uit
+het meegereisde bronarchief (`xerProjectCode`). Weergave en P6 XML-writer lezen beide via
+`documentProjectCode`.
+
 ### 3. Eén autoritatief JSON-blob
 
 Voor structuren die niet in losse properties passen — baselines, `schedulingOptions`, de

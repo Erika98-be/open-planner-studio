@@ -570,6 +570,9 @@ export interface Project {
    *  `OPS_ProjectSettings` (`IfcSchemaUnconfirmed`, of `IfcSchemaConfirmed` als het veld leeg is), zodat
    *  crashherstel de vraag bewaart en een beantwoorde vraag bij heropenen niet terugkomt. */
   ifcSchemaUnconfirmed?: string;
+  /** P6 Project-ID (`<Project><Id>`), los van `name`. Afwezig ⇒ geen code. Lezen altijd via
+   *  `documentProjectCode` (daar staan het besluit en de XER-route). */
+  p6ProjectCode?: string;
 }
 
 export interface ProjectStats {

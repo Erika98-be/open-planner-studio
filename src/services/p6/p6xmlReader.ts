@@ -35,6 +35,7 @@ import {
   P6_LINK_TYPE,
   P6_NAME_TO_CURVE,
   isOpsInternalProjectId,
+  isLegacyOpsProjectId,
 } from './p6xmlWriter';
 import { invertRecord } from '@/utils/collections';
 import {
@@ -1227,13 +1228,19 @@ function readP6XmlProject(scope: P6XmlScope): P6XmlProjectRead {
 }
 
 /**
- * Weergavenaam van een P6-project: "Naam (Id)" (`nameWithProjectCode`). De eigen writer zet een
- * project zonder code onder `Id` = `OPS:` + het interne project-id; dat is geen projectcode en
- * komt er niet achter.
+ * De P6 Project-ID (`<Id>`) van een `<Project>` of `<BaselineProject>`, of `''`. Geen code: het Id dat de
+ * eigen writer zonder code schrijft (`OPS:` + intern id) en het interne id van exports tot en met
+ * v2026.9.0 (`isLegacyOpsProjectId`); anders kreeg een heropende oude export een blijvende nepcode.
  */
-function p6ProjectName(name: string, id: string): string {
+function p6ProjectCode(id: string): string {
   const code = id.trim();
-  return nameWithProjectCode(name.trim(), isOpsInternalProjectId(code) ? '' : code);
+  return isOpsInternalProjectId(code) || isLegacyOpsProjectId(code) ? '' : code;
+}
+
+/** Naam van een P6-baseline: "Naam (Id)" (`nameWithProjectCode`). Een baseline is geen document;
+ *  alleen haar label draagt de code. */
+function p6ProjectName(name: string, id: string): string {
+  return nameWithProjectCode(name.trim(), p6ProjectCode(id));
 }
 
 function parseProject(projEl: Element | null): Project {
@@ -1256,13 +1263,11 @@ function parseProject(projEl: Element | null): Project {
   // MustFinishByDate is in P6 een optionele eis, geen berekend einde: ontbreekt hij, dan blijft de
   // einddatum leeg (zoals de writer hem voor een project zonder einddatum weglaat).
   const mustFinishRaw = getElementText(projEl, 'MustFinishByDate');
+  // Naam kaal, code apart in `p6ProjectCode` (zie `documentProjectCode`). Geen naam ⇒ de code, zoals XER.
+  const code = p6ProjectCode(getElementText(projEl, 'Id'));
   const project: Project = {
     id: generateId('proj'),
-    // "Naam (Id)", zoals een XER-document: een bestand met meerdere projecten (OZB: twaalf updates
-    // met dezelfde naam) geeft zo onderscheidbare tabbladen. P6 XML heeft geen documentmetadata
-    // zoals de XER-broncache, dus de code staat in de projectnaam zelf; `nameWithProjectCode`
-    // voegt hem niet dubbel toe als een heropende export hem al draagt.
-    name: p6ProjectName(getElementText(projEl, 'Name'), getElementText(projEl, 'Id')) || 'P6 Import',
+    name: getElementText(projEl, 'Name').trim() || code || 'P6 Import',
     description: getElementText(projEl, 'Description'),
     startDate: parseP6Date(getElementText(projEl, 'PlannedStartDate')),
     endDate: mustFinishRaw ? parseP6Date(mustFinishRaw) : '',
@@ -1272,6 +1277,7 @@ function parseProject(projEl: Element | null): Project {
     author: '',
     company: '',
   };
+  if (code) project.p6ProjectCode = code;
   // Data date → project.statusDate. Alleen wanneer aanwezig.
   const dataDateRaw = getElementText(projEl, 'DataDate');
   if (dataDateRaw) project.statusDate = statusDateFromXml(dataDateRaw);

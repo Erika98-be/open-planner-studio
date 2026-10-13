@@ -2120,6 +2120,9 @@ function extractStructure(
           if (v === true) ifcSchemaMarkers.confirmed = true;
         } else if (name === 'IfcSchemaUnconfirmed') {
           if (typeof v === 'string' && v) ifcSchemaMarkers.unconfirmed = v;
+        } else if (name === 'P6ProjectCode') {
+          // P6 Project-ID (spiegel van writeStructure).
+          if (typeof v === 'string' && v) project.p6ProjectCode = v;
         }
       }
       continue;

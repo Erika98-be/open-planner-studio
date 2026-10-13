@@ -148,7 +148,10 @@ const NIET_PUBLIEK = {
   // `ifcSchema` en `ifcSchemaUnconfirmed` (issue #292) zijn eigenschappen van het bestand (de kop bij
   // opslaan en de open schemavraag), geen planningsdata; het extensiecontract blijft ongewijzigd.
   // Een lees-wijzig-laad op hetzelfde id houdt ze vast (`retainActiveDocument`, N3D-14).
-  project: ['companyId', 'companyName', 'ifcSchema', 'ifcSchemaUnconfirmed'] as readonly string[],
+  project: ['companyId', 'companyName', 'ifcSchema', 'ifcSchemaUnconfirmed',
+    // P6 Project-ID van een P6 XML-import (eigenaarsbesluit 2026-10-13): bronidentiteit voor de
+    // P6-export, geen extensie-invoer. `retainActiveDocument` houdt hem bij lees-wijzig-laad vast.
+    'p6ProjectCode'] as readonly string[],
   // De penaltydiagnose is een IFC-leesdiagnose, geen extensie-invoer of -uitvoer. De geldige
   // brongegevens zelf (`p6Source` + lijst) blijven wél rondtrippend beschikbaar.
   calendar: ['generation', 'libraryOrigin', 'p6NonWorkPenaltyDatesState'] as readonly string[],
@@ -285,6 +288,7 @@ const VOL_PROJECT = {
   schedulingProfile: { baseId: 'msproject', id: 'eigen-1', name: 'Eigen', overrides: { clampNegativeFreeFloat: true } },
   ifcSchema: 'IFC4',
   ifcSchemaUnconfirmed: 'IFC4',
+  p6ProjectCode: 'OZB-05',
 } satisfies Required<Project>;
 
 const VOL_CALENDAR = {

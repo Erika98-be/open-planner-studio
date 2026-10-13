@@ -70,9 +70,9 @@ Per file format: whether you can open, save and export it, what does and does no
 
 **Save** — no.
 
-**Export** — yes, as *Primavera P6 XML* (*For Oracle Primavera P6.*). Default name: the project name with `.xml`, so the same name as an MS Project XML export: give them different names yourself.
+**Export** — yes, as *Primavera P6 XML* (*For Oracle Primavera P6.*). Default name: the project name with `.xml`, with the project ID in brackets if the project has one. An MS Project XML export gets the same name: give them different names yourself.
 
-**Project name and project ID.** If the project name ends with a code in brackets without a space, such as *Office (OZB-05)*, then *OZB-05* becomes the project ID in P6 and *Office* the name. That way a project from P6 comes back with the same name after reopening. Text with a space, such as *New build (phase 2)*, stays in the name. Without a code, the project gets a unique ID of its own from the app, starting with *OPS:*.
+**Project name and project ID.** The app keeps the project ID from P6 separate from the project name, as with an `.xer`. *Project info* shows only the name, for example *Bid for Facility Extension*. The tab shows *Bid for Facility Extension (OZB-05)*. If you rename the project to *Hall extension*, the tab is called *Hall extension (OZB-05)*. An export to P6 XML writes *OZB-05* back as the project ID and *Hall extension* as the name. That way P6 recognises the project. A project from an `.xer` also takes its project ID along. The project ID stays when you save the project as IFC. Brackets in the name itself, such as *New build (phase 2)*, stay in the name. A project without a project ID gets a unique ID of its own from the app at export, starting with *OPS:*.
 
 **What goes along** — WBS structure and tasks with duration, dates and progress; relations with lag; constraints (also a second one, as a soft constraint); calendars; resources and assignments; the status date (as `DataDate`); a custom task type, in a field of its own, `OPS Custom Task Type`, that the app reads back and that P6 may ignore.
 
