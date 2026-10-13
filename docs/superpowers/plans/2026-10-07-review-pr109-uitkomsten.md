@@ -507,3 +507,7 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   `generateId`), extensie-fix, tests M1/M3/M4, rapportkop en PDF-naam via de helper (B21), opruimen.
   **Besluit orkestrator 2026-10-13:** IFC's uit de browserbuild van 13-10 met "Naam (OZB-05)" in de naam niet
   migreren (gokken; desktopreleases hadden dit nooit). Duplicaat houdt de code ("de code blijft altijd").
+- #339 fixronde 1 klaar (kop b08b156f3, CI 15/15): overloop gemeten zonder pijlen, 4 px marge, vangnet tegen
+  wisselen, `flex: none` op de menuknop, pixel-sweep-test (rood op de oude kop), 17 mutanten rood, RTL-commit
+  (kruisje `inset-inline-end`, `dir="auto"`), nieuwe screenshots (door de orkestrator bekeken). Extra: actief
+  tabblad schuift in beeld na sluiten van het overzicht. Her-check gestart.
