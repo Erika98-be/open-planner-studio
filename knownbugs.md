@@ -242,6 +242,15 @@ en noem het in je rapport of PR-tekst.
     kalender-pset (`HoursPerDay`, `WorkStartHour`, `WorkEndHour`) en de resource-pset (`MaxUnits`,
     `CostPerHour`). Voorstel: één hulpfunctie voor een STEP-REAL, zoals `ifcCompletionReal`. Gevonden bij
     #292, niet daar opgelost. — B
+109. **`StartTime`/`FinishTime` van `IfcWorkPlan` en `IfcWorkSchedule` komen uit de invoerdatums, niet uit de
+    berekende planning.** `ifcWriter.ts` (blok `// Work plan & schedule`) neemt het minimum en maximum van
+    `time.scheduleStart`/`time.scheduleFinish`. Dat zijn invoervelden (`ifcTaskSlots.ts`,
+    `RECORDED_INPUT_SLOT_KEYS`). Het commentaar bij `ProjectStartDate` zegt dat deze plekken "de afgeleide
+    plan-omvang (min/max van de taak-span)" dragen. Gezien in `examples/10-villa-wassenaar.ifc`: het
+    werkschema eindigt op 2027-03-16, maar de laatste taak (Handover) eindigt volgens `IfcTaskTime`
+    (EarlyFinish/LateFinish) op 2027-12-01. Zo staat het ook op main (1e192b31a en later). Na
+    `MergeProjects` neemt IfcOpenShell deze datums over. Voorstel: de getoonde datums gebruiken (werkelijk,
+    anders early, anders invoer), zoals de baseline doet. Gevonden bij #292, niet daar opgelost. — B
 
 ## Rondleiding, Help en extensie-gidsen
 
