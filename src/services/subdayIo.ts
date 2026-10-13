@@ -205,8 +205,8 @@ export function workDayFromBlocks(dayBlocks: ReadonlyArray<{ start: number; end:
   };
 }
 
-/** Zie `firstBlockedDay` in `@/utils/effectiveWorkTime` (daar, zodat ook `inferredSimpleBreak` hem
- *  zonder importcyclus gebruikt); hier opnieuw geëxporteerd voor de lezers en de dialoog. */
+/** Zie `firstBlockedDay` in `@/utils/effectiveWorkTime` (daar gedefinieerd, zonder importcyclus);
+ *  hier opnieuw geëxporteerd voor de lezers en de dialoog. */
 export { firstBlockedDay };
 
 /**
@@ -218,9 +218,20 @@ export { firstBlockedDay };
  *    formulier hem opende — een korte vrijdag 08–12 + 13–15 komt zo terug als 08–12 + 13–15); (2) een
  *    kopie van de eerste werkdag met blokken ({@link firstBlockedDay}); (3) heeft de kalender geen enkel
  *    blok meer, de effectieve blokken van zijn enkelvoudige werkdag (begin, einde, pauze;
- *    `seedScalarBands`), zodat een werkdag nooit zonder blokken ontstaat.
+ *    `seedScalarBands`); (4) levert ook dat niets op (een nachtscalar 22→06, of netto meer dan de
+ *    spanne), de standaardwerkdag {@link STANDARD_DAY_BLOCKS}. Zo ontstaat een werkdag nooit zonder
+ *    blokken.
  * `hoursPerDay` volgt dan uit de blokken ({@link deriveHoursPerDay}).
  */
+/**
+ * Laatste terugval voor een werkdag die aan gaat zonder bron voor zijn blokken: de standaardwerkdag van
+ * een nieuwe kalender (`createDefaultCalendar`: 07:00–16:00, 8 netto uur, pauze 12:00–13:00). Dezelfde
+ * werkdag als de knop *Ma–vr* bij een eenvoudige kalender, dus voor de gebruiker herkenbaar.
+ */
+export const STANDARD_DAY_BLOCKS: ReadonlyArray<{ start: number; end: number }> = [
+  { start: 7 * 60, end: 12 * 60 }, { start: 13 * 60, end: 16 * 60 },
+];
+
 export function workDayTogglePatch(
   cal: Pick<WorkCalendar, 'workDays' | 'workTime' | 'hoursPerDay' | 'workStartHour' | 'workEndHour'
     | 'simpleBreakStartMinute' | 'simpleBreakDurationMinutes'>,
@@ -231,11 +242,14 @@ export function workDayTogglePatch(
   const workDays = has ? cal.workDays.filter((x) => x !== day) : [...cal.workDays, day].sort((a, b) => a - b);
   if (!cal.workTime || day < 1 || day > 7) return { workDays };
   const own = initial?.byWeekday[day as 1];
+  const seeded = () => {
+    const bands = seedScalarBands(cal.workStartHour * 60, cal.workEndHour * 60, cal.hoursPerDay,
+      cal.simpleBreakStartMinute, cal.simpleBreakDurationMinutes);
+    return bands.length > 0 ? bands : STANDARD_DAY_BLOCKS;
+  };
   const source = has
     ? []
-    : (own && own.length > 0 ? own : firstBlockedDay(cal.workTime))
-      ?? seedScalarBands(cal.workStartHour * 60, cal.workEndHour * 60, cal.hoursPerDay,
-        cal.simpleBreakStartMinute, cal.simpleBreakDurationMinutes);
+    : (own && own.length > 0 ? own : firstBlockedDay(cal.workTime)) ?? seeded();
   const workTime: WorkTimeBands = {
     byWeekday: { ...cal.workTime.byWeekday, [day as 1]: source.map((b) => ({ ...b })) },
   };

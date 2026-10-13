@@ -160,29 +160,14 @@ export function firstBlockedDay(
 }
 
 /**
- * De pauze die een kalender zonder pauzevelden impliciet heeft, als begin (minuut van de dag) en duur.
- *
- *  - Draagt de kalender weekbanden (`workTime`) en heeft de eerste werkdag precies twee blokken die
- *    samen de scalaire werkdag beslaan (begin eerste = `workStartHour`, einde laatste = `workEndHour`),
- *    dan is de pauze het gat tussen die blokken: MS Projects 08:00–12:00 + 13:00–17:00 geeft 12:00,
- *    60 min; 07:00–11:30 + 12:00–16:00 geeft 11:30, 30 min.
- *  - Anders de legacy-afleiding: begin 12:00, duur = klokspanne − netto uren
- *    ({@link legacySimpleBreakDurationMinutes}).
+ * De pauze die een kalender zonder pauzevelden impliciet heeft, als begin (minuut van de dag) en duur:
+ * begin 12:00, duur = klokspanne − netto uren ({@link legacySimpleBreakDurationMinutes}). Alleen voor een
+ * kalender zonder werkblokken: bij werkblokken toont het kalendervenster het blok Werktijden en geen
+ * pauzevelden (besluit eigenaar 2026-10-13, optie 2), en MCP raakt de pauze van een uurkalender niet.
  */
 export function inferredSimpleBreak(
-  calendar: Pick<WorkCalendar, 'workStartHour' | 'workEndHour' | 'hoursPerDay' | 'workTime'>,
+  calendar: Pick<WorkCalendar, 'workStartHour' | 'workEndHour' | 'hoursPerDay'>,
 ): { startMinute: number; durationMinutes: number } {
-  // Dezelfde dag als de lezers en het bibliotheekherstel (`firstBlockedDay`): de getoonde pauze hoort
-  // bij de dag waar begin en einde vandaan komen.
-  const day = firstBlockedDay(calendar.workTime);
-  if (day && day.length === 2) {
-    const [first, last] = [...day].sort((a, b) => a.start - b.start);
-    const gap = last.start - first.end;
-    if (gap > 0 && first.start === Math.round(calendar.workStartHour * 60)
-      && last.end === Math.round(calendar.workEndHour * 60)) {
-      return { startMinute: first.end, durationMinutes: gap };
-    }
-  }
   return { startMinute: NOON, durationMinutes: legacySimpleBreakDurationMinutes(calendar) };
 }
 
@@ -210,8 +195,7 @@ export function scalarTimesValid(calendar: ScalarCalendar, patch: Partial<WorkCa
  * De afleiding bij het wijzigen van werkdag (Begin/Einde) of pauze op een scalaire kalender — één
  * definitie voor de kalenderdialoog (`CalendarForm`) en MCP `planner_update_calendar`:
  *  1. een legacy-kalender (zonder expliciete pauzeduur) wordt eerst expliciet: zijn impliciete pauze
- *     ({@link inferredSimpleBreak}: het gat tussen twee blokken, anders begin 12:00 en duur =
- *     klokspanne − netto uren) komt in de patch, zodat een oud handmatig
+ *     ({@link inferredSimpleBreak}: begin 12:00 en duur = klokspanne − netto uren) komt in de patch, zodat een oud handmatig
  *     `hoursPerDay` geen verborgen tweede bron blijft;
  *  2. daarna volgen de netto uren (`hoursPerDay`) uit werkdag en pauze (`simpleBreakNetHours`). Is dat
  *     patroon ongeldig, dan blijft `hoursPerDay` buiten de patch — de aanroeper valideert en weigert

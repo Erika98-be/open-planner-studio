@@ -159,6 +159,9 @@ export function CalendarForm({
   // tijden); deze vlag laat de gebruiker hem inklappen. Voor een dag-kalender is er nog geen
   // `workTime`, dus opent de knop de editor (seed uit scalar) i.p.v. te collapsen.
   const [bandsCollapsed, setBandsCollapsed] = useState(false);
+  // De beginstand van de blokken voor de werkdagknoppen en *Ma–vr* (`workDayTogglePatch`): bij openen de
+  // blokken van de kalender, na een preset de blokken van die preset ("een preset vervangt alles").
+  const [initialWorkTime, setInitialWorkTime] = useState(() => draft.workTime);
   const [savingPreset, setSavingPreset] = useState(false);
   const [presetName, setPresetName] = useState('');
   // Een kalender met werkblokken (weekbanden) toont ALTIJD het blok Werktijden, ook met urenplanning
@@ -171,9 +174,8 @@ export function CalendarForm({
   const scalarBreakError = calendarScalarBreakIssue(draft);
   // Oude scalar-kalenders hebben nog geen velden, maar hun zichtbare waarden moeten het bestaande
   // gedrag verklaren: 07:00–16:00 / 8 uur toont daarom de afgeleide 12:00 / 60 min, terwijl
-  // 08:00–16:00 / 8 uur terecht 0 minuten toont.
-  // Draagt de kalender weekbanden met precies twee blokken (MS Project: 08:00–12:00 + 13:00–17:00),
-  // dan is de pauze het gat ertussen (`inferredSimpleBreak`).
+  // 08:00–16:00 / 8 uur terecht 0 minuten toont. Alleen voor een kalender zonder werkblokken: bij
+  // werkblokken staan deze velden er niet.
   const inferredBreak = inferredSimpleBreak(draft);
   const inferredSimpleBreakDuration = inferredBreak.durationMinutes;
   const inferredSimpleBreakStart = inferredBreak.startMinute;
@@ -252,6 +254,9 @@ export function CalendarForm({
     });
     // Elke uur-preset ⇒ editor meteen open/zichtbaar (uitgeklapt); dag-preset heeft geen editor.
     setBandsCollapsed(false);
+    // Een preset vervangt alles: een dag die daarna uit en weer aan gaat, krijgt de presetblokken
+    // terug, niet die van vóór de preset.
+    setInitialWorkTime(patch.workTime);
   };
 
   // Eén van de vijf INGEBOUWDE presets (CALENDAR_PRESETS) — in tegenstelling tot een eigen preset
@@ -343,8 +348,8 @@ export function CalendarForm({
 
   // Bij een uurkalender gaan de blokken mee (`workDayTogglePatch`), zodat `workDays` en `workTime`
   // gelijk blijven — met urenplanning uit én aan. Een dag die weer aan gaat, krijgt eerst zijn eigen
-  // blokken terug zoals het formulier ze opende (`initialWorkTime`; CalendarDialog mount per kalender).
-  const [initialWorkTime] = useState(() => draft.workTime);
+  // blokken terug: zoals het formulier ze opende, of zoals de laatst gekozen preset ze zette
+  // (`initialWorkTime`, zie `applyPreset`; CalendarDialog mount per kalender).
   const toggleWorkDay = (day: number) => onChange(workDayTogglePatch(draft, day, initialWorkTime));
 
   // Het eenvoudige patroon is geen tweede engineformule: de netto uren worden alleen als
@@ -503,7 +508,7 @@ export function CalendarForm({
   };
 
   // Presets: "24/7" = workDays [1..7]. Dit is uitsluitend de ene-doorlopende-kalender-preset, geen
-  // dag/nacht-PLOEGEN. "Ma-vr" ernaast herstelt symmetrisch de standaard.
+  // dag/nacht-PLOEGEN. "Ma-vr" ernaast zet bij een eenvoudige kalender de standaard ma–vr 07:00–16:00.
   // Kalender met werkblokken: de motor rekent met `workTime`, dus beide knoppen passen de blokken aan.
   // "24/7" wordt de ingebouwde preset Continu (00:00–24:00, alle dagen); "Ma–vr" zet de werkdagen op
   // ma–vr en houdt per dag de blokken (`workDaysSetPatch`). De omschrijving blijft staan, net als bij
@@ -567,8 +572,8 @@ export function CalendarForm({
           <label className="text-text-secondary font-medium">
             {tMenu('ribbon.calendarDialog.workDays')}
           </label>
-          {/* Presets: "Continu (24/7)" zet workDays [1..7] + 0-24u ineens;
-              "Ma-vr" herstelt symmetrisch de standaard ma-vr/07-16. */}
+          {/* Presets: "Continu (24/7)" zet alle dagen op 00:00–24:00. "Ma-vr": eenvoudige kalender ⇒
+              standaard ma–vr 07:00–16:00; kalender met werkblokken ⇒ werkdagen ma–vr, blokken per dag. */}
           <div className="flex gap-1.5">
             <button
               type="button"

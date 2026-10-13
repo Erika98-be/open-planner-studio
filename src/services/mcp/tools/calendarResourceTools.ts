@@ -1227,13 +1227,15 @@ const updateCalendar: BatchStepTool = {
           'concrete work blocks to be calculated.',
         );
       }
-      // De schakelaar Urenplanning is puur UI (de solver rekent sowieso uur-native): meld het, want
-      // de gebruiker ziet zijn uurkalender anders nergens terug in de app.
+      // De schakelaar Urenplanning is puur UI (de solver rekent sowieso uur-native): meld het. Het
+      // kalendervenster toont de werkblokken van een uurkalender altijd (besluit eigenaar 2026-10-13,
+      // optie 2), maar de rest van de app (duur in uren, tijdschaal Uur) toont geen uren.
       if (rows.some((r) => r.mode === 'hour') && !ctx.app.store.getState().ui.enableHourPlanning) {
         warnings.push(
           'There is now an HOUR calendar in this document while the app setting "Enable hour planning" is ' +
-          'OFF. The schedule is calculated hour-native, but the app shows no hour input/display until the ' +
-          'user turns that setting on (Settings → Enable hour planning).',
+          'OFF. The schedule is calculated hour-native. The Calendars dialog shows and edits the work ' +
+          'blocks of this calendar, but the rest of the app (durations in hours, the Hour time scale) shows ' +
+          'no hours until the user turns that setting on (Settings → Enable hour planning).',
         );
       }
       return { calendars: rows, warnings, projectEnd, ...(cappedTaskIds ? { cappedTaskIds } : {}) };

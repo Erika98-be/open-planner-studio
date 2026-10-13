@@ -470,19 +470,51 @@ test('kalenderdialoog: korte vrijdag uit en weer aan krijgt zijn eigen blokken t
 });
 
 // Ma–vr en Continu (24/7) bij een kalender met werkblokken en urenplanning uit: de motor rekent met de
-// blokken, dus beide knoppen passen de blokken aan (niet alleen de werkdagen). Continu ⇒ alle dagen
-// 00:00–24:00; Ma–vr ⇒ za en zo zonder blokken, ma–vr houden hun blokken.
-test('kalenderdialoog: Ma–vr en Continu passen bij een kalender met blokken de blokken aan', async ({ page, ops: _ops }) => {
+// blokken, dus beide knoppen passen de blokken aan (niet alleen de werkdagen).
+const calendarBlocks = (page: import('@playwright/test').Page) => page.evaluate(() => {
+  const c = window.__OPS__!.store.getState().calendar;
+  return { workDays: c.workDays, byWeekday: c.workTime?.byWeekday ?? null, hpd: c.hoursPerDay };
+});
+
+test('kalenderdialoog: Continu bij een kalender met blokken zet alle dagen 00:00–24:00 en 24 uur', async ({ page, ops: _ops }) => {
   const dialog = await openMspdiAndCalendarDialog(page, mspdiWithBlocks([['08:00', '12:00'], ['13:00', '17:00']]));
-  const cal = () => page.evaluate(() => {
-    const c = window.__OPS__!.store.getState().calendar;
-    return { workDays: c.workDays, sat: c.workTime?.byWeekday[6] ?? null, mon: c.workTime?.byWeekday[1] ?? null, hpd: c.hoursPerDay };
-  });
   await dialog.locator('[data-ops-calendar-preset-continuous]').click();
-  await expect.poll(() => blocksOf(dialog, 6)).toEqual(['00:00', '00:00']);
-  await dialog.locator('[data-ops-calendar-preset-weekdays]').click();
-  await expect.poll(() => blocksOf(dialog, 6)).toEqual([]);
-  await expect.poll(() => blocksOf(dialog, 1)).toEqual(['00:00', '00:00']);
+  await expect(dialog.locator('[data-ops-simple-break-net-hours]')).toHaveText(/^24[.,]00 h$/);
   await dialog.locator('[data-ops-cal-apply]').click();
-  await expect.poll(cal).toEqual({ workDays: [1, 2, 3, 4, 5], sat: [], mon: [{ start: 0, end: 1440 }], hpd: 24 });
+  const allDay = [{ start: 0, end: 1440 }];
+  await expect.poll(() => calendarBlocks(page)).toEqual({
+    workDays: [1, 2, 3, 4, 5, 6, 7], hpd: 24,
+    byWeekday: { 1: allDay, 2: allDay, 3: allDay, 4: allDay, 5: allDay, 6: allDay, 7: allDay },
+  });
+});
+
+// Ma–vr zet een dag die uit stond weer aan met zijn eigen blokken: een korte vrijdag (08–12 + 13–15) die
+// je uitzet, krijgt bij Ma–vr de korte vrijdag terug, niet de blokken van maandag.
+test('kalenderdialoog: Ma–vr geeft een uitgezette korte vrijdag zijn eigen blokken terug', async ({ page, ops: _ops }) => {
+  const dialog = await openMspdiAndCalendarDialog(page,
+    mspdiWithBlocks([['08:00', '12:00'], ['13:00', '17:00']], [['08:00', '12:00'], ['13:00', '15:00']]));
+  await dialog.getByRole('button', { name: 'Fri', exact: true }).click();
+  await expect.poll(() => blocksOf(dialog, 5)).toEqual([]);
+  await dialog.locator('[data-ops-calendar-preset-weekdays]').click();
+  await expect.poll(() => blocksOf(dialog, 5)).toEqual(['08:00', '12:00', '13:00', '15:00']);
+  await dialog.locator('[data-ops-cal-apply]').click();
+  await expect.poll(() => calendarBlocks(page).then(c => [c.workDays, c.byWeekday?.[5], c.byWeekday?.[1]])).toEqual([
+    [1, 2, 3, 4, 5], [{ start: 480, end: 720 }, { start: 780, end: 900 }], [{ start: 480, end: 720 }, { start: 780, end: 1020 }],
+  ]);
+});
+
+// Een preset vervangt alles: na Nachtploeg, dinsdag uit en Ma–vr krijgt dinsdag de nachtploeg terug
+// (22:00–06:00), niet de blokken van vóór de preset (08–12 + 13–17).
+test('kalenderdialoog: na een preset krijgt een dag die weer aan gaat de presetblokken', async ({ page, ops: _ops }) => {
+  const dialog = await openMspdiAndCalendarDialog(page, mspdiWithBlocks([['08:00', '12:00'], ['13:00', '17:00']]));
+  await dialog.locator('[data-ops-preset="night"]').click();
+  await dialog.getByRole('button', { name: 'Tue', exact: true }).click();
+  await expect.poll(() => blocksOf(dialog, 2)).toEqual([]);
+  await dialog.locator('[data-ops-calendar-preset-weekdays]').click();
+  await expect.poll(() => blocksOf(dialog, 2)).toEqual(['22:00', '06:00']);
+  await dialog.locator('[data-ops-cal-apply]').click();
+  const night = [{ start: 1320, end: 1800 }];
+  await expect.poll(() => calendarBlocks(page).then(c => [c.workDays, c.byWeekday?.[2], c.byWeekday?.[1], c.hpd])).toEqual([
+    [1, 2, 3, 4, 5], night, night, 8,
+  ]);
 });

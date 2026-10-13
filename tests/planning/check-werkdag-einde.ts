@@ -12,8 +12,7 @@
 //  §3 IFC: oud OPS-bestand zonder eigenschappen ⇒ 8/17; periodes in omgekeerde volgorde ⇒ 8/17;
 //     drieploegen met een nachtblok ⇒ einde 24; tussenwaarde hoursPerDay netto (ActualDuration);
 //     bewust gekozen werkdagen en scalaire kalenders blijven.
-//  §4 Kalenderdialoog: pauze uit de blokken (12:00/60, 11:30/30) en de echte invoercontrole
-//     (`scalarTimesValid`).
+//  §4 Kalenderdialoog: begin/einde/netto uit de blokken en de echte invoercontrole (`scalarTimesValid`).
 //  §6 Werkdagknoppen: bij een uurkalender gaan de blokken mee (`workDayTogglePatch`); vrijdag uit en
 //     weer aan geeft de juiste blokken en taakeinddatum, ook na opslaan en heropenen.
 //  §6b/§6c Korte vrijdag krijgt zijn eigen blokken terug; kalender zonder blok ⇒ blokken uit de scalar.
@@ -40,7 +39,7 @@ import {
   calendarScalarBreakIssue, inferredSimpleBreak, makeBands, scalarTimesValid,
 } from '@/utils/effectiveWorkTime';
 import { shiftPresetPatch } from '@/utils/shiftPresets';
-import { withRepairedFirstBlockScalar, workDayTogglePatch, workDaysSetPatch } from '@/services/subdayIo';
+import { STANDARD_DAY_BLOCKS, withRepairedFirstBlockScalar, workDayTogglePatch, workDaysSetPatch } from '@/services/subdayIo';
 import { parseOpenedFile } from '@/services/formatRegistry';
 import { applyCalendarUpdate, bumpPool, classifyCalendarOnOpen, normalizePoolShape } from '@/services/library/libraryOps';
 import { readFileSync } from 'node:fs';
@@ -246,29 +245,18 @@ const hourCal = (start: number, end: number): Partial<WorkCalendar> => ({
 
 // ── §4 Kalenderdialoog: de afleiding achter Begin/Einde/Pauze/Netto ────────────────────────────────
 {
-  // Een MS Project-kalender (uurkalender): uurplanning uit ⇒ alleen-lezen weergave van de blokken.
+  // Een MS Project-kalender (uurkalender): het venster toont het blok Werktijden (optie 2); begin,
+  // einde en netto volgen uit de blokken, en de kalender geeft bij openen geen pauzefout.
   const cal = readMSPDI(mspdi({ minutesPerDay: 480 })).calendar;
-  const brk = inferredSimpleBreak(cal);
-  same('§4 dialoog: begin 08:00, einde 17:00, pauze 12:00 van 60 min, netto 8 h',
-    { start: cal.workStartHour, end: cal.workEndHour, breakStart: brk.startMinute, breakMin: brk.durationMinutes, net: cal.hoursPerDay },
-    { start: 8, end: 17, breakStart: 720, breakMin: 60, net: 8 });
+  same('§4 dialoog: begin 08:00, einde 17:00, netto 8 h',
+    { start: cal.workStartHour, end: cal.workEndHour, net: cal.hoursPerDay }, { start: 8, end: 17, net: 8 });
   same('§4 dialoog: geen foutmelding bij openen', calendarScalarBreakIssue(cal) ?? null, null);
 
-  // Andere blokken: 07:00–11:30 + 12:00–16:00 ⇒ pauze 11:30 van 30 min (niet 12:00).
-  const other: WorkCalendar = { ...cal, workTime: makeBands([1, 2, 3, 4, 5], [{ start: 420, end: 690 }, { start: 720, end: 960 }]),
-    workStartHour: 7, workEndHour: 16, hoursPerDay: 8.5 };
-  same('§4 blokken 07:00–11:30 + 12:00–16:00 ⇒ pauze 11:30 van 30 min', inferredSimpleBreak(other), { startMinute: 690, durationMinutes: 30 });
-  // De echte invoercontrole (`scalarTimesValid`) kijkt naar die afgeleide pauze: Begin 11:45 ligt ná
-  // het pauzebegin 11:30 en is dus ongeldig (met de oude aanname "pauze om 12:00" was hij geldig).
-  same('§4 scalarTimesValid: Begin 11:45 bij pauze 11:30 ongeldig', scalarTimesValid(other, { workStartHour: 11.75 }), false);
-  same('§4 scalarTimesValid: Begin 11:00 bij pauze 11:30 geldig', scalarTimesValid(other, { workStartHour: 11 }), true);
   // Zonder blokken: de legacy-afleiding (12:00, klokspanne − netto), en Begin 07:00 is geldig.
   const legacy: WorkCalendar = { ...cal, workTime: undefined, workStartHour: 8, workEndHour: 17, hoursPerDay: 8 };
   same('§4 zonder blokken: legacy 12:00 van 60 min', inferredSimpleBreak(legacy), { startMinute: 720, durationMinutes: 60 });
   same('§4 scalarTimesValid: dagkalender Begin 07:00 geldig', scalarTimesValid(legacy, { workStartHour: 7 }), true);
   same('§4 scalarTimesValid: dagkalender Einde 12:00 (pauze valt erbuiten) ongeldig', scalarTimesValid(legacy, { workEndHour: 12 }), false);
-  // Blokken die de scalar niet beslaan (einde 12 bij blokken tot 17): geen afleiding uit de blokken.
-  same('§4 blokken passen niet bij de scalar ⇒ legacy', inferredSimpleBreak({ ...cal, workEndHour: 12 }), { startMinute: 720, durationMinutes: 0 });
 }
 
 // ── §5 Resourcebibliotheek ─────────────────────────────────────────────────────────────────────────
@@ -390,15 +378,46 @@ const hourCal = (start: number, end: number): Partial<WorkCalendar> => ({
   const back = workDaysSetPatch(onlyMon, [1, 2, 3, 4, 5], withShortFri.workTime);
   same('§6d terug naar ma–vr: vrijdag krijgt zijn eigen (korte) blokken, di die van maandag',
     [back.workDays, back.workTime?.byWeekday[5], back.workTime?.byWeekday[2]], [[1, 2, 3, 4, 5], shortFri, MSP_DAY]);
+  // Weekendkalender (za/zo 06:00–18:00) zonder `initial`, scalar nog de standaard 07–16: eerst gaan de
+  // dagen aan (kopie van zondag, 06–18), pas daarna gaan za/zo uit. Andersom kreeg maandag de scalar.
+  const weekendDay = [{ start: 360, end: 1080 }];
+  const weekend: WorkCalendar = { ...opened, workDays: [6, 7], workStartHour: 7, workEndHour: 16, hoursPerDay: 12,
+    workTime: makeBands([6, 7], weekendDay) };
+  const fromWeekend = workDaysSetPatch(weekend, [1, 2, 3, 4, 5]);
+  same('§6d weekend ⇒ Ma–vr: ma en vr krijgen 06–18 van zondag, za leeg, hpd 12',
+    [fromWeekend.workDays, fromWeekend.workTime?.byWeekday[1], fromWeekend.workTime?.byWeekday[5], fromWeekend.workTime?.byWeekday[6], fromWeekend.hoursPerDay],
+    [[1, 2, 3, 4, 5], weekendDay, weekendDay, [], 12]);
+  // De modale uren wisselen: ma 8 h, za/zo 10 h (hpd 10). Alleen ma over ⇒ hpd 8 (afgeleid, niet de oude 10).
+  const mixed: WorkCalendar = { ...opened, workDays: [1, 6, 7], hoursPerDay: 10,
+    workTime: { byWeekday: { ...makeBands([6, 7], [{ start: 480, end: 1080 }]).byWeekday, 1: MSP_DAY } } };
+  same('§6d modale uren wisselen: alleen ma over ⇒ hpd 8', workDaysSetPatch(mixed, [1]).hoursPerDay, 8);
+
   same('§6d dagkalender: alleen workDays',
     workDaysSetPatch({ workDays: [1, 2, 3, 4, 5, 6, 7], hoursPerDay: 8, workStartHour: 7, workEndHour: 16 }, [1, 2, 3, 4, 5]),
     { workDays: [1, 2, 3, 4, 5] });
 }
 
+// §6e. Een werkdag ontstaat nooit zonder blokken. Alles uit en dan Ma–vr, met een scalar waaruit geen
+//      blokken volgen (nachtscalar 22→06, of netto meer dan de spanne): de standaardwerkdag 07–12 + 13–16.
+{
+  const opened = readMSPDI(mspdi({ minutesPerDay: 480 })).calendar;
+  for (const [label, scalar] of [
+    ['nachtscalar 22→06', { workStartHour: 22, workEndHour: 6, hoursPerDay: 8 }],
+    ['netto 10 h in 9 h spanne', { workStartHour: 7, workEndHour: 16, hoursPerDay: 10 }],
+  ] as const) {
+    const empty: WorkCalendar = { ...opened, ...scalar, workDays: [], workTime: makeBands([], []),
+      simpleBreakStartMinute: undefined, simpleBreakDurationMinutes: undefined };
+    const p = workDaysSetPatch(empty, [1, 2, 3, 4, 5]);
+    same(`§6e ${label}: ma–vr krijgen de standaardwerkdag, hpd 8`,
+      [p.workDays, [1, 2, 3, 4, 5].every(d => JSON.stringify(p.workTime?.byWeekday[d as 1]) === JSON.stringify(STANDARD_DAY_BLOCKS)), p.hoursPerDay],
+      [[1, 2, 3, 4, 5], true, 8]);
+  }
+}
+
 // ── §7 Eerste werkdag met blokken: zondag eerst (MS Project-volgorde), één regel overal ────────────
 // Kalender met zondag als werkdag (09–13 + 14–18) en maandag t/m vrijdag 08–12 + 13–17. De MSPDI-lezer
-// neemt zondag (DayType 1 staat eerst): 9/18. De getoonde pauze, het bibliotheekherstel en de
-// werkdagknoppen moeten dezelfde dag nemen.
+// neemt zondag (DayType 1 staat eerst): 9/18. Het bibliotheekherstel en de werkdagknoppen moeten
+// dezelfde dag nemen.
 {
   const sun = wt('09:00:00', '13:00:00') + wt('14:00:00', '18:00:00');
   const days = [1, 2, 3, 4, 5, 6, 7].map(n => {
@@ -409,7 +428,6 @@ const hourCal = (start: number, end: number): Partial<WorkCalendar> => ({
   const SUN_DAY = [{ start: 540, end: 780 }, { start: 840, end: 1080 }];
   same('§7 fixture: zondag en maandag hebben verschillende blokken', [cal.workTime?.byWeekday[7], cal.workTime?.byWeekday[1]], [SUN_DAY, MSP_DAY]);
   same('§7 lezer: scalar van zondag 9/18', [cal.workStartHour, cal.workEndHour], [9, 18]);
-  same('§7 getoonde pauze van zondag: 13:00, 60 min', inferredSimpleBreak(cal), { startMinute: 780, durationMinutes: 60 });
   same('§7 bibliotheekherstel: oude scalar 9/13 (eerste zondagblok) ⇒ 9/18',
     withRepairedFirstBlockScalar({ ...cal, workEndHour: 13 }).workEndHour, 18);
   const sat = workDayTogglePatch(cal, 6);

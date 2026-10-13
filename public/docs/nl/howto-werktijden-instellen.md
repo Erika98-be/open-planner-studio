@@ -47,7 +47,7 @@ Een eigen preset staat op dit apparaat, niet in het projectbestand.
 
 **Een preset vervangt alles.** Kies je een preset, dan verdwijnen de werkdagen en werktijden die je eerder instelde. De feestdagen blijven.
 
-**Dagknoppen passen de blokken aan.** Zet je bij *Werkdagen* een dag uit, dan verdwijnen de blokken van die dag. Zet je hem weer aan, dan krijgt hij de blokken terug die hij had toen je het venster opende, of anders die van de eerste werkdag. *Ma–vr* en *Continu (24/7)* passen de blokken op dezelfde manier aan.
+**Dagknoppen passen de blokken aan.** Zet je bij *Werkdagen* een dag uit, dan verdwijnen de blokken van die dag. Zet je hem weer aan, dan krijgt hij de blokken terug die hij had toen je het venster opende (of na de laatste preset), of anders die van de eerste werkdag. *Ma–vr* doet dat voor maandag tot en met vrijdag en haalt de blokken van zaterdag en zondag weg. *Continu (24/7)* vervangt alle blokken: elke dag krijgt 00:00 tot 24:00.
 
 **Werktijden aanpassen met Urenplanning uit.** Een kalender met werktijdblokken houdt het blok *Werktijden*, ook als je urenplanning uitzet. Je past de blokken daar gewoon aan. Kies je *Dagdienst*, dan wordt het weer een gewone kalender met de velden *Begin (uur)*, *Einde (uur)* en de pauze; blokken terugzetten kan dan alleen met urenplanning aan.
 
