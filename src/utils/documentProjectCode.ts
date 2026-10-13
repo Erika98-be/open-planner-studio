@@ -5,10 +5,11 @@ import { xerProjectCode } from '@/utils/xerDocumentName';
 /**
  * De P6 Project-ID van een document, los van de projectnaam.
  *
- * Eigenaarsbesluit 2026-10-13: de code blijft altijd, los van de naam, zoals bij XER. In
- * *Projectinfo* staat alleen de naam ("Bid for Facility Extension"). Hernoem je naar "Uitbreiding
- * hal", dan toont het tabblad "Uitbreiding hal (OZB-05)". Bij een export naar P6 gaat OZB-05 terug als
- * Project-ID, zodat P6 het project herkent; de code overleeft opslaan als IFC.
+ * Eigenaarsbesluit 2026-10-13 (vervolg op B21, documentnaam "Projectnaam (Project-ID)"): de code
+ * blijft altijd, los van de naam, zoals bij XER. In *Projectinfo* staat alleen de naam ("Bid for
+ * Facility Extension"). Hernoem je naar "Uitbreiding hal", dan toont het tabblad "Uitbreiding hal
+ * (OZB-05)". Bij een export naar P6 gaat OZB-05 terug als Project-ID, zodat P6 het project herkent;
+ * de code overleeft opslaan als IFC.
  *
  * Dit is de ENE bron voor de code: tabblad, projectbalk/overzicht, titelbalk, venstertitel,
  * sluitdialoog, herstelvenster, bezettingsoverzicht, `getOpenDocuments` (ook MCP), rapportkop, de

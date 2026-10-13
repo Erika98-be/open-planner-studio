@@ -221,8 +221,8 @@ export function ReportPanel() {
   const sequences = useAppStore(s => s.sequences);
   const calendar = useAppStore(s => s.calendar);
   const project = useAppStore(s => s.project);
-  // Kop en PDF-naam dragen de documentnaam "Naam (code)", zoals tabblad en opslaan
-  // (`documentFileBase`; zie `documentProjectCode`).
+  // Kop en PDF-naam dragen de documentnaam "Naam (code)", zoals tabblad en opslaan (B21,
+  // `documentFileBase`; zie `documentProjectCode`).
   const projectCode = useAppStore(s => documentProjectCode(s.project, s.xerImportMetadata));
   // Naamloos project ⇒ de vertaalde weergavenaam. De printlaag is een Canvas-renderer zonder
   // `t(...)`: die krijgt de al-vertaalde tekst dóórgegeven (zelfde patroon als `options.labels`).
