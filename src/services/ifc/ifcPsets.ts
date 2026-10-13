@@ -208,6 +208,31 @@ export function ifcBool(b: boolean): string {
   return b ? '.T.' : '.F.';
 }
 
+/**
+ * Een getal als STEP-REAL (ISO 10303-21 §6.3.3: `[teken] cijfers "." [cijfers] [E [teken] cijfers]`).
+ * De decimale punt is verplicht: `5` is een INTEGER en dus geen geldige waarde voor een REAL-type als
+ * `IfcReal` of `IfcMonetaryMeasure` (IfcOpenShell-validatie 2026-10-13: 158 fouten in de voorbeelden).
+ * Basis is de kortste exacte vorm (`String`), dus `parseFloat` leest exact hetzelfde getal terug:
+ * `5` ⇒ `5.`, `2.5` ⇒ `2.5`, `1e-7` ⇒ `1.E-7`. STEP kent geen NaN of oneindig: dan `undefined`.
+ */
+export function stepReal(n: number): string | undefined {
+  if (!Number.isFinite(n)) return undefined;
+  const [mantissa, exponent] = String(n).split('e');
+  const withPoint = mantissa.includes('.') ? mantissa : `${mantissa}.`;
+  return exponent === undefined ? withPoint : `${withPoint}E${exponent}`;
+}
+
+/**
+ * Getypte REAL-waarde voor een select als `IfcValue`, bv. `IFCREAL(5.)`. Een niet-eindig getal heeft
+ * geen STEP-vorm; dan `$` (geen waarde). Gebruik dit alleen op een OPTIONAL plek, zoals
+ * `IfcPropertySingleValue.NominalValue`. De lezer behandelt `$` daar gelijk aan het vroegere
+ * `IFCREAL(NaN)`: geen getal, dus de standaardwaarde.
+ */
+export function ifcTypedReal(type: 'IFCREAL' | 'IFCMONETARYMEASURE', n: number): string {
+  const real = stepReal(n);
+  return real === undefined ? '$' : `${type}(${real})`;
+}
+
 /** Eén IFCPROPERTYSINGLEVALUE binnen een pset. `value` is de REEDS-geformatteerde getypte IFC-waarde
  *  (bv. `IFCLABEL('SNET')`); de writer verpakt 'm als `IFCPROPERTYSINGLEVALUE(name,$,value,$)`. */
 export interface PropSpec {
@@ -410,7 +435,7 @@ export const PER_TASK_PSETS: PerTaskPset[] = [
     write(task) {
       const t = task.time;
       const props: PropSpec[] = [];
-      if (t.interferingFloat !== undefined) props.push({ name: 'InterferingFloat', value: `IFCREAL(${t.interferingFloat})` });
+      if (t.interferingFloat !== undefined) props.push({ name: 'InterferingFloat', value: ifcTypedReal('IFCREAL', t.interferingFloat) });
       if (t.isNearCritical !== undefined) props.push({ name: 'IsNearCritical', value: `IFCBOOLEAN(${ifcBool(t.isNearCritical)})` });
       if (t.floatPath !== undefined) props.push({ name: 'FloatPath', value: `IFCINTEGER(${Math.round(t.floatPath)})` });
       return props;

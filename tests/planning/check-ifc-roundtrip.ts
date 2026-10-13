@@ -73,6 +73,7 @@
 //   de afgeleide span — zie `projCal` hieronder (workEndHour 16, hoursPerDay 8: 16−7=9 ≠ 8).
 
 import { writeIFC } from '@/services/ifc/ifcWriter';
+import { checkIfcSchema } from './ifcSchemaCheck';
 import { readIFC } from '@/services/ifc/ifcReader';
 import { solveProject } from '@/engine/scheduler/solveProject';
 import { ALL_RECORDED_SLOT_KEYS, IFC_TASKTIME_SLOTS, TASKTIME_SLOT, IFC_TASK_SLOTS, TASK_SLOT } from '@/services/ifc/ifcTaskSlots';
@@ -2517,6 +2518,20 @@ const hasP6BoundarySequence = (input: ImportResult) =>
     const got = extern18.tasks.find(t => t.name === `P${i}`)?.time.totalFloat;
     assert(got === want, `(18i) ${lit} → ${want}: ${why} — kreeg ${got}`);
   });
+}
+
+// ════════════════════════════════════════════════════════════════════════════════════════════════
+// (19) Schemageldig. De fixture is een bron van de IFC-schemapoort (`check-ifc-schema.ts`): hij
+//      draagt wat de voorbeelden en het rijke schemaproject niet hebben (splits, contouren,
+//      timephased werk, P6-voortgang, …). De poort toetst tegen IFC4X3_ADD2; de fixture kiest IFC4
+//      (zie `project` hierboven), dus hier met de standaard. De inhoud is in de drie schema's gelijk,
+//      alleen de kop verschilt (`IFC_SCHEMAS`).
+{
+  const fixtureAdd2 = { ...fixture, project: { ...fixture.project, ifcSchema: 'IFC4X3_ADD2' as const } };
+  const result = checkIfcSchema('round-trip-fixture', writeIFC(fixtureAdd2));
+  assert(result.checks > 100, `(19) testvoorwaarde: de schematoets liep (${result.checks} entiteiten getoetst)`);
+  for (const failure of result.failures) assert(false, `(19) ${failure}`);
+  if (result.failures.length === 0) assert(true, '(19) schemageldig');
 }
 
 // ════════════════════════════════════════════════════════════════════════════════════════════════

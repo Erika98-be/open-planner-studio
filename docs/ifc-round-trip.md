@@ -188,41 +188,41 @@ eerste werkdag, en zette de reader die op elke werkdag. Zo staat het nu in het b
 - **Eén groep blijft byte-identiek.** Een uniforme week, een kalender zonder blokken en een scalaire
   kalender met urentaak (die schrijft zijn afgeleide blokken, op elke werkdag dezelfde) geven
   hetzelfde bestand als vóór B7.
-- **Een terugvalweek vooraan.** Bij meer groepen staat eerst een week met alle werkdagen en de blokken
-  van de eerste werkdag — de week die de writer vóór B7 schreef — met StartDate = FinishDate =
-  `1900-01-01`. Uitgebrachte versies (t/m v2026.9.0) lezen alleen de eerste `IfcWorkTime` en negeren
-  de datums. Zij zien zo precies wat ze vóór B7 zagen. Zonder terugvalweek zagen zij alleen de dagen
-  van de eerste groep als werkdag: een korte vrijdag werd daar een vrije dag (gemeten met de reader van
-  main 1e192b31a). De reader herkent de terugvalweek aan zijn datum. Er is bewust geen markering met een
-  STEP-id: een ander pakket mag de id's hernummeren, en dan wijst zo'n markering naar de verkeerde regel.
-  Sinds issue #292 heeft `IfcWorkCalendar` 9 attributen. Uitgebrachte versies lezen `WorkingTimes` dan
-  op plek 5, waar nu Identification (`$`) staat: de terugvalweek helpt hen niet meer, en zij lezen hem
-  op plek 6 als een feestdag op 1900-01-01. Dat valt onder het aanvaarde verlies voor oudere versies
-  (PR #336, *Voorwaartse compatibiliteit*). De week blijft staan.
+- **Geen terugvalweek.** Main schreef tussen #340 en #344 bij meer groepen eerst een extra week met
+  StartDate = FinishDate = `1900-01-01`, voor oudere OPS-versies. Die week zat in geen release en is
+  weer weg (besluit orkestrator 2026-10-13, fixronde 1 van PR #344). IfcWorkCalendar heeft nu 9
+  attributen, en oudere versies lezen `WorkingTimes` dan toch niet (zie "Oudere OPS-versies", alinea
+  Schemageldigheid). Een bestand met zo'n week leest deze reader goed (zie "De reader" hieronder).
 - **De scalar staat altijd in `OPS_Calendar`.** Bij meer groepen schrijft de writer `WorkStartHour` en
-  `WorkEndHour` altijd: een oudere reader leidt ze af uit de terugvalweek, deze reader uit de eerste
-  werkdag met blokken.
+  `WorkEndHour` altijd. Zonder die eigenschappen zou een oudere reader ze afleiden uit de eerste
+  `IfcWorkTime`, en deze reader uit de eerste werkdag met blokken.
 - **De reader** (`buildCalendarFromEntity`). Een `IfcWorkTime` met een StartDate of FinishDate doet niet
   mee in de week. Datumgebonden werktijden (een zomer- en een winterweek, een losse werkzaterdag) leest
-  OPS dus (nog) niet; als gewone week zouden ze in elke week gelden. De terugvalweek valt hier ook onder.
+  OPS dus (nog) niet; als gewone week zouden ze in elke week gelden. De terugvalweek van main valt hier
+  ook onder.
   OPS schreef vóór B7 nooit een datum in `WorkingTimes` (feestdagen en werkende uitzonderingen staan in
-  `ExceptionTimes`), dus oude OPS-bestanden lezen ongewijzigd. Twee of meer weekpatronen: elke dag
+  `ExceptionTimes`), dus oude OPS-bestanden lezen ongewijzigd. Hebben ALLE werktijden een datum (bijv.
+  één week 08–16 van 2026-01-01 t/m 2027-12-31), dan neemt de reader het eerste patroon met een datum,
+  zoals vóór B7; anders kreeg zo'n kalender de standaardweek. Twee of meer weekpatronen: elke dag
   krijgt de tijdvakken van zijn eigen patroon; staat een dag in meer patronen, dan de vereniging;
   `workDays` is de vereniging van alle patronen. De scalaire werkdag is de eerste werkdag met blokken
   (zondag eerst, `firstBlockedDay`), afgeleid met `workDayFromBlocks` — dezelfde regel als de MSPDI- en
   `.mpp`-lezer. Eén patroon: het oude pad, ongewijzigd.
 
 De bewaking staat in `tests/planning/check-ifc-werktijd-per-dag.ts` (round-trip per geval, de vorm van
-het bestand, wat een oudere versie leest, byte-identiek aan main, werktijden met een datum, hernummerde
-STEP-id's en een weggevallen `OPS_Calendar`) en in de uurkalender `hourCal` in de fixture van
+het bestand, byte-identiek aan main, de lezer in beide indelingen van `IfcWorkCalendar`, werktijden met
+een datum, hernummerde STEP-id's en een weggevallen `OPS_Calendar`) en in de uurkalender `hourCal` in de fixture van
 `check-ifc-roundtrip.ts`.
 
-**Externe bestanden.** Sinds issue #292 schrijft OPS `IfcWorkCalendar` met de 9 attributen van het
-schema (Identification `$`, `WorkingTimes` op plek 6). De reader kiest de plekken op de argumenten van de
-kalender (`workCalendarSlots` in `ifcWorkControlSlots.ts`): 9 = het schema, 8 = de oude OPS-vorm zonder
-Identification. Een kalender uit een bestand dat het schema volgt, bereikt de leestak hierboven dus wel.
-Getoetst met bestanden van de eigen writer (`check-ifc-arity`, `check-ifc-legacy-arity`, ook na IfcOpenShell
-`MergeProjects`); met kalenders die andere programma's schrijven niet.
+**Externe bestanden.** De reader kiest de plekken in `IfcWorkCalendar` op zijn argumenten
+(`workCalendarSlots` in `ifcWorkControlSlots.ts`): 9 = het schema (Identification op 5, `WorkingTimes` op
+6), 8 = de oude OPS-vorm zonder Identification, en 9 met een lijst op Identification = zo'n oud bestand na
+IfcOpenShell `MergeProjects`. Een kalender uit een bestand dat het schema volgt, bereikt de leestak
+hierboven dus. Gemeten op het corpus: de 9 kalenders van bSI, xbim, IfcOpenShell en ifcwebserver
+(allemaal ma–vr 08:00–16:00) komen binnen als ma–vr 08:00–16:00; met de reader van vóór #292 kwamen ze
+binnen als een uurkalender zonder blokken met 07:00–16:00. Verder getoetst met bestanden van de eigen
+writer (`check-ifc-arity`, `check-ifc-legacy-arity`, ook na `MergeProjects`). Interop met andere
+programma's is daarmee nog niet getest.
 
 ## Wat dit niet dekt
 
@@ -233,7 +233,146 @@ Getoetst met bestanden van de eigen writer (`check-ifc-arity`, `check-ifc-legacy
   project-IFC, via hetzelfde `OPS_`-pset-patroon (zie `docs/library.md`).
 - **De vraag of andere programma's ons bestand kunnen lezen.** De round-trip-test bewijst dat *wij*
   onze eigen data terugkrijgen. Interop met Synchro, BlenderBIM of Navisworks is nooit getest — dat
-  staat als open onzekerheid in `docs/onderhoudbaarheid/README.md` §6.
+  staat als open onzekerheid in `docs/onderhoudbaarheid/README.md` §6. Wél getoetst: of het bestand
+  schemageldig is (zie hieronder). Dat is een voorwaarde voor interop, geen bewijs ervan.
+
+## Schemageldigheid
+
+Een round-trip-test ziet niet of het bestand geldige IFC is. Schrijft OPS een attribuut op de
+verkeerde plek, en leest OPS het van diezelfde verkeerde plek terug, dan blijft de round-trip groen.
+
+**De geschiedenis** (alleen hier; code en toetsen verwijzen naar deze alinea). OPS t/m v2026.9.0, en
+main tot PR #336 en PR #344 (oktober 2026), schreef geen geldige IFC: `python -m ifcopenshell.validate`
+gaf op elk publiek voorbeeld 34 tot 80 schemafouten. De grootste oorzaken:
+
+- IfcWorkPlan en IfcWorkSchedule met 15 in plaats van 14 attributen (één `$` te veel vóór StartTime);
+- IfcWorkCalendar met 8 in plaats van 9 (zonder `Identification`);
+- de vijf resource-entiteiten met 9 in plaats van 11 (het type op de plek van BaseCosts);
+- REAL-waarden zonder decimale punt (`IFCREAL(5)`);
+- de kop `IFC4X3`; IfcOpenShell valideert die tegen een ouder, apart 4.3-schema.
+
+Daarnaast kleinere vormfouten: een tijd zonder seconden, een negatieve duur als `P0Y0M-2D`, een lege
+lijst `()`, een verplichte naam als `$`, `IfcTaskTime.Completion` `0.00` (het schema eist > 0). PR #336
+(issue #292) herstelde de aantallen en maakte de kop een keuze per project; PR #344 de rest en de
+poort hieronder.
+
+Nu geeft de validatie 0 fouten, met en zonder `--rules`, voor elk nieuw project (zie "Bestaande
+GlobalIds" voor de uitzondering).
+
+**Schema.** De kop is het schema van het project (`Project.ifcSchema`, issue #292): standaard
+`IFC4X3_ADD2` (IFC 4.3.2.0, ISO 16739-1:2024), in *Projectinfo* ook IFC 4.3 of IFC4. De inhoud is in de
+drie gelijk. De poort en de metingen met IfcOpenShell toetsen alleen `IFC4X3_ADD2`. Een bestand met de
+kop IFC4 of IFC4X3 is niet tegen dat schema gevalideerd; alleen het aantal argumenten
+(`check-ifc-arity`).
+
+**De poort** is `tests/planning/check-ifc-schema.ts` (de toets per bestand staat in `ifcSchemaCheck.ts`).
+Hij draait zonder Python, dus ook in CI. Hij toetst elke regel tegen een tabel uit het EXPRESS-schema:
+het aantal attributen, `$` alleen op een OPTIONAL plek, de enum op de enum-plek, REAL met punt, INTEGER
+zonder, de vorm van GlobalId (22 tekens uit het IFC-alfabet, eerste teken `0`–`3`), van IfcDateTime (met
+seconden), IfcDate, IfcTime en IfcDuration, een verwijzing die bestaat en naar een toegestaan
+entiteittype wijst, een getypte waarde die de select toestaat, geen lege lijst `()` waar het schema
+minstens één element vraagt, een SET zonder dubbele elementen, en een paar WHERE-regels (zoals
+"USERDEFINED vraagt een ObjectType"). De bronnen:
+
+- de publieke en alle andere voorbeelden;
+- een rijk project (alle resourcetypen, ploegen, baselines,
+  ook een zonder taken, werkende uitzonderingen, bibliotheekkalenders, alle eigen-veldtypen);
+- een leeg project, kalenderrandgevallen en een XER-import met bronarchief (`OPS_XerSourceArchive`),
+  zie `tests/planning/ifcSchemaFixture.ts`;
+- in `check-ifc-roundtrip.ts` (19) de round-trip-fixture (splits, contouren, timephased werk,
+  P6-voortgang).
+
+Een entiteit die de writer gebruikt maar niet in de tabel staat, is rood. Een entiteit uit de tabel die
+in geen getoetst bestand voorkomt, ook.
+
+**De tabel** (`tests/planning/ifcSchemaTable.ts`) wordt gegenereerd door `scripts/ifc-schema-table.py`
+uit het schema `IFC4X3_ADD2` dat IfcOpenShell meelevert. Schrijft de writer een nieuwe entiteit, zet
+die dan in `OPS_ENTITIES` in het script en genereer de tabel opnieuw:
+
+    source <venv met ifcopenshell>/bin/activate
+    python -I scripts/ifc-schema-table.py > tests/planning/ifcSchemaTable.ts
+
+**Besluit: alles in één keer.** De writer schrijft IfcWorkCalendar altijd met de 9 attributen van het
+schema. Een OPS-versie t/m v2026.9.0 leest zo'n kalender verkeerd (zie "Oudere OPS-versies"). Dat
+verlies is aanvaard. Bron: PR #336, alinea "Besluit: voorwaartse compatibiliteit": "Eigenaar (Nozzit),
+2026-10-13: **alles in één keer**. Geen overgangsrelease waarin de reader eerst beide indelingen leert."
+De releasetekst moet daarvoor waarschuwen. De lezer leest wel beide indelingen, dus deze versie opent
+oude bestanden zonder verlies.
+
+**De lezer** leest elke indeling. `ifcWorkControlSlots.ts` kiest de plekken op de argumenten van de
+regel:
+
+- IfcWorkPlan/IfcWorkSchedule: 14 = het schema; 15 met de enumeratie achteraan = de oude OPS-indeling;
+  14 met tekst op PredefinedType = zo'n oud bestand na IfcOpenShell `MergeProjects`; 15 met de
+  enumeratie op 13 = IFC2X3. Alleen een stringliteral telt als tijd; in IFC2X3 staan daar verwijzingen.
+- IfcWorkCalendar: 9 = het schema; 8 = de oude OPS-indeling; 9 met een lijst op Identification = zo'n
+  oud bestand na `MergeProjects`.
+- Resources leest de lezer alleen op GlobalId, Name en Description; daar maakt de indeling niets uit.
+
+`check-ifc-schema-reader.ts` bewijst dat een bestand in de oude OPS-indeling gelijk leest aan hetzelfde
+bestand in het schema, `check-ifc-legacy-arity.ts` doet dat met een echt bestand van de oude writer (ook
+na `MergeProjects`), en `check-ifc-werktijd-per-dag.ts` §5 toetst de kalenderlezer in beide indelingen.
+
+**Projectstart uit een ander pakket.** Zonder `OPS_ProjectSettings` komt de projectstart uit
+IfcWorkPlan.StartTime. Valt die later dan de vroegste ingelezen taakstart, dan geldt die taakstart
+(`readIFC`). Gemeten op het corpus, met de lezers van main vóór #336 (59794aa55), main ná #336
+(fa796cdad) en deze branch:
+
+- bSI, xbim, IfcOpenShell en ifcwebserver, `construction-scheduling-task` (9 bestanden, 72 taken):
+  StartTime is 2010-09-23 (de aanmaakdag), de taken beginnen op 2010-09-20. Main ná #336 nam
+  2010-09-23 als projectstart; 63 van de 72 taken begonnen daardoor drie dagen later. Nu: projectstart
+  2010-09-20 en de ingelezen taakdatums gelijk aan 59794aa55 (72 van 72). Na doorrekenen (`solveProject`)
+  zijn alle 72 anders dan bij 59794aa55. Die las de kalender als uurkalender zonder blokken en zette elke
+  taak op 2010-09-20 00:00, zonder duur. Nu volgen de taken de kalender van het bestand (ma–vr
+  08:00–16:00), bijvoorbeeld Wall #1 op 21 september 08:00–16:00.
+- De twee kubusbestanden van BlenderBIM (StartTime vóór de eerste taak): projectstart 2022-09-12 en
+  2022-09-14 uit StartTime (59794aa55: 2022-10-01, en als einde de tekst `.NOTDEFINE`). De 9 taken zijn
+  na doorrekenen gelijk.
+
+**Bestaande GlobalIds.** "0 fouten" geldt voor een nieuw project. Een bestand dat OPS inleest, houdt
+bij opslaan zijn GlobalIds, ook als die ongeldig zijn (besluit eigenaar 2026-09-28,
+`check-ifc-globalid.ts`): externe koppelingen naar die id's mogen niet breken. Oude OPS-versies
+schreven GlobalIds met een eerste teken buiten `0`–`3`. Zo'n bestand blijft daardoor na opnieuw
+opslaan ongeldig. Gemeten op vijf eigen OPS-bestanden, ingelezen en teruggeschreven met deze branch: 6,
+12, 20 en 44 fouten, alle op GlobalId; één bestand had al geldige GlobalIds (0 fouten). De reviewer van
+#344 mat 6 tot 123 fouten. Het gedrag is bewust niet veranderd. Nieuwe GlobalIds uitgeven voor
+ongeldige bewaarde id's is een apart, later besluit.
+
+**Oudere OPS-versies en een nieuw bestand.** Gemeten met de lezer en de writer van de uitgebrachte tag
+v2026.9.0 zelf, in Node (niet in de desktopapp). Oud = hetzelfde project in de oude indeling: de 32
+voorbeelden van main 59794aa55, en vier extra gevallen geschreven met de writer van 59794aa55 (het
+rijke project, en villa Wassenaar met een zesdaagse week 08–17 met werkende uitzondering, een
+urenkalender met pauze, en een korte vrijdag met werkende uitzondering). Nieuw = de writer van deze
+branch. Controle: de lezer van deze branch leest oud en nieuw gelijk (kalenders en 2219 taken na
+doorrekenen).
+
+- **Oorzaak.** v2026.9.0 leest `WorkingTimes` op plek 5 (nu Identification), `ExceptionTimes` op plek 6
+  (nu de werkweken) en de ploeg op plek 7 (nu de uitzonderingen). Een werkweek zonder datum wordt bij
+  haar een feestdag op de dag van inlezen.
+- **Openen.** In alle 32 voorbeelden: alle 614 feestdagen weg, een extra feestdag "Standard work week"
+  op de dag van openen (34 kalenders), werkweek en werkuren terug naar de standaard ma–vr 07–16 (onder
+  meer 7 zesdaagse weken), 1451 van 1818 taken anders na doorrekenen. In de vier extra gevallen: 91 van
+  91 feestdagen weg, 4 werkende uitzonderingen en 2 ploegen weg, werkuren terug naar 07–16 (ook 08–17,
+  de urenkalender met pauze en de korte vrijdag), 347 van 401 taken anders.
+- **Gelijk** blijven: projectstart en -einde, het aantal taken, relaties, resources en toewijzingen, en
+  de ingelezen taakdatums.
+- **Opslaan in v2026.9.0** maakt het verlies blijvend. Alle 36 bestanden geopend en opgeslagen met
+  v2026.9.0, daarna gelezen met deze branch: 705 van 705 feestdagen weg, de extra feestdag op de dag
+  van openen staat nu als echte feestdag in het bestand (42 feestdagen in 41 kalenders), 4 werkende
+  uitzonderingen en 2 ploegen weg, 2027 van 2219 taken anders na doorrekenen. De kop is daarna weer
+  `IFC4X3`.
+- **De omgekeerde richting** werkt: deze versie leest oude bestanden zoals main
+  (`check-ifc-legacy-arity`, `check-ifc-schema-reader`).
+
+**Lokaal valideren met IfcOpenShell.** `OPS_IFC_SCHEMA_DUMP=/tmp/map bash tests/planning/run.sh
+check-ifc-schema.ts` schrijft het rijke project, het lege project, de
+kalenderrandgevallen en de XER-import naar die map. Daarna
+`python -m ifcopenshell.validate --rules <bestand>`; `--rules` toetst ook alle WHERE-regels.
+
+**Bekende afwijking.** `IfcRelAssignsToProcess.RelatedObjects` is een SET. Staat dezelfde resource
+twee keer op één taak, dan herhaalt OPS hem daar; de lezer telt elke herhaling als eigen toewijzing.
+IfcOpenShell meldt dit niet. Een andere codering raakt de lezer en oudere OPS-versies; dat vraagt een
+eigen besluit.
 
 ## Waar het echt staat
 
@@ -243,7 +382,9 @@ Getoetst met bestanden van de eigen writer (`check-ifc-arity`, `check-ifc-legacy
 | per-taak-psets (write + apply per descriptor) | `src/services/ifc/ifcPsets.ts` |
 | schrijven | `src/services/ifc/ifcWriter.ts` |
 | lezen | `src/services/ifc/ifcReader.ts` |
+| plekken per indeling (schema, oud, MergeProjects, IFC2X3) | `src/services/ifc/ifcWorkControlSlots.ts` |
+| schemageldigheid: de poort, de toets per bestand, de tabel, de bronnen | `tests/planning/check-ifc-schema.ts`, `ifcSchemaCheck.ts`, `ifcSchemaTable.ts`, `ifcSchemaFixture.ts` |
 | de poort, de fixture, de canon-tabellen en de `KNOWN_GAPS`-asserties (blok 3) | `tests/planning/check-ifc-roundtrip.ts` |
-| werkblokken per weekdag (B7): groepen, terugvalweek, byte-identiek aan main | `tests/planning/check-ifc-werktijd-per-dag.ts` |
+| werkblokken per weekdag (B7): groepen, geen terugvalweek, byte-identiek aan main, de lezer in beide indelingen | `tests/planning/check-ifc-werktijd-per-dag.ts` |
 | welke velden een save meeschrijft | `src/state/ifcSaveInput.ts` |
 | wat een "document" ís (breder dan IFC) | `src/state/documentContract.ts` |

@@ -196,7 +196,8 @@ const cell = (taskId: string, columnId: string, value: unknown): CellEditIntent 
   const taskTime = ifc.match(/IFCTASKTIME\('IFC Time'[^\n]*/)?.[0] ?? '';
   eq('20 IfcTaskTime.ScheduleFinish is het coherente einde', taskTime.split(',')[6], "'2026-09-08T12:00:00'");
   const workplan = ifc.match(/IFCWORKPLAN\([^\n]*/)?.[0] ?? '';
-  eq('21 IFC-werkplan-einde is het coherente einde', workplan.includes("'2026-09-08T12:00'"), true);
+  // IfcDateTime met seconden (schemafix 2026-10; vroeger `'2026-09-08T12:00'`).
+  eq('21 IFC-werkplan-einde is het coherente einde', workplan.includes("'2026-09-08T12:00:00'"), true);
   const reopened = readIFC(ifc).tasks.find(t => t.name === 'IFC')!;
   eq('22 heropend: ingevoerd einde onveranderd', reopened.time.scheduleFinish, '2026-09-08T12:00');
 }
