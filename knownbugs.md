@@ -84,11 +84,11 @@ en noem het in je rapport of PR-tekst.
     Playwright-proeven; de tutorials zeggen daarom nu "dubbelklik". Voorstel: de inhoud selecteren bij focus,
     zoals de tabelcel waarin typen al vervangt. Eenh./dag (Toewijzen ▾ en het blok Toewijzingen) niet apart
     gemeten. — B
-108. **De gekleurde meldingsblokken (`alert--info/success/warning/error`) houden in het donkere thema hun
-    lichte kleuren.** `globals.css` (blok *Alerts*) zet vaste kleuren (`#EFF6FF` met `#1E40AF`), zonder
-    themavariant. In Projectinfo valt het blauwe blok in donker daardoor fel op (Rekenprofiel en het
-    IFC-schemablok). Gezien op een schermbeeld van de browsertest van #292. Misschien bewust; niet nagevraagd.
-    — S
+108. **De gekleurde meldingsblokken (`alert--success/warning/error`) en de labels (`badge--*`) houden in
+    het donkere thema hun lichte kleuren.** `globals.css` (blokken *Alerts* en *Badges*) zet vaste kleuren
+    zonder themavariant, bv. de witte labels "Alleen bij uurplanning" in Rekenprofiel. `alert--info` is
+    in #336 al oranje en themavolgend gemaakt (eigenaar, 2026-10-13); de rest nog niet. Bevestigd door de
+    eigenaar in de app. — B
 
 ## Kalenders
 

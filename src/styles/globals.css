@@ -2335,7 +2335,9 @@ body {
   font-size: var(--text-body);
   line-height: 1.5;
 }
-.alert--info    { background: #EFF6FF; border-left-color: var(--info);    color: #1E40AF; }
+/* Info is oranje (eigenaar, 2026-10-13) en volgt het thema: een doorschijnende tint over het
+   oppervlak eronder plus de gewone tekstkleur, zodat het blok in donker niet licht blijft. */
+.alert--info    { background: color-mix(in srgb, var(--signal-orange) 12%, transparent); border-left-color: var(--signal-orange); color: var(--color-text-primary); }
 .alert--success { background: #F0FDF4; border-left-color: var(--success); color: #166534; }
 .alert--warning { background: #FFFBEB; border-left-color: #D97706;       color: #92400E; }
 .alert--error   { background: #FEF2F2; border-left-color: var(--error);   color: #991B1B; }
