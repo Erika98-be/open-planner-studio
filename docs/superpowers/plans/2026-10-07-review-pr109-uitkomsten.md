@@ -433,3 +433,10 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
 - #335 fixronde 3 klaar: kop 7e5182de6 (main f922cae4e/#337 erin), CI 15/15. Onbestaande basis-UID = wortel
   (zoals MPXJ en `.mpp`); alleen cyclus/zelfverwijzing/te diep blokkeert; nooit NL. Corpus: 940 van 940 afgeleide
   kalenders zonder eigen gegevens erven nu hun basis (vorige kop 670). `measure:profiles` exit 0. Her-check gestart.
+- **Tabnamen, eigenaar 2026-10-13: "1"** (zo laten), met de vraag waarom de code erbij staat en of die blijft na
+  hernoemen. Bron B21 nagezocht: vraag 17 op 24-09 (17:19Z) bood "projectnaam" letterlijk aan als "de projectnaam
+  uit het XER, met het ID erachter tussen haakjes als het ID afwijkt"; antwoord 17:41Z "projectnaam".
+  **Gemeten (headless, testversie 3049), inconsistentie:** XER houdt de code los van de naam (veld Projectinfo
+  "MERIDIAN-1 Data Centre, Hall A"; na hernoemen tab "Nieuwe naam (MER-1-2026)"). P6 XML zet de code ín de naam
+  (veld "Bid for Facility Extension (OZB-05)"; na hernoemen tab "Nieuwe naam", code weg; de P6 XML-schrijver
+  geeft dan `Id` = `OPS:…`). Voorgelegd als besluit.
