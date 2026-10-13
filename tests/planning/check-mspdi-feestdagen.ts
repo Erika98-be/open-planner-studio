@@ -19,10 +19,21 @@
 //     eigen `<WeekDay>` wint per weekdag; begin, einde en netto-uren kloppen (`workDayFromBlocks`);
 // 11. rekentest: een taak op een afgeleide kalender rekent met de geërfde zaterdag.
 //
+// Fixronde 2 #335 (review):
+// 12. budget: overerving telt mee in MAX_TOTAL_HOLIDAY_SLOTS (MSPDI-versie van T6-C1), ook bij een
+//     basis met ~100.000 vrije dagen en 1023 afgeleide kalenders (vroeger: heap out of memory);
+// 13. `<Exceptions>` gaat vóór de oude `DayType 0`-vorm; `DayType 0` in `<WorkWeeks>` telt niet;
+// 14. terugval van de projectkalender als alleen taken en resources een `<CalendarUID>` hebben;
+// 15. basis bestaat niet, cyclus, zelfverwijzing ⇒ geen overerving en géén NL-terugval (zoals .mpp);
+// 16. keten van 40: de uitkomst hangt niet af van de documentvolgorde;
+// 17. eigen export schrijft `<CalendarUID>` in de projectkop; round-trip met een bibliotheekkalender
+//     op de eerste taak.
+//
 // Draait via run.sh (esbuild-bundel). Exit 0 = alles groen — alleen de exitcode telt.
 import { readMSPDI } from '@/services/msproject/mspdiReader';
 import { writeMSPDI } from '@/services/msproject/mspdiWriter';
 import { createDefaultCalendar } from '@/engine/calendar/defaultCalendar';
+import { MAX_TOTAL_HOLIDAY_SLOTS, MAX_BASE_CHAIN_DEPTH } from '@/services/calendarRecurrence';
 import { solveProject } from '@/engine/scheduler/solveProject';
 import type { WorkCalendar } from '@/types/calendar';
 import type { Project } from '@/types/project';
@@ -34,13 +45,19 @@ installDOMParser();
 
 let checks = 0;
 const fails: string[] = [];
+// Faalregels meteen printen: de zware budgettest (12, achteraan) kan bij een regressie het proces
+// laten crashen (heap out of memory); de eerdere faalregels staan dan al in de uitvoer.
+const fail = (msg: string) => {
+  fails.push(msg);
+  console.log(`XX  ${msg}`);
+};
 const ok = (label: string, cond: boolean) => {
   checks++;
-  if (!cond) fails.push(label);
+  if (!cond) fail(label);
 };
 const eq = (label: string, got: unknown, want: unknown) => {
   checks++;
-  if (JSON.stringify(got) !== JSON.stringify(want)) fails.push(`${label}: verwacht ${JSON.stringify(want)}, kreeg ${JSON.stringify(got)}`);
+  if (JSON.stringify(got) !== JSON.stringify(want)) fail(`${label}: verwacht ${JSON.stringify(want)}, kreeg ${JSON.stringify(got)}`);
 };
 
 // ── Bouwstenen ─────────────────────────────────────────────────────────────────────────────────
@@ -250,8 +267,126 @@ ok('voorwaarde: Koningsdag 2026 zit in de NL-standaard', NL.some((h) => h.startD
   eq('11 taak op afgeleide kalender eindigt op de geërfde zaterdag', (r.tasks[0]?.time.earlyFinish ?? '').slice(0, 10), '2026-06-06');
 }
 
+// ── 12. Budget: overerving telt mee in MAX_TOTAL_HOLIDAY_SLOTS ─────────────────────────────────
+// MSPDI-versie van T6-C1 (check-mpp-calendars.ts): één basis met 400 losse vrije dagen + 300
+// afgeleide kalenders zonder eigen data. Ongeklemd 301 × 400 = 120.400 > 100.000.
+{
+  const d0 = Date.UTC(2026, 0, 1);
+  let excs = '';
+  for (let i = 0; i < 400; i++) {
+    const d = new Date(d0 + i * 2 * 86_400_000).toISOString().slice(0, 10);
+    excs += exc(d, d, `H${i}`);
+  }
+  let cals = cal(1, 'Basis', WEEK + `<Exceptions>${excs}</Exceptions>`);
+  for (let k = 2; k <= 301; k++) cals += cal(k, `R${k}`, '', 1);
+  const t0 = Date.now();
+  const r = readMSPDI(doc(cals));
+  const ms = Date.now() - t0;
+  const all = [r.calendar, ...(r.resourceCalendars ?? [])];
+  const total = all.reduce((n, c) => n + c.holidays.length, 0);
+  eq(`12 T6-C1: totaal precies MAX_TOTAL_HOLIDAY_SLOTS (ongeklemd 120400)`, total, MAX_TOTAL_HOLIDAY_SLOTS);
+  eq('12 T6-C1: alle 301 kalenders gematerialiseerd', all.length, 301);
+  ok(`12 T6-C1: binnen 2000 ms (${ms} ms)`, ms < 2000);
+}
+// ── 13. Voorrang <Exceptions> boven DayType 0; DayType 0 in <WorkWeeks> telt niet ──────────────
+{
+  const day0 = (d: string) => `<WeekDay><DayType>0</DayType><DayWorking>0</DayWorking><TimePeriod><FromDate>${d}T00:00:00</FromDate><ToDate>${d}T23:59:00</ToDate></TimePeriod></WeekDay>`;
+  const week = WEEK.replace('</WeekDays>', `${day0('2026-07-01')}${day0('2026-08-03')}</WeekDays>`);
+  const r = readMSPDI(doc(cal(1, 'Beide', week + `<Exceptions>${exc('2026-07-01', '2026-07-01', 'X')}</Exceptions>`)));
+  eq('13 <Exceptions> aanwezig: alleen die, DayType 0 genegeerd (zoals MPXJ)', r.calendar.holidays, [
+    { name: 'X', startDate: '2026-07-01', endDate: '2026-07-01' },
+  ]);
+  const ww = `<WorkWeeks><WorkWeek><TimePeriod><FromDate>2026-06-01T00:00:00</FromDate><ToDate>2026-06-30T23:59:00</ToDate></TimePeriod><WeekDays>${day0('2026-06-10')}</WeekDays></WorkWeek></WorkWeeks>`;
+  eq('13 DayType 0 binnen <WorkWeeks>: geen uitzondering', readMSPDI(doc(cal(1, 'Tijdelijk', WEEK + ww))).calendar.holidays.length, 0);
+}
+
+// ── 14. Terugval: alleen taken en resources hebben een <CalendarUID> ───────────────────────────
+{
+  const cals = cal(1, 'Standard', WEEK) + cal(3, 'Ander', MA_ZA);
+  const res = '<Resource><UID>1</UID><Name>Piet</Name><Type>1</Type><CalendarUID>3</CalendarUID></Resource>';
+  const r = readMSPDI(doc(cals, taskOn(1, 'Op ander', 3, '2026-06-01', 8), '', res));
+  eq('14 geen <CalendarUID> in de projectkop: eerste element, niet de UID van een taak/resource', r.calendar.name, 'Standard');
+  eq('14 taak met CalendarUID 3 wijst naar "Ander"', r.tasks[0]?.calendarId, lib(r, 'Ander')?.id);
+}
+
+// ── 15. Basis bestaat niet, cyclus, zelfverwijzing: geen overerving, geen NL-terugval ──────────
+{
+  const base = cal(1, 'Proj', MA_ZA + `<Exceptions>${exc('2026-07-01', '2026-07-01', 'X')}</Exceptions>`);
+  const r = readMSPDI(doc(base + cal(2, 'Wees', '', 99) + cal(3, 'A', '', 4) + cal(4, 'B', '', 3) + cal(5, 'Zelf', '', 5) + cal(6, 'Rare', '', -65533)
+    + cal(7, 'Op cyclus', '', 3)));
+  for (const n of ['Wees', 'A', 'B', 'Zelf', 'Rare', 'Op cyclus']) {
+    eq(`15 "${n}": 0 feestdagen (geen NL-terugval, geen basis)`, lib(r, n)?.holidays.length, 0);
+    eq(`15 "${n}": app-werkweek, niet die van een basis`, lib(r, n)?.workDays, createDefaultCalendar().workDays);
+  }
+  // Eigen uitzondering blijft wel staan.
+  const eigen = readMSPDI(doc(base + cal(2, 'Wees eigen', `<Exceptions>${exc('2026-09-01', '2026-09-01', 'Eigen')}</Exceptions>`, 99)));
+  eq('15 basis bestaat niet, eigen uitzondering: precies die', lib(eigen, 'Wees eigen')?.holidays, [{ name: 'Eigen', startDate: '2026-09-01', endDate: '2026-09-01' }]);
+}
+
+// ── 16. Keten van 40: uitkomst onafhankelijk van de documentvolgorde ───────────────────────────
+// K2 → Proj, K3 → K2, …, K41 → K40. K(n) ligt n-1 schakels van de basis: tot en met MAX_BASE_CHAIN_DEPTH
+// schakels erft hij, daarboven niet — in beide documentvolgordes hetzelfde.
+{
+  const proj = cal(1, 'Proj', MA_ZA);
+  const links = Array.from({ length: 40 }, (_, i) => i + 2).map((k) => cal(k, `K${k}`, '', k === 2 ? 1 : k - 1));
+  const sig = (r: ReturnType<typeof readMSPDI>) => (r.resourceCalendars ?? []).map((c) => `${c.name}:${c.workDays.join('')}`).sort().join(' ');
+  const baseFirst = readMSPDI(doc(proj + links.join('')));
+  const leafFirst = readMSPDI(doc(proj + [...links].reverse().join('')));
+  eq('16 keten van 40: blad eerst = basis eerst', sig(leafFirst), sig(baseFirst));
+  const inherits = (k: number) => lib(leafFirst, `K${k}`)?.workDays.join('') === '123456';
+  ok(`16 K${MAX_BASE_CHAIN_DEPTH + 1} (${MAX_BASE_CHAIN_DEPTH} schakels) erft nog`, inherits(MAX_BASE_CHAIN_DEPTH + 1));
+  ok(`16 K${MAX_BASE_CHAIN_DEPTH + 2} (te diep) erft niet`, !inherits(MAX_BASE_CHAIN_DEPTH + 2));
+}
+
+// ── 17. Eigen export: <CalendarUID> in de projectkop; eerste taak op een bibliotheekkalender ─────
+{
+  const projCal: WorkCalendar = { ...createDefaultCalendar(), id: 'cal-proj', name: 'NL project' };
+  const ploeg: WorkCalendar = { ...createDefaultCalendar(), id: 'cal-ploeg', name: 'Ploeg za', holidays: [], workDays: [1, 2, 3, 4, 5, 6] };
+  const project: Project = {
+    id: 'p', name: 'RT', description: '', startDate: '2026-04-20', endDate: '2026-05-30',
+    calendarId: 'cal-proj', createdAt: '2026-04-20T00:00', modifiedAt: '2026-04-20T00:00', author: 'T', company: 'C',
+  };
+  const mk = (id: string, calendarId?: string): Task => ({
+    id, name: id, description: '', wbsCode: id, taskType: 'CONSTRUCTION', status: 'NOT_STARTED',
+    isMilestone: false, priority: 500, parentId: null, childIds: [], resourceIds: [], calendarId,
+    time: {
+      durationType: 'WORKTIME', durationUnit: 'days', scheduleDuration: 2, scheduleStart: '2026-04-24', scheduleFinish: '2026-04-27',
+      earlyStart: '2026-04-24', earlyFinish: '2026-04-27', lateStart: '2026-04-24', lateFinish: '2026-04-27',
+      freeFloat: 0, totalFloat: 0, isCritical: false, completion: 0,
+    },
+  });
+  const xml = writeMSPDI(project, projCal, [mk('A', 'cal-ploeg'), mk('B')], [], [], [], [ploeg]);
+  const head = xml.split('<Calendars>')[0];
+  ok('17 export: <CalendarUID>1</CalendarUID> in de projectkop', /<CalendarUID>1<\/CalendarUID>/.test(head));
+  const r = readMSPDI(xml);
+  eq('17 heropend: projectkalender', r.calendar.name, 'NL project');
+  eq('17 heropend: projectkalender houdt zijn feestdagen', r.calendar.holidays.length, projCal.holidays.length);
+  eq('17 heropend: bibliotheek', (r.resourceCalendars ?? []).map((c) => c.name), ['Ploeg za']);
+  eq('17 heropend: taak A op "Ploeg za"', r.tasks.find((t) => t.name === 'A')?.calendarId, lib(r, 'Ploeg za')?.id);
+  eq('17 heropend: taak B op de projectkalender', r.tasks.find((t) => t.name === 'B')?.calendarId, undefined);
+}
+
+// ── 12b. Budget, zwaar (achteraan: een regressie kan hier crashen) ─────────────────────────────
+{
+  // Zwaar: 28 wekelijkse records ma/wo/vr van elk 24 jaar ⇒ ~100.000 vrije dagen in de basis, plus
+  // 1023 lege afgeleide kalenders (129 KB XML). Zonder rem in `mergeInherited` pakt dat 1023 × 100.000
+  // datums uit.
+  let excs = '';
+  for (let i = 0; i < 28; i++) {
+    const y = 2000 + i * 24;
+    excs += `<Exception><DayWorking>0</DayWorking><TimePeriod><FromDate>${y}-01-01T00:00:00</FromDate><ToDate>${y + 24}-01-01T00:00:00</ToDate></TimePeriod><Type>6</Type><DaysOfWeek>42</DaysOfWeek><Period>1</Period></Exception>`;
+  }
+  let cals = cal(1, 'Basis', WEEK + `<Exceptions>${excs}</Exceptions>`);
+  for (let k = 2; k <= 1024; k++) cals += cal(k, `R${k}`, '', 1);
+  const t0 = Date.now();
+  const r = readMSPDI(doc(cals));
+  const ms = Date.now() - t0;
+  const total = [r.calendar, ...(r.resourceCalendars ?? [])].reduce((n, c) => n + c.holidays.length, 0);
+  ok(`12 zwaar: totaal ≤ MAX_TOTAL_HOLIDAY_SLOTS (${total})`, total <= MAX_TOTAL_HOLIDAY_SLOTS);
+  ok(`12 zwaar: binnen 3000 ms (${ms} ms)`, ms < 3000);
+}
+
 if (fails.length > 0) {
-  for (const f of fails) console.log(`XX  ${f}`);
   console.log(`check-mspdi-feestdagen: ${fails.length}/${checks} ROOD`);
   process.exit(1);
 }
