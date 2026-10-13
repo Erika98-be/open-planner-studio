@@ -419,3 +419,10 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   naar de maker: onbestaande basis = wortel (zoals MPXJ en `.mpp`), alleen cyclus/te diep blokkeert, geen NL.
   Na de release: Miraya-afwijking stijgt licht (355 taken op kalender Sector 43; vermoedelijk houden de Asta-datums
   geen rekening met het bouwverbod), past bij de Asta-vraag; vereenvoudiging `mergeInherited` (`take`/`room`).
+- **#338 review (reviewer, Opus 5.5): nee.** Kern gezond; 4 van 6 mutanten overleefden (*Ma–vr* zonder
+  `initialWorkTime`, *Continu* met oude `hoursPerDay`, volgorde en `hoursPerDay` in `workDaysSetPatch`). Verder:
+  gidsen (`howto-kalender-maken-en-toewijzen`, `ref-instellingen`, `howto-werktijden-instellen`), preset zet oude
+  blokken terug, werkdagen zonder blokken na "alles uit" + *Ma–vr*, MCP-waarschuwing verouderd, dode tak
+  `inferredSimpleBreak`. Fixronde 1 naar de maker met alles erin (releaseregel). **Besluit orkestrator
+  2026-10-13:** géén valkuilregel over B7 in de gids, omdat B7 vóór de release wordt opgelost (expert loopt);
+  #338 en de B7-PR gaan dus allebei vóór de release naar main.
