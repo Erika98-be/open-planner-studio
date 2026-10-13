@@ -384,3 +384,9 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   overerving van basiskalender. Corpus vs main: 7 bestanden exacter, 0 minder; exacte taken 3362 → 6909.
   Woodscapes 606 (geen verslechtering t.o.v. main); verschil met tussenmeting komt uit `lagCalendar` in het profiel.
   `measure:profiles` EXIT 0. Review door reviewer (Opus 5.5) gestart.
+- Review #335 (reviewer Opus 5.5): **nee**. BEVESTIGD hoog: overervingskopie omzeilt het feestdagenbudget ⇒ klein
+  vijandig bestand (129 KB) geeft out of memory. Midden: 21 cellen exact → inexact (voltooide taak met einde in een
+  nu gelezen vrije periode; motor zet vastgelegd einde terug); PR-tekst: 6 bestanden exacter (niet 7) en
+  `measure:profiles` dekt MSPDI niet. Verder 4 overlevende mutaties, schrijver zonder `<CalendarUID>`, dieptegrens-
+  memo, verouderd commentaar. **Orkestratorbesluit 2026-10-13:** ontbrekende basis/cyclus ⇒ geen NL-terugval,
+  zoals `.mpp`. Fixronde 2 gestart (incl. diagnose van het terugzetten van een vastgelegd einde).
