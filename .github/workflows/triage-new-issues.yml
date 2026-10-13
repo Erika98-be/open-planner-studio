@@ -1,0 +1,29 @@
+name: Nieuwe issues naar triage
+
+# Elk issue dat iemand van buiten opent, krijgt het label `needs-triage`. Zo staan
+# meldingen van gebruikers apart van de taken die agents aanmaken (`agent-ticket`).
+# Dit is nodig omdat GitHub labels in een /issues/new-URL alleen toepast voor wie
+# triagerechten heeft; de feedbackknop in de app (feedbackService.ts) zet dus bij
+# een gewone gebruiker geen label. Issues van eigenaar, leden en collaborators
+# blijven ongemoeid: die labelen zelf. Betekenis van de labels:
+# `docs/agents/triage-labels.md`.
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  issues: write
+
+jobs:
+  label:
+    if: ${{ !contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.issue.author_association) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Label needs-triage zetten
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          NUMBER: ${{ github.event.issue.number }}
+        run: gh issue edit "$NUMBER" --repo "$REPO" --add-label needs-triage
