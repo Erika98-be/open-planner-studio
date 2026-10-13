@@ -10,16 +10,22 @@ import {
   revealDocumentTab,
 } from './documentTabNavigation';
 import {
-  documentTabScrollState,
+  documentTabNeedsArrows,
+  documentTabScrollEdges,
   documentTabScrollTarget,
   wheelDeltaInPixels,
-  type DocumentTabScrollState,
+  type DocumentTabScrollEdges,
 } from './documentTabScroll';
 import { documentTabFocusTargetOutsideOverview } from './projectOverviewFocus';
 import './DocumentChrome.css';
 
 /** Zo lang telt een volgende pijlklik vanaf het doel van de vorige (duur van een vloeiende scroll). */
 const PENDING_SCROLL_MS = 600;
+
+/** Laatste vangnet tegen een aan-uit-lus: wisselen de pijlen vaker dan dit binnen
+ *  LOOP_GUARD_WINDOW_MS, dan blijven ze staan tot de maat weer echt verandert. */
+const LOOP_GUARD_TOGGLES = 4;
+const LOOP_GUARD_WINDOW_MS = 1000;
 
 /** A · Documenttabs — horizontale tabstrip onder het lint. */
 export function DocumentTabBar() {
@@ -33,79 +39,103 @@ export function DocumentTabBar() {
   const direction = i18n.dir() === 'rtl' ? 'rtl' : 'ltr';
   const stripRef = useRef<HTMLDivElement>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
-  const arrowsRef = useRef<HTMLDivElement>(null);
   // Doel van een lopende vloeiende klik. Een tweede klik tijdens het schuiven telt vanaf dat doel,
   // anders zou hij vanaf een halve positie rekenen en minder ver schuiven. Het doel vervalt zodra het
   // bereikt is, bij het scrollwiel, en uiterlijk na PENDING_SCROLL_MS (ook zonder 'scrollend'-event,
   // dat WebKit niet kent).
   const pendingOffset = useRef<{ offset: number; until: number } | null>(null);
-  const [scroll, setScroll] = useState<DocumentTabScrollState>(
-    { overflowing: false, atStart: true, atEnd: true },
-  );
+  const [overflowing, setOverflowing] = useState(false);
+  const [edges, setEdges] = useState<DocumentTabScrollEdges>({ atStart: true, atEnd: true });
+  const overflowingRef = useRef(false);
+  const toggleTimes = useRef<number[]>([]);
 
-  // Meet overloop en randen opnieuw bij scrollen, bij elke maatwijziging van strook of tabbladen
-  // (venster, tab erbij/eraf, langere naam) en bij een taalwissel (RTL keert de randen om).
+  // Overloop meten bij elke maatwijziging van strook of tabbladen (venster, tab erbij/eraf, langere
+  // naam), randen ook bij scrollen. De overloop vergelijkt de tabbladen met de ruimte die ze zónder
+  // pijlen krijgen; die maat hangt niet af van de pijlen zelf, dus de pijlen kunnen hun eigen
+  // verschijnen niet terugdraaien. Vaste CSS-maten (padding, gap) lezen we één keer per opbouw.
   useLayoutEffect(() => {
     const viewport = viewportRef.current;
     const strip = stripRef.current;
-    if (!viewport || !strip) return;
-    const measure = () => {
+    const tabs = viewport?.firstElementChild as HTMLElement | null | undefined;
+    if (!viewport || !strip || !tabs) return;
+    const stripStyle = getComputedStyle(strip);
+    const gap = Number.parseFloat(stripStyle.columnGap) || 0;
+    const padding = (Number.parseFloat(stripStyle.paddingLeft) || 0) + (Number.parseFloat(stripStyle.paddingRight) || 0);
+
+    const measureEdges = () => {
       if (pendingOffset.current && Math.abs(Math.abs(viewport.scrollLeft) - pendingOffset.current.offset) < 1) {
         pendingOffset.current = null;
       }
-      const tabs = viewport.firstElementChild as HTMLElement | null;
-      const next = documentTabScrollState({
-        scrollLeft: viewport.scrollLeft,
-        contentWidth: tabs?.scrollWidth ?? viewport.scrollWidth,
-        viewportWidth: viewport.clientWidth,
-        arrowsWidth: arrowsRef.current
-          ? arrowsRef.current.offsetWidth + (Number.parseFloat(getComputedStyle(strip).columnGap) || 0)
-          : 0,
-      });
-      setScroll(previous => (
-        previous.overflowing === next.overflowing && previous.atStart === next.atStart && previous.atEnd === next.atEnd
-          ? previous
-          : next
-      ));
+      const next = documentTabScrollEdges(viewport.scrollLeft, viewport.scrollWidth, viewport.clientWidth);
+      setEdges(previous => (previous.atStart === next.atStart && previous.atEnd === next.atEnd ? previous : next));
     };
-    measure();
-    const observer = new ResizeObserver(measure);
+
+    const measureOverflow = () => {
+      // Vaste knoppen (menu, "+"): alles in de strook behalve de viewport en de pijlen.
+      let fixedWidth = 0;
+      let fixedCount = 0;
+      for (const child of strip.children) {
+        if (child === viewport || child.hasAttribute('data-ops-tabstrip-scroll')) continue;
+        const style = getComputedStyle(child);
+        fixedWidth += (child as HTMLElement).offsetWidth
+          + (Number.parseFloat(style.marginLeft) || 0) + (Number.parseFloat(style.marginRight) || 0);
+        fixedCount += 1;
+      }
+      const available = strip.clientWidth - padding - fixedWidth - gap * fixedCount;
+      const shown = overflowingRef.current;
+      let next = documentTabNeedsArrows(tabs.scrollWidth, available, shown);
+      if (next !== shown) {
+        const now = performance.now();
+        toggleTimes.current = toggleTimes.current.filter(time => now - time < LOOP_GUARD_WINDOW_MS);
+        if (!next && toggleTimes.current.length >= LOOP_GUARD_TOGGLES) next = true;
+        else toggleTimes.current.push(now);
+      }
+      if (next !== shown) {
+        overflowingRef.current = next;
+        setOverflowing(next);
+      }
+      measureEdges();
+    };
+
+    measureOverflow();
+    const observer = new ResizeObserver(measureOverflow);
     observer.observe(strip);
     observer.observe(viewport);
-    if (viewport.firstElementChild) observer.observe(viewport.firstElementChild);
-    viewport.addEventListener('scroll', measure, { passive: true });
+    observer.observe(tabs);
+    viewport.addEventListener('scroll', measureEdges, { passive: true });
     return () => {
       observer.disconnect();
-      viewport.removeEventListener('scroll', measure);
+      viewport.removeEventListener('scroll', measureEdges);
     };
-  }, [cards, direction, scroll.overflowing]);
+  }, [direction]);
 
   // Het verticale scrollwiel schuift de tabbladen horizontaal (zoals in een browser). Een
-  // horizontale touchpadbeweging laat de browser zelf afhandelen. Non-passive: anders mag
-  // preventDefault niet en scrolt de browser alsnog verticaal mee.
+  // horizontale touchpadbeweging laat de browser zelf afhandelen, en Ctrl+wiel blijft zoomen.
+  // Non-passive: anders mag preventDefault niet en scrolt de browser alsnog verticaal mee.
   useEffect(() => {
     const viewport = viewportRef.current;
-    if (!viewport || !scroll.overflowing) return;
+    if (!viewport || !overflowing) return;
     const onWheel = (event: WheelEvent) => {
       if (event.ctrlKey || Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
       event.preventDefault();
       pendingOffset.current = null;
-      const amount = wheelDeltaInPixels(event.deltaY, event.deltaMode, viewport.clientWidth);
+      const amount = wheelDeltaInPixels(event.deltaY, event.deltaMode);
       // Wiel omlaag = richting het eind, in LTR en RTL.
       viewport.scrollBy({ left: direction === 'rtl' ? -amount : amount, behavior: 'instant' });
     };
     viewport.addEventListener('wheel', onWheel, { passive: false });
     return () => viewport.removeEventListener('wheel', onWheel);
-  }, [direction, scroll.overflowing]);
+  }, [direction, overflowing]);
 
   // Iedere route kan een document activeren; alleen hier kennen we de horizontale viewport. Ook
   // als de pijlknoppen verschijnen of verdwijnen: dan verandert de breedte van de viewport en kan
-  // het actieve tabblad er net buiten vallen.
+  // het actieve tabblad er net buiten vallen. En als het overzicht sluit: wie daar het al actieve
+  // project kiest, verwacht dat tabblad ook te zien, ook als hij het eerder weg had geschoven.
   useEffect(() => {
-    if (!activeId) return;
+    if (!activeId || projectOverviewOpen) return;
     const tab = tabRefs.current.get(activeId);
     if (tab) revealDocumentTab(tab);
-  }, [activeId, scroll.overflowing]);
+  }, [activeId, overflowing, projectOverviewOpen]);
 
   const scrollTabs = useCallback((towards: 'start' | 'end') => {
     const viewport = viewportRef.current;
@@ -175,15 +205,15 @@ export function DocumentTabBar() {
           het WAI-ARIA-tabspatroon geeft de tablist één tabstop, en met de pijltoetsen, Home en End
           schuift het actieve tabblad al vanzelf in beeld. Voor muis, touch en spraakbediening
           houden ze wel een naam en tooltip. */}
-      {scroll.overflowing && (
-        <div className="ops-tabstrip-scroll" ref={arrowsRef} data-ops-tabstrip-scroll>
+      {overflowing && (
+        <div className="ops-tabstrip-scroll" data-ops-tabstrip-scroll>
           <button
             type="button"
             tabIndex={-1}
             className="ops-iconbtn ops-tabstrip-scroll-button"
             title={t('documents.scrollTabsStart')}
             aria-label={t('documents.scrollTabsStart')}
-            disabled={scroll.atStart}
+            disabled={edges.atStart}
             onClick={() => scrollTabs('start')}
             data-ops-tabstrip-scroll-start
           >
@@ -195,7 +225,7 @@ export function DocumentTabBar() {
             className="ops-iconbtn ops-tabstrip-scroll-button"
             title={t('documents.scrollTabsEnd')}
             aria-label={t('documents.scrollTabsEnd')}
-            disabled={scroll.atEnd}
+            disabled={edges.atEnd}
             onClick={() => scrollTabs('end')}
             data-ops-tabstrip-scroll-end
           >

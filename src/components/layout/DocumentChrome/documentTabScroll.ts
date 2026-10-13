@@ -1,34 +1,45 @@
 /** Halve pixel speling: zoom en subpixelbreedtes laten `scrollLeft` zelden exact op de rand eindigen. */
 const EDGE_TOLERANCE = 1;
 
-export interface DocumentTabScrollState {
-  /** De tabbladen passen niet in de viewport; alleen dan staan de pijlknoppen er. */
-  overflowing: boolean;
+/**
+ * Marge voor het weghalen van de pijlen. Ze verschijnen zodra de tabbladen niet passen, maar
+ * verdwijnen pas als er minstens zoveel pixels over zijn. Een meetfout van een paar pixels
+ * (subpixels, zoom, een knop die één pixel krimpt) kan zo nooit een aan-uit-lus geven.
+ */
+export const DOCUMENT_TAB_HIDE_MARGIN = 4;
+
+/**
+ * Hebben de tabbladen de pijlknoppen nodig?
+ *
+ * `availableWidth` is de ruimte die de tabbladen zónder pijlen zouden krijgen: de strook min de
+ * vaste knoppen (menu, "+") en hun tussenruimte. Die maat hangt dus niet af van of de pijlen er
+ * staan. Daardoor kan het verschijnen van de pijlen de uitkomst nooit omkeren.
+ */
+export function documentTabNeedsArrows(
+  contentWidth: number,
+  availableWidth: number,
+  arrowsShown: boolean,
+): boolean {
+  if (arrowsShown) return contentWidth > availableWidth - DOCUMENT_TAB_HIDE_MARGIN;
+  return contentWidth > availableWidth + EDGE_TOLERANCE / 2;
+}
+
+export interface DocumentTabScrollEdges {
   /** De viewport staat aan het begin (LTR links, RTL rechts): de knop naar het begin is uit. */
   atStart: boolean;
   /** De viewport staat aan het eind: de knop naar het eind is uit. */
   atEnd: boolean;
 }
 
-export interface DocumentTabScrollMetrics {
-  /** `scrollLeft` van de viewport. In RTL is die 0 aan het begin en negatief richting het eind. */
-  scrollLeft: number;
-  /** Breedte van alle tabbladen samen (de tablist op max-content). */
-  contentWidth: number;
-  /** Zichtbare breedte van de viewport. */
-  viewportWidth: number;
-  /** Breedte die de pijlknoppen nu innemen (0 als ze er niet staan). Zonder pijlen krijgt de
-   *  viewport die ruimte terug; past alles dan, dan zijn de pijlen niet nodig. */
-  arrowsWidth: number;
-}
-
-/** Bepaal of de pijlknoppen nodig zijn en welke uit staat. Werkt in LTR en RTL gelijk via |scrollLeft|. */
-export function documentTabScrollState(metrics: DocumentTabScrollMetrics): DocumentTabScrollState {
-  const overflowing = metrics.contentWidth > metrics.viewportWidth + metrics.arrowsWidth + EDGE_TOLERANCE;
-  const offset = Math.abs(metrics.scrollLeft);
-  const maxOffset = Math.max(0, metrics.contentWidth - metrics.viewportWidth);
+/** Randen uit `scrollLeft`. In RTL is die 0 aan het begin en negatief richting het eind. */
+export function documentTabScrollEdges(
+  scrollLeft: number,
+  scrollWidth: number,
+  clientWidth: number,
+): DocumentTabScrollEdges {
+  const offset = Math.abs(scrollLeft);
+  const maxOffset = Math.max(0, scrollWidth - clientWidth);
   return {
-    overflowing,
     atStart: offset <= EDGE_TOLERANCE,
     atEnd: offset >= maxOffset - EDGE_TOLERANCE,
   };
@@ -50,14 +61,13 @@ export function documentTabScrollTarget(
   towards: 'start' | 'end',
   count = DOCUMENT_TABS_PER_SCROLL_STEP,
 ): number {
-  if (tabStarts.length === 0) return towards === 'end' ? maxOffset : 0;
   // Het tabblad dat nu aan de beginrand staat (ook als het half zichtbaar is).
   let current = 0;
   for (let i = 0; i < tabStarts.length; i += 1) {
     if (tabStarts[i]! <= offset + EDGE_TOLERANCE) current = i;
   }
   // Staat dat tabblad half buiten beeld, dan telt naar het begin het halve tabblad als eerste stap.
-  const partial = tabStarts[current]! < offset - EDGE_TOLERANCE;
+  const partial = (tabStarts[current] ?? 0) < offset - EDGE_TOLERANCE;
   const target = towards === 'end'
     ? current + count
     : current - count + (partial ? 1 : 0);
@@ -66,9 +76,7 @@ export function documentTabScrollTarget(
   return Math.min(Math.max(tabStarts[target]!, 0), maxOffset);
 }
 
-/** `WheelEvent.deltaMode`: 0 = pixels, 1 = regels, 2 = pagina's. */
-export function wheelDeltaInPixels(delta: number, deltaMode: number, pageWidth: number): number {
-  if (deltaMode === 1) return delta * 16;
-  if (deltaMode === 2) return delta * pageWidth;
-  return delta;
+/** `WheelEvent.deltaMode` 1 = regels (Firefox met muiswiel); anders pixels. */
+export function wheelDeltaInPixels(delta: number, deltaMode: number): number {
+  return deltaMode === 1 ? delta * 16 : delta;
 }

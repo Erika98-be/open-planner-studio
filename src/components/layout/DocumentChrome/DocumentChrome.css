@@ -22,7 +22,8 @@
   background: var(--theme-ribbon-tab-bg); border-bottom: 1px solid var(--theme-border);
   padding: 0 6px; gap: 3px;
 }
-.ops-tabstrip-menu { align-self: center; width: 30px; height: 26px; margin-right: 2px; }
+/* flex: none: de menuknop mag niet meekrimpen, anders klopt de meting van de vrije ruimte niet. */
+.ops-tabstrip-menu { align-self: center; width: 30px; height: 26px; margin-right: 2px; flex: none; }
 .ops-tabstrip-viewport {
   /* Krimpt tot de inhoud: de "+" volgt direct na het laatste tabblad (zoals een browser). Bij overloop
      krimpt de viewport tot min-width 0 en blijft de "+" aan de eindrand zichtbaar; RTL spiegelt via flex.
