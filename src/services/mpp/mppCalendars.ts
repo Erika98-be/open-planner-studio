@@ -13,7 +13,7 @@
  * (`periodCount>0`) worden `WorkCalendar.workingExceptions`.
  *
  * Doelsemantiek is IDENTIEK aan de kalendersectie van `mspdiReader.ts` (`applyCalendarBody`/
- * `parseCalendar`) — zelfde `WorkCalendar`-vorm, dezelfde `canonicalizeBands`/
+ * `readCalendars`) — zelfde `WorkCalendar`-vorm, dezelfde `canonicalizeBands`/
  * `registerCalendarBands`/`promoteHourCalendar`-orkestratie uit `@/services/subdayIo`.
  *
  * `buildCalendarFromDays` registreert alleen banden en promoveert NIET: promotie is een losse stap
@@ -22,9 +22,9 @@
  * `cal.hoursPerDay` van vóór promotie lezen, niet de door `deriveHoursPerDay` herberekende waarde.
  *
  * Twee bewuste verschillen met `mspdiReader.ts`:
- *  a. `WorkCalendar.holidays` begint hier ALTIJD als `[]`; mspdiReader start bij
- *     `createDefaultCalendar()` (met gegenereerde NL-feestdagen) en overschrijft die alleen bij ≥1
- *     `<Exception>`. MPP-kalenders zijn altijd letterlijke bestandsdata, nooit een stille default.
+ *  a. `WorkCalendar.holidays` begint hier ALTIJD als `[]`; mspdiReader houdt de NL-feestdagen van
+ *     `createDefaultCalendar()` alleen bij een kale `<Calendar>` (geen werkweek, geen uitzonderingen,
+ *     geen basiskalender). MPP-kalenders zijn altijd letterlijke bestandsdata, nooit een stille default.
  *  b. Naamloze kalenders krijgen hier `"Kalender <uid>"` (uniek per kalender); mspdiReader valt terug
  *     op `"Imported Calendar"`.
  *
@@ -55,14 +55,14 @@ import { MAX_VAR_TEXT_BYTES, MAX_EXCEPTION_BAND_PERIODS } from './limits';
 import {
   expandRecurrence, buildContributions, resolveContributions, mergeInherited, newHolidayBudget,
   RECURRENCE_TYPES, RELATIVE_MAP, RECURRENCE_PRECEDENCE_ORDER,
-  MAX_CALENDAR_EXCEPTIONS, MAX_HOLIDAY_RANGE_DAYS, MAX_TOTAL_HOLIDAY_SLOTS,
+  MAX_CALENDAR_EXCEPTIONS, MAX_HOLIDAY_RANGE_DAYS, MAX_TOTAL_HOLIDAY_SLOTS, MAX_BASE_CHAIN_DEPTH,
 } from '@/services/calendarRecurrence';
 import type { RecurrenceSpec, RecordContribution, RawException, ParsedExceptions, HolidayBudget } from '@/services/calendarRecurrence';
 
 export {
   expandRecurrence, resolveContributions, newHolidayBudget,
   RECURRENCE_TYPES, RELATIVE_MAP, RECURRENCE_PRECEDENCE_ORDER,
-  MAX_CALENDAR_EXCEPTIONS, MAX_HOLIDAY_RANGE_DAYS, MAX_TOTAL_HOLIDAY_SLOTS,
+  MAX_CALENDAR_EXCEPTIONS, MAX_HOLIDAY_RANGE_DAYS, MAX_TOTAL_HOLIDAY_SLOTS, MAX_BASE_CHAIN_DEPTH,
 };
 export type { RecurrenceSpec, RecordContribution, ParsedExceptions, HolidayBudget };
 
@@ -98,12 +98,6 @@ const MAX_DAY_HOUR_PERIODS = 5;
  *  FixedData-iteratie stopt zodra de klem is bereikt. */
 export const MAX_CALENDARS = 1_024;
 
-/** Begrenst de base-kalender-ketenvolging voor afgeleide (resource-)kalenders. Een geprepareerd
- *  bestand kan een kalender naar zichzelf of circulair laten verwijzen; MPXJ beschermt daar niet
- *  tegen (`updateBaseCalendarNames` heeft geen cyclusdetectie). De fixed-point-resolutie in
- *  `readCalendars` probeert hoogstens dit aantal ronden; wat dan nog niet opgelost is, wordt zonder
- *  overerving gematerialiseerd. */
-export const MAX_BASE_CHAIN_DEPTH = 32;
 
 /** Eén weekdag, volledig geresolveerd (geen "gebruik de default/base"-sentinel meer) — de
  *  tussenvorm die zowel de projectbrede DEFAULT_CALENDAR_HOURS-fallback, een basiskalender én een
@@ -419,7 +413,7 @@ export interface CalendarReadResult {
    *  `createDefaultCalendar()`. */
   projectCalendar: WorkCalendar;
   /** Alle overige kalenders (alles behalve `projectCalendar`) — spiegelt mspdiReader's
-   *  `resourceCalendars` (elk `<Calendar>`-element behalve UID 1). */
+   *  `resourceCalendars` (elk `<Calendar>`-element behalve de projectkalender van `<CalendarUID>`). */
   resourceCalendars: WorkCalendar[];
   /** MPP resource-uniqueID → kalender-uniqueID (`AbstractCalendarFactory`'s `resourceMap`), voor de
    *  `Resource.calendarId`-koppeling in `readResources`. */
@@ -450,8 +444,8 @@ function fallbackResult(): CalendarReadResult {
  * `NumberHelper.getInt(null) === 0`-terugval.
  *
  * `hoursPerDayOverride` is de MINUTES_PER_DAY-projecteigenschap (of `null`) en geldt UITSLUITEND
- * voor de kalender die de PROJECTkalender wordt — zoals mspdiReader, waar de override alleen in
- * `parseCalendar` zit. Omdat hij vóór promotie moet landen, wordt de projectkalender-identiteit al
+ * voor de kalender die de PROJECTkalender wordt — zoals mspdiReader, waar de override alleen op de
+ * projectkalender in `readCalendars` werkt. Omdat hij vóór promotie moet landen, wordt de projectkalender-identiteit al
  * vóór de materialisatielussen bepaald.
  *
  * Altijd-vangende wrapper rond `readCalendarsUnsafe`: een kapotte kalendersectie blokkeert de import

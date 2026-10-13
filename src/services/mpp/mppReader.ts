@@ -1581,7 +1581,7 @@ export function readMPP(bytes: Uint8Array, labels?: ImportLabels): ImportResult 
   // (c)-signaal en promoveert ze daarna in-place (zelfde object-referenties), dus `calendar` en
   // `calResult.resourceCalendars` zijn na `readTasks` volledig gepromoveerd.
   // `calendarHoursPerDayOverride` (alleen bij een geldige MINUTES_PER_DAY) spiegelt mspdiReader's
-  // MinutesPerDay-override in `parseCalendar`.
+  // MinutesPerDay-override op de projectkalender in `readCalendars`.
   const calResult = readCalendars(cfb, projectProps, applicationVersion, calendarHoursPerDayOverride);
   const calendar = calResult.projectCalendar;
   project.calendarId = calendar.id;
