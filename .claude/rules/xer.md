@@ -59,7 +59,8 @@ Een activiteit zonder `target_start_date` volgt de gedeelde regel `resolveMissin
 `PROJECT.plan_start_date`, dan de vroegste aanwezige taakstart; nooit meer 1970. De openingsmelding telt ze
 (`ImportResult.xerMissingPlannedStarts`, transient; review PR #109 N1).
 De documentnaam na een XER-import is de projectnaam, met het P6 Project-ID tussen haakjes als dat afwijkt
-(`src/utils/xerDocumentName.ts`). (2) **Bak 4 — opgeslagen rekenuitvoer is
+(`src/utils/documentProjectCode.ts`, één regel voor XER en P6 XML; de XER-code komt uit `xerProjectCode` in
+`src/utils/xerDocumentName.ts`). (2) **Bak 4 — opgeslagen rekenuitvoer is
 weergave, nooit solverinvoer.** De zes P6-uitvoerkolommen (`early_/late_start/end_date`,
 `total_/free_float_hr_cnt`) mogen uitsluitend via `xerRecordedTimes.ts` gelezen worden, als
 `ImportResult.recordedTimes`; ze voeden de weergave "Datums zoals opgeslagen" (issue #63, zie
