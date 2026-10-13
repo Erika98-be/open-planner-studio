@@ -531,3 +531,8 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
 - #343 fixronde 1 klaar (maker): legacy-id-herkenning, extensie-fix, 11 mutanten rood, rapportkop/PDF-naam met code.
   Orkestrator: `.claude/rules/xer.md` verwijzing rechtgezet, main (met #339/#340) erin → kop e15ad9bf0; lokaal
   typecheck + checks exit 0. Her-check gestart.
+- **#343 her-check: ja** (reviewer, Opus 5.5), na groene CI. Eisen 1 en 2 opgelost; QA-bestanden goed; combinatie met
+  #339/#340 groen. Advies (laag, uitgevoerd door de orkestrator vóór de merge, fcb9928c3): `isLegacyOpsProjectId`
+  eist de echte vorm van `generateId` (8+4+cijfers), anders vielen codes als `proj-monument` weg; 10b/10d rood met de
+  oude regex. PR-tekst over het restgeval rechtgezet (alleen browserbuild 25-09 t/m 13-10, niet v2026.9.0).
+  Open vraag voor later (niet blokkerend): een duplicaat houdt dezelfde P6-`<Id>` (toets 9b).
