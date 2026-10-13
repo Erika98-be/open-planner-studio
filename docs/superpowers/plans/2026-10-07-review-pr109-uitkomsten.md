@@ -440,3 +440,11 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   "MERIDIAN-1 Data Centre, Hall A"; na hernoemen tab "Nieuwe naam (MER-1-2026)"). P6 XML zet de code ín de naam
   (veld "Bid for Facility Extension (OZB-05)"; na hernoemen tab "Nieuwe naam", code weg; de P6 XML-schrijver
   geeft dan `Id` = `OPS:…`). Voorgelegd als besluit.
+- **#335 her-check ronde 3: ja** (reviewer, Opus 5.5). Fout `BaseCalendarUID 0` weg (probe `0`/`-1`/`-65533`/`99`
+  allemaal goed), 940/940 kalenders erven hun basis, alle mutanten rood. Restpunten laag, na de release:
+  kale kalender met onbestaande basis krijgt app-week 07–16 (MPXJ: ma–vr zonder uren; `.mpp`: standaarduren uit
+  het bestand; corpus 1 geval zonder taken), asymmetrie kale `-1` (houdt NL) vs kale `0`, kalender met UID 0.
+  **Gemerged in main 2026-10-13: #335 → 14a23c1a2**, met `--admin` (branchbeveiliging). Geen aparte
+  integratiebranch: de PR-kop 7e5182de6 bevatte main f922cae4e al, CI 15/15 en `measure:profiles` exit 0 liepen
+  op precies die kop.
+- #338 fixronde 1 klaar (kop 3adaf582a, main erin, CI groen volgens maker; M1–M6 rood). Her-check gestart.
