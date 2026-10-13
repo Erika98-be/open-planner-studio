@@ -84,6 +84,11 @@ en noem het in je rapport of PR-tekst.
     Playwright-proeven; de tutorials zeggen daarom nu "dubbelklik". Voorstel: de inhoud selecteren bij focus,
     zoals de tabelcel waarin typen al vervangt. Eenh./dag (Toewijzen ▾ en het blok Toewijzingen) niet apart
     gemeten. — B
+108. **De gekleurde meldingsblokken (`alert--info/success/warning/error`) houden in het donkere thema hun
+    lichte kleuren.** `globals.css` (blok *Alerts*) zet vaste kleuren (`#EFF6FF` met `#1E40AF`), zonder
+    themavariant. In Projectinfo valt het blauwe blok in donker daardoor fel op (Rekenprofiel en het
+    IFC-schemablok). Gezien op een schermbeeld van de browsertest van #292. Misschien bewust; niet nagevraagd.
+    — S
 
 ## Kalenders
 
@@ -228,6 +233,20 @@ en noem het in je rapport of PR-tekst.
     van een nieuwe sessie-id na een bezet tabblad). Die functie bestaat alleen in een veilige context (https of
     localhost); op een gewoon http-adres gooit hij. Gezien bij #309 in de nep-site op de dev-server via
     Tailscale (daar hersteld). Productie draait op https; de dev-server via een IP-adres niet. — S
+106. **`IfcTaskTime.Completion` krijgt `0.00` bij een taak zonder voortgang.** Het attribuut is een
+    `IfcPositiveRatioMeasure`, en die moet groter dan 0 zijn (regel WR1). `ifcTaskSlots.ts`, slot `completion`
+    (`ifcCompletionReal(... ?? 0)`). IfcOpenShell 0.9.0 (`ifcopenshell.validate`) geeft één melding per taak
+    zonder voortgang: 537 in de voorbeelden, 17 in het rijke testproject van `check-ifc-arity.ts`. Voorstel:
+    `$` bij 0 (de reader leest `$` al als 0); niet uitgezocht of de aanwezigheidsregistratie in hetzelfde
+    bestand dat toelaat. Gevonden bij #292, niet daar opgelost. — B
+107. **Gehele getallen in `IFCREAL(...)` en `IFCMONETARYMEASURE(...)` zonder decimale punt.** STEP vraagt voor
+    een REAL een punt (`8.`), de writer schrijft `8`. IfcOpenShell meldt dan
+    `IfcPropertySingleValue :: NominalValue: Not valid`: 158 keer in de voorbeelden, 17 keer in het rijke
+    testproject (precies de 17 gehele waarden). Met `8.` in plaats van `8` verdwijnen de meldingen (met een
+    script nagemeten). Plekken: `ifcWriter.ts`: eigen velden `number`/`cost` (`case 'number'`), de
+    kalender-pset (`HoursPerDay`, `WorkStartHour`, `WorkEndHour`) en de resource-pset (`MaxUnits`,
+    `CostPerHour`). Voorstel: één hulpfunctie voor een STEP-REAL, zoals `ifcCompletionReal`. Gevonden bij
+    #292, niet daar opgelost. — B
 
 ## Rondleiding, Help en extensie-gidsen
 
