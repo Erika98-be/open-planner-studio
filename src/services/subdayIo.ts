@@ -205,15 +205,53 @@ export function workDayFromBlocks(dayBlocks: ReadonlyArray<{ start: number; end:
   };
 }
 
-/** De scalaire werkdag van een kalender met weekbanden: de eerste ISO-weekdag met blokken. */
-function scalarDayOfBands(cal: Pick<WorkCalendar, 'workTime'>): BlockedWorkDay | undefined {
-  const byWeekday = cal.workTime?.byWeekday;
+/**
+ * Volgorde waarin "de eerste werkdag met blokken" gezocht wordt: zondag eerst, dan maandag t/m zaterdag
+ * (ISO-nummers). Dat is de volgorde waarin MS Project zijn weekdagen schrijft (DayType 1 = zondag) en
+ * dus waarin de MSPDI- en `.mpp`-lezer hun scalaire werkdag kiezen. Eén regel voor de lezers, het
+ * bibliotheekherstel en de werkdagknoppen van de kalenderdialoog. (IFC draagt op elke werkdag
+ * dezelfde periodes, dus daar maakt de volgorde niet uit.)
+ */
+const SCALAR_DAY_ORDER = [7, 1, 2, 3, 4, 5, 6] as const;
+
+/** De blokken van de eerste werkdag met blokken (volgorde {@link SCALAR_DAY_ORDER}), of `undefined`. */
+export function firstBlockedDay(
+  bands: Pick<WorkTimeBands, 'byWeekday'> | undefined,
+): ReadonlyArray<{ start: number; end: number }> | undefined {
+  const byWeekday = bands?.byWeekday;
   if (!byWeekday) return undefined;
-  for (let wd = 1; wd <= 7; wd++) {
-    const day = byWeekday[wd as 1];
-    if (Array.isArray(day) && day.length > 0) return workDayFromBlocks(day);
+  for (const wd of SCALAR_DAY_ORDER) {
+    const day = byWeekday[wd];
+    if (Array.isArray(day) && day.length > 0) return day;
   }
   return undefined;
+}
+
+/**
+ * Wat een werkdagknop in de kalenderdialoog doet. Dagkalender: alleen `workDays`. Uurkalender: de
+ * blokken gaan mee, want de motor gebruikt beide (het werkdagmasker voor de dagtelling, de blokken voor
+ * de uren) en een `workDays` zonder blokken verdween na opslaan en heropenen. Een dag uit ⇒ zijn blokken
+ * leeg; een dag aan ⇒ een kopie van de blokken van de eerste werkdag met blokken ({@link firstBlockedDay}).
+ * `hoursPerDay` volgt dan uit de blokken ({@link deriveHoursPerDay}).
+ */
+export function workDayTogglePatch(
+  cal: Pick<WorkCalendar, 'workDays' | 'workTime' | 'hoursPerDay'>,
+  day: number,
+): Partial<WorkCalendar> {
+  const has = cal.workDays.includes(day);
+  const workDays = has ? cal.workDays.filter((x) => x !== day) : [...cal.workDays, day].sort((a, b) => a - b);
+  if (!cal.workTime || day < 1 || day > 7) return { workDays };
+  const source = has ? [] : (firstBlockedDay(cal.workTime) ?? []);
+  const workTime: WorkTimeBands = {
+    byWeekday: { ...cal.workTime.byWeekday, [day as 1]: source.map((b) => ({ ...b })) },
+  };
+  return { workDays, workTime, hoursPerDay: deriveHoursPerDay(workTime, cal.hoursPerDay) };
+}
+
+/** De scalaire werkdag van een kalender met weekbanden: de eerste werkdag met blokken. */
+function scalarDayOfBands(cal: Pick<WorkCalendar, 'workTime'>): BlockedWorkDay | undefined {
+  const day = firstBlockedDay(cal.workTime);
+  return day ? workDayFromBlocks(day) : undefined;
 }
 
 /**

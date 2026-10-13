@@ -14,6 +14,8 @@
 //     bewust gekozen werkdagen en scalaire kalenders blijven.
 //  §4 Kalenderdialoog: pauze uit de blokken (12:00/60, 11:30/30) en de echte invoercontrole
 //     (`scalarTimesValid`).
+//  §6 Werkdagknoppen: bij een uurkalender gaan de blokken mee (`workDayTogglePatch`); vrijdag uit en
+//     weer aan geeft de juiste blokken en taakeinddatum, ook na opslaan en heropenen.
 //  §5 Resourcebibliotheek: een oud project met een MSP-kalender in de bibliotheek opent `in-sync`
 //     (geen afwijkingsdialoog); `behind` blijft `behind` en verversen zet geen 08:00–12:00 terug.
 import './domStub';
@@ -35,6 +37,7 @@ import {
   calendarScalarBreakIssue, inferredSimpleBreak, makeBands, scalarTimesValid,
 } from '@/utils/effectiveWorkTime';
 import { shiftPresetPatch } from '@/utils/shiftPresets';
+import { workDayTogglePatch } from '@/services/subdayIo';
 import { parseOpenedFile } from '@/services/formatRegistry';
 import { applyCalendarUpdate, bumpPool, classifyCalendarOnOpen, normalizePoolShape } from '@/services/library/libraryOps';
 import { readFileSync } from 'node:fs';
@@ -219,6 +222,15 @@ const hourCal = (start: number, end: number): Partial<WorkCalendar> => ({
   const scalarRead = readIFC(scalarIfc).calendar;
   same('§3e scalaire dagkalender 08–17 blijft 8/17 scalair', [scalar(scalarRead), scalarRead.workTime ?? null],
     [{ start: 8, end: 17, hpd: 8 }, null]);
+  // Tegenstrijdige scalaire data: pauzevelden gezet (12:00, 60 min) maar hpd 9 = einde − begin. De
+  // schrijver laat `HoursPerDay` dan weg (9 = einde − begin) en materialiseert 08–12 + 13–17 met
+  // IsHourCalendar .F. De lezer houdt de afspraak met de schrijver (hpd = einde − begin = 9) en neemt
+  // NIET de netto uren van de periodes (8): bij een scalaire kalender is de netto-tussenwaarde uit.
+  const contradictory = ifcWith({ ...scalarDay, hoursPerDay: 9, simpleBreakStartMinute: 720, simpleBreakDurationMinutes: 60 }, true);
+  same('§3e fixture: tegenstrijdige scalaire kalender zonder HoursPerDay, met IsHourCalendar .F. en twee periodes',
+    [contradictory.includes("'HoursPerDay'"), contradictory.includes("'IsHourCalendar',$,IFCBOOLEAN(.F.)"), contradictory.includes(pm)],
+    [false, true, true]);
+  same('§3e .F. met pauzevelden en hpd = einde − begin houdt hpd 9 (geen netto)', readIFC(contradictory).calendar.hoursPerDay, 9);
 
   // §3f. Tussenwaarde vóór promotie: een IFC (geschreven uit een MSP-import, kalender 08–12 + 13–17)
   //      met ActualDuration/FreeFloat 'PT72H'. Die rekent de lezer om met de hoursPerDay van vóór de
@@ -294,6 +306,37 @@ const hourCal = (start: number, end: number): Partial<WorkCalendar> => ({
   same('§5 verversen: omschrijving uit de bibliotheek, einde blijft 17', [refreshed.description, refreshed.workEndHour], ['bijgewerkt', 17]);
   // Een echt lokaal bewerkte kopie blijft deviated.
   same('§5 lokaal bewerkte kopie (andere naam) blijft deviated', classifyCalendarOnOpen({ ...opened, name: 'Eigen' }, moved), 'deviated');
+}
+
+// ── §6 Werkdagknoppen ──────────────────────────────────────────────────────────────────────────────
+// De motor gebruikt bij een uurkalender zowel het werkdagmasker (`workDays`, dagtelling) als de blokken.
+// Vrijdag uit moet daarom ook de vrijdagblokken weghalen; anders stonden ze na opslaan weer aan.
+{
+  const ctx = createAppStoreContext();
+  const S = () => ctx.store.getState();
+  S().applyLoadedProject(readMSPDI(mspdi({ minutesPerDay: 480 })), { filePath: null, recompute: true });
+  const finish = () => S().tasks.find(t => t.name === 'Taak')!.time.earlyFinish;
+  same('§6 uitgangspunt: taak van 5 dagen eindigt vrijdag 9 jan 17:00', finish(), '2026-01-09T17:00');
+
+  const off = workDayTogglePatch(S().calendar, 5);
+  same('§6 vrijdag uit: werkdagen ma–do, vrijdagblokken leeg, hpd 8', [off.workDays, off.workTime?.byWeekday[5], off.hoursPerDay],
+    [[1, 2, 3, 4], [], 8]);
+  S().setCalendar({ ...S().calendar, ...off });
+  S().runCPM();
+  same('§6 vrijdag uit: taak eindigt maandag 12 jan 17:00', finish(), '2026-01-12T17:00');
+  const reopened = readIFC(writeIFC(buildWriteIFCInput(S()))).calendar;
+  same('§6 vrijdag uit: na opslaan en heropenen geen vrijdag', [reopened.workDays, reopened.workTime?.byWeekday[5] ?? []], [[1, 2, 3, 4], []]);
+
+  const on = workDayTogglePatch(S().calendar, 5);
+  same('§6 vrijdag weer aan: blokken 08–12 + 13–17 terug', [on.workDays, on.workTime?.byWeekday[5]], [[1, 2, 3, 4, 5], MSP_DAY]);
+  S().setCalendar({ ...S().calendar, ...on });
+  S().runCPM();
+  same('§6 vrijdag weer aan: taak eindigt weer vrijdag 9 jan 17:00', finish(), '2026-01-09T17:00');
+
+  // Zaterdag aan: krijgt de blokken van de eerste werkdag met blokken.
+  same('§6 zaterdag aan: blokken van de eerste werkdag', workDayTogglePatch(S().calendar, 6).workTime?.byWeekday[6], MSP_DAY);
+  // Dagkalender (geen blokken): alleen de werkdagen.
+  same('§6 dagkalender: alleen workDays', workDayTogglePatch({ workDays: [1, 2, 3, 4, 5], hoursPerDay: 8 }, 5), { workDays: [1, 2, 3, 4] });
 }
 
 if (failures.length > 0) {

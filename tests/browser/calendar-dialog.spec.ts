@@ -365,3 +365,40 @@ test('kalenderdialoog: pauze volgt uit het gat tussen de blokken (07:00–11:30 
     await expect(dialog.locator('[data-ops-simple-break-net-hours]')).toHaveText(/^8[.,]50 h$/);
     await dialog.locator('[data-ops-cal-cancel]').click();
   });
+
+// Werkdagknoppen bij een kalender met werkblokken (review #334, ronde 2): de motor gebruikt zowel het
+// werkdagmasker als de blokken, dus vrijdag uit haalt ook de vrijdagblokken weg — met urenplanning uit
+// én aan. Een taak van 5 dagen (ma 5 – vr 9 jan) eindigt dan maandag 12 jan; vrijdag weer aan zet hem
+// terug op vrijdag 9 jan.
+for (const hourPlanning of [false, true]) {
+  test(`kalenderdialoog: werkdag uit en weer aan past de blokken mee aan (urenplanning ${hourPlanning ? 'aan' : 'uit'})`,
+    async ({ page, ops: _ops }) => {
+      const dialog = await openMspdiAndCalendarDialog(page, mspdiWithBlocks([['08:00', '12:00'], ['13:00', '17:00']]));
+      if (hourPlanning) await page.evaluate(() => window.__OPS__!.store.getState().setUI({ enableHourPlanning: true }));
+      const friday = () => page.evaluate(() => {
+        const s = window.__OPS__!.store.getState();
+        return {
+          workDays: s.calendar.workDays,
+          fri: s.calendar.workTime?.byWeekday[5] ?? null,
+          finish: s.tasks.find(t => t.name === 'Taak')?.time.earlyFinish,
+        };
+      });
+      await expect.poll(friday).toEqual({
+        workDays: [1, 2, 3, 4, 5], fri: [{ start: 480, end: 720 }, { start: 780, end: 1020 }], finish: '2026-01-09T17:00',
+      });
+
+      await dialog.getByRole('button', { name: 'Fri', exact: true }).click();
+      await dialog.locator('[data-ops-cal-apply]').click();
+      await expect.poll(friday).toEqual({ workDays: [1, 2, 3, 4], fri: [], finish: '2026-01-12T17:00' });
+
+      // Toepassen sluit de dialoog; open hem opnieuw.
+      await expect(dialog).toHaveCount(0);
+      await page.evaluate(() => window.__OPS__!.store.getState().setUI({ showCalendarDialog: true }));
+      await expect(dialog).toBeVisible();
+      await dialog.getByRole('button', { name: 'Fri', exact: true }).click();
+      await dialog.locator('[data-ops-cal-apply]').click();
+      await expect.poll(friday).toEqual({
+        workDays: [1, 2, 3, 4, 5], fri: [{ start: 480, end: 720 }, { start: 780, end: 1020 }], finish: '2026-01-09T17:00',
+      });
+    });
+}
