@@ -180,9 +180,9 @@ eerste werkdag, en zette de reader die op elke werkdag. Zo staat het nu in het b
   kalender met urentaak (die schrijft zijn afgeleide blokken, op elke werkdag dezelfde) geven
   hetzelfde bestand als vóór B7.
 - **Een terugvalweek vooraan.** Bij meer groepen staat eerst een week met alle werkdagen en de blokken
-  van de grootste groep, met StartDate = FinishDate = `1900-01-01`. Uitgebrachte versies (t/m
-  v2026.9.0) lezen alleen de eerste `IfcWorkTime` en negeren de datums. Zij zien zo wat ze vóór B7
-  zagen. Zonder terugvalweek zagen zij alleen de dagen van de eerste groep als werkdag: een korte
+  van de eerste werkdag — de week die de writer vóór B7 schreef — met StartDate = FinishDate =
+  `1900-01-01`. Uitgebrachte versies (t/m v2026.9.0) lezen alleen de eerste `IfcWorkTime` en negeren
+  de datums. Zij zien zo precies wat ze vóór B7 zagen. Zonder terugvalweek zagen zij alleen de dagen van de eerste groep als werkdag: een korte
   vrijdag werd daar een vrije dag (gemeten met de reader van main 1e192b31a). Een lezer die IFC 4.3
   volgt, past de terugvalweek nooit toe: de datums "restrict never-ending recurrence patterns"
   (`IfcWorkTime`). `LegacyWorkTimeIds` in `OPS_Calendar` wijst hem aan; de reader slaat hem over.

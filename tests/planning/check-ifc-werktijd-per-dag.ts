@@ -7,12 +7,14 @@
 // `IfcWorkCalendar` figuur 1), met vooraan een terugvalweek voor oudere OPS-versies.
 //
 //  §1 round-trip per geval: korte vrijdag, zaterdag, drie groepen, nachtploeg per dag, blok tot 24:00,
-//     zondag die afwijkt (de scalaire dag is niet de grootste groep); plus een tweede round-trip.
+//     zondag die afwijkt (de scalaire dag is niet de eerste groep), de nachtploeg van MS Project (de
+//     eerste werkdag is de afwijkende); plus een tweede round-trip.
 //  §2 de vorm van het bestand: terugvalweek vooraan (datum 1900-01-01, `LegacyWorkTimeIds`), daarna de
-//     groepen zonder datum, de grootste eerst.
+//     groepen zonder datum, in de volgorde van `workDays`.
 //  §3 wat een oudere OPS-versie ziet: die leest alleen de EERSTE `IFCWORKTIME` (gemeten met de lezer van
-//     main 1e192b31a). Die moet alle werkdagen dragen, met de blokken van de grootste groep — precies wat
-//     zo'n versie vóór de fix zag. Zonder terugvalweek werd een korte vrijdag daar een VRIJE dag.
+//     main 1e192b31a). Die moet alle werkdagen dragen, met de blokken van de eerste werkdag — precies de
+//     week die main schreef, dus precies wat zo'n versie vóór de fix zag. Zonder terugvalweek werd een
+//     korte vrijdag daar een VRIJE dag.
 //  §4 byte-identiek aan main: een uniforme uurweek, een dagkalender zonder blokken en een scalaire
 //     kalender met urentaak (gematerialiseerde blokken). De verwachte regels zijn gemaakt met de writer
 //     van main 1e192b31a; een gewijzigde byte is een fout, geen reden om de verwachting bij te werken.
@@ -138,11 +140,18 @@ const CASES: [string, WorkCalendar][] = [
     week({ ...on([1, 2, 3, 4, 5], [{ start: 960, end: 1440 }]), 6: [{ start: 960, end: 1200 }] }),
     { workStartHour: 16, workEndHour: 24, hoursPerDay: 8 })],
   // De scalaire dag van de lezer (eerste werkdag met blokken, zondag eerst — zoals MSPDI/.mpp) is hier
-  // NIET de grootste groep, en de eerste periode geeft de scalar 7 terug. Zonder `WorkStartHour` werd
+  // NIET de eerste groep, en de eerste periode geeft de scalar 7 terug. Zonder `WorkStartHour` werd
   // het 10 (de zondag).
   ['zondag die afwijkt', hourCal('Zondag',
     week({ ...on([1, 2, 3, 4, 5], MA_DO_PAUZE), 7: [{ start: 600, end: 840 }] }),
     { workStartHour: 7, workEndHour: 16, hoursPerDay: 8.5 })],
+  // De ingebouwde "Night Shift" van MS Project: de eerste werkdag (maandag 23:00–24:00) is de
+  // afwijkende dag, di–vr de grote groep, za een derde. De terugvalweek neemt de maandag, zoals main.
+  ['nachtploeg van MS Project (eerste werkdag wijkt af)', hourCal('Night Shift',
+    week({ 1: [{ start: 1380, end: 1440 }],
+      ...on([2, 3, 4, 5], [{ start: 0, end: 180 }, { start: 240, end: 480 }, { start: 1380, end: 1440 }]),
+      6: [{ start: 0, end: 180 }, { start: 240, end: 480 }] }),
+    { workStartHour: 23, workEndHour: 24, hoursPerDay: 8 })],
 ];
 for (const [label, cal] of CASES) {
   const ifc1 = write(cal);
@@ -172,16 +181,11 @@ for (const [label, cal] of CASES) {
   // Een oudere OPS-versie (t/m v2026.9.0 en main 1e192b31a) neemt de EERSTE IFCWORKTIME met een patroon,
   // negeert zijn datums en zet zijn tijdvakken op elke weekdag van dat patroon.
   const [first] = workingTimes(write(cal));
-  const bandsOf = (d: Day) => cal.workTime!.byWeekday[d].map((b) => `${b.start}-${b.end}`).join(',');
-  const counts = new Map<string, number>();
-  for (const d of cal.workDays) counts.set(bandsOf(d as Day), (counts.get(bandsOf(d as Day)) ?? 0) + 1);
-  const largest = [...counts.entries()].sort((a, b) => b[1] - a[1])[0][0];
-  const largestDay = cal.workDays.find((d) => bandsOf(d as Day) === largest) as Day;
   const clock = (m: number, end = false) => (end && m === 1440 ? '24:00:00'
     : `${String(Math.floor((m % 1440) / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}:00`);
-  same(`§3 ${label}: een oudere versie ziet alle werkdagen, met de blokken van de grootste groep`,
+  same(`§3 ${label}: een oudere versie ziet alle werkdagen, met de blokken van de eerste werkdag (zoals main)`,
     { days: first.days, periods: first.periods },
-    { days: cal.workDays, periods: cal.workTime!.byWeekday[largestDay].map((b) => `${clock(b.start)}-${clock(b.end, true)}`) });
+    { days: cal.workDays, periods: cal.workTime!.byWeekday[cal.workDays[0] as Day].map((b) => `${clock(b.start)}-${clock(b.end, true)}`) });
 }
 
 // ════════════════════════════════════════════════════════════════════════════════════════════════

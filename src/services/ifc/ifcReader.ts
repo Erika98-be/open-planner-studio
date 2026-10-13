@@ -2440,8 +2440,8 @@ function extractCalendarSimpleBreak(
  * van `writeCalendarGenerationMeta`). Die week schrijft OPS alleen voor oudere OPS-versies, vooraan, bij
  * werkblokken die per weekdag verschillen; deze lezer slaat hem over. Geen/corrupte property ⇒ lege set:
  * dan telt een terugvalweek als gewone week mee. Elke dag krijgt dan de vereniging (`unionPeriods`) van
- * de terugvalweek en zijn eigen groep — een korte vrijdag wordt weer een volle, maar geen werkdag gaat
- * verloren.
+ * de terugvalweek (de blokken van de eerste werkdag) en zijn eigen groep — een korte vrijdag wordt weer
+ * een volle, maar geen werkdag gaat verloren.
  */
 function extractCalendarLegacyWorkTimeIds(
   calStepId: string,

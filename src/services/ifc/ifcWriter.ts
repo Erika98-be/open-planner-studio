@@ -954,9 +954,9 @@ const LEGACY_WEEK_DATE = '1900-01-01';
  *    werkdag (`cal.workDays[0]`): zo blijft elke kalender die vroeger verliesloos was één groep.
  *  - Twee dagen horen bij dezelfde groep als hun blokken (gesorteerd op begin) gelijk zijn; de groep
  *    schrijft de blokken in de volgorde van zijn eerste dag.
- *  - Volgorde: de groep met de MEESTE dagen eerst, bij gelijkstand de groep die het eerst in
- *    `cal.workDays` voorkomt. De eerste groep levert de blokken van de terugvalweek voor oudere
- *    OPS-versies (`writeCalendar`). Verder heeft de volgorde geen betekenis: `WorkingTimes` is een SET.
+ *  - Volgorde: die van `cal.workDays` (eerste voorkomen). De eerste groep met blokken is die van de
+ *    eerste werkdag; hij levert de blokken van de terugvalweek voor oudere OPS-versies
+ *    (`writeCalendar`). Verder heeft de volgorde geen betekenis: `WorkingTimes` is een SET.
  *  - Eén groep (uniforme week) ⇒ het bestand is byte-identiek aan vroeger.
  */
 function weekBandGroups(workDays: readonly number[], workTime: WorkTimeBands): WeekBandGroup[] {
@@ -977,8 +977,7 @@ function weekBandGroups(workDays: readonly number[], workTime: WorkTimeBands): W
     }
     group.days.push(day);
   }
-  // `Array.prototype.sort` is stabiel: bij gelijkstand blijft de volgorde van eerste voorkomen.
-  return groups.sort((a, b) => b.days.length - a.days.length);
+  return groups;
 }
 
 function writeCalendar(
@@ -1017,11 +1016,13 @@ function writeCalendar(
     perDayWeek = written.length > 1;
     if (perDayWeek) {
       // TERUGVALWEEK voor oudere OPS-versies, VOORAAN in `WorkingTimes`: alle werkdagen met de blokken
-      // van de grootste groep — wat zij vóór deze wijziging ook lazen. Uitgebrachte versies (t/m
-      // v2026.9.0) lezen alleen de EERSTE `IFCWORKTIME` en negeren zijn datums; zonder deze week zagen
-      // zij alleen de dagen van de eerste groep als werkdag (gemeten: een korte vrijdag werd een VRIJE
-      // dag). Hij geldt alleen op `LEGACY_WEEK_DATE`, dus een lezer die IFC 4.3 volgt past hem nooit
-      // toe; deze lezer slaat hem over via `LegacyWorkTimeIds` in `OPS_Calendar`.
+      // van de eerste werkdag — precies de week die de writer vóór deze wijziging schreef, dus precies
+      // wat zij nu ook lezen. Uitgebrachte versies (t/m v2026.9.0) lezen alleen de EERSTE `IFCWORKTIME`
+      // en negeren zijn datums; zonder deze week zagen zij alleen de dagen van de eerste groep als
+      // werkdag (gemeten: een korte vrijdag werd een VRIJE dag). Hij geldt alleen op
+      // `LEGACY_WEEK_DATE`, dus een lezer die IFC 4.3 volgt past hem nooit toe; deze lezer slaat hem
+      // over via `LegacyWorkTimeIds` in `OPS_Calendar`. (Heeft de eerste werkdag geen blokken — vroeger
+      // een lege `TimePeriods`-lijst — dan de eerste groep met blokken.)
       const writtenDays = new Set(written.flatMap((g) => g.days));
       legacyWorkTimeStepId = writeWeek(
         cal.workDays.filter((d) => writtenDays.has(d)), written[0].bands,
