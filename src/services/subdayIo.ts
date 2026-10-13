@@ -242,6 +242,31 @@ export function workDayTogglePatch(
   return { workDays, workTime, hoursPerDay: deriveHoursPerDay(workTime, cal.hoursPerDay) };
 }
 
+/**
+ * Zet de werkdagen van een kalender in één keer op `days` (de knop *Ma–vr* in de kalenderdialoog).
+ * Elke dag die van stand wisselt, gaat door {@link workDayTogglePatch}; bij een uurkalender gaan de
+ * blokken dus mee en houdt een dag die aan blijft zijn eigen blokken. Eerst gaan de dagen aan (zij
+ * kopiëren dan nog van een bestaande werkdag), daarna gaan de andere uit.
+ */
+export function workDaysSetPatch(
+  cal: Pick<WorkCalendar, 'workDays' | 'workTime' | 'hoursPerDay' | 'workStartHour' | 'workEndHour'
+    | 'simpleBreakStartMinute' | 'simpleBreakDurationMinutes'>,
+  days: readonly number[],
+  initial?: WorkTimeBands,
+): Partial<WorkCalendar> {
+  let cur = { ...cal };
+  for (const on of [true, false]) {
+    for (let day = 1; day <= 7; day++) {
+      if (days.includes(day) === on && cur.workDays.includes(day) !== on) {
+        cur = { ...cur, ...workDayTogglePatch(cur, day, initial) };
+      }
+    }
+  }
+  return cur.workTime
+    ? { workDays: cur.workDays, workTime: cur.workTime, hoursPerDay: cur.hoursPerDay }
+    : { workDays: cur.workDays };
+}
+
 /** De scalaire werkdag van een kalender met weekbanden: de eerste werkdag met blokken. */
 function scalarDayOfBands(cal: Pick<WorkCalendar, 'workTime'>): BlockedWorkDay | undefined {
   const day = firstBlockedDay(cal.workTime);
