@@ -501,3 +501,9 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   eigenaar (fout in het native formaat van wat al gebouwd is). Expert (Opus 5.5) gestart op `claude/ifc-schemageldig`:
   fase 1 (REAL, resources, werkplan/-schema, lezer voor beide indelingen, poort zonder Python), fase 2
   (IfcWorkCalendar) pas na de merge van #340.
+- **#343 review: nee** (reviewer, Opus 5.5). Kern gezond (QA-bestanden, escaping, byte-gelijk, combinatie met
+  #338/#340 groen). Blokkerend: P6 XML-exports uit v2026.9.0 hebben `<Id>proj-…</Id>` en krijgen een blijvende
+  nepcode; XER-code verdwijnt na een extensie-load. Fixronde 1: herkenning oude OPS-id's (tijdstempelvorm van
+  `generateId`), extensie-fix, tests M1/M3/M4, rapportkop en PDF-naam via de helper (B21), opruimen.
+  **Besluit orkestrator 2026-10-13:** IFC's uit de browserbuild van 13-10 met "Naam (OZB-05)" in de naam niet
+  migreren (gokken; desktopreleases hadden dit nooit). Duplicaat houdt de code ("de code blijft altijd").
