@@ -15,10 +15,13 @@ name: Label sync
 # Dat laatste is een bewuste keuze en geen omissie. Pruning zou van één typefout
 # in labels.json een onomkeerbare actie maken: een verwijderd label verdwijnt van
 # alle issues die hem droegen, en GitHub kent daar geen ongedaan maken voor.
-# GitHub's eigen standaardlabels (`documentation`, `question`, `duplicate`, …)
-# staan daarom ook niet in het bestand — ze bestaan in de repo, worden niet
-# gebruikt, en hoeven niet beheerd te worden. Alleen `bug` en `enhancement` staan
-# erin, want die zijn wél in gebruik.
+# Een label weghalen gebeurt daarom met de hand (`gh label delete`), en alleen
+# als geen open issue hem nog draagt. Zo zijn op 2026-10-13 de ongebruikte labels
+# `documentation`, `question`, `duplicate`, `invalid`, `planned` en `blocked`
+# verwijderd. Van GitHub's standaardlabels staan `bug`, `enhancement`, `wontfix`,
+# `good first issue` en `help wanted` in het bestand, want die zijn in gebruik of
+# hebben betekenis buiten de repo. Wat elk label betekent voor agents staat in
+# `docs/agents/triage-labels.md`.
 
 on:
   workflow_dispatch:
