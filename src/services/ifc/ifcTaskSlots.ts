@@ -191,8 +191,14 @@ export const IFC_TASKTIME_SLOTS: TaskTimeSlot[] = [
  * die exact terugleest (`String`), zodat opslaan + openen het percentage niet afrondt. Een STEP-REAL
  * vraagt een decimale punt zonder exponent; voor de (theoretische) waarden waar `String` een exponent
  * geeft, volstaat een vaste notatie met 20 decimalen.
+ *
+ * `IfcTaskTime.Completion` is een `IfcPositiveRatioMeasure` met de regel `WR1: SELF > 0`. Een taak
+ * zonder voortgang (0) krijgt dus `$` (het attribuut is OPTIONAL), net als een niet-eindige of
+ * negatieve waarde. De lezer leest `$` als 0 (`parseFloat('$') || 0`), dus dat leest gelijk aan het
+ * vroegere `0.00`.
  */
 export function ifcCompletionReal(value: number): string {
+  if (!(value > 0) || !Number.isFinite(value)) return '$';
   const fixed = value.toFixed(2);
   if (Number(fixed) === value) return fixed;
   const shortest = String(value);
@@ -290,11 +296,16 @@ export interface TaskSlot {
 export const IFC_TASK_SLOTS: TaskSlot[] = [
   { key: 'globalId', write: (w) => w.guidArg },
   { key: 'ownerHistory', write: (w) => `#${w.ownerHistId}` },
-  { key: 'name', write: (w) => ifcStr(w.task.name) },
+  // `IfcTask.HasName` (WHERE-regel) eist een Name. Een lege naam wordt daarom `''` en niet `$`; de
+  // lezer leest beide als leeg (en toont dan 'Naamloze taak').
+  { key: 'name', write: (w) => ifcStr(w.task.name) === '$' ? "''" : ifcStr(w.task.name) },
   { key: 'description', write: (w) => ifcStr(w.task.description) },
   // IFC eist USERDEFINED voor een niet-standaard classificatie. ObjectType geeft andere IFC-tools
   // een leesbaar label; de stabiele id reist aanvullend mee in OPS_TaskTypes.
-  { key: 'objectType', write: (w) => w.task.taskType === 'USERDEFINED' && w.task.customTaskTypeId ? ifcStr(w.customTaskTypeLabel ?? 'USERDEFINED') : '$' },
+  // `IfcTask.CorrectPredefinedType` (WHERE-regel): bij PredefinedType USERDEFINED moet ObjectType
+  // bestaan. Daarom een label in elk geval waarin `predefinedType` hieronder USERDEFINED schrijft,
+  // ook een USERDEFINED-taak zonder eigen taaktype. De lezer leest ObjectType van een taak niet.
+  { key: 'objectType', write: (w) => w.task.customTaskTypeId || w.task.taskType === 'USERDEFINED' ? ifcStr(w.customTaskTypeLabel || 'USERDEFINED') : '$' },
   { key: 'identification', write: (w) => ifcStr(w.task.wbsCode) },
   { key: 'longDescription', write: () => '$' },
   { key: 'status', write: () => '$' },

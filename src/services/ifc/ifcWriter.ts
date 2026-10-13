@@ -18,7 +18,7 @@ import type { ImportResult, RecordedSourceFormat } from '@/services/importTypes'
 import {
   IFC_TIME_ANCHOR, FIELD_MEASURE, RESOURCE_TYPE_TO_IFC,
 } from './ifcConstants';
-import { PSET, PER_TASK_PSETS, OPS_APP_VERSION, ifcStr, ifcJson, asciiJson } from './ifcPsets';
+import { PSET, PER_TASK_PSETS, OPS_APP_VERSION, ifcStr, ifcJson, asciiJson, ifcTypedReal, stepReal } from './ifcPsets';
 import { isSummaryTask } from '@/utils/taskHierarchy';
 import { projectFileBase } from '@/utils/documents';
 import {
@@ -88,6 +88,12 @@ export function ifcGuid128(seed: string): string {
 }
 
 // ifcStr/ifcBool komen uit ./ifcPsets (gedeeld met de per-taak-pset-registry).
+
+/** Tekst voor een attribuut dat een waarde MOET hebben (niet OPTIONAL, of een WHERE-regel eist
+ *  `EXISTS`): leeg wordt `''` in plaats van `$`. De lezer (`ifcSlotText`) leest beide als ''. */
+function ifcRequiredStr(s: string): string {
+  return s ? ifcStr(s) : "''";
+}
 
 function ifcDateTime(iso: string): string {
   if (!iso) return '$';
@@ -290,23 +296,29 @@ export function writeIFC(input: WriteIFCInput): string {
   // projectnaam. Een naamloos project zou daar letterlijk `'.ifc'` opleveren. Vandaar dezelfde
   // neutrale, taalonafhankelijke basis die de opslaan-dialoog voorstelt (`projectFileBase` ->
   // `project.ifc`), zodat header en voorgestelde bestandsnaam dezelfde waarde dragen. De ECHTE
-  // projectnaam blijft `IFCPROJECT.Name = $` — dat is de plek waar "geen naam" hoort te staan, en die
-  // raken we niet aan.
+  // projectnaam blijft leeg in `IFCPROJECT.Name` (`''`, zie daar) — dat is de plek waar "geen naam"
+  // hoort te staan.
   const headerFileName = projectFileBase(headerText(project.name)) + '.ifc';
   const header = [
     'ISO-10303-21;',
     'HEADER;',
     "FILE_DESCRIPTION(('ViewDefinition [SchedulingView]'),'2;1');",
     `FILE_NAME(${ifcStr(headerFileName)},${ifcStr(now)},(${ifcStr(headerText(project.author || 'Open Planner Studio'))}),(${ifcStr(headerText(project.company || 'OpenAEC Foundation'))}),'Open Planner Studio 0.1','Open Planner Studio','');`,
-    "FILE_SCHEMA(('IFC4X3'));",
+    // Schema-identifier van IFC 4.3.2.0 (ISO 16739-1:2024), de huidige officiële IFC 4.3-versie.
+    // Tot 2026-10 stond hier 'IFC4X3' zonder suffix; IfcOpenShell valideert dat tegen een ouder,
+    // apart 4.3-schema. Voor alle entiteiten die OPS schrijft, zijn beide gelijk in aantal en
+    // volgorde van attributen. De lezer kijkt niet naar deze header. Zie docs/ifc-round-trip.md.
+    "FILE_SCHEMA(('IFC4X3_ADD2'));",
     'ENDSEC;',
     'DATA;',
     '',
   ].join('\n');
 
-  // Owner history
-  const personId = addLine(ctx, '_person', `IFCPERSON($,${ifcStr(project.author)},$,$,$,$,$,$)`);
-  const orgId = addLine(ctx, '_org', `IFCORGANIZATION($,${ifcStr(project.company)},$,$,$)`);
+  // Owner history. `IfcOrganization.Name` is verplicht, en `IfcPerson` eist een naam of id
+  // (WHERE-regel IdentifiablePerson). Leeg ⇒ `''` in plaats van `$`; de lezer (`extractProject`) leest
+  // beide als ''.
+  const personId = addLine(ctx, '_person', `IFCPERSON($,${ifcRequiredStr(project.author)},$,$,$,$,$,$)`);
+  const orgId = addLine(ctx, '_org', `IFCORGANIZATION($,${ifcRequiredStr(project.company)},$,$,$)`);
   const personOrgId = addLine(ctx, '_personorg', `IFCPERSONANDORGANIZATION(#${personId},#${orgId},$)`);
   const appOrgId = addLine(ctx, '_apporg', `IFCORGANIZATION($,'OpenAEC Foundation',$,$,$)`);
   // Version is een formaatteken (zie `OPS_APP_VERSION`): de lezer decodeert STEP-tekst pas vanaf '0.2'.
@@ -324,8 +336,10 @@ export function writeIFC(input: WriteIFCInput): string {
   const ctxId = addLine(ctx, '_ctx', `IFCGEOMETRICREPRESENTATIONCONTEXT($,'Plan',3,1.0E-05,#${axId},$)`);
 
   // Project. Description (arg 3) draagt project.description — de reader leest 'm terug
-  // uit de IFCWORKPLAN.Description-slot, met terugval op deze.
-  addLine(ctx, '_project', `IFCPROJECT(${ifcStr(objectGuid(ctx, 'proj', project.id))},#${ownerHistId},${ifcStr(project.name)},${ifcStr(project.description)},$,$,$,(#${ctxId}),#${unitAssId})`);
+  // uit de IFCWORKPLAN.Description-slot, met terugval op deze. Name: een naamloos project schrijft `''`
+  // (geen verzonnen naam), omdat `IfcProject.HasName` (WHERE-regel) een Name eist. De lezer leest `''`
+  // en `$` allebei als leeg.
+  addLine(ctx, '_project', `IFCPROJECT(${ifcStr(objectGuid(ctx, 'proj', project.id))},#${ownerHistId},${ifcRequiredStr(project.name)},${ifcStr(project.description)},$,$,$,(#${ctxId}),#${unitAssId})`);
   writeXerSourceArchive(ctx, ownerHistId, xerSourceArchive, xer?.sourceProjectId ?? xerSourceProjectId, xerSourceArchiveStorage);
 
   // Calendar (projectkalender — altijd de EERSTE IFCWORKCALENDAR in het bestand; vaste conventie
@@ -344,20 +358,32 @@ export function writeIFC(input: WriteIFCInput): string {
   const planStart = startDates[0] || project.startDate;
   const planEnd = endDates[endDates.length - 1] || project.endDate;
 
+  // IfcWorkPlan en IfcWorkSchedule (IFC 4.3, IfcWorkControl) tellen 14 attributen: GlobalId,
+  // OwnerHistory, Name, Description, ObjectType, Identification, CreationDate, Creators, Purpose,
+  // Duration, TotalFloat, StartTime, FinishTime, PredefinedType. StartTime is VERPLICHT. Tot 2026-10
+  // schreef OPS er 15 (één `$` te veel vóór StartTime, dus StartTime/FinishTime/PredefinedType op
+  // index 12/13/14); de lezer herkent die oude indeling nog (`workControlSlots` in ifcReader).
+  // Een project zonder taken en zonder startdatum heeft geen planstart; dan het schrijfmoment, zodat
+  // StartTime nooit `$` is. De OPS-lezer gebruikt dit slot dan niet: OPS_ProjectSettings draagt
+  // `ProjectStartDate` altijd (ook leeg) en wint.
+  const workControlStart = planStart || now;
   const workPlanId = addLine(ctx, '_workplan',
-    `IFCWORKPLAN(${ifcStr(objectGuid(ctx, 'wp', project.id))},#${ownerHistId},${ifcStr(project.name)},${ifcStr(project.description)},$,$,${ifcDateTime(now)},$,$,$,$,$,${ifcDateTime(planStart)},${ifcDateTime(planEnd)},.PLANNED.)`);
+    `IFCWORKPLAN(${ifcStr(objectGuid(ctx, 'wp', project.id))},#${ownerHistId},${ifcStr(project.name)},${ifcStr(project.description)},$,$,${ifcDateTime(now)},$,$,$,$,${ifcDateTime(workControlStart)},${ifcDateTime(planEnd)},.PLANNED.)`);
 
   const workSchedId = addLine(ctx, '_worksched',
-    `IFCWORKSCHEDULE(${ifcStr(objectGuid(ctx, 'ws', project.id))},#${ownerHistId},${ifcStr('Construction schedule v1.0')},$,$,$,${ifcDateTime(now)},$,$,$,$,$,${ifcDateTime(planStart)},${ifcDateTime(planEnd)},.PLANNED.)`);
+    `IFCWORKSCHEDULE(${ifcStr(objectGuid(ctx, 'ws', project.id))},#${ownerHistId},${ifcStr('Construction schedule v1.0')},$,$,$,${ifcDateTime(now)},$,$,$,$,${ifcDateTime(workControlStart)},${ifcDateTime(planEnd)},.PLANNED.)`);
 
   // Baselines — per baseline één `.BASELINE.`-IfcWorkSchedule-header (Name +
   // CreationDate, ZONDER taak-duplicatie: de datums leven verliesloos in het OPS_Baselines-JSON
   // hieronder). Puur een interop-signaal "deze baselines bestaan" voor externe IFC-tools.
   // Golden rule: geen baselines ⇒ geen extra IfcWorkSchedule (de lus doet niets).
+  // StartTime (verplicht) = de vroegste taakstart in de baseline; zonder taken de planstart van het
+  // werkschema hierboven. Geen lezer gebruikt dit slot (de datums staan in OPS_Baselines).
   const baselineSchedRefs: string[] = [];
   for (const b of baselines) {
+    const baselineStart = (b.tasks ?? []).map(t => t.start).filter(Boolean).sort()[0] || workControlStart;
     const bId = addLine(ctx, `_baseline_ws_${b.id}`,
-      `IFCWORKSCHEDULE(${ifcStr(guidOf(ctx, 'baseline_ws_' + b.id))},#${ownerHistId},${ifcStr(b.name)},$,$,$,${ifcDateTime(b.createdAt)},$,$,$,$,$,$,${ifcDateTime(b.projectEnd)},.BASELINE.)`);
+      `IFCWORKSCHEDULE(${ifcStr(guidOf(ctx, 'baseline_ws_' + b.id))},#${ownerHistId},${ifcStr(b.name)},$,$,$,${ifcDateTime(b.createdAt || now)},$,$,$,$,${ifcDateTime(baselineStart)},${ifcDateTime(b.projectEnd)},.BASELINE.)`);
     baselineSchedRefs.push(`#${bId}`);
   }
 
@@ -518,11 +544,14 @@ function writeTaskTypeMeta(
 
 function ifcTypedValue(type: CustomFieldType, value: CustomFieldValue): string {
   switch (type) {
-    case 'text': return `IFCTEXT(${ifcStr(String(value))})`;
-    case 'number': return `IFCREAL(${Number(value)})`;
+    // Tekst/datum: `ifcRequiredStr`, want `IFCTEXT($)` is geen geldige STEP (een getypte waarde
+    // draagt altijd een waarde). Leeg ⇒ `IFCTEXT('')`.
+    case 'text': return `IFCTEXT(${ifcRequiredStr(String(value))})`;
+    // REAL-typen altijd met decimale punt (`stepReal`); een niet-eindig getal ⇒ NominalValue `$`.
+    case 'number': return ifcTypedReal('IFCREAL', Number(value));
     case 'integer': return `IFCINTEGER(${Math.round(Number(value))})`;
-    case 'cost': return `IFCMONETARYMEASURE(${Number(value)})`;
-    case 'date': return `IFCDATE(${ifcStr(String(value))})`;
+    case 'cost': return ifcTypedReal('IFCMONETARYMEASURE', Number(value));
+    case 'date': return `IFCDATE(${ifcRequiredStr(String(value))})`;
     case 'boolean': return `IFCBOOLEAN(${value ? '.T.' : '.F.'})`;
     default: {
       // Exhaustiviteitscheck: een nieuw CustomFieldType zonder eigen case geeft hier een
@@ -661,11 +690,15 @@ function writeStructure(
   }
   if (activityCodeTypes.length > 0) {
     const codeTmplRefs = activityCodeTypes.map(t => {
-      const labels = t.values.map(v => `IFCLABEL(${ifcStr(v.code)})`).join(',');
-      const enumId = addLine(ctx, `_acte_${t.id}`,
-        `IFCPROPERTYENUMERATION(${ifcStr(t.name)},(${labels}),$)`);
+      // `IfcPropertyEnumeration.EnumerationValues` is een LIST [1:?]: een codetype zonder waarden
+      // krijgt geen enumeratie (Enumerators `$`). De OPS-lezer haalt de definities uit
+      // OPS_StructureMeta; de template is alleen voor andere tools.
+      const labels = t.values.map(v => `IFCLABEL(${ifcRequiredStr(v.code)})`).join(',');
+      const enumRef = t.values.length > 0
+        ? `#${addLine(ctx, `_acte_${t.id}`, `IFCPROPERTYENUMERATION(${ifcRequiredStr(t.name)},(${labels}),$)`)}`
+        : '$';
       const id = addLine(ctx, `_actt_${t.id}`,
-        `IFCSIMPLEPROPERTYTEMPLATE(${ifcStr(guidOf(ctx, 'actt_' + t.id))},#${ownerHistId},${ifcStr(t.name)},$,.P_ENUMERATEDVALUE.,$,$,#${enumId},$,$,$,$)`);
+        `IFCSIMPLEPROPERTYTEMPLATE(${ifcStr(guidOf(ctx, 'actt_' + t.id))},#${ownerHistId},${ifcStr(t.name)},$,.P_ENUMERATEDVALUE.,$,$,${enumRef},$,$,$,$)`);
       return `#${id}`;
     });
     templateIds.push(addLine(ctx, '_psett_codes',
@@ -685,7 +718,7 @@ function writeStructure(
       const propRefs = fieldEntries.map(([defId, value]) => {
         const def = defById.get(defId)!;
         const id = addLine(ctx, `_cfv_${task.id}_${defId}`,
-          `IFCPROPERTYSINGLEVALUE(${ifcStr(def.name)},$,${ifcTypedValue(def.type, value)},$)`);
+          `IFCPROPERTYSINGLEVALUE(${ifcRequiredStr(def.name)},$,${ifcTypedValue(def.type, value)},$)`);
         return `#${id}`;
       });
       const setId = addLine(ctx, `_pset_cf_${task.id}`,
@@ -702,7 +735,7 @@ function writeStructure(
         const t = typeById.get(typeId)!;
         const v = t.values.find(x => x.id === valueId)!;
         const id = addLine(ctx, `_acv_${task.id}_${typeId}`,
-          `IFCPROPERTYENUMERATEDVALUE(${ifcStr(t.name)},$,(IFCLABEL(${ifcStr(v.code)})),$)`);
+          `IFCPROPERTYENUMERATEDVALUE(${ifcRequiredStr(t.name)},$,(IFCLABEL(${ifcRequiredStr(v.code)})),$)`);
         return `#${id}`;
       });
       const setId = addLine(ctx, `_pset_ac_${task.id}`,
@@ -1083,15 +1116,15 @@ function writeCalendarGenerationMeta(
   }
   if (needsHoursPerDayOverride) {
     props.push(addLine(ctx, `_opscal_hpd_${cal.id}`,
-      `IFCPROPERTYSINGLEVALUE('HoursPerDay',$,IFCREAL(${cal.hoursPerDay}),$)`));
+      `IFCPROPERTYSINGLEVALUE('HoursPerDay',$,${ifcTypedReal('IFCREAL', cal.hoursPerDay)},$)`));
   }
   if (needsWorkStartHour) {
     props.push(addLine(ctx, `_opscal_workstart_${cal.id}`,
-      `IFCPROPERTYSINGLEVALUE('WorkStartHour',$,IFCREAL(${cal.workStartHour}),$)`));
+      `IFCPROPERTYSINGLEVALUE('WorkStartHour',$,${ifcTypedReal('IFCREAL', cal.workStartHour)},$)`));
   }
   if (needsWorkEndHour) {
     props.push(addLine(ctx, `_opscal_workend_${cal.id}`,
-      `IFCPROPERTYSINGLEVALUE('WorkEndHour',$,IFCREAL(${cal.workEndHour}),$)`));
+      `IFCPROPERTYSINGLEVALUE('WorkEndHour',$,${ifcTypedReal('IFCREAL', cal.workEndHour)},$)`));
   }
   // IFC kent geen semantisch "eenvoudig pauzepatroon". Bewaar het daarom als OPS-metadata,
   // uitsluitend wanneer de gebruiker de nieuwe velden werkelijk heeft gezet.
@@ -1249,7 +1282,9 @@ function writeWBSNesting(ctx: WriteContext, tasks: Task[], ownerHistId: number):
 // standaardnotatie; niet elke externe tool leest het teken, maar onze round-trip behoudt het.
 function ifcLagValue(seq: Sequence): string {
   if (typeof seq.lagPercent === 'number' && Number.isFinite(seq.lagPercent)) {
-    return `IFCRATIOMEASURE(${seq.lagPercent / 100})`;
+    // REAL met decimale punt (`stepReal`): 100 % ⇒ `IFCRATIOMEASURE(1.)`, niet `(1)`. De guard
+    // hierboven maakt het getal eindig, dus `stepReal` geeft altijd een waarde.
+    return `IFCRATIOMEASURE(${stepReal(seq.lagPercent / 100)!})`;
   }
   // Uur-lag (`lagMinutes`, bron van waarheid) als minuut-precieze IFCDURATION met
   // tijdcomponent; de reader herkent de `T`-component en zet `lagMinutes` terug.
@@ -1306,7 +1341,13 @@ function writeResource(ctx: WriteContext, res: Resource, ownerHistId: number): v
   // Entiteitnaam uit de gedeelde RESOURCE_TYPE_TO_IFC-map (reader leidt de inverse eruit af);
   // onbekend type ⇒ MATERIAL.
   const entityName = RESOURCE_TYPE_TO_IFC[res.type] ?? 'IFCCONSTRUCTIONMATERIALRESOURCE';
-  const entity = `${entityName}(${ifcStr(objectGuid(ctx, 'res', res.id))},#${ownerHistId},${ifcStr(res.name)},${ifcStr(res.description)},$,$,$,$,.USERDEFINED.)`;
+  // IFC 4.3 (IfcConstructionResource en subtypen) telt 11 attributen: GlobalId, OwnerHistory, Name,
+  // Description, ObjectType, Identification, LongDescription, Usage, BaseCosts, BaseQuantity,
+  // PredefinedType. Tot 2026-10 schreef OPS er 9 (`…,$,$,$,$,.USERDEFINED.`), met de enum op de plek
+  // van BaseCosts. De lezer gebruikt alleen GlobalId, Name en Description en leest beide indelingen
+  // dus gelijk. PredefinedType is `.NOTDEFINED.`: OPS kent geen soortindeling binnen een resourcetype,
+  // en `.USERDEFINED.` eist een ObjectType (WHERE-regel CorrectPredefinedType).
+  const entity = `${entityName}(${ifcStr(objectGuid(ctx, 'res', res.id))},#${ownerHistId},${ifcStr(res.name)},${ifcStr(res.description)},$,$,$,$,$,$,.NOTDEFINED.)`;
   addLine(ctx, `res_${res.id}`, entity);
 }
 
@@ -1320,12 +1361,12 @@ function writeResourceMeta(ctx: WriteContext, resources: Resource[], ownerHistId
     const props: string[] = [];
     if (res.maxUnits !== 1) {
       const id = addLine(ctx, `_resmu_${res.id}`,
-        `IFCPROPERTYSINGLEVALUE('MaxUnits',$,IFCREAL(${res.maxUnits}),$)`);
+        `IFCPROPERTYSINGLEVALUE('MaxUnits',$,${ifcTypedReal('IFCREAL', res.maxUnits)},$)`);
       props.push(`#${id}`);
     }
     if (res.costPerHour !== undefined) {
       const id = addLine(ctx, `_resch_${res.id}`,
-        `IFCPROPERTYSINGLEVALUE('CostPerHour',$,IFCMONETARYMEASURE(${res.costPerHour}),$)`);
+        `IFCPROPERTYSINGLEVALUE('CostPerHour',$,${ifcTypedReal('IFCMONETARYMEASURE', res.costPerHour)},$)`);
       props.push(`#${id}`);
     }
     if (res.unitOfMeasure) {

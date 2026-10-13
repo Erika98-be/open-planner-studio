@@ -172,7 +172,52 @@ blok (3) bevestigt nog los dat ze exact terugkomen.
   project-IFC, via hetzelfde `OPS_`-pset-patroon (zie `docs/library.md`).
 - **De vraag of andere programma's ons bestand kunnen lezen.** De round-trip-test bewijst dat *wij*
   onze eigen data terugkrijgen. Interop met Synchro, BlenderBIM of Navisworks is nooit getest — dat
-  staat als open onzekerheid in `docs/onderhoudbaarheid/README.md` §6.
+  staat als open onzekerheid in `docs/onderhoudbaarheid/README.md` §6. Wél getoetst: of het bestand
+  schemageldig is (zie hieronder). Dat is een voorwaarde voor interop, geen bewijs ervan.
+
+## Schemageldigheid
+
+Een round-trip-test ziet niet of het bestand geldige IFC is. Schrijft OPS een attribuut op de
+verkeerde plek, en leest OPS het van diezelfde verkeerde plek terug, dan blijft de round-trip groen.
+Zo stond het tot 2026-10: `python -m ifcopenshell.validate` gaf op elk publiek voorbeeld 34 tot 80
+schemafouten. De oorzaken: REAL-waarden zonder decimale punt (`IFCREAL(5)`), resources met 9 in plaats
+van 11 attributen, IfcWorkPlan/IfcWorkSchedule met 15 in plaats van 14, en IfcWorkCalendar met 8 in
+plaats van 9. IfcWorkCalendar volgt in een aparte stap; tot dan slaat de poort de attribuuttoets van
+die entiteit over (`PHASE2_EXEMPT` in de poort).
+
+**Schema.** De header is `FILE_SCHEMA(('IFC4X3_ADD2'))`: IFC 4.3.2.0, ISO 16739-1:2024. Tot 2026-10
+stond er `IFC4X3`. IfcOpenShell valideert dat tegen een ouder, apart 4.3-schema. Voor alle entiteiten
+die OPS schrijft, zijn beide gelijk in aantal en volgorde van attributen.
+
+**De poort** is `tests/planning/check-ifc-schema.ts`. Hij draait zonder Python, dus ook in CI. Hij
+toetst elke regel van de publieke en alle andere voorbeelden, van een rijk project en van een leeg
+project (`tests/planning/ifcSchemaFixture.ts`) tegen een tabel uit het EXPRESS-schema: het aantal
+attributen, `$` alleen op een OPTIONAL plek, de enum op de enum-plek, REAL met punt, verwijzingen
+die bestaan, en een paar WHERE-regels (zoals "USERDEFINED vraagt een ObjectType"). Een entiteit die
+de writer gebruikt maar niet in de tabel staat, is rood. Een entiteit uit de tabel die in geen getoetst
+bestand voorkomt, ook.
+
+**De tabel** (`tests/planning/ifcSchemaTable.ts`) wordt gegenereerd door `scripts/ifc-schema-table.py`
+uit het schema `IFC4X3_ADD2` dat IfcOpenShell meelevert. Schrijft de writer een nieuwe entiteit, zet
+die dan in `OPS_ENTITIES` in het script en genereer de tabel opnieuw:
+
+    source <venv met ifcopenshell>/bin/activate
+    python -I scripts/ifc-schema-table.py > tests/planning/ifcSchemaTable.ts
+
+**De lezer** leest beide indelingen. `workControlSlots` in `ifcReader.ts` herkent IfcWorkPlan en
+IfcWorkSchedule aan het aantal attributen: 14 is de norm, 15 met de enum achteraan is de oude
+OPS-indeling, 15 met de enum op index 13 is IFC2X3. Resources leest de lezer alleen op GlobalId,
+Name en Description, dus daar maakt de indeling niets uit. `check-ifc-schema-reader.ts` bewijst dat
+een bestand in de oude OPS-indeling exact gelijk leest aan hetzelfde bestand in de norm.
+
+**Lokaal valideren met IfcOpenShell.** `OPS_IFC_SCHEMA_DUMP=/tmp/map bash tests/planning/run.sh
+check-ifc-schema.ts` schrijft het rijke en het lege project naar die map. Daarna
+`python -m ifcopenshell.validate --rules <bestand>`; `--rules` toetst ook alle WHERE-regels.
+
+**Bekende afwijking.** `IfcRelAssignsToProcess.RelatedObjects` is een SET. Staat dezelfde resource
+twee keer op één taak, dan herhaalt OPS hem daar; de lezer telt elke herhaling als eigen toewijzing.
+IfcOpenShell meldt dit niet. Een andere codering raakt de lezer en oudere OPS-versies; dat vraagt een
+eigen besluit.
 
 ## Waar het echt staat
 

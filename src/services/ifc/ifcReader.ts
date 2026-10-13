@@ -374,7 +374,7 @@ function collectIfcGlobalIds(
   const plan = entities.find(e => e.type === 'IFCWORKPLAN');
   const planGuid = plan ? ifcSlotText(plan.args[0]) : '';
   if (planGuid) out[ifcObjectSeed('wp', projectId)] = planGuid;
-  const schedule = entities.find(e => e.type === 'IFCWORKSCHEDULE' && !(e.args[14] || '').includes('BASELINE'));
+  const schedule = entities.find(e => e.type === 'IFCWORKSCHEDULE' && !isBaselineSchedule(e));
   const scheduleGuid = schedule ? ifcSlotText(schedule.args[0]) : '';
   if (scheduleGuid) out[ifcObjectSeed('ws', projectId)] = scheduleGuid;
   return Object.keys(out).length > 0 ? out : undefined;
@@ -1166,6 +1166,33 @@ function ifcSlotText(s: string | undefined): string {
   return stripQuotes(s);
 }
 
+/**
+ * StartTime, FinishTime en PredefinedType van een IfcWorkPlan/IfcWorkSchedule (IfcWorkControl). Drie
+ * indelingen, herkend aan het AANTAL attributen en de plek van de enum:
+ *  - 14 = IFC 4 en IFC 4.3 (de norm): op index 11/12/13. Zo schrijft OPS sinds 2026-10, en zo
+ *    schrijven bSI, xbim en IfcOpenShell.
+ *  - 15 met een enum op index 14 = OPS tot 2026-10: één `$` te veel vóór StartTime, dus 12/13/14.
+ *    Oude OPS-bestanden lezen zo exact zoals vóór de fix.
+ *  - 15 met de enum op index 13 = IFC2X3 (WorkControlType, UserDefinedControlType erna): het type op
+ *    13; de tijden zijn daar entiteitverwijzingen (IfcDateTimeSelect), geen IfcDateTime-tekst.
+ * Een tijd telt alleen als het een stringliteral is; anders `''` (zoals een leeg slot). Een andere
+ * telling geeft lege slots.
+ */
+function workControlSlots(e: StepEntity): { start: string; finish: string; predefinedType: string } {
+  const a = e.args;
+  const isEnum = (s: string | undefined) => /^\.[A-Z0-9_]+\.$/i.test((s ?? '').trim());
+  const timeText = (s: string | undefined) => ((s ?? '').trim().startsWith("'") ? s!.trim() : '');
+  if (a.length === 14) return { start: timeText(a[11]), finish: timeText(a[12]), predefinedType: a[13] ?? '' };
+  if (a.length === 15 && isEnum(a[14])) return { start: timeText(a[12]), finish: timeText(a[13]), predefinedType: a[14] };
+  if (a.length === 15) return { start: '', finish: '', predefinedType: a[13] ?? '' };
+  return { start: '', finish: '', predefinedType: '' };
+}
+
+/** Een IfcWorkSchedule met PredefinedType BASELINE, in elke indeling (`workControlSlots`). */
+function isBaselineSchedule(e: StepEntity): boolean {
+  return e.type === 'IFCWORKSCHEDULE' && workControlSlots(e).predefinedType.includes('BASELINE');
+}
+
 function parseRef(s: string): string | null {
   const m = s.trim().match(/^#(\w+)$/);
   return m ? m[1] : null;
@@ -1274,6 +1301,7 @@ function extractProject(
 ): Project {
   const proj = entities.find(e => e.type === 'IFCPROJECT');
   const wp = entities.find(e => e.type === 'IFCWORKPLAN');
+  const wpSlots = wp ? workControlSlots(wp) : undefined;
   const projectGlobalId = proj ? ifcSlotText(proj.args[0]) : '';
 
   // Auteur/organisatie uit de owner-history-keten (IFCOWNERHISTORY → IFCPERSONANDORGANIZATION →
@@ -1318,10 +1346,12 @@ function extractProject(
     // vandaag). Direct "vandaag" zou verzonnen data zijn die via de projectstart-vloer taken mét
     // voorgangers naar de leesdatum tilt (check-recorded-dates 9A/9B). `parseDateFromIFC`
     // wordt bewust alleen op een niet-lege slottekst losgelaten — op '' levert hij zelf "vandaag".
-    startDate: wp && ifcSlotText(wp.args[12]) ? parseDateFromIFC(wp.args[12]) : '',
+    // StartTime/FinishTime via `workControlSlots`: de norm (14 attributen) en de oude OPS-indeling
+    // (15) staan op een andere index.
+    startDate: wpSlots && ifcSlotText(wpSlots.start) ? parseDateFromIFC(wpSlots.start) : '',
     // Zelfde regel voor FinishTime: een leeg slot is "geen einde", niet vandaag. Het
     // OPS_ProjectSettings-pset wint hierna nog steeds als het er is.
-    endDate: wp && ifcSlotText(wp.args[13]) ? parseDateFromIFC(wp.args[13]) : '',
+    endDate: wpSlots && ifcSlotText(wpSlots.finish) ? parseDateFromIFC(wpSlots.finish) : '',
     calendarId: 'cal-default',
     // createdAt/modifiedAt: default = nu; overschreven door het OPS_ProjectSettings-pset in
     // extractStructure als het bestand ze draagt (oude bestanden ⇒ deze default blijft staan).
@@ -1768,7 +1798,9 @@ function extractSequences(
       if (lagEntity && lagEntity.type === 'IFCLAGTIME') {
         const lagValue = (lagEntity.args[3] || '').trim();
         const durType = (lagEntity.args[4] || '').trim();
-        const ratioMatch = lagValue.match(/^IFCRATIOMEASURE\s*\(\s*(-?[\d.]+)\s*\)$/i);
+        // Een STEP-REAL mag een exponent dragen (`5.E-1`); de writer schrijft sinds 2026-10 altijd
+        // een decimale punt (`1.` voor 100 %), wat `[\d.]+` al las.
+        const ratioMatch = lagValue.match(/^IFCRATIOMEASURE\s*\(\s*(-?[\d.]+(?:E[+-]?\d+)?)\s*\)$/i);
         const durMatch = lagValue.match(/^IFCDURATION\s*\(\s*(.+?)\s*\)$/i);
         if (ratioMatch) {
           // Ratio → procent; afronden tegen floating-point-ruis (0.33*100 = 33.000000000000004).
@@ -1849,14 +1881,14 @@ function extractP6BoundarySequenceGuids(
     if (entity.type === 'IFCRELNESTS') {
       const scheduleId = parseRef(entity.args[4] || '');
       const schedule = scheduleId ? entityMap.get(scheduleId) : undefined;
-      if (schedule?.type === 'IFCWORKSCHEDULE' && !(schedule.args[14] || '').includes('BASELINE')
+      if (schedule?.type === 'IFCWORKSCHEDULE' && !isBaselineSchedule(schedule)
         && parseRefs(entity.args[5] || '').some(id => liveTaskStepIds.has(id))) {
         relevantScheduleIds.add(scheduleId!);
       }
     } else if (entity.type === 'IFCRELASSIGNSTOCONTROL') {
       const scheduleId = parseRef(entity.args[6] || '');
       const schedule = scheduleId ? entityMap.get(scheduleId) : undefined;
-      if (schedule?.type === 'IFCWORKSCHEDULE' && !(schedule.args[14] || '').includes('BASELINE')
+      if (schedule?.type === 'IFCWORKSCHEDULE' && !isBaselineSchedule(schedule)
         && parseRefs(entity.args[4] || '').some(id => liveTaskStepIds.has(id))) {
         relevantScheduleIds.add(scheduleId!);
       }
@@ -3130,12 +3162,12 @@ function remapLevelingResourceIds(
  * JSON), maar externe tools kunnen dat wél doen; die taken zijn baseline-snapshots, geen live
  * taken, en mogen niet als echte taak worden ingeladen. Koppeling via IFCRELNESTS (RelatingObject
  * = het schema) of IFCRELASSIGNSTOCONTROL (control = het schema). PredefinedType `.BASELINE.` staat
- * op arg-index 14 van IFCWORKSCHEDULE.
+ * op arg-index 13 (de norm) of 14 (oude OPS-bestanden); zie `workControlSlots`.
  */
 function collectBaselineTaskStepIds(entities: StepEntity[]): Set<string> {
   const baselineSchedIds = new Set(
     entities
-      .filter(e => e.type === 'IFCWORKSCHEDULE' && (e.args[14] || '').includes('BASELINE'))
+      .filter(isBaselineSchedule)
       .map(e => e.id),
   );
   const taskStepIds = new Set<string>();

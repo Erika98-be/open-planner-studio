@@ -1,0 +1,235 @@
+// De IFC-lezer leest BEIDE indelingen: de oude OPS-indeling (tot 2026-10) en de norm (IFC 4.3, zoals OPS
+// nu schrijft en zoals andere tools schrijven). Herkenning op het aantal attributen, niet op een gok.
+// Tegenhanger van de schemapoort `check-ifc-schema.ts`; toelichting in docs/ifc-round-trip.md.
+//
+//   A. Hetzelfde rijke project, eenmaal in de norm geschreven en eenmaal omgezet naar de oude
+//      OPS-indeling (IfcWorkPlan/IfcWorkSchedule 15 attributen, resources 9 met `.USERDEFINED.`, REAL
+//      zonder punt, Completion `0.00`, header `IFC4X3`), leest exact gelijk. Ook zonder de
+//      OPS_ProjectSettings-datums, zodat de projectdatums echt uit het IfcWorkPlan-slot komen.
+//   B. Een geldig bestand van een andere tool (indeling zoals bSI/xbim `construction-scheduling-task`):
+//      de projectstart komt uit IfcWorkPlan.StartTime (index 11), en taken onder een `.BASELINE.`-
+//      IfcWorkSchedule (index 13) zijn geen live taken.
+//   C. Een IFC2X3-indeling (ook 15 attributen, maar de enum op index 13 en de tijden als verwijzing):
+//      geen verzonnen datum uit een verwijzing, en `.BASELINE.` op index 13 telt.
+//
+// Draait via run.sh. Exit 0 = alles groen.
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { writeIFC } from '@/services/ifc/ifcWriter';
+import { readIFC } from '@/services/ifc/ifcReader';
+import type { ImportResult } from '@/services/importTypes';
+import { buildRichSchemaProject } from './ifcSchemaFixture';
+
+const HERE = fileURLToPath(new URL('.', import.meta.url));
+const ROOT = join(HERE, '..', '..');
+
+let checks = 0;
+const fails: string[] = [];
+const eq = (label: string, got: unknown, want: unknown) => {
+  checks++;
+  if (JSON.stringify(got) !== JSON.stringify(want)) fails.push(`${label}: verwacht ${JSON.stringify(want)}, kreeg ${JSON.stringify(got)}`);
+};
+const ok = (label: string, cond: boolean) => { checks++; if (!cond) fails.push(label); };
+
+/** Splitst de argumenten van één STEP-regel op het hoogste niveau (strings en haakjes respecterend). */
+function splitArgs(inner: string): string[] {
+  const out: string[] = [];
+  let depth = 0;
+  let inStr = false;
+  let cur = '';
+  for (let i = 0; i < inner.length; i++) {
+    const c = inner[i];
+    if (inStr) {
+      cur += c;
+      if (c === "'") {
+        if (inner[i + 1] === "'") { cur += "'"; i++; } else inStr = false;
+      }
+      continue;
+    }
+    if (c === "'") { inStr = true; cur += c; continue; }
+    if (c === '(') depth++;
+    if (c === ')') depth--;
+    if (c === ',' && depth === 0) { out.push(cur); cur = ''; continue; }
+    cur += c;
+  }
+  out.push(cur);
+  return out;
+}
+
+/** Past `edit(type, args)` toe op elke `#id=IFCXXX(...);`-regel. */
+function mapEntities(ifc: string, edit: (type: string, args: string[]) => string[] | undefined): string {
+  return ifc.split('\n').map((line) => {
+    const m = /^(#\d+=)([A-Z0-9]+)\((.*)\);$/.exec(line);
+    if (!m) return line;
+    const next = edit(m[2], splitArgs(m[3]));
+    return next ? `${m[1]}${m[2]}(${next.join(',')});` : line;
+  }).join('\n');
+}
+
+const RESOURCES = new Set([
+  'IFCLABORRESOURCE', 'IFCCONSTRUCTIONEQUIPMENTRESOURCE', 'IFCCONSTRUCTIONMATERIALRESOURCE',
+  'IFCSUBCONTRACTRESOURCE', 'IFCCREWRESOURCE',
+]);
+
+/**
+ * Zet een bestand van de huidige writer om naar de indeling die OPS tot 2026-10 schreef (zie de
+ * geschiedenis van ifcWriter.ts; de initiële release schreef al zo). Alleen wat de fix veranderde.
+ */
+function toLegacyOpsLayout(ifc: string): string {
+  const out = mapEntities(ifc, (type, args) => {
+    if (type === 'IFCWORKPLAN' || type === 'IFCWORKSCHEDULE') {
+      if (args.length !== 14) throw new Error(`${type} heeft geen 14 attributen`);
+      // Een baseline-werkschema had StartTime `$`; daarna de extra `$` vóór StartTime.
+      const start = args[13] === '.BASELINE.' ? '$' : args[11];
+      return [...args.slice(0, 11), '$', start, args[12], args[13]];
+    }
+    if (RESOURCES.has(type)) {
+      if (args.length !== 11) throw new Error(`${type} heeft geen 11 attributen`);
+      return [...args.slice(0, 4), '$', '$', '$', '$', '.USERDEFINED.'];
+    }
+    if (type === 'IFCTASKTIME' && args[19] === '$') return [...args.slice(0, 19), '0.00'];
+    if (type === 'IFCTASK') {
+      const next = [...args];
+      if (next[2] === "''") next[2] = '$';
+      if (next[4] === "'USERDEFINED'") next[4] = '$';
+      return next;
+    }
+    return undefined;
+  });
+  return out
+    .replace(/\b(IFCREAL|IFCMONETARYMEASURE|IFCRATIOMEASURE)\((-?\d+)\.\)/g, '$1($2)')
+    .replace("FILE_SCHEMA(('IFC4X3_ADD2'));", "FILE_SCHEMA(('IFC4X3'));");
+}
+
+/** Leesresultaat zonder wat per keer lezen verschilt (toewijzings-id's komen uit `generateId`). */
+function canon(r: ImportResult): string {
+  return JSON.stringify({ ...r, assignments: r.assignments.map(a => ({ ...a, id: '' })) });
+}
+
+/** Eerste verschil tussen twee JSON-bomen, als pad, voor een leesbare foutmelding. */
+function firstDiff(a: unknown, b: unknown, path = ''): string | undefined {
+  if (JSON.stringify(a) === JSON.stringify(b)) return undefined;
+  if (a && b && typeof a === 'object' && typeof b === 'object') {
+    for (const k of new Set([...Object.keys(a as object), ...Object.keys(b as object)])) {
+      const d = firstDiff((a as Record<string, unknown>)[k], (b as Record<string, unknown>)[k], `${path}.${k}`);
+      if (d) return d;
+    }
+  }
+  return `${path}: ${JSON.stringify(a)?.slice(0, 120)} ≠ ${JSON.stringify(b)?.slice(0, 120)}`;
+}
+
+// ── A. Oude OPS-indeling en de norm lezen gelijk ─────────────────────────────────────────────────
+{
+  const rich = buildRichSchemaProject(ROOT);
+  // Een lege tekstwaarde schrijft de writer sinds 2026-10 als `IFCTEXT('')` (vroeger het ongeldige
+  // `IFCTEXT($)`, dat als "geen waarde" las): een bewuste verbetering, dus hier niet in de vergelijking.
+  const input: ImportResult = {
+    ...rich,
+    tasks: rich.tasks.map(t => {
+      if (t.customFields?.['sf-text'] !== '') return t;
+      const { 'sf-text': _drop, ...customFields } = t.customFields;
+      void _drop;
+      return { ...t, customFields };
+    }),
+  };
+  const modern = writeIFC(input);
+  const legacy = toLegacyOpsLayout(modern);
+  const argCounts = (ifc: string, type: string) => {
+    const counts: number[] = [];
+    mapEntities(ifc, (t, args) => { if (t === type) counts.push(args.length); return undefined; });
+    return counts;
+  };
+  eq('A0 omzetting raakt het werkplan (15 attributen)', argCounts(legacy, 'IFCWORKPLAN'), [15]);
+  eq('A0 de norm: werkplan met 14 attributen', argCounts(modern, 'IFCWORKPLAN'), [14]);
+  ok('A0 omzetting raakt de resources (9 attributen, .USERDEFINED.)', /IFCLABORRESOURCE\([^\n]*,\$,\$,\$,\$,\.USERDEFINED\.\);/.test(legacy));
+  ok('A0 omzetting raakt de REAL-waarden (zonder punt)', /IFCREAL\(\d+\)/.test(legacy) && !/IFCREAL\(\d+\.\)/.test(legacy));
+  ok('A0 omzetting raakt Completion (0.00)', legacy.includes(',0.00);'));
+
+  const readModern = readIFC(modern);
+  const readLegacy = readIFC(legacy);
+  const diff = firstDiff(JSON.parse(canon(readModern)), JSON.parse(canon(readLegacy)));
+  ok(`A1 rijk project: oude OPS-indeling leest gelijk aan de norm${diff ? ` — eerste verschil ${diff}` : ''}`, !diff);
+
+  // Zonder de OPS_ProjectSettings-datums (zoals een bestand van vóór die pset, of een ander tool):
+  // dan komen projectstart en -einde uit IfcWorkPlan.StartTime/FinishTime, in beide indelingen.
+  const strip = (ifc: string) => ifc.replace("'ProjectStartDate'", "'OnbekendVeld1'").replace("'ProjectEndDate'", "'OnbekendVeld2'");
+  const plainModern = readIFC(strip(modern));
+  const plainLegacy = readIFC(strip(legacy));
+  const planStart = rich.tasks.map(t => t.time.scheduleStart).filter(Boolean).sort()[0].slice(0, 10);
+  const planEnd = rich.tasks.map(t => t.time.scheduleFinish).filter(Boolean).sort().at(-1)!.slice(0, 10);
+  eq('A2 norm zonder pset: projectstart uit IfcWorkPlan.StartTime (index 11)', plainModern.project.startDate, planStart);
+  eq('A2 norm zonder pset: projecteinde uit IfcWorkPlan.FinishTime (index 12)', plainModern.project.endDate, planEnd);
+  eq('A3 oude indeling zonder pset: projectstart uit index 12', plainLegacy.project.startDate, planStart);
+  eq('A3 oude indeling zonder pset: projecteinde uit index 13', plainLegacy.project.endDate, planEnd);
+  const diff2 = firstDiff(JSON.parse(canon(plainModern)), JSON.parse(canon(plainLegacy)));
+  ok(`A4 zonder pset: oude indeling leest gelijk aan de norm${diff2 ? ` — eerste verschil ${diff2}` : ''}`, !diff2);
+  // Het werkschema-GlobalId (anker voor 4D-koppelingen) is dat van het niet-baseline-schema.
+  const wsGuid = /IFCWORKSCHEDULE\('([^']+)',[^\n]*\.PLANNED\.\);/.exec(modern)?.[1];
+  ok('A5 setup: het niet-baseline-werkschema staat in het bestand', !!wsGuid);
+  eq('A5 GlobalId van het werkschema (norm)', readModern.ifcGlobalIds?.[`ws:${readModern.project.id}`], wsGuid);
+  eq('A5 GlobalId van het werkschema (oude indeling)', readLegacy.ifcGlobalIds?.[`ws:${readLegacy.project.id}`], wsGuid);
+}
+
+// ── B/C. Bestanden van andere tools ──────────────────────────────────────────────────────────────
+
+/** Minimaal planningsbestand; `plan`/`schedules` zijn de IfcWorkPlan- en IfcWorkSchedule-regels. */
+function foreignFile(schema: string, plan: string, schedules: string[], nests: string[]): string {
+  return [
+    'ISO-10303-21;', 'HEADER;', "FILE_DESCRIPTION((''),'2;1');", "FILE_NAME('x.ifc','2026-10-13T00:00:00',(''),(''),'','','');",
+    `FILE_SCHEMA(('${schema}'));`, 'ENDSEC;', 'DATA;',
+    "#1=IFCPROJECT('3x9fqFQJ5Bmv2kNtW0sQ0a',$,'Extern',$,$,$,$,$,$);",
+    plan,
+    ...schedules,
+    "#20=IFCTASKTIME('Live Time',$,$,.WORKTIME.,'P5D','2010-10-04T08:00:00','2010-10-08T16:00:00',$,$,$,$,$,$,$,$,$,$,$,$,$);",
+    "#21=IFCTASK('1PvbZ4lhv8QPYrhvdzM8Jg',$,'Live taak',$,$,'A',$,$,$,.F.,$,#20,.CONSTRUCTION.);",
+    "#22=IFCTASKTIME('Basis Time',$,$,.WORKTIME.,'P5D','2010-09-27T08:00:00','2010-10-01T16:00:00',$,$,$,$,$,$,$,$,$,$,$,$,$);",
+    "#23=IFCTASK('2B8yE8mTn1mAnyUFh2s$3b',$,'Baselinetaak',$,$,'B',$,$,$,.F.,$,#22,.CONSTRUCTION.);",
+    ...nests,
+    'ENDSEC;', 'END-ISO-10303-21;', '',
+  ].join('\n');
+}
+
+{
+  // B. Norm (IFC 4 / 4.3): 14 attributen, StartTime op 11, PredefinedType op 13.
+  const ifc = foreignFile('IFC4X3_ADD2',
+    "#10=IFCWORKPLAN('0eVhmaYyb3sBLb0LoNiW62',$,'Work Plan #1',$,$,$,'2010-09-23T16:26:16',$,$,$,$,'2010-09-23T00:00:00',$,$);",
+    [
+      "#11=IFCWORKSCHEDULE('2LoWUCZHr7YvZks8lmqjcw',$,'Planning',$,$,$,'2010-09-23T16:26:42',$,$,$,$,'2010-09-23T00:00:00',$,.PLANNED.);",
+      "#12=IFCWORKSCHEDULE('1Ezw2Gk6v8ufQJ8nB4Zr8m',$,'Basis',$,$,$,'2010-09-20T10:00:00',$,$,$,$,'2010-09-20T00:00:00',$,.BASELINE.);",
+    ],
+    [
+      "#30=IFCRELNESTS('0aQgg3GdP0BB8_2Y5UbS6u',$,$,$,#11,(#21));",
+      "#31=IFCRELNESTS('3GmKhDwhD1i9mKk4jZ3h4R',$,$,$,#12,(#23));",
+    ]);
+  const r = readIFC(ifc);
+  eq('B1 norm: projectstart uit IfcWorkPlan.StartTime (index 11)', r.project.startDate, '2010-09-23');
+  eq('B2 norm: taak onder het .BASELINE.-werkschema (index 13) is geen live taak', r.tasks.map(t => t.name), ['Live taak']);
+  eq('B3 norm: werkschema-GlobalId is dat van het .PLANNED.-schema', r.ifcGlobalIds?.[`ws:${r.project.id}`], '2LoWUCZHr7YvZks8lmqjcw');
+}
+{
+  // C. IFC2X3: IfcWorkControl telt ook 15 attributen, maar met WorkControlType op 13 en
+  //    UserDefinedControlType op 14; StartTime/FinishTime zijn verwijzingen (IfcDateTimeSelect).
+  const ifc = foreignFile('IFC2X3',
+    "#10=IFCWORKPLAN('3jFxrHuvvB9Axuu2YDFOLK',$,'Workplan',$,$,'WP-1',#40,$,$,$,$,#41,$,.PLANNED.,$);",
+    [
+      "#11=IFCWORKSCHEDULE('3fDfjRHgHEF9k6AoFnMQHP',$,'Planning',$,$,'WS-1',#40,$,$,$,$,#41,$,.PLANNED.,$);",
+      "#12=IFCWORKSCHEDULE('1Ezw2Gk6v8ufQJ8nB4Zr8m',$,'Basis',$,$,'WS-2',#40,$,$,$,$,#41,$,.BASELINE.,$);",
+    ],
+    [
+      "#30=IFCRELNESTS('0aQgg3GdP0BB8_2Y5UbS6u',$,$,$,#11,(#21));",
+      "#31=IFCRELNESTS('3GmKhDwhD1i9mKk4jZ3h4R',$,$,$,#12,(#23));",
+      "#40=IFCCALENDARDATE(23,9,2010);",
+      "#41=IFCCALENDARDATE(23,9,2010);",
+    ]);
+  const r = readIFC(ifc);
+  ok(`C1 IFC2X3: geen datum uit een verwijzing (kreeg "${r.project.startDate}")`, !r.project.startDate.startsWith('#'));
+  eq('C1 IFC2X3: projectstart = vroegste taakstart (geen WorkPlan-tekst)', r.project.startDate, '2010-10-04');
+  eq('C2 IFC2X3: taak onder het .BASELINE.-werkschema (index 13) is geen live taak', r.tasks.map(t => t.name), ['Live taak']);
+}
+
+if (fails.length) {
+  for (const f of fails) console.log(`   XX ${f}`);
+  console.log(`XX check-ifc-schema-reader: ${fails.length}/${checks} ROOD`);
+  process.exit(1);
+}
+console.log(`OK check-ifc-schema-reader: ${checks}/${checks} groen`);

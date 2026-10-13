@@ -113,7 +113,9 @@ const isTaskTime = (name: string) => (args: string[]) => args[0] === `'${name} T
 {
   // Een extern bestand kent het OPS-pset niet: hernoem de eigenschap zodat alleen WORKPLAN overblijft.
   const zonderPset = base.replace("'ProjectEndDate'", "'OnbekendVeld'");
-  const ifc = blankSlots(zonderPset, 'IFCWORKPLAN', () => true, [13]);
+  // FinishTime staat op index 12 (IFC 4.3, 14 attributen; tot 2026-10 schreef OPS 15 attributen met
+  // FinishTime op 13 — die oude indeling toetst check-ifc-schema-reader.ts).
+  const ifc = blankSlots(zonderPset, 'IFCWORKPLAN', () => true, [12]);
   eq('2a projecteinde bij leeg FinishTime-slot', readIFC(ifc).project.endDate, '');
   ok('2b zonder die bewerking levert de WORKPLAN nog gewoon zijn einde (controle)',
     readIFC(zonderPset).project.endDate.startsWith('2015'));
