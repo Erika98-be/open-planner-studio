@@ -466,3 +466,11 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   Slotronde naar de maker (vóór de release, klein): §6e letterlijke blokken (N9), toets beginstand na eigen
   preset/*Continu* (N8), JSDoc, commentaar MCP, MCP-case. Merge pas na checkstap 10 van de eigenaar (testversie)
   en groene CI. Checkstap 10 gemeten: *Vr* uit → Einde 25-09-2006 wordt 26-09-2006; *Continu* → 22-09-2006.
+- **#339 review: nee** (reviewer, Opus 5.5). **[BEVESTIGD · kritiek]** oneindige render-lus ("Maximum update depth
+  exceeded", leeg scherm) twee px voorbij het passpunt (bv. 8 tabbladen bij 1363 px); oorzaak: menuknop zonder
+  `flex: none` krimpt mee, voorspelling `arrowsWidth` mist 1–3 px, pijlen wisselen eindeloos. Main crasht niet.
+  Verder 5 van 6 mutanten groen, misleidende screenshots, opruimpunten. RTL (bestond al): sluitkruisje fysiek
+  rechts (verkeerd project sluiten mogelijk in ar/fa), Latijnse namen verliezen hun begin. Fixronde 1 naar de
+  maker, RTL als aparte commit in dezelfde PR (zelfde CSS-bestand). Vloeiend schuiven blijft (eigenaar keurde
+  het goed in checkstap 9). **Na de release voorleggen:** een error boundary bovenaan de app (nu wordt elk
+  renderfout een leeg scherm).
