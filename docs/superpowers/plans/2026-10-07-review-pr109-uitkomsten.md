@@ -396,3 +396,10 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   (rekenprofiel/motor, nieuw):** (a) werkelijk einde in een vrije periode wordt onder OPS/MSP teruggezet
   (`snapOnOrBefore`, `CPMSolver.ts:2265`; ontwerpregel spec 2026-07-04; MS Project houdt het vermoedelijk letterlijk);
   (b) lagkalender bij Asta-exports (Woodscapes). Her-check door dezelfde reviewer gestart.
+- Optie 2 kalendervenster klaar als #338 (`claude/kalender-optie2`, 86940a3d5, CI 15/15, 9 mutaties rood).
+  Review gestart (reviewer, Opus 5.5). De maker meldde een oude beperking: IFC bewaart maar één set
+  werkblokken voor alle werkdagen (een korte vrijdag verdwijnt na opslaan). Dat is bevinding B7 uit
+  `docs/onderhoudbaarheid/deelrapporten/rapport-ifc.md` (2026-07-25, ernst middel). **Besluit orkestrator
+  2026-10-13:** vóór de release oplossen. Het is dataverlies in iets wat al gebouwd is, en dus volgens de
+  releaseregel van de eigenaar (2026-10-12) werk vóór de release. Expert (Opus 5.5) gestart op
+  `claude/ifc-werktijd-per-dag`, met de IFC-eigen route uit B7 en meting van wat oudere versies lezen.
