@@ -22,11 +22,6 @@ import './DocumentChrome.css';
 /** Zo lang telt een volgende pijlklik vanaf het doel van de vorige (duur van een vloeiende scroll). */
 const PENDING_SCROLL_MS = 600;
 
-/** Laatste vangnet tegen een aan-uit-lus: wisselen de pijlen vaker dan dit binnen
- *  LOOP_GUARD_WINDOW_MS, dan blijven ze staan tot de maat weer echt verandert. */
-const LOOP_GUARD_TOGGLES = 4;
-const LOOP_GUARD_WINDOW_MS = 1000;
-
 /** A · Documenttabs — horizontale tabstrip onder het lint. */
 export function DocumentTabBar() {
   const { t, i18n } = useTranslation('common');
@@ -47,7 +42,6 @@ export function DocumentTabBar() {
   const [overflowing, setOverflowing] = useState(false);
   const [edges, setEdges] = useState<DocumentTabScrollEdges>({ atStart: true, atEnd: true });
   const overflowingRef = useRef(false);
-  const toggleTimes = useRef<number[]>([]);
 
   // Overloop meten bij elke maatwijziging van strook of tabbladen (venster, tab erbij/eraf, langere
   // naam), randen ook bij scrollen. De overloop vergelijkt de tabbladen met de ruimte die ze zónder
@@ -83,13 +77,7 @@ export function DocumentTabBar() {
       }
       const available = strip.clientWidth - padding - fixedWidth - gap * fixedCount;
       const shown = overflowingRef.current;
-      let next = documentTabNeedsArrows(tabs.scrollWidth, available, shown);
-      if (next !== shown) {
-        const now = performance.now();
-        toggleTimes.current = toggleTimes.current.filter(time => now - time < LOOP_GUARD_WINDOW_MS);
-        if (!next && toggleTimes.current.length >= LOOP_GUARD_TOGGLES) next = true;
-        else toggleTimes.current.push(now);
-      }
+      const next = documentTabNeedsArrows(tabs.scrollWidth, available, shown);
       if (next !== shown) {
         overflowingRef.current = next;
         setOverflowing(next);

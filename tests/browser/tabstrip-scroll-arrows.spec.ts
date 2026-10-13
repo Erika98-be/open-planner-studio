@@ -274,6 +274,11 @@ test('RTL: pijlen gespiegeld, klik schuift twee tabbladen, wiel schuift', async 
   const ar = LOCALE_CASES.find(locale => locale.code === 'ar')!;
   await chooseLocale(page, ar);
   await openProjects(page, 12);
+  // Eén tabblad zonder wijzigingen (geen stipje): daar loopt de naam door tot de padding, dus
+  // alleen hier toont zich of het kruisje de naam raakt.
+  await page.evaluate(() => window.__OPS__!.store.getState().newDocument());
+  await expect(page.locator('[data-testid="document-tab"]')).toHaveCount(13);
+  await expect(page.locator('.ops-tab-group').last().locator('.ops-dirty-dot')).toHaveCount(0);
   const viewport = page.locator(viewportSel);
   await expectNoScrollbar(viewport);
 
@@ -294,7 +299,7 @@ test('RTL: pijlen gespiegeld, klik schuift twee tabbladen, wiel schuift', async 
 
   // Elk sluitkruisje staat binnen zijn eigen tabblad, aan de logische eindkant (in RTL links).
   // Anders staat het naast de naam van het buurtabblad en sluit een klik het verkeerde project.
-  const closeLayout = await page.evaluate(() => [...document.querySelectorAll('.ops-tab-group')].slice(0, 4).map((group) => {
+  const closeLayout = await page.evaluate(() => [...document.querySelectorAll('.ops-tab-group')].map((group) => {
     const g = group.getBoundingClientRect();
     const c = group.querySelector('.ops-tab-close')!.getBoundingClientRect();
     const name = group.querySelector('.ops-tab-name')!;
@@ -303,6 +308,8 @@ test('RTL: pijlen gespiegeld, klik schuift twee tabbladen, wiel schuift', async 
       inside: c.left >= g.left - 0.5 && c.right <= g.right + 0.5,
       atLogicalEnd: c.right < (g.left + g.right) / 2,
       clearOfName: c.right <= n.left + 0.5,
+      latinName: /^Project/.test(name.textContent ?? ''),
+      clean: !group.querySelector('.ops-dirty-dot'),
       nameLtr: name.matches(':dir(ltr)'),
     };
   }));
@@ -310,8 +317,9 @@ test('RTL: pijlen gespiegeld, klik schuift twee tabbladen, wiel schuift', async 
     expect(tab.inside, `kruisje ${i + 1} binnen zijn tabblad`).toBe(true);
     expect(tab.atLogicalEnd, `kruisje ${i + 1} aan de eindkant (links in RTL)`).toBe(true);
     expect(tab.clearOfName, `kruisje ${i + 1} overlapt de naam niet`).toBe(true);
-    expect(tab.nameLtr, `naam ${i + 1} (Latijns) loopt ltr, begin blijft zichtbaar`).toBe(true);
+    if (tab.latinName) expect(tab.nameLtr, `naam ${i + 1} (Latijns) loopt ltr, begin blijft zichtbaar`).toBe(true);
   }
+  expect(closeLayout.filter(tab => tab.clean), 'de controle omvat een tabblad zonder wijzigingen').toHaveLength(1);
   // Een klik op het kruisje van tabblad 2 vraagt om tabblad 2 te sluiten, niet een buurtabblad.
   // De fixtureprojecten hebben wijzigingen, dus de klik vraagt eerst om bevestiging. De brug leest
   // alleen welk document gevraagd is; Annuleren (heeft de focus) laat alles open.
@@ -323,7 +331,7 @@ test('RTL: pijlen gespiegeld, klik schuift twee tabbladen, wiel schuift', async 
     .toBe(secondId);
   await page.keyboard.press('Enter');
   await expect.poll(() => page.evaluate(() => window.__OPS__!.store.getState().ui.pendingCloseDocId)).toBe(null);
-  await expect(page.locator('[data-testid="document-tab"]')).toHaveCount(12);
+  await expect(page.locator('[data-testid="document-tab"]')).toHaveCount(13);
 
   await page.locator(endSel).click();
   await expectTabAtStartEdge(page, 2, true);
