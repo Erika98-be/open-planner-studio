@@ -6,7 +6,7 @@ Doel: per weekdag vastleggen op welke kloktijden een kalender werkt, zodat taken
 
 De vrijdagmiddag is vrij. De ploeg werkt van 06:00 tot 22:00 in twee diensten. Er is een nachtploeg. De pauze is korter dan een uur. Zolang je alleen in dagen plant, volstaan *Begin (uur)*, *Einde (uur)* en de pauze ([Een kalender maken en toewijzen](docs://howto-kalender-maken-en-toewijzen)). Plan je taken in uren, dan telt de app werkminuten binnen de **werktijdblokken** van de kalender. In de app heten die blokken *banden*: een blok is een aaneengesloten stuk werktijd op één weekdag, en een gat tussen twee blokken is een pauze. Wat dat voor je planning betekent, staat in [Dagen en uren](docs://uitleg-dagen-en-uren).
 
-Je hebt hiervoor *Urenplanning inschakelen* nodig ([Urenplanning aanzetten](docs://howto-urenplanning-aanzetten)). Zonder urenplanning zie je het blok *Werktijden* niet.
+Om een gewone kalender werktijdblokken te geven, heb je *Urenplanning inschakelen* nodig ([Urenplanning aanzetten](docs://howto-urenplanning-aanzetten)). Heeft de kalender al blokken, bijvoorbeeld uit een MS Project-bestand, dan staat het blok *Werktijden* er altijd en wijzig je de blokken ook met urenplanning uit.
 
 ## Stappen
 
@@ -47,9 +47,9 @@ Een eigen preset staat op dit apparaat, niet in het projectbestand.
 
 **Een preset vervangt alles.** Kies je een preset, dan verdwijnen de werkdagen en werktijden die je eerder instelde. De feestdagen blijven.
 
-**Dagknoppen en blokken zijn twee dingen.** De knoppen bij *Werkdagen* veranderen de blokken niet. Een dag krijgt werktijd door bij die dag *Band toevoegen* te klikken. Zet je een dag alleen met de knop aan, dan telt hij mee voor taken in dagen maar niet voor taken in uren. Gebruik bij een kalender met werktijden dus de regels per weekdag.
+**Dagknoppen passen de blokken aan.** Zet je bij *Werkdagen* een dag uit, dan verdwijnen de blokken van die dag. Zet je hem weer aan, dan krijgt hij de blokken terug die hij had toen je het venster opende, of anders die van de eerste werkdag. *Ma–vr* en *Continu (24/7)* passen de blokken op dezelfde manier aan.
 
-**Werktijden aanpassen met Urenplanning uit.** Zet je urenplanning weer uit, dan komen de velden *Begin (uur)*, *Einde (uur)* en de pauze terug. Bij een kalender met werktijdblokken veranderen die de blokken niet. Pas de werktijden dus altijd aan terwijl urenplanning aan staat.
+**Werktijden aanpassen met Urenplanning uit.** Een kalender met werktijdblokken houdt het blok *Werktijden*, ook als je urenplanning uitzet. Je past de blokken daar gewoon aan. Kies je *Dagdienst*, dan wordt het weer een gewone kalender met de velden *Begin (uur)*, *Einde (uur)* en de pauze; blokken terugzetten kan dan alleen met urenplanning aan.
 
 **Geen bruikbare werktijden.** Een kalender zonder blokken of zonder werkdagen kan geen taak in uren dragen. De app meldt dan *Deze kalender heeft geen geldige werktijden. Controleer de werkdagen en werktijden.*
 
