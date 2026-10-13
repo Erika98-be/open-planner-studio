@@ -22,7 +22,7 @@ import { contourPeriodsToDayItems, countSplitTasksWithoutContour, minutesToMspdi
 import { parseInstant, formatInstant } from '@/utils/dateUtils';
 import { flattenOrder, taskDepths } from '@/utils/wbs';
 import { invertRecord } from '@/utils/collections';
-import { shownStart, shownFinish } from '@/utils/taskDates';
+import { computedStart, shownStart, shownFinish } from '@/utils/taskDates';
 import { MSPDI_TASK_TYPE_CODE, mspFromWorkRule } from '@/engine/work/workRuleMapping';
 
 /**
@@ -484,6 +484,8 @@ export function writeMSPDI(
     if (mspType && !isSummary) {
       lines.push(`${indent(3)}<EffortDriven>${mspType.effortDriven ? 1 : 0}</EffortDriven>`);
     }
+    // Start/Finish zoals MS Project: een gestarte taak begint op haar werkelijke start, een voltooide
+    // eindigt op haar werkelijke einde (`shownStart`/`shownFinish`).
     lines.push(`${indent(3)}<Start>${toXmlDateTime(shownStart(task))}</Start>`);
     lines.push(`${indent(3)}<Finish>${toXmlDateTime(shownFinish(task))}</Finish>`);
     lines.push(`${indent(3)}<WBS>${escapeXml(task.wbsCode)}</WBS>`);
@@ -655,10 +657,13 @@ export function writeMSPDI(
       const workHpd = task ? (effCalByTask.get(task.id)?.hoursPerDay ?? calendar.hoursPerDay) : calendar.hoursPerDay;
       // De contour van déze toewijzing (gekoppeld via `resourceId`).
       const taskContour = task ? contourOf(task, a) : undefined;
-      const dayItems = task && taskContour && shownStart(task)
+      // De contour vanaf de REKENstart, zoals de eigen resourcebelasting (`ResourceLoad.taskWorkDayIsos`
+      // legt hem vanaf `earlyStart`). <Start> hierboven is de getoonde start (MS Project: de werkelijke
+      // start van een gestarte taak); in het OPS- en MSP-profiel vallen die twee op dezelfde dag.
+      const dayItems = task && taskContour && computedStart(task)
         ? contourPeriodsToDayItems(
           engineForTask(task), resolveCalendar(task.calendarId, resourceCalendars, calendar),
-          parseInstant(shownStart(task)), taskContour.periods,
+          parseInstant(computedStart(task)), taskContour.periods,
         )
         : [];
 

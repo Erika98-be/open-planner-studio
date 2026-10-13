@@ -28,7 +28,7 @@ Za druhé, práce, která ještě nezačala, nemůže ležet v minulosti. Je-li 
 
 Za třetí, zbývající práce úkolu, který už běží, začíná přesně na datu stavu. Aplikace bere datum stavu jako začátek toho dne. Zhodnotíte-li stav v pátek po pracovní době, nastavte datum stavu na pondělí. Nastavíte-li pátek, aplikace zbývající práci plánuje stále na ten pátek.
 
-Nemáte-li zatím datum stavu a zadáte průběh, aplikace nastaví datum stavu na dnešek a upozorní vás na to. Bez data stavu aplikace počítá běžící úkol dopředu se zbývající dobou trvání, ale dozadu s plnou dobou trvání. Časová rezerva pak vyjde záporně a úkol vypadá kriticky bez důvodu.
+Nemáte-li zatím datum stavu a zadáte průběh, aplikace nastaví datum stavu na dnešek a upozorní vás na to. Jiné datum nastavíte na kartě *Plán › Směrné plány a průběh › Datum stavu*. Bez data stavu aplikace počítá běžící úkol dopředu se zbývající dobou trvání, ale dozadu s plnou dobou trvání. Časová rezerva pak vyjde záporně a úkol vypadá kriticky bez důvodu.
 
 ### Procento, skutečná data a zbývající doba trvání
 

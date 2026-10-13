@@ -18,7 +18,7 @@ Durum tarihi, durumu değerlendirdiğiniz gündür. İlerlemeyi girmeden önce o
 
 Cuma günü çalışma saatlerinden sonra durumu değerlendirirseniz, durum tarihini bir sonraki iş günü olan Pazartesi'ye ayarlayın. Uygulama kalan işi durum tarihinin başlangıcından itibaren planlar.
 
-Durum tarihi yokken ilerleme girerseniz, uygulama durum tarihini bugüne ayarlar ve şu mesajı gösterir: *Henüz durum tarihi yoktu: ilerleme durum tarihine kadar ölçüldüğü için bugüne (…) ayarlandı. Planlama → Durum tarihi altından değiştirebilirsiniz.* Bu yüzden önce durum tarihini kendiniz ayarlayın.
+Durum tarihi yokken ilerleme girerseniz, uygulama durum tarihini bugüne ayarlar ve şu mesajı gösterir: *Durum tarihi bugüne ayarlandı (…).* Bu yüzden önce durum tarihini kendiniz ayarlayın.
 
 ### 2. İlerlemeyi girin
 

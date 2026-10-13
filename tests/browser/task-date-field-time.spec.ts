@@ -8,7 +8,13 @@ import { expect, state, test } from './fixtures/ops';
  * hele project niet meer ("Ongeldige startdatum").
  *
  * Alle geteste handelingen gaan via echte muis-/toetsenbordevents. De dev-brug opent alleen het
- * voorbeeld-resultaat (selectie, paneel zichtbaar, dialoog openen) en leest state.
+ * voorbeeld-resultaat (selectie, paneel zichtbaar, dialoog openen), zet de fixture van
+ * `openShowcaseTask` en leest state.
+ *
+ * Taak 3.6 is in het voorbeeld voltooid. Sinds het eigenaarsbesluit van 2026-10-12 (optie 1, "zoals
+ * Primavera") is Start van een gestarte of voltooide taak alleen-lezen: de getoonde start is de
+ * werkelijke start. De Start-tests hieronder gaan over een BEWERKBAAR datumveld met tijddeel; daarvoor
+ * maakt de fixture de taak eerst niet-gestart (`notStarted`).
  */
 
 const TASK = 'Rebar fixing, basement floor — Tower A';
@@ -42,8 +48,13 @@ async function cpmError(page: Page): Promise<string | null> {
   return page.evaluate(() => window.__OPS__!.store.getState().cpmResult?.error ?? null);
 }
 
-/** Opent het showcase-voorbeeld via de echte Backstage en selecteert taak 3.6 in het paneel. */
-async function openShowcaseTask(page: Page): Promise<string> {
+/** Opent het showcase-voorbeeld via de echte Backstage en selecteert taak 3.6 in het paneel.
+ *
+ *  `notStarted`: fixture die de voortgang van taak 3.6 wist en de statusdatum weghaalt, en dan
+ *  herberekent. Zonder voortgang is Start weer bewerkbaar; zonder statusdatum begint de taak weer op
+ *  de berekende start uit haar (voltooide) voorganger, 13-05 07:00 — dezelfde start als met voortgang,
+ *  zodat de verwachtingen hieronder voor beide varianten gelden. */
+async function openShowcaseTask(page: Page, opts: { notStarted?: boolean } = {}): Promise<string> {
   await page.locator('.ribbon-tab--file').first().click();
   await page.locator('button.backstage-nav-item[data-tour-anchor="backstage-examples"]').click();
   const card = page.locator('button.backstage-export-card')
@@ -61,6 +72,21 @@ async function openShowcaseTask(page: Page): Promise<string> {
     s.selectTask(task.id);
     return task.id;
   }, TASK);
+  if (opts.notStarted) {
+    await page.evaluate((taskId) => {
+      const s = window.__OPS__!.store.getState();
+      const task = s.tasks.find(candidate => candidate.id === taskId)!;
+      // Expliciet `undefined` (sleutel aanwezig) wist het veld, zie `mergeTaskTime`.
+      s.updateTask(taskId, { time: {
+        ...task.time,
+        actualStart: undefined, actualFinish: undefined, actualDuration: undefined,
+        remainingTime: undefined, remainingMinutes: undefined, completion: 0,
+      } });
+      s.setStatusDate('');
+      window.__OPS__!.store.getState().runCPM();
+    }, id);
+    expect((await taskFacts(page, id)).actualStart).toBeUndefined();
+  }
   const facts = await taskFacts(page, id);
   // De fixture waarom het gaat: een start MET tijd (uurkalender) — anders test deze spec niets.
   expect(facts.earlyStart).toBe('2027-05-13T07:00');
@@ -84,7 +110,7 @@ async function recalc(page: Page): Promise<void> {
 }
 
 test('paneel: klik-in + Tab op Start van een urentaak laat het anker ongemoeid en F5 rekent', async ({ page, ops: _ops }) => {
-  const id = await openShowcaseTask(page);
+  const id = await openShowcaseTask(page, { notStarted: true });
   const start = railGroup(page, 'Start');
   await start.scrollIntoViewIfNeeded();
   // Het veld toont het datumdeel van de berekende start, niet een leeg veld.
@@ -101,7 +127,7 @@ test('paneel: klik-in + Tab op Start van een urentaak laat het anker ongemoeid e
 });
 
 test('paneel: een andere datum typen op Start behoudt het tijddeel', async ({ page, ops: _ops }) => {
-  const id = await openShowcaseTask(page);
+  const id = await openShowcaseTask(page, { notStarted: true });
   const start = railGroup(page, 'Start');
   await start.scrollIntoViewIfNeeded();
   await expect.poll(() => segments(start)).toBe('13-05-2027');
@@ -116,7 +142,7 @@ test('paneel: een andere datum typen op Start behoudt het tijddeel', async ({ pa
 });
 
 test('paneel: Start met Backspace leegmaken wordt geweigerd en het veld valt terug', async ({ page, ops: _ops }) => {
-  const id = await openShowcaseTask(page);
+  const id = await openShowcaseTask(page, { notStarted: true });
   const start = railGroup(page, 'Start');
   await start.scrollIntoViewIfNeeded();
   await expect.poll(() => segments(start)).toBe('13-05-2027');
@@ -132,6 +158,16 @@ test('paneel: Start met Backspace leegmaken wordt geweigerd en het veld valt ter
   expect((await taskFacts(page, id)).scheduleStart).toBe('2027-03-01T07:00');
   await recalc(page);
   expect(await cpmError(page)).toBeNull();
+});
+
+test('paneel: Start van de voltooide urentaak is alleen-lezen en toont de werkelijke start', async ({ page, ops: _ops }) => {
+  const id = await openShowcaseTask(page);
+  const start = railGroup(page, 'Start');
+  await start.scrollIntoViewIfNeeded();
+  await expect.poll(() => segments(start)).toBe('13-05-2027');
+  await expect(start).toHaveAttribute('aria-disabled', 'true');
+  await expect(start.locator('input').first()).toBeDisabled();
+  expect((await taskFacts(page, id)).actualStart).toBe('2027-05-13T07:00');
 });
 
 test('paneel: Werkelijke start van een voltooide taak doortabben verandert niets', async ({ page, ops: _ops }) => {
@@ -183,7 +219,7 @@ test('paneel: een leeggemaakte taaknaam wordt niet vastgelegd', async ({ page, o
 });
 
 test('Taak bewerken: met Tab door Startdatum naar Duur en Opslaan laat de start ongemoeid', async ({ page, ops: _ops }) => {
-  const id = await openShowcaseTask(page);
+  const id = await openShowcaseTask(page, { notStarted: true });
   await page.evaluate((taskId) => {
     window.__OPS__!.store.getState().setUI({ showTaskDialog: true, editingTaskId: taskId });
   }, id);
@@ -221,7 +257,7 @@ test('Taak bewerken: met Tab door Startdatum naar Duur en Opslaan laat de start 
 });
 
 test('Taak bewerken: Startdatum leegmaken en Opslaan behoudt de start', async ({ page, ops: _ops }) => {
-  const id = await openShowcaseTask(page);
+  const id = await openShowcaseTask(page, { notStarted: true });
   await page.evaluate((taskId) => {
     window.__OPS__!.store.getState().setUI({ showTaskDialog: true, editingTaskId: taskId });
   }, id);

@@ -24,7 +24,7 @@ Akkor hasznos, ha a tevékenységtáblázatban dolgozik.
 2. Tartsa lenyomva a Ctrl billentyűt (Mac-en ⌘), és kattintson a következő tevékenységre: ez az utód.
 3. Válassza a *Kezdőlap › Tevékenységek › Kapcsolat ▾ › Kijelöltek összekapcsolása* lehetőséget. Ugyanez a gomb az *Ütemezés › Kapcsolatok* alatt is megtalálható.
 
-Az alkalmazás befejezés-kezdés kapcsolatot hoz létre késleltetés nélkül, és például ezt jelzi: *Kapcsolat létrehozva: Foundation brickwork → Lay hollow-core floor*. A gomb csak pontosan két kijelölt tevékenységgel működik.
+Az alkalmazás befejezés-kezdés kapcsolatot hoz létre késleltetés nélkül. A kapcsolat nyílként látható a Gantt-ben és az *Elődök* oszlopban; értesítés csak akkor jelenik meg, ha az alkalmazás elutasítja a kapcsolatot. A gomb csak pontosan két kijelölt tevékenységgel működik.
 
 ### Kapcsolat rajzolása a Gantt-ben
 

@@ -13,6 +13,7 @@ Je begint de dag met het project van gisteren, je krijgt een bestand van een col
 1. Kies *Start › Bestand › Openen*, of *Bestand › Openen*, of druk op Ctrl+O (⌘+O op een Mac). *Openen* staat ook in de balk helemaal bovenaan. De groep *Bestand* staat ook op het tabblad *Tabel*.
 2. Kies het bestand. Je opent één bestand per keer. Op de desktop en in browsers met bestandstoegang, zoals Chrome en Edge, toont het venster een lijst met bestandstypen: *All Supported*, *IFC Files*, *CSV Files*, *XML Files*, *MS Project Files* en *Primavera XER Files*.
 3. Het project opent in een nieuw tabblad. Was het huidige tabblad nog leeg en ongewijzigd, dan opent het project daarin.
+4. Was het bestand geen IFC, dan verschijnt een venster met een korte uitleg over dat formaat. Een groen blok zegt wat de app overnam, een amber blok wat niet of maar deels meekwam, en een blauw blok hoe opslaan en terugschrijven werken. *Lees meer* opent de gids over dat formaat. Klik op *Begrepen* om het venster te sluiten. Vink eerst *Niet meer tonen voor …* aan als je deze uitleg voor dat formaat niet meer wilt zien. Je zet hem weer aan in [Instellingen](docs://ref-instellingen), op het tabblad *Geavanceerd*.
 
 Een IFC-bestand geeft zijn bestandsnaam aan het tabblad. Een project uit een ander formaat krijgt zijn projectnaam.
 
@@ -20,7 +21,7 @@ De app opent `.ifc`, `.csv`, `.xml` (MS Project XML of Primavera P6 XML), `.mpp`
 
 ### Een recent project openen
 
-Kies *Start › Bestand › Recent* en klik op een bestand in de lijst, of kies *Bestand › Recent*. De lijst bewaart de laatste tien bestanden die je opende, opsloeg of exporteerde. De desktopapp toont bij elk bestand het pad, een browser alleen de naam.
+Kies *Start › Bestand › Recent* en klik op een bestand in de lijst, of kies *Bestand › Recent*. De lijst bewaart de laatste tien bestanden die je opende, opsloeg of exporteerde. Ook hier verschijnt na een bestand dat geen IFC is de uitleg over het formaat. De desktopapp toont bij elk bestand het pad, een browser alleen de naam.
 
 Kan de app een bestand uit de lijst niet meer lezen, bijvoorbeeld omdat je het verplaatste, dan verdwijnt het zonder melding uit de lijst. In browsers zonder bestandstoegang, zoals Firefox, blijft *Recent* leeg.
 

@@ -24,7 +24,7 @@ Hodí se, když pracujete v tabulce úkolů.
 2. Podržte Ctrl (na Macu ⌘) a klikněte na úkol, který následuje: na následníka.
 3. Zvolte *Domů › Úkoly › Závislost ▾ › Propojit vybrané úkoly*. Stejné tlačítko je také na kartě *Plán › Závislosti*.
 
-Aplikace vytvoří závislost typu dokončení-zahájení (FS) bez prodlevy a ohlásí například *Závislost vytvořena: Foundation brickwork → Lay hollow-core floor*. Tlačítko funguje jen při výběru přesně dvou úkolů.
+Aplikace vytvoří závislost typu dokončení-zahájení (FS) bez prodlevy. Uvidíte ji jako šipku v diagramu Gantt a ve sloupci *Předchůdci*. Oznámení se zobrazí jen tehdy, když aplikace závislost odmítne. Tlačítko funguje jen při výběru přesně dvou úkolů.
 
 ### Kreslení závislosti v diagramu Gantt
 

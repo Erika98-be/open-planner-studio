@@ -1525,6 +1525,13 @@ for (const [naam, ext, bron, sleutels] of [
     na.filePath, na.fileHandle, na.siteFileId, na.isDirty,
   ], [null, null, null, false]);
 
+  // Integratie ronde 2 (#325 × #329): de formaatuitleg beschrijft de INGEBOUWDE lezers. Een
+  // extensie-importer las het bestand zelf, dus ook een naam met een bekende extensie (.xer) geeft
+  // geen uitleg (`openAsDocument` zet hem niet; alleen de open-routes van de gebruiker doen dat).
+  useAppStore.setState((s) => { s.ui.formatNoticeHidden = []; s.ui.pendingFormatNotice = null; });
+  openExtensionImport(useAppStore, importResultaat, 'planning.xer');
+  eq('N3D-24b importer met een .xer-naam ⇒ geen formaatuitleg', useAppStore.getState().ui.pendingFormatNotice, null);
+
   const backstage = readFileSync(join(process.cwd(), 'src/components/backstage/Backstage.tsx'), 'utf8');
   eq('N3D-25 Backstage → Importeren opent via importWithExtension, niet via loadState', [
     /importWithExtension\(useAppStore, imp, file\)/.test(backstage),

@@ -47,7 +47,7 @@ import {
 } from '@/utils/taskDefaults';
 import { sameValue } from '@/utils/sameValue';
 import { taskWorkMinutes } from '@/engine/contour/contourEngine';
-import { shownFinish, shownStart, startAnchorAfterEdit } from '@/utils/taskDates';
+import { finishIsActual, shownFinish, shownStart, startAnchorAfterEdit, startIsActual } from '@/utils/taskDates';
 import { CalendarEngine } from '@/engine/scheduler/CalendarEngine';
 import { isPinnedComplete, isZeroDurationMilestone } from '@/engine/scheduler/duration';
 import { calendarForEngine } from '@/utils/effectiveWorkTime';
@@ -453,6 +453,10 @@ function applyScheduleEdit(
     // die datum stond: de beperking kan dan nog ontbreken.
     if (!optionalString(edit.value)) return failure('date', edit);
     if (edit.value === undefined) return failure('required', edit);
+    // Ongewijzigd teruggetypt: niets. Anders staat de start van een gestarte taak vast — de
+    // kolom is daar al alleen-lezen; dit vangt elke route die de kolomgrens niet kent.
+    if (edit.value === shownStart(task)) return { ok: true, value: false };
+    if (startIsActual(task)) return failure('startIsActual', edit);
     const anchor = startAnchorAfterEdit(task, edit.value);
     if (anchor !== undefined) lost = applyTypedStart(task, anchor, environment, effects);
   } else if (id === 'task.time.finish') {
@@ -460,6 +464,9 @@ function applyScheduleEdit(
     if (edit.value === undefined) return failure('required', edit);
     // Ongewijzigd teruggetypt: niets verzetten (geen duur afronden, geen tijdfasering wissen).
     if (edit.value === shownFinish(task)) return { ok: true, value: false };
+    // Het einde van een voltooide taak is haar werkelijke einde — ook bij een handmatig geplande taak
+    // (anders veranderde alleen het onzichtbare `scheduleFinish`).
+    if (finishIsActual(task)) return failure('finishIsActual', edit);
     if (edit.value.slice(0, 10) < shownStart(task).slice(0, 10)) return failure('finishBeforeStart', edit);
     if (isManuallyScheduled(task)) {
       // Een handmatig geplande taak eindigt op haar ingevoerde einde (`CPMSolver.forwardPass`).

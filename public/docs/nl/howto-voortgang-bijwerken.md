@@ -18,7 +18,7 @@ De statusdatum is de dag waarop je de stand opneemt. Zet hem vóór je voortgang
 
 Neem je de stand vrijdag na werktijd op, dan zet je de statusdatum op de eerstvolgende werkdag, maandag. De app plant het restwerk vanaf het begin van de statusdatum.
 
-Vul je voortgang in terwijl er nog geen statusdatum is, dan zet de app hem op vandaag en meldt: *Er stond nog geen statusdatum: die staat nu op vandaag (…), want voortgang wordt tot de statusdatum gemeten. Aanpassen kan via Planning → Statusdatum.* Doe dit dus liever eerst zelf.
+Vul je voortgang in terwijl er nog geen statusdatum is, dan zet de app hem op vandaag en meldt: *Statusdatum op vandaag gezet (…).* Doe dit dus liever eerst zelf.
 
 ### 2. Vul de voortgang in
 

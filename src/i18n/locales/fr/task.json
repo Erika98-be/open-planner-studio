@@ -153,6 +153,7 @@
       "scheduleFinishNotManual": "La fin planifiée ne s’applique qu’à une tâche planifiée manuellement. Modifiez la fin via la colonne Fin ou via la durée.",
       "finishFromDuration": "Pour cette tâche, la fin découle du début et de la durée. Modifiez le début ou la durée.",
       "finishBeforeStart": "La fin est antérieure au début.",
+      "startIsActual": "Cette tâche a commencé ; son début est le début réel. Modifiez-le via l’avancement.",
       "finishIsActual": "Cette tâche est terminée ; sa fin est la fin réelle. Modifiez-la via l’avancement.",
       "invalid": "La valeur saisie n’est pas valide.",
       "relationToken": "Utilisez par exemple 1.2 FS+2d.",

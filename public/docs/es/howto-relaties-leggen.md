@@ -24,7 +24,7 @@ Es útil cuando trabaja en la tabla de tareas.
 2. Mantenga pulsado Ctrl (⌘ en un Mac) y haga clic en la tarea que va después: el sucesor.
 3. Elija *Inicio › Tareas › Vincular ▾ › Vincular tareas seleccionadas*. El mismo botón también está en *Planificación › Relaciones*.
 
-La aplicación crea una relación fin-comienzo sin desfase e informa, por ejemplo, de *Relación creada: Foundation brickwork → Lay hollow-core floor*. El botón solo funciona con exactamente dos tareas seleccionadas.
+La aplicación crea una relación fin-comienzo sin desfase. La ve como una flecha en el Gantt y en la columna *Predecesoras*; solo aparece una notificación si la aplicación rechaza la relación. El botón solo funciona con exactamente dos tareas seleccionadas.
 
 ### Dibujar una relación en el Gantt
 

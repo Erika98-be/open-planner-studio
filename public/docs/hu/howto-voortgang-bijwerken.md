@@ -18,7 +18,7 @@ Az állapotdátum az a nap, amelyen felmérést készít. Állítsa be, mielőtt
 
 Ha pénteken munkaidő után készít felmérést, állítsa az állapotdátumot a következő munkanapra, a hétfőre. Az alkalmazás a hátralévő munkát az állapotdátum kezdetétől ütemezi.
 
-Ha még nincs állapotdátum, és Ön mégis megad előrehaladást, az alkalmazás az állapotdátumot a mai napra állítja, és ezt jelzi: *Nem volt még állapotdátum: most a mai napra (…) lett beállítva, mert a program az előrehaladást az állapotdátumig méri. Módosíthatja az Ütemezés → Állapotdátum menüpontban.* Ezért célszerű ezt előbb Ön maga beállítani.
+Ha még nincs állapotdátum, és Ön mégis megad előrehaladást, az alkalmazás az állapotdátumot a mai napra állítja, és ezt jelzi: *Az állapotdátum a mai napra lett állítva (…).* Ezért célszerű ezt előbb Ön maga beállítani.
 
 ### 2. Adja meg az előrehaladást
 

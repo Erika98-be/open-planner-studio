@@ -18,7 +18,7 @@ Raportointipäivä on päivä, jolloin edistyminen tarkistetaan. Aseta se ennen 
 
 Jos edistyminen tarkistetaan perjantaina työajan jälkeen, aseta raportointipäiväksi seuraava työpäivä, maanantai. Sovellus suunnittelee jäljellä olevan työn raportointipäivän alusta alkaen.
 
-Jos edistyminen syötetään, kun raportointipäivää ei ole vielä asetettu, sovellus asettaa sen tähän päivään ja näyttää viestin: *Raportointipäivää ei ollut vielä asetettu: se on nyt asetettu tähän päivään (…), koska edistyminen mitataan raportointipäivään asti. Sen voi muuttaa kohdassa Aikataulu → Raportointipäivä*. Tee tämä mieluummin itse ensin.
+Jos edistyminen syötetään, kun raportointipäivää ei ole vielä asetettu, sovellus asettaa sen tähän päivään ja näyttää viestin: *Raportointipäivä asetettu tähän päivään (…).* Tee tämä mieluummin itse ensin.
 
 ### 2. Syötä edistyminen
 

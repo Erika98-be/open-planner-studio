@@ -1,5 +1,5 @@
-// Taaknamen in een melding — één plek voor het afkappen, zodat "Relatie aangemaakt: …" en een
-// geweigerde kring (relatie of verhanging) dezelfde namen tonen.
+// Taaknamen in een melding — één plek voor het afkappen, zodat elke melding (bijv. een geweigerde
+// kring, relatie of verhanging) dezelfde namen toont.
 import type { Task } from '@/types/task';
 
 /** Namen in een melding blijven leesbaar: langere taaknamen worden afgekapt. */

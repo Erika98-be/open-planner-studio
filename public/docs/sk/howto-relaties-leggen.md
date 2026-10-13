@@ -24,7 +24,7 @@ Užitočné, keď pracujete v tabuľke úloh.
 2. Podržte Ctrl (⌘ na Macu) a kliknite na úlohu, ktorá ide ďalšia, teda na nasledujúcu úlohu.
 3. Vyberte *Domov › Úlohy › Prepojiť ▾ › Prepojiť vybrané úlohy*. Rovnaké tlačidlo je aj na *Plán › Závislosti*.
 
-Aplikácia vytvorí závislosť dokončenie-začiatok bez oneskorenia. Zobrazí napríklad hlásenie *Závislosť vytvorená: Foundation brickwork → Lay hollow-core floor*. Tlačidlo funguje len vtedy, keď sú vybrané presne dve úlohy.
+Aplikácia vytvorí závislosť dokončenie-začiatok bez oneskorenia. Uvidíte ju ako šípku v diagrame Gantt a v stĺpci *Predchádzajúce úlohy*. Oznámenie sa zobrazí, len ak aplikácia závislosť odmietne. Tlačidlo funguje len vtedy, keď sú vybrané presne dve úlohy.
 
 ### Kreslenie závislosti v diagrame Gantt
 

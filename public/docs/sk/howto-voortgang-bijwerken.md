@@ -18,7 +18,7 @@ Dátum kontroly stavu je deň, ku ktorému zhodnotíte stav. Nastavte ho skôr, 
 
 Ak stav kontrolujete v piatok po skončení pracovnej doby, nastavte dátum kontroly stavu na najbližší pracovný deň, na pondelok. Aplikácia naplánuje zostávajúcu prácu od začiatku dátumu kontroly stavu.
 
-Ak zadáte postup, keď ešte nie je nastavený dátum kontroly stavu, aplikácia ho nastaví na dnešok a oznámi: *Dátum stavu ešte nebol nastavený: teraz je nastavený na dnešok (…), pretože postup sa meria do dátumu stavu. Zmeniť ho môžete na karte Plán → Dátum stavu.* Radšej to preto urobte najprv sami.
+Ak zadáte postup, keď ešte nie je nastavený dátum kontroly stavu, aplikácia ho nastaví na dnešok a oznámi: *Dátum stavu nastavený na dnešok (…).* Radšej to preto urobte najprv sami.
 
 ### 2. Zadajte postup
 

@@ -2,10 +2,12 @@
 // de XER-lezer (`xerMultiProject.ts`, PROJECT.sum_base_proj_id) en de P6 XML-lezer
 // (`<BaselineProject>` met `OriginalProjectObjectId`). Eén regel voor beide formaten: elke bladtaak
 // van de bron wordt een baselinetaak, gekoppeld aan de taak van het eigenaarproject met dezelfde
-// id, anders met dezelfde unieke code (`wbsCode` = activity-id); datums = early, anders gepland.
+// id, anders met dezelfde unieke code (`wbsCode` = activity-id); datums = de getoonde (`shownStart`/
+// `shownFinish`: werkelijk zodra gestart/voltooid, anders early, anders gepland).
 import type { BaselineTask } from '@/types/baseline';
 import type { Task } from '@/types/task';
 import { isLeafTask } from '@/utils/taskHierarchy';
+import { shownFinish, shownStart } from '@/utils/taskDates';
 
 function uniqueTaskByCode(tasks: readonly Task[]): Map<string, Task> {
   const grouped = new Map<string, Task[]>();
@@ -36,8 +38,11 @@ export function baselineTasksFromSource(
       taskId: matched?.id ?? task.id,
       sourceTaskId: task.id,
       sourceTaskCode: task.wbsCode,
-      start: task.time.earlyStart || task.time.scheduleStart,
-      finish: task.time.earlyFinish || task.time.scheduleFinish,
+      // Zoals P6's BL Project Start/Finish: de geplande datums tot de basislijntaak gestart is, daarna
+      // de werkelijke start (en bij voltooid het werkelijke einde) — de getoonde datums, dezelfde
+      // bron als `saveBaseline` en de afwijking (`variance.ts`).
+      start: shownStart(task),
+      finish: shownFinish(task),
       duration: task.time.scheduleDuration,
       isMilestone: task.isMilestone,
       ...(task.milestoneKind ? { milestoneKind: task.milestoneKind } : {}),

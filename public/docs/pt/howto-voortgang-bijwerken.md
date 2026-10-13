@@ -18,7 +18,7 @@ A data de estado é o dia em que faz o balanço. Defina-a antes de introduzir o 
 
 Se fizer o balanço à sexta-feira depois do horário de trabalho, defina a data de estado para o dia útil seguinte, segunda-feira. A aplicação planeia o trabalho restante a partir do início da data de estado.
 
-Se introduzir progresso enquanto ainda não houver data de estado, a aplicação define-a para hoje e indica: *Ainda não havia data de estado: foi definida para hoje (…), porque o progresso é medido até à data de estado. Pode alterá-la em Planeamento → Data de estado.* Por isso, é melhor fazer primeiro este passo manualmente.
+Se introduzir progresso enquanto ainda não houver data de estado, a aplicação define-a para hoje e indica: *Data de estado definida para hoje (…).* Por isso, é melhor fazer primeiro este passo manualmente.
 
 ### 2. Introduza o progresso
 

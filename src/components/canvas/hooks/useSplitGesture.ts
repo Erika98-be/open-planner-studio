@@ -15,6 +15,7 @@ import type { WorkCalendar } from '@/types/calendar';
 import { readAccentColor, sizeCanvasToContainer } from './useCanvasLayer';
 import { hourSnapMinutesFor, snapTimelineDate } from './timelineSnap';
 import { listenWindowDrag } from '@/hooks/listenWindowDrag';
+import { shownStart } from '@/utils/taskDates';
 
 // Monotone teller, exact als `dragSeq` in `useBarDrag`: élk splitsgebaar krijgt een UNIEKE
 // coalesce-key, zodat de reeks per-mousemove-commits één undo-stap is en twee opeenvolgende
@@ -162,10 +163,10 @@ export function useSplitGesture({
     const x = input.startClientX - canvas.getBoundingClientRect().left;
     const at = snapAt(x, hourMode);
     if (!at) return false;
-    // De balk staat op `earlyStart || scheduleStart` (`GanttRenderer.barGeometry`): een taak die
+    // De balk staat op de getoonde start (`shownStart`, `GanttRenderer.barGeometry`): een taak die
     // door een voorganger is opgeschoven houdt haar `scheduleStart`-anker op de projectstart. Vanaf
     // dat anker meten schuift de split precies die opschuiving op.
-    const startIso = task.time.earlyStart || task.time.scheduleStart;
+    const startIso = shownStart(task);
     const taskStart = startIso.includes('T') ? parseInstant(startIso) : parseDate(startIso);
     const { workMinutes: offsetMinutes, inGap } = workOffsetAtDate(pieces0, taskStart, at, eng, hourMode);
     if (inGap) return false;

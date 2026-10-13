@@ -670,6 +670,16 @@ met de dwingende volgorde, en het werkt alléén zolang de oude sleutel er nog i
   start tonen** ('A'-datum = Start-kolom; ES én LS, vier cellen). Nog te checken: welk veld de
   vergelijking eigenlijk hoort te gebruiken (werkelijke start versus reststart) vóór er een oorzaak
   wordt aangewezen. Zie plan §9.
+  **Verklaring (2026-10-12):** de meetset (`cases-p6-verified.json`) toont in de ES-/LS-cel van een
+  lopende taak de WERKELIJKE start met het achtervoegsel " A" (08 A: `2026-01-06 08:00:00 A`,
+  werkelijke start 06-01; 10 B: `2026-01-08 08:00:00 A`). Dat is P6's kolom Start, die voor een
+  gestarte taak de werkelijke start toont — niet de vroege start uit de berekening. Onze solver
+  zet onder A19 de vroege start op de statusdatum (de reststart, zoals P6's eigen Early Start), dus
+  de vier cellen vergelijken twee verschillende velden; er is geen motorfout aangetoond. Sinds het
+  eigenaarsbesluit van 2026-10-12 (optie 1) toont de app als Start óók de werkelijke start
+  (`shownStart`, `utils/taskDates.ts`); voor 08 A en 10 B is dat precies de " A"-datum. Open: de
+  meetlat in `check-p6-verified-cases-engine.ts` voor " A"-cellen tegen de getoonde start leggen in
+  plaats van tegen `earlyStart`, en daarna de pin `DEVIATING_CELLS_PIN` herzien.
 
 - [ ] **Geen enkele poort raakt het Tauri-asset-protocol — een hele klasse desktopbugs is
   structureel onzichtbaar.** Aangetoond 2026-07-28: in de uitgeleverde `.deb` v2026.7.13 toonde

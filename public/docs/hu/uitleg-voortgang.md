@@ -28,7 +28,7 @@ Másodszor: olyan munka, amely még nem kezdődött el, nem eshet a múltba. Ha 
 
 Harmadszor: egy már futó tevékenység hátralévő munkája magán az állapotdátumon kezdődik. Az alkalmazás az állapotdátumot a nap kezdeteként kezeli. Ha pénteken munkaidő után veszi számba a helyzetet, állítsa az állapotdátumot hétfőre. Ha pénteket állít be, az alkalmazás a hátralévő munkát még arra a péntekre tervezi.
 
-Ha még nincs állapotdátum, és előrehaladást ad meg, az alkalmazás az állapotdátumot a mai napra állítja, és ezt jelzi. Állapotdátum nélkül az alkalmazás egy futó tevékenységet előre a hátralévő időtartamával, visszafelé viszont a teljes időtartamával számít. A tartalékidő ekkor negatív lesz, és a tevékenység ok nélkül kritikusnak látszik.
+Ha még nincs állapotdátum, és előrehaladást ad meg, az alkalmazás az állapotdátumot a mai napra állítja, és ezt jelzi. Másik dátumot az *Ütemezés › Alaptervek és előrehaladás › Állapotdátum* menüpontban állíthat be. Állapotdátum nélkül az alkalmazás egy futó tevékenységet előre a hátralévő időtartamával, visszafelé viszont a teljes időtartamával számít. A tartalékidő ekkor negatív lesz, és a tevékenység ok nélkül kritikusnak látszik.
 
 ### Százalék, tényleges dátumok és hátralévő időtartam
 

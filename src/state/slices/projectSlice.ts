@@ -30,6 +30,7 @@ import { captureCalendarChange, settleCalendarChange } from '@/engine/work/workR
 import { assignmentsByTask, tasksFollowingProjectCalendar } from '../calendarTasks';
 import { notifyTimephasedLoss } from '../timephasedLossNotice';
 import type { AppSliceFactory } from './types';
+import { PROJECT_INFO_HELP_ARTICLE_ID } from '@/state/helpArticles';
 import { effHoursPerDay } from '@/utils/taskDuration';
 import { isLeafTask } from '@/utils/taskHierarchy';
 import type { XerArchiveIssue, XerImportMetadata } from '@/services/importTypes';
@@ -235,6 +236,7 @@ export const createProjectSlice: AppSliceFactory<ProjectSlice> = (runtime) => (s
         messageKey: 'notifications.projectStartAnchorsClamped',
         params: { count: clampedAnchors },
         dedupeKey: 'project-start-anchors-clamped',
+        helpArticleId: PROJECT_INFO_HELP_ARTICLE_ID,
       });
     }
   },

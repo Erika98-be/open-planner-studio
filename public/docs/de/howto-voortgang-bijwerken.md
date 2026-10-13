@@ -18,7 +18,7 @@ Das Statusdatum ist der Tag, an dem Sie den Stand feststellen. Setzen Sie es, be
 
 Wenn Sie am Freitag nach Feierabend den Stand feststellen, setzen Sie das Statusdatum auf den nächsten Arbeitstag, Montag. Die App plant die Restarbeit ab dem Anfang des Statusdatums.
 
-Wenn Sie Fortschritt eingeben, obwohl noch kein Statusdatum gesetzt ist, setzt die App es auf heute und meldet: *Es gab noch kein Statusdatum: Es ist jetzt auf heute (…) gesetzt, weil der Fortschritt bis zum Statusdatum gemessen wird. Ändern können Sie es unter Planung → Statusdatum.* Setzen Sie es daher besser zuerst selbst.
+Wenn Sie Fortschritt eingeben, obwohl noch kein Statusdatum gesetzt ist, setzt die App es auf heute und meldet: *Statusdatum auf heute gesetzt (…).* Setzen Sie es daher besser zuerst selbst.
 
 ### 2. Fortschritt eingeben
 

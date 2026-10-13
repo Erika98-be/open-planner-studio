@@ -28,7 +28,7 @@ Po drugie zadanie, które jeszcze się nie zaczęło, nie może leżeć w przesz
 
 Po trzecie pozostała praca zadania, które już trwa, zaczyna się w samym dniu statusu. Aplikacja traktuje datę statusu jako początek tego dnia. Jeśli robisz podsumowanie w piątek po godzinach, ustaw datę statusu na poniedziałek. Ustawiona na piątek data statusu oznacza, że aplikacja nadal planuje pozostałą pracę na ten piątek.
 
-Jeśli nie masz jeszcze daty statusu, a wpisujesz postęp, aplikacja ustawia datę statusu na dzisiaj i o tym informuje. Bez daty statusu aplikacja liczy zadanie w toku do przodu z jego pozostałym czasem trwania, ale do tyłu z jego pełnym czasem trwania. Zapas wychodzi wtedy ujemny i zadanie wygląda na krytyczne bez powodu.
+Jeśli nie masz jeszcze daty statusu, a wpisujesz postęp, aplikacja ustawia datę statusu na dzisiaj i o tym informuje. Inną datę ustawisz w *Planowanie › Plan bazowy i postęp › Data statusu*. Bez daty statusu aplikacja liczy zadanie w toku do przodu z jego pozostałym czasem trwania, ale do tyłu z jego pełnym czasem trwania. Zapas wychodzi wtedy ujemny i zadanie wygląda na krytyczne bez powodu.
 
 ### Procent, rzeczywiste daty i pozostały czas trwania
 

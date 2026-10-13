@@ -24,7 +24,7 @@ Bu yol, görev tablosunda çalışırken kullanışlıdır.
 2. Ctrl tuşunu basılı tutun (Mac'te ⌘) ve sonra gelen görevi tıklayın: ardıl görevi.
 3. *Ana sayfa › Görevler › Bağlantı ▾ › Seçili görevleri bağla* öğesini seçin. Aynı düğme *Planlama › İlişkiler* üzerinde de bulunur.
 
-Uygulama gecikmesiz bir Bitiş-Başlangıç ilişkisi oluşturur. Bunu örneğin şöyle bildirir: *İlişki oluşturuldu: Foundation brickwork → Lay hollow-core floor*. Bu düğme yalnızca tam olarak iki seçili görevle çalışır.
+Uygulama gecikmesiz bir Bitiş-Başlangıç ilişkisi oluşturur. Bunu Gantt'ta bir ok olarak ve *Öncüller* sütununda görürsünüz; bildirim yalnızca uygulama ilişkiyi reddederse görünür. Bu düğme yalnızca tam olarak iki seçili görevle çalışır.
 
 ### Gantt'ta ilişki çizmek
 
