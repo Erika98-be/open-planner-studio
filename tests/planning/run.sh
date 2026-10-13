@@ -27,7 +27,7 @@ STATUS=0
 #  1. Alleen STDOUT wordt onderdrukt — dat is enkel esbuilds groottemelding. STDERR NIET:
 #     een compilefout moet zichtbaar zijn. Voorheen ging er `2>&1` overheen, waardoor een
 #     syntaxfout in één check-script een run opleverde met exitcode 1 en NUL regels uitvoer.
-#     In CI (deze suite is sinds kort een blokkerende poort in release.yml en live.yml) was
+#     In CI (deze suite is sinds kort een blokkerende poort in release.yml en ci.yml) was
 #     dat een rode job met een lege log: je zag niet eens wélke check stuk was.
 #  2. Mislukt het bundelen, dan breekt de suite NIET af maar loopt hij door met STATUS=1.
 #     Onder `set -e` sneuvelde voorheen alles ná de kapotte check — inclusief de resterende

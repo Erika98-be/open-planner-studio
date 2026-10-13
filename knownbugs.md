@@ -351,3 +351,9 @@ en noem het in je rapport of PR-tekst.
     zonder naar de volgende kolom te gaan. Bij snel invoeren via de spookregel (typ naam, Tab, typ duur)
     verwacht je het Excel-gedrag: vastleggen en een kolom verder (Shift+Tab terug). Gezien bij review
     vader, punt 1. — B
+106. **De feedbackknop zet bij een gewone gebruiker geen label `bug`/`enhancement`.** `feedbackService.ts`
+    (`buildGitHubUrl`) zet het label via `labels=` in de `/issues/new`-URL; GitHub past die parameter alleen toe
+    voor wie labelrechten op de repo heeft. Het issue komt dus zonder soortlabel binnen. `needs-triage` komt er
+    sinds `.github/workflows/triage-new-issues.yml` wel bij. Voorstel: die workflow leidt het soortlabel af uit de
+    regel `Type: Bug`/`Type: Feature request` onderaan de body. Afgeleid uit de GitHub-documentatie over
+    query-parameters, niet nagespeeld met een account zonder rechten. — S

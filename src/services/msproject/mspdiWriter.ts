@@ -350,6 +350,10 @@ export function writeMSPDI(
     lines.push(`${indent(1)}<StatusDate>${toXmlDateTime(project.statusDate)}</StatusDate>`);
   }
   lines.push(`${indent(1)}<ScheduleFromStart>1</ScheduleFromStart>`);
+  // De projectkalender staat hieronder altijd als UID 1 (`writeCalendarBlock(..., 1, true, ...)`).
+  // Expliciet in de kop, zodat een lezer (ook de eigen) hem niet uit "het eerste element" hoeft af te
+  // leiden. Schemavolgorde: `CalendarUID` vóór `MinutesPerDay`.
+  lines.push(`${indent(1)}<CalendarUID>1</CalendarUID>`);
   lines.push(`${indent(1)}<MinutesPerDay>${calendar.hoursPerDay * 60}</MinutesPerDay>`);
   lines.push(`${indent(1)}<MinutesPerWeek>${calendar.hoursPerDay * calendar.workDays.length * 60}</MinutesPerWeek>`);
   lines.push(`${indent(1)}<DaysPerMonth>20</DaysPerMonth>`);

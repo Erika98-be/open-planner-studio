@@ -62,6 +62,14 @@ export const UNNAMED_HOLIDAY_NAME = 'Holiday';
 export const UNNAMED_WORKING_EXCEPTION_NAME = 'Working exception';
 export const MAX_TOTAL_HOLIDAY_SLOTS = 100_000;
 
+/** Begrenst de basiskalender-ketenvolging voor afgeleide (resource-)kalenders, gedeeld door
+ *  `mppCalendars.ts` en `mspdiReader.ts`. Een geprepareerd bestand kan een kalender naar zichzelf of
+ *  circulair laten verwijzen; MPXJ beschermt daar niet tegen (`updateBaseCalendarNames` heeft geen
+ *  cyclusdetectie). `.mpp`: de fixed-point-resolutie probeert hoogstens dit aantal ronden. MSPDI: een
+ *  kalender wiens keten naar een basis zonder basis langer is dan dit, of in een cyclus eindigt,
+ *  erft niet. Wat niet opgelost wordt, wordt zonder overerving gematerialiseerd. */
+export const MAX_BASE_CHAIN_DEPTH = 32;
+
 /**
  * Bovengrens op het aantal uitzonderingsRECORDS dat één kalender (basis of afgeleid) bijdraagt —
  * gedeeld tussen `mppCalendars.ts` (92-byte-blokken, `exceptionCount`-SHORT @420) en
@@ -652,9 +660,28 @@ function reExpandRange(startIso: string, endIso: string): Date[] {
  *  "latere-contributie-wint-per-datum"-mechaniek als binnen één kalender, nu toegepast over de
  *  basis→afgeleide-grens heen. */
 export function mergeInherited(base: ParsedExceptions, ownContributions: RecordContribution[], budget: HolidayBudget): ParsedExceptions {
-  const baseContributions: RecordContribution[] = [
-    ...base.holidays.map((h) => ({ ownDates: reExpandRange(h.startDate, h.endDate), working: false, bands: [], name: h.name })),
-    ...base.workingExceptions.map((w) => ({ ownDates: reExpandRange(w.startDate, w.endDate), working: true, bands: w.bands ?? [], name: w.name })),
-  ];
+  // Herexpansie alleen zolang het gedeelde budget ruimte heeft: `resolveContributions` neemt toch niet
+  // meer dagen op dan `budget.remaining`, dus dagen daarboven hebben geen effect op de uitkomst. Zonder
+  // deze rem pakt een bestand met N afgeleide kalenders op een basis met ~100.000 vrije dagen N ×
+  // 100.000 datums uit, ook als het budget al op is (MSPDI-review #335: heap out of memory).
+  let room = budget.remaining;
+  const take = (startIso: string, endIso: string): Date[] | null => {
+    if (room <= 0) return null;
+    const dates = reExpandRange(startIso, endIso);
+    if (dates.length > room) dates.length = room;
+    room -= dates.length;
+    return dates;
+  };
+  const baseContributions: RecordContribution[] = [];
+  for (const h of base.holidays) {
+    const ownDates = take(h.startDate, h.endDate);
+    if (!ownDates) break;
+    baseContributions.push({ ownDates, working: false, bands: [], name: h.name });
+  }
+  for (const w of base.workingExceptions) {
+    const ownDates = take(w.startDate, w.endDate);
+    if (!ownDates) break;
+    baseContributions.push({ ownDates, working: true, bands: w.bands ?? [], name: w.name });
+  }
   return resolveContributions([...baseContributions, ...ownContributions], budget);
 }
