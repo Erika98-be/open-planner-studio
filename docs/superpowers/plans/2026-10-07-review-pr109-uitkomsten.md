@@ -390,3 +390,9 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   `measure:profiles` dekt MSPDI niet. Verder 4 overlevende mutaties, schrijver zonder `<CalendarUID>`, dieptegrens-
   memo, verouderd commentaar. **Orkestratorbesluit 2026-10-13:** ontbrekende basis/cyclus ⇒ geen NL-terugval,
   zoals `.mpp`. Fixronde 2 gestart (incl. diagnose van het terugzetten van een vastgelegd einde).
+- #335 fixronde 2 klaar: CI groen op 480a1a1b1. Budget via `mergeInherited` (gedeelde rem in
+  `calendarRecurrence.ts`), R1–R4 rood, schrijver zet `<CalendarUID>1`, kapotte basis zonder NL-terugval.
+  Corpus: 6 exacter, 0 minder; 3568 cellen inexact→exact, 21 exact→inexact. **Na de release voorleggen
+  (rekenprofiel/motor, nieuw):** (a) werkelijk einde in een vrije periode wordt onder OPS/MSP teruggezet
+  (`snapOnOrBefore`, `CPMSolver.ts:2265`; ontwerpregel spec 2026-07-04; MS Project houdt het vermoedelijk letterlijk);
+  (b) lagkalender bij Asta-exports (Woodscapes). Her-check door dezelfde reviewer gestart.
