@@ -165,6 +165,26 @@ export function inferredSimpleBreak(
 }
 
 /**
+ * Mag de kalenderdialoog `patch` (Begin, Einde of pauzebegin) op `calendar` toepassen? Begin vóór
+ * einde binnen 00:00–24:00, en de pauze — expliciet, anders de impliciete ({@link inferredSimpleBreak}
+ * van `calendar`) — valt volledig binnen de nieuwe werkdag. Ook een legacy-scalar zonder zichtbare
+ * pauzevelden draagt zijn netto-tijd als impliciete pauze; dezelfde controle beschermt een nieuw
+ * Begin/Einde dus tegen het ongemerkt buiten de werkdag drukken van die pauze. Puur, zodat de regel
+ * zonder React te toetsen is (`check-werkdag-einde`).
+ */
+export function scalarTimesValid(calendar: ScalarCalendar, patch: Partial<WorkCalendar>): boolean {
+  const next = { ...calendar, ...patch };
+  const start = Math.round(next.workStartHour * 60);
+  const end = Math.round(next.workEndHour * 60);
+  if (start < 0 || start >= 24 * 60 || end <= 0 || end > 24 * 60 || start >= end) return false;
+  const inferred = inferredSimpleBreak(calendar);
+  const breakStart = next.simpleBreakStartMinute ?? inferred.startMinute;
+  const breakDuration = next.simpleBreakDurationMinutes ?? inferred.durationMinutes;
+  return breakStart >= start && breakStart < end
+    && scalarBreakIssue(start, end, breakStart, breakDuration) === undefined;
+}
+
+/**
  * De afleiding bij het wijzigen van werkdag (Begin/Einde) of pauze op een scalaire kalender — één
  * definitie voor de kalenderdialoog (`CalendarForm`) en MCP `planner_update_calendar`:
  *  1. een legacy-kalender (zonder expliciete pauzeduur) wordt eerst expliciet: zijn impliciete pauze

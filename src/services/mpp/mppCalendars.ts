@@ -43,7 +43,7 @@
 import type { WorkCalendar } from '@/types/calendar';
 import { createDefaultCalendar } from '@/engine/calendar/defaultCalendar';
 import { generateId } from '@/utils/id';
-import { canonicalizeBands, promoteHourCalendars, registerCalendarBands, scalarHoursPerDay } from '@/services/subdayIo';
+import { canonicalizeBands, deriveHoursPerDay, promoteHourCalendars, registerCalendarBands, workDayFromBlocks } from '@/services/subdayIo';
 import type { CfbFile } from './cfb';
 import type { Props } from './mppContainer';
 import { FixedData, FixedMeta, Var2Data, VarMeta12, getDate, getInt, getShort, getUnicodeString } from './mppPrimitives';
@@ -208,16 +208,20 @@ function buildCalendarFromDays(name: string, days: ReadonlyArray<DayResolution>,
   }
   if (workDays.length > 0) cal.workDays = workDays.sort((a, b) => a - b);
   const { bands, deviates } = canonicalizeBands(rawByWeekday);
-  if (scalarDay) {
-    // Begin van het EERSTE en einde van het LAATSTE blok van die dag (op begintijd gesorteerd), zoals
-    // de P6 XML- en XER-lezer: MS Projects standaard 08:00–12:00 + 13:00–17:00 wordt 8–17, niet 8–12.
+  const blocked = scalarDay && scalarDay.length > 1 ? workDayFromBlocks(scalarDay) : undefined;
+  if (blocked) {
+    // Meer blokken: begin eerste / einde laatste blok (MS Projects 08:00–12:00 + 13:00–17:00 ⇒ 8–17),
+    // tussenwaarde `hoursPerDay` NETTO — één definitie met mspdiReader (`workDayFromBlocks`).
+    cal.workStartHour = blocked.startHour;
+    cal.workEndHour = blocked.endHour;
+    cal.hoursPerDay = deriveHoursPerDay(bands, blocked.netHours);
+  } else if (scalarDay) {
     // FLOOR op beide grenzen — spiegelt mspdiReader's `parseInt(toTime.split(':')[0])` (het
     // hele-uurdeel van de kloktijd); `Math.ceil` gaf bij 17:30 een te hoge `hoursPerDay`.
-    const sorted = [...scalarDay].sort((a, b) => a.start - b.start);
-    cal.workStartHour = Math.floor(sorted[0].start / 60);
-    cal.workEndHour = Math.floor(sorted[sorted.length - 1].end / 60);
-    // Tussenwaarde vóór promotie (zie `scalarHoursPerDay`): netto bij meer blokken per dag.
-    cal.hoursPerDay = scalarHoursPerDay(cal, sorted.length, bands);
+    cal.workStartHour = Math.floor(scalarDay[0].start / 60);
+    cal.workEndHour = Math.floor(scalarDay[0].end / 60);
+    cal.hoursPerDay = cal.workEndHour - cal.workStartHour;
+    if (cal.hoursPerDay <= 0) cal.hoursPerDay = 8;
   }
   if (hoursPerDayOverride !== null) cal.hoursPerDay = hoursPerDayOverride;
 

@@ -166,29 +166,84 @@ export function canonicalizeBands(
 export const deriveHoursPerDay = modalBandHoursPerDay;
 
 /**
- * De `hoursPerDay` die een lezer vóór de uur-modus-promotie op een kalender zet, nadat hij de
- * scalaire werkdag (`workStartHour` = begin van het eerste blok, `workEndHour` = einde van het laatste
- * blok) heeft gezet. `blocksOnScalarDay` is het aantal blokken op de dag waaruit die scalar komt.
+ * De scalaire werkdag van één dag met werkblokken: begin van het EERSTE blok, einde van het LAATSTE
+ * blok en de netto uren (som van de blokken). Eén definitie voor de MSPDI-, `.mpp`- en IFC-lezer en
+ * voor de resourcebibliotheek (fix werkdag-einde, 2026-10): MS Projects 08:00–12:00 + 13:00–17:00 is
+ * 8–17 met 8 netto uren, niet 8–12.
  *
- *  - Eén blok: `workEndHour − workStartHour` (≤ 0 ⇒ 8), zoals altijd.
- *  - Meer blokken: NETTO, de som van de blokken — via {@link deriveHoursPerDay} over de canonieke
- *    blokken, precies de waarde die `promoteHourCalendar` daarna zet. Einde min begin zou de pauze
- *    meetellen (08:00–12:00 + 13:00–17:00 ⇒ 9 i.p.v. 8). Zo ziet het tussensignaal ((c)-duur, MSPDI's
- *    lag-/werkomrekening zonder `<MinutesPerDay>`) dezelfde werkdag als de kalender ná promotie; een
- *    kalender met meer blokken op een dag promoveert altijd (discriminator a), dus de eindwaarde
- *    verandert er niet door.
+ *  - Canonieke minuten: een blok met `end <= start` loopt over middernacht (`end += 1440`); de blokken
+ *    worden op begintijd gesorteerd (een bestand hoeft ze niet op volgorde te schrijven).
+ *  - Middernacht: eindigt het laatste blok ná middernacht (drieploegen 06–14, 14–22, 22–06), dan is
+ *    het einde 24 — zoals MSPDI's `00:00:00`. Anders het hele-uurdeel (FLOOR) van het einde.
+ *  - `firstBlockEndHour`: het einde van het eerste blok, de scalar die de lezers van vóór deze fix
+ *    namen (om oude bibliotheekdata te herkennen, zie {@link withRepairedFirstBlockScalar}).
+ *
+ * De lezers gebruiken dit alleen voor een dag met MEER blokken; bij één blok houdt elke lezer zijn
+ * eigen, ongewijzigde afleiding. Geen blokken ⇒ `undefined`.
  */
-export function scalarHoursPerDay(
-  cal: Pick<WorkCalendar, 'workStartHour' | 'workEndHour'>,
-  blocksOnScalarDay: number,
-  canonical: WorkTimeBands,
-): number {
-  if (blocksOnScalarDay > 1) {
-    const net = deriveHoursPerDay(canonical, 0);
-    if (net > 0) return net;
+export interface BlockedWorkDay {
+  startHour: number;
+  endHour: number;
+  netHours: number;
+  blocks: number;
+  firstBlockEndHour: number;
+}
+export function workDayFromBlocks(dayBlocks: ReadonlyArray<{ start: number; end: number }>): BlockedWorkDay | undefined {
+  const blocks = dayBlocks
+    .filter((b) => Number.isFinite(b.start) && Number.isFinite(b.end))
+    .map((b) => ({ start: b.start, end: b.end <= b.start ? b.end + MIN_PER_DAY : b.end }))
+    .sort((a, b) => a.start - b.start);
+  if (blocks.length === 0) return undefined;
+  const first = blocks[0];
+  const last = blocks[blocks.length - 1];
+  return {
+    startHour: Math.floor(first.start / 60),
+    endHour: last.end > MIN_PER_DAY ? 24 : Math.floor(last.end / 60),
+    netHours: blocks.reduce((sum, b) => sum + (b.end - b.start), 0) / 60,
+    blocks: blocks.length,
+    firstBlockEndHour: Math.floor(Math.min(first.end, MIN_PER_DAY) / 60),
+  };
+}
+
+/** De scalaire werkdag van een kalender met weekbanden: de eerste ISO-weekdag met blokken. */
+function scalarDayOfBands(cal: Pick<WorkCalendar, 'workTime'>): BlockedWorkDay | undefined {
+  const byWeekday = cal.workTime?.byWeekday;
+  if (!byWeekday) return undefined;
+  for (let wd = 1; wd <= 7; wd++) {
+    const day = byWeekday[wd as 1];
+    if (Array.isArray(day) && day.length > 0) return workDayFromBlocks(day);
   }
-  const span = cal.workEndHour - cal.workStartHour;
-  return span > 0 ? span : 8;
+  return undefined;
+}
+
+/**
+ * Herstelt de oude eerste-blok-scalar van een kalender met weekbanden (MSPDI/`.mpp` van vóór 2026-10:
+ * 08:00–12:00 + 13:00–17:00 werd `workEndHour` 12). Alleen als het patroon aantoonbaar dat is: meer
+ * blokken op de scalaire dag, begin = begin eerste blok, einde = einde eerste blok, en het laatste blok
+ * eindigt later. Dan wordt `workEndHour` het einde van het laatste blok; al het andere blijft. Voor de
+ * resourcebibliotheek, die zulke kalenders als JSON bewaart (`normalizePoolShape`) — de lezers zelf
+ * leiden het einde al goed af. Geen weekbanden of geen patroon ⇒ dezelfde kalender terug.
+ */
+export function withRepairedFirstBlockScalar<T extends Pick<WorkCalendar, 'workTime' | 'workStartHour' | 'workEndHour'>>(cal: T): T {
+  const day = scalarDayOfBands(cal);
+  if (!day || day.blocks < 2) return cal;
+  if (cal.workStartHour !== day.startHour || cal.workEndHour !== day.firstBlockEndHour) return cal;
+  if (day.endHour <= cal.workEndHour) return cal;
+  return { ...cal, workEndHour: day.endHour };
+}
+
+/**
+ * Omgekeerde van {@link withRepairedFirstBlockScalar}: de kalender zoals een lezer van vóór 2026-10 hem
+ * gaf (einde = einde eerste blok), als de huidige scalar precies begin eerste / einde laatste blok is.
+ * Voor de stempelvergelijking van de bibliotheek: een `syncedHash` uit een oud bestand dekt die oude
+ * scalar. Anders `undefined`.
+ */
+export function firstBlockScalarVariant<T extends Pick<WorkCalendar, 'workTime' | 'workStartHour' | 'workEndHour'>>(cal: T): T | undefined {
+  const day = scalarDayOfBands(cal);
+  if (!day || day.blocks < 2) return undefined;
+  if (cal.workStartHour !== day.startHour || cal.workEndHour !== day.endHour) return undefined;
+  if (day.firstBlockEndHour >= day.endHour) return undefined;
+  return { ...cal, workEndHour: day.firstBlockEndHour };
 }
 
 /** De werk-weekdagen (ISO 1..7) met ≥1 band. */

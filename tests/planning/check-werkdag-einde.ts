@@ -9,10 +9,13 @@
 //  §1 MSPDI: projectkalender (met en zonder <MinutesPerDay>) en resourcekalender ⇒ 8/17, hoursPerDay 8;
 //     blokken in omgekeerde volgorde in het bestand ⇒ ook 8/17; één blok ⇒ ongewijzigd.
 //  §2 `.mpp` (synthetische TBkndCal): 8/17, tussenwaarde hoursPerDay netto 8, na promotie 8.
-//  §3 IFC: oud OPS-bestand zonder eigenschappen ⇒ 8/17; met de eerste-blok-scalar als eigenschap
-//     (WorkStartHour 8 / WorkEndHour 12) ⇒ hersteld naar 8/17; bewust gekozen werkdagen blijven.
-//  §4 Kalenderdialoog: pauze uit de blokken (12:00, 60 min), netto 8 h, Begin/Einde wijzigen geeft
-//     een consistente hoursPerDay.
+//  §3 IFC: oud OPS-bestand zonder eigenschappen ⇒ 8/17; periodes in omgekeerde volgorde ⇒ 8/17;
+//     drieploegen met een nachtblok ⇒ einde 24; tussenwaarde hoursPerDay netto (ActualDuration);
+//     bewust gekozen werkdagen en scalaire kalenders blijven.
+//  §4 Kalenderdialoog: pauze uit de blokken (12:00/60, 11:30/30) en de echte invoercontrole
+//     (`scalarTimesValid`).
+//  §5 Resourcebibliotheek: een oud project met een MSP-kalender in de bibliotheek opent `in-sync`
+//     (geen afwijkingsdialoog); `behind` blijft `behind` en verversen zet geen 08:00–12:00 terug.
 import './domStub';
 import { installDOMParser } from './xmldom-shim';
 import { readMSPDI } from '@/services/msproject/mspdiReader';
@@ -29,9 +32,16 @@ import { readIFC } from '@/services/ifc/ifcReader';
 import { buildWriteIFCInput } from '@/state/ifcSaveInput';
 import { createDefaultTaskTime } from '@/utils/taskDefaults';
 import {
-  calendarScalarBreakIssue, inferredSimpleBreak, makeBands, scalarBreakIssue, simpleBreakPatch,
+  calendarScalarBreakIssue, inferredSimpleBreak, makeBands, scalarTimesValid,
 } from '@/utils/effectiveWorkTime';
+import { shiftPresetPatch } from '@/utils/shiftPresets';
+import { parseOpenedFile } from '@/services/formatRegistry';
+import { applyCalendarUpdate, bumpPool, classifyCalendarOnOpen, normalizePoolShape } from '@/services/library/libraryOps';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import type { WorkCalendar } from '@/types/calendar';
+import type { Company, CompanyPool } from '@/types/library';
 
 installDOMParser();
 
@@ -159,7 +169,6 @@ function ifcWith(patch: Partial<WorkCalendar>, hourTask = false): string {
   S().runCPM();
   return writeIFC(buildWriteIFCInput(S()));
 }
-const prop = (name: string, value: number) => `IFCPROPERTYSINGLEVALUE('${name}',$,IFCREAL(${value}),$)`;
 const hourCal = (start: number, end: number): Partial<WorkCalendar> => ({
   workTime: makeBands([1, 2, 3, 4, 5], MSP_DAY), workDays: [1, 2, 3, 4, 5],
   workStartHour: start, workEndHour: end, hoursPerDay: 8,
@@ -172,28 +181,23 @@ const hourCal = (start: number, end: number): Partial<WorkCalendar> => ({
   same('§3a oud bestand draagt geen WorkStartHour/WorkEndHour', ['WorkStartHour', 'WorkEndHour'].filter(n => oldIfc.includes(n)), []);
   same('§3a oud bestand (alleen periodes) ⇒ 8/17, hpd 8', scalar(readIFC(oldIfc).calendar), { start: 8, end: 17, hpd: 8 });
 
-  // §3b. Bestand dat de eerste-blok-scalar expliciet draagt (WorkStartHour 8 / WorkEndHour 12). Gemaakt
-  //      uit een kalender 7/13 (de schrijver bewaart beide) en dan in de tekst op 8/12 gezet.
-  const explicit = ifcWith(hourCal(7, 13));
-  same('§3b fixture: schrijver bewaart WorkStartHour 7 en WorkEndHour 13',
-    [explicit.includes(prop('WorkStartHour', 7)), explicit.includes(prop('WorkEndHour', 13))], [true, true]);
-  const firstBlockIfc = explicit.replace(prop('WorkStartHour', 7), prop('WorkStartHour', 8))
-    .replace(prop('WorkEndHour', 13), prop('WorkEndHour', 12));
-  same('§3b eigenschappen 8/12 bij blokken 08–12 + 13–17 ⇒ hersteld naar 8/17, hpd 8',
-    scalar(readIFC(firstBlockIfc).calendar), { start: 8, end: 17, hpd: 8 });
-  // Alleen WorkEndHour 12 (begin uit de periodes): ook het eerste-blok-patroon.
-  const onlyEnd = explicit.replace(prop('WorkStartHour', 7), prop('GeenEigenschap', 7))
-    .replace(prop('WorkEndHour', 13), prop('WorkEndHour', 12));
-  same('§3b alleen WorkEndHour 12 ⇒ hersteld naar 8/17', scalar(readIFC(onlyEnd).calendar), { start: 8, end: 17, hpd: 8 });
+  // §3b. Periodes in omgekeerde volgorde in het bestand (13–17 vóór 08–12): ook 8/17.
+  const am = "IFCTIMEPERIOD('08:00:00','12:00:00')", pm = "IFCTIMEPERIOD('13:00:00','17:00:00')";
+  same('§3b fixture: beide periodes staan in het bestand', [oldIfc.includes(am), oldIfc.includes(pm)], [true, true]);
+  const swapped = oldIfc.replace(am, '@AM@').replace(pm, am).replace('@AM@', pm);
+  same('§3b periodes in omgekeerde volgorde ⇒ 8/17', scalar(readIFC(swapped).calendar), { start: 8, end: 17, hpd: 8 });
 
-  // §3c. Een bewaard einde dat NIET het eerste blok is, blijft staan (hier 16 bij blokken tot 17).
-  const sixteen = explicit.replace(prop('WorkStartHour', 7), prop('WorkStartHour', 8))
-    .replace(prop('WorkEndHour', 13), prop('WorkEndHour', 16));
-  same('§3c bewaard einde 16 (geen eerste-blok-patroon) blijft 16', readIFC(sixteen).calendar.workEndHour, 16);
-  // Bewaard begin wijkt af van het eerste blok (7 bij een blok vanaf 8): niet het patroon, blijft 7/12.
-  const otherStart = explicit.replace(prop('WorkEndHour', 13), prop('WorkEndHour', 12));
-  same('§3c bewaard 7/12 (begin past niet bij het eerste blok) blijft 7/12',
-    [readIFC(otherStart).calendar.workStartHour, readIFC(otherStart).calendar.workEndHour], [7, 12]);
+  // §3c. Drieploegen (06–14, 14–22, 22–06) uit v2026.9.0: geen WorkStartHour/WorkEndHour in het
+  //      bestand (die versie schreef ze niet). Het laatste blok eindigt na middernacht ⇒ einde 24, niet
+  //      6 (een werkdag van nul uur) en niet 14 (de eerste periode, zoals vroeger).
+  const threeShift = ifcWith(shiftPresetPatch('three-shift'))
+    .replace(/'WorkStartHour'/g, "'GeenEigenschap1'").replace(/'WorkEndHour'/g, "'GeenEigenschap2'");
+  same('§3c fixture: drie periodes met een nachtblok', threeShift.includes("IFCTIMEPERIOD('22:00:00','06:00:00')"), true);
+  const ts = readIFC(threeShift).calendar;
+  same('§3c drieploegen zonder eigenschappen ⇒ 6/24, hpd 24', scalar(ts), { start: 6, end: 24, hpd: 24 });
+  // Mét de eigenschappen (zoals de huidige schrijver): de bewaarde 0/24 van de preset wint.
+  same('§3c drieploegen met eigenschappen ⇒ 0/24', scalar(readIFC(ifcWith(shiftPresetPatch('three-shift'))).calendar),
+    { start: 0, end: 24, hpd: 24 });
 
   // §3d. Bewust gekozen enkelvoudige werkdag 08:00–12:00 (dagkalender, 4 h): één periode, ongemoeid —
   //      ook mét urentaak (de schrijver materialiseert dan de effectieve blokken).
@@ -202,56 +206,94 @@ const hourCal = (start: number, end: number): Partial<WorkCalendar> => ({
   const halfDayHour = readIFC(ifcWith(halfDay, true)).calendar;
   same('§3d dagkalender 08–12 met urentaak blijft scalair 8/12, hpd 4', [scalar(halfDayHour), halfDayHour.workTime ?? null],
     [{ start: 8, end: 12, hpd: 4 }, null]);
+  // Eén nachtblok (22–06): de oude afleiding van één periode blijft (22/6).
+  const night = readIFC(ifcWith(shiftPresetPatch('night'))).calendar;
+  same('§3d één nachtblok 22–06 houdt 22/6', [night.workStartHour, night.workEndHour], [22, 6]);
 
   // §3e. Scalaire dagkalender 08–17 / 8 h met urentaak: de schrijver materialiseert 08–12 + 13–17 en
-  //      markeert hem scalair (IsHourCalendar .F.). Hij blijft 8/17 scalair; en een in de tekst op 12
-  //      gezet einde wordt NIET "hersteld": bij een scalaire kalender is het einde de keuze van de
-  //      gebruiker (voorwaarde 1 van `isFirstBlockScalar`).
+  //      markeert hem scalair (IsHourCalendar .F.). Hij blijft 8/17 scalair met zijn eigen 8 uur.
   const scalarDay: Partial<WorkCalendar> = { workTime: undefined, workDays: [1, 2, 3, 4, 5], workStartHour: 8, workEndHour: 17, hoursPerDay: 8 };
   const scalarIfc = ifcWith(scalarDay, true);
   same('§3e fixture: scalaire kalender met gematerialiseerde blokken en IsHourCalendar .F.',
-    [scalarIfc.includes("IFCTIMEPERIOD('13:00:00','17:00:00')"), scalarIfc.includes("'IsHourCalendar',$,IFCBOOLEAN(.F.)")], [true, true]);
+    [scalarIfc.includes(pm), scalarIfc.includes("'IsHourCalendar',$,IFCBOOLEAN(.F.)")], [true, true]);
   const scalarRead = readIFC(scalarIfc).calendar;
   same('§3e scalaire dagkalender 08–17 blijft 8/17 scalair', [scalar(scalarRead), scalarRead.workTime ?? null],
     [{ start: 8, end: 17, hpd: 8 }, null]);
-  same('§3e scalaire kalender met bewaard einde 12 blijft 12 (geen herstel)',
-    readIFC(scalarIfc.replace(prop('WorkEndHour', 17), prop('WorkEndHour', 12))).calendar.workEndHour, 12);
+
+  // §3f. Tussenwaarde vóór promotie: een IFC (geschreven uit een MSP-import, kalender 08–12 + 13–17)
+  //      met ActualDuration/FreeFloat 'PT72H'. Die rekent de lezer om met de hoursPerDay van vóór de
+  //      promotie: netto 8 h ⇒ 9 dagen. Einde min begin (9 h) gaf 8 dagen.
+  const HERE = fileURLToPath(new URL('.', import.meta.url));
+  const tussen = readIFC(readFileSync(join(HERE, 'fixtures', 'werkdag-einde-tussenwaarde.ifc'), 'utf8'));
+  const a = tussen.tasks.find(t => t.name === 'A')!;
+  same('§3f tussenwaarde netto: PT72H ⇒ 9 dagen (actualDuration, freeFloat)', [a.time.actualDuration, a.time.freeFloat], [9, 9]);
 }
 
-// ── §4 Kalenderdialoog (uurplanning uit): de berekening achter Begin/Einde/Pauze/Netto ──────────────
+// ── §4 Kalenderdialoog: de afleiding achter Begin/Einde/Pauze/Netto ────────────────────────────────
 {
+  // Een MS Project-kalender (uurkalender): uurplanning uit ⇒ alleen-lezen weergave van de blokken.
   const cal = readMSPDI(mspdi({ minutesPerDay: 480 })).calendar;
   const brk = inferredSimpleBreak(cal);
   same('§4 dialoog: begin 08:00, einde 17:00, pauze 12:00 van 60 min, netto 8 h',
     { start: cal.workStartHour, end: cal.workEndHour, breakStart: brk.startMinute, breakMin: brk.durationMinutes, net: cal.hoursPerDay },
     { start: 8, end: 17, breakStart: 720, breakMin: 60, net: 8 });
   same('§4 dialoog: geen foutmelding bij openen', calendarScalarBreakIssue(cal) ?? null, null);
-  // Spiegel van `scalarTimesAreValid` in CalendarForm: Begin 07:00 is nu toegestaan.
-  const valid = (patch: Partial<WorkCalendar>) => {
-    const next = { ...cal, ...patch };
-    const s = Math.round(next.workStartHour * 60), e = Math.round(next.workEndHour * 60);
-    const bs = next.simpleBreakStartMinute ?? brk.startMinute;
-    const bd = next.simpleBreakDurationMinutes ?? brk.durationMinutes;
-    return s >= 0 && s < e && e <= 1440 && bs >= s && bs < e && scalarBreakIssue(s, e, bs, bd) === undefined;
-  };
-  same('§4 dialoog: Begin 07:00 toegestaan', valid({ workStartHour: 7 }), true);
-  const p7 = simpleBreakPatch(cal, { workStartHour: 7 });
-  same('§4 Begin 07:00 ⇒ pauze 12:00/60 expliciet, hpd 9', [p7.simpleBreakStartMinute, p7.simpleBreakDurationMinutes, p7.hoursPerDay], [720, 60, 9]);
-  const p16 = simpleBreakPatch(cal, { workEndHour: 16 });
-  same('§4 Einde 16:00 ⇒ hpd 7', p16.hoursPerDay, 7);
-  const p17 = simpleBreakPatch(cal, { workEndHour: 17 });
-  same('§4 Einde 17:00 (ongewijzigd) ⇒ hpd 8, niet 9', p17.hoursPerDay, 8);
 
   // Andere blokken: 07:00–11:30 + 12:00–16:00 ⇒ pauze 11:30 van 30 min (niet 12:00).
   const other: WorkCalendar = { ...cal, workTime: makeBands([1, 2, 3, 4, 5], [{ start: 420, end: 690 }, { start: 720, end: 960 }]),
     workStartHour: 7, workEndHour: 16, hoursPerDay: 8.5 };
   same('§4 blokken 07:00–11:30 + 12:00–16:00 ⇒ pauze 11:30 van 30 min', inferredSimpleBreak(other), { startMinute: 690, durationMinutes: 30 });
-  same('§4 daar Einde 15:00 ⇒ hpd 7.5', simpleBreakPatch(other, { workEndHour: 15 }).hoursPerDay, 7.5);
-  // Zonder blokken: de legacy-afleiding (12:00, klokspanne − netto).
-  const legacy: WorkCalendar = { ...cal, workTime: undefined, workStartHour: 7, workEndHour: 16, hoursPerDay: 8 };
+  // De echte invoercontrole (`scalarTimesValid`) kijkt naar die afgeleide pauze: Begin 11:45 ligt ná
+  // het pauzebegin 11:30 en is dus ongeldig (met de oude aanname "pauze om 12:00" was hij geldig).
+  same('§4 scalarTimesValid: Begin 11:45 bij pauze 11:30 ongeldig', scalarTimesValid(other, { workStartHour: 11.75 }), false);
+  same('§4 scalarTimesValid: Begin 11:00 bij pauze 11:30 geldig', scalarTimesValid(other, { workStartHour: 11 }), true);
+  // Zonder blokken: de legacy-afleiding (12:00, klokspanne − netto), en Begin 07:00 is geldig.
+  const legacy: WorkCalendar = { ...cal, workTime: undefined, workStartHour: 8, workEndHour: 17, hoursPerDay: 8 };
   same('§4 zonder blokken: legacy 12:00 van 60 min', inferredSimpleBreak(legacy), { startMinute: 720, durationMinutes: 60 });
+  same('§4 scalarTimesValid: dagkalender Begin 07:00 geldig', scalarTimesValid(legacy, { workStartHour: 7 }), true);
+  same('§4 scalarTimesValid: dagkalender Einde 12:00 (pauze valt erbuiten) ongeldig', scalarTimesValid(legacy, { workEndHour: 12 }), false);
   // Blokken die de scalar niet beslaan (einde 12 bij blokken tot 17): geen afleiding uit de blokken.
   same('§4 blokken passen niet bij de scalar ⇒ legacy', inferredSimpleBreak({ ...cal, workEndHour: 12 }), { startMinute: 720, durationMinutes: 0 });
+}
+
+// ── §5 Resourcebibliotheek ─────────────────────────────────────────────────────────────────────────
+// Een project dat main (vóór de fix) opsloeg met een MSP-kalender in de bibliotheek: projectkalender én
+// poolkalender 8/12, stempel over 8/12 (fixture geschreven door main 55461d2b2, probe van de review #334).
+{
+  const HERE = fileURLToPath(new URL('.', import.meta.url));
+  const ifc = readFileSync(join(HERE, 'fixtures', 'werkdag-einde-main-bibliotheek.ifc'), 'utf8');
+  const fx = JSON.parse(readFileSync(join(HERE, 'fixtures', 'werkdag-einde-main-bibliotheek.json'), 'utf8')) as {
+    pool: CompanyPool; companies: Company[];
+  };
+  const rawPool = fx.pool;
+  const cid = rawPool.companyId;
+  same('§5 fixture: poolkalender 8/12, bestand zonder WorkEndHour',
+    [rawPool.calendars[0].workStartHour, rawPool.calendars[0].workEndHour, ifc.includes('WorkEndHour')], [8, 12, false]);
+
+  const opened = readIFC(ifc).calendar;
+  same('§5 heropend: projectkalender 8/17 met herkomst', [opened.workStartHour, opened.workEndHour, !!opened.libraryOrigin], [8, 17, true]);
+  same('§5 ruwe pool (buiten de laadroute): in-sync', classifyCalendarOnOpen(opened, rawPool), 'in-sync');
+  const loaded = normalizePoolShape(cid, structuredClone(rawPool), fx.companies);
+  same('§5 geladen pool (normalizePoolShape) herstelt naar 8/17', loaded.calendars[0].workEndHour, 17);
+  same('§5 geladen pool: in-sync', classifyCalendarOnOpen(opened, loaded), 'in-sync');
+
+  // De echte openroute met gekoppelde bibliotheek: geen afwijkingsdialoog.
+  const ctx = createAppStoreContext();
+  ctx.store.setState({ companies: fx.companies, pools: { [cid]: structuredClone(rawPool) } });
+  ctx.store.getState().applyOpenedImport(await parseOpenedFile({ name: 'oud.ifc', text: ifc }), {
+    filePath: null, recompute: true, linkedOpen: true, hourDataNotice: false,
+  });
+  same('§5 openroute: kalender 8/17 en geen afwijkingsdialoog',
+    [ctx.store.getState().calendar.workEndHour, ctx.store.getState().ui.showLibraryLinkDialog ?? false], [17, false]);
+
+  // "behind": de bibliotheek veranderde na het opslaan (andere omschrijving). Het bestand is onbewerkt
+  // (stempel over de oude 8/12) ⇒ behind, en verversen geeft 8/17, nooit weer 8/12.
+  const moved = bumpPool({ ...rawPool, calendars: rawPool.calendars.map(c => ({ ...c, description: 'bijgewerkt' })) });
+  same('§5 bibliotheek bewoog: behind', classifyCalendarOnOpen(opened, moved), 'behind');
+  const refreshed = applyCalendarUpdate(opened, moved);
+  same('§5 verversen: omschrijving uit de bibliotheek, einde blijft 17', [refreshed.description, refreshed.workEndHour], ['bijgewerkt', 17]);
+  // Een echt lokaal bewerkte kopie blijft deviated.
+  same('§5 lokaal bewerkte kopie (andere naam) blijft deviated', classifyCalendarOnOpen({ ...opened, name: 'Eigen' }, moved), 'deviated');
 }
 
 if (failures.length > 0) {
