@@ -33,8 +33,9 @@ A new `check-*.ts` runs automatically (also in the timezone matrix); add your ow
 `tests/planning/run.sh` only for an environment variable, a fixed order or no matrix (grep a neighbouring check).
 New `cases-*.json`: extend `EXPECTED_BATTERIES` — do not read run.sh (~1.7k lines) in full.
 
-**`npm run verify` is one definition, in `package.json`** — the release and deploy gates run that line; ci.yml
-runs the same steps in parallel jobs via `scripts/verify-parts.mjs`, which reads them from that definition. The
+**`npm run verify` is one definition, in `package.json`** — the release gate runs that line; ci.yml and the deploy
+gate in live.yml run the same steps in parallel jobs via `scripts/verify-parts.mjs`, which reads them from that
+definition (a serial run took 31–45 min and hit the 45-minute job limit on 2026-10-13). The
 steps, in order: `typecheck` → `lint` → `test` (all five suites) → `verify:examples` → `verify:docs` →
 `verify:i18n` → `verify:release-highlights-json` → `verify:store-boundaries` → `verify:conventions` →
 `verify:gantt-boundaries` → `verify:cycles` → `verify:text-roles`.
