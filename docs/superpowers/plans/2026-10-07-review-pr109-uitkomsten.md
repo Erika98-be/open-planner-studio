@@ -567,3 +567,10 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
 - #338 opnieuw bijgewerkt met main (4f5c73b2b); typecheck, `check-werkdag-einde`, `verify:i18n` exit 0; CI loopt.
 - #344 schakelaar weg (kop 86eb30d04, CI 15/15): schrijver altijd 9 attributen, lezer leest beide; docs en PR-tekst
   met eigenaarsbesluit (#336), meting v2026.9.0 en een kopje "Voor de releasetekst" (nl/en). Her-check gestart.
+- **#344 her-check: ja** (reviewer, Opus 5.5). B2/B4/B5 opgelost (mutanten rood); 62 bestanden 0 fouten in ADD2,
+  IFC4X3 én IFC4; oude bestanden gelijk (9 verschillen = B2-correctie); samenvoeging met #336 zonder verlies;
+  releasetekst klopt met eigen meting. **Gemerged in main 2026-10-13: #344 → 35c59df7d** (`--admin`; kop 86eb30d04
+  bevatte main fa796cdad; CI 15/15; `measure:profiles` exit 0 in ronde 1, daarna geen motorwijziging; de meetlat
+  leest geen IFC). Vervolg-PR gestart (worker, Opus 5.5, `claude/ifc-poort-enums`): IFC4-enums in de poort (N5),
+  negatieve duur (N4), klem-filter (N2), dubbele tabellen weg.
+  **Releasetekst:** de waarschuwing staat in de PR-tekst van #344 onder "Voor de releasetekst" (nl/en).
