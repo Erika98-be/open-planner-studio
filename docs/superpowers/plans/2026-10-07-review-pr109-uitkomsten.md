@@ -380,3 +380,7 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   `measure:profiles` EXIT 0. Fixronde gestart: projectkalender via `CalendarUID` en werkweek-overerving.
 - Prototype optie 2 kalendervenster: worktree `prototype-optie2`, lokale branch `claude/prototype-kalender-optie2`
   (niet pushen), dev-server poort 3061; vergelijkingsschermen in `/tmp/qa-kal/vergelijk/`. Keuze ligt bij eigenaar.
+- #335 fixronde klaar: CI groen op 66bb7b436. Projectkalender via `<CalendarUID>` (zoals `.mpp`), werkweek-
+  overerving van basiskalender. Corpus vs main: 7 bestanden exacter, 0 minder; exacte taken 3362 → 6909.
+  Woodscapes 606 (geen verslechtering t.o.v. main); verschil met tussenmeting komt uit `lagCalendar` in het profiel.
+  `measure:profiles` EXIT 0. Review door reviewer (Opus 5.5) gestart.
