@@ -520,3 +520,5 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   integratiebranch: de kop 681e29604 bevatte main 22f48e7bf al; CI 15/15 en `measure:profiles` exit 0 op die kop.
   Twee restpunten (week met alleen gedateerde werktijden, toets StartDate-only) doorgegeven aan de schema-expert
   voor fase 2.
+- #338 bijgewerkt met main (bb94a59d5, met #340) door de orkestrator; lokaal typecheck, `check-werkdag-einde` en
+  `check-ifc-werktijd-per-dag` exit 0; CI loopt. Testversie (lokaal, `release-check-3`) heeft nu #338 + #340 + #339.
