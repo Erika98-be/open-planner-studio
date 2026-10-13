@@ -56,8 +56,6 @@ test('IFC-schema: kiezen in Projectinfo, toepassen, opslaan schrijft het in de k
 
     await toProjectInfo(page);
     await expect(trigger(page)).toHaveText(/^(IFC 4\.3 \(default\)|IFC 4\.3 \(standaard\))$/);
-    // De uitleg staat in één gekleurd infoblok.
-    await expect(page.locator('[data-ops-project-ifc-schema-info].alert.alert--info')).toBeVisible();
     if (SHOTS) {
       // Alleen voor de schermbeelden: het thema rechtstreeks op de DOM (de Backstage is pure DOM/CSS).
       const before = await page.evaluate(() => document.documentElement.getAttribute('data-theme'));

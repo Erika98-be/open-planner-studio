@@ -595,9 +595,6 @@ export const ProjectInfoPanelContent = forwardRef<ProjectInfoPanelContentHandle,
                 { value: 'IFC4', label: tMenu('projectInfo.ifcSchema.optionIfc4') },
               ]}
             />
-            <div className="alert alert--info mt-1" data-ops-project-ifc-schema-info>
-              {tMenu('projectInfo.ifcSchema.info')}
-            </div>
           </div>
         )}
 

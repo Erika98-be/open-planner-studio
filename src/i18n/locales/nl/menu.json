@@ -261,8 +261,7 @@
       "label": "IFC-schema bij opslaan",
       "optionIfc4x3": "IFC 4.3 (standaard)",
       "optionIfc4x3Add2": "IFC 4.3 ADD2",
-      "optionIfc4": "IFC4",
-      "info": "De inhoud van het bestand blijft gelijk; alleen de kop verandert. Kies het schema van het bouwmodel waarmee je de planning wilt samenvoegen, bijvoorbeeld IFC4 voor een IFC4-model in IfcOpenShell of Bonsai."
+      "optionIfc4": "IFC4"
     }
   },
   "newProject": {
