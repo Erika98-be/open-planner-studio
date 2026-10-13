@@ -11,6 +11,7 @@ import { holidayEndDate, WorkCalendar } from '@/types/calendar';
 import { exportCalendarLayout, minutesToClock, taskMinutesForWrite } from '@/services/subdayIo';
 import { effectiveWorkTimeBands } from '@/utils/effectiveWorkTime';
 import { projectFileBase } from '@/utils/documents';
+import { documentProjectCode } from '@/utils/documentProjectCode';
 import { isLeafTask, isSummaryTask } from '@/utils/taskHierarchy';
 import { flattenOrder } from '@/utils/wbs';
 import type { CustomTaskType } from '@/types/taskType';
@@ -229,6 +230,9 @@ export function writeP6XML(...args: Parameters<typeof writeP6XMLWithReport>): st
 /**
  * Als `writeP6XML`, plus het aantal namen en codes dat tot de schemagrens is ingekort
  * (`renderP6XmlWithReport`; de exportmelding `exportP6TruncatedNotice` gebruikt dit getal).
+ *
+ * `projectCode`: de P6 Project-ID van het document (`documentProjectCode`); de aanroeper geeft hem mee,
+ * zodat ook een XER-document zijn code als `<Id>` krijgt. Weggelaten ⇒ die van `project` zelf.
  */
 export function writeP6XMLWithReport(
   project: Project,
@@ -239,6 +243,7 @@ export function writeP6XMLWithReport(
   assignments: ResourceAssignment[],
   resourceCalendars: WorkCalendar[] = [],
   customTaskTypes: readonly CustomTaskType[] = [],
+  projectCode: string | null | undefined = documentProjectCode(project),
 ): { xml: string; truncated: number } {
   // Externe (cross-project) dependencies zijn in P6-XML niet uitdrukbaar buiten de
   // master/subproject-context ⇒ weggelaten (de ghost-weergave blijft in-app). Één warn.
@@ -651,7 +656,7 @@ export function writeP6XMLWithReport(
   // Project. Zelfde afweging als in mspdiWriter: een leeg <Name> gaf P6 een naamloos project, terwijl
   // de projectnaam in P6 juist een dragend, verplicht ingevuld veld is. Dezelfde neutrale,
   // taalonafhankelijke terugval als de bestandsnaam en de STEP-header.
-  const projectIdentity = p6ProjectIdentity(projectFileBase(project.name), project.id);
+  const projectIdentity = p6ProjectIdentity(project, projectCode);
   top.push(node('Project', [
     ...leaf('ActivityDefaultCalendarObjectId', 1),
     // Data date — P6's peildatum. Alleen wanneer gezet (golden rule).
@@ -673,20 +678,21 @@ export function writeP6XMLWithReport(
 }
 
 /**
- * Naam en `Id` van het P6-project. Een geïmporteerd P6-project heet "Naam (Id)" (zie
- * `nameWithProjectCode`); die code gaat terug naar `<Id>` en de naam zonder code naar `<Name>`, zodat
- * heropenen dezelfde naam geeft. Alleen een CODE splitst: tekst tussen haakjes zonder spatie, ≤ 40
- * tekens ("Kantoor (OZB-05)"). "Nieuwbouw (fase 2)" blijft de naam. Zonder code is het Id
- * `OPS:` + het interne project-id: uniek, ook als twee projecten dezelfde naam hebben. De lezer zet
- * zo'n Id niet achter de naam (`isOpsInternalProjectId`). Het voorvoegsel maakt hem herkenbaar,
- * ongeacht de vorm van het interne id (`proj-…`, een IFC-id, een test-id).
+ * Naam en `Id` van het P6-project: `<Name>` = de projectnaam (neutrale terugval `projectFileBase`),
+ * `<Id>` = de P6 Project-ID van het document (zie `documentProjectCode`). Zonder code: `OPS:` + het
+ * interne project-id, uniek ook bij gelijke namen; de lezer bewaart dat niet als code. Geen terugval
+ * die een code uit de naam haalt: die gokte ("Renovatie (2027)" ⇒ Id "2027") en miste codes met een
+ * spatie ("OZB-14 1st Update").
  */
-export function p6ProjectIdentity(displayName: string, internalId: string): { name: string; id: string } {
-  const match = / \(([^()\s]+)\)$/.exec(displayName);
-  if (match && match[1].length <= P6_ID_MAX_LENGTH && match.index > 0) {
-    return { name: displayName.slice(0, match.index), id: match[1] };
-  }
-  return { name: displayName, id: `${OPS_INTERNAL_PROJECT_ID_PREFIX}${internalId}`.slice(0, P6_ID_MAX_LENGTH) };
+export function p6ProjectIdentity(
+  project: Pick<Project, 'id' | 'name'>,
+  code: string | null | undefined,
+): { name: string; id: string } {
+  const id = (code ?? '').trim();
+  return {
+    name: projectFileBase(project.name),
+    id: id || `${OPS_INTERNAL_PROJECT_ID_PREFIX}${project.id}`.slice(0, P6_ID_MAX_LENGTH),
+  };
 }
 
 const OPS_INTERNAL_PROJECT_ID_PREFIX = 'OPS:';
@@ -694,4 +700,25 @@ const OPS_INTERNAL_PROJECT_ID_PREFIX = 'OPS:';
 /** Een project-Id dat de OPS-writer zelf maakte (geen code van de gebruiker; `p6ProjectIdentity`). */
 export function isOpsInternalProjectId(id: string): boolean {
   return id.startsWith(OPS_INTERNAL_PROJECT_ID_PREFIX);
+}
+
+/**
+ * Het interne project-id dat de writer tot en met v2026.9.0 als `<Id>` schreef (`leaf('Id', project.id)`),
+ * dus geen code van de gebruiker. Twee vormen:
+ *  - `generateId('proj')`: `proj-` + `Date.now()` in base36 (8 tekens sinds 1972) + 4 willekeurige
+ *    base36-tekens + een teller in cijfers. Herkend aan die vorm én aan de tijdstempel: tussen
+ *    2026-01-01 (de app bestaat sinds februari 2026) en morgen. Zo blijven codes als `proj-benchmark`,
+ *    `proj-monument`, `proj-museumplein` of `proj-mozart123` echte codes (review #343 ronde 2: alleen
+ *    de tijdstempel liet woorden van 8+ letters wegvallen).
+ *  - IFC-afgeleid (`ifcReader` `extractProject`): `proj-ifc-<GlobalId>` of `proj-ifc-step-<STEP-id>`.
+ * Een kortere of andere vorm (`proj-01`, `proj-ext-hal`, `PROJ-001`) is altijd een code.
+ */
+const LEGACY_OPS_PROJECT_ID = /^proj-(?:ifc-(?:step-)?[0-9A-Za-z_$]+|([0-9a-z]{8})[0-9a-z]{4}\d+)$/;
+const LEGACY_OPS_PROJECT_ID_FROM = Date.UTC(2026, 0, 1);
+export function isLegacyOpsProjectId(id: string, now: number = Date.now()): boolean {
+  const m = LEGACY_OPS_PROJECT_ID.exec(id);
+  if (!m) return false;
+  if (m[1] === undefined) return true;
+  const ms = parseInt(m[1], 36);
+  return ms >= LEGACY_OPS_PROJECT_ID_FROM && ms <= now + 86_400_000;
 }

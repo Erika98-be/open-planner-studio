@@ -70,9 +70,9 @@ Per bestandsformaat: of je het kunt openen, opslaan en exporteren, wat er wel en
 
 **Opslaan** — nee.
 
-**Exporteren** — ja, als *Primavera P6 XML* (*Voor Oracle Primavera P6.*). Standaardnaam: de projectnaam met `.xml`, dus dezelfde naam als een MS Project XML-export: geef ze zelf een verschillende naam.
+**Exporteren** — ja, als *Primavera P6 XML* (*Voor Oracle Primavera P6.*). Standaardnaam: de projectnaam met `.xml`, met het project-ID tussen haakjes als het project er een heeft. Een MS Project XML-export krijgt dezelfde naam: geef ze zelf een verschillende naam.
 
-**Projectnaam en project-ID.** Eindigt de projectnaam op een code tussen haakjes zonder spatie, zoals *Kantoor (OZB-05)*, dan wordt *OZB-05* het project-ID in P6 en *Kantoor* de naam. Zo komt een project uit P6 na heropenen met dezelfde naam terug. Tekst met een spatie, zoals *Nieuwbouw (fase 2)*, blijft in de naam. Zonder code krijgt het project een eigen, uniek ID van de app, dat begint met *OPS:*.
+**Projectnaam en project-ID.** De app bewaart het project-ID uit P6 apart van de projectnaam, net als bij een `.xer`. In *Projectinfo* staat alleen de naam, bijvoorbeeld *Bid for Facility Extension*. Het tabblad toont *Bid for Facility Extension (OZB-05)*. Hernoem je het project naar *Uitbreiding hal*, dan heet het tabblad *Uitbreiding hal (OZB-05)*. Bij een export naar P6 XML gaat *OZB-05* terug als project-ID en *Uitbreiding hal* als naam. Zo herkent P6 het project. Een project uit een `.xer` krijgt zijn project-ID ook mee. Het project-ID blijft bewaard als je het project opslaat als IFC. Haakjes in de naam zelf, zoals *Nieuwbouw (fase 2)*, blijven in de naam. Een project zonder project-ID krijgt bij de export een eigen, uniek ID van de app, dat begint met *OPS:*.
 
 **Wat meegaat** — WBS-structuur en taken met duur, datums en voortgang; relaties met lag; constraints (ook een tweede, als zachte constraint); kalenders; resources en toewijzingen; de statusdatum (als `DataDate`); een eigen taaktype, in een eigen veld `OPS Custom Task Type` dat de app terugleest en dat P6 mag negeren.
 

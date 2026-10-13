@@ -212,25 +212,32 @@ eq('7e oud: <Description>', old.tasks.find(t => t.wbsCode === 'A')?.description,
   eq('10c geen waarschuwing over een onbekende soort', warns.some(w => w.includes('PercentCompleteType')), false);
 }
 
-// (11) Projectnaam en P6-Id (review A): alleen een CODE tussen haakjes (zonder spatie) wordt het Id.
+// (11) Projectnaam en P6-Id (eigenaarsbesluit 2026-10-13): <Name> = de naam letterlijk, <Id> = de
+//      apart bewaarde code (`project.p6ProjectCode`). Geen gok meer die een code uit de naam haalt.
+//      Volledige toetsen (store, IFC, XER, crashherstel): check-p6xml-project-code.
 {
   const named = readP6XML(readFileSync(new URL('./fixtures/p6xml-genest-meerdere-projecten.xml', import.meta.url), 'utf8'));
-  const idAndName = (name: string): [string, string, string] => {
+  const idAndName = (name: string, code: string | undefined): [string, string, string, string | undefined] => {
     named.project.name = name;
+    if (code === undefined) delete named.project.p6ProjectCode; else named.project.p6ProjectCode = code;
     const out = write(named);
     const project = /<Project>[\s\S]*?<Id>([^<]*)<\/Id>[\s\S]*?<Name>([^<]*)<\/Name>/.exec(out.replace(/<WBS>[\s\S]*<\/ResourceAssignment>/, ''));
-    return [project?.[1] ?? '', project?.[2] ?? '', readP6XML(out).project.name];
+    const back = readP6XML(out).project;
+    return [project?.[1] ?? '', project?.[2] ?? '', back.name, back.p6ProjectCode];
   };
-  const [codeId, codeName, codeBack] = idAndName('Kantoor (OZB-05)');
-  eq('11a code zonder spatie ⇒ Id', [codeId, codeName, codeBack], ['OZB-05', 'Kantoor', 'Kantoor (OZB-05)']);
-  const [faseId, faseName, faseBack] = idAndName('Nieuwbouw (fase 2)');
-  eq('11b "(fase 2)" blijft in de naam; Id = OPS: + intern project-id', [faseName, faseId === `OPS:${named.project.id}`.slice(0, 40), faseBack], ['Nieuwbouw (fase 2)', true, 'Nieuwbouw (fase 2)']);
+  eq('11a bewaarde code ⇒ Id; naam letterlijk', idAndName('Kantoor', 'OZB-05'), ['OZB-05', 'Kantoor', 'Kantoor', 'OZB-05']);
+  eq('11b code met spatie (OZB) ⇒ Id', idAndName('Bid for Facility Extension', 'OZB-14 1st Update'),
+    ['OZB-14 1st Update', 'Bid for Facility Extension', 'Bid for Facility Extension', 'OZB-14 1st Update']);
+  const [faseId, faseName, faseBack, faseCode] = idAndName('Nieuwbouw (fase 2)', undefined);
+  eq('11c "(fase 2)" zonder code blijft heel; Id = OPS: + intern project-id', [faseName, faseId === `OPS:${named.project.id}`.slice(0, 40), faseBack, faseCode], ['Nieuwbouw (fase 2)', true, 'Nieuwbouw (fase 2)', undefined]);
+  const [kantoorId, kantoorName, kantoorBack, kantoorCode] = idAndName('Kantoor (OZB-05)', undefined);
+  eq('11d "(OZB-05)" in de naam zonder code wordt niet gesplitst', [kantoorId.startsWith('OPS:'), kantoorName, kantoorBack, kantoorCode], [true, 'Kantoor (OZB-05)', 'Kantoor (OZB-05)', undefined]);
   // Twee projecten met dezelfde naam zonder code krijgen een verschillend Id.
   named.project.id = 'proj-aaa1';
-  const [idA] = idAndName('Renovatie');
+  const [idA] = idAndName('Renovatie', undefined);
   named.project.id = 'proj-bbb2';
-  const [idB, , backB] = idAndName('Renovatie');
-  eq('11c zelfde naam zonder code ⇒ uniek Id, naam ongewijzigd terug', [idA !== idB, backB], [true, 'Renovatie']);
+  const [idB, , backB] = idAndName('Renovatie', undefined);
+  eq('11e zelfde naam zonder code ⇒ uniek Id, naam ongewijzigd terug', [idA !== idB, backB], [true, 'Renovatie']);
 }
 
 // (12) nameWithProjectCode (review E): de code komt er niet dubbel achter.
