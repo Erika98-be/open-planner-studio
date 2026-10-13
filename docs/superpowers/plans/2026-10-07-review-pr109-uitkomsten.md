@@ -555,3 +555,13 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   schakelaar, voorlopig 8 attributen (twee stappen); TS-poort uitbreiden i.p.v. IfcOpenShell in CI; GlobalIds
   niet opnieuw uitgeven (later besluit). **Voor de eigenaar (na checkstap 10):** nu alles geldig mét waarschuwing,
   of in twee stappen.
+- **#336 (andere sessie van de eigenaar, #292 "IFC: juiste argumentaantallen en schemakeuze per project") gemerged
+  in main door Nozzit, 2026-10-13 20:24Z → fa796cdad.** Daarin het eigenaarsbesluit, letterlijk in de PR-tekst
+  ("Besluit: voorwaartse compatibiliteit"): "Eigenaar (Nozzit), 2026-10-13: **alles in één keer**. Geen
+  overgangsrelease waarin de reader eerst beide indelingen leert. ... De release-opmerkingen moeten daarvoor
+  waarschuwen." Het voorgenomen besluit "twee stappen" voor #344 vervalt dus; de eigenaar besliste al.
+  #344 fixronde 1 (kop d87de3695, CI groen) is met #336 samengevoegd; schakelaar stond op 9. Orkestrator: schakelaar
+  schrappen (besluit genomen), lezer blijft beide indelingen lezen; daarna her-review.
+  **Voor de releasetekst:** waarschuwing voorwaartse compatibiliteit (v2026.9.0 en ouder: feestdagen weg, vrije dag
+  op de openingsdag, werkweek ma–vr 07–16, werkende uitzonderingen en ploeg weg, blijvend na opslaan).
+- #338 opnieuw bijgewerkt met main (4f5c73b2b); typecheck, `check-werkdag-einde`, `verify:i18n` exit 0; CI loopt.
