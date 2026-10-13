@@ -3,14 +3,18 @@
 // Tegenhanger van de schemapoort `check-ifc-schema.ts`; toelichting in docs/ifc-round-trip.md.
 //
 //   A. Hetzelfde rijke project, eenmaal in de norm geschreven en eenmaal omgezet naar de oude
-//      OPS-indeling (IfcWorkPlan/IfcWorkSchedule 15 attributen, resources 9 met `.USERDEFINED.`, REAL
-//      zonder punt, Completion `0.00`, header `IFC4X3`), leest exact gelijk. Ook zonder de
-//      OPS_ProjectSettings-datums, zodat de projectdatums echt uit het IfcWorkPlan-slot komen.
+//      OPS-indeling (IfcWorkPlan/IfcWorkSchedule 15 attributen, resources 9 met `.USERDEFINED.`,
+//      IfcWorkCalendar 8 zonder `Identification`, REAL zonder punt, Completion `0.00`, header `IFC4X3`),
+//      leest exact gelijk. Ook zonder de OPS_ProjectSettings-datums, zodat de projectdatums echt uit het
+//      IfcWorkPlan-slot komen. De kalenders (project, bibliotheek, uurkalender, ploegen, feestdagen,
+//      werkende uitzonderingen) vallen onder A1.
 //   B. Een geldig bestand van een andere tool (indeling zoals bSI/xbim `construction-scheduling-task`):
 //      de projectstart komt uit IfcWorkPlan.StartTime (index 11), en taken onder een `.BASELINE.`-
 //      IfcWorkSchedule (index 13) zijn geen live taken.
 //   C. Een IFC2X3-indeling (ook 15 attributen, maar de enum op index 13 en de tijden als verwijzing):
 //      geen verzonnen datum uit een verwijzing, en `.BASELINE.` op index 13 telt.
+//   D. De kalender uit dat bSI/xbim-bestand (IfcWorkCalendar met 9 attributen, ma–vr 08:00–16:00):
+//      die werktijd komt binnen. Vóór de fix kwam de standaardweek (07:00–16:00) binnen.
 //
 // Draait via run.sh. Exit 0 = alles groen.
 import { join } from 'node:path';
@@ -87,6 +91,11 @@ function toLegacyOpsLayout(ifc: string): string {
       if (args.length !== 11) throw new Error(`${type} heeft geen 11 attributen`);
       return [...args.slice(0, 4), '$', '$', '$', '$', '.USERDEFINED.'];
     }
+    if (type === 'IFCWORKCALENDAR') {
+      // Zonder `Identification` (index 5, altijd `$` bij OPS).
+      if (args.length !== 9 || args[5] !== '$') throw new Error('IFCWORKCALENDAR heeft geen 9 attributen met `$` op index 5');
+      return [...args.slice(0, 5), ...args.slice(6)];
+    }
     if (type === 'IFCTASKTIME' && args[19] === '$') return [...args.slice(0, 19), '0.00'];
     if (type === 'IFCTASK') {
       const next = [...args];
@@ -144,6 +153,14 @@ function firstDiff(a: unknown, b: unknown, path = ''): string | undefined {
   ok('A0 omzetting raakt de resources (9 attributen, .USERDEFINED.)', /IFCLABORRESOURCE\([^\n]*,\$,\$,\$,\$,\.USERDEFINED\.\);/.test(legacy));
   ok('A0 omzetting raakt de REAL-waarden (zonder punt)', /IFCREAL\(\d+\)/.test(legacy) && !/IFCREAL\(\d+\.\)/.test(legacy));
   ok('A0 omzetting raakt Completion (0.00)', legacy.includes(',0.00);'));
+  eq('A0 omzetting raakt de kalenders (8 attributen)', argCounts(legacy, 'IFCWORKCALENDAR'), [8, 8, 8, 8]);
+  eq('A0 de norm: kalenders met 9 attributen', argCounts(modern, 'IFCWORKCALENDAR'), [9, 9, 9, 9]);
+  const readCalendars = (r: ImportResult) => [r.calendar, ...(r.resourceCalendars ?? [])];
+  const richCalendars = readCalendars(readIFC(modern));
+  ok('A0 setup: de kalenders dragen feestdagen, werkende uitzonderingen, ploegen en een uurweek',
+    richCalendars.some(c => c.holidays.length > 0) && richCalendars.some(c => (c.workingExceptions ?? []).length > 0)
+    && richCalendars.some(c => c.shift === 'THIRD') && richCalendars.some(c => c.shift === 'USERDEFINED')
+    && richCalendars.some(c => !!c.workTime));
 
   const readModern = readIFC(modern);
   const readLegacy = readIFC(legacy);
@@ -225,6 +242,25 @@ function foreignFile(schema: string, plan: string, schedules: string[], nests: s
   ok(`C1 IFC2X3: geen datum uit een verwijzing (kreeg "${r.project.startDate}")`, !r.project.startDate.startsWith('#'));
   eq('C1 IFC2X3: projectstart = vroegste taakstart (geen WorkPlan-tekst)', r.project.startDate, '2010-10-04');
   eq('C2 IFC2X3: taak onder het .BASELINE.-werkschema (index 13) is geen live taak', r.tasks.map(t => t.name), ['Live taak']);
+}
+
+{
+  // D. De kalender zoals bSI/xbim (`construction-scheduling-task`) hem schrijft: 9 attributen, Name `$`,
+  //    `Identification` `$`, één IfcWorkTime ma–vr 08:00–16:00 zonder datum.
+  const ifc = foreignFile('IFC4X3_ADD2',
+    "#10=IFCWORKPLAN('0eVhmaYyb3sBLb0LoNiW62',$,'Work Plan #1',$,$,$,'2010-09-23T16:26:16',$,$,$,$,'2010-09-23T00:00:00',$,$);",
+    ["#11=IFCWORKSCHEDULE('2LoWUCZHr7YvZks8lmqjcw',$,'Planning',$,$,$,'2010-09-23T16:26:42',$,$,$,$,'2010-09-23T00:00:00',$,.PLANNED.);"],
+    [
+      "#30=IFCRELNESTS('0aQgg3GdP0BB8_2Y5UbS6u',$,$,$,#11,(#21,#23));",
+      "#783=IFCWORKCALENDAR('0LHFCz8r5EQw4GeNNMS$Xp',$,$,$,$,$,(#789),$,.FIRSTSHIFT.);",
+      "#787=IFCTIMEPERIOD('08:00:00','16:00:00');",
+      "#788=IFCRECURRENCEPATTERN(.WEEKLY.,$,(1,2,3,4,5),$,$,$,$,(#787));",
+      "#789=IFCWORKTIME('Standard',$,$,#788,$,$);",
+    ]);
+  const cal = readIFC(ifc).calendar;
+  eq('D1 kalender met 9 attributen: ma–vr 08:00–16:00, 8 u',
+    [cal.workDays, cal.workStartHour, cal.workEndHour, cal.hoursPerDay], [[1, 2, 3, 4, 5], 8, 16, 8]);
+  eq('D2 kalender met 9 attributen: WorkingTimes wordt geen uitzondering', [cal.holidays, cal.workingExceptions ?? []], [[], []]);
 }
 
 if (fails.length) {

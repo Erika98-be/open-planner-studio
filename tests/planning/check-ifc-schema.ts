@@ -35,7 +35,7 @@ import { fileURLToPath } from 'node:url';
 import { writeIFC } from '@/services/ifc/ifcWriter';
 import { RESOURCE_TYPE_TO_IFC } from '@/services/ifc/ifcConstants';
 import { IFC_ENTITY_ATTRIBUTES, IFC_SCHEMA_TABLE_SOURCE, IFC_SELECTS, IFC_TYPED_VALUE_KIND } from './ifcSchemaTable';
-import { buildEmptySchemaProject, buildRichSchemaProject } from './ifcSchemaFixture';
+import { buildEdgeCalendarProject, buildEmptySchemaProject, buildRichSchemaProject } from './ifcSchemaFixture';
 
 const HERE = fileURLToPath(new URL('.', import.meta.url));
 const ROOT = join(HERE, '..', '..');
@@ -46,14 +46,6 @@ function assert(cond: boolean, msg: string): void {
   checks++;
   if (!cond) fails.push(msg);
 }
-
-/**
- * FASE 2 — TIJDELIJKE UITZONDERING. IfcWorkCalendar mist nog het attribuut `Identification` (8 in
- * plaats van 9). Die fix wacht op PR #340 (`writeCalendar`/`buildCalendarFromEntity` worden daar
- * herschreven). Tot dan slaat de poort de attribuuttoets van deze entiteit over; de dekking (punt 4)
- * telt hem wel. Fase 2 haalt deze set leeg.
- */
-const PHASE2_EXEMPT = new Set(['IFCWORKCALENDAR']);
 
 /**
  * BEKENDE AFWIJKING (bewust, gemeld): `IfcRelAssignsToProcess.RelatedObjects` is een SET, maar OPS
@@ -277,7 +269,6 @@ function checkFile(label: string, text: string, seen: Seen): void {
     for (const a of e.args) collectTyped(a, seen.typed);
     const spec = IFC_ENTITY_ATTRIBUTES[e.type];
     if (!spec) { fail(e, 'entiteit staat niet in de schematabel (ifcSchemaTable.ts)'); continue; }
-    if (PHASE2_EXEMPT.has(e.type)) continue;
     checks++;
     if (e.args.length !== spec.length) {
       fail(e, `${e.args.length} attributen, IFC4X3_ADD2 vraagt er ${spec.length}`);
@@ -356,12 +347,17 @@ for (const f of ifcFiles('examples')) checkFile(`examples/${f}`, readFileSync(jo
 // ── 2. Een rijk project en 3. randgevallen, geschreven met de echte writer ───────────────────────
 // Inhoud: zie tests/planning/ifcSchemaFixture.ts. Het lege project dekt de verplichte attributen
 // zonder bronwaarde: IfcWorkPlan/IfcWorkSchedule.StartTime, IfcOrganization.Name, en de WHERE-regels
-// HasName (IfcProject) en IdentifiablePerson (IfcPerson).
+// HasName (IfcProject) en IdentifiablePerson (IfcPerson). De kalenderrandgevallen dekken lege
+// WeekdayComponent/TimePeriods (`$`, geen `()`).
 const rich = buildRichSchemaProject(ROOT);
 const richIfc = writeIFC(rich);
 checkFile('rijk project', richIfc, seen);
 const emptyIfc = writeIFC(buildEmptySchemaProject(rich));
 checkFile('leeg project', emptyIfc, seen);
+const edgeIfc = writeIFC(buildEdgeCalendarProject(rich));
+checkFile('kalenderrandgevallen', edgeIfc, seen);
+assert(/IFCRECURRENCEPATTERN\(\.WEEKLY\.,\$,\$,/.test(edgeIfc) && /IFCRECURRENCEPATTERN\([^\n]*,\$\);/.test(edgeIfc),
+  'kalenderrandgevallen: testvoorwaarde — een patroon zonder weekdagen en een patroon zonder tijdvakken');
 
 // ── 4. Dekking ───────────────────────────────────────────────────────────────────────────────────
 for (const entity of Object.keys(IFC_ENTITY_ATTRIBUTES)) {
@@ -387,7 +383,8 @@ if (dumpDir) {
   mkdirSync(dumpDir, { recursive: true });
   writeFileSync(join(dumpDir, 'schema-rijk-project.ifc'), richIfc, 'utf8');
   writeFileSync(join(dumpDir, 'schema-leeg-project.ifc'), emptyIfc, 'utf8');
-  console.log(`   (rijk project en randgeval geschreven naar ${dumpDir})`);
+  writeFileSync(join(dumpDir, 'schema-kalenderrandgevallen.ifc'), edgeIfc, 'utf8');
+  console.log(`   (rijk project en randgevallen geschreven naar ${dumpDir})`);
 }
 
 if (fails.length) {

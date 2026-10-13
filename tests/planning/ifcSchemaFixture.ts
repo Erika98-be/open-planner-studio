@@ -10,6 +10,8 @@
 // heropen-herkomst en een codetype zonder waarden.
 //
 // LEEG project: geen naam, auteur, bedrijf, omschrijving of datums, en geen taken.
+//
+// RANDGEVALLEN van de kalender: geen werkdagen, en een uurkalender zonder blokken.
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { readIFC } from '@/services/ifc/ifcReader';
@@ -93,6 +95,25 @@ export function buildRichSchemaProject(root: string): ImportResult {
     activityCodeTypes: [...(base.activityCodeTypes ?? []), { id: 'schema-act-empty', name: 'Codetype zonder waarden', values: [] }],
     importPristine: true,
     recordedSourceFormat: 'mspdi',
+  };
+}
+
+/**
+ * RANDGEVALLEN van de kalender: een projectkalender zonder werkdagen en een uurkalender zonder blokken.
+ * `WeekdayComponent` en `TimePeriods` van IfcRecurrencePattern zijn OPTIONAL SET/LIST [1:?]; leeg moet
+ * dus `$` zijn, geen `()`. (Zo'n uurkalender las de lezer vóór de schemafix uit een IfcWorkCalendar
+ * met 9 attributen, zoals in het bSI-voorbeeld `construction-scheduling-task`.)
+ */
+export function buildEdgeCalendarProject(rich: ImportResult): ImportResult {
+  const noWorkDays: WorkCalendar = { ...rich.calendar, id: 'schema-geen-werkdagen', name: 'Geen werkdagen', workDays: [], workTime: undefined };
+  const noBlocks: WorkCalendar = {
+    id: 'schema-geen-blokken', name: 'Uurkalender zonder blokken', description: '',
+    workDays: [1, 2, 3, 4, 5], workStartHour: 7, workEndHour: 16, hoursPerDay: 8, holidays: [],
+    workTime: { byWeekday: { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [] } },
+  };
+  return {
+    project: { ...rich.project, calendarId: noWorkDays.id },
+    calendar: noWorkDays, resourceCalendars: [noBlocks], tasks: [], sequences: [], resources: [], assignments: [],
   };
 }
 

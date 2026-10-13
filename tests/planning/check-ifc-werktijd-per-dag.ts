@@ -12,16 +12,19 @@
 //     eerste werkdag is de afwijkende), IFC 4.3 figuur 1; plus een tweede round-trip.
 //  §2 de vorm van het bestand: terugvalweek vooraan (datum 1900-01-01, geen STEP-id-markering), daarna
 //     de groepen zonder datum, in de volgorde van `workDays`.
-//  §3 wat een oudere OPS-versie ziet, volgens een MODEL van die lezer (zie daar): alleen de eerste
-//     `IFCWORKTIME`, datums genegeerd. Dit toetst de inhoud van de terugvalweek, niet de lezer van main.
-//  §4 byte-identiek aan main: een uniforme uurweek (ook met de blokken van één dag in een andere
-//     volgorde), een dagkalender zonder blokken en een scalaire kalender met urentaak (gematerialiseerde
-//     blokken). De verwachte regels zijn gemaakt met de writer van main 1e192b31a; een gewijzigde byte
-//     is een fout, geen reden om de verwachting bij te werken.
-//  §5 de lezer op bestanden in de vorm die OPS schrijft, zonder `OPS_Calendar`: één `IFCWORKTIME` per
-//     tijdvak, overlap, de dag-modus (vereniging van werkdagen), de scalaire dag (eerste werkdag met
-//     blokken, zoals MSPDI/.mpp), en werktijden MET datum (zomer-/winterweek, losse werkzaterdag): die
-//     doen niet mee.
+//  §3 wat een lezer ziet die alleen de eerste `IFCWORKTIME` neemt en de datums negeert, volgens een
+//     MODEL van die lezer (zie daar). Dit toetst de inhoud van de terugvalweek, niet de lezer van main.
+//  §4 gelijk aan main: een uniforme uurweek (ook met de blokken van één dag in een andere volgorde), een
+//     dagkalender zonder blokken en een scalaire kalender met urentaak (gematerialiseerde blokken). De
+//     verwachte regels zijn gemaakt met de writer van main 1e192b31a, met precies twee bewuste
+//     verschillen van de schemafix (2026-10, zie daar). Een andere gewijzigde byte is een fout, geen
+//     reden om de verwachting bij te werken.
+//  §5 de lezer op bestanden zonder `OPS_Calendar`, in beide indelingen van `IfcWorkCalendar` (9
+//     attributen volgens IFC 4.3, 8 in oude OPS-bestanden): één `IFCWORKTIME` per tijdvak, overlap, de
+//     dag-modus (vereniging van werkdagen), de scalaire dag (eerste werkdag met blokken, zoals
+//     MSPDI/.mpp), en werktijden MET datum (zomer-/winterweek, losse werkzaterdag, alleen een StartDate
+//     of alleen een FinishDate): die doen niet mee, tenzij er geen werktijd zonder datum is. Plus de
+//     plek van ExceptionTimes en PredefinedType per indeling.
 //  §6 afgeleide velden en de motor na heropenen: de pauze in de blokken, `hoursPerDay`, en een urentaak
 //     van 16 u vanaf donderdag 07:00 die eindigt op maandag 11:00 (met de oude fout: vrijdag 15:30).
 //  §7 robuustheid van de terugvalweek: STEP-id's hernummerd (zoals een ander pakket kan doen) en een
@@ -104,11 +107,14 @@ function parseStep(ifc: string): Map<string, Entity> {
 const refs = (s: string): string[] => [...s.matchAll(/#(\d+)/g)].map((m) => m[1]);
 const ints = (s: string): number[] => s.replace(/[()]/g, '').split(',').filter(Boolean).map(Number);
 const unq = (s: string): string => s.replace(/^'|'$/g, '');
+/** Index van `WorkingTimes` in een `IFCWORKCALENDAR`: 6 bij 9 attributen (IFC 4.3, zo schrijft OPS sinds
+ *  de schemafix), 5 bij 8 (oude OPS-bestanden). */
+const workingTimesIndex = (calArgs: string[]): number => (calArgs.length === 9 ? 6 : 5);
 /** De `IFCWORKTIME`'s in `WorkingTimes` van de (enige/eerste) kalender: naam, datums, weekdagen, tijdvakken. */
 function workingTimes(ifc: string) {
   const e = parseStep(ifc);
   const cal = [...e.values()].find((x) => x.type === 'IFCWORKCALENDAR')!;
-  return refs(cal.args[5]).map((id) => {
+  return refs(cal.args[workingTimesIndex(cal.args)]).map((id) => {
     const wt = e.get(id)!;
     const rec = e.get(refs(wt.args[3])[0])!;
     const periods = refs(rec.args[7]).map((p) => e.get(p)!.args.map(unq).join('-'));
@@ -182,7 +188,7 @@ for (const [label, cal] of CASES) {
   // verkeerde regel wijzen (§7).
   same('§2 korte vrijdag: geen STEP-id-markering in OPS_Calendar', opsCalendarProp(ifc, 'LegacyWorkTimeIds'), undefined);
   same('§2 korte vrijdag: WorkStartHour/WorkEndHour altijd geschreven bij meer groepen',
-    [opsCalendarProp(ifc, 'WorkStartHour'), opsCalendarProp(ifc, 'WorkEndHour')], ['7', '15']);
+    [opsCalendarProp(ifc, 'WorkStartHour'), opsCalendarProp(ifc, 'WorkEndHour')], ['7.', '15.']);
 }
 /** Herschrijft de `WorkingTimes`-lijst van de (eerste) kalender. */
 function editWorkingTimes(ifc: string, edit: (ids: string[]) => string[]): string {
@@ -190,15 +196,19 @@ function editWorkingTimes(ifc: string, edit: (ids: string[]) => string[]): strin
     const m = /^#(\d+)=IFCWORKCALENDAR\((.*)\);$/.exec(line.trim());
     if (!m) return line;
     const args = splitTop(m[2]);
-    args[5] = `(${edit(refs(args[5])).map((id) => `#${id}`).join(',')})`;
+    const i = workingTimesIndex(args);
+    args[i] = `(${edit(refs(args[i])).map((id) => `#${id}`).join(',')})`;
     return `#${m[1]}=IFCWORKCALENDAR(${args.join(',')});`;
   }).join('\n');
 }
-/** MODEL van een oudere OPS-lezer (t/m v2026.9.0 en main 1e192b31a): die neemt alleen de EERSTE
- *  `IFCWORKTIME` van `WorkingTimes` en negeert zijn datums. Dat model is buiten deze test gemeten met de
- *  lezer van main zelf (39 kalenders uit het corpus, 39 gelijk); hier zit die lezer niet in. Het model
- *  laat alleen de eerste `IFCWORKTIME` staan, zonder datums. De huidige lezer leest één `IFCWORKTIME`
- *  langs het pad van main (ongewijzigd), dus het resultaat is wat een oudere versie ziet. */
+/** MODEL van een lezer die alleen de EERSTE `IFCWORKTIME` van `WorkingTimes` neemt en zijn datums
+ *  negeert. Zo las een oudere OPS-versie (t/m v2026.9.0 en main 1e192b31a) een kalender met 8
+ *  attributen; dat model is buiten deze test gemeten met de lezer van main zelf (39 kalenders uit het
+ *  corpus, 39 gelijk). Let op: sinds de schemafix (2026-10) schrijft OPS 9 attributen, en die leest een
+ *  oudere OPS-versie niet meer goed (zij neemt het lege `Identification`-slot als WorkingTimes). Dit
+ *  model toetst dus alleen nog de inhoud van de terugvalweek. Het model laat alleen de eerste
+ *  `IFCWORKTIME` staan, zonder datums. De huidige lezer leest één `IFCWORKTIME` langs het pad van main
+ *  (ongewijzigd). */
 function asOlderVersionSees(ifc: string): string {
   const firstId = workingTimes(ifc)[0].id;
   return editWorkingTimes(ifc, (ids) => ids.slice(0, 1)).split('\n').map((line) => {
@@ -214,12 +224,12 @@ function flattenToFirstWorkDay(cal: WorkCalendar): WorkCalendar {
   return { ...cal, workTime: week(on(cal.workDays as Day[], first)) };
 }
 for (const [label, cal] of CASES) {
-  same(`§3 ${label}: een oudere versie ziet hetzelfde als in het bestand van main`,
+  same(`§3 ${label}: een lezer van alleen de eerste IFCWORKTIME ziet hetzelfde als in het bestand van main`,
     shape(readIFC(asOlderVersionSees(write(cal))).calendar), shape(readIFC(write(flattenToFirstWorkDay(cal))).calendar));
 }
 
 // ════════════════════════════════════════════════════════════════════════════════════════════════
-// §4 Byte-identiek aan main (1e192b31a) bij één groep en bij een kalender zonder blokken
+// §4 Gelijk aan main (1e192b31a) bij één groep en bij een kalender zonder blokken
 // ════════════════════════════════════════════════════════════════════════════════════════════════
 /** De kalenderregels van het bestand, met STEP-ids relatief aan de eerste kalenderregel (`#+n`) en
  *  verwijzingen naar eerdere regels als `#<`; zo maakt een extra entiteit vóór de kalender niets uit. */
@@ -246,13 +256,17 @@ const hourTask: Task = {
 };
 // Gemaakt door deze batterij met esbuild te bundelen tegen `src/` van main 1e192b31a (alias `@`) en de
 // §4-uitvoer over te nemen. Zie de kop: een afwijking is een fout in de writer, niet in deze lijst.
+// Twee bewuste verschillen met main sinds de schemafix (2026-10, docs/ifc-round-trip.md, alinea
+// "Schemageldigheid"), verder byte-gelijk:
+//  - REAL met decimale punt: `IFCREAL(16.)` en `IFCREAL(8.)` (was `IFCREAL(16)`, `IFCREAL(8)`);
+//  - `IFCWORKCALENDAR` met 9 attributen: `Identification` = `$` na ObjectType (was 8 attributen).
 const UNIFORM_GOLDEN = [
     "#+0=IFCTIMEPERIOD('07:00:00','12:00:00');",
     "#+1=IFCTIMEPERIOD('12:30:00','16:00:00');",
     "#+2=IFCRECURRENCEPATTERN(.WEEKLY.,$,(1,2,3,4,5),$,$,$,$,(#+0,#+1));",
     "#+3=IFCWORKTIME('Standard work week',.PREDICTED.,$,#+2,$,$);",
-    "#+4=IFCWORKCALENDAR('2uNGXnRewWtJPOazG2o4_7',#<,'Uniforme uurweek',$,$,(#+3),$,.FIRSTSHIFT.);",
-    "#+5=IFCPROPERTYSINGLEVALUE('WorkEndHour',$,IFCREAL(16),$);",
+    "#+4=IFCWORKCALENDAR('2uNGXnRewWtJPOazG2o4_7',#<,'Uniforme uurweek',$,$,$,(#+3),$,.FIRSTSHIFT.);",
+    "#+5=IFCPROPERTYSINGLEVALUE('WorkEndHour',$,IFCREAL(16.),$);",
     "#+6=IFCPROPERTYSINGLEVALUE('IsHourCalendar',$,IFCBOOLEAN(.T.),$);",
     "#+7=IFCPROPERTYSET('263IQ2FKK_eiUDl$xw9qpv',#<,'OPS_Calendar',$,(#+5,#+6));",
 ];
@@ -264,8 +278,8 @@ const GOLDEN: [string, string, string[]][] = [
     "#+1=IFCRECURRENCEPATTERN(.WEEKLY.,$,(1,2,3,4,5),$,$,$,$,(#+0));",
     "#+2=IFCWORKTIME('Standard work week',.PREDICTED.,$,#+1,$,$);",
     "#+3=IFCWORKTIME('Kerst',.PREDICTED.,$,$,'2026-12-25','2026-12-26');",
-    "#+4=IFCWORKCALENDAR('2uNGXnRewWtJPOazG2o4_7',#<,'Dagkalender',$,$,(#+2),(#+3),.FIRSTSHIFT.);",
-    "#+5=IFCPROPERTYSINGLEVALUE('HoursPerDay',$,IFCREAL(8),$);",
+    "#+4=IFCWORKCALENDAR('2uNGXnRewWtJPOazG2o4_7',#<,'Dagkalender',$,$,$,(#+2),(#+3),.FIRSTSHIFT.);",
+    "#+5=IFCPROPERTYSINGLEVALUE('HoursPerDay',$,IFCREAL(8.),$);",
     "#+6=IFCPROPERTYSET('263IQ2FKK_eiUDl$xw9qpv',#<,'OPS_Calendar',$,(#+5));",
   ]],
   ['scalaire kalender met urentaak (gematerialiseerde blokken)', write(dayCal, [hourTask]), [
@@ -274,76 +288,118 @@ const GOLDEN: [string, string, string[]][] = [
     "#+2=IFCRECURRENCEPATTERN(.WEEKLY.,$,(1,2,3,4,5),$,$,$,$,(#+0,#+1));",
     "#+3=IFCWORKTIME('Standard work week',.PREDICTED.,$,#+2,$,$);",
     "#+4=IFCWORKTIME('Kerst',.PREDICTED.,$,$,'2026-12-25','2026-12-26');",
-    "#+5=IFCWORKCALENDAR('2uNGXnRewWtJPOazG2o4_7',#<,'Dagkalender',$,$,(#+3),(#+4),.FIRSTSHIFT.);",
-    "#+6=IFCPROPERTYSINGLEVALUE('HoursPerDay',$,IFCREAL(8),$);",
-    "#+7=IFCPROPERTYSINGLEVALUE('WorkEndHour',$,IFCREAL(16),$);",
+    "#+5=IFCWORKCALENDAR('2uNGXnRewWtJPOazG2o4_7',#<,'Dagkalender',$,$,$,(#+3),(#+4),.FIRSTSHIFT.);",
+    "#+6=IFCPROPERTYSINGLEVALUE('HoursPerDay',$,IFCREAL(8.),$);",
+    "#+7=IFCPROPERTYSINGLEVALUE('WorkEndHour',$,IFCREAL(16.),$);",
     "#+8=IFCPROPERTYSINGLEVALUE('IsHourCalendar',$,IFCBOOLEAN(.F.),$);",
     "#+9=IFCPROPERTYSET('263IQ2FKK_eiUDl$xw9qpv',#<,'OPS_Calendar',$,(#+6,#+7,#+8));",
   ]],
 ];
 for (const [label, ifc, want] of GOLDEN) {
-  same(`§4 ${label}: kalenderregels byte-identiek aan main`, calendarLines(ifc), want);
+  same(`§4 ${label}: kalenderregels gelijk aan main (op de twee schemaverschillen na)`, calendarLines(ifc), want);
 }
 
 // ════════════════════════════════════════════════════════════════════════════════════════════════
-// §5 De lezer op bestanden in de vorm die OPS schrijft, zonder OPS_Calendar
+// §5 De lezer op bestanden zonder OPS_Calendar, in beide indelingen van IfcWorkCalendar
 // ════════════════════════════════════════════════════════════════════════════════════════════════
+/** StartDate en FinishDate van een `IFCWORKTIME`; `null` is een leeg slot (`$`). */
+type Dates = [string | null, string | null];
 /** Een minimaal bestand: één `IFCWORKCALENDAR` met de gegeven `WorkingTimes` (weekdagen + tijdvakken
- *  als 'hh:mm', en optioneel StartDate/FinishDate). Let op: in de vorm die OPS schrijft (8 attributen,
- *  zonder `Identification`); een bestand dat het IFC 4.3-schema volgt, bereikt deze leestak nu niet. */
-function foreignIfc(groups: [number[], [string, string][], [string, string]?][], extra = ''): string {
+ *  als 'hh:mm', en optioneel StartDate/FinishDate). `layout` 9 = IFC 4.3, met `Identification` (zo
+ *  schrijven bSI, xbim en IfcOpenShell, en OPS sinds de schemafix); 8 = oude OPS-bestanden, zonder.
+ *  `opts.exceptions` komen als feestdag-`IFCWORKTIME`'s in ExceptionTimes, `opts.predefinedType` in
+ *  PredefinedType. */
+function foreignIfc(
+  layout: 8 | 9,
+  groups: [number[], [string, string][], Dates?][],
+  opts: { exceptions?: [string, string, string][]; predefinedType?: string } = {},
+): string {
   const lines: string[] = [];
   let id = 100;
   const wtIds: number[] = [];
+  const dateArg = (d: string | null) => (d ? `'${d}'` : '$');
   for (const [days, periods, dates] of groups) {
     const tps = periods.map(([s, e]) => { lines.push(`#${++id}=IFCTIMEPERIOD('${s}:00','${e}:00');`); return id; });
     lines.push(`#${++id}=IFCRECURRENCEPATTERN(.WEEKLY.,$,(${days.join(',')}),$,$,$,$,(${tps.map((t) => `#${t}`).join(',')}));`);
-    const dateArgs = dates ? `'${dates[0]}','${dates[1]}'` : '$,$';
+    const dateArgs = dates ? `${dateArg(dates[0])},${dateArg(dates[1])}` : '$,$';
     lines.push(`#${++id}=IFCWORKTIME('Werktijd',.PREDICTED.,$,#${id - 1},${dateArgs});`);
     wtIds.push(id);
   }
-  lines.push(`#${++id}=IFCWORKCALENDAR('3Ext0000000000000000000',$,'Extern',$,$,(${wtIds.map((w) => `#${w}`).join(',')}),$,.FIRSTSHIFT.);`);
-  return `ISO-10303-21;\nHEADER;\nENDSEC;\nDATA;\n${lines.join('\n')}\n${extra}ENDSEC;\nEND-ISO-10303-21;\n`;
+  const excIds = (opts.exceptions ?? []).map(([name, start, end]) => {
+    lines.push(`#${++id}=IFCWORKTIME('${name}',.PREDICTED.,$,$,'${start}','${end}');`);
+    return id;
+  });
+  const list = (ids: number[]) => (ids.length > 0 ? `(${ids.map((w) => `#${w}`).join(',')})` : '$');
+  const args = ["'3Ext0000000000000000000'", '$', "'Extern'", '$', '$', ...(layout === 9 ? ['$'] : []),
+    list(wtIds), list(excIds), opts.predefinedType ?? '.FIRSTSHIFT.'];
+  lines.push(`#${++id}=IFCWORKCALENDAR(${args.join(',')});`);
+  return `ISO-10303-21;\nHEADER;\nENDSEC;\nDATA;\n${lines.join('\n')}\nENDSEC;\nEND-ISO-10303-21;\n`;
 }
 {
+  // Testvoorwaarde: de twee indelingen hebben echt 9 en 8 attributen.
+  const calArgs = (layout: 8 | 9) => splitTop(/IFCWORKCALENDAR\((.*)\);/.exec(foreignIfc(layout, []))![1]).length;
+  same('§5 testvoorwaarde: IfcWorkCalendar met 9 en met 8 attributen', [calArgs(9), calArgs(8)], [9, 8]);
+}
+for (const layout of [9, 8] as const) {
+  const L = `[${layout} attributen]`;
+  const read = (groups: Parameters<typeof foreignIfc>[1], opts?: Parameters<typeof foreignIfc>[2]) =>
+    readIFC(foreignIfc(layout, groups, opts)).calendar;
   // (a) Eén IFCWORKTIME per tijdvak (ma–vr 08–12 en ma–vr 13–17): de vereniging per dag.
-  const c = readIFC(foreignIfc([[[1, 2, 3, 4, 5], [['08:00', '12:00']]], [[1, 2, 3, 4, 5], [['13:00', '17:00']]]])).calendar;
-  same('§5a één IFCWORKTIME per tijdvak: beide tijdvakken op elke werkdag', shape(c), {
+  const c = read([[[1, 2, 3, 4, 5], [['08:00', '12:00']]], [[1, 2, 3, 4, 5], [['13:00', '17:00']]]]);
+  same(`§5a ${L} één IFCWORKTIME per tijdvak: beide tijdvakken op elke werkdag`, shape(c), {
     workDays: [1, 2, 3, 4, 5], workStartHour: 8, workEndHour: 17, hoursPerDay: 8,
     byWeekday: DAYS.map((d) => (d <= 5 ? [[480, 720], [780, 1020]] : [])),
   });
   // (b) Dag-modus (één blok per dag, geen signaal (a)/(b)/(c)): geen workTime, maar workDays is de
   //     vereniging van alle groepen, en de scalar komt van de eerste werkdag met blokken.
-  const d = readIFC(foreignIfc([[[1, 2, 3, 4], [['07:00', '15:00']]], [[5], [['07:00', '11:00']]]])).calendar;
-  same('§5b dag-modus: werkdagen = vereniging van de groepen', shape(d),
+  const d = read([[[1, 2, 3, 4], [['07:00', '15:00']]], [[5], [['07:00', '11:00']]]]);
+  same(`§5b ${L} dag-modus: werkdagen = vereniging van de groepen`, shape(d),
     { workDays: [1, 2, 3, 4, 5], workStartHour: 7, workEndHour: 15, hoursPerDay: 8, byWeekday: null });
   // (c) Overlap: vrijdag in twee IFCWORKTIME's (07–11 en 08–11:30) wordt één tijdvak 07–11:30.
-  const o = readIFC(foreignIfc([[[1, 2, 3, 4], [['07:00', '12:00'], ['12:30', '16:00']]], [[5], [['07:00', '11:00']]], [[5], [['08:00', '11:30']]]])).calendar;
-  same('§5c overlap op één weekdag: de vereniging van de tijdvakken', o.workTime?.byWeekday[5], [{ start: 420, end: 690 }]);
+  const o = read([[[1, 2, 3, 4], [['07:00', '12:00'], ['12:30', '16:00']]], [[5], [['07:00', '11:00']]], [[5], [['08:00', '11:30']]]]);
+  same(`§5c ${L} overlap op één weekdag: de vereniging van de tijdvakken`, o.workTime?.byWeekday[5], [{ start: 420, end: 690 }]);
   // (d) De scalaire dag is de eerste werkdag met blokken in de MSPDI/.mpp-volgorde (zondag eerst),
   //     onafhankelijk van de volgorde in de SET.
-  const s = readIFC(foreignIfc([[[1, 2, 3, 4, 5], [['08:00', '12:00'], ['13:00', '17:00']]], [[7], [['10:00', '14:00']]]])).calendar;
-  same('§5d scalaire dag = eerste werkdag met blokken (zondag eerst)', [s.workStartHour, s.workEndHour], [10, 14]);
-}
-{
+  const s = read([[[1, 2, 3, 4, 5], [['08:00', '12:00'], ['13:00', '17:00']]], [[7], [['10:00', '14:00']]]]);
+  same(`§5d ${L} scalaire dag = eerste werkdag met blokken (zondag eerst)`, [s.workStartHour, s.workEndHour], [10, 14]);
+
   // Werktijden MET datum doen niet mee: datumgebonden werktijden worden (nog) niet gelezen. Als gewone
   // week zouden ze in elke week gelden.
   const BASIS: [number[], [string, string][]] = [[1, 2, 3, 4, 5], [['08:00', '12:00'], ['13:00', '17:00']]];
-  const basis = shape(readIFC(foreignIfc([BASIS])).calendar);
+  const basis = shape(read([BASIS]));
   // (e) Een basisweek zonder datum en een zomerweek met datum: alleen de basisweek.
-  const zomer = readIFC(foreignIfc([BASIS, [[1, 2, 3, 4, 5], [['07:00', '16:00']], ['2026-04-01', '2026-09-30']]])).calendar;
-  same('§5e zomerweek met datum naast een basisweek: alleen de basisweek telt', shape(zomer), basis);
-  // (f) Alleen een zomer- en een winterweek, beide met datum (07–16 en 08–17): geen werkweek gelezen,
-  //     zoals een kalender zonder werktijden — niet 07–17 met 10 u.
-  const geen = shape(readIFC(foreignIfc([])).calendar);
-  const seizoen = readIFC(foreignIfc([
+  const zomer = read([BASIS, [[1, 2, 3, 4, 5], [['07:00', '16:00']], ['2026-04-01', '2026-09-30']]]);
+  same(`§5e ${L} zomerweek met datum naast een basisweek: alleen de basisweek telt`, shape(zomer), basis);
+  // (f) Alleen een zomer- en een winterweek, beide met datum (07–16 en 08–17): er is geen werktijd zonder
+  //     datum, dus het eerste patroon met datum (de zomerweek), zoals de lezer vóór de indeling per
+  //     weekdag. Niet de vereniging (07–17, 10 u) en niet de standaardweek (07–16, 8 u).
+  const seizoen = read([
     [[1, 2, 3, 4, 5], [['07:00', '16:00']], ['2026-04-01', '2026-09-30']],
     [[1, 2, 3, 4, 5], [['08:00', '17:00']], ['2026-10-01', '2027-03-31']],
-  ])).calendar;
-  same('§5f alleen een zomer- en een winterweek met datum: geen werkweek gelezen (niet 07–17, 10 u)', shape(seizoen), geen);
-  // (g) Een losse werkzaterdag met datum: geen werkzaterdag in elke week.
-  const zaterdag = readIFC(foreignIfc([BASIS, [[6], [['08:00', '12:00']], ['2026-06-13', '2026-06-13']]])).calendar;
-  same('§5g losse werkzaterdag met datum: zaterdag blijft vrij', [shape(zaterdag), zaterdag.workDays], [basis, [1, 2, 3, 4, 5]]);
+  ]);
+  same(`§5f ${L} alleen een zomer- en een winterweek met datum: het eerste patroon (07–16, 9 u)`, shape(seizoen),
+    { workDays: [1, 2, 3, 4, 5], workStartHour: 7, workEndHour: 16, hoursPerDay: 9, byWeekday: null });
+  // (f2) Het voorbeeld uit de review van #340: één week 08–16 met datums 2026-01-01 t/m 2027-12-31. Main
+  //      las 08–16; zonder deze regel kwam de standaardweek (07–16) binnen.
+  const eenWeek = read([[[1, 2, 3, 4, 5], [['08:00', '16:00']], ['2026-01-01', '2027-12-31']]]);
+  same(`§5f2 ${L} alleen één week met datum: die week (08–16)`, shape(eenWeek),
+    shape(read([[[1, 2, 3, 4, 5], [['08:00', '16:00']]]])));
+  same(`§5f2 ${L} testvoorwaarde: 08–16 is niet de standaardweek`, [eenWeek.workStartHour, eenWeek.workEndHour], [8, 16]);
+  // (g) Een losse werkzaterdag met datum: geen werkzaterdag in elke week, en ook geen feestdag (in een
+  //     kalender met 9 attributen las de lezer vóór de schemafix `WorkingTimes` als ExceptionTimes).
+  const zaterdag = read([BASIS, [[6], [['08:00', '12:00']], ['2026-06-13', '2026-06-13']]]);
+  same(`§5g ${L} losse werkzaterdag met datum: zaterdag blijft vrij`, [shape(zaterdag), zaterdag.workDays], [basis, [1, 2, 3, 4, 5]]);
+  same(`§5g ${L} losse werkzaterdag met datum: geen feestdag`, zaterdag.holidays, []);
+  // (h) Alleen een StartDate, of alleen een FinishDate, telt ook als datum (beide slots zijn OPTIONAL).
+  const alleenStart = read([BASIS, [[6], [['08:00', '12:00']], ['2026-06-13', null]]]);
+  same(`§5h ${L} werkzaterdag met alleen een StartDate: zaterdag blijft vrij`, [shape(alleenStart), alleenStart.workDays], [basis, [1, 2, 3, 4, 5]]);
+  const alleenEind = read([BASIS, [[6], [['08:00', '12:00']], [null, '2026-06-13']]]);
+  same(`§5h ${L} werkzaterdag met alleen een FinishDate: zaterdag blijft vrij`, [shape(alleenEind), alleenEind.workDays], [basis, [1, 2, 3, 4, 5]]);
+  // (i) ExceptionTimes en PredefinedType staan in elke indeling op hun eigen plek.
+  const metUitzondering = read([BASIS], { exceptions: [['Kerst', '2026-12-25', '2026-12-26']], predefinedType: '.SECONDSHIFT.' });
+  same(`§5i ${L} feestdag uit ExceptionTimes en ploeg uit PredefinedType`,
+    [metUitzondering.holidays, metUitzondering.shift, shape(metUitzondering)],
+    [[{ name: 'Kerst', startDate: '2026-12-25', endDate: '2026-12-26' }], 'SECOND', basis]);
 }
 
 // ════════════════════════════════════════════════════════════════════════════════════════════════

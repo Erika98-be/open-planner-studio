@@ -2641,23 +2641,41 @@ function unionPeriods(list: ReadonlyArray<{ start: number; end: number }>): { st
   return out;
 }
 
+/**
+ * WorkingTimes, ExceptionTimes en PredefinedType van een IfcWorkCalendar. Twee indelingen, herkend aan
+ * het AANTAL attributen:
+ *  - 9 = IFC 4 en IFC 4.3 (de norm, met `Identification` op index 5): op index 6/7/8. Zo schrijft OPS
+ *    sinds 2026-10, en zo schrijven bSI, xbim en IfcOpenShell.
+ *  - 8 = OPS tot 2026-10, zonder `Identification`: op index 5/6/7. Oude OPS-bestanden lezen zo exact
+ *    zoals vóór de fix.
+ * Vroeger las de lezer altijd 5/6/7. Een kalender volgens de norm kwam dan zonder werktijden binnen, en
+ * zijn `WorkingTimes` werd als `ExceptionTimes` gelezen: een werktijd met een datum werd een feestdag.
+ * Een andere telling geeft lege slots (dus de standaardwerkweek, geen feestdagen).
+ */
+function workCalendarSlots(cal: StepEntity): { workingTimes: string; exceptionTimes: string; predefinedType: string } {
+  const a = cal.args;
+  if (a.length === 9) return { workingTimes: a[6] ?? '', exceptionTimes: a[7] ?? '', predefinedType: a[8] ?? '' };
+  if (a.length === 8) return { workingTimes: a[5] ?? '', exceptionTimes: a[6] ?? '', predefinedType: a[7] ?? '' };
+  return { workingTimes: '', exceptionTimes: '', predefinedType: '' };
+}
+
 /** Bouwt een `WorkCalendar` uit een `IFCWORKCALENDAR`-entiteit: naam/omschrijving/feestdagen,
- *  plus werkdagen/uren teruggelezen uit de `WorkingTimes`-keten (args[5] → IFCWORKTIME's →
+ *  plus werkdagen/uren teruggelezen uit de `WorkingTimes`-keten (IFCWORKTIME's →
  *  RecurrencePattern-ref → IFCRECURRENCEPATTERN WeekdayComponent (args[2]) + TimePeriods (args[7]) →
  *  IFCTIMEPERIOD start/eind-uur), spiegel van `ifcWriter.ts` `writeCalendar` (één IFCWORKTIME per
  *  groep weekdagen met dezelfde blokken). Golden rule:
  *  ontbreekt de keten (bestand van een ander tool, of geen worktime), dan blijven de
  *  `createDefaultCalendar()`-defaults (ma-vr 07-16) staan. Tot slot de
  *  `OPS_Calendar`-pset → `generation` (legacy/onvolledig ⇒ `undefined`, nooit gegokt).
- *  Let op: de argumentposities volgen de writer, die `IfcWorkCalendar` zonder `Identification` schrijft
- *  (8 i.p.v. 9 attributen). In een bestand dat het IFC 4.3-schema volgt staat `WorkingTimes` op args[6];
- *  zo'n kalender komt hier nu zonder werktijden binnen (aparte, nog open fout). */
+ *  De plek van `WorkingTimes`, `ExceptionTimes` en `PredefinedType` hangt af van de indeling
+ *  (`workCalendarSlots`: 9 attributen volgens de norm, 8 in oude OPS-bestanden). */
 function buildCalendarFromEntity(
   cal: StepEntity,
   entityMap: Map<string, StepEntity>,
   entities: StepEntity[],
 ): WorkCalendar {
   const calendar = createDefaultCalendar();
+  const slots = workCalendarSlots(cal);
   calendar.name = ifcSlotText(cal.args[2]) || calendar.name;
   // `ifcSlotText` i.p.v. kale `stripQuotes` — een lege omschrijving schrijft de writer als
   // STEP-null (`$`), en `stripQuotes('$')` geeft het letterlijke tweetekentje `'$'` terug (het start/
@@ -2671,9 +2689,10 @@ function buildCalendarFromEntity(
   Object.assign(calendar, extractCalendarSimpleBreak(cal.id, entities, entityMap));
   const hourMeta = extractCalendarHourMeta(cal.id, entities, entityMap);
 
-  // Werkweek + uren. WorkingTimes (args[5]) is een SET van IFCWORKTIME's; de holiday-IFCWORKTIME's
-  // zitten in ExceptionTimes (args[6]). Elke IFCWORKTIME met een IFCRECURRENCEPATTERN (args[3]) draagt
-  // zijn weekdagen (WeekdayComponent, args[2]) en zijn tijdvakken (TimePeriods, args[7]).
+  // Werkweek + uren. WorkingTimes (`slots.workingTimes`) is een SET van IFCWORKTIME's; de
+  // holiday-IFCWORKTIME's zitten in ExceptionTimes (`slots.exceptionTimes`). Elke IFCWORKTIME met een
+  // IFCRECURRENCEPATTERN (args[3]) draagt zijn weekdagen (WeekdayComponent, args[2]) en zijn tijdvakken
+  // (TimePeriods, args[7]).
   //  - Een IFCWORKTIME met een StartDate of FinishDate (args[4]/args[5]) doet NIET mee. Datumgebonden
   //    werktijden (een zomer- en een winterweek, een losse werkzaterdag) worden (nog) niet gelezen; als
   //    gewone week zouden ze elke week gelden (07–16 en 08–17 werd 07–17, een losse zaterdag elke
@@ -2682,6 +2701,9 @@ function buildCalendarFromEntity(
   //    geen markering met een STEP-id: een ander pakket mag de id's hernummeren. OPS schreef in
   //    `WorkingTimes` vóór de terugvalweek nooit een datum (feestdagen en werkende uitzonderingen staan in
   //    `ExceptionTimes`), dus oude OPS-bestanden lezen ongewijzigd.
+  //  - Blijft er zo geen patroon over (ALLE werktijden hebben een datum, bijv. één week 08–16 van
+  //    2026-01-01 t/m 2027-12-31), dan het eerste patroon met een datum, zoals de lezer vóór de indeling
+  //    per weekdag deed. Anders kreeg zo'n kalender de standaardweek (07–16).
   //  - Twee of meer zulke patronen MET weekdagen: werkblokken die per weekdag verschillen (zo schrijft
   //    `weekBandGroups` een korte vrijdag, en zo modelleert IFC 4.3 het zelf, `IfcWorkCalendar` figuur 1).
   //    Elke dag krijgt de tijdvakken van zijn eigen patroon; `workDays` is de vereniging. Staat een
@@ -2690,18 +2712,19 @@ function buildCalendarFromEntity(
   //    goed. Patronen zonder weekdagen doen dan niet mee.
   //  - Anders het eerste patroon, op elke weekdag dezelfde tijdvakken: ongewijzigd t.o.v. vroeger, ook
   //    voor bestanden van oudere OPS-versies (één IFCWORKTIME) en voor één DAILY-patroon zonder weekdagen.
-  const workTimeRefs = parseRefs(cal.args[5] || '');
+  const workTimeRefs = parseRefs(slots.workingTimes);
   const recurrences: StepEntity[] = [];
+  const datedRecurrences: StepEntity[] = []; // datumgebonden (ook de terugvalweek): zie hierboven
   for (const wtRef of workTimeRefs) {
     const wt = entityMap.get(wtRef);
     if (!wt || wt.type !== 'IFCWORKTIME') continue;
-    if (workTimeDateRange(wt)) continue; // datumgebonden (ook de terugvalweek): zie hierboven
     const recurrenceRef = parseRef(wt.args[3] || '');
     if (!recurrenceRef) continue;
     const rec = entityMap.get(recurrenceRef);
     if (!rec || rec.type !== 'IFCRECURRENCEPATTERN') continue;
-    recurrences.push(rec);
+    (workTimeDateRange(wt) ? datedRecurrences : recurrences).push(rec);
   }
+  if (recurrences.length === 0 && datedRecurrences.length > 0) recurrences.push(datedRecurrences[0]);
   const weekRecurrences = recurrences.filter(rec => parseIntList(rec.args[2] || '').length > 0);
   // ALLE TimePeriods van één patroon (`TimePeriods` is native een lijst — pauze/split-shift).
   const readPeriods = (timePeriodRefs: string[]): { start: number; end: number }[] => {
@@ -2816,14 +2839,14 @@ function buildCalendarFromEntity(
   // Rauwe banden registreren (per weekdag, zie hierboven), voor de uur-modus-post-pass.
   registerCalendarBands(calendar, { canonical: bands, deviates });
 
-  // Ploeg-classificatie uit `PredefinedType` (arg 7) → `shift`. `.FIRSTSHIFT.`/afwezig ⇒
+  // Ploeg-classificatie uit `PredefinedType` (`slots.predefinedType`) → `shift`. `.FIRSTSHIFT.`/afwezig ⇒
   // undefined (de schrijver emitteert `.FIRSTSHIFT.` voor undefined).
-  const predef = (cal.args[7] || '').toUpperCase();
+  const predef = slots.predefinedType.toUpperCase();
   if (predef.includes('SECONDSHIFT')) calendar.shift = 'SECOND';
   else if (predef.includes('THIRDSHIFT')) calendar.shift = 'THIRD';
   else if (predef.includes('USERDEFINED')) calendar.shift = 'USERDEFINED';
 
-  // ExceptionTimes (args[6]) draagt zowel feestdagen als werkende uitzonderingen. Het onderscheid is de
+  // ExceptionTimes (`slots.exceptionTimes`) draagt zowel feestdagen als werkende uitzonderingen. Het onderscheid is de
   // OPS-pset-markering (`extractWorkingExceptionStepIds`), NIET de aanwezigheid van een gevulde
   // RecurrencePattern-ref (args[3]): een spec-conforme externe tool kan een RECURRENTE FEESTDAG
   // ("elke 25 december") met precies zo'n gevulde ref schrijven, en die zou dan zonder deze
@@ -2832,7 +2855,7 @@ function buildCalendarFromEntity(
   // is een feestdag, óók met een gevulde recurrence-ref.
   const calendarExceptionMetadata = extractCalendarExceptionMetadata(cal.id, entities, entityMap);
   const workingExceptionIds = calendarExceptionMetadata.workingExceptionIds;
-  const exceptionRefs = parseRefs(cal.args[6] || '');
+  const exceptionRefs = parseRefs(slots.exceptionTimes);
   const holidays: Holiday[] = [];
   const workingExceptions: WorkingException[] = [];
   for (const ref of exceptionRefs) {

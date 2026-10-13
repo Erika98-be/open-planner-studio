@@ -972,11 +972,13 @@ const ISO_DAY_LABEL: Record<number, string> = { 1: 'Mon', 2: 'Tue', 3: 'Wed', 4:
  *    StartDate of FinishDate doet niet mee in de weekopbouw (`buildCalendarFromEntity`). Er is bewust
  *    geen markering met een STEP-id: een ander pakket mag de id's hernummeren, en dan wijst zo'n
  *    markering naar de verkeerde regel.
- *  - Uitgebrachte OPS-versies (t/m v2026.9.0) lezen de datums van `WorkingTimes` niet.
- *  - Op papier past een lezer die IFC 4.3 volgt deze week alleen op 1 januari 1900 toe (`IfcWorkTime`:
- *    de datums "restrict never-ending recurrence patterns"). In de praktijk leest zo'n lezer nu
- *    helemaal geen werktijden van OPS: OPS schrijft `IfcWorkCalendar` zonder `Identification` (8 i.p.v.
- *    9 attributen), een aparte, nog open fout.
+ *  - Uitgebrachte OPS-versies (t/m v2026.9.0) lezen de datums van `WorkingTimes` niet. Maar sinds OPS
+ *    `IfcWorkCalendar` met 9 attributen schrijft (IFC 4.3, met `Identification`), lezen zij
+ *    `WorkingTimes` helemaal niet meer: zij nemen het lege `Identification`-slot als WorkingTimes en
+ *    krijgen hun standaardweek. Deze week helpt hen dus niet meer. Hij helpt nog wel een lezer die alleen
+ *    de eerste `IfcWorkTime` neemt en de datums negeert.
+ *  - Een lezer die IFC 4.3 volgt, past deze week alleen op 1 januari 1900 toe (`IfcWorkTime`: de datums
+ *    "restrict never-ending recurrence patterns"); voor een planning na 1900 doet hij niets.
  */
 const LEGACY_WEEK_DATE = '1900-01-01';
 
@@ -1051,13 +1053,14 @@ function writeCalendar(
     const written = groups.filter((g) => g.bands.length > 0);
     perDayWeek = written.length > 1;
     if (perDayWeek) {
-      // TERUGVALWEEK voor oudere OPS-versies, VOORAAN in `WorkingTimes`: alle werkdagen met de blokken
-      // van de eerste werkdag — precies de week die de writer vóór deze wijziging schreef, dus precies
-      // wat zij nu ook lezen. Uitgebrachte versies (t/m v2026.9.0) lezen alleen de EERSTE `IFCWORKTIME`
-      // en negeren zijn datums; zonder deze week zagen zij alleen de dagen van de eerste groep als
-      // werkdag (gemeten: een korte vrijdag werd een VRIJE dag). Hij geldt alleen op
-      // `LEGACY_WEEK_DATE`; deze lezer herkent hem aan die datum en slaat hem over (zie
-      // `LEGACY_WEEK_DATE`). (Heeft de eerste werkdag geen blokken — vroeger een lege
+      // TERUGVALWEEK voor oudere lezers, VOORAAN in `WorkingTimes`: alle werkdagen met de blokken
+      // van de eerste werkdag — precies de week die de writer vóór deze wijziging schreef. Bedoeld voor
+      // een lezer die alleen de EERSTE `IFCWORKTIME` neemt en zijn datums negeert, zoals uitgebrachte
+      // OPS-versies (t/m v2026.9.0) bij een kalender met 8 attributen deden; zonder deze week zag zo'n
+      // lezer alleen de dagen van de eerste groep als werkdag (gemeten: een korte vrijdag werd een VRIJE
+      // dag). Een kalender met 9 attributen (IFC 4.3) lezen die versies niet meer goed; zie
+      // `LEGACY_WEEK_DATE`. Hij geldt alleen op `LEGACY_WEEK_DATE`; deze lezer herkent hem aan die datum
+      // en slaat hem over. (Heeft de eerste werkdag geen blokken — vroeger een lege
       // `TimePeriods`-lijst — dan de eerste groep met blokken.)
       const writtenDays = new Set(written.flatMap((g) => g.days));
       workTimeIds.push(writeWeek(
@@ -1093,7 +1096,11 @@ function writeCalendar(
       timePeriodRefs = `#${timePeriodId}`;
       firstPeriod = [startTime, endTime];
     }
-    const recurrenceId = addLine(ctx, '_recurrence', `IFCRECURRENCEPATTERN(.WEEKLY.,$,(${dayNums}),$,$,$,$,(${timePeriodRefs}))`);
+    // WeekdayComponent en TimePeriods zijn OPTIONAL SET/LIST [1:?]: een lege lijst `()` is ongeldig,
+    // dus leeg ⇒ `$` (een kalender zonder werkdagen, of een uurkalender zonder blokken). De lezer leest
+    // `$` en `()` gelijk (geen dagen, geen tijdvakken).
+    const recurrenceId = addLine(ctx, '_recurrence',
+      `IFCRECURRENCEPATTERN(.WEEKLY.,$,${dayNums ? `(${dayNums})` : '$'},$,$,$,$,${timePeriodRefs ? `(${timePeriodRefs})` : '$'})`);
     // Engelstalig label: dit belandt in ELK opgeslagen IFC-bestand, ook bij een gebruiker die
     // de app in het Duits of Japans draait — en IFC is een Engelstalige standaard, dus een Nederlands
     // label is hier vreemde eend. Veilig te wijzigen: de lezer gebruikt van de `IFCWORKTIME`'s in
@@ -1140,8 +1147,15 @@ function writeCalendar(
   const exceptStr = allExceptionRefs.length > 0 ? `(${allExceptionRefs.join(',')})` : '$';
   // ObjectType (arg 4): alleen een label bij USERDEFINED-ploeg; anders `$`.
   const objectType = cal.shift === 'USERDEFINED' ? ifcStr('USERDEFINED') : '$';
+  // Negen attributen volgens IFC 4.3: GlobalId, OwnerHistory, Name, Description, ObjectType,
+  // Identification (`$`, OPS heeft geen kalendercode), WorkingTimes, ExceptionTimes, PredefinedType.
+  // Tot 2026-10 ontbrak `Identification` (8 attributen); de lezer herkent beide indelingen aan het aantal
+  // (`workCalendarSlots` in `ifcReader.ts`). Een OPS-versie van vóór deze fix leest een kalender met 9
+  // attributen niet goed: zij leest `Identification` als WorkingTimes, `WorkingTimes` als ExceptionTimes
+  // en `ExceptionTimes` als PredefinedType. Zij krijgt dan haar standaardwerkdagen, geen feestdagen, geen
+  // werkende uitzonderingen en geen ploeg (gemeten, zie docs/ifc-round-trip.md).
   const calStepId = addLine(ctx, key,
-    `IFCWORKCALENDAR(${ifcStr(objectGuid(ctx, 'cal', cal.id))},#${ownerHistId},${ifcStr(cal.name)},${ifcStr(cal.description)},${objectType},(${workTimeIds.map((i) => `#${i}`).join(',')}),${exceptStr},${shiftToPredefinedType(cal.shift)})`);
+    `IFCWORKCALENDAR(${ifcStr(objectGuid(ctx, 'cal', cal.id))},#${ownerHistId},${ifcStr(cal.name)},${ifcStr(cal.description)},${objectType},$,(${workTimeIds.map((i) => `#${i}`).join(',')}),${exceptStr},${shiftToPredefinedType(cal.shift)})`);
   return {
     calStepId,
     workingExceptionStepIds,
