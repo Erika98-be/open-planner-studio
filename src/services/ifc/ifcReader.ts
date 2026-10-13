@@ -47,7 +47,7 @@ import { resolveCalendar } from '@/engine/scheduler/resolveCalendar';
 import { seedScalarBands } from '@/utils/effectiveWorkTime';
 import { hourRemainingDays } from '@/engine/taskMutationRules';
 import {
-  canonicalizeBands, clockToMinutes, deriveHoursPerDay, firstBlockedDay, getCalendarBands, hasNonAnchorTime,
+  canonicalizeBands, clockToMinutes, firstBlockedDay, getCalendarBands, hasNonAnchorTime,
   isoDurationToMinutes, isSubDayMinutes, minutesToClock, promoteHourCalendar, promoteHourCalendars,
   registerCalendarBands, scalarHourFromClock, workDayFromBlocks,
 } from '@/services/subdayIo';
@@ -2435,34 +2435,6 @@ function extractCalendarSimpleBreak(
   return result;
 }
 
-/**
- * De STEP-ids van de terugvalweek(en) in `WorkingTimes` (`LegacyWorkTimeIds` in `OPS_Calendar`, spiegel
- * van `writeCalendarGenerationMeta`). Die week schrijft OPS alleen voor oudere OPS-versies, vooraan, bij
- * werkblokken die per weekdag verschillen; deze lezer slaat hem over. Geen/corrupte property ⇒ lege set:
- * dan telt een terugvalweek als gewone week mee. Elke dag krijgt dan de vereniging (`unionPeriods`) van
- * de terugvalweek (de blokken van de eerste werkdag) en zijn eigen groep — een korte vrijdag wordt weer
- * een volle, maar geen werkdag gaat verloren.
- */
-function extractCalendarLegacyWorkTimeIds(
-  calStepId: string,
-  entities: StepEntity[],
-  entityMap: Map<string, StepEntity>,
-): Set<string> {
-  const ids = new Set<string>();
-  for (const props of opsCalendarPsetProps(calStepId, entities, entityMap)) {
-    for (const prop of props) {
-      if (stripQuotes(prop.args[0] || '') !== 'LegacyWorkTimeIds') continue;
-      const value = parseTypedValue(prop.args[2] || '');
-      if (typeof value !== 'string' || !value) continue;
-      try {
-        const parsed = JSON.parse(value);
-        if (Array.isArray(parsed)) for (const id of parsed) if (typeof id === 'string') ids.add(id);
-      } catch { /* corrupte JSON: negeren */ }
-    }
-  }
-  return ids;
-}
-
 /** OPS-eigen aanvulling op IFC's ambigue standaardwerkweek (`OPS_Calendar`, spiegel van
  * `writeCalendarGenerationMeta`):
  *  - `IsHourCalendar = .T.` bewaart dat een kalender met precies één gewone band toch uur-modus was;
@@ -2618,7 +2590,8 @@ function extractCalendarExceptionMetadata(
   return {};
 }
 
-/** Vereniging van de tijdvakken die twee of meer `IFCWORKTIME`'s aan dezelfde weekdag geven. IFC 4.3
+/** Vereniging van de tijdvakken die twee of meer `IFCWORKTIME`'s ZONDER datum aan dezelfde weekdag geven
+ *  (werktijden met een datum doen niet mee, zie `buildCalendarFromEntity`). IFC 4.3
  *  legt overlap tussen werktijden niet vast en OPS schrijft hem nooit; een ander pakket kan wel één
  *  `IFCWORKTIME` per tijdvak schrijven (ma–vr 08–12 en ma–vr 13–17). Canoniek (`end ≤ start` ⇒ wrap,
  *  `+1440`), op begin gesorteerd; overlappende of dubbele tijdvakken worden één vak, aansluitende
@@ -2643,7 +2616,10 @@ function unionPeriods(list: ReadonlyArray<{ start: number; end: number }>): { st
  *  groep weekdagen met dezelfde blokken). Golden rule:
  *  ontbreekt de keten (bestand van een ander tool, of geen worktime), dan blijven de
  *  `createDefaultCalendar()`-defaults (ma-vr 07-16) staan. Tot slot de
- *  `OPS_Calendar`-pset → `generation` (legacy/onvolledig ⇒ `undefined`, nooit gegokt). */
+ *  `OPS_Calendar`-pset → `generation` (legacy/onvolledig ⇒ `undefined`, nooit gegokt).
+ *  Let op: de argumentposities volgen de writer, die `IfcWorkCalendar` zonder `Identification` schrijft
+ *  (8 i.p.v. 9 attributen). In een bestand dat het IFC 4.3-schema volgt staat `WorkingTimes` op args[6];
+ *  zo'n kalender komt hier nu zonder werktijden binnen (aparte, nog open fout). */
 function buildCalendarFromEntity(
   cal: StepEntity,
   entityMap: Map<string, StepEntity>,
@@ -2666,7 +2642,14 @@ function buildCalendarFromEntity(
   // Werkweek + uren. WorkingTimes (args[5]) is een SET van IFCWORKTIME's; de holiday-IFCWORKTIME's
   // zitten in ExceptionTimes (args[6]). Elke IFCWORKTIME met een IFCRECURRENCEPATTERN (args[3]) draagt
   // zijn weekdagen (WeekdayComponent, args[2]) en zijn tijdvakken (TimePeriods, args[7]).
-  //  - De terugvalweek voor oudere OPS-versies (`LegacyWorkTimeIds`) doet niet mee.
+  //  - Een IFCWORKTIME met een StartDate of FinishDate (args[4]/args[5]) doet NIET mee. Datumgebonden
+  //    werktijden (een zomer- en een winterweek, een losse werkzaterdag) worden (nog) niet gelezen; als
+  //    gewone week zouden ze elke week gelden (07–16 en 08–17 werd 07–17, een losse zaterdag elke
+  //    zaterdag). Hieronder valt ook de terugvalweek die OPS vooraan schrijft voor oudere OPS-versies
+  //    (StartDate = FinishDate = 1900-01-01, `LEGACY_WEEK_DATE` in `ifcWriter.ts`). Bewust de datum en
+  //    geen markering met een STEP-id: een ander pakket mag de id's hernummeren. OPS schreef in
+  //    `WorkingTimes` vóór de terugvalweek nooit een datum (feestdagen en werkende uitzonderingen staan in
+  //    `ExceptionTimes`), dus oude OPS-bestanden lezen ongewijzigd.
   //  - Twee of meer zulke patronen MET weekdagen: werkblokken die per weekdag verschillen (zo schrijft
   //    `weekBandGroups` een korte vrijdag, en zo modelleert IFC 4.3 het zelf, `IfcWorkCalendar` figuur 1).
   //    Elke dag krijgt de tijdvakken van zijn eigen patroon; `workDays` is de vereniging. Staat een
@@ -2676,12 +2659,11 @@ function buildCalendarFromEntity(
   //  - Anders het eerste patroon, op elke weekdag dezelfde tijdvakken: ongewijzigd t.o.v. vroeger, ook
   //    voor bestanden van oudere OPS-versies (één IFCWORKTIME) en voor één DAILY-patroon zonder weekdagen.
   const workTimeRefs = parseRefs(cal.args[5] || '');
-  const legacyWorkTimeIds = extractCalendarLegacyWorkTimeIds(cal.id, entities, entityMap);
   const recurrences: StepEntity[] = [];
   for (const wtRef of workTimeRefs) {
-    if (legacyWorkTimeIds.has(wtRef)) continue; // terugvalweek voor oudere OPS-versies
     const wt = entityMap.get(wtRef);
     if (!wt || wt.type !== 'IFCWORKTIME') continue;
+    if (workTimeDateRange(wt)) continue; // datumgebonden (ook de terugvalweek): zie hierboven
     const recurrenceRef = parseRef(wt.args[3] || '');
     if (!recurrenceRef) continue;
     const rec = entityMap.get(recurrenceRef);
@@ -2770,17 +2752,16 @@ function buildCalendarFromEntity(
   // Meer periodes op de scalaire dag (een uurkalender, of de gematerialiseerde blokken van een
   // scalaire kalender): begin van de eerste en einde van de laatste periode op begintijd, met de
   // middernachtregel, en NETTO uren als tussenwaarde — één definitie met de MSPDI- en `.mpp`-lezer
-  // (`workDayFromBlocks`; bij blokken die per weekdag verschillen, net als daar, de modale dagsom over
-  // de week, `deriveHoursPerDay`). Vroeger de eerste periode: MS Projects 08:00–12:00 + 13:00–17:00 werd
+  // (`workDayFromBlocks`). Meer periodes op de scalaire dag ⇒ discriminator (a) ⇒ de post-pass promoveert
+  // de kalender en zet `hoursPerDay` op de modale dagsom (`promoteHourCalendar`); bij blokken die per
+  // weekdag verschillen is dat dus ook zo. Vroeger de eerste periode: MS Projects 08:00–12:00 + 13:00–17:00 werd
   // 8–12, een drieploegenkalender 6–14. Een OPS-bestand dat die oude scalar bewaarde, draagt geen
   // `WorkEndHour` (de schrijver bewaart hem alleen als hij afwijkt van de eerste periode) en herstelt dus
   // hier vanzelf. Netto alleen als de kalender niet als SCALAIR gemarkeerd is (`IsHourCalendar = .F.`):
   // daar zijn de periodes de afgeleide blokken van de scalar van de gebruiker, en geldt de oude afspraak
   // met de schrijver (`HoursPerDay` ontbreekt ⇔ hpd = einde − begin, `needsHoursPerDayOverride`).
   const blocked = periods.length > 1 ? workDayFromBlocks(periods) : undefined;
-  const netHours = blocked && hourMeta.hourMode !== false
-    ? (perDayWeek ? deriveHoursPerDay(bands, blocked.netHours) : blocked.netHours)
-    : undefined;
+  const netHours = blocked && hourMeta.hourMode !== false ? blocked.netHours : undefined;
   if (blocked) {
     calendar.workStartHour = blocked.startHour;
     calendar.workEndHour = blocked.endHour;
@@ -2792,8 +2773,8 @@ function buildCalendarFromEntity(
   if (hourMeta.workStartHour !== undefined || hourMeta.workEndHour !== undefined) {
     if (hourMeta.workStartHour !== undefined) calendar.workStartHour = hourMeta.workStartHour;
     if (hourMeta.workEndHour !== undefined) calendar.workEndHour = hourMeta.workEndHour;
-    // Bij meer periodes blijft de tussenwaarde netto (de som van de blokken, of bij blokken per
-    // weekdag de modale dagsom); een expliciete `HoursPerDay` wint hieronder nog steeds.
+    // Bij meer periodes blijft de tussenwaarde netto (de som van de blokken); een expliciete
+    // `HoursPerDay` wint hieronder nog steeds.
     if (netHours !== undefined) calendar.hoursPerDay = netHours;
     else if (calendar.workEndHour > calendar.workStartHour) {
       calendar.hoursPerDay = calendar.workEndHour - calendar.workStartHour;
