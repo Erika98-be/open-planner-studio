@@ -999,15 +999,16 @@ function applyCalendarBody(
   //     eroverheen (eigen wint per datum) — zoals MS Project. Altijd via `mergeInherited` onder het
   //     gedeelde budget, zoals `.mpp`: ook een "lege" afgeleide kalender telt mee in
   //     `MAX_TOTAL_HOLIDAY_SLOTS` (anders: N afgeleide kalenders × een grote basis zonder grens).
-  //  2. Afgeleide kalender waarvan de basis niet bestaat, in een cyclus zit of te diep ligt: alleen de
-  //     eigen uitzonderingen (dus vaak leeg). Geen NL-terugval: zoals `.mpp` (besluit orkestrator
-  //     2026-10-13, review #335) — "kaal" betekent "geen basis".
+  //  2. Een basis-UID die niet bestaat (`0` in Project 2013+, `-65533`, onbekend) maakt de kalender
+  //     een wortel: zijn eigen week en uitzonderingen (regels 3–4). Zit hij in een cyclus of ligt hij te
+  //     diep: idem, zonder overerving. In geen van beide een NL-terugval: zoals `.mpp` (besluit
+  //     orkestrator 2026-10-13, review #335) — "kaal" betekent "geen basis genoemd".
   //  3. Eigen uitzonderingen: precies die. De beslissing hangt af van het AANTAL ruwe records, niet
   //     van de resolved lengte (die is 0 bij een kalender met alleen werkende uitzonderingen).
   //  4. Eigen werkweek zonder uitzonderingen: een volledige MS Project-kalender ⇒ GEEN feestdagen.
   //     Zelfde regel als de P6 XML-lezer; `.mpp` begint altijd leeg.
-  //  5. Kale kalender (geen basis, geen werkweek, geen uitzonderingen): de NL-standaard van
-  //     `createDefaultCalendar()` blijft staan.
+  //  5. Kale kalender (`<BaseCalendarUID>` -1 of ontbrekend, geen werkweek, geen uitzonderingen): de
+  //     NL-standaard van `createDefaultCalendar()` blijft staan.
   const rawExceptions = readRawMspdiExceptions(calEl);
   let parsed: { holidays: WorkCalendar['holidays']; workingExceptions: NonNullable<WorkCalendar['workingExceptions']> } | null = null;
   if (inherit.base) {
@@ -1075,9 +1076,9 @@ function effectiveWeek(own: WeekEntry[], baseWeek: WeekEntry[] | null): WeekEntr
  *
  *  Een afgeleide kalender (`<BaseCalendarUID>` ≠ -1) erft in MS Project de werkweek en de
  *  uitzonderingen van zijn basis. Of hij erft, hangt alleen van de structuur af, niet van de
- *  documentvolgorde: de keten naar een kalender zonder basis wordt eerst gemeten (`chainOk`). Een
- *  keten die in een cyclus eindigt (ook een zelfverwijzing), naar een onbekende UID wijst of langer is
- *  dan `MAX_BASE_CHAIN_DEPTH`, erft niet. */
+ *  documentvolgorde: de keten naar een wortel wordt eerst gemeten (`chainOk`). Een wortel is een
+ *  kalender waarvan de basis-UID niet in het bestand staat (`-1`, `0`, …). Alleen een keten die in een
+ *  cyclus eindigt (ook een zelfverwijzing) of langer is dan `MAX_BASE_CHAIN_DEPTH`, erft niet. */
 function readCalendars(root: Element, budget: HolidayBudget): {
   calendar: WorkCalendar; resourceCalendars: WorkCalendar[]; calUidToId: Map<number, string>;
 } {
@@ -1108,9 +1109,13 @@ function readCalendars(root: Element, budget: HolidayBudget): {
   const projectCalUid = allEls.has(declared) ? declared : first.value;
 
   const baseUidOf = (uid: number): number => getElementInt(allEls.get(uid)!, 'BaseCalendarUID', -1);
-  /** Bereikt de keten vanaf `uid` binnen `MAX_BASE_CHAIN_DEPTH` stappen een kalender zonder basis
-   *  (`-1`)? Nee bij een onbekende basis-UID of een te lange keten. Een cyclus (ook een zelfverwijzing)
-   *  komt nooit bij `-1` en loopt dus vanzelf tegen de stapgrens: dat is de cyclusbewaking. */
+  /** Bereikt de keten vanaf `uid` binnen `MAX_BASE_CHAIN_DEPTH` stappen een WORTEL: een kalender
+   *  waarvan de `<BaseCalendarUID>` niet naar een `<Calendar>` in het bestand wijst? Dat is `-1`
+   *  (Project 2007/2010), `0` (Project 2013 en later: UID 0 bestaat niet), `-65533` of elk ander
+   *  onbekend nummer — zoals MPXJ (`map.get` geeft `null`: geen ouder) en `.mpp`
+   *  (`baseCalendarUniqueId <= 0` = basiskalender). Nee alleen bij een cyclus (ook een
+   *  zelfverwijzing) of een te lange keten: een cyclus bereikt nooit een wortel en loopt dus tegen de
+   *  stapgrens — dat is de cyclusbewaking. */
   const chainMemo = new Map<number, boolean>();
   const chainOk = (uid: number): boolean => {
     const known = chainMemo.get(uid);
@@ -1119,8 +1124,7 @@ function readCalendars(root: Element, budget: HolidayBudget): {
     let ok = false;
     for (let steps = 0; steps <= MAX_BASE_CHAIN_DEPTH; steps++) {
       const b = baseUidOf(cur);
-      if (b === -1) { ok = true; break; }
-      if (!allEls.has(b)) break;
+      if (!allEls.has(b)) { ok = true; break; }
       cur = b;
     }
     chainMemo.set(uid, ok);
@@ -1135,8 +1139,10 @@ function readCalendars(root: Element, budget: HolidayBudget): {
     if (done) return done;
     const calEl = allEls.get(uid)!;
     const baseUid = baseUidOf(uid);
+    // `declaredBase`: het bestand noemt een basis (alles behalve -1/ontbrekend). Alleen voor de
+    // NL-terugval (regel 5 in `applyCalendarBody`): een kalender met een genoemde basis is nooit "kaal".
     const declaredBase = baseUid !== -1;
-    const base = declaredBase && chainOk(uid) ? resolve(baseUid) : null;
+    const base = allEls.has(baseUid) && chainOk(uid) ? resolve(baseUid) : null;
     const week = effectiveWeek(readOwnWeek(calEl), base ? weekOf.get(baseUid) ?? null : null);
     const cal = createDefaultCalendar();
     if (uid === projectCalUid) {
