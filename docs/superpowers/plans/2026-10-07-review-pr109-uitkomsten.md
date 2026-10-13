@@ -577,3 +577,7 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
 - Vervolg-PR **#345** (`claude/ifc-poort-enums`, 84ee07969, CI groen): poort per schema (enum-literals IFC4/IFC4X3/
   ADD2), negatieve duur, klem-filter, één rijke fixture, één constante in `ifcWorkControlSlots.ts`; N2/N4/N5 en drie
   eigen mutanten rood; voorbeelden byte-gelijk. Review gestart (reviewer, Opus 5.5).
+- **#345 review: ja** (reviewer, Opus 5.5). Enum-tabel byte-gelijk na opnieuw genereren, 0 verschillen per enum met
+  IfcOpenShell, round-trip-fixture 0 fouten in IFC4/IFC4X3/ADD2, alle mutanten rood. Orkestrator: commentaar
+  IFCURIREFERENCE rechtgezet (af72ac272); CI loopt, daarna merge. Niet gedaan (bewust): `check-ifc-arity`
+  inkorten (dubbel met de poort) en de dubbele toets op negatieve duur.
