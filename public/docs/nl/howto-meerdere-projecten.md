@@ -24,6 +24,8 @@ Het project verschijnt in een eigen tabblad en is meteen actief. Ook *Nieuw* en 
 
 Bij elk tabblad staat een gekleurd bolletje, dat bij het project hoort. Een tabblad met een stipje erachter heeft niet-opgeslagen wijzigingen.
 
+Passen niet alle tabbladen in de breedte, dan verschijnen tussen de tabbladen en het plusje twee pijlen (*Tabbladen naar het begin schuiven* en *Tabbladen naar het eind schuiven*). Elke klik schuift twee tabbladen op. Een pijl is grijs als je al aan het begin of het eind staat. Je kunt ook met het scrollwiel boven de tabbladen schuiven. Het tabblad dat je kiest, schuift altijd vanzelf in beeld.
+
 ### Een project sluiten
 
 Klik op het kruisje naast de naam op het tabblad (*Sluiten*), of op het kruisje op een kaart in het overzicht. Een project zonder wijzigingen sluit meteen. Heeft het niet-opgeslagen wijzigingen, dan vraagt de app *Niet-opgeslagen wijzigingen* met drie keuzes:
