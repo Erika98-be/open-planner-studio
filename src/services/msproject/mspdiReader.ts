@@ -29,7 +29,7 @@ import {
 } from '@/services/xmlInterchange';
 import {
   canonicalizeBands, clockToMinutes, hasNonAnchorTime, isSubDayMinutes,
-  milestoneKindAt, promoteHourCalendars, registerCalendarBands,
+  milestoneKindAt, promoteHourCalendars, registerCalendarBands, scalarHoursPerDay,
 } from '@/services/subdayIo';
 
 // MSPDI-uitzonderingssemantiek gebruikt dezelfde `buildContributions` (record-opbouw MET budgetklem
@@ -901,6 +901,21 @@ function readRawMspdiExceptions(calEl: Element): RawException[] {
 }
 
 /**
+ * Eerste en laatste `<WorkingTime>` van één weekdag, op `FromTime` gesorteerd (een bestand hoeft ze
+ * niet op volgorde te schrijven). Blokken zonder leesbare `FromTime` tellen niet mee; zijn er geen
+ * leesbare, dan de documentvolgorde.
+ */
+function scalarWorkingTimes(times: Element[]): { first: Element; last: Element; count: number } | undefined {
+  if (times.length === 0) return undefined;
+  const timed = times
+    .map(el => ({ el, from: clockToMinutes(getElementText(el, 'FromTime')) }))
+    .filter((t): t is { el: Element; from: number } => t.from != null)
+    .sort((a, b) => a.from - b.from);
+  if (timed.length === 0) return { first: times[0], last: times[0], count: 1 };
+  return { first: timed[0].el, last: timed[timed.length - 1].el, count: timed.length };
+}
+
+/**
  * Werkdagen/uren/feestdagen uit een `<Calendar>`-element in `calendar` toepassen (spiegel van
  * `writeCalendarBlock`) — gedeeld tussen de projectkalender (`parseCalendar`) en elke
  * bibliotheekkalender. Golden rule: ontbrekende WeekDay/WorkingTime/Exception-elementen laten de
@@ -917,8 +932,8 @@ function applyCalendarBody(calEl: Element, calendar: WorkCalendar, budget: Holid
   // ALLE <WorkingTime>-banden per weekdag lezen → rauwe banden voor de uur-modus-beslissing.
   const rawByWeekday: Partial<Record<1 | 2 | 3 | 4 | 5 | 6 | 7, { start: number; end: number }[]>> = {};
 
-  // Eerste werktijdblok van de standaardwerkweek (voor de scalaire uren hieronder).
-  let firstWorkingTime: Element | undefined;
+  // Werktijdblokken van de eerste werkdag van de standaardwerkweek (voor de scalaire uren hieronder).
+  let firstDayTimes: Element[] | undefined;
 
   for (let i = 0; i < weekDays.length; i++) {
     const wd = weekDays[i];
@@ -943,7 +958,7 @@ function applyCalendarBody(calEl: Element, calendar: WorkCalendar, budget: Holid
         if (s != null && e != null) dayBands.push({ start: s, end: e });
       }
       if (dayBands.length > 0) rawByWeekday[isoDay as 1] = dayBands;
-      if (!firstWorkingTime && wts.length > 0) firstWorkingTime = wts[0];
+      if (!firstDayTimes && wts.length > 0) firstDayTimes = Array.from({ length: wts.length }, (_, k) => wts[k]);
     }
   }
 
@@ -951,12 +966,17 @@ function applyCalendarBody(calEl: Element, calendar: WorkCalendar, budget: Holid
     calendar.workDays = workDays.sort((a, b) => a - b);
   }
 
-  // Parse working times for start/end hours (scalar dag-pad). Uit de standaardwerkweek
-  // hierboven, niet het eerste `WorkingTime` van de hele kalender: dat kan van een uitzondering of een
-  // tijdelijke werkweek zijn (een kalender zonder eigen `WeekDays` houdt zo zijn standaarduren).
-  if (firstWorkingTime) {
-    const fromTime = getElementText(firstWorkingTime, 'FromTime');
-    const toTime = getElementText(firstWorkingTime, 'ToTime');
+  const { bands, deviates } = canonicalizeBands(rawByWeekday);
+
+  // Scalaire werkdag (dag-pad, en wat de kalenderdialoog toont) uit de standaardwerkweek hierboven,
+  // niet het eerste `WorkingTime` van de hele kalender: dat kan van een uitzondering of een tijdelijke
+  // werkweek zijn (een kalender zonder eigen `WeekDays` houdt zo zijn standaarduren). Begin van het
+  // EERSTE blok en einde van het LAATSTE blok van die dag, zoals de P6 XML- en XER-lezer: MS Projects
+  // standaard 08:00–12:00 + 13:00–17:00 wordt 8–17, niet 8–12.
+  const scalar = firstDayTimes ? scalarWorkingTimes(firstDayTimes) : undefined;
+  if (scalar) {
+    const fromTime = getElementText(scalar.first, 'FromTime');
+    const toTime = getElementText(scalar.last, 'ToTime');
     if (fromTime) {
       const h = parseInt(fromTime.split(':')[0]);
       if (!isNaN(h)) calendar.workStartHour = h;
@@ -967,13 +987,11 @@ function applyCalendarBody(calEl: Element, calendar: WorkCalendar, budget: Holid
       // onze writer schrijven dat zo) ⇒ 24, niet 0.
       if (!isNaN(h)) calendar.workEndHour = h <= calendar.workStartHour ? h + 24 : h;
     }
-    calendar.hoursPerDay = calendar.workEndHour - calendar.workStartHour;
-    if (calendar.hoursPerDay <= 0) calendar.hoursPerDay = 8;
+    // Tussenwaarde vóór promotie (zie `scalarHoursPerDay`): netto bij meer blokken per dag.
+    calendar.hoursPerDay = scalarHoursPerDay(calendar, scalar.count, bands);
   }
 
-  const { bands, deviates } = canonicalizeBands(rawByWeekday);
   registerCalendarBands(calendar, { canonical: bands, deviates });
-
   // Uitzonderingen (holidays + werkende uitzonderingen + recurrente expansie) via
   // `buildContributions` + `resolveContributions`. Golden rule: 0 `<Exception>`-elementen ⇒
   // `createDefaultCalendar()`'s NL-feestdagen-default blijft ongemoeid. De beslissing hangt daarom

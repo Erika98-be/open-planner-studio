@@ -165,6 +165,32 @@ export function canonicalizeBands(
  */
 export const deriveHoursPerDay = modalBandHoursPerDay;
 
+/**
+ * De `hoursPerDay` die een lezer vóór de uur-modus-promotie op een kalender zet, nadat hij de
+ * scalaire werkdag (`workStartHour` = begin van het eerste blok, `workEndHour` = einde van het laatste
+ * blok) heeft gezet. `blocksOnScalarDay` is het aantal blokken op de dag waaruit die scalar komt.
+ *
+ *  - Eén blok: `workEndHour − workStartHour` (≤ 0 ⇒ 8), zoals altijd.
+ *  - Meer blokken: NETTO, de som van de blokken — via {@link deriveHoursPerDay} over de canonieke
+ *    blokken, precies de waarde die `promoteHourCalendar` daarna zet. Einde min begin zou de pauze
+ *    meetellen (08:00–12:00 + 13:00–17:00 ⇒ 9 i.p.v. 8). Zo ziet het tussensignaal ((c)-duur, MSPDI's
+ *    lag-/werkomrekening zonder `<MinutesPerDay>`) dezelfde werkdag als de kalender ná promotie; een
+ *    kalender met meer blokken op een dag promoveert altijd (discriminator a), dus de eindwaarde
+ *    verandert er niet door.
+ */
+export function scalarHoursPerDay(
+  cal: Pick<WorkCalendar, 'workStartHour' | 'workEndHour'>,
+  blocksOnScalarDay: number,
+  canonical: WorkTimeBands,
+): number {
+  if (blocksOnScalarDay > 1) {
+    const net = deriveHoursPerDay(canonical, 0);
+    if (net > 0) return net;
+  }
+  const span = cal.workEndHour - cal.workStartHour;
+  return span > 0 ? span : 8;
+}
+
 /** De werk-weekdagen (ISO 1..7) met ≥1 band. */
 export function workDaysFromBands(bands: WorkTimeBands): number[] {
   const days: number[] = [];

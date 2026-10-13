@@ -1,0 +1,263 @@
+// Werkdag-einde bij een kalender met meer blokken per dag (fix werkdag-einde, 2026-10).
+//
+// MS Projects standaardkalender heeft twee blokken: 08:00–12:00 + 13:00–17:00. De MSPDI-, `.mpp`- en
+// IFC-lezer namen als scalaire werkdag alleen het EERSTE blok (8–12). De motor rekende wel goed (die
+// gebruikt de blokken), maar de kalenderdialoog toonde begin 08:00, einde 12:00, netto 8 h — en weigerde
+// een begin van 07:00. Nu nemen alle lezers het begin van het eerste en het einde van het laatste blok
+// van dezelfde dag, zoals de P6 XML- en XER-lezer al deden.
+//
+//  §1 MSPDI: projectkalender (met en zonder <MinutesPerDay>) en resourcekalender ⇒ 8/17, hoursPerDay 8;
+//     blokken in omgekeerde volgorde in het bestand ⇒ ook 8/17; één blok ⇒ ongewijzigd.
+//  §2 `.mpp` (synthetische TBkndCal): 8/17, tussenwaarde hoursPerDay netto 8, na promotie 8.
+//  §3 IFC: oud OPS-bestand zonder eigenschappen ⇒ 8/17; met de eerste-blok-scalar als eigenschap
+//     (WorkStartHour 8 / WorkEndHour 12) ⇒ hersteld naar 8/17; bewust gekozen werkdagen blijven.
+//  §4 Kalenderdialoog: pauze uit de blokken (12:00, 60 min), netto 8 h, Begin/Einde wijzigen geeft
+//     een consistente hoursPerDay.
+import './domStub';
+import { installDOMParser } from './xmldom-shim';
+import { readMSPDI } from '@/services/msproject/mspdiReader';
+import { readCalendars, promoteCalendarsForHourMode } from '@/services/mpp/mppCalendars';
+import { Props } from '@/services/mpp/mppContainer';
+import { CfbFile } from '@/services/mpp/cfb';
+import {
+  buildNestedCfb, encodePropsEntries, buildCalFixedMetaBlob, buildCalFixedDataRecord, buildCalHoursBlock,
+  buildVarMetaBytes,
+} from './mppFixtures';
+import { createAppStoreContext } from '@/state/appStore';
+import { writeIFC } from '@/services/ifc/ifcWriter';
+import { readIFC } from '@/services/ifc/ifcReader';
+import { buildWriteIFCInput } from '@/state/ifcSaveInput';
+import { createDefaultTaskTime } from '@/utils/taskDefaults';
+import {
+  calendarScalarBreakIssue, inferredSimpleBreak, makeBands, scalarBreakIssue, simpleBreakPatch,
+} from '@/utils/effectiveWorkTime';
+import type { WorkCalendar } from '@/types/calendar';
+
+installDOMParser();
+
+const failures: string[] = [];
+let checks = 0;
+function same(label: string, got: unknown, want: unknown): void {
+  checks++;
+  if (JSON.stringify(got) !== JSON.stringify(want)) {
+    failures.push(`${label}: verwacht ${JSON.stringify(want)}, kreeg ${JSON.stringify(got)}`);
+  }
+}
+const scalar = (c: WorkCalendar) => ({ start: c.workStartHour, end: c.workEndHour, hpd: c.hoursPerDay });
+const MSP_DAY = [{ start: 480, end: 720 }, { start: 780, end: 1020 }];
+
+// ── §1 MSPDI ───────────────────────────────────────────────────────────────────────────────────────
+const wt = (from: string, to: string) => `<WorkingTime><FromTime>${from}</FromTime><ToTime>${to}</ToTime></WorkingTime>`;
+function weekDays(times: string): string {
+  return [1, 2, 3, 4, 5, 6, 7].map(n => {
+    const work = n >= 2 && n <= 6;
+    return `<WeekDay><DayType>${n}</DayType><DayWorking>${work ? 1 : 0}</DayWorking>${work ? `<WorkingTimes>${times}</WorkingTimes>` : ''}</WeekDay>`;
+  }).join('');
+}
+const TWO_BLOCKS = wt('08:00:00', '12:00:00') + wt('13:00:00', '17:00:00');
+function mspdi(opts: { minutesPerDay?: number; projectTimes?: string; resourceTimes?: string }): string {
+  const projectTimes = opts.projectTimes ?? TWO_BLOCKS;
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<Project xmlns="http://schemas.microsoft.com/project"><Name>Werkdag</Name><StartDate>2026-01-05T08:00:00</StartDate>
+${opts.minutesPerDay ? `<MinutesPerDay>${opts.minutesPerDay}</MinutesPerDay>` : ''}<CalendarUID>1</CalendarUID>
+<Calendars>
+<Calendar><UID>1</UID><Name>Standard</Name><IsBaseCalendar>1</IsBaseCalendar><WeekDays>${weekDays(projectTimes)}</WeekDays></Calendar>
+${opts.resourceTimes ? `<Calendar><UID>2</UID><Name>Ploeg</Name><IsBaseCalendar>1</IsBaseCalendar><WeekDays>${weekDays(opts.resourceTimes)}</WeekDays></Calendar>` : ''}
+</Calendars>
+<Tasks><Task><UID>1</UID><ID>1</ID><Name>Taak</Name><OutlineLevel>1</OutlineLevel><Start>2026-01-05T08:00:00</Start><Finish>2026-01-09T17:00:00</Finish><Duration>PT40H0M0S</Duration></Task></Tasks>
+</Project>`;
+}
+{
+  const withMpd = readMSPDI(mspdi({ minutesPerDay: 480, resourceTimes: TWO_BLOCKS }));
+  same('§1 MSPDI projectkalender (MinutesPerDay 480): 8/17, hpd 8', scalar(withMpd.calendar), { start: 8, end: 17, hpd: 8 });
+  same('§1 MSPDI projectkalender: blokken blijven 08–12 + 13–17', withMpd.calendar.workTime?.byWeekday[1], MSP_DAY);
+  const res = (withMpd.resourceCalendars ?? []).find(c => c.name === 'Ploeg');
+  same('§1 MSPDI resourcekalender: 8/17, hpd 8', res && scalar(res), { start: 8, end: 17, hpd: 8 });
+
+  const noMpd = readMSPDI(mspdi({}));
+  same('§1 MSPDI zonder MinutesPerDay: 8/17, hpd 8', scalar(noMpd.calendar), { start: 8, end: 17, hpd: 8 });
+
+  const reversed = readMSPDI(mspdi({ projectTimes: wt('13:00:00', '17:00:00') + wt('08:00:00', '12:00:00') }));
+  same('§1 MSPDI blokken in omgekeerde volgorde: 8/17', scalar(reversed.calendar), { start: 8, end: 17, hpd: 8 });
+
+  // Eén blok: precies het oude gedrag (einde − begin, geen promotie).
+  const single = readMSPDI(mspdi({ projectTimes: wt('07:00:00', '16:00:00') }));
+  same('§1 MSPDI één blok 07–16: ongewijzigd 7/16, hpd 9', scalar(single.calendar), { start: 7, end: 16, hpd: 9 });
+}
+
+// §1b. MSPDI-lag zonder <MinutesPerDay> op een opvolger op een DAGkalender (B: datums op het dag-anker,
+// duur een hele werkdag, dus geen (c)-signaal): de tussenwaarde van de projectkalender (vóór promotie)
+// rekent de lag om (`mspdiReader` §lags). Netto 8 h ⇒ 4800 tienden-minuut = 1 dag. Vóór de fix was de
+// tussenwaarde einde − begin van het eerste blok (4 h ⇒ 2 dagen).
+{
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<Project xmlns="http://schemas.microsoft.com/project"><Name>Lag</Name><StartDate>2026-01-05T08:00:00</StartDate><CalendarUID>1</CalendarUID>
+<Calendars>
+<Calendar><UID>1</UID><Name>Standard</Name><IsBaseCalendar>1</IsBaseCalendar><WeekDays>${weekDays(TWO_BLOCKS)}</WeekDays></Calendar>
+<Calendar><UID>2</UID><Name>Dag</Name><IsBaseCalendar>1</IsBaseCalendar><WeekDays>${weekDays(wt('08:00:00', '16:00:00'))}</WeekDays></Calendar>
+</Calendars>
+<Tasks>
+<Task><UID>1</UID><ID>1</ID><Name>A</Name><OutlineLevel>1</OutlineLevel><Start>2026-01-05T08:00:00</Start><Finish>2026-01-06T17:00:00</Finish><Duration>PT16H0M0S</Duration></Task>
+<Task><UID>2</UID><ID>2</ID><Name>B</Name><OutlineLevel>1</OutlineLevel><CalendarUID>2</CalendarUID><Start>2026-01-08T08:00:00</Start><Finish>2026-01-09T08:00:00</Finish><Duration>PT8H0M0S</Duration>
+<PredecessorLink><PredecessorUID>1</PredecessorUID><Type>1</Type><LinkLag>4800</LinkLag><LagFormat>7</LagFormat></PredecessorLink></Task>
+</Tasks></Project>`;
+  const r = readMSPDI(xml);
+  same('§1b MSPDI-lag zonder MinutesPerDay: 4800 tienden-minuut = 1 dag (netto 8 h)',
+    r.sequences.map(s => [s.lagDays, s.lagMinutes ?? null]), [[1, null]]);
+}
+
+// ── §2 `.mpp` (synthetische TBkndCal, één basiskalender met twee blokken op ma–vr) ─────────────────
+function encodeUnicodeStringAscii(s: string): Uint8Array {
+  const out = new Uint8Array(s.length * 2);
+  const view = new DataView(out.buffer);
+  for (let i = 0; i < s.length; i++) view.setUint16(i * 2, s.charCodeAt(i), true);
+  return out;
+}
+function mppCalendar(bands: { startMinutes: number; durationMinutes: number }[]) {
+  const hoursBlock = buildCalHoursBlock([
+    { defaultFlag: 0 },
+    ...Array.from({ length: 5 }, () => ({ defaultFlag: 0 as const, bands })),
+    { defaultFlag: 0 },
+  ]);
+  const varMeta = buildVarMetaBytes([{ uniqueId: 1, type: 1, offset: 0 }, { uniqueId: 1, type: 8, offset: 40 }]);
+  const namePayload = encodeUnicodeStringAscii('Standard');
+  const var2Data = new Uint8Array(40 + 4 + hoursBlock.length);
+  const view = new DataView(var2Data.buffer);
+  view.setInt32(0, namePayload.length, true);
+  var2Data.set(namePayload, 4);
+  view.setInt32(40, hoursBlock.length, true);
+  var2Data.set(hoursBlock, 44);
+  const cfb = new CfbFile(buildNestedCfb({
+    '   114': { children: { TBkndCal: { children: {
+      FixedMeta: { data: buildCalFixedMetaBlob([0]) }, FixedData: { data: buildCalFixedDataRecord(1, -1, -1) },
+      VarMeta: { data: varMeta }, Var2Data: { data: var2Data },
+    } } } },
+  }));
+  return readCalendars(cfb, new Props(encodePropsEntries([]), 'werkdag-einde'), null);
+}
+{
+  // Bewust omgekeerde volgorde in het bestand (middagblok eerst): ook dan 8/17.
+  const result = mppCalendar([{ startMinutes: 780, durationMinutes: 240 }, { startMinutes: 480, durationMinutes: 240 }]);
+  const cal = result.calendarByUniqueId.get(1)!;
+  same('§2 .mpp vóór promotie: 8/17, tussenwaarde hpd netto 8', scalar(cal), { start: 8, end: 17, hpd: 8 });
+  promoteCalendarsForHourMode(result.calendarByUniqueId, new Set());
+  same('§2 .mpp ná promotie: 8/17, hpd 8, blokken 08–12 + 13–17', [scalar(cal), cal.workTime?.byWeekday[1]],
+    [{ start: 8, end: 17, hpd: 8 }, MSP_DAY]);
+
+  const single = mppCalendar([{ startMinutes: 420, durationMinutes: 540 }]).calendarByUniqueId.get(1)!;
+  same('§2 .mpp één blok 07–16: ongewijzigd 7/16, hpd 9', scalar(single), { start: 7, end: 16, hpd: 9 });
+}
+
+// ── §3 IFC ─────────────────────────────────────────────────────────────────────────────────────────
+function ifcWith(patch: Partial<WorkCalendar>, hourTask = false): string {
+  const store = createAppStoreContext().store;
+  const S = () => store.getState();
+  S().setProject({ startDate: '2026-06-01' });
+  S().setCalendar({ ...S().calendar, ...patch });
+  S().addTask({ name: 'Dagtaak', time: createDefaultTaskTime('2026-06-01', 2) });
+  if (hourTask) S().addTask({ name: 'Urentaak', time: createDefaultTaskTime('2026-06-01', 10, 'hours', S().calendar) });
+  S().runCPM();
+  return writeIFC(buildWriteIFCInput(S()));
+}
+const prop = (name: string, value: number) => `IFCPROPERTYSINGLEVALUE('${name}',$,IFCREAL(${value}),$)`;
+const hourCal = (start: number, end: number): Partial<WorkCalendar> => ({
+  workTime: makeBands([1, 2, 3, 4, 5], MSP_DAY), workDays: [1, 2, 3, 4, 5],
+  workStartHour: start, workEndHour: end, hoursPerDay: 8,
+});
+{
+  // §3a. Een OPS-bestand van vóór de fix met een MSP-import: kalender 8/12 met blokken 08–12 + 13–17.
+  //      De schrijver bewaart WorkEndHour alleen als hij afwijkt van het einde van de eerste periode,
+  //      dus in het bestand staan alleen de periodes. De lezer neemt nu het einde van de laatste.
+  const oldIfc = ifcWith(hourCal(8, 12));
+  same('§3a oud bestand draagt geen WorkStartHour/WorkEndHour', ['WorkStartHour', 'WorkEndHour'].filter(n => oldIfc.includes(n)), []);
+  same('§3a oud bestand (alleen periodes) ⇒ 8/17, hpd 8', scalar(readIFC(oldIfc).calendar), { start: 8, end: 17, hpd: 8 });
+
+  // §3b. Bestand dat de eerste-blok-scalar expliciet draagt (WorkStartHour 8 / WorkEndHour 12). Gemaakt
+  //      uit een kalender 7/13 (de schrijver bewaart beide) en dan in de tekst op 8/12 gezet.
+  const explicit = ifcWith(hourCal(7, 13));
+  same('§3b fixture: schrijver bewaart WorkStartHour 7 en WorkEndHour 13',
+    [explicit.includes(prop('WorkStartHour', 7)), explicit.includes(prop('WorkEndHour', 13))], [true, true]);
+  const firstBlockIfc = explicit.replace(prop('WorkStartHour', 7), prop('WorkStartHour', 8))
+    .replace(prop('WorkEndHour', 13), prop('WorkEndHour', 12));
+  same('§3b eigenschappen 8/12 bij blokken 08–12 + 13–17 ⇒ hersteld naar 8/17, hpd 8',
+    scalar(readIFC(firstBlockIfc).calendar), { start: 8, end: 17, hpd: 8 });
+  // Alleen WorkEndHour 12 (begin uit de periodes): ook het eerste-blok-patroon.
+  const onlyEnd = explicit.replace(prop('WorkStartHour', 7), prop('GeenEigenschap', 7))
+    .replace(prop('WorkEndHour', 13), prop('WorkEndHour', 12));
+  same('§3b alleen WorkEndHour 12 ⇒ hersteld naar 8/17', scalar(readIFC(onlyEnd).calendar), { start: 8, end: 17, hpd: 8 });
+
+  // §3c. Een bewaard einde dat NIET het eerste blok is, blijft staan (hier 16 bij blokken tot 17).
+  const sixteen = explicit.replace(prop('WorkStartHour', 7), prop('WorkStartHour', 8))
+    .replace(prop('WorkEndHour', 13), prop('WorkEndHour', 16));
+  same('§3c bewaard einde 16 (geen eerste-blok-patroon) blijft 16', readIFC(sixteen).calendar.workEndHour, 16);
+  // Bewaard begin wijkt af van het eerste blok (7 bij een blok vanaf 8): niet het patroon, blijft 7/12.
+  const otherStart = explicit.replace(prop('WorkEndHour', 13), prop('WorkEndHour', 12));
+  same('§3c bewaard 7/12 (begin past niet bij het eerste blok) blijft 7/12',
+    [readIFC(otherStart).calendar.workStartHour, readIFC(otherStart).calendar.workEndHour], [7, 12]);
+
+  // §3d. Bewust gekozen enkelvoudige werkdag 08:00–12:00 (dagkalender, 4 h): één periode, ongemoeid —
+  //      ook mét urentaak (de schrijver materialiseert dan de effectieve blokken).
+  const halfDay: Partial<WorkCalendar> = { workTime: undefined, workDays: [1, 2, 3, 4, 5], workStartHour: 8, workEndHour: 12, hoursPerDay: 4 };
+  same('§3d dagkalender 08–12 blijft 8/12, hpd 4', scalar(readIFC(ifcWith(halfDay)).calendar), { start: 8, end: 12, hpd: 4 });
+  const halfDayHour = readIFC(ifcWith(halfDay, true)).calendar;
+  same('§3d dagkalender 08–12 met urentaak blijft scalair 8/12, hpd 4', [scalar(halfDayHour), halfDayHour.workTime ?? null],
+    [{ start: 8, end: 12, hpd: 4 }, null]);
+
+  // §3e. Scalaire dagkalender 08–17 / 8 h met urentaak: de schrijver materialiseert 08–12 + 13–17 en
+  //      markeert hem scalair (IsHourCalendar .F.). Hij blijft 8/17 scalair; en een in de tekst op 12
+  //      gezet einde wordt NIET "hersteld": bij een scalaire kalender is het einde de keuze van de
+  //      gebruiker (voorwaarde 1 van `isFirstBlockScalar`).
+  const scalarDay: Partial<WorkCalendar> = { workTime: undefined, workDays: [1, 2, 3, 4, 5], workStartHour: 8, workEndHour: 17, hoursPerDay: 8 };
+  const scalarIfc = ifcWith(scalarDay, true);
+  same('§3e fixture: scalaire kalender met gematerialiseerde blokken en IsHourCalendar .F.',
+    [scalarIfc.includes("IFCTIMEPERIOD('13:00:00','17:00:00')"), scalarIfc.includes("'IsHourCalendar',$,IFCBOOLEAN(.F.)")], [true, true]);
+  const scalarRead = readIFC(scalarIfc).calendar;
+  same('§3e scalaire dagkalender 08–17 blijft 8/17 scalair', [scalar(scalarRead), scalarRead.workTime ?? null],
+    [{ start: 8, end: 17, hpd: 8 }, null]);
+  same('§3e scalaire kalender met bewaard einde 12 blijft 12 (geen herstel)',
+    readIFC(scalarIfc.replace(prop('WorkEndHour', 17), prop('WorkEndHour', 12))).calendar.workEndHour, 12);
+}
+
+// ── §4 Kalenderdialoog (uurplanning uit): de berekening achter Begin/Einde/Pauze/Netto ──────────────
+{
+  const cal = readMSPDI(mspdi({ minutesPerDay: 480 })).calendar;
+  const brk = inferredSimpleBreak(cal);
+  same('§4 dialoog: begin 08:00, einde 17:00, pauze 12:00 van 60 min, netto 8 h',
+    { start: cal.workStartHour, end: cal.workEndHour, breakStart: brk.startMinute, breakMin: brk.durationMinutes, net: cal.hoursPerDay },
+    { start: 8, end: 17, breakStart: 720, breakMin: 60, net: 8 });
+  same('§4 dialoog: geen foutmelding bij openen', calendarScalarBreakIssue(cal) ?? null, null);
+  // Spiegel van `scalarTimesAreValid` in CalendarForm: Begin 07:00 is nu toegestaan.
+  const valid = (patch: Partial<WorkCalendar>) => {
+    const next = { ...cal, ...patch };
+    const s = Math.round(next.workStartHour * 60), e = Math.round(next.workEndHour * 60);
+    const bs = next.simpleBreakStartMinute ?? brk.startMinute;
+    const bd = next.simpleBreakDurationMinutes ?? brk.durationMinutes;
+    return s >= 0 && s < e && e <= 1440 && bs >= s && bs < e && scalarBreakIssue(s, e, bs, bd) === undefined;
+  };
+  same('§4 dialoog: Begin 07:00 toegestaan', valid({ workStartHour: 7 }), true);
+  const p7 = simpleBreakPatch(cal, { workStartHour: 7 });
+  same('§4 Begin 07:00 ⇒ pauze 12:00/60 expliciet, hpd 9', [p7.simpleBreakStartMinute, p7.simpleBreakDurationMinutes, p7.hoursPerDay], [720, 60, 9]);
+  const p16 = simpleBreakPatch(cal, { workEndHour: 16 });
+  same('§4 Einde 16:00 ⇒ hpd 7', p16.hoursPerDay, 7);
+  const p17 = simpleBreakPatch(cal, { workEndHour: 17 });
+  same('§4 Einde 17:00 (ongewijzigd) ⇒ hpd 8, niet 9', p17.hoursPerDay, 8);
+
+  // Andere blokken: 07:00–11:30 + 12:00–16:00 ⇒ pauze 11:30 van 30 min (niet 12:00).
+  const other: WorkCalendar = { ...cal, workTime: makeBands([1, 2, 3, 4, 5], [{ start: 420, end: 690 }, { start: 720, end: 960 }]),
+    workStartHour: 7, workEndHour: 16, hoursPerDay: 8.5 };
+  same('§4 blokken 07:00–11:30 + 12:00–16:00 ⇒ pauze 11:30 van 30 min', inferredSimpleBreak(other), { startMinute: 690, durationMinutes: 30 });
+  same('§4 daar Einde 15:00 ⇒ hpd 7.5', simpleBreakPatch(other, { workEndHour: 15 }).hoursPerDay, 7.5);
+  // Zonder blokken: de legacy-afleiding (12:00, klokspanne − netto).
+  const legacy: WorkCalendar = { ...cal, workTime: undefined, workStartHour: 7, workEndHour: 16, hoursPerDay: 8 };
+  same('§4 zonder blokken: legacy 12:00 van 60 min', inferredSimpleBreak(legacy), { startMinute: 720, durationMinutes: 60 });
+  // Blokken die de scalar niet beslaan (einde 12 bij blokken tot 17): geen afleiding uit de blokken.
+  same('§4 blokken passen niet bij de scalar ⇒ legacy', inferredSimpleBreak({ ...cal, workEndHour: 12 }), { startMinute: 720, durationMinutes: 0 });
+}
+
+if (failures.length > 0) {
+  for (const f of failures) console.log(`XX ${f}`);
+  console.log(`\n${failures.length}/${checks} werkdag-einde-checks mislukt.`);
+  process.exitCode = 1;
+} else {
+  console.log(`OK  werkdag-einde: ${checks} checks groen.`);
+}

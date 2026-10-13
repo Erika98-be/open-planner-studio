@@ -1025,10 +1025,14 @@ function writeCalendar(
  *    signaal (zie `writeCalendar`).
  *
  * Kalenderidentiteit door de round-trip:
- *  - `WorkStartHour`/`WorkEndHour`: de lezer haalt de scalar werktijd uit de EERSTE `IFCTIMEPERIOD`
- *    (`scalarHourFromClock`). Bij meer banden — een uurkalender, of een scalaire kalender waarvoor
- *    `writeCalendar` de effectieve banden materialiseert — is dat niet de scalar (07:00–16:00 zou
- *    07:00–12:00 worden). Per veld alleen geschreven wanneer die afleiding hem niet teruggeeft.
+ *  - `WorkStartHour`/`WorkEndHour`: OPS-versies vóór 2026-10 haalden de scalar werktijd uit de EERSTE
+ *    `IFCTIMEPERIOD` (`scalarHourFromClock`). Bij meer banden — een uurkalender, of een scalaire
+ *    kalender waarvoor `writeCalendar` de effectieve banden materialiseert — is dat niet de scalar
+ *    (07:00–16:00 zou 07:00–12:00 worden). De huidige lezer neemt begin eerste / einde laatste periode,
+ *    maar de toets hier blijft BEWUST tegen de eerste periode (`readerScalarHours`): zo leest ook een
+ *    oudere versie het juiste einde. Per veld alleen geschreven wanneer die afleiding hem niet
+ *    teruggeeft. Een kalender die nog de oude eerste-blok-scalar draagt (bv. 08:00–12:00 bij banden
+ *    08–12 + 13–17), krijgt dus geen `WorkEndHour` en herstelt bij lezen naar 17.
  *  - `IsHourCalendar = .F.`: alleen wanneer de `IFCTIMEPERIOD`s gematerialiseerde effectieve banden van
  *    een SCALAIRE kalender zijn (een urentaak gebruikt hem). IFC zelf ziet daar gewoon de lunchpauze
  *    (interop); de OPS-lezer weet zo dat de kalender scalair was en promoveert hem niet naar uur-modus.

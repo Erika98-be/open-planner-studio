@@ -43,7 +43,7 @@
 import type { WorkCalendar } from '@/types/calendar';
 import { createDefaultCalendar } from '@/engine/calendar/defaultCalendar';
 import { generateId } from '@/utils/id';
-import { canonicalizeBands, promoteHourCalendars, registerCalendarBands } from '@/services/subdayIo';
+import { canonicalizeBands, promoteHourCalendars, registerCalendarBands, scalarHoursPerDay } from '@/services/subdayIo';
 import type { CfbFile } from './cfb';
 import type { Props } from './mppContainer';
 import { FixedData, FixedMeta, Var2Data, VarMeta12, getDate, getInt, getShort, getUnicodeString } from './mppPrimitives';
@@ -196,28 +196,31 @@ function buildCalendarFromDays(name: string, days: ReadonlyArray<DayResolution>,
 
   const rawByWeekday: Partial<Record<1 | 2 | 3 | 4 | 5 | 6 | 7, { start: number; end: number }[]>> = {};
   const workDays: number[] = [];
-  let scalar: { start: number; end: number } | null = null;
+  let scalarDay: ReadonlyArray<{ start: number; end: number }> | null = null;
   for (let index = 0; index < 7; index++) {
     const isoDay = (index === 0 ? 7 : index) as 1 | 2 | 3 | 4 | 5 | 6 | 7; // MSP 1=zo..7=za → ISO 1=ma..7=zo
     const d = days[index];
     if (d && d.working && d.bands.length > 0) {
       workDays.push(isoDay);
       rawByWeekday[isoDay] = d.bands;
-      if (!scalar) scalar = d.bands[0];
+      if (!scalarDay) scalarDay = d.bands;
     }
   }
   if (workDays.length > 0) cal.workDays = workDays.sort((a, b) => a - b);
-  if (scalar) {
+  const { bands, deviates } = canonicalizeBands(rawByWeekday);
+  if (scalarDay) {
+    // Begin van het EERSTE en einde van het LAATSTE blok van die dag (op begintijd gesorteerd), zoals
+    // de P6 XML- en XER-lezer: MS Projects standaard 08:00–12:00 + 13:00–17:00 wordt 8–17, niet 8–12.
     // FLOOR op beide grenzen — spiegelt mspdiReader's `parseInt(toTime.split(':')[0])` (het
     // hele-uurdeel van de kloktijd); `Math.ceil` gaf bij 17:30 een te hoge `hoursPerDay`.
-    cal.workStartHour = Math.floor(scalar.start / 60);
-    cal.workEndHour = Math.floor(scalar.end / 60);
-    cal.hoursPerDay = cal.workEndHour - cal.workStartHour;
-    if (cal.hoursPerDay <= 0) cal.hoursPerDay = 8;
+    const sorted = [...scalarDay].sort((a, b) => a.start - b.start);
+    cal.workStartHour = Math.floor(sorted[0].start / 60);
+    cal.workEndHour = Math.floor(sorted[sorted.length - 1].end / 60);
+    // Tussenwaarde vóór promotie (zie `scalarHoursPerDay`): netto bij meer blokken per dag.
+    cal.hoursPerDay = scalarHoursPerDay(cal, sorted.length, bands);
   }
   if (hoursPerDayOverride !== null) cal.hoursPerDay = hoursPerDayOverride;
 
-  const { bands, deviates } = canonicalizeBands(rawByWeekday);
   registerCalendarBands(cal, { canonical: bands, deviates });
   // Geen promotie hier (zie de moduleheader): `cal.hoursPerDay` blijft de SCALAIRE waarde tot
   // `promoteCalendarsForHourMode`, want `readTasks` heeft precies die nodig voor het (c)-signaal.

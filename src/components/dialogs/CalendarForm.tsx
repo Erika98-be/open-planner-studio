@@ -19,7 +19,7 @@ import {
 } from '@/engine/calendar/generateCalendarHolidays';
 import { orderedWeekDays } from '@/utils/weekDays';
 import {
-  calendarScalarBreakIssue, legacySimpleBreakDurationMinutes, scalarBreakIssue, simpleBreakPatch,
+  calendarScalarBreakIssue, inferredSimpleBreak, scalarBreakIssue, simpleBreakPatch,
 } from '@/utils/effectiveWorkTime';
 import { holidayIssue } from '@/utils/holidayRange';
 
@@ -166,11 +166,15 @@ export function CalendarForm({
   // Oude scalar-kalenders hebben nog geen velden, maar hun zichtbare waarden moeten het bestaande
   // gedrag verklaren: 07:00–16:00 / 8 uur toont daarom de afgeleide 12:00 / 60 min, terwijl
   // 08:00–16:00 / 8 uur terecht 0 minuten toont.
-  const inferredSimpleBreakDuration = legacySimpleBreakDurationMinutes(draft);
+  // Draagt de kalender weekbanden met precies twee blokken (MS Project: 08:00–12:00 + 13:00–17:00),
+  // dan is de pauze het gat ertussen (`inferredSimpleBreak`).
+  const inferredBreak = inferredSimpleBreak(draft);
+  const inferredSimpleBreakDuration = inferredBreak.durationMinutes;
+  const inferredSimpleBreakStart = inferredBreak.startMinute;
   const [workStartText, setWorkStartText] = useState(() => minutesToTime(draft.workStartHour * 60));
   const [workEndText, setWorkEndText] = useState(() => minutesToTime(draft.workEndHour * 60));
   const [simpleBreakStartText, setSimpleBreakStartText] = useState(() =>
-    minutesToTime(draft.simpleBreakStartMinute ?? 12 * 60));
+    minutesToTime(draft.simpleBreakStartMinute ?? inferredSimpleBreakStart));
   const [simpleBreakDurationText, setSimpleBreakDurationText] = useState(() =>
     String(draft.simpleBreakDurationMinutes ?? inferredSimpleBreakDuration));
   const [scalarTimeIssues, setScalarTimeIssues] = useState<Partial<Record<ScalarTimeField, ScalarTimeIssue>>>({});
@@ -200,14 +204,14 @@ export function CalendarForm({
   }, [draft.workEndHour]);
 
   useEffect(() => {
-    setSimpleBreakStartText(minutesToTime(draft.simpleBreakStartMinute ?? 12 * 60));
+    setSimpleBreakStartText(minutesToTime(draft.simpleBreakStartMinute ?? inferredSimpleBreakStart));
     setScalarTimeIssues(issues => {
       if (!issues.breakStart) return issues;
       const next = { ...issues };
       delete next.breakStart;
       return next;
     });
-  }, [draft.simpleBreakStartMinute]);
+  }, [draft.simpleBreakStartMinute, inferredSimpleBreakStart]);
 
   useEffect(() => {
     setSimpleBreakDurationText(String(draft.simpleBreakDurationMinutes ?? inferredSimpleBreakDuration));
@@ -377,7 +381,7 @@ export function CalendarForm({
     // Ook een legacy-scalar zonder zichtbare pauzevelden draagt zijn bestaande netto-tijd als
     // impliciete middagpauze. Dezelfde controle beschermt dus een nieuw Start/Einde tegen het
     // ongemerkt buiten de nieuwe werkdag drukken van die pauze.
-    const breakStart = next.simpleBreakStartMinute ?? 12 * 60;
+    const breakStart = next.simpleBreakStartMinute ?? inferredSimpleBreakStart;
     const breakDuration = next.simpleBreakDurationMinutes ?? inferredSimpleBreakDuration;
     return breakStart >= start && breakStart < end
       && scalarBreakIssue(start, end, breakStart, breakDuration) === undefined;
@@ -429,7 +433,7 @@ export function CalendarForm({
     return scalarBreakIssue(
       draft.workStartHour * 60,
       draft.workEndHour * 60,
-      draft.simpleBreakStartMinute ?? 12 * 60,
+      draft.simpleBreakStartMinute ?? inferredSimpleBreakStart,
       duration,
     );
   };
@@ -453,7 +457,7 @@ export function CalendarForm({
       return;
     }
     setScalarTimeIssue('breakDuration');
-    patchSimpleBreak({ simpleBreakStartMinute: draft.simpleBreakStartMinute ?? 12 * 60, simpleBreakDurationMinutes: duration });
+    patchSimpleBreak({ simpleBreakStartMinute: draft.simpleBreakStartMinute ?? inferredSimpleBreakStart, simpleBreakDurationMinutes: duration });
   };
 
   const stepSimpleBreakDuration = (delta: number) => {
@@ -464,14 +468,14 @@ export function CalendarForm({
     }
     const nextDuration = current + delta;
     if (nextDuration < 0 || nextDuration > 24 * 60) return;
-    const issue = scalarBreakIssue(draft.workStartHour * 60, draft.workEndHour * 60, draft.simpleBreakStartMinute ?? 12 * 60, nextDuration);
+    const issue = scalarBreakIssue(draft.workStartHour * 60, draft.workEndHour * 60, draft.simpleBreakStartMinute ?? inferredSimpleBreakStart, nextDuration);
     if (issue) {
       setScalarTimeIssue('breakDuration', issue);
       return;
     }
     setSimpleBreakDurationText(String(nextDuration));
     setScalarTimeIssue('breakDuration');
-    patchSimpleBreak({ simpleBreakStartMinute: draft.simpleBreakStartMinute ?? 12 * 60, simpleBreakDurationMinutes: nextDuration });
+    patchSimpleBreak({ simpleBreakStartMinute: draft.simpleBreakStartMinute ?? inferredSimpleBreakStart, simpleBreakDurationMinutes: nextDuration });
   };
 
   const stepScalarTime = (

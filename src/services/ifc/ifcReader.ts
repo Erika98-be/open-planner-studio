@@ -2589,6 +2589,35 @@ function extractCalendarExceptionMetadata(
   return {};
 }
 
+/**
+ * Herkent een bewaarde scalar `WorkStartHour`/`WorkEndHour` die precies het EERSTE blok is van een
+ * werkdag met meer blokken — de fout van de MSPDI- en `.mpp`-lezer van vóór deze versie (MS Projects
+ * 08:00–12:00 + 13:00–17:00 werd 8–12). Dan wint het einde van het laatste blok (`derived`, al uit de
+ * periodes gezet) en niet de bewaarde eigenschap. Alle voorwaarden zijn vereist:
+ *  1. het bestand markeert de kalender niet als scalair (`IsHourCalendar = .F.`): daar zijn de periodes
+ *     de afgeleide banden van de scalar van de gebruiker, en die eindigen altijd vóór zijn einde;
+ *  2. er zijn minstens twee periodes;
+ *  3. bewaard einde = einde eerste periode, en bewaard begin (of, zonder eigenschap, het afgeleide
+ *     begin) = begin eerste periode;
+ *  4. het einde van de laatste periode ligt later dan het bewaarde einde.
+ * Een bewust gekozen enkelvoudige werkdag valt hier niet onder: die heeft één periode, of (dag-
+ * kalender met urentaak) `IsHourCalendar = .F.`. De OPS-schrijver bewaart `WorkEndHour` alleen als hij
+ * afwijkt van het einde van de eerste periode, dus dit patroon schrijft hij zelf niet; het vangt een
+ * bestand dat de oude scalar toch expliciet draagt.
+ */
+function isFirstBlockScalar(
+  hourMeta: { hourMode?: boolean; workStartHour?: number; workEndHour?: number },
+  firstPeriodHours: { start: number; end: number } | undefined,
+  derived: Pick<WorkCalendar, 'workStartHour' | 'workEndHour'>,
+  periodCount: number,
+): boolean {
+  if (hourMeta.hourMode === false || periodCount < 2 || !firstPeriodHours) return false;
+  if (hourMeta.workEndHour === undefined || hourMeta.workEndHour !== firstPeriodHours.end) return false;
+  const storedStart = hourMeta.workStartHour ?? derived.workStartHour;
+  if (storedStart !== firstPeriodHours.start) return false;
+  return derived.workEndHour > hourMeta.workEndHour;
+}
+
 /** Bouwt een `WorkCalendar` uit een `IFCWORKCALENDAR`-entiteit: naam/omschrijving/feestdagen,
  *  plus werkdagen/uren teruggelezen uit de `WorkingTimes`-keten (args[5] → IFCWORKTIME →
  *  RecurrencePattern-ref → IFCRECURRENCEPATTERN DayComponent (args[2]) + TimePeriods (args[7]) →
@@ -2620,6 +2649,10 @@ function buildCalendarFromEntity(
   // (args[6]) en hebben geen RecurrencePattern-ref (args[3] blijft `$` daar).
   const workTimeRefs = parseRefs(cal.args[5] || '');
   let periods: { start: number; end: number }[] = []; // ALLE banden (minuten)
+  // Dezelfde periodes met hun kloktekst, voor de scalar (die leest het hele-uurdeel van de klok).
+  const periodClocks: { start: number; startClock: string; endClock: string }[] = [];
+  // Begin/einde (uren) van de eerste periode: het patroon dat oudere lezers als scalar namen.
+  let firstPeriodHours: { start: number; end: number } | undefined;
   let calWorkDays: number[] = [];
   for (const wtRef of workTimeRefs) {
     const wt = entityMap.get(wtRef);
@@ -2637,23 +2670,29 @@ function buildCalendarFromEntity(
     for (const tpRef of timePeriodRefs) {
       const tp = entityMap.get(tpRef);
       if (!tp || tp.type !== 'IFCTIMEPERIOD') continue;
-      const s = clockToMinutes(stripQuotes(tp.args[0] || ''));
-      const e = clockToMinutes(stripQuotes(tp.args[1] || ''));
+      const startClock = stripQuotes(tp.args[0] || '');
+      const endClock = stripQuotes(tp.args[1] || '');
+      const s = clockToMinutes(startClock);
+      const e = clockToMinutes(endClock);
       if (s != null && e != null) periods.push({ start: s, end: e });
+      // Ook een oude, niet-`hh:mm`-klok ('7.5:00:00', writer 531940ac) telt mee voor de scalar; sorteren
+      // op het hele-uurdeel als de klok niet als `hh:mm` te lezen is.
+      periodClocks.push({ start: s ?? scalarHourFromClock(startClock) * 60, startClock, endClock });
     }
-    // Scalar uit de EERSTE periode — houdt de dag-kalender scalair (de post-pass promoveert
-    // pas naar uur-modus bij een echte afwijking, discriminator a/b/c).
-    if (timePeriodRefs.length > 0) {
-      const tp = entityMap.get(timePeriodRefs[0]);
-      if (tp && tp.type === 'IFCTIMEPERIOD') {
-        const startHour = scalarHourFromClock(stripQuotes(tp.args[0] || ''));
-        const endHour = scalarHourFromClock(stripQuotes(tp.args[1] || ''));
-        if (Number.isFinite(startHour)) calendar.workStartHour = startHour;
-        if (Number.isFinite(endHour)) calendar.workEndHour = endHour;
-        if (Number.isFinite(startHour) && Number.isFinite(endHour) && endHour > startHour) {
-          calendar.hoursPerDay = endHour - startHour;
-        }
+    // Scalar uit het begin van de EERSTE en het einde van de LAATSTE periode (op begintijd), zoals de
+    // MSPDI-, `.mpp`-, P6 XML- en XER-lezer: 08:00–12:00 + 13:00–17:00 wordt 8–17, niet 8–12. Houdt de
+    // dag-kalender scalair (de post-pass promoveert pas naar uur-modus bij een echte afwijking,
+    // discriminator a/b/c). Eén periode: precies de oude afleiding.
+    if (periodClocks.length > 0) {
+      const sorted = [...periodClocks].sort((a, b) => (a.start || 0) - (b.start || 0));
+      const startHour = scalarHourFromClock(sorted[0].startClock);
+      const endHour = scalarHourFromClock(sorted[sorted.length - 1].endClock);
+      if (Number.isFinite(startHour)) calendar.workStartHour = startHour;
+      if (Number.isFinite(endHour)) calendar.workEndHour = endHour;
+      if (Number.isFinite(startHour) && Number.isFinite(endHour) && endHour > startHour) {
+        calendar.hoursPerDay = endHour - startHour;
       }
+      firstPeriodHours = { start: startHour, end: scalarHourFromClock(sorted[0].endClock) };
     }
     break; // writer schrijft precies één werktijdslot in WorkingTimes
   }
@@ -2662,7 +2701,9 @@ function buildCalendarFromEntity(
   // writer `needsHoursPerDayOverride` toetst; een expliciete `HoursPerDay` wint hieronder nog steeds.
   if (hourMeta.workStartHour !== undefined || hourMeta.workEndHour !== undefined) {
     if (hourMeta.workStartHour !== undefined) calendar.workStartHour = hourMeta.workStartHour;
-    if (hourMeta.workEndHour !== undefined) calendar.workEndHour = hourMeta.workEndHour;
+    if (hourMeta.workEndHour !== undefined && !isFirstBlockScalar(hourMeta, firstPeriodHours, calendar, periods.length)) {
+      calendar.workEndHour = hourMeta.workEndHour;
+    }
     if (calendar.workEndHour > calendar.workStartHour) {
       calendar.hoursPerDay = calendar.workEndHour - calendar.workStartHour;
     }

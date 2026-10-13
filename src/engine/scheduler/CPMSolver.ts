@@ -944,14 +944,14 @@ export class CPMSolver {
   /** Snap een geregistreerd FEIT (actualStart/actualFinish)
    *  VOORWAARTS naar de eerstvolgende werk-instant, MAAR alleen als die instant op DEZELFDE
    *  kalenderdag blijft — kruist de snap naar een andere dag, dan blijft het rauwe instant staan.
-   *  Reconcilieert twee tegenstrijdige corpusmetingen: `mpp14resource.mpp`'s "Completed Task"
-   *  (actualStart zaterdag, MSP-eigen SCHEDULED_START blijft zaterdag — GEEN dag-kruisende snap)
-   *  tegenover `mpp14timephasedsegmentsmanual.mpp`'s "Task Three"/"Task Four" (actualStart 07:00,
-   *  buiten de band maar op een GEWONE werkdag — MSP-eigen SCHEDULED_START snapt hier WEL door naar
-   *  08:00, een BINNEN-dag-snap). MSP normaliseert dus
-   *  een sub-dag-afwijking BINNEN dezelfde dag, maar verplaatst een geregistreerd feit nooit naar
-   *  een ANDERE kalenderdag — precies wat deze functie doet. Gebruikt in zowel de VOLTOOID- als de
-   *  IN-PROGRESS-branch van de voortgangstak.
+   *  Bewijs voor "nooit naar een andere dag": `mpp14resource.mpp`'s "Completed Task" (actualStart
+   *  zaterdag; MSP's eigen start blijft zaterdag). De BINNEN-dag-snap heeft geen corpusbewijs: hij
+   *  steunde op `mpp14timephasedsegmentsmanual.mpp`'s "Task Three"/"Task Four" (actualStart 07:00,
+   *  veld 35 SCHEDULED_START 08:00), maar dat zijn handmatig geplande taken — de lezer neemt hun
+   *  handmatige start (veld 1283, 07:00, ook MSP's eigen vroege start) en de manual-tak in de
+   *  voorwaartse pass houdt die rauw aan; ze komen hier nooit. Geen niet-handmatige MSP-taak in het
+   *  corpus heeft een actualStart buiten de werkband op een werkdag. Gebruikt in zowel de VOLTOOID-
+   *  als de IN-PROGRESS-branch van de voortgangstak.
    *
    *  NÁ-BAND-UITKOMST: `d` NÁ de laatste band van zijn EIGEN
    *  kalenderdag (bv. 20:00 op een werkdag waarvan de laatste band om 17:00 eindigt) laat

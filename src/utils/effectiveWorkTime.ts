@@ -129,7 +129,7 @@ export function simpleBreakNetHours(
 }
 
 type ScalarCalendar = Pick<WorkCalendar,
-  'workStartHour' | 'workEndHour' | 'hoursPerDay' | 'simpleBreakStartMinute' | 'simpleBreakDurationMinutes'>;
+  'workStartHour' | 'workEndHour' | 'hoursPerDay' | 'simpleBreakStartMinute' | 'simpleBreakDurationMinutes' | 'workTime'>;
 
 /** De impliciete pauze van een legacy-scalarkalender (zonder pauzevelden): klokspanne min netto uren,
  *  in minuten, nooit negatief. 07:00–16:00 / 8 u ⇒ 60. */
@@ -138,10 +138,38 @@ export function legacySimpleBreakDurationMinutes(calendar: Pick<WorkCalendar, 'w
 }
 
 /**
+ * De pauze die een kalender zonder pauzevelden impliciet heeft, als begin (minuut van de dag) en duur.
+ *
+ *  - Draagt de kalender weekbanden (`workTime`) en heeft de eerste werkdag precies twee blokken die
+ *    samen de scalaire werkdag beslaan (begin eerste = `workStartHour`, einde laatste = `workEndHour`),
+ *    dan is de pauze het gat tussen die blokken: MS Projects 08:00–12:00 + 13:00–17:00 geeft 12:00,
+ *    60 min; 07:00–11:30 + 12:00–16:00 geeft 11:30, 30 min.
+ *  - Anders de legacy-afleiding: begin 12:00, duur = klokspanne − netto uren
+ *    ({@link legacySimpleBreakDurationMinutes}).
+ */
+export function inferredSimpleBreak(
+  calendar: Pick<WorkCalendar, 'workStartHour' | 'workEndHour' | 'hoursPerDay' | 'workTime'>,
+): { startMinute: number; durationMinutes: number } {
+  const day = calendar.workTime
+    ? ISO_WEEK_DAYS.map((weekday) => calendar.workTime!.byWeekday[weekday] ?? []).find((bands) => bands.length > 0)
+    : undefined;
+  if (day && day.length === 2) {
+    const [first, last] = [...day].sort((a, b) => a.start - b.start);
+    const gap = last.start - first.end;
+    if (gap > 0 && first.start === Math.round(calendar.workStartHour * 60)
+      && last.end === Math.round(calendar.workEndHour * 60)) {
+      return { startMinute: first.end, durationMinutes: gap };
+    }
+  }
+  return { startMinute: NOON, durationMinutes: legacySimpleBreakDurationMinutes(calendar) };
+}
+
+/**
  * De afleiding bij het wijzigen van werkdag (Begin/Einde) of pauze op een scalaire kalender — één
  * definitie voor de kalenderdialoog (`CalendarForm`) en MCP `planner_update_calendar`:
  *  1. een legacy-kalender (zonder expliciete pauzeduur) wordt eerst expliciet: zijn impliciete pauze
- *     (begin 12:00, duur = klokspanne − netto uren) komt in de patch, zodat een oud handmatig
+ *     ({@link inferredSimpleBreak}: het gat tussen twee blokken, anders begin 12:00 en duur =
+ *     klokspanne − netto uren) komt in de patch, zodat een oud handmatig
  *     `hoursPerDay` geen verborgen tweede bron blijft;
  *  2. daarna volgen de netto uren (`hoursPerDay`) uit werkdag en pauze (`simpleBreakNetHours`). Is dat
  *     patroon ongeldig, dan blijft `hoursPerDay` buiten de patch — de aanroeper valideert en weigert
@@ -154,10 +182,11 @@ export function simpleBreakPatch(calendar: ScalarCalendar, patch: Partial<WorkCa
     || patch.simpleBreakStartMinute !== undefined
     || patch.simpleBreakDurationMinutes !== undefined;
   if (!changesScalarTime) return patch;
-  const materializedLegacyDuration = calendar.simpleBreakDurationMinutes === undefined
+  const inferred = calendar.simpleBreakDurationMinutes === undefined ? inferredSimpleBreak(calendar) : undefined;
+  const materializedLegacyDuration = inferred
     ? {
-        simpleBreakStartMinute: calendar.simpleBreakStartMinute ?? NOON,
-        simpleBreakDurationMinutes: legacySimpleBreakDurationMinutes(calendar),
+        simpleBreakStartMinute: calendar.simpleBreakStartMinute ?? inferred.startMinute,
+        simpleBreakDurationMinutes: inferred.durationMinutes,
       }
     : {};
   const next = { ...calendar, ...materializedLegacyDuration, ...patch };
