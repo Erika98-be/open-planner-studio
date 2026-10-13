@@ -55,16 +55,18 @@ test('IFC-schema: kiezen in Projectinfo, toepassen, opslaan schrijft het in de k
     expect(await schemaOf(page)).toBeNull();
 
     await toProjectInfo(page);
-    await expect(trigger(page)).toHaveText(/^(IFC 4\.3 \(default\)|IFC 4\.3 \(standaard\))$/);
+    // De standaard is IFC 4.3 ADD2 (besluit eigenaar 2026-10-13).
+    await expect(trigger(page)).toHaveText(/^(IFC 4\.3 ADD2 \(default\)|IFC 4\.3 ADD2 \(standaard\))$/);
     if (SHOTS) {
-      // Alleen voor de schermbeelden: het thema rechtstreeks op de DOM (de Backstage is pure DOM/CSS).
-      const before = await page.evaluate(() => document.documentElement.getAttribute('data-theme'));
+      // Alleen voor de schermbeelden: het thema via de store (`ui.uiTheme`), zoals de instelling het zet.
+      const before = await page.evaluate(() => window.__OPS__!.store.getState().ui.uiTheme);
       await page.locator('[data-ops-project-ifc-schema]').scrollIntoViewIfNeeded();
       for (const theme of ['light', 'dark'] as const) {
-        await page.evaluate((t) => document.documentElement.setAttribute('data-theme', t), theme);
+        await page.evaluate((t) => window.__OPS__!.store.getState().setUI({ uiTheme: t }), theme);
+        await page.waitForTimeout(400);
         await page.screenshot({ path: `${SHOTS}/projectinfo-ifc-schema-${theme === 'light' ? 'licht' : 'donker'}.png` });
       }
-      await page.evaluate((t) => { if (t) document.documentElement.setAttribute('data-theme', t); }, before);
+      await page.evaluate((t) => window.__OPS__!.store.getState().setUI({ uiTheme: t }), before);
     }
 
     // Kiezen is een concept: de store verandert pas bij Toepassen.
@@ -84,18 +86,20 @@ test('IFC-schema: kiezen in Projectinfo, toepassen, opslaan schrijft het in de k
     await page.keyboard.press('Control+y');
     await expect.poll(() => schemaOf(page)).toBe('IFC4');
 
-    // Het formulier toont de opgeslagen keuze; IFC 4.3 ADD2 kiezen en opslaan.
+    // Het formulier toont de opgeslagen keuze; IFC 4.3 kiezen en opslaan.
     await toProjectInfo(page);
     await expect(trigger(page)).toHaveText(/^IFC4$/);
-    await pick(page, /^IFC 4\.3 ADD2$/);
-    await apply(page);
-    await expect.poll(() => schemaOf(page)).toBe('IFC4X3_ADD2');
-    expect(await saveAndReadSchemaLine(page)).toBe("FILE_SCHEMA(('IFC4X3_ADD2'));");
-
-    // Terug naar de standaard.
-    await toProjectInfo(page);
-    await pick(page, /^(IFC 4\.3 \(default\)|IFC 4\.3 \(standaard\))$/);
+    await pick(page, /^IFC 4\.3$/);
     await apply(page);
     await expect.poll(() => schemaOf(page)).toBe('IFC4X3');
     expect(await saveAndReadSchemaLine(page)).toBe("FILE_SCHEMA(('IFC4X3'));");
+
+    // Terug naar de standaard.
+    await toProjectInfo(page);
+    await pick(page, /^(IFC 4\.3 ADD2 \(default\)|IFC 4\.3 ADD2 \(standaard\))$/);
+    await apply(page);
+    await expect.poll(() => schemaOf(page)).toBe('IFC4X3_ADD2');
+    expect(await saveAndReadSchemaLine(page)).toBe("FILE_SCHEMA(('IFC4X3_ADD2'));");
+    // Een nieuw project kreeg nooit een schemavraag.
+    await expect(page.locator('[data-ops-ifc-schema-question]')).toHaveCount(0);
   });

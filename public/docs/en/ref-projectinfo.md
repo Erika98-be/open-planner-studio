@@ -40,7 +40,7 @@ The fields of the *New project* window and of *Project info*: what each field do
 
 ## Only in Project info
 
-**IFC schema when saving** — which IFC schema is in the header of the saved file. Choice of *IFC 4.3 (default)*, *IFC 4.3 ADD2* and *IFC4*. Default: *IFC 4.3 (default)*; for an opened IFC file, the schema of that file. Effect: only the header of the file changes, not the content. Use it to merge the schedule with a building model in the same schema. See [Choosing the IFC schema](docs://howto-ifc-schema-kiezen).
+**IFC schema when saving** — which IFC schema is in the header of the saved file. Choice of *IFC 4.3 ADD2 (default)*, *IFC 4.3* and *IFC4*. Default: *IFC 4.3 ADD2 (default)*; for an opened IFC file, the schema of that file. Effect: only the header of the file changes, not the content. Use it to merge the schedule with a building model in the same schema. If an opened file has another schema than the default, the app asks the first time you save whether you keep that schema; a choice here counts as the answer. See [Choosing the IFC schema](docs://howto-ifc-schema-kiezen).
 
 ## Only in the New project window
 

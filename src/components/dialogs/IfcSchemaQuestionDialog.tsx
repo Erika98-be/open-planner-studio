@@ -1,4 +1,4 @@
-import type { KeyboardEvent } from 'react';
+import { useEffect, useRef, type KeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppStore } from '@/state/appStore';
 import { Dialog, DialogHeader } from '@/components/common/Dialog';
@@ -18,7 +18,9 @@ import type { IfcSchemaId } from '@/types/project';
  *    Projectinfo zijn de keuzes, de standaard eerst.
  *
  * Esc en het kruisje annuleren: dan wordt er niets opgeslagen. Geen backdrop-klik (een keuze die over
- * het bestandstype gaat, sluit je niet per ongeluk). Enter activeert de knop met focus.
+ * het bestandstype gaat, sluit je niet per ongeluk). Enter activeert de knop met focus; bij het openen
+ * staat de focus op de hoofdknop (houden, of bij een niet-schrijfbaar schema de standaard), zodat Enter
+ * nooit stil het bestandstype verandert.
  */
 export function IfcSchemaQuestionDialog() {
   const pending = useAppStore((s) => s.ui.pendingIfcSchemaQuestion);
@@ -32,6 +34,11 @@ function IfcSchemaQuestionDialogBody({ question }: { question: IfcSchemaQuestion
   const schema = ifcSchemaDisplayName(question.fileSchema);
   const cancel = () => answerIfcSchemaQuestion(null);
   const choose = (choice: IfcSchemaId) => answerIfcSchemaQuestion(choice);
+  const primaryRef = useRef<HTMLButtonElement>(null);
+
+  // De focus-trap van `Dialog` zet de focus eerst op het kruisje (een kind-effect loopt vóór dit
+  // effect); daarna hoort hij op de hoofdknop.
+  useEffect(() => { primaryRef.current?.focus(); }, []);
 
   // Ctrl/⌘+S en Ctrl/⌘+O in deze dialoog niet doorlaten naar de globale sneltoetsen: dan zou er na
   // het antwoord nóg een opslag- of openronde starten (zelfde regel als `SiteSaveDialog`).
@@ -77,6 +84,7 @@ function IfcSchemaQuestionDialogBody({ question }: { question: IfcSchemaQuestion
               {t('ifcSchemaQuestion.toDefault')}
             </button>
             <button
+              ref={primaryRef}
               className="btn btn--sm btn--primary shadow-[var(--shadow-glow)]"
               onClick={() => choose(question.keep!)}
               data-ops-ifc-schema-choice={question.keep}
@@ -87,6 +95,7 @@ function IfcSchemaQuestionDialogBody({ question }: { question: IfcSchemaQuestion
         ) : (
           <>
             <button
+              ref={primaryRef}
               className="btn btn--sm btn--primary shadow-[var(--shadow-glow)]"
               onClick={() => choose('IFC4X3_ADD2')}
               data-ops-ifc-schema-choice="IFC4X3_ADD2"
