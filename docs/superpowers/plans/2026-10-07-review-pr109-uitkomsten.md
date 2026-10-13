@@ -482,3 +482,8 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   gelijke week (482 van 499 corpusdocumenten; de 17 verschillen hebben echte verschillen per dag). 11 mutanten
   rood; `measure:profiles` exit 0, cel-delta 0. Proefmerge met #338: geen tekstconflict. Review gestart
   (reviewer, Opus 5.5), inclusief de combinatie met #338.
+- **P6-projectcode klaar als #343** (`claude/p6-projectcode`, ed69b56ab, CI 16/16). Veld `Project.p6ProjectCode`
+  (IFC: `P6ProjectCode` in `OPS_ProjectSettings`, alleen als gezet); één helper `documentProjectCode`. Ook opgelost:
+  een XER-document gaf na hernoemen bij export naar P6 XML `<Id>OPS:…</Id>`. Bekend: P6 XML-exports uit v2026.9.0
+  hebben `<Id>proj-…</Id>` en tonen heropend "Naam (proj-…)" (sinds 56147b288). Proefmerge main + #338 + #340 +
+  #343: geen tekstconflict. Review gestart (reviewer, Opus 5.5), inclusief de combinatie.
