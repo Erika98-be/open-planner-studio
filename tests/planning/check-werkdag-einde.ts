@@ -87,8 +87,8 @@ ${opts.resourceTimes ? `<Calendar><UID>2</UID><Name>Ploeg</Name><IsBaseCalendar>
 
 // §1b. MSPDI-lag zonder <MinutesPerDay> op een opvolger op een DAGkalender (B: datums op het dag-anker,
 // duur een hele werkdag, dus geen (c)-signaal): de tussenwaarde van de projectkalender (vóór promotie)
-// rekent de lag om (`mspdiReader` §lags). Netto 8 h ⇒ 4800 tienden-minuut = 1 dag. Vóór de fix was de
-// tussenwaarde einde − begin van het eerste blok (4 h ⇒ 2 dagen).
+// rekent de lag om (`mspdiReader` §lags). Netto 8 h ⇒ 24000 tienden-minuut (40 h) = 5 dagen. Vóór de fix
+// was de tussenwaarde einde − begin van het eerste blok (4 h ⇒ 10 dagen); de klokspanne (9 h) gaf 4.
 {
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <Project xmlns="http://schemas.microsoft.com/project"><Name>Lag</Name><StartDate>2026-01-05T08:00:00</StartDate><CalendarUID>1</CalendarUID>
@@ -99,11 +99,11 @@ ${opts.resourceTimes ? `<Calendar><UID>2</UID><Name>Ploeg</Name><IsBaseCalendar>
 <Tasks>
 <Task><UID>1</UID><ID>1</ID><Name>A</Name><OutlineLevel>1</OutlineLevel><Start>2026-01-05T08:00:00</Start><Finish>2026-01-06T17:00:00</Finish><Duration>PT16H0M0S</Duration></Task>
 <Task><UID>2</UID><ID>2</ID><Name>B</Name><OutlineLevel>1</OutlineLevel><CalendarUID>2</CalendarUID><Start>2026-01-08T08:00:00</Start><Finish>2026-01-09T08:00:00</Finish><Duration>PT8H0M0S</Duration>
-<PredecessorLink><PredecessorUID>1</PredecessorUID><Type>1</Type><LinkLag>4800</LinkLag><LagFormat>7</LagFormat></PredecessorLink></Task>
+<PredecessorLink><PredecessorUID>1</PredecessorUID><Type>1</Type><LinkLag>24000</LinkLag><LagFormat>7</LagFormat></PredecessorLink></Task>
 </Tasks></Project>`;
   const r = readMSPDI(xml);
-  same('§1b MSPDI-lag zonder MinutesPerDay: 4800 tienden-minuut = 1 dag (netto 8 h)',
-    r.sequences.map(s => [s.lagDays, s.lagMinutes ?? null]), [[1, null]]);
+  same('§1b MSPDI-lag zonder MinutesPerDay: 40 h = 5 dagen (netto 8 h)',
+    r.sequences.map(s => [s.lagDays, s.lagMinutes ?? null]), [[5, null]]);
 }
 
 // ── §2 `.mpp` (synthetische TBkndCal, één basiskalender met twee blokken op ma–vr) ─────────────────
