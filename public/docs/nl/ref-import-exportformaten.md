@@ -8,7 +8,7 @@ Per bestandsformaat: of je het kunt openen, opslaan en exporteren, wat er wel en
 
 **Opslaan** schrijft altijd IFC. Alleen een geopend IFC-bestand wordt het opslagdoel; een project uit een ander formaat heeft na het openen nog geen bestand en *Opslaan* vraagt dan waar het IFC-bestand moet komen.
 
-**Exporteren** kan naar IFC 4x3, MS Project XML, Primavera P6 XML, CSV en twee voortgangsbladen (Excel en CSV). Een export verandert je project niet.
+**Exporteren** kan naar IFC, MS Project XML, Primavera P6 XML, CSV en twee voortgangsbladen (Excel en CSV). Een export verandert je project niet.
 
 **Alleen lezen** zijn `.mpp` en `.xer`: de app kan ze openen, niet schrijven.
 
@@ -20,11 +20,11 @@ Per bestandsformaat: of je het kunt openen, opslaan en exporteren, wat er wel en
 
 ## IFC
 
-**Openen** — ja, `.ifc`. De app leest IFC 4.3. Rekenprofiel: dat uit het bestand.
+**Openen** — ja, `.ifc`. De app leest IFC4 en IFC 4.3 (ook ADD2). Rekenprofiel: dat uit het bestand.
 
 **Opslaan** — ja, en het is het enige formaat dat opslaat. *Opslaan* schrijft je hele project als IFC-bestand. Het bestand wordt het opslagdoel.
 
-**Exporteren** — ja, als *IFC 4x3* (met de toelichting *BuildingSMART standaard. 4D-koppeling met BIM-modellen.*). Standaardnaam: de projectnaam met de extensie `.ifc`. Is je project gekoppeld aan een resourcebibliotheek, dan staat in *Bestand › Exporteren* onder de kaarten het vakje *Bibliotheekbestand ernaast opslaan*. Aangevinkt vraagt de app na het project ook om een plek voor *projectnaam-bibliotheek.ifc*. Het vakje staat niet in de lijst op het tabblad *Start*.
+**Exporteren** — ja, als *IFC*, in het IFC-schema van het project (standaard IFC 4.3 ADD2). Standaardnaam: de projectnaam met de extensie `.ifc`. Is je project gekoppeld aan een resourcebibliotheek, dan staat in *Bestand › Exporteren* onder de kaarten het vakje *Bibliotheekbestand ernaast opslaan*. Aangevinkt vraagt de app na het project ook om een plek voor *projectnaam-bibliotheek.ifc*. Het vakje staat niet in de lijst op het tabblad *Start*.
 
 **Wat meegaat** — alles wat bij het project hoort: taken met structuur, duur, datums en voortgang; relaties met lag; constraints en deadlines; kalenders; resources en toewijzingen, ook de urenverdeling; baselines; activiteitcodes en eigen velden; aantekeningen; externe koppelingen naar andere projecten; onderbrekingen; werkregels en taaktypen; de projectinstellingen zoals de statusdatum, de voortgangsmodus, het rekenprofiel en de reken-opties; de koppeling met een resourcebibliotheek. Bij een project uit een `.xer` gaat ook het oorspronkelijke bronbestand mee. Een eigen taaktype staat erin als het IFC-type `USERDEFINED` met de naam in het veld ObjectType, zodat andere IFC-programma's de taak gewoon lezen; daarnaast bewaart de app het vaste id van het type, zodat hernoemen de koppeling niet breekt. Opent iemand het bestand op een andere computer, dan staat het type daar onder *Uit dit project*, niet in diens eigen *Mijn taaktypen*.
 

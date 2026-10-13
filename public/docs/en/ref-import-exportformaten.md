@@ -8,7 +8,7 @@ Per file format: whether you can open, save and export it, what does and does no
 
 **Saving** always writes IFC. Only an opened IFC file becomes the save target; a project from another format has no file after opening, and *Save* then asks where the IFC file should go.
 
-**Exporting** works to IFC 4x3, MS Project XML, Primavera P6 XML, CSV and two progress sheets (Excel and CSV). An export does not change your project.
+**Exporting** works to IFC, MS Project XML, Primavera P6 XML, CSV and two progress sheets (Excel and CSV). An export does not change your project.
 
 **Read-only** are `.mpp` and `.xer`: the app can open them, not write them.
 
@@ -20,11 +20,11 @@ Per file format: whether you can open, save and export it, what does and does no
 
 ## IFC
 
-**Open** — yes, `.ifc`. The app reads IFC 4.3. Calculation profile: the one in the file.
+**Open** — yes, `.ifc`. The app reads IFC4 and IFC 4.3 (also ADD2). Calculation profile: the one in the file.
 
 **Save** — yes, and it is the only format that saves. *Save* writes your whole project as an IFC file. The file becomes the save target.
 
-**Export** — yes, as *IFC 4x3* (described as *BuildingSMART standard. 4D link with BIM models.*). Default name: the project name with the extension `.ifc`. If your project is linked to a resource library, the checkbox *Save library file alongside* is below the cards in *File › Export*. Ticked, the app asks for a place for *projectname-bibliotheek.ifc* after the project. The checkbox is not in the list on the *Home* tab.
+**Export** — yes, as *IFC*, in the IFC schema of the project (default IFC 4.3 ADD2). Default name: the project name with the extension `.ifc`. If your project is linked to a resource library, the checkbox *Save library file alongside* is below the cards in *File › Export*. Ticked, the app asks for a place for *projectname-bibliotheek.ifc* after the project. The checkbox is not in the list on the *Home* tab.
 
 **What goes along** — everything that belongs to the project: tasks with structure, duration, dates and progress; relations with lag; constraints and deadlines; calendars; resources and assignments, including the hour distribution; baselines; activity codes and custom fields; notes; external links to other projects; interruptions; work rules and task types; the project settings such as the status date, the progress mode, the calculation profile and the calculation options; the link with a resource library. For a project from a `.xer`, the original source file goes along too. A custom task type is stored as the IFC type `USERDEFINED` with its name in the ObjectType field, so other IFC programs read the task normally; the app also keeps the fixed id of the type, so renaming does not break the link. If someone opens the file on another computer, the type appears there under *From this project*, not in their own *My task types*.
 
