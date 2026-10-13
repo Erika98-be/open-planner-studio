@@ -1,10 +1,18 @@
 name: Deploy site
 
+# Deployt pas ná een geslaagde CI-run op `main`. Dit workflow draait zelf GEEN verify meer:
+# de uitkomst van `ci.yml` (alle verify-delen plus de Tauri-builds) is de poort. Eerder draaide
+# hier een eigen, seriële `npm run verify`; dat duurde 31–45 min en haalde de grens van 45 min op
+# 2026-10-13 niet meer (run 38422479396: alle stappen groen, afgebroken 3 s voor het einde, deploy
+# overgeslagen), terwijl ci.yml dezelfde controles al parallel had gedraaid.
+#
+# Bewust geen `workflow_dispatch`: zonder poort zou een handmatige run elke branch ongecontroleerd
+# naar productie zetten. Opnieuw deployen: "Re-run all jobs" op de run van dit workflow.
 on:
-  push:
-    branches:
-      - main
-  workflow_dispatch:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
 
 permissions:
   contents: read
@@ -18,57 +26,18 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # Deploy-gate: live.yml is een echte productie-deploy (deploy-site.yml rsync't
-  # dist/ naar open-planner-studio.open-aec.com) en draaide tot nu toe parallel
-  # aan ci.yml, zónder op diens poorten te wachten — een rode suite kon daardoor
-  # gewoon live staan. Deze gate draait `npm run verify`, precies wat ci.yml ook
-  # draait, vóór de deploy. (Geen versievergelijking hier: dat hoort bij een
-  # release, niet bij een site-deploy.)
-  gate:
-    # Bevinding O6. De `deploy`-job hieronder krijgt er bewust géén: op een job
-    # met `uses:` (reusable workflow) is `timeout-minutes` niet toegestaan.
-    # 45 zoals de verify-jobs in ci.yml (#229): de volledige verify in één job haalt de 20 min
-    # op de GitHub-runner niet meer — de gates van #233, #235, #237 en #238 werden na 20 min
-    # afgebroken, de deploy sloeg over en de site bleef op #226 staan.
-    timeout-minutes: 45
-    permissions:
-      contents: read
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v5
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v5
-        with:
-          node-version: '22'
-          cache: 'npm'
-
-      - name: Install dependencies (npm ci)
-        run: npm ci
-
-      - name: Install Playwright Chromium
-        run: npx playwright install --with-deps --only-shell chromium
-
-      # Exact dezelfde poort als ci.yml en release.yml — één definitie, in
-      # package.json: typecheck (src én scripts/tests) + de vijf testsuites +
-      # verify:examples + verify:docs.
-      - name: Verify (typecheck, testsuites, examples, docs)
-        run: npm run verify
-
-      - name: Upload Playwright failure artifacts
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: playwright-live-${{ github.job }}-${{ github.run_attempt }}
-          path: |
-            playwright-report/
-            test-results/
-          if-no-files-found: ignore
-          retention-days: 7
-
   deploy:
-    needs: gate
+    # De poort. Alle voorwaarden samen:
+    #  - CI is geslaagd (een geannuleerde of rode run deployt niet);
+    #  - de CI-run kwam uit een push op main, niet uit een pull request;
+    #  - `github.sha` (bij `workflow_run` de punt van de standaardbranch op het moment dat deze run
+    #    start, en wat de gepinde deploy-workflow hieronder uitcheckt) is precies de commit die CI
+    #    testte. Is `main` intussen verder, dan slaat deze run over: de nieuwere push heeft zijn
+    #    eigen CI-run en daarna zijn eigen deploy. Zo bouwt de deploy nooit ongeteste code.
+    if: >-
+      github.event.workflow_run.conclusion == 'success'
+      && github.event.workflow_run.event == 'push'
+      && github.sha == github.event.workflow_run.head_sha
     # Op SHA gepind in plaats van `@main`. Deze reusable workflow krijgt
     # `DEPLOY_SSH_KEY` doorgegeven: op `@main` kon iedereen met schrijfrechten op
     # OpenAEC-Foundation/github bij de volgende main-push van DEZE repo de
