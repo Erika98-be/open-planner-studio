@@ -459,3 +459,5 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   kalenderdelen) vastgelegd; de twee gaan samen in één integratieronde.
 - Toevoeging eigenaar: scrollwiel boven de tabbladen moet schuiven, zonder scrollbalk. Zit al in #339; gemeten in
   de testversie (wiel 300 → scrollLeft 300, terug 0; scrollbalkhoogte 0).
+- **Checkstap 9 (tabstrook-pijlen en scrollwiel, testversie) goedgekeurd door de eigenaar 2026-10-13,
+  letterlijk: "mooi, heel netjes".** Review van #339 loopt nog.
