@@ -5,7 +5,7 @@ import { ResourceAssignment } from '@/types/resource';
 import { Project, SchedulingOptions, SchedulingProfile } from '@/types/project';
 import { carriesProfile, schedulingProfileToJson } from '@/services/ifc/schedulingOptionsRead';
 import { legacyOptionsBlobFor } from '@/services/ifc/schedulingProfileMigration';
-import { holidayEndDate, WorkCalendar } from '@/types/calendar';
+import { holidayEndDate, WorkCalendar, type WorkTimeBands } from '@/types/calendar';
 import { DEFAULT_CALENDAR_ID } from '@/engine/calendar/defaultCalendar';
 import { ActivityCodeType, CustomFieldDef, CustomFieldType, CustomFieldValue } from '@/types/structure';
 import { Baseline } from '@/types/baseline';
@@ -917,6 +917,68 @@ interface WriteCalendarResult {
   /** De `IFCTIMEPERIOD`s zijn de EFFECTIEVE banden van een SCALAIRE kalender (een urentaak
    *  gebruikt hem), niet de expliciete `workTime` van een uurkalender. */
   materializedScalarBands: boolean;
+  /** `WorkingTimes` draagt meer dan één weekgroep (werkblokken die per weekdag verschillen, zie
+   *  `weekBandGroups`). Dan is de scalar werktijd niet eenduidig uit de periodes af te leiden: een
+   *  oudere lezer neemt de terugvalweek, deze lezer de eerste werkdag met blokken. */
+  perDayWeek: boolean;
+  /** STEP-id van de terugvalweek voor oudere OPS-versies (`LEGACY_WEEK_DATE`), of `undefined`. */
+  legacyWorkTimeStepId: number | undefined;
+}
+
+/** Eén `IFCWORKTIME` in `WorkingTimes`: de werkdagen (in `cal.workDays`-volgorde) met precies
+ *  dezelfde set blokken, en die blokken. */
+interface WeekBandGroup {
+  days: number[];
+  bands: ReadonlyArray<{ start: number; end: number }>;
+}
+
+/** Engelse dagafkortingen voor het label van een `IFCWORKTIME`-groep (ISO 1 = maandag). */
+const ISO_DAY_LABEL: Record<number, string> = { 1: 'Mon', 2: 'Tue', 3: 'Wed', 4: 'Thu', 5: 'Fri', 6: 'Sat', 7: 'Sun' };
+
+/**
+ * StartDate = FinishDate van de terugvalweek voor oudere OPS-versies (zie `writeCalendar`). IFC 4.3
+ * (`IfcWorkTime`): start- en einddatum "restrict never-ending recurrence patterns" — een lezer die de
+ * norm volgt, past deze week dus alleen op 1 januari 1900 toe, en dus nooit in een echte planning.
+ * Uitgebrachte OPS-versies (t/m v2026.9.0) lezen de datums van `WorkingTimes` niet.
+ */
+const LEGACY_WEEK_DATE = '1900-01-01';
+
+/**
+ * Groepeert de werkdagen van een kalender op een identieke set blokken: één groep per
+ * `IFCWORKTIME` in `WorkingTimes`, met een eigen `IFCRECURRENCEPATTERN(.WEEKLY.)` (WeekdayComponent +
+ * TimePeriods). Zo modelleert IFC 4.3 zelf een week met een korte vrijdag (`IfcWorkCalendar`, figuur 1:
+ * ma–do 8:00–12:00 + 13:00–17:00, vr 8:00–14:00 — elk een eigen `IfcWorkTime`, zonder overlap).
+ *
+ *  - Alleen de dagen uit `cal.workDays`, net als vóór deze indeling (dagen buiten `workDays` schreef de
+ *    writer nooit). Een werkdag zonder eigen blokken krijgt, net als vroeger, de blokken van de eerste
+ *    werkdag (`cal.workDays[0]`): zo blijft elke kalender die vroeger verliesloos was één groep.
+ *  - Twee dagen horen bij dezelfde groep als hun blokken (gesorteerd op begin) gelijk zijn; de groep
+ *    schrijft de blokken in de volgorde van zijn eerste dag.
+ *  - Volgorde: de groep met de MEESTE dagen eerst, bij gelijkstand de groep die het eerst in
+ *    `cal.workDays` voorkomt. De eerste groep levert de blokken van de terugvalweek voor oudere
+ *    OPS-versies (`writeCalendar`). Verder heeft de volgorde geen betekenis: `WorkingTimes` is een SET.
+ *  - Eén groep (uniforme week) ⇒ het bestand is byte-identiek aan vroeger.
+ */
+function weekBandGroups(workDays: readonly number[], workTime: WorkTimeBands): WeekBandGroup[] {
+  const ownBands = (day: number) => (day >= 1 && day <= 7 ? workTime.byWeekday[day as 1] : undefined) ?? [];
+  const firstDayBands = workDays.length > 0 ? ownBands(workDays[0]) : [];
+  const groups: WeekBandGroup[] = [];
+  const byKey = new Map<string, WeekBandGroup>();
+  for (const day of workDays) {
+    const own = ownBands(day);
+    const bands = own.length > 0 ? own : firstDayBands;
+    const key = [...bands].sort((a, b) => a.start - b.start || a.end - b.end)
+      .map((b) => `${b.start}-${b.end}`).join(',');
+    let group = byKey.get(key);
+    if (!group) {
+      group = { days: [], bands };
+      byKey.set(key, group);
+      groups.push(group);
+    }
+    group.days.push(day);
+  }
+  // `Array.prototype.sort` is stabiel: bij gelijkstand blijft de volgorde van eerste voorkomen.
+  return groups.sort((a, b) => b.days.length - a.days.length);
 }
 
 function writeCalendar(
@@ -927,40 +989,83 @@ function writeCalendar(
   includeEffectiveScalarBands = false,
 ): WriteCalendarResult {
   // Work time recurrence (weekdays)
-  const dayNums = cal.workDays.join(',');
-  let timePeriodRefs: string;
   let firstPeriod: [string, string] | undefined;
+  let perDayWeek = false;
+  let legacyWorkTimeStepId: number | undefined;
   const workTime = cal.workTime ?? (includeEffectiveScalarBands ? effectiveWorkTimeBands(cal) : undefined);
-  if (workTime) {
-    // UUR-kalender ⇒ `TimePeriods` als LIJST van per-dag-banden (`IfcRecurrencePattern.TimePeriods`
-    // is native een lijst). IFC's enkele recurrence draagt één set periodes voor alle
-    // DayComponent-dagen; we schrijven de banden van de eerste werkdag (uniform-over-de-week). Een
-    // wrap-band (`end > 1440`) emitteert het eind als tijd-van-de-dag (`end % 1440`), waaruit de
-    // reader de wrap herkent (`end ≤ start`). Een band tot precies middernacht eindigt op '24:00:00'
-    // (einde van de dag, begin vóór eind); oudere bestanden met '00:00:00' leest de wrapregel nog.
-    const firstDay = cal.workDays[0] as 1 | 2 | 3 | 4 | 5 | 6 | 7 | undefined;
-    const bands = (firstDay && workTime.byWeekday[firstDay]) || [];
+  // Werkblokken die per weekdag verschillen ⇒ meer groepen, elk een eigen `IFCWORKTIME` (zie
+  // `weekBandGroups`). Een uniforme week (één groep) en een kalender zonder blokken nemen de tak
+  // hieronder ongewijzigd: hun bestand blijft byte-identiek. Een scalaire kalender is altijd uniform
+  // (`effectiveWorkTimeBands` geeft elke werkdag dezelfde blokken).
+  const groups = workTime ? weekBandGroups(cal.workDays, workTime) : [];
+  const workTimeIds: number[] = [];
+  /** Eén `IFCWORKTIME` met een WEEKLY-patroon; geeft zijn STEP-id terug. */
+  const writeWeek = (days: readonly number[], bands: WeekBandGroup['bands'], label: string, dates: string): number => {
     const ids = bands.map((b) =>
       addLine(ctx, '_timeperiod', `IFCTIMEPERIOD('${minutesToClock(b.start)}','${minutesToClock(b.end, true)}')`),
     );
-    timePeriodRefs = ids.map((i) => `#${i}`).join(',');
-    if (bands[0]) firstPeriod = [minutesToClock(bands[0].start), minutesToClock(bands[0].end, true)];
+    if (!firstPeriod && bands[0]) firstPeriod = [minutesToClock(bands[0].start), minutesToClock(bands[0].end, true)];
+    const recurrenceId = addLine(ctx, '_recurrence',
+      `IFCRECURRENCEPATTERN(.WEEKLY.,$,(${days.join(',')}),$,$,$,$,(${ids.map((i) => `#${i}`).join(',')}))`);
+    return addLine(ctx, '_worktime', `IFCWORKTIME(${ifcStr(label)},.PREDICTED.,$,#${recurrenceId},${dates})`);
+  };
+  if (groups.length > 1) {
+    // Een groep zonder blokken (de eerste werkdag heeft er geen) heeft geen werktijd; IFC kent geen
+    // "werkdag zonder tijdvakken" (een WEEKLY-patroon zonder TimePeriods is de hele dag). Hij gaat dus
+    // niet mee — de lezer zou zo'n dag via `promoteHourCalendar` toch uit de werkdagen halen.
+    const written = groups.filter((g) => g.bands.length > 0);
+    perDayWeek = written.length > 1;
+    if (perDayWeek) {
+      // TERUGVALWEEK voor oudere OPS-versies, VOORAAN in `WorkingTimes`: alle werkdagen met de blokken
+      // van de grootste groep — wat zij vóór deze wijziging ook lazen. Uitgebrachte versies (t/m
+      // v2026.9.0) lezen alleen de EERSTE `IFCWORKTIME` en negeren zijn datums; zonder deze week zagen
+      // zij alleen de dagen van de eerste groep als werkdag (gemeten: een korte vrijdag werd een VRIJE
+      // dag). Hij geldt alleen op `LEGACY_WEEK_DATE`, dus een lezer die IFC 4.3 volgt past hem nooit
+      // toe; deze lezer slaat hem over via `LegacyWorkTimeIds` in `OPS_Calendar`.
+      const writtenDays = new Set(written.flatMap((g) => g.days));
+      legacyWorkTimeStepId = writeWeek(
+        cal.workDays.filter((d) => writtenDays.has(d)), written[0].bands,
+        'Standard work week (for older Open Planner Studio versions)', `'${LEGACY_WEEK_DATE}','${LEGACY_WEEK_DATE}'`);
+      workTimeIds.push(legacyWorkTimeStepId);
+    }
+    for (const group of written) {
+      const label = `Standard work week (${group.days.map((d) => ISO_DAY_LABEL[d] ?? String(d)).join(', ')})`;
+      workTimeIds.push(writeWeek(group.days, group.bands, label, '$,$'));
+    }
   } else {
-    // Geldige IfcTime `hh:mm:ss` (07:30 ⇒ '07:30:00', niet '7.5:00:00'); 24 ⇒ '24:00:00' (einde dag).
-    const startTime = minutesToClock(Math.round(cal.workStartHour * 60));
-    const endTime = minutesToClock(Math.round(cal.workEndHour * 60), true);
-    const timePeriodId = addLine(ctx, '_timeperiod', `IFCTIMEPERIOD('${startTime}','${endTime}')`);
-    timePeriodRefs = `#${timePeriodId}`;
-    firstPeriod = [startTime, endTime];
+    const dayNums = cal.workDays.join(',');
+    let timePeriodRefs: string;
+    if (workTime) {
+      // UUR-kalender ⇒ `TimePeriods` als LIJST van per-dag-banden (`IfcRecurrencePattern.TimePeriods`
+      // is native een lijst). Eén groep: elke werkdag draagt dezelfde banden; we schrijven die van de
+      // eerste werkdag. Een wrap-band (`end > 1440`) emitteert het eind als tijd-van-de-dag
+      // (`end % 1440`), waaruit de reader de wrap herkent (`end ≤ start`). Een band tot precies
+      // middernacht eindigt op '24:00:00' (einde van de dag, begin vóór eind); oudere bestanden met
+      // '00:00:00' leest de wrapregel nog.
+      const firstDay = cal.workDays[0] as 1 | 2 | 3 | 4 | 5 | 6 | 7 | undefined;
+      const bands = (firstDay && workTime.byWeekday[firstDay]) || [];
+      const ids = bands.map((b) =>
+        addLine(ctx, '_timeperiod', `IFCTIMEPERIOD('${minutesToClock(b.start)}','${minutesToClock(b.end, true)}')`),
+      );
+      timePeriodRefs = ids.map((i) => `#${i}`).join(',');
+      if (bands[0]) firstPeriod = [minutesToClock(bands[0].start), minutesToClock(bands[0].end, true)];
+    } else {
+      // Geldige IfcTime `hh:mm:ss` (07:30 ⇒ '07:30:00', niet '7.5:00:00'); 24 ⇒ '24:00:00' (einde dag).
+      const startTime = minutesToClock(Math.round(cal.workStartHour * 60));
+      const endTime = minutesToClock(Math.round(cal.workEndHour * 60), true);
+      const timePeriodId = addLine(ctx, '_timeperiod', `IFCTIMEPERIOD('${startTime}','${endTime}')`);
+      timePeriodRefs = `#${timePeriodId}`;
+      firstPeriod = [startTime, endTime];
+    }
+    const recurrenceId = addLine(ctx, '_recurrence', `IFCRECURRENCEPATTERN(.WEEKLY.,$,(${dayNums}),$,$,$,$,(${timePeriodRefs}))`);
+    // Engelstalig label: dit belandt in ELK opgeslagen IFC-bestand, ook bij een gebruiker die
+    // de app in het Duits of Japans draait — en IFC is een Engelstalige standaard, dus een Nederlands
+    // label is hier vreemde eend. Veilig te wijzigen: de lezer gebruikt van de `IFCWORKTIME`'s in
+    // `WorkingTimes` alleen args[3] (de RecurrencePattern-ref), nooit de naam. Let op het verschil met de
+    // FEESTDAG-IFCWORKTIME's in ExceptionTimes: dáár leest de lezer args[0] wél, als feestdagnaam —
+    // die komen uit `cal.holidays` en staan hier los van.
+    workTimeIds.push(addLine(ctx, '_worktime', `IFCWORKTIME('Standard work week',.PREDICTED.,$,#${recurrenceId},$,$)`));
   }
-  const recurrenceId = addLine(ctx, '_recurrence', `IFCRECURRENCEPATTERN(.WEEKLY.,$,(${dayNums}),$,$,$,$,(${timePeriodRefs}))`);
-  // Engelstalig label: dit belandt in ELK opgeslagen IFC-bestand, ook bij een gebruiker die
-  // de app in het Duits of Japans draait — en IFC is een Engelstalige standaard, dus een Nederlands
-  // label is hier vreemde eend. Veilig te wijzigen: de lezer gebruikt van dit "hoofd"-IFCWORKTIME
-  // alleen args[3] (de RecurrencePattern-ref), nooit de naam. Let op het verschil met de
-  // FEESTDAG-IFCWORKTIME's in ExceptionTimes: dáár leest de lezer args[0] wél, als feestdagnaam —
-  // die komen uit `cal.holidays` en staan hier los van.
-  const workTimeId = addLine(ctx, '_worktime', `IFCWORKTIME('Standard work week',.PREDICTED.,$,#${recurrenceId},$,$)`);
 
   // Holidays as exception times
   const holidayRefs: string[] = [];
@@ -1000,7 +1105,7 @@ function writeCalendar(
   // ObjectType (arg 4): alleen een label bij USERDEFINED-ploeg; anders `$`.
   const objectType = cal.shift === 'USERDEFINED' ? ifcStr('USERDEFINED') : '$';
   const calStepId = addLine(ctx, key,
-    `IFCWORKCALENDAR(${ifcStr(objectGuid(ctx, 'cal', cal.id))},#${ownerHistId},${ifcStr(cal.name)},${ifcStr(cal.description)},${objectType},(#${workTimeId}),${exceptStr},${shiftToPredefinedType(cal.shift)})`);
+    `IFCWORKCALENDAR(${ifcStr(objectGuid(ctx, 'cal', cal.id))},#${ownerHistId},${ifcStr(cal.name)},${ifcStr(cal.description)},${objectType},(${workTimeIds.map((i) => `#${i}`).join(',')}),${exceptStr},${shiftToPredefinedType(cal.shift)})`);
   return {
     calStepId,
     workingExceptionStepIds,
@@ -1008,6 +1113,8 @@ function writeCalendar(
       ? { start: scalarHourFromClock(firstPeriod[0]), end: scalarHourFromClock(firstPeriod[1]) }
       : undefined,
     materializedScalarBands: !cal.workTime && workTime !== undefined,
+    perDayWeek,
+    legacyWorkTimeStepId,
   };
 }
 
@@ -1033,6 +1140,12 @@ function writeCalendar(
  *    (07:00–16:00 met lunchblokken wordt daar 07:00–12:00). Per veld alleen geschreven wanneer de
  *    eerste periode hem niet teruggeeft. Een kalender die nog de oude eerste-blok-scalar draagt (bv.
  *    08:00–12:00 bij blokken 08–12 + 13–17) krijgt dus geen `WorkEndHour` en wordt bij lezen 8–17.
+ *    Uitzondering: een week met meer `IFCWORKTIME`-groepen (`perDayWeek`) krijgt beide altijd — daar
+ *    leidt een oudere lezer de scalar uit de eerste groep af en deze lezer uit de eerste werkdag met
+ *    blokken, dus geen enkele periode geeft hem eenduidig terug.
+ *  - `LegacyWorkTimeIds`: het STEP-id van de terugvalweek die `writeCalendar` vooraan in `WorkingTimes`
+ *    zet voor oudere OPS-versies (alleen bij werkblokken die per weekdag verschillen). De lezer slaat die
+ *    `IFCWORKTIME` over; zonder deze markering telt hij als gewone week mee (zie de lezer).
  *  - `IsHourCalendar = .F.`: alleen wanneer de `IFCTIMEPERIOD`s gematerialiseerde effectieve banden van
  *    een SCALAIRE kalender zijn (een urentaak gebruikt hem). IFC zelf ziet daar gewoon de lunchpauze
  *    (interop); de OPS-lezer weet zo dat de kalender scalair was en promoveert hem niet naar uur-modus.
@@ -1043,7 +1156,9 @@ function writeCalendarGenerationMeta(
   ownerHistId: number,
   written: WriteCalendarResult,
 ): void {
-  const { calStepId, workingExceptionStepIds, readerScalarHours, materializedScalarBands } = written;
+  const {
+    calStepId, workingExceptionStepIds, readerScalarHours, materializedScalarBands, perDayWeek, legacyWorkTimeStepId,
+  } = written;
   const gen = cal.generation;
   const derivedHoursPerDay = cal.workEndHour - cal.workStartHour;
   const needsHoursPerDayOverride = !cal.workTime && cal.hoursPerDay !== derivedHoursPerDay;
@@ -1055,11 +1170,16 @@ function writeCalendarGenerationMeta(
   // Een enkele 08:00–16:00-band is aan de IFC-kant niet te onderscheiden van een dagkalender met
   // dezelfde scalar-uren. De OPS-markering bewaart daarom de kalenderidentiteit ook zonder urentaak.
   const isHourCalendar = cal.workTime !== undefined;
-  const needsWorkStartHour = Number.isFinite(cal.workStartHour) && readerScalarHours?.start !== cal.workStartHour;
-  const needsWorkEndHour = Number.isFinite(cal.workEndHour) && readerScalarHours?.end !== cal.workEndHour;
+  // Week met meer groepen: altijd schrijven. Oudere lezers nemen de scalar uit de eerste groep, deze
+  // lezer uit de eerste werkdag met blokken (`firstBlockedDay`); die twee kunnen verschillen.
+  const needsWorkStartHour = Number.isFinite(cal.workStartHour)
+    && (perDayWeek || readerScalarHours?.start !== cal.workStartHour);
+  const needsWorkEndHour = Number.isFinite(cal.workEndHour)
+    && (perDayWeek || readerScalarHours?.end !== cal.workEndHour);
+  const hasLegacyWeek = legacyWorkTimeStepId !== undefined;
   if (!gen && !cal.libraryOrigin && !needsHoursPerDayOverride && !hasWorkingExceptions
     && !hasSimpleBreak && !isHourCalendar && !materializedScalarBands && !needsWorkStartHour && !needsWorkEndHour
-    && !hasP6Source && !hasRejectedPenaltyDiagnostic) return;
+    && !hasP6Source && !hasRejectedPenaltyDiagnostic && !hasLegacyWeek) return;
   const props: number[] = [];
   if (gen) {
     props.push(addLine(ctx, `_opscal_ruleset_${cal.id}`,
@@ -1116,6 +1236,11 @@ function writeCalendarGenerationMeta(
     const idJson = JSON.stringify(workingExceptionStepIds.map(String));
     props.push(addLine(ctx, `_opscal_wexc_${cal.id}`,
       `IFCPROPERTYSINGLEVALUE('WorkingExceptionIds',$,IFCTEXT(${ifcStr(asciiJson(idJson))}),$)`));
+  }
+  if (hasLegacyWeek) {
+    // Zelfde vorm als `WorkingExceptionIds`: een JSON-lijst van STEP-ids (zonder `#`).
+    props.push(addLine(ctx, `_opscal_legacyweek_${cal.id}`,
+      `IFCPROPERTYSINGLEVALUE('LegacyWorkTimeIds',$,IFCTEXT(${ifcStr(JSON.stringify([String(legacyWorkTimeStepId)]))}),$)`));
   }
   if (hasP6Source) {
     props.push(addLine(ctx, `_opscal_p6source_${cal.id}`,
