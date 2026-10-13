@@ -581,4 +581,4 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   IfcOpenShell, round-trip-fixture 0 fouten in IFC4/IFC4X3/ADD2, alle mutanten rood. Orkestrator: commentaar
   IFCURIREFERENCE rechtgezet (af72ac272); CI loopt, daarna merge. Niet gedaan (bewust): `check-ifc-arity`
   inkorten (dubbel met de poort) en de dubbele toets op negatieve duur.
-- **#345 gemerged in main 2026-10-14** (kop af72ac272, bevatte main 35c59df7d, CI 16/16, `--admin`; alleen tests/commentaar en één gedragsloze constante, dus geen `measure:profiles`).
+- **#345 gemerged in main 2026-10-14 → c5c806fbe** (kop af72ac272, bevatte main 35c59df7d, CI 16/16, `--admin`; alleen tests/commentaar en één gedragsloze constante, dus geen `measure:profiles`).
