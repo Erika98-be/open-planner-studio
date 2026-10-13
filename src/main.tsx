@@ -34,6 +34,12 @@ if (import.meta.env.DEV && new URLSearchParams(window.location.search).get('fake
   void import('@/services/fileAccess/fakeSiteHost').then(({ installFakeSiteHost }) => installFakeSiteHost());
 }
 
+// Kijkscène voor handmatige controle, alleen in DEV en met `?qaScene=<naam>` (zie qaScenes.ts).
+const qaScene = import.meta.env.DEV ? new URLSearchParams(window.location.search).get('qaScene') : null;
+if (qaScene) {
+  void import('@/utils/qaScenes').then(({ runQaScene }) => runQaScene(qaScene)).catch(e => console.error(e));
+}
+
 // Wacht tot de actieve taal geladen is voordat we renderen (voorkomt een Engelse flits).
 // Faalt de taal-load, dan valt i18next terug op de eager 'en'-resources en renderen we alsnog.
 initLocale()
