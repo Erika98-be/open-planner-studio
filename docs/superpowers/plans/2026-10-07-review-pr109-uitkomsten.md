@@ -855,3 +855,8 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   VERMOED: (3) bron "120" ontbreekt in de PR (staat wel in het eindrapport van de #353-maker); (6) fase met alleen
   lopende 100 %-taken krijgt bij lezen een verzonnen AF (alleen zonder solve). Fixronde bij de maker: fasen uit het
   predicaat (geen eigenaarsvraag: buiten de scope van het besluit), 115 corrigeren, punt 6 alleen meten.
+- **Hercheck #357 (reviewer): code in orde** op 3754d21cb (fasen uit het predicaat, mutanten e/f/g rood, corpus 9
+  treffers). Nee alleen om tekst: knownbugs 115 gaf voor 101 MER-taken een verkeerde oorzaak (de MER-bestanden missen
+  `status_code`; `statusOf` leest leeg als NOT_STARTED). Orkestrator verwerkte dat zelf (fa355198b): 115 = 11 echte
+  P6-tegenspraken, 116 uitleg rollup, **117 nieuw: XER zonder `status_code`** (bug in bestaande import ⇒ kandidaat
+  vóór de release). Tekstcheck bij de reviewer; merge na ja en groene CI.
