@@ -640,3 +640,9 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   (oud → nieuw) en de knop "Standaardopties van <profiel> gebruiken"; geen blok als er geen verschil is.
   Eigenaar vroeg ook waarom er twee subagents "op Opus 5.5 xhigh" staan: gemeten in de transcripts draaien beide
   workers op `claude-opus-5-5` met effort `medium` (definitie `~/.claude/agents/worker.md`).
+- **Eigenaarsbesluit 2026-10-14 (knop *Standaardopties*), letterlijk:** "wat ik wil is dat wanneer mijn rekenopties
+  anders zijn dan wat hoort ibj het standaardprofiel dat ik dan een blokje met uitleg krijg, een kruisje om het weg te
+  klikken en in de blokje ene knop om naar de profielstandaard instellingen te gaan." Orkestrator vulde in: vergelijken
+  op effectieve waarde, bronopties tellen niet mee, regel per afwijking "veld: huidig (standaard: …)", knop zet het
+  formulier (Toepassen blijft nodig, één undo-stap), kruisje onthoudt per document + afwijkingenset in het geheugen
+  (komt terug na heropenen of bij een nieuwe afwijking), oude vaste knop weg. Doorgegeven aan de profielblok-worker.
