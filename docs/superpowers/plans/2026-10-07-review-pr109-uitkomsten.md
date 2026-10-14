@@ -886,3 +886,7 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
 - **#358 fixronde klaar** (4e70c8982: alleen check + `knownbugs.md` + PR-tekst; M7 nu rood; knownbugs 118 onbekende
   statustekst). Main kreeg intussen #356 (tauri 2.12, ffe1e5ddf, andere sessie); #358 bijgewerkt met main via
   `gh pr update-branch` (kop 9eb106908). Merge na groene CI.
+- **#358 gemerged in main 2026-10-14 → 5a65f6b86** (kop 9eb106908 bevatte main ffe1e5ddf, CI 16/16, reviewer ja,
+  geen UI; `--admin`). Regel A: `readXER`-uitvoer hash-gelijk in 86/88 documenten, 0 datumwijzigingen
+  (`measure:profiles` raakt de MER-bestanden niet). Open voor de eigenaar, later: knownbugs 115 (P6-status tegen
+  actuals) en 118 (onbekende statustekst).
