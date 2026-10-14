@@ -133,7 +133,18 @@ test('profielblok: P6 ingeklapt en alleen-lezen, Nieuw profiel bewerkt en rekent
     await page.keyboard.press('Tab');
     await expect(page.locator(`[data-ops-convention-help="${id}"]`)).toBeFocused();
     await expect(tooltip(page)).toHaveText(help!);
+    // Chrome stuurt na een scroll pas iets later mouseout/mouseover onder de stilstaande muis: even
+    // wachten, dan moet de tooltip er nog staan.
+    await page.waitForTimeout(150);
+    await expect(tooltip(page)).toHaveText(help!);
   }
+
+  // Een tooltip die door focus kwam, blijft zolang zijn element de focus heeft: ook een hover over een
+  // ander icoon vervangt hem niet (fixronde 2 punt 3).
+  const lastHelp = helps[helps.length - 1]![1]!;
+  await infos.first().hover();
+  await page.waitForTimeout(150);
+  await expect(tooltip(page)).toHaveText(lastHelp);
 
   // Schermlezer (punt 6): direct na focus() — synchroon, vóór het bubbeltje er is — wijst
   // aria-describedby naar een element met de uitleg.
@@ -479,16 +490,17 @@ test('wizard: geen "(aangepast)" en geen afwijkingen uit het actieve document', 
 });
 
 // Fixronde 2 punt 5: verdwijnt het element van een tooltip uit de DOM, dan ruimt de host de tooltip op en
-// slikt hij de volgende Escape niet (die gaat naar Backstage). Het weghalen is een fixture (DOM).
+// slikt hij de volgende Escape niet (die gaat naar Backstage). Het weghalen is een fixture (DOM). Een
+// hover-tooltip, want bij een element met focus ruimt focusout al op.
 test('tooltip: weg met zijn element, en Escape gaat daarna gewoon door', async ({ page, ops: _ops }) => {
   await openFile(page, 'weg.xer', XER);
   await toProjectInfo(page);
   const toggle = page.locator('[data-ops-conventions-toggle]');
   await toggle.click();
-  await page.keyboard.press('Tab');
   const first = page.locator('[data-ops-convention-help]').first();
-  await expect(first).toBeFocused();
+  await first.hover();
   await expect(tooltip(page)).toHaveCount(1);
+  await expect(first).not.toBeFocused();
   await first.evaluate(el => el.remove());
   await expect(tooltip(page)).toHaveCount(0);
   await page.keyboard.press('Escape');
