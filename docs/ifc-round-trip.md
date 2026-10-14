@@ -247,6 +247,19 @@ venster bepaalt dat één keer per sessie, op de stand bij het openen (na een pr
 aan stil 10, en schreef de writer dan geen `HoursPerDay` meer. Toetsen: `check-urenperdag-dagwissel.ts` en
 `tests/mcp/cases-urenperdag-dagwissel.ts`.
 
+## Lopend op 100 %: `IfcTask.Status`
+
+Een P6-taak `TK_Active` op 100 % komt uit de XER-lezer als status STARTED, `completion` 1 en zonder werkelijk
+einde. `normalizeImportedProgress` maakt elke taak op 100 % zonder werkelijk einde "Voltooid", met het
+werkelijke einde op de statusdatum. Daarom schrijft de writer `IfcTask.Status` = `'STARTED'`, alleen bij zo'n
+taak (`isRunningAtFullCompletion` in `ifcTaskSlots.ts`). Elke andere taak houdt `$`. De lezer geeft de taken
+met precies die tekst als smalle set aan `normalizeImportedProgress`; die houdt ze lopend, zonder afgeleid
+werkelijk einde en met de restduur uit het bestand. Een werkelijk einde wint altijd, onder 100 % verandert
+niets, en een andere Status-tekst negeert de lezer. Oude bestanden (`$`) lezen zoals voorheen. Een oudere
+app-versie negeert Status en maakt zo'n taak bij openen "Voltooid". De motor plant de vastgelegde restduur
+van zo'n taak nog niet in (`knownbugs.md` 114). Toets: `check-ifc-lopend-100.ts` en de twee IFC-corpuschecks
+(A3040 in torture).
+
 ## Wat dit niet dekt
 
 - **De CSV-, MS Project- en P6-adapters.** Dat zijn import/export-adapters, geen opslagformaat; ze

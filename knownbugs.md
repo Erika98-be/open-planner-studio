@@ -60,6 +60,17 @@ en noem het in je rapport of PR-tekst.
     `drivingInfo.ts`, die "geen driving-informatie" onderscheidt van "berekend, niets driving"; de andere
     lezers nog niet. Gevonden bij de prestatiefixes voor grote planningen (rehab-2). Voorstel: dezelfde helper
     in die drie lezers. — S
+114. **De motor plant een lopende taak op 100 % niet met zijn vastgelegde restduur.** Zo'n taak (status
+    STARTED, `completion` 1, geen werkelijk einde) komt uit P6 als `TK_Active` op 100 %. In P6 eindigt
+    "Duration 100 %" (rest 0) op de statusdatum; "Physical 100 %" (rest > 0) plant de rest in. OPS zet beide
+    op het geplande einde; alleen de tweede klopt dan met P6. Gezien bij de corpusmeting van #353: 9 taken in
+    4 bestanden (rehab-2 4, `p6_torture_test_v1.xer` A3040, `percent-complete-8.4.xer` 2, `invalid-8.4.xer`
+    2). Het voorbeeld met 800 u rest staat in `percent-complete-8.4.xer` en `invalid-8.4.xer` (MPXJ-corpus),
+    taak 101724 *Physical 100%*: `remainingMinutes` 48000, statusdatum 2015-02-24, in OPS einde 2015-07-13 16:00;
+    taak 101720 *Duration 100%* (rest 0) eindigt in OPS op dezelfde datum. Besluit eigenaar 2026-10-14: IFC
+    bewaart "lopend" nu (`IfcTask.Status` = 'STARTED', PR claude/ifc-lopend-100); de motor plant de
+    vastgelegde rest in (optie 3) na de release, in het rekenprofielen-spoor. — B voor de OPS-kant (gemeten),
+    S voor de P6-kant
 
 ## Tabel, invoer en bediening
 
@@ -278,6 +289,17 @@ en noem het in je rapport of PR-tekst.
     Zo ook met de lezer van main; de huidige writer bewaart de nummers op dezelfde manier. Voorstel: de
     uitzonderingen herkennen op iets dat een merge overleeft (naam en datum, of een GlobalId-achtige
     sleutel). Gevonden bij de herbeoordeling van #336. — B
+115. **Na een IFC-round-trip veranderen status of percentage van XER-taken waarvan de P6-status de werkelijke
+    datums tegenspreekt**, zonder datumwijziging. De XER-lezer houdt de P6-status aan; de IFC-lezer leidt de
+    status af uit de actuals (`normalizeImportedProgress`). Gemeten over het XER-corpus (openen, opslaan als
+    IFC, heropenen), met `IfcTask.Status` = 'STARTED' (zie 114): 116 taken in 4 documenten (bij #353 gemeld als 120; daarvan waren 4
+    de lopende taken op 100 % in rehab-2, die nu gelijk blijven). Verdeling: 86 taken "niet gestart" met
+    werkelijk einde worden voltooid (`sample.xer` 9, `MER-1-2026_update_2026-05-01.xer` 46,
+    `MER-1-2026_epc.xer` 31; in `sample.xer` van 0 % naar 100 %); 24 taken "niet gestart" met een percentage
+    worden lopend (MER ×2); 4 taken "gestart" op 0 % zonder actuals worden niet gestart
+    (`synthetic_v2212.xer`); 2 lopende taken in `sample.xer` krijgen een ander percentage (0,171 → 0,951 en
+    0,583 → 0,833). Voorstel: besluiten welke kant wint (P6-status of actuals) en dat in beide lezers gelijk
+    trekken. — B
 
 ## Rondleiding, Help en extensie-gidsen
 
