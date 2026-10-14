@@ -9,6 +9,7 @@
 import { readFile } from 'node:fs/promises';
 import type { Locator, Page } from '@playwright/test';
 import { expect, test } from './fixtures/ops';
+import { LOCALE_CASES, chooseLocale } from './fixtures/locale';
 
 // Schermbewijs (licht en donker) alleen als deze map is gezet.
 const SHOTS = process.env.OPS_PROFIELBLOK_SHOTS;
@@ -48,18 +49,34 @@ const earlyStart = (page: Page) => page.evaluate(() =>
 const tooltip = (page: Page) => page.locator('.ops-tooltip[role="tooltip"]');
 const select = (page: Page) => page.locator('[data-ops-scheduling-profile-select] .ops-select__trigger');
 
-async function shoot(page: Page, target: Locator, name: string): Promise<void> {
+// Schermbewijs in het Nederlands (de eigenaar leest nl); de asserties accepteren nl en en.
+async function dutchForShots(page: Page): Promise<void> {
   if (!SHOTS) return;
+  await page.setViewportSize({ width: 1280, height: 1300 });
+  await chooseLocale(page, LOCALE_CASES.find(l => l.code === 'nl')!);
+}
+async function shoot(page: Page, target: Locator, name: string, scrollToTop = false, maxHeight = 1300): Promise<void> {
+  if (!SHOTS) return;
+  // Meldingen weg (fixture), en alleen het zichtbare deel van het doel: een schermafbeelding van een
+  // element buiten beeld wordt zwart.
+  await page.evaluate(() => window.__OPS__!.store.setState(st => { st.ui.notifications = []; }));
   const before = await page.evaluate(() => window.__OPS__!.store.getState().ui.uiTheme);
+  const viewport = page.viewportSize()!;
+  if (scrollToTop) await target.evaluate(el => el.scrollIntoView({ block: 'start' }));
+  const bottom = viewport.height - 40; // de statusbalk onderaan blijft buiten beeld
   for (const theme of ['light', 'dark'] as const) {
     await page.evaluate(t => window.__OPS__!.store.getState().setUI({ uiTheme: t }), theme);
     await page.waitForTimeout(300);
-    await target.screenshot({ path: `${SHOTS}/${name}-${theme === 'light' ? 'licht' : 'donker'}.png` });
+    const b = (await target.boundingBox())!;
+    const top = Math.max(b.y, 0);
+    const clip = { x: Math.max(b.x, 0), y: top, width: Math.min(b.width, viewport.width), height: Math.min(b.y + b.height, bottom, top + maxHeight) - top };
+    await page.screenshot({ path: `${SHOTS}/${name}-${theme === 'light' ? 'licht' : 'donker'}.png`, clip });
   }
   await page.evaluate(t => window.__OPS__!.store.getState().setUI({ uiTheme: t }), before);
 }
 
 test('profielblok: P6 ingeklapt en alleen-lezen, Nieuw profiel bewerkt en rekent, Ctrl+Z zet terug', async ({ page, ops: _ops }) => {
+  await dutchForShots(page);
   await openFile(page, 'profielblok.xer', XER);
   await expect.poll(() => profileOf(page).then(p => p?.id)).toBe('p6');
   await expect.poll(() => earlyStart(page)).toBe('2026-03-02');
@@ -72,7 +89,7 @@ test('profielblok: P6 ingeklapt en alleen-lezen, Nieuw profiel bewerkt en rekent
   await expect(page.locator('[data-ops-conventions-count]')).toHaveText('(27)');
   await expect(page.locator('[data-ops-convention-row]')).toHaveCount(0);
   await expect(page.locator('[data-ops-conventions-deviating]')).toHaveCount(0);
-  await shoot(page, section, 'p6-ingeklapt');
+  await shoot(page, section, 'p6-ingeklapt', true);
 
   // Uitklappen: 27 regels, alleen-lezen — waarde als label, geen vinkje, geen "terug naar basis".
   await toggle.click();
@@ -152,7 +169,7 @@ test('profielblok: P6 ingeklapt en alleen-lezen, Nieuw profiel bewerkt en rekent
   await expect(a23).toHaveAttribute('data-ops-convention-deviates', 'true');
   await expect(a23.locator('[data-ops-convention-reset]')).toBeVisible();
   await expect(page.locator('[data-ops-conventions-deviating]')).toHaveText(/(afwijkend|changed): 1/);
-  await shoot(page, section, 'eigen-profiel-bewerken');
+  await shoot(page, section, 'eigen-profiel-bewerken', true, 760);
   await page.getByRole('button', { name: /^(Apply|Toepassen)$/ }).click();
   await expect.poll(() => profileOf(page)).toMatchObject({
     baseId: 'p6', name: 'Aannemer zonder statusdatum', overrides: { unstartedIgnoresStatusDate: true },
@@ -235,6 +252,7 @@ async function chooseProfile(page: Page, value: string): Promise<void> {
 
 test('profielblok: afwijkende reken-opties tonen een blok met kruisje en een knop naar de standaard', async ({ page, ops: _ops }) => {
   // Een nieuw project (OPS, geen opties) toont geen blok.
+  await dutchForShots(page);
   await toProjectInfo(page);
   await expect(page.locator('[data-ops-scheduling-options]')).toBeVisible();
   await expect(page.locator('[data-ops-options-deviate-notice]')).toHaveCount(0);
@@ -253,7 +271,7 @@ test('profielblok: afwijkende reken-opties tonen een blok met kruisje en een kno
   await expect(lines).toHaveCount(1);
   await expect(lines.first()).toHaveAttribute('data-ops-options-deviation', 'criticalDefinition');
   await expect(lines.first()).toHaveText(/^(Kritiek-definitie: Langste pad \(standaard: totale speling ≤ 0 uren\)|Critical definition: Longest path \(default: total float ≤ 0 hours\))$/);
-  await shoot(page, page.locator('[data-ops-scheduling-options]'), 'afwijkende-opties-p6');
+  await shoot(page, page.locator('[data-ops-scheduling-options]'), 'afwijkende-opties-p6', true);
 
   // Een wissel naar Microsoft Project in het formulier vergelijkt meteen met die standaard.
   await chooseProfile(page, 'builtin:msproject');
