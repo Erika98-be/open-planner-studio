@@ -166,7 +166,7 @@ Deze groep staat ook op *Tabel* en *Rapport*.
 
 ### Beeld › Presentatie
 
-- **Presentatie** — zet de presentatiemodus aan of uit (F11 of Esc om te stoppen): alleen de Gantt vult het scherm. Zie [Presenteren op een groot scherm](docs://howto-presentatie).
+- **Presentatie** — zet de presentatiemodus aan of uit (Esc om te stoppen, in de desktopapp ook F11): alleen de Gantt vult het scherm. Zie [Presenteren op een groot scherm](docs://howto-presentatie).
 - **Split view** — splitst de Gantt in twee tijdvensters die beide beginnen met je huidige zoom en positie (verdeling 50 procent), of maakt er weer één van. Standaard: uit. Zie [Split view en mini-map gebruiken](docs://howto-split-view-en-mini-map).
 - **Mini-map** — toont of verbergt de mini-map. Standaard: uit. De keuze blijft bewaard.
 

@@ -30,6 +30,7 @@ import { computeScrollToDate } from '@/utils/ganttViewport';
 // De acties die het lint EN het toetsenbord delen, staan één keer gedefinieerd.
 import { COMMANDS } from '@/state/commands';
 import i18n from '@/i18n/config';
+import { isTauri } from '@/utils/platform';
 
 export type ShortcutCategory = 'file' | 'edit' | 'structure' | 'view' | 'nav' | 'grid';
 
@@ -49,6 +50,7 @@ export interface ShortcutDef {
   allowInInput?: boolean;                     // werkt óók in invoervelden (zoals Ctrl+S/F5/F11)
   when?: () => boolean;                       // optionele extra-guard
   displayOnly?: boolean;                      // alleen tonen in de dialoog, niet zelf afhandelen
+  hiddenInBrowser?: boolean;                  // niet tonen in de overzichtsdialoog als de app in een browser draait
   /** Uitzondering voor `edit.deselect`: roept `e.preventDefault()` NIET aan. Voor elke andere entry
    *  wordt preventDefault altijd aangeroepen. */
   skipPreventDefault?: boolean;
@@ -200,6 +202,11 @@ export const SHORTCUTS: ShortcutDef[] = [
     category: 'view',
     labelKey: 'menu:ribbon.presentationMode',
     allowInInput: true,
+    // In een browser is F11 van de browser zelf (gewoon volledig scherm, app-chrome blijft staan).
+    // We kapen de toets daar alleen om een lopende presentatie te verlaten; starten gaat via de
+    // lintknop. In de desktopschil heeft F11 geen eigen betekenis en start hij de presentatie.
+    hiddenInBrowser: true,
+    when: () => isTauri() || useAppStore.getState().ui.presentationMode,
     run: (store) => store.setPresentationMode(!store.ui.presentationMode),
   },
   {

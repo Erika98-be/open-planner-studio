@@ -6,6 +6,7 @@ import { Dialog, DialogHeader } from '@/components/common/Dialog';
 import { SHORTCUTS_HELP_ARTICLE_ID } from '@/state/helpArticles';
 import { SHORTCUTS, type ShortcutCategory, type ShortcutCombo, type ShortcutDef } from '@/hooks/keyboard/shortcutRegistry';
 import { isMacPlatform, formatComboGroup } from '@/hooks/keyboard/shortcutFormat';
+import { isTauri } from '@/utils/platform';
 
 /** Vaste categorievolgorde; `grid` staat achteraan als eigen
  *  sectie voor de taakgridtoetsen (zie shortcutRegistry.ts). */
@@ -29,6 +30,7 @@ function buildRows(): Record<ShortcutCategory, ShortcutRow[]> {
   const index = new Map<string, ShortcutRow>(); // key: `${category}:${labelKey}`
 
   for (const entry of SHORTCUTS) {
+    if (entry.hiddenInBrowser && !isTauri()) continue;
     const key = `${entry.category}:${entry.labelKey}`;
     let row = index.get(key);
     if (!row) {
