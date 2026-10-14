@@ -1238,8 +1238,9 @@ function writtenWeekHoursPerDay(groups: readonly WeekBandGroup[]): number {
  *      `day_hr_cnt` 8 kwam zonder deze eigenschap terug met 10. Altijd samen met `IsHourCalendar = .T.`
  *      (hieronder): de herkenning van oude scalaire kalenders (`legacyScalarFromEffectiveBands` in de
  *      lezer) kijkt alleen naar kalenders zonder die markering, dus ziet deze `HoursPerDay` nooit.
- *      Oudere lezers (t/m v2026.9.0) zetten hem bij een uurkalender met blokken terug op de klokuren,
- *      zoals vóór deze eigenschap; zie docs/ifc-round-trip.md, "Uren per dag bij een blokkenkalender".
+ *      v2026.9.0 leest de blokken van dit bestand al niet (9 attributen in `IfcWorkCalendar`) en houdt
+ *      dan deze waarde in plaats van 8; zie docs/ifc-round-trip.md, "Uren per dag bij een
+ *      blokkenkalender".
  *  - `WorkingExceptionIds`: de STEP-ids van de werkende-uitzondering-`IFCWORKTIME`'s uit
  *    `writeCalendar`. Dit IS de discriminator waarmee de reader een werkende uitzondering van een
  *    (evt. recurrente) feestdag onderscheidt — een RecurrencePattern-ref is geen IFC-gereserveerd

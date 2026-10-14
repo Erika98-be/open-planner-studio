@@ -2,12 +2,12 @@ import './domStub';
 // Uren per dag van blokkenkalenders door IFC opslaan en heropenen, op echte XER's (OPS_XER_CORPUS).
 // De corpusloze toets van hetzelfde gedrag staat in `check-ifc-urenperdag-blokken.ts`.
 //
-// Gemeten vóór de fix (main 7ea3e8748), over alle 93 XER's van het corpus (88 te openen documenten,
-// 761 uurkalenders): 16 kalenders in 4 bestanden hadden een `hoursPerDay` (P6 `day_hr_cnt`) die afwijkt
-// van de klokuren van hun blokken, en kwamen na IFC terug met de klokuren. Daardoor veranderde bij 1301
-// urentaken de dagwaarde (`scheduleDuration`, de kolom Duur van de CSV-export) en in de P6- en
-// MSPDI-export de uren per dag van de kalender. De getoonde duur en de datums veranderden niet: de
-// weergave en de motor rekenen bij een uurkalender met de blokken.
+// Gemeten vóór de fix (main 7ea3e8748), over alle 93 XER's van het corpus (88 te openen documenten): 11
+// kalenders in deze 4 bestanden hadden een `hoursPerDay` (P6 `day_hr_cnt`) die afwijkt van de klokuren van
+// hun blokken, en kwamen na IFC terug met de klokuren. Daardoor veranderde bij 1301 taken de dagwaarde
+// (`scheduleDuration`, de kolom Duur van de CSV-export) en in de P6- en MSPDI-export de uren per dag van de
+// kalender. De getoonde duur en de datums veranderden niet: de weergave en de motor rekenen bij een
+// uurkalender met de blokken.
 //
 // Per bestand, voor elk document: openen via de echte route (doorrekenen), opslaan als IFC, heropenen.
 //  - het aantal uurkalenders met een afwijkende `hoursPerDay` (gepind, zodat de toets ze echt raakt);
