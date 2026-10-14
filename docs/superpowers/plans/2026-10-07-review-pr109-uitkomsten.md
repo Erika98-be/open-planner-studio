@@ -582,3 +582,7 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   IFCURIREFERENCE rechtgezet (af72ac272); CI loopt, daarna merge. Niet gedaan (bewust): `check-ifc-arity`
   inkorten (dubbel met de poort) en de dubbele toets op negatieve duur.
 - **#345 gemerged in main 2026-10-14 → c5c806fbe** (kop af72ac272, bevatte main 35c59df7d, CI 16/16, `--admin`; alleen tests/commentaar en één gedragsloze constante, dus geen `measure:profiles`).
+- **Checkstap 10 (2026-10-14), bevindingen eigenaar:** stap 1 klopt (screenshot: blok *Working times*, geen infoblok,
+  geen Begin/Einde/Pauze). Stap 2 (*Fri* uit → Einde 26-09-2006): "het werkt". **Bevinding:** de tijdvelden tonen
+  AM/PM ("01:00 PM") in de Engelse UI; dat volgt de browserlocale van `<input type="time">`, niet de app-taal.
+  Na de check voorleggen.
