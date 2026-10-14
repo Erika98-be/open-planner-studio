@@ -823,3 +823,6 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   browser; XER-minuten: 0 corpusverschillen; R3/R8/R10–R14 rood. Rest: R16 (beginstand resourcevenster) ongetest,
   gidsen noemen netto-uren nog altijd de bloksom ⇒ beide bij de maker; daarna merge. Voor de eigenaar [VERMOED]:
   een afwijkende hpd is in het venster alleen via een preset terug te zetten (hoort bij besluit "een dag").
+- **#354 gemerged in main 2026-10-14 → eef8bdacf** (kop 0803e71ec bevatte main 967c9e07b, CI 16/16, reviewer ja,
+  R16 rood, gidszin over eigen uren per dag; `measure:profiles` main = PR; `--admin`; gedrag zonder zichtbare
+  ontwerpwijziging). #347 en #350 mergen main (conflict CalendarForm/gidsen bij #347).
