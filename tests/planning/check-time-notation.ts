@@ -180,9 +180,8 @@ for (const end of [60, 1020, 1425, 1440, 1441, 1800, 2879]) {
 // ── 8b) IFC: blokken uit de editor overleven opslaan en heropenen (review #347, punt 4) ─────
 // Wat de blokeditor nu maakt: een blok tot 24:00 (1440), een blok tot 23:45 na een stap omlaag
 // (1425) en een nachtblok tot 06:00 de volgende dag (1800). Twee round-trips, gelijk aan het origineel.
-// NB: een kalender met blokken waarvan hoursPerDay afwijkt van de blokken (de XER-"Late ploeg": 8 bij
-// 10 klokuren) komt na IFC terug met de afgeleide waarde; dat is bestaand writergedrag
-// (`ifcWriter.ts`, `needsHoursPerDayOverride` alleen zonder workTime) en staat los van de tijdnotatie.
+// Plus de XER-"Late ploeg": blokken tot 24:00 met een hoursPerDay (8) die afwijkt van de bloksom (10);
+// sinds #351 schrijft de IFC-schrijver die afwijking ook bij een blokkenkalender (docs/ifc-round-trip.md).
 {
   const project = { ...createDefaultProject(), id: 'proj-tn', calendarId: 'cal-tn', startDate: '2026-01-05' };
   const roundTrip = (cal: WorkCalendar): WorkCalendar => readIFC(writeIFC({
@@ -197,8 +196,13 @@ for (const end of [60, 1020, 1425, 1440, 1441, 1800, 2879]) {
     1: [{ start: 960, end: 1440 }], 2: [{ start: 1320, end: 1800 }], 3: [{ start: 960, end: 1425 }],
     4: [{ start: 480, end: 720 }, { start: 780, end: 1440 }], 5: [{ start: 1320, end: 1800 }], 6: [], 7: [],
   } };
+  const late: WorkTimeBands = { byWeekday: {
+    1: [{ start: 840, end: 1440 }], 2: [{ start: 840, end: 1440 }], 3: [{ start: 840, end: 1440 }],
+    4: [{ start: 840, end: 1440 }], 5: [{ start: 840, end: 1440 }], 6: [], 7: [],
+  } };
   for (const cal of [
     mk('24:00, 23:45 en nachtblok', mixed, deriveHoursPerDay(mixed, 8), 16, 24),
+    mk('Late ploeg (hoursPerDay 8 bij 10 klokuren)', late, 8, 14, 24),
   ]) {
     const rt1 = roundTrip(cal);
     eq(`IFC ${cal.name}: workTime en hoursPerDay na opslaan en heropenen`, facts(rt1), facts(cal));
