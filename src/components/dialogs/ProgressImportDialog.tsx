@@ -2,6 +2,8 @@ import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AlertTriangle } from 'lucide-react';
 import { useAppStore } from '@/state/appStore';
+import { displayIsoTime } from '@/utils/displayTime';
+import type { TimeNotation } from '@/types/view';
 import { Dialog, DialogHeader } from '@/components/common/Dialog';
 import { PROGRESS_IMPORT_HELP_ARTICLE_ID } from '@/state/helpArticles';
 import { openFileDialog } from '@/services/fileAccess';
@@ -51,9 +53,9 @@ function capRows<T>(rows: readonly T[]): { shown: readonly T[]; hiddenCount: num
  *  als enige weergave. Draagt de waarde een tijddeel, dan komt dat erachter. Ook gebruikt voor de
  *  datumvolgorde-vraag: `DateOrderDetection.sampleAlternatives` draagt twee
  *  ISO-datums, geen kant-en-klare weergavetekst — die formatteren we hier locale-bewust. */
-function formatIsoForDisplay(iso: string, locale: string): string {
+function formatIsoForDisplay(iso: string, locale: string, timeNotation: TimeNotation): string {
   const datePart = iso.slice(0, 10);
-  const timePart = iso.length > 10 ? iso.slice(11, 16) : '';
+  const timePart = displayIsoTime(iso, timeNotation);
   const dateLabel = formatDisplayDate(parseDate(datePart), locale);
   return timePart ? `${dateLabel} ${timePart}` : dateLabel;
 }
@@ -70,10 +72,11 @@ function formatChangeValue(
   value: string | number | undefined,
   locale: string,
   emptyLabel: string,
+  timeNotation: TimeNotation,
 ): string {
   if (value === undefined) return emptyLabel;
   if (field === 'completion') return formatPercent(value as number, locale);
-  return formatIsoForDisplay(value as string, locale);
+  return formatIsoForDisplay(value as string, locale, timeNotation);
 }
 
 /** Rijnummer → sheetrij, voor de secties die de RUWE bladwaarden tonen (rijen die nog op koppeling
@@ -100,6 +103,7 @@ export function ProgressImportDialog() {
   const open = useAppStore(s => s.ui.showProgressImportDialog);
   const setUI = useAppStore(s => s.setUI);
   const tasks = useAppStore(s => s.tasks);
+  const timeNotation = useAppStore(s => s.ui.timeNotation);
   // Store-acties — zie `ProgressImportPlanFn` hierboven.
   const previewProgressImport = useAppStore(s => s.previewProgressImport) as ProgressImportPlanFn;
   const applyProgressImport = useAppStore(s => s.applyProgressImport) as ProgressImportPlanFn;
@@ -268,9 +272,9 @@ export function ProgressImportDialog() {
       {row.changes.map(change => (
         <li key={change.field}>
           {t(`progressImport.field.${change.field}`)}:{' '}
-          {formatChangeValue(change.field, change.before, i18n.language, emptyLabel)}
+          {formatChangeValue(change.field, change.before, i18n.language, emptyLabel, timeNotation)}
           {' → '}
-          {formatChangeValue(change.field, change.after, i18n.language, emptyLabel)}
+          {formatChangeValue(change.field, change.after, i18n.language, emptyLabel, timeNotation)}
         </li>
       ))}
     </ul>
@@ -322,10 +326,10 @@ export function ProgressImportDialog() {
             <p>{t('progressImport.dateOrderQuestion', { sample: detection.sample })}</p>
             <div className="flex flex-col gap-2">
               <button onClick={() => chooseOrder('dmy')} className="btn btn--sm btn--secondary self-start">
-                {t('progressImport.dateOrderOptionA', { date: formatIsoForDisplay(detection.sampleAlternatives[0], i18n.language) })}
+                {t('progressImport.dateOrderOptionA', { date: formatIsoForDisplay(detection.sampleAlternatives[0], i18n.language, timeNotation) })}
               </button>
               <button onClick={() => chooseOrder('mdy')} className="btn btn--sm btn--secondary self-start">
-                {t('progressImport.dateOrderOptionB', { date: formatIsoForDisplay(detection.sampleAlternatives[1], i18n.language) })}
+                {t('progressImport.dateOrderOptionB', { date: formatIsoForDisplay(detection.sampleAlternatives[1], i18n.language, timeNotation) })}
               </button>
             </div>
           </div>

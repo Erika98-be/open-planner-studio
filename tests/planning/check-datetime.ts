@@ -125,12 +125,16 @@ eq('60 uur 24 wordt geweigerd', parseGridDateTime('31-12-2026 24:00', 'dmy'), nu
 eq('61 minuut 60 wordt geweigerd', parseGridDateTime('31-12-2026 08:60', 'dmy'), null);
 eq('62 seconden worden niet stil afgekapt door de gridparser', parseGridDateTime('31-12-2026 08:45:30', 'dmy'), null);
 eq('63 niet-bestaande grid-datumtijd wordt geweigerd', parseGridDateTime('31-02-2026 08:45', 'dmy'), null);
-eq('64 ISO-minuut formatteert naar dmy', formatGridDateTime('2026-12-31T08:45', 'dmy'), '31-12-2026 08:45');
+eq('64 ISO-minuut formatteert naar dmy', formatGridDateTime('2026-12-31T08:45', 'dmy', '24h'), '31-12-2026 08:45');
 eq('65 datetime dmy roundtrip bewaart ISO-minuut',
-  parseGridDateTime(formatGridDateTime('2024-02-29T00:05', 'dmy'), 'dmy'), '2024-02-29T00:05');
+  parseGridDateTime(formatGridDateTime('2024-02-29T00:05', 'dmy', '24h'), 'dmy'), '2024-02-29T00:05');
+eq('66 ISO-minuut formatteert naar dmy in 12-uursnotatie', formatGridDateTime('2026-12-31T13:30', 'dmy', '12h'), '31-12-2026 1:30 PM');
+eq('67 grid datetime accepteert 12-uursinvoer', parseGridDateTime('31-12-2026 1:30 PM', 'dmy'), '2026-12-31T13:30');
+eq('68 datetime 12h roundtrip bewaart ISO-minuut (middernacht)',
+  parseGridDateTime(formatGridDateTime('2024-02-29T00:05', 'dmy', '12h'), 'dmy'), '2024-02-29T00:05');
 
 if (diffs.length === 0) {
-  console.log('OK  datetime-check: alle checks groen (65)');
+  console.log('OK  datetime-check: alle checks groen (68)');
   process.exit(0);
 } else {
   console.log(`XX  datetime-check: ${diffs.length} afwijking(en)`);

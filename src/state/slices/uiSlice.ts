@@ -149,6 +149,7 @@ export function createDefaultUI(): UIState {
     // App.tsx hydrateert bij opstart uit localStorage (loadConstructionMode).
     constructionMode: true,
     dateNotation: 'dmy',
+    timeNotation: '24h',
     // Urenplanning-defaults — hoofdschakelaar uit, gemengd toegestaan,
     // duurweergave automatisch, balk-opsplitsing bij selectie.
     enableHourPlanning: false,

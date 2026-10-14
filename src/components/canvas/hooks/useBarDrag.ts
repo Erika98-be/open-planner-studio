@@ -14,7 +14,7 @@ import {
 import type { GanttAxis } from '@/engine/renderer/timeAxis';
 import type { Task, TaskConstraint } from '@/types/task';
 import type { WorkCalendar } from '@/types/calendar';
-import type { DateNotation } from '@/types/view';
+import type { DateNotation, TimeNotation } from '@/types/view';
 import type { NotifyInput } from '@/state/slices/types';
 import {
   constraintBlockingStart,
@@ -169,6 +169,7 @@ interface UseBarDragOptions {
   /** Het ene meldkanaal en de datumnotatie voor de startmelding na het loslaten. */
   notify?: (notification: NotifyInput) => void;
   dateNotation?: DateNotation;
+  timeNotation?: TimeNotation;
 }
 
 // Balk-sleep (resize links/rechts + verplaatsen), dag- én uur-taken. Bezit zijn eigen `dragState`
@@ -194,7 +195,7 @@ interface UseBarDragOptions {
 export function useBarDrag({
   zoom, enableQuarterHourZoom, enableHourPlanning, calendar, effectiveCalById, compressNonWorkdays, getTask,
   updateTask, onVerticalBodyDrag, axis, canvasRef, setTaskSplits, barTopOf, isStartDrivenByPredecessor,
-  notify, dateNotation = 'dmy',
+  notify, dateNotation = 'dmy', timeNotation = '24h',
 }: UseBarDragOptions) {
   const [dragState, setDragState] = useState<DragState | null>(null);
   const [splitLabel, setSplitLabel] = useState<SplitDragLabel | null>(null);
@@ -552,7 +553,7 @@ export function useBarDrag({
           : rule.snet?.constraint.date
             ? [{ kind: 'snet', name: rule.original.name, date: rule.snet.constraint.date, change: rule.snet.change }]
             : [];
-        notifyStartEdit(notify, notices, dateNotation);
+        notifyStartEdit(notify, notices, dateNotation, timeNotation);
       }
       setSplitLabel(null);
       setDragState(null);
@@ -577,6 +578,7 @@ export function useBarDrag({
     snapAt,
     notify,
     dateNotation,
+    timeNotation,
   ]);
 
   return { dragState, startBarDrag, splitLabel, active: !!dragState };

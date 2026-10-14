@@ -1,6 +1,6 @@
 import type { StartConstraintChange } from '@/engine/startEditConstraint';
 import type { TaskConstraint } from '@/types/task';
-import type { DateNotation } from '@/types/view';
+import type { DateNotation, TimeNotation } from '@/types/view';
 import { displayDateTime } from '@/utils/displayDate';
 import type { NotifyInput } from './slices/types';
 import { CONSTRAINTS_HELP_ARTICLE_ID } from './helpArticles';
@@ -28,6 +28,7 @@ const HELP_ARTICLE_ID = CONSTRAINTS_HELP_ARTICLE_ID;
 export function startEditNotifications(
   notices: readonly StartEditNotice[],
   notation: DateNotation,
+  timeNotation: TimeNotation,
 ): NotifyInput[] {
   const out: NotifyInput[] = [];
   const snet = notices.filter((notice): notice is Extract<StartEditNotice, { kind: 'snet' }> => notice.kind === 'snet');
@@ -37,7 +38,7 @@ export function startEditNotifications(
     out.push({
       severity: 'info',
       messageKey: notice.change === 'created' ? 'notifications.startSnetCreated' : 'notifications.startSnetUpdated',
-      params: { name: notice.name, date: displayDateTime(notice.date, notation) },
+      params: { name: notice.name, date: displayDateTime(notice.date, notation, timeNotation) },
       helpArticleId: HELP_ARTICLE_ID,
     });
   } else if (snet.length > 1) {
@@ -54,7 +55,7 @@ export function startEditNotifications(
       severity: 'info',
       messageKey: constraint.date ? 'notifications.startBlockedByConstraint' : 'notifications.startBlockedByConstraintNoDate',
       params: constraint.date
-        ? { name, type: constraint.type, date: displayDateTime(constraint.date, notation) }
+        ? { name, type: constraint.type, date: displayDateTime(constraint.date, notation, timeNotation) }
         : { name, type: constraint.type },
       helpArticleId: HELP_ARTICLE_ID,
     });
@@ -74,6 +75,7 @@ export function notifyStartEdit(
   notify: (notification: NotifyInput) => void,
   notices: readonly StartEditNotice[],
   notation: DateNotation,
+  timeNotation: TimeNotation,
 ): void {
-  for (const notification of startEditNotifications(notices, notation)) notify(notification);
+  for (const notification of startEditNotifications(notices, notation, timeNotation)) notify(notification);
 }

@@ -27,6 +27,7 @@ import type { UIState } from '@/state/slices/types';
 import type { PersistedTaskGridPreferencesV1 } from '@/types/taskGrid';
 import {
   DATE_NOTATIONS,
+  TIME_NOTATIONS,
   DURATION_DISPLAYS,
   BAR_SPLIT_MODES,
   UI_FONT_FAMILIES,
@@ -175,6 +176,7 @@ export const SETTINGS: SettingDescriptor[] = [
 
   // Datumnotatie
   setting({ key: 'dateNotation', field: 'dateNotation', parse: parseEnum(DATE_NOTATIONS) }),
+  setting({ key: 'timeNotation', field: 'timeNotation', parse: parseEnum(TIME_NOTATIONS) }),
 
   // Lettertype interface: familie (enum) + schaalpercentage. De schaal snapt naar de
   // dichtstbijzijnde waarde uit UI_FONT_SCALES — dezelfde lijst waaruit de Select zijn opties bouwt

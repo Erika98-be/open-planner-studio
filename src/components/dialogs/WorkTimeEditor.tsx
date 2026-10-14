@@ -1,18 +1,45 @@
 import { useTranslation } from 'react-i18next';
 import { Plus, Trash2, Copy } from 'lucide-react';
 import type { WorkTimeBands } from '@/types/calendar';
-import { deriveHoursPerDay, minutesToClock, clockToMinutes } from '@/services/subdayIo';
+import { deriveHoursPerDay } from '@/services/subdayIo';
 import { ISO_WEEK_DAYS, orderedWeekDays } from '@/utils/weekDays';
+import { MinuteTimeInput } from '@/components/common/TimeInput';
 type WD = 1 | 2 | 3 | 4 | 5 | 6 | 7;
 
-/** Minuten → `'HH:MM'` (voor een `type="time"`-veld). Wrap-tijd (>1440) wordt modulo getoond. */
-function toHM(min: number): string {
-  return minutesToClock(min).slice(0, 5);
+/**
+ * Blokeinde ⇄ eindveld, in één domein. Een blokeinde is een minuut-vanaf-middernacht van de begindag:
+ * tot en met 1440 (= 24:00, middernacht) op dezelfde dag, daarboven "volgende dag" (een nachtblok,
+ * bv. 1800 = 06:00 volgende dag). Het eindveld toont een einde tot en met 1440 als dagtijd met
+ * `endOfDay` (24:00 of 12:00 AM), en een nachtblok als tijd op de volgende dag (0..1439).
+ */
+export function bandEndField(end: number): { minutes: number; nextDay: boolean } {
+  return end > 1440 ? { minutes: end - 1440, nextDay: true } : { minutes: end, nextDay: false };
+}
+
+/** Getypte of gestapte tijd in het eindveld → blokeinde. Zie {@link bandEndField}. */
+export function bandEndFromField(minutes: number, nextDay: boolean): number {
+  return nextDay ? minutes + 1440 : minutes;
+}
+
+/**
+ * Blokeinde na typen of stappen in het eindveld. Middernacht (`24:00`, `12:00 AM`, `0:00` bij een
+ * nachtblok) is altijd 1440. Verder: een einde op of vóór het begin ligt op de volgende dag, dezelfde
+ * regel als `canonicalizeBands` (`subdayIo.ts`) bij het inlezen. Zo wordt 22:00–24:00 met een getypt
+ * einde `02:00` een nachtblok tot 1560, en geen blok van 22:00 terug naar 02:00 (−20 uur). Omgekeerd
+ * wordt een blok nooit langer dan 24 uur: een nachtblok 22:00–06:00 met getypt einde `23:00` wordt
+ * 22:00–23:00 op dezelfde dag (1380), niet 2820.
+ */
+export function bandEndAfterEdit(start: number, typed: number, nextDay: boolean): number {
+  if (typed === 1440) return 1440;
+  const end = bandEndFromField(typed, nextDay);
+  if (end <= start) return end + 1440;
+  // Een blok is nooit langer dan 24 uur: 22:00–06:00 (volgende dag) met getypt einde 23:00 is 22:00–23:00.
+  return end - start > 1440 ? end - 1440 : end;
 }
 
 /**
  * Volledige banden-editor — achter "Per weekdag instellen…". Per ISO-weekdag een
- * lijst `{start,end}`-banden (tijd-pickers), een nachtploeg-toggle ("volgende dag" = band die
+ * lijst `{start,end}`-banden (tijdvelden volgens de instelling Tijdnotatie), een nachtploeg-toggle ("volgende dag" = band die
  * middernacht kruist, `end += 1440`), meerdere banden per dag (pauze), "kopieer naar alle
  * werkdagen" en de per-weekdag-som + afgeleide `hoursPerDay` als controlegetal.
  *
@@ -64,7 +91,7 @@ export function WorkTimeEditor({
   const visibleWeekDays = orderedWeekDays(weekStartDay);
 
   const timeCls =
-    'px-1.5 py-1 bg-surface border-[1.5px] border-[var(--theme-control-border)] rounded-[6px] text-text-primary focus:outline-none focus:border-accent';
+    'w-[6.5rem] px-1.5 py-1 bg-surface border-[1.5px] border-[var(--theme-control-border)] rounded-[6px] text-text-primary focus:outline-none focus:border-accent';
 
   return (
     <div className="border border-border rounded-[10px] p-3 flex flex-col gap-2 bg-surface-alt" data-ops-worktime-editor>
@@ -96,26 +123,32 @@ export function WorkTimeEditor({
               <span className="!text-small text-text-secondary italic pl-8">{tCommon('calendar.worktime.noBands')}</span>
             ) : (
               list.map((b, idx) => {
-                const nextDay = b.end >= 1440; // 1440 = 24:00 (middernacht volgende dag) ⇒ wrap
-                const endClock = b.end % 1440;
+                // 1440 = 24:00 is middernacht aan het eind van de dag, géén "volgende dag".
+                const { minutes: endMinutes, nextDay } = bandEndField(b.end);
                 return (
                   <div key={idx} className="flex items-center gap-1.5 pl-8" data-ops-band>
-                    <input type="time" value={toHM(b.start)} className={timeCls}
-                      onChange={(e) => {
-                        const m = clockToMinutes(e.currentTarget.value);
-                        if (m != null) updateBand(wd, idx, { start: m });
-                      }} />
+                    <MinuteTimeInput minutes={b.start % 1440} className={timeCls}
+                      ariaLabel={tCommon('calendar.worktime.bandStart')}
+                      increaseLabel={tCommon('calendar.simpleBreak.increaseTime')}
+                      decreaseLabel={tCommon('calendar.simpleBreak.decreaseTime')}
+                      dataAttribute="band-start"
+                      onCommit={(m) => updateBand(wd, idx, { start: m })} />
                     <span className="text-text-secondary">–</span>
-                    <input type="time" value={toHM(endClock)} className={timeCls}
-                      onChange={(e) => {
-                        const m = clockToMinutes(e.currentTarget.value);
-                        if (m != null) updateBand(wd, idx, { end: nextDay ? m + 1440 : m });
-                      }} />
+                    <MinuteTimeInput minutes={endMinutes} endOfDay className={timeCls}
+                      ariaLabel={tCommon('calendar.worktime.bandEnd')}
+                      increaseLabel={tCommon('calendar.simpleBreak.increaseTime')}
+                      decreaseLabel={tCommon('calendar.simpleBreak.decreaseTime')}
+                      dataAttribute="band-end"
+                      onCommit={(m) => updateBand(wd, idx, { end: bandEndAfterEdit(b.start, m, nextDay) })} />
                     <label className="flex items-center gap-1 !text-small text-text-secondary">
-                      <input type="checkbox" checked={nextDay} className="accent-accent"
+                      {/* Een blok tot 24:00 eindigt al om middernacht: "volgende dag" heeft dan geen
+                          betekenis en staat uit. Doorlopen na middernacht: typ een eindtijd vóór het
+                          begin (02:00 bij 22:00), dan wordt het vanzelf "volgende dag". */}
+                      <input type="checkbox" checked={nextDay} disabled={b.end === 1440} className="accent-accent"
+                        data-ops-band-next-day
                         onChange={(e) => {
                           const checked = e.currentTarget.checked;
-                          updateBand(wd, idx, { end: checked ? endClock + 1440 : endClock });
+                          updateBand(wd, idx, { end: bandEndFromField(endMinutes, checked) });
                         }} />
                       {tCommon('calendar.worktime.nextDay')}
                     </label>

@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { expect, test } from './fixtures/ops';
+import { blocksOf, mspdiWithBlocks, openMspdiAndCalendarDialog } from './fixtures/mspdiBlocks';
 
 test('kalenderdialoog bewaart gewone enkelregelige velden bij Enter zonder te sluiten', async ({ page, ops: _ops }) => {
   await page.evaluate(() => {
@@ -295,36 +296,8 @@ test('resourcekalender blokkeert lokaal ongeldige scalar-tijden zonder het model
 // Fix werkdag-einde (2026-10): een kalender met werkblokken (MS Project: 08:00–12:00 + 13:00–17:00) kwam
 // binnen als werkdag 08:00–12:00. Open een MSPDI via de knop Openen en de bestandskiezer. Besluit eigenaar
 // 2026-10-13 (optie 2): ook met urenplanning uit (standaard) toont het venster dan het blok Werktijden, en
-// de gebruiker wijzigt de blokken daar direct. Begin, einde en pauze staan er dan niet.
-function mspdiWithBlocks(blocks: [string, string][], fridayBlocks: [string, string][] = blocks): string {
-  const times = (list: [string, string][]) => '<WorkingTimes>' + list.map(([from, to]) =>
-    `<WorkingTime><FromTime>${from}:00</FromTime><ToTime>${to}:00</ToTime></WorkingTime>`).join('') + '</WorkingTimes>';
-  const days = [1, 2, 3, 4, 5, 6, 7].map(n => `<WeekDay><DayType>${n}</DayType><DayWorking>${n >= 2 && n <= 6 ? 1 : 0}</DayWorking>${n >= 2 && n <= 5 ? times(blocks) : n === 6 ? times(fridayBlocks) : ''}</WeekDay>`).join('');
-  return `<?xml version="1.0" encoding="UTF-8"?>
-<Project xmlns="http://schemas.microsoft.com/project"><Name>Blokken</Name><StartDate>2026-01-05T08:00:00</StartDate>
-<MinutesPerDay>480</MinutesPerDay><CalendarUID>1</CalendarUID>
-<Calendars><Calendar><UID>1</UID><Name>Standard</Name><IsBaseCalendar>1</IsBaseCalendar><WeekDays>${days}</WeekDays></Calendar></Calendars>
-<Tasks><Task><UID>1</UID><ID>1</ID><Name>Taak</Name><OutlineLevel>1</OutlineLevel><Start>2026-01-05T08:00:00</Start><Finish>2026-01-09T17:00:00</Finish><Duration>PT40H0M0S</Duration></Task></Tasks>
-</Project>`;
-}
-
-async function openMspdiAndCalendarDialog(page: import('@playwright/test').Page, xml: string) {
-  const openButton = page.locator('button.ribbon-btn').filter({ hasText: /^(Open|Openen)$/ });
-  await expect(openButton).toHaveCount(1);
-  const chooser = page.waitForEvent('filechooser');
-  await openButton.click();
-  await (await chooser).setFiles({ name: 'blokken.xml', mimeType: 'application/xml', buffer: Buffer.from(xml) });
-  await expect.poll(() => page.evaluate(() => window.__OPS__!.store.getState().calendar.name)).toBe('Standard');
-  await page.evaluate(() => window.__OPS__!.store.getState().setUI({ showCalendarDialog: true, enableHourPlanning: false }));
-  const dialog = page.locator('[data-ops-calendar-dialog]');
-  await expect(dialog).toBeVisible();
-  return dialog;
-}
-
-const blocksOf = (dialog: import('@playwright/test').Locator, day: number) =>
-  dialog.locator(`[data-ops-worktime-day="${day}"] [data-ops-band] input[type="time"]`)
-    .evaluateAll(inputs => inputs.map(input => (input as HTMLInputElement).value));
-
+// de gebruiker wijzigt de blokken daar direct. Begin, einde en pauze staan er dan niet. De MSPDI-fixture
+// staat in fixtures/mspdiBlocks.ts (gedeeld met time-notation.spec.ts).
 test('kalenderdialoog: kalender met werkblokken toont bij urenplanning uit het blok Werktijden',
   async ({ page, ops: _ops }) => {
     const dialog = await openMspdiAndCalendarDialog(page, mspdiWithBlocks([['08:00', '12:00'], ['13:00', '17:00']]));
@@ -369,7 +342,7 @@ test('kalenderdialoog: een blok wijzigen bij urenplanning uit telt in de plannin
   const dialog = await openMspdiAndCalendarDialog(page, mspdiWithBlocks([['08:00', '12:00'], ['13:00', '17:00']]));
   await expect.poll(() => blocksState(page)).toEqual({ ...MSPDI_BLOCKS, finish: '2026-01-09T17:00' });
 
-  const friEnd = dialog.locator('[data-ops-worktime-day="5"] [data-ops-band]').nth(1).locator('input[type="time"]').nth(1);
+  const friEnd = dialog.locator('[data-ops-worktime-day="5"] [data-ops-band]').nth(1).locator('[data-ops-time-input]').nth(1);
   await friEnd.fill('15:00');
   await expect.poll(() => blocksOf(dialog, 5)).toEqual(['08:00', '12:00', '13:00', '15:00']);
   await dialog.locator('[data-ops-cal-apply]').click();
@@ -387,7 +360,7 @@ test('kalenderdialoog: gewijzigde blokken bij urenplanning uit blijven na opslaa
   const dialog = await openMspdiAndCalendarDialog(page, mspdiWithBlocks([['08:00', '12:00'], ['13:00', '17:00']]));
   await expect.poll(() => blocksState(page)).toEqual({ ...MSPDI_BLOCKS, finish: '2026-01-09T17:00' });
 
-  const monEnd = dialog.locator('[data-ops-worktime-day="1"] [data-ops-band]').nth(1).locator('input[type="time"]').nth(1);
+  const monEnd = dialog.locator('[data-ops-worktime-day="1"] [data-ops-band]').nth(1).locator('[data-ops-time-input]').nth(1);
   await monEnd.fill('15:00');
   await dialog.locator('[data-ops-worktime-day="1"]').getByTitle('Copy to all workdays').click();
   await expect.poll(() => blocksOf(dialog, 5)).toEqual(['08:00', '12:00', '13:00', '15:00']);
@@ -527,7 +500,7 @@ test('kalenderdialoog: na Continu krijgt een dag die weer aan gaat 00:00–24:00
   await dialog.getByRole('button', { name: 'Tue', exact: true }).click();
   await expect.poll(() => blocksOf(dialog, 2)).toEqual([]);
   await dialog.locator('[data-ops-calendar-preset-weekdays]').click();
-  await expect.poll(() => blocksOf(dialog, 2)).toEqual(['00:00', '00:00']);
+  await expect.poll(() => blocksOf(dialog, 2)).toEqual(['00:00', '24:00']);
   await dialog.locator('[data-ops-cal-apply]').click();
   const allDay = [{ start: 0, end: 1440 }];
   await expect.poll(() => calendarBlocks(page).then(c => [c.workDays, c.byWeekday?.[2], c.byWeekday?.[6], c.hpd])).toEqual([

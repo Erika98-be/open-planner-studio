@@ -463,7 +463,7 @@ export function TaskCellEditor({
                   ? ''
                   : dateEditorKind === 'date'
                     ? formatGridDate(value, dateNotation)
-                    : formatGridDateTime(value, dateNotation));
+                    : formatGridDateTime(value, dateNotation, adapter.context.timeNotation ?? '24h'));
               }}
               className="task-grid-date-picker"
               data-task-editor-picker={dateEditorKind}
