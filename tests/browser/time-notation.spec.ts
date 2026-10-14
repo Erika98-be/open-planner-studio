@@ -328,12 +328,21 @@ for (const n of NOTATIONS) {
     await expect(band(dialog, 2, 0, 'end')).toHaveValue(n.midnight);
     await expect(nextDay(2)).not.toBeChecked();
     await expect(dayHeader(2)).toContainText('2.00h');
+    // Wo: eerst een nachtblok tot 06:00, dan "23:00" ⇒ 22:00–23:00 op dezelfde dag, nooit 25 uur.
+    await typeTime(band(dialog, 3, 0, 'end'), '06:00');
+    await expect(nextDay(3)).toBeChecked();
+    await expect(dayHeader(3)).toContainText('8.00h');
+    await typeTime(band(dialog, 3, 0, 'end'), n.notation === '24h' ? '23:00' : '11 pm');
+    await expect(band(dialog, 3, 0, 'end')).toHaveValue(n.notation === '24h' ? '23:00' : '11:00 PM');
+    await expect(nextDay(3)).not.toBeChecked();
+    await expect(dayHeader(3)).toContainText('1.00h');
 
     await dialog.locator('[data-ops-cal-apply]').click();
     await expect(dialog).toHaveCount(0);
     const blocks = await dayBlocks(page);
     expect(blocks[0]).toEqual([{ start: 1320, end: 1560 }]);
     expect(blocks[1]).toEqual([{ start: 1320, end: 1440 }]);
+    expect(blocks[2]).toEqual([{ start: 1320, end: 1380 }]);
     // Na Toepassen en heropenen: ma toont 4.00h en "volgende dag".
     await page.evaluate(() => window.__OPS__!.store.getState().setUI({ showCalendarDialog: true }));
     await expect(dialog).toBeVisible();

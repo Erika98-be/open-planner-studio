@@ -163,6 +163,15 @@ eq('blok na edit: nachtblok, typ 24:00 ⇒ 1440', bandEndAfterEdit(1320, 1440, t
 eq('blok na edit: nachtblok, typ 0:00 ⇒ 1440', bandEndAfterEdit(1320, 0, true), 1440);
 eq('blok na edit: nachtblok, typ 05:00 ⇒ 1740', bandEndAfterEdit(1320, 300, true), 1740);
 eq('blok na edit: stap omlaag vanaf 24:00 ⇒ 1425', bandEndAfterEdit(960, 1425, false), 1425);
+eq('blok na edit: nachtblok 22:00–06:00, typ 23:00 ⇒ 1380 (geen 25 uur)', bandEndAfterEdit(1320, 1380, true), 1380);
+eq('blok na edit: 22:00, typ 02:00 ⇒ 1560', bandEndAfterEdit(1320, 120, false), 1560);
+eq('blok na edit: 22:00, typ 24:00 ⇒ 1440 (dag)', bandEndAfterEdit(1320, 1440, false), 1440);
+eq('blok na edit: 22:00, typ 24:00 ⇒ 1440 (nachtblok)', bandEndAfterEdit(1320, 1440, true), 1440);
+eq('blok na edit: precies 24 uur blijft (08:00 tot 08:00 volgende dag)', bandEndAfterEdit(480, 480, true), 1920);
+for (const start of [0, 420, 1320, 1425]) for (const typed of [0, 60, 420, 1380, 1425, 1440]) for (const nd of [false, true]) {
+  const end = bandEndAfterEdit(start, typed, nd);
+  eq(`blok na edit: ${start}/${typed}/${nd} ⇒ lengte 1..1440`, end - start > 0 && end - start <= 1440, true);
+}
 for (const end of [60, 1020, 1425, 1440, 1441, 1800, 2879]) {
   const f = bandEndField(end);
   eq(`blok: rondgang einde ${end}`, bandEndFromField(f.minutes, f.nextDay), end);

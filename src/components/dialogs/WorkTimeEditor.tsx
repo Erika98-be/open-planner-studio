@@ -25,12 +25,16 @@ export function bandEndFromField(minutes: number, nextDay: boolean): number {
  * Blokeinde na typen of stappen in het eindveld. Middernacht (`24:00`, `12:00 AM`, `0:00` bij een
  * nachtblok) is altijd 1440. Verder: een einde op of vóór het begin ligt op de volgende dag, dezelfde
  * regel als `canonicalizeBands` (`subdayIo.ts`) bij het inlezen. Zo wordt 22:00–24:00 met een getypt
- * einde `02:00` een nachtblok tot 1560, en geen blok van 22:00 terug naar 02:00 (−20 uur).
+ * einde `02:00` een nachtblok tot 1560, en geen blok van 22:00 terug naar 02:00 (−20 uur). Omgekeerd
+ * wordt een blok nooit langer dan 24 uur: een nachtblok 22:00–06:00 met getypt einde `23:00` wordt
+ * 22:00–23:00 op dezelfde dag (1380), niet 2820.
  */
 export function bandEndAfterEdit(start: number, typed: number, nextDay: boolean): number {
   if (typed === 1440) return 1440;
   const end = bandEndFromField(typed, nextDay);
-  return end <= start ? end + 1440 : end;
+  if (end <= start) return end + 1440;
+  // Een blok is nooit langer dan 24 uur: 22:00–06:00 (volgende dag) met getypt einde 23:00 is 22:00–23:00.
+  return end - start > 1440 ? end - 1440 : end;
 }
 
 /**
