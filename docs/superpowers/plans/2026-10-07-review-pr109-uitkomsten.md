@@ -779,5 +779,5 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   schema's, R2-gat). NB: `measure:profiles` meet geen IFC-rondgang.
 - **Hercheck #352 (reviewer, Opus 5.5): ja** op fc7415722 (M4 rood, teksten kloppen). Optioneel M16/M17 ⇒ twee cases
   bij de maker; daarna merge.
-- **#352 gemerged in main 2026-10-14** (kop 2d7235858 bevatte main 8db05a95c, CI 16/16, M16/M17 rood, reviewer ja,
+- **#352 gemerged in main 2026-10-14 → 2e252983d** (kop 2d7235858 bevatte main 8db05a95c, CI 16/16, M16/M17 rood, reviewer ja,
   `--admin`, geen UI).
