@@ -732,3 +732,7 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   dode code weg, §10-meldingen apart, doc 10 regels, corpusvergelijking zonder ontdubbelen. Hercheck gestart.
   Bijvangst (A3040 `remainingTime`/`earlyFinish`, projectstart-kloktijd) als aparte opdracht naar dezelfde expert,
   branch `claude/ifc-rondgang-datums` vanaf main.
+- **Hercheck 2 #350 (reviewer, Opus 5.5): ja** op 702139732. B14 werkt ook na opslaan/heropenen (vroege starts gelijk
+  aan origineel), wizardlek dicht, tooltip bij Tab 27/27 in dialoog en Backstage, blok wacht, Escape gaat door,
+  T1–T3 rood, `MutationObserver` lekt niet en kost niets meetbaars (rehab-2, 6978 taken). Testgat: F1b (focusbewaking
+  uit `onOut`) niet gelijkwaardig ⇒ kleine test bij de maker gevraagd. Daarna: checkstap 11 van de eigenaar, dan merge.
