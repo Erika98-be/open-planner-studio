@@ -786,3 +786,13 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   corpusdocumenten; ook `Deadline`/eigen datumveld/`StatusDate 'T7:00'`. Helper `ifcDateValue` (DATE / DATETIME met
   seconden / TEXT letterlijk); lezer `readIfcDate` per veld zoals eerst. 914 checks, schemapoort drie schema's ook in
   de corpuscheck, 9 mutanten rood, IfcOpenShell 0. Review door dezelfde reviewer als #353 gestart.
+- **#354 uren per dag bij dagwissel** (expert, Opus 5.5; `claude/urenperdag-dagwissel`, kop 499e2a276): open (niet
+  gemerged), concept, CI groen. `hoursPerDayAfterDayChange` in `subdayIo.ts` (venster + MCP): hpd volgt de blokken
+  alleen als hij gelijk was aan de modale dagsom. Planning 68/75, browser (Late ploeg + *Za* ⇒ 8.00 h), MCP-case,
+  5 mutanten rood. MCP-beschrijving hpd wordt nog bijgewerkt. Review gestart.
+- **Open eigenaarsbesluit (in de rij na de checks): twee definities van "een dag" bij afwijkende hpd.** XER-/IFC-lezer
+  delen `scheduleDuration` door opgeslagen hpd (P6: minuten / `day_hr_cnt`, 1870 u ⇒ 233,75 d); raster, paneel, MCP,
+  weergave en motor door de bloksom (187 d). Na import 0 verschillen; na een rasterbewerking Roads 1182 taken anders na
+  IFC; corpus 1263. [VERMOED] resourcebelasting spreidt /8 over 25 % meer dagen. Opties maker: (1) opgeslagen hpd in
+  de schrijfroutes; (2) bloksom ook in de lezers (aanbevolen; CSV/baseline geïmporteerde taken 187); (3) overal opgeslagen
+  hpd incl. motor. Plus: venster toont "Netto-uren per dag 8.00 h" naast 10 u blokken.
