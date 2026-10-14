@@ -1,5 +1,6 @@
 import { displayDate, displayDateTime, parsePersonalDate } from '@/utils/displayDate';
-import type { DateNotation } from '@/types/view';
+import { formatClock, parseClock } from '@/utils/displayTime';
+import type { DateNotation, TimeNotation } from '@/types/view';
 import type { CellValidationError, GridResult, TaskColumnContext, TaskColumnDescriptor } from '@/types/taskGrid';
 import type { Task } from '@/types/task';
 
@@ -17,24 +18,27 @@ export function parseGridDate(text: string, notation: DateNotation): string | nu
   return parsePersonalDate(text, notation);
 }
 
+/**
+ * Datum met optionele tijd. De tijd volgt de tijdparser (`parseClock`): `13:00`, `1300`, `1:00 PM`
+ * en `1 pm` zijn allemaal geldig, in beide tijdnotaties. De uitkomst is altijd ISO, 24 uur.
+ */
 export function parseGridDateTime(text: string, notation: DateNotation): string | null {
   const value = text.trim();
   if (!value) return null;
-  const match = /^(.*?)(?:T|\s+)(\d{1,2}):(\d{2})$/.exec(value);
+  const match = /^(\S+?)(?:T|\s+)(\S.*)$/.exec(value);
   if (!match) return parseGridDate(value, notation);
   const date = parseGridDate(match[1], notation);
-  const hour = Number(match[2]);
-  const minute = Number(match[3]);
-  if (!date || hour > 23 || minute > 59) return null;
-  return `${date}T${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+  const minutes = parseClock(match[2]);
+  if (!date || minutes === undefined) return null;
+  return `${date}T${formatClock(minutes, '24h')}`;
 }
 
 export function formatGridDate(iso: string | undefined, notation: DateNotation): string {
   return displayDate(iso, notation);
 }
 
-export function formatGridDateTime(iso: string | undefined, notation: DateNotation): string {
-  return displayDateTime(iso, notation);
+export function formatGridDateTime(iso: string | undefined, notation: DateNotation, timeNotation: TimeNotation): string {
+  return displayDateTime(iso, notation, timeNotation);
 }
 
 function failure(code: string, value: unknown): GridResult<never, readonly CellValidationError[]> {
@@ -85,6 +89,8 @@ export function copyGridEditorValue(
     return booleanLabels[value ? 'true' : 'false'];
   }
   if (descriptor.valueKind === 'date' && typeof value === 'string') return formatGridDate(value, notation);
-  if (descriptor.valueKind === 'datetime' && typeof value === 'string') return formatGridDateTime(value, notation);
+  if (descriptor.valueKind === 'datetime' && typeof value === 'string') {
+    return formatGridDateTime(value, notation, context.timeNotation ?? '24h');
+  }
   return descriptor.copy(task, context);
 }

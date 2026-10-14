@@ -34,6 +34,7 @@ export function SiteOpenDialog() {
 
 function SiteOpenDialogBody({ extensions }: { extensions: string[] }) {
   const { t, i18n } = useTranslation('common');
+  const timeNotation = useAppStore((s) => s.ui.timeNotation);
   const [files, setFiles] = useState<Loaded<SiteFileInfo>>({ status: 'loading' });
   const [attempt, setAttempt] = useState(0);
   const [versions, setVersions] = useState<Record<string, Loaded<SiteVersionInfo>>>({});
@@ -86,7 +87,7 @@ function SiteOpenDialogBody({ extensions }: { extensions: string[] }) {
     });
   };
 
-  const fmt = new Intl.DateTimeFormat(i18n.language, { dateStyle: 'medium', timeStyle: 'short' });
+  const fmt = new Intl.DateTimeFormat(i18n.language, { dateStyle: 'medium', timeStyle: 'short', hour12: timeNotation === '12h' });
   const when = (value?: string) => {
     if (!value) return null;
     const date = new Date(value);

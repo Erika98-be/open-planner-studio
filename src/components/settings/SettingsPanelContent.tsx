@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppStore } from '@/state/appStore';
 import { useResolvedUITheme } from '@/hooks/useResolvedUITheme';
-import { ResolvedUITheme, UI_THEMES, DocumentChromeStyle, DateNotation, DurationDisplay, BarSplitMode, UIFontFamily, UI_FONT_FAMILIES, UI_FONT_SCALES, type UIState } from '@/state/slices/types';
-import { saveZoomSettings, saveDebugTerminalEnabled, saveDocumentChromeStyle, saveShowClassicViewControls, saveConstructionMode, saveDateNotation, saveEnableHourPlanning, saveShowTaskTypes, saveAllowMixedDayHour, saveDurationDisplay, saveBarSplitMode, saveCompressNonWorkdays, saveUIFontFamily, saveUIFontScale, saveAiAutostart, saveFormatNoticeHidden } from '@/utils/settingsStore';
+import { ResolvedUITheme, UI_THEMES, DocumentChromeStyle, DateNotation, TimeNotation, DurationDisplay, BarSplitMode, UIFontFamily, UI_FONT_FAMILIES, UI_FONT_SCALES, type UIState } from '@/state/slices/types';
+import { saveZoomSettings, saveDebugTerminalEnabled, saveDocumentChromeStyle, saveShowClassicViewControls, saveConstructionMode, saveDateNotation, saveTimeNotation, saveEnableHourPlanning, saveShowTaskTypes, saveAllowMixedDayHour, saveDurationDisplay, saveBarSplitMode, saveCompressNonWorkdays, saveUIFontFamily, saveUIFontScale, saveAiAutostart, saveFormatNoticeHidden } from '@/utils/settingsStore';
 import { FORMAT_NOTICE_KINDS, withFormatNoticeShown } from '@/services/formatNoticeKinds';
 import { applyAiModeLive } from '@/services/mcp/server';
 import { isTauri } from '@/utils/platform';
@@ -63,6 +63,7 @@ export function SettingsPanelContent() {
   const showClassicViewControls = useAppStore(s => s.ui.showClassicViewControls);
   const constructionMode = useAppStore(s => s.ui.constructionMode);
   const dateNotation = useAppStore(s => s.ui.dateNotation);
+  const timeNotation = useAppStore(s => s.ui.timeNotation);
   const enableHourPlanning = useAppStore(s => s.ui.enableHourPlanning);
   const showTaskTypes = useAppStore(s => s.ui.showTaskTypes);
   const formatNoticeHidden = useAppStore(s => s.ui.formatNoticeHidden);
@@ -215,6 +216,20 @@ export function SettingsPanelContent() {
                 ]}
               />
               <p className="scrollzoom-hint">{t('settings.dateNotationHint')}</p>
+            </div>
+
+            <div className="settings-section" data-ops-setting="timeNotation">
+              <h3>{t('settings.timeNotation')}</h3>
+              <Select
+                aria-label={t('settings.timeNotation')}
+                value={timeNotation}
+                onChange={v => applySetting('timeNotation', v as TimeNotation, saveTimeNotation)}
+                options={[
+                  { value: '24h', label: t('settings.timeNotation24h') },
+                  { value: '12h', label: t('settings.timeNotation12h') },
+                ]}
+              />
+              <p className="scrollzoom-hint">{t('settings.timeNotationHint')}</p>
             </div>
 
             <div className="settings-section">

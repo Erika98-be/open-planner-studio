@@ -298,7 +298,7 @@ export function createTaskDialogSave(context: AppStoreContext): (input: TaskDial
     } else {
       batch.withTransaction(() => save(input, notices));
     }
-    notifyStartEdit(S().notify, notices, S().ui.dateNotation);
+    notifyStartEdit(S().notify, notices, S().ui.dateNotation, S().ui.timeNotation);
     return true;
   };
 }

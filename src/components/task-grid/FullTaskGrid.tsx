@@ -302,6 +302,7 @@ export function TaskGridSurface({
   const viewRows = useAppStore(state => state.viewRows);
   const view = useAppStore(state => state.view);
   const dateNotation = useAppStore(state => state.ui.dateNotation);
+  const timeNotation = useAppStore(state => state.ui.timeNotation);
   const durationDisplay = useAppStore(state => state.ui.durationDisplay);
   const uiFontScale = useAppStore(state => state.ui.uiFontScale);
   const traceMode = useAppStore(state => state.ui.traceMode);
@@ -426,6 +427,7 @@ export function TaskGridSurface({
     scheduleStale,
     wbsAutoNumber: project.wbsAutoNumber === true,
     dateNotation,
+    timeNotation,
     calendarOptions,
     // Duur-kolom en speling: dezelfde Duurweergave en hetzelfde decimaalteken als tooltip en afdruk.
     durationDisplay,
@@ -454,7 +456,7 @@ export function TaskGridSurface({
     textDirection,
   }), [
     activityCodeTypes, assignments, baselines, calendar, calendarEngine, calendarOptions, calendars,
-    cpmResult, customFieldDefs, customTaskTypes, datesAsRecorded, dateNotation, durationDisplay, project.id,
+    cpmResult, customFieldDefs, customTaskTypes, datesAsRecorded, dateNotation, timeNotation, durationDisplay, project.id,
     project.wbsAutoNumber, recordedDates, resources, scheduleStale, sequences, showTaskTypes,
     taskTypesVisible, tCommon, tTask, taskI18n.language, tasks, textDirection, showGhostRow, ghostTask,
   ]);

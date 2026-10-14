@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { RotateCcw, FileText } from 'lucide-react';
 import { Dialog, DialogHeader } from '@/components/common/Dialog';
 import { RECOVERY_HELP_ARTICLE_ID } from '@/state/helpArticles';
+import { useTimeNotation } from '@/hooks/displayDate';
 
 /**
  * Eén te herstellen document, zoals de {@link RecoveryDialog} het toont.
@@ -53,9 +54,10 @@ interface RecoveryDialogProps {
  */
 export function RecoveryDialog({ entries, onRestore, onDiscard, onClose, onHelp }: RecoveryDialogProps) {
   const { t, i18n } = useTranslation('common');
+  const timeNotation = useTimeNotation();
 
   const fmt = new Intl.DateTimeFormat(i18n.language, {
-    dateStyle: 'medium', timeStyle: 'short',
+    dateStyle: 'medium', timeStyle: 'short', hour12: timeNotation === '12h',
   });
 
   return (

@@ -1,7 +1,7 @@
 import type { Baseline } from '@/types/baseline';
 import type { Resource, ResourceAssignment, ResourceCurve } from '@/types/resource';
 import type { Task } from '@/types/task';
-import type { DurationDisplay } from '@/types/view';
+import type { DurationDisplay, TimeNotation } from '@/types/view';
 import type { TaskRelationIndex } from '@/engine/taskGrid/relationIndex';
 
 export type TaskGridSurfaceId = 'gantt-task-grid' | 'full-task-grid';
@@ -161,6 +161,9 @@ export interface TaskColumnContext {
   /** De werkregelkolommen bestaan alleen wanneer de weergave
    *  ontsloten is (instelling of documentontsluiting, `taskTypesUnlocked`). */
   taskTypesUnlocked?: boolean;
+  /** Instelling Tijdnotatie voor de weergave- en kopieertekst van datum-met-tijd; ontbreekt ⇒ `'24h'`.
+   *  De parser accepteert beide notaties; de opgeslagen waarde blijft ISO. */
+  timeNotation?: TimeNotation;
 }
 
 /**

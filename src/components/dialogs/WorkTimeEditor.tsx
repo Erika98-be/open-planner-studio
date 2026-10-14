@@ -1,18 +1,23 @@
 import { useTranslation } from 'react-i18next';
 import { Plus, Trash2, Copy } from 'lucide-react';
 import type { WorkTimeBands } from '@/types/calendar';
-import { deriveHoursPerDay, minutesToClock, clockToMinutes } from '@/services/subdayIo';
+import { deriveHoursPerDay } from '@/services/subdayIo';
 import { ISO_WEEK_DAYS, orderedWeekDays } from '@/utils/weekDays';
+import { MinuteTimeInput } from '@/components/common/TimeInput';
 type WD = 1 | 2 | 3 | 4 | 5 | 6 | 7;
 
-/** Minuten → `'HH:MM'` (voor een `type="time"`-veld). Wrap-tijd (>1440) wordt modulo getoond. */
-function toHM(min: number): string {
-  return minutesToClock(min).slice(0, 5);
+/**
+ * Nieuw blokeinde uit een getypte tijd. `24:00` (of `12:00 AM`) is middernacht aan het eind van de dag:
+ * altijd 1440, ook als "volgende dag" al aan stond. Verder telt "volgende dag" er 1440 bij op.
+ */
+export function bandEndFromClock(typed: number, nextDay: boolean): number {
+  if (typed === 1440) return 1440;
+  return nextDay ? typed + 1440 : typed;
 }
 
 /**
  * Volledige banden-editor — achter "Per weekdag instellen…". Per ISO-weekdag een
- * lijst `{start,end}`-banden (tijd-pickers), een nachtploeg-toggle ("volgende dag" = band die
+ * lijst `{start,end}`-banden (tijdvelden volgens de instelling Tijdnotatie), een nachtploeg-toggle ("volgende dag" = band die
  * middernacht kruist, `end += 1440`), meerdere banden per dag (pauze), "kopieer naar alle
  * werkdagen" en de per-weekdag-som + afgeleide `hoursPerDay` als controlegetal.
  *
@@ -64,7 +69,7 @@ export function WorkTimeEditor({
   const visibleWeekDays = orderedWeekDays(weekStartDay);
 
   const timeCls =
-    'px-1.5 py-1 bg-surface border-[1.5px] border-[var(--theme-control-border)] rounded-[6px] text-text-primary focus:outline-none focus:border-accent';
+    'w-[6.5rem] px-1.5 py-1 bg-surface border-[1.5px] border-[var(--theme-control-border)] rounded-[6px] text-text-primary focus:outline-none focus:border-accent';
 
   return (
     <div className="border border-border rounded-[10px] p-3 flex flex-col gap-2 bg-surface-alt" data-ops-worktime-editor>
@@ -100,17 +105,19 @@ export function WorkTimeEditor({
                 const endClock = b.end % 1440;
                 return (
                   <div key={idx} className="flex items-center gap-1.5 pl-8" data-ops-band>
-                    <input type="time" value={toHM(b.start)} className={timeCls}
-                      onChange={(e) => {
-                        const m = clockToMinutes(e.currentTarget.value);
-                        if (m != null) updateBand(wd, idx, { start: m });
-                      }} />
+                    <MinuteTimeInput minutes={b.start % 1440} className={timeCls}
+                      ariaLabel={tCommon('calendar.worktime.bandStart')}
+                      increaseLabel={tCommon('calendar.simpleBreak.increaseTime')}
+                      decreaseLabel={tCommon('calendar.simpleBreak.decreaseTime')}
+                      dataAttribute="band-start"
+                      onCommit={(m) => updateBand(wd, idx, { start: m })} />
                     <span className="text-text-secondary">–</span>
-                    <input type="time" value={toHM(endClock)} className={timeCls}
-                      onChange={(e) => {
-                        const m = clockToMinutes(e.currentTarget.value);
-                        if (m != null) updateBand(wd, idx, { end: nextDay ? m + 1440 : m });
-                      }} />
+                    <MinuteTimeInput minutes={endClock} endOfDay className={timeCls}
+                      ariaLabel={tCommon('calendar.worktime.bandEnd')}
+                      increaseLabel={tCommon('calendar.simpleBreak.increaseTime')}
+                      decreaseLabel={tCommon('calendar.simpleBreak.decreaseTime')}
+                      dataAttribute="band-end"
+                      onCommit={(m) => updateBand(wd, idx, { end: bandEndFromClock(m, nextDay) })} />
                     <label className="flex items-center gap-1 !text-small text-text-secondary">
                       <input type="checkbox" checked={nextDay} className="accent-accent"
                         onChange={(e) => {

@@ -7,6 +7,7 @@ import type {
   DocumentChromeStyle,
   Layout,
   DateNotation,
+  TimeNotation,
   DurationDisplay,
   BarSplitMode,
   FilterNode,
@@ -486,6 +487,12 @@ export function saveConstructionMode(value: boolean): void {
 // corrupte sleutel ⇒ undefined → de store houdt de default 'dmy' (dd-mm-jjjj), geen reset.
 export async function saveDateNotation(value: DateNotation): Promise<void> {
   await setSetting('dateNotation', value);
+}
+
+// Tijdnotatie (24 of 12 uur): app-instelling onder de 3-plekken-regel, net als de datumnotatie.
+// Ontbrekende of corrupte sleutel ⇒ undefined → de store houdt de default '24h'.
+export async function saveTimeNotation(value: TimeNotation): Promise<void> {
+  await setSetting('timeNotation', value);
 }
 
 // Lettertype-instellingen interface: app-instellingen onder de 3-plekken-regel

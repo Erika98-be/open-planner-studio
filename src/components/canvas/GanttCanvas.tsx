@@ -137,6 +137,7 @@ export function GanttCanvas({
   // een sleepgebaar gesteld.
   const notify = useAppStore(s => s.notify);
   const dateNotation = useAppStore(s => s.ui.dateNotation);
+  const timeNotation = useAppStore(s => s.ui.timeNotation);
   const isStartDrivenByPredecessor = useCallback(
     (taskId: string) => predecessorDrivenTaskIds(tasks, allSequences).has(taskId),
     [tasks, allSequences],
@@ -492,6 +493,7 @@ export function GanttCanvas({
     isStartDrivenByPredecessor,
     notify,
     dateNotation,
+    timeNotation,
   });
 
   // Canvas is wel tabbable, maar krijgt bij een gepositioneerde canvas-klik niet in elke browser
@@ -614,6 +616,7 @@ export function GanttCanvas({
     localizedMonths,
     localizedWeekdays,
     weekStartDay,
+    timeNotation,
     enableQuarterHourZoom,
     effectiveCalById,
     barSplitMode,
@@ -629,7 +632,7 @@ export function GanttCanvas({
     axis: sharedAxis,
     fontFamily: canvasFontFamily,
     fontScale,
-  }), [viewRows, sequences, calendar, effectiveView, selectedTaskIds, cpmResult, statusDate, showStatusDateLine, showProgressLine, showResourceAccent, showFloatBand, barColorSelection, activityCodeTypes, customFieldDefs, taskTypeLabels, resources, assignments, showBaselineOverlay, baselineOverlay, trace, rowHeight, headerHeight, localizedMonths, localizedWeekdays, weekStartDay, enableQuarterHourZoom, effectiveCalById, barSplitMode, enableHourPlanning, durationDisplay, durationSuffixes, tTask, durationDrag, uiTheme, compressNonWorkdays, sharedAxis, canvasFontFamily, fontScale]);
+  }), [viewRows, sequences, calendar, effectiveView, selectedTaskIds, cpmResult, statusDate, showStatusDateLine, showProgressLine, showResourceAccent, showFloatBand, barColorSelection, activityCodeTypes, customFieldDefs, taskTypeLabels, resources, assignments, showBaselineOverlay, baselineOverlay, trace, rowHeight, headerHeight, localizedMonths, localizedWeekdays, weekStartDay, timeNotation, enableQuarterHourZoom, effectiveCalById, barSplitMode, enableHourPlanning, durationDisplay, durationSuffixes, tTask, durationDrag, uiTheme, compressNonWorkdays, sharedAxis, canvasFontFamily, fontScale]);
 
   // Secondary houdt exact zijn eigen zoom/scrollX en deelt rows/scrollY met primary.
   const secondaryRenderInput = useMemo<GanttRenderOptionsSourceInput | undefined>(() => (
@@ -664,6 +667,7 @@ export function GanttCanvas({
       localizedMonths,
       localizedWeekdays,
       weekStartDay,
+      timeNotation,
       enableQuarterHourZoom,
       effectiveCalById,
       barSplitMode,
@@ -683,7 +687,7 @@ export function GanttCanvas({
       fontFamily: canvasFontFamily,
       fontScale,
     } : undefined
-  ), [splitView, viewRows, sequences, calendar, effectiveView, selectedTaskIds, cpmResult, statusDate, showStatusDateLine, showProgressLine, showResourceAccent, showFloatBand, barColorSelection, activityCodeTypes, customFieldDefs, taskTypeLabels, resources, assignments, showBaselineOverlay, baselineOverlay, trace, rowHeight, headerHeight, localizedMonths, localizedWeekdays, weekStartDay, enableQuarterHourZoom, effectiveCalById, barSplitMode, enableHourPlanning, tTask, uiTheme, compressNonWorkdays, canvasFontFamily, fontScale]);
+  ), [splitView, viewRows, sequences, calendar, effectiveView, selectedTaskIds, cpmResult, statusDate, showStatusDateLine, showProgressLine, showResourceAccent, showFloatBand, barColorSelection, activityCodeTypes, customFieldDefs, taskTypeLabels, resources, assignments, showBaselineOverlay, baselineOverlay, trace, rowHeight, headerHeight, localizedMonths, localizedWeekdays, weekStartDay, timeNotation, enableQuarterHourZoom, effectiveCalById, barSplitMode, enableHourPlanning, tTask, uiTheme, compressNonWorkdays, canvasFontFamily, fontScale]);
 
   useGanttRendererHost({
     containers: {

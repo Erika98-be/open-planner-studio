@@ -77,7 +77,7 @@ export function TaskTimeFields({ task, onChange }: {
               // melden, en het veld laat de invoer los (`false`).
               const blocking = constraintBlockingStart(task, driven);
               if (blocking) {
-                notifyStartEdit(state.notify, [{ kind: 'blocked', name: task.name, constraint: blocking }], state.ui.dateNotation);
+                notifyStartEdit(state.notify, [{ kind: 'blocked', name: task.name, constraint: blocking }], state.ui.dateNotation, state.ui.timeNotation);
                 return false;
               }
               // Voorganger? Dan wordt de getypte start een SNET. Anker en beperking in één patch,
@@ -89,7 +89,7 @@ export function TaskTimeFields({ task, onChange }: {
               if (!snet && anchor === task.time.scheduleStart) return;
               onChange({ time: { ...task.time, scheduleStart: anchor }, ...(snet ? { constraint: snet.constraint } : {}) });
               if (snet) {
-                notifyStartEdit(state.notify, [{ kind: 'snet', name: task.name, date: anchor, change: snet.change }], state.ui.dateNotation);
+                notifyStartEdit(state.notify, [{ kind: 'snet', name: task.name, date: anchor, change: snet.change }], state.ui.dateNotation, state.ui.timeNotation);
               }
             }}
           />

@@ -344,6 +344,10 @@
     "dateNotationDmy": "dd-mm-yyyy",
     "dateNotationMdy": "mm-dd-yyyy",
     "dateNotationYmd": "yyyy-mm-dd",
+    "timeNotation": "Time format",
+    "timeNotationHint": "Determines how clock times are displayed and entered everywhere in the app. Files and calculations are unaffected (24-hour).",
+    "timeNotation24h": "24-hour (13:00)",
+    "timeNotation12h": "12-hour (1:00 PM)",
     "fontFamilyLabel": "Font",
     "fontScaleLabel": "Text size",
     "fontScaleHint": "Scales the interface text and layout.",
@@ -905,6 +909,8 @@
       "copyToAll": "Copy to all workdays",
       "noBands": "Non-working",
       "nextDay": "next day",
+      "bandStart": "Block start",
+      "bandEnd": "Block end",
       "shiftPreset": "Shift",
       "breakHint": "A gap between two bands is a break — adjust the times as needed."
     }

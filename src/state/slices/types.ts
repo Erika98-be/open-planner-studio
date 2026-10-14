@@ -16,14 +16,14 @@ export type AppSliceFactory<T> = (runtime: StoreRuntime) => AppSlice<T>;
 // engine/services importeren rechtstreeks uit `@/types/view`. De bijbehorende waarde-constanten
 // (DATE_NOTATIONS, DURATION_DISPLAYS, BAR_SPLIT_MODES) blijven hieronder in de state-laag.
 import type {
-  TimeScale, DateNotation, DurationDisplay, BarSplitMode,
+  TimeScale, DateNotation, TimeNotation, DurationDisplay, BarSplitMode,
   BuiltinFieldKey, FieldRef, ColumnConfig, FilterOperator, FilterNode, SavedFilter,
   GroupLevel, SortLevel, Layout, LayoutSession, LayoutViewParts, SplitViewState, ViewState,
 } from '@/types/view';
 import type { BarColorSelection } from '@/types/barColor';
 import type { ScheduleErrorKey } from '@/i18n/scheduleErrors';
 export type {
-  TimeScale, DateNotation, DurationDisplay, BarSplitMode,
+  TimeScale, DateNotation, TimeNotation, DurationDisplay, BarSplitMode,
   BuiltinFieldKey, FieldRef, ColumnConfig, FilterOperator, FilterNode, SavedFilter,
   GroupLevel, SortLevel, Layout, LayoutSession, LayoutViewParts, SplitViewState, ViewState,
 };
@@ -69,6 +69,8 @@ export const DEFAULT_MODIFIER_MAP: ModifierMap = {
 // bovenaan her-geïmporteerd; deze arrays blijven in de state-laag (waarde-exports horen niet in
 // `src/types/`).
 export const DATE_NOTATIONS: DateNotation[] = ['dmy', 'mdy', 'ymd'];
+
+export const TIME_NOTATIONS: TimeNotation[] = ['24h', '12h'];
 
 export const DURATION_DISPLAYS: DurationDisplay[] = ['auto', 'days', 'hours'];
 
@@ -561,6 +563,7 @@ export interface UIState {
   constructionMode: boolean;                 // persisted — bouwmodus (AAN=bouwgericht, default); UIT=bouw-agnostisch
 
   dateNotation: DateNotation;                // persisted — weergavenotatie voor datums; opslag blijft ISO
+  timeNotation: TimeNotation;                // persisted — weergave/invoer van kloktijden (24 of 12 uur); opslag blijft ISO
   // --- Urenplanning-instellingen; ontbrekende sleutel ⇒ default (geen reset) ---
   enableHourPlanning: boolean;               // persisted — hoofdschakelaar Urenplanning (default UIT)
   /** persisted (`ops-showTaskTypes`) — toon de werkregel (taaktype) en het

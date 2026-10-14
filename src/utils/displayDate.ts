@@ -1,4 +1,5 @@
-import type { DateNotation } from '@/types/view';
+import type { DateNotation, TimeNotation } from '@/types/view';
+import { displayIsoTime } from '@/utils/displayTime';
 import { isExistingYmd } from '@/utils/dateUtils';
 
 /** Jaren onder 100 vallen af: `parseDate` (via `Date.UTC`) leest die als 1900–1999. */
@@ -53,15 +54,14 @@ export function displayDate(iso: string | undefined, notation: DateNotation): st
 }
 
 /**
- * Datetime-variant (uur-modus komt in 2.8b): `YYYY-MM-DDTHH:mm` ⇒ datum-in-notatie + " HH:mm".
- * Een pure datum (geen `T`) valt terug op {@link displayDate}. Seconden/milliseconden/`Z` (bv.
- * een `createdAt`-timestamp) worden genegeerd behalve de minuut-precieze `HH:mm`.
+ * Datetime-variant: `YYYY-MM-DDTHH:mm` ⇒ datum-in-notatie + spatie + tijd-in-notatie (`13:00` of
+ * `1:00 PM`, zie `@/utils/displayTime`). Een pure datum (geen `T`) valt terug op {@link displayDate}.
+ * Seconden/milliseconden/`Z` (bv. een `createdAt`-timestamp) worden genegeerd behalve de
+ * minuut-precieze `HH:mm`.
  */
-export function displayDateTime(iso: string | undefined, notation: DateNotation): string {
+export function displayDateTime(iso: string | undefined, notation: DateNotation, timeNotation: TimeNotation): string {
   if (!iso) return '';
   const date = displayDate(iso, notation);
-  const tIdx = iso.indexOf('T');
-  if (tIdx < 0) return date;
-  const time = iso.slice(tIdx + 1, tIdx + 6); // HH:mm
-  return /^\d{2}:\d{2}$/.test(time) ? `${date} ${time}` : date;
+  const time = displayIsoTime(iso, timeNotation);
+  return time ? `${date} ${time}` : date;
 }
