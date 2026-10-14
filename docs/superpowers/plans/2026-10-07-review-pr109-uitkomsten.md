@@ -800,3 +800,10 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   gelijk; v2026.9.0 heropslaan geen motorverschil (141 documenten); MSPDI/.mpp-uurmodus exact terug; 9 mutanten rood.
   Aanbevolen en gevraagd: `IFCDATETIME` alleen in opslagvorm `YYYY-MM-DDTHH:mm` met geldige datum, rest `IFCTEXT`
   letterlijk (zone/seconden uit extensie veranderden SNET 08:00 → 10:00; `2026-13-45` werd actieve SNET).
+- **Review #354 (reviewer, Opus 5.5): nee** op b0e671e06. BEVESTIGD: (1) regressie na lege tussenweek: nieuwe dag krijgt
+  verzonnen blokken met pauze uit de afwijkende hpd (`seeded()`, `subdayIo.ts:246-253`); (2) uitkomst hangt af van de
+  klikvolgorde (regel per klik); (3) "+ blok" via *Werktijden* (`applyBands`) volgt de oude regel; (4) kommaruis
+  XER-gemiddelde 7.6000000000000005; MCP-tekst "their"; dode tak; dubbele MCP-test; R3/R8 groen.
+  **Orkestratorbesluit (verfijning):** "volgt de blokken" één keer per venstersessie bepalen (bij openen en na een
+  preset); alle dagwissels in een sessie = één wissel (zoals één MCP-call); zelfde regel in `applyBands`. Fixronde
+  naar de maker, incl. XER-minutenberekening (`xerCalendarData.ts:872`).
