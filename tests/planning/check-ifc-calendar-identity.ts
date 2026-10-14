@@ -278,10 +278,8 @@ same('§9 fixture: oude writer schreef geen H7-markering', ['WorkStartHour', 'Wo
 // §10. De herkenning van §9 draait alleen op een kalender ZONDER `IsHourCalendar`. Elke uurkalender
 //      draagt die markering (`.T.`), met of zonder urentaak, dus ziet §9 hem nooit:
 //       - SimpleBreak* krijgt een uurkalender nooit, ook niet met achtergebleven pauzevelden;
-//       - HoursPerDay alleen als `hoursPerDay` afwijkt van de modale dagsom van zijn blokken (P6
-//         `day_hr_cnt` 8 bij blokken van 10 uur). Tot de fix uren-per-dag-blokken schreef de writer hem
-//         nooit voor een uurkalender (829a4123 en 601aa417: altijd achter `!cal.workTime`), en ging die
-//         waarde na opslaan verloren — zie `check-ifc-urenperdag-blokken.ts`.
+//       - HoursPerDay alleen als `hoursPerDay` afwijkt van de modale dagsom van zijn blokken, zie
+//         docs/ifc-round-trip.md, "Uren per dag bij een blokkenkalender".
 //      Zo'n uurkalender met HoursPerDay leest terug als uurkalender met die waarde, niet als scalair.
 {
   const seeded = seedScalarWorkTime([1, 2, 3, 4, 5], 7, 16, 8);
@@ -319,11 +317,12 @@ same('§9 fixture: oude writer schreef geen H7-markering', ['WorkStartHour', 'Wo
       if (props.length > 0 || !ifc.includes("'IsHourCalendar',$,IFCBOOLEAN(.T.)")) {
         leaks.push(`${label}${tasks.length ? ' + urentaak' : ''}: ${props.join(',') || 'mist IsHourCalendar .T.'}`);
       }
-      // De afwijkende hpd komt terug, en de kalender blijft een uurkalender met dezelfde blokken.
+      // De kalender blijft een uurkalender met dezelfde blokken, en de hpd komt terug (apart getoetst).
       const rt = readIFC(ifc).calendar;
-      if (rt.hoursPerDay !== cal.hoursPerDay || JSON.stringify(rt.workTime) !== JSON.stringify(cal.workTime)) {
-        leaks.push(`${label}${tasks.length ? ' + urentaak' : ''}: terug als hpd ${rt.hoursPerDay}, ${rt.workTime ? 'andere blokken' : 'scalair'}`);
-      }
+      const where = `${label}${tasks.length ? ' + urentaak' : ''}`;
+      if (!rt.workTime) leaks.push(`${where}: terug als scalaire kalender`);
+      else if (JSON.stringify(rt.workTime) !== JSON.stringify(cal.workTime)) leaks.push(`${where}: andere blokken`);
+      if (rt.hoursPerDay !== cal.hoursPerDay) leaks.push(`${where}: hpd ${rt.hoursPerDay} in plaats van ${cal.hoursPerDay}`);
     }
   }
   same('§10 geen uurkalender draagt SimpleBreak, HoursPerDay alleen bij een afwijking, elke draagt IsHourCalendar .T.',

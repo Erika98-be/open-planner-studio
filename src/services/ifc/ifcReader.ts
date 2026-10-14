@@ -2486,8 +2486,7 @@ function extractCalendarLibraryOrigin(
 
 /**
  * Expliciete `HoursPerDay` teruglezen uit het `OPS_Calendar`-
- * pset (spiegel van `writeCalendarGenerationMeta`'s `needsHoursPerDayOverride`-tak; bij een dagkalender
- * en, met `IsHourCalendar = .T.`, bij een uurkalender — zie `buildCalendarFromEntity`). BEWUST
+ * pset (spiegel van `writeCalendarGenerationMeta`'s `needsHoursPerDayOverride`-tak). BEWUST
  * losstaand van `extractCalendarGeneration`/`extractCalendarLibraryOrigin` — zelfde reden: een
  * kalender met ALLEEN een `HoursPerDay`-afwijking (geen generation, geen libraryOrigin) mag 'm
  * niet mislopen. Geen/corrupte property ⇒ `undefined` (fallback blijft de bestaande
@@ -2561,9 +2560,9 @@ function extractCalendarHourMeta(
  * de effectieve banden (07–12 + 13–16) zonder te zeggen dat de kalender scalair was, waardoor hij als
  * uurkalender 07:00–12:00 terugkwam. Alle drie de voorwaarden zijn vereist:
  *  1. een OPS-scalarkenmerk in `OPS_Calendar`: `HoursPerDay` of `SimpleBreakStart`/`SimpleBreakDuration`.
- *     `SimpleBreak*` schrijft de writer uitsluitend bij `!cal.workTime`. `HoursPerDay` krijgt een
- *     uurkalender alleen als hij afwijkt van zijn blokken, en dan altijd samen met `IsHourCalendar = .T.`;
- *     deze herkenning draait alleen zonder die markering, dus ziet hem nooit (bewaakt in
+ *     `SimpleBreak*` schrijft de writer uitsluitend bij `!cal.workTime`; `HoursPerDay` bij een uurkalender
+ *     alleen samen met `IsHourCalendar = .T.`, en deze herkenning draait alleen zonder die markering (zie
+ *     docs/ifc-round-trip.md, "Uren per dag bij een blokkenkalender"; bewaakt in
  *     `check-ifc-calendar-identity.ts` §10);
  *  2. precies twee `IFCTIMEPERIOD`s — meer levert de effectieve-bandafleiding (`seedScalarBands`) niet;
  *  3. zelfcontrole: de scalar die we reconstrueren (begin eerste band – eind laatste band, hpd en pauze
@@ -2975,13 +2974,9 @@ function buildCalendarFromEntity(
   const hpdOverride = extractCalendarHoursPerDay(cal.id, entities, entityMap);
   if (hpdOverride != null) calendar.hoursPerDay = hpdOverride;
   if (hourMeta.hourMode === true) {
-    // `promoteHourCalendar` zet `hoursPerDay` op de modale dagsom van de blokken. Een uurkalender
-    // waarvan `hoursPerDay` daarvan afwijkt (P6 `day_hr_cnt` 8 bij blokken van 10 uur), draagt hem
-    // expliciet in `HoursPerDay` (`writeCalendarGenerationMeta`); die wint dan. Bestanden van vóór die
-    // eigenschap hebben hem bij een uurkalender nooit: daar blijft de dagsom staan, zoals vroeger.
-    // Alleen bij de markering `IsHourCalendar = .T.`: een ongemarkeerde kalender met `HoursPerDay` is
-    // een oude scalaire kalender (`legacyScalarFromEffectiveBands` hieronder) of komt van elders, en
-    // volgt het oude pad.
+    // `promoteHourCalendar` zet `hoursPerDay` op de modale dagsom van de blokken; een expliciete
+    // `HoursPerDay` wint daarna. Alleen bij deze markering: zie docs/ifc-round-trip.md, "Uren per dag
+    // bij een blokkenkalender".
     promoteHourCalendar(calendar, getCalendarBands(calendar), true, true);
     if (hpdOverride != null) calendar.hoursPerDay = hpdOverride;
   } else if (hourMeta.hourMode === false) {

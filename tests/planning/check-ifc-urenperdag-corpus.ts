@@ -80,9 +80,11 @@ function openInStore(parsed: OpenedImport): DocumentPayload[] {
 }
 
 const calendarsOf = (p: DocumentPayload): WorkCalendar[] => [p.calendar, ...p.calendars];
-const calendarSet = (p: DocumentPayload): string[] => [...new Set(calendarsOf(p).map((c) => JSON.stringify({
+/** Alle kalenders als gesorteerde lijst, zonder ontdubbelen: de id's veranderen na IFC en de volgorde van
+ *  de bibliotheek ook, maar elke kalender telt mee (een verloren tweeling maakt de lijst korter). */
+const calendarList = (p: DocumentPayload): string[] => calendarsOf(p).map((c) => JSON.stringify({
   name: c.name, workDays: c.workDays, hoursPerDay: c.hoursPerDay, workTime: c.workTime?.byWeekday ?? null,
-})))].sort();
+})).sort();
 function taskView(p: DocumentPayload, skipDates: ReadonlySet<string>) {
   return Object.fromEntries(p.tasks.map((t) => {
     const cal = effectiveCalendarOf(t, p.calendar, p.calendars);
@@ -150,7 +152,7 @@ for (const target of TARGETS) {
   for (const [i, doc] of before.entries()) {
     const label = `${target.name} document ${i + 1}`;
     const [after] = openInStore(await parseOpenedFile({ name: 'rondgang.ifc', text: writeIFC(buildWriteIFCInput(doc)) }));
-    same(`${label}: kalenders gelijk na opslaan en heropenen`, calendarSet(after), calendarSet(doc));
+    same(`${label}: kalenders gelijk na opslaan en heropenen`, calendarList(after), calendarList(doc));
     const tb = taskView(doc, skipDates);
     const ta = taskView(after, skipDates);
     const changed = Object.keys(tb).filter((id) => JSON.stringify(tb[id]) !== JSON.stringify(ta[id]));

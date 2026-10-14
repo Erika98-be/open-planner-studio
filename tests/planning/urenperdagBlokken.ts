@@ -23,8 +23,12 @@ export interface UrenCase {
   /** Kort label voor de checkregels. */
   label: string;
   cal: WorkCalendar;
-  /** Klokuren per dag zoals de lezer ze uit de blokken afleidt (modale dagsom). */
+  /** Klokuren per dag zoals de lezer ze uit de GESCHREVEN blokken afleidt (modale dagsom). */
   clockHours: number;
+  /** Alleen als de writer de week anders schrijft dan hij in het geheugen staat: de blokken per weekdag
+   *  zoals ze terugkomen. Zo'n kalender doet niet mee in de open- en opslaanroute (§4), want zijn
+   *  werktijd verandert (los van de uren per dag). */
+  written?: WorkTimeBands;
 }
 
 function hourCal(
@@ -77,6 +81,26 @@ export const CASES: readonly UrenCase[] = [
     clockHours: 10,
   },
   {
+    // Modaal 8 (di–vr), niet de eerste groep (ma 10) en niet het maximum (10).
+    label: 'lange maandag (ma 07–17, di–vr 07–15, 10 u/dag)',
+    cal: hourCal('cal-maandag', 'Lange maandag', week({
+      1: [{ start: 420, end: 1020 }], ...on([2, 3, 4, 5], [{ start: 420, end: 900 }]),
+    }), { workStartHour: 7, workEndHour: 17, hoursPerDay: 10 }),
+    clockHours: 8,
+  },
+  {
+    // Werkdagen zonder eigen blokken: do en vr staan in `workDays` maar hebben geen blokken. Zo'n
+    // kalender maakt `planner_update_calendar` met alleen `workDays` (de blokken blijven staan). De
+    // writer geeft zo'n dag de blokken van de eerste werkdag (`weekBandGroups`): in het bestand staat
+    // ma/do/vr 10 u en di/wo 8 u, dus de lezer leidt 10 af. In het geheugen is de dagsom 8 (ma 10, di/wo 8).
+    label: 'werkdagen zonder eigen blokken (ma 07–17, di/wo 07–15, do/vr leeg, 8 u/dag)',
+    cal: { ...hourCal('cal-leeg', 'Werkdagen zonder blokken', week({
+      1: [{ start: 420, end: 1020 }], ...on([2, 3], [{ start: 420, end: 900 }]),
+    }), { workStartHour: 7, workEndHour: 17, hoursPerDay: 8 }), workDays: [1, 2, 3, 4, 5] },
+    clockHours: 10,
+    written: week({ ...on([1, 4, 5], [{ start: 420, end: 1020 }]), ...on([2, 3], [{ start: 420, end: 900 }]) }),
+  },
+  {
     label: 'gelijk aan de klokuren (07–15, 8 u/dag)',
     cal: hourCal('cal-gelijk', 'Gelijk', week(on(MA_VR, [{ start: 420, end: 900 }])),
       { workStartHour: 7, workEndHour: 15, hoursPerDay: 8 }),
@@ -101,8 +125,8 @@ function hourTask(id: string, name: string, cal: WorkCalendar, calendarId: strin
 
 /** Project: de eerste kalender is de projectkalender, de rest de bibliotheek; per kalender één urentaak
  *  van 40 u, plus een dagtaak van 5 d op de projectkalender. */
-export function buildProject(): ImportResult {
-  const [first, ...rest] = CASES.map((c) => c.cal);
+export function buildProject(cases: readonly UrenCase[] = CASES): ImportResult {
+  const [first, ...rest] = cases.map((c) => c.cal);
   const project = { ...createDefaultProject(), id: 'proj-urenperdag', calendarId: first.id, startDate: '2026-06-01' };
   const tasks: Task[] = [
     hourTask('t-late', 'Urentaak Late ploeg', first, undefined),

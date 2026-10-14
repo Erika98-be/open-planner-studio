@@ -9,12 +9,15 @@ import './domStub';
 // waarde in de lezer na de promotie. Zie docs/ifc-round-trip.md, "Uren per dag bij een blokkenkalender".
 //
 //  §1 round-trip per geval: één blok, twee blokken, nachtblok, blokken per weekdag, gelijk aan de spanne
-//     maar niet aan de blokken, een gebroken getal, en gelijk aan de klokuren; plus een tweede round-trip.
+//     maar niet aan de blokken, een gebroken getal, een lange maandag (modaal ≠ eerste groep ≠ maximum),
+//     werkdagen zonder eigen blokken (de dagsom van het bestand ≠ die in het geheugen), en gelijk aan de
+//     klokuren; plus een tweede round-trip.
 //  §2 de vorm van het bestand: `HoursPerDay` alleen bij een afwijking, met de exacte waarde, altijd samen
 //     met `IsHourCalendar = .T.`; nooit `SimpleBreak*`.
 //  §3 urentaken: de dagwaarde (`scheduleDuration`, uren / hoursPerDay) komt terug zoals vóór opslaan.
 //  §4 de echte open- en opslaanroute (store, doorrekenen): kalenders, getoonde duur, datums en de motor
-//     (die rekent met de blokken) gelijk vóór en na.
+//     (die rekent met de blokken) gelijk vóór en na. Zonder de kalender waarvan de writer de week anders
+//     schrijft (`written`): zijn werktijd verandert los van de uren per dag.
 //  §5 een bestand van de writer van main 7ea3e8748 (zonder deze `HoursPerDay`) leest zoals main het las.
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -76,14 +79,17 @@ const read = readIFC(ifc);
 // ════════════════════════════════════════════════════════════════════════════════════════════════
 // §1 Round-trip per geval
 // ════════════════════════════════════════════════════════════════════════════════════════════════
-same('§1 opzet: één geval zonder afwijking, zes met', CASES.map(deviates), [true, true, true, true, true, true, false]);
+same('§1 opzet: één geval zonder afwijking, acht met', CASES.map(deviates),
+  [true, true, true, true, true, true, true, true, false]);
+/** De kalender zoals hij terug moet komen: met de blokken zoals het bestand ze draagt. */
+const expected = (c: (typeof CASES)[number]): WorkCalendar => ({ ...c.cal, workTime: c.written ?? c.cal.workTime });
 {
   const rt2 = readIFC(writeIFC(read));
   for (const c of CASES) {
     const got = byName(calendarsOf(read), c.cal.name);
-    same(`§1 ${c.label}: kalender na opslaan en heropenen`, got && shape(got), shape(c.cal));
+    same(`§1 ${c.label}: kalender na opslaan en heropenen`, got && shape(got), shape(expected(c)));
     const got2 = byName(calendarsOf(rt2), c.cal.name);
-    same(`§1 ${c.label}: tweede round-trip gelijk`, got2 && shape(got2), shape(c.cal));
+    same(`§1 ${c.label}: tweede round-trip gelijk`, got2 && shape(got2), shape(expected(c)));
   }
 }
 
@@ -123,15 +129,16 @@ function openInStore(parsed: OpenedImport): DocumentPayload {
   return store.getState().getOpenDocumentPayloads()[0].payload;
 }
 {
-  const before = openInStore(buildProject());
+  const stable = CASES.filter((c) => !c.written);
+  const before = openInStore(buildProject(stable));
   const after = openInStore(await parseOpenedFile({ name: 'urenperdag.ifc', text: writeIFC(buildWriteIFCInput(before)) }));
   const calView = (p: DocumentPayload) => Object.fromEntries(calendarsOf({ calendar: p.calendar, resourceCalendars: p.calendars })
     .map((c) => [c.name, { ...shape(c), motor: new CalendarEngine(c).hoursPerDay }]));
   same('§4 kalenders (en de uren per dag van de motor) gelijk na opslaan en heropenen', calView(after), calView(before));
   // De motor rekent bij een uurkalender met de blokken (`CalendarEngine.hoursPerDay` = de modale dagsom);
   // de fix verandert de rekenuitkomst dus niet.
-  same('§4 de motor rekent met de klokuren van de blokken', CASES.map((c) => calView(after)[c.cal.name]?.motor),
-    CASES.map((c) => c.clockHours));
+  same('§4 de motor rekent met de klokuren van de blokken', stable.map((c) => calView(after)[c.cal.name]?.motor),
+    stable.map((c) => c.clockHours));
   const taskView = (p: DocumentPayload) => Object.fromEntries(p.tasks.map((t) => {
     const cal = effectiveCalendarOf(t, p.calendar, p.calendars);
     const x = t.time;
@@ -150,24 +157,20 @@ function openInStore(parsed: OpenedImport): DocumentPayload {
 // §5 Een bestand van de writer van main 7ea3e8748 (zonder HoursPerDay bij een uurkalender)
 // ════════════════════════════════════════════════════════════════════════════════════════════════
 // De fixture is gegenereerd met de writer van origin/main 7ea3e8748 uit `buildProject()`; de JSON ernaast
-// legt vast wat de lezer van diezelfde commit eruit las (hoursPerDay = de klokuren van de blokken).
+// legt vast wat de lezer van diezelfde commit eruit las: de uren per dag per kalender (de klokuren van de
+// geschreven blokken) en de dagwaarde per taak.
 {
   const oldIfc = readFileSync(join(HERE, 'fixtures', 'urenperdag-oude-writer.ifc'), 'utf8');
   const want = JSON.parse(readFileSync(join(HERE, 'fixtures', 'urenperdag-oude-writer.json'), 'utf8')) as {
-    calendars: Record<string, { wd: number[]; s: number; e: number; hpd: number; wt: unknown }>;
-    tasks: Record<string, { unit: string; min: number | null; dur: number; cal: string | null }>;
+    hoursPerDay: Record<string, number>;
+    scheduleDuration: Record<string, number>;
   };
   same('§5 fixture: de oude writer schreef geen HoursPerDay', oldIfc.includes("'HoursPerDay'"), false);
   const old = readIFC(oldIfc);
-  const oldShape = (c: WorkCalendar) => ({
-    wd: c.workDays, s: c.workStartHour, e: c.workEndHour, hpd: c.hoursPerDay,
-    wt: c.workTime ? Object.values(c.workTime.byWeekday) : null,
-  });
-  same('§5 oud bestand: kalenders zoals main ze las (uren per dag = klokuren)',
-    Object.fromEntries(calendarsOf(old).map((c) => [c.name, oldShape(c)])), want.calendars);
-  same('§5 oud bestand: taken zoals main ze las', Object.fromEntries(old.tasks.map((t) => [t.id, {
-    unit: t.time.durationUnit, min: t.time.durationMinutes ?? null, dur: t.time.scheduleDuration, cal: t.calendarId ?? null,
-  }])), want.tasks);
+  same('§5 oud bestand: uren per dag zoals main ze las (de klokuren)',
+    Object.fromEntries(calendarsOf(old).map((c) => [c.name, c.hoursPerDay])), want.hoursPerDay);
+  same('§5 oud bestand: dagwaarde per taak zoals main hem las',
+    Object.fromEntries(old.tasks.map((t) => [t.id, t.time.scheduleDuration])), want.scheduleDuration);
 }
 
 if (failures.length > 0) {

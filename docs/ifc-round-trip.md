@@ -226,40 +226,17 @@ programma's is daarmee nog niet getest.
 
 ## Uren per dag bij een blokkenkalender
 
-`hoursPerDay` is de omrekening tussen dagen en uren (in P6 `day_hr_cnt`), los van de werktijd. Bij een
-uurkalender (`workTime`) mag hij afwijken van de klokuren van de blokken. De XER-lezer houdt `day_hr_cnt`
-vast sinds `df2676b9d` (2026-08-24): de kalender "Late ploeg" met blokken 14:00–24:00 (10 klokuren) en
-`day_hr_cnt` 8 heeft `hoursPerDay` 8. De weergave en de motor rekenen bij een uurkalender met de blokken
-(`effHoursPerDay`, `CalendarEngine.hoursPerDay`). De P6- en MSPDI-export, de kolom Duur van de CSV-export
-(de dagwaarde van een urentaak) en de MCP-tools lezen `hoursPerDay` zelf.
-
-- **Het bestand.** De writer schrijft `HoursPerDay` in `OPS_Calendar` als de waarde afwijkt van wat de
-  reader zonder die eigenschap afleidt. Bij een dagkalender is dat einde − begin, zoals altijd. Bij een
-  uurkalender is het de modale dagsom van de geschreven blokken. Een uurkalender krijgt hem altijd samen
-  met `IsHourCalendar = .T.` Geen nieuw attribuut; de entiteiten blijven gelijk.
-- **De reader.** Bij `IsHourCalendar = .T.` zet `promoteHourCalendar` de dagsom van de blokken, en daarna
-  wint `HoursPerDay`. Zonder die markering verandert er niets: de herkenning van oude scalaire kalenders
-  (`legacyScalarFromEffectiveBands`) kijkt alleen naar ongemarkeerde kalenders.
-- **Oude bestanden.** Tot deze fix schreef de writer `HoursPerDay` nooit voor een uurkalender. Zo'n
-  bestand leest gelijk aan vroeger: de uren per dag zijn de klokuren. Getoetst met een bestand van de
-  writer van main 7ea3e8748.
-- **v2026.9.0** leest de blokken van een nieuw bestand al niet (zie "Oudere OPS-versies", alinea
-  Schemageldigheid). Hij past `HoursPerDay` toe, en houdt die waarde bij een uurkalender zonder blokken.
-  Gemeten met de lezer van de tag, in Node: in het testproject van `check-ifc-urenperdag-blokken` kregen 3
-  van de 7 kalenders de echte waarde (7,5, 10 en 7,6) in plaats van 8. De andere vier hadden al 8. In
-  Roads_Project_TEC en p6_torture_test_v1 lezen het bestand van main en dat van deze fix gelijk (alle
-  kalenders en taken). Hij wordt dus niet slechter.
-- **Gemeten vóór de fix** (main 7ea3e8748, alle 93 XER's van het corpus, 88 te openen documenten): 11
-  kalenders in 4 bestanden kwamen terug met de klokuren (8 werd 9, 10 of 24): Roads_Project_TEC 3,
-  p6_torture_test_v1 6, Hotel Project en Hotel_Construction_TEC elk 1. Gevolg: bij 1301 taken een andere
-  dagwaarde (40 u was 5 d, werd 4 d), en in de P6-export `HoursPerDay/Week/Month`, in de MSPDI-export
-  `MinutesPerDay/Week`. De getoonde duur en de datums veranderden nergens door deze fout. Na de fix: 0
-  kalenders en 0 taken.
-
-De bewaking staat in `tests/planning/check-ifc-urenperdag-blokken.ts` (één blok, twee blokken, nachtblok,
-blokken per weekdag, een gebroken getal, gelijk aan de klokuren; de open- en opslaanroute; het oude
-bestand), `check-ifc-urenperdag-corpus.ts` (vier echte XER's, met `OPS_XER_CORPUS`) en §10 van
-`check-ifc-calendar-identity.ts`.
+`hoursPerDay` is de omrekening tussen dagen en uren (P6 `day_hr_cnt`). Bij een uurkalender mag hij afwijken
+van de klokuren van de blokken: "Late ploeg" 14:00–24:00 met `day_hr_cnt` 8 heeft `hoursPerDay` 8. De
+writer schrijft `HoursPerDay` in `OPS_Calendar` als hij afwijkt van wat de reader zonder die eigenschap
+afleidt: einde − begin bij een dagkalender, de modale dagsom van de geschreven blokken bij een
+uurkalender. Een uurkalender zonder enig blok krijgt hem altijd (er is geen dagsom); dat is onschadelijk.
+Bij een uurkalender staat hij altijd naast `IsHourCalendar = .T.`; de reader laat hem dan winnen ná
+`promoteHourCalendar`. De herkenning van oude scalaire kalenders kijkt alleen naar ongemarkeerde
+kalenders en ziet hem dus nooit. Oude bestanden dragen hem bij een uurkalender nooit en lezen zoals
+vroeger (de klokuren). v2026.9.0 leest de blokken van een nieuw bestand al niet en houdt dan
+`HoursPerDay` in plaats van 8. Toetsen: `check-ifc-urenperdag-blokken.ts`, `check-ifc-urenperdag-corpus.ts`
+(met `OPS_XER_CORPUS`) en §10 van `check-ifc-calendar-identity.ts`.
 
 ## Wat dit niet dekt
 

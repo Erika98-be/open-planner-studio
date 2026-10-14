@@ -1208,19 +1208,14 @@ function writeCalendar(
 
 /**
  * De uren per dag die de lezer voor een uurkalender afleidt: de modale dagsom (`deriveHoursPerDay`) van
- * de blokken zoals ze in het bestand staan. Dat zijn de groepen van `weekBandGroups` mét blokken: een
- * dag buiten `workDays` schrijft de writer niet, en een werkdag zonder eigen blokken krijgt die van de
- * eerste werkdag. Geen enkel blok ⇒ `NaN` (de lezer valt dan terug op wat hij al had).
+ * de blokken zoals ze in het bestand staan, dus per groep van `weekBandGroups`. Een dag buiten `workDays`
+ * schrijft de writer niet, en een werkdag zonder eigen blokken krijgt die van de eerste werkdag. Geen
+ * enkel blok ⇒ `NaN`. `deriveHoursPerDay` leest alleen weekdag 1–7 en slaat dagen zonder blokken over.
  */
 function writtenWeekHoursPerDay(groups: readonly WeekBandGroup[]): number {
-  const written: WorkTimeBands = { byWeekday: { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [] } };
-  for (const group of groups) {
-    if (group.bands.length === 0) continue;
-    for (const day of group.days) {
-      if (day >= 1 && day <= 7) written.byWeekday[day as 1] = group.bands.map((b) => ({ ...b }));
-    }
-  }
-  return deriveHoursPerDay(written, NaN);
+  const byWeekday: Record<number, WeekBandGroup['bands']> = {};
+  for (const group of groups) for (const day of group.days) byWeekday[day] = group.bands;
+  return deriveHoursPerDay({ byWeekday } as WorkTimeBands, NaN);
 }
 
 /**
@@ -1228,19 +1223,11 @@ function writtenWeekHoursPerDay(groups: readonly WeekBandGroup[]): number {
  * (`IFCPROPERTYSINGLEVALUE`s + `IFCRELDEFINESBYPROPERTIES`). Elke property volgt de golden rule
  * (alleen schrijven wat afwijkt of gezet is):
  *  - `generation` (regelset-herkomst): alleen bij een gegenereerde kalender.
- *  - `HoursPerDay`: alleen wanneer hij AFWIJKT van wat de lezer zonder deze eigenschap afleidt — anders
- *    overschrijft die afleiding hem bij het lezen.
- *    - Dagkalender (`!cal.workTime`): `workEndHour − workStartHour` (bv. "Bouwkalender NL" 07-16 met
- *      lunchuur: 8 ≠ 9).
- *    - Uurkalender (`cal.workTime`): de modale dagsom van de geschreven blokken
- *      (`readerHourCalendarHoursPerDay`). `hoursPerDay` is daar de omrekening tussen dagen en uren, los
- *      van de werktijd: een XER-kalender "Late ploeg" met blokken 14:00–24:00 (10 klokuren) en
- *      `day_hr_cnt` 8 kwam zonder deze eigenschap terug met 10. Altijd samen met `IsHourCalendar = .T.`
- *      (hieronder): de herkenning van oude scalaire kalenders (`legacyScalarFromEffectiveBands` in de
- *      lezer) kijkt alleen naar kalenders zonder die markering, dus ziet deze `HoursPerDay` nooit.
- *      v2026.9.0 leest de blokken van dit bestand al niet (9 attributen in `IfcWorkCalendar`) en houdt
- *      dan deze waarde in plaats van 8; zie docs/ifc-round-trip.md, "Uren per dag bij een
- *      blokkenkalender".
+ *  - `HoursPerDay`: alleen wanneer hij AFWIJKT van wat de lezer zonder deze eigenschap afleidt — bij een
+ *    dagkalender `workEndHour − workStartHour` (bv. "Bouwkalender NL" 07-16 met lunchuur: 8 ≠ 9), bij
+ *    een uurkalender de modale dagsom van de geschreven blokken (`readerHourCalendarHoursPerDay`). De
+ *    regel voor schrijver en lezer staat in docs/ifc-round-trip.md, "Uren per dag bij een
+ *    blokkenkalender".
  *  - `WorkingExceptionIds`: de STEP-ids van de werkende-uitzondering-`IFCWORKTIME`'s uit
  *    `writeCalendar`. Dit IS de discriminator waarmee de reader een werkende uitzondering van een
  *    (evt. recurrente) feestdag onderscheidt — een RecurrencePattern-ref is geen IFC-gereserveerd
