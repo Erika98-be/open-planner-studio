@@ -674,6 +674,22 @@ if [ "$RUN_HOLIDAYS" -eq 1 ]; then
     unset 'BUNDLES[-1]'
   fi
 
+  # Uren per dag van blokkenkalenders door IFC opslaan en heropenen, op vier echte XER's (met
+  # OPS_XER_CORPUS; zonder corpus een groene skip). Eén keer, niet in de tijdzonematrix.
+  IFCURENPERDAGCORPUSCHECK="$DIR/.ifc-urenperdag-corpus.mjs"
+  if bundle_check "$DIR/check-ifc-urenperdag-corpus.ts" "$IFCURENPERDAGCORPUSCHECK"; then
+    node "$IFCURENPERDAGCORPUSCHECK" || STATUS=1
+    unset 'BUNDLES[-1]'
+  fi
+
+  # Projectstart en -einde met tijd door IFC opslaan en heropenen, op vier echte XER's (met
+  # OPS_XER_CORPUS; zonder corpus een groene skip). Eén keer, niet in de tijdzonematrix.
+  IFCPROJECTDATUMCORPUSCHECK="$DIR/.ifc-projectdatum-corpus.mjs"
+  if bundle_check "$DIR/check-ifc-projectdatum-corpus.ts" "$IFCPROJECTDATUMCORPUSCHECK"; then
+    node "$IFCPROJECTDATUMCORPUSCHECK" || STATUS=1
+    unset 'BUNDLES[-1]'
+  fi
+
   # X2-corpuspoort: alle kedular-parserfixtures en publieke p6xer-robuustheidsgevallen zijn op
   # concrete rapportinhoud of typed foutcode gepind. Zonder corpus een expliciete groene skip.
   XERCORPUSCHECK="$DIR/.xer-corpus.mjs"

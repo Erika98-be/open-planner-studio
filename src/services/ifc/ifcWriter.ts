@@ -11,14 +11,15 @@ import { ActivityCodeType, CustomFieldDef, CustomFieldType, CustomFieldValue } f
 import { Baseline } from '@/types/baseline';
 import type { CustomTaskType } from '@/types/taskType';
 import {
-  effectiveCalendarByTask, minutesToClock, minutesToIsoDuration, scalarHourFromClock, taskMinutesForWrite,
+  deriveHoursPerDay, effectiveCalendarByTask, minutesToClock, minutesToIsoDuration, scalarHourFromClock,
+  taskMinutesForWrite,
 } from '@/services/subdayIo';
 import { effectiveWorkTimeBands } from '@/utils/effectiveWorkTime';
 import type { ImportResult, RecordedSourceFormat } from '@/services/importTypes';
 import {
   IFC_TIME_ANCHOR, FIELD_MEASURE, RESOURCE_TYPE_TO_IFC,
 } from './ifcConstants';
-import { PSET, PER_TASK_PSETS, OPS_APP_VERSION, ifcStr, ifcJson, asciiJson, ifcTypedReal, stepReal } from './ifcPsets';
+import { PSET, PER_TASK_PSETS, OPS_APP_VERSION, ifcStr, ifcJson, asciiJson, ifcTypedReal, stepReal, ifcDateValue } from './ifcPsets';
 import { ifcSchemaQuestionFor } from './ifcSchemaQuestion';
 import { isSummaryTask } from '@/utils/taskHierarchy';
 import { projectFileBase } from '@/utils/documents';
@@ -587,14 +588,15 @@ function writeTaskTypeMeta(
 
 function ifcTypedValue(type: CustomFieldType, value: CustomFieldValue): string {
   switch (type) {
-    // Tekst/datum: `ifcRequiredStr`, want `IFCTEXT($)` is geen geldige STEP (een getypte waarde
-    // draagt altijd een waarde). Leeg ⇒ `IFCTEXT('')`.
+    // Tekst: `ifcRequiredStr`, want `IFCTEXT($)` is geen geldige STEP (een getypte waarde draagt
+    // altijd een waarde). Leeg ⇒ `IFCTEXT('')`.
     case 'text': return `IFCTEXT(${ifcRequiredStr(String(value))})`;
     // REAL-typen altijd met decimale punt (`stepReal`); een niet-eindig getal ⇒ NominalValue `$`.
     case 'number': return ifcTypedReal('IFCREAL', Number(value));
     case 'integer': return `IFCINTEGER(${Math.round(Number(value))})`;
     case 'cost': return ifcTypedReal('IFCMONETARYMEASURE', Number(value));
-    case 'date': return `IFCDATE(${ifcRequiredStr(String(value))})`;
+    // Datum via `ifcDateValue`: een tijd erin wordt IFCDATETIME, andere tekst IFCTEXT (geen schemafout).
+    case 'date': return ifcDateValue(String(value));
     case 'boolean': return `IFCBOOLEAN(${value ? '.T.' : '.F.'})`;
     default: {
       // Exhaustiviteitscheck: een nieuw CustomFieldType zonder eigen case geeft hier een
@@ -655,14 +657,10 @@ function writeStructure(
       `IFCPROPERTYSINGLEVALUE('DefaultWorkRule',$,IFCLABEL(${ifcStr(project.defaultWorkRule)}),$)`));
   }
   if (project.statusDate) {
-    // Datum ⇒ IFCDATE. Mét tijd (uur-modus, `YYYY-MM-DDTHH:mm`) ⇒ IFCDATETIME met seconden: IfcDate
-    // kent geen tijd, dus anders staat de statusdatum na opslaan + openen op middernacht.
-    const sd = project.statusDate;
-    const typed = sd.length > 10
-      ? `IFCDATETIME(${ifcStr(sd.length === 16 ? `${sd}:00` : sd)})`
-      : `IFCDATE(${ifcStr(sd)})`;
+    // `ifcDateValue`: datum ⇒ IFCDATE, mét tijd (uur-modus) ⇒ IFCDATETIME met seconden. IfcDate kent
+    // geen tijd, dus anders staat de statusdatum na opslaan + openen op middernacht.
     projSettingProps.push(addLine(ctx, '_ps_statusdate',
-      `IFCPROPERTYSINGLEVALUE('StatusDate',$,${typed},$)`));
+      `IFCPROPERTYSINGLEVALUE('StatusDate',$,${ifcDateValue(project.statusDate)},$)`));
   }
   // ProgressMode alleen als afwijkend van de default RETAINED_LOGIC (golden rule).
   if (project.progressMode && project.progressMode !== 'RETAINED_LOGIC') {
@@ -679,13 +677,14 @@ function writeStructure(
   //
   // AFWIJKING van de golden rule: deze twee worden ALTIJD geschreven, ook leeg — anders valt de
   // lezer terug op het WORKPLAN-slot en vult de afgeleide datum een bewust léég gelaten einddatum.
-  // Codering: gezet ⇒ IFCDATE(...), leeg ⇒ NominalValue `$` ("aanwezig, maar geen waarde"), zodat
-  // de lezer dat onderscheidt van "veld afwezig" (ouder bestand of ander tool ⇒ WORKPLAN-slot).
-  // IfcDate kent geen tijd: een projectstart met tijd (zoals na een XER-import) gaat als datum mee.
-  // Beide lezers, ook die van v2026.9.0, lezen hier alleen de eerste 10 tekens.
+  // Codering: gezet ⇒ `ifcDateValue` (datum ⇒ IFCDATE, mét tijd zoals na een XER-import ⇒
+  // IFCDATETIME met seconden), leeg ⇒ NominalValue `$` ("aanwezig, maar geen waarde"), zodat de
+  // lezer dat onderscheidt van "veld afwezig" (ouder bestand of ander tool ⇒ WORKPLAN-slot). De motor
+  // rekent met de tijd van het projecteinde (`useProjectEndDateForFloat`), de P6- en MSPDI-export met
+  // beide. Zie docs/ifc-round-trip.md, "Projectstart en -einde met tijd".
   const contractDateProp = (key: string, name: string, value: string): number =>
     addLine(ctx, key,
-      `IFCPROPERTYSINGLEVALUE(${ifcStr(name)},$,${value ? `IFCDATE(${ifcStr(value.slice(0, 10))})` : '$'},$)`);
+      `IFCPROPERTYSINGLEVALUE(${ifcStr(name)},$,${value ? ifcDateValue(value) : '$'},$)`);
   projSettingProps.push(contractDateProp('_ps_projstart', 'ProjectStartDate', project.startDate));
   projSettingProps.push(contractDateProp('_ps_projend', 'ProjectEndDate', project.endDate));
 
@@ -1016,6 +1015,10 @@ interface WriteCalendarResult {
    *  `weekBandGroups`). Dan is de scalar werktijd niet eenduidig uit de periodes af te leiden: een
    *  oudere lezer neemt de eerste groep, deze lezer de eerste werkdag met blokken. */
   perDayWeek: boolean;
+  /** Alleen bij een UURkalender (`cal.workTime`): de uren per dag die de lezer uit de GESCHREVEN blokken
+   *  afleidt (`promoteHourCalendar` → `deriveHoursPerDay`, de modale dagsom). `NaN` als er geen blok
+   *  geschreven is (de lezer heeft dan geen eigen afleiding). Dagkalender ⇒ `undefined`. */
+  readerHourCalendarHoursPerDay: number | undefined;
 }
 
 /** Eén `IFCWORKTIME` in `WorkingTimes`: de werkdagen (in `cal.workDays`-volgorde) met precies
@@ -1197,7 +1200,20 @@ function writeCalendar(
       : undefined,
     materializedScalarBands: !cal.workTime && workTime !== undefined,
     perDayWeek,
+    readerHourCalendarHoursPerDay: cal.workTime ? writtenWeekHoursPerDay(groups) : undefined,
   };
+}
+
+/**
+ * De uren per dag die de lezer voor een uurkalender afleidt: de modale dagsom (`deriveHoursPerDay`) van
+ * de blokken zoals ze in het bestand staan, dus per groep van `weekBandGroups`. Een dag buiten `workDays`
+ * schrijft de writer niet, en een werkdag zonder eigen blokken krijgt die van de eerste werkdag. Geen
+ * enkel blok ⇒ `NaN`. `deriveHoursPerDay` leest alleen weekdag 1–7 en slaat dagen zonder blokken over.
+ */
+function writtenWeekHoursPerDay(groups: readonly WeekBandGroup[]): number {
+  const byWeekday: Record<number, WeekBandGroup['bands']> = {};
+  for (const group of groups) for (const day of group.days) byWeekday[day] = group.bands;
+  return deriveHoursPerDay({ byWeekday } as WorkTimeBands, NaN);
 }
 
 /**
@@ -1205,9 +1221,11 @@ function writeCalendar(
  * (`IFCPROPERTYSINGLEVALUE`s + `IFCRELDEFINESBYPROPERTIES`). Elke property volgt de golden rule
  * (alleen schrijven wat afwijkt of gezet is):
  *  - `generation` (regelset-herkomst): alleen bij een gegenereerde kalender.
- *  - `HoursPerDay`: alleen voor DAG-kalenders (`!cal.workTime`; uurkalenders leiden hem af uit de
- *    banden) en alleen wanneer hij AFWIJKT van `workEndHour − workStartHour` (bv. "Bouwkalender NL"
- *    07-16 met lunchuur: 8 ≠ 9) — anders overschrijft de afgeleide span hem bij het lezen.
+ *  - `HoursPerDay`: alleen wanneer hij AFWIJKT van wat de lezer zonder deze eigenschap afleidt — bij een
+ *    dagkalender `workEndHour − workStartHour` (bv. "Bouwkalender NL" 07-16 met lunchuur: 8 ≠ 9), bij
+ *    een uurkalender de modale dagsom van de geschreven blokken (`readerHourCalendarHoursPerDay`). De
+ *    regel voor schrijver en lezer staat in docs/ifc-round-trip.md, "Uren per dag bij een
+ *    blokkenkalender".
  *  - `WorkingExceptionIds`: de STEP-ids van de werkende-uitzondering-`IFCWORKTIME`'s uit
  *    `writeCalendar`. Dit IS de discriminator waarmee de reader een werkende uitzondering van een
  *    (evt. recurrente) feestdag onderscheidt — een RecurrencePattern-ref is geen IFC-gereserveerd
@@ -1237,10 +1255,15 @@ function writeCalendarGenerationMeta(
 ): void {
   const {
     calStepId, workingExceptionStepIds, readerScalarHours, materializedScalarBands, perDayWeek,
+    readerHourCalendarHoursPerDay,
   } = written;
   const gen = cal.generation;
-  const derivedHoursPerDay = cal.workEndHour - cal.workStartHour;
-  const needsHoursPerDayOverride = !cal.workTime && cal.hoursPerDay !== derivedHoursPerDay;
+  // De uren per dag die de lezer zonder deze eigenschap zou afleiden: bij een dagkalender
+  // einde − begin, bij een uurkalender de modale dagsom van de geschreven blokken.
+  const derivedHoursPerDay = cal.workTime
+    ? readerHourCalendarHoursPerDay
+    : cal.workEndHour - cal.workStartHour;
+  const needsHoursPerDayOverride = cal.hoursPerDay !== derivedHoursPerDay;
   const hasWorkingExceptions = workingExceptionStepIds.length > 0;
   const hasP6Source = cal.p6Source === 'XER';
   const hasRejectedPenaltyDiagnostic = cal.p6NonWorkPenaltyDatesState === 'REJECTED';

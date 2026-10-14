@@ -224,6 +224,29 @@ binnen als een uurkalender zonder blokken met 07:00–16:00. Verder getoetst met
 writer (`check-ifc-arity`, `check-ifc-legacy-arity`, ook na `MergeProjects`). Interop met andere
 programma's is daarmee nog niet getest.
 
+## Uren per dag bij een blokkenkalender
+
+`hoursPerDay` is de omrekening tussen dagen en uren (P6 `day_hr_cnt`). Bij een uurkalender mag hij afwijken
+van de klokuren van de blokken: "Late ploeg" 14:00–24:00 met `day_hr_cnt` 8 heeft `hoursPerDay` 8. De
+writer schrijft `HoursPerDay` in `OPS_Calendar` als hij afwijkt van wat de reader zonder die eigenschap
+afleidt: einde − begin bij een dagkalender, de modale dagsom van de geschreven blokken bij een
+uurkalender. Een uurkalender zonder enig blok krijgt hem altijd (er is geen dagsom); dat is onschadelijk.
+Bij een uurkalender staat hij altijd naast `IsHourCalendar = .T.`; de reader laat hem dan winnen ná
+`promoteHourCalendar`. De herkenning van oude scalaire kalenders kijkt alleen naar ongemarkeerde
+kalenders en ziet hem dus nooit. Oude bestanden dragen hem bij een uurkalender nooit en lezen zoals
+vroeger (de klokuren). v2026.9.0 leest de blokken van een nieuw bestand al niet en houdt dan
+`HoursPerDay` in plaats van 8. Toetsen: `check-ifc-urenperdag-blokken.ts`, `check-ifc-urenperdag-corpus.ts`
+(met `OPS_XER_CORPUS`) en §10 van `check-ifc-calendar-identity.ts`.
+
+Een wissel van werkdagen of blokken (de dagknoppen, *Ma–vr* en *Werktijden* in het kalendervenster, MCP
+`planner_update_calendar` met `workDays` of `workTime` zonder `hoursPerDay`) laat een afwijkende `hoursPerDay` staan. Alleen een waarde die gelijk was aan de modale
+dagsom van de blokken vóór de wijziging volgt de nieuwe blokken (`hoursPerDayFollowsBlocks` en
+`hoursPerDayForBlocks` in `src/services/subdayIo.ts`; de vergelijking is strikt, net als de writer). Het
+venster bepaalt dat één keer per sessie, op de stand bij het openen (na een preset opnieuw). Alle wissels in
+één sessie tellen dus samen als één wissel, net als één MCP-call. Zonder die regel werd Late ploeg na *Za*
+aan stil 10, en schreef de writer dan geen `HoursPerDay` meer. Toetsen: `check-urenperdag-dagwissel.ts` en
+`tests/mcp/cases-urenperdag-dagwissel.ts`.
+
 ## Wat dit niet dekt
 
 - **De CSV-, MS Project- en P6-adapters.** Dat zijn import/export-adapters, geen opslagformaat; ze
@@ -330,6 +353,44 @@ IfcWorkPlan.StartTime. Valt die later dan de vroegste ingelezen taakstart, dan g
 - De twee kubusbestanden van BlenderBIM (StartTime vóór de eerste taak): projectstart 2022-09-12 en
   2022-09-14 uit StartTime (59794aa55: 2022-10-01, en als einde de tekst `.NOTDEFINE`). De 9 taken zijn
   na doorrekenen gelijk.
+
+**Projectstart en -einde met tijd.** Na een XER-import hebben projectstart en -einde een tijd, zoals
+`2012-12-17T07:00`. De writer schrijft `ProjectStartDate`/`ProjectEndDate` dan als IFCDATETIME met
+seconden, net als `StatusDate`. Zonder tijd blijft het IFCDATE. De lezer neemt de tijd alleen uit
+IFCDATETIME over. Een oud bestand met IFCDATE leest dus als voorheen, ook als er een tijd in staat.
+De lezer van v2026.9.0 leest van beide alleen de datum. Vóór deze wijziging viel de tijd weg. De P6-
+en MSPDI-export schreven dan 08:00 (Roads: 07:00 werd 08:00). De motor leest van de projectstart
+alleen de datum, maar van het projecteinde de tijd, als `useProjectEndDateForFloat` aan staat.
+Getoetst in `check-ifc-projectdatum-tijd.ts`, op het corpus in `check-ifc-projectdatum-corpus.ts`.
+
+**Datums in een property.** Eén regel voor `StatusDate`, `ProjectStartDate`/`-EndDate`, `ConstraintDate`,
+`ConstraintDate2`, `Deadline` en een eigen veld van het type datum (`ifcDateValue` en `readIfcDate` in
+`ifcPsets.ts`). Tot 2026-10 schreef de writer een constraintdatum met tijd als IFCDATE, een schemafout.
+Op main 8db05a95c ging het om 47 waarden in 22 van de 88 corpusdocumenten, waarvan 4 in Roads.
+IfcOpenShell ziet dat niet, de schemapoort wel.
+
+De writer typt nu alleen de twee vormen van de store, en alleen met een datum die bestaat:
+
+- `YYYY-MM-DD` wordt IFCDATE;
+- `YYYY-MM-DDTHH:mm` wordt IFCDATETIME met seconden `:00`;
+- elke andere waarde wordt letterlijk IFCTEXT: `2026-03-02T7:00`, een spatie, seconden, een zone
+  (`+02:00`, uit een extensie of MCP), een datum die niet bestaat (`2026-13-45`), of leeg.
+
+De lezer zet IFCDATETIME om naar `YYYY-MM-DDTHH:mm`. Voor de getypte waarden van de writer is dat precies
+de waarde uit de store. Een zone of een onmogelijke datum als IFCDATETIME zou wel veranderen: een SNET op
+`10:00+02:00` startte na heropenen om 10:00 in plaats van 08:00, en `2026-13-45` werd 2027-02-14. Al het
+andere leest de lezer per veld zoals eerst, ook IFCDATE met een tijd erin:
+
+- `StatusDate` houdt de kloktijd;
+- de projectdatums nemen de datum;
+- de andere velden lezen de tekst letterlijk.
+
+Zo staat elke waarde ongewijzigd in het bestand. Constraint, deadline en een eigen veld krijgen hem
+ongewijzigd terug. `StatusDate` en de projectdatums lezen hem zoals altijd; een projectdatum met seconden
+houdt dus alleen de datum. Een oud bestand leest exact gelijk. Gemeten op alle 88 corpusdocumenten,
+opgeslagen met main en gelezen met beide lezers. De lezer van v2026.9.0 leest een constraintdatum uit
+IFCDATETIME met seconden (`2013-04-27T00:00:00`), en rekent Roads daarmee gelijk door. Getoetst in
+`check-ifc-datumvorm.ts`.
 
 **Bestaande GlobalIds.** "0 fouten" geldt voor een nieuw project. Een bestand dat OPS inleest, houdt
 bij opslaan zijn GlobalIds, ook als die ongeldig zijn (besluit eigenaar 2026-09-28,

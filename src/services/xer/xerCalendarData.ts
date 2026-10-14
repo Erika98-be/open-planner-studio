@@ -418,7 +418,7 @@ function periodHours(row: XerRow, field: string, tables: XerTables): number | un
   );
 }
 
-function actualWeekHours(bands: WorkTimeBands): { week: number; workingDays: number } {
+function actualWeekHours(bands: WorkTimeBands): { week: number; weekMinutes: number; workingDays: number } {
   let minutes = 0;
   let workingDays = 0;
   for (const day of WEEKDAYS) {
@@ -427,7 +427,7 @@ function actualWeekHours(bands: WorkTimeBands): { week: number; workingDays: num
     workingDays++;
     minutes += dayBands.reduce((sum, band) => sum + band.end - band.start, 0);
   }
-  return { week: minutes / 60, workingDays };
+  return { week: minutes / 60, weekMinutes: minutes, workingDays };
 }
 
 function scalarBounds(bands: WorkTimeBands): { start: number; end: number } {
@@ -870,7 +870,9 @@ export function readXerCalendars(tables: XerTables): XerCalendarReadResult {
     }
     const hoursPerWeek = explicitWeek ?? actual.week;
     const hoursPerDay = explicitDay
-      ?? (actual.workingDays > 0 ? actual.week / actual.workingDays : 8);
+      // Gemiddelde eerst in minuten per dag, dan pas in uren: (6 × 7,6) / 6 in uren geeft 7.6000000000000005,
+      // en dat telt dan als afwijking van de blokken (modale dagsom 7.6).
+      ?? (actual.workingDays > 0 ? actual.weekMinutes / actual.workingDays / 60 : 8);
     const hoursPerMonth = explicitMonth ?? hoursPerWeek * 4;
     const hoursPerYear = explicitYear ?? hoursPerMonth * 12;
     const bounds = scalarBounds(decoded.bands);
