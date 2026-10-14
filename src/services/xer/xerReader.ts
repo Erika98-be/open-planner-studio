@@ -29,6 +29,8 @@ import type {
   TaskStatus,
 } from '@/types/task';
 import { createDefaultTaskTime } from '@/utils/taskDefaults';
+import { defaultActualFinish, defaultActualStart } from '@/engine/taskMutationRules';
+import { orderActualsAfterDerivedFinish } from '@/engine/actualDatesOrder';
 import { flattenOrder } from '@/utils/wbs';
 import { formatInstant, parseInstant } from '@/utils/dateUtils';
 import { hasValidP6SuspendResume } from '@/utils/p6SuspendResume';
@@ -354,12 +356,31 @@ function durationTypeOf(
   return defaultType;
 }
 
+/** Leest een INGEVULDE `status_code`. Een lege cel of een ontbrekende kolom gaat via
+ *  `statusFromProgress` (knownbugs 117); hier komt alleen een niet-lege waarde. */
 function statusOf(raw: string, row: XerRow, issues: XerEnumFallback[]): TaskStatus {
   const token = raw.trim().toLowerCase();
-  if (!token || token === 'tk_notstart') return 'NOT_STARTED';
+  if (token === 'tk_notstart') return 'NOT_STARTED';
   if (token === 'tk_active') return 'STARTED';
   if (token === 'tk_complete') return 'COMPLETED';
   fallback(issues, 'status', raw, 'NOT_STARTED', 'TASK', 'status_code', row.line);
+  return 'NOT_STARTED';
+}
+
+/**
+ * Status van een activiteit ZONDER `status_code` (kolom ontbreekt of cel leeg; knownbugs 117).
+ * Dezelfde regel als `normalizeImportedProgress` (`services/importNormalize.ts`): werkelijk einde of
+ * 100 % ⇒ voltooid; werkelijke start of voortgang > 0 ⇒ lopend; anders niet gestart. Vroeger las de
+ * lezer een lege status stil als niet gestart, ook met een werkelijk einde en 100 %. Een INGEVULDE
+ * status blijft leidend, ook als hij de datums tegenspreekt (knownbugs 115).
+ */
+function statusFromProgress(
+  completion: number,
+  actualStart: string | undefined,
+  actualFinish: string | undefined,
+): TaskStatus {
+  if (actualFinish || completion >= 1) return 'COMPLETED';
+  if (actualStart || completion > 0) return 'STARTED';
   return 'NOT_STARTED';
 }
 
@@ -682,6 +703,9 @@ function readXerProject(
   // enig anker kiest de gedeelde functie de vroegste aanwezige taakstart, anders vandaag.
   const missingDates = emptyMissingScheduleDates();
   let missingPlannedStarts = 0;
+  // Activiteiten zonder `status_code` die uit hun voortgang VOLTOOID zijn afgeleid. Hun ontbrekende
+  // werkelijke start/einde vult de lezer ná `resolveMissingScheduleDates` aan (zie daar).
+  const derivedCompleted: Task[] = [];
   for (const row of activityRows) {
     const effectiveCalendar = calendarById.get(row.cells.clndr_id) ?? projectCalendar;
     const hourMode = effectiveCalendar.workTime !== undefined;
@@ -727,12 +751,16 @@ function readXerProject(
       row.cells.duration_type ?? '', projectDefaultDuration, row, enumFallbacks,
     );
     const rawStatus = row.cells.status_code ?? '';
-    const status = statusOf(rawStatus, row, enumFallbacks);
+    const statusToken = rawStatus.trim().toLowerCase();
+    const hasSourceStatus = statusToken !== '';
+    // Op dezelfde plek als vroeger, zodat de volgorde van de enum-meldingen gelijk blijft.
+    const sourceStatus = hasSourceStatus ? statusOf(rawStatus, row, enumFallbacks) : undefined;
+    const actualStart = sourceInstant(row.cells.act_start_date ?? '', hourMode);
+    const actualFinish = sourceInstant(row.cells.act_end_date ?? '', hourMode);
     const rawCompletePctType = row.cells.complete_pct_type ?? '';
     const completePctType = rawCompletePctType.trim() === ''
       ? undefined
       : completePctTypeOf(rawCompletePctType, row, enumFallbacks);
-    const statusToken = rawStatus.trim().toLowerCase();
     const statusForcesCompletion = statusToken === 'tk_notstart' || statusToken === 'tk_complete';
     // Status is de leidende P6-toestand. Percentagekolommen verklaren uitsluitend de voortgang
     // van een actieve taak; ze mogen een expliciete TK_NotStart nooit de solver-in-progressroute
@@ -753,11 +781,16 @@ function readXerProject(
             ? (1 - remainingHours / durationHours) * 100
             : 0)
         : numberOf(tables, row, 'phys_complete_pct') ?? 0;
-    const completion = statusToken === 'tk_complete'
+    const sourceCompletion = statusToken === 'tk_complete'
       ? 1
       : statusToken === 'tk_notstart'
         ? 0
         : Math.max(0, Math.min(1, completionPercent / 100));
+    // Zonder status leidt de lezer hem af uit de voortgang (knownbugs 117). Een werkelijk einde
+    // maakt de activiteit dan voltooid op 100 %, net als `normalizeImportedProgress`. Mét status
+    // verandert hier niets: `status` en `completion` zijn dan byte-gelijk aan vroeger.
+    const status = sourceStatus ?? statusFromProgress(sourceCompletion, actualStart, actualFinish);
+    const completion = !hasSourceStatus && actualFinish ? 1 : sourceCompletion;
     // Een activiteit onder een WBS die dit project niet heeft, hangt op topniveau (MPXJ doet hetzelfde):
     // een `parentId` naar een niet-bestaande taak maakt de boom in raster en rollup onvindbaar.
     const parentId = row.cells.wbs_id && localWbsIds.has(row.cells.wbs_id)
@@ -810,8 +843,6 @@ function readXerProject(
     } else if (p6RemainingHours !== null) {
       time.remainingTime = p6RemainingHours / hoursPerDay;
     }
-    const actualStart = sourceInstant(row.cells.act_start_date ?? '', hourMode);
-    const actualFinish = sourceInstant(row.cells.act_end_date ?? '', hourMode);
     if (actualStart) time.actualStart = actualStart;
     if (actualFinish) time.actualFinish = actualFinish;
     const stop = sourceX7Instant(row.cells.suspend_date ?? '');
@@ -865,6 +896,7 @@ function readXerProject(
         return { ...(constraint ? { constraint } : {}), ...(constraint2 ? { constraint2 } : {}) };
       })(),
     });
+    if (!hasSourceStatus && status === 'COMPLETED') derivedCompleted.push(mappedActivities[mappedActivities.length - 1]);
   }
 
   resolveMissingScheduleDates(mappedActivities, missingDates, '', task =>
@@ -926,6 +958,21 @@ function readXerProject(
     ? sourceProjectEnd ?? ''
     : taskDerivedProjectEnd;
   const statusDate = projectStatusDate(tables, projectRow, projectHourMode);
+  // Afgeleid voltooid zonder status (knownbugs 117): dezelfde AS/AF-defaults als
+  // `normalizeImportedProgress`, ná `resolveMissingScheduleDates` zodat geen plaatshouder-datum
+  // meetelt. Werkelijk einde zonder start ⇒ start = einde. 100 % zonder einde ⇒ start = eigen geplande
+  // start, einde = statusdatum (anders het geplande einde), en de volgorde-regel van de store. Zo is
+  // de taak na een IFC-round-trip gelijk aan de import. Mét status blijft dit pad dicht.
+  for (const task of derivedCompleted) {
+    const t = task.time;
+    if (t.actualFinish) {
+      if (!t.actualStart) t.actualStart = t.actualFinish;
+      continue;
+    }
+    if (!t.actualStart) t.actualStart = defaultActualStart(t);
+    t.actualFinish = defaultActualFinish(t, statusDate);
+    orderActualsAfterDerivedFinish(t, statusDate);
+  }
 
   const wbsRows = stableWbsRows(rawWbsRows, projectId, localWbsIds);
   const wbsTasks: Task[] = wbsRows.map(row => {
