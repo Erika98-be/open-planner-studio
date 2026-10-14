@@ -6,16 +6,19 @@ import './domStub';
 // `IFCDATE('<waarde>')`, ook met een tijd erin (`IFCDATE('2013-04-27T00:00')`): een schemafout (IfcDate kent
 // geen tijd). Gemeten op main 8db05a95c: 47 waarden in 22 van de 88 corpusdocumenten (10 bestanden),
 // waarvan 4 in Roads. `StatusDate` schreef bij een onleesbare tijd `IFCDATETIME('2026-03-02T7:00')`, ook
-// een schemafout. Nu: een datum ⇒ IFCDATE, een datum met tijd ⇒ IFCDATETIME met seconden, andere tekst
-// ⇒ IFCTEXT (letterlijk). De lezer neemt bij IFCDATETIME de store-vorm `YYYY-MM-DDTHH:mm`; al het andere
-// leest hij per veld precies zoals main.
+// een schemafout. Nu typt de writer alleen de vormen van de store met een datum die bestaat:
+// `YYYY-MM-DD` ⇒ IFCDATE, `YYYY-MM-DDTHH:mm` ⇒ IFCDATETIME met `:00`. Al het andere (seconden, een zone,
+// een onmogelijke datum, een onleesbare tijd) gaat letterlijk als IFCTEXT. De lezer neemt bij IFCDATETIME
+// de store-vorm `YYYY-MM-DDTHH:mm`; al het andere leest hij per veld precies zoals main.
 //
 //  §1 de helper: de vorm per soort waarde.
 //  §2 per veld (StatusDate, ProjectStartDate, ConstraintDate, ConstraintDate2, Deadline, eigen datumveld):
-//     de vorm in het bestand en de round-trip, voor een datum, een tijd, een onleesbare tijd, een spatie.
+//     de vorm in het bestand en de round-trip, voor een datum, een tijd, een onleesbare tijd, een spatie,
+//     seconden, een zone en een onmogelijke datum.
 //  §3 oude bestanden (de vorm van main) lezen zoals main ze las, ook IFCDATE met een tijd.
 //  §4 IFCDATETIME van een ander pakket: een onleesbare tijd geeft de datum, een zone de kloktijd.
-//  §5 de echte open- en opslaanroute: een urentaak met SNET 10:00 rekent na heropenen gelijk.
+//  §5 de echte open- en opslaanroute: een urentaak met SNET 10:00 rekent na heropenen gelijk, ook met een
+//     SNET met zone (start blijft 08:00), met seconden, en op een onmogelijke datum (blijft genegeerd).
 //  §6 schemapoort in IFC4X3_ADD2, IFC4X3 en IFC4: 0 fouten.
 import { writeIFC } from '@/services/ifc/ifcWriter';
 import { readIFC } from '@/services/ifc/ifcReader';
@@ -50,10 +53,23 @@ for (const [value, want] of [
   ['2026-03-02T07:00', "IFCDATETIME('2026-03-02T07:00:00')"],
   ['2026-03-02T00:00', "IFCDATETIME('2026-03-02T00:00:00')"],
   ['2026-03-02T23:59', "IFCDATETIME('2026-03-02T23:59:00')"],
-  ['2026-03-02T07:00:30', "IFCDATETIME('2026-03-02T07:00:30')"],
-  ['2026-03-02T07:00:30.5', "IFCDATETIME('2026-03-02T07:00:30.5')"],
-  ['2026-03-02T07:00Z', "IFCDATETIME('2026-03-02T07:00:00Z')"],
-  ['2026-03-02T07:00:00+02:00', "IFCDATETIME('2026-03-02T07:00:00+02:00')"],
+  ['2028-02-29', "IFCDATE('2028-02-29')"],
+  ['2028-02-29T12:00', "IFCDATETIME('2028-02-29T12:00:00')"],
+  // Geen vorm van de store, of een datum die niet bestaat: tekst, letterlijk. Als IFCDATETIME zou de
+  // lezer seconden en zone wegnemen en een onmogelijke datum doorrollen (2026-13-45 ⇒ 2027-02-14).
+  ['2026-03-02T07:00:30', "IFCTEXT('2026-03-02T07:00:30')"],
+  ['2026-03-02T07:00:00', "IFCTEXT('2026-03-02T07:00:00')"],
+  ['2026-03-02T07:00:30.5', "IFCTEXT('2026-03-02T07:00:30.5')"],
+  ['2026-03-02T07:00Z', "IFCTEXT('2026-03-02T07:00Z')"],
+  ['2026-03-02T07:00:00+02:00', "IFCTEXT('2026-03-02T07:00:00+02:00')"],
+  ['2026-03-02+02:00', "IFCTEXT('2026-03-02+02:00')"],
+  ['2026-13-45', "IFCTEXT('2026-13-45')"],
+  ['2026-13-45T10:00', "IFCTEXT('2026-13-45T10:00')"],
+  ['2026-02-29', "IFCTEXT('2026-02-29')"],
+  ['2026-02-29T10:00', "IFCTEXT('2026-02-29T10:00')"],
+  ['2026-04-31', "IFCTEXT('2026-04-31')"],
+  ['2026-00-10', "IFCTEXT('2026-00-10')"],
+  ['0050-01-01', "IFCTEXT('0050-01-01')"],
   ['2026-03-02T7:00', "IFCTEXT('2026-03-02T7:00')"],
   ['2026-03-02T24:00', "IFCTEXT('2026-03-02T24:00')"],
   ['2026-03-02T07:60', "IFCTEXT('2026-03-02T07:60')"],
@@ -125,6 +141,12 @@ for (const [value, typed, back] of [
   // de andere velden houden de tekst letterlijk, zoals main.
   ['2026-03-04T7:00', "IFCTEXT('2026-03-04T7:00')", ['2026-03-04', '2026-03-04', '2026-03-04T7:00']],
   ['2026-03-04 10:00', "IFCTEXT('2026-03-04 10:00')", ['2026-03-04', '2026-03-04', '2026-03-04 10:00']],
+  // Seconden of zone: tekst. StatusDate neemt er de kloktijd uit (zoals main, die hier IFCDATETIME
+  // schreef), de projectdatums de datum, de rest blijft letterlijk.
+  ['2026-03-04T10:00:30', "IFCTEXT('2026-03-04T10:00:30')", ['2026-03-04T10:00', '2026-03-04', '2026-03-04T10:00:30']],
+  ['2026-03-04T10:00:00+02:00', "IFCTEXT('2026-03-04T10:00:00+02:00')", ['2026-03-04T10:00', '2026-03-04', '2026-03-04T10:00:00+02:00']],
+  // Een datum die niet bestaat: tekst, letterlijk. StatusDate en de projectdatums lezen hem zoals main.
+  ['2026-13-45', "IFCTEXT('2026-13-45')", ['2026-13-45', '2026-13-45', '2026-13-45']],
 ] as const) {
   const ifc = writeIFC(buildProject(allAs(value)));
   same(`§2 ${value}: vorm per veld`, propValues(ifc), Object.fromEntries(PROPS.map((p) => [p, typed])));
@@ -207,13 +229,35 @@ for (const [value, typed, back] of [
   same('§5 datums, speling en kritiek na heropenen',
     [t1.time.earlyStart, t1.time.earlyFinish, t1.time.lateStart, t1.time.lateFinish, t1.time.totalFloat, t1.time.isCritical],
     [t0.earlyStart, t0.earlyFinish, t0.lateStart, t0.lateFinish, t0.totalFloat, t0.isCritical]);
+
+  // Waarden die niet in de vorm van de store staan (uit een extensie of MCP) blijven letterlijk, en de
+  // motor rekent er na heropenen hetzelfde mee. Gemeten vóór deze regel: een SNET met zone startte na
+  // de rondgang om 10:00 in plaats van 08:00, en een onmogelijke datum werd een actieve SNET.
+  for (const [label, constraint, field, start] of [
+    // De motor leest de zone: 10:00+02:00 is 08:00.
+    ['SNET met zone', '2026-03-04T10:00:00+02:00', '2026-03-05T10:00:00+02:00', '2026-03-04T08:00'],
+    ['SNET met zone zonder seconden', '2026-03-04T10:00+02:00', '2026-03-05T10:00Z', '2026-03-04T08:00'],
+    ['SNET met seconden', '2026-03-04T10:00:30', '2026-03-05T10:00:30', '2026-03-04T10:00'],
+    // Een datum die niet bestaat: de motor negeert de SNET, de taak start op de projectstart.
+    ['SNET op een onmogelijke datum', '2026-13-45T10:00', '2026-13-45', '2026-03-02T07:00'],
+  ] as const) {
+    const odd = openInStore(buildProject({ ...dates, constraint, field }));
+    const o0 = odd.tasks[0];
+    same(`§5 ${label}: controle, de start vóór opslaan`, o0.time.earlyStart, start);
+    const back = openInStore(await parseOpenedFile({ name: 'rondgang.ifc', text: writeIFC(buildWriteIFCInput(odd)) }));
+    const o1 = back.tasks[0];
+    same(`§5 ${label}: constraint en eigen veld letterlijk`, [o1.constraint?.date, Object.values(o1.customFields ?? {})], [constraint, [field]]);
+    same(`§5 ${label}: datums, speling en kritiek na heropenen`,
+      [o1.time.earlyStart, o1.time.earlyFinish, o1.time.lateStart, o1.time.lateFinish, o1.time.totalFloat, o1.time.isCritical],
+      [o0.time.earlyStart, o0.time.earlyFinish, o0.time.lateStart, o0.time.lateFinish, o0.time.totalFloat, o0.time.isCritical]);
+  }
 }
 
 // ════════════════════════════════════════════════════════════════════════════════════════════════
 // §6 Schemapoort in de drie schema's
 // ════════════════════════════════════════════════════════════════════════════════════════════════
 for (const schema of ['IFC4X3_ADD2', 'IFC4X3', 'IFC4'] as const) {
-  for (const value of ['2026-03-04', '2026-03-04T10:00', '2026-03-04T7:00', '2026-03-04 10:00', '']) {
+  for (const value of ['2026-03-04', '2026-03-04T10:00', '2026-03-04T7:00', '2026-03-04 10:00', '2026-03-04T10:00:00+02:00', '2026-13-45T10:00', '']) {
     const dates = { ...allAs(value), start: value || '2026-03-04', status: value };
     const r = checkIfcSchema(`datumvorm ${JSON.stringify(value)}`, writeIFC(buildProject(dates, schema)), undefined, schema);
     checks += r.checks;

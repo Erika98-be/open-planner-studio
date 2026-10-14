@@ -9,7 +9,7 @@ import './domStub';
 // "Projectstart en -einde met tijd".
 //
 //  §1 de vorm in het bestand: met tijd IFCDATETIME met seconden, zonder tijd IFCDATE (zoals main), leeg `$`,
-//     een onleesbare tijd IFCTEXT, letterlijk (`ifcDateValue`; de lezer neemt daar de datum, zoals main).
+//     een onleesbare tijd of seconden IFCTEXT, letterlijk (`ifcDateValue`; de lezer neemt daar de datum).
 //  §2 round-trip van start en einde (readIFC): met tijd, middernacht, zonder tijd, leeg einde.
 //  §3 oude bestanden lezen zoals main ze las: IFCDATE zonder tijd, IFCDATE mét tijd (main vóór #344),
 //     en de fixture `xer-archief-herschreven.ifc`. Een IFCDATETIME van een ander pakket met een
@@ -143,8 +143,11 @@ function projectExportLines(p: DocumentPayload): string[] {
     { start: "IFCDATE('2026-03-02')", end: "IFCDATE('2026-03-13')" });
   same('§1 leeg einde: `$`', contractDates(writeIFC(buildProject('2026-03-02T07:00', ''))),
     { start: "IFCDATETIME('2026-03-02T07:00:00')", end: '$' });
-  same('§1 met seconden: zoals gegeven', contractDates(writeIFC(buildProject('2026-03-02T07:00:30', ''))).start,
-    "IFCDATETIME('2026-03-02T07:00:30')");
+  // Seconden zijn geen vorm van de store (alleen uit een extensie): tekst, letterlijk. De lezer neemt de
+  // datum, zoals main vóór #353.
+  const withSeconds = writeIFC(buildProject('2026-03-02T07:00:30', ''));
+  same('§1 met seconden: IFCTEXT, letterlijk', contractDates(withSeconds).start, "IFCTEXT('2026-03-02T07:00:30')");
+  same('§1 met seconden: de lezer neemt de datum', readIFC(withSeconds).project.startDate, '2026-03-02');
   // Geen geldige IfcDateTime: tekst, letterlijk (het bestand blijft schemageldig). De lezer neemt er de
   // datum uit, zoals main.
   const unreadable = writeIFC(buildProject('2026-03-02T7:00', ''));

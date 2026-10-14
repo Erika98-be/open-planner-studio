@@ -141,33 +141,47 @@ export function ifcJson(value: unknown): string {
 //    eigen veld van het type datum). Eén regel voor elke schrijver en elke lezer: zie
 //    docs/ifc-round-trip.md, "Datums in een property". ─────────────────────────────────────────────
 
-const IFC_DATE_FORM = /^\d{4}-\d{2}-\d{2}$/;
-// De store bewaart een uur-instant als `YYYY-MM-DDTHH:mm`. Seconden, een fractie en een zone laat
-// IfcDateTime ook toe; die gaan ongewijzigd mee.
-const IFC_DATE_TIME_FORM = /^\d{4}-\d{2}-\d{2}T(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z|[+-]\d{2}:\d{2})?$/;
+// Alleen de twee vormen van de store, en alleen met een kalenderdatum die bestaat: precies de waarden
+// die de lezer ongewijzigd teruggeeft (zie `readIfcDate`).
+const IFC_DATE_FORM = /^(\d{4})-(\d{2})-(\d{2})$/;
+const IFC_DATE_TIME_FORM = /^(\d{4})-(\d{2})-(\d{2})T(?:[01]\d|2[0-3]):[0-5]\d$/;
+
+/** Bestaat de kalenderdatum (geen maand 13, geen 30 februari)? Jaren onder 100 tellen niet mee:
+ *  `Date.UTC` leest die als 19xx, en zo'n waarde gaat dus als tekst. */
+function isCalendarDate(m: RegExpExecArray): boolean {
+  const [y, mo, d] = [Number(m[1]), Number(m[2]), Number(m[3])];
+  const date = new Date(Date.UTC(y, mo - 1, d));
+  return date.getUTCFullYear() === y && date.getUTCMonth() === mo - 1 && date.getUTCDate() === d;
+}
 
 /**
  * Een datum uit de store als getypte waarde voor een property:
  *  - `YYYY-MM-DD` ⇒ `IFCDATE(...)`;
- *  - `YYYY-MM-DDTHH:mm` (ook met seconden of zone) ⇒ `IFCDATETIME(...)`, altijd met seconden;
- *  - elke andere tekst (een onleesbare tijd zoals `T7:00`, een spatie in plaats van `T`, of leeg) ⇒
- *    `IFCTEXT(...)`, letterlijk. IfcDate kent geen tijd, en een IfcDateTime zonder seconden of met een
- *    onleesbare tijd is een schemafout; als tekst blijft het bestand geldig en gaat niets verloren.
+ *  - `YYYY-MM-DDTHH:mm` ⇒ `IFCDATETIME(...)` met seconden `:00`;
+ *  - elke andere tekst ⇒ `IFCTEXT(...)`, letterlijk. Bijvoorbeeld een onleesbare tijd (`T7:00`), een
+ *    spatie in plaats van `T`, seconden, een fractie of een zone (`+02:00`, uit een extensie of MCP),
+ *    een datum die niet bestaat (`2026-13-45`), of leeg.
+ * Zo geeft de lezer elke waarde ongewijzigd terug. IFCDATETIME met seconden of een zone zou de lezer
+ * naar `HH:mm` afronden en de zone laten vallen; een onmogelijke datum zou hij doorrollen
+ * (`2026-13-45` ⇒ 2027-02-14). IfcDate kent geen tijd, en een IfcDateTime zonder seconden is een
+ * schemafout; als tekst blijft het bestand geldig en gaat niets verloren.
  */
 export function ifcDateValue(value: string): string {
-  if (IFC_DATE_FORM.test(value)) return `IFCDATE(${ifcStr(value)})`;
-  if (IFC_DATE_TIME_FORM.test(value)) {
-    return `IFCDATETIME(${ifcStr(value.replace(/^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2})(?!:)/, '$1:00'))})`;
-  }
+  const date = IFC_DATE_FORM.exec(value);
+  if (date && isCalendarDate(date)) return `IFCDATE(${ifcStr(value)})`;
+  const dateTime = IFC_DATE_TIME_FORM.exec(value);
+  if (dateTime && isCalendarDate(dateTime)) return `IFCDATETIME(${ifcStr(`${value}:00`)})`;
   return `IFCTEXT(${value ? ifcStr(value) : "''"})`;
 }
 
 /**
  * Leesrichting van {@link ifcDateValue}. `rawArg` is de ruwe STEP-waarde (`IFCDATETIME('…')`),
  * `value` de tekst erin.
- *  - IFCDATETIME ⇒ de store-vorm `YYYY-MM-DDTHH:mm` (`importStatusDate`: een zone valt weg, een
- *    onleesbare tijd geeft de datum). Geen OPS-versie schreef IFCDATETIME bij ConstraintDate,
- *    Deadline of een eigen veld, dus geen oud bestand leest daardoor anders.
+ *  - IFCDATETIME ⇒ de store-vorm `YYYY-MM-DDTHH:mm` (`importStatusDate`). Onze writer schrijft daar
+ *    alleen `YYYY-MM-DDTHH:mm:00`, dus dat komt ongewijzigd terug. Bij een bestand van een ander
+ *    pakket valt een zone weg en geeft een onleesbare tijd de datum. Geen OPS-versie schreef
+ *    IFCDATETIME bij ConstraintDate, Deadline of een eigen veld, dus geen oud bestand leest daardoor
+ *    anders.
  *  - Elke andere waarde (IFCDATE, IFCTEXT) ⇒ `legacy(value)`: per veld precies wat de lezer altijd
  *    deed, ook met een tijd in IFCDATE. Dat verschilt per veld (standaard letterlijk; StatusDate
  *    houdt de tijd, de projectdatums nemen de datum), zodat elk oud bestand exact gelijk leest.
@@ -285,7 +299,7 @@ export interface PropSpec {
 export interface ReadProp {
   name: string;
   value: unknown;
-  raw?: string;
+  raw: string;
 }
 
 /** Descriptor voor één per-taak-pset: NAAM + GUID-seeds + geco-lokeerde write/read. */
@@ -344,7 +358,7 @@ export const PER_TASK_PSETS: PerTaskPset[] = [
     apply(task, props) {
       let ctype: string | undefined; let cdate: string | undefined; let hard = false;
       let ctype2: string | undefined; let cdate2: string | undefined;
-      for (const { name, value, raw = '' } of props) {
+      for (const { name, value, raw } of props) {
         // Hard is een IFCBOOLEAN — niet overslaan met de string-guard hieronder.
         if (name === 'Hard') { if (value === true) hard = true; continue; }
         if (typeof value !== 'string') continue;
