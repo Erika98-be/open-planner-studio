@@ -878,3 +878,8 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   blijft leidend. MPXJ leidt bij lezen niets af (`TableProjectReader.java:300`). Corpus: 101 MER-taken veranderen,
   0 datumwijzigingen, rest byte-gelijk; IFC-statuswissels 116 → 15 (= knownbugs 115). `measure:profiles` main = branch.
   Review bij reviewer (Opus 5.5, xhigh) gestart.
+- **Review #358 (reviewer, Opus 5.5 xhigh): ja** op 97aaf9363. BEVESTIGD: bestanden mét status hash-gelijk (86/88
+  documenten), 0 datumwijzigingen, IFC-wissels 116 → 15. Sterk aanbevolen: (1) mutant M7 (afleiding vóór
+  `resolveMissingScheduleDates`) overleeft ⇒ fixture zonder statusdatum/plan/target-start; (2) `measure:profiles`-claim
+  bewijst niets (MER-bestanden `included: false` in het X12-manifest). Open punt: onbekende statustekst blijft "niet
+  gestart" (MPXJ: null = leeg) ⇒ knownbugs 118, besluit later. Kleine fixronde bij de maker.
