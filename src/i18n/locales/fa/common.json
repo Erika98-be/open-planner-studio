@@ -1393,7 +1393,6 @@
     "applyTemplate": "به‌روزرسانی از الگو",
     "deleteTemplate": "حذف الگو",
     "templateDeviates": "این پروفایل با الگوی «{{name}}» تفاوت دارد.",
-    "applyDefaultOptions": "اعمال گزینه‌های پیش‌فرض این پروفایل",
     "themes": {
       "completedWork": "پیشرفت و کار تکمیل‌شده",
       "relationsLag": "روابط و تأخیر",

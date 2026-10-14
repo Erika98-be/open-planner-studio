@@ -1389,7 +1389,6 @@
     "applyTemplate": "Frissítés sablonból",
     "deleteTemplate": "Sablon törlése",
     "templateDeviates": "Ez a profil eltér a(z) „{{name}}” sablontól.",
-    "applyDefaultOptions": "Ennek a profilnak az alapbeállításainak alkalmazása",
     "themes": {
       "completedWork": "Befejezett munka és előrehaladás",
       "relationsLag": "Késleltetés és kapcsolatok",

@@ -1403,7 +1403,15 @@
   "schedulingProfile": {
     "title": "Calculation profile and options",
     "profile": "Calculation profile",
+    "newProfile": "New profile",
+    "newProfileTitle": "New scheduling profile",
+    "newProfileIntro": "The new profile gets all conventions of “{{name}}”, including the deviations. You can then switch each convention on or off yourself. The project uses the new profile after you click Apply.",
+    "newProfileName": "Name of the new profile",
+    "newProfileCreate": "Create",
+    "bareBaseHint": "“{{name}}” is the bare base, without the deviations of this project. To keep them, choose “{{modified}}”.",
     "conventionsTitle": "Conventions of this profile",
+    "builtInReadOnly": "{{name}} is a built-in profile. The conventions are shown for information and cannot be changed. For other conventions, choose {{button}}.",
+    "builtInDeviations": "This project comes from an older file. The orange conventions deviate from the {{name}} base and are used as shown. To change them, choose {{button}}.",
     "optionsTitle": "Calculation options of this project",
     "customName": "Name of this custom profile",
     "saveAsTemplate": "Save as template",
@@ -1412,7 +1420,6 @@
     "deleteTemplate": "Delete template",
     "deleteTemplateConfirm": "Delete template “{{name}}”? Projects with this profile keep their own copy.",
     "templateDeviates": "This profile differs from the template “{{name}}”.",
-    "applyDefaultOptions": "Apply this profile's default options",
     "themes": {
       "completedWork": "Progress and completed work",
       "relationsLag": "Relationships and lag",
@@ -1422,7 +1429,7 @@
       "msproject": "Progress as in Microsoft Project",
       "ownProfilesOnly": "Custom profiles only"
     },
-    "ownProfilesOnlyNote": "These conventions are off in every built-in profile, including Primavera P6. Turning one on makes it a custom profile.",
+    "ownProfilesOnlyNote": "These conventions are off in every built-in profile, including Primavera P6. Only a custom profile can switch them on: choose New profile for that.",
     "deviatingCount": "changed: {{n}}",
     "baseValue": "base: {{value}}",
     "on": "on",
@@ -1442,6 +1449,18 @@
       "xerOrigin": ".xer tasks only",
       "hourPlanning": "hour planning only",
       "hourPlanningTitle": "Only works with hour planning: a calendar with working blocks, a task in hours, or the lag calendar set to 24-hour."
+    },
+    "optionsDeviate": {
+      "line": "{{field}}: {{current}} (default: {{standard}})",
+      "intro": "These scheduling options differ from the {{name}} default. That is often on purpose, for example because they come from the opened file.",
+      "introNeutral": "These scheduling options differ from the {{name}} default. That can be a deliberate choice.",
+      "useDefaults": "Use the {{name}} default settings",
+      "totalFloatAtMost": "total float ≤ {{amount}}",
+      "hours_one": "{{count}} hour",
+      "hours_other": "{{count}} hours",
+      "days_one": "{{count}} work day",
+      "days_other": "{{count}} work days",
+      "tfAuto": "Automatic"
     }
   },
   "dialogHelp": {

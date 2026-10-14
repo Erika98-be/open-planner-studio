@@ -11,6 +11,25 @@ async function chooseProfile(trigger: Locator, value: string): Promise<void> {
   await trigger.click();
   await trigger.page().locator(`[role="option"][data-value="${value}"]`).click();
 }
+// Sinds de review van #169 (eigenaar, 2026-10-14) zijn de conventies van een ingebouwd profiel
+// alleen-lezen: bewerken gaat via de knop "Nieuw profiel" en de naamvraag in de app. Zonder `name`
+// blijft de voorgestelde naam ("Kopie van …") staan. Daarna staat het conventiedeel open.
+async function createProfile(page: Page, scope: Page | Locator = page, name?: string): Promise<void> {
+  await scope.locator('[data-ops-scheduling-new-profile]').click();
+  const dialog = page.locator('[data-ops-new-profile-dialog]');
+  await expect(dialog).toBeVisible();
+  if (name !== undefined) await dialog.locator('[data-ops-new-profile-name]').fill(name);
+  await dialog.locator('[data-ops-new-profile-create]').click();
+  await expect(dialog).toHaveCount(0);
+  await expect(scope.locator('[data-ops-conventions-body]')).toBeVisible();
+}
+// Het conventiedeel staat standaard ingeklapt; deze klik klapt het open.
+async function expandConventions(scope: Page | Locator): Promise<void> {
+  const toggle = scope.locator('[data-ops-conventions-toggle]');
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+  await toggle.click();
+  await expect(scope.locator('[data-ops-conventions-body]')).toBeVisible();
+}
 
 // Statusdatum (last_recalc_date) 2026-03-02, niet-gestarte taak gepland op 2026-01-05: onder P6 schuift
 // hij naar de statusdatum, onder MS Project (A23) niet ⇒ de wissel verschuift precies één taak.
@@ -65,10 +84,15 @@ test('rekenprofiel: XER opent als P6 met melding, wissel naar MS Project herbere
     await expect(page.locator('.ops-toast').filter({ hasText: /is 1 taak verschoven|1 task moved/ })).toHaveCount(1);
     await expect.poll(() => page.evaluate(() => window.__OPS__!.store.getState().scheduleStale)).toBe(false);
 
-    // Een conventie wijzigen op een ingebouwd profiel maakt "Kopie van Microsoft Project".
+    // "Nieuw profiel" op een ingebouwd profiel stelt "Kopie van Microsoft Project" voor; daarna is een
+    // conventie te wijzigen (een ingebouwd profiel zelf heeft geen vinkjes).
     await page.getByRole('button', { name: /^(File|Bestand)$/ }).first().click();
     await page.getByRole('button', { name: /^(Project info|Projectinfo)$/ }).first().click();
     await expect(select).toHaveAttribute('data-value', 'builtin:msproject');
+    await expect(page.locator('[data-ops-convention]')).toHaveCount(0);
+    await page.locator('[data-ops-scheduling-new-profile]').click();
+    await expect(page.locator('[data-ops-new-profile-name]')).toHaveValue(/^(Kopie van|Copy of) Microsoft Project$/);
+    await page.locator('[data-ops-new-profile-create]').click();
     await page.locator('[data-ops-convention="clampNegativeFreeFloat"]').check();
     await expect(select).toHaveAttribute('data-value', 'current');
     const nameField = page.locator('[data-ops-scheduling-profile-name]');
@@ -96,6 +120,7 @@ test('rekenprofiel: XER opent als P6 met melding, wissel naar MS Project herbere
     const dialog = page.locator('[data-ops-project-dialog="info"]');
     await expect(dialog).toBeVisible();
     await dialog.locator('input').first().fill('Nieuwe projectnaam');
+    await expandConventions(dialog);
     await dialog.locator('[data-ops-convention="p6OpenLoeTargetSpan"]').check();
     await dialog.locator('[data-ops-scheduling-profile-name]').fill('');
     await expect(dialog.locator('[data-ops-scheduling-profile-name-required]')).toBeVisible();
@@ -213,9 +238,11 @@ test('rekenprofiel: de SS-lag-variant komt uit de XER en is in Projectinfo te wi
   await expect.poll(option).toBe('earlyStart');
 
   // De motor eist C6 én A19: met A19 uit (C6 aan) is het veld uitgeschakeld, met een tooltip die A19 noemt.
+  // A19 uitzetten kan alleen in een eigen profiel (ingebouwd = alleen-lezen).
   await page.getByRole('button', { name: /^(File|Bestand)$/ }).first().click();
   await page.getByRole('button', { name: /^(Project info|Projectinfo)$/ }).first().click();
   await expect(ssLag).toBeEnabled();
+  await createProfile(page);
   await page.locator('[data-ops-convention="p6UseRemainingStartForProgress"]').uncheck();
   await expect(page.locator('[data-ops-convention="p6InProgressStartLagElapsed"]')).toBeChecked();
   await expect(ssLag).toBeDisabled();
@@ -327,7 +354,11 @@ test('rekenprofiel: conventies per thema met basiswaarde, terug naar basis en ui
   await page.getByRole('button', { name: /^(File|Bestand)$/ }).first().click();
   await page.getByRole('button', { name: /^(Project info|Projectinfo)$/ }).first().click();
 
-  // Alle 26 regels staan er, verdeeld over de groepen; A19 onder voortgang, C1 bij "alleen eigen profielen".
+  // Het conventiedeel staat standaard dicht; de kop toont het aantal regels.
+  await expect(page.locator('[data-ops-convention-row]')).toHaveCount(0);
+  await expect(page.locator('[data-ops-conventions-count]')).toHaveText('(27)');
+  await expandConventions(page);
+  // Alle 27 regels staan er, verdeeld over de groepen; A19 onder voortgang, C1 bij "alleen eigen profielen".
   await expect(page.locator('[data-ops-convention-row]')).toHaveCount(27);
   const a19 = page.locator('[data-ops-convention-group="completedWork"] [data-ops-convention-row="p6UseRemainingStartForProgress"]');
   await expect(a19).toHaveCount(1);
@@ -337,21 +368,24 @@ test('rekenprofiel: conventies per thema met basiswaarde, terug naar basis en ui
   // A19 is een gewone P6-conventie: geen per-bestand-label, basis aan, niet afwijkend — ook niet met
   // `rem_target_link_flag` = Y in het bestand. De keuzelijst toont "Primavera P6" zonder "(aangepast)".
   await expect(page.locator('[data-ops-convention-per-file]')).toHaveCount(0);
-  await expect(page.locator('[data-ops-convention="p6UseRemainingStartForProgress"]')).toBeChecked();
-  await expect(a19.locator('[data-ops-convention-base]')).toHaveText(/(basis|base): (aan|on)/);
+  // Ingebouwd = alleen-lezen: de waarde als label, geen vinkje en geen "terug naar basis".
+  await expect(a19.locator('[data-ops-convention-value]')).toHaveAttribute('data-value', 'on');
+  await expect(page.locator('[data-ops-convention]')).toHaveCount(0);
+  // "basis: …" staat bij een ingebouwd profiel alleen bij een afwijking (review #350, punt 8).
+  await expect(a19.locator('[data-ops-convention-base]')).toHaveCount(0);
   await expect(a19).not.toHaveAttribute('data-ops-convention-deviates', 'true');
   await expect(page.locator('[data-ops-convention-group="completedWork"] [data-ops-convention-group-deviating]')).toHaveCount(0);
   const select = profileSelect(page);
   await expect(select).toHaveAttribute('data-value', 'builtin:p6');
   await expect(select).toHaveText('Primavera P6');
 
-  // Uitleg uitklappen en weer inklappen.
-  await a19.locator('[data-ops-convention-help-toggle]').click();
-  await expect(a19.locator('[data-ops-convention-help]')).toBeVisible();
-  await a19.locator('[data-ops-convention-help-toggle]').click();
-  await expect(a19.locator('[data-ops-convention-help]')).toHaveCount(0);
+  // Uitleg via het i-icoon: de tooltip verschijnt bij hover (de rest staat in de spec profielblok).
+  await a19.locator('[data-ops-convention-help]').hover();
+  await expect(page.locator('.ops-tooltip[role="tooltip"]')).toBeVisible();
 
-  // Een afwijking maakt een kopie en krijgt een eigen "terug naar basis"; die zet de basiswaarde terug.
+  // Een eigen profiel ("Nieuw profiel"): een afwijking krijgt een eigen "terug naar basis"; die zet de
+  // basiswaarde terug.
+  await createProfile(page);
   await page.locator('[data-ops-convention="p6UseRemainingStartForProgress"]').uncheck();
   await expect(a19).toHaveAttribute('data-ops-convention-deviates', 'true');
   await expect(select).not.toHaveAttribute('data-value', 'builtin:p6');
@@ -575,6 +609,7 @@ test('rekenprofiel: poortlabels, SS-lag zonder urenkalender en sjabloonmeldingen
   await page.getByRole('button', { name: /^(Project info|Projectinfo)$/ }).first().click();
   const select = profileSelect(page);
   await chooseProfile(select, 'builtin:p6');
+  await expandConventions(page);
 
   // Labels volgen het register: 15 conventies alleen bij uurplanning, 8 alleen op .xer-taken.
   await expect(page.locator('[data-ops-convention-requires="hourPlanning"]')).toHaveCount(15);
@@ -604,9 +639,10 @@ test('rekenprofiel: poortlabels, SS-lag zonder urenkalender en sjabloonmeldingen
   await expect(ssLag).toBeEnabled();
   await expect(page.locator('[data-ops-ss-lag-needs-hour-planning]')).toHaveCount(0);
 
-  // Een conventie aanzetten maakt een eigen profiel; Opslaan als sjabloon meldt zich.
+  // Een eigen profiel maken en een conventie aanzetten; Opslaan als sjabloon meldt zich.
+  await createProfile(page, page, 'Mijn sjabloon');
   await page.locator('[data-ops-convention="p6CompletedPredecessorAtDataDate"]').check();
-  await page.locator('[data-ops-scheduling-profile-name]').fill('Mijn sjabloon');
+  await expect(page.locator('[data-ops-scheduling-profile-name]')).toHaveValue('Mijn sjabloon');
   await page.locator('[data-ops-scheduling-save-template]').click();
   await expect(page.locator('.ops-toast').filter({ hasText: /(Sjabloon „Mijn sjabloon” opgeslagen|Template “Mijn sjabloon” saved)/ })).toHaveCount(1);
   const storedNames = () => page.evaluate(() =>

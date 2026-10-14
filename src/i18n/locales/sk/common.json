@@ -1489,7 +1489,6 @@
     "applyTemplate": "Aktualizovať zo šablóny",
     "deleteTemplate": "Odstrániť šablónu",
     "templateDeviates": "Tento profil sa líši od šablóny „{{name}}“.",
-    "applyDefaultOptions": "Použiť predvolené možnosti tohto profilu",
     "themes": {
       "completedWork": "Postup a dokončená práca",
       "relationsLag": "Závislosti a oneskorenie",

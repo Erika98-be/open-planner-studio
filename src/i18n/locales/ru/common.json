@@ -1489,7 +1489,6 @@
     "applyTemplate": "Обновить из шаблона",
     "deleteTemplate": "Удалить шаблон",
     "templateDeviates": "Этот профиль отличается от шаблона «{{name}}».",
-    "applyDefaultOptions": "Применить стандартные параметры этого профиля",
     "themes": {
       "completedWork": "Ход выполнения и выполненные трудозатраты",
       "relationsLag": "Связи и задержки",

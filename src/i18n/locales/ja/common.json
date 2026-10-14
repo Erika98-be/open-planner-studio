@@ -1342,7 +1342,6 @@
     "applyTemplate": "テンプレートから更新",
     "deleteTemplate": "テンプレートを削除",
     "templateDeviates": "このプロファイルはテンプレート「{{name}}」と異なります。",
-    "applyDefaultOptions": "このプロファイルの既定オプションを適用",
     "themes": {
       "completedWork": "進捗と完了済みの作業",
       "relationsLag": "関係とラグ",

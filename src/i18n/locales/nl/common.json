@@ -1403,7 +1403,15 @@
   "schedulingProfile": {
     "title": "Rekenprofiel en reken-opties",
     "profile": "Rekenprofiel",
+    "newProfile": "Nieuw profiel",
+    "newProfileTitle": "Nieuw rekenprofiel",
+    "newProfileIntro": "Het nieuwe profiel krijgt alle conventies van „{{name}}”, ook de afwijkingen. Daarna kun je elke conventie zelf aan- of uitzetten. Pas na Toepassen rekent het project met het nieuwe profiel.",
+    "newProfileName": "Naam van het nieuwe profiel",
+    "newProfileCreate": "Maken",
+    "bareBaseHint": "„{{name}}” is de kale basis, zonder de afwijkingen van dit project. Wil je die houden, kies dan „{{modified}}”.",
     "conventionsTitle": "Conventies van dit profiel",
+    "builtInReadOnly": "{{name}} is een ingebouwd profiel. De conventies staan hier ter informatie en zijn niet te wijzigen. Wil je andere conventies, kies dan {{button}}.",
+    "builtInDeviations": "Dit project komt uit een ouder bestand. De oranje conventies wijken af van de basis van {{name}} en rekenen zo mee. Wil je ze wijzigen, kies dan {{button}}.",
     "optionsTitle": "Reken-opties van dit project",
     "customName": "Naam van dit eigen profiel",
     "saveAsTemplate": "Opslaan als sjabloon",
@@ -1412,7 +1420,6 @@
     "deleteTemplate": "Sjabloon verwijderen",
     "deleteTemplateConfirm": "Sjabloon „{{name}}” verwijderen? Projecten met dit profiel houden hun eigen kopie.",
     "templateDeviates": "Dit profiel wijkt af van het sjabloon “{{name}}”.",
-    "applyDefaultOptions": "Standaardopties van dit profiel toepassen",
     "themes": {
       "completedWork": "Voortgang en voltooid werk",
       "relationsLag": "Relaties en lag",
@@ -1422,7 +1429,7 @@
       "msproject": "Voortgang zoals Microsoft Project",
       "ownProfilesOnly": "Alleen voor eigen profielen"
     },
-    "ownProfilesOnlyNote": "Deze conventies staan in elk ingebouwd profiel uit, ook onder Primavera P6. Zet je er een aan, dan wordt het een eigen profiel.",
+    "ownProfilesOnlyNote": "Deze conventies staan in elk ingebouwd profiel uit, ook onder Primavera P6. Alleen een eigen profiel kan ze aanzetten: kies daarvoor Nieuw profiel.",
     "deviatingCount": "afwijkend: {{n}}",
     "baseValue": "basis: {{value}}",
     "on": "aan",
@@ -1442,6 +1449,18 @@
       "xerOrigin": "alleen taken uit .xer",
       "hourPlanning": "alleen bij uurplanning",
       "hourPlanningTitle": "Werkt alleen bij uurplanning: een kalender met werkblokken, een taak in uren, of de lag-kalender op 24-uurs."
+    },
+    "optionsDeviate": {
+      "line": "{{field}}: {{current}} (standaard: {{standard}})",
+      "intro": "Deze reken-opties wijken af van de standaard van {{name}}. Dat is vaak bewust, bijvoorbeeld omdat ze uit het geopende bestand komen.",
+      "introNeutral": "Deze reken-opties wijken af van de standaard van {{name}}. Dat kan een bewuste keuze zijn.",
+      "useDefaults": "Standaardinstellingen van {{name}} gebruiken",
+      "totalFloatAtMost": "totale speling ≤ {{amount}}",
+      "hours_one": "{{count}} uur",
+      "hours_other": "{{count}} uur",
+      "days_one": "{{count}} werkdag",
+      "days_other": "{{count}} werkdagen",
+      "tfAuto": "Automatisch"
     }
   },
   "dialogHelp": {

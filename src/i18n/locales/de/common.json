@@ -1393,7 +1393,6 @@
     "applyTemplate": "Aus Vorlage aktualisieren",
     "deleteTemplate": "Vorlage löschen",
     "templateDeviates": "Dieses Profil weicht von der Vorlage „{{name}}“ ab.",
-    "applyDefaultOptions": "Standardoptionen dieses Profils anwenden",
     "themes": {
       "completedWork": "Fortschritt und abgeschlossene Arbeit",
       "relationsLag": "Beziehungen und Zeitabstand",

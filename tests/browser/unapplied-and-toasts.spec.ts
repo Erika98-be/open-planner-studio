@@ -11,9 +11,12 @@ import { expect, test } from './fixtures/ops';
 
 const SHOTS = process.env.OPS_UI_2409_SHOTS;
 
-const CONVENTION = '[data-ops-convention="clampNegativeFreeFloat"]';
-const conventionOverride = (page: Page) => page.evaluate(() =>
-  window.__OPS__!.store.getState().project.schedulingProfile?.overrides?.clampNegativeFreeFloat ?? null);
+// De draftwijziging is een reken-optie (open eind kritiek), geen conventie: sinds de review van #169
+// (eigenaar, 2026-10-14) zijn de conventies van een ingebouwd profiel alleen-lezen, en dit project
+// rekent als OPS. Het gaat hier om "niet toegepast", niet om welk veld het is.
+const OPTION = '[data-ops-open-ended]';
+const optionValue = (page: Page) => page.evaluate(() =>
+  window.__OPS__!.store.getState().project.schedulingOptions?.makeOpenEndedCritical ?? null);
 const activeTab = (page: Page) => page.evaluate(() => window.__OPS__!.store.getState().ui.activeRibbonTab);
 const section = (page: Page) => page.evaluate(() => window.__OPS__!.store.getState().ui.backstageSection);
 
@@ -39,8 +42,8 @@ test('B2: wegnavigeren met een niet-toegepaste wijziging vraagt Toepassen/Verwer
   // Wijzigen ⇒ gekleurd blok "niet toegepast" in de actiebalk. De balk plakt NIET (eigenaar,
   // 2026-10-13): hij staat onder het formulier, dus het blok hangt niet over de inhoud.
   await toProjectInfo(page);
-  expect(await conventionOverride(page)).toBeNull();
-  await page.locator(CONVENTION).check();
+  expect(await optionValue(page)).toBeNull();
+  await page.locator(OPTION).check();
   await expect(marker).toBeVisible();
   expect(await bar.evaluate(el => getComputedStyle(el).position)).toBe('static');
   await apply.scrollIntoViewIfNeeded();
@@ -58,7 +61,7 @@ test('B2: wegnavigeren met een niet-toegepaste wijziging vraagt Toepassen/Verwer
   await dialog.locator('[data-ops-unapplied-choice="cancel"]').click();
   await expect(dialog).toHaveCount(0);
   expect(await activeTab(page)).toBe('file');
-  await expect(page.locator(CONVENTION)).toBeChecked();
+  await expect(page.locator(OPTION)).toBeChecked();
   await expect(marker).toBeVisible();
 
   // Escape ⇒ dialoog; Escape in de dialoog = Annuleren (Backstage blijft open).
@@ -68,7 +71,7 @@ test('B2: wegnavigeren met een niet-toegepaste wijziging vraagt Toepassen/Verwer
   await page.keyboard.press('Escape');
   await expect(dialog).toHaveCount(0);
   expect(await activeTab(page)).toBe('file');
-  await expect(page.locator(CONVENTION)).toBeChecked();
+  await expect(page.locator(OPTION)).toBeChecked();
 
   // Linttabblad ⇒ dialoog (het lint staat buiten Backstage); annuleren.
   await page.locator('.ribbon-tabs button').filter({ hasText: /^(Planning)$/ }).click();
@@ -82,25 +85,25 @@ test('B2: wegnavigeren met een niet-toegepaste wijziging vraagt Toepassen/Verwer
   await dialog.locator('[data-ops-unapplied-choice="discard"]').click();
   await expect(dialog).toHaveCount(0);
   await expect.poll(() => section(page)).toBe('settings');
-  expect(await conventionOverride(page)).toBeNull();
+  expect(await optionValue(page)).toBeNull();
   await page.locator('.backstage-sidebar').getByRole('button', { name: /^(Project info|Projectinfo)$/ }).click();
-  await expect(page.locator(CONVENTION)).not.toBeChecked();
+  await expect(page.locator(OPTION)).not.toBeChecked();
   await expect(marker).toHaveCount(0);
 
   // Verwerpen in de plakkende balk zet de draft terug zonder weg te gaan.
-  await page.locator(CONVENTION).check();
+  await page.locator(OPTION).check();
   await expect(marker).toBeVisible();
   await bar.locator('[data-ops-project-info-discard]').click();
-  await expect(page.locator(CONVENTION)).not.toBeChecked();
+  await expect(page.locator(OPTION)).not.toBeChecked();
   await expect(marker).toHaveCount(0);
 
   // Opnieuw wijzigen, Terug ⇒ Toepassen in de dialoog ⇒ toegepast én terug naar de werkruimte.
-  await page.locator(CONVENTION).check();
+  await page.locator(OPTION).check();
   await page.locator('[data-ops-backstage-back]').click();
   await expect(dialog).toBeVisible();
   await dialog.locator('[data-ops-unapplied-choice="apply"]').click();
   await expect(dialog).toHaveCount(0);
-  await expect.poll(() => conventionOverride(page)).toBe(true);
+  await expect.poll(() => optionValue(page)).toBe(true);
   await expect.poll(() => activeTab(page)).toBe('start');
 });
 
@@ -115,7 +118,7 @@ test('B2: F1 en Ctrl+1 lopen niet dwars door een niet-toegepaste draft of de keu
   expect(await activeDoc(page)).toBe(secondId);
 
   await toProjectInfo(page);
-  await page.locator(CONVENTION).check();
+  await page.locator(OPTION).check();
   // Focus uit het selectievakje (in een invoerveld vuren deze sneltoetsen sowieso niet).
   await page.locator('.backstage-title').click();
 
@@ -124,7 +127,7 @@ test('B2: F1 en Ctrl+1 lopen niet dwars door een niet-toegepaste draft of de keu
   await expect(dialog).toHaveCount(0);
   expect(await activeDoc(page)).toBe(secondId);
   expect(await section(page)).toBe('project-info');
-  await expect(page.locator(CONVENTION)).toBeChecked();
+  await expect(page.locator(OPTION)).toBeChecked();
 
   // F1 ⇒ de keuzedialoog (niet stil naar Help).
   await page.keyboard.press('F1');
@@ -141,13 +144,13 @@ test('B2: F1 en Ctrl+1 lopen niet dwars door een niet-toegepaste draft of de keu
   // Annuleren ⇒ draft blijft; opnieuw F1 ⇒ Verwerpen ⇒ naar Help.
   await dialog.locator('[data-ops-unapplied-choice="cancel"]').click();
   await expect(dialog).toHaveCount(0);
-  await expect(page.locator(CONVENTION)).toBeChecked();
+  await expect(page.locator(OPTION)).toBeChecked();
   await page.locator('.backstage-title').click();
   await page.keyboard.press('F1');
   await expect(dialog).toBeVisible();
   await dialog.locator('[data-ops-unapplied-choice="discard"]').click();
   await expect.poll(() => section(page)).toBe('help');
-  expect(await conventionOverride(page)).toBeNull();
+  expect(await optionValue(page)).toBeNull();
 
   // Controle dat de test gevoelig is: zonder draft wisselt Ctrl+1 wél.
   await page.locator('.backstage-title').click();
@@ -231,7 +234,7 @@ test('B5: meldingen bedekken geen knoppen van de Projectinfo-dialoog, de wizard 
   // Backstage → Projectinfo met een niet-toegepaste wijziging: staat de balk in beeld, dan schuift de
   // stapel erboven. De balk plakt niet meer, dus eerst naar de balk scrollen.
   await toProjectInfo(page);
-  await page.locator(CONVENTION).check();
+  await page.locator(OPTION).check();
   const bar = page.locator('[data-ops-project-info-actions]');
   await bar.scrollIntoViewIfNeeded();
   await expect(page.locator('.ops-toast-stack')).toHaveAttribute('data-ops-toast-placement', 'above');

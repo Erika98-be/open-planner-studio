@@ -1597,7 +1597,6 @@
     "applyTemplate": "تحديث من القالب",
     "deleteTemplate": "حذف القالب",
     "templateDeviates": "يختلف هذا الملف عن القالب «{{name}}».",
-    "applyDefaultOptions": "تطبيق الخيارات الافتراضية لهذا الملف",
     "themes": {
       "completedWork": "التقدم والعمل المكتمل",
       "relationsLag": "العلاقات والتأخير",

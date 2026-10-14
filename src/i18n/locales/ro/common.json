@@ -1439,7 +1439,6 @@
     "applyTemplate": "Actualizare din șablon",
     "deleteTemplate": "Ștergere șablon",
     "templateDeviates": "Acest profil diferă de șablonul „{{name}}”.",
-    "applyDefaultOptions": "Aplicare opțiuni implicite ale acestui profil",
     "themes": {
       "completedWork": "Progres și lucru finalizat",
       "relationsLag": "Dependențe și decalaj",

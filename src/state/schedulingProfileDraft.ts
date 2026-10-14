@@ -5,7 +5,7 @@ import type {
   BuiltInProfileId, ConventionKey, ProjectSchedulingOptions, SchedulingConventions, SchedulingProfile,
 } from '@/types/project';
 import {
-  CONVENTION_KEYS, builtInConventions, builtInProfile, defaultOptionsFor, diffAgainstBase, isBuiltInProfileId,
+  CONVENTION_KEYS, builtInProfile, defaultOptionsFor, diffAgainstBase, isBuiltInProfileId,
   isDefaultProfile, resolveConventions, switchProfile,
 } from '@/engine/scheduler/conventions/registry';
 import { MAX_PROFILE_ID_LENGTH, MAX_PROFILE_NAME_LENGTH } from '@/services/ifc/schedulingOptionsRead';
@@ -19,9 +19,10 @@ export interface SchedulingSettingsDraft {
   options: ProjectSchedulingOptions | undefined;
 }
 
-/** De waarde in de keuzelijst: een ingebouwd profiel, een sjabloon (op id), of het eigen profiel
- *  van dit project dat (nog) geen sjabloon is. */
-export type ProfileChoice = `builtin:${BuiltInProfileId}` | `template:${string}` | 'current';
+/** De waarde in de keuzelijst: een ingebouwd profiel (de kale basis), een ingebouwd profiel met de
+ *  afwijkingen van dit project ('modified', "Primavera P6 (aangepast)"), een sjabloon (op id), of het
+ *  eigen profiel van dit project dat (nog) geen sjabloon is. */
+export type ProfileChoice = `builtin:${BuiltInProfileId}` | 'modified' | `template:${string}` | 'current';
 
 export function copyProfile(p: SchedulingProfile): SchedulingProfile {
   return { baseId: p.baseId, id: p.id, name: p.name, overrides: { ...p.overrides } };
@@ -29,32 +30,42 @@ export function copyProfile(p: SchedulingProfile): SchedulingProfile {
 
 export function choiceOf(profile: SchedulingProfile | undefined, templates: readonly SchedulingProfile[]): ProfileChoice {
   const p = profile ?? builtInProfile('ops');
-  if (isBuiltInProfileId(p.id)) return `builtin:${p.id}`;
+  if (isBuiltInProfileId(p.id)) return isModifiedBuiltIn(p) ? 'modified' : `builtin:${p.id}`;
   if (templates.some(t => t.id === p.id)) return `template:${p.id}`;
   return 'current';
 }
 
+/** Een ingebouwd id met afwijkingen (opgelost, `diffAgainstBase`): komt alleen uit een ouder bestand
+ *  (migratie); de UI maakt ze niet meer. */
+export function isModifiedBuiltIn(profile: SchedulingProfile | undefined): boolean {
+  return !!profile && isBuiltInProfileId(profile.id)
+    && Object.keys(diffAgainstBase(profile.baseId, resolveConventions(profile))).length > 0;
+}
+
 /**
- * Keuzelijst-wissel. Er bestaan geen per-bestand-conventies, dus elke conventie volgt dezelfde
- * regels:
- *  - Ingebouwd vanaf een INGEBOUWD id: `switchProfile` — alle afwijkingen blijven
- *    letterlijk, ook als ze onder de nieuwe basis gelijk aan die basis zijn (P6 {A13: uit} → OPS → P6
- *    geeft het origineel). Zo'n profiel wordt dus nooit tot `undefined` genormaliseerd:
- *    `isDefaultProfile` is letterlijk "ops zonder enige afwijking".
- *  - Ingebouwd vanaf een EIGEN profiel: de kale basis — de handmatige afwijkingen verlaat de gebruiker
- *    juist met deze keuze.
- *  - Sjabloon: een kopie van het sjabloon (het project draagt zijn eigen profiel; matching op id, nooit
+ * Keuzelijst-wissel (besluiten orkestrator na review #350, 2026-10-14):
+ *  - Ingebouwd naar een ANDERE basis vanaf een ingebouwd id: `switchProfile` — alle afwijkingen blijven
+ *    letterlijk staan (B14): P6 (aangepast) → OPS → P6 geeft het origineel terug, ook na opslaan.
+ *  - Ingebouwd naar DEZELFDE basis ("Primavera P6" naast "Primavera P6 (aangepast)"): de kale basis;
+ *    het blok onder de keuzelijst zegt dat de afwijkingen dan weg zijn.
+ *  - Ingebouwd vanaf een EIGEN profiel: de kale basis.
+ *  - 'modified': het ingebouwde profiel met de afwijkingen van dit project (`modified`, de regel
+ *    "Primavera P6 (aangepast)").
+ *  - Sjabloon: een kopie van het sjabloon (het project draagt zijn eigen kopie; matching op id, nooit
  *    op naam).
  *  - Alleen het kale standaardprofiel (ops zonder afwijking) wordt `undefined` (afwezig ≡ ops).
  */
 export function selectProfile(
   current: SchedulingProfile | undefined, choice: ProfileChoice, templates: readonly SchedulingProfile[],
+  modified?: SchedulingProfile,
 ): SchedulingProfile | undefined {
   if (choice === 'current') return current;
+  if (choice === 'modified') return modified ? copyProfile(modified) : current;
   if (choice.startsWith('builtin:')) {
     const baseId = choice.slice('builtin:'.length);
     if (!isBuiltInProfileId(baseId)) return current;
-    const next = switchProfile(current, baseId);
+    const next = current && isBuiltInProfileId(current.id) && current.baseId !== baseId
+      ? switchProfile(current, baseId) : builtInProfile(baseId);
     return isDefaultProfile(next) ? undefined : next;
   }
   const template = templates.find(t => t.id === choice.slice('template:'.length));
@@ -75,32 +86,42 @@ function validCustomId(id: string): boolean {
   return id.trim().length > 0 && id.length <= MAX_PROFILE_ID_LENGTH && !isBuiltInProfileId(id);
 }
 
-/** Handmatige conventiewijziging. Op een ingebouwd id maakt dat automatisch een eigen profiel
- *  ("Kopie van P6") met álle huidige waarden (ook die uit het bestand); op een eigen
- *  profiel blijft het id. Een ongewijzigde waarde, of een ongeldig kopie-id, geeft hetzelfde object terug.
- *  Zet de wijziging een conventie op een ingebouwd id terug op de waarde van de basis, dan is dat
- *  dezelfde handeling als "terug naar basis" (`resetConventionToBase`): geen kopie zonder afwijkingen
- *  (critreview #169, N7). */
+/** Handmatige conventiewijziging, alleen in een EIGEN profiel: de afwijkingen worden opnieuw tegen de
+ *  basis bepaald (een waarde gelijk aan de basis is geen afwijking). Een ingebouwd profiel is
+ *  alleen-lezen (eigenaar, review #169, 2026-10-14): daar, en bij een ongewijzigde waarde, komt hetzelfde
+ *  object terug. Bewerken van een ingebouwd profiel gaat via `newProfileFrom`. */
 export function editConvention(
-  current: SchedulingProfile | undefined, key: ConventionKey, value: boolean, copy: { id: string; name: string },
+  current: SchedulingProfile | undefined, key: ConventionKey, value: boolean,
 ): SchedulingProfile | undefined {
-  const p = current ?? builtInProfile('ops');
-  const values = resolveConventions(p);
+  if (!current || !conventionsEditable(current)) return current;
+  const values = resolveConventions(current);
   if (values[key] === value) return current;
-  if (isBuiltInProfileId(p.id) && builtInConventions(p.baseId)[key] === value) return resetConventionToBase(current, key);
   values[key] = value;
-  const overrides = diffAgainstBase(p.baseId, values);
-  if (isBuiltInProfileId(p.id)) {
-    if (!validCustomId(copy.id)) return current;
-    return { baseId: p.baseId, id: copy.id, name: clampName(copy.name), overrides };
-  }
-  return { ...p, overrides };
+  return { ...current, overrides: diffAgainstBase(current.baseId, values) };
 }
 
-/** "Terug naar basis" voor één conventie: haal haar afwijking uit het profiel, zodat de waarde van de
- *  basis (`baseId`) weer geldt. Anders dan `editConvention` maakt dit van een ingebouwd profiel GEEN
- *  kopie: een afwijking weghalen brengt het profiel juist dichter bij de school (op een ingebouwd id
- *  is zo'n afwijking een waarde uit het bestand, bijvoorbeeld A19). Zonder afwijking: ongewijzigd. */
+/** De knop "Nieuw profiel": een eigen profiel op dezelfde basis met precies de opgeloste conventies
+ *  van `current` — ook de afwijkingen die een ingebouwd id uit de migratie van een oud bestand draagt.
+ *  Een ingebouwd profiel is in de UI alleen-lezen; dit is de enige weg naar bewerkbare conventies.
+ *  Een ongeldig id of een lege naam geeft `current` ongewijzigd terug (de naamvraag laat dat niet toe). */
+export function newProfileFrom(
+  current: SchedulingProfile | undefined, copy: { id: string; name: string },
+): SchedulingProfile | undefined {
+  const p = current ?? builtInProfile('ops');
+  const name = clampName(copy.name);
+  if (!validCustomId(copy.id) || name.length === 0) return current;
+  return { baseId: p.baseId, id: copy.id, name, overrides: diffAgainstBase(p.baseId, resolveConventions(p)) };
+}
+
+/** Is de conventieset van dit profiel in de UI te bewerken? Alleen bij een eigen profiel; de drie
+ *  ingebouwde profielen (en afwezig ≡ OPS) zijn alleen-lezen. */
+export function conventionsEditable(profile: SchedulingProfile | undefined): boolean {
+  return !!profile && !isBuiltInProfileId(profile.id);
+}
+
+/** "Terug naar basis" voor één conventie van een eigen profiel: haal haar afwijking weg, zodat de
+ *  waarde van de basis (`baseId`) weer geldt. De UI biedt dit alleen bij een eigen profiel; een
+ *  ingebouwd profiel is alleen-lezen. Zonder afwijking: ongewijzigd. */
 export function resetConventionToBase(current: SchedulingProfile | undefined, key: ConventionKey): SchedulingProfile | undefined {
   if (!current || typeof current.overrides[key] !== 'boolean') return current;
   const overrides = { ...current.overrides };
@@ -185,8 +206,8 @@ export const SOURCE_ONLY_OPTION_KEYS = [
 export type SourceOnlyOptionKey = typeof SOURCE_ONLY_OPTION_KEYS[number];
 
 /** De standaard-projectopties van de basis van dit profiel; OPS ⇒ afwezig. De bronsignalen uit
- *  `current` (`SOURCE_ONLY_OPTION_KEYS`) blijven staan: "Standaardopties" en een profielkeuze in de
- *  wizard gooien geen bestandsdata weg. */
+ *  `current` (`SOURCE_ONLY_OPTION_KEYS`) blijven staan: de knop "Standaardinstellingen van … gebruiken"
+ *  (blok afwijkende reken-opties) en een profielkeuze in de wizard gooien geen bestandsdata weg. */
 export function withDefaultOptions(
   profile: SchedulingProfile | undefined, current?: ProjectSchedulingOptions,
 ): ProjectSchedulingOptions | undefined {
@@ -195,6 +216,80 @@ export function withDefaultOptions(
     if (current?.[key] !== undefined) Object.assign(options, { [key]: current[key] });
   }
   return Object.keys(options).length > 0 ? options : undefined;
+}
+
+/** De zeven reken-opties die het blok laat bewerken (alle elf min `SOURCE_ONLY_OPTION_KEYS`). */
+export const EDITABLE_OPTION_KEYS = [
+  'criticalDefinition', 'totalFloatMode', 'makeOpenEndedCritical', 'nearCriticalThreshold', 'floatPaths',
+  'lagCalendar', 'startToStartLagFrom',
+] as const satisfies readonly Exclude<keyof ProjectSchedulingOptions, SourceOnlyOptionKey>[];
+export type EditableOptionKey = typeof EDITABLE_OPTION_KEYS[number];
+
+/** De EFFECTIEVE waarde van elke bewerkbare reken-optie: een ontbrekende sleutel krijgt de app-standaard,
+ *  precies zoals de velden in het blok hem tonen (geen lag-kalender ⇒ Voorganger, geen kritiek-definitie
+ *  ⇒ totale speling ≤ 0, …). Een drempel die alleen bij "totale speling" telt, valt bij "langste pad" weg. */
+export interface EffectiveOptions {
+  criticalDefinition: { mode: 'longestPath' } | { mode: 'totalFloat'; value: number; unit: 'hours' | 'days' };
+  totalFloatMode: TotalFloatModeUi;
+  makeOpenEndedCritical: boolean;
+  /** `null` = bijna-kritiek uit; anders de drempel in werkdagen. */
+  nearCriticalThreshold: number | null;
+  /** `null` = uit. */
+  floatPaths: { method: 'FREE_FLOAT' | 'TOTAL_FLOAT'; maxPaths: number } | null;
+  lagCalendar: NonNullable<ProjectSchedulingOptions['lagCalendar']>;
+  startToStartLagFrom: NonNullable<ProjectSchedulingOptions['startToStartLagFrom']>;
+}
+export function effectiveOptions(options: ProjectSchedulingOptions | undefined): EffectiveOptions {
+  const o = options ?? {};
+  const crit = o.criticalDefinition;
+  const fp = o.floatPaths;
+  return {
+    criticalDefinition: crit?.mode === 'longestPath' ? { mode: 'longestPath' }
+      : crit?.thresholdHours !== undefined ? { mode: 'totalFloat', value: crit.thresholdHours, unit: 'hours' }
+        : { mode: 'totalFloat', value: crit?.threshold ?? 0, unit: 'days' },
+    totalFloatMode: totalFloatModeToUi(o.totalFloatMode),
+    makeOpenEndedCritical: !!o.makeOpenEndedCritical,
+    nearCriticalThreshold: o.nearCriticalThreshold ?? null,
+    floatPaths: fp?.enabled ? { method: fp.method ?? 'FREE_FLOAT', maxPaths: fp.maxPaths ?? 10 } : null,
+    lagCalendar: o.lagCalendar ?? 'predecessor',
+    startToStartLagFrom: o.startToStartLagFrom ?? 'earlyStart',
+  };
+}
+function sameEffective<K extends EditableOptionKey>(key: K, a: EffectiveOptions[K], b: EffectiveOptions[K]): boolean {
+  // Een drempel van 0 is ≤ 0, in uren én in werkdagen: geen verschil.
+  if (key === 'criticalDefinition') {
+    const ca = a as EffectiveOptions['criticalDefinition'];
+    const cb = b as EffectiveOptions['criticalDefinition'];
+    if (ca.mode === 'totalFloat' && cb.mode === 'totalFloat' && ca.value === 0 && cb.value === 0) return true;
+  }
+  return JSON.stringify(a) === JSON.stringify(b);
+}
+
+export type OptionDeviation = {
+  [K in EditableOptionKey]: { key: K; current: EffectiveOptions[K]; standard: EffectiveOptions[K] }
+}[EditableOptionKey];
+
+/** Waar wijken de bewerkbare reken-opties af van de standaard van de basis van dit profiel
+ *  (`defaultOptionsFor`; een eigen profiel ⇒ zijn ingebouwde basis)? Vergelijkt effectieve waarden; de
+ *  bronsignalen (`SOURCE_ONLY_OPTION_KEYS`) tellen niet mee. Volgorde = `EDITABLE_OPTION_KEYS`. */
+export function optionDeviations(
+  profile: SchedulingProfile | undefined, options: ProjectSchedulingOptions | undefined,
+): OptionDeviation[] {
+  const current = effectiveOptions(options);
+  const standard = effectiveOptions(defaultOptionsFor((profile ?? builtInProfile('ops')).baseId));
+  const out: OptionDeviation[] = [];
+  for (const key of EDITABLE_OPTION_KEYS) {
+    if (!sameEffective(key, current[key], standard[key])) {
+      out.push({ key, current: current[key], standard: standard[key] } as OptionDeviation);
+    }
+  }
+  return out;
+}
+
+/** Vaste sleutel voor één set afwijkingen (basis + elke afwijking met haar huidige waarde): het kruisje
+ *  van het blok onthoudt deze sleutel; een nieuwe of andere afwijking geeft een andere sleutel. */
+export function optionDeviationsSignature(profile: SchedulingProfile | undefined, deviations: readonly OptionDeviation[]): string {
+  return JSON.stringify([(profile ?? builtInProfile('ops')).baseId, deviations.map(d => [d.key, d.current])]);
 }
 
 export function normalizeProfile(profile: SchedulingProfile | undefined): SchedulingProfile | undefined {
