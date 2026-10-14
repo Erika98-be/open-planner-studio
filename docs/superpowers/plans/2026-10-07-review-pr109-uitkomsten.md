@@ -845,3 +845,6 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
 - **#347 gemerged in main 2026-10-14 → 63128d4c7** (kop 09ea1c88c bevatte main fedbae8e6, CI 16/16, reviewer ja,
   checkstap 12 akkoord eigenaar, `--admin`).
 - **Besluit "een dag" (afwijkende uren per dag) voorgelegd** (zie #354-rapport; advies optie 2: bloksom ook in de lezers).
+- **#357 (lopend op 100 % via IFC) concept, CI 16/16 op 9344d000b** (worker Opus 5.5 medium). 9 corpustaken: vóór 5
+  met datumwijziging, ná 0; 46 checks, 4 mutanten rood; `knownDateChanges` weg; knownbugs 114 (optie 3, na release)
+  en 115 (bijvangst: 116 taken in 4 documenten, niet 120 in 6). Review bij reviewer (Opus 5.5, xhigh) gestart.
