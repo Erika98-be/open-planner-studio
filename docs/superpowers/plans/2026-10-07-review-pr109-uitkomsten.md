@@ -724,3 +724,7 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   **Bijvangst nu BEVESTIGD (bestond al, main = kop):** IFC-rondgang zet bij p6_torture A3040 `remainingTime` leeg → 0 en
   `earlyFinish` 14-03 17:30 → 02-03; projectstart verliest kloktijd (07:00 → datum, MSPDI-export 08:00). ⇒ vóór de
   release onderzoeken/herstellen (releaseregel); zelfde expert na #351, eigen branch.
+- **#350 fixronde 2 klaar:** kop 702139732, CI 16/16. B14 hersteld (andere basis via `switchProfile`; C2b via
+  `selectProfile`), wizardlek dicht, `onOut` alleen bij verlaten actief element + focus-bewaking, blok wacht bij
+  draft ≠ toegepast, Escape alleen bij verbonden element + `MutationObserver`, "(standaard: Automatisch)".
+  F1c/F2–F7 rood. Hercheck 2 gestart. Testversie (3049) bijgewerkt.
