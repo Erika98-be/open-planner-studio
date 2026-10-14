@@ -717,3 +717,10 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   = volgende dag (22–24 + "02:00" ⇒ 1560), "24:00" in nachtblok = middernacht, blok nooit > 24 u (22–06 + "23:00" ⇒
   1380); mutanten G/H/I rood. Testversie (3049) = main + #350 (45bc5e68a) + #347; 12-uursstand in het kalendervenster
   zelf nagelopen. Eigen waarneming: "Netto-uren per dag 8,00 h" (komma) naast "8.00h" (punt) per weekdag.
+- **Review #351 (reviewer, Opus 5.5): nee — alleen testkracht.** Code exact (schrijver en lezer zelfde
+  `modalBandHoursPerDay`, 16 randgevallen goed, §10 veilig, één parser, volgorde lezer klopt; R9/R10 rood). Mutanten
+  R1–R3 (bloksom uit geheugen / eerste groep / maximum) overleven ⇒ testgevallen "lange maandag" en "werkdag zonder
+  blokken" erbij; dode regel 1218 weg; §10-melding; doc inkorten. Fixronde naar de maker (expert).
+  **Bijvangst nu BEVESTIGD (bestond al, main = kop):** IFC-rondgang zet bij p6_torture A3040 `remainingTime` leeg → 0 en
+  `earlyFinish` 14-03 17:30 → 02-03; projectstart verliest kloktijd (07:00 → datum, MSPDI-export 08:00). ⇒ vóór de
+  release onderzoeken/herstellen (releaseregel); zelfde expert na #351, eigen branch.
