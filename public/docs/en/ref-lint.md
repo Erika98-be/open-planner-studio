@@ -166,7 +166,7 @@ This group is also on *Table* and *Report*.
 
 ### View › Presentation
 
-- **Presentation** — turns presentation mode on or off (F11 or Esc to stop): only the Gantt fills the screen. See [Presenting on a large screen](docs://howto-presentatie).
+- **Presentation** — turns presentation mode on or off (Esc to stop, in the desktop app also F11): only the Gantt fills the screen. See [Presenting on a large screen](docs://howto-presentatie).
 - **Split view** — splits the Gantt into two time windows that both start with your current zoom and position (split 50 percent), or makes it one again. Default: off. See [Using split view and the mini-map](docs://howto-split-view-en-mini-map).
 - **Mini-map** — shows or hides the mini-map. Default: off. Your choice is remembered.
 

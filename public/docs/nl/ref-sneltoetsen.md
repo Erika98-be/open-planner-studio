@@ -68,7 +68,7 @@ Inspringen, uitspringen en invoegen boven of onder een geselecteerde taak werken
 
 ## Weergave
 
-**F11** — *Presentatie*: zet de presentatiemodus aan of uit. De app vraagt de browser of het venster ook om volledig scherm. Werkt ook in een invoerveld.
+**F11** — *Presentatie*: zet de presentatiemodus aan of uit. De app vraagt het venster ook om volledig scherm. Werkt ook in een invoerveld. In de browser start F11 de presentatie niet: de browser zet dan zelf het venster op volledig scherm en de app blijft zoals ze is. F11 stopt in de browser wel een lopende presentatie.
 
 **Esc** (tijdens de presentatie) — *Presentatie verlaten*. Werkt ook in een invoerveld. Dit heeft voorrang op *Selectie opheffen*.
 

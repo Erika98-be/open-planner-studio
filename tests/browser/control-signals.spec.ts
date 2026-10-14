@@ -22,9 +22,16 @@ test('bedieningssignalen: gewone controls wijzen, uitgeschakelde ribbonbediening
   await expect(customDisabled).toBeVisible();
   await expect(customDisabled).toHaveCSS('cursor', 'not-allowed');
 
-  // De presentatiehandeling zelf loopt via de echte F11-sneltoets. De hint is vertaald en Escape
-  // verlaat dezelfde modus weer; de storebrug leest uitsluitend de toestand terug.
+  // In de browser is F11 van de browser: de app start er geen presentatie mee (anders verdwijnt
+  // het hele lint zodra iemand volledig scherm kiest). De presentatie start via de lintknop.
+  await page.locator('.ribbon-tab').filter({ hasText: /^(Beeld|View)$/ }).click();
   await page.keyboard.press('F11');
+  await expect.poll(() => page.evaluate(() => window.__OPS__!.store.getState().ui.presentationMode)).toBe(false);
+  await expect(startTab).toBeVisible();
+
+  // De hint is vertaald en Escape verlaat dezelfde modus weer; de storebrug leest uitsluitend de
+  // toestand terug.
+  await page.getByRole('button', { name: /^(Presentation|Presentatie)$/ }).click();
   await expect(page.locator('text=/Esc.*F11|F11.*Esc/')).toBeVisible();
   await expect.poll(() => page.evaluate(() => window.__OPS__!.store.getState().ui.presentationMode)).toBe(true);
   await page.keyboard.press('Escape');
