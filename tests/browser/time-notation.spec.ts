@@ -161,3 +161,127 @@ test('Tijdnotatie: kalendervenster, tabel en Gantt volgen de instelling, ook na 
     return [c.workStartHour, c.workEndHour];
   })).toEqual([0, 24]);
 });
+
+// ── Blokeinde 24:00 (review #347, punt 1 en 3) ──────────────────────────────────────────────────
+// Een blok tot middernacht (16:00–24:00) toont in het eindveld 24:00 (12 uur: 12:00 AM), zonder
+// "volgende dag". Een stap omlaag — knop of pijltje, getypt of onaangeroerd — geeft 23:45 op
+// DEZELFDE dag (1425), nooit 23:45 de volgende dag (2865).
+
+const NOTATIONS = [
+  { notation: '24h', option: /^(24-hour \(13:00\)|24 uur \(13:00\))$/, midnight: '24:00', quarterTo: '23:45', five: '17:00', typedMidnight: '24:00' },
+  { notation: '12h', option: /^(12-hour \(1:00 PM\)|12 uur \(1:00 PM\))$/, midnight: '12:00 AM', quarterTo: '11:45 PM', five: '5:00 PM', typedMidnight: '12 am' },
+] as const;
+
+const dayBlocks = (page: Page) => page.evaluate(() => {
+  const c = window.__OPS__!.store.getState().calendar;
+  return [1, 2, 3, 4, 5].map(d => c.workTime?.byWeekday[d as 1] ?? null);
+});
+
+for (const n of NOTATIONS) {
+  test(`Tijdnotatie ${n.notation}: blokeinde 24:00 stapt omlaag naar 23:45 op dezelfde dag`, async ({ page, ops: _ops }) => {
+    if (n.notation === '12h') await chooseTimeFormat(page, n.option);
+    const dialog = await openMspdiAndCalendarDialog(page, mspdiWithBlocks([['16:00', '00:00']]));
+    await expect.poll(() => dayBlocks(page)).toEqual(Array(5).fill([{ start: 960, end: 1440 }]));
+    const end = (day: number) => band(dialog, day, 0, 'end');
+    for (const day of [1, 2, 3, 4, 5]) {
+      await expect(end(day)).toHaveValue(n.midnight);
+      const nextDay = dialog.locator(`[data-ops-worktime-day="${day}"] [data-ops-band-next-day]`);
+      await expect(nextDay).not.toBeChecked();
+      await expect(nextDay).toBeDisabled();
+    }
+    // Ma: de stapknop omlaag, onaangeroerd veld.
+    const monDown = dialog.locator('[data-ops-worktime-day="1"] [data-ops-scalar-time-step="band-end-down"]');
+    await monDown.click();
+    await expect(end(1)).toHaveValue(n.quarterTo);
+    // En weer omhoog: 23:45 + 15 min = 24:00 (het einde van de dag), daarna weer omlaag.
+    await dialog.locator('[data-ops-worktime-day="1"] [data-ops-scalar-time-step="band-end-up"]').click();
+    await expect(end(1)).toHaveValue(n.midnight);
+    await monDown.click();
+    await expect(end(1)).toHaveValue(n.quarterTo);
+    // Di: het pijltje omlaag, onaangeroerd veld.
+    await end(2).click();
+    await end(2).press('ArrowDown');
+    await expect(end(2)).toHaveValue(n.quarterTo);
+    // Wo: middernacht getypt (dezelfde waarde), dan het pijltje omlaag.
+    await end(3).click();
+    await end(3).fill(n.typedMidnight);
+    await end(3).press('ArrowDown');
+    await expect(end(3)).toHaveValue(n.quarterTo);
+    // Do: eerst 17:00, dan middernacht typen ("24:00" of "12 am") ⇒ weer 24:00, zonder "volgende dag".
+    await typeTime(end(4), '17:00');
+    await expect(end(4)).toHaveValue(n.five);
+    await typeTime(end(4), n.typedMidnight);
+    await expect(end(4)).toHaveValue(n.midnight);
+    // Vr: "12 am" en "24:00" in een eindveld van 17:00 betekenen beide middernacht.
+    await typeTime(end(5), '17:00');
+    await typeTime(end(5), n.notation === '24h' ? '12 am' : '24:00');
+    await expect(end(5)).toHaveValue(n.midnight);
+    await expect(dialog.locator('[data-ops-worktime-day="5"] [data-ops-band-next-day]')).not.toBeChecked();
+    // Een stap omhoog vanaf 24:00 kan niet verder.
+    await dialog.locator('[data-ops-worktime-day="5"] [data-ops-scalar-time-step="band-end-up"]').click();
+    await expect(end(5)).toHaveValue(n.midnight);
+
+    await dialog.locator('[data-ops-cal-apply]').click();
+    await expect(dialog).toHaveCount(0);
+    const q = { start: 960, end: 1425 };
+    const m = { start: 960, end: 1440 };
+    await expect.poll(() => dayBlocks(page)).toEqual([[q], [q], [q], [m], [m]]);
+    expect(await page.evaluate(() => window.__OPS__!.store.getState().calendar.workTime?.byWeekday[1]))
+      .not.toEqual([{ start: 960, end: 2865 }]);
+  });
+}
+
+// ── Focus + Tab zonder wijziging (review #347, punt 2 en 3) ─────────────────────────────────────
+// XER-kalender "Late ploeg": blokken 14:00–24:00 (10 klokuren), maar `day_hr_cnt` 8. Zonder echte
+// wijziging mag Toepassen hoursPerDay, de pauze en de blokken niet raken.
+const LATE_DAY = (n: number) => `(0||${n}()(${n >= 2 && n <= 6 ? '(0||0(s|14:00|f|00:00)())' : ''}))`;
+const LATE_XER = [
+  'ERMHDR\t23.12\t2026-01-01\t\t\t\t\t\tEUR',
+  '%T\tCALENDAR', '%F\tclndr_id\tclndr_name\tclndr_type\tday_hr_cnt\tweek_hr_cnt\tclndr_data',
+  `%R\tC1\tLate ploeg\tCA_Base\t8\t40\t(0||CalendarData()((0||DaysOfWeek()(${[1, 2, 3, 4, 5, 6, 7].map(LATE_DAY).join('')}))(0||Exceptions()())))`,
+  '%T\tPROJECT', '%F\tproj_id\tproj_short_name\tclndr_id\tlast_recalc_date\tplan_start_date',
+  '%R\tP1\tLatePloeg\tC1\t2026-03-02\t2026-01-05',
+  '%T\tTASK',
+  '%F\ttask_id\tproj_id\tclndr_id\ttask_code\ttask_name\ttask_type\tduration_type\tstatus_code\ttarget_drtn_hr_cnt\tremain_drtn_hr_cnt\ttarget_start_date\ttarget_end_date',
+  '%R\tT1\tP1\tC1\tA1\tTaak\tTT_Task\tDT_FixedDUR\tTK_NotStart\t40\t40\t2026-01-05 14:00\t2026-01-08 18:00',
+  '%E',
+].join('\n');
+
+const calendarFacts = (page: Page) => page.evaluate(() => {
+  const c = window.__OPS__!.store.getState().calendar;
+  return { workTime: c.workTime, hoursPerDay: c.hoursPerDay, workDays: c.workDays,
+    breakStart: c.simpleBreakStartMinute, breakMinutes: c.simpleBreakDurationMinutes };
+});
+
+for (const n of NOTATIONS) {
+  test(`Tijdnotatie ${n.notation}: focus en Tab zonder wijziging laten de kalender ongemoeid`, async ({ page, ops: _ops }) => {
+    if (n.notation === '12h') await chooseTimeFormat(page, n.option);
+    const chooser = page.waitForEvent('filechooser');
+    await page.locator('button.ribbon-btn').filter({ hasText: /^(Open|Openen)$/ }).click();
+    await (await chooser).setFiles({ name: 'late.xer', mimeType: 'application/octet-stream', buffer: Buffer.from(LATE_XER) });
+    await expect.poll(() => page.evaluate(() => window.__OPS__!.store.getState().calendar.name)).toBe('Late ploeg');
+    const before = await calendarFacts(page);
+    expect(before.hoursPerDay).toBe(8);
+    expect(before.workTime?.byWeekday[1]).toEqual([{ start: 840, end: 1440 }]);
+
+    await page.evaluate(() => window.__OPS__!.store.getState().setUI({ showCalendarDialog: true }));
+    const dialog = page.locator('[data-ops-calendar-dialog]');
+    await expect(dialog).toBeVisible();
+    await expect(band(dialog, 1, 0, 'end')).toHaveValue(n.midnight);
+    // Ma–do: focus + Tab door begin en einde, zonder te typen.
+    for (const day of [1, 2, 3, 4]) {
+      await band(dialog, day, 0, 'start').click();
+      await band(dialog, day, 0, 'start').press('Tab');
+      await band(dialog, day, 0, 'end').click();
+      await band(dialog, day, 0, 'end').press('Tab');
+    }
+    // Vr: dezelfde waarde opnieuw typen ("24:00" of "12 am") en Tab.
+    await band(dialog, 5, 0, 'end').click();
+    await band(dialog, 5, 0, 'end').fill(n.typedMidnight);
+    await band(dialog, 5, 0, 'end').press('Tab');
+    await expect(band(dialog, 5, 0, 'end')).toHaveValue(n.midnight);
+    await dialog.locator('[data-ops-cal-apply]').click();
+    await expect(dialog).toHaveCount(0);
+    expect(await calendarFacts(page)).toEqual(before);
+  });
+}

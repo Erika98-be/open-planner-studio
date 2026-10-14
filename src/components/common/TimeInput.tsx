@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { useTimeNotation } from '@/hooks/displayDate';
 import { clockPlaceholder, formatClock, parseClock } from '@/utils/displayTime';
@@ -93,9 +93,12 @@ export function TimeInput({
 
 /**
  * {@link TimeInput} voor een waarde in minuten-vanaf-middernacht (0..1439, of 1440 met `endOfDay`).
- * Houdt de tusseninvoer zelf bij en schrijft bij blur/Enter alleen een geldige tijd weg. Ongeldige
- * invoer valt bij afronden terug op de huidige waarde: na afronden toont het veld nooit iets anders dan
- * het model. Wisselt de waarde of de notatie, dan volgt de tekst.
+ *
+ * Het veld toont de modelwaarde, tot de gebruiker typt: dan staat er een concept (`draft`). Pas bij
+ * blur/Enter wordt het concept gelezen; een geldige, ándere waarde gaat naar `onCommit`, daarna toont
+ * het veld weer het model. Zonder te typen (focus + Tab) is er geen concept en dus nooit een commit;
+ * dezelfde waarde opnieuw typen (`12 am` op `12:00 AM`) commit ook niet. De stapknoppen en pijltjes
+ * werken in hetzelfde domein als `minutes`: 0..1439, of tot en met 1440 met `endOfDay`.
  */
 export function MinuteTimeInput({
   minutes,
@@ -114,31 +117,27 @@ export function MinuteTimeInput({
   dataAttributes?: DataAttributes;
 }) {
   const notation = useTimeNotation();
-  const shown = formatClock(minutes, notation, { endOfDay });
-  const [text, setText] = useState(shown);
-  // Na elke commit volgt de tekst het model, ook als de getoonde waarde gelijk bleef (`1300` wordt
-  // `13:00`) of als de aanroeper de waarde anders opslaat dan getypt (een blokeinde `24:00`).
-  const [syncTick, setSyncTick] = useState(0);
-  useEffect(() => setText(shown), [shown, syncTick]);
+  const [draft, setDraft] = useState<string | null>(null);
 
   const commit = () => {
-    const parsed = parseClock(text, { endOfDay });
+    if (draft === null) return;
+    const parsed = parseClock(draft, { endOfDay });
+    setDraft(null);
     if (parsed !== undefined && parsed !== minutes) onCommit(parsed);
-    setSyncTick(tick => tick + 1);
   };
   const step = (delta: number) => {
-    const current = parseClock(text, { endOfDay }) ?? minutes;
+    const current = draft === null ? minutes : parseClock(draft, { endOfDay }) ?? minutes;
     const next = current + delta;
     if (next < 0 || next > (endOfDay ? 1440 : 1439)) return;
+    setDraft(null);
     onCommit(next);
-    setSyncTick(tick => tick + 1);
   };
 
   return (
     <TimeInput
       {...rest}
-      value={text}
-      onTextChange={setText}
+      value={draft ?? formatClock(minutes, notation, { endOfDay })}
+      onTextChange={setDraft}
       onCommit={commit}
       onStep={step}
     />

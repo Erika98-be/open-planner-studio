@@ -10,7 +10,7 @@
 import { clockPlaceholder, displayIsoTime, formatAxisClock, formatClock, parseClock } from '@/utils/displayTime';
 import { displayDateTime } from '@/utils/displayDate';
 import { formatGridDateTime, parseGridDateTime } from '@/engine/taskGrid/editors';
-import { bandEndFromClock } from '@/components/dialogs/WorkTimeEditor';
+import { bandEndField, bandEndFromField } from '@/components/dialogs/WorkTimeEditor';
 import { SETTINGS } from '@/utils/settingsRegistry';
 import { useAppStore } from '@/state/appStore';
 
@@ -126,11 +126,17 @@ eq('raster: ongeldige tijd', parseGridDateTime('15-06-2026 13:00 PM', 'dmy'), nu
 eq('raster: 24:00 geweigerd', parseGridDateTime('15-06-2026 24:00', 'dmy'), null);
 
 // ── 8) Blokeinde in de werktijden-editor ────────────────────────────────────
-eq('blok: 17:00 zonder volgende dag', bandEndFromClock(1020, false), 1020);
-eq('blok: nachtblok 06:00 volgende dag', bandEndFromClock(360, true), 1800);
-eq('blok: 00:00 volgende dag = middernacht', bandEndFromClock(0, true), 1440);
-eq('blok: 24:00 getypt = middernacht', bandEndFromClock(1440, false), 1440);
-eq('blok: 24:00 getypt bij volgende dag blijft middernacht', bandEndFromClock(1440, true), 1440);
+eq('blok: einde 17:00 ⇒ veld', bandEndField(1020), { minutes: 1020, nextDay: false });
+eq('blok: einde 24:00 ⇒ veld 1440, geen volgende dag', bandEndField(1440), { minutes: 1440, nextDay: false });
+eq('blok: nachtblok 06:00 ⇒ veld 360 + volgende dag', bandEndField(1800), { minutes: 360, nextDay: true });
+eq('blok: veld 17:00 ⇒ einde', bandEndFromField(1020, false), 1020);
+eq('blok: veld 24:00 ⇒ middernacht', bandEndFromField(1440, false), 1440);
+eq('blok: stap omlaag vanaf 24:00 ⇒ 23:45 dezelfde dag', bandEndFromField(1440 - 15, bandEndField(1440).nextDay), 1425);
+eq('blok: nachtblok veld 06:00 ⇒ 1800', bandEndFromField(360, true), 1800);
+for (const end of [60, 1020, 1425, 1440, 1441, 1800, 2879]) {
+  const f = bandEndField(end);
+  eq(`blok: rondgang einde ${end}`, bandEndFromField(f.minutes, f.nextDay), end);
+}
 
 // ── 9) Instelling laden: sleutel, default en validatie ──────────────────────
 const descriptor = SETTINGS.find(d => d.field === 'timeNotation');

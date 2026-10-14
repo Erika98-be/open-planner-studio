@@ -500,7 +500,7 @@ test('kalenderdialoog: na Continu krijgt een dag die weer aan gaat 00:00–24:00
   await dialog.getByRole('button', { name: 'Tue', exact: true }).click();
   await expect.poll(() => blocksOf(dialog, 2)).toEqual([]);
   await dialog.locator('[data-ops-calendar-preset-weekdays]').click();
-  await expect.poll(() => blocksOf(dialog, 2)).toEqual(['00:00', '00:00']);
+  await expect.poll(() => blocksOf(dialog, 2)).toEqual(['00:00', '24:00']);
   await dialog.locator('[data-ops-cal-apply]').click();
   const allDay = [{ start: 0, end: 1440 }];
   await expect.poll(() => calendarBlocks(page).then(c => [c.workDays, c.byWeekday?.[2], c.byWeekday?.[6], c.hpd])).toEqual([
