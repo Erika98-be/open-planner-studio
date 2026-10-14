@@ -13,6 +13,11 @@ import { formatGridDateTime, parseGridDateTime } from '@/engine/taskGrid/editors
 import { bandEndField, bandEndFromField } from '@/components/dialogs/WorkTimeEditor';
 import { SETTINGS } from '@/utils/settingsRegistry';
 import { useAppStore } from '@/state/appStore';
+import { writeIFC } from '@/services/ifc/ifcWriter';
+import { readIFC } from '@/services/ifc/ifcReader';
+import { createDefaultProject } from '@/state/defaults';
+import { deriveHoursPerDay } from '@/services/subdayIo';
+import type { WorkCalendar, WorkTimeBands } from '@/types/calendar';
 
 const diffs: string[] = [];
 let count = 0;
@@ -136,6 +141,35 @@ eq('blok: nachtblok veld 06:00 ⇒ 1800', bandEndFromField(360, true), 1800);
 for (const end of [60, 1020, 1425, 1440, 1441, 1800, 2879]) {
   const f = bandEndField(end);
   eq(`blok: rondgang einde ${end}`, bandEndFromField(f.minutes, f.nextDay), end);
+}
+
+// ── 8b) IFC: blokken uit de editor overleven opslaan en heropenen (review #347, punt 4) ─────
+// Wat de blokeditor nu maakt: een blok tot 24:00 (1440), een blok tot 23:45 na een stap omlaag
+// (1425) en een nachtblok tot 06:00 de volgende dag (1800). Twee round-trips, gelijk aan het origineel.
+// NB: een kalender met blokken waarvan hoursPerDay afwijkt van de blokken (de XER-"Late ploeg": 8 bij
+// 10 klokuren) komt na IFC terug met de afgeleide waarde; dat is bestaand writergedrag
+// (`ifcWriter.ts`, `needsHoursPerDayOverride` alleen zonder workTime) en staat los van de tijdnotatie.
+{
+  const project = { ...createDefaultProject(), id: 'proj-tn', calendarId: 'cal-tn', startDate: '2026-01-05' };
+  const roundTrip = (cal: WorkCalendar): WorkCalendar => readIFC(writeIFC({
+    project, calendar: cal, tasks: [], sequences: [], resources: [], assignments: [],
+  })).calendar;
+  const facts = (c: WorkCalendar) => ({ byWeekday: c.workTime?.byWeekday, hoursPerDay: c.hoursPerDay, workDays: [...c.workDays] });
+  const mk = (name: string, workTime: WorkTimeBands, hoursPerDay: number, start: number, end: number): WorkCalendar => ({
+    id: 'cal-tn', name, description: '', holidays: [], workTime, hoursPerDay, workStartHour: start, workEndHour: end,
+    workDays: ([1, 2, 3, 4, 5, 6, 7] as const).filter(d => workTime.byWeekday[d].length > 0),
+  });
+  const mixed: WorkTimeBands = { byWeekday: {
+    1: [{ start: 960, end: 1440 }], 2: [{ start: 1320, end: 1800 }], 3: [{ start: 960, end: 1425 }],
+    4: [{ start: 480, end: 720 }, { start: 780, end: 1440 }], 5: [{ start: 1320, end: 1800 }], 6: [], 7: [],
+  } };
+  for (const cal of [
+    mk('24:00, 23:45 en nachtblok', mixed, deriveHoursPerDay(mixed, 8), 16, 24),
+  ]) {
+    const rt1 = roundTrip(cal);
+    eq(`IFC ${cal.name}: workTime en hoursPerDay na opslaan en heropenen`, facts(rt1), facts(cal));
+    eq(`IFC ${cal.name}: tweede round-trip gelijk`, facts(roundTrip({ ...rt1, id: cal.id })), facts(cal));
+  }
 }
 
 // ── 9) Instelling laden: sleutel, default en validatie ──────────────────────
