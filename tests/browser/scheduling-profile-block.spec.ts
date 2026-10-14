@@ -142,6 +142,17 @@ test('profielblok: P6 ingeklapt en alleen-lezen, Nieuw profiel bewerkt en rekent
   // Een tooltip die door focus kwam, blijft zolang zijn element de focus heeft: ook een hover over een
   // ander icoon vervangt hem niet (fixronde 2 punt 3).
   const lastHelp = helps[helps.length - 1]![1]!;
+  // De muis over het icoon met focus en weer weg (mouse.move): de tooltip en aria-describedby blijven,
+  // want de focus staat er nog (hercheck 2, mutant F1b op de focusbewaking in onOut).
+  const lastInfo = infos.last();
+  await expect(lastInfo).toBeFocused();
+  const lastBox = (await lastInfo.boundingBox())!;
+  await page.mouse.move(lastBox.x + lastBox.width / 2, lastBox.y + lastBox.height / 2);
+  await page.mouse.move(lastBox.x + lastBox.width / 2, lastBox.y - 40);
+  await page.waitForTimeout(150);
+  await expect(lastInfo).toBeFocused();
+  await expect(tooltip(page)).toHaveText(lastHelp);
+  await expect(lastInfo).toHaveAttribute('aria-describedby', 'ops-tooltip-description');
   await infos.first().hover();
   await page.waitForTimeout(150);
   await expect(tooltip(page)).toHaveText(lastHelp);
