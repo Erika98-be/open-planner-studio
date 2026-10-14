@@ -292,11 +292,11 @@ en noem het in je rapport of PR-tekst.
 115. **Na een IFC-round-trip veranderen status of percentage van XER-taken waarvan de P6-status de werkelijke
     datums tegenspreekt**, zonder datumwijziging. De XER-lezer houdt de P6-status aan; de IFC-lezer leidt de
     status af uit de actuals (`normalizeImportedProgress`). Gemeten over het XER-corpus (openen, opslaan als
-    IFC, heropenen), met `IfcTask.Status` = 'STARTED' (zie 114): 116 taken in 4 documenten (bij #353 gemeld als 120; daarvan waren 4
-    de lopende taken op 100 % in rehab-2, die nu gelijk blijven). Verdeling: 86 taken "niet gestart" met
-    werkelijk einde worden voltooid (`sample.xer` 9, `MER-1-2026_update_2026-05-01.xer` 46,
-    `MER-1-2026_epc.xer` 31; in `sample.xer` van 0 % naar 100 %); 24 taken "niet gestart" met een percentage
-    worden lopend (MER ×2); 4 taken "gestart" op 0 % zonder actuals worden niet gestart
+    IFC, heropenen), met `IfcTask.Status` = 'STARTED' (zie 114): 116 taken in 4 documenten. Bij #353 gemeld
+    als 120; daarvan waren 4 de lopende taken op 100 % in rehab-2, en die blijven nu gelijk. Verdeling: 86
+    taken "niet gestart" met werkelijk einde worden voltooid (`sample.xer` 9, `MER-1-2026_update_2026-05-01.xer`
+    46, `MER-1-2026_epc.xer` 31; in `sample.xer` van 0 % naar 100 %); 24 taken "niet gestart" met een
+    percentage worden lopend (de twee MER-bestanden, elk 12); 4 taken "gestart" op 0 % zonder actuals worden niet gestart
     (`synthetic_v2212.xer`); 2 lopende taken in `sample.xer` krijgen een ander percentage (0,171 → 0,951 en
     0,583 → 0,833). Voorstel: besluiten welke kant wint (P6-status of actuals) en dat in beide lezers gelijk
     trekken. — B
