@@ -688,3 +688,10 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   alle eigen mutanten rood (ook D). Restpunt [midden]: blok 22–24 doortrekken naar "02:00" geeft tijdelijk
   `{1320,120}` (-20 h) en Toepassen laat het door ⇒ vervolgcommit bij de maker (einde ≤ begin = volgende dag, zoals
   `canonicalizeBands`), plus "24:00" in nachtblok-eindveld en PR-tekst. Daarna checkstap voor de eigenaar.
+- **#350 fixronde klaar:** kop 45bc5e68a, CI 16/16 groen. Blok vergelijkt toegepaste opties (geen sprong bij typen;
+  bestand alleen genoemd bij bronopties), tooltip blijft bij focus-scroll, `preventDefault` in label, "(aangepast)"
+  als eigen regel; `selectProfile('builtin:x')` geeft nu de kale basis met oranje waarschuwing (gedragswijziging
+  t.o.v. B14, Ctrl+Z werkt), Escape sluit eerst de tooltip, `aria-describedby` naar vast verborgen element, dode
+  kopie-tak weg, "≤ 0 uur", "basis" alleen bij afwijking. T1–T3 + 8 nieuwe + 9 oude mutanten rood. Hercheck door
+  dezelfde reviewer gestart, met nadruk op de B14-wijziging. Testversie (3049) bijgewerkt met deze kop; zelf
+  nagelopen met Roads: "≤ 0 uur" klopt.
