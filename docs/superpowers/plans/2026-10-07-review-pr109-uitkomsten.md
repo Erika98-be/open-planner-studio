@@ -810,3 +810,8 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
 - **Hercheck #355 (reviewer, Opus 5.5): ja** op bdf4a4dcc (zone/onmogelijke datum: start gelijk aan main; IFCTEXT
   letterlijk terug; StatusDate als main; Y1 rood). **#355 gemerged in main 2026-10-14 → 967c9e07b** (kop bevatte main 2e252983d,
   CI 16/16, `--admin`, geen UI). Testversie bijgewerkt.
+- **#354 fixronde klaar:** kop cd4e36498 (bevat main 967c9e07b), CI 16/16. Sessieregel (`hoursPerDayFollowsBlocks`/
+  `hoursPerDayForBlocks`, beginstand per kalender in de vensterbuffer, opnieuw na preset), lege week neemt eerste
+  werkdag met blokken, `applyBands` zelfde regel, XER-gemiddelde in minuten (corpus-hpd identiek), MCP-tekst, 13
+  mutanten rood, browserspec 6 tests. **Orkestratorbesluit:** MCP met `workTime` = één sessie, zelfde regel; gids
+  `ref-kalenders` bijwerken. `measure:profiles` p6-deelmeting exit 1 ⇒ maker meet main ter vergelijking.
