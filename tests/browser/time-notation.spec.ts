@@ -302,3 +302,43 @@ test('Tijdnotatie 12h: Gantt-uurschaal bij zoom 800 houdt middernacht en middag'
   expect(labels.filter(text => /^\d{1,2}[ap]$/.test(text)).length, labels.join(' | ')).toBeGreaterThan(8);
   expect(labels.some(text => /^\d{1,2} (AM|PM)$/.test(text))).toBe(false);
 });
+
+// ── Blok doortrekken na middernacht (hercheck #347, punt 1 en 2) ────────────────────────────────
+// 22:00–24:00 met een getypt einde "02:00" of "2 am" wordt een nachtblok tot 02:00 de volgende dag
+// (1560, "volgende dag" aan, 4.00h), niet 22:00 terug naar 02:00 (−20 uur). En in het eindveld van
+// een nachtblok is "24:00" middernacht (1440), net als "0:00" en "12 am".
+for (const n of NOTATIONS) {
+  test(`Tijdnotatie ${n.notation}: een getypt einde vóór het begin loopt door naar de volgende dag`, async ({ page, ops: _ops }) => {
+    if (n.notation === '12h') await chooseTimeFormat(page, n.option);
+    const dialog = await openMspdiAndCalendarDialog(page, mspdiWithBlocks([['22:00', '00:00']]));
+    await expect.poll(() => dayBlocks(page)).toEqual(Array(5).fill([{ start: 1320, end: 1440 }]));
+    const twoAm = n.notation === '24h' ? '02:00' : '2:00 AM';
+    const dayHeader = (day: number) => dialog.locator(`[data-ops-worktime-day="${day}"] > div`).first();
+    const nextDay = (day: number) => dialog.locator(`[data-ops-worktime-day="${day}"] [data-ops-band-next-day]`);
+
+    // Ma: "02:00" (24 uur) of "2 am" (12 uur) ⇒ nachtblok tot 02:00.
+    await typeTime(band(dialog, 1, 0, 'end'), n.notation === '24h' ? '02:00' : '2 am');
+    await expect(band(dialog, 1, 0, 'end')).toHaveValue(twoAm);
+    await expect(nextDay(1)).toBeChecked();
+    await expect(dayHeader(1)).toContainText('4.00h');
+    // Di: eerst doortrekken naar 02:00, dan "24:00" in het eindveld van het nachtblok ⇒ weer middernacht.
+    await typeTime(band(dialog, 2, 0, 'end'), '02:00');
+    await expect(nextDay(2)).toBeChecked();
+    await typeTime(band(dialog, 2, 0, 'end'), '24:00');
+    await expect(band(dialog, 2, 0, 'end')).toHaveValue(n.midnight);
+    await expect(nextDay(2)).not.toBeChecked();
+    await expect(dayHeader(2)).toContainText('2.00h');
+
+    await dialog.locator('[data-ops-cal-apply]').click();
+    await expect(dialog).toHaveCount(0);
+    const blocks = await dayBlocks(page);
+    expect(blocks[0]).toEqual([{ start: 1320, end: 1560 }]);
+    expect(blocks[1]).toEqual([{ start: 1320, end: 1440 }]);
+    // Na Toepassen en heropenen: ma toont 4.00h en "volgende dag".
+    await page.evaluate(() => window.__OPS__!.store.getState().setUI({ showCalendarDialog: true }));
+    await expect(dialog).toBeVisible();
+    await expect(dayHeader(1)).toContainText('4.00h');
+    await expect(nextDay(1)).toBeChecked();
+    expect(await page.evaluate(() => window.__OPS__!.store.getState().calendar.hoursPerDay)).toBeGreaterThan(0);
+  });
+}

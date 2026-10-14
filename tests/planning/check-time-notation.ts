@@ -10,7 +10,7 @@
 import { clockPlaceholder, displayIsoTime, formatAxisClock, formatClock, formatLocalDateTime, parseClock } from '@/utils/displayTime';
 import { displayDateTime } from '@/utils/displayDate';
 import { formatGridDateTime, parseGridDateTime } from '@/engine/taskGrid/editors';
-import { bandEndField, bandEndFromField } from '@/components/dialogs/WorkTimeEditor';
+import { bandEndAfterEdit, bandEndField, bandEndFromField } from '@/components/dialogs/WorkTimeEditor';
 import { SETTINGS } from '@/utils/settingsRegistry';
 import { useAppStore } from '@/state/appStore';
 import { writeIFC } from '@/services/ifc/ifcWriter';
@@ -155,6 +155,14 @@ eq('blok: veld 17:00 ⇒ einde', bandEndFromField(1020, false), 1020);
 eq('blok: veld 24:00 ⇒ middernacht', bandEndFromField(1440, false), 1440);
 eq('blok: stap omlaag vanaf 24:00 ⇒ 23:45 dezelfde dag', bandEndFromField(1440 - 15, bandEndField(1440).nextDay), 1425);
 eq('blok: nachtblok veld 06:00 ⇒ 1800', bandEndFromField(360, true), 1800);
+eq('blok na edit: 22:00–24:00, typ 02:00 ⇒ 1560 (volgende dag)', bandEndAfterEdit(1320, 120, false), 1560);
+eq('blok na edit: einde gelijk aan begin ⇒ volgende dag', bandEndAfterEdit(480, 480, false), 1920);
+eq('blok na edit: 08:00, typ 17:00 ⇒ 1020', bandEndAfterEdit(480, 1020, false), 1020);
+eq('blok na edit: 24:00 blijft 1440', bandEndAfterEdit(960, 1440, false), 1440);
+eq('blok na edit: nachtblok, typ 24:00 ⇒ 1440', bandEndAfterEdit(1320, 1440, true), 1440);
+eq('blok na edit: nachtblok, typ 0:00 ⇒ 1440', bandEndAfterEdit(1320, 0, true), 1440);
+eq('blok na edit: nachtblok, typ 05:00 ⇒ 1740', bandEndAfterEdit(1320, 300, true), 1740);
+eq('blok na edit: stap omlaag vanaf 24:00 ⇒ 1425', bandEndAfterEdit(960, 1425, false), 1425);
 for (const end of [60, 1020, 1425, 1440, 1441, 1800, 2879]) {
   const f = bandEndField(end);
   eq(`blok: rondgang einde ${end}`, bandEndFromField(f.minutes, f.nextDay), end);
