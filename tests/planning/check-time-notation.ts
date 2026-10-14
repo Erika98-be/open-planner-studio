@@ -61,6 +61,10 @@ eq('as 12h uur middag', formatAxisClock(720, '12h', 'hour'), '12 PM');
 eq('as 12h uur 13:00', formatAxisClock(780, '12h', 'hour'), '1 PM');
 eq('as 12h kwartier 13:15', formatAxisClock(795, '12h', 'quarterHour'), '1:15');
 eq('as 12h kwartier 0:45', formatAxisClock(45, '12h', 'quarterHour'), '12:45');
+eq('as 12h uur smal middernacht', formatAxisClock(0, '12h', 'hour', true), '12a');
+eq('as 12h uur smal middag', formatAxisClock(720, '12h', 'hour', true), '12p');
+eq('as 12h uur smal 22:00', formatAxisClock(1320, '12h', 'hour', true), '10p');
+eq('as 24h negeert smal', formatAxisClock(780, '24h', 'hour', true), '13:00');
 
 // ── 3) parseClock: 24-uursvormen ────────────────────────────────────────────
 eq('parse 13:00', parseClock('13:00'), 780);

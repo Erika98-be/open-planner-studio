@@ -48,7 +48,7 @@ async function finishCellText(page: Page): Promise<string> {
  * zodat ook de eerste tekenbeurt na het terugkeren naar de Gantt meetelt; daarna wachten we tot er
  * een uurlabel (in een van beide notaties) getekend is.
  */
-async function ganttHourLabels(page: Page): Promise<string[]> {
+async function ganttHourLabels(page: Page, zoom = 1000): Promise<string[]> {
   await page.evaluate(() => {
     const w = window as Window & { __opsDrawnText?: string[] };
     if (!w.__opsDrawnText) {
@@ -66,14 +66,14 @@ async function ganttHourLabels(page: Page): Promise<string[]> {
   // Terug naar de Gantt: het lint-tabblad Start (het tabblad Tabel toont het volledige raster).
   await page.locator('.ribbon-tab').filter({ hasText: /^(Home|Start)$/ }).click();
   await expect(page.locator('[data-task-grid-surface-id="full-task-grid"]')).toHaveCount(0);
-  await page.evaluate(() => {
+  await page.evaluate((z) => {
     const s = window.__OPS__!.store.getState();
     s.setUI({ enableHourPlanning: true });
-    window.__OPS__!.store.getState().setZoom(1000);
+    window.__OPS__!.store.getState().setZoom(z);
     window.__OPS__!.store.getState().setViewStartDate('2026-01-06');
-  });
+  }, zoom);
   const drawn = () => page.evaluate(() => (window as Window & { __opsDrawnText?: string[] }).__opsDrawnText ?? []);
-  await expect.poll(async () => (await drawn()).some(text => /^(\d{2}:00|\d{1,2} (AM|PM))$/.test(text)), {
+  await expect.poll(async () => (await drawn()).some(text => /^(\d{2}:00|\d{1,2} (AM|PM)|\d{1,2}[ap])$/.test(text)), {
     message: 'de Gantt tekende geen uurlabel',
   }).toBe(true);
   return drawn();
@@ -285,3 +285,20 @@ for (const n of NOTATIONS) {
     expect(await calendarFacts(page)).toEqual(before);
   });
 }
+
+// ── Gantt-uurschaal bij zoom 800 (review #347, punt 5) ──────────────────────────────────────────
+// Een uurkolom is dan ~33 px: "12 AM" en "10 PM" passen niet. De hele uurrij gebruikt dan de smalle
+// vorm ("12a", "12p"), zodat middernacht en middag zichtbaar blijven. Zonder de smalle vorm vielen
+// "10 AM", "11 AM", "12 PM", "10 PM" en "11 PM" weg.
+test('Tijdnotatie 12h: Gantt-uurschaal bij zoom 800 houdt middernacht en middag', async ({ page, ops: _ops }) => {
+  await chooseTimeFormat(page, /^(12-hour \(1:00 PM\)|12 uur \(1:00 PM\))$/);
+  await openMspdiAndCalendarDialog(page, mspdiWithBlocks([['08:00', '12:00'], ['13:00', '17:00']]));
+  await page.locator('[data-ops-calendar-dialog] [data-ops-cal-cancel]').click();
+  await page.getByRole('button', { name: /^(Table|Tabel)$/ }).click();
+  const labels = await ganttHourLabels(page, 800);
+  // Het zichtbare venster loopt van de vroege ochtend tot de avond: middag moet erin staan, en elke
+  // uurlabel in de smalle vorm (middernacht "12a" dekt de planningscheck).
+  expect(labels.includes('12p'), labels.join(' | ')).toBe(true);
+  expect(labels.filter(text => /^\d{1,2}[ap]$/.test(text)).length, labels.join(' | ')).toBeGreaterThan(8);
+  expect(labels.some(text => /^\d{1,2} (AM|PM)$/.test(text))).toBe(false);
+});
