@@ -141,7 +141,7 @@ export function MoveProjectDialog() {
             ) : null}
 
             {isPast && (
-              <div className="!text-body" style={{ color: 'var(--warning)' }}>
+              <div className="!text-body" style={{ color: 'var(--theme-warning-text)' }}>
                 {t('moveProject.warnPast')}
               </div>
             )}

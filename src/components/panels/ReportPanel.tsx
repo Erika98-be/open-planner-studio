@@ -1511,7 +1511,7 @@ export function ReportPanel() {
               />
             </ReportFieldRow>
             {statusLine !== 'none' && !statusDate && (
-              <p className="!text-body text-amber-600 mt-0.5">{t('statusLineHint')}</p>
+              <p className="!text-body mt-0.5" style={{ color: 'var(--theme-warning-text)' }}>{t('statusLineHint')}</p>
             )}
 
             {/* Volg weergave: export = wat het scherm toont (filter, groepering,

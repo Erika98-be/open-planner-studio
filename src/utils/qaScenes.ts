@@ -207,7 +207,7 @@ const SCENES: Record<string, Scene> = {
       // Gecontroleerd React-veld: de waarde via de native setter, dan een input-event.
       Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(input, '2025-03-03');
       input.dispatchEvent(new Event('input', { bubbles: true }));
-      return tagWhere('[role="dialog"] div', el => el.style.color === 'var(--warning)');
+      return tagWhere('[role="dialog"] div', el => el.style.color === 'var(--theme-warning-text)');
     },
   },
   // 4. Taakpaneel: "⚠ Deze taak loopt over … — een vrije periode van … dagen" (bouwvak).
