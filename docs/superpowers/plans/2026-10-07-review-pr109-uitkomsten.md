@@ -586,3 +586,8 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   geen Begin/Einde/Pauze). Stap 2 (*Fri* uit → Einde 26-09-2006): "het werkt". **Bevinding:** de tijdvelden tonen
   AM/PM ("01:00 PM") in de Engelse UI; dat volgt de browserlocale van `<input type="time">`, niet de app-taal.
   Na de check voorleggen.
+- **Checkstap 10 goedgekeurd door de eigenaar 2026-10-14, letterlijk: "gedaan werkt allemaal"** (stap 3: *Continuous*
+  → Einde 22-09-2006). #338 bijgewerkt met main c5c806fbe (ed3d30222), lokaal typecheck/`check-werkdag-einde`/
+  `check-ifc-werktijd-per-dag` exit 0; merge na groene CI. AM/PM-besluit voorgelegd. Feit: de blokvelden in
+  `WorkTimeEditor.tsx:103,109` zijn native `<input type="time">` (browserlocale); de velden Begin/Einde gebruiken
+  `ScalarTimeInput` (eigen tekstveld, altijd 24 uur).
