@@ -19,7 +19,7 @@ import type { ImportResult, RecordedSourceFormat } from '@/services/importTypes'
 import {
   IFC_TIME_ANCHOR, FIELD_MEASURE, RESOURCE_TYPE_TO_IFC,
 } from './ifcConstants';
-import { PSET, PER_TASK_PSETS, OPS_APP_VERSION, ifcStr, ifcJson, asciiJson, ifcTypedReal, stepReal } from './ifcPsets';
+import { PSET, PER_TASK_PSETS, OPS_APP_VERSION, ifcStr, ifcJson, asciiJson, ifcTypedReal, stepReal, ifcDateValue } from './ifcPsets';
 import { ifcSchemaQuestionFor } from './ifcSchemaQuestion';
 import { isSummaryTask } from '@/utils/taskHierarchy';
 import { projectFileBase } from '@/utils/documents';
@@ -588,14 +588,15 @@ function writeTaskTypeMeta(
 
 function ifcTypedValue(type: CustomFieldType, value: CustomFieldValue): string {
   switch (type) {
-    // Tekst/datum: `ifcRequiredStr`, want `IFCTEXT($)` is geen geldige STEP (een getypte waarde
-    // draagt altijd een waarde). Leeg ⇒ `IFCTEXT('')`.
+    // Tekst: `ifcRequiredStr`, want `IFCTEXT($)` is geen geldige STEP (een getypte waarde draagt
+    // altijd een waarde). Leeg ⇒ `IFCTEXT('')`.
     case 'text': return `IFCTEXT(${ifcRequiredStr(String(value))})`;
     // REAL-typen altijd met decimale punt (`stepReal`); een niet-eindig getal ⇒ NominalValue `$`.
     case 'number': return ifcTypedReal('IFCREAL', Number(value));
     case 'integer': return `IFCINTEGER(${Math.round(Number(value))})`;
     case 'cost': return ifcTypedReal('IFCMONETARYMEASURE', Number(value));
-    case 'date': return `IFCDATE(${ifcRequiredStr(String(value))})`;
+    // Datum via `ifcDateValue`: een tijd erin wordt IFCDATETIME, andere tekst IFCTEXT (geen schemafout).
+    case 'date': return ifcDateValue(String(value));
     case 'boolean': return `IFCBOOLEAN(${value ? '.T.' : '.F.'})`;
     default: {
       // Exhaustiviteitscheck: een nieuw CustomFieldType zonder eigen case geeft hier een
@@ -656,14 +657,10 @@ function writeStructure(
       `IFCPROPERTYSINGLEVALUE('DefaultWorkRule',$,IFCLABEL(${ifcStr(project.defaultWorkRule)}),$)`));
   }
   if (project.statusDate) {
-    // Datum ⇒ IFCDATE. Mét tijd (uur-modus, `YYYY-MM-DDTHH:mm`) ⇒ IFCDATETIME met seconden: IfcDate
-    // kent geen tijd, dus anders staat de statusdatum na opslaan + openen op middernacht.
-    const sd = project.statusDate;
-    const typed = sd.length > 10
-      ? `IFCDATETIME(${ifcStr(sd.length === 16 ? `${sd}:00` : sd)})`
-      : `IFCDATE(${ifcStr(sd)})`;
+    // `ifcDateValue`: datum ⇒ IFCDATE, mét tijd (uur-modus) ⇒ IFCDATETIME met seconden. IfcDate kent
+    // geen tijd, dus anders staat de statusdatum na opslaan + openen op middernacht.
     projSettingProps.push(addLine(ctx, '_ps_statusdate',
-      `IFCPROPERTYSINGLEVALUE('StatusDate',$,${typed},$)`));
+      `IFCPROPERTYSINGLEVALUE('StatusDate',$,${ifcDateValue(project.statusDate)},$)`));
   }
   // ProgressMode alleen als afwijkend van de default RETAINED_LOGIC (golden rule).
   if (project.progressMode && project.progressMode !== 'RETAINED_LOGIC') {
@@ -680,13 +677,14 @@ function writeStructure(
   //
   // AFWIJKING van de golden rule: deze twee worden ALTIJD geschreven, ook leeg — anders valt de
   // lezer terug op het WORKPLAN-slot en vult de afgeleide datum een bewust léég gelaten einddatum.
-  // Codering: gezet ⇒ IFCDATE(...), leeg ⇒ NominalValue `$` ("aanwezig, maar geen waarde"), zodat
-  // de lezer dat onderscheidt van "veld afwezig" (ouder bestand of ander tool ⇒ WORKPLAN-slot).
-  // IfcDate kent geen tijd: een projectstart met tijd (zoals na een XER-import) gaat als datum mee.
-  // Beide lezers, ook die van v2026.9.0, lezen hier alleen de eerste 10 tekens.
+  // Codering: gezet ⇒ `ifcDateValue` (datum ⇒ IFCDATE, mét tijd zoals na een XER-import ⇒
+  // IFCDATETIME met seconden), leeg ⇒ NominalValue `$` ("aanwezig, maar geen waarde"), zodat de
+  // lezer dat onderscheidt van "veld afwezig" (ouder bestand of ander tool ⇒ WORKPLAN-slot). De motor
+  // rekent met de tijd van het projecteinde (`useProjectEndDateForFloat`), de P6- en MSPDI-export met
+  // beide. Zie docs/ifc-round-trip.md, "Projectstart en -einde met tijd".
   const contractDateProp = (key: string, name: string, value: string): number =>
     addLine(ctx, key,
-      `IFCPROPERTYSINGLEVALUE(${ifcStr(name)},$,${value ? `IFCDATE(${ifcStr(value.slice(0, 10))})` : '$'},$)`);
+      `IFCPROPERTYSINGLEVALUE(${ifcStr(name)},$,${value ? ifcDateValue(value) : '$'},$)`);
   projSettingProps.push(contractDateProp('_ps_projstart', 'ProjectStartDate', project.startDate));
   projSettingProps.push(contractDateProp('_ps_projend', 'ProjectEndDate', project.endDate));
 

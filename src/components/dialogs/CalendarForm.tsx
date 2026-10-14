@@ -8,7 +8,10 @@ import { DateTextInput } from '@/components/common/DateTextInput';
 import { StepButtons, TimeInput, TIME_STEP_MINUTES } from '@/components/common/TimeInput';
 import { formatClock, parseClock } from '@/utils/displayTime';
 import { useAppStore } from '@/state/appStore';
-import { isHourCalendar, deriveHoursPerDay, workDayTogglePatch, workDaysFromBands, workDaysSetPatch } from '@/services/subdayIo';
+import {
+  isHourCalendar, hoursPerDayForBlocks, workDayTogglePatch, workDaysFromBands, workDaysSetPatch,
+  type WorkTimeSessionStart,
+} from '@/services/subdayIo';
 import { generateId } from '@/utils/id';
 import { loadWorkTimePresets, saveWorkTimePresets } from '@/utils/settingsStore';
 import {
@@ -50,12 +53,19 @@ export function CalendarForm({
   onChange,
   onScalarTimeValidityChange,
   projectYearSpan,
+  sessionStart: sessionStartProp,
+  onSessionStartChange,
 }: {
   draft: WorkCalendar;
   onChange: (patch: Partial<WorkCalendar>) => void;
   /** De aanroeper bezit Apply en moet lokaal ongeldige, nog niet-gecommitte HH:MM-invoer blokkeren. */
   onScalarTimeValidityChange?: (invalid: boolean) => void;
   projectYearSpan?: { from: number; to: number };
+  /** De beginstand van deze kalender in de venstersessie (`WorkTimeSessionStart`). `CalendarDialog`
+   *  bewaart hem per kalender, want het formulier mount per kalender opnieuw; zonder prop houdt het
+   *  formulier hem zelf bij (`ResourceCalendarDialog`: één kalender per venster). */
+  sessionStart?: WorkTimeSessionStart;
+  onSessionStartChange?: (start: WorkTimeSessionStart) => void;
 }) {
   const { t: tMenu, i18n } = useTranslation('menu');
   const { t: tCommon } = useTranslation('common');
@@ -73,7 +83,13 @@ export function CalendarForm({
   const [bandsCollapsed, setBandsCollapsed] = useState(false);
   // De beginstand van de blokken voor de werkdagknoppen en *Ma–vr* (`workDayTogglePatch`): bij openen de
   // blokken van de kalender, na een preset de blokken van die preset ("een preset vervangt alles").
-  const [initialWorkTime, setInitialWorkTime] = useState(() => draft.workTime);
+  // De beginstand voor de werkdagknoppen, *Ma–vr* en het blok Werktijden: bij openen de kalender zelf, na een
+  // preset de presetstand ("een preset vervangt alles"). Hij bepaalt welke blokken een dag terugkrijgt en of
+  // de uren per dag de blokken volgen (`hoursPerDayForBlocks`), één keer per sessie: de klikvolgorde telt niet.
+  const [ownSessionStart, setOwnSessionStart] = useState<WorkTimeSessionStart>(
+    () => ({ workTime: draft.workTime, hoursPerDay: draft.hoursPerDay }));
+  const sessionStart = sessionStartProp ?? ownSessionStart;
+  const setSessionStart = onSessionStartChange ?? setOwnSessionStart;
   const [savingPreset, setSavingPreset] = useState(false);
   const [presetName, setPresetName] = useState('');
   // Een kalender met werkblokken (weekbanden) toont ALTIJD het blok Werktijden, ook met urenplanning
@@ -168,7 +184,7 @@ export function CalendarForm({
     setBandsCollapsed(false);
     // Een preset vervangt alles: een dag die daarna uit en weer aan gaat, krijgt de presetblokken
     // terug, niet die van vóór de preset.
-    setInitialWorkTime(patch.workTime);
+    setSessionStart({ workTime: patch.workTime, hoursPerDay: patch.hoursPerDay });
   };
 
   // Eén van de vijf INGEBOUWDE presets (CALENDAR_PRESETS) — in tegenstelling tot een eigen preset
@@ -214,7 +230,7 @@ export function CalendarForm({
   const applyBands = (bands: WorkTimeBands) => {
     onChange({
       workTime: bands,
-      hoursPerDay: deriveHoursPerDay(bands, draft.hoursPerDay),
+      hoursPerDay: hoursPerDayForBlocks(sessionStart, draft, bands),
       workDays: workDaysFromBands(bands),
       // Handmatige weekbanden zijn absoluut leidend; laat geen oud scalar-pauzepatroon als
       // tweede bron naast deze expliciete keuze bestaan.
@@ -261,8 +277,8 @@ export function CalendarForm({
   // Bij een uurkalender gaan de blokken mee (`workDayTogglePatch`), zodat `workDays` en `workTime`
   // gelijk blijven — met urenplanning uit én aan. Een dag die weer aan gaat, krijgt eerst zijn eigen
   // blokken terug: zoals het formulier ze opende, of zoals de laatst gekozen preset ze zette
-  // (`initialWorkTime`, zie `applyPreset`; CalendarDialog mount per kalender).
-  const toggleWorkDay = (day: number) => onChange(workDayTogglePatch(draft, day, initialWorkTime));
+  // (`sessionStart`, zie `applyPreset`).
+  const toggleWorkDay = (day: number) => onChange(workDayTogglePatch(draft, day, sessionStart));
 
   // Het eenvoudige patroon is geen tweede engineformule: de netto uren worden alleen als
   // gebruikersfeedback uit hetzelfde effectieve-worktime-model afgeleid. Expliciete weekbanden
@@ -437,7 +453,7 @@ export function CalendarForm({
   };
   const applyWeekdaysPreset = () => {
     if (hourMode) {
-      onChange(workDaysSetPatch(draft, [1, 2, 3, 4, 5], initialWorkTime));
+      onChange(workDaysSetPatch(draft, [1, 2, 3, 4, 5], sessionStart));
       return;
     }
     onChange({

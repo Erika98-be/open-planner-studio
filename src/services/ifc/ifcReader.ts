@@ -22,7 +22,7 @@ import type { ImportLabels, ImportResult, RecordedSourceFormat, XerArchiveIssue,
 import {
   DEFAULT_PRIORITY, IFC_TIME_ANCHOR, MEASURE_TO_FIELD, IFC_TO_RESOURCE_TYPE,
 } from './ifcConstants';
-import { OPS_LEGACY_LITERAL_APP_VERSION, PSET, PER_TASK_PSET_BY_NAME } from './ifcPsets';
+import { OPS_LEGACY_LITERAL_APP_VERSION, PSET, PER_TASK_PSET_BY_NAME, readIfcDate } from './ifcPsets';
 import {
   IFC_TASKTIME_SLOTS, ALL_RECORDED_SLOT_KEYS, TASK_SLOT, TASKTIME_SLOT,
   type RecordedFieldKey, type TaskTimeReadHelpers,
@@ -2076,7 +2076,7 @@ function extractStructure(
     if (perTask) {
       const singleValueProps = props
         .filter(p => p.type === 'IFCPROPERTYSINGLEVALUE')
-        .map(p => ({ name: stripQuotes(p.args[0] || ''), value: parseTypedValue(p.args[2] || '') }));
+        .map(p => ({ name: stripQuotes(p.args[0] || ''), value: parseTypedValue(p.args[2] || ''), raw: p.args[2] || '' }));
       for (const objRef of objectRefs) {
         const taskId = taskStepIdMap.get(objRef);
         const task = taskId ? taskById.get(taskId) : undefined;
@@ -2117,8 +2117,9 @@ function extractStructure(
           // P6 data date → project.statusDate. Een tijd-van-de-dag (uur-modus) blijft behouden:
           // IFCDATETIME, én oudere bestanden die de tijd in IFCDATE zetten (spiegel van
           // writeStructure). Datum zonder tijd ⇒ `YYYY-MM-DD`. Zelfde
-          // regel als MSPDI en P6 (`statusDateFromXml`).
-          if (typeof v === 'string' && v) project.statusDate = importStatusDate(v);
+          // regel als MSPDI en P6 (`statusDateFromXml`). `readIfcDate` met `importStatusDate` als
+          // regel voor IFCDATE: precies wat deze lezer altijd deed.
+          if (typeof v === 'string' && v) project.statusDate = readIfcDate(prop.args[2] || '', v, importStatusDate);
         } else if (name === 'ProgressMode') {
           // Alleen PROGRESS_OVERRIDE wordt geschreven; RETAINED_LOGIC is de default.
           if (v === 'PROGRESS_OVERRIDE' || v === 'RETAINED_LOGIC') project.progressMode = v;
@@ -2129,7 +2130,11 @@ function extractStructure(
           // AFGELEIDE datum uit IFCWORKPLAN.StartTime/FinishTime die extractProject al invulde.
           // Ontbreekt het veld helemaal (ouder bestand of ander tool), dan komen we hier niet en
           // blijft die WORKPLAN-terugval staan.
-          const date = typeof v === 'string' ? v.substring(0, 10) : '';
+          // De tijd komt alleen uit IFCDATETIME (`readIfcDate`; de writer sinds docs/ifc-round-trip.md,
+          // "Projectstart en -einde met tijd"). IFCDATE (en IFCTEXT) geeft de datum, ook met een tijd
+          // erin (zo schreef main vóór #344 een projectstart na een XER-import); zulke bestanden lazen
+          // altijd zonder tijd.
+          const date = typeof v !== 'string' ? '' : readIfcDate(prop.args[2] || '', v, (x) => x.substring(0, 10));
           if (name === 'ProjectStartDate') { project.startDate = date; projectStartRecorded.value = true; }
           else project.endDate = date;
         } else if (name === 'CreatedAt') {
@@ -2162,7 +2167,10 @@ function extractStructure(
         const name = stripQuotes(prop.args[0] || '');
         if (psetName === PSET.CustomFields && prop.type === 'IFCPROPERTYSINGLEVALUE') {
           const def = defByName.get(name);
-          const value = parseTypedValue(prop.args[2] || '');
+          const parsed = parseTypedValue(prop.args[2] || '');
+          // Een datumveld: IFCDATETIME ⇒ de store-vorm (`readIfcDate`); IFCDATE en IFCTEXT letterlijk,
+          // zoals altijd.
+          const value = def?.type === 'date' && typeof parsed === 'string' ? readIfcDate(prop.args[2] || '', parsed) : parsed;
           if (def && value !== undefined) {
             task.customFields = { ...(task.customFields ?? {}), [def.id]: value };
           }

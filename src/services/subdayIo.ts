@@ -219,29 +219,73 @@ export const STANDARD_DAY_BLOCKS: ReadonlyArray<{ start: number; end: number }> 
 ];
 
 /**
+ * De beginstand van een kalender voor de regel van de uren per dag ({@link hoursPerDayFollowsBlocks}) en
+ * voor de blokken die een werkdag terugkrijgt: de kalender zoals het kalendervenster hem in deze sessie
+ * opende, of zoals de laatste preset hem zette. Het venster bewaart hem per kalender in zijn eigen buffer,
+ * niet in de store. Eén MCP-call is één sessie: dan is de beginstand de kalender vóór de call.
+ */
+export type WorkTimeSessionStart = Pick<WorkCalendar, 'workTime' | 'hoursPerDay'>;
+
+/**
+ * Volgt `hoursPerDay` in deze sessie de blokken? Eén keer bepaald op de beginstand, zodat alle
+ * werkdag- en blokwissels samen als één wissel tellen en de klikvolgorde niets uitmaakt.
+ *
+ * `hoursPerDay` is de omrekening tussen dagen en uren (P6 `day_hr_cnt`) en mag afwijken van de blokken:
+ * "Late ploeg" 14:00–24:00 met 8 uur per dag. Zo'n afwijking is projectdata en blijft staan. Hij volgt de
+ * blokken alleen als hij bij de beginstand gelijk was aan hun modale dagsom ({@link deriveHoursPerDay}).
+ * Strikte gelijkheid, zoals de IFC-schrijver beslist of hij `HoursPerDay` apart bewaart
+ * (`docs/ifc-round-trip.md`, "Uren per dag bij een blokkenkalender").
+ *
+ * Geen dagsom, dan volgt hij ook: een dagkalender bij openen (zijn uren per dag komen uit begin, einde en
+ * pauze; *Per weekdag instellen…* maakt er in de sessie een uurkalender van) en een week zonder enig blok.
+ * Zo maakt een wissel nooit zelf een afwijking.
+ */
+export function hoursPerDayFollowsBlocks(start: WorkTimeSessionStart): boolean {
+  if (!start.workTime) return true;
+  const modal = deriveHoursPerDay(start.workTime, NaN);
+  return Number.isNaN(modal) || start.hoursPerDay === modal;
+}
+
+/**
+ * `hoursPerDay` voor de nieuwe blokken `workTime` van kalender `cal`: de modale dagsom als hij in deze
+ * sessie de blokken volgt, anders blijft hij staan. Zonder enig blok blijft hij ook staan (geen dagsom).
+ * Eén regel voor de werkdagknoppen, *Ma–vr* en het blok *Werktijden* in het venster, en MCP
+ * `planner_update_calendar` met alleen `workDays`.
+ */
+export function hoursPerDayForBlocks(
+  start: WorkTimeSessionStart,
+  cal: Pick<WorkCalendar, 'hoursPerDay'>,
+  workTime: WorkTimeBands,
+): number {
+  return hoursPerDayFollowsBlocks(start) ? deriveHoursPerDay(workTime, cal.hoursPerDay) : cal.hoursPerDay;
+}
+
+/**
  * Wat een werkdagknop in de kalenderdialoog doet. Dagkalender: alleen `workDays`. Uurkalender: de
  * blokken gaan mee, want de motor gebruikt beide (het werkdagmasker voor de dagtelling, de blokken voor
  * de uren) en een `workDays` zonder blokken verdween na opslaan en heropenen.
  *  - Dag uit ⇒ zijn blokken leeg.
- *  - Dag aan ⇒ in deze volgorde: (1) de eigen blokken van die dag in `initial` (de kalender zoals het
- *    formulier hem opende — een korte vrijdag 08–12 + 13–15 komt zo terug als 08–12 + 13–15); (2) een
- *    kopie van de eerste werkdag met blokken ({@link firstBlockedDay}); (3) heeft de kalender geen enkel
- *    blok meer, de effectieve blokken van zijn enkelvoudige werkdag (begin, einde, pauze;
- *    `seedScalarBands`); (4) levert ook dat niets op (een nachtscalar 22→06, of netto meer dan de
- *    spanne), de standaardwerkdag {@link STANDARD_DAY_BLOCKS}. Zo ontstaat een werkdag nooit zonder
- *    blokken.
- * `hoursPerDay` volgt dan uit de blokken ({@link deriveHoursPerDay}).
+ *  - Dag aan ⇒ in deze volgorde: (1) de eigen blokken van die dag in de beginstand `opened` (de kalender
+ *    zoals het venster hem opende — een korte vrijdag 08–12 + 13–15 komt zo terug als 08–12 + 13–15); (2)
+ *    een kopie van de eerste werkdag met blokken ({@link firstBlockedDay}); (3) staat er geen enkel blok
+ *    meer, de eerste werkdag met blokken van de beginstand (alle dagen uit en dan Za aan: Za krijgt de
+ *    werkdag van het openen); (4) had ook de beginstand geen blok, de effectieve blokken van de enkelvoudige
+ *    werkdag (begin, einde, pauze; `seedScalarBands`); (5) levert ook dat niets op (een nachtscalar 22→06,
+ *    of netto meer dan de spanne), de standaardwerkdag {@link STANDARD_DAY_BLOCKS}. Zo ontstaat een werkdag
+ *    nooit zonder blokken, en zaait (4) alleen bij een kalender zonder dagsom, dus nooit met een
+ *    afwijkende `hoursPerDay` (die zou een verzonnen pauze geven).
+ * `hoursPerDay`: {@link hoursPerDayForBlocks} met de beginstand `opened`, of zonder sessie de kalender zelf.
  */
 export function workDayTogglePatch(
   cal: Pick<WorkCalendar, 'workDays' | 'workTime' | 'hoursPerDay' | 'workStartHour' | 'workEndHour'
     | 'simpleBreakStartMinute' | 'simpleBreakDurationMinutes'>,
   day: number,
-  initial?: WorkTimeBands,
+  opened?: WorkTimeSessionStart,
 ): Partial<WorkCalendar> {
   const has = cal.workDays.includes(day);
   const workDays = has ? cal.workDays.filter((x) => x !== day) : [...cal.workDays, day].sort((a, b) => a - b);
   if (!cal.workTime || day < 1 || day > 7) return { workDays };
-  const own = initial?.byWeekday[day as 1];
+  const own = opened?.workTime?.byWeekday[day as 1];
   const seeded = () => {
     const bands = seedScalarBands(cal.workStartHour * 60, cal.workEndHour * 60, cal.hoursPerDay,
       cal.simpleBreakStartMinute, cal.simpleBreakDurationMinutes);
@@ -249,35 +293,38 @@ export function workDayTogglePatch(
   };
   const source = has
     ? []
-    : (own && own.length > 0 ? own : firstBlockedDay(cal.workTime)) ?? seeded();
+    : (own && own.length > 0 ? own : firstBlockedDay(cal.workTime) ?? firstBlockedDay(opened?.workTime)) ?? seeded();
   const workTime: WorkTimeBands = {
     byWeekday: { ...cal.workTime.byWeekday, [day as 1]: source.map((b) => ({ ...b })) },
   };
-  return { workDays, workTime, hoursPerDay: deriveHoursPerDay(workTime, cal.hoursPerDay) };
+  return { workDays, workTime, hoursPerDay: hoursPerDayForBlocks(opened ?? cal, cal, workTime) };
 }
 
 /**
- * Zet de werkdagen van een kalender in één keer op `days` (de knop *Ma–vr* in de kalenderdialoog).
- * Elke dag die van stand wisselt, gaat door {@link workDayTogglePatch}; bij een uurkalender gaan de
- * blokken dus mee en houdt een dag die aan blijft zijn eigen blokken. Eerst gaan de dagen aan (zij
- * kopiëren dan nog van een bestaande werkdag), daarna gaan de andere uit.
+ * Zet de werkdagen van een kalender in één keer op `days` (de knop *Ma–vr* in de kalenderdialoog, MCP met
+ * alleen `workDays`). Elke dag die van stand wisselt, gaat door {@link workDayTogglePatch}; bij een
+ * uurkalender gaan de blokken dus mee en houdt een dag die aan blijft zijn eigen blokken. Eerst gaan de
+ * dagen aan (zij kopiëren dan nog van een bestaande werkdag), daarna gaan de andere uit.
+ *
+ * `hoursPerDay` volgt {@link hoursPerDayForBlocks} met de beginstand `opened`, of zonder sessie de
+ * kalender van vóór de zet: de hele zet is één wissel, los van de tussenstanden.
  */
 export function workDaysSetPatch(
   cal: Pick<WorkCalendar, 'workDays' | 'workTime' | 'hoursPerDay' | 'workStartHour' | 'workEndHour'
     | 'simpleBreakStartMinute' | 'simpleBreakDurationMinutes'>,
   days: readonly number[],
-  initial?: WorkTimeBands,
+  opened?: WorkTimeSessionStart,
 ): Partial<WorkCalendar> {
   let cur = { ...cal };
   for (const on of [true, false]) {
     for (let day = 1; day <= 7; day++) {
       if (days.includes(day) === on && cur.workDays.includes(day) !== on) {
-        cur = { ...cur, ...workDayTogglePatch(cur, day, initial) };
+        cur = { ...cur, ...workDayTogglePatch(cur, day, opened) };
       }
     }
   }
   return cur.workTime
-    ? { workDays: cur.workDays, workTime: cur.workTime, hoursPerDay: cur.hoursPerDay }
+    ? { workDays: cur.workDays, workTime: cur.workTime, hoursPerDay: hoursPerDayForBlocks(opened ?? cal, cal, cur.workTime) }
     : { workDays: cur.workDays };
 }
 
