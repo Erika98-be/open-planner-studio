@@ -37,7 +37,7 @@ import { ensureFreshSchedule } from '../staleGuard';
 import { createNewCalendar } from '@/engine/calendar/defaultCalendar';
 import { computeMoveDelta } from '@/engine/moveProject';
 import { diffDays } from '@/utils/dateUtils';
-import { deriveHoursPerDay, workDaysFromBands } from '@/services/subdayIo';
+import { deriveHoursPerDay, workDaysFromBands, workDaysSetPatch } from '@/services/subdayIo';
 import { effHoursPerDay } from '@/utils/taskDuration';
 import type { GeneratorCountry, HolidayGenParams } from '@/engine/calendar/generateCalendarHolidays';
 import type { CalendarGeneration, Holiday, WorkCalendar, WorkingException, WorkTimeBands } from '@/types/calendar';
@@ -704,6 +704,17 @@ function calendarFieldPatch(item: CalendarItem, existing: CalendarBase): Partial
     if (item.workDays === undefined) patch.workDays = workDaysFromBands(bands);
     if (item.hoursPerDay === undefined) patch.hoursPerDay = deriveHoursPerDay(bands, existing.hoursPerDay);
   }
+  // ALLEEN `workDays` OP EEN UURKALENDER (review PR #351): de blokken gaan mee, precies zoals de knoppen
+  // in het kalendervenster (`workDaysSetPatch`, één regel). Een nieuwe werkdag krijgt blokken (kopie van
+  // de eerste werkdag met blokken, anders de standaardwerkdag); een vervallen werkdag verliest ze;
+  // `hoursPerDay` volgt uit de blokken, tenzij het item hem zelf opgeeft. Zonder dit bleef een werkdag
+  // zonder blokken achter, en na een IFC-rondgang kreeg die dag stil de blokken van maandag.
+  // Startpunt zijn de werkdagen volgens de blokken: zo herstelt dit ook een kalender die al tegenstrijdig was.
+  if (item.workDays !== undefined && item.workTime === undefined && existing.workTime !== undefined) {
+    const fromBands = { ...existing, workDays: workDaysFromBands(existing.workTime) };
+    Object.assign(patch, workDaysSetPatch(fromBands, item.workDays));
+    if (item.hoursPerDay !== undefined) patch.hoursPerDay = item.hoursPerDay;
+  }
   if (item.shift !== undefined && item.shift !== null) patch.shift = item.shift;
   if (item.simpleBreakStartMinute !== undefined) patch.simpleBreakStartMinute = item.simpleBreakStartMinute;
   if (item.simpleBreakDurationMinutes !== undefined) patch.simpleBreakDurationMinutes = item.simpleBreakDurationMinutes;
@@ -1038,7 +1049,11 @@ const updateCalendar: BatchStepTool = {
     'concrete work blocks. The response reports a mode switch as `modeChangedFrom` and confirms with ' +
     '`taskDurationsPreserved: true` that the task durations were not converted. `workDays` and `hoursPerDay` ' +
     'are DERIVED from the bands as soon as you pass `workTime` (as the calendar dialog does); if you pass ' +
-    'them anyway, `workDays` must not contradict the bands. KEEPING IN THE FILE (IFC): a newly created ' +
+    'them anyway, `workDays` must not contradict the bands. Passing ONLY `workDays` on an HOUR calendar ' +
+    'moves the bands along, as the weekday buttons in the calendar dialog do: a day that becomes a working day ' +
+    'gets a copy of the bands of the first working day with bands (none left: the standard day 07:00–12:00 + ' +
+    '13:00–16:00), a day that stops being a working day loses its bands, and `hoursPerDay` follows from the ' +
+    'bands unless you pass it. KEEPING IN THE FILE (IFC): a newly created ' +
     'calendar to which NO task and no resource is attached does NOT survive save+reload — so attach tasks to ' +
     'it right away with `update_tasks.calendarId`. Hour bands survive IFC, also when they DIFFER PER ' +
     'WEEKDAY (for example a short Friday). A calendar in which tasks no longer fit (e.g. a long holiday block) gives no ' +
@@ -1067,7 +1082,9 @@ const updateCalendar: BatchStepTool = {
             workDays: {
               type: 'array',
               items: { type: 'integer', minimum: 1, maximum: 7 },
-              description: 'Working days as ISO weekday numbers (1 = Monday … 7 = Sunday).',
+              description: 'Working days as ISO weekday numbers (1 = Monday … 7 = Sunday). On an HOUR calendar ' +
+                'without `workTime` in the same item, the bands follow (a new day copies the first working ' +
+                'day, a dropped day loses its bands), as in the calendar dialog.',
             },
             workStartHour: { type: 'number', description: 'Start of the working day in HOURS (0–24), e.g. 7.' },
             workEndHour: { type: 'number', description: 'End of the working day in HOURS (0–24), e.g. 16.' },
