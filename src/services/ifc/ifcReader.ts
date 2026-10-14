@@ -2129,7 +2129,11 @@ function extractStructure(
           // AFGELEIDE datum uit IFCWORKPLAN.StartTime/FinishTime die extractProject al invulde.
           // Ontbreekt het veld helemaal (ouder bestand of ander tool), dan komen we hier niet en
           // blijft die WORKPLAN-terugval staan.
-          const date = typeof v === 'string' ? v.substring(0, 10) : '';
+          // De tijd komt alleen uit IFCDATETIME (de writer sinds docs/ifc-round-trip.md, "Projectstart
+          // en -einde met tijd"). IFCDATE geeft de datum, ook met een tijd erin (zo schreef main vóór
+          // #344 een projectstart na een XER-import); zulke bestanden lazen altijd zonder tijd.
+          const withTime = /^IFCDATETIME\s*\(/i.test((prop.args[2] || '').trim());
+          const date = typeof v !== 'string' ? '' : withTime ? importStatusDate(v) : v.substring(0, 10);
           if (name === 'ProjectStartDate') { project.startDate = date; projectStartRecorded.value = true; }
           else project.endDate = date;
         } else if (name === 'CreatedAt') {

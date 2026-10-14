@@ -682,11 +682,16 @@ function writeStructure(
   // lezer terug op het WORKPLAN-slot en vult de afgeleide datum een bewust léég gelaten einddatum.
   // Codering: gezet ⇒ IFCDATE(...), leeg ⇒ NominalValue `$` ("aanwezig, maar geen waarde"), zodat
   // de lezer dat onderscheidt van "veld afwezig" (ouder bestand of ander tool ⇒ WORKPLAN-slot).
-  // IfcDate kent geen tijd: een projectstart met tijd (zoals na een XER-import) gaat als datum mee.
-  // Beide lezers, ook die van v2026.9.0, lezen hier alleen de eerste 10 tekens.
+  // Mét tijd (`YYYY-MM-DDTHH:mm`, zoals na een XER-import) ⇒ IFCDATETIME met seconden, net als
+  // StatusDate: IfcDate kent geen tijd. De motor rekent met de tijd van het projecteinde
+  // (`useProjectEndDateForFloat`), de P6- en MSPDI-export met beide. Zie docs/ifc-round-trip.md,
+  // "Projectstart en -einde met tijd".
+  const contractDateValue = (value: string): string => (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?$/.test(value)
+    ? `IFCDATETIME(${ifcStr(value.length === 16 ? `${value}:00` : value)})`
+    : `IFCDATE(${ifcStr(value.slice(0, 10))})`);
   const contractDateProp = (key: string, name: string, value: string): number =>
     addLine(ctx, key,
-      `IFCPROPERTYSINGLEVALUE(${ifcStr(name)},$,${value ? `IFCDATE(${ifcStr(value.slice(0, 10))})` : '$'},$)`);
+      `IFCPROPERTYSINGLEVALUE(${ifcStr(name)},$,${value ? contractDateValue(value) : '$'},$)`);
   projSettingProps.push(contractDateProp('_ps_projstart', 'ProjectStartDate', project.startDate));
   projSettingProps.push(contractDateProp('_ps_projend', 'ProjectEndDate', project.endDate));
 

@@ -345,6 +345,15 @@ IfcWorkPlan.StartTime. Valt die later dan de vroegste ingelezen taakstart, dan g
   2022-09-14 uit StartTime (59794aa55: 2022-10-01, en als einde de tekst `.NOTDEFINE`). De 9 taken zijn
   na doorrekenen gelijk.
 
+**Projectstart en -einde met tijd.** Na een XER-import hebben projectstart en -einde een tijd, zoals
+`2012-12-17T07:00`. De writer schrijft `ProjectStartDate`/`ProjectEndDate` dan als IFCDATETIME met
+seconden, net als `StatusDate`. Zonder tijd blijft het IFCDATE. De lezer neemt de tijd alleen uit
+IFCDATETIME over. Een oud bestand met IFCDATE leest dus als voorheen, ook als er een tijd in staat.
+De lezer van v2026.9.0 leest van beide alleen de datum. Vóór deze wijziging viel de tijd weg. De P6-
+en MSPDI-export schreven dan 08:00 (Roads: 07:00 werd 08:00). De motor leest van de projectstart
+alleen de datum, maar van het projecteinde de tijd, als `useProjectEndDateForFloat` aan staat.
+Getoetst in `check-ifc-projectdatum-tijd.ts`, op het corpus in `check-ifc-projectdatum-corpus.ts`.
+
 **Bestaande GlobalIds.** "0 fouten" geldt voor een nieuw project. Een bestand dat OPS inleest, houdt
 bij opslaan zijn GlobalIds, ook als die ongeldig zijn (besluit eigenaar 2026-09-28,
 `check-ifc-globalid.ts`): externe koppelingen naar die id's mogen niet breken. Oude OPS-versies
