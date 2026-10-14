@@ -704,3 +704,12 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   VERMOED bijvangst (bestond al): 7 taakdatums verschuiven bij IFC-rondgang (100 %-lopend, `remainingTime` leeg →
   waarde), projectstart Roads 07:00 → 08:00 in exports, volgorde bibliotheekkalenders. Review gestart.
   Na merge: verouderde opmerking over `needsHoursPerDayOverride` in `check-time-notation.ts` (#347) bijwerken.
+- **Hercheck #350 (reviewer, Opus 5.5): nee.** Opgelost: geen sprong, Roads één regel, geen vals alarm, label-klik,
+  T1–T4 rood, Escape breekt geen andere dialogen. BEVESTIGD open: (1) wissel naar een andere basis verliest
+  afwijkingen zonder eigen blok (`overrides: {}` na Toepassen; C2b-test pint `switchProfile`, dat geen productieweg
+  meer gebruikt); (2) wizard neemt "(aangepast)" van het actieve document over; (3) tooltip na klik op de kop + Tab
+  verdwijnt via `onOut`; (4) blok noemt toegepaste waarde terwijl het veld al de standaard toont; (5) achtergebleven
+  tooltip slikt Escape; teksten "(standaard: Automatisch (standaard))", gids "0 uren".
+  **Orkestratorbesluit: B14 blijft** (wissel naar andere basis bewaart afwijkingen via `switchProfile`; alleen
+  "P6" vs "P6 (aangepast)" geeft de kale basis met blok); blok verborgen zolang draft-opties ≠ toegepast.
+  Fixronde 2 naar de maker.
