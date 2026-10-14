@@ -2,7 +2,7 @@ import { Task } from '@/types/task';
 import type { BaselineOverlay } from '@/types/baseline';
 import { Sequence } from '@/types/sequence';
 import type { ViewState, BarSplitMode, DurationDisplay, TimeNotation } from '@/types/view';
-import { formatClock } from '@/utils/displayTime';
+import { formatAxisClock } from '@/utils/displayTime';
 import { parseDate, parseInstant, addCalendarDays, diffCalendarDays, isoDayOfWeek, getWeekNumberFor, utcDayStart, localNowOnDayAxis, MS_PER_DAY } from '@/utils/dateUtils';
 import { holidayEndDate, WorkCalendar } from '@/types/calendar';
 import { calendarWithEffectiveWorkTime } from '@/utils/effectiveWorkTime';
@@ -130,7 +130,7 @@ export interface GanttRenderOptions {
    *  in de 'day'-tier bij zoom≥40; afwezig ⇒ de dag-tier toont alleen het dagnummer. */
   localizedWeekdays?: string[];
   weekStartDay?: 'monday' | 'sunday';        // default 'monday'
-  /** Instelling Tijdnotatie voor de tijdschaal Uur/Kwartier (`13:00` of `1:00 PM`). Default '24h'. */
+  /** Instelling Tijdnotatie voor de tijdschaal Uur/Kwartier (`13:00` of `1 PM`). Default '24h'. */
   timeNotation?: TimeNotation;
   enableQuarterHourZoom?: boolean;            // default false
   /** Effectieve kalender per taak-id (`task.calendarId` → bibliotheek, anders
@@ -1162,7 +1162,8 @@ export class GanttRenderer {
     localizedWeekdays?: string[]
   ): string {
     const months = localizedMonths || ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const clock = () => formatClock(d.getUTCHours() * 60 + d.getUTCMinutes(), this.opts.timeNotation ?? '24h');
+    const clock = (axisTier: 'hour' | 'quarterHour') =>
+      formatAxisClock(d.getUTCHours() * 60 + d.getUTCMinutes(), this.opts.timeNotation ?? '24h', axisTier);
     switch (tier) {
       case 'year':        return `${d.getUTCFullYear()}`;
       case 'quarter':     return `Q${Math.floor(d.getUTCMonth() / 3) + 1} ${d.getUTCFullYear()}`;
@@ -1177,8 +1178,8 @@ export class GanttRenderer {
         }
         return `${dayNum}`;
       }
-      case 'hour':        return clock();
-      case 'quarterHour': return clock();
+      case 'hour':        return clock('hour');
+      case 'quarterHour': return clock('quarterHour');
     }
   }
 

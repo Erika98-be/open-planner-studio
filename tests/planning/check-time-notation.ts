@@ -7,7 +7,7 @@
 //  - het laden van de instelling uit localStorage (`ops-timeNotation`), met de default 24 uur.
 //
 // Draait via run.sh (esbuild-bundel). Exit 0 = alles groen.
-import { clockPlaceholder, displayIsoTime, formatClock, parseClock } from '@/utils/displayTime';
+import { clockPlaceholder, displayIsoTime, formatAxisClock, formatClock, parseClock } from '@/utils/displayTime';
 import { displayDateTime } from '@/utils/displayDate';
 import { formatGridDateTime, parseGridDateTime } from '@/engine/taskGrid/editors';
 import { bandEndFromClock } from '@/components/dialogs/WorkTimeEditor';
@@ -47,6 +47,15 @@ eq('12h nachtblok-start 22:00', formatClock(1320, '12h'), '10:00 PM');
 eq('12h nachtblok-einde 1800 toont 6:00 AM', formatClock(1800, '12h'), '6:00 AM');
 eq('plaatshouder 24h', clockPlaceholder('24h'), 'HH:MM');
 eq('plaatshouder 12h', clockPlaceholder('12h'), 'h:mm AM');
+
+// ── 2b) Tijdschaal van de Gantt (korte vorm) ────────────────────────────────
+eq('as 24h uur', formatAxisClock(780, '24h', 'hour'), '13:00');
+eq('as 24h kwartier', formatAxisClock(795, '24h', 'quarterHour'), '13:15');
+eq('as 12h uur middernacht', formatAxisClock(0, '12h', 'hour'), '12 AM');
+eq('as 12h uur middag', formatAxisClock(720, '12h', 'hour'), '12 PM');
+eq('as 12h uur 13:00', formatAxisClock(780, '12h', 'hour'), '1 PM');
+eq('as 12h kwartier 13:15', formatAxisClock(795, '12h', 'quarterHour'), '1:15');
+eq('as 12h kwartier 0:45', formatAxisClock(45, '12h', 'quarterHour'), '12:45');
 
 // ── 3) parseClock: 24-uursvormen ────────────────────────────────────────────
 eq('parse 13:00', parseClock('13:00'), 780);

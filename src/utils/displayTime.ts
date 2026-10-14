@@ -41,6 +41,20 @@ export function formatClock(minutes: number, notation: TimeNotation, opts: { end
   return `${pad2(h)}:${pad2(mm)}`;
 }
 
+/**
+ * Korte kloktijd voor de tijdschaal van de Gantt, waar een uurkolom bij de hoogste zoom maar ~42 px
+ * breed is. 24 uur: `13:00` en `13:15`. 12 uur: de uurrij toont `1 PM`, de kwartierrij `1:15` (de
+ * uurrij erboven draagt AM/PM). Een volledig `1:00 PM` past daar niet en zou wegvallen.
+ */
+export function formatAxisClock(minutes: number, notation: TimeNotation, tier: 'hour' | 'quarterHour'): string {
+  if (notation === '24h') return formatClock(minutes, '24h');
+  const m = ((Math.round(minutes) % MIN_PER_DAY) + MIN_PER_DAY) % MIN_PER_DAY;
+  const h = Math.floor(m / 60);
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  if (tier === 'hour') return `${h12} ${h < 12 ? 'AM' : 'PM'}`;
+  return `${h12}:${pad2(m % 60)}`;
+}
+
 /** Plaatshouder voor een leeg tijdveld in de gekozen notatie. */
 export function clockPlaceholder(notation: TimeNotation): string {
   return notation === '12h' ? 'h:mm AM' : 'HH:MM';
