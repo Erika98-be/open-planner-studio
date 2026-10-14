@@ -37,7 +37,7 @@ import { ensureFreshSchedule } from '../staleGuard';
 import { createNewCalendar } from '@/engine/calendar/defaultCalendar';
 import { computeMoveDelta } from '@/engine/moveProject';
 import { diffDays } from '@/utils/dateUtils';
-import { deriveHoursPerDay, workDaysFromBands, workDaysSetPatch } from '@/services/subdayIo';
+import { hoursPerDayForBlocks, workDaysFromBands, workDaysSetPatch } from '@/services/subdayIo';
 import { effHoursPerDay } from '@/utils/taskDuration';
 import type { GeneratorCountry, HolidayGenParams } from '@/engine/calendar/generateCalendarHolidays';
 import type { CalendarGeneration, Holiday, WorkCalendar, WorkingException, WorkTimeBands } from '@/types/calendar';
@@ -698,11 +698,15 @@ function calendarFieldPatch(item: CalendarItem, existing: CalendarBase): Partial
   if (item.workTime !== undefined && item.workTime !== null) {
     const bands = cloneBands(item.workTime);
     patch.workTime = bands;
-    // Spiegelt `CalendarForm.applyBands` (de kalenderdialoog): werkdagen én netto uren volgen de
-    // banden. Zijn ze expliciet meegegeven (een letterlijke lezing stuurt ze mee), dan is die opgave
-    // leidend — `calendarItemReason` heeft dan al vastgesteld dat `workDays` de banden niet tegenspreekt.
+    // Spiegelt `CalendarForm.applyBands` (de kalenderdialoog): de werkdagen volgen de banden. `hoursPerDay`
+    // volgt ze met dezelfde regel als het venster: één call is één sessie, met `existing` (de kalender vóór
+    // de call) als beginstand. Hij volgt dus alleen als hij gelijk was aan de modale dagsom van de blokken
+    // van vóór de call; een bewuste afwijking (P6 `day_hr_cnt`, bv. Late ploeg 14–24 met 8) blijft staan.
+    // Een dagkalender (ook `create`) heeft geen blokken en volgt (`hoursPerDayForBlocks` in `subdayIo.ts`).
+    // Zijn ze expliciet meegegeven (een letterlijke lezing stuurt ze mee), dan is die opgave leidend —
+    // `calendarItemReason` heeft dan al vastgesteld dat `workDays` de banden niet tegenspreekt.
     if (item.workDays === undefined) patch.workDays = workDaysFromBands(bands);
-    if (item.hoursPerDay === undefined) patch.hoursPerDay = deriveHoursPerDay(bands, existing.hoursPerDay);
+    if (item.hoursPerDay === undefined) patch.hoursPerDay = hoursPerDayForBlocks(existing, existing, bands);
   }
   // ALLEEN `workDays` OP EEN UURKALENDER (review PR #351): de blokken gaan mee via dezelfde functie als de
   // werkdagknoppen in het kalendervenster (`workDaysSetPatch`, één regel). Eerst gaan de nieuwe dagen aan,
@@ -1054,8 +1058,10 @@ const updateCalendar: BatchStepTool = {
     'Start/finish distribution and project end can change, though; an hour task cannot be calculated without ' +
     'concrete work blocks. The response reports a mode switch as `modeChangedFrom` and confirms with ' +
     '`taskDurationsPreserved: true` that the task durations were not converted. `workDays` and `hoursPerDay` ' +
-    'are DERIVED from the bands as soon as you pass `workTime` (as the calendar dialog does); if you pass ' +
-    'them anyway, `workDays` must not contradict the bands. Passing ONLY `workDays` on an HOUR calendar ' +
+    'follow the bands as soon as you pass `workTime` (as the calendar dialog does): `workDays` always, ' +
+    '`hoursPerDay` only if it was equal to the modal day sum of the bands before the change (on a DAY ' +
+    'calendar it always follows); a deliberate deviation (P6 `day_hr_cnt`) stays. If you pass them anyway, ' +
+    '`workDays` must not contradict the bands, and `hoursPerDay` wins. Passing ONLY `workDays` on an HOUR calendar ' +
     'moves the bands along, as the weekday buttons in the calendar dialog do. New days are switched on ' +
     'first, then the other days off. A day that becomes a working day gets a copy of the bands of the first ' +
     'day with bands, searched in the order Sunday, Monday … Saturday; if no day has bands, it gets the ' +
@@ -1106,8 +1112,8 @@ const updateCalendar: BatchStepTool = {
               description: 'Net working hours per working day (HOURS), e.g. 8. On a DAY calendar WITH a ' +
                 'break it is derived (working day minus break): a differing value is softly refused, an ' +
                 'equal one does nothing — change the working day or the break duration there. On an HOUR ' +
-                'calendar it may differ from the bands (P6 `day_hr_cnt`); changing only `workDays` keeps such ' +
-                'a deviation.',
+                'calendar it may differ from the bands (P6 `day_hr_cnt`); changing `workDays` or `workTime` ' +
+                'without `hoursPerDay` keeps such a deviation.',
             },
             simpleBreakStartMinute: {
               type: 'integer', minimum: 0, maximum: 1439,

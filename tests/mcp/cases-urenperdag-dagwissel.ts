@@ -1,11 +1,12 @@
-// Uren per dag bij `planner_update_calendar` met alleen `workDays` (review PR #352, punt 1).
+// Uren per dag bij `planner_update_calendar` met alleen `workDays` of met `workTime` (review PR #352, punt 1;
+// fixronde PR #354).
 //
 // XER "Late ploeg": blokken 14:00–24:00 (10 klokuren) met `day_hr_cnt` 8. `hoursPerDay` is de omrekening
-// tussen dagen en uren en mag afwijken van de blokken. MCP met alleen `workDays` gaat door `workDaysSetPatch`,
-// dezelfde regel als de dagknoppen in het kalendervenster (`hoursPerDayForBlocks` in
-// `src/services/subdayIo.ts`): een afwijkende waarde blijft staan, een waarde gelijk aan de modale dagsom
-// van de blokken vóór de call volgt de nieuwe blokken.
-// Vóór de fix werd Late ploeg na `workDays` [1..6] stil 10. Kern zonder MCP:
+// tussen dagen en uren en mag afwijken van de blokken. Eén MCP-call is één sessie, met dezelfde regel als het
+// kalendervenster (`hoursPerDayForBlocks` in `src/services/subdayIo.ts`): een afwijkende waarde blijft staan,
+// een waarde gelijk aan de modale dagsom van de blokken vóór de call volgt de nieuwe blokken. Alleen
+// `workDays` gaat door `workDaysSetPatch` (de dagknoppen); `workTime` volgt het blok Werktijden (`applyBands`).
+// Vóór de fix werd Late ploeg na `workDays` [1..6] of een extra Za-blok stil 10. Kern zonder MCP:
 // `tests/planning/check-urenperdag-dagwissel.ts`.
 import { appStoreContext, makeMcpContext, useAppStore, test, assert, assertEq, run } from './harness';
 import { calendarResourceTools } from '@/services/mcp/tools/calendarResourceTools';
@@ -17,7 +18,7 @@ import type { McpToolResult, McpToolOk } from '@/services/mcp/contracts';
 import { writeIFC } from '@/services/ifc/ifcWriter';
 import { readIFC } from '@/services/ifc/ifcReader';
 import { buildWriteIFCInput } from '@/state/ifcSaveInput';
-import { workDayTogglePatch, workDaysSetPatch } from '@/services/subdayIo';
+import { hoursPerDayForBlocks, workDayTogglePatch, workDaysSetPatch } from '@/services/subdayIo';
 import type { WorkCalendar, WorkTimeBands } from '@/types/calendar';
 
 const S = () => useAppStore.getState();
@@ -108,6 +109,40 @@ test('volgt: ma–wo 8 u en do/vr 10 u (8 = modaal 8), alleen workDays [2..5] �
   assertEq(fields(cal), fields(venster), 'MCP geeft precies wat dezelfde zet in het venster geeft (workDaysSetPatch)');
   const terug = readIFC(writeIFC(buildWriteIFCInput(S()))).calendar;
   assertEq([terug.workDays, terug.hoursPerDay], [[2, 3, 4, 5], 10], 'na opslaan en heropenen: di–vr, 10 u/dag');
+});
+
+test('Late ploeg 8 u/dag, workTime met een extra Za-blok ⇒ 8, zoals Werktijden in het venster, ook na IFC', async () => {
+  const id = await lateProjectCalendar(8);
+  assertEq(calById(id).hoursPerDay, 8, 'testvoorwaarde: 8 u/dag');
+  const bands = lateWeek([1, 2, 3, 4, 5, 6]);
+  const venster = hoursPerDayForBlocks(calById(id), calById(id), bands);
+
+  const res = await call('planner_update_calendar', { calendars: [{ id, workTime: bands }] });
+  assertEq(rejections(res), [], 'geen weigering');
+  const cal = calById(id);
+  assertEq(cal.hoursPerDay, 8, 'de uren per dag blijven 8 (een bewuste afwijking blijft staan)');
+  assertEq(cal.workDays, [1, 2, 3, 4, 5, 6], 'de werkdagen volgen de blokken: ma–za');
+  assertEq(cal.workTime!.byWeekday[6], LATE, 'zaterdag 14–24');
+  assertEq(cal.hoursPerDay, venster, 'MCP geeft wat het blok Werktijden in het venster geeft (hoursPerDayForBlocks)');
+
+  const terug = readIFC(writeIFC(buildWriteIFCInput(S()))).calendar;
+  assertEq([terug.workDays, terug.hoursPerDay], [[1, 2, 3, 4, 5, 6], 8], 'na opslaan en heropenen: ma–za, 8 u/dag');
+});
+
+test('volgt: Late ploeg 10 u/dag (= de blokken), workTime ma–za 14–22 ⇒ 8, zoals Werktijden in het venster', async () => {
+  const id = await lateProjectCalendar();
+  assertEq(calById(id).hoursPerDay, 10, 'testvoorwaarde: 10 u/dag, gelijk aan de modale dagsom');
+  const H1422 = [{ start: 840, end: 1320 }];
+  const byWeekday = { 1: H1422, 2: H1422, 3: H1422, 4: H1422, 5: H1422, 6: H1422, 7: [] } as WorkTimeBands['byWeekday'];
+  const venster = hoursPerDayForBlocks(calById(id), calById(id), { byWeekday });
+
+  const res = await call('planner_update_calendar', { calendars: [{ id, workTime: { byWeekday } }] });
+  assertEq(rejections(res), [], 'geen weigering');
+  const cal = calById(id);
+  assertEq(cal.hoursPerDay, 8, 'de uren per dag volgen de nieuwe blokken: 8');
+  assertEq(cal.hoursPerDay, venster, 'MCP geeft wat het blok Werktijden in het venster geeft (hoursPerDayForBlocks)');
+  const terug = readIFC(writeIFC(buildWriteIFCInput(S()))).calendar;
+  assertEq([terug.workDays, terug.hoursPerDay], [[1, 2, 3, 4, 5, 6], 8], 'na opslaan en heropenen: ma–za, 8 u/dag');
 });
 
 await run();
