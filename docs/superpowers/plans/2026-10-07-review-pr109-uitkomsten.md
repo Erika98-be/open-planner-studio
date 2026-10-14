@@ -695,3 +695,12 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   kopie-tak weg, "≤ 0 uur", "basis" alleen bij afwijking. T1–T3 + 8 nieuwe + 9 oude mutanten rood. Hercheck door
   dezelfde reviewer gestart, met nadruk op de B14-wijziging. Testversie (3049) bijgewerkt met deze kop; zelf
   nagelopen met Roads: "≤ 0 uur" klopt.
+- **#351 IFC uren per dag bij blokkenkalender** (expert, Opus 5.5; `claude/ifc-urenperdag-blokken`, kop 8d686799b):
+  open (niet gemerged), concept, CI 16/16. Meting vóór fix: corpus 11 kalenders in 4 XER's (Roads 3); 1301 taken
+  andere `scheduleDuration`, P6/MSPDI-export uren per dag anders; getoonde duur en datums 0 taken (weergave en motor
+  rekenen met de blokken). Fix via bestaande `OPS_Calendar.HoursPerDay` + `IsHourCalendar .T.`; lezer laat die na de
+  promotie winnen; oude bestanden gelijk; v2026.9.0 niet slechter. 44 checks (27 rood op main), corpuscheck,
+  §10 calendar-identity versoepeld, 5 mutanten rood, IfcOpenShell 0 fouten, `measure:profiles` exit 0.
+  VERMOED bijvangst (bestond al): 7 taakdatums verschuiven bij IFC-rondgang (100 %-lopend, `remainingTime` leeg →
+  waarde), projectstart Roads 07:00 → 08:00 in exports, volgorde bibliotheekkalenders. Review gestart.
+  Na merge: verouderde opmerking over `needsHoursPerDayOverride` in `check-time-notation.ts` (#347) bijwerken.
