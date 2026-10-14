@@ -600,3 +600,13 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   `c5c806fbe`. Gemerged met `--admin` (override van de review-eis/conceptstatus; machtiging: afgeronde
   releasecheck-PR, reviewer + eigenaar check 10 akkoord). Prototype-server (poort 3061) gestopt en worktree
   `prototype-optie2` verwijderd (lokale branch blijft staan). Worker tijdnotatie ingelicht.
+
+## Eigenaarsreview #169 en #170 (gestart 2026-10-14)
+
+- Eigenaar: "we kunnen dit nu toch doen?" ⇒ review nu, als checkroute in de testversie (`claude/release-check-3`,
+  nu main `09e33b8ea` + qa-hulpje, poort 3049). Route: (1) XER opent als P6, melding → Projectinfo-blok;
+  (2) wissel naar Microsoft Project, Toepassen, "N taken verschoven", Ctrl+Z; (3) één conventie ⇒ "Kopie van …";
+  (4) `.mpp` opent als Microsoft Project + profiel in *Nieuw project*; (5) werkregels in de `.mpp`
+  (`public/qa-files/productieplanning.mpp` = "Bijlage 13 Productieplanning", 51 toewijzingen). Besluiten (o.a. N4)
+  pas na de check. Stap 1 vooraf zelf nagelopen (Playwright, `/tmp/qa169/`). Eigen waarneming: *Kritiek-definitie*
+  is smaller dan de andere keuzelijsten in het blok.
