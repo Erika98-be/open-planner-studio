@@ -646,3 +646,8 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   op effectieve waarde, bronopties tellen niet mee, regel per afwijking "veld: huidig (standaard: …)", knop zet het
   formulier (Toepassen blijft nodig, één undo-stap), kruisje onthoudt per document + afwijkingenset in het geheugen
   (komt terug na heropenen of bij een nieuwe afwijking), oude vaste knop weg. Doorgegeven aan de profielblok-worker.
+- **#347 Tijdnotatie** (`claude/tijdnotatie`, kop 02822b5f3, bevat main 7ea3e8748): open (niet gemerged), concept,
+  CI 16/16 groen. Gedeeld `TimeInput.tsx`; volgt: kalendervenster, taakraster, splitsingen, Gantt Uur/Kwartier,
+  startmeldingen, voortgangsimport, herstel-/sitevenster. 24:00 in 12-uursstand = "12:00 AM". 7 mutanten rood.
+  Restpunten maker: foutteksten "UU:MM", datum+tijd afgekapt in standaard kolombreedte (al zo vóór de PR).
+  Screenshots zelf bekeken (kalender 12h licht, taaktijd 12h donker): klopt. Review gestart (reviewer, Opus 5.5).
