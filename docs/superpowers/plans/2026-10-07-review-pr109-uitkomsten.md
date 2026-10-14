@@ -675,3 +675,11 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   keuzelijst zolang het toegepaste profiel afwijkingen heeft; "0 uur"; "basis" alleen bij een afwijking.
   Voor de eigenaar (later): `NewProfileDialog` weg of houden; knop naast de lijst of regel in de lijst.
   Fixronde naar de maker (worker, Opus 5.5).
+- **#347 fixronde klaar:** kop dcaf9277c (bevat main 7ea3e8748), CI groen. Blokeinde in één domein (≤ 1440 = zelfde
+  dag, "24:00"/"12:00 AM"; *Continu* toont nu 00:00–24:00), concept i.p.v. `syncTick` (geen commit zonder typen),
+  4 browsertests, A/B/C/E/F rood (D overleeft, gelijkwaardig), Gantt smalle vorm "12a/1p" als labels niet passen,
+  herstel-/sitevenster vaste AM/PM, hint juist. Hercheck door dezelfde reviewer gestart.
+- **Bijvangst [BEVESTIGD], bestond al:** blokkenkalender met `hoursPerDay` ≠ klokuren (XER "Late ploeg" 8 bij 10 u)
+  komt na IFC terug met 10 (`ifcWriter.ts` `needsHoursPerDayOverride = !cal.workTime && …`). Dataverlies in iets wat
+  al gebouwd is ⇒ vóór de release (releaseregel eigenaar 2026-10-12). Expert (Opus 5.5) gestart op
+  `claude/ifc-urenperdag-blokken`: eerst meten (echte XER's, corpus), dan fix via bestaande meta, IfcOpenShell.
