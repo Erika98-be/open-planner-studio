@@ -863,3 +863,6 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
 - **Tekstcheck #357 (reviewer): ja** op fa355198b (115 en 117 kloppen). Bijzin in 116 fout (lopende taak op 100 % telt
   in de rollup als voltooid); door de orkestrator hersteld in bf85d096e (alleen `knownbugs.md`, geen nieuwe review
   nodig volgens de reviewer). Merge na groene CI.
+- **#357 gemerged in main 2026-10-14 → dcbdaf2e4** (kop bf85d096e bevatte main 63128d4c7, CI 16/16, reviewer ja,
+  geen UI; `--admin`). Geen `measure:profiles`: motor niet geraakt. Volgende: knownbugs 117 (XER zonder `status_code`)
+  bij een worker, vóór de release (regel eigenaar 2026-10-12: fouten in bestaand werk vóór de release).
