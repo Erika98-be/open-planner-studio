@@ -18,8 +18,11 @@ import './Tooltip.css';
  *    hover); een klik op een icoon binnen een `<label>` zet dat label NIET om (review #350, punt 3);
  *  - blijft de tooltip van het icoon met focus of onder de muis staan als de pagina scrolt (Tab laat
  *    een lange lijst scrollen), op de nieuwe plek;
+ *  - blijft een tooltip die door focus kwam staan zolang zijn element de focus heeft: een `mouseout`/
+ *    `mouseover` doordat de inhoud onder een stilstaande muis wegscrolt, sluit of vervangt hem niet;
  *  - sluit Escape alleen de tooltip (niet ook de dialoog of Backstage eronder), net als focusverlies of
- *    een klik elders;
+ *    een klik elders; verdwijnt het element uit de DOM, dan ruimt de host de tooltip op en slikt hij
+ *    geen Escape meer;
  *  - wijst `aria-describedby` meteen bij het tonen (synchroon, vóór het bubbeltje er is) naar een
  *    verborgen element dat altijd bestaat en de uitleg bevat, zodat een schermlezer hem bij focus leest.
  */
@@ -41,8 +44,13 @@ export function TooltipHost() {
   const descriptionRef = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
+    // Verdwijnt het element van de tooltip uit de DOM (bv. een dialoog sluit), dan opruimen.
+    const removal = new MutationObserver(() => {
+      if (activeEl.current && !activeEl.current.isConnected) dismiss();
+    });
     // Zet het weggehaalde `title` terug op het element waar we het van leenden.
     const restore = () => {
+      removal.disconnect();
       if (activeEl.current && stashed.current !== null) {
         activeEl.current.setAttribute('title', stashed.current);
       }
@@ -83,8 +91,12 @@ export function TooltipHost() {
         return;
       }
       if (!el || el === activeEl.current) return;
+      if (focusTip()) return; // de tooltip van het element met focus blijft
       show(el, instantDelay(el));
     };
+    // Kwam de actieve tooltip door focus (een direct info-icoon dat nu de focus heeft)?
+    const focusTip = (): boolean => !!activeEl.current && isInstant(activeEl.current)
+      && document.activeElement === activeEl.current;
     // Toon de tooltip van `el` na `delay` ms; het `title` gaat zolang naar `stashed`.
     const show = (el: HTMLElement, delay: number) => {
       dismiss();
@@ -92,6 +104,7 @@ export function TooltipHost() {
       if (!text) return;
       activeEl.current = el;
       stashed.current = text;
+      removal.observe(document.body, { childList: true, subtree: true });
       el.removeAttribute('title'); // onderdrukt de native tooltip
       if (isInstant(el) && !el.hasAttribute('aria-describedby') && descriptionRef.current) {
         descriptionRef.current.textContent = text;
@@ -127,6 +140,7 @@ export function TooltipHost() {
     };
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key !== 'Escape' || !activeEl.current) return;
+      if (!activeEl.current.isConnected) { dismiss(); return; } // achtergebleven: niet slikken
       // Een directe tooltip sluit eerst zelf; de dialoog of Backstage eronder pas bij de volgende Escape.
       if (isInstant(activeEl.current)) { e.preventDefault(); e.stopPropagation(); }
       dismiss();
@@ -142,7 +156,9 @@ export function TooltipHost() {
       dismiss();
     };
     const onOut = (e: MouseEvent) => {
-      if (!activeEl.current) return;
+      if (!activeEl.current || focusTip()) return;
+      // Alleen als de muis het actieve element zelf verlaat (niet bij een mouseout elders).
+      if (!(e.target instanceof Node) || !activeEl.current.contains(e.target)) return;
       const to = e.relatedTarget as Node | null;
       if (to && activeEl.current.contains(to)) return; // nog binnen het actieve element
       dismiss();

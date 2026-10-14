@@ -137,9 +137,6 @@ export function SchedulingProfileSection({ mode, value, onChange }: SchedulingPr
   // regel "Primavera P6 (aangepast)" komt van het toegepaste profiel (besluiten orkestrator, review #350).
   const appliedProfile = useAppStore(s => s.project.schedulingProfile);
   const appliedOptions = useAppStore(s => s.project.schedulingOptions);
-  // Na de knop "Standaardinstellingen … gebruiken": verborgen voor deze set afwijkingen, zolang de draft
-  // niet terug is op de toegepaste opties (Verwerpen).
-  const [defaultsTakenFor, setDefaultsTakenFor] = useState<string | null>(null);
   // Telt alleen om na een klik op het kruisje opnieuw te tekenen (de set zelf staat buiten React).
   const [, setDismissTick] = useState(0);
   const durationDisplay = useAppStore(s => s.ui.durationDisplay);
@@ -166,9 +163,10 @@ export function SchedulingProfileSection({ mode, value, onChange }: SchedulingPr
   const choice = choiceOf(profile, templates);
   // Het ingebouwde profiel mét de afwijkingen van dit project (uit een ouder bestand): de draft als die
   // zo is, anders het toegepaste profiel. Zolang het er is, staat het als eigen regel "… (aangepast)" in
-  // de lijst; de gewone regel is de kale basis.
+  // de lijst; de gewone regel is de kale basis. Niet in de wizard: een nieuw project krijgt niets van
+  // het actieve document (review #350, fixronde 2).
   const modifiedSource = profile && isModifiedBuiltIn(profile) ? profile
-    : appliedProfile && isModifiedBuiltIn(appliedProfile) ? appliedProfile : undefined;
+    : mode === 'edit' && appliedProfile && isModifiedBuiltIn(appliedProfile) ? appliedProfile : undefined;
 
   const choices: { value: ProfileChoice; label: string }[] = [
     ...BUILT_IN_PROFILE_IDS.map(id => ({ value: `builtin:${id}` as ProfileChoice, label: brand(id) })),
@@ -240,8 +238,10 @@ export function SchedulingProfileSection({ mode, value, onChange }: SchedulingPr
   const deviations = optionDeviations(profile, appliedOptions);
   const deviationsSignature = optionDeviationsSignature(profile, deviations);
   const draftOnApplied = sameSettings({ profile: undefined, options: value.options }, { profile: undefined, options: appliedOptions });
-  const showOptionsNotice = deviations.length > 0
-    && !(defaultsTakenFor === deviationsSignature && !draftOnApplied)
+  // Verborgen zolang de reken-opties in het formulier afwijken van de toegepaste (na eigen invoer of na
+  // de knop): dan zou het blok andere waarden noemen dan de velden. Een profielwissel zonder
+  // optiewijziging werkt het blok wel bij (review #350, fixronde 2).
+  const showOptionsNotice = deviations.length > 0 && draftOnApplied
     && !dismissedOptionNotices.has(noticeKey(activeDocumentId, deviationsSignature));
   // Het bestand noemen kan alleen als de opties echt uit een geopend bestand komen: dat zijn projecten
   // met een bronoptie (alleen de XER-lezer zet die).
@@ -272,7 +272,9 @@ export function SchedulingProfileSection({ mode, value, onChange }: SchedulingPr
       case 'criticalDefinition': return critLabel(d[side]);
       case 'totalFloatMode': {
         const v = d[side];
-        return tMenu(v === 'auto' ? 'projectInfo.calc.tfAuto' : v === 'smallest' ? 'projectInfo.calc.tfSmallest'
+        // "Automatisch" zonder "(standaard)": de regel zegt zelf al "(standaard: …)".
+        if (v === 'auto') return t('schedulingProfile.optionsDeviate.tfAuto');
+        return tMenu(v === 'smallest' ? 'projectInfo.calc.tfSmallest'
           : v === 'start' ? 'projectInfo.calc.tfStart' : 'projectInfo.calc.tfFinish');
       }
       case 'makeOpenEndedCritical': return onOff(d[side]);
@@ -532,10 +534,7 @@ export function SchedulingProfileSection({ mode, value, onChange }: SchedulingPr
               ))}
             </ul>
             <button type="button" className={`${btnCls} self-start`}
-              onClick={() => {
-                onChange({ ...value, options: withDefaultOptions(profile, value.options) });
-                setDefaultsTakenFor(deviationsSignature);
-              }}
+              onClick={() => onChange({ ...value, options: withDefaultOptions(profile, value.options) })}
               data-ops-scheduling-apply-defaults>
               {t('schedulingProfile.optionsDeviate.useDefaults', { name: brand(baseId) })}
             </button>

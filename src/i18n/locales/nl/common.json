@@ -1459,7 +1459,8 @@
       "hours_one": "{{count}} uur",
       "hours_other": "{{count}} uur",
       "days_one": "{{count}} werkdag",
-      "days_other": "{{count}} werkdagen"
+      "days_other": "{{count}} werkdagen",
+      "tfAuto": "Automatisch"
     }
   },
   "dialogHelp": {

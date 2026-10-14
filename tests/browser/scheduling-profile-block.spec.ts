@@ -113,18 +113,22 @@ test('profielblok: P6 ingeklapt en alleen-lezen, Nieuw profiel bewerkt en rekent
   const a19Info = a19.locator('[data-ops-convention-help]');
   const a19Help = await a19Info.getAttribute('title');
   expect(a19Help?.length ?? 0).toBeGreaterThan(20);
+  // Alle uitlegteksten nu lezen, vóór een tooltip een title tijdelijk weghaalt.
+  const infos = page.locator('[data-ops-convention-help]');
+  const helps = await infos.evaluateAll(els => els.map(el => [el.getAttribute('data-ops-convention-help'), el.getAttribute('title')]));
   await a19Info.hover();
   await expect(tooltip(page)).toHaveText(a19Help!);
   await shoot(page, section, 'p6-uitgeklapt-tooltip');
-  await page.mouse.move(0, 0);
-  await expect(tooltip(page)).toHaveCount(0);
 
-  // Tab langs ALLE 27 i-iconen vanaf de kop van het deel, zonder voorbereiding: elk icoon toont zijn
-  // eigen uitleg, ook als de focus de lijst laat scrollen (review #350, punt 2).
-  const infos = page.locator('[data-ops-convention-help]');
-  const helps = await infos.evaluateAll(els => els.map(el => [el.getAttribute('data-ops-convention-help'), el.getAttribute('title')]));
+  // Tab langs ALLE 27 i-iconen vanaf de kop van het deel, zonder voorbereiding: twee echte klikken op de
+  // kop (dicht, open), de muis blijft daar staan, dan Tab. Elk icoon toont zijn eigen uitleg, ook als de
+  // focus de lijst laat scrollen en de inhoud onder de muis wegschuift (review #350, punten 2 en 3).
   expect(helps).toHaveLength(27);
-  await toggle.focus();
+  await toggle.click();
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+  await toggle.click();
+  await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+  await expect(toggle).toBeFocused();
   for (const [id, help] of helps) {
     await page.keyboard.press('Tab');
     await expect(page.locator(`[data-ops-convention-help="${id}"]`)).toBeFocused();
@@ -207,9 +211,9 @@ test('profielblok: P6 ingeklapt en alleen-lezen, Nieuw profiel bewerkt en rekent
   await expect.poll(() => earlyStart(page)).toBe('2026-03-02');
 });
 
-test('profielblok: een afwijking uit een oud bestand staat alleen-lezen en gaat mee naar Nieuw profiel', async ({ page, ops: _ops }) => {
-  // Fixture: een project met een P6-profiel dat een afwijking op het ingebouwde id draagt (A19 uit), zoals
-  // de migratie van een oud bestand dat geeft. Opslaan met Ctrl+S geeft het IFC; daarna echt openen.
+// Fixture: een project met een P6-profiel dat een afwijking op het ingebouwde id draagt (A19 uit), zoals
+// de migratie van een oud bestand dat geeft. Opslaan met Ctrl+S geeft het IFC; daarna echt openen.
+async function openOldIfc(page: Page): Promise<void> {
   await openFile(page, 'oud.xer', XER);
   await expect.poll(() => profileOf(page).then(p => p?.id)).toBe('p6');
   await page.evaluate(() => {
@@ -225,6 +229,10 @@ test('profielblok: een afwijking uit een oud bestand staat alleen-lezen en gaat 
   await page.evaluate(() => { window.__OPS__!.store.getState().newDocument(); });
   await openFile(page, 'oud-profiel.ifc', ifc);
   await expect.poll(() => profileOf(page)).toMatchObject({ id: 'p6', overrides: { p6UseRemainingStartForProgress: false } });
+}
+
+test('profielblok: een afwijking uit een oud bestand staat alleen-lezen en gaat mee naar Nieuw profiel', async ({ page, ops: _ops }) => {
+  await openOldIfc(page);
 
   await toProjectInfo(page);
   await expect(select(page)).toHaveText(/^(Primavera P6 \(aangepast\)|Primavera P6 \(modified\))$/);
@@ -261,7 +269,19 @@ test('profielblok: een afwijking uit een oud bestand staat alleen-lezen en gaat 
   await page.getByRole('button', { name: /^(Apply|Toepassen)$/ }).click();
   await expect.poll(() => profileOf(page)).toMatchObject({ id: 'p6', overrides: { p6UseRemainingStartForProgress: false } });
 
-  // De gewone regel "Primavera P6" is de kale basis: dat zegt een blok, en toepassen haalt de afwijking weg.
+  // B14 (fixronde 2): P6 (aangepast) → Microsoft Project → Toepassen → Primavera P6 → Toepassen geeft de
+  // afwijking terug, tot in de store. Een wissel naar een andere basis bewaart hem letterlijk.
+  await toProjectInfo(page);
+  await chooseProfile(page, 'builtin:msproject');
+  await page.getByRole('button', { name: /^(Apply|Toepassen)$/ }).click();
+  await expect.poll(() => profileOf(page)).toMatchObject({ id: 'msproject', overrides: { p6UseRemainingStartForProgress: false } });
+  await toProjectInfo(page);
+  await chooseProfile(page, 'builtin:p6');
+  await page.getByRole('button', { name: /^(Apply|Toepassen)$/ }).click();
+  await expect.poll(() => profileOf(page)).toMatchObject({ id: 'p6', overrides: { p6UseRemainingStartForProgress: false } });
+
+  // De gewone regel "Primavera P6" naast "(aangepast)" (dezelfde basis) is de kale basis: dat zegt een
+  // blok vóór Toepassen, en toepassen haalt de afwijking weg.
   await toProjectInfo(page);
   await chooseProfile(page, 'builtin:p6');
   await expect(page.locator('[data-ops-scheduling-bare-base-hint]')).toBeVisible();
@@ -312,6 +332,7 @@ test('profielblok: afwijkende reken-opties tonen een blok met kruisje en een kno
   await expect(page.locator('[data-ops-near-critical-threshold]')).toBeVisible();
   await expect(page.locator('[data-ops-options-deviate-notice]')).toHaveCount(0);
   expect(await offset()).toBe(yBefore);
+  await page.locator('[data-ops-project-info-discard]').click();
   // Kies je in het formulier Primavera P6, dan wijken de toegepaste opties (geen) af van de P6-standaard:
   // het blok verschijnt, met een neutrale zin (de opties komen niet uit een bestand).
   await chooseProfile(page, 'builtin:p6');
@@ -343,14 +364,18 @@ test('profielblok: afwijkende reken-opties tonen een blok met kruisje en een kno
   const critSelect = page.getByRole('button', { name: /^(Kritiek-definitie|Critical definition)$/ });
   await critSelect.click();
   await page.getByRole('option', { name: /^(Totale speling ≤ drempel|Total float ≤ threshold)$/ }).click();
-  await expect(lines).toHaveCount(1);
+  // Fixronde 2 punt 4: wijken de opties in het formulier af van de toegepaste, dan wacht het blok (het
+  // zou anders andere waarden noemen dan de velden). Verwerpen brengt het terug.
+  await expect(notice).toHaveCount(0);
   await page.locator('[data-ops-project-info-discard]').click();
+  await expect(lines).toHaveCount(1);
 
   // Een wissel naar Microsoft Project in het formulier vergelijkt meteen met die standaard.
   await chooseProfile(page, 'builtin:msproject');
   await expect(notice).toContainText('Microsoft Project');
   await expect.poll(() => lines.evaluateAll(els => els.map(el => el.getAttribute('data-ops-options-deviation'))))
     .toEqual(['criticalDefinition', 'totalFloatMode']);
+  await expect(lines.nth(1)).toHaveText(/^(Speling-berekening: Finishspeling \(standaard: Automatisch\)|Float calculation: Finish float \(default: Automatic\))$/);
   await chooseProfile(page, 'builtin:p6');
   await expect(lines).toHaveCount(1);
 
@@ -377,6 +402,11 @@ test('profielblok: afwijkende reken-opties tonen een blok met kruisje en een kno
   await expect(lines).toHaveCount(1);
   await notice.locator('[data-ops-scheduling-apply-defaults]').click();
   await expect(notice).toHaveCount(0);
+  // Een profielwissel ná de knop: de draft-opties wijken nog af van de toegepaste, dus geen blok met
+  // "Langste pad" naast een veld met "Totale speling" (fixronde 2 punt 4).
+  await chooseProfile(page, 'builtin:msproject');
+  await expect(notice).toHaveCount(0);
+  await chooseProfile(page, 'builtin:p6');
   await expect(page.getByRole('button', { name: /^(Kritiek-definitie|Critical definition)$/ })).toHaveText(/(Totale speling ≤ drempel|Total float ≤ threshold)/);
   await expect(page.locator('[data-ops-scheduling-source-option="useExpectedFinishDates"]')).toBeVisible();
   expect(await options(page)).toEqual({ crit: 'longestPath', expect: true });
@@ -428,4 +458,39 @@ test.describe('touch', () => {
     await page.locator('[data-ops-scheduling-title]').tap();
     await expect(tooltip(page)).toHaveCount(0);
   });
+});
+
+// Fixronde 2 punt 2: de wizard Nieuw project neemt niets over van het actieve document, ook niet als dat
+// een "Primavera P6 (aangepast)" uit een oud bestand is.
+test('wizard: geen "(aangepast)" en geen afwijkingen uit het actieve document', async ({ page, ops: _ops }) => {
+  await openOldIfc(page);
+  await page.locator('[data-ops-tabstrip] .ops-tabstrip-add').click();
+  await page.locator('[data-ops-new-project-choice]').click();
+  const dialog = page.locator('[data-ops-project-dialog="new"]');
+  await expect(dialog).toBeVisible();
+  await dialog.locator('[data-ops-scheduling-profile-select] .ops-select__trigger').click();
+  await expect(page.locator('[role="option"][data-value="modified"]')).toHaveCount(0);
+  await page.locator('[role="option"][data-value="builtin:p6"]').click();
+  await dialog.locator('input').first().fill('Wizardproject');
+  await dialog.locator('[data-ops-project-primary]').click();
+  await expect(dialog).toBeHidden();
+  await expect.poll(() => page.evaluate(() => window.__OPS__!.store.getState().project.name)).toBe('Wizardproject');
+  expect(await profileOf(page)).toMatchObject({ id: 'p6', overrides: {} });
+});
+
+// Fixronde 2 punt 5: verdwijnt het element van een tooltip uit de DOM, dan ruimt de host de tooltip op en
+// slikt hij de volgende Escape niet (die gaat naar Backstage). Het weghalen is een fixture (DOM).
+test('tooltip: weg met zijn element, en Escape gaat daarna gewoon door', async ({ page, ops: _ops }) => {
+  await openFile(page, 'weg.xer', XER);
+  await toProjectInfo(page);
+  const toggle = page.locator('[data-ops-conventions-toggle]');
+  await toggle.click();
+  await page.keyboard.press('Tab');
+  const first = page.locator('[data-ops-convention-help]').first();
+  await expect(first).toBeFocused();
+  await expect(tooltip(page)).toHaveCount(1);
+  await first.evaluate(el => el.remove());
+  await expect(tooltip(page)).toHaveCount(0);
+  await page.keyboard.press('Escape');
+  await expect(page.locator('[data-ops-scheduling-profile-section]')).toHaveCount(0);
 });

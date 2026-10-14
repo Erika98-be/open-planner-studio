@@ -32,8 +32,11 @@ eq('03 keuzewaarde los eigen profiel', choiceOf(own, []), 'current');
 eq('04 afwezig = ops', choiceOf(undefined, []), 'builtin:ops');
 // Besluit orkestrator na review #350 (punt 4): de regel "Primavera P6" is de KALE basis; de afwijkingen
 // van het project staan onder de eigen regel 'modified'. Mutant: 'builtin:' weer via switchProfile ⇒ 05 rood.
-eq('05 wissel naar een ingebouwd profiel = kale basis, ook vanaf een aangepast ingebouwd', selectProfile(xerP6, 'builtin:msproject', [], xerP6),
-  builtInProfile('msproject'));
+// Fixronde 2 (B14 blijft): naar een ANDERE basis blijven de afwijkingen letterlijk staan; alleen
+// "Primavera P6" naast "Primavera P6 (aangepast)" (dezelfde basis) is de kale basis.
+eq('05 wissel naar een andere basis bewaart de afwijkingen letterlijk (B14)', selectProfile(xerP6, 'builtin:msproject', [], xerP6),
+  { baseId: 'msproject', id: 'msproject', name: '', overrides: { p6UseRemainingStartForProgress: false } });
+eq('05c dezelfde basis ("Primavera P6") = kale basis', selectProfile(xerP6, 'builtin:p6', [], xerP6), builtInProfile('p6'));
 eq('05a "(aangepast)" kiezen geeft de afwijkingen terug (kopie)', [selectProfile(builtInProfile('ops'), 'modified', [], xerP6),
   selectProfile(builtInProfile('ops'), 'modified', [], xerP6) === xerP6], [xerP6, false]);
 eq('05b "(aangepast)" zonder bron = ongewijzigd', selectProfile(own, 'modified', []), own);
@@ -145,9 +148,10 @@ eq('33a sjabloonrelatie telt A19 gewoon mee', templateRelation(own, [templateWit
 // het origineel terug; de gewone regel "P6" is de kale basis.
 const p6NoClamp: SchedulingProfile = { ...builtInProfile('p6'), overrides: { clampNegativeFreeFloat: false } };
 const viaOps = selectProfile(p6NoClamp, 'builtin:ops', [], p6NoClamp);
-eq('34 P6 {A13 uit} → OPS: de kale OPS-basis (afwezig)', viaOps, undefined);
-eq('34a …→ "(aangepast)": het origineel', selectProfile(viaOps, 'modified', [], p6NoClamp), p6NoClamp);
-eq('34b …→ "Primavera P6": de kale basis', selectProfile(viaOps, 'builtin:p6', [], p6NoClamp), builtInProfile('p6'));
+eq('34 P6 {A13 uit} → OPS: niet genormaliseerd tot afwezig', viaOps, { ...builtInProfile('ops'), overrides: { clampNegativeFreeFloat: false } });
+eq('34a …→ P6: het origineel (B14)', selectProfile(viaOps, 'builtin:p6', [], p6NoClamp), p6NoClamp);
+eq('34b …→ "(aangepast)": ook het origineel', selectProfile(viaOps, 'modified', [], p6NoClamp), p6NoClamp);
+eq('34c onder OPS toont de keuzelijst geen "(aangepast)"', profileLabel(viaOps), { kind: 'builtIn', baseId: 'ops', modified: false });
 
 // Punt 7: sameSettings vergelijkt inhoudelijk (id + basis + naam + opgeloste set), niet structureel.
 eq('35 afwijking gelijk aan de basis ≡ geen afwijking',

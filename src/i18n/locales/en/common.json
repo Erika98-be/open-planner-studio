@@ -1459,7 +1459,8 @@
       "hours_one": "{{count}} hour",
       "hours_other": "{{count}} hours",
       "days_one": "{{count}} work day",
-      "days_other": "{{count}} work days"
+      "days_other": "{{count}} work days",
+      "tfAuto": "Automatic"
     }
   },
   "dialogHelp": {

@@ -6,7 +6,7 @@ import type {
 } from '@/types/project';
 import {
   CONVENTION_KEYS, builtInProfile, defaultOptionsFor, diffAgainstBase, isBuiltInProfileId,
-  isDefaultProfile, resolveConventions,
+  isDefaultProfile, resolveConventions, switchProfile,
 } from '@/engine/scheduler/conventions/registry';
 import { MAX_PROFILE_ID_LENGTH, MAX_PROFILE_NAME_LENGTH } from '@/services/ifc/schedulingOptionsRead';
 import { fileHasHourData, isHourCalendar } from '@/services/subdayIo';
@@ -43,12 +43,14 @@ export function isModifiedBuiltIn(profile: SchedulingProfile | undefined): boole
 }
 
 /**
- * Keuzelijst-wissel (besluit orkestrator na review #350, 2026-10-14):
- *  - Ingebouwd ('builtin:x'): altijd de KALE basis, ook vanaf een ingebouwd profiel met afwijkingen.
+ * Keuzelijst-wissel (besluiten orkestrator na review #350, 2026-10-14):
+ *  - Ingebouwd naar een ANDERE basis vanaf een ingebouwd id: `switchProfile` — alle afwijkingen blijven
+ *    letterlijk staan (B14): P6 (aangepast) → OPS → P6 geeft het origineel terug, ook na opslaan.
+ *  - Ingebouwd naar DEZELFDE basis ("Primavera P6" naast "Primavera P6 (aangepast)"): de kale basis;
+ *    het blok onder de keuzelijst zegt dat de afwijkingen dan weg zijn.
+ *  - Ingebouwd vanaf een EIGEN profiel: de kale basis.
  *  - 'modified': het ingebouwde profiel met de afwijkingen van dit project (`modified`, de regel
- *    "Primavera P6 (aangepast)"). Zolang het toegepaste profiel zo'n profiel is, staat die regel in de
- *    lijst; zo geeft P6 (aangepast) → OPS → P6 (aangepast) het origineel terug (B14) en gaat een
- *    afwijking uit de migratie nooit stil verloren via een omweg.
+ *    "Primavera P6 (aangepast)").
  *  - Sjabloon: een kopie van het sjabloon (het project draagt zijn eigen kopie; matching op id, nooit
  *    op naam).
  *  - Alleen het kale standaardprofiel (ops zonder afwijking) wordt `undefined` (afwezig ≡ ops).
@@ -62,7 +64,8 @@ export function selectProfile(
   if (choice.startsWith('builtin:')) {
     const baseId = choice.slice('builtin:'.length);
     if (!isBuiltInProfileId(baseId)) return current;
-    const next = builtInProfile(baseId);
+    const next = current && isBuiltInProfileId(current.id) && current.baseId !== baseId
+      ? switchProfile(current, baseId) : builtInProfile(baseId);
     return isDefaultProfile(next) ? undefined : next;
   }
   const template = templates.find(t => t.id === choice.slice('template:'.length));
