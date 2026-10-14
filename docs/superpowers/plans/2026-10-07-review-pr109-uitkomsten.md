@@ -866,3 +866,10 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
 - **#357 gemerged in main 2026-10-14 → dcbdaf2e4** (kop bf85d096e bevatte main 63128d4c7, CI 16/16, reviewer ja,
   geen UI; `--admin`). Geen `measure:profiles`: motor niet geraakt. Volgende: knownbugs 117 (XER zonder `status_code`)
   bij een worker, vóór de release (regel eigenaar 2026-10-12: fouten in bestaand werk vóór de release).
+- **Eigenaar vroeg 2026-10-14 om meer uitleg bij besluit "een dag": waarom P6 dit doet en hoe de app ermee omgaat.**
+  Researcher (Haiku): P6 bewaart uren; Hours per Time Period is alleen omrekenfactor voor weergave/invoer (Oracle
+  F51303 "defining_default_hours_per_time_period_in_calendars"); handmatig ingevuld, geen waarschuwing gevonden; Tensix
+  noemt 8 bij een 10-uursdag een instelfout; XER-naam van de vlag "Use assigned calendar" niet gevonden. Explore
+  (Haiku): weergave Duur en motor rekenen uit minuten ÷ bloksom; het dagengetal lezen o.a. `ResourceLoad.ts:156`,
+  leveler, baseline-variantie, MSPDI-export `workDays`, `CPMSolver.ts:262`. Bijvangst [VERMOED, na te lopen]: MCP-create
+  van een urentaak zonder `scheduleDuration` zet uren als dagengetal (`taskTools.ts:201-207` → `taskDefaults.ts:75`).
