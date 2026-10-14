@@ -354,6 +354,35 @@ en MSPDI-export schreven dan 08:00 (Roads: 07:00 werd 08:00). De motor leest van
 alleen de datum, maar van het projecteinde de tijd, als `useProjectEndDateForFloat` aan staat.
 Getoetst in `check-ifc-projectdatum-tijd.ts`, op het corpus in `check-ifc-projectdatum-corpus.ts`.
 
+**Datums in een property.** Eén regel voor `StatusDate`, `ProjectStartDate`/`-EndDate`, `ConstraintDate`,
+`ConstraintDate2`, `Deadline` en een eigen veld van het type datum (`ifcDateValue` en `readIfcDate` in
+`ifcPsets.ts`). Tot 2026-10 schreef de writer een constraintdatum met tijd als IFCDATE, een schemafout.
+Op main 8db05a95c ging het om 47 waarden in 22 van de 88 corpusdocumenten, waarvan 4 in Roads.
+IfcOpenShell ziet dat niet, de schemapoort wel.
+
+De writer typt nu alleen de twee vormen van de store, en alleen met een datum die bestaat:
+
+- `YYYY-MM-DD` wordt IFCDATE;
+- `YYYY-MM-DDTHH:mm` wordt IFCDATETIME met seconden `:00`;
+- elke andere waarde wordt letterlijk IFCTEXT: `2026-03-02T7:00`, een spatie, seconden, een zone
+  (`+02:00`, uit een extensie of MCP), een datum die niet bestaat (`2026-13-45`), of leeg.
+
+De lezer zet IFCDATETIME om naar `YYYY-MM-DDTHH:mm`. Voor de getypte waarden van de writer is dat precies
+de waarde uit de store. Een zone of een onmogelijke datum als IFCDATETIME zou wel veranderen: een SNET op
+`10:00+02:00` startte na heropenen om 10:00 in plaats van 08:00, en `2026-13-45` werd 2027-02-14. Al het
+andere leest de lezer per veld zoals eerst, ook IFCDATE met een tijd erin:
+
+- `StatusDate` houdt de kloktijd;
+- de projectdatums nemen de datum;
+- de andere velden lezen de tekst letterlijk.
+
+Zo staat elke waarde ongewijzigd in het bestand. Constraint, deadline en een eigen veld krijgen hem
+ongewijzigd terug. `StatusDate` en de projectdatums lezen hem zoals altijd; een projectdatum met seconden
+houdt dus alleen de datum. Een oud bestand leest exact gelijk. Gemeten op alle 88 corpusdocumenten,
+opgeslagen met main en gelezen met beide lezers. De lezer van v2026.9.0 leest een constraintdatum uit
+IFCDATETIME met seconden (`2013-04-27T00:00:00`), en rekent Roads daarmee gelijk door. Getoetst in
+`check-ifc-datumvorm.ts`.
+
 **Bestaande GlobalIds.** "0 fouten" geldt voor een nieuw project. Een bestand dat OPS inleest, houdt
 bij opslaan zijn GlobalIds, ook als die ongeldig zijn (besluit eigenaar 2026-09-28,
 `check-ifc-globalid.ts`): externe koppelingen naar die id's mogen niet breken. Oude OPS-versies
