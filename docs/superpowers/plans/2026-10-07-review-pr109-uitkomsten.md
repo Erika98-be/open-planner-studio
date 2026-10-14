@@ -683,3 +683,8 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   komt na IFC terug met 10 (`ifcWriter.ts` `needsHoursPerDayOverride = !cal.workTime && …`). Dataverlies in iets wat
   al gebouwd is ⇒ vóór de release (releaseregel eigenaar 2026-10-12). Expert (Opus 5.5) gestart op
   `claude/ifc-urenperdag-blokken`: eerst meten (echte XER's, corpus), dan fix via bestaande meta, IfcOpenShell.
+- **Hercheck #347 (reviewer, Opus 5.5): ja** op dcaf9277c. Fouten 1/2 weg; 12/12 bestaande kalenders (MSPDI/XER,
+  beide standen) exact gelijk na focus+Tab+Toepassen; opslagvorm ongewijzigd; Gantt "12a/1p" alleen als het moet;
+  alle eigen mutanten rood (ook D). Restpunt [midden]: blok 22–24 doortrekken naar "02:00" geeft tijdelijk
+  `{1320,120}` (-20 h) en Toepassen laat het door ⇒ vervolgcommit bij de maker (einde ≤ begin = volgende dag, zoals
+  `canonicalizeBands`), plus "24:00" in nachtblok-eindveld en PR-tekst. Daarna checkstap voor de eigenaar.
