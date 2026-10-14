@@ -296,8 +296,10 @@ en noem het in je rapport of PR-tekst.
     met `TK_NotStart` en een werkelijk einde voltooid (van 0 % naar 100 %); in `synthetic_v2212.xer` worden 2
     taken met `TK_Active` op 0 % zonder actuals niet gestart. Daardoor verandert bij 4 fasen ook de rollup
     (`sample.xer` `xer-wbs:1:1` 0,171 → 0,951 en `xer-wbs:1:2` 0,583 → 0,833; `synthetic_v2212.xer`
-    `xer-wbs:100:1` en `xer-wbs:100:2` van gestart naar niet gestart). Nog eens 101 taken in de twee
-    MER-bestanden veranderen ook, maar door een andere oorzaak: zie 117. Gemeld in het eindrapport bij #353
+    `xer-wbs:100:1` en `xer-wbs:100:2` van gestart naar niet gestart). De 101 taken in de twee MER-bestanden
+    (geen `status_code`) veranderden vroeger ook; sinds de XER-lezer daar de status uit de voortgang afleidt
+    (fix van punt 117) blijven ze gelijk. Opnieuw gemeten na die fix: 11 taken en 4 fasen, alleen in deze
+    twee bestanden. Gemeld in het eindrapport bij #353
     (niet in de PR) als 120 taken in 6 documenten; de meting bij #357 vond vóór die fix 120 in 5 documenten,
     waaronder de 4 lopende taken op 100 % in rehab-2 die nu gelijk blijven. Voorstel: besluiten welke kant
     wint (P6-status of actuals) en dat in beide lezers gelijk trekken. — B
@@ -312,14 +314,6 @@ en noem het in je rapport of PR-tekst.
     XER-import (zonder IFC) heeft de fase geen werkelijk einde. Met #357 houdt de taak geen werkelijk einde
     meer, dus spreekt het einde van de fase haar taak nu tegen. Voorstel: fasen in de lezer niet door de
     voortgang-invarianten halen. — B (lezer), S (gevolg in "Datums zoals opgeslagen" niet nagespeeld)
-117. **Een XER zonder kolom `status_code` geeft elke taak status "niet gestart", ook met werkelijke datums.**
-    `statusOf` (`src/services/xer/xerReader.ts:357-359`) leest een lege waarde stil als NOT_STARTED; de
-    voortgang leest de lezer wel uit `phys_complete_pct`. `MER-1-2026_epc.xer` en
-    `MER-1-2026_update_2026-05-01.xer` hebben geen `status_code` in de TASK-tabel. Na het openen staan daar
-    77 taken op "niet gestart" met 100 % en een werkelijk einde, en 24 op "niet gestart" met een percentage
-    en een werkelijke start. Na een IFC-round-trip leidt de IFC-lezer de status wel goed af uit de actuals;
-    die 101 taken veranderen dan (zie 115). Gevonden bij de review van #357. Voorstel: zonder statuskolom de
-    status in de XER-lezer afleiden uit de actuals, met dezelfde regel als `normalizeImportedProgress`. — B
 
 ## Rondleiding, Help en extensie-gidsen
 

@@ -76,7 +76,7 @@ function taskLines(status: (code: string) => string | null): string[] {
 const progressOf = (task: Task) => [
   task.status, task.time.completion, task.time.actualStart ?? null, task.time.actualFinish ?? null,
 ];
-const byCode = (result: XerReadResult) => new Map(
+const byCode = (result: { tasks: readonly Task[] }) => new Map(
   result.tasks.filter(task => !task.isSummary).map(task => [task.wbsCode, task]),
 );
 
