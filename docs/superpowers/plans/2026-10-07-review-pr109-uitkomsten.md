@@ -596,3 +596,7 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   (kalendervenster, taaktijden, Gantt-uurschaal, uitzonderingen, rapporten); bestandsformaten en MCP blijven ISO/24 uur;
   één eigen tijdveld i.p.v. native `type="time"`. Worker (Opus 5.5) gestart op `claude/tijdnotatie` (vanaf #338).
   Opmerking: dit is deels nieuw; gebouwd vóór de release tenzij de eigenaar anders zegt.
+- **#338 gemerged in main (2026-10-14) → `09e33b8ea`.** CI op kop `ed3d30222`: 16/16 groen; kop bevatte main
+  `c5c806fbe`. Gemerged met `--admin` (override van de review-eis/conceptstatus; machtiging: afgeronde
+  releasecheck-PR, reviewer + eigenaar check 10 akkoord). Prototype-server (poort 3061) gestopt en worktree
+  `prototype-optie2` verwijderd (lokale branch blijft staan). Worker tijdnotatie ingelicht.
