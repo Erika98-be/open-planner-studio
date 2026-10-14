@@ -833,3 +833,6 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   voorbereid: de balk "Urenplanning aanzetten" verschijnt niet omdat urenplanning in zijn browser al aan staat, en de
   kolommen Start/Einde staan niet in de standaardtabel. Vervangen door: *Beeld › Dag ▼ › Uur* (uurschaal toont
   "1 AM … 10 PM"; zelf nagelopen).
+- **Checkstap 12 (tijdnotatie) goedgekeurd door de eigenaar 2026-10-14, letterlijk: "ja, dit werkt, heel netjes".**
+  #347 bijgewerkt met main fedbae8e6 via `gh pr update-branch` (kop 09ea1c88c); merge na groene CI.
+- **Besluit lopende taak op 100 % voorgelegd** (zie eerder in dit log, #353-rapport).
