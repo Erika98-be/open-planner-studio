@@ -842,3 +842,6 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   vastgelegde rest in) gaat als punt in `knownbugs.md`, na de release, rekenprofielen-spoor. Bouw bij een worker
   (Opus 5.5, medium), branch `claude/ifc-lopend-100`; daarin ook `knownDateChanges` A3040 weg uit beide corpuschecks
   en de #353-bijvangst (120 taken) als knownbugs-punt.
+- **#347 gemerged in main 2026-10-14 → 63128d4c7** (kop 09ea1c88c bevatte main fedbae8e6, CI 16/16, reviewer ja,
+  checkstap 12 akkoord eigenaar, `--admin`).
+- **Besluit "een dag" (afwijkende uren per dag) voorgelegd** (zie #354-rapport; advies optie 2: bloksom ook in de lezers).
