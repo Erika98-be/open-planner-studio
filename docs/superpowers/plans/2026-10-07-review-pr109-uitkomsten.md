@@ -664,3 +664,14 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   (lokaal, poort 3049). Zelf nagelopen met echte Roads-XER, licht + donker: afwijkingsblok toont precies
   *Kritiek-definitie*. Eigen waarnemingen: "≤ 0 uren" (beter "0 uur"); bij een ingebouwd profiel staat "basis: aan"
   dubbel naast het label AAN. Checkstap 11 (profielblok) aan de eigenaar gegeven.
+- **Review #350 (reviewer, Opus 5.5): nee.** BEVESTIGD: (1) afwijkingsblok verschijnt bij eigen invoer en verschuift
+  het formulier 124 px, noemt "geopend bestand" zonder bestand; (2) tooltip weg als focus scrolt (4/26), omzeild in
+  spec/QA-scène; (3) klik op i-icoon in `LayoutsDialog` zet het vinkje om; (4) migratie-afwijking verdwijnt via
+  *Nieuw profiel* en terug (`overrides: {}`); (5) mutanten T1–T3 (Escape/klik/aria) overleven; (7) dode
+  `editConvention`-tak, verouderde commentaren; (8) vaste kleur `#D97706`. VERMOED: schermlezer leest bij focus
+  niets. In orde: geen vals alarm (OPS/P6/MSP, na Toepassen, na IFC-heropenen, MER-1), Roads precies één regel,
+  MCP/extensies kunnen het profiel niet schrijven. **Orkestratorbesluiten fixronde:** blok vergelijkt de toegepaste
+  opties met de standaard van het gekozen profiel (geen sprong bij typen); "(aangepast)" blijft een eigen regel in de
+  keuzelijst zolang het toegepaste profiel afwijkingen heeft; "0 uur"; "basis" alleen bij een afwijking.
+  Voor de eigenaar (later): `NewProfileDialog` weg of houden; knop naast de lijst of regel in de lijst.
+  Fixronde naar de maker (worker, Opus 5.5).
