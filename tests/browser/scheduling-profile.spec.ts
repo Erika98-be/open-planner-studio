@@ -371,7 +371,8 @@ test('rekenprofiel: conventies per thema met basiswaarde, terug naar basis en ui
   // Ingebouwd = alleen-lezen: de waarde als label, geen vinkje en geen "terug naar basis".
   await expect(a19.locator('[data-ops-convention-value]')).toHaveAttribute('data-value', 'on');
   await expect(page.locator('[data-ops-convention]')).toHaveCount(0);
-  await expect(a19.locator('[data-ops-convention-base]')).toHaveText(/(basis|base): (aan|on)/);
+  // "basis: …" staat bij een ingebouwd profiel alleen bij een afwijking (review #350, punt 8).
+  await expect(a19.locator('[data-ops-convention-base]')).toHaveCount(0);
   await expect(a19).not.toHaveAttribute('data-ops-convention-deviates', 'true');
   await expect(page.locator('[data-ops-convention-group="completedWork"] [data-ops-convention-group-deviating]')).toHaveCount(0);
   const select = profileSelect(page);
@@ -379,8 +380,6 @@ test('rekenprofiel: conventies per thema met basiswaarde, terug naar basis en ui
   await expect(select).toHaveText('Primavera P6');
 
   // Uitleg via het i-icoon: de tooltip verschijnt bij hover (de rest staat in de spec profielblok).
-  await a19.locator('[data-ops-convention-help]').scrollIntoViewIfNeeded();
-  await page.mouse.move(0, 0);
   await a19.locator('[data-ops-convention-help]').hover();
   await expect(page.locator('.ops-tooltip[role="tooltip"]')).toBeVisible();
 

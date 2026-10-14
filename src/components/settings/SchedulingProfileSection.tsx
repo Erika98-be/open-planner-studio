@@ -18,7 +18,8 @@ import { generateId } from '@/utils/id';
 import { isHourCalendar } from '@/services/subdayIo';
 import { effHoursPerDay } from '@/utils/taskDuration';
 import {
-  choiceOf, conventionsEditable, editConvention, hasValidProfileName, newProfileFrom, optionDeviations, optionDeviationsSignature,
+  choiceOf, conventionsEditable, editConvention, hasValidProfileName, isModifiedBuiltIn, newProfileFrom, optionDeviations,
+  optionDeviationsSignature, sameSettings,
   ssLagHasHourPlanning, profileLabel, renameProfile, type EffectiveOptions, type OptionDeviation,
   resetConventionToBase, selectProfile, templateRelation,
   totalFloatModeFromUi,
@@ -83,9 +84,9 @@ const noticeKey = (documentId: string, signature: string) => `${documentId}\u000
  * (alleen data) — zijn bewust NIET bewerkbaar (`SOURCE_ONLY_OPTION_KEYS`):
  * het zijn P6-bronsignalen die de XER-lezer uit SCHEDOPTIONS zet (of die aan de P6-herkomstketen van
  * B3/B4 hangen), zonder betekenis voor een project dat niet uit P6 komt. Het blok toont ze onderaan alleen-lezen
- * en laat ze ongemoeid, ook "Standaardopties van dit profiel toepassen" (`withDefaultOptions`: de
- * standaard van het profiel voor de bewerkbare opties, de bronsignalen blijven zoals het bestand ze
- * gaf, en een profiel voegt er geen toe). Commit gebeurt pas op Toepassen via `applyProjectInfo` (één undo-stap,
+ * en laat ze ongemoeid, ook de knop "Standaardinstellingen van … gebruiken" in het blok afwijkende
+ * reken-opties (`withDefaultOptions`: de standaard van het profiel voor de bewerkbare opties, de
+ * bronsignalen blijven zoals het bestand ze gaf, en een profiel voegt er geen toe). Commit gebeurt pas op Toepassen via `applyProjectInfo` (één undo-stap,
  * herberekenen, melding "N taken verschoven"). Alleen sjablonen opslaan/verwijderen gaat direct: dat
  * is app-data, geen projectdata.
  */
@@ -132,6 +133,13 @@ export function SchedulingProfileSection({ mode, value, onChange }: SchedulingPr
     setPendingDelete(null);
   };
   const activeDocumentId = useAppStore(s => s.activeDocumentId);
+  // De TOEGEPASTE stand (store): het blok afwijkende reken-opties vergelijkt die, niet de draft, en de
+  // regel "Primavera P6 (aangepast)" komt van het toegepaste profiel (besluiten orkestrator, review #350).
+  const appliedProfile = useAppStore(s => s.project.schedulingProfile);
+  const appliedOptions = useAppStore(s => s.project.schedulingOptions);
+  // Na de knop "Standaardinstellingen … gebruiken": verborgen voor deze set afwijkingen, zolang de draft
+  // niet terug is op de toegepaste opties (Verwerpen).
+  const [defaultsTakenFor, setDefaultsTakenFor] = useState<string | null>(null);
   // Telt alleen om na een klik op het kruisje opnieuw te tekenen (de set zelf staat buiten React).
   const [, setDismissTick] = useState(0);
   const durationDisplay = useAppStore(s => s.ui.durationDisplay);
@@ -156,20 +164,22 @@ export function SchedulingProfileSection({ mode, value, onChange }: SchedulingPr
   const brand = (id: BuiltInProfileId) => t(builtInNameKey(id));
   const currentName = label.kind === 'builtIn' ? brand(label.baseId) : label.name;
   const choice = choiceOf(profile, templates);
+  // Het ingebouwde profiel mét de afwijkingen van dit project (uit een ouder bestand): de draft als die
+  // zo is, anders het toegepaste profiel. Zolang het er is, staat het als eigen regel "… (aangepast)" in
+  // de lijst; de gewone regel is de kale basis.
+  const modifiedSource = profile && isModifiedBuiltIn(profile) ? profile
+    : appliedProfile && isModifiedBuiltIn(appliedProfile) ? appliedProfile : undefined;
 
   const choices: { value: ProfileChoice; label: string }[] = [
-    ...BUILT_IN_PROFILE_IDS.map(id => ({
-      value: `builtin:${id}` as ProfileChoice,
-      // "(aangepast)" volgt diffAgainstBase (profileLabel), niet het aantal sleutels in overrides.
-      label: label.kind === 'builtIn' && label.baseId === id && label.modified
-        ? t('profiles.modified', { name: brand(id) }) : brand(id),
-    })),
+    ...BUILT_IN_PROFILE_IDS.map(id => ({ value: `builtin:${id}` as ProfileChoice, label: brand(id) })),
+    // "(aangepast)" volgt diffAgainstBase (isModifiedBuiltIn), niet het aantal sleutels in overrides.
+    ...(modifiedSource ? [{ value: 'modified' as ProfileChoice, label: t('profiles.modified', { name: brand(modifiedSource.baseId) }) }] : []),
     ...templates.map(tp => ({ value: `template:${tp.id}` as ProfileChoice, label: tp.name })),
     ...(choice === 'current' ? [{ value: 'current' as ProfileChoice, label: currentName }] : []),
   ];
 
   const onChoose = (next: ProfileChoice) => {
-    const nextProfile = selectProfile(profile, next, templates);
+    const nextProfile = selectProfile(profile, next, templates, modifiedSource);
     onChange(mode === 'wizard'
       ? { profile: nextProfile, options: withDefaultOptions(nextProfile, value.options) }
       : { ...value, profile: nextProfile });
@@ -215,7 +225,7 @@ export function SchedulingProfileSection({ mode, value, onChange }: SchedulingPr
   const ncDays = so.nearCriticalThreshold ?? 2;
   const ncDisplay = hourUnit ? +(ncDays * hpd).toFixed(2) : ncDays;
   const fp = so.floatPaths;
-  const copyTarget = () => ({ id: generateId('prof'), name: t('profiles.copyOf', { name: currentName }) });
+  const copyName = t('profiles.copyOf', { name: currentName });
   const editable = conventionsEditable(profile);
   const deviatingTotal = CONVENTIONS.filter(c => conventions[c.id] !== base[c.id]).length;
   const createProfile = (name: string) => {
@@ -225,11 +235,17 @@ export function SchedulingProfileSection({ mode, value, onChange }: SchedulingPr
   };
   const templateName = templates.find(tp => tp.id === profile?.id)?.name ?? '';
   const nameValid = hasValidProfileName(profile);
-  // Afwijkende reken-opties tegenover de standaard van de basis van het profiel (zie het blok hieronder).
-  const deviations = optionDeviations(profile, value.options);
+  // Afwijkende reken-opties: de TOEGEPASTE opties tegenover de standaard van het profiel dat in het
+  // formulier gekozen is. Typen in de velden verandert het blok dus niet; een profielwissel wel.
+  const deviations = optionDeviations(profile, appliedOptions);
   const deviationsSignature = optionDeviationsSignature(profile, deviations);
+  const draftOnApplied = sameSettings({ profile: undefined, options: value.options }, { profile: undefined, options: appliedOptions });
   const showOptionsNotice = deviations.length > 0
+    && !(defaultsTakenFor === deviationsSignature && !draftOnApplied)
     && !dismissedOptionNotices.has(noticeKey(activeDocumentId, deviationsSignature));
+  // Het bestand noemen kan alleen als de opties echt uit een geopend bestand komen: dat zijn projecten
+  // met een bronoptie (alleen de XER-lezer zet die).
+  const optionsFromFile = SOURCE_ONLY_OPTION_KEYS.some(key => appliedOptions?.[key] !== undefined);
   const dismissOptionsNotice = () => {
     dismissedOptionNotices.add(noticeKey(activeDocumentId, deviationsSignature));
     setDismissTick(n => n + 1);
@@ -246,11 +262,11 @@ export function SchedulingProfileSection({ mode, value, onChange }: SchedulingPr
     }
   };
   const onOff = (on: boolean) => (on ? t('schedulingProfile.on') : t('schedulingProfile.off'));
+  const amount = (count: number, unit: 'hours' | 'days') => (unit === 'hours'
+    ? t('schedulingProfile.optionsDeviate.hours', { count }) : t('schedulingProfile.optionsDeviate.days', { count }));
   const critLabel = (c: EffectiveOptions['criticalDefinition']) => (c.mode === 'longestPath'
     ? tMenu('projectInfo.calc.critLongestPath')
-    : t('schedulingProfile.optionsDeviate.totalFloatAtMost', {
-      value: c.value, unit: c.unit === 'hours' ? tMenu('projectInfo.calc.unitHours') : tMenu('projectInfo.calc.unitDays'),
-    }));
+    : t('schedulingProfile.optionsDeviate.totalFloatAtMost', { amount: amount(c.value, c.unit) }));
   const optionValueLabel = (d: OptionDeviation, side: 'current' | 'standard'): string => {
     switch (d.key) {
       case 'criticalDefinition': return critLabel(d[side]);
@@ -262,7 +278,7 @@ export function SchedulingProfileSection({ mode, value, onChange }: SchedulingPr
       case 'makeOpenEndedCritical': return onOff(d[side]);
       case 'nearCriticalThreshold': {
         const v = d[side];
-        return v === null ? onOff(false) : `${+(hourUnit ? v * hpd : v).toFixed(2)} ${hourUnit ? tMenu('projectInfo.calc.unitHours') : tMenu('projectInfo.calc.unitDays')}`;
+        return v === null ? onOff(false) : amount(+(hourUnit ? v * hpd : v).toFixed(2), hourUnit ? 'hours' : 'days');
       }
       case 'floatPaths': {
         const v = d[side];
@@ -298,10 +314,15 @@ export function SchedulingProfileSection({ mode, value, onChange }: SchedulingPr
           </button>
         </div>
       </div>
+      {modifiedSource && choice === `builtin:${modifiedSource.baseId}` && (
+        <div className="alert alert--info" data-ops-scheduling-bare-base-hint>
+          {t('schedulingProfile.bareBaseHint', { name: brand(modifiedSource.baseId), modified: t('profiles.modified', { name: brand(modifiedSource.baseId) }) })}
+        </div>
+      )}
       {newProfileOpen && (
         <NewProfileDialog
           sourceName={currentName}
-          initialName={copyTarget().name}
+          initialName={copyName}
           onCreate={createProfile}
           onCancel={() => setNewProfileOpen(false)}
         />
@@ -418,14 +439,14 @@ export function SchedulingProfileSection({ mode, value, onChange }: SchedulingPr
                     return (
                       <div key={c.id} className="flex items-start gap-1.5 rounded-[6px] px-1 py-0.5" data-ops-convention-row={c.id}
                         data-ops-convention-deviates={deviates ? 'true' : undefined}
-                        style={deviates ? { background: 'color-mix(in srgb, #D97706 12%, transparent)' } : undefined}>
+                        style={deviates ? { background: 'color-mix(in srgb, var(--warning) 14%, transparent)' } : undefined}>
                         {editable ? (
                           <label className="flex items-start gap-1.5 min-w-0">
                             <input
                               type="checkbox"
                               className="accent-accent mt-0.5"
                               checked={on}
-                              onChange={e => onChange({ ...value, profile: editConvention(profile, c.id, e.target.checked, copyTarget()) })}
+                              onChange={e => onChange({ ...value, profile: editConvention(profile, c.id, e.target.checked) })}
                               data-ops-convention={c.id}
                             />
                             <span className={deviates ? 'font-semibold' : undefined} data-ops-convention-label>{name}</span>
@@ -463,9 +484,12 @@ export function SchedulingProfileSection({ mode, value, onChange }: SchedulingPr
                             {t('schedulingProfile.requires.xerOrigin')}
                           </span>
                         )}
-                        <span className="shrink-0 whitespace-nowrap text-text-secondary" data-ops-convention-base>
-                          {t('schedulingProfile.baseValue', { value: base[c.id] ? t('schedulingProfile.on') : t('schedulingProfile.off') })}
-                        </span>
+                        {/* Bij een ingebouwd profiel zegt AAN/UIT al de basiswaarde; "basis: …" alleen bij een afwijking. */}
+                        {(editable || deviates) && (
+                          <span className="shrink-0 whitespace-nowrap text-text-secondary" data-ops-convention-base>
+                            {t('schedulingProfile.baseValue', { value: base[c.id] ? t('schedulingProfile.on') : t('schedulingProfile.off') })}
+                          </span>
+                        )}
                         {editable && deviates && (
                           <button type="button" className="shrink-0 whitespace-nowrap underline text-accent"
                             onClick={() => onChange({ ...value, profile: resetConventionToBase(profile, c.id) })}
@@ -495,7 +519,9 @@ export function SchedulingProfileSection({ mode, value, onChange }: SchedulingPr
               aria-label={t('close')} title={t('close')} onClick={dismissOptionsNotice} data-ops-options-deviate-dismiss>
               <X size={14} aria-hidden />
             </button>
-            <span>{t('schedulingProfile.optionsDeviate.intro', { name: brand(baseId) })}</span>
+            <span>{optionsFromFile
+              ? t('schedulingProfile.optionsDeviate.intro', { name: brand(baseId) })
+              : t('schedulingProfile.optionsDeviate.introNeutral', { name: brand(baseId) })}</span>
             <ul className="flex flex-col gap-0.5 pl-4 list-disc">
               {deviations.map(d => (
                 <li key={d.key} data-ops-options-deviation={d.key}>
@@ -506,7 +532,10 @@ export function SchedulingProfileSection({ mode, value, onChange }: SchedulingPr
               ))}
             </ul>
             <button type="button" className={`${btnCls} self-start`}
-              onClick={() => onChange({ ...value, options: withDefaultOptions(profile, value.options) })}
+              onClick={() => {
+                onChange({ ...value, options: withDefaultOptions(profile, value.options) });
+                setDefaultsTakenFor(deviationsSignature);
+              }}
               data-ops-scheduling-apply-defaults>
               {t('schedulingProfile.optionsDeviate.useDefaults', { name: brand(baseId) })}
             </button>

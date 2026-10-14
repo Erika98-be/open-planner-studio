@@ -13,16 +13,21 @@ import './Tooltip.css';
  * clips (bv. de ribbon-strook) het niet afsnijden; de horizontale positie wordt binnen de viewport
  * geklemd.
  *
- * Info-iconen (`data-tooltip-instant`) zijn er voor de uitleg zelf. Daarom tonen ze de tooltip ook
- * bij toetsenbordfocus en bij een klik of tik (een touchscreen kent geen hover), en verdwijnt hij
- * met Escape, bij focusverlies of bij een klik elders. Zolang hij staat, wijst `aria-describedby` van
- * het icoon naar het bubbeltje, zodat een schermlezer de uitleg voorleest.
+ * Info-iconen (`data-tooltip-instant`) zijn er voor de uitleg zelf. Daarom:
+ *  - tonen ze de tooltip ook bij toetsenbordfocus en bij een klik of tik (een touchscreen kent geen
+ *    hover); een klik op een icoon binnen een `<label>` zet dat label NIET om (review #350, punt 3);
+ *  - blijft de tooltip van het icoon met focus of onder de muis staan als de pagina scrolt (Tab laat
+ *    een lange lijst scrollen), op de nieuwe plek;
+ *  - sluit Escape alleen de tooltip (niet ook de dialoog of Backstage eronder), net als focusverlies of
+ *    een klik elders;
+ *  - wijst `aria-describedby` meteen bij het tonen (synchroon, vóór het bubbeltje er is) naar een
+ *    verborgen element dat altijd bestaat en de uitleg bevat, zodat een schermlezer hem bij focus leest.
  */
 const DELAY_MS = 400;
 /** `data-tooltip-instant`: geen vertraging — voor info-iconen waar de tooltip dé inhoud is. */
 const isInstant = (el: HTMLElement): boolean => el.hasAttribute('data-tooltip-instant');
 const instantDelay = (el: HTMLElement): number => (isInstant(el) ? 0 : DELAY_MS);
-const BUBBLE_ID = 'ops-tooltip-bubble';
+const DESCRIPTION_ID = 'ops-tooltip-description';
 
 interface TipState { text: string; x: number; y: number; }
 
@@ -32,6 +37,8 @@ export function TooltipHost() {
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const activeEl = useRef<HTMLElement | null>(null);
   const stashed = useRef<string | null>(null);
+  // Altijd aanwezig, verborgen: de beschrijving voor `aria-describedby` (zie hierboven).
+  const descriptionRef = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
     // Zet het weggehaalde `title` terug op het element waar we het van leenden.
@@ -39,9 +46,10 @@ export function TooltipHost() {
       if (activeEl.current && stashed.current !== null) {
         activeEl.current.setAttribute('title', stashed.current);
       }
-      if (activeEl.current?.getAttribute('aria-describedby') === BUBBLE_ID) {
+      if (activeEl.current?.getAttribute('aria-describedby') === DESCRIPTION_ID) {
         activeEl.current.removeAttribute('aria-describedby');
       }
+      if (descriptionRef.current) descriptionRef.current.textContent = '';
       activeEl.current = null;
       stashed.current = null;
     };
@@ -85,7 +93,10 @@ export function TooltipHost() {
       activeEl.current = el;
       stashed.current = text;
       el.removeAttribute('title'); // onderdrukt de native tooltip
-      if (isInstant(el) && !el.hasAttribute('aria-describedby')) el.setAttribute('aria-describedby', BUBBLE_ID);
+      if (isInstant(el) && !el.hasAttribute('aria-describedby') && descriptionRef.current) {
+        descriptionRef.current.textContent = text;
+        el.setAttribute('aria-describedby', DESCRIPTION_ID);
+      }
       timer.current = setTimeout(() => {
         const r = el.getBoundingClientRect();
         setTip({ text, x: r.left + r.width / 2, y: r.bottom + 6 });
@@ -109,10 +120,26 @@ export function TooltipHost() {
     // touchscreen geeft geen blijvende hover). Een niet-focusbaar icoon krijgt zo ook zijn uitleg.
     const onClick = (e: MouseEvent) => {
       const el = instantTarget(e.target);
-      if (el && el !== activeEl.current) show(el, 0);
+      if (!el) return;
+      // Het icoon staat soms in een <label> (LayoutsDialog): de klik is voor de uitleg, niet voor het vinkje.
+      if (el.closest('label')) e.preventDefault();
+      if (el !== activeEl.current) show(el, 0);
     };
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && activeEl.current) dismiss();
+      if (e.key !== 'Escape' || !activeEl.current) return;
+      // Een directe tooltip sluit eerst zelf; de dialoog of Backstage eronder pas bij de volgende Escape.
+      if (isInstant(activeEl.current)) { e.preventDefault(); e.stopPropagation(); }
+      dismiss();
+    };
+    // Scrollen: de tooltip van het icoon met focus of onder de muis verschuift mee; andere sluiten.
+    const onScroll = () => {
+      const el = activeEl.current;
+      if (el && isInstant(el) && stashed.current !== null && (document.activeElement === el || el.matches(':hover'))) {
+        const r = el.getBoundingClientRect();
+        setTip({ text: stashed.current, x: r.left + r.width / 2, y: r.bottom + 6 });
+        return;
+      }
+      dismiss();
     };
     const onOut = (e: MouseEvent) => {
       if (!activeEl.current) return;
@@ -129,7 +156,7 @@ export function TooltipHost() {
     document.addEventListener('focusout', onFocusOut, true);
     document.addEventListener('click', onClick, true);
     document.addEventListener('keydown', onKeyDown, true);
-    window.addEventListener('scroll', dismiss, true);
+    window.addEventListener('scroll', onScroll, true);
     window.addEventListener('blur', dismiss);
     return () => {
       document.removeEventListener('mouseover', onOverEvent, true);
@@ -139,7 +166,7 @@ export function TooltipHost() {
       document.removeEventListener('focusout', onFocusOut, true);
       document.removeEventListener('click', onClick, true);
       document.removeEventListener('keydown', onKeyDown, true);
-      window.removeEventListener('scroll', dismiss, true);
+      window.removeEventListener('scroll', onScroll, true);
       window.removeEventListener('blur', dismiss);
       dismiss();
     };
@@ -153,11 +180,15 @@ export function TooltipHost() {
     bubbleRef.current.style.left = `${cx}px`;
   }, [tip]);
 
-  if (!tip) return null;
   return createPortal(
-    <div ref={bubbleRef} id={BUBBLE_ID} className="ops-tooltip" role="tooltip" style={{ left: tip.x, top: tip.y }}>
-      {tip.text}
-    </div>,
+    <>
+      <span ref={descriptionRef} id={DESCRIPTION_ID} hidden />
+      {tip && (
+        <div ref={bubbleRef} className="ops-tooltip" role="tooltip" style={{ left: tip.x, top: tip.y }}>
+          {tip.text}
+        </div>
+      )}
+    </>,
     document.body,
   );
 }

@@ -106,31 +106,55 @@ test('profielblok: P6 ingeklapt en alleen-lezen, Nieuw profiel bewerkt en rekent
   const a23 = page.locator('[data-ops-convention-row="unstartedIgnoresStatusDate"]');
   await expect(a23.locator('[data-ops-convention-value]')).toHaveAttribute('data-value', 'off');
 
-  // Het i-icoon: de uitleg verschijnt meteen bij hover…
+  // Bij een ingebouwd profiel zegt AAN/UIT al de basis: geen "basis: …" zonder afwijking (review #350, punt 8).
+  await expect(a19.locator('[data-ops-convention-base]')).toHaveCount(0);
+
+  // Het i-icoon: de uitleg verschijnt meteen bij hover, zonder voorbereiding (ook als hover laat scrollen).
   const a19Info = a19.locator('[data-ops-convention-help]');
   const a19Help = await a19Info.getAttribute('title');
   expect(a19Help?.length ?? 0).toBeGreaterThan(20);
-  // Eerst in beeld scrollen: een scroll sluit een open tooltip (TooltipHost), net als bij een gebruiker.
-  await a19Info.scrollIntoViewIfNeeded();
-  await page.mouse.move(0, 0);
   await a19Info.hover();
   await expect(tooltip(page)).toHaveText(a19Help!);
   await shoot(page, section, 'p6-uitgeklapt-tooltip');
-  // …en bij toetsenbordfocus (Tab vanaf het vorige i-icoon), met aria-describedby naar het bubbeltje.
   await page.mouse.move(0, 0);
   await expect(tooltip(page)).toHaveCount(0);
+
+  // Tab langs ALLE 27 i-iconen vanaf de kop van het deel, zonder voorbereiding: elk icoon toont zijn
+  // eigen uitleg, ook als de focus de lijst laat scrollen (review #350, punt 2).
   const infos = page.locator('[data-ops-convention-help]');
-  const ids = await infos.evaluateAll(els => els.map(el => el.getAttribute('data-ops-convention-help')));
-  const index = ids.indexOf('p6UseRemainingStartForProgress');
-  expect(index).toBeGreaterThan(0);
-  await infos.nth(index - 1).focus();
-  await page.keyboard.press('Tab');
-  await expect(a19Info).toBeFocused();
+  const helps = await infos.evaluateAll(els => els.map(el => [el.getAttribute('data-ops-convention-help'), el.getAttribute('title')]));
+  expect(helps).toHaveLength(27);
+  await toggle.focus();
+  for (const [id, help] of helps) {
+    await page.keyboard.press('Tab');
+    await expect(page.locator(`[data-ops-convention-help="${id}"]`)).toBeFocused();
+    await expect(tooltip(page)).toHaveText(help!);
+  }
+
+  // Schermlezer (punt 6): direct na focus() — synchroon, vóór het bubbeltje er is — wijst
+  // aria-describedby naar een element met de uitleg.
+  const described = await a19Info.evaluate(el => {
+    (el as HTMLElement).focus();
+    const id = el.getAttribute('aria-describedby');
+    return { id, text: id ? document.getElementById(id)?.textContent : null };
+  });
+  expect(described).toEqual({ id: 'ops-tooltip-description', text: a19Help });
   await expect(tooltip(page)).toHaveText(a19Help!);
-  await expect(a19Info).toHaveAttribute('aria-describedby', 'ops-tooltip-bubble');
-  // Focus weg ⇒ tooltip weg, het title-attribuut terug.
+  // Escape sluit alleen de tooltip: de focus blijft, Projectinfo blijft open, aria-describedby is weg
+  // en het title-attribuut terug (mutanten T1 en T3).
+  await page.keyboard.press('Escape');
+  await expect(tooltip(page)).toHaveCount(0);
+  await expect(a19Info).toBeFocused();
+  await expect(section).toBeVisible();
+  await expect(a19Info).not.toHaveAttribute('aria-describedby', /./);
+  await expect(a19Info).toHaveAttribute('title', a19Help!);
+  // Focus weg na opnieuw tonen ⇒ ook weg, zonder aria-describedby.
+  await page.keyboard.press('Shift+Tab');
+  await page.keyboard.press('Tab');
+  await expect(tooltip(page)).toHaveText(a19Help!);
   await page.keyboard.press('Shift+Tab');
   await expect(tooltip(page)).not.toHaveText(a19Help!);
+  await expect(a19Info).not.toHaveAttribute('aria-describedby', /./);
   await expect(a19Info).toHaveAttribute('title', a19Help!);
 
   // "Nieuw profiel": de naamvraag in de app, voorgevuld met "Kopie van Primavera P6". Annuleren doet niets.
@@ -225,6 +249,27 @@ test('profielblok: een afwijking uit een oud bestand staat alleen-lezen en gaat 
   await expect(page.locator('[data-ops-convention="p6UseRemainingStartForProgress"]')).not.toBeChecked();
   await expect(a19).toHaveAttribute('data-ops-convention-deviates', 'true');
   await expect(a19.locator('[data-ops-convention-reset]')).toBeVisible();
+
+  // Review #350 punt 4: na Nieuw profiel staat het toegepaste "Primavera P6 (aangepast)" nog als eigen
+  // regel in de lijst; die kiezen en toepassen geeft de afwijking terug, tot in de store.
+  const modifiedOption = page.locator('[role="option"][data-value="modified"]');
+  await select(page).click();
+  await expect(modifiedOption).toHaveText(/^(Primavera P6 \(aangepast\)|Primavera P6 \(modified\))$/);
+  await expect(page.locator('[role="option"][data-value="builtin:p6"]')).toHaveText('Primavera P6');
+  await modifiedOption.click();
+  await expect(page.locator('[data-ops-scheduling-bare-base-hint]')).toHaveCount(0);
+  await page.getByRole('button', { name: /^(Apply|Toepassen)$/ }).click();
+  await expect.poll(() => profileOf(page)).toMatchObject({ id: 'p6', overrides: { p6UseRemainingStartForProgress: false } });
+
+  // De gewone regel "Primavera P6" is de kale basis: dat zegt een blok, en toepassen haalt de afwijking weg.
+  await toProjectInfo(page);
+  await chooseProfile(page, 'builtin:p6');
+  await expect(page.locator('[data-ops-scheduling-bare-base-hint]')).toBeVisible();
+  await page.getByRole('button', { name: /^(Apply|Toepassen)$/ }).click();
+  await expect.poll(() => profileOf(page).then(p => p?.overrides)).toEqual({});
+  // Eén Ctrl+Z zet de afwijking terug.
+  await page.keyboard.press('Control+z');
+  await expect.poll(() => profileOf(page)).toMatchObject({ id: 'p6', overrides: { p6UseRemainingStartForProgress: false } });
 });
 
 // Het blok "afwijkende reken-opties" (eigenaar, 2026-10-14). Zoals Roads: een XER die kritiek rekent op
@@ -257,12 +302,31 @@ test('profielblok: afwijkende reken-opties tonen een blok met kruisje en een kno
   await expect(page.locator('[data-ops-scheduling-options]')).toBeVisible();
   await expect(page.locator('[data-ops-options-deviate-notice]')).toHaveCount(0);
   await expect(page.locator('[data-ops-scheduling-apply-defaults]')).toHaveCount(0);
+  // Review #350 punt 1: eigen invoer in de velden laat geen blok verschijnen en verschuift niets.
+  const nearCritical = page.locator('[data-ops-near-critical-enable]');
+  // De plek t.o.v. het optiedeel (check() kan scrollen; de pagina-y zegt dan niets).
+  const offset = () => nearCritical.evaluate(el =>
+    el.getBoundingClientRect().top - el.closest('[data-ops-scheduling-options]')!.getBoundingClientRect().top);
+  const yBefore = await offset();
+  await nearCritical.check();
+  await expect(page.locator('[data-ops-near-critical-threshold]')).toBeVisible();
+  await expect(page.locator('[data-ops-options-deviate-notice]')).toHaveCount(0);
+  expect(await offset()).toBe(yBefore);
+  // Kies je in het formulier Primavera P6, dan wijken de toegepaste opties (geen) af van de P6-standaard:
+  // het blok verschijnt, met een neutrale zin (de opties komen niet uit een bestand).
+  await chooseProfile(page, 'builtin:p6');
+  const notice = page.locator('[data-ops-options-deviate-notice]');
+  await expect(notice).toBeVisible();
+  await expect(notice.locator('[data-ops-options-deviation]')).toHaveCount(1);
+  await expect(notice.locator('[data-ops-options-deviation]')).toHaveAttribute('data-ops-options-deviation', 'totalFloatMode');
+  await expect(notice).not.toContainText(/(bestand|file)/);
+  await page.locator('[data-ops-project-info-discard]').click();
+  await expect(notice).toHaveCount(0);
   await page.locator('[data-ops-backstage-back]').click();
 
   await openFile(page, 'roads.xer', ROADS_XER);
   await expect.poll(() => options(page)).toEqual({ crit: 'longestPath', expect: true });
   await toProjectInfo(page);
-  const notice = page.locator('[data-ops-options-deviate-notice]');
   const lines = notice.locator('[data-ops-options-deviation]');
   // Onder P6 precies één regel: Kritiek-definitie, met de huidige waarde en de standaard. De bronoptie
   // (verwachte einddatums) telt niet mee.
@@ -270,8 +334,17 @@ test('profielblok: afwijkende reken-opties tonen een blok met kruisje en een kno
   await expect(notice).toContainText('Primavera P6');
   await expect(lines).toHaveCount(1);
   await expect(lines.first()).toHaveAttribute('data-ops-options-deviation', 'criticalDefinition');
-  await expect(lines.first()).toHaveText(/^(Kritiek-definitie: Langste pad \(standaard: totale speling ≤ 0 uren\)|Critical definition: Longest path \(default: total float ≤ 0 hours\))$/);
+  await expect(lines.first()).toHaveText(/^(Kritiek-definitie: Langste pad \(standaard: totale speling ≤ 0 uur\)|Critical definition: Longest path \(default: total float ≤ 0 hours\))$/);
+  // De opties komen uit een .xer (er is een bronoptie): het blok noemt het bestand.
+  await expect(notice).toContainText(/(geopende bestand|opened file)/);
   await shoot(page, page.locator('[data-ops-scheduling-options]'), 'afwijkende-opties-p6', true);
+  // Het blok vergelijkt de TOEGEPASTE opties: de kritiek-definitie in het formulier op de standaard
+  // zetten laat het blok staan (geen verspringend formulier); Verwerpen zet de draft terug.
+  const critSelect = page.getByRole('button', { name: /^(Kritiek-definitie|Critical definition)$/ });
+  await critSelect.click();
+  await page.getByRole('option', { name: /^(Totale speling ≤ drempel|Total float ≤ threshold)$/ }).click();
+  await expect(lines).toHaveCount(1);
+  await page.locator('[data-ops-project-info-discard]').click();
 
   // Een wissel naar Microsoft Project in het formulier vergelijkt meteen met die standaard.
   await chooseProfile(page, 'builtin:msproject');
@@ -310,7 +383,49 @@ test('profielblok: afwijkende reken-opties tonen een blok met kruisje en een kno
   await page.getByRole('button', { name: /^(Apply|Toepassen)$/ }).click();
   await expect.poll(() => options(page)).toEqual({ crit: 'totalFloat', expect: true });
   await expect.poll(() => page.evaluate(() => window.__OPS__!.store.getState().scheduleStale)).toBe(false);
+  // Na Toepassen geldt de nieuwe toegepaste stand: geen afwijking meer, geen blok.
+  await toProjectInfo(page);
+  await expect(notice).toHaveCount(0);
+  await page.locator('[data-ops-backstage-back]').click();
   // Eén undo-stap (B35).
   await page.keyboard.press('Control+z');
   await expect.poll(() => options(page)).toEqual({ crit: 'longestPath', expect: true });
+});
+
+// Review #350 punt 3 en mutant T2: in de layoutdialoog staat het i-icoon (een niet-focusbaar <span>) in
+// het <label> van een onderdeel. Een klik toont de uitleg (mousedown sloot de hover-tooltip; alleen de
+// klik toont hem weer) en zet het vinkje NIET om.
+test('i-icoon in een label: een klik toont de uitleg en laat het vinkje staan', async ({ page, ops: _ops }) => {
+  await page.getByRole('button', { name: /^(View|Beeld)$/ }).click();
+  await page.getByRole('button', { name: /^(New layout|Nieuwe layout)$/ }).click();
+  const dialog = page.locator('[data-ops-layout-dialog]');
+  const row = dialog.locator('[data-ops-layout-part-row="columns"]');
+  const box = row.locator('[data-ops-layout-part="columns"]');
+  const before = await box.isChecked();
+  const info = row.locator('[data-tooltip-instant]');
+  const help = await info.getAttribute('title');
+  expect(help?.length ?? 0).toBeGreaterThan(5);
+  await info.click();
+  await expect(tooltip(page)).toHaveText(help!);
+  expect(await box.isChecked()).toBe(before);
+  await info.click();
+  await expect(tooltip(page)).toHaveText(help!);
+  expect(await box.isChecked()).toBe(before);
+});
+
+// Touchscreen: een tik op het i-icoon toont de uitleg; een tik ergens anders sluit hem.
+test.describe('touch', () => {
+  test.use({ hasTouch: true });
+  test('profielblok: een tik op het i-icoon toont de uitleg', async ({ page, ops: _ops }) => {
+    await openFile(page, 'tik.xer', XER);
+    await expect.poll(() => profileOf(page).then(p => p?.id)).toBe('p6');
+    await toProjectInfo(page);
+    await page.locator('[data-ops-conventions-toggle]').tap();
+    const info = page.locator('[data-ops-convention-help="p6UseRemainingStartForProgress"]');
+    const help = await info.getAttribute('title');
+    await info.tap();
+    await expect(tooltip(page)).toHaveText(help!);
+    await page.locator('[data-ops-scheduling-title]').tap();
+    await expect(tooltip(page)).toHaveCount(0);
+  });
 });

@@ -1408,6 +1408,7 @@
     "newProfileIntro": "Het nieuwe profiel krijgt alle conventies van „{{name}}”, ook de afwijkingen. Daarna kun je elke conventie zelf aan- of uitzetten. Pas na Toepassen rekent het project met het nieuwe profiel.",
     "newProfileName": "Naam van het nieuwe profiel",
     "newProfileCreate": "Maken",
+    "bareBaseHint": "„{{name}}” is de kale basis, zonder de afwijkingen van dit project. Wil je die houden, kies dan „{{modified}}”.",
     "conventionsTitle": "Conventies van dit profiel",
     "builtInReadOnly": "{{name}} is een ingebouwd profiel. De conventies staan hier ter informatie en zijn niet te wijzigen. Wil je andere conventies, kies dan {{button}}.",
     "builtInDeviations": "Dit project komt uit een ouder bestand. De oranje conventies wijken af van de basis van {{name}} en rekenen zo mee. Wil je ze wijzigen, kies dan {{button}}.",
@@ -1452,8 +1453,13 @@
     "optionsDeviate": {
       "line": "{{field}}: {{current}} (standaard: {{standard}})",
       "intro": "Deze reken-opties wijken af van de standaard van {{name}}. Dat is vaak bewust, bijvoorbeeld omdat ze uit het geopende bestand komen.",
+      "introNeutral": "Deze reken-opties wijken af van de standaard van {{name}}. Dat kan een bewuste keuze zijn.",
       "useDefaults": "Standaardinstellingen van {{name}} gebruiken",
-      "totalFloatAtMost": "totale speling ≤ {{value}} {{unit}}"
+      "totalFloatAtMost": "totale speling ≤ {{amount}}",
+      "hours_one": "{{count}} uur",
+      "hours_other": "{{count}} uur",
+      "days_one": "{{count}} werkdag",
+      "days_other": "{{count}} werkdagen"
     }
   },
   "dialogHelp": {

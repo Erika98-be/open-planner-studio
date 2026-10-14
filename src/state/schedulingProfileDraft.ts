@@ -5,8 +5,8 @@ import type {
   BuiltInProfileId, ConventionKey, ProjectSchedulingOptions, SchedulingConventions, SchedulingProfile,
 } from '@/types/project';
 import {
-  CONVENTION_KEYS, builtInConventions, builtInProfile, defaultOptionsFor, diffAgainstBase, isBuiltInProfileId,
-  isDefaultProfile, resolveConventions, switchProfile,
+  CONVENTION_KEYS, builtInProfile, defaultOptionsFor, diffAgainstBase, isBuiltInProfileId,
+  isDefaultProfile, resolveConventions,
 } from '@/engine/scheduler/conventions/registry';
 import { MAX_PROFILE_ID_LENGTH, MAX_PROFILE_NAME_LENGTH } from '@/services/ifc/schedulingOptionsRead';
 import { fileHasHourData, isHourCalendar } from '@/services/subdayIo';
@@ -19,9 +19,10 @@ export interface SchedulingSettingsDraft {
   options: ProjectSchedulingOptions | undefined;
 }
 
-/** De waarde in de keuzelijst: een ingebouwd profiel, een sjabloon (op id), of het eigen profiel
- *  van dit project dat (nog) geen sjabloon is. */
-export type ProfileChoice = `builtin:${BuiltInProfileId}` | `template:${string}` | 'current';
+/** De waarde in de keuzelijst: een ingebouwd profiel (de kale basis), een ingebouwd profiel met de
+ *  afwijkingen van dit project ('modified', "Primavera P6 (aangepast)"), een sjabloon (op id), of het
+ *  eigen profiel van dit project dat (nog) geen sjabloon is. */
+export type ProfileChoice = `builtin:${BuiltInProfileId}` | 'modified' | `template:${string}` | 'current';
 
 export function copyProfile(p: SchedulingProfile): SchedulingProfile {
   return { baseId: p.baseId, id: p.id, name: p.name, overrides: { ...p.overrides } };
@@ -29,32 +30,39 @@ export function copyProfile(p: SchedulingProfile): SchedulingProfile {
 
 export function choiceOf(profile: SchedulingProfile | undefined, templates: readonly SchedulingProfile[]): ProfileChoice {
   const p = profile ?? builtInProfile('ops');
-  if (isBuiltInProfileId(p.id)) return `builtin:${p.id}`;
+  if (isBuiltInProfileId(p.id)) return isModifiedBuiltIn(p) ? 'modified' : `builtin:${p.id}`;
   if (templates.some(t => t.id === p.id)) return `template:${p.id}`;
   return 'current';
 }
 
+/** Een ingebouwd id met afwijkingen (opgelost, `diffAgainstBase`): komt alleen uit een ouder bestand
+ *  (migratie); de UI maakt ze niet meer. */
+export function isModifiedBuiltIn(profile: SchedulingProfile | undefined): boolean {
+  return !!profile && isBuiltInProfileId(profile.id)
+    && Object.keys(diffAgainstBase(profile.baseId, resolveConventions(profile))).length > 0;
+}
+
 /**
- * Keuzelijst-wissel. Er bestaan geen per-bestand-conventies, dus elke conventie volgt dezelfde
- * regels:
- *  - Ingebouwd vanaf een INGEBOUWD id: `switchProfile` — alle afwijkingen blijven
- *    letterlijk, ook als ze onder de nieuwe basis gelijk aan die basis zijn (P6 {A13: uit} → OPS → P6
- *    geeft het origineel). Zo'n profiel wordt dus nooit tot `undefined` genormaliseerd:
- *    `isDefaultProfile` is letterlijk "ops zonder enige afwijking".
- *  - Ingebouwd vanaf een EIGEN profiel: de kale basis — de handmatige afwijkingen verlaat de gebruiker
- *    juist met deze keuze.
- *  - Sjabloon: een kopie van het sjabloon (het project draagt zijn eigen profiel; matching op id, nooit
+ * Keuzelijst-wissel (besluit orkestrator na review #350, 2026-10-14):
+ *  - Ingebouwd ('builtin:x'): altijd de KALE basis, ook vanaf een ingebouwd profiel met afwijkingen.
+ *  - 'modified': het ingebouwde profiel met de afwijkingen van dit project (`modified`, de regel
+ *    "Primavera P6 (aangepast)"). Zolang het toegepaste profiel zo'n profiel is, staat die regel in de
+ *    lijst; zo geeft P6 (aangepast) → OPS → P6 (aangepast) het origineel terug (B14) en gaat een
+ *    afwijking uit de migratie nooit stil verloren via een omweg.
+ *  - Sjabloon: een kopie van het sjabloon (het project draagt zijn eigen kopie; matching op id, nooit
  *    op naam).
  *  - Alleen het kale standaardprofiel (ops zonder afwijking) wordt `undefined` (afwezig ≡ ops).
  */
 export function selectProfile(
   current: SchedulingProfile | undefined, choice: ProfileChoice, templates: readonly SchedulingProfile[],
+  modified?: SchedulingProfile,
 ): SchedulingProfile | undefined {
   if (choice === 'current') return current;
+  if (choice === 'modified') return modified ? copyProfile(modified) : current;
   if (choice.startsWith('builtin:')) {
     const baseId = choice.slice('builtin:'.length);
     if (!isBuiltInProfileId(baseId)) return current;
-    const next = switchProfile(current, baseId);
+    const next = builtInProfile(baseId);
     return isDefaultProfile(next) ? undefined : next;
   }
   const template = templates.find(t => t.id === choice.slice('template:'.length));
@@ -75,26 +83,18 @@ function validCustomId(id: string): boolean {
   return id.trim().length > 0 && id.length <= MAX_PROFILE_ID_LENGTH && !isBuiltInProfileId(id);
 }
 
-/** Handmatige conventiewijziging. Op een ingebouwd id maakt dat automatisch een eigen profiel
- *  ("Kopie van P6") met álle huidige waarden (ook die uit het bestand); op een eigen
- *  profiel blijft het id. Een ongewijzigde waarde, of een ongeldig kopie-id, geeft hetzelfde object terug.
- *  Zet de wijziging een conventie op een ingebouwd id terug op de waarde van de basis, dan is dat
- *  dezelfde handeling als "terug naar basis" (`resetConventionToBase`): geen kopie zonder afwijkingen
- *  (critreview #169, N7). */
+/** Handmatige conventiewijziging, alleen in een EIGEN profiel: de afwijkingen worden opnieuw tegen de
+ *  basis bepaald (een waarde gelijk aan de basis is geen afwijking). Een ingebouwd profiel is
+ *  alleen-lezen (eigenaar, review #169, 2026-10-14): daar, en bij een ongewijzigde waarde, komt hetzelfde
+ *  object terug. Bewerken van een ingebouwd profiel gaat via `newProfileFrom`. */
 export function editConvention(
-  current: SchedulingProfile | undefined, key: ConventionKey, value: boolean, copy: { id: string; name: string },
+  current: SchedulingProfile | undefined, key: ConventionKey, value: boolean,
 ): SchedulingProfile | undefined {
-  const p = current ?? builtInProfile('ops');
-  const values = resolveConventions(p);
+  if (!current || !conventionsEditable(current)) return current;
+  const values = resolveConventions(current);
   if (values[key] === value) return current;
-  if (isBuiltInProfileId(p.id) && builtInConventions(p.baseId)[key] === value) return resetConventionToBase(current, key);
   values[key] = value;
-  const overrides = diffAgainstBase(p.baseId, values);
-  if (isBuiltInProfileId(p.id)) {
-    if (!validCustomId(copy.id)) return current;
-    return { baseId: p.baseId, id: copy.id, name: clampName(copy.name), overrides };
-  }
-  return { ...p, overrides };
+  return { ...current, overrides: diffAgainstBase(current.baseId, values) };
 }
 
 /** De knop "Nieuw profiel": een eigen profiel op dezelfde basis met precies de opgeloste conventies
@@ -116,10 +116,9 @@ export function conventionsEditable(profile: SchedulingProfile | undefined): boo
   return !!profile && !isBuiltInProfileId(profile.id);
 }
 
-/** "Terug naar basis" voor één conventie: haal haar afwijking uit het profiel, zodat de waarde van de
- *  basis (`baseId`) weer geldt. Anders dan `editConvention` maakt dit van een ingebouwd profiel GEEN
- *  kopie: een afwijking weghalen brengt het profiel juist dichter bij de school (op een ingebouwd id
- *  is zo'n afwijking een waarde uit het bestand, bijvoorbeeld A19). Zonder afwijking: ongewijzigd. */
+/** "Terug naar basis" voor één conventie van een eigen profiel: haal haar afwijking weg, zodat de
+ *  waarde van de basis (`baseId`) weer geldt. De UI biedt dit alleen bij een eigen profiel; een
+ *  ingebouwd profiel is alleen-lezen. Zonder afwijking: ongewijzigd. */
 export function resetConventionToBase(current: SchedulingProfile | undefined, key: ConventionKey): SchedulingProfile | undefined {
   if (!current || typeof current.overrides[key] !== 'boolean') return current;
   const overrides = { ...current.overrides };
@@ -204,8 +203,8 @@ export const SOURCE_ONLY_OPTION_KEYS = [
 export type SourceOnlyOptionKey = typeof SOURCE_ONLY_OPTION_KEYS[number];
 
 /** De standaard-projectopties van de basis van dit profiel; OPS ⇒ afwezig. De bronsignalen uit
- *  `current` (`SOURCE_ONLY_OPTION_KEYS`) blijven staan: "Standaardopties" en een profielkeuze in de
- *  wizard gooien geen bestandsdata weg. */
+ *  `current` (`SOURCE_ONLY_OPTION_KEYS`) blijven staan: de knop "Standaardinstellingen van … gebruiken"
+ *  (blok afwijkende reken-opties) en een profielkeuze in de wizard gooien geen bestandsdata weg. */
 export function withDefaultOptions(
   profile: SchedulingProfile | undefined, current?: ProjectSchedulingOptions,
 ): ProjectSchedulingOptions | undefined {

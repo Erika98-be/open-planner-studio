@@ -168,18 +168,10 @@ function seedLibraryBooking(companyId?: string): { companyId: string; taskId: st
 
 const SCENES: Record<string, Scene> = {
   // Blauwe (nu oranje) infoblokken in Projectinfo › Rekenprofiel.
-  // Uitleg per conventie: het i-icoon krijgt de focus, de tooltip staat er meteen.
-  // Eerst in beeld scrollen, dan focussen: een scroll sluit de tooltip.
+  // Uitleg per conventie: het i-icoon krijgt de focus, de tooltip staat er meteen (en blijft bij scrollen).
   'info-uitleg': {
-    run: async () => {
-      await openProjectInfo();
-      await expandConventions();
-      const icon = await waitFor('[data-ops-convention-help]');
-      icon.scrollIntoView({ block: 'center' });
-      await sleep(300);
-      icon.focus();
-      return '[data-ops-convention-help]';
-    },
+    steps: async () => { await expandConventions(); (await waitFor('[data-ops-convention-help]')).focus(); },
+    target: '[data-ops-convention-help]',
   },
   'info-eigen-profielen': { steps: expandConventions, target: '[data-ops-convention-own-only-note]' },
   'info-sslag-conventie': { target: '[data-ops-ss-lag-needs-convention]' },
