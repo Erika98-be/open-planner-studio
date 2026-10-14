@@ -2340,7 +2340,7 @@ body {
    --theme-accent over --theme-surface, zoals de geselecteerde rij, met de gewone tekstkleur. */
 .alert--info    { background: color-mix(in srgb, var(--theme-accent) 16%, var(--theme-surface)); border-left-color: var(--theme-accent); color: var(--color-text-primary); }
 .alert--success { background: color-mix(in srgb, var(--success) 12%, var(--theme-surface)); border-left-color: var(--success); color: var(--color-text-primary); }
-.alert--warning { background: color-mix(in srgb, var(--warning) 16%, var(--theme-surface)); border-left-color: var(--warning); color: var(--color-text-primary); }
+.alert--warning { background: color-mix(in srgb, var(--error) 12%, var(--theme-surface)); border-left-color: var(--error); color: var(--color-text-primary); }
 .alert--error   { background: color-mix(in srgb, var(--error) 12%, var(--theme-surface)); border-left-color: var(--error); color: var(--color-text-primary); }
 
 /* Badges (DESIGN-SYSTEM.md §3.6) */
@@ -2357,8 +2357,9 @@ body {
 }
 .badge--amber { background: color-mix(in srgb, var(--warning) 26%, var(--theme-surface)); color: var(--color-text-primary); }
 
-/* Waarschuwing = geel + driehoek-icoon, zodat hij niet verward wordt met het oranje infoblok (eigenaar,
-   2026-10-14). Het icoon is een masker in de signaalkleur, dus het volgt het thema. */
+/* Waarschuwingsblok = rood + driehoek-icoon, zodat het niet lijkt op het oranje infoblok; het label
+   `badge--amber` blijft geel, met hetzelfde icoon (eigenaar, 2026-10-14). Het icoon is een masker in de
+   signaalkleur, dus het volgt het thema. */
 .alert--warning { position: relative; padding-left: calc(var(--sp-6) + 20px); }
 .alert--warning::before {
   content: '';
@@ -2367,7 +2368,7 @@ body {
   top: calc(var(--sp-4) + 0.5px);
   width: 16px;
   height: 16px;
-  background: var(--warning);
+  background: var(--error);
   -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3'/%3E%3Cpath d='M12 9v4'/%3E%3Cpath d='M12 17h.01'/%3E%3C/svg%3E") no-repeat center / contain;
   mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3'/%3E%3Cpath d='M12 9v4'/%3E%3Cpath d='M12 17h.01'/%3E%3C/svg%3E") no-repeat center / contain;
 }
@@ -2382,12 +2383,6 @@ body {
   -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3'/%3E%3Cpath d='M12 9v4'/%3E%3Cpath d='M12 17h.01'/%3E%3C/svg%3E") no-repeat center / contain;
   mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3'/%3E%3Cpath d='M12 9v4'/%3E%3Cpath d='M12 17h.01'/%3E%3C/svg%3E") no-repeat center / contain;
 }
-
-/* PROTOTYPE (2026-10-14, weghalen na het besluit): variant "rood" voor de waarschuwing, alleen te zien via
-   `?warningVariant=rood` (qaScenes, DEV). */
-:root[data-ops-warning-variant='rood'] .alert--warning { background: color-mix(in srgb, var(--error) 12%, var(--theme-surface)); border-left-color: var(--error); }
-:root[data-ops-warning-variant='rood'] .alert--warning::before { background: var(--error); }
-:root[data-ops-warning-variant='rood'] .badge--amber { background: color-mix(in srgb, var(--error) 22%, var(--theme-surface)); }
 .badge--green { background: color-mix(in srgb, var(--success) 22%, var(--theme-surface)); color: var(--color-text-primary); }
 .badge--red   { background: color-mix(in srgb, var(--error) 22%, var(--theme-surface)); color: var(--color-text-primary); }
 /* Info-label: zelfde accent-tint als .alert--info (eigenaar, 2026-10-13). */

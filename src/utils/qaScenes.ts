@@ -104,9 +104,6 @@ export async function runQaScene(name: string): Promise<void> {
     console.warn(`qaScene: onbekend "${name}"; bekend: ${Object.keys(SCENES).join(', ')}`);
     return;
   }
-  // PROTOTYPE (2026-10-14): `&warningVariant=rood` toont de rode waarschuwingsvariant (globals.css).
-  const variant = new URLSearchParams(window.location.search).get('warningVariant');
-  if (variant) document.documentElement.dataset.opsWarningVariant = variant;
   // Welkomstvenster (eerste start in een schone browser) wegklikken.
   await sleep(300);
   if (document.querySelector('[data-ops-welcome-dialog]')) await clickText('[data-ops-welcome-dialog]', ['Overslaan', 'Skip']);
