@@ -622,3 +622,9 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
     dropdown". Nu: vinkjes onder elk ingebouwd profiel bewerkbaar, één wijziging ⇒ "Kopie van …" (B14, orkestrator
     2026-09-22); groepen altijd open (B33, eigenaar "Mergen" 2026-09-24 zonder los antwoord op open/ingeklapt).
     ⇒ besluit na de check. Route-stap 3 ("Kopie van …") vervalt hierdoor.
+  - Letterlijk: "en waarom moet je op dat pijltje klikken om info te laten zien, de hele rest van de app doet dat met
+    zo'n i'tje met een tooltip die gelijk verschijnt". Herkomst: UI-voorstel 2026-09-24
+    (`2026-09-24-ui-conventies-groepen-voorstel.md`, agent; bron gebruikstest 24-09 B3 + Fable-eindreview bev. 2/3):
+    uitleg stond alleen in een tooltip, onvindbaar en niet bruikbaar op touch ⇒ uitklappijltje. Eigenaar "Mergen"
+    2026-09-24 over het hele voorstel (B33), geen los besluit over pijltje vs. i-icoon. **Bevinding:** wijkt af
+    van het app-patroon (`Info`-icoon met tooltip, o.a. `SettingsPanelContent.tsx:369`) ⇒ besluit na de check.
