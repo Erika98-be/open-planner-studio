@@ -238,6 +238,12 @@ vroeger (de klokuren). v2026.9.0 leest de blokken van een nieuw bestand al niet 
 `HoursPerDay` in plaats van 8. Toetsen: `check-ifc-urenperdag-blokken.ts`, `check-ifc-urenperdag-corpus.ts`
 (met `OPS_XER_CORPUS`) en §10 van `check-ifc-calendar-identity.ts`.
 
+Een werkdagwissel (de dagknoppen en *Ma–vr* in het kalendervenster, MCP met alleen `workDays`) laat een
+afwijkende `hoursPerDay` staan. Alleen een waarde die vóór de wissel gelijk was aan de modale dagsom volgt
+de nieuwe blokken (`hoursPerDayAfterDayChange` in `src/services/subdayIo.ts`). Zonder die regel werd Late
+ploeg na *Za* aan stil 10, en schreef de writer dan geen `HoursPerDay` meer. Toets:
+`check-urenperdag-dagwissel.ts`.
+
 ## Wat dit niet dekt
 
 - **De CSV-, MS Project- en P6-adapters.** Dat zijn import/export-adapters, geen opslagformaat; ze
