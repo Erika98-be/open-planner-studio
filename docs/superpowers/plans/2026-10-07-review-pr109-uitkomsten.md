@@ -826,3 +826,6 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
 - **#354 gemerged in main 2026-10-14 → eef8bdacf** (kop 0803e71ec bevatte main 967c9e07b, CI 16/16, reviewer ja,
   R16 rood, gidszin over eigen uren per dag; `measure:profiles` main = PR; `--admin`; gedrag zonder zichtbare
   ontwerpwijziging). #347 en #350 mergen main (conflict CalendarForm/gidsen bij #347).
+- **Checkstap 11 (profielblok) goedgekeurd door de eigenaar 2026-10-14, letterlijk: "nice, tien keer beter, dit is
+  goed".** Daarmee ook de vorm van *Nieuw profiel* (naamvenster, knop naast de lijst) aanvaard.
+  **#350 gemerged in main 2026-10-14** (kop 6b61d6b51 bevatte main eef8bdacf, CI 16/16, reviewer ja, `--admin`).
