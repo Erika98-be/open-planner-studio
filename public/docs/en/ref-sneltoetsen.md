@@ -68,7 +68,7 @@ Indent, outdent and inserting above or below a selected task only work in the pl
 
 ## View
 
-**F11** — *Presentation*: switches presentation mode on or off. The app also asks the browser or window for full screen. Also works in an input field.
+**F11** — *Presentation*: switches presentation mode on or off. The app also asks the window for full screen. Also works in an input field. In the browser F11 does not start the presentation: the browser puts the window in full screen itself and the app stays as it is. F11 does stop a running presentation in the browser.
 
 **Esc** (during the presentation) — *Exit presentation*. Also works in an input field. This takes precedence over *Clear selection*.
 
