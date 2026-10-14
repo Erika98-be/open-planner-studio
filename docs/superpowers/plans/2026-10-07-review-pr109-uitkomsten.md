@@ -634,3 +634,9 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   "Nieuw profiel" bij de keuzelijst, conventies standaard ingeklapt, i-icoon met tooltip i.p.v. uitklappijltje;
   datamodel/IFC/motor ongewijzigd, migratie-afwijkingen alleen-lezen zichtbaar. Ontwerp van de knop
   *Standaardopties* ligt bij de eigenaar (voorgelegd).
+- Eigenaar vroeg uitleg over de knop *Standaardopties* (gegeven: wat, waarom B12, wanneer wel/niet) en daarna
+  "kom met een voorstel om dit te verbeteren". Voorstel orkestrator: knop weg uit de kop van *Reken-opties*; alleen
+  na een profielwissel in het formulier een oranje blok onder de keuzelijst met de concrete verschillen
+  (oud → nieuw) en de knop "Standaardopties van <profiel> gebruiken"; geen blok als er geen verschil is.
+  Eigenaar vroeg ook waarom er twee subagents "op Opus 5.5 xhigh" staan: gemeten in de transcripts draaien beide
+  workers op `claude-opus-5-5` met effort `medium` (definitie `~/.claude/agents/worker.md`).
