@@ -1,42 +1,54 @@
-// Uren per dag bij een werkdagknop in het kalendervenster (review PR #352, punt 1).
+// Uren per dag bij een werkdagwissel in het kalendervenster (review PR #352 punt 1, review #354).
 //
-// XER "Late ploeg": blokken 14:00–24:00 op ma–vr (10 klokuren) met `day_hr_cnt` 8. `hoursPerDay` is de
-// omrekening tussen dagen en uren en mag afwijken van de blokken. Vóór de fix zette de knop *Za* hem stil op
-// 10 (de modale dagsom van de blokken). Nu blijft een afwijkende waarde staan; alleen een waarde die gelijk
-// was aan de blokken volgt ze. Corpusloze kern: `tests/planning/check-urenperdag-dagwissel.ts`.
+// `hoursPerDay` is de omrekening tussen dagen en uren (P6 `day_hr_cnt`) en mag afwijken van de blokken:
+// XER "Late ploeg" 14:00–24:00 op ma–vr (10 klokuren) met `day_hr_cnt` 8. Een afwijkende waarde blijft
+// staan; alleen een waarde die bij het openen gelijk was aan de blokken volgt ze. Dat geldt voor de hele
+// venstersessie samen: de klikvolgorde telt niet, en het blok Werktijden volgt dezelfde regel als de
+// dagknoppen. Corpusloze kern: `tests/planning/check-urenperdag-dagwissel.ts` (§1–§4, §6).
 //
 // De .xer gaat via de ribbonknop Openen en de bestandskiezer; daarna alleen echte klikken. `window.__OPS__`
 // wordt uitsluitend gebruikt om de uitkomst te LEZEN (patroon `xer-wbs-tree.spec.ts`).
-import type { Page } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
 import { expect, test } from './fixtures/ops';
 
-const day = (n: number, band?: string) => (band ? `(0||${n}()((0||0(${band})())))` : `(0||${n}()())`);
+type Clock = readonly [string, string];
+type Days = Partial<Record<number, Clock>>;
+const calendarData = (days: Days) => {
+  const day = (n: number) => {
+    const band = days[n];
+    return band ? `(0||${n}()((0||0(s|${band[0]}|f|${band[1]})())))` : `(0||${n}()())`;
+  };
+  return `(0||CalendarData()((0||DaysOfWeek()(${[1, 2, 3, 4, 5, 6, 7].map(day).join('')}))(0||Exceptions()())))`;
+};
+/** XER met kalender C1 (de projectkalender) en één urentaak van 40 u. `days`: per P6-dag (1 = zondag …
+ *  7 = zaterdag) het blok. `extra`: een tweede kalender C2 in de bibliotheek. */
+function xer(name: string, days: Days, dayHrCnt: number, extra?: { name: string; days: Days }): string {
+  return [
+    'ERMHDR\t8.4\t2026-07-18\t\t\t\t\t\tEUR',
+    '%T\tCALENDAR', '%F\tclndr_id\tclndr_name\tclndr_type\tday_hr_cnt\tweek_hr_cnt\tclndr_data',
+    `%R\tC1\t${name}\tCA_Base\t${dayHrCnt}\t${dayHrCnt * 5}\t${calendarData(days)}`,
+    ...(extra ? [`%R\tC2\t${extra.name}\tCA_Base\t8\t40\t${calendarData(extra.days)}`] : []),
+    '%T\tPROJECT', '%F\tproj_id\tproj_short_name\tclndr_id\tlast_recalc_date\tplan_start_date',
+    '%R\tP1\tUrenPerDag\tC1\t2026-06-01\t2026-06-01',
+    '%T\tPROJWBS', '%F\twbs_id\tproj_id\tparent_wbs_id\tseq_num\twbs_short_name\twbs_name',
+    '%R\t1\tP1\t0\t1\tUPD\tUren per dag',
+    '%T\tTASK',
+    '%F\ttask_id\tproj_id\twbs_id\tclndr_id\ttask_code\ttask_name\ttask_type\tstatus_code\ttarget_drtn_hr_cnt\tremain_drtn_hr_cnt\ttarget_start_date\ttarget_end_date',
+    '%R\tA1\tP1\t1\tC1\tA-1\tUrentaak\tTT_Task\tTK_NotStart\t40\t40\t2026-06-01 08:00\t2026-06-05 18:00',
+    '%E',
+  ].join('\n');
+}
 // P6 telt de dagen vanaf zondag (1); 2..6 = ma..vr. Een blok tot middernacht eindigt op 00:00.
-const LATE_PLOEG = `(0||CalendarData()((0||DaysOfWeek()(${[1, 2, 3, 4, 5, 6, 7]
-  .map((n) => day(n, n >= 2 && n <= 6 ? 's|14:00|f|00:00' : undefined)).join('')}))(0||Exceptions()())))`;
-
-const XER = [
-  'ERMHDR\t8.4\t2026-07-18\t\t\t\t\t\tEUR',
-  '%T\tCALENDAR', '%F\tclndr_id\tclndr_name\tclndr_type\tday_hr_cnt\tweek_hr_cnt\tclndr_data',
-  `%R\tC1\tLate ploeg\tCA_Base\t8\t40\t${LATE_PLOEG}`,
-  '%T\tPROJECT', '%F\tproj_id\tproj_short_name\tclndr_id\tlast_recalc_date\tplan_start_date',
-  '%R\tP1\tLatePloeg\tC1\t2026-06-01\t2026-06-01',
-  '%T\tPROJWBS', '%F\twbs_id\tproj_id\tparent_wbs_id\tseq_num\twbs_short_name\twbs_name',
-  '%R\t1\tP1\t0\t1\tLP\tLate ploeg',
-  '%T\tTASK',
-  '%F\ttask_id\tproj_id\twbs_id\tclndr_id\ttask_code\ttask_name\ttask_type\tstatus_code\ttarget_drtn_hr_cnt\tremain_drtn_hr_cnt\ttarget_start_date\ttarget_end_date',
-  '%R\tA1\tP1\t1\tC1\tA-1\tUrentaak\tTT_Task\tTK_NotStart\t40\t40\t2026-06-01 14:00\t2026-06-05 00:00',
-  '%E',
-].join('\n');
-
+const ON_MA_VR = (band: Clock) => ({ 2: band, 3: band, 4: band, 5: band, 6: band });
+const LATE_PLOEG = xer('Late ploeg', ON_MA_VR(['14:00', '00:00']), 8);
 const LATE = [{ start: 840, end: 1440 }];
 
-async function openXer(page: Page): Promise<void> {
+async function openXer(page: Page, text: string): Promise<void> {
   const openButton = page.locator('button.ribbon-btn').filter({ hasText: /^(Open|Openen)$/ });
   await expect(openButton).toHaveCount(1);
   const chooser = page.waitForEvent('filechooser');
   await openButton.click();
-  await (await chooser).setFiles({ name: 'late-ploeg.xer', mimeType: 'application/octet-stream', buffer: Buffer.from(XER) });
+  await (await chooser).setFiles({ name: 'uren-per-dag.xer', mimeType: 'application/octet-stream', buffer: Buffer.from(text) });
 }
 
 async function calendarState(page: Page) {
@@ -54,26 +66,35 @@ async function calendarState(page: Page) {
   });
 }
 
-test('kalendervenster: Za aan bij Late ploeg (14–24, 8 u/dag) houdt de uren per dag op 8', async ({ page, ops: _ops }) => {
-  await openXer(page);
-  await expect.poll(() => calendarState(page)).toEqual({
-    name: 'Late ploeg', workDays: [1, 2, 3, 4, 5], hoursPerDay: 8, sat: [], taskMinutes: 2400, taskDays: 5,
-  });
-
+/** Planning ▸ Kalender met echte klikken; het venster toont de projectkalender. */
+async function openCalendarDialog(page: Page): Promise<Locator> {
   await page.locator('.ribbon-tab').filter({ hasText: /^Planning$/ }).click();
   await page.locator('[data-ops-ribbon-item="calendar"]').first().click();
   const dialog = page.locator('[data-ops-calendar-dialog]');
   await expect(dialog).toBeVisible();
-  const netHours = dialog.locator('[data-ops-simple-break-net-hours]');
-  await expect(netHours).toHaveText('8.00 h');
+  return dialog;
+}
+const dayButton = (dialog: Locator, label: string) => dialog.getByRole('button', { name: label, exact: true });
+async function clickDays(dialog: Locator, labels: readonly string[]): Promise<void> {
+  for (const label of labels) await dayButton(dialog, label).click();
+}
+const netHours = (dialog: Locator) => dialog.locator('[data-ops-simple-break-net-hours]');
 
-  const sat = dialog.getByRole('button', { name: 'Sat', exact: true });
+test('kalendervenster: Za aan bij Late ploeg (14–24, 8 u/dag) houdt de uren per dag op 8', async ({ page, ops: _ops }) => {
+  await openXer(page, LATE_PLOEG);
+  await expect.poll(() => calendarState(page)).toEqual({
+    name: 'Late ploeg', workDays: [1, 2, 3, 4, 5], hoursPerDay: 8, sat: [], taskMinutes: 2400, taskDays: 5,
+  });
+
+  const dialog = await openCalendarDialog(page);
+  await expect(netHours(dialog)).toHaveText('8.00 h');
+  const sat = dayButton(dialog, 'Sat');
   await expect(sat).toHaveCount(1);
   await sat.click();
   await expect(sat).toHaveClass(/bg-accent/);
   // Zaterdag krijgt de blokken van de eerste werkdag (14–24, 10 klokuren); de uren per dag blijven 8.
   await expect(dialog.locator('[data-ops-worktime-day="6"]')).toContainText('10.00h');
-  await expect(netHours).toHaveText('8.00 h');
+  await expect(netHours(dialog)).toHaveText('8.00 h');
 
   await dialog.locator('[data-ops-cal-apply]').click();
   await expect(dialog).toBeHidden();
@@ -81,3 +102,113 @@ test('kalendervenster: Za aan bij Late ploeg (14–24, 8 u/dag) houdt de uren pe
     name: 'Late ploeg', workDays: [1, 2, 3, 4, 5, 6], hoursPerDay: 8, sat: LATE, taskMinutes: 2400, taskDays: 5,
   });
 });
+
+test('kalendervenster: ma t/m vr uit en dan Za aan geeft za de werkdag van het openen, zonder verzonnen pauze',
+  async ({ page, ops: _ops }) => {
+    // XER ma–vr 08:00–18:00 (10 klokuren) met day_hr_cnt 8. Zonder enig blok in de tussenstand zaaide het
+    // venster za met 8 netto uren: 08–12 + 14–18. Nu krijgt za 08–18, de werkdag van het openen.
+    await openXer(page, xer('Dagploeg 10 u', ON_MA_VR(['08:00', '18:00']), 8));
+    await expect.poll(() => calendarState(page).then((s) => [s.workDays, s.hoursPerDay])).toEqual([[1, 2, 3, 4, 5], 8]);
+
+    const dialog = await openCalendarDialog(page);
+    await clickDays(dialog, ['Mon', 'Tue', 'Wed', 'Thu', 'Fri']);
+    await expect(netHours(dialog)).toHaveText('8.00 h');
+    await clickDays(dialog, ['Sat']);
+    await expect(dialog.locator('[data-ops-worktime-day="6"]')).toContainText('10.00h');
+    await expect(netHours(dialog)).toHaveText('8.00 h');
+
+    await dialog.locator('[data-ops-cal-apply]').click();
+    await expect(dialog).toBeHidden();
+    await expect.poll(() => calendarState(page).then((s) => [s.workDays, s.sat, s.hoursPerDay]))
+      .toEqual([[6], [{ start: 480, end: 1080 }], 8]);
+  });
+
+test('kalendervenster: twee klikvolgordes naar dezelfde werkdagen geven dezelfde uren per dag',
+  async ({ page, ops: _ops }) => {
+    // XER ma–do 07:00–16:00 (9 u), vr 07:00–15:00 (8 u), day_hr_cnt 8: modaal 9, dus 8 is een afwijking.
+    // Per klik vergeleken gaf "ma t/m do uit, ma weer aan" 9 en "di, wo, do uit" 8. Nu geven beide 8.
+    const nineToFour = ['07:00', '16:00'] as const;
+    await openXer(page, xer('Negen en acht', { 2: nineToFour, 3: nineToFour, 4: nineToFour, 5: nineToFour, 6: ['07:00', '15:00'] }, 8));
+    await expect.poll(() => calendarState(page).then((s) => [s.workDays, s.hoursPerDay])).toEqual([[1, 2, 3, 4, 5], 8]);
+
+    let dialog = await openCalendarDialog(page);
+    await clickDays(dialog, ['Tue', 'Wed', 'Thu']);
+    await expect(netHours(dialog)).toHaveText('8.00 h');
+    await dialog.locator('[data-ops-cal-cancel]').click();
+    await expect(dialog).toBeHidden();
+
+    dialog = await openCalendarDialog(page);
+    await clickDays(dialog, ['Mon', 'Tue', 'Wed', 'Thu', 'Mon']);
+    await expect(netHours(dialog)).toHaveText('8.00 h');
+    await dialog.locator('[data-ops-cal-apply]').click();
+    await expect(dialog).toBeHidden();
+    await expect.poll(() => calendarState(page).then((s) => [s.workDays, s.hoursPerDay])).toEqual([[1, 5], 8]);
+  });
+
+test('kalendervenster: + blok bij Za in Werktijden houdt de uren per dag van Late ploeg op 8',
+  async ({ page, ops: _ops }) => {
+    await openXer(page, LATE_PLOEG);
+    await expect.poll(() => calendarState(page).then((s) => s.hoursPerDay)).toBe(8);
+
+    const dialog = await openCalendarDialog(page);
+    const satRow = dialog.locator('[data-ops-worktime-day="6"]');
+    await satRow.getByRole('button', { name: 'Add band', exact: true }).click();
+    // Het nieuwe blok is 08:00–16:00; zaterdag wordt daarmee een werkdag.
+    await expect(satRow).toContainText('8.00h');
+    await expect(dayButton(dialog, 'Sat')).toHaveClass(/bg-accent/);
+    await expect(netHours(dialog)).toHaveText('8.00 h');
+
+    await dialog.locator('[data-ops-cal-apply]').click();
+    await expect(dialog).toBeHidden();
+    await expect.poll(() => calendarState(page).then((s) => [s.workDays, s.sat, s.hoursPerDay]))
+      .toEqual([[1, 2, 3, 4, 5, 6], [{ start: 480, end: 960 }], 8]);
+  });
+
+test('kalendervenster: na een preset volgen de uren per dag de blokken weer', async ({ page, ops: _ops }) => {
+  // Late ploeg (8 u/dag) week af. De preset 2 ploegen zet 06–22 met 16 u/dag: dat is de nieuwe beginstand, en
+  // die volgt de blokken. Ma t/m vr uit en + blok op za (08–16) geeft dan 8 u/dag. Zonder nieuwe beginstand
+  // bleef de afwijking van Late ploeg gelden en bleef het 16.
+  await openXer(page, LATE_PLOEG);
+  await expect.poll(() => calendarState(page).then((s) => s.hoursPerDay)).toBe(8);
+
+  const dialog = await openCalendarDialog(page);
+  await dialog.getByRole('button', { name: '2 shifts', exact: true }).click();
+  await expect(netHours(dialog)).toHaveText('16.00 h');
+  await clickDays(dialog, ['Mon', 'Tue', 'Wed', 'Thu', 'Fri']);
+  await expect(netHours(dialog)).toHaveText('16.00 h');
+  await dialog.locator('[data-ops-worktime-day="6"]').getByRole('button', { name: 'Add band', exact: true }).click();
+  await expect(netHours(dialog)).toHaveText('8.00 h');
+
+  await dialog.locator('[data-ops-cal-apply]').click();
+  await expect(dialog).toBeHidden();
+  await expect.poll(() => calendarState(page).then((s) => [s.workDays, s.sat, s.hoursPerDay]))
+    .toEqual([[6], [{ start: 480, end: 960 }], 8]);
+});
+
+test('kalendervenster: de beginstand blijft per kalender bewaard als je in het venster van kalender wisselt',
+  async ({ page, ops: _ops }) => {
+    // Het formulier mount per kalender opnieuw. Ma t/m do uit, even naar een andere kalender en terug, dan ma
+    // aan: ma krijgt zijn eigen 9 u van het openen terug en de 8 u/dag (afwijkend) blijft. Zonder bewaarde
+    // beginstand was de tussenstand (alleen vr 8 u) de nieuwe beginstand: ma kreeg 8 u, een kopie van vr.
+    const nineToFour = ['07:00', '16:00'] as const;
+    await openXer(page, xer('Negen en acht', { 2: nineToFour, 3: nineToFour, 4: nineToFour, 5: nineToFour, 6: ['07:00', '15:00'] }, 8,
+      { name: 'Andere', days: ON_MA_VR(['08:00', '16:00']) }));
+    await expect.poll(() => calendarState(page).then((s) => [s.name, s.workDays, s.hoursPerDay])).toEqual(['Negen en acht', [1, 2, 3, 4, 5], 8]);
+    const ids = await page.evaluate(() => Object.fromEntries(
+      window.__OPS__!.store.getState().calendars.map((c) => [c.name, c.id])));
+
+    const dialog = await openCalendarDialog(page);
+    await clickDays(dialog, ['Mon', 'Tue', 'Wed', 'Thu']);
+    await dialog.locator(`[data-ops-calendar-row="${ids['Andere']}"]`).click();
+    await dialog.locator(`[data-ops-calendar-row="${ids['Negen en acht']}"]`).click();
+    await clickDays(dialog, ['Mon']);
+    await expect(dialog.locator('[data-ops-worktime-day="1"]')).toContainText('9.00h');
+    await expect(netHours(dialog)).toHaveText('8.00 h');
+
+    await dialog.locator('[data-ops-cal-apply]').click();
+    await expect(dialog).toBeHidden();
+    await expect.poll(() => page.evaluate(() => {
+      const c = window.__OPS__!.store.getState().calendar;
+      return [c.workDays, c.workTime?.byWeekday[1], c.hoursPerDay];
+    })).toEqual([[1, 5], [{ start: 420, end: 960 }], 8]);
+  });

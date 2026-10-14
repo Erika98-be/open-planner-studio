@@ -709,9 +709,9 @@ function calendarFieldPatch(item: CalendarItem, existing: CalendarBase): Partial
   // daarna de andere uit. Een nieuwe werkdag krijgt een kopie van de eerste werkdag met blokken (volgorde
   // zondag, maandag … zaterdag; `firstBlockedDay`); is er geen, dan de blokken van de eigen enkelvoudige
   // werkdag (begin, einde, pauze), en pas daarna 07–12 + 13–16. Een vervallen werkdag verliest zijn blokken.
-  // `hoursPerDay` volgt de blokken alleen als hij vóór de wissel gelijk was aan hun modale dagsom; een bewuste
-  // afwijking (P6 `day_hr_cnt`, bv. Late ploeg 14–24 met 8) blijft staan (`hoursPerDayAfterDayChange` in
-  // `subdayIo.ts`). Een `hoursPerDay` in het item zelf wint altijd. Zonder dit bleef een werkdag
+  // `hoursPerDay` volgt de nieuwe blokken alleen als hij gelijk was aan de modale dagsom van de blokken van
+  // vóór de call; een bewuste afwijking (P6 `day_hr_cnt`, bv. Late ploeg 14–24 met 8) blijft staan
+  // (`hoursPerDayForBlocks` in `subdayIo.ts`). Een `hoursPerDay` in het item zelf wint altijd. Zonder dit bleef een werkdag
   // zonder blokken achter, en na een IFC-rondgang kreeg die dag stil de blokken van maandag.
   // Gelijk aan het venster geldt alleen voor een geldige kalender. Startpunt zijn hier de werkdagen volgens
   // de BLOKKEN, niet de opgeslagen `workDays`: op een kalender die al tegenstrijdig was, ruimt MCP dus
@@ -1061,8 +1061,8 @@ const updateCalendar: BatchStepTool = {
     'day with bands, searched in the order Sunday, Monday … Saturday; if no day has bands, it gets the ' +
     "calendar's own single working day (`workStartHour`/`workEndHour` and break), and only if that gives " +
     'nothing the standard day 07:00–12:00 + 13:00–16:00. A day that stops being a working day loses its ' +
-    'bands. `hoursPerDay` follows the bands only if it was equal to their modal day sum before the change; ' +
-    'a deliberate deviation (P6 `day_hr_cnt`, e.g. bands 14:00–24:00 with 8 hours per day) stays. A ' +
+    'bands. `hoursPerDay` follows the new bands only if it was equal to the modal day sum of the bands ' +
+    'before the change; a deliberate deviation (P6 `day_hr_cnt`, e.g. bands 14:00–24:00 with 8 hours per day) stays. A ' +
     '`hoursPerDay` you pass in the same item always wins. The working days are read from the ' +
     'bands, so a calendar where they disagreed is repaired. KEEPING IN THE FILE (IFC): a newly created ' +
     'calendar to which NO task and no resource is attached does NOT survive save+reload — so attach tasks to ' +
@@ -1096,8 +1096,8 @@ const updateCalendar: BatchStepTool = {
               description: 'Working days as ISO weekday numbers (1 = Monday … 7 = Sunday). On an HOUR calendar ' +
                 'without `workTime` in the same item, the bands follow as in the calendar dialog: a new day ' +
                 'copies the first day with bands (order Sunday, Monday … Saturday), a dropped day loses its ' +
-                'bands. `hoursPerDay` follows the new bands only if it was equal to their modal day sum; a ' +
-                'deliberate deviation stays. See the tool description for the fallbacks.',
+                'bands. `hoursPerDay` follows the new bands only if it was equal to the modal day sum of the ' +
+                'bands before the change; a deliberate deviation stays. See the tool description for the fallbacks.',
             },
             workStartHour: { type: 'number', description: 'Start of the working day in HOURS (0–24), e.g. 7.' },
             workEndHour: { type: 'number', description: 'End of the working day in HOURS (0–24), e.g. 16.' },

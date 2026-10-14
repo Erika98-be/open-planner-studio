@@ -238,11 +238,13 @@ vroeger (de klokuren). v2026.9.0 leest de blokken van een nieuw bestand al niet 
 `HoursPerDay` in plaats van 8. Toetsen: `check-ifc-urenperdag-blokken.ts`, `check-ifc-urenperdag-corpus.ts`
 (met `OPS_XER_CORPUS`) en §10 van `check-ifc-calendar-identity.ts`.
 
-Een werkdagwissel (de dagknoppen en *Ma–vr* in het kalendervenster, MCP met alleen `workDays`) laat een
-afwijkende `hoursPerDay` staan. Alleen een waarde die vóór de wissel gelijk was aan de modale dagsom volgt
-de nieuwe blokken (`hoursPerDayAfterDayChange` in `src/services/subdayIo.ts`). Zonder die regel werd Late
-ploeg na *Za* aan stil 10, en schreef de writer dan geen `HoursPerDay` meer. Toets:
-`check-urenperdag-dagwissel.ts`.
+Een werkdagwissel (de dagknoppen en *Ma–vr* in het kalendervenster, *Werktijden* in het venster, MCP met
+alleen `workDays`) laat een afwijkende `hoursPerDay` staan. Alleen een waarde die gelijk was aan de modale
+dagsom van de blokken vóór de wijziging volgt de nieuwe blokken (`hoursPerDayFollowsBlocks` en
+`hoursPerDayForBlocks` in `src/services/subdayIo.ts`; de vergelijking is strikt, net als de writer). Het
+venster bepaalt dat één keer per sessie, op de stand bij het openen (na een preset opnieuw). Alle wissels in
+één sessie tellen dus samen als één wissel, net als één MCP-call. Zonder die regel werd Late ploeg na *Za*
+aan stil 10, en schreef de writer dan geen `HoursPerDay` meer. Toets: `check-urenperdag-dagwissel.ts`.
 
 ## Wat dit niet dekt
 

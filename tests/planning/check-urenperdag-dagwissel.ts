@@ -8,9 +8,11 @@ import './domStub';
 // datums bleven gelijk (de motor rekent met de blokken), maar de P6-export (`HoursPerDay`) en de dagwaarde
 // van urentaken na opslaan en heropenen volgden 10.
 //
-// Besluit orkestrator: een afwijkende `hoursPerDay` is projectdata en blijft staan. Een werkdagwissel
-// rekent hem alleen opnieuw uit als hij vóór de wissel gelijk was aan de modale dagsom. Eén regel voor
-// venster en MCP (`hoursPerDayAfterDayChange` in `src/services/subdayIo.ts`).
+// Besluit orkestrator: een afwijkende `hoursPerDay` is projectdata en blijft staan. Hij volgt de blokken
+// alleen als hij bij de beginstand gelijk was aan de modale dagsom. De beginstand is de kalender zoals het
+// venster hem opende (of na de laatste preset); één MCP-call is één sessie. Alle wissels in een sessie samen
+// tellen als één wissel, ook die in het blok *Werktijden*. Eén regel voor venster en MCP
+// (`hoursPerDayFollowsBlocks`/`hoursPerDayForBlocks` in `src/services/subdayIo.ts`).
 //
 //  §1 `workDayTogglePatch` (één werkdagknop): afwijkend blijft staan, gelijk volgt de blokken, ook als de
 //     modale dagsom verandert; een week zonder blok volgt de nieuwe blokken.
@@ -20,10 +22,16 @@ import './domStub';
 //     en heropenen: uren per dag, dagwaarde, getoonde duur, datums en de P6-export gelijk.
 //  §5 (alleen met `OPS_XER_CORPUS`) hetzelfde op de echte Roads_Project_TEC.xer (wissel Do: die kalenders
 //     werken al op zaterdag).
+//  §6 de sessieregel (review #354): de klikvolgorde telt niet, een lege tussenweek verzint geen pauze, het
+//     blok *Werktijden* volgt dezelfde regel, en de vergelijking is strikt.
+//  §7 XER zonder `day_hr_cnt`: het gemiddelde in minuten, zonder kommaruis (7,6 u is 7.6, geen afwijking).
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { deriveHoursPerDay, workDayTogglePatch, workDaysSetPatch } from '@/services/subdayIo';
+import {
+  deriveHoursPerDay, hoursPerDayFollowsBlocks, hoursPerDayForBlocks, workDayTogglePatch, workDaysSetPatch,
+  type WorkTimeSessionStart,
+} from '@/services/subdayIo';
 import { writeIFC } from '@/services/ifc/ifcWriter';
 import { buildWriteIFCInput } from '@/state/ifcSaveInput';
 import { parseOpenedFile } from '@/services/formatRegistry';
@@ -50,6 +58,9 @@ const LATE: Band[] = [{ start: 840, end: 1440 }]; // 14:00–24:00, 10 klokuren
 const H8: Band[] = [{ start: 420, end: 900 }]; // 07:00–15:00
 const H10: Band[] = [{ start: 420, end: 1020 }]; // 07:00–17:00
 const H6: Band[] = [{ start: 420, end: 780 }]; // 07:00–13:00
+const H9: Band[] = [{ start: 420, end: 960 }]; // 07:00–16:00
+const H0818: Band[] = [{ start: 480, end: 1080 }]; // 08:00–18:00
+const H76: Band[] = [{ start: 420, end: 876 }]; // 07:00–14:36, 7,6 uur
 const MA_VR: readonly Day[] = [1, 2, 3, 4, 5];
 
 function hourCal(name: string, byDay: Partial<Record<Day, Band[]>>, hoursPerDay: number): WorkCalendar {
@@ -64,13 +75,13 @@ const view = (p: Partial<WorkCalendar>) => ({ workDays: p.workDays, hoursPerDay:
 // ════════════════════════════════════════════════════════════════════════════════════════════════
 {
   const late = hourCal('Late ploeg', on(MA_VR, LATE), 8);
-  const za = workDayTogglePatch(late, 6, late.workTime);
+  const za = workDayTogglePatch(late, 6, late);
   same('§1 Late ploeg (8 u/dag), Za aan: werkdagen ma–za, za 14–24, uren per dag blijven 8',
     [za.workDays, za.workTime?.byWeekday[6], za.hoursPerDay], [[1, 2, 3, 4, 5, 6], LATE, 8]);
-  const vr = workDayTogglePatch(late, 5, late.workTime);
+  const vr = workDayTogglePatch(late, 5, late);
   same('§1 Late ploeg (8 u/dag), Vr uit: uren per dag blijven 8', [vr.workDays, vr.workTime?.byWeekday[5], vr.hoursPerDay],
     [[1, 2, 3, 4], [], 8]);
-  const back = workDayTogglePatch({ ...late, ...za }, 6, late.workTime);
+  const back = workDayTogglePatch({ ...late, ...za }, 6, late);
   same('§1 Late ploeg, Za aan en weer uit: alles terug zoals het was', view({ ...late, ...back }), view(late));
 
   // Gelijk aan de blokken: de uren per dag volgen de blokken.
@@ -85,9 +96,10 @@ const view = (p: Partial<WorkCalendar>) => ({ workDays: p.workDays, hoursPerDay:
   same('§1 afwijkend (7,5 ≠ modaal 8), Ma uit ⇒ modaal 10: de uren per dag blijven 7,5',
     workDayTogglePatch(hourCal('Gemengd 7,5', gemengd, 7.5), 1).hoursPerDay, 7.5);
   // Afwijkend en de wissel maakt de blokken gelijk aan de uren per dag: hij bleef staan, dus 10 blijft 10.
-  same('§1 afwijkend (10 ≠ modaal 8), Do aan met 10 u: blijft 10',
-    workDayTogglePatch(hourCal('Afwijkend 10', { ...on([1, 2, 3], H8), ...on([5], H10) }, 10), 4,
-      week({ 4: H10 })).hoursPerDay, 10);
+  // Geopend als ma–wo 8 u, do/vr 10 u met 10 u/dag (modaal 8); do ging uit en gaat nu weer aan (10 u).
+  const geopend = hourCal('Afwijkend 10', { ...on([1, 2, 3], H8), ...on([4, 5], H10) }, 10);
+  same('§1 afwijkend (10 ≠ modaal 8), Do aan met zijn eigen 10 u: blijft 10',
+    workDayTogglePatch(hourCal('Afwijkend 10', { ...on([1, 2, 3], H8), ...on([5], H10) }, 10), 4, geopend).hoursPerDay, 10);
 
   // Een week zonder enig blok heeft geen dagsom: de nieuwe blokken bepalen de uren per dag. Netto 10 u in een
   // spanne van 9 u levert geen blokken uit de enkelvoudige werkdag, dus de standaardwerkdag (8 u).
@@ -119,14 +131,17 @@ const view = (p: Partial<WorkCalendar>) => ({ workDays: p.workDays, hoursPerDay:
   same('§2 afwijkend (7,5), workDays [2..5]: blijft 7,5',
     workDaysSetPatch(hourCal('Gemengd 7,5', gemengd, 7.5), [2, 3, 4, 5]).hoursPerDay, 7.5);
 
-  // De hele zet is één wissel. Uren per dag 8 bij alleen ma 10 u (afwijkend). Naar di–za met de blokken van het
-  // openen (di/wo 8 u, do/vr/za 6 u). Per dag doorgerekend raakt de tussenstand ma 10 + di/wo 8 de 8 (modaal
-  // 8), en volgde de rest naar 6. Als één wissel: de 8 was afwijkend, dus hij blijft 8.
+  // De hele zet is één wissel. Geopend als ma 10 u, di/wo 8 u, do/vr/za 6 u met 8 u/dag (modaal 6: afwijkend);
+  // daarna stonden alleen ma aan. Naar di–za met hun eigen blokken. Per dag doorgerekend raakte de tussenstand
+  // ma 10 + di/wo 8 de 8 (modaal 8) en volgde de rest naar 6. Als één wissel: de 8 week af, dus hij blijft 8.
   const alleenMa = hourCal('Alleen ma', { 1: H10 }, 8);
-  const opened = week({ 2: H8, 3: H8, 4: H6, 5: H6, 6: H6 });
+  const opened = { workTime: week({ 1: H10, 2: H8, 3: H8, 4: H6, 5: H6, 6: H6 }), hoursPerDay: 8 };
   const zet = workDaysSetPatch(alleenMa, [2, 3, 4, 5, 6], opened);
-  same('§2 de hele zet is één wissel: afwijkend (8 bij ma 10 u), naar di–za (8, 8, 6, 6, 6): blijft 8',
+  same('§2 de hele zet is één wissel: afwijkend (8 bij modaal 6), naar di–za (8, 8, 6, 6, 6): blijft 8',
     [zet.workDays, zet.workTime?.byWeekday[1], zet.workTime?.byWeekday[4], zet.hoursPerDay], [[2, 3, 4, 5, 6], [], H6, 8]);
+  // Zonder beginstand (MCP) is de kalender zelf de beginstand: alleen ma 10 u met 8 u/dag week af, dus 8.
+  same('§2 zonder beginstand: de kalender vóór de zet telt (ma 10 u, 8 u/dag), naar di–vr: blijft 8',
+    workDaysSetPatch(alleenMa, [2, 3, 4, 5]).hoursPerDay, 8);
 
   same('§2 dagkalender: alleen workDays', workDaysSetPatch({ ...late, workTime: undefined }, [1, 2, 3, 4, 5, 6]),
     { workDays: [1, 2, 3, 4, 5, 6] });
@@ -145,7 +160,7 @@ const view = (p: Partial<WorkCalendar>) => ({ workDays: p.workDays, hoursPerDay:
     for (const day of [1, 4, 6, 7]) {
       const days = cal.workDays.includes(day) ? cal.workDays.filter((d) => d !== day) : [...cal.workDays, day];
       same(`§3 ${cal.name}, dag ${day} wisselt: werkdagknop = workDaysSetPatch`,
-        view(workDaysSetPatch(cal, days, cal.workTime)), view(workDayTogglePatch(cal, day, cal.workTime)));
+        view(workDaysSetPatch(cal, days, cal)), view(workDayTogglePatch(cal, day, cal)));
     }
   }
 }
@@ -175,7 +190,7 @@ const payloadOf = (ctx: Ctx): DocumentPayload => {
  *  bibliotheek vastleggen (`commitCalendarLibrary`) en doorrekenen — zoals `CalendarDialog.confirm`. */
 function toggleInDialog(ctx: Ctx, names: ReadonlySet<string>, day: number): void {
   const s = ctx.store.getState();
-  const next = s.calendars.map((c) => (names.has(c.name) ? { ...c, ...workDayTogglePatch(c, day, c.workTime) } : c));
+  const next = s.calendars.map((c) => (names.has(c.name) ? { ...c, ...workDayTogglePatch(c, day, c) } : c));
   if (!s.commitCalendarLibrary(next, s.project.calendarId)) failures.push('§4/§5 commitCalendarLibrary legde niets vast');
   s.runCPM();
 }
@@ -290,6 +305,106 @@ if (root && !existsSync(root)) {
   }
 }
 console.log(`-- urenperdag-dagwissel: corpus ${corpus}`);
+
+// ════════════════════════════════════════════════════════════════════════════════════════════════
+// §6 De sessieregel (review #354): beginstand, klikvolgorde, lege tussenweek, blok Werktijden, strikt
+// ════════════════════════════════════════════════════════════════════════════════════════════════
+/** Het venster: elke klik is één `workDayTogglePatch` op de draft van dat moment, met de beginstand van de
+ *  sessie (`CalendarForm.toggleWorkDay`). */
+function clicks(cal: WorkCalendar, days: readonly number[], start: WorkTimeSessionStart = cal): WorkCalendar {
+  let cur = cal;
+  for (const d of days) cur = { ...cur, ...workDayTogglePatch(cur, d, start) };
+  return cur;
+}
+{
+  // a. De klikvolgorde telt niet. P6-kalender ma–do 9 u, vr 8 u, day_hr_cnt 8 (modaal 9: afwijkend). Per klik
+  //    vergeleken gaf "ma t/m do uit, ma weer aan" 9 (de tussenstand alleen vr 8 u leek gelijk), en "di, wo,
+  //    do uit" 8. Met de beginstand van de sessie geven beide 8.
+  const p6 = hourCal('P6 9/8', { ...on([1, 2, 3, 4], H9), 5: H8 }, 8);
+  const a = clicks(p6, [2, 3, 4]);
+  const b = clicks(p6, [1, 2, 3, 4, 1]);
+  same('§6a klikvolgorde: "di, wo, do uit" en "ma t/m do uit, ma weer aan" geven dezelfde kalender, 8 u/dag',
+    [view(b), b.hoursPerDay], [view(a), 8]);
+  same('§6a ma krijgt zijn eigen 9 u terug', b.workTime?.byWeekday[1], H9);
+  const late = hourCal('Late ploeg', on(MA_VR, LATE), 8);
+  same('§6a Late ploeg: ma t/m vr uit en weer aan geeft de beginstand terug (8 u/dag)',
+    view(clicks(late, [1, 2, 3, 4, 5, 1, 2, 3, 4, 5])), view(late));
+  const volgt = hourCal('Volgt 9/8', { ...on([1, 2, 3, 4], H9), 5: H8 }, 9);
+  same('§6a volgt (9 = modaal 9): beide volgordes naar ma + vr geven 9',
+    [clicks(volgt, [2, 3, 4]).hoursPerDay, clicks(volgt, [1, 2, 3, 4, 1]).hoursPerDay], [9, 9]);
+
+  // b. Een lege tussenweek. Volgt (ma–vr 07–15, 8 u/dag): alles uit ⇒ geen dagsom, de uren per dag blijven 8.
+  const gewoon = hourCal('Gewoon', on(MA_VR, H8), 8);
+  const leeg = clicks(gewoon, [1, 2, 3, 4, 5]);
+  same('§6b volgt, alles uit: geen werkdag, de uren per dag blijven 8', [leeg.workDays, leeg.hoursPerDay], [[], 8]);
+  const zaG = clicks(leeg, [6], gewoon);
+  same('§6b volgt, daarna Za aan: za krijgt 07–15 van de beginstand, 8 u/dag',
+    [zaG.workDays, zaG.workTime?.byWeekday[6], zaG.hoursPerDay], [[6], H8, 8]);
+  same('§6b volgt, alles uit en dan Ma–vr: de beginstand terug',
+    view({ ...leeg, ...workDaysSetPatch(leeg, MA_VR, gewoon) }), view(gewoon));
+  // Afwijkend (XER ma–vr 08–18 met day_hr_cnt 8; enkelvoudige werkdag 8–18): alles uit, dan Za aan. In de vorige
+  // stand van #354 zaaide de enkelvoudige werkdag met 8 u en verzon hij een pauze (08–12 + 14–18). Op main a40561fa9
+  // werd het 08–18 met 10 u/dag. Nu: 08–18, de werkdag van het openen, en 8 u/dag.
+  const p6Dag = { ...hourCal('P6 08–18', on(MA_VR, H0818), 8), workStartHour: 8, workEndHour: 18 };
+  const zaP = clicks(p6Dag, [1, 2, 3, 4, 5, 6]);
+  same('§6b afwijkend (08–18, 8 u/dag), ma t/m vr uit en Za aan: za 08–18, 8 u/dag',
+    [zaP.workDays, zaP.workTime?.byWeekday[6], zaP.hoursPerDay], [[6], H0818, 8]);
+
+  // c. Het blok Werktijden (`CalendarForm.applyBands`) volgt dezelfde regel als de dagknoppen.
+  const lateZaBlok = week({ ...on(MA_VR, LATE), 6: [{ start: 480, end: 960 }] });
+  same('§6c afwijkend (Late ploeg 8 u/dag), + blok op za (08–16): blijft 8', hoursPerDayForBlocks(late, late, lateZaBlok), 8);
+  const lateGelijk = hourCal('Late ploeg 10', on(MA_VR, LATE), 10);
+  same('§6c volgt (Late ploeg 10 u/dag), + blok op za: modaal 10', hoursPerDayForBlocks(lateGelijk, lateGelijk, lateZaBlok), 10);
+  const gemengd8 = hourCal('Gemengd 8', { ...on([1, 2, 3], H8), ...on([4, 5], H10) }, 8);
+  same('§6c volgt (8 = modaal 8), ma wordt 10 u: volgt naar 10',
+    hoursPerDayForBlocks(gemengd8, gemengd8, week({ ...on([1, 4, 5], H10), ...on([2, 3], H8) })), 10);
+  // Een dagkalender bij openen heeft geen dagsom van blokken (*Per weekdag instellen…* maakt er in de sessie een
+  // uurkalender van): de uren per dag volgen de blokken. Net zo een week zonder enig blok bij openen.
+  same('§6c dagkalender bij openen, daarna blokken 07–17: volgt naar 10',
+    hoursPerDayForBlocks({ workTime: undefined, hoursPerDay: 8 }, { hoursPerDay: 8 }, week(on(MA_VR, H10))), 10);
+  same('§6c week zonder blok bij openen (10 u/dag), daarna blokken 07–15: volgt naar 8',
+    hoursPerDayForBlocks({ workTime: week({}), hoursPerDay: 10 }, { hoursPerDay: 10 }, week(on(MA_VR, H8))), 8);
+  same('§6c volgt, alle blokken weg: geen dagsom, de uren per dag blijven 8',
+    hoursPerDayForBlocks(gewoon, gewoon, week({})), 8);
+
+  // d. Strikt vergeleken, zoals de IFC-schrijver: 8,005 u/dag bij blokken van 8 u is een afwijking (0,3 minuut).
+  //    Za aan verandert de modale dagsom niet (8); volgen zou 8 geven, blijven staan geeft 8,005.
+  const bijna = hourCal('Bijna 8', on(MA_VR, H8), 8.005);
+  same('§6d strikt: 8,005 u/dag bij blokken van 8 u blijft 8,005 na Za aan', workDayTogglePatch(bijna, 6, bijna).hoursPerDay, 8.005);
+  // En 7,6 u/dag bij blokken van 7:36 (456 minuten) is wél gelijk: 456 / 60 === 7.6.
+  const zesKomma = hourCal('7,6', { ...on([1, 2, 3], H76), ...on([4, 5], H10) }, 7.6);
+  same('§6d 7,6 u/dag bij blokken van 7:36 volgt (gelijk), Ma uit ⇒ modaal 10', [hoursPerDayFollowsBlocks(zesKomma),
+    workDayTogglePatch(zesKomma, 1, zesKomma).hoursPerDay], [true, 10]);
+}
+
+// ════════════════════════════════════════════════════════════════════════════════════════════════
+// §7 XER zonder day_hr_cnt: het gemiddelde in minuten, zonder kommaruis
+// ════════════════════════════════════════════════════════════════════════════════════════════════
+// Ma–za 07:00–14:36 (7,6 u) zonder `day_hr_cnt`: de lezer neemt het gemiddelde. In uren gerekend was dat
+// (6 × 7,6) / 6 = 7.6000000000000005, en dat telde als afwijking van de blokken (modaal 7.6).
+{
+  const dayData = (n: number, band?: string) => (band ? `(0||${n}()((0||0(${band})())))` : `(0||${n}()())`);
+  const data = `(0||CalendarData()((0||DaysOfWeek()(${[1, 2, 3, 4, 5, 6, 7]
+    .map((n) => dayData(n, n >= 2 ? 's|07:00|f|14:36' : undefined)).join('')}))(0||Exceptions()())))`;
+  const xer = [
+    'ERMHDR\t8.4\t2026-07-18\t\t\t\t\t\tEUR',
+    '%T\tCALENDAR', '%F\tclndr_id\tclndr_name\tclndr_type\tday_hr_cnt\tweek_hr_cnt\tclndr_data',
+    `%R\tC1\tZes dagen 7,6\tCA_Base\t\t\t${data}`,
+    '%T\tPROJECT', '%F\tproj_id\tproj_short_name\tclndr_id\tlast_recalc_date\tplan_start_date',
+    '%R\tP1\tZesDagen\tC1\t2026-06-01\t2026-06-01',
+    '%T\tPROJWBS', '%F\twbs_id\tproj_id\tparent_wbs_id\tseq_num\twbs_short_name\twbs_name',
+    '%R\t1\tP1\t0\t1\tZD\tZes dagen',
+    '%T\tTASK',
+    '%F\ttask_id\tproj_id\twbs_id\tclndr_id\ttask_code\ttask_name\ttask_type\tstatus_code\ttarget_drtn_hr_cnt\tremain_drtn_hr_cnt\ttarget_start_date\ttarget_end_date',
+    '%R\tA1\tP1\t1\tC1\tA-1\tTaak\tTT_Task\tTK_NotStart\t38\t38\t2026-06-01 07:00\t2026-06-05 14:36',
+    '%E',
+  ].join('\n');
+  const parsed = await parseOpenedFile({ name: 'zes-dagen.xer', bytes: new TextEncoder().encode(xer) });
+  const cal = payloadOf(quiet(() => openInStore(parsed))).calendar;
+  same('§7 XER zonder day_hr_cnt, ma–za 7,6 u: uurkalender, 7.6 u/dag precies, volgt de blokken',
+    [cal.name, cal.workDays, cal.workTime?.byWeekday[1], cal.hoursPerDay, hoursPerDayFollowsBlocks(cal)],
+    ['Zes dagen 7,6', [1, 2, 3, 4, 5, 6], H76, 7.6, true]);
+}
 
 if (failures.length > 0) {
   for (const f of failures) console.log(`XX  urenperdag-dagwissel: ${f}`);

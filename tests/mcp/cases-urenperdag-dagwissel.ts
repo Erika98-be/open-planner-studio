@@ -2,8 +2,9 @@
 //
 // XER "Late ploeg": blokken 14:00–24:00 (10 klokuren) met `day_hr_cnt` 8. `hoursPerDay` is de omrekening
 // tussen dagen en uren en mag afwijken van de blokken. MCP met alleen `workDays` gaat door `workDaysSetPatch`,
-// dezelfde regel als de dagknoppen in het kalendervenster (`hoursPerDayAfterDayChange` in
-// `src/services/subdayIo.ts`): een afwijkende waarde blijft staan, een waarde gelijk aan de blokken volgt ze.
+// dezelfde regel als de dagknoppen in het kalendervenster (`hoursPerDayForBlocks` in
+// `src/services/subdayIo.ts`): een afwijkende waarde blijft staan, een waarde gelijk aan de modale dagsom
+// van de blokken vóór de call volgt de nieuwe blokken.
 // Vóór de fix werd Late ploeg na `workDays` [1..6] stil 10. Kern zonder MCP:
 // `tests/planning/check-urenperdag-dagwissel.ts`.
 import { appStoreContext, makeMcpContext, useAppStore, test, assert, assertEq, run } from './harness';
@@ -16,7 +17,7 @@ import type { McpToolResult, McpToolOk } from '@/services/mcp/contracts';
 import { writeIFC } from '@/services/ifc/ifcWriter';
 import { readIFC } from '@/services/ifc/ifcReader';
 import { buildWriteIFCInput } from '@/state/ifcSaveInput';
-import { workDayTogglePatch } from '@/services/subdayIo';
+import { workDayTogglePatch, workDaysSetPatch } from '@/services/subdayIo';
 import type { WorkCalendar, WorkTimeBands } from '@/types/calendar';
 
 const S = () => useAppStore.getState();
@@ -65,7 +66,7 @@ const fields = (c: Partial<WorkCalendar>) => ({ workDays: c.workDays, workTime: 
 test('Late ploeg 8 u/dag, alleen workDays [1..6] ⇒ 8, gelijk aan de dagknop Za, ook na IFC', async () => {
   const id = await lateProjectCalendar(8);
   assertEq(calById(id).hoursPerDay, 8, 'testvoorwaarde: 8 u/dag');
-  const venster = workDayTogglePatch(calById(id), 6, calById(id).workTime);
+  const venster = workDayTogglePatch(calById(id), 6, calById(id));
 
   const res = await call('planner_update_calendar', { calendars: [{ id, workDays: [1, 2, 3, 4, 5, 6] }] });
   assertEq(rejections(res), [], 'geen weigering');
@@ -87,10 +88,26 @@ test('Late ploeg 10 u/dag (= de blokken), alleen workDays [1..6] en terug ⇒ 10
   assertEq(calById(id).hoursPerDay, 10, 'na workDays [1..5]: 10');
 });
 
-test('een eigen hoursPerDay in hetzelfde item blijft leidend', async () => {
-  const id = await lateProjectCalendar(8);
-  await call('planner_update_calendar', { calendars: [{ id, workDays: [1, 2, 3, 4, 5, 6], hoursPerDay: 9 }] });
-  assertEq(calById(id).hoursPerDay, 9, 'de opgegeven 9 staat');
+test('volgt: ma–wo 8 u en do/vr 10 u (8 = modaal 8), alleen workDays [2..5] ⇒ modaal 10, zoals het venster', async () => {
+  S().newProject();
+  const id = S().project.calendarId;
+  S().ensureProjectCalendarInLibrary();
+  const H8 = [{ start: 420, end: 900 }];
+  const H10 = [{ start: 420, end: 1020 }];
+  const byWeekday = { 1: H8, 2: H8, 3: H8, 4: H10, 5: H10, 6: [], 7: [] } as WorkTimeBands['byWeekday'];
+  const opzet = await call('planner_update_calendar', { calendars: [{ id, workTime: { byWeekday } }] });
+  assertEq(rejections(opzet), [], 'testvoorwaarde: de kalender is aangenomen');
+  S().addTask({ name: 'Werk' });
+  assertEq(calById(id).hoursPerDay, 8, 'testvoorwaarde: 8 u/dag, gelijk aan de modale dagsom');
+  const venster = workDaysSetPatch(calById(id), [2, 3, 4, 5], calById(id));
+
+  const res = await call('planner_update_calendar', { calendars: [{ id, workDays: [2, 3, 4, 5] }] });
+  assertEq(rejections(res), [], 'geen weigering');
+  const cal = calById(id);
+  assertEq(cal.hoursPerDay, 10, 'di/wo 8 u en do/vr 10 u: gelijkspel, de hoogste (10) wint');
+  assertEq(fields(cal), fields(venster), 'MCP geeft precies wat dezelfde zet in het venster geeft (workDaysSetPatch)');
+  const terug = readIFC(writeIFC(buildWriteIFCInput(S()))).calendar;
+  assertEq([terug.workDays, terug.hoursPerDay], [[2, 3, 4, 5], 10], 'na opslaan en heropenen: di–vr, 10 u/dag');
 });
 
 await run();

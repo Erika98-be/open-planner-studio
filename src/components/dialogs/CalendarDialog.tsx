@@ -8,6 +8,7 @@ import { generateId } from '@/utils/id';
 import { computeGenerateSpan } from '@/engine/calendar/generateCalendarHolidays';
 import { Dialog, DialogHeader } from '@/components/common/Dialog';
 import { CalendarForm } from './CalendarForm';
+import type { WorkTimeSessionStart } from '@/services/subdayIo';
 import { calendarScalarBreakIssue } from '@/utils/effectiveWorkTime';
 import { calendarHasHolidayIssue, withCanonicalHolidayEnds } from '@/utils/holidayRange';
 import { CALENDARS_HELP_ARTICLE_ID } from '@/state/helpArticles';
@@ -50,6 +51,10 @@ export function CalendarDialog() {
   // De buffer zoals hij het laatst in de store stond (bij openen en na elke commit): de ?-knop vraagt
   // alleen Opslaan / Annuleren / Terug als er sindsdien iets is veranderd.
   const [committedSnapshot, setCommittedSnapshot] = useState('');
+  // De beginstand per kalender in deze venstersessie (`WorkTimeSessionStart`): de kalender vóór zijn eerste
+  // wijziging in het venster, of na de laatste preset. Alleen in deze buffer, niet in de store; ook na een
+  // tussentijdse Enter-commit loopt de sessie door.
+  const [sessionStarts, setSessionStarts] = useState<Record<string, WorkTimeSessionStart>>({});
 
   // Init vóór de eerste paint (useLayoutEffect, geen flash): promoveer (lazy, idempotente
   // normalisatie — geen gebruikerswijziging) de gedenormaliseerde projectkalender naar de zichtbare
@@ -166,6 +171,10 @@ export function CalendarDialog() {
 
   const patchSelected = (patch: Partial<WorkCalendar>) => {
     if (!selectedId) return;
+    if (selected) {
+      const before = { workTime: selected.workTime, hoursPerDay: selected.hoursPerDay };
+      setSessionStarts(m => (m[selectedId] ? m : { ...m, [selectedId]: before }));
+    }
     setLocalCalendars(cs => cs.map(c => (c.id === selectedId ? { ...c, ...patch } : c)));
   };
 
@@ -256,6 +265,8 @@ export function CalendarDialog() {
                   onChange={patchSelected}
                   onScalarTimeValidityChange={setScalarTimeTextInvalid}
                   projectYearSpan={projectYearSpan}
+                  sessionStart={sessionStarts[selected.id] ?? selected}
+                  onSessionStartChange={start => setSessionStarts(m => ({ ...m, [selected.id]: start }))}
                 />
               </>
             ) : (
