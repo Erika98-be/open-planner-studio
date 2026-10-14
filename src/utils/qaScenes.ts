@@ -82,6 +82,15 @@ const SCENES: Record<string, Scene> = {
   },
   // Info-labels (badge--blue) bij de conventies.
   'label-uurplanning': { target: '[data-ops-convention-requires="hourPlanning"]' },
+  // Info (oranje) naast waarschuwing (geel + icoon): een conventie aanzetten maakt de groep "afwijkend"
+  // en geeft onderaan "Wijzigingen niet toegepast".
+  'waarschuwing-naast-info': {
+    steps: async () => {
+      (await waitFor('[data-ops-convention-group="completedWork"] input[type="checkbox"]')).click();
+      await waitFor('[data-ops-project-info-unapplied]');
+    },
+    target: '[data-ops-convention-group="completedWork"]',
+  },
   // De IFC-schemakeuze (#292).
   'ifc-schema': { target: '[data-ops-project-ifc-schema]' },
   // De schemavraag bij opslaan (#292): een IFC4-bestand, en een IFC 4.3-bestand van een oudere app.
@@ -95,6 +104,9 @@ export async function runQaScene(name: string): Promise<void> {
     console.warn(`qaScene: onbekend "${name}"; bekend: ${Object.keys(SCENES).join(', ')}`);
     return;
   }
+  // PROTOTYPE (2026-10-14): `&warningVariant=rood` toont de rode waarschuwingsvariant (globals.css).
+  const variant = new URLSearchParams(window.location.search).get('warningVariant');
+  if (variant) document.documentElement.dataset.opsWarningVariant = variant;
   // Welkomstvenster (eerste start in een schone browser) wegklikken.
   await sleep(300);
   if (document.querySelector('[data-ops-welcome-dialog]')) await clickText('[data-ops-welcome-dialog]', ['Overslaan', 'Skip']);
