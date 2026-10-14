@@ -836,3 +836,9 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
 - **Checkstap 12 (tijdnotatie) goedgekeurd door de eigenaar 2026-10-14, letterlijk: "ja, dit werkt, heel netjes".**
   #347 bijgewerkt met main fedbae8e6 via `gh pr update-branch` (kop 09ea1c88c); merge na groene CI.
 - **Besluit lopende taak op 100 % voorgelegd** (zie eerder in dit log, #353-rapport).
+- **Besluit eigenaar 2026-10-14 (lopende taak op 100 %), letterlijk: "doe optie 1 en zet dat inplannen in de
+  knownbugs.md".** Optie 1: de IFC-writer schrijft `IfcTask.Status = 'STARTED'` alleen bij een lopende taak op 100 %
+  zonder werkelijk einde; de lezer houdt hem dan lopend. Oude bestanden lezen als nu. Optie 3 (de motor plant de
+  vastgelegde rest in) gaat als punt in `knownbugs.md`, na de release, rekenprofielen-spoor. Bouw bij een worker
+  (Opus 5.5, medium), branch `claude/ifc-lopend-100`; daarin ook `knownDateChanges` A3040 weg uit beide corpuschecks
+  en de #353-bijvangst (120 taken) als knownbugs-punt.
