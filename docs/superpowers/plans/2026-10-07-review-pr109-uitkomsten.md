@@ -736,3 +736,11 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   aan origineel), wizardlek dicht, tooltip bij Tab 27/27 in dialoog en Backstage, blok wacht, Escape gaat door,
   T1–T3 rood, `MutationObserver` lekt niet en kost niets meetbaars (rehab-2, 6978 taken). Testgat: F1b (focusbewaking
   uit `onOut`) niet gelijkwaardig ⇒ kleine test bij de maker gevraagd. Daarna: checkstap 11 van de eigenaar, dan merge.
+- **Hercheck #351 (reviewer, Opus 5.5): ja** op e6e9fd0af (R1–R3 + R6 rood, type-cast onschadelijk, corpusvergelijking
+  ziet verloren tweeling). **#351 gemerged in main 2026-10-14 → a40561fa9.** Kop bevatte main 7ea3e8748, CI 16/16,
+  `measure:profiles` exit 0 (maker). Gemerged met `--admin` (override review-eis/concept; machtiging afgeronde
+  releasecheck-PR; geen UI ⇒ geen eigenaarscheck). #347 krijgt de NB-opmerking in `check-time-notation.ts` bij.
+- **Nieuwe bijvangst [BEVESTIGD], bestond al:** MCP `planner_update_calendar` met alleen `workDays` laat werkdagen zonder
+  blokken staan (`calendarResourceTools.ts:508`, `createMcpTransactions.ts:675`) ⇒ na IFC krijgen do/vr de blokken van
+  maandag, uren per dag 8 → 10. **Orkestratorbesluit:** MCP volgt de regel van het kalendervenster (`workDaysSetPatch`).
+  Worker (Opus 5.5) gestart op `claude/mcp-werkdagen-blokken`.
