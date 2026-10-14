@@ -657,3 +657,10 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   12-uursstand zoom ~800 mist "12 AM/PM"-labels; (6) herstel-/sitevenster locale-AM/PM; (7) hinttekst "overal".
   VERMOED: schade bereikt IFC. In orde: parser, klembord, instelling op drie plekken, gidsen, 24-uursregressie.
   Fixronde naar de maker (worker, Opus 5.5) met alle punten.
+- **#350 profielblok** (`claude/profielblok-alleen-lezen`, kop 051e7a3bd, bevat main 7ea3e8748): open (niet
+  gemerged), concept, CI 16/16 groen. AAN/UIT-badges bij ingebouwd profiel, "Nieuw profiel" (naamvraag in de app),
+  conventies ingeklapt, i-icoon via gedeelde `TooltipHost` (ook focus/klik/tik), afwijkingsblok met kruisje en knop.
+  9 mutanten rood. Review gestart (reviewer, Opus 5.5). Testversie `claude/release-check-3` = main 7ea3e8748 + #350
+  (lokaal, poort 3049). Zelf nagelopen met echte Roads-XER, licht + donker: afwijkingsblok toont precies
+  *Kritiek-definitie*. Eigen waarnemingen: "≤ 0 uren" (beter "0 uur"); bij een ingebouwd profiel staat "basis: aan"
+  dubbel naast het label AAN. Checkstap 11 (profielblok) aan de eigenaar gegeven.
