@@ -759,3 +759,15 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   (Late ploeg 8) stil op de bloksom (10). [VERMOED] dagwaarde urentaak 4 vóór en 5 na IFC bij afwijkende hpd.
   **Orkestratorbesluit:** afwijkende hpd is projectdata; dagwissel herberekent alleen als hpd vóór de wissel gelijk was
   aan de modale bloksom. Expert (Opus 5.5) gestart op `claude/urenperdag-dagwissel` (eerst meten).
+- **#353 projectstart/-einde met tijd in IFC** (expert, Opus 5.5; `claude/ifc-rondgang-datums`, kop 40818621a, bevat
+  main a40561fa9): open (niet gemerged), concept, CI 16/16. Meting: 81/88 corpusdocumenten verloren de tijd; 42 andere
+  exportregels (08:00); taakdatums/speling/kritiek pad gelijk. Oorzaak writer `IFCDATE(slice(0,10))` (#344) en lezer
+  `substring(0,10)`. Fix: `IFCDATETIME` alleen mét tijd; lezer neemt tijd alleen uit `IFCDATETIME`. 160+24 checks,
+  5 mutanten rood, IfcOpenShell 0, `measure:profiles` cel-delta 0. Review gestart.
+- **Open eigenaarsbesluit (na de lopende checks voorleggen): lopende taak op 100 % na IFC.** 9 taken in 4 bestanden
+  (rehab-2 4, torture A3040, twee `*-8.4.xer`) worden na IFC "Voltooid" met einde op de statusdatum
+  (`normalizeImportedProgress` in de IFC-lezer; XER-lezer houdt `TK_Active`, 0f5405325/125978797); bij 7 taken andere
+  datums, kritiek pad gelijk. Opties maker: (1) `IfcTask.Status = 'STARTED'` bewaren (aanbevolen, geen motorwerk);
+  (2) XER-import maakt ze al voltooid; (3) optie 1 + motor plant vastgelegde rest (later, rekenprofielen).
+  Bijvangst: 120 taken in 6 documenten wisselen status/percentage na IFC (XER-status spreekt datums tegen).
+  Bron "status bewust afgeleid": `docs/onderhoudbaarheid/deelrapporten/rapport-ifc.md` (aa3e37efc, 2026-10-13).
