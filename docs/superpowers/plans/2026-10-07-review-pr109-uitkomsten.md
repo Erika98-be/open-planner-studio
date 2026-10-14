@@ -815,3 +815,6 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   werkdag met blokken, `applyBands` zelfde regel, XER-gemiddelde in minuten (corpus-hpd identiek), MCP-tekst, 13
   mutanten rood, browserspec 6 tests. **Orkestratorbesluit:** MCP met `workTime` = één sessie, zelfde regel; gids
   `ref-kalenders` bijwerken. `measure:profiles` p6-deelmeting exit 1 ⇒ maker meet main ter vergelijking.
+- #354 kop 269aba26e (CI 16/16): MCP met `workTime` zelfde sessieregel (M14–M16 rood), gids `ref-kalenders` bijgewerkt;
+  `measure:profiles --only=p6`: main 967c9e07b en PR beide p6-x12 exit 1 (NULDOEL, 76 afwijkingen, bestaande stand),
+  eindexit 0, tabellen gelijk. Hercheck door dezelfde reviewer gestart.
