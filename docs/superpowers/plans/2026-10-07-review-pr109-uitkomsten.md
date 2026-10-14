@@ -746,3 +746,5 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   Worker (Opus 5.5) gestart op `claude/mcp-werkdagen-blokken`.
 - #350: test voor F1b toegevoegd (F1b rood), kop d82b45c69, CI 16/16. Wacht op checkstap 11 van de eigenaar.
   Testversie (3049) = main a40561fa9 + #350 d82b45c69 + #347.
+- #347 bijgewerkt met main a40561fa9 (incl. #351): kop 43218b52a, CI groen; NB-opmerking weg, "Late ploeg" (8 bij 10 u)
+  nu in de IFC-proef van `check-time-notation` (207 checks). Testversie bijgewerkt.
