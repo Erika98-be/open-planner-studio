@@ -20,6 +20,11 @@ export type TimeScale = 'day' | 'week' | 'month' | 'quarter' | 'year' | 'hour';
 // engine of import/export nooit. Ontbrekende localStorage-sleutel ⇒ 'dmy' (dd-mm-jjjj).
 export type DateNotation = 'dmy' | 'mdy' | 'ymd';
 
+// Tijdnotatie: bepaalt ALLEEN hoe kloktijden getoond en ingevoerd worden ('24h' = 13:00,
+// '12h' = 1:00 PM). Opslag, bestandsformaten en MCP-antwoorden blijven ISO en 24 uur.
+// Ontbrekende localStorage-sleutel ⇒ '24h'.
+export type TimeNotation = '24h' | '12h';
+
 // Duurweergave — hoe duur in tabellen/tooltips getoond wordt.
 // 'auto' = eigen eenheid per taak ("3d"/"20u"); 'days'/'hours' = altijd forceren.
 export type DurationDisplay = 'auto' | 'days' | 'hours';

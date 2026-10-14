@@ -71,7 +71,7 @@ eq('Niet-bestaande persoonlijke datum weigert', parseGridDate('31-02-2026', 'dmy
 eq('Datumtijd dmy naar ISO-minuut', parseGridDateTime('31-12-2026 08:45', 'dmy'), '2026-12-31T08:45');
 eq('Datumtijd met ongeldige tijd weigert', parseGridDateTime('31-12-2026 24:00', 'dmy'), null);
 eq('ISO-datum naar mdy-weergave', formatGridDate('2026-12-31', 'mdy'), '12-31-2026');
-eq('ISO-datumtijd naar dmy-weergave', formatGridDateTime('2026-12-31T08:45', 'dmy'), '31-12-2026 08:45');
+eq('ISO-datumtijd naar dmy-weergave', formatGridDateTime('2026-12-31T08:45', 'dmy', '24h'), '31-12-2026 08:45');
 
 const S = () => useAppStore.getState();
 S().newProject();

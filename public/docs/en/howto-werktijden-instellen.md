@@ -27,7 +27,7 @@ Each preset does this:
 ### Setting working times per weekday
 
 1. In the *Working times* block, click *Set per weekday…*. Under the buttons a row appears per weekday with the working time of that day, and the calendar now has working-time blocks per weekday. If the calendar already has them, this overview is open right away; the button is then called *Hide working times* and folds it in.
-2. Adjust the start and end time of each block in the two time fields.
+2. Adjust the start and end time of each block in the two time fields. Type the time and press Enter, or use the arrows (15 minutes per step). The fields follow the *Time format* in the settings; *13:00* and *1:00 PM* both work.
 3. If you want to build in a break, click **+** (*Add band*) for that day and adjust the times of the blocks so that there is a gap between them. A new block starts at 08:00 and ends at 16:00.
 4. A block that runs past midnight, you tick with *next day*. The block counts for the day on which it begins.
 5. Click the bin behind a block to remove it. A day without blocks shows as *Non-working*.

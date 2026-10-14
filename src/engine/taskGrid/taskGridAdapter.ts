@@ -9,7 +9,7 @@ import type { Sequence } from '@/types/sequence';
 import type { ActivityCodeType, CustomFieldDef } from '@/types/structure';
 import type { Task } from '@/types/task';
 import type { CustomTaskType } from '@/types/taskType';
-import type { DateNotation, DurationDisplay } from '@/types/view';
+import type { DateNotation, DurationDisplay, TimeNotation } from '@/types/view';
 import type { CPMResult } from '@/engine/scheduler/CPMSolver';
 import { classifyTraceTask, taskGridTraceClass, type TaskTrace } from '@/engine/taskGrid/trace';
 import type {
@@ -125,6 +125,8 @@ export interface CreateTaskGridAdapterDomainInput {
   recordedMark?: (task: Task) => RecordedTaskMark;
   recordedUnrecordedAxes?: (task: Task) => readonly RecordedTaskAxis[];
   dateNotation?: DateNotation;
+  /** Instelling Tijdnotatie; komt in de kolomcontext (`TaskColumnContext.timeNotation`). */
+  timeNotation?: TimeNotation;
   calendarOptions?: readonly { value: string; label: string }[];
   /** Instelling Duurweergave (weergavetekst van de Duur-kolom); ontbreekt ⇒ `'auto'`. */
   durationDisplay?: DurationDisplay;
@@ -248,6 +250,7 @@ export function createTaskGridAdapterDomain(
     recordedMark: input.recordedMark,
     recordedUnrecordedAxes: input.recordedUnrecordedAxes,
     taskTypesUnlocked: input.taskTypesUnlocked,
+    timeNotation: input.timeNotation,
   };
   const descriptors = buildTaskColumnRegistry({
     projectId: input.projectId,

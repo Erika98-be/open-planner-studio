@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChevronDown, ChevronRight, FileText, HardDrive, RefreshCw } from 'lucide-react';
 import { useAppStore } from '@/state/appStore';
+import { formatLocalDateTime } from '@/utils/displayTime';
 import { Dialog, DialogHeader } from '@/components/common/Dialog';
 import { answerSiteOpen } from '@/state/siteDialogBridge';
 import { listSiteFiles, listSiteVersions } from '@/services/fileAccess/siteBackend';
@@ -34,6 +35,7 @@ export function SiteOpenDialog() {
 
 function SiteOpenDialogBody({ extensions }: { extensions: string[] }) {
   const { t, i18n } = useTranslation('common');
+  const timeNotation = useAppStore((s) => s.ui.timeNotation);
   const [files, setFiles] = useState<Loaded<SiteFileInfo>>({ status: 'loading' });
   const [attempt, setAttempt] = useState(0);
   const [versions, setVersions] = useState<Record<string, Loaded<SiteVersionInfo>>>({});
@@ -86,11 +88,10 @@ function SiteOpenDialogBody({ extensions }: { extensions: string[] }) {
     });
   };
 
-  const fmt = new Intl.DateTimeFormat(i18n.language, { dateStyle: 'medium', timeStyle: 'short' });
   const when = (value?: string) => {
     if (!value) return null;
     const date = new Date(value);
-    return Number.isNaN(date.getTime()) ? value : fmt.format(date);
+    return Number.isNaN(date.getTime()) ? value : formatLocalDateTime(date, i18n.language, timeNotation);
   };
 
   return (

@@ -55,6 +55,7 @@ export function useGanttPointerCoordinator(
     isStartDrivenByPredecessor,
     notify,
     dateNotation,
+    timeNotation,
   } = input;
   const canvasRef = host.primaryCanvasRef;
   const rendererRef = host.primaryRendererRef;
@@ -118,6 +119,7 @@ export function useGanttPointerCoordinator(
     isStartDrivenByPredecessor,
     notify,
     dateNotation,
+    timeNotation,
   });
   // Het splitsgebaar. Bewust ná `useDependencyDraw` gedeclareerd — beide tekenen op
   // hetzelfde overlay-canvas, en de twee modi sluiten elkaar uit, dus de laatst gemounte teken-

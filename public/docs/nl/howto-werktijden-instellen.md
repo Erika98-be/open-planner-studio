@@ -27,7 +27,7 @@ Dit doet elke preset:
 ### Werktijden per weekdag instellen
 
 1. Klik in het blok *Werktijden* op *Per weekdag instellen…*. Onder de knoppen verschijnt per weekdag een regel met de werktijd van die dag, en de kalender heeft daarmee werktijdblokken per weekdag. Heeft de kalender die al, dan staat dit overzicht meteen open; de knop heet dan *Werktijden verbergen* en klapt het in.
-2. Pas per blok de begin- en eindtijd aan in de twee tijdvelden.
+2. Pas per blok de begin- en eindtijd aan in de twee tijdvelden. Typ de tijd en druk op Enter, of gebruik de pijltjes (15 minuten per stap). De velden volgen de *Tijdnotatie* in de instellingen; *13:00* en *1:00 PM* zijn allebei goed.
 3. Wil je een pauze inbouwen, klik dan bij die dag op **+** (*Band toevoegen*) en pas de tijden van de blokken zo aan dat er een gat tussen zit. Een nieuw blok begint op 08:00 en eindigt op 16:00.
 4. Een blok dat na middernacht doorloopt, vink je aan met *volgende dag*. Het blok telt bij de dag waarop het begint.
 5. Klik op de prullenbak achter een blok om het te verwijderen. Een dag zonder blokken staat als *Niet-werkend*.

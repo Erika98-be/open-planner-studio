@@ -19,7 +19,7 @@ import type { GanttAxis } from '@/engine/renderer/timeAxis';
 import type { ViewRow } from '@/engine/view/visibleRows';
 import type { ModifierMap, NotifyInput, PositionDivision, ScrollMode } from '@/state/slices/types';
 import type { Task } from '@/types/task';
-import type { DateNotation, SplitViewState, ViewState } from '@/types/view';
+import type { DateNotation, SplitViewState, TimeNotation, ViewState } from '@/types/view';
 import type { WorkCalendar } from '@/types/calendar';
 import type { Splitter } from '@/hooks/useSplitter';
 import type { GanttRenderOptionsSourceInput } from '../ganttRenderOptions';
@@ -236,6 +236,7 @@ export interface GanttPointerCoordinatorInput {
   /** Het ene meldkanaal en de datumnotatie voor die startmelding na het loslaten. */
   notify: (notification: NotifyInput) => void;
   dateNotation: DateNotation;
+  timeNotation: TimeNotation;
 }
 
 /** React-bedrading en vluchtige presentatie die uitsluitend bij pointerinteractie hoort. */

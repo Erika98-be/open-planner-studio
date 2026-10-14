@@ -21,6 +21,7 @@ const SECTION_HEADINGS: RegExp[][] = [
     /^(Font|Lettertype)$/,
     /^(Text size|Tekengrootte)$/,
     /^(Date format|Datumnotatie)$/,
+    /^(Time format|Tijdnotatie)$/,
     /^(Duration display|Duurweergave)$/,
     /^(Document switch style|Documentwissel-stijl)$/,
     /^Gantt$/,

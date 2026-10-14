@@ -1,10 +1,12 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ChevronDown, ChevronUp, Plus, Trash2, X } from 'lucide-react';
+import { Plus, Trash2, X } from 'lucide-react';
 import type { WorkCalendar, Holiday, WorkTimeBands } from '@/types/calendar';
 import { accentChipClass, CalendarGeneratorFields } from './CalendarGeneratorFields';
 import { WorkTimeEditor } from './WorkTimeEditor';
 import { DateTextInput } from '@/components/common/DateTextInput';
+import { StepButtons, TimeInput, TIME_STEP_MINUTES } from '@/components/common/TimeInput';
+import { formatClock, parseClock } from '@/utils/displayTime';
 import { useAppStore } from '@/state/appStore';
 import {
   isHourCalendar, hoursPerDayForBlocks, workDayTogglePatch, workDaysFromBands, workDaysSetPatch,
@@ -26,102 +28,11 @@ import {
 } from '@/utils/effectiveWorkTime';
 import { holidayIssue } from '@/utils/holidayRange';
 
-function minutesToTime(value: number): string {
-  const totalMinutes = Math.round(value);
-  const hours = Math.floor(totalMinutes / 60);
-  const minutes = totalMinutes % 60;
-  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
-}
-
-function timeToMinutes(value: string): number | undefined {
-  const match = /^(\d{2}):(\d{2})$/.exec(value);
-  if (!match) return undefined;
-  const hours = Number(match[1]);
-  const minutes = Number(match[2]);
-  return hours >= 0 && hours <= 24 && minutes >= 0 && minutes < 60 && (hours < 24 || minutes === 0)
-    ? hours * 60 + minutes
-    : undefined;
-}
-
-const TIME_STEP_MINUTES = 15;
-
 /** Rode rand voor een ongeldige feestdagdatum; `DateTextInput` legt `style` op de omrande groep. */
 const INVALID_DATE_STYLE = { borderColor: 'var(--error)' } as const;
 
 type ScalarTimeField = 'workStart' | 'workEnd' | 'breakStart' | 'breakDuration';
 type ScalarTimeIssue = 'invalidWorkStart' | 'invalidWorkEnd' | 'invalidWorkTimeOrder' | 'invalidStart' | 'invalidDuration' | 'outsideWorkingDay' | 'consumesWorkingDay';
-
-function StepButtons({ onStep, increaseLabel, decreaseLabel, dataAttribute }: {
-  onStep: (delta: number) => void;
-  increaseLabel: string;
-  decreaseLabel: string;
-  dataAttribute: string;
-}) {
-  return <span className="flex w-5 shrink-0 flex-col gap-0.5">
-    <button type="button" className="flex flex-1 items-center justify-center rounded border border-[var(--theme-control-border)] text-text-secondary hover:bg-surface-hover focus:outline-none focus:ring-2 focus:ring-accent" aria-label={increaseLabel} title={increaseLabel} onClick={() => onStep(TIME_STEP_MINUTES)} data-ops-scalar-time-step={`${dataAttribute}-up`}>
-      <ChevronUp size={11} aria-hidden="true" />
-    </button>
-    <button type="button" className="flex flex-1 items-center justify-center rounded border border-[var(--theme-control-border)] text-text-secondary hover:bg-surface-hover focus:outline-none focus:ring-2 focus:ring-accent" aria-label={decreaseLabel} title={decreaseLabel} onClick={() => onStep(-TIME_STEP_MINUTES)} data-ops-scalar-time-step={`${dataAttribute}-down`}>
-      <ChevronDown size={11} aria-hidden="true" />
-    </button>
-  </span>;
-}
-
-/**
- * Een bewust gewoon tekstveld voor de drie scalar-tijden. Native time/number-invoer verschilt per
- * browser (klokje, AM/PM en spinners); dit veld houdt OPS overal bij 24-uurs HH:MM. De aanroeper
- * bewaart tusseninvoer lokaal en schrijft uitsluitend gevalideerde minuten naar het kalenderdraft.
- */
-function ScalarTimeInput({
-  id,
-  value,
-  onTextChange,
-  onCommit,
-  onStep,
-  increaseLabel,
-  decreaseLabel,
-  className,
-  dataAttribute,
-}: {
-  id: string;
-  value: string;
-  onTextChange: (value: string) => void;
-  onCommit: () => void;
-  onStep: (delta: number) => void;
-  increaseLabel: string;
-  decreaseLabel: string;
-  className: string;
-  dataAttribute: string;
-}) {
-  return (
-    <div className="flex min-w-0 items-stretch gap-1">
-      <input
-        id={id}
-        type="text"
-        inputMode="numeric"
-        placeholder="HH:MM"
-        value={value}
-        onChange={event => onTextChange(event.target.value)}
-        onBlur={onCommit}
-        onKeyDown={event => {
-          if (event.key === 'Enter') {
-            event.preventDefault();
-            onCommit();
-          } else if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
-            event.preventDefault();
-            onStep(event.key === 'ArrowUp' ? TIME_STEP_MINUTES : -TIME_STEP_MINUTES);
-          }
-        }}
-        className={className + ' min-w-0 flex-1'}
-        data-ops-scalar-time={dataAttribute}
-        data-ops-work-start={dataAttribute === 'work-start' ? true : undefined}
-        data-ops-work-end={dataAttribute === 'work-end' ? true : undefined}
-        data-ops-simple-break-start={dataAttribute === 'break-start' ? true : undefined}
-      />
-      <StepButtons onStep={onStep} increaseLabel={increaseLabel} decreaseLabel={decreaseLabel} dataAttribute={dataAttribute} />
-    </div>
-  );
-}
 
 function minutesFromText(value: string): number | undefined {
   return /^\d+$/.test(value) && Number(value) <= 24 * 60 ? Number(value) : undefined;
@@ -160,6 +71,7 @@ export function CalendarForm({
   const { t: tCommon } = useTranslation('common');
   const enableHourPlanning = useAppStore(s => s.ui.enableHourPlanning);
   const weekStartDay = useAppStore(s => s.ui.weekStartDay);
+  const timeNotation = useAppStore(s => s.ui.timeNotation);
 
   const [showGenerator, setShowGenerator] = useState(false);
   // Werktijden-UI: eigen presets (app-niveau localStorage), banden-editor achter een knop,
@@ -195,10 +107,10 @@ export function CalendarForm({
   const inferredBreak = inferredSimpleBreak(draft);
   const inferredSimpleBreakDuration = inferredBreak.durationMinutes;
   const inferredSimpleBreakStart = inferredBreak.startMinute;
-  const [workStartText, setWorkStartText] = useState(() => minutesToTime(draft.workStartHour * 60));
-  const [workEndText, setWorkEndText] = useState(() => minutesToTime(draft.workEndHour * 60));
+  const [workStartText, setWorkStartText] = useState(() => formatClock(draft.workStartHour * 60, timeNotation));
+  const [workEndText, setWorkEndText] = useState(() => formatClock(draft.workEndHour * 60, timeNotation, { endOfDay: true }));
   const [simpleBreakStartText, setSimpleBreakStartText] = useState(() =>
-    minutesToTime(draft.simpleBreakStartMinute ?? inferredSimpleBreakStart));
+    formatClock(draft.simpleBreakStartMinute ?? inferredSimpleBreakStart, timeNotation));
   const [simpleBreakDurationText, setSimpleBreakDurationText] = useState(() =>
     String(draft.simpleBreakDurationMinutes ?? inferredSimpleBreakDuration));
   const [scalarTimeIssues, setScalarTimeIssues] = useState<Partial<Record<ScalarTimeField, ScalarTimeIssue>>>({});
@@ -208,34 +120,34 @@ export function CalendarForm({
   );
 
   useEffect(() => {
-    setWorkStartText(minutesToTime(draft.workStartHour * 60));
+    setWorkStartText(formatClock(draft.workStartHour * 60, timeNotation));
     setScalarTimeIssues(issues => {
       if (!issues.workStart) return issues;
       const next = { ...issues };
       delete next.workStart;
       return next;
     });
-  }, [draft.workStartHour]);
+  }, [draft.workStartHour, timeNotation]);
 
   useEffect(() => {
-    setWorkEndText(minutesToTime(draft.workEndHour * 60));
+    setWorkEndText(formatClock(draft.workEndHour * 60, timeNotation, { endOfDay: true }));
     setScalarTimeIssues(issues => {
       if (!issues.workEnd) return issues;
       const next = { ...issues };
       delete next.workEnd;
       return next;
     });
-  }, [draft.workEndHour]);
+  }, [draft.workEndHour, timeNotation]);
 
   useEffect(() => {
-    setSimpleBreakStartText(minutesToTime(draft.simpleBreakStartMinute ?? inferredSimpleBreakStart));
+    setSimpleBreakStartText(formatClock(draft.simpleBreakStartMinute ?? inferredSimpleBreakStart, timeNotation));
     setScalarTimeIssues(issues => {
       if (!issues.breakStart) return issues;
       const next = { ...issues };
       delete next.breakStart;
       return next;
     });
-  }, [draft.simpleBreakStartMinute, inferredSimpleBreakStart]);
+  }, [draft.simpleBreakStartMinute, inferredSimpleBreakStart, timeNotation]);
 
   useEffect(() => {
     setSimpleBreakDurationText(String(draft.simpleBreakDurationMinutes ?? inferredSimpleBreakDuration));
@@ -395,7 +307,7 @@ export function CalendarForm({
     setText(value);
     // Tusseninvoer blijft in het DOM en raakt het model nooit. Alleen een volledig gevormde
     // HH:MM wist een eerdere tekstfout; inhoudelijke grenzen worden bij blur/Enter beoordeeld.
-    if (timeToMinutes(value) !== undefined) setScalarTimeIssue(field);
+    if (parseClock(value, { endOfDay: field === 'workEnd' }) !== undefined) setScalarTimeIssue(field);
   };
 
   const scalarTimesAreValid = (patch: Partial<WorkCalendar>) => scalarTimesValid(draft, patch);
@@ -403,7 +315,7 @@ export function CalendarForm({
   // Pas bij blur of Enter wordt een complete, inhoudelijk geldige HH:MM-waarde naar het model
   // geschreven. Daarmee blijft ook omgekeerde of buiten-de-dag liggende tusseninvoer veilig lokaal.
   const commitWorkStart = () => {
-    const minute = timeToMinutes(workStartText);
+    const minute = parseClock(workStartText);
     if (minute === undefined) {
       setScalarTimeIssue('workStart', 'invalidWorkStart');
       return;
@@ -417,7 +329,7 @@ export function CalendarForm({
   };
 
   const commitWorkEnd = () => {
-    const minute = timeToMinutes(workEndText);
+    const minute = parseClock(workEndText, { endOfDay: true });
     if (minute === undefined) {
       setScalarTimeIssue('workEnd', 'invalidWorkEnd');
       return;
@@ -431,7 +343,7 @@ export function CalendarForm({
   };
 
   const commitSimpleBreakStart = () => {
-    const minute = timeToMinutes(simpleBreakStartText);
+    const minute = parseClock(simpleBreakStartText);
     if (minute === undefined || !scalarTimesAreValid({ simpleBreakStartMinute: minute })) {
       setScalarTimeIssue('breakStart', 'invalidStart');
       return;
@@ -497,7 +409,7 @@ export function CalendarForm({
     setText: (value: string) => void,
     delta: number,
   ) => {
-    const current = timeToMinutes(text);
+    const current = parseClock(text, { endOfDay: field === 'workEnd' });
     if (current === undefined) {
       setScalarTimeIssue(field, field === 'workStart' ? 'invalidWorkStart' : field === 'workEnd' ? 'invalidWorkEnd' : 'invalidStart');
       return;
@@ -518,7 +430,7 @@ export function CalendarForm({
       setScalarTimeIssue(field, field === 'breakStart' ? 'invalidStart' : 'invalidWorkTimeOrder');
       return;
     }
-    setText(minutesToTime(nextMinute));
+    setText(formatClock(nextMinute, timeNotation, { endOfDay: field === 'workEnd' }));
     setScalarTimeIssue(field);
     patchSimpleBreak(patch);
   };
@@ -634,7 +546,7 @@ export function CalendarForm({
             <label className="text-text-secondary font-medium" htmlFor="ops-work-start">
               {tMenu('ribbon.calendarDialog.startHour')}
             </label>
-            <ScalarTimeInput
+            <TimeInput
               id="ops-work-start"
               value={workStartText}
               onTextChange={value => updateScalarTimeText('workStart', setWorkStartText, value)}
@@ -644,13 +556,14 @@ export function CalendarForm({
               decreaseLabel={tCommon('calendar.simpleBreak.decreaseTime')}
               className={inputCls}
               dataAttribute="work-start"
+              dataAttributes={{ 'data-ops-scalar-time': 'work-start', 'data-ops-work-start': true }}
             />
           </div>
           <div className="flex flex-col gap-1">
             <label className="text-text-secondary font-medium" htmlFor="ops-work-end">
               {tMenu('ribbon.calendarDialog.endHour')}
             </label>
-            <ScalarTimeInput
+            <TimeInput
               id="ops-work-end"
               value={workEndText}
               onTextChange={value => updateScalarTimeText('workEnd', setWorkEndText, value)}
@@ -660,6 +573,7 @@ export function CalendarForm({
               decreaseLabel={tCommon('calendar.simpleBreak.decreaseTime')}
               className={inputCls}
               dataAttribute="work-end"
+              dataAttributes={{ 'data-ops-scalar-time': 'work-end', 'data-ops-work-end': true }}
             />
           </div>
           </>
@@ -684,7 +598,7 @@ export function CalendarForm({
             <label className="text-text-secondary font-medium" htmlFor="ops-simple-break-start">
               {tCommon('calendar.simpleBreak.start')}
             </label>
-            <ScalarTimeInput
+            <TimeInput
               id="ops-simple-break-start"
               value={simpleBreakStartText}
               onTextChange={value => updateScalarTimeText('breakStart', setSimpleBreakStartText, value)}
@@ -694,6 +608,7 @@ export function CalendarForm({
               decreaseLabel={tCommon('calendar.simpleBreak.decreaseTime')}
               className={inputCls}
               dataAttribute="break-start"
+              dataAttributes={{ 'data-ops-scalar-time': 'break-start', 'data-ops-simple-break-start': true }}
             />
           </div>
           <div className="flex flex-col gap-1">

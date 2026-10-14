@@ -344,6 +344,10 @@
     "dateNotationDmy": "dd-mm-jjjj",
     "dateNotationMdy": "mm-dd-jjjj",
     "dateNotationYmd": "jjjj-mm-dd",
+    "timeNotation": "Tijdnotatie",
+    "timeNotationHint": "Bepaalt hoe kloktijden worden getoond en ingevoerd: in het kalendervenster, bij taken in uren in de tabel, op de uurschaal van de Gantt en in meldingen. Bestanden en berekeningen blijven ongewijzigd (24 uur).",
+    "timeNotation24h": "24 uur (13:00)",
+    "timeNotation12h": "12 uur (1:00 PM)",
     "fontFamilyLabel": "Lettertype",
     "fontScaleLabel": "Tekengrootte",
     "fontScaleHint": "Schaalt de interface-tekst en -indeling.",
@@ -905,6 +909,8 @@
       "copyToAll": "Kopieer naar alle werkdagen",
       "noBands": "Niet-werkend",
       "nextDay": "volgende dag",
+      "bandStart": "Begin van het blok",
+      "bandEnd": "Einde van het blok",
       "shiftPreset": "Ploeg",
       "breakHint": "Een gat tussen twee banden is een pauze — pas de tijden naar wens aan."
     }
