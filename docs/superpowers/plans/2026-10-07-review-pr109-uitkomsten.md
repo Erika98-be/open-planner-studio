@@ -860,3 +860,6 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   `status_code`; `statusOf` leest leeg als NOT_STARTED). Orkestrator verwerkte dat zelf (fa355198b): 115 = 11 echte
   P6-tegenspraken, 116 uitleg rollup, **117 nieuw: XER zonder `status_code`** (bug in bestaande import ⇒ kandidaat
   vóór de release). Tekstcheck bij de reviewer; merge na ja en groene CI.
+- **Tekstcheck #357 (reviewer): ja** op fa355198b (115 en 117 kloppen). Bijzin in 116 fout (lopende taak op 100 % telt
+  in de rollup als voltooid); door de orkestrator hersteld in bf85d096e (alleen `knownbugs.md`, geen nieuwe review
+  nodig volgens de reviewer). Merge na groene CI.
