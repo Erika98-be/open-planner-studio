@@ -771,3 +771,11 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   (2) XER-import maakt ze al voltooid; (3) optie 1 + motor plant vastgelegde rest (later, rekenprofielen).
   Bijvangst: 120 taken in 6 documenten wisselen status/percentage na IFC (XER-status spreekt datums tegen).
   Bron "status bewust afgeleid": `docs/onderhoudbaarheid/deelrapporten/rapport-ifc.md` (aa3e37efc, 2026-10-13).
+- **Review #353 (reviewer, Opus 5.5): ja.** Schema in orde (`IfcValue`-SELECT bevat IfcDate en IfcDateTime in alle
+  drie de schema's), tijdzones 6/6, oude bestanden gelijk, UI wist de tijd niet. **#353 gemerged in main 2026-10-14 →
+  8db05a95c** (kop bevatte main a40561fa9, CI 16/16, `--admin`, geen UI). Bijvangst [BEVESTIGD]: `ConstraintDate*`
+  schrijft `IFCDATE` met tijd (schemafout, `ifcPsets.ts:291/297`, 4× in Roads; IfcOpenShell ziet het niet) en
+  `StatusDate` `length > 10` ⇒ zelfde expert, branch `claude/ifc-datumvorm` (één datumhelper, schemapoort op drie
+  schema's, R2-gat). NB: `measure:profiles` meet geen IFC-rondgang.
+- **Hercheck #352 (reviewer, Opus 5.5): ja** op fc7415722 (M4 rood, teksten kloppen). Optioneel M16/M17 ⇒ twee cases
+  bij de maker; daarna merge.
