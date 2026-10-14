@@ -158,6 +158,41 @@ const dates = (t: Task) => {
   eq('1d IFCTASK heeft 13 argumenten (spec-lay-out)', argsOf(ifc, 'IFCTASK', 'L').length, 13);
 }
 
+// ── 1e–1k. Fasen en een taak mét werkelijk einde houden `$` ───────────────────────────────────────
+// De fase-rollup (`summaryProgress.ts`) geeft STARTED op 1 zonder werkelijk einde in twee gevallen:
+// alle taken klaar plus een niet-gestarte mijlpaal (F1), en ≥ 99,95 % dat afrondt naar 1 (F2). Dat is
+// geen P6-status maar een afgeleide; de fase mag dus geen Status krijgen. W is STARTED op 100 % mét
+// werkelijk einde: ook `$`.
+{
+  const store = createAppStoreContext().store;
+  const G = () => store.getState();
+  G().newProject();
+  G().setProject({ startDate: '2015-01-05', statusDate: '2015-01-07' });
+  const f1 = G().addTask({ name: 'F1', time: createDefaultTaskTime('2015-01-05', 2) });
+  const k1 = G().addTask({ name: 'K1', time: createDefaultTaskTime('2015-01-05', 2) });
+  const m1 = G().addTask({ name: 'M1', isMilestone: true, time: { ...createDefaultTaskTime('2015-01-09', 0), scheduleDuration: 0 } });
+  const f2 = G().addTask({ name: 'F2', time: createDefaultTaskTime('2015-01-05', 2) });
+  const k2 = G().addTask({ name: 'K2', time: createDefaultTaskTime('2015-01-05', 20) });
+  const w = G().addTask({ name: 'W', time: createDefaultTaskTime('2015-01-05', 2) });
+  G().indentTasks([k1, m1]);
+  G().indentTasks([k2]);
+  G().runCPM();
+  const at = (id: string) => G().tasks.find(t => t.id === id)!;
+  G().updateTask(k1, { status: 'COMPLETED', time: { ...at(k1).time, completion: 1, actualStart: '2015-01-05', actualFinish: '2015-01-06' } });
+  G().updateTask(k2, { status: 'STARTED', time: { ...at(k2).time, completion: 0.9996, actualStart: '2015-01-05' } });
+  G().updateTask(w, { status: 'STARTED', time: { ...at(w).time, completion: 1, actualStart: '2015-01-05', actualFinish: '2015-01-06' } });
+  G().runCPM();
+  const fase = (id: string) => [at(id).status, at(id).time.completion, at(id).time.actualFinish ?? null];
+  eq('1e opzet: F1 (taken klaar + niet-gestarte mijlpaal) is STARTED op 1 zonder werkelijk einde', fase(f1), ['STARTED', 1, null]);
+  eq('1f opzet: F2 (99,96 %) is STARTED op 1 zonder werkelijk einde', fase(f2), ['STARTED', 1, null]);
+  eq('1g opzet: W is STARTED op 1 mét werkelijk einde', fase(w), ['STARTED', 1, '2015-01-06']);
+  const fIfc = writeIFC(buildWriteIFCInput(G()));
+  eq('1h F1 (fase): IfcTask.Status blijft $', argsOf(fIfc, 'IFCTASK', 'F1')[STATUS], '$');
+  eq('1i F2 (fase): IfcTask.Status blijft $', argsOf(fIfc, 'IFCTASK', 'F2')[STATUS], '$');
+  eq('1j W (werkelijk einde): IfcTask.Status blijft $', argsOf(fIfc, 'IFCTASK', 'W')[STATUS], '$');
+  eq('1k K2 (99,96 %, taak): IfcTask.Status blijft $', argsOf(fIfc, 'IFCTASK', 'K2')[STATUS], '$');
+}
+
 // ── 2. Round-trip via de echte openroute ──────────────────────────────────────────────────────────
 const opened = await openIfc(ifc);
 const after = opened.doc;
@@ -239,14 +274,20 @@ const oud = setTaskStatus(ifc, 'L', '$');
       ...(unit === 'hours' ? { durationMinutes: 20 * 8 * 60 } : {}), ...extra },
   });
   const fysiek = mk('fysiek', { completion: 1, actualStart: '2015-01-05T08:00', remainingMinutes: 48000 }, 'hours');
-  const duur = mk('duur', { completion: 1, actualStart: '2015-01-05' });
+  // Dagtaak met vastgelegde restduur 5 (P6 "Physical 100 %" in een dagproject): de motor leest in
+  // dagmodus `remainingTime`, dus die moet ongewijzigd blijven (zonder de uitzondering werd hij 0).
+  const duur = mk('duur', { completion: 1, actualStart: '2015-01-05', remainingTime: 5 });
   const ander = mk('ander', { completion: 1, actualStart: '2015-01-05' });
   const metAf = mk('metAf', { completion: 1, actualStart: '2015-01-05', actualFinish: '2015-01-20' });
   const half = mk('half', { completion: 0.5, actualStart: '2015-01-05' });
   normalizeImportedProgress([fysiek, duur, ander, metAf, half], '2015-01-07', new Set(['fysiek', 'duur', 'metAf', 'half']));
-  eq('8a urentaak in de set: lopend, geen werkelijk einde, restduur-minuten bewaard',
-    [fysiek.status, fysiek.time.actualFinish ?? null, fysiek.time.remainingMinutes], ['STARTED', null, 48000]);
-  eq('8b dagtaak in de set: lopend, geen werkelijk einde', [duur.status, duur.time.actualFinish ?? null], ['STARTED', null]);
+  // `remainingTime` blijft leeg: de lezer leidt hem niet af uit `completion` (dat zou 0 geven, of bij
+  // een urentaak de dagfractie van de minuten).
+  eq('8a urentaak in de set: lopend, geen werkelijk einde, restduur zoals vastgelegd',
+    [fysiek.status, fysiek.time.actualFinish ?? null, fysiek.time.remainingMinutes, fysiek.time.remainingTime ?? null],
+    ['STARTED', null, 48000, null]);
+  eq('8b dagtaak in de set: lopend, geen werkelijk einde, vastgelegde restduur 5 blijft',
+    [duur.status, duur.time.actualFinish ?? null, duur.time.remainingTime ?? null], ['STARTED', null, 5]);
   eq('8c taak niet in de set: voltooid op de statusdatum', [ander.status, ander.time.actualFinish], ['COMPLETED', '2015-01-07']);
   eq('8d in de set mét werkelijk einde: voltooid, eigen einde', [metAf.status, metAf.time.actualFinish], ['COMPLETED', '2015-01-20']);
   eq('8e in de set onder 100 %: lopend zoals altijd', [half.status, half.time.completion], ['STARTED', 0.5]);

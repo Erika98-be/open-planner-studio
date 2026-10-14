@@ -1,6 +1,7 @@
 import type { Task, TaskTime, TaskTimeComputed, TaskTimeInput } from '@/types/task';
 import { ifcStr, ifcBool } from './ifcPsets';
 import { DEFAULT_PRIORITY } from './ifcConstants';
+import { isSummaryTask } from '@/utils/taskHierarchy';
 
 /**
  * IFCTASK/IFCTASKTIME-slot-registry: de POSITIONELE slot-layout van de twee IFC-kern-entiteiten op
@@ -22,8 +23,8 @@ import { DEFAULT_PRIORITY } from './ifcConstants';
  *     leest via dezelfde `TASKTIME_SLOT`-namen.
  * De STEP-parse-helpers (parseDateFromIFC/parseDurationDays/optDate/optDuration) blijven in ifcReader
  * en worden aan de read-descriptors doorgegeven (dependency-injectie) — zo importeert dit bestand
- * alleen uit `@/types`, `./ifcPsets` en `./ifcConstants` (leaves) en ontstaat er geen import-cyclus
- * met ifcReader/ifcWriter.
+ * alleen uit `@/types`, `@/utils/taskHierarchy`, `./ifcPsets` en `./ifcConstants` (leaves) en
+ * ontstaat er geen import-cyclus met ifcReader/ifcWriter.
  */
 
 // ── IFCTASKTIME ─────────────────────────────────────────────────────────────────────────────────
@@ -288,12 +289,16 @@ export interface TaskWriteCtx {
 export const IFC_TASK_STATUS_RUNNING = 'STARTED';
 
 /**
- * Lopend op 100 %: status STARTED, `completion >= 1` en geen werkelijk einde. Zo komt een P6-taak
- * binnen (XER `TK_Active` op 100 %). Zonder markering maakt `normalizeImportedProgress` hem bij het
- * heropenen "Voltooid", met het werkelijke einde op de statusdatum.
+ * Lopend op 100 %: een TAAK (geen fase) met status STARTED, `completion >= 1` en geen werkelijk einde.
+ * Zo komt een P6-taak binnen (XER `TK_Active` op 100 %). Zonder markering maakt
+ * `normalizeImportedProgress` hem bij het heropenen "Voltooid", met het werkelijke einde op de
+ * statusdatum. Een fase valt erbuiten: haar voortgang is een rollup (`summaryProgress.ts`), die ook
+ * STARTED op 1 geeft (alle taken klaar plus een niet-gestarte mijlpaal, of ≥ 99,95 % afgerond), en
+ * de solve rekent hem na het openen opnieuw uit.
  */
-export function isRunningAtFullCompletion(task: Task): boolean {
-  return task.status === 'STARTED' && task.time.completion >= 1 && !task.time.actualFinish;
+function isRunningAtFullCompletion(task: Task): boolean {
+  return !isSummaryTask(task)
+    && task.status === 'STARTED' && task.time.completion >= 1 && !task.time.actualFinish;
 }
 
 export interface TaskSlot {
