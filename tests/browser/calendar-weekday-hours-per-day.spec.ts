@@ -7,7 +7,9 @@
 // dagknoppen. Corpusloze kern: `tests/planning/check-urenperdag-dagwissel.ts` (§1–§4, §6).
 //
 // De .xer gaat via de ribbonknop Openen en de bestandskiezer; daarna alleen echte klikken. `window.__OPS__`
-// wordt uitsluitend gebruikt om de uitkomst te LEZEN (patroon `xer-wbs-tree.spec.ts`).
+// wordt uitsluitend gebruikt om de uitkomst te LEZEN (patroon `xer-wbs-tree.spec.ts`). Uitzondering: de
+// laatste test (resourcekalendervenster) zet zijn fixture via `__OPS__` (patroon
+// `calendar-dialog-commits.spec.ts`); de gebruikershandeling zelf blijft echte klikken.
 import type { Locator, Page } from '@playwright/test';
 import { expect, test } from './fixtures/ops';
 
@@ -211,4 +213,46 @@ test('kalendervenster: de beginstand blijft per kalender bewaard als je in het v
       const c = window.__OPS__!.store.getState().calendar;
       return [c.workDays, c.workTime?.byWeekday[1], c.hoursPerDay];
     })).toEqual([[1, 5], [{ start: 420, end: 960 }], 8]);
+  });
+
+test('resourcekalendervenster: ma t/m do uit en ma weer aan bij 9/9/9/9/8 (8 u/dag) geeft 8, en ma krijgt zijn eigen 9 u terug',
+  async ({ page, ops: _ops }) => {
+    // Het resourcekalendervenster houdt de beginstand in het formulier zelf (geen `sessionStart`-prop). Ma–do
+    // 07:00–16:00 (9 u), vr 07:00–15:00 (8 u), 8 u/dag: modaal 9, dus 8 is een afwijking. Met de tussenstand
+    // (alleen vr 8 u) als beginstand kreeg ma een kopie van vr (8 u). De fixture gaat via `__OPS__`; de
+    // dagknoppen en Toepassen zijn echte klikken.
+    const calendarId = await page.evaluate(() => {
+      const s = window.__OPS__!.store.getState();
+      const { id: _ignored, ...base } = structuredClone(s.calendar);
+      void _ignored;
+      const nine = [{ start: 420, end: 960 }];
+      const eight = [{ start: 420, end: 900 }];
+      const id = s.addCalendar({
+        ...base, name: 'Negen en acht', workDays: [1, 2, 3, 4, 5], hoursPerDay: 8,
+        workTime: { byWeekday: { 1: nine, 2: nine, 3: nine, 4: nine, 5: eight, 6: [], 7: [] } },
+      });
+      s.addResource({ name: 'Ploeg', type: 'LABOR', description: '', maxUnits: 1, calendarId: id });
+      window.__OPS__!.store.getState().setUI({
+        activeRibbonTab: 'resources', showResourcePanel: true, resourcePanelDocked: false, resourcesView: 'project',
+      });
+      return id;
+    });
+    const resourceCalendar = (id: string) => page.evaluate((cid) => {
+      const c = window.__OPS__!.store.getState().calendars.find((x) => x.id === cid)!;
+      return [c.workDays, c.workTime?.byWeekday[1], c.hoursPerDay];
+    }, id);
+    expect(await resourceCalendar(calendarId)).toEqual([[1, 2, 3, 4, 5], [{ start: 420, end: 960 }], 8]);
+
+    await page.getByRole('row', { name: /Ploeg/ }).getByRole('button', { name: 'Edit…' }).click();
+    const dialog = page.getByRole('dialog');
+    await expect(netHours(dialog)).toHaveText('8.00 h');
+    await clickDays(dialog, ['Mon', 'Tue', 'Wed', 'Thu']);
+    await expect(netHours(dialog)).toHaveText('8.00 h');
+    await clickDays(dialog, ['Mon']);
+    await expect(dialog.locator('[data-ops-worktime-day="1"]')).toContainText('9.00h');
+    await expect(netHours(dialog)).toHaveText('8.00 h');
+
+    await dialog.getByRole('button', { name: 'Apply' }).click();
+    await expect(dialog).toBeHidden();
+    await expect.poll(() => resourceCalendar(calendarId)).toEqual([[1, 5], [{ start: 420, end: 960 }], 8]);
   });
