@@ -230,7 +230,8 @@ export const STANDARD_DAY_BLOCKS: ReadonlyArray<{ start: number; end: number }> 
  *    `seedScalarBands`); (4) levert ook dat niets op (een nachtscalar 22→06, of netto meer dan de
  *    spanne), de standaardwerkdag {@link STANDARD_DAY_BLOCKS}. Zo ontstaat een werkdag nooit zonder
  *    blokken.
- * `hoursPerDay` volgt dan uit de blokken ({@link deriveHoursPerDay}).
+ * `hoursPerDay` volgt de blokken alleen als hij dat vóór de wissel ook deed; zie
+ * {@link hoursPerDayAfterDayChange}.
  */
 export function workDayTogglePatch(
   cal: Pick<WorkCalendar, 'workDays' | 'workTime' | 'hoursPerDay' | 'workStartHour' | 'workEndHour'
@@ -253,7 +254,29 @@ export function workDayTogglePatch(
   const workTime: WorkTimeBands = {
     byWeekday: { ...cal.workTime.byWeekday, [day as 1]: source.map((b) => ({ ...b })) },
   };
-  return { workDays, workTime, hoursPerDay: deriveHoursPerDay(workTime, cal.hoursPerDay) };
+  return { workDays, workTime, hoursPerDay: hoursPerDayAfterDayChange(cal, workTime) };
+}
+
+/**
+ * `hoursPerDay` van een uurkalender na een wissel van werkdagen (één regel voor de werkdagknoppen, de
+ * knop *Ma–vr* en MCP `planner_update_calendar` met alleen `workDays`).
+ *
+ * `hoursPerDay` is de omrekening tussen dagen en uren (P6 `day_hr_cnt`) en mag afwijken van de blokken:
+ * "Late ploeg" 14:00–24:00 met 8 uur per dag. Zo'n afwijking is projectdata en blijft staan. Alleen als
+ * `hoursPerDay` vóór de wissel gelijk was aan de modale dagsom van de blokken ({@link deriveHoursPerDay}),
+ * volgt hij de nieuwe blokken. Een week zonder enig blok heeft geen dagsom; dan volgt hij ook de nieuwe
+ * blokken, zodat een werkdagwissel nooit zelf een afwijking maakt.
+ *
+ * Strikte gelijkheid, zoals de IFC-schrijver beslist of hij `HoursPerDay` apart bewaart
+ * (`docs/ifc-round-trip.md`, "Uren per dag bij een blokkenkalender").
+ */
+function hoursPerDayAfterDayChange(
+  before: Pick<WorkCalendar, 'workTime' | 'hoursPerDay'>,
+  workTime: WorkTimeBands,
+): number {
+  const followsBlocks = !before.workTime
+    || before.hoursPerDay === deriveHoursPerDay(before.workTime, before.hoursPerDay);
+  return followsBlocks ? deriveHoursPerDay(workTime, before.hoursPerDay) : before.hoursPerDay;
 }
 
 /**
@@ -261,6 +284,9 @@ export function workDayTogglePatch(
  * Elke dag die van stand wisselt, gaat door {@link workDayTogglePatch}; bij een uurkalender gaan de
  * blokken dus mee en houdt een dag die aan blijft zijn eigen blokken. Eerst gaan de dagen aan (zij
  * kopiëren dan nog van een bestaande werkdag), daarna gaan de andere uit.
+ *
+ * De hele zet telt als één wissel: `hoursPerDay` volgt de blokken als hij dat vóór de zet deed
+ * ({@link hoursPerDayAfterDayChange} op de kalender van vóór de zet), los van de tussenstanden.
  */
 export function workDaysSetPatch(
   cal: Pick<WorkCalendar, 'workDays' | 'workTime' | 'hoursPerDay' | 'workStartHour' | 'workEndHour'
@@ -277,7 +303,7 @@ export function workDaysSetPatch(
     }
   }
   return cur.workTime
-    ? { workDays: cur.workDays, workTime: cur.workTime, hoursPerDay: cur.hoursPerDay }
+    ? { workDays: cur.workDays, workTime: cur.workTime, hoursPerDay: hoursPerDayAfterDayChange(cal, cur.workTime) }
     : { workDays: cur.workDays };
 }
 
