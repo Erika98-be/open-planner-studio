@@ -11,7 +11,8 @@ import { ActivityCodeType, CustomFieldDef, CustomFieldType, CustomFieldValue } f
 import { Baseline } from '@/types/baseline';
 import type { CustomTaskType } from '@/types/taskType';
 import {
-  effectiveCalendarByTask, minutesToClock, minutesToIsoDuration, scalarHourFromClock, taskMinutesForWrite,
+  deriveHoursPerDay, effectiveCalendarByTask, minutesToClock, minutesToIsoDuration, scalarHourFromClock,
+  taskMinutesForWrite,
 } from '@/services/subdayIo';
 import { effectiveWorkTimeBands } from '@/utils/effectiveWorkTime';
 import type { ImportResult, RecordedSourceFormat } from '@/services/importTypes';
@@ -1016,6 +1017,10 @@ interface WriteCalendarResult {
    *  `weekBandGroups`). Dan is de scalar werktijd niet eenduidig uit de periodes af te leiden: een
    *  oudere lezer neemt de eerste groep, deze lezer de eerste werkdag met blokken. */
   perDayWeek: boolean;
+  /** Alleen bij een UURkalender (`cal.workTime`): de uren per dag die de lezer uit de GESCHREVEN blokken
+   *  afleidt (`promoteHourCalendar` → `deriveHoursPerDay`, de modale dagsom). `NaN` als er geen blok
+   *  geschreven is (de lezer heeft dan geen eigen afleiding). Dagkalender ⇒ `undefined`. */
+  readerHourCalendarHoursPerDay: number | undefined;
 }
 
 /** Eén `IFCWORKTIME` in `WorkingTimes`: de werkdagen (in `cal.workDays`-volgorde) met precies
@@ -1197,7 +1202,20 @@ function writeCalendar(
       : undefined,
     materializedScalarBands: !cal.workTime && workTime !== undefined,
     perDayWeek,
+    readerHourCalendarHoursPerDay: cal.workTime ? writtenWeekHoursPerDay(groups) : undefined,
   };
+}
+
+/**
+ * De uren per dag die de lezer voor een uurkalender afleidt: de modale dagsom (`deriveHoursPerDay`) van
+ * de blokken zoals ze in het bestand staan, dus per groep van `weekBandGroups`. Een dag buiten `workDays`
+ * schrijft de writer niet, en een werkdag zonder eigen blokken krijgt die van de eerste werkdag. Geen
+ * enkel blok ⇒ `NaN`. `deriveHoursPerDay` leest alleen weekdag 1–7 en slaat dagen zonder blokken over.
+ */
+function writtenWeekHoursPerDay(groups: readonly WeekBandGroup[]): number {
+  const byWeekday: Record<number, WeekBandGroup['bands']> = {};
+  for (const group of groups) for (const day of group.days) byWeekday[day] = group.bands;
+  return deriveHoursPerDay({ byWeekday } as WorkTimeBands, NaN);
 }
 
 /**
@@ -1205,9 +1223,11 @@ function writeCalendar(
  * (`IFCPROPERTYSINGLEVALUE`s + `IFCRELDEFINESBYPROPERTIES`). Elke property volgt de golden rule
  * (alleen schrijven wat afwijkt of gezet is):
  *  - `generation` (regelset-herkomst): alleen bij een gegenereerde kalender.
- *  - `HoursPerDay`: alleen voor DAG-kalenders (`!cal.workTime`; uurkalenders leiden hem af uit de
- *    banden) en alleen wanneer hij AFWIJKT van `workEndHour − workStartHour` (bv. "Bouwkalender NL"
- *    07-16 met lunchuur: 8 ≠ 9) — anders overschrijft de afgeleide span hem bij het lezen.
+ *  - `HoursPerDay`: alleen wanneer hij AFWIJKT van wat de lezer zonder deze eigenschap afleidt — bij een
+ *    dagkalender `workEndHour − workStartHour` (bv. "Bouwkalender NL" 07-16 met lunchuur: 8 ≠ 9), bij
+ *    een uurkalender de modale dagsom van de geschreven blokken (`readerHourCalendarHoursPerDay`). De
+ *    regel voor schrijver en lezer staat in docs/ifc-round-trip.md, "Uren per dag bij een
+ *    blokkenkalender".
  *  - `WorkingExceptionIds`: de STEP-ids van de werkende-uitzondering-`IFCWORKTIME`'s uit
  *    `writeCalendar`. Dit IS de discriminator waarmee de reader een werkende uitzondering van een
  *    (evt. recurrente) feestdag onderscheidt — een RecurrencePattern-ref is geen IFC-gereserveerd
@@ -1237,10 +1257,15 @@ function writeCalendarGenerationMeta(
 ): void {
   const {
     calStepId, workingExceptionStepIds, readerScalarHours, materializedScalarBands, perDayWeek,
+    readerHourCalendarHoursPerDay,
   } = written;
   const gen = cal.generation;
-  const derivedHoursPerDay = cal.workEndHour - cal.workStartHour;
-  const needsHoursPerDayOverride = !cal.workTime && cal.hoursPerDay !== derivedHoursPerDay;
+  // De uren per dag die de lezer zonder deze eigenschap zou afleiden: bij een dagkalender
+  // einde − begin, bij een uurkalender de modale dagsom van de geschreven blokken.
+  const derivedHoursPerDay = cal.workTime
+    ? readerHourCalendarHoursPerDay
+    : cal.workEndHour - cal.workStartHour;
+  const needsHoursPerDayOverride = cal.hoursPerDay !== derivedHoursPerDay;
   const hasWorkingExceptions = workingExceptionStepIds.length > 0;
   const hasP6Source = cal.p6Source === 'XER';
   const hasRejectedPenaltyDiagnostic = cal.p6NonWorkPenaltyDatesState === 'REJECTED';
