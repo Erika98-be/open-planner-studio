@@ -883,3 +883,6 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   `resolveMissingScheduleDates`) overleeft ⇒ fixture zonder statusdatum/plan/target-start; (2) `measure:profiles`-claim
   bewijst niets (MER-bestanden `included: false` in het X12-manifest). Open punt: onbekende statustekst blijft "niet
   gestart" (MPXJ: null = leeg) ⇒ knownbugs 118, besluit later. Kleine fixronde bij de maker.
+- **#358 fixronde klaar** (4e70c8982: alleen check + `knownbugs.md` + PR-tekst; M7 nu rood; knownbugs 118 onbekende
+  statustekst). Main kreeg intussen #356 (tauri 2.12, ffe1e5ddf, andere sessie); #358 bijgewerkt met main via
+  `gh pr update-branch` (kop 9eb106908). Merge na groene CI.
