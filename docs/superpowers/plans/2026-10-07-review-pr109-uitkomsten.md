@@ -818,3 +818,8 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
 - #354 kop 269aba26e (CI 16/16): MCP met `workTime` zelfde sessieregel (M14–M16 rood), gids `ref-kalenders` bijgewerkt;
   `measure:profiles --only=p6`: main 967c9e07b en PR beide p6-x12 exit 1 (NULDOEL, 76 afwijkingen, bestaande stand),
   eindexit 0, tabellen gelijk. Hercheck door dezelfde reviewer gestart.
+- **Hercheck #354 (reviewer, Opus 5.5): ja** op 269aba26e. Lege week (za 08–18, hpd 8), klikvolgorde (beide 8), "+ blok"
+  houdt 8; beginstand per kalender klopt bij Annuleren/heropenen/Enter/preset; resourcekalendervenster werkt in de
+  browser; XER-minuten: 0 corpusverschillen; R3/R8/R10–R14 rood. Rest: R16 (beginstand resourcevenster) ongetest,
+  gidsen noemen netto-uren nog altijd de bloksom ⇒ beide bij de maker; daarna merge. Voor de eigenaar [VERMOED]:
+  een afwijkende hpd is in het venster alleen via een preset terug te zetten (hoort bij besluit "een dag").
