@@ -7,7 +7,6 @@ import { WorkTimeEditor } from './WorkTimeEditor';
 import { DateTextInput } from '@/components/common/DateTextInput';
 import { StepButtons, TimeInput, TIME_STEP_MINUTES } from '@/components/common/TimeInput';
 import { formatClock, parseClock } from '@/utils/displayTime';
-import type { TimeNotation } from '@/types/view';
 import { useAppStore } from '@/state/appStore';
 import { isHourCalendar, deriveHoursPerDay, workDayTogglePatch, workDaysFromBands, workDaysSetPatch } from '@/services/subdayIo';
 import { generateId } from '@/utils/id';
@@ -25,17 +24,6 @@ import {
   calendarScalarBreakIssue, inferredSimpleBreak, scalarBreakIssue, scalarTimesValid, simpleBreakPatch,
 } from '@/utils/effectiveWorkTime';
 import { holidayIssue } from '@/utils/holidayRange';
-
-/** Minuten → kloktijd in de gekozen notatie. Alleen *Einde* kent 24:00 (of 12:00 AM): het eind van de dag. */
-function minutesToTime(value: number, notation: TimeNotation, endOfDay = false): string {
-  return formatClock(value, notation, { endOfDay });
-}
-
-/** Getypte kloktijd → minuten; beide notaties zijn geldig (`parseClock`). */
-function timeToMinutes(value: string, endOfDay = false): number | undefined {
-  return parseClock(value, { endOfDay });
-}
-
 
 /** Rode rand voor een ongeldige feestdagdatum; `DateTextInput` legt `style` op de omrande groep. */
 const INVALID_DATE_STYLE = { borderColor: 'var(--error)' } as const;
@@ -103,10 +91,10 @@ export function CalendarForm({
   const inferredBreak = inferredSimpleBreak(draft);
   const inferredSimpleBreakDuration = inferredBreak.durationMinutes;
   const inferredSimpleBreakStart = inferredBreak.startMinute;
-  const [workStartText, setWorkStartText] = useState(() => minutesToTime(draft.workStartHour * 60, timeNotation));
-  const [workEndText, setWorkEndText] = useState(() => minutesToTime(draft.workEndHour * 60, timeNotation, true));
+  const [workStartText, setWorkStartText] = useState(() => formatClock(draft.workStartHour * 60, timeNotation));
+  const [workEndText, setWorkEndText] = useState(() => formatClock(draft.workEndHour * 60, timeNotation, { endOfDay: true }));
   const [simpleBreakStartText, setSimpleBreakStartText] = useState(() =>
-    minutesToTime(draft.simpleBreakStartMinute ?? inferredSimpleBreakStart, timeNotation));
+    formatClock(draft.simpleBreakStartMinute ?? inferredSimpleBreakStart, timeNotation));
   const [simpleBreakDurationText, setSimpleBreakDurationText] = useState(() =>
     String(draft.simpleBreakDurationMinutes ?? inferredSimpleBreakDuration));
   const [scalarTimeIssues, setScalarTimeIssues] = useState<Partial<Record<ScalarTimeField, ScalarTimeIssue>>>({});
@@ -116,7 +104,7 @@ export function CalendarForm({
   );
 
   useEffect(() => {
-    setWorkStartText(minutesToTime(draft.workStartHour * 60, timeNotation));
+    setWorkStartText(formatClock(draft.workStartHour * 60, timeNotation));
     setScalarTimeIssues(issues => {
       if (!issues.workStart) return issues;
       const next = { ...issues };
@@ -126,7 +114,7 @@ export function CalendarForm({
   }, [draft.workStartHour, timeNotation]);
 
   useEffect(() => {
-    setWorkEndText(minutesToTime(draft.workEndHour * 60, timeNotation, true));
+    setWorkEndText(formatClock(draft.workEndHour * 60, timeNotation, { endOfDay: true }));
     setScalarTimeIssues(issues => {
       if (!issues.workEnd) return issues;
       const next = { ...issues };
@@ -136,7 +124,7 @@ export function CalendarForm({
   }, [draft.workEndHour, timeNotation]);
 
   useEffect(() => {
-    setSimpleBreakStartText(minutesToTime(draft.simpleBreakStartMinute ?? inferredSimpleBreakStart, timeNotation));
+    setSimpleBreakStartText(formatClock(draft.simpleBreakStartMinute ?? inferredSimpleBreakStart, timeNotation));
     setScalarTimeIssues(issues => {
       if (!issues.breakStart) return issues;
       const next = { ...issues };
@@ -303,7 +291,7 @@ export function CalendarForm({
     setText(value);
     // Tusseninvoer blijft in het DOM en raakt het model nooit. Alleen een volledig gevormde
     // HH:MM wist een eerdere tekstfout; inhoudelijke grenzen worden bij blur/Enter beoordeeld.
-    if (timeToMinutes(value, field === 'workEnd') !== undefined) setScalarTimeIssue(field);
+    if (parseClock(value, { endOfDay: field === 'workEnd' }) !== undefined) setScalarTimeIssue(field);
   };
 
   const scalarTimesAreValid = (patch: Partial<WorkCalendar>) => scalarTimesValid(draft, patch);
@@ -311,7 +299,7 @@ export function CalendarForm({
   // Pas bij blur of Enter wordt een complete, inhoudelijk geldige HH:MM-waarde naar het model
   // geschreven. Daarmee blijft ook omgekeerde of buiten-de-dag liggende tusseninvoer veilig lokaal.
   const commitWorkStart = () => {
-    const minute = timeToMinutes(workStartText);
+    const minute = parseClock(workStartText);
     if (minute === undefined) {
       setScalarTimeIssue('workStart', 'invalidWorkStart');
       return;
@@ -325,7 +313,7 @@ export function CalendarForm({
   };
 
   const commitWorkEnd = () => {
-    const minute = timeToMinutes(workEndText, true);
+    const minute = parseClock(workEndText, { endOfDay: true });
     if (minute === undefined) {
       setScalarTimeIssue('workEnd', 'invalidWorkEnd');
       return;
@@ -339,7 +327,7 @@ export function CalendarForm({
   };
 
   const commitSimpleBreakStart = () => {
-    const minute = timeToMinutes(simpleBreakStartText);
+    const minute = parseClock(simpleBreakStartText);
     if (minute === undefined || !scalarTimesAreValid({ simpleBreakStartMinute: minute })) {
       setScalarTimeIssue('breakStart', 'invalidStart');
       return;
@@ -405,7 +393,7 @@ export function CalendarForm({
     setText: (value: string) => void,
     delta: number,
   ) => {
-    const current = timeToMinutes(text, field === 'workEnd');
+    const current = parseClock(text, { endOfDay: field === 'workEnd' });
     if (current === undefined) {
       setScalarTimeIssue(field, field === 'workStart' ? 'invalidWorkStart' : field === 'workEnd' ? 'invalidWorkEnd' : 'invalidStart');
       return;
@@ -426,7 +414,7 @@ export function CalendarForm({
       setScalarTimeIssue(field, field === 'breakStart' ? 'invalidStart' : 'invalidWorkTimeOrder');
       return;
     }
-    setText(minutesToTime(nextMinute, timeNotation, field === 'workEnd'));
+    setText(formatClock(nextMinute, timeNotation, { endOfDay: field === 'workEnd' }));
     setScalarTimeIssue(field);
     patchSimpleBreak(patch);
   };

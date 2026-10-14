@@ -345,7 +345,7 @@
     "dateNotationMdy": "mm-dd-yyyy",
     "dateNotationYmd": "yyyy-mm-dd",
     "timeNotation": "Time format",
-    "timeNotationHint": "Determines how clock times are displayed and entered everywhere in the app. Files and calculations are unaffected (24-hour).",
+    "timeNotationHint": "Determines how clock times are displayed and entered: in the calendar window, for tasks in hours in the table, on the hour scale of the Gantt and in messages. Files and calculations are unaffected (24-hour).",
     "timeNotation24h": "24-hour (13:00)",
     "timeNotation12h": "12-hour (1:00 PM)",
     "fontFamilyLabel": "Font",

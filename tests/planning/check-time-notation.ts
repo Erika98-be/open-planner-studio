@@ -50,8 +50,8 @@ eq('12h 23:59 is 11:59 PM', formatClock(1439, '12h'), '11:59 PM');
 eq('12h 1440 als einde is 12:00 AM', formatClock(1440, '12h', { endOfDay: true }), '12:00 AM');
 eq('12h nachtblok-start 22:00', formatClock(1320, '12h'), '10:00 PM');
 eq('12h nachtblok-einde 1800 toont 6:00 AM', formatClock(1800, '12h'), '6:00 AM');
-eq('plaatshouder 24h', clockPlaceholder('24h'), 'HH:MM');
-eq('plaatshouder 12h', clockPlaceholder('12h'), 'h:mm AM');
+eq('plaatshouder 24h', clockPlaceholder('24h'), '13:30');
+eq('plaatshouder 12h', clockPlaceholder('12h'), '1:30 PM');
 
 // ── 2b) Tijdschaal van de Gantt (korte vorm) ────────────────────────────────
 eq('as 24h uur', formatAxisClock(780, '24h', 'hour'), '13:00');

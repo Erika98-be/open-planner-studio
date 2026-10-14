@@ -146,7 +146,7 @@ test('Tijdnotatie: kalendervenster, tabel en Gantt volgen de instelling, ook na 
   dialog = page.locator('[data-ops-calendar-dialog]');
   await expect(dialog.locator('[data-ops-work-start]')).toHaveValue('7:00 AM');
   await expect(dialog.locator('[data-ops-work-end]')).toHaveValue('4:00 PM');
-  await expect(dialog.locator('[data-ops-work-start]')).toHaveAttribute('placeholder', 'h:mm AM');
+  await expect(dialog.locator('[data-ops-work-start]')).toHaveAttribute('placeholder', '1:30 PM');
   await dialog.locator('[data-ops-calendar-preset-continuous]').click();
   await expect(dialog.locator('[data-ops-work-start]')).toHaveValue('12:00 AM');
   await expect(dialog.locator('[data-ops-work-end]')).toHaveValue('12:00 AM');

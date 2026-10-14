@@ -74,9 +74,14 @@ export function formatLocalDateTime(date: Date, locale: string, notation: TimeNo
   return `${dateFormat.format(date)} ${formatClock(date.getHours() * 60 + date.getMinutes(), notation)}`;
 }
 
-/** Plaatshouder voor een leeg tijdveld in de gekozen notatie. */
+/**
+ * Plaatshouder voor een leeg tijdveld: een voorbeeldtijd in de gekozen notatie (`13:30` of `1:30 PM`).
+ * Bewust geen vertaalsleutel: een patroon als `HH:MM` hangt van de taal af (nl `UU:MM`, fr `HH:MM`),
+ * een voorbeeldtijd niet. AM/PM zijn vaste notatietekens (zie boven), dus de plaatshouder is in elke taal
+ * gelijk en laat meteen de vorm zien die het veld verwacht.
+ */
 export function clockPlaceholder(notation: TimeNotation): string {
-  return notation === '12h' ? 'h:mm AM' : 'HH:MM';
+  return formatClock(13 * 60 + 30, notation);
 }
 
 const CLOCK_INPUT = /^(\d{1,2})(?:[:.]?(\d{2}))?\s*(?:(a|p)\.?(?:m\.?)?)?$/;
