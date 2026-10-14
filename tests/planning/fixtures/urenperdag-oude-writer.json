@@ -1,0 +1,25 @@
+{
+ "hoursPerDay": {
+  "Late ploeg": 10,
+  "Twee blokken": 9,
+  "Nachtblok": 8,
+  "Korte vrijdag": 10,
+  "Spanne": 9,
+  "Fractie": 10,
+  "Lange maandag": 8,
+  "Werkdagen zonder blokken": 10,
+  "Gelijk": 8
+ },
+ "scheduleDuration": {
+  "t-late": 4,
+  "t-twee": 4.444444444444445,
+  "t-nacht": 5,
+  "t-perdag": 4,
+  "t-spanne": 4.444444444444445,
+  "t-fractie": 4,
+  "t-maandag": 5,
+  "t-leeg": 4,
+  "t-gelijk": 5,
+  "t-dag": 5
+ }
+}
