@@ -1339,7 +1339,6 @@
     "applyTemplate": "ອັບເດດຈາກແມ່ແບບ",
     "deleteTemplate": "ລຶບແມ່ແບບ",
     "templateDeviates": "ໂປຣໄຟລ໌ນີ້ແຕກຕ່າງຈາກແມ່ແບບ “{{name}}”.",
-    "applyDefaultOptions": "ນຳໃຊ້ຕົວເລືອກເລີ່ມຕົ້ນຂອງໂປຣໄຟລ໌ນີ້",
     "themes": {
       "completedWork": "ຄວາມຄືບໜ້າ ແລະ ວຽກທີ່ສຳເລັດ",
       "relationsLag": "ສາຍສຳພັນ ແລະ ຄ່າ lag",

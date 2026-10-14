@@ -1444,7 +1444,6 @@
     "applyTemplate": "Atualizar a partir do modelo",
     "deleteTemplate": "Eliminar modelo",
     "templateDeviates": "Este perfil difere do modelo «{{name}}».",
-    "applyDefaultOptions": "Aplicar as opções predefinidas deste perfil",
     "themes": {
       "completedWork": "Progresso e trabalho concluído",
       "relationsLag": "Relações e defasagem",

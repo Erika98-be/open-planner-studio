@@ -1393,7 +1393,6 @@
     "applyTemplate": "Şablondan güncelle",
     "deleteTemplate": "Şablonu sil",
     "templateDeviates": "Bu profil “{{name}}” şablonundan farklı.",
-    "applyDefaultOptions": "Bu profilin varsayılan seçeneklerini uygula",
     "themes": {
       "completedWork": "İlerleme ve tamamlanan iş",
       "relationsLag": "İlişkiler ve gecikme",

@@ -1419,7 +1419,6 @@
     "deleteTemplate": "Sjabloon verwijderen",
     "deleteTemplateConfirm": "Sjabloon „{{name}}” verwijderen? Projecten met dit profiel houden hun eigen kopie.",
     "templateDeviates": "Dit profiel wijkt af van het sjabloon “{{name}}”.",
-    "applyDefaultOptions": "Standaardopties van dit profiel toepassen",
     "themes": {
       "completedWork": "Voortgang en voltooid werk",
       "relationsLag": "Relaties en lag",
@@ -1449,6 +1448,12 @@
       "xerOrigin": "alleen taken uit .xer",
       "hourPlanning": "alleen bij uurplanning",
       "hourPlanningTitle": "Werkt alleen bij uurplanning: een kalender met werkblokken, een taak in uren, of de lag-kalender op 24-uurs."
+    },
+    "optionsDeviate": {
+      "line": "{{field}}: {{current}} (standaard: {{standard}})",
+      "intro": "Deze reken-opties wijken af van de standaard van {{name}}. Dat is vaak bewust, bijvoorbeeld omdat ze uit het geopende bestand komen.",
+      "useDefaults": "Standaardinstellingen van {{name}} gebruiken",
+      "totalFloatAtMost": "totale speling ≤ {{value}} {{unit}}"
     }
   },
   "dialogHelp": {

@@ -1389,7 +1389,6 @@
     "applyTemplate": "Oppdater fra mal",
     "deleteTemplate": "Slett mal",
     "templateDeviates": "Denne profilen avviker fra malen “{{name}}”.",
-    "applyDefaultOptions": "Bruk standardinnstillingene i denne profilen",
     "themes": {
       "completedWork": "Fremdrift og fullført arbeid",
       "relationsLag": "Avhengigheter og forsinkelse",

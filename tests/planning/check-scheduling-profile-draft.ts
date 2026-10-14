@@ -4,6 +4,7 @@ import {
   choiceOf, selectProfile, editConvention, renameProfile, resetConventionToBase, profileLabel, templateRelation,
   totalFloatModeToUi, totalFloatModeFromUi, withCriticalMode, withCriticalThreshold, withDefaultOptions, sameSettings,
   hasValidProfileName, SOURCE_ONLY_OPTION_KEYS, ssLagHasHourPlanning, newProfileFrom, conventionsEditable,
+  optionDeviations, optionDeviationsSignature, effectiveOptions,
 } from '@/state/schedulingProfileDraft';
 import { builtInProfile, defaultOptionsFor, resolveConventions } from '@/engine/scheduler/conventions/registry';
 import type { SchedulingProfile } from '@/types/project';
@@ -214,6 +215,40 @@ eq('36c ingebouwd id als kopie-id ⇒ no-op', editConvention(xerP6, 'clampNegati
     newProfileFrom(xerP6, { id: 'p6', name: 'K' }) === xerP6,
     newProfileFrom(xerP6, { id: 'x'.repeat(65), name: 'K' }) === xerP6,
   ], [true, true, true]);
+}
+
+// Blok "afwijkende reken-opties" (eigenaar 2026-10-14): effectieve waarden, bronopties tellen niet mee.
+// Mutanten: een ontbrekende sleutel telt als afwijking ⇒ 40a/40b rood; een bronoptie telt mee ⇒ 40d rood.
+{
+  const keys = (profile: SchedulingProfile | undefined, o: Parameters<typeof optionDeviations>[1]) => optionDeviations(profile, o).map(d => d.key);
+  const p6 = builtInProfile('p6');
+  eq('40a nieuw project, OPS zonder opties: geen afwijking', keys(undefined, undefined), []);
+  eq('40b P6 met precies de standaard: geen afwijking', keys(p6, defaultOptionsFor('p6')), []);
+  eq('40c P6 zonder opties: ontbrekende sleutels = app-standaard, alleen speling wijkt af (auto ≠ finish)', keys(p6, undefined), ['totalFloatMode']);
+  eq('40d bronopties tellen niet mee', keys(p6, { ...defaultOptionsFor('p6'), useExpectedFinishDates: true, useProjectEndDateForFloat: true,
+    p6CompletedLateFromRemainingWindow: true, leveling: { keepScheduleDates: true } as never }), []);
+  const roads = { ...defaultOptionsFor('p6'), criticalDefinition: { mode: 'longestPath' as const, thresholdHours: 0 } };
+  const dev = optionDeviations(p6, roads);
+  eq('40e langste pad onder P6: precies Kritiek-definitie', dev, [{ key: 'criticalDefinition', current: { mode: 'longestPath' }, standard: { mode: 'totalFloat', value: 0, unit: 'hours' } }]);
+  eq('40f drempel 0 in werkdagen = 0 in uren', keys(p6, { ...defaultOptionsFor('p6'), criticalDefinition: { mode: 'totalFloat', threshold: 0 } }), []);
+  eq('40g drempel 8 uur wijkt af', keys(p6, { ...defaultOptionsFor('p6'), criticalDefinition: { mode: 'totalFloat', thresholdHours: 8 } }), ['criticalDefinition']);
+  eq('40h onder MS Project wijken de P6-opties af (lag-kalender Voorganger = app-standaard)', keys(builtInProfile('msproject'), roads),
+    ['criticalDefinition', 'totalFloatMode']);
+  eq('40i eigen profiel: standaard van zijn basis', keys(own, roads), ['criticalDefinition']);
+  eq('40j alle zeven bewerkbare opties', keys(undefined, { criticalDefinition: { mode: 'longestPath' }, totalFloatMode: 'start', makeOpenEndedCritical: true,
+    nearCriticalThreshold: 2, floatPaths: { enabled: true, method: 'TOTAL_FLOAT', maxPaths: 3 }, lagCalendar: '24hour', startToStartLagFrom: 'actualStart' }),
+    ['criticalDefinition', 'totalFloatMode', 'makeOpenEndedCritical', 'nearCriticalThreshold', 'floatPaths', 'lagCalendar', 'startToStartLagFrom']);
+  eq('40k uitgeschakelde speling-paden = uit', effectiveOptions({ floatPaths: { enabled: false, method: 'FREE_FLOAT', maxPaths: 10 } }).floatPaths, null);
+  eq('40l de knop (withDefaultOptions) heft elke afwijking op en houdt de bronopties', [
+    keys(p6, withDefaultOptions(p6, { ...roads, useExpectedFinishDates: true })),
+    withDefaultOptions(p6, { ...roads, useExpectedFinishDates: true })?.useExpectedFinishDates,
+  ], [[], true]);
+  const sig = (o: Parameters<typeof optionDeviations>[1]) => optionDeviationsSignature(p6, optionDeviations(p6, o));
+  eq('40m andere afwijking ⇒ andere sleutel; zelfde set ⇒ zelfde sleutel', [
+    sig(roads) === sig({ ...roads, useExpectedFinishDates: true }),
+    sig(roads) === sig({ ...roads, lagCalendar: 'successor' }),
+    optionDeviationsSignature(p6, optionDeviations(p6, roads)) === optionDeviationsSignature(builtInProfile('msproject'), optionDeviations(p6, roads)),
+  ], [true, false, false]);
 }
 
 if (diffs.length === 0) console.log(`OK: bewerkmodel rekenprofiel — ${checks} checks groen`);

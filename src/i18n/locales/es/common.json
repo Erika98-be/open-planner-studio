@@ -1444,7 +1444,6 @@
     "applyTemplate": "Actualizar desde la plantilla",
     "deleteTemplate": "Eliminar plantilla",
     "templateDeviates": "Este perfil difiere de la plantilla «{{name}}».",
-    "applyDefaultOptions": "Aplicar las opciones predeterminadas de este perfil",
     "themes": {
       "completedWork": "Avance y trabajo completado",
       "relationsLag": "Relaciones y desfase",

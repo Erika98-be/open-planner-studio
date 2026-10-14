@@ -1495,7 +1495,6 @@
     "applyTemplate": "Aktualizuj z szablonu",
     "deleteTemplate": "Usuń szablon",
     "templateDeviates": "Ten profil różni się od szablonu „{{name}}”.",
-    "applyDefaultOptions": "Zastosuj domyślne opcje tego profilu",
     "themes": {
       "completedWork": "Postęp i ukończona praca",
       "relationsLag": "Powiązania i opóźnienie",

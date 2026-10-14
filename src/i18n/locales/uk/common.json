@@ -1489,7 +1489,6 @@
     "applyTemplate": "Оновити з шаблону",
     "deleteTemplate": "Видалити шаблон",
     "templateDeviates": "Цей профіль відрізняється від шаблону «{{name}}».",
-    "applyDefaultOptions": "Застосувати стандартні параметри цього профілю",
     "themes": {
       "completedWork": "Прогрес і виконані трудовитрати",
       "relationsLag": "Залежності та затримки",

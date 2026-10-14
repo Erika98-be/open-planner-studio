@@ -1419,7 +1419,6 @@
     "deleteTemplate": "Delete template",
     "deleteTemplateConfirm": "Delete template “{{name}}”? Projects with this profile keep their own copy.",
     "templateDeviates": "This profile differs from the template “{{name}}”.",
-    "applyDefaultOptions": "Apply this profile's default options",
     "themes": {
       "completedWork": "Progress and completed work",
       "relationsLag": "Relationships and lag",
@@ -1449,6 +1448,12 @@
       "xerOrigin": ".xer tasks only",
       "hourPlanning": "hour planning only",
       "hourPlanningTitle": "Only works with hour planning: a calendar with working blocks, a task in hours, or the lag calendar set to 24-hour."
+    },
+    "optionsDeviate": {
+      "line": "{{field}}: {{current}} (default: {{standard}})",
+      "intro": "These scheduling options differ from the {{name}} default. That is often on purpose, for example because they come from the opened file.",
+      "useDefaults": "Use the {{name}} default settings",
+      "totalFloatAtMost": "total float ≤ {{value}} {{unit}}"
     }
   },
   "dialogHelp": {

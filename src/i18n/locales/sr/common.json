@@ -1439,7 +1439,6 @@
     "applyTemplate": "Ажурирај из шаблона",
     "deleteTemplate": "Избриши шаблон",
     "templateDeviates": "Овај профил се разликује од шаблона „{{name}}”.",
-    "applyDefaultOptions": "Примени подразумеване опције овог профила",
     "themes": {
       "completedWork": "Напредак и завршени посао",
       "relationsLag": "Зависности и кашњење",

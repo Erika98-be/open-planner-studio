@@ -216,6 +216,80 @@ export function withDefaultOptions(
   return Object.keys(options).length > 0 ? options : undefined;
 }
 
+/** De zeven reken-opties die het blok laat bewerken (alle elf min `SOURCE_ONLY_OPTION_KEYS`). */
+export const EDITABLE_OPTION_KEYS = [
+  'criticalDefinition', 'totalFloatMode', 'makeOpenEndedCritical', 'nearCriticalThreshold', 'floatPaths',
+  'lagCalendar', 'startToStartLagFrom',
+] as const satisfies readonly Exclude<keyof ProjectSchedulingOptions, SourceOnlyOptionKey>[];
+export type EditableOptionKey = typeof EDITABLE_OPTION_KEYS[number];
+
+/** De EFFECTIEVE waarde van elke bewerkbare reken-optie: een ontbrekende sleutel krijgt de app-standaard,
+ *  precies zoals de velden in het blok hem tonen (geen lag-kalender ⇒ Voorganger, geen kritiek-definitie
+ *  ⇒ totale speling ≤ 0, …). Een drempel die alleen bij "totale speling" telt, valt bij "langste pad" weg. */
+export interface EffectiveOptions {
+  criticalDefinition: { mode: 'longestPath' } | { mode: 'totalFloat'; value: number; unit: 'hours' | 'days' };
+  totalFloatMode: TotalFloatModeUi;
+  makeOpenEndedCritical: boolean;
+  /** `null` = bijna-kritiek uit; anders de drempel in werkdagen. */
+  nearCriticalThreshold: number | null;
+  /** `null` = uit. */
+  floatPaths: { method: 'FREE_FLOAT' | 'TOTAL_FLOAT'; maxPaths: number } | null;
+  lagCalendar: NonNullable<ProjectSchedulingOptions['lagCalendar']>;
+  startToStartLagFrom: NonNullable<ProjectSchedulingOptions['startToStartLagFrom']>;
+}
+export function effectiveOptions(options: ProjectSchedulingOptions | undefined): EffectiveOptions {
+  const o = options ?? {};
+  const crit = o.criticalDefinition;
+  const fp = o.floatPaths;
+  return {
+    criticalDefinition: crit?.mode === 'longestPath' ? { mode: 'longestPath' }
+      : crit?.thresholdHours !== undefined ? { mode: 'totalFloat', value: crit.thresholdHours, unit: 'hours' }
+        : { mode: 'totalFloat', value: crit?.threshold ?? 0, unit: 'days' },
+    totalFloatMode: totalFloatModeToUi(o.totalFloatMode),
+    makeOpenEndedCritical: !!o.makeOpenEndedCritical,
+    nearCriticalThreshold: o.nearCriticalThreshold ?? null,
+    floatPaths: fp?.enabled ? { method: fp.method ?? 'FREE_FLOAT', maxPaths: fp.maxPaths ?? 10 } : null,
+    lagCalendar: o.lagCalendar ?? 'predecessor',
+    startToStartLagFrom: o.startToStartLagFrom ?? 'earlyStart',
+  };
+}
+function sameEffective<K extends EditableOptionKey>(key: K, a: EffectiveOptions[K], b: EffectiveOptions[K]): boolean {
+  // Een drempel van 0 is ≤ 0, in uren én in werkdagen: geen verschil.
+  if (key === 'criticalDefinition') {
+    const ca = a as EffectiveOptions['criticalDefinition'];
+    const cb = b as EffectiveOptions['criticalDefinition'];
+    if (ca.mode === 'totalFloat' && cb.mode === 'totalFloat' && ca.value === 0 && cb.value === 0) return true;
+  }
+  return JSON.stringify(a) === JSON.stringify(b);
+}
+
+export type OptionDeviation = {
+  [K in EditableOptionKey]: { key: K; current: EffectiveOptions[K]; standard: EffectiveOptions[K] }
+}[EditableOptionKey];
+
+/** Waar wijken de bewerkbare reken-opties af van de standaard van de basis van dit profiel
+ *  (`defaultOptionsFor`; een eigen profiel ⇒ zijn ingebouwde basis)? Vergelijkt effectieve waarden; de
+ *  bronsignalen (`SOURCE_ONLY_OPTION_KEYS`) tellen niet mee. Volgorde = `EDITABLE_OPTION_KEYS`. */
+export function optionDeviations(
+  profile: SchedulingProfile | undefined, options: ProjectSchedulingOptions | undefined,
+): OptionDeviation[] {
+  const current = effectiveOptions(options);
+  const standard = effectiveOptions(defaultOptionsFor((profile ?? builtInProfile('ops')).baseId));
+  const out: OptionDeviation[] = [];
+  for (const key of EDITABLE_OPTION_KEYS) {
+    if (!sameEffective(key, current[key], standard[key])) {
+      out.push({ key, current: current[key], standard: standard[key] } as OptionDeviation);
+    }
+  }
+  return out;
+}
+
+/** Vaste sleutel voor één set afwijkingen (basis + elke afwijking met haar huidige waarde): het kruisje
+ *  van het blok onthoudt deze sleutel; een nieuwe of andere afwijking geeft een andere sleutel. */
+export function optionDeviationsSignature(profile: SchedulingProfile | undefined, deviations: readonly OptionDeviation[]): string {
+  return JSON.stringify([(profile ?? builtInProfile('ops')).baseId, deviations.map(d => [d.key, d.current])]);
+}
+
 export function normalizeProfile(profile: SchedulingProfile | undefined): SchedulingProfile | undefined {
   return isDefaultProfile(profile) ? undefined : profile;
 }

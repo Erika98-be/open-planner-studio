@@ -1342,7 +1342,6 @@
     "applyTemplate": "템플릿에서 업데이트",
     "deleteTemplate": "템플릿 삭제",
     "templateDeviates": "이 프로필은 템플릿 “{{name}}”과(와) 다릅니다.",
-    "applyDefaultOptions": "이 프로필의 기본 옵션 적용",
     "themes": {
       "completedWork": "진행 및 완료된 작업",
       "relationsLag": "관계 및 지연",

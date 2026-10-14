@@ -209,3 +209,90 @@ test('profielblok: een afwijking uit een oud bestand staat alleen-lezen en gaat 
   await expect(a19).toHaveAttribute('data-ops-convention-deviates', 'true');
   await expect(a19.locator('[data-ops-convention-reset]')).toBeVisible();
 });
+
+// Het blok "afwijkende reken-opties" (eigenaar, 2026-10-14). Zoals Roads: een XER die kritiek rekent op
+// het langste pad (`critical_path_type` = CT_DrivPath); de rest van de opties is de P6-standaard.
+const ROADS_XER = [
+  'ERMHDR\t23.12\t2026-01-01\t\t\t\t\t\tEUR',
+  '%T\tCALENDAR', '%F\tclndr_id\tclndr_name\tclndr_type\tday_hr_cnt\tweek_hr_cnt\tclndr_data',
+  '%R\tC1\tStandaard 8u\tCA_Base\t8\t40\t',
+  '%T\tPROJECT', '%F\tproj_id\tproj_short_name\tclndr_id\tlast_recalc_date\tplan_start_date\tcritical_path_type',
+  '%R\tP1\tRoads\tC1\t2026-03-02\t2026-01-05\tCT_DrivPath',
+  '%T\tSCHEDOPTIONS', '%F\tproj_id\tsched_use_expect_end_flag', '%R\tP1\tY',
+  '%T\tTASK',
+  '%F\ttask_id\tproj_id\tclndr_id\ttask_code\ttask_name\ttask_type\tduration_type\tstatus_code\ttarget_drtn_hr_cnt\tremain_drtn_hr_cnt\ttarget_start_date\ttarget_end_date',
+  '%R\tT1\tP1\tC1\tA1\tNiet gestart\tTT_Task\tDT_FixedDUR\tTK_NotStart\t40\t40\t2026-01-05\t2026-01-09',
+  '%E',
+].join('\n');
+const options = (page: Page) => page.evaluate(() => {
+  const o = window.__OPS__!.store.getState().project.schedulingOptions;
+  return { crit: o?.criticalDefinition?.mode, expect: o?.useExpectedFinishDates };
+});
+async function chooseProfile(page: Page, value: string): Promise<void> {
+  await select(page).click();
+  await page.locator(`[role="option"][data-value="${value}"]`).click();
+}
+
+test('profielblok: afwijkende reken-opties tonen een blok met kruisje en een knop naar de standaard', async ({ page, ops: _ops }) => {
+  // Een nieuw project (OPS, geen opties) toont geen blok.
+  await toProjectInfo(page);
+  await expect(page.locator('[data-ops-scheduling-options]')).toBeVisible();
+  await expect(page.locator('[data-ops-options-deviate-notice]')).toHaveCount(0);
+  await expect(page.locator('[data-ops-scheduling-apply-defaults]')).toHaveCount(0);
+  await page.locator('[data-ops-backstage-back]').click();
+
+  await openFile(page, 'roads.xer', ROADS_XER);
+  await expect.poll(() => options(page)).toEqual({ crit: 'longestPath', expect: true });
+  await toProjectInfo(page);
+  const notice = page.locator('[data-ops-options-deviate-notice]');
+  const lines = notice.locator('[data-ops-options-deviation]');
+  // Onder P6 precies één regel: Kritiek-definitie, met de huidige waarde en de standaard. De bronoptie
+  // (verwachte einddatums) telt niet mee.
+  await expect(notice).toBeVisible();
+  await expect(notice).toContainText('Primavera P6');
+  await expect(lines).toHaveCount(1);
+  await expect(lines.first()).toHaveAttribute('data-ops-options-deviation', 'criticalDefinition');
+  await expect(lines.first()).toHaveText(/^(Kritiek-definitie: Langste pad \(standaard: totale speling ≤ 0 uren\)|Critical definition: Longest path \(default: total float ≤ 0 hours\))$/);
+  await shoot(page, page.locator('[data-ops-scheduling-options]'), 'afwijkende-opties-p6');
+
+  // Een wissel naar Microsoft Project in het formulier vergelijkt meteen met die standaard.
+  await chooseProfile(page, 'builtin:msproject');
+  await expect(notice).toContainText('Microsoft Project');
+  await expect.poll(() => lines.evaluateAll(els => els.map(el => el.getAttribute('data-ops-options-deviation'))))
+    .toEqual(['criticalDefinition', 'totalFloatMode']);
+  await chooseProfile(page, 'builtin:p6');
+  await expect(lines).toHaveCount(1);
+
+  // Het kruisje verbergt het blok; terug naar de werkruimte en weer naar Projectinfo: het blijft weg.
+  await notice.locator('[data-ops-options-deviate-dismiss]').click();
+  await expect(notice).toHaveCount(0);
+  await page.locator('[data-ops-backstage-back]').click();
+  await toProjectInfo(page);
+  await expect(notice).toHaveCount(0);
+  // Een andere afwijking (de wissel naar MS Project geeft er een tweede) brengt het blok terug.
+  await chooseProfile(page, 'builtin:msproject');
+  await expect(notice).toBeVisible();
+  await chooseProfile(page, 'builtin:p6');
+  await expect(notice).toHaveCount(0);
+  // De draft is weer gelijk aan het project: Terug vraagt niets.
+  await expect(page.locator('[data-ops-project-info-unapplied]')).toHaveCount(0);
+  await page.locator('[data-ops-backstage-back]').click();
+
+  // Het bestand opnieuw openen (een nieuw document): het blok is terug. De knop zet de kritiek-definitie
+  // in het formulier op de standaard, het blok verdwijnt, de bronoptie blijft; pas Toepassen rekent.
+  await openFile(page, 'roads-opnieuw.xer', ROADS_XER);
+  await expect.poll(() => options(page)).toEqual({ crit: 'longestPath', expect: true });
+  await toProjectInfo(page);
+  await expect(lines).toHaveCount(1);
+  await notice.locator('[data-ops-scheduling-apply-defaults]').click();
+  await expect(notice).toHaveCount(0);
+  await expect(page.getByRole('button', { name: /^(Kritiek-definitie|Critical definition)$/ })).toHaveText(/(Totale speling ≤ drempel|Total float ≤ threshold)/);
+  await expect(page.locator('[data-ops-scheduling-source-option="useExpectedFinishDates"]')).toBeVisible();
+  expect(await options(page)).toEqual({ crit: 'longestPath', expect: true });
+  await page.getByRole('button', { name: /^(Apply|Toepassen)$/ }).click();
+  await expect.poll(() => options(page)).toEqual({ crit: 'totalFloat', expect: true });
+  await expect.poll(() => page.evaluate(() => window.__OPS__!.store.getState().scheduleStale)).toBe(false);
+  // Eén undo-stap (B35).
+  await page.keyboard.press('Control+z');
+  await expect.poll(() => options(page)).toEqual({ crit: 'longestPath', expect: true });
+});

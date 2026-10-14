@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ParseKeys } from 'i18next';
-import { ChevronDown, ChevronRight, Info, Plus } from 'lucide-react';
+import { ChevronDown, ChevronRight, Info, Plus, X } from 'lucide-react';
 import { useAppStore } from '@/state/appStore';
 import { Select } from '@/components/common/Select';
 import {
@@ -18,7 +18,8 @@ import { generateId } from '@/utils/id';
 import { isHourCalendar } from '@/services/subdayIo';
 import { effHoursPerDay } from '@/utils/taskDuration';
 import {
-  choiceOf, conventionsEditable, editConvention, hasValidProfileName, newProfileFrom, ssLagHasHourPlanning, profileLabel, renameProfile,
+  choiceOf, conventionsEditable, editConvention, hasValidProfileName, newProfileFrom, optionDeviations, optionDeviationsSignature,
+  ssLagHasHourPlanning, profileLabel, renameProfile, type EffectiveOptions, type OptionDeviation,
   resetConventionToBase, selectProfile, templateRelation,
   totalFloatModeFromUi,
   totalFloatModeToUi, withCriticalMode, withCriticalThreshold, withDefaultOptions,
@@ -61,6 +62,13 @@ const SHOWN_SOURCE_OPTIONS = SOURCE_ONLY_OPTION_KEYS.filter((key): key is ShownS
 const sourceOptionKey = (key: ShownSourceOptionKey): ParseKeys<'common'> =>
   `schedulingProfile.sourceOptions.${key}`;
 const themeTitleKey = (id: ConventionGroupId): ParseKeys<'common'> => `schedulingProfile.themes.${id}`;
+
+/** Het kruisje van het blok "afwijkende reken-opties" onthoudt per document welke set afwijkingen de
+ *  gebruiker wegklikte. Bewust alleen in het geheugen van deze sessie (eigenaar, 2026-10-14): niet in het
+ *  projectbestand en niet in `localStorage`. Een heropend bestand is een nieuw document en toont het
+ *  blok dus weer; een nieuwe of andere afwijking heeft een andere sleutel. */
+const dismissedOptionNotices = new Set<string>();
+const noticeKey = (documentId: string, signature: string) => `${documentId}\u0000${signature}`;
 
 /**
  * Rekenprofielen. Bovenaan het profiel (ingebouwd,
@@ -123,6 +131,9 @@ export function SchedulingProfileSection({ mode, value, onChange }: SchedulingPr
     setTemplates(loadCustomProfiles());
     setPendingDelete(null);
   };
+  const activeDocumentId = useAppStore(s => s.activeDocumentId);
+  // Telt alleen om na een klik op het kruisje opnieuw te tekenen (de set zelf staat buiten React).
+  const [, setDismissTick] = useState(0);
   const durationDisplay = useAppStore(s => s.ui.durationDisplay);
   const enableHourPlanning = useAppStore(s => s.ui.enableHourPlanning);
   const projectCal = useAppStore(s => s.calendar);
@@ -214,6 +225,59 @@ export function SchedulingProfileSection({ mode, value, onChange }: SchedulingPr
   };
   const templateName = templates.find(tp => tp.id === profile?.id)?.name ?? '';
   const nameValid = hasValidProfileName(profile);
+  // Afwijkende reken-opties tegenover de standaard van de basis van het profiel (zie het blok hieronder).
+  const deviations = optionDeviations(profile, value.options);
+  const deviationsSignature = optionDeviationsSignature(profile, deviations);
+  const showOptionsNotice = deviations.length > 0
+    && !dismissedOptionNotices.has(noticeKey(activeDocumentId, deviationsSignature));
+  const dismissOptionsNotice = () => {
+    dismissedOptionNotices.add(noticeKey(activeDocumentId, deviationsSignature));
+    setDismissTick(n => n + 1);
+  };
+  const optionFieldLabel = (key: OptionDeviation['key']): string => {
+    switch (key) {
+      case 'criticalDefinition': return tMenu('projectInfo.calc.criticalDefinition');
+      case 'totalFloatMode': return tMenu('projectInfo.calc.totalFloatMode');
+      case 'makeOpenEndedCritical': return tMenu('projectInfo.calc.makeOpenEndedCritical');
+      case 'nearCriticalThreshold': return tMenu('projectInfo.calc.nearCritical');
+      case 'floatPaths': return tMenu('projectInfo.calc.floatPaths');
+      case 'lagCalendar': return tMenu('projectInfo.calc.lagCalendar');
+      case 'startToStartLagFrom': return tMenu('projectInfo.calc.ssLagFrom');
+    }
+  };
+  const onOff = (on: boolean) => (on ? t('schedulingProfile.on') : t('schedulingProfile.off'));
+  const critLabel = (c: EffectiveOptions['criticalDefinition']) => (c.mode === 'longestPath'
+    ? tMenu('projectInfo.calc.critLongestPath')
+    : t('schedulingProfile.optionsDeviate.totalFloatAtMost', {
+      value: c.value, unit: c.unit === 'hours' ? tMenu('projectInfo.calc.unitHours') : tMenu('projectInfo.calc.unitDays'),
+    }));
+  const optionValueLabel = (d: OptionDeviation, side: 'current' | 'standard'): string => {
+    switch (d.key) {
+      case 'criticalDefinition': return critLabel(d[side]);
+      case 'totalFloatMode': {
+        const v = d[side];
+        return tMenu(v === 'auto' ? 'projectInfo.calc.tfAuto' : v === 'smallest' ? 'projectInfo.calc.tfSmallest'
+          : v === 'start' ? 'projectInfo.calc.tfStart' : 'projectInfo.calc.tfFinish');
+      }
+      case 'makeOpenEndedCritical': return onOff(d[side]);
+      case 'nearCriticalThreshold': {
+        const v = d[side];
+        return v === null ? onOff(false) : `${+(hourUnit ? v * hpd : v).toFixed(2)} ${hourUnit ? tMenu('projectInfo.calc.unitHours') : tMenu('projectInfo.calc.unitDays')}`;
+      }
+      case 'floatPaths': {
+        const v = d[side];
+        return v === null ? onOff(false)
+          : `${tMenu(v.method === 'FREE_FLOAT' ? 'projectInfo.calc.methodFree' : 'projectInfo.calc.methodTotal')}, ${tMenu('projectInfo.calc.maxPaths')} ${v.maxPaths}`;
+      }
+      case 'lagCalendar': {
+        const v = d[side];
+        return tMenu(v === 'predecessor' ? 'projectInfo.calc.lagPredecessor' : v === 'successor' ? 'projectInfo.calc.lagSuccessor'
+          : v === '24hour' ? 'projectInfo.calc.lag24hour' : 'projectInfo.calc.lagProjectDefault');
+      }
+      case 'startToStartLagFrom':
+        return tMenu(d[side] === 'actualStart' ? 'projectInfo.calc.ssLagActualStart' : 'projectInfo.calc.ssLagEarlyStart');
+    }
+  };
   // Alleen de opties die het project echt draagt; een project zonder P6-bron toont het blok niet.
   const sourceOptions = SHOWN_SOURCE_OPTIONS.filter(key => so[key] !== undefined);
 
@@ -420,13 +484,34 @@ export function SchedulingProfileSection({ mode, value, onChange }: SchedulingPr
       </div>
 
       <div className="flex flex-col gap-2" data-ops-scheduling-options>
-        <div className="flex items-center justify-between gap-2">
-          <span className={labelCls}>{t('schedulingProfile.optionsTitle')}</span>
-          <button type="button" className={btnCls} onClick={() => onChange({ ...value, options: withDefaultOptions(profile, value.options) })}
-            data-ops-scheduling-apply-defaults>
-            {t('schedulingProfile.applyDefaultOptions')}
-          </button>
-        </div>
+        <span className={labelCls}>{t('schedulingProfile.optionsTitle')}</span>
+
+        {showOptionsNotice && (
+          // Alleen als de bewerkbare reken-opties afwijken van de standaard van het profiel (eigenaar,
+          // 2026-10-14). De knop zet de velden in het formulier op die standaard (`withDefaultOptions`;
+          // de bronopties blijven); de app rekent pas na Toepassen (één undo-stap, B35).
+          <div className="alert alert--info relative flex flex-col gap-1.5 pr-8" data-ops-options-deviate-notice>
+            <button type="button" className="absolute top-1.5 right-1.5 inline-flex rounded-[4px] p-0.5 text-text-secondary hover:text-text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
+              aria-label={t('close')} title={t('close')} onClick={dismissOptionsNotice} data-ops-options-deviate-dismiss>
+              <X size={14} aria-hidden />
+            </button>
+            <span>{t('schedulingProfile.optionsDeviate.intro', { name: brand(baseId) })}</span>
+            <ul className="flex flex-col gap-0.5 pl-4 list-disc">
+              {deviations.map(d => (
+                <li key={d.key} data-ops-options-deviation={d.key}>
+                  {t('schedulingProfile.optionsDeviate.line', {
+                    field: optionFieldLabel(d.key), current: optionValueLabel(d, 'current'), standard: optionValueLabel(d, 'standard'),
+                  })}
+                </li>
+              ))}
+            </ul>
+            <button type="button" className={`${btnCls} self-start`}
+              onClick={() => onChange({ ...value, options: withDefaultOptions(profile, value.options) })}
+              data-ops-scheduling-apply-defaults>
+              {t('schedulingProfile.optionsDeviate.useDefaults', { name: brand(baseId) })}
+            </button>
+          </div>
+        )}
 
         <div className="flex flex-col gap-1">
           <label className={labelCls}>{tMenu('projectInfo.calc.criticalDefinition')}</label>
