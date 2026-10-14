@@ -651,3 +651,9 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   startmeldingen, voortgangsimport, herstel-/sitevenster. 24:00 in 12-uursstand = "12:00 AM". 7 mutanten rood.
   Restpunten maker: foutteksten "UU:MM", datum+tijd afgekapt in standaard kolombreedte (al zo vóór de PR).
   Screenshots zelf bekeken (kalender 12h licht, taaktijd 12h donker): klopt. Review gestart (reviewer, Opus 5.5).
+- **Review #347 (reviewer, Opus 5.5): nee.** BEVESTIGD: (1) stap omlaag op blokeinde 24:00 ⇒ 23:45 volgende dag
+  (`end:2865`, dagsom 8 ⇒ 31.75 h), ook in 24-uursstand na typen "24:00"; (2) in 12-uursstand wijzigt focus+Tab
+  zonder wijziging de kalender (`hoursPerDay` 8 ⇒ 10, pauze gewist); (3) mutanten A/B/C overleven; (5) Gantt
+  12-uursstand zoom ~800 mist "12 AM/PM"-labels; (6) herstel-/sitevenster locale-AM/PM; (7) hinttekst "overal".
+  VERMOED: schade bereikt IFC. In orde: parser, klembord, instelling op drie plekken, gidsen, 24-uursregressie.
+  Fixronde naar de maker (worker, Opus 5.5) met alle punten.
