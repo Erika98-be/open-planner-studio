@@ -13,6 +13,8 @@ type Scene = {
   steps?: () => Promise<void>;
   /** Het element dat de eigenaar moet zien. */
   target?: string;
+  /** Omlijning binnen het element, voor een doel in een vlak dat de buitenkant afknipt. */
+  inset?: boolean;
 };
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -61,6 +63,83 @@ async function openOldFileAndSave(schema: 'IFC4' | 'IFC4X3'): Promise<string> {
   return '[data-ops-ifc-schema-question]';
 }
 
+// ── Hulpjes voor de gele-waarschuwingsscènes ───────────────────────────────────────────────────
+
+/** Opent een voorbeeldproject uit `public/examples` als nieuw document en wacht tot het staat. */
+async function openExample(file: string): Promise<void> {
+  const text = await (await fetch(`/examples/${file}`)).text();
+  await useAppStore.getState().openExampleFromString(text, file);
+  await sleep(800);
+}
+
+/** Klikt een lintknop: eerst het tabblad, dan het item (`data-ops-ribbon-item`). */
+async function clickRibbon(tab: string, item: string): Promise<void> {
+  (await waitFor(`[data-ops-ribbon-tab="${tab}"]`)).click();
+  (await waitFor(`[data-ops-ribbon-item="${item}"]`)).click();
+}
+
+/** Zoekt binnen `scope` het eerste element dat aan `match` voldoet, en geeft er een selector voor. */
+async function tagWhere(scope: string, match: (el: HTMLElement) => boolean, timeoutMs = 10000): Promise<string> {
+  const end = Date.now() + timeoutMs;
+  for (;;) {
+    const el = [...document.querySelectorAll<HTMLElement>(`${scope}`)].find(match);
+    if (el) {
+      el.setAttribute('data-qa-scene-target', '');
+      return '[data-qa-scene-target]';
+    }
+    if (Date.now() > end) throw new Error(`qaScene: geen passend element in ${scope}`);
+    await sleep(100);
+  }
+}
+
+/** Zet de planning op verouderd (zoals na een bewerking zonder F5). */
+async function markStale(): Promise<void> {
+  const { markDateMutation } = await import('@/state/transaction');
+  useAppStore.setState(s => { markDateMutation(s); });
+}
+
+/** Brengt de taakrij in beeld en selecteert de taak met een echte klik op de naamcel. */
+async function clickTaskRow(taskId: string): Promise<void> {
+  useAppStore.getState().focusOnTask(taskId);
+  const row = `[data-task-grid-surface-id="gantt-task-grid"] [data-grid-data-row="true"][data-grid-row-key="${taskId}"]`;
+  (await waitFor(`${row} [data-grid-column-id="task.name"]`)).click();
+  await sleep(300);
+}
+
+/** Een gewone taak (geen mijlpaal, geen samenvatting) die over een lange vrije periode loopt. */
+async function taskOverFreePeriod(): Promise<string> {
+  const [{ findLongFreePeriods }, { effectiveCalendarOf }, { shownStart, shownFinish }] = await Promise.all([
+    import('@/engine/scheduler/freePeriods'),
+    import('@/utils/taskDuration'),
+    import('@/utils/taskDates'),
+  ]);
+  const s = useAppStore.getState();
+  const task = s.tasks.find(t => !t.isMilestone && !s.tasks.some(o => o.parentId === t.id)
+    && findLongFreePeriods(effectiveCalendarOf(t, s.calendar, s.calendars), shownStart(t), shownFinish(t)).length > 0);
+  if (!task) throw new Error('qaScene: geen taak over een lange vrije periode');
+  return task.id;
+}
+
+/** Een bibliotheek met één poolresource, gekoppeld aan het actieve project en toegewezen aan één
+ *  gewone taak. Geeft de bibliotheek en de taak terug. */
+function seedLibraryBooking(companyId?: string): { companyId: string; taskId: string } {
+  const s = useAppStore.getState();
+  const cid = companyId ?? s.addCompany('Bouwbedrijf Kijklink');
+  const poolId = companyId
+    ? useAppStore.getState().pools[cid]!.resources[0]!.id
+    : s.addPoolResource(cid, { name: 'Torenkraan', type: 'LABOR', description: '', maxUnits: 1 });
+  if (!poolId) throw new Error('qaScene: poolresource niet aangemaakt');
+  useAppStore.getState().bindProjectToCompany(cid);
+  const { resourceId } = useAppStore.getState().addLibraryResourceToProject(cid, poolId);
+  if (!resourceId) throw new Error('qaScene: poolresource niet in het project gezet');
+  const st = useAppStore.getState();
+  const task = st.tasks.find(t => !t.isMilestone && !st.tasks.some(o => o.parentId === t.id));
+  if (!task) throw new Error('qaScene: geen gewone taak');
+  st.assignResource(task.id, resourceId, 1);
+  useAppStore.getState().runCPM();
+  return { companyId: cid, taskId: task.id };
+}
+
 const SCENES: Record<string, Scene> = {
   // Blauwe (nu oranje) infoblokken in Projectinfo › Rekenprofiel.
   'info-uitleg': {
@@ -82,11 +161,129 @@ const SCENES: Record<string, Scene> = {
   },
   // Info-labels (badge--blue) bij de conventies.
   'label-uurplanning': { target: '[data-ops-convention-requires="hourPlanning"]' },
+  // Info (oranje) naast waarschuwing (geel + icoon): een conventie aanzetten maakt de groep "afwijkend"
+  // en geeft onderaan "Wijzigingen niet toegepast".
+  'waarschuwing-naast-info': {
+    steps: async () => {
+      (await waitFor('[data-ops-convention-group="completedWork"] input[type="checkbox"]')).click();
+      await waitFor('[data-ops-project-info-unapplied]');
+    },
+    target: '[data-ops-convention-group="completedWork"]',
+  },
   // De IFC-schemakeuze (#292).
   'ifc-schema': { target: '[data-ops-project-ifc-schema]' },
   // De schemavraag bij opslaan (#292): een IFC4-bestand, en een IFC 4.3-bestand van een oudere app.
   'ifc-vraag-ifc4': { run: () => openOldFileAndSave('IFC4') },
   'ifc-vraag-ifc43': { run: () => openOldFileAndSave('IFC4X3') },
+
+  // ── Gele waarschuwingen: waar de app nu geel toont (keuze welke rood worden) ──
+  // 1. Waarschuwingsbalk met driehoek boven de resourcetabel (StatusBanner `warning`), hier in de
+  //    Bibliotheekweergave. Dezelfde balk staat in Bezetting bij een ongeteld document (scène 7).
+  'geel-bibliotheek-balk': {
+    run: async () => {
+      await openExample('showcase-verbouwing-eengezinswoning.ifc');
+      seedLibraryBooking();
+      await clickRibbon('resources', 'openResourcePanel');
+      await clickText('[data-ops-resources-view-toggle]', ['Bibliotheek', 'Library']);
+      return '[data-ops-company-view-hint]';
+    },
+  },
+  // 2. Baseline-dialoog: "⚠ Planning is verouderd — herbereken eerst (F5)" bij een verouderde planning.
+  'geel-baseline-verouderd': {
+    run: async () => {
+      await openExample('showcase-verbouwing-eengezinswoning.ifc');
+      await markStale();
+      (await waitFor('[data-ops-ribbon-tab="planning"]')).click();
+      await clickText('body', ['Baselines beheren…', 'Manage baselines…']);
+      return tagWhere('[role="dialog"] div', el => el.children.length === 0 && (el.textContent ?? '').startsWith('⚠'));
+    },
+  },
+  // 3. Project verplaatsen: "De nieuwe startdatum ligt in het verleden." bij een datum vóór vandaag.
+  'geel-project-verplaatsen': {
+    run: async () => {
+      await openExample('showcase-verbouwing-eengezinswoning.ifc');
+      await clickRibbon('planning', 'moveProject');
+      const input = await waitFor('[role="dialog"] input[type="date"]') as HTMLInputElement;
+      // Gecontroleerd React-veld: de waarde via de native setter, dan een input-event.
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(input, '2025-03-03');
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      return tagWhere('[role="dialog"] div', el => el.style.color === 'var(--theme-warning-text)');
+    },
+  },
+  // 4. Taakpaneel: "⚠ Deze taak loopt over … — een vrije periode van … dagen" (bouwvak).
+  'geel-vrije-periode': {
+    run: async () => {
+      await openExample('showcase-rijwoningen-de-akkers.ifc');
+      await clickTaskRow(await taskOverFreePeriod());
+      return tagWhere('div', el => el.children.length === 0 && el.style.color === 'var(--theme-warning-text)'
+        && (el.textContent ?? '').startsWith('⚠'));
+    },
+  },
+  // 5. Paneel Waarschuwingen met gele driehoekjes, geopend via de gele melding in de statusbalk.
+  'geel-waarschuwingen-paneel': {
+    run: async () => {
+      await openExample('showcase-rijwoningen-de-akkers.ifc');
+      (await waitFor('[data-ops-status-warning="missedDeadlines"]')).click();
+      await waitFor('[data-ops-warnings-panel]');
+      await waitFor('[data-ops-warnings-panel] [data-ops-warning-id]');
+      return '[data-ops-warnings-panel] ul[role="list"]';
+    },
+    // Het paneel knipt een omlijning aan de buitenkant af.
+    inset: true,
+  },
+  // 6. Statusbalk onderaan: "⚠ 1 deadline(s) overschreden" en "⚠ 1 resource(s) overbezet".
+  'geel-statusbalk': {
+    run: async () => {
+      await openExample('showcase-rijwoningen-de-akkers.ifc');
+      await waitFor('[data-ops-status-warning]');
+      return '[data-ops-status-warning]';
+    },
+  },
+  // 7. Bezetting: een slapend document dat niet door te rekenen is (relatiekring) telt niet mee —
+  //    gele balk bovenaan en per document "⚠ Telt niet mee: …". Omlijnd: de markering in de rij.
+  'geel-bezetting': {
+    run: async () => {
+      await openExample('showcase-verbouwing-eengezinswoning.ifc');
+      const { companyId } = seedLibraryBooking();
+      // Beginstand: een kring van twee relaties (zoals een geïmporteerd bestand kan hebben) en verouderd.
+      const { markDateMutation } = await import('@/state/transaction');
+      useAppStore.setState(s => {
+        const [a, b] = s.tasks.filter(t => !t.isMilestone && !s.tasks.some(o => o.parentId === t.id));
+        s.sequences.push(
+          { id: 'qa-kring-1', predecessorId: a!.id, successorId: b!.id, type: 'FINISH_START', lagDays: 0 },
+          { id: 'qa-kring-2', predecessorId: b!.id, successorId: a!.id, type: 'FINISH_START', lagDays: 0 },
+        );
+        markDateMutation(s);
+      });
+      await openExample('showcase-rijwoningen-de-akkers.ifc');
+      seedLibraryBooking(companyId);
+      await clickRibbon('resources', 'openResourcePanel');
+      (await waitFor('[data-ops-occupancy-view-button]')).click();
+      (await waitFor('[data-ops-occupancy-expand]')).click();
+      return '[data-ops-occupancy-stale-doc]';
+    },
+  },
+  // 8. Taakpaneel › Toewijzingen: gele driehoek bij opgeslagen werk dat afwijkt van inzet × duur
+  //    (tooltip "Wijkt af van inzet × duur"). Alleen zichtbaar met "Toon werkregels en werk".
+  'geel-toewijzing-werk': {
+    run: async () => {
+      await openExample('showcase-verbouwing-eengezinswoning.ifc');
+      const s = useAppStore.getState();
+      s.setUI({ showTaskTypes: true });
+      const a = s.assignments.find(x => {
+        const t = s.tasks.find(t => t.id === x.taskId);
+        return t && !t.isMilestone && !s.tasks.some(o => o.parentId === t.id);
+      });
+      if (!a) throw new Error('qaScene: geen toewijzing');
+      // Beginstand: opgeslagen restwerk van 1 uur (zoals een P6-toewijzing met een eigen spanne).
+      useAppStore.setState(st => {
+        const x = st.assignments.find(y => y.id === a.id)!;
+        x.remainingWorkMinutes = 60;
+      });
+      await clickTaskRow(a.taskId);
+      return `[data-ops-assignment-row="${a.id}"] [data-ops-assignment-work-deviates]`;
+    },
+  },
 };
 
 export async function runQaScene(name: string): Promise<void> {
@@ -107,8 +304,10 @@ export async function runQaScene(name: string): Promise<void> {
     await scene.steps?.();
     target = scene.target!;
   }
-  const el = await waitFor(target);
-  el.scrollIntoView({ block: 'center' });
-  el.style.outline = '3px dashed var(--theme-accent)';
-  el.style.outlineOffset = '3px';
+  (await waitFor(target)).scrollIntoView({ block: 'center' });
+  // Alle treffers omlijnen (bv. meerdere meldingen naast elkaar in de statusbalk).
+  for (const el of document.querySelectorAll<HTMLElement>(target)) {
+    el.style.outline = '3px dashed var(--theme-accent)';
+    el.style.outlineOffset = scene.inset ? '-3px' : '3px';
+  }
 }
