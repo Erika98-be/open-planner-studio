@@ -728,3 +728,7 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   `selectProfile`), wizardlek dicht, `onOut` alleen bij verlaten actief element + focus-bewaking, blok wacht bij
   draft ≠ toegepast, Escape alleen bij verbonden element + `MutationObserver`, "(standaard: Automatisch)".
   F1c/F2–F7 rood. Hercheck 2 gestart. Testversie (3049) bijgewerkt.
+- **#351 fixronde klaar:** kop e6e9fd0af, CI 16/16; R1–R3 rood ("lange maandag", "werkdagen zonder eigen blokken"),
+  dode code weg, §10-meldingen apart, doc 10 regels, corpusvergelijking zonder ontdubbelen. Hercheck gestart.
+  Bijvangst (A3040 `remainingTime`/`earlyFinish`, projectstart-kloktijd) als aparte opdracht naar dezelfde expert,
+  branch `claude/ifc-rondgang-datums` vanaf main.
