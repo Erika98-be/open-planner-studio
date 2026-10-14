@@ -68,7 +68,7 @@ en noem het in je rapport of PR-tekst.
     2). Het voorbeeld met 800 u rest staat in `percent-complete-8.4.xer` en `invalid-8.4.xer` (MPXJ-corpus),
     taak 101724 *Physical 100%*: `remainingMinutes` 48000, statusdatum 2015-02-24, in OPS einde 2015-07-13 16:00;
     taak 101720 *Duration 100%* (rest 0) eindigt in OPS op dezelfde datum. Besluit eigenaar 2026-10-14: IFC
-    bewaart "lopend" nu (`IfcTask.Status` = 'STARTED', PR claude/ifc-lopend-100); de motor plant de
+    bewaart "lopend" nu (`IfcTask.Status` = 'STARTED', #357); de motor plant de
     vastgelegde rest in (optie 3) na de release, in het rekenprofielen-spoor. — B voor de OPS-kant (gemeten),
     S voor de P6-kant
 
