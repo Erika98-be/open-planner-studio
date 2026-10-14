@@ -252,7 +252,9 @@ aan stil 10, en schreef de writer dan geen `HoursPerDay` meer. Toetsen: `check-u
 Een P6-taak `TK_Active` op 100 % komt uit de XER-lezer als status STARTED, `completion` 1 en zonder werkelijk
 einde. `normalizeImportedProgress` maakt elke taak op 100 % zonder werkelijk einde "Voltooid", met het
 werkelijke einde op de statusdatum. Daarom schrijft de writer `IfcTask.Status` = `'STARTED'`, alleen bij zo'n
-taak (`isRunningAtFullCompletion` in `ifcTaskSlots.ts`). Elke andere taak houdt `$`. De lezer geeft de taken
+taak (`isRunningAtFullCompletion` in `ifcTaskSlots.ts`). Elke andere taak houdt `$`, ook een fase: haar
+voortgang is een rollup die STARTED op 1 kan geven (taken klaar plus een niet-gestarte mijlpaal, of ≥ 99,95 %
+afgerond), en de solve rekent hem na het openen opnieuw uit. De lezer geeft de taken
 met precies die tekst als smalle set aan `normalizeImportedProgress`; die houdt ze lopend, zonder afgeleid
 werkelijk einde en met de restduur uit het bestand. Een werkelijk einde wint altijd, onder 100 % verandert
 niets, en een andere Status-tekst negeert de lezer. Oude bestanden (`$`) lezen zoals voorheen. Een oudere

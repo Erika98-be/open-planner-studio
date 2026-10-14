@@ -292,14 +292,28 @@ en noem het in je rapport of PR-tekst.
 115. **Na een IFC-round-trip veranderen status of percentage van XER-taken waarvan de P6-status de werkelijke
     datums tegenspreekt**, zonder datumwijziging. De XER-lezer houdt de P6-status aan; de IFC-lezer leidt de
     status af uit de actuals (`normalizeImportedProgress`). Gemeten over het XER-corpus (openen, opslaan als
-    IFC, heropenen), met `IfcTask.Status` = 'STARTED' (zie 114): 116 taken in 4 documenten. Bij #353 gemeld
-    als 120; daarvan waren 4 de lopende taken op 100 % in rehab-2, en die blijven nu gelijk. Verdeling: 86
-    taken "niet gestart" met werkelijk einde worden voltooid (`sample.xer` 9, `MER-1-2026_update_2026-05-01.xer`
-    46, `MER-1-2026_epc.xer` 31; in `sample.xer` van 0 % naar 100 %); 24 taken "niet gestart" met een
-    percentage worden lopend (de twee MER-bestanden, elk 12); 4 taken "gestart" op 0 % zonder actuals worden niet gestart
-    (`synthetic_v2212.xer`); 2 lopende taken in `sample.xer` krijgen een ander percentage (0,171 → 0,951 en
-    0,583 → 0,833). Voorstel: besluiten welke kant wint (P6-status of actuals) en dat in beide lezers gelijk
-    trekken. — B
+    IFC, heropenen), met `IfcTask.Status` = 'STARTED' (zie 114): 112 taken in 4 documenten. Verdeling: 86
+    taken "niet gestart" met werkelijk einde worden voltooid (`sample.xer` 9, van 0 % naar 100 %;
+    `MER-1-2026_update_2026-05-01.xer` 46; `MER-1-2026_epc.xer` 31); 24 taken "niet gestart" met een
+    percentage worden lopend (de twee MER-bestanden, elk 12); 2 taken "gestart" op 0 % zonder actuals worden
+    niet gestart (`synthetic_v2212.xer`). Apart, en geen tegenspraak: bij 4 fasen verandert de status of het
+    percentage door de rollup, want een fase heeft geen eigen P6-status (`sample.xer` `xer-wbs:1:1`
+    0,171 → 0,951 en `xer-wbs:1:2` 0,583 → 0,833; `synthetic_v2212.xer` `xer-wbs:100:1` en `xer-wbs:100:2`
+    van gestart naar niet gestart). Gemeld in het eindrapport bij #353 (niet in de PR) als 120 taken in 6
+    documenten; deze meting vond vóór #357 120 in 5 documenten, waaronder de 4 lopende taken op 100 % in
+    rehab-2 die nu gelijk blijven. Voorstel: besluiten welke kant wint (P6-status of actuals) en dat in beide
+    lezers gelijk trekken. — B
+116. **`readIFC` geeft een fase op 100 % zonder werkelijk einde een verzonnen werkelijk einde.** De writer
+    schrijft de fase-rollup (`summaryProgress.ts`): status STARTED of COMPLETED, voortgang 1 en geen werkelijk
+    einde als geen enkele taak eronder een werkelijk einde heeft. `normalizeImportedProgress` maakt daar bij
+    het lezen een werkelijk einde op de statusdatum van. Na de solve rekent de rollup de fase opnieuw uit en
+    is het weg; het telt dus alleen op paden zonder solve, zoals "Datums zoals opgeslagen"
+    (`documentActivation.ts`). Gemeten met een script, op main en met #357 gelijk: fase P met alleen een
+    lopende taak op 100 % (statusdatum 2015-01-07) krijgt AF 2015-01-07; fase *Pre-Construction* in
+    `demo-sample.xer` krijgt AF 2024-06-01T08:00. Direct na de XER-import (zonder IFC) heeft de fase geen
+    werkelijk einde. Met #357 houdt de taak geen werkelijk einde meer, dus spreekt het einde van de fase haar
+    taak nu tegen. Voorstel: fasen in de lezer niet door de voortgang-invarianten halen. — B (lezer), S
+    (gevolg in "Datums zoals opgeslagen" niet nagespeeld)
 
 ## Rondleiding, Help en extensie-gidsen
 
