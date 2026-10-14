@@ -873,3 +873,8 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   (Haiku): weergave Duur en motor rekenen uit minuten ÷ bloksom; het dagengetal lezen o.a. `ResourceLoad.ts:156`,
   leveler, baseline-variantie, MSPDI-export `workDays`, `CPMSolver.ts:262`. Bijvangst [VERMOED, na te lopen]: MCP-create
   van een urentaak zonder `scheduleDuration` zet uren als dagengetal (`taskTools.ts:201-207` → `taskDefaults.ts:75`).
+- **#358 (knownbugs 117, XER zonder `status_code`) concept, CI 16/16 op 97aaf9363** (worker Opus 5.5 medium). Lege
+  status ⇒ afgeleid uit AF/100 %/AS/voortgang, met de AS/AF-defaults van `normalizeImportedProgress`; ingevulde status
+  blijft leidend. MPXJ leidt bij lezen niets af (`TableProjectReader.java:300`). Corpus: 101 MER-taken veranderen,
+  0 datumwijzigingen, rest byte-gelijk; IFC-statuswissels 116 → 15 (= knownbugs 115). `measure:profiles` main = branch.
+  Review bij reviewer (Opus 5.5, xhigh) gestart.
