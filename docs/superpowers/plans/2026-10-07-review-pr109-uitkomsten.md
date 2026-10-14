@@ -781,3 +781,8 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   bij de maker; daarna merge.
 - **#352 gemerged in main 2026-10-14 → 2e252983d** (kop 2d7235858 bevatte main 8db05a95c, CI 16/16, M16/M17 rood, reviewer ja,
   `--admin`, geen UI).
+- **#355 datumvorm IFC** (expert, Opus 5.5; `claude/ifc-datumvorm`, kop 22f7dc526, bevat main 2e252983d): open
+  (niet gemerged), concept, CI 16/16. Op main: 47 constraintdatums met tijd als `IFCDATE` ⇒ schemafout in 22/88
+  corpusdocumenten; ook `Deadline`/eigen datumveld/`StatusDate 'T7:00'`. Helper `ifcDateValue` (DATE / DATETIME met
+  seconden / TEXT letterlijk); lezer `readIfcDate` per veld zoals eerst. 914 checks, schemapoort drie schema's ook in
+  de corpuscheck, 9 mutanten rood, IfcOpenShell 0. Review door dezelfde reviewer als #353 gestart.
