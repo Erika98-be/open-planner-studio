@@ -610,3 +610,15 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   (`public/qa-files/productieplanning.mpp` = "Bijlage 13 Productieplanning", 51 toewijzingen). Besluiten (o.a. N4)
   pas na de check. Stap 1 vooraf zelf nagelopen (Playwright, `/tmp/qa169/`). Eigen waarneming: *Kritiek-definitie*
   is smaller dan de andere keuzelijsten in het blok.
+- **Checkstap 1 (#169), bevindingen eigenaar 2026-10-14:**
+  - Vraag: "waarom staat hier nog een knop waar ik apart op moet klikken om het echte P6 profiel volledig te
+    krijgen?" (*Standaardopties van dit profiel toepassen*). Antwoord: het profiel is al volledig P6; de knop
+    vervangt de opties uit het bestand door de P6-standaard voor een nieuw project (Roads: *Kritiek-definitie*
+    *Langste pad* ⇒ speling ≤ 0). Bron B12 (orkestrator, spec-ronde 2, 2026-09-22). **Bevinding:** tekst en plek
+    wekken de indruk dat het profiel pas na de klik compleet is.
+  - Letterlijk: "en waarom is dit zichtbaar als je een standaardprofiel hebt gekozen? de instellingen moeten niet te
+    editen zijn als je een van de ingebouwde profielen kiest. in de profielen selector moet een knop komen om een nieuw
+    profiel te maken. dat is veel meer intentional voor de user. de instellingen zitten standaard verstopt onder een
+    dropdown". Nu: vinkjes onder elk ingebouwd profiel bewerkbaar, één wijziging ⇒ "Kopie van …" (B14, orkestrator
+    2026-09-22); groepen altijd open (B33, eigenaar "Mergen" 2026-09-24 zonder los antwoord op open/ingeklapt).
+    ⇒ besluit na de check. Route-stap 3 ("Kopie van …") vervalt hierdoor.
