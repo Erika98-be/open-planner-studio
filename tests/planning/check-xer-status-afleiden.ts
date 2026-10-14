@@ -94,6 +94,11 @@ const PINNED_FULL_STATUS = [
   ['NIETS', 'NOT_STARTED', 0, null, null, 960, null],
 ];
 
+// Fixture 4b: geen statusdatum ⇒ AF = eigen geplande einde. De taak zonder geplande datums krijgt de
+// vroegste taakstart (2026-08-03) van `resolveMissingScheduleDates`, en zonder target-einde is het
+// geplande einde gelijk aan die start. [statusdatum, status, completion, AS, AF].
+const PINNED_NO_ANCHOR = [null, 'COMPLETED', 1, '2026-08-03', '2026-08-03'];
+
 // ── 1. Kolom ontbreekt: de vier gevallen van de regel ────────────────────────────────────────────
 const noColumn = read([...head, ...taskLines(() => null), '%E']);
 const nc = byCode(noColumn);
@@ -153,6 +158,8 @@ eq('117-18 TK_Complete met alleen een start blijft voltooid zonder verzonnen AF'
   ['COMPLETED', 1, '2026-08-04T08:00', null]);
 eq('117-19 TK_Active zonder actuals blijft lopend zonder verzonnen AS', progressOf(mx.get('PCT')!),
   ['STARTED', 0.3, null, null]);
+// Pint het HUIDIGE gedrag vast, geen gewenst gedrag: een onbekende statustekst blijft "niet gestart",
+// ook op 100 %. MPXJ leest zo'n tekst als `null`, net als een lege status. Open vraag: knownbugs 118.
 eq('117-20 onbekende status op 100 % blijft de enum-fallback niet gestart', progressOf(mx.get('P100')!),
   ['NOT_STARTED', 1, null, null]);
 eq('117-21 onbekende status geeft precies één enum-melding',
@@ -171,6 +178,27 @@ eq('117-22 bestand mét status: status, completion, actuals en restduur zoals op
     task.wbsCode, ...progressOf(task), task.time.remainingMinutes ?? null, task.time.remainingTime ?? null,
   ]),
   PINNED_FULL_STATUS);
+
+// ── 4b. Defaults pas ná het aanvullen van ontbrekende geplande datums ───────────────────────────
+// Zonder statusdatum, zonder `plan_start_date` en zonder `target_start_date` staat er vóór
+// `resolveMissingScheduleDates` nog een plaatshouder als geplande start. De AS/AF-defaults mogen die
+// nooit overnemen: de lezer vult ze pas daarna in (review #358, mutant M7 gaf AS = AF = 0001-01-01).
+const noAnchor = read([
+  'ERMHDR\t23.12\t2026-08-01\t\t\t\t\t\tEUR',
+  '%T\tPROJECT', '%F\tproj_id\tproj_short_name\tclndr_id', '%R\tP1\tGeen anker\tC1',
+  '%T\tCALENDAR', '%F\tclndr_id\tclndr_name\tproj_id\tclndr_type\tday_hr_cnt\tweek_hr_cnt\tclndr_data',
+  '%R\tC1\tWerkweek\tP1\tCA_Project\t8\t40\t',
+  '%T\tTASK',
+  '%F\ttask_id\tproj_id\tclndr_id\ttask_code\ttask_name\ttask_type\tphys_complete_pct\ttarget_drtn_hr_cnt\ttarget_start_date\ttarget_end_date\tact_start_date\tact_end_date',
+  '%R\tX1\tP1\tC1\tX1\tX1\tTT_Task\t100\t16\t\t\t\t',
+  '%R\tX2\tP1\tC1\tX2\tX2\tTT_Task\t0\t16\t2026-08-03 08:00\t2026-08-04 16:00\t\t',
+  '%E',
+]);
+const x1 = byCode(noAnchor).get('X1')!;
+eq('117-25 100 % zonder statusdatum en zonder geplande start: defaults uit de aangevulde planning',
+  [noAnchor.project.statusDate ?? null, ...progressOf(x1)], PINNED_NO_ANCHOR);
+eq('117-26 geen plaatshouder-datum in de actuals',
+  [x1.time.actualStart, x1.time.actualFinish].some(value => !value || value.startsWith('0001')), false);
 
 // ── 5. IFC-round-trip zonder statuswissel ────────────────────────────────────────────────────────
 const solved = solveProject({
