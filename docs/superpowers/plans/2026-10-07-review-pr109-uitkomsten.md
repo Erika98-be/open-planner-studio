@@ -744,3 +744,5 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   blokken staan (`calendarResourceTools.ts:508`, `createMcpTransactions.ts:675`) ⇒ na IFC krijgen do/vr de blokken van
   maandag, uren per dag 8 → 10. **Orkestratorbesluit:** MCP volgt de regel van het kalendervenster (`workDaysSetPatch`).
   Worker (Opus 5.5) gestart op `claude/mcp-werkdagen-blokken`.
+- #350: test voor F1b toegevoegd (F1b rood), kop d82b45c69, CI 16/16. Wacht op checkstap 11 van de eigenaar.
+  Testversie (3049) = main a40561fa9 + #350 d82b45c69 + #347.
