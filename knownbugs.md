@@ -301,12 +301,11 @@ en noem het in je rapport of PR-tekst.
     (niet in de PR) als 120 taken in 6 documenten; de meting bij #357 vond vóór die fix 120 in 5 documenten,
     waaronder de 4 lopende taken op 100 % in rehab-2 die nu gelijk blijven. Voorstel: besluiten welke kant
     wint (P6-status of actuals) en dat in beide lezers gelijk trekken. — B
-116. **`readIFC` maakt een lopende fase op 100 % voltooid, met een verzonnen werkelijk einde.** De writer
-    schrijft de fase-rollup (`summaryProgress.ts`). Die kan status STARTED geven met voortgang 1 en zonder
-    werkelijk einde: niet alle taken eronder zijn voltooid, maar de gewogen voortgang is 1 (bv. een
-    niet-gestarte mijlpaal onder voltooide taken, of een lopende taak op 100 % eronder).
-    `normalizeImportedProgress` maakt van zo'n fase bij het lezen COMPLETED, met een werkelijk einde op de
-    statusdatum. Na de solve rekent de rollup de fase opnieuw uit en is het weg; het telt dus alleen op
+116. **`readIFC` geeft een fase op 100 % zonder werkelijk einde een verzonnen werkelijk einde** (en maakt een
+    lopende fase voltooid). De writer schrijft de fase-rollup (`summaryProgress.ts`). Die kan een fase op
+    100 % zonder werkelijk einde geven: STARTED als een niet-gestarte mijlpaal onder voltooide taken hangt, of
+    COMPLETED als de taken eronder alleen voltooid of lopend op 100 % zijn. `normalizeImportedProgress` maakt
+    van zo'n fase bij het lezen COMPLETED, met een werkelijk einde op de statusdatum. Na de solve rekent de rollup de fase opnieuw uit en is het weg; het telt dus alleen op
     paden zonder solve, zoals "Datums zoals opgeslagen" (`documentActivation.ts`). Gemeten met een script, op
     main en met #357 gelijk: fase P met alleen een lopende taak op 100 % (statusdatum 2015-01-07) krijgt AF
     2015-01-07; fase *Pre-Construction* in `demo-sample.xer` krijgt AF 2024-06-01T08:00. Direct na de
