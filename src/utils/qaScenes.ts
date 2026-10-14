@@ -47,6 +47,32 @@ async function openProjectInfo(): Promise<void> {
   await waitFor('[data-ops-scheduling-profile-section]');
 }
 
+/** Klapt *Conventies van dit profiel* open (standaard dicht). */
+async function expandConventions(): Promise<void> {
+  const toggle = await waitFor('[data-ops-conventions-toggle]');
+  if (toggle.getAttribute('aria-expanded') !== 'true') toggle.click();
+  await waitFor('[data-ops-conventions-body]');
+}
+
+/** "Nieuw profiel" met de voorgestelde naam: daarna zijn de conventies bewerkbaar. */
+async function createProfile(): Promise<void> {
+  (await waitFor('[data-ops-scheduling-new-profile]')).click();
+  (await waitFor('[data-ops-new-profile-create]')).click();
+  await waitFor('input[type="checkbox"][data-ops-convention]');
+}
+
+/** Beginstand: het project rekent als Primavera P6, met reken-opties zoals Roads (langste pad) en een
+ *  bronoptie uit de .xer; `overrides` = afwijkingen op het ingebouwde id (zoals de migratie ze geeft). */
+function setP6Project(overrides: Record<string, boolean> = {}): void {
+  useAppStore.setState(s => {
+    s.project.schedulingProfile = { baseId: 'p6', id: 'p6', name: '', overrides };
+    s.project.schedulingOptions = {
+      lagCalendar: 'predecessor', criticalDefinition: { mode: 'longestPath' }, totalFloatMode: 'finish',
+      makeOpenEndedCritical: false, startToStartLagFrom: 'earlyStart', useExpectedFinishDates: true,
+    };
+  });
+}
+
 async function chooseProfile(value: string): Promise<void> {
   (await waitFor('[data-ops-scheduling-profile-select] .ops-select__trigger')).click();
   (await waitFor(`[role="option"][data-value="${value}"]`)).click();
@@ -142,11 +168,12 @@ function seedLibraryBooking(companyId?: string): { companyId: string; taskId: st
 
 const SCENES: Record<string, Scene> = {
   // Blauwe (nu oranje) infoblokken in Projectinfo › Rekenprofiel.
+  // Uitleg per conventie: het i-icoon krijgt de focus, de tooltip staat er meteen.
   'info-uitleg': {
-    steps: async () => { (await waitFor('[data-ops-convention-help-toggle]')).click(); },
+    steps: async () => { await expandConventions(); (await waitFor('[data-ops-convention-help]')).focus(); },
     target: '[data-ops-convention-help]',
   },
-  'info-eigen-profielen': { target: '[data-ops-convention-own-only-note]' },
+  'info-eigen-profielen': { steps: expandConventions, target: '[data-ops-convention-own-only-note]' },
   'info-sslag-conventie': { target: '[data-ops-ss-lag-needs-convention]' },
   'info-sslag-uurplanning': {
     steps: () => chooseProfile('builtin:p6'),
@@ -160,15 +187,29 @@ const SCENES: Record<string, Scene> = {
     target: '[data-ops-scheduling-source-options]',
   },
   // Info-labels (badge--blue) bij de conventies.
-  'label-uurplanning': { target: '[data-ops-convention-requires="hourPlanning"]' },
+  'label-uurplanning': { steps: expandConventions, target: '[data-ops-convention-requires="hourPlanning"]' },
   // Info (oranje) naast waarschuwing (geel + icoon): een conventie aanzetten maakt de groep "afwijkend"
   // en geeft onderaan "Wijzigingen niet toegepast".
   'waarschuwing-naast-info': {
     steps: async () => {
+      await createProfile();
       (await waitFor('[data-ops-convention-group="completedWork"] input[type="checkbox"]')).click();
       await waitFor('[data-ops-project-info-unapplied]');
     },
     target: '[data-ops-convention-group="completedWork"]',
+  },
+  // Profielblok (review #169, 2026-10-14): P6 met ingeklapte conventies en het blok "afwijkende
+  // reken-opties"; de naamvraag van "Nieuw profiel"; een afwijking uit een oud bestand, alleen-lezen.
+  'profielblok-p6': { setup: () => setP6Project(), target: '[data-ops-scheduling-profile-section]' },
+  'profielblok-nieuw-profiel': {
+    setup: () => setP6Project(),
+    steps: async () => { (await waitFor('[data-ops-scheduling-new-profile]')).click(); },
+    target: '[data-ops-new-profile-dialog]',
+  },
+  'profielblok-oud-bestand': {
+    setup: () => setP6Project({ p6UseRemainingStartForProgress: false }),
+    steps: expandConventions,
+    target: '[data-ops-convention-row="p6UseRemainingStartForProgress"]',
   },
   // De IFC-schemakeuze (#292).
   'ifc-schema': { target: '[data-ops-project-ifc-schema]' },
