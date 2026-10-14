@@ -18,7 +18,7 @@ import type { ImportResult, RecordedSourceFormat } from '@/services/importTypes'
 import {
   IFC_TIME_ANCHOR, FIELD_MEASURE, RESOURCE_TYPE_TO_IFC,
 } from './ifcConstants';
-import { PSET, PER_TASK_PSETS, OPS_APP_VERSION, ifcStr, ifcJson, asciiJson } from './ifcPsets';
+import { PSET, PER_TASK_PSETS, OPS_APP_VERSION, ifcStr, ifcJson, asciiJson, ifcTypedReal, stepReal } from './ifcPsets';
 import { ifcSchemaQuestionFor } from './ifcSchemaQuestion';
 import { isSummaryTask } from '@/utils/taskHierarchy';
 import { projectFileBase } from '@/utils/documents';
@@ -90,10 +90,19 @@ export function ifcGuid128(seed: string): string {
 
 // ifcStr/ifcBool komen uit ./ifcPsets (gedeeld met de per-taak-pset-registry).
 
+/** Tekst voor een attribuut dat een waarde MOET hebben (niet OPTIONAL, of een WHERE-regel eist
+ *  `EXISTS`): leeg wordt `''` in plaats van `$`. De lezer (`ifcSlotText`) leest beide als ''. */
+function ifcRequiredStr(s: string): string {
+  return s ? ifcStr(s) : "''";
+}
+
 function ifcDateTime(iso: string): string {
   if (!iso) return '$';
   // Ensure format: 'YYYY-MM-DDT07:00:00' (anker gedeeld met de reader via IFC_TIME_ANCHOR).
   if (iso.length === 10) return `'${iso}T${IFC_TIME_ANCHOR}'`;
+  // IfcDateTime vraagt seconden (`YYYY-MM-DDThh:mm:ss`): een tijd zonder seconden
+  // (`YYYY-MM-DDThh:mm`, zoals de store uur-instants bewaart) krijgt `:00`.
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(iso)) return `'${iso}:00'`;
   return `'${iso}'`;
 }
 
@@ -127,6 +136,9 @@ function ifcDayNumber(days: number): string {
 }
 
 function ifcDuration(days: number): string {
+  // ISO 8601 zet het minteken vóór de P (`-P0Y0M2D`), niet bij het getal (`P0Y0M-2D`, zoals v2026.9.0).
+  // Beide lezers, ook die van v2026.9.0, lezen het voorloopteken (`parseDurationDays`).
+  if (days < 0) return `'-P0Y0M${ifcDayNumber(-days)}D'`;
   return `'P0Y0M${ifcDayNumber(days)}D'`;
 }
 
@@ -324,25 +336,29 @@ export function writeIFC(input: WriteIFCInput): string {
   // projectnaam. Een naamloos project zou daar letterlijk `'.ifc'` opleveren. Vandaar dezelfde
   // neutrale, taalonafhankelijke basis die de opslaan-dialoog voorstelt (`projectFileBase` ->
   // `project.ifc`), zodat header en voorgestelde bestandsnaam dezelfde waarde dragen. De ECHTE
-  // projectnaam blijft `IFCPROJECT.Name = $` — dat is de plek waar "geen naam" hoort te staan, en die
-  // raken we niet aan.
+  // projectnaam blijft leeg in `IFCPROJECT.Name` (`''`, zie daar) — dat is de plek waar "geen naam"
+  // hoort te staan.
   const headerFileName = projectFileBase(headerText(project.name)) + '.ifc';
   const header = [
     'ISO-10303-21;',
     'HEADER;',
     "FILE_DESCRIPTION(('ViewDefinition [SchedulingView]'),'2;1');",
     `FILE_NAME(${ifcStr(headerFileName)},${ifcStr(now)},(${ifcStr(headerText(project.author || 'Open Planner Studio'))}),(${ifcStr(headerText(project.company || 'OpenAEC Foundation'))}),'Open Planner Studio 0.1','Open Planner Studio','');`,
-    // Het gekozen schema (issue #292, `Project.ifcSchema`, afwezig ⇒ IFC4X3). De inhoud is in alle drie
-    // gelijk (zie `IFC_SCHEMAS`); `projectIfcSchema` laat nooit een vrije tekst in de kop toe.
+    // Het schema van het project (issue #292, `Project.ifcSchema`; afwezig ⇒ `DEFAULT_IFC_SCHEMA`,
+    // IFC4X3_ADD2 = IFC 4.3.2.0, ISO 16739-1:2024). Voor alle entiteiten die OPS schrijft, zijn de drie
+    // schema's gelijk in aantal en volgorde van attributen (zie `IFC_SCHEMAS`); `projectIfcSchema` laat
+    // nooit een vrije tekst in de kop toe.
     `FILE_SCHEMA(('${projectIfcSchema(project)}'));`,
     'ENDSEC;',
     'DATA;',
     '',
   ].join('\n');
 
-  // Owner history
-  const personId = addLine(ctx, '_person', `IFCPERSON($,${ifcStr(project.author)},$,$,$,$,$,$)`);
-  const orgId = addLine(ctx, '_org', `IFCORGANIZATION($,${ifcStr(project.company)},$,$,$)`);
+  // Owner history. `IfcOrganization.Name` is verplicht, en `IfcPerson` eist een naam of id
+  // (WHERE-regel IdentifiablePerson). Leeg ⇒ `''` in plaats van `$`; de lezer (`extractProject`) leest
+  // beide als ''.
+  const personId = addLine(ctx, '_person', `IFCPERSON($,${ifcRequiredStr(project.author)},$,$,$,$,$,$)`);
+  const orgId = addLine(ctx, '_org', `IFCORGANIZATION($,${ifcRequiredStr(project.company)},$,$,$)`);
   const personOrgId = addLine(ctx, '_personorg', `IFCPERSONANDORGANIZATION(#${personId},#${orgId},$)`);
   const appOrgId = addLine(ctx, '_apporg', `IFCORGANIZATION($,'OpenAEC Foundation',$,$,$)`);
   // Version is een formaatteken (zie `OPS_APP_VERSION`): de lezer decodeert STEP-tekst pas vanaf '0.2'.
@@ -360,8 +376,10 @@ export function writeIFC(input: WriteIFCInput): string {
   const ctxId = addLine(ctx, '_ctx', `IFCGEOMETRICREPRESENTATIONCONTEXT($,'Plan',3,1.0E-05,#${axId},$)`);
 
   // Project. Description (arg 3) draagt project.description — de reader leest 'm terug
-  // uit de IFCWORKPLAN.Description-slot, met terugval op deze.
-  addLine(ctx, '_project', `IFCPROJECT(${ifcStr(objectGuid(ctx, 'proj', project.id))},#${ownerHistId},${ifcStr(project.name)},${ifcStr(project.description)},$,$,$,(#${ctxId}),#${unitAssId})`);
+  // uit de IFCWORKPLAN.Description-slot, met terugval op deze. Name: een naamloos project schrijft `''`
+  // (geen verzonnen naam), omdat `IfcProject.HasName` (WHERE-regel) een Name eist. De lezer leest `''`
+  // en `$` allebei als leeg.
+  addLine(ctx, '_project', `IFCPROJECT(${ifcStr(objectGuid(ctx, 'proj', project.id))},#${ownerHistId},${ifcRequiredStr(project.name)},${ifcStr(project.description)},$,$,$,(#${ctxId}),#${unitAssId})`);
   writeXerSourceArchive(ctx, ownerHistId, xerSourceArchive, xer?.sourceProjectId ?? xerSourceProjectId, xerSourceArchiveStorage);
 
   // Calendar (projectkalender — altijd de EERSTE IFCWORKCALENDAR in het bestand; vaste conventie
@@ -380,27 +398,33 @@ export function writeIFC(input: WriteIFCInput): string {
   const planStart = startDates[0] || project.startDate;
   const planEnd = endDates[endDates.length - 1] || project.endDate;
 
+  // IfcWorkPlan en IfcWorkSchedule: de 14 argumenten van het schema (`workControlArgs`). StartTime is
+  // VERPLICHT. Een project zonder taken en zonder startdatum heeft geen planstart; dan het
+  // schrijfmoment, zodat StartTime nooit `$` is. De OPS-lezer gebruikt dit slot dan niet:
+  // OPS_ProjectSettings draagt `ProjectStartDate` altijd (ook leeg) en wint.
+  const workControlStart = planStart || now;
   const workPlanId = addLine(ctx, '_workplan', `IFCWORKPLAN(${workControlArgs({
     guid: objectGuid(ctx, 'wp', project.id), ownerHistId, name: project.name, description: project.description,
-    creationDate: now, startTime: planStart, finishTime: planEnd, predefinedType: 'PLANNED',
+    creationDate: now, startTime: workControlStart, finishTime: planEnd, predefinedType: 'PLANNED',
   })})`);
 
   const workSchedId = addLine(ctx, '_worksched', `IFCWORKSCHEDULE(${workControlArgs({
     guid: objectGuid(ctx, 'ws', project.id), ownerHistId, name: 'Construction schedule v1.0', description: '',
-    creationDate: now, startTime: planStart, finishTime: planEnd, predefinedType: 'PLANNED',
+    creationDate: now, startTime: workControlStart, finishTime: planEnd, predefinedType: 'PLANNED',
   })})`);
 
   // Baselines — per baseline één `.BASELINE.`-IfcWorkSchedule-header (Name +
   // CreationDate, ZONDER taak-duplicatie: de datums leven verliesloos in het OPS_Baselines-JSON
   // hieronder). Puur een interop-signaal "deze baselines bestaan" voor externe IFC-tools.
   // Golden rule: geen baselines ⇒ geen extra IfcWorkSchedule (de lus doet niets).
-  // StartTime is in het schema verplicht: de vroegste start in de baseline, anders die van het plan.
-  // De OPS-lezer leest hem niet (de datums staan in het JSON); hij is er voor andere pakketten.
+  // StartTime en CreationDate zijn in het schema verplicht: de vroegste start in de baseline, anders de
+  // planstart van het werkschema hierboven; een baseline zonder aanmaakdatum krijgt het schrijfmoment.
+  // De OPS-lezer leest deze slots niet (de datums staan in het JSON); ze zijn er voor andere pakketten.
   const baselineSchedRefs: string[] = [];
   for (const b of baselines) {
     const bId = addLine(ctx, `_baseline_ws_${b.id}`, `IFCWORKSCHEDULE(${workControlArgs({
       guid: guidOf(ctx, 'baseline_ws_' + b.id), ownerHistId, name: b.name, description: '',
-      creationDate: b.createdAt, startTime: baselineStart(b) || planStart, finishTime: b.projectEnd,
+      creationDate: b.createdAt || now, startTime: baselineStart(b) || workControlStart, finishTime: b.projectEnd,
       predefinedType: 'BASELINE',
     })})`);
     baselineSchedRefs.push(`#${bId}`);
@@ -563,11 +587,14 @@ function writeTaskTypeMeta(
 
 function ifcTypedValue(type: CustomFieldType, value: CustomFieldValue): string {
   switch (type) {
-    case 'text': return `IFCTEXT(${ifcStr(String(value))})`;
-    case 'number': return `IFCREAL(${Number(value)})`;
+    // Tekst/datum: `ifcRequiredStr`, want `IFCTEXT($)` is geen geldige STEP (een getypte waarde
+    // draagt altijd een waarde). Leeg ⇒ `IFCTEXT('')`.
+    case 'text': return `IFCTEXT(${ifcRequiredStr(String(value))})`;
+    // REAL-typen altijd met decimale punt (`stepReal`); een niet-eindig getal ⇒ NominalValue `$`.
+    case 'number': return ifcTypedReal('IFCREAL', Number(value));
     case 'integer': return `IFCINTEGER(${Math.round(Number(value))})`;
-    case 'cost': return `IFCMONETARYMEASURE(${Number(value)})`;
-    case 'date': return `IFCDATE(${ifcStr(String(value))})`;
+    case 'cost': return ifcTypedReal('IFCMONETARYMEASURE', Number(value));
+    case 'date': return `IFCDATE(${ifcRequiredStr(String(value))})`;
     case 'boolean': return `IFCBOOLEAN(${value ? '.T.' : '.F.'})`;
     default: {
       // Exhaustiviteitscheck: een nieuw CustomFieldType zonder eigen case geeft hier een
@@ -654,9 +681,11 @@ function writeStructure(
   // lezer terug op het WORKPLAN-slot en vult de afgeleide datum een bewust léég gelaten einddatum.
   // Codering: gezet ⇒ IFCDATE(...), leeg ⇒ NominalValue `$` ("aanwezig, maar geen waarde"), zodat
   // de lezer dat onderscheidt van "veld afwezig" (ouder bestand of ander tool ⇒ WORKPLAN-slot).
+  // IfcDate kent geen tijd: een projectstart met tijd (zoals na een XER-import) gaat als datum mee.
+  // Beide lezers, ook die van v2026.9.0, lezen hier alleen de eerste 10 tekens.
   const contractDateProp = (key: string, name: string, value: string): number =>
     addLine(ctx, key,
-      `IFCPROPERTYSINGLEVALUE(${ifcStr(name)},$,${value ? `IFCDATE(${ifcStr(value)})` : '$'},$)`);
+      `IFCPROPERTYSINGLEVALUE(${ifcStr(name)},$,${value ? `IFCDATE(${ifcStr(value.slice(0, 10))})` : '$'},$)`);
   projSettingProps.push(contractDateProp('_ps_projstart', 'ProjectStartDate', project.startDate));
   projSettingProps.push(contractDateProp('_ps_projend', 'ProjectEndDate', project.endDate));
 
@@ -723,11 +752,15 @@ function writeStructure(
   }
   if (activityCodeTypes.length > 0) {
     const codeTmplRefs = activityCodeTypes.map(t => {
-      const labels = t.values.map(v => `IFCLABEL(${ifcStr(v.code)})`).join(',');
-      const enumId = addLine(ctx, `_acte_${t.id}`,
-        `IFCPROPERTYENUMERATION(${ifcStr(t.name)},(${labels}),$)`);
+      // `IfcPropertyEnumeration.EnumerationValues` is een LIST [1:?]: een codetype zonder waarden
+      // krijgt geen enumeratie (Enumerators `$`). De OPS-lezer haalt de definities uit
+      // OPS_StructureMeta; de template is alleen voor andere tools.
+      const labels = t.values.map(v => `IFCLABEL(${ifcRequiredStr(v.code)})`).join(',');
+      const enumRef = t.values.length > 0
+        ? `#${addLine(ctx, `_acte_${t.id}`, `IFCPROPERTYENUMERATION(${ifcRequiredStr(t.name)},(${labels}),$)`)}`
+        : '$';
       const id = addLine(ctx, `_actt_${t.id}`,
-        `IFCSIMPLEPROPERTYTEMPLATE(${ifcStr(guidOf(ctx, 'actt_' + t.id))},#${ownerHistId},${ifcStr(t.name)},$,.P_ENUMERATEDVALUE.,$,$,#${enumId},$,$,$,$)`);
+        `IFCSIMPLEPROPERTYTEMPLATE(${ifcStr(guidOf(ctx, 'actt_' + t.id))},#${ownerHistId},${ifcStr(t.name)},$,.P_ENUMERATEDVALUE.,$,$,${enumRef},$,$,$,$)`);
       return `#${id}`;
     });
     templateIds.push(addLine(ctx, '_psett_codes',
@@ -747,7 +780,7 @@ function writeStructure(
       const propRefs = fieldEntries.map(([defId, value]) => {
         const def = defById.get(defId)!;
         const id = addLine(ctx, `_cfv_${task.id}_${defId}`,
-          `IFCPROPERTYSINGLEVALUE(${ifcStr(def.name)},$,${ifcTypedValue(def.type, value)},$)`);
+          `IFCPROPERTYSINGLEVALUE(${ifcRequiredStr(def.name)},$,${ifcTypedValue(def.type, value)},$)`);
         return `#${id}`;
       });
       const setId = addLine(ctx, `_pset_cf_${task.id}`,
@@ -764,7 +797,7 @@ function writeStructure(
         const t = typeById.get(typeId)!;
         const v = t.values.find(x => x.id === valueId)!;
         const id = addLine(ctx, `_acv_${task.id}_${typeId}`,
-          `IFCPROPERTYENUMERATEDVALUE(${ifcStr(t.name)},$,(IFCLABEL(${ifcStr(v.code)})),$)`);
+          `IFCPROPERTYENUMERATEDVALUE(${ifcRequiredStr(t.name)},$,(IFCLABEL(${ifcRequiredStr(v.code)})),$)`);
         return `#${id}`;
       });
       const setId = addLine(ctx, `_pset_ac_${task.id}`,
@@ -981,7 +1014,7 @@ interface WriteCalendarResult {
   materializedScalarBands: boolean;
   /** `WorkingTimes` draagt meer dan één weekgroep (werkblokken die per weekdag verschillen, zie
    *  `weekBandGroups`). Dan is de scalar werktijd niet eenduidig uit de periodes af te leiden: een
-   *  oudere lezer neemt de terugvalweek, deze lezer de eerste werkdag met blokken. */
+   *  oudere lezer neemt de eerste groep, deze lezer de eerste werkdag met blokken. */
   perDayWeek: boolean;
 }
 
@@ -996,25 +1029,6 @@ interface WeekBandGroup {
 const ISO_DAY_LABEL: Record<number, string> = { 1: 'Mon', 2: 'Tue', 3: 'Wed', 4: 'Thu', 5: 'Fri', 6: 'Sat', 7: 'Sun' };
 
 /**
- * StartDate = FinishDate van de terugvalweek voor oudere OPS-versies (zie `writeCalendar`).
- *  - Deze lezer herkent de terugvalweek aan die datum: een `IfcWorkTime` in `WorkingTimes` met een
- *    StartDate of FinishDate doet niet mee in de weekopbouw (`buildCalendarFromEntity`). Er is bewust
- *    geen markering met een STEP-id: een ander pakket mag de id's hernummeren, en dan wijst zo'n
- *    markering naar de verkeerde regel.
- *  - Uitgebrachte OPS-versies (t/m v2026.9.0) lezen de datums van `WorkingTimes` niet.
- *  - Een lezer die IFC 4.3 volgt, past deze week alleen op 1 januari 1900 toe (`IfcWorkTime`: de datums
- *    "restrict never-ending recurrence patterns"). Sinds issue #292 schrijft OPS `IfcWorkCalendar` met de
- *    9 attributen van het schema, dus zo'n lezer vindt `WorkingTimes` ook echt.
- *  - Sinds #292 helpt deze week de uitgebrachte versies niet meer: zij lezen `WorkingTimes` op plek 5,
- *    en daar staat nu Identification (`$`). Zij lezen dus geen blokken, met of zonder terugvalweek. Plek
- *    6 lezen zij als ExceptionTimes: de terugvalweek wordt daar een feestdag op 1900-01-01 (gemeten met
- *    de lezer van 1e192b31a en v2026.9.0). Dat verlies voor oudere versies is aanvaard (besluit eigenaar
- *    2026-10-13, "alles in één keer"; zie de PR-tekst van #336). De week blijft staan zoals #340 hem
- *    schrijft.
- */
-const LEGACY_WEEK_DATE = '1900-01-01';
-
-/**
  * Groepeert de werkdagen van een kalender op een identieke set blokken: één groep per
  * `IFCWORKTIME` in `WorkingTimes`, met een eigen `IFCRECURRENCEPATTERN(.WEEKLY.)` (WeekdayComponent +
  * TimePeriods). Zo modelleert IFC 4.3 zelf een week met een korte vrijdag (`IfcWorkCalendar`, figuur 1:
@@ -1026,8 +1040,11 @@ const LEGACY_WEEK_DATE = '1900-01-01';
  *  - Twee dagen horen bij dezelfde groep als hun blokken (gesorteerd op begin) gelijk zijn; de groep
  *    schrijft de blokken in de volgorde van zijn eerste dag.
  *  - Volgorde: die van `cal.workDays` (eerste voorkomen). De eerste groep met blokken is die van de
- *    eerste werkdag; hij levert de blokken van de terugvalweek voor oudere OPS-versies
- *    (`writeCalendar`). Verder heeft de volgorde geen betekenis: `WorkingTimes` is een SET.
+ *    eerste werkdag. Verder heeft de volgorde geen betekenis: `WorkingTimes` is een SET.
+ *  - Een uitgebrachte OPS-versie (t/m v2026.9.0) leest `WorkingTimes` niet, want zij verwacht de
+ *    kalender met 8 attributen (zie `writeCalendar` en docs/ifc-round-trip.md, "Oudere OPS-versies").
+ *    Daarom is er geen terugvalweek meer (besluit orkestrator 2026-10-13, PR #344; hij zat in geen
+ *    enkele release).
  *  - Eén groep (uniforme week) ⇒ het bestand is byte-identiek aan vroeger.
  */
 function weekBandGroups(workDays: readonly number[], workTime: WorkTimeBands): WeekBandGroup[] {
@@ -1069,14 +1086,15 @@ function writeCalendar(
   const groups = workTime ? weekBandGroups(cal.workDays, workTime) : [];
   const workTimeIds: number[] = [];
   /** Eén `IFCWORKTIME` met een WEEKLY-patroon; geeft zijn STEP-id terug. */
-  const writeWeek = (days: readonly number[], bands: WeekBandGroup['bands'], label: string, dates: string): number => {
+  // Alleen aangeroepen met een groep die blokken en dagen heeft (`written` hieronder): geen lege lijst.
+  const writeWeek = (days: readonly number[], bands: WeekBandGroup['bands'], label: string): number => {
     const ids = bands.map((b) =>
       addLine(ctx, '_timeperiod', `IFCTIMEPERIOD('${minutesToClock(b.start)}','${minutesToClock(b.end, true)}')`),
     );
     if (!firstPeriod && bands[0]) firstPeriod = [minutesToClock(bands[0].start), minutesToClock(bands[0].end, true)];
     const recurrenceId = addLine(ctx, '_recurrence',
       `IFCRECURRENCEPATTERN(.WEEKLY.,$,(${days.join(',')}),$,$,$,$,(${ids.map((i) => `#${i}`).join(',')}))`);
-    return addLine(ctx, '_worktime', `IFCWORKTIME(${ifcStr(label)},.PREDICTED.,$,#${recurrenceId},${dates})`);
+    return addLine(ctx, '_worktime', `IFCWORKTIME(${ifcStr(label)},.PREDICTED.,$,#${recurrenceId},$,$)`);
   };
   if (groups.length > 1) {
     // Een groep zonder blokken (de eerste werkdag heeft er geen) heeft geen werktijd; IFC kent geen
@@ -1084,25 +1102,9 @@ function writeCalendar(
     // niet mee — de lezer zou zo'n dag via `promoteHourCalendar` toch uit de werkdagen halen.
     const written = groups.filter((g) => g.bands.length > 0);
     perDayWeek = written.length > 1;
-    if (perDayWeek) {
-      // TERUGVALWEEK voor oudere OPS-versies, VOORAAN in `WorkingTimes`: alle werkdagen met de blokken
-      // van de eerste werkdag — precies de week die de writer vóór deze wijziging schreef, dus precies
-      // wat zij nu ook lezen. Uitgebrachte versies (t/m v2026.9.0) lezen alleen de EERSTE `IFCWORKTIME`
-      // en negeren zijn datums; zonder deze week zagen zij alleen de dagen van de eerste groep als
-      // werkdag (gemeten: een korte vrijdag werd een VRIJE dag). Hij geldt alleen op
-      // `LEGACY_WEEK_DATE`; deze lezer herkent hem aan die datum en slaat hem over (zie
-      // `LEGACY_WEEK_DATE`). (Heeft de eerste werkdag geen blokken — vroeger een lege
-      // `TimePeriods`-lijst — dan de eerste groep met blokken.) Let op: sinds #292 (9 attributen) lezen
-      // uitgebrachte versies `WorkingTimes` niet meer, dus deze week bereikt hen niet; zie
-      // `LEGACY_WEEK_DATE`.
-      const writtenDays = new Set(written.flatMap((g) => g.days));
-      workTimeIds.push(writeWeek(
-        cal.workDays.filter((d) => writtenDays.has(d)), written[0].bands,
-        'Standard work week (for older Open Planner Studio versions)', `'${LEGACY_WEEK_DATE}','${LEGACY_WEEK_DATE}'`));
-    }
     for (const group of written) {
       const label = `Standard work week (${group.days.map((d) => ISO_DAY_LABEL[d] ?? String(d)).join(', ')})`;
-      workTimeIds.push(writeWeek(group.days, group.bands, label, '$,$'));
+      workTimeIds.push(writeWeek(group.days, group.bands, label));
     }
   } else {
     const dayNums = cal.workDays.join(',');
@@ -1129,7 +1131,11 @@ function writeCalendar(
       timePeriodRefs = `#${timePeriodId}`;
       firstPeriod = [startTime, endTime];
     }
-    const recurrenceId = addLine(ctx, '_recurrence', `IFCRECURRENCEPATTERN(.WEEKLY.,$,(${dayNums}),$,$,$,$,(${timePeriodRefs}))`);
+    // WeekdayComponent en TimePeriods zijn OPTIONAL SET/LIST [1:?]: een lege lijst `()` is ongeldig,
+    // dus leeg ⇒ `$` (een kalender zonder werkdagen, of een uurkalender zonder blokken). De lezer leest
+    // `$` en `()` gelijk (geen dagen, geen tijdvakken).
+    const recurrenceId = addLine(ctx, '_recurrence',
+      `IFCRECURRENCEPATTERN(.WEEKLY.,$,${dayNums ? `(${dayNums})` : '$'},$,$,$,$,${timePeriodRefs ? `(${timePeriodRefs})` : '$'})`);
     // Engelstalig label: dit belandt in ELK opgeslagen IFC-bestand, ook bij een gebruiker die
     // de app in het Duits of Japans draait — en IFC is een Engelstalige standaard, dus een Nederlands
     // label is hier vreemde eend. Veilig te wijzigen: de lezer gebruikt van de `IFCWORKTIME`'s in
@@ -1176,9 +1182,11 @@ function writeCalendar(
   const exceptStr = allExceptionRefs.length > 0 ? `(${allExceptionRefs.join(',')})` : '$';
   // ObjectType (arg 4): alleen een label bij USERDEFINED-ploeg; anders `$`.
   const objectType = cal.shift === 'USERDEFINED' ? ifcStr('USERDEFINED') : '$';
-  // De 9 argumenten van het schema: GlobalId, OwnerHistory, Name, Description, ObjectType,
-  // Identification ($), WorkingTimes, ExceptionTimes, PredefinedType. Oudere versies lieten
-  // Identification weg (8 argumenten); de lezer kent beide (`ifcWorkControlSlots.ts`).
+  // De 9 attributen van het schema: GlobalId, OwnerHistory, Name, Description, ObjectType,
+  // Identification (`$`, OPS heeft geen kalendercode), WorkingTimes, ExceptionTimes, PredefinedType.
+  // OPS t/m v2026.9.0 schreef er 8, zonder Identification; de lezer kent beide (`workCalendarSlots` in
+  // `ifcWorkControlSlots.ts`). Zo'n oudere versie leest deze kalender verkeerd: aanvaard, besluit eigenaar
+  // 2026-10-13 ("alles in één keer", PR #336). Gemeten in docs/ifc-round-trip.md, "Oudere OPS-versies".
   const calStepId = addLine(ctx, key,
     `IFCWORKCALENDAR(${ifcStr(objectGuid(ctx, 'cal', cal.id))},#${ownerHistId},${ifcStr(cal.name)},${ifcStr(cal.description)},${objectType},$,(${workTimeIds.map((i) => `#${i}`).join(',')}),${exceptStr},${shiftToPredefinedType(cal.shift)})`);
   return {
@@ -1273,15 +1281,15 @@ function writeCalendarGenerationMeta(
   }
   if (needsHoursPerDayOverride) {
     props.push(addLine(ctx, `_opscal_hpd_${cal.id}`,
-      `IFCPROPERTYSINGLEVALUE('HoursPerDay',$,IFCREAL(${cal.hoursPerDay}),$)`));
+      `IFCPROPERTYSINGLEVALUE('HoursPerDay',$,${ifcTypedReal('IFCREAL', cal.hoursPerDay)},$)`));
   }
   if (needsWorkStartHour) {
     props.push(addLine(ctx, `_opscal_workstart_${cal.id}`,
-      `IFCPROPERTYSINGLEVALUE('WorkStartHour',$,IFCREAL(${cal.workStartHour}),$)`));
+      `IFCPROPERTYSINGLEVALUE('WorkStartHour',$,${ifcTypedReal('IFCREAL', cal.workStartHour)},$)`));
   }
   if (needsWorkEndHour) {
     props.push(addLine(ctx, `_opscal_workend_${cal.id}`,
-      `IFCPROPERTYSINGLEVALUE('WorkEndHour',$,IFCREAL(${cal.workEndHour}),$)`));
+      `IFCPROPERTYSINGLEVALUE('WorkEndHour',$,${ifcTypedReal('IFCREAL', cal.workEndHour)},$)`));
   }
   // IFC kent geen semantisch "eenvoudig pauzepatroon". Bewaar het daarom als OPS-metadata,
   // uitsluitend wanneer de gebruiker de nieuwe velden werkelijk heeft gezet.
@@ -1439,7 +1447,9 @@ function writeWBSNesting(ctx: WriteContext, tasks: Task[], ownerHistId: number):
 // standaardnotatie; niet elke externe tool leest het teken, maar onze round-trip behoudt het.
 function ifcLagValue(seq: Sequence): string {
   if (typeof seq.lagPercent === 'number' && Number.isFinite(seq.lagPercent)) {
-    return `IFCRATIOMEASURE(${seq.lagPercent / 100})`;
+    // REAL met decimale punt (`stepReal`): 100 % ⇒ `IFCRATIOMEASURE(1.)`, niet `(1)`. De guard
+    // hierboven maakt het getal eindig, dus `stepReal` geeft altijd een waarde.
+    return `IFCRATIOMEASURE(${stepReal(seq.lagPercent / 100)!})`;
   }
   // Uur-lag (`lagMinutes`, bron van waarheid) als minuut-precieze IFCDURATION met
   // tijdcomponent; de reader herkent de `T`-component en zet `lagMinutes` terug.
@@ -1516,12 +1526,12 @@ function writeResourceMeta(ctx: WriteContext, resources: Resource[], ownerHistId
     const props: string[] = [];
     if (res.maxUnits !== 1) {
       const id = addLine(ctx, `_resmu_${res.id}`,
-        `IFCPROPERTYSINGLEVALUE('MaxUnits',$,IFCREAL(${res.maxUnits}),$)`);
+        `IFCPROPERTYSINGLEVALUE('MaxUnits',$,${ifcTypedReal('IFCREAL', res.maxUnits)},$)`);
       props.push(`#${id}`);
     }
     if (res.costPerHour !== undefined) {
       const id = addLine(ctx, `_resch_${res.id}`,
-        `IFCPROPERTYSINGLEVALUE('CostPerHour',$,IFCMONETARYMEASURE(${res.costPerHour}),$)`);
+        `IFCPROPERTYSINGLEVALUE('CostPerHour',$,${ifcTypedReal('IFCMONETARYMEASURE', res.costPerHour)},$)`);
       props.push(`#${id}`);
     }
     if (res.unitOfMeasure) {

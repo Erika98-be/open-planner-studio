@@ -4,77 +4,35 @@
 // 14), IfcWorkCalendar met 8 (schema: 9) en de vijf resource-entiteiten met 9 (schema: 11). IfcOpenShell
 // las daardoor een lege StartTime, een einddatum in PredefinedType en de werkweek in Identification.
 //
-// Deze check schrijft een RIJK project (`fixtures/ifc-arity-rich.ts`: elke entiteit die de writer kan
-// schrijven) in elk van de drie schema's en toetst per regel het argumentaantal tegen `ARITY`. Daarnaast:
-//   - elk type in `ARITY` komt in het rijke project voor (anders toetst de tabel niets meer), en elk
-//     geschreven type staat in `ARITY` (een nieuw type dwingt een nieuwe tabelregel af);
+// Deze check schrijft het RIJKE project (`ifcSchemaFixture.ts`, dezelfde fixture als de schemapoort) in
+// elk van de drie schema's en toetst per regel het argumentaantal tegen `arity(schema)`. Daarnaast:
+//   - elk type uit de tabel komt in het rijke project voor (anders toetst de tabel niets meer), en elk
+//     geschreven type staat in de tabel (een nieuw type dwingt een nieuwe tabelregel af);
 //   - de kop draagt precies het gekozen schema, en `readIFC` zet het terug op `project.ifcSchema`.
 //
-// HOE `ARITY` IS GEMAAKT. Eenmalig met IfcOpenShell 0.9.0 (Python), zonder Python in CI:
-//
-//   import ifcopenshell.ifcopenshell_wrapper as w
-//   for n in [...]:  # de entiteiten hieronder, in IfcCamelCase
-//       counts = {s: len(w.schema_by_name(s).declaration_by_name(n).all_attributes())
-//                 for s in ("IFC4", "IFC4X3", "IFC4X3_ADD2")}
-//       assert len(set(counts.values())) == 1   # in alle drie gelijk
-//       print(f"{n.upper()}: {counts['IFC4X3']},")
-//
-// `all_attributes()` telt de geërfde attributen mee, precies zoals STEP ze positioneel verwacht. Voeg je
-// een entiteit aan de writer toe, draai dan hetzelfde voor die entiteit en zet de regel hieronder bij.
+// DE AANTALLEN komen uit de gegenereerde schematabel (`ifcSchemaTable.ts`, door
+// `scripts/ifc-schema-table.py` uit de EXPRESS-schema's afgeleid): het aantal attributen per entiteit,
+// inclusief de geërfde, precies zoals STEP ze positioneel verwacht. Een eigen handgeschreven tabel is er
+// niet meer; een nieuwe entiteit in de writer zet je in `OPS_ENTITIES` van dat script.
 //
 // Bewaar de geschreven bestanden met OPS_IFC_ARITY_OUT=<map> (bijvoorbeeld voor een validatie met
 // IfcOpenShell `ifcopenshell.validate`). Draait via run.sh. Exit 0 = alles groen.
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { writeIFC } from '@/services/ifc/ifcWriter';
 import { readFileSchema, readIFC } from '@/services/ifc/ifcReader';
 import { DEFAULT_IFC_SCHEMA, IFC_SCHEMAS, type IfcSchemaId, type Project } from '@/types/project';
-import { buildRichIfcProject } from './fixtures/ifc-arity-rich';
+import { IFC_SCHEMA_TABLES } from './ifcSchemaTable';
+import { buildRichSchemaProject } from './ifcSchemaFixture';
 
-const ARITY: Readonly<Record<string, number>> = {
-  IFCAPPLICATION: 4,
-  IFCAXIS2PLACEMENT3D: 3,
-  IFCCARTESIANPOINT: 1,
-  IFCCONSTRUCTIONEQUIPMENTRESOURCE: 11,
-  IFCCONSTRUCTIONMATERIALRESOURCE: 11,
-  IFCCREWRESOURCE: 11,
-  IFCGEOMETRICREPRESENTATIONCONTEXT: 6,
-  IFCLABORRESOURCE: 11,
-  IFCLAGTIME: 5,
-  IFCORGANIZATION: 5,
-  IFCOWNERHISTORY: 8,
-  IFCPERSON: 8,
-  IFCPERSONANDORGANIZATION: 3,
-  IFCPROJECT: 9,
-  IFCPROPERTYENUMERATEDVALUE: 4,
-  IFCPROPERTYENUMERATION: 3,
-  IFCPROPERTYSET: 5,
-  IFCPROPERTYSETTEMPLATE: 7,
-  IFCPROPERTYSINGLEVALUE: 4,
-  IFCRECURRENCEPATTERN: 8,
-  IFCRELAGGREGATES: 6,
-  IFCRELASSIGNSTOCONTROL: 7,
-  IFCRELASSIGNSTOPROCESS: 8,
-  IFCRELDECLARES: 6,
-  IFCRELDEFINESBYPROPERTIES: 6,
-  IFCRELNESTS: 6,
-  IFCRELSEQUENCE: 9,
-  IFCSIMPLEPROPERTYTEMPLATE: 12,
-  IFCSIUNIT: 4,
-  IFCSUBCONTRACTRESOURCE: 11,
-  IFCTASK: 13,
-  IFCTASKTIME: 20,
-  IFCTIMEPERIOD: 2,
-  IFCUNITASSIGNMENT: 1,
-  IFCWORKCALENDAR: 9,
-  IFCWORKPLAN: 14,
-  IFCWORKSCHEDULE: 14,
-  IFCWORKTIME: 6,
-};
+/** Argumentaantal per entiteit in `schema`, uit de gegenereerde tabel. */
+function arity(schema: IfcSchemaId): Readonly<Record<string, number>> {
+  return Object.fromEntries(Object.entries(IFC_SCHEMA_TABLES[schema].attributes).map(([type, attrs]) => [type, attrs.length]));
+}
 
 const HERE = fileURLToPath(new URL('.', import.meta.url));
-const BASE_EXAMPLE = join(HERE, '..', '..', 'public', 'examples', 'showcase-verbouwing-eengezinswoning.ifc');
+const ROOT = join(HERE, '..', '..');
 
 let checks = 0;
 const diffs: string[] = [];
@@ -113,13 +71,13 @@ function entities(ifc: string): { type: string; args: number; line: string }[] {
   return out;
 }
 
-const base = readIFC(readFileSync(BASE_EXAMPLE, 'utf8'));
-const rich = buildRichIfcProject(base);
+const rich = buildRichSchemaProject(ROOT);
 const outDir = process.env.OPS_IFC_ARITY_OUT;
 if (outDir) mkdirSync(outDir, { recursive: true });
 
 const seenTypes = new Set<string>();
 for (const schema of IFC_SCHEMAS) {
+  const ARITY = arity(schema);
   const ifc = writeIFC({ ...rich, project: { ...rich.project, ifcSchema: schema } });
   if (outDir) writeFileSync(join(outDir, `rijk-${schema}.ifc`), ifc, 'utf8');
 
@@ -135,18 +93,17 @@ for (const schema of IFC_SCHEMAS) {
     seenTypes.add(e.type);
     const want = ARITY[e.type];
     if (want === undefined) {
-      wrong.set(e.type, { got: e.args, line: '(type staat niet in ARITY — zet de regel erbij, zie de kop)' });
+      wrong.set(e.type, { got: e.args, line: '(type staat niet in de schematabel — zie de kop)' });
     } else if (e.args !== want && !wrong.has(e.type)) {
       wrong.set(e.type, { got: e.args, line: e.line.slice(0, 160) });
     }
   }
   for (const [type, w] of wrong) ok(`2 ${schema}: ${type} heeft ${w.got} argumenten, schema ${ARITY[type] ?? '?'} — ${w.line}`, false);
+  // (3) Dekking: elk type uit de tabel komt in het rijke project voor.
+  const types = new Set(entities(ifc).map(e => e.type));
+  eq(`3 ${schema}: elk type uit de schematabel komt in het rijke project voor`, Object.keys(ARITY).filter(t => !types.has(t)), []);
   ok(`2 ${schema}: er zijn entiteiten gelezen`, entities(ifc).length > 100);
 }
-
-// (3) Dekking: elk type uit de tabel komt in het rijke project voor.
-const unseen = Object.keys(ARITY).filter(t => !seenTypes.has(t));
-eq('3 elk type uit ARITY komt in het rijke project voor', unseen, []);
 
 // (4) Standaard en onbekende waarde: afwezig ⇒ IFC4X3_ADD2 (besluit eigenaar 2026-10-13), een vrije
 // tekst komt nooit in de kop.

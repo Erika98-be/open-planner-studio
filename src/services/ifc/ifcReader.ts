@@ -308,6 +308,20 @@ export function readIFC(
   // regel voor alle lezers (`resolveMissingScheduleDates`), vóór de voortgang-invarianten: start ⇒ de
   // projectstart (zoals `addTask`), finish ⇒ start + duur waar eenduidig. Aanwezigheid komt uit
   // `recordedFields` (de slot-lezer zelf zet nog de vandaag-plaatshouder).
+  // Projectstart uit IfcWorkPlan.StartTime (dus niet uit OPS_ProjectSettings): valt die LATER dan de
+  // vroegste ingelezen taakstart, dan wint hij niet en geldt die taakstart. In het bSI/xbim-voorbeeld
+  // `construction-scheduling-task` is StartTime 2010-09-23 (de aanmaakdag), terwijl de taken op
+  // 2010-09-20 beginnen; als projectstart zou hij via de projectstart-vloer 63 van de 72 taken drie
+  // dagen later laten starten. Een StartTime vóór de eerste taak blijft staan (zoals de kubusbestanden
+  // van BlenderBIM). Alleen taken met een ingelezen ScheduleStart tellen (`recordedFields`).
+  if (project.startDate && !projectStartRecorded.value) {
+    const earliestTaskStart = tasks
+      .filter(t => (recordedFields[t.id] ?? []).includes('scheduleStart'))
+      .map(t => (t.time.scheduleStart ?? '').slice(0, 10))
+      .filter(Boolean)
+      .sort()[0];
+    if (earliestTaskStart && earliestTaskStart < project.startDate) project.startDate = earliestTaskStart;
+  }
   const missingDates = emptyMissingScheduleDates();
   for (const t of tasks) {
     const present = recordedFields[t.id] ?? [];
@@ -1054,7 +1068,8 @@ export function readFileSchema(content: string): IfcSchemaId | undefined {
 }
 
 /** Is deze IFCWORKSCHEDULE een baseline (PredefinedType `.BASELINE.`)? De positie hangt af van de
- *  argumenten: 13 in het schema, 14 in bestanden van oudere OPS-versies (`workControlSlots`). */
+ *  argumenten: 13 in het schema (en WorkControlType in IFC2X3), 14 in bestanden van oudere OPS-versies
+ *  (`workControlSlots`). */
 function isBaselineSchedule(e: StepEntity): boolean {
   return (e.args[workControlSlots(e.args).predefinedType] || '').includes('BASELINE');
 }
@@ -1322,6 +1337,14 @@ function extractProject(
   const proj = entities.find(e => e.type === 'IFCPROJECT');
   const wp = entities.find(e => e.type === 'IFCWORKPLAN');
   const wpSlots = workControlSlots(wp?.args ?? []);
+  // Een tijd telt alleen als stringliteral (IfcDateTime). In IFC2X3 staan op deze plekken verwijzingen
+  // (IfcDateTimeSelect); die geven geen datum, net als een leeg slot.
+  const wpTime = (slot: number): string => {
+    const raw = (wp?.args[slot] ?? '').trim();
+    return raw.startsWith("'") ? raw : '';
+  };
+  const wpStart = wpTime(wpSlots.startTime);
+  const wpFinish = wpTime(wpSlots.finishTime);
   const projectGlobalId = proj ? ifcSlotText(proj.args[0]) : '';
 
   // Auteur/organisatie uit de owner-history-keten (IFCOWNERHISTORY → IFCPERSONANDORGANIZATION →
@@ -1366,12 +1389,12 @@ function extractProject(
     // vandaag). Direct "vandaag" zou verzonnen data zijn die via de projectstart-vloer taken mét
     // voorgangers naar de leesdatum tilt (check-recorded-dates 9A/9B). `parseDateFromIFC`
     // wordt bewust alleen op een niet-lege slottekst losgelaten — op '' levert hij zelf "vandaag".
-    // StartTime/FinishTime op de plek die bij de argumenten hoort: schema of oude OPS-lay-out
-    // (`workControlSlots`, ook na IfcOpenShell MergeProjects).
-    startDate: wp && ifcSlotText(wp.args[wpSlots.startTime]) ? parseDateFromIFC(wp.args[wpSlots.startTime]) : '',
+    // StartTime/FinishTime op de plek die bij de argumenten hoort: schema, oude OPS-indeling (ook na
+    // IfcOpenShell MergeProjects) of IFC2X3 (`workControlSlots`).
+    startDate: ifcSlotText(wpStart) ? parseDateFromIFC(wpStart) : '',
     // Zelfde regel voor FinishTime: een leeg slot is "geen einde", niet vandaag. Het
     // OPS_ProjectSettings-pset wint hierna nog steeds als het er is.
-    endDate: wp && ifcSlotText(wp.args[wpSlots.finishTime]) ? parseDateFromIFC(wp.args[wpSlots.finishTime]) : '',
+    endDate: ifcSlotText(wpFinish) ? parseDateFromIFC(wpFinish) : '',
     calendarId: 'cal-default',
     // createdAt/modifiedAt: default = nu; overschreven door het OPS_ProjectSettings-pset in
     // extractStructure als het bestand ze draagt (oude bestanden ⇒ deze default blijft staan).
@@ -1818,7 +1841,9 @@ function extractSequences(
       if (lagEntity && lagEntity.type === 'IFCLAGTIME') {
         const lagValue = (lagEntity.args[3] || '').trim();
         const durType = (lagEntity.args[4] || '').trim();
-        const ratioMatch = lagValue.match(/^IFCRATIOMEASURE\s*\(\s*(-?[\d.]+)\s*\)$/i);
+        // Een STEP-REAL mag een exponent dragen (`5.E-1`). De writer schrijft altijd een decimale
+        // punt (`1.` voor 100 %); dat las `[\d.]+` al.
+        const ratioMatch = lagValue.match(/^IFCRATIOMEASURE\s*\(\s*(-?[\d.]+(?:E[+-]?\d+)?)\s*\)$/i);
         const durMatch = lagValue.match(/^IFCDURATION\s*\(\s*(.+?)\s*\)$/i);
         if (ratioMatch) {
           // Ratio → procent; afronden tegen floating-point-ruis (0.33*100 = 33.000000000000004).
@@ -2714,11 +2739,13 @@ function buildCalendarFromEntity(
   //  - Een IFCWORKTIME met een StartDate of FinishDate (args[4]/args[5]) doet NIET mee. Datumgebonden
   //    werktijden (een zomer- en een winterweek, een losse werkzaterdag) worden (nog) niet gelezen; als
   //    gewone week zouden ze elke week gelden (07–16 en 08–17 werd 07–17, een losse zaterdag elke
-  //    zaterdag). Hieronder valt ook de terugvalweek die OPS vooraan schrijft voor oudere OPS-versies
-  //    (StartDate = FinishDate = 1900-01-01, `LEGACY_WEEK_DATE` in `ifcWriter.ts`). Bewust de datum en
-  //    geen markering met een STEP-id: een ander pakket mag de id's hernummeren. OPS schreef in
-  //    `WorkingTimes` vóór de terugvalweek nooit een datum (feestdagen en werkende uitzonderingen staan in
-  //    `ExceptionTimes`), dus oude OPS-bestanden lezen ongewijzigd.
+  //    zaterdag). Hieronder valt ook de terugvalweek (StartDate = FinishDate = 1900-01-01) die main tussen
+  //    #340 en #344 vooraan schreef; hij zat in geen release, maar zo'n bestand leest hiermee goed. Een
+  //    uitgebrachte OPS-versie schreef in `WorkingTimes` nooit een datum (feestdagen en werkende
+  //    uitzonderingen staan in `ExceptionTimes`), dus oude OPS-bestanden lezen ongewijzigd.
+  //  - Blijft er zo geen patroon over (ALLE werktijden hebben een datum, bijv. één week 08–16 van
+  //    2026-01-01 t/m 2027-12-31), dan het eerste patroon met een datum, zoals de lezer vóór de indeling
+  //    per weekdag deed. Anders kreeg zo'n kalender de standaardweek (07–16).
   //  - Twee of meer zulke patronen MET weekdagen: werkblokken die per weekdag verschillen (zo schrijft
   //    `weekBandGroups` een korte vrijdag, en zo modelleert IFC 4.3 het zelf, `IfcWorkCalendar` figuur 1).
   //    Elke dag krijgt de tijdvakken van zijn eigen patroon; `workDays` is de vereniging. Staat een
@@ -2729,16 +2756,17 @@ function buildCalendarFromEntity(
   //    voor bestanden van oudere OPS-versies (één IFCWORKTIME) en voor één DAILY-patroon zonder weekdagen.
   const workTimeRefs = parseRefs(cal.args[calSlots.workingTimes] || '');
   const recurrences: StepEntity[] = [];
+  const datedRecurrences: StepEntity[] = []; // datumgebonden: zie hierboven
   for (const wtRef of workTimeRefs) {
     const wt = entityMap.get(wtRef);
     if (!wt || wt.type !== 'IFCWORKTIME') continue;
-    if (workTimeDateRange(wt)) continue; // datumgebonden (ook de terugvalweek): zie hierboven
     const recurrenceRef = parseRef(wt.args[3] || '');
     if (!recurrenceRef) continue;
     const rec = entityMap.get(recurrenceRef);
     if (!rec || rec.type !== 'IFCRECURRENCEPATTERN') continue;
-    recurrences.push(rec);
+    (workTimeDateRange(wt) ? datedRecurrences : recurrences).push(rec);
   }
+  if (recurrences.length === 0 && datedRecurrences.length > 0) recurrences.push(datedRecurrences[0]);
   const weekRecurrences = recurrences.filter(rec => parseIntList(rec.args[2] || '').length > 0);
   // ALLE TimePeriods van één patroon (`TimePeriods` is native een lijst — pauze/split-shift).
   const readPeriods = (timePeriodRefs: string[]): { start: number; end: number }[] => {
@@ -3286,8 +3314,8 @@ function remapLevelingResourceIds(
  * JSON), maar externe tools kunnen dat wél doen; die taken zijn baseline-snapshots, geen live
  * taken, en mogen niet als echte taak worden ingeladen. Koppeling via IFCRELNESTS (RelatingObject
  * = het schema) of IFCRELASSIGNSTOCONTROL (control = het schema). PredefinedType `.BASELINE.` staat
- * op arg-index 13 van IFCWORKSCHEDULE (schema), of 14 in bestanden van oudere OPS-versies
- * (`isBaselineSchedule`).
+ * op arg-index 13 van IFCWORKSCHEDULE (schema en IFC2X3, daar als WorkControlType), of 14 in
+ * bestanden van oudere OPS-versies (`isBaselineSchedule`, `workControlSlots`).
  *
  * Review #336 (sinds de herkenning ook bij 14 argumenten werkt, dus bij bestanden van andere pakketten):
  *  - Alleen uitsluiten als er óók een gewoon (niet-baseline) werkschema is, met minstens één taak

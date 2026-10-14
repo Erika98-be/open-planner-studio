@@ -73,13 +73,14 @@
 //   de afgeleide span — zie `projCal` hieronder (workEndHour 16, hoursPerDay 8: 16−7=9 ≠ 8).
 
 import { writeIFC } from '@/services/ifc/ifcWriter';
+import { checkIfcSchema } from './ifcSchemaCheck';
 import { readIFC } from '@/services/ifc/ifcReader';
 import { solveProject } from '@/engine/scheduler/solveProject';
 import { ALL_RECORDED_SLOT_KEYS, IFC_TASKTIME_SLOTS, TASKTIME_SLOT, IFC_TASK_SLOTS, TASK_SLOT } from '@/services/ifc/ifcTaskSlots';
 import type { Task, TaskTime, ExternalLink, TaskSplitGap, TaskTimephasedContour } from '@/types/task';
 import type { Sequence } from '@/types/sequence';
 import type { Resource, ResourceAssignment } from '@/types/resource';
-import type { Project, ProjectSchedulingOptions } from '@/types/project';
+import { IFC_SCHEMAS, type Project, type ProjectSchedulingOptions } from '@/types/project';
 import type { WorkCalendar, CalendarGeneration, Holiday, WorkingException } from '@/types/calendar';
 import type { ActivityCodeType, ActivityCodeValue, CustomFieldDef } from '@/types/structure';
 import type { Baseline, BaselineTask } from '@/types/baseline';
@@ -2517,6 +2518,18 @@ const hasP6BoundarySequence = (input: ImportResult) =>
     const got = extern18.tasks.find(t => t.name === `P${i}`)?.time.totalFloat;
     assert(got === want, `(18i) ${lit} → ${want}: ${why} — kreeg ${got}`);
   });
+}
+
+// ════════════════════════════════════════════════════════════════════════════════════════════════
+// (19) Schemageldig. De fixture is een bron van de IFC-schemapoort (`check-ifc-schema.ts`): hij
+//      draagt wat de voorbeelden en het rijke schemaproject niet hebben (splits, contouren,
+//      timephased werk, P6-voortgang, …). De fixture kiest IFC4 (zie `project` hierboven); hier in
+//      elk schema dat de app schrijft (`IFC_SCHEMAS`), getoetst tegen de tabel van dat schema.
+for (const schema of IFC_SCHEMAS) {
+  const result = checkIfcSchema(`round-trip-fixture (${schema})`, writeIFC({ ...fixture, project: { ...fixture.project, ifcSchema: schema } }), undefined, schema);
+  assert(result.checks > 100, `(19) ${schema}: testvoorwaarde: de schematoets liep (${result.checks} entiteiten getoetst)`);
+  for (const failure of result.failures) assert(false, `(19) ${failure}`);
+  if (result.failures.length === 0) assert(true, `(19) schemageldig in ${schema}`);
 }
 
 // ════════════════════════════════════════════════════════════════════════════════════════════════

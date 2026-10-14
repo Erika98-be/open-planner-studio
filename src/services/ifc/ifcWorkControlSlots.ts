@@ -24,6 +24,12 @@
  * (`.X.`) of `$`. Daaraan herkent de lezer de oude indeling. Het oude PredefinedType zelf is dan al weg
  * (IfcOpenShell laat het vallen); die slot is leeg, zoals in een bestand zonder type.
  *
+ * IFC2X3 telt voor IfcWorkPlan/IfcWorkSchedule ook 15 argumenten, maar met een andere inhoud:
+ * StartTime (11) en FinishTime (12) zijn daar verwijzingen (IfcDateTimeSelect), WorkControlType (13) is
+ * de enumeratie en UserDefinedControlType (14) een tekst of `$`. De lezer herkent die vorm aan de
+ * enumeratie op 13 zonder enumeratie op 14. Een verwijzing is geen datum; dat bewaakt de lezer zelf
+ * (alleen een stringliteral telt als tijd).
+ *
  * Bladmodule: geen imports, zodat lezer en schrijver hem zonder cyclus delen.
  */
 
@@ -48,8 +54,12 @@ export interface WorkCalendarSlots {
   predefinedType: number;
 }
 
+/** De slots van het schema. IFC2X3 heeft dezelfde posities (StartTime 11, FinishTime 12, de
+ *  enumeratie WorkControlType op 13); alleen het argumentaantal (15) en de inhoud verschillen. */
 const WORK_CONTROL_SCHEMA: WorkControlSlots = { startTime: 11, finishTime: 12, predefinedType: 13 };
 const WORK_CONTROL_LEGACY_OPS: WorkControlSlots = { startTime: 12, finishTime: 13, predefinedType: 14 };
+/** Een STEP-enumeratie als `.BASELINE.`. */
+const isStepEnum = (arg: string | undefined): boolean => /^\.[A-Z0-9_]+\.$/i.test((arg ?? '').trim());
 const WORK_CALENDAR_SCHEMA: WorkCalendarSlots = { workingTimes: 6, exceptionTimes: 7, predefinedType: 8 };
 const WORK_CALENDAR_LEGACY_OPS: WorkCalendarSlots = { workingTimes: 5, exceptionTimes: 6, predefinedType: 7 };
 /** Identification van IfcWorkCalendar in het schema: een `IfcIdentifier` (tekst), nooit een lijst. */
@@ -57,8 +67,12 @@ const CALENDAR_IDENTIFICATION = 5;
 
 /** Slotposities van een IfcWorkPlan/IfcWorkSchedule met deze argumenten. Oude OPS-lay-out bij 15 of
  *  meer argumenten (zo las de lezer elk bestand vóór #292), en bij 14 argumenten met tekst op
- *  PredefinedType (13): een oud bestand na MergeProjects. Anders het schema. */
+ *  PredefinedType (13): een oud bestand na MergeProjects. IFC2X3 bij 15 argumenten met de enumeratie op
+ *  13 en niet op 14. Anders het schema. */
 export function workControlSlots(args: readonly string[]): WorkControlSlots {
+  if (args.length === LEGACY_OPS_WORK_CONTROL_ARITY && isStepEnum(args[13]) && !isStepEnum(args[14])) {
+    return WORK_CONTROL_SCHEMA; // IFC2X3: zelfde posities als het schema
+  }
   if (args.length >= LEGACY_OPS_WORK_CONTROL_ARITY) return WORK_CONTROL_LEGACY_OPS;
   if (args.length === WORK_CONTROL_ARITY && (args[WORK_CONTROL_SCHEMA.predefinedType] ?? '').trim().startsWith("'")) {
     return WORK_CONTROL_LEGACY_OPS;
