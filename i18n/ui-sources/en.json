@@ -733,7 +733,6 @@
     "calendar.simpleBreak.start": "484e299a7a3dc4e5",
     "calendar.simpleBreak.duration": "65103881e7eb35d2",
     "calendar.simpleBreak.hint": "26a2af0c55cc0f02",
-    "calendar.simpleBreak.blocksReadOnly": "2627c2b38f52d136",
     "calendar.simpleBreak.errors.invalidDuration": "b0e1295e05896687",
     "calendar.simpleBreak.errors.outsideWorkingDay": "1278293d3dca4ba2",
     "calendar.simpleBreak.errors.consumesWorkingDay": "b899bb0e541eee0c",

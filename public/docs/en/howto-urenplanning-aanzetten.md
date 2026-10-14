@@ -14,7 +14,7 @@ You hire a crane by the hour, not by the day. A pour of six hours does not fit i
 2. Under *Hour planning*, tick *Enable hour planning*. It works right away. In the message *This file contains hour-based planning.* the *Enable hour planning* button does the same.
 3. Below it is *Allow mixed day/hour planning*, on by default. With that setting you choose per task whether it counts in days or hours. If you turn it off, the *Duration unit* list disappears. You can then still type a duration with a unit, such as `12h`.
 
-That changes more than the duration of a task: under *View › Time Scale* you can choose the scale *Hour*, the *Calendars* window gets the *Working times* block, and the *New project* window gets the choices *Shift* and *Default unit for new tasks*.
+That changes more than the duration of a task: under *View › Time Scale* you can choose the scale *Hour*, in the *Calendars* window an ordinary calendar can get working-time blocks (the *Working times* block; a calendar that already has blocks always shows it), and the *New project* window gets the choices *Shift* and *Default unit for new tasks*.
 
 ### Planning a task in hours
 

@@ -14,7 +14,7 @@ Een kraan huur je per uur, niet per dag. Een stort van zes uur past niet in een 
 2. Zet onder *Urenplanning* het vinkje bij *Urenplanning inschakelen* aan. Het werkt meteen. In de melding *Dit bestand bevat urenplanning.* doet de knop *Urenplanning aanzetten* hetzelfde.
 3. Daaronder staat *Gemengde dag/uur-planning toestaan*, standaard aan. Met die instelling kies je per taak of hij in dagen of uren telt. Zet je hem uit, dan verdwijnt de keuzelijst *Duureenheid*. Je kunt dan nog wel een duur met een eenheid typen, zoals `12h`.
 
-Daarmee verandert er meer dan alleen de duur van een taak: onder *Beeld › Tijdschaal* kun je de schaal *Uur* kiezen, het venster *Kalenders* krijgt het blok *Werktijden*, en het venster *Nieuw project* krijgt de keuzes *Ploeg* en *Standaardeenheid voor nieuwe taken*.
+Daarmee verandert er meer dan alleen de duur van een taak: onder *Beeld › Tijdschaal* kun je de schaal *Uur* kiezen, in het venster *Kalenders* kan een gewone kalender werktijdblokken krijgen (het blok *Werktijden*; een kalender die al blokken heeft, toont dat blok altijd), en het venster *Nieuw project* krijgt de keuzes *Ploeg* en *Standaardeenheid voor nieuwe taken*.
 
 ### Een taak in uren plannen
 

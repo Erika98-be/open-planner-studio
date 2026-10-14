@@ -1,12 +1,12 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ChevronDown, ChevronUp, Info, Plus, Trash2, X } from 'lucide-react';
+import { ChevronDown, ChevronUp, Plus, Trash2, X } from 'lucide-react';
 import type { WorkCalendar, Holiday, WorkTimeBands } from '@/types/calendar';
 import { accentChipClass, CalendarGeneratorFields } from './CalendarGeneratorFields';
 import { WorkTimeEditor } from './WorkTimeEditor';
 import { DateTextInput } from '@/components/common/DateTextInput';
 import { useAppStore } from '@/state/appStore';
-import { isHourCalendar, deriveHoursPerDay, workDayTogglePatch, workDaysFromBands } from '@/services/subdayIo';
+import { isHourCalendar, deriveHoursPerDay, workDayTogglePatch, workDaysFromBands, workDaysSetPatch } from '@/services/subdayIo';
 import { generateId } from '@/utils/id';
 import { loadWorkTimePresets, saveWorkTimePresets } from '@/utils/settingsStore';
 import {
@@ -79,7 +79,6 @@ function ScalarTimeInput({
   decreaseLabel,
   className,
   dataAttribute,
-  readOnly = false,
 }: {
   id: string;
   value: string;
@@ -90,8 +89,6 @@ function ScalarTimeInput({
   decreaseLabel: string;
   className: string;
   dataAttribute: string;
-  /** Alleen-lezen: geen invoer, geen commit, geen stapknoppen (uurkalender met uurplanning uit). */
-  readOnly?: boolean;
 }) {
   return (
     <div className="flex min-w-0 items-stretch gap-1">
@@ -101,12 +98,9 @@ function ScalarTimeInput({
         inputMode="numeric"
         placeholder="HH:MM"
         value={value}
-        readOnly={readOnly}
-        aria-readonly={readOnly || undefined}
-        onChange={event => { if (!readOnly) onTextChange(event.target.value); }}
-        onBlur={() => { if (!readOnly) onCommit(); }}
+        onChange={event => onTextChange(event.target.value)}
+        onBlur={onCommit}
         onKeyDown={event => {
-          if (readOnly) return;
           if (event.key === 'Enter') {
             event.preventDefault();
             onCommit();
@@ -121,9 +115,7 @@ function ScalarTimeInput({
         data-ops-work-end={dataAttribute === 'work-end' ? true : undefined}
         data-ops-simple-break-start={dataAttribute === 'break-start' ? true : undefined}
       />
-      {!readOnly && (
-        <StepButtons onStep={onStep} increaseLabel={increaseLabel} decreaseLabel={decreaseLabel} dataAttribute={dataAttribute} />
-      )}
+      <StepButtons onStep={onStep} increaseLabel={increaseLabel} decreaseLabel={decreaseLabel} dataAttribute={dataAttribute} />
     </div>
   );
 }
@@ -167,23 +159,23 @@ export function CalendarForm({
   // tijden); deze vlag laat de gebruiker hem inklappen. Voor een dag-kalender is er nog geen
   // `workTime`, dus opent de knop de editor (seed uit scalar) i.p.v. te collapsen.
   const [bandsCollapsed, setBandsCollapsed] = useState(false);
+  // De beginstand van de blokken voor de werkdagknoppen en *Ma–vr* (`workDayTogglePatch`): bij openen de
+  // blokken van de kalender, na een preset de blokken van die preset ("een preset vervangt alles").
+  const [initialWorkTime, setInitialWorkTime] = useState(() => draft.workTime);
   const [savingPreset, setSavingPreset] = useState(false);
   const [presetName, setPresetName] = useState('');
+  // Een kalender met werkblokken (weekbanden) toont ALTIJD het blok Werktijden, ook met urenplanning
+  // uit: de motor rekent met die blokken, dus de gebruiker bewerkt ze daar direct. Begin, einde en
+  // pauze bestaan dan niet als veld (die zouden `workTime` niet raken). Urenplanning bepaalt alleen of
+  // een eenvoudige kalender werkblokken kan KRIJGEN (presets, "Per weekdag instellen…").
+  // Besluit eigenaar 2026-10-13 (optie 2), vervangt de alleen-lezen-stand uit #334.
   const hourMode = isHourCalendar(draft);
-  // Een uurkalender (weekbanden) met urenplanning UIT: de motor rekent met de blokken, en die zijn hier
-  // niet te bewerken. Begin, einde, pauze en netto staan daarom alleen-lezen (afgeleid uit de blokken),
-  // de presets staan uit en een infoblok wijst naar urenplanning. Zonder deze stand paste de
-  // scalarbediening wel `workStartHour`/`hoursPerDay` aan maar niet `workTime`: een wijziging deed
-  // niets en verdween na opslaan. De werkdagknoppen blijven bruikbaar (`toggleWorkDay` past de blokken
-  // mee aan). Besluit orkestrator 2026-10-13 (review #334); eigenaar kan anders kiezen.
-  const blocksReadOnly = hourMode && !enableHourPlanning;
-  const setUI = useAppStore(s => s.setUI);
+  const showWorkTimeSection = enableHourPlanning || hourMode;
   const scalarBreakError = calendarScalarBreakIssue(draft);
   // Oude scalar-kalenders hebben nog geen velden, maar hun zichtbare waarden moeten het bestaande
   // gedrag verklaren: 07:00–16:00 / 8 uur toont daarom de afgeleide 12:00 / 60 min, terwijl
-  // 08:00–16:00 / 8 uur terecht 0 minuten toont.
-  // Draagt de kalender weekbanden met precies twee blokken (MS Project: 08:00–12:00 + 13:00–17:00),
-  // dan is de pauze het gat ertussen (`inferredSimpleBreak`).
+  // 08:00–16:00 / 8 uur terecht 0 minuten toont. Alleen voor een kalender zonder werkblokken: bij
+  // werkblokken staan deze velden er niet.
   const inferredBreak = inferredSimpleBreak(draft);
   const inferredSimpleBreakDuration = inferredBreak.durationMinutes;
   const inferredSimpleBreakStart = inferredBreak.startMinute;
@@ -262,6 +254,9 @@ export function CalendarForm({
     });
     // Elke uur-preset ⇒ editor meteen open/zichtbaar (uitgeklapt); dag-preset heeft geen editor.
     setBandsCollapsed(false);
+    // Een preset vervangt alles: een dag die daarna uit en weer aan gaat, krijgt de presetblokken
+    // terug, niet die van vóór de preset.
+    setInitialWorkTime(patch.workTime);
   };
 
   // Eén van de vijf INGEBOUWDE presets (CALENDAR_PRESETS) — in tegenstelling tot een eigen preset
@@ -353,8 +348,8 @@ export function CalendarForm({
 
   // Bij een uurkalender gaan de blokken mee (`workDayTogglePatch`), zodat `workDays` en `workTime`
   // gelijk blijven — met urenplanning uit én aan. Een dag die weer aan gaat, krijgt eerst zijn eigen
-  // blokken terug zoals het formulier ze opende (`initialWorkTime`; CalendarDialog mount per kalender).
-  const [initialWorkTime] = useState(() => draft.workTime);
+  // blokken terug: zoals het formulier ze opende, of zoals de laatst gekozen preset ze zette
+  // (`initialWorkTime`, zie `applyPreset`; CalendarDialog mount per kalender).
   const toggleWorkDay = (day: number) => onChange(workDayTogglePatch(draft, day, initialWorkTime));
 
   // Het eenvoudige patroon is geen tweede engineformule: de netto uren worden alleen als
@@ -513,14 +508,26 @@ export function CalendarForm({
   };
 
   // Presets: "24/7" = workDays [1..7]. Dit is uitsluitend de ene-doorlopende-kalender-preset, geen
-  // dag/nacht-PLOEGEN. "Ma-vr" ernaast herstelt symmetrisch de standaard.
+  // dag/nacht-PLOEGEN. "Ma-vr" ernaast zet bij een eenvoudige kalender de standaard ma–vr 07:00–16:00.
+  // Kalender met werkblokken: de motor rekent met `workTime`, dus beide knoppen passen de blokken aan.
+  // "24/7" wordt de ingebouwde preset Continu (00:00–24:00, alle dagen); "Ma–vr" zet de werkdagen op
+  // ma–vr en houdt per dag de blokken (`workDaysSetPatch`). De omschrijving blijft staan, net als bij
+  // een eenvoudige kalender.
   const applyContinuousPreset = () => {
+    if (hourMode) {
+      applyPreset(shiftPresetPatch('continuous'));
+      return;
+    }
     onChange({
       workDays: [1, 2, 3, 4, 5, 6, 7], workStartHour: 0, workEndHour: 24, hoursPerDay: 24,
       simpleBreakStartMinute: undefined, simpleBreakDurationMinutes: undefined,
     });
   };
   const applyWeekdaysPreset = () => {
+    if (hourMode) {
+      onChange(workDaysSetPatch(draft, [1, 2, 3, 4, 5], initialWorkTime));
+      return;
+    }
     onChange({
       workDays: [1, 2, 3, 4, 5], workStartHour: 7, workEndHour: 16, hoursPerDay: 8,
       simpleBreakStartMinute: undefined, simpleBreakDurationMinutes: undefined,
@@ -544,12 +551,6 @@ export function CalendarForm({
   const inputCls =
     'px-2 py-1.5 bg-surface border-[1.5px] border-[var(--theme-control-border)] rounded-[8px] text-text-primary focus:outline-none focus:border-accent focus:shadow-[0_0_0_3px_rgba(217,119,6,0.2)] transition-[border-color,box-shadow]';
 
-  // Alleen-lezen zoals elders in de app (`disabled:opacity-50/60` in de taakvelden, `opacity: 0.6` bij
-  // een vergrendeld veld in de AI-groep): gedimd, geen focusrand, geen tekstcursor.
-  const scalarInputCls = blocksReadOnly
-    ? inputCls + ' opacity-60 cursor-default focus:!border-[var(--theme-control-border)] focus:!shadow-none'
-    : inputCls;
-
   return (
     <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-4 text-small leading-4">
       {/* Name */}
@@ -571,14 +572,13 @@ export function CalendarForm({
           <label className="text-text-secondary font-medium">
             {tMenu('ribbon.calendarDialog.workDays')}
           </label>
-          {/* Presets: "Continu (24/7)" zet workDays [1..7] + 0-24u ineens;
-              "Ma-vr" herstelt symmetrisch de standaard ma-vr/07-16. */}
+          {/* Presets: "Continu (24/7)" zet alle dagen op 00:00–24:00. "Ma-vr": eenvoudige kalender ⇒
+              standaard ma–vr 07:00–16:00; kalender met werkblokken ⇒ werkdagen ma–vr, blokken per dag. */}
           <div className="flex gap-1.5">
             <button
               type="button"
               onClick={applyWeekdaysPreset}
-              disabled={blocksReadOnly}
-              className="btn btn--sm btn--secondary disabled:opacity-40"
+              className="btn btn--sm btn--secondary"
               data-ops-calendar-preset-weekdays
             >
               {tCommon('calendar.preset.weekdays')}
@@ -586,8 +586,7 @@ export function CalendarForm({
             <button
               type="button"
               onClick={applyContinuousPreset}
-              disabled={blocksReadOnly}
-              className="btn btn--sm btn--secondary disabled:opacity-40"
+              className="btn btn--sm btn--secondary"
               data-ops-calendar-preset-continuous
             >
               {tCommon('calendar.preset.continuous')}
@@ -610,11 +609,10 @@ export function CalendarForm({
         </div>
       </div>
 
-      {/* Netto-uren zijn in elke kalenderstand uitsluitend een afleiding. De scalarbediening blijft
-          verborgen zodra weekbanden autoritatief zijn, maar de readout zelf wisselt nooit van vorm
-          of bewerkbaarheid door de Urenplanning-toggle. */}
+      {/* Netto-uren zijn in elke kalenderstand uitsluitend een afleiding. Begin/einde/pauze bestaan
+          alleen bij een eenvoudige kalender; bij werkblokken bewerk je het blok Werktijden. */}
       <div className="grid grid-cols-3 gap-3">
-        {!(enableHourPlanning && hourMode) && (
+        {!hourMode && (
           <>
           <div className="flex flex-col gap-1">
             <label className="text-text-secondary font-medium" htmlFor="ops-work-start">
@@ -628,9 +626,8 @@ export function CalendarForm({
               onStep={delta => stepScalarTime('workStart', workStartText, setWorkStartText, delta)}
               increaseLabel={tCommon('calendar.simpleBreak.increaseTime')}
               decreaseLabel={tCommon('calendar.simpleBreak.decreaseTime')}
-              className={scalarInputCls}
+              className={inputCls}
               dataAttribute="work-start"
-              readOnly={blocksReadOnly}
             />
           </div>
           <div className="flex flex-col gap-1">
@@ -645,9 +642,8 @@ export function CalendarForm({
               onStep={delta => stepScalarTime('workEnd', workEndText, setWorkEndText, delta)}
               increaseLabel={tCommon('calendar.simpleBreak.increaseTime')}
               decreaseLabel={tCommon('calendar.simpleBreak.decreaseTime')}
-              className={scalarInputCls}
+              className={inputCls}
               dataAttribute="work-end"
-              readOnly={blocksReadOnly}
             />
           </div>
           </>
@@ -665,7 +661,7 @@ export function CalendarForm({
           </output>
         </div>
       </div>
-      {!(enableHourPlanning && hourMode) && (
+      {!hourMode && (
         <>
         <div className="grid grid-cols-2 gap-3" data-ops-simple-break>
           <div className="flex flex-col gap-1">
@@ -680,9 +676,8 @@ export function CalendarForm({
               onStep={delta => stepScalarTime('breakStart', simpleBreakStartText, setSimpleBreakStartText, delta)}
               increaseLabel={tCommon('calendar.simpleBreak.increaseTime')}
               decreaseLabel={tCommon('calendar.simpleBreak.decreaseTime')}
-              className={scalarInputCls}
+              className={inputCls}
               dataAttribute="break-start"
-              readOnly={blocksReadOnly}
             />
           </div>
           <div className="flex flex-col gap-1">
@@ -691,43 +686,23 @@ export function CalendarForm({
             </label>
             <div className="flex min-w-0 items-stretch gap-1">
               <input id="ops-simple-break-duration" type="text" inputMode="numeric" value={simpleBreakDurationText}
-                readOnly={blocksReadOnly} aria-readonly={blocksReadOnly || undefined}
-                onChange={event => { if (!blocksReadOnly) updateSimpleBreakDurationText(event.target.value); }}
-                onBlur={() => { if (!blocksReadOnly) commitSimpleBreakDuration(); }}
+                onChange={event => updateSimpleBreakDurationText(event.target.value)}
+                onBlur={commitSimpleBreakDuration}
                 onKeyDown={event => {
-                  if (blocksReadOnly) return;
                   if (event.key === 'Enter') { event.preventDefault(); commitSimpleBreakDuration(); }
                   else if (event.key === 'ArrowUp' || event.key === 'ArrowDown') { event.preventDefault(); stepSimpleBreakDuration(event.key === 'ArrowUp' ? TIME_STEP_MINUTES : -TIME_STEP_MINUTES); }
                 }}
-                className={scalarInputCls + ' min-w-0 flex-1'} data-ops-simple-break-duration />
-              {!blocksReadOnly && (
-                <StepButtons onStep={stepSimpleBreakDuration}
-                  increaseLabel={tCommon('calendar.simpleBreak.increaseBreakDuration')}
-                  decreaseLabel={tCommon('calendar.simpleBreak.decreaseBreakDuration')}
-                  dataAttribute="break-duration" />
-              )}
+                className={inputCls + ' min-w-0 flex-1'} data-ops-simple-break-duration />
+              <StepButtons onStep={stepSimpleBreakDuration}
+                increaseLabel={tCommon('calendar.simpleBreak.increaseBreakDuration')}
+                decreaseLabel={tCommon('calendar.simpleBreak.decreaseBreakDuration')}
+                dataAttribute="break-duration" />
             </div>
           </div>
-          {blocksReadOnly ? (
-            <div
-              className="col-span-2 flex items-center gap-3 rounded-[8px] px-3 py-2 !text-body"
-              style={{ background: 'var(--theme-accent-soft, rgba(217,119,6,0.12))', color: 'var(--theme-text)' }}
-              role="note"
-              data-ops-calendar-blocks-notice
-            >
-              <Info size={14} className="shrink-0 text-accent" aria-hidden="true" />
-              <span className="flex-1">{tCommon('calendar.simpleBreak.blocksReadOnly')}</span>
-              <button type="button" className="btn btn--sm btn--primary" onClick={() => setUI({ enableHourPlanning: true })}
-                data-ops-calendar-enable-hour-planning>
-                {tCommon('hourData.enable')}
-              </button>
-            </div>
-          ) : (
-            <p className="col-span-2 !text-body text-text-secondary">
-              {tCommon('calendar.simpleBreak.hint')}
-            </p>
-          )}
-          {!blocksReadOnly && (scalarBreakError || Object.keys(scalarTimeIssues).length > 0) && (
+          <p className="col-span-2 !text-body text-text-secondary">
+            {tCommon('calendar.simpleBreak.hint')}
+          </p>
+          {(scalarBreakError || Object.keys(scalarTimeIssues).length > 0) && (
             <p className="col-span-2 !text-body text-red-600" role="alert" data-ops-simple-break-error>
               {scalarTimeIssues.workStart === 'invalidWorkStart'
                 ? tCommon('calendar.simpleBreak.invalidWorkStart')
@@ -752,8 +727,8 @@ export function CalendarForm({
         </>
       )}
 
-      {/* Werktijden / ploegen — alleen met Urenplanning aan; anders de scalar-UI. */}
-      {enableHourPlanning && (
+      {/* Werktijden / ploegen — met Urenplanning aan, én altijd bij een kalender met werkblokken. */}
+      {showWorkTimeSection && (
         <div className="flex flex-col gap-2" data-ops-worktime-section>
           <label className="text-text-secondary font-medium">{tCommon('calendar.worktime.section')}</label>
 

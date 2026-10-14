@@ -71,7 +71,8 @@ export function WorkTimeEditor({
       {visibleWeekDays.map((wd) => {
         const list = bands.byWeekday[wd] ?? [];
         return (
-          <div key={wd} className="flex flex-col gap-1 border-b border-[var(--theme-border-light)] pb-2 last:border-0">
+          <div key={wd} className="flex flex-col gap-1 border-b border-[var(--theme-border-light)] pb-2 last:border-0"
+            data-ops-worktime-day={wd}>
             <div className="flex items-center gap-2">
               <span className="w-8 font-medium text-text-secondary">
                 {tMenu(`ribbon.calendarDialog.days.${wd}`)}

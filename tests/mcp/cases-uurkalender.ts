@@ -635,4 +635,41 @@ test('IFC: één gewone band per dag overleeft — ook op een kalender zonder ge
   assertEq(los!.workTime?.byWeekday[1], [{ start: 480, end: 960 }], 'inclusief de uurbanden');
 });
 
+// =================================================================================================
+// 12) UUR → DAG mét een pauzeduur — de pauze die het item niet noemt, volgt de dagregel (12:00), niet het
+//     gat tussen de oude blokken (`inferredSimpleBreak`, besluit eigenaar 2026-10-13, optie 2).
+// =================================================================================================
+function twoBlocks(a: [number, number], b: [number, number]): WorkTimeBands {
+  const byWeekday = { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [] } as WorkTimeBands['byWeekday'];
+  for (const d of [1, 2, 3, 4, 5] as const) byWeekday[d] = [{ start: a[0], end: a[1] }, { start: b[0], end: b[1] }];
+  return { byWeekday };
+}
+
+test('uur→dag met pauzeduur 30 ⇒ pauze 12:00, netto 8,5 h (07–11 + 11:30–16)', async () => {
+  reset();
+  const projId = S().project.calendarId;
+  S().ensureProjectCalendarInLibrary();
+  S().updateCalendar(projId, { workTime: twoBlocks([420, 660], [690, 960]), workStartHour: 7, workEndHour: 16,
+    hoursPerDay: 8.5, workDays: [1, 2, 3, 4, 5], simpleBreakStartMinute: undefined, simpleBreakDurationMinutes: undefined });
+  const res = await call('planner_update_calendar', { calendars: [{ id: projId, workTime: null, simpleBreakDurationMinutes: 30 }] });
+  okData(res);
+  assertEq(rejections(res), [], 'geen weigering');
+  const cal = calById(projId)!;
+  assertEq({ workTime: cal.workTime, start: cal.simpleBreakStartMinute, duration: cal.simpleBreakDurationMinutes, hpd: cal.hoursPerDay },
+    { workTime: undefined, start: 720, duration: 30, hpd: 8.5 }, 'dagkalender met pauze 12:00 van 30 min, netto 8,5 h');
+});
+
+test('uur→dag met pauzeduur 30 bij 05–09 + 09:30–11 ⇒ zachte weigering, kalender ongewijzigd', async () => {
+  reset();
+  const projId = S().project.calendarId;
+  S().ensureProjectCalendarInLibrary();
+  S().updateCalendar(projId, { workTime: twoBlocks([300, 540], [570, 660]), workStartHour: 5, workEndHour: 11,
+    hoursPerDay: 5.5, workDays: [1, 2, 3, 4, 5], simpleBreakStartMinute: undefined, simpleBreakDurationMinutes: undefined });
+  const before = JSON.stringify(calById(projId));
+  const res = await call('planner_update_calendar', { calendars: [{ id: projId, workTime: null, simpleBreakDurationMinutes: 30 }] });
+  const reason = soleRejection(res);
+  assert(/simpleBreakStartMinute/.test(reason), `de melding noemt simpleBreakStartMinute: ${reason}`);
+  assertEq(JSON.stringify(calById(projId)), before, 'de kalender blijft ongewijzigd');
+});
+
 await run();
