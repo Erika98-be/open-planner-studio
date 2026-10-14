@@ -29,10 +29,16 @@ store.getState().undo();
 
 registerToolModules([readTools, calendarResourceTools, batchTools]);
 
+/** Via de ECHTE dispatch-weg (`handleMcpMessage`, recept mcp-tool stap 5): schemapoort inbegrepen. */
+let rpcId = 0;
 async function call(name: string, args: unknown): Promise<McpToolResult> {
-  const def = [...calendarResourceTools, ...readTools, ...batchTools].find((t) => t.name === name);
-  if (!def) throw new Error(`tool ontbreekt: ${name}`);
-  return await def.handler(args, makeMcpContext(appStoreContext, {}));
+  const raw = await handleMcpMessage(
+    JSON.stringify({ jsonrpc: '2.0', id: ++rpcId, method: 'tools/call', params: { name, arguments: args } }),
+    makeMcpContext(appStoreContext, {}),
+  );
+  const msg = JSON.parse(raw);
+  assert(msg.result !== undefined, `dispatch gaf een fout: ${raw.slice(0, 400)}`);
+  return JSON.parse(msg.result.content[0].text) as McpToolResult;
 }
 
 function okData(res: McpToolResult): any {
@@ -195,6 +201,21 @@ test('dagkalender: alleen workDays verandert alleen de werkdagen', async () => {
   assertEq(cal.workDays, [1, 2, 3, 4], 'de werkdagen zijn ma–do');
   assertEq(cal.workTime, undefined, 'er komen geen blokken bij');
   assertEq(cal.hoursPerDay, voor.hoursPerDay, 'de uren per dag blijven gelijk');
+});
+
+test('workTime én gelijke workDays in één item (letterlijke lezing): de NIEUWE blokken gelden', async () => {
+  // Pint de voorwaarde `item.workTime === undefined` vast: met `workTime` in het item mag de werkdagregel
+  // de meegestuurde blokken niet vervangen door de oude (mutant `!== null` liet maandag 07–12 + 13–16).
+  const projId = await hourProjectCalendar(bandsOn([1, 2, 3, 4, 5], STANDAARD));
+  const nieuw: Block[] = [{ start: 360, end: 840 }]; // 06–14
+  const res = await call('planner_update_calendar', {
+    calendars: [{ id: projId, workTime: bandsOn([1, 2, 3, 4, 5], nieuw), workDays: [1, 2, 3, 4, 5] }],
+  });
+  assertEq(rejections(res), [], 'geen weigering');
+  const cal = calById(projId);
+  for (let d = 1; d <= 5; d++) assertEq(cal.workTime!.byWeekday[d as 1], nieuw, `dag ${d} krijgt 06–14`);
+  assertEq(cal.hoursPerDay, 8, 'de uren per dag volgen de nieuwe blokken');
+  assertConsistent(cal, 'letterlijke lezing');
 });
 
 test('workTime én tegenstrijdige workDays in één item: de bestaande weigering blijft', async () => {
