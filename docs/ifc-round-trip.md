@@ -224,6 +224,20 @@ binnen als een uurkalender zonder blokken met 07:00–16:00. Verder getoetst met
 writer (`check-ifc-arity`, `check-ifc-legacy-arity`, ook na `MergeProjects`). Interop met andere
 programma's is daarmee nog niet getest.
 
+## Uren per dag bij een blokkenkalender
+
+`hoursPerDay` is de omrekening tussen dagen en uren (P6 `day_hr_cnt`). Bij een uurkalender mag hij afwijken
+van de klokuren van de blokken: "Late ploeg" 14:00–24:00 met `day_hr_cnt` 8 heeft `hoursPerDay` 8. De
+writer schrijft `HoursPerDay` in `OPS_Calendar` als hij afwijkt van wat de reader zonder die eigenschap
+afleidt: einde − begin bij een dagkalender, de modale dagsom van de geschreven blokken bij een
+uurkalender. Een uurkalender zonder enig blok krijgt hem altijd (er is geen dagsom); dat is onschadelijk.
+Bij een uurkalender staat hij altijd naast `IsHourCalendar = .T.`; de reader laat hem dan winnen ná
+`promoteHourCalendar`. De herkenning van oude scalaire kalenders kijkt alleen naar ongemarkeerde
+kalenders en ziet hem dus nooit. Oude bestanden dragen hem bij een uurkalender nooit en lezen zoals
+vroeger (de klokuren). v2026.9.0 leest de blokken van een nieuw bestand al niet en houdt dan
+`HoursPerDay` in plaats van 8. Toetsen: `check-ifc-urenperdag-blokken.ts`, `check-ifc-urenperdag-corpus.ts`
+(met `OPS_XER_CORPUS`) en §10 van `check-ifc-calendar-identity.ts`.
+
 ## Wat dit niet dekt
 
 - **De CSV-, MS Project- en P6-adapters.** Dat zijn import/export-adapters, geen opslagformaat; ze
