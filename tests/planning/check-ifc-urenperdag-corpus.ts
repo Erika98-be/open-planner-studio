@@ -45,8 +45,6 @@ interface Target {
   sha256: string;
   /** Kalender-id's (over alle documenten) van uurkalenders met hoursPerDay ≠ klokuren van de blokken. */
   deviating: string[];
-  /** Taken waarvan de datums na IFC veranderen om een andere reden dan de uren per dag (zie onder). */
-  knownDateChanges?: string[];
 }
 const TARGETS: Target[] = [
   { name: 'Roads_Project_TEC.xer', sha256: 'a2ef7b35c00d8cf8ba75230d71d69b96130f7f689495e86a4cf5f8fcd34431ae',
@@ -55,11 +53,10 @@ const TARGETS: Target[] = [
     deviating: ['597'] },
   { name: 'Hotel_Construction_TEC.xer', sha256: '9679599df9108bd3b31e755351c1543d1915b82a91445a3f1b0b9c9a3d1f86fe',
     deviating: ['597'] },
-  // A3040: lopende taak op 100 % met restduur 0 en zonder werkelijk einde. Na IFC krijgt hij
-  // `remainingTime` 0 (vóór opslaan leeg) en rekent de motor hem anders door. Dat staat los van de uren per
-  // dag (gemeten: ook met de fix), en valt buiten deze toets.
+  // A3040 (lopende taak op 100 % zonder werkelijk einde) telt sinds `IfcTask.Status` = 'STARTED' gewoon
+  // mee: hij blijft lopend en zijn datums blijven gelijk (check-ifc-lopend-100.ts).
   { name: 'p6_torture_test_v1.xer', sha256: '2a7732b5b99de2a5f40aab40e0af52757fbe68e5d4eda404a9a060fdc1be1140',
-    deviating: ['CAL-02', 'CAL-03', 'CAL-04', 'CAL-05', 'RCAL-CRANE600', 'RCAL-SPECIALIST'], knownDateChanges: ['A3040'] },
+    deviating: ['CAL-02', 'CAL-03', 'CAL-04', 'CAL-05', 'RCAL-CRANE600', 'RCAL-SPECIALIST'] },
 ];
 
 function findByName(dir: string, name: string): string[] {
@@ -85,7 +82,7 @@ const calendarsOf = (p: DocumentPayload): WorkCalendar[] => [p.calendar, ...p.ca
 const calendarList = (p: DocumentPayload): string[] => calendarsOf(p).map((c) => JSON.stringify({
   name: c.name, workDays: c.workDays, hoursPerDay: c.hoursPerDay, workTime: c.workTime?.byWeekday ?? null,
 })).sort();
-function taskView(p: DocumentPayload, skipDates: ReadonlySet<string>) {
+function taskView(p: DocumentPayload) {
   return Object.fromEntries(p.tasks.map((t) => {
     const cal = effectiveCalendarOf(t, p.calendar, p.calendars);
     const x = t.time;
@@ -94,9 +91,7 @@ function taskView(p: DocumentPayload, skipDates: ReadonlySet<string>) {
       auto: formatTaskDurationDisplay(t, cal, 'auto', true),
       days: formatTaskDurationDisplay(t, cal, 'days', true),
       hours: formatTaskDurationDisplay(t, cal, 'hours', true),
-      ...(skipDates.has(t.id) ? {} : {
-        dates: [x.scheduleStart, x.scheduleFinish, x.earlyStart, x.earlyFinish, x.lateStart, x.lateFinish],
-      }),
+      dates: [x.scheduleStart, x.scheduleFinish, x.earlyStart, x.earlyFinish, x.lateStart, x.lateFinish],
     }];
   }));
 }
@@ -148,13 +143,12 @@ for (const target of TARGETS) {
     }
   }
   same(`${target.name}: uurkalenders met afwijkende uren per dag`, [...deviating].sort(), [...target.deviating].sort());
-  const skipDates = new Set(target.knownDateChanges ?? []);
   for (const [i, doc] of before.entries()) {
     const label = `${target.name} document ${i + 1}`;
     const [after] = openInStore(await parseOpenedFile({ name: 'rondgang.ifc', text: writeIFC(buildWriteIFCInput(doc)) }));
     same(`${label}: kalenders gelijk na opslaan en heropenen`, calendarList(after), calendarList(doc));
-    const tb = taskView(doc, skipDates);
-    const ta = taskView(after, skipDates);
+    const tb = taskView(doc);
+    const ta = taskView(after);
     const changed = Object.keys(tb).filter((id) => JSON.stringify(tb[id]) !== JSON.stringify(ta[id]));
     same(`${label}: taken met andere dagwaarde, duur of datums (van ${Object.keys(tb).length})`,
       changed.slice(0, 5).map((id) => ({ id, voor: tb[id], na: ta[id] })), []);

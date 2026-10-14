@@ -1,6 +1,7 @@
 import type { Task, TaskTime, TaskTimeComputed, TaskTimeInput } from '@/types/task';
 import { ifcStr, ifcBool } from './ifcPsets';
 import { DEFAULT_PRIORITY } from './ifcConstants';
+import { isSummaryTask } from '@/utils/taskHierarchy';
 
 /**
  * IFCTASK/IFCTASKTIME-slot-registry: de POSITIONELE slot-layout van de twee IFC-kern-entiteiten op
@@ -22,8 +23,8 @@ import { DEFAULT_PRIORITY } from './ifcConstants';
  *     leest via dezelfde `TASKTIME_SLOT`-namen.
  * De STEP-parse-helpers (parseDateFromIFC/parseDurationDays/optDate/optDuration) blijven in ifcReader
  * en worden aan de read-descriptors doorgegeven (dependency-injectie) — zo importeert dit bestand
- * alleen uit `@/types`, `./ifcPsets` en `./ifcConstants` (leaves) en ontstaat er geen import-cyclus
- * met ifcReader/ifcWriter.
+ * alleen uit `@/types`, `@/utils/taskHierarchy`, `./ifcPsets` en `./ifcConstants` (leaves) en
+ * ontstaat er geen import-cyclus met ifcReader/ifcWriter.
  */
 
 // ── IFCTASKTIME ─────────────────────────────────────────────────────────────────────────────────
@@ -280,6 +281,26 @@ export interface TaskWriteCtx {
   customTaskTypeLabel?: string;
 }
 
+/**
+ * `IfcTask.Status`-tekst voor een LOPENDE taak op 100 % (eigenaarsbesluit 2026-10-14). IFC 4.3 laat
+ * Status vrij (IfcLabel); OPS schrijft alleen deze ene waarde, en alleen bij zo'n taak. Elke andere
+ * taak houdt `$`, zodat bestaande bestanden byte-gelijk blijven.
+ */
+export const IFC_TASK_STATUS_RUNNING = 'STARTED';
+
+/**
+ * Lopend op 100 %: een TAAK (geen fase) met status STARTED, `completion >= 1` en geen werkelijk einde.
+ * Zo komt een P6-taak binnen (XER `TK_Active` op 100 %). Zonder markering maakt
+ * `normalizeImportedProgress` hem bij het heropenen "Voltooid", met het werkelijke einde op de
+ * statusdatum. Een fase valt erbuiten: haar voortgang is een rollup (`summaryProgress.ts`), die ook
+ * STARTED op 1 geeft (alle taken klaar plus een niet-gestarte mijlpaal, of ≥ 99,95 % afgerond), en
+ * de solve rekent hem na het openen opnieuw uit.
+ */
+function isRunningAtFullCompletion(task: Task): boolean {
+  return !isSummaryTask(task)
+    && task.status === 'STARTED' && task.time.completion >= 1 && !task.time.actualFinish;
+}
+
 export interface TaskSlot {
   key: string;
   write(w: TaskWriteCtx): string;
@@ -287,8 +308,11 @@ export interface TaskSlot {
 
 /**
  * De 13 IFCTASK-argumenten in de spec-conforme IFC 4.3-volgorde (0-based; geverifieerd tegen
- * ifc43-docs.standards.buildingsmart.org, IfcTask-attribuuttabel). ObjectType/LongDescription/Status/
- * WorkMethod blijven `$` (pragmatische subset); Priority alleen bij afwijking van de default. Oudere
+ * ifc43-docs.standards.buildingsmart.org, IfcTask-attribuuttabel). LongDescription/WorkMethod blijven
+ * `$` (pragmatische subset); Priority alleen bij afwijking van de default. Status blijft `$`, BEHALVE
+ * bij een lopende taak op 100 % (`isRunningAtFullCompletion`): die krijgt `'STARTED'`, zodat de lezer
+ * hem niet "Voltooid" maakt (eigenaarsbesluit 2026-10-14). Status staat vóór WorkMethod en schuift dus
+ * niet mee in de legacy-lay-out hieronder. Oudere
  * OPS-bestanden schreven 12 args (zonder WorkMethod op index 8, waardoor de vier slots erná één positie
  * eerder zaten) — de reader (`extractTasks`) verschuift de gedeelde `TASK_SLOT`-indices met één OFFSET
  * voor die legacy-lay-out.
@@ -308,7 +332,7 @@ export const IFC_TASK_SLOTS: TaskSlot[] = [
   { key: 'objectType', write: (w) => w.task.customTaskTypeId || w.task.taskType === 'USERDEFINED' ? ifcStr(w.customTaskTypeLabel || 'USERDEFINED') : '$' },
   { key: 'identification', write: (w) => ifcStr(w.task.wbsCode) },
   { key: 'longDescription', write: () => '$' },
-  { key: 'status', write: () => '$' },
+  { key: 'status', write: (w) => (isRunningAtFullCompletion(w.task) ? ifcStr(IFC_TASK_STATUS_RUNNING) : '$') },
   { key: 'workMethod', write: () => '$' },
   { key: 'isMilestone', write: (w) => ifcBool(w.task.isMilestone) },
   { key: 'priority', write: (w) => (w.task.priority !== DEFAULT_PRIORITY ? String(Math.round(w.task.priority)) : '$') },
