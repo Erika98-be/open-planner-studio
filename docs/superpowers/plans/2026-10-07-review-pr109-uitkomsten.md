@@ -713,3 +713,7 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   **Orkestratorbesluit: B14 blijft** (wissel naar andere basis bewaart afwijkingen via `switchProfile`; alleen
   "P6" vs "P6 (aangepast)" geeft de kale basis met blok); blok verborgen zolang draft-opties ≠ toegepast.
   Fixronde 2 naar de maker.
+- **#347 klaar voor de eigenaarscheck:** kop abe6cdc61 (bevat main 7ea3e8748), CI 16/16. Vervolgcommits: einde ≤ begin
+  = volgende dag (22–24 + "02:00" ⇒ 1560), "24:00" in nachtblok = middernacht, blok nooit > 24 u (22–06 + "23:00" ⇒
+  1380); mutanten G/H/I rood. Testversie (3049) = main + #350 (45bc5e68a) + #347; 12-uursstand in het kalendervenster
+  zelf nagelopen. Eigen waarneming: "Netto-uren per dag 8,00 h" (komma) naast "8.00h" (punt) per weekdag.
