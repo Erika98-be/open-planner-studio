@@ -752,3 +752,10 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   `calendarFieldPatch` gebruikt `workDaysSetPatch` bij losse `workDays` op een uurkalender; startpunt = werkdagen volgens
   de blokken (herstelt ook al tegenstrijdige kalenders); 9 MCP-cases (6 met IFC-rondgang), 5 mutanten rood.
   Review gestart (reviewer, Opus 5.5), met vraag naar bewuste `hoursPerDay`-afwijking (#351) en planningsdatums.
+- **Review #352 (reviewer, Opus 5.5): nee** (klein). Pariteit venster 35/35, datums na IFC 5/5 gelijk, batch zelfde kern.
+  Open: M4 (`item.workTime === undefined`) ongetest ⇒ nieuwe blokken stil weg; twee zinnen in beschrijving/schema
+  onjuist (volgorde zo–za, eigen werkdag vóór 07–16); cases niet via `handleMcpMessage`. Fixronde naar de maker.
+- **Bijvangst [BEVESTIGD]:** een dagwissel (venster én MCP, `subdayIo.ts:256`) zet een bewust afwijkende `hoursPerDay`
+  (Late ploeg 8) stil op de bloksom (10). [VERMOED] dagwaarde urentaak 4 vóór en 5 na IFC bij afwijkende hpd.
+  **Orkestratorbesluit:** afwijkende hpd is projectdata; dagwissel herberekent alleen als hpd vóór de wissel gelijk was
+  aan de modale bloksom. Expert (Opus 5.5) gestart op `claude/urenperdag-dagwissel` (eerst meten).
