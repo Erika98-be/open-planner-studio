@@ -796,3 +796,7 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   IFC; corpus 1263. [VERMOED] resourcebelasting spreidt /8 over 25 % meer dagen. Opties maker: (1) opgeslagen hpd in
   de schrijfroutes; (2) bloksom ook in de lezers (aanbevolen; CSV/baseline geïmporteerde taken 187); (3) overal opgeslagen
   hpd incl. motor. Plus: venster toont "Netto-uren per dag 8.00 h" naast 10 u blokken.
+- **Review #355 (reviewer, Opus 5.5): ja.** Main 57 schemafouten in corpusrun, PR 0; oude tags v2026.7.1–9.0 lezen
+  gelijk; v2026.9.0 heropslaan geen motorverschil (141 documenten); MSPDI/.mpp-uurmodus exact terug; 9 mutanten rood.
+  Aanbevolen en gevraagd: `IFCDATETIME` alleen in opslagvorm `YYYY-MM-DDTHH:mm` met geldige datum, rest `IFCTEXT`
+  letterlijk (zone/seconden uit extensie veranderden SNET 08:00 → 10:00; `2026-13-45` werd actieve SNET).
