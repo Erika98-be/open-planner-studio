@@ -3,6 +3,7 @@ import { RotateCcw, FileText } from 'lucide-react';
 import { Dialog, DialogHeader } from '@/components/common/Dialog';
 import { RECOVERY_HELP_ARTICLE_ID } from '@/state/helpArticles';
 import { useTimeNotation } from '@/hooks/displayDate';
+import { formatLocalDateTime } from '@/utils/displayTime';
 
 /**
  * Eén te herstellen document, zoals de {@link RecoveryDialog} het toont.
@@ -56,9 +57,6 @@ export function RecoveryDialog({ entries, onRestore, onDiscard, onClose, onHelp 
   const { t, i18n } = useTranslation('common');
   const timeNotation = useTimeNotation();
 
-  const fmt = new Intl.DateTimeFormat(i18n.language, {
-    dateStyle: 'medium', timeStyle: 'short', hour12: timeNotation === '12h',
-  });
 
   return (
     // Escape = veilig sluiten (bestanden blijven staan). Enter = herstellen.
@@ -101,7 +99,7 @@ export function RecoveryDialog({ entries, onRestore, onDiscard, onClose, onHelp 
                   <div className="flex items-center gap-3 text-text-secondary mt-0.5">
                     <span>{t('recovery.taskCount', { count: entry.taskCount })}</span>
                     {entry.mtime && (
-                      <span>{t('recovery.timeLabel')}: {fmt.format(entry.mtime)}</span>
+                      <span>{t('recovery.timeLabel')}: {formatLocalDateTime(entry.mtime, i18n.language, timeNotation)}</span>
                     )}
                   </div>
                 </div>

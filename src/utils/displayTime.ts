@@ -58,6 +58,22 @@ export function formatAxisClock(
   return `${h12}:${pad2(m % 60)}`;
 }
 
+/**
+ * Een lokaal tijdstip (bv. de wijzigingstijd van een bestand) als "datum tijd": de datum in de UI-taal
+ * (`dateStyle: 'medium'`, Gregoriaans en Latijnse cijfers, zoals overal in de app), de tijd via
+ * {@link formatClock}. Zo staan AM/PM overal hetzelfde ("1:00 PM"), en niet als "1:00 p.m." of "午後1:00".
+ */
+export function formatLocalDateTime(date: Date, locale: string, notation: TimeNotation): string {
+  const base = locale.split('-u-')[0] || 'en';
+  let dateFormat: Intl.DateTimeFormat;
+  try {
+    dateFormat = new Intl.DateTimeFormat(`${base}-u-ca-gregory-nu-latn`, { dateStyle: 'medium' });
+  } catch {
+    dateFormat = new Intl.DateTimeFormat('en-u-ca-gregory-nu-latn', { dateStyle: 'medium' });
+  }
+  return `${dateFormat.format(date)} ${formatClock(date.getHours() * 60 + date.getMinutes(), notation)}`;
+}
+
 /** Plaatshouder voor een leeg tijdveld in de gekozen notatie. */
 export function clockPlaceholder(notation: TimeNotation): string {
   return notation === '12h' ? 'h:mm AM' : 'HH:MM';

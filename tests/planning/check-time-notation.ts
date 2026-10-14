@@ -7,7 +7,7 @@
 //  - het laden van de instelling uit localStorage (`ops-timeNotation`), met de default 24 uur.
 //
 // Draait via run.sh (esbuild-bundel). Exit 0 = alles groen.
-import { clockPlaceholder, displayIsoTime, formatAxisClock, formatClock, parseClock } from '@/utils/displayTime';
+import { clockPlaceholder, displayIsoTime, formatAxisClock, formatClock, formatLocalDateTime, parseClock } from '@/utils/displayTime';
 import { displayDateTime } from '@/utils/displayDate';
 import { formatGridDateTime, parseGridDateTime } from '@/engine/taskGrid/editors';
 import { bandEndField, bandEndFromField } from '@/components/dialogs/WorkTimeEditor';
@@ -133,6 +133,19 @@ eq('raster: invoer 1300', parseGridDateTime('15-06-2026 1300', 'dmy'), '2026-06-
 eq('raster: invoer ISO met T', parseGridDateTime('2026-06-15T13:00', 'dmy'), '2026-06-15T13:00');
 eq('raster: ongeldige tijd', parseGridDateTime('15-06-2026 13:00 PM', 'dmy'), null);
 eq('raster: 24:00 geweigerd', parseGridDateTime('15-06-2026 24:00', 'dmy'), null);
+
+// ── 7b) Lokaal tijdstip (herstel- en sitevenster): vaste AM/PM, Latijnse cijfers ───────────
+{
+  const local = new Date(2026, 0, 15, 13, 30);
+  for (const locale of ['nl', 'en', 'ja', 'ar', 'fa', 'zh']) {
+    const t12 = formatLocalDateTime(local, locale, '12h');
+    const t24 = formatLocalDateTime(local, locale, '24h');
+    eq(`lokaal ${locale} 12h eindigt op 1:30 PM`, t12.endsWith(' 1:30 PM'), true);
+    eq(`lokaal ${locale} 24h eindigt op 13:30`, t24.endsWith(' 13:30'), true);
+    eq(`lokaal ${locale} alleen Latijnse cijfers`, /[\u0660-\u0669\u06F0-\u06F9]/.test(t12), false);
+    eq(`lokaal ${locale} bevat 2026`, t12.includes('2026'), true);
+  }
+}
 
 // ── 8) Blokeinde in de werktijden-editor ────────────────────────────────────
 eq('blok: einde 17:00 ⇒ veld', bandEndField(1020), { minutes: 1020, nextDay: false });
