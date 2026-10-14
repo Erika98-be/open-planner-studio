@@ -339,11 +339,11 @@ const hourCal = (start: number, end: number): Partial<WorkCalendar> => ({
     ...readMSPDI(mspdi({ minutesPerDay: 480 })).calendar,
   };
   opened.workTime = { byWeekday: { ...opened.workTime!.byWeekday, 5: shortFri } };
-  const off = { ...opened, ...workDayTogglePatch(opened, 5, opened.workTime) };
-  const on = workDayTogglePatch(off, 5, opened.workTime);
+  const off = { ...opened, ...workDayTogglePatch(opened, 5, opened) };
+  const on = workDayTogglePatch(off, 5, opened);
   same('§6b korte vrijdag uit en weer aan: 08–12 + 13–15 terug', on.workTime?.byWeekday[5], shortFri);
   // Een dag die bij het openen geen blokken had (zaterdag): blokken van de eerste werkdag.
-  same('§6b zaterdag aan (had geen blokken): blokken van de eerste werkdag', workDayTogglePatch(off, 6, opened.workTime).workTime?.byWeekday[6], MSP_DAY);
+  same('§6b zaterdag aan (had geen blokken): blokken van de eerste werkdag', workDayTogglePatch(off, 6, opened).workTime?.byWeekday[6], MSP_DAY);
 }
 
 // §6c. Een uurkalender zonder enig blok (alle dagen uitgezet): een dag aan krijgt de effectieve blokken
@@ -375,7 +375,7 @@ const hourCal = (start: number, end: number): Partial<WorkCalendar> => ({
     withShortFri.workTime);
   const onlyMon = { ...opened, ...workDaysSetPatch(opened, [1]) };
   same('§6d alleen maandag over', [onlyMon.workDays, onlyMon.workTime?.byWeekday[5]], [[1], []]);
-  const back = workDaysSetPatch(onlyMon, [1, 2, 3, 4, 5], withShortFri.workTime);
+  const back = workDaysSetPatch(onlyMon, [1, 2, 3, 4, 5], withShortFri);
   same('§6d terug naar ma–vr: vrijdag krijgt zijn eigen (korte) blokken, di die van maandag',
     [back.workDays, back.workTime?.byWeekday[5], back.workTime?.byWeekday[2]], [[1, 2, 3, 4, 5], shortFri, MSP_DAY]);
   // Weekendkalender (za/zo 06:00–18:00) zonder `initial`, scalar nog de standaard 07–16: eerst gaan de
