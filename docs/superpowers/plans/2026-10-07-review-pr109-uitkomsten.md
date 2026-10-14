@@ -628,3 +628,9 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
     uitleg stond alleen in een tooltip, onvindbaar en niet bruikbaar op touch ⇒ uitklappijltje. Eigenaar "Mergen"
     2026-09-24 over het hele voorstel (B33), geen los besluit over pijltje vs. i-icoon. **Bevinding:** wijkt af
     van het app-patroon (`Info`-icoon met tooltip, o.a. `SettingsPanelContent.tsx:369`) ⇒ besluit na de check.
+- **Eigenaar 2026-10-14: "nee, we gaan dit nu eerst fixen"** (check gepauzeerd na stap 1) en over de knop
+  *Standaardopties*: "dit was totaal neit duidelijk dus dit moet echt verbeterd worden". Worker (Opus 5.5) gestart
+  op `claude/profielblok-alleen-lezen` (vanaf main 09e33b8ea): ingebouwde profielen alleen-lezen, knop
+  "Nieuw profiel" bij de keuzelijst, conventies standaard ingeklapt, i-icoon met tooltip i.p.v. uitklappijltje;
+  datamodel/IFC/motor ongewijzigd, migratie-afwijkingen alleen-lezen zichtbaar. Ontwerp van de knop
+  *Standaardopties* ligt bij de eigenaar (voorgelegd).
