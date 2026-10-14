@@ -280,6 +280,22 @@ export interface TaskWriteCtx {
   customTaskTypeLabel?: string;
 }
 
+/**
+ * `IfcTask.Status`-tekst voor een LOPENDE taak op 100 % (eigenaarsbesluit 2026-10-14). IFC 4.3 laat
+ * Status vrij (IfcLabel); OPS schrijft alleen deze ene waarde, en alleen bij zo'n taak. Elke andere
+ * taak houdt `$`, zodat bestaande bestanden byte-gelijk blijven.
+ */
+export const IFC_TASK_STATUS_RUNNING = 'STARTED';
+
+/**
+ * Lopend op 100 %: status STARTED, `completion >= 1` en geen werkelijk einde. Zo komt een P6-taak
+ * binnen (XER `TK_Active` op 100 %). Zonder markering maakt `normalizeImportedProgress` hem bij het
+ * heropenen "Voltooid", met het werkelijke einde op de statusdatum.
+ */
+export function isRunningAtFullCompletion(task: Task): boolean {
+  return task.status === 'STARTED' && task.time.completion >= 1 && !task.time.actualFinish;
+}
+
 export interface TaskSlot {
   key: string;
   write(w: TaskWriteCtx): string;
@@ -287,8 +303,11 @@ export interface TaskSlot {
 
 /**
  * De 13 IFCTASK-argumenten in de spec-conforme IFC 4.3-volgorde (0-based; geverifieerd tegen
- * ifc43-docs.standards.buildingsmart.org, IfcTask-attribuuttabel). ObjectType/LongDescription/Status/
- * WorkMethod blijven `$` (pragmatische subset); Priority alleen bij afwijking van de default. Oudere
+ * ifc43-docs.standards.buildingsmart.org, IfcTask-attribuuttabel). LongDescription/WorkMethod blijven
+ * `$` (pragmatische subset); Priority alleen bij afwijking van de default. Status blijft `$`, BEHALVE
+ * bij een lopende taak op 100 % (`isRunningAtFullCompletion`): die krijgt `'STARTED'`, zodat de lezer
+ * hem niet "Voltooid" maakt (eigenaarsbesluit 2026-10-14). Status staat vóór WorkMethod en schuift dus
+ * niet mee in de legacy-lay-out hieronder. Oudere
  * OPS-bestanden schreven 12 args (zonder WorkMethod op index 8, waardoor de vier slots erná één positie
  * eerder zaten) — de reader (`extractTasks`) verschuift de gedeelde `TASK_SLOT`-indices met één OFFSET
  * voor die legacy-lay-out.
@@ -308,7 +327,7 @@ export const IFC_TASK_SLOTS: TaskSlot[] = [
   { key: 'objectType', write: (w) => w.task.customTaskTypeId || w.task.taskType === 'USERDEFINED' ? ifcStr(w.customTaskTypeLabel || 'USERDEFINED') : '$' },
   { key: 'identification', write: (w) => ifcStr(w.task.wbsCode) },
   { key: 'longDescription', write: () => '$' },
-  { key: 'status', write: () => '$' },
+  { key: 'status', write: (w) => (isRunningAtFullCompletion(w.task) ? ifcStr(IFC_TASK_STATUS_RUNNING) : '$') },
   { key: 'workMethod', write: () => '$' },
   { key: 'isMilestone', write: (w) => ifcBool(w.task.isMilestone) },
   { key: 'priority', write: (w) => (w.task.priority !== DEFAULT_PRIORITY ? String(Math.round(w.task.priority)) : '$') },

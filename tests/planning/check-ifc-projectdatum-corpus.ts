@@ -15,7 +15,7 @@ import './domStub';
 //  - projectstart, -einde en statusdatum gelijk, en gepind (zodat de toets echt een tijd raakt);
 //  - de projectregels in de P6-export (`PlannedStartDate`, `MustFinishByDate`, `ResourceRate.EffectiveDate`)
 //    en de MSPDI-export (`StartDate`, `FinishDate`) gelijk;
-//  - alle taakdatums, speling en kritiek gelijk, op de bekende uitzonderingen na (zie TARGETS);
+//  - alle taakdatums, speling en kritiek gelijk;
 //  - per taak constraint, tweede constraint en deadline gelijk (de datums met tijd zijn gepind);
 //  - de schemapoort (`ifcSchemaCheck.ts`) in IFC4X3_ADD2, IFC4X3 en IFC4: 0 fouten. Main 8db05a95c
 //    schreef een constraintdatum met tijd als IFCDATE: 4 fouten in Roads, 11 in torture. Zie
@@ -52,8 +52,6 @@ interface Target {
   projectDates: [string, string][];
   /** Aantal constraint-, tweede-constraint- en deadlinedatums mét tijd, over alle documenten. */
   timedConstraintDates: number;
-  /** Taken waarvan de datums na IFC veranderen om een andere reden dan de projectdatums (zie onder). */
-  knownDateChanges?: string[];
 }
 const TARGETS: Target[] = [
   { name: 'Roads_Project_TEC.xer', sha256: 'a2ef7b35c00d8cf8ba75230d71d69b96130f7f689495e86a4cf5f8fcd34431ae',
@@ -63,10 +61,10 @@ const TARGETS: Target[] = [
   // Twee documenten; het tweede heeft `useProjectEndDateForFloat` met een einde op 00:00.
   { name: 'Hotel_Construction_TEC.xer', sha256: '9679599df9108bd3b31e755351c1543d1915b82a91445a3f1b0b9c9a3d1f86fe',
     projectDates: [['2013-08-01T00:00', '2013-08-01T16:00'], ['2012-06-04T08:00', '2014-07-24T00:00']], timedConstraintDates: 0 },
-  // A3040: lopende taak op 100 % zonder werkelijk einde. De IFC-lezer maakt hem voltooid (actualFinish op
-  // de statusdatum); dat staat los van de projectdatums en is een open besluit van de eigenaar.
+  // A3040 (lopende taak op 100 % zonder werkelijk einde) telt sinds `IfcTask.Status` = 'STARTED' gewoon
+  // mee: hij blijft lopend en zijn datums blijven gelijk (eigenaarsbesluit 2026-10-14, check-ifc-lopend-100.ts).
   { name: 'p6_torture_test_v1.xer', sha256: '2a7732b5b99de2a5f40aab40e0af52757fbe68e5d4eda404a9a060fdc1be1140',
-    projectDates: [['2026-03-02T00:00', '2026-03-02T00:00']], timedConstraintDates: 11, knownDateChanges: ['A3040'] },
+    projectDates: [['2026-03-02T00:00', '2026-03-02T00:00']], timedConstraintDates: 11 },
 ];
 
 function findByName(dir: string, name: string): string[] {
@@ -86,8 +84,7 @@ function openInStore(parsed: OpenedImport): DocumentPayload[] {
   return store.getState().getOpenDocumentPayloads().map((d) => d.payload);
 }
 
-const taskDates = (p: DocumentPayload, skip: ReadonlySet<string>) => Object.fromEntries(p.tasks
-  .filter((t) => !skip.has(t.id))
+const taskDates = (p: DocumentPayload) => Object.fromEntries(p.tasks
   .map((t) => {
     const x = t.time;
     return [t.id, [x.scheduleStart, x.scheduleFinish, x.earlyStart, x.earlyFinish, x.lateStart, x.lateFinish, x.totalFloat, x.isCritical]];
@@ -137,7 +134,6 @@ for (const target of TARGETS) {
   same(`${target.name}: constraint-/deadlinedatums met tijd`,
     before.flatMap((d) => d.tasks.flatMap((t) => [t.constraint?.date, t.constraint2?.date, t.deadline])).filter((v) => v?.includes('T')).length,
     target.timedConstraintDates);
-  const skip = new Set(target.knownDateChanges ?? []);
   for (const [i, doc] of before.entries()) {
     const label = `${target.name} document ${i + 1}`;
     const input = buildWriteIFCInput(doc);
@@ -159,8 +155,8 @@ for (const target of TARGETS) {
     const lines = projectExportLines(doc);
     same(`${label}: controle, de export heeft projectregels`, lines.some((l) => l.startsWith('P6 PlannedStartDate=')) && lines.some((l) => l.startsWith('MSPDI StartDate=')), true);
     same(`${label}: projectregels in de P6- en MSPDI-export`, projectExportLines(after), lines);
-    const tb = taskDates(doc, skip);
-    const ta = taskDates(after, skip);
+    const tb = taskDates(doc);
+    const ta = taskDates(after);
     const changed = Object.keys(tb).filter((id) => JSON.stringify(tb[id]) !== JSON.stringify(ta[id]));
     same(`${label}: taken met andere datums, speling of kritiek (van ${Object.keys(tb).length})`,
       changed.slice(0, 5).map((id) => ({ id, voor: tb[id], na: ta[id] })), []);

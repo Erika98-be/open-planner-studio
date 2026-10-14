@@ -42,8 +42,16 @@ export function deriveImportedWorkRules(tasks: Task[]): void {
  * (`applyRemainingDuration`): een afwijkende geïmporteerde dag-restduur wordt naar de afgeleide
  * genormaliseerd (gedocumenteerd verlies); vastgelegde restduur-minuten van een urentaak blijven
  * staan.
+ *
+ * `runningAtFullIds`: smalle uitzondering voor de IFC-lezer. Een taak in deze set met `completion >= 1`
+ * en ZONDER werkelijk einde blijft STARTED (zie de tak hieronder). Met een werkelijk einde, of onder
+ * 100 %, telt de set niet: dan geldt de gewone regel. Andere lezers geven de set niet mee.
  */
-export function normalizeImportedProgress(tasks: Task[], statusDate?: string): void {
+export function normalizeImportedProgress(
+  tasks: Task[],
+  statusDate?: string,
+  runningAtFullIds?: ReadonlySet<string>,
+): void {
   for (const task of tasks) {
     const t = task.time;
 
@@ -65,6 +73,14 @@ export function normalizeImportedProgress(tasks: Task[], statusDate?: string): v
       t.completion = 1;
       if (!t.actualStart) t.actualStart = t.actualFinish;
       task.status = 'COMPLETED';
+    } else if (t.completion >= 1 && runningAtFullIds?.has(task.id)) {
+      // Lopend op 100 %, zo gemarkeerd in het bestand (alleen IFC: `IfcTask.Status` = 'STARTED',
+      // eigenaarsbesluit 2026-10-14). Houd hem lopend: geen afgeleid werkelijk einde, geen afgeleide
+      // werkelijke start, en de restduur zoals het bestand hem vastlegde (geen afleiding uit
+      // `completion`), zodat de taak na opslaan en heropenen gelijk is aan de import.
+      t.completion = 1;
+      task.status = 'STARTED';
+      continue;
     } else if (t.completion >= 1) {
       t.completion = 1;
       // Zelfde volgorde en regels als de store (`setTaskProgress`): eerst de impliciete start (de

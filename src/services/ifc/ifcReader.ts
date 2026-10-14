@@ -24,7 +24,7 @@ import {
 } from './ifcConstants';
 import { OPS_LEGACY_LITERAL_APP_VERSION, PSET, PER_TASK_PSET_BY_NAME, readIfcDate } from './ifcPsets';
 import {
-  IFC_TASKTIME_SLOTS, ALL_RECORDED_SLOT_KEYS, TASK_SLOT, TASKTIME_SLOT,
+  IFC_TASKTIME_SLOTS, ALL_RECORDED_SLOT_KEYS, TASK_SLOT, TASKTIME_SLOT, IFC_TASK_STATUS_RUNNING,
   type RecordedFieldKey, type TaskTimeReadHelpers,
 } from './ifcTaskSlots';
 import { normalizeImportedProgress, reconstructResourceIds } from '@/services/importNormalize';
@@ -218,7 +218,7 @@ export function readIFC(
   // Taken die aan een `.BASELINE.`-IfcWorkSchedule hangen zijn baseline-snapshots, geen live
   // taken — sla ze over (robuust tegen externe tools; OPS zelf hangt er geen op).
   const baselineTaskStepIds = collectBaselineTaskStepIds(entities);
-  const { tasks, taskStepIdMap, taskTimeEntities, recordedFields } = extractTasks(
+  const { tasks, taskStepIdMap, taskTimeEntities, recordedFields, runningStatusIds } = extractTasks(
     entities, entityMap, baselineTaskStepIds, taskIdentityByStepId, calendar.hoursPerDay,
   );
   const p6BoundarySequenceGuids = extractP6BoundarySequenceGuids(
@@ -343,7 +343,9 @@ export function readIFC(
 
   // Voortgang-invarianten op de rauw ingelezen actuals — ná extractStructure zodat
   // project.statusDate (uit OPS_ProjectSettings) beschikbaar is als default-actualFinish.
-  normalizeImportedProgress(tasks, project.statusDate);
+  // `runningStatusIds`: taken met `IfcTask.Status` = 'STARTED' — een lopende taak op 100 % blijft
+  // dan lopend (eigenaarsbesluit 2026-10-14). Oude bestanden (`$`) lezen als voorheen.
+  normalizeImportedProgress(tasks, project.statusDate, runningStatusIds);
 
   const ifcGlobalIds = collectIfcGlobalIds(entities, entityMap, taskStepIdMap, project.id, guidLog);
 
@@ -1600,7 +1602,10 @@ function extractTasks(
   baselineTaskStepIds: Set<string> = new Set(),
   persistedIds: Map<string, string> = new Map(),
   hoursPerDay = 8,
-): { tasks: Task[]; taskStepIdMap: Map<string, string>; taskTimeEntities: Map<string, StepEntity>; recordedFields: Record<string, RecordedFieldKey[]> } {
+): {
+  tasks: Task[]; taskStepIdMap: Map<string, string>; taskTimeEntities: Map<string, StepEntity>;
+  recordedFields: Record<string, RecordedFieldKey[]>; runningStatusIds: Set<string>;
+} {
   const taskEntities = entities.filter(e => e.type === 'IFCTASK' && !baselineTaskStepIds.has(e.id));
   const tasks: Task[] = [];
   const taskStepIdMap = new Map<string, string>(); // STEP #id -> our task id
@@ -1612,6 +1617,9 @@ function extractTasks(
   // "geen enkel slot gevuld" is een uitspraak, "onbekend" niet.
   const recordedFields: Record<string, RecordedFieldKey[]> = {};
   const usedIds = new Set<string>();
+  // Taken met `IfcTask.Status` precies `'STARTED'` (zie `IFC_TASK_STATUS_RUNNING`). Alleen
+  // `normalizeImportedProgress` leest dit, en alleen voor een taak op 100 % zonder werkelijk einde.
+  const runningStatusIds = new Set<string>();
 
   for (const te of taskEntities) {
     const id = stableIfcTaskId(te, persistedIds, usedIds);
@@ -1638,6 +1646,10 @@ function extractTasks(
     const time = ttEntity ? parseTaskTime(ttEntity, hoursPerDay) : createDefaultTaskTime(localTodayIso(), 5);
     if (ttEntity) taskTimeEntities.set(id, ttEntity);
     recordedFields[id] = ttEntity ? recordedSlotsOf(ttEntity) : [];
+
+    // Status (spec-index 7) staat vóór WorkMethod: geen OFFSET in de legacy-lay-out. Een andere of
+    // onbekende tekst negeren we, zoals voorheen.
+    if (ifcSlotText(te.args[TASK_SLOT.status]) === IFC_TASK_STATUS_RUNNING) runningStatusIds.add(id);
 
     const isMilestone = te.args[isMilestoneIdx]?.includes('T') || false;
     if (isMilestone) time.scheduleDuration = 0;
@@ -1671,7 +1683,7 @@ function extractTasks(
     });
   }
 
-  return { tasks, taskStepIdMap, taskTimeEntities, recordedFields };
+  return { tasks, taskStepIdMap, taskTimeEntities, recordedFields, runningStatusIds };
 }
 
 /** Lees de OPS-catalogus defensief. Zonder metadata blijft een extern/oud USERDEFINED-bestand
