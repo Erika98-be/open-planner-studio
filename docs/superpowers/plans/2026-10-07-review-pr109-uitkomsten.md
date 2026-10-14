@@ -808,5 +808,5 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   preset); alle dagwissels in een sessie = één wissel (zoals één MCP-call); zelfde regel in `applyBands`. Fixronde
   naar de maker, incl. XER-minutenberekening (`xerCalendarData.ts:872`).
 - **Hercheck #355 (reviewer, Opus 5.5): ja** op bdf4a4dcc (zone/onmogelijke datum: start gelijk aan main; IFCTEXT
-  letterlijk terug; StatusDate als main; Y1 rood). **#355 gemerged in main 2026-10-14** (kop bevatte main 2e252983d,
+  letterlijk terug; StatusDate als main; Y1 rood). **#355 gemerged in main 2026-10-14 → 967c9e07b** (kop bevatte main 2e252983d,
   CI 16/16, `--admin`, geen UI). Testversie bijgewerkt.
