@@ -748,3 +748,7 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   Testversie (3049) = main a40561fa9 + #350 d82b45c69 + #347.
 - #347 bijgewerkt met main a40561fa9 (incl. #351): kop 43218b52a, CI groen; NB-opmerking weg, "Late ploeg" (8 bij 10 u)
   nu in de IFC-proef van `check-time-notation` (207 checks). Testversie bijgewerkt.
+- **#352 MCP werkdagen** (`claude/mcp-werkdagen-blokken`, kop 9750782cb): open (niet gemerged), concept, CI groen.
+  `calendarFieldPatch` gebruikt `workDaysSetPatch` bij losse `workDays` op een uurkalender; startpunt = werkdagen volgens
+  de blokken (herstelt ook al tegenstrijdige kalenders); 9 MCP-cases (6 met IFC-rondgang), 5 mutanten rood.
+  Review gestart (reviewer, Opus 5.5), met vraag naar bewuste `hoursPerDay`-afwijking (#351) en planningsdatums.
