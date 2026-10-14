@@ -1403,7 +1403,14 @@
   "schedulingProfile": {
     "title": "Rekenprofiel en reken-opties",
     "profile": "Rekenprofiel",
+    "newProfile": "Nieuw profiel",
+    "newProfileTitle": "Nieuw rekenprofiel",
+    "newProfileIntro": "Het nieuwe profiel krijgt alle conventies van „{{name}}”, ook de afwijkingen. Daarna kun je elke conventie zelf aan- of uitzetten. Pas na Toepassen rekent het project met het nieuwe profiel.",
+    "newProfileName": "Naam van het nieuwe profiel",
+    "newProfileCreate": "Maken",
     "conventionsTitle": "Conventies van dit profiel",
+    "builtInReadOnly": "{{name}} is een ingebouwd profiel. De conventies staan hier ter informatie en zijn niet te wijzigen. Wil je andere conventies, kies dan {{button}}.",
+    "builtInDeviations": "Dit project komt uit een ouder bestand. De oranje conventies wijken af van de basis van {{name}} en rekenen zo mee. Wil je ze wijzigen, kies dan {{button}}.",
     "optionsTitle": "Reken-opties van dit project",
     "customName": "Naam van dit eigen profiel",
     "saveAsTemplate": "Opslaan als sjabloon",
@@ -1422,7 +1429,7 @@
       "msproject": "Voortgang zoals Microsoft Project",
       "ownProfilesOnly": "Alleen voor eigen profielen"
     },
-    "ownProfilesOnlyNote": "Deze conventies staan in elk ingebouwd profiel uit, ook onder Primavera P6. Zet je er een aan, dan wordt het een eigen profiel.",
+    "ownProfilesOnlyNote": "Deze conventies staan in elk ingebouwd profiel uit, ook onder Primavera P6. Alleen een eigen profiel kan ze aanzetten: kies daarvoor Nieuw profiel.",
     "deviatingCount": "afwijkend: {{n}}",
     "baseValue": "basis: {{value}}",
     "on": "aan",

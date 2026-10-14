@@ -12,10 +12,17 @@ import './Tooltip.css';
  * Het bubbeltje gaat via een portal naar `document.body` (net als {@link Popover}) zodat overflow-
  * clips (bv. de ribbon-strook) het niet afsnijden; de horizontale positie wordt binnen de viewport
  * geklemd.
+ *
+ * Info-iconen (`data-tooltip-instant`) zijn er voor de uitleg zelf. Daarom tonen ze de tooltip ook
+ * bij toetsenbordfocus en bij een klik of tik (een touchscreen kent geen hover), en verdwijnt hij
+ * met Escape, bij focusverlies of bij een klik elders. Zolang hij staat, wijst `aria-describedby` van
+ * het icoon naar het bubbeltje, zodat een schermlezer de uitleg voorleest.
  */
 const DELAY_MS = 400;
 /** `data-tooltip-instant`: geen vertraging — voor info-iconen waar de tooltip dé inhoud is. */
-const instantDelay = (el: HTMLElement): number => (el.hasAttribute('data-tooltip-instant') ? 0 : DELAY_MS);
+const isInstant = (el: HTMLElement): boolean => el.hasAttribute('data-tooltip-instant');
+const instantDelay = (el: HTMLElement): number => (isInstant(el) ? 0 : DELAY_MS);
+const BUBBLE_ID = 'ops-tooltip-bubble';
 
 interface TipState { text: string; x: number; y: number; }
 
@@ -31,6 +38,9 @@ export function TooltipHost() {
     const restore = () => {
       if (activeEl.current && stashed.current !== null) {
         activeEl.current.setAttribute('title', stashed.current);
+      }
+      if (activeEl.current?.getAttribute('aria-describedby') === BUBBLE_ID) {
+        activeEl.current.removeAttribute('aria-describedby');
       }
       activeEl.current = null;
       stashed.current = null;
@@ -65,16 +75,44 @@ export function TooltipHost() {
         return;
       }
       if (!el || el === activeEl.current) return;
+      show(el, instantDelay(el));
+    };
+    // Toon de tooltip van `el` na `delay` ms; het `title` gaat zolang naar `stashed`.
+    const show = (el: HTMLElement, delay: number) => {
       dismiss();
       const text = el.getAttribute('title');
       if (!text) return;
       activeEl.current = el;
       stashed.current = text;
       el.removeAttribute('title'); // onderdrukt de native tooltip
+      if (isInstant(el) && !el.hasAttribute('aria-describedby')) el.setAttribute('aria-describedby', BUBBLE_ID);
       timer.current = setTimeout(() => {
         const r = el.getBoundingClientRect();
         setTip({ text, x: r.left + r.width / 2, y: r.bottom + 6 });
-      }, instantDelay(el));
+      }, delay);
+    };
+    // Info-icoon met focus (toetsenbord, of de focus na een klik of tik): meteen tonen.
+    const instantTarget = (target: EventTarget | null): HTMLElement | null => {
+      const el = target instanceof Element ? target.closest<HTMLElement>('[data-tooltip-instant]') : null;
+      return el && (el === activeEl.current || el.getAttribute('title')) ? el : null;
+    };
+    const onFocusIn = (e: FocusEvent) => {
+      const el = instantTarget(e.target);
+      if (el && el !== activeEl.current) show(el, 0);
+    };
+    const onFocusOut = (e: FocusEvent) => {
+      if (!activeEl.current || !isInstant(activeEl.current)) return;
+      const to = e.relatedTarget as Node | null;
+      if (e.target === activeEl.current && !(to && activeEl.current.contains(to))) dismiss();
+    };
+    // Klik of tik op een info-icoon: tonen (mousedown heeft hem net gesloten; een tik op een
+    // touchscreen geeft geen blijvende hover). Een niet-focusbaar icoon krijgt zo ook zijn uitleg.
+    const onClick = (e: MouseEvent) => {
+      const el = instantTarget(e.target);
+      if (el && el !== activeEl.current) show(el, 0);
+    };
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && activeEl.current) dismiss();
     };
     const onOut = (e: MouseEvent) => {
       if (!activeEl.current) return;
@@ -87,12 +125,20 @@ export function TooltipHost() {
     document.addEventListener('mouseover', onOverEvent, true);
     document.addEventListener('mouseout', onOut, true);
     document.addEventListener('mousedown', dismiss, true);
+    document.addEventListener('focusin', onFocusIn, true);
+    document.addEventListener('focusout', onFocusOut, true);
+    document.addEventListener('click', onClick, true);
+    document.addEventListener('keydown', onKeyDown, true);
     window.addEventListener('scroll', dismiss, true);
     window.addEventListener('blur', dismiss);
     return () => {
       document.removeEventListener('mouseover', onOverEvent, true);
       document.removeEventListener('mouseout', onOut, true);
       document.removeEventListener('mousedown', dismiss, true);
+      document.removeEventListener('focusin', onFocusIn, true);
+      document.removeEventListener('focusout', onFocusOut, true);
+      document.removeEventListener('click', onClick, true);
+      document.removeEventListener('keydown', onKeyDown, true);
       window.removeEventListener('scroll', dismiss, true);
       window.removeEventListener('blur', dismiss);
       dismiss();
@@ -109,7 +155,7 @@ export function TooltipHost() {
 
   if (!tip) return null;
   return createPortal(
-    <div ref={bubbleRef} className="ops-tooltip" role="tooltip" style={{ left: tip.x, top: tip.y }}>
+    <div ref={bubbleRef} id={BUBBLE_ID} className="ops-tooltip" role="tooltip" style={{ left: tip.x, top: tip.y }}>
       {tip.text}
     </div>,
     document.body,

@@ -97,6 +97,25 @@ export function editConvention(
   return { ...p, overrides };
 }
 
+/** De knop "Nieuw profiel": een eigen profiel op dezelfde basis met precies de opgeloste conventies
+ *  van `current` — ook de afwijkingen die een ingebouwd id uit de migratie van een oud bestand draagt.
+ *  Een ingebouwd profiel is in de UI alleen-lezen; dit is de enige weg naar bewerkbare conventies.
+ *  Een ongeldig id of een lege naam geeft `current` ongewijzigd terug (de naamvraag laat dat niet toe). */
+export function newProfileFrom(
+  current: SchedulingProfile | undefined, copy: { id: string; name: string },
+): SchedulingProfile | undefined {
+  const p = current ?? builtInProfile('ops');
+  const name = clampName(copy.name);
+  if (!validCustomId(copy.id) || name.length === 0) return current;
+  return { baseId: p.baseId, id: copy.id, name, overrides: diffAgainstBase(p.baseId, resolveConventions(p)) };
+}
+
+/** Is de conventieset van dit profiel in de UI te bewerken? Alleen bij een eigen profiel; de drie
+ *  ingebouwde profielen (en afwezig ≡ OPS) zijn alleen-lezen. */
+export function conventionsEditable(profile: SchedulingProfile | undefined): boolean {
+  return !!profile && !isBuiltInProfileId(profile.id);
+}
+
 /** "Terug naar basis" voor één conventie: haal haar afwijking uit het profiel, zodat de waarde van de
  *  basis (`baseId`) weer geldt. Anders dan `editConvention` maakt dit van een ingebouwd profiel GEEN
  *  kopie: een afwijking weghalen brengt het profiel juist dichter bij de school (op een ingebouwd id

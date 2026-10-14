@@ -3,7 +3,7 @@
 import {
   choiceOf, selectProfile, editConvention, renameProfile, resetConventionToBase, profileLabel, templateRelation,
   totalFloatModeToUi, totalFloatModeFromUi, withCriticalMode, withCriticalThreshold, withDefaultOptions, sameSettings,
-  hasValidProfileName, SOURCE_ONLY_OPTION_KEYS, ssLagHasHourPlanning,
+  hasValidProfileName, SOURCE_ONLY_OPTION_KEYS, ssLagHasHourPlanning, newProfileFrom, conventionsEditable,
 } from '@/state/schedulingProfileDraft';
 import { builtInProfile, defaultOptionsFor, resolveConventions } from '@/engine/scheduler/conventions/registry';
 import type { SchedulingProfile } from '@/types/project';
@@ -191,6 +191,29 @@ eq('36c ingebouwd id als kopie-id ⇒ no-op', editConvention(xerP6, 'clampNegati
     ssLagHasHourPlanning({ lagCalendar: 'projectDefault' }, [dayTask], hour, []),
   ], [false, true]);
   eq('38f projectkalender met werkblokken (voorganger)', ssLagHasHourPlanning({ lagCalendar: 'predecessor' }, [dayTask], hour, []), true);
+}
+
+// Profielblok alleen-lezen (eigenaar 2026-10-14): een ingebouwd profiel is niet te bewerken; "Nieuw
+// profiel" maakt een eigen profiel met ALLE opgeloste conventies, ook een afwijking uit de migratie.
+// Mutanten: afwijkingen niet meenemen ⇒ 39a rood; ingebouwd toch bewerkbaar ⇒ 39f rood.
+{
+  eq('39a nieuw profiel vanaf P6 met migratie-afwijking neemt die mee', newProfileFrom(xerP6, copy),
+    { baseId: 'p6', id: 'prof-new', name: 'Kopie van Primavera P6', overrides: { p6UseRemainingStartForProgress: false } });
+  const fresh = newProfileFrom(builtInProfile('msproject'), { id: 'prof-x', name: '  Mijn MSP  ' });
+  eq('39b nieuw profiel vanaf een kaal ingebouwd profiel: geen afwijkingen, naam getrimd', fresh,
+    { baseId: 'msproject', id: 'prof-x', name: 'Mijn MSP', overrides: {} });
+  eq('39c zelfde opgeloste conventies als het origineel', resolveConventions(newProfileFrom(xerP6, copy)!), resolveConventions(xerP6));
+  eq('39d nieuw profiel vanaf afwezig (≡ OPS)', newProfileFrom(undefined, copy), { baseId: 'ops', id: 'prof-new', name: 'Kopie van Primavera P6', overrides: {} });
+  const fromOwn = newProfileFrom(own, { id: 'prof-2', name: 'Tweede' });
+  eq('39e nieuw profiel vanaf een eigen profiel: nieuw id, zelfde afwijkingen', fromOwn,
+    { baseId: 'p6', id: 'prof-2', name: 'Tweede', overrides: { clampNegativeFreeFloat: false } });
+  eq('39f alleen een eigen profiel is bewerkbaar', [undefined, builtInProfile('p6'), xerP6, builtInProfile('ops'), own].map(conventionsEditable),
+    [false, false, false, false, true]);
+  eq('39g lege naam of ongeldig id ⇒ ongewijzigd', [
+    newProfileFrom(xerP6, { id: 'prof-y', name: '   ' }) === xerP6,
+    newProfileFrom(xerP6, { id: 'p6', name: 'K' }) === xerP6,
+    newProfileFrom(xerP6, { id: 'x'.repeat(65), name: 'K' }) === xerP6,
+  ], [true, true, true]);
 }
 
 if (diffs.length === 0) console.log(`OK: bewerkmodel rekenprofiel — ${checks} checks groen`);

@@ -1403,7 +1403,14 @@
   "schedulingProfile": {
     "title": "Calculation profile and options",
     "profile": "Calculation profile",
+    "newProfile": "New profile",
+    "newProfileTitle": "New scheduling profile",
+    "newProfileIntro": "The new profile gets all conventions of “{{name}}”, including the deviations. You can then switch each convention on or off yourself. The project uses the new profile after you click Apply.",
+    "newProfileName": "Name of the new profile",
+    "newProfileCreate": "Create",
     "conventionsTitle": "Conventions of this profile",
+    "builtInReadOnly": "{{name}} is a built-in profile. The conventions are shown for information and cannot be changed. For other conventions, choose {{button}}.",
+    "builtInDeviations": "This project comes from an older file. The orange conventions deviate from the {{name}} base and are used as shown. To change them, choose {{button}}.",
     "optionsTitle": "Calculation options of this project",
     "customName": "Name of this custom profile",
     "saveAsTemplate": "Save as template",
@@ -1422,7 +1429,7 @@
       "msproject": "Progress as in Microsoft Project",
       "ownProfilesOnly": "Custom profiles only"
     },
-    "ownProfilesOnlyNote": "These conventions are off in every built-in profile, including Primavera P6. Turning one on makes it a custom profile.",
+    "ownProfilesOnlyNote": "These conventions are off in every built-in profile, including Primavera P6. Only a custom profile can switch them on: choose New profile for that.",
     "deviatingCount": "changed: {{n}}",
     "baseValue": "base: {{value}}",
     "on": "on",
