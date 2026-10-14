@@ -591,3 +591,8 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   `check-ifc-werktijd-per-dag` exit 0; merge na groene CI. AM/PM-besluit voorgelegd. Feit: de blokvelden in
   `WorkTimeEditor.tsx:103,109` zijn native `<input type="time">` (browserlocale); de velden Begin/Einde gebruiken
   `ScalarTimeInput` (eigen tekstveld, altijd 24 uur).
+- **Eigenaarsbesluit 2026-10-14 (AM/PM in werkblokken), letterlijk: "maak het een instelling".** Orkestrator legde
+  vast: instelling "Tijdnotatie" (24 uur / 12 uur), standaard 24 uur, geldt voor elke kloktijd in de weergave
+  (kalendervenster, taaktijden, Gantt-uurschaal, uitzonderingen, rapporten); bestandsformaten en MCP blijven ISO/24 uur;
+  één eigen tijdveld i.p.v. native `type="time"`. Worker (Opus 5.5) gestart op `claude/tijdnotatie` (vanaf #338).
+  Opmerking: dit is deels nieuw; gebouwd vóór de release tenzij de eigenaar anders zegt.
