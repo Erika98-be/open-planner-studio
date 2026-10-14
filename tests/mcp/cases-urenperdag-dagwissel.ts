@@ -1,0 +1,96 @@
+// Uren per dag bij `planner_update_calendar` met alleen `workDays` (review PR #352, punt 1).
+//
+// XER "Late ploeg": blokken 14:00–24:00 (10 klokuren) met `day_hr_cnt` 8. `hoursPerDay` is de omrekening
+// tussen dagen en uren en mag afwijken van de blokken. MCP met alleen `workDays` gaat door `workDaysSetPatch`,
+// dezelfde regel als de dagknoppen in het kalendervenster (`hoursPerDayAfterDayChange` in
+// `src/services/subdayIo.ts`): een afwijkende waarde blijft staan, een waarde gelijk aan de blokken volgt ze.
+// Vóór de fix werd Late ploeg na `workDays` [1..6] stil 10. Kern zonder MCP:
+// `tests/planning/check-urenperdag-dagwissel.ts`.
+import { appStoreContext, makeMcpContext, useAppStore, test, assert, assertEq, run } from './harness';
+import { calendarResourceTools } from '@/services/mcp/tools/calendarResourceTools';
+import { readTools } from '@/services/mcp/tools/readTools';
+import { batchTools } from '@/services/mcp/tools/batchTool';
+import { registerToolModules } from '@/services/mcp/toolRegistry';
+import { handleMcpMessage } from '@/services/mcp/dispatcher';
+import type { McpToolResult, McpToolOk } from '@/services/mcp/contracts';
+import { writeIFC } from '@/services/ifc/ifcWriter';
+import { readIFC } from '@/services/ifc/ifcReader';
+import { buildWriteIFCInput } from '@/state/ifcSaveInput';
+import { workDayTogglePatch } from '@/services/subdayIo';
+import type { WorkCalendar, WorkTimeBands } from '@/types/calendar';
+
+const S = () => useAppStore.getState();
+
+// Warm-up (zelfde reden als cases-mutate-cal-res.ts): een verse store heeft `calendars: []`.
+S().addTask({ name: 'warmup' });
+S().undo();
+
+registerToolModules([readTools, calendarResourceTools, batchTools]);
+
+/** Via de ECHTE dispatch-weg (`handleMcpMessage`, recept mcp-tool stap 5): schemapoort inbegrepen. */
+let rpcId = 0;
+async function call(name: string, args: unknown): Promise<McpToolResult> {
+  const raw = await handleMcpMessage(
+    JSON.stringify({ jsonrpc: '2.0', id: ++rpcId, method: 'tools/call', params: { name, arguments: args } }),
+    makeMcpContext(appStoreContext, {}),
+  );
+  const msg = JSON.parse(raw);
+  assert(msg.result !== undefined, `dispatch gaf een fout: ${raw.slice(0, 400)}`);
+  return JSON.parse(msg.result.content[0].text) as McpToolResult;
+}
+const rejections = (res: McpToolResult) => (res as McpToolOk).itemRejections ?? [];
+
+const LATE = [{ start: 840, end: 1440 }]; // 14:00–24:00
+function lateWeek(days: number[]): WorkTimeBands {
+  const byWeekday = { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [] } as WorkTimeBands['byWeekday'];
+  for (const d of days) byWeekday[d as 1] = LATE.map((b) => ({ ...b }));
+  return { byWeekday };
+}
+
+/** Projectkalender Late ploeg ma–vr, met een eigen `hoursPerDay` of afgeleid uit de blokken (10). */
+async function lateProjectCalendar(hoursPerDay?: number): Promise<string> {
+  S().newProject();
+  const id = S().project.calendarId;
+  S().ensureProjectCalendarInLibrary();
+  const res = await call('planner_update_calendar', {
+    calendars: [{ id, workTime: lateWeek([1, 2, 3, 4, 5]), ...(hoursPerDay !== undefined ? { hoursPerDay } : {}) }],
+  });
+  assertEq(rejections(res), [], 'testvoorwaarde: Late ploeg is aangenomen');
+  S().addTask({ name: 'Werk' }); // de IFC-rondgang moet de kalender dragen
+  return id;
+}
+const calById = (id: string): WorkCalendar => S().calendars.find((c) => c.id === id)!;
+const fields = (c: Partial<WorkCalendar>) => ({ workDays: c.workDays, workTime: c.workTime, hoursPerDay: c.hoursPerDay });
+
+test('Late ploeg 8 u/dag, alleen workDays [1..6] ⇒ 8, gelijk aan de dagknop Za, ook na IFC', async () => {
+  const id = await lateProjectCalendar(8);
+  assertEq(calById(id).hoursPerDay, 8, 'testvoorwaarde: 8 u/dag');
+  const venster = workDayTogglePatch(calById(id), 6, calById(id).workTime);
+
+  const res = await call('planner_update_calendar', { calendars: [{ id, workDays: [1, 2, 3, 4, 5, 6] }] });
+  assertEq(rejections(res), [], 'geen weigering');
+  const cal = calById(id);
+  assertEq(cal.hoursPerDay, 8, 'de uren per dag blijven 8');
+  assertEq(cal.workTime!.byWeekday[6], LATE, 'zaterdag 14–24, zoals maandag');
+  assertEq(fields(cal), fields(venster), 'MCP geeft precies wat de dagknop Za in het venster geeft');
+
+  const terug = readIFC(writeIFC(buildWriteIFCInput(S()))).calendar;
+  assertEq([terug.workDays, terug.hoursPerDay], [[1, 2, 3, 4, 5, 6], 8], 'na opslaan en heropenen: ma–za, 8 u/dag');
+});
+
+test('Late ploeg 10 u/dag (= de blokken), alleen workDays [1..6] en terug ⇒ 10', async () => {
+  const id = await lateProjectCalendar();
+  assertEq(calById(id).hoursPerDay, 10, 'testvoorwaarde: afgeleid uit de blokken');
+  await call('planner_update_calendar', { calendars: [{ id, workDays: [1, 2, 3, 4, 5, 6] }] });
+  assertEq(calById(id).hoursPerDay, 10, 'na workDays [1..6]: 10');
+  await call('planner_update_calendar', { calendars: [{ id, workDays: [1, 2, 3, 4, 5] }] });
+  assertEq(calById(id).hoursPerDay, 10, 'na workDays [1..5]: 10');
+});
+
+test('een eigen hoursPerDay in hetzelfde item blijft leidend', async () => {
+  const id = await lateProjectCalendar(8);
+  await call('planner_update_calendar', { calendars: [{ id, workDays: [1, 2, 3, 4, 5, 6], hoursPerDay: 9 }] });
+  assertEq(calById(id).hoursPerDay, 9, 'de opgegeven 9 staat');
+});
+
+await run();
