@@ -81,7 +81,7 @@ function buildProject(startDate: string, endDate: string): ImportResult {
   const tasks = [hourTask('a', '2026-03-02T07:00', 1080), hourTask('b', '2026-03-04T07:00', 540), hourTask('c', '2026-03-02T07:00', 270)];
   return {
     project, calendar: CAL, tasks,
-    sequences: [{ id: 's-ab', predecessorId: 'a', successorId: 'b', type: 'FS', lagDays: 0 }],
+    sequences: [{ id: 's-ab', predecessorId: 'a', successorId: 'b', type: 'FINISH_START', lagDays: 0 }],
     resources: [{ id: 'r1', name: 'Ploeg', type: 'LABOR', description: '', costPerHour: 55, maxUnits: 1 }],
     assignments: [],
   } as ImportResult;
@@ -106,12 +106,18 @@ const taskDates = (p: DocumentPayload) => p.tasks.map((t) => {
   const x = t.time;
   return [t.id, x.earlyStart, x.earlyFinish, x.lateStart, x.lateFinish, x.totalFloat, x.isCritical];
 });
+// De console van de exportschrijvers (meldingen over niet-exporteerbare opties) hoort niet in de log.
+const quiet = <T>(fn: () => T): T => {
+  const warn = console.warn;
+  console.warn = () => {};
+  try { return fn(); } finally { console.warn = warn; }
+};
 /** Alleen de projectregels: P6 `<Project>`-velden en `ResourceRate`, MSPDI de kop vóór `<Calendars>`. */
 function projectExportLines(p: DocumentPayload): string[] {
-  const p6 = writeP6XMLWithReport(p.project, p.calendar, p.tasks, p.sequences, p.resources, p.assignments, p.calendars,
-    p.customTaskTypes).xml;
-  const msp = writeMSPDI(p.project, p.calendar, p.tasks, p.sequences, p.resources, p.assignments, p.calendars,
-    p.baselines, p.activeBaselineId, p.customTaskTypes);
+  const p6 = quiet(() => writeP6XMLWithReport(p.project, p.calendar, p.tasks, p.sequences, p.resources, p.assignments,
+    p.calendars, p.customTaskTypes).xml);
+  const msp = quiet(() => writeMSPDI(p.project, p.calendar, p.tasks, p.sequences, p.resources, p.assignments, p.calendars,
+    p.baselines, p.activeBaselineId, p.customTaskTypes));
   const p6Project = /<Project>[\s\S]*?<\/Project>/.exec(p6)?.[0] ?? '';
   const p6Own = p6Project.replace(/<(WBS|Activity|Relationship|ResourceAssignment|Calendar)>[\s\S]*?<\/\1>/g, '');
   const p6Rates = [...p6.matchAll(/<ResourceRate>[\s\S]*?<\/ResourceRate>/g)].map((m) => m[0]).join('');
@@ -200,7 +206,8 @@ for (const [start, end] of [
   differs(`§4 ${label}: controle, de tijd van het einde verandert de late kant`, taskDates(dateOnly), taskDates(before));
 
   const lines = projectExportLines(before);
-  same(`§5 ${label}: controle, de export heeft de projectregels`, lines.length, 6);
+  same(`§5 ${label}: controle, de export heeft de projectregels`, lines.map((l) => l.split('=')[0]),
+    ['P6 MustFinishByDate', 'P6 PlannedStartDate', 'P6 rate EffectiveDate', 'MSPDI StartDate', 'MSPDI FinishDate']);
   same(`§5 ${label}: projectregels in de P6- en MSPDI-export`, projectExportLines(after), lines);
   differs(`§5 ${label}: controle, zonder tijd schrijft de export andere regels`, projectExportLines(dateOnly), lines);
 }
