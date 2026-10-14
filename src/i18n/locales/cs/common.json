@@ -1489,7 +1489,6 @@
     "applyTemplate": "Aktualizovat ze šablony",
     "deleteTemplate": "Odstranit šablonu",
     "templateDeviates": "Tento profil se liší od šablony „{{name}}“.",
-    "applyDefaultOptions": "Použít výchozí možnosti tohoto profilu",
     "themes": {
       "completedWork": "Průběh a dokončená práce",
       "relationsLag": "Závislosti a prodleva",

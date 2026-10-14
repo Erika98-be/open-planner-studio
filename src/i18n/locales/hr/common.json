@@ -1439,7 +1439,6 @@
     "applyTemplate": "Ažuriraj iz predloška",
     "deleteTemplate": "Izbriši predložak",
     "templateDeviates": "Ovaj profil odstupa od predloška „{{name}}”.",
-    "applyDefaultOptions": "Primijeni standardne opcije ovog profila",
     "themes": {
       "completedWork": "Napredak i dovršeni rad",
       "relationsLag": "Ovisnosti i vrijeme odgode",

@@ -1444,7 +1444,6 @@
     "applyTemplate": "Aggiorna dal modello",
     "deleteTemplate": "Elimina modello",
     "templateDeviates": "Questo profilo differisce dal modello «{{name}}».",
-    "applyDefaultOptions": "Applica le opzioni predefinite di questo profilo",
     "themes": {
       "completedWork": "Avanzamento e lavoro completato",
       "relationsLag": "Relazioni e ritardo",

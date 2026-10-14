@@ -47,7 +47,7 @@ By default a task is critical when its total float is 0 or less. This can be cha
 - **Critical definition** with *Total float ≤ threshold* and the field *Threshold (work days)*. The threshold is 0 by default. To guard a buffer, set it to 2, for example: every task with 2 work days of float or less then counts as critical and turns red.
 - **Mark near-critical** with its own *Threshold*, 2 work days by default. A task with more than 0 but at most that much float gets an amber bar. That shows which tasks have almost no margin left, without calling them critical.
 - **Open-ended tasks critical**: a task without a successor that is not finished yet counts as critical. Useful as a safety net against forgotten relations (see the misconceptions below).
-- **Float calculation** decides whether total float is measured at the start of the task, at its finish, or as the smaller of the two. New projects are set to *Automatic (default)*. If you follow Primavera P6's way of calculating, *Apply this profile's default options* sets this choice to *Finish float*. For MS Project the same button sets it back to *Automatic (default)*: with a status date, MS Project itself calculates that way.
+- **Float calculation** decides whether total float is measured at the start of the task, at its finish, or as the smaller of the two. New projects are set to *Automatic (default)*. If the project uses the Primavera P6 profile and this choice is not *Finish float*, an orange block in Project info says so; its button sets the choice to *Finish float*. For MS Project the same button sets it back to *Automatic (default)*: with a status date, MS Project itself calculates that way.
 
 ### Where you see it
 

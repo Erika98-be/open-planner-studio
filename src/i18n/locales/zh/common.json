@@ -1342,7 +1342,6 @@
     "applyTemplate": "从模板更新",
     "deleteTemplate": "删除模板",
     "templateDeviates": "此配置文件与模板“{{name}}”不同。",
-    "applyDefaultOptions": "应用此配置文件的默认选项",
     "themes": {
       "completedWork": "进度与已完成工作",
       "relationsLag": "关系与延隔",

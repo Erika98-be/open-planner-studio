@@ -8,6 +8,7 @@
 // vers geschreven bestand te vervangen.
 //
 // Draait via run.sh (esbuild-bundel). Exit 0 = alles groen; faalregels beginnen met "XX".
+import { selectProfile } from '@/state/schedulingProfileDraft';
 import { readFileSync, readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -377,13 +378,15 @@ function roundTripC2(profile: SchedulingProfile | undefined, options: ProjectSch
 // De pset draagt daarvoor naast `conventions` ook `overrides` letterlijk. Verwachtingen met de hand.
 // Mutatiebewijs: `overrides` niet wegschrijven (schedulingProfileToJson) ⇒ C2b-01/03 rood; de
 // letterlijke overlay in sanitizeSchedulingProfile weglaten ⇒ C2b-01 rood; carriesProfile terug naar
-// isDefaultProfile ⇒ C2b-02 rood.
+// isDefaultProfile ⇒ C2b-02 rood. Sinds review #350 loopt de wissel via de echte app-weg (`selectProfile`,
+// dezelfde functie als de keuzelijst in Projectinfo, met de "(aangepast)"-bron zoals de UI die geeft):
+// breekt de app B14, dan wordt C2b-01 rood.
 {
   const p6Adjusted: SchedulingProfile = { ...builtInProfile('p6'), overrides: { clampNegativeFreeFloat: false } };
-  const underOps = switchProfile(p6Adjusted, 'ops');
+  const underOps = selectProfile(p6Adjusted, 'builtin:ops', [], p6Adjusted);
   const written = writeIFC(fixture({ schedulingProfile: underOps }));
   const reread = readIFC(written).project.schedulingProfile;
-  const back = switchProfile(reread, 'p6');
+  const back = selectProfile(reread, 'builtin:p6', [], undefined);
   eq('C2b-01 P6{A13 uit} → OPS → opslaan → heropenen → P6: A13 blijft uit', resolveConventions(back).clampNegativeFreeFloat, false);
   same('C2b-01b …en is exact het origineel', back, p6Adjusted);
   ok('C2b-02 OPS met alleen een basisgelijke letterlijke afwijking schrijft tóch een pset', written.includes("'OPS_SchedulingProfile'"));
