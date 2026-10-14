@@ -829,3 +829,7 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
 - **Checkstap 11 (profielblok) goedgekeurd door de eigenaar 2026-10-14, letterlijk: "nice, tien keer beter, dit is
   goed".** Daarmee ook de vorm van *Nieuw profiel* (naamvenster, knop naast de lijst) aanvaard.
   **#350 gemerged in main 2026-10-14** (kop 6b61d6b51 bevatte main eef8bdacf, CI 16/16, reviewer ja, `--admin`).
+- **Checkstap 12 (tijdnotatie, #347), eigenaar 2026-10-14:** stap 1–4 kloppen ("alles hiervoor klopte"). Stap 5 was fout
+  voorbereid: de balk "Urenplanning aanzetten" verschijnt niet omdat urenplanning in zijn browser al aan staat, en de
+  kolommen Start/Einde staan niet in de standaardtabel. Vervangen door: *Beeld › Dag ▼ › Uur* (uurschaal toont
+  "1 AM … 10 PM"; zelf nagelopen).
