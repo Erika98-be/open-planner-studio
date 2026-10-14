@@ -186,6 +186,32 @@ test('een al tegenstrijdige kalender (werkdag zonder blokken) wordt hersteld doo
   assertIfcStable(cal, 'herstel');
 });
 
+test('ongesorteerde workDays met een dubbele dag ⇒ de store bewaart de genormaliseerde lijst', async () => {
+  const projId = await hourProjectCalendar(bandsOn([1, 2, 3], STANDAARD));
+  const res = await call('planner_update_calendar', { calendars: [{ id: projId, workDays: [5, 3, 1, 1] }] });
+  assertEq(rejections(res), [], 'geen weigering');
+  const cal = calById(projId);
+  assertEq(cal.workDays, [1, 3, 5], 'letterlijk [1,3,5]: gesorteerd en zonder dubbele dag');
+  assertConsistent(cal, 'genormaliseerd');
+});
+
+test('uurkalender zonder enig blok ⇒ de werkdagen krijgen de eigen enkelvoudige werkdag (06–12 + 13–15)', async () => {
+  S().newProject();
+  const projId = S().project.calendarId;
+  S().ensureProjectCalendarInLibrary();
+  S().updateCalendar(projId, {
+    workTime: bandsOn([], []), workDays: [], workStartHour: 6, workEndHour: 15, hoursPerDay: 8,
+    simpleBreakStartMinute: undefined, simpleBreakDurationMinutes: undefined,
+  });
+  const res = await call('planner_update_calendar', { calendars: [{ id: projId, workDays: [1, 2, 3, 4, 5] }] });
+  assertEq(rejections(res), [], 'geen weigering');
+  const cal = calById(projId);
+  const verwacht: Block[] = [{ start: 360, end: 720 }, { start: 780, end: 900 }];
+  for (let d = 1; d <= 5; d++) assertEq(cal.workTime!.byWeekday[d as 1], verwacht, `dag ${d} krijgt 06–12 + 13–15`);
+  assertEq(cal.hoursPerDay, 8, 'de uren per dag zijn 8');
+  assertConsistent(cal, 'zonder blokken');
+});
+
 // =================================================================================================
 // 3) Wat ongewijzigd blijft
 // =================================================================================================
