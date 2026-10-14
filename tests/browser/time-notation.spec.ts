@@ -43,29 +43,40 @@ async function finishCellText(page: Page): Promise<string> {
   return (await cell.innerText()).trim();
 }
 
-/** Teksten die de Gantt-canvas tekent, na een nieuwe tekenbeurt met de uurschaal. */
+/**
+ * Teksten die de Gantt-canvas tekent op de uurschaal. De `fillText`-haak staat vóór de klik op Start,
+ * zodat ook de eerste tekenbeurt na het terugkeren naar de Gantt meetelt; daarna wachten we tot er
+ * een uurlabel (in een van beide notaties) getekend is.
+ */
 async function ganttHourLabels(page: Page): Promise<string[]> {
+  await page.evaluate(() => {
+    const w = window as Window & { __opsDrawnText?: string[] };
+    if (!w.__opsDrawnText) {
+      const drawn: string[] = [];
+      const original = CanvasRenderingContext2D.prototype.fillText;
+      CanvasRenderingContext2D.prototype.fillText = function fillText(text: string, x: number, y: number, maxWidth?: number) {
+        drawn.push(String(text));
+        if (maxWidth === undefined) original.call(this, text, x, y);
+        else original.call(this, text, x, y, maxWidth);
+      };
+      Object.defineProperty(window, '__opsDrawnText', { configurable: true, value: drawn });
+    }
+    w.__opsDrawnText!.length = 0;
+  });
   // Terug naar de Gantt: het lint-tabblad Start (het tabblad Tabel toont het volledige raster).
   await page.locator('.ribbon-tab').filter({ hasText: /^(Home|Start)$/ }).click();
   await expect(page.locator('[data-task-grid-surface-id="full-task-grid"]')).toHaveCount(0);
   await page.evaluate(() => {
-    const drawn: string[] = [];
-    const original = CanvasRenderingContext2D.prototype.fillText;
-    CanvasRenderingContext2D.prototype.fillText = function fillText(text: string, x: number, y: number, maxWidth?: number) {
-      drawn.push(String(text));
-      if (maxWidth === undefined) original.call(this, text, x, y);
-      else original.call(this, text, x, y, maxWidth);
-    };
-    Object.defineProperty(window, '__opsDrawnText', { configurable: true, value: drawn });
     const s = window.__OPS__!.store.getState();
     s.setUI({ enableHourPlanning: true });
     window.__OPS__!.store.getState().setZoom(1000);
     window.__OPS__!.store.getState().setViewStartDate('2026-01-06');
   });
-  await expect.poll(() => page.evaluate(() =>
-    ((window as Window & { __opsDrawnText?: string[] }).__opsDrawnText ?? []).length)).toBeGreaterThan(10);
-  await page.waitForTimeout(300);
-  return page.evaluate(() => (window as Window & { __opsDrawnText?: string[] }).__opsDrawnText ?? []);
+  const drawn = () => page.evaluate(() => (window as Window & { __opsDrawnText?: string[] }).__opsDrawnText ?? []);
+  await expect.poll(async () => (await drawn()).some(text => /^(\d{2}:00|\d{1,2} (AM|PM))$/.test(text)), {
+    message: 'de Gantt tekende geen uurlabel',
+  }).toBe(true);
+  return drawn();
 }
 
 test('Tijdnotatie: kalendervenster, tabel en Gantt volgen de instelling, ook na herladen', async ({ page, ops: _ops }) => {
