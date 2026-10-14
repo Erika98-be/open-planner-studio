@@ -9,15 +9,16 @@ import './domStub';
 // "Projectstart en -einde met tijd".
 //
 //  §1 de vorm in het bestand: met tijd IFCDATETIME met seconden, zonder tijd IFCDATE (zoals main), leeg `$`,
-//     een onleesbare tijd IFCDATE met de datum.
+//     een onleesbare tijd of seconden IFCTEXT, letterlijk (`ifcDateValue`; de lezer neemt daar de datum).
 //  §2 round-trip van start en einde (readIFC): met tijd, middernacht, zonder tijd, leeg einde.
 //  §3 oude bestanden lezen zoals main ze las: IFCDATE zonder tijd, IFCDATE mét tijd (main vóór #344),
-//     en de fixture `xer-archief-herschreven.ifc`.
+//     en de fixture `xer-archief-herschreven.ifc`. Een IFCDATETIME van een ander pakket met een
+//     onleesbare tijd geeft de datum, met een zone de kloktijd.
 //  §4 de echte open- en opslaanroute (store, doorrekenen): projectdatums, alle taakdatums en speling gelijk
 //     vóór en na, met `useProjectEndDateForFloat`. Controle: zonder de tijd van het einde rekent de motor
 //     echt anders, dus §4 toetst iets.
 //  §5 de P6- en MSPDI-export: de projectregels gelijk vóór en na.
-//  §6 schemapoort: het geschreven bestand heeft 0 fouten.
+//  §6 schemapoort: het geschreven bestand heeft 0 fouten, in IFC4X3_ADD2, IFC4X3 en IFC4.
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -142,11 +143,16 @@ function projectExportLines(p: DocumentPayload): string[] {
     { start: "IFCDATE('2026-03-02')", end: "IFCDATE('2026-03-13')" });
   same('§1 leeg einde: `$`', contractDates(writeIFC(buildProject('2026-03-02T07:00', ''))),
     { start: "IFCDATETIME('2026-03-02T07:00:00')", end: '$' });
-  same('§1 met seconden: zoals gegeven', contractDates(writeIFC(buildProject('2026-03-02T07:00:30', ''))).start,
-    "IFCDATETIME('2026-03-02T07:00:30')");
-  // Geen geldige IfcDateTime: dan de datum, zoals main (het bestand blijft schemageldig).
-  same('§1 onleesbare tijd: IFCDATE met de datum', contractDates(writeIFC(buildProject('2026-03-02T7:00', ''))).start,
-    "IFCDATE('2026-03-02')");
+  // Seconden zijn geen vorm van de store (alleen uit een extensie): tekst, letterlijk. De lezer neemt de
+  // datum, zoals main vóór #353.
+  const withSeconds = writeIFC(buildProject('2026-03-02T07:00:30', ''));
+  same('§1 met seconden: IFCTEXT, letterlijk', contractDates(withSeconds).start, "IFCTEXT('2026-03-02T07:00:30')");
+  same('§1 met seconden: de lezer neemt de datum', readIFC(withSeconds).project.startDate, '2026-03-02');
+  // Geen geldige IfcDateTime: tekst, letterlijk (het bestand blijft schemageldig). De lezer neemt er de
+  // datum uit, zoals main.
+  const unreadable = writeIFC(buildProject('2026-03-02T7:00', ''));
+  same('§1 onleesbare tijd: IFCTEXT, letterlijk', contractDates(unreadable).start, "IFCTEXT('2026-03-02T7:00')");
+  same('§1 onleesbare tijd: de lezer neemt de datum', readIFC(unreadable).project.startDate, '2026-03-02');
 }
 
 // ════════════════════════════════════════════════════════════════════════════════════════════════
@@ -183,6 +189,12 @@ for (const [start, end] of [
   const fixture = readFileSync(join(HERE, 'fixtures', 'xer-archief-herschreven.ifc'), 'utf8');
   same('§3 controle: de fixture draagt IFCDATE met tijd', fixture.includes("'ProjectStartDate',$,IFCDATE('2026-08-03T08:00')"), true);
   same('§3 fixture xer-archief-herschreven.ifc: projectstart zoals main', readIFC(fixture).project.startDate, '2026-08-03');
+  // IFCDATETIME van een ander pakket: een onleesbare tijd geeft de datum (niet de eerste 16 tekens), een
+  // zone valt weg en de kloktijd blijft (`importStatusDate`, zoals bij StatusDate).
+  const foreign = (value: string) => readIFC(ifc.replace("IFCDATETIME('2026-03-02T07:00:00')", `IFCDATETIME('${value}')`)).project.startDate;
+  same('§3 IFCDATETIME met een onleesbare tijd: de datum', foreign('2026-03-02T7:00:00'), '2026-03-02');
+  same('§3 IFCDATETIME met een uur 25: de datum', foreign('2026-03-02T25:00:00'), '2026-03-02');
+  same('§3 IFCDATETIME met een zone: de kloktijd', foreign('2026-03-02T07:00:00+02:00'), '2026-03-02T07:00');
 }
 
 // ════════════════════════════════════════════════════════════════════════════════════════════════
@@ -215,10 +227,13 @@ for (const [start, end] of [
 // ════════════════════════════════════════════════════════════════════════════════════════════════
 // §6 Schemapoort
 // ════════════════════════════════════════════════════════════════════════════════════════════════
-for (const [start, end] of [['2026-03-02T07:00', '2026-03-13T12:00'], ['2026-03-02', '']] as const) {
-  const r = checkIfcSchema(`projectdatum ${start} / ${end || 'leeg'}`, writeIFC(buildProject(start, end)));
-  checks += r.checks;
-  failures.push(...r.failures.map((f) => `§6 ${f}`));
+for (const schema of ['IFC4X3_ADD2', 'IFC4X3', 'IFC4'] as const) {
+  for (const [start, end] of [['2026-03-02T07:00', '2026-03-13T12:00'], ['2026-03-02', ''], ['2026-03-02T7:00', '2026-03-13 12:00']] as const) {
+    const input = buildProject(start, end);
+    const r = checkIfcSchema(`projectdatum ${start} / ${end || 'leeg'}`, writeIFC({ ...input, project: { ...input.project, ifcSchema: schema } }), undefined, schema);
+    checks += r.checks;
+    failures.push(...r.failures.map((f) => `§6 ${f}`));
+  }
 }
 
 if (failures.length) {

@@ -4,6 +4,7 @@ import type {
 } from '@/types/task';
 import { WORK_RULES } from '@/types/workRule';
 import { hasValidP6SuspendResume } from '@/utils/p6SuspendResume';
+import { importStatusDate } from '@/services/importDates';
 
 /**
  * IFC-pset-registry: het OPS_*-round-trip-contract met per pset één bron. Een typo in een naam of
@@ -136,6 +137,59 @@ export function ifcJson(value: unknown): string {
   return ifcStr(json === undefined ? '' : asciiJson(json));
 }
 
+// ── Datums in een property (StatusDate, ProjectStartDate/-EndDate, ConstraintDate/-2, Deadline, een
+//    eigen veld van het type datum). Eén regel voor elke schrijver en elke lezer: zie
+//    docs/ifc-round-trip.md, "Datums in een property". ─────────────────────────────────────────────
+
+// Alleen de twee vormen van de store, en alleen met een kalenderdatum die bestaat: precies de waarden
+// die de lezer ongewijzigd teruggeeft (zie `readIfcDate`).
+const IFC_DATE_FORM = /^(\d{4})-(\d{2})-(\d{2})$/;
+const IFC_DATE_TIME_FORM = /^(\d{4})-(\d{2})-(\d{2})T(?:[01]\d|2[0-3]):[0-5]\d$/;
+
+/** Bestaat de kalenderdatum (geen maand 13, geen 30 februari)? Jaren onder 100 tellen niet mee:
+ *  `Date.UTC` leest die als 19xx, en zo'n waarde gaat dus als tekst. */
+function isCalendarDate(m: RegExpExecArray): boolean {
+  const [y, mo, d] = [Number(m[1]), Number(m[2]), Number(m[3])];
+  const date = new Date(Date.UTC(y, mo - 1, d));
+  return date.getUTCFullYear() === y && date.getUTCMonth() === mo - 1 && date.getUTCDate() === d;
+}
+
+/**
+ * Een datum uit de store als getypte waarde voor een property:
+ *  - `YYYY-MM-DD` ⇒ `IFCDATE(...)`;
+ *  - `YYYY-MM-DDTHH:mm` ⇒ `IFCDATETIME(...)` met seconden `:00`;
+ *  - elke andere tekst ⇒ `IFCTEXT(...)`, letterlijk. Bijvoorbeeld een onleesbare tijd (`T7:00`), een
+ *    spatie in plaats van `T`, seconden, een fractie of een zone (`+02:00`, uit een extensie of MCP),
+ *    een datum die niet bestaat (`2026-13-45`), of leeg.
+ * Zo geeft de lezer elke waarde ongewijzigd terug. IFCDATETIME met seconden of een zone zou de lezer
+ * naar `HH:mm` afronden en de zone laten vallen; een onmogelijke datum zou hij doorrollen
+ * (`2026-13-45` ⇒ 2027-02-14). IfcDate kent geen tijd, en een IfcDateTime zonder seconden is een
+ * schemafout; als tekst blijft het bestand geldig en gaat niets verloren.
+ */
+export function ifcDateValue(value: string): string {
+  const date = IFC_DATE_FORM.exec(value);
+  if (date && isCalendarDate(date)) return `IFCDATE(${ifcStr(value)})`;
+  const dateTime = IFC_DATE_TIME_FORM.exec(value);
+  if (dateTime && isCalendarDate(dateTime)) return `IFCDATETIME(${ifcStr(`${value}:00`)})`;
+  return `IFCTEXT(${value ? ifcStr(value) : "''"})`;
+}
+
+/**
+ * Leesrichting van {@link ifcDateValue}. `rawArg` is de ruwe STEP-waarde (`IFCDATETIME('…')`),
+ * `value` de tekst erin.
+ *  - IFCDATETIME ⇒ de store-vorm `YYYY-MM-DDTHH:mm` (`importStatusDate`). Onze writer schrijft daar
+ *    alleen `YYYY-MM-DDTHH:mm:00`, dus dat komt ongewijzigd terug. Bij een bestand van een ander
+ *    pakket valt een zone weg en geeft een onleesbare tijd de datum. Geen OPS-versie schreef
+ *    IFCDATETIME bij ConstraintDate, Deadline of een eigen veld, dus geen oud bestand leest daardoor
+ *    anders.
+ *  - Elke andere waarde (IFCDATE, IFCTEXT) ⇒ `legacy(value)`: per veld precies wat de lezer altijd
+ *    deed, ook met een tijd in IFCDATE. Dat verschilt per veld (standaard letterlijk; StatusDate
+ *    houdt de tijd, de projectdatums nemen de datum), zodat elk oud bestand exact gelijk leest.
+ */
+export function readIfcDate(rawArg: string, value: string, legacy: (v: string) => string = (v) => v): string {
+  return /^IFCDATETIME\s*\(/i.test(rawArg.trim()) ? importStatusDate(value) : legacy(value);
+}
+
 /**
  * IFCAPPLICATION.Version van onze writer. Het is geen appversie maar een formaatteken: vanaf
  * '0.2' zijn stringliterals volgens ISO 10303-21 gecodeerd (`encodeStepText`). Bestanden van
@@ -240,10 +294,12 @@ export interface PropSpec {
   value: string;
 }
 
-/** Een gelezen property zoals de reader 'm aanlevert: naam + reeds-geparste waarde. */
+/** Een gelezen property zoals de reader 'm aanlevert: naam + reeds-geparste waarde, en de ruwe
+ *  STEP-waarde (`IFCDATE('…')`) voor wie het type nodig heeft ({@link readIfcDate}). */
 export interface ReadProp {
   name: string;
   value: unknown;
+  raw: string;
 }
 
 /** Descriptor voor één per-taak-pset: NAAM + GUID-seeds + geco-lokeerde write/read. */
@@ -288,29 +344,29 @@ export const PER_TASK_PSETS: PerTaskPset[] = [
       const c = task.constraint;
       if (c && c.type !== 'ASAP') {
         props.push({ name: 'ConstraintType', value: `IFCLABEL(${ifcStr(c.type)})` });
-        if (c.date) props.push({ name: 'ConstraintDate', value: `IFCDATE(${ifcStr(c.date)})` });
+        if (c.date) props.push({ name: 'ConstraintDate', value: ifcDateValue(c.date) });
         if (c.hard) props.push({ name: 'Hard', value: 'IFCBOOLEAN(.T.)' });
       }
       const c2 = task.constraint2;
       if (c2 && c2.type !== 'ASAP') {
         props.push({ name: 'ConstraintType2', value: `IFCLABEL(${ifcStr(c2.type)})` });
-        if (c2.date) props.push({ name: 'ConstraintDate2', value: `IFCDATE(${ifcStr(c2.date)})` });
+        if (c2.date) props.push({ name: 'ConstraintDate2', value: ifcDateValue(c2.date) });
       }
-      if (task.deadline) props.push({ name: 'Deadline', value: `IFCDATE(${ifcStr(task.deadline)})` });
+      if (task.deadline) props.push({ name: 'Deadline', value: ifcDateValue(task.deadline) });
       return props;
     },
     apply(task, props) {
       let ctype: string | undefined; let cdate: string | undefined; let hard = false;
       let ctype2: string | undefined; let cdate2: string | undefined;
-      for (const { name, value } of props) {
+      for (const { name, value, raw } of props) {
         // Hard is een IFCBOOLEAN — niet overslaan met de string-guard hieronder.
         if (name === 'Hard') { if (value === true) hard = true; continue; }
         if (typeof value !== 'string') continue;
         if (name === 'ConstraintType') ctype = value;
-        else if (name === 'ConstraintDate') cdate = value;
+        else if (name === 'ConstraintDate') cdate = readIfcDate(raw, value);
         else if (name === 'ConstraintType2') ctype2 = value;
-        else if (name === 'ConstraintDate2') cdate2 = value;
-        else if (name === 'Deadline') task.deadline = value;
+        else if (name === 'ConstraintDate2') cdate2 = readIfcDate(raw, value);
+        else if (name === 'Deadline') task.deadline = readIfcDate(raw, value);
       }
       if (ctype && CONSTRAINT_VALID.includes(ctype as ConstraintType)) {
         task.constraint = {

@@ -15,7 +15,11 @@ import './domStub';
 //  - projectstart, -einde en statusdatum gelijk, en gepind (zodat de toets echt een tijd raakt);
 //  - de projectregels in de P6-export (`PlannedStartDate`, `MustFinishByDate`, `ResourceRate.EffectiveDate`)
 //    en de MSPDI-export (`StartDate`, `FinishDate`) gelijk;
-//  - alle taakdatums, speling en kritiek gelijk, op de bekende uitzonderingen na (zie TARGETS).
+//  - alle taakdatums, speling en kritiek gelijk, op de bekende uitzonderingen na (zie TARGETS);
+//  - per taak constraint, tweede constraint en deadline gelijk (de datums met tijd zijn gepind);
+//  - de schemapoort (`ifcSchemaCheck.ts`) in IFC4X3_ADD2, IFC4X3 en IFC4: 0 fouten. Main 8db05a95c
+//    schreef een constraintdatum met tijd als IFCDATE: 4 fouten in Roads, 11 in torture. Zie
+//    `check-ifc-datumvorm.ts`.
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
@@ -27,6 +31,8 @@ import { writeP6XMLWithReport } from '@/services/p6/p6xmlWriter';
 import { writeMSPDI } from '@/services/msproject/mspdiWriter';
 import type { DocumentPayload } from '@/state/documentContract';
 import type { OpenedImport } from '@/services/importTypes';
+import { projectIfcSchema } from '@/types/project';
+import { checkIfcSchema } from './ifcSchemaCheck';
 
 declare const process: { env: Record<string, string | undefined>; exit(code: number): never };
 
@@ -44,21 +50,23 @@ interface Target {
   sha256: string;
   /** Per document: [projectstart, projecteinde] zoals de XER-import ze zet. */
   projectDates: [string, string][];
+  /** Aantal constraint-, tweede-constraint- en deadlinedatums mét tijd, over alle documenten. */
+  timedConstraintDates: number;
   /** Taken waarvan de datums na IFC veranderen om een andere reden dan de projectdatums (zie onder). */
   knownDateChanges?: string[];
 }
 const TARGETS: Target[] = [
   { name: 'Roads_Project_TEC.xer', sha256: 'a2ef7b35c00d8cf8ba75230d71d69b96130f7f689495e86a4cf5f8fcd34431ae',
-    projectDates: [['2012-12-17T07:00', '']] },
+    projectDates: [['2012-12-17T07:00', '']], timedConstraintDates: 4 },
   { name: 'stack_data_center_baseline.xer', sha256: '1ba69d297ee9a5c65c644e7373dc414aa334c996b74800c4688aea7e3681eebf',
-    projectDates: [['2026-05-04T07:00', '2026-05-22T17:00']] },
+    projectDates: [['2026-05-04T07:00', '2026-05-22T17:00']], timedConstraintDates: 0 },
   // Twee documenten; het tweede heeft `useProjectEndDateForFloat` met een einde op 00:00.
   { name: 'Hotel_Construction_TEC.xer', sha256: '9679599df9108bd3b31e755351c1543d1915b82a91445a3f1b0b9c9a3d1f86fe',
-    projectDates: [['2013-08-01T00:00', '2013-08-01T16:00'], ['2012-06-04T08:00', '2014-07-24T00:00']] },
+    projectDates: [['2013-08-01T00:00', '2013-08-01T16:00'], ['2012-06-04T08:00', '2014-07-24T00:00']], timedConstraintDates: 0 },
   // A3040: lopende taak op 100 % zonder werkelijk einde. De IFC-lezer maakt hem voltooid (actualFinish op
   // de statusdatum); dat staat los van de projectdatums en is een open besluit van de eigenaar.
   { name: 'p6_torture_test_v1.xer', sha256: '2a7732b5b99de2a5f40aab40e0af52757fbe68e5d4eda404a9a060fdc1be1140',
-    projectDates: [['2026-03-02T00:00', '2026-03-02T00:00']], knownDateChanges: ['A3040'] },
+    projectDates: [['2026-03-02T00:00', '2026-03-02T00:00']], timedConstraintDates: 11, knownDateChanges: ['A3040'] },
 ];
 
 function findByName(dir: string, name: string): string[] {
@@ -126,10 +134,25 @@ for (const target of TARGETS) {
   }
   const before = openInStore(await parseOpenedFile({ name: target.name, bytes: new Uint8Array(readFileSync(path)) }));
   same(`${target.name}: projectstart en -einde per document`, before.map((d) => [d.project.startDate, d.project.endDate]), target.projectDates);
+  same(`${target.name}: constraint-/deadlinedatums met tijd`,
+    before.flatMap((d) => d.tasks.flatMap((t) => [t.constraint?.date, t.constraint2?.date, t.deadline])).filter((v) => v?.includes('T')).length,
+    target.timedConstraintDates);
   const skip = new Set(target.knownDateChanges ?? []);
   for (const [i, doc] of before.entries()) {
     const label = `${target.name} document ${i + 1}`;
-    const [after] = openInStore(await parseOpenedFile({ name: 'rondgang.ifc', text: writeIFC(buildWriteIFCInput(doc)) }));
+    const input = buildWriteIFCInput(doc);
+    const ifc = writeIFC(input);
+    for (const schema of ['IFC4X3_ADD2', 'IFC4X3', 'IFC4'] as const) {
+      const text = schema === projectIfcSchema(input.project) ? ifc : writeIFC({ ...input, project: { ...input.project, ifcSchema: schema } });
+      const r = checkIfcSchema(label, text, undefined, schema);
+      checks += r.checks;
+      failures.push(...r.failures);
+    }
+    const [after] = openInStore(await parseOpenedFile({ name: 'rondgang.ifc', text: ifc }));
+    const constraintsOf = (p: DocumentPayload) => p.tasks.map((t) => [t.id, t.constraint ?? null, t.constraint2 ?? null, t.deadline ?? null]);
+    const cb = constraintsOf(doc);
+    const ca = constraintsOf(after);
+    same(`${label}: taken met andere constraint of deadline`, cb.filter((x, j) => JSON.stringify(x) !== JSON.stringify(ca[j])).slice(0, 5), []);
     same(`${label}: projectstart, -einde en statusdatum na opslaan en heropenen`,
       [after.project.startDate, after.project.endDate, after.project.statusDate],
       [doc.project.startDate, doc.project.endDate, doc.project.statusDate]);
