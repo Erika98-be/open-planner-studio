@@ -275,10 +275,14 @@ same('§9 fixture: oude writer schreef geen H7-markering', ['WorkStartHour', 'Wo
     calendarShape(libCal(mismatch, 'Pauzekalender')).workTime !== null, true);
 }
 
-// §10. De kenmerken waarop §9 steunt schrijft de writer UITSLUITEND voor scalaire kalenders: geen
-//      enkele uurkalender — ook niet met achtergebleven pauzevelden of een afwijkende hpd — krijgt
-//      HoursPerDay of SimpleBreak*, met of zonder urentaak. (In git sinds de invoering, 829a4123 en
-//      601aa417, stond hun schrijfvoorwaarde altijd achter `!cal.workTime`.)
+// §10. De herkenning van §9 draait alleen op een kalender ZONDER `IsHourCalendar`. Elke uurkalender
+//      draagt die markering (`.T.`), met of zonder urentaak, dus ziet §9 hem nooit:
+//       - SimpleBreak* krijgt een uurkalender nooit, ook niet met achtergebleven pauzevelden;
+//       - HoursPerDay alleen als `hoursPerDay` afwijkt van de modale dagsom van zijn blokken (P6
+//         `day_hr_cnt` 8 bij blokken van 10 uur). Tot de fix uren-per-dag-blokken schreef de writer hem
+//         nooit voor een uurkalender (829a4123 en 601aa417: altijd achter `!cal.workTime`), en ging die
+//         waarde na opslaan verloren — zie `check-ifc-urenperdag-blokken.ts`.
+//      Zo'n uurkalender met HoursPerDay leest terug als uurkalender met die waarde, niet als scalair.
 {
   const seeded = seedScalarWorkTime([1, 2, 3, 4, 5], 7, 16, 8);
   const hourCalendars: [string, Partial<WorkCalendar>][] = [
@@ -304,15 +308,29 @@ same('§9 fixture: oude writer schreef geen H7-markering', ['WorkStartHour', 'Wo
   const leaks: string[] = [];
   for (const [label, patch] of hourCalendars) {
     const cal = { ...baseCal, ...patch };
+    const deviatingHpd = cal.hoursPerDay !== deriveHoursPerDay(cal.workTime!, NaN);
     for (const tasks of [[], [hourTask(cal)]]) {
       const ifc = writeIFC({ project, calendar: cal, tasks, sequences: [], resources: [], assignments: [] });
-      const props = ['HoursPerDay', 'SimpleBreakStart', 'SimpleBreakDuration'].filter((p) => ifc.includes(`'${p}'`));
+      const props = ['SimpleBreakStart', 'SimpleBreakDuration'].filter((p) => ifc.includes(`'${p}'`));
+      const hpdLine = ifc.includes(`'HoursPerDay',$,IFCREAL(${cal.hoursPerDay}.)`);
+      if (ifc.includes("'HoursPerDay'") !== deviatingHpd || (deviatingHpd && !hpdLine)) {
+        props.push(deviatingHpd ? 'mist HoursPerDay' : 'HoursPerDay zonder afwijking');
+      }
       if (props.length > 0 || !ifc.includes("'IsHourCalendar',$,IFCBOOLEAN(.T.)")) {
         leaks.push(`${label}${tasks.length ? ' + urentaak' : ''}: ${props.join(',') || 'mist IsHourCalendar .T.'}`);
       }
+      // De afwijkende hpd komt terug, en de kalender blijft een uurkalender met dezelfde blokken.
+      const rt = readIFC(ifc).calendar;
+      if (rt.hoursPerDay !== cal.hoursPerDay || JSON.stringify(rt.workTime) !== JSON.stringify(cal.workTime)) {
+        leaks.push(`${label}${tasks.length ? ' + urentaak' : ''}: terug als hpd ${rt.hoursPerDay}, ${rt.workTime ? 'andere blokken' : 'scalair'}`);
+      }
     }
   }
-  same('§10 geen uurkalender draagt een scalarkenmerk (en elke draagt IsHourCalendar .T.)', leaks, []);
+  same('§10 geen uurkalender draagt SimpleBreak, HoursPerDay alleen bij een afwijking, elke draagt IsHourCalendar .T.',
+    leaks, []);
+  same('§10 opzet: precies één uurkalender met afwijkende hpd',
+    hourCalendars.filter(([, p]) => { const c = { ...baseCal, ...p }; return c.hoursPerDay !== deriveHoursPerDay(c.workTime!, NaN); })
+      .map(([label]) => label), ['uurkalender met oude pauzevelden en hpd 6']);
   // En de oude writer deed hetzelfde: in de fixture dragen de twee uurkalenders er ook geen.
   const psetOfCalendar = (text: string, name: string): string[] => {
     const lines = new Map([...text.matchAll(/^#(\d+)=(.*);$/gm)].map((m) => [m[1], m[2]]));
