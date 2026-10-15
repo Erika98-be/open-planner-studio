@@ -1106,3 +1106,7 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   blijven. Worker (Opus 5.5, medium) op `claude/hernoem-projectsettings`.
 - Testversie: qa-hulpje `?qa-thema=licht|donker` (988baf093, lokaal; alleen geheugen, zelf nagelopen: `data-theme`
   volgt, `ops-theme` blijft). **Checkstap 18 (oordeel, #362):** zwevende schuifbalken in de takenlijst.
+- **#359 fixronde klaar** (c44e5b85e, CI 16/16): reviewpunten 1–5, eigenaarsbesluiten cursor/tooltip bij icoon/dagtaakzin
+  (510 controles, 7 mutanten rood). Zelf screenshots bekeken: tooltip direct onder het icoon, knop vierkant. Bijgewerkt
+  met main via `gh pr update-branch` (kop ed060ecca, CI loopt). Hercheck bij dezelfde reviewer gestart. Testversie nog
+  niet bijgewerkt (eigenaar is bezig met checkstap 18 op 3049).
