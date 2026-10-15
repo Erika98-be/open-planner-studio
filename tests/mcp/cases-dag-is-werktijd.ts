@@ -99,4 +99,20 @@ test('update_tasks: een dagtaak wordt urentaak van 40 u ⇒ dagengetal 4', async
   assertEq([taskById(id).time.durationMinutes, taskById(id).time.scheduleDuration], [2400, 4], 'minuten en dagengetal');
 });
 
+// =================================================================================================
+// C. planner_update_calendar
+// =================================================================================================
+test('update_calendar: blokken van 10 u naar 8 u ⇒ dagengetal 187 wordt 233,75; minuten en 8 u/dag blijven', async () => {
+  reset();
+  const created = okData(await call('planner_add_tasks', {
+    tasks: [{ tempId: 'tmp-k', name: 'Kalenderwissel', duration: 1870, durationUnit: 'hours' }],
+  }));
+  const id = created.created['tmp-k'];
+  assertEq(taskById(id).time.scheduleDuration, 187, 'vooraf: 187');
+  okData(await call('planner_update_calendar', { calendars: [{ id: store.getState().calendar.id, workTime: week(420, 900) }] }));
+  const t = taskById(id);
+  assertEq([t.time.durationMinutes, t.time.scheduleDuration], [112200, 233.75], 'minuten blijven, dagengetal volgt de blokken');
+  assertEq(store.getState().calendar.hoursPerDay, 8, 'de opgeslagen uren per dag blijven 8');
+});
+
 run();
