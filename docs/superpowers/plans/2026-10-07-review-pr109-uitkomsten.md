@@ -1199,3 +1199,18 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   mogelijk zonder mij."** Orkestrator: geen merges van UI-PR's zonder check eigenaar; checks en besluiten worden
   klaargezet. Besluit native keuzelijsten blijft open; het taakpaneel (gemeen aan optie 1 en 2) wordt alvast in een
   eigen PR gebouwd en niet gemerged tot het besluit er is.
+- **Review #365: nee** (reviewer Opus 5.5, xhigh) op 2b83e1e9c. [BEVESTIGD] conflict met main in
+  `ref-taak-eigenschappen.md:38` (regel *Werkregel*, #359); [BEVESTIGD] MCP-tekst `calendarResourceTools.ts:1275` noemt
+  nog "Settings → Enable hour planning"; [BEVESTIGD] termbase `project-info` kent de nieuwe naam niet ⇒ **taak bij de
+  release** (nieuw concept, oude term als avoid; alleen nl omzetten is erger). Zacht afbreekstreepje mag blijven.
+  Fixronde bij de maker (Opus 5.5, medium), keuzes orkestrator (eigenaar afwezig): streepje uit title/aria-label,
+  hoofdletter in `hourPlanningDisabled`, ondertitel Projectinstellingen, "tab *View*" ⇒ *Appearance*, testregexen
+  vereenvoudigd, codeopmerking bij de sleutelnamen. Voor de check eigenaar: ook zijbalk *Bestand* en venstertitel heten
+  nu *App-instellingen* (ruimer dan het letterlijke besluit).
+- **Review #364: nee** (reviewer Opus 5.5, xhigh) op 61bddf800. [BEVESTIGD] zelfde symptoom bij app-start en
+  `newDocument()`/`planner_new_document`; [BEVESTIGD] sjabloon met fasen opent op 133 px/dag i.p.v. 30; tests laten
+  M1/M2 vrij. Bijvangst: urenbalk na `.mpp` + Nieuw (al in v2026.9.0), leeg raster bij sjabloon met fasen
+  (`recomputeViewRows` ontbreekt), Ctrl+Home en kale 0 op leeg project; MSP-melding verdwijnt na 5 s (geen fout).
+  Fixronde bij de maker (Opus 5.5, medium), keuzes orkestrator (eigenaar afwezig): alle ingangen naar een leeg document,
+  één formule in `ganttViewport.ts`, signaal alleen zonder fasen (sjabloon zoals main), urenbalk en sjabloonraster als
+  eigen commits in dezelfde PR (gedeelde bestanden).
