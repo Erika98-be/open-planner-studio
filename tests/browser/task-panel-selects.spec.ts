@@ -53,22 +53,79 @@ async function choose(page: Page, label: RegExp, value: string): Promise<void> {
   await expect(page.locator('.ops-select__menu')).toHaveCount(0);
 }
 
+/** Undo zoals een gebruiker: eerst klikken op een kop buiten de keuzelijst (de focus verlaat de
+ *  trigger), dan Ctrl+Z. De brug doet hier niets. */
 async function undo(page: Page): Promise<void> {
-  await page.evaluate(() => window.__OPS__!.store.getState().undo());
+  await page.locator('[data-ops-rail] .ui-card-header').first().click();
+  expect(await page.evaluate(() => document.activeElement?.getAttribute('aria-haspopup') ?? null)).toBeNull();
+  await page.keyboard.press('Control+z');
 }
 
-test('taakpaneel: geen native keuzelijst meer bij constraint, mijlpaal en code', async ({ page, ops: _ops }) => {
+const SECONDARY = /^(Secondary constraint|Secundaire constraint)$/;
+const MILESTONE_KIND = /^(Milestone kind|Soort mijlpaal)$/;
+
+test('taakpaneel: constraint, secundaire constraint, mijlpaalsoort en code zijn de eigen keuzelijst', async ({ page, ops: _ops }) => {
   await seedPanelTask(page);
   await page.evaluate(() => {
     const s = window.__OPS__!.store.getState();
     const id = s.selectedTaskIds[0];
     s.updateTask(id, { constraint: { type: 'SNET', date: '2026-09-07' }, isMilestone: true });
   });
+  // Alleen de vier velden van deze PR; andere secties van het paneel vallen hier buiten.
   const rail = page.locator('[data-ops-rail]');
-  await expect(rail.getByRole('button', { name: /^(Secondary constraint|Secundaire constraint)$/ })).toBeVisible();
-  await expect(rail.getByRole('button', { name: /^(Milestone kind|Soort mijlpaal)$/ })).toBeVisible();
-  await expect(rail.getByRole('button', { name: CODE_NAME })).toBeVisible();
-  await expect(rail.locator('select')).toHaveCount(0);
+  for (const name of [/^Constraint$/, SECONDARY, MILESTONE_KIND, new RegExp(`^${CODE_NAME}$`)]) {
+    const field = rail.getByRole('button', { name });
+    await expect(field).toHaveCount(1);
+    await expect(field).toHaveAttribute('aria-haspopup', 'listbox');
+  }
+  await expect(rail.getByRole('combobox', { name: /^(Constraint|Secondary constraint|Secundaire constraint|Milestone kind|Soort mijlpaal)$/ })).toHaveCount(0);
+  await expect(rail.getByRole('combobox', { name: CODE_NAME })).toHaveCount(0);
+});
+
+test('taakpaneel: ongeldige combinatie geeft rode rand, aria-invalid en verwijst naar de fouttekst', async ({ page, ops: _ops }) => {
+  const { taskId, codeTypeId } = await seedPanelTask(page);
+  await choose(page, /^Constraint$/, 'SNET');
+  const secondary = page.locator('[data-ops-rail]').getByRole('button', { name: SECONDARY });
+  await expect(secondary).not.toHaveAttribute('aria-invalid', /.*/);
+  await expect(secondary).not.toHaveAttribute('aria-describedby', /.*/);
+
+  // SNET + FNET liggen aan dezelfde kant: ongeldig.
+  await choose(page, SECONDARY, 'FNET');
+  await expect.poll(() => taskFacts(page, taskId, codeTypeId).then(f => f.constraint2)).toBe('FNET');
+  const error = page.locator('[data-ops-constraint2-error]');
+  await expect(error).toBeVisible();
+  await expect(secondary).toHaveAttribute('aria-invalid', 'true');
+  const describedBy = await secondary.getAttribute('aria-describedby');
+  expect(describedBy).toBeTruthy();
+  expect(await error.getAttribute('id')).toBe(describedBy);
+  await expect(secondary).toHaveAccessibleDescription((await error.textContent())!.trim());
+  const colors = await secondary.evaluate(el => {
+    const probe = document.createElement('span');
+    probe.style.color = 'var(--error)';
+    document.body.appendChild(probe);
+    const errorColor = getComputedStyle(probe).color;
+    probe.remove();
+    return { border: getComputedStyle(el).borderTopColor, errorColor };
+  });
+  expect(colors.border).toBe(colors.errorColor);
+
+  // Weer geldig: alles weg.
+  await choose(page, SECONDARY, 'SNLT');
+  await expect(error).toHaveCount(0);
+  await expect(secondary).not.toHaveAttribute('aria-invalid', /.*/);
+  await expect(secondary).not.toHaveAttribute('aria-describedby', /.*/);
+});
+
+test('taakpaneel: een secundair type buiten de lijst (bv. MSO uit IFC) toont zijn naam', async ({ page, ops: _ops }) => {
+  const { taskId } = await seedPanelTask(page);
+  // Fixture: zo'n waarde komt alleen via import binnen (ifcPsets leest elk geldig type).
+  await page.evaluate(id => window.__OPS__!.store.getState().updateTask(id, {
+    constraint: { type: 'SNET', date: '2026-09-07' },
+    constraint2: { type: 'MSO', date: '2026-09-10' },
+  }), taskId);
+  const secondary = page.locator('[data-ops-rail]').getByRole('button', { name: SECONDARY });
+  await expect(secondary).toHaveAttribute('data-value', 'MSO');
+  await expect(secondary).toHaveText(/\(MSO\)$/);
 });
 
 test('taakpaneel: constraint en secundaire constraint kiezen via de eigen keuzelijst; undo zet terug', async ({ page, ops: _ops }) => {
@@ -83,7 +140,7 @@ test('taakpaneel: constraint en secundaire constraint kiezen via de eigen keuzel
     .toEqual(['ASAP', 'ALAP', 'SNET', 'SNLT', 'FNET', 'FNLT', 'MSO', 'MFO']);
   await page.keyboard.press('Escape');
 
-  // Een herhaalde keuze (ASAP terwijl ASAP al geldt) is net als bij de native lijst geen undo-stap.
+  // Een herhaalde keuze (ASAP terwijl ASAP al geldt) is geen undo-stap (de store doet niets).
   const depth0 = (await state(page)).undoDepth;
   await choose(page, /^Constraint$/, 'ASAP');
   expect((await state(page)).undoDepth).toBe(depth0);
@@ -91,7 +148,7 @@ test('taakpaneel: constraint en secundaire constraint kiezen via de eigen keuzel
   await choose(page, /^Constraint$/, 'SNET');
   await expect.poll(() => taskFacts(page, taskId, codeTypeId).then(f => f.constraint)).toBe('SNET');
 
-  const secondaryLabel = /^(Secondary constraint|Secundaire constraint)$/;
+  const secondaryLabel = SECONDARY;
   const secondary = page.locator('[data-ops-rail]').getByRole('button', { name: secondaryLabel });
   await expect(secondary).toHaveAttribute('data-value', '');
   await secondary.click();
@@ -120,7 +177,7 @@ test('taakpaneel: soort mijlpaal kiezen via de eigen keuzelijst; undo zet terug'
   const { taskId, codeTypeId } = await seedPanelTask(page);
   await page.evaluate(id => window.__OPS__!.store.getState().updateTask(id, { isMilestone: true }), taskId);
 
-  const label = /^(Milestone kind|Soort mijlpaal)$/;
+  const label = MILESTONE_KIND;
   const trigger = page.locator('[data-ops-rail]').getByRole('button', { name: label });
   await expect(trigger).toHaveAttribute('data-value', 'AUTO');
 

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Task, ConstraintType } from '@/types/task';
 import { validateConstraintPair, withPrimaryConstraint } from '@/engine/scheduler/constraintValidation';
@@ -24,6 +24,7 @@ export function TaskConstraintFields({ task, onChange }: {
   // overschrijft relaties". Geen bevestigingsdialoog — gegate op een localStorage-vlag zodat hij
   // maar één keer ooit verschijnt.
   const [pinHint, setPinHint] = useState(false);
+  const constraint2ErrorId = `${useId()}-constraint2-error`;
 
   const pairValidation = validateConstraintPair(task.constraint, task.constraint2);
   const isPinnable = task.constraint?.type === 'MSO' || task.constraint?.type === 'MFO';
@@ -41,9 +42,6 @@ export function TaskConstraintFields({ task, onChange }: {
           aria-label={t('properties.constraint')}
           value={task.constraint?.type ?? 'ASAP'}
           onChange={value => {
-            // Een native select meldt alleen een ECHTE wijziging; de eigen `Select` meldt ook een
-            // herhaalde keuze. Die is hier een no-op, zodat er geen lege undo-stap ontstaat.
-            if (value === (task.constraint?.type ?? 'ASAP')) return;
             const type = value as ConstraintType;
             // Gedeelde canonicalisatie met raster en MCP (`withPrimaryConstraint`): ASAP wist
             // beide constraints, ALAP de secundaire. Bij een niet-MSO/MFO-primair vervalt de harde
@@ -112,28 +110,26 @@ export function TaskConstraintFields({ task, onChange }: {
       {task.constraint && task.constraint.type !== 'ASAP' && task.constraint.type !== 'ALAP' && !task.constraint.hard && (
         <div className="flex flex-col gap-2">
           <Field label={t('properties.constraint2')}>
-            {/* De wrapper draagt de reden-tooltip: de eigen `Select` kent geen `title`. */}
-            <div
-              title={!pairValidation.ok ? pairValidation.issues.map(i => t(`properties.constraintPair.${i}`)).join(' · ') : undefined}
-              data-ops-constraint2-type
-            >
-              <Select
-                aria-label={t('properties.constraint2')}
-                value={task.constraint2?.type ?? ''}
-                onChange={value => {
-                  if (value === (task.constraint2?.type ?? '')) return;
-                  const type = value as ConstraintType | '';
-                  if (!type) onChange({ constraint2: undefined });
-                  else onChange({ constraint2: { type: type as ConstraintType, date: task.constraint2?.date ?? task.time.scheduleStart } });
-                }}
-                className={`!text-small !leading-4 !px-2.5 !py-1.5 ${!pairValidation.ok ? '!border-[var(--error)]' : ''}`}
-                aria-invalid={!pairValidation.ok ? true : undefined}
-                options={[
-                  { value: '', label: t('properties.constraint2None') },
-                  ...SECONDARY_TYPES.map(ct => ({ value: ct, label: t(`constraintType.${ct}`) })),
-                ]}
-              />
-            </div>
+            <Select
+              aria-label={t('properties.constraint2')}
+              value={task.constraint2?.type ?? ''}
+              onChange={value => {
+                const type = value as ConstraintType | '';
+                if (!type) onChange({ constraint2: undefined });
+                else onChange({ constraint2: { type: type as ConstraintType, date: task.constraint2?.date ?? task.time.scheduleStart } });
+              }}
+              className={`!text-small !leading-4 !px-2.5 !py-1.5 ${!pairValidation.ok ? '!border-[var(--error)]' : ''}`}
+              aria-invalid={!pairValidation.ok ? true : undefined}
+              // De reden staat zichtbaar onder de keuzelijst; de trigger verwijst ernaar.
+              aria-describedby={!pairValidation.ok ? constraint2ErrorId : undefined}
+              // Een secundair type buiten de lijst (bv. MSO uit een IFC-pset) heeft geen optie; toon
+              // dan toch zijn naam in de trigger i.p.v. een lege knop.
+              placeholder={task.constraint2 ? t(`constraintType.${task.constraint2.type}`) : undefined}
+              options={[
+                { value: '', label: t('properties.constraint2None') },
+                ...SECONDARY_TYPES.map(ct => ({ value: ct, label: t(`constraintType.${ct}`) })),
+              ]}
+            />
           </Field>
           {task.constraint2 && (
             <Field label={t('properties.constraint2Date')}>
@@ -147,7 +143,7 @@ export function TaskConstraintFields({ task, onChange }: {
             </Field>
           )}
           {!pairValidation.ok && (
-            <div className="!text-small" style={{ color: 'var(--error)' }} data-ops-constraint2-error>
+            <div id={constraint2ErrorId} className="!text-small" style={{ color: 'var(--error)' }} data-ops-constraint2-error>
               {pairValidation.issues.map(i => t(`properties.constraintPair.${i}`)).join(' · ')}
             </div>
           )}

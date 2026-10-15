@@ -51,11 +51,7 @@ export function TaskMilestoneFields({ task, onChange }: {
             <Select
               aria-label={t('properties.milestoneKind')}
               value={task.milestoneKind ?? 'AUTO'}
-              onChange={v => {
-                // Herhaalde keuze is een no-op (de native select meldde die niet).
-                if (v === (task.milestoneKind ?? 'AUTO')) return;
-                onChange({ milestoneKind: v === 'AUTO' ? undefined : (v as MilestoneKind) });
-              }}
+              onChange={v => onChange({ milestoneKind: v === 'AUTO' ? undefined : (v as MilestoneKind) })}
               className="!text-small !leading-4 !px-2.5 !py-1.5"
               options={[
                 { value: 'AUTO', label: t('milestoneKind.AUTO') },

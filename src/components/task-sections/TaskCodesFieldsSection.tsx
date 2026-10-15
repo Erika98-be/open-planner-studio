@@ -29,11 +29,7 @@ export function TaskCodesFieldsSection({ taskId }: { taskId: string }) {
           <Select
             aria-label={type.name}
             value={task.activityCodes?.[type.id] ?? ''}
-            onChange={v => {
-              // Herhaalde keuze is een no-op (de native select meldde die niet).
-              if (v === (task.activityCodes?.[type.id] ?? '')) return;
-              setTaskActivityCode(taskId, type.id, v || null);
-            }}
+            onChange={v => setTaskActivityCode(taskId, type.id, v || null)}
             className="!text-small !leading-4 !px-2.5 !py-1.5"
             options={[
               { value: '', label: t('structure.none') },
