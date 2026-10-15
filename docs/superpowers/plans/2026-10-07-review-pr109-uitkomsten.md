@@ -1142,3 +1142,11 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   BaselineProjects 0 uurverschil). Later (eigen ronde): begroot tempo alleen vasthouden bij dezelfde resource (extensie
   die een id hergebruikt); MSPDI `Work` ≠ `ActualWork` + `RemainingWork` (bestond al). Merge na een korte oordeelscheck
   van de eigenaar (⚠-tooltiptekst, A10530), na checkstap 19.
+- **Checkstap 19 goedgekeurd door de eigenaar 2026-10-15, letterlijk: "perfect, volgende".**
+  **#359 gemerged in main 2026-10-15 → 799d4ff2c** (kop ed060ecca bevatte main 74338e28e, CI 16/16, hercheck reviewer
+  ja, checkstap 17 + 19 eigenaar, `--admin`). #361 bijgewerkt met main via `gh pr update-branch` (kop afd7bb60a).
+- **Review #362: nee** (reviewer Opus 5.5) op 66aece59d: overlays zijn tabstops ondanks `aria-hidden` (Shift+Tab);
+  Shift+wiel boven de balken schuift verkeerd. Spookrij/uitlijning onderaan opgelost in bc36b27b4 (fout bestond al op
+  main: DOM 3273 vs store 3233). Doorgegeven aan de maker (lopende fixronde), plus vereenvoudigingen.
+- **Tekstcheck #361 voorgelegd:** ⚠-tooltip, laatste zin "the units stay as the file gave them" ⇒ "The app does not
+  change the units to remove the difference." (nl: "De app past de inzet niet aan om het verschil weg te werken.").
