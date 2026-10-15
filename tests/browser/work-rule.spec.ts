@@ -513,7 +513,12 @@ test('werkregel: na Ctrl+Z met de tooltip open toont het i-icoon de regel die nu
   for (const how of ['hover', 'focus'] as const) {
     await chooseWorkRule(page, page, 'FIXED_WORK');
     expect((await taskState(page, taskId)).workRule).toBe('FIXED_WORK');
-    if (how === 'hover') await info.hover(); else await info.focus();
+    // Na de muiskeuze staat de focus op de keuzelijst-trigger; daar gaan sneltoetsen (ook Ctrl+Z)
+    // bewust niet af, net als op een native <select>. Bij "hover" halen we de focus er dus af.
+    if (how === 'hover') {
+      await page.locator('[data-ops-work-rule] button[aria-haspopup="listbox"]').first().evaluate(el => (el as HTMLElement).blur());
+      await info.hover();
+    } else await info.focus();
     await expect(tip.locator('strong')).toHaveText(fw);
     await page.keyboard.press('Control+z');
     await expect.poll(async () => (await taskState(page, taskId)).workRule).toBeUndefined();
