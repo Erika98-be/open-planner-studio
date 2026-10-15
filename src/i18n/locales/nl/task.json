@@ -129,6 +129,7 @@
       "workWindowFinish": "Einde werkvenster",
       "workWindowStart": "Start werkvenster",
       "workRule": "Werkregel",
+      "assignmentPlannedUnits": "Begrote eenheden per dag",
       "assignmentPlannedWork": "Begroot werk (uren)",
       "assignmentActualWork": "Verricht werk (uren)",
       "assignmentRemainingWork": "Resterend werk (uren)"
@@ -476,7 +477,7 @@
       "work": "Werk (rest)",
       "workHint": "Resterend werk in uren; de werkregel bepaalt of de duur of de inzet meebeweegt.",
       "workDeviates": "Wijkt af van inzet × duur",
-      "workDeviatesHint": "Opgeslagen werk {{stored}} u wijkt af van inzet × resterende duur ({{derived}} u). Het histogram volgt het opgeslagen werk over de hele taakduur; de inzet blijft zoals het bestand hem gaf.",
+      "workDeviatesHint": "Opgeslagen werk {{stored}} u wijkt af van inzet × resterende duur ({{derived}} u). Het histogram volgt het opgeslagen werk over de hele taakduur. De app past de inzet niet aan om het verschil weg te werken.",
       "locked": "Beschermd door de werkregel {{rule}}"
     },
     "notes": {
