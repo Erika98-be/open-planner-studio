@@ -1137,3 +1137,8 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   (onafgerond). 6 mutanten rood. **Correctie:** de kosten veranderen NIET bij openen (alleen Roads resource 2970
   450 → 360 h, tarief 0,00); de orkestrator meldde de eigenaar eerder ten onrechte dat de kosten veranderen ⇒
   rechtzetten. Hercheck bij dezelfde reviewer gestart.
+- **Hercheck #361: ja** (reviewer Opus 5.5) op e094efe38 (CI 16/16, bevat main): extensieverlies opgelost (proef P1,
+  mutant rood), XER = P6 XML, testgaten gedicht, kosten veranderen niet (Roads geen tarief > 0; rehab-2 en
+  BaselineProjects 0 uurverschil). Later (eigen ronde): begroot tempo alleen vasthouden bij dezelfde resource (extensie
+  die een id hergebruikt); MSPDI `Work` ≠ `ActualWork` + `RemainingWork` (bestond al). Merge na een korte oordeelscheck
+  van de eigenaar (⚠-tooltiptekst, A10530), na checkstap 19.
