@@ -142,8 +142,9 @@ test('occupancy ververst na actieve-documentedit zonder documentwissel', async (
   }), taskId);
   const taskDialog = page.locator('[data-ops-task-dialog]');
   await expect(taskDialog).toBeVisible();
-  const units = taskDialog.locator('input[type="number"][step="any"]');
-  await expect(units).toHaveCount(1);
+  // Het inzetveld is het eerste veld van de enige toewijzingsrij (tekstveld met `inputMode="decimal"`).
+  await expect(taskDialog.locator('[data-ops-assignment-row]')).toHaveCount(1);
+  const units = taskDialog.locator('[data-ops-assignment-row] input').first();
   // TaskDialog zet 30 ms na openen de focus (met selectie) op het naamveld. Wacht daarop: valt die
   // focuswissel midden in `fill`, dan belandt de tekst in de taaknaam (CI-run 36032473792).
   await expect(taskDialog.locator('input:focus')).toHaveCount(1);
