@@ -1035,3 +1035,8 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   resource maakt de taak korter" klopt niet altijd (afronding op hele dagen). 26 vertaalde gidsen beschrijven nog het
   oude blok ⇒ release (`update-docs-lang`).
 - **Eigenaar 2026-10-15 bij #360: "top, we moeten het er nu wel over hebben waar we de scrollbalken nu laten stoppen".**
+- **Besluit eigenaar 2026-10-15 (schuifbalken takenlijst): optie 3**, letterlijk "dit" bij: "Zwevende balken in de
+  takenlijst, zoals de Gantt al heeft. Een dunne balk ligt over de inhoud en neemt geen ruimte in. Er is geen
+  hoekvlakje. De verticale balk blijft wel tussen de takenlijst en de Gantt." (Advies orkestrator was optie 2: één
+  verticale balk rechts van de Gantt, zoals MS Project.) Worker (Opus 5.5, medium) bouwt op `claude/zwevende-balken`
+  vanaf #360; eerst prototype in de app voor de eigenaar (licht/donker), daarna dezelfde branch als PR.
