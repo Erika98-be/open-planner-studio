@@ -48,6 +48,9 @@ interface SelectProps {
 
 interface MenuRect {
   left: number;
+  /** Rechterrand van de trigger: in RTL lijnt de lijst daarop uit. */
+  right: number;
+  rtl: boolean;
   top: number;
   width: number;
   maxHeight: number;
@@ -87,8 +90,6 @@ export function Select({
   });
 
   const selectedIndex = options.findIndex(o => o.value === value);
-  // Alleen met minstens één uitleg: menu mag breder worden dan de trigger (ruimte voor het i-icoon).
-  const hasDescriptions = options.some(o => !!o.description);
   const descriptionId = (i: number) => `${listboxId}-desc-${i}`;
   const selectedLabel = selectedIndex >= 0 ? options[selectedIndex].label : undefined;
 
@@ -115,6 +116,8 @@ export function Select({
     const maxHeight = Math.min(MENU_MAX_HEIGHT, openUp ? spaceAbove : spaceBelow);
     setRect({
       left: r.left,
+      right: r.right,
+      rtl: getComputedStyle(el).direction === 'rtl',
       top: openUp ? r.top - MENU_GAP : r.bottom + MENU_GAP,
       width: r.width,
       maxHeight: Math.max(maxHeight, 80),
@@ -135,14 +138,20 @@ export function Select({
     };
   }, [open, computeRect]);
 
-  // Met uitleg per optie is het menu minstens zo breed als de trigger, maar mag het groeien tot het
-  // langste label plus i-icoon past. Valt het dan rechts buiten de viewport, schuif het naar links.
+  // Het menu is minstens zo breed als de trigger, maar groeit tot het langste label (plus een
+  // eventueel i-icoon) past; anders knipt een smalle trigger de opties af (in it/pl/de zag je twee
+  // keer hetzelfde begin). In LTR lijnt het uit op de linkerrand van de trigger en schuift het naar
+  // links als het rechts buiten het venster valt. In RTL lijnt het uit op de rechterrand en groeit
+  // het naar links; het blijft altijd binnen het venster.
   useLayoutEffect(() => {
-    if (!open || !rect || !hasDescriptions || !menuRef.current) return;
+    if (!open || !rect || !menuRef.current) return;
     const menu = menuRef.current;
-    const overflow = rect.left + menu.offsetWidth - (window.innerWidth - MENU_GAP * 2);
-    menu.style.left = `${Math.max(MENU_GAP * 2, overflow > 0 ? rect.left - overflow : rect.left)}px`;
-  }, [open, rect, hasDescriptions]);
+    const width = menu.offsetWidth;
+    const minLeft = MENU_GAP * 2;
+    const maxLeft = window.innerWidth - MENU_GAP * 2 - width;
+    const wanted = rect.rtl ? rect.right - width : rect.left;
+    menu.style.left = `${Math.max(minLeft, Math.min(wanted, maxLeft))}px`;
+  }, [open, rect]);
 
   // Bij autoOpen begint de trigger nooit gefocust vanuit de gewone
   // klik-/tabvolgorde (de gridcel-editor mount 'm rechtstreeks) — zonder deze focus werken
@@ -271,7 +280,11 @@ export function Select({
         }
         break;
       case 'Escape':
+        // Escape in een open lijst sluit alleen de lijst. Zonder stopPropagation sloot dezelfde
+        // toets ook de omringende dialoog (`useDialogKeys` luistert op `document`) en gooide hij het
+        // concept weg. Een dichte trigger laat Escape door, net als een native `<select>`.
         e.preventDefault();
+        e.stopPropagation();
         close();
         break;
       case 'Tab':
@@ -301,9 +314,9 @@ export function Select({
             className="ops-select__menu"
             style={{
               left: rect.left,
-              ...(hasDescriptions
-                ? { minWidth: rect.width, width: 'max-content', maxWidth: window.innerWidth - MENU_GAP * 4 }
-                : { width: rect.width }),
+              minWidth: rect.width,
+              width: 'max-content',
+              maxWidth: window.innerWidth - MENU_GAP * 4,
               maxHeight: rect.maxHeight,
               ...(rect.openUp
                 ? { bottom: window.innerHeight - rect.top }
