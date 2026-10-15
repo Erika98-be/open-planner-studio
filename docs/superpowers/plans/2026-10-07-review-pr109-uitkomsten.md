@@ -1132,3 +1132,8 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   en te beslissen." ⇒ geen tussenberichten over agents; checks en besluiten aanbieden. **Checkstap 19 (oordeel, #359):**
   tooltip bij het icoon en geen vraagtekencursor; zelf nagelopen op 3049 (508865945): cursor `pointer`, knop 29×29,
   tooltip direct onder het icoon (gesloten en in de lijst), licht en donker.
+- **#361 fixronde klaar** (e094efe38, bijgewerkt met main, CI 16/16): extensie-behoud `plannedUnitsPerDay`
+  (`retainActiveDocument.ts`), P6 XML-terugval gelijk aan XER, tests materiaal/MCP, gidsen, kolomopmaak = inzetkolom
+  (onafgerond). 6 mutanten rood. **Correctie:** de kosten veranderen NIET bij openen (alleen Roads resource 2970
+  450 → 360 h, tarief 0,00); de orkestrator meldde de eigenaar eerder ten onrechte dat de kosten veranderen ⇒
+  rechtzetten. Hercheck bij dezelfde reviewer gestart.
