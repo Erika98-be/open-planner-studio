@@ -1676,6 +1676,11 @@ body {
 ::-webkit-scrollbar-track {
   background: var(--theme-scrollbar-track);
 }
+/* De hoek waar een horizontale en verticale balk samenkomen is in Chromium/WebKit standaard wit
+ * (bv. rechtsonder in de takenlijst). Geef hem de kleur van de track. */
+::-webkit-scrollbar-corner {
+  background: var(--theme-scrollbar-track);
+}
 ::-webkit-scrollbar-thumb {
   background: var(--theme-scrollbar-thumb);
   border-radius: 4px;
@@ -1694,7 +1699,8 @@ body {
   scrollbar-width: thin;
   scrollbar-color: var(--theme-scrollbar-thumb) transparent;
 }
-.gantt-overlay-scrollbar::-webkit-scrollbar-track {
+.gantt-overlay-scrollbar::-webkit-scrollbar-track,
+.gantt-overlay-scrollbar::-webkit-scrollbar-corner {
   background: transparent;
 }
 
