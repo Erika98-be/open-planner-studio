@@ -78,7 +78,7 @@ export function computeContentSpanDays(
   effectiveViewStart: string,
   compressNonWorkdays: boolean,
   axis: GanttAxis,
-  navigationEndDates: string[] = [],
+  navigationEndDates: readonly string[] = [],
 ): number | null {
   if (tasks.length === 0 && navigationEndDates.length === 0) return null;
   let maxDays = 365;

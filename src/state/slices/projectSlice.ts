@@ -32,7 +32,6 @@ import { captureCalendarChange, settleCalendarChange } from '@/engine/work/workR
 import { assignmentsByTask, tasksFollowingProjectCalendar } from '../calendarTasks';
 import { notifyTimephasedLoss } from '../timephasedLossNotice';
 import type { AppSliceFactory } from './types';
-import type { DocumentPayload } from '../documentContract';
 import { PROJECT_INFO_HELP_ARTICLE_ID } from '@/state/helpArticles';
 import { effHoursPerDay } from '@/utils/taskDuration';
 import { isLeafTask } from '@/utils/taskHierarchy';
@@ -198,17 +197,6 @@ function projectChanges(current: Project, updates: Partial<Project>): boolean {
     .some((k) => k !== 'modifiedAt' && !sameValue(current[k], updates[k]));
 }
 
-
-/**
- * Een nieuw project uit het "Nieuw"-scherm (`createNewProject`) opent op zijn projectstart, via
- * hetzelfde `pendingFit`-signaal als een geopend bestand. De Gantt zet bij een project zonder taken `viewStartDate` links in beeld
- * (`computeEmptyProjectScrollX`). Zonder dit signaal bleef scrollX op 0, en dat is bij de
- * standaard feestdagenkalender december 2024.
- */
-function withStartFit(payload: DocumentPayload): DocumentPayload {
-  payload.view = { ...payload.view, viewStartDate: payload.project.startDate, pendingFit: true };
-  return payload;
-}
 
 export const createProjectSlice: AppSliceFactory<ProjectSlice> = (runtime) => (set, get) => ({
   project: createDefaultProject(),
@@ -499,9 +487,6 @@ export const createProjectSlice: AppSliceFactory<ProjectSlice> = (runtime) => (s
     // project). hydratePayload promoveert + synct de projectkalender.
     set((s) => {
       removeSessionHistoryForDocumentFromState(s, s.activeDocumentId);
-      // Bewust GEEN `withStartFit`: geen UI roept dit aan; tests en de dev-brug gebruiken het als
-      // reset en zaaien daarna direct taken. Een openstaand fit-signaal zou die taken dan fitten
-      // (andere zoom). Het "Nieuw"-scherm loopt via `createNewProject` hieronder.
       hydratePayload(s, freshPayload());
       // Zelfde reset als newDocument()/closeDocument() in documentSlice.ts:
       // showLibraryLinkDialog/libraryRefreshNotice zijn APP-globaal en worden door hydratePayload
@@ -573,7 +558,10 @@ export const createProjectSlice: AppSliceFactory<ProjectSlice> = (runtime) => (s
       });
       // Een leeg project (template 'Leeg') is nog niet 'dirty'; met fasen wél.
       payload.isDirty = opts.phaseNames.length > 0;
-      hydratePayload(s, withStartFit(payload));
+      // Een leeg project begint de tijdlijn bij zijn projectstart (de verse view staat op vandaag).
+      // Een sjabloon met fasen houdt de gewone beginweergave.
+      if (opts.phaseNames.length === 0) payload.view.viewStartDate = proj.startDate;
+      hydratePayload(s, payload);
       // Zelfde reset als newProject()/newDocument() hierboven: bij het PRISTINE-hergebruikpad
       // (geen newDocument()-aanroep, dus geen reset onderweg) kan een openstaande
       // showLibraryLinkDialog/libraryRefreshNotice van vóór deze wizard blijven hangen. Onvoorwaardelijk

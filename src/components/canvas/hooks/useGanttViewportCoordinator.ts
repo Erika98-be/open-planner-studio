@@ -13,12 +13,12 @@ import {
   scrollbarRangeRatio,
   computeTimelineZoom,
   computeEffectiveViewStart,
-  computeEmptyProjectScrollX,
   computeFitToProject,
   computeFocusTaskHorizontal,
   computeFocusTaskScrollY,
   computeGanttScrollBounds,
   DEFAULT_ZOOM,
+  emptyGanttReachDates,
   getGanttScrollBounds,
   setGanttChartWidth,
   setGanttScrollBounds,
@@ -57,16 +57,15 @@ export function useGanttViewportCoordinator(
   const latest = useRef(input);
   latest.current = input;
 
-  // Ook zonder taken moet de tijdlijn de concrete kalenderuitzonderingen kunnen bereiken. Een
-  // feestdag is dan de enige domeindatum die de gebruiker naar de Gantt kan willen pannen.
-  const calendarNavigationDates = useMemo(() => input.tasks.length === 0 ? ({
-    starts: input.calendar.holidays.map(holiday => holiday.startDate),
-    ends: input.calendar.holidays.map(holiday => holiday.endDate || holiday.startDate),
-  }) : ({ starts: [], ends: [] }), [input.calendar.holidays, input.tasks.length]);
+  // Ook zonder taken moet de tijdlijn latere feestdagen kunnen bereiken; de regel staat in ganttViewport.
+  const emptyReachDates = useMemo(
+    () => emptyGanttReachDates(input.tasks.length, input.calendar),
+    [input.calendar, input.tasks.length],
+  );
 
   const effectiveViewStart = useMemo(
-    () => computeEffectiveViewStart(input.tasks, input.view.viewStartDate, calendarNavigationDates.starts),
-    [input.tasks, input.view.viewStartDate, calendarNavigationDates.starts],
+    () => computeEffectiveViewStart(input.tasks, input.view.viewStartDate),
+    [input.tasks, input.view.viewStartDate],
   );
   const effectiveView = useMemo(
     () => ({ ...input.view, viewStartDate: effectiveViewStart }),
@@ -116,9 +115,9 @@ export function useGanttViewportCoordinator(
       effectiveViewStart,
       input.compressNonWorkdays,
       spanAxis,
-      calendarNavigationDates.ends,
+      emptyReachDates,
     ),
-    [input.tasks, effectiveViewStart, input.compressNonWorkdays, spanAxis, calendarNavigationDates.ends],
+    [input.tasks, effectiveViewStart, input.compressNonWorkdays, spanAxis, emptyReachDates],
   );
   const contentWidthFor = useCallback(
     (zoom: number) => computeContentWidth(contentSpanDays, zoom),
@@ -192,15 +191,8 @@ export function useGanttViewportCoordinator(
     const container = primaryContainerRef.current;
     if (!container) return;
     if (current.tasks.length === 0) {
-      // Zelfde lege tak als de open-fit hieronder: de projectstart links, niet de feestdagenoorsprong.
-      registerBoundsForZoom(DEFAULT_ZOOM);
       current.setZoom(DEFAULT_ZOOM);
-      current.setScroll(computeEmptyProjectScrollX(
-        current.view.viewStartDate,
-        DEFAULT_ZOOM,
-        calendarNavigationDates.starts,
-        dayDistance,
-      ), 0);
+      current.setScroll(0, 0);
       return;
     }
     const rect = container.getBoundingClientRect();
@@ -209,7 +201,6 @@ export function useGanttViewportCoordinator(
       rect.width,
       current.enableQuarterHourZoom,
       current.enableHourPlanning,
-      [],
       dayDistance,
     );
     if (!fit) return;
@@ -217,7 +208,7 @@ export function useGanttViewportCoordinator(
     current.setZoom(fit.zoom);
     current.setViewStartDate(fit.viewStartDate);
     current.setScroll(fit.scrollX, 0);
-  }, [calendarNavigationDates.starts, dayDistance, registerBoundsForZoom]);
+  }, [dayDistance, registerBoundsForZoom]);
 
   const { zoomAt } = useGanttZoom({
     containerRef: primaryContainerRef,
@@ -239,9 +230,7 @@ export function useGanttViewportCoordinator(
     fitToProject,
   });
 
-  // Open-fit wist het signaal één keer. Een leeg project (zoals een net gemaakt nieuw project)
-  // houdt zijn zoom en zet `viewStartDate` (de projectstart) links in beeld. Zonder die pan lag de
-  // oorsprong op de vroegste feestdag van de kalender en toonde de tijdlijn december 2024.
+  // Open-fit wist het signaal één keer. Een leeg project houdt de huidige viewport.
   useEffect(() => {
     const current = latest.current;
     if (!current.view.pendingFit) return;
@@ -249,13 +238,6 @@ export function useGanttViewportCoordinator(
     if (!container) return;
     if (current.tasks.length === 0) {
       current.clearPendingFit();
-      registerBoundsForZoom(current.view.zoom);
-      current.setScroll(computeEmptyProjectScrollX(
-        current.view.viewStartDate,
-        current.view.zoom,
-        calendarNavigationDates.starts,
-        dayDistance,
-      ), 0);
       return;
     }
     const rect = container.getBoundingClientRect();
@@ -264,7 +246,6 @@ export function useGanttViewportCoordinator(
       rect.width,
       current.enableQuarterHourZoom,
       current.enableHourPlanning,
-      calendarNavigationDates.starts,
       dayDistance,
     );
     current.clearPendingFit();
@@ -273,7 +254,7 @@ export function useGanttViewportCoordinator(
     current.setZoom(fit.zoom);
     current.setViewStartDate(fit.viewStartDate);
     current.setScroll(fit.scrollX, 0);
-  }, [input.view.pendingFit, input.tasks, input.enableQuarterHourZoom, input.enableHourPlanning, input.clearPendingFit, input.setZoom, input.setViewStartDate, input.setScroll, calendarNavigationDates.starts, dayDistance, registerBoundsForZoom]);
+  }, [input.view.pendingFit, input.tasks, input.enableQuarterHourZoom, input.enableHourPlanning, input.clearPendingFit, input.setZoom, input.setViewStartDate, input.setScroll, dayDistance, registerBoundsForZoom]);
 
   useEffect(() => {
     const current = latest.current;
