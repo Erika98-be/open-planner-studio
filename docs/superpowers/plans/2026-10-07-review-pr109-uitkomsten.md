@@ -1040,3 +1040,9 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   hoekvlakje. De verticale balk blijft wel tussen de takenlijst en de Gantt." (Advies orkestrator was optie 2: één
   verticale balk rechts van de Gantt, zoals MS Project.) Worker (Opus 5.5, medium) bouwt op `claude/zwevende-balken`
   vanaf #360; eerst prototype in de app voor de eigenaar (licht/donker), daarna dezelfde branch als PR.
+- **#360 gemerged in main 2026-10-15 → 74338e28e** (kop fbf6b443a bevatte main 5a65f6b86, CI 16/16, reviewer ja,
+  eigenaar "top", `--admin`). Geen `measure:profiles`: alleen CSS.
+- **Checkstap 17 (oordeel, #359):** lezen de uitlegteksten bij *Work rule* goed? Testversie 3049 met #359 op 25b5ff24f
+  (fixronde loopt; teksten veranderen daarin niet). In `productieplanning.mpp` is geen taak effort-driven ⇒ de
+  varianten *Vaste inzet* (effort-driven/onbekend) en *Vaste duur en werk* (effort-driven, eigen tekst maker) in de chat
+  gegeven.
