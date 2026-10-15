@@ -1082,3 +1082,10 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   `ribbon.projectSettingsTitle` ("Project settings") en `ribbon.projectInfoTitle` worden nergens gebruikt. "Project
   info" staat ook in venstertitel, backstage-sectie en meldingen ("Change it via File → Project info → …"); 54
   gidsbestanden nl/en.
+- **Review #361: nee** (reviewer Opus 5.5 xhigh) op 4f0054cfe. Verplicht: [BEVESTIGD] een extensie-`loadProject`
+  verliest `plannedUnitsPerDay` ⇒ P6 XML-export schrijft resttempo als `PlannedUnitsPerTime` (fix in
+  `retainActiveDocument.ts`, test omdraaien). Aanbevolen: P6 XML-terugval bij begroot ≤ 0 (nu 1), testgat
+  materiaaluitzondering P6 XML en `planner_get_task`, gidszinnen, kolomopmaak (1.11111111111111). Bevestigd juist:
+  keuzeregel, IFC/undo/crashherstel, `DOCUMENT_FIELDS` ongewijzigd nodig, histogram Roads A10540 volgt het bestand
+  (360 h), kolom standaard uit, geen conflict met #359. Voor de eigenaar: histogram én kosten veranderen bij openen in
+  drie documenten. Fixronde bij de maker.
