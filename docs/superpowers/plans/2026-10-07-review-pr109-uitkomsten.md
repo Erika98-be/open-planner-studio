@@ -912,3 +912,8 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   (standaard Open Planner Studio); kies Microsoft Project ⇒ Create ⇒ Project info toont Microsoft Project. Eigen
   waarnemingen: (a) in *New project* geen knop *New profile* naast de lijst; (b) leeg nieuw project (start 15-10-2026)
   toont de tijdlijn op december 2024.
+- **Checkstap 14 goedgekeurd door de eigenaar 2026-10-15, letterlijk: "ok, dit werkt ik vraag me alleen wel af waarom
+  ik dit moest checken als dit puur een checkstap is van opent het en laat het de juiste waarde zien. je zegt zelf dat
+  je het zelf ook nog bent nagelopen dus wat is het doel voor mij om dit ook na te lopen".** Les: functionele checks
+  (opent het, klopt de waarde, werkt undo) loopt de orkestrator zelf na en meldt hij met bewijs; de eigenaar krijgt
+  alleen checkstappen waar zijn oordeel nodig is. Route-stap 5 (werkregels `.mpp`) eerst zelf nalopen.
