@@ -4,6 +4,7 @@ import {
   clampTaskGridWidth,
   effectiveTaskGridMax,
 } from '../../src/components/canvas/ganttSplitter';
+import { TASK_GRID_CHOOSER_STRIP } from '../../src/components/task-grid/DataGridCore';
 
 const root = process.cwd();
 const read = (relative: string) => fs.readFileSync(path.join(root, relative), 'utf8');
@@ -96,7 +97,8 @@ const addColumnRule = cssRule(/\.task-grid-add-column\s*\{([^}]*)\}/);
 // is nu knop (20px) plus zes pixels lucht aan weerszijden, en de knop zelf heeft een vast vierkant
 // met een pas bij hover/focus zichtbare rand — géén permanent gevuld vlak.
 ok('De kolomkiezer reserveert een strook met lucht rond de plusknop',
-  /--task-grid-chooser-strip:\s*32px/.test(styles)
+  TASK_GRID_CHOOSER_STRIP === 32
+    && /'--task-grid-chooser-strip':\s*`\$\{TASK_GRID_CHOOSER_STRIP\}px`/.test(read('src/components/task-grid/TaskGrid.tsx'))
     && chooserAnchorRule.includes('padding-inline: 6px'));
 ok('De kiezerstrook volgt de scrollende header en inhoud in plaats van de scrollcontainer te versmallen',
   !cssRule(/\.task-grid-core\s*\{([^}]*)\}/).includes('padding-inline-end')

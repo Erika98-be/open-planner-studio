@@ -20,12 +20,7 @@
  */
 export const OVERLAY_SCROLLBAR_SIZE = 8;
 
-/** Aantal rijen dat meetelt voor de schuifhoogte: de zichtbare rijen plus eventueel de spookregel. */
-export function taskListScrollRowCount(viewRowCount: number, hasGhostRow: boolean): number {
-  return Math.max(0, viewRowCount) + (hasGhostRow ? 1 : 0);
-}
-
 /** Schuifbare inhoudshoogte ONDER de kop, gelijk voor takenlijst en Gantt. */
 export function taskListScrollContentHeight(viewRowCount: number, rowHeight: number, hasGhostRow: boolean): number {
-  return taskListScrollRowCount(viewRowCount, hasGhostRow) * rowHeight + OVERLAY_SCROLLBAR_SIZE;
+  return (Math.max(0, viewRowCount) + (hasGhostRow ? 1 : 0)) * rowHeight + OVERLAY_SCROLLBAR_SIZE;
 }

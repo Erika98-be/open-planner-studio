@@ -192,7 +192,7 @@ function wheelPixels(delta: number, deltaMode: number, page: number): number {
 
 /** De wielrichting zoals de browser hem op een gewone scroller toepast: Shift+wiel zonder eigen
  * horizontale delta (Chromium stuurt dan `deltaX=0, deltaY=100`) schuift horizontaal. */
-export function resolveWheelAxes(event: Pick<WheelEvent<Element>, 'deltaX' | 'deltaY' | 'shiftKey'>): { x: number; y: number } {
+function resolveWheelAxes(event: Pick<WheelEvent<Element>, 'deltaX' | 'deltaY' | 'shiftKey'>): { x: number; y: number } {
   if (event.shiftKey && event.deltaX === 0) return { x: event.deltaY, y: 0 };
   return { x: event.deltaX, y: event.deltaY };
 }
@@ -205,12 +205,10 @@ function keepFocusOffBar(event: ReactMouseEvent<HTMLDivElement>): void {
   event.preventDefault();
 }
 
-/** Breedte van de "kolom toevoegen"-strook (`--task-grid-chooser-strip` op `.task-grid-shell`).
- * Hij is vast per shell; één keer lezen is genoeg. */
-function readChooserStrip(element: HTMLElement): number {
-  const value = Number.parseFloat(getComputedStyle(element).getPropertyValue('--task-grid-chooser-strip'));
-  return Number.isFinite(value) ? value : 0;
-}
+/** Breedte van de "kolom toevoegen"-strook: een 20px-knop met 6px lucht aan weerszijden (issue
+ * #89). `TaskGrid` zet hem als `--task-grid-chooser-strip` op de shell; de CSS leest die variabele,
+ * DataGridCore rekent er het horizontale bereik mee. */
+export const TASK_GRID_CHOOSER_STRIP = 32;
 
 export function DataGridCore({
   rows,
@@ -255,7 +253,26 @@ export function DataGridCore({
   // 1 px in het raster is. Duim slepen en in de track klikken blijven zo native browsergedrag.
   const hScrollRef = useRef<HTMLDivElement | null>(null);
   const vScrollRef = useRef<HTMLDivElement | null>(null);
-  const [chooserStrip, setChooserStrip] = useState(0);
+  // De laatste waarde die het raster zelf in een overlay schreef. Het scroll-event van die schrijfactie
+  // komt later (in WebKitGTK zelfs ná een volgende stap van de wielanimatie van het raster). Meldt de
+  // overlay precies die waarde, dan is het onze eigen echo en mag hij het raster niet terugzetten:
+  // anders stopt hij de wielanimatie en de store-sprongen (review #362, WebKitGTK 2.52).
+  const barEchoRef = useRef<{ top: number | null; left: number | null }>({ top: null, left: null });
+  /** Zet een overlay op de stand van het raster en onthoud die waarde als verwachte echo. */
+  const mirrorToBar = (bar: HTMLDivElement, axis: 'top' | 'left', value: number) => {
+    const current = axis === 'top' ? bar.scrollTop : bar.scrollLeft;
+    if (Math.abs(current - value) < 1) return;
+    if (axis === 'top') bar.scrollTop = value;
+    else bar.scrollLeft = value;
+    // De browser rondt en klemt; de echo meldt de waarde die de overlay werkelijk kreeg.
+    barEchoRef.current[axis] = axis === 'top' ? bar.scrollTop : bar.scrollLeft;
+  };
+  /** Meldt de overlay precies onze laatste spiegeling? Dan is dit event een echo; hij telt één keer. */
+  const isBarEcho = (axis: 'top' | 'left', value: number): boolean => {
+    const expected = barEchoRef.current[axis];
+    barEchoRef.current[axis] = null;
+    return expected !== null && Math.abs(expected - value) < 1;
+  };
   const cellsRef = useRef(new Map<string, HTMLDivElement>());
   const pendingFocusKeyRef = useRef<string | null>(null);
   // De nog openstaande uitgestelde celfocus (`deferCellFocus`); `null` laat hem vervallen.
@@ -287,10 +304,7 @@ export function DataGridCore({
   // Het scrollbereik volgt uit de props: geen native balken, dus de zichtbare maat is precies
   // `viewportWidth` × (`headerHeight` + `viewportHeight`). De inhoud is de kolommen plus de
   // kiezerstrook, en alle rijen plus de eindstrook (`scrollExtent.ts`).
-  useLayoutEffect(() => {
-    if (containerRef.current) setChooserStrip(readChooserStrip(containerRef.current));
-  }, []);
-  const contentWidth = totalWidth + chooserStrip;
+  const contentWidth = totalWidth + TASK_GRID_CHOOSER_STRIP;
   const overflowX = Math.max(0, contentWidth - viewportWidth);
   const overflowY = Math.max(0, rows.length * rowHeight + OVERLAY_SCROLLBAR_SIZE - viewportHeight);
   const showHorizontalBar = overflowX > 0;
@@ -302,8 +316,8 @@ export function DataGridCore({
   useLayoutEffect(() => {
     const container = containerRef.current;
     if (!container) return;
-    if (hScrollRef.current) hScrollRef.current.scrollLeft = container.scrollLeft;
-    if (vScrollRef.current) vScrollRef.current.scrollTop = container.scrollTop;
+    if (hScrollRef.current) mirrorToBar(hScrollRef.current, 'left', container.scrollLeft);
+    if (vScrollRef.current) mirrorToBar(vScrollRef.current, 'top', container.scrollTop);
   }, [showHorizontalBar, showVerticalBar, verticalBarHeight, overflowX, overflowY]);
   const rowIndexByKey = useMemo(
     () => new Map(rows.map((row, index) => [row.rowKey, index] as const)),
@@ -448,25 +462,26 @@ export function DataGridCore({
 
   const handleScroll = (event: UIEvent<HTMLDivElement>) => {
     const { scrollTop: top, scrollLeft: left } = event.currentTarget;
-    const hBar = hScrollRef.current;
-    const vBar = vScrollRef.current;
-    if (hBar && Math.abs(hBar.scrollLeft - left) >= 1) hBar.scrollLeft = left;
-    if (vBar && Math.abs(vBar.scrollTop - top) >= 1) vBar.scrollTop = top;
+    if (hScrollRef.current) mirrorToBar(hScrollRef.current, 'left', left);
+    if (vScrollRef.current) mirrorToBar(vScrollRef.current, 'top', top);
     onScrollTopChange?.(top);
     onScrollLeftChange?.(left);
   };
 
   // Overlay -> raster. Het raster vuurt daarna zijn eigen scroll-event (`handleScroll`), dus de
   // store en de meeschuivende Gantt volgen via precies hetzelfde pad als bij muiswiel of toetsen.
+  // Een event dat alleen onze eigen spiegeling meldt (`isBarEcho`) slaat hij over.
   const handleHorizontalBarScroll = (event: UIEvent<HTMLDivElement>) => {
     const container = containerRef.current;
     const left = event.currentTarget.scrollLeft;
-    if (container && Math.abs(container.scrollLeft - left) >= 1) container.scrollLeft = left;
+    if (!container || isBarEcho('left', left)) return;
+    if (Math.abs(container.scrollLeft - left) >= 1) container.scrollLeft = left;
   };
   const handleVerticalBarScroll = (event: UIEvent<HTMLDivElement>) => {
     const container = containerRef.current;
     const top = event.currentTarget.scrollTop;
-    if (container && Math.abs(container.scrollTop - top) >= 1) container.scrollTop = top;
+    if (!container || isBarEcho('top', top)) return;
+    if (Math.abs(container.scrollTop - top) >= 1) container.scrollTop = top;
   };
   // Het wiel boven een overlay doet wat het op de oude native balk deed: de overlay schuift zelf
   // langs zijn eigen as (native), de andere as gaat door naar het raster. Shift+wiel telt als

@@ -632,9 +632,8 @@
   position: relative;
   width: fit-content;
   max-width: 100%;
-  /* Eén bron voor de "kolom toevoegen"-strook: een 20px-knop met 6px lucht aan weerszijden, zodat
-   * hij vrijstaat van de laatste kolominhoud én van de rand van het kader (issue #89). */
-  --task-grid-chooser-strip: 32px;
+  /* `--task-grid-chooser-strip` (de "kolom toevoegen"-strook) zet TaskGrid inline vanuit
+   * `TASK_GRID_CHOOSER_STRIP` (DataGridCore.tsx): één bron voor CSS en scrollbereik (issue #89). */
 }
 
 .task-grid-column-header[data-grid-dragging="true"] {
