@@ -181,7 +181,7 @@
       "calendar": "Choose a calendar from the list.",
       "calendarNotFound": "The chosen calendar does not exist.",
       "calendarHours": "The calendar of this task has no working hours per day.",
-      "hourPlanningDisabled": "Hour planning is switched off in the app settings.",
+      "hourPlanningDisabled": "Hour planning is switched off in the App settings.",
       "durationConversionNotExact": "This duration cannot be converted to the other unit exactly.",
       "milestoneRequired": "This field only applies to milestones.",
       "milestoneUnavailable": "A summary task with subtasks cannot become a milestone.",

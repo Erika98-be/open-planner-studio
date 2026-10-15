@@ -1272,7 +1272,7 @@ const updateCalendar: BatchStepTool = {
           'There is now an HOUR calendar in this document while the app setting "Enable hour planning" is ' +
           'OFF. The schedule is calculated hour-native. The Calendars dialog shows and edits the work ' +
           'blocks of this calendar, but the rest of the app (durations in hours, the Hour time scale) shows ' +
-          'no hours until the user turns that setting on (Settings → Enable hour planning).',
+          'no hours until the user turns that setting on (App settings → Planning → Enable hour planning).',
         );
       }
       return { calendars: rows, warnings, projectEnd, ...(cappedTaskIds ? { cappedTaskIds } : {}) };

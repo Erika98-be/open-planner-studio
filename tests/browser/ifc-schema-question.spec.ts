@@ -128,7 +128,7 @@ test('IFC-schema: nieuw project zonder vraag; IFC4 houden, ADD2 kiezen, Esc slaa
     // (e) Automatisch opslaan (crashherstel) vraagt niets en bewaart de open vraag. Een echte wijziging
     // via Projectinfo (naam), dan wachten op de herstelsnapshot in IndexedDB.
     await page.getByRole('button', { name: /^(File|Bestand)$/ }).first().click();
-    await page.locator('.backstage-sidebar').getByRole('button', { name: /^(Project settings|Project\u00ad?instellingen)$/ }).click();
+    await page.locator('.backstage-sidebar').getByRole('button', { name: /^(Project settings|Projectinstellingen)$/ }).click();
     await page.locator('[data-ops-project-name]').fill('Herstelproef schemavraag');
     await page.locator('[data-ops-project-info-actions]').getByRole('button', { name: /^(Apply|Toepassen)$/ }).click();
     await expect.poll(() => state(page).then(s => [s.name, s.isDirty])).toEqual(['Herstelproef schemavraag', true]);

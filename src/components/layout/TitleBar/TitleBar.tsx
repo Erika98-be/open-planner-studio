@@ -181,6 +181,8 @@ export function TitleBar() {
 
           <div className="quick-access-separator" />
 
+          {/* Sleutelnaam bewust gelijk gebleven: `ribbon.projectSettings` = App-instellingen
+              (`ribbon.projectInfo` = Projectinstellingen). */}
           <button
             className="quick-access-btn"
             title={tMenu('ribbon.projectSettings')}

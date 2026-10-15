@@ -22,7 +22,7 @@ const section = (page: Page) => page.evaluate(() => window.__OPS__!.store.getSta
 
 async function toProjectInfo(page: Page): Promise<void> {
   await page.getByRole('button', { name: /^(File|Bestand)$/ }).first().click();
-  await page.locator('.backstage-sidebar').getByRole('button', { name: /^(Project settings|Project\u00ad?instellingen)$/ }).click();
+  await page.locator('.backstage-sidebar').getByRole('button', { name: /^(Project settings|Projectinstellingen)$/ }).click();
   await expect(page.locator('[data-ops-scheduling-profile-section]')).toBeVisible();
 }
 
@@ -86,7 +86,7 @@ test('B2: wegnavigeren met een niet-toegepaste wijziging vraagt Toepassen/Verwer
   await expect(dialog).toHaveCount(0);
   await expect.poll(() => section(page)).toBe('settings');
   expect(await optionValue(page)).toBeNull();
-  await page.locator('.backstage-sidebar').getByRole('button', { name: /^(Project settings|Project\u00ad?instellingen)$/ }).click();
+  await page.locator('.backstage-sidebar').getByRole('button', { name: /^(Project settings|Projectinstellingen)$/ }).click();
   await expect(page.locator(OPTION)).not.toBeChecked();
   await expect(marker).toHaveCount(0);
 

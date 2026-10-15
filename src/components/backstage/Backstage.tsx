@@ -579,6 +579,7 @@ function SettingsSection() {
   const { t: tMenu } = useTranslation('menu');
   return (
     <>
+      {/* `ribbon.projectSettings` = App-instellingen; de sleutelnaam bleef bewust gelijk. */}
       <h2 className="backstage-title">{tMenu('ribbon.projectSettings')}</h2>
       <SettingsPanelContent />
     </>

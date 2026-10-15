@@ -311,7 +311,7 @@
     "printSubtitle": "Open the report screen for print preview and settings.",
     "openPrintPreview": "Open print preview",
     "projectInfoTitle": "Project settings",
-    "projectInfoSubtitle": "Metadata for this project.",
+    "projectInfoSubtitle": "Details and settings for this project.",
     "help": "Help",
     "helpSubtitle": "Documentation and user guide, built into the app.",
     "helpSearchPlaceholder": "Search documentation…",

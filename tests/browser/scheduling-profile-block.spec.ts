@@ -37,7 +37,7 @@ async function openFile(page: Page, name: string, content: string): Promise<void
 }
 async function toProjectInfo(page: Page): Promise<void> {
   await page.getByRole('button', { name: /^(File|Bestand)$/ }).first().click();
-  await page.getByRole('button', { name: /^(Project settings|Project\u00ad?instellingen)$/ }).first().click();
+  await page.getByRole('button', { name: /^(Project settings|Projectinstellingen)$/ }).first().click();
   await expect(page.locator('[data-ops-scheduling-profile-section]')).toBeVisible();
 }
 const profileOf = (page: Page) => page.evaluate(() => {

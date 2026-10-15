@@ -19,7 +19,7 @@ test('lint: gepersisteerde schakelaar wisselt en bewaart, UI-actieknop opent zij
   expect(await page.evaluate(() => localStorage.getItem('ops-showFloatBand'))).toBe(String(before));
 
   await page.locator('.ribbon-tab').filter({ hasText: /^(Settings|Instellingen)$/ }).click();
-  const projectInfo = page.getByRole('button', { name: /^(Project settings|Project\u00ad?instellingen)/ });
+  const projectInfo = page.getByRole('button', { name: /^(Project settings|Projectinstellingen)/ });
   for (let i = 0; i < 2; i++) {
     await projectInfo.click();
     const dialog = page.locator('[data-ops-project-dialog="info"]');
