@@ -196,17 +196,19 @@ test('takenlijst heeft zwevende balken zonder gereserveerde strook; schuiven en 
     expect(Math.round(vBox.y + vBox.height)).toBe(Math.round(hBox.y));
     const aboveThumb = await clickRowAt(page, coreBox.x + 40, hBox.y - 2);
     await expect.poll(() => selectedRowIs(page, aboveThumb)).toBe(true);
-    // Slepen aan de duim laat de focus op de cel: de pijltjes blijven daarna gewoon werken.
+    // Slepen aan de duim laat de focus in het raster: de pijltjes blijven daarna gewoon werken.
     await expect.poll(() => page.evaluate(() => Boolean(document.activeElement?.closest('[role="gridcell"]')))).toBe(true);
     const thumbBox = await box(vBar);
     await page.mouse.move(thumbBox.x + thumbBox.width / 2, thumbBox.y + thumbBox.height - 30);
     await page.mouse.down();
     await page.mouse.move(thumbBox.x + thumbBox.width / 2, thumbBox.y + thumbBox.height - 80, { steps: 5 });
     await page.mouse.up();
+    // De balk pakt de focus niet. Schuift de actieve cel uit beeld, dan gaat de focus (net als op
+    // main) naar het raster zelf; hij blijft in elk geval in het raster.
     expect(await page.evaluate(() => {
       const active = document.activeElement as HTMLElement | null;
-      return { cell: Boolean(active?.closest('[role="gridcell"]')), overlay: active?.dataset.testid ?? null };
-    })).toEqual({ cell: true, overlay: null });
+      return { inGrid: Boolean(active?.closest('.gantt-task-grid .task-grid-core')), overlay: active?.dataset.testid ?? null };
+    })).toEqual({ inGrid: true, overlay: null });
   }
 });
 
