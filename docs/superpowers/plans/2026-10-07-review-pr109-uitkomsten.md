@@ -917,3 +917,13 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   je het zelf ook nog bent nagelopen dus wat is het doel voor mij om dit ook na te lopen".** Les: functionele checks
   (opent het, klopt de waarde, werkt undo) loopt de orkestrator zelf na en meldt hij met bewijs; de eigenaar krijgt
   alleen checkstappen waar zijn oordeel nodig is. Route-stap 5 (werkregels `.mpp`) eerst zelf nalopen.
+- **Eigenaar 2026-10-15: "zou je bijvoorbeeld deze checkstap ook door haiku kunnen doen? test dat eens".** Test op
+  route-stap 5 (werkregel, `productieplanning.mpp`, taak *Lassen bovenarm*). Referentie orkestrator (Playwright,
+  `/tmp/qa-stap15/`): Fixed units, blok "Protected: units (duration follows work)" + "From MS Project: not
+  effort-driven", Lasser GKB 1/dag, werk 4; inzet 2 ⇒ duur 4 h → 2 h, werk blijft 4; na F5 fase 1.2.2 2 h. Haiku 5.5
+  blind (general-purpose, 80k tokens, ~3 min, 5 scriptversies): alle waarden gelijk, plus extra details (fasen pas na
+  F5 bijgewerkt, statusbalk "Out of date — recalculate (F5)"). **Oordeel van Haiku fout:** noemt het gedrag in strijd
+  met "units protected" (verwacht duur gelijk en werk 8); volgens de gids (`howto-werkregel-kiezen.md`, "Onder Vast werk
+  en Vaste inzet volgt de duur uit inzet en werk") klopt het gedrag. Conclusie: Haiku kan functionele checks nalopen,
+  zijn oordeel over goed/fout niet zonder controle. Bijvangst: de bloktekst "Protected: units" misleidde Haiku ⇒
+  kandidaat-oordeelscheck voor de eigenaar.
