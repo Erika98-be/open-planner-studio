@@ -26,12 +26,12 @@ Verandert de duur van de taak doordat een werkregel hem aanpast, dan wordt de pl
 
 ### Vier regels
 
-In het paneel *Eigenschappen* staat onder de keuzelijst wat de gekozen regel beschermt. De vier regels, met de tekst uit de app:
+In het paneel *Eigenschappen* staat naast de keuzelijst *Werkregel* een i-icoon. Wijs het aan, klik of tik erop, dan legt de app de regel uit die nu geldt. In de open keuzelijst heeft elke regel ook zo'n i-icoon. De uitleg begint met een vette zin. De vier regels, met die zin uit de app:
 
-- **Vaste duur en inzet** (*Beschermd: duur en inzet (werk volgt)*). Dit is de standaard. De app verandert de duur nooit zelf en het werk volgt uit duur en inzet. Typ je zelf het werk, dan past de app de inzet aan, want de duur staat vast.
-- **Vaste duur en werk** (*Beschermd: duur en werk (inzet volgt)*). De app verandert de duur nooit zelf. Wijzig je de duur, dan blijft het werk staan en past de inzet zich aan.
-- **Vast werk** (*Beschermd: werk (duur volgt de inzet)*). Het werk staat vast en de duur volgt uit werk en inzet.
-- **Vaste inzet** (*Beschermd: inzet (duur volgt het werk)*). De inzet staat vast en de duur volgt uit het werk.
+- **Vaste duur en inzet** (*Het werk volgt uit de duur en de inzet.*). Dit is de standaard. De app verandert de duur nooit zelf en het werk volgt uit duur en inzet. Typ je zelf het werk, dan past de app de inzet aan, want de duur staat vast.
+- **Vaste duur en werk** (*De inzet volgt uit de duur en het werk.*). De app verandert de duur nooit zelf. Wijzig je de duur, dan blijft het werk staan en past de inzet zich aan.
+- **Vast werk** (*De duur volgt uit het werk en de inzet.*). Het werk staat vast en de duur volgt uit werk en inzet.
+- **Vaste inzet** (*De duur volgt uit het werk en de inzet.*). De inzet staat vast en de duur volgt uit het werk.
 
 Twee regels laten de duur dus met rust. Bij de andere twee beweegt de duur mee als je de inzet, het werk of het aantal resources wijzigt. Bij één resource doen Vast werk en Vaste inzet daarbij precies hetzelfde. Ze verschillen als je zelf de duur wijzigt: bij Vast werk blijft het werk staan en past de inzet zich aan, bij Vaste inzet blijft de inzet staan en groeit het werk mee. Ze verschillen ook als er meer resources op de taak staan (zie hieronder).
 
@@ -113,7 +113,7 @@ Het binnenspouwblad duurt 5 werkdagen en is voor 40% klaar: 2 werkdagen zijn ged
 
 **Zonder toewijzing doet een werkregel niets.** Er is dan geen inzet en geen werk om te koppelen aan de duur.
 
-**Bestanden uit MS Project of Primavera P6 tonen de werkregel altijd.** Bij een taak uit MS Project staat onder de regel soms *Uit MS Project: effort-driven* of *Uit MS Project: niet effort-driven*. Die bewaarde instelling verandert twee gevallen. Bij *Vaste duur en werk* met effort-driven verandert het werk mee als je de duur wijzigt, in plaats van de inzet. Bij *Vaste inzet* met niet effort-driven verandert het werk mee als je een resource toevoegt of weghaalt, en blijft de duur staan. Taken die je zelf in de app maakt hebben deze instelling niet.
+**Bestanden uit MS Project of Primavera P6 tonen de werkregel altijd.** Bij een taak uit MS Project bewaart de app soms de instelling effort-driven. Die bewaarde instelling verandert twee gevallen. Bij *Vaste duur en werk* met effort-driven verandert het werk mee als je de duur wijzigt, in plaats van de inzet. Bij *Vaste inzet* met niet effort-driven verandert het werk mee als je een resource toevoegt of weghaalt, en blijft de duur staan. Taken die je zelf in de app maakt hebben deze instelling niet. De uitleg achter het i-icoon houdt rekening met deze instelling.
 
 ## Zie ook
 

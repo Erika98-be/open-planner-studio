@@ -449,6 +449,8 @@ function getTask(s: AppState, args: GetTaskArgs) {
       resourceId: a.resourceId,
       resourceName: resById.get(a.resourceId)?.name ?? null,
       unitsPerDay: a.unitsPerDay,
+      // Begroot tempo naast een P6-resttempo (dan is `unitsPerDay` het resttempo); alleen wanneer gezet.
+      ...(a.plannedUnitsPerDay !== undefined ? { plannedUnitsPerDay: a.plannedUnitsPerDay } : {}),
       curve: a.curve ?? 'UNIFORM',
       // De drie werkvelden, alleen wanneer gezet (afwezig ⇒ afgeleid).
       ...(a.plannedWorkMinutes !== undefined ? { plannedWorkMinutes: a.plannedWorkMinutes } : {}),

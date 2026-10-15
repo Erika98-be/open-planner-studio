@@ -63,8 +63,17 @@ export interface ResourceAssignment {
   taskId: string;
   resourceId: string;
   /** Eenheden per werkdag (P6 Units/Time, MSP Units): 1 = 100% (één persoon), 0.5 = halve dag.
-   *  Werk = duur × unitsPerDay, tenzij de `*WorkMinutes`-velden hieronder het vastleggen. */
+   *  Werk = duur × unitsPerDay, tenzij de `*WorkMinutes`-velden hieronder het vastleggen. Bij een
+   *  P6-toewijzing met restwerk is dit het RESTERENDE tempo (eigenaarsbesluit 2026-10-15); het
+   *  begrote tempo staat dan in `plannedUnitsPerDay`. */
   unitsPerDay: number;
+  /** OPTIONEEL — het BEGROTE tempo (P6 Planned Units/Time, XER `target_qty_per_hr`), zelfde schaal
+   *  als `unitsPerDay`. Alleen aanwezig wanneer een P6-import het resterende tempo als `unitsPerDay`
+   *  koos en dat afwijkt (`importedAssignmentRate`, `workRuleMapping.ts`). Referentie, zoals
+   *  `plannedWorkMinutes`: geen bewerking leest of herschrijft het; de P6 XML-export schrijft het als
+   *  `PlannedUnitsPerTime` (anders `unitsPerDay`). Afwezig ⇒ begroot tempo = `unitsPerDay`.
+   *  Round-tript in het `OPS_Timephased`-JSON-blob. */
+  plannedUnitsPerDay?: number;
   /** Verdeelcurve over de duur (P6 resource curves, vereenvoudigd). undefined = UNIFORM. */
   curve?: ResourceCurve;
   /** De EXACTE 21-punts curve van deze toewijzing zoals P6 (`<ResourceCurve>`, `Value0`..`Value100`)

@@ -367,13 +367,6 @@
     "FIXED_RATE": "Stałe jednostki",
     "label": "Reguła pracy",
     "projectDefault": "Domyślna dla projektu ({{rule}})",
-    "protects": "Chronione: {{what}}",
-    "protectsFIXED_DURATION_RATE": "czas trwania i jednostki (praca się dostosowuje)",
-    "protectsFIXED_DURATION_WORK": "czas trwania i praca (jednostki się dostosowują)",
-    "protectsFIXED_WORK": "praca (czas trwania zależy od jednostek)",
-    "protectsFIXED_RATE": "jednostki (czas trwania zależy od pracy)",
-    "mspEffortDriven": "Z MS Project: sterowane nakładem pracy",
-    "mspNotEffortDriven": "Z MS Project: niesterowane nakładem pracy",
     "none": "Domyślna dla projektu"
   },
   "properties": {

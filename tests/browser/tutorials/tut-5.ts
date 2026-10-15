@@ -130,12 +130,12 @@ export const TUTORIAL_5: TutorialScript = {
           const t = s.tasks.find(x => x.name === T.plaster[lang]);
           return t?.workRule?.includes('FIXED_WORK') ? [] : [`werkregel ${t?.workRule}`];
         } },
-        { see: props, text: l('Beschermd: werk (duur volgt de inzet)', 'Protected: work (duration follows units)') },
+        { see: props, text: l('Vast werk', 'Fixed work') },
         { state: (s, lang) => [...taskIs(s, lang, T.plaster, { days: 4 }), ...(s.stale ? ['verouderd'] : [])] },
       ],
       shots: [{
         name: 'tut-5-werkregel',
-        of: [{ text: l('Werkregel', 'Work rule'), within: props }, { text: l('Beschermd: werk (duur volgt de inzet)', 'Protected: work (duration follows units)'), within: props }],
+        of: [{ text: l('Werkregel', 'Work rule'), within: props }, { text: l('Vast werk', 'Fixed work'), within: props }],
         pad: 10,
       }],
     },

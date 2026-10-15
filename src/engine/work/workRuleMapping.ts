@@ -108,6 +108,44 @@ export function workRuleFromXerDurationType(token: string | null | undefined): W
   return XER_TOKEN_TO_RULE.get(token.trim());
 }
 
+// ── Tempo bij import ────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Relatieve tolerantie waarbinnen het resterende en het begrote tempo als hetzelfde getal gelden.
+ * P6 schrijft het resttempo afgerond: XER op 6 significante cijfers (rehab-2: `1.46667` naast
+ * `1.46666667`) of 8 decimalen (Roads: `1.77777778` naast `1.77777777777778`). Die afronding is
+ * hooguit 5e-6 relatief; alles boven 1e-5 is een ander tempo (corpus: het eerste echte verschil,
+ * `42.226` naast `42.2267`, is 1,7e-5).
+ */
+const RATE_REL_EPS = 1e-5;
+
+/**
+ * Welk tempo de app gebruikt voor een geïmporteerde P6-toewijzing (eigenaarsbesluit 2026-10-15,
+ * optie 1): voor werk dat nog moet gebeuren het RESTERENDE tempo (XER `remain_qty_per_hr`, P6 XML
+ * `RemainingUnitsPerTime`), anders het begrote. Er wordt niets omgerekend: de app kiest alleen welk
+ * bewaard getal `unitsPerDay` wordt.
+ *
+ * - `plannedRate` is het tempo dat de lezer zonder deze regel zou nemen (zijn eigen terugval
+ *   inbegrepen); `remainingRate` het resttempo uit de bron, in dezelfde schaal.
+ * - Het resttempo telt alleen bij restwerk > 0 én een resttempo > 0. Restwerk zonder resttempo
+ *   (DCP-03 Baseline: 45 rijen) houdt het begrote tempo: geen getal verzinnen.
+ * - Gelijk binnen `RATE_REL_EPS` ⇒ het begrote getal (zelfde tempo, preciezer geschreven).
+ * - Anders: `unitsPerDay` = resttempo en `plannedUnitsPerDay` = het begrote tempo, zodat de
+ *   P6 XML-export `PlannedUnitsPerTime` ongewijzigd terugschrijft.
+ */
+export function importedAssignmentRate(
+  plannedRate: number,
+  remainingRate: number | undefined,
+  remainingWork: number | undefined,
+): { unitsPerDay: number; plannedUnitsPerDay?: number } {
+  const hasRemainingWork = typeof remainingWork === 'number' && Number.isFinite(remainingWork) && remainingWork > 0;
+  const usableRemaining = typeof remainingRate === 'number' && Number.isFinite(remainingRate) && remainingRate > 0;
+  if (!hasRemainingWork || !usableRemaining) return { unitsPerDay: plannedRate };
+  const scale = Math.max(Math.abs(plannedRate), Math.abs(remainingRate));
+  if (Math.abs(remainingRate - plannedRate) <= RATE_REL_EPS * scale) return { unitsPerDay: plannedRate };
+  return { unitsPerDay: remainingRate, plannedUnitsPerDay: plannedRate };
+}
+
 // ── Werkvelden bij import ───────────────────────────────────────────────────────────────────────
 
 /** Tolerantie waarbinnen een bronwaarde als "gelijk aan de afleiding" geldt: één minuut. */

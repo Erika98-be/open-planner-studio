@@ -24,7 +24,8 @@ This is a setting of the app, not of the project file. If a file already contain
 
 1. Select the task. The *Properties* panel is on the right; if you do not see it, turn it on with *View › Panels › Properties*.
 2. At *Work rule*, choose one of the five options: *Project default (Fixed duration and units)*, *Fixed duration and units*, *Fixed duration and work*, *Fixed work* or *Fixed units*. With *Project default* the task follows the project's default.
-3. Under the drop-down the app shows what the rule protects, for example *Protected: work (duration follows units)*.
+3. Want to know what a rule does? In the open drop-down each rule has an i icon. Point at it, click or tap it for the explanation. Clicking the i icon does not choose the rule yet.
+4. Next to the closed field there is an i icon too. It explains the rule that applies now, for example *Duration follows from work and units.* With *Project default* that is the rule between the brackets.
 
 *Project default* is the first choice and is what a task has by default. The rule between the brackets is the one the project currently has as its default. The app has no button to change that project default: it comes from an import (for example from MS Project or Primavera P6) or from the MCP connection. If you want another rule for one task, choose it here.
 

@@ -13,7 +13,7 @@ import {
 } from './xerAssignmentProvenance';
 import { isFlatCurveValues, matchCurveValues, normalizeCurveValues } from '@/engine/contour/contourEngine';
 import { P6_NAME_TO_CURVE } from '@/services/p6/p6xmlWriter';
-import { importedWorkFields } from '@/engine/work/workRuleMapping';
+import { importedAssignmentRate, importedWorkFields } from '@/engine/work/workRuleMapping';
 
 // MPXJ's XerUnitsHelper gebruikt 1.000.000 als afrondingsprecisie voor P6-werkhoeveelheden.
 // Dit is geen deler voor *_qty_per_hr: OPS gebruikt daar net als XER 1 = 100%.
@@ -94,9 +94,23 @@ function curveOf(curve: XerReadonly<XerResourceCurveSource> | undefined): { curv
   return { ...(matched ? { curve: matched } : {}), curveValues: values };
 }
 
-function assignmentRate(quantities: XerAssignmentQuantitiesSource): number {
+/** Het BEGROTE tempo: `target_qty_per_hr` als het > 0 is, anders het resttempo als terugval (werk
+ *  zonder begroot tarief, 263 corpusrijen). Dit was tot 2026-10-15 het enige tempo van de lezer. */
+function plannedAssignmentRate(quantities: XerAssignmentQuantitiesSource): number {
   if ((quantities.targetPerHour ?? 0) > 0) return quantities.targetPerHour as number;
   return quantities.remainingPerHour ?? quantities.targetPerHour ?? 0;
+}
+/**
+ * Het tempo van de toewijzing (eigenaarsbesluit 2026-10-15, optie 1): bij restwerk het resttempo
+ * `remain_qty_per_hr`, anders het begrote (`importedAssignmentRate`). Materiaal houdt het begrote
+ * tempo: het valt buiten de werkdriehoek, heeft geen werkvelden, en een ander tempo zou bij openen
+ * de belasting veranderen.
+ */
+function assignmentRate(quantities: XerAssignmentQuantitiesSource, resource: Resource): { rate: number; plannedRate?: number } {
+  const planned = plannedAssignmentRate(quantities);
+  if (resource.type === 'MATERIAL') return { rate: planned };
+  const chosen = importedAssignmentRate(planned, quantities.remainingPerHour, quantities.remaining);
+  return { rate: chosen.unitsPerDay, ...(chosen.plannedUnitsPerDay !== undefined ? { plannedRate: chosen.plannedUnitsPerDay } : {}) };
 }
 function unitsPerDay(rawRate: number, resource: Resource, context: XerResourceReadContext): {
   value: number; scale: XerAssignmentUnitScale;
@@ -210,7 +224,9 @@ export function readXerResourceAssignments(
         roleResourceById.set(role.internalId, resource);
       }
     }
-    const scaled = unitsPerDay(assignmentRate(quantities), resource, context);
+    const rate = assignmentRate(quantities, resource);
+    const scaled = unitsPerDay(rate.rate, resource, context);
+    const plannedUnitsPerDay = rate.plannedRate !== undefined ? unitsPerDay(rate.plannedRate, resource, context).value : undefined;
     sources.push({ ...sourceBase, unitScale: scaled.scale });
     if (skipExpectation === 'XER_ASSIGNMENT_TASK_MISSING') {
       issues.push({ code: 'XER_ASSIGNMENT_TASK_MISSING', table: 'TASKRSRC', line: row.line, sourceId, fallback: 'SKIPPED' });
@@ -221,8 +237,9 @@ export function readXerResourceAssignments(
     if (curveSourceId && !curve) issues.push({ code: 'XER_ASSIGNMENT_CURVE_MISSING', table: 'TASKRSRC', line: row.line, sourceId, fallback: 'UNIFORM' });
     const { curve: opsCurve, curveValues } = curveOf(curve);
     // target_qty / act_reg_qty + act_ot_qty / remain_qty (uren) worden eersteklasvelden — alleen
-    // wanneer ze afwijken van `activiteitsduur × target_qty_per_hr` (`importedWorkFields`); materiaal
-    // blijft buiten de driehoek. De rauwe rijen blijven daarnaast in het bronarchief.
+    // wanneer ze afwijken van `activiteitsduur × inzet` (`importedWorkFields`; inzet = het gekozen
+    // tempo, dus bij een afwijkend resttempo gaan ze altijd mee); materiaal blijft buiten de driehoek.
+    // De rauwe rijen blijven daarnaast in het bronarchief.
     const taskWork = context.taskWorkMinutes?.get(taskSourceId);
     const workFields = resource.type !== 'MATERIAL' && taskWork !== undefined
       ? importedWorkFields({
@@ -234,6 +251,7 @@ export function readXerResourceAssignments(
       }, taskWork * scaled.value)
       : {};
     assignments.push({ id: `xer-assignment:${sourceId}`, taskId: taskSourceId, resourceId: resource.id, unitsPerDay: scaled.value,
+      ...(plannedUnitsPerDay !== undefined ? { plannedUnitsPerDay } : {}),
       ...(opsCurve ? { curve: opsCurve } : {}), ...(curveValues ? { curveValues } : {}), ...workFields });
   }
   return { assignments, roleResources: Array.from(roleResourceById.values()), sources, issues };

@@ -24,7 +24,8 @@ Dit is een instelling van de app, niet van het projectbestand. Bevat een bestand
 
 1. Selecteer de taak. Het paneel *Eigenschappen* staat rechts; zie je het niet, zet het dan aan met *Beeld › Panelen › Eigensch.*
 2. Kies bij *Werkregel* een van de vijf opties: *Projectstandaard (Vaste duur en inzet)*, *Vaste duur en inzet*, *Vaste duur en werk*, *Vast werk* of *Vaste inzet*. Bij *Projectstandaard* volgt de taak de standaard van het project.
-3. Onder de keuzelijst staat wat de regel beschermt, bijvoorbeeld *Beschermd: werk (duur volgt de inzet)*.
+3. Wil je weten wat een regel doet? In de open keuzelijst staat achter elke regel een i-icoon. Wijs het aan, klik of tik erop voor de uitleg. Klik je op het i-icoon, dan kiest de app de regel nog niet.
+4. Naast het gesloten veld staat ook een i-icoon. Dat legt de regel uit die nu geldt, bijvoorbeeld *De duur volgt uit het werk en de inzet.* Bij *Projectstandaard* is dat de regel tussen de haakjes.
 
 *Projectstandaard* is de eerste keuze en staat er standaard. Tussen de haakjes staat de regel die het project nu als standaard heeft. Er is in de app geen knop om die projectstandaard te wijzigen: hij komt uit een import (bijvoorbeeld uit MS Project of Primavera P6) of uit de MCP-koppeling. Wil je voor één taak een andere regel, kies die dan hier.
 

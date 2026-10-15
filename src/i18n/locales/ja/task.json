@@ -355,13 +355,6 @@
     "FIXED_RATE": "固定単位",
     "label": "作業ルール",
     "projectDefault": "プロジェクトの既定（{{rule}}）",
-    "protects": "保護：{{what}}",
-    "protectsFIXED_DURATION_RATE": "期間と単位（作業が追従）",
-    "protectsFIXED_DURATION_WORK": "期間と作業（単位が追従）",
-    "protectsFIXED_WORK": "作業（期間は単位に追従）",
-    "protectsFIXED_RATE": "単位（期間は作業に追従）",
-    "mspEffortDriven": "MS Project より：実効作業駆動",
-    "mspNotEffortDriven": "MS Project より：実効作業駆動ではない",
     "none": "プロジェクトの既定"
   },
   "properties": {
