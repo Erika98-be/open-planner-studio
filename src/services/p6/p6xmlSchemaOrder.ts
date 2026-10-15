@@ -70,7 +70,8 @@ const ORDER: Readonly<Record<string, readonly string[]>> = {
   ResourceAssignment: [
     'ActivityObjectId', 'ActualCurve', 'ActualStartDate', 'ActualUnits', 'ObjectId', 'PlannedCurve',
     'PlannedFinishDate', 'PlannedStartDate', 'PlannedUnits', 'PlannedUnitsPerTime', 'ProjectObjectId',
-    'RemainingCurve', 'RemainingStartDate', 'RemainingUnits', 'ResourceCurveObjectId', 'ResourceObjectId',
+    'RemainingCurve', 'RemainingStartDate', 'RemainingUnits', 'RemainingUnitsPerTime', 'ResourceCurveObjectId',
+    'ResourceObjectId',
   ],
 };
 

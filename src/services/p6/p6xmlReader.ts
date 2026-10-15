@@ -26,7 +26,7 @@ import { resolveCalendar } from '@/engine/scheduler/resolveCalendar';
 import { calendarForEngine } from '@/utils/effectiveWorkTime';
 import { isFlatCurveValues, matchCurveValues, normalizeCurveValues } from '@/engine/contour/contourEngine';
 import { attachContours, axisOffsetMinutes, collectContour, p6SpreadToContourPeriods } from '@/services/contourIo';
-import { importedWorkFields } from '@/engine/work/workRuleMapping';
+import { importedAssignmentRate, importedWorkFields } from '@/engine/work/workRuleMapping';
 import { taskWorkMinutes } from '@/engine/contour/contourEngine';
 import { buildRecordedTime, recordedFloatDays, type RecordedTime } from '@/engine/scheduler/recordedDates';
 import {
@@ -1125,6 +1125,7 @@ function readP6XmlProject(scope: P6XmlScope): P6XmlProjectRead {
   const contoursByTaskId = new Map<string, TaskTimephasedContour[]>();
 
   // ResourceAssignments
+  const resourceById = new Map(resources.map(r => [r.id, r] as const));
   const asgnElements = scopedElements(scope, 'ResourceAssignment');
   const assignments: ResourceAssignment[] = [];
   for (const asgnEl of asgnElements) {
@@ -1155,29 +1156,43 @@ function readP6XmlProject(scope: P6XmlScope): P6XmlProjectRead {
       curve = P6_NAME_TO_CURVE[plannedCurveRaw];
     }
 
-    // PlannedUnitsPerTime is een fractie (1.0 = 100%), geen uren/dag (spiegel van p6xmlWriter) —
-    // 1:1 overnemen.
-    const unitsPerDay = plannedUnitsPerTime > 0 ? plannedUnitsPerTime : 1;
-    // <PlannedUnits>/<ActualUnits>/<RemainingUnits> in UREN → minuten, alleen bewaard wanneer ze
-    // afwijken van `duur × inzet/tijd` (`importedWorkFields`).
-    const workTask = taskById.get(taskId);
-    const derivedWork = workTask ? taskWorkMinutes(workTask.time, engineForTask(workTask).hoursPerDay) * unitsPerDay : 0;
+    // <PlannedUnits>/<ActualUnits>/<RemainingUnits> in UREN → minuten.
     const unitsMinutes = (tag: string): number | undefined => {
       const raw = getElementText(asgnEl, tag);
       if (!raw.trim()) return undefined;
       const hours = parseFloat(raw);
       return Number.isFinite(hours) ? hours * 60 : undefined;
     };
+    const remainingMinutes = unitsMinutes('RemainingUnits');
+    // PlannedUnitsPerTime/RemainingUnitsPerTime zijn een fractie (1.0 = 100%), geen uren/dag
+    // (spiegel van p6xmlWriter) — 1:1 overnemen. Bij restwerk het resttempo, anders het begrote
+    // (eigenaarsbesluit 2026-10-15, spiegel van de XER-lezer `xerResourceAssignments.ts`; materiaal
+    // houdt het begrote tempo). Ontbreekt RemainingUnitsPerTime, dan blijft alles zoals vroeger.
+    // Geen bruikbaar begroot tempo (≤ 0)? Dan het resttempo als begroot, zoals de XER-lezer
+    // (`plannedAssignmentRate`); dan is er geen apart begroot tempo en verzint de export er geen.
+    // Pas zonder beide de oude terugval 1 (review #361 punt 2).
+    const remainingRateRaw = getElementText(asgnEl, 'RemainingUnitsPerTime');
+    const remainingRate = remainingRateRaw.trim() ? parseFloat(remainingRateRaw) : undefined;
+    const plannedRate = plannedUnitsPerTime > 0 ? plannedUnitsPerTime
+      : remainingRate !== undefined && Number.isFinite(remainingRate) && remainingRate > 0 ? remainingRate : 1;
+    const isMaterial = resourceById.get(resourceId)?.type === 'MATERIAL';
+    const { unitsPerDay, plannedUnitsPerDay } = isMaterial
+      ? { unitsPerDay: plannedRate, plannedUnitsPerDay: undefined }
+      : importedAssignmentRate(plannedRate, remainingRate, remainingMinutes);
+    // De werkvelden alleen bewaard wanneer ze afwijken van `duur × inzet/tijd` (`importedWorkFields`).
+    const workTask = taskById.get(taskId);
+    const derivedWork = workTask ? taskWorkMinutes(workTask.time, engineForTask(workTask).hoursPerDay) * unitsPerDay : 0;
     const workFields = importedWorkFields({
       plannedMinutes: unitsMinutes('PlannedUnits'),
       actualMinutes: unitsMinutes('ActualUnits'),
-      remainingMinutes: unitsMinutes('RemainingUnits'),
+      remainingMinutes,
     }, derivedWork);
     assignments.push({
       id: generateId('asgn'),
       taskId,
       resourceId,
       unitsPerDay,
+      ...(plannedUnitsPerDay !== undefined ? { plannedUnitsPerDay } : {}),
       ...(curve && curve !== 'UNIFORM' ? { curve } : {}),
       ...(curveValues ? { curveValues } : {}),
       ...workFields,

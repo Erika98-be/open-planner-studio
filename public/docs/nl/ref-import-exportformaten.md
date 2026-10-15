@@ -66,6 +66,8 @@ Per bestandsformaat: of je het kunt openen, opslaan en exporteren, wat er wel en
 
 **Baselines.** Een `<BaselineProject>` in het bestand wordt een baseline van zijn project. De baseline die P6 als actief aanwijst, is ook in de app actief.
 
+**Tempo van een toewijzing.** Is er nog werk te doen, dan wordt het resterende tempo (`RemainingUnitsPerTime`) de *Eenh./dag*. Anders is dat het begrote tempo (`PlannedUnitsPerTime`). Bij materiaal blijft het begrote tempo staan. De app rekent bij openen niets om. Bij een export naar P6 XML schrijft ze het begrote tempo als `PlannedUnitsPerTime`. Het resterende tempo schrijft ze als `RemainingUnitsPerTime`, maar alleen als de toewijzing een apart begroot tempo heeft.
+
 **Geen leesbare activiteiten.** Vindt de app geen activiteit die ze kan lezen, dan opent ze geen tabblad. Ze meldt dat, met de reden als die bekend is. Voorbeelden: activiteiten zonder `ObjectId`, of XER-kolomnamen in een XML-bestand. Exporteer het project dan opnieuw uit P6 als P6 XML, of open het als `.xer`.
 
 **Opslaan** — nee.
@@ -87,6 +89,8 @@ Per bestandsformaat: of je het kunt openen, opslaan en exporteren, wat er wel en
 **Exporteren** — nee. Exporteer je een project uit een `.xer` naar CSV, MS Project XML of P6 XML, dan meldt de app dat XER-broninformatie verloren gaat, ook als je het project tussendoor als IFC hebt opgeslagen. Naar IFC gaat niets verloren.
 
 **Wat meegaat** — de WBS-structuur en activiteiten met duur, datums, constraints en voortgang; relaties met lag; kalenders; resources met toewijzingen; activiteitcodes; eigen velden (UDF's); aantekeningen; de planningsinstellingen van P6. Een activiteit van het type *Level of Effort* wordt een hammock. Een baselineproject wordt de actieve baseline van het project dat ernaar verwijst. Een relatie tussen twee projecten bewaart de app als brongegeven.
+
+**Tempo van een toewijzing.** Is er nog werk te doen, dan wordt het resterende tempo (`remain_qty_per_hr`) de *Eenh./dag*. Anders is dat het begrote tempo (`target_qty_per_hr`). Het begrote werk, het verrichte werk en het resterende werk blijven zoals in het bestand. Bij materiaal blijft het begrote tempo staan.
 
 **Wat niet meegaat** — een project zonder activiteiten, en een relatie tussen twee projecten als echte relatie in je planning. Zie [Een Primavera P6-bestand (.xer) openen](docs://howto-xer-openen).
 

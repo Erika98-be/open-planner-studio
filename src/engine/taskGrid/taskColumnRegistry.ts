@@ -516,6 +516,16 @@ function assignmentWorkText(task: Task, ctx: TaskColumnContext, field: Assignmen
   return values.length > 0 ? values.join('; ') : '—';
 }
 
+/** Het begrote tempo naast een P6-resttempo (`plannedUnitsPerDay`); afwezig ⇒ niet getoond (dan is
+ *  het begrote tempo de inzet zelf). Zelfde opmaak als de inzetkolom (`assignment.unitsPerDay`):
+ *  `Naam: getal`, zonder afronding. */
+function assignmentPlannedUnitsText(task: Task, ctx: TaskColumnContext): string {
+  const values = assignments(task, ctx).flatMap(assignment => assignment.plannedUnitsPerDay !== undefined
+    ? [`${assignmentLabel(assignment, ctx)}: ${assignment.plannedUnitsPerDay}`]
+    : []);
+  return values.length > 0 ? values.join('; ') : '—';
+}
+
 function assignmentWorkColumn(id: string, labelKey: string, field: AssignmentWorkField): TaskColumnDescriptor {
   return readonlyColumn({
     id, labelKey, category: 'resources', valueKind: 'technical',
@@ -1091,6 +1101,8 @@ function fixedAssignmentColumns(): TaskColumnDescriptor[] {
       }]),
     }),
     readonlyColumn({ id: 'assignment.workWindowStart', labelKey: 'taskGrid.columns.workWindowStart', category: 'resources', valueKind: 'technical', read: (task, ctx) => assignments(task, ctx).map(item => ({ assignmentId: item.id, value: item.workWindowStart })), format: (_value, task, ctx) => assignmentWindowText(task, ctx, 'workWindowStart'), copy: (task, ctx) => canonicalGridJson(assignments(task, ctx).map(item => ({ assignmentId: item.id, workWindowStart: item.workWindowStart }))) }),
+    // Alleen-lezen: het begrote tempo van een P6-toewijzing waarvan de inzet het resttempo is.
+    readonlyColumn({ id: 'assignment.plannedUnits', labelKey: 'taskGrid.columns.assignmentPlannedUnits', category: 'resources', valueKind: 'technical', read: (task, ctx) => assignments(task, ctx).map(item => ({ assignmentId: item.id, value: item.plannedUnitsPerDay })), format: (_value, task, ctx) => assignmentPlannedUnitsText(task, ctx), copy: (task, ctx) => canonicalGridJson(assignments(task, ctx).map(item => ({ assignmentId: item.id, plannedUnitsPerDay: item.plannedUnitsPerDay }))) }),
     // Alleen-lezen; minuten in de state, uren in beeld.
     assignmentWorkColumn('assignment.plannedWork', 'taskGrid.columns.assignmentPlannedWork', 'plannedWorkMinutes'),
     assignmentWorkColumn('assignment.actualWork', 'taskGrid.columns.assignmentActualWork', 'actualWorkMinutes'),

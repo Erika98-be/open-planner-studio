@@ -3120,6 +3120,8 @@ interface WindowMeta {
   plannedWorkMinutes?: number;
   actualWorkMinutes?: number;
   remainingWorkMinutes?: number;
+  /** Begroot tempo naast een P6-resttempo, zie `ResourceAssignment.plannedUnitsPerDay`. */
+  plannedUnitsPerDay?: number;
 }
 
 /** Eindig, niet-negatief werkgetal uit het JSON-blob; al het andere blijft weg (nooit NaN in de state). */
@@ -3191,6 +3193,8 @@ function extractAssignments(
         const planned = workMinutesOf(vv.plannedWorkMinutes);
         const actual = workMinutesOf(vv.actualWorkMinutes);
         const remaining = workMinutesOf(vv.remainingWorkMinutes);
+        // Zelfde validatie als de werkvelden: eindig en niet-negatief, anders weg (nooit NaN).
+        const plannedUnits = workMinutesOf(vv.plannedUnitsPerDay);
         const meta: WindowMeta = {
           ...(typeof vv.workWindowStart === 'string' ? { workWindowStart: vv.workWindowStart } : {}),
           ...(typeof vv.workWindowFinish === 'string' ? { workWindowFinish: vv.workWindowFinish } : {}),
@@ -3198,6 +3202,7 @@ function extractAssignments(
           ...(planned !== undefined ? { plannedWorkMinutes: planned } : {}),
           ...(actual !== undefined ? { actualWorkMinutes: actual } : {}),
           ...(remaining !== undefined ? { remainingWorkMinutes: remaining } : {}),
+          ...(plannedUnits !== undefined ? { plannedUnitsPerDay: plannedUnits } : {}),
         };
         if (Object.keys(meta).length === 0) continue;
         indexed.push({ guid: m[1], index: parseInt(m[2], 10), meta });
@@ -3291,6 +3296,7 @@ function extractAssignments(
         taskId,
         resourceId: resId,
         unitsPerDay: meta?.unitsPerDay ?? 1,
+        ...(window?.plannedUnitsPerDay !== undefined ? { plannedUnitsPerDay: window.plannedUnitsPerDay } : {}),
         ...(meta?.curve && meta.curve !== 'UNIFORM' ? { curve: meta.curve } : {}),
         ...(window?.workWindowStart !== undefined ? { workWindowStart: window.workWindowStart } : {}),
         ...(window?.workWindowFinish !== undefined ? { workWindowFinish: window.workWindowFinish } : {}),
