@@ -6,6 +6,10 @@
 // venstersessie samen: de klikvolgorde telt niet, en het blok Werktijden volgt dezelfde regel als de
 // dagknoppen. Corpusloze kern: `tests/planning/check-urenperdag-dagwissel.ts` (§1–§4, §6).
 //
+// Het veld "Net hours per day" toont de werktijd per dag waarmee de app rekent (modale bandsom), niet de
+// opgeslagen `hoursPerDay` (besluit eigenaar 2026-10-15, optie 1). De opgeslagen waarde lezen de tests daarom
+// na Toepassen uit de store.
+//
 // De .xer gaat via de ribbonknop Openen en de bestandskiezer; daarna alleen echte klikken. `window.__OPS__`
 // wordt uitsluitend gebruikt om de uitkomst te LEZEN (patroon `xer-wbs-tree.spec.ts`). Uitzondering: de
 // laatste test (resourcekalendervenster) zet zijn fixture via `__OPS__` (patroon
@@ -89,14 +93,14 @@ test('kalendervenster: Za aan bij Late ploeg (14–24, 8 u/dag) houdt de uren pe
   });
 
   const dialog = await openCalendarDialog(page);
-  await expect(netHours(dialog)).toHaveText('8.00 h');
+  await expect(netHours(dialog)).toHaveText('10.00 h');
   const sat = dayButton(dialog, 'Sat');
   await expect(sat).toHaveCount(1);
   await sat.click();
   await expect(sat).toHaveClass(/bg-accent/);
   // Zaterdag krijgt de blokken van de eerste werkdag (14–24, 10 klokuren); de uren per dag blijven 8.
   await expect(dialog.locator('[data-ops-worktime-day="6"]')).toContainText('10.00h');
-  await expect(netHours(dialog)).toHaveText('8.00 h');
+  await expect(netHours(dialog)).toHaveText('10.00 h');
 
   await dialog.locator('[data-ops-cal-apply]').click();
   await expect(dialog).toBeHidden();
@@ -117,7 +121,7 @@ test('kalendervenster: ma t/m vr uit en dan Za aan geeft za de werkdag van het o
     await expect(netHours(dialog)).toHaveText('8.00 h');
     await clickDays(dialog, ['Sat']);
     await expect(dialog.locator('[data-ops-worktime-day="6"]')).toContainText('10.00h');
-    await expect(netHours(dialog)).toHaveText('8.00 h');
+    await expect(netHours(dialog)).toHaveText('10.00 h');
 
     await dialog.locator('[data-ops-cal-apply]').click();
     await expect(dialog).toBeHidden();
@@ -135,13 +139,14 @@ test('kalendervenster: twee klikvolgordes naar dezelfde werkdagen geven dezelfde
 
     let dialog = await openCalendarDialog(page);
     await clickDays(dialog, ['Tue', 'Wed', 'Thu']);
-    await expect(netHours(dialog)).toHaveText('8.00 h');
+    // Ma 9 u en vr 8 u: bij gelijke telling geldt de hoogste, dus het venster toont 9.
+    await expect(netHours(dialog)).toHaveText('9.00 h');
     await dialog.locator('[data-ops-cal-cancel]').click();
     await expect(dialog).toBeHidden();
 
     dialog = await openCalendarDialog(page);
     await clickDays(dialog, ['Mon', 'Tue', 'Wed', 'Thu', 'Mon']);
-    await expect(netHours(dialog)).toHaveText('8.00 h');
+    await expect(netHours(dialog)).toHaveText('9.00 h');
     await dialog.locator('[data-ops-cal-apply]').click();
     await expect(dialog).toBeHidden();
     await expect.poll(() => calendarState(page).then((s) => [s.workDays, s.hoursPerDay])).toEqual([[1, 5], 8]);
@@ -158,7 +163,7 @@ test('kalendervenster: + blok bij Za in Werktijden houdt de uren per dag van Lat
     // Het nieuwe blok is 08:00–16:00; zaterdag wordt daarmee een werkdag.
     await expect(satRow).toContainText('8.00h');
     await expect(dayButton(dialog, 'Sat')).toHaveClass(/bg-accent/);
-    await expect(netHours(dialog)).toHaveText('8.00 h');
+    await expect(netHours(dialog)).toHaveText('10.00 h');
 
     await dialog.locator('[data-ops-cal-apply]').click();
     await expect(dialog).toBeHidden();
@@ -205,7 +210,7 @@ test('kalendervenster: de beginstand blijft per kalender bewaard als je in het v
     await dialog.locator(`[data-ops-calendar-row="${ids['Negen en acht']}"]`).click();
     await clickDays(dialog, ['Mon']);
     await expect(dialog.locator('[data-ops-worktime-day="1"]')).toContainText('9.00h');
-    await expect(netHours(dialog)).toHaveText('8.00 h');
+    await expect(netHours(dialog)).toHaveText('9.00 h');
 
     await dialog.locator('[data-ops-cal-apply]').click();
     await expect(dialog).toBeHidden();
@@ -245,14 +250,49 @@ test('resourcekalendervenster: ma t/m do uit en ma weer aan bij 9/9/9/9/8 (8 u/d
 
     await page.getByRole('row', { name: /Ploeg/ }).getByRole('button', { name: 'Edit…' }).click();
     const dialog = page.getByRole('dialog');
-    await expect(netHours(dialog)).toHaveText('8.00 h');
+    await expect(netHours(dialog)).toHaveText('9.00 h');
     await clickDays(dialog, ['Mon', 'Tue', 'Wed', 'Thu']);
     await expect(netHours(dialog)).toHaveText('8.00 h');
     await clickDays(dialog, ['Mon']);
     await expect(dialog.locator('[data-ops-worktime-day="1"]')).toContainText('9.00h');
-    await expect(netHours(dialog)).toHaveText('8.00 h');
+    await expect(netHours(dialog)).toHaveText('9.00 h');
 
     await dialog.getByRole('button', { name: 'Apply' }).click();
     await expect(dialog).toBeHidden();
     await expect.poll(() => resourceCalendar(calendarId)).toEqual([[1, 5], [{ start: 420, end: 960 }], 8]);
+  });
+
+test('kalendervenster: netto-uren per dag toont de werktijd van de blokken, live, en Annuleren laat de opgeslagen 8 staan',
+  async ({ page, ops: _ops }) => {
+    // Besluit eigenaar 2026-10-15 (optie 1): ma–vr 08:00–18:00 (10 klokuren) met day_hr_cnt 8. Het veld toont
+    // 10, net als "Derived hours/day" in het blok Werktijden. De opgeslagen 8 (P6-omrekenfactor) toont het
+    // venster niet, maar blijft bewaard.
+    await openXer(page, xer('Dagploeg 10 u', ON_MA_VR(['08:00', '18:00']), 8));
+    await expect.poll(() => calendarState(page).then((s) => [s.workDays, s.hoursPerDay])).toEqual([[1, 2, 3, 4, 5], 8]);
+
+    const dialog = await openCalendarDialog(page);
+    const derived = dialog.locator('[data-ops-derived-hpd]');
+    await expect(netHours(dialog)).toHaveText('10.00 h');
+    await expect(derived).toHaveText('10h');
+
+    // Ma 07:00–16:00 en kopiëren naar alle werkdagen: 9 klokuren per dag; het veld volgt live.
+    const monBand = dialog.locator('[data-ops-worktime-day="1"] [data-ops-band]').first().locator('[data-ops-time-input]');
+    await monBand.nth(0).fill('07:00');
+    await monBand.nth(0).press('Tab');
+    await monBand.nth(1).fill('16:00');
+    await monBand.nth(1).press('Tab');
+    await expect(dialog.locator('[data-ops-worktime-day="1"]')).toContainText('9.00h');
+    // Alleen ma op 9: de meeste werkdagen hebben nog 10 klokuren (modale bandsom), dus het veld blijft 10.
+    await expect(netHours(dialog)).toHaveText('10.00 h');
+    await dialog.locator('[data-ops-worktime-day="1"]').getByTitle('Copy to all workdays').click();
+    await expect(dialog.locator('[data-ops-worktime-day="5"]')).toContainText('9.00h');
+    await expect(netHours(dialog)).toHaveText('9.00 h');
+    await expect(derived).toHaveText('9h');
+
+    await dialog.locator('[data-ops-cal-cancel]').click();
+    await expect(dialog).toBeHidden();
+    await expect.poll(() => page.evaluate(() => {
+      const c = window.__OPS__!.store.getState().calendar;
+      return [c.hoursPerDay, c.workTime?.byWeekday[1]];
+    })).toEqual([8, [{ start: 480, end: 1080 }]]);
   });
