@@ -931,3 +931,13 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   Haiku: "moet je hem niet gewoon uberhaupt neit laten beoordelen" ⇒ AGENTS.md-regel: Haiku loopt functionele checks
   na en beoordeelt niets. **Checkstap 15 (oordeel, #170):** begrijpt een planner de tekst onder *Work rule*
   ("Protected: units (duration follows work)", "From MS Project: not effort-driven")? Link met `?qa-taak=` (abfcf38a4+1).
+- **Checkstap 15, bevindingen eigenaar 2026-10-15:**
+  - Annotatie op *Work rule*: "waarom zijn het fixed units en niet fixed duration and units? kun je dat per taak
+    aanpassen?" Antwoord: de regel komt per taak uit het `.mpp` (MSP-taaktype Fixed Units ⇒ FIXED_RATE,
+    `src/types/workRule.ts`; *Lassen hefvoet* is Fixed Duration ⇒ FIXED_DURATION_RATE); per taak te wijzigen via de
+    keuzelijst of de tabelkolom *Work rule* (`howto-werkregel-kiezen.md`).
+  - Annotatie (Gantt, onderaan bij de datumas): "soms bij het resizen verschijnt hier een klein wit blokje". Nog niet
+    nagespeeld; na de check onderzoeken.
+  - Oordeel tekst: "het is redelijk ok maar kom met 10 voorstellen met voorbeelden om het beter te maken. allemaal een
+    andere smaak en stijl". Worker (Opus 5.5, medium) bouwt een prototype in de app, lokale branch
+    `claude/proto-werkregel-tekst` (vanaf de testversie, niet pushen), `?werkregel-variant=0..10`, licht en donker.
