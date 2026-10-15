@@ -1110,3 +1110,9 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   (510 controles, 7 mutanten rood). Zelf screenshots bekeken: tooltip direct onder het icoon, knop vierkant. Bijgewerkt
   met main via `gh pr update-branch` (kop ed060ecca, CI loopt). Hercheck bij dezelfde reviewer gestart. Testversie nog
   niet bijgewerkt (eigenaar is bezig met checkstap 18 op 3049).
+- **Checkstap 18, bevindingen eigenaar 2026-10-15, letterlijk: "elke keer als ik helemaal naar beneden scroll en dan
+  opzij scroll gaat de verticale scroll weer een beetje omhoog, dit heeft te maken met de ghost taak onderaan. hij moet
+  gewoon standaard tot die taak kunnen scrollen zodat hij zichtbaar is en wanneer je horizontaal scrollt moet hi niet
+  verdwijen. op de gantt moet er ook een beetje overscroll komen omdat anders als je in de table helemaal naa beneden
+  scrollt de taken neit op dezelfde hoogte zitten als de gantt".** Doorgegeven aan de maker van #362 (fixronde; ook
+  nagaan of de sprong al op main zat).
