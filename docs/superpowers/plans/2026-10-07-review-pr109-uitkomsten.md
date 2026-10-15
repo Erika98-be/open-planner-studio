@@ -1182,3 +1182,8 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   heel dom is." en bij "De app rekent met de werktijden": "rekent en toont!". Orkestrator: niet dom, beter dan het
   advies (optie 2). "Net hours per day" toont de werktijd per dag; opgeslagen 8 blijft voor export; MCP/extensies
   ongemoeid. Worker (Opus 5.5, medium) op `claude/kalender-nettouren`.
+- **#361 gemerged in main 2026-10-15 → 3832e5d85** (kop afd7bb60a bevatte main 799d4ff2c, CI 16/16, hercheck reviewer ja,
+  checkstap 20 eigenaar "jahoor", `measure:profiles` main = branch, `--admin`).
+- Zonder eigenaar gestart: worker (Opus 5.5, medium) `claude/toewijzingen-blok`: inzet op 2 decimalen tonen (opslag
+  exact), niets afgeknipt, 3 native selects in het blok ⇒ eigen `Select` (eigenaarsregel "nooit native").
+- **Besluit voorgelegd: overige native keuzelijsten** (38 in 18 bestanden op main, waarvan 3 in het blok Toewijzingen).
