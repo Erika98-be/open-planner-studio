@@ -965,3 +965,11 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   `.claude/rules/i18n.md`): nieuwe tekst alleen `nl` + `en` via `npm run i18n:add`, andere talen vallen terug op `en`,
   de release vult ze (`verify:translations`). Fout zat in de brief van de orkestrator (vertaalstraat voor 12 locales,
   verkeerde receptnaam). Worker bijgestuurd: vertaalruns stoppen, andere locales terugdraaien voor nieuwe sleutels.
+- **Checkstap 16, eigenaar 2026-10-15:** las de tooltip als "opgeslagen werk klopt niet met de rekensom van de
+  taaktype-instelling" (bijna goed: de som werk = duur × inzet geldt voor elke regel). Vraag, letterlijk: "waarom niet?
+  dat doen we toch wel bij alle gekke endings en spelingen etc?" Antwoord met bronnen uit
+  `docs/superpowers/specs/2026-09-04-spec-taaktypes-opgeslagen-werk.md`: §3.1-5 (eigenaarsbesluit 2026-08-18: werkregels
+  alleen bij bewerkingen, nooit bij openen/herberekenen), §3.3 besluit 9 (2026-09-05: drie werkvelden, restwerk is
+  invoer; corpus rehab-2 14.459/52.640 toewijzingen met afwijkend resttarief), besluit 10 (2026-09-05: geen spanne per
+  toewijzing; de oorzaak bij A10530 is waarschijnlijk zo'n eigen spanne in P6 — VERMOED, niet nagekeken). Mogelijk
+  besluit na de check: opgeslagen werk toch rechtzetten?
