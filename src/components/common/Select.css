@@ -144,6 +144,23 @@
   white-space: nowrap;
 }
 
+.ops-select__option-info {
+  display: inline-flex;
+  flex-shrink: 0;
+  margin-inline-start: auto;
+  padding-inline-start: var(--sp-3);
+  color: var(--theme-text-dim);
+  cursor: help;
+}
+
+.ops-select__option-info:hover {
+  color: var(--theme-text);
+}
+
+.ops-select__option.is-selected .ops-select__option-info {
+  color: var(--theme-accent-on);
+}
+
 .ops-select__option.is-highlighted {
   background: var(--theme-hover);
 }

@@ -359,14 +359,23 @@
     "FIXED_RATE": "Vaste inzet",
     "label": "Werkregel",
     "projectDefault": "Projectstandaard ({{rule}})",
-    "protects": "Beschermd: {{what}}",
-    "protectsFIXED_DURATION_RATE": "duur en inzet (werk volgt)",
-    "protectsFIXED_DURATION_WORK": "duur en werk (inzet volgt)",
-    "protectsFIXED_WORK": "werk (duur volgt de inzet)",
-    "protectsFIXED_RATE": "inzet (duur volgt het werk)",
-    "mspEffortDriven": "Uit MS Project: effort-driven",
-    "mspNotEffortDriven": "Uit MS Project: niet effort-driven",
-    "none": "Projectstandaard"
+    "none": "Projectstandaard",
+    "explain": {
+      "followsWork": "Het werk volgt uit de duur en de inzet.",
+      "followsUnits": "De inzet volgt uit de duur en het werk.",
+      "followsDuration": "De duur volgt uit het werk en de inzet.",
+      "followsUnitsFromWork": "De inzet volgt uit het werk.",
+      "workAdjustsUnits": "Wijzig je het werk, dan past de inzet zich aan.",
+      "unitsAdjustsWork": "Wijzig je de inzet, dan past het werk zich aan.",
+      "durationAdjustsUnits": "Wijzig je de duur, dan past de inzet zich aan.",
+      "durationAdjustsWork": "Wijzig je de duur, dan past het werk zich aan.",
+      "unitsOrDurationAdjustsWork": "Wijzig je de inzet of de duur, dan past het werk zich aan.",
+      "resourceAddsWork": "Een extra resource voegt werk toe.",
+      "resourceSharesWork": "Een extra resource neemt een deel van het werk over; de inzet per resource daalt.",
+      "resourceShorter": "Een extra resource maakt de taak korter.",
+      "resourceAddsWorkSameDuration": "Een extra resource voegt werk toe; de duur blijft gelijk."
+    },
+    "info": "Uitleg bij de werkregel"
   },
   "properties": {
     "task": "Taak",

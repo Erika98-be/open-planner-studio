@@ -26,6 +26,13 @@
   animation: ops-tooltip-in 0.09s ease-out;
 }
 
+/* `data-tooltip-lead`: de kernzin vet op een eigen regel, de uitleg eronder. */
+.ops-tooltip__lead {
+  display: block;
+  margin-bottom: 2px;
+  font-weight: 600;
+}
+
 @keyframes ops-tooltip-in {
   from { opacity: 0; transform: translateX(-50%) translateY(-2px); }
   to   { opacity: 1; transform: translateX(-50%) translateY(0); }

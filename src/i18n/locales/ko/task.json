@@ -355,13 +355,6 @@
     "FIXED_RATE": "고정 단위",
     "label": "작업 규칙",
     "projectDefault": "프로젝트 기본값({{rule}})",
-    "protects": "보호됨: {{what}}",
-    "protectsFIXED_DURATION_RATE": "기간과 단위(작업량이 따라감)",
-    "protectsFIXED_DURATION_WORK": "기간과 작업량(단위가 따라감)",
-    "protectsFIXED_WORK": "작업량(기간이 단위를 따름)",
-    "protectsFIXED_RATE": "단위(기간이 작업량을 따름)",
-    "mspEffortDriven": "MS Project에서: 작업량 기준",
-    "mspNotEffortDriven": "MS Project에서: 작업량 기준 아님",
     "none": "프로젝트 기본값"
   },
   "properties": {

@@ -362,13 +362,6 @@
     "FIXED_RATE": "Фиксне јединице",
     "label": "Радно правило",
     "projectDefault": "Стандард пројекта ({{rule}})",
-    "protects": "Заштићено: {{what}}",
-    "protectsFIXED_DURATION_RATE": "трајање и јединице доделе (посао следи)",
-    "protectsFIXED_DURATION_WORK": "трајање и посао (јединице доделе следе)",
-    "protectsFIXED_WORK": "посао (трајање следи јединице доделе)",
-    "protectsFIXED_RATE": "јединице доделе (трајање следи посао)",
-    "mspEffortDriven": "Из MS Project-а: вођено радом",
-    "mspNotEffortDriven": "Из MS Project: није вођено радом",
     "none": "Стандард пројекта"
   },
   "properties": {

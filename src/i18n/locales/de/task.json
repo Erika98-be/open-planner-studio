@@ -359,13 +359,6 @@
     "FIXED_RATE": "Feste Einheiten",
     "label": "Arbeitsregel",
     "projectDefault": "Projektstandard ({{rule}})",
-    "protects": "Geschützt: {{what}}",
-    "protectsFIXED_DURATION_RATE": "Dauer und Einheiten (Arbeit folgt)",
-    "protectsFIXED_DURATION_WORK": "Dauer und Arbeit (Einheiten folgen)",
-    "protectsFIXED_WORK": "Arbeit (Dauer folgt den Einheiten)",
-    "protectsFIXED_RATE": "Einheiten (Dauer folgt der Arbeit)",
-    "mspEffortDriven": "Aus MS Project: leistungsgesteuert",
-    "mspNotEffortDriven": "Aus MS Project: nicht leistungsgesteuert",
     "none": "Projektstandard"
   },
   "properties": {

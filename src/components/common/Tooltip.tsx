@@ -25,14 +25,32 @@ import './Tooltip.css';
  *    geen Escape meer;
  *  - wijst `aria-describedby` meteen bij het tonen (synchroon, vóór het bubbeltje er is) naar een
  *    verborgen element dat altijd bestaat en de uitleg bevat, zodat een schermlezer hem bij focus leest.
+ *
+ * `data-tooltip-lead` (optioneel): de eerste regel van het `title` (tot de eerste `\n`) staat vet,
+ * de rest eronder. Zo kan een uitleg met een kernzin beginnen (veld *Werkregel*).
  */
 const DELAY_MS = 400;
 /** `data-tooltip-instant`: geen vertraging — voor info-iconen waar de tooltip dé inhoud is. */
 const isInstant = (el: HTMLElement): boolean => el.hasAttribute('data-tooltip-instant');
 const instantDelay = (el: HTMLElement): number => (isInstant(el) ? 0 : DELAY_MS);
 const DESCRIPTION_ID = 'ops-tooltip-description';
+/** `data-tooltip-lead`: de eerste regel van het `title` staat vet. */
+const hasLead = (el: HTMLElement): boolean => el.hasAttribute('data-tooltip-lead');
 
-interface TipState { text: string; x: number; y: number; }
+/** Inhoud van het bubbeltje: met `lead` de eerste regel vet, anders de tekst zoals hij is. */
+function TipText({ text, lead }: { text: string; lead?: boolean }) {
+  const cut = lead ? text.indexOf('\n') : -1;
+  if (cut < 0) return <>{text}</>;
+  return (
+    <>
+      <strong className="ops-tooltip__lead">{text.slice(0, cut)}</strong>
+      {text.slice(cut + 1)}
+    </>
+  );
+}
+
+/** `above`: bovenrand van het element, voor als het bubbeltje onder de viewport zou vallen. */
+interface TipState { text: string; x: number; y: number; above: number; lead?: boolean; }
 
 export function TooltipHost() {
   const [tip, setTip] = useState<TipState | null>(null);
@@ -112,7 +130,7 @@ export function TooltipHost() {
       }
       timer.current = setTimeout(() => {
         const r = el.getBoundingClientRect();
-        setTip({ text, x: r.left + r.width / 2, y: r.bottom + 6 });
+        setTip({ text, x: r.left + r.width / 2, y: r.bottom + 6, above: r.top - 6, lead: hasLead(el) });
       }, delay);
     };
     // Info-icoon met focus (toetsenbord, of de focus na een klik of tik): meteen tonen.
@@ -150,7 +168,7 @@ export function TooltipHost() {
       const el = activeEl.current;
       if (el && isInstant(el) && stashed.current !== null && (document.activeElement === el || el.matches(':hover'))) {
         const r = el.getBoundingClientRect();
-        setTip({ text: stashed.current, x: r.left + r.width / 2, y: r.bottom + 6 });
+        setTip({ text: stashed.current, x: r.left + r.width / 2, y: r.bottom + 6, above: r.top - 6, lead: hasLead(el) });
         return;
       }
       dismiss();
@@ -194,6 +212,11 @@ export function TooltipHost() {
     const half = bubbleRef.current.offsetWidth / 2;
     const cx = Math.max(half + 6, Math.min(tip.x, window.innerWidth - half - 6));
     bubbleRef.current.style.left = `${cx}px`;
+    // Valt het bubbeltje onder de viewport, dan boven het element (lange uitleg laag in beeld).
+    const h = bubbleRef.current.offsetHeight;
+    if (tip.y + h > window.innerHeight - 6 && tip.above - h >= 6) {
+      bubbleRef.current.style.top = `${tip.above - h}px`;
+    }
   }, [tip]);
 
   return createPortal(
@@ -201,7 +224,7 @@ export function TooltipHost() {
       <span ref={descriptionRef} id={DESCRIPTION_ID} hidden />
       {tip && (
         <div ref={bubbleRef} className="ops-tooltip" role="tooltip" style={{ left: tip.x, top: tip.y }}>
-          {tip.text}
+          <TipText text={tip.text} lead={tip.lead} />
         </div>
       )}
     </>,
