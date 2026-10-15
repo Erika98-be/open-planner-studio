@@ -1699,8 +1699,7 @@ body {
   scrollbar-width: thin;
   scrollbar-color: var(--theme-scrollbar-thumb) transparent;
 }
-.gantt-overlay-scrollbar::-webkit-scrollbar-track,
-.gantt-overlay-scrollbar::-webkit-scrollbar-corner {
+.gantt-overlay-scrollbar::-webkit-scrollbar-track {
   background: transparent;
 }
 
