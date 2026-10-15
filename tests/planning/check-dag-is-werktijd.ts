@@ -250,7 +250,8 @@ const loadCtx = openInStore(await parseOpenedFile({ name: 'dag-is-werktijd.xer',
 // TASKRSRC geeft materiaal als tempo per uur (`target_qty_per_hr`). De lezer maakt er een tempo per dag
 // van; de belasting is dat tempo × de dagen van de taak. Bij een urentaak zijn dat 187 dagen van 10 u, dus
 // moet het tempo per dag × 10 zijn — ook als de resource op een kalender van 8 u staat (Wapening, zoals 8
-// van de 85 materiaaltoewijzingen in Roads). Zand op de dagtaak is de bewaking: × 8, zoals op main.
+// van de 85 materiaaltoewijzingen in Roads). Zand op de dagtaak is de bewaking: zijn resourcekalender heeft
+// blokken van 10 u, maar een dagtaak houdt de opgeslagen 8 van de resourcekalender (3 × 8 × 5 d = 3 × 40 u).
 {
   const XER_MAT = [
     ...XER.split('\n').filter((l) => l !== '%E'),
@@ -258,7 +259,7 @@ const loadCtx = openInStore(await parseOpenedFile({ name: 'dag-is-werktijd.xer',
     '%F\trsrc_id\trsrc_name\trsrc_type\tclndr_id\tdef_qty_per_hr\tunit_id\trole_id',
     '%R\tM1\tBeton\tRT_Mat\tC1\t1\t\t',
     '%R\tM2\tWapening\tRT_Mat\tC2\t1\t\t',
-    '%R\tM3\tZand\tRT_Mat\tC2\t1\t\t',
+    '%R\tM3\tZand\tRT_Mat\tC1\t1\t\t',
     '%T\tTASKRSRC',
     '%F\ttaskrsrc_id\tproj_id\ttask_id\trsrc_id\trole_id\ttarget_qty_per_hr\tremain_qty_per_hr\tremain_qty\ttarget_qty',
     '%R\tTR1\tP1\tA\tM1\t\t1\t1\t1870\t1870',
@@ -269,7 +270,7 @@ const loadCtx = openInStore(await parseOpenedFile({ name: 'dag-is-werktijd.xer',
   const m = openInStore(await parseOpenedFile({ name: 'dag-is-werktijd-materiaal.xer', bytes: new TextEncoder().encode(XER_MAT) }));
   const s = m.store.getState();
   const perDay = Object.fromEntries(s.assignments.map((a) => [a.resourceId, a.unitsPerDay]));
-  same('§7 tempo per dag: Beton 1 × 10, Wapening 2 × 10 (taakdag, niet de 8 u van zijn eigen kalender), Zand 3 × 8 (dagtaak)',
+  same('§7 tempo per dag: Beton 1 × 10, Wapening 2 × 10 (taakdag, niet de 8 u van zijn eigen kalender), Zand 3 × 8 (dagtaak; niet × 10 van zijn blokken)',
     perDay, { 'xer-resource:M1': 10, 'xer-resource:M2': 20, 'xer-resource:M3': 24 });
   const res = computeResourceLoad(s.resources, s.assignments, s.tasks, s.calendar, s.calendars);
   const total = (rid: string) => Math.round(Object.values(res.load[rid] ?? {}).reduce((x, y) => x + y, 0) * 1000) / 1000;
