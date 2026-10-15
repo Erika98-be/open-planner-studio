@@ -87,7 +87,7 @@ test('rekenprofiel: XER opent als P6 met melding, wissel naar MS Project herbere
     // "Nieuw profiel" op een ingebouwd profiel stelt "Kopie van Microsoft Project" voor; daarna is een
     // conventie te wijzigen (een ingebouwd profiel zelf heeft geen vinkjes).
     await page.getByRole('button', { name: /^(File|Bestand)$/ }).first().click();
-    await page.getByRole('button', { name: /^(Project settings|Projectinstellingen)$/ }).first().click();
+    await page.getByRole('button', { name: /^(Project settings|Project\u00ad?instellingen)$/ }).first().click();
     await expect(select).toHaveAttribute('data-value', 'builtin:msproject');
     await expect(page.locator('[data-ops-convention]')).toHaveCount(0);
     await page.locator('[data-ops-scheduling-new-profile]').click();
@@ -116,7 +116,7 @@ test('rekenprofiel: XER opent als P6 met melding, wissel naar MS Project herbere
     // naam wissen + projectnaam wijzigen + Enter ⇒ dialoog blijft open, niets opgeslagen.
     const projectNameBefore = await page.evaluate(() => window.__OPS__!.store.getState().project.name);
     await page.locator('button.ribbon-tab').filter({ hasText: /^(Settings|Instellingen)$/ }).click();
-    await page.locator('button.ribbon-btn').filter({ hasText: /^(Project settings|Projectinstellingen)$/ }).click();
+    await page.locator('button.ribbon-btn').filter({ hasText: /^(Project settings|Project\u00ad?instellingen)$/ }).click();
     const dialog = page.locator('[data-ops-project-dialog="info"]');
     await expect(dialog).toBeVisible();
     await dialog.locator('input').first().fill('Nieuwe projectnaam');
@@ -175,7 +175,7 @@ test('rekenprofiel: in "datums zoals opgeslagen" is Toepassen zonder wijziging e
 
     const toBackstageInfo = async () => {
       await page.getByRole('button', { name: /^(File|Bestand)$/ }).first().click();
-      await page.getByRole('button', { name: /^(Project settings|Projectinstellingen)$/ }).first().click();
+      await page.getByRole('button', { name: /^(Project settings|Project\u00ad?instellingen)$/ }).first().click();
     };
     // Toepassen zonder iets te wijzigen: geen undo-stap, niet vuil, modus + strook blijven.
     await toBackstageInfo();
@@ -227,7 +227,7 @@ test('rekenprofiel: de SS-lag-variant komt uit de XER en is in Projectinfo te wi
   await expect.poll(option).toBe('actualStart');
 
   await page.getByRole('button', { name: /^(File|Bestand)$/ }).first().click();
-  await page.getByRole('button', { name: /^(Project settings|Projectinstellingen)$/ }).first().click();
+  await page.getByRole('button', { name: /^(Project settings|Project\u00ad?instellingen)$/ }).first().click();
   const ssLag = page.getByRole('button', { name: /^(SS-lag van een lopende voorganger rekenen vanaf|Calculate SS lag from an in-progress predecessor from)$/ });
   await expect(ssLag).toHaveText(/(Statusdatum|Data date) \(P6: Actual Start\)/);
   await expect(ssLag).toBeEnabled();
@@ -240,7 +240,7 @@ test('rekenprofiel: de SS-lag-variant komt uit de XER en is in Projectinfo te wi
   // De motor eist C6 én A19: met A19 uit (C6 aan) is het veld uitgeschakeld, met een tooltip die A19 noemt.
   // A19 uitzetten kan alleen in een eigen profiel (ingebouwd = alleen-lezen).
   await page.getByRole('button', { name: /^(File|Bestand)$/ }).first().click();
-  await page.getByRole('button', { name: /^(Project settings|Projectinstellingen)$/ }).first().click();
+  await page.getByRole('button', { name: /^(Project settings|Project\u00ad?instellingen)$/ }).first().click();
   await expect(ssLag).toBeEnabled();
   await createProfile(page);
   await page.locator('[data-ops-convention="p6UseRemainingStartForProgress"]').uncheck();
@@ -312,7 +312,7 @@ test('rekenprofiel: P6 → OPS → P6 geeft dezelfde datums terug, ook na Bereke
   });
   const applyProfile = async (choice: string) => {
     await page.getByRole('button', { name: /^(File|Bestand)$/ }).first().click();
-    await page.getByRole('button', { name: /^(Project settings|Projectinstellingen)$/ }).first().click();
+    await page.getByRole('button', { name: /^(Project settings|Project\u00ad?instellingen)$/ }).first().click();
     await chooseProfile(profileSelect(page), choice);
     await page.getByRole('button', { name: /^(Apply|Toepassen)$/ }).click();
   };
@@ -352,7 +352,7 @@ test('rekenprofiel: conventies per thema met basiswaarde, terug naar basis en ui
   await (await chooser).setFiles({ name: 'groepen.xer', mimeType: 'application/octet-stream', buffer: Buffer.from(SS_LAG_XER) });
   await expect.poll(() => profileOf(page)).toEqual({ id: 'p6', baseId: 'p6', name: '' });
   await page.getByRole('button', { name: /^(File|Bestand)$/ }).first().click();
-  await page.getByRole('button', { name: /^(Project settings|Projectinstellingen)$/ }).first().click();
+  await page.getByRole('button', { name: /^(Project settings|Project\u00ad?instellingen)$/ }).first().click();
 
   // Het conventiedeel staat standaard dicht; de kop toont het aantal regels.
   await expect(page.locator('[data-ops-convention-row]')).toHaveCount(0);
@@ -409,7 +409,7 @@ test('rekenprofiel: na Ctrl+Z en Ctrl+Y volgt het profielblok de store, ook in d
   const storeChoice = () => profileOf(page).then(p => `builtin:${p?.id ?? 'ops'}`);
   const toBackstageInfo = async () => {
     await page.getByRole('button', { name: /^(File|Bestand)$/ }).first().click();
-    await page.getByRole('button', { name: /^(Project settings|Projectinstellingen)$/ }).first().click();
+    await page.getByRole('button', { name: /^(Project settings|Project\u00ad?instellingen)$/ }).first().click();
     await expect(select).toBeVisible();
   };
   const apply = () => page.getByRole('button', { name: /^(Apply|Toepassen)$/ }).click();
@@ -469,7 +469,7 @@ test('rekenprofiel: na Ctrl+Z en Ctrl+Y volgt het profielblok de store, ook in d
   // De dialoogvariant (Instellingen → Projectinfo): ook daar is de keuzelijst gelijk aan de store na
   // Ctrl+Y en Ctrl+Z.
   await page.locator('button.ribbon-tab').filter({ hasText: /^(Settings|Instellingen)$/ }).click();
-  await page.locator('button.ribbon-btn').filter({ hasText: /^(Project settings|Projectinstellingen)$/ }).click();
+  await page.locator('button.ribbon-btn').filter({ hasText: /^(Project settings|Project\u00ad?instellingen)$/ }).click();
   const dialog = page.locator('[data-ops-project-dialog="info"]');
   await expect(dialog).toBeVisible();
   const dialogSelect = profileSelect(dialog);
@@ -493,7 +493,7 @@ test('rekenprofiel: Ctrl+Z van naam plus profiel zet beide velden terug (N1, met
   const nameInput = page.locator('[data-ops-project-name]');
   const toBackstageInfo = async () => {
     await page.getByRole('button', { name: /^(File|Bestand)$/ }).first().click();
-    await page.getByRole('button', { name: /^(Project settings|Projectinstellingen)$/ }).first().click();
+    await page.getByRole('button', { name: /^(Project settings|Project\u00ad?instellingen)$/ }).first().click();
     await expect(select).toBeVisible();
   };
   const pressOutsideField = async (combo: string) => {
@@ -543,7 +543,7 @@ test('rekenprofiel: aangeraakt, teruggezet en Ctrl+Z, en een documentwissel geve
   const select = profileSelect(page);
   const toBackstageInfo = async () => {
     await page.getByRole('button', { name: /^(File|Bestand)$/ }).first().click();
-    await page.getByRole('button', { name: /^(Project settings|Projectinstellingen)$/ }).first().click();
+    await page.getByRole('button', { name: /^(Project settings|Project\u00ad?instellingen)$/ }).first().click();
     await expect(select).toBeVisible();
   };
   const pressOutsideField = async (combo: string) => {
@@ -606,7 +606,7 @@ test('rekenprofiel: poortlabels, SS-lag zonder urenkalender en sjabloonmeldingen
   });
   expect(hasHourPlanning).toBe(false);
   await page.getByRole('button', { name: /^(File|Bestand)$/ }).first().click();
-  await page.getByRole('button', { name: /^(Project settings|Projectinstellingen)$/ }).first().click();
+  await page.getByRole('button', { name: /^(Project settings|Project\u00ad?instellingen)$/ }).first().click();
   const select = profileSelect(page);
   await chooseProfile(select, 'builtin:p6');
   await expandConventions(page);

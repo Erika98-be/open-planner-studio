@@ -43,7 +43,7 @@ async function clickText(scope: string, texts: readonly string[], timeoutMs = 10
 
 async function openProjectInfo(): Promise<void> {
   await clickText('body', ['Bestand', 'File']);
-  await clickText('.backstage-sidebar', ['Projectinstellingen', 'Project settings']);
+  await clickText('.backstage-sidebar', ['Project\u00adinstellingen', 'Project settings']);
   await waitFor('[data-ops-scheduling-profile-section]');
 }
 
