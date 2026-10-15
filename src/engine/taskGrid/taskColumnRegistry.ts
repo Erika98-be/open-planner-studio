@@ -517,10 +517,11 @@ function assignmentWorkText(task: Task, ctx: TaskColumnContext, field: Assignmen
 }
 
 /** Het begrote tempo naast een P6-resttempo (`plannedUnitsPerDay`); afwezig ⇒ niet getoond (dan is
- *  het begrote tempo de inzet zelf). */
+ *  het begrote tempo de inzet zelf). Zelfde opmaak als de inzetkolom (`assignment.unitsPerDay`):
+ *  `Naam: getal`, zonder afronding. */
 function assignmentPlannedUnitsText(task: Task, ctx: TaskColumnContext): string {
   const values = assignments(task, ctx).flatMap(assignment => assignment.plannedUnitsPerDay !== undefined
-    ? [`${assignmentLabel(assignment, ctx)}: ${formatScalar(assignment.plannedUnitsPerDay)}`]
+    ? [`${assignmentLabel(assignment, ctx)}: ${assignment.plannedUnitsPerDay}`]
     : []);
   return values.length > 0 ? values.join('; ') : '—';
 }

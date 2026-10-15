@@ -66,7 +66,7 @@ Per file format: whether you can open, save and export it, what does and does no
 
 **Baselines.** A `<BaselineProject>` in the file becomes a baseline of its project. The baseline that P6 marks as active is also active in the app.
 
-**Rate of an assignment.** If work remains, the remaining rate (`RemainingUnitsPerTime`) becomes the *Units/day*. Otherwise it is the planned rate (`PlannedUnitsPerTime`). The app recalculates nothing when it opens the file. On an export to P6 XML it writes the planned rate as `PlannedUnitsPerTime` and the remaining rate as `RemainingUnitsPerTime`.
+**Rate of an assignment.** If work remains, the remaining rate (`RemainingUnitsPerTime`) becomes the *Units/day*. Otherwise it is the planned rate (`PlannedUnitsPerTime`). For material the planned rate stays. The app recalculates nothing when it opens the file. On an export to P6 XML it writes the planned rate as `PlannedUnitsPerTime`. It writes the remaining rate as `RemainingUnitsPerTime` only when the assignment has a separate planned rate.
 
 **No readable activities.** If the app finds no activity it can read, it does not open a tab. It reports this, with the reason when it is known. Examples: activities without an `ObjectId`, or XER column names in an XML file. Then export the project from P6 again as P6 XML, or open it as `.xer`.
 

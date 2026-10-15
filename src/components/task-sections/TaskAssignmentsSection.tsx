@@ -151,10 +151,6 @@ export function TaskAssignmentsSection({ taskId }: { taskId: string }) {
     return Math.round((minutes / 60) * 100) / 100;
   };
   const lockTitle = t('properties.assignments.locked', { rule: t(`workRule.${rule}`) });
-  /** Opgeslagen werk dat afwijkt van inzet × restduur krijgt een markering (`assignmentWorkDeviation`,
-   *  zelfde regel als de planningssuite toetst). */
-  const workDeviation = (assignmentId: string, unitsPerDay: number, stored: number | undefined): { stored: number; derived: number } | null =>
-    assignmentWorkDeviation(task, unitsPerDay, stored, hoursPerDay, contourOf.has(assignmentId));
 
   return (
     <>
@@ -223,7 +219,9 @@ export function TaskAssignmentsSection({ taskId }: { taskId: string }) {
                         className="input !text-small !px-1 !py-0.5 !w-[calc(var(--text-small)*5)] text-right"
                       />
                       {(() => {
-                        const deviation = workDeviation(a.id, a.unitsPerDay, a.remainingWorkMinutes);
+                        // Opgeslagen werk dat afwijkt van inzet × restduur krijgt een markering
+                        // (zelfde regel als de planningssuite toetst).
+                        const deviation = assignmentWorkDeviation(task, a.unitsPerDay, a.remainingWorkMinutes, hoursPerDay, contourOf.has(a.id));
                         return deviation && (
                           <span
                             className="shrink-0 inline-flex items-center"

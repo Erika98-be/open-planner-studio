@@ -1164,9 +1164,13 @@ function readP6XmlProject(scope: P6XmlScope): P6XmlProjectRead {
     // (spiegel van p6xmlWriter) — 1:1 overnemen. Bij restwerk het resttempo, anders het begrote
     // (eigenaarsbesluit 2026-10-15, spiegel van de XER-lezer `xerResourceAssignments.ts`; materiaal
     // houdt het begrote tempo). Ontbreekt RemainingUnitsPerTime, dan blijft alles zoals vroeger.
-    const plannedRate = plannedUnitsPerTime > 0 ? plannedUnitsPerTime : 1;
+    // Geen bruikbaar begroot tempo (≤ 0)? Dan het resttempo als begroot, zoals de XER-lezer
+    // (`plannedAssignmentRate`); dan is er geen apart begroot tempo en verzint de export er geen.
+    // Pas zonder beide de oude terugval 1 (review #361 punt 2).
     const remainingRateRaw = getElementText(asgnEl, 'RemainingUnitsPerTime');
     const remainingRate = remainingRateRaw.trim() ? parseFloat(remainingRateRaw) : undefined;
+    const plannedRate = plannedUnitsPerTime > 0 ? plannedUnitsPerTime
+      : remainingRate !== undefined && Number.isFinite(remainingRate) && remainingRate > 0 ? remainingRate : 1;
     const isMaterial = resourceById.get(resourceId)?.type === 'MATERIAL';
     const { unitsPerDay, plannedUnitsPerDay } = isMaterial
       ? { unitsPerDay: plannedRate, plannedUnitsPerDay: undefined }

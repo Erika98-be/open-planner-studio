@@ -23,6 +23,11 @@ import { writeMSPDI } from '@/services/msproject/mspdiWriter';
 import { readMSPDI } from '@/services/msproject/mspdiReader';
 import { writeIFC } from '@/services/ifc/ifcWriter';
 import { isMultiDocumentImport, type ImportResult } from '@/services/importTypes';
+import { createExtensionApi } from '@/extensions/extensionApi';
+import { buildTaskColumnRegistry } from '@/engine/taskGrid/taskColumnRegistry';
+import { buildTaskRelationIndex } from '@/engine/taskGrid/relationIndex';
+import type { TaskColumnContext } from '@/types/taskGrid';
+import { appStoreContext } from '@/state/appStore';
 import { importedAssignmentRate } from '@/engine/work/workRuleMapping';
 import { assignmentWorkDeviation } from '@/engine/work/assignmentWorkDeviation';
 import { taskCalendarHoursPerDay } from '@/utils/taskDefaults';
@@ -112,8 +117,8 @@ const xer = [
   '%E',
 ].join('\n');
 
-function openXer(): ImportResult {
-  const opened = readXER(new TextEncoder().encode(xer));
+function openXer(text = xer): ImportResult {
+  const opened = readXER(new TextEncoder().encode(text));
   if (isMultiDocumentImport(opened)) throw new Error('resttempo-fixture gaf meerdere documenten');
   return opened;
 }
@@ -254,6 +259,31 @@ console.log('-- (g) P6 XML-lezer: spiegel van de XER-lezer --');
   eq('g10 resttempo 0 ⇒ begroot tempo', [r3.unitsPerDay, 'plannedUnitsPerDay' in r3], [T_FOREMAN, false]);
   const r4 = foremanRead(base);
   eq('g11 geen RemainingUnitsPerTime ⇒ begroot tempo (zoals vroeger)', [r4.unitsPerDay, 'plannedUnitsPerDay' in r4], [T_FOREMAN, false]);
+
+  // Review #361 punt 2: geen bruikbaar begroot tempo (PlannedUnitsPerTime 0) maar wel een resttempo.
+  // Dan is het resttempo ook het begrote, zoals in de XER-lezer; de lezer verzint geen begroot tempo 1.
+  const plannedPatch = `<PlannedUnitsPerTime>${T_FOREMAN}</PlannedUnitsPerTime>`;
+  ok('g12 voorwaarde: het begrote tempo van de Foreman staat één keer in de basis', base.split(plannedPatch).length === 2);
+  const zonderBegroot = (xml: string) => xml.replace(plannedPatch, '<PlannedUnitsPerTime>0</PlannedUnitsPerTime>');
+  const r5 = foremanRead(zonderBegroot(withRest('306', '34')));
+  eq('g13 PlannedUnitsPerTime 0 en resttempo 34 ⇒ inzet 34, geen apart begroot tempo', [r5.unitsPerDay, 'plannedUnitsPerDay' in r5], [34, false]);
+  const xerZonderBegroot = openXer(xer.replace(`\t2969\tRT_Labor\t${T_FOREMAN}\t34\t`, '\t2969\tRT_Labor\t0\t34\t'));
+  const xerForeman = asg(xerZonderBegroot, '72605');
+  eq('g14 dezelfde gegevens in XER (target 0, rest 34) geven hetzelfde', [xerForeman.unitsPerDay, 'plannedUnitsPerDay' in xerForeman], [34, false]);
+  const r6 = foremanRead(zonderBegroot(base));
+  eq('g15 PlannedUnitsPerTime 0 zonder resttempo ⇒ de oude terugval 1', [r6.unitsPerDay, 'plannedUnitsPerDay' in r6], [1, false]);
+
+  // Review #361 punt 3: materiaal houdt in de P6 XML-lezer het begrote tempo, zoals in XER (b8).
+  // Mutatiebewijs: de materiaaluitzondering in `p6xmlReader.ts` uit ⇒ g17 rood (inzet 50).
+  const materiaal = /(<PlannedUnitsPerTime>30<\/PlannedUnitsPerTime>\s*<ProjectObjectId>\d+<\/ProjectObjectId>)(\s*<ResourceObjectId>)/;
+  ok('g16 voorwaarde: het materiaalblok (Beton, 30 per dag) staat in de basis', materiaal.test(base));
+  const metMateriaalRest = base.replace(materiaal, '$1<RemainingUnits>45</RemainingUnits><RemainingUnitsPerTime>50</RemainingUnitsPerTime>$2');
+  const mr = readP6XML(metMateriaalRest);
+  const betonId = mr.resources.find((x) => x.name === 'Beton')?.id;
+  const beton = mr.assignments.find((a) => a.resourceId === betonId);
+  eq('g17 materiaal met restwerk en een ander resttempo ⇒ inzet blijft 30, geen apart begroot tempo',
+    [mr.resources.find((x) => x.id === betonId)?.type, beton?.unitsPerDay, beton ? 'plannedUnitsPerDay' in beton : 'ontbreekt'],
+    ['MATERIAL', 30, false]);
 }
 
 console.log('-- (h) P6 XML geopend in de app: duur 9 → 10 h geeft 340 h --');
@@ -285,7 +315,6 @@ console.log('-- (i) IFC: beide tempo\'s en het bronarchief overleven opslaan en 
 
 console.log('-- (j) MSPDI: één Units per toewijzing; lezen verandert niet --');
 {
-  const s = S();
   S().applyOpenedImport(openXer(), OPEN_OPTIONS);
   const st = S();
   const xml = writeMSPDI(st.project, st.calendar, st.tasks, st.sequences, st.resources, st.assignments, st.calendars);
@@ -295,7 +324,67 @@ console.log('-- (j) MSPDI: één Units per toewijzing; lezen verandert niet --')
   const foreman = back.assignments.find((a) => a.taskId === task?.id && a.resourceId === foremanId);
   eq('j1 MSPDI kent geen begroot tempo: geen apart veld na lezen', foreman ? 'plannedUnitsPerDay' in foreman : 'ontbreekt', false);
   eq('j2 MSPDI Units = de inzet (het resttempo), consistent met RemainingWork 306 h', [foreman?.unitsPerDay, foreman?.remainingWorkMinutes], [34, 306 * 60]);
-  void s;
+}
+
+console.log('-- (l) tabelkolom: begroot tempo in dezelfde opmaak als de inzet --');
+// Review #361 punt 4: de gids belooft `Naam: getal` zonder afronding, net als de inzetkolom.
+{
+  const task = opened.tasks.find((t) => t.wbsCode === 'A10530')!;
+  const ctx: TaskColumnContext = {
+    projectId: opened.project.id,
+    tasksById: new Map(opened.tasks.map((t) => [t.id, t] as const)),
+    relationIndex: buildTaskRelationIndex(opened.tasks, opened.sequences),
+    assignmentsByTaskId: new Map([[task.id, opened.assignments.filter((a) => a.taskId === task.id)]]),
+    resourcesById: new Map(opened.resources.map((r) => [r.id, r] as const)),
+    baselinesById: new Map(),
+    scheduleStale: false,
+  };
+  const registry = buildTaskColumnRegistry({ projectId: opened.project.id, activityCodeTypes: [], customFieldDefs: [], baselines: [] });
+  const text = (id: string) => {
+    const column = registry.find((c) => c.id === id)!;
+    return column.format(column.read(task, ctx), task, ctx);
+  };
+  eq('l1 Begrote eenheden per dag: alleen de toewijzingen met een apart begroot tempo, zonder afronding',
+    text('assignment.plannedUnits'), `Foreman: ${T_FOREMAN}; General worker: ${T_WORKER}`);
+  eq('l2 de inzetkolom toont het resttempo in dezelfde opmaak',
+    text('assignment.unitsPerDay'), 'Foreman: 34; General worker: 1; Compactor: 1.77777777777778');
+}
+
+console.log('-- (k) extensie: lees-wijzig-laad houdt het begrote tempo (review #361 punt 1) --');
+// `api.data.loadProject(get*())` op hetzelfde project. Het begrote tempo is niet publiek; zonder de
+// `assignments`-regel in `retainActiveDocument` schreef de P6 XML-export daarna het resttempo 34 als
+// `PlannedUnitsPerTime`. Mutatiebewijs: die regel weg ⇒ k1, k2 en k3 rood.
+{
+  S().applyOpenedImport(openXer(), OPEN_OPTIONS);
+  const api = createExtensionApi('resttempo-k', [], undefined, appStoreContext, { app: appStoreContext, showNotification: () => {} });
+  const lees = () => ({
+    project: api.data.getProject(), calendar: api.data.getCalendar(), tasks: api.data.getTasks(),
+    sequences: api.data.getSequences(), resources: api.data.getResources(), assignments: api.data.getAssignments(),
+  });
+  const foreman = () => S().assignments.find((a) => a.id === 'xer-assignment:72605');
+  const tempo = (xml: string) => (xml.match(/<(Planned|Remaining)UnitsPerTime>[^<]*</g) ?? []).sort();
+  const projectId = S().project.id;
+  ok('k0 voorwaarde: het contract draagt het begrote tempo niet', api.data.getAssignments().every((a) => !('plannedUnitsPerDay' in a)));
+  api.data.loadProject(lees());
+  eq('k1 Foreman na een ongewijzigde lees-wijzig-laad: inzet 34, begroot 1,111, zelfde project',
+    [foreman()?.unitsPerDay, foreman()?.plannedUnitsPerDay, S().project.id], [34, T_FOREMAN, projectId]);
+  const st = S();
+  const xml = writeP6XML(st.project, st.calendar, st.tasks, st.sequences, st.resources, st.assignments, st.calendars);
+  ok('k2 P6 XML daarna: PlannedUnitsPerTime blijft 1,111, nooit 34',
+    xml.includes(`<PlannedUnitsPerTime>${T_FOREMAN}</PlannedUnitsPerTime>`) && !xml.includes('<PlannedUnitsPerTime>34</PlannedUnitsPerTime>'));
+  eq('k3 dezelfde tempo-elementen als de export vóór de extensie (f)', tempo(xml), tempo(exported));
+
+  // De extensie wijzigt de inzet: het begrote tempo blijft referentie, zoals bij een wijziging in de app.
+  const gewijzigd = lees();
+  gewijzigd.assignments = gewijzigd.assignments.map((a) => (a.id === 'xer-assignment:72605' ? { ...a, unitsPerDay: 30 } : a));
+  api.data.loadProject(gewijzigd);
+  eq('k4 extensie zet de inzet op 30 ⇒ inzet 30, begroot blijft 1,111', [foreman()?.unitsPerDay, foreman()?.plannedUnitsPerDay], [30, T_FOREMAN]);
+
+  // Een ander project-id is een nieuw project: dan geldt alleen wat de extensie meestuurt.
+  const ander = lees();
+  ander.project = { ...ander.project, id: 'ander-project-resttempo' };
+  api.data.loadProject(ander);
+  eq('k5 ander project-id ⇒ geen begroot tempo van het vorige document', foreman() ? 'plannedUnitsPerDay' in foreman()! : 'ontbreekt', false);
 }
 
 if (diffs.length > 0) {

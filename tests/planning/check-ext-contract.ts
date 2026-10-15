@@ -63,7 +63,10 @@ import { isMultiDocumentImport } from '@/services/importTypes';
 import { decodeXerSourceArchive, sha256Hex } from '@/services/xerSourceArchive';
 import { ExtImportSourceDriftError } from '@/extensions/extImportSource';
 import { builtInProfile } from '@/engine/scheduler/conventions/registry';
-import { TASK_SOURCE_FIELDS, SEQUENCE_SOURCE_FIELDS, CALENDAR_SOURCE_FIELDS, openExtensionImport, importWithExtension } from '@/extensions/retainActiveDocument';
+import {
+  TASK_SOURCE_FIELDS, SEQUENCE_SOURCE_FIELDS, CALENDAR_SOURCE_FIELDS, ASSIGNMENT_SOURCE_FIELDS,
+  openExtensionImport, importWithExtension, retainActiveDocument,
+} from '@/extensions/retainActiveDocument';
 import type { CalendarGeneration } from '@/types/calendar';
 import { ifcSchemaBlocksSilentWrite } from '@/services/ifc/ifcSchemaQuestion';
 
@@ -160,7 +163,8 @@ const NIET_PUBLIEK = {
   taskTime: [] as readonly string[],
   sequence: [] as readonly string[],
   // Het begrote tempo naast een P6-resttempo (resttempo-besluit 2026-10-15) is bronreferentie voor de
-  // P6 XML-export, geen extensie-invoer. Het extensiecontract (apiVersion) blijft ongewijzigd.
+  // P6 XML-export, geen extensie-invoer. Het extensiecontract (apiVersion) blijft ongewijzigd. Een
+  // lees-wijzig-laad op hetzelfde id houdt het vast (`ASSIGNMENT_SOURCE_FIELDS`; 18c, 24, N3D-14).
   assignment: ['plannedUnitsPerDay'] as readonly string[],
 };
 
@@ -514,6 +518,17 @@ for (const [naam, ext, bron, sleutels] of [
   }
 }
 
+// De route van `api.data.loadProject` op hetzelfde project-id, voor één toewijzing: naar het contract,
+// terug, en dan `retainActiveDocument` tegen een document dat deze toewijzing al heeft.
+function leesWijzigLaadToewijzing(a: ResourceAssignment): ResourceAssignment | undefined {
+  const doc = { ...useAppStore.getState(), assignments: [a] };
+  const loaded = fromExtImportResult({
+    project: toExtProject(doc.project), calendar: toExtCalendar(doc.calendar),
+    tasks: [], sequences: [], resources: [], assignments: [toExtAssignment(a)],
+  });
+  return retainActiveDocument(loaded, doc).assignments.find((x) => x.id === a.id);
+}
+
 // ── 2. `fromExt*` laat geen intern veld vallen (op de bewuste uitzonderingen na) ──
 {
   const controle = (
@@ -551,8 +566,13 @@ for (const [naam, ext, bron, sleutels] of [
   for (const k of NIET_PUBLIEK.resource) {
     eq(`18b resourceveld "${k}" lekt niet naar het contract`, k in toExtResource(VOL_RESOURCE), false);
   }
+  // Review #361 punt 1: het veld steekt niet over, maar gaat bij een lees-wijzig-laad op hetzelfde id
+  // ook niet verloren. Mutatiebewijs: de `assignments`-regel in `retainActiveDocument` weg ⇒ 18c en 24 rood.
   for (const k of NIET_PUBLIEK.assignment) {
     eq(`18c toewijzingsveld "${k}" lekt niet naar het contract`, k in toExtAssignment(VOL_ASSIGNMENT), false);
+    eq(`18c toewijzingsveld "${k}" blijft na lees-wijzig-laad op hetzelfde id`,
+      (leesWijzigLaadToewijzing(VOL_ASSIGNMENT) as Record<string, unknown> | undefined)?.[k],
+      (VOL_ASSIGNMENT as Record<string, unknown>)[k]);
   }
 }
 
@@ -572,8 +592,12 @@ for (const [naam, ext, bron, sleutels] of [
     stripNietPubliek(VOL_SEQUENCE, [...NIET_PUBLIEK.sequence, ...LEES_ALLEEN_EXT.sequence]));
   eq('23 resource round-trip',
     fromExtResource(toExtResource(VOL_RESOURCE)), stripNietPubliek(VOL_RESOURCE, NIET_PUBLIEK.resource));
-  eq('24 toewijzing round-trip',
-    fromExtAssignment(toExtAssignment(VOL_ASSIGNMENT)), stripNietPubliek(VOL_ASSIGNMENT, NIET_PUBLIEK.assignment));
+  // De mapper alleen laat het niet-publieke begrote tempo vallen; de lees-wijzig-laad (mapper +
+  // `retainActiveDocument`) geeft de toewijzing volledig terug, ook `plannedUnitsPerDay`.
+  // Sleutels gesorteerd: `retainActiveDocument` zet het bronveld achteraan, `eq` vergelijkt JSON-tekst.
+  const gesorteerd = (o: object | undefined) => o && Object.fromEntries(Object.entries(o).sort(([a], [b]) => a.localeCompare(b)));
+  eq('24 toewijzing round-trip via lees-wijzig-laad: niets gaat verloren',
+    gesorteerd(leesWijzigLaadToewijzing(VOL_ASSIGNMENT)), gesorteerd(VOL_ASSIGNMENT));
 }
 
 // ── 4. Isolatie: de extensie krijgt een verse, DIEPE kopie ───────────────────
@@ -1433,10 +1457,12 @@ for (const [naam, ext, bron, sleutels] of [
 {
   eq('N3D-14 de bronveldlijsten zijn precies de velden die niet naar binnen oversteken', [
     [...TASK_SOURCE_FIELDS], [...SEQUENCE_SOURCE_FIELDS], [...CALENDAR_SOURCE_FIELDS].sort(),
+    [...ASSIGNMENT_SOURCE_FIELDS].sort(),
   ], [
     LEES_ALLEEN_EXT.task, LEES_ALLEEN_EXT.sequence,
     // `libraryOrigin` niet: elke niet-gekoppelde load wist hem (`stripLibraryOrigins`).
     [...LEES_ALLEEN_EXT.calendar, ...NIET_PUBLIEK.calendar.filter((k) => k !== 'libraryOrigin')].sort(),
+    [...LEES_ALLEEN_EXT.assignment, ...NIET_PUBLIEK.assignment].sort(),
   ]);
 
   const xer = [

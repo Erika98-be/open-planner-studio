@@ -66,7 +66,7 @@ Per bestandsformaat: of je het kunt openen, opslaan en exporteren, wat er wel en
 
 **Baselines.** Een `<BaselineProject>` in het bestand wordt een baseline van zijn project. De baseline die P6 als actief aanwijst, is ook in de app actief.
 
-**Tempo van een toewijzing.** Is er nog werk te doen, dan wordt het resterende tempo (`RemainingUnitsPerTime`) de *Eenh./dag*. Anders is dat het begrote tempo (`PlannedUnitsPerTime`). De app rekent bij openen niets om. Bij een export naar P6 XML schrijft ze het begrote tempo als `PlannedUnitsPerTime` en het resterende tempo als `RemainingUnitsPerTime`.
+**Tempo van een toewijzing.** Is er nog werk te doen, dan wordt het resterende tempo (`RemainingUnitsPerTime`) de *Eenh./dag*. Anders is dat het begrote tempo (`PlannedUnitsPerTime`). Bij materiaal blijft het begrote tempo staan. De app rekent bij openen niets om. Bij een export naar P6 XML schrijft ze het begrote tempo als `PlannedUnitsPerTime`. Het resterende tempo schrijft ze als `RemainingUnitsPerTime`, maar alleen als de toewijzing een apart begroot tempo heeft.
 
 **Geen leesbare activiteiten.** Vindt de app geen activiteit die ze kan lezen, dan opent ze geen tabblad. Ze meldt dat, met de reden als die bekend is. Voorbeelden: activiteiten zonder `ObjectId`, of XER-kolomnamen in een XML-bestand. Exporteer het project dan opnieuw uit P6 als P6 XML, of open het als `.xer`.
 
