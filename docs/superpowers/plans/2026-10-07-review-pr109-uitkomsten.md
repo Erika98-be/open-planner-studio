@@ -1157,3 +1157,6 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   accepteren + release notes. Later (lijst): procent-lag P6 XML-export, `lagDays` XER, **`promoteHourCalendar`: eigen
   P6 XML/MSPDI-export opnieuw openen maakt hpd 8 ⇒ 10, een dagtaak van 5 d wordt 4 d (dataverlies, bestaat al op
   main) ⇒ fout in bestaand werk, vóór de release**. Helper zelf klopt; geen gemiste schrijfplek; Late ploeg 5 → 4 terecht.
+- **Checkstap 20 (tekst ⚠, #361) goedgekeurd door de eigenaar 2026-10-15, letterlijk: "jahoor".** Merge #361 na groene
+  CI op afd7bb60a (bevat main 799d4ff2c). Zonder eigenaar gestart: worker (Opus 5.5, medium)
+  `claude/urenperdag-heropenen` voor `promoteHourCalendar` (fout in bestaand werk). Besluit oude baselines voorgelegd.
