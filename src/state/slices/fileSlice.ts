@@ -818,7 +818,10 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
         s.ui.showLibraryLinkDialog = activation.signals.showLibraryLinkDialog;
         s.ui.libraryRefreshNotice = activation.signals.libraryRefreshNotice;
         if (opts.hourDataNotice) {
-          s.ui.hourDataNotice = !s.ui.enableHourPlanning && fileHasHourData(s.tasks, [s.calendar, ...s.calendars]);
+          const showNotice = !s.ui.enableHourPlanning && fileHasHourData(s.tasks, [s.calendar, ...s.calendars]);
+          // Alleen DIT document krijgt of verliest de melding; die van een ander open document blijft.
+          if (showNotice) s.ui.hourDataNotice = s.activeDocumentId;
+          else if (s.ui.hourDataNotice === s.activeDocumentId) s.ui.hourDataNotice = null;
         }
       });
       // De open-grens ververste een achterlopende bibliotheekkalender en de werkregel paste taken
