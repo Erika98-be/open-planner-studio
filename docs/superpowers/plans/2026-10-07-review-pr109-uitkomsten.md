@@ -946,3 +946,10 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   Worker was gestopt zonder wijzigingen; dev-server gestopt, worktree en branch `claude/proto-werkregel-tekst`
   verwijderd. 10 tekstvoorstellen in de chat gegeven, gecontroleerd tegen `work-triangle-cases.json` (FIXED_RATE:
   duur → werk, inzet → duur, werk → duur, resource erbij niet effort-driven → werk groeit, duur blijft).
+- **Eigenaar 2026-10-15 over de werkregeltekst:** stijl "werk volgt uit de duur en de inzet". Orkestrator: per regel
+  zin 1 "X volgt uit Y en Z" + zin 2 "Wijzig je …, dan past … zich aan" + zin over extra resource (gecontroleerd tegen
+  `work-triangle-cases.json`). Eigenaar, letterlijk: "op deze manier wil ik het ja" en "ik wil het als i'tje naast de
+  opties de dropdown mag niet native zijn, dat mag hij nooit zijn." Project-memory `keuzelijsten-nooit-native`
+  vastgelegd (46 native `<select>` in 24 bestanden op main). Worker (Opus 5.5, medium) op `claude/werkregel-i-icoon`:
+  eigen `Select` met i-icoon per optie + i-icoon naast het gesloten veld, oranje blok weg, teksten nl/en + vertaalstraat,
+  gidsen, check tekst ⇔ rekenkern.
