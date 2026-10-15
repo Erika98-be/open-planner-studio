@@ -1050,3 +1050,7 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   waar hij hoort te staan: op de tool, niet naast de dropdown".** `cursor: help` stond alleen in `Select.css:153`
   (branch #359; main gebruikt nergens `cursor-help`). Doorgegeven aan de maker in de lopende fixronde: cursor gelijk aan
   de i-knop bij *Duur*; tooltip bij het icoon, `data-tooltip-beside` weg, test + mutant op plaatsing bij het icoon.
+- **Checkstap 17 goedgekeurd door de eigenaar 2026-10-15, letterlijk: "de rest klopt en de tekst is helder"** (met de
+  twee bevindingen cursor/tooltipplaats, in de fixronde). Besluit voorgelegd: de zin "Een extra resource maakt de taak
+  korter" (Vast werk; Vaste inzet effort-driven/onbekend) klopt niet altijd door afronding op hele dagen (reviewer #359,
+  BEVESTIGD: 1 d blijft 1 d; 5 d met extra inzet 0,1 blijft 5 d). Advies orkestrator: "kan de taak korter maken".
