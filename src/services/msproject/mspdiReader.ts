@@ -29,7 +29,8 @@ import {
 } from '@/services/xmlInterchange';
 import {
   canonicalizeBands, clockToMinutes, hasNonAnchorTime, isSubDayMinutes,
-  milestoneKindAt, promoteHourCalendars, registerCalendarBands, workDayFromBlocks, deriveHoursPerDay,
+  milestoneKindAt, promoteHourCalendars, registerCalendarBands, registerExplicitHoursPerDay, workDayFromBlocks,
+  deriveHoursPerDay,
 } from '@/services/subdayIo';
 
 // MSPDI-uitzonderingssemantiek gebruikt dezelfde `buildContributions` (record-opbouw MET budgetklem
@@ -1161,7 +1162,8 @@ function readCalendars(root: Element, budget: HolidayBudget): {
       // afgeleide kalender rekent zijn `hoursPerDay` uit zijn eigen (geërfde) blokken, net als elke
       // andere bibliotheekkalender.
       const minutesPerDay = getElementInt(root, 'MinutesPerDay');
-      if (minutesPerDay > 0) cal.hoursPerDay = minutesPerDay / 60;
+      // Ook de uur-promotie overschrijft hem niet (`registerExplicitHoursPerDay`).
+      if (minutesPerDay > 0) { cal.hoursPerDay = minutesPerDay / 60; registerExplicitHoursPerDay(cal); }
     }
     resolved.set(uid, cal);
     weekOf.set(uid, week);

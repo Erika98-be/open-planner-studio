@@ -43,7 +43,7 @@ import {
 } from '@/services/xmlInterchange';
 import {
   canonicalizeBands, clockToMinutes, hasNonAnchorTime, isSubDayMinutes,
-  promoteHourCalendars, registerCalendarBands,
+  promoteHourCalendars, registerCalendarBands, registerExplicitHoursPerDay,
 } from '@/services/subdayIo';
 
 // De rauwe-bandenregistry en `synth*BandsFromScalar` staan in subdayIo. P6_NAME_TO_CURVE (P6-curvenaam
@@ -1296,7 +1296,8 @@ function readP6Calendar(calEl: Element, lastMinute = false): WorkCalendar {
   delete calendar.generation;
 
   const hpd = getElementFloat(calEl, 'HoursPerDay');
-  if (hpd > 0) calendar.hoursPerDay = hpd; // authoritatief — StandardWorkWeek-uren overschrijven dit niet
+  // Authoritatief — StandardWorkWeek-uren en de uur-promotie overschrijven dit niet.
+  if (hpd > 0) { calendar.hoursPerDay = hpd; registerExplicitHoursPerDay(calendar); }
 
   // Werkweek + feestdagen — golden rule: geen <StandardWorkWeek>/<HolidayOrExceptions> (ander tool /
   // oud bestand) ⇒ createDefaultCalendar()-defaults blijven staan.
