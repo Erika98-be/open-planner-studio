@@ -1015,3 +1015,8 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   `claude/dag-is-werktijd`, inclusief de MCP-bijvangst (urentaak zonder `scheduleDuration`, eerst bewijzen).
   Genoteerd voor later: het kalendervenster toont "Netto-uren per dag 8.00 h" naast 10 h blokken; dat is de enige plek
   waar de 8 nog zichtbaar is (past niet bij de redenering van de eigenaar) ⇒ voorleggen na de bouw.
+- **#360 wit vierkantje bij resize** (worker Sonnet 5.5, op verzoek van de eigenaar): open (niet gemerged), concept,
+  CI 16/16 op de40e4e95, kop bevat main. Oorzaak: `::-webkit-scrollbar-corner` van `.task-grid-core` zonder stijl ⇒
+  standaard wit zodra de lijst twee schuifbalken heeft. Fix in `globals.css`: hoek = `--theme-scrollbar-track`,
+  Gantt-overlay transparant. Voor/na zelf bekeken (licht/donker). Review bij reviewer (Opus 5.5, xhigh) gestart.
+  In de testversie gemerged (lokaal).
