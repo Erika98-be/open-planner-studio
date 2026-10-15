@@ -13,7 +13,8 @@ import './domStub';
 //  §1 oude telling ⇒ ⚠ (A); een dagtaak ⇒ geen ⚠ (D).
 //  §2 nieuwe baseline (zelfde taak, nieuwe telling 187 d) ⇒ geen ⚠.
 //  §3 onduidelijk ⇒ geen ⚠: een onderbreking (span langer dan de duur) en een duur die bij geen van beide past.
-//  §4 een kalender waarvan de opgeslagen uren per dag gelijk zijn aan de blokken ⇒ geen ⚠.
+//  §4 een kalender waarvan de opgeslagen uren per dag gelijk zijn aan de blokken (of minder dan één minuut
+//     per dag afwijken) ⇒ geen ⚠.
 //  §5 het raster (echte adapter): ⚠ in Baselineduur en Duurafwijking van "Oud", nergens anders.
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -99,6 +100,12 @@ same('§2 nieuwe telling ⇒ geen ⚠', check(A, snapshotOf(A.id, newBaseline)),
   const engine: CalendarEngine = engineForTaskCalendar(new Map(), same10, A);
   same('§4 opgeslagen 10 u/dag bij blokken van 10 u: de oude baseline 233,75 d ⇒ geen ⚠',
     baselineHasOldDayCount(A, snapshotOf(A.id), same10, engine), false);
+  // Een afwijking onder de tolerantie (0,3 min per dag): ook een baseline die precies bij die opgeslagen
+  // waarde past, krijgt geen ⚠ — over 187 d is dat 56 min verschil, maar het is geen andere dagtelling.
+  const almost = { ...cal, hoursPerDay: 10.005 };
+  same('§4 opgeslagen 10,005 u/dag bij blokken van 10 u (0,3 min per dag): baseline 112200 ÷ (10,005 × 60) d ⇒ geen ⚠',
+    baselineHasOldDayCount(A, { ...snapshotOf(A.id), duration: 112200 / (10.005 * 60) }, almost,
+      engineForTaskCalendar(new Map(), almost, A)), false);
   same('§4 dezelfde kalender met 8 u/dag ⇒ wel ⚠ (controle van de opzet)',
     baselineHasOldDayCount(A, snapshotOf(A.id), cal, engineForTaskCalendar(new Map(), cal, A)), true);
 }
