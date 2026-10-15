@@ -450,7 +450,32 @@ test('werkregel: i-icoon per optie en naast het veld, met de uitleg van de regel
   await expect(tip).toBeVisible();
   await expect(tip.locator('strong')).toHaveText(nl ? 'De duur volgt uit het werk en de inzet.' : 'Duration follows from work and units.');
   await expect(tip).toContainText(nl ? 'Wijzig je de duur, dan past het werk zich aan.' : 'If you change the duration, the work adjusts.');
-  await expect(tip).toContainText(nl ? 'Een extra resource maakt de taak korter.' : 'An extra resource makes the task shorter.');
+  // Dagtaak: de rekenkern rondt af op hele werkdagen, dus de zin noemt dat (besluit eigenaar 2026-10-15).
+  await expect(tip).toContainText(nl ? 'Een extra resource maakt de taak korter, afgerond op hele dagen.' : 'An extra resource makes the task shorter, rounded to whole days.');
+});
+
+// Besluit eigenaar 2026-10-15: "afgerond op hele dagen" alleen bij een dagtaak. Een urentaak rondt af op
+// hele minuten en houdt de korte zin. Fixture: de taak als urentaak via de brug.
+test('werkregel: bij een urentaak noemt de uitleg geen afronding op hele dagen', async ({ page, ops: _ops }) => {
+  const { taskId } = await seedAssignedTask(page);
+  await page.evaluate((id) => {
+    const store = window.__OPS__!.store;
+    store.getState().setTaskWorkRule(id, 'FIXED_WORK');
+    store.setState((draft: { tasks: { id: string; time: { durationUnit: string; durationMinutes?: number; scheduleDuration: number } }[] }) => {
+      const t = draft.tasks.find(x => x.id === id)!;
+      t.time.durationUnit = 'hours';
+      t.time.durationMinutes = t.time.scheduleDuration * 8 * 60;
+    });
+  }, taskId);
+  const nl = (await page.evaluate(() => document.documentElement.lang)).startsWith('nl');
+  const tip = page.locator('.ops-tooltip[role="tooltip"]');
+  await page.locator('[data-ops-work-rule-info]').hover();
+  await expect(tip.locator('.ops-tooltip__line').last()).toHaveText(nl ? 'Een extra resource maakt de taak korter.' : 'An extra resource makes the task shorter.');
+  // Ook de uitleg bij de optie in de open lijst volgt de geselecteerde (uren)taak.
+  await page.mouse.move(0, 0);
+  await page.locator('[data-ops-work-rule] button[aria-haspopup="listbox"]').click();
+  await page.locator('[data-ops-select-option-info="FIXED_RATE"]').hover();
+  await expect(tip.locator('.ops-tooltip__line').last()).toHaveText(nl ? 'Een extra resource maakt de taak korter.' : 'An extra resource makes the task shorter.');
 });
 
 // Het bewaarde MS Project-vinkje staat niet meer als losse regel onder het veld; de uitleg zelf

@@ -32,7 +32,9 @@ function ok(label: string, cond: boolean): void {
 }
 
 type Q = 'duration' | 'units' | 'work';
-type ResourceEffect = 'workUp' | 'durationSame' | 'unitsDown' | 'durationDown';
+/** `shorterWholeDays`: de duur wordt niet langer en is precies W / ΣI naar boven afgerond op hele
+ *  werkdagen (dus mag hij gelijk blijven: 1 dag + een tweede resource = 0,5 → 1 dag). */
+type ResourceEffect = 'workUp' | 'durationSame' | 'unitsDown' | 'durationDown' | 'shorterWholeDays';
 interface Meaning {
   /** Bewerking van de sleutel ⇒ de grootheid die zich aanpast (de derde blijft gelijk). */
   edits?: Partial<Record<Q, Q>>;
@@ -70,6 +72,9 @@ const MEANING: Record<WorkRuleSentence, Meaning> = {
     en: 'An extra resource takes over part of the work; the units per resource go down.' },
   resourceShorter: { resource: ['durationDown'],
     nl: 'Een extra resource maakt de taak korter.', en: 'An extra resource makes the task shorter.' },
+  resourceShorterWholeDays: { resource: ['shorterWholeDays'],
+    nl: 'Een extra resource maakt de taak korter, afgerond op hele dagen.',
+    en: 'An extra resource makes the task shorter, rounded to whole days.' },
   resourceAddsWorkSameDuration: { resource: ['workUp', 'durationSame'],
     nl: 'Een extra resource voegt werk toe; de duur blijft gelijk.',
     en: 'An extra resource adds work; the duration stays the same.' },
@@ -91,11 +96,14 @@ for (const lang of ['nl', 'en'] as const) {
   }
 }
 
-// (b) De rekenkern. Uitgangssituatie: dagtaak, 8 u/dag, 5 werkdagen, één werkresource op 1,0 (40 u).
+// (b) De rekenkern. Uitgangssituatie: 8 u/dag, 5 werkdagen, één werkresource op 1,0 (40 u); een dagtaak
+// rondt een afgeleide duur af op hele werkdagen, een urentaak op hele minuten (`roundUpRemaining`).
+// Voor de resourcezin ook een taak van 1 dag: daar laat de afronding de duur gelijk (0,5 → 1 dag).
 const SLOT = 8 * 60;
-function base(rule: WorkRule, effortDriven: boolean | undefined): TriangleState {
+type Unit = 'days' | 'hours';
+function base(rule: WorkRule, effortDriven: boolean | undefined, unit: Unit, days = 5): TriangleState {
   return {
-    rule, effortDriven, remainingMinutes: 5 * SLOT, slotMinutes: SLOT, wholeDays: true,
+    rule, effortDriven, remainingMinutes: days * SLOT, slotMinutes: SLOT, wholeDays: unit === 'days',
     assignments: [{ id: 'a', unitsPerDay: 1, drivesDuration: true }],
   };
 }
@@ -111,9 +119,9 @@ const stateOf = (r: TriangleResult, label: string): TriangleState | null => {
 };
 
 /** Welke grootheid paste zich aan bij een bewerking van `edited`? `null` = geen of meer dan één. */
-function adjusted(rule: WorkRule, ed: boolean | undefined, edited: Q): Q | null {
-  const s0 = base(rule, ed);
-  const label = `${rule}/${String(ed)}/${edited}`;
+function adjusted(rule: WorkRule, ed: boolean | undefined, unit: Unit, edited: Q): Q | null {
+  const s0 = base(rule, ed, unit);
+  const label = `${rule}/${String(ed)}/${unit}/${edited}`;
   const r = edited === 'duration' ? applyDurationEdit(s0, 10 * SLOT)
     : edited === 'units' ? applyUnitsEdit(s0, 'a', 0.5)
       : applyWorkEdit(s0, 'a', 80 * 60);
@@ -125,12 +133,16 @@ function adjusted(rule: WorkRule, ed: boolean | undefined, edited: Q): Q | null 
   return changed.length === 1 ? changed[0] : null;
 }
 
-function resourceEffects(rule: WorkRule, ed: boolean | undefined): Set<ResourceEffect> {
-  const s0 = base(rule, ed);
+function resourceEffects(rule: WorkRule, ed: boolean | undefined, unit: Unit, days: number): Set<ResourceEffect> {
+  const s0 = base(rule, ed, unit, days);
   const out = new Set<ResourceEffect>();
-  const s1 = stateOf(applyAssignmentAdded(s0, { id: 'b', unitsPerDay: 1 }), `${rule}/${String(ed)}/resource`);
+  const s1 = stateOf(applyAssignmentAdded(s0, { id: 'b', unitsPerDay: 1 }), `${rule}/${String(ed)}/${unit}/${days}d/resource`);
   if (!s1) return out;
   const totalWork = (s: TriangleState) => s.assignments.reduce((sum, a) => sum + remainingWorkOf(a, s.remainingMinutes), 0);
+  const sumUnits = s1.assignments.reduce((sum, a) => sum + a.unitsPerDay, 0);
+  const exact = totalWork(s1) / sumUnits;
+  if (s1.remainingMinutes <= s0.remainingMinutes + 1e-6
+    && same(s1.remainingMinutes, Math.ceil(exact / SLOT - 1e-9) * SLOT)) out.add('shorterWholeDays');
   if (totalWork(s1) > totalWork(s0) + 1e-6) out.add('workUp');
   if (same(s1.remainingMinutes, s0.remainingMinutes)) out.add('durationSame');
   if (s1.remainingMinutes < s0.remainingMinutes - 1e-6) out.add('durationDown');
@@ -141,9 +153,10 @@ function resourceEffects(rule: WorkRule, ed: boolean | undefined): Set<ResourceE
 const table: string[] = [];
 for (const rule of WORK_RULES) {
   for (const ed of [undefined, true, false] as const) {
-    const ex = workRuleExplanation(rule, ed);
+  for (const unit of ['days', 'hours'] as const) {
+    const ex = workRuleExplanation(rule, ed, unit);
     const sentences = [ex.lead, ...ex.rest];
-    const label = `${rule} effortDriven=${String(ed)}`;
+    const label = `${rule} effortDriven=${String(ed)} ${unit}`;
     // (c) volledigheid: elke bewerking precies één bewering, precies één resourcezin.
     const claims = new Map<Q, Q>();
     for (const s of sentences) {
@@ -160,20 +173,38 @@ for (const rule of WORK_RULES) {
     // (b) naast de rekenkern.
     const row: string[] = [];
     for (const [edited, claim] of claims) {
-      const actual = adjusted(rule, ed, edited);
+      const actual = adjusted(rule, ed, unit, edited);
       row.push(`${edited}→${actual ?? '?'}`);
       ok(`${label}: zin zegt "${edited} gewijzigd ⇒ ${claim} past aan", de rekenkern past ${actual ?? 'niet precies één grootheid'} aan`,
         actual === claim);
     }
-    const effects = resourceEffects(rule, ed);
-    row.push(`resource: ${[...effects].join('+')}`);
-    for (const s of resourceSentences) {
-      for (const e of MEANING[s].resource!) {
-        ok(`${label}: zin "${MEANING[s].nl}" beweert ${e}, de rekenkern geeft ${[...effects].join('+') || 'niets'}`, effects.has(e));
+    // De resourcezin moet kloppen bij 5 dagen én bij 1 dag (waar de dagafronding de duur gelijk laat).
+    for (const days of [5, 1]) {
+      const effects = resourceEffects(rule, ed, unit, days);
+      row.push(`resource(${days}d): ${[...effects].join('+')}`);
+      for (const s of resourceSentences) {
+        for (const e of MEANING[s].resource!) {
+          ok(`${label} ${days} d: zin "${MEANING[s].nl}" beweert ${e}, de rekenkern geeft ${[...effects].join('+') || 'niets'}`, effects.has(e));
+        }
       }
     }
-    table.push(`${label.padEnd(40)} ${row.join('  ')}  ⇒ ${sentences.join(', ')}`);
+    table.push(`${label.padEnd(46)} ${row.join('  ')}  ⇒ ${sentences.join(', ')}`);
   }
+  }
+}
+
+// Expliciet (besluit eigenaar 2026-10-15): een dagtaak van 1 dag onder Vast werk met een tweede
+// resource blijft 1 dag (0,5 → 1), en de dagzin noemt dat ("afgerond op hele dagen"); bij een urentaak
+// wordt dezelfde taak echt korter (4 u) en staat de zin zonder afronding.
+{
+  const day = stateOf(applyAssignmentAdded(base('FIXED_WORK', undefined, 'days', 1), { id: 'b', unitsPerDay: 1 }), 'dag 1 d');
+  ok(`dagtaak 1 d + resource: duur ${day?.remainingMinutes} min, verwacht ${SLOT} (afgerond op 1 dag)`, day?.remainingMinutes === SLOT);
+  ok('dagtaak: Vast werk gebruikt de zin met afronding',
+    workRuleExplanation('FIXED_WORK', undefined, 'days').rest.includes('resourceShorterWholeDays'));
+  const hour = stateOf(applyAssignmentAdded(base('FIXED_WORK', undefined, 'hours', 1), { id: 'b', unitsPerDay: 1 }), 'uur 1 d');
+  ok(`urentaak 8 u + resource: duur ${hour?.remainingMinutes} min, verwacht ${SLOT / 2}`, hour?.remainingMinutes === SLOT / 2);
+  ok('urentaak: Vast werk gebruikt de zin zonder afronding',
+    workRuleExplanation('FIXED_WORK', undefined, 'hours').rest.includes('resourceShorter'));
 }
 
 if (diffs.length) {
@@ -182,4 +213,4 @@ if (diffs.length) {
   for (const line of table) console.log(`    ${line}`);
   process.exit(1);
 }
-console.log(`OK  check-work-rule-explain: ${checks} controles; elke uitlegzin klopt met de rekenkern (4 regels × 3 effortDriven × 4 bewerkingen)`);
+console.log(`OK  check-work-rule-explain: ${checks} controles; elke uitlegzin klopt met de rekenkern (4 regels × 3 effortDriven × dag/uur × 4 bewerkingen)`);
