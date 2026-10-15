@@ -1239,3 +1239,20 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   MSPDI-writer schrijft dagkalender 07–16/8 u als één blok ⇒ heropenen 9 u ("Budget Work Resource",
   `mspdiassignmentfields.xml`); `Hospital_GW_Programme_pmxml.xml` opent niet (geen ObjectId).
 - **Release-taak:** termbase `project-info` bijwerken voor Projectinstellingen/App-instellingen (#365).
+- **Tweede crash 2026-10-15.** Acht agents hervat met de gemeten stand (o.a. #362 niet-gecommit werk in de worktree,
+  #366 kop 2987b609e, #368 browser 4-4 rood, #370 nieuw). Testversie op 3049 opnieuw (met polling: inotify ENOSPC).
+- **Hercheck #365: ja** (reviewer Opus 5.5, xhigh) op 8afa45640, na de check van de eigenaar. Orkestrator daarna
+  66bfc4f94: `­` leesbaar in de regex, streepje uit de knopnaam in de zijbalk van *Bestand* (beide door de
+  reviewer aangeraden; 15/15 gerichte specs, CI 16/16). Testversie: main + #365 gemerged, `?qa-tab=` en `?qa-dialog=app`.
+  **Check eigenaar klaar.** Bijvangst: *Projectinstellingen* heeft nog een native keuzelijst *Resourcebibliotheek*
+  (`ProjectInfoPanelContent.tsx`, valt onder het open besluit native keuzelijsten).
+- **Review #368: nee** ⇒ toetslek en lijstbreedte zitten in `Select` zelf (ook op main: Delete/Backspace verwijderen de
+  taak, Escape sluit de dialoog, `-`/`0` zoomen; lijst knipt opties af). Eigen PR **#370** `claude/select-toetsen`
+  (worker Opus 5.5 medium), merget vóór #368/#369. #368 fixronde: dode guards weg, `aria-describedby`.
+- **#369 Toewijzingen** (worker Opus 5.5 medium): CI groen; spec 2026-09-04 §6.1 ("opslag op twee decimalen") klopt
+  niet met de code (opslag exact; niet veranderd). Review gestart.
+- **Hercheck #362: nee** — WebKitGTK (Linux-desktop): echo van de overlaybalk zet het raster terug (wiel 3 px i.p.v.
+  409). Fixrichting bewezen (echo negeren). Check eigenaar later in de **desktopapp**, niet in de browser.
+- **Hercheck #364: nee, bijna** — nieuwe oorsprongregel van de maker (lege Gantt: `viewStartDate` − 14 d, geen
+  feestdagen ervoor) juist; G1 ging over een latere feestdag (vault `takenlijsten/bevindigen…:8`). Rest: sjabloon met
+  latere start toont fasen niet (ook op main). Kleine fixronde.
