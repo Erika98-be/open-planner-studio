@@ -358,13 +358,6 @@
     "FIXED_RATE": "Фиксирани единици",
     "label": "Работно правило",
     "projectDefault": "Стандарт на проекта ({{rule}})",
-    "protects": "Защитено: {{what}}",
-    "protectsFIXED_DURATION_RATE": "продължителност и единици (работата следва)",
-    "protectsFIXED_DURATION_WORK": "продължителност и работа (единиците следват)",
-    "protectsFIXED_WORK": "работа (продължителността следва единиците)",
-    "protectsFIXED_RATE": "единици (продължителността следва работата)",
-    "mspEffortDriven": "От MS Project: управлявано от усилието",
-    "mspNotEffortDriven": "От MS Project: не въз основа на усилия",
     "none": "Стандарт на проекта"
   },
   "properties": {
