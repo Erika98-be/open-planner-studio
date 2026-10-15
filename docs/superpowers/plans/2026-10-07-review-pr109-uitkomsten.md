@@ -1177,3 +1177,8 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   `pendingFit` in `createNewProject` + `computeEmptyProjectScrollX`. Bijvangst: na een nieuw project blijven de balk
   "hour-based planning" en de melding "calculates as Microsoft Project" van het vorige `.mpp` staan; Ctrl+Home op leeg
   project. Review bij reviewer (Opus 5.5, xhigh) gestart.
+- **Besluit eigenaar 2026-10-15 (kalendervenster): optie 1**, letterlijk "ik vraag me af of het uberhaupt wel nut heeft
+  om te tonen aan de user, wat heeft hij eraan? het heeft geen enkele functie. ik neig naar 1. je mag het zeggen als dat
+  heel dom is." en bij "De app rekent met de werktijden": "rekent en toont!". Orkestrator: niet dom, beter dan het
+  advies (optie 2). "Net hours per day" toont de werktijd per dag; opgeslagen 8 blijft voor export; MCP/extensies
+  ongemoeid. Worker (Opus 5.5, medium) op `claude/kalender-nettouren`.
