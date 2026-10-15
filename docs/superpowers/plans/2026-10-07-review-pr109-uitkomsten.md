@@ -906,3 +906,9 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   project settings".** Na de check bespreken: naast de knop staat al *Settings* (`menu:ribbon.projectSettings`,
   opent het instellingenvenster); "Project info" staat ook in venstertitel, backstage-sectie, meldingen (15 strings
   nl/en) en 54 gidsbestanden ⇒ alleen de knop of overal?
+- **Checkstap 14 = route-stap 4 (#169)** klaargezet en zelf nagelopen (Playwright, licht en donker, `/tmp/qa-stap14/`):
+  `productieplanning.mpp` ⇒ venster "MS Project file (.mpp) opened" + melding "This project calculates as Microsoft
+  Project…"; Project info toont Microsoft Project zonder oranje blok; *New project* heeft *Calculation profile*
+  (standaard Open Planner Studio); kies Microsoft Project ⇒ Create ⇒ Project info toont Microsoft Project. Eigen
+  waarnemingen: (a) in *New project* geen knop *New profile* naast de lijst; (b) leeg nieuw project (start 15-10-2026)
+  toont de tijdlijn op december 2024.
