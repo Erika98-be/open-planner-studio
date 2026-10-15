@@ -1214,3 +1214,28 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   Fixronde bij de maker (Opus 5.5, medium), keuzes orkestrator (eigenaar afwezig): alle ingangen naar een leeg document,
   één formule in `ganttViewport.ts`, signaal alleen zonder fasen (sjabloon zoals main), urenbalk en sjabloonraster als
   eigen commits in dezelfde PR (gedeelde bestanden).
+- **#366 urenperdag-heropenen** (worker Opus 5.5 medium): open (niet gemerged), concept, CI groen op b86d5618f.
+  `promoteHourCalendar` overschreef de bestandswaarde (sinds 0710c0795). **Review: nee** (reviewer Opus 5.5, xhigh):
+  [BEVESTIGD] samen met #363 MSPDI-baseline urentaak fout (−47 d); opgeslagen speling `mspditimephased.xml` 6,5 ⇒
+  6,93 d; `.mpp` en MSPDI geven andere kalender; MSPDI-bibliotheekkalender verliest nog een dag (main ook, geen veld).
+  Fixronde, keuzes orkestrator: merget ná #363 (bevat #363); speling omrekenen met de werktijd zoals XER; `.mpp` gelijk
+  aan MSPDI mits `measure:profiles` gelijk; WeakSet weg, waarde terugzetten zoals XER/IFC; eerlijke PR-tekst + gidsregel.
+  **Contract:** de baselineregel `mspdiReader.ts:469/471` hoort bij #363, niet bij #366.
+- **#367 kalender-nettouren** (worker Opus 5.5 medium): open (niet gemerged), concept, CI groen. Veld toont
+  `effHoursPerDay(draft)` (Roads 10,00 h). Keuze orkestrator: regel "Afgeleide uren/dag" in `WorkTimeEditor` weg (zelfde
+  getal twee keer past niet bij optie 1). Na #363: zinnen in `ref-kalenders` en `howto-werktijden-instellen` stap 7
+  gelijktrekken (wie als tweede merget).
+- **#368 taakpaneel-keuzelijsten** (worker Opus 5.5 medium): open (niet gemerged), concept, CI groen. Niet mergen vóór
+  het besluit native keuzelijsten. Review gestart (reviewer Opus 5.5, xhigh).
+- **#362** fixronde af (kop 375adc189, CI 16/16): de sprong onderaan zat al op main (tabel telde spookrij, Gantt niet);
+  één schuifhoogte in `scrollExtent.ts`. Hercheck gestart.
+- **#365** fixronde af (kop 8afa45640, CI 16/16, mergeable). Flake: `gantt-histogram-rtl.spec.ts:153` (browser 1-4),
+  groen na herstart. Hercheck gestart.
+- **Hercheck #363: nee** (dicht bij goed). Materiaal via taakkalender juist (P6 TT_Task); MCP hoeft ⚠ niet te melden.
+  Nodig: `mspdiReader.ts:471` baseline met de factor van de schrijver; oude baseline naar MSPDI met opgeslagen hpd; ⚠
+  ook voor 123 gestarte taken in Roads. Tweede fixronde gestart.
+- **Later-lijst erbij:** materiaal per uur in P6 XML (`PlannedUnitsPerTime` hoort tempo per uur; main 8, #363 10, juist
+  1; lezer `p6xmlReader.ts:1178` leest 1:1); procent-lag P6 XML (200 u, 50 %: #363 80 u, main 104 u, juist 100 u);
+  MSPDI-writer schrijft dagkalender 07–16/8 u als één blok ⇒ heropenen 9 u ("Budget Work Resource",
+  `mspdiassignmentfields.xml`); `Hospital_GW_Programme_pmxml.xml` opent niet (geen ObjectId).
+- **Release-taak:** termbase `project-info` bijwerken voor Projectinstellingen/App-instellingen (#365).
