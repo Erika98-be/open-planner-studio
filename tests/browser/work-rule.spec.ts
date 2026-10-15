@@ -368,10 +368,18 @@ test('werkregel: i-icoon per optie en naast het veld, met de uitleg van de regel
 
   // Gesloten veld: projectstandaard ⇒ het i-icoon legt Vaste duur en inzet uit (de regel tussen haakjes).
   await expect(info).toHaveAttribute('data-ops-work-rule-info', 'FIXED_DURATION_RATE');
+  // Klikvlak zoals bij *Duur*: vierkant, minstens 24 px (review #359, punt 2).
+  const ib = (await info.boundingBox())!;
+  expect(ib.width).toBeGreaterThanOrEqual(24);
+  expect(ib.height).toBeGreaterThanOrEqual(24);
+  expect(Math.abs(ib.width - ib.height)).toBeLessThanOrEqual(1);
   await info.hover();
   await expect(tip).toBeVisible();
   await expect(tip.locator('strong')).toHaveText(nl ? 'Het werk volgt uit de duur en de inzet.' : 'Work follows from duration and units.');
-  await expect(tip).toContainText(nl ? 'Een extra resource voegt werk toe.' : 'An extra resource adds work.');
+  // Elke zin een eigen regel: geen spatie als scheiding tussen zinnen (zh/ja, review #359, punt 5).
+  await expect(tip.locator('.ops-tooltip__line')).toHaveText(nl
+    ? ['Wijzig je het werk, dan past de inzet zich aan.', 'Een extra resource voegt werk toe.']
+    : ['If you change the work, the units adjust.', 'An extra resource adds work.']);
   await page.mouse.move(0, 0);
   await expect(tip).toHaveCount(0);
 
@@ -388,28 +396,36 @@ test('werkregel: i-icoon per optie en naast het veld, met de uitleg van de regel
   await expect(tip).toBeVisible();
   await expect(tip.locator('strong')).toHaveText(nl ? 'De duur volgt uit het werk en de inzet.' : 'Duration follows from work and units.');
   await expect(tip).toContainText(nl ? 'Wijzig je de duur, dan past de inzet zich aan.' : 'If you change the duration, the units adjust.');
-  // Het menu en de tooltip vallen binnen het scherm.
+  // Het menu en de tooltip vallen binnen het scherm, en de tooltip staat NAAST het menu: hij
+  // overlapt de rechthoek van het open menu niet (`data-tooltip-beside`, review #359, punt 3).
   const vw = page.viewportSize()!.width;
-  for (const box of [await menu.boundingBox(), await tip.boundingBox()]) {
-    expect(box!.x).toBeGreaterThanOrEqual(0);
-    expect(box!.x + box!.width).toBeLessThanOrEqual(vw);
+  const mb = (await menu.boundingBox())!;
+  const tb = (await tip.boundingBox())!;
+  for (const box of [mb, tb]) {
+    expect(box.x).toBeGreaterThanOrEqual(0);
+    expect(box.x + box.width).toBeLessThanOrEqual(vw);
   }
+  const overlaps = tb.x < mb.x + mb.width && mb.x < tb.x + tb.width && tb.y < mb.y + mb.height && mb.y < tb.y + tb.height;
+  expect(overlaps, `tooltip ${JSON.stringify(tb)} overlapt menu ${JSON.stringify(mb)}`).toBe(false);
   // Een klik op het i-icoon toont de uitleg en kiest de optie niet.
   await workIcon.click();
   await expect(menu).toBeVisible();
   await expect(tip).toBeVisible();
   expect((await taskState(page, taskId)).workRule).toBeUndefined();
 
-  // Toetsenbord: de gemarkeerde optie en de trigger wijzen met aria-describedby naar de uitleg.
+  // Toetsenbord: de focus blijft op de trigger; die wijst met aria-describedby naar de uitleg van de
+  // gemarkeerde optie (een optie zelf krijgt nooit focus, dus geen aria-describedby op de optie).
   await trigger.focus();
   await page.keyboard.press('Home');
   await page.keyboard.press('ArrowDown');
   const highlighted = menu.locator('[role="option"].is-highlighted');
   await expect(highlighted).toHaveAttribute('data-value', 'FIXED_DURATION_RATE');
-  const descId = await highlighted.getAttribute('aria-describedby');
+  await expect(highlighted).not.toHaveAttribute('aria-describedby', /.+/);
+  const descId = await trigger.getAttribute('aria-describedby');
   expect(descId).toBeTruthy();
-  await expect(trigger).toHaveAttribute('aria-describedby', descId!);
-  await expect(page.locator(`[id="${descId}"]`)).toHaveText(/volgt uit|follows from/);
+  await expect(page.locator(`[id="${descId}"]`)).toHaveText(nl ? /^Het werk volgt uit de duur en de inzet\./ : /^Work follows from duration and units\./);
+  await page.keyboard.press('ArrowDown');
+  await expect(page.locator(`[id="${await trigger.getAttribute('aria-describedby')}"]`)).toHaveText(nl ? /^De inzet volgt uit de duur en het werk\./ : /^Units follow from duration and work\./);
 
   // Kies Vaste inzet met een klik op het label.
   await menu.locator('[role="option"][data-value="FIXED_RATE"]').click();
@@ -445,4 +461,57 @@ test('werkregel: de uitleg volgt het bewaarde MS Project-vinkje', async ({ page,
   await info.hover();
   const tip = page.locator('.ops-tooltip[role="tooltip"]');
   await expect(tip).toContainText(nl ? 'Een extra resource voegt werk toe; de duur blijft gelijk.' : 'An extra resource adds work; the duration stays the same.');
+});
+
+// Review #359, punt 1: de tooltip toont de uitleg van de regel die NU geldt, ook als de regel
+// verandert terwijl hij open staat (Ctrl+Z met de muis of de focus op het i-icoon). Voorheen zette
+// TooltipHost bij het sluiten het oude `title` terug over de nieuwe waarde van React.
+test('werkregel: na Ctrl+Z met de tooltip open toont het i-icoon de regel die nu geldt', async ({ page, ops: _ops }) => {
+  const { taskId } = await seedAssignedTask(page);
+  const nl = (await page.evaluate(() => document.documentElement.lang)).startsWith('nl');
+  const tip = page.locator('.ops-tooltip[role="tooltip"]');
+  const info = page.locator('[data-ops-work-rule-info]');
+  const fdr = nl ? 'Het werk volgt uit de duur en de inzet.' : 'Work follows from duration and units.';
+  const fw = nl ? 'De duur volgt uit het werk en de inzet.' : 'Duration follows from work and units.';
+  for (const how of ['hover', 'focus'] as const) {
+    await chooseWorkRule(page, page, 'FIXED_WORK');
+    expect((await taskState(page, taskId)).workRule).toBe('FIXED_WORK');
+    if (how === 'hover') await info.hover(); else await info.focus();
+    await expect(tip.locator('strong')).toHaveText(fw);
+    await page.keyboard.press('Control+z');
+    await expect.poll(async () => (await taskState(page, taskId)).workRule).toBeUndefined();
+    await expect(info).toHaveAttribute('data-ops-work-rule-info', 'FIXED_DURATION_RATE');
+    // Zichtbare tooltip volgt meteen; na sluiten staat het nieuwe `title` op de knop.
+    await expect(tip.locator('strong')).toHaveText(fdr);
+    await page.mouse.move(0, 0);
+    // Een tooltip door focus sluit met Escape (TooltipHost slikt die Escape; zonder tooltip zou
+    // Escape de selectie opheffen).
+    if (how === 'focus') await page.keyboard.press('Escape');
+    await expect(tip).toHaveCount(0);
+    await expect(info).toHaveAttribute('title', new RegExp(`^${fdr.replace(/\./g, '\\.')}`));
+    await info.hover();
+    await expect(tip.locator('strong')).toHaveText(fdr);
+    await page.mouse.move(0, 0);
+  }
+});
+
+// Review #359, punt 3: een tooltip die onder het scherm zou vallen, komt boven zijn element.
+test('tooltip: onderaan het scherm staat de tooltip boven het i-icoon', async ({ page, ops: _ops }) => {
+  await seedAssignedTask(page);
+  await page.setViewportSize({ width: 1280, height: 560 });
+  const info = page.locator('[data-ops-work-rule-info]');
+  await info.evaluate(el => el.scrollIntoView({ block: 'end' }));
+  const vh = page.viewportSize()!.height;
+  const ib = (await info.boundingBox())!;
+  const tip = page.locator('.ops-tooltip[role="tooltip"]');
+  await info.hover();
+  await expect(tip).toBeVisible();
+  // De uitleg (drie regels) past niet meer onder het icoon …
+  const th = (await tip.boundingBox())!.height;
+  expect(ib.y + ib.height + 6 + th, 'fixture: het icoon moet laag genoeg staan').toBeGreaterThan(vh - 6);
+  // … dus staat hij erboven, helemaal in beeld.
+  await expect.poll(async () => {
+    const tb = (await tip.boundingBox())!;
+    return tb.y + tb.height <= ib.y + 0.5 && tb.y >= 0;
+  }).toBe(true);
 });

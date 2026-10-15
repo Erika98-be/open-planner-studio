@@ -33,6 +33,10 @@
   font-weight: 600;
 }
 
+.ops-tooltip__line {
+  display: block;
+}
+
 /* `data-tooltip-beside`: links/rechts naast een voorouder; JS zet `left`/`top`, geen centrering. */
 .ops-tooltip.ops-tooltip--beside {
   transform: none;

@@ -34,14 +34,15 @@ export function TaskWorkRuleField({ task, onChange }: {
   const effective = effectiveWorkRule(task, defaultRule);
   const effortDriven = effectiveEffortDriven(task);
   const projectRule = defaultRule ?? DEFAULT_WORK_RULE;
-  // Eerste regel = vette kernzin (`data-tooltip-lead`), daarna de rest van de uitleg.
+  // Elke zin op een eigen regel (`\n`), de eerste vet (`data-tooltip-lead`). Geen spatie tussen
+  // zinnen: die is taalafhankelijk (zh/ja kennen hem niet).
   const explain = (rule: WorkRule): string => {
     const ex = workRuleExplanation(rule, effortDriven);
-    return `${t(`workRule.explain.${ex.lead}`)}\n${ex.rest.map(s => t(`workRule.explain.${s}`)).join(' ')}`;
+    return [ex.lead, ...ex.rest].map(s => t(`workRule.explain.${s}`)).join('\n');
   };
   return (
     <Field label={t('workRule.label')}>
-      <div className="flex items-stretch gap-1.5">
+      <div className="flex min-w-0 items-center gap-1.5">
         <div className="min-w-0 flex-1" data-ops-work-rule data-value={task.workRule ?? ''}>
           <Select
             aria-label={t('workRule.label')}
@@ -59,17 +60,22 @@ export function TaskWorkRuleField({ task, onChange }: {
           />
         </div>
         {/* i-icoon naast het gesloten veld, zoals bij *Duur*: de uitleg van de regel die nu geldt. */}
-        <button
-          type="button"
-          className="inline-flex aspect-square shrink-0 items-center justify-center rounded-[5px] text-text-secondary hover:bg-surface-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
-          title={explain(effective)}
-          aria-label={t('workRule.info')}
-          data-tooltip-instant="true"
-          data-tooltip-lead="true"
-          data-ops-work-rule-info={effective}
-        >
-          <Info size={14} aria-hidden="true" />
-        </button>
+        {/* Zelfde omhulling als het i-icoon bij *Duur* (`TaskDurationField`): vierkant zo hoog als het veld.
+            `h-9` = de hoogte van de trigger (`ops-select__trigger--duration`, 2.25rem): zonder vaste hoogte
+            rekent Chrome de breedte uit vóór het oprekken en blijft het vlak 14 px breed. */}
+        <span className="inline-flex aspect-square h-9 shrink-0 self-stretch">
+          <button
+            type="button"
+            className="inline-flex h-full w-full items-center justify-center rounded-[5px] text-text-secondary hover:bg-surface-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
+            title={explain(effective)}
+            aria-label={t('workRule.info')}
+            data-tooltip-instant="true"
+            data-tooltip-lead="true"
+            data-ops-work-rule-info={effective}
+          >
+            <Info size={14} aria-hidden="true" />
+          </button>
+        </span>
       </div>
     </Field>
   );

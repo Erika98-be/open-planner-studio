@@ -17,8 +17,8 @@ export type SelectOption = {
   /** Optionele uitleg bij deze optie. In de open lijst krijgt de optie dan een i-icoon met deze
    *  tekst als directe tooltip (`TooltipHost`, `data-tooltip-instant`: hover, klik en tik). Staat er
    *  een regeleinde (`\n`) in, dan is de eerste regel de vette kernzin (`data-tooltip-lead`).
-   *  Toetsenbord: de optie én (bij de gemarkeerde optie) de trigger wijzen er met
-   *  `aria-describedby` naar, zodat een schermlezer de uitleg voorleest. Zonder `description`
+   *  Toetsenbord: de focus blijft op de trigger; bij de gemarkeerde optie wijst de trigger met
+   *  `aria-describedby` naar de uitleg, zodat een schermlezer hem voorleest. Zonder `description`
    *  verandert er niets aan de keuzelijst. */
   description?: string;
 };
@@ -324,7 +324,6 @@ export function Select({
                   data-value={opt.value}
                   aria-selected={isSelected}
                   aria-disabled={opt.disabled || undefined}
-                  aria-describedby={opt.description ? descriptionId(i) : undefined}
                   className={
                     'ops-select__option' +
                     (isHighlighted ? ' is-highlighted' : '') +
@@ -343,7 +342,7 @@ export function Select({
                     <>
                       {/* i-icoon: alleen voor muis en tik (de focus blijft op de trigger); een klik
                           toont de uitleg en kiest de optie NIET. Schermlezers krijgen de uitleg via
-                          `aria-describedby` (verborgen spans ná de opties, zodat de tekst van de optie
+                          `aria-describedby` op de trigger (verborgen spans ná de opties, zodat de tekst van de optie
                           zelf alleen het label blijft). */}
                       <span
                         className="ops-select__option-info"
