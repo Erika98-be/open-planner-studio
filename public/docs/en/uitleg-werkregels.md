@@ -26,12 +26,12 @@ If a work rule changes the task's duration, the schedule becomes out of date. Th
 
 ### Four rules
 
-In the *Properties* panel, under the drop-down, the app shows what the chosen rule protects. The four rules, with the app's own text:
+In the *Properties* panel there is an i icon next to the *Work rule* drop-down. Point at it, click or tap it, and the app explains the rule that applies now. In the open drop-down each rule has such an i icon too. The explanation starts with a bold sentence. The four rules, with that sentence from the app:
 
-- **Fixed duration and units** (*Protected: duration and units (work follows)*). This is the default. The app never changes the duration itself and the work follows from duration and units. If you type the work yourself, the app adjusts the units, because the duration is fixed.
-- **Fixed duration and work** (*Protected: duration and work (units follow)*). The app never changes the duration itself. If you change the duration, the work stays and the units adjust.
-- **Fixed work** (*Protected: work (duration follows units)*). The work is fixed and the duration follows from work and units.
-- **Fixed units** (*Protected: units (duration follows work)*). The units are fixed and the duration follows from the work.
+- **Fixed duration and units** (*Work follows from duration and units.*). This is the default. The app never changes the duration itself and the work follows from duration and units. If you type the work yourself, the app adjusts the units, because the duration is fixed.
+- **Fixed duration and work** (*Units follow from duration and work.*). The app never changes the duration itself. If you change the duration, the work stays and the units adjust.
+- **Fixed work** (*Duration follows from work and units.*). The work is fixed and the duration follows from work and units.
+- **Fixed units** (*Duration follows from work and units.*). The units are fixed and the duration follows from the work.
 
 So two rules leave the duration alone. With the other two the duration moves along when you change the units, the work or the number of resources. With one resource, Fixed work and Fixed units do exactly the same there. They differ when you change the duration yourself: with Fixed work the work stays and the units adjust, with Fixed units the units stay and the work grows along. They also differ when there are more resources on the task (see below).
 
@@ -113,7 +113,7 @@ The inner cavity leaf takes 5 work days and is 40% done: 2 work days are done an
 
 **Without an assignment a work rule does nothing.** There are then no units and no work to tie to the duration.
 
-**Files from MS Project or Primavera P6 always show the work rule.** For a task from MS Project the text *From MS Project: effort-driven* or *From MS Project: not effort-driven* sometimes appears under the rule. That stored setting changes two cases. With *Fixed duration and work* and effort-driven, the work moves along when you change the duration, instead of the units. With *Fixed units* and not effort-driven, the work moves along when you add or remove a resource, and the duration stays. Tasks you create in the app do not have this setting.
+**Files from MS Project or Primavera P6 always show the work rule.** For a task from MS Project the app sometimes keeps the effort-driven setting. That stored setting changes two cases. With *Fixed duration and work* and effort-driven, the work moves along when you change the duration, instead of the units. With *Fixed units* and not effort-driven, the work moves along when you add or remove a resource, and the duration stays. Tasks you create in the app do not have this setting. The explanation behind the i icon takes this setting into account.
 
 ## See also
 

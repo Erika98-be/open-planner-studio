@@ -358,13 +358,6 @@
     "FIXED_RATE": "Kiinteä yksikkömäärä",
     "label": "Työsääntö",
     "projectDefault": "Projektin oletus ({{rule}})",
-    "protects": "Suojattu: {{what}}",
-    "protectsFIXED_DURATION_RATE": "kesto ja kuormitusaste (työ seuraa)",
-    "protectsFIXED_DURATION_WORK": "kesto ja työmäärä (kuormitusaste seuraa)",
-    "protectsFIXED_WORK": "työmäärä (kesto seuraa kuormitusastetta)",
-    "protectsFIXED_RATE": "kuormitusaste (kesto seuraa työtä)",
-    "mspEffortDriven": "MS Projectista: työmäärään perustuva",
-    "mspNotEffortDriven": "MS Projectista: ei työmäärään perustuva",
     "none": "Projektin oletus"
   },
   "properties": {

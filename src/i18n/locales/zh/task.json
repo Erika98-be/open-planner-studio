@@ -355,13 +355,6 @@
     "FIXED_RATE": "固定单位",
     "label": "工作规则",
     "projectDefault": "项目默认（{{rule}}）",
-    "protects": "受保护：{{what}}",
-    "protectsFIXED_DURATION_RATE": "工期和单位（工时随之变化）",
-    "protectsFIXED_DURATION_WORK": "工期和工时（单位随之变化）",
-    "protectsFIXED_WORK": "工时（工期随单位变化）",
-    "protectsFIXED_RATE": "单位（工期随工时变化）",
-    "mspEffortDriven": "来自 MS Project：投入驱动",
-    "mspNotEffortDriven": "来自 MS Project：非投入驱动",
     "none": "项目默认"
   },
   "properties": {

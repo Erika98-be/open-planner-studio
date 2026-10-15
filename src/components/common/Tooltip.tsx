@@ -25,14 +25,33 @@ import './Tooltip.css';
  *    geen Escape meer;
  *  - wijst `aria-describedby` meteen bij het tonen (synchroon, vóór het bubbeltje er is) naar een
  *    verborgen element dat altijd bestaat en de uitleg bevat, zodat een schermlezer hem bij focus leest.
+ *
+ * `data-tooltip-lead` (optioneel): de eerste regel van het `title` (tot de eerste `\n`) staat vet,
+ * elke volgende regel staat apart eronder. Zo kan een uitleg met een kernzin beginnen (veld *Werkregel*).
  */
 const DELAY_MS = 400;
 /** `data-tooltip-instant`: geen vertraging — voor info-iconen waar de tooltip dé inhoud is. */
 const isInstant = (el: HTMLElement): boolean => el.hasAttribute('data-tooltip-instant');
 const instantDelay = (el: HTMLElement): number => (isInstant(el) ? 0 : DELAY_MS);
 const DESCRIPTION_ID = 'ops-tooltip-description';
+/** `data-tooltip-lead`: de eerste regel van het `title` staat vet. */
+const hasLead = (el: HTMLElement): boolean => el.hasAttribute('data-tooltip-lead');
 
-interface TipState { text: string; x: number; y: number; }
+/** Inhoud van het bubbeltje: met `lead` de eerste regel vet en elke volgende regel (`\n`) als eigen
+ *  regel, zodat zinnen zonder taalafhankelijke spatie onder elkaar staan; anders de tekst zoals hij is. */
+function TipText({ text, lead }: { text: string; lead?: boolean }) {
+  if (!lead || !text.includes('\n')) return <>{text}</>;
+  const [first, ...rest] = text.split('\n');
+  return (
+    <>
+      <strong className="ops-tooltip__lead">{first}</strong>
+      {rest.map((line, i) => <span key={i} className="ops-tooltip__line">{line}</span>)}
+    </>
+  );
+}
+
+/** `above`: bovenrand van het element, voor als het bubbeltje onder de viewport zou vallen. */
+interface TipState { text: string; x: number; y: number; above: number; lead?: boolean; }
 
 export function TooltipHost() {
   const [tip, setTip] = useState<TipState | null>(null);
@@ -48,10 +67,25 @@ export function TooltipHost() {
     const removal = new MutationObserver(() => {
       if (activeEl.current && !activeEl.current.isConnected) dismiss();
     });
-    // Zet het weggehaalde `title` terug op het element waar we het van leenden.
+    // Zet React tijdens het tonen een nieuw `title` (de waarde veranderde, bv. na Ctrl+Z), dan is
+    // DAT de tekst: haal hem weer weg (geen native tooltip) en toon hem meteen in het bubbeltje.
+    const titleWatch = new MutationObserver(() => {
+      const el = activeEl.current;
+      const next = el?.getAttribute('title');
+      if (!el || !next) return;
+      stashed.current = next;
+      el.removeAttribute('title');
+      if (el.getAttribute('aria-describedby') === DESCRIPTION_ID && descriptionRef.current) {
+        descriptionRef.current.textContent = next;
+      }
+      setTip(prev => (prev ? { ...prev, text: next } : prev));
+    });
+    // Zet het weggehaalde `title` terug op het element waar we het van leenden, maar nooit over een
+    // `title` dat er intussen weer staat: dat is de nieuwere waarde (review PR #359, punt 1).
     const restore = () => {
       removal.disconnect();
-      if (activeEl.current && stashed.current !== null) {
+      titleWatch.disconnect();
+      if (activeEl.current && stashed.current !== null && !activeEl.current.hasAttribute('title')) {
         activeEl.current.setAttribute('title', stashed.current);
       }
       if (activeEl.current?.getAttribute('aria-describedby') === DESCRIPTION_ID) {
@@ -106,13 +140,14 @@ export function TooltipHost() {
       stashed.current = text;
       removal.observe(document.body, { childList: true, subtree: true });
       el.removeAttribute('title'); // onderdrukt de native tooltip
+      titleWatch.observe(el, { attributes: true, attributeFilter: ['title'] });
       if (isInstant(el) && !el.hasAttribute('aria-describedby') && descriptionRef.current) {
         descriptionRef.current.textContent = text;
         el.setAttribute('aria-describedby', DESCRIPTION_ID);
       }
       timer.current = setTimeout(() => {
         const r = el.getBoundingClientRect();
-        setTip({ text, x: r.left + r.width / 2, y: r.bottom + 6 });
+        setTip({ text: stashed.current ?? text, x: r.left + r.width / 2, y: r.bottom + 6, above: r.top - 6, lead: hasLead(el)});
       }, delay);
     };
     // Info-icoon met focus (toetsenbord, of de focus na een klik of tik): meteen tonen.
@@ -150,7 +185,7 @@ export function TooltipHost() {
       const el = activeEl.current;
       if (el && isInstant(el) && stashed.current !== null && (document.activeElement === el || el.matches(':hover'))) {
         const r = el.getBoundingClientRect();
-        setTip({ text: stashed.current, x: r.left + r.width / 2, y: r.bottom + 6 });
+        setTip({ text: stashed.current, x: r.left + r.width / 2, y: r.bottom + 6, above: r.top - 6, lead: hasLead(el) });
         return;
       }
       dismiss();
@@ -194,6 +229,11 @@ export function TooltipHost() {
     const half = bubbleRef.current.offsetWidth / 2;
     const cx = Math.max(half + 6, Math.min(tip.x, window.innerWidth - half - 6));
     bubbleRef.current.style.left = `${cx}px`;
+    // Valt het bubbeltje onder de viewport, dan boven het element (lange uitleg laag in beeld).
+    const h = bubbleRef.current.offsetHeight;
+    if (tip.y + h > window.innerHeight - 6 && tip.above - h >= 6) {
+      bubbleRef.current.style.top = `${tip.above - h}px`;
+    }
   }, [tip]);
 
   return createPortal(
@@ -201,7 +241,7 @@ export function TooltipHost() {
       <span ref={descriptionRef} id={DESCRIPTION_ID} hidden />
       {tip && (
         <div ref={bubbleRef} className="ops-tooltip" role="tooltip" style={{ left: tip.x, top: tip.y }}>
-          {tip.text}
+          <TipText text={tip.text} lead={tip.lead} />
         </div>
       )}
     </>,
