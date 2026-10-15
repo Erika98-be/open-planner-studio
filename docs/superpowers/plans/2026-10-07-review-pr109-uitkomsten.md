@@ -1089,3 +1089,8 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   keuzeregel, IFC/undo/crashherstel, `DOCUMENT_FIELDS` ongewijzigd nodig, histogram Roads A10540 volgt het bestand
   (360 h), kolom standaard uit, geen conflict met #359. Voor de eigenaar: histogram én kosten veranderen bij openen in
   drie documenten. Fixronde bij de maker.
+- **Melding "573 tasks moved" na Ctrl+Z: geen fout** (worker Opus 5.5, gemeten met Playwright): de melding verdwijnt na
+  de normale 5 s; Ctrl+Z verlengt niets. Staat er nog een andere info-melding, dan start `NotificationHost.tsx` de timers
+  opnieuw (bewust, gedocumenteerd) ⇒ tot ~10 s. Na Ctrl+Z toont hij dus nog 4–9 s een getal dat niet meer klopt.
+  Niets gebouwd; worktree en lokale branch verwijderd. Ontwerpkeuze voor later (eigenaar): undo haalt de melding over
+  die actie direct weg.
