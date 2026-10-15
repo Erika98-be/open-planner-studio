@@ -18,7 +18,7 @@ const taskIds = (page: Page) => page.evaluate(() => window.__OPS__!.store.getSta
 const selected = (page: Page) => page.evaluate(() => window.__OPS__!.store.getState().selectedTaskIds);
 const menu = (page: Page) => page.locator('.ops-select__menu');
 
-const LONG_TASK = 'Gevelmetselwerk met verdiepte voegen en natuursteen plinten aan de noordzijde';
+const LONG_TASK = 'Gevelmetselwerk met verdiepte voegen en natuursteen plinten aan de noordzijde, inclusief steigerwerk en voegwerk na de vorstperiode';
 /** `dialog.parentTask` uit de taalbestanden: zo volgt de test de vertaling. */
 const parentTaskLabel = (locale: 'en' | 'ar'): string =>
   (JSON.parse(readFileSync(new URL(`../../src/i18n/locales/${locale}/task.json`, import.meta.url), 'utf8')) as { dialog: { parentTask: string } }).dialog.parentTask;
@@ -45,26 +45,18 @@ async function seedPanel(page: Page, extraCalendar = false): Promise<{ id: strin
   return { id, trigger };
 }
 
-test('Delete, Backspace, − en 0 in de keuzelijst laten taak en zoom met rust', async ({ page, ops: _ops }) => {
+test('Delete en Backspace in de open lijst en op de dichte trigger verwijderen de taak niet', async ({ page, ops: _ops }) => {
   const { id, trigger } = await seedPanel(page);
 
-  // Controle vooraf: zonder veldfocus zoomt het min-teken wél.
-  await page.locator('body').click({ position: { x: 1, y: 1 } });
-  await page.evaluate(taskId => window.__OPS__!.store.getState().selectTask(taskId), id);
-  const start = await zoom(page);
-  await page.keyboard.press('-');
-  await expect.poll(() => zoom(page)).toBeLessThan(start);
-
-  // Open lijst: − en 0 zoomen niet, Delete en Backspace verwijderen niets.
+  // Open lijst.
   await trigger.click();
   await expect(menu(page)).toBeVisible();
-  const before = await zoom(page);
-  for (const key of ['-', '0', 'Delete', 'Backspace']) await page.keyboard.press(key);
-  expect(await zoom(page)).toBe(before);
+  await page.keyboard.press('Delete');
+  await page.keyboard.press('Backspace');
   expect(await taskIds(page)).toEqual([id]);
 
   // Kiezen met de muis: de focus gaat terug naar de dichte trigger. Backspace en Delete daar
-  // verwijderen de taak niet.
+  // verwijderen de taak ook niet.
   await menu(page).locator('[role="option"]').first().click();
   await expect(menu(page)).toHaveCount(0);
   await expect(trigger).toBeFocused();
@@ -72,6 +64,24 @@ test('Delete, Backspace, − en 0 in de keuzelijst laten taak en zoom met rust',
   await page.keyboard.press('Delete');
   expect(await taskIds(page)).toEqual([id]);
   expect(await selected(page)).toEqual([id]);
+});
+
+test('− en 0 in de open lijst zoomen de Gantt niet', async ({ page, ops: _ops }) => {
+  const { trigger } = await seedPanel(page);
+
+  // Controle vooraf: zonder veldfocus zoomt het min-teken wél.
+  await page.locator('body').click({ position: { x: 1, y: 1 } });
+  const start = await zoom(page);
+  await page.keyboard.press('-');
+  await expect.poll(() => zoom(page)).toBeLessThan(start);
+
+  await trigger.click();
+  await expect(menu(page)).toBeVisible();
+  const before = await zoom(page);
+  await page.keyboard.press('-');
+  await page.keyboard.press('0');
+  expect(await zoom(page)).toBe(before);
+  await expect(menu(page)).toBeVisible();
 });
 
 test('Escape op de keuzelijst in het paneel: lijst dicht, taakselectie blijft (zoals een native select)', async ({ page, ops: _ops }) => {
@@ -115,6 +125,11 @@ test('Escape in een open lijst in de taakdialoog sluit alleen de lijst; het conc
   // De taak zelf is niet gewijzigd: het concept is nog niet opgeslagen en niet weggegooid.
   expect(await page.evaluate(id => window.__OPS__!.store.getState().tasks.find(t => t.id === id)!.name, second)).toBe('Metselwerk');
   expect(await taskIds(page)).toEqual([first, second]);
+
+  // Een tweede Escape op de dichte trigger sluit de dialoog wél, net als bij een gefocuste native
+  // <select> op main: alleen een open lijst houdt Escape vast.
+  await page.keyboard.press('Escape');
+  await expect(dialog).toHaveCount(0);
 });
 
 /** Elke optie past volledig: geen afgeknipt label, en de lijst ligt binnen het venster. */
@@ -135,7 +150,7 @@ async function expectOptionsFit(page: Page): Promise<{ menu: DOMRect; widest: nu
   return { menu: result.menu, widest: result.widest };
 }
 
-/** De taakdialoog met een taak met een lange naam; geeft de trigger "Bovenliggende taak" terug. De
+/** De taakdialoog met een taak met een naam die breder is dan de (brede) trigger "Bovenliggende taak". De
  *  dialoog staat midden in het venster, dus de lijst heeft aan beide kanten ruimte om te groeien. */
 async function openParentSelect(page: Page, locale: 'en' | 'ar'): Promise<Locator> {
   const [, second] = await seedProject(page, [
