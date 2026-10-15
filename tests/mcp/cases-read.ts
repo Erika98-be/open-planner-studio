@@ -272,6 +272,25 @@ test('get_task: detail incl. assignments (resource/units/curve) + voorganger/opv
   assertEq(data.calendar.isProjectDefault, true, 'kalender is projectdefault');
 });
 
+// Resttempo (eigenaarsbesluit 2026-10-15, review #361 punt 3): komt een toewijzing uit P6 met een
+// ander resttempo, dan is `unitsPerDay` het resttempo en staat het begrote tempo apart. De bridge
+// geeft het begrote tempo alleen als het gezet is. Mutatiebewijs: de regel in `readTools.ts` weg ⇒ rood.
+test('get_task: begroot tempo naast het resttempo (plannedUnitsPerDay), alleen wanneer gezet', () => {
+  cleanProject();
+  const rId = S().addResource({ name: 'Voorman', type: 'LABOR', description: '', maxUnits: 40 });
+  const t = S().addTask({ name: 'P6-taak', isMilestone: false, parentId: null, time: createDefaultTaskTime('2026-06-01', 2) });
+  S().assignResource(t, rId, 34);
+  const zonder = callOk('planner_get_task', { taskId: t });
+  assertEq('plannedUnitsPerDay' in zonder.assignments[0], false, 'zonder apart begroot tempo: geen veld');
+  useAppStore.setState((s) => {
+    const a = s.assignments.find((x) => x.taskId === t);
+    if (a) a.plannedUnitsPerDay = 1.11111111111111;
+  });
+  const met = callOk('planner_get_task', { taskId: t });
+  assertEq([met.assignments[0].unitsPerDay, met.assignments[0].plannedUnitsPerDay], [34, 1.11111111111111],
+    'inzet = resttempo 34, begroot tempo 1,111 apart');
+});
+
 // F5 (spec-review-fixronde op 526af9f9, plan-Z14 regel ~470) — leeskant-rand: .mpp-importvelden
 // moeten via de MCP-bridge leesbaar zijn. `manuallyScheduled`/`splitGaps`/`levelingDelayMinutes`
 // bestonden al als Task-veld maar ontbraken in `planner_get_task`; `mspTaskType`/`effortDriven`/
