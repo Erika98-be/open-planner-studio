@@ -1160,3 +1160,9 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
 - **Checkstap 20 (tekst ⚠, #361) goedgekeurd door de eigenaar 2026-10-15, letterlijk: "jahoor".** Merge #361 na groene
   CI op afd7bb60a (bevat main 799d4ff2c). Zonder eigenaar gestart: worker (Opus 5.5, medium)
   `claude/urenperdag-heropenen` voor `promoteHourCalendar` (fout in bestaand werk). Besluit oude baselines voorgelegd.
+- **Besluit eigenaar 2026-10-15 (oude baselines): optie 2** (niet omrekenen; zin in de release notes), plus letterlijk:
+  "kan er niet in dit specifieke geval een klein warning message worden gegeven met zo'n driehoekje?" ⇒ ⚠ in de kolommen
+  *Baselineduur* en *Afwijking duur* alleen bij urentaak + opgeslagen hpd ≠ werktijd per dag + baselineduur past bij de
+  oude rekenwijze (uit baseline-start/-einde) en niet bij de nieuwe. Toegevoegd aan de fixronde #363.
+  **Voor de releasetekst:** "Heb je een P6-planning met afwijkende uren per dag en een baseline uit een oudere versie?
+  Dan kan de kolom *Afwijking duur* een verschil tonen (met ⚠). Neem de baseline opnieuw."
