@@ -1007,3 +1007,11 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
 - Eigenaar 2026-10-15 vroeg het besluit "een dag" opnieuw uit te leggen in gewone taal, met het waarom. Gedaan (P6
   bewaart uren; "uren per dag" is alleen een omrekengetal voor het scherm; het verborgen dagengetal bestaat omdat de
   app dag- en urentaken kent). Antwoord open.
+- **Besluit eigenaar 2026-10-15 ("een dag"): optie 2**, letterlijk bij de optietekst: "dit lijkt me de meest logische
+  keuze omdat dit de echte waarde is en wij niet zoals p6 werken met een aparte instelling voor weergave". Vragen erbij:
+  "dus dit is wat p6 laat zien" (233,75 d in de kolom: ja) en "dit is het echte?" (balk 187 werkdagen: ja). Optie 2:
+  het verborgen dagengetal van een urentaak = werkminuten ÷ werktijd per dag van de taakkalender, ook in de lezers;
+  `hoursPerDay` (8) blijft bewaard en gaat bij export terug. Bouw bij een expert (Opus 5.5, xhigh), branch
+  `claude/dag-is-werktijd`, inclusief de MCP-bijvangst (urentaak zonder `scheduleDuration`, eerst bewijzen).
+  Genoteerd voor later: het kalendervenster toont "Netto-uren per dag 8.00 h" naast 10 h blokken; dat is de enige plek
+  waar de 8 nog zichtbaar is (past niet bij de redenering van de eigenaar) ⇒ voorleggen na de bouw.
