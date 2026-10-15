@@ -1094,3 +1094,9 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   opnieuw (bewust, gedocumenteerd) ⇒ tot ~10 s. Na Ctrl+Z toont hij dus nog 4–9 s een getal dat niet meer klopt.
   Niets gebouwd; worktree en lokale branch verwijderd. Ontwerpkeuze voor later (eigenaar): undo haalt de melding over
   die actie direct weg.
+- **#362 zwevende schuifbalken takenlijst** (worker Opus 5.5 medium): open (niet gemerged), concept, CI 16/16 op
+  66aece59d. Overlay-scrollers in `DataGridCore.tsx` (horizontaal onder, verticaal aan de Gantt-kant, RTL links),
+  `.task-grid-core` zonder eigen balken; duim 6 px in strook 8 px, zelfde kleur als de Gantt-duim; duim bedekt ~6 px van
+  de laatste kolom. 4 mutanten rood, 98 browsertests lokaal groen. In de testversie gemerged (8299e0799, lokaal); zelf
+  nagelopen: geen gereserveerde balkruimte meer. Review bij reviewer (Opus 5.5, xhigh) gestart. Ontwerpcheck eigenaar
+  volgt na het besluit over *Project info*.
