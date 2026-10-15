@@ -28,9 +28,6 @@ import './Tooltip.css';
  *
  * `data-tooltip-lead` (optioneel): de eerste regel van het `title` (tot de eerste `\n`) staat vet,
  * elke volgende regel staat apart eronder. Zo kan een uitleg met een kernzin beginnen (veld *Werkregel*).
- * `data-tooltip-beside="<selector>"` (optioneel): het bubbeltje staat naast de dichtstbijzijnde
- * voorouder die op de selector past (links ervan, anders rechts), op de hoogte van het element. Zo
- * bedekt de uitleg bij een optie in een open keuzelijst de andere opties niet.
  */
 const DELAY_MS = 400;
 /** `data-tooltip-instant`: geen vertraging — voor info-iconen waar de tooltip dé inhoud is. */
@@ -39,14 +36,6 @@ const instantDelay = (el: HTMLElement): number => (isInstant(el) ? 0 : DELAY_MS)
 const DESCRIPTION_ID = 'ops-tooltip-description';
 /** `data-tooltip-lead`: de eerste regel van het `title` staat vet. */
 const hasLead = (el: HTMLElement): boolean => el.hasAttribute('data-tooltip-lead');
-/** Rechthoek van de `data-tooltip-beside`-voorouder, of niets. */
-function besideOf(el: HTMLElement, r: DOMRect): TipState['beside'] {
-  const sel = el.getAttribute('data-tooltip-beside');
-  const host = sel ? el.closest(sel) : null;
-  if (!host) return undefined;
-  const h = host.getBoundingClientRect();
-  return { left: h.left, right: h.right, top: r.top };
-}
 
 /** Inhoud van het bubbeltje: met `lead` de eerste regel vet en elke volgende regel (`\n`) als eigen
  *  regel, zodat zinnen zonder taalafhankelijke spatie onder elkaar staan; anders de tekst zoals hij is. */
@@ -62,11 +51,7 @@ function TipText({ text, lead }: { text: string; lead?: boolean }) {
 }
 
 /** `above`: bovenrand van het element, voor als het bubbeltje onder de viewport zou vallen. */
-interface TipState {
-  text: string; x: number; y: number; above: number; lead?: boolean;
-  /** `data-tooltip-beside`: rechthoek van de voorouder waar het bubbeltje NAAST moet staan. */
-  beside?: { left: number; right: number; top: number };
-}
+interface TipState { text: string; x: number; y: number; above: number; lead?: boolean; }
 
 export function TooltipHost() {
   const [tip, setTip] = useState<TipState | null>(null);
@@ -162,7 +147,7 @@ export function TooltipHost() {
       }
       timer.current = setTimeout(() => {
         const r = el.getBoundingClientRect();
-        setTip({ text: stashed.current ?? text, x: r.left + r.width / 2, y: r.bottom + 6, above: r.top - 6, lead: hasLead(el), beside: besideOf(el, r) });
+        setTip({ text: stashed.current ?? text, x: r.left + r.width / 2, y: r.bottom + 6, above: r.top - 6, lead: hasLead(el)});
       }, delay);
     };
     // Info-icoon met focus (toetsenbord, of de focus na een klik of tik): meteen tonen.
@@ -200,7 +185,7 @@ export function TooltipHost() {
       const el = activeEl.current;
       if (el && isInstant(el) && stashed.current !== null && (document.activeElement === el || el.matches(':hover'))) {
         const r = el.getBoundingClientRect();
-        setTip({ text: stashed.current, x: r.left + r.width / 2, y: r.bottom + 6, above: r.top - 6, lead: hasLead(el), beside: besideOf(el, r) });
+        setTip({ text: stashed.current, x: r.left + r.width / 2, y: r.bottom + 6, above: r.top - 6, lead: hasLead(el) });
         return;
       }
       dismiss();
@@ -241,16 +226,6 @@ export function TooltipHost() {
   // Horizontaal binnen de viewport houden (triggers vlak bij de rand).
   useLayoutEffect(() => {
     if (!tip || !bubbleRef.current) return;
-    if (tip.beside) {
-      // Naast de voorouder: links als dat past, anders rechts; verticaal binnen de viewport.
-      const b = bubbleRef.current;
-      const w = b.offsetWidth;
-      const h = b.offsetHeight;
-      const left = tip.beside.left - 8 - w >= 6 ? tip.beside.left - 8 - w : Math.min(tip.beside.right + 8, window.innerWidth - w - 6);
-      b.style.left = `${left}px`;
-      b.style.top = `${Math.max(6, Math.min(tip.beside.top, window.innerHeight - h - 6))}px`;
-      return;
-    }
     const half = bubbleRef.current.offsetWidth / 2;
     const cx = Math.max(half + 6, Math.min(tip.x, window.innerWidth - half - 6));
     bubbleRef.current.style.left = `${cx}px`;
@@ -265,7 +240,7 @@ export function TooltipHost() {
     <>
       <span ref={descriptionRef} id={DESCRIPTION_ID} hidden />
       {tip && (
-        <div ref={bubbleRef} className={tip.beside ? 'ops-tooltip ops-tooltip--beside' : 'ops-tooltip'} role="tooltip" style={{ left: tip.x, top: tip.y }}>
+        <div ref={bubbleRef} className="ops-tooltip" role="tooltip" style={{ left: tip.x, top: tip.y }}>
           <TipText text={tip.text} lead={tip.lead} />
         </div>
       )}

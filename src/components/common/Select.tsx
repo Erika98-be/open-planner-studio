@@ -349,7 +349,6 @@ export function Select({
                         title={opt.description}
                         data-tooltip-instant="true"
                         data-tooltip-lead={opt.description.includes('\n') ? 'true' : undefined}
-                        data-tooltip-beside=".ops-select__menu"
                         data-ops-select-option-info={opt.value}
                         aria-hidden="true"
                         onClick={e => e.stopPropagation()}

@@ -21,6 +21,20 @@ async function seedAssignedTask(page: Page): Promise<{ taskId: string; resourceI
   }, taskId);
 }
 
+/** De tooltip staat direct bij zijn i-icoon (besluit eigenaar 2026-10-15, checkstap 17: "op de tool,
+ *  niet naast de dropdown"): zijn rechthoek grenst aan die van het icoon, erboven of eronder (≤ 10 px
+ *  tussenruimte), en ligt horizontaal over het icoon. */
+async function expectTipAtIcon(tip: Locator, icon: Locator): Promise<void> {
+  await expect.poll(async () => {
+    const t = (await tip.boundingBox())!;
+    const i = (await icon.boundingBox())!;
+    const below = t.y >= i.y + i.height - 0.5 && t.y <= i.y + i.height + 10;
+    const above = t.y + t.height <= i.y + 0.5 && t.y + t.height >= i.y - 10;
+    const overIcon = t.x <= i.x + 0.5 && t.x + t.width >= i.x + i.width - 0.5;
+    return (below || above) && overIcon ? 'bij het icoon' : `tooltip ${JSON.stringify(t)} niet bij icoon ${JSON.stringify(i)}`;
+  }).toBe('bij het icoon');
+}
+
 /** Kies een werkregel met echte klikken in de eigen keuzelijst (geen native `<select>` meer). */
 async function chooseWorkRule(page: Page, scope: Page | Locator, value: string): Promise<void> {
   await scope.locator('[data-ops-work-rule] button[aria-haspopup="listbox"]').first().click();
@@ -376,6 +390,7 @@ test('werkregel: i-icoon per optie en naast het veld, met de uitleg van de regel
   await info.hover();
   await expect(tip).toBeVisible();
   await expect(tip.locator('strong')).toHaveText(nl ? 'Het werk volgt uit de duur en de inzet.' : 'Work follows from duration and units.');
+  await expectTipAtIcon(tip, info);
   // Elke zin een eigen regel: geen spatie als scheiding tussen zinnen (zh/ja, review #359, punt 5).
   await expect(tip.locator('.ops-tooltip__line')).toHaveText(nl
     ? ['Wijzig je het werk, dan past de inzet zich aan.', 'Een extra resource voegt werk toe.']
@@ -396,17 +411,14 @@ test('werkregel: i-icoon per optie en naast het veld, met de uitleg van de regel
   await expect(tip).toBeVisible();
   await expect(tip.locator('strong')).toHaveText(nl ? 'De duur volgt uit het werk en de inzet.' : 'Duration follows from work and units.');
   await expect(tip).toContainText(nl ? 'Wijzig je de duur, dan past de inzet zich aan.' : 'If you change the duration, the units adjust.');
-  // Het menu en de tooltip vallen binnen het scherm, en de tooltip staat NAAST het menu: hij
-  // overlapt de rechthoek van het open menu niet (`data-tooltip-beside`, review #359, punt 3).
+  // Het menu en de tooltip vallen binnen het scherm, en de tooltip staat bij het i-icoon van de optie
+  // zelf, niet naast de lijst (hij mag andere opties bedekken: keus van de eigenaar).
   const vw = page.viewportSize()!.width;
-  const mb = (await menu.boundingBox())!;
-  const tb = (await tip.boundingBox())!;
-  for (const box of [mb, tb]) {
+  for (const box of [(await menu.boundingBox())!, (await tip.boundingBox())!]) {
     expect(box.x).toBeGreaterThanOrEqual(0);
     expect(box.x + box.width).toBeLessThanOrEqual(vw);
   }
-  const overlaps = tb.x < mb.x + mb.width && mb.x < tb.x + tb.width && tb.y < mb.y + mb.height && mb.y < tb.y + tb.height;
-  expect(overlaps, `tooltip ${JSON.stringify(tb)} overlapt menu ${JSON.stringify(mb)}`).toBe(false);
+  await expectTipAtIcon(tip, workIcon);
   // Een klik op het i-icoon toont de uitleg en kiest de optie niet.
   await workIcon.click();
   await expect(menu).toBeVisible();
@@ -488,7 +500,7 @@ test('werkregel: na Ctrl+Z met de tooltip open toont het i-icoon de regel die nu
     // Escape de selectie opheffen).
     if (how === 'focus') await page.keyboard.press('Escape');
     await expect(tip).toHaveCount(0);
-    await expect(info).toHaveAttribute('title', new RegExp(`^${fdr.replace(/\./g, '\\.')}`));
+    await expect.poll(async () => (await info.getAttribute('title'))?.startsWith(fdr)).toBe(true);
     await info.hover();
     await expect(tip.locator('strong')).toHaveText(fdr);
     await page.mouse.move(0, 0);
@@ -509,7 +521,8 @@ test('tooltip: onderaan het scherm staat de tooltip boven het i-icoon', async ({
   // De uitleg (drie regels) past niet meer onder het icoon …
   const th = (await tip.boundingBox())!.height;
   expect(ib.y + ib.height + 6 + th, 'fixture: het icoon moet laag genoeg staan').toBeGreaterThan(vh - 6);
-  // … dus staat hij erboven, helemaal in beeld.
+  // … dus staat hij erboven, helemaal in beeld, direct bij het icoon.
+  await expectTipAtIcon(tip, info);
   await expect.poll(async () => {
     const tb = (await tip.boundingBox())!;
     return tb.y + tb.height <= ib.y + 0.5 && tb.y >= 0;

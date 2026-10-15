@@ -150,7 +150,6 @@
   margin-inline-start: auto;
   padding-inline-start: var(--sp-3);
   color: var(--theme-text-dim);
-  cursor: help;
 }
 
 .ops-select__option-info:hover {
