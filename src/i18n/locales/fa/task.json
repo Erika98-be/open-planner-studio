@@ -359,13 +359,6 @@
     "FIXED_RATE": "واحدهای ثابت",
     "label": "قاعدهٔ کار",
     "projectDefault": "پیش‌فرض پروژه ({{rule}})",
-    "protects": "محافظت‌شده: {{what}}",
-    "protectsFIXED_DURATION_RATE": "مدت و واحدها (کار تبعیت می‌کند)",
-    "protectsFIXED_DURATION_WORK": "مدت و کار (واحدها تبعیت می‌کنند)",
-    "protectsFIXED_WORK": "کار (مدت از واحدها تبعیت می‌کند)",
-    "protectsFIXED_RATE": "واحدها (مدت از کار تبعیت می‌کند)",
-    "mspEffortDriven": "از MS Project: مبتنی بر تلاش",
-    "mspNotEffortDriven": "از MS Project: غیرمبتنی بر تلاش",
     "none": "پیش‌فرض پروژه"
   },
   "properties": {

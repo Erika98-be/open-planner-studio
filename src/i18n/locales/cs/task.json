@@ -366,13 +366,6 @@
     "FIXED_RATE": "Pevné jednotky",
     "label": "Pravidlo pevné veličiny",
     "projectDefault": "Výchozí pro projekt ({{rule}})",
-    "protects": "Chráněno: {{what}}",
-    "protectsFIXED_DURATION_RATE": "doba trvání a jednotky přiřazení (práce se přizpůsobí)",
-    "protectsFIXED_DURATION_WORK": "doba trvání a práce (jednotky přiřazení se přizpůsobí)",
-    "protectsFIXED_WORK": "práce (doba trvání se řídí jednotkami přiřazení)",
-    "protectsFIXED_RATE": "jednotky přiřazení (doba trvání se řídí prací)",
-    "mspEffortDriven": "Z MS Project: řízeno úsilím",
-    "mspNotEffortDriven": "Z MS Project: neřízeno úsilím",
     "none": "Výchozí pro projekt"
   },
   "properties": {

@@ -359,14 +359,24 @@
     "FIXED_RATE": "Fixed units",
     "label": "Work rule",
     "projectDefault": "Project default ({{rule}})",
-    "protects": "Protected: {{what}}",
-    "protectsFIXED_DURATION_RATE": "duration and units (work follows)",
-    "protectsFIXED_DURATION_WORK": "duration and work (units follow)",
-    "protectsFIXED_WORK": "work (duration follows units)",
-    "protectsFIXED_RATE": "units (duration follows work)",
-    "mspEffortDriven": "From MS Project: effort-driven",
-    "mspNotEffortDriven": "From MS Project: not effort-driven",
-    "none": "Project default"
+    "none": "Project default",
+    "explain": {
+      "followsWork": "Work follows from duration and units.",
+      "followsUnits": "Units follow from duration and work.",
+      "followsDuration": "Duration follows from work and units.",
+      "followsUnitsFromWork": "Units follow from work.",
+      "workAdjustsUnits": "If you change the work, the units adjust.",
+      "unitsAdjustsWork": "If you change the units, the work adjusts.",
+      "durationAdjustsUnits": "If you change the duration, the units adjust.",
+      "durationAdjustsWork": "If you change the duration, the work adjusts.",
+      "unitsOrDurationAdjustsWork": "If you change the units or the duration, the work adjusts.",
+      "resourceAddsWork": "An extra resource adds work.",
+      "resourceSharesWork": "An extra resource takes over part of the work; the units per resource go down.",
+      "resourceShorter": "An extra resource makes the task shorter.",
+      "resourceShorterWholeDays": "An extra resource makes the task shorter, rounded to whole days.",
+      "resourceAddsWorkSameDuration": "An extra resource adds work; the duration stays the same."
+    },
+    "info": "Explanation of the work rule"
   },
   "properties": {
     "task": "Task",
