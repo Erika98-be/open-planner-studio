@@ -941,3 +941,8 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   - Oordeel tekst: "het is redelijk ok maar kom met 10 voorstellen met voorbeelden om het beter te maken. allemaal een
     andere smaak en stijl". Worker (Opus 5.5, medium) bouwt een prototype in de app, lokale branch
     `claude/proto-werkregel-tekst` (vanaf de testversie, niet pushen), `?werkregel-variant=0..10`, licht en donker.
+- **Eigenaar 2026-10-15: "wat de fack, waarom zou je 10 kleine tekst voorbeelden volledig in de app bouwen met een
+  subagetn".** Les: tekstvoorstellen gewoon in de chat; de prototype-regel geldt voor UI, niet voor losse tekst.
+  Worker was gestopt zonder wijzigingen; dev-server gestopt, worktree en branch `claude/proto-werkregel-tekst`
+  verwijderd. 10 tekstvoorstellen in de chat gegeven, gecontroleerd tegen `work-triangle-cases.json` (FIXED_RATE:
+  duur → werk, inzet → duur, werk → duur, resource erbij niet effort-driven → werk groeit, duur blijft).
