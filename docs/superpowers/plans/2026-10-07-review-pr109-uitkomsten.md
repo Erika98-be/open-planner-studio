@@ -1187,3 +1187,15 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
 - Zonder eigenaar gestart: worker (Opus 5.5, medium) `claude/toewijzingen-blok`: inzet op 2 decimalen tonen (opslag
   exact), niets afgeknipt, 3 native selects in het blok ⇒ eigen `Select` (eigenaarsregel "nooit native").
 - **Besluit voorgelegd: overige native keuzelijsten** (38 in 18 bestanden op main, waarvan 3 in het blok Toewijzingen).
+  Opties: 1 alles vóór de release; 2 alleen het taakpaneel (voorwaarde 2, mijlpaal 1, codes 1) vóór, de rest erna
+  (advies); 3 alles erna. Nog geen antwoord.
+- **Sessieherstart 2026-10-15.** Alle dev-servers waren gestopt; testversie opnieuw op 3049. Zeven gestopte agents
+  hervat met de letterlijk gemeten stand: #363 (97d860e2b + niet gecommit ⚠-werk), #362 (6c0235a1e + niet gecommit
+  reviewpunten), urenperdag-heropenen (f9d741615, nog geen PR), kalender-nettouren (geen commit), toewijzingen-blok
+  (schoon op main), review #364, review #365. Testversie: `?qa-thema=licht|donker` toegevoegd (alleen geheugen).
+- **Bevestiging eigenaar 2026-10-15 (kalendervenster), letterlijk "prima"** op: bij export naar P6 gaat de opgeslagen 8
+  stil mee terug; MCP blijft de 8 doorgeven (kalendertools kunnen hem schrijven) en blijft ongemoeid.
+- **Eigenaar 2026-10-15, letterlijk: "ik ben voorlopig neit beschikbaar dus probeer me niets te vragen, kom zover
+  mogelijk zonder mij."** Orkestrator: geen merges van UI-PR's zonder check eigenaar; checks en besluiten worden
+  klaargezet. Besluit native keuzelijsten blijft open; het taakpaneel (gemeen aan optie 1 en 2) wordt alvast in een
+  eigen PR gebouwd en niet gemerged tot het besluit er is.
