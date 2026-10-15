@@ -1100,3 +1100,9 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   de laatste kolom. 4 mutanten rood, 98 browsertests lokaal groen. In de testversie gemerged (8299e0799, lokaal); zelf
   nagelopen: geen gereserveerde balkruimte meer. Review bij reviewer (Opus 5.5, xhigh) gestart. Ontwerpcheck eigenaar
   volgt na het besluit over *Project info*.
+- **Besluit eigenaar 2026-10-15 (hernoemen): optie 3**, letterlijk "top, precies wat ik al dacht": overal *Project
+  settings* / *Projectinstellingen* voor het projectvenster (knop, venstertitel, File-menu, meldingen, gidsen nl/en);
+  lintknop *Settings* (app-instellingen) wordt *App settings* / *App-instellingen*; tabblad *Settings* blijft; ID's
+  blijven. Worker (Opus 5.5, medium) op `claude/hernoem-projectsettings`.
+- Testversie: qa-hulpje `?qa-thema=licht|donker` (988baf093, lokaal; alleen geheugen, zelf nagelopen: `data-theme`
+  volgt, `ops-theme` blijft). **Checkstap 18 (oordeel, #362):** zwevende schuifbalken in de takenlijst.
