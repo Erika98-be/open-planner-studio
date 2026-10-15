@@ -32,6 +32,7 @@ import { captureCalendarChange, settleCalendarChange } from '@/engine/work/workR
 import { assignmentsByTask, tasksFollowingProjectCalendar } from '../calendarTasks';
 import { notifyTimephasedLoss } from '../timephasedLossNotice';
 import type { AppSliceFactory } from './types';
+import type { DocumentPayload } from '../documentContract';
 import { PROJECT_INFO_HELP_ARTICLE_ID } from '@/state/helpArticles';
 import { effHoursPerDay } from '@/utils/taskDuration';
 import { isLeafTask } from '@/utils/taskHierarchy';
@@ -197,6 +198,17 @@ function projectChanges(current: Project, updates: Partial<Project>): boolean {
     .some((k) => k !== 'modifiedAt' && !sameValue(current[k], updates[k]));
 }
 
+
+/**
+ * Een nieuw project opent op zijn projectstart, via hetzelfde `pendingFit`-signaal als een geopend
+ * bestand. De Gantt zet bij een project zonder taken `viewStartDate` links in beeld
+ * (`computeEmptyProjectScrollX`). Zonder dit signaal bleef scrollX op 0, en dat is bij de
+ * standaard feestdagenkalender december 2024.
+ */
+function withStartFit(payload: DocumentPayload): DocumentPayload {
+  payload.view = { ...payload.view, viewStartDate: payload.project.startDate, pendingFit: true };
+  return payload;
+}
 
 export const createProjectSlice: AppSliceFactory<ProjectSlice> = (runtime) => (set, get) => ({
   project: createDefaultProject(),
@@ -487,7 +499,7 @@ export const createProjectSlice: AppSliceFactory<ProjectSlice> = (runtime) => (s
     // project). hydratePayload promoveert + synct de projectkalender.
     set((s) => {
       removeSessionHistoryForDocumentFromState(s, s.activeDocumentId);
-      hydratePayload(s, freshPayload());
+      hydratePayload(s, withStartFit(freshPayload()));
       // Zelfde reset als newDocument()/closeDocument() in documentSlice.ts:
       // showLibraryLinkDialog/libraryRefreshNotice zijn APP-globaal en worden door hydratePayload
       // NIET aangeraakt (het zijn geen DOCUMENT_FIELDS). Zonder deze reset kan een openstaande vlag
@@ -558,7 +570,7 @@ export const createProjectSlice: AppSliceFactory<ProjectSlice> = (runtime) => (s
       });
       // Een leeg project (template 'Leeg') is nog niet 'dirty'; met fasen wél.
       payload.isDirty = opts.phaseNames.length > 0;
-      hydratePayload(s, payload);
+      hydratePayload(s, withStartFit(payload));
       // Zelfde reset als newProject()/newDocument() hierboven: bij het PRISTINE-hergebruikpad
       // (geen newDocument()-aanroep, dus geen reset onderweg) kan een openstaande
       // showLibraryLinkDialog/libraryRefreshNotice van vóór deze wizard blijven hangen. Onvoorwaardelijk

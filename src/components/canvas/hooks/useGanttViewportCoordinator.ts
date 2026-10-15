@@ -13,6 +13,7 @@ import {
   scrollbarRangeRatio,
   computeTimelineZoom,
   computeEffectiveViewStart,
+  computeEmptyProjectScrollX,
   computeFitToProject,
   computeFocusTaskHorizontal,
   computeFocusTaskScrollY,
@@ -191,8 +192,15 @@ export function useGanttViewportCoordinator(
     const container = primaryContainerRef.current;
     if (!container) return;
     if (current.tasks.length === 0) {
+      // Zelfde lege tak als de open-fit hieronder: de projectstart links, niet de feestdagenoorsprong.
+      registerBoundsForZoom(DEFAULT_ZOOM);
       current.setZoom(DEFAULT_ZOOM);
-      current.setScroll(0, 0);
+      current.setScroll(computeEmptyProjectScrollX(
+        current.view.viewStartDate,
+        DEFAULT_ZOOM,
+        calendarNavigationDates.starts,
+        dayDistance,
+      ), 0);
       return;
     }
     const rect = container.getBoundingClientRect();
@@ -209,7 +217,7 @@ export function useGanttViewportCoordinator(
     current.setZoom(fit.zoom);
     current.setViewStartDate(fit.viewStartDate);
     current.setScroll(fit.scrollX, 0);
-  }, [dayDistance, registerBoundsForZoom]);
+  }, [calendarNavigationDates.starts, dayDistance, registerBoundsForZoom]);
 
   const { zoomAt } = useGanttZoom({
     containerRef: primaryContainerRef,
@@ -231,7 +239,9 @@ export function useGanttViewportCoordinator(
     fitToProject,
   });
 
-  // Open-fit wist het signaal één keer. Een leeg project houdt de huidige viewport.
+  // Open-fit wist het signaal één keer. Een leeg project (zoals een net gemaakt nieuw project)
+  // houdt zijn zoom en zet `viewStartDate` (de projectstart) links in beeld. Zonder die pan lag de
+  // oorsprong op de vroegste feestdag van de kalender en toonde de tijdlijn december 2024.
   useEffect(() => {
     const current = latest.current;
     if (!current.view.pendingFit) return;
@@ -239,6 +249,13 @@ export function useGanttViewportCoordinator(
     if (!container) return;
     if (current.tasks.length === 0) {
       current.clearPendingFit();
+      registerBoundsForZoom(current.view.zoom);
+      current.setScroll(computeEmptyProjectScrollX(
+        current.view.viewStartDate,
+        current.view.zoom,
+        calendarNavigationDates.starts,
+        dayDistance,
+      ), 0);
       return;
     }
     const rect = container.getBoundingClientRect();

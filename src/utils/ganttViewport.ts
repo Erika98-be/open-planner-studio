@@ -243,6 +243,26 @@ export function computeFitToProject(
   return { zoom, viewStartDate: minStart, scrollX };
 }
 
+/**
+ * De fit voor een project ZONDER taken: zet `viewStartDate` (bij een nieuw project de projectstart)
+ * links in beeld, op de huidige zoom. Zelfde rekenregel als de pan in {@link computeFitToProject}.
+ *
+ * Waarom nodig: een lege Gantt trekt zijn oorsprong naar de vroegste kalenderuitzondering (zie
+ * {@link computeEffectiveViewStart}). Met de standaard feestdagenkalender (2025–2029) lag de
+ * oorsprong zo op 18-12-2024; scrollX = 0 toonde dan december 2024 in plaats van de projectstart.
+ * Een onparseerbare datum geeft 0 (de oude positie), nooit NaN.
+ */
+export function computeEmptyProjectScrollX(
+  viewStartDate: string,
+  zoom: number,
+  navigationStartDates: string[] = [],
+  dayDistance: (from: Date, to: Date) => number = diffCalendarDays,
+): number {
+  const effectiveStart = computeEffectiveViewStart([], viewStartDate, navigationStartDates);
+  const scrollX = dayDistance(parseDate(effectiveStart), parseDate(viewStartDate)) * zoom;
+  return Number.isFinite(scrollX) ? Math.max(0, scrollX) : 0;
+}
+
 /** Kleine marge (in dagen) die vóór de doeldatum zichtbaar blijft, zodat hij niet exact tegen de
  *  chart-linkerrand plakt (analoog aan de "reveal on select"-marge in
  *  GanttCanvas.revealTaskIfOffscreen). */

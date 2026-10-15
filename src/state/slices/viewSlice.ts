@@ -60,7 +60,7 @@ export interface ViewSlice {
    *  fit uit (die kent de viewport-breedte) en wist het signaal. Twee soorten aanroepers: laadpaden
    *  (openFile/openRecentFile/voorbeeld) en een expliciete gebruikersactie (Ctrl+0, canvas-
    *  contextmenu, ribbon-knop Beeld → Tijdschaal) — NIET bij undo/redo of herberekeningen.
-   *  Een leeg project blijft "vandaag" (de canvas slaat de fit dan over). */
+   *  Een leeg project houdt zijn zoom; de canvas zet dan `viewStartDate` links in beeld. */
   requestFitToProject: () => void;
   /** Wis het `pendingFit`-signaal (door de GanttCanvas aangeroepen nadat de fit is uitgevoerd). */
   clearPendingFit: () => void;
