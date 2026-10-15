@@ -1116,3 +1116,10 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   verdwijen. op de gantt moet er ook een beetje overscroll komen omdat anders als je in de table helemaal naa beneden
   scrollt de taken neit op dezelfde hoogte zitten als de gantt".** Doorgegeven aan de maker van #362 (fixronde; ook
   nagaan of de sprong al op main zat).
+- **#363 een dag = werktijd** (expert Opus 5.5 xhigh): open (niet gemerged), concept, CI 16/16 op b1c5e882a, bijgewerkt
+  met main. Helper `hourTaskScheduleDuration` in vijf lezers, paneel en kalenderwissel; Gantt-pointer via
+  `effHoursPerDay`. Corpus: afwijking 1263 → 0 (na import en na bewerking + IFC), 0 datum/speling/kritiek-wijzigingen;
+  belasting Roads: VERMOED 25 % bevestigd (taak 85086 234 → 187 belaste dagen; toewijzingen met belasting na einde
+  2122 → 7; overbelaste dagen 3026 → 2537). `measure:profiles` main = branch. MCP-bijvangst weerlegd. De 8 telt nog in
+  export/weergave, volgregel en drie XER-importberekeningen (plan-venster-drempel, lagDays, MATERIAL) — gemeld, niet
+  gebouwd. Review bij reviewer (Opus 5.5, xhigh) gestart.
