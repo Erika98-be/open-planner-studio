@@ -981,3 +981,10 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   De eerdere uitleg "eigen spanne in P6" (VERMOED) was fout. Taak-duur: `target_drtn_hr_cnt` 9 = `remain_drtn_hr_cnt` 9
   (planner-invoer). Bevinding voor na de check: inzet bij restwerk = resttarief tonen/gebruiken? Tooltiptekst "the
   units stay as the file gave them" misleidt (het bestand geeft twee tarieven).
+- **Checkstap 16 goedgekeurd door de eigenaar 2026-10-15, letterlijk: "ok, het doel van de test is dat ik begreep wat
+  het driehoekje betekende toch? nou dat werkt".** Route #169/#170 klaar (werkregelveld volgt als check na de worker).
+- **Besluit voorgelegd: welk tempo bij resterend werk.** XER-lezer `assignmentRate` (`xerResourceAssignments.ts:97`)
+  neemt `target_qty_per_hr` als het > 0 is, `remain_qty_per_hr` alleen als terugval; sinds 95fa4fb86 (2026-08-25,
+  "Bedraad XER-resources en toewijzingen"), geen eigenaarsbesluit gevonden. Spec §11: afwijkend resttarief in rehab-2
+  14.459/52.640, DCP-03 As-Built 47/47, Baseline 45/45, Roads 71/3.575, HarbourPointe 14/417. Gevolg bij een bewerking
+  onder FIXED_DURATION_RATE (wt-06/wt-18): duur 9 → 10 h maakt het werk 1,11 × 10 ≈ 11 h (P6: 34 × 10 = 340 h).
