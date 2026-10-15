@@ -575,6 +575,10 @@ export const createProjectSlice: AppSliceFactory<ProjectSlice> = (runtime) => (s
       clearTimephasedLossNoticeForDoc(s.activeDocumentId);
       clearTaskTypesNoticeForDoc(s.activeDocumentId); // zelfde reden, voor de taaktypes-melding
     });
+    // `viewRows` is afgeleid en zit niet in de payload. Zonder deze stap houdt een sjabloon met
+    // fasen de rijen van het vorige (lege) document: taken zonder rijen, dus een leeg raster en
+    // geen balken.
+    get().recomputeViewRows();
     runtime.emitHostEvent(HOST_EVENTS.projectNew);
   },
 
