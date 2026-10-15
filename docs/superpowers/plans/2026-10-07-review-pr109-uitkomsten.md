@@ -960,3 +960,8 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   (`/tmp/qa-stap16/`). Eigen functionele waarnemingen in het blok *Assignments*: inzetvelden tonen onafgeronde
   waarden ("1.77777777777778", afgeknipt); in de rij met waarschuwingsteken worden *Uniform* en *Move to* afgeknipt;
   curve, *Move to* en *Assign resource* zijn native selects. A73 (werk 0) is voltooid ⇒ klopt.
+- **Eigenaar 2026-10-15: "waarom zoveel vertaal subagetn? de regel is op dit moment toch dat je alleen in het engels en
+  nederlands vertaalt en dat bij de release naar alle talen wordt vertaalt?"** Klopt: besluit B5 (2026-10-10,
+  `.claude/rules/i18n.md`): nieuwe tekst alleen `nl` + `en` via `npm run i18n:add`, andere talen vallen terug op `en`,
+  de release vult ze (`verify:translations`). Fout zat in de brief van de orkestrator (vertaalstraat voor 12 locales,
+  verkeerde receptnaam). Worker bijgestuurd: vertaalruns stoppen, andere locales terugdraaien voor nieuwe sleutels.
