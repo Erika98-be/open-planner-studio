@@ -1,4 +1,4 @@
-import type { Page } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
 import { expect, seedProject, test } from './fixtures/ops';
 
 // Taaktypes-etappe (spec 2026-09-04 §7, bouwstap 5): de werkregel en het resterende werk bewerken
@@ -21,6 +21,13 @@ async function seedAssignedTask(page: Page): Promise<{ taskId: string; resourceI
   }, taskId);
 }
 
+/** Kies een werkregel met echte klikken in de eigen keuzelijst (geen native `<select>` meer). */
+async function chooseWorkRule(page: Page, scope: Page | Locator, value: string): Promise<void> {
+  await scope.locator('[data-ops-work-rule] button[aria-haspopup="listbox"]').first().click();
+  await page.locator(`.ops-select__menu [role="option"][data-value="${value}"]`).click();
+  await expect(page.locator('.ops-select__menu')).toHaveCount(0);
+}
+
 function taskState(page: Page, taskId: string): Promise<{ workRule?: string; duration: number; units: number; work?: number; stale: boolean }> {
   return page.evaluate((id) => {
     const s = window.__OPS__!.store.getState();
@@ -40,12 +47,12 @@ test('werkregel kiezen, werk typen en inzet wijzigen volgen de regel; undo in é
   await expect(page.locator('[data-ops-assignment-work]')).toHaveAttribute('data-ops-assignment-work', 'derived');
 
   // Vast werk kiezen: geen getal verandert, het restwerk (4 d × 8 u = 32 u) wordt vastgelegd.
-  await select.selectOption('FIXED_WORK');
+  await chooseWorkRule(page, page, 'FIXED_WORK');
   let st = await taskState(page, taskId);
   expect(st.workRule).toBe('FIXED_WORK');
   expect(st.duration).toBe(4);
   expect(st.work).toBe(4 * 8 * 60);
-  await expect(page.locator('[data-ops-work-rule-protects]')).toHaveAttribute('data-ops-work-rule-protects', 'FIXED_WORK');
+  await expect(page.locator('[data-ops-work-rule-info]')).toHaveAttribute('data-ops-work-rule-info', 'FIXED_WORK');
   await expect(page.locator('[data-ops-assignment-lock-work]')).toHaveAttribute('data-ops-assignment-lock-work', 'locked');
   await expect(page.locator('[data-ops-assignment-work]')).toHaveAttribute('data-ops-assignment-work', 'stored');
 
@@ -81,7 +88,7 @@ test('werkregel kiezen, werk typen en inzet wijzigen volgen de regel; undo in é
   expect(st.units).toBe(1);
 
   // Terug naar de projectstandaard: het veld verdwijnt, het werk blijft staan (besluit 2).
-  await select.selectOption('');
+  await chooseWorkRule(page, page, '');
   st = await taskState(page, taskId);
   expect(st.workRule).toBeUndefined();
   expect(st.work).toBe(64 * 60);
@@ -92,8 +99,7 @@ test('taakdialoog: werkregel kiezen commit direct, werk typen in dezelfde dialoo
   await page.evaluate((id) => window.__OPS__!.store.getState().setUI({ showTaskDialog: true, editingTaskId: id }), taskId);
   const dialog = page.locator('[role="dialog"]').last();
   await expect(dialog).toBeVisible();
-  const select = dialog.locator('[data-ops-work-rule]');
-  await select.selectOption('FIXED_WORK');
+  await chooseWorkRule(page, dialog, 'FIXED_WORK');
   let st = await taskState(page, taskId);
   expect(st.workRule).toBe('FIXED_WORK');
   const workInput = dialog.locator('[data-ops-assignment-work] input');
@@ -116,7 +122,7 @@ test('instelling uit en document zonder taaktypes: geen werkregel-UI; een gezett
   // Documentontsluiting: een regel via de store zet `taskTypesVisible` ⇒ de UI verschijnt.
   await page.evaluate((id) => window.__OPS__!.store.getState().setTaskWorkRule(id, 'FIXED_RATE'), taskId);
   await expect(page.locator('[data-ops-work-rule]')).toBeVisible();
-  await expect(page.locator('[data-ops-work-rule]')).toHaveValue('FIXED_RATE');
+  await expect(page.locator('[data-ops-work-rule]')).toHaveAttribute('data-value', 'FIXED_RATE');
 });
 
 // Gebruikstest #170, G1: met de kolom "Werk (rest)" en een "Verplaats naar…"-keuzelijst (vanaf
@@ -241,7 +247,7 @@ test('taakdialoog: Annuleren draait werkregel en werk terug, Opslaan is één un
 
   // Annuleren: regel + werk (inzet volgt) worden teruggedraaid.
   let dialog = await open();
-  await dialog.locator('[data-ops-work-rule]').selectOption('FIXED_DURATION_WORK');
+  await chooseWorkRule(page, dialog, 'FIXED_DURATION_WORK');
   const work = dialog.locator('[data-ops-assignment-work] input');
   await work.fill('64');
   await work.press('Enter');
@@ -260,7 +266,7 @@ test('taakdialoog: Annuleren draait werkregel en werk terug, Opslaan is één un
 
   // Opslaan met regel + werk + naam: één Ctrl+Z haalt alles terug.
   dialog = await open();
-  await dialog.locator('[data-ops-work-rule]').selectOption('FIXED_DURATION_WORK');
+  await chooseWorkRule(page, dialog, 'FIXED_DURATION_WORK');
   await dialog.locator('[data-ops-assignment-work] input').fill('64');
   await dialog.locator('[data-ops-assignment-work] input').press('Enter');
   await dialog.locator('input').first().fill('Metselwerk gevel');
@@ -276,13 +282,14 @@ test('taakdialoog: Annuleren draait werkregel en werk terug, Opslaan is één un
 
 // Gebruikstest #170, E5/G6: de instelling heet "Toon werkregels en werk", staat onder Berekenen
 // (geen eigen sectiekop) en haar toelichting is één zin in een gekleurd blok (accentbalk), geen
-// los bijschrift; in het paneel staan "Beschermd: …" en het MS Project-vinkje in datzelfde blok.
-test('instelling en paneel: werkregel-toelichting in een gekleurd blok, instelling onder Berekenen', async ({ page, ops: _ops }) => {
+// los bijschrift. In het paneel staat sinds 2026-10-15 GEEN blok meer onder de werkregel: de uitleg
+// zit achter het i-icoon (zie de test hieronder).
+test('instelling en paneel: geen blok onder de werkregel, instelling onder Berekenen', async ({ page, ops: _ops }) => {
   await seedAssignedTask(page);
-  const note = page.locator('[data-ops-work-rule-note]');
-  await expect(note).toBeVisible();
-  await expect(note.locator('[data-ops-work-rule-protects]')).toBeVisible();
-  expect(await note.evaluate(el => getComputedStyle(el).boxShadow)).toContain('inset');
+  await expect(page.locator('[data-ops-work-rule]')).toBeVisible();
+  await expect(page.locator('[data-ops-work-rule-note]')).toHaveCount(0);
+  // Geen native keuzelijst (besluit eigenaar 2026-10-15: "mag nooit native zijn").
+  await expect(page.locator('[data-ops-work-rule] select')).toHaveCount(0);
 
   await page.getByTitle(/^(Settings|Instellingen)$/, { exact: true }).click();
   const dlg = page.locator('.settings-dialog');
@@ -345,4 +352,97 @@ test('werkcel: opgeslagen werk dat afwijkt van inzet × resterende duur is gemar
   await expect(crewRow.locator('[data-ops-assignment-work-deviates]')).toHaveCount(0);
   const units = await page.evaluate((id) => window.__OPS__!.store.getState().assignments.filter(a => a.taskId === id).map(a => a.unitsPerDay), taskId);
   expect(units).toEqual([1, 1]);
+});
+
+// Besluit eigenaar 2026-10-15: eigen keuzelijst met een i-icoon per optie en een i-icoon naast het
+// gesloten veld. Echte events: lijst openen met een klik, het i-icoon van een optie aanwijzen
+// (hover) en aanklikken (een klik op het icoon kiest NIET), het toetsenbord (aria-describedby op de
+// gemarkeerde optie en de trigger), een regel kiezen, en dan de tooltip van het gesloten veld.
+test('werkregel: i-icoon per optie en naast het veld, met de uitleg van de regel die nu geldt', async ({ page, ops: _ops }) => {
+  const { taskId } = await seedAssignedTask(page);
+  const nl = (await page.evaluate(() => document.documentElement.lang)).startsWith('nl');
+  const tip = page.locator('.ops-tooltip[role="tooltip"]');
+  const field = page.locator('[data-ops-work-rule]');
+  const trigger = field.locator('button[aria-haspopup="listbox"]');
+  const info = page.locator('[data-ops-work-rule-info]');
+
+  // Gesloten veld: projectstandaard ⇒ het i-icoon legt Vaste duur en inzet uit (de regel tussen haakjes).
+  await expect(info).toHaveAttribute('data-ops-work-rule-info', 'FIXED_DURATION_RATE');
+  await info.hover();
+  await expect(tip).toBeVisible();
+  await expect(tip.locator('strong')).toHaveText(nl ? 'Het werk volgt uit de duur en de inzet.' : 'Work follows from duration and units.');
+  await expect(tip).toContainText(nl ? 'Een extra resource voegt werk toe.' : 'An extra resource adds work.');
+  await page.mouse.move(0, 0);
+  await expect(tip).toHaveCount(0);
+
+  // Lijst openen: elke optie (5) heeft een i-icoon.
+  await trigger.click();
+  const menu = page.locator('.ops-select__menu');
+  await expect(menu).toBeVisible();
+  await expect(menu.locator('[role="option"]')).toHaveCount(5);
+  await expect(menu.locator('[data-ops-select-option-info]')).toHaveCount(5);
+
+  // Hover op het i-icoon van Vast werk: de tooltip met de uitleg van díe regel.
+  const workIcon = menu.locator('[data-ops-select-option-info="FIXED_WORK"]');
+  await workIcon.hover();
+  await expect(tip).toBeVisible();
+  await expect(tip.locator('strong')).toHaveText(nl ? 'De duur volgt uit het werk en de inzet.' : 'Duration follows from work and units.');
+  await expect(tip).toContainText(nl ? 'Wijzig je de duur, dan past de inzet zich aan.' : 'If you change the duration, the units adjust.');
+  // Het menu en de tooltip vallen binnen het scherm.
+  const vw = page.viewportSize()!.width;
+  for (const box of [await menu.boundingBox(), await tip.boundingBox()]) {
+    expect(box!.x).toBeGreaterThanOrEqual(0);
+    expect(box!.x + box!.width).toBeLessThanOrEqual(vw);
+  }
+  // Een klik op het i-icoon toont de uitleg en kiest de optie niet.
+  await workIcon.click();
+  await expect(menu).toBeVisible();
+  await expect(tip).toBeVisible();
+  expect((await taskState(page, taskId)).workRule).toBeUndefined();
+
+  // Toetsenbord: de gemarkeerde optie en de trigger wijzen met aria-describedby naar de uitleg.
+  await trigger.focus();
+  await page.keyboard.press('Home');
+  await page.keyboard.press('ArrowDown');
+  const highlighted = menu.locator('[role="option"].is-highlighted');
+  await expect(highlighted).toHaveAttribute('data-value', 'FIXED_DURATION_RATE');
+  const descId = await highlighted.getAttribute('aria-describedby');
+  expect(descId).toBeTruthy();
+  await expect(trigger).toHaveAttribute('aria-describedby', descId!);
+  await expect(page.locator(`[id="${descId}"]`)).toHaveText(/volgt uit|follows from/);
+
+  // Kies Vaste inzet met een klik op het label.
+  await menu.locator('[role="option"][data-value="FIXED_RATE"]').click();
+  await expect(menu).toHaveCount(0);
+  expect((await taskState(page, taskId)).workRule).toBe('FIXED_RATE');
+
+  // Het i-icoon van het gesloten veld legt nu Vaste inzet uit; focus toont de tooltip ook.
+  await expect(info).toHaveAttribute('data-ops-work-rule-info', 'FIXED_RATE');
+  await info.focus();
+  await expect(tip).toBeVisible();
+  await expect(tip.locator('strong')).toHaveText(nl ? 'De duur volgt uit het werk en de inzet.' : 'Duration follows from work and units.');
+  await expect(tip).toContainText(nl ? 'Wijzig je de duur, dan past het werk zich aan.' : 'If you change the duration, the work adjusts.');
+  await expect(tip).toContainText(nl ? 'Een extra resource maakt de taak korter.' : 'An extra resource makes the task shorter.');
+});
+
+// Het bewaarde MS Project-vinkje staat niet meer als losse regel onder het veld; de uitleg zelf
+// volgt het (Vaste inzet, niet effort-driven: een extra resource voegt werk toe, de duur blijft).
+test('werkregel: de uitleg volgt het bewaarde MS Project-vinkje', async ({ page, ops: _ops }) => {
+  const { taskId } = await seedAssignedTask(page);
+  await page.evaluate((id) => {
+    const store = window.__OPS__!.store;
+    store.getState().setTaskWorkRule(id, 'FIXED_RATE');
+    // Zoals de MSP-lezer het zet: taaktype Fixed Units, niet effort-driven.
+    store.setState((draft: { tasks: { id: string; effortDriven?: boolean; mspTaskType?: string }[] }) => {
+      const t = draft.tasks.find(x => x.id === id)!;
+      t.mspTaskType = 'FIXED_UNITS';
+      t.effortDriven = false;
+    });
+  }, taskId);
+  const nl = (await page.evaluate(() => document.documentElement.lang)).startsWith('nl');
+  await expect(page.locator('[data-ops-work-rule-msp]')).toHaveCount(0);
+  const info = page.locator('[data-ops-work-rule-info]');
+  await info.hover();
+  const tip = page.locator('.ops-tooltip[role="tooltip"]');
+  await expect(tip).toContainText(nl ? 'Een extra resource voegt werk toe; de duur blijft gelijk.' : 'An extra resource adds work; the duration stays the same.');
 });
