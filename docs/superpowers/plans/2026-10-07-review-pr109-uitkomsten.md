@@ -1123,3 +1123,12 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   2122 → 7; overbelaste dagen 3026 → 2537). `measure:profiles` main = branch. MCP-bijvangst weerlegd. De 8 telt nog in
   export/weergave, volgregel en drie XER-importberekeningen (plan-venster-drempel, lagDays, MATERIAL) — gemeld, niet
   gebouwd. Review bij reviewer (Opus 5.5, xhigh) gestart.
+- **Hercheck #359: ja** (reviewer Opus 5.5) op ed060ecca (CI 16/16): drie verplichte punten opgelost, elk met rode
+  mutant; dagtaakzin klopt met `roundUpRemaining`; `data-tooltip-beside` volledig weg. Vervolg (blokkeert niet):
+  ribbon mini-knop neemt via de nieuwe `title`-observer het label als `title` over bij hover tijdens resize
+  (`Ribbon.tsx:107-110`); toetsenbord ziet uitleg per optie niet; schermlezer leest bij pijltjes waarschijnlijk niets;
+  26 vertaalde gidsen ⇒ release `update-docs-lang`. Merge na checkstap 19 van de eigenaar.
+- Eigenaar 2026-10-15: "ik wil mijn tijd niet besteden aan kijken hoe je subagents werken. ik ben hier nu om te testen
+  en te beslissen." ⇒ geen tussenberichten over agents; checks en besluiten aanbieden. **Checkstap 19 (oordeel, #359):**
+  tooltip bij het icoon en geen vraagtekencursor; zelf nagelopen op 3049 (508865945): cursor `pointer`, knop 29×29,
+  tooltip direct onder het icoon (gesloten en in de lijst), licht en donker.
