@@ -995,3 +995,15 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   (10 h / 9 h en 306 h / 9 h). Orkestrator las "volgende" als akkoord en meldde dat (stop mogelijk). Bouw bij een expert
   (Opus 5.5, xhigh), branch `claude/resttempo`; aandacht voor de P6 XML-writer (`PlannedUnitsPerTime` mag niet het
   resterende tempo worden) en de tooltiptekst bij ⚠.
+- **#359 werkregel met eigen keuzelijst en i-icoon** (worker Opus 5.5 medium): open (niet gemerged), concept, CI 16/16 op
+  25b5ff24f, kop bevat main. Eigen `Select` met `description` per optie; i-icoon per optie en naast het gesloten veld;
+  oranje blok weg; check `check-work-rule-explain.ts` (248 controles tegen `workTriangle`); 3 mutanten rood; oude
+  sleutels `protects*`/`mspEffortDriven`/`mspNotEffortDriven` uit alle locales; nieuwe tekst alleen nl/en (B5).
+  `TooltipHost` kreeg vette eerste regel, plaatsing naast de lijst en boven het element (raakt alle tooltips).
+  Eigen tekst van de maker voor *Vaste duur en werk* effort-driven ⇒ oordeel eigenaar. Worker meldt 38 native
+  `<select>` in 18 bestanden (main 39). Review bij reviewer (Opus 5.5, xhigh) gestart. In de testversie gemerged
+  (79d68d4a5, lokaal); zelf nagelopen op 3049 (licht/donker): veld aanwezig, geen native select, oud blok weg.
+  Oordeelscheck voor de eigenaar volgt na de review en na het besluit "een dag".
+- Eigenaar 2026-10-15 vroeg het besluit "een dag" opnieuw uit te leggen in gewone taal, met het waarom. Gedaan (P6
+  bewaart uren; "uren per dag" is alleen een omrekengetal voor het scherm; het verborgen dagengetal bestaat omdat de
+  app dag- en urentaken kent). Antwoord open.
