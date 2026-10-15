@@ -927,3 +927,7 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   en Vaste inzet volgt de duur uit inzet en werk") klopt het gedrag. Conclusie: Haiku kan functionele checks nalopen,
   zijn oordeel over goed/fout niet zonder controle. Bijvangst: de bloktekst "Protected: units" misleidde Haiku ⇒
   kandidaat-oordeelscheck voor de eigenaar.
+- Eigenaar akkoord ("prima") op AGENTS.md-regel checkstappen alleen bij oordeel; toegevoegd. Eigenaar 2026-10-15 over
+  Haiku: "moet je hem niet gewoon uberhaupt neit laten beoordelen" ⇒ AGENTS.md-regel: Haiku loopt functionele checks
+  na en beoordeelt niets. **Checkstap 15 (oordeel, #170):** begrijpt een planner de tekst onder *Work rule*
+  ("Protected: units (duration follows work)", "From MS Project: not effort-driven")? Link met `?qa-taak=` (abfcf38a4+1).
