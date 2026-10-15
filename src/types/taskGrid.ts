@@ -1,4 +1,4 @@
-import type { Baseline } from '@/types/baseline';
+import type { Baseline, BaselineTask } from '@/types/baseline';
 import type { Resource, ResourceAssignment, ResourceCurve } from '@/types/resource';
 import type { Task } from '@/types/task';
 import type { DurationDisplay, TimeNotation } from '@/types/view';
@@ -149,6 +149,9 @@ export interface TaskColumnContext {
   /** De echte projectkalenderberekening voor baselineafwijkingen (`variance.signedWorkDaysBetween`).
    *  Ontbreekt hij, dan blijft de afwijking leeg — er is bewust geen kalenderloze terugval. */
   signedWorkDaysBetween?: (fromIso: string, toIso: string) => number;
+  /** Is deze baseline van deze urentaak met de oude dagtelling opgeslagen (`engine/baselineOldDay.ts`)?
+   *  Dan tonen Baselineduur en Duurafwijking een ⚠. Ontbreekt ⇒ nooit een ⚠ (alleen weergave). */
+  baselineOldDay?: (task: Task, baselineTask: BaselineTask) => boolean;
   /** "Datums zoals opgeslagen" — badge voor de kolom `recorded.source`.
    *  `undefined` op documenten zonder vastlegging (`recordedDates === null`), dus de kolom bestaat
    *  dan niet: `available(ctx) => ctx.recordedMark !== undefined`. */
@@ -179,6 +182,13 @@ export type TaskColumnLabelSource =
 
 export type TaskColumnDescriptor = TaskColumnDescriptorFields & TaskColumnLabelSource;
 
+/** Een kleine ⚠ in een cel, met uitleg als tooltip. `kind` geeft de cel een vaste selector
+ *  (`data-ops-<kind>`); `text` is de vertaalde uitleg. */
+export interface TaskCellWarning {
+  kind: 'baseline-old-day';
+  text: string;
+}
+
 interface TaskColumnDescriptorFields {
   id: TaskColumnId;
   category: TaskColumnCategory;
@@ -199,6 +209,8 @@ interface TaskColumnDescriptorFields {
   /** Starttekst voor de editor wanneer de canonieke kopieervorm rijkere markers bevat. */
   editText?: (task: Task, ctx: TaskColumnContext) => string;
   tooltip?: (value: unknown, task: Task, ctx: TaskColumnContext) => string | null;
+  /** Een ⚠ naast de waarde (alleen weergave; kopieer- en bewerktekst blijven gelijk). */
+  warning?: (value: unknown, task: Task, ctx: TaskColumnContext) => TaskCellWarning | null;
   parse?: (text: string, task: Task, ctx: TaskColumnContext) => GridResult<unknown, readonly CellValidationError[]>;
   validate?: (value: unknown, task: Task, ctx: TaskColumnContext) => GridResult<unknown, readonly CellValidationError[]>;
   planWrite?: (value: unknown, task: Task, ctx: TaskColumnContext) => GridResult<readonly GridWriteIntent[], readonly CellValidationError[]>;
