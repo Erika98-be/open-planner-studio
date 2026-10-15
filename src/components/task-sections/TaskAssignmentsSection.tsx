@@ -4,6 +4,7 @@ import { useAppStore } from '@/state/appStore';
 import type { ResourceCurve } from '@/types/resource';
 import { UnitsInput } from '@/components/common/UnitsInput';
 import { Select, type SelectOption } from '@/components/common/Select';
+import { formatReportNumber } from '@/utils/reportNumber';
 import { AlertTriangle, BarChart3, Lock, Trash2 } from 'lucide-react';
 import { RESOURCE_CURVES, CURVE_KEY } from './shared';
 import { isSummaryTask } from '@/utils/taskHierarchy';
@@ -30,12 +31,14 @@ const IMPORTED_CURVE = '__importedCurve';
  * Werkinvoer in uren die pas op Enter/blur commit — anders zou elke
  * toetsaanslag ("6" op weg naar "64") een eigen driehoekstap, undo-stap en contour-/venster-nazorg
  * afvuren. Ongeldig (≤ 0 of geen getal) ⇒ rode rand, geen commit, terug naar de getoonde waarde.
+ * Tekstveld met `inputMode="decimal"` in de getalnotatie van de app (komma of punt), zoals de
+ * inzet: een `type="number"` reserveert in Chromium ruimte voor een spinknop en knipte "306" af.
  */
-function WorkHoursInput({ value, onCommit, ariaLabel, title, className }: {
-  value: number; onCommit: (hours: number) => void; ariaLabel: string; title: string; className: string;
+function WorkHoursInput({ value, onCommit, ariaLabel, title, className, locale }: {
+  value: number; onCommit: (hours: number) => void; ariaLabel: string; title: string; className: string; locale: string;
 }) {
   const [draft, setDraft] = useState<string | null>(null);
-  const shown = draft ?? String(value);
+  const shown = draft ?? formatReportNumber(value, locale);
   const parsed = parseFloat(shown.replace(',', '.'));
   const invalid = draft !== null && !(Number.isFinite(parsed) && parsed > 0);
   const commit = () => {
@@ -48,9 +51,8 @@ function WorkHoursInput({ value, onCommit, ariaLabel, title, className }: {
   };
   return (
     <input
-      type="number"
-      min="0"
-      step="any"
+      type="text"
+      inputMode="decimal"
       value={shown}
       title={title}
       aria-label={ariaLabel}
@@ -252,6 +254,7 @@ export function TaskAssignmentsSection({ taskId }: { taskId: string }) {
                         ariaLabel={`${t('properties.assignments.work')} — ${res?.name ?? a.resourceId}`}
                         onCommit={hours => setAssignmentWork(a.id, Math.round(hours * 60))}
                         className="input !text-small !px-1 !py-0.5 !h-6 !w-[calc(var(--text-small)*5)] text-right"
+                        locale={i18n.language}
                       />
                     </span>
                   ))}

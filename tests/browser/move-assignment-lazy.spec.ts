@@ -23,19 +23,24 @@ test('verplaats naar…: opties pas na openen, keuze verplaatst de toewijzing', 
   }, { a, c });
 
   const move = page.locator('[data-ops-assignment-row] [data-ops-assignment-move]').first();
+  const trigger = move.getByRole('button');
   await expect(move).toBeVisible();
-  // Dicht: alleen de plaatshouder, geen kandidatenlijst in de DOM.
+  // Dicht: geen kandidatenlijst in de DOM (eigen keuzelijst, nooit native — eigenaar 2026-10-15).
   await expect(move).toHaveAttribute('data-ops-assignment-move', 'closed');
-  await expect(move.locator('option')).toHaveCount(1);
+  await expect(page.getByRole('listbox')).toHaveCount(0);
 
-  // Openen met de muis bouwt de lijst: plaatshouder + B (C draagt de resource al, A is de bron).
-  await move.click();
+  // Openen met de muis bouwt de lijst: alleen B (C draagt de resource al, A is de bron).
+  await trigger.click();
   await expect(move).toHaveAttribute('data-ops-assignment-move', 'open');
-  await expect(move.locator('option')).toHaveCount(2);
-  await expect(move.locator(`option[value="${b}"]`)).toHaveCount(1);
+  const listbox = page.getByRole('listbox');
+  await expect(listbox.getByRole('option')).toHaveCount(1);
+  await expect(listbox.locator(`[data-value="${b}"]`)).toHaveCount(1);
   await page.keyboard.press('Escape');
+  await expect(listbox).toHaveCount(0);
 
-  await move.selectOption(b);
+  // Kiezen met een echte klik op de optie.
+  await trigger.click();
+  await listbox.locator(`[data-value="${b}"]`).click();
   const owners = await page.evaluate((r) => window.__OPS__!.store.getState().assignments
     .filter(x => x.resourceId === r).map(x => x.taskId).sort(), resourceId);
   expect(owners).toEqual([b, c].sort());
