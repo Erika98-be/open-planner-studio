@@ -1054,3 +1054,10 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   twee bevindingen cursor/tooltipplaats, in de fixronde). Besluit voorgelegd: de zin "Een extra resource maakt de taak
   korter" (Vast werk; Vaste inzet effort-driven/onbekend) klopt niet altijd door afronding op hele dagen (reviewer #359,
   BEVESTIGD: 1 d blijft 1 d; 5 d met extra inzet 0,1 blijft 5 d). Advies orkestrator: "kan de taak korter maken".
+- **Besluit eigenaar 2026-10-15 (zin extra resource): optie 3, alleen bij een dagtaak**, letterlijk: "doe dit maar zet
+  het alleen wanneer het een dagtaak is." Dagtaak: "Een extra resource maakt de taak korter, afgerond op hele dagen."
+  Urentaak: zin blijft. (Advies orkestrator was optie 2 "kan … korter maken".) Doorgegeven aan de maker van #359.
+  Vraag eigenaar: "is dit puur weergave of wordt er ook echt zo gerekend?" ⇒ echt gerekend: `roundUpRemaining`
+  (`workTriangle.ts:97`) rondt de afgeleide duur van een dagtaak naar boven af op hele werkdagen (nooit < 1 dag), het
+  werk blijft exact, de laatste dag is niet vol; spec §6.1 (BEREDENEERD; MSP kent 0,5 d). Geen apart eigenaarsbesluit
+  over de afronding gevonden.
