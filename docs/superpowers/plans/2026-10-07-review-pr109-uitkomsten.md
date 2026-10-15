@@ -1150,3 +1150,10 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   main: DOM 3273 vs store 3233). Doorgegeven aan de maker (lopende fixronde), plus vereenvoudigingen.
 - **Tekstcheck #361 voorgelegd:** ⚠-tooltip, laatste zin "the units stay as the file gave them" ⇒ "The app does not
   change the units to remove the difference." (nl: "De app past de inzet niet aan om het verschil weg te werken.").
+- **Review #363: nee** (reviewer Opus 5.5) op b1c5e882a. Verplicht: [BEVESTIGD · hoog] XER-materiaal 20 % te laag
+  (eenheden/dag = tarief × opgeslagen 8, dagen nu 187; Roads 145.267 → 116.213; #361 lost het niet op);
+  [BEVESTIGD · midden] MSPDI-baselineduur van urentaken met de 8 (1870 u ⇒ 1496 u). Fixronde bij de maker.
+  **Eigenaarsbesluit nodig:** oude baselines tonen −20 % afwijking (187 − 233,75) na deze PR: omrekenen bij openen of
+  accepteren + release notes. Later (lijst): procent-lag P6 XML-export, `lagDays` XER, **`promoteHourCalendar`: eigen
+  P6 XML/MSPDI-export opnieuw openen maakt hpd 8 ⇒ 10, een dagtaak van 5 d wordt 4 d (dataverlies, bestaat al op
+  main) ⇒ fout in bestaand werk, vóór de release**. Helper zelf klopt; geen gemiste schrijfplek; Late ploeg 5 → 4 terecht.
