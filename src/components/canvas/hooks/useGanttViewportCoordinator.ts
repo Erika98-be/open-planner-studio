@@ -18,7 +18,6 @@ import {
   computeFocusTaskScrollY,
   computeGanttScrollBounds,
   DEFAULT_ZOOM,
-  emptyGanttReachDates,
   getGanttScrollBounds,
   setGanttChartWidth,
   setGanttScrollBounds,
@@ -57,10 +56,11 @@ export function useGanttViewportCoordinator(
   const latest = useRef(input);
   latest.current = input;
 
-  // Ook zonder taken moet de tijdlijn latere feestdagen kunnen bereiken; de regel staat in ganttViewport.
+  // Een lege Gantt verbreedt zijn inhoud tot de laatste feestdag, zodat de gebruiker ernaar kan
+  // pannen. De oorsprong blijft `viewStartDate` (zie `computeEffectiveViewStart`).
   const emptyReachDates = useMemo(
-    () => emptyGanttReachDates(input.tasks.length, input.calendar),
-    [input.calendar, input.tasks.length],
+    () => input.tasks.length > 0 ? [] : input.calendar.holidays.map(h => h.endDate || h.startDate),
+    [input.calendar.holidays, input.tasks.length],
   );
 
   const effectiveViewStart = useMemo(
@@ -191,8 +191,7 @@ export function useGanttViewportCoordinator(
     const container = primaryContainerRef.current;
     if (!container) return;
     if (current.tasks.length === 0) {
-      current.setZoom(DEFAULT_ZOOM);
-      current.setScroll(0, 0);
+      resetZoom();
       return;
     }
     const rect = container.getBoundingClientRect();
@@ -208,7 +207,7 @@ export function useGanttViewportCoordinator(
     current.setZoom(fit.zoom);
     current.setViewStartDate(fit.viewStartDate);
     current.setScroll(fit.scrollX, 0);
-  }, [dayDistance, registerBoundsForZoom]);
+  }, [dayDistance, registerBoundsForZoom, resetZoom]);
 
   const { zoomAt } = useGanttZoom({
     containerRef: primaryContainerRef,

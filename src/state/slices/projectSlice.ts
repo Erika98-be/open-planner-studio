@@ -558,9 +558,10 @@ export const createProjectSlice: AppSliceFactory<ProjectSlice> = (runtime) => (s
       });
       // Een leeg project (template 'Leeg') is nog niet 'dirty'; met fasen wél.
       payload.isDirty = opts.phaseNames.length > 0;
-      // Een leeg project begint de tijdlijn bij zijn projectstart (de verse view staat op vandaag).
-      // Een sjabloon met fasen houdt de gewone beginweergave.
-      if (opts.phaseNames.length === 0) payload.view.viewStartDate = proj.startDate;
+      // De tijdlijn begint bij de projectstart (de verse view staat op vandaag). Ook bij een
+      // sjabloon: zijn fasen starten op de projectstart, dus bij een latere start lagen ze anders
+      // buiten beeld. Zoom en scroll blijven de verse waarden.
+      payload.view.viewStartDate = proj.startDate;
       hydratePayload(s, payload);
       // Zelfde reset als newProject()/newDocument() hierboven: bij het PRISTINE-hergebruikpad
       // (geen newDocument()-aanroep, dus geen reset onderweg) kan een openstaande

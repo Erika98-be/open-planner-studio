@@ -136,12 +136,16 @@ test('nieuw project: de eerste taak via de rij "Nieuwe taak" blijft in beeld', a
   expect(await dateX(page, start)).toBeLessThan(width);
 });
 
-test('sjabloon met fasen: zoom blijft gelijk en elke fase staat in raster en Gantt', async ({ page, ops: _ops }) => {
+test('sjabloon met fasen en latere start: zoom blijft gelijk, fasen in raster en Gantt, start in beeld', async ({ page, ops: _ops }) => {
   await page.locator('[data-ops-ribbon-item="new"]').click();
   const dialog = page.locator('[data-ops-project-dialog="new"]');
   await expect(dialog).toBeVisible();
   await dialog.getByRole('button', { name: /^(Fasering-template|Phasing template|Template)/i }).first().click();
   await page.getByRole('option', { name: /^(Woningbouw|Residential)/i }).click();
+  // Een latere start dan vandaag: de fasen beginnen op de projectstart en moeten in beeld staan.
+  await dialog.getByRole('group', { name: /^(Startdatum|Start date)$/i }).locator('input').first().click();
+  await page.keyboard.type('01032027');
+  await page.keyboard.press('Tab');
   await dialog.locator('[data-ops-project-primary]').click();
   await expect(dialog).toBeHidden();
 
@@ -155,4 +159,6 @@ test('sjabloon met fasen: zoom blijft gelijk en elke fase staat in raster en Gan
   )).toBeVisible();
   const first = after.tasks[0]!;
   await expect.poll(() => page.evaluate(id => window.__OPS__!.gantt.taskBarPoint(id), first.id)).not.toBeNull();
+  expect((await projectView(page)).startDate).toBe('2027-03-01');
+  await expectProjectStartAtOrigin(page);
 });

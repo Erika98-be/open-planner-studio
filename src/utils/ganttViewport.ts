@@ -180,8 +180,8 @@ export function computeEffectiveViewStart(
   // begint zo bij `viewStartDate` (bij een nieuw document de projectstart), en de oorsprong blijft
   // gelijk als de eerste taak erbij komt. Trok een vroege feestdag de oorsprong naar links, dan
   // toonde een nieuw document die feestdag in plaats van de projectstart, en sprong het beeld weg
-  // zodra de eerste taak de oorsprong terugzette. Latere feestdagen blijven bereikbaar via
-  // `emptyGanttReachDates` (de inhoudsbreedte).
+  // zodra de eerste taak de oorsprong terugzette. Latere feestdagen blijven bereikbaar: de
+  // coördinator verbreedt de inhoud van een lege Gantt tot de laatste feestdag.
   // Onparseerbaar (leeg, corrupte import): geef de invoer onveranderd terug in plaats van te
   // gooien. De aanroeper rekent dan met een datum die net zo min klopt als zijn invoer, maar de
   // app blijft staan.
@@ -235,19 +235,6 @@ export function computeFitToProject(
   const effectiveStart = computeEffectiveViewStart(tasks, minStart);
   const scrollX = Math.max(0, dayDistance(parseDate(effectiveStart), parseDate(minStart)) * zoom);
   return { zoom, viewStartDate: minStart, scrollX };
-}
-
-/** Einddatums die een Gantt ZONDER taken bereikbaar moet houden: de feestdagen van de kalender.
- *  Een lege Gantt is niet tijdloos; de gebruiker kan naar een latere vrije dag willen pannen. Ze
- *  verbreden alleen de inhoud naar rechts; de oorsprong blijft `viewStartDate`
- *  (zie {@link computeEffectiveViewStart}). Met taken bepalen de taken de inhoud en is dit leeg. */
-const NO_REACH_DATES: readonly string[] = Object.freeze([]);
-export function emptyGanttReachDates(
-  taskCount: number,
-  calendar: Pick<WorkCalendar, 'holidays'> | undefined,
-): readonly string[] {
-  if (taskCount > 0 || !calendar) return NO_REACH_DATES;
-  return calendar.holidays.map(holiday => holiday.endDate || holiday.startDate);
 }
 
 /** Kleine marge (in dagen) die vóór de doeldatum zichtbaar blijft, zodat hij niet exact tegen de

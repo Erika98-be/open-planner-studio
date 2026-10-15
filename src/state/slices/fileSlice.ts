@@ -819,7 +819,9 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
         s.ui.libraryRefreshNotice = activation.signals.libraryRefreshNotice;
         if (opts.hourDataNotice) {
           const showNotice = !s.ui.enableHourPlanning && fileHasHourData(s.tasks, [s.calendar, ...s.calendars]);
-          // Alleen DIT document krijgt of verliest de melding; die van een ander open document blijft.
+          // De melding hoort bij één document: het laatst geopende bestand met uur-data. Een ander
+          // bestand zonder uur-data laat hem staan; opent u er twee met uur-data, dan houdt alleen
+          // het laatste de strook.
           if (showNotice) s.ui.hourDataNotice = s.activeDocumentId;
           else if (s.ui.hourDataNotice === s.activeDocumentId) s.ui.hourDataNotice = null;
         }
