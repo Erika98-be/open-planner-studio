@@ -900,3 +900,9 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   Microsoft Project, Apply ⇒ "After applying, 573 tasks moved." (kritiek pad 188 ⇒ 279 werkdagen), Ctrl+Z ⇒ terug naar
   P6 en 188. Zelf nagelopen (Playwright, `/tmp/qa-stap13/`). Eigen waarneming: de melding "573 tasks moved" blijft
   staan na Ctrl+Z.
+- **Checkstap 13 (profielwissel P6 → Microsoft Project, Apply, Ctrl+Z) goedgekeurd door de eigenaar 2026-10-15,
+  letterlijk: "dit werkt".** Eigen waarneming blijft genoteerd: melding "573 tasks moved" blijft na Ctrl+Z staan.
+- **Bevinding eigenaar 2026-10-15 (annotatie op lintknop *Settings › Project info*), letterlijk: "hernoem deze knop naar
+  project settings".** Na de check bespreken: naast de knop staat al *Settings* (`menu:ribbon.projectSettings`,
+  opent het instellingenvenster); "Project info" staat ook in venstertitel, backstage-sectie, meldingen (15 strings
+  nl/en) en 54 gidsbestanden ⇒ alleen de knop of overal?
