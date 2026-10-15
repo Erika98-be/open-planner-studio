@@ -205,6 +205,21 @@ function keepFocusOffBar(event: ReactMouseEvent<HTMLDivElement>): void {
   event.preventDefault();
 }
 
+/**
+ * Echo-wacht tussen het raster en zijn zwevende balken. `echo[axis]` is de laatste waarde die de ene
+ * kant in de andere schreef. Meldt de andere kant precies die waarde, dan is dat de echo van onze
+ * eigen schrijfactie: niet terugschrijven. Twee snelle schrijfacties kunnen twee events geven die
+ * allebei de laatste waarde melden, dus de echo blijft staan tot de volgende schrijfactie. Een event
+ * met een andere waarde komt van de gebruiker (wiel, duim, toets); dan vervalt de echo, zodat de
+ * gebruiker daarna ook weer precies op die oude waarde kan uitkomen.
+ */
+function isEcho(echo: { top: number | null; left: number | null }, axis: 'top' | 'left', value: number): boolean {
+  const expected = echo[axis];
+  if (expected !== null && Math.abs(expected - value) < 1) return true;
+  echo[axis] = null;
+  return false;
+}
+
 /** Breedte van de "kolom toevoegen"-strook: een 20px-knop met 6px lucht aan weerszijden (issue
  * #89). `TaskGrid` zet hem als `--task-grid-chooser-strip` op de shell; de CSS leest die variabele,
  * DataGridCore rekent er het horizontale bereik mee. */
@@ -258,6 +273,12 @@ export function DataGridCore({
   // overlay precies die waarde, dan is het onze eigen echo en mag hij het raster niet terugzetten:
   // anders stopt hij de wielanimatie en de store-sprongen (review #362, WebKitGTK 2.52).
   const barEchoRef = useRef<{ top: number | null; left: number | null }>({ top: null, left: null });
+  // Andersom hetzelfde: de waarde die een overlay net in het raster schreef. Het scroll-event van het
+  // raster meldt die later; spiegelen we hem dan terug, dan stopt de lopende animatie van de overlay
+  // (WebKitGTK: wiel boven de horizontale balk bleef op 3 à 10 px steken).
+  const coreEchoRef = useRef<{ top: number | null; left: number | null }>({ top: null, left: null });
+  // De laatste stand die het raster zelf aan de store meldde (`handleScroll`).
+  const reportedRef = useRef<{ top: number | null; left: number | null }>({ top: null, left: null });
   /** Zet een overlay op de stand van het raster en onthoud die waarde als verwachte echo. */
   const mirrorToBar = (bar: HTMLDivElement, axis: 'top' | 'left', value: number) => {
     const current = axis === 'top' ? bar.scrollTop : bar.scrollLeft;
@@ -267,11 +288,15 @@ export function DataGridCore({
     // De browser rondt en klemt; de echo meldt de waarde die de overlay werkelijk kreeg.
     barEchoRef.current[axis] = axis === 'top' ? bar.scrollTop : bar.scrollLeft;
   };
-  /** Meldt de overlay precies onze laatste spiegeling? Dan is dit event een echo; hij telt één keer. */
-  const isBarEcho = (axis: 'top' | 'left', value: number): boolean => {
-    const expected = barEchoRef.current[axis];
-    barEchoRef.current[axis] = null;
-    return expected !== null && Math.abs(expected - value) < 1;
+  /** Meldt de overlay precies onze laatste spiegeling? Dan is dit event een echo (`isEcho`). */
+  const isBarEcho = (axis: 'top' | 'left', value: number): boolean => isEcho(barEchoRef.current, axis, value);
+  /** Overlay -> raster, en onthoud de waarde als verwachte echo van het raster. */
+  const writeToCore = (container: HTMLDivElement, axis: 'top' | 'left', value: number) => {
+    const current = axis === 'top' ? container.scrollTop : container.scrollLeft;
+    if (Math.abs(current - value) < 1) return;
+    if (axis === 'top') container.scrollTop = value;
+    else container.scrollLeft = value;
+    coreEchoRef.current[axis] = axis === 'top' ? container.scrollTop : container.scrollLeft;
   };
   const cellsRef = useRef(new Map<string, HTMLDivElement>());
   const pendingFocusKeyRef = useRef<string | null>(null);
@@ -282,13 +307,18 @@ export function DataGridCore({
   // Elke as volgt alleen zijn EIGEN prop. Een horizontale scroll (nieuwe `scrollLeft`) mag de
   // verticale stand nooit terugzetten — ook niet als de store die stand ooit anders klemde dan de
   // DOM (eigenaarsbevinding 2026-10-15: opzij schuiven onderaan liet de lijst omhoog springen).
+  // Een prop die precies de waarde is die het raster zelf net meldde (`reportedRef`), is de echo
+  // via de store: niet terugschrijven. Het raster kan intussen verder zijn (wielanimatie in
+  // WebKitGTK); terugschrijven zou die animatie stoppen.
   useEffect(() => {
     const container = containerRef.current;
-    if (container) synchronizeDataGridScrollPosition(container, scrollTop, container.scrollLeft);
+    if (!container || scrollTop === reportedRef.current.top) return;
+    synchronizeDataGridScrollPosition(container, scrollTop, container.scrollLeft);
   }, [scrollTop]);
   useEffect(() => {
     const container = containerRef.current;
-    if (container) synchronizeDataGridScrollPosition(container, container.scrollTop, scrollLeft);
+    if (!container || scrollLeft === reportedRef.current.left) return;
+    synchronizeDataGridScrollPosition(container, container.scrollTop, scrollLeft);
   }, [scrollLeft]);
   const virtual = useMemo(() => computeVirtualWindow({
     totalRows: rows.length,
@@ -462,8 +492,9 @@ export function DataGridCore({
 
   const handleScroll = (event: UIEvent<HTMLDivElement>) => {
     const { scrollTop: top, scrollLeft: left } = event.currentTarget;
-    if (hScrollRef.current) mirrorToBar(hScrollRef.current, 'left', left);
-    if (vScrollRef.current) mirrorToBar(vScrollRef.current, 'top', top);
+    if (hScrollRef.current && !isEcho(coreEchoRef.current, 'left', left)) mirrorToBar(hScrollRef.current, 'left', left);
+    if (vScrollRef.current && !isEcho(coreEchoRef.current, 'top', top)) mirrorToBar(vScrollRef.current, 'top', top);
+    reportedRef.current = { top, left };
     onScrollTopChange?.(top);
     onScrollLeftChange?.(left);
   };
@@ -475,13 +506,13 @@ export function DataGridCore({
     const container = containerRef.current;
     const left = event.currentTarget.scrollLeft;
     if (!container || isBarEcho('left', left)) return;
-    if (Math.abs(container.scrollLeft - left) >= 1) container.scrollLeft = left;
+    writeToCore(container, 'left', left);
   };
   const handleVerticalBarScroll = (event: UIEvent<HTMLDivElement>) => {
     const container = containerRef.current;
     const top = event.currentTarget.scrollTop;
     if (!container || isBarEcho('top', top)) return;
-    if (Math.abs(container.scrollTop - top) >= 1) container.scrollTop = top;
+    writeToCore(container, 'top', top);
   };
   // Het wiel boven een overlay doet wat het op de oude native balk deed: de overlay schuift zelf
   // langs zijn eigen as (native), de andere as gaat door naar het raster. Shift+wiel telt als
