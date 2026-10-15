@@ -27,6 +27,7 @@ import {
   calendarScalarBreakIssue, inferredSimpleBreak, scalarBreakIssue, scalarTimesValid, simpleBreakPatch,
 } from '@/utils/effectiveWorkTime';
 import { holidayIssue } from '@/utils/holidayRange';
+import { effHoursPerDay } from '@/utils/taskDuration';
 
 /** Rode rand voor een ongeldige feestdagdatum; `DateTextInput` legt `style` op de omrande groep. */
 const INVALID_DATE_STYLE = { borderColor: 'var(--error)' } as const;
@@ -538,7 +539,10 @@ export function CalendarForm({
       </div>
 
       {/* Netto-uren zijn in elke kalenderstand uitsluitend een afleiding. Begin/einde/pauze bestaan
-          alleen bij een eenvoudige kalender; bij werkblokken bewerk je het blok Werktijden. */}
+          alleen bij een eenvoudige kalender; bij werkblokken bewerk je het blok Werktijden.
+          Het veld toont de werktijd per dag waarmee de app rekent (`effHoursPerDay`): bij werkblokken de
+          modale bandsom, live uit de draft. De opgeslagen `hoursPerDay` (P6-omrekenfactor) toont het venster
+          niet; die blijft ongewijzigd bewaard en gaat mee bij export. Besluit eigenaar 2026-10-15 (optie 1). */}
       <div className="grid grid-cols-3 gap-3">
         {!hourMode && (
           <>
@@ -587,7 +591,7 @@ export function CalendarForm({
             aria-live="polite"
             data-ops-simple-break-net-hours
           >
-            {netHoursFormatter.format(draft.hoursPerDay)} h
+            {netHoursFormatter.format(effHoursPerDay(draft))} h
           </output>
         </div>
       </div>
