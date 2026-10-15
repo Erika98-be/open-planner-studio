@@ -3,8 +3,12 @@ import { useTranslation } from 'react-i18next';
 import { Task, ConstraintType } from '@/types/task';
 import { validateConstraintPair, withPrimaryConstraint } from '@/engine/scheduler/constraintValidation';
 import { DateTextInput } from '@/components/common/DateTextInput';
+import { Select } from '@/components/common/Select';
 import { Field } from './shared';
 import { readLocal, writeLocal } from '@/utils/settingsStore';
+
+const PRIMARY_TYPES: ConstraintType[] = ['ASAP', 'ALAP', 'SNET', 'SNLT', 'FNET', 'FNLT', 'MSO', 'MFO'];
+const SECONDARY_TYPES: ConstraintType[] = ['SNET', 'FNET', 'SNLT', 'FNLT'];
 
 /**
  * Constraint + hard-pin + secundaire constraint + validatie — sectie van
@@ -30,14 +34,17 @@ export function TaskConstraintFields({ task, onChange }: {
           Plus harde Mandatory-pin + secundaire constraint.
           Volle paneelbreedte i.p.v. een 2-koloms grid: de vertaalde
           constraint-labels zijn lange volzinnen + afkorting ("As soon as possible (ASAP)") — in een
-          halve kolom (het paneel is standaard 280px) klipt de select vóór de sluit-haakjes, met het
-          native pijltje er half doorheen. De datum staat eronder i.p.v. ernaast, zoals `TaskDeadlineField`
-          al doet voor een los datumveld. */}
+          halve kolom (het paneel is standaard 280px) klipt de keuzelijst vóór de sluit-haakjes. De datum staat eronder
+          i.p.v. ernaast, zoals `TaskDeadlineField` al doet voor een los datumveld. */}
       <Field label={t('properties.constraint')}>
-        <select
+        <Select
+          aria-label={t('properties.constraint')}
           value={task.constraint?.type ?? 'ASAP'}
-          onChange={e => {
-            const type = e.target.value as ConstraintType;
+          onChange={value => {
+            // Een native select meldt alleen een ECHTE wijziging; de eigen `Select` meldt ook een
+            // herhaalde keuze. Die is hier een no-op, zodat er geen lege undo-stap ontstaat.
+            if (value === (task.constraint?.type ?? 'ASAP')) return;
+            const type = value as ConstraintType;
             // Gedeelde canonicalisatie met raster en MCP (`withPrimaryConstraint`): ASAP wist
             // beide constraints, ALAP de secundaire. Bij een niet-MSO/MFO-primair vervalt de harde
             // pin (hard alleen zinvol op MSO/MFO).
@@ -47,12 +54,9 @@ export function TaskConstraintFields({ task, onChange }: {
               task.constraint2,
             ));
           }}
-          className="input !text-small !leading-4 !px-2.5 !py-1.5"
-        >
-          {(['ASAP', 'ALAP', 'SNET', 'SNLT', 'FNET', 'FNLT', 'MSO', 'MFO'] as ConstraintType[]).map(ct => (
-            <option key={ct} value={ct}>{t(`constraintType.${ct}`)}</option>
-          ))}
-        </select>
+          className="!text-small !leading-4 !px-2.5 !py-1.5"
+          options={PRIMARY_TYPES.map(ct => ({ value: ct, label: t(`constraintType.${ct}`) }))}
+        />
       </Field>
       {task.constraint && task.constraint.type !== 'ALAP' && (
         <Field label={t('properties.constraintDate')}>
@@ -108,22 +112,28 @@ export function TaskConstraintFields({ task, onChange }: {
       {task.constraint && task.constraint.type !== 'ASAP' && task.constraint.type !== 'ALAP' && !task.constraint.hard && (
         <div className="flex flex-col gap-2">
           <Field label={t('properties.constraint2')}>
-            <select
-              value={task.constraint2?.type ?? ''}
-              onChange={e => {
-                const type = e.target.value as ConstraintType | '';
-                if (!type) onChange({ constraint2: undefined });
-                else onChange({ constraint2: { type: type as ConstraintType, date: task.constraint2?.date ?? task.time.scheduleStart } });
-              }}
-              className={`input !text-small !leading-4 !px-2.5 !py-1.5 ${!pairValidation.ok ? '!border-[var(--error)]' : ''}`}
+            {/* De wrapper draagt de reden-tooltip: de eigen `Select` kent geen `title`. */}
+            <div
               title={!pairValidation.ok ? pairValidation.issues.map(i => t(`properties.constraintPair.${i}`)).join(' · ') : undefined}
               data-ops-constraint2-type
             >
-              <option value="">{t('properties.constraint2None')}</option>
-              {(['SNET', 'FNET', 'SNLT', 'FNLT'] as ConstraintType[]).map(ct => (
-                <option key={ct} value={ct}>{t(`constraintType.${ct}`)}</option>
-              ))}
-            </select>
+              <Select
+                aria-label={t('properties.constraint2')}
+                value={task.constraint2?.type ?? ''}
+                onChange={value => {
+                  if (value === (task.constraint2?.type ?? '')) return;
+                  const type = value as ConstraintType | '';
+                  if (!type) onChange({ constraint2: undefined });
+                  else onChange({ constraint2: { type: type as ConstraintType, date: task.constraint2?.date ?? task.time.scheduleStart } });
+                }}
+                className={`!text-small !leading-4 !px-2.5 !py-1.5 ${!pairValidation.ok ? '!border-[var(--error)]' : ''}`}
+                aria-invalid={!pairValidation.ok ? true : undefined}
+                options={[
+                  { value: '', label: t('properties.constraint2None') },
+                  ...SECONDARY_TYPES.map(ct => ({ value: ct, label: t(`constraintType.${ct}`) })),
+                ]}
+              />
+            </div>
           </Field>
           {task.constraint2 && (
             <Field label={t('properties.constraint2Date')}>
