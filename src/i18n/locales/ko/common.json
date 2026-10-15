@@ -833,7 +833,6 @@
     },
     "worktime": {
       "section": "근무 시간",
-      "derivedHpd": "산출된 시간/일:",
       "saveAsPreset": "프리셋으로 저장…",
       "saveAsPresetHint": "현재 근무 시간을 나만의 프리셋으로 (이 기기에) 저장하여 나중에 다른 프로젝트에서도 재사용할 수 있습니다.",
       "perWeekday": "요일별로 설정…",

@@ -265,15 +265,14 @@ test('resourcekalendervenster: ma t/m do uit en ma weer aan bij 9/9/9/9/8 (8 u/d
 test('kalendervenster: netto-uren per dag toont de werktijd van de blokken, live, en Annuleren laat de opgeslagen 8 staan',
   async ({ page, ops: _ops }) => {
     // Besluit eigenaar 2026-10-15 (optie 1): ma–vr 08:00–18:00 (10 klokuren) met day_hr_cnt 8. Het veld toont
-    // 10, net als "Derived hours/day" in het blok Werktijden. De opgeslagen 8 (P6-omrekenfactor) toont het
-    // venster niet, maar blijft bewaard.
+    // 10; het is de enige plek met dat getal (de regel "Derived hours/day" in het blok Werktijden is weg). De
+    // opgeslagen 8 (P6-omrekenfactor) toont het venster niet, maar blijft bewaard.
     await openXer(page, xer('Dagploeg 10 u', ON_MA_VR(['08:00', '18:00']), 8));
     await expect.poll(() => calendarState(page).then((s) => [s.workDays, s.hoursPerDay])).toEqual([[1, 2, 3, 4, 5], 8]);
 
     const dialog = await openCalendarDialog(page);
-    const derived = dialog.locator('[data-ops-derived-hpd]');
     await expect(netHours(dialog)).toHaveText('10.00 h');
-    await expect(derived).toHaveText('10h');
+    await expect(dialog.locator('[data-ops-derived-hpd]')).toHaveCount(0);
 
     // Ma 07:00–16:00 en kopiëren naar alle werkdagen: 9 klokuren per dag; het veld volgt live.
     const monBand = dialog.locator('[data-ops-worktime-day="1"] [data-ops-band]').first().locator('[data-ops-time-input]');
@@ -287,7 +286,6 @@ test('kalendervenster: netto-uren per dag toont de werktijd van de blokken, live
     await dialog.locator('[data-ops-worktime-day="1"]').getByTitle('Copy to all workdays').click();
     await expect(dialog.locator('[data-ops-worktime-day="5"]')).toContainText('9.00h');
     await expect(netHours(dialog)).toHaveText('9.00 h');
-    await expect(derived).toHaveText('9h');
 
     await dialog.locator('[data-ops-cal-cancel]').click();
     await expect(dialog).toBeHidden();

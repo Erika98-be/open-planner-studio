@@ -1,7 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { Plus, Trash2, Copy } from 'lucide-react';
 import type { WorkTimeBands } from '@/types/calendar';
-import { deriveHoursPerDay } from '@/services/subdayIo';
 import { ISO_WEEK_DAYS, orderedWeekDays } from '@/utils/weekDays';
 import { MinuteTimeInput } from '@/components/common/TimeInput';
 type WD = 1 | 2 | 3 | 4 | 5 | 6 | 7;
@@ -84,7 +83,6 @@ export function WorkTimeEditor({
   };
 
   const dayMinutes = (wd: WD) => (bands.byWeekday[wd] ?? []).reduce((s, b) => s + (b.end - b.start), 0);
-  const derivedHpd = deriveHoursPerDay(bands, 0);
   // Toont de pauze-hint zodra een werkdag meer dan één band heeft (een gat = pauze). Dekt de
   // afgeleide pauze uit de scalar-seed én handmatig toegevoegde pauzes.
   const hasBreak = ISO_WEEK_DAYS.some((wd) => (bands.byWeekday[wd] ?? []).length > 1);
@@ -163,10 +161,6 @@ export function WorkTimeEditor({
           </div>
         );
       })}
-      <div className="flex items-center justify-between pt-1">
-        <span className="!text-body font-medium text-text-secondary">{tCommon('calendar.worktime.derivedHpd')}</span>
-        <span className="!text-body font-semibold text-accent tabular-nums" data-ops-derived-hpd>{derivedHpd}h</span>
-      </div>
       {hasBreak && (
         <span className="!text-small text-text-secondary italic" data-ops-break-hint>
           {tCommon('calendar.worktime.breakHint')}

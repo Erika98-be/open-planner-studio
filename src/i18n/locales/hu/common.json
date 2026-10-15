@@ -872,7 +872,6 @@
     },
     "worktime": {
       "section": "Munkaórák",
-      "derivedHpd": "Számított órák/nap:",
       "saveAsPreset": "Mentés előbeállításként…",
       "saveAsPresetHint": "Mentse a jelenlegi munkaórákat saját előbeállításként (ezen az eszközön), hogy később bármely projektben újra felhasználhassa.",
       "perWeekday": "Beállítás hétköznaponként…",

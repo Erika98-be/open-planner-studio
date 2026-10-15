@@ -898,7 +898,6 @@
     },
     "worktime": {
       "section": "Werktijden",
-      "derivedHpd": "Afgeleide uren/dag:",
       "saveAsPreset": "Bewaar als preset…",
       "saveAsPresetHint": "Bewaar de huidige werktijden als je eigen preset (op dit apparaat), zodat je ze later in elk project kunt hergebruiken.",
       "perWeekday": "Per weekdag instellen…",

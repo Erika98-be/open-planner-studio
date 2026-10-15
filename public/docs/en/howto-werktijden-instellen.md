@@ -34,7 +34,7 @@ Each preset does this:
 6. For a day from Monday to Friday, click the copy symbol (*Copy to all workdays*) to put the blocks of that day on Monday to Friday.
 7. At the bottom is *Derived hours/day:* with the net hours per day that the app derives from this. A calendar with its own hours per day (for example from Primavera P6) keeps that value, also when you change work days or blocks; only a preset sets it again. Click *Apply*.
 
-**Example: a free Friday afternoon.** Click *Set per weekday…*. Remove the second block (13:00 to 16:00) for *Fri*. Friday now has 5 hours, the other days 8. The derived hours per day stay 8.
+**Example: a free Friday afternoon.** Click *Set per weekday…*. Remove the second block (13:00 to 16:00) for *Fri*. Friday now has 5 hours, the other days 8. The *Net hours per day* stay 8.
 
 ### Saving a preset of your own
 
