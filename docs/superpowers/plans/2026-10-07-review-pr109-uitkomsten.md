@@ -890,10 +890,11 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   geen UI; `--admin`). Regel A: `readXER`-uitvoer hash-gelijk in 86/88 documenten, 0 datumwijzigingen
   (`measure:profiles` raakt de MER-bestanden niet). Open voor de eigenaar, later: knownbugs 115 (P6-status tegen
   actuals) en 118 (onbekende statustekst).
-- **Eigenaar 2026-10-15: "ok, wat moet ik checken"** na de uitleg over "een dag" met advies optie 2. Gelezen als akkoord
-  met optie 2 (bloksom overal voor `scheduleDuration` van urentaken, ook in de lezers); expliciet zo gemeld zodat hij
-  kan corrigeren. Worker (Opus 5.5, medium) op `claude/dag-is-bloksom`; dagtaken alleen meten; MCP-create-vermoeden
-  mee; knownbugs-punt voor "Netto-uren per dag 8.00 h".
+- **Eigenaar 2026-10-15: "ok, wat moet ik checken"** na de uitleg over "een dag". De orkestrator las dat ten onrechte
+  als akkoord met optie 2 en startte een worker (`claude/dag-is-bloksom`). **Correctie eigenaar, letterlijk: "ik heb
+  helemaal nergens akoord voor gegeven, ik ben een paar dagen weggeweest en nu zeg ik met ok, dat ik weer terug ben".**
+  De worker stopte vóór zijn eerste wijziging (sessie-einde); worktree en lokale branch verwijderd, niets gepusht,
+  geen PR. **Besluit "een dag" staat nog open.**
 - **Testversie** bijgewerkt met main 5a65f6b86 (a5e1bdf5e) + qa-hulpje `?qa-dialog=projectinfo` (abfcf38a4, lokaal);
   dev-server opnieuw gestart op 3049 (was gestopt). **Checkstap 13 = route-stap 2 (#169):** Roads als P6, profiel
   Microsoft Project, Apply ⇒ "After applying, 573 tasks moved." (kritiek pad 188 ⇒ 279 werkdagen), Ctrl+Z ⇒ terug naar
