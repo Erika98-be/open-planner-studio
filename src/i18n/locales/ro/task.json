@@ -362,13 +362,6 @@
     "FIXED_RATE": "Unități fixe",
     "label": "Regulă de lucru",
     "projectDefault": "Standard de proiect ({{rule}})",
-    "protects": "Protejat: {{what}}",
-    "protectsFIXED_DURATION_RATE": "durată și unități de atribuire (lucrul urmează)",
-    "protectsFIXED_DURATION_WORK": "durată și lucru (unitățile de atribuire urmează)",
-    "protectsFIXED_WORK": "lucru (durata urmează unitățile de atribuire)",
-    "protectsFIXED_RATE": "unități de atribuire (durata urmează lucrul)",
-    "mspEffortDriven": "Din MS Project: determinată de efort",
-    "mspNotEffortDriven": "Din MS Project: nu este determinată de efort",
     "none": "Standard de proiect"
   },
   "properties": {

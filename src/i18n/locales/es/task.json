@@ -363,13 +363,6 @@
     "FIXED_RATE": "Unidades fijas",
     "label": "Regla de trabajo",
     "projectDefault": "Valor predeterminado del proyecto ({{rule}})",
-    "protects": "Protegido: {{what}}",
-    "protectsFIXED_DURATION_RATE": "duración y unidades (el trabajo sigue)",
-    "protectsFIXED_DURATION_WORK": "duración y trabajo (las unidades siguen)",
-    "protectsFIXED_WORK": "trabajo (la duración sigue a las unidades)",
-    "protectsFIXED_RATE": "unidades (la duración sigue al trabajo)",
-    "mspEffortDriven": "De MS Project: condicionado por el esfuerzo",
-    "mspNotEffortDriven": "De MS Project: no condicionado por el esfuerzo",
     "none": "Predeterminado del proyecto"
   },
   "properties": {
