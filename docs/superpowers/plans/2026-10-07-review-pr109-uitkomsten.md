@@ -953,3 +953,10 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   vastgelegd (46 native `<select>` in 24 bestanden op main). Worker (Opus 5.5, medium) op `claude/werkregel-i-icoon`:
   eigen `Select` met i-icoon per optie + i-icoon naast het gesloten veld, oranje blok weg, teksten nl/en + vertaalstraat,
   gidsen, check tekst ⇔ rekenkern.
+- **Checkstap 16 (oordeel, #170 E7):** waarschuwingsteken bij afwijkend opgeslagen werk. Roads A10530 *Placing of
+  Blinding Concrete*, Foreman: inzet 1,111, werk 306 h, tooltip "Stored work 306 h differs from units × remaining
+  duration (10 h). The histogram follows the stored work across the whole task duration; the units stay as the file
+  gave them." Link `?qa=Roads_Project_TEC.xer&qa-wbs=A10530` (nieuw qa-hulpje). Zelf nagelopen licht/donker
+  (`/tmp/qa-stap16/`). Eigen functionele waarnemingen in het blok *Assignments*: inzetvelden tonen onafgeronde
+  waarden ("1.77777777777778", afgeknipt); in de rij met waarschuwingsteken worden *Uniform* en *Move to* afgeknipt;
+  curve, *Move to* en *Assign resource* zijn native selects. A73 (werk 0) is voltooid ⇒ klopt.
