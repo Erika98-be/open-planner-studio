@@ -343,7 +343,8 @@ export function Select({
                     <>
                       {/* i-icoon: alleen voor muis en tik (de focus blijft op de trigger); een klik
                           toont de uitleg en kiest de optie NIET. Schermlezers krijgen de uitleg via
-                          `aria-describedby` (verborgen span hieronder). */}
+                          `aria-describedby` (verborgen spans ná de opties, zodat de tekst van de optie
+                          zelf alleen het label blijft). */}
                       <span
                         className="ops-select__option-info"
                         title={opt.description}
@@ -356,12 +357,14 @@ export function Select({
                       >
                         <Info size={14} aria-hidden="true" />
                       </span>
-                      <span id={descriptionId(i)} hidden>{opt.description}</span>
                     </>
                   )}
                 </div>
               );
             })}
+            {options.map((opt, i) => opt.description
+              ? <span key={`desc-${opt.value}`} id={descriptionId(i)} hidden>{opt.description}</span>
+              : null)}
           </div>,
           document.body,
         )
