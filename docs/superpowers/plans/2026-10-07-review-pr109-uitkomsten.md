@@ -1020,3 +1020,18 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   standaard wit zodra de lijst twee schuifbalken heeft. Fix in `globals.css`: hoek = `--theme-scrollbar-track`,
   Gantt-overlay transparant. Voor/na zelf bekeken (licht/donker). Review bij reviewer (Opus 5.5, xhigh) gestart.
   In de testversie gemerged (lokaal).
+- **Eigenaar 2026-10-15 vroeg: "die 233,75 wordt nu alleen nog opgeslagen voor export?"** Orkestrator liep de directe
+  lezers van de opgeslagen `calendar.hoursPerDay` na (kalender met werktijdblokken): rekenen/plannen gebruikt de
+  werktijd per dag (`CalendarEngine.hoursPerDay` in uurmodus, `effHoursPerDay`; ook MCP-taakduur `taskTools.ts:125`).
+  De 8 wordt direct gelezen door: kalendervenster (`CalendarForm.tsx:590`, weergave), MCP `project_info`
+  (`readTools.ts:205`) en extensie-API (`extMappers.ts:229/249`) (doorgeven), Gantt-knipcursor/-menu
+  (`useGanttPointerCoordinator.ts:147/167/267`; urentaak: geen effect, dagtaak op blokkenkalender [VERMOED] klein),
+  XER-materiaal per dag (`xerReader.ts:1029` → `xerResourceAssignments.ts:106`, rekenen bij inlezen [gevolg VERMOED]).
+- **Review #360: ja** (reviewer Opus 5.5): oorzaak en fix bevestigd (hoek wit 255,255,255 ⇒ trackkleur in alle drie
+  thema's; 24/25 vensterbreedtes wit vóór de fix); dode selector `.gantt-overlay-scrollbar::-webkit-scrollbar-corner`
+  door de orkestrator weggehaald (fbf6b443a), PR-tekst Firefox gecorrigeerd. Merge na groene CI.
+- **Review #359: nee** (reviewer Opus 5.5): i-knop houdt verouderde `title` na Ctrl+Z (`Tooltip.tsx` `restore()`),
+  i-knop 14×29 px, plaatsing tooltip ongetest. Fixronde bij de maker. Tekstbesluit voor de eigenaar: "Een extra
+  resource maakt de taak korter" klopt niet altijd (afronding op hele dagen). 26 vertaalde gidsen beschrijven nog het
+  oude blok ⇒ release (`update-docs-lang`).
+- **Eigenaar 2026-10-15 bij #360: "top, we moeten het er nu wel over hebben waar we de scrollbalken nu laten stoppen".**
