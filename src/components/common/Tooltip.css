@@ -33,6 +33,17 @@
   font-weight: 600;
 }
 
+/* `data-tooltip-beside`: links/rechts naast een voorouder; JS zet `left`/`top`, geen centrering. */
+.ops-tooltip.ops-tooltip--beside {
+  transform: none;
+  animation-name: ops-tooltip-in-beside;
+}
+
+@keyframes ops-tooltip-in-beside {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
 @keyframes ops-tooltip-in {
   from { opacity: 0; transform: translateX(-50%) translateY(-2px); }
   to   { opacity: 1; transform: translateX(-50%) translateY(0); }
