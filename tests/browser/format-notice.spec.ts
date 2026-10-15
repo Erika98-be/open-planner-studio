@@ -39,7 +39,7 @@ async function openFile(page: Page, name: string, buffer: Buffer, firstFile = fa
 }
 
 async function setXerNoticeInSettings(page: Page, shown: boolean): Promise<void> {
-  await page.getByTitle(/^(Settings|Instellingen)$/, { exact: true }).click();
+  await page.getByTitle(/^(App settings|App-instellingen)$/, { exact: true }).click();
   const settings = page.locator('.settings-dialog');
   await expect(settings).toBeVisible();
   await settings.getByRole('button', { name: /^(Advanced|Geavanceerd)$/ }).click();

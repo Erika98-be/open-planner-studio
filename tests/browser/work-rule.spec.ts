@@ -284,7 +284,7 @@ test('instelling en paneel: werkregel-toelichting in een gekleurd blok, instelli
   await expect(note.locator('[data-ops-work-rule-protects]')).toBeVisible();
   expect(await note.evaluate(el => getComputedStyle(el).boxShadow)).toContain('inset');
 
-  await page.getByTitle(/^(Settings|Instellingen)$/, { exact: true }).click();
+  await page.getByTitle(/^(App settings|App-instellingen)$/, { exact: true }).click();
   const dlg = page.locator('.settings-dialog');
   await dlg.locator('.settings-tab').filter({ hasText: /^Planning$/ }).click();
   const box = dlg.locator('[data-ops-setting-show-task-types]');

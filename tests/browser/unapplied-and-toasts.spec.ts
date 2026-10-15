@@ -22,7 +22,7 @@ const section = (page: Page) => page.evaluate(() => window.__OPS__!.store.getSta
 
 async function toProjectInfo(page: Page): Promise<void> {
   await page.getByRole('button', { name: /^(File|Bestand)$/ }).first().click();
-  await page.locator('.backstage-sidebar').getByRole('button', { name: /^(Project info|Projectinfo)$/ }).click();
+  await page.locator('.backstage-sidebar').getByRole('button', { name: /^(Project settings|Projectinstellingen)$/ }).click();
   await expect(page.locator('[data-ops-scheduling-profile-section]')).toBeVisible();
 }
 
@@ -80,13 +80,13 @@ test('B2: wegnavigeren met een niet-toegepaste wijziging vraagt Toepassen/Verwer
   expect(await activeTab(page)).toBe('file');
 
   // Zijbalk → Instellingen ⇒ dialoog; Verwerpen ⇒ naar Instellingen, niets in de store.
-  await page.locator('.backstage-sidebar').getByRole('button', { name: /^(Settings|Instellingen)$/ }).click();
+  await page.locator('.backstage-sidebar').getByRole('button', { name: /^(App settings|App-instellingen)$/ }).click();
   await expect(dialog).toBeVisible();
   await dialog.locator('[data-ops-unapplied-choice="discard"]').click();
   await expect(dialog).toHaveCount(0);
   await expect.poll(() => section(page)).toBe('settings');
   expect(await optionValue(page)).toBeNull();
-  await page.locator('.backstage-sidebar').getByRole('button', { name: /^(Project info|Projectinfo)$/ }).click();
+  await page.locator('.backstage-sidebar').getByRole('button', { name: /^(Project settings|Projectinstellingen)$/ }).click();
   await expect(page.locator(OPTION)).not.toBeChecked();
   await expect(marker).toHaveCount(0);
 
@@ -195,7 +195,7 @@ async function seedToasts(page: Page): Promise<void> {
 
 async function openProjectInfoDialog(page: Page): Promise<void> {
   await page.locator('.ribbon-tabs button').filter({ hasText: /^(Settings|Instellingen)$/ }).click();
-  await page.locator('button.ribbon-btn').filter({ hasText: /^(Project info|Projectinfo)$/ }).click();
+  await page.locator('button.ribbon-btn').filter({ hasText: /^(Project settings|Projectinstellingen)$/ }).click();
   await expect(page.locator('[data-ops-project-dialog="info"]')).toBeVisible();
 }
 

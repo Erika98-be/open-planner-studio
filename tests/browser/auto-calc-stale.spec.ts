@@ -95,7 +95,7 @@ test('automatisch berekenen herhaalt een mislukte berekening niet tot de invoer 
   await expect(toast.locator('.ops-toast-count')).toHaveCount(0);
   expect(await solves()).toBe(1);
 
-  await page.getByTitle(/^(Settings|Instellingen)$/, { exact: true }).click();
+  await page.getByTitle(/^(App settings|App-instellingen)$/, { exact: true }).click();
   const dialog = page.locator('.settings-dialog');
   await dialog.locator('.settings-tab').filter({ hasText: /^Planning$/ }).click();
   await dialog.getByLabel(/^(Calculate automatically|Automatisch berekenen)$/).check();

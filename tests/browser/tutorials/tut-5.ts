@@ -116,7 +116,7 @@ export const TUTORIAL_5: TutorialScript = {
     {
       id: 'werkregel',
       do: [
-        { ribbon: 'instellingen:projectSettings', label: l('Instellingen', 'Settings') },
+        { ribbon: 'instellingen:projectSettings', label: l('App-instellingen', 'App settings') },
         { waitFor: dialog },
         { click: { button: l('Planning', 'Planning'), within: dialog } },
         { click: { text: l('Toon werkregels en werk', 'Show work rules and work'), within: dialog } },

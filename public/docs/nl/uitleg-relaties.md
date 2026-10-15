@@ -45,7 +45,7 @@ Een lead kan een taak niet vóór de projectstart zetten. Zou dat gebeuren, dan 
 
 ### In welke kalender telt de lag
 
-Elke taak kan een eigen kalender hebben. Bij een lag in werkdagen maakt het uit welke kalender de werkdagen telt. De instelling *Lag-kalender* bepaalt dat, met vier keuzes: *Voorganger*, *Opvolger*, *24-uurs* en *Projectkalender*. Standaard telt de lag in de kalender van de **voorganger**. Je vindt de instelling onder *Instellingen › Project › Projectinfo*, in het blok *Rekenprofiel en reken-opties*, bij *Reken-opties van dit project*. De keuze hoort bij het projectbestand en telt pas nadat je op *Toepassen* hebt geklikt; de planning wordt dan opnieuw doorgerekend.
+Elke taak kan een eigen kalender hebben. Bij een lag in werkdagen maakt het uit welke kalender de werkdagen telt. De instelling *Lag-kalender* bepaalt dat, met vier keuzes: *Voorganger*, *Opvolger*, *24-uurs* en *Projectkalender*. Standaard telt de lag in de kalender van de **voorganger**. Je vindt de instelling onder *Instellingen › Project › Projectinstellingen*, in het blok *Rekenprofiel en reken-opties*, bij *Reken-opties van dit project*. De keuze hoort bij het projectbestand en telt pas nadat je op *Toepassen* hebt geklikt; de planning wordt dan opnieuw doorgerekend.
 
 Een lag in kalenderdagen (`3ed`) telt altijd alle dagen, welke *Lag-kalender* je ook kiest.
 

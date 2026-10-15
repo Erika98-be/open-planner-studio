@@ -1855,11 +1855,11 @@ const PROJECT_REFUSED: Record<string, string> = {
     'the calculation options (`schedulingOptions`, including `floatPaths`, `criticalDefinition`, ' +
     '`lagCalendar`, `startToStartLagFrom`) are NOT settable via the bridge: together with the calculation ' +
     'profile they determine the solver semantics of the whole document. Set them in the app under File → ' +
-    'Project info → Calculation profile and options; `planner_get_project_info` shows the active profile and ' +
+    'Project settings → Calculation profile and options; `planner_get_project_info` shows the active profile and ' +
     'the project options, `planner_get_critical_path` reports with `pathsMode` which setting applies.',
   schedulingProfile:
     'the calculation profile (P6 / MS Project / OPS / custom) is NOT settable via the bridge: a switch ' +
-    'shifts dates of the whole document. Choose it in the app under File → Project info → Calculation ' +
+    'shifts dates of the whole document. Choose it in the app under File → Project settings → Calculation ' +
     'profile; `planner_get_project_info` shows the active profile with its twenty-seven resolved conventions.',
   leveling:
     '`leveling` belongs in `project.schedulingOptions`: the leveling settings from the source file (P6 ' +
@@ -1867,7 +1867,7 @@ const PROJECT_REFUSED: Record<string, string> = {
     '`planner_get_project_info` shows them read-only; manual leveling is done with `planner_level_resources`.',
   floatPaths:
     '`floatPaths` belongs in `project.schedulingOptions` and is NOT settable via the bridge (see the app ' +
-    'under File → Project info → Calculation profile and options). `planner_get_critical_path` reports with ' +
+    'under File → Project settings → Calculation profile and options). `planner_get_critical_path` reports with ' +
     '`pathsMode` which setting applies.',
   calendarId:
     'WHICH calendar is the project default cannot be switched via the bridge — you do that in the app ' +

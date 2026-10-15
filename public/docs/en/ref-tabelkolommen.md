@@ -11,7 +11,7 @@ By default the table next to the Gantt shows *WBS*, *Task name* and *Duration*. 
 ## How values are read and edited
 
 - **Calculated columns** — the columns in the category *Calculated* and a number of others are read-only: they come from the calculation. If you try to edit a read-only cell, the app says *This calculated column cannot be edited.* That text is the general message for every read-only cell, also when the column is not calculated. If they are out of date because you changed something, *outdated* appears next to them until you press *Calculate*.
-- **Dates** — appear in the notation you chose under *Settings*, tab *View*, heading *Date format*.
+- **Dates** — appear in the notation you chose under *App settings*, tab *View*, heading *Date format*.
 - **Durations and float** — a duration appears in the unit of the task (`5d`, `12h`), or according to *Duration display* on the same tab (*Automatic (native unit per task)*, *Always days* or *Always hours*). Float appears in working days with two decimals and the decimal separator of your language.
 - **Yes/No** — a yes/no value appears as *Yes* or *No*; an empty value as a dash (—).
 - **Editing** — type or choose a value. An invalid value is refused with a reason under the cell, for example *Enter a valid duration, such as 5d or 8h.* or *Enter a percentage between 0 and 100.* Pasting a block of cells works cell by cell; read-only cells are skipped and the app reports how many.
@@ -93,7 +93,7 @@ All columns in this category are read-only.
 - **Total float** — the working days the task can slip without delaying the project finish. Negative if a constraint or deadline cannot be met.
 - **Critical** — *Yes* if the task is on the critical path.
 - **Interfering float** — total float minus free float.
-- **Near critical** — *Yes* for a near-critical task. Only filled if *Mark near-critical* is on (*Project info*, block *Calculation profile and options*); otherwise a dash.
+- **Near critical** — *Yes* for a near-critical task. Only filled if *Mark near-critical* is on (*Project settings*, block *Calculation profile and options*); otherwise a dash.
 - **Float path** — the number of the float path, 1 for the most critical. Only filled if *Multiple float paths* is on; otherwise a dash.
 - **Recorded-dates source** — for a file with recorded dates: *Deviates* or *Partly unrecorded*. Only visible in the picker for such a file. On an unrecorded axis, *Not recorded* appears in the late-date and float columns.
 

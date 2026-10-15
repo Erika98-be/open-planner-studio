@@ -93,10 +93,8 @@
     "printPreview": "Print",
     "printPreviewTitle": "Print preview (Ctrl+P)",
     "project": "Project",
-    "projectInfo": "Project info",
-    "projectInfoTitle": "Project information",
-    "projectSettings": "Settings",
-    "projectSettingsTitle": "Project settings",
+    "projectInfo": "Project settings",
+    "projectSettings": "App settings",
     "language": "Language",
     "appearance": "Appearance",
     "ifcInfo": "IFC - Industry Foundation Classes, in the schema of the project (default IFC 4.3 ADD2)",
@@ -215,7 +213,7 @@
     "lines": "lines"
   },
   "projectInfo": {
-    "title": "Project Information",
+    "title": "Project settings",
     "name": "Project Name",
     "number": "Project Number",
     "description": "Description",
@@ -288,7 +286,7 @@
     "recent": "Recent",
     "saveAs": "Save As",
     "export": "Export",
-    "settings": "Settings",
+    "settings": "App settings",
     "closeProject": "Close project",
     "fileMenu": "File menu",
     "fileNav": "File navigation",
@@ -312,7 +310,7 @@
     "printTitle": "Print",
     "printSubtitle": "Open the report screen for print preview and settings.",
     "openPrintPreview": "Open print preview",
-    "projectInfoTitle": "Project info",
+    "projectInfoTitle": "Project settings",
     "projectInfoSubtitle": "Metadata for this project.",
     "help": "Help",
     "helpSubtitle": "Documentation and user guide, built into the app.",
@@ -328,7 +326,7 @@
     "helpReadIn": "Read in:",
     "unapplied": {
       "title": "Changes not applied",
-      "body": "You changed the project info but have not applied it yet. What do you want to do with these changes?",
+      "body": "You changed the project settings but have not applied them yet. What do you want to do with these changes?",
       "marker": "Changes not applied — click {{apply}} to keep them.",
       "discard": "Discard",
       "invalid": "The custom scheduling profile has no name yet. Give it a name or discard the changes."
