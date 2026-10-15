@@ -182,6 +182,17 @@ function parseMSPDuration(s: string, hoursPerDay: number): number {
   return 0;
 }
 
+/**
+ * Baselineduur in DAGEN, met dezelfde dag als de taakduur en als `mspdiWriter` hem schrijft. Urentaak:
+ * werkminuten ÷ de werktijd per dag van de taakkalender (`hourTaskScheduleDuration`), zonder afronding —
+ * ook als de kalender een eigen, afwijkende uren per dag houdt (`MinutesPerDay` 480 bij blokken van
+ * 10 u). Dagtaak (of een duur zonder uren): `parseMSPDuration` met de opgeslagen uren per dag.
+ */
+export function mspdiBaselineDays(text: string, hourTask: boolean, cal: WorkCalendar, hoursPerDay: number): number {
+  const minutes = hourTask ? mspDurationMinutes(text) : null;
+  return minutes != null ? hourTaskScheduleDuration(minutes, cal) : parseMSPDuration(text, hoursPerDay);
+}
+
 /** Eigen MSPDI-uitbreiding; andere clients mogen de vrije ExtendedAttribute negeren. */
 function readOpsCustomTaskType(task: Element): { id: string; name?: string } | undefined {
   const attrs = task.getElementsByTagName('ExtendedAttribute');
@@ -465,9 +476,11 @@ export function readMSPDI(content: string): ImportResult {
         taskId: id,
         start: parseMSPDate(getElementText(bEl, 'Start')),
         finish: parseMSPDate(getElementText(bEl, 'Finish')),
-        // Dezelfde taakkalender-hpd als de taakduur (`effHpd`), anders leest een 24/7-taak haar eigen
-        // baseline als 2,33 dagen terug.
-        duration: parseMSPDuration(getElementText(bEl, 'Duration'), effHpd),
+        // Dezelfde dag als de taakduur (`mspdiBaselineDays`), anders leest een 24/7-taak haar eigen
+        // baseline als 2,33 dagen terug, of een urentaak van 1870 u op 8 u/dag met blokken van 10 u
+        // haar baseline als 234 d naast een taak van 187 d.
+        duration: mspdiBaselineDays(getElementText(bEl, 'Duration'), durationUnit === 'hours',
+          calById.get(effCalId) ?? calendar, effHpd),
         isMilestone,
       });
       break;

@@ -20,14 +20,15 @@ import './domStub';
 //  §6 kalenderwissel: blokken naar 8 u ⇒ dagengetal 233,75; de uren per dag blijven 8; de restduur volgt.
 //  §7 materiaal uit XER (TASKRSRC, tempo per uur): totaal = tempo × uren, ook als de resourcekalender
 //     een andere dag heeft dan de taakkalender (Roads: 85 toewijzingen, 8 daarvan zo); de dagtaak blijft.
-//  §8 MSPDI-baseline van een urentaak: `<Baseline><Duration>` 1870 u, heropend weer 187 d.
+//  §8 MSPDI-baseline van een urentaak: `<Baseline><Duration>` 1870 u, heropend weer 187 d; ook als de kalender
+//     na heropenen 8 u/dag houdt (#366, §8b); een oude baseline (233,75 d) gaat als 1870 u (§8c).
 import { readXER } from '@/services/xer/xerReader';
 import { readXerArchiveIFC as readIFC } from './xerArchiveTestReader';
 import { writeIFC } from '@/services/ifc/ifcWriter';
 import { writeP6XMLWithReport } from '@/services/p6/p6xmlWriter';
 import { readP6XML } from '@/services/p6/p6xmlReader';
 import { writeMSPDI } from '@/services/msproject/mspdiWriter';
-import { readMSPDI } from '@/services/msproject/mspdiReader';
+import { mspdiBaselineDays, readMSPDI } from '@/services/msproject/mspdiReader';
 import { buildWriteIFCInput } from '@/state/ifcSaveInput';
 import { parseOpenedFile } from '@/services/formatRegistry';
 import { createAppStoreContext } from '@/state/appStore';
@@ -40,6 +41,9 @@ import { parseTaskDurationInput } from '@/utils/taskDurationInput';
 import { computeResourceLoad } from '@/engine/scheduler/ResourceLoad';
 import { effHoursPerDay } from '@/utils/taskDuration';
 import { installDOMParser } from './xmldom-shim';
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 declare const process: { exit(code: number): never };
 
@@ -296,6 +300,32 @@ const loadCtx = openInStore(await parseOpenedFile({ name: 'dag-is-werktijd.xer',
   const backA = back.tasks.find((t) => t.name === 'Lange urentaak');
   const backBaseline = back.baselines?.[0]?.tasks.find((x) => x.taskId === backA?.id)?.duration;
   same('§8 MSPDI heropend: taak 187 d en baseline 187 d (geen afwijking)', [backA?.time.scheduleDuration, backBaseline], [187, 187]);
+
+  // §8b Zoals na #366: de kalender houdt na heropenen zijn eigen 8 u/dag (`MinutesPerDay` 480) naast
+  // blokken van 10 u. De lezer moet de baseline dan nog steeds in de werktijd per dag lezen (187 d), net
+  // als de taak en als de schrijver; met de opgeslagen 8 werd het 234 d, een nep-afwijking van −47 d.
+  const long = calNamed(calendarsOf(imported), 'Lange dagen')!;
+  same('§8b lezer met 8 u/dag en blokken van 10 u: <Baseline><Duration> PT1870H0M0S ⇒ 187 d; dagtaak PT40H0M0S op 8 u ⇒ 5 d',
+    [long.hoursPerDay, mspdiBaselineDays('PT1870H0M0S', true, long, long.hoursPerDay), mspdiBaselineDays('PT40H0M0S', false, long, 8)],
+    [8, 187, 5]);
+
+  // §8c Een baseline met de oude dagtelling (fixture gemaakt met main: 233,75 d = 1870 u ÷ 8) gaat in de
+  // opgeslagen uren per dag naar MSPDI: 1870 u, zoals main schreef — niet 233,75 × 10 = 2337,5 u.
+  const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
+  const oldIfc = readFileSync(join(ROOT, 'tests', 'browser', 'fixtures', 'ifc', 'oude-baseline.ifc'), 'utf8');
+  const o = openInStore(await parseOpenedFile({ name: 'oude-baseline.ifc', text: oldIfc }));
+  const os = o.store.getState();
+  const oldA = taskIn(o, 'A');
+  same('§8c testvoorwaarde: taak 187 d, oude baseline 233,75 d',
+    [oldA.time.scheduleDuration, os.baselines[0]?.tasks.find((x) => x.taskId === oldA.id)?.duration], [187, 233.75]);
+  const oldMsp = quiet(() => writeMSPDI(os.project, os.calendar, os.tasks, os.sequences, os.resources, os.assignments, os.calendars,
+    os.baselines, os.activeBaselineId));
+  const oldTask = [...oldMsp.matchAll(/<Task>([\s\S]*?)<\/Task>/g)].map((x) => x[1]).find((x) => x.includes('<Name>Lange urentaak</Name>'));
+  same('§8c MSPDI: oude baseline van de urentaak 1870 u (233,75 × 8), niet 2337,5 u', baselineDuration(oldTask), 'PT1870H0M0S');
+  const oldBack = quiet(() => readMSPDI(oldMsp));
+  const oldBackA = oldBack.tasks.find((t) => t.name === 'Lange urentaak');
+  same('§8c MSPDI heropend: 1870 u is in de werktijd per dag 187 d, net als de taak',
+    [oldBackA?.time.scheduleDuration, oldBack.baselines?.[0]?.tasks.find((x) => x.taskId === oldBackA?.id)?.duration], [187, 187]);
 }
 
 if (failures.length > 0) {

@@ -13,6 +13,7 @@ import {
 } from '@/services/subdayIo';
 import { taskDurationUnit } from '@/engine/scheduler/duration';
 import { effHoursPerDay } from '@/utils/taskDuration';
+import { createBaselineOldDayCheck } from '@/engine/baselineOldDay';
 import { encodeCustomTaskType, escapeXml, OPS_DURATION_UNIT_NAME, toXmlDateTime } from '@/services/xmlInterchange';
 import { isSummaryTask } from '@/utils/taskHierarchy';
 import { effectiveWorkTimeBands, calendarForEngine } from '@/utils/effectiveWorkTime';
@@ -429,6 +430,9 @@ export function writeMSPDI(
   }
   lines.push(`${indent(1)}</Calendars>`);
 
+  // Een baseline van een urentaak met de oude dagtelling houdt bij de export zijn eigen omrekening.
+  const oldDayBaseline = createBaselineOldDayCheck(calendar, resourceCalendars);
+
   // Build task UID map
   const taskUidMap = new Map<string, number>();
   // UID 0 is reserved for summary project task
@@ -568,7 +572,9 @@ export function writeMSPDI(
       // en verzint MS Project 112 u afwijking. Dagtaak: `effHpd`, zoals <Duration>. Urentaak: haar
       // baselinedagen tellen in de werktijd per dag van de taakkalender, net als haar dagengetal
       // (`hourTaskScheduleDuration`); met `effHpd` werd 187 d van 10 u 1496 u in plaats van 1870 u.
-      const baselineHpd = isHourTask ? effHoursPerDay(effCal ?? calendar) : effHpd;
+      // Uitzondering: een baseline die nog met de oude dagtelling is opgeslagen (233,75 d = 1870 u ÷ 8,
+      // `baselineOldDay.ts`) telt in de opgeslagen uren per dag, anders werd hij 2337,5 u.
+      const baselineHpd = isHourTask && !oldDayBaseline(task, bt) ? effHoursPerDay(effCal ?? calendar) : effHpd;
       lines.push(`${indent(4)}<Duration>${durationToISO8601(bt.duration, baselineHpd)}</Duration>`);
       lines.push(`${indent(3)}</Baseline>`);
     }
