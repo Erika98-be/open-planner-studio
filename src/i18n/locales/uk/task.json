@@ -366,13 +366,6 @@
     "FIXED_RATE": "Фіксовані одиниці",
     "label": "Правило роботи",
     "projectDefault": "Стандарт проєкту ({{rule}})",
-    "protects": "Захищено: {{what}}",
-    "protectsFIXED_DURATION_RATE": "тривалість і одиниці призначення (трудовитрати слідують за ними)",
-    "protectsFIXED_DURATION_WORK": "тривалість і трудовитрати (одиниці призначення слідують за ними)",
-    "protectsFIXED_WORK": "трудовитрати (тривалість слідує за одиницями призначення)",
-    "protectsFIXED_RATE": "одиниці призначення (тривалість слідує за трудовитратами)",
-    "mspEffortDriven": "З MS Project: фіксований обсяг роботи",
-    "mspNotEffortDriven": "З MS Project: не фіксований обсяг роботи",
     "none": "Стандарт проєкту"
   },
   "properties": {

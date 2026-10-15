@@ -366,13 +366,6 @@
     "FIXED_RATE": "Pevné jednotky priradenia",
     "label": "Pravidlo práce",
     "projectDefault": "Štandard projektu ({{rule}})",
-    "protects": "Chránené: {{what}}",
-    "protectsFIXED_DURATION_RATE": "trvanie a jednotky priradenia (práca nasleduje)",
-    "protectsFIXED_DURATION_WORK": "trvanie a práca (jednotky priradenia nasledujú)",
-    "protectsFIXED_WORK": "práca (trvanie nasleduje jednotky priradenia)",
-    "protectsFIXED_RATE": "jednotky priradenia (trvanie nasleduje prácu)",
-    "mspEffortDriven": "Z MS Project: riadené úsilím",
-    "mspNotEffortDriven": "Z MS Project: nie je riadené úsilím",
     "none": "Štandard projektu"
   },
   "properties": {

@@ -31,6 +31,10 @@
  *    na een ONGEWIJZIGDE lees-wijzig-laad anders. De lijsten zijn gelijk aan `LEES_ALLEEN_EXT` in
  *    check-ext-contract; daar staat ook dat er geen niet-publieke taak-/relatievelden zijn
  *    (`NIET_PUBLIEK`). De .mpp-/MSP-velden (`mspTaskType`, `timephased*`, …) reizen al gewoon mee.
+ *  - bronveld op toewijzingen (`ASSIGNMENT_SOURCE_FIELDS`): het begrote tempo naast een P6-resttempo
+ *    (`plannedUnitsPerDay`, resttempo-besluit 2026-10-15) is niet publiek ⇒ van de toewijzing met
+ *    hetzelfde id in het document. Zonder dit schreef de P6 XML-export na een ONGEWIJZIGDE
+ *    lees-wijzig-laad het resttempo als `PlannedUnitsPerTime` (review #361).
  * Draagt een latere contractversie een van deze velden wél, dan hoort die waarde hier de extensie te
  * volgen (ook leeg) in plaats van het document.
  *
@@ -58,6 +62,7 @@ import type { ProjectSchedulingOptions } from '@/types/project';
 import type { Task } from '@/types/task';
 import type { Sequence } from '@/types/sequence';
 import type { WorkCalendar } from '@/types/calendar';
+import type { ResourceAssignment } from '@/types/resource';
 import { PUBLIC_SCHEDULING_OPTION_KEYS, fromExtImportResult } from './extMappers';
 import { documentProjectCode } from '@/utils/documentProjectCode';
 
@@ -72,6 +77,8 @@ export const SEQUENCE_SOURCE_FIELDS = ['p6StartAtPredecessorFinishBoundary'] as 
 export const CALENDAR_SOURCE_FIELDS = [
   'p6Source', 'p6NonWorkPenaltyDates', 'p6NonWorkPenaltyDatesState', 'generation',
 ] as const satisfies readonly (keyof WorkCalendar)[];
+/** Toewijzing: het niet-publieke begrote tempo naast een P6-resttempo. */
+export const ASSIGNMENT_SOURCE_FIELDS = ['plannedUnitsPerDay'] as const satisfies readonly (keyof ResourceAssignment)[];
 
 /** Zet de bronvelden van het documentitem met hetzelfde id terug op het geladen item. */
 function withSourceFields<T extends { id: string }>(items: T[], own: readonly T[], fields: readonly (keyof T)[]): T[] {
@@ -100,7 +107,7 @@ function mergeCustomTaskTypes(
 
 /** Het deel van het actieve document dat deze stap leest. */
 export type ActiveDocument = Pick<AppState,
-  'project' | 'tasks' | 'sequences' | 'customTaskTypes' | 'calendars' | 'baselines' | 'activeBaselineId' | 'activityCodeTypes' | 'customFieldDefs' | 'ifcGlobalIds'
+  'project' | 'tasks' | 'sequences' | 'assignments' | 'customTaskTypes' | 'calendars' | 'baselines' | 'activeBaselineId' | 'activityCodeTypes' | 'customFieldDefs' | 'ifcGlobalIds'
   | 'xerImportMetadata'>;
 
 /** Alleen voor hetzelfde project-id; die keuze maakt `loadExtensionProject`. Bij een ander id gaat het
@@ -143,6 +150,7 @@ export function retainActiveDocument(loaded: ImportResult, active: ActiveDocumen
     project,
     tasks: withSourceFields(loaded.tasks, active.tasks, TASK_SOURCE_FIELDS),
     sequences: withSourceFields(loaded.sequences, active.sequences, SEQUENCE_SOURCE_FIELDS),
+    assignments: withSourceFields(loaded.assignments, active.assignments, ASSIGNMENT_SOURCE_FIELDS),
     calendar,
     resourceCalendars,
     baselines: active.baselines,

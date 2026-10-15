@@ -358,13 +358,6 @@
     "FIXED_RATE": "Faste enheder",
     "label": "Arbejdsregel",
     "projectDefault": "Projektstandard ({{rule}})",
-    "protects": "Beskyttet: {{what}}",
-    "protectsFIXED_DURATION_RATE": "varighed og tildelingsenheder (arbejde følger)",
-    "protectsFIXED_DURATION_WORK": "varighed og arbejde (tildelingsenheder følger)",
-    "protectsFIXED_WORK": "arbejde (varighed følger tildelingsenhederne)",
-    "protectsFIXED_RATE": "tildelingsenheder (varighed følger arbejdet)",
-    "mspEffortDriven": "Fra MS Project: indsatsbaseret",
-    "mspNotEffortDriven": "Fra MS Project: ikke indsatsbaseret",
     "none": "Projektstandard"
   },
   "properties": {

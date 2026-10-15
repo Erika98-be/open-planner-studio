@@ -7,10 +7,21 @@ import {
   useState,
 } from 'react';
 import { createPortal } from 'react-dom';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Info } from 'lucide-react';
 import './Select.css';
 
-export type SelectOption = { value: string; label: string; disabled?: boolean };
+export type SelectOption = {
+  value: string;
+  label: string;
+  disabled?: boolean;
+  /** Optionele uitleg bij deze optie. In de open lijst krijgt de optie dan een i-icoon met deze
+   *  tekst als directe tooltip (`TooltipHost`, `data-tooltip-instant`: hover, klik en tik). Staat er
+   *  een regeleinde (`\n`) in, dan is de eerste regel de vette kernzin (`data-tooltip-lead`).
+   *  Toetsenbord: de focus blijft op de trigger; bij de gemarkeerde optie wijst de trigger met
+   *  `aria-describedby` naar de uitleg, zodat een schermlezer hem voorleest. Zonder `description`
+   *  verandert er niets aan de keuzelijst. */
+  description?: string;
+};
 
 interface SelectProps {
   value: string;
@@ -76,6 +87,9 @@ export function Select({
   });
 
   const selectedIndex = options.findIndex(o => o.value === value);
+  // Alleen met minstens één uitleg: menu mag breder worden dan de trigger (ruimte voor het i-icoon).
+  const hasDescriptions = options.some(o => !!o.description);
+  const descriptionId = (i: number) => `${listboxId}-desc-${i}`;
   const selectedLabel = selectedIndex >= 0 ? options[selectedIndex].label : undefined;
 
   const firstEnabled = options.findIndex(o => !o.disabled);
@@ -120,6 +134,15 @@ export function Select({
       window.removeEventListener('resize', onScrollOrResize);
     };
   }, [open, computeRect]);
+
+  // Met uitleg per optie is het menu minstens zo breed als de trigger, maar mag het groeien tot het
+  // langste label plus i-icoon past. Valt het dan rechts buiten de viewport, schuif het naar links.
+  useLayoutEffect(() => {
+    if (!open || !rect || !hasDescriptions || !menuRef.current) return;
+    const menu = menuRef.current;
+    const overflow = rect.left + menu.offsetWidth - (window.innerWidth - MENU_GAP * 2);
+    menu.style.left = `${Math.max(MENU_GAP * 2, overflow > 0 ? rect.left - overflow : rect.left)}px`;
+  }, [open, rect, hasDescriptions]);
 
   // Bij autoOpen begint de trigger nooit gefocust vanuit de gewone
   // klik-/tabvolgorde (de gridcel-editor mount 'm rechtstreeks) — zonder deze focus werken
@@ -278,7 +301,9 @@ export function Select({
             className="ops-select__menu"
             style={{
               left: rect.left,
-              width: rect.width,
+              ...(hasDescriptions
+                ? { minWidth: rect.width, width: 'max-content', maxWidth: window.innerWidth - MENU_GAP * 4 }
+                : { width: rect.width }),
               maxHeight: rect.maxHeight,
               ...(rect.openUp
                 ? { bottom: window.innerHeight - rect.top }
@@ -313,9 +338,31 @@ export function Select({
                   onClick={() => selectAt(i)}
                 >
                   <span className="ops-select__option-label">{opt.label}</span>
+                  {opt.description && (
+                    <>
+                      {/* i-icoon: alleen voor muis en tik (de focus blijft op de trigger); een klik
+                          toont de uitleg en kiest de optie NIET. Schermlezers krijgen de uitleg via
+                          `aria-describedby` op de trigger (verborgen spans ná de opties, zodat de tekst van de optie
+                          zelf alleen het label blijft). */}
+                      <span
+                        className="ops-select__option-info"
+                        title={opt.description}
+                        data-tooltip-instant="true"
+                        data-tooltip-lead={opt.description.includes('\n') ? 'true' : undefined}
+                        data-ops-select-option-info={opt.value}
+                        aria-hidden="true"
+                        onClick={e => e.stopPropagation()}
+                      >
+                        <Info size={14} aria-hidden="true" />
+                      </span>
+                    </>
+                  )}
                 </div>
               );
             })}
+            {options.map((opt, i) => opt.description
+              ? <span key={`desc-${opt.value}`} id={descriptionId(i)} hidden>{opt.description}</span>
+              : null)}
           </div>,
           document.body,
         )
@@ -335,7 +382,10 @@ export function Select({
         aria-controls={open ? listboxId : undefined}
         aria-label={ariaLabel}
         aria-invalid={ariaInvalid}
-        aria-describedby={ariaDescribedBy}
+        aria-describedby={
+          [ariaDescribedBy, open && highlight >= 0 && options[highlight]?.description ? descriptionId(highlight) : undefined]
+            .filter(Boolean).join(' ') || undefined
+        }
         onClick={() => !disabled && setOpen(o => !o)}
         onKeyDown={onTriggerKeyDown}
         onBlur={e => {

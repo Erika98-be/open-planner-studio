@@ -358,13 +358,6 @@
     "FIXED_RATE": "Fasta enheter",
     "label": "Arbetsregel",
     "projectDefault": "Projektstandard ({{rule}})",
-    "protects": "Skyddat: {{what}}",
-    "protectsFIXED_DURATION_RATE": "varaktighet och tilldelningsenheter (arbete följer)",
-    "protectsFIXED_DURATION_WORK": "varaktighet och arbete (tilldelningsenheter följer)",
-    "protectsFIXED_WORK": "arbete (varaktighet följer tilldelningsenheterna)",
-    "protectsFIXED_RATE": "tilldelningsenheter (varaktighet följer arbetet)",
-    "mspEffortDriven": "Från MS Project: insatsberoende",
-    "mspNotEffortDriven": "Från MS Project: inte insatsberoende",
     "none": "Projektstandard"
   },
   "properties": {

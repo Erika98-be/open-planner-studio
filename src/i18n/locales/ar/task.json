@@ -375,13 +375,6 @@
     "FIXED_RATE": "وحدات ثابتة",
     "label": "قاعدة العمل",
     "projectDefault": "الافتراضي للمشروع ({{rule}})",
-    "protects": "محمي: {{what}}",
-    "protectsFIXED_DURATION_RATE": "المدة والوحدات (يتبع العمل)",
-    "protectsFIXED_DURATION_WORK": "المدة والعمل (تتبع الوحدات)",
-    "protectsFIXED_WORK": "العمل (تتبع المدة الوحدات)",
-    "protectsFIXED_RATE": "الوحدات (تتبع المدة العمل)",
-    "mspEffortDriven": "من MS Project: مدفوع بالجهد",
-    "mspNotEffortDriven": "من MS Project: غير مدفوع بالجهد",
     "none": "الافتراضي للمشروع"
   },
   "properties": {

@@ -358,13 +358,6 @@
     "FIXED_RATE": "Rögzített egységek",
     "label": "Munkaszabály",
     "projectDefault": "Projektalapbeállítás ({{rule}})",
-    "protects": "Védett: {{what}}",
-    "protectsFIXED_DURATION_RATE": "időtartam és hozzárendelt mennyiség (a munka követi)",
-    "protectsFIXED_DURATION_WORK": "időtartam és munka (a hozzárendelt mennyiség követi)",
-    "protectsFIXED_WORK": "munka (az időtartam követi a hozzárendelt mennyiséget)",
-    "protectsFIXED_RATE": "hozzárendelt mennyiség (az időtartam követi a munkát)",
-    "mspEffortDriven": "MS Project-ből: munkaigény-vezérelt",
-    "mspNotEffortDriven": "MS Project-ből: nem munkamennyiség alapú",
     "none": "Projektalapbeállítás"
   },
   "properties": {

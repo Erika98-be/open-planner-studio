@@ -354,13 +354,6 @@
     "FIXED_RATE": "ຄົງທີ່ຫົວໜ່ວຍ",
     "label": "ກົດລະບຽບວຽກ",
     "projectDefault": "ຄ່າເລີ່ມຕົ້ນຂອງໂຄງການ ({{rule}})",
-    "protects": "ປ້ອງກັນ: {{what}}",
-    "protectsFIXED_DURATION_RATE": "ໄລຍະເວລາ ແລະ ຫົວໜ່ວຍ (ວຽກຄິດໄລ່ຕາມ)",
-    "protectsFIXED_DURATION_WORK": "ໄລຍະເວລາ ແລະ ວຽກ (ຫົວໜ່ວຍຄິດໄລ່ຕາມ)",
-    "protectsFIXED_WORK": "ວຽກ (ໄລຍະເວລາຄິດໄລ່ຕາມຫົວໜ່ວຍ)",
-    "protectsFIXED_RATE": "ຫົວໜ່ວຍ (ໄລຍະເວລາຄິດໄລ່ຕາມວຽກ)",
-    "mspEffortDriven": "ຈາກ MS Project: ຂຶ້ນກັບປະລິມານວຽກ",
-    "mspNotEffortDriven": "ຈາກ MS Project: ບໍ່ຂຶ້ນກັບປະລິມານວຽກ",
     "none": "ຄ່າເລີ່ມຕົ້ນຂອງໂຄງການ"
   },
   "properties": {
