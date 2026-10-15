@@ -4,6 +4,7 @@
 // en zegt de meting niets. Deze spec zet dat argument uit en controleert dat ook.
 import type { Locator, Page } from '@playwright/test';
 import { barPoint, expect, seedProject, state, test } from './fixtures/ops';
+import { chooseLocale, LOCALE_CASES } from './fixtures/locale';
 
 test.use({ launchOptions: { ignoreDefaultArgs: ['--hide-scrollbars'] } });
 
@@ -22,12 +23,44 @@ async function selectedRowIs(page: Page, rowKey: string): Promise<boolean> {
 }
 
 /** Klik op (x, y) en geef de rijsleutel terug van de rij die daar lag. */
+type Surface = 'gantt-task-grid' | 'full-task-grid';
+
+/** Ligging en bereik van de overlays: geen strook, verticale balk aan de logische eindkant (de kant
+ * van de Gantt) direct onder de kop, horizontale balk onderaan, en elk bereik gelijk aan dat van
+ * het raster. */
+async function overlayLayout(page: Page, surface: Surface) {
+  return page.evaluate(selector => {
+    const shell = document.querySelector<HTMLElement>(selector)!;
+    const core = shell.querySelector<HTMLElement>('.task-grid-core')!;
+    const header = core.querySelector<HTMLElement>('.task-grid-header-row')!;
+    const v = shell.querySelector<HTMLElement>('[data-testid="task-grid-vscroll"]')!;
+    const h = shell.querySelector<HTMLElement>('[data-testid="task-grid-hscroll"]');
+    const c = core.getBoundingClientRect();
+    const vb = v.getBoundingClientRect();
+    return {
+      gutterX: core.offsetWidth - core.clientWidth,
+      gutterY: core.offsetHeight - core.clientHeight,
+      vLeftGap: vb.left - c.left,
+      vRightGap: c.right - vb.right,
+      vTopGap: vb.top - header.getBoundingClientRect().bottom,
+      vRange: v.scrollHeight - v.clientHeight,
+      coreRangeY: core.scrollHeight - core.clientHeight,
+      hRange: h ? h.scrollWidth - h.clientWidth : null,
+      coreRangeX: core.scrollWidth - core.clientWidth,
+    };
+  }, `[data-task-grid-surface-id="${surface}"] .task-grid-shell`);
+}
+
 async function clickRowAt(page: Page, x: number, y: number): Promise<string> {
   const rowKey = await page.evaluate(({ px, py }) => {
     const hit = document.elementFromPoint(px, py);
     return hit?.closest<HTMLElement>('[data-grid-data-row]')?.dataset.gridRowKey ?? null;
   }, { px: x, py: y });
-  expect(rowKey, `geen rastercel op (${x}, ${y})`).not.toBeNull();
+  const hitInfo = await page.evaluate(({ px, py }) => {
+    const hit = document.elementFromPoint(px, py) as HTMLElement | null;
+    return hit ? `${hit.tagName}.${hit.className}` : 'niets';
+  }, { px: x, py: y });
+  expect(rowKey, `geen rastercel op (${x}, ${y}): ${hitInfo}`).not.toBeNull();
   await page.mouse.click(x, y);
   return rowKey!;
 }
@@ -67,6 +100,21 @@ test('takenlijst heeft zwevende balken zonder gereserveerde strook; schuiven en 
   const vBox = await box(vBar);
   expect(Math.round(vBox.x + vBox.width)).toBe(Math.round(coreBox.x + coreBox.width));
   expect(vBox.width).toBe(8);
+  const layout = await overlayLayout(page, 'gantt-task-grid');
+  expect(Math.abs(layout.vTopGap)).toBeLessThanOrEqual(0.5);
+  expect(layout.vRange).toBe(layout.coreRangeY);
+  expect(layout.hRange).toBe(layout.coreRangeX);
+
+  // De overlays zijn geen tabstop: Shift+Tab vanaf "Kolom toevoegen" gaat direct het raster in.
+  await page.locator('.gantt-task-grid .task-grid-add-column').focus();
+  await page.keyboard.press('Shift+Tab');
+  expect(await page.evaluate(() => {
+    const active = document.activeElement as HTMLElement | null;
+    return {
+      inGrid: Boolean(active?.closest('.gantt-task-grid .task-grid-core')),
+      overlay: active?.dataset.testid ?? null,
+    };
+  })).toEqual({ inGrid: true, overlay: null });
 
   // Muiswiel boven het raster: de rijen schuiven en de Gantt schuift precies even ver mee.
   const barBefore = await barPoint(page, taskIds[0]);
@@ -88,6 +136,38 @@ test('takenlijst heeft zwevende balken zonder gereserveerde strook; schuiven en 
   await expect.poll(() => state(page).then(snapshot => snapshot.view.scrollY)).toBeGreaterThan(0);
   const dragged = (await state(page)).view.scrollY;
   expect(await core.evaluate((node: HTMLElement) => node.scrollTop)).toBe(dragged);
+
+  // Shift+wiel boven de balken schuift horizontaal, net als op de native balk van main; de
+  // verticale stand blijft staan. Eerst boven de horizontale balk, dan boven de verticale.
+  const hOverlay = page.locator('.gantt-task-grid [data-testid="task-grid-hscroll"]');
+  const hOverlayBox = await box(hOverlay);
+  const coreLeft = () => core.evaluate((node: HTMLElement) => node.scrollLeft);
+  const coreTop = () => core.evaluate((node: HTMLElement) => node.scrollTop);
+  const topBeforeShift = await coreTop();
+  expect(await coreLeft()).toBe(0);
+  await page.mouse.move(hOverlayBox.x + hOverlayBox.width / 2, hOverlayBox.y + hOverlayBox.height / 2);
+  await page.keyboard.down('Shift');
+  await page.mouse.wheel(0, 100);
+  await page.keyboard.up('Shift');
+  await expect.poll(coreLeft).toBeGreaterThan(0);
+  expect(await coreTop()).toBe(topBeforeShift);
+  await page.mouse.move(coreBox.x + coreBox.width / 2, coreBox.y + coreBox.height / 2);
+  await page.keyboard.down('Shift');
+  await page.mouse.wheel(0, -500);
+  await page.keyboard.up('Shift');
+  await expect.poll(coreLeft).toBe(0);
+  await page.mouse.move(vBox.x + vBox.width / 2, vBox.y + vBox.height / 2);
+  await page.keyboard.down('Shift');
+  await page.mouse.wheel(0, 100);
+  await page.keyboard.up('Shift');
+  await expect.poll(coreLeft).toBeGreaterThan(0);
+  expect(await coreTop()).toBe(topBeforeShift);
+  // Terug naar links; rechts staat dan weer een echte kolom naast de duim (niet de kiezerstrook).
+  await page.mouse.move(coreBox.x + coreBox.width / 2, coreBox.y + coreBox.height / 2);
+  await page.keyboard.down('Shift');
+  await page.mouse.wheel(0, -500);
+  await page.keyboard.up('Shift');
+  await expect.poll(coreLeft).toBe(0);
 
   // Klik in de track onder de duim: een pagina verder.
   await page.mouse.click(vBox.x + vBox.width / 2, vBox.y + vBox.height - 12);
@@ -116,6 +196,17 @@ test('takenlijst heeft zwevende balken zonder gereserveerde strook; schuiven en 
     expect(Math.round(vBox.y + vBox.height)).toBe(Math.round(hBox.y));
     const aboveThumb = await clickRowAt(page, coreBox.x + 40, hBox.y - 2);
     await expect.poll(() => selectedRowIs(page, aboveThumb)).toBe(true);
+    // Slepen aan de duim laat de focus op de cel: de pijltjes blijven daarna gewoon werken.
+    await expect.poll(() => page.evaluate(() => Boolean(document.activeElement?.closest('[role="gridcell"]')))).toBe(true);
+    const thumbBox = await box(vBar);
+    await page.mouse.move(thumbBox.x + thumbBox.width / 2, thumbBox.y + thumbBox.height - 30);
+    await page.mouse.down();
+    await page.mouse.move(thumbBox.x + thumbBox.width / 2, thumbBox.y + thumbBox.height - 80, { steps: 5 });
+    await page.mouse.up();
+    expect(await page.evaluate(() => {
+      const active = document.activeElement as HTMLElement | null;
+      return { cell: Boolean(active?.closest('[role="gridcell"]')), overlay: active?.dataset.testid ?? null };
+    })).toEqual({ cell: true, overlay: null });
   }
 });
 
@@ -221,3 +312,46 @@ test('helemaal onderaan: spookregel zichtbaar, opzij schuiven houdt de stand, ta
   expect(viaGantt.storeScrollY).toBe(viaGantt.scrollTop);
   expect(Math.abs(viaGantt.lastRowMid - viaGantt.ganttBarMid)).toBeLessThanOrEqual(1);
 });
+
+// ar (rtl) en de Tabel-weergave: zelfde ligging en bereik; in ar staat de verticale balk links,
+// aan de kant van de Gantt. De duim slepen schuift het raster.
+const AR = LOCALE_CASES.find(locale => locale.code === 'ar')!;
+const LAYOUT_CASES: ReadonlyArray<{ name: string; surface: Surface; rtl: boolean }> = [
+  { name: 'ar, Gantt', surface: 'gantt-task-grid', rtl: true },
+  { name: 'Tabel', surface: 'full-task-grid', rtl: false },
+  { name: 'ar, Tabel', surface: 'full-task-grid', rtl: true },
+];
+for (const layoutCase of LAYOUT_CASES) {
+  test(`zwevende balken: ${layoutCase.name}`, async ({ page, ops: _ops }) => {
+    await seedProject(page, Array.from({ length: 80 }, (_, index) => ({
+      name: `Ligrij ${index + 1}`,
+      start: '2026-09-07',
+      finish: '2026-09-11',
+      durationDays: 5,
+    })));
+    if (layoutCase.surface === 'full-task-grid') {
+      await page.getByRole('button', { name: /^(Table|Tabel)$/ }).click();
+    }
+    if (layoutCase.rtl) await chooseLocale(page, AR);
+    const shellSelector = `[data-task-grid-surface-id="${layoutCase.surface}"] .task-grid-shell`;
+    const core = page.locator(`${shellSelector} .task-grid-core`);
+    const vBar = page.locator(`${shellSelector} [data-testid="task-grid-vscroll"]`);
+    await expect(vBar).toBeVisible();
+    const layout = await overlayLayout(page, layoutCase.surface);
+    expect(layout.gutterX).toBe(0);
+    expect(layout.gutterY).toBe(0);
+    expect(Math.abs(layout.vTopGap)).toBeLessThanOrEqual(0.5);
+    expect(Math.abs(layoutCase.rtl ? layout.vLeftGap : layout.vRightGap)).toBeLessThanOrEqual(0.5);
+    expect(layout.vRange).toBe(layout.coreRangeY);
+    if (layout.hRange !== null) expect(layout.hRange).toBe(layout.coreRangeX);
+
+    const vBox = await box(vBar);
+    await page.mouse.move(vBox.x + vBox.width / 2, vBox.y + 24);
+    await page.mouse.down();
+    await page.mouse.move(vBox.x + vBox.width / 2, vBox.y + 124, { steps: 5 });
+    await page.mouse.up();
+    await expect.poll(() => core.evaluate((node: HTMLElement) => node.scrollTop)).toBeGreaterThan(0);
+    expect(await vBar.evaluate((node: HTMLElement) => node.scrollTop))
+      .toBe(await core.evaluate((node: HTMLElement) => node.scrollTop));
+  });
+}

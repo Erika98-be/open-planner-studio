@@ -17,7 +17,7 @@ import {
   setGanttScrollBounds, clampGanttScroll,
   FOCUS_TASK_MIN_ZOOM, FOCUS_TASK_MAX_ZOOM,
 } from '@/utils/ganttViewport';
-import { TASK_LIST_SCROLL_END_PADDING, taskListScrollContentHeight } from '@/engine/taskGrid/scrollExtent';
+import { OVERLAY_SCROLLBAR_SIZE, taskListScrollContentHeight } from '@/engine/taskGrid/scrollExtent';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -113,9 +113,9 @@ eq('00b beide taskgrids bedraden lokale relaties naar dezelfde focusOnTask-actie
   // De Gantt schuift even ver als de takenlijst: rijen + spookregel + eindstrook (PR #362).
   const shared = taskListScrollContentHeight(20, 28, true);
   eq('11b gedeelde schuifhoogte = (rijen + spookregel)·rowHeight + eindstrook',
-    shared, 21 * 28 + TASK_LIST_SCROLL_END_PADDING);
+    shared, 21 * 28 + OVERLAY_SCROLLBAR_SIZE);
   eq('11c zonder spookregel (filter/groep/sortering) telt hij niet mee',
-    taskListScrollContentHeight(20, 28, false), 20 * 28 + TASK_LIST_SCROLL_END_PADDING);
+    taskListScrollContentHeight(20, 28, false), 20 * 28 + OVERLAY_SCROLLBAR_SIZE);
 }
 
 // ── 7) Regressie: springen naar een taak na een zoomwijziging mag niet klemmen tegen de

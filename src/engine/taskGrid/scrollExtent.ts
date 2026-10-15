@@ -12,11 +12,13 @@
  * horizontale scroll zette het raster zijn eigen stand daarop terug en sprong hij omhoog.
  */
 
-/** Dikte van de zwevende schuifbalken over takenlijst en Gantt (gelijk aan `SCROLLBAR_GUTTER`). */
-export const TASK_LIST_OVERLAY_SCROLLBAR_SIZE = 8;
-
-/** Lege strook onder de laatste rij: precies één zwevende balk hoog. */
-export const TASK_LIST_SCROLL_END_PADDING = TASK_LIST_OVERLAY_SCROLLBAR_SIZE;
+/**
+ * Dikte van de zwevende schuifbalken over takenlijst en Gantt, en daarmee ook de eindstrook onder
+ * de laatste rij. Eén waarde voor alle drie: de strook van een overlay is precies één balk dik (geen
+ * dode klikzone ernaast) en de eindstrook houdt precies één balk vrij. `globals.css` gebruikt
+ * dezelfde 8 px voor `::-webkit-scrollbar`.
+ */
+export const OVERLAY_SCROLLBAR_SIZE = 8;
 
 /** Aantal rijen dat meetelt voor de schuifhoogte: de zichtbare rijen plus eventueel de spookregel. */
 export function taskListScrollRowCount(viewRowCount: number, hasGhostRow: boolean): number {
@@ -25,5 +27,5 @@ export function taskListScrollRowCount(viewRowCount: number, hasGhostRow: boolea
 
 /** Schuifbare inhoudshoogte ONDER de kop, gelijk voor takenlijst en Gantt. */
 export function taskListScrollContentHeight(viewRowCount: number, rowHeight: number, hasGhostRow: boolean): number {
-  return taskListScrollRowCount(viewRowCount, hasGhostRow) * rowHeight + TASK_LIST_SCROLL_END_PADDING;
+  return taskListScrollRowCount(viewRowCount, hasGhostRow) * rowHeight + OVERLAY_SCROLLBAR_SIZE;
 }

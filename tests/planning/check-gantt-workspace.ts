@@ -80,14 +80,12 @@ ok('De paneelsplitter blijft tijdens hover, focus en resizen neutraal',
   splitterInteractionRule.includes('background: transparent')
     && !splitterInteractionRule.includes('var(--theme-accent)'));
 
-// Zwevende balken (eigenaarsbesluit 2026-10-15): het raster toont geen native balken; de verticale
-// overlay begint pas onder de kolomkop. Het gedrag zelf: tests/browser/task-grid-overlay-scrollbars.spec.ts.
-const dataGridCore = read('src/components/task-grid/DataGridCore.tsx');
+// Zwevende balken (eigenaarsbesluit 2026-10-15): het raster toont geen native balken. Waar de
+// verticale overlay begint (onder de kolomkop) is gedrag, geen brontekst: dat meet
+// tests/browser/task-grid-overlay-scrollbars.spec.ts in de echte browser (ltr, ar en Tabel).
 ok('De taakgrid verbergt zijn native balken en reserveert geen strook',
   /\.task-grid-core\s*\{[^}]*scrollbar-width:\s*none/s.test(styles)
     && /\.task-grid-core::-webkit-scrollbar\s*\{[^}]*display:\s*none/s.test(styles));
-ok('De verticale taakgrid-scrollbaan begint pas onder de kolomkop',
-  /data-testid="task-grid-vscroll"[\s\S]*?style=\{\{\s*top:\s*headerHeight\b/.test(dataGridCore));
 
 ok('Taaknamen benutten de cel tot vlak voor de rechter kolomgrens',
   /\.task-grid-cell:has\(\.full-task-grid-name\)\s*\{[^}]*padding-inline-end:\s*1px/s.test(styles));

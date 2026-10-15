@@ -36,8 +36,6 @@
 }
 .task-grid-core::-webkit-scrollbar {
   display: none;
-  width: 0;
-  height: 0;
 }
 
 /* De overlays liggen in `.task-grid-shell` (position: relative) bovenop het raster. De verticale
@@ -1721,7 +1719,7 @@ body {
    BINNEN het pane in plaats van een eigen goot/rij eromheen, zodat de kaart en de takenlijst tot
    de rand doorlopen. Een dekkende track zou dat weer tenietdoen — die legt alsnog een 8px strook
    over het canvas — dus alleen de duim is zichtbaar. De DIKTE blijft de 8px hierboven: die is
-   gelijk aan de SCROLLBAR_GUTTER in GanttCanvas.tsx, waarmee de overlay-strook precies één
+   gelijk aan `OVERLAY_SCROLLBAR_SIZE` (engine/taskGrid/scrollExtent.ts), waarmee de overlay-strook precies één
    scrollbalk breed/hoog is en er geen dode klikzone naast de balk ontstaat.
    De zwevende balken van de takenlijst (`.task-grid-overlay-scrollbar`) delen deze stijl, zodat
    beide er hetzelfde uitzien. */

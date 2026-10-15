@@ -6,6 +6,7 @@ import {
   useRef,
   useState,
   type KeyboardEvent,
+  type MouseEvent as ReactMouseEvent,
   type UIEvent,
   type WheelEvent,
 } from 'react';
@@ -27,7 +28,7 @@ import {
 import { sameCellAddress, type GridCellAddress, type GridSelectionState } from '@/engine/taskGrid/selection';
 import type { TaskColumnId } from '@/types/taskGrid';
 import { nextFrame } from '@/utils/nextFrame';
-import { TASK_LIST_OVERLAY_SCROLLBAR_SIZE, TASK_LIST_SCROLL_END_PADDING } from '@/engine/taskGrid/scrollExtent';
+import { OVERLAY_SCROLLBAR_SIZE } from '@/engine/taskGrid/scrollExtent';
 
 export interface DataGridCoreProps {
   rows: readonly DataGridRowModel[];
@@ -182,30 +183,33 @@ export function synchronizeDataGridScrollPosition(
   if (container.scrollLeft !== scrollLeft) container.scrollLeft = scrollLeft;
 }
 
-/** Dikte van de zwevende balken over de takenlijst. Gelijk aan `SCROLLBAR_GUTTER` in
- * GanttCanvas.tsx en de `::-webkit-scrollbar`-maat in globals.css: de strook is precies één balk
- * dik, zodat er naast de balk geen dode klikzone over de cellen ligt. */
-const TASK_GRID_OVERLAY_SCROLLBAR_SIZE = TASK_LIST_OVERLAY_SCROLLBAR_SIZE;
-
-interface DataGridScrollMetrics {
-  scrollWidth: number;
-  scrollHeight: number;
-  clientWidth: number;
-  clientHeight: number;
-}
-
-const EMPTY_SCROLL_METRICS: DataGridScrollMetrics = { scrollWidth: 0, scrollHeight: 0, clientWidth: 0, clientHeight: 0 };
-
-function sameScrollMetrics(a: DataGridScrollMetrics, b: DataGridScrollMetrics): boolean {
-  return a.scrollWidth === b.scrollWidth && a.scrollHeight === b.scrollHeight
-    && a.clientWidth === b.clientWidth && a.clientHeight === b.clientHeight;
-}
-
 /** Wiel-delta in pixels; regel- en paginamodus (Firefox) omgerekend zoals de browser ongeveer doet. */
 function wheelPixels(delta: number, deltaMode: number, page: number): number {
   if (deltaMode === 1) return delta * 16;
   if (deltaMode === 2) return delta * page;
   return delta;
+}
+
+/** De wielrichting zoals de browser hem op een gewone scroller toepast: Shift+wiel zonder eigen
+ * horizontale delta (Chromium stuurt dan `deltaX=0, deltaY=100`) schuift horizontaal. */
+export function resolveWheelAxes(event: Pick<WheelEvent<Element>, 'deltaX' | 'deltaY' | 'shiftKey'>): { x: number; y: number } {
+  if (event.shiftKey && event.deltaX === 0) return { x: event.deltaY, y: 0 };
+  return { x: event.deltaX, y: event.deltaY };
+}
+
+/** De overlays zijn geen tabstop (`tabIndex={-1}`: Chromium maakt een scroller anders zelf
+ * toetsenbordfocusbaar). Met `tabIndex` pakt een muisklik op de balk wel de focus; dan verliest de
+ * actieve cel hem en werken de pijltjes niet meer. Een tegengehouden mousedown laat de focus staan;
+ * slepen aan de duim en klikken in de track blijven werken (browsertest). */
+function keepFocusOffBar(event: ReactMouseEvent<HTMLDivElement>): void {
+  event.preventDefault();
+}
+
+/** Breedte van de "kolom toevoegen"-strook (`--task-grid-chooser-strip` op `.task-grid-shell`).
+ * Hij is vast per shell; één keer lezen is genoeg. */
+function readChooserStrip(element: HTMLElement): number {
+  const value = Number.parseFloat(getComputedStyle(element).getPropertyValue('--task-grid-chooser-strip'));
+  return Number.isFinite(value) ? value : 0;
 }
 
 export function DataGridCore({
@@ -251,7 +255,7 @@ export function DataGridCore({
   // 1 px in het raster is. Duim slepen en in de track klikken blijven zo native browsergedrag.
   const hScrollRef = useRef<HTMLDivElement | null>(null);
   const vScrollRef = useRef<HTMLDivElement | null>(null);
-  const [scrollMetrics, setScrollMetrics] = useState<DataGridScrollMetrics>(EMPTY_SCROLL_METRICS);
+  const [chooserStrip, setChooserStrip] = useState(0);
   const cellsRef = useRef(new Map<string, HTMLDivElement>());
   const pendingFocusKeyRef = useRef<string | null>(null);
   // De nog openstaande uitgestelde celfocus (`deferCellFocus`); `null` laat hem vervallen.
@@ -280,31 +284,27 @@ export function DataGridCore({
   const pinned = useMemo(() => computePinnedColumnLayout(columns, viewportWidth), [columns, viewportWidth]);
   const totalWidth = columns.reduce((total, column) => total + column.width, 0);
   const template = columns.map(column => `${column.width}px`).join(' ');
+  // Het scrollbereik volgt uit de props: geen native balken, dus de zichtbare maat is precies
+  // `viewportWidth` × (`headerHeight` + `viewportHeight`). De inhoud is de kolommen plus de
+  // kiezerstrook, en alle rijen plus de eindstrook (`scrollExtent.ts`).
   useLayoutEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-    const next = {
-      scrollWidth: container.scrollWidth,
-      scrollHeight: container.scrollHeight,
-      clientWidth: container.clientWidth,
-      clientHeight: container.clientHeight,
-    };
-    setScrollMetrics(current => sameScrollMetrics(current, next) ? current : next);
-  }, [rows.length, rowHeight, headerHeight, viewportHeight, viewportWidth, totalWidth]);
-  const overflowX = scrollMetrics.scrollWidth - scrollMetrics.clientWidth;
-  const overflowY = scrollMetrics.scrollHeight - scrollMetrics.clientHeight;
+    if (containerRef.current) setChooserStrip(readChooserStrip(containerRef.current));
+  }, []);
+  const contentWidth = totalWidth + chooserStrip;
+  const overflowX = Math.max(0, contentWidth - viewportWidth);
+  const overflowY = Math.max(0, rows.length * rowHeight + OVERLAY_SCROLLBAR_SIZE - viewportHeight);
   const showHorizontalBar = overflowX > 0;
   const showVerticalBar = overflowY > 0;
   // De verticale balk begint onder de kop en stopt boven de horizontale balk: geen hoekvlakje,
   // geen overlap. De spacer is de balkhoogte plus het scrollbereik, dus de bereiken zijn gelijk.
-  const verticalBarHeight = Math.max(0, viewportHeight - (showHorizontalBar ? TASK_GRID_OVERLAY_SCROLLBAR_SIZE : 0));
+  const verticalBarHeight = Math.max(0, viewportHeight - (showHorizontalBar ? OVERLAY_SCROLLBAR_SIZE : 0));
   // Een overlay die net verschijnt of een ander bereik krijgt, neemt de stand van het raster over.
   useLayoutEffect(() => {
     const container = containerRef.current;
     if (!container) return;
     if (hScrollRef.current) hScrollRef.current.scrollLeft = container.scrollLeft;
     if (vScrollRef.current) vScrollRef.current.scrollTop = container.scrollTop;
-  }, [showHorizontalBar, showVerticalBar, verticalBarHeight, scrollMetrics]);
+  }, [showHorizontalBar, showVerticalBar, verticalBarHeight, overflowX, overflowY]);
   const rowIndexByKey = useMemo(
     () => new Map(rows.map((row, index) => [row.rowKey, index] as const)),
     [rows],
@@ -468,15 +468,18 @@ export function DataGridCore({
     const top = event.currentTarget.scrollTop;
     if (container && Math.abs(container.scrollTop - top) >= 1) container.scrollTop = top;
   };
-  // Het wiel boven een overlay schuift in de richting die die overlay zelf niet kan, door naar het
-  // raster: verticaal boven de horizontale balk, horizontaal boven de verticale balk.
+  // Het wiel boven een overlay doet wat het op de oude native balk deed: de overlay schuift zelf
+  // langs zijn eigen as (native), de andere as gaat door naar het raster. Shift+wiel telt als
+  // horizontaal (`resolveWheelAxes`): boven de horizontale balk schuift de overlay dan zelf, boven
+  // de verticale balk schuift het raster opzij.
   const handleBarWheel = (axis: 'x' | 'y') => (event: WheelEvent<HTMLDivElement>) => {
     const container = containerRef.current;
     if (!container) return;
-    if (axis === 'x' && event.deltaY !== 0) {
-      container.scrollTop += wheelPixels(event.deltaY, event.deltaMode, container.clientHeight);
-    } else if (axis === 'y' && event.deltaX !== 0) {
-      container.scrollLeft += wheelPixels(event.deltaX, event.deltaMode, container.clientWidth);
+    const delta = resolveWheelAxes(event);
+    if (axis === 'x' && delta.y !== 0) {
+      container.scrollTop += wheelPixels(delta.y, event.deltaMode, container.clientHeight);
+    } else if (axis === 'y' && delta.x !== 0) {
+      container.scrollLeft += wheelPixels(delta.x, event.deltaMode, container.clientWidth);
     }
   };
 
@@ -626,8 +629,8 @@ export function DataGridCore({
               horizontale balk zichtbaar. De Gantt rekent met dezelfde hoogte (`scrollExtent.ts`). */}
           <div
             role="presentation"
-            data-grid-end-padding={TASK_LIST_SCROLL_END_PADDING}
-            style={{ height: TASK_LIST_SCROLL_END_PADDING }}
+            data-grid-end-padding={OVERLAY_SCROLLBAR_SIZE}
+            style={{ height: OVERLAY_SCROLLBAR_SIZE }}
           />
         </div>
         <div aria-live="polite" aria-atomic="true" className="sr-only">
@@ -638,25 +641,29 @@ export function DataGridCore({
         <div
           ref={hScrollRef}
           aria-hidden="true"
+          tabIndex={-1}
           dir="ltr"
           data-testid="task-grid-hscroll"
           className="task-grid-overlay-scrollbar task-grid-overlay-scrollbar-x"
-          style={{ height: TASK_GRID_OVERLAY_SCROLLBAR_SIZE }}
+          style={{ height: OVERLAY_SCROLLBAR_SIZE }}
           onScroll={handleHorizontalBarScroll}
           onWheel={handleBarWheel('x')}
+          onMouseDown={keepFocusOffBar}
         >
-          <div style={{ width: scrollMetrics.scrollWidth, height: 1 }} />
+          <div style={{ width: contentWidth, height: 1 }} />
         </div>
       )}
       {showVerticalBar && verticalBarHeight > 0 && (
         <div
           ref={vScrollRef}
           aria-hidden="true"
+          tabIndex={-1}
           data-testid="task-grid-vscroll"
           className="task-grid-overlay-scrollbar task-grid-overlay-scrollbar-y"
-          style={{ top: headerHeight, height: verticalBarHeight, width: TASK_GRID_OVERLAY_SCROLLBAR_SIZE }}
+          style={{ top: headerHeight, height: verticalBarHeight, width: OVERLAY_SCROLLBAR_SIZE }}
           onScroll={handleVerticalBarScroll}
           onWheel={handleBarWheel('y')}
+          onMouseDown={keepFocusOffBar}
         >
           <div style={{ width: 1, height: verticalBarHeight + overflowY }} />
         </div>

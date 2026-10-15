@@ -1,7 +1,6 @@
 import type { Task } from '@/types/task';
 import type { GridIntent, GridWriteIntent } from '@/types/taskGrid';
 import { isTreeMode, type ViewRow } from '@/engine/view/visibleRows';
-import type { ViewState } from '@/state/slices/types';
 
 /**
  * De spookregel onderaan het taakraster (review vader 2026-10-06, punt 1).
@@ -21,7 +20,7 @@ export const GHOST_TASK_ID = 'ops-ghost-task';
 
 /** Toont het raster de spookregel? Alleen in de boomweergave. De Gantt telt hem mee voor zijn
  * schuifhoogte (`scrollExtent.ts`), zodat beide even ver kunnen schuiven. */
-export function hasGhostRow(view: Pick<ViewState, 'filter' | 'group' | 'sort'>): boolean {
+export function hasGhostRow(view: Parameters<typeof isTreeMode>[0]): boolean {
   return isTreeMode(view);
 }
 
