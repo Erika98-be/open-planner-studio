@@ -988,3 +988,10 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   "Bedraad XER-resources en toewijzingen"), geen eigenaarsbesluit gevonden. Spec §11: afwijkend resttarief in rehab-2
   14.459/52.640, DCP-03 As-Built 47/47, Baseline 45/45, Roads 71/3.575, HarbourPointe 14/417. Gevolg bij een bewerking
   onder FIXED_DURATION_RATE (wt-06/wt-18): duur 9 → 10 h maakt het werk 1,11 × 10 ≈ 11 h (P6: 34 × 10 = 340 h).
+- **Besluit eigenaar 2026-10-15 (tempo bij resterend werk), letterlijk: "optie 1, leg uit waarom dat de beste optie zou
+  zijn"**, na de uitleg: "volgende". Optie 1: bij werk dat nog moet gebeuren rekent en toont de app met het resterende
+  tempo (XER `remain_qty_per_hr`, P6 XML `RemainingUnitsPerTime`); het geplande werk blijft bewaard; een toewijzing
+  zonder restwerk toont het geplande tempo. Uitleg aan de eigenaar: 1,11 en 34 zijn uren werk per uur taakduur
+  (10 h / 9 h en 306 h / 9 h). Orkestrator las "volgende" als akkoord en meldde dat (stop mogelijk). Bouw bij een expert
+  (Opus 5.5, xhigh), branch `claude/resttempo`; aandacht voor de P6 XML-writer (`PlannedUnitsPerTime` mag niet het
+  resterende tempo worden) en de tooltiptekst bij ⚠.
