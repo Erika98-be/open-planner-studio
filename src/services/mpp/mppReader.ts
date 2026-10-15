@@ -34,8 +34,8 @@
  * `check-mpp-import.ts`, "ankerdivergentie").
  *
  * TWEE ASYMMETRISCHE REKENPADEN (bewust):
- *  - `scheduleDuration`: het UUR-pad rekent op de `hoursPerDay` van de effectieve taakkalender
- *    (`effHpd`, ná promotie); het DAG-pad op de projectbrede `hoursPerDay` (Props/MINUTES_PER_DAY,
+ *  - `scheduleDuration`: het UUR-pad rekent op de werktijd per dag van de effectieve taakkalender
+ *    (`hourTaskScheduleDuration`, ná promotie); het DAG-pad op de projectbrede `hoursPerDay` (Props/MINUTES_PER_DAY,
  *    of 8u), ook als de taak een kalender-override met een ander `hoursPerDay` draagt.
  *  - `Sequence.lagMinutes`: een relatie naar een uur-opvolger krijgt altijd `lagMinutes`, ook `0`
  *    (spiegelt mspdiReader's `taskHourById`-tak). Dat verandert de serialisatievorm t.o.v. een
@@ -61,6 +61,7 @@ import type {
   Task, TaskConstraint, TaskSplitGap, MspTaskType, TaskTimephasedContour, TimephasedContourPeriod,
 } from '@/types/task';
 import type { WorkCalendar } from '@/types/calendar';
+import { hourTaskScheduleDuration } from '@/utils/taskDuration';
 import type { Resource, ResourceType } from '@/types/resource';
 import type { ImportLabels, ImportResult } from '@/services/importTypes';
 import { generateId } from '@/utils/id';
@@ -766,8 +767,9 @@ export function readTasks(ctx: ReadTasksContext): ReadTasksResult {
     // ELAPSED-takken: vaste 24-uursdag, geen minutes-per-day-factor). `tenthsOfMinutesToDays` deelt
     // door `hoursPerDay × 60` (werktijd) en zou dus onterecht een tweede keer door `hoursPerDay`
     // delen; dag-modus + elapsed rekent daarom met de vaste klokdag (24 × 60 × 10 tienden).
+    // Urentaak: dagengetal via `hourTaskScheduleDuration`, niet ÷ de opgeslagen `hoursPerDay`.
     const duration = isHour
-      ? (effHpd > 0 ? durationMinutes! / (effHpd * 60) : 0)
+      ? hourTaskScheduleDuration(durationMinutes!, cal)
       : raw.isElapsedDuration
         ? raw.durationRaw / (24 * 60 * 10)
         : tenthsOfMinutesToDays(raw.durationRaw, hoursPerDay);

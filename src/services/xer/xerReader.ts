@@ -29,6 +29,7 @@ import type {
   TaskStatus,
 } from '@/types/task';
 import { createDefaultTaskTime } from '@/utils/taskDefaults';
+import { effHoursPerDay, hourTaskScheduleDuration } from '@/utils/taskDuration';
 import { defaultActualFinish, defaultActualStart } from '@/engine/taskMutationRules';
 import { orderActualsAfterDerivedFinish } from '@/engine/actualDatesOrder';
 import { flattenOrder } from '@/utils/wbs';
@@ -822,8 +823,12 @@ function readXerProject(
     // DAGEN mee omdat `scheduleDuration` dagen hoort te zijn; de daaruit volgende foutieve
     // `durationMinutes` wordt hieronder in dezelfde `if (hourMode)`-tak overschreven met de
     // echte bronminuten. Die overschrijving is dus dragend — haal 'm niet weg.
+    // Urentaak: dagengetal via `hourTaskScheduleDuration` (de blokken, niet `day_hr_cnt`; die blijft
+    // wel op de kalender staan). Een dagtaak houdt de bronomrekening.
     const time = createDefaultTaskTime(
-      start, durationMinutes / (hoursPerDay * 60), hourMode ? 'hours' : 'days',
+      start,
+      hourMode ? hourTaskScheduleDuration(durationMinutes, effectiveCalendar) : durationMinutes / (hoursPerDay * 60),
+      hourMode ? 'hours' : 'days',
     );
     time.scheduleFinish = finish;
     time.earlyStart = start;
@@ -1033,6 +1038,14 @@ function readXerProject(
       task.id,
       activityWorkMinutes(task, calendarById.get(task.calendarId ?? '')?.hoursPerDay ?? projectCalendar.hoursPerDay),
     ])),
+    // Per urentaak de dag van haar dagengetal (dezelfde taakkalender als bij `hourTaskScheduleDuration`
+    // hierboven: `clndr_id`, anders de projectkalender). Materiaal op een urentaak rekent zijn tempo per
+    // uur daarmee om naar een tempo per dag.
+    hourTaskHoursPerDay: new Map(mappedActivities.flatMap(task => {
+      if (task.time.durationUnit !== 'hours') return [];
+      const hoursPerDay = effHoursPerDay(calendarById.get(task.calendarId ?? '') ?? projectCalendar);
+      return hoursPerDay > 0 ? [[task.id, hoursPerDay] as const] : [];
+    })),
   }, taskResourceRowsByProject.get(projectId) ?? []);
   for (const assignment of resourceResult.assignments) {
     const task = taskById.get(assignment.taskId);

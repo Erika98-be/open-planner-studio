@@ -3,6 +3,7 @@ import { Sequence, SequenceType } from '@/types/sequence';
 import { Resource, ResourceAssignment } from '@/types/resource';
 import { Project } from '@/types/project';
 import { WorkCalendar } from '@/types/calendar';
+import { hourTaskScheduleDuration } from '@/utils/taskDuration';
 import { createDefaultCalendar } from '@/engine/calendar/defaultCalendar';
 import { Baseline, BaselineTask } from '@/types/baseline';
 import { generateId } from '@/utils/id';
@@ -360,8 +361,9 @@ export function readMSPDI(content: string): ImportResult {
     // Duur: uur ⇒ minuten (bron van waarheid, geen afronding); dag ⇒ het dag-pad.
     const durationUnit = taskDurationUnit(te, isHour, durationUnitMarkerFieldId);
     const durationMinutes = durationUnit === 'hours' ? (mspDurationMinutes(durationStr) ?? 0) : undefined;
+    // Urentaak: dagengetal via `hourTaskScheduleDuration`; dagtaak: de opgeslagen uren per dag.
     const duration = durationUnit === 'hours'
-      ? (effHpd > 0 ? durationMinutes! / (effHpd * 60) : 0)
+      ? hourTaskScheduleDuration(durationMinutes!, calById.get(effCalId) ?? calendar)
       : parseMSPDuration(durationStr, effHpd);
     const startRaw = getElementText(te, 'Start');
     const finishRaw = getElementText(te, 'Finish');

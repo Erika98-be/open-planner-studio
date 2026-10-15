@@ -20,7 +20,7 @@ Uren gebruik je voor werk dat niet in hele dagen past: een kraan die je twaalf u
 
 Elke kalender heeft per werkdag **werktijdblokken** (in de app *banden* genoemd). De standaardkalender heeft 07:00 tot 12:00 en 13:00 tot 16:00. Het gat is de pauze. Die blokken leidt de app af uit *Begin (uur)*, *Einde (uur)* en de pauze van de kalender; je hoeft er niets voor in te stellen. Stel je per weekdag eigen blokken in, dan zijn die leidend.
 
-De **netto-uren per dag** zijn de som van de blokken van een werkdag. Verschilt de lengte van de werkdagen, dan geldt de meest voorkomende dagsom, en bij gelijkspel de hoogste. Bij een week van vier dagen van 8 uur en een vrijdag van 5 uur zijn de netto-uren per dag dus 8. Een kalender met eigen uren per dag (bijvoorbeeld uit Primavera P6) houdt die waarde, ook als je werkdagen of blokken wijzigt; alleen een preset zet hem opnieuw.
+De **netto-uren per dag** zijn de som van de blokken van een werkdag. Verschilt de lengte van de werkdagen, dan geldt de meest voorkomende dagsom, en bij gelijkspel de hoogste. Bij een week van vier dagen van 8 uur en een vrijdag van 5 uur zijn de netto-uren per dag dus 8. Een kalender met eigen uren per dag (bijvoorbeeld uit Primavera P6) houdt die waarde, ook als je werkdagen of blokken wijzigt; alleen een preset zet hem opnieuw. De app rekent bij zo'n kalender toch met de blokken, en bewaart de eigen waarde voor de export. Een taak van 1870 uur op blokken van 10 uur duurt dus 187 dagen, ook als de kalender 8 uur per dag heeft.
 
 ### Een taak in uren
 

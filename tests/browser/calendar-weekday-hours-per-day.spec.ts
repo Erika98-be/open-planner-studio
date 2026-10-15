@@ -84,8 +84,10 @@ const netHours = (dialog: Locator) => dialog.locator('[data-ops-simple-break-net
 
 test('kalendervenster: Za aan bij Late ploeg (14–24, 8 u/dag) houdt de uren per dag op 8', async ({ page, ops: _ops }) => {
   await openXer(page, LATE_PLOEG);
+  // Het dagengetal van de urentaak volgt de blokken, niet de opgeslagen 8 (eigenaarsbesluit 2026-10-15,
+  // optie 2): 2400 werkminuten ÷ 600 min (14–24) = 4 dagen. Bewaakt in `check-dag-is-werktijd.ts`.
   await expect.poll(() => calendarState(page)).toEqual({
-    name: 'Late ploeg', workDays: [1, 2, 3, 4, 5], hoursPerDay: 8, sat: [], taskMinutes: 2400, taskDays: 5,
+    name: 'Late ploeg', workDays: [1, 2, 3, 4, 5], hoursPerDay: 8, sat: [], taskMinutes: 2400, taskDays: 4,
   });
 
   const dialog = await openCalendarDialog(page);
@@ -101,7 +103,7 @@ test('kalendervenster: Za aan bij Late ploeg (14–24, 8 u/dag) houdt de uren pe
   await dialog.locator('[data-ops-cal-apply]').click();
   await expect(dialog).toBeHidden();
   await expect.poll(() => calendarState(page)).toEqual({
-    name: 'Late ploeg', workDays: [1, 2, 3, 4, 5, 6], hoursPerDay: 8, sat: LATE, taskMinutes: 2400, taskDays: 5,
+    name: 'Late ploeg', workDays: [1, 2, 3, 4, 5, 6], hoursPerDay: 8, sat: LATE, taskMinutes: 2400, taskDays: 4,
   });
 });
 
