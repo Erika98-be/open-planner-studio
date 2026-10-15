@@ -13,17 +13,18 @@
  *  1. de taak is een urentaak;
  *  2. de opgeslagen `hoursPerDay` van de taakkalender wijkt meer dan één minuut per dag af van de werktijd
  *     per dag (`effHoursPerDay`) — anders zijn oude en nieuwe telling gelijk;
- *  3. de baselineduur past bij de oude telling en niet bij de nieuwe, gemeten aan een van twee getallen
- *     `M` werkminuten:
+ *  3. de baselineduur past bij de oude telling en NERGENS bij de nieuwe. Er zijn twee maatstaven `M` in
+ *     werkminuten:
  *     a. de huidige werkminuten van de taak (`durationMinutes`) — dit vangt ook een gestarte taak, waarvan
  *        de baselinespan (werkelijk begin tot einde) niet bij de duur past;
  *     b. de werkminuten tussen baseline-start en baseline-einde op de taakkalender (de urenmotor,
  *        `engineForTaskCalendar`) — dit vangt een taak waarvan de duur na de baseline veranderde.
- *     Oud past als `duur × opgeslagen hpd × 60` binnen één minuut van `M` ligt; nieuw past als
- *     `duur × werktijd per dag × 60` dat doet.
- * Past de duur bij geen van beide (een onderbreking én een gewijzigde duur, een gewijzigde kalender), dan
- * geen ⚠. Een nieuwe baseline past altijd bij de nieuwe telling (a), dus nooit een ⚠ — behalve in het
- * zeldzame geval dat een latere duurwijziging precies op de oude telling uitkomt.
+ *     "Oud past" als `duur × opgeslagen hpd × 60` binnen één minuut van a óf b ligt; "nieuw past" als
+ *     `duur × werktijd per dag × 60` binnen één minuut van a óf b ligt. ⚠ = oud past en nieuw past niet.
+ * De regel is bewust symmetrisch. Een nieuwe baseline van een taak die daarna precies met de factor
+ * opgeslagen ÷ werktijd korter wordt (10 u → 8 u), past via a bij de oude telling, maar via b nog bij de
+ * nieuwe: geen ⚠, want die afwijking is echt. Past de duur bij geen van beide (een onderbreking én een
+ * gewijzigde duur, een gewijzigde kalender), dan ook geen ⚠.
  */
 import type { Task } from '@/types/task';
 import type { BaselineTask } from '@/types/baseline';
@@ -61,23 +62,22 @@ export function baselineHasOldDayCount(
   const lengths = dayLengths(cal);
   if (!lengths) return false;
   if (!Number.isFinite(baselineTask.duration) || baselineTask.duration <= 0) return false;
-  const fitsMinutes = (minutes: number) => (hoursPerDay: number) =>
-    Math.abs(baselineTask.duration * hoursPerDay * 60 - minutes) <= TOLERANCE_MINUTES;
+  const measures: number[] = [];
   // a. De huidige werkminuten van de taak.
   const work = task.time.durationMinutes;
-  if (typeof work === 'number' && Number.isFinite(work) && work > 0) {
-    const fits = fitsMinutes(work);
-    if (fits(lengths.stored) && !fits(lengths.effective)) return true;
-  }
+  if (typeof work === 'number' && Number.isFinite(work) && work > 0) measures.push(work);
   // b. De werkminuten tussen baseline-start en baseline-einde.
-  if (!baselineTask.start || !baselineTask.finish) return false;
-  const start = parseInstant(baselineTask.start);
-  const finish = parseInstant(baselineTask.finish);
-  if (Number.isNaN(start.getTime()) || Number.isNaN(finish.getTime())) return false;
-  const spanMinutes = engine.workMinutesBetween(start, finish);
-  if (!(spanMinutes > 0)) return false;
-  const fits = fitsMinutes(spanMinutes);
-  return fits(lengths.stored) && !fits(lengths.effective);
+  if (baselineTask.start && baselineTask.finish) {
+    const start = parseInstant(baselineTask.start);
+    const finish = parseInstant(baselineTask.finish);
+    if (!Number.isNaN(start.getTime()) && !Number.isNaN(finish.getTime())) {
+      const span = engine.workMinutesBetween(start, finish);
+      if (span > 0) measures.push(span);
+    }
+  }
+  const fitsSomewhere = (hoursPerDay: number) => measures.some(minutes =>
+    Math.abs(baselineTask.duration * hoursPerDay * 60 - minutes) <= TOLERANCE_MINUTES);
+  return fitsSomewhere(lengths.stored) && !fitsSomewhere(lengths.effective);
 }
 
 /**

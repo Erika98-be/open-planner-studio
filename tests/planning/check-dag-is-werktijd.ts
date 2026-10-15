@@ -21,7 +21,8 @@ import './domStub';
 //  §7 materiaal uit XER (TASKRSRC, tempo per uur): totaal = tempo × uren, ook als de resourcekalender
 //     een andere dag heeft dan de taakkalender (Roads: 85 toewijzingen, 8 daarvan zo); de dagtaak blijft.
 //  §8 MSPDI-baseline van een urentaak: `<Baseline><Duration>` 1870 u, heropend weer 187 d; ook als de kalender
-//     na heropenen 8 u/dag houdt (#366, §8b); een oude baseline (233,75 d) gaat als 1870 u (§8c).
+//     na heropenen 8 u/dag houdt (#366, §8b); een oude baseline (233,75 d) gaat als 1870 u (§8c); een nieuwe
+//     baseline van een taak die daarna × 0,8 korter werd, blijft 10 u / 100 u en krijgt geen ⚠ (§8d).
 import { readXER } from '@/services/xer/xerReader';
 import { readXerArchiveIFC as readIFC } from './xerArchiveTestReader';
 import { writeIFC } from '@/services/ifc/ifcWriter';
@@ -29,6 +30,7 @@ import { writeP6XMLWithReport } from '@/services/p6/p6xmlWriter';
 import { readP6XML } from '@/services/p6/p6xmlReader';
 import { writeMSPDI } from '@/services/msproject/mspdiWriter';
 import { mspdiBaselineDays, readMSPDI } from '@/services/msproject/mspdiReader';
+import { createBaselineOldDayCheck } from '@/engine/baselineOldDay';
 import { buildWriteIFCInput } from '@/state/ifcSaveInput';
 import { parseOpenedFile } from '@/services/formatRegistry';
 import { createAppStoreContext } from '@/state/appStore';
@@ -326,6 +328,28 @@ const loadCtx = openInStore(await parseOpenedFile({ name: 'dag-is-werktijd.xer',
   const oldBackA = oldBack.tasks.find((t) => t.name === 'Lange urentaak');
   same('§8c MSPDI heropend: 1870 u is in de werktijd per dag 187 d, net als de taak',
     [oldBackA?.time.scheduleDuration, oldBack.baselines?.[0]?.tasks.find((x) => x.taskId === oldBackA?.id)?.duration], [187, 187]);
+
+  // §8d Een NIEUWE baseline, daarna wordt de taak korter met precies de factor opgeslagen ÷ werktijd
+  // (8 ÷ 10). De baseline past dan via de huidige minuten bij de oude telling, maar via haar span nog
+  // bij de nieuwe: geen ⚠, en de echte afwijking blijft in MS Project (baseline 10 u, niet 8 u).
+  for (const [before, after, wantDays, wantMsp] of [['10h', '8h', 1, 'PT10H0M0S'], ['100h', '80h', 10, 'PT100H0M0S']] as const) {
+    const c = openInStore(await parseOpenedFile({ name: 'dag-is-werktijd.xer', bytes: XER_BYTES }));
+    gridDuration(c, 'A', before);
+    quiet(() => c.store.getState().runCPM());
+    quiet(() => c.store.getState().saveBaseline('Basis'));
+    gridDuration(c, 'A', after);
+    quiet(() => c.store.getState().runCPM());
+    const st = c.store.getState();
+    const a = taskIn(c, 'A');
+    const bt = st.baselines[0]!.tasks.find((x) => x.taskId === a.id)!;
+    const warn = createBaselineOldDayCheck(st.calendar, st.calendars)(a, bt);
+    const out = quiet(() => writeMSPDI(st.project, st.calendar, st.tasks, st.sequences, st.resources, st.assignments, st.calendars,
+      st.baselines, st.activeBaselineId));
+    const block = [...out.matchAll(/<Task>([\s\S]*?)<\/Task>/g)].map((x) => x[1]).find((x) => x.includes('<Name>Lange urentaak</Name>'));
+    same(`§8d nieuwe baseline ${before}, daarna ${after}: baseline ${wantDays} d, geen ⚠, MSPDI-baseline ${wantMsp}`,
+      [bt.duration, a.time.durationMinutes, warn, baselineDuration(block)],
+      [wantDays, Number.parseInt(after, 10) * 60, false, wantMsp]);
+  }
 }
 
 if (failures.length > 0) {
