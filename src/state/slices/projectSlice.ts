@@ -200,8 +200,8 @@ function projectChanges(current: Project, updates: Partial<Project>): boolean {
 
 
 /**
- * Een nieuw project opent op zijn projectstart, via hetzelfde `pendingFit`-signaal als een geopend
- * bestand. De Gantt zet bij een project zonder taken `viewStartDate` links in beeld
+ * Een nieuw project uit het "Nieuw"-scherm (`createNewProject`) opent op zijn projectstart, via
+ * hetzelfde `pendingFit`-signaal als een geopend bestand. De Gantt zet bij een project zonder taken `viewStartDate` links in beeld
  * (`computeEmptyProjectScrollX`). Zonder dit signaal bleef scrollX op 0, en dat is bij de
  * standaard feestdagenkalender december 2024.
  */
@@ -499,7 +499,10 @@ export const createProjectSlice: AppSliceFactory<ProjectSlice> = (runtime) => (s
     // project). hydratePayload promoveert + synct de projectkalender.
     set((s) => {
       removeSessionHistoryForDocumentFromState(s, s.activeDocumentId);
-      hydratePayload(s, withStartFit(freshPayload()));
+      // Bewust GEEN `withStartFit`: geen UI roept dit aan; tests en de dev-brug gebruiken het als
+      // reset en zaaien daarna direct taken. Een openstaand fit-signaal zou die taken dan fitten
+      // (andere zoom). Het "Nieuw"-scherm loopt via `createNewProject` hieronder.
+      hydratePayload(s, freshPayload());
       // Zelfde reset als newDocument()/closeDocument() in documentSlice.ts:
       // showLibraryLinkDialog/libraryRefreshNotice zijn APP-globaal en worden door hydratePayload
       // NIET aangeraakt (het zijn geen DOCUMENT_FIELDS). Zonder deze reset kan een openstaande vlag
