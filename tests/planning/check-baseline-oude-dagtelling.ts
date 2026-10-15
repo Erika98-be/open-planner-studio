@@ -12,7 +12,8 @@ import './domStub';
 // urentaak A 1870 u, dagtaak D 40 u, baseline "Oud" met A = 233,75 d.
 //  §1 oude telling ⇒ ⚠ (A); een dagtaak ⇒ geen ⚠ (D).
 //  §2 nieuwe baseline (zelfde taak, nieuwe telling 187 d) ⇒ geen ⚠.
-//  §3 onduidelijk ⇒ geen ⚠: een onderbreking (span langer dan de duur) en een duur die bij geen van beide past.
+//  §3 twee maatstaven: de huidige werkminuten (vangt ook een gestarte taak) en de baselinespan (vangt een
+//     latere duurwijziging); past de duur bij geen van beide ⇒ geen ⚠.
 //  §4 een kalender waarvan de opgeslagen uren per dag gelijk zijn aan de blokken (of minder dan één minuut
 //     per dag afwijken) ⇒ geen ⚠.
 //  §5 het raster (echte adapter): ⚠ in Baselineduur en Duurafwijking van "Oud", nergens anders.
@@ -80,15 +81,23 @@ same('§2 testvoorwaarde: de nieuwe baseline zegt 187 d, met dezelfde datums als
 same('§2 nieuwe telling ⇒ geen ⚠', check(A, snapshotOf(A.id, newBaseline)), false);
 
 // ════════════════════════════════════════════════════════════════════════════════════════════════
-// §3 Onduidelijk ⇒ geen ⚠
+// §3 Twee maatstaven: de huidige werkminuten (a) en de baselinespan (b)
 // ════════════════════════════════════════════════════════════════════════════════════════════════
 {
   const old = snapshotOf(A.id);
-  // Een onderbreking van een week: dezelfde duur, maar het einde ligt 7 dagen (5 werkdagen) later.
-  same('§3 onderbreking: 233,75 d over een span van 192 werkdagen van 10 u ⇒ geen ⚠',
-    check(A, { ...old, finish: '2027-04-27T17:00' }), false);
+  const changed = { ...A, time: { ...A.time, durationMinutes: 120000 } }; // 2000 u: duur gewijzigd na de baseline
+  // (a) De baseline past bij de huidige werkminuten in de oude telling, de span niet:
+  same('§3a gestarte taak: span 5 werkdagen (werkelijk begin tot einde), 233,75 d = 112200 min ÷ 480 ⇒ ⚠',
+    check(A, { ...old, finish: '2026-08-07T17:00' }), true);
+  same('§3a onderbreking (einde een week later), duur ongewijzigd ⇒ ⚠', check(A, { ...old, finish: '2027-04-27T17:00' }), true);
+  same('§3a baseline zonder einde, duur ongewijzigd ⇒ ⚠', check(A, { ...old, finish: '' }), true);
+  // (b) De duur veranderde na de baseline, maar de span past bij de oude telling:
+  same('§3b duur gewijzigd (2000 u), span 187 werkdagen = 233,75 × 480 min ⇒ ⚠', check(changed, old), true);
+  // Geen van beide past ⇒ geen ⚠:
+  same('§3 duur gewijzigd én onderbreking ⇒ geen ⚠', check(changed, { ...old, finish: '2027-04-27T17:00' }), false);
   same('§3 een duur die bij geen van beide telt (200 d) ⇒ geen ⚠', check(A, { ...old, duration: 200 }), false);
-  same('§3 een baseline zonder einde ⇒ geen ⚠', check(A, { ...old, finish: '' }), false);
+  same('§3 nieuwe baseline van een gestarte taak (187 d, span 5 werkdagen) ⇒ geen ⚠',
+    check(A, { ...snapshotOf(A.id, newBaseline), finish: '2026-08-07T17:00' }), false);
 }
 
 // ════════════════════════════════════════════════════════════════════════════════════════════════
