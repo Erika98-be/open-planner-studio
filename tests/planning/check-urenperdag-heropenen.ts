@@ -149,7 +149,7 @@ function checkTasks(label: string, tasks: Task[], dayName: string): void {
 // P6 XML schrijft per kalender een eigen `HoursPerDay`: ook de bibliotheekkalender houdt 8.
 // MSPDI kent alleen `<MinutesPerDay>` op projectniveau: een bibliotheekkalender heeft daar geen veld
 // voor en volgt na heropenen de blokken (bekende grens, ook op main; zie de gids).
-function route(fmt: Format, libHpdAfter: number): void {
+function route(fmt: Format, libHpdAfter: number, libDayAfter: [number, number]): void {
   let cal = CAL;
   let lib = [LIB];
   let tasks = [...TASKS, LIB_TASK];
@@ -162,13 +162,17 @@ function route(fmt: Format, libHpdAfter: number): void {
     checkTasks(label, back.tasks, 'Dagtaak');
     const backLib = back.resourceCalendars?.find(c => c.name === LIB.name);
     checkCalendar(`${label} bibliotheekkalender`, backLib, libHpdAfter);
+    // P6 XML: de dagtaak op de bibliotheekkalender blijft 5 d. MSPDI: bekende grens (ook op main, zie
+    // de gids ref-import-exportformaten): 40 h ÷ 10,5 = 3,8 ⇒ 4 d na de eerste ronde.
+    eq(`${label} dagtaak op bibliotheekkalender`,
+      back.tasks.find(t => t.name === LIB_TASK.name)?.time.scheduleDuration, libDayAfter[round - 1]);
     cal = back.calendar;
     lib = back.resourceCalendars ?? [];
     tasks = back.tasks;
   }
 }
-route(P6, FILE_HPD);
-route(MSPDI, WERKTIJD);
+route(P6, FILE_HPD, [5, 5]);
+route(MSPDI, WERKTIJD, [4, 4]);
 
 // ── §2 Zonder eigen of met ongeldige waarde volgt de kalender de blokken ────────────────────────────
 for (const fmt of [P6, MSPDI]) {

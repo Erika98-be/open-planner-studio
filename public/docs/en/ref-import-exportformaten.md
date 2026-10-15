@@ -42,7 +42,7 @@ Per file format: whether you can open, save and export it, what does and does no
 
 **What does not go along** — notes (the checklist on a task), external links to other projects, activity codes and custom fields, a second constraint, the marking *Manually scheduled*, the leveling delay, the resume and stop point of an out-of-sequence task, the conventions *Remaining work resumes after the elapsed duration* and *Don't move unstarted tasks to the status date* of an MS Project profile, and the other calculation options. Interrupted tasks without an hour distribution go along without their interruptions.
 
-**What changes on the way** — a constraint *Must start on (MSO)* or *Must finish on (MFO)* without the choice *Mandatory (pin logic)* becomes *Start no earlier than (SNET)* or *Finish no earlier than (FNET)*. A hammock becomes an ordinary task with calculated dates.
+**What changes on the way** — a constraint *Must start on (MSO)* or *Must finish on (MFO)* without the choice *Mandatory (pin logic)* becomes *Start no earlier than (SNET)* or *Finish no earlier than (FNET)*. A hammock becomes an ordinary task with calculated dates. MS Project XML stores the hours per day only for the project calendar. Another calendar with its own hours per day gets its working time as hours per day when you open the file: 8 hours per day with working times of 10 hours becomes 10. A task in days on such a calendar then gets shorter, for example 4 days instead of 5.
 
 ## MS Project file (`.mpp`)
 
