@@ -1166,3 +1166,9 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   oude rekenwijze (uit baseline-start/-einde) en niet bij de nieuwe. Toegevoegd aan de fixronde #363.
   **Voor de releasetekst:** "Heb je een P6-planning met afwijkende uren per dag en een baseline uit een oudere versie?
   Dan kan de kolom *Afwijking duur* een verschil tonen (met ⚠). Neem de baseline opnieuw."
+- **Besluit voorgelegd (kalendervenster "Net hours per day")**: Roads toont 8.00 h bovenaan en "Derived hours/day: 10h"
+  onderaan (screenshot `/tmp/qa-kal/kalendervenster-roads.png`). Opties: 1 alleen werktijd; 2 werktijd + oranje infoblok
+  bij verschil (advies); 3 als 2 met knop "Gelijk maken" (nieuw ⇒ na release).
+- **#365 hernoeming** (worker Opus 5.5 medium): open (niet gemerged), concept, CI groen op 2b83e1e9c. Ook `backstage.
+  settings` (zijbalk File) hernoemd, dode sleutels uit alle 28 locales, 82 gidsbestanden, nl-lintlabel met zacht
+  afbreekstreepje (`Project­instellingen`). Review bij reviewer (Opus 5.5, xhigh) gestart; daarna check eigenaar.
