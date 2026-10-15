@@ -1,23 +1,37 @@
-// Uren per dag na eigen export en heropenen (P6 XML en MSPDI). Fout gevonden bij de review van PR #363
-// (2026-10-15): `promoteHourCalendar` zette `hoursPerDay` altijd op de modale dagsom van de blokken.
-// Een kalender met `hoursPerDay` 8 en blokken van 10 h opende na export met 10; de volgende export
-// schreef 10, en een dagtaak van 5 d werd 4 d.
+// Uren per dag na eigen export en heropenen (P6 XML, MSPDI, `.mpp`). Fout gevonden bij de review van
+// PR #363 (2026-10-15): `promoteHourCalendar` zette `hoursPerDay` altijd op de modale dagsom van de
+// blokken. Een kalender met `hoursPerDay` 8 en blokken van 10 h opende na export met 10; de volgende
+// export schreef 10, en een dagtaak van 5 d werd 4 d.
 //
-// Eigenaarsbesluit 2026-10-15 ("een dag", optie 2, PR #363): de opgeslagen uren per dag blijven
-// bewaard en gaan ongewijzigd terug bij export. Dus na twee keer exporteren en heropenen:
-//   - `hoursPerDay` blijft 8, de blokken blijven 10 h;
-//   - een dagtaak van 5 d blijft 5 d;
-//   - een urentaak houdt haar minuten.
-// Een kalender zonder eigen waarde in het bestand volgt de blokken (zoals vroeger).
+// Eigenaarsbesluit 2026-10-15 ("een dag", optie 2, PR #363): de opgeslagen uren per dag blijven bewaard
+// en gaan ongewijzigd terug bij export; de werktijd (de blokken) rekent en toont. De lezers zetten de
+// bestandswaarde daarom NA de promotie terug, zoals XER en IFC.
+//
+// De fixture maakt elk verschil zichtbaar: blokken 07:00–17:30 (werktijd 10,5 h) bij een bestandswaarde
+// van 8. Een kalender zonder eigen waarde krijgt vóór de promotie einde − begin in hele uren (10) of de
+// standaard 8; na de promotie volgt hij de blokken (10,5). Zo valt elke verwisseling op.
+import './domStub';
 import { writeP6XML } from '@/services/p6/p6xmlWriter';
 import { readP6XML } from '@/services/p6/p6xmlReader';
 import { writeMSPDI } from '@/services/msproject/mspdiWriter';
 import { readMSPDI } from '@/services/msproject/mspdiReader';
+import { readXER } from '@/services/xer/xerReader';
+import { readMPP } from '@/services/mpp/mppReader';
+import { promoteCalendarsForHourMode } from '@/services/mpp/mppCalendars';
+import { canonicalizeBands, registerCalendarBands } from '@/services/subdayIo';
+import { parseOpenedFile } from '@/services/formatRegistry';
+import { createAppStoreContext } from '@/state/appStore';
+import { isMultiDocumentImport, type ImportResult } from '@/services/importTypes';
+import { effHoursPerDay } from '@/utils/taskDuration';
 import type { Task } from '@/types/task';
+import type { Baseline } from '@/types/baseline';
 import type { WorkCalendar, WorkTimeBands } from '@/types/calendar';
 import type { Project } from '@/types/project';
-import type { ImportResult } from '@/services/importTypes';
+import { existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { installDOMParser } from './xmldom-shim';
+
+declare const process: { env: Record<string, string | undefined>; exit(code: number): never };
 
 installDOMParser();
 
@@ -30,106 +44,243 @@ function eq(name: string, got: unknown, want: unknown): void {
     console.log(`   XX ${name}: kreeg ${JSON.stringify(got)} ≠ verwacht ${JSON.stringify(want)}`);
   }
 }
+function quiet<T>(fn: () => T): T {
+  const log = console.log;
+  const warn = console.warn;
+  console.log = () => {};
+  console.warn = () => {};
+  try { return fn(); } finally { console.log = log; console.warn = warn; }
+}
 
-const tenHourWeek = (): WorkTimeBands => {
+// ── Fixture ────────────────────────────────────────────────────────────────────────────────────
+const START = 7 * 60;
+const END = 17 * 60 + 30; // 07:00–17:30: 630 min werktijd, einde − begin in hele uren = 10
+const BAND = [{ start: START, end: END }];
+const WERKTIJD = 10.5;
+const FILE_HPD = 8;
+const weekBands = (): WorkTimeBands => {
   const byWeekday = { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [] } as WorkTimeBands['byWeekday'];
-  for (let d = 1; d <= 5; d++) byWeekday[d as 1] = [{ start: 7 * 60, end: 17 * 60 }]; // 07–17, geen pauze
+  for (let d = 1; d <= 5; d++) byWeekday[d as 1] = [...BAND];
   return { byWeekday };
 };
-const TEN_HOUR_BAND = [{ start: 420, end: 1020 }];
-
-// Projectkalender: 8 uur per dag, blokken van 10 h.
 const CAL: WorkCalendar = {
-  id: 'cal-tien', name: 'Tien uur', description: '', workDays: [1, 2, 3, 4, 5],
-  workStartHour: 7, workEndHour: 17, hoursPerDay: 8, holidays: [], workTime: tenHourWeek(),
+  id: 'cal-proj', name: 'Lange dagen', description: '', workDays: [1, 2, 3, 4, 5],
+  workStartHour: 7, workEndHour: 17, hoursPerDay: FILE_HPD, holidays: [], workTime: weekBands(),
 };
-// Bibliotheekkalender met dezelfde vorm (P6 schrijft per kalender een eigen `HoursPerDay`).
-const LIB: WorkCalendar = { ...CAL, id: 'cal-lib', name: 'Bibliotheek tien uur', workTime: tenHourWeek() };
-
+const LIB: WorkCalendar = { ...CAL, id: 'cal-lib', name: 'Bibliotheek lange dagen', workTime: weekBands() };
 const project: Project = {
   id: 'p', name: 'Uren per dag', description: '', startDate: '2026-07-06', endDate: '2026-12-31',
   calendarId: CAL.id, createdAt: '2026-07-06T00:00', modifiedAt: '2026-07-06T00:00', author: 'T', company: 'C',
 };
-
-const HOUR_MINUTES = 1870 * 60; // urentaak van 1870 h
+const HOUR_MINUTES = 1870 * 60;
 const mk = (name: string, unit: 'days' | 'hours', duration: number, minutes?: number, calendarId?: string): Task => ({
   id: `t-${name}`, name, description: '', wbsCode: name, taskType: 'CONSTRUCTION', status: 'NOT_STARTED',
   isMilestone: false, priority: 500, parentId: null, childIds: [],
   time: {
     durationType: 'WORKTIME', durationUnit: unit, scheduleDuration: duration,
     ...(minutes !== undefined ? { durationMinutes: minutes } : {}),
-    scheduleStart: '2026-07-06T07:00', scheduleFinish: '2026-07-10T17:00',
-    earlyStart: '2026-07-06T07:00', earlyFinish: '2026-07-10T17:00',
-    lateStart: '2026-07-06T07:00', lateFinish: '2026-07-10T17:00',
+    scheduleStart: '2026-07-06T07:00', scheduleFinish: '2026-07-10T17:30',
+    earlyStart: '2026-07-06T07:00', earlyFinish: '2026-07-10T17:30',
+    lateStart: '2026-07-06T07:00', lateFinish: '2026-07-10T17:30',
     freeFloat: 0, totalFloat: 0, isCritical: false, completion: 0,
   },
   resourceIds: [],
   ...(calendarId ? { calendarId } : {}),
 });
-const TASKS: Task[] = [
-  mk('Dagtaak', 'days', 5),
-  mk('Urentaak', 'hours', HOUR_MINUTES / 600, HOUR_MINUTES),
-];
+const TASKS: Task[] = [mk('Dagtaak', 'days', 5), mk('Urentaak', 'hours', HOUR_MINUTES / (WERKTIJD * 60), HOUR_MINUTES)];
+const LIB_TASK = mk('Dagtaak bibliotheek', 'days', 5, undefined, LIB.id);
 
-type Writer = (p: Project, c: WorkCalendar, t: Task[], s: [], r: [], a: [], lib: WorkCalendar[]) => string;
-type Reader = (xml: string) => ImportResult;
+type Format = {
+  name: string;
+  write: (cal: WorkCalendar, tasks: Task[], lib: WorkCalendar[], baselines?: Baseline[]) => string;
+  read: (xml: string) => ImportResult;
+  /** De geschreven uren per dag van de projectkalender, zoals ze in het bestand staan. */
+  writtenHpd: (xml: string) => string | undefined;
+  /** Wat de geschreven uren per dag moeten zijn bij `FILE_HPD`. */
+  wantWritten: string;
+  /** Zet de waarde uit het bestand op `raw` (`null` = weg). */
+  setFileHpd: (xml: string, raw: string | null) => string;
+  /** Voeg opgeslagen speling toe aan de urentaak: 105 werkuren = 10 werkdagen van 10,5 h. */
+  addTotalFloat: (xml: string) => string;
+};
+const firstTag = (tag: string) => (xml: string) => xml.match(new RegExp(`<${tag}>([^<]*)</${tag}>`))?.[1];
+const setTag = (tag: string) => (xml: string, raw: string | null) =>
+  xml.replace(new RegExp(`<${tag}>[^<]*</${tag}>`, 'g'), raw === null ? '' : `<${tag}>${raw}</${tag}>`);
+const insertInBlock = (block: string, name: string, extra: string) => (xml: string) =>
+  xml.replace(new RegExp(`(<${block}>(?:(?!</${block}>)[\\s\\S])*<Name>${name}</Name>(?:(?!</${block}>)[\\s\\S])*)</${block}>`), `$1${extra}</${block}>`);
 
-function checkCalendar(label: string, cal: WorkCalendar | undefined): void {
-  eq(`${label} hoursPerDay`, cal?.hoursPerDay, 8);
-  eq(`${label} blokken ma`, cal?.workTime?.byWeekday[1], TEN_HOUR_BAND);
-  eq(`${label} blokken vr`, cal?.workTime?.byWeekday[5], TEN_HOUR_BAND);
+const P6: Format = {
+  name: 'P6 XML',
+  write: (cal, tasks, lib) => writeP6XML(project, cal, tasks, [], [], [], lib),
+  read: readP6XML,
+  writtenHpd: firstTag('HoursPerDay'),
+  wantWritten: String(FILE_HPD),
+  setFileHpd: setTag('HoursPerDay'),
+  // Een vastlegging vraagt ook begin en einde; de eigen writer schrijft die P6-velden niet.
+  addTotalFloat: insertInBlock('Activity', 'Urentaak',
+    '<StartDate>2026-07-06T07:00:00</StartDate><FinishDate>2026-07-10T17:30:00</FinishDate><TotalFloat>105</TotalFloat>'),
+};
+const MSPDI: Format = {
+  name: 'MSPDI',
+  write: (cal, tasks, lib, baselines = []) => writeMSPDI(project, cal, tasks, [], [], [], lib, baselines, baselines[0]?.id ?? null),
+  read: readMSPDI,
+  writtenHpd: firstTag('MinutesPerDay'),
+  wantWritten: String(FILE_HPD * 60),
+  setFileHpd: setTag('MinutesPerDay'),
+  // Tienden van een minuut: 105 h = 6300 min = 63000.
+  addTotalFloat: insertInBlock('Task', 'Urentaak', '<TotalSlack>63000</TotalSlack>'),
+};
+
+function checkCalendar(label: string, cal: WorkCalendar | undefined, wantHpd: number): void {
+  eq(`${label} hoursPerDay`, cal?.hoursPerDay, wantHpd);
+  eq(`${label} blokken ma`, cal?.workTime?.byWeekday[1], BAND);
+  eq(`${label} blokken vr`, cal?.workTime?.byWeekday[5], BAND);
 }
-
 function checkTasks(label: string, tasks: Task[], dayName: string): void {
   const day = tasks.find(t => t.name === dayName);
   const hour = tasks.find(t => t.name === 'Urentaak');
-  eq(`${label} ${dayName} eenheid`, day?.time.durationUnit, 'days');
-  eq(`${label} ${dayName} 5 d`, day?.time.scheduleDuration, 5);
-  eq(`${label} urentaak eenheid`, hour?.time.durationUnit, 'hours');
-  eq(`${label} urentaak minuten`, hour?.time.durationMinutes, HOUR_MINUTES);
+  eq(`${label} ${dayName}: dagen, 5 d`, [day?.time.durationUnit, day?.time.scheduleDuration], ['days', 5]);
+  eq(`${label} urentaak: uren, minuten, dagengetal in werktijd (#363)`,
+    [hour?.time.durationUnit, hour?.time.durationMinutes, hour?.time.scheduleDuration],
+    ['hours', HOUR_MINUTES, HOUR_MINUTES / (WERKTIJD * 60)]);
 }
 
-function route(name: string, write: Writer, read: Reader, hpdTag: RegExp, withLibrary: boolean): void {
-  const lib = withLibrary ? [LIB] : [];
-  const tasks = withLibrary ? [...TASKS, mk('Dagtaak bibliotheek', 'days', 5, undefined, LIB.id)] : TASKS;
+// ── §1 Twee keer exporteren en heropenen ─────────────────────────────────────────────────────────
+// P6 XML schrijft per kalender een eigen `HoursPerDay`: ook de bibliotheekkalender houdt 8.
+// MSPDI kent alleen `<MinutesPerDay>` op projectniveau: een bibliotheekkalender heeft daar geen veld
+// voor en volgt na heropenen de blokken (bekende grens, ook op main; zie de gids).
+function route(fmt: Format, libHpdAfter: number): void {
   let cal = CAL;
-  let libCals = lib;
-  let tk = tasks;
+  let lib = [LIB];
+  let tasks = [...TASKS, LIB_TASK];
   for (let round = 1; round <= 2; round++) {
-    const label = `${name} ronde ${round}`;
-    const xml = write(project, cal, tk, [], [], [], libCals);
-    eq(`${label} geschreven uren per dag`, xml.match(hpdTag)?.[1], hpdTag.source.includes('Minutes') ? '480' : '8');
-    const back = read(xml);
-    checkCalendar(`${label} projectkalender`, back.calendar);
+    const label = `§1 ${fmt.name} ronde ${round}`;
+    const xml = quiet(() => fmt.write(cal, tasks, lib));
+    eq(`${label} geschreven uren per dag`, fmt.writtenHpd(xml), fmt.wantWritten);
+    const back = quiet(() => fmt.read(xml));
+    checkCalendar(`${label} projectkalender`, back.calendar, FILE_HPD);
     checkTasks(label, back.tasks, 'Dagtaak');
-    if (withLibrary) {
-      checkCalendar(`${label} bibliotheekkalender`, back.resourceCalendars?.find(c => c.name === LIB.name));
-      checkTasks(label, back.tasks, 'Dagtaak bibliotheek');
-    }
+    const backLib = back.resourceCalendars?.find(c => c.name === LIB.name);
+    checkCalendar(`${label} bibliotheekkalender`, backLib, libHpdAfter);
     cal = back.calendar;
-    libCals = back.resourceCalendars ?? [];
-    tk = back.tasks;
+    lib = back.resourceCalendars ?? [];
+    tasks = back.tasks;
   }
 }
+route(P6, FILE_HPD);
+route(MSPDI, WERKTIJD);
 
-// Route A: app → P6 XML → app (twee keer). P6 schrijft per kalender een `HoursPerDay`.
-route('P6 XML', writeP6XML as Writer, readP6XML, /<HoursPerDay>([^<]*)<\/HoursPerDay>/, true);
-// Route B: app → MSPDI → app (twee keer). MSPDI draagt alleen `MinutesPerDay` op projectniveau.
-route('MSPDI', writeMSPDI as Writer, readMSPDI, /<MinutesPerDay>([^<]*)<\/MinutesPerDay>/, false);
+// ── §2 Zonder eigen of met ongeldige waarde volgt de kalender de blokken ────────────────────────────
+for (const fmt of [P6, MSPDI]) {
+  const xml = quiet(() => fmt.write(CAL, TASKS, []));
+  eq(`§2 ${fmt.name} zonder eigen waarde: de blokken (10,5)`,
+    quiet(() => fmt.read(fmt.setFileHpd(xml, null))).calendar.hoursPerDay, WERKTIJD);
+  eq(`§2 ${fmt.name} met waarde 0: de blokken (10,5)`,
+    quiet(() => fmt.read(fmt.setFileHpd(xml, '0'))).calendar.hoursPerDay, WERKTIJD);
+  // Een andere geldige waarde komt letterlijk terug (geen vaste 8 in de lezer).
+  eq(`§2 ${fmt.name} met waarde 7,5: 7,5`,
+    quiet(() => fmt.read(fmt.setFileHpd(xml, fmt === P6 ? '7.5' : '450'))).calendar.hoursPerDay, 7.5);
+}
 
-// Zonder eigen waarde in het bestand volgt de kalender de blokken (10 h), zoals vroeger.
-{
-  const xml = writeP6XML(project, CAL, TASKS, [], [], [], []).replace(/<HoursPerDay>[^<]*<\/HoursPerDay>/g, '');
-  eq('P6 XML zonder HoursPerDay volgt de blokken', readP6XML(xml).calendar.hoursPerDay, 10);
+// ── §3 Opgeslagen speling op een uurkalender: in werktijd per dag, zoals XER ─────────────────────────
+for (const fmt of [P6, MSPDI]) {
+  const back = quiet(() => fmt.read(fmt.addTotalFloat(fmt.write(CAL, TASKS, []))));
+  const hour = back.tasks.find(t => t.name === 'Urentaak');
+  eq(`§3 ${fmt.name} opgeslagen speling 105 h = 10 werkdagen van 10,5 h (niet 13,125 van 8 h)`,
+    hour ? back.recordedTimes?.[hour.id]?.totalFloat : 'geen taak', 10);
 }
+
+// ── §4 MSPDI-baseline: dag- en urentaak komen terug zoals ze gingen (samen met #363) ────────────────
 {
-  const xml = writeMSPDI(project, CAL, TASKS, [], [], [], []).replace(/<MinutesPerDay>[^<]*<\/MinutesPerDay>/g, '');
-  eq('MSPDI zonder MinutesPerDay volgt de blokken', readMSPDI(xml).calendar.hoursPerDay, 10);
+  const baseline: Baseline = {
+    id: 'b0', name: 'Basis', createdAt: '2026-07-01T00:00',
+    tasks: TASKS.map(t => ({
+      taskId: t.id, start: t.time.scheduleStart, finish: t.time.scheduleFinish,
+      duration: t.time.scheduleDuration, isMilestone: false,
+    })),
+  } as Baseline;
+  const back = quiet(() => MSPDI.read(MSPDI.write(CAL, TASKS, [], [baseline])));
+  const durationOf = (name: string) => {
+    const id = back.tasks.find(t => t.name === name)?.id;
+    return back.baselines?.[0]?.tasks.find(b => b.taskId === id)?.duration;
+  };
+  eq('§4 MSPDI-baseline dagtaak 5 d', durationOf('Dagtaak'), 5);
+  eq('§4 MSPDI-baseline urentaak in werktijd', durationOf('Urentaak'), HOUR_MINUTES / (WERKTIJD * 60));
 }
-// Een ongeldige waarde (0) telt als geen eigen waarde.
+
+// ── §5 De echte openroute (store, herberekenen) na export: samenloop met #363 ──────────────────────
+const OPEN = { filePath: null, fileHandle: null, recompute: true, fit: false, hourDataNotice: false, linkedOpen: true } as const;
+for (const fmt of [P6, MSPDI]) {
+  const xml = quiet(() => fmt.write(CAL, TASKS, []));
+  const parsed = await parseOpenedFile({ name: 'heropenen.xml', text: xml } as never);
+  const ctx = createAppStoreContext();
+  quiet(() => ctx.store.getState().applyOpenedImport(parsed, OPEN));
+  const s = ctx.store.getState();
+  eq(`§5 ${fmt.name} store: hoursPerDay 8, werktijd 10,5`, [s.calendar.hoursPerDay, effHoursPerDay(s.calendar)], [FILE_HPD, WERKTIJD]);
+  checkTasks(`§5 ${fmt.name} store`, s.tasks, 'Dagtaak');
+  // Een dagtaak van 5 d op deze kalender eindigt op de vijfde werkdag (vrijdag), niet een dag eerder.
+  eq(`§5 ${fmt.name} store: dagtaak eindigt vrijdag`, s.tasks.find(t => t.name === 'Dagtaak')?.time.scheduleFinish.slice(0, 10), '2026-07-10');
+}
+
+// ── §6 `.mpp`: MINUTES_PER_DAY blijft na de promotie staan, net als MSPDI ──────────────────────────
 {
-  const xml = writeP6XML(project, CAL, TASKS, [], [], [], []).replace(/<HoursPerDay>[^<]*<\/HoursPerDay>/g, '<HoursPerDay>0</HoursPerDay>');
-  eq('P6 XML met HoursPerDay 0 volgt de blokken', readP6XML(xml).calendar.hoursPerDay, 10);
+  const register = (c: WorkCalendar) => {
+    const { bands, deviates } = canonicalizeBands({ 1: BAND, 2: BAND, 3: BAND, 4: BAND, 5: BAND });
+    registerCalendarBands(c, { canonical: bands, deviates });
+  };
+  const cal: WorkCalendar = { ...CAL, workTime: undefined, hoursPerDay: FILE_HPD };
+  const other: WorkCalendar = { ...CAL, id: 'cal-other', workTime: undefined, hoursPerDay: 10 };
+  register(cal);
+  register(other);
+  const promoted = promoteCalendarsForHourMode(
+    new Map([[1, cal], [2, other]]), new Set([cal, other]), { calendar: cal, hoursPerDay: FILE_HPD },
+  );
+  eq('§6 .mpp-promotie: beide kalenders uurmodus', [promoted.has(cal), promoted.has(other)], [true, true]);
+  eq('§6 .mpp-promotie: MINUTES_PER_DAY-kalender houdt 8, de andere volgt de blokken',
+    [cal.hoursPerDay, other.hoursPerDay], [FILE_HPD, WERKTIJD]);
+}
+// Met corpus: drie MSPDI/.mpp-tweelingen geven dezelfde projectkalender en dezelfde speling.
+const corpus = process.env.OPS_XER_CORPUS;
+const twinDir = corpus ? join(corpus, 'mpxj/junit/data') : '';
+if (corpus && existsSync(join(twinDir, 'mpp14timephased.mpp'))) {
+  for (const [xml, mpp] of [['mspditimephased.xml', 'mpp14timephased.mpp'], ['baselines.xml', 'mpp14baselines.mpp'], ['mspdinulltasks.xml', 'mpp14nulltasks.mpp']]) {
+    const a = quiet(() => readMSPDI(readFileSync(join(twinDir, xml), 'utf8')));
+    const b = quiet(() => readMPP(new Uint8Array(readFileSync(join(twinDir, mpp)))));
+    const tfOf = (r: ImportResult) => {
+      const t = r.tasks.find(x => x.name === 'Task 1');
+      return t ? r.recordedTimes?.[t.id]?.totalFloat : undefined;
+    };
+    eq(`§6 tweeling ${xml}/${mpp}: hoursPerDay gelijk`, a.calendar.hoursPerDay, b.calendar.hoursPerDay);
+    // Speling alleen als beide bestanden hem dragen (mpp14nulltasks.mpp heeft er geen).
+    if (tfOf(a) !== undefined && tfOf(b) !== undefined) {
+      eq(`§6 tweeling ${xml}/${mpp}: speling Task 1 gelijk`, tfOf(a), tfOf(b));
+    }
+    eq(`§6 tweeling ${xml}: MinutesPerDay 450 blijft 7,5`, a.calendar.hoursPerDay, 7.5);
+  }
+} else {
+  console.log('   .. §6 tweelingen overgeslagen: corpus niet aanwezig (OPS_XER_CORPUS)');
+}
+
+// ── §7 XER: de tweede promotie (uursignaal in TASK) houdt day_hr_cnt ───────────────────────────────
+// Een kalender zonder klokblokken (lege clndr_data) promoveert pas in `xerReader` door een tijdstip in
+// een taak. De lezer leidt daar blokken van 8 h af (08:00–16:00); `day_hr_cnt` 10 moet blijven staan,
+// zoals bij de eerste promotie in `xerCalendarData.ts`.
+{
+  const xer = [
+    'ERMHDR\t23.12\t2026-08-01\t\t\t\t\t\tEUR',
+    '%T\tPROJECT', '%F\tproj_id\tproj_short_name\tclndr_id\tlast_recalc_date', '%R\tP1\tTweede promotie\tC1\t2026-08-03',
+    '%T\tCALENDAR', '%F\tclndr_id\tclndr_name\tproj_id\tclndr_type\tday_hr_cnt\tweek_hr_cnt\tclndr_data',
+    '%R\tC1\tLeeg\tP1\tCA_Project\t10\t40\t',
+    '%T\tTASK',
+    '%F\ttask_id\tproj_id\tclndr_id\ttask_code\ttask_name\ttask_type\tstatus_code\tcomplete_pct_type\tcomplete_pct\tphys_complete_pct\ttarget_drtn_hr_cnt\tremain_drtn_hr_cnt\ttarget_start_date\ttarget_end_date',
+    '%R\tA\tP1\tC1\tA\tUren\tTT_Task\tTK_NotStart\tCP_Drtn\t0\t\t5\t5\t2026-08-03 09:00\t2026-08-03 14:00',
+    '%E',
+  ].join('\n');
+  const r = quiet(() => readXER(new TextEncoder().encode(xer)));
+  const c = isMultiDocumentImport(r) ? undefined : r.calendar;
+  eq('§7 XER tweede promotie: testvoorwaarde uurkalender met afgeleide blokken 08:00–16:00',
+    c?.workTime?.byWeekday[1], [{ start: 480, end: 960 }]);
+  eq('§7 XER tweede promotie: day_hr_cnt 10 blijft', c?.hoursPerDay, 10);
 }
 
 if (fails > 0) {
