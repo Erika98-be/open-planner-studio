@@ -1487,9 +1487,10 @@ function applyHourModeIFC(
     if (t.time.durationUnit === 'hours') {
       const minutes = durMin != null ? durMin : (t.time.durationMinutes ?? 0);
       t.time.durationMinutes = minutes;
-      // Compatibiliteitsafgeleide voor bestaande analyse/exportcode; nooit invoerbron. Werkminuten ÷ de
-      // werktijd per dag van de blokken, niet ÷ een apart bewaarde `HoursPerDay` (eigenaarsbesluit
-      // 2026-10-15, optie 2): zo geeft opslaan en heropenen hetzelfde getal als het raster.
+      // Compatibiliteitsafgeleide voor bestaande analyse/exportcode; nooit invoerbron. Via
+      // `hourTaskScheduleDuration` (niet ÷ een apart bewaarde `HoursPerDay`): zo geeft opslaan en
+      // heropenen hetzelfde getal als het raster. De wachter houdt bij een kalender zonder werktijd het
+      // gelezen getal, in plaats van 0.
       if (effHoursPerDay(effCal) > 0) t.time.scheduleDuration = hourTaskScheduleDuration(minutes, effCal);
     } else {
       t.time.durationMinutes = undefined;

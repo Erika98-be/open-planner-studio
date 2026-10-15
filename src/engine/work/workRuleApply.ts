@@ -519,16 +519,15 @@ export function settleCalendarChange(
   const { triangle } = captured;
   if (isHourTask(task.time)) {
     // Een urentaak houdt haar werkminuten; alleen haar verborgen dagengetal volgt de werktijd per dag
-    // van de nieuwe kalender(inhoud) — dezelfde omrekening als lezers, raster en paneel
-    // (`hourTaskScheduleDuration`, eigenaarsbesluit 2026-10-15, optie 2). Een verzameltaak of hangmat
-    // krijgt haar duur uit de doorrekening (`writeDerivedSpan`) en blijft hier ongemoeid.
+    // van de nieuwe kalender(inhoud) — zie `hourTaskScheduleDuration`. Een verzameltaak of hangmat
+    // krijgt haar duur uit de doorrekening (`writeDerivedSpan`) en blijft hier ongemoeid. (Immer
+    // markeert een toewijzing met dezelfde waarde niet als wijziging; een wachter is niet nodig.)
     if (task.childIds.length === 0 && !task.isHammock) {
-      const days = hourTaskScheduleDuration(task.time.durationMinutes, resolveCalendar(task.calendarId, deps.calendars as WorkCalendar[], deps.calendar));
-      if (task.time.scheduleDuration !== days) task.time.scheduleDuration = days;
+      task.time.scheduleDuration = hourTaskScheduleDuration(task.time.durationMinutes,
+        resolveCalendar(task.calendarId, deps.calendars as WorkCalendar[], deps.calendar));
       // De restduur in dagen heeft dezelfde vorm (`hourRemainingDays`); de restminuten blijven.
       if (task.time.remainingTime !== undefined && task.time.remainingMinutes !== undefined) {
-        const rest = hourRemainingDays(task.time, task.time.remainingMinutes);
-        if (task.time.remainingTime !== rest) task.time.remainingTime = rest;
+        task.time.remainingTime = hourRemainingDays(task.time, task.time.remainingMinutes);
       }
     }
     return NO_CALENDAR_CHANGE;

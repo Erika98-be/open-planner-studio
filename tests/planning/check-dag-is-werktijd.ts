@@ -18,6 +18,9 @@ import './domStub';
 //     `<Work>` (terugval duur × inzet) 1870 u; heropenen van die exports geeft weer 187.
 //  §5 resourcebelasting: de taak belast 187 werkdagen (1870 u), tot en met haar vroegste einde.
 //  §6 kalenderwissel: blokken naar 8 u ⇒ dagengetal 233,75; de uren per dag blijven 8; de restduur volgt.
+//  §7 materiaal uit XER (TASKRSRC, tempo per uur): totaal = tempo × uren, ook als de resourcekalender
+//     een andere dag heeft dan de taakkalender (Roads: 85 toewijzingen, 8 daarvan zo); de dagtaak blijft.
+//  §8 MSPDI-baseline van een urentaak: `<Baseline><Duration>` 1870 u, heropend weer 187 d.
 import { readXER } from '@/services/xer/xerReader';
 import { readXerArchiveIFC as readIFC } from './xerArchiveTestReader';
 import { writeIFC } from '@/services/ifc/ifcWriter';
@@ -239,6 +242,59 @@ const loadCtx = openInStore(await parseOpenedFile({ name: 'dag-is-werktijd.xer',
   same('§6 de dagtaak op de andere kalender blijft 5 d', shape(taskIn(c, 'D')), DAY_TASK);
   c.store.getState().undo();
   same('§6 ongedaan maken: weer 187 en 93,5', [shape(taskIn(c, 'A')), taskIn(c, 'A').time.remainingTime], [HOUR_TASK, 93.5]);
+}
+
+// ════════════════════════════════════════════════════════════════════════════════════════════════
+// §7 Materiaal uit XER: tempo per uur × uren, niet × 8 × 187
+// ════════════════════════════════════════════════════════════════════════════════════════════════
+// TASKRSRC geeft materiaal als tempo per uur (`target_qty_per_hr`). De lezer maakt er een tempo per dag
+// van; de belasting is dat tempo × de dagen van de taak. Bij een urentaak zijn dat 187 dagen van 10 u, dus
+// moet het tempo per dag × 10 zijn — ook als de resource op een kalender van 8 u staat (Wapening, zoals 8
+// van de 85 materiaaltoewijzingen in Roads). Zand op de dagtaak is de bewaking: × 8, zoals op main.
+{
+  const XER_MAT = [
+    ...XER.split('\n').filter((l) => l !== '%E'),
+    '%T\tRSRC',
+    '%F\trsrc_id\trsrc_name\trsrc_type\tclndr_id\tdef_qty_per_hr\tunit_id\trole_id',
+    '%R\tM1\tBeton\tRT_Mat\tC1\t1\t\t',
+    '%R\tM2\tWapening\tRT_Mat\tC2\t1\t\t',
+    '%R\tM3\tZand\tRT_Mat\tC2\t1\t\t',
+    '%T\tTASKRSRC',
+    '%F\ttaskrsrc_id\tproj_id\ttask_id\trsrc_id\trole_id\ttarget_qty_per_hr\tremain_qty_per_hr\tremain_qty\ttarget_qty',
+    '%R\tTR1\tP1\tA\tM1\t\t1\t1\t1870\t1870',
+    '%R\tTR2\tP1\tA\tM2\t\t2\t2\t3740\t3740',
+    '%R\tTR3\tP1\tD\tM3\t\t3\t3\t120\t120',
+    '%E',
+  ].join('\n');
+  const m = openInStore(await parseOpenedFile({ name: 'dag-is-werktijd-materiaal.xer', bytes: new TextEncoder().encode(XER_MAT) }));
+  const s = m.store.getState();
+  const perDay = Object.fromEntries(s.assignments.map((a) => [a.resourceId, a.unitsPerDay]));
+  same('§7 tempo per dag: Beton 1 × 10, Wapening 2 × 10 (taakdag, niet de 8 u van zijn eigen kalender), Zand 3 × 8 (dagtaak)',
+    perDay, { 'xer-resource:M1': 10, 'xer-resource:M2': 20, 'xer-resource:M3': 24 });
+  const res = computeResourceLoad(s.resources, s.assignments, s.tasks, s.calendar, s.calendars);
+  const total = (rid: string) => Math.round(Object.values(res.load[rid] ?? {}).reduce((x, y) => x + y, 0) * 1000) / 1000;
+  same('§7 materiaaltotaal = tempo × uren: 1 × 1870, 2 × 1870, 3 × 40',
+    [total('xer-resource:M1'), total('xer-resource:M2'), total('xer-resource:M3')], [1870, 3740, 120]);
+}
+
+// ════════════════════════════════════════════════════════════════════════════════════════════════
+// §8 MSPDI-baseline van een urentaak: 1870 u, heropend 187 d
+// ════════════════════════════════════════════════════════════════════════════════════════════════
+{
+  const b = openInStore(await parseOpenedFile({ name: 'dag-is-werktijd.xer', bytes: XER_BYTES }));
+  quiet(() => b.store.getState().saveBaseline('Basis'));
+  const st = b.store.getState();
+  same('§8 testvoorwaarde: de baseline van de urentaak is 187 d', st.baselines[0]?.tasks.find((x) => x.taskId === taskIn(b, 'A').id)?.duration, 187);
+  const msp = quiet(() => writeMSPDI(st.project, st.calendar, st.tasks, st.sequences, st.resources, st.assignments, st.calendars,
+    st.baselines, st.activeBaselineId));
+  const mspTask = (name: string) => [...msp.matchAll(/<Task>([\s\S]*?)<\/Task>/g)].map((x) => x[1]).find((x) => x.includes(`<Name>${name}</Name>`));
+  const baselineDuration = (block: string | undefined) => block?.match(/<Baseline>[\s\S]*?<Duration>([^<]*)<\/Duration>/)?.[1];
+  same('§8 MSPDI: <Baseline><Duration> van de urentaak 1870 u (187 × 10), niet 1496 u (187 × 8); de dagtaak 40 u',
+    [baselineDuration(mspTask('Lange urentaak')), baselineDuration(mspTask('Dagtaak'))], ['PT1870H0M0S', 'PT40H0M0S']);
+  const back = quiet(() => readMSPDI(msp));
+  const backA = back.tasks.find((t) => t.name === 'Lange urentaak');
+  const backBaseline = back.baselines?.[0]?.tasks.find((x) => x.taskId === backA?.id)?.duration;
+  same('§8 MSPDI heropend: taak 187 d en baseline 187 d (geen afwijking)', [backA?.time.scheduleDuration, backBaseline], [187, 187]);
 }
 
 if (failures.length > 0) {

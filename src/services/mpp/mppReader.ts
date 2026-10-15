@@ -767,8 +767,7 @@ export function readTasks(ctx: ReadTasksContext): ReadTasksResult {
     // ELAPSED-takken: vaste 24-uursdag, geen minutes-per-day-factor). `tenthsOfMinutesToDays` deelt
     // door `hoursPerDay × 60` (werktijd) en zou dus onterecht een tweede keer door `hoursPerDay`
     // delen; dag-modus + elapsed rekent daarom met de vaste klokdag (24 × 60 × 10 tienden).
-    // Urentaak: dagengetal = werkminuten ÷ de werktijd per dag van de taakkalender (eigenaarsbesluit
-    // 2026-10-15, optie 2 — `hourTaskScheduleDuration`), niet ÷ de opgeslagen `hoursPerDay`.
+    // Urentaak: dagengetal via `hourTaskScheduleDuration`, niet ÷ de opgeslagen `hoursPerDay`.
     const duration = isHour
       ? hourTaskScheduleDuration(durationMinutes!, cal)
       : raw.isElapsedDuration

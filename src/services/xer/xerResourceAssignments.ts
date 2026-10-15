@@ -98,14 +98,16 @@ function assignmentRate(quantities: XerAssignmentQuantitiesSource): number {
   if ((quantities.targetPerHour ?? 0) > 0) return quantities.targetPerHour as number;
   return quantities.remainingPerHour ?? quantities.targetPerHour ?? 0;
 }
-function unitsPerDay(rawRate: number, resource: Resource, context: XerResourceReadContext): {
+function unitsPerDay(rawRate: number, resource: Resource, context: XerResourceReadContext, taskId?: string): {
   value: number; scale: XerAssignmentUnitScale;
 } {
   if (resource.type === 'MATERIAL') {
     const hoursPerDay = resource.calendarId
       ? context.calendarHoursPerDay.get(resource.calendarId) ?? context.projectHoursPerDay
       : context.projectHoursPerDay;
-    return { value: rawRate * hoursPerDay, scale: 'MATERIAL_PER_HOUR' };
+    // Op een urentaak telt de dag van de taak zelf (`hourTaskHoursPerDay`): tempo × dagengetal = tempo × uren.
+    const taskHoursPerDay = taskId !== undefined ? context.hourTaskHoursPerDay?.get(taskId) : undefined;
+    return { value: rawRate * (taskHoursPerDay ?? hoursPerDay), scale: 'MATERIAL_PER_HOUR' };
   }
   return { value: rawRate, scale: 'DIRECT_FRACTION' };
 }
@@ -210,7 +212,7 @@ export function readXerResourceAssignments(
         roleResourceById.set(role.internalId, resource);
       }
     }
-    const scaled = unitsPerDay(assignmentRate(quantities), resource, context);
+    const scaled = unitsPerDay(assignmentRate(quantities), resource, context, taskSourceId);
     sources.push({ ...sourceBase, unitScale: scaled.scale });
     if (skipExpectation === 'XER_ASSIGNMENT_TASK_MISSING') {
       issues.push({ code: 'XER_ASSIGNMENT_TASK_MISSING', table: 'TASKRSRC', line: row.line, sourceId, fallback: 'SKIPPED' });

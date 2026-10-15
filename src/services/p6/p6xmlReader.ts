@@ -944,9 +944,8 @@ function readP6XmlProject(scope: P6XmlScope): P6XmlProjectRead {
     // Zelfde `effHpd` als de duur hieronder — symmetrisch met de writer.
     const remainingTime = !isHour && remainingRaw ? p6HoursToDays(parseFloat(remainingRaw), effHpd) : undefined;
 
-    // Duur: uur ⇒ minuten (`uren × 60`) als bron van waarheid, met als dagengetal werkminuten ÷ de
-    // werktijd per dag van de taakkalender (eigenaarsbesluit 2026-10-15, optie 2 —
-    // `hourTaskScheduleDuration`); dag ⇒ `Math.round(uren/hpd)` met de opgeslagen `HoursPerDay`.
+    // Duur: uur ⇒ minuten (`uren × 60`) als bron van waarheid, dagengetal via
+    // `hourTaskScheduleDuration`; dag ⇒ `Math.round(uren/hpd)` met de opgeslagen `HoursPerDay`.
     const durationMinutes = isHour ? Math.round(plannedDuration * 60) : undefined;
     const durationDays = isHour
       ? hourTaskScheduleDuration(durationMinutes!, calById.get(effCalId) ?? calendar)

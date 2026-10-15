@@ -43,14 +43,24 @@ export function effHoursPerDay(cal: WorkCalendar): number {
 }
 
 /**
- * DE definitie van het verborgen dagengetal (`scheduleDuration`) van een URENtaak: werkminuten ÷ de
- * werktijd per dag van de taakkalender ({@link effHoursPerDay}; bij een blokkenkalender de modale dagsom
- * van de blokken). Eigenaarsbesluit 2026-10-15, optie 2 ("een dag is de echte werktijd"): een P6-kalender
- * met `day_hr_cnt` 8 en blokken van 10 u geeft een taak van 1870 u dus 187 dagen, net als de weergave en
- * de motor — niet 233,75. De opgeslagen `hoursPerDay` blijft op de kalender staan voor de export, maar telt
- * hier niet. Elke route die het dagengetal van een urentaak zet (lezers, raster, paneel, MCP,
- * kalenderwissel) rekent met deze ene omrekening. Kalender zonder werktijd ⇒ 0. Een dagtaak raakt dit
- * nooit: daar is `scheduleDuration` zelf de invoer.
+ * Het verborgen dagengetal (`scheduleDuration`) van een gewone URENtaak (blad, geen hangmat): werkminuten
+ * ÷ de werktijd per dag van de taakkalender ({@link effHoursPerDay}; bij een blokkenkalender de modale
+ * dagsom van de blokken).
+ *
+ * Eigenaarsbesluit 2026-10-15, optie 2 ("een dag is de echte werktijd"; bron:
+ * docs/superpowers/plans/2026-10-07-review-pr109-uitkomsten.md op `claude/review-pr109-log`, "een dag",
+ * #354). Een P6-kalender met `day_hr_cnt` 8 en blokken van 10 u geeft een taak van 1870 u dus 187 dagen,
+ * net als de weergave en de motor — niet 233,75. De opgeslagen `hoursPerDay` blijft op de kalender staan
+ * voor de export, maar telt hier niet. De andere plekken in de code verwijzen naar deze docstring.
+ *
+ * Wie rekent hiermee: de lezers (XER, IFC, P6 XML, MSPDI, .mpp), het paneel en de kalenderwissel
+ * (`settleCalendarChange`). Raster en MCP rekenen dezelfde deling zelf uit met {@link effHoursPerDay}
+ * (`gridTransaction` → `taskEditPlan`, `taskTools` → `taskFields`); de werkregel (`applyTriangleResult`)
+ * ook, met de werktijd per dag
+ * afgerond op hele minuten. Uitzondering: bij een verzameltaak of hangmat leidt de doorrekening het
+ * dagengetal af uit de span (`writeDerivedSpan`); bij ELAPSEDTIME deelt die door 24 uur, niet door de
+ * werktijd per dag. Kalender zonder werktijd ⇒ 0. Een dagtaak raakt dit nooit: daar is
+ * `scheduleDuration` zelf de invoer.
  */
 export function hourTaskScheduleDuration(minutes: number, cal: WorkCalendar): number {
   const hpd = effHoursPerDay(cal);

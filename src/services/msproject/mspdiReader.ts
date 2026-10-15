@@ -360,8 +360,7 @@ export function readMSPDI(content: string): ImportResult {
     // Duur: uur ⇒ minuten (bron van waarheid, geen afronding); dag ⇒ het dag-pad.
     const durationUnit = taskDurationUnit(te, isHour, durationUnitMarkerFieldId);
     const durationMinutes = durationUnit === 'hours' ? (mspDurationMinutes(durationStr) ?? 0) : undefined;
-    // Urentaak: dagengetal = werkminuten ÷ de werktijd per dag van de taakkalender (eigenaarsbesluit
-    // 2026-10-15, optie 2 — `hourTaskScheduleDuration`); dagtaak: de opgeslagen uren per dag.
+    // Urentaak: dagengetal via `hourTaskScheduleDuration`; dagtaak: de opgeslagen uren per dag.
     const duration = durationUnit === 'hours'
       ? hourTaskScheduleDuration(durationMinutes!, calById.get(effCalId) ?? calendar)
       : parseMSPDuration(durationStr, effHpd);
