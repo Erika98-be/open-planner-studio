@@ -129,6 +129,7 @@
       "workWindowFinish": "Work window finish",
       "workWindowStart": "Work window start",
       "workRule": "Work rule",
+      "assignmentPlannedUnits": "Planned units per day",
       "assignmentPlannedWork": "Planned work (hours)",
       "assignmentActualWork": "Actual work (hours)",
       "assignmentRemainingWork": "Remaining work (hours)"
@@ -466,7 +467,7 @@
       "work": "Work (rem.)",
       "workHint": "Remaining work in hours; the work rule decides whether duration or units move.",
       "workDeviates": "Differs from units × duration",
-      "workDeviatesHint": "Stored work {{stored}} h differs from units × remaining duration ({{derived}} h). The histogram follows the stored work across the whole task duration; the units stay as the file gave them.",
+      "workDeviatesHint": "Stored work {{stored}} h differs from units × remaining duration ({{derived}} h). The histogram follows the stored work across the whole task duration. The app does not change the units to remove the difference.",
       "locked": "Protected by the work rule {{rule}}"
     },
     "notes": {

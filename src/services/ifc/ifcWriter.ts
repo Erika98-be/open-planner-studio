@@ -1704,13 +1704,17 @@ function writeTimephasedMeta(
     const windows: Record<string, {
       workWindowStart?: string; workWindowFinish?: string; curveValues?: number[];
       plannedWorkMinutes?: number; actualWorkMinutes?: number; remainingWorkMinutes?: number;
+      plannedUnitsPerDay?: number;
     }> = {};
     list.forEach((a, index) => {
       // `curveValues` (de exacte 21-punts P6-/MSPDI-curve) reist in hetzelfde JSON-blob mee — een
       // toewijzing zonder venster én zonder curve schrijft niets. De drie optionele werkvelden
-      // (begroot/verricht/resterend, minuten) idem — zelfde blob, zelfde `GUID#N`-sleutel.
+      // (begroot/verricht/resterend, minuten) idem — zelfde blob, zelfde `GUID#N`-sleutel. Het
+      // begrote tempo (`plannedUnitsPerDay`, alleen naast een P6-resttempo) ook: het pipe-formaat
+      // van `OPS_Assignments` blijft ongewijzigd.
       if (a.workWindowStart === undefined && a.workWindowFinish === undefined && a.curveValues === undefined
-        && a.plannedWorkMinutes === undefined && a.actualWorkMinutes === undefined && a.remainingWorkMinutes === undefined) return;
+        && a.plannedWorkMinutes === undefined && a.actualWorkMinutes === undefined && a.remainingWorkMinutes === undefined
+        && a.plannedUnitsPerDay === undefined) return;
       const resGuid = objectGuid(ctx, 'res', a.resourceId);
       const propName = `${resGuid}#${index}`;
       windows[propName] = {
@@ -1720,6 +1724,7 @@ function writeTimephasedMeta(
         ...(a.plannedWorkMinutes !== undefined ? { plannedWorkMinutes: a.plannedWorkMinutes } : {}),
         ...(a.actualWorkMinutes !== undefined ? { actualWorkMinutes: a.actualWorkMinutes } : {}),
         ...(a.remainingWorkMinutes !== undefined ? { remainingWorkMinutes: a.remainingWorkMinutes } : {}),
+        ...(a.plannedUnitsPerDay !== undefined ? { plannedUnitsPerDay: a.plannedUnitsPerDay } : {}),
       };
     });
     if (Object.keys(windows).length === 0) continue;

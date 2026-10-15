@@ -159,7 +159,9 @@ const NIET_PUBLIEK = {
   task: [] as readonly string[],
   taskTime: [] as readonly string[],
   sequence: [] as readonly string[],
-  assignment: [] as readonly string[],
+  // Het begrote tempo naast een P6-resttempo (resttempo-besluit 2026-10-15) is bronreferentie voor de
+  // P6 XML-export, geen extensie-invoer. Het extensiecontract (apiVersion) blijft ongewijzigd.
+  assignment: ['plannedUnitsPerDay'] as readonly string[],
 };
 
 // Zichtbare velden die een extensie uitsluitend mag LEZEN. Dit is een andere grens dan
@@ -462,7 +464,7 @@ const VOL_RESOURCE = {
 } satisfies Required<Resource>;
 
 const VOL_ASSIGNMENT = {
-  id: 'a1', taskId: 't1', resourceId: 'r1', unitsPerDay: 0.5, curve: 'BELL',
+  id: 'a1', taskId: 't1', resourceId: 'r1', unitsPerDay: 0.5, plannedUnitsPerDay: 0.25, curve: 'BELL',
   workWindowStart: '2026-06-01T08:00', workWindowFinish: '2026-06-10T17:00',
   curveValues: [0, 6.5, 6.5, 6.5, 6.5, 6.5, 6.5, 6.5, 6.5, 6.5, 6.5, 3.5, 3.5, 3.5, 3.5, 3.5, 3.5, 3.5, 3.5, 3.5, 3.5],
   plannedWorkMinutes: 4800, actualWorkMinutes: 1200, remainingWorkMinutes: 3000,
@@ -549,6 +551,9 @@ for (const [naam, ext, bron, sleutels] of [
   for (const k of NIET_PUBLIEK.resource) {
     eq(`18b resourceveld "${k}" lekt niet naar het contract`, k in toExtResource(VOL_RESOURCE), false);
   }
+  for (const k of NIET_PUBLIEK.assignment) {
+    eq(`18c toewijzingsveld "${k}" lekt niet naar het contract`, k in toExtAssignment(VOL_ASSIGNMENT), false);
+  }
 }
 
 // ── 3. Round-trip behoudt de waarden ─────────────────────────────────────────
@@ -567,7 +572,8 @@ for (const [naam, ext, bron, sleutels] of [
     stripNietPubliek(VOL_SEQUENCE, [...NIET_PUBLIEK.sequence, ...LEES_ALLEEN_EXT.sequence]));
   eq('23 resource round-trip',
     fromExtResource(toExtResource(VOL_RESOURCE)), stripNietPubliek(VOL_RESOURCE, NIET_PUBLIEK.resource));
-  eq('24 toewijzing round-trip', fromExtAssignment(toExtAssignment(VOL_ASSIGNMENT)), VOL_ASSIGNMENT);
+  eq('24 toewijzing round-trip',
+    fromExtAssignment(toExtAssignment(VOL_ASSIGNMENT)), stripNietPubliek(VOL_ASSIGNMENT, NIET_PUBLIEK.assignment));
 }
 
 // ── 4. Isolatie: de extensie krijgt een verse, DIEPE kopie ───────────────────

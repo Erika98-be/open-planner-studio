@@ -644,10 +644,15 @@ export function writeP6XMLWithReport(
         : []),
       ...(a.plannedWorkMinutes !== undefined ? leaf('PlannedUnits', a.plannedWorkMinutes / 60) : []),
       // PlannedUnitsPerTime: fractie, 1.0 = 100% (zelfde semantiek als MaxUnitsPerTime hierboven).
-      ...leaf('PlannedUnitsPerTime', a.unitsPerDay),
+      // Het BEGROTE tempo: `plannedUnitsPerDay` als een P6-import het resttempo als inzet koos,
+      // anders de inzet zelf. Nooit het resttempo (eigenaarsbesluit 2026-10-15).
+      ...leaf('PlannedUnitsPerTime', a.plannedUnitsPerDay ?? a.unitsPerDay),
       ...leaf('ProjectObjectId', 1),
       ...(remainingSpread && anchorIso ? [...leaf('RemainingCurve', remainingSpread), ...leaf('RemainingStartDate', anchorIso)] : []),
       ...(a.remainingWorkMinutes !== undefined ? leaf('RemainingUnits', a.remainingWorkMinutes / 60) : []),
+      // RemainingUnitsPerTime alleen naast een apart begroot tempo: dan is de inzet het resttempo.
+      // Zonder `plannedUnitsPerDay` blijft de uitvoer byte-gelijk aan vroeger.
+      ...(a.plannedUnitsPerDay !== undefined ? leaf('RemainingUnitsPerTime', a.unitsPerDay) : []),
       ...(curveObjId !== undefined ? leaf('ResourceCurveObjectId', curveObjId) : []),
       ...leaf('ResourceObjectId', resObjId),
     ]));
