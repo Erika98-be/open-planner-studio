@@ -99,15 +99,15 @@ test('taakpaneel: ongeldige combinatie geeft rode rand, aria-invalid en verwijst
   expect(describedBy).toBeTruthy();
   expect(await error.getAttribute('id')).toBe(describedBy);
   await expect(secondary).toHaveAccessibleDescription((await error.textContent())!.trim());
-  const colors = await secondary.evaluate(el => {
+  // De rand heeft een CSS-overgang (0,15 s): poll tot hij de foutkleur heeft.
+  await expect.poll(() => secondary.evaluate(el => {
     const probe = document.createElement('span');
     probe.style.color = 'var(--error)';
     document.body.appendChild(probe);
     const errorColor = getComputedStyle(probe).color;
     probe.remove();
-    return { border: getComputedStyle(el).borderTopColor, errorColor };
-  });
-  expect(colors.border).toBe(colors.errorColor);
+    return getComputedStyle(el).borderTopColor === errorColor ? 'foutkleur' : `${getComputedStyle(el).borderTopColor} ≠ ${errorColor}`;
+  })).toBe('foutkleur');
 
   // Weer geldig: alles weg.
   await choose(page, SECONDARY, 'SNLT');
