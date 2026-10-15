@@ -29,6 +29,7 @@ import type {
   TaskStatus,
 } from '@/types/task';
 import { createDefaultTaskTime } from '@/utils/taskDefaults';
+import { hourTaskScheduleDuration } from '@/utils/taskDuration';
 import { defaultActualFinish, defaultActualStart } from '@/engine/taskMutationRules';
 import { orderActualsAfterDerivedFinish } from '@/engine/actualDatesOrder';
 import { flattenOrder } from '@/utils/wbs';
@@ -822,8 +823,13 @@ function readXerProject(
     // DAGEN mee omdat `scheduleDuration` dagen hoort te zijn; de daaruit volgende foutieve
     // `durationMinutes` wordt hieronder in dezelfde `if (hourMode)`-tak overschreven met de
     // echte bronminuten. Die overschrijving is dus dragend — haal 'm niet weg.
+    // Het dagengetal van een urentaak is werkminuten ÷ de werktijd per dag van de taakkalender (de
+    // blokken), niet ÷ `day_hr_cnt`: eigenaarsbesluit 2026-10-15, optie 2 (`hourTaskScheduleDuration`).
+    // `day_hr_cnt` blijft wel op de kalender staan. Een dagtaak houdt de bronomrekening.
     const time = createDefaultTaskTime(
-      start, durationMinutes / (hoursPerDay * 60), hourMode ? 'hours' : 'days',
+      start,
+      hourMode ? hourTaskScheduleDuration(durationMinutes, effectiveCalendar) : durationMinutes / (hoursPerDay * 60),
+      hourMode ? 'hours' : 'days',
     );
     time.scheduleFinish = finish;
     time.earlyStart = start;

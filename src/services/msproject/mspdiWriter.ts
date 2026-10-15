@@ -655,10 +655,16 @@ export function writeMSPDI(
       const resUid = resUidMap.get(a.resourceId);
       if (taskUid === undefined || resUid === undefined) continue;
       const task = tasks.find(t => t.id === a.taskId);
-      const workDays = (task?.time.scheduleDuration ?? 0) * a.unitsPerDay;
       // Werk in uren van de TAAK-kalender, consistent met <Duration> — anders leest MS Project
       // Duration 168 u / Work 56 u / Units 100% en herrekent de eenheden naar 33%.
       const workHpd = task ? (effCalByTask.get(task.id)?.hoursPerDay ?? calendar.hoursPerDay) : calendar.hoursPerDay;
+      // Een urentaak telt haar werkminuten, niet het verborgen dagengetal: dat is werkminuten ÷ de
+      // werktijd per dag van de blokken (eigenaarsbesluit 2026-10-15, optie 2), terwijl `<Work>`
+      // hieronder in `workHpd`-uren wordt geschreven. Zo blijven de geschreven uren gelijk.
+      const taskDays = !task ? 0
+        : taskDurationUnit(task) === 'hours' && workHpd > 0 ? (task.time.durationMinutes ?? 0) / (workHpd * 60)
+          : task.time.scheduleDuration;
+      const workDays = taskDays * a.unitsPerDay;
       // De contour van déze toewijzing (gekoppeld via `resourceId`).
       const taskContour = task ? contourOf(task, a) : undefined;
       // De contour vanaf de REKENstart, zoals de eigen resourcebelasting (`ResourceLoad.taskWorkDayIsos`

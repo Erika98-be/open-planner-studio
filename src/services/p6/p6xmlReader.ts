@@ -3,6 +3,7 @@ import { P6XmlImportError } from './p6xmlErrors';
 import { Task, TaskConstraint, ConstraintType } from '@/types/task';
 import type { P6CompletePctType, P6DurationType } from '@/types/task';
 import { createDefaultTaskTime } from '@/utils/taskDefaults';
+import { hourTaskScheduleDuration } from '@/utils/taskDuration';
 import { Sequence, SequenceType } from '@/types/sequence';
 import { Resource, ResourceAssignment, ResourceType, ResourceCurve } from '@/types/resource';
 import { Project } from '@/types/project';
@@ -943,9 +944,13 @@ function readP6XmlProject(scope: P6XmlScope): P6XmlProjectRead {
     // Zelfde `effHpd` als de duur hieronder — symmetrisch met de writer.
     const remainingTime = !isHour && remainingRaw ? p6HoursToDays(parseFloat(remainingRaw), effHpd) : undefined;
 
-    // Duur: uur ⇒ minuten (`uren × 60`) als bron van waarheid; dag ⇒ `Math.round(uren/hpd)`.
+    // Duur: uur ⇒ minuten (`uren × 60`) als bron van waarheid, met als dagengetal werkminuten ÷ de
+    // werktijd per dag van de taakkalender (eigenaarsbesluit 2026-10-15, optie 2 —
+    // `hourTaskScheduleDuration`); dag ⇒ `Math.round(uren/hpd)` met de opgeslagen `HoursPerDay`.
     const durationMinutes = isHour ? Math.round(plannedDuration * 60) : undefined;
-    const durationDays = isHour ? (effHpd > 0 ? durationMinutes! / (effHpd * 60) : 0) : p6HoursToDays(plannedDuration, effHpd);
+    const durationDays = isHour
+      ? hourTaskScheduleDuration(durationMinutes!, calById.get(effCalId) ?? calendar)
+      : p6HoursToDays(plannedDuration, effHpd);
     const isMilestone = p6Type.includes('Milestone');
     // P6 onderscheidt Start/Finish Milestone — bewaar de soort expliciet.
     const milestoneKind = !isMilestone ? undefined

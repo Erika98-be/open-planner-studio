@@ -43,6 +43,21 @@ export function effHoursPerDay(cal: WorkCalendar): number {
 }
 
 /**
+ * DE definitie van het verborgen dagengetal (`scheduleDuration`) van een URENtaak: werkminuten ÷ de
+ * werktijd per dag van de taakkalender ({@link effHoursPerDay}; bij een blokkenkalender de modale dagsom
+ * van de blokken). Eigenaarsbesluit 2026-10-15, optie 2 ("een dag is de echte werktijd"): een P6-kalender
+ * met `day_hr_cnt` 8 en blokken van 10 u geeft een taak van 1870 u dus 187 dagen, net als de weergave en
+ * de motor — niet 233,75. De opgeslagen `hoursPerDay` blijft op de kalender staan voor de export, maar telt
+ * hier niet. Elke route die het dagengetal van een urentaak zet (lezers, raster, paneel, MCP,
+ * kalenderwissel) rekent met deze ene omrekening. Kalender zonder werktijd ⇒ 0. Een dagtaak raakt dit
+ * nooit: daar is `scheduleDuration` zelf de invoer.
+ */
+export function hourTaskScheduleDuration(minutes: number, cal: WorkCalendar): number {
+  const hpd = effHoursPerDay(cal);
+  return hpd > 0 ? minutes / (hpd * 60) : 0;
+}
+
+/**
  * Duur van een taak in integer MINUTEN o.b.v. een `WorkCalendar` (spiegelt `durationMinutesOf`).
  * Uur-kalender ⇒ `durationMinutes` als bron; anders `scheduleDuration × hpd × 60`.
  */
