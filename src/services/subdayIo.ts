@@ -409,24 +409,9 @@ export function getCalendarBands(
 }
 
 /**
- * Kalenders met een eigen, geldige uren-per-dag uit het bestand (P6 XML `HoursPerDay`, MSPDI
- * `MinutesPerDay` van de projectkalender). {@link promoteHourCalendar} laat hun `hoursPerDay` staan.
- * Zelfde regel als XER (`day_hr_cnt`) en IFC (`OPS_Calendar.HoursPerDay`): de opgeslagen waarde is de
- * omrekening tussen dagen en uren en mag afwijken van de blokken (eigenaarsbesluit 2026-10-15, "een
- * dag", PR #363). Zonder die regel werd 8 bij 10 h blokken na heropenen 10, en een dagtaak van 5 d 4 d.
- * WeakSet: per-parse, net als {@link bandRegistry}.
- */
-const explicitHoursPerDay = new WeakSet<WorkCalendar>();
-
-/** Markeer dat de lezer `cal.hoursPerDay` uit een eigen, geldige bestandswaarde haalde. */
-export function registerExplicitHoursPerDay(cal: WorkCalendar): void {
-  explicitHoursPerDay.add(cal);
-}
-
-/**
  * Promoveer één kalender naar uur-modus als hij afwijkt (a/b, `deviates`) of een (c)-signaal droeg
- * (`signaled`). Zet `workTime` + afgeleide `workDays`/`hoursPerDay`. Een uren-per-dag die de lezer met
- * {@link registerExplicitHoursPerDay} markeerde, blijft staan. Retourneert of de kalender (nu)
+ * (`signaled`). Zet `workTime` + afgeleide `workDays`/`hoursPerDay`; een lezer met een eigen uren per dag
+ * uit het bestand zet die daarna terug (XER, IFC, P6 XML, MSPDI, `.mpp`). Retourneert of de kalender (nu)
  * uur-modus is — inclusief het geval dat hij al `workTime` droeg. Gedeelde promotie-orkestratie;
  * de readers houden zelf hun format-specifieke signaal-verzameling (`cSignalCalIds`/`subDayCals`).
  *
@@ -449,7 +434,7 @@ export function promoteHourCalendar(
   cal.workTime = bands;
   const wd = workDaysFromBands(bands);
   if (wd.length > 0) cal.workDays = wd;
-  if (!explicitHoursPerDay.has(cal)) cal.hoursPerDay = deriveHoursPerDay(bands, cal.hoursPerDay);
+  cal.hoursPerDay = deriveHoursPerDay(bands, cal.hoursPerDay);
   return true;
 }
 

@@ -3,7 +3,7 @@ import { P6XmlImportError } from './p6xmlErrors';
 import { Task, TaskConstraint, ConstraintType } from '@/types/task';
 import type { P6CompletePctType, P6DurationType } from '@/types/task';
 import { createDefaultTaskTime } from '@/utils/taskDefaults';
-import { hourTaskScheduleDuration } from '@/utils/taskDuration';
+import { effHoursPerDay, hourTaskScheduleDuration } from '@/utils/taskDuration';
 import { Sequence, SequenceType } from '@/types/sequence';
 import { Resource, ResourceAssignment, ResourceType, ResourceCurve } from '@/types/resource';
 import { Project } from '@/types/project';
@@ -44,7 +44,7 @@ import {
 } from '@/services/xmlInterchange';
 import {
   canonicalizeBands, clockToMinutes, hasNonAnchorTime, isSubDayMinutes,
-  promoteHourCalendars, registerCalendarBands, registerExplicitHoursPerDay,
+  promoteHourCalendars, registerCalendarBands,
 } from '@/services/subdayIo';
 
 // De rauwe-bandenregistry en `synth*BandsFromScalar` staan in subdayIo. P6_NAME_TO_CURVE (P6-curvenaam
@@ -858,6 +858,21 @@ function readP6XmlProject(scope: P6XmlScope): P6XmlProjectRead {
   // P6 valt terug op de scalar-synth zodra de geregistreerde canonical geen werkdag draagt
   // (preferCanonicalWhenEmpty = false) — zie `promoteHourCalendar`.
   const hourModeCalIds = promoteHourCalendars(calById, id => cSignalCalIds.has(id), false);
+  // Een eigen `HoursPerDay` uit het bestand (authoritatief, zie `readP6Calendar`) gaat na de promotie
+  // terug, zoals bij XER en IFC: de omrekening tussen dagen en uren mag afwijken van de blokken.
+  const restoreFileHoursPerDay = (cal: WorkCalendar | undefined, calEl: Element | undefined): void => {
+    const fileHpd = calEl ? getElementFloat(calEl, 'HoursPerDay') : 0;
+    if (cal && fileHpd > 0) cal.hoursPerDay = fileHpd;
+  };
+  restoreFileHoursPerDay(calendar, projectCalEl);
+  const restoredCalIds = new Set<string>(); // per ObjectId telt het eerste element, zoals hierboven
+  for (const calEl of calElements) {
+    if (calEl === projectCalEl) continue;
+    const calId = calObjIdToId.get(getElementInt(calEl, 'ObjectId', -1));
+    if (calId === undefined || restoredCalIds.has(calId)) continue;
+    restoredCalIds.add(calId);
+    restoreFileHoursPerDay(calById.get(calId), calEl);
+  }
 
   // "Datums zoals opgeslagen" voor P6 XML: P6's EIGEN rekenuitvoer per activiteit —
   // `EarlyStartDate`/`EarlyFinishDate` (terugval `StartDate`/`FinishDate`), `LateStartDate`/
@@ -913,7 +928,11 @@ function readP6XmlProject(scope: P6XmlScope): P6XmlProjectRead {
       const floatDays = (raw: string): number | undefined => {
         if (!raw) return undefined;
         const hours = Number.parseFloat(raw);
-        return Number.isFinite(hours) ? recordedFloatDays(hours * 60, effHpd * 60) : undefined;
+        // Op een uurkalender in werktijd per dag, zoals XER (`readXerRecordedTimes`): de werktijd rekent
+        // en toont (eigenaarsbesluit 2026-10-15, "een dag"); de opgeslagen `HoursPerDay` telt hier niet.
+        return Number.isFinite(hours)
+          ? recordedFloatDays(hours * 60, effHoursPerDay(calById.get(effCalId) ?? calendar) * 60)
+          : undefined;
       };
       const criticalRaw = getElementText(actEl, 'IsCritical');
       const recorded = buildRecordedTime({
@@ -1315,8 +1334,7 @@ function readP6Calendar(calEl: Element, lastMinute = false): WorkCalendar {
   delete calendar.generation;
 
   const hpd = getElementFloat(calEl, 'HoursPerDay');
-  // Authoritatief — StandardWorkWeek-uren en de uur-promotie overschrijven dit niet.
-  if (hpd > 0) { calendar.hoursPerDay = hpd; registerExplicitHoursPerDay(calendar); }
+  if (hpd > 0) calendar.hoursPerDay = hpd; // authoritatief — StandardWorkWeek-uren overschrijven dit niet
 
   // Werkweek + feestdagen — golden rule: geen <StandardWorkWeek>/<HolidayOrExceptions> (ander tool /
   // oud bestand) ⇒ createDefaultCalendar()-defaults blijven staan.
