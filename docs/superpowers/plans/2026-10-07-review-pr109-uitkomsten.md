@@ -1061,3 +1061,15 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   (`workTriangle.ts:97`) rondt de afgeleide duur van een dagtaak naar boven af op hele werkdagen (nooit < 1 dag), het
   werk blijft exact, de laatste dag is niet vol; spec §6.1 (BEREDENEERD; MSP kent 0,5 d). Geen apart eigenaarsbesluit
   over de afronding gevonden.
+- Eigenaar 2026-10-15, hypothetisch: "is het logisch of haalbaar en een goede route om ooit in de toekomst volledig over
+  te stappen op uren?" Antwoord orkestrator: ja als intern alles minuten wordt en dagen alleen weergave/invoer (zoals
+  P6/MSP), nee als de gebruiker alles in uren ziet; omvang `isHourMode` 120× in 20 bestanden, `durationUnit` 124× in 31,
+  `enableHourPlanning` 149× in 91; route na de release als eigen etappe (eerst meten: profielcellen + snelheid). Geen
+  eerder besluit gevonden (kort gezocht). Geen opdracht.
+- **#361 resttempo** (expert Opus 5.5 xhigh): open (niet gemerged), concept, CI 16/16 op 4f0054cfe. Nieuw veld
+  `plannedUnitsPerDay` (IFC round-trip), keuzeregel `importedAssignmentRate` voor XER en P6 XML, P6 XML-writer houdt
+  `PlannedUnitsPerTime` = begroot. Corpus ⚠ 368 → 319 (Roads 25 → 0, rehab-2 7 → 0), inzet anders bij 1.149/61.859,
+  0 datumwijzigingen, `measure:profiles` main = branch, 9 mutanten rood. Histogram bij openen anders in rehab-2
+  (≤ 0,13 eenh./dag), Roads (resource 2970/A10540 450 → 360 h = `remain_qty`), BaselineProjects (≤ 0,005). Extra: kolom
+  *Begrote eenheden per dag*, MSPDI-export `Units` = resttempo, extensiecontract verliest het veld. Review bij reviewer
+  (Opus 5.5, xhigh) gestart.
