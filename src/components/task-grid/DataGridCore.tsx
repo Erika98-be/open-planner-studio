@@ -27,6 +27,7 @@ import {
 import { sameCellAddress, type GridCellAddress, type GridSelectionState } from '@/engine/taskGrid/selection';
 import type { TaskColumnId } from '@/types/taskGrid';
 import { nextFrame } from '@/utils/nextFrame';
+import { TASK_LIST_OVERLAY_SCROLLBAR_SIZE, TASK_LIST_SCROLL_END_PADDING } from '@/engine/taskGrid/scrollExtent';
 
 export interface DataGridCoreProps {
   rows: readonly DataGridRowModel[];
@@ -184,7 +185,7 @@ export function synchronizeDataGridScrollPosition(
 /** Dikte van de zwevende balken over de takenlijst. Gelijk aan `SCROLLBAR_GUTTER` in
  * GanttCanvas.tsx en de `::-webkit-scrollbar`-maat in globals.css: de strook is precies één balk
  * dik, zodat er naast de balk geen dode klikzone over de cellen ligt. */
-export const TASK_GRID_OVERLAY_SCROLLBAR_SIZE = 8;
+const TASK_GRID_OVERLAY_SCROLLBAR_SIZE = TASK_LIST_OVERLAY_SCROLLBAR_SIZE;
 
 interface DataGridScrollMetrics {
   scrollWidth: number;
@@ -257,10 +258,17 @@ export function DataGridCore({
   const pendingCellFocusRef = useRef<(() => void) | null>(null);
   const lastRequestedActiveKeyRef = useRef<string | null>(null);
   const [announcedMessage, setAnnouncedMessage] = useState('');
+  // Elke as volgt alleen zijn EIGEN prop. Een horizontale scroll (nieuwe `scrollLeft`) mag de
+  // verticale stand nooit terugzetten — ook niet als de store die stand ooit anders klemde dan de
+  // DOM (eigenaarsbevinding 2026-10-15: opzij schuiven onderaan liet de lijst omhoog springen).
   useEffect(() => {
     const container = containerRef.current;
-    if (container) synchronizeDataGridScrollPosition(container, scrollTop, scrollLeft);
-  }, [scrollLeft, scrollTop]);
+    if (container) synchronizeDataGridScrollPosition(container, scrollTop, container.scrollLeft);
+  }, [scrollTop]);
+  useEffect(() => {
+    const container = containerRef.current;
+    if (container) synchronizeDataGridScrollPosition(container, container.scrollTop, scrollLeft);
+  }, [scrollLeft]);
   const virtual = useMemo(() => computeVirtualWindow({
     totalRows: rows.length,
     rowHeight,
@@ -613,6 +621,13 @@ export function DataGridCore({
             role="presentation"
             data-grid-bottom-spacer={virtual.bottomSpacerHeight}
             style={{ height: virtual.bottomSpacerHeight }}
+          />
+          {/* Eindstrook onder de laatste rij (spookregel): zo blijft die rij boven de zwevende
+              horizontale balk zichtbaar. De Gantt rekent met dezelfde hoogte (`scrollExtent.ts`). */}
+          <div
+            role="presentation"
+            data-grid-end-padding={TASK_LIST_SCROLL_END_PADDING}
+            style={{ height: TASK_LIST_SCROLL_END_PADDING }}
           />
         </div>
         <div aria-live="polite" aria-atomic="true" className="sr-only">

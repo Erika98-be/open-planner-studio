@@ -118,3 +118,106 @@ test('takenlijst heeft zwevende balken zonder gereserveerde strook; schuiven en 
     await expect.poll(() => selectedRowIs(page, aboveThumb)).toBe(true);
   }
 });
+
+/** Geef het raster tijd om uit te rollen; klaar als twee lezingen achter elkaar gelijk zijn. */
+async function settledScrollTop(core: Locator): Promise<number> {
+  let last = -1;
+  await expect.poll(async () => {
+    const top = await core.evaluate((node: HTMLElement) => node.scrollTop);
+    const settled = top === last;
+    last = top;
+    return settled;
+  }, { intervals: [120] }).toBe(true);
+  return last;
+}
+
+async function bottomGeometry(page: Page, lastTaskId: string) {
+  const geometry = await page.evaluate(() => {
+    const core = document.querySelector<HTMLElement>('.gantt-task-grid .task-grid-core')!;
+    const rows = [...core.querySelectorAll<HTMLElement>('[data-grid-data-row]')];
+    const ghost = rows.find(row => row.dataset.gridRowKey === 'ops-ghost-row');
+    const real = rows.filter(row => row !== ghost);
+    const last = real[real.length - 1].getBoundingClientRect();
+    // Niet gemount (niet onderaan): NaN laat de verwachtingen hieronder leesbaar falen.
+    const ghostBox = ghost?.getBoundingClientRect() ?? { top: Number.NaN, bottom: Number.NaN };
+    const hBar = document.querySelector('.gantt-task-grid [data-testid="task-grid-hscroll"]')!.getBoundingClientRect();
+    return {
+      scrollTop: core.scrollTop,
+      maxScrollTop: core.scrollHeight - core.clientHeight,
+      scrollLeft: core.scrollLeft,
+      storeScrollY: window.__OPS__!.store.getState().view.scrollY,
+      lastRowMid: last.top + last.height / 2,
+      rowHeight: last.height,
+      ghostTop: ghostBox.top,
+      ghostBottom: ghostBox.bottom,
+      hBarTop: hBar.top,
+    };
+  });
+  const bar = await barPoint(page, lastTaskId);
+  return { ...geometry, ganttBarMid: bar.y };
+}
+
+test('helemaal onderaan: spookregel zichtbaar, opzij schuiven houdt de stand, tabel en Gantt op één hoogte', async ({ page, ops: _ops }) => {
+  const taskIds = await seedProject(page, Array.from({ length: 80 }, (_, index) => ({
+    name: `Onderrij ${index + 1}`,
+    start: '2026-09-07',
+    finish: '2026-09-11',
+    durationDays: 5,
+  })));
+  const lastTaskId = taskIds[taskIds.length - 1];
+  const core = page.locator('.gantt-task-grid .task-grid-core');
+  await expect(core).toBeVisible();
+  await expect(page.locator('.gantt-task-grid [data-testid="task-grid-hscroll"]')).toBeVisible();
+  const coreBox = await box(core);
+
+  // 1. Wiel boven de tabel tot helemaal onderaan.
+  await page.mouse.move(coreBox.x + coreBox.width / 2, coreBox.y + coreBox.height / 2);
+  for (let step = 0; step < 12; step++) await page.mouse.wheel(0, 600);
+  await settledScrollTop(core);
+  const bottom = await bottomGeometry(page, lastTaskId);
+  expect(bottom.scrollTop).toBe(bottom.maxScrollTop);
+  // De store (en dus de Gantt) staat op precies dezelfde stand: geen klem op een kleinere grens.
+  expect(bottom.storeScrollY).toBe(bottom.scrollTop);
+  // De spookregel staat volledig boven de zwevende horizontale balk.
+  expect(bottom.ghostBottom).toBeLessThanOrEqual(bottom.hBarTop + 0.5);
+  // Laatste taak: tabelrij en Gantt-balk op dezelfde hoogte (≤ 1 px), en de spookregel er direct onder.
+  expect(Math.abs(bottom.lastRowMid - bottom.ganttBarMid)).toBeLessThanOrEqual(1);
+  expect(Math.abs(bottom.ghostTop - (bottom.ganttBarMid + bottom.rowHeight / 2))).toBeLessThanOrEqual(1);
+
+  // 2. Opzij schuiven (Shift+wiel en de duim van de horizontale balk slepen): verticaal verandert niets.
+  // Eerst de duim naar rechts slepen, daarna met Shift+wiel boven de tabel een stuk terug.
+  const hBox = await box(page.locator('.gantt-task-grid [data-testid="task-grid-hscroll"]'));
+  await page.mouse.move(hBox.x + 24, hBox.y + hBox.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(hBox.x + 64, hBox.y + hBox.height / 2, { steps: 5 });
+  await page.mouse.up();
+  await expect.poll(() => core.evaluate((node: HTMLElement) => node.scrollLeft)).toBeGreaterThan(0);
+  const afterDrag = await core.evaluate((node: HTMLElement) => node.scrollLeft);
+  expect(await core.evaluate((node: HTMLElement) => node.scrollTop)).toBe(bottom.scrollTop);
+  await page.mouse.move(coreBox.x + coreBox.width / 2, coreBox.y + coreBox.height / 2);
+  await page.keyboard.down('Shift');
+  await page.mouse.wheel(0, -20);
+  await page.keyboard.up('Shift');
+  await expect.poll(() => core.evaluate((node: HTMLElement) => node.scrollLeft)).toBeLessThan(afterDrag);
+  await page.waitForTimeout(300);
+  const sideways = await bottomGeometry(page, lastTaskId);
+  expect(sideways.scrollLeft).toBeGreaterThan(0);
+  expect(sideways.scrollTop).toBe(bottom.scrollTop);
+  expect(sideways.storeScrollY).toBe(bottom.scrollTop);
+  expect(sideways.ghostBottom).toBeLessThanOrEqual(sideways.hBarTop + 0.5);
+  expect(Math.abs(sideways.lastRowMid - sideways.ganttBarMid)).toBeLessThanOrEqual(1);
+
+  // 3. Terug naar boven, dan met het wiel boven de Gantt helemaal naar beneden: zelfde eindstand.
+  for (let step = 0; step < 12; step++) await page.mouse.wheel(0, -600);
+  await expect.poll(() => core.evaluate((node: HTMLElement) => node.scrollTop)).toBe(0);
+  // Boven de Gantt schuift Shift+wiel de rijen (standaard wielmodus, zie gantt-split-scroll.spec.ts).
+  await page.mouse.move(coreBox.x + coreBox.width + 300, coreBox.y + coreBox.height / 2);
+  await page.keyboard.down('Shift');
+  for (let step = 0; step < 12; step++) await page.mouse.wheel(0, 600);
+  await page.keyboard.up('Shift');
+  await settledScrollTop(core);
+  const viaGantt = await bottomGeometry(page, lastTaskId);
+  expect(viaGantt.scrollTop).toBe(viaGantt.maxScrollTop);
+  expect(viaGantt.storeScrollY).toBe(viaGantt.scrollTop);
+  expect(Math.abs(viaGantt.lastRowMid - viaGantt.ganttBarMid)).toBeLessThanOrEqual(1);
+});

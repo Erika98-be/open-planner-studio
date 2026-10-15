@@ -355,15 +355,16 @@ let maxScrollY: number | null = null;
  */
 export function computeGanttScrollBounds(
   contentWidth: number,
-  viewRowCount: number,
-  rowHeight: number,
+  /** Schuifbare hoogte onder de kop: `taskListScrollContentHeight` (engine/taskGrid/scrollExtent),
+   *  dezelfde als die van de takenlijst. Dan is de maximale verticale stand voor beide gelijk. */
+  contentHeight: number,
   headerHeight: number,
   canvasWidth: number,
   canvasHeight: number,
 ): { maxScrollX: number; maxScrollY: number } {
   return {
     maxScrollX: Math.max(0, contentWidth - canvasWidth),
-    maxScrollY: Math.max(0, viewRowCount * rowHeight - (canvasHeight - headerHeight)),
+    maxScrollY: Math.max(0, contentHeight - (canvasHeight - headerHeight)),
   };
 }
 
