@@ -389,6 +389,9 @@ const resources: Resource[] = [RCrew, RMember, REquip, RMat, RSub];
 // ── Toewijzingen: incl. twee assignments van DEZELFDE resource op één taak (M3-uniciteit) + curve ─
 const A1 = {
   id: 'a1', taskId: 't-x', resourceId: 'r-mem', unitsPerDay: 2, curve: 'BELL',
+  // Resttempo-besluit (2026-10-15): het begrote tempo naast een P6-resttempo, onderscheidend van
+  // `unitsPerDay` (een writer die de inzet terugschrijft, wordt zo niet stil goedgekeurd).
+  plannedUnitsPerDay: 1.111,
   // Z14: round-tript sinds OPS_Timephased — zie de KEEP-cel in ASSIGNMENT_CANON hieronder. Nog
   // ONGEVULD door de mpp-lezer (Z8, aparte taak); dit test alleen de opslag-/round-trip-laag.
   workWindowStart: '2026-07-06', workWindowFinish: '2026-07-08',
@@ -703,6 +706,8 @@ const ASSIGNMENT_CANON = {
   taskId: { as: 'task', get: (a: ResourceAssignment, k: Keys) => k.task(a.taskId) },
   resourceId: { as: 'resource', get: (a: ResourceAssignment, k: Keys) => k.res(a.resourceId) },
   unitsPerDay: KEEP, curve: KEEP,
+  // Resttempo-besluit (2026-10-15): het begrote tempo in het `OPS_Timephased`-JSON-blob — echte KEEP.
+  plannedUnitsPerDay: KEEP,
   // Z14: het timephased-venster round-trippt nu écht via het nieuwe `OPS_Timephased`-JSON-pset
   // (ifcWriter.writeTimephasedMeta / ifcReader.extractAssignments) — echte KEEP-vergelijking.
   // Nog ONGEVULD door de mpp-lezer (Z8, aparte taak) — dit is puur de opslag-/round-trip-laag.

@@ -10,6 +10,7 @@ import { assignmentCurveState, contouredAssignmentIds } from '@/engine/contour/c
 import { ContourDialog } from '@/components/dialogs/ContourDialog';
 import { matchContoursToAssignments } from '@/engine/contour/contourEngine';
 import { effectiveWorkRule, remainingMinutesOf, workRuleApplies } from '@/engine/work/workRuleApply';
+import { assignmentWorkDeviation } from '@/engine/work/assignmentWorkDeviation';
 import { ruleProtectsWork } from '@/engine/work/workTriangle';
 import { taskTypesUnlocked } from '@/state/taskTypesVisibility';
 import { taskCalendarHoursPerDay } from '@/utils/taskDefaults';
@@ -150,17 +151,6 @@ export function TaskAssignmentsSection({ taskId }: { taskId: string }) {
     return Math.round((minutes / 60) * 100) / 100;
   };
   const lockTitle = t('properties.assignments.locked', { rule: t(`workRule.${rule}`) });
-  /** Opgeslagen werk dat afwijkt van
-   *  inzet × restduur (bv. een P6-toewijzing met een eigen spanne binnen de taak) krijgt een
-   *  markering — géén stille aanpassing van de inzet (brondata). Niet bij een contour: die
-   *  vormt de inzet per dag zelf. Tolerantie 1 % (en minstens een minuut) tegen afronding. */
-  const workDeviation = (assignmentId: string, unitsPerDay: number, stored: number | undefined): { stored: number; derived: number } | null => {
-    if (stored === undefined || contourOf.has(assignmentId)) return null;
-    const derived = remainingMinutesOf(task, { hoursPerDay }) * unitsPerDay;
-    if (Math.abs(stored - derived) <= Math.max(1, 0.01 * Math.max(stored, derived))) return null;
-    const hours = (minutes: number) => Math.round((minutes / 60) * 100) / 100;
-    return { stored: hours(stored), derived: hours(derived) };
-  };
 
   return (
     <>
@@ -229,7 +219,9 @@ export function TaskAssignmentsSection({ taskId }: { taskId: string }) {
                         className="input !text-small !px-1 !py-0.5 !w-[calc(var(--text-small)*5)] text-right"
                       />
                       {(() => {
-                        const deviation = workDeviation(a.id, a.unitsPerDay, a.remainingWorkMinutes);
+                        // Opgeslagen werk dat afwijkt van inzet × restduur krijgt een markering
+                        // (zelfde regel als de planningssuite toetst).
+                        const deviation = assignmentWorkDeviation(task, a.unitsPerDay, a.remainingWorkMinutes, hoursPerDay, contourOf.has(a.id));
                         return deviation && (
                           <span
                             className="shrink-0 inline-flex items-center"

@@ -158,6 +158,8 @@ export const ASSIGNMENT_FIELD_COVERAGE = {
   taskId: field('technical', 'assignment.taskId'),
   resourceId: field('composite', 'assignment.resources', 'assignment.resourceId'),
   unitsPerDay: field('direct', 'assignment.unitsPerDay'),
+  // Begroot tempo naast een P6-resttempo: alleen-lezen technische kolom.
+  plannedUnitsPerDay: field('technical', 'assignment.plannedUnits'),
   curve: field('direct', 'assignment.curve'),
   workWindowStart: field('technical', 'assignment.workWindowStart'),
   workWindowFinish: field('technical', 'assignment.workWindowFinish'),
