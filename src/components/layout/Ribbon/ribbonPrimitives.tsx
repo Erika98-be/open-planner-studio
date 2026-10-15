@@ -135,7 +135,7 @@ function ribbonButton(
   // naamloos zijn. Een expliciete `title` (bv. de Relatie-knop) wint. Een zacht afbreekstreepje
   // (U+00AD, bv. nl "Project­instellingen") hoort alleen bij het afbreken van het label, niet in
   // de tooltip of de toegankelijke naam.
-  const tip = title ?? label.replace(/­/g, '');
+  const tip = title ?? label.replace(/\u00ad/g, '');
   return (
     <button
       className={cls.join(' ')}
