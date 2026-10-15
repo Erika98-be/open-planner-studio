@@ -973,3 +973,11 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   invoer; corpus rehab-2 14.459/52.640 toewijzingen met afwijkend resttarief), besluit 10 (2026-09-05: geen spanne per
   toewijzing; de oorzaak bij A10530 is waarschijnlijk zo'n eigen spanne in P6 — VERMOED, niet nagekeken). Mogelijk
   besluit na de check: opgeslagen werk toch rechtzetten?
+- **Correctie orkestrator bij checkstap 16 (2026-10-15), na nakijken van de XER** (`Roads_Project_TEC.xer`, TASK 85140
+  / TASKRSRC Foreman): de Foreman heeft GEEN eigen spanne (target/restart/reend gelijk aan de taak, 23-04 07:00–16:00).
+  P6 bewaart twee tarieven: begroot `target_qty_per_hr` 1,111 (`target_qty` 10 h) en rest `remain_qty_per_hr` 34
+  (`remain_qty` 306 h); 34 × 9 h = 306 h, dus in P6 klopt het. De app toont het begrote tarief (1,111) naast het
+  restwerk (306 h) ⇒ het ⚠ ontstaat in de app, niet in het bestand. Idem General worker (begroot 2,22/h, rest 1/h, 9 h).
+  De eerdere uitleg "eigen spanne in P6" (VERMOED) was fout. Taak-duur: `target_drtn_hr_cnt` 9 = `remain_drtn_hr_cnt` 9
+  (planner-invoer). Bevinding voor na de check: inzet bij restwerk = resttarief tonen/gebruiken? Tooltiptekst "the
+  units stay as the file gave them" misleidt (het bestand geeft twee tarieven).
