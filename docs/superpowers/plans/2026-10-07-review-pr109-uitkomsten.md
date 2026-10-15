@@ -1172,3 +1172,8 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
 - **#365 hernoeming** (worker Opus 5.5 medium): open (niet gemerged), concept, CI groen op 2b83e1e9c. Ook `backstage.
   settings` (zijbalk File) hernoemd, dode sleutels uit alle 28 locales, 82 gidsbestanden, nl-lintlabel met zacht
   afbreekstreepje (`Project­instellingen`). Review bij reviewer (Opus 5.5, xhigh) gestart; daarna check eigenaar.
+- **#364 nieuw project tijdlijn** (worker Opus 5.5 medium): open (niet gemerged), concept, CI 16/16 op 61bddf800.
+  Oorzaak: lege Gantt begint bij vroegste feestdag − 14 d (feestdagen vanaf startjaar − 1) met `scrollX` 0; fix via
+  `pendingFit` in `createNewProject` + `computeEmptyProjectScrollX`. Bijvangst: na een nieuw project blijven de balk
+  "hour-based planning" en de melding "calculates as Microsoft Project" van het vorige `.mpp` staan; Ctrl+Home op leeg
+  project. Review bij reviewer (Opus 5.5, xhigh) gestart.
