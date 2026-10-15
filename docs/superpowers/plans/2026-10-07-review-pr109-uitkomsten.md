@@ -1073,3 +1073,12 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   (≤ 0,13 eenh./dag), Roads (resource 2970/A10540 450 → 360 h = `remain_qty`), BaselineProjects (≤ 0,005). Extra: kolom
   *Begrote eenheden per dag*, MSPDI-export `Units` = resttempo, extensiecontract verliest het veld. Review bij reviewer
   (Opus 5.5, xhigh) gestart.
+- Eigenaar 2026-10-15: "kan ik weer wat besluiten of testen?" Zonder eigenaar gestart (eigen waarnemingen, duidelijke
+  fouten): worker (Opus 5.5, medium) `claude/melding-weg-na-undo` (melding "573 tasks moved" na Ctrl+Z; eerst meten of
+  hij vanzelf verdwijnt; orkestratorbesluit: ongedaan maken ⇒ melding over die actie weg) en worker (Opus 5.5, medium)
+  `claude/nieuw-project-tijdlijn` (leeg nieuw project toont december 2024). Besluit voorgelegd: hernoemen *Project info*.
+  Feiten: lint *Settings*-tab heeft [Project info] (projectvenster, ook rekenprofiel/opties "horen bij het bestand") en
+  [Settings] (`ribbon.projectSettings` = "Settings", opent het app-instellingenvenster `showSettingsDialog`).
+  `ribbon.projectSettingsTitle` ("Project settings") en `ribbon.projectInfoTitle` worden nergens gebruikt. "Project
+  info" staat ook in venstertitel, backstage-sectie en meldingen ("Change it via File → Project info → …"); 54
+  gidsbestanden nl/en.
