@@ -35,8 +35,8 @@ Each move is one step for *Undo* (Ctrl+Z).
 
 Look at the *WBS auto* button in *Planning › Structure*.
 
-- **On (the default in a new project).** The app renumbers the whole tree with every addition, deletion and move. The WBS code is then read-only: you cannot type it in the list or in the *Properties* panel. *Renumber WBS* is disabled.
-- **Off.** The codes stay as they are, also after moving and indenting. You type them yourself, in the *WBS* column or in the *WBS Code* field in *Properties*, or you have them renumbered once with *Renumber WBS*. That also overwrites codes you typed yourself.
+- **On (the default in a new project).** Also on after you open a file without this setting, if all WBS codes already match the numbering of the tree (1, 1.1, 1.2 …). The codes do not change. The app renumbers the whole tree with every addition, deletion and move. The WBS code is then read-only: you cannot type it in the list or in the *Properties* panel. *Renumber WBS* is disabled.
+- **Off.** The default in a file with its own codes, such as *A1000*, or with one code that differs from the tree. The codes stay as they are, also after moving and indenting. You type them yourself, in the *WBS* column or in the *WBS Code* field in *Properties*, or you have them renumbered once with *Renumber WBS*. That also overwrites codes you typed yourself.
 
 If you turn *WBS auto* on, the app numbers the tree at once. Both *WBS auto* and *Renumber WBS* can be reversed with *Undo*.
 
@@ -46,7 +46,7 @@ If you turn *WBS auto* on, the app numbers the tree at once. Both *WBS auto* and
 
 Alt+↑ and Alt+↓ do work in such a view, without a message. With only a filter you see the new order at once. With a sorting the order in the schedule does change, but you only see it after *Clear*.
 
-**WBS auto is off.** A new task gets the code that fits its place in the tree, even if another task already has that code. That way duplicate numbers can appear. After indenting, too, the codes no longer match the tree. *Renumber WBS* fixes both.
+**WBS auto is off.** This happens with a file that has its own codes, or with a file that saves the setting as *off*. A new task gets the code that fits its place in the tree, even if another task already has that code. That way duplicate numbers can appear. After indenting, too, the codes no longer match the tree. *Renumber WBS* fixes both.
 
 **A milestone gets subtasks.** A milestone is a moment and has no subtasks. The app removes the milestone flag and tells you.
 

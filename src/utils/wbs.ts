@@ -128,6 +128,29 @@ export function applyWbsNumbering(tasks: Task[]): void {
 }
 
 /**
+ * Zijn ALLE WBS-codes al precies de nummering van de boom (1, 1.1, 1.2.1 …)? Vergelijkt elke taak
+ * met {@link deriveWbsCodes} — dezelfde nummering als "WBS auto" en "Hernummer WBS", geen tweede
+ * kopie. Eén afwijking, een lege code of een eigen opbouw (P6 "OCEC9730") ⇒ false. Zonder taken ⇒
+ * false: dan valt er niets af te leiden.
+ */
+export function wbsCodesMatchTree(tasks: readonly Task[]): boolean {
+  if (tasks.length === 0) return false;
+  const codes = deriveWbsCodes(tasks);
+  return tasks.every(task => codes.get(task.id) === task.wbsCode);
+}
+
+/**
+ * Openroute (eigenaarsbesluit 2026-10-17): draagt het bestand geen `wbsAutoNumber`-vlag en zijn alle
+ * codes al gelijk aan de boomnummering, dan zet het openen "WBS auto" aan. De codes veranderen
+ * daardoor niet. Een vlag uit het bestand (ook `false`, uit `OPS_ProjectSettings`) blijft staan.
+ * Puur: geeft hetzelfde project terug als er niets verandert.
+ */
+export function inferWbsAutoNumberOnOpen<P extends { wbsAutoNumber?: boolean }>(project: P, tasks: readonly Task[]): P {
+  if (project.wbsAutoNumber !== undefined || !wbsCodesMatchTree(tasks)) return project;
+  return { ...project, wbsAutoNumber: true };
+}
+
+/**
  * Diepte per taak in de WBS-boom (1 = hoofdniveau), afgeleid van de ECHTE ouderketen en niet van
  * de `wbsCode`-tekst. Een IFC-import neemt de code uit
  * `IfcTask.Identification` over (vrije tekst, bv. `T107` of `1.0`), en `wbsAutoNumber` draait niet

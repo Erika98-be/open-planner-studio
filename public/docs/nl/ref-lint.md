@@ -94,7 +94,7 @@ Je kunt beide tegelijk aan hebben; een tweede klik op een knop zet die kant weer
 ### Planning › Structuur
 
 - **Codes & velden** — opent het venster *Codes & velden* voor activity codes en gebruikersvelden. Zie [Codes en eigen velden](docs://howto-codes-en-velden).
-- **WBS auto** — zet automatisch nummeren van de WBS-codes aan of uit. Standaard: uit. Aan: de hele boom wordt meteen hernummerd, de codes volgen daarna elke structuurwijziging en het veld *WBS Code* in het paneel en de dialoog wordt uitgeschakeld.
+- **WBS auto** — zet automatisch nummeren van de WBS-codes aan of uit. Standaard: aan in een nieuw project. In een geopend bestand zonder deze instelling: aan als alle codes al gelijk zijn aan de nummering van de boom, anders uit. Aan: de hele boom wordt meteen hernummerd, de codes volgen daarna elke structuurwijziging en het veld *WBS Code* in het paneel en de dialoog wordt uitgeschakeld.
 - **Hernummer WBS** — nummert de WBS-codes eenmalig opnieuw volgens de boompositie (1.2.3). Uitgeschakeld zolang *WBS auto* aan staat.
 - **Sjablonen** — uitklapmenu met opgeslagen WBS-sjablonen, elk met het aantal taken en relaties. Een klik voegt het sjabloon in onder de geselecteerde taak, of op het hoogste niveau zonder selectie. Het prullenbakje verwijdert een sjabloon. Zonder sjablonen staat er hoe je er een bewaart (rechtsklik op een samenvattingstaak, *Bewaar tak als sjabloon*). Zie [WBS-sjablonen bewaren en invoegen](docs://howto-wbs-sjablonen).
 - **Inspringen** — maakt de geselecteerde taken subtaak van hun voorgaande taak. Uitgeschakeld zonder selectie en zodra er gefilterd, gegroepeerd of gesorteerd wordt; de tooltip zegt dan *Niet beschikbaar tijdens filteren/groeperen/sorteren*.
