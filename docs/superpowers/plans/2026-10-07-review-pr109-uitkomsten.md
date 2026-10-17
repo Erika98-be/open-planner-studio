@@ -1431,3 +1431,9 @@ Testversie (release-check, poort 3049) is NIET bijgewerkt met de PR's van vandaa
 - Na de stop: **#371** kop 45103baf9 gepusht (fixronde 3 af, mutanten rood; CI en PR-tekst nog doen). **#374** kop
   afcd47f5f (WIP) gepusht: sneltoetspoort, vangnet met melding, ?-knop weg, `<bdi>`; nog doen: specs/i18n/docs opnieuw,
   schermbewijs bekijken, CI, PR-tekst.
+- **Voorlopige review #377 (gestopt, alleen code gelezen): NEE.** BLOKKEERT: in een project met dagkalender staan lijn
+  en label op de tijd (`statusDateTime.ts:524-526`), maar de solver gebruikt de tijd alleen in uurmodus
+  (`CPMSolver.ts:935-936`); het tijdveld verschijnt al bij *Urenplanning inschakelen* (UI-schakelaar) ⇒ lijn en
+  tijdveld alleen bij uurmodus van de kalender, of lijn op begin van de dag; gidsen aanpassen. Nog na te gaan: blijft de
+  tijd staan als je in het lint alleen de datum wijzigt? VERVOLG: tijdveld niet uitgeschakeld zonder statusdatum,
+  undo voegt datum+tijd samen (bestond al), i18n-ruis, los docblok, printbalken per dag.
