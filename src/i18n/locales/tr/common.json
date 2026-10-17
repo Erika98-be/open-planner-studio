@@ -876,7 +876,6 @@
     },
     "worktime": {
       "section": "Çalışma saatleri",
-      "derivedHpd": "Türetilmiş saat/gün:",
       "saveAsPreset": "Ön ayar olarak kaydet…",
       "saveAsPresetHint": "Geçerli çalışma saatlerini kendi ön ayarınız olarak (bu cihazda) kaydedin, böylece daha sonra herhangi bir projede yeniden kullanabilirsiniz.",
       "perWeekday": "Haftanın gününe göre ayarla…",

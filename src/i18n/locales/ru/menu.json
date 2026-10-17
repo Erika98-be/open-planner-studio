@@ -60,7 +60,6 @@
       "startHour": "Начало (час)",
       "endHour": "Окончание (час)",
       "hoursPerDay": "Часов в день",
-      "netHoursPerDay": "Чистых часов в день",
       "holidaysSection": "Праздничные дни",
       "holidayName": "Описание",
       "from": "С",

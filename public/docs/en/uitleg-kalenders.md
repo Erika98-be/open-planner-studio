@@ -9,7 +9,7 @@ A schedule counts in **work days**, not calendar days. "Five days of bricklaying
 Which days are work days is recorded in a **calendar**. A calendar fixes three things:
 
 - The **work week**: the weekdays on which work happens. By default that is Monday to Friday.
-- The **working times**: start, end and break. They give the **net hours per day**. By default that is 07:00 to 16:00 with an hour's break, so 8 hours.
+- The **working times**: start, end and break. They give the **standard workday**. By default that is 07:00 to 16:00 with an hour's break, so 8 hours.
 - The **holidays**: single days or whole periods on which no work happens, such as King's Day, Christmas or the construction holiday.
 
 A project has one library of calendars. One of them is the **project calendar**. It applies to every task that has no calendar of its own. You give another calendar to an individual task, for example a six-day work week for a subcontractor who also works on Saturdays. A resource can have its own calendar too, but that does something different (see below).

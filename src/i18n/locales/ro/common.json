@@ -914,7 +914,6 @@
     },
     "worktime": {
       "section": "Ore de lucru",
-      "derivedHpd": "Ore pe zi calculate:",
       "saveAsPreset": "Salvare ca preset…",
       "saveAsPresetHint": "Salvați orele de lucru curente ca preset propriu, pe acest dispozitiv, ca să le refolosiți în orice proiect.",
       "perWeekday": "Setare pe zi a săptămânii…",

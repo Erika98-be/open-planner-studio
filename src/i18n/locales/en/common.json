@@ -898,7 +898,6 @@
     },
     "worktime": {
       "section": "Working times",
-      "derivedHpd": "Derived hours/day:",
       "saveAsPreset": "Save as preset…",
       "saveAsPresetHint": "Save the current working times as your own preset (on this device) so you can reuse them in any project.",
       "perWeekday": "Set per weekday…",

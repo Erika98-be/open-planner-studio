@@ -872,7 +872,6 @@
     },
     "worktime": {
       "section": "Työajat",
-      "derivedHpd": "Johdetut tunnit/päivä:",
       "saveAsPreset": "Tallenna esiasetukseksi…",
       "saveAsPresetHint": "Tallenna nykyiset työajat omaksi esiasetukseksi tälle laitteelle. Silloin niitä voi käyttää myöhemmin missä tahansa projektissa.",
       "perWeekday": "Aseta viikonpäivittäin…",
