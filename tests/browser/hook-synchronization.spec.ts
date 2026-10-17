@@ -118,7 +118,7 @@ test('hook synchronization: een resourcetoewijzing wist geen niet-opgeslagen taa
   await expect(description).toHaveValue('Nog niet opgeslagen omschrijving');
   // De echte klik op de keuzelijst haalt de focus uit het duurveld; dat schrijft "13d" bij blur als
   // "13" met de eenheid dagen. De waarde zelf blijft staan (en is na Opslaan 13, zie hieronder).
-  await expect(duration).toHaveValue(/^13d?$/);
+  await expect(duration).toHaveValue('13');
   await dialog.locator('[data-ops-task-save]').click();
 
   await expect.poll(() => page.evaluate((id) => {

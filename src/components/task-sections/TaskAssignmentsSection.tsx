@@ -1,10 +1,9 @@
-import { useMemo, useState, type KeyboardEvent } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppStore } from '@/state/appStore';
 import type { ResourceCurve } from '@/types/resource';
 import { UnitsInput } from '@/components/common/UnitsInput';
 import { Select, type SelectOption } from '@/components/common/Select';
-import { formatReportNumber } from '@/utils/reportNumber';
 import { AlertTriangle, BarChart3, Lock, Trash2 } from 'lucide-react';
 import { RESOURCE_CURVES, CURVE_KEY } from './shared';
 import { isSummaryTask } from '@/utils/taskHierarchy';
@@ -28,50 +27,16 @@ const CONTOURED = '__contoured';
 const IMPORTED_CURVE = '__importedCurve';
 
 /**
- * Werkinvoer in uren die pas op Enter/blur commit — anders zou elke
- * toetsaanslag ("6" op weg naar "64") een eigen driehoekstap, undo-stap en contour-/venster-nazorg
- * afvuren. Ongeldig (≤ 0 of geen getal) ⇒ rode rand, geen commit, terug naar de getoonde waarde.
- * Tekstveld met `inputMode="decimal"` in de getalnotatie van de app (komma of punt), zoals de
- * inzet: een `type="number"` reserveert in Chromium ruimte voor een spinknop en knipte "306" af.
- */
-function WorkHoursInput({ value, onCommit, ariaLabel, title, className, locale }: {
-  value: number; onCommit: (hours: number) => void; ariaLabel: string; title: string; className: string; locale: string;
-}) {
-  const [draft, setDraft] = useState<string | null>(null);
-  const shown = draft ?? formatReportNumber(value, locale);
-  const parsed = parseFloat(shown.replace(',', '.'));
-  const invalid = draft !== null && !(Number.isFinite(parsed) && parsed > 0);
-  const commit = () => {
-    if (draft !== null && Number.isFinite(parsed) && parsed > 0 && parsed !== value) onCommit(parsed);
-    setDraft(null);
-  };
-  const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') { e.preventDefault(); commit(); (e.target as HTMLInputElement).blur(); }
-    if (e.key === 'Escape') { setDraft(null); (e.target as HTMLInputElement).blur(); }
-  };
-  return (
-    <input
-      type="text"
-      inputMode="decimal"
-      value={shown}
-      title={title}
-      aria-label={ariaLabel}
-      aria-invalid={invalid}
-      className={className}
-      onChange={e => setDraft(e.target.value)}
-      onBlur={commit}
-      onKeyDown={onKeyDown}
-    />
-  );
-}
-
-/**
  * Keuzelijst "verplaats naar…" die zijn opties pas bouwt als de gebruiker hem opent (focus of
  * muisklik). Op een groot project zijn dat duizenden opties per toewijzingsrij; die bij elke
  * render bouwen maakte selecteren en bewerken onbruikbaar (prestatiemeting rehab-2, 2026-10-07).
  * De eigen `Select` (nooit native, besluit eigenaar 2026-10-15) heeft geen open-event; de omhulling
  * luistert daarom zelf naar `pointerdown` en focus. `pointerdown` is een discreet React-event: de
  * state-update rendert synchroon, dus de opties staan er al als de klik de lijst openklapt.
+ * Hermeting 2026-10-17 (rehab-2.xer, 6978 taken, 40 taken met toewijzingen selecteren): lui
+ * mediaan 120–131 ms, met de lijst bij elke render 189 ms. De omhulling blijft dus.
+ * `data-ops-assignment-move-options` telt de gebouwde opties; de browsertest toetst daarop dat er
+ * vóór focus niets gebouwd is.
  */
 function MoveToSelect({ label, candidates, onMove }: {
   label: string; candidates: () => Task[]; onMove: (targetTaskId: string) => void;
@@ -91,6 +56,7 @@ function MoveToSelect({ label, candidates, onMove }: {
         if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setOpen(false);
       }}
       data-ops-assignment-move={open ? 'open' : 'closed'}
+      data-ops-assignment-move-options={options.length}
     >
       <Select
         value=""
@@ -248,7 +214,10 @@ export function TaskAssignmentsSection({ taskId }: { taskId: string }) {
                     <span className="w-[calc(var(--text-small)*5)] shrink-0 text-right text-text-secondary" data-ops-assignment-work="material">—</span>
                   ) : (
                     <span className="shrink-0 flex items-center" data-ops-assignment-work={a.remainingWorkMinutes !== undefined ? 'stored' : 'derived'}>
-                      <WorkHoursInput
+                      {/* Werk in uren: zelfde veld als de inzet. Het commit pas op Enter/blur —
+                          anders zou elke toetsaanslag ("6" op weg naar "64") een eigen
+                          driehoekstap, undo-stap en contour-nazorg afvuren. */}
+                      <UnitsInput
                         value={remainingHoursOf(a.id, a.unitsPerDay, a.remainingWorkMinutes)}
                         title={t('properties.assignments.workHint')}
                         ariaLabel={`${t('properties.assignments.work')} — ${res?.name ?? a.resourceId}`}
@@ -258,8 +227,11 @@ export function TaskAssignmentsSection({ taskId }: { taskId: string }) {
                       />
                     </span>
                   ))}
-                  <div className="flex shrink-0 items-center gap-1" data-ops-assignment-curve-group>
-                    <div className="shrink-0" title={contoured ? t('properties.assignments.contouredHint') : t('properties.assignments.curve')} data-ops-assignment-curve={curveValue}>
+                  {/* `min-w-0` op de groep én de omhulling: bij een smal paneel met een grote
+                      tekstschaal (uk/ru/pl op 125 %) krimpt de trigger met een ellips in plaats van
+                      buiten het paneel te vallen. */}
+                  <div className="flex min-w-0 max-w-full items-center gap-1" data-ops-assignment-curve-group>
+                    <div className="min-w-0" title={contoured ? t('properties.assignments.contouredHint') : t('properties.assignments.curve')} data-ops-assignment-curve={curveValue}>
                       <Select
                         value={curveValue}
                         disabled={contoured}
@@ -267,6 +239,9 @@ export function TaskAssignmentsSection({ taskId }: { taskId: string }) {
                         options={curveOptions}
                         fitWidestOption
                         onChange={v => {
+                          // Dezelfde keuze opnieuw is geen wijziging: `updateAssignment` met `curve`
+                          // wist de geïmporteerde exacte curve (`curveValues`, P6/MSPDI).
+                          if (v === curveValue) return;
                           if (v === CONTOURED || v === IMPORTED_CURVE) return;
                           updateAssignment(a.id, { curve: v as ResourceCurve });
                         }}
@@ -304,7 +279,7 @@ export function TaskAssignmentsSection({ taskId }: { taskId: string }) {
                 aria-label={t('properties.assignments.add')}
                 options={availableResources.map(r => ({ value: r.id, label: r.name || r.id }))}
                 onChange={v => { if (v) assignResource(taskId, v, 1); }}
-                className="ops-select__trigger--duration"
+                className="!h-9 !py-0 !px-2.5 !text-small !leading-4"
               />
             </div>
           ) : (

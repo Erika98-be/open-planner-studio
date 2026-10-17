@@ -149,6 +149,8 @@ test('occupancy ververst na actieve-documentedit zonder documentwissel', async (
   // focuswissel midden in `fill`, dan belandt de tekst in de taaknaam (CI-run 36032473792).
   await expect(taskDialog.locator('input:focus')).toHaveCount(1);
   await units.fill('1.5');
+  // Het inzetveld commit op Enter of blur, niet per toetsaanslag.
+  await units.press('Enter');
 
   await expect.poll(() => row.innerText()).not.toBe(beforeText);
   expect((await state(page)).activeDocumentId).toBe(documentId);

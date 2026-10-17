@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test';
-import { expect, seedProject, test } from './fixtures/ops';
+import { expect, seedProject, test, waitForOps, waitForWelcomeDialog } from './fixtures/ops';
 
 // Het blok *Toewijzingen* in het taakpaneel (eigenaar 2026-10-15, testversie met Roads A10530):
 // 1. de inzet toont hooguit twee decimalen; de opgeslagen waarde blijft exact tot de gebruiker hem
@@ -44,10 +44,27 @@ async function seedBlock(page: Page, panelWidth: number) {
 const assignmentOf = (page: Page, id: string) => page.evaluate(
   (aid) => {
     const a = window.__OPS__!.store.getState().assignments.find(x => x.id === aid);
-    return a ? { units: a.unitsPerDay, curve: a.curve ?? 'UNIFORM', taskId: a.taskId } : null;
+    return a ? {
+      units: a.unitsPerDay, curve: a.curve ?? 'UNIFORM', taskId: a.taskId,
+      curveValues: a.curveValues?.length ?? 0, work: a.remainingWorkMinutes,
+    } : null;
   },
   id,
 );
+
+/** App-taal kiezen zoals een gebruiker die hem eerder koos (opgeslagen voorkeur), daarna herladen. */
+async function useLocale(page: Page, locale: string) {
+  await page.evaluate((l) => localStorage.setItem('ops-locale', l), locale);
+  await page.reload();
+  await waitForOps(page);
+  await waitForWelcomeDialog(page);
+  await page.evaluate(() => {
+    const s = window.__OPS__!.store.getState();
+    s.newProject();
+    s.setUI({ showWelcomeDialog: false, showTourOverlay: false });
+  });
+  await expect.poll(() => page.evaluate(() => document.documentElement.lang)).toBe(locale);
+}
 
 test('inzet: toont twee decimalen, focus en blur zonder wijziging laten de opslag exact', async ({ page, ops: _ops }) => {
   const { unitsId } = await seedBlock(page, 280);
@@ -172,4 +189,131 @@ test('keuzelijsten: geen native select; curve, verplaatsen en toewijzen werken m
     return s.assignments.filter(a => a.taskId === id).map(a => s.resources.find(r => r.id === a.resourceId)!.name).sort();
   }, taskId);
   expect(names).toEqual(['Foreman', 'Opperman', 'Transit mixer']);
+});
+
+test('curve: dezelfde curve opnieuw kiezen laat de geïmporteerde P6-curve staan', async ({ page, ops: _ops }) => {
+  const { unitsId } = await seedBlock(page, 280);
+  // Fixture: een P6-import met naamterugval én de exacte 21 waarden.
+  await page.evaluate((id) => {
+    window.__OPS__!.store.setState(st => {
+      const a = st.assignments.find(x => x.id === id)!;
+      a.curve = 'FRONT_LOADED';
+      a.curveValues = Array.from({ length: 21 }, (_, i) => 21 - i);
+    });
+  }, unitsId);
+  const curve = page.locator(`[data-ops-assignment-row="${unitsId}"] [data-ops-assignment-curve] button`);
+  await expect(curve).toHaveAttribute('data-value', 'FRONT_LOADED');
+  expect((await assignmentOf(page, unitsId))!.curveValues).toBe(21);
+
+  // Enter + Enter: openen, de actieve (huidige) optie kiezen.
+  await curve.focus();
+  await page.keyboard.press('Enter');
+  await expect(curve).toHaveAttribute('aria-expanded', 'true');
+  await page.keyboard.press('Enter');
+  await expect(curve).toHaveAttribute('aria-expanded', 'false');
+  // Spatie + Spatie.
+  await page.keyboard.press(' ');
+  await expect(curve).toHaveAttribute('aria-expanded', 'true');
+  await page.keyboard.press(' ');
+  await expect(curve).toHaveAttribute('aria-expanded', 'false');
+  // Klik op dezelfde optie.
+  await curve.click();
+  await page.getByRole('listbox').locator('[data-value="FRONT_LOADED"]').click();
+  await expect(curve).toHaveAttribute('aria-expanded', 'false');
+
+  const after = (await assignmentOf(page, unitsId))!;
+  expect([after.curve, after.curveValues]).toEqual(['FRONT_LOADED', 21]);
+  // Een ándere curve vervangt de importcurve wél (bestaand gedrag).
+  await curve.click();
+  await page.getByRole('listbox').locator('[data-value="BELL"]').click();
+  await expect.poll(async () => (await assignmentOf(page, unitsId))!.curveValues).toBe(0);
+});
+
+for (const locale of ['nl', 'en']) {
+  test(`invoer (${locale}): onzin commit niet, krijgt een rode rand en laat de oude waarde staan`, async ({ page, ops: _ops }) => {
+    await useLocale(page, locale);
+    const { unitsId, warnId } = await seedBlock(page, 280);
+    const units = page.locator(`[data-ops-assignment-row="${unitsId}"] input`).first();
+    const work = page.locator(`[data-ops-assignment-row="${warnId}"] [data-ops-assignment-work] input`);
+    const before = (await assignmentOf(page, warnId))!.work;
+    expect(before).toBe(306 * 60);
+    const shownUnits = locale === 'nl' ? '1,78' : '1.78';
+    await expect(units).toHaveValue(shownUnits);
+    await expect(units).toHaveAttribute('aria-invalid', 'false');
+
+    for (const bad of ['1.234,5', '1,234.5', '2x', '1e3', '-2', '']) {
+      // Echt typen, teken voor teken: ook een geldig voorvoegsel ("1.234") mag niet committen.
+      await units.click();
+      await units.press('Control+a');
+      if (bad) await page.keyboard.type(bad); else await page.keyboard.press('Backspace');
+      await expect(units).toHaveAttribute('aria-invalid', 'true');
+      await page.keyboard.press('Enter');
+      expect((await assignmentOf(page, unitsId))!.units, bad).toBe(EXACT);
+      // Na het verlaten staat de opgeslagen waarde er weer, zonder rode rand.
+      await expect(units).toHaveValue(shownUnits);
+      await expect(units).toHaveAttribute('aria-invalid', 'false');
+    }
+
+    // Werk: "1.234,5" werd eerder 1.234 uur = 74 min.
+    await work.click();
+    await work.press('Control+a');
+    await page.keyboard.type('1.234,5');
+    await expect(work).toHaveAttribute('aria-invalid', 'true');
+    await page.keyboard.press('Tab');
+    expect((await assignmentOf(page, warnId))!.work).toBe(before);
+    await expect(work).toHaveValue('306');
+    await expect(work).toHaveAttribute('aria-invalid', 'false');
+
+    // Escape zet terug zonder commit; een geldige waarde met het andere decimaalteken commit wel.
+    await units.click();
+    await units.press('Control+a');
+    await page.keyboard.type('3');
+    await page.keyboard.press('Escape');
+    expect((await assignmentOf(page, unitsId))!.units).toBe(EXACT);
+    await units.click();
+    await units.press('Control+a');
+    await page.keyboard.type(locale === 'nl' ? '0.5' : '0,5');
+    await page.keyboard.press('Enter');
+    await expect.poll(async () => (await assignmentOf(page, unitsId))!.units).toBe(0.5);
+  });
+}
+
+test('inzet: een kleine geldige waarde toont meer cijfers en geen rode rand', async ({ page, ops: _ops }) => {
+  const { unitsId } = await seedBlock(page, 280);
+  await page.evaluate((id) => window.__OPS__!.store.getState().updateAssignment(id, { unitsPerDay: 0.004 }), unitsId);
+  const units = page.locator(`[data-ops-assignment-row="${unitsId}"] input`).first();
+  await expect(units).toHaveValue(/^0[.,]004$/);
+  await expect(units).toHaveAttribute('aria-invalid', 'false');
+  // Focussen en verlaten wijzigt niets.
+  await units.click();
+  await page.keyboard.press('Tab');
+  expect((await assignmentOf(page, unitsId))!.units).toBe(0.004);
+  await expect(units).toHaveAttribute('aria-invalid', 'false');
+});
+
+test('curve: bij 200 px en 125 % in uk valt de knop binnen het paneel', async ({ page, ops: _ops }) => {
+  await useLocale(page, 'uk');
+  const { unitsId } = await seedBlock(page, 200);
+  await page.evaluate(() => window.__OPS__!.store.getState().setUI({ uiFontScale: 125 }));
+  // Het paneel draagt de veldenregel; de rand van de rail is de rand van het paneel.
+  await expect.poll(() => page.evaluate(() => window.__OPS__!.store.getState().ui.rightPanelWidth)).toBe(200);
+  const report = await page.evaluate(() => {
+    const rail = document.querySelector('[data-ops-rail]')!.getBoundingClientRect();
+    return [...document.querySelectorAll<HTMLElement>('[data-ops-assignment-curve] button, [data-ops-assignment-contour]')]
+      .map(el => {
+        const r = el.getBoundingClientRect();
+        return { left: r.left >= rail.left - 0.5, right: r.right <= rail.right + 0.5, width: r.width };
+      });
+  });
+  expect(report.length).toBe(4);
+  for (const r of report) {
+    expect(r.left).toBe(true);
+    expect(r.right).toBe(true);
+    expect(r.width).toBeGreaterThan(10);
+  }
+  // De curve blijft werken (krimpt met een ellips, maar opent en kiest).
+  const curve = page.locator(`[data-ops-assignment-row="${unitsId}"] [data-ops-assignment-curve] button`);
+  await curve.click();
+  await page.getByRole('listbox').locator('[data-value="BELL"]').click();
+  await expect.poll(async () => (await assignmentOf(page, unitsId))!.curve).toBe('BELL');
 });

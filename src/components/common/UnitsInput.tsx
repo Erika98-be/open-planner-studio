@@ -1,18 +1,22 @@
-import { useEffect, useState } from 'react';
-import { formatReportNumber } from '@/utils/reportNumber';
+import { useRef, useState, type KeyboardEvent } from 'react';
+import { formatDecimalInput, parsePositiveDecimal } from '@/utils/decimalInput';
 
 /**
- * Strikt-positief eenheden-invoerveld. Houdt een lokale draft-string
- * bij zodat de gebruiker vrij kan typen, wijst 0/negatieve/lege waarden visueel af (rode rand) en
- * commit ALLEEN geldige (> 0, eindig) waarden naar de store — nooit een clamp naar 0. Bij blur op
- * een ongeldige waarde valt het veld terug op de laatst geldige (opgeslagen) waarde. Fracties zijn
- * toegestaan (materiaal-max.eenheden, halve-dag-toewijzingen), dus `step="any"`.
+ * Strikt-positief eenheden-invoerveld. Houdt een lokale draft-string bij zodat de gebruiker vrij
+ * kan typen, wijst 0/negatieve/lege/onleesbare invoer visueel af (rode rand, `aria-invalid`) en
+ * commit ALLEEN geldige (> 0, eindig) waarden naar de store — nooit een clamp naar 0. De rode rand
+ * staat alleen op wat de gebruiker zelf typt, niet op een opgeslagen waarde. Bij blur op een
+ * ongeldige waarde valt het veld terug op de opgeslagen waarde. Fracties zijn toegestaan
+ * (materiaal-max.eenheden, halve-dag-toewijzingen). Invoer leest `parsePositiveDecimal` (strikt).
  *
- * Met `locale` toont het veld de getalnotatie van de app (`formatReportNumber`: hooguit twee
- * decimalen, decimaalteken van de taal) in een tekstveld met `inputMode="decimal"`; komma en punt
- * zijn dan allebei geldige invoer. De weergave rondt af, de opslag niet: alleen een echte
- * wijziging (`onChange`) commit, dus focussen en weer verlaten laat een geïmporteerde
- * 1.77777777777778 exact staan.
+ * Zonder `locale`: een `type="number"`-veld dat bij elke geldige toetsaanslag commit, zoals altijd.
+ *
+ * Met `locale`: een tekstveld met `inputMode="decimal"` in de getalnotatie van de app
+ * (`formatDecimalInput`: hooguit twee decimalen, decimaalteken van de taal, een kleine waarde met
+ * drie significante cijfers); komma en punt zijn allebei geldig. Het veld commit pas op Enter of
+ * blur, en alleen als de gebruiker iets typte: een half getypt getal ("1.234" op weg naar
+ * "1.234,5") komt dus nooit in de store, en focussen en weer verlaten laat een geïmporteerde
+ * 1.77777777777778 exact staan. Escape zet de opgeslagen waarde terug.
  */
 export function UnitsInput({
   value, onCommit, className = '', title, ariaLabel, onKeyDown, gridCell, locale,
@@ -23,46 +27,52 @@ export function UnitsInput({
   title?: string;
   ariaLabel?: string;
   /** Rasternavigatie (Enter/Shift+Enter) — het veld is een cel in een live tabel. */
-  onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+  onKeyDown?: (e: KeyboardEvent<HTMLInputElement>) => void;
   /** `data-ops-grid-cell`-adres van deze cel; `useLiveGridNav` focust hierop. */
   gridCell?: string;
-  /** App-taal voor de weergave (twee decimalen, decimaalteken van de taal). Zonder: de ruwe waarde
-   *  in een `type="number"`-veld, zoals altijd. */
+  /** App-taal voor de weergave. Zonder: de ruwe waarde in een `type="number"`-veld. */
   locale?: string;
 }) {
-  const shownOf = (n: number) => locale ? formatReportNumber(n, locale) : String(n);
-  const [draft, setDraft] = useState<string>(() => shownOf(value));
-  const [focused, setFocused] = useState(false);
+  // `null` = de gebruiker typt niet; het veld toont dan de opgeslagen waarde.
+  const [draft, setDraft] = useState<string | null>(null);
+  // Escape roept `blur()` aan; de blur-handler ziet dan nog de oude draft en mag die niet committen.
+  const discardOnBlur = useRef(false);
+  const text = draft ?? (locale ? formatDecimalInput(value, locale) : String(value));
+  const parsed = draft === null ? null : parsePositiveDecimal(draft);
+  const invalid = draft !== null && parsed === null;
 
-  // Zolang het veld niet in bewerking is, blijft de draft gelijk aan de opgeslagen waarde.
-  useEffect(() => {
-    if (!focused) setDraft(locale ? formatReportNumber(value, locale) : String(value));
-  }, [value, focused, locale]);
-
-  const parseDraft = (text: string) => parseFloat(locale ? text.replace(',', '.') : text);
-  const parsed = parseDraft(draft);
-  const invalid = !(Number.isFinite(parsed) && parsed > 0);
+  const commit = () => {
+    if (parsed !== null && parsed !== value) onCommit(parsed);
+    setDraft(null);
+  };
 
   return (
     <input
       {...(locale
         ? { type: 'text', inputMode: 'decimal' as const }
         : { type: 'number', min: '0', step: 'any' })}
-      value={draft}
+      value={text}
       title={title}
       aria-label={ariaLabel}
       aria-invalid={invalid}
       data-ops-grid-cell={gridCell}
-      onKeyDown={onKeyDown}
-      onFocus={() => setFocused(true)}
+      onKeyDown={e => {
+        // Enter verlaat het veld; de blur commit (één keer, één undo-stap).
+        if (locale && e.key === 'Enter') { e.preventDefault(); e.currentTarget.blur(); }
+        else if (locale && e.key === 'Escape') { discardOnBlur.current = true; setDraft(null); e.currentTarget.blur(); }
+        onKeyDown?.(e);
+      }}
       onChange={e => {
         setDraft(e.target.value);
-        const n = parseDraft(e.target.value);
-        if (Number.isFinite(n) && n > 0) onCommit(n);
+        if (!locale) {
+          const n = parsePositiveDecimal(e.target.value);
+          if (n !== null) onCommit(n);
+        }
       }}
       onBlur={() => {
-        setFocused(false);
-        if (invalid) setDraft(shownOf(value));
+        if (locale && !discardOnBlur.current) commit();
+        else setDraft(null);
+        discardOnBlur.current = false;
       }}
       className={className}
       style={invalid ? { borderColor: 'var(--error)', boxShadow: '0 0 0 1px var(--error)' } : undefined}

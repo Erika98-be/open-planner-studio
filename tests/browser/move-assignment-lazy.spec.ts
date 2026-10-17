@@ -28,6 +28,24 @@ test('verplaats naar…: opties pas na openen, keuze verplaatst de toewijzing', 
   // Dicht: geen kandidatenlijst in de DOM (eigen keuzelijst, nooit native — eigenaar 2026-10-15).
   await expect(move).toHaveAttribute('data-ops-assignment-move', 'closed');
   await expect(page.getByRole('listbox')).toHaveCount(0);
+  // Luiheid zelf: er IS een kandidaat (B), maar vóór focus is er geen enkele optie gebouwd. Ook een
+  // nieuwe render van het blok (fixture: inzet wijzigen via de brug) bouwt de lijst niet.
+  await expect(move).toHaveAttribute('data-ops-assignment-move-options', '0');
+  await page.evaluate((r) => {
+    const s = window.__OPS__!.store.getState();
+    const asg = s.assignments.find(x => x.resourceId === r)!;
+    s.updateAssignment(asg.id, { unitsPerDay: 1.5 });
+  }, resourceId);
+  await expect(page.locator('[data-ops-assignment-row] input').first()).toHaveValue(/^1[.,]5$/);
+  await expect(move).toHaveAttribute('data-ops-assignment-move-options', '0');
+
+  // Focus (Tab-route) bouwt de lijst, nog zonder hem te openen.
+  await trigger.focus();
+  await expect(move).toHaveAttribute('data-ops-assignment-move-options', '1');
+  await expect(page.getByRole('listbox')).toHaveCount(0);
+  // Focus weg ⇒ de lijst valt weer weg.
+  await page.locator('[data-ops-assignment-name]').first().click();
+  await expect(move).toHaveAttribute('data-ops-assignment-move-options', '0');
 
   // Openen met de muis bouwt de lijst: alleen B (C draagt de resource al, A is de bron).
   await trigger.click();
