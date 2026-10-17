@@ -337,9 +337,6 @@ test('eenheid kiezen zet een exacte duur meteen om en undo zet het in één stap
   await expect(duration.getByRole('button', { name: /(proposal|voorstel|Retain|Behouden)/i })).toHaveCount(0);
 
   // Eén undo-stap zet eenheid én duur samen terug; een tussenstand (alleen eenheid) mag niet bestaan.
-  // Na de muiskeuze staat de focus weer op de keuzelijst-trigger; daar gaan sneltoetsen (ook
-  // Ctrl+Z) bewust niet af, net als op een native <select>. Haal de focus er dus eerst af.
-  await duration.getByRole('button', { name: /^(Duration unit|Duureenheid)$/ }).evaluate(el => (el as HTMLElement).blur());
   await page.keyboard.press('ControlOrMeta+z');
   await expect.poll(readTime).toEqual({ unit: 'hours', days: 2, minutes: 960 });
   await expect(duration.locator('[data-ops-duration-value]')).toHaveValue('16');

@@ -62,8 +62,49 @@ test('Delete en Backspace in de open lijst en op de dichte trigger verwijderen d
   await expect(trigger).toBeFocused();
   await page.keyboard.press('Backspace');
   await page.keyboard.press('Delete');
+  // Ook met Ctrl: Delete en Backspace blijven op de trigger afgevangen.
+  await page.keyboard.press('Control+Delete');
+  await page.keyboard.press('Control+Backspace');
   expect(await taskIds(page)).toEqual([id]);
   expect(await selected(page)).toEqual([id]);
+
+  // En in de open lijst met Ctrl evenmin.
+  await trigger.click();
+  await expect(menu(page)).toBeVisible();
+  await page.keyboard.press('Control+Delete');
+  await page.keyboard.press('Control+Backspace');
+  expect(await taskIds(page)).toEqual([id]);
+});
+
+test('Ctrl+Z na een muiskeuze zet de keuze terug; in de open lijst doet Ctrl+Z niets', async ({ page, ops: _ops }) => {
+  const { id } = await seedPanel(page, true);
+  // De trigger toont na de keuze een andere tekst; zoek hem hier op zijn (Engelse) label.
+  const trigger = page.locator('button[aria-haspopup="listbox"][aria-label="Calendar"]');
+  await expect(trigger).toHaveCount(1);
+  const calendarOf = () => page.evaluate(taskId => window.__OPS__!.store.getState().tasks.find(t => t.id === taskId)!.calendarId ?? null, id);
+  expect(await calendarOf()).toBeNull();
+
+  // Muiskeuze: de focus staat daarna weer op de dichte trigger.
+  await trigger.click();
+  await menu(page).getByRole('option', { name: LONG_CALENDAR }).click();
+  await expect(menu(page)).toHaveCount(0);
+  await expect(trigger).toBeFocused();
+  const chosen = await calendarOf();
+  expect(chosen).not.toBeNull();
+
+  // Open lijst: Ctrl+Z blijft afgevangen, de keuze staat nog.
+  await trigger.click();
+  await expect(menu(page)).toBeVisible();
+  await page.keyboard.press('ControlOrMeta+z');
+  expect(await calendarOf()).toBe(chosen);
+  await page.keyboard.press('Escape');
+  await expect(menu(page)).toHaveCount(0);
+  await expect(trigger).toBeFocused();
+
+  // Dichte trigger: Ctrl+Z gaat door naar de globale undo.
+  await page.keyboard.press('ControlOrMeta+z');
+  await expect.poll(calendarOf).toBeNull();
+  expect(await taskIds(page)).toEqual([id]);
 });
 
 test('− en 0 in de open lijst zoomen de Gantt niet', async ({ page, ops: _ops }) => {

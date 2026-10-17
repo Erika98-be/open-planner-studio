@@ -93,7 +93,7 @@ export function useKeyboardShortcuts() {
       }
 
       const target = e.target as HTMLElement;
-      const typing = isTypingTarget(target);
+      const typing = isTypingTarget(target, e);
       if (shouldYieldClipboardShortcutToTaskGrid(e)) return;
 
       // Sneltoets-register: matcht in volgorde, stopt bij de EERSTE hit (zie shortcutRegistry.ts
