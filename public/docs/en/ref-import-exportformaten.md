@@ -96,7 +96,7 @@ Per file format: whether you can open, save and export it, what does and does no
 
 ## CSV
 
-**Open** — yes. The app reads `;` and `,` as separator. It recognises column headers in English and Dutch (for example `Name` or `Naam`, `Duration` or `Duur`, `Predecessors` or `Voorgangers`). Dates may be *yyyy-mm-dd*, *dd-mm-yyyy* or *dd/mm/yyyy*. You write a predecessor as WBS code, relation type and lag, for example `1.2FS+2d`. Calculation profile: *Open Planner Studio*. The project is called *CSV Import*. The `Task Type` column holds the work category, not the task type. A `Task Type` that is none of the fixed codes (such as `CONSTRUCTION` or `INSTALLATION`, which the app writes itself) becomes a custom work category under *From this project*, not in *My work categories*; with `OPS Custom Task Type ID` the id of a custom work category is kept.
+**Open** — yes. The app reads `;` and `,` as separator. It recognises column headers in English and Dutch (for example `Name` or `Naam`, `Duration` or `Duur`, `Predecessors` or `Voorgangers`). Dates may be *yyyy-mm-dd*, *dd-mm-yyyy* or *dd/mm/yyyy*. You write a predecessor as WBS code, relation type and lag, for example `1.2FS+2d`. Calculation profile: *Open Planner Studio*. The project is called *CSV Import*. The `Task Type` column holds the work category, not the task type; the app also reads the headers `Werksoort` and `Work category`. A `Task Type` that is none of the fixed codes (such as `CONSTRUCTION` or `INSTALLATION`, which the app writes itself) becomes a custom work category under *From this project*, not in *My work categories*; with `OPS Custom Task Type ID` the id of a custom work category is kept.
 
 **Save** — no.
 

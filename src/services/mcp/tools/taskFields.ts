@@ -587,7 +587,7 @@ export const TASK_FIELD_SCHEMA_PROPERTIES: Record<string, unknown> = {
     type: ['string', 'null'],
     enum: [...WORK_RULES, null],
     description:
-      'Task type (work rule; shown in the app as "Task type") of the task: which corner of work = remaining duration × units stays fixed when ' +
+      'Task type (`workRule`; shown in the app as "Task type") of the task: which corner of work = remaining duration × units stays fixed when ' +
       'another changes. FIXED_DURATION_RATE (default, MSP "Fixed Duration", not effort-driven): duration and ' +
       'units stay, the work follows. FIXED_DURATION_WORK (P6 "Fixed Duration & Units"): duration and work ' +
       'stay, the units follow. FIXED_WORK (MSP "Fixed Work", P6 "Fixed Units"): the work stays; more units ' +
