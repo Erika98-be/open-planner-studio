@@ -22,7 +22,7 @@ De **bouwvak** is de collectieve vakantie in de bouw, drie weken in de zomer. In
 
 Bij Nederland zet de app per jaar Nieuwjaar, Goede Vrijdag, Pasen (twee dagen), Koningsdag, Hemelvaart, Pinksteren (twee dagen) en Kerst (25 en 26 december) in de lijst. Valt Koningsdag op een zondag, dan staat hij op 26 april. Bevrijdingsdag staat er alleen in lustrumjaren, zoals 2025 en 2030.
 
-De jaren volgen de projectperiode: van het jaar vóór de startdatum tot het jaar na de einddatum. Heeft het project geen einddatum, dan tot drie jaar na het jaar van de start. Start en einde pas je aan onder *Instellingen › Project › Projectinfo*.
+De jaren volgen de projectperiode: van het jaar vóór de startdatum tot het jaar na de einddatum. Heeft het project geen einddatum, dan tot drie jaar na het jaar van de start. Start en einde pas je aan onder *Instellingen › Project › Projectinstellingen*.
 
 ### Opnieuw genereren na een nieuwe projectperiode
 
@@ -58,5 +58,5 @@ Kies bij *Land* de keuze *Geen feestdagen* en klik op *Genereren*. De lijst is d
 - [Kalenders en werkdagen](docs://uitleg-kalenders): hoe de app feestdagen en bouwvak meeneemt bij het tellen van werkdagen.
 - [Een kalender maken en toewijzen](docs://howto-kalender-maken-en-toewijzen): een eigen kalender maken waar je feestdagen in zet.
 - [Kalendervensters](docs://ref-kalenders): alle velden van de kalendervensters.
-- [Nieuw project en Projectinfo](docs://ref-projectinfo): de feestdagenset bij een nieuw project.
+- [Nieuw project en Projectinstellingen](docs://ref-projectinfo): de feestdagenset bij een nieuw project.
 - [6 New Terraced Houses, De Akkers](examples://showcase-rijwoningen-de-akkers.ifc): de projectkalender heeft naast de feestdagen een vrije periode *Frost delay, foundations* (vorstverlet).

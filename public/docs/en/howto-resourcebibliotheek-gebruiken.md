@@ -22,7 +22,7 @@ For a new project:
 
 For an existing project:
 
-1. Choose *File › Project info*.
+1. Choose *File › Project settings*.
 2. Under *Resource library*, choose the library.
 3. Click *Apply*. Until then the bottom says *Changes not applied — click Apply to keep them.*
 

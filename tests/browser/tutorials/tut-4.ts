@@ -29,7 +29,7 @@ export const TUTORIAL_4: TutorialScript = {
     {
       id: 'urenplanning',
       do: [
-        { ribbon: 'instellingen:projectSettings', label: l('Instellingen', 'Settings') },
+        { ribbon: 'instellingen:projectSettings', label: l('App-instellingen', 'App settings') },
         { waitFor: dialog },
         { click: { button: l('Planning', 'Planning'), within: dialog } },
         { click: { text: l('Urenplanning inschakelen', 'Enable hour planning'), within: dialog } },

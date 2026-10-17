@@ -40,13 +40,13 @@ De solver krijgt uitsluitend `EffectiveSchedulingOptions` via `solveOptionsFor`/
 (`src/engine/scheduler/solveInput.ts`) — `CPMOptions.schedulingOptions` is verplicht dat type, dus een
 aanroeper die het profiel overslaat compileert niet. Lezers stellen het profiel voor
 (`ImportResult.suggestedProfileId`: XER ⇒ p6, `.mpp` ⇒ msproject, MSPDI/P6-XML/CSV ⇒ ops deze etappe);
-openen meldt het profiel met een actie naar Projectinfo (`src/state/schedulingProfileNotice.ts`; bij een
+openen meldt het profiel met een actie naar Projectinstellingen (`src/state/schedulingProfileNotice.ts`; bij een
 onbruikbaar XER-archief stapelt `withXerArchiveIssueNotice` er als buitenste laag omheen). IFC:
 `OPS_SchedulingProfile` (alle zevenentwintig opgelost plus de letterlijke afwijkingen, alleen ≠
 standaardprofiel) naast `OPS_SchedulingOptions` (opties + A22/A23 alleen als true) — door
 `writeIFC`/`readIFC` geschreven en gelezen. Eigen profielen zijn app-globale sjablonen
 (`ops-schedulingProfiles`, `services/schedulingProfiles/profileStore.ts`); een project draagt zijn eigen
-kopie. UI: het blok *Rekenprofiel en reken-opties* in Projectinfo (`SchedulingProfileSection.tsx`,
+kopie. UI: het blok *Rekenprofiel en reken-opties* in Projectinstellingen (`SchedulingProfileSection.tsx`,
 bewerkmodel `state/schedulingProfileDraft.ts`, actie `applySchedulingSettings`). Extensies lezen het
 opgeloste profiel via `ExtProject.schedulingProfile` (API 1.2.0).
 

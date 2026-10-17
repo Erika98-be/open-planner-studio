@@ -40,14 +40,14 @@ De kalender van een **resource** doet niet mee aan de datums. In een planning di
 Hangen twee taken met verschillende kalenders aan elkaar, dan geldt:
 
 - Bij een relatie Eind-Start begint de opvolger op de eerste werkdag ná het einde van de voorganger, geteld in de kalender van de **opvolger**. Eindigt een taak op vrijdag, dan start een opvolger met een zesdaagse werkweek op zaterdag.
-- Een **lag** telt standaard in de kalender van de **voorganger**. Dat kun je veranderen onder *Instellingen › Project › Projectinfo*, in het blok *Rekenprofiel en reken-opties*, bij *Reken-opties van dit project*, met de keuze *Lag-kalender*: *Voorganger* (standaard), *Opvolger*, *24-uurs* of *Projectkalender*.
+- Een **lag** telt standaard in de kalender van de **voorganger**. Dat kun je veranderen onder *Instellingen › Project › Projectinstellingen*, in het blok *Rekenprofiel en reken-opties*, bij *Reken-opties van dit project*, met de keuze *Lag-kalender*: *Voorganger* (standaard), *Opvolger*, *24-uurs* of *Projectkalender*.
 - De **totale speling** telt in werkdagen van de kalender van de taak zelf. De **vrije speling** telt in dit profiel in de kalender van de opvolger.
 
 Wat een lag precies is, staat in [Relaties leggen](docs://howto-relaties-leggen); wat speling is, in [Kritiek pad en speling](docs://uitleg-kritiek-pad).
 
 ### In de Gantt
 
-De grijze achtergrond in de Gantt toont altijd de niet-werkdagen van de **projectkalender**. Een taak op een eigen kalender kan dus over een grijze dag lopen, zoals een zesdaagse taak over de zaterdag. Een feestdagblok van drie dagen of meer krijgt zijn naam erbij, bijvoorbeeld *Bouwvak (Noord)*. Dat gebeurt niet als *Alleen werkbare dagen tonen* aan staat. Wil je de grijze dagen helemaal niet zien, zet dan *Alleen werkbare dagen tonen* aan onder *Instellingen › Project › Instellingen*, tabblad *Weergave*, kopje *Tijd-as*.
+De grijze achtergrond in de Gantt toont altijd de niet-werkdagen van de **projectkalender**. Een taak op een eigen kalender kan dus over een grijze dag lopen, zoals een zesdaagse taak over de zaterdag. Een feestdagblok van drie dagen of meer krijgt zijn naam erbij, bijvoorbeeld *Bouwvak (Noord)*. Dat gebeurt niet als *Alleen werkbare dagen tonen* aan staat. Wil je de grijze dagen helemaal niet zien, zet dan *Alleen werkbare dagen tonen* aan onder *Instellingen › Project › App-instellingen*, tabblad *Weergave*, kopje *Tijd-as*.
 
 ## Rekenvoorbeeld: de bouwplanning
 
