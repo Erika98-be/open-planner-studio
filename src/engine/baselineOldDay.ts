@@ -26,7 +26,9 @@
  *
  * Bekende grens (review #363): bij een gestarte taak past de span vaak nergens, dus beslist a, en a kent
  * de duur van het moment van de baseline niet. Daardoor:
- *  - een NIEUWE baseline, daarna de duur × opgeslagen ÷ werktijd (10 u → 8 u): vals ⚠;
+ *  - een NIEUWE baseline, daarna de duur × opgeslagen ÷ werktijd (10 u → 8 u): vals ⚠. Ook de export volgt
+ *    dat: `mspdiWriter.ts` schrijft de baseline dan in de opgeslagen uren per dag (187 d ⇒ `PT1496H0M0S`
+ *    in plaats van `PT1870H0M0S`), zodat de echte afwijking in MS Project verdwijnt;
  *  - een OUDE baseline, daarna de duur × werktijd ÷ opgeslagen (× 1,25): geen ⚠.
  * Met deze twee maatstaven is dat niet te scheiden. Alleen een kenmerk in de baseline zelf (dat via IFC heen
  * en terug gaat) lost het op; dat is later werk.
