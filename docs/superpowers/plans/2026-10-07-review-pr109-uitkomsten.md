@@ -1271,3 +1271,21 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
 - **#363 derde fixronde af** (expert Opus 5.5, xhigh): geen codewijziging nodig, `59e7901ac` volgt de symmetrische regel;
   Roads: baseline van main 1180 ⚠, nieuwe baseline 0 ⚠ (A37/A72 grensgeval zonder ⚠, alleen weergave); M24 rood;
   PR-tekst bijgewerkt. Derde hercheck gestart (reviewer Opus 5.5, xhigh).
+- **Eigenaar 2026-10-17, besluiten:** (a) checkstap 21 #365: en-lintlabel ook over twee regels (optie 2), letterlijk
+  "voor deze keer mag je dit doen en dan force mergen zonder dat ci groen is"; gerichte specs lokaal groen na
+  `hasText`-regex `\s+`; checkstap 22 "goed, perfect" ⇒ **#365 gemerged in main → 465d24b9d** (`--admin`).
+  (b) native keuzelijsten: **optie 2** (taakpaneel #368 vóór de release, de andere 31 erna als eigen etappe).
+  (c) P6-datumsbadge in het taakpaneel ("loopt buiten het veld", "staat op een random plek in het midden"): **optie 1**,
+  infoblok over de volle breedte boven de datumvelden, oranje/rood/grijs uit het thema ⇒ worker `claude/p6-datums-infoblok`.
+  (d) checkstap 24 #367: stap 3 "klopt"; getal bleef 10 bij ma 16 u (modale dagsom) ⇒ **optie 2**: label
+  *Standaard werkdag* + i-icoon ("De lengte van de werkdag die het vaakst voorkomt. Hiermee rekent de app een dag om
+  naar uren."). Eigenaar: "dit getal is er om in een gemengde dag/uren planning de dagen een juist aantal uren te geven".
+  (e) checkstap 23 #370: gedrag paneel goed, lijsten breed genoeg ("top"); *Bovenliggende taak* traag (6978 opties:
+  main 0,9–1,0 s, #370 1,1–1,8 s) ⇒ **optie 2**: virtualiseren vóór de release, zoekveld na de release (bovenaan).
+  (f) Grens van drie agents vervalt: de OOM kwam door een andere sessie (eigenaar). Inline HTML mag voor schetsen van
+  UI-opties en uitleg (in `~/.claude/AGENTS.md`).
+- **Review #370: nee** (Escape in Tabel-enumcel annuleert niet meer; Ctrl/Meta-uitzondering ook in modale dialogen ⇒
+  Ctrl+Z verwijdert de taak achter de taakdialoog; `[role=listbox]` overbodig) ⇒ fixronde + virtualisatie bij de maker.
+  **Hercheck #367: ja** (kleine punten + label bij de maker). **Hercheck #363 (3e): nee** (× 1,25 verliest ⚠) ⇒
+  span-voorrang `b71c414ed`; vierde hercheck loopt. Bekende grens gestarte taken (117 vals ⚠ na × 0,8): niet oplossen,
+  wel melden; later via een kenmerk in de baseline.
