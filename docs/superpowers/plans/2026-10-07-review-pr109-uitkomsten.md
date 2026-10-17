@@ -1380,3 +1380,7 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   maar laat FIXED_WORK fout; vijf aanroepplekken. ⇒ eerst besluit eigenaar, dan één fix. Scripts: /tmp/restduur-ns-scripts/.
 - **#366 gemerged in main → 35bcfdfc9** (kop 9498cc351, bijgewerkt met 9341d6e34, CI 16/16, hercheck JA; nieuwe
   bewaking `mppReader.ts:916` zonder corpus, mutant rood). Eigenaarspunt i-tekst *Standaard werkdag* blijft open.
+- **Hercheck #375: NEE** — drie staande weigeringen slikken nieuwe infos (`uiSlice.ts:381-385`; SNET-info en
+  statusdatum verdwijnen stil), "Niet aangepast: …" onwaar bij deels geschreven plak, vaste `dedupeKey` op meldingen
+  met een aantal, zinsvolgorde gids ⇒ fixronde bij de maker. **Open voor de eigenaar:** "+ Taak" bij filter maakt de
+  taak wél (onderaan) en toont de rode strook "Niet beschikbaar tijdens filteren/groeperen/sorteren" — tekst klopt niet.
