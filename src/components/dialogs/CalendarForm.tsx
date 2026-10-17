@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Plus, Trash2, X } from 'lucide-react';
 import type { WorkCalendar, Holiday, WorkTimeBands } from '@/types/calendar';
@@ -39,13 +39,6 @@ function minutesFromText(value: string): number | undefined {
   return /^\d+$/.test(value) && Number(value) <= 24 * 60 ? Number(value) : undefined;
 }
 
-/** Geen enkele dag met werktijd: bij werkblokken alle weekdagen leeg, anders geen werkdagen. De solver
- *  weigert zo'n kalender (`noWorkingDays`), dus het veld toont dan geen getal. */
-function hasNoWorkTime(cal: WorkCalendar): boolean {
-  if (cal.workTime) return Object.values(cal.workTime.byWeekday).every(list => !list || list.length === 0);
-  return cal.workDays.length === 0;
-}
-
 /**
  * Presentational kalenderformulier (naam, werkdagen, uren, feestdagen) — kent geen store.
  * Hergebruikt door `CalendarDialog` (projectkalender) én `ResourceCalendarDialog`;
@@ -77,6 +70,7 @@ export function CalendarForm({
 }) {
   const { t: tMenu, i18n } = useTranslation('menu');
   const { t: tCommon } = useTranslation('common');
+  const netHoursId = useId();
   const enableHourPlanning = useAppStore(s => s.ui.enableHourPlanning);
   const weekStartDay = useAppStore(s => s.ui.weekStartDay);
   const timeNotation = useAppStore(s => s.ui.timeNotation);
@@ -587,15 +581,17 @@ export function CalendarForm({
           </>
         )}
         <div className="flex flex-col gap-1">
-          <label className="text-text-secondary font-medium">
+          <label htmlFor={netHoursId} className="text-text-secondary font-medium">
             {tMenu('ribbon.calendarDialog.netHoursPerDay')}
           </label>
           <output
+            id={netHoursId}
             className="py-1.5 font-semibold text-text-primary tabular-nums"
             aria-live="polite"
             data-ops-simple-break-net-hours
           >
-            {hasNoWorkTime(draft) ? '—' : `${netHoursFormatter.format(effHoursPerDay(draft))} h`}
+            {/* Zonder werkdagen weigert de solver de kalender (`noWorkingDays`): geen getal. */}
+            {draft.workDays.length === 0 ? '—' : `${netHoursFormatter.format(effHoursPerDay(draft))} h`}
           </output>
         </div>
       </div>

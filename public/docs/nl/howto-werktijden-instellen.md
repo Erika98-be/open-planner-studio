@@ -32,7 +32,7 @@ Dit doet elke preset:
 4. Een blok dat na middernacht doorloopt, vink je aan met *volgende dag*. Het blok telt bij de dag waarop het begint.
 5. Klik op de prullenbak achter een blok om het te verwijderen. Een dag zonder blokken staat als *Niet-werkend*.
 6. Klik bij een dag van maandag tot en met vrijdag op het kopieersymbool (*Kopieer naar alle werkdagen*) om de blokken van die dag naar maandag tot en met vrijdag te zetten.
-7. Boven het blok *Werktijden* staat *Netto-uren per dag*: de werktijd per dag die de app uit de blokken afleidt en waarmee hij rekent. Het getal volgt direct als je de blokken wijzigt. Heeft de kalender eigen uren per dag (bijvoorbeeld uit Primavera P6), dan blijft die eigen waarde bewaard en gaat hij mee bij de export. Het venster toont hem niet. Klik op *Toepassen*.
+7. Boven het blok *Werktijden* staat *Netto-uren per dag*: de werktijd per dag die de app uit de blokken afleidt en waarmee hij rekent. Het getal volgt direct als je de blokken wijzigt. Heeft de kalender eigen uren per dag (bijvoorbeeld uit Primavera P6), dan blijft die eigen waarde bewaard en gaat hij mee bij de export, tot een preset hem vervangt. Het venster toont hem niet. Klik op *Toepassen*.
 
 **Voorbeeld: een vrijdagmiddag vrij.** Klik op *Per weekdag instellen…*. Verwijder bij *Vr* het tweede blok (13:00 tot 16:00). Vrijdag telt nu 5 uur, de andere dagen 8. De *Netto-uren per dag* blijven 8.
 
