@@ -33,7 +33,7 @@ How do you choose?
 
 **A P6 file.** If you open a Primavera P6 file (.xer), the app takes the mode from the file. Besides Retained Logic and Progress Override, P6 also has Actual Dates. The app does not know that third mode; such a file calculates as Retained Logic. The import message counts that as *1 P6 scheduling setting used a safe fallback.*
 
-**The calculation profile.** In the Primavera P6 profile Progress Override also works backward, in the late dates and the free float of the predecessor (convention *Progress Override ignores a started successor on the late side too*). In the Open Planner Studio and Microsoft Project profiles that is not so. You find the conventions under *Settings › Project › Project info*, in the block *Calculation profile and options*. In the example of the explanation that backward effect cannot be seen.
+**The calculation profile.** In the Primavera P6 profile Progress Override also works backward, in the late dates and the free float of the predecessor (convention *Progress Override ignores a started successor on the late side too*). In the Open Planner Studio and Microsoft Project profiles that is not so. You find the conventions under *Settings › Project › Project settings*, in the block *Calculation profile and options*. In the example of the explanation that backward effect cannot be seen.
 
 ## See also
 

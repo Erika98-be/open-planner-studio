@@ -172,7 +172,7 @@ test('gemengde dag/uur-planning is een verborgen onderliggende, gepersisteerde i
     localStorage.setItem('ops-allowMixedDayHour', 'false');
     window.__OPS__!.store.getState().setUI({ allowMixedDayHour: false, showSettingsDialog: true });
   });
-  const settings = page.getByRole('dialog', { name: /^(Settings|Instellingen)$/ });
+  const settings = page.getByRole('dialog', { name: /^(App settings|App-instellingen)$/ });
   // Urenplanning zit sinds U1 op de Planning-tab (gelijke naam in nl/en), niet meer op de
   // voormalige "Timeline / Zoom"-tab.
   await settings.getByRole('button', { name: /^Planning$/, exact: true }).click();

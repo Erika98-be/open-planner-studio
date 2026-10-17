@@ -33,7 +33,7 @@ Hoe kies je?
 
 **Een P6-bestand.** Open je een Primavera P6-bestand (.xer), dan neemt de app de modus uit het bestand over. P6 kent naast Retained Logic en Progress Override ook Actual Dates. Die derde modus kent de app niet; zo'n bestand rekent als Retained Logic. De importmelding telt dat mee als *1 P6-planningsinstelling met veilige terugval.*
 
-**Het rekenprofiel.** In het profiel Primavera P6 werkt Progress Override ook achterwaarts, in de late datums en de vrije speling van de voorganger (conventie *Progress Override negeert een gestarte opvolger ook achterwaarts*). In de profielen Open Planner Studio en Microsoft Project is dat niet zo. Je vindt de conventies onder *Instellingen › Project › Projectinfo*, in het blok *Rekenprofiel en reken-opties*. In het voorbeeld van de uitleg is dat achterwaartse effect niet te zien.
+**Het rekenprofiel.** In het profiel Primavera P6 werkt Progress Override ook achterwaarts, in de late datums en de vrije speling van de voorganger (conventie *Progress Override negeert een gestarte opvolger ook achterwaarts*). In de profielen Open Planner Studio en Microsoft Project is dat niet zo. Je vindt de conventies onder *Instellingen › Project › Projectinstellingen*, in het blok *Rekenprofiel en reken-opties*. In het voorbeeld van de uitleg is dat achterwaartse effect niet te zien.
 
 ## Zie ook
 

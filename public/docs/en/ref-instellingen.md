@@ -1,10 +1,10 @@
-# Settings
+# App settings
 
 Every setting of the app: what it does, its starting value, what changes and where you find it. For the calculation options of a project (calculation profile, critical definition) see [Calculation options and conventions](docs://ref-rekenopties-en-conventies): those belong to the project file, not to the app.
 
 ## Where to find them and how they work
 
-The settings panel is in three places, and everywhere it is the same panel: the gear at the top of the window, *Settings › Project › Settings* and *File › Settings*. The panel has three tabs: *Appearance*, *Planning* and *Advanced*. Each setting below only names the tab.
+The settings panel is in three places, and everywhere it is the same panel: the gear at the top of the window, *Settings › Project › App settings* and *File › App settings*. The panel has three tabs: *Appearance*, *Planning* and *Advanced*. Each setting below only names the tab.
 
 A change takes effect immediately. There is no *Apply* button and no *Cancel*.
 
@@ -48,7 +48,7 @@ A change takes effect immediately. There is no *Apply* button and no *Cancel*.
 
 **Enable construction mode** — construction-oriented starting values for new projects. Default: on. Effect: on gives a new project the calendar *Bouwkalender NL* with the Dutch public holidays, lets you choose a builders' holiday when generating holidays, offers the phasing templates *Residential construction* and *Commercial / renovation* and gives new tasks the task type *Construction*. Off gives the calendar *Standaardkalender* without holidays, only the template *Empty* and the task type *Other*. A new task under a parent task that has a task type takes over that task type first; *Construction* or *Other* applies after that. Existing tasks and calendars do not change. Where: *Planning*.
 
-**Enable hour planning** — planning in working hours next to working days. Default: off. Effect: the time scale *Hour* appears under *View › Time Scale*, in the *Calendars* window an ordinary calendar can get working-time blocks (the *Working times* block; a calendar that already has blocks always shows it), and the *New project* window gets the choices *Shift* and *Default unit for new tasks*. *Project info* also gets the choice *Default unit for new tasks*. Off, the app works day-granular. Tasks that are already in hours stay and are included in the calculation; you can only edit their duration once you turn hour planning on. Where: *Planning*, under *Hour planning*. See [Turning on hour planning](docs://howto-urenplanning-aanzetten).
+**Enable hour planning** — planning in working hours next to working days. Default: off. Effect: the time scale *Hour* appears under *View › Time Scale*, in the *Calendars* window an ordinary calendar can get working-time blocks (the *Working times* block; a calendar that already has blocks always shows it), and the *New project* window gets the choices *Shift* and *Default unit for new tasks*. *Project settings* also gets the choice *Default unit for new tasks*. Off, the app works day-granular. Tasks that are already in hours stay and are included in the calculation; you can only edit their duration once you turn hour planning on. Where: *Planning*, under *Hour planning*. See [Turning on hour planning](docs://howto-urenplanning-aanzetten).
 
 **Allow mixed day/hour planning** — whether you choose the unit per task. Only visible when *Enable hour planning* is on. Default: on. Effect: on shows the *Duration unit* drop-down next to the duration of every task. Off hides that drop-down. Where: *Planning*, under *Hour planning*. See [Days and hours](docs://uitleg-dagen-en-uren).
 
@@ -76,7 +76,7 @@ A change takes effect immediately. There is no *Apply* button and no *Cancel*.
 - *Per release* — the same downloads per version, with the date; first the six newest, with *Show all … releases* for the rest.
 - *Source* — the date of the figures (GitHub Releases, updated weekly) and *Refresh now*. The app keeps fetched figures for half an hour. If fetching fails, the window says so. Installs via the Snap Store do not go through GitHub and are missing.
 
-**Start tour** — the introductory tour again. Effect: closes the settings window and starts the tour from the first step. Where: *Advanced*, under *Tour*.
+**Start tour** — the introductory tour again. Effect: closes the *App settings* window and starts the tour from the first step. Where: *Advanced*, under *Tour*.
 
 **Version** — the version number of the app, with two buttons. *Check for updates* opens the update window. *What's new* shows the news of the current version. Where: *Advanced*, under *Version*.
 

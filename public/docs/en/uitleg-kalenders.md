@@ -40,14 +40,14 @@ The calendar of a **resource** plays no part in the dates. In a schedule you bui
 When two tasks with different calendars are linked, this applies:
 
 - With a Finish-Start relation the successor begins on the first work day after the finish of the predecessor, counted in the calendar of the **successor**. If a task finishes on a Friday, a successor with a six-day work week starts on the Saturday.
-- A **lag** counts in the calendar of the **predecessor** by default. You can change that under *Settings › Project › Project info*, in the block *Calculation profile and options*, under *Calculation options of this project*, with the choice *Lag calendar*: *Predecessor* (default), *Successor*, *24-hour* or *Project calendar*.
+- A **lag** counts in the calendar of the **predecessor** by default. You can change that under *Settings › Project › Project settings*, in the block *Calculation profile and options*, under *Calculation options of this project*, with the choice *Lag calendar*: *Predecessor* (default), *Successor*, *24-hour* or *Project calendar*.
 - The **total float** counts in work days of the calendar of the task itself. In this profile the **free float** counts in the calendar of the successor.
 
 What a lag is exactly is covered in [Adding relations](docs://howto-relaties-leggen); what float is, in [Critical path and float](docs://uitleg-kritiek-pad).
 
 ### In the Gantt
 
-The grey background in the Gantt always shows the non-working days of the **project calendar**. A task on a calendar of its own can therefore run across a grey day, such as a six-day task across the Saturday. A block of holidays three days wide or more gets its name shown, for example *Bouwvak (Noord)*. That does not happen when *Show only working days* is on. If you do not want to see the grey days at all, turn on *Show only working days* under *Settings › Project › Settings*, tab *Appearance*, heading *Timeline axis*.
+The grey background in the Gantt always shows the non-working days of the **project calendar**. A task on a calendar of its own can therefore run across a grey day, such as a six-day task across the Saturday. A block of holidays three days wide or more gets its name shown, for example *Bouwvak (Noord)*. That does not happen when *Show only working days* is on. If you do not want to see the grey days at all, turn on *Show only working days* under *Settings › Project › App settings*, tab *Appearance*, heading *Timeline axis*.
 
 ## Worked example: the building schedule
 

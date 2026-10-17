@@ -176,7 +176,7 @@ test('Backstage: geen Extensies, geen extensie-importers, geen AI-instellingen',
   await openBackstage(page);
 
   // Controle dat de selector werkt: de andere items zijn er wel.
-  await expect(navItem(page, 'Settings')).toHaveCount(1);
+  await expect(navItem(page, 'App settings')).toHaveCount(1);
   await expect(navItem(page, 'Help')).toHaveCount(1);
   await expect(navItem(page, 'Extensions')).toHaveCount(0);
 
@@ -186,7 +186,7 @@ test('Backstage: geen Extensies, geen extensie-importers, geen AI-instellingen',
   await expect(page.locator('.backstage-main')).not.toContainText('Extensions');
 
   // Instellingen → Geavanceerd: Debug-terminal wel, AI-modus niet.
-  await navItem(page, 'Settings').click();
+  await navItem(page, 'App settings').click();
   await page.locator('.backstage-main .settings-tab', { hasText: 'Advanced' }).click();
   await expect(page.locator('.backstage-main').getByText('Debug terminal', { exact: true })).toBeVisible();
   await expect(page.locator('.backstage-main').getByText('AI mode', { exact: true })).toHaveCount(0);

@@ -60,7 +60,7 @@ De meldingen verschijnen onderin het scherm, ook in de tabel, in Backstage en in
 
 - **Teller ×N** — een melding met een vaste sleutel vouwt een herhaling samen tot één regel met een teller, bijvoorbeeld een opslagfout die steeds terugkomt of een geweigerde relatie die je herhaalt. Niet elke melding doet dat.
 - **Lees meer** — sommige meldingen hebben een link *Lees meer* of een eigen onderwerp (bijvoorbeeld *Werkregels uitgelegd*) naar de gids in Backstage › Help.
-- **Actieknop** — de melding over het rekenprofiel heeft een knop *Rekenprofiel openen* naar Projectinfo.
+- **Actieknop** — de melding over het rekenprofiel heeft een knop *Rekenprofiel openen* naar Projectinstellingen.
 
 De lijst hieronder is een keuze, gegroepeerd naar onderwerp. Waar het niet staat, is het een fout of info.
 
@@ -121,7 +121,7 @@ De lijst hieronder is een keuze, gegroepeerd naar onderwerp. Waar het niet staat
 - **Werk en werkregels zichtbaar** (info) — *Dit bestand bevat opgeslagen werk of eigen werkregels; de werkregel en het resterende werk zijn voor dit project zichtbaar.*
 - **MS Project-planning ingelezen** (info) — *Dit MS Project-bestand bevat N taken met een onderbroken, genivelleerde of resource-gedreven planning. Die worden als zodanig ingelezen en getoond.*
 - **Onderbrekingen niet geëxporteerd** (info) — *N taken met onderbrekingen zijn zonder onderbrekingen geëxporteerd: MS Project/P6 kennen die alleen als urenverdeling.* Bij export naar MS Project of Primavera.
-- **Projectstart verzet** (info) — *N taken schoven mee met de projectstart.* Als je de projectstart later zet. Alleen taken zonder voorganger en zonder constraint die vóór de nieuwe startdatum zouden liggen, schuiven naar die datum. Met een link *Lees meer* naar [Nieuw project en Projectinfo](docs://ref-projectinfo).
+- **Projectstart verzet** (info) — *N taken schoven mee met de projectstart.* Als je de projectstart later zet. Alleen taken zonder voorganger en zonder constraint die vóór de nieuwe startdatum zouden liggen, schuiven naar die datum. Met een link *Lees meer* naar [Nieuw project en Projectinstellingen](docs://ref-projectinfo).
 - **Datumvenster stuurt niet meer** (info) — *Het datumvenster uit MS Project stuurt N taken niet meer na deze bewerking; …* Eén keer per document.
 - **Nivelleervertraging afgerond** (info) — *Nivelleren rondt de minuutprecieze nivelleervertraging van MS Project van N taken af op hele werkdagen.* Eén keer per document.
-- **Rekenprofiel toegepast** (info) — *Dit project rekent als {profiel}. Aanpassen via Bestand → Projectinfo → Rekenprofiel en reken-opties.* Met de knop *Rekenprofiel openen*. Na het toepassen van een profiel volgt zo nodig *Na het toepassen zijn N taken verschoven.*
+- **Rekenprofiel toegepast** (info) — *Dit project rekent als {profiel}. Aanpassen via Bestand → Projectinstellingen → Rekenprofiel en reken-opties.* Met de knop *Rekenprofiel openen*. Na het toepassen van een profiel volgt zo nodig *Na het toepassen zijn N taken verschoven.*

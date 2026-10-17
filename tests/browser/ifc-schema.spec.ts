@@ -16,7 +16,7 @@ const activeTab = (page: Page) => page.evaluate(() => window.__OPS__!.store.getS
 
 async function toProjectInfo(page: Page): Promise<void> {
   await page.getByRole('button', { name: /^(File|Bestand)$/ }).first().click();
-  await page.locator('.backstage-sidebar').getByRole('button', { name: /^(Project info|Projectinfo)$/ }).click();
+  await page.locator('.backstage-sidebar').getByRole('button', { name: /^(Project settings|Projectinstellingen)$/ }).click();
   await expect(page.locator('[data-ops-project-ifc-schema]')).toBeVisible();
 }
 

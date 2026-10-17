@@ -10,7 +10,7 @@ You hire a crane by the hour, not by the day. A pour of six hours does not fit i
 
 ### Enabling hour planning
 
-1. Choose *Settings › Project › Settings* and open the *Planning* tab.
+1. Choose *Settings › Project › App settings* and open the *Planning* tab.
 2. Under *Hour planning*, tick *Enable hour planning*. It works right away. In the message *This file contains hour-based planning.* the *Enable hour planning* button does the same.
 3. Below it is *Allow mixed day/hour planning*, on by default. With that setting you choose per task whether it counts in days or hours. If you turn it off, the *Duration unit* list disappears. You can then still type a duration with a unit, such as `12h`.
 
@@ -27,10 +27,10 @@ That changes more than the duration of a task: under *View › Time Scale* you c
 
 ### New tasks in hours by default
 
-1. Choose *Settings › Project › Project info*.
+1. Choose *Settings › Project › Project settings*.
 2. Under *Default unit for new tasks*, choose the unit *Hours* and click *Apply*.
 
-A new task then starts with 5 hours instead of 5 days. Existing tasks do not change. With a new project the same choice is in the *New project* window. If you choose *Day shift* under *Shift* there, *Hours* is disabled. Choose another shift, or set the default unit after creating in *Project info*.
+A new task then starts with 5 hours instead of 5 days. Existing tasks do not change. With a new project the same choice is in the *New project* window. If you choose *Day shift* under *Shift* there, *Hours* is disabled. Choose another shift, or set the default unit after creating in *Project settings*.
 
 ## Pitfalls and what the app does then
 
@@ -49,5 +49,5 @@ A new task then starts with 5 hours instead of 5 days. Existing tasks do not cha
 - [Days and hours](docs://uitleg-dagen-en-uren): how the app counts hours, what happens when days and hours meet and where it rounds.
 - [Setting working times](docs://howto-werktijden-instellen): the times of a calendar per weekday.
 - [Adding relations](docs://howto-relaties-leggen): a lag in hours between two tasks.
-- [Settings](docs://ref-instellingen): the setting Enable hour planning and what else it changes.
+- [App settings](docs://ref-instellingen): the setting Enable hour planning and what else it changes.
 - [De Vaart Apartment Complex](examples://showcase-appartementencomplex.ifc): contains tasks in hours (rebar fixing and pouring) with an hour calendar of its own, *Hourly calendar, rebar fixing & pouring*.
