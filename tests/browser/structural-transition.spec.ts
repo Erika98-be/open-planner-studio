@@ -460,3 +460,49 @@ test('verricht werk in het Nederlands: de canonieke zin', async ({ page, ops: _o
   ]);
   await cancelButton(page).click();
 });
+
+test('alle globale sneltoetsen staan dicht onder de vraag: Delete, Backspace, F5, Insert (review #374)', async ({ page, ops: _ops }) => {
+  const { L, N } = await seedAssignedLeaf(page);
+  await selectRow(page, N);
+  await page.keyboard.press('Alt+Shift+ArrowRight');
+  await expect(dialog(page)).toBeVisible();
+  // Geen ?-knop in dit venster: die zou Help áchter "Taak bewerken" openen.
+  await expect(dialog(page).locator('[data-ops-help-button]')).toHaveCount(0);
+  const before = await page.evaluate(() => {
+    const s = window.__OPS__!.store.getState();
+    return JSON.stringify({ tasks: s.tasks, assignments: s.assignments, stale: s.scheduleStale });
+  });
+  const depth = (await state(page)).undoDepth;
+
+  for (const key of ['Delete', 'Backspace', 'F5', 'Insert', 'Alt+Shift+ArrowLeft', 'Control+d', 'Control+z']) {
+    await page.keyboard.press(key);
+  }
+  await expect(dialog(page)).toBeVisible();
+  expect(await page.evaluate(() => {
+    const s = window.__OPS__!.store.getState();
+    return JSON.stringify({ tasks: s.tasks, assignments: s.assignments, stale: s.scheduleStale });
+  })).toBe(before);
+  expect((await state(page)).undoDepth).toBe(depth);
+
+  await moveButton(page).click();
+  await expect(dialog(page)).toBeHidden();
+  expect(await parentOf(page, N)).toBe(L);
+  expect(await assignmentTaskIds(page)).toEqual([N]);
+});
+
+test('Taak bewerken: Delete onder de vraag verwijdert de bewerkte taak niet (review #374)', async ({ page, ops: _ops }) => {
+  const { N } = await seedAssignedLeaf(page);
+  await nameCell(page, N).click({ button: 'right' });
+  await page.getByRole('button', { name: /^Edit\.\.\.$/ }).click();
+  const taskDialog = page.locator('[data-ops-task-dialog]');
+  await taskDialog.getByLabel(/^Parent task$/).click();
+  await page.getByRole('option', { name: /Metselen$/ }).click();
+  await taskDialog.getByRole('button', { name: /^Save$/ }).click();
+  await expect(dialog(page)).toBeVisible();
+  await page.keyboard.press('Delete');
+  await page.keyboard.press('Backspace');
+  await cancelButton(page).click();
+  await expect(taskDialog).toBeVisible();
+  await expect(taskDialog).toContainText('Edit task');
+  expect(await page.evaluate((n) => window.__OPS__!.store.getState().tasks.some(t => t.id === n), N)).toBe(true);
+});

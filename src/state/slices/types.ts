@@ -236,6 +236,7 @@ export type NotificationMessageKey =
   | 'notifications.milestoneClearedOnPhase'
   | 'notifications.phaseRefusedNoAssignableChild'
   | 'notifications.phaseRefusedDuplicateResource'
+  | 'notifications.phaseQuestionOutdated'
   | 'notifications.mppLegacy'
   | 'notifications.mppEncrypted'
   | 'notifications.xerInvalidInput'

@@ -1,8 +1,7 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppStore } from '@/state/appStore';
 import { Dialog, DialogHeader } from '@/components/common/Dialog';
-import { STRUCTURE_HELP_ARTICLE_ID } from '@/state/helpArticles';
 import { formatReportNumber } from '@/utils/reportNumber';
 import type { PhaseAssignmentQuestion, PhaseAssignmentQuestionItem } from '@/state/slices/types';
 
@@ -24,24 +23,32 @@ import type { PhaseAssignmentQuestion, PhaseAssignmentQuestionItem } from '@/sta
  * Rendert alleen bij `ui.pendingPhaseAssignmentQuestion`; het antwoord gaat naar
  * `answerPhaseAssignmentQuestion`, die de handeling met de keuze uitvoert. Stapelt boven "Taak
  * bewerken" (`z-[60]`); de toetsen lopen via de dialoogstapel van `Dialog` (alleen de bovenste
- * reageert): Escape = Annuleren, Enter = de knop met focus, anders de primaire keuze. Undo, redo en
- * plakken staan uit zolang de vraag open is (`shortcutRegistry.ts`). Geen backdrop-klik: kiezen gaat
- * alleen met een knop.
+ * reageert): Escape = Annuleren, Enter = de knop met focus, anders de primaire keuze. Alle globale
+ * sneltoetsen staan dicht zolang de vraag open is (`isGlobalShortcutFrozen`). Geen backdrop-klik:
+ * kiezen gaat alleen met een knop. Geen ?-knop: die zou Help áchter "Taak bewerken" openen
+ * (zelfde keuze als `ActualStartDialog`).
  */
-// `Intl.ListFormat` (ES2021) staat niet in de lib van dit project (ES2020); de doelplatforms (Chromium,
-// WebKitGTK, WebView2, Safari) hebben hem wel. Zonder ⇒ een kale kommalijst.
-type ListFormatCtor = new (locale: string, opts: { style: 'long'; type: 'conjunction' }) => {
-  format(items: readonly string[]): string;
-};
-const ListFormat = (Intl as unknown as { ListFormat?: ListFormatCtor }).ListFormat;
-
-/** "Jan, Piet en Klaas" in de taal van de app. */
+/** "Jan, Piet en Klaas" in de taal van de app. Een onbekende taalcode ⇒ een kale kommalijst. */
 function formatNameList(locale: string, names: readonly string[]): string {
   try {
-    return ListFormat ? new ListFormat(locale, { style: 'long', type: 'conjunction' }).format(names) : names.join(', ');
+    return new Intl.ListFormat(locale, { style: 'long', type: 'conjunction' }).format(names);
   } catch {
     return names.join(', ');
   }
+}
+
+/** Onzichtbaar scheidingsteken rond een naam in een vertaalde zin; komt in geen vertaling voor. */
+const NAME_MARK = '\u2063';
+
+/**
+ * Zet elke taak- en resourcenaam in een `<bdi>`: in een RTL-taal (of de Engelse terugvaltekst daarin)
+ * blijven de aanhalingstekens en leestekens rond een Latijnse naam dan op hun plek. `build` krijgt
+ * `name()`, dat een naam markeert; de zichtbare tekst blijft precies gelijk.
+ */
+function withIsolatedNames(build: (name: (value: string) => string) => string): ReactNode[] {
+  const names: string[] = [];
+  const text = build(value => `${NAME_MARK}${names.push(value) - 1}${NAME_MARK}`);
+  return text.split(NAME_MARK).map((part, index) => (index % 2 === 1 ? <bdi key={index}>{names[Number(part)]}</bdi> : part));
 }
 
 export function PhaseAssignmentDialog() {
@@ -55,7 +62,8 @@ function PhaseAssignmentDialogBody({ question }: { question: PhaseAssignmentQues
   const answer = useAppStore(s => s.answerPhaseAssignmentQuestion);
   const primaryRef = useRef<HTMLButtonElement>(null);
 
-  const list = (names: readonly string[]) => formatNameList(i18n.language, names);
+  const list = (names: readonly string[], name: (value: string) => string) =>
+    formatNameList(i18n.language, names.map(name));
   const items = question.items;
   const single = items.length === 1 ? items[0] : null;
   const blocked = items.filter(item => item.blocked !== null);
@@ -73,15 +81,16 @@ function PhaseAssignmentDialogBody({ question }: { question: PhaseAssignmentQues
 
   useEffect(() => { primaryRef.current?.focus(); }, []);
 
-  const blockedLine = (item: PhaseAssignmentQuestionItem) => item.blocked?.kind === 'duplicateResource'
+  const blockedLine = (item: PhaseAssignmentQuestionItem) => withIsolatedNames(name => (item.blocked?.kind === 'duplicateResource'
     ? t('phaseAssignmentQuestion.blockedDuplicate', {
-      child: item.targetName ?? '?', resources: list(item.blocked.resourceNames),
+      child: name(item.targetName ?? '?'), resources: list(item.blocked.resourceNames, name),
     })
-    : t('phaseAssignmentQuestion.blockedNoChild', { phase: item.phaseName });
+    : t('phaseAssignmentQuestion.blockedNoChild', { phase: name(item.phaseName) })));
 
   // Eén nieuwe samenvattingstaak met een geschikte subtaak: die naam op de knop; anders algemeen.
-  const moveLabel = single?.targetName
-    ? t('phaseAssignmentQuestion.moveTo', { child: single.targetName })
+  const targetName = single?.targetName;
+  const moveLabel = targetName
+    ? withIsolatedNames(name => t('phaseAssignmentQuestion.moveTo', { child: name(targetName) }))
     : t('phaseAssignmentQuestion.moveToSubtasks');
 
   return (
@@ -97,20 +106,19 @@ function PhaseAssignmentDialogBody({ question }: { question: PhaseAssignmentQues
         <DialogHeader
           title={t('phaseAssignmentQuestion.title')}
           onClose={cancel}
-          help={{ articleId: STRUCTURE_HELP_ARTICLE_ID }}
         />
         <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3 text-small leading-5 text-text-primary">
           {single ? (
             <p data-ops-phase-dialog-text>
-              {t('phaseAssignmentQuestion.intro', {
-                count: single.childCount, phase: single.phaseName, child: single.firstChildName,
-              })}
+              {withIsolatedNames(name => t('phaseAssignmentQuestion.intro', {
+                count: single.childCount, phase: name(single.phaseName), child: name(single.firstChildName),
+              }))}
               {' '}
               {t('phaseAssignmentQuestion.noOwnAssignments')}
               {' '}
-              {t('phaseAssignmentQuestion.question', {
-                count: single.resourceNames.length, resources: list(single.resourceNames),
-              })}
+              {withIsolatedNames(name => t('phaseAssignmentQuestion.question', {
+                count: single.resourceNames.length, resources: list(single.resourceNames, name),
+              }))}
             </p>
           ) : (
             <>
@@ -124,7 +132,9 @@ function PhaseAssignmentDialogBody({ question }: { question: PhaseAssignmentQues
               <ul className="flex flex-col gap-1 pl-4 list-disc">
                 {items.map(item => (
                   <li key={item.phaseId} data-ops-phase-dialog-row={item.phaseId}>
-                    {t('phaseAssignmentQuestion.row', { phase: item.phaseName, resources: list(item.resourceNames) })}
+                    {withIsolatedNames(name => t('phaseAssignmentQuestion.row', {
+                      phase: name(item.phaseName), resources: list(item.resourceNames, name),
+                    }))}
                   </li>
                 ))}
               </ul>
@@ -137,9 +147,9 @@ function PhaseAssignmentDialogBody({ question }: { question: PhaseAssignmentQues
                 const hours = Math.round(work.minutes / 60 * 100) / 100;
                 return (
                   <span key={index} data-ops-phase-actual-work>
-                    {t('phaseAssignmentQuestion.actualWorkLost', {
-                      count: hours, hours: formatReportNumber(hours, i18n.language), resource: work.resourceName,
-                    })}
+                    {withIsolatedNames(name => t('phaseAssignmentQuestion.actualWorkLost', {
+                      count: hours, hours: formatReportNumber(hours, i18n.language), resource: name(work.resourceName),
+                    }))}
                   </span>
                 );
               })}

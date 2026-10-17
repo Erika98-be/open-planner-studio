@@ -146,8 +146,13 @@ export interface TaskSlice {
   insertWbsTemplate: (template: WbsTemplate, parentId: string | null, opts?: PhaseAssignmentOptions) => string | null;
   /** Stel de vraag "Taak wordt een samenvattingstaak" voor een handeling buiten de store (de taakdialoog vraagt
    *  vóór het opslaan). `onChoice` draait alleen bij Verplaatsen of Verwijderen; een nieuwe vraag
-   *  vervangt een openstaande (die geldt dan als geannuleerd). */
-  askPhaseAssignmentQuestion: (question: PhaseAssignmentQuestion, onChoice: (choice: PhaseAssignmentChoice) => void) => void;
+   *  vervangt een openstaande (die geldt dan als geannuleerd). `recheck` stelt dezelfde vraag op de
+   *  state van het antwoord; wijkt die af van de gestelde vraag, dan gebeurt er niets (met melding). */
+  askPhaseAssignmentQuestion: (
+    question: PhaseAssignmentQuestion,
+    onChoice: (choice: PhaseAssignmentChoice) => void,
+    recheck: () => PhaseAssignmentQuestion | null,
+  ) => void;
   /** Het antwoord op de openstaande vraag; `null` = Annuleren (er verandert niets). Geen open vraag
    *  ⇒ no-op (dubbelklik). */
   answerPhaseAssignmentQuestion: (choice: PhaseAssignmentChoice | null) => void;
@@ -722,9 +727,11 @@ function applyHierarchyEdit(
   if (mode === 'ask') {
     const question = phaseAssignmentQuestion(before, gains);
     if (question) {
-      ask(question, choice => applyHierarchyEdit(
-        runtime, set, get, edit, staleWhen, { phaseAssignments: choice, answered: true }, ask,
-      ));
+      ask(
+        question,
+        choice => applyHierarchyEdit(runtime, set, get, edit, staleWhen, { phaseAssignments: choice, answered: true }, ask),
+        () => phaseAssignmentQuestion(get(), hierarchyPhaseGains(get().tasks, edit)),
+      );
       return;
     }
   }
@@ -847,7 +854,11 @@ interface StructuralOutcome {
 }
 
 /** Stelt de vraag "Taak wordt een samenvattingstaak" en bewaart wat er op het antwoord wacht (zie `createTaskSlice`). */
-type AskPhaseAssignments = (question: PhaseAssignmentQuestion, onChoice: (choice: PhaseAssignmentChoice) => void) => void;
+type AskPhaseAssignments = (
+  question: PhaseAssignmentQuestion,
+  onChoice: (choice: PhaseAssignmentChoice) => void,
+  recheck: () => PhaseAssignmentQuestion | null,
+) => void;
 const emptyOutcome = (): StructuralOutcome => ({ notices: [], lostSteering: 0, assignmentsMoved: false });
 
 /** Binnen de producer, NA de structuurmutatie en in dezelfde undo-stap: voer het plan uit. */
@@ -875,14 +886,15 @@ export const createTaskSlice: AppSliceFactory<TaskSlice> = (runtime) => (set, ge
   // hoort niet in een snapshot; de factory draait één keer per storecontext, dus deze plek is per
   // context (net als de resolver van `state/actualStartQuestion.ts`, maar zonder app-singleton).
   let pendingPhaseChoice: ((choice: PhaseAssignmentChoice) => void) | null = null;
-  // De state waarop de vraag gesteld is. Verandert er intussen iets aan taken of toewijzingen
-  // (undo, een documentwissel, een andere route), dan beschrijft de vraag niet meer wat er gebeurt:
-  // het antwoord doet dan niets. Immer geeft bij elke wijziging een nieuwe array, dus een
-  // referentievergelijking volstaat.
-  let askedOn: { tasks: AppState['tasks']; assignments: AppState['assignments'] } | null = null;
-  const askPhaseAssignments: AskPhaseAssignments = (question, onChoice) => {
+  // Vangnet: dezelfde vraag opnieuw gesteld op de state van het antwoord. Alle sneltoetsen staan
+  // dicht zolang de vraag open is, maar iets anders (een extensie, een documentwissel) kan de state
+  // toch veranderen. Is de vraag dan anders (andere taken, resources, subtaak, blokkade, verricht
+  // werk), dan beschrijft het venster niet meer wat er zou gebeuren: niets doen, en melden. Een
+  // wijziging die de vraag niet raakt (F5 via een andere route, een datum) houdt de keuze geldig.
+  let recheckPhaseQuestion: (() => PhaseAssignmentQuestion | null) | null = null;
+  const askPhaseAssignments: AskPhaseAssignments = (question, onChoice, recheck) => {
     pendingPhaseChoice = onChoice;
-    askedOn = { tasks: get().tasks, assignments: get().assignments };
+    recheckPhaseQuestion = recheck;
     set((s) => { s.ui.pendingPhaseAssignmentQuestion = question; });
   };
 
@@ -892,13 +904,19 @@ export const createTaskSlice: AppSliceFactory<TaskSlice> = (runtime) => (set, ge
   askPhaseAssignmentQuestion: askPhaseAssignments,
 
   answerPhaseAssignmentQuestion: (choice) => {
-    if (get().ui.pendingPhaseAssignmentQuestion === null) return;
+    const asked = get().ui.pendingPhaseAssignmentQuestion;
+    if (asked === null) return;
     const run = pendingPhaseChoice;
-    const stale = askedOn === null || askedOn.tasks !== get().tasks || askedOn.assignments !== get().assignments;
+    const recheck = recheckPhaseQuestion;
     pendingPhaseChoice = null;
-    askedOn = null;
+    recheckPhaseQuestion = null;
     set((s) => { s.ui.pendingPhaseAssignmentQuestion = null; });
-    if (choice !== null && !stale) run?.(choice);
+    if (choice === null || !run) return;
+    if (JSON.stringify(recheck?.() ?? null) !== JSON.stringify(asked)) {
+      get().notify({ severity: 'info', messageKey: 'notifications.phaseQuestionOutdated', dedupeKey: 'phase-question-outdated' });
+      return;
+    }
+    run(choice);
   },
 
   addTask: (partial, opts) => {
@@ -907,6 +925,15 @@ export const createTaskSlice: AppSliceFactory<TaskSlice> = (runtime) => (set, ge
     const mode = opts?.phaseAssignments ?? 'ask';
     const asked: { question: PhaseAssignmentQuestion | null } = { question: null };
     let refused = false;
+    // Dezelfde vraag op de state van het antwoord (zelfde ouderregel als hieronder).
+    const recheck = () => {
+      const st = get();
+      const anchor = partial.position ? st.tasks.find(t => t.id === partial.position!.anchorId) : undefined;
+      const parentId = anchor ? anchor.parentId : (partial.parentId || null);
+      return phaseAssignmentQuestion(st, firstChildGains(st.tasks, [{ childId: id, parentId }]), new Map([[id, {
+        name: partial.name, isMilestone: !!partial.isMilestone, hasChildren: false,
+      }]]));
+    };
     set((s) => {
       // Insert/contextmenu "invoegen boven/onder": een geldige `position`
       // bepaalt zowel de OUDER (die van de anker) als de invoegplek — de aanroeper hoeft dan geen
@@ -1001,7 +1028,7 @@ export const createTaskSlice: AppSliceFactory<TaskSlice> = (runtime) => (set, ge
     if (asked.question) {
       askPhaseAssignments(asked.question, (choice) => {
         get().addTask(partial, { phaseAssignments: choice, answered: true });
-      });
+      }, recheck);
       return '';
     }
     finishStructural(get, outcome);
@@ -1409,6 +1436,7 @@ export const createTaskSlice: AppSliceFactory<TaskSlice> = (runtime) => (set, ge
     const outcome = emptyOutcome();
     const mode = opts?.phaseAssignments ?? 'ask';
     const asked: { question: PhaseAssignmentQuestion | null } = { question: null };
+    let recheck: () => PhaseAssignmentQuestion | null = () => null;
     set((s) => {
       const idMap = new Map<string, string>();
       for (const tt of template.tasks) idMap.set(tt.id, generateId('task'));
@@ -1426,6 +1454,9 @@ export const createTaskSlice: AppSliceFactory<TaskSlice> = (runtime) => (set, ge
       const gains = firstChildGains(s.tasks, [...pending.keys()].map(childId => ({ childId, parentId })));
       if (mode === 'ask') {
         asked.question = phaseAssignmentQuestion(s, gains, pending);
+        recheck = () => phaseAssignmentQuestion(
+          get(), firstChildGains(get().tasks, [...pending.keys()].map(childId => ({ childId, parentId }))), pending,
+        );
         if (asked.question) return; // eerst de vraag; er verandert nog niets
       }
       const phasePlan = planPhaseTransitions(s, gains, pending, mode === 'ask' ? 'move' : mode);
@@ -1478,7 +1509,7 @@ export const createTaskSlice: AppSliceFactory<TaskSlice> = (runtime) => (set, ge
     if (asked.question) {
       askPhaseAssignments(asked.question, (choice) => {
         get().insertWbsTemplate(template, parentId, { phaseAssignments: choice, answered: true });
-      });
+      }, recheck);
       return null;
     }
     finishStructural(get, outcome);

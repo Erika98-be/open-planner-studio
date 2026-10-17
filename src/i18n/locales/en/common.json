@@ -140,6 +140,7 @@
     "milestoneClearedOnPhase_other": "{{count}} tasks are no longer milestones.",
     "phaseRefusedNoAssignableChild": "'{{phase}}' cannot become a summary task: its assignments have nowhere to go, because none of the new subtasks can carry assignments (a milestone or summary task). Nothing was changed.",
     "phaseRefusedDuplicateResource": "'{{phase}}' cannot become a summary task: the assignment of {{resource}} cannot move to the new subtask '{{child}}', because it already has {{resource}}. Nothing was changed.",
+    "phaseQuestionOutdated": "The tasks or assignments changed while the question was open. Nothing was changed; please try again.",
     "schedulingProfileApplied": "This project calculates as {{profile}}. Change it via File → Project settings → Calculation profile and options.",
     "schedulingTemplateSaved": "Template “{{name}}” saved.",
     "schedulingTemplateLimit": "Template not saved: there are already {{max}} templates. Delete a template first.",

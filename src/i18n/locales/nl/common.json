@@ -140,6 +140,7 @@
     "milestoneClearedOnPhase_other": "{{count}} taken zijn geen mijlpaal meer.",
     "phaseRefusedNoAssignableChild": "'{{phase}}' kan geen samenvattingstaak worden: de toewijzingen ervan kunnen nergens heen, want geen van de nieuwe subtaken mag toewijzingen dragen (een mijlpaal of samenvattingstaak). Er is niets gewijzigd.",
     "phaseRefusedDuplicateResource": "'{{phase}}' kan geen samenvattingstaak worden: de toewijzing van {{resource}} kan niet naar de nieuwe subtaak '{{child}}', want die heeft {{resource}} al. Er is niets gewijzigd.",
+    "phaseQuestionOutdated": "De taken of toewijzingen zijn veranderd terwijl de vraag openstond. Er is niets gewijzigd; probeer het opnieuw.",
     "schedulingProfileApplied": "Dit project rekent als {{profile}}. Aanpassen via Bestand → Projectinstellingen → Rekenprofiel en reken-opties.",
     "schedulingTemplateSaved": "Sjabloon „{{name}}” opgeslagen.",
     "schedulingTemplateLimit": "Sjabloon niet opgeslagen: er zijn al {{max}} sjablonen. Verwijder eerst een sjabloon.",

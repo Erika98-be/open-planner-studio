@@ -198,17 +198,18 @@ export function TaskDialog() {
     if (!phaseAssignments) {
       const store = useAppStore.getState();
       // De vorm van het CONCEPT (naam, mijlpaal ja/nee): Opslaan zet die eerst, verhangt daarna.
-      const question = !editingTask || draft.parentId !== editingTask.parentId
-        ? phaseAssignmentQuestionForTaskDialog(store, editingTask?.id ?? null, draft.parentId || null, {
+      const ask = () => (!editingTask || draft.parentId !== editingTask.parentId
+        ? phaseAssignmentQuestionForTaskDialog(useAppStore.getState(), editingTask?.id ?? null, draft.parentId || null, {
           name: draft.name,
           isMilestone: draft.isMilestone,
           hasChildren: (editingTask?.childIds.length ?? 0) > 0,
         })
-        : null;
+        : null);
+      const question = ask();
       if (question) {
         store.askPhaseAssignmentQuestion(question, (choice) => {
           if (saveWith(choice) === true) afterLaterSave?.();
-        });
+        }, ask);
         return 'later';
       }
     }

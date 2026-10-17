@@ -429,11 +429,26 @@ const fingerprint = () => JSON.stringify({
   S().unassignResource(opperman);
   S().indentTasks([N]);
   eq('F12 vraag noemt alleen Metselaar', question()?.items[0].resourceNames, ['Metselaar']);
-  S().undo(); // Opperman terug, terwijl de vraag open staat (sneltoets is dicht; dit is het vangnet)
-  const before = fingerprint();
+  S().undo(); // Opperman terug, terwijl de vraag open staat (sneltoetsen zijn dicht; dit is het vangnet)
+  const before = fingerprint(); const mark = noticeMark();
   S().answerPhaseAssignmentQuestion('remove');
   eq('F12 verouderd antwoord: vraag weg, niets gedaan', [question(), fingerprint()], [null, before]);
   eq('F12 Opperman en Metselaar staan nog op L', assignmentsOf(L).length, 2);
+  eq('F12 melding via het ene kanaal', noticesSince(mark).map(n => n[0]), ['notifications.phaseQuestionOutdated']);
+}
+{
+  // F14 Een wijziging die de vraag niet raakt (F5, een andere taak) houdt de keuze geldig (review #374:
+  // het vangnet mocht een keuze niet stil weggooien na F5).
+  const { L, N, assignmentId } = leafWithAssignment();
+  const X = S().addTask({ name: 'Los' });
+  S().indentTasks([N]);
+  S().runCPM();
+  S().updateTask(X, { name: 'Andere naam' });
+  const mark = noticeMark();
+  S().answerPhaseAssignmentQuestion('move');
+  eq('F14 keuze uitgevoerd ondanks F5 en een andere wijziging',
+    [task(N).parentId, S().assignments.find(a => a.id === assignmentId)?.taskId], [L, N]);
+  eq('F14 geen verouderd-melding', noticesSince(mark).map(n => n[0]).filter(k => k === 'notifications.phaseQuestionOutdated'), []);
 }
 {
   // F13 Taak bewerken vraagt met de vorm van het CONCEPT (review #374).
