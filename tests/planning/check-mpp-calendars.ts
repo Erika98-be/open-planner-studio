@@ -134,7 +134,10 @@ function mppDayToIso(raw: number): string {
 // I4/T6-assertieblok hieronder (die de gematerialiseerde datum controleert) 'm zien.
 const HOLIDAY_FROM_DAY = 15005;
 
-function buildI4T6FixtureBytes(): Uint8Array {
+/** `baseBands`: de blokken van ma–vr op de basiskalender (calId 1). Standaard één blok 08:00–17:00. */
+function buildI4T6FixtureBytes(
+  baseBands: { startMinutes: number; durationMinutes: number }[] = [{ startMinutes: 480, durationMinutes: 540 }],
+): Uint8Array {
   // ── Taak (minimaal — alleen om calendarUniqueId=5 te dragen). FixedData op de LETTERLIJKE
   // default-offsets uit fieldMap14.ts (geen TASK_FIELD_MAP meegegeven, spiegelt check-mpp-import.ts
   // se I4-fixture). Index 0-2 zijn dummy (FIRST_TASK_INDEX=3 in mppReader.ts se readTasks). ────────
@@ -182,11 +185,11 @@ function buildI4T6FixtureBytes(): Uint8Array {
   // calendarUniqueId hierboven, zodat dit tegelijk de koppeling bewijst. ─────────────────────────
   const baseHours = buildCalHoursBlock([
     { defaultFlag: 0 },
-    { defaultFlag: 0, bands: [{ startMinutes: 480, durationMinutes: 540 }] },
-    { defaultFlag: 0, bands: [{ startMinutes: 480, durationMinutes: 540 }] },
-    { defaultFlag: 0, bands: [{ startMinutes: 480, durationMinutes: 540 }] },
-    { defaultFlag: 0, bands: [{ startMinutes: 480, durationMinutes: 540 }] },
-    { defaultFlag: 0, bands: [{ startMinutes: 480, durationMinutes: 540 }] },
+    { defaultFlag: 0, bands: baseBands },
+    { defaultFlag: 0, bands: baseBands },
+    { defaultFlag: 0, bands: baseBands },
+    { defaultFlag: 0, bands: baseBands },
+    { defaultFlag: 0, bands: baseBands },
     { defaultFlag: 0 },
   ]);
   const derivedHours = concatBytes(
@@ -291,6 +294,18 @@ function buildI4T6FixtureBytes(): Uint8Array {
       truthy('I4/T6 end-to-end readMPP: Task1.calendarId === de afgeleide kalender (calendarUniqueId=5)', !!task && task.calendarId === derived.id);
     }
   }
+}
+
+// PR #366: MINUTES_PER_DAY blijft na de uur-promotie staan, zoals `<MinutesPerDay>` bij MSPDI. Zonder
+// corpus: blokken met een pauze (07:00–12:00 en 12:30–17:30 = 10 u) wijken af, dus beide kalenders
+// promoveren. De projectkalender houdt 480 min = 8 u; de afgeleide kalender heeft geen eigen waarde en
+// volgt de blokken (10 u). Bewaakt de koppeling `readCalendars` → `readTasks` → `promoteCalendarsForHourMode`.
+{
+  const r = readMPP(buildI4T6FixtureBytes([{ startMinutes: 420, durationMinutes: 300 }, { startMinutes: 750, durationMinutes: 300 }]));
+  const derived = r.resourceCalendars?.[0];
+  truthy('#366 .mpp: beide kalenders zijn uurkalender (testvoorwaarde)', !!r.calendar.workTime && !!derived?.workTime);
+  truthy(`#366 .mpp: projectkalender houdt MINUTES_PER_DAY 8 u na de promotie (kreeg ${r.calendar.hoursPerDay})`, r.calendar.hoursPerDay === 8);
+  truthy(`#366 .mpp: afgeleide kalender volgt de blokken, 10 u (kreeg ${derived?.hoursPerDay})`, derived?.hoursPerDay === 10);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════

@@ -666,9 +666,7 @@ function readCalendarsUnsafe(
     if (cal !== projectCalendar) resourceCalendars.push(cal);
   }
 
-  const overriddenCalendar = projectCalendarUid !== null && hoursPerDayOverride !== null
-    ? calendarByUniqueId.get(projectCalendarUid)
-    : undefined;
+  const overriddenCalendar = projectCalendarUid !== null ? calendarByUniqueId.get(projectCalendarUid) : undefined;
   return {
     calendarByUniqueId,
     ...(overriddenCalendar && hoursPerDayOverride !== null

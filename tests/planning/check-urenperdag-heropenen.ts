@@ -27,6 +27,7 @@ import type { Task } from '@/types/task';
 import type { Baseline } from '@/types/baseline';
 import type { WorkCalendar, WorkTimeBands } from '@/types/calendar';
 import type { Project } from '@/types/project';
+import type { Resource, ResourceAssignment } from '@/types/resource';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { installDOMParser } from './xmldom-shim';
@@ -285,6 +286,27 @@ if (corpus && existsSync(join(twinDir, 'mpp14timephased.mpp'))) {
   eq('§7 XER tweede promotie: testvoorwaarde uurkalender met afgeleide blokken 08:00–16:00',
     c?.workTime?.byWeekday[1], [{ start: 480, end: 960 }]);
   eq('§7 XER tweede promotie: day_hr_cnt 10 blijft', c?.hoursPerDay, 10);
+}
+
+// ── §8 MSPDI-toewijzing op een dagtaak: het werk rekent met de opgeslagen uren per dag ──────────────
+// `mspdiWriter` schrijft `<Work>` als dagen × `hoursPerDay` (5 d × 8 u = 40 u). De lezer moet met dezelfde
+// 8 u terugrekenen. Met de werktijd (10,5 u) legt hij 40 u vast als afwijkend werk, en groeit het werk niet
+// meer mee als de gebruiker de duur verandert (10 d ⇒ `Duration` 80 u bij `Work` 40 u).
+{
+  const res = { id: 'r1', name: 'Timmerman', type: 'LABOR', description: '', maxUnits: 1 } as Resource;
+  const asg: ResourceAssignment = { id: 'a1', taskId: 't-Dagtaak', resourceId: 'r1', unitsPerDay: 1 };
+  const dayTask: Task = { ...mk('Dagtaak', 'days', 5), resourceIds: ['r1'] };
+  const workHours = (xml: string) => xml.match(/<Assignment>[\s\S]*?<Work>PT(\d+)H/)?.[1];
+  const xml1 = quiet(() => writeMSPDI(project, CAL, [dayTask], [], [res], [asg], [], [], null));
+  eq('§8 MSPDI-toewijzing: geschreven werk 40 u (testvoorwaarde)', workHours(xml1), '40');
+  const back = quiet(() => readMSPDI(xml1));
+  const a = back.assignments?.[0];
+  eq('§8 MSPDI-toewijzing: geen vastgelegd afwijkend werk na heropenen',
+    [a?.unitsPerDay, a?.plannedWorkMinutes, a?.actualWorkMinutes, a?.remainingWorkMinutes], [1, undefined, undefined, undefined]);
+  const t = back.tasks.find(x => x.name === 'Dagtaak');
+  if (t) t.time.scheduleDuration = 10;
+  const xml2 = quiet(() => writeMSPDI(project, back.calendar, back.tasks, [], back.resources ?? [], back.assignments ?? [], [], [], null));
+  eq('§8 MSPDI-toewijzing: na 10 d groeit het werk mee naar 80 u', workHours(xml2), '80');
 }
 
 if (fails > 0) {

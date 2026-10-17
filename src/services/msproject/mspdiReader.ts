@@ -363,8 +363,10 @@ export function readMSPDI(content: string): ImportResult {
     const isHour = hourModeCalIds.has(effCalId);
     const effCal = calById.get(effCalId) ?? calendar;
     const effHpd = calById.get(effCalId)?.hoursPerDay ?? hoursPerDay;
-    // Het werk van een toewijzing rekent in werktijd per dag, zoals de P6 XML-lezer (`engineForTask`).
-    effHpdByTaskId.set(id, effHoursPerDay(effCal));
+    // Het werk van een toewijzing rekent met de opgeslagen uren per dag, net als `mspdiWriter` hem schrijft
+    // (`<Work>` = dagen × `hoursPerDay`). Met de werktijd zou een dagtaak van 5 d op 8 u/dag met blokken
+    // van 10 u haar 40 u als vastgelegd werk terugkrijgen, en bij een langere duur niet meer meegroeien.
+    effHpdByTaskId.set(id, effHpd);
     // MSP's <Type> (0/1/2 = Fixed Units/Duration/Work) en <EffortDriven> — dezelfde bewaarvelden als
     // de .mpp-lezer; de werkregel volgt eruit via `deriveImportedWorkRules`. Ontbrekend/ongeldig ⇒
     // geen veld.
@@ -378,7 +380,7 @@ export function readMSPDI(content: string): ImportResult {
     const durationMinutes = durationUnit === 'hours' ? (mspDurationMinutes(durationStr) ?? 0) : undefined;
     // Urentaak: dagengetal via `hourTaskScheduleDuration`; dagtaak: de opgeslagen uren per dag.
     const duration = durationUnit === 'hours'
-      ? hourTaskScheduleDuration(durationMinutes!, calById.get(effCalId) ?? calendar)
+      ? hourTaskScheduleDuration(durationMinutes!, effCal)
       : parseMSPDuration(durationStr, effHpd);
     const startRaw = getElementText(te, 'Start');
     const finishRaw = getElementText(te, 'Finish');
@@ -486,8 +488,7 @@ export function readMSPDI(content: string): ImportResult {
         // Dezelfde dag als de taakduur (`mspdiBaselineDays`), anders leest een 24/7-taak haar eigen
         // baseline als 2,33 dagen terug, of een urentaak van 1870 u op 8 u/dag met blokken van 10 u
         // haar baseline als 234 d naast een taak van 187 d.
-        duration: mspdiBaselineDays(getElementText(bEl, 'Duration'), durationUnit === 'hours',
-          calById.get(effCalId) ?? calendar, effHpd),
+        duration: mspdiBaselineDays(getElementText(bEl, 'Duration'), durationUnit === 'hours', effCal, effHpd),
         isMilestone,
       });
       break;
@@ -1106,6 +1107,8 @@ function readCalendars(root: Element, budget: HolidayBudget): {
   /** `<MinutesPerDay>` / 60 als hij op de projectkalender staat; zie de promotie in `readMSPDI`. */
   projectFileHoursPerDay?: number;
 } {
+  const fileMinutesPerDay = getElementInt(root, 'MinutesPerDay');
+  const projectFileHoursPerDay = fileMinutesPerDay > 0 ? fileMinutesPerDay / 60 : undefined;
   const calendarsRoot = root.getElementsByTagName('Calendars')[0];
   const allEls = new Map<number, Element>();
   if (calendarsRoot) {
@@ -1184,8 +1187,7 @@ function readCalendars(root: Element, budget: HolidayBudget): {
       // WorkingTime-afgeleide waarde uit applyCalendarBody. Alleen voor de projectkalender: een
       // afgeleide kalender rekent zijn `hoursPerDay` uit zijn eigen (geërfde) blokken, net als elke
       // andere bibliotheekkalender.
-      const minutesPerDay = getElementInt(root, 'MinutesPerDay');
-      if (minutesPerDay > 0) cal.hoursPerDay = minutesPerDay / 60;
+      if (projectFileHoursPerDay !== undefined) cal.hoursPerDay = projectFileHoursPerDay;
     }
     resolved.set(uid, cal);
     weekOf.set(uid, week);
@@ -1202,6 +1204,5 @@ function readCalendars(root: Element, budget: HolidayBudget): {
     calUidToId.set(uid, cal.id);
     resourceCalendars.push(cal);
   }
-  const minutesPerDay = getElementInt(root, 'MinutesPerDay');
-  return { calendar, resourceCalendars, calUidToId, ...(minutesPerDay > 0 ? { projectFileHoursPerDay: minutesPerDay / 60 } : {}) };
+  return { calendar, resourceCalendars, calUidToId, ...(projectFileHoursPerDay !== undefined ? { projectFileHoursPerDay } : {}) };
 }

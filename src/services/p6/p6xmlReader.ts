@@ -603,6 +603,13 @@ function readP6XmlProject(scope: P6XmlScope): P6XmlProjectRead {
   const projectCalEl = calElements.find(el => defaultCalObjId >= 0 && getElementInt(el, 'ObjectId', -1) === defaultCalObjId)
     ?? calElements[0];
   const calendar = projectCalEl ? readP6Calendar(projectCalEl, lastMinute) : createDefaultCalendar();
+  // Een eigen, geldige `HoursPerDay` per kalender; hij gaat na de uur-promotie terug (zie daar).
+  const fileHoursPerDay = new Map<WorkCalendar, number>();
+  const noteFileHoursPerDay = (cal: WorkCalendar, calEl: Element): void => {
+    const fileHpd = getElementFloat(calEl, 'HoursPerDay');
+    if (fileHpd > 0) fileHoursPerDay.set(cal, fileHpd);
+  };
+  if (projectCalEl) noteFileHoursPerDay(calendar, projectCalEl);
   const projectCalObjId = projectCalEl ? getElementInt(projectCalEl, 'ObjectId', -1) : -1;
   const hoursPerDay = calendar.hoursPerDay;
 
@@ -623,6 +630,7 @@ function readP6XmlProject(scope: P6XmlScope): P6XmlProjectRead {
     if (objId < 0 || objId === projectCalObjId || calObjIdToId.has(objId)) continue;
     if (getElementText(calEl, 'Type') !== 'Resource' && !referencedCalObjIds.has(objId)) continue;
     const cal = readP6Calendar(calEl, lastMinute);
+    noteFileHoursPerDay(cal, calEl);
     cal.id = generateId('rescal');
     calObjIdToId.set(objId, cal.id);
     resourceCalendars.push(cal);
@@ -860,19 +868,7 @@ function readP6XmlProject(scope: P6XmlScope): P6XmlProjectRead {
   const hourModeCalIds = promoteHourCalendars(calById, id => cSignalCalIds.has(id), false);
   // Een eigen `HoursPerDay` uit het bestand (authoritatief, zie `readP6Calendar`) gaat na de promotie
   // terug, zoals bij XER en IFC: de omrekening tussen dagen en uren mag afwijken van de blokken.
-  const restoreFileHoursPerDay = (cal: WorkCalendar | undefined, calEl: Element | undefined): void => {
-    const fileHpd = calEl ? getElementFloat(calEl, 'HoursPerDay') : 0;
-    if (cal && fileHpd > 0) cal.hoursPerDay = fileHpd;
-  };
-  restoreFileHoursPerDay(calendar, projectCalEl);
-  const restoredCalIds = new Set<string>(); // per ObjectId telt het eerste element, zoals hierboven
-  for (const calEl of calElements) {
-    if (calEl === projectCalEl) continue;
-    const calId = calObjIdToId.get(getElementInt(calEl, 'ObjectId', -1));
-    if (calId === undefined || restoredCalIds.has(calId)) continue;
-    restoredCalIds.add(calId);
-    restoreFileHoursPerDay(calById.get(calId), calEl);
-  }
+  for (const [cal, fileHpd] of fileHoursPerDay) cal.hoursPerDay = fileHpd;
 
   // "Datums zoals opgeslagen" voor P6 XML: P6's EIGEN rekenuitvoer per activiteit —
   // `EarlyStartDate`/`EarlyFinishDate` (terugval `StartDate`/`FinishDate`), `LateStartDate`/
