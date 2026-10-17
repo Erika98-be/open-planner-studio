@@ -299,11 +299,11 @@ test('lange lijst: alleen de zichtbare opties in de DOM; toetsen, scrollen en br
 
   // Veel minder optie-nodes dan opties; aria-setsize noemt het echte aantal.
   const options = list.locator('[role="option"]');
-  const setsize = Number(await options.first().getAttribute('aria-setsize'));
-  expect(setsize).toBeGreaterThanOrEqual(COUNT - 1);
   const rendered = await options.count();
   expect(rendered).toBeGreaterThan(0);
   expect(rendered).toBeLessThan(100);
+  const setsize = Number(await options.first().getAttribute('aria-setsize'));
+  expect(setsize).toBeGreaterThanOrEqual(COUNT - 1);
 
   const active = () => list.locator('.ops-select__option.is-highlighted');
   const expectActiveInView = async (name: RegExp | string) => {
