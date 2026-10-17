@@ -812,7 +812,7 @@ const inMode = (ifcText: string): ImportResult => ({ ...offerOnly(ifcText), impo
 
 // (9.D) De bewuste asymmetrie: een bewerking die GÉÉN datums raakt (`finishMutation` zonder
 // `stale`) laat de modus staan. Zou élke `finishMutation` de modus verlaten, dan zou een
-// hernummering het aanbod stil weggooien — en er is dan niets dat de weergegeven datums nog
+// hernummering de modus stil verlaten — en er is dan niets dat de weergegeven datums nog
 // herrekent, want `scheduleStale` blijft uit. Precies de mengvorm die de modus moet voorkomen.
 {
   S().newProject();
@@ -825,6 +825,23 @@ const inMode = (ifcText: string): ImportResult => ({ ...offerOnly(ifcText), impo
   truthy('9D-3 …en laat de vastlegging staan', S().recordedDates !== null);
   eq('9D-4 …en zet de planning niet op verouderd', S().scheduleStale, false);
   eq('9D-5 …en laat de getoonde opgeslagen datum met rust', earlyStartOf(bId), '2026-03-16');
+
+  // Het eigenschappenpaneel schrijft via `updateTask`. Een naam wijzigen raakt geen datum en laat de
+  // modus staan (gids `uitleg-datums-zoals-opgeslagen`: "Een naam wijzigen doet dat niet"), net als
+  // de naamcel in het taakraster. MUTATIEBEWIJS: `const keepsRecordedMode = false` in
+  // `taskSlice.ts` ⇒ 9D-6 ROOD; `'priority'` in `DATE_NEUTRAL_TASK_FIELDS` ⇒ 9D-8 ROOD.
+  S().updateTask(bId, { name: 'Hernoemd', description: 'Omschrijving' });
+  eq('9D-6 naam + omschrijving via updateTask: modus blijft, niet verouderd, wel vuil',
+    [S().datesAsRecorded, S().recordedDates !== null, S().scheduleStale, S().isDirty, S().tasks.find((t) => t.id === bId)!.name],
+    [true, true, false, true, 'Hernoemd']);
+  eq('9D-7 …en de getoonde opgeslagen datum blijft', earlyStartOf(bId), '2026-03-16');
+  // Een patch met één planningsveld erbij (prioriteit: invoer voor nivelleren) verlaat de modus wél.
+  S().updateTask(bId, { name: 'Nog eens', priority: S().tasks.find((t) => t.id === bId)!.priority + 1 });
+  eq('9D-8 naam + prioriteit: modus uit, vastlegging weg, verouderd', [S().datesAsRecorded, S().recordedDates, S().scheduleStale], [false, null, true]);
+  // Buiten de modus blijft het pad ongewijzigd: ook een naamwijziging zet de planning op verouderd.
+  S().runCPM();
+  S().updateTask(bId, { name: 'Buiten de modus' });
+  eq('9D-9 buiten de modus: naamwijziging zet de planning (ongewijzigd) op verouderd', S().scheduleStale, true);
 }
 
 // ── (10) De tweede ring: élk ánder pad dat herrekent (review taak 6) ─────────

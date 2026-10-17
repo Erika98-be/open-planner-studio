@@ -317,7 +317,9 @@ expect('6f ... en vergeet de opgeslagen datums (geen aanbod-stand meer, eigenaar
     store().getOpenDocumentPayloads()[0]!.payload.datesAsRecorded === true);
   const editId = store().tasks[0]!.id;
   const p6Start = store().tasks[0]!.time.earlyStart;
-  store().updateTask(editId, { name: 'Hernoemd door gebruiker' });
+  // Naam plus prioriteit: een naam alleen laat de modus staan (datumneutraal, zie
+  // `DATE_NEUTRAL_TASK_FIELDS` in taskSlice.ts); de prioriteit is planningsinvoer (nivelleren).
+  store().updateTask(editId, { name: 'Hernoemd door gebruiker', priority: store().tasks[0]!.priority + 1 });
   const gap = store().getOpenDocumentPayloads()[0]!.payload;
   expect('6i voorwaarde: de bewerking verliet de modus en zette de planning op verouderd',
     gap.datesAsRecorded === false && gap.scheduleStale === true);
