@@ -463,26 +463,32 @@ test('verricht werk in het Nederlands: de canonieke zin', async ({ page, ops: _o
 
 test('alle globale sneltoetsen staan dicht onder de vraag: Delete, Backspace, F5, Insert (review #374)', async ({ page, ops: _ops }) => {
   const { L, N } = await seedAssignedLeaf(page);
+  // Planning verouderd, zodat een doorgelaten F5 zichtbaar is (stale gaat dan uit).
+  await page.evaluate((n) => {
+    const s = window.__OPS__!.store.getState();
+    const t = s.tasks.find(x => x.id === n)!;
+    s.updateTask(n, { time: { ...t.time, scheduleDuration: 6 } });
+  }, N);
+  expect(await page.evaluate(() => window.__OPS__!.store.getState().scheduleStale)).toBe(true);
   await selectRow(page, N);
   await page.keyboard.press('Alt+Shift+ArrowRight');
   await expect(dialog(page)).toBeVisible();
   // Geen ?-knop in dit venster: die zou Help áchter "Taak bewerken" openen.
   await expect(dialog(page).locator('[data-ops-help-button]')).toHaveCount(0);
-  const before = await page.evaluate(() => {
+  const snapshot = () => page.evaluate(() => {
     const s = window.__OPS__!.store.getState();
     return JSON.stringify({ tasks: s.tasks, assignments: s.assignments, stale: s.scheduleStale });
   });
+  const before = await snapshot();
   const depth = (await state(page)).undoDepth;
 
-  for (const key of ['Delete', 'Backspace', 'F5', 'Insert', 'Alt+Shift+ArrowLeft', 'Control+d', 'Control+z']) {
+  // Na ELKE toets apart nagaan: twee doorgelaten toetsen mogen elkaar niet opheffen (Delete + Ctrl+Z).
+  for (const key of ['Delete', 'Backspace', 'F5', 'Insert', 'Alt+Shift+ArrowLeft', 'Control+d', 'Control+z', 'Control+y']) {
     await page.keyboard.press(key);
+    await expect(dialog(page), key).toBeVisible();
+    expect(await snapshot(), key).toBe(before);
+    expect((await state(page)).undoDepth, key).toBe(depth);
   }
-  await expect(dialog(page)).toBeVisible();
-  expect(await page.evaluate(() => {
-    const s = window.__OPS__!.store.getState();
-    return JSON.stringify({ tasks: s.tasks, assignments: s.assignments, stale: s.scheduleStale });
-  })).toBe(before);
-  expect((await state(page)).undoDepth).toBe(depth);
 
   await moveButton(page).click();
   await expect(dialog(page)).toBeHidden();
