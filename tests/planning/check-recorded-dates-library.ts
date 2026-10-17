@@ -160,9 +160,11 @@ console.log('-- (d) heropenen: eigen IFC, bibliotheek intussen gewijzigd --');
   fridayOff(f);
   f.S().applyOpenedImport(readXerArchiveIFC(ifc), { filePath: '/tmp/v1.ifc', recompute: true, fit: false, hourDataNotice: false, linkedOpen: true });
   eq('d0 voorwaarde: de open-grens ververste de kalender', f.S().calendar.workDays, [1, 2, 3, 4]);
-  // Het bestand is sinds de import bewerkt (koppeling aan de bibliotheek): heropenen VERGEET de
-  // opgeslagen datums — er is geen aanbod-stand meer (eigenaar, 2026-10-17, optie 1).
-  eq('d1 bewerkt bestand: geen vastlegging, geen modus', [f.S().recordedDates, f.S().datesAsRecorded], [null, false]);
+  // Het bestand is sinds de import bewerkt (koppeling aan de bibliotheek), maar IN de modus
+  // opgeslagen: het opent weer in de modus, "zoals je het achterliet" (eigenaar, 2026-10-17). De
+  // strook telt NA de verversing van de open-grens.
+  eq('d1 bewerkt maar in de modus opgeslagen: modus aan, strook telt NA de verversing: 3',
+    [f.S().datesAsRecorded, f.S().recordedDates !== null, strip(f)], [true, true, 3]);
   // Hetzelfde bestand als ONBEWERKT (vlag aan) opent wél in de modus; de strook telt dan NA de
   // verversing.
   f.S().newProject();

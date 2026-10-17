@@ -257,22 +257,26 @@ eq('zonder recordedUnrecordedAxes: lateFinish toont gewoon de datum',
 // ── Einde-tot-eind door de ECHTE store ───────────────────────────────────────────────────────
 // Geen synthetische context maar de documentstate zoals `applyLoadedProject` hem achterlaat, door
 // dezelfde binding en dezelfde kolomdescriptor.
-//  1. Een BEWERKT, heropend eigen IFC: geen aanbod-stand meer (eigenaar, 2026-10-17) — de app
-//     vergeet de opgeslagen datums, de late-/floatkolommen tonen onze echte berekening.
-//  2. Hetzelfde bestand ONBEWERKT: in de modus is "Niet vastgelegd" juist het eerlijke antwoord.
-// MUTATIEBEWIJS: zet de poort in `recordedGridBinding` terug op `recorded ? … : undefined` én laat
-// `applyRecordedDatesOnLoad` het aanbod weer zetten ⇒ de asserties onder 1 slaan ROOD.
+//  1. Een BUITEN de modus opgeslagen, bewerkt eigen IFC (dus zonder `SourceFormat`, dat de app alleen
+//     in de modus schrijft): de app vergeet de opgeslagen datums, de late-/floatkolommen tonen onze
+//     echte berekening. Een bewerkt bestand MET `SourceFormat` is in de modus opgeslagen en opent
+//     sinds 2026-10-17 weer in de modus ("zoals je het achterliet", zie check-recorded-dates 7aj6c).
+//  2. Hetzelfde bestand ONBEWERKT, in de modus opgeslagen: "Niet vastgelegd" is het eerlijke antwoord.
+// MUTATIEBEWIJS: zet de poort in `recordedGridBinding` terug op `recorded ? … : undefined` ⇒ de
+// asserties onder 2 tonen dan nog steeds "Niet vastgelegd" maar onder 1 blijft alles groen; het
+// aanbod-pad zelf bewaakt check-recorded-dates 8a.
 {
   const S = () => useAppStore.getState();
   const eigenIfc = (importPristine: boolean) => ({
-    ...readIFC(externIfc('mark')), recordedTimesOrigin: 'ifc-own' as const, recordedSourceFormat: 'ifc' as const, importPristine,
+    ...readIFC(externIfc('mark')), recordedTimesOrigin: 'ifc-own' as const,
+    recordedSourceFormat: importPristine ? 'ifc' as const : undefined, importPristine,
   });
   S().newProject();
   S().applyLoadedProject(eigenIfc(false), { filePath: null, recompute: true });
-  ok('bewerkt eigen IFC: geen vastlegging, modus uit', S().recordedDates === null && S().datesAsRecorded === false);
+  ok('buiten de modus opgeslagen eigen IFC: geen vastlegging, modus uit', S().recordedDates === null && S().datesAsRecorded === false);
 
   const binding = recordedGridBinding(S().recordedDates, S().datesAsRecorded);
-  ok('bewerkt eigen IFC: geen kolom recorded.source en geen onvastgelegde-assennaad',
+  ok('buiten de modus opgeslagen eigen IFC: geen kolom recorded.source en geen onvastgelegde-assennaad',
     binding.recordedMark === undefined && binding.recordedUnrecordedAxes === undefined);
   const storeTask = S().tasks.find(t => t.wbsCode === '1.1')!;
   const ctx = baseContext({
@@ -281,9 +285,9 @@ eq('zonder recordedUnrecordedAxes: lateFinish toont gewoon de datum',
     ...binding,
     labelForText: key => ({ 'recordedDates.notRecorded': 'Niet vastgelegd' }[key] ?? key),
   });
-  eq('bewerkt eigen IFC door de echte store: lateStart toont de BEREKENDE datum, niet "Niet vastgelegd"',
+  eq('buiten de modus opgeslagen eigen IFC door de echte store: lateStart toont de BEREKENDE datum, niet "Niet vastgelegd"',
     lateStartCol.format(lateStartCol.read(storeTask, ctx), storeTask, ctx), storeTask.time.lateStart);
-  eq('bewerkt eigen IFC door de echte store: totalFloat toont de BEREKENDE speling, niet "Niet vastgelegd"',
+  eq('buiten de modus opgeslagen eigen IFC door de echte store: totalFloat toont de BEREKENDE speling, niet "Niet vastgelegd"',
     showsNumber(totalFloatCol.format(totalFloatCol.read(storeTask, ctx), storeTask, ctx), storeTask.time.totalFloat), true);
 
   S().newProject();
