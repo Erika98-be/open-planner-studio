@@ -801,8 +801,11 @@ function finishStructural(get: () => AppState, outcome: StructuralOutcome): void
 /**
  * Taakvelden die geen datum en geen planning raken. Dezelfde velden die het taakraster zonder
  * `scheduleStale` schrijft (route `task-field` zonder `task.priority`, plus `activity-code` en
- * `custom-field`, zie `expectedRoute`/`applyOneCellEdit` in `taskEditPlan.ts`) — bewust ZONDER
- * `taskType`/`customTaskTypeId`/`workRule`, die via `updateTask` gevolgregels hebben.
+ * `custom-field`, zie `expectedRoute`/`applyOneCellEdit` in `taskEditPlan.ts`).
+ *  - `taskType`/`customTaskTypeId`: een IFC-classificatie; de motor leest ze niet.
+ *  - `workRule`: `settleRuleChange` legt hooguit het restwerk vast ("Typewissel: geen enkel getal
+ *    verandert", `applyRuleChange` in `workTriangle.ts`) — hetzelfde als `setTaskWorkRule`, dat
+ *    daarom ook zonder `stale` sluit.
  *
  * Gebruik: een patch die ALLEEN deze velden verandert, laat "datums zoals opgeslagen" staan (de
  * getoonde datums blijven dan kloppen met het bestand). Zie de gids `uitleg-datums-zoals-opgeslagen`:
@@ -810,6 +813,7 @@ function finishStructural(get: () => AppState, outcome: StructuralOutcome): void
  */
 const DATE_NEUTRAL_TASK_FIELDS: ReadonlySet<string> = new Set([
   'name', 'description', 'wbsCode', 'color', 'notes', 'activityCodes', 'customFields',
+  'taskType', 'customTaskTypeId', 'workRule',
 ]);
 
 function changesOnlyDateNeutralFields(before: Task, after: Task): boolean {

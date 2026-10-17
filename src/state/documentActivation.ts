@@ -376,12 +376,18 @@ export function applyRecordedDatesOnLoad(
   const { recorded, sourceFormat } = allowed;
   const shiftedIds = shiftedTaskIds(prepared.tasks, recorded.times);
   // Een VERSE import van elk formaat gaat automatisch in de modus zodra er
-  // restverschillen zijn; een HEROPENING van een eigen IFC ('ifc-own'/'xer-archive') alleen
-  // zolang het document sinds de import niet is bewerkt (`importPristine`, uit het bestand zelf).
+  // restverschillen zijn. Een HEROPENING van een eigen IFC ('ifc-own'/'xer-archive') opent "zoals
+  // je het achterliet" (eigenaar, 2026-10-17): in de modus als het document sinds de import niet is
+  // bewerkt (`importPristine`), OF als het IN de modus is opgeslagen. Dat laatste herkent de app aan
+  // `OPS_ImportProvenance.SourceFormat` (`recordedSourceFormat`): `ifcSaveInput.ts` schrijft hem
+  // alleen in de modus. Zo opent een bestand dat na een naamwijziging in de modus is opgeslagen weer
+  // met dezelfde datums, en een bestand dat buiten de modus is opgeslagen (na F5 of een
+  // datumbewerking) met de berekening. Dit vervangt optie B van #167 (alleen `importPristine`).
   const origin = parsed.recordedTimesOrigin;
   const autoEnter = shiftedIds.length > 0 && (
     isFreshImportOrigin(origin)
-    || ((origin === 'ifc-own' || origin === 'xer-archive') && prepared.importPristine === true)
+    || ((origin === 'ifc-own' || origin === 'xer-archive')
+      && (prepared.importPristine === true || parsed.recordedSourceFormat !== undefined))
   );
   // Geen modus ⇒ de app VERGEET de opgeslagen datums (eigenaar, 2026-10-17, optie 1): geen
   // `recordedDates`, dus geen aanbod-strook, geen "wijkt af" en geen melding. Zelfde uitkomst als

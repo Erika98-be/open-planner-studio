@@ -54,7 +54,7 @@ If the file does not record everything for a task, you see a grey block in the *
 You leave the view in two ways:
 
 - Click *Recalculate* in the bar, or choose *Calculate* (F5). The app calculates with its own rules.
-- Change something that can alter the dates, such as the duration of a task or a new task. The app leaves the view and recalculates straight away, even if *Calculate automatically* is off. Changing a name does not do that: the view stays on.
+- Change something that can alter the dates, such as the duration of a task or a new task. The app leaves the view and recalculates straight away, even if *Calculate automatically* is off. Changing a name, description, task type or work rule does not do that: the view stays on.
 
 A calendar change from the resource library keeps the view on and the dates from the file in place, but updates the number in the bar.
 
@@ -66,9 +66,9 @@ If you recover a project after a crash that was in the view, the view stays on. 
 
 ### Saving and reopening
 
-If you save while you are using the view, the app writes the displayed dates into the IFC file, together with the source format. If you later open that IFC file again and have not edited it since the import, the view is on again, without a new message.
+If you save while you are using the view, the app writes the displayed dates into the IFC file, together with the source format. If you later open that IFC file again, the view is on again, without a new message. This also applies if you changed something in the view that does not affect the dates, such as a name. The app opens the file the way you left it.
 
-If you edited and saved in between, the app forgets the dates from the file when reopening. You then see the app's own calculation, without a strip and without a block in the *Properties* panel. This applies to every source. Your edited schedule is now the schedule; the old dates from the source package no longer belong to it. If you still want to see them, open the source file again.
+If you save after you left the view, by recalculating or by an edit that can change the dates, the file holds the app's own calculation. When reopening you see that calculation, without a strip and without a block in the *Properties* panel. There is one exception: an `.xer` that you only recalculated and did not edit (see above). Your edited schedule is now the schedule; the old dates from the source package no longer belong to it. If you still want to see them, open the source file again.
 
 ## Worked example: the extension
 
@@ -84,7 +84,8 @@ What if it is different?
 - You add a task in the view: the same recalculation. Metselwerk moves to 10 through 21 May.
 - You save in the view and open the IFC file again, without editing: Metselwerk is back on 17 through 28 May.
 - You recalculate, save without editing further and open the IFC file again: the view is on again and Metselwerk is on 17 through 28 May.
-- You edit, save and open again: the app forgets the dates from the file. Metselwerk is on 10 to 21 May, without a strip and without a block.
+- You only change the name of Metselwerk in the view, save and open again: the view is on again and Metselwerk is on 17 through 28 May.
+- You add a task in the view, save and open again: the app forgets the dates from the file. Metselwerk is on 10 to 21 May, without a strip and without a block.
 - Fundering is already complete in the file: it actually started on 3 May and actually finished on 7 May. The file records the status date as its early start. The bar of Fundering still sits on 3 to 7 May, in the view and after recalculating. Fundering does not count as a difference.
 
 ## Consequences and misunderstandings

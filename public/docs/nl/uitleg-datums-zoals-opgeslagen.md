@@ -54,7 +54,7 @@ Legt het bestand van een taak niet alles vast, dan zie je in het paneel *Eigensc
 Je verlaat de weergave op twee manieren:
 
 - Klik in de strook op *Herberekenen*, of kies *Bereken* (F5). De app rekent door met haar eigen regels.
-- Wijzig iets waardoor de datums kunnen veranderen, zoals de duur van een taak of een nieuwe taak. De app verlaat de weergave en rekent meteen door, ook als *Automatisch berekenen* uit staat. Een naam wijzigen doet dat niet: dan blijft de weergave aan.
+- Wijzig iets waardoor de datums kunnen veranderen, zoals de duur van een taak of een nieuwe taak. De app verlaat de weergave en rekent meteen door, ook als *Automatisch berekenen* uit staat. Een naam, omschrijving, taaktype of werkregel wijzigen doet dat niet: dan blijft de weergave aan.
 
 Een kalenderwijziging uit de resourcebibliotheek laat de weergave aan en de datums uit het bestand staan, maar werkt het getal in de strook bij.
 
@@ -66,9 +66,9 @@ Herstel je na een crash een project dat in de weergave stond, dan blijft de weer
 
 ### Opslaan en heropenen
 
-Sla je op terwijl je de weergave gebruikt, dan schrijft de app de getoonde datums in het IFC-bestand, samen met het bronformaat. Open je dat IFC-bestand later opnieuw en heb je het sinds de import niet bewerkt, dan staat de weergave weer aan, zonder nieuwe melding.
+Sla je op terwijl je de weergave gebruikt, dan schrijft de app de getoonde datums in het IFC-bestand, samen met het bronformaat. Open je dat IFC-bestand later opnieuw, dan staat de weergave weer aan, zonder nieuwe melding. Dat geldt ook als je in de weergave iets wijzigde dat de datums niet raakt, zoals een naam. De app opent het bestand zoals je het achterliet.
 
-Heb je tussendoor bewerkt en opgeslagen, dan vergeet de app bij het heropenen de datums uit het bestand. Je ziet dan de eigen berekening, zonder strook en zonder blok in het paneel *Eigenschappen*. Dat geldt voor elke bron. Je bewerkte planning is nu de planning; de oude datums uit het bronpakket horen daar niet meer bij. Wil je ze toch zien, open dan het bronbestand opnieuw.
+Sla je op nadat je de weergave verliet, door te herberekenen of door een bewerking die de datums kan veranderen, dan staat de eigen berekening in het bestand. Bij het heropenen zie je die berekening, zonder strook en zonder blok in het paneel *Eigenschappen*. Er is één uitzondering: een `.xer` die je alleen herberekende en niet bewerkte (zie hierboven). Je bewerkte planning is nu de planning; de oude datums uit het bronpakket horen daar niet meer bij. Wil je ze toch zien, open dan het bronbestand opnieuw.
 
 ## Rekenvoorbeeld: de uitbouw
 
@@ -84,7 +84,8 @@ Wat als het anders is?
 - Je voegt in de weergave een taak toe: dezelfde herberekening. Metselwerk gaat naar 10 tot en met 21 mei.
 - Je slaat op in de weergave en opent het IFC-bestand opnieuw, zonder bewerking: Metselwerk staat weer op 17 tot en met 28 mei.
 - Je herberekent, slaat op zonder verder te bewerken en opent het IFC-bestand opnieuw: de weergave staat weer aan en Metselwerk staat op 17 tot en met 28 mei.
-- Je bewerkt, slaat op en opent opnieuw: de app vergeet de datums uit het bestand. Metselwerk staat op 10 tot en met 21 mei, zonder strook en zonder blok.
+- Je wijzigt in de weergave alleen de naam van Metselwerk, slaat op en opent opnieuw: de weergave staat weer aan en Metselwerk staat op 17 tot en met 28 mei.
+- Je voegt in de weergave een taak toe, slaat op en opent opnieuw: de app vergeet de datums uit het bestand. Metselwerk staat op 10 tot en met 21 mei, zonder strook en zonder blok.
 - Fundering is in het bestand al klaar: werkelijk gestart op 3 mei en werkelijk klaar op 7 mei. Het bestand legt als vroege start de statusdatum vast. De balk van Fundering staat toch op 3 tot en met 7 mei, in de weergave en na herberekenen. Fundering telt niet mee als afwijking.
 
 ## Gevolgen en misverstanden

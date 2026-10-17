@@ -835,6 +835,21 @@ const inMode = (ifcText: string): ImportResult => ({ ...offerOnly(ifcText), impo
     [S().datesAsRecorded, S().recordedDates !== null, S().scheduleStale, S().isDirty, S().tasks.find((t) => t.id === bId)!.name],
     [true, true, false, true, 'Hernoemd']);
   eq('9D-7 …en de getoonde opgeslagen datum blijft', earlyStartOf(bId), '2026-03-16');
+  // Het paneel (`TaskTypeField`) en *Taak bewerken* schrijven het taaktype via `updateTask`; het
+  // raster laat de modus daarbij al staan. Zelfde uitkomst hier. Ook een werkregel via `updateTask`
+  // (zoals `setTaskWorkRule`). MUTATIEBEWIJS: `'taskType'` uit `DATE_NEUTRAL_TASK_FIELDS` ⇒ 9D-7a
+  // ROOD; `'workRule'` eruit ⇒ 9D-7b ROOD.
+  {
+    const huidig = S().tasks.find((t) => t.id === bId)!.taskType;
+    S().updateTask(bId, { taskType: huidig === 'LOGISTIC' ? 'MOVE' : 'LOGISTIC', customTaskTypeId: undefined });
+    eq('9D-7a taaktype via updateTask: modus blijft, niet verouderd, datum blijft',
+      [S().datesAsRecorded, S().scheduleStale, earlyStartOf(bId)], [true, false, '2026-03-16']);
+    const regel = S().tasks.find((t) => t.id === bId)!.workRule;
+    S().updateTask(bId, { workRule: regel === 'FIXED_WORK' ? 'FIXED_DURATION_WORK' : 'FIXED_WORK' });
+    eq('9D-7b werkregel via updateTask: modus blijft, niet verouderd, datum blijft',
+      [S().datesAsRecorded, S().scheduleStale, earlyStartOf(bId), S().tasks.find((t) => t.id === bId)!.workRule !== regel],
+      [true, false, '2026-03-16', true]);
+  }
   // Een patch met één planningsveld erbij (prioriteit: invoer voor nivelleren) verlaat de modus wél.
   S().updateTask(bId, { name: 'Nog eens', priority: S().tasks.find((t) => t.id === bId)!.priority + 1 });
   eq('9D-8 naam + prioriteit: modus uit, vastlegging weg, verouderd', [S().datesAsRecorded, S().recordedDates, S().scheduleStale], [false, null, true]);
@@ -1396,9 +1411,10 @@ const inMode = (ifcText: string): ImportResult => ({ ...offerOnly(ifcText), impo
   // ís dan de herberekening, dus er valt niets meer te tonen. Geen modus, geen aanbod.
   eq('16h heropenen na F5+opslaan: het bestand draagt de herberekening zelf ⇒ niets te melden', [S().datesAsRecorded, S().recordedDates], [false, null]);
 
-  // Eén bewerking (echte mutator) wist de vlag; daarna opent het bestand niet meer in de modus.
+  // Eén bewerking (echte mutator) wist de vlag. De modus stond sinds 16h al uit, dus deze check
+  // toetst alleen de vlag en het vuil worden; het verlaten van de modus staat in 9D-8.
   S().updateTask(S().tasks[0]!.id, { name: 'Bewerkt' });
-  eq('16i een bewerking verlaat de modus én wist de vlag', [S().datesAsRecorded, S().importPristine, S().isDirty], [false, false, true]);
+  eq('16i een bewerking (modus stond al uit, 16h) wist de vlag en maakt vuil', [S().datesAsRecorded, S().importPristine, S().isDirty], [false, false, true]);
   const savedEdited = writeIFC(buildWriteIFCInput(S()));
   truthy('16j het bewerkte bestand draagt geen OPS_ImportProvenance meer', !savedEdited.includes("'OPS_ImportProvenance'"));
   S().newProject();
