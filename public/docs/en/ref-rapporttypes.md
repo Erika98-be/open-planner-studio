@@ -26,9 +26,9 @@ Open the *Report* tab (or press Ctrl+P). On the left is the *Report* column with
 
 The schedule as a bar chart, with a table on the left and a timeline on the right, over several pages if needed. The preview shows the paper with page header, table, timeline and legend. The block *Summary* counts *Tasks:*, *Leaf tasks:*, *Critical:* and *Relations:*. All options are under *Settings*.
 
-**Company:** — the company in the page header. Default: the company from the project information. Effect: only the header of the report; what you type over here is not kept. Change the company in *Settings › Project › Project info*, in the field *Client/organization*, and confirm with *Apply*.
+**Company:** — the company in the page header. Default: the company from the project settings. Effect: only the header of the report; what you type over here is not kept. Change the company in *Settings › Project › Project settings*, in the field *Client/organization*, and confirm with *Apply*.
 
-**Author:** — the author in the page header. Read-only: the app takes it from the project information.
+**Author:** — the author in the page header. Read-only: the app takes it from the project settings.
 
 **Font size:** — size of text and table in the report. Choose from 90%, 100%, 110% and 125%. Default: 100%. Effect: with a larger font, text, rows and table grow and the timeline loses width. Independent of *Text size* in the settings.
 

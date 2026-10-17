@@ -40,7 +40,7 @@ If you close the last project, an empty schedule called *New schedule* remains.
 
 ### Choosing the switch style
 
-The tabs are a choice. Open the settings window with the gear in the title bar, go to the *Appearance* tab and choose at *Document switch style*:
+The tabs are a choice. Open the *App settings* window with the gear in the title bar, go to the *Appearance* tab and choose at *Document switch style*:
 
 - *Horizontal tabs*: the default. A row of tabs under the ribbon.
 - *Vertical tabs*: a narrow bar on the left with a button per project (the first letters of the name) and a plus. If you hover over a button you see name, file name, number of tasks, number of critical tasks and end date. The button at the top opens the overview.
@@ -52,7 +52,7 @@ All three styles open the same overview, and Ctrl+1 to Ctrl+9 works in every sty
 
 **What belongs to the project and what is shared.** Each project has its own view: zoom and position, an active layout with filter, grouping or sorting, split view, the relationship lines and the collapsed phases. If you switch to another project, you see its own view there. Shared by all projects are the selected tab in the ribbon, the mini-map, the overlays (baseline overlay, progress line and the rest), your column choice, your layouts and the report choices.
 
-**You cannot switch with a dialog open.** As long as a dialog is open, for example the settings window or a task window, Ctrl+1 to Ctrl+9 do nothing in the app. In the browser they then switch browser tabs. Close the dialog first. An unapplied change in *Project info* in Backstage also blocks switching.
+**You cannot switch with a dialog open.** As long as a dialog is open, for example the *App settings* window or a task window, Ctrl+1 to Ctrl+9 do nothing in the app. In the browser they then switch browser tabs. Close the dialog first. An unapplied change in *Project settings* in Backstage also blocks switching.
 
 **Ctrl+1 to Ctrl+9 count by order.** The shortcut goes to the project at that place in the row. If you close a project, the other places shift up. If you have more than nine projects open, you reach the rest only through the tabs or the overview.
 

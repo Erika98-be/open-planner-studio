@@ -52,10 +52,10 @@ What does not shift:
 
 **The date is in the past.** That is allowed, but the preview mentions it: *The new start date is in the past.*
 
-**Changing the project start in Project info is something else.** If you change the start date in *Settings › Project › Project info* and choose *Apply*, the schedule does not move. Only tasks without a predecessor or constraint that would then lie before the new start shift to that date, and the app tells you how many. If you want to shift everything, use *Move project…*.
+**Changing the project start in Project settings is something else.** If you change the start date in *Settings › Project › Project settings* and choose *Apply*, the schedule does not move. Only tasks without a predecessor or constraint that would then lie before the new start shift to that date, and the app tells you how many. If you want to shift everything, use *Move project…*.
 
 ## See also
 
 - [Critical path and float](docs://uitleg-kritiek-pad): how the schedule calculates and why the finish moves.
 - [Adding relations](docs://howto-relaties-leggen): relations simply stay in place when you move.
-- [New project and Project info](docs://ref-projectinfo): what the start date in Project info does.
+- [New project and Project settings](docs://ref-projectinfo): what the start date in Project settings does.

@@ -78,7 +78,7 @@ async function assertThreeTabsAndSections(container: Locator): Promise<void> {
 
 test('gear-popup, Instellingen-ribbontab en Backstage tonen dezelfde drie tabs zonder de sectie Project', async ({ page, ops: _ops }) => {
   // 1) Tandwiel-popup (⚙) in de titelbalk.
-  await page.getByTitle(/^(Settings|Instellingen)$/, { exact: true }).click();
+  await page.getByTitle(/^(App settings|App-instellingen)$/, { exact: true }).click();
   const gearDialog = page.locator('.settings-dialog');
   await expect(gearDialog).toBeVisible();
   await assertThreeTabsAndSections(gearDialog);
@@ -87,7 +87,7 @@ test('gear-popup, Instellingen-ribbontab en Backstage tonen dezelfde drie tabs z
 
   // 2) Instellingen-ribbontab → knop "Instellingen"/"Settings" in de Project-lintgroep.
   await page.locator('.ribbon-tab').filter({ hasText: /^(Settings|Instellingen)$/ }).click();
-  await page.locator('.ribbon-content').getByRole('button', { name: /^(Settings|Instellingen)$/, exact: true }).click();
+  await page.locator('.ribbon-content').getByRole('button', { name: /^(App settings|App-instellingen)$/, exact: true }).click();
   const ribbonDialog = page.locator('.settings-dialog');
   await expect(ribbonDialog).toBeVisible();
   await assertThreeTabsAndSections(ribbonDialog);
@@ -98,6 +98,6 @@ test('gear-popup, Instellingen-ribbontab en Backstage tonen dezelfde drie tabs z
   await page.locator('.ribbon-tab--file').click();
   const backstage = page.locator('.backstage');
   await expect(backstage).toBeVisible();
-  await backstage.locator('.backstage-nav-item').filter({ hasText: /^(Settings|Instellingen)$/ }).click();
+  await backstage.locator('.backstage-nav-item').filter({ hasText: /^(App settings|App-instellingen)$/ }).click();
   await assertThreeTabsAndSections(backstage.locator('.backstage-main'));
 });

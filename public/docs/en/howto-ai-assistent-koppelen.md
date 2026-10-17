@@ -12,7 +12,7 @@ The bridge only works in the desktop app. If you turn on AI mode in the browser,
 
 ### 1. Turn on AI mode
 
-1. Choose *Settings › Project › Settings*. You can also choose *File › Settings*, or the gear at the top.
+1. Choose *Settings › Project › App settings*. You can also choose *File › App settings*, or the gear at the top.
 2. Choose the tab *Advanced* and turn on *Enable AI mode*. The tab *AI* appears in the ribbon.
 3. If you want the bridge to be live as soon as the app starts, also turn on *Start bridge automatically*. That only switches when AI mode is on and only works in the desktop app. It is off by default, because opening a port is a deliberate choice.
 
@@ -98,4 +98,4 @@ Whether the assistant really read the guide you can see in the *Activity panel*:
 - [How the AI link works](docs://uitleg-ai-koppeling): what the link is, why the assistant works in your open project and what it may not do.
 - [AI tools](docs://ref-ai-tools): all `planner_*` tools by group, the error codes and how long backups are kept.
 - [Planning well](docs://gids-goed-plannen): the planning principles; the assistant receives them in an English version with the tools added.
-- [Settings](docs://ref-instellingen): the AI settings.
+- [App settings](docs://ref-instellingen): the AI settings.
