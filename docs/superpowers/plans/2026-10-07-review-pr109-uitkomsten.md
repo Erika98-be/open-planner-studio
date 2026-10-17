@@ -1369,3 +1369,12 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
 - **#376 review: NEE** — uitleg bij *Taaktypes gebruiken* feitelijk onjuist (bestand zet het vinkje niet; "werkuren"),
   "regel" in vier gidsen, vier gemiste plekken ⇒ fixronde. **Vóór de release:** tutorial 5 in de extensions-repo
   (live van main, alle appversies) tegelijk aanpassen; releasetekst noemt de hernoeming.
+- **Fout op main (expert Opus 5.5, BEVESTIGD op 9341d6e34): restduur van een niet-gestarte geïmporteerde taak volgt
+  een duurbewerking niet.** Paneel, raster en MCP gelijk. Voorbeelden: E-1010 (DCP-03) duur 80 → 88 u, *Resterend*
+  blijft 80 u; Roads A15131 (geen toewijzingen) 60 → 70 u, rest 60 u; dagtaak 10 → 11 d, rest 10 d. Solver rekent met
+  de duur ⇒ balk en *Resterend* verschillen; blijft na IFC opslaan/heropenen. Vervolg: werkelijke start op 0 % laat het
+  restwerk springen (320 → 352 u); spookdeel "verricht" in het histogram; onder FIXED_WORK past de inzet niet aan.
+  **Niet gebouwd:** de voor de hand liggende fix (`carryRemainingThroughDurationEdit` ook voor niet-gestart) laat onder
+  FIXED_DURATION_RATE het opgeslagen restwerk overschrijven (E-1010 320 → 88 u) — dat is het open eigenaarsbesluit
+  (checkstap 37: vragen of het restwerk nog geldt). Variant "rest na `settleDurationEdit`" houdt het werk (status quo)
+  maar laat FIXED_WORK fout; vijf aanroepplekken. ⇒ eerst besluit eigenaar, dan één fix. Scripts: /tmp/restduur-ns-scripts/.
