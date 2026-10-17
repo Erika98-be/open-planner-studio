@@ -594,19 +594,17 @@ const earlyStartOf = (id: string) => S().tasks.find((t) => t.id === id)!.time.ea
   // heropende IFC met XER-archief (T5) — biedt de modus alleen AAN, net als 'xer-archive' zonder
   // enige herkomst hierboven. Alleen 'xer' (verse import) zet 'm automatisch AAN. MUTATIEBEWIJS:
   // stelde `applyRecordedDatesOnLoad` 'xer-archive' gelijk aan 'xer' (`origin !== undefined` i.p.v.
-  // `origin === 'xer'`), dan zou 7ah hieronder `true` worden en dus ROOD slaan.
+  // `origin === 'xer'`), dan zou 7ag hieronder `true` worden en dus ROOD slaan.
   const asXerArchive: ImportResult = {
     ...rtOracleSource, recordedFields: undefined, recordedTimes: oracleTimes,
     recordedTimesOrigin: 'xer-archive',
   };
   S().newProject();
   S().applyLoadedProject(asXerArchive, { filePath: null, recompute: true });
-  eq('7ag "xer-archive" (heropende IFC met XER-archief) biedt de modus alleen aan, NIET gelijk aan "xer"',
+  eq('7ag "xer-archive" (heropende IFC met XER-archief, zonder vlag) gaat NIET in de modus, NIET gelijk aan "xer"',
     S().datesAsRecorded, false);
-  truthy('7ah …maar het aanbod verschijnt wél', S().recordedDates !== null);
-  eq('7ai …met dezelfde teller als de verse import (sectie 7u)', S().recordedDates?.shifted, 1);
-  eq('7ai2 …en draagt de archiefherkomst, dus óók de Primavera-tekst (sectie 14)',
-    S().recordedDates?.origin, 'xer-archive');
+  // Geen aanbod-stand meer (eigenaar, 2026-10-17, optie 1): de app vergeet de opgeslagen datums.
+  eq('7ah …en vergeet de opgeslagen datums (geen aanbod)', S().recordedDates, null);
 
   // Heropen-beleid OPTIE B (eigenaarsbesluit 2026-09-09): dezelfde heropening gaat WEL automatisch
   // aan zolang het bestand zelf zegt dat het sinds de import ongewijzigd is (`importPristine`,
@@ -642,7 +640,7 @@ const earlyStartOf = (id: string) => S().tasks.find((t) => t.id === id)!.time.ea
   eq('7aj6b …ook niet met de vlag "ongewijzigd sinds import"', [S().datesAsRecorded, S().recordedDates], [false, null]);
   S().newProject();
   S().applyLoadedProject({ ...asUnknownOrigin, recordedTimesOrigin: 'ifc-own', recordedSourceFormat: 'mspdi' }, { filePath: null, recompute: true });
-  eq('7aj6c heropend eigen IFC mét bron, zonder vlag: alleen aanbod', [S().datesAsRecorded, S().recordedDates !== null, S().importPristine], [false, true, false]);
+  eq('7aj6c heropend eigen IFC mét bron, zonder vlag: geen modus, vastlegging vergeten', [S().datesAsRecorded, S().recordedDates, S().importPristine], [false, null, false]);
   S().newProject();
   S().applyLoadedProject({ ...asUnknownOrigin, recordedTimesOrigin: 'ifc-own', recordedSourceFormat: 'mspdi', importPristine: true }, { filePath: null, recompute: true });
   eq('7aj7 heropend eigen IFC mét bron en vlag ⇒ automatisch AAN', S().datesAsRecorded, true);
@@ -653,7 +651,7 @@ const earlyStartOf = (id: string) => S().tasks.find((t) => t.id === id)!.time.ea
 // recovery-manifest (`RecoveryDocInput.datesAsRecorded`, `applyRecordedDatesOnLoad(..., restoredMode)`
 // in `documentActivation.ts`) — geen heuristiek meer. Deze sectie pint de tegenkant vast: een gewoon
 // #63-document (IFC/CSV/MSPDI/MPP/P6XML) dat met `datesAsRecorded: false` in het manifest stond,
-// komt terug in de AANBOD-stand en niet in de modus. MUTATIEBEWIJS: geef `restoredMode` in
+// komt terug ZONDER modus en vergeet de opgeslagen datums (geen aanbod-stand meer, eigenaar 2026-10-17). MUTATIEBEWIJS: geef `restoredMode` in
 // `applyRecordedDatesOnLoad` voorrang op de manifestvlag (`restoredMode ?? true`) ⇒ 7aj slaat ROOD.
 {
   const parsed = readIFC(externIfc('7C'));
@@ -661,21 +659,15 @@ const earlyStartOf = (id: string) => S().tasks.find((t) => t.id === id)!.time.ea
   S().newProject();
   S().restoreDocuments([input], 'rec-63');
   eq('7aj crashherstel van een gewoon #63-document zet de modus NIET aan', S().datesAsRecorded, false);
-  truthy('7ak …maar herstelt wél het aanbod', S().recordedDates !== null);
-  eq('7al …met dezelfde teller als het gewone openen (sectie 7i)', S().recordedDates?.shifted, 1);
-  eq('7am …met de herkomst "ifc" (ander pakket), dus met de formaatneutrale tekst (sectie 14)', S().recordedDates?.origin, 'ifc');
+  eq('7ak …en vergeet de opgeslagen datums (geen aanbod)', S().recordedDates, null);
 }
 
 /**
- * Secties 8 t/m 13 testen het HANDMATIG betreden en verlaten van de modus op een document dat de
- * modus alleen AANBIEDT. Sinds 2026-09-09 gaat een IFC uit een ander pakket (herkomst 'ifc')
- * automatisch de modus in (sectie 7/7B/16), dus de aanbiedende uitgangstoestand wordt hier
- * expliciet nagebootst door de herkomst te wissen — het geval van een importer zonder stempel.
- * De inhoud van de vastlegging is exact dezelfde als bij het echte openen.
+ * Secties 8 t/m 13 testen het betreden en verlaten van de modus. De uitgangstoestand is een
+ * heropend eigen IFC waarvan de bron bekend is (OPS_ImportProvenance.SourceFormat), nagebootst op de
+ * gedeelde #63-fixture: BEWERKT (`offerOnly`) vergeet de app de opgeslagen datums, ONBEWERKT
+ * (`inMode`) opent hij in de modus. Er is geen aanbod-stand meer (eigenaar, 2026-10-17, optie 1).
  */
-// Eigenaarsbesluit 2026-09-24 ("beperken"): een importer zonder herkomst krijgt geen aanbod meer. Het
-// ECHTE productpad naar de aanbodstand is een bewerkt, heropend eigen IFC waarvan de bron bekend is
-// (OPS_ImportProvenance.SourceFormat) — dat simuleren we hier op de gedeelde #63-fixture.
 const offerOnly = (ifcText: string): ImportResult => ({
   ...readIFC(ifcText), recordedTimesOrigin: 'ifc-own', recordedSourceFormat: 'ifc', importPristine: false,
 });
