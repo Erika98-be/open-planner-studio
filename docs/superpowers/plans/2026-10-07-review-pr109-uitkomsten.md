@@ -1378,3 +1378,5 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   FIXED_DURATION_RATE het opgeslagen restwerk overschrijven (E-1010 320 → 88 u) — dat is het open eigenaarsbesluit
   (checkstap 37: vragen of het restwerk nog geldt). Variant "rest na `settleDurationEdit`" houdt het werk (status quo)
   maar laat FIXED_WORK fout; vijf aanroepplekken. ⇒ eerst besluit eigenaar, dan één fix. Scripts: /tmp/restduur-ns-scripts/.
+- **#366 gemerged in main → 35bcfdfc9** (kop 9498cc351, bijgewerkt met 9341d6e34, CI 16/16, hercheck JA; nieuwe
+  bewaking `mppReader.ts:916` zonder corpus, mutant rood). Eigenaarspunt i-tekst *Standaard werkdag* blijft open.
