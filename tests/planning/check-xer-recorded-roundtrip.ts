@@ -237,7 +237,9 @@ store().updateTask(store().tasks[0]!.id, { name: 'Bewerkt na import' });
 const editedPayload = store().getOpenDocumentPayloads()[0]!.payload;
 expect('4e één bewerking wist "ongewijzigd sinds import"', editedPayload.importPristine === false && editedPayload.isDirty === true);
 const ifcEdited = writeIFC(buildWriteIFCInput(editedPayload));
-expect('4f het bewerkte bestand draagt het pset niet meer', !ifcEdited.includes("'OPS_ImportProvenance'"));
+// Een naam wijzigen laat de modus staan (datumneutraal); opslaan in de modus schrijft het pset dan
+// nog wél, maar alleen met `SourceFormat` — de vlag zelf is weg (zelfde stand als na `renumberWbs`).
+expect('4f het bewerkte bestand draagt "ongewijzigd sinds import" niet meer', !ifcEdited.includes("'UnchangedSinceImport'"));
 const reopenedEdited = readXerArchiveIFC(ifcEdited);
 store().newProject();
 store().applyOpenedImport(reopenedEdited, {

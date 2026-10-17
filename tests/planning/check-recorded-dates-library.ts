@@ -185,8 +185,8 @@ console.log('-- (e) hertelling met een solverfout: geen verzonnen meting --');
   eq('e0 voorwaarde: er is een meting', [st.recordedDates?.shifted, st.recordedDates?.shiftedTaskIds?.length], [1, 1]);
   const [a, b] = st.tasks;
   const cyclus: Sequence[] = [
-    { id: 'cyc-1', predecessorId: a!.id, successorId: b!.id, type: 'FS', lagDays: 0 },
-    { id: 'cyc-2', predecessorId: b!.id, successorId: a!.id, type: 'FS', lagDays: 0 },
+    { id: 'cyc-1', predecessorId: a!.id, successorId: b!.id, type: 'FINISH_START', lagDays: 0 },
+    { id: 'cyc-2', predecessorId: b!.id, successorId: a!.id, type: 'FINISH_START', lagDays: 0 },
   ];
   const next = recountShiftedAfterLibraryRefresh({ ...st, sequences: [...st.sequences, ...cyclus] });
   eq('e1 solverfout: geen teller', next?.shifted, undefined);
