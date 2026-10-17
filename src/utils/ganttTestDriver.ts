@@ -1,5 +1,6 @@
 import type { RefObject } from 'react';
 import type { GanttRenderer } from '@/engine/renderer/GanttRenderer';
+import { parseDate } from '@/utils/dateUtils';
 
 export type GanttTestSurface = 'primary' | 'secondary';
 export type GanttPaintSurface = GanttTestSurface | 'histogram';
@@ -51,6 +52,14 @@ export function taskBarPoint(
   const canvasY = (bar.top + bar.bottom) / 2;
   const bounds = canvas.getBoundingClientRect();
   return { x: bounds.left + canvasX, y: bounds.top + canvasY };
+}
+
+/** Observer-only: canvas-x (CSS-px, 0 = linkerrand van de tijdlijn) waar de renderer `isoDate`
+ *  tekent, via zijn eigen as (`GanttRenderer.dateToX`). Zo leest een test welke datum links in beeld
+ *  staat zonder de asformule na te bouwen. Start zelf geen paint. */
+export function dateX(isoDate: string, surface: GanttTestSurface = 'primary'): number | null {
+  const renderer = surfaces.get(surface)?.renderer.current;
+  return renderer ? renderer.dateToX(parseDate(isoDate)) : null;
 }
 
 /** Observer-only: aantal balkstukken dat de laatste paint voor een taak tekende (zie

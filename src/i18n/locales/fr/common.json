@@ -919,7 +919,6 @@
     },
     "worktime": {
       "section": "Horaires de travail",
-      "derivedHpd": "Heures/jour dérivées :",
       "saveAsPreset": "Enregistrer comme préréglage…",
       "saveAsPresetHint": "Enregistrez les horaires de travail actuels comme votre propre préréglage (sur cet appareil) afin de pouvoir les réutiliser plus tard dans n'importe quel projet.",
       "perWeekday": "Définir par jour de la semaine…",

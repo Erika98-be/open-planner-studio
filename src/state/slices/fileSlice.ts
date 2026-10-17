@@ -818,7 +818,12 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
         s.ui.showLibraryLinkDialog = activation.signals.showLibraryLinkDialog;
         s.ui.libraryRefreshNotice = activation.signals.libraryRefreshNotice;
         if (opts.hourDataNotice) {
-          s.ui.hourDataNotice = !s.ui.enableHourPlanning && fileHasHourData(s.tasks, [s.calendar, ...s.calendars]);
+          const showNotice = !s.ui.enableHourPlanning && fileHasHourData(s.tasks, [s.calendar, ...s.calendars]);
+          // De melding hoort bij één document: het laatst geopende bestand met uur-data. Een ander
+          // bestand zonder uur-data laat hem staan; opent u er twee met uur-data, dan houdt alleen
+          // het laatste de strook.
+          if (showNotice) s.ui.hourDataNotice = s.activeDocumentId;
+          else if (s.ui.hourDataNotice === s.activeDocumentId) s.ui.hourDataNotice = null;
         }
       });
       // De open-grens ververste een achterlopende bibliotheekkalender en de werkregel paste taken

@@ -60,7 +60,6 @@
       "startHour": "Kezdés (óra)",
       "endHour": "Befejezés (óra)",
       "hoursPerDay": "Napi óraszám",
-      "netHoursPerDay": "Nettó óra naponta",
       "holidaysSection": "Ünnepnapok",
       "holidayName": "Megnevezés",
       "from": "Ettől",

@@ -9,7 +9,7 @@ Een planning telt in **werkdagen**, niet in kalenderdagen. "Vijf dagen metselen"
 Welke dagen werkdagen zijn, staat in een **kalender**. Een kalender legt drie dingen vast:
 
 - De **werkweek**: de weekdagen waarop gewerkt wordt. Standaard is dat maandag tot en met vrijdag.
-- De **werktijden**: begin, einde en pauze. Daaruit volgen de **netto-uren per dag**. Standaard is dat 07:00 tot 16:00 met een uur pauze, dus 8 uur.
+- De **werktijden**: begin, einde en pauze. Daaruit volgt de **standaard werkdag**. Standaard is dat 07:00 tot 16:00 met een uur pauze, dus 8 uur.
 - De **feestdagen**: losse dagen of hele periodes waarop niet gewerkt wordt, zoals Koningsdag, Kerst of de bouwvak.
 
 Een project heeft één bibliotheek met kalenders. Eén daarvan is de **projectkalender**. Die geldt voor alle taken die geen eigen kalender hebben. Een andere kalender geef je aan een losse taak, bijvoorbeeld een zesdaagse werkweek voor een onderaannemer die ook op zaterdag werkt. Een resource kan ook een eigen kalender hebben, maar die doet iets anders (zie hieronder).

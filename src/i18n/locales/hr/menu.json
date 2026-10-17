@@ -60,7 +60,6 @@
       "startHour": "Početak (sat)",
       "endHour": "Završetak (sat)",
       "hoursPerDay": "Sati po danu",
-      "netHoursPerDay": "Neto sati po danu",
       "holidaysSection": "Praznici",
       "holidayName": "Opis",
       "from": "Od",

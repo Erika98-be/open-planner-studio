@@ -914,7 +914,6 @@
     },
     "worktime": {
       "section": "Radno vrijeme",
-      "derivedHpd": "Izračunati sati/dan:",
       "saveAsPreset": "Spremi kao predložak…",
       "saveAsPresetHint": "Spremite trenutačno radno vrijeme kao vlastiti predložak (na ovom uređaju), kako biste ga kasnije mogli ponovno upotrijebiti u bilo kojem projektu.",
       "perWeekday": "Postavi po danu u tjednu…",
