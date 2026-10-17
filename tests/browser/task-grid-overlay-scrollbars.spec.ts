@@ -357,3 +357,68 @@ for (const layoutCase of LAYOUT_CASES) {
       .toBe(await core.evaluate((node: HTMLElement) => node.scrollTop));
   });
 }
+
+// Echo-wacht (review #362, WebKitGTK 2.52): het scroll-event van een eigen schrijfactie komt later
+// dan het raster verder schuift. Zo'n verouderd event mag het raster niet terugzetten. Chromium
+// headless animeert het wiel niet, dus de test bootst de volgorde van WebKitGTK na.
+test('een verouderd scroll-event van balk of store zet het raster niet terug', async ({ page, ops: _ops }) => {
+  await seedProject(page, Array.from({ length: 120 }, (_, index) => ({
+    name: `Echorij ${index + 1}`,
+    start: '2026-09-07',
+    finish: '2026-09-11',
+    durationDays: 5,
+  })));
+  const core = page.locator('.gantt-task-grid .task-grid-core');
+  const vBar = page.locator('.gantt-task-grid [data-testid="task-grid-vscroll"]');
+  const hBar = page.locator('.gantt-task-grid [data-testid="task-grid-hscroll"]');
+  await expect(vBar).toBeVisible();
+  await expect(hBar).toBeVisible();
+  const settle = () => page.evaluate(() => new Promise<void>(resolve => {
+    requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(resolve, 50)));
+  }));
+
+  // 1. Balk -> raster: het raster staat op 100 en de balk volgt. Het raster schuift door naar 400
+  //    en vóór zijn eigen event komt een (verouderd) scroll-event van de balk, die nog 100 meldt.
+  await core.evaluate((node: HTMLElement) => { node.scrollTop = 100; });
+  await expect.poll(() => vBar.evaluate((node: HTMLElement) => node.scrollTop)).toBe(100);
+  await settle();
+  await page.evaluate(() => {
+    const grid = document.querySelector<HTMLElement>('.gantt-task-grid .task-grid-core')!;
+    const bar = document.querySelector<HTMLElement>('.gantt-task-grid [data-testid="task-grid-vscroll"]')!;
+    grid.scrollTop = 400;
+    bar.dispatchEvent(new Event('scroll'));
+  });
+  await settle();
+  expect(await core.evaluate((node: HTMLElement) => node.scrollTop)).toBe(400);
+  await expect.poll(() => state(page).then(snapshot => snapshot.view.scrollY)).toBe(400);
+
+  // Horizontaal hetzelfde.
+  await core.evaluate((node: HTMLElement) => { node.scrollLeft = 10; });
+  await expect.poll(() => hBar.evaluate((node: HTMLElement) => node.scrollLeft)).toBe(10);
+  await settle();
+  await page.evaluate(() => {
+    const grid = document.querySelector<HTMLElement>('.gantt-task-grid .task-grid-core')!;
+    const bar = document.querySelector<HTMLElement>('.gantt-task-grid [data-testid="task-grid-hscroll"]')!;
+    grid.scrollLeft = 30;
+    bar.dispatchEvent(new Event('scroll'));
+  });
+  await settle();
+  expect(await core.evaluate((node: HTMLElement) => node.scrollLeft)).toBe(30);
+
+  // 2. Store -> raster: het raster meldt 600 aan de store en schuift direct daarna door naar 650
+  //    (zoals een lopende wielanimatie). De store-prop 600 is dan een echo en mag niet terug.
+  await page.evaluate(() => {
+    const grid = document.querySelector<HTMLElement>('.gantt-task-grid .task-grid-core')!;
+    const onScroll = () => {
+      if (Math.round(grid.scrollTop) !== 600) return;
+      grid.removeEventListener('scroll', onScroll);
+      grid.scrollTop = 650;
+    };
+    grid.addEventListener('scroll', onScroll);
+    grid.scrollTop = 600;
+  });
+  await settle();
+  await settle();
+  expect(await core.evaluate((node: HTMLElement) => node.scrollTop)).toBe(650);
+  await expect.poll(() => state(page).then(snapshot => snapshot.view.scrollY)).toBe(650);
+});
