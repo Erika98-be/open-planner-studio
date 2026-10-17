@@ -9,6 +9,7 @@ import type { Task } from '@/types/task';
 import type { ImportResult } from '@/services/importTypes';
 import { createDefaultProject } from '@/state/defaults';
 import { createDefaultTaskTime } from '@/utils/taskDefaults';
+import { hourTaskScheduleDuration } from '@/utils/taskDuration';
 
 export type Day = 1 | 2 | 3 | 4 | 5 | 6 | 7;
 export type Band = { start: number; end: number };
@@ -110,11 +111,13 @@ export const CASES: readonly UrenCase[] = [
 
 export const deviates = (c: UrenCase): boolean => c.cal.hoursPerDay !== c.clockHours;
 
-/** Urentaak van 40 werkuren op `cal`, met de dagwaarde zoals de XER-lezer hem zet (uren / hoursPerDay). */
+/** Urentaak van 40 werkuren op `cal`, met de dagwaarde zoals elke lezer hem zet: werkminuten ÷ de
+ *  werktijd per dag van de blokken (`hourTaskScheduleDuration`, eigenaarsbesluit 2026-10-15, optie 2),
+ *  niet ÷ `hoursPerDay`. */
 function hourTask(id: string, name: string, cal: WorkCalendar, calendarId: string | undefined): Task {
   const time = createDefaultTaskTime('2026-06-01T07:00', 40, 'hours', cal);
   time.durationMinutes = 2400;
-  time.scheduleDuration = 2400 / (cal.hoursPerDay * 60);
+  time.scheduleDuration = hourTaskScheduleDuration(2400, cal);
   return {
     id, name, description: '', wbsCode: id, taskType: 'CONSTRUCTION', status: 'NOT_STARTED',
     isMilestone: false, priority: 500, parentId: null, childIds: [], resourceIds: [],

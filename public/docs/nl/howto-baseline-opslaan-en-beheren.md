@@ -42,6 +42,8 @@ Elke baseline heeft zes kolommen in de takentabel. Klik op de **+** rechts in de
 
 **Een baseline bijwerken kan niet.** Wil je de afspraak herzien, sla dan een nieuwe baseline op en verwijder zo nodig de oude.
 
+**Een ⚠ bij Duur of Duurafwijking.** Bij een taak in uren is een dag de werktijd van haar kalender. Heeft de kalender een eigen aantal uren per dag (bijvoorbeeld 8 bij blokken van 10 uur, uit Primavera P6), dan telde een oudere versie van de app de dagen anders. Een baseline uit die versie houdt het oude getal: een taak van 1870 uur staat in de baseline als 233,75 dagen en nu als 187 dagen. De app rekent zo'n baseline niet om. In de kolommen *Duur* en *Duurafwijking* van die baseline staat dan een ⚠; wijs het aan voor de uitleg. De datums van de baseline kloppen wel. Sla een nieuwe baseline op en verwijder zo nodig de oude.
+
 **Alleen taken zonder onderliggende taken.** Een fase staat niet in de baseline: ze heeft geen baseline-balk en geen afwijking. De fase volgt uit de taken eronder.
 
 **Nieuwe en verwijderde taken.** Een taak die je na het opslaan toevoegt, heeft geen baseline-balk. In het Variance-rapport staat hij als *Nieuw*. Een taak die je verwijdert, staat er als *Vervallen*.

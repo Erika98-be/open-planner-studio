@@ -3,6 +3,7 @@ import { WORK_RULES, type WorkRule } from '@/types/workRule';
 import { normalizeCurveValues } from '@/engine/contour/contourEngine';
 import type { CustomTaskType } from '@/types/taskType';
 import { createDefaultTaskTime } from '@/utils/taskDefaults';
+import { effHoursPerDay, hourTaskScheduleDuration } from '@/utils/taskDuration';
 import { Sequence, SequenceType } from '@/types/sequence';
 import { Resource, ResourceAssignment, AvailabilityStep, ResourceCurve, isResourceCurve } from '@/types/resource';
 import { Project, ProjectSchedulingOptions, SchedulingOptions, SchedulingProfile, isIfcSchemaId, type IfcSchemaId } from '@/types/project';
@@ -1473,22 +1474,24 @@ function applyHourModeIFC(
     if (!minutePrecise) {
       // Dag-kalender, uur-taak (kale `PT{n}H` uit andermans bestand): de compatibiliteitsafgeleide
       // `scheduleDuration` komt uit `parseDurationDays`' vaste `/8`. Zelfde afleiding als de
-      // uurkalender-tak hieronder, met de hpd van de EFFECTIEVE kalender.
-      if (t.time.durationUnit === 'hours' && t.time.durationMinutes != null && effCal.hoursPerDay > 0) {
-        t.time.scheduleDuration = t.time.durationMinutes / (effCal.hoursPerDay * 60);
+      // uurkalender-tak hieronder: werkminuten ÷ de werktijd per dag van de EFFECTIEVE kalender.
+      if (t.time.durationUnit === 'hours' && t.time.durationMinutes != null && effHoursPerDay(effCal) > 0) {
+        t.time.scheduleDuration = hourTaskScheduleDuration(t.time.durationMinutes, effCal);
       }
       if (t.time.durationUnit === 'hours') readRemainingMinutes(t, taskTimeEntities.get(t.id));
       continue;
     }
     const e = taskTimeEntities.get(t.id);
     if (!e) continue;
-    const hpd = effCal.hoursPerDay;
     const durMin = isoDurationToMinutes(stripQuotes(e.args[TASKTIME_SLOT.scheduleDuration] || ''));
     if (t.time.durationUnit === 'hours') {
       const minutes = durMin != null ? durMin : (t.time.durationMinutes ?? 0);
       t.time.durationMinutes = minutes;
-      // Compatibiliteitsafgeleide voor bestaande analyse/exportcode; nooit invoerbron.
-      if (hpd > 0) t.time.scheduleDuration = minutes / (hpd * 60);
+      // Compatibiliteitsafgeleide voor bestaande analyse/exportcode; nooit invoerbron. Via
+      // `hourTaskScheduleDuration` (niet ÷ een apart bewaarde `HoursPerDay`): zo geeft opslaan en
+      // heropenen hetzelfde getal als het raster. De wachter houdt bij een kalender zonder werktijd het
+      // gelezen getal, in plaats van 0.
+      if (effHoursPerDay(effCal) > 0) t.time.scheduleDuration = hourTaskScheduleDuration(minutes, effCal);
     } else {
       t.time.durationMinutes = undefined;
     }

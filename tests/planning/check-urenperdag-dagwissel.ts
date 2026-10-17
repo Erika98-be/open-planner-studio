@@ -231,8 +231,10 @@ const changedIds = (a: Record<string, unknown>, b: Record<string, unknown>) =>
   same('§4 na Za in het venster: Late ploeg werkt ma–za, za 14–24', [cals['Late ploeg']?.workDays, cals['Late ploeg']?.za],
     [[1, 2, 3, 4, 5, 6], LATE]);
   const lateTask = before.tasks.find((t) => t.id === 't-late')!;
-  same('§4 urentaak van 40 u op Late ploeg: dagwaarde 5 (40 / 8), getoond 4d (de motor rekent met de blokken)',
-    [lateTask.time.scheduleDuration, formatTaskDurationDisplay(lateTask, before.calendar, 'days', true)], [5, '4d(40h)']);
+  // Eigenaarsbesluit 2026-10-15, optie 2: de dagwaarde is werkminuten ÷ de werktijd per dag van de blokken
+  // (40 / 10), net als de getoonde duur en de motor; de uren per dag (8) blijven alleen voor de export.
+  same('§4 urentaak van 40 u op Late ploeg: dagwaarde 4 (40 / 10 klokuren), getoond 4d',
+    [lateTask.time.scheduleDuration, formatTaskDurationDisplay(lateTask, before.calendar, 'days', true)], [4, '4d(40h)']);
 
   const afterCtx = openInStore(await parseOpenedFile({ name: 'dagwissel.ifc', text: writeIFC(buildWriteIFCInput(before)) }));
   const after = payloadOf(afterCtx);
