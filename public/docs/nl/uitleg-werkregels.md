@@ -1,6 +1,6 @@
-# Werkregels: duur, inzet en werk
+# Taaktypes: duur, inzet en werk
 
-Je zet één stukadoor op het stucwerk en de taak duurt vier dagen. Zet je er een tweede stukadoor bij, dan kan het werk in twee dagen klaar zijn. Het kan ook vier dagen blijven duren, met dubbel zoveel werk erin. Beide zijn logisch. Welke van de twee de app kiest, hangt af van de **werkregel** van de taak. In dit artikel lees je hoe de app duur, inzet en werk aan elkaar koppelt en wat elke werkregel vasthoudt.
+Je zet één stukadoor op het stucwerk en de taak duurt vier dagen. Zet je er een tweede stukadoor bij, dan kan het werk in twee dagen klaar zijn. Het kan ook vier dagen blijven duren, met dubbel zoveel werk erin. Beide zijn logisch. Welke van de twee de app kiest, hangt af van het **taaktype** van de taak. In dit artikel lees je hoe de app duur, inzet en werk aan elkaar koppelt en wat elk taaktype vasthoudt.
 
 ## Het begrip
 
@@ -12,9 +12,9 @@ Drie grootheden hangen aan elkaar:
 
 De som is: werk = duur × inzet × uren per werkdag. De uren per werkdag komen uit de kalender van de taak. Het stucwerk van vier werkdagen met één stukadoor is bij een werkdag van 8 uur dus 4 × 1 × 8 = 32 uur werk.
 
-Verander je één van de drie, dan moet minstens één van de andere twee meebewegen, anders klopt de som niet meer. Welke dat is, bepaalt de werkregel. Je stelt hem per taak in, in het paneel *Eigenschappen*. De app toont de werkregel en het werk pas als je ze zichtbaar maakt; hoe dat gaat, staat in [Werkregel kiezen](docs://howto-werkregel-kiezen).
+Verander je één van de drie, dan moet minstens één van de andere twee meebewegen, anders klopt de som niet meer. Welke dat is, bepaalt het taaktype. Je stelt het per taak in, in het paneel *Eigenschappen*. De app toont het taaktype en het werk pas als je ze zichtbaar maakt; hoe dat gaat, staat in [Taaktype kiezen](docs://howto-werkregel-kiezen).
 
-Een werkregel werkt alleen op gewone taken. Op mijlpalen, fasen (samenvattingstaken), hangmatten en taken waarvan het *Duurtype* *Verstreken tijd* is, bestaat hij niet: daar staat het veld *Werkregel* niet. Materiaal, zoals beton of stucmortel, telt ook niet mee. De hoeveelheid materiaal stuurt de duur nooit en de app past haar bij een werkregel nooit aan.
+Een taaktype werkt alleen op gewone taken. Op mijlpalen, fasen (samenvattingstaken), hangmatten en taken waarvan het *Duurtype* *Verstreken tijd* is, bestaat het niet: daar staat het veld *Taaktype* niet. Materiaal, zoals beton of stucmortel, telt ook niet mee. De hoeveelheid materiaal stuurt de duur nooit en de app past haar bij een taaktype nooit aan.
 
 ## Hoe de app rekent
 
@@ -22,11 +22,11 @@ Een werkregel werkt alleen op gewone taken. Op mijlpalen, fasen (samenvattingsta
 
 De app rekent duur, inzet en werk alleen door op het moment dat jij er iets aan verandert: de duur van de taak, de inzet van een toewijzing, het werk, een resource erbij of eraf, of het aantal uren per dag in een kalender. **Bereken** (F5) verandert er niets aan: F5 rekent alleen datums uit. Een regel kiezen verandert ook geen enkel getal. De regel telt pas bij je eerstvolgende wijziging.
 
-Verandert de duur van de taak doordat een werkregel hem aanpast, dan wordt de planning verouderd. De statusbalk meldt dan *Verouderd — herbereken (F5)*, tenzij *Automatisch berekenen* aan staat.
+Verandert de duur van de taak doordat een taaktype hem aanpast, dan wordt de planning verouderd. De statusbalk meldt dan *Verouderd — herbereken (F5)*, tenzij *Automatisch berekenen* aan staat.
 
 ### Vier regels
 
-In het paneel *Eigenschappen* staat naast de keuzelijst *Werkregel* een i-icoon. Wijs het aan, klik of tik erop, dan legt de app de regel uit die nu geldt. In de open keuzelijst heeft elke regel ook zo'n i-icoon. De uitleg begint met een vette zin. De vier regels, met die zin uit de app:
+In het paneel *Eigenschappen* staat naast de keuzelijst *Taaktype* een i-icoon. Wijs het aan, klik of tik erop, dan legt de app de regel uit die nu geldt. In de open keuzelijst heeft elke regel ook zo'n i-icoon. De uitleg begint met een vette zin. De vier regels, met die zin uit de app:
 
 - **Vaste duur en inzet** (*Het werk volgt uit de duur en de inzet.*). Dit is de standaard. De app verandert de duur nooit zelf en het werk volgt uit duur en inzet. Typ je zelf het werk, dan past de app de inzet aan, want de duur staat vast.
 - **Vaste duur en werk** (*De inzet volgt uit de duur en het werk.*). De app verandert de duur nooit zelf. Wijzig je de duur, dan blijft het werk staan en past de inzet zich aan.
@@ -97,7 +97,7 @@ Met twee resources met verschillende inzet werkt het net zo. Zet je onder Vast w
 
 ### Een andere kalender
 
-Onder Vast werk gaat de werkdag van de kalender van 8 naar 6 uur. Het werk blijft 32 uur, dus de duur wordt 32 ÷ 6 = 5,33, afgerond 6 werkdagen. Hoe de app werkdagen en werkuren telt, staat in [Kalenders en werkdagen](docs://uitleg-kalenders). De app meldt: *De werkregel heeft na de kalenderwijziging de duur van 1 taak aangepast (werk blijft, uren per dag veranderden).*
+Onder Vast werk gaat de werkdag van de kalender van 8 naar 6 uur. Het werk blijft 32 uur, dus de duur wordt 32 ÷ 6 = 5,33, afgerond 6 werkdagen. Hoe de app werkdagen en werkuren telt, staat in [Kalenders en werkdagen](docs://uitleg-kalenders). De app meldt: *Het taaktype heeft na de kalenderwijziging de duur van 1 taak aangepast (werk blijft, uren per dag veranderden).*
 
 ### Een taak met voortgang
 
@@ -111,13 +111,13 @@ Het binnenspouwblad duurt 5 werkdagen en is voor 40% klaar: 2 werkdagen zijn ged
 
 **"De duur veranderde zonder dat ik hem aanraakte."** Dat kan na een wijziging van de inzet, het werk, het aantal resources of de uren per dag, onder Vast werk of Vaste inzet. Dan meldt de statusbalk dat de planning verouderd is. Druk op **Bereken** (F5) om de nieuwe datums te zien.
 
-**Zonder toewijzing doet een werkregel niets.** Er is dan geen inzet en geen werk om te koppelen aan de duur.
+**Zonder toewijzing doet een taaktype niets.** Er is dan geen inzet en geen werk om te koppelen aan de duur.
 
-**Bestanden uit MS Project of Primavera P6 tonen de werkregel altijd.** Bij een taak uit MS Project bewaart de app soms de instelling effort-driven. Die bewaarde instelling verandert twee gevallen. Bij *Vaste duur en werk* met effort-driven verandert het werk mee als je de duur wijzigt, in plaats van de inzet. Bij *Vaste inzet* met niet effort-driven verandert het werk mee als je een resource toevoegt of weghaalt, en blijft de duur staan. Taken die je zelf in de app maakt hebben deze instelling niet. De uitleg achter het i-icoon houdt rekening met deze instelling.
+**Bestanden uit MS Project of Primavera P6 tonen het taaktype altijd.** Bij een taak uit MS Project bewaart de app soms de instelling effort-driven. Die bewaarde instelling verandert twee gevallen. Bij *Vaste duur en werk* met effort-driven verandert het werk mee als je de duur wijzigt, in plaats van de inzet. Bij *Vaste inzet* met niet effort-driven verandert het werk mee als je een resource toevoegt of weghaalt, en blijft de duur staan. Taken die je zelf in de app maakt hebben deze instelling niet. De uitleg achter het i-icoon houdt rekening met deze instelling.
 
 ## Zie ook
 
-- [Werkregel kiezen](docs://howto-werkregel-kiezen): de stappen om de werkregel van een taak in te stellen.
+- [Taaktype kiezen](docs://howto-werkregel-kiezen): de stappen om het taaktype van een taak in te stellen.
 - [Resources toewijzen met een curve](docs://howto-resource-toewijzen): een resource op een taak zetten, met inzet en verdeling.
 - [Dagen en uren](docs://uitleg-dagen-en-uren): hoe de app dagen en uren omrekent.
 - [Kalenders en werkdagen](docs://uitleg-kalenders): hoe de app werkdagen en werkuren telt.
