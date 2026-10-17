@@ -6,20 +6,22 @@ import { STRUCTURE_HELP_ARTICLE_ID } from '@/state/helpArticles';
 import type { PhaseAssignmentQuestion, PhaseAssignmentQuestionItem } from '@/state/slices/types';
 
 /**
- * De vraag "Taak wordt een fase" (eigenaarsbesluit 2026-10-17, "altijd vragen"). Een taak met
- * toewijzingen krijgt door een structuurhandeling haar eerste subtaak; een fase draagt zelf geen
+ * De vraag "Taak wordt een samenvattingstaak" (eigenaarsbesluit 2026-10-17, "altijd vragen"). Een taak met
+ * toewijzingen krijgt door een structuurhandeling haar eerste subtaak; een samenvattingstaak draagt zelf geen
  * toewijzingen. De planner kiest:
  *  - Annuleren (knop, kruisje, Escape): er verandert niets, ook de structuurhandeling niet;
- *  - Toewijzing verwijderen: de fase krijgt haar subtaken, haar toewijzingen verdwijnen;
+ *  - Toewijzing verwijderen: de taak krijgt haar subtaken, haar toewijzingen verdwijnen;
  *  - Verplaatsen naar '<subtaak>': de toewijzingen gaan naar de eerste nieuwe subtaak die ze mag
  *    dragen. Kan dat niet (die subtaak heeft dezelfde resource al, of er is geen geschikte subtaak),
  *    dan is de knop uit, zegt een infoblok waarom, en is Verwijderen de primaire knop.
- * Eén vraag voor de hele handeling; de keuze geldt voor elke nieuwe fase.
+ * Eén vraag voor de hele handeling; de keuze geldt voor elke nieuwe samenvattingstaak.
  *
  * Rendert alleen bij `ui.pendingPhaseAssignmentQuestion`; het antwoord gaat naar
  * `answerPhaseAssignmentQuestion`, die de handeling met de keuze uitvoert. Stapelt boven "Taak
- * bewerken" (`z-[60]`), daarom eigen Escape/Enter in de capture-fase (zoals `ActualStartDialog`).
- * Geen backdrop-klik: kiezen gaat alleen met een knop.
+ * bewerken" (`z-[60]`); de toetsen lopen via de dialoogstapel van `Dialog` (alleen de bovenste
+ * reageert): Escape = Annuleren, Enter = de knop met focus, anders de primaire keuze. Undo, redo en
+ * plakken staan uit zolang de vraag open is (`shortcutRegistry.ts`). Geen backdrop-klik: kiezen gaat
+ * alleen met een knop.
  */
 // `Intl.ListFormat` (ES2021) staat niet in de lib van dit project (ES2020); de doelplatforms (Chromium,
 // WebKitGTK, WebView2, Safari) hebben hem wel. Zonder ⇒ een kale kommalijst.
@@ -58,29 +60,6 @@ function PhaseAssignmentDialogBody({ question }: { question: PhaseAssignmentQues
   const cancel = () => answer(null);
   const primary = () => answer(canMove ? 'move' : 'remove');
 
-  // Capture-fase: zie de docstring (stapeling boven "Taak bewerken"). Enter op een knop kiest die
-  // knop; anders de primaire keuze.
-  const primaryActionRef = useRef(primary);
-  primaryActionRef.current = primary;
-  const cancelRef = useRef(cancel);
-  cancelRef.current = cancel;
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); cancelRef.current(); return; }
-      if (e.key !== 'Enter') return;
-      e.preventDefault();
-      e.stopPropagation();
-      const focused = document.activeElement;
-      if (focused instanceof HTMLButtonElement && focused.closest('[data-ops-phase-dialog]')) {
-        if (!focused.disabled) focused.click();
-        return;
-      }
-      primaryActionRef.current();
-    };
-    document.addEventListener('keydown', onKey, true);
-    return () => document.removeEventListener('keydown', onKey, true);
-  }, []);
-
   useEffect(() => { primaryRef.current?.focus(); }, []);
 
   const blockedLine = (item: PhaseAssignmentQuestionItem) => item.blocked?.kind === 'duplicateResource'
@@ -89,13 +68,16 @@ function PhaseAssignmentDialogBody({ question }: { question: PhaseAssignmentQues
     })
     : t('phaseAssignmentQuestion.blockedNoChild', { phase: item.phaseName });
 
-  // Eén fase met een geschikte subtaak: die naam op de knop; anders algemeen.
+  // Eén nieuwe samenvattingstaak met een geschikte subtaak: die naam op de knop; anders algemeen.
   const moveLabel = single?.targetName
     ? t('phaseAssignmentQuestion.moveTo', { child: single.targetName })
     : t('phaseAssignmentQuestion.moveToSubtasks');
 
   return (
     <Dialog
+      onCancel={cancel}
+      onConfirm={primary}
+      focusedButtonOwnsEnter
       overlayClassName="bg-black/60 z-[60]"
       stopBackdropPropagation
       panelClassName="bg-surface border border-border rounded-[14px] shadow-[var(--shadow-pop)] w-[500px] max-h-[85vh] flex flex-col overflow-hidden"

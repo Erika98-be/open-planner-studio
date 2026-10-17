@@ -144,7 +144,7 @@ export interface TaskSlice {
   outdentTasks: (ids: string[], opts?: PhaseAssignmentOptions) => void;
   /** Voeg een WBS-sjabloon in onder een ouder (null = rootniveau); geeft de nieuwe root-id terug. */
   insertWbsTemplate: (template: WbsTemplate, parentId: string | null, opts?: PhaseAssignmentOptions) => string | null;
-  /** Stel de vraag "Taak wordt een fase" voor een handeling buiten de store (de taakdialoog vraagt
+  /** Stel de vraag "Taak wordt een samenvattingstaak" voor een handeling buiten de store (de taakdialoog vraagt
    *  vóór het opslaan). `onChoice` draait alleen bij Verplaatsen of Verwijderen; een nieuwe vraag
    *  vervangt een openstaande (die geldt dan als geannuleerd). */
   askPhaseAssignmentQuestion: (question: PhaseAssignmentQuestion, onChoice: (choice: PhaseAssignmentChoice) => void) => void;
@@ -660,28 +660,27 @@ export function moveTaskVerdict(
 }
 
 /**
- * Zou `moveTask(id, newParentId, position)` de planner moeten vragen wat er met toewijzingen
- * gebeurt ("Taak wordt een fase")? Dezelfde proef als de actie — voor de taakdialoog, die vóór het
- * opslaan vraagt, zodat Annuleren de hele bewerking open laat. `null` ⇒ niets te vragen.
+ * De vraag van "Taak bewerken": moet de planner kiezen wat er met toewijzingen gebeurt als hij
+ * opslaat met `parentId` als bovenliggende taak? Dezelfde proef als `moveTask` (bestaande taak,
+ * `taskId`) of `addTask` (nieuwe taak, `taskId: null`), maar met de vorm van het CONCEPT (`draft`:
+ * naam, mijlpaal ja/nee): Opslaan zet die vorm eerst (`updateTask`) en verhangt daarna
+ * (`moveTask`). Vraagt vóór het opslaan, zodat Annuleren de hele bewerking open laat. `null` ⇒ niets
+ * te vragen.
  */
-export function phaseAssignmentQuestionForMove(
+export function phaseAssignmentQuestionForTaskDialog(
   state: Pick<AppState, 'tasks' | 'resources' | 'assignments'>,
-  id: string,
-  newParentId: string | null,
-  position?: number,
-): PhaseAssignmentQuestion | null {
-  return phaseAssignmentQuestion(state, hierarchyPhaseGains(state.tasks, moveTaskEdit(id, newParentId, position)));
-}
-
-/** Idem voor een NIEUWE taak onder `parentId` (`addTask` zonder positie). */
-export function phaseAssignmentQuestionForNewChild(
-  state: Pick<AppState, 'tasks' | 'resources' | 'assignments'>,
+  taskId: string | null,
   parentId: string | null,
-  child: PendingChild,
+  draft: PendingChild,
 ): PhaseAssignmentQuestion | null {
-  const childId = 'nieuwe-taak';
+  if (taskId === null) {
+    const childId = 'nieuwe-taak';
+    return phaseAssignmentQuestion(
+      state, firstChildGains(state.tasks, [{ childId, parentId }]), new Map([[childId, draft]]),
+    );
+  }
   return phaseAssignmentQuestion(
-    state, firstChildGains(state.tasks, [{ childId, parentId }]), new Map([[childId, child]]),
+    state, hierarchyPhaseGains(state.tasks, moveTaskEdit(taskId, parentId)), new Map([[taskId, draft]]),
   );
 }
 
@@ -847,7 +846,7 @@ interface StructuralOutcome {
   assignmentsMoved: boolean;
 }
 
-/** Stelt de vraag "Taak wordt een fase" en bewaart wat er op het antwoord wacht (zie `createTaskSlice`). */
+/** Stelt de vraag "Taak wordt een samenvattingstaak" en bewaart wat er op het antwoord wacht (zie `createTaskSlice`). */
 type AskPhaseAssignments = (question: PhaseAssignmentQuestion, onChoice: (choice: PhaseAssignmentChoice) => void) => void;
 const emptyOutcome = (): StructuralOutcome => ({ notices: [], lostSteering: 0, assignmentsMoved: false });
 
@@ -872,12 +871,18 @@ function finishStructural(get: () => AppState, outcome: StructuralOutcome): void
 }
 
 export const createTaskSlice: AppSliceFactory<TaskSlice> = (runtime) => (set, get) => {
-  // De handeling die op het antwoord van "Taak wordt een fase" wacht. Een functie is geen state en
+  // De handeling die op het antwoord van "Taak wordt een samenvattingstaak" wacht. Een functie is geen state en
   // hoort niet in een snapshot; de factory draait één keer per storecontext, dus deze plek is per
   // context (net als de resolver van `state/actualStartQuestion.ts`, maar zonder app-singleton).
   let pendingPhaseChoice: ((choice: PhaseAssignmentChoice) => void) | null = null;
+  // De state waarop de vraag gesteld is. Verandert er intussen iets aan taken of toewijzingen
+  // (undo, een documentwissel, een andere route), dan beschrijft de vraag niet meer wat er gebeurt:
+  // het antwoord doet dan niets. Immer geeft bij elke wijziging een nieuwe array, dus een
+  // referentievergelijking volstaat.
+  let askedOn: { tasks: AppState['tasks']; assignments: AppState['assignments'] } | null = null;
   const askPhaseAssignments: AskPhaseAssignments = (question, onChoice) => {
     pendingPhaseChoice = onChoice;
+    askedOn = { tasks: get().tasks, assignments: get().assignments };
     set((s) => { s.ui.pendingPhaseAssignmentQuestion = question; });
   };
 
@@ -889,9 +894,11 @@ export const createTaskSlice: AppSliceFactory<TaskSlice> = (runtime) => (set, ge
   answerPhaseAssignmentQuestion: (choice) => {
     if (get().ui.pendingPhaseAssignmentQuestion === null) return;
     const run = pendingPhaseChoice;
+    const stale = askedOn === null || askedOn.tasks !== get().tasks || askedOn.assignments !== get().assignments;
     pendingPhaseChoice = null;
+    askedOn = null;
     set((s) => { s.ui.pendingPhaseAssignmentQuestion = null; });
-    if (choice !== null) run?.(choice);
+    if (choice !== null && !stale) run?.(choice);
   },
 
   addTask: (partial, opts) => {

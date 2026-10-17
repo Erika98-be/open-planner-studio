@@ -50,13 +50,13 @@ Alt+↑ and Alt+↓ do work in such a view, without a message. With only a filte
 
 **A milestone gets subtasks.** A milestone is a moment and has no subtasks. The app removes the milestone flag and tells you.
 
-**A task with resource assignments gets subtasks.** A summary task carries no assignments itself. So the app first asks what to do with them, in the window *Task becomes a phase*. This happens when you indent, use *Add subtask*, insert a template, or choose another *Parent task* in *Edit task*. You choose:
+**A task with resource assignments gets subtasks.** A summary task carries no assignments itself. So the app first asks what to do with them, in the window *Task becomes a summary task*. This happens when you indent, use *Add subtask* or *Add milestone* on a task, insert a template, and in *Edit task* when you choose a new *Parent task*: for an existing task and for a new task. In *Edit task* the question comes before saving. If you choose *Cancel* there, *Edit task* stays open with your changes. You choose:
 
 - *Cancel*: nothing changes, the structure also stays as it was.
 - *Remove assignment*: the task gets its subtasks and its assignments are removed. The actual work of those assignments is removed too.
 - *Move to '…'*: the assignments go to the first new subtask that can carry them, with their actual work. A milestone or a summary task carries no assignments.
 
-If that subtask already has the same resource, or there is no suitable subtask, *Move* is disabled. An orange block in the window tells you why. If one action creates more summary tasks at once, the window shows the resources per task, and your choice applies to all of them. One *Undo* (Ctrl+Z) reverts the whole action.
+If that subtask already has the same resource, or there is no suitable subtask, *Move* is disabled. An orange block in the window tells you why. While the window is open, *Undo*, *Redo* and *Paste* do not work. If one action creates more summary tasks at once, the window shows the resources per task, and your choice applies to all of them. One *Undo* (Ctrl+Z) reverts the whole action.
 
 **A relation would create a cycle.** The relations of a summary task also apply to its subtasks. If a move would create a cycle because of that, the app refuses it, with the message *This move would create a cycle in the schedule (…)*. Nothing changes.
 

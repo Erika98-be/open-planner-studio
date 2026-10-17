@@ -459,7 +459,7 @@ export interface PhaseAssignmentQuestionItem {
     | { kind: 'duplicateResource'; resourceNames: string[] };
 }
 
-/** De vraag "Taak wordt een fase" (eigenaarsbesluit 2026-10-17): één vraag voor de hele handeling. */
+/** De vraag "Taak wordt een samenvattingstaak" (eigenaarsbesluit 2026-10-17): één vraag voor de hele handeling. */
 export interface PhaseAssignmentQuestion {
   items: PhaseAssignmentQuestionItem[];
 }
@@ -632,7 +632,7 @@ export interface UIState {
    *  `state/actualStartQuestion.ts` (een promise-resolver hoort niet in state thuis, zoals bij
    *  `pendingExtensionConsent`). Modaal: telt mee in `hasBlockingDialogOpen`. */
   pendingActualStartQuestion: ActualStartQuestionRequest | null;
-  /** session — de openstaande vraag "Taak wordt een fase" (`PhaseAssignmentDialog`), of `null`.
+  /** session — de openstaande vraag "Taak wordt een samenvattingstaak" (`PhaseAssignmentDialog`), of `null`.
    *  Draagt alleen de VRAAG; de handeling die op het antwoord wacht staat in de taakslice
    *  (`answerPhaseAssignmentQuestion`), niet in state. Modaal: telt mee in `hasBlockingDialogOpen`. */
   pendingPhaseAssignmentQuestion: PhaseAssignmentQuestion | null;

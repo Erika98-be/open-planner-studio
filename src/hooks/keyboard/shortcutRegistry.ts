@@ -73,7 +73,7 @@ export function hasBlockingDialogOpen(ui: UIState = useAppStore.getState().ui): 
     ui.pendingExtensionConsent !== null ||
     // De vraag naar de werkelijke start wacht op een antwoord; intussen verandert er niets.
     ui.pendingActualStartQuestion !== null ||
-    // "Taak wordt een fase" wacht op een keuze; de handeling is nog niet uitgevoerd.
+    // "Taak wordt een samenvattingstaak" wacht op een keuze; de handeling is nog niet uitgevoerd.
     ui.pendingPhaseAssignmentQuestion !== null ||
     // Openen van/opslaan op de site wacht op een keuze; de opslaanroute houdt intussen de
     // schrijfvergrendeling vast.
@@ -99,6 +99,14 @@ export function hasBlockingDialogOpen(ui: UIState = useAppStore.getState().ui): 
 export function isShortcutBlockedByDialog(): boolean {
   return hasBlockingDialogOpen() || isAnyDialogOpen();
 }
+
+/**
+ * "Taak wordt een samenvattingstaak" wacht op een antwoord dat een handeling uitvoert op de state
+ * van NU (`answerPhaseAssignmentQuestion`). Undo, redo en plakken mogen die state er niet onder
+ * wegtrekken. Bewust alleen deze vraag: onder andere dialogen blijven Ctrl+Z/Ctrl+Y bestaand gedrag
+ * (zie `ProgressImportDialog`, `ProjectInfoPanelContent`).
+ */
+const noPhaseQuestionOpen = (): boolean => useAppStore.getState().ui.pendingPhaseAssignmentQuestion === null;
 
 /**
  * Documentwissels (Ctrl/⌘+1–9, Ctrl/⌘+N, Ctrl/⌘+O): geblokkeerd zolang een dialoog openstaat én
@@ -235,6 +243,7 @@ export const SHORTCUTS: ShortcutDef[] = [
     combo: { key: 'v', mod: true },
     category: 'edit',
     labelKey: 'context.paste',
+    when: noPhaseQuestionOpen,
     run: (store) => store.pasteTasks(),
   },
   {
@@ -242,6 +251,7 @@ export const SHORTCUTS: ShortcutDef[] = [
     combo: { key: 'z', mod: true },
     category: 'edit',
     labelKey: 'menu:commands.undo',
+    when: noPhaseQuestionOpen,
     run: COMMANDS.undo.run,
   },
   {
@@ -249,6 +259,7 @@ export const SHORTCUTS: ShortcutDef[] = [
     combo: { key: 'y', mod: true },
     category: 'edit',
     labelKey: 'menu:commands.redo',
+    when: noPhaseQuestionOpen,
     run: COMMANDS.redo.run,
   },
   {
@@ -256,6 +267,7 @@ export const SHORTCUTS: ShortcutDef[] = [
     combo: { key: 'z', mod: true, shift: true },
     category: 'edit',
     labelKey: 'menu:commands.redo', // zelfde actie/label als edit.redo — alternatieve combinatie
+    when: noPhaseQuestionOpen,
     run: COMMANDS.redo.run,
   },
   {

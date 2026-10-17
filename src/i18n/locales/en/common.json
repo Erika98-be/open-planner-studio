@@ -1571,12 +1571,12 @@
     "toDefault": "Save as IFC 4.3 ADD2"
   },
   "phaseAssignmentQuestion": {
-    "title": "Task becomes a phase",
-    "intro_one": "'{{phase}}' gets the subtask '{{child}}' and becomes a phase.",
-    "intro_other": "'{{phase}}' gets {{count}} subtasks and becomes a phase.",
-    "introMany_one": "This action turns {{count}} task into a phase.",
-    "introMany_other": "This action turns {{count}} tasks into phases.",
-    "noOwnAssignments": "A phase has no assignments of its own.",
+    "title": "Task becomes a summary task",
+    "intro_one": "'{{phase}}' gets the subtask '{{child}}' and becomes a summary task.",
+    "intro_other": "'{{phase}}' gets {{count}} subtasks and becomes a summary task.",
+    "introMany_one": "This action turns {{count}} task into a summary task.",
+    "introMany_other": "This action turns {{count}} tasks into summary tasks.",
+    "noOwnAssignments": "A summary task has no assignments of its own.",
     "question_one": "What do you want to do with the assignment of {{resources}}?",
     "question_other": "What do you want to do with the assignments of {{resources}}?",
     "questionMany": "What do you want to do with their assignments?",
@@ -1586,6 +1586,6 @@
     "moveTo": "Move to '{{child}}'",
     "moveToSubtasks": "Move to the subtasks",
     "blockedDuplicate": "Moving is not possible: '{{child}}' already has {{resources}}.",
-    "blockedNoChild": "Moving is not possible: '{{phase}}' gets no subtask that can carry an assignment, only milestones or phases."
+    "blockedNoChild": "Moving is not possible: '{{phase}}' gets no subtask that can carry an assignment, only milestones or summary tasks."
   }
 }

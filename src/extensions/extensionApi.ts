@@ -257,7 +257,7 @@ export function createExtensionApi(
         return batch.withTransaction(() => {
           if (materialize) document.store.getState().ensureProjectTaskType(materialize);
           // Een extensie kan geen venster tonen: vaste keuze "verplaatsen", het gedrag van vóór de vraag
-          // "Taak wordt een fase" (eigenaarsbesluit 2026-10-17 geldt voor de gebruikersroutes).
+          // "Taak wordt een samenvattingstaak" (eigenaarsbesluit 2026-10-17 geldt voor de gebruikersroutes).
           return added(document.store.getState().addTask(fromExtTaskAddInput(input), { phaseAssignments: 'move' }));
         });
       },

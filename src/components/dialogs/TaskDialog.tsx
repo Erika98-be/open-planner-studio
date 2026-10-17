@@ -1,9 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAppStore } from '@/state/appStore';
 import type { HistorySessionMark } from '@/state/slices/historySlice';
-import {
-  moveTaskVerdict, phaseAssignmentQuestionForMove, phaseAssignmentQuestionForNewChild,
-} from '@/state/slices/taskSlice';
+import { moveTaskVerdict, phaseAssignmentQuestionForTaskDialog } from '@/state/slices/taskSlice';
 import type { PhaseAssignmentChoice } from '@/state/structuralTransition';
 import { notifyHierarchyCycle } from '@/state/hierarchyRelationNotice';
 import { useTranslation } from 'react-i18next';
@@ -156,9 +154,16 @@ export function TaskDialog() {
   };
 
   /** Opslaan en sluiten; `false` = geweigerd (melding) of eerst een vraag, de dialoog blijft open. */
-  const handleSave = (): boolean => saveWith(undefined);
+  const handleSave = (): boolean => saveWith(undefined) === true;
 
-  const saveWith = (phaseAssignments: PhaseAssignmentChoice | undefined): boolean => {
+  /**
+   * `afterLaterSave`: wat er moet gebeuren als het opslaan pas na de vraag "Taak wordt een
+   * samenvattingstaak" lukt (de ?-knop opent dan Help). `'later'` = de vraag staat open.
+   */
+  const saveWith = (
+    phaseAssignments: PhaseAssignmentChoice | undefined,
+    afterLaterSave?: () => void,
+  ): boolean | 'later' => {
     if (!draft.name.trim()) return false;
     // Een andere bovenliggende taak die via de relaties van de nieuwe fase een kring zou maken
     // moet VÓÓR er iets wordt opgeslagen geweigerd worden. `moveTask` weigert zelf ook,
@@ -186,22 +191,25 @@ export function TaskDialog() {
         return false;
       }
     }
-    // "Taak wordt een fase" (eigenaarsbesluit 2026-10-17): krijgt de nieuwe bovenliggende taak
+    // "Taak wordt een samenvattingstaak" (eigenaarsbesluit 2026-10-17): krijgt de nieuwe bovenliggende taak
     // hierdoor haar eerste subtaak terwijl ze toewijzingen draagt, dan vraagt de app VÓÓR het
     // opslaan wat ermee moet. De vraag ligt boven deze dialoog; Annuleren laat alles open zoals het
     // was, een keuze slaat op met die keuze, in dezelfde undo-stap.
     if (!phaseAssignments) {
       const store = useAppStore.getState();
-      const question = editingTask
-        ? (draft.parentId !== editingTask.parentId
-          ? phaseAssignmentQuestionForMove(store, editingTask.id, draft.parentId)
-          : null)
-        : phaseAssignmentQuestionForNewChild(store, draft.parentId || null, {
-          name: draft.name, isMilestone: draft.isMilestone, hasChildren: false,
-        });
+      // De vorm van het CONCEPT (naam, mijlpaal ja/nee): Opslaan zet die eerst, verhangt daarna.
+      const question = !editingTask || draft.parentId !== editingTask.parentId
+        ? phaseAssignmentQuestionForTaskDialog(store, editingTask?.id ?? null, draft.parentId || null, {
+          name: draft.name,
+          isMilestone: draft.isMilestone,
+          hasChildren: (editingTask?.childIds.length ?? 0) > 0,
+        })
+        : null;
       if (question) {
-        store.askPhaseAssignmentQuestion(question, choice => { saveWith(choice); });
-        return false;
+        store.askPhaseAssignmentQuestion(question, (choice) => {
+          if (saveWith(choice) === true) afterLaterSave?.();
+        });
+        return 'later';
       }
     }
     // Opslaan = één undo-stap met dezelfde voortgangsregels als het paneel; de details (vers uit de
@@ -265,7 +273,7 @@ export function TaskDialog() {
           <span className="flex items-center gap-1">
             {/* ?-knop: altijd eerst Opslaan / Annuleren / Terug — de dialoog werkt met een concept. */}
             <DialogHelpButton
-              help={{ articleId: TASK_PROPERTIES_HELP_ARTICLE_ID, confirmLeave: { onSave: handleSave } }}
+              help={{ articleId: TASK_PROPERTIES_HELP_ARTICLE_ID, confirmLeave: { onSave: openHelpLater => saveWith(undefined, openHelpLater) } }}
               onClose={handleClose}
             />
             <button

@@ -23,7 +23,8 @@ import { contextMenuBulk } from '@/components/canvas/contextMenuScope';
 import { taskMilestoneTransition } from '@/engine/taskMilestoneTransition';
 import { historyDepthsForActiveScope } from '@/state/sessionHistory';
 import { hasBlockingDialogOpen } from '@/hooks/keyboard/shortcutRegistry';
-import { phaseAssignmentQuestionForMove, phaseAssignmentQuestionForNewChild } from '@/state/slices/taskSlice';
+import { phaseAssignmentQuestionForTaskDialog } from '@/state/slices/taskSlice';
+import { saveTaskDialog } from '@/state/taskDialogSave';
 import type { CellEditIntent } from '@/types/taskGrid';
 import type { WbsTemplate } from '@/utils/wbsTemplates';
 
@@ -405,16 +406,63 @@ const fingerprint = () => JSON.stringify({
 {
   // F10 De taakdialoog vraagt vóór het opslaan met dezelfde proef.
   const { L, N } = leafWithAssignment();
-  eq('F10 vraag bij een andere ouder', phaseAssignmentQuestionForMove(S(), N, L)?.items.map(i => i.targetName), ['Voegen']);
-  eq('F10 geen vraag naar de wortel', phaseAssignmentQuestionForMove(S(), N, null), null);
+  const leaf = { name: 'Voegen', isMilestone: false, hasChildren: false };
+  eq('F10 vraag bij een andere ouder',
+    phaseAssignmentQuestionForTaskDialog(S(), N, L, leaf)?.items.map(i => i.targetName), ['Voegen']);
+  eq('F10 geen vraag naar de wortel', phaseAssignmentQuestionForTaskDialog(S(), N, null, leaf), null);
   eq('F10 nieuwe mijlpaal onder L: geblokkeerd',
-    phaseAssignmentQuestionForNewChild(S(), L, { name: 'M', isMilestone: true, hasChildren: false })?.items[0].blocked,
+    phaseAssignmentQuestionForTaskDialog(S(), null, L, { name: 'M', isMilestone: true, hasChildren: false })?.items[0].blocked,
     { kind: 'noAssignableChild' });
   // Een taak zonder toewijzing die fase wordt: geen vraag, gewoon doen.
   const Y = S().addTask({ name: 'Leeg' });
   const X = S().addTask({ name: 'Los' });
   S().indentTasks([X]);
   eq('F10 geen toewijzing op de nieuwe fase ⇒ geen vraag, gewoon gedaan', [question(), task(X).parentId], [null, Y]);
+}
+{
+  // F12 De vraag is verouderd zodra taken of toewijzingen intussen veranderen (review #374): het
+  // antwoord doet dan niets. Probe van de review: de vraag noemt Metselaar, een undo zet intussen
+  // een tweede toewijzing (Opperman) terug; "Verwijderen" mocht die niet meenemen.
+  const { L, N, assignmentId } = leafWithAssignment();
+  S().assignResource(L, resource('Opperman'), 1);
+  const opperman = assignmentsOf(L).find(a => a.id !== assignmentId)!.id;
+  S().unassignResource(opperman);
+  S().indentTasks([N]);
+  eq('F12 vraag noemt alleen Metselaar', question()?.items[0].resourceNames, ['Metselaar']);
+  S().undo(); // Opperman terug, terwijl de vraag open staat (sneltoets is dicht; dit is het vangnet)
+  const before = fingerprint();
+  S().answerPhaseAssignmentQuestion('remove');
+  eq('F12 verouderd antwoord: vraag weg, niets gedaan', [question(), fingerprint()], [null, before]);
+  eq('F12 Opperman en Metselaar staan nog op L', assignmentsOf(L).length, 2);
+}
+{
+  // F13 Taak bewerken vraagt met de vorm van het CONCEPT (review #374).
+  // a) Mijlpaal ⇒ gewone taak met een nieuwe ouder: verplaatsen kan wél.
+  fresh();
+  const L = S().addTask({ name: 'Metselen' });
+  S().assignResource(L, resource('Metselaar'), 1);
+  const M = S().addTask({ name: 'Keuring', isMilestone: true });
+  const qa = phaseAssignmentQuestionForTaskDialog(S(), M, L, { name: 'Keuring (taak)', isMilestone: false, hasChildren: false });
+  eq('F13a mijlpaal ⇒ taak: verplaatsen kan, naar de conceptnaam', qa?.items.map(i => [i.targetName, i.blocked]), [['Keuring (taak)', null]]);
+  const draftA = { ...task(M), name: 'Keuring (taak)', isMilestone: false, parentId: L };
+  draftA.time = { ...draftA.time, scheduleDuration: 3 };
+  saveTaskDialog({ editingTaskId: M, draft: draftA, startDate: '2026-03-02', phaseAssignments: 'move' });
+  eq('F13a opgeslagen: onder L, toewijzing op M, geen mijlpaal',
+    [task(M).parentId, assignmentsOf(M).length, assignmentsOf(L).length, task(M).isMilestone], [L, 1, 0, false]);
+
+  // b) Gewone taak ⇒ mijlpaal met een nieuwe ouder: verplaatsen kan niet; verwijderen slaat alles op.
+  fresh();
+  const L2 = S().addTask({ name: 'Metselen' });
+  S().assignResource(L2, resource('Metselaar'), 1);
+  const N2 = S().addTask({ name: 'Oplevering' });
+  const qb = phaseAssignmentQuestionForTaskDialog(S(), N2, L2, { name: 'Oplevering', isMilestone: true, hasChildren: false });
+  eq('F13b taak ⇒ mijlpaal: verplaatsen geblokkeerd', qb?.items[0].blocked, { kind: 'noAssignableChild' });
+  const mark = noticeMark();
+  const draftB = { ...task(N2), isMilestone: true, parentId: L2 };
+  saveTaskDialog({ editingTaskId: N2, draft: draftB, startDate: '2026-03-02', phaseAssignments: 'remove' });
+  eq('F13b opgeslagen: mijlpaal onder L2, toewijzing weg',
+    [task(N2).isMilestone, task(N2).parentId, S().assignments.length], [true, L2, 0]);
+  eq('F13b geen weigermelding', noticesSince(mark).map(n => n[0]).filter(k => String(k).includes('phaseRefused')), []);
 }
 {
   // F11 Verricht werk (actuals) op de toewijzing: verplaatsen houdt het, verwijderen niet.

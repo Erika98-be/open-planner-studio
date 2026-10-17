@@ -449,7 +449,7 @@ function AppContent() {
             zou beginnen). Rendert alleen bij `ui.pendingActualStartQuestion`; stapelt boven
             "Taak bewerken". */}
         <ActualStartDialog />
-        {/* "Taak wordt een fase": rendert alleen bij `ui.pendingPhaseAssignmentQuestion`; stapelt
+        {/* "Taak wordt een samenvattingstaak": rendert alleen bij `ui.pendingPhaseAssignmentQuestion`; stapelt
             boven "Taak bewerken". */}
         <PhaseAssignmentDialog />
         {/* Opslag via de site: renderen alleen bij `ui.pendingSiteOpen` / `ui.pendingSiteSave`. */}

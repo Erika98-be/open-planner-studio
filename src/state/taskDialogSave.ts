@@ -111,7 +111,7 @@ export interface TaskDialogSaveInput {
   /** Vandaag (`localTodayIso`), meegegeven door de dialoog: de invoerregels van
    *  `engine/progressEntry.ts` gelden. Afwezig = vangnet zonder die regels. */
   today?: string;
-  /** Het antwoord op "Taak wordt een fase", als de dialoog het vóór het opslaan vroeg (de nieuwe
+  /** Het antwoord op "Taak wordt een samenvattingstaak", als de dialoog het vóór het opslaan vroeg (de nieuwe
    *  ouder draagt toewijzingen). Afwezig ⇒ de store vraagt zelf (`PhaseAssignmentOptions`). */
   phaseAssignments?: PhaseAssignmentChoice;
 }

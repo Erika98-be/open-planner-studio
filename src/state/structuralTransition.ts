@@ -106,8 +106,9 @@ interface DescribeState {
   assignments: readonly ResourceAssignment[];
 }
 
+// `pending` eerst: zo beschrijft de vraag een concept (de taakdialoog) met zijn concept-naam.
 const taskName = (s: DescribeState, id: string | null, pending?: ReadonlyMap<string, PendingChild>) =>
-  (id && (s.tasks.find(t => t.id === id)?.name ?? pending?.get(id)?.name)) || '?';
+  (id && (pending?.get(id)?.name ?? s.tasks.find(t => t.id === id)?.name)) || '?';
 const resourceName = (s: DescribeState, id: string) => s.resources.find(r => r.id === id)?.name ?? id;
 
 type ChildShape = (id: string) => { isMilestone: boolean; hasChildren: boolean } | undefined;
