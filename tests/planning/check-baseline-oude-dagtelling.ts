@@ -13,7 +13,7 @@ import './domStub';
 //  §1 oude telling ⇒ ⚠ (A); een dagtaak ⇒ geen ⚠ (D).
 //  §2 nieuwe baseline (zelfde taak, nieuwe telling 187 d) ⇒ geen ⚠.
 //  §3 twee maatstaven: de huidige werkminuten (vangt ook een gestarte taak) en de baselinespan (vangt een
-//     latere duurwijziging); past de duur bij geen van beide ⇒ geen ⚠.
+//     latere duurwijziging); ⚠ alleen als oud ergens past en nieuw nergens (symmetrisch).
 //  §4 een kalender waarvan de opgeslagen uren per dag gelijk zijn aan de blokken (of minder dan één minuut
 //     per dag afwijken) ⇒ geen ⚠.
 //  §5 het raster (echte adapter): ⚠ in Baselineduur en Duurafwijking van "Oud", nergens anders.
@@ -96,6 +96,8 @@ same('§2 nieuwe telling ⇒ geen ⚠', check(A, snapshotOf(A.id, newBaseline)),
   // Geen van beide past ⇒ geen ⚠:
   same('§3 duur gewijzigd én onderbreking ⇒ geen ⚠', check(changed, { ...old, finish: '2027-04-27T17:00' }), false);
   same('§3 een duur die bij geen van beide telt (200 d) ⇒ geen ⚠', check(A, { ...old, duration: 200 }), false);
+  same('§3 nieuwe baseline, daarna duur × 0,8 (1496 u = 187 × 480 min): oud past via a, nieuw via b ⇒ geen ⚠',
+    check({ ...A, time: { ...A.time, durationMinutes: 89760 } }, snapshotOf(A.id, newBaseline)), false);
   same('§3 nieuwe baseline van een gestarte taak (187 d, span 5 werkdagen) ⇒ geen ⚠',
     check(A, { ...snapshotOf(A.id, newBaseline), finish: '2026-08-07T17:00' }), false);
 }
