@@ -1324,3 +1324,14 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   niet in de repo (vermoedelijk klantbestand), geen melding in de UI.
 - Sessie crashte 2× (17:50, 17:54) door OOM: kernel doodde het Claude-proces. Oorzaak volgens eigenaar: per ongeluk een
   VM gestart. Agents hervat met gemeten stand.
+- Reviews na hervatten: **#370 nee ⇒ fix ⇒ ja ⇒ gemerged (9341d6e34)**; **#373 nee ⇒ fix (leeg bestand ⇒ aan; alleen
+  open-paden) ⇒ ja ⇒ gemerged (0cfc8a47e)**; #366 nee (MSPDI-toewijzingswerk `mspdiReader.ts:367`), #369 nee (inzet
+  weg bij taakwissel; na #370 specs), #374 nee (Ctrl+Z tijdens vraag; Taak bewerken rekent met oude vorm), #375 nee
+  (stapelen, wegduwen saveFailed, StructureLocked, plakken) ⇒ fixrondes bij de makers. #368 bijwerken na #370.
+- **Checkstap 35 (statusdatum met tijd):** eigenaar wil de tijd erbij (lint toonde alleen datum; Gantt-label in ISO)
+  ⇒ worker `claude/statusdatum-tijd`. **Checkstap 36 #371 (nieuwe teksten oranje/grijs, aanbod weg): goed** ⇒ review loopt.
+- **Besluiten eigenaar 2026-10-17:** deels gelukte weigering ook rood ("weigering = rood"); bij *Taak wordt een fase*
+  met verricht werk: waarschuwen in het oranje blok + focus op Annuleren (optie 1).
+- Open voor de eigenaar: plek van de instelling *Taaktypes gebruiken* (App-instellingen › Planning › Berekenen) niet
+  beoordeeld; #366-punt: verborgen opgeslagen uren per dag bepaalt de export-omrekening terwijl de i-tekst van
+  *Standaard werkdag* zegt dat de app daarmee een dag omrekent.
