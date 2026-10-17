@@ -106,7 +106,7 @@ The list below is a selection, grouped by topic. Where it does not say otherwise
 - **Summary task refused** (error) — *'{phase}' cannot become a summary task: …* with the reason, and *Nothing was changed.*
 - **Cells skipped on paste** (error) — *Skipped N cells: they are read-only (for example an auto-numbered WBS code or a calculated column).*
 - **References cleared on paste** (info) — *N references did not exist in this document and were cleared (task calendars, custom task types, activity codes or custom fields from the source document).*
-- **Structure is locked** (error, red strip below the ribbon) — *Not available while filtering/grouping/sorting*, with the *Clear* button. When indenting, outdenting or dragging while the list is filtered, grouped or sorted. The strip stays until you click the cross. See [Adjusting the structure](docs://howto-structuur-aanpassen).
+- **Structure is locked** (error, red strip below the ribbon) — *Not available while filtering/grouping/sorting*, with the *Clear* button. While the list is filtered, grouped or sorted: when indenting, outdenting and dragging, with *Insert above* and *Insert below* (right-click menu or shortcut), and with *Task* and *Milestone ▾* while a task is selected (the new task then goes to the bottom). The strip stays until you click the cross. See [Adjusting the structure](docs://howto-structuur-aanpassen).
 - **Work rule adjusted durations** (info) — *After the calendar change the work rule adjusted the duration of N tasks (work stays, hours per day changed).* With a link *Work rules explained*.
 
 ### Primavera (XER)

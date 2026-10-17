@@ -106,7 +106,7 @@ De lijst hieronder is een keuze, gegroepeerd naar onderwerp. Waar het niet staat
 - **Samenvattingstaak geweigerd** (fout) — *'{fase}' kan geen samenvattingstaak worden: …* met de reden, en *Er is niets gewijzigd.*
 - **Cellen overgeslagen bij plakken** (fout) — *N cellen overgeslagen: ze zijn read-only (bijvoorbeeld een automatisch genummerde WBS-code of een berekende kolom).*
 - **Verwijzingen leeggemaakt bij plakken** (info) — *N verwijzingen bestonden niet in dit document en zijn leeggemaakt (taakkalenders, eigen taaktypes, activity codes of gebruikersvelden uit het brondocument).*
-- **Structuur staat vast** (fout, rode strook onder het lint) — *Niet beschikbaar tijdens filteren/groeperen/sorteren*, met de knop *Wissen*. Bij inspringen, uitspringen of slepen terwijl er gefilterd, gegroepeerd of gesorteerd wordt. De strook blijft staan tot je op het kruisje klikt. Zie [Structuur aanpassen](docs://howto-structuur-aanpassen).
+- **Structuur staat vast** (fout, rode strook onder het lint) — *Niet beschikbaar tijdens filteren/groeperen/sorteren*, met de knop *Wissen*. Terwijl er gefilterd, gegroepeerd of gesorteerd wordt: bij inspringen, uitspringen en slepen, bij *Invoegen boven* en *Invoegen onder* (rechtermuismenu of sneltoets), en bij *Taak* en *Mijlpaal ▾* met een geselecteerde taak (de nieuwe taak komt dan onderaan). De strook blijft staan tot je op het kruisje klikt. Zie [Structuur aanpassen](docs://howto-structuur-aanpassen).
 - **Werkregel paste duren aan** (info) — *De werkregel heeft na de kalenderwijziging de duur van N taken aangepast (werk blijft, uren per dag veranderden).* Met een link *Werkregels uitgelegd*.
 
 ### Primavera (XER)
