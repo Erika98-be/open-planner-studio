@@ -1398,3 +1398,33 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   achterliet". Fix: `recordedSourceFormat` (alleen geschreven bij opslaan in de modus) als teken om weer in de modus te
   openen; wijkt af van heropen-beleid optie B (#167) ⇒ in de PR-tekst en bij de check aan de eigenaar melden.
   Ook `taskType`/`customTaskTypeId`/`workRule` datum-neutraal op alle routes. MCP draait altijd `runCPM` (bewust).
+- **Hercheck #369: NEE** (vóór de nieuwe regel): (1) productie-voorpoort `useKeyboardShortcuts.ts:73-92` doet geen blur
+  vóór Ctrl+S/F5 ⇒ getypte inzet niet opgeslagen (duur-/werkveld hadden dit al op main); (2) unmount-commit schrijft in
+  de kopie na `duplicateDocument` (MCP); (3) en: "1,500" wordt stil 1,5 u; (4)/(5) tekst- vs getalvergelijking, lege
+  undo-stap. Met de nieuwe regel: 1 en 3 BLOKKEREN (gewoon gebruik), 2/4/5 VERVOLG — nog niet doorgestuurd.
+- **Werkregel eigenaar 2026-10-17 (in `~/.claude/AGENTS.md`):** reviewer deelt in als BLOKKEERT of VERVOLG; alleen
+  BLOKKEERT geeft een nieuwe fixronde.
+
+## Overdracht 2026-10-17 ~20:55 (sessie gestopt door de eigenaar; maandag verder)
+
+Alle agents kregen om ~20:53 STOP (commit + push wat er is). Stand per PR (controleer maandag eerst met `gh pr view`):
+- Gemerged in main vandaag: #366 (35bcfdfc9) (plus eerder #370, #373).
+- #362 zwevende schuifbalken: klaar, CI groen ⇒ wacht op desktopcheck eigenaar + keuze Shift+wiel boven verticale balk.
+- #368 keuzelijsten taakpaneel: delta-review JA ⇒ laatste kleine punten liepen (stop) ⇒ visuele check eigenaar.
+- #369 Toewijzingen: hercheck NEE ⇒ fixronde voor BLOKKEERT 1 (blur in productie-voorpoort) en 3 (en "1,500").
+- #371 P6-datumblok: fixronde 3 liep (heropenen in de modus via `recordedSourceFormat`; taaktype/werkregel datum-neutraal).
+- #374 wordt fase: fixronde 3 liep (sneltoetsen dicht, vangnet met melding, ?-knop weg).
+- #375 rode weigeringen: fixronde 2 klaar (c4666a736, CI groen); hercheck ronde 3 liep (stop).
+- #376 nieuwe namen: fixronde liep (uitleg instelling, "regel" in gidsen, gemiste plekken, termbase); merget als laatste.
+- #377 statusdatum met tijd: klaar (cf82e89a4, CI groen, lijn + print op het tijdstip); review liep (stop).
+- `claude/werk-decimalen`: worker liep (tabelkolommen; taakpaneel hoort bij #369).
+Open voor de eigenaar, één per bericht, in deze volgorde:
+1. Restwerk uit P6 dat afwijkt bij een duurwijziging: vragen / altijd opnieuw / altijd houden (aanbeveling 1); blokkeert
+   ook de fix van de fout "*Resterend* volgt de duur niet bij niet-gestarte taken".
+2. Zichtbaar maken bewaard vs. berekend restwerk in de tabel (checkstap 37 deel a).
+3. Titel "Taak wordt een fase" vs "samenvattingstaak" (#374) + telt in de app geboekte voortgang als verricht werk?
+4. #371: grijs blok vervangt of vult het oranje aan; heropen-beleid wijzigt t.o.v. #167 optie B.
+5. #375: tekst strook bij *Taak* met filter; rode weigering na Ctrl+Z/documentwissel laten staan of weghalen.
+6. #362 Shift+wiel; desktopcheck. 7. Plek instelling *Taaktypes gebruiken*. 8. #366-punt i-tekst *Standaard werkdag*.
+Vóór de release: tutorial 5 in de extensions-repo tegelijk aanpassen; releasetekst noemt de hernoeming.
+Testversie (release-check, poort 3049) is NIET bijgewerkt met de PR's van vandaag.
