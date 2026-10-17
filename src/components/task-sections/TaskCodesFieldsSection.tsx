@@ -28,7 +28,9 @@ export function TaskCodesFieldsSection({ taskId }: { taskId: string }) {
         <Field key={type.id} label={type.name}>
           <Select
             aria-label={type.name}
-            value={task.activityCodes?.[type.id] ?? ''}
+            // Een id dat niet (meer) in dit codetype staat (bv. uit een import) toont "(geen)", zoals de
+            // native lijst op main deed: React koos daar bij een onbekende waarde de eerste optie.
+            value={type.values.some(v => v.id === task.activityCodes?.[type.id]) ? task.activityCodes![type.id] : ''}
             onChange={v => setTaskActivityCode(taskId, type.id, v || null)}
             className="!text-small !leading-4 !px-2.5 !py-1.5"
             options={[

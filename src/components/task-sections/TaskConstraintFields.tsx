@@ -123,8 +123,8 @@ export function TaskConstraintFields({ task, onChange }: {
               // De reden staat zichtbaar onder de keuzelijst; de trigger verwijst ernaar.
               aria-describedby={!pairValidation.ok ? constraint2ErrorId : undefined}
               // Een secundair type buiten de lijst (bv. MSO uit een IFC-pset) heeft geen optie; toon
-              // dan toch zijn naam in de trigger i.p.v. een lege knop.
-              placeholder={task.constraint2 ? t(`constraintType.${task.constraint2.type}`) : undefined}
+              // dan toch zijn naam in de trigger, als gewone waarde (hij is echt gezet).
+              valueLabel={task.constraint2 ? t(`constraintType.${task.constraint2.type}`) : undefined}
               options={[
                 { value: '', label: t('properties.constraint2None') },
                 ...SECONDARY_TYPES.map(ct => ({ value: ct, label: t(`constraintType.${ct}`) })),

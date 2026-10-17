@@ -126,6 +126,9 @@ test('taakpaneel: een secundair type buiten de lijst (bv. MSO uit IFC) toont zij
   const secondary = page.locator('[data-ops-rail]').getByRole('button', { name: SECONDARY });
   await expect(secondary).toHaveAttribute('data-value', 'MSO');
   await expect(secondary).toHaveText(/\(MSO\)$/);
+  // De waarde is echt gezet: gewone opmaak, niet de grijze plaatshouder.
+  await expect(secondary.locator('.ops-select__value')).toHaveCount(1);
+  await expect(secondary.locator('.ops-select__value.is-placeholder')).toHaveCount(0);
 
   // Toetsenbord (#370): MSO hoort bij geen optie, dus de lijst opent zonder actieve optie en Enter
   // kiest niets. Pijl-omlaag maakt de eerste optie ("geen") actief; Enter wist dan de secundaire.
@@ -218,6 +221,13 @@ test('taakpaneel: soort mijlpaal kiezen via de eigen keuzelijst; undo zet terug'
   await undo(page);
   await expect.poll(() => taskFacts(page, taskId, codeTypeId).then(f => f.milestoneKind)).toBeUndefined();
   await expect(trigger).toHaveAttribute('data-value', 'AUTO');
+
+  // AUTO kiezen na START zet de store terug op "geen soort" (undefined), niet op de tekst 'AUTO'.
+  await choose(page, label, 'START');
+  await expect.poll(() => taskFacts(page, taskId, codeTypeId).then(f => f.milestoneKind)).toBe('START');
+  await choose(page, label, 'AUTO');
+  await expect.poll(() => taskFacts(page, taskId, codeTypeId).then(f => f.milestoneKind ?? 'undefined')).toBe('undefined');
+  await expect(trigger).toHaveAttribute('data-value', 'AUTO');
 });
 
 test('taakpaneel: activiteitcode kiezen via de eigen keuzelijst; undo zet terug', async ({ page, ops: _ops }) => {
@@ -237,4 +247,46 @@ test('taakpaneel: activiteitcode kiezen via de eigen keuzelijst; undo zet terug'
   await undo(page);
   await expect.poll(() => taskFacts(page, taskId, codeTypeId).then(f => f.code)).toBeUndefined();
   await expect(trigger).toHaveAttribute('data-value', '');
+
+  // N.1 en dan "(geen)": de sleutel van het codetype verdwijnt van de taak, zoals op main
+  // (de store wist alleen bij null; een lege tekst zou als waarde blijven staan).
+  const hasKey = () => page.evaluate(({ id, typeId }) => {
+    const t = window.__OPS__!.store.getState().tasks.find(x => x.id === id)!;
+    return t.activityCodes ? Object.prototype.hasOwnProperty.call(t.activityCodes, typeId) : false;
+  }, { id: taskId, typeId: codeTypeId });
+  await choose(page, new RegExp(`^${CODE_NAME}$`), noordId);
+  await expect.poll(hasKey).toBe(true);
+  await choose(page, new RegExp(`^${CODE_NAME}$`), '');
+  await expect.poll(hasKey).toBe(false);
+  await expect(trigger).toHaveText(/^\((none|geen)\)$/);
+});
+
+test('taakpaneel: een activiteitcode-id dat niet in het codetype staat toont "(geen)", zoals op main', async ({ page, ops: _ops }) => {
+  const { taskId, codeTypeId } = await seedPanelTask(page);
+  // Fixture: zo'n id komt alleen via import binnen.
+  await page.evaluate(({ id, typeId }) => window.__OPS__!.store.getState().updateTask(id, {
+    activityCodes: { [typeId]: 'onbekend-id' },
+  }), { id: taskId, typeId: codeTypeId });
+  const trigger = page.locator('[data-ops-rail]').getByRole('button', { name: CODE_NAME });
+  await expect(trigger).toHaveAttribute('data-value', '');
+  await expect(trigger).toHaveText(/^\((none|geen)\)$/);
+  await expect(trigger.locator('.ops-select__value.is-placeholder')).toHaveCount(0);
+});
+
+test('Taak bewerken: Enter op de dichte constraint-keuzelijst opent de lijst en slaat niet op', async ({ page, ops: _ops }) => {
+  // Vastgelegd verschil met de native lijst op main: daar sloeg Enter op een dichte select de
+  // dialoog op. De eigen Select houdt Enter zelf (zoals de andere keuzelijsten in deze dialoog).
+  const { taskId } = await seedPanelTask(page);
+  await page.evaluate(id => window.__OPS__!.store.getState().setUI({ showTaskDialog: true, editingTaskId: id }), taskId);
+  const dialog = page.locator('[data-ops-task-dialog]');
+  const trigger = dialog.getByRole('button', { name: /^(Constraint|Beperking)$/ });
+  await trigger.focus();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('.ops-select__menu')).toBeVisible();
+  await expect(dialog).toBeVisible();
+  // Escape sluit alleen de lijst, niet de dialoog.
+  await page.keyboard.press('Escape');
+  await expect(page.locator('.ops-select__menu')).toHaveCount(0);
+  await expect(dialog).toBeVisible();
+  await expect(trigger).toBeFocused();
 });
