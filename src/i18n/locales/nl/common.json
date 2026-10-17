@@ -31,7 +31,7 @@
     "xerDuplicateId": "Het XER-bestand bevat een dubbele WBS-, activiteit- of relatie-id.",
     "xerAmbiguousLocalRelation": "Een ongescopeerde XER-relatie is niet eenduidig aan één lokaal project toe te wijzen.",
     "xerDanglingLocalRelation": "Een lokale XER-relatie verwijst naar een ontbrekende activiteit.",
-    "xerEnumFallback": "XER {{family}}: onbekend token ‘{{token}}’; teruggevallen op ‘{{fallback}}’.",
+    "xerEnumFallback": "XER {{family}}: onbekend token '{{token}}'; teruggevallen op '{{fallback}}'.",
     "xerImportOpened_one": "XER-bestand geopend: {{count}} projectdocument.",
     "xerImportOpened_other": "XER-bestand geopend: {{count}} projectdocumenten.",
     "xerImportProjectsSeen_one": "{{count}} project gezien.",

@@ -31,7 +31,7 @@
     "xerDuplicateId": "The XER file contains a duplicate WBS, activity, or relation ID.",
     "xerAmbiguousLocalRelation": "An unscoped XER relation cannot be assigned unambiguously to one local project.",
     "xerDanglingLocalRelation": "A local XER relation refers to a missing activity.",
-    "xerEnumFallback": "XER {{family}}: unknown token ‘{{token}}’; fell back to ‘{{fallback}}’.",
+    "xerEnumFallback": "XER {{family}}: unknown token '{{token}}'; fell back to '{{fallback}}'.",
     "xerImportOpened_one": "XER file opened: {{count}} project document.",
     "xerImportOpened_other": "XER file opened: {{count}} project documents.",
     "xerImportProjectsSeen_one": "{{count}} project found.",
