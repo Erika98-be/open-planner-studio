@@ -49,6 +49,8 @@ const moveButton = (page: Page) => dialog(page).locator('[data-ops-phase-move]')
 const removeButton = (page: Page) => dialog(page).locator('[data-ops-phase-remove]');
 const cancelButton = (page: Page) => dialog(page).locator('[data-ops-phase-cancel]');
 const blockedNote = (page: Page) => dialog(page).locator('[data-ops-phase-move-blocked]');
+const notice = (page: Page) => dialog(page).locator('[data-ops-phase-notice]');
+const actualWorkLines = (page: Page) => dialog(page).locator('[data-ops-phase-actual-work]');
 
 function nameCell(page: Page, taskId: string): Locator {
   return page.locator(
@@ -90,7 +92,7 @@ test('Alt+Shift+→ vraagt eerst; Verplaatsen verhuist de toewijzing naar de nie
     .toHaveText(['Cancel', 'Remove assignment', "Move to 'Voegen'"]);
   await expect(moveButton(page)).toBeEnabled();
   await expect(moveButton(page)).toHaveClass(/btn--primary/);
-  await expect(blockedNote(page)).toHaveCount(0);
+  await expect(notice(page)).toHaveCount(0);
   // Zolang het venster open staat, is er niets gewijzigd.
   expect(await fingerprint(page)).toBe(before);
 
@@ -145,7 +147,7 @@ test('subtaak heeft dezelfde resource al: Verplaatsen uit, oranje infoblok, Verw
   await page.keyboard.press('Alt+Shift+ArrowRight');
   await expect(dialog(page)).toBeVisible();
   await expect(blockedNote(page)).toHaveText("Moving is not possible: 'Voegen' already has Metselaar.");
-  await expect(blockedNote(page)).toHaveClass(/alert--info/);
+  await expect(notice(page)).toHaveClass(/alert--info/);
   await expect(moveButton(page)).toBeDisabled();
   await expect(removeButton(page)).toHaveClass(/btn--primary/);
 
@@ -390,4 +392,71 @@ test('Taak bewerken › ? › Opslaan: na de keuze opent Help alsnog (review #37
   expect(await parentOf(page, N)).toBe(L);
   await expect(page.locator('.help-panel')).toBeVisible();
   await expect(page.locator('.help-article-body')).toHaveAttribute('data-help-current', 'ref-taak-eigenschappen');
+});
+
+test('verricht werk: het infoblok noemt het, focus op Annuleren, Enter wijzigt niets (eigenaarsbesluit 2026-10-17)', async ({ page, ops: _ops }) => {
+  const { L, N } = await seedAssignedLeaf(page);
+  // Fixture: 7,5 uur verricht werk op de toewijzing van Metselaar.
+  await page.evaluate(() => window.__OPS__!.store.setState((s) => { s.assignments[0].actualWorkMinutes = 450; }));
+  const before = await fingerprint(page);
+  const depth = (await state(page)).undoDepth;
+
+  await selectRow(page, N);
+  await page.keyboard.press('Alt+Shift+ArrowRight');
+  await expect(dialog(page)).toBeVisible();
+  await expect(actualWorkLines(page)).toHaveText([
+    'The assignment of Metselaar already has 7.5 hours of actual work. Removing it discards that work.',
+  ]);
+  await expect(notice(page)).toHaveClass(/alert--info/);
+  await expect(cancelButton(page)).toBeFocused();
+  await expect(cancelButton(page)).toHaveClass(/btn--primary/);
+  await expect(removeButton(page)).not.toHaveClass(/btn--primary/);
+  await expect(moveButton(page)).toBeEnabled();
+  await expect(moveButton(page)).not.toHaveClass(/btn--primary/);
+
+  // Enter gooit nooit verricht werk weg: het venster sluit, er verandert niets.
+  await page.keyboard.press('Enter');
+  await expect(dialog(page)).toBeHidden();
+  expect(await fingerprint(page)).toBe(before);
+  expect((await state(page)).undoDepth).toBe(depth);
+
+  // Ook als Verplaatsen uit is (dezelfde resource op de subtaak) blijft de focus op Annuleren.
+  await page.evaluate(({ n }) => {
+    const s = window.__OPS__!.store.getState();
+    s.assignResource(n, s.assignments[0].resourceId, 1);
+  }, { n: N });
+  await page.keyboard.press('Alt+Shift+ArrowRight');
+  await expect(dialog(page)).toBeVisible();
+  await expect(moveButton(page)).toBeDisabled();
+  await expect(cancelButton(page)).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect(dialog(page)).toBeHidden();
+  expect(await parentOf(page, N)).toBeNull();
+
+  // Verwijderen blijft mogelijk met een bewuste klik.
+  await page.keyboard.press('Alt+Shift+ArrowRight');
+  await removeButton(page).click();
+  await expect(dialog(page)).toBeHidden();
+  expect(await parentOf(page, N)).toBe(L);
+  expect(await assignmentTaskIds(page)).toEqual([N]);
+});
+
+test('verricht werk in het Nederlands: de canonieke zin', async ({ page, ops: _ops }) => {
+  await page.evaluate(() => localStorage.setItem('ops-locale', 'nl'));
+  await page.reload();
+  await waitForOps(page);
+  await waitForWelcomeDialog(page);
+  await page.evaluate(() => {
+    const s = window.__OPS__!.store.getState();
+    s.newProject();
+    s.setUI({ showWelcomeDialog: false, showTourOverlay: false, activeRibbonTab: 'start' });
+  });
+  const { N } = await seedAssignedLeaf(page);
+  await page.evaluate(() => window.__OPS__!.store.setState((s) => { s.assignments[0].actualWorkMinutes = 480; }));
+  await selectRow(page, N);
+  await page.keyboard.press('Alt+Shift+ArrowRight');
+  await expect(actualWorkLines(page)).toHaveText([
+    'Op de toewijzing van Metselaar staat al 8 uur verricht werk. Verwijderen gooit dat weg.',
+  ]);
+  await cancelButton(page).click();
 });

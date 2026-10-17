@@ -203,6 +203,9 @@ export function phaseAssignmentQuestion(
       targetId,
       targetName: targetId === null ? null : taskName(s, targetId, pending),
       resourceNames: assignments.map(a => resourceName(s, a.resourceId)),
+      actualWork: assignments
+        .filter(a => (a.actualWorkMinutes ?? 0) > 0)
+        .map(a => ({ resourceName: resourceName(s, a.resourceId), minutes: a.actualWorkMinutes! })),
       blocked: targetId === null
         ? { kind: 'noAssignableChild' }
         : duplicates.length > 0 ? { kind: 'duplicateResource', resourceNames: duplicates } : null,

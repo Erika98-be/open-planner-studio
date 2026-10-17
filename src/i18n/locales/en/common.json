@@ -1586,6 +1586,8 @@
     "moveTo": "Move to '{{child}}'",
     "moveToSubtasks": "Move to the subtasks",
     "blockedDuplicate": "Moving is not possible: '{{child}}' already has {{resources}}.",
-    "blockedNoChild": "Moving is not possible: '{{phase}}' gets no subtask that can carry an assignment, only milestones or summary tasks."
+    "blockedNoChild": "Moving is not possible: '{{phase}}' gets no subtask that can carry an assignment, only milestones or summary tasks.",
+    "actualWorkLost_one": "The assignment of {{resource}} already has {{hours}} hour of actual work. Removing it discards that work.",
+    "actualWorkLost_other": "The assignment of {{resource}} already has {{hours}} hours of actual work. Removing it discards that work."
   }
 }

@@ -452,6 +452,9 @@ export interface PhaseAssignmentQuestionItem {
   targetName: string | null;
   /** De resources van de toewijzingen van de fase, in volgorde. */
   resourceNames: string[];
+  /** Toewijzingen met verricht werk (actuals), die Verwijderen zou weggooien (eigenaarsbesluit
+   *  2026-10-17: het venster noemt ze en zet de focus op Annuleren). */
+  actualWork: { resourceName: string; minutes: number }[];
   /** Waarom verplaatsen niet kan; `null` ⇒ het kan. */
   blocked:
     | null

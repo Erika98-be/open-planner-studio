@@ -294,7 +294,7 @@ const fingerprint = () => JSON.stringify({
   S().indentTasks([N]);
   eq('F1 vraag staat open', question(), { items: [{
     phaseId: L, phaseName: 'Metselen', childCount: 1, firstChildName: 'Voegen',
-    targetId: N, targetName: 'Voegen', resourceNames: ['Metselaar'], blocked: null,
+    targetId: N, targetName: 'Voegen', resourceNames: ['Metselaar'], actualWork: [], blocked: null,
   }] });
   eq('F1 nog niets veranderd (structuur, toewijzing, undo, isDirty)', fingerprint(), before);
   eq('F1 geen melding', noticesSince(mark), []);
@@ -469,6 +469,7 @@ const fingerprint = () => JSON.stringify({
   const { L, N, assignmentId } = leafWithAssignment();
   useAppStore.setState((s) => { s.assignments.find(a => a.id === assignmentId)!.actualWorkMinutes = 480; });
   S().indentTasks([N]);
+  eq('F11 de vraag noemt het verrichte werk', question()?.items[0].actualWork, [{ resourceName: 'Metselaar', minutes: 480 }]);
   S().answerPhaseAssignmentQuestion('move');
   eq('F11 verplaatsen: verricht werk gaat mee', S().assignments.find(a => a.id === assignmentId)?.actualWorkMinutes, 480);
   S().undo();

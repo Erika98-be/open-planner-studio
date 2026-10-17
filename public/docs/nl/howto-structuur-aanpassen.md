@@ -56,7 +56,11 @@ Alt+↑ en Alt+↓ werken in zo'n weergave wél, zonder melding. Bij alleen een 
 - *Toewijzing verwijderen*: de taak krijgt haar subtaken en haar toewijzingen gaan weg. Het verrichte werk van die toewijzingen gaat ook weg.
 - *Verplaatsen naar '…'*: de toewijzingen gaan naar de eerste nieuwe subtaak die ze mag dragen, met hun verrichte werk. Een mijlpaal of een samenvattingstaak draagt geen toewijzingen.
 
-Heeft die subtaak dezelfde resource al, of is er geen geschikte subtaak, dan is *Verplaatsen* uitgeschakeld. Een oranje blok in het venster zegt waarom. Zolang het venster open is, werken *Ongedaan*, *Opnieuw* en *Plakken* niet. Maakt één handeling meer samenvattingstaken tegelijk, dan toont het venster per taak de resources, en je keuze geldt voor allemaal. Eén keer *Ongedaan* (Ctrl+Z) draait de hele handeling terug.
+Heeft die subtaak dezelfde resource al, of is er geen geschikte subtaak, dan is *Verplaatsen* uitgeschakeld. Een oranje blok in het venster zegt waarom.
+
+Staat er op een toewijzing al verricht werk, dan noemt het oranje blok per resource hoeveel uur, bijvoorbeeld *Op de toewijzing van Metselaar staat al 8 uur verricht werk. Verwijderen gooit dat weg.* De knop *Annuleren* is dan de standaardknop: Enter verandert niets. Wil je de toewijzing toch verwijderen, klik dan zelf op *Toewijzing verwijderen*.
+
+Zolang het venster open is, werken *Ongedaan*, *Opnieuw* en *Plakken* niet. Maakt één handeling meer samenvattingstaken tegelijk, dan toont het venster per taak de resources, en je keuze geldt voor allemaal. Eén keer *Ongedaan* (Ctrl+Z) draait de hele handeling terug.
 
 **Een relatie zou een kring maken.** De relaties van een samenvattingstaak gelden ook voor haar subtaken. Zou een verplaatsing daardoor een kring maken, dan weigert de app hem, met de melding *Deze verplaatsing zou een kring in de planning maken (…)*. Er verandert dan niets.
 

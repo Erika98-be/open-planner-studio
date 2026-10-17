@@ -1586,6 +1586,8 @@
     "moveTo": "Verplaatsen naar '{{child}}'",
     "moveToSubtasks": "Verplaatsen naar de subtaken",
     "blockedDuplicate": "Verplaatsen kan niet: '{{child}}' heeft {{resources}} al.",
-    "blockedNoChild": "Verplaatsen kan niet: '{{phase}}' krijgt geen subtaak die een toewijzing kan dragen, alleen mijlpalen of samenvattingstaken."
+    "blockedNoChild": "Verplaatsen kan niet: '{{phase}}' krijgt geen subtaak die een toewijzing kan dragen, alleen mijlpalen of samenvattingstaken.",
+    "actualWorkLost_one": "Op de toewijzing van {{resource}} staat al {{hours}} uur verricht werk. Verwijderen gooit dat weg.",
+    "actualWorkLost_other": "Op de toewijzing van {{resource}} staat al {{hours}} uur verricht werk. Verwijderen gooit dat weg."
   }
 }

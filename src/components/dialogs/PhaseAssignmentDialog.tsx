@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useAppStore } from '@/state/appStore';
 import { Dialog, DialogHeader } from '@/components/common/Dialog';
 import { STRUCTURE_HELP_ARTICLE_ID } from '@/state/helpArticles';
+import { formatReportNumber } from '@/utils/reportNumber';
 import type { PhaseAssignmentQuestion, PhaseAssignmentQuestionItem } from '@/state/slices/types';
 
 /**
@@ -15,6 +16,10 @@ import type { PhaseAssignmentQuestion, PhaseAssignmentQuestionItem } from '@/sta
  *    dragen. Kan dat niet (die subtaak heeft dezelfde resource al, of er is geen geschikte subtaak),
  *    dan is de knop uit, zegt een infoblok waarom, en is Verwijderen de primaire knop.
  * Eén vraag voor de hele handeling; de keuze geldt voor elke nieuwe samenvattingstaak.
+ *
+ * Verricht werk (eigenaarsbesluit 2026-10-17): draagt een toewijzing al verricht werk, dan noemt het
+ * infoblok per resource hoeveel uur Verwijderen weggooit, en ligt de focus en de primaire stijl op
+ * Annuleren. Enter gooit zo nooit verricht werk weg; Verwijderen blijft een bewuste klik.
  *
  * Rendert alleen bij `ui.pendingPhaseAssignmentQuestion`; het antwoord gaat naar
  * `answerPhaseAssignmentQuestion`, die de handeling met de keuze uitvoert. Stapelt boven "Taak
@@ -57,8 +62,14 @@ function PhaseAssignmentDialogBody({ question }: { question: PhaseAssignmentQues
   const canMove = blocked.length === 0;
   const assignmentCount = items.reduce((sum, item) => sum + item.resourceNames.length, 0);
 
+  const actualWork = items.flatMap(item => item.actualWork);
+  // Welke knop is primair (stijl, beginfocus, Enter zonder knopfocus)?
+  const primaryKind: 'cancel' | 'remove' | 'move' = actualWork.length > 0 ? 'cancel' : canMove ? 'move' : 'remove';
+
   const cancel = () => answer(null);
-  const primary = () => answer(canMove ? 'move' : 'remove');
+  const primary = () => answer(primaryKind === 'cancel' ? null : primaryKind);
+  const primaryClass = 'btn btn--sm btn--primary shadow-[var(--shadow-glow)]';
+  const secondaryClass = 'btn btn--sm btn--secondary';
 
   useEffect(() => { primaryRef.current?.focus(); }, []);
 
@@ -119,29 +130,44 @@ function PhaseAssignmentDialogBody({ question }: { question: PhaseAssignmentQues
               </ul>
             </>
           )}
-          {!canMove && (
-            <div className="alert alert--info flex flex-col gap-1" data-ops-phase-move-blocked>
-              {blocked.map(item => <span key={item.phaseId}>{blockedLine(item)}</span>)}
+          {(!canMove || actualWork.length > 0) && (
+            <div className="alert alert--info flex flex-col gap-1" data-ops-phase-notice>
+              {blocked.map(item => <span key={item.phaseId} data-ops-phase-move-blocked>{blockedLine(item)}</span>)}
+              {actualWork.map((work, index) => {
+                const hours = Math.round(work.minutes / 60 * 100) / 100;
+                return (
+                  <span key={index} data-ops-phase-actual-work>
+                    {t('phaseAssignmentQuestion.actualWorkLost', {
+                      count: hours, hours: formatReportNumber(hours, i18n.language), resource: work.resourceName,
+                    })}
+                  </span>
+                );
+              })}
             </div>
           )}
         </div>
         <div className="flex justify-end gap-3 px-4 py-3 border-t border-border">
-          <button onClick={cancel} className="btn btn--sm btn--secondary" data-ops-phase-cancel>
+          <button
+            ref={primaryKind === 'cancel' ? primaryRef : undefined}
+            onClick={cancel}
+            className={primaryKind === 'cancel' ? primaryClass : secondaryClass}
+            data-ops-phase-cancel
+          >
             {t('cancel')}
           </button>
           <button
-            ref={canMove ? undefined : primaryRef}
+            ref={primaryKind === 'remove' ? primaryRef : undefined}
             onClick={() => answer('remove')}
-            className={canMove ? 'btn btn--sm btn--secondary' : 'btn btn--sm btn--primary shadow-[var(--shadow-glow)]'}
+            className={primaryKind === 'remove' ? primaryClass : secondaryClass}
             data-ops-phase-remove
           >
             {t('phaseAssignmentQuestion.remove', { count: assignmentCount })}
           </button>
           <button
-            ref={canMove ? primaryRef : undefined}
+            ref={primaryKind === 'move' ? primaryRef : undefined}
             onClick={() => answer('move')}
             disabled={!canMove}
-            className={canMove ? 'btn btn--sm btn--primary shadow-[var(--shadow-glow)]' : 'btn btn--sm btn--secondary'}
+            className={primaryKind === 'move' ? primaryClass : secondaryClass}
             data-ops-phase-move
           >
             {moveLabel}
