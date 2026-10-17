@@ -42,6 +42,8 @@ Every baseline has six columns in the task table. Click the **+** at the right o
 
 **A baseline cannot be updated.** If you want to revise the agreement, save a new baseline and delete the old one if needed.
 
+**A ⚠ at Duration or Duration variance.** For a task in hours, a day is the working time of its calendar. If the calendar has its own hours per day (for example 8 with blocks of 10 hours, from Primavera P6), an older version of the app counted the days differently. A baseline from that version keeps the old number: a task of 1870 hours is 233.75 days in the baseline and 187 days now. The app does not convert such a baseline. The columns *Duration* and *Duration variance* of that baseline then show a ⚠; point at it for the explanation. The dates of the baseline are correct. Save a new baseline and delete the old one if needed.
+
 **Only tasks without subtasks.** A phase is not in the baseline: it has no baseline bar and no variance. The phase follows from the tasks below it.
 
 **New and deleted tasks.** A task you add after saving has no baseline bar. In the Variance report it appears as *New*. A task you delete appears as *Dropped*.

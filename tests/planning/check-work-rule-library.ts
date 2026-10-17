@@ -115,7 +115,12 @@ console.log('-- (a) refreshAllDocumentsFromPool, actief document --');
   eq('a0 voorwaarde: projectkopie ververst naar 6 u', f.S().calendar.hoursPerDay, 6);
   eq('a1 Vast werk 32 u, kalender 8→6 u/d ⇒ 6 d, werk blijft 32 u', [dur(f, f.t), asgOf(f, f.t).remainingWorkMinutes], [6, 32 * 60]);
   eq('a2 standaardregel op dezelfde kalender: duur blijft 4, geen werkveld', [dur(f, f.q), asgOf(f, f.q).remainingWorkMinutes], [4, qWorkBefore]);
-  eq('a3 urentaak: byte-identiek', JSON.stringify({ time: taskOf(f, f.h).time, asg: asgOf(f, f.h) }), hBefore);
+  // De urentaak valt buiten de regel: minuten, datums en toewijzing blijven byte-identiek. Alleen haar
+  // verborgen dagengetal volgt de nieuwe werktijd per dag: 600 min ÷ 6 u (eigenaarsbesluit 2026-10-15,
+  // optie 2 — `hourTaskScheduleDuration`, ook bij een kalenderwissel).
+  const hAfter = JSON.parse(hBefore) as { time: Task['time']; asg: ResourceAssignment };
+  hAfter.time.scheduleDuration = 600 / (6 * 60);
+  eq('a3 urentaak: byte-identiek op het dagengetal na (600 min ÷ 6 u)', JSON.stringify({ time: taskOf(f, f.h).time, asg: asgOf(f, f.h) }), JSON.stringify(hAfter));
   eq('a4 niet-undoable zoals de verversing: geen undo-stap, geen isDirty, wel stale', [appliedEvents(f) - ev0, f.S().isDirty, f.S().scheduleStale], [0, false, true]);
   eq('a5 één melding "1 taak" (dezelfde als de kalenderdialoog)', msgs(f, DUR_KEY), [1]);
   // Een tweede poolbewerking die de kalender NIET raakt (resource) ⇒ geen settle, geen melding.
