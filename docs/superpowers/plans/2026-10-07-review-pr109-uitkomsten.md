@@ -1256,3 +1256,18 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
 - **Hercheck #364: nee, bijna** — nieuwe oorsprongregel van de maker (lege Gantt: `viewStartDate` − 14 d, geen
   feestdagen ervoor) juist; G1 ging over een latere feestdag (vault `takenlijsten/bevindigen…:8`). Rest: sjabloon met
   latere start toont fasen niet (ook op main). Kleine fixronde.
+- **Weeklimiet 2026-10-15 ~22:26** stopte alle agents. **Reboot 2026-10-17 14:41**: `/tmp` leeg (scans, mutantlogs,
+  voorstellen weg). Nieuwe sessie: oude agent-id's niet meer bereikbaar ⇒ nieuwe agents met briefbestanden
+  `/home/nozzit/open-aec/briefs-2026-10-17/<pr>.md` (alle eerdere opdrachten per agent + laatste notities).
+- **OOM 2026-10-17 15:01/15:03**: systemd-oomd stopte Claude Code (zeven agents met eigen dev-server/Playwright).
+  Mutanten stonden nog in `dag-is-werktijd` (M24) en `zwevende-balken` (DataGridCore echo-wacht); teruggezet uit HEAD.
+  Regel vanaf nu: hooguit drie agents tegelijk, geen eigen dev-server, typecheck/Playwright onder het slot met
+  `--workers=1` (ook in `~/.claude/AGENTS.md`).
+- **Eigenaar 2026-10-17, checkstap 21 (#365)**: letterlijk "ziet er goed uit". Bevindingen: (1) "de open knop leek niet
+  te werken" ⇒ orkestrator gemeten: het T3-voorbeeldvenster houdt de bestandskiezer vast (`fileChooser` wacht,
+  `.ifc,.csv,.xml,.mpp,.xer`); geen appfout. Bijvangst: de `accept`-lijst noemt elke extensie twee keer (onschuldig).
+  (2) "deze is nu net wat breder geworden" (lintknop *Project settings*, en, 87 px op één regel). Besluit voorgelegd:
+  1 zo mergen (advies) / 2 Engels ook over twee regels.
+- **#363 derde fixronde af** (expert Opus 5.5, xhigh): geen codewijziging nodig, `59e7901ac` volgt de symmetrische regel;
+  Roads: baseline van main 1180 ⚠, nieuwe baseline 0 ⚠ (A37/A72 grensgeval zonder ⚠, alleen weergave); M24 rood;
+  PR-tekst bijgewerkt. Derde hercheck gestart (reviewer Opus 5.5, xhigh).
