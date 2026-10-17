@@ -62,7 +62,7 @@ for (const { label, title, seed } of TASK_DIALOG_CASES) {
 
 test('instellingendialoog: het kopkruisje heet "Sluiten", start geen sleep en sluit de dialoog', async ({ page, ops: _ops }) => {
   await page.evaluate(() => window.__OPS__!.store.getState().setUI({ showSettingsDialog: true }));
-  const dialog = page.getByRole('dialog', { name: /^(Settings|Instellingen)$/ });
+  const dialog = page.getByRole('dialog', { name: /^(App settings|App-instellingen)$/ });
   await expect(dialog).toBeVisible();
 
   // De voet heeft óók een tekstknop "Sluiten" (zonder tooltip); het kruisje zit in de sleepkop.

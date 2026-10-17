@@ -9,7 +9,7 @@ A schedule counts in **work days**, not calendar days. "Five days of bricklaying
 Which days are work days is recorded in a **calendar**. A calendar fixes three things:
 
 - The **work week**: the weekdays on which work happens. By default that is Monday to Friday.
-- The **working times**: start, end and break. They give the **net hours per day**. By default that is 07:00 to 16:00 with an hour's break, so 8 hours.
+- The **working times**: start, end and break. They give the **standard workday**. By default that is 07:00 to 16:00 with an hour's break, so 8 hours.
 - The **holidays**: single days or whole periods on which no work happens, such as King's Day, Christmas or the construction holiday.
 
 A project has one library of calendars. One of them is the **project calendar**. It applies to every task that has no calendar of its own. You give another calendar to an individual task, for example a six-day work week for a subcontractor who also works on Saturdays. A resource can have its own calendar too, but that does something different (see below).
@@ -40,14 +40,14 @@ The calendar of a **resource** plays no part in the dates. In a schedule you bui
 When two tasks with different calendars are linked, this applies:
 
 - With a Finish-Start relation the successor begins on the first work day after the finish of the predecessor, counted in the calendar of the **successor**. If a task finishes on a Friday, a successor with a six-day work week starts on the Saturday.
-- A **lag** counts in the calendar of the **predecessor** by default. You can change that under *Settings › Project › Project info*, in the block *Calculation profile and options*, under *Calculation options of this project*, with the choice *Lag calendar*: *Predecessor* (default), *Successor*, *24-hour* or *Project calendar*.
+- A **lag** counts in the calendar of the **predecessor** by default. You can change that under *Settings › Project › Project settings*, in the block *Calculation profile and options*, under *Calculation options of this project*, with the choice *Lag calendar*: *Predecessor* (default), *Successor*, *24-hour* or *Project calendar*.
 - The **total float** counts in work days of the calendar of the task itself. In this profile the **free float** counts in the calendar of the successor.
 
 What a lag is exactly is covered in [Adding relations](docs://howto-relaties-leggen); what float is, in [Critical path and float](docs://uitleg-kritiek-pad).
 
 ### In the Gantt
 
-The grey background in the Gantt always shows the non-working days of the **project calendar**. A task on a calendar of its own can therefore run across a grey day, such as a six-day task across the Saturday. A block of holidays three days wide or more gets its name shown, for example *Bouwvak (Noord)*. That does not happen when *Show only working days* is on. If you do not want to see the grey days at all, turn on *Show only working days* under *Settings › Project › Settings*, tab *Appearance*, heading *Timeline axis*.
+The grey background in the Gantt always shows the non-working days of the **project calendar**. A task on a calendar of its own can therefore run across a grey day, such as a six-day task across the Saturday. A block of holidays three days wide or more gets its name shown, for example *Bouwvak (Noord)*. That does not happen when *Show only working days* is on. If you do not want to see the grey days at all, turn on *Show only working days* under *Settings › Project › App settings*, tab *Appearance*, heading *Timeline axis*.
 
 ## Worked example: the building schedule
 

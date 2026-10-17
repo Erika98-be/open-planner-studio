@@ -22,7 +22,7 @@ Bij een nieuw project:
 
 Bij een bestaand project:
 
-1. Kies *Bestand › Projectinfo*.
+1. Kies *Bestand › Projectinstellingen*.
 2. Kies bij *Resourcebibliotheek* de bibliotheek.
 3. Klik op *Toepassen*. Tot dat moment staat onderaan *Wijzigingen niet toegepast — klik op Toepassen om ze te bewaren.*
 

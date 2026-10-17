@@ -627,7 +627,7 @@ function hoursLabel(hours: number): string {
 
 /**
  * NETTO UREN OP EEN KALENDER MET PAUZE ("MCP doet wat de kalenderdialoog doet"). In de dialoog is
- * "Netto-uren per dag" een afleiding uit werkdag − pauze (`simpleBreakPatch` → `simpleBreakNetHours`).
+ * "Standaard werkdag" een afleiding uit werkdag − pauze (`simpleBreakPatch` → `simpleBreakNetHours`).
  * Een meegegeven `hoursPerDay` voor een DAG-kalender met (na samenvoegen) een pauzepatroon moet dus
  * gelijk zijn aan werkdag − pauze; afwijkend ⇒ zachte weigering met de velden die de AI wél moet
  * wijzigen, gelijk ⇒ no-op (`calendarFieldPatch` neemt de afgeleide waarde).
@@ -677,7 +677,7 @@ function netHoursReason(item: CalendarItem, existing: CalendarBase): string | nu
     }
   }
   return `\`hoursPerDay\` ${hoursLabel(item.hoursPerDay)} does not match this calendar: with a break the net ` +
-    'hours are DERIVED from working day minus break, like the non-editable "Net hours per day" in the ' +
+    'hours are DERIVED from working day minus break, like the non-editable "Standard workday" in the ' +
     `calendar dialog — here ${clockLabel(start)}–${clockLabel(end)} with ${pause} min break = ` +
     `${hoursLabel(net)} h net. Leave \`hoursPerDay\` out, or change the working day ` +
     '(`workStartHour`/`workEndHour`, in HOURS) or the break duration (`simpleBreakDurationMinutes`, in ' +
@@ -1045,7 +1045,7 @@ const updateCalendar: BatchStepTool = {
     'replaces the list exactly). The derived read fields `isProjectDefault`/`usedByTasks`/`usedByResources` ' +
     'and the library stamp `libraryOrigin` may come along but do nothing; the response reports them as ' +
     '`ignoredFields`. BREAK: on a DAY calendar with a break, `hoursPerDay` is DERIVED from working day minus ' +
-    'break, just like the non-editable "Net hours per day" in the calendar dialog. If you touch the break or ' +
+    'break, just like the non-editable "Standard workday" in the calendar dialog. If you touch the break or ' +
     'start/end, `hoursPerDay` follows automatically. More or fewer net hours means: change ' +
     '`workStartHour`/`workEndHour` or `simpleBreakDurationMinutes`. A given `hoursPerDay` that does not ' +
     'match working day minus break (to the minute) is softly refused, naming the fields you do need to ' +
@@ -1272,7 +1272,7 @@ const updateCalendar: BatchStepTool = {
           'There is now an HOUR calendar in this document while the app setting "Enable hour planning" is ' +
           'OFF. The schedule is calculated hour-native. The Calendars dialog shows and edits the work ' +
           'blocks of this calendar, but the rest of the app (durations in hours, the Hour time scale) shows ' +
-          'no hours until the user turns that setting on (Settings → Enable hour planning).',
+          'no hours until the user turns that setting on (App settings → Planning → Enable hour planning).',
         );
       }
       return { calendars: rows, warnings, projectEnd, ...(cappedTaskIds ? { cappedTaskIds } : {}) };
@@ -1855,11 +1855,11 @@ const PROJECT_REFUSED: Record<string, string> = {
     'the calculation options (`schedulingOptions`, including `floatPaths`, `criticalDefinition`, ' +
     '`lagCalendar`, `startToStartLagFrom`) are NOT settable via the bridge: together with the calculation ' +
     'profile they determine the solver semantics of the whole document. Set them in the app under File → ' +
-    'Project info → Calculation profile and options; `planner_get_project_info` shows the active profile and ' +
+    'Project settings → Calculation profile and options; `planner_get_project_info` shows the active profile and ' +
     'the project options, `planner_get_critical_path` reports with `pathsMode` which setting applies.',
   schedulingProfile:
     'the calculation profile (P6 / MS Project / OPS / custom) is NOT settable via the bridge: a switch ' +
-    'shifts dates of the whole document. Choose it in the app under File → Project info → Calculation ' +
+    'shifts dates of the whole document. Choose it in the app under File → Project settings → Calculation ' +
     'profile; `planner_get_project_info` shows the active profile with its twenty-seven resolved conventions.',
   leveling:
     '`leveling` belongs in `project.schedulingOptions`: the leveling settings from the source file (P6 ' +
@@ -1867,7 +1867,7 @@ const PROJECT_REFUSED: Record<string, string> = {
     '`planner_get_project_info` shows them read-only; manual leveling is done with `planner_level_resources`.',
   floatPaths:
     '`floatPaths` belongs in `project.schedulingOptions` and is NOT settable via the bridge (see the app ' +
-    'under File → Project info → Calculation profile and options). `planner_get_critical_path` reports with ' +
+    'under File → Project settings → Calculation profile and options). `planner_get_critical_path` reports with ' +
     '`pathsMode` which setting applies.',
   calendarId:
     'WHICH calendar is the project default cannot be switched via the bridge — you do that in the app ' +

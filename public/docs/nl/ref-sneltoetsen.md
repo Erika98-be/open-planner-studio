@@ -14,7 +14,7 @@ Alle toetscombinaties van de app, gegroepeerd zoals in het venster *Sneltoetsen*
 
 - In een invoerveld, een keuzelijst of een tekstvak vangt de app geen toetsen af, zodat je gewoon kunt typen. Uitzondering: F5, Ctrl+S, F11 en Esc tijdens de presentatie werken ook in een veld. In de gebouwde app (desktop en de webversie op de site) geldt dat ook voor Ctrl+Shift+S, Ctrl+O en Ctrl+N.
 - Staat er een dialoog of een ander venster open, dan werken de toetsen die hieronder *Niet in een dialoog* heten niet. Dat geldt ook voor de presentatiemodus, de rondleiding, de welkomstdialoog en de vragen die op een antwoord wachten, zoals de toestemming bij het installeren van een extensie.
-- Documentwissels (Ctrl+1 tot en met 9, Ctrl+N, Ctrl+O) werken ook niet zolang *Bestand › Projectinfo* wijzigingen bevat die je nog niet met *Toepassen* hebt bevestigd. Verwerp of pas ze eerst toe.
+- Documentwissels (Ctrl+1 tot en met 9, Ctrl+N, Ctrl+O) werken ook niet zolang *Bestand › Projectinstellingen* wijzigingen bevat die je nog niet met *Toepassen* hebt bevestigd. Verwerp of pas ze eerst toe.
 
 ## Bestand
 
@@ -24,9 +24,9 @@ Alle toetscombinaties van de app, gegroepeerd zoals in het venster *Sneltoetsen*
 
 **Ctrl+Shift+S** — *Opslaan als*: vraagt waar het bestand moet komen. In een ontwikkelversie werkt het niet in een invoerveld.
 
-**Ctrl+O** — *Openen*: opent een bestand, meestal in een nieuw tabblad. Niet in een dialoog en niet bij een niet-toegepaste Projectinfo.
+**Ctrl+O** — *Openen*: opent een bestand, meestal in een nieuw tabblad. Niet in een dialoog en niet bij niet-toegepaste Projectinstellingen.
 
-**Ctrl+N** — *Nieuw project*: opent het venster *Nieuw project*. Niet in een dialoog en niet bij een niet-toegepaste Projectinfo.
+**Ctrl+N** — *Nieuw project*: opent het venster *Nieuw project*. Niet in een dialoog en niet bij niet-toegepaste Projectinstellingen.
 
 De gebouwde app (desktop en de webversie op de site) blokkeert bovendien een aantal browsertoetsen, zodat ze de app niet in de weg zitten: Ctrl+R en Ctrl+Shift+R (herladen), F12, Ctrl+Shift+I en Ctrl+Shift+J (ontwikkelaarsgereedschap), Ctrl+U (bron bekijken) en Ctrl+G, Ctrl+F en Ctrl+L (zoeken en adresbalk). Ctrl+S, Ctrl+Shift+S, Ctrl+O, Ctrl+N en F5 gaan naar de app zelf.
 
@@ -96,7 +96,7 @@ Inspringen, uitspringen en invoegen boven of onder een geselecteerde taak werken
 
 **F1** — *Help openen*: opent *Bestand › Help*. Niet in een invoerveld en niet in een dialoog. In een venster gebruik je het vraagteken rechtsboven: dat opent Help op het artikel over dat venster (zie [Lint per tabblad](docs://ref-lint), bij *Help*).
 
-**Ctrl+1** tot en met **Ctrl+9** — *Wissel van document*: gaat naar het eerste tot en met negende geopende document. Bestaat dat document niet, dan gebeurt er niets. Niet in een dialoog en niet bij een niet-toegepaste Projectinfo.
+**Ctrl+1** tot en met **Ctrl+9** — *Wissel van document*: gaat naar het eerste tot en met negende geopende document. Bestaat dat document niet, dan gebeurt er niets. Niet in een dialoog en niet bij niet-toegepaste Projectinstellingen.
 
 **Ctrl+Home** — *Spring naar vandaag*: scrolt de tijdlijn zodat een datum links in beeld staat. Dat is de statusdatum als je die hebt ingesteld, anders vandaag. Het label zegt dus "vandaag", ook als de tijdlijn naar de statusdatum springt. Zoom en beginpunt van de tijdlijn blijven zoals ze waren. Heeft een cel van het taakraster de focus, dan gaat Ctrl+Home juist naar de eerste cel van het raster (zie *Tabel*).
 

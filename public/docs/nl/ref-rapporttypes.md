@@ -26,9 +26,9 @@ Open het tabblad *Rapport* (of druk op Ctrl+P). Links staat de kolom *Rapportage
 
 De planning als balkenplan, met een tabel links en een tijdlijn rechts, over meerdere pagina's als het moet. Het voorbeeld toont het papier met paginakop, tabel, tijdlijn en legenda. Het blok *Overzicht* telt *Taken:*, *Bladtaken:*, *Kritiek:* en *Relaties:*. Alle opties staan onder *Instellingen*.
 
-**Bedrijf:** — het bedrijf in de paginakop. Standaard: het bedrijf uit de projectinformatie. Effect: alleen de kop van het rapport; wat je hier overtypt, wordt niet bewaard. Verander het bedrijf in *Instellingen › Project › Projectinfo*, in het veld *Opdrachtgever/organisatie*, en bevestig met *Toepassen*.
+**Bedrijf:** — het bedrijf in de paginakop. Standaard: het bedrijf uit de projectinstellingen. Effect: alleen de kop van het rapport; wat je hier overtypt, wordt niet bewaard. Verander het bedrijf in *Instellingen › Project › Projectinstellingen*, in het veld *Opdrachtgever/organisatie*, en bevestig met *Toepassen*.
 
-**Auteur:** — de auteur in de paginakop. Alleen lezen: de app neemt hem uit de projectinformatie.
+**Auteur:** — de auteur in de paginakop. Alleen lezen: de app neemt hem uit de projectinstellingen.
 
 **Lettergrootte:** — grootte van tekst en tabel in het rapport. Keuze uit 90%, 100%, 110% en 125%. Standaard: 100%. Effect: bij een grotere letter groeien tekst, rijen en tabel en levert de tijdlijn breedte in. Los van *Tekengrootte* in de instellingen.
 

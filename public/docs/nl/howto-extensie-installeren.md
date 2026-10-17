@@ -29,7 +29,7 @@ Heb je een extensie als bestand gekregen, dan installeer je die zo.
 2. Klik rechtsboven op *ZIP* voor een ZIP-bestand, of op *JS* voor een los JavaScript-bestand.
 3. Kies het bestand. Het venster *Extensie installeren?* opent, zoals hierboven.
 
-Een ZIP-bestand moet een `manifest.json` en het hoofdbestand van de extensie bevatten. Installeer je een extensie die al geïnstalleerd is, dan vervangt de nieuwe versie de oude. Kan de app het bestand niet installeren, bijvoorbeeld omdat een ZIP-bestand beschadigd is, dan gebeurt er niets: de app toont bij ZIP en JS geen foutmelding en de extensie komt niet in de lijst. De reden staat wel in de debug-terminal. Zet die aan met *Instellingen › Project › Instellingen*, tabblad *Geavanceerd*, *Debug-terminal inschakelen*, en open hem met de knop *Debug-terminal tonen* in de statusbalk. Daar staat dan bijvoorbeeld *[Extensies] ZIP-installatie mislukt: Error: Geen manifest.json gevonden in ZIP*.
+Een ZIP-bestand moet een `manifest.json` en het hoofdbestand van de extensie bevatten. Installeer je een extensie die al geïnstalleerd is, dan vervangt de nieuwe versie de oude. Kan de app het bestand niet installeren, bijvoorbeeld omdat een ZIP-bestand beschadigd is, dan gebeurt er niets: de app toont bij ZIP en JS geen foutmelding en de extensie komt niet in de lijst. De reden staat wel in de debug-terminal. Zet die aan met *Instellingen › Project › App-instellingen*, tabblad *Geavanceerd*, *Debug-terminal inschakelen*, en open hem met de knop *Debug-terminal tonen* in de statusbalk. Daar staat dan bijvoorbeeld *[Extensies] ZIP-installatie mislukt: Error: Geen manifest.json gevonden in ZIP*.
 
 ### De toestemmingsvraag lezen
 

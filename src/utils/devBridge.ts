@@ -22,7 +22,7 @@ import { setConsentAsker, resetConsentAsker, type ConsentAsker } from '@/extensi
 import { copyScreenshotToClipboard } from '@/services/feedback/feedbackService';
 import { isTauri } from '@/utils/platform';
 import { registerHelpArticles, resetRegisteredHelpArticles } from '@/utils/helpArticleRegistry';
-import { lastSize, paintCount, taskBarPoint, taskSegmentCount } from '@/utils/ganttTestDriver';
+import { dateX, lastSize, paintCount, taskBarPoint, taskSegmentCount } from '@/utils/ganttTestDriver';
 
 /**
  * Dev-only inspectie- en controle-haak voor geautomatiseerd zelf-testen.
@@ -277,6 +277,7 @@ export interface OpsDevBridge {
     taskSegmentCount: typeof taskSegmentCount;
     paintCount: typeof paintCount;
     lastSize: typeof lastSize;
+    dateX: typeof dateX;
   };
   /** Niveau 1: serialiseer→parse round-trip, meet dataverlies (werkt ook in de browser). */
   roundTrip: typeof roundTrip;
@@ -334,7 +335,7 @@ export function installDevBridge(): void {
   window.__OPS__ = {
     store: useAppStore,
     log: appLog,
-    gantt: { taskBarPoint, taskSegmentCount, paintCount, lastSize },
+    gantt: { taskBarPoint, taskSegmentCount, paintCount, lastSize, dateX },
     roundTrip,
     saveToPath,
     openFromPath,

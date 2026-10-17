@@ -22,7 +22,7 @@ The **construction holiday** (*bouwvak*) is the collective holiday in the Dutch 
 
 For the Netherlands the app puts Nieuwjaar, Goede Vrijdag, Pasen (two days), Koningsdag, Hemelvaart, Pinksteren (two days) and Kerst (25 and 26 December) in the list each year (New Year's Day, Good Friday, Easter, King's Day, Ascension Day, Whitsun and Christmas). If King's Day falls on a Sunday, it is on 26 April. Bevrijdingsdag (Liberation Day) is only in the list in lustrum years, such as 2025 and 2030.
 
-The years follow the project period: from the year before the start date to the year after the end date. If the project has no end date, up to three years after the year of the start. You adjust start and end under *Settings › Project › Project info*.
+The years follow the project period: from the year before the start date to the year after the end date. If the project has no end date, up to three years after the year of the start. You adjust start and end under *Settings › Project › Project settings*.
 
 ### Regenerating after a new project period
 
@@ -58,5 +58,5 @@ Choose *No holidays* under *Country* and click *Generate*. The list is then empt
 - [Calendars and working days](docs://uitleg-kalenders): how the app takes holidays and the construction holiday into account when counting work days.
 - [Creating and assigning a calendar](docs://howto-kalender-maken-en-toewijzen): making a calendar of your own to put holidays in.
 - [Calendar windows](docs://ref-kalenders): all fields of the calendar windows.
-- [New project and Project info](docs://ref-projectinfo): the holiday set for a new project.
+- [New project and Project settings](docs://ref-projectinfo): the holiday set for a new project.
 - [6 New Terraced Houses, De Akkers](examples://showcase-rijwoningen-de-akkers.ifc): besides the holidays, the project calendar has a period off *Frost delay, foundations*.

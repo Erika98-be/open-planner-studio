@@ -14,7 +14,7 @@ All key combinations of the app, grouped as in the *Keyboard Shortcuts* window. 
 
 - In an input field, a drop-down list or a text box the app does not intercept keys, so you can simply type. Exceptions: F5, Ctrl+S, F11 and Esc during the presentation also work in a field. In the built app (desktop and the web version on the site) that also holds for Ctrl+Shift+S, Ctrl+O and Ctrl+N.
 - While a dialog or another window is open, the keys marked *Not in a dialog* below do not work. That also holds for presentation mode, the tour, the welcome dialog and the questions that wait for an answer, such as the consent when installing an extension.
-- Document switches (Ctrl+1 to 9, Ctrl+N, Ctrl+O) also do not work while *File › Project info* holds changes that you have not yet confirmed with *Apply*. Discard or apply them first.
+- Document switches (Ctrl+1 to 9, Ctrl+N, Ctrl+O) also do not work while *File › Project settings* holds changes that you have not yet confirmed with *Apply*. Discard or apply them first.
 
 ## File
 
@@ -24,9 +24,9 @@ All key combinations of the app, grouped as in the *Keyboard Shortcuts* window. 
 
 **Ctrl+Shift+S** — *Save As*: asks where the file should go. In a development build it does not work in an input field.
 
-**Ctrl+O** — *Open*: opens a file, usually in a new tab. Not in a dialog and not with unapplied Project info.
+**Ctrl+O** — *Open*: opens a file, usually in a new tab. Not in a dialog and not with unapplied Project settings.
 
-**Ctrl+N** — *New project*: opens the *New project* window. Not in a dialog and not with unapplied Project info.
+**Ctrl+N** — *New project*: opens the *New project* window. Not in a dialog and not with unapplied Project settings.
 
 The built app (desktop and the web version on the site) also blocks a number of browser keys so that they do not get in the way: Ctrl+R and Ctrl+Shift+R (reload), F12, Ctrl+Shift+I and Ctrl+Shift+J (developer tools), Ctrl+U (view source) and Ctrl+G, Ctrl+F and Ctrl+L (find and address bar). Ctrl+S, Ctrl+Shift+S, Ctrl+O, Ctrl+N and F5 go to the app itself.
 
@@ -96,7 +96,7 @@ Indent, outdent and inserting above or below a selected task only work in the pl
 
 **F1** — *Open help*: opens *File › Help*. Not in an input field and not in a dialog. In a window, use the question mark at the top right: it opens Help on the article about that window (see [The ribbon, tab by tab](docs://ref-lint), under *Help*).
 
-**Ctrl+1** to **Ctrl+9** — *Switch document*: goes to the first to ninth open document. If that document does not exist, nothing happens. Not in a dialog and not with unapplied Project info.
+**Ctrl+1** to **Ctrl+9** — *Switch document*: goes to the first to ninth open document. If that document does not exist, nothing happens. Not in a dialog and not with unapplied Project settings.
 
 **Ctrl+Home** — *Jump to today*: scrolls the timeline so that a date is at the left of the view. That is the status date if you have set one, otherwise today. So the label says "today", even when the timeline jumps to the status date. Zoom and the start of the timeline stay as they were. If a cell of the task grid has focus, Ctrl+Home instead goes to the first cell of the grid (see *Table*).
 

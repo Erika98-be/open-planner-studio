@@ -32,9 +32,9 @@ Dit doet elke preset:
 4. Een blok dat na middernacht doorloopt, vink je aan met *volgende dag*. Het blok telt bij de dag waarop het begint.
 5. Klik op de prullenbak achter een blok om het te verwijderen. Een dag zonder blokken staat als *Niet-werkend*.
 6. Klik bij een dag van maandag tot en met vrijdag op het kopieersymbool (*Kopieer naar alle werkdagen*) om de blokken van die dag naar maandag tot en met vrijdag te zetten.
-7. Onderaan staat *Afgeleide uren/dag:* met de netto-uren per dag die de app hieruit afleidt. Een kalender met eigen uren per dag (bijvoorbeeld uit Primavera P6) houdt die waarde, ook als je werkdagen of blokken wijzigt; alleen een preset zet hem opnieuw. Klik op *Toepassen*.
+7. Boven het blok *Werktijden* staat *Standaard werkdag*: de werktijd per dag die de app uit de blokken afleidt en waarmee hij rekent. Het getal volgt direct als je de blokken wijzigt. Heeft de kalender eigen uren per dag (bijvoorbeeld uit Primavera P6), dan blijft die eigen waarde bewaard en gaat hij mee bij de export, tot een preset hem vervangt. Het venster toont hem niet. Klik op *Toepassen*.
 
-**Voorbeeld: een vrijdagmiddag vrij.** Klik op *Per weekdag instellen…*. Verwijder bij *Vr* het tweede blok (13:00 tot 16:00). Vrijdag telt nu 5 uur, de andere dagen 8. De afgeleide uren per dag blijven 8.
+**Voorbeeld: een vrijdagmiddag vrij.** Klik op *Per weekdag instellen…*. Verwijder bij *Vr* het tweede blok (13:00 tot 16:00). Vrijdag telt nu 5 uur, de andere dagen 8. De *Standaard werkdag* blijft 8 uur.
 
 ### Een eigen preset bewaren
 
@@ -55,7 +55,7 @@ Een eigen preset staat op dit apparaat, niet in het projectbestand.
 
 ## Zie ook
 
-- [Dagen en uren](docs://uitleg-dagen-en-uren): hoe de app werkuren telt en de netto-uren per dag afleidt.
+- [Dagen en uren](docs://uitleg-dagen-en-uren): hoe de app werkuren telt en de standaard werkdag afleidt.
 - [Urenplanning aanzetten](docs://howto-urenplanning-aanzetten): een taak in uren plannen.
 - [Kalenders en werkdagen](docs://uitleg-kalenders): welke kalender voor welke taak geldt.
 - [Kalendervensters](docs://ref-kalenders): alle velden van de kalendervensters.

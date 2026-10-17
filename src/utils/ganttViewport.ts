@@ -167,7 +167,6 @@ export function computeAnchoredZoom(input: AnchoredZoomInput): { zoom: number; s
 export function computeEffectiveViewStart(
   tasks: Task[],
   viewStartDate: string,
-  navigationStartDates: string[] = [],
 ): string {
   let earliest = parseDate(viewStartDate);
   for (const task of tasks) {
@@ -177,14 +176,12 @@ export function computeEffectiveViewStart(
       if (d.getTime() < earliest.getTime()) earliest = d;
     }
   }
-  // Een lege Gantt is niet automatisch een tijdloze Gantt: een kalender kan al concrete
-  // uitzonderingen bevatten voordat de eerste taak bestaat. Neem het begin van zulke periodes mee
-  // als mogelijke oorsprong, zodat een oudere vrije dag niet links van de onbereikbare scrollgrens
-  // blijft liggen. Ongeldige importwaarden slaan we net als ongeldige taakdatums veilig over.
-  for (const date of navigationStartDates) {
-    const parsed = parseDate(date);
-    if (!Number.isNaN(parsed.getTime()) && parsed.getTime() < earliest.getTime()) earliest = parsed;
-  }
+  // Feestdagen tellen hier bewust NIET mee, ook niet bij een Gantt zonder taken. Een lege Gantt
+  // begint zo bij `viewStartDate` (bij een nieuw document de projectstart), en de oorsprong blijft
+  // gelijk als de eerste taak erbij komt. Trok een vroege feestdag de oorsprong naar links, dan
+  // toonde een nieuw document die feestdag in plaats van de projectstart, en sprong het beeld weg
+  // zodra de eerste taak de oorsprong terugzette. Latere feestdagen blijven bereikbaar: de
+  // coördinator verbreedt de inhoud van een lege Gantt tot de laatste feestdag.
   // Onparseerbaar (leeg, corrupte import): geef de invoer onveranderd terug in plaats van te
   // gooien. De aanroeper rekent dan met een datum die net zo min klopt als zijn invoer, maar de
   // app blijft staan.
@@ -215,7 +212,6 @@ export function computeFitToProject(
   timelineWidth: number,
   enableQuarterHourZoom: boolean,
   enableHourPlanning = false,
-  navigationStartDates: string[] = [],
   /** As-afstand (`axisDayDistance`); afwezig ⇒ kalenderdagen, ongewijzigd. */
   dayDistance: (from: Date, to: Date) => number = diffCalendarDays,
 ): FitToProject | null {
@@ -234,11 +230,9 @@ export function computeFitToProject(
   const span = Math.max(1, dayDistance(parseDate(minStart), parseDate(maxFinish)) + 1);
   const max = maxGanttZoom(enableQuarterHourZoom, enableHourPlanning);
   const zoom = Math.max(0.5, Math.min(max, timelineWidth / span));
-  // De renderer kan zijn oorsprong verder naar links trekken voor kalenderuitzonderingen. Een fit
-  // die blind met alleen `ORIGIN_PADDING_DAYS` rekent, zet dan wel de juiste zoom maar laat het
-  // project te ver naar rechts staan. Gebruik exact zijn effectieve oorsprong en pan van daaruit
-  // naar de eerste taak; zonder zulke uitzonderingen is dit 14 × zoom.
-  const effectiveStart = computeEffectiveViewStart(tasks, minStart, navigationStartDates);
+  // Gebruik exact de effectieve oorsprong van de renderer en pan van daaruit naar de eerste taak
+  // (dat is 14 × zoom).
+  const effectiveStart = computeEffectiveViewStart(tasks, minStart);
   const scrollX = Math.max(0, dayDistance(parseDate(effectiveStart), parseDate(minStart)) * zoom);
   return { zoom, viewStartDate: minStart, scrollX };
 }

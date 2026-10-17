@@ -181,7 +181,7 @@
       "calendar": "Kies een kalender uit de lijst.",
       "calendarNotFound": "De gekozen kalender bestaat niet.",
       "calendarHours": "De kalender van deze taak heeft geen werkuren per dag.",
-      "hourPlanningDisabled": "Urenplanning staat uit in de instellingen.",
+      "hourPlanningDisabled": "Urenplanning staat uit in de App-instellingen.",
       "durationConversionNotExact": "Deze duur is niet exact naar de andere eenheid om te rekenen.",
       "milestoneRequired": "Dit veld geldt alleen voor mijlpalen.",
       "milestoneUnavailable": "Een samenvattingstaak met subtaken kan geen mijlpaal worden.",

@@ -12,13 +12,14 @@ import { NoticeStrip } from './NoticeStrip';
  */
 export function HourDataNotice() {
   const { t } = useTranslation('common');
-  const visible = useAppStore((s) => s.ui.hourDataNotice);
+  // De strook hoort bij het document met uur-data (zie `UIState.hourDataNotice`).
+  const visible = useAppStore((s) => s.ui.hourDataNotice !== null && s.ui.hourDataNotice === s.activeDocumentId);
   const setUI = useAppStore((s) => s.setUI);
 
   if (!visible) return null;
 
   const enable = () => {
-    setUI({ enableHourPlanning: true, hourDataNotice: false });
+    setUI({ enableHourPlanning: true, hourDataNotice: null });
     void saveEnableHourPlanning(true);
   };
 
@@ -28,7 +29,7 @@ export function HourDataNotice() {
       text={t('hourData.notice')}
       actionLabel={t('hourData.enable')}
       onAction={enable}
-      onDismiss={() => setUI({ hourDataNotice: false })}
+      onDismiss={() => setUI({ hourDataNotice: null })}
       stripProps={{ 'data-ops-hour-data-notice': true }}
       actionProps={{ 'data-ops-hour-data-enable': true }}
     />

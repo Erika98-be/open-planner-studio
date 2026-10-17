@@ -9,7 +9,7 @@ Een planning telt in **werkdagen**, niet in kalenderdagen. "Vijf dagen metselen"
 Welke dagen werkdagen zijn, staat in een **kalender**. Een kalender legt drie dingen vast:
 
 - De **werkweek**: de weekdagen waarop gewerkt wordt. Standaard is dat maandag tot en met vrijdag.
-- De **werktijden**: begin, einde en pauze. Daaruit volgen de **netto-uren per dag**. Standaard is dat 07:00 tot 16:00 met een uur pauze, dus 8 uur.
+- De **werktijden**: begin, einde en pauze. Daaruit volgt de **standaard werkdag**. Standaard is dat 07:00 tot 16:00 met een uur pauze, dus 8 uur.
 - De **feestdagen**: losse dagen of hele periodes waarop niet gewerkt wordt, zoals Koningsdag, Kerst of de bouwvak.
 
 Een project heeft één bibliotheek met kalenders. Eén daarvan is de **projectkalender**. Die geldt voor alle taken die geen eigen kalender hebben. Een andere kalender geef je aan een losse taak, bijvoorbeeld een zesdaagse werkweek voor een onderaannemer die ook op zaterdag werkt. Een resource kan ook een eigen kalender hebben, maar die doet iets anders (zie hieronder).
@@ -40,14 +40,14 @@ De kalender van een **resource** doet niet mee aan de datums. In een planning di
 Hangen twee taken met verschillende kalenders aan elkaar, dan geldt:
 
 - Bij een relatie Eind-Start begint de opvolger op de eerste werkdag ná het einde van de voorganger, geteld in de kalender van de **opvolger**. Eindigt een taak op vrijdag, dan start een opvolger met een zesdaagse werkweek op zaterdag.
-- Een **lag** telt standaard in de kalender van de **voorganger**. Dat kun je veranderen onder *Instellingen › Project › Projectinfo*, in het blok *Rekenprofiel en reken-opties*, bij *Reken-opties van dit project*, met de keuze *Lag-kalender*: *Voorganger* (standaard), *Opvolger*, *24-uurs* of *Projectkalender*.
+- Een **lag** telt standaard in de kalender van de **voorganger**. Dat kun je veranderen onder *Instellingen › Project › Projectinstellingen*, in het blok *Rekenprofiel en reken-opties*, bij *Reken-opties van dit project*, met de keuze *Lag-kalender*: *Voorganger* (standaard), *Opvolger*, *24-uurs* of *Projectkalender*.
 - De **totale speling** telt in werkdagen van de kalender van de taak zelf. De **vrije speling** telt in dit profiel in de kalender van de opvolger.
 
 Wat een lag precies is, staat in [Relaties leggen](docs://howto-relaties-leggen); wat speling is, in [Kritiek pad en speling](docs://uitleg-kritiek-pad).
 
 ### In de Gantt
 
-De grijze achtergrond in de Gantt toont altijd de niet-werkdagen van de **projectkalender**. Een taak op een eigen kalender kan dus over een grijze dag lopen, zoals een zesdaagse taak over de zaterdag. Een feestdagblok van drie dagen of meer krijgt zijn naam erbij, bijvoorbeeld *Bouwvak (Noord)*. Dat gebeurt niet als *Alleen werkbare dagen tonen* aan staat. Wil je de grijze dagen helemaal niet zien, zet dan *Alleen werkbare dagen tonen* aan onder *Instellingen › Project › Instellingen*, tabblad *Weergave*, kopje *Tijd-as*.
+De grijze achtergrond in de Gantt toont altijd de niet-werkdagen van de **projectkalender**. Een taak op een eigen kalender kan dus over een grijze dag lopen, zoals een zesdaagse taak over de zaterdag. Een feestdagblok van drie dagen of meer krijgt zijn naam erbij, bijvoorbeeld *Bouwvak (Noord)*. Dat gebeurt niet als *Alleen werkbare dagen tonen* aan staat. Wil je de grijze dagen helemaal niet zien, zet dan *Alleen werkbare dagen tonen* aan onder *Instellingen › Project › App-instellingen*, tabblad *Weergave*, kopje *Tijd-as*.
 
 ## Rekenvoorbeeld: de bouwplanning
 

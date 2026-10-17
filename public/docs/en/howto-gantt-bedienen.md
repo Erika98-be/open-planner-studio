@@ -31,10 +31,10 @@ One drag is one step in *Undo*, however long you drag. On a split bar the edges 
 
 ### Shifting the timeline
 
-What a drag on the empty background does depends on your scroll mode. You choose it in *Settings*, tab *Appearance*, under *Gantt › Scroll & zoom* at *Mode*:
+What a drag on the empty background does depends on your scroll mode. You choose it in *App settings*, tab *Appearance*, under *Gantt › Scroll & zoom* at *Mode*:
 
 - **Zoom + drag** (default): if you drag on the empty background with the left mouse button, the timeline moves with the mouse, like a map. The cursor is a hand. On a bar, a drag simply starts a bar gesture.
-- **Position** and **Keys**: the same drag makes a selection box. You shift the timeline with the wheel (see [Settings](docs://ref-instellingen)) or with the middle mouse button.
+- **Position** and **Keys**: the same drag makes a selection box. You shift the timeline with the wheel (see [App settings](docs://ref-instellingen)) or with the middle mouse button.
 
 **The middle mouse button** (the wheel pressed) shifts the timeline in every mode, and also if you start on a bar. It does not work while another gesture is in progress, such as dragging a bar.
 
@@ -50,7 +50,7 @@ More about selecting is in [Selecting, deleting and undoing tasks](docs://howto-
 
 ### Zooming in and out
 
-1. Use *Zoom +* and *Zoom -* (*Start › Zoom*), or the + and - keys. The wheel zooms too; when depends on your scroll mode (see [Settings](docs://ref-instellingen)).
+1. Use *Zoom +* and *Zoom -* (*Start › Zoom*), or the + and - keys. The wheel zooms too; when depends on your scroll mode (see [App settings](docs://ref-instellingen)).
 2. If you want the whole project in view, choose *View › Time Scale › Fit to project* or press Ctrl+0. *Reset* (on the *View* tab) or the 0 key sets the zoom back to the default.
 3. At the bottom right of the status bar is the zoom in pixels per day, for example *Zoom: 15px/day*.
 
@@ -72,5 +72,5 @@ The task name is shown in the bar if it fits completely. If it does not fit, for
 
 - [Right-click menus](docs://ref-contextmenus): the menus on a bar, a row and a group header.
 - [Keyboard shortcuts](docs://ref-sneltoetsen): the keys for zooming and for cancelling a gesture.
-- [Settings](docs://ref-instellingen): the scroll mode and the time axis.
+- [App settings](docs://ref-instellingen): the scroll mode and the time axis.
 - [Constraints and deadlines](docs://uitleg-constraints): why a moved start becomes a constraint.
