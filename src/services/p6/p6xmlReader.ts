@@ -3,7 +3,7 @@ import { P6XmlImportError } from './p6xmlErrors';
 import { Task, TaskConstraint, ConstraintType } from '@/types/task';
 import type { P6CompletePctType, P6DurationType } from '@/types/task';
 import { createDefaultTaskTime } from '@/utils/taskDefaults';
-import { hourTaskScheduleDuration } from '@/utils/taskDuration';
+import { effHoursPerDay, hourTaskScheduleDuration } from '@/utils/taskDuration';
 import { Sequence, SequenceType } from '@/types/sequence';
 import { Resource, ResourceAssignment, ResourceType, ResourceCurve } from '@/types/resource';
 import { Project } from '@/types/project';
@@ -603,6 +603,13 @@ function readP6XmlProject(scope: P6XmlScope): P6XmlProjectRead {
   const projectCalEl = calElements.find(el => defaultCalObjId >= 0 && getElementInt(el, 'ObjectId', -1) === defaultCalObjId)
     ?? calElements[0];
   const calendar = projectCalEl ? readP6Calendar(projectCalEl, lastMinute) : createDefaultCalendar();
+  // Een eigen, geldige `HoursPerDay` per kalender; hij gaat na de uur-promotie terug (zie daar).
+  const fileHoursPerDay = new Map<WorkCalendar, number>();
+  const noteFileHoursPerDay = (cal: WorkCalendar, calEl: Element): void => {
+    const fileHpd = getElementFloat(calEl, 'HoursPerDay');
+    if (fileHpd > 0) fileHoursPerDay.set(cal, fileHpd);
+  };
+  if (projectCalEl) noteFileHoursPerDay(calendar, projectCalEl);
   const projectCalObjId = projectCalEl ? getElementInt(projectCalEl, 'ObjectId', -1) : -1;
   const hoursPerDay = calendar.hoursPerDay;
 
@@ -623,6 +630,7 @@ function readP6XmlProject(scope: P6XmlScope): P6XmlProjectRead {
     if (objId < 0 || objId === projectCalObjId || calObjIdToId.has(objId)) continue;
     if (getElementText(calEl, 'Type') !== 'Resource' && !referencedCalObjIds.has(objId)) continue;
     const cal = readP6Calendar(calEl, lastMinute);
+    noteFileHoursPerDay(cal, calEl);
     cal.id = generateId('rescal');
     calObjIdToId.set(objId, cal.id);
     resourceCalendars.push(cal);
@@ -858,6 +866,9 @@ function readP6XmlProject(scope: P6XmlScope): P6XmlProjectRead {
   // P6 valt terug op de scalar-synth zodra de geregistreerde canonical geen werkdag draagt
   // (preferCanonicalWhenEmpty = false) — zie `promoteHourCalendar`.
   const hourModeCalIds = promoteHourCalendars(calById, id => cSignalCalIds.has(id), false);
+  // Een eigen `HoursPerDay` uit het bestand (authoritatief, zie `readP6Calendar`) gaat na de promotie
+  // terug, zoals bij XER en IFC: de omrekening tussen dagen en uren mag afwijken van de blokken.
+  for (const [cal, fileHpd] of fileHoursPerDay) cal.hoursPerDay = fileHpd;
 
   // "Datums zoals opgeslagen" voor P6 XML: P6's EIGEN rekenuitvoer per activiteit —
   // `EarlyStartDate`/`EarlyFinishDate` (terugval `StartDate`/`FinishDate`), `LateStartDate`/
@@ -900,7 +911,8 @@ function readP6XmlProject(scope: P6XmlScope): P6XmlProjectRead {
     // dagtaak op een urenkalender blijft een dagtaak (eenheid uit de OPS-marker), maar haar datums
     // (ook de actuals) houden hun echte tijd.
     const hourDates = hourModeCalIds.has(effCalId);
-    const effHpd = calById.get(effCalId)?.hoursPerDay ?? hoursPerDay;
+    const effCal = calById.get(effCalId) ?? calendar;
+    const effHpd = effCal.hoursPerDay;
     // Datum-parser: uur ⇒ echte tijd (`parseInstant`+`formatInstant`), dag ⇒ tijd-strippen.
     const plannedStart = importDateTime(plannedStartRaw, hourDates);
     const plannedFinish = importDateTime(plannedFinishRaw, hourDates);
@@ -913,7 +925,11 @@ function readP6XmlProject(scope: P6XmlScope): P6XmlProjectRead {
       const floatDays = (raw: string): number | undefined => {
         if (!raw) return undefined;
         const hours = Number.parseFloat(raw);
-        return Number.isFinite(hours) ? recordedFloatDays(hours * 60, effHpd * 60) : undefined;
+        // Op een uurkalender in werktijd per dag, zoals XER (`readXerRecordedTimes`): de werktijd rekent
+        // en toont (eigenaarsbesluit 2026-10-15, "een dag"); de opgeslagen `HoursPerDay` telt hier niet.
+        return Number.isFinite(hours)
+          ? recordedFloatDays(hours * 60, effHoursPerDay(effCal) * 60)
+          : undefined;
       };
       const criticalRaw = getElementText(actEl, 'IsCritical');
       const recorded = buildRecordedTime({
@@ -948,7 +964,7 @@ function readP6XmlProject(scope: P6XmlScope): P6XmlProjectRead {
     // `hourTaskScheduleDuration`; dag ⇒ `Math.round(uren/hpd)` met de opgeslagen `HoursPerDay`.
     const durationMinutes = isHour ? Math.round(plannedDuration * 60) : undefined;
     const durationDays = isHour
-      ? hourTaskScheduleDuration(durationMinutes!, calById.get(effCalId) ?? calendar)
+      ? hourTaskScheduleDuration(durationMinutes!, effCal)
       : p6HoursToDays(plannedDuration, effHpd);
     const isMilestone = p6Type.includes('Milestone');
     // P6 onderscheidt Start/Finish Milestone — bewaar de soort expliciet.

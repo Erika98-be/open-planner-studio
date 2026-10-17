@@ -672,12 +672,15 @@ function readXerProject(
     if (inferBlankCalendarBands(tables, calendar, activityRows, projectCalendar.id)) {
       plannedWindowCalendarIds.add(calendar.id);
     }
-    promoteHourCalendar(
+    // De periodewaarde uit de kalender (`day_hr_cnt`) is leidend, zoals bij de eerste promotie in
+    // `xerCalendarData.ts`: na de promotie gaat hij terug.
+    const periodHoursPerDay = calendar.hoursPerDay;
+    if (promoteHourCalendar(
       calendar,
       getCalendarBands(calendar),
       hourSignalCalendarIds.has(calendar.id),
       false,
-    );
+    )) calendar.hoursPerDay = periodHoursPerDay;
   }
   const calendarEngines = new Map(calendarList.map(calendar => [
     calendar.id,
