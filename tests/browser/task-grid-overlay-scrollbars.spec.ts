@@ -453,6 +453,55 @@ test('een verouderd scroll-event van balk of store zet het raster niet terug', a
   await expect.poll(() => state(page).then(snapshot => snapshot.view.scrollY)).toBe(1000);
 });
 
+// Store-wacht (review #362): na een eigen schrijfactie vervalt de echo. De store gaat 500 -> 800 -> 500
+// terwijl het scroll-event van het raster (van 800) nog onderweg is. Prop 500 is dan een echte sprong
+// terug, geen echo van het raster: het raster moet terug naar 500. Een capture-listener op `window`
+// houdt de scroll-events van het raster zolang tegen, zoals WebKitGTK ze laat aflevert.
+test('een store-sprong heen en terug vóór het scroll-event van het raster eindigt op de laatste stand', async ({ page, ops: _ops }) => {
+  await seedProject(page, Array.from({ length: 120 }, (_, index) => ({
+    name: `Sprongrij ${index + 1}`,
+    start: '2026-09-07',
+    finish: '2026-09-11',
+    durationDays: 5,
+  })));
+  const core = page.locator('.gantt-task-grid .task-grid-core');
+  await expect(page.locator('.gantt-task-grid [data-testid="task-grid-vscroll"]')).toBeVisible();
+  const settle = () => page.evaluate(() => new Promise<void>(resolve => {
+    requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(resolve, 50)));
+  }));
+  const storeY = () => state(page).then(snapshot => snapshot.view.scrollY);
+
+  // Het raster meldt zelf 500 aan de store: dat is nu de gemelde stand.
+  await core.evaluate((node: HTMLElement) => { node.scrollTop = 500; });
+  await expect.poll(storeY).toBe(500);
+  await settle();
+
+  await page.evaluate(() => {
+    const grid = document.querySelector<HTMLElement>('.gantt-task-grid .task-grid-core')!;
+    const win = window as unknown as { __jumpBlocker?: (event: Event) => void };
+    win.__jumpBlocker = event => { if (event.target === grid) event.stopImmediatePropagation(); };
+    window.addEventListener('scroll', win.__jumpBlocker, true);
+    const s = window.__OPS__!.store.getState();
+    s.setScroll(s.view.scrollX, 800);
+  });
+  await settle();
+  expect(await core.evaluate((node: HTMLElement) => node.scrollTop)).toBe(800);
+  await page.evaluate(() => {
+    const s = window.__OPS__!.store.getState();
+    s.setScroll(s.view.scrollX, 500);
+  });
+  await settle();
+  await page.evaluate(() => {
+    const grid = document.querySelector<HTMLElement>('.gantt-task-grid .task-grid-core')!;
+    const win = window as unknown as { __jumpBlocker?: (event: Event) => void };
+    window.removeEventListener('scroll', win.__jumpBlocker!, true);
+    grid.dispatchEvent(new Event('scroll'));
+  });
+  await settle();
+  expect(await core.evaluate((node: HTMLElement) => node.scrollTop)).toBe(500);
+  await expect.poll(storeY).toBe(500);
+});
+
 // Ctrl+End (review #362): de laatste rij eindigt boven de zwevende horizontale balk, niet eronder.
 // Het raster schuift dan tot zijn echte maximum, de eindstrook inbegrepen.
 test('Ctrl+End toont de laatste rij boven de horizontale balk', async ({ page, ops: _ops }) => {

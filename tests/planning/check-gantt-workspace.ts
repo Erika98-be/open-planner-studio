@@ -4,7 +4,7 @@ import {
   clampTaskGridWidth,
   effectiveTaskGridMax,
 } from '../../src/components/canvas/ganttSplitter';
-import { TASK_GRID_CHOOSER_STRIP } from '../../src/components/task-grid/DataGridCore';
+import { TASK_GRID_CHOOSER_STRIP } from '../../src/engine/taskGrid/scrollExtent';
 
 const root = process.cwd();
 const read = (relative: string) => fs.readFileSync(path.join(root, relative), 'utf8');

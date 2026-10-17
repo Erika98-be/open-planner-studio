@@ -28,7 +28,7 @@ import {
 import { sameCellAddress, type GridCellAddress, type GridSelectionState } from '@/engine/taskGrid/selection';
 import type { TaskColumnId } from '@/types/taskGrid';
 import { nextFrame } from '@/utils/nextFrame';
-import { OVERLAY_SCROLLBAR_SIZE } from '@/engine/taskGrid/scrollExtent';
+import { OVERLAY_SCROLLBAR_SIZE, TASK_GRID_CHOOSER_STRIP, taskListScrollContentHeight } from '@/engine/taskGrid/scrollExtent';
 
 export interface DataGridCoreProps {
   rows: readonly DataGridRowModel[];
@@ -183,11 +183,9 @@ export function synchronizeDataGridScrollPosition(
   if (container.scrollLeft !== scrollLeft) container.scrollLeft = scrollLeft;
 }
 
-/** Wiel-delta in pixels; regel- en paginamodus (Firefox) omgerekend zoals de browser ongeveer doet. */
-function wheelPixels(delta: number, deltaMode: number, page: number): number {
-  if (deltaMode === 1) return delta * 16;
-  if (deltaMode === 2) return delta * page;
-  return delta;
+/** Wiel-delta in pixels; de regelmodus (Firefox) omgerekend zoals de browser ongeveer doet. */
+function wheelPixels(delta: number, deltaMode: number): number {
+  return deltaMode === 1 ? delta * 16 : delta;
 }
 
 /** De wielrichting zoals de browser hem op een gewone scroller toepast: Shift+wiel zonder eigen
@@ -219,11 +217,6 @@ function isEcho(echo: { top: number | null; left: number | null }, axis: 'top' |
   echo[axis] = null;
   return false;
 }
-
-/** Breedte van de "kolom toevoegen"-strook: een 20px-knop met 6px lucht aan weerszijden (issue
- * #89). `TaskGrid` zet hem als `--task-grid-chooser-strip` op de shell; de CSS leest die variabele,
- * DataGridCore rekent er het horizontale bereik mee. */
-export const TASK_GRID_CHOOSER_STRIP = 32;
 
 export function DataGridCore({
   rows,
@@ -310,15 +303,21 @@ export function DataGridCore({
   // Een prop die precies de waarde is die het raster zelf net meldde (`reportedRef`), is de echo
   // via de store: niet terugschrijven. Het raster kan intussen verder zijn (wielanimatie in
   // WebKitGTK); terugschrijven zou die animatie stoppen.
+  // Na een eigen schrijfactie vervalt die echo (`null`): het raster staat dan niet meer op de gemelde
+  // waarde. Anders slikt de wacht een echte sprong terug in: store 500 -> 800 (effect schrijft 800),
+  // terug naar 500 vóór het scroll-event van het raster, prop 500 == gemeld 500, effect slaat over
+  // en het late event meldt 800 (review #362).
   useEffect(() => {
     const container = containerRef.current;
     if (!container || scrollTop === reportedRef.current.top) return;
     synchronizeDataGridScrollPosition(container, scrollTop, container.scrollLeft);
+    reportedRef.current.top = null;
   }, [scrollTop]);
   useEffect(() => {
     const container = containerRef.current;
     if (!container || scrollLeft === reportedRef.current.left) return;
     synchronizeDataGridScrollPosition(container, container.scrollTop, scrollLeft);
+    reportedRef.current.left = null;
   }, [scrollLeft]);
   const virtual = useMemo(() => computeVirtualWindow({
     totalRows: rows.length,
@@ -336,7 +335,8 @@ export function DataGridCore({
   // kiezerstrook, en alle rijen plus de eindstrook (`scrollExtent.ts`).
   const contentWidth = totalWidth + TASK_GRID_CHOOSER_STRIP;
   const overflowX = Math.max(0, contentWidth - viewportWidth);
-  const overflowY = Math.max(0, rows.length * rowHeight + OVERLAY_SCROLLBAR_SIZE - viewportHeight);
+  // `rows` bevat de spookregel al (als rij), dus geen extra spookregel meetellen.
+  const overflowY = Math.max(0, taskListScrollContentHeight(rows.length, rowHeight, false) - viewportHeight);
   const showHorizontalBar = overflowX > 0;
   const showVerticalBar = overflowY > 0;
   // De verticale balk begint onder de kop en stopt boven de horizontale balk: geen hoekvlakje,
@@ -516,18 +516,19 @@ export function DataGridCore({
     if (!container || isBarEcho('top', top)) return;
     writeToCore(container, 'top', top);
   };
-  // Het wiel boven een overlay doet wat het op de oude native balk deed: de overlay schuift zelf
-  // langs zijn eigen as (native), de andere as gaat door naar het raster. Shift+wiel telt als
-  // horizontaal (`resolveWheelAxes`): boven de horizontale balk schuift de overlay dan zelf, boven
-  // de verticale balk schuift het raster opzij.
+  // Het wiel boven een overlay: de overlay schuift zelf langs zijn eigen as (native), de andere as
+  // gaat door naar het raster. Shift+wiel telt als horizontaal (`resolveWheelAxes`): boven de
+  // horizontale balk schuift de overlay dan zelf, boven de verticale balk schuift het raster opzij.
+  // Dat laatste is zoals Chromium op de oude native balk deed. WebKitGTK schoof daar met Shift+wiel
+  // juist verticaal; dat verschil is bewust nog niet rechtgezet (keuze voor de eigenaar, review #362).
   const handleBarWheel = (axis: 'x' | 'y') => (event: WheelEvent<HTMLDivElement>) => {
     const container = containerRef.current;
     if (!container) return;
     const delta = resolveWheelAxes(event);
     if (axis === 'x' && delta.y !== 0) {
-      container.scrollTop += wheelPixels(delta.y, event.deltaMode, container.clientHeight);
+      container.scrollTop += wheelPixels(delta.y, event.deltaMode);
     } else if (axis === 'y' && delta.x !== 0) {
-      container.scrollLeft += wheelPixels(delta.x, event.deltaMode, container.clientWidth);
+      container.scrollLeft += wheelPixels(delta.x, event.deltaMode);
     }
   };
 

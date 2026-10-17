@@ -20,6 +20,11 @@
  */
 export const OVERLAY_SCROLLBAR_SIZE = 8;
 
+/** Breedte van de "kolom toevoegen"-strook: een 20px-knop met 6px lucht aan weerszijden (issue
+ * #89). `TaskGrid` zet hem als `--task-grid-chooser-strip` op de shell; de CSS leest die variabele,
+ * DataGridCore rekent er het horizontale bereik mee. */
+export const TASK_GRID_CHOOSER_STRIP = 32;
+
 /** Schuifbare inhoudshoogte ONDER de kop, gelijk voor takenlijst en Gantt. */
 export function taskListScrollContentHeight(viewRowCount: number, rowHeight: number, hasGhostRow: boolean): number {
   return (Math.max(0, viewRowCount) + (hasGhostRow ? 1 : 0)) * rowHeight + OVERLAY_SCROLLBAR_SIZE;

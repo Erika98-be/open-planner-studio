@@ -47,11 +47,11 @@ for (const scrollTop of [0, 18, 36 * 20_000 + 17, ROWS * ROW_HEIGHT - VIEWPORT])
   const target = ROWS - 1;
   const expected = ROWS * ROW_HEIGHT - VIEWPORT;
   eq('Rij 49.999 krijgt minimale scroll naar onderrand',
-    minimalScrollTopForRow(target, 0, VIEWPORT, ROW_HEIGHT, ROWS), expected);
+    minimalScrollTopForRow(target, 0, VIEWPORT, ROW_HEIGHT, ROWS, 0), expected);
   eq('Reeds zichtbare doelrij verandert scroll niet',
-    minimalScrollTopForRow(target, expected, VIEWPORT, ROW_HEIGHT, ROWS), expected);
+    minimalScrollTopForRow(target, expected, VIEWPORT, ROW_HEIGHT, ROWS, 0), expected);
   eq('Eerste rij scrollt exact naar nul',
-    minimalScrollTopForRow(0, expected, VIEWPORT, ROW_HEIGHT, ROWS), 0);
+    minimalScrollTopForRow(0, expected, VIEWPORT, ROW_HEIGHT, ROWS, 0), 0);
 }
 
 {

@@ -14,7 +14,8 @@ import type {
   TaskGridSurfacePreferences,
 } from '@/types/taskGrid';
 import { ColumnChooser, type ColumnChooserLabels, type TaskGridColumnOption } from './ColumnChooser';
-import { DataGridCore, TASK_GRID_CHOOSER_STRIP, type DataGridCoreProps } from './DataGridCore';
+import { DataGridCore, type DataGridCoreProps } from './DataGridCore';
+import { TASK_GRID_CHOOSER_STRIP } from '@/engine/taskGrid/scrollExtent';
 import type { DataGridColumnModel, DataGridLabels } from './taskGridContext';
 
 export interface TaskGridHistoryLabels {

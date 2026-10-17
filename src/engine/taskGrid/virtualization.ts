@@ -72,7 +72,7 @@ export function minimalScrollTopForRow(
   viewportHeight: number,
   rowHeight: number,
   totalRows: number,
-  bottomInset = 0,
+  bottomInset: number,
 ): number {
   if (totalRows <= 0 || rowHeight <= 0 || viewportHeight < 0) return 0;
   const inset = Math.max(0, bottomInset);
