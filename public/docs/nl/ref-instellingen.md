@@ -1,10 +1,10 @@
-# Instellingen
+# App-instellingen
 
 Elke instelling van de app: wat ze doet, wat de beginwaarde is, wat er verandert en waar je haar vindt. Voor de rekenopties van een project (rekenprofiel, kritiek-definitie) zie [Rekenopties en conventies](docs://ref-rekenopties-en-conventies): die horen bij het projectbestand, niet bij de app.
 
 ## Waar vind je ze en hoe werken ze
 
-Het instellingenpaneel staat op drie plekken, en overal is het hetzelfde paneel: het tandwiel bovenin het venster, *Instellingen › Project › Instellingen* en *Bestand › Instellingen*. Het paneel heeft drie tabbladen: *Weergave*, *Planning* en *Geavanceerd*. Bij elke instelling hieronder staat alleen het tabblad.
+Het instellingenpaneel staat op drie plekken, en overal is het hetzelfde paneel: het tandwiel bovenin het venster, *Instellingen › Project › App-instellingen* en *Bestand › App-instellingen*. Het paneel heeft drie tabbladen: *Weergave*, *Planning* en *Geavanceerd*. Bij elke instelling hieronder staat alleen het tabblad.
 
 Een wijziging werkt direct. Er is geen knop *Toepassen* en geen *Annuleren*.
 
@@ -48,7 +48,7 @@ Een wijziging werkt direct. Er is geen knop *Toepassen* en geen *Annuleren*.
 
 **Bouwmodus inschakelen** — bouwgerichte beginwaarden voor nieuwe projecten. Standaard: aan. Effect: aan geeft een nieuw project de kalender *Bouwkalender NL* met de Nederlandse feestdagen, laat je bij het genereren van feestdagen een bouwvak kiezen, biedt de fasesjablonen *Woningbouw* en *Utiliteitsbouw / renovatie* aan en geeft nieuwe taken het taaktype *Bouw*. Uit geeft de kalender *Standaardkalender* zonder feestdagen, alleen het sjabloon *Leeg* en het taaktype *Overig*. Een nieuwe taak onder een bovenliggende taak met een taaktype neemt eerst dat taaktype over; *Bouw* of *Overig* geldt daarna. Bestaande taken en kalenders veranderen niet. Waar: *Planning*.
 
-**Urenplanning inschakelen** — plannen in werkuren naast werkdagen. Standaard: uit. Effect: de tijdschaal *Uur* verschijnt onder *Beeld › Tijdschaal*, in het venster *Kalenders* kan een gewone kalender werktijdblokken krijgen (het blok *Werktijden*; een kalender die al blokken heeft, toont dat blok altijd), en het venster *Nieuw project* krijgt de keuzes *Ploeg* en *Standaardeenheid voor nieuwe taken*. Ook *Projectinfo* krijgt de keuze *Standaardeenheid voor nieuwe taken*. Uit werkt de app dag-granulair. Taken die al in uren staan blijven bestaan en rekenen mee; hun duur bewerk je pas als je urenplanning aanzet. Waar: *Planning*, onder *Urenplanning*. Zie [Urenplanning aanzetten](docs://howto-urenplanning-aanzetten).
+**Urenplanning inschakelen** — plannen in werkuren naast werkdagen. Standaard: uit. Effect: de tijdschaal *Uur* verschijnt onder *Beeld › Tijdschaal*, in het venster *Kalenders* kan een gewone kalender werktijdblokken krijgen (het blok *Werktijden*; een kalender die al blokken heeft, toont dat blok altijd), en het venster *Nieuw project* krijgt de keuzes *Ploeg* en *Standaardeenheid voor nieuwe taken*. Ook *Projectinstellingen* krijgt de keuze *Standaardeenheid voor nieuwe taken*. Uit werkt de app dag-granulair. Taken die al in uren staan blijven bestaan en rekenen mee; hun duur bewerk je pas als je urenplanning aanzet. Waar: *Planning*, onder *Urenplanning*. Zie [Urenplanning aanzetten](docs://howto-urenplanning-aanzetten).
 
 **Gemengde dag/uur-planning toestaan** — of je per taak de eenheid kiest. Alleen zichtbaar als *Urenplanning inschakelen* aan staat. Standaard: aan. Effect: aan toont bij elke taak de keuzelijst *Duureenheid* naast de duur. Uit verbergt die keuzelijst. Waar: *Planning*, onder *Urenplanning*. Zie [Dagen en uren](docs://uitleg-dagen-en-uren).
 
@@ -76,7 +76,7 @@ Een wijziging werkt direct. Er is geen knop *Toepassen* en geen *Annuleren*.
 - *Per release* — dezelfde downloads per versie, met de datum; eerst de zes nieuwste, met *Alle … releases tonen* voor de rest.
 - *Bron* — de datum van de cijfers (GitHub Releases, wekelijks bijgewerkt) en *Nu vernieuwen*. De app onthoudt de opgehaalde cijfers een half uur. Lukt ophalen niet, dan meldt het venster dat. Installaties via de Snap Store lopen niet via GitHub en ontbreken.
 
-**Rondleiding starten** — de introductierondleiding opnieuw. Effect: sluit het instellingenvenster en start de rondleiding vanaf de eerste stap. Waar: *Geavanceerd*, onder *Rondleiding*.
+**Rondleiding starten** — de introductierondleiding opnieuw. Effect: sluit het venster *App-instellingen* en start de rondleiding vanaf de eerste stap. Waar: *Geavanceerd*, onder *Rondleiding*.
 
 **Versie** — het versienummer van de app, met twee knoppen. *Controleren op updates* opent het updatevenster. *Wat is er nieuw* toont de nieuwigheden van de huidige versie. Waar: *Geavanceerd*, onder *Versie*.
 

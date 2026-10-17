@@ -22,7 +22,7 @@ Just before the update is installed, the app also takes a recovery snapshot (for
 
 ### Check for a new version yourself
 
-1. Choose *Settings › Project › Settings*. You can also choose *File › Settings*, or the gear at the top.
+1. Choose *Settings › Project › App settings*. You can also choose *File › App settings*, or the gear at the top.
 2. Choose the tab *Advanced*. Under *Version* is the number of your current version.
 3. Click *Check for updates*. The window *Software update* opens and says *Checking…*. Afterwards it says *You're running the latest version* or the message that there is a new version, with the same button *Download & install*.
 
@@ -37,7 +37,7 @@ In the browser this button does nothing special: the window immediately says *Yo
 5. Under *This update in numbers* are the number of days since the previous release, the number of commits and the number of added lines of code. If the app can look up the difference in size of the installation package, that is shown too. Each figure is only shown if it is available.
 6. Click *Got it* to close the window.
 
-If you want to see this window once more later, choose *Settings › Project › Settings*, tab *Advanced*, and under *Version* the button *What's new*. The window then opens for your current version, without a previous version.
+If you want to see this window once more later, choose *Settings › Project › App settings*, tab *Advanced*, and under *Version* the button *What's new*. The window then opens for your current version, without a previous version.
 
 ## Pitfalls and what the app does then
 

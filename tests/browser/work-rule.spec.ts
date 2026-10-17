@@ -304,7 +304,7 @@ test('instelling en paneel: geen blok onder de werkregel, instelling onder Berek
   // Geen native keuzelijst (besluit eigenaar 2026-10-15: "mag nooit native zijn").
   await expect(page.locator('[data-ops-work-rule] select')).toHaveCount(0);
 
-  await page.getByTitle(/^(Settings|Instellingen)$/, { exact: true }).click();
+  await page.getByTitle(/^(App settings|App-instellingen)$/, { exact: true }).click();
   const dlg = page.locator('.settings-dialog');
   await dlg.locator('.settings-tab').filter({ hasText: /^Planning$/ }).click();
   const box = dlg.locator('[data-ops-setting-show-task-types]');

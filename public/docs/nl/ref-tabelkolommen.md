@@ -11,7 +11,7 @@ Standaard toont de tabel naast de Gantt *WBS*, *Taaknaam* en *Duur*. De tabel op
 ## Hoe je waarden leest en bewerkt
 
 - **Berekende kolommen** — de kolommen in de categorie *Berekend* en een aantal andere zijn alleen-lezen: ze komen uit de berekening. Probeer je een alleen-lezen cel te bewerken, dan zegt de app *Deze berekende kolom kan niet worden bewerkt.* Die tekst is de algemene melding voor elke alleen-lezen cel, ook als de kolom niet berekend is. Zijn ze verouderd omdat je iets wijzigde, dan staat er *verouderd* bij tot je *Bereken* drukt.
-- **Datums** — staan in de notatie die je koos onder *Instellingen*, tabblad *Weergave*, kop *Datumnotatie*.
+- **Datums** — staan in de notatie die je koos onder *App-instellingen*, tabblad *Weergave*, kop *Datumnotatie*.
 - **Duren en speling** — een duur staat in de eenheid van de taak (`5d`, `12h`), of volgens *Duurweergave* op hetzelfde tabblad (*Automatisch (eigen eenheid per taak)*, *Altijd dagen* of *Altijd uren*). Speling staat in werkdagen met twee decimalen en het decimaalteken van je taal.
 - **Ja/Nee** — een ja/nee-waarde staat als *Ja* of *Nee*; een lege waarde als een streepje (—).
 - **Bewerken** — typ of kies een waarde. Een ongeldige waarde wordt geweigerd met een reden onder de cel, bijvoorbeeld *Voer een geldige duur in, zoals 5d of 8u.* of *Voer een percentage tussen 0 en 100 in.* Plakken van een blok cellen werkt cel voor cel; alleen-lezen cellen worden overgeslagen en de app meldt hoeveel.
@@ -94,7 +94,7 @@ Alle kolommen in deze categorie zijn alleen-lezen.
 - **Totale speling** — de werkdagen die de taak kan schuiven zonder het projecteinde te vertragen. Negatief als een constraint of deadline niet haalbaar is.
 - **Kritiek** — *Ja* als de taak op het kritieke pad ligt.
 - **Interfererende speling** — totale speling min vrije speling.
-- **Bijna kritiek** — *Ja* voor een bijna-kritieke taak. Alleen gevuld als *Bijna-kritiek markeren* aan staat (*Projectinfo*, blok *Rekenprofiel en reken-opties*); anders een streepje.
+- **Bijna kritiek** — *Ja* voor een bijna-kritieke taak. Alleen gevuld als *Bijna-kritiek markeren* aan staat (*Projectinstellingen*, blok *Rekenprofiel en reken-opties*); anders een streepje.
 - **Spelingpad** — het nummer van het spelingpad, 1 voor het meest kritieke. Alleen gevuld als *Meerdere speling-paden* aan staat; anders een streepje.
 - **Herkomst (opgeslagen datums)** — bij een bestand met vastgelegde datums: *Wijkt af* of *Deels niet vastgelegd*. Alleen zichtbaar in de kiezer bij zo'n bestand. Bij een niet vastgelegde as staat *Niet vastgelegd* in de late-datum- en spelingkolommen.
 

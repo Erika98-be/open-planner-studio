@@ -14,7 +14,7 @@ De regel bepaalt welke van de drie grootheden duur, inzet en werk meebeweegt als
 
 De werkregel staat standaard niet in beeld. Zet hem eenmalig aan:
 
-1. Kies *Instellingen › Project › Instellingen*, tabblad *Planning*.
+1. Kies *Instellingen › Project › App-instellingen*, tabblad *Planning*.
 2. Vink onder het kopje *Berekenen* het vakje *Toon werkregels en werk* aan.
 3. Sluit het venster met *Sluiten*.
 

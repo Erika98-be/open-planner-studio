@@ -60,7 +60,7 @@ Notifications appear at the bottom of the screen, also in the table, in Backstag
 
 - **Counter ×N** — a notification with a fixed key folds a repeat into one line with a counter, for example a save error that keeps coming back or a refused relation that you repeat. Not every notification does that.
 - **Read more** — some notifications have a *Read more* link or a topic of their own (for example *Work rules explained*) to the guide in Backstage › Help.
-- **Action button** — the notification about the calculation profile has a button *Open calculation profile* to Project info.
+- **Action button** — the notification about the calculation profile has a button *Open calculation profile* to Project settings.
 
 The list below is a selection, grouped by topic. Where it does not say otherwise, it is an info.
 
@@ -121,7 +121,7 @@ The list below is a selection, grouped by topic. Where it does not say otherwise
 - **Work and work rules visible** (info) — *This file contains stored work or custom work rules; the work rule and remaining work are shown for this project.*
 - **MS Project schedule read** (info) — *This MS Project file contains N tasks with a split, leveled, or resource-driven schedule. They are imported and shown as such.*
 - **Breaks not exported** (info) — *N tasks with breaks were exported without their breaks: MS Project/P6 only know breaks as a work distribution.* When exporting to MS Project or Primavera.
-- **Project start moved** (info) — *N tasks moved with the project start.* When you set the project start later. Only tasks without a predecessor and without a constraint that would lie before the new start date move to that date. With a *Read more* link to [New project and Project info](docs://ref-projectinfo).
+- **Project start moved** (info) — *N tasks moved with the project start.* When you set the project start later. Only tasks without a predecessor and without a constraint that would lie before the new start date move to that date. With a *Read more* link to [New project and Project settings](docs://ref-projectinfo).
 - **Date window no longer steers** (info) — *MS Project's date window no longer drives N tasks after this edit; …* Once per document.
 - **Leveling delay rounded** (info) — *Leveling rounds MS Project's minute-precise leveling delay for N tasks to whole workdays.* Once per document.
-- **Calculation profile applied** (info) — *This project calculates as {profile}. Change it via File → Project info → Calculation profile and options.* With the button *Open calculation profile*. After applying a profile, *After applying, N tasks moved.* follows if needed.
+- **Calculation profile applied** (info) — *This project calculates as {profile}. Change it via File → Project settings → Calculation profile and options.* With the button *Open calculation profile*. After applying a profile, *After applying, N tasks moved.* follows if needed.
