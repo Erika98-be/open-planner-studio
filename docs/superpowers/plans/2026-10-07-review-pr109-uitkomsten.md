@@ -1428,3 +1428,6 @@ Open voor de eigenaar, één per bericht, in deze volgorde:
 6. #362 Shift+wiel; desktopcheck. 7. Plek instelling *Taaktypes gebruiken*. 8. #366-punt i-tekst *Standaard werkdag*.
 Vóór de release: tutorial 5 in de extensions-repo tegelijk aanpassen; releasetekst noemt de hernoeming.
 Testversie (release-check, poort 3049) is NIET bijgewerkt met de PR's van vandaag.
+- Na de stop: **#371** kop 45103baf9 gepusht (fixronde 3 af, mutanten rood; CI en PR-tekst nog doen). **#374** kop
+  afcd47f5f (WIP) gepusht: sneltoetspoort, vangnet met melding, ?-knop weg, `<bdi>`; nog doen: specs/i18n/docs opnieuw,
+  schermbewijs bekijken, CI, PR-tekst.
