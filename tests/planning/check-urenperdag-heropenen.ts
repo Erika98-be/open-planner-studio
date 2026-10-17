@@ -28,6 +28,7 @@ import type { Baseline } from '@/types/baseline';
 import type { WorkCalendar, WorkTimeBands } from '@/types/calendar';
 import type { Project } from '@/types/project';
 import type { Resource, ResourceAssignment } from '@/types/resource';
+import type { Sequence } from '@/types/sequence';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { installDOMParser } from './xmldom-shim';
@@ -307,6 +308,25 @@ if (corpus && existsSync(join(twinDir, 'mpp14timephased.mpp'))) {
   if (t) t.time.scheduleDuration = 10;
   const xml2 = quiet(() => writeMSPDI(project, back.calendar, back.tasks, [], back.resources ?? [], back.assignments ?? [], [], [], null));
   eq('§8 MSPDI-toewijzing: na 10 d groeit het werk mee naar 80 u', workHours(xml2), '80');
+}
+// Een dagkalender (geen blokken, geen promotie) uit een vreemd bestand: `<MinutesPerDay>` 600 (10 u)
+// naast werktijden van 8 u. De lezer zet de bestandswaarde al bij het bouwen van de projectkalender, dus
+// rekent de vertraging (`LinkLag` 14400 tienden = 24 u) met 10 u: 2,4 ⇒ 2 d (de lezer rondt af op hele
+// dagen). Met de werktijd (8 u) zou het 3 d zijn.
+{
+  const dayCal: WorkCalendar = { ...CAL, id: 'cal-dag', workStartHour: 8, workEndHour: 16, workTime: undefined };
+  const dayOnly = (name: string): Task => {
+    const t = mk(name, 'days', 5);
+    const d0 = '2026-07-06', d1 = '2026-07-10';
+    return { ...t, time: { ...t.time, scheduleStart: d0, scheduleFinish: d1, earlyStart: d0, earlyFinish: d1, lateStart: d0, lateFinish: d1 } };
+  };
+  const seq: Sequence = { id: 's1', predecessorId: 't-Voor', successorId: 't-Na', type: 'FINISH_START', lagDays: 3 };
+  const written = quiet(() => writeMSPDI({ ...project, calendarId: dayCal.id }, dayCal, [dayOnly('Voor'), dayOnly('Na')], [seq], [], [], [], [], null));
+  eq('§8 MSPDI-dagkalender: testvoorwaarde LinkLag 14400 en MinutesPerDay 480',
+    [written.match(/<LinkLag>([^<]*)</)?.[1], MSPDI.writtenHpd(written)], ['14400', '480']);
+  const back = quiet(() => readMSPDI(MSPDI.setFileHpd(written, '600')));
+  eq('§8 MSPDI-dagkalender: testvoorwaarde geen uurkalender; bestandswaarde 10 u', [!!back.calendar.workTime, back.calendar.hoursPerDay], [false, 10]);
+  eq('§8 MSPDI-dagkalender: vertraging rekent met de bestandswaarde, 2 d', [back.sequences[0]?.lagDays, back.sequences[0]?.lagMinutes], [2, undefined]);
 }
 
 if (fails > 0) {
