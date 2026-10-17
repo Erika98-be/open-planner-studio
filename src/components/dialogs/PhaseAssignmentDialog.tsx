@@ -180,7 +180,8 @@ function PhaseAssignmentDialogBody({ question }: { question: PhaseAssignmentQues
             className={primaryKind === 'move' ? primaryClass : secondaryClass}
             data-ops-phase-move
           >
-            {moveLabel}
+            {/* Eén flex-item: de knop heeft `gap`, anders komt er ruimte rond de <bdi>. */}
+            <span>{moveLabel}</span>
           </button>
         </div>
     </Dialog>
