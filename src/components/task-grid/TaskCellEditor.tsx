@@ -241,6 +241,9 @@ export function TaskCellEditor({
   // aanroept en dan al wél `textRef.current` (synchroon bijgewerkt) leest. Diezelfde weg voor een
   // Enter-keuze in `Select` zelf: die stopt de propagatie van zijn eigen Enter (zie Select.tsx),
   // dus dit is de ENIGE plek die de commit voor een gekozen waarde triggert — geen dubbele afhandeling.
+  // `Select` roept `onChange` niet aan als de gebruiker de al gekozen optie opnieuw kiest. De cel
+  // legt dan via `onReselect` toch vast en sluit, bij klik, Enter en Spatie, net als bij een andere
+  // waarde.
   const commitPickedValue = (value: string, inputProps: GridEditorInputProps) => {
     textRef.current = value;
     setText(value);
@@ -406,9 +409,9 @@ export function TaskCellEditor({
           // capture-fase af (`cancelOnEscapeCapture`): één Escape sluit de lijst én annuleert de
           // celbewerking, zoals vroeger. `onKeyDown={inputProps.onKeyDown}` op de wrapper (niet op
           // Select zelf, dat kent die prop niet) blijft voor de overige toetsen. Enter/klik op een
-          // optie roept `onChange` hieronder aan, die de commit ZELF triggert via een synthetische
-          // Enter naar `inputProps.onKeyDown` — Select stopt bij een echte keuze wél de propagatie
-          // van zijn eigen Enter, dus geen dubbele commit.
+          // optie roept `onChange` hieronder aan (of `onReselect` bij de al gekozen optie), die de
+          // commit ZELF triggert via een synthetische Enter naar `inputProps.onKeyDown` — Select
+          // stopt bij een keuze de propagatie van zijn eigen Enter, dus geen dubbele commit.
           <div
             className="task-grid-editor-input"
             data-task-editor-kind="enum"
@@ -426,6 +429,7 @@ export function TaskCellEditor({
                 label: option.label ?? labelForOption(option.labelKey ?? option.value, option.value),
               }))}
               onChange={value => commitPickedValue(value, inputProps)}
+              onReselect={value => commitPickedValue(value, inputProps)}
             />
           </div>
         ) : descriptor?.editorKind === 'boolean' ? (
@@ -447,6 +451,7 @@ export function TaskCellEditor({
                 { value: 'false', label: adapter.booleanLabels?.false ?? 'false' },
               ]}
               onChange={value => commitPickedValue(value, inputProps)}
+              onReselect={value => commitPickedValue(value, inputProps)}
             />
           </div>
         ) : dateEditorKind ? (

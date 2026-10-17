@@ -44,6 +44,10 @@ interface SelectProps {
    *  keuze. Voor korte suffix-kiezers naast een invoerveld (duur-eenheid). De wrapper moet de
    *  breedte dan niet vastzetten (`shrink-0`, geen `w-*`). */
   fitWidestOption?: boolean;
+  /** Kiest de gebruiker de al gekozen optie opnieuw (klik, Enter of Spatie), dan roept `Select`
+   *  `onChange` NIET aan, zoals een native `<select>`. Wie die keuze toch moet horen (de gridcel-
+   *  editor legt vast en sluit bij elke keuze), geeft deze callback mee. */
+  onReselect?: (value: string) => void;
 }
 
 interface MenuRect {
@@ -62,10 +66,8 @@ const MENU_MAX_HEIGHT = 280;
 /** Vanaf zoveel opties tekent de open lijst alleen de zichtbare rijen (plus een buffer). Een lijst
  *  met duizenden opties (bv. "Bovenliggende taak" in een groot P6-project) opende anders pas na
  *  ruim een seconde. Korte lijsten tekenen alle opties, zoals altijd. */
-export const SELECT_VIRTUAL_THRESHOLD = 200;
+const SELECT_VIRTUAL_THRESHOLD = 200;
 const VIRTUAL_BUFFER = 8;
-/** PageUp/PageDown in een niet-gevirtualiseerde lijst: zoveel rijen per stap. */
-const PAGE_ROWS_FALLBACK = 10;
 
 /** Eén canvas voor alle breedtemetingen: meet de labels zonder er DOM-nodes voor te maken. */
 let measureContext: CanvasRenderingContext2D | null = null;
@@ -99,6 +101,7 @@ export function Select({
   'aria-invalid': ariaInvalid,
   'aria-describedby': ariaDescribedBy,
   fitWidestOption = false,
+  onReselect,
 }: SelectProps) {
   const reactId = useId();
   const listboxId = `${id ?? reactId}-listbox`;
@@ -107,7 +110,7 @@ export function Select({
   const [highlight, setHighlight] = useState(-1);
   const [rect, setRect] = useState<MenuRect | null>(null);
   const [scrollTop, setScrollTop] = useState(0);
-  const virtual = options.length > SELECT_VIRTUAL_THRESHOLD;
+  const virtual = options.length >= SELECT_VIRTUAL_THRESHOLD;
   // Breedte van het langste label, per optielijst en lettertype maar één keer gemeten.
   const labelWidthCache = useRef<{ options: SelectOption[]; font: string; width: number } | null>(null);
 
@@ -269,9 +272,10 @@ export function Select({
       const opt = options[index];
       if (!opt || opt.disabled) return;
       if (opt.value !== value) onChange(opt.value);
+      else onReselect?.(opt.value);
       close();
     },
-    [options, value, onChange, close],
+    [options, value, onChange, onReselect, close],
   );
 
   const moveHighlight = useCallback(
@@ -294,10 +298,12 @@ export function Select({
   /** PageUp/PageDown: een schermhoogte verder, zonder rond te lopen; landt op een geldige optie. */
   const pageHighlight = useCallback(
     (dir: 1 | -1) => {
+      // Eén formule voor korte en lange lijsten: zoveel rijen als er in beeld passen, min één.
       const menu = menuRef.current;
-      const rows = virtual && menu
-        ? Math.max(1, Math.floor(menu.clientHeight / virtualRowHeight()) - 1)
-        : PAGE_ROWS_FALLBACK;
+      const row = virtual
+        ? virtualRowHeight()
+        : (optionRefs.current.find(el => el)?.offsetHeight || virtualRowHeight());
+      const rows = menu ? Math.max(1, Math.floor(menu.clientHeight / row) - 1) : 1;
       setHighlight(prev => {
         const n = options.length;
         if (n === 0) return -1;
@@ -374,11 +380,12 @@ export function Select({
         // dezelfde Enter ook nog doorbubbelen naar een omringende "Enter commit"-handler (zoals de
         // gridcel-editor), die de keuze dan een TWEEDE keer zou verwerken. Grid-integratie roept de
         // commit zelf al aan vanuit onChange (zie TaskCellEditor); dit voorkomt dat dubbel gebeurt.
-        // Dezelfde waarde opnieuw kiezen roept geen onChange aan; dan mag de Enter wél door, zodat
-        // de gridcel-editor zijn (ongewijzigde) waarde vastlegt en sluit. Zonder actieve optie kiest
-        // Enter of Spatie niets.
+        // Dezelfde waarde opnieuw kiezen roept geen onChange aan. Zonder `onReselect` mag de Enter
+        // dan wél door (een omringende Enter-handler ziet een gewone Enter); met `onReselect` handelt
+        // die callback de keuze af en stopt de toets hier. Zonder actieve optie kiest Enter of
+        // Spatie niets.
         if (highlight >= 0) {
-          if (options[highlight]?.value !== value) e.stopPropagation();
+          if (options[highlight]?.value !== value || onReselect) e.stopPropagation();
           selectAt(highlight);
         }
         break;

@@ -107,8 +107,10 @@ export function useKeyboardShortcuts() {
         if (typing && !entry.allowInInput) continue;
         if (entry.when && !entry.when()) continue;
 
-        if (entry.allowInInput && typing) {
-          // Forceer een eventuele hangende onBlur-commit vóórdat we herberekenen/opslaan/etc.
+        if (entry.allowInInput && typing
+          && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
+          // Forceer een eventuele hangende onBlur-commit vóórdat we herberekenen/opslaan/etc. Alleen
+          // tekstvelden hebben zo'n commit; een keuzelijst-trigger houdt de focus (zoals op main).
           target.blur();
         }
         if (!entry.skipPreventDefault) e.preventDefault();

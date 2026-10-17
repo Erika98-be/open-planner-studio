@@ -282,6 +282,62 @@ test('Tabel: één Escape in een open keuzelijst-cel sluit de lijst én annuleer
   }
 });
 
+test('Tabel: de al gekozen optie opnieuw kiezen (klik, Spatie, Enter) legt vast en sluit de editor', async ({ page, ops: _ops }) => {
+  const [id] = await seedProject(page, [
+    { name: 'Metselwerk', start: '2026-09-07', finish: '2026-09-10', durationDays: 4 },
+  ]);
+  await page.evaluate(() => {
+    const store = window.__OPS__!.store.getState();
+    const columns = store.taskGridSurfaces['full-task-grid'].columns;
+    const wanted = ['task.constraint.type', 'task.isMilestone'] as (typeof columns)[number]['id'][];
+    const missing = wanted.filter(w => !columns.some(c => c.id === w));
+    if (missing.length) {
+      store.commitTaskGridColumns('full-task-grid', 'Keuzelijstkolommen voor browsertest', [
+        ...columns,
+        ...missing.map(w => ({ id: w, width: 180, pinned: false })),
+      ]);
+    }
+    store.setUI({ activeRibbonTab: 'table' });
+  });
+  const taskOf = () => page.evaluate(taskId => {
+    const t = window.__OPS__!.store.getState().tasks.find(x => x.id === taskId)!;
+    return { constraint: t.constraint?.type ?? 'ASAP', milestone: t.isMilestone };
+  }, id);
+  const before = await taskOf();
+
+  for (const [column, kind] of [['task.constraint.type', 'enum'], ['task.isMilestone', 'boolean']] as const) {
+    const cell = page.locator(`[data-task-grid-surface-id="full-task-grid"] [data-grid-row-key="${id}"][data-grid-column-id="${column}"]`);
+    const editor = page.locator(`[data-task-editor-kind="${kind}"]`);
+    for (const how of ['click', ' ', 'Enter'] as const) {
+      await cell.click();
+      await page.keyboard.press('Enter');
+      await expect(editor).toBeVisible();
+      await expect(menu(page)).toBeVisible();
+      const current = menu(page).locator('[role="option"][aria-selected="true"]');
+      await expect(current).toHaveCount(1);
+      if (how === 'click') await current.click();
+      else await page.keyboard.press(how);
+      await expect(menu(page)).toHaveCount(0);
+      await expect(editor).toHaveCount(0);
+      // Vastleggen gaat zoals Enter bij een andere waarde: de focus staat weer op een cel van deze
+      // kolom (de volgende rij), niet op een losse knop.
+      await expect.poll(() => page.evaluate(() => document.activeElement?.closest('[data-grid-column-id]')?.getAttribute('data-grid-column-id') ?? null)).toBe(column);
+      expect(await taskOf()).toEqual(before);
+    }
+  }
+});
+
+test('F5 na een muiskeuze: de focus blijft op de keuzelijst-trigger', async ({ page, ops: _ops }) => {
+  await seedPanel(page, true);
+  const trigger = page.locator('button[aria-haspopup="listbox"][aria-label="Calendar"]');
+  await trigger.click();
+  await menu(page).getByRole('option', { name: LONG_CALENDAR }).click();
+  await expect(menu(page)).toHaveCount(0);
+  await expect(trigger).toBeFocused();
+  await page.keyboard.press('F5');
+  await expect(trigger).toBeFocused();
+});
+
 test('lange lijst: alleen de zichtbare opties in de DOM; toetsen, scrollen en breedte werken over alle opties', async ({ page, ops: _ops }) => {
   const COUNT = 600;
   const LAST = `${LONG_TASK} (laatste)`;
