@@ -136,7 +136,7 @@ export interface RecordedDatesState extends RecordedDates {
    *  `shifted === shiftedTaskIds.length`), zodat het eigenschappenpaneel per taak kan zeggen of hij
    *  verandert (eigenaar, 2026-10-17). Zelfde regel als `shifted`: afwezig ⇒ onbekend, nooit een
    *  verzonnen lege lijst. */
-  shiftedTaskIds?: readonly string[];
+  shiftedTaskIds?: string[];
   /** Bronformaat van de vastlegging (spiegelt `ImportResult.recordedTimesOrigin`) — bewust GEEN import van dat type hier: de engine-laag kent geen formaten,
    *  alleen deze twee letterlijke waarden. Stuurt uitsluitend WOORDKEUZE in de strook
    *  (`RecordedDatesNotice.tsx` noemt "Primavera" alleen wanneer dit gezet is); de modus-
