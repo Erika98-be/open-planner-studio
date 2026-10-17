@@ -833,7 +833,6 @@
     },
     "worktime": {
       "section": "工作时间",
-      "derivedHpd": "推算的小时/天：",
       "saveAsPreset": "另存为预设…",
       "saveAsPresetHint": "将当前工作时间另存为你自己的预设(仅保存在此设备上),以便日后在任何项目中重复使用。",
       "perWeekday": "按星期设置…",

@@ -1,6 +1,6 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useId } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Trash2, X } from 'lucide-react';
+import { Info, Plus, Trash2, X } from 'lucide-react';
 import type { WorkCalendar, Holiday, WorkTimeBands } from '@/types/calendar';
 import { accentChipClass, CalendarGeneratorFields } from './CalendarGeneratorFields';
 import { WorkTimeEditor } from './WorkTimeEditor';
@@ -27,6 +27,7 @@ import {
   calendarScalarBreakIssue, inferredSimpleBreak, scalarBreakIssue, scalarTimesValid, simpleBreakPatch,
 } from '@/utils/effectiveWorkTime';
 import { holidayIssue } from '@/utils/holidayRange';
+import { effHoursPerDay } from '@/utils/taskDuration';
 
 /** Rode rand voor een ongeldige feestdagdatum; `DateTextInput` legt `style` op de omrande groep. */
 const INVALID_DATE_STYLE = { borderColor: 'var(--error)' } as const;
@@ -69,6 +70,7 @@ export function CalendarForm({
 }) {
   const { t: tMenu, i18n } = useTranslation('menu');
   const { t: tCommon } = useTranslation('common');
+  const netHoursId = useId();
   const enableHourPlanning = useAppStore(s => s.ui.enableHourPlanning);
   const weekStartDay = useAppStore(s => s.ui.weekStartDay);
   const timeNotation = useAppStore(s => s.ui.timeNotation);
@@ -537,8 +539,8 @@ export function CalendarForm({
         </div>
       </div>
 
-      {/* Netto-uren zijn in elke kalenderstand uitsluitend een afleiding. Begin/einde/pauze bestaan
-          alleen bij een eenvoudige kalender; bij werkblokken bewerk je het blok Werktijden. */}
+      {/* Netto-uren tonen de werktijd waarmee de app rekent (`effHoursPerDay`), nooit de opgeslagen P6-factor;
+          zonder enige werkdag een streepje. Besluit eigenaar 2026-10-15 (optie 1). */}
       <div className="grid grid-cols-3 gap-3">
         {!hourMode && (
           <>
@@ -579,15 +581,31 @@ export function CalendarForm({
           </>
         )}
         <div className="flex flex-col gap-1">
-          <label className="text-text-secondary font-medium">
-            {tMenu('ribbon.calendarDialog.netHoursPerDay')}
-          </label>
+          {/* Standaard werkdag = de modale dagsom, geen gemiddelde (besluit eigenaar 2026-10-17). Het i-icoon
+              volgt het patroon van *Werkregel*: `title` + `data-tooltip-instant` (hover, focus en tik). */}
+          <div className="flex items-center gap-1">
+            <label htmlFor={netHoursId} className="text-text-secondary font-medium">
+              {tMenu('ribbon.calendarDialog.standardWorkday')}
+            </label>
+            <button
+              type="button"
+              className="inline-flex h-5 w-5 items-center justify-center rounded-[5px] text-text-secondary hover:bg-surface-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
+              title={tMenu('ribbon.calendarDialog.standardWorkdayInfo')}
+              aria-label={tMenu('ribbon.calendarDialog.standardWorkdayInfoLabel')}
+              data-tooltip-instant="true"
+              data-ops-standard-workday-info
+            >
+              <Info size={14} aria-hidden="true" />
+            </button>
+          </div>
           <output
+            id={netHoursId}
             className="py-1.5 font-semibold text-text-primary tabular-nums"
             aria-live="polite"
             data-ops-simple-break-net-hours
           >
-            {netHoursFormatter.format(draft.hoursPerDay)} h
+            {/* Zonder werkdagen weigert de solver de kalender (`noWorkingDays`): geen getal. */}
+            {draft.workDays.length === 0 ? '—' : `${netHoursFormatter.format(effHoursPerDay(draft))} h`}
           </output>
         </div>
       </div>

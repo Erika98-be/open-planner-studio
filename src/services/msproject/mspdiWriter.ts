@@ -12,6 +12,8 @@ import {
   exportCalendarLayout, minutesToClock, minutesToIsoDuration, taskMinutesForWrite,
 } from '@/services/subdayIo';
 import { taskDurationUnit } from '@/engine/scheduler/duration';
+import { effHoursPerDay } from '@/utils/taskDuration';
+import { createBaselineOldDayCheck } from '@/engine/baselineOldDay';
 import { encodeCustomTaskType, escapeXml, OPS_DURATION_UNIT_NAME, toXmlDateTime } from '@/services/xmlInterchange';
 import { isSummaryTask } from '@/utils/taskHierarchy';
 import { effectiveWorkTimeBands, calendarForEngine } from '@/utils/effectiveWorkTime';
@@ -428,6 +430,9 @@ export function writeMSPDI(
   }
   lines.push(`${indent(1)}</Calendars>`);
 
+  // Een baseline van een urentaak met de oude dagtelling houdt bij de export zijn eigen omrekening.
+  const oldDayBaseline = createBaselineOldDayCheck(calendar, resourceCalendars);
+
   // Build task UID map
   const taskUidMap = new Map<string, number>();
   // UID 0 is reserved for summary project task
@@ -563,9 +568,14 @@ export function writeMSPDI(
       lines.push(`${indent(4)}<Number>0</Number>`);
       lines.push(`${indent(4)}<Start>${toXmlDateTime(bt.start)}</Start>`);
       lines.push(`${indent(4)}<Finish>${toXmlDateTime(bt.finish)}</Finish>`);
-      // Dezelfde `effHpd` als <Duration> — anders staat naast een taakduur van 168 u een baseline van
-      // 56 u en verzint MS Project 112 u afwijking.
-      lines.push(`${indent(4)}<Duration>${durationToISO8601(bt.duration, effHpd)}</Duration>`);
+      // Dezelfde dag als de taakduur — anders staat naast een taakduur van 168 u een baseline van 56 u
+      // en verzint MS Project 112 u afwijking. Dagtaak: `effHpd`, zoals <Duration>. Urentaak: haar
+      // baselinedagen tellen in de werktijd per dag van de taakkalender, net als haar dagengetal
+      // (`hourTaskScheduleDuration`); met `effHpd` werd 187 d van 10 u 1496 u in plaats van 1870 u.
+      // Uitzondering: een baseline die nog met de oude dagtelling is opgeslagen (233,75 d = 1870 u ÷ 8,
+      // `baselineOldDay.ts`) telt in de opgeslagen uren per dag, anders werd hij 2337,5 u.
+      const baselineHpd = isHourTask && !oldDayBaseline(task, bt) ? effHoursPerDay(effCal ?? calendar) : effHpd;
+      lines.push(`${indent(4)}<Duration>${durationToISO8601(bt.duration, baselineHpd)}</Duration>`);
       lines.push(`${indent(3)}</Baseline>`);
     }
 
@@ -655,10 +665,15 @@ export function writeMSPDI(
       const resUid = resUidMap.get(a.resourceId);
       if (taskUid === undefined || resUid === undefined) continue;
       const task = tasks.find(t => t.id === a.taskId);
-      const workDays = (task?.time.scheduleDuration ?? 0) * a.unitsPerDay;
       // Werk in uren van de TAAK-kalender, consistent met <Duration> — anders leest MS Project
       // Duration 168 u / Work 56 u / Units 100% en herrekent de eenheden naar 33%.
       const workHpd = task ? (effCalByTask.get(task.id)?.hoursPerDay ?? calendar.hoursPerDay) : calendar.hoursPerDay;
+      // Terugval voor <Work> (duur × inzet) in minuten. Een urentaak telt haar werkminuten, niet het
+      // dagengetal: dat telt in de werktijd per dag (`hourTaskScheduleDuration`), niet in `workHpd`.
+      // Een dagtaak telt haar dagen × `workHpd`, zoals <Duration>.
+      const fallbackWorkMinutes = !task ? 0
+        : taskDurationUnit(task) === 'hours' ? (task.time.durationMinutes ?? 0) * a.unitsPerDay
+          : task.time.scheduleDuration * a.unitsPerDay * workHpd * 60;
       // De contour van déze toewijzing (gekoppeld via `resourceId`).
       const taskContour = task ? contourOf(task, a) : undefined;
       // De contour vanaf de REKENstart, zoals de eigen resourcebelasting (`ResourceLoad.taskWorkDayIsos`
@@ -696,7 +711,7 @@ export function writeMSPDI(
           : undefined);
       lines.push(`${indent(3)}<Work>${plannedWork !== undefined
         ? minutesToMspdiValue(plannedWork)
-        : dayItems.length > 0 ? minutesToMspdiValue(contourWorkMinutes) : durationToISO8601(workDays, workHpd)}</Work>`);
+        : dayItems.length > 0 ? minutesToMspdiValue(contourWorkMinutes) : minutesToIsoDuration(fallbackWorkMinutes)}</Work>`);
       // WorkContour 8 = Contoured zodra er een echte verdeling meegaat (MPXJ `WorkContour.CONTOURED`).
       const contour = dayItems.length > 0 ? MSPDI_WORKCONTOUR_CONTOURED : CURVE_TO_WORKCONTOUR[a.curve ?? 'UNIFORM'];
       if (contour !== 0) {

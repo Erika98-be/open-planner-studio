@@ -1,4 +1,5 @@
 import { useCallback, useState, type MouseEvent } from 'react';
+import { AlertTriangle } from 'lucide-react';
 import { gridCellKey, useTaskGridContext, type DataGridCellModel, type DataGridColumnModel } from './taskGridContext';
 import { GRID_CLIP_ATTRIBUTE, isGridCellTruncated, resolveGridCellTitle } from '@/engine/taskGrid/cellTitle';
 import type { GridCellAddress } from '@/engine/taskGrid/selection';
@@ -89,6 +90,19 @@ export function GridCell({
       onDoubleClick={event => onDoubleClick?.(cell, event)}
       onContextMenu={event => onContextMenu?.(cell, event)}
     >
+      {model.warning && (
+        // Zelfde ⚠ als bij afwijkend werk in het paneel Toewijzingen: themakleur, eigen uitleg als title.
+        <span
+          className="shrink-0 inline-flex items-center"
+          style={{ color: 'var(--theme-warning-text)', marginInlineEnd: 3 }}
+          title={model.warning.text}
+          aria-label={model.warning.text}
+          role="img"
+          {...{ [`data-ops-${model.warning.kind}`]: 'true' }}
+        >
+          <AlertTriangle size={11} aria-hidden />
+        </span>
+      )}
       <span className="task-grid-cell-content" {...{ [GRID_CLIP_ATTRIBUTE]: 'true' }}>{model.content ?? model.text}</span>
       {model.statusText && <span className="sr-only">{model.statusText}</span>}
       {model.error && <span id={model.error.id} className="sr-only">{model.error.message}</span>}

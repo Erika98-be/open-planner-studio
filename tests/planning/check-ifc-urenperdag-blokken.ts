@@ -14,7 +14,8 @@ import './domStub';
 //     klokuren; plus een tweede round-trip.
 //  §2 de vorm van het bestand: `HoursPerDay` alleen bij een afwijking, met de exacte waarde, altijd samen
 //     met `IsHourCalendar = .T.`; nooit `SimpleBreak*`.
-//  §3 urentaken: de dagwaarde (`scheduleDuration`, uren / hoursPerDay) komt terug zoals vóór opslaan.
+//  §3 urentaken: de dagwaarde (`scheduleDuration`) is na heropenen werkminuten ÷ de werktijd per dag van
+//     de geschreven blokken, niet ÷ hoursPerDay (eigenaarsbesluit 2026-10-15, optie 2).
 //  §4 de echte open- en opslaanroute (store, doorrekenen): kalenders, getoonde duur, datums en de motor
 //     (die rekent met de blokken) gelijk vóór en na. Zonder de kalender waarvan de writer de week anders
 //     schrijft (`written`): zijn werktijd verandert los van de uren per dag.
@@ -111,12 +112,18 @@ for (const c of CASES) {
 {
   const taskShape = (t: { time: { durationUnit?: string; durationMinutes?: number; scheduleDuration: number } }) =>
     ({ unit: t.time.durationUnit, min: t.time.durationMinutes ?? null, dur: t.time.scheduleDuration });
+  // Verwacht per kalender: 2400 werkminuten ÷ de klokuren van de GESCHREVEN blokken (`clockHours`). Voor
+  // de kalender die de writer anders schrijft (`written`) is dat bewust een ander getal dan vóór opslaan:
+  // zijn blokken veranderen, dus de werktijd per dag ook.
+  const clockOf = new Map(CASES.map((c) => [c.cal.id, c.clockHours]));
   for (const t of project.tasks) {
     const got = read.tasks.find((x) => x.id === t.id);
-    same(`§3 taak "${t.name}": eenheid, minuten en dagwaarde`, got && taskShape(got), taskShape(t));
+    const clock = clockOf.get(t.calendarId ?? CASES[0].cal.id)!;
+    const want = t.time.durationUnit === 'hours' ? { ...taskShape(t), dur: 2400 / (clock * 60) } : taskShape(t);
+    same(`§3 taak "${t.name}": eenheid, minuten en dagwaarde`, got && taskShape(got), want);
   }
-  // De Late ploeg: 40 u bij 8 u/dag is 5 d (met de fout: 4 d, 40 / 10 klokuren).
-  same('§3 Late ploeg: urentaak van 40 u is 5 d', read.tasks.find((t) => t.id === 't-late')?.time.scheduleDuration, 5);
+  // De Late ploeg: 40 u bij blokken van 10 u is 4 d, ook al staat hoursPerDay op 8 (optie 2).
+  same('§3 Late ploeg: urentaak van 40 u is 4 d', read.tasks.find((t) => t.id === 't-late')?.time.scheduleDuration, 4);
 }
 
 // ════════════════════════════════════════════════════════════════════════════════════════════════
