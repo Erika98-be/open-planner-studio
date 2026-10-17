@@ -217,6 +217,41 @@ test('een losse rij handmatig koppelen laat hem meedraaien', async ({ page, ops:
   expect(after.completion).toBe(0.55);
 });
 
+test('koppelkiezer met plaatshouder: bij openen geen actieve optie, Enter en Spatie kiezen niets', async ({ page, ops: _ops }) => {
+  await seedProject(page, [
+    { name: 'Koppel-taak', start: '2026-09-07', finish: '2026-09-18', durationDays: 10 },
+  ]);
+  await openViaBackstage(page);
+  await chooseCsv(page, [
+    'OPS Task ID;Completion (%)',
+    'onbekend-id;55',
+    '',
+  ].join('\r\n'));
+  await expect(page.getByText(NEEDS_LINK_HEADING)).toBeVisible();
+
+  // De waarde is leeg en hoort bij geen optie: de lijst opent zonder actieve optie.
+  const picker = rowByNumber(page, 2).getByRole('button', { name: PICKER_PLACEHOLDER });
+  await picker.click();
+  const list = page.locator('.ops-select__menu');
+  await expect(list).toBeVisible();
+  await expect(list.locator('.ops-select__option.is-highlighted')).toHaveCount(0);
+  await expect(list).not.toHaveAttribute('aria-activedescendant', /./);
+
+  // Een extra Enter of Spatie kiest dan niets; de rij wacht nog op een koppeling.
+  await page.keyboard.press('Enter');
+  await page.keyboard.press(' ');
+  await expect(picker).toHaveText(PICKER_PLACEHOLDER);
+  await expect(dialog(page).getByRole('button', { name: APPLY })).toBeDisabled();
+
+  // Pijl-omlaag maakt de eerste optie actief.
+  await expect(list).toBeVisible();
+  await page.keyboard.press('ArrowDown');
+  await expect(list.locator('[role="option"]').first()).toHaveClass(/is-highlighted/);
+  await page.keyboard.press('Escape');
+  await expect(list).toHaveCount(0);
+  await expect(dialog(page)).toBeVisible();
+});
+
 test('een al gekoppelde taak is niet nog eens kiesbaar', async ({ page, ops: _ops }) => {
   const [idA] = await seedProject(page, [
     { name: 'Enige-taak', start: '2026-09-07', finish: '2026-09-18', durationDays: 10 },
