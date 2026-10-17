@@ -28,9 +28,11 @@ export function TaskCodesFieldsSection({ taskId }: { taskId: string }) {
         <Field key={type.id} label={type.name}>
           <Select
             aria-label={type.name}
-            // Een id dat niet (meer) in dit codetype staat (bv. uit een import) toont "(geen)", zoals de
-            // native lijst op main deed: React koos daar bij een onbekende waarde de eerste optie.
-            value={type.values.some(v => v.id === task.activityCodes?.[type.id]) ? task.activityCodes![type.id] : ''}
+            value={task.activityCodes?.[type.id] ?? ''}
+            // Een id dat niet in dit codetype staat (kan via de extensie-API binnenkomen) toont "(geen)"
+            // als gewone waarde, zoals de native lijst op main. "(geen)" kiezen wist dat id dan echt:
+            // de waarde is anders dan '', dus de Select roept onChange('') aan.
+            valueLabel={t('structure.none')}
             onChange={v => setTaskActivityCode(taskId, type.id, v || null)}
             className="!text-small !leading-4 !px-2.5 !py-1.5"
             options={[
