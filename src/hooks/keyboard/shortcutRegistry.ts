@@ -73,6 +73,8 @@ export function hasBlockingDialogOpen(ui: UIState = useAppStore.getState().ui): 
     ui.pendingExtensionConsent !== null ||
     // De vraag naar de werkelijke start wacht op een antwoord; intussen verandert er niets.
     ui.pendingActualStartQuestion !== null ||
+    // "Taak wordt een fase" wacht op een keuze; de handeling is nog niet uitgevoerd.
+    ui.pendingPhaseAssignmentQuestion !== null ||
     // Openen van/opslaan op de site wacht op een keuze; de opslaanroute houdt intussen de
     // schrijfvergrendeling vast.
     ui.pendingSiteOpen !== null || ui.pendingSiteSave !== null ||

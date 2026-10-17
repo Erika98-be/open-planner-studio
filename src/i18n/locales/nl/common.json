@@ -1570,5 +1570,23 @@
     "bodyUnwritable": "Dit bestand is opgeslagen als {{schema}}. Dat schema kan de app niet schrijven. Kies het schema waarin de app het opslaat. Je kunt dit later wijzigen in Projectinstellingen.",
     "keep": "{{schema}} houden",
     "toDefault": "Opslaan als IFC 4.3 ADD2"
+  },
+  "phaseAssignmentQuestion": {
+    "title": "Taak wordt een fase",
+    "intro_one": "'{{phase}}' krijgt de subtaak '{{child}}' en wordt een fase.",
+    "intro_other": "'{{phase}}' krijgt {{count}} subtaken en wordt een fase.",
+    "introMany_one": "Deze handeling maakt {{count}} taak tot fase.",
+    "introMany_other": "Deze handeling maakt {{count}} taken tot fase.",
+    "noOwnAssignments": "Een fase heeft geen eigen toewijzingen.",
+    "question_one": "Wat doe je met de toewijzing van {{resources}}?",
+    "question_other": "Wat doe je met de toewijzingen van {{resources}}?",
+    "questionMany": "Wat doe je met hun toewijzingen?",
+    "row": "'{{phase}}': {{resources}}",
+    "remove_one": "Toewijzing verwijderen",
+    "remove_other": "Toewijzingen verwijderen",
+    "moveTo": "Verplaatsen naar '{{child}}'",
+    "moveToSubtasks": "Verplaatsen naar de subtaken",
+    "blockedDuplicate": "Verplaatsen kan niet: '{{child}}' heeft {{resources}} al.",
+    "blockedNoChild": "Verplaatsen kan niet: '{{phase}}' krijgt geen subtaak die een toewijzing kan dragen, alleen mijlpalen of fases."
   }
 }

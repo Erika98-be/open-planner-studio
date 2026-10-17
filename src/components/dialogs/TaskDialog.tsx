@@ -1,7 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAppStore } from '@/state/appStore';
 import type { HistorySessionMark } from '@/state/slices/historySlice';
-import { moveTaskVerdict } from '@/state/slices/taskSlice';
+import {
+  moveTaskVerdict, phaseAssignmentQuestionForMove, phaseAssignmentQuestionForNewChild,
+} from '@/state/slices/taskSlice';
+import type { PhaseAssignmentChoice } from '@/state/structuralTransition';
 import { notifyHierarchyCycle } from '@/state/hierarchyRelationNotice';
 import { useTranslation } from 'react-i18next';
 import { Task } from '@/types/task';
@@ -152,8 +155,10 @@ export function TaskDialog() {
     return { ok: true };
   };
 
-  /** Opslaan en sluiten; `false` = geweigerd (melding), de dialoog blijft open. */
-  const handleSave = (): boolean => {
+  /** Opslaan en sluiten; `false` = geweigerd (melding) of eerst een vraag, de dialoog blijft open. */
+  const handleSave = (): boolean => saveWith(undefined);
+
+  const saveWith = (phaseAssignments: PhaseAssignmentChoice | undefined): boolean => {
     if (!draft.name.trim()) return false;
     // Een andere bovenliggende taak die via de relaties van de nieuwe fase een kring zou maken
     // moet VÓÓR er iets wordt opgeslagen geweigerd worden. `moveTask` weigert zelf ook,
@@ -181,6 +186,24 @@ export function TaskDialog() {
         return false;
       }
     }
+    // "Taak wordt een fase" (eigenaarsbesluit 2026-10-17): krijgt de nieuwe bovenliggende taak
+    // hierdoor haar eerste subtaak terwijl ze toewijzingen draagt, dan vraagt de app VÓÓR het
+    // opslaan wat ermee moet. De vraag ligt boven deze dialoog; Annuleren laat alles open zoals het
+    // was, een keuze slaat op met die keuze, in dezelfde undo-stap.
+    if (!phaseAssignments) {
+      const store = useAppStore.getState();
+      const question = editingTask
+        ? (draft.parentId !== editingTask.parentId
+          ? phaseAssignmentQuestionForMove(store, editingTask.id, draft.parentId)
+          : null)
+        : phaseAssignmentQuestionForNewChild(store, draft.parentId || null, {
+          name: draft.name, isMilestone: draft.isMilestone, hasChildren: false,
+        });
+      if (question) {
+        store.askPhaseAssignmentQuestion(question, choice => { saveWith(choice); });
+        return false;
+      }
+    }
     // Opslaan = één undo-stap met dezelfde voortgangsregels als het paneel; de details (vers uit de
     // store vs uit de draft, het scheduleStart-anker, `moveTask` voor de ouder, de duur alleen bij
     // een echte duurbewerking) staan in state/taskDialogSave.ts. Met een open
@@ -195,6 +218,7 @@ export function TaskDialog() {
       initialDuration: initialDurationRef.current,
       session: historyMarkRef.current,
       today: localTodayIso(),
+      phaseAssignments,
     });
     if (!saved) return false;
     setUI({ showTaskDialog: false, editingTaskId: null });

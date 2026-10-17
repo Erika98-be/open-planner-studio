@@ -1570,5 +1570,23 @@
     "bodyUnwritable": "This file was saved as {{schema}}. The app cannot write that schema. Choose the schema in which the app saves it. You can change this later in Project settings.",
     "keep": "Keep {{schema}}",
     "toDefault": "Save as IFC 4.3 ADD2"
+  },
+  "phaseAssignmentQuestion": {
+    "title": "Task becomes a phase",
+    "intro_one": "'{{phase}}' gets the subtask '{{child}}' and becomes a phase.",
+    "intro_other": "'{{phase}}' gets {{count}} subtasks and becomes a phase.",
+    "introMany_one": "This action turns {{count}} task into a phase.",
+    "introMany_other": "This action turns {{count}} tasks into phases.",
+    "noOwnAssignments": "A phase has no assignments of its own.",
+    "question_one": "What do you want to do with the assignment of {{resources}}?",
+    "question_other": "What do you want to do with the assignments of {{resources}}?",
+    "questionMany": "What do you want to do with their assignments?",
+    "row": "'{{phase}}': {{resources}}",
+    "remove_one": "Remove assignment",
+    "remove_other": "Remove assignments",
+    "moveTo": "Move to '{{child}}'",
+    "moveToSubtasks": "Move to the subtasks",
+    "blockedDuplicate": "Moving is not possible: '{{child}}' already has {{resources}}.",
+    "blockedNoChild": "Moving is not possible: '{{phase}}' gets no subtask that can carry an assignment, only milestones or phases."
   }
 }
