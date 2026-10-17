@@ -1,8 +1,7 @@
-import { useMemo, useState, type KeyboardEvent } from 'react';
+import { useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppStore } from '@/state/appStore';
 import type { ResourceCurve } from '@/types/resource';
-import { UnitsInput } from '@/components/common/UnitsInput';
 import { AlertTriangle, BarChart3, Lock, Trash2 } from 'lucide-react';
 import { RESOURCE_CURVES, CURVE_KEY } from './shared';
 import { isSummaryTask } from '@/utils/taskHierarchy';
@@ -16,7 +15,7 @@ import { taskTypesUnlocked } from '@/state/taskTypesVisibility';
 import { taskCalendarHoursPerDay } from '@/utils/taskDefaults';
 import type { Task } from '@/types/task';
 import { createMoveCandidateLookup } from './moveCandidates';
-import { formatReportNumber, parseDecimalInput } from '@/utils/reportNumber';
+import { formatReportNumber, localizeDecimalPoint, parseDecimalInput } from '@/utils/reportNumber';
 
 /** Pseudowaarden van de curve-dropdown voor de twee data-toestanden van de contour-engine:
  *  een opgeslagen contour (de dropdown is dan uitgeschakeld — loslaten gaat via het
@@ -27,28 +26,33 @@ const CONTOURED = '__contoured';
 const IMPORTED_CURVE = '__importedCurve';
 
 /**
- * Werkinvoer in uren die pas op Enter/blur commit — anders zou elke
- * toetsaanslag ("6" op weg naar "64") een eigen driehoekstap, undo-stap en contour-/venster-nazorg
- * afvuren. Ongeldig (≤ 0 of geen getal) ⇒ rode rand, geen commit, terug naar de getoonde waarde.
- * Getoond in de getalnotatie van de taal (`formatReportNumber`, zoals de duurkolom: nl "617,14");
- * invoer met komma of punt. Onveranderde tekst ⇒ geen commit, dus het exacte werk blijft staan.
+ * Getalinvoer (werk in uren, inzet per dag) die pas op Enter/blur commit — anders zou elke
+ * toetsaanslag ("6" op weg naar "64", of "1" op weg naar "1,71") een eigen driehoekstap, undo-stap en
+ * contour-/venster-nazorg afvuren. Ongeldig (≤ 0 of geen getal) ⇒ geen commit, terug naar de
+ * getoonde waarde. Getoond in de getalnotatie van de taal (`formatReportNumber`, zoals de duurkolom:
+ * nl "617,14"); invoer met komma of punt. Onveranderde tekst ⇒ geen commit, dus de exacte waarde
+ * (1.71428571428571, 37028,57 minuten) blijft staan.
  */
-function WorkHoursInput({ minutes, locale, onCommit, ariaLabel, title, className }: {
-  minutes: number; locale: string; onCommit: (hours: number) => void; ariaLabel: string; title: string; className: string;
+function DecimalCommitInput({ value, locale, onCommit, ariaLabel, title, className }: {
+  value: number; locale: string; onCommit: (n: number) => void; ariaLabel: string; title: string; className: string;
 }) {
   const [draft, setDraft] = useState<string | null>(null);
-  const formatted = formatReportNumber(minutes / 60, locale);
+  const formatted = formatReportNumber(value, locale);
   const shown = draft ?? formatted;
   const parsed = parseDecimalInput(shown);
   const unchanged = shown.trim() === formatted;
   const invalid = draft !== null && !unchanged && !(Number.isFinite(parsed) && parsed > 0);
+  // Enter en Escape verlaten het veld via blur; de blur is de enige commitplek, zodat Enter niet
+  // twee keer schrijft en Escape de draft niet alsnog vastlegt.
+  const cancelled = useRef(false);
   const commit = () => {
-    if (draft !== null && !unchanged && Number.isFinite(parsed) && parsed > 0) onCommit(parsed);
+    if (!cancelled.current && draft !== null && !unchanged && Number.isFinite(parsed) && parsed > 0) onCommit(parsed);
+    cancelled.current = false;
     setDraft(null);
   };
   const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') { e.preventDefault(); commit(); (e.target as HTMLInputElement).blur(); }
-    if (e.key === 'Escape') { setDraft(null); (e.target as HTMLInputElement).blur(); }
+    if (e.key === 'Enter') { e.preventDefault(); (e.target as HTMLInputElement).blur(); }
+    if (e.key === 'Escape') { cancelled.current = true; (e.target as HTMLInputElement).blur(); }
   };
   return (
     <input
@@ -59,6 +63,7 @@ function WorkHoursInput({ minutes, locale, onCommit, ariaLabel, title, className
       aria-label={ariaLabel}
       aria-invalid={invalid}
       className={className}
+      style={invalid ? { borderColor: 'var(--error)', boxShadow: '0 0 0 1px var(--error)' } : undefined}
       onChange={e => setDraft(e.target.value)}
       onBlur={commit}
       onKeyDown={onKeyDown}
@@ -203,9 +208,11 @@ export function TaskAssignmentsSection({ taskId }: { taskId: string }) {
                   </button>
                 </div>
                 <div className="flex items-center gap-1 min-w-0">
-                  <UnitsInput
+                  <DecimalCommitInput
                     value={a.unitsPerDay}
-                    title={`${t('properties.assignments.unitsPerDay')}: ${formatReportNumber(a.unitsPerDay, i18n.language)}`}
+                    locale={i18n.language}
+                    // De title draagt de volledige waarde (her-check #170), in het decimaalteken van de taal.
+                    title={`${t('properties.assignments.unitsPerDay')}: ${localizeDecimalPoint(String(a.unitsPerDay), i18n.language)}`}
                     ariaLabel={`${t('properties.assignments.unitsPerDay')} — ${res?.name ?? a.resourceId}`}
                     onCommit={n => updateAssignment(a.id, { unitsPerDay: n })}
                     className="input !text-small !px-1 !py-0.5 !w-[calc(var(--text-small)*5)] shrink-0 text-right"
@@ -214,8 +221,8 @@ export function TaskAssignmentsSection({ taskId }: { taskId: string }) {
                     <span className="w-[calc(var(--text-small)*5)] shrink-0 text-right text-text-secondary" data-ops-assignment-work="material">—</span>
                   ) : (
                     <span className="shrink-0 flex items-center gap-0.5" data-ops-assignment-work={a.remainingWorkMinutes !== undefined ? 'stored' : 'derived'}>
-                      <WorkHoursInput
-                        minutes={remainingMinutesShown(a.id, a.unitsPerDay, a.remainingWorkMinutes)}
+                      <DecimalCommitInput
+                        value={remainingMinutesShown(a.id, a.unitsPerDay, a.remainingWorkMinutes) / 60}
                         locale={i18n.language}
                         title={t('properties.assignments.workHint')}
                         ariaLabel={`${t('properties.assignments.work')} — ${res?.name ?? a.resourceId}`}
