@@ -1,7 +1,8 @@
 import { Task } from '@/types/task';
 import type { BaselineOverlay } from '@/types/baseline';
 import { Sequence } from '@/types/sequence';
-import type { ViewState, BarSplitMode, DurationDisplay, TimeNotation } from '@/types/view';
+import type { ViewState, BarSplitMode, DateNotation, DurationDisplay, TimeNotation } from '@/types/view';
+import { displayDateTime } from '@/utils/displayDate';
 import { formatAxisClock } from '@/utils/displayTime';
 import { parseDate, parseInstant, addCalendarDays, diffCalendarDays, isoDayOfWeek, getWeekNumberFor, utcDayStart, localNowOnDayAxis, MS_PER_DAY } from '@/utils/dateUtils';
 import { holidayEndDate, WorkCalendar } from '@/types/calendar';
@@ -132,6 +133,8 @@ export interface GanttRenderOptions {
   weekStartDay?: 'monday' | 'sunday';        // default 'monday'
   /** Instelling Tijdnotatie voor de tijdschaal Uur/Kwartier (`13:00` of `1 PM`). Default '24h'. */
   timeNotation?: TimeNotation;
+  /** Instelling Datumnotatie voor het statusdatumlabel (`20-09-2006`). Default 'dmy', zoals de app. */
+  dateNotation?: DateNotation;
   enableQuarterHourZoom?: boolean;            // default false
   /** Effectieve kalender per taak-id (`task.calendarId` → bibliotheek, anders
    *  projectkalender). Bepaalt per taak of hij uur-modus is (sub-dag-balkpositie) en levert de
@@ -807,6 +810,11 @@ export class GanttRenderer {
    *
    * Het vlakje staat rechts van de lijn, tenzij het dan buiten het canvas zou vallen — dan links.
    */
+  /** De tekst van het statusdatumlabel. Statisch en puur, zodat een check hem zonder canvas leest. */
+  static statusDateBadgeLabel(iso: string, dateNotation: DateNotation = 'dmy', timeNotation: TimeNotation = '24h'): string {
+    return displayDateTime(iso, dateNotation, timeNotation);
+  }
+
   private drawStatusDateBadge(): void {
     const iso = this.opts.statusDate;
     if (!iso) return;
@@ -816,7 +824,9 @@ export class GanttRenderer {
     const x = this.dateToX(parseDate(iso));
     if (x < 0 || x >= canvasWidth) return;
 
-    const label = iso.slice(0, 10);
+    // Datum in de Datumnotatie, plus de tijd in de Tijdnotatie als de statusdatum er een draagt
+    // (besluit eigenaar 2026-10-17): `20-09-2006 17:00`, niet de ruwe ISO-tekst.
+    const label = GanttRenderer.statusDateBadgeLabel(iso, this.opts.dateNotation, this.opts.timeNotation);
     this.ctx.save();
     const h = GanttRenderer.DRAG_BADGE_H;
     const w = this.pillWidth(label);
