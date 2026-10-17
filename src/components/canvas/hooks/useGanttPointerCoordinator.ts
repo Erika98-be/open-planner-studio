@@ -10,6 +10,7 @@ import { canSplitTask } from '@/engine/scheduler/splitEdit';
 import { isSummaryTask } from '@/engine/scheduler/relationRules';
 import type { Task } from '@/types/task';
 import { formatDate } from '@/utils/dateUtils';
+import { effHoursPerDay } from '@/utils/taskDuration';
 import type { GanttRenderer } from '@/engine/renderer/GanttRenderer';
 import type {
   GanttContextMenuState,
@@ -141,10 +142,11 @@ export function useGanttPointerCoordinator(
   });
 
   /** `null` = splitsbaar. De uren-per-dag komen uit dezelfde effectieve taakkalender die de
-   *  renderer en `setTaskSplits` gebruiken, zodat de cursor niet iets anders belooft dan de store
+   *  renderer en `setTaskSplits` gebruiken, met dezelfde werktijd per dag (`effHoursPerDay`, zoals
+   *  `taskCalendarHoursPerDay` in de store), zodat de cursor niet iets anders belooft dan de store
    *  toestaat. */
   const splitRefusalFor = useCallback((task: Task) => {
-    const hoursPerDay = (effectiveCalendarByTaskId.get(task.id) ?? calendar).hoursPerDay;
+    const hoursPerDay = effHoursPerDay(effectiveCalendarByTaskId.get(task.id) ?? calendar);
     return canSplitTask(task, hoursPerDay, isSummaryTask(task));
   }, [effectiveCalendarByTaskId, calendar]);
 

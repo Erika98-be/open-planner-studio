@@ -23,7 +23,7 @@ import { DEFAULT_WORK_RULE, type WorkRule } from '@/types/workRule';
 import { contourIndexForAssignment, taskWorkMinutes } from '@/engine/contour/contourEngine';
 import { resolveCalendar } from '@/engine/scheduler/resolveCalendar';
 import { taskDurationUnit } from '@/engine/scheduler/duration';
-import { effHoursPerDay } from '@/utils/taskDuration';
+import { effHoursPerDay, hourTaskScheduleDuration } from '@/utils/taskDuration';
 // `contourKeepsWork` en `effectiveEffortDriven`
 // lezen per-taak-herkomst (`mspTaskType`) van bewaarde data — bewerksemantiek, geen solverinvoer en
 // geen conventie. Ze wonen daarom in `utils/taskDefaults.ts`, buiten `src/engine/` (verify:conventions).
@@ -498,7 +498,7 @@ const NO_CALENDAR_CHANGE: CalendarSettle = { durationChanged: false, timephasedL
  * Kalenderwissel: aanroepen NÁDAT de kalender van de taak (of de
  * inhoud van haar kalender) is gewijzigd, met de momentopname van daarvóór. Alleen de slotgrootte
  * (uren per dag) telt; de restduur in dagen blijft, en de regel beslist (`applySlotChange`).
- * Uurtaken en een ongewijzigde slot ⇒ niets. Eén definitie voor store, raster, MCP, project-
+ * Uurtaken ⇒ alleen hun verborgen dagengetal volgt de nieuwe werktijd per dag; een ongewijzigde slot ⇒ niets. Eén definitie voor store, raster, MCP, project-
  * kalender, kalenderinhoud en de hele bibliotheek (`commitCalendarLibrary` = de kalenderdialoog,
  * `removeCalendar`; via `state/calendarTasks.ts`), inclusief de nazorg:
  *  - verandert de duur ⇒ `settleDurationAftermath` met de OUDE werkminuten als referentie (contour
@@ -517,7 +517,22 @@ export function settleCalendarChange(
   deps: WorkRuleDeps,
 ): CalendarSettle {
   const { triangle } = captured;
-  if (!triangle || isHourTask(task.time)) return NO_CALENDAR_CHANGE;
+  if (isHourTask(task.time)) {
+    // Een urentaak houdt haar werkminuten; alleen haar verborgen dagengetal volgt de werktijd per dag
+    // van de nieuwe kalender(inhoud) — zie `hourTaskScheduleDuration`. Een verzameltaak of hangmat
+    // krijgt haar duur uit de doorrekening (`writeDerivedSpan`) en blijft hier ongemoeid. (Immer
+    // markeert een toewijzing met dezelfde waarde niet als wijziging; een wachter is niet nodig.)
+    if (task.childIds.length === 0 && !task.isHammock) {
+      task.time.scheduleDuration = hourTaskScheduleDuration(task.time.durationMinutes,
+        resolveCalendar(task.calendarId, deps.calendars as WorkCalendar[], deps.calendar));
+      // De restduur in dagen heeft dezelfde vorm (`hourRemainingDays`); de restminuten blijven.
+      if (task.time.remainingTime !== undefined && task.time.remainingMinutes !== undefined) {
+        task.time.remainingTime = hourRemainingDays(task.time, task.time.remainingMinutes);
+      }
+    }
+    return NO_CALENDAR_CHANGE;
+  }
+  if (!triangle) return NO_CALENDAR_CHANGE;
   const ctx = workRuleContextOf(task, deps);
   const newSlot = slotMinutesOf(ctx);
   if (newSlot === triangle.state.slotMinutes) return NO_CALENDAR_CHANGE;
