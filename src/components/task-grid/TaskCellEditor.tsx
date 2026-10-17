@@ -20,7 +20,7 @@ import {
   type GridEditorInputProps,
 } from './GridEditorHost';
 import { controlKeyDown, RelationCellEditor } from './RelationCellEditor';
-import { formatReportNumber, parseDecimalInput } from '@/utils/reportNumber';
+import { formatReportNumber } from '@/utils/reportNumber';
 
 export interface CommitTaskCellEditorValueInput {
   adapter: TaskGridAdapter;
@@ -28,6 +28,12 @@ export interface CommitTaskCellEditorValueInput {
   text: string;
   directValue?: unknown;
   messageForError: (messageKey: string, error: CellValidationError) => string;
+}
+
+/** Komma of punt als decimaalteken, zoals de tekstparsers van de kolommen; leeg ⇒ NaN (geen stille 0). */
+function decimalFromText(text: string): number {
+  const trimmed = text.trim();
+  return trimmed === '' ? NaN : Number(trimmed.replace(',', '.'));
 }
 
 function errorId(cell: GridCellAddress): string {
@@ -330,7 +336,7 @@ export function TaskCellEditor({
                         const original = initialTokenByKey.get(tokenKey)?.unitsPerDay;
                         const unitsPerDay = original !== undefined && typed.trim() === formatReportNumber(original, numberLocale)
                           ? original
-                          : parseDecimalInput(typed);
+                          : decimalFromText(typed);
                         setNumberDrafts(current => ({ ...current, [tokenKey]: typed }));
                         setAssignmentTokens(current => current.map((item, itemIndex) => (
                           itemIndex === index ? { ...item, unitsPerDay } : item
@@ -352,7 +358,7 @@ export function TaskCellEditor({
                       onChange={event => {
                         const typed = event.currentTarget.value;
                         const original = initialTokenByKey.get(tokenKey)?.remainingWorkMinutes;
-                        const hours = parseDecimalInput(typed);
+                        const hours = decimalFromText(typed);
                         const remainingWorkMinutes = original !== undefined && typed.trim() === formatReportNumber(original / 60, numberLocale)
                           ? original
                           : Number.isFinite(hours) ? Math.round(hours * 60) : NaN;

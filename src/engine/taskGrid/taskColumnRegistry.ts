@@ -52,7 +52,7 @@ import {
 import { isStrictIsoDateTime } from '@/utils/dateUtils';
 import { isFiniteNumber } from '@/utils/guards';
 import { isManuallyScheduled } from '@/utils/manualScheduling';
-import { formatReportNumber, parseDecimalInput } from '@/utils/reportNumber';
+import { formatReportNumber } from '@/utils/reportNumber';
 
 export const TASK_COLUMN_CATEGORY_ORDER: readonly TaskColumnCategory[] = [
   'task', 'planning', 'constraints', 'relations', 'resources',
@@ -689,7 +689,7 @@ const parseAssignmentUnits: Parser = (text, task, ctx) => {
     if (separator <= 0) return failure('assignmentUnits', pair);
     const resolved = resolveAssignment(pair.slice(0, separator).trim(), task, ctx);
     const typed = pair.slice(separator + 1).trim();
-    const unitsPerDay = parseDecimalInput(typed);
+    const unitsPerDay = Number(typed.replace(',', '.'));
     if (!resolved.ok) return resolved;
     if (!Number.isFinite(unitsPerDay) || unitsPerDay <= 0) return failure('assignmentUnits', pair);
     if (seen.has(resolved.value.id)) return failure('assignmentDuplicateId', resolved.value.id);
@@ -744,7 +744,7 @@ const parseAssignmentWork: Parser = (text, task, ctx) => {
     if (separator <= 0) return failure('assignmentWork', pair);
     const resolved = resolveAssignment(pair.slice(0, separator).trim(), task, ctx);
     const typed = pair.slice(separator + 1).trim();
-    const hours = parseDecimalInput(typed);
+    const hours = Number(typed.replace(',', '.'));
     if (!resolved.ok) return resolved;
     if (!Number.isFinite(hours) || hours <= 0) return failure('assignmentWork', pair);
     if (seen.has(resolved.value.id)) return failure('assignmentDuplicateId', resolved.value.id);
@@ -1086,8 +1086,9 @@ function fixedAssignmentColumns(): TaskColumnDescriptor[] {
         ASSIGNMENT_CLIPBOARD_MARKER,
         assignmentTokens(task, ctx),
       ),
+      // Bewerktekst blijft exact (geen stille afronding bij Enter op de tekstroute).
       editText: (task, ctx) => assignments(task, ctx)
-        .map(item => `${assignmentLabel(item, ctx)}: ${unitsText(item.unitsPerDay, ctx.numberLocale)}`).join('; '),
+        .map(item => `${assignmentLabel(item, ctx)}: ${item.unitsPerDay}`).join('; '),
       parse: parseAssignmentUnits,
       validate: (value, task, ctx) => validateAssignmentTokens(value, task, ctx, 'assignmentUnits'),
       planWrite: (value, task) => success([{

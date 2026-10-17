@@ -2,6 +2,7 @@ import type { Page } from '@playwright/test';
 import { expect, seedProject, test } from './fixtures/ops';
 import { chooseLocale, LOCALE_CASES } from './fixtures/locale';
 
+// Alleen de tabel; het taakpaneel › Toewijzingen hoort bij PR #369.
 // Releasecheck (Roads_Project_TEC.xer, taal nl): de werkkolommen toonden "Draughtman: 617.14" en de
 // inzet "1.71428571428571" naast een duur "146,9d". Nu: de getalnotatie van de taal, hoogstens twee
 // decimalen. En bevestigen zonder wijziging schrijft niets: de exacte opgeslagen minuten en inzet
@@ -38,8 +39,7 @@ async function seed(page: Page): Promise<string> {
       ...columns.filter(c => !wanted.includes(c.id)),
       ...wanted.map(w => ({ id: w, width: 200, pinned: false })),
     ]);
-    g.setUI({ showPropertiesPanel: true, rightPanelCollapsed: false, showTaskTypes: true });
-    g.selectTask(id);
+    g.setUI({ showTaskTypes: true });
   }, { id: taskId, units: UNITS, work: WORK, actual: ACTUAL });
   return taskId;
 }
@@ -69,32 +69,12 @@ for (const locale of LOCALE_CASES.filter(l => l.code === 'nl' || l.code === 'en'
     const initial = await storeState(page, taskId);
     expect(initial).toMatchObject({ units: UNITS, planned: WORK, actual: ACTUAL, remaining: WORK });
 
-    // ── Taakpaneel › Toewijzingen ──
-    const row = page.locator('[data-ops-assignment-row]').first();
-    const unitsInput = row.locator('input').first();
-    const workInput = page.locator('[data-ops-assignment-work] input');
-    await expect(unitsInput).toHaveValue(dec('1.71'));
-    await expect(workInput).toHaveValue(dec('617.14'));
-    // Openen en bevestigen zonder wijziging: Tab (blur) op de inzet, Enter op het werk.
-    await unitsInput.click();
-    await page.keyboard.press('Tab');
-    await workInput.click();
-    await page.keyboard.press('Enter');
-    // De getoonde tekst opnieuw typen is ook geen wijziging.
-    await unitsInput.click();
-    await unitsInput.press('Control+a');
-    await unitsInput.pressSequentially(dec('1.71'));
-    await page.keyboard.press('Tab');
-    expect(await storeState(page, taskId)).toEqual(initial);
-
     // ── Tabel ──
     await page.getByRole('button', { name: /^(Table|Tabel)$/ }).click();
     await expect(cell(page, taskId, 'assignment.unitsPerDay')).toHaveText(`Draughtman: ${dec('1.71')}`);
     await expect(cell(page, taskId, 'assignment.plannedWork')).toHaveText(`Draughtman: ${dec('617.14')}`);
     await expect(cell(page, taskId, 'assignment.actualWork')).toHaveText(`Draughtman: ${dec('26.67')}`);
     await expect(cell(page, taskId, 'assignment.remainingWork')).toHaveText(`Draughtman: ${dec('617.14')}`);
-    // Zelfde notatie als de duurkolom in dezelfde tabel ("10d" heeft geen decimalen; de
-    // planned-kolom wel).
 
     // Cel openen (Enter) en bevestigen (Enter) zonder wijziging: inzet en resterend werk.
     for (const [column, kind, shown] of [

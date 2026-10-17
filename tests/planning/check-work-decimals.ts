@@ -8,7 +8,6 @@ import { renderToStaticMarkup } from 'react-dom/server.browser';
 import { TaskCellEditor } from '@/components/task-grid/TaskCellEditor';
 import { createTaskGridAdapter } from '@/engine/taskGrid/taskGridAdapter';
 import { taskColumnId } from '@/engine/taskGrid/fieldIds';
-import { parseDecimalInput } from '@/utils/reportNumber';
 import type { TaskAssignmentToken } from '@/types/taskGrid';
 import type { ResourceAssignment } from '@/types/resource';
 import type { Task } from '@/types/task';
@@ -75,8 +74,8 @@ eq('nl resterend werk: "240", niet "240,00"', cellText('nl', 'assignment.remaini
 eq('en resterend werk', cellText('en', 'assignment.remainingWork'), 'Draughtman: 617.14; Ploeg, Noord: 240');
 eq('nl begrote inzet', cellText('nl', 'assignment.plannedUnits'), 'Draughtman: 2,5');
 eq('zonder taal: neutrale punt-notatie', cellText(undefined, 'assignment.unitsPerDay'), 'Draughtman: 1.71; Ploeg, Noord: 0.5');
-eq('nl bewerktekst inzet volgt de getoonde notatie',
-  adapterFor('nl').getCell('occ-1', col('assignment.unitsPerDay'))?.editText, 'Draughtman: 1,71; Ploeg, Noord: 0,5');
+eq('bewerktekst inzet blijft exact (tekstroute rondt niet stil af)',
+  adapterFor('nl').getCell('occ-1', col('assignment.unitsPerDay'))?.editText, `Draughtman: ${UNITS}; Ploeg, Noord: 0.5`);
 
 // ── Kopiëren: mensentekst in de taal, tokens exact ─────────────────────────────────────────
 const copyNl = adapterFor('nl').getCell('occ-1', col('assignment.unitsPerDay'))!.copyText;
@@ -131,10 +130,6 @@ const workMarkup = renderToStaticMarkup(createElement(TaskCellEditor, {
 }));
 eq('cel-editor werk nl toont "617,14" en "240"',
   [...workMarkup.matchAll(/data-assignment-number="work"[^>]*value="([^"]*)"/g)].map(m => m[1]), ['617,14', '240']);
-
-// ── parseDecimalInput ──────────────────────────────────────────────────────────────────────
-eq('parseDecimalInput', ['617,14', '617.14', ' 2 ', ',5', '1,2,3', '', 'abc', '‎1,5', '1 000'].map(parseDecimalInput),
-  [617.14, 617.14, 2, 0.5, NaN, NaN, NaN, 1.5, NaN]);
 
 if (diffs.length) {
   for (const d of diffs) console.log(`XX  ${d}`);

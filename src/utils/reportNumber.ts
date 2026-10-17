@@ -86,15 +86,3 @@ export function localizeDecimalPoint(text: string, locale?: string): string {
   }
   return sep === '.' ? text : text.replace(/(\d)\.(\d)/g, `$1${sep}$2`);
 }
-
-/**
- * Leest een getal terug dat de gebruiker typt in de notatie van {@link formatReportNumber}: komma
- * óf punt als decimaalteken (nl "617,14", en "617.14"; beide worden in elke taal geaccepteerd, net
- * als de bestaande cel-parsers), zonder duizendtalscheiding. Bidi-markeringen (U+200E/U+200F) en
- * witruimte eromheen tellen niet. Geen getal ⇒ `NaN` (ook bij een lege tekst — nooit stil 0).
- */
-export function parseDecimalInput(text: string): number {
-  const cleaned = text.replace(/[‎‏]/g, '').trim().replace(/−/g, '-');
-  if (!/^[+-]?(\d+([.,]\d*)?|[.,]\d+)$/.test(cleaned)) return NaN;
-  return Number(cleaned.replace(',', '.'));
-}

@@ -184,7 +184,7 @@ for (const scale of [100, 125]) {
 
 // Her-check #170, punt 3: op 125 % toonde het inzetveld "0.267" afgekapt. De kolom schaalt nu met
 // de tekstrol mee (breedte in `--text-small`), en de title draagt de volledige waarde.
-test('toewijzingstabel: inzet 0.267 past (als 0.27) volledig in het veld op 125 % en staat in de title', async ({ page, ops: _ops }) => {
+test('toewijzingstabel: inzet 0.267 past volledig in het veld op 125 % en staat in de title', async ({ page, ops: _ops }) => {
   const [taskId] = await seedProject(page, [
     { name: 'Metselwerk', start: '2026-09-07', finish: '2026-09-10', durationDays: 4 },
   ]);
@@ -199,9 +199,7 @@ test('toewijzingstabel: inzet 0.267 past (als 0.27) volledig in het veld op 125 
     s.selectTask(id);
   }, taskId);
   const input = page.locator('[data-ops-assignment-row]').first().locator('input').first();
-  // Releasecheck werk/inzet: het veld toont hoogstens twee decimalen ("0.27"); de title houdt de
-  // volledige waarde.
-  await expect(input).toHaveValue('0.27');
+  await expect(input).toHaveValue('0.267');
   await expect(input).toHaveAttribute('title', /0\.267/);
   const fit = await input.evaluate((el: HTMLInputElement) => {
     const cs = getComputedStyle(el);
