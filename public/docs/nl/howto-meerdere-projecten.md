@@ -40,7 +40,7 @@ Sluit je het laatste project, dan blijft er een lege planning met de naam *Nieuw
 
 ### De wisselstijl kiezen
 
-De tabbladen zijn een keuze. Open het instellingenvenster met het tandwiel in de titelbalk, ga naar het tabblad *Weergave* en kies bij *Documentwissel-stijl*:
+De tabbladen zijn een keuze. Open het venster *App-instellingen* met het tandwiel in de titelbalk, ga naar het tabblad *Weergave* en kies bij *Documentwissel-stijl*:
 
 - *Horizontale tabbladen*: de standaard. Een rij tabbladen onder het lint.
 - *Verticale tabbladen*: een smalle balk links met een knop per project (de beginletters van de naam) en een plusje. Ga je met de muis op een knop staan, dan zie je naam, bestandsnaam, aantal taken, aantal kritieke taken en einddatum. De knop bovenaan opent het overzicht.
@@ -52,7 +52,7 @@ Alle drie de stijlen openen hetzelfde overzicht, en Ctrl+1 tot en met Ctrl+9 wer
 
 **Wat bij het project hoort en wat gedeeld is.** Bij elk project hoort zijn eigen beeld: zoom en positie, een actieve layout met filter, groepering of sortering, split view, de relatielijnen en de ingeklapte fasen. Wissel je naar een ander project, dan zie je daar zijn eigen beeld. Gedeeld voor alle projecten zijn het geselecteerde tabblad in het lint, de mini-map, de overlays (baseline-overlay, voortgangslijn en de rest), je kolomkeuze, je layouts en de rapportkeuzes.
 
-**Wisselen kan niet met een dialoog open.** Zolang er een dialoog openstaat, bijvoorbeeld het instellingenvenster of een taakvenster, doen Ctrl+1 tot en met Ctrl+9 niets in de app. In de browser wissel je dan van browsertabblad. Sluit eerst de dialoog. Een niet-toegepaste wijziging in *Projectinfo* in Backstage blokkeert wisselen ook.
+**Wisselen kan niet met een dialoog open.** Zolang er een dialoog openstaat, bijvoorbeeld het venster *App-instellingen* of een taakvenster, doen Ctrl+1 tot en met Ctrl+9 niets in de app. In de browser wissel je dan van browsertabblad. Sluit eerst de dialoog. Een niet-toegepaste wijziging in *Projectinstellingen* in Backstage blokkeert wisselen ook.
 
 **Ctrl+1 tot en met Ctrl+9 tellen op volgorde.** De sneltoets gaat naar het project op die plek in de rij. Sluit je een project, dan schuiven de andere plaatsen op. Heb je meer dan negen projecten open, dan bereik je de rest alleen via de tabbladen of het overzicht.
 

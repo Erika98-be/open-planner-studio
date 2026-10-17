@@ -45,7 +45,7 @@ A lead cannot put a task before the project start. If that would happen, the app
 
 ### In which calendar the lag counts
 
-Every task can have its own calendar. With a lag in work days it matters which calendar counts the work days. The setting *Lag calendar* decides that, with four choices: *Predecessor*, *Successor*, *24-hour* and *Project calendar*. By default the lag counts in the calendar of the **predecessor**. You find the setting under *Settings › Project › Project info*, in the block *Calculation profile and options*, at *Calculation options of this project*. The choice belongs to the project file and only counts after you click *Apply*; the schedule is then recalculated.
+Every task can have its own calendar. With a lag in work days it matters which calendar counts the work days. The setting *Lag calendar* decides that, with four choices: *Predecessor*, *Successor*, *24-hour* and *Project calendar*. By default the lag counts in the calendar of the **predecessor**. You find the setting under *Settings › Project › Project settings*, in the block *Calculation profile and options*, at *Calculation options of this project*. The choice belongs to the project file and only counts after you click *Apply*; the schedule is then recalculated.
 
 A lag in calendar days (`3ed`) always counts all days, whichever *Lag calendar* you choose.
 

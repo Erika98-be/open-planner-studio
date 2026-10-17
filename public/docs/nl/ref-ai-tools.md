@@ -43,7 +43,7 @@ Alle tools die een AI-assistent via de bridge kan aanroepen, per groep, met wat 
 
 ## Project en kalenders
 
-- `planner_update_project` (wijzigen) — naam, omschrijving, auteur, opdrachtgever, startdatum, einddatum, statusdatum, voortgangsmodus en de projectstandaard voor de werkregel. De startdatum is het anker voor nieuwe taken. Zet de assistent hem later, dan schuiven alleen losse taken mee (zonder voorganger en zonder constraint met een ondergrens, zoals *Start niet eerder dan*) en meldt het antwoord hoeveel als `anchorsClamped`; de rest van de planning blijft staan, zie [Nieuw project en Projectinfo](docs://ref-projectinfo). De statusdatum is geen label maar de peildatum van de berekening: op een planning zonder voortgang schuift alles mee. De einddatum is alleen metadata.
+- `planner_update_project` (wijzigen) — naam, omschrijving, auteur, opdrachtgever, startdatum, einddatum, statusdatum, voortgangsmodus en de projectstandaard voor de werkregel. De startdatum is het anker voor nieuwe taken. Zet de assistent hem later, dan schuiven alleen losse taken mee (zonder voorganger en zonder constraint met een ondergrens, zoals *Start niet eerder dan*) en meldt het antwoord hoeveel als `anchorsClamped`; de rest van de planning blijft staan, zie [Nieuw project en Projectinstellingen](docs://ref-projectinfo). De statusdatum is geen label maar de peildatum van de berekening: op een planning zonder voortgang schuift alles mee. De einddatum is alleen metadata.
 - `planner_move_project` (wijzigen) — de hele bestaande planning naar een nieuwe startdatum verschuiven. De kalenders schuiven niet mee, dus het einde kan met een ander aantal dagen verspringen dan de start. Baselines blijven staan, tenzij de assistent ze uitdrukkelijk mee laat schuiven. Zie [Project verplaatsen](docs://howto-project-verplaatsen).
 - `planner_update_calendar` (wijzigen, bulk) — kalenders wijzigen of aanmaken: werkdagen, werkuren, pauze, uurbanden, feestdagen (genereren voor een land en regio of letterlijk opgeven) en werkende uitzonderingen. Welke kalender de projectkalender is, kan hij niet wijzigen.
 
@@ -117,5 +117,5 @@ Per taak kan de assistent niet zetten: hammock, handmatig plannen, een tweede co
 
 - [Hoe de AI-koppeling werkt](docs://uitleg-ai-koppeling): waarom de bridge zo is ingericht en wat de assistent wel en niet mag.
 - [Een AI-assistent koppelen (MCP)](docs://howto-ai-assistent-koppelen): bridge starten, koppelen, skill installeren.
-- [Instellingen](docs://ref-instellingen): de twee AI-schakelaars.
+- [App-instellingen](docs://ref-instellingen): de twee AI-schakelaars.
 - [Meldingen en waarschuwingen](docs://ref-meldingen): de AI-bol in de statusbalk.

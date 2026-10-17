@@ -207,7 +207,8 @@ function NavItem({ icon, label, active, onClick, tourAnchor }: {
       {...(tourAnchor ? { 'data-tour-anchor': tourAnchor } : {})}
     >
       <span className="backstage-nav-icon">{icon}</span>
-      {label}
+      {/* De zijbalk is breed genoeg; een afbreekstreepje of regelafbreking uit een lintlabel hoort niet in de knopnaam. */}
+      {label.replace(/\u00ad/g, '').replace(/\s*\n\s*/g, ' ')}
     </button>
   );
 }
@@ -579,6 +580,7 @@ function SettingsSection() {
   const { t: tMenu } = useTranslation('menu');
   return (
     <>
+      {/* `ribbon.projectSettings` = App-instellingen; de sleutelnaam bleef bewust gelijk. */}
       <h2 className="backstage-title">{tMenu('ribbon.projectSettings')}</h2>
       <SettingsPanelContent />
     </>

@@ -52,10 +52,10 @@ Niet mee schuift:
 
 **De datum ligt in het verleden.** Dat mag, maar het voorbeeld meldt het: *De nieuwe startdatum ligt in het verleden.*
 
-**De projectstart wijzigen in Projectinfo is iets anders.** Pas je in *Instellingen › Project › Projectinfo* de startdatum aan en kies je *Toepassen*, dan verplaatst de planning niet. Alleen taken zonder voorganger of constraint die dan vóór de nieuwe start zouden liggen, schuiven naar die datum, en de app meldt hoeveel. Wil je alles verschuiven, gebruik dan *Project verplaatsen…*.
+**De projectstart wijzigen in Projectinstellingen is iets anders.** Pas je in *Instellingen › Project › Projectinstellingen* de startdatum aan en kies je *Toepassen*, dan verplaatst de planning niet. Alleen taken zonder voorganger of constraint die dan vóór de nieuwe start zouden liggen, schuiven naar die datum, en de app meldt hoeveel. Wil je alles verschuiven, gebruik dan *Project verplaatsen…*.
 
 ## Zie ook
 
 - [Kritiek pad en speling](docs://uitleg-kritiek-pad): hoe de planning rekent en waarom het einde schuift.
 - [Relaties leggen](docs://howto-relaties-leggen): de relaties blijven bij het verplaatsen gewoon bestaan.
-- [Nieuw project en Projectinfo](docs://ref-projectinfo): wat de startdatum in Projectinfo doet.
+- [Nieuw project en Projectinstellingen](docs://ref-projectinfo): wat de startdatum in Projectinstellingen doet.

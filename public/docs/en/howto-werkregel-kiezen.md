@@ -14,7 +14,7 @@ The rule decides which of the three quantities duration, units and work moves al
 
 The work rule is not shown by default. Turn it on once:
 
-1. Choose *Settings › Project › Settings*, tab *Planning*.
+1. Choose *Settings › Project › App settings*, tab *Planning*.
 2. Under the heading *Calculation*, tick *Show work rules and work*.
 3. Close the window with *Close*.
 

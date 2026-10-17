@@ -11,9 +11,9 @@ The ribbon at the top of the screen has tabs, and each tab has groups of buttons
 
 ## File
 
-Clicking *File* makes a screen of its own (the Backstage) take over the workspace. It has no ribbon. *Back* closes it. If you changed something under *Project info* and did not apply it, the app first asks what to do with it.
+Clicking *File* makes a screen of its own (the Backstage) take over the workspace. It has no ribbon. *Back* closes it. If you changed something under *Project settings* and did not apply it, the app first asks what to do with it.
 
-- **New** — opens the *New project* window and closes the Backstage. The fields are in [New project and Project info](docs://ref-projectinfo).
+- **New** — opens the *New project* window and closes the Backstage. The fields are in [New project and Project settings](docs://ref-projectinfo).
 - **Open** — picks a file and opens it as a document. Closes the Backstage.
 - **Recent** — a list of recently opened projects; a click opens one. Only visible when the environment can reopen files: in the desktop app and in browsers that offer file access, such as Chrome and Edge. In other browsers the button is there, but the page stays empty.
 - **Examples** — bundled example schedules, split into *Full showcase schedules* (badge *All features*) and *Simple examples*. A click opens one in a new tab.
@@ -22,8 +22,8 @@ Clicking *File* makes a screen of its own (the Backstage) take over the workspac
 - **Export** — cards per export format, with a description. A click converts the project and saves it, and takes you back to *Home*. If the schedule has a cycle, the error appears in the Backstage and you stay there. If the project is linked to a resource library, the checkbox *Save library file alongside* appears below; it only works for the IFC card.
 - **Import** — at the top the card *Update progress from a spreadsheet* (disabled without tasks), below it the importers that extensions add.
 - **Print** — the button *Open print preview* takes you to the *Report* tab.
-- **Project info** — the metadata and calculation profile of this project. Changes only take effect after *Apply*. See [New project and Project info](docs://ref-projectinfo) and [Calculation profiles and conventions](docs://uitleg-rekenprofielen).
-- **Settings** — the same settings as the *Settings* window.
+- **Project settings** — the metadata and calculation profile of this project. Changes only take effect after *Apply*. See [New project and Project settings](docs://ref-projectinfo) and [Calculation profiles and conventions](docs://uitleg-rekenprofielen).
+- **App settings** — the same settings as the *App settings* window.
 - **Extensions** — management and installation of extensions; see [Installing and managing an extension](docs://howto-extensie-installeren).
 - **Library** — management of resource libraries; see [Managing and sharing resource libraries](docs://howto-bibliotheken-beheren).
 - **Help** — the built-in documentation, also with F1. The search field searches titles, headings and the text itself. The articles are in four sections: *Tutorials*, *How-to guides*, *Explanation* and *Reference*. Under *Documentation language* you choose *Follow app language*, *Nederlands* or *English*. Help only exists in Dutch and English: if the app is in another language, you read the English version, with a notice. The choice is kept on this device, separately from the language of the app. You can also reach Help from a window or panel: many windows and the panels *Properties*, *Resources* and *Warnings* have a question mark at the top right (*Help on this topic*), which opens Help on the article about that window or panel. If you entered something in the window that is not saved yet, the app first asks *Save*, *Cancel* (discard your input) or *Back* (stay in the window); then the window closes and Help opens. A few windows, such as *Edit task* and *Level resources*, always ask. Without input, Help opens straight away.
@@ -46,14 +46,14 @@ Clicking *File* makes a screen of its own (the Backstage) take over the workspac
 
 ### Home › Tasks
 
-- **Task** — adds a task named *New task*, with a duration of 5 working days, starting on the project start. (If *Enable hour planning* is on and the *Default unit for new tasks* in *Project info* is hours, the duration is 5 hours.) If a task is selected and the view is the plain tree, it lands directly below the lowest selected task (tooltip *New task directly below the selection*). With no selection it goes at the bottom (tooltip *New task at the bottom of the list*). With a selection but while filtering, grouping or sorting, it also goes at the bottom and a strip says *Not available while filtering/grouping/sorting*. The new task becomes the only selection, the Gantt jumps to it and its name is ready to overwrite in the *Properties* panel.
+- **Task** — adds a task named *New task*, with a duration of 5 working days, starting on the project start. (If *Enable hour planning* is on and the *Default unit for new tasks* in *Project settings* is hours, the duration is 5 hours.) If a task is selected and the view is the plain tree, it lands directly below the lowest selected task (tooltip *New task directly below the selection*). With no selection it goes at the bottom (tooltip *New task at the bottom of the list*). With a selection but while filtering, grouping or sorting, it also goes at the bottom and a strip says *Not available while filtering/grouping/sorting*. The new task becomes the only selection, the Gantt jumps to it and its name is ready to overwrite in the *Properties* panel.
 - **Milestone ▾** — a drop-down that puts a milestone (duration 0) in the same place as *Task*. *Start milestone* and *Finish milestone* set the kind of milestone; the new milestone is named *New milestone* and gets task type *Other*. *Inspection point (mandatory)* makes a finish milestone with task type *Inspection* and the flag *Mandatory (contractual)*, named *New inspection point*.
 - **Link ▾** — a drop-down with four fixed actions; the main button never changes meaning. See *Planning › Relations* for the four actions.
 - **Split task** — turns split mode on or off. On: a strip under the ribbon explains that you click on a bar where the break starts and drag right for its length. Disabled when the Gantt is not in view (on the *Table*, *IFC* and *Report* tabs and under the full resource panel); the tooltip then says *Only available when the Gantt chart is visible*. See [Splitting a task](docs://howto-taak-splitsen).
 
 ### Home › Schedule
 
-- **Calculate** — calculates the schedule: dates, float, critical path and resource load. This never happens by itself, unless you turn on *Calculate automatically* (*Settings*, tab *Planning*, heading *Calculation*). While the schedule is out of date, the status bar says *Out of date — recalculate (F5)*.
+- **Calculate** — calculates the schedule: dates, float, critical path and resource load. This never happens by itself, unless you turn on *Calculate automatically* (*App settings*, tab *Planning*, heading *Calculation*). While the schedule is out of date, the status bar says *Out of date — recalculate (F5)*.
 
 ### Home › Zoom
 
@@ -152,7 +152,7 @@ This group is also on *Table* and *Report*.
 
 ### View › Display
 
-- **Columns…**, **Filter…**, **Group…** and **Sort…** — only visible when *Show classic view buttons* is on (*Settings*, tab *Advanced*, heading *Legacy features*). Default: off. *Columns…* takes you to *Table* and opens the column picker there. *Filter…* opens the filter window straight away as long as there is no saved filter; with saved filters it opens a menu with *Filter…*, *Clear* (only when a filter is active) and the saved filters. *Group…* allows two levels. *Sort…* allows more levels. A button lights up when that view setting is active. In the current ribbon you do this with layout buttons; see [Creating and using a layout](docs://howto-layouts-gebruiken).
+- **Columns…**, **Filter…**, **Group…** and **Sort…** — only visible when *Show classic view buttons* is on (*App settings*, tab *Advanced*, heading *Legacy features*). Default: off. *Columns…* takes you to *Table* and opens the column picker there. *Filter…* opens the filter window straight away as long as there is no saved filter; with saved filters it opens a menu with *Filter…*, *Clear* (only when a filter is active) and the saved filters. *Group…* allows two levels. *Sort…* allows more levels. A button lights up when that view setting is active. In the current ribbon you do this with layout buttons; see [Creating and using a layout](docs://howto-layouts-gebruiken).
 
 ### View › Outline
 
@@ -192,8 +192,8 @@ This group has the same name as the one on *Planning*, but holds the drawing opt
 
 ### Settings › Project
 
-- **Project info** — opens the *Project info* window: the metadata of the project and, in the block *Calculation profile and options*, how the project calculates. See [New project and Project info](docs://ref-projectinfo).
-- **Settings** — opens the *Settings* window with the tabs *Appearance*, *Planning* and *Advanced*. The same settings are under *File › Settings*.
+- **Project settings** — opens the *Project settings* window: the metadata of the project and, in the block *Calculation profile and options*, how the project calculates. See [New project and Project settings](docs://ref-projectinfo).
+- **App settings** — opens the *App settings* window with the tabs *Appearance*, *Planning* and *Advanced*. The same settings are under *File › App settings*.
 
 ### Settings › Calendar
 
@@ -223,7 +223,7 @@ The tab shows the IFC panel in the workspace. The ribbon has no buttons here, on
 
 ## AI
 
-The *AI* tab only exists when *Enable AI mode* is on (*Settings*, tab *Advanced*, heading *AI mode*). Default: off. Turning it off removes the tab and stops the bridge. An AI assistant works with your schedule through an MCP bridge that you start here. See [Connecting an AI assistant (MCP)](docs://howto-ai-assistent-koppelen).
+The *AI* tab only exists when *Enable AI mode* is on (*App settings*, tab *Advanced*, heading *AI mode*). Default: off. Turning it off removes the tab and stops the bridge. An AI assistant works with your schedule through an MCP bridge that you start here. See [Connecting an AI assistant (MCP)](docs://howto-ai-assistent-koppelen).
 
 ### AI › Server
 

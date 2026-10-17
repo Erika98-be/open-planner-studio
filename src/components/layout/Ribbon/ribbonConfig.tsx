@@ -833,6 +833,8 @@ const beeldTab: RibbonTabConfig = [
 const instellingenTab: RibbonTabConfig = [
   {
     id: 'project', labelKey: 'menu:ribbon.project',
+    // De sleutel- en item-ID's bleven bewust gelijk bij de hernoeming (besluit 2026-10-15):
+    // `projectInfo` = Projectinstellingen, `projectSettings` = App-instellingen.
     items: [
       {
         kind: 'button', id: 'projectInfo', icon: <Info size={20} />, labelKey: 'menu:ribbon.projectInfo',
