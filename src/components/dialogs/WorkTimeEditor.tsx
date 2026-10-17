@@ -40,7 +40,7 @@ export function bandEndAfterEdit(start: number, typed: number, nextDay: boolean)
  * Volledige banden-editor — achter "Per weekdag instellen…". Per ISO-weekdag een
  * lijst `{start,end}`-banden (tijdvelden volgens de instelling Tijdnotatie), een nachtploeg-toggle ("volgende dag" = band die
  * middernacht kruist, `end += 1440`), meerdere banden per dag (pauze), "kopieer naar alle
- * werkdagen" en de per-weekdag-som + afgeleide `hoursPerDay` als controlegetal.
+ * werkdagen" en de som per weekdag.
  *
  * Zuiver presentational: muteert alleen via `onChange` (buffer-model van de kalenderdialoog).
  */

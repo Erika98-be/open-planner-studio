@@ -20,7 +20,7 @@ You use hours for work that does not fit in whole days: a crane you hire for twe
 
 Every calendar has **working-time blocks** for each work day (called *bands* in the app). The standard calendar has 07:00 to 12:00 and 13:00 to 16:00. The gap is the break. The app derives those blocks from the calendar's *Start (hour)*, *End (hour)* and break; you do not have to set anything for it. If you set blocks of your own per weekday, those take precedence.
 
-The **net hours per day** are the sum of the blocks of a work day. If the work days differ in length, the most common daily total applies, and in a tie the highest. With four days of 8 hours and a Friday of 5 hours, the net hours per day are therefore 8. A calendar with its own hours per day (for example from Primavera P6) keeps that value, also when you change work days or blocks; only a preset sets it again.
+The **net hours per day** are the sum of the blocks of a work day. If the work days differ in length, the most common daily total applies, and in a tie the highest. With four days of 8 hours and a Friday of 5 hours, the net hours per day are therefore 8. A calendar with its own hours per day (for example from Primavera P6) also calculates with this daily total, and the calendar window shows it. Its own value is only kept for the export.
 
 ### A task in hours
 

@@ -243,6 +243,21 @@ test('netto-uren blijft in beide urenplanningstanden een afgeleide output', asyn
   await dialog.locator('[data-ops-cal-cancel]').click();
 });
 
+test('netto-uren toont een streepje als een eenvoudige kalender geen werkdag heeft', async ({ page, ops: _ops }) => {
+  // De solver weigert een kalender zonder werkdagen (`noWorkingDays`); het veld toont dan geen getal, ook
+  // niet de opgeslagen 8. Echte klikken op de dagknoppen; `__OPS__` opent alleen het venster en leest.
+  await page.evaluate(() => window.__OPS__!.store.getState().setUI({ showCalendarDialog: true, enableHourPlanning: false }));
+  const dialog = page.locator('[data-ops-calendar-dialog]');
+  const netHours = dialog.locator('[data-ops-simple-break-net-hours]');
+  await expect(netHours).toHaveText('8.00 h');
+  for (const day of ['Mon', 'Tue', 'Wed', 'Thu', 'Fri']) await dialog.getByRole('button', { name: day, exact: true }).click();
+  await expect(netHours).toHaveText('—');
+  await dialog.getByRole('button', { name: 'Mon', exact: true }).click();
+  await expect(netHours).toHaveText('8.00 h');
+  await dialog.locator('[data-ops-cal-cancel]').click();
+  expect(await page.evaluate(() => window.__OPS__!.store.getState().calendar.hoursPerDay)).toBe(8);
+});
+
 test('resourcekalender blokkeert lokaal ongeldige scalar-tijden zonder het model te muteren', async ({ page, ops: _ops }) => {
   const resourceCalendarId = await page.evaluate(() => {
     const s = window.__OPS__!.store.getState();

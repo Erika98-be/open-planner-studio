@@ -118,7 +118,8 @@ test('kalendervenster: ma t/m vr uit en dan Za aan geeft za de werkdag van het o
 
     const dialog = await openCalendarDialog(page);
     await clickDays(dialog, ['Mon', 'Tue', 'Wed', 'Thu', 'Fri']);
-    await expect(netHours(dialog)).toHaveText('8.00 h');
+    // Geen enkele dag met werktijd: het veld toont een streepje, niet de opgeslagen 8.
+    await expect(netHours(dialog)).toHaveText('—');
     await clickDays(dialog, ['Sat']);
     await expect(dialog.locator('[data-ops-worktime-day="6"]')).toContainText('10.00h');
     await expect(netHours(dialog)).toHaveText('10.00 h');
@@ -182,7 +183,7 @@ test('kalendervenster: na een preset volgen de uren per dag de blokken weer', as
   await dialog.getByRole('button', { name: '2 shifts', exact: true }).click();
   await expect(netHours(dialog)).toHaveText('16.00 h');
   await clickDays(dialog, ['Mon', 'Tue', 'Wed', 'Thu', 'Fri']);
-  await expect(netHours(dialog)).toHaveText('16.00 h');
+  await expect(netHours(dialog)).toHaveText('—');
   await dialog.locator('[data-ops-worktime-day="6"]').getByRole('button', { name: 'Add band', exact: true }).click();
   await expect(netHours(dialog)).toHaveText('8.00 h');
 

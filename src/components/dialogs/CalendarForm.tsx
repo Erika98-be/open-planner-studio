@@ -39,6 +39,13 @@ function minutesFromText(value: string): number | undefined {
   return /^\d+$/.test(value) && Number(value) <= 24 * 60 ? Number(value) : undefined;
 }
 
+/** Geen enkele dag met werktijd: bij werkblokken alle weekdagen leeg, anders geen werkdagen. De solver
+ *  weigert zo'n kalender (`noWorkingDays`), dus het veld toont dan geen getal. */
+function hasNoWorkTime(cal: WorkCalendar): boolean {
+  if (cal.workTime) return Object.values(cal.workTime.byWeekday).every(list => !list || list.length === 0);
+  return cal.workDays.length === 0;
+}
+
 /**
  * Presentational kalenderformulier (naam, werkdagen, uren, feestdagen) — kent geen store.
  * Hergebruikt door `CalendarDialog` (projectkalender) én `ResourceCalendarDialog`;
@@ -538,11 +545,8 @@ export function CalendarForm({
         </div>
       </div>
 
-      {/* Netto-uren zijn in elke kalenderstand uitsluitend een afleiding. Begin/einde/pauze bestaan
-          alleen bij een eenvoudige kalender; bij werkblokken bewerk je het blok Werktijden.
-          Het veld toont de werktijd per dag waarmee de app rekent (`effHoursPerDay`): bij werkblokken de
-          modale bandsom, live uit de draft. De opgeslagen `hoursPerDay` (P6-omrekenfactor) toont het venster
-          niet; die blijft ongewijzigd bewaard en gaat mee bij export. Besluit eigenaar 2026-10-15 (optie 1). */}
+      {/* Netto-uren tonen de werktijd waarmee de app rekent (`effHoursPerDay`), nooit de opgeslagen P6-factor;
+          zonder enige werkdag een streepje. Besluit eigenaar 2026-10-15 (optie 1). */}
       <div className="grid grid-cols-3 gap-3">
         {!hourMode && (
           <>
@@ -591,7 +595,7 @@ export function CalendarForm({
             aria-live="polite"
             data-ops-simple-break-net-hours
           >
-            {netHoursFormatter.format(effHoursPerDay(draft))} h
+            {hasNoWorkTime(draft) ? '—' : `${netHoursFormatter.format(effHoursPerDay(draft))} h`}
           </output>
         </div>
       </div>

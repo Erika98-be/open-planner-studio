@@ -32,7 +32,7 @@ Each preset does this:
 4. A block that runs past midnight, you tick with *next day*. The block counts for the day on which it begins.
 5. Click the bin behind a block to remove it. A day without blocks shows as *Non-working*.
 6. For a day from Monday to Friday, click the copy symbol (*Copy to all workdays*) to put the blocks of that day on Monday to Friday.
-7. At the bottom is *Derived hours/day:* with the net hours per day that the app derives from this. A calendar with its own hours per day (for example from Primavera P6) keeps that value, also when you change work days or blocks; only a preset sets it again. Click *Apply*.
+7. Above the *Working times* block is *Net hours per day*: the working time per day that the app derives from the blocks and calculates with. The number follows at once when you change the blocks. If the calendar has its own hours per day (for example from Primavera P6), that own value is kept and goes along with the export. The window does not show it. Click *Apply*.
 
 **Example: a free Friday afternoon.** Click *Set per weekday…*. Remove the second block (13:00 to 16:00) for *Fri*. Friday now has 5 hours, the other days 8. The *Net hours per day* stay 8.
 
