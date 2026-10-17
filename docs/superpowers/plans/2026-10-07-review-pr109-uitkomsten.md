@@ -1391,3 +1391,10 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   weg; ?-knop opent Help achter *Taak bewerken* ⇒ fixronde bij de maker. **Open voor de eigenaar:** telt voortgang die
   in de app geboekt is (bijv. 60 %) als "verricht werk" voor de waarschuwing? Nu alleen opgeslagen `actualWorkMinutes`
   (uit MSP/P6/XER); de belasting rekent voortgang wel als gedaan.
+- **Delta-review #368: JA na visuele check eigenaar**; laatste kleine punten bij de maker ("(geen)" wist een onbekend
+  code-id, commentaar bron = extensie-API, assertie).
+- **Review #371 ronde 3: NEE** — na alleen een naamwijziging in de modus + opslaan + heropenen schuiven taken stil
+  (MER-1: 89/120, taak 50 13-04 → 01-04; rehab-2 846/6976), strijdig met "een bewerkt bestand opent zoals je het
+  achterliet". Fix: `recordedSourceFormat` (alleen geschreven bij opslaan in de modus) als teken om weer in de modus te
+  openen; wijkt af van heropen-beleid optie B (#167) ⇒ in de PR-tekst en bij de check aan de eigenaar melden.
+  Ook `taskType`/`customTaskTypeId`/`workRule` datum-neutraal op alle routes. MCP draait altijd `runCPM` (bewust).
