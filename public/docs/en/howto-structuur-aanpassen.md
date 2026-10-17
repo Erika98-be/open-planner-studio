@@ -35,7 +35,7 @@ Each move is one step for *Undo* (Ctrl+Z).
 
 Look at the *WBS auto* button in *Planning › Structure*.
 
-- **On (the default in a new project).** Also on after you open a file without this setting, if all WBS codes already match the numbering of the tree (1, 1.1, 1.2 …). The codes do not change. The app renumbers the whole tree with every addition, deletion and move. The WBS code is then read-only: you cannot type it in the list or in the *Properties* panel. *Renumber WBS* is disabled.
+- **On (the default in a new project).** Also on after you open a file without this setting, if all WBS codes already match the numbering of the tree (1, 1.1, 1.2 …). The codes do not change. An empty file without this setting also gets *on*, just like a new project. The app renumbers the whole tree with every addition, deletion and move. The WBS code is then read-only: you cannot type it in the list or in the *Properties* panel. *Renumber WBS* is disabled.
 - **Off.** The default in a file with its own codes, such as *A1000*, or with one code that differs from the tree. The codes stay as they are, also after moving and indenting. You type them yourself, in the *WBS* column or in the *WBS Code* field in *Properties*, or you have them renumbered once with *Renumber WBS*. That also overwrites codes you typed yourself.
 
 If you turn *WBS auto* on, the app numbers the tree at once. Both *WBS auto* and *Renumber WBS* can be reversed with *Undo*.

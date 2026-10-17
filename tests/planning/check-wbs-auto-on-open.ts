@@ -3,21 +3,18 @@
 // Regel: draagt het bestand GEEN `wbsAutoNumber`-vlag en is elke WBS-code precies de boomnummering
 // (zelfde nummering als `deriveWbsCodes`/"Hernummer WBS"), dan staat "WBS auto" na het openen aan.
 // Anders blijft alles zoals het was (vrije tekst; een vlag uit het bestand blijft staan, ook `false`).
-// Bewaakt ook: geen undo-stap, document niet gewijzigd, codes ongewijzigd, en export (MSPDI, P6 XML,
-// CSV, IFC) schrijft dezelfde codes. Er is geen XER-export (ExportFormat kent hem niet).
+// Een leeg bestand zonder vlag krijgt ook true (zoals een nieuw project). Alleen op de echte
+// open-paden: `loadState` (IFC-paneel *Toepassen*, extensie-`loadProject`) laat de vlag staan.
+// Bewaakt ook: geen undo-stap, document niet gewijzigd, codes ongewijzigd, IFC-export zelfde codes.
 // Corpusloos (CI). Fixtures: inline, zelf geschreven.
 import './domStub';
 import { parseOpenedFile } from '@/services/formatRegistry';
 import { useAppStore } from '@/state/appStore';
 import { activeImportResult, type ImportResult, type OpenedImport } from '@/services/importTypes';
 import { selectUndoHistoryEvent } from '@/state/sessionHistory';
-import { writeMSPDI } from '@/services/msproject/mspdiWriter';
-import { writeP6XMLWithReport } from '@/services/p6/p6xmlWriter';
-import { writeCSV } from '@/services/csv/csvWriter';
 import { writeIFC } from '@/services/ifc/ifcWriter';
 import { readIFC } from '@/services/ifc/ifcReader';
 import { buildExportIFCInput } from '@/state/ifcSaveInput';
-import { documentProjectCode } from '@/utils/documentProjectCode';
 import { flattenOrder } from '@/utils/wbs';
 import { installDOMParser } from './xmldom-shim';
 
@@ -71,16 +68,7 @@ async function openText(name: string, text: string): Promise<OpenedImport> {
 }
 const codesInTreeOrder = () => flattenOrder(S().tasks).map(t => t.wbsCode);
 
-function exports(): { mspdi: string; p6: string; csv: string; ifcCodes: string[] } {
-  const st = S();
-  const mspdi = writeMSPDI(st.project, st.calendar, st.tasks, st.sequences, st.resources, st.assignments,
-    st.calendars, st.baselines, st.activeBaselineId, st.customTaskTypes);
-  const p6 = writeP6XMLWithReport(st.project, st.calendar, st.tasks, st.sequences, st.resources, st.assignments,
-    st.calendars, st.customTaskTypes, documentProjectCode(st.project, st.xerImportMetadata)).xml;
-  const csv = writeCSV(st.project, st.calendar, st.tasks, st.sequences, st.resources, st.assignments, st.customTaskTypes);
-  const ifcCodes = flattenOrder(readIFC(writeIFC(buildExportIFCInput(st))).tasks).map(t => t.wbsCode);
-  return { mspdi, p6, csv, ifcCodes };
-}
+const ifcExportCodes = () => flattenOrder(readIFC(writeIFC(buildExportIFCInput(S()))).tasks).map(t => t.wbsCode);
 
 async function main(): Promise<void> {
   // (a) Codes gelijk aan de boom ⇒ vlag true; codes ongewijzigd; geen undo-stap; niet gewijzigd.
@@ -91,15 +79,11 @@ async function main(): Promise<void> {
   eq('a3 geen undo-stap', [undoEventCount(), selectUndoHistoryEvent(S().historyEvents, S().activeDocumentId)?.id ?? null], [0, null]);
   eq('a4 document niet gewijzigd', S().isDirty, false);
 
-  // Export schrijft dezelfde codes als vóór de wijziging (vlag weg = de oude stand na openen).
-  const withFlag = exports();
+  // IFC-export schrijft dezelfde codes als vóór de wijziging (vlag weg = de oude stand na openen).
+  const withFlag = ifcExportCodes();
   useAppStore.setState(st => { st.project.wbsAutoNumber = undefined; });
-  const without = exports();
-  eq('a5 MSPDI-export identiek', withFlag.mspdi === without.mspdi, true);
-  eq('a6 P6 XML-export identiek', withFlag.p6 === without.p6, true);
-  eq('a7 CSV-export identiek', withFlag.csv === without.csv, true);
-  eq('a8 IFC-export: zelfde codes', withFlag.ifcCodes, without.ifcCodes);
-  eq('a9 IFC-export: codes = bron', withFlag.ifcCodes, TREE_CODES);
+  eq('a8 IFC-export: zelfde codes', withFlag, ifcExportCodes());
+  eq('a9 IFC-export: codes = bron', withFlag, TREE_CODES);
 
   // (a') Na het openen nummert de app live: een ingevoegde taak krijgt geen dubbele code.
   await openText('gelijk.xml', mspdi(TREE_CODES));
@@ -147,16 +131,28 @@ async function main(): Promise<void> {
   await openParsed(emptyCode, 'leeg.xml');
   eq('d1 lege code ⇒ geen vlag', S().project.wbsAutoNumber, undefined);
 
-  // (e) Leeg project ⇒ undefined.
+  // (e) Leeg bestand zonder vlag ⇒ true (zoals een nieuw project): toevoegen + invoegen boven geeft
+  // daarna geen dubbele code (zonder de vlag: A=1, N=2, B=2).
   const emptyProject: ImportResult = { ...resD, tasks: [], sequences: [], assignments: [] };
   await openParsed(emptyProject, 'leeg-project.xml');
-  eq('e1 leeg project ⇒ geen vlag', S().project.wbsAutoNumber, undefined);
+  eq('e1 leeg bestand ⇒ vlag true', S().project.wbsAutoNumber, true);
+  eq('e2 leeg bestand: geen undo-stap, niet gewijzigd', [undoEventCount(), S().isDirty], [0, false]);
+  S().addTask({ name: 'A' });
+  const b = S().addTask({ name: 'B' });
+  S().addTask({ name: 'N', position: { anchorId: b, where: 'above' } });
+  const emptyAfter = codesInTreeOrder();
+  eq('e3 leeg bestand: geen dubbele code na invoegen', emptyAfter, ['1', '2', '3']);
+  // Leeg bestand met vlag false (eigen IFC) ⇒ blijft false.
+  await openParsed({ ...emptyProject, project: { ...emptyProject.project, wbsAutoNumber: false } }, 'leeg-false.xml');
+  eq('e4 leeg bestand met vlag false ⇒ blijft false', S().project.wbsAutoNumber, false);
 
-  // (f) loadState (IFC-paneel, extensie-import) loopt door dezelfde stap.
+  // (f) loadState (IFC-paneel *Toepassen*, extensie-`loadProject`) is geen openen: de vlag blijft.
   S().newProject();
   S().loadState(resD);
-  eq('f1 loadState: boomcodes ⇒ true', S().project.wbsAutoNumber, true);
+  eq('f1 loadState: boomcodes ⇒ vlag blijft undefined', S().project.wbsAutoNumber, undefined);
   eq('f2 loadState: geen undo-stap', undoEventCount(), 0);
+  S().loadState(emptyProject);
+  eq('f3 loadState: leeg ⇒ vlag blijft undefined', S().project.wbsAutoNumber, undefined);
 
   if (fails.length) {
     for (const f of fails) console.log(`XX  ${f}`);

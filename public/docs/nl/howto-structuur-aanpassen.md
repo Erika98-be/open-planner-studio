@@ -35,7 +35,7 @@ Elke verplaatsing is één stap voor *Ongedaan* (Ctrl+Z).
 
 Kijk in *Planning › Structuur* naar de knop *WBS auto*.
 
-- **Aan (standaard in een nieuw project).** Ook aan na het openen van een bestand zonder deze instelling, als alle WBS-codes al gelijk zijn aan de nummering van de boom (1, 1.1, 1.2 …). De codes veranderen dan niet. De app nummert de hele boom opnieuw bij elke toevoeging, verwijdering en verplaatsing. De WBS-code is dan alleen-lezen: in de lijst en in het paneel *Eigenschappen* kun je hem niet typen. *Hernummer WBS* is uitgeschakeld.
+- **Aan (standaard in een nieuw project).** Ook aan na het openen van een bestand zonder deze instelling, als alle WBS-codes al gelijk zijn aan de nummering van de boom (1, 1.1, 1.2 …). De codes veranderen dan niet. Een leeg bestand zonder deze instelling krijgt ook *aan*, net als een nieuw project. De app nummert de hele boom opnieuw bij elke toevoeging, verwijdering en verplaatsing. De WBS-code is dan alleen-lezen: in de lijst en in het paneel *Eigenschappen* kun je hem niet typen. *Hernummer WBS* is uitgeschakeld.
 - **Uit.** Standaard in een bestand met eigen codes, zoals *A1000*, of met één code die afwijkt van de boom. De codes blijven staan zoals ze zijn, ook na verplaatsen en inspringen. Je typt ze zelf, in de kolom *WBS* of in het veld *WBS Code* in *Eigenschappen*, of je laat ze één keer opnieuw nummeren met *Hernummer WBS*. Dat overschrijft ook codes die je zelf getypt hebt.
 
 Zet je *WBS auto* aan, dan nummert de app de boom meteen. Zowel *WBS auto* als *Hernummer WBS* is met *Ongedaan* terug te draaien.

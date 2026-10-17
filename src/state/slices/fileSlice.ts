@@ -778,10 +778,11 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
       const payload = payloadFromImport(uniqueParsed, filePath);
       // WBS auto bij het openen (eigenaarsbesluit 2026-10-17): één generieke stap voor élk
       // formaat, op de geïsoleerde payload vóór publicatie. Daardoor geen undo-stap en blijft
-      // `isDirty` false — het hoort bij het openen. Bewust hier en niet in `payloadFromImport`:
-      // die bouwt ook het crashherstel (`payloadFromInput`), en dat moet de opgeslagen staat
-      // exact terugzetten.
-      payload.project = inferWbsAutoNumberOnOpen(payload.project, payload.tasks);
+      // `isDirty` false — het hoort bij het openen. Alleen op de echte open-paden (`linkedOpen`:
+      // `openAsDocument`), niet bij `loadState` (IFC-paneel *Toepassen*, extensie-
+      // `loadProject`: die mogen het project niet stil veranderen). Bewust niet in
+      // `payloadFromImport`: die bouwt ook het crashherstel (`payloadFromInput`).
+      if (opts.linkedOpen) payload.project = inferWbsAutoNumberOnOpen(payload.project, payload.tasks);
       payload.view = opts.viewStartDate === undefined
         ? { ...current.view }
         : { ...current.view, viewStartDate: opts.viewStartDate };

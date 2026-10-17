@@ -540,8 +540,9 @@ export interface Project {
    * "Hernummer WBS"-actie. Nieuwe projecten krijgen true; geladen bestanden zonder vlag blijven op
    * vrije tekst (MSP-stabiliteitsmodel: codes in omloop worden niet stilzwijgend herschreven).
    * Uitzondering (eigenaarsbesluit 2026-10-17): zijn bij het openen ALLE codes al precies de
-   * boomnummering, dan zet de openroute de vlag op true — er wordt dan niets herschreven
-   * (`inferWbsAutoNumberOnOpen` in `utils/wbs.ts`, aangeroepen in `applyLoadedProject`).
+   * boomnummering (of is het bestand leeg), dan zet de openroute de vlag op true — er wordt dan
+   * niets herschreven (`inferWbsAutoNumberOnOpen` in `utils/wbs.ts`, alleen op de open-paden van
+   * `applyLoadedProject`, niet bij `loadState`).
    */
   wbsAutoNumber?: boolean;
   /** P6 "data date": de grens verleden/toekomst. undefined = geen statusdatum. Gezet ⇒ restwerk
