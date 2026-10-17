@@ -22,7 +22,8 @@ import './domStub';
 //     een andere dag heeft dan de taakkalender (Roads: 85 toewijzingen, 8 daarvan zo); de dagtaak blijft.
 //  §8 MSPDI-baseline van een urentaak: `<Baseline><Duration>` 1870 u, heropend weer 187 d; ook als de kalender
 //     na heropenen 8 u/dag houdt (#366, §8b); een oude baseline (233,75 d) gaat als 1870 u (§8c); een nieuwe
-//     baseline van een taak die daarna × 0,8 korter werd, blijft 10 u / 100 u en krijgt geen ⚠ (§8d).
+//     baseline van een taak die daarna × 0,8 korter werd, blijft 10 u / 100 u en krijgt geen ⚠ (§8d); een oude
+//     baseline van een taak die daarna × 1,25 langer werd, houdt ⚠ en gaat als 1870 u (§8e).
 import { readXER } from '@/services/xer/xerReader';
 import { readXerArchiveIFC as readIFC } from './xerArchiveTestReader';
 import { writeIFC } from '@/services/ifc/ifcWriter';
@@ -349,6 +350,25 @@ const loadCtx = openInStore(await parseOpenedFile({ name: 'dag-is-werktijd.xer',
     same(`§8d nieuwe baseline ${before}, daarna ${after}: baseline ${wantDays} d, geen ⚠, MSPDI-baseline ${wantMsp}`,
       [bt.duration, a.time.durationMinutes, warn, baselineDuration(block)],
       [wantDays, Number.parseInt(after, 10) * 60, false, wantMsp]);
+  }
+
+  // §8e De spiegel van §8d: een OUDE baseline (233,75 d), daarna wordt de taak langer met precies de factor
+  // werktijd ÷ opgeslagen (10 ÷ 8): 1870 u → 2337,5 u = 233,75 × 600 min. De huidige minuten passen dan bij
+  // de nieuwe telling, maar de span van de baseline past bij de oude en beslist: ⚠, en de MSPDI-baseline
+  // blijft 1870 u (233,75 × 8). Zonder span-voorrang verdween de afwijking in MS Project (PT2337H30M0S).
+  {
+    const e = openInStore(await parseOpenedFile({ name: 'oude-baseline.ifc', text: oldIfc }));
+    gridDuration(e, 'A', '2337.5h');
+    quiet(() => e.store.getState().runCPM());
+    const st = e.store.getState();
+    const a = taskIn(e, 'A');
+    const bt = st.baselines[0]!.tasks.find((x) => x.taskId === a.id)!;
+    const warn = createBaselineOldDayCheck(st.calendar, st.calendars)(a, bt);
+    const out = quiet(() => writeMSPDI(st.project, st.calendar, st.tasks, st.sequences, st.resources, st.assignments, st.calendars,
+      st.baselines, st.activeBaselineId));
+    const block = [...out.matchAll(/<Task>([\s\S]*?)<\/Task>/g)].map((x) => x[1]).find((x) => x.includes('<Name>Lange urentaak</Name>'));
+    same('§8e oude baseline 233,75 d, daarna 1870 u → 2337,5 u: ⚠ blijft, MSPDI-baseline PT1870H0M0S',
+      [bt.duration, a.time.durationMinutes, warn, baselineDuration(block)], [233.75, 140250, true, 'PT1870H0M0S']);
   }
 }
 

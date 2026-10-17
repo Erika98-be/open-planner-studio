@@ -13,7 +13,7 @@ import './domStub';
 //  §1 oude telling ⇒ ⚠ (A); een dagtaak ⇒ geen ⚠ (D).
 //  §2 nieuwe baseline (zelfde taak, nieuwe telling 187 d) ⇒ geen ⚠.
 //  §3 twee maatstaven: de huidige werkminuten (vangt ook een gestarte taak) en de baselinespan (vangt een
-//     latere duurwijziging); ⚠ alleen als oud ergens past en nieuw nergens (symmetrisch).
+//     latere duurwijziging); de span beslist als hij bij een telling past, anders de werkminuten.
 //  §4 een kalender waarvan de opgeslagen uren per dag gelijk zijn aan de blokken (of minder dan één minuut
 //     per dag afwijken) ⇒ geen ⚠.
 //  §5 het raster (echte adapter): ⚠ in Baselineduur en Duurafwijking van "Oud", nergens anders.
@@ -96,8 +96,10 @@ same('§2 nieuwe telling ⇒ geen ⚠', check(A, snapshotOf(A.id, newBaseline)),
   // Geen van beide past ⇒ geen ⚠:
   same('§3 duur gewijzigd én onderbreking ⇒ geen ⚠', check(changed, { ...old, finish: '2027-04-27T17:00' }), false);
   same('§3 een duur die bij geen van beide telt (200 d) ⇒ geen ⚠', check(A, { ...old, duration: 200 }), false);
-  same('§3 nieuwe baseline, daarna duur × 0,8 (1496 u = 187 × 480 min): oud past via a, nieuw via b ⇒ geen ⚠',
+  same('§3 nieuwe baseline, daarna duur × 0,8 (1496 u = 187 × 480 min): de span past bij de nieuwe telling ⇒ geen ⚠',
     check({ ...A, time: { ...A.time, durationMinutes: 89760 } }, snapshotOf(A.id, newBaseline)), false);
+  same('§3 oude baseline, daarna duur × 1,25 (2337,5 u = 233,75 × 600 min): de span past bij de oude telling ⇒ ⚠',
+    check({ ...A, time: { ...A.time, durationMinutes: 140250 } }, old), true);
   same('§3 nieuwe baseline van een gestarte taak (187 d, span 5 werkdagen) ⇒ geen ⚠',
     check(A, { ...snapshotOf(A.id, newBaseline), finish: '2026-08-07T17:00' }), false);
 }
