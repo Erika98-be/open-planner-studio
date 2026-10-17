@@ -19,8 +19,8 @@ import { formatDecimalInput, parsePositiveDecimal } from '@/utils/decimalInput';
  *   Escape gaan ongemoeid naar `onKeyDown` (rasternavigatie, `useLiveGridNav`). Met: het veld commit
  *   op Enter, blur of unmount, en alleen als de gebruiker echt iets anders typte dan er stond. Een
  *   half getypt getal ("1.234" op weg naar "1.234,5") komt dus nooit in de store, en focussen en
- *   verlaten laat een geïmporteerde 1.77777777777778 exact staan. Enter commit en gaat daarna door
- *   naar een omringende handler (de taakdialoog slaat dan op, zoals vroeger). Escape met een draft
+ *   verlaten laat een geïmporteerde 1.77777777777778 exact staan. Enter commit en verlaat het veld;
+ *   een omringende dialoog slaat dan niet op (zoals het duurveld). Escape met een draft
  *   zet alleen dit veld terug (de toets stopt hier); Escape zonder draft gaat door (sluit de
  *   dialoog).
  */
@@ -88,8 +88,12 @@ export function UnitsInput({
       data-ops-grid-cell={gridCell}
       onKeyDown={e => {
         if (commitOnBlur && e.key === 'Enter') {
+          // Enter is van dit veld: commit en verlaat het veld (Ctrl+Z is daarna de app-undo). De
+          // taakdialoog slaat op Enter bewust NIET op (`preventDefault` ⇒ `useDialogKeys` slaat
+          // over), gelijk aan het duurveld en het werkveld op main.
+          e.preventDefault();
           flush();
-          setDraftState(null);
+          e.currentTarget.blur();
         } else if (commitOnBlur && e.key === 'Escape' && draftRef.current !== null) {
           // Lokale betekenis: alleen dit veld terugzetten, niet de dialoog sluiten.
           e.stopPropagation();

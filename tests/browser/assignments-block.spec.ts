@@ -162,13 +162,15 @@ test('keuzelijsten: geen native select; curve, verplaatsen en toewijzen werken m
   await expect(curve).toHaveAttribute('aria-expanded', 'false');
   expect((await assignmentOf(page, unitsId))!.curve).toBe('UNIFORM');
 
-  // Verplaatsen met het toetsenbord: focus bouwt de lijst, Enter opent, Enter kiest Voegwerk.
+  // Verplaatsen met het toetsenbord: focus bouwt de lijst, Enter opent. Een lijst met plaatshouder
+  // opent zonder actieve optie (#370): Enter kiest dan niets, eerst Pijl-omlaag naar Voegwerk.
   const move = page.locator(`[data-ops-assignment-row="${warnId}"] [data-ops-assignment-move]`);
   const moveTrigger = move.getByRole('button');
   await moveTrigger.focus();
   await expect(move).toHaveAttribute('data-ops-assignment-move', 'open');
   await page.keyboard.press('Enter');
   await expect(page.getByRole('listbox').getByRole('option')).toHaveCount(1);
+  await page.keyboard.press('ArrowDown');
   await page.keyboard.press('Enter');
   await expect.poll(async () => (await assignmentOf(page, warnId))!.taskId).toBe(otherId);
   await expect(block).toHaveCount(1);
@@ -178,10 +180,11 @@ test('keuzelijsten: geen native select; curve, verplaatsen en toewijzen werken m
   await add.click();
   await page.getByRole('listbox').getByRole('option', { name: 'Opperman' }).click();
   await expect(block).toHaveCount(2);
-  // En met het toetsenbord: Foreman.
+  // En met het toetsenbord: Foreman (plaatshouder ⇒ geen actieve optie, eerst Pijl-omlaag).
   await add.focus();
   await page.keyboard.press('Enter');
   await expect(page.getByRole('listbox').getByRole('option')).toHaveCount(1);
+  await page.keyboard.press('ArrowDown');
   await page.keyboard.press('Enter');
   await expect(block).toHaveCount(3);
   const names = await page.evaluate((id) => {
@@ -374,7 +377,9 @@ test('taakdialoog: Escape met een draft zet alleen het veld terug, de tweede Esc
   expect((await assignmentOf(page, unitsId))!.units).toBe(EXACT);
 });
 
-test('taakdialoog: Enter in het inzetveld commit en slaat op, zoals vroeger', async ({ page, ops: _ops }) => {
+// Bewuste keuze (fixronde 2): Enter is van het veld, zoals het duurveld en het werkveld. De dialoog
+// blijft open; Opslaan of Enter buiten een veld slaat op.
+test('taakdialoog: Enter in het inzetveld commit het veld, de dialoog blijft open', async ({ page, ops: _ops }) => {
   const { taskId, unitsId } = await seedBlock(page, 280);
   const dialog = await openDialogFor(page, taskId);
   const units = dialog.locator(`[data-ops-assignment-row="${unitsId}"] input`).first();
@@ -382,8 +387,9 @@ test('taakdialoog: Enter in het inzetveld commit en slaat op, zoals vroeger', as
   await units.press('Control+a');
   await page.keyboard.type('3');
   await page.keyboard.press('Enter');
-  await expect(dialog).toHaveCount(0);
-  expect((await assignmentOf(page, unitsId))!.units).toBe(3);
+  await expect.poll(async () => (await assignmentOf(page, unitsId))!.units).toBe(3);
+  await expect(units).not.toBeFocused();
+  await expect(dialog).toBeVisible();
 });
 
 test('inzet: één teken wissen en terugtypen rondt de opslag niet af', async ({ page, ops: _ops }) => {

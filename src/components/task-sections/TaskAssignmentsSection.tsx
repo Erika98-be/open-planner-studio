@@ -246,9 +246,10 @@ export function TaskAssignmentsSection({ taskId }: { taskId: string }) {
                         options={curveOptions}
                         fitWidestOption
                         onChange={v => {
-                          // Dezelfde keuze opnieuw is geen wijziging: `updateAssignment` met `curve`
-                          // wist de geïmporteerde exacte curve (`curveValues`, P6/MSPDI).
-                          if (v === curveValue) return;
+                          // Dezelfde keuze opnieuw komt hier niet: `Select` roept zonder
+                          // `onReselect` geen `onChange` aan. Belangrijk, want `updateAssignment` met
+                          // `curve` wist de geïmporteerde exacte curve (`curveValues`, P6/MSPDI); de
+                          // spec "dezelfde curve opnieuw" bewaakt dat.
                           if (v === CONTOURED || v === IMPORTED_CURVE) return;
                           updateAssignment(a.id, { curve: v as ResourceCurve });
                         }}
