@@ -4,6 +4,7 @@ import { useAppStore } from '@/state/appStore';
 import type { ResourceCurve } from '@/types/resource';
 import { UnitsInput } from '@/components/common/UnitsInput';
 import { Select, type SelectOption } from '@/components/common/Select';
+import { localizeDecimalPoint } from '@/utils/reportNumber';
 import { AlertTriangle, BarChart3, Lock, Trash2 } from 'lucide-react';
 import { RESOURCE_CURVES, CURVE_KEY } from './shared';
 import { isSummaryTask } from '@/utils/taskHierarchy';
@@ -205,7 +206,9 @@ export function TaskAssignmentsSection({ taskId }: { taskId: string }) {
                   <UnitsInput
                     value={a.unitsPerDay}
                     locale={i18n.language}
-                    title={`${t('properties.assignments.unitsPerDay')}: ${a.unitsPerDay}`}
+                    commitOnBlur
+                    // De exacte opgeslagen waarde, met het decimaalteken van de taal.
+                    title={`${t('properties.assignments.unitsPerDay')}: ${localizeDecimalPoint(String(a.unitsPerDay), i18n.language)}`}
                     ariaLabel={`${t('properties.assignments.unitsPerDay')} — ${res?.name ?? a.resourceId}`}
                     onCommit={n => updateAssignment(a.id, { unitsPerDay: n })}
                     className="input !text-small !px-1 !py-0.5 !h-6 !w-[calc(var(--text-small)*5)] shrink-0 text-right"
@@ -216,22 +219,26 @@ export function TaskAssignmentsSection({ taskId }: { taskId: string }) {
                     <span className="shrink-0 flex items-center" data-ops-assignment-work={a.remainingWorkMinutes !== undefined ? 'stored' : 'derived'}>
                       {/* Werk in uren: zelfde veld als de inzet. Het commit pas op Enter/blur —
                           anders zou elke toetsaanslag ("6" op weg naar "64") een eigen
-                          driehoekstap, undo-stap en contour-nazorg afvuren. */}
+                          driehoekstap, undo-stap en contour-nazorg afvuren. Opslag is in hele
+                          minuten: wat afrondt tot 0 minuten ("0,004" uur) is ongeldig, niet een
+                          stille weigering in `setAssignmentWork`. */}
                       <UnitsInput
                         value={remainingHoursOf(a.id, a.unitsPerDay, a.remainingWorkMinutes)}
                         title={t('properties.assignments.workHint')}
                         ariaLabel={`${t('properties.assignments.work')} — ${res?.name ?? a.resourceId}`}
                         onCommit={hours => setAssignmentWork(a.id, Math.round(hours * 60))}
+                        accepts={hours => Math.round(hours * 60) >= 1}
+                        commitOnBlur
                         className="input !text-small !px-1 !py-0.5 !h-6 !w-[calc(var(--text-small)*5)] text-right"
                         locale={i18n.language}
                       />
                     </span>
                   ))}
-                  {/* `min-w-0` op de groep én de omhulling: bij een smal paneel met een grote
-                      tekstschaal (uk/ru/pl op 125 %) krimpt de trigger met een ellips in plaats van
-                      buiten het paneel te vallen. */}
-                  <div className="flex min-w-0 max-w-full items-center gap-1" data-ops-assignment-curve-group>
-                    <div className="min-w-0" title={contoured ? t('properties.assignments.contouredHint') : t('properties.assignments.curve')} data-ops-assignment-curve={curveValue}>
+                  {/* Bewust GEEN `shrink-0` op de groep of de omhulling: bij een smal paneel met een
+                      grote tekstschaal (uk/ru/pl op 125 %) mag de groep dan krimpen, en de trigger
+                      krimpt met een ellips in plaats van buiten het paneel te vallen. */}
+                  <div className="flex items-center gap-1" data-ops-assignment-curve-group>
+                    <div title={contoured ? t('properties.assignments.contouredHint') : t('properties.assignments.curve')} data-ops-assignment-curve={curveValue}>
                       <Select
                         value={curveValue}
                         disabled={contoured}

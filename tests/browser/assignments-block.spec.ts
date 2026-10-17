@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test';
-import { expect, seedProject, test, waitForOps, waitForWelcomeDialog } from './fixtures/ops';
+import { barPoint, expect, seedProject, test, waitForOps, waitForWelcomeDialog } from './fixtures/ops';
 
 // Het blok *Toewijzingen* in het taakpaneel (eigenaar 2026-10-15, testversie met Roads A10530):
 // 1. de inzet toont hooguit twee decimalen; de opgeslagen waarde blijft exact tot de gebruiker hem
@@ -316,4 +316,103 @@ test('curve: bij 200 px en 125 % in uk valt de knop binnen het paneel', async ({
   await curve.click();
   await page.getByRole('listbox').locator('[data-value="BELL"]').click();
   await expect.poll(async () => (await assignmentOf(page, unitsId))!.curve).toBe('BELL');
+});
+
+// Een taakwissel verwijdert de rij vóór de browser een blur stuurt. De getypte waarde moet dan
+// toch in de store landen (op main commitde de inzet per toetsaanslag; het werkveld verloor hem al).
+for (const via of ['raster', 'gantt'] as const) {
+  for (const field of ['inzet', 'werk'] as const) {
+    test(`taakwissel via ${via}: getypte ${field} zonder Enter blijft bewaard`, async ({ page, ops: _ops }) => {
+      const { otherId, unitsId, warnId } = await seedBlock(page, 280);
+      const input = field === 'inzet'
+        ? page.locator(`[data-ops-assignment-row="${unitsId}"] input`).first()
+        : page.locator(`[data-ops-assignment-row="${warnId}"] [data-ops-assignment-work] input`);
+      await input.click();
+      await input.press('Control+a');
+      await page.keyboard.type(field === 'inzet' ? '3' : '200');
+      if (via === 'raster') {
+        await page.locator('.full-task-grid-name-label', { hasText: 'Voegwerk' }).first().click();
+      } else {
+        const p = await barPoint(page, otherId);
+        await page.mouse.click(p.x, p.y);
+      }
+      await expect.poll(() => page.evaluate(() => window.__OPS__!.store.getState().selectedTaskIds)).toEqual([otherId]);
+      if (field === 'inzet') {
+        await expect.poll(async () => (await assignmentOf(page, unitsId))!.units).toBe(3);
+      } else {
+        await expect.poll(async () => (await assignmentOf(page, warnId))!.work).toBe(200 * 60);
+      }
+    });
+  }
+}
+
+async function openDialogFor(page: Page, taskId: string) {
+  await page.evaluate((id) => window.__OPS__!.store.getState().setUI({ showTaskDialog: true, editingTaskId: id }), taskId);
+  const dialog = page.locator('[data-ops-task-dialog]');
+  await expect(dialog).toBeVisible();
+  // TaskDialog zet kort na openen de focus op het naamveld; wacht daarop.
+  await expect(dialog.locator('input:focus')).toHaveCount(1);
+  return dialog;
+}
+
+test('taakdialoog: Escape met een draft zet alleen het veld terug, de tweede Escape sluit', async ({ page, ops: _ops }) => {
+  const { taskId, unitsId } = await seedBlock(page, 280);
+  const dialog = await openDialogFor(page, taskId);
+  const units = dialog.locator(`[data-ops-assignment-row="${unitsId}"] input`).first();
+  const shown = await units.inputValue();
+  await units.click();
+  await units.press('Control+a');
+  await page.keyboard.type('3');
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeVisible();
+  await expect(units).toHaveValue(shown);
+  expect((await assignmentOf(page, unitsId))!.units).toBe(EXACT);
+  // Zonder draft is Escape weer van de dialoog.
+  await units.click();
+  await page.keyboard.press('Escape');
+  await expect(dialog).toHaveCount(0);
+  expect((await assignmentOf(page, unitsId))!.units).toBe(EXACT);
+});
+
+test('taakdialoog: Enter in het inzetveld commit en slaat op, zoals vroeger', async ({ page, ops: _ops }) => {
+  const { taskId, unitsId } = await seedBlock(page, 280);
+  const dialog = await openDialogFor(page, taskId);
+  const units = dialog.locator(`[data-ops-assignment-row="${unitsId}"] input`).first();
+  await units.click();
+  await units.press('Control+a');
+  await page.keyboard.type('3');
+  await page.keyboard.press('Enter');
+  await expect(dialog).toHaveCount(0);
+  expect((await assignmentOf(page, unitsId))!.units).toBe(3);
+});
+
+test('inzet: één teken wissen en terugtypen rondt de opslag niet af', async ({ page, ops: _ops }) => {
+  const { unitsId } = await seedBlock(page, 280);
+  const units = page.locator(`[data-ops-assignment-row="${unitsId}"] input`).first();
+  await units.click();
+  await page.keyboard.press('End');
+  await page.keyboard.press('Backspace');
+  await page.keyboard.type('8');
+  await page.keyboard.press('Enter');
+  await page.keyboard.press('Tab');
+  expect((await assignmentOf(page, unitsId))!.units).toBe(EXACT);
+});
+
+test('werk: een waarde die tot 0 minuten afrondt is ongeldig', async ({ page, ops: _ops }) => {
+  const { warnId } = await seedBlock(page, 280);
+  const work = page.locator(`[data-ops-assignment-row="${warnId}"] [data-ops-assignment-work] input`);
+  await work.click();
+  await work.press('Control+a');
+  await page.keyboard.type('0,004');
+  await expect(work).toHaveAttribute('aria-invalid', 'true');
+  await page.keyboard.press('Tab');
+  expect((await assignmentOf(page, warnId))!.work).toBe(306 * 60);
+  await expect(work).toHaveAttribute('aria-invalid', 'false');
+  // Eén minuut (1/60 uur ≈ 0,017) mag wel.
+  await work.click();
+  await work.press('Control+a');
+  await page.keyboard.type('0,02');
+  await expect(work).toHaveAttribute('aria-invalid', 'false');
+  await page.keyboard.press('Tab');
+  await expect.poll(async () => (await assignmentOf(page, warnId))!.work).toBe(1);
 });
