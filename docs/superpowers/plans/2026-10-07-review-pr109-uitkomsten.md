@@ -1335,3 +1335,15 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
 - Open voor de eigenaar: plek van de instelling *Taaktypes gebruiken* (App-instellingen › Planning › Berekenen) niet
   beoordeeld; #366-punt: verborgen opgeslagen uren per dag bepaalt de export-omrekening terwijl de i-tekst van
   *Standaard werkdag* zegt dat de app daarmee een dag omrekent.
+- **Checkstap 37 #170/E3 (werkvelden alleen bij afwijkend werk, Roads): beeld klopt** (eigenaar vond de kolommen via
+  het zoekveld van *Kolommen…*). Oordeel eigenaar 2026-10-17, letterlijk: "ik vind dat je dat wel moet kunnen zien en
+  dat als je een edit aan de taak maakt moet je gevraagd worden of die resterende werk nog steeds geld of niet denk ik."
+  ⇒ (a) bewaard vs. berekend restwerk zichtbaar maken; (b) bij een bewerking van een taak met bewaard restwerk vragen of
+  het nog geldt. Onderzoek gestart (huidig gedrag + eerdere besluiten + MSP/P6); voorstel volgt. Bevinding (eigen fix,
+  worker `claude/werk-decimalen`): werkvelden en inzet tonen een punt en geen afronding in nl.
+- **#366 fixronde klaar** (kop a87634f64, CI 16/16 groen; bijgewerkt met 06aa45071) ⇒ hercheck reviewer.
+- **#362 hercheck: JA na visuele check eigenaar in de echte desktopapp** (muiswiel + touchpad boven lijst en beide
+  balken; Broadway bewijst het GL-pad niet). Blokkade WebKitGTK weg (GTK3/webkit2gtk-4.1 en GTK4 gemeten). Kleine fixes
+  (store-wacht slikt sprong, claim Shift+wiel, opruimen) ⇒ worker. **Keuze eigenaar:** Shift+wiel boven de verticale
+  balk schuift in de PR horizontaal, op main (WebKitGTK) verticaal.
+- Eigenaar weg om ~19:25; werk stopt vóór 00:00 (zondag). Agents hebben een harde grens 23:15.
