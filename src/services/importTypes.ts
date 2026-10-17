@@ -278,12 +278,12 @@ export interface ImportResult {
    *    NIET door deze app is geschreven): standaard AAN zodra er restverschillen zijn.
    *  - HEROPENING — `'xer-archive'` (eigen IFC mét XER-bronarchief) en `'ifc-own'` (eigen IFC
    *    zonder archief): automatisch AAN alleen zolang het document sinds de import niet is
-   *    bewerkt (`importPristine`, hieronder); anders uitsluitend het AANBOD — een intussen
-   *    bewerkte en opgeslagen planning mag bij heropenen niet stilzwijgend de oude brondatums
-   *    tonen.
+   *    bewerkt (`importPristine`, hieronder); anders VERGEET de app de opgeslagen datums — een
+   *    intussen bewerkte en opgeslagen planning mag bij heropenen niet stilzwijgend de oude
+   *    brondatums tonen (er is geen aanbod-stand meer, eigenaar 2026-10-17, optie 1).
    *  - `undefined`: geen herkomst (bv. een extensie-importer).
    *  BEPERKT: alleen een bron met echte
-   *  rekenuitvoer krijgt de modus, het aanbod of de melding — zie de ene poort
+   *  rekenuitvoer krijgt de modus of de melding — zie de ene poort
    *  `recordedDatesSource` (`src/state/documentActivation.ts`). 'csv', `undefined`, een 'ifc' met
    *  alleen ScheduleStart/-Finish en een 'ifc-own' zonder `recordedSourceFormat` vallen erbuiten.
    *  `applyRecordedDatesOnLoad` (`src/state/documentActivation.ts`) is de enige plek die op dit

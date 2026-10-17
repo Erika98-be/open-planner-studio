@@ -158,9 +158,15 @@ console.log('-- (d) heropenen: eigen IFC, bibliotheek intussen gewijzigd --');
   fridayOff(f);
   f.S().applyOpenedImport(readXerArchiveIFC(ifc), { filePath: '/tmp/v1.ifc', recompute: true, fit: false, hourDataNotice: false, linkedOpen: true });
   eq('d0 voorwaarde: de open-grens ververste de kalender', f.S().calendar.workDays, [1, 2, 3, 4]);
-  eq('d1 strook (aanbod) telt NA de verversing: 3', strip(f), 3);
-  f.S().showRecordedDates();
-  eq('d2 "Opgeslagen datums tonen": modus aan met hetzelfde getal', [f.S().datesAsRecorded, f.S().scheduleStale, strip(f)], [true, false, 3]);
+  // Het bestand is sinds de import bewerkt (koppeling aan de bibliotheek): heropenen VERGEET de
+  // opgeslagen datums — er is geen aanbod-stand meer (eigenaar, 2026-10-17, optie 1).
+  eq('d1 bewerkt bestand: geen vastlegging, geen modus', [f.S().recordedDates, f.S().datesAsRecorded], [null, false]);
+  // Hetzelfde bestand als ONBEWERKT (vlag aan) opent wél in de modus; de strook telt dan NA de
+  // verversing.
+  f.S().newProject();
+  f.S().applyOpenedImport({ ...readXerArchiveIFC(ifc), importPristine: true }, { filePath: '/tmp/v1.ifc', recompute: true, fit: false, hourDataNotice: false, linkedOpen: true });
+  eq('d2 onbewerkt: modus aan, strook telt NA de verversing: 3', [f.S().datesAsRecorded, f.S().scheduleStale, strip(f)], [true, false, 3]);
+  eq('d2b de lijst per taak hoort bij hetzelfde getal', f.S().recordedDates?.shiftedTaskIds?.length, 3);
   eq('d3 strookgetal = wat F5 echt verschuift', strip(f), realF5Shift(f));
 }
 
