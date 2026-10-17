@@ -2,9 +2,32 @@
  * Zit de toetsenbordfocus in een tekst- of keuzeveld? Dan horen globale sneltoetsen de toets niet
  * te kapen. Eén definitie voor alle toetsenbordhooks: eerder kende de zoomhook `<select>` niet
  * (−/+/0 zoomden terwijl een keuzelijst focus had) en het sneltoetsregister geen contentEditable.
+ *
+ * De eigen keuzelijst (`Select`) is een knop met `aria-haspopup="listbox"`. Die telt ook als
+ * keuzeveld: anders verwijderen Delete en Backspace de geselecteerde taak, zoomen − en 0 de Gantt en
+ * heft Escape de taakselectie op terwijl de gebruiker in de keuzelijst zit. De open lijst van
+ * `Select` krijgt nooit focus (de focus blijft op de trigger, met `aria-expanded="true"`); andere
+ * lijsten met `role="listbox"` vallen hier bewust NIET onder.
+ *
+ * Eén uitzondering (besluit orkestrator 2026-10-15): op een DICHTE trigger gaan combinaties met
+ * Ctrl/Meta wél door, behalve Delete en Backspace. Na een muiskeuze staat de focus weer op de
+ * trigger, en een planner die verkeerd kiest drukt meteen Ctrl+Z; dat mag geen extra klik vragen.
+ * In een open lijst blijft alles afgevangen. In een modale dialoog (`aria-modal="true"`) geldt de
+ * uitzondering niet: daar staat de keuze in het concept van de dialoog, niet in de store, dus
+ * Ctrl+Z of Ctrl+V zou iets achter de dialoog veranderen.
  */
-export function isTypingTarget(target: EventTarget | null): boolean {
+export function isTypingTarget(
+  target: EventTarget | null,
+  event: Pick<KeyboardEvent, 'key' | 'ctrlKey' | 'metaKey'>,
+): boolean {
   if (!(target instanceof HTMLElement)) return false;
   const tag = target.tagName;
-  return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || target.isContentEditable;
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || target.isContentEditable) return true;
+  const trigger = target.closest('[aria-haspopup="listbox"]');
+  if (!trigger) return false;
+  const closed = trigger.getAttribute('aria-expanded') !== 'true';
+  const inModal = trigger.closest('[aria-modal="true"]') !== null;
+  if (closed && !inModal && (event.ctrlKey || event.metaKey)
+    && event.key !== 'Delete' && event.key !== 'Backspace') return false;
+  return true;
 }

@@ -61,7 +61,7 @@ import type {
   Task, TaskConstraint, TaskSplitGap, MspTaskType, TaskTimephasedContour, TimephasedContourPeriod,
 } from '@/types/task';
 import type { WorkCalendar } from '@/types/calendar';
-import { hourTaskScheduleDuration } from '@/utils/taskDuration';
+import { effHoursPerDay, hourTaskScheduleDuration } from '@/utils/taskDuration';
 import type { Resource, ResourceType } from '@/types/resource';
 import type { ImportLabels, ImportResult } from '@/services/importTypes';
 import { generateId } from '@/utils/id';
@@ -744,7 +744,7 @@ export function readTasks(ctx: ReadTasksContext): ReadTasksResult {
       (raw.finishTs != null && hasNonAnchorTime(formatInstant(raw.finishTs, 'hour'), anchor));
     if (durSignal || dateSignal) cSignalCals.add(cal);
   }
-  const hourModeCals = promoteCalendarsForHourMode(calResult.calendarByUniqueId, cSignalCals);
+  const hourModeCals = promoteCalendarsForHourMode(calResult.calendarByUniqueId, cSignalCals, calResult.fileHoursPerDay);
 
   // ── Fase C: de `Task`-objecten, met de nu bekende dag/uur-beslissing per taak. ─────────────────
   const taskIdByUniqueId = new Map<number, string>();
@@ -755,10 +755,9 @@ export function readTasks(ctx: ReadTasksContext): ReadTasksResult {
   for (const raw of raws) {
     const cal = raw.effCal;
     const isHour = hourModeCals.has(cal);
-    const effHpd = cal.hoursPerDay;
 
     // Duur: uur ⇒ minuten (bron van waarheid, geen dag-afronding); dag ⇒ werkdagen op de
-    // PROJECT-brede `hoursPerDay` (niet `effHpd`, zie de moduleheader). `durationMinutes` is
+    // PROJECT-brede `hoursPerDay` (niet die van de taakkalender, zie de moduleheader). `durationMinutes` is
     // klok-neutraal (een minuut is een minuut); de solver past ELAPSEDTIME 24/7 toe (`duration.ts`).
     // Beperkingen daar: MSO/MFO-snaps op een ELAPSEDTIME-taak (`CPMSolver.hardPinStart`) en de
     // vrije-speling-eenheid bij een elapsed voorganger (`scheduleAnalysis.ts`).
@@ -913,7 +912,8 @@ export function readTasks(ctx: ReadTasksContext): ReadTasksResult {
         if (tenths === null) return undefined;
         return raw.isElapsedDuration
           ? recordedFloatDays(tenths / 10, 24 * 60)
-          : recordedFloatDays(tenths / 10, (isHour ? effHpd : hoursPerDay) * 60);
+          // Urentaak: werktijd per dag, zoals XER (`readXerRecordedTimes`) — niet MINUTES_PER_DAY.
+          : recordedFloatDays(tenths / 10, (isHour ? effHoursPerDay(cal) : hoursPerDay) * 60);
       };
       const totalSlackRaw = mppTotalSlackTenths(raw.actualStartTs !== null, raw.startSlackRaw, raw.finishSlackRaw);
       const totalFloat = slackDays(totalSlackRaw);
@@ -1583,7 +1583,8 @@ export function readMPP(bytes: Uint8Array, labels?: ImportLabels): ImportResult 
   // (c)-signaal en promoveert ze daarna in-place (zelfde object-referenties), dus `calendar` en
   // `calResult.resourceCalendars` zijn na `readTasks` volledig gepromoveerd.
   // `calendarHoursPerDayOverride` (alleen bij een geldige MINUTES_PER_DAY) spiegelt mspdiReader's
-  // MinutesPerDay-override op de projectkalender in `readCalendars`.
+  // MinutesPerDay-override op de projectkalender in `readCalendars`; ook na de promotie blijft hij staan
+  // (`promoteCalendarsForHourMode`), zodat `.mpp` en MSPDI van hetzelfde project dezelfde kalender geven.
   const calResult = readCalendars(cfb, projectProps, applicationVersion, calendarHoursPerDayOverride);
   const calendar = calResult.projectCalendar;
   project.calendarId = calendar.id;
