@@ -42,7 +42,7 @@ Per bestandsformaat: of je het kunt openen, opslaan en exporteren, wat er wel en
 
 **Wat niet meegaat** — aantekeningen (de checklist bij een taak), externe koppelingen naar andere projecten, activiteitcodes en eigen velden, een tweede constraint, de markering *Handmatig gepland*, de nivelleervertraging, het hervat- en stoppunt bij een uit-volgorde-taak, de conventies *Restwerk hervat na de al verstreken duur* en *Niet-gestarte taken niet naar de statusdatum* van een MS Project-profiel, en de overige reken-opties. Onderbroken taken zonder urenverdeling gaan zonder hun onderbrekingen mee.
 
-**Wat verandert onderweg** — een constraint *Moet starten op (MSO)* of *Moet eindigen op (MFO)* zonder de keuze *Verplicht (pin logica)* wordt *Start niet eerder dan (SNET)* of *Eindig niet eerder dan (FNET)*. Een hammock wordt een gewone taak met berekende datums.
+**Wat verandert onderweg** — een constraint *Moet starten op (MSO)* of *Moet eindigen op (MFO)* zonder de keuze *Verplicht (pin logica)* wordt *Start niet eerder dan (SNET)* of *Eindig niet eerder dan (FNET)*. Een hammock wordt een gewone taak met berekende datums. MS Project XML kent de uren per dag alleen voor de projectkalender. Een andere kalender met eigen uren per dag krijgt bij openen de werktijd als uren per dag: 8 uur per dag bij werktijden van 10 uur wordt 10. Een taak in dagen op zo'n kalender wordt dan korter, bijvoorbeeld 4 dagen in plaats van 5.
 
 ## MS Project-bestand (`.mpp`)
 

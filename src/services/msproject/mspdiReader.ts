@@ -3,7 +3,7 @@ import { Sequence, SequenceType } from '@/types/sequence';
 import { Resource, ResourceAssignment } from '@/types/resource';
 import { Project } from '@/types/project';
 import { WorkCalendar } from '@/types/calendar';
-import { hourTaskScheduleDuration } from '@/utils/taskDuration';
+import { effHoursPerDay, hourTaskScheduleDuration } from '@/utils/taskDuration';
 import { createDefaultCalendar } from '@/engine/calendar/defaultCalendar';
 import { Baseline, BaselineTask } from '@/types/baseline';
 import { generateId } from '@/utils/id';
@@ -252,7 +252,7 @@ export function readMSPDI(content: string): ImportResult {
   // Eén gedeeld `HolidayBudget` over ALLE kalenders in dit document (projectkalender + elke
   // resourcekalender) — zie `applyCalendarBody`.
   const holidayBudget = newHolidayBudget();
-  const { calendar, resourceCalendars, calUidToId } = readCalendars(root, holidayBudget);
+  const { calendar, resourceCalendars, calUidToId, projectFileHoursPerDay } = readCalendars(root, holidayBudget);
   const hoursPerDay = calendar.hoursPerDay;
 
   // Resources
@@ -332,6 +332,9 @@ export function readMSPDI(content: string): ImportResult {
   // MSPDI valt terug op de scalar-synth zodra de geregistreerde canonical geen werkdag draagt
   // (preferCanonicalWhenEmpty = false) — zie `promoteHourCalendar`.
   const hourModeCalIds = promoteHourCalendars(calById, id => cSignalCalIds.has(id), false);
+  // `<MinutesPerDay>` (authoritatief voor de projectkalender, zie `readCalendars`) gaat na de promotie
+  // terug, zoals bij XER en IFC: de omrekening tussen dagen en uren mag afwijken van de blokken.
+  if (projectFileHoursPerDay !== undefined) calendar.hoursPerDay = projectFileHoursPerDay;
 
   for (let i = 0; i < taskElements.length; i++) {
     const te = taskElements[i];
@@ -358,7 +361,11 @@ export function readMSPDI(content: string): ImportResult {
     // Uur- vs dag-modus voor deze taak.
     const effCalId = effCalIdOfUid(taskCalUid);
     const isHour = hourModeCalIds.has(effCalId);
-    const effHpd = calById.get(effCalId)?.hoursPerDay ?? hoursPerDay;
+    const effCal = calById.get(effCalId) ?? calendar;
+    const effHpd = effCal.hoursPerDay;
+    // Het werk van een toewijzing rekent met de opgeslagen uren per dag, net als `mspdiWriter` hem schrijft
+    // (`<Work>` = dagen × `hoursPerDay`). Met de werktijd zou een dagtaak van 5 d op 8 u/dag met blokken
+    // van 10 u haar 40 u als vastgelegd werk terugkrijgen, en bij een langere duur niet meer meegroeien.
     effHpdByTaskId.set(id, effHpd);
     // MSP's <Type> (0/1/2 = Fixed Units/Duration/Work) en <EffortDriven> — dezelfde bewaarvelden als
     // de .mpp-lezer; de werkregel volgt eruit via `deriveImportedWorkRules`. Ontbrekend/ongeldig ⇒
@@ -373,7 +380,7 @@ export function readMSPDI(content: string): ImportResult {
     const durationMinutes = durationUnit === 'hours' ? (mspDurationMinutes(durationStr) ?? 0) : undefined;
     // Urentaak: dagengetal via `hourTaskScheduleDuration`; dagtaak: de opgeslagen uren per dag.
     const duration = durationUnit === 'hours'
-      ? hourTaskScheduleDuration(durationMinutes!, calById.get(effCalId) ?? calendar)
+      ? hourTaskScheduleDuration(durationMinutes!, effCal)
       : parseMSPDuration(durationStr, effHpd);
     const startRaw = getElementText(te, 'Start');
     const finishRaw = getElementText(te, 'Finish');
@@ -393,7 +400,9 @@ export function readMSPDI(content: string): ImportResult {
       const slackDays = (raw: string): number | undefined => {
         if (!raw) return undefined;
         const tenths = Number.parseFloat(raw);
-        return Number.isFinite(tenths) ? recordedFloatDays(tenths / 10, effHpd * 60) : undefined;
+        // Op een uurkalender in werktijd per dag, zoals XER (`readXerRecordedTimes`): de werktijd rekent
+        // en toont (eigenaarsbesluit 2026-10-15, "een dag"); `<MinutesPerDay>` telt hier niet.
+        return Number.isFinite(tenths) ? recordedFloatDays(tenths / 10, effHoursPerDay(effCal) * 60) : undefined;
       };
       const criticalRaw = getElementText(te, 'Critical');
       const earlyStartRaw = getElementText(te, 'EarlyStart');
@@ -479,8 +488,7 @@ export function readMSPDI(content: string): ImportResult {
         // Dezelfde dag als de taakduur (`mspdiBaselineDays`), anders leest een 24/7-taak haar eigen
         // baseline als 2,33 dagen terug, of een urentaak van 1870 u op 8 u/dag met blokken van 10 u
         // haar baseline als 234 d naast een taak van 187 d.
-        duration: mspdiBaselineDays(getElementText(bEl, 'Duration'), durationUnit === 'hours',
-          calById.get(effCalId) ?? calendar, effHpd),
+        duration: mspdiBaselineDays(getElementText(bEl, 'Duration'), durationUnit === 'hours', effCal, effHpd),
         isMilestone,
       });
       break;
@@ -1096,7 +1104,11 @@ function effectiveWeek(own: WeekEntry[], baseWeek: WeekEntry[] | null): WeekEntr
  *  cyclus eindigt (ook een zelfverwijzing) of langer is dan `MAX_BASE_CHAIN_DEPTH`, erft niet. */
 function readCalendars(root: Element, budget: HolidayBudget): {
   calendar: WorkCalendar; resourceCalendars: WorkCalendar[]; calUidToId: Map<number, string>;
+  /** `<MinutesPerDay>` / 60 als hij op de projectkalender staat; zie de promotie in `readMSPDI`. */
+  projectFileHoursPerDay?: number;
 } {
+  const fileMinutesPerDay = getElementInt(root, 'MinutesPerDay');
+  const projectFileHoursPerDay = fileMinutesPerDay > 0 ? fileMinutesPerDay / 60 : undefined;
   const calendarsRoot = root.getElementsByTagName('Calendars')[0];
   const allEls = new Map<number, Element>();
   if (calendarsRoot) {
@@ -1175,8 +1187,7 @@ function readCalendars(root: Element, budget: HolidayBudget): {
       // WorkingTime-afgeleide waarde uit applyCalendarBody. Alleen voor de projectkalender: een
       // afgeleide kalender rekent zijn `hoursPerDay` uit zijn eigen (geërfde) blokken, net als elke
       // andere bibliotheekkalender.
-      const minutesPerDay = getElementInt(root, 'MinutesPerDay');
-      if (minutesPerDay > 0) cal.hoursPerDay = minutesPerDay / 60;
+      if (projectFileHoursPerDay !== undefined) cal.hoursPerDay = projectFileHoursPerDay;
     }
     resolved.set(uid, cal);
     weekOf.set(uid, week);
@@ -1193,5 +1204,5 @@ function readCalendars(root: Element, budget: HolidayBudget): {
     calUidToId.set(uid, cal.id);
     resourceCalendars.push(cal);
   }
-  return { calendar, resourceCalendars, calUidToId };
+  return { calendar, resourceCalendars, calUidToId, ...(projectFileHoursPerDay !== undefined ? { projectFileHoursPerDay } : {}) };
 }
