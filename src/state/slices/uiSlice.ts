@@ -158,7 +158,7 @@ export function createDefaultUI(): UIState {
     barSplitMode: 'selection',
     // «Alleen werkbare dagen tonen»: default UIT.
     compressNonWorkdays: false,
-    hourDataNotice: false,
+    hourDataNotice: null,
     showTaskTypes: false,
     structureLockedNotice: 0,
     showShortcutsDialog: false,
