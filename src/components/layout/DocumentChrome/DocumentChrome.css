@@ -42,6 +42,8 @@
 .ops-tabstrip-scroll-button:disabled:hover { background: transparent; color: var(--theme-text-dim); }
 .ops-tabstrip-tabs { display: flex; align-items: stretch; gap: 3px; min-width: max-content; height: 100%; }
 .ops-tab-group {
+  /* Eén bron voor de tabhoogte: het sluitkruisje rekent zijn verticale midden hierop. */
+  --ops-tab-height: 31px;
   position: relative; align-self: flex-end; flex: none; min-width: 158px; max-width: 230px; height: 100%;
 }
 .ops-tab {
@@ -49,7 +51,7 @@
   /* Logische padding en inset: in RTL staat het sluitkruisje aan de linkerkant van zijn eigen
      tabblad, niet naast de naam van het buurtabblad. */
   width: 100%; padding-block: 0; padding-inline: 11px 32px; min-width: 0; max-width: none; align-self: flex-end;
-  height: 31px; border-radius: 7px 7px 0 0; border: 1px solid transparent;
+  height: var(--ops-tab-height); border-radius: 7px 7px 0 0; border: 1px solid transparent;
   border-bottom: none; background: transparent; cursor: pointer; overflow: hidden; outline: none;
   font-family: var(--font-body);
 }
@@ -67,7 +69,9 @@
 .ops-tab.active .ops-tab-name { font-weight: 600; color: var(--theme-text); }
 .ops-dirty-dot { width: 7px; height: 7px; border-radius: 9999px; flex: none; background: var(--theme-warning-text); }
 .ops-tab-close {
-  position: absolute; inset-inline-end: 7px; bottom: 6px; z-index: 1;
+  /* Verticaal in het midden van het zichtbare tabblad (incl. rand en accentlijn), niet van de groep:
+     de groep is even hoog als de strook, het tabblad staat bovenin. bottom: 6px stond 4,5 px te laag. */
+  position: absolute; inset-inline-end: 7px; top: calc((var(--ops-tab-height) - 18px) / 2); z-index: 1;
   width: 18px; height: 18px; flex: none; display: flex; align-items: center; justify-content: center;
   background: transparent; border: none; border-radius: 5px; cursor: pointer; color: var(--theme-text-muted);
 }

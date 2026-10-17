@@ -872,7 +872,6 @@
     },
     "worktime": {
       "section": "Arbetstider",
-      "derivedHpd": "Härledda timmar/dag:",
       "saveAsPreset": "Spara som förinställning…",
       "saveAsPresetHint": "Spara de aktuella arbetstiderna som din egen förinställning (på den här enheten) så att du kan använda dem i vilket projekt som helst.",
       "perWeekday": "Ställ in per veckodag…",

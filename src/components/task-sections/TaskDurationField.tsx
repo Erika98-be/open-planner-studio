@@ -14,7 +14,7 @@ import {
   type ParsedTaskDuration,
 } from '@/utils/taskDurationInput';
 import { hasConcreteWorkBlocks } from '@/services/subdayIo';
-import { effHoursPerDay } from '@/utils/taskDuration';
+import { hourTaskScheduleDuration } from '@/utils/taskDuration';
 import { isZeroDurationMilestone } from '@/engine/scheduler/duration';
 import type { WorkCalendar } from '@/types/calendar';
 import type { Task, TaskDurationUnit } from '@/types/task';
@@ -77,8 +77,7 @@ export function TaskDurationField({ task, calendar, onChange }: {
     } else {
       const minutes = parsed.durationMinutes ?? 0;
       time.durationMinutes = minutes;
-      const hpd = effHoursPerDay(calendar);
-      time.scheduleDuration = hpd > 0 ? minutes / (hpd * 60) : 0;
+      time.scheduleDuration = hourTaskScheduleDuration(minutes, calendar);
     }
     onChange({ time });
     setMessage(null);

@@ -1,6 +1,6 @@
 import { createContext, useContext, type ReactNode } from 'react';
 import type { GridCellAddress, GridSelectionState } from '@/engine/taskGrid/selection';
-import type { TaskColumnId } from '@/types/taskGrid';
+import type { TaskCellWarning, TaskColumnId } from '@/types/taskGrid';
 
 export interface DataGridColumnModel {
   id: TaskColumnId;
@@ -49,6 +49,8 @@ export interface DataGridCellModel {
   title?: string;
   /** Kolomeigen uitleg; altijd als native title getoond. */
   tooltip?: string;
+  /** Een ⚠ naast de waarde, met eigen uitleg als native title. */
+  warning?: TaskCellWarning;
   error?: DataGridError;
 }
 

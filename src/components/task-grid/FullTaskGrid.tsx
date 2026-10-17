@@ -52,6 +52,7 @@ import { isTreeMode } from '@/engine/view/visibleRows';
 import { effectiveCalendarOf, effHoursPerDay } from '@/utils/taskDuration';
 import { CalendarEngine } from '@/engine/scheduler/CalendarEngine';
 import { signedWorkDaysBetween } from '@/engine/variance';
+import { createBaselineOldDayCheck } from '@/engine/baselineOldDay';
 import { endOfListPosition, insertTaskRelativeToScope } from '@/state/taskInsertActions';
 import { withTransaction } from '@/state/batchTransaction';
 import {
@@ -434,6 +435,8 @@ export function TaskGridSurface({
     numberLocale: taskI18n.language,
     effectiveHoursPerDay: task => effHoursPerDay(effectiveCalendarOf(task, calendar, calendars)),
     signedWorkDaysBetween: (fromIso, toIso) => signedWorkDaysBetween(calendarEngine, fromIso, toIso),
+    // ⚠ bij een baseline van een urentaak met de oude dagtelling (alleen weergave).
+    baselineOldDay: createBaselineOldDayCheck(calendar, calendars),
     // "Datums zoals opgeslagen" — `undefined` op documenten zonder
     // vastlegging, dus de kolom `recorded.source` en de "niet vastgelegd"-tak op late/float
     // bestaan dan niet (`available`-gates in taskColumnRegistry.ts). De poort per naad staat in
@@ -1045,6 +1048,7 @@ export function TaskGridSurface({
       ),
       title: base.title,
       tooltip: base.tooltip,
+      warning: base.warning,
       content: relationDirection && task && relationItems.length > 0 ? (
         <RelationCellContent
           items={relationItems}
