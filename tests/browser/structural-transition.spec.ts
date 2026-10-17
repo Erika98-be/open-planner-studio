@@ -1,7 +1,7 @@
 // Structuurovergangen met toewijzingen (audit taakmutaties §6), met ECHTE browser-events.
 // - Het mijlpaalvinkje in het eigenschappenpaneel op een taak met een toewijzing: geweigerd, met een
 //   zichtbare melding (voorheen werd de taak een mijlpaal en viel de belasting stil naar 0).
-// - "Taak wordt een fase" (eigenaarsbesluit 2026-10-17, "altijd vragen"): krijgt een taak met een
+// - "Taak wordt een samenvattingstaak" (eigenaarsbesluit 2026-10-17, "altijd vragen"): krijgt een taak met een
 //   toewijzing haar eerste subtaak, dan vraagt een venster wat ermee moet. Annuleren wijzigt niets,
 //   Verplaatsen verhuist de toewijzing naar de nieuwe subtaak, Verwijderen haalt haar weg; één
 //   Ctrl+Z zet alles terug. Heeft de subtaak dezelfde resource al, dan is Verplaatsen uit.
@@ -80,9 +80,9 @@ test('Alt+Shift+→ vraagt eerst; Verplaatsen verhuist de toewijzing naar de nie
   await page.keyboard.press('Alt+Shift+ArrowRight');
 
   await expect(dialog(page)).toBeVisible();
-  await expect(dialog(page)).toContainText('Task becomes a phase');
+  await expect(dialog(page)).toContainText('Task becomes a summary task');
   await expect(dialog(page).locator('[data-ops-phase-dialog-text]')).toHaveText(
-    "'Metselen' gets the subtask 'Voegen' and becomes a phase. A phase has no assignments of its own. "
+    "'Metselen' gets the subtask 'Voegen' and becomes a summary task. A summary task has no assignments of its own. "
     + 'What do you want to do with the assignment of Metselaar?',
   );
   // Drie knoppen, van links naar rechts; Verplaatsen is primair en aan, geen infoblok.
@@ -277,12 +277,117 @@ test('Nederlands: de canonieke tekst en knoppen', async ({ page, ops: _ops }) =>
   const { N } = await seedAssignedLeaf(page);
   await selectRow(page, N);
   await page.keyboard.press('Alt+Shift+ArrowRight');
-  await expect(dialog(page)).toContainText('Taak wordt een fase');
+  await expect(dialog(page)).toContainText('Taak wordt een samenvattingstaak');
   await expect(dialog(page).locator('[data-ops-phase-dialog-text]')).toHaveText(
-    "'Metselen' krijgt de subtaak 'Voegen' en wordt een fase. Een fase heeft geen eigen toewijzingen. "
+    "'Metselen' krijgt de subtaak 'Voegen' en wordt een samenvattingstaak. Een samenvattingstaak heeft geen eigen toewijzingen. "
     + 'Wat doe je met de toewijzing van Metselaar?',
   );
   await expect(dialog(page).locator('button[data-ops-phase-cancel], button[data-ops-phase-remove], button[data-ops-phase-move]'))
     .toHaveText(['Annuleren', 'Toewijzing verwijderen', "Verplaatsen naar 'Voegen'"]);
   await cancelButton(page).click();
+});
+
+test('zolang het venster open is, doen Ctrl+Z, Ctrl+Y en Ctrl+V niets (review #374)', async ({ page, ops: _ops }) => {
+  const { L, N } = await seedAssignedLeaf(page);
+  // Probe van de review: een tweede toewijzing (Opperman) toevoegen en weer weghalen, zodat Ctrl+Z
+  // haar zou terugzetten terwijl het venster alleen Metselaar noemt.
+  await page.evaluate((l) => {
+    const s = () => window.__OPS__!.store.getState();
+    const R2 = s().addResource({ name: 'Opperman', type: 'LABOR', description: '', maxUnits: 1 });
+    s().assignResource(l, R2, 1);
+    s().unassignResource(s().assignments.find(a => a.resourceId === R2)!.id);
+    s().copyTasks();
+  }, L);
+  await selectRow(page, N);
+  await page.keyboard.press('Alt+Shift+ArrowRight');
+  await expect(dialog(page)).toBeVisible();
+  const before = await fingerprint(page);
+  const depth = (await state(page)).undoDepth;
+
+  await page.keyboard.press('Control+z');
+  await page.keyboard.press('Control+y');
+  await page.keyboard.press('Control+Shift+z');
+  await page.keyboard.press('Control+v');
+  await expect(dialog(page)).toBeVisible();
+  expect(await fingerprint(page)).toBe(before);
+  expect((await state(page)).undoDepth).toBe(depth);
+
+  await removeButton(page).click();
+  await expect(dialog(page)).toBeHidden();
+  expect(await parentOf(page, N)).toBe(L);
+  expect(await assignmentTaskIds(page)).toEqual([]);
+  // Na het venster werkt Ctrl+Z weer gewoon: één stap terug.
+  await page.keyboard.press('Control+z');
+  await expect.poll(() => parentOf(page, N)).toBeNull();
+  expect(await assignmentTaskIds(page)).toEqual([L]);
+});
+
+test('Taak bewerken: taak ⇒ mijlpaal met een nieuwe ouder vraagt met het concept (review #374)', async ({ page, ops: _ops }) => {
+  const { L, N } = await seedAssignedLeaf(page);
+  await nameCell(page, N).click({ button: 'right' });
+  await page.getByRole('button', { name: /^Edit\.\.\.$/ }).click();
+  const taskDialog = page.locator('[data-ops-task-dialog]');
+  await expect(taskDialog).toBeVisible();
+  await taskDialog.locator('label', { hasText: /^Milestone$/ }).first().locator('input[type=checkbox]').check();
+  await taskDialog.getByLabel(/^Parent task$/).click();
+  await page.getByRole('option', { name: /Metselen$/ }).click();
+  await taskDialog.getByRole('button', { name: /^Save$/ }).click();
+
+  // Het concept is een mijlpaal: verplaatsen kan niet, verwijderen is primair.
+  await expect(dialog(page)).toBeVisible();
+  await expect(moveButton(page)).toBeDisabled();
+  await expect(blockedNote(page)).toContainText("'Metselen' gets no subtask that can carry an assignment");
+  await removeButton(page).click();
+  await expect(taskDialog).toBeHidden();
+  const after = await page.evaluate((n) => {
+    const s = window.__OPS__!.store.getState();
+    return { milestone: s.tasks.find(t => t.id === n)!.isMilestone, assignments: s.assignments.length };
+  }, N);
+  expect(after).toEqual({ milestone: true, assignments: 0 });
+  expect(await parentOf(page, N)).toBe(L);
+  await expect(page.locator('.ops-toast', { hasText: /Nothing was changed/ })).toHaveCount(0);
+});
+
+test('Taak bewerken: mijlpaal ⇒ taak met een nieuwe ouder mag verplaatsen (review #374)', async ({ page, ops: _ops }) => {
+  const { L } = await seedAssignedLeaf(page);
+  const M = await page.evaluate(() => {
+    const s = window.__OPS__!.store.getState();
+    const id = s.addTask({ name: 'Keuring', isMilestone: true });
+    window.__OPS__!.store.getState().runCPM();
+    return id;
+  });
+  await nameCell(page, M).click({ button: 'right' });
+  await page.getByRole('button', { name: /^Edit\.\.\.$/ }).click();
+  const taskDialog = page.locator('[data-ops-task-dialog]');
+  await expect(taskDialog).toBeVisible();
+  await taskDialog.locator('label', { hasText: /^Milestone$/ }).first().locator('input[type=checkbox]').uncheck();
+  await taskDialog.getByLabel(/^Parent task$/).click();
+  await page.getByRole('option', { name: /Metselen$/ }).click();
+  await taskDialog.getByRole('button', { name: /^Save$/ }).click();
+
+  await expect(dialog(page)).toBeVisible();
+  await expect(moveButton(page)).toBeEnabled();
+  await expect(moveButton(page)).toHaveText("Move to 'Keuring'");
+  await moveButton(page).click();
+  await expect(taskDialog).toBeHidden();
+  expect(await parentOf(page, M)).toBe(L);
+  expect(await assignmentTaskIds(page)).toEqual([M]);
+});
+
+test('Taak bewerken › ? › Opslaan: na de keuze opent Help alsnog (review #374)', async ({ page, ops: _ops }) => {
+  const { L, N } = await seedAssignedLeaf(page);
+  await nameCell(page, N).click({ button: 'right' });
+  await page.getByRole('button', { name: /^Edit\.\.\.$/ }).click();
+  const taskDialog = page.locator('[data-ops-task-dialog]');
+  await taskDialog.getByLabel(/^Parent task$/).click();
+  await page.getByRole('option', { name: /Metselen$/ }).click();
+  await taskDialog.locator('[data-ops-help-button="ref-taak-eigenschappen"]').click();
+  await page.locator('[data-ops-help-leave-dialog] [data-ops-help-leave-choice="save"]').click();
+
+  await expect(dialog(page)).toBeVisible();
+  await moveButton(page).click();
+  await expect(taskDialog).toBeHidden();
+  expect(await parentOf(page, N)).toBe(L);
+  await expect(page.locator('.help-panel')).toBeVisible();
+  await expect(page.locator('.help-article-body')).toHaveAttribute('data-help-current', 'ref-taak-eigenschappen');
 });
