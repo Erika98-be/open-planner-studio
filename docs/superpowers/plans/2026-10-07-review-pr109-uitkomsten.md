@@ -1360,3 +1360,12 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   corpus, PR-tekst). **#376 (hernoeming) klaar**, CI groen ⇒ review. **#375 fixronde klaar** (b08f124f1, CI groen) ⇒ hercheck.
 - **#371 review ronde 2: JA na twee kleine fixes** (test M2, `state.md:42` + verouderde commentaren) ⇒ worker. Open voor
   de eigenaar: grijs blok vervangt oranje bij deels vastgelegde taak — vervangen of aanvullen?
+- **#362 kleine fixes klaar** (kop 7bd4eae62, bijgewerkt met 9341d6e34, CI 16/16): store-wacht (test + mutant), claim
+  Shift+wiel eerlijk, opruimen. Wacht op desktopcheck eigenaar (muiswiel + touchpad) en keuze Shift+wiel.
+- **#374 fixronde klaar** (2523b30a9, CI 16/16): modaal, Taak bewerken met concept, gids, verricht werk ⇒ oranje zin +
+  focus Annuleren. **Open voor de eigenaar:** maker veranderde de titel in "Taak wordt een samenvattingstaak" (UI zegt
+  overal "samenvattingstaak"); eigenaar keurde eerder "Taak wordt een fase" goed. ⇒ hercheck reviewer.
+- **#368 bijgewerkt met main** (ff954fdee, CI 16/16; alleen tests aangepast aan #370) ⇒ hercheck reviewer.
+- **#376 review: NEE** — uitleg bij *Taaktypes gebruiken* feitelijk onjuist (bestand zet het vinkje niet; "werkuren"),
+  "regel" in vier gidsen, vier gemiste plekken ⇒ fixronde. **Vóór de release:** tutorial 5 in de extensions-repo
+  (live van main, alle appversies) tegelijk aanpassen; releasetekst noemt de hernoeming.
