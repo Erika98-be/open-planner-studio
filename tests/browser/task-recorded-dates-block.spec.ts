@@ -1,10 +1,11 @@
 // "Datums zoals opgeslagen" in het eigenschappenpaneel als infoblok (eigenaar, 2026-10-17). De oude
 // badge (hoofdletters, `white-space: nowrap`) liep met een hele zin buiten het paneel en stond los in
 // het midden. Nu: een `alert`-blok over de volle breedte, direct boven de datumvelden onder *Tijd*,
-// met per stand een themakleur (oranje = actief, rood = wijkt af, grijs = deels niet vastgelegd).
-// Echte gebruikersflow: een .xer via de ribbonknop Openen en de bestandskiezer, een klik op de taakrij
-// en een klik op *Herberekenen* in de strook. `window.__OPS__` zet alleen de paneelbreedte (fixture),
-// leest taak-id's en zet het thema voor het schermbewijs.
+// met per stand een themakleur (oranje = actief, grijs = deels niet vastgelegd). Teksten en het
+// vervallen van de aanbod-stand (dus geen 'wijkt af' meer): eigenaar, 2026-10-17, optie 1.
+// Echte gebruikersflow: een .xer via de ribbonknop Openen en de bestandskiezer, en een klik op de
+// taakrij. `window.__OPS__` zet alleen de paneelbreedte (fixture), leest taak-id's en zet het thema
+// voor het schermbewijs.
 import type { Locator, Page } from '@playwright/test';
 import { expect, test } from './fixtures/ops';
 import { LOCALE_CASES, chooseLocale } from './fixtures/locale';
@@ -20,7 +21,8 @@ const HEADER = [
 ].join('\t');
 
 // Zelfde orakel-fixture als `recorded-dates.spec.ts`: T1 wijkt af van onze herberekening (de modus gaat
-// vanzelf aan), T3 legt alleen het vroege paar vast (deels niet vastgelegd).
+// vanzelf aan), T2 ligt gelijk met de herberekening, T3 legt alleen het vroege paar vast (deels niet
+// vastgelegd).
 const XER = [
   'ERMHDR\t23.12\t2026-01-01\t\t\t\t\t\tEUR',
   '%T\tCALENDAR',
@@ -32,6 +34,7 @@ const XER = [
   '%T\tTASK',
   `%F\t${HEADER}`,
   '%R\tT1\tP1\tC1\tA1\tDeviates\tTT_Task\tDT_FixedDUR\tTK_NotStart\t40\t40\t2026-01-02\t2026-01-09\t2026-01-05\t2026-01-12\t2026-01-10\t2026-01-17\t40\t8',
+  '%R\tT2\tP1\tC1\tA2\tStays\tTT_Task\tDT_FixedDUR\tTK_NotStart\t40\t40\t2026-02-02\t2026-02-06\t2026-02-02\t2026-02-06\t2026-02-02\t2026-02-06\t0\t0',
   '%R\tT3\tP1\tC1\tA3\tEarlyOnly\tTT_Task\tDT_FixedDUR\tTK_NotStart\t16\t16\t2026-03-01\t2026-03-03\t2026-03-01\t2026-03-03\t\t\t\t',
   '%E',
 ].join('\n');
@@ -44,6 +47,13 @@ async function openXer(page: Page): Promise<void> {
   await (await chooser).setFiles({ name: 'infoblok.xer', mimeType: 'application/octet-stream', buffer: Buffer.from(XER) });
 }
 
+// Definitieve teksten (eigenaar, 2026-10-17); nl of en, afhankelijk van de taal van de testbrowser.
+const SHOWN_PRIMAVERA = /^(Je ziet de datums die Primavera opsloeg, niet de berekening van de app\.|You see the dates Primavera saved, not the app's calculation\.)$/;
+const WILL_SHIFT = /^(Bij herberekenen verandert deze taak\.|Recalculating changes this task\.)$/;
+const WILL_STAY = /^(Bij herberekenen blijft deze taak gelijk\.|Recalculating leaves this task the same\.)$/;
+const MISSING_PRIMAVERA = /^(Primavera heeft voor deze taak niet alles opgeslagen\. Ontbreekt: Laatste start, Laatste einde, Totale speling, Vrije speling\.|Primavera did not save everything for this task\. Missing: Late start, Late finish, Total float, Free float\.)$/;
+const sentence = (block: Locator, i: number) => block.locator(`[data-ops-task-recorded-dates-sentence="${i}"]`);
+
 const panel = (page: Page) => page.locator('[data-ops-rail-panel="properties"]');
 
 async function clickTask(page: Page, taskId: string): Promise<void> {
@@ -51,16 +61,6 @@ async function clickTask(page: Page, taskId: string): Promise<void> {
     `[data-task-grid-surface-id="gantt-task-grid"] [data-grid-data-row="true"][data-grid-row-key="${taskId}"]`
       + ' [data-grid-data-cell="true"][data-grid-column-id="task.name"]',
   ).click();
-}
-
-/** 'Wijkt af' bestaat alleen BUITEN de modus mét een vastlegging: een document dat de modus alleen
- *  aanbiedt (`documentActivation.ts`). Fixture: de modus uit zetten zoals in zo'n document; daarna een
- *  echte klik op *Bereken* onderaan het paneel, zodat onze datums van de vastlegging afwijken.
- *  (De strookknop wist de vastlegging, dus die route geeft geen 'wijkt af'.) */
-async function toDeviates(page: Page): Promise<void> {
-  await page.evaluate(() => window.__OPS__!.store.setState(st => { st.datesAsRecorded = false; }));
-  await panel(page).getByRole('button', { name: /^(Bereken|Calculate)$/ }).click();
-  await expect(page.locator('[data-ops-recorded-dates-offer]')).toBeVisible();
 }
 
 /** Een CSS-kleur zoals de browser hem uitrekent (zelfde schrijfwijze als `getComputedStyle`). */
@@ -77,7 +77,6 @@ async function resolveColor(page: Page, css: string): Promise<string> {
 
 const EXPECTED_BORDER: Record<string, string> = {
   active: 'var(--theme-accent)',
-  deviates: 'var(--error)',
   'partly-unrecorded': 'color-mix(in srgb, var(--color-text-primary) 35%, var(--theme-surface))',
 };
 
@@ -152,18 +151,30 @@ for (const width of [280, 200] as const) {
     await page.evaluate(w => window.__OPS__!.store.getState().setUI({ rightPanelWidth: w, showPropertiesPanel: true, rightPanelCollapsed: false }), width);
     const ids = await page.evaluate(() => {
       const s = window.__OPS__!.store.getState();
-      return { a1: s.tasks.find(t => t.wbsCode === 'A1')!.id, a3: s.tasks.find(t => t.wbsCode === 'A3')!.id };
+      return { a1: s.tasks.find(t => t.wbsCode === 'A1')!.id, a2: s.tasks.find(t => t.wbsCode === 'A2')!.id, a3: s.tasks.find(t => t.wbsCode === 'A3')!.id };
     });
 
+    // Oranje, met per taak de tweede zin: A1 verschuift bij herberekenen, A2 niet.
     await clickTask(page, ids.a1);
-    await expect(await expectBlock(page, 'active')).toContainText(/Primavera/);
+    const a1 = await expectBlock(page, 'active');
+    await expect(sentence(a1, 0)).toHaveText(SHOWN_PRIMAVERA);
+    await expect(sentence(a1, 1)).toHaveText(WILL_SHIFT);
+    await clickTask(page, ids.a2);
+    const a2 = await expectBlock(page, 'active');
+    await expect(sentence(a2, 0)).toHaveText(SHOWN_PRIMAVERA);
+    await expect(sentence(a2, 1)).toHaveText(WILL_STAY);
 
+    // Grijs: de ontbrekende waarden met de kolomnamen, zonder vaktaal.
     await clickTask(page, ids.a3);
-    await expectBlock(page, 'partly-unrecorded');
+    const a3 = await expectBlock(page, 'partly-unrecorded');
+    await expect(sentence(a3, 0)).toHaveText(MISSING_PRIMAVERA);
+    await expect(a3).not.toContainText(/vastlegging|late-\/speling/i);
 
-    await toDeviates(page);
+    // Geen aanbod-stand meer: na herberekenen is er geen blok en geen strook.
+    await page.locator('[data-ops-recorded-dates-recalculate]').click();
+    await expect(page.locator('[data-ops-recorded-dates-active]')).toHaveCount(0);
     await clickTask(page, ids.a1);
-    await expectBlock(page, 'deviates');
+    await expect(panel(page).locator('[data-ops-task-recorded-dates]')).toHaveCount(0);
   });
 }
 
@@ -177,7 +188,7 @@ test('datums zoals opgeslagen: schermbewijs nl en en, licht en donker', async ({
     await page.evaluate(() => window.__OPS__!.store.getState().setUI({ rightPanelWidth: 280, showPropertiesPanel: true, rightPanelCollapsed: false }));
     const ids = await page.evaluate(() => {
       const s = window.__OPS__!.store.getState();
-      return { a1: s.tasks.find(t => t.wbsCode === 'A1')!.id, a3: s.tasks.find(t => t.wbsCode === 'A3')!.id };
+      return { a1: s.tasks.find(t => t.wbsCode === 'A1')!.id, a2: s.tasks.find(t => t.wbsCode === 'A2')!.id, a3: s.tasks.find(t => t.wbsCode === 'A3')!.id };
     });
     await clickTask(page, ids.a1);
     await expectBlock(page, 'active');
@@ -185,9 +196,5 @@ test('datums zoals opgeslagen: schermbewijs nl en en, licht en donker', async ({
     await clickTask(page, ids.a3);
     await expectBlock(page, 'partly-unrecorded');
     await shoot(page, `deels-${code}`);
-    await toDeviates(page);
-    await clickTask(page, ids.a1);
-    await expectBlock(page, 'deviates');
-    await shoot(page, `wijkt-af-${code}`);
   }
 });
