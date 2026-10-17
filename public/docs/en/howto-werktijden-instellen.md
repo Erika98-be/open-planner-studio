@@ -32,9 +32,9 @@ Each preset does this:
 4. A block that runs past midnight, you tick with *next day*. The block counts for the day on which it begins.
 5. Click the bin behind a block to remove it. A day without blocks shows as *Non-working*.
 6. For a day from Monday to Friday, click the copy symbol (*Copy to all workdays*) to put the blocks of that day on Monday to Friday.
-7. At the bottom is *Derived hours/day:* with the net hours per day that the app derives from this. A calendar with its own hours per day (for example from Primavera P6) keeps that value, also when you change work days or blocks; only a preset sets it again. The app does calculate with the derived hours; its own value goes along with the export. Click *Apply*.
+7. Above the *Working times* block is *Standard workday*: the working time per day that the app derives from the blocks and calculates with. The number follows at once when you change the blocks. If the calendar has its own hours per day (for example from Primavera P6), that own value is kept and goes along with the export, until a preset replaces it. The window does not show it. Click *Apply*.
 
-**Example: a free Friday afternoon.** Click *Set per weekday…*. Remove the second block (13:00 to 16:00) for *Fri*. Friday now has 5 hours, the other days 8. The derived hours per day stay 8.
+**Example: a free Friday afternoon.** Click *Set per weekday…*. Remove the second block (13:00 to 16:00) for *Fri*. Friday now has 5 hours, the other days 8. The *Standard workday* stays 8 hours.
 
 ### Saving a preset of your own
 
@@ -55,7 +55,7 @@ A preset of your own is stored on this device, not in the project file.
 
 ## See also
 
-- [Days and hours](docs://uitleg-dagen-en-uren): how the app counts working hours and derives the net hours per day.
+- [Days and hours](docs://uitleg-dagen-en-uren): how the app counts working hours and derives the standard workday.
 - [Turning on hour planning](docs://howto-urenplanning-aanzetten): planning a task in hours.
 - [Calendars and working days](docs://uitleg-kalenders): which calendar applies to which task.
 - [Calendar windows](docs://ref-kalenders): all fields of the calendar windows.

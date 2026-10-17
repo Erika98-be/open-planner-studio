@@ -60,7 +60,6 @@
       "startHour": "Alku (tunti)",
       "endHour": "Loppu (tunti)",
       "hoursPerDay": "Tuntia päivässä",
-      "netHoursPerDay": "Nettotunteja päivässä",
       "holidaysSection": "Vapaapäivät",
       "holidayName": "Kuvaus",
       "from": "Alkaen",

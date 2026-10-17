@@ -576,7 +576,12 @@ export interface UIState {
   // «Alleen werkbare dagen tonen» — comprimeert de Gantt/Histogram-tijd-as (weekenden+feestdagen
   // weggelaten). Globaal (geen ViewState).
   compressNonWorkdays: boolean;               // persisted — default UIT
-  hourDataNotice: boolean;                   // session — geladen bestand bevat uur-data terwijl Urenplanning uit staat
+  /** session — id van het document waarvan het geladen bestand uur-data bevat terwijl Urenplanning
+   *  uit staat; `null` = geen melding. Een id en geen vlag: de strook hoort bij DAT document. Een
+   *  nieuw of ander document toont hem niet, terug naar dat document wel. Grens: opent u twee
+   *  bestanden met uur-data, dan houdt alleen het laatst geopende de strook. Geen enkel wisselpad
+   *  hoeft hem dus te wissen. */
+  hourDataNotice: string | null;
   /** session — teller voor de "structuur vergrendeld"-melding: elke geweigerde
    *  structuurpoging hoogt hem op, zodat de melding ook opnieuw verschijnt als hij al zichtbaar
    *  was. 0 = niets te tonen. */

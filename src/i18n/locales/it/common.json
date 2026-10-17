@@ -919,7 +919,6 @@
     },
     "worktime": {
       "section": "Orari di lavoro",
-      "derivedHpd": "Ore/giorno derivate:",
       "saveAsPreset": "Salva come preimpostazione…",
       "saveAsPresetHint": "Salva gli orari di lavoro attuali come tua preimpostazione personale (su questo dispositivo) per poterli riutilizzare in seguito in qualsiasi progetto.",
       "perWeekday": "Imposta per giorno della settimana…",
