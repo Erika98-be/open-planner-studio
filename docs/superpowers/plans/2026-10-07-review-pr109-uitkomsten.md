@@ -1312,3 +1312,15 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   (optie 1)**: bewerkt bestand opent zoals je het achterliet. Ronde bij de maker van #371.
 - Eigenaar ziet testvensters op zijn scherm: Playwright-runs zijn headless; vermoedelijk de #362-agent (WebKitGTK).
   Opgedragen: geen zichtbare vensters; xvfb-run is niet geïnstalleerd.
+- **Checkstap 33 #237 (duur korter dan gedaan werk): goed.** Besluit eigenaar 2026-10-17: **alle weigeringen rood**
+  (severity `error`, blijft tot wegklikken), plus veldherstel na weigering en gelijke aanhalingstekens ⇒ worker
+  `claude/weigering-rood`.
+- **Checkstap 34 #170 (instelling "Toon werkregels en werk"): naam slecht.** Besluiten eigenaar 2026-10-17: IFC-*Taaktype*
+  (Bouw, Installatie …) heet **Werksoort** (en *Work category*); *Werkregel* heet **Taaktype** (en *Task type*, zoals
+  MS Project); instelling **Taaktypes gebruiken** met uitleg incl. MSP *Task Type* / P6 *Duration Type* ⇒ worker
+  `claude/hernoem-taaktype`, merget als laatste vóór de release. Plek van de instelling nog niet beoordeeld.
+- **#374 (wordt fase: altijd vragen)** klaar, CI groen ⇒ review. Open besluitpunt: verwijderen gooit verricht werk weg
+  zonder aparte waarschuwing (Ctrl+Z herstelt). **#373 (WBS auto bij openen)** klaar, CI groen ⇒ review; .mpp-fixture
+  niet in de repo (vermoedelijk klantbestand), geen melding in de UI.
+- Sessie crashte 2× (17:50, 17:54) door OOM: kernel doodde het Claude-proces. Oorzaak volgens eigenaar: per ongeluk een
+  VM gestart. Agents hervat met gemeten stand.
