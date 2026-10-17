@@ -4,6 +4,7 @@ import type { DateNotation, TimeNotation } from '@/types/view';
 import { displayDateTime } from '@/utils/displayDate';
 import type { NotifyInput } from './slices/types';
 import { CONSTRAINTS_HELP_ARTICLE_ID } from './helpArticles';
+import { partialRefusalNotice } from './refusalNotice';
 
 /**
  * Eén taak waarvan een nieuwe start (getypt of gesleept) iets met de constraint deed:
@@ -12,7 +13,11 @@ import { CONSTRAINTS_HELP_ARTICLE_ID } from './helpArticles';
  */
 export type StartEditNotice =
   | { kind: 'snet'; name: string; /** De nieuwe SNET-datum (ISO, zoals opgeslagen). */ date: string; change: StartConstraintChange }
-  | { kind: 'blocked'; name: string; constraint: TaskConstraint };
+  | {
+    kind: 'blocked'; name: string; constraint: TaskConstraint;
+    /** Voor het samenvouwen per taak: tien pogingen op dezelfde taak = één regel met een teller. */
+    taskId?: string;
+  };
 
 /** De gids die uitlegt hoe een nieuwe start op een taak met voorganger met constraints samenhangt. */
 const HELP_ARTICLE_ID = CONSTRAINTS_HELP_ARTICLE_ID;
@@ -29,6 +34,8 @@ export function startEditNotifications(
   notices: readonly StartEditNotice[],
   notation: DateNotation,
   timeNotation: TimeNotation,
+  /** De rest van dezelfde bewerking (plakken, vullen) is wél toegepast ⇒ deels gelukte weigering. */
+  partlyApplied = false,
 ): NotifyInput[] {
   const out: NotifyInput[] = [];
   const snet = notices.filter((notice): notice is Extract<StartEditNotice, { kind: 'snet' }> => notice.kind === 'snet');
@@ -50,22 +57,22 @@ export function startEditNotifications(
     });
   }
   if (blocked.length === 1) {
-    const [{ name, constraint }] = blocked;
-    out.push({
-      severity: 'error',
+    const [{ name, constraint, taskId }] = blocked;
+    out.push(partialRefusalNotice({
       messageKey: constraint.date ? 'notifications.startBlockedByConstraint' : 'notifications.startBlockedByConstraintNoDate',
       params: constraint.date
         ? { name, type: constraint.type, date: displayDateTime(constraint.date, notation, timeNotation) }
         : { name, type: constraint.type },
+      dedupeKey: `start-blocked:${taskId ?? name}`,
       helpArticleId: HELP_ARTICLE_ID,
-    });
+    }, partlyApplied));
   } else if (blocked.length > 1) {
-    out.push({
-      severity: 'error',
+    out.push(partialRefusalNotice({
       messageKey: 'notifications.startBlockedByConstraintMany',
       params: { count: blocked.length },
+      dedupeKey: 'start-blocked-many',
       helpArticleId: HELP_ARTICLE_ID,
-    });
+    }, partlyApplied));
   }
   return out;
 }

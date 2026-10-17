@@ -111,7 +111,9 @@ export const contextMenuBulk = {
         if (current) state.updateTask(id, taskMilestoneTransition(current, isMilestone));
       },
     );
-    for (const notice of milestoneRefusalNotices(refused)) useAppStore.getState().notify(notice);
+    // Deels gelukt als een andere taak in de reikwijdte wél mijlpaal werd.
+    const partlyApplied = isMilestone && scope.some(id => tasks.find(candidate => candidate.id === id)?.isMilestone === false);
+    for (const notice of milestoneRefusalNotices(refused, partlyApplied)) useAppStore.getState().notify(notice);
   },
 
   setCalendar(taskId: string, calendarId: string | undefined): void {

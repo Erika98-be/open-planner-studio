@@ -59,6 +59,7 @@ import type {
 } from '@/types/taskGrid';
 import type { ViewRow } from '@/engine/view/visibleRows';
 import { markDocumentEdited } from '@/state/documentEdited';
+import { partialRefusalNotice } from './refusalNotice';
 
 export interface PreparedGridMutation {
   documentId: string;
@@ -798,7 +799,7 @@ function applyCellEdits(
   // constraint tegenhield — die laat de taak juist ongemoeid, dus daar geldt `changed` niet.
   const snet = planned.value.task.constraint;
   const startNotice: StartEditNotice | undefined = planned.value.startBlocked
-    ? { kind: 'blocked', name: planned.value.task.name, constraint: planned.value.startBlocked }
+    ? { kind: 'blocked', name: planned.value.task.name, constraint: planned.value.startBlocked, taskId: planned.value.task.id }
     : planned.value.changed && planned.value.startConstraint && snet?.date
       ? { kind: 'snet', name: planned.value.task.name, date: snet.date, change: planned.value.startConstraint }
       : undefined;
@@ -1055,7 +1056,12 @@ export function prepareGridMutation(
       before,
       after,
       derivedAfter: { viewRows, resourceLoadResult },
-      notifications: [...notifications, ...startEditNotifications(startNotices, state.ui.dateNotation, state.ui.timeNotation)],
+      // Een tegengehouden start terwijl andere cellen wél zijn geschreven, is een deels gelukte
+      // weigering (`partialRefusalNotice`); niets geschreven ⇒ rood en blijvend.
+      notifications: [
+        ...notifications,
+        ...startEditNotifications(startNotices, state.ui.dateNotation, state.ui.timeNotation, !snapshotsEqual(before, after)),
+      ],
       timephasedLossCount: timephasedLossTaskIds.size,
       skippedReadOnlyCount: skippedReadOnlyFromPlanning + skippedReadOnlyFromTransaction,
       label: normalized.value.length === 1 ? 'Cel bewerken' : 'Cellen bewerken',
@@ -1104,12 +1110,12 @@ function commitPreparedAgainstStore(
   // Ongeacht `changed` — ook een paste die UITSLUITEND read-only doelcellen raakte
   // (dus per saldo niets schreef) moet de gebruiker vertellen dat er iets is overgeslagen, anders
   // oogt de paste als een stille no-op.
+  // Niets geschreven ⇒ een weigering (rood, blijvend); de rest wél geschreven ⇒ deels gelukt.
   if (prepared.skippedReadOnlyCount > 0) {
-    get().notify({
-      severity: 'info',
+    get().notify(partialRefusalNotice({
       messageKey: 'notifications.pasteSkippedReadOnly',
       params: { count: prepared.skippedReadOnlyCount },
-    });
+    }, changed));
   }
   return { ok: true, value: undefined };
 }

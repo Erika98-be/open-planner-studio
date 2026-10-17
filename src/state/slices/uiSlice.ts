@@ -355,6 +355,7 @@ export const createUiSlice: AppSlice<UiSlice> = (set, get) => ({
           // Rekenprofielen: de serialiseerbare vervolgactie volgt dezelfde regel.
           if (n.action !== undefined) existing.action = { ...n.action };
           if (n.sticky !== undefined) existing.sticky = n.sticky;
+          if (n.refusal !== undefined) existing.refusal = n.refusal;
           existing.detailKey = n.detailKey;
           existing.detailParams = n.detailParams;
           return;
@@ -367,16 +368,21 @@ export const createUiSlice: AppSlice<UiSlice> = (set, get) => ({
         id: `n${++notificationSeq}`,
         count: 1,
       });
-      // 3. Begrens op MAX_NOTIFICATIONS. Bij overschrijding verwijderen we bij VOORKEUR de oudste
-      //    `info`, en pas als die er niet is de oudste melding overall — een fout mag nooit door een
-      //    info verdrongen worden (de cyclus-/opslaafout is juist degene die moet blijven staan).
+      // 3. Begrens op MAX_NOTIFICATIONS. Volgorde van verwijderen bij overschrijding:
+      //    a. de oudste gewone info (verdwijnt toch vanzelf);
+      //    b. de oudste weigering (`refusal`, eigenaarsbesluit 2026-10-17): rood en blijvend, maar
+      //       herhaalde weigeringen mogen een echte fout of een blijvende info NOOIT wegduwen;
+      //    c. de oudste blijvende info (`sticky`, openingsmelding met gewijzigde data);
+      //    d. pas dan de oudste melding overall (alleen nog echte fouten).
+      //    Een fout mag dus nooit door een info of een weigering verdrongen worden (de cyclus-/
+      //    opslaafout is juist degene die moet blijven staan).
       if (s.ui.notifications.length > MAX_NOTIFICATIONS) {
-        // Een blijvende info (`sticky`, openingsmelding met gewijzigde data) gaat pas weg als er
-        // geen gewone info meer is.
-        let idx = s.ui.notifications.findIndex((x) => x.severity === 'info' && !x.sticky);
-        if (idx < 0) idx = s.ui.notifications.findIndex((x) => x.severity === 'info');
-        if (idx >= 0) s.ui.notifications.splice(idx, 1);
-        else s.ui.notifications.shift();
+        const list = s.ui.notifications;
+        let idx = list.findIndex((x) => x.severity === 'info' && !x.sticky);
+        if (idx < 0) idx = list.findIndex((x) => x.refusal);
+        if (idx < 0) idx = list.findIndex((x) => x.severity === 'info');
+        if (idx >= 0) list.splice(idx, 1);
+        else list.shift();
       }
     }),
 

@@ -416,6 +416,10 @@ export interface AppNotification {
    *  een openingsmelding waarbij de app data invulde, verving, repareerde of wegliet — zie
    *  `state/openNoticeSticky.ts` voor de regel. Geen fout: de kleur blijft die van een info. */
   sticky?: boolean;
+  /** Een WEIGERING: de app heeft een handeling van de gebruiker niet uitgevoerd (eigenaarsbesluit
+   *  2026-10-17). Maak hem alleen via `state/refusalNotice.ts`. Een weigering is rood en blijft
+   *  staan, maar duwt bij een volle stapel nooit een echte fout of een blijvende info weg. */
+  refusal?: boolean;
 }
 
 /** Wat een aanroeper meegeeft; `id` en `count` vult de store. */

@@ -26,6 +26,7 @@ import { taskMilestoneTransition, type MilestoneRefusal } from '@/engine/taskMil
 import { relocateAssignment } from './assignmentMutations';
 import type { NotifyInput } from './slices/types';
 import { STRUCTURE_HELP_ARTICLE_ID } from '@/state/helpArticles';
+import { partialRefusalNotice, refusalNotice } from './refusalNotice';
 
 /** Namen in een melding blijven leesbaar (zelfde grens als `relationActions.ts`). */
 const MAX_NAME = 40;
@@ -265,15 +266,13 @@ export function phaseRefusalNotice(
 ): NotifyInput {
   const phase = shortName(taskName(s, refusal.phaseId));
   if (refusal.kind === 'noAssignableChild') {
-    return {
-      severity: 'error',
+    return refusalNotice({
       messageKey: 'notifications.phaseRefusedNoAssignableChild',
       params: { phase },
       dedupeKey: `phase-refused-${refusal.phaseId}`,
-    };
+    });
   }
-  return {
-    severity: 'error',
+  return refusalNotice({
     messageKey: 'notifications.phaseRefusedDuplicateResource',
     params: {
       phase,
@@ -281,25 +280,29 @@ export function phaseRefusalNotice(
       resource: shortName(resourceName(s, refusal.resourceId)),
     },
     dedupeKey: `phase-refused-${refusal.phaseId}`,
-  };
+  });
 }
 
-/** De melding bij een geweigerde omzetting naar mijlpaal; `refused` in volgorde, gegroepeerd per reden. */
+/**
+ * De melding bij een geweigerde omzetting naar mijlpaal; `refused` in volgorde, gegroepeerd per reden.
+ * `partlyApplied`: de rest van dezelfde handeling werd wél mijlpaal (contextmenu op een tak) ⇒ een
+ * deels gelukte weigering (`partialRefusalNotice`); anders rood en blijvend.
+ */
 export function milestoneRefusalNotices(
   refused: readonly { name: string; refusal: MilestoneRefusal }[],
+  partlyApplied = false,
 ): NotifyInput[] {
   const notices: NotifyInput[] = [];
   for (const reason of ['assignments', 'summary'] as const) {
     const group = refused.filter(r => r.refusal === reason);
     if (group.length === 0) continue;
-    notices.push({
-      severity: 'error',
+    notices.push(partialRefusalNotice({
       messageKey: reason === 'assignments'
         ? 'notifications.milestoneRefusedAssignments'
         : 'notifications.milestoneRefusedSummary',
       params: { count: group.length, task: shortName(group[0].name) },
       dedupeKey: `milestone-refused-${reason}`,
-    });
+    }, partlyApplied));
   }
   return notices;
 }
