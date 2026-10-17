@@ -5,8 +5,9 @@
 //   1. EEN BRON VALT TERUG NAAR INFO. Elke weigeringsbron hieronder (gedrag), en een bronscan die eist
 //      dat geen enkele weigeringssleutel nog met een losse `severity:` wordt gebouwd: alleen via
 //      `refusalNotice`/`partialRefusalNotice` (`src/state/refusalNotice.ts`).
-//   2. DEELS GELUKT. Lukte de rest van dezelfde handeling wél, dan geldt de ene schakelaar
-//      `PARTIAL_REFUSAL_SEVERITY` (open besluit van de eigenaar).
+//   2. DEELS GELUKT. Ook als de rest van dezelfde handeling wél lukte, is een weigering rood
+//      (eigenaarsbesluit 2026-10-17, "weigering = rood"), en noemt een detailregel welke taken of
+//      relaties niet zijn aangepast.
 //   3. STAPELEN EN WEGDUWEN. Herhaalde weigeringen vouwen samen, en duwen bij een volle stapel nooit
 //      een echte fout of een blijvende info weg.
 //
@@ -22,7 +23,8 @@ import { startEditNotifications } from '@/state/startConstraintNotice';
 import { milestoneRefusalNotices, phaseRefusalNotice } from '@/state/structuralTransition';
 import { notifyHierarchyCycle } from '@/state/hierarchyRelationNotice';
 import { createRelationWithFeedback } from '@/state/relationActions';
-import { PARTIAL_REFUSAL_SEVERITY } from '@/state/refusalNotice';
+import { PARTIAL_REFUSAL_SEVERITY, REFUSED_NAMES_SHOWN } from '@/state/refusalNotice';
+import { notifyRelationsSkipped } from '@/state/insertedBranch';
 import type { NotifyInput } from '@/state/slices/types';
 
 const S = () => useAppStore.getState();
@@ -36,7 +38,8 @@ const eq = (label: string, got: unknown, want: unknown) => {
 const clearAll = () => { for (const n of [...N()]) S().dismissNotification(n.id); };
 const kind = (n: NotifyInput | undefined) => n && { severity: n.severity, refusal: n.refusal === true };
 const RED = { severity: 'error', refusal: true };
-const PARTIAL = { severity: PARTIAL_REFUSAL_SEVERITY, refusal: true };
+const PARTIAL = RED;
+eq('0 de schakelaar voor deels gelukt staat op rood', PARTIAL_REFUSAL_SEVERITY, 'error');
 
 // ── 1. Elke weigeringsbron is rood ──────────────────────────────────────────
 eq('1a durationBelowDoneWork', kind(durationBelowDoneWorkNotice({ id: 't', name: 'T', time: { completion: 0.5 } })), RED);
@@ -90,6 +93,22 @@ eq('2b startBlockedMany deels gelukt',
 eq('2c mijlpaal deels gelukt (contextmenu)',
   kind(milestoneRefusalNotices([{ name: 'A', refusal: 'assignments' }], true)[0]), PARTIAL);
 
+// Welke taken niet zijn aangepast.
+eq('2d Many noemt de taken', many[0]?.detailLines, [{ messageKey: 'notifications.refusedTaskNames', params: { names: 'B, C' } }]);
+const msMany = milestoneRefusalNotices([{ name: 'A', refusal: 'assignments' }, { name: 'B', refusal: 'assignments' }], true);
+eq('2e mijlpaal _other noemt de taken', msMany[0]?.detailLines, [{ messageKey: 'notifications.refusedTaskNames', params: { names: 'A, B' } }]);
+const seven = Array.from({ length: REFUSED_NAMES_SHOWN + 2 }, (_, i) => ({ kind: 'blocked' as const, name: `T${i}`, constraint: mso }));
+eq('2f meer dan vijf namen ⇒ "en nog N"', startEditNotifications(seven, 'dmy', '24h', true)[0]?.detailLines,
+  [{ messageKey: 'notifications.refusedTaskNamesMore', params: { names: 'T0, T1, T2, T3, T4', count: 2 } }]);
+const skippedRel: NotifyInput[] = [];
+notifyRelationsSkipped((n) => skippedRel.push(n), ['A → B'], 'k');
+eq('2g relationsSkippedOnInsert is rood en noemt de relatie',
+  [skippedRel[0]?.messageKey, kind(skippedRel[0]), skippedRel[0]?.detailLines],
+  ['notifications.relationsSkippedOnInsert', RED, [{ messageKey: 'notifications.refusedRelationNames', params: { names: 'A → B' } }]]);
+const none: NotifyInput[] = [];
+notifyRelationsSkipped((n) => none.push(n), [], 'k');
+eq('2h geen overgeslagen relaties ⇒ geen melding', none.length, 0);
+
 // ── 3. Samenvouwen en wegduwen ──────────────────────────────────────────────
 for (let i = 0; i < 10; i++) for (const n of one) S().notify(n);
 eq('3a tien keer dezelfde startweigering ⇒ één regel ×10', N().map(n => [n.messageKey, n.count]),
@@ -132,6 +151,7 @@ const REFUSAL_KEYS = [
   'startBlockedByConstraint', 'startBlockedByConstraintNoDate', 'startBlockedByConstraintMany',
   'dragStartIsActual', 'dragDatesAreActual', 'milestoneRefusedAssignments', 'milestoneRefusedSummary',
   'phaseRefusedNoAssignableChild', 'phaseRefusedDuplicateResource', 'taskEditRevertBlocked', 'pasteSkippedReadOnly',
+  'relationsSkippedOnInsert',
 ];
 const SRC = fileURLToPath(new URL('../../src', import.meta.url));
 const files: string[] = [];

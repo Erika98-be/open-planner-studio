@@ -26,7 +26,7 @@ import { taskMilestoneTransition, type MilestoneRefusal } from '@/engine/taskMil
 import { relocateAssignment } from './assignmentMutations';
 import type { NotifyInput } from './slices/types';
 import { STRUCTURE_HELP_ARTICLE_ID } from '@/state/helpArticles';
-import { partialRefusalNotice, refusalNotice } from './refusalNotice';
+import { partialRefusalNotice, refusalNotice, refusedNamesLine } from './refusalNotice';
 
 /** Namen in een melding blijven leesbaar (zelfde grens als `relationActions.ts`). */
 const MAX_NAME = 40;
@@ -301,6 +301,8 @@ export function milestoneRefusalNotices(
         ? 'notifications.milestoneRefusedAssignments'
         : 'notifications.milestoneRefusedSummary',
       params: { count: group.length, task: shortName(group[0].name) },
+      // Meer taken (contextmenu op een tak): noem welke geen mijlpaal werden.
+      ...(group.length > 1 ? { detailLines: refusedNamesLine(group.map(r => shortName(r.name))) } : {}),
       dedupeKey: `milestone-refused-${reason}`,
     }, partlyApplied));
   }

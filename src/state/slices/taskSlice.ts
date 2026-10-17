@@ -1292,7 +1292,7 @@ export const createTaskSlice: AppSliceFactory<TaskSlice> = (runtime) => (set, ge
   insertWbsTemplate: (template, parentId) => {
     if (template.tasks.length === 0) return null;
     let newRootId: string | null = null;
-    let skippedRelations = 0;
+    let skippedRelations: string[] = [];
     const outcome = emptyOutcome();
     set((s) => {
       const idMap = new Map<string, string>();

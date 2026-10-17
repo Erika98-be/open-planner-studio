@@ -4,7 +4,7 @@ import type { DateNotation, TimeNotation } from '@/types/view';
 import { displayDateTime } from '@/utils/displayDate';
 import type { NotifyInput } from './slices/types';
 import { CONSTRAINTS_HELP_ARTICLE_ID } from './helpArticles';
-import { partialRefusalNotice } from './refusalNotice';
+import { partialRefusalNotice, refusedNamesLine } from './refusalNotice';
 
 /**
  * Eén taak waarvan een nieuwe start (getypt of gesleept) iets met de constraint deed:
@@ -70,6 +70,7 @@ export function startEditNotifications(
     out.push(partialRefusalNotice({
       messageKey: 'notifications.startBlockedByConstraintMany',
       params: { count: blocked.length },
+      detailLines: refusedNamesLine(blocked.map(b => b.name)),
       dedupeKey: 'start-blocked-many',
       helpArticleId: HELP_ARTICLE_ID,
     }, partlyApplied));

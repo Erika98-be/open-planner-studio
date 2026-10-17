@@ -738,6 +738,11 @@ function planAndCommitPaste(
       S().ui.notifications.filter(n => n.messageKey === 'notifications.pasteSkippedReadOnly').length, 1);
     eq('De melding telt beide overgeslagen WBS-cellen samen',
       S().ui.notifications.find(n => n.messageKey === 'notifications.pasteSkippedReadOnly')?.params?.count, 2);
+    // Eigenaarsbesluit 2026-10-17: ook een deels gelukte weigering is rood, en noemt de taken.
+    const skippedNote = S().ui.notifications.find(n => n.messageKey === 'notifications.pasteSkippedReadOnly');
+    eq('Deels gelukte plak: de melding is een rode weigering', [skippedNote?.severity, skippedNote?.refusal], ['error', true]);
+    eq('De melding noemt de taken waarvan cellen niet zijn aangepast', skippedNote?.detailLines,
+      [{ messageKey: 'notifications.refusedTaskNames', params: { names: 'AutoWBS 0, AutoWBS 1' } }]);
   }
 
   // 5) Mijlpaalmetadata-case uit de reviewbrief: task.milestoneKind/task.mandatory plakken zonder
@@ -761,6 +766,9 @@ function planAndCommitPaste(
       [after?.isMilestone, after?.milestoneKind, after?.mandatory], [false, null, null]);
     eq('De melding telt beide overgeslagen mijlpaalmetadatacellen samen',
       S().ui.notifications.find(n => n.messageKey === 'notifications.pasteSkippedReadOnly')?.params?.count, 2);
+    eq('Conditioneel overgeslagen cellen noemen ook hun taak',
+      S().ui.notifications.find(n => n.messageKey === 'notifications.pasteSkippedReadOnly')?.detailLines,
+      [{ messageKey: 'notifications.refusedTaskNames', params: { names: 'Mijlpaalmetadata na' } }]);
   }
 
   // 6) Delete/Backspace (planTaskGridClear) behoudt de BESTAANDE "één niet-leegbare cel ⇒

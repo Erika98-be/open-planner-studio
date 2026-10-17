@@ -59,7 +59,7 @@ import type {
 } from '@/types/taskGrid';
 import type { ViewRow } from '@/engine/view/visibleRows';
 import { markDocumentEdited } from '@/state/documentEdited';
-import { partialRefusalNotice } from './refusalNotice';
+import { partialRefusalNotice, refusedNamesLine } from './refusalNotice';
 
 export interface PreparedGridMutation {
   documentId: string;
@@ -75,6 +75,8 @@ export interface PreparedGridMutation {
    *  berekend (clipboard.ts) of conditioneel bleken (deze module, applyCellEdits) — bij een echte
    *  Ctrl+V-paste in plaats van de hele transactie te blokkeren. 0 buiten die route. */
   skippedReadOnlyCount: number;
+  /** De taken met overgeslagen cellen (zelfde volgorde als ontdekt), voor "Niet aangepast: …". */
+  skippedReadOnlyTaskIds?: readonly string[];
   label: string;
 }
 
@@ -855,6 +857,10 @@ export function prepareGridMutation(
   const assignmentValidationTaskIds = new Set<string>();
   const appliedRelationWrites: RelationSetIntent[] = [];
   let skippedReadOnlyFromTransaction = 0;
+  const skippedReadOnlyTaskIds = new Set<string>();
+  for (const intent of intents) {
+    if (intent.kind === 'paste') for (const id of intent.skippedReadOnlyTaskIds ?? []) skippedReadOnlyTaskIds.add(id);
+  }
   const startNotices: StartEditNotice[] = [];
   const isolated = produce(state as AppState, draft => {
     // Welke taken hebben een voorganger (getypte start ⇒ SNET)? Lui: alleen een getypte
@@ -909,6 +915,7 @@ export function prepareGridMutation(
           }
           if (applied.value.timephasedGuidanceLost) timephasedLossTaskIds.add(write.taskId);
           skippedReadOnlyFromTransaction += applied.value.skippedReadOnlyCount;
+          if (applied.value.skippedReadOnlyCount > 0) skippedReadOnlyTaskIds.add(write.taskId);
           if (applied.value.startNotice) startNotices.push(applied.value.startNotice);
         }
         if (taskWrites.some(item => String(item.columnId) === 'task.isMilestone')) {
@@ -1064,6 +1071,7 @@ export function prepareGridMutation(
       ],
       timephasedLossCount: timephasedLossTaskIds.size,
       skippedReadOnlyCount: skippedReadOnlyFromPlanning + skippedReadOnlyFromTransaction,
+      skippedReadOnlyTaskIds: [...skippedReadOnlyTaskIds],
       label: normalized.value.length === 1 ? 'Cel bewerken' : 'Cellen bewerken',
     },
   };
@@ -1110,11 +1118,18 @@ function commitPreparedAgainstStore(
   // Ongeacht `changed` — ook een paste die UITSLUITEND read-only doelcellen raakte
   // (dus per saldo niets schreef) moet de gebruiker vertellen dat er iets is overgeslagen, anders
   // oogt de paste als een stille no-op.
-  // Niets geschreven ⇒ een weigering (rood, blijvend); de rest wél geschreven ⇒ deels gelukt.
+  // Een weigering (rood, blijvend), ook als de rest wél geschreven is (`partialRefusalNotice`); de
+  // detailregel noemt de taken waarvan cellen niet zijn aangepast.
   if (prepared.skippedReadOnlyCount > 0) {
+    const tasks = get().tasks;
+    const names = (prepared.skippedReadOnlyTaskIds ?? [])
+      .map(id => tasks.find(task => task.id === id)?.name)
+      .filter((name): name is string => !!name);
     get().notify(partialRefusalNotice({
       messageKey: 'notifications.pasteSkippedReadOnly',
       params: { count: prepared.skippedReadOnlyCount },
+      detailLines: refusedNamesLine(names),
+      dedupeKey: 'paste-skipped-read-only',
     }, changed));
   }
   return { ok: true, value: undefined };

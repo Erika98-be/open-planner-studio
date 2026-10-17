@@ -351,6 +351,12 @@ export type NotificationMessageKey =
   // Restduur: een nieuwe duur korter dan het gedane werk van een lopende taak is
   // geweigerd — zie `runningDurationChange` in engine/taskMutationRules.ts. Parameters `name`, `percent`.
   | 'notifications.durationBelowDoneWork'
+  // Detailregel onder een weigering die meer taken of relaties raakt: welke niet zijn aangepast /
+  // aangemaakt (`refusedNamesLine` in state/refusalNotice.ts). `names`, en bij `More` ook `count`.
+  | 'notifications.refusedTaskNames'
+  | 'notifications.refusedTaskNamesMore'
+  | 'notifications.refusedRelationNames'
+  | 'notifications.refusedRelationNamesMore'
   // Tutorialvraag na de eerste voltooide rondleiding (`TutorialOfferDialog`): "later" bij Nee of een
   // geweigerde installatie, "unavailable" als ophalen/installeren/starten niet lukte.
   | 'notifications.tutorialOfferLater'
