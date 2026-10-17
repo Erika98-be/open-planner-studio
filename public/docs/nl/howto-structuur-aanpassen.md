@@ -35,8 +35,8 @@ Elke verplaatsing is één stap voor *Ongedaan* (Ctrl+Z).
 
 Kijk in *Planning › Structuur* naar de knop *WBS auto*.
 
-- **Aan (standaard in een nieuw project).** De app nummert de hele boom opnieuw bij elke toevoeging, verwijdering en verplaatsing. De WBS-code is dan alleen-lezen: in de lijst en in het paneel *Eigenschappen* kun je hem niet typen. *Hernummer WBS* is uitgeschakeld.
-- **Uit.** De codes blijven staan zoals ze zijn, ook na verplaatsen en inspringen. Je typt ze zelf, in de kolom *WBS* of in het veld *WBS Code* in *Eigenschappen*, of je laat ze één keer opnieuw nummeren met *Hernummer WBS*. Dat overschrijft ook codes die je zelf getypt hebt.
+- **Aan (standaard in een nieuw project).** Ook aan na het openen van een bestand zonder deze instelling, als alle WBS-codes al gelijk zijn aan de nummering van de boom (1, 1.1, 1.2 …). De codes veranderen dan niet. Een leeg bestand zonder deze instelling krijgt ook *aan*, net als een nieuw project. De app nummert de hele boom opnieuw bij elke toevoeging, verwijdering en verplaatsing. De WBS-code is dan alleen-lezen: in de lijst en in het paneel *Eigenschappen* kun je hem niet typen. *Hernummer WBS* is uitgeschakeld.
+- **Uit.** Standaard in een bestand met eigen codes, zoals *A1000*, of met één code die afwijkt van de boom. De codes blijven staan zoals ze zijn, ook na verplaatsen en inspringen. Je typt ze zelf, in de kolom *WBS* of in het veld *WBS Code* in *Eigenschappen*, of je laat ze één keer opnieuw nummeren met *Hernummer WBS*. Dat overschrijft ook codes die je zelf getypt hebt.
 
 Zet je *WBS auto* aan, dan nummert de app de boom meteen. Zowel *WBS auto* als *Hernummer WBS* is met *Ongedaan* terug te draaien.
 
@@ -46,7 +46,7 @@ Zet je *WBS auto* aan, dan nummert de app de boom meteen. Zowel *WBS auto* als *
 
 Alt+↑ en Alt+↓ werken in zo'n weergave wél, zonder melding. Bij alleen een filter zie je de nieuwe volgorde meteen. Bij een sortering verandert de volgorde in de planning wel, maar zie je het pas na *Wissen*.
 
-**WBS auto staat uit.** Een nieuwe taak krijgt de code die bij zijn plek in de boom past, ook als een andere taak die code al heeft. Zo kunnen er dubbele nummers ontstaan. Ook na inspringen kloppen de codes niet meer met de boom. *Hernummer WBS* lost beide op.
+**WBS auto staat uit.** Dat gebeurt bij een bestand met eigen codes, of bij een bestand dat de instelling *uit* bewaart. Een nieuwe taak krijgt de code die bij zijn plek in de boom past, ook als een andere taak die code al heeft. Zo kunnen er dubbele nummers ontstaan. Ook na inspringen kloppen de codes niet meer met de boom. *Hernummer WBS* lost beide op.
 
 **Een mijlpaal krijgt subtaken.** Een mijlpaal is een moment en heeft geen subtaken. De app haalt de mijlpaalmarkering eraf en meldt dat.
 

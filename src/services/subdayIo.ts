@@ -410,7 +410,8 @@ export function getCalendarBands(
 
 /**
  * Promoveer één kalender naar uur-modus als hij afwijkt (a/b, `deviates`) of een (c)-signaal droeg
- * (`signaled`). Zet `workTime` + afgeleide `workDays`/`hoursPerDay`. Retourneert of de kalender (nu)
+ * (`signaled`). Zet `workTime` + afgeleide `workDays`/`hoursPerDay`; een lezer met een eigen uren per dag
+ * uit het bestand zet die daarna terug (XER, IFC, P6 XML, MSPDI, `.mpp`). Retourneert of de kalender (nu)
  * uur-modus is — inclusief het geval dat hij al `workTime` droeg. Gedeelde promotie-orkestratie;
  * de readers houden zelf hun format-specifieke signaal-verzameling (`cSignalCalIds`/`subDayCals`).
  *

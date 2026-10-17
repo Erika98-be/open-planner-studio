@@ -2,7 +2,7 @@ import { claimTaskTypesNotice, notifyTaskTypesUnlocked, notifyTaskTypesUnlockedC
 import { taskTypesNeedNotice } from '../taskTypesVisibility';
 import { writeIFC } from '@/services/ifc/ifcWriter';
 import { writeCSV, writeProgressSheetCSV } from '@/services/csv/csvWriter';
-import { flattenOrder } from '@/utils/wbs';
+import { flattenOrder, inferWbsAutoNumberOnOpen } from '@/utils/wbs';
 import { writeMSPDI } from '@/services/msproject/mspdiWriter';
 import { writeP6XMLWithReport } from '@/services/p6/p6xmlWriter';
 import { countSplitTasksWithoutContour } from '@/services/contourIo';
@@ -776,6 +776,13 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
       // Dubbele id's uit een kapot of vreemd bestand eerst uniek maken; de store sleutelt op id.
       const { result: uniqueParsed, renamed: duplicateIds } = ensureUniqueImportIds(parsed);
       const payload = payloadFromImport(uniqueParsed, filePath);
+      // WBS auto bij het openen (eigenaarsbesluit 2026-10-17): één generieke stap voor élk
+      // formaat, op de geïsoleerde payload vóór publicatie. Daardoor geen undo-stap en blijft
+      // `isDirty` false — het hoort bij het openen. Alleen op de echte open-paden (`linkedOpen`:
+      // `openAsDocument`), niet bij `loadState` (IFC-paneel *Toepassen*, extensie-
+      // `loadProject`: die mogen het project niet stil veranderen). Bewust niet in
+      // `payloadFromImport`: die bouwt ook het crashherstel (`payloadFromInput`).
+      if (opts.linkedOpen) payload.project = inferWbsAutoNumberOnOpen(payload.project, payload.tasks);
       payload.view = opts.viewStartDate === undefined
         ? { ...current.view }
         : { ...current.view, viewStartDate: opts.viewStartDate };
