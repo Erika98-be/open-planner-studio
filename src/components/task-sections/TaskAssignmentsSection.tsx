@@ -16,6 +16,7 @@ import { taskTypesUnlocked } from '@/state/taskTypesVisibility';
 import { taskCalendarHoursPerDay } from '@/utils/taskDefaults';
 import type { Task } from '@/types/task';
 import { createMoveCandidateLookup } from './moveCandidates';
+import { formatReportNumber, parseDecimalInput } from '@/utils/reportNumber';
 
 /** Pseudowaarden van de curve-dropdown voor de twee data-toestanden van de contour-engine:
  *  een opgeslagen contour (de dropdown is dan uitgeschakeld — loslaten gaat via het
@@ -29,16 +30,20 @@ const IMPORTED_CURVE = '__importedCurve';
  * Werkinvoer in uren die pas op Enter/blur commit — anders zou elke
  * toetsaanslag ("6" op weg naar "64") een eigen driehoekstap, undo-stap en contour-/venster-nazorg
  * afvuren. Ongeldig (≤ 0 of geen getal) ⇒ rode rand, geen commit, terug naar de getoonde waarde.
+ * Getoond in de getalnotatie van de taal (`formatReportNumber`, zoals de duurkolom: nl "617,14");
+ * invoer met komma of punt. Onveranderde tekst ⇒ geen commit, dus het exacte werk blijft staan.
  */
-function WorkHoursInput({ value, onCommit, ariaLabel, title, className }: {
-  value: number; onCommit: (hours: number) => void; ariaLabel: string; title: string; className: string;
+function WorkHoursInput({ minutes, locale, onCommit, ariaLabel, title, className }: {
+  minutes: number; locale: string; onCommit: (hours: number) => void; ariaLabel: string; title: string; className: string;
 }) {
   const [draft, setDraft] = useState<string | null>(null);
-  const shown = draft ?? String(value);
-  const parsed = parseFloat(shown.replace(',', '.'));
-  const invalid = draft !== null && !(Number.isFinite(parsed) && parsed > 0);
+  const formatted = formatReportNumber(minutes / 60, locale);
+  const shown = draft ?? formatted;
+  const parsed = parseDecimalInput(shown);
+  const unchanged = shown.trim() === formatted;
+  const invalid = draft !== null && !unchanged && !(Number.isFinite(parsed) && parsed > 0);
   const commit = () => {
-    if (draft !== null && Number.isFinite(parsed) && parsed > 0 && parsed !== value) onCommit(parsed);
+    if (draft !== null && !unchanged && Number.isFinite(parsed) && parsed > 0) onCommit(parsed);
     setDraft(null);
   };
   const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
@@ -47,9 +52,8 @@ function WorkHoursInput({ value, onCommit, ariaLabel, title, className }: {
   };
   return (
     <input
-      type="number"
-      min="0"
-      step="any"
+      type="text"
+      inputMode="decimal"
       value={shown}
       title={title}
       aria-label={ariaLabel}
@@ -103,7 +107,7 @@ function MoveToSelect({ label, candidates, onMove }: {
  * per werkdag); een toewijzing mét opgeslagen contour toont dat in de curve-dropdown.
  */
 export function TaskAssignmentsSection({ taskId }: { taskId: string }) {
-  const { t } = useTranslation('task');
+  const { t, i18n } = useTranslation('task');
   const { t: tCommon } = useTranslation('common');
   const tasks = useAppStore(s => s.tasks);
   const resources = useAppStore(s => s.resources);
@@ -140,15 +144,14 @@ export function TaskAssignmentsSection({ taskId }: { taskId: string }) {
   // De werkkolom alleen waar de regel werkt (geen hangmat/ELAPSEDTIME — de kern zou stil weigeren).
   const showWork = unlocked && workRuleApplies(task);
   const hoursPerDay = taskCalendarHoursPerDay(task, calendars, projectCalendar);
-  /** Resterend werk in uren: opgeslagen, anders de som van de `remaining`-periodes van een contour,
-   *  anders afgeleid als restduur × inzet. */
-  const remainingHoursOf = (assignmentId: string, unitsPerDay: number, stored: number | undefined): number => {
+  /** Resterend werk in MINUTEN (exact; het veld toont uren): opgeslagen, anders de som van de
+   *  `remaining`-periodes van een contour, anders afgeleid als restduur × inzet. */
+  const remainingMinutesShown = (assignmentId: string, unitsPerDay: number, stored: number | undefined): number => {
     const contour = contourOf.get(assignmentId);
     const contourRemaining = contour
       ? contour.periods.reduce((sum, p) => sum + (p.kind === 'actual' ? 0 : p.workMinutes), 0)
       : undefined;
-    const minutes = stored ?? contourRemaining ?? remainingMinutesOf(task, { hoursPerDay }) * unitsPerDay;
-    return Math.round((minutes / 60) * 100) / 100;
+    return stored ?? contourRemaining ?? remainingMinutesOf(task, { hoursPerDay }) * unitsPerDay;
   };
   const lockTitle = t('properties.assignments.locked', { rule: t(`workRule.${rule}`) });
 
@@ -202,7 +205,7 @@ export function TaskAssignmentsSection({ taskId }: { taskId: string }) {
                 <div className="flex items-center gap-1 min-w-0">
                   <UnitsInput
                     value={a.unitsPerDay}
-                    title={`${t('properties.assignments.unitsPerDay')}: ${a.unitsPerDay}`}
+                    title={`${t('properties.assignments.unitsPerDay')}: ${formatReportNumber(a.unitsPerDay, i18n.language)}`}
                     ariaLabel={`${t('properties.assignments.unitsPerDay')} — ${res?.name ?? a.resourceId}`}
                     onCommit={n => updateAssignment(a.id, { unitsPerDay: n })}
                     className="input !text-small !px-1 !py-0.5 !w-[calc(var(--text-small)*5)] shrink-0 text-right"
@@ -212,7 +215,8 @@ export function TaskAssignmentsSection({ taskId }: { taskId: string }) {
                   ) : (
                     <span className="shrink-0 flex items-center gap-0.5" data-ops-assignment-work={a.remainingWorkMinutes !== undefined ? 'stored' : 'derived'}>
                       <WorkHoursInput
-                        value={remainingHoursOf(a.id, a.unitsPerDay, a.remainingWorkMinutes)}
+                        minutes={remainingMinutesShown(a.id, a.unitsPerDay, a.remainingWorkMinutes)}
+                        locale={i18n.language}
                         title={t('properties.assignments.workHint')}
                         ariaLabel={`${t('properties.assignments.work')} — ${res?.name ?? a.resourceId}`}
                         onCommit={hours => setAssignmentWork(a.id, Math.round(hours * 60))}

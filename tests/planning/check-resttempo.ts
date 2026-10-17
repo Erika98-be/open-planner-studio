@@ -327,7 +327,7 @@ console.log('-- (j) MSPDI: één Units per toewijzing; lezen verandert niet --')
 }
 
 console.log('-- (l) tabelkolom: begroot tempo in dezelfde opmaak als de inzet --');
-// Review #361 punt 4: de gids belooft `Naam: getal` zonder afronding, net als de inzetkolom.
+// Review #361 punt 4: de begrote kolom heeft dezelfde opmaak als de inzetkolom.
 {
   const task = opened.tasks.find((t) => t.wbsCode === 'A10530')!;
   const ctx: TaskColumnContext = {
@@ -344,10 +344,12 @@ console.log('-- (l) tabelkolom: begroot tempo in dezelfde opmaak als de inzet --
     const column = registry.find((c) => c.id === id)!;
     return column.format(column.read(task, ctx), task, ctx);
   };
-  eq('l1 Begrote eenheden per dag: alleen de toewijzingen met een apart begroot tempo, zonder afronding',
-    text('assignment.plannedUnits'), `Foreman: ${T_FOREMAN}; General worker: ${T_WORKER}`);
+  // Releasecheck (Roads): beide kolommen in de getalnotatie van de duurkolom — hoogstens twee
+  // decimalen; de opgeslagen waarden blijven exact (`T_FOREMAN`/`T_WORKER` hierboven).
+  eq('l1 Begrote eenheden per dag: alleen de toewijzingen met een apart begroot tempo, twee decimalen',
+    text('assignment.plannedUnits'), 'Foreman: 1.11; General worker: 2.22');
   eq('l2 de inzetkolom toont het resttempo in dezelfde opmaak',
-    text('assignment.unitsPerDay'), 'Foreman: 34; General worker: 1; Compactor: 1.77777777777778');
+    text('assignment.unitsPerDay'), 'Foreman: 34; General worker: 1; Compactor: 1.78');
 }
 
 console.log('-- (k) extensie: lees-wijzig-laad houdt het begrote tempo (review #361 punt 1) --');
