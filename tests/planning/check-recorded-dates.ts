@@ -1379,7 +1379,7 @@ const inMode = (ifcText: string): ImportResult => ({ ...offerOnly(ifcText), impo
   // ís dan de herberekening, dus er valt niets meer te tonen. Geen modus, geen aanbod.
   eq('16h heropenen na F5+opslaan: het bestand draagt de herberekening zelf ⇒ niets te melden', [S().datesAsRecorded, S().recordedDates], [false, null]);
 
-  // Eén bewerking (echte mutator) wist de vlag; daarna alleen nog het aanbod.
+  // Eén bewerking (echte mutator) wist de vlag; daarna opent het bestand niet meer in de modus.
   S().updateTask(S().tasks[0]!.id, { name: 'Bewerkt' });
   eq('16i een bewerking verlaat de modus én wist de vlag', [S().datesAsRecorded, S().importPristine, S().isDirty], [false, false, true]);
   const savedEdited = writeIFC(buildWriteIFCInput(S()));
@@ -1535,6 +1535,25 @@ const inMode = (ifcText: string): ImportResult => ({ ...offerOnly(ifcText), impo
     eq('16n `isDirty = true` / `isDirty: true` staat nergens buiten markDocumentEdited (documentEdited.ts) en de uitzonderingenlijst', overtreders, []);
     eq('16n2 elke uitzondering vangt nog een regel (geen verouderde lijst)',
       UITZONDERINGEN.filter((_, i) => !gebruikt.has(i)).map((x) => `${x.file}: ${x.fragment}`), []);
+  }
+
+  // 16y: een SLAPEND hersteld document in de modus heeft geen meting (`applyRestoredRecordedMode`
+  // rekent niet door). Na de wissel ernaartoe zegt het paneel per taak dus NIETS over verschuiven:
+  // `recordedTaskWillShift` geeft `undefined`, nooit een verzonnen `false`.
+  // MUTATIEBEWIJS: `return recorded.shiftedTaskIds?.includes(taskId) ?? false` in
+  // `recordedDatesSelectors.ts` ⇒ 16y3 slaat ROOD.
+  {
+    const slaap = recoveryInputFromParsed(inMode(externIfc('16y')), { id: 'rec-16y-slaap', filePath: null, isDirty: false, datesAsRecorded: true });
+    const wakker = recoveryInputFromParsed(inMode(externIfc('16y')), { id: 'rec-16y-wakker', filePath: null, isDirty: false, datesAsRecorded: true });
+    S().newProject();
+    S().restoreDocuments([slaap, wakker], 'rec-16y-wakker');
+    S().switchDocument('rec-16y-slaap');
+    const bId = idOfWbs('1.2');
+    eq('16y1 na de wissel: het slapend herstelde document staat in de modus, met vastlegging',
+      [S().activeDocumentId, S().datesAsRecorded, S().recordedDates !== null], ['rec-16y-slaap', true, true]);
+    eq('16y2 …maar zonder meting', [S().recordedDates?.shifted, S().recordedDates?.shiftedTaskIds], [undefined, undefined]);
+    eq('16y3 recordedTaskWillShift: onbekend, geen verzonnen "nee"',
+      recordedTaskWillShift(S().recordedDates, S().datesAsRecorded, bId), undefined);
   }
 }
 

@@ -781,8 +781,8 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
       }
       const prepared = prepareLoadedPayload(payload, { recompute: !!opts.recompute });
       if (opts.recompute) {
-        // Wanneer de modus automatisch aangaat en wanneer hij alleen wordt aangeboden, beslist
-        // `applyRecordedDatesOnLoad` (verse import vs. heropening met `importPristine`). `payload.tasks`
+        // Of de modus aangaat, beslist `applyRecordedDatesOnLoad` (verse import vs. heropening met
+        // `importPristine`); anders vergeet het document de opgeslagen datums (geen aanbod-stand). `payload.tasks`
         // is hier bewust de PRE-solve
         // array (zie de docstring van `applyRecordedDatesOnLoad`): `prepareLoadedPayload` muteert
         // zijn `input`-argument niet.
