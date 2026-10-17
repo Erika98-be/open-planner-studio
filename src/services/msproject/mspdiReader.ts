@@ -3,6 +3,7 @@ import { Sequence, SequenceType } from '@/types/sequence';
 import { Resource, ResourceAssignment } from '@/types/resource';
 import { Project } from '@/types/project';
 import { WorkCalendar } from '@/types/calendar';
+import { hourTaskScheduleDuration } from '@/utils/taskDuration';
 import { createDefaultCalendar } from '@/engine/calendar/defaultCalendar';
 import { Baseline, BaselineTask } from '@/types/baseline';
 import { generateId } from '@/utils/id';
@@ -179,6 +180,17 @@ function parseMSPDuration(s: string, hoursPerDay: number): number {
   const dayMatch = s.match(/P(\d+)D/);
   if (dayMatch) return parseInt(dayMatch[1]);
   return 0;
+}
+
+/**
+ * Baselineduur in DAGEN, met dezelfde dag als de taakduur en als `mspdiWriter` hem schrijft. Urentaak:
+ * werkminuten ÷ de werktijd per dag van de taakkalender (`hourTaskScheduleDuration`), zonder afronding —
+ * ook als de kalender een eigen, afwijkende uren per dag houdt (`MinutesPerDay` 480 bij blokken van
+ * 10 u). Dagtaak (of een duur zonder uren): `parseMSPDuration` met de opgeslagen uren per dag.
+ */
+export function mspdiBaselineDays(text: string, hourTask: boolean, cal: WorkCalendar, hoursPerDay: number): number {
+  const minutes = hourTask ? mspDurationMinutes(text) : null;
+  return minutes != null ? hourTaskScheduleDuration(minutes, cal) : parseMSPDuration(text, hoursPerDay);
 }
 
 /** Eigen MSPDI-uitbreiding; andere clients mogen de vrije ExtendedAttribute negeren. */
@@ -359,8 +371,9 @@ export function readMSPDI(content: string): ImportResult {
     // Duur: uur ⇒ minuten (bron van waarheid, geen afronding); dag ⇒ het dag-pad.
     const durationUnit = taskDurationUnit(te, isHour, durationUnitMarkerFieldId);
     const durationMinutes = durationUnit === 'hours' ? (mspDurationMinutes(durationStr) ?? 0) : undefined;
+    // Urentaak: dagengetal via `hourTaskScheduleDuration`; dagtaak: de opgeslagen uren per dag.
     const duration = durationUnit === 'hours'
-      ? (effHpd > 0 ? durationMinutes! / (effHpd * 60) : 0)
+      ? hourTaskScheduleDuration(durationMinutes!, calById.get(effCalId) ?? calendar)
       : parseMSPDuration(durationStr, effHpd);
     const startRaw = getElementText(te, 'Start');
     const finishRaw = getElementText(te, 'Finish');
@@ -463,9 +476,11 @@ export function readMSPDI(content: string): ImportResult {
         taskId: id,
         start: parseMSPDate(getElementText(bEl, 'Start')),
         finish: parseMSPDate(getElementText(bEl, 'Finish')),
-        // Dezelfde taakkalender-hpd als de taakduur (`effHpd`), anders leest een 24/7-taak haar eigen
-        // baseline als 2,33 dagen terug.
-        duration: parseMSPDuration(getElementText(bEl, 'Duration'), effHpd),
+        // Dezelfde dag als de taakduur (`mspdiBaselineDays`), anders leest een 24/7-taak haar eigen
+        // baseline als 2,33 dagen terug, of een urentaak van 1870 u op 8 u/dag met blokken van 10 u
+        // haar baseline als 234 d naast een taak van 187 d.
+        duration: mspdiBaselineDays(getElementText(bEl, 'Duration'), durationUnit === 'hours',
+          calById.get(effCalId) ?? calendar, effHpd),
         isMilestone,
       });
       break;

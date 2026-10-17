@@ -112,14 +112,16 @@ function assignmentRate(quantities: XerAssignmentQuantitiesSource, resource: Res
   const chosen = importedAssignmentRate(planned, quantities.remainingPerHour, quantities.remaining);
   return { rate: chosen.unitsPerDay, ...(chosen.plannedUnitsPerDay !== undefined ? { plannedRate: chosen.plannedUnitsPerDay } : {}) };
 }
-function unitsPerDay(rawRate: number, resource: Resource, context: XerResourceReadContext): {
+function unitsPerDay(rawRate: number, resource: Resource, context: XerResourceReadContext, taskId?: string): {
   value: number; scale: XerAssignmentUnitScale;
 } {
   if (resource.type === 'MATERIAL') {
     const hoursPerDay = resource.calendarId
       ? context.calendarHoursPerDay.get(resource.calendarId) ?? context.projectHoursPerDay
       : context.projectHoursPerDay;
-    return { value: rawRate * hoursPerDay, scale: 'MATERIAL_PER_HOUR' };
+    // Op een urentaak telt de dag van de taak zelf (`hourTaskHoursPerDay`): tempo × dagengetal = tempo × uren.
+    const taskHoursPerDay = taskId !== undefined ? context.hourTaskHoursPerDay?.get(taskId) : undefined;
+    return { value: rawRate * (taskHoursPerDay ?? hoursPerDay), scale: 'MATERIAL_PER_HOUR' };
   }
   return { value: rawRate, scale: 'DIRECT_FRACTION' };
 }
@@ -225,8 +227,8 @@ export function readXerResourceAssignments(
       }
     }
     const rate = assignmentRate(quantities, resource);
-    const scaled = unitsPerDay(rate.rate, resource, context);
-    const plannedUnitsPerDay = rate.plannedRate !== undefined ? unitsPerDay(rate.plannedRate, resource, context).value : undefined;
+    const scaled = unitsPerDay(rate.rate, resource, context, taskSourceId);
+    const plannedUnitsPerDay = rate.plannedRate !== undefined ? unitsPerDay(rate.plannedRate, resource, context, taskSourceId).value : undefined;
     sources.push({ ...sourceBase, unitScale: scaled.scale });
     if (skipExpectation === 'XER_ASSIGNMENT_TASK_MISSING') {
       issues.push({ code: 'XER_ASSIGNMENT_TASK_MISSING', table: 'TASKRSRC', line: row.line, sourceId, fallback: 'SKIPPED' });

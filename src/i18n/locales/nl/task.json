@@ -286,6 +286,7 @@
       "externalRelations_one": "{{count}} externe relatie",
       "externalRelations_other": "{{count}} externe relaties",
       "baselineMissing": "Niet aanwezig in deze baseline",
+      "baselineOldDay": "Deze baseline is opgeslagen met een oudere versie, die een dag anders telde. De afwijking in duur klopt daarom niet. Neem de baseline opnieuw.",
       "baselineVarianceStart": "Startafwijking",
       "baselineVarianceFinish": "Eindafwijking",
       "baselineVarianceDuration": "Duurafwijking"

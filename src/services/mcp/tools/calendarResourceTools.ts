@@ -627,7 +627,7 @@ function hoursLabel(hours: number): string {
 
 /**
  * NETTO UREN OP EEN KALENDER MET PAUZE ("MCP doet wat de kalenderdialoog doet"). In de dialoog is
- * "Netto-uren per dag" een afleiding uit werkdag − pauze (`simpleBreakPatch` → `simpleBreakNetHours`).
+ * "Standaard werkdag" een afleiding uit werkdag − pauze (`simpleBreakPatch` → `simpleBreakNetHours`).
  * Een meegegeven `hoursPerDay` voor een DAG-kalender met (na samenvoegen) een pauzepatroon moet dus
  * gelijk zijn aan werkdag − pauze; afwijkend ⇒ zachte weigering met de velden die de AI wél moet
  * wijzigen, gelijk ⇒ no-op (`calendarFieldPatch` neemt de afgeleide waarde).
@@ -677,7 +677,7 @@ function netHoursReason(item: CalendarItem, existing: CalendarBase): string | nu
     }
   }
   return `\`hoursPerDay\` ${hoursLabel(item.hoursPerDay)} does not match this calendar: with a break the net ` +
-    'hours are DERIVED from working day minus break, like the non-editable "Net hours per day" in the ' +
+    'hours are DERIVED from working day minus break, like the non-editable "Standard workday" in the ' +
     `calendar dialog — here ${clockLabel(start)}–${clockLabel(end)} with ${pause} min break = ` +
     `${hoursLabel(net)} h net. Leave \`hoursPerDay\` out, or change the working day ` +
     '(`workStartHour`/`workEndHour`, in HOURS) or the break duration (`simpleBreakDurationMinutes`, in ' +
@@ -1045,7 +1045,7 @@ const updateCalendar: BatchStepTool = {
     'replaces the list exactly). The derived read fields `isProjectDefault`/`usedByTasks`/`usedByResources` ' +
     'and the library stamp `libraryOrigin` may come along but do nothing; the response reports them as ' +
     '`ignoredFields`. BREAK: on a DAY calendar with a break, `hoursPerDay` is DERIVED from working day minus ' +
-    'break, just like the non-editable "Net hours per day" in the calendar dialog. If you touch the break or ' +
+    'break, just like the non-editable "Standard workday" in the calendar dialog. If you touch the break or ' +
     'start/end, `hoursPerDay` follows automatically. More or fewer net hours means: change ' +
     '`workStartHour`/`workEndHour` or `simpleBreakDurationMinutes`. A given `hoursPerDay` that does not ' +
     'match working day minus break (to the minute) is softly refused, naming the fields you do need to ' +

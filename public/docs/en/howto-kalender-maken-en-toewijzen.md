@@ -14,7 +14,7 @@ A subcontractor also works on Saturdays. A crew works only Monday to Thursday. A
 2. Under the list, click the button with the plus sign (*New calendar*). The new calendar is a copy of the standard: Monday to Friday, 07:00 to 16:00 with an hour's break and, if *Construction mode* is on, the Dutch public holidays. If you want an existing calendar as a basis, pick it in the list and click the button with the two sheets under the list (*Duplicate*).
 3. Give the calendar a name under *Name* that says who uses it, for example *Six-day week*.
 4. Under *Work days*, click the weekdays on or off. *Mon–Fri* restores the standard week, with 07:00 to 16:00. If the calendar has work blocks, *Mon–Fri* only switches on Monday through Friday and every day keeps its blocks. *Continuous (24/7)* switches on all seven days, from 00:00 to 24:00.
-5. Adjust the working times if needed: *Start (hour)*, *End (hour)*, *Break starts* and *Break duration (minutes)*. You type times as HH:MM; with the arrows you raise or lower them by a quarter of an hour. If you set the break duration to 0, the calendar works without a break. *Net hours per day* is worked out by the app itself. If the calendar has working-time blocks per weekday (for example from MS Project), you do not see these fields but the *Working times* block, also with hour planning off; see [Setting working times](docs://howto-werktijden-instellen).
+5. Adjust the working times if needed: *Start (hour)*, *End (hour)*, *Break starts* and *Break duration (minutes)*. You type times as HH:MM; with the arrows you raise or lower them by a quarter of an hour. If you set the break duration to 0, the calendar works without a break. The app works out the *Standard workday* itself. If the calendar has working-time blocks per weekday (for example from MS Project), you do not see these fields but the *Working times* block, also with hour planning off; see [Setting working times](docs://howto-werktijden-instellen).
 6. Adjust the holidays if needed. How that works is covered in [Generating holidays and the construction holiday](docs://howto-feestdagen-genereren).
 7. Click *Apply*. The app recalculates the schedule right away and closes the window. With *Cancel* you throw the changes away. Enter in an input field saves in between and also recalculates, without closing the window; *Cancel* then only undoes what you changed after that.
 
@@ -59,11 +59,11 @@ Only the tasks without a calendar of their own move along.
 
 **The same calendar, two choices.** In the list the project calendar appears twice: as *Project calendar: name* and as an ordinary calendar with that name. If you choose the second, that is a choice of its own for that task. The task then does not move along when you later choose a different project calendar.
 
-**Different hours per day.** If you change the working times or the break so that the *Net hours per day* of a calendar change, a task in days still counts the same number of days. For a task with resources and the work rule *Fixed work* or *Fixed units*, the duration does change with it, because the work stays the same. Forty hours of work is 5 days at 8 hours per day and 7 days at 6 hours per day. The app reports how many tasks got a different duration.
+**Different hours per day.** If you change the working times or the break so that the *Standard workday* of a calendar changes, a task in days still counts the same number of days. For a task with resources and the work rule *Fixed work* or *Fixed units*, the duration does change with it, because the work stays the same. Forty hours of work is 5 days at 8 hours per day and 7 days at 6 hours per day. The app reports how many tasks got a different duration.
 
 ## See also
 
 - [Calendars and working days](docs://uitleg-kalenders): how the app counts work days and which calendar wins.
-- [Days and hours](docs://uitleg-dagen-en-uren): what the net hours per day do.
+- [Days and hours](docs://uitleg-dagen-en-uren): what the standard workday does.
 - [Setting up a resource calendar](docs://howto-resourcekalender-instellen): a calendar for a resource instead of a task.
 - [Calendar windows](docs://ref-kalenders): all fields of the calendar windows.

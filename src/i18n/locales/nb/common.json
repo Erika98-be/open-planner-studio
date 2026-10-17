@@ -872,7 +872,6 @@
     },
     "worktime": {
       "section": "Arbeidstider",
-      "derivedHpd": "Avledede timer/dag:",
       "saveAsPreset": "Lagre som preset…",
       "saveAsPresetHint": "Lagre de gjeldende arbeidstidene som ditt eget preset (på denne enheten), så du kan bruke dem i ethvert prosjekt senere.",
       "perWeekday": "Angi per ukedag…",

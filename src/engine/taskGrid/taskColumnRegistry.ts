@@ -86,6 +86,7 @@ interface ReadonlyColumnFields {
   copy?: (task: Task, ctx: TaskColumnContext) => string;
   available?: (ctx: TaskColumnContext) => boolean;
   tooltip?: (value: unknown, task: Task, ctx: TaskColumnContext) => string | null;
+  warning?: TaskColumnDescriptor['warning'];
 }
 
 type ReadonlyColumnConfig = ReadonlyColumnFields & TaskColumnLabelSource;
@@ -236,6 +237,7 @@ function readonlyColumn(config: ReadonlyColumnConfig): TaskColumnDescriptor {
     format,
     copy,
     tooltip: config.tooltip,
+    ...(config.warning ? { warning: config.warning } : {}),
     autoFitText: (task, ctx) => format(config.read(task, ctx), task, ctx),
   };
 }
@@ -1303,6 +1305,15 @@ function baselineColumns(input: TaskColumnRegistryInput): TaskColumnDescriptor[]
         tooltip: (value, _task, ctx) => value === BASELINE_MISSING
           ? ctx.labelForText?.('taskGrid.summary.baselineMissing') ?? null
           : null,
+        // Een baseline van een urentaak met de oude dagtelling (eigenaarsbesluit 2026-10-15: niet
+        // omrekenen, wel een ⚠ met uitleg): alleen bij de duur en de duurafwijking, de datums kloppen.
+        ...(fieldName === 'duration' || fieldName === 'varianceDuration' ? {
+          warning: (value: unknown, task: Task, ctx: TaskColumnContext) => {
+            const snapshot = taskIndex.get(task.id);
+            if (!snapshot || value === BASELINE_MISSING || !ctx.baselineOldDay?.(task, snapshot)) return null;
+            return { kind: 'baseline-old-day' as const, text: ctx.labelForText?.('taskGrid.summary.baselineOldDay') ?? '' };
+          },
+        } : {}),
         copy: (task, ctx) => {
           const snapshot = taskIndex.get(task.id);
           return snapshot ? copyScalar(baselineValue(fieldName, snapshot, task, ctx)) : '';

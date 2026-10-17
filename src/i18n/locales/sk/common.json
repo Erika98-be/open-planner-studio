@@ -956,7 +956,6 @@
     },
     "worktime": {
       "section": "Pracovná doba",
-      "derivedHpd": "Odvodené hodiny/deň:",
       "saveAsPreset": "Uložiť ako predvoľbu…",
       "saveAsPresetHint": "Uložte aktuálnu pracovnú dobu ako svoju predvoľbu (na tomto zariadení), aby ste ju mohli neskôr znova použiť v ľubovoľnom projekte.",
       "perWeekday": "Nastaviť podľa dní…",

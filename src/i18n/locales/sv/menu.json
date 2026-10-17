@@ -60,7 +60,6 @@
       "startHour": "Start (timme)",
       "endHour": "Slut (timme)",
       "hoursPerDay": "Timmar per dag",
-      "netHoursPerDay": "Nettotimmar per dag",
       "holidaysSection": "Helgdagar",
       "holidayName": "Beskrivning",
       "from": "Från",
