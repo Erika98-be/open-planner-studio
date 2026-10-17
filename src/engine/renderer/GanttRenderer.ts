@@ -3,6 +3,7 @@ import type { BaselineOverlay } from '@/types/baseline';
 import { Sequence } from '@/types/sequence';
 import type { ViewState, BarSplitMode, DateNotation, DurationDisplay, TimeNotation } from '@/types/view';
 import { displayDateTime } from '@/utils/displayDate';
+import { statusDateInstant } from '@/utils/statusDateTime';
 import { formatAxisClock } from '@/utils/displayTime';
 import { parseDate, parseInstant, addCalendarDays, diffCalendarDays, isoDayOfWeek, getWeekNumberFor, utcDayStart, localNowOnDayAxis, MS_PER_DAY } from '@/utils/dateUtils';
 import { holidayEndDate, WorkCalendar } from '@/types/calendar';
@@ -812,14 +813,14 @@ export class GanttRenderer {
    */
   /**
    * X van de statusdatum op de tijdas (lijn, label en voortgangslijn delen hem). Met een tijd
-   * (`YYYY-MM-DDTHH:mm`) staat de lijn op dat tijdstip, zoals een uurtaakbalk: `parseInstant` en
-   * dezelfde `dateToX` van de as. Op de kalenderas is dat de fractie van de kalenderdag (17:00 =
+   * (`YYYY-MM-DDTHH:mm`) staat de lijn op dat tijdstip, zoals een uurtaakbalk: `statusDateInstant`
+   * (gedeeld met de printexport) en dezelfde `dateToX` van de as. Op de kalenderas is dat de fractie van de kalenderdag (17:00 =
    * 17/24 van de dagbreedte, ook bij dagzoom); op de werkdag-as bepaalt die as zelf de positie.
    * Zonder tijd: het begin van de dag, zoals altijd (besluit eigenaar 2026-10-17: label en lijn
    * zeggen hetzelfde).
    */
   statusDateX(iso: string): number {
-    return this.dateToX(iso.includes('T') ? parseInstant(iso) : parseDate(iso));
+    return this.dateToX(statusDateInstant(iso));
   }
 
   /** De tekst van het statusdatumlabel. Statisch en puur, zodat een check hem zonder canvas leest. */

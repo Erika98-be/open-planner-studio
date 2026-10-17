@@ -1,4 +1,5 @@
 import { formatClock } from '@/utils/displayTime';
+import { parseDate, parseInstant } from '@/utils/dateUtils';
 
 /**
  * De statusdatum met of zonder tijd (besluit eigenaar 2026-10-17).
@@ -34,3 +35,12 @@ export function withStatusTime(statusDate: string | undefined, minutes: number |
   return minutes === undefined ? m[1] : `${m[1]}T${formatClock(minutes, '24h')}`;
 }
 
+
+/**
+ * Het tijdstip van de statusdatum op de tijdas — de ene positieregel voor scherm (`GanttRenderer`) en
+ * print (`printPreview`). Met een tijd: `parseInstant`, zoals een uurtaakbalk (kalendertijd; 17:00 =
+ * 17/24 van de dag op de lineaire as). Zonder tijd: het begin van de dag (`parseDate`), zoals altijd.
+ */
+export function statusDateInstant(statusDate: string): Date {
+  return statusDate.includes('T') ? parseInstant(statusDate) : parseDate(statusDate);
+}
