@@ -18,6 +18,7 @@ import type {
   GridResult,
   RecordedTaskAxis,
   RecordedTaskMark,
+  TaskCellWarning,
   TaskColumnCategory,
   TaskColumnContext,
   TaskColumnDescriptor,
@@ -81,6 +82,8 @@ export interface TaskGridAdapterCell {
   title?: string;
   /** Kolomeigen uitleg die altijd als tooltip verschijnt, ongeacht afknippen. */
   tooltip?: string;
+  /** Een ⚠ naast de waarde, met uitleg (`TaskColumnDescriptor.warning`). */
+  warning?: TaskCellWarning;
 }
 
 export interface TaskGridAdapterEventTarget {
@@ -122,6 +125,8 @@ export interface CreateTaskGridAdapterDomainInput {
   textDirection?: 'ltr' | 'rtl';
   effectiveHoursPerDay?: (task: Task) => number;
   signedWorkDaysBetween?: (fromIso: string, toIso: string) => number;
+  /** Zie `TaskColumnContext.baselineOldDay`. */
+  baselineOldDay?: TaskColumnContext['baselineOldDay'];
   recordedMark?: (task: Task) => RecordedTaskMark;
   recordedUnrecordedAxes?: (task: Task) => readonly RecordedTaskAxis[];
   dateNotation?: DateNotation;
@@ -245,6 +250,7 @@ export function createTaskGridAdapterDomain(
     wbsAutoNumber: input.wbsAutoNumber,
     effectiveHoursPerDay: input.effectiveHoursPerDay,
     signedWorkDaysBetween: input.signedWorkDaysBetween,
+    baselineOldDay: input.baselineOldDay,
     durationDisplay: input.durationDisplay,
     numberLocale: input.numberLocale,
     recordedMark: input.recordedMark,
@@ -397,6 +403,7 @@ export function createTaskGridAdapter(
         ? copyGridEditorValue(descriptor, task, context, domain.dateNotation)
         : descriptor.format(value, task, context));
     const tooltip = descriptor.tooltip?.(value, task, context) ?? undefined;
+    const warning = descriptor.warning?.(value, task, context) ?? undefined;
     const title = tooltip
       ?? ((descriptor.valueKind === 'date' || descriptor.valueKind === 'datetime') && typeof value === 'string'
         ? value
@@ -423,6 +430,7 @@ export function createTaskGridAdapter(
       statusText: stale ? 'taskGrid.status.stale' : undefined,
       title: title && title !== '—' ? title : undefined,
       tooltip: tooltip || undefined,
+      ...(warning ? { warning } : {}),
     };
   }
 

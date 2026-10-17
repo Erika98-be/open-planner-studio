@@ -238,6 +238,15 @@ vroeger (de klokuren). v2026.9.0 leest de blokken van een nieuw bestand al niet 
 `HoursPerDay` in plaats van 8. Toetsen: `check-ifc-urenperdag-blokken.ts`, `check-ifc-urenperdag-corpus.ts`
 (met `OPS_XER_CORPUS`) en §10 van `check-ifc-calendar-identity.ts`.
 
+Het verborgen dagengetal van een urentaak volgt `hoursPerDay` niet (eigenaarsbesluit 2026-10-15, optie 2:
+"een dag is de echte werktijd"). `scheduleDuration` is daar werkminuten ÷ de werktijd per dag van de
+taakkalender, bij een uurkalender de modale dagsom van de blokken (`hourTaskScheduleDuration` in
+`src/utils/taskDuration.ts`). Dat geldt in elke lezer (XER, IFC, P6 XML, MSPDI, `.mpp`), in raster, paneel en
+MCP, en na een kalenderwissel (`settleCalendarChange`). Een taak van 1870 u op Late-ploegblokken van 10 u is
+dus 187 d, vóór en na opslaan en heropenen; de bewaarde `HoursPerDay` 8 gaat alleen mee naar de export.
+Geschreven uren veranderen niet: IFC, P6 XML en MSPDI schrijven een urentaak in minuten. Toets:
+`check-dag-is-werktijd.ts` en `tests/mcp/cases-dag-is-werktijd.ts`.
+
 Een wissel van werkdagen of blokken (de dagknoppen, *Ma–vr* en *Werktijden* in het kalendervenster, MCP
 `planner_update_calendar` met `workDays` of `workTime` zonder `hoursPerDay`) laat een afwijkende `hoursPerDay` staan. Alleen een waarde die gelijk was aan de modale
 dagsom van de blokken vóór de wijziging volgt de nieuwe blokken (`hoursPerDayFollowsBlocks` en
