@@ -1289,3 +1289,9 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   **Hercheck #367: ja** (kleine punten + label bij de maker). **Hercheck #363 (3e): nee** (× 1,25 verliest ⚠) ⇒
   span-voorrang `b71c414ed`; vierde hercheck loopt. Bekende grens gestarte taken (117 vals ⚠ na × 0,8): niet oplossen,
   wel melden; later via een kenmerk in de baseline.
+- **Checkstap 27 #364: goed** (nieuw project opent op de goede plek; balk hoort bij het juiste document). Kleine
+  testpunten bij een worker, daarna mergen. Testhulpje `qa-urenplanning=uit` wint niet van een bewaarde
+  `ops-enableHourPlanning=true` (fout in het hulpje, niet in de app).
+- **#363 vierde ronde klaar:** kop c5ed700a1, CI 16/16, bijgewerkt met main; wacht op de merge van #367 (gidsen).
+  **Checkstap 28 #363: goed** (⚠ en uitleg bij een oude baseline, licht en donker). Fout in mijn stap: de kolommen
+  staan in de tab *Tabel*, niet achter een knop in *Start*.
