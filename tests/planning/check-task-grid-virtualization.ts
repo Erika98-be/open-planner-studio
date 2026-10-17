@@ -55,6 +55,20 @@ for (const scrollTop of [0, 18, 36 * 20_000 + 17, ROWS * ROW_HEIGHT - VIEWPORT])
 }
 
 {
+  // Eindstrook onder de zwevende horizontale balk (review #362): de laatste rij eindigt boven de
+  // strook, dus Ctrl+End komt op het echte schuifmaximum (inhoud + strook - viewport).
+  const INSET = 8;
+  const target = ROWS - 1;
+  const expected = ROWS * ROW_HEIGHT + INSET - VIEWPORT;
+  eq('Laatste rij met eindstrook: scroll tot het echte maximum',
+    minimalScrollTopForRow(target, 0, VIEWPORT, ROW_HEIGHT, ROWS, INSET), expected);
+  eq('Rij die net onder de strook valt, schuift precies tot boven de strook',
+    minimalScrollTopForRow(24, 0, VIEWPORT, ROW_HEIGHT, ROWS, INSET), 25 * ROW_HEIGHT - (VIEWPORT - INSET));
+  eq('Rij die boven de strook past, verandert scroll niet',
+    minimalScrollTopForRow(23, 0, VIEWPORT, ROW_HEIGHT, ROWS, INSET), 0);
+}
+
+{
   const columns = Array.from({ length: 12 }, (_, index) => ({
     id: taskColumnId(`c${index}`), width: 100, pinned: index === 0 || index === 11,
   }));

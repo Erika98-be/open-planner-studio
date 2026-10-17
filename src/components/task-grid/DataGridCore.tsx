@@ -384,7 +384,9 @@ export function DataGridCore({
     containerRef.current?.focus();
     const absoluteIndex = rowIndexByKey.get(cell.rowKey);
     if (absoluteIndex === undefined || !columnIndexById.has(cell.columnId)) return;
-    const nextScrollTop = minimalScrollTopForRow(absoluteIndex, scrollTop, viewportHeight, rowHeight, rows.length);
+    const nextScrollTop = minimalScrollTopForRow(
+      absoluteIndex, scrollTop, viewportHeight, rowHeight, rows.length, OVERLAY_SCROLLBAR_SIZE,
+    );
     if (nextScrollTop !== scrollTop) {
       if (containerRef.current) containerRef.current.scrollTop = nextScrollTop;
       onScrollTopChange?.(nextScrollTop);
@@ -547,7 +549,14 @@ export function DataGridCore({
         className="task-grid-core"
         dir="ltr"
         data-grid-sticky-enabled={pinned.stickyEnabled ? 'true' : 'false'}
-        style={{ width: viewportWidth, height: headerHeight + viewportHeight, direction: 'ltr' }}
+        // `scrollPaddingBottom`: schuift de browser zelf een cel in beeld (focus), dan eindigt die
+        // boven de eindstrook en dus boven de zwevende horizontale balk (`minimalScrollTopForRow`).
+        style={{
+          width: viewportWidth,
+          height: headerHeight + viewportHeight,
+          direction: 'ltr',
+          scrollPaddingBottom: OVERLAY_SCROLLBAR_SIZE,
+        }}
         onScroll={handleScroll}
         onKeyDown={handleKeyDown}
         onContextMenu={event => {

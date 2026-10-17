@@ -452,3 +452,39 @@ test('een verouderd scroll-event van balk of store zet het raster niet terug', a
   expect(await core.evaluate((node: HTMLElement) => node.scrollTop)).toBe(1000);
   await expect.poll(() => state(page).then(snapshot => snapshot.view.scrollY)).toBe(1000);
 });
+
+// Ctrl+End (review #362): de laatste rij eindigt boven de zwevende horizontale balk, niet eronder.
+// Het raster schuift dan tot zijn echte maximum, de eindstrook inbegrepen.
+test('Ctrl+End toont de laatste rij boven de horizontale balk', async ({ page, ops: _ops }) => {
+  await seedProject(page, Array.from({ length: 120 }, (_, index) => ({
+    name: `Eindrij ${index + 1}`,
+    start: '2026-09-07',
+    finish: '2026-09-11',
+    durationDays: 5,
+  })));
+  const core = page.locator('.gantt-task-grid .task-grid-core');
+  const hBar = page.locator('.gantt-task-grid [data-testid="task-grid-hscroll"]');
+  await expect(hBar).toBeVisible();
+  const coreBox = await box(core);
+  const firstRow = page.locator('.gantt-task-grid [data-grid-data-row]').first();
+  const firstBox = await box(firstRow);
+  await clickRowAt(page, coreBox.x + 40, firstBox.y + firstBox.height / 2);
+  await page.keyboard.press('Control+End');
+  await expect.poll(() => core.evaluate((node: HTMLElement) => node.scrollTop)).toBeGreaterThan(0);
+  await settledScrollTop(core);
+  const geometry = await page.evaluate(() => {
+    const grid = document.querySelector<HTMLElement>('.gantt-task-grid .task-grid-core')!;
+    const bar = document.querySelector<HTMLElement>('.gantt-task-grid [data-testid="task-grid-hscroll"]')!;
+    const active = document.activeElement?.closest<HTMLElement>('[data-grid-data-row]');
+    return {
+      activeInGrid: !!active && grid.contains(active),
+      activeBottom: active?.getBoundingClientRect().bottom ?? Number.NaN,
+      hBarTop: bar.getBoundingClientRect().top,
+      scrollTop: grid.scrollTop,
+      maxScrollTop: grid.scrollHeight - grid.clientHeight,
+    };
+  });
+  expect(geometry.activeInGrid).toBe(true);
+  expect(geometry.activeBottom).toBeLessThanOrEqual(geometry.hBarTop + 0.5);
+  expect(Math.abs(geometry.scrollTop - geometry.maxScrollTop)).toBeLessThanOrEqual(1);
+});
