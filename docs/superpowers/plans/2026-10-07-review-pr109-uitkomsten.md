@@ -1302,3 +1302,13 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   resource al heeft), **optie 1: altijd vragen, geen "niet meer vragen"**. Bron oud besluit ("besluit van de eigenaar"
   in PR #210, 2026-09-25) niet terug te vinden. Bevindingen: Esc na Insert haalt bij de eigenaar de selectie weg (bij
   Haiku niet); na inspringen twee taken WBS 1.3.6.2 (onderzoek loopt).
+- **Checkstap 30 #367: goed** ⇒ #367 gemerged (8448ee2eb). **Checkstap 31 #372: goed** ⇒ gemerged (ce8081e8f). #364
+  gemerged (d40c1be5e); #363 bijgewerkt met main (gidsen: naam van #367, inhoud van #363) ⇒ gemerged (06aa45071).
+- **WBS-codes bij import (besluit eigenaar 2026-10-17, optie 1, vóór de release):** zet *WBS auto* vanzelf aan als alle
+  codes al gelijk zijn aan de boomnummering; anders vrije tekst zoals nu ⇒ worker `claude/wbs-auto-bij-import`.
+- **Checkstap 32 #371 (P6-datumblok): niet duidelijk.** Besluiten eigenaar 2026-10-17: oranje tekst "Je ziet de datums
+  die Primavera opsloeg, niet de berekening van de app." + per taak "Bij herberekenen verandert/blijft deze taak …";
+  grijs noemt de ontbrekende waarden in gewone taal; **rood blok + aanbod na heropenen van een bewerkt bestand weg
+  (optie 1)**: bewerkt bestand opent zoals je het achterliet. Ronde bij de maker van #371.
+- Eigenaar ziet testvensters op zijn scherm: Playwright-runs zijn headless; vermoedelijk de #362-agent (WebKitGTK).
+  Opgedragen: geen zichtbare vensters; xvfb-run is niet geïnstalleerd.
