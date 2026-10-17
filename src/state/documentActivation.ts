@@ -304,9 +304,10 @@ export function prepareLoadedPayload(
  *     datums (zie hieronder).
  *  (Vóór beide: de poort `recordedDatesSource` — geen bron met echte rekenuitvoer ⇒ niets.)
  *  2. Anders: automatisch aan bij een VERSE import (`isFreshImportOrigin`) mét restverschillen, en
- *     bij een HEROPENING van een eigen IFC (`'ifc-own'`/`'xer-archive'`) alleen zolang
- *     `importPristine` nog `true` is — een intussen bewerkte en opgeslagen planning mag bij
- *     heropenen niet stilzwijgend de oude brondatums tonen.
+ *     bij een HEROPENING van een eigen IFC (`'ifc-own'`/`'xer-archive'`) als `importPristine` nog
+ *     `true` is of het bestand IN de modus is opgeslagen (`recordedSourceFormat`) — "zoals je het
+ *     achterliet"; een buiten de modus opgeslagen planning toont bij heropenen nooit stilzwijgend de
+ *     oude brondatums.
  *  Al het overige VERGEET de opgeslagen datums: `recordedDates` blijft `null`, `datesAsRecorded`
  *  `false` (eigenaar, 2026-10-17, optie 1 — er is geen aanbod-stand meer). Gevolg, overal in de app:
  *  `recordedDates !== null` ⇔ `datesAsRecorded`.

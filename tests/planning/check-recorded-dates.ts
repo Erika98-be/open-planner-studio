@@ -630,8 +630,11 @@ const earlyStartOf = (id: string) => S().tasks.find((t) => t.id === id)!.time.ea
   S().applyLoadedProject({ ...asUnknownOrigin, recordedTimesOrigin: 'csv' }, { filePath: null, recompute: true });
   eq('7aj4c CSV: geen vastlegging, geen modus, geen aanbod', [S().recordedDates, S().datesAsRecorded], [null, false]);
   // 'ifc-own' ZONDER bron (orkestratorbesluit 2026-09-24): onze eigen oude solve tegen de nieuwe ⇒
-  // niets, ook met de vlag. MET bron: zonder vlag alleen aanbod, mét vlag aan.
-  // MUTATIEBEWIJS: 'ifc-own' zonder `recordedSourceFormat` toelaten ⇒ 7aj6/7aj6b ROOD.
+  // niets, ook met de vlag. MET bron: de app schrijft `SourceFormat` alleen bij opslaan IN de modus
+  // (`ifcSaveInput.ts`), dus het bestand opent weer in de modus, ook zonder vlag ("zoals je het
+  // achterliet", eigenaar 2026-10-17; vervangt optie B van #167).
+  // MUTATIEBEWIJS: 'ifc-own' zonder `recordedSourceFormat` toelaten ⇒ 7aj6/7aj6b ROOD;
+  // `|| parsed.recordedSourceFormat !== undefined` weg uit `applyRecordedDatesOnLoad` ⇒ 7aj6c ROOD.
   S().newProject();
   S().applyLoadedProject({ ...asUnknownOrigin, recordedTimesOrigin: 'ifc-own' }, { filePath: null, recompute: true });
   eq('7aj6 heropend eigen IFC zonder bron: niets', [S().datesAsRecorded, S().recordedDates], [false, null]);
@@ -640,7 +643,8 @@ const earlyStartOf = (id: string) => S().tasks.find((t) => t.id === id)!.time.ea
   eq('7aj6b …ook niet met de vlag "ongewijzigd sinds import"', [S().datesAsRecorded, S().recordedDates], [false, null]);
   S().newProject();
   S().applyLoadedProject({ ...asUnknownOrigin, recordedTimesOrigin: 'ifc-own', recordedSourceFormat: 'mspdi' }, { filePath: null, recompute: true });
-  eq('7aj6c heropend eigen IFC mét bron, zonder vlag: geen modus, vastlegging vergeten', [S().datesAsRecorded, S().recordedDates, S().importPristine], [false, null, false]);
+  eq('7aj6c heropend eigen IFC mét bron (in de modus opgeslagen), zonder vlag: modus aan, vastlegging terug',
+    [S().datesAsRecorded, S().recordedDates !== null, S().importPristine], [true, true, false]);
   S().newProject();
   S().applyLoadedProject({ ...asUnknownOrigin, recordedTimesOrigin: 'ifc-own', recordedSourceFormat: 'mspdi', importPristine: true }, { filePath: null, recompute: true });
   eq('7aj7 heropend eigen IFC mét bron en vlag ⇒ automatisch AAN', S().datesAsRecorded, true);
@@ -664,30 +668,30 @@ const earlyStartOf = (id: string) => S().tasks.find((t) => t.id === id)!.time.ea
 
 /**
  * Secties 8 t/m 13 testen het betreden en verlaten van de modus. De uitgangstoestand is een
- * heropend eigen IFC waarvan de bron bekend is (OPS_ImportProvenance.SourceFormat), nagebootst op de
- * gedeelde #63-fixture: BEWERKT (`offerOnly`) vergeet de app de opgeslagen datums, ONBEWERKT
- * (`inMode`) opent hij in de modus. Er is geen aanbod-stand meer (eigenaar, 2026-10-17, optie 1).
+ * heropend eigen IFC, nagebootst op de gedeelde #63-fixture. BUITEN de modus opgeslagen
+ * (`offerOnly`: bewerkt, en zonder `SourceFormat`, want dat schrijft de app alleen in de modus) ⇒ de
+ * app opent met de berekening. IN de modus opgeslagen (`inMode`: met `SourceFormat`) ⇒ de app opent
+ * in de modus. "Zoals je het achterliet" (eigenaar, 2026-10-17); er is geen aanbod-stand meer.
  */
 const offerOnly = (ifcText: string): ImportResult => ({
-  ...readIFC(ifcText), recordedTimesOrigin: 'ifc-own', recordedSourceFormat: 'ifc', importPristine: false,
+  ...readIFC(ifcText), recordedTimesOrigin: 'ifc-own', recordedSourceFormat: undefined, importPristine: false,
 });
-// Hetzelfde eigen IFC, maar ONBEWERKT sinds de import (`importPristine`): dat opent in de modus. Er is
-// geen aanbod-stand meer (eigenaar, 2026-10-17, optie 1), dus dit is dé route naar de modus.
-const inMode = (ifcText: string): ImportResult => ({ ...offerOnly(ifcText), importPristine: true });
+// Hetzelfde eigen IFC, maar IN de modus opgeslagen en ONBEWERKT sinds de import: dat opent in de modus.
+const inMode = (ifcText: string): ImportResult => ({ ...offerOnly(ifcText), recordedSourceFormat: 'ifc', importPristine: true });
 
 // ── (8) Geen aanbod-stand meer (eigenaar, 2026-10-17, optie 1) ────────────────
 // Zelfde fixture als (7): één FS-relatie waarvan de opgeslagen datums niet uit de logica volgen
 // (b staat vast op 2026-03-16, ver ná a's werkelijke opvolgdatum 2026-03-09).
-//  - Een sinds de import BEWERKT eigen IFC vergeet de opgeslagen datums: geen `recordedDates`, geen
-//    modus, de herberekening blijft staan.
+//  - Een BUITEN de modus opgeslagen eigen IFC (bewerkt, geen `SourceFormat`) vergeet de opgeslagen
+//    datums: geen `recordedDates`, geen modus, de herberekening blijft staan.
 //  - Hetzelfde bestand ONBEWERKT opent in de modus, met de opgeslagen datums en de meting per taak.
 {
   S().newProject();
   S().applyLoadedProject(offerOnly(externIfc('2')), { filePath: null, recompute: true });
   const bId = idOfWbs('1.2');
-  eq('8a bewerkt eigen IFC: geen vastlegging (geen aanbod)', S().recordedDates, null);
-  eq('8b bewerkt eigen IFC: modus uit', S().datesAsRecorded, false);
-  eq('8c bewerkt eigen IFC: b staat op de herberekende datum', S().tasks.find((t) => t.id === bId)!.time.earlyStart, '2026-03-09');
+  eq('8a buiten de modus opgeslagen eigen IFC: geen vastlegging (geen aanbod)', S().recordedDates, null);
+  eq('8b buiten de modus opgeslagen eigen IFC: modus uit', S().datesAsRecorded, false);
+  eq('8c buiten de modus opgeslagen eigen IFC: b staat op de herberekende datum', S().tasks.find((t) => t.id === bId)!.time.earlyStart, '2026-03-09');
 
   S().newProject();
   S().applyLoadedProject(inMode(externIfc('2')), { filePath: null, recompute: true });
@@ -798,7 +802,7 @@ const inMode = (ifcText: string): ImportResult => ({ ...offerOnly(ifcText), impo
 {
   S().newProject();
   S().applyLoadedProject(offerOnly(externIfc('9c')), { filePath: null, recompute: true });
-  eq('9C-1 voorwaarde: de modus staat UIT (bewerkt eigen IFC)', S().datesAsRecorded, false);
+  eq('9C-1 voorwaarde: de modus staat UIT (buiten de modus opgeslagen eigen IFC)', S().datesAsRecorded, false);
   // Zet `scheduleStale` expres aan (direct, geen actie): zonder dit zou runCPM hooguit "niets te
   // doen" bevestigen, terwijl de assertie moet bewijzen dat een ECHTE herberekening niets pusht.
   useAppStore.setState((s) => { s.scheduleStale = true; });
@@ -1603,8 +1607,9 @@ const inMode = (ifcText: string): ImportResult => ({ ...offerOnly(ifcText), impo
 // ── (18) Heropenen van een EIGEN IFC geeft geen openingsmelding (critreview ded4d8c3, bevinding 6) ─
 // Scenario: verse import (modus aan) → een bewerking die de modus NIET verlaat (projectomschrijving,
 // geen datumwijziging) wist "ongewijzigd sinds import" → opslaan ín de modus → heropenen. Het eigen
-// IFC ('ifc-own', vlag uit) vergeet de opgeslagen datums (geen aanbod-stand meer) en geeft dus ook
-// geen openingsmelding. Het echte openpad (`applyOpenedImport`), dat ook de melding plaatst.
+// IFC ('ifc-own', vlag uit, mét `SourceFormat`) opent weer in de modus, zoals je het achterliet
+// (eigenaar, 2026-10-17), maar zonder openingsmelding: het is geen nieuwe import. Het echte openpad
+// (`applyOpenedImport`), dat ook de melding plaatst.
 {
   const importMeldingen = () => S().ui.notifications.filter((n) =>
     n.messageKey === 'notifications.importDatesAsRecorded').length;
@@ -1619,7 +1624,7 @@ const inMode = (ifcText: string): ImportResult => ({ ...offerOnly(ifcText), impo
   S().newProject();
   const voorHeropen = importMeldingen();
   S().applyOpenedImport(eigen, { filePath: null, recompute: true });
-  eq('18d heropenen: geen vastlegging en geen modus (geen aanbod-stand)', [S().recordedDates, S().datesAsRecorded], [null, false]);
+  eq('18d heropenen: in de modus opgeslagen ⇒ weer in de modus, met vastlegging', [S().recordedDates !== null, S().datesAsRecorded], [true, true]);
   eq('18e …en GEEN openingsmelding', importMeldingen() - voorHeropen, 0);
 }
 
