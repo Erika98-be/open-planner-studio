@@ -10,7 +10,7 @@ Een kraan huur je per uur, niet per dag. Een stort van zes uur past niet in een 
 
 ### Urenplanning inschakelen
 
-1. Kies *Instellingen › Project › Instellingen* en open het tabblad *Planning*.
+1. Kies *Instellingen › Project › App-instellingen* en open het tabblad *Planning*.
 2. Zet onder *Urenplanning* het vinkje bij *Urenplanning inschakelen* aan. Het werkt meteen. In de melding *Dit bestand bevat urenplanning.* doet de knop *Urenplanning aanzetten* hetzelfde.
 3. Daaronder staat *Gemengde dag/uur-planning toestaan*, standaard aan. Met die instelling kies je per taak of hij in dagen of uren telt. Zet je hem uit, dan verdwijnt de keuzelijst *Duureenheid*. Je kunt dan nog wel een duur met een eenheid typen, zoals `12h`.
 
@@ -27,10 +27,10 @@ Daarmee verandert er meer dan alleen de duur van een taak: onder *Beeld › Tijd
 
 ### Nieuwe taken standaard in uren
 
-1. Kies *Instellingen › Project › Projectinfo*.
+1. Kies *Instellingen › Project › Projectinstellingen*.
 2. Kies bij *Standaardeenheid voor nieuwe taken* de eenheid *Uren* en klik op *Toepassen*.
 
-Een nieuwe taak begint dan met 5 uur in plaats van 5 dagen. Bestaande taken veranderen niet. Bij een nieuw project staat dezelfde keuze in het venster *Nieuw project*. Kies je daar bij *Ploeg* voor *Dagdienst*, dan is *Uren* uitgeschakeld. Kies een andere ploeg, of zet de standaardeenheid na het aanmaken in *Projectinfo*.
+Een nieuwe taak begint dan met 5 uur in plaats van 5 dagen. Bestaande taken veranderen niet. Bij een nieuw project staat dezelfde keuze in het venster *Nieuw project*. Kies je daar bij *Ploeg* voor *Dagdienst*, dan is *Uren* uitgeschakeld. Kies een andere ploeg, of zet de standaardeenheid na het aanmaken in *Projectinstellingen*.
 
 ## Valkuilen en wat de app dan doet
 
@@ -49,5 +49,5 @@ Een nieuwe taak begint dan met 5 uur in plaats van 5 dagen. Bestaande taken vera
 - [Dagen en uren](docs://uitleg-dagen-en-uren): hoe de app uren telt, wat er gebeurt als dagen en uren samenkomen en waar hij afrondt.
 - [Werktijden instellen](docs://howto-werktijden-instellen): de tijden van een kalender per weekdag.
 - [Relaties leggen](docs://howto-relaties-leggen): een lag in uren tussen twee taken.
-- [Instellingen](docs://ref-instellingen): de instelling Urenplanning inschakelen en wat hij verder verandert.
+- [App-instellingen](docs://ref-instellingen): de instelling Urenplanning inschakelen en wat hij verder verandert.
 - [De Vaart Apartment Complex](examples://showcase-appartementencomplex.ifc): bevat taken in uren (vlechtwerk en storten) met een eigen urenkalender, *Hourly calendar, rebar fixing & pouring*.

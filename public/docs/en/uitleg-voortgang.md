@@ -16,7 +16,7 @@ A **baseline** is a snapshot of the schedule at a certain moment, usually the mo
 
 The example below uses the calculation profile *Open Planner Studio*, which a new project calculates with. Further on you can read what differs in the Primavera P6 and Microsoft Project profiles.
 
-The app does not recalculate by itself. After every change to progress or the status date the status bar shows *Out of date — recalculate (F5)*. Press **Calculate** (F5), for example through *Planning › Schedule › Calculate*. If *Calculate automatically* is on (under *Settings › Project › Settings*, tab *Planning*, heading *Calculation*), the app does this itself.
+The app does not recalculate by itself. After every change to progress or the status date the status bar shows *Out of date — recalculate (F5)*. Press **Calculate** (F5), for example through *Planning › Schedule › Calculate*. If *Calculate automatically* is on (under *Settings › Project › App settings*, tab *Planning*, heading *Calculation*), the app does this itself.
 
 ### The status date
 
@@ -137,7 +137,7 @@ The handover stays Friday 6 August in both cases: the painting had float anyway.
 
 ### Other calculation profiles
 
-In the Primavera P6 and Microsoft Project profiles the painting in this example finishes on the same dates (27 and 22 July). They differ on the following points. They are conventions of the profile; you find them under *Settings › Project › Project info*, in the block *Calculation profile and options*.
+In the Primavera P6 and Microsoft Project profiles the painting in this example finishes on the same dates (27 and 22 July). They differ on the following points. They are conventions of the profile; you find them under *Settings › Project › Project settings*, in the block *Calculation profile and options*.
 
 - In the Microsoft Project profile, work that has not started does not move to the status date (convention *Don't move unstarted tasks to the status date*). If in the example above you only set a status date and enter nothing, the handover in that profile stays Friday 6 August.
 - In the Microsoft Project profile the remaining work also does not start earlier than the actual start plus the duration already elapsed (convention *Remaining work resumes after the elapsed duration*). That is an extra lower limit next to the status date: the later of the two counts. Take *Build inner cavity leaf* (5 work days), started on Tuesday 29 June and at 40% on Wednesday 30 June, the status date (two crews are bricklaying at the same time, so 40% is already done after one day). Everything before it is finished according to plan. Open Planner Studio and Primavera P6 let the task finish on Friday 2 July; Microsoft Project on Monday 5 July, because Tuesday 29 June plus 2 elapsed work days is Thursday 1 July, after the status date.

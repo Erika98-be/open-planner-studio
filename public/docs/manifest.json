@@ -581,16 +581,16 @@
     {
       "id": "ref-instellingen",
       "title": {
-        "nl": "Instellingen",
-        "en": "Settings"
+        "nl": "App-instellingen",
+        "en": "App settings"
       },
       "kind": "referentie"
     },
     {
       "id": "ref-projectinfo",
       "title": {
-        "nl": "Nieuw project en Projectinfo",
-        "en": "New project and Project info"
+        "nl": "Nieuw project en Projectinstellingen",
+        "en": "New project and Project settings"
       },
       "kind": "referentie"
     },

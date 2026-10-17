@@ -12,7 +12,7 @@ import { blocksOf, mspdiWithBlocks, openMspdiAndCalendarDialog } from './fixture
 const TIME_FORMAT = /^(Time format|Tijdnotatie)$/;
 
 async function chooseTimeFormat(page: Page, option: RegExp): Promise<void> {
-  await page.getByTitle(/^(Settings|Instellingen)$/, { exact: true }).click();
+  await page.getByTitle(/^(App settings|App-instellingen)$/, { exact: true }).click();
   const settings = page.locator('.settings-dialog');
   await expect(settings).toBeVisible();
   await settings.getByLabel(TIME_FORMAT).click();
@@ -137,7 +137,7 @@ test('Tijdnotatie: kalendervenster, tabel en Gantt volgen de instelling, ook na 
   await expect(skipWelcome).toBeVisible();
   await skipWelcome.click();
   expect(await page.evaluate(() => window.__OPS__!.store.getState().ui.timeNotation)).toBe('12h');
-  await page.getByTitle(/^(Settings|Instellingen)$/, { exact: true }).click();
+  await page.getByTitle(/^(App settings|App-instellingen)$/, { exact: true }).click();
   await expect(page.locator('.settings-dialog').getByLabel(TIME_FORMAT)).toContainText(/12/);
   await page.locator('.settings-dialog .modal-close-btn').click();
 

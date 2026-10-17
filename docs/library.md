@@ -27,7 +27,7 @@ bibliotheekactie. Eén gedeeld paneel verzorgt de selector op alle drie de plekk
 voorkomt:
 
 - **Projectwizard** ("Nieuw project"): een bibliotheekselector, voorgeselecteerd op de standaardbibliotheek.
-- **Projectinfo** (bestaand project, via dialoog of Backstage → Projectinfo): dezelfde selector;
+- **Projectinstellingen** (bestaand project, via dialoog of Backstage → Projectinstellingen): dezelfde selector;
   wijzigen bindt/herbindt/ontkoppelt direct.
 
 De ≥2-bibliotheken-regel geldt uitsluitend voor **secundaire** selectors elders — bijvoorbeeld de
@@ -321,7 +321,7 @@ expliciet tussen twee acties — geen impliciete "openen" meer dat in werkelijkh
    dezelfde bibliotheek, al eerder geïmporteerd of gedeeld), dan krijgt de nieuwe bibliotheek een vers
    gegenereerd id en komt ze als losse kopie náást de bestaande te staan. Deze route bindt het actieve
    project NIET automatisch aan de nieuwe bibliotheek — dat blijft een aparte, bewuste koppelactie via
-   Projectinfo.
+   Projectinstellingen.
 2. **"Een bestaande resourcebibliotheek vervangen"** (`replacePool`) — het oude gedrag, ongewijzigd: de
    HELE pool van de gekozen resourcebibliotheek wordt vervangen. Alleen bij déze route toont de dialoog
    de bedrijfsselector (zie hierboven, ≥2-regel) en de demping-waarschuwing.

@@ -16,7 +16,7 @@ De rekenmethode heet **CPM** (Critical Path Method, de kritieke-padmethode). Daa
 
 ## Hoe de app rekent
 
-De app rekent de planning niet vanzelf door. De berekening start met **Bereken** (F5), bijvoorbeeld via *Start › Planning › Bereken*. Is er iets gewijzigd sinds de laatste berekening, dan staat in de statusbalk *Verouderd — herbereken (F5)*. Staat *Automatisch berekenen* aan (onder *Instellingen › Project › Instellingen*, tabblad *Planning*, kopje *Berekenen*), dan doet de app dat zelf.
+De app rekent de planning niet vanzelf door. De berekening start met **Bereken** (F5), bijvoorbeeld via *Start › Planning › Bereken*. Is er iets gewijzigd sinds de laatste berekening, dan staat in de statusbalk *Verouderd — herbereken (F5)*. Staat *Automatisch berekenen* aan (onder *Instellingen › Project › App-instellingen*, tabblad *Planning*, kopje *Berekenen*), dan doet de app dat zelf.
 
 Een berekening bestaat uit twee rondes door het netwerk.
 
@@ -42,12 +42,12 @@ Speling kan ook negatief worden. Dat gebeurt als een taak een deadline heeft, of
 
 ### Wanneer is een taak kritiek?
 
-Standaard is een taak kritiek als de totale speling 0 is of minder. Dat is aan te passen onder *Instellingen › Project › Projectinfo*, in het blok *Rekenprofiel en reken-opties*, bij *Reken-opties van dit project*. Met *Toepassen* rekent de app de planning meteen opnieuw door. De opties horen bij het projectbestand, niet bij de app.
+Standaard is een taak kritiek als de totale speling 0 is of minder. Dat is aan te passen onder *Instellingen › Project › Projectinstellingen*, in het blok *Rekenprofiel en reken-opties*, bij *Reken-opties van dit project*. Met *Toepassen* rekent de app de planning meteen opnieuw door. De opties horen bij het projectbestand, niet bij de app.
 
 - **Kritiek-definitie** met *Totale speling ≤ drempel* en het veld *Drempel (werkdagen)*. Standaard is de drempel 0. Wie een buffer wil bewaken, zet de drempel bijvoorbeeld op 2: elke taak met 2 werkdagen speling of minder telt dan als kritiek en wordt rood.
 - **Bijna-kritiek markeren** met een eigen *Drempel*, standaard 2 werkdagen. Een taak met meer dan 0 maar hoogstens zoveel speling krijgt een amberkleurige balk. Zo zie je welke taken bijna geen marge meer hebben, zonder ze kritiek te noemen.
 - **Open-eind-taken kritiek**: een taak zonder opvolger die nog niet klaar is, telt als kritiek. Handig als vangnet tegen vergeten relaties (zie de misverstanden hieronder).
-- **Speling-berekening** bepaalt of de totale speling aan de startkant of de eindkant van de taak wordt gemeten, of de kleinste van beide. Nieuwe projecten staan op *Automatisch (standaard)*. Rekent het project met het profiel Primavera P6 en staat deze keuze niet op *Finishspeling*, dan meldt een oranje blok in Projectinfo dat; de knop daarin zet de keuze op *Finishspeling*. Voor MS Project zet dezelfde knop hem terug op *Automatisch (standaard)*: met een statusdatum rekent MS Project zelf zo.
+- **Speling-berekening** bepaalt of de totale speling aan de startkant of de eindkant van de taak wordt gemeten, of de kleinste van beide. Nieuwe projecten staan op *Automatisch (standaard)*. Rekent het project met het profiel Primavera P6 en staat deze keuze niet op *Finishspeling*, dan meldt een oranje blok in Projectinstellingen dat; de knop daarin zet de keuze op *Finishspeling*. Voor MS Project zet dezelfde knop hem terug op *Automatisch (standaard)*: met een statusdatum rekent MS Project zelf zo.
 
 ### Waar je het ziet
 

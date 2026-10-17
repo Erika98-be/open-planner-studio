@@ -31,10 +31,10 @@ Eén sleepbeweging is één stap in *Ongedaan*, hoe lang je ook sleept. Op een g
 
 ### De tijdlijn verschuiven
 
-Wat een sleepbeweging op lege achtergrond doet, hangt af van je scrollmodus. Die kies je in *Instellingen*, tabblad *Weergave*, onder *Gantt › Scrollen & zoomen* bij *Modus*:
+Wat een sleepbeweging op lege achtergrond doet, hangt af van je scrollmodus. Die kies je in *App-instellingen*, tabblad *Weergave*, onder *Gantt › Scrollen & zoomen* bij *Modus*:
 
 - **Zoom + slepen** (standaard): sleep je op lege achtergrond met de linker muisknop, dan verschuift de tijdlijn mee met de muis, zoals een kaart. De cursor is een hand. Op een balk begint een sleep gewoon een balkgebaar.
-- **Positie** en **Toetsen**: dezelfde sleepbeweging maakt een selectiekader. De tijdlijn verschuif je dan met het wiel (zie [Instellingen](docs://ref-instellingen)) of met de middelste muisknop.
+- **Positie** en **Toetsen**: dezelfde sleepbeweging maakt een selectiekader. De tijdlijn verschuif je dan met het wiel (zie [App-instellingen](docs://ref-instellingen)) of met de middelste muisknop.
 
 **De middelste muisknop** (het wiel ingedrukt) verschuift de tijdlijn in elke modus, en ook als je op een balk begint. Het werkt niet zolang je een ander gebaar bezig hebt, zoals het verslepen van een balk.
 
@@ -50,7 +50,7 @@ Meer over selecteren staat in [Taken selecteren, verwijderen en ongedaan maken](
 
 ### Inzoomen en uitzoomen
 
-1. Gebruik *Zoomen +* en *Zoomen -* (*Start › Zoomen*), of de toetsen + en -. Het wiel zoomt ook; wanneer, hangt af van je scrollmodus (zie [Instellingen](docs://ref-instellingen)).
+1. Gebruik *Zoomen +* en *Zoomen -* (*Start › Zoomen*), of de toetsen + en -. Het wiel zoomt ook; wanneer, hangt af van je scrollmodus (zie [App-instellingen](docs://ref-instellingen)).
 2. Wil je het hele project in beeld, kies dan *Beeld › Tijdschaal › Passend maken op project* of druk op Ctrl+0. *Herstellen* (op het tabblad *Beeld*) of de toets 0 zet de zoom terug op de standaard.
 3. Rechts onderin de statusbalk staat de zoom in pixels per dag, bijvoorbeeld *Zoom: 15px/dag*.
 
@@ -72,5 +72,5 @@ De taaknaam staat in de balk als hij er helemaal in past. Past hij niet, bijvoor
 
 - [Rechtermuismenu's](docs://ref-contextmenus): de menu's op een balk, een rij en een groepskop.
 - [Sneltoetsen](docs://ref-sneltoetsen): de toetsen voor zoomen en voor het annuleren van een gebaar.
-- [Instellingen](docs://ref-instellingen): de scrollmodus en de tijdas.
+- [App-instellingen](docs://ref-instellingen): de scrollmodus en de tijdas.
 - [Constraints en deadlines](docs://uitleg-constraints): waarom een verschoven start een constraint wordt.

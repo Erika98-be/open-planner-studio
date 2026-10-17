@@ -14,7 +14,7 @@ async function expectHelpOn(page: Page, id: string): Promise<void> {
 }
 
 test('instellingen: de ?-knop sluit het venster en opent Instellingen in Help', async ({ page, ops: _ops }) => {
-  await page.getByTitle(/^(Settings|Instellingen)$/, { exact: true }).click();
+  await page.getByTitle(/^(App settings|App-instellingen)$/, { exact: true }).click();
   const dialog = page.locator('.settings-dialog');
   await expect(dialog).toBeVisible();
   await dialog.locator('[data-ops-help-button="ref-instellingen"]').click();
