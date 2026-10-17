@@ -18,24 +18,24 @@ Een taaktype werkt alleen op gewone taken. Op mijlpalen, fasen (samenvattingstak
 
 ## Hoe de app rekent
 
-### De regel werkt op wat jij wijzigt
+### Het taaktype werkt op wat jij wijzigt
 
-De app rekent duur, inzet en werk alleen door op het moment dat jij er iets aan verandert: de duur van de taak, de inzet van een toewijzing, het werk, een resource erbij of eraf, of het aantal uren per dag in een kalender. **Bereken** (F5) verandert er niets aan: F5 rekent alleen datums uit. Een regel kiezen verandert ook geen enkel getal. De regel telt pas bij je eerstvolgende wijziging.
+De app rekent duur, inzet en werk alleen door op het moment dat jij er iets aan verandert: de duur van de taak, de inzet van een toewijzing, het werk, een resource erbij of eraf, of het aantal uren per dag in een kalender. **Bereken** (F5) verandert er niets aan: F5 rekent alleen datums uit. Een taaktype kiezen verandert ook geen enkel getal. Het taaktype telt pas bij je eerstvolgende wijziging.
 
 Verandert de duur van de taak doordat een taaktype hem aanpast, dan wordt de planning verouderd. De statusbalk meldt dan *Verouderd — herbereken (F5)*, tenzij *Automatisch berekenen* aan staat.
 
-### Vier regels
+### Vier taaktypes
 
-In het paneel *Eigenschappen* staat naast de keuzelijst *Taaktype* een i-icoon. Wijs het aan, klik of tik erop, dan legt de app de regel uit die nu geldt. In de open keuzelijst heeft elke regel ook zo'n i-icoon. De uitleg begint met een vette zin. De vier regels, met die zin uit de app:
+In het paneel *Eigenschappen* staat naast de keuzelijst *Taaktype* een i-icoon. Wijs het aan, klik of tik erop, dan legt de app het taaktype uit dat nu geldt. In de open keuzelijst heeft elke keuze ook zo'n i-icoon. De uitleg begint met een vette zin. De vier taaktypes, met die zin uit de app:
 
 - **Vaste duur en inzet** (*Het werk volgt uit de duur en de inzet.*). Dit is de standaard. De app verandert de duur nooit zelf en het werk volgt uit duur en inzet. Typ je zelf het werk, dan past de app de inzet aan, want de duur staat vast.
 - **Vaste duur en werk** (*De inzet volgt uit de duur en het werk.*). De app verandert de duur nooit zelf. Wijzig je de duur, dan blijft het werk staan en past de inzet zich aan.
 - **Vast werk** (*De duur volgt uit het werk en de inzet.*). Het werk staat vast en de duur volgt uit werk en inzet.
 - **Vaste inzet** (*De duur volgt uit het werk en de inzet.*). De inzet staat vast en de duur volgt uit het werk.
 
-Twee regels laten de duur dus met rust. Bij de andere twee beweegt de duur mee als je de inzet, het werk of het aantal resources wijzigt. Bij één resource doen Vast werk en Vaste inzet daarbij precies hetzelfde. Ze verschillen als je zelf de duur wijzigt: bij Vast werk blijft het werk staan en past de inzet zich aan, bij Vaste inzet blijft de inzet staan en groeit het werk mee. Ze verschillen ook als er meer resources op de taak staan (zie hieronder).
+Twee taaktypes laten de duur dus met rust. Bij de andere twee beweegt de duur mee als je de inzet, het werk of het aantal resources wijzigt. Bij één resource doen Vast werk en Vaste inzet daarbij precies hetzelfde. Ze verschillen als je zelf de duur wijzigt: bij Vast werk blijft het werk staan en past de inzet zich aan, bij Vaste inzet blijft de inzet staan en groeit het werk mee. Ze verschillen ook als er meer resources op de taak staan (zie hieronder).
 
-Bij de rekenvoorbeelden hieronder zie je wat elke regel doet.
+Bij de rekenvoorbeelden hieronder zie je wat elk taaktype doet.
 
 ### Afronding
 
@@ -49,7 +49,7 @@ Een voorbeeld: twee resources hebben elk 32 uur werk en inzet 1, samen 4 werkdag
 
 ### Voortgang
 
-Heeft de taak al voortgang, dan werkt de regel op het resterende deel: de restduur en het resterende werk. In de app heet dat werk *Werk (rest)*. Wat al gedaan is, blijft staan.
+Heeft de taak al voortgang, dan werkt het taaktype op het resterende deel: de restduur en het resterende werk. In de app heet dat werk *Werk (rest)*. Wat al gedaan is, blijft staan.
 
 ### Uurtaken
 
@@ -57,7 +57,7 @@ Een taak die je in uren plant rekent hetzelfde, maar dan in minuten. Staat allee
 
 ## Rekenvoorbeeld: het stucwerk
 
-Het voorbeeld is het oefenproject *Aanbouw woning* uit de tutorials. In tutorial 5 werk je dit zelf uit en reken je het na. Hier lees je wat elke regel doet.
+Het voorbeeld is het oefenproject *Aanbouw woning* uit de tutorials. In tutorial 5 werk je dit zelf uit en reken je het na. Hier lees je wat elk taaktype doet.
 
 Het stucwerk duurt 4 werkdagen. Eén stukadoor is er aan toegewezen, met een inzet van 1, en de werkdag telt 8 uur. Het werk is dus 32 uur.
 
@@ -107,7 +107,7 @@ Het binnenspouwblad duurt 5 werkdagen en is voor 40% klaar: 2 werkdagen zijn ged
 
 **"Vast werk betekent dat de duur vaststaat."** Nee, precies andersom. Bij *Vaste duur en inzet* en *Vaste duur en werk* staat de duur vast. Bij *Vast werk* en *Vaste inzet* volgt de duur uit de andere twee.
 
-**"Als ik een regel kies, verandert mijn planning."** Nee. Het kiezen verandert geen getal. Alleen bij een volgende wijziging beslist de regel wat meebeweegt. Onder een regel die werk beschermt, legt de app op het moment van kiezen het werk vast, zodat er een getal is om te beschermen. Zo'n taak heeft dan een opgeslagen *Werk (rest)*.
+**"Als ik een taaktype kies, verandert mijn planning."** Nee. Het kiezen verandert geen getal. Alleen bij een volgende wijziging beslist het taaktype wat meebeweegt. Onder een taaktype dat werk beschermt, legt de app op het moment van kiezen het werk vast, zodat er een getal is om te beschermen. Zo'n taak heeft dan een opgeslagen *Werk (rest)*.
 
 **"De duur veranderde zonder dat ik hem aanraakte."** Dat kan na een wijziging van de inzet, het werk, het aantal resources of de uren per dag, onder Vast werk of Vaste inzet. Dan meldt de statusbalk dat de planning verouderd is. Druk op **Bereken** (F5) om de nieuwe datums te zien.
 

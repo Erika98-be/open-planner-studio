@@ -24,24 +24,24 @@ Dit is een instelling van de app, niet van het projectbestand. Bevat een bestand
 
 1. Selecteer de taak. Het paneel *Eigenschappen* staat rechts; zie je het niet, zet het dan aan met *Beeld › Panelen › Eigensch.*
 2. Kies bij *Taaktype* een van de vijf opties: *Projectstandaard (Vaste duur en inzet)*, *Vaste duur en inzet*, *Vaste duur en werk*, *Vast werk* of *Vaste inzet*. Bij *Projectstandaard* volgt de taak de standaard van het project.
-3. Wil je weten wat een regel doet? In de open keuzelijst staat achter elke regel een i-icoon. Wijs het aan, klik of tik erop voor de uitleg. Klik je op het i-icoon, dan kiest de app de regel nog niet.
-4. Naast het gesloten veld staat ook een i-icoon. Dat legt de regel uit die nu geldt, bijvoorbeeld *De duur volgt uit het werk en de inzet.* Bij *Projectstandaard* is dat de regel tussen de haakjes.
+3. Wil je weten wat een keuze doet? In de open keuzelijst staat achter elke keuze een i-icoon. Wijs het aan, klik of tik erop voor de uitleg. Klik je op het i-icoon, dan kiest de app dat taaktype nog niet.
+4. Naast het gesloten veld staat ook een i-icoon. Dat legt het taaktype uit dat nu geldt, bijvoorbeeld *De duur volgt uit het werk en de inzet.* Bij *Projectstandaard* is dat het taaktype tussen de haakjes.
 
-*Projectstandaard* is de eerste keuze en staat er standaard. Tussen de haakjes staat de regel die het project nu als standaard heeft. Er is in de app geen knop om die projectstandaard te wijzigen: hij komt uit een import (bijvoorbeeld uit MS Project of Primavera P6) of uit de MCP-koppeling. Wil je voor één taak een andere regel, kies die dan hier.
+*Projectstandaard* is de eerste keuze en staat er standaard. Tussen de haakjes staat het taaktype dat het project nu als standaard heeft. Er is in de app geen knop om die projectstandaard te wijzigen: hij komt uit een import (bijvoorbeeld uit MS Project of Primavera P6) of uit de MCP-koppeling. Wil je voor één taak een ander taaktype, kies dat dan hier.
 
 Je kunt het taaktype ook in de tabel kiezen. Klik op de **+** rechts in de kop van de takenlijst (*Kolom toevoegen*) en kies onder *Planning* de kolom *Taaktype*.
 
-Een taak zonder toewijzing heeft niets om te koppelen, dus de regel doet daar niets. Wijs eerst een resource toe (zie [Resources toewijzen met een curve](docs://howto-resource-toewijzen)).
+Een taak zonder toewijzing heeft niets om te koppelen, dus het taaktype doet daar niets. Wijs eerst een resource toe (zie [Resources toewijzen met een curve](docs://howto-resource-toewijzen)).
 
 ### Het werk zien en aanpassen
 
-Bij een taak met toewijzingen verschijnt in het blok *Toewijzingen* van het paneel *Eigenschappen* een kolom *Werk (rest)*, naast *Eenh./dag*. Dat is het resterende werk van die resource in uren. Een slotje boven een kolom laat zien wat de regel vasthoudt: *Eenh./dag* bij *Vaste duur en inzet* en bij *Vaste inzet*, *Werk (rest)* bij *Vaste duur en werk* en bij *Vast werk*.
+Bij een taak met toewijzingen verschijnt in het blok *Toewijzingen* van het paneel *Eigenschappen* een kolom *Werk (rest)*, naast *Eenh./dag*. Dat is het resterende werk van die resource in uren. Een slotje boven een kolom laat zien wat het taaktype vasthoudt: *Eenh./dag* bij *Vaste duur en inzet* en bij *Vaste inzet*, *Werk (rest)* bij *Vaste duur en werk* en bij *Vast werk*.
 
 Wil je het werk zelf wijzigen, typ dan de uren in het veld en druk op Enter. Een waarde van 0 of lager neemt de app niet over: het veld springt terug naar de vorige waarde.
 
 ### Zien wat er gebeurt
 
-Kies je een regel, dan verandert er nog geen getal. Onder een regel die werk beschermt, legt de app alleen het huidige werk vast, zodat *Werk (rest)* een opgeslagen waarde heeft. Pas bij de volgende wijziging beslist de regel wat meebeweegt. Wijzig bijvoorbeeld de *Eenh./dag* en kijk wat er met de duur en het werk gebeurt.
+Kies je een taaktype, dan verandert er nog geen getal. Onder een taaktype dat werk beschermt, legt de app alleen het huidige werk vast, zodat *Werk (rest)* een opgeslagen waarde heeft. Pas bij de volgende wijziging beslist het taaktype wat meebeweegt. Wijzig bijvoorbeeld de *Eenh./dag* en kijk wat er met de duur en het werk gebeurt.
 
 Verandert daardoor de duur van de taak, dan meldt de statusbalk *Verouderd — herbereken (F5)*. Druk op **Bereken** (F5), bijvoorbeeld via *Start › Planning › Bereken*, om de nieuwe datums te zien. Staat *Automatisch berekenen* aan (zelfde tabblad *Planning*, kopje *Berekenen*), dan doet de app dat zelf.
 
@@ -49,7 +49,7 @@ Verandert daardoor de duur van de taak, dan meldt de statusbalk *Verouderd — h
 
 - **Vaste duur en inzet** past als de duur een afspraak is en de inzet jouw invoer. Het werk volgt uit die twee. Dit is de standaard. De kraan die voor één dag is gehuurd, hoort hier: de dag staat vast en jij bepaalt hoeveel kranen er staan.
 - **Vaste duur en werk** past als de taak in een vaste periode klaar moet zijn en je weet hoeveel werk erin zit. Verandert de duur, dan past de app de inzet aan.
-- **Vast werk** past als je weet hoeveel uur werk erin zit en wilt zien hoe de duur meebeweegt met het aantal mensen. De 160 uur metselwerk met drie man in plaats van twee hoort hier. Het stucwerk in het oefenproject krijgt deze regel.
+- **Vast werk** past als je weet hoeveel uur werk erin zit en wilt zien hoe de duur meebeweegt met het aantal mensen. De 160 uur metselwerk met drie man in plaats van twee hoort hier. Het stucwerk in het oefenproject krijgt dit taaktype.
 - **Vaste inzet** past als de inzet vaststaat, bijvoorbeeld één kraan, en het werk de duur bepaalt.
 
 ## Valkuilen en wat de app dan doet
@@ -62,9 +62,9 @@ Verandert daardoor de duur van de taak, dan meldt de statusbalk *Verouderd — h
 
 **Materiaal telt niet mee.** Bij een materiaalresource staat in *Werk (rest)* een streepje. Materiaal stuurt de duur nooit.
 
-**Een taak met voortgang.** De regel werkt op het resterende deel. *Werk (rest)* toont dus alleen wat nog moet gebeuren.
+**Een taak met voortgang.** Het taaktype werkt op het resterende deel. *Werk (rest)* toont dus alleen wat nog moet gebeuren.
 
-**Terugdraaien.** Een regel kiezen en elke wijziging die de regel doorrekent, is één stap voor *Ongedaan* (Ctrl+Z). De regel verdwijnt dan weer, maar het veld *Taaktype* blijft in beeld.
+**Terugdraaien.** Een taaktype kiezen en elke wijziging die het taaktype doorrekent, is één stap voor *Ongedaan* (Ctrl+Z). Het gekozen taaktype verdwijnt dan weer, maar het veld *Taaktype* blijft in beeld.
 
 ## Zie ook
 

@@ -283,7 +283,7 @@
     "enableHourPlanning": "Urenplanning inschakelen",
     "enableHourPlanningHint": "Zet uren-/minuten-scheduling aan: een uur-tijdschaal, ploegen met werktijd-banden en uur-precieze taakbalken. Uit ⇒ de app werkt volledig dag-granulair zoals voorheen.",
     "showTaskTypes": "Taaktypes gebruiken",
-    "showTaskTypesHint": "Kies per taak hoe duur, inzet en werkuren samenhangen, zoals Task Type in MS Project en Duration Type in P6. Uit: elke taak houdt duur en inzet vast. Bestanden met taaktypes zetten dit zelf aan.",
+    "showTaskTypesHint": "Kies per taak wat meebeweegt als duur, inzet of werk verandert, zoals Task Type in MS Project en Duration Type in P6. Uit: duur en inzet blijven staan. Een bestand met taaktypes of opgeslagen werk toont ze ook als dit uit staat.",
     "allowMixedDayHour": "Gemengde dag/uur-planning toestaan",
     "defaultTaskDurationUnit": "Standaardeenheid voor nieuwe taken",
     "defaultTaskDurationUnitHint": "Bepaalt of nieuwe taken standaard in werkdagen of werkuren beginnen. Bestaande taken veranderen niet.",
