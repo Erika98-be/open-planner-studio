@@ -962,7 +962,6 @@
     },
     "worktime": {
       "section": "Godziny pracy",
-      "derivedHpd": "Wyliczone godziny/dzień:",
       "saveAsPreset": "Zapisz jako profil…",
       "saveAsPresetHint": "Zapisz bieżące godziny pracy jako własny profil (na tym urządzeniu), aby móc go później ponownie wykorzystać w dowolnym projekcie.",
       "perWeekday": "Ustaw dla każdego dnia tygodnia…",
