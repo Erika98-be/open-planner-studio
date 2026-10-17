@@ -4,7 +4,7 @@ import type { DateNotation, TimeNotation } from '@/types/view';
 import { displayDateTime } from '@/utils/displayDate';
 import type { NotifyInput } from './slices/types';
 import { CONSTRAINTS_HELP_ARTICLE_ID } from './helpArticles';
-import { partialRefusalNotice, refusedNamesLine } from './refusalNotice';
+import { refusalNotice, refusedNamesLine, refusedSetKey } from './refusalNotice';
 
 /**
  * Eén taak waarvan een nieuwe start (getypt of gesleept) iets met de constraint deed:
@@ -16,7 +16,7 @@ export type StartEditNotice =
   | {
     kind: 'blocked'; name: string; constraint: TaskConstraint;
     /** Voor het samenvouwen per taak: tien pogingen op dezelfde taak = één regel met een teller. */
-    taskId?: string;
+    taskId: string;
   };
 
 /** De gids die uitlegt hoe een nieuwe start op een taak met voorganger met constraints samenhangt. */
@@ -34,8 +34,6 @@ export function startEditNotifications(
   notices: readonly StartEditNotice[],
   notation: DateNotation,
   timeNotation: TimeNotation,
-  /** De rest van dezelfde bewerking (plakken, vullen) is wél toegepast ⇒ deels gelukte weigering. */
-  partlyApplied = false,
 ): NotifyInput[] {
   const out: NotifyInput[] = [];
   const snet = notices.filter((notice): notice is Extract<StartEditNotice, { kind: 'snet' }> => notice.kind === 'snet');
@@ -58,22 +56,23 @@ export function startEditNotifications(
   }
   if (blocked.length === 1) {
     const [{ name, constraint, taskId }] = blocked;
-    out.push(partialRefusalNotice({
+    out.push(refusalNotice({
       messageKey: constraint.date ? 'notifications.startBlockedByConstraint' : 'notifications.startBlockedByConstraintNoDate',
       params: constraint.date
         ? { name, type: constraint.type, date: displayDateTime(constraint.date, notation, timeNotation) }
         : { name, type: constraint.type },
-      dedupeKey: `start-blocked:${taskId ?? name}`,
+      dedupeKey: `start-blocked:${taskId}`,
       helpArticleId: HELP_ARTICLE_ID,
-    }, partlyApplied));
+    }));
   } else if (blocked.length > 1) {
-    out.push(partialRefusalNotice({
+    // "Niet toegepast bij": bij plakken kan een andere cel van dezelfde taak wél geschreven zijn.
+    out.push(refusalNotice({
       messageKey: 'notifications.startBlockedByConstraintMany',
       params: { count: blocked.length },
-      detailLines: refusedNamesLine(blocked.map(b => b.name)),
-      dedupeKey: 'start-blocked-many',
+      detailLines: refusedNamesLine(blocked.map(b => b.name), 'notApplied'),
+      dedupeKey: refusedSetKey('start-blocked-many', blocked.map(b => b.taskId)),
       helpArticleId: HELP_ARTICLE_ID,
-    }, partlyApplied));
+    }));
   }
   return out;
 }

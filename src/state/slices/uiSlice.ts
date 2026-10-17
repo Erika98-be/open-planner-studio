@@ -1,4 +1,4 @@
-import type { UIState, AppSlice, NotifyInput } from './types';
+import type { UIState, AppSlice, AppNotification, NotifyInput } from './types';
 import type { McpServerStatus } from '@/services/mcp/contracts';
 import { MCP_DEFAULT_PORT, peekTheme } from '@/utils/settingsStore';
 import { detectSystemPrefersDark } from '@/utils/theme';
@@ -368,18 +368,23 @@ export const createUiSlice: AppSlice<UiSlice> = (set, get) => ({
         id: `n${++notificationSeq}`,
         count: 1,
       });
-      // 3. Begrens op MAX_NOTIFICATIONS. Volgorde van verwijderen bij overschrijding:
-      //    a. de oudste gewone info (verdwijnt toch vanzelf);
+      // 3. Begrens op MAX_NOTIFICATIONS. Volgorde van verwijderen bij overschrijding (de nieuwe
+      //    melding staat achteraan):
+      //    a. de oudste gewone info, behalve de nieuwe (verdwijnt toch vanzelf);
       //    b. de oudste weigering (`refusal`, eigenaarsbesluit 2026-10-17): rood en blijvend, maar
-      //       herhaalde weigeringen mogen een echte fout of een blijvende info NOOIT wegduwen;
-      //    c. de oudste blijvende info (`sticky`, openingsmelding met gewijzigde data);
-      //    d. pas dan de oudste melding overall (alleen nog echte fouten).
-      //    Een fout mag dus nooit door een info of een weigering verdrongen worden (de cyclus-/
-      //    opslaafout is juist degene die moet blijven staan).
+      //       hij mag een echte fout of een blijvende info NOOIT wegduwen, en een nieuwe info ook
+      //       niet opslokken (drie staande weigeringen + een info ⇒ de info verschijnt);
+      //    c. de nieuwe melding zelf, als die een gewone info is (alleen nog fouten en blijvende
+      //       info's staan er);
+      //    d. de oudste blijvende info (`sticky`, openingsmelding met gewijzigde data);
+      //    e. pas dan de oudste melding overall (alleen nog echte fouten).
       if (s.ui.notifications.length > MAX_NOTIFICATIONS) {
         const list = s.ui.notifications;
-        let idx = list.findIndex((x) => x.severity === 'info' && !x.sticky);
+        const newest = list.length - 1;
+        const plainInfo = (x: AppNotification) => x.severity === 'info' && !x.sticky;
+        let idx = list.findIndex((x, i) => i !== newest && plainInfo(x));
         if (idx < 0) idx = list.findIndex((x) => x.refusal);
+        if (idx < 0 && plainInfo(list[newest])) idx = newest;
         if (idx < 0) idx = list.findIndex((x) => x.severity === 'info');
         if (idx >= 0) list.splice(idx, 1);
         else list.shift();

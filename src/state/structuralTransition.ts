@@ -26,7 +26,7 @@ import { taskMilestoneTransition, type MilestoneRefusal } from '@/engine/taskMil
 import { relocateAssignment } from './assignmentMutations';
 import type { NotifyInput } from './slices/types';
 import { STRUCTURE_HELP_ARTICLE_ID } from '@/state/helpArticles';
-import { partialRefusalNotice, refusalNotice, refusedNamesLine } from './refusalNotice';
+import { refusalNotice, refusedNamesLine, refusedSetKey } from './refusalNotice';
 
 /** Namen in een melding blijven leesbaar (zelfde grens als `relationActions.ts`). */
 const MAX_NAME = 40;
@@ -285,26 +285,27 @@ export function phaseRefusalNotice(
 
 /**
  * De melding bij een geweigerde omzetting naar mijlpaal; `refused` in volgorde, gegroepeerd per reden.
- * `partlyApplied`: de rest van dezelfde handeling werd wél mijlpaal (contextmenu op een tak) ⇒ een
- * deels gelukte weigering (`partialRefusalNotice`); anders rood en blijvend.
+ * Altijd een rode weigering, ook als de rest van de reikwijdte (contextmenu op een tak) wél mijlpaal
+ * werd; bij meer taken noemt een detailregel welke niet.
  */
 export function milestoneRefusalNotices(
-  refused: readonly { name: string; refusal: MilestoneRefusal }[],
-  partlyApplied = false,
+  refused: readonly { id: string; name: string; refusal: MilestoneRefusal }[],
 ): NotifyInput[] {
   const notices: NotifyInput[] = [];
   for (const reason of ['assignments', 'summary'] as const) {
     const group = refused.filter(r => r.refusal === reason);
     if (group.length === 0) continue;
-    notices.push(partialRefusalNotice({
+    notices.push(refusalNotice({
       messageKey: reason === 'assignments'
         ? 'notifications.milestoneRefusedAssignments'
         : 'notifications.milestoneRefusedSummary',
       params: { count: group.length, task: shortName(group[0].name) },
       // Meer taken (contextmenu op een tak): noem welke geen mijlpaal werden.
-      ...(group.length > 1 ? { detailLines: refusedNamesLine(group.map(r => shortName(r.name))) } : {}),
-      dedupeKey: `milestone-refused-${reason}`,
-    }, partlyApplied));
+      // Een omzetting naar mijlpaal raakt verder niets aan die taak, dus "Niet aangepast" klopt.
+      ...(group.length > 1 ? { detailLines: refusedNamesLine(group.map(r => shortName(r.name)), 'untouched') } : {}),
+      // Alleen precies dezelfde set taken vouwt samen (anders zou "3 taken" "2 taken ×2" worden).
+      dedupeKey: refusedSetKey(`milestone-refused-${reason}`, group.map(r => r.id)),
+    }));
   }
   return notices;
 }

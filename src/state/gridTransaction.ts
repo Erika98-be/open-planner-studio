@@ -59,7 +59,7 @@ import type {
 } from '@/types/taskGrid';
 import type { ViewRow } from '@/engine/view/visibleRows';
 import { markDocumentEdited } from '@/state/documentEdited';
-import { partialRefusalNotice, refusedNamesLine } from './refusalNotice';
+import { refusalNotice, refusedNamesLine } from './refusalNotice';
 
 export interface PreparedGridMutation {
   documentId: string;
@@ -75,8 +75,10 @@ export interface PreparedGridMutation {
    *  berekend (clipboard.ts) of conditioneel bleken (deze module, applyCellEdits) — bij een echte
    *  Ctrl+V-paste in plaats van de hele transactie te blokkeren. 0 buiten die route. */
   skippedReadOnlyCount: number;
-  /** De taken met overgeslagen cellen (zelfde volgorde als ontdekt), voor "Niet aangepast: …". */
-  skippedReadOnlyTaskIds?: readonly string[];
+  /** Taken met overgeslagen cellen waarin NIETS is geschreven ("Niet aangepast: …"), en taken met
+   *  overgeslagen cellen waarin een andere cel wél is geschreven ("Niet toegepast bij: …"). */
+  skippedReadOnlyUntouchedTaskIds?: readonly string[];
+  skippedReadOnlyPartialTaskIds?: readonly string[];
   label: string;
 }
 
@@ -858,6 +860,8 @@ export function prepareGridMutation(
   const appliedRelationWrites: RelationSetIntent[] = [];
   let skippedReadOnlyFromTransaction = 0;
   const skippedReadOnlyTaskIds = new Set<string>();
+  // Taken waarin deze transactie iets schreef (een cel die niet is overgeslagen, of een toewijzing).
+  const wroteTaskIds = new Set<string>();
   for (const intent of intents) {
     if (intent.kind === 'paste') for (const id of intent.skippedReadOnlyTaskIds ?? []) skippedReadOnlyTaskIds.add(id);
   }
@@ -916,12 +920,14 @@ export function prepareGridMutation(
           if (applied.value.timephasedGuidanceLost) timephasedLossTaskIds.add(write.taskId);
           skippedReadOnlyFromTransaction += applied.value.skippedReadOnlyCount;
           if (applied.value.skippedReadOnlyCount > 0) skippedReadOnlyTaskIds.add(write.taskId);
+          if (taskWrites.length > applied.value.skippedReadOnlyCount) wroteTaskIds.add(write.taskId);
           if (applied.value.startNotice) startNotices.push(applied.value.startNotice);
         }
         if (taskWrites.some(item => String(item.columnId) === 'task.isMilestone')) {
           assignmentValidationTaskIds.add(write.taskId);
         }
       } else if (write.kind === 'assignment-set') {
+        wroteTaskIds.add(write.taskId);
         assignmentValidationTaskIds.add(write.taskId);
         const applied = applyAssignmentSet(
           draft,
@@ -1063,15 +1069,11 @@ export function prepareGridMutation(
       before,
       after,
       derivedAfter: { viewRows, resourceLoadResult },
-      // Een tegengehouden start terwijl andere cellen wél zijn geschreven, is een deels gelukte
-      // weigering (`partialRefusalNotice`); niets geschreven ⇒ rood en blijvend.
-      notifications: [
-        ...notifications,
-        ...startEditNotifications(startNotices, state.ui.dateNotation, state.ui.timeNotation, !snapshotsEqual(before, after)),
-      ],
+      notifications: [...notifications, ...startEditNotifications(startNotices, state.ui.dateNotation, state.ui.timeNotation)],
       timephasedLossCount: timephasedLossTaskIds.size,
       skippedReadOnlyCount: skippedReadOnlyFromPlanning + skippedReadOnlyFromTransaction,
-      skippedReadOnlyTaskIds: [...skippedReadOnlyTaskIds],
+      skippedReadOnlyUntouchedTaskIds: [...skippedReadOnlyTaskIds].filter(id => !wroteTaskIds.has(id)),
+      skippedReadOnlyPartialTaskIds: [...skippedReadOnlyTaskIds].filter(id => wroteTaskIds.has(id)),
       label: normalized.value.length === 1 ? 'Cel bewerken' : 'Cellen bewerken',
     },
   };
@@ -1118,19 +1120,22 @@ function commitPreparedAgainstStore(
   // Ongeacht `changed` — ook een paste die UITSLUITEND read-only doelcellen raakte
   // (dus per saldo niets schreef) moet de gebruiker vertellen dat er iets is overgeslagen, anders
   // oogt de paste als een stille no-op.
-  // Een weigering (rood, blijvend), ook als de rest wél geschreven is (`partialRefusalNotice`); de
-  // detailregel noemt de taken waarvan cellen niet zijn aangepast.
+  // Een weigering (rood, blijvend), ook als de rest wél geschreven is. De detailregels noemen de
+  // taken waarin niets is aangepast, en apart de taken waarin een andere cel wél is geschreven. Geen
+  // samenvouwsleutel: het aantal staat in de tekst, en twee verschillende plakacties zijn twee meldingen.
   if (prepared.skippedReadOnlyCount > 0) {
     const tasks = get().tasks;
-    const names = (prepared.skippedReadOnlyTaskIds ?? [])
+    const names = (ids: readonly string[] | undefined) => (ids ?? [])
       .map(id => tasks.find(task => task.id === id)?.name)
       .filter((name): name is string => !!name);
-    get().notify(partialRefusalNotice({
+    get().notify(refusalNotice({
       messageKey: 'notifications.pasteSkippedReadOnly',
       params: { count: prepared.skippedReadOnlyCount },
-      detailLines: refusedNamesLine(names),
-      dedupeKey: 'paste-skipped-read-only',
-    }, changed));
+      detailLines: [
+        ...refusedNamesLine(names(prepared.skippedReadOnlyUntouchedTaskIds), 'untouched'),
+        ...refusedNamesLine(names(prepared.skippedReadOnlyPartialTaskIds), 'notApplied'),
+      ],
+    }));
   }
   return { ok: true, value: undefined };
 }

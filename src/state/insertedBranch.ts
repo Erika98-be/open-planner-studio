@@ -14,7 +14,7 @@ import type { NotifyInput } from './slices/types';
 import { relationVerdict } from './relationRules';
 import { generateId } from '@/utils/id';
 import { applyWbsNumbering, deriveWbsCodes } from '@/utils/wbs';
-import { partialRefusalNotice, refusedNamesLine } from './refusalNotice';
+import { refusalNotice, refusedNamesLine, refusedSetKey } from './refusalNotice';
 
 /**
  * Legt `relations` opnieuw aan tussen de nieuwe ids uit `idMap` (bron-id → nieuw id). Een spread
@@ -157,10 +157,11 @@ export function notifyRelationsSkipped(
   if (skipped.length === 0) return;
   // Een weigering (eigenaarsbesluit 2026-10-17: ook deels gelukt is rood): de tak is ingevoegd,
   // deze relaties niet. De detailregel noemt ze.
-  notify(partialRefusalNotice({
+  notify(refusalNotice({
     messageKey: 'notifications.relationsSkippedOnInsert',
     params: { count: skipped.length },
     detailLines: refusedNamesLine(skipped, 'relations'),
-    dedupeKey,
-  }, true));
+    // Alleen precies dezelfde set relaties vouwt samen (het aantal staat in de tekst).
+    dedupeKey: refusedSetKey(dedupeKey, skipped),
+  }));
 }

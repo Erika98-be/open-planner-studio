@@ -924,7 +924,7 @@ export const createTaskSlice: AppSliceFactory<TaskSlice> = (runtime) => (set, ge
           hasAssignments: s.assignments.some(a => a.taskId === id),
         });
         if (refusal) {
-          refusedNotices = milestoneRefusalNotices([{ name: task.name, refusal }]);
+          refusedNotices = milestoneRefusalNotices([{ id: task.id, name: task.name, refusal }]);
           return;
         }
       }

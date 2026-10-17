@@ -355,6 +355,8 @@ export type NotificationMessageKey =
   // aangemaakt (`refusedNamesLine` in state/refusalNotice.ts). `names`, en bij `More` ook `count`.
   | 'notifications.refusedTaskNames'
   | 'notifications.refusedTaskNamesMore'
+  | 'notifications.notAppliedTaskNames'
+  | 'notifications.notAppliedTaskNamesMore'
   | 'notifications.refusedRelationNames'
   | 'notifications.refusedRelationNamesMore'
   // Tutorialvraag na de eerste voltooide rondleiding (`TutorialOfferDialog`): "later" bij Nee of een
