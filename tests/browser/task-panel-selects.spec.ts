@@ -126,6 +126,24 @@ test('taakpaneel: een secundair type buiten de lijst (bv. MSO uit IFC) toont zij
   const secondary = page.locator('[data-ops-rail]').getByRole('button', { name: SECONDARY });
   await expect(secondary).toHaveAttribute('data-value', 'MSO');
   await expect(secondary).toHaveText(/\(MSO\)$/);
+
+  // Toetsenbord (#370): MSO hoort bij geen optie, dus de lijst opent zonder actieve optie en Enter
+  // kiest niets. Pijl-omlaag maakt de eerste optie ("geen") actief; Enter wist dan de secundaire.
+  await secondary.focus();
+  await page.keyboard.press('Enter');
+  const list = page.locator('.ops-select__menu');
+  await expect(list).toBeVisible();
+  await expect(list).not.toHaveAttribute('aria-activedescendant', /.*/);
+  await page.keyboard.press('Enter');
+  await expect(list).toBeVisible();
+  const facts = () => page.evaluate(id => window.__OPS__!.store.getState().tasks.find(x => x.id === id)!.constraint2?.type, taskId);
+  expect(await facts()).toBe('MSO');
+  await page.keyboard.press('ArrowDown');
+  await expect(list.locator('.ops-select__option.is-highlighted')).toHaveAttribute('data-value', '');
+  await page.keyboard.press('Enter');
+  await expect(list).toHaveCount(0);
+  await expect.poll(facts).toBeUndefined();
+  await expect(secondary).toHaveAttribute('data-value', '');
 });
 
 test('taakpaneel: constraint en secundaire constraint kiezen via de eigen keuzelijst; undo zet terug', async ({ page, ops: _ops }) => {
@@ -140,7 +158,8 @@ test('taakpaneel: constraint en secundaire constraint kiezen via de eigen keuzel
     .toEqual(['ASAP', 'ALAP', 'SNET', 'SNLT', 'FNET', 'FNLT', 'MSO', 'MFO']);
   await page.keyboard.press('Escape');
 
-  // Een herhaalde keuze (ASAP terwijl ASAP al geldt) is geen undo-stap (de store doet niets).
+  // Een herhaalde keuze (ASAP terwijl ASAP al geldt) is geen undo-stap: sinds #370 roept `Select`
+  // dan geen onChange aan (net als de native lijst op main).
   const depth0 = (await state(page)).undoDepth;
   await choose(page, /^Constraint$/, 'ASAP');
   expect((await state(page)).undoDepth).toBe(depth0);
@@ -180,6 +199,17 @@ test('taakpaneel: soort mijlpaal kiezen via de eigen keuzelijst; undo zet terug'
   const label = MILESTONE_KIND;
   const trigger = page.locator('[data-ops-rail]').getByRole('button', { name: label });
   await expect(trigger).toHaveAttribute('data-value', 'AUTO');
+
+  // Enter-Enter op de huidige waarde: de lijst opent met AUTO actief, de tweede Enter kiest AUTO
+  // opnieuw. Sinds #370 roept `Select` dan geen onChange aan: geen undo-stap, geen wijziging.
+  const depth0 = (await state(page)).undoDepth;
+  await trigger.focus();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('.ops-select__menu .ops-select__option.is-highlighted')).toHaveAttribute('data-value', 'AUTO');
+  await page.keyboard.press('Enter');
+  await expect(page.locator('.ops-select__menu')).toHaveCount(0);
+  expect((await state(page)).undoDepth).toBe(depth0);
+  expect((await taskFacts(page, taskId, codeTypeId)).milestoneKind).toBeUndefined();
 
   await choose(page, label, 'START');
   await expect.poll(() => taskFacts(page, taskId, codeTypeId).then(f => f.milestoneKind)).toBe('START');
