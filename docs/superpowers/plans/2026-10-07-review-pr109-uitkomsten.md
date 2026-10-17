@@ -1437,3 +1437,13 @@ Testversie (release-check, poort 3049) is NIET bijgewerkt met de PR's van vandaa
   tijdveld alleen bij uurmodus van de kalender, of lijn op begin van de dag; gidsen aanpassen. Nog na te gaan: blijft de
   tijd staan als je in het lint alleen de datum wijzigt? VERVOLG: tijdveld niet uitgeschakeld zonder statusdatum,
   undo voegt datum+tijd samen (bestond al), i18n-ruis, los docblok, printbalken per dag.
+- **Voorlopige hercheck #375 ronde 3: voorlopig JA** (geen BLOKKEERT); vóór merge: specs `refusal-red`,
+  `actual-dates`, `start-snet` draaien + relatiekolom-gat (`gridTransaction.ts:928-942`, één regel) bevestigen/fixen.
+  VERVOLG: info duwt oudste weigering weg, sleutel uit namen bij relaties.
+- **#376 fixronde af:** kop 8d8b34bde, CI 16/16; nieuwe instellingstekst nl "Kies per taak wat meebeweegt als duur,
+  inzet of werk verandert, zoals Task Type in MS Project en Duration Type in P6. Uit: duur en inzet blijven staan. Een
+  bestand met taaktypes of opgeslagen werk toont ze ook als dit uit staat."; termbase werksoort; `task-type` zonder
+  `p6: "duration type"` (botst met *Duurtype*). ⇒ hercheck maandag.
+- **#378 werk-decimalen** (nieuw, concept): kop 179e2e8ef; CI liep nog bij de stop. Tabelkolommen + cel-editor +
+  contourvenster/histogram-as in taalnotatie, max 2 decimalen, onveranderd = geen schrijfactie. Overlapt met #369
+  (`taskColumnRegistry.ts`, helper `parsePositiveDecimal`) ⇒ na #369 samenvoegen.
