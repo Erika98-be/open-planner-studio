@@ -16,11 +16,11 @@ You use hours for work that does not fit in whole days: a crane you hire for twe
 
 ## How the app calculates
 
-### Working times and net hours
+### Working times and the standard workday
 
 Every calendar has **working-time blocks** for each work day (called *bands* in the app). The standard calendar has 07:00 to 12:00 and 13:00 to 16:00. The gap is the break. The app derives those blocks from the calendar's *Start (hour)*, *End (hour)* and break; you do not have to set anything for it. If you set blocks of your own per weekday, those take precedence.
 
-The **net hours per day** are the sum of the blocks of a work day. If the work days differ in length, the most common daily total applies, and in a tie the highest. With four days of 8 hours and a Friday of 5 hours, the net hours per day are therefore 8. A calendar with its own hours per day (for example from Primavera P6) also calculates with this daily total, and the calendar window shows it. Its own value is kept for the export.
+The **standard workday** is the workday that occurs most often; its length is the sum of its blocks. So it is not an average: with Monday at 16 hours and Tuesday to Friday at 10 hours, the standard workday is 10 hours. If the work days differ in length, the most common daily total applies, and in a tie the highest. With four days of 8 hours and a Friday of 5 hours, the standard workday is therefore 8 hours. A calendar with its own hours per day (for example from Primavera P6) also calculates with this daily total, and the calendar window shows it. Its own value is kept for the export.
 
 ### A task in hours
 
@@ -32,7 +32,7 @@ The app counts whole work days. The hours per day play no part. A task of 5 days
 
 ### Converting days and hours
 
-A day is the net hours per day of the task's calendar. The app uses that in three places:
+A day is the standard workday of the task's calendar. The app uses that in three places:
 
 - For *Duration display*. Under *Settings › Project › App settings*, tab *Appearance*, you choose *Automatic (native unit per task)*, *Always days* or *Always hours*. A task of 18 hours shows under *Always days* as `2.25d(18h)`: the native unit stays in brackets.
 - For a lag in hours after a day task (see *Rounding*).
@@ -51,13 +51,13 @@ The rules below apply to a Finish-Start relation on a calendar without working-t
 The app rounds, or refuses, in four places:
 
 - **A day task after an hour task** begins on the next work day. The hour task is, as it were, rounded up to whole days.
-- **A lag in hours** counts in the lag calendar, by default that of the predecessor. If the predecessor is a day task on a calendar without working-time blocks of its own, such as the standard calendar, the app converts the lag to whole work days: the lag divided by the net hours per day, rounded to a whole number; half a day rounds up. At 8 hours per day, 1 hour counts as 0 days, 4 hours as 1 day and 12 hours as 2 days. That also applies if the successor is an hour task. If the predecessor is an hour task, or its calendar has working-time blocks of its own, the lag counts exactly in working hours and the break does not count.
+- **A lag in hours** counts in the lag calendar, by default that of the predecessor. If the predecessor is a day task on a calendar without working-time blocks of its own, such as the standard calendar, the app converts the lag to whole work days: the lag divided by the hours of the standard workday, rounded to a whole number; half a day rounds up. At 8 hours per day, 1 hour counts as 0 days, 4 hours as 1 day and 12 hours as 2 days. That also applies if the successor is an hour task. If the predecessor is an hour task, or its calendar has working-time blocks of its own, the lag counts exactly in working hours and the break does not count.
 - **A duration in days** is always a whole number. If you type `1.5d`, the app reports *Enter a whole number of days or hours, for example 2d or 12h.* A duration in hours may be `1.5h`, or `1h 30m`.
 - **Switching the unit** only happens if the outcome is exact (see above).
 
 ## Worked example: the crane
 
-The calendar is Monday to Friday from 07:00 to 12:00 and from 13:00 to 16:00: 8 net hours per day. The project starts on Monday 7 June 2027.
+The calendar is Monday to Friday from 07:00 to 12:00 and from 13:00 to 16:00: a standard workday of 8 hours. The project starts on Monday 7 June 2027.
 
 ### Hour, hour and day
 
@@ -81,7 +81,7 @@ After a day task a lag works differently. *Pour foundation* finishes on Tuesday 
 
 ### A free Friday afternoon
 
-Now Friday has only one block, from 07:00 to 12:00: 5 hours. The other days stay at 8 hours. The net hours per day stay 8, because that is the most common daily total. A week now has 37 working hours.
+Now Friday has only one block, from 07:00 to 12:00: 5 hours. The other days stay at 8 hours. The standard workday stays 8 hours, because that is the most common daily total. A week now has 37 working hours.
 
 A task of 40 hours from Monday 7 June 07:00 uses Monday to Thursday (32 hours) and the Friday (5 hours). The last 3 hours fall on the Monday after, from 07:00 to 10:00. The finish is **Monday 14 June 10:00**. A task of 5 days would occupy 37 hours from Monday, and that is what the app proposes if you switch the unit of 5 days to hours.
 

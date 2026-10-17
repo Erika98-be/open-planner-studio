@@ -6,7 +6,7 @@
 // venstersessie samen: de klikvolgorde telt niet, en het blok Werktijden volgt dezelfde regel als de
 // dagknoppen. Corpusloze kern: `tests/planning/check-urenperdag-dagwissel.ts` (§1–§4, §6).
 //
-// Het veld "Net hours per day" toont de werktijd per dag waarmee de app rekent (modale bandsom), niet de
+// Het veld "Standard workday" toont de werktijd per dag waarmee de app rekent (modale bandsom), niet de
 // opgeslagen `hoursPerDay` (besluit eigenaar 2026-10-15, optie 1). De opgeslagen waarde lezen de tests daarom
 // na Toepassen uit de store.
 //
@@ -294,4 +294,48 @@ test('kalendervenster: netto-uren per dag toont de werktijd van de blokken, live
       const c = window.__OPS__!.store.getState().calendar;
       return [c.hoursPerDay, c.workTime?.byWeekday[1]];
     })).toEqual([8, [{ start: 480, end: 1080 }]]);
+  });
+
+test('kalendervenster: standaard werkdag is de dagsom die het vaakst voorkomt, geen gemiddelde (ma 16 u, di–vr 10 u ⇒ 10)',
+  async ({ page, ops: _ops }) => {
+    // Besluit eigenaar 2026-10-17 (checkstap 24, optie 2): het veld heet *Standard workday* en blijft 10,00 h
+    // als maandag 07:00–23:00 (16 u) wordt; een gemiddelde zou 11,20 h geven.
+    await openXer(page, xer('Dagploeg 10 u', ON_MA_VR(['08:00', '18:00']), 10));
+    await expect.poll(() => calendarState(page).then((s) => s.workDays)).toEqual([1, 2, 3, 4, 5]);
+
+    const dialog = await openCalendarDialog(page);
+    await expect(netHours(dialog)).toHaveText('10.00 h');
+    const monBand = dialog.locator('[data-ops-worktime-day="1"] [data-ops-band]').first().locator('[data-ops-time-input]');
+    await monBand.nth(0).fill('07:00');
+    await monBand.nth(0).press('Tab');
+    await monBand.nth(1).fill('23:00');
+    await monBand.nth(1).press('Tab');
+    await expect(dialog.locator('[data-ops-worktime-day="1"]')).toContainText('16.00h');
+    await expect(netHours(dialog)).toHaveText('10.00 h');
+    await dialog.locator('[data-ops-cal-cancel]').click();
+    await expect(dialog).toBeHidden();
+  });
+
+test('kalendervenster: het i-icoon bij Standard workday legt het veld uit, met de muis en met het toetsenbord',
+  async ({ page, ops: _ops }) => {
+    await openXer(page, LATE_PLOEG);
+    await expect.poll(() => calendarState(page).then((s) => s.workDays)).toEqual([1, 2, 3, 4, 5]);
+    const dialog = await openCalendarDialog(page);
+    const info = dialog.locator('[data-ops-standard-workday-info]');
+    await expect(info).toHaveAttribute('aria-label', 'Explanation of the standard workday');
+    // Gewone cursor, geen vraagteken (patroon *Werkregel*).
+    expect(await info.evaluate((el) => getComputedStyle(el).cursor)).not.toBe('help');
+    const tip = page.locator('.ops-tooltip[role="tooltip"]');
+    const text = 'The length of the workday that occurs most often. The app uses it to convert a day into hours.';
+    await info.hover();
+    await expect(tip).toHaveText(text);
+    await page.mouse.move(0, 0);
+    await expect(tip).toHaveCount(0);
+    // Toetsenbord: de knop is focusbaar en toont de uitleg bij focus; Escape sluit alleen de tooltip.
+    await info.focus();
+    await expect(tip).toHaveText(text);
+    await page.keyboard.press('Escape');
+    await expect(tip).toHaveCount(0);
+    await expect(dialog).toBeVisible();
+    await dialog.locator('[data-ops-cal-cancel]').click();
   });

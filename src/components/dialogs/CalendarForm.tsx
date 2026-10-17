@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useId } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Trash2, X } from 'lucide-react';
+import { Info, Plus, Trash2, X } from 'lucide-react';
 import type { WorkCalendar, Holiday, WorkTimeBands } from '@/types/calendar';
 import { accentChipClass, CalendarGeneratorFields } from './CalendarGeneratorFields';
 import { WorkTimeEditor } from './WorkTimeEditor';
@@ -581,9 +581,23 @@ export function CalendarForm({
           </>
         )}
         <div className="flex flex-col gap-1">
-          <label htmlFor={netHoursId} className="text-text-secondary font-medium">
-            {tMenu('ribbon.calendarDialog.netHoursPerDay')}
-          </label>
+          {/* Standaard werkdag = de modale dagsom, geen gemiddelde (besluit eigenaar 2026-10-17). Het i-icoon
+              volgt het patroon van *Werkregel*: `title` + `data-tooltip-instant` (hover, focus en tik). */}
+          <div className="flex items-center gap-1">
+            <label htmlFor={netHoursId} className="text-text-secondary font-medium">
+              {tMenu('ribbon.calendarDialog.standardWorkday')}
+            </label>
+            <button
+              type="button"
+              className="inline-flex h-5 w-5 items-center justify-center rounded-[5px] text-text-secondary hover:bg-surface-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
+              title={tMenu('ribbon.calendarDialog.standardWorkdayInfo')}
+              aria-label={tMenu('ribbon.calendarDialog.standardWorkdayInfoLabel')}
+              data-tooltip-instant="true"
+              data-ops-standard-workday-info
+            >
+              <Info size={14} aria-hidden="true" />
+            </button>
+          </div>
           <output
             id={netHoursId}
             className="py-1.5 font-semibold text-text-primary tabular-nums"

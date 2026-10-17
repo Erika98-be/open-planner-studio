@@ -133,8 +133,10 @@ test('scalar HH:MM-bediening leidt netto uren af, stapt per kwartier en blokkeer
   expect(await dialog.locator('[data-ops-scalar-time-step]').evaluateAll(buttons => buttons.every(button => !/^(calendar|ribbon)\./.test(button.getAttribute('title') ?? '') && !/^(calendar|ribbon)\./.test(button.getAttribute('aria-label') ?? '')))).toBe(true);
   await expect(netHours).toHaveText('8.00 h');
   await expect(netHours.locator('input')).toHaveCount(0);
-  await expect(dialog.getByText('Net hours per day', { exact: true })).toBeVisible();
-  await expect(dialog).not.toContainText('ribbon.calendarDialog.netHoursPerDay');
+  await expect(dialog.getByText('Standard workday', { exact: true })).toBeVisible();
+  // Het label is gekoppeld aan het veld: een schermlezer noemt de naam bij het getal.
+  await expect(dialog.getByLabel('Standard workday', { exact: true })).toHaveText('8.00 h');
+  await expect(dialog).not.toContainText('ribbon.calendarDialog.standardWorkday');
 
   await dialog.locator('[data-ops-scalar-time-step="work-start-up"]').click();
   await expect(workStart).toHaveValue('07:15');
@@ -233,7 +235,7 @@ test('netto-uren blijft in beide urenplanningstanden een afgeleide output', asyn
   const netHours = dialog.locator('[data-ops-simple-break-net-hours]');
   await expect(netHours).toHaveText('8.00 h');
   await expect(netHours.locator('input')).toHaveCount(0);
-  await expect(dialog.getByText('Net hours per day', { exact: true })).toBeVisible();
+  await expect(dialog.getByText('Standard workday', { exact: true })).toBeVisible();
   await expect(dialog.locator('input[type="number"][value="8"]')).toHaveCount(0);
 
   await page.evaluate(() => window.__OPS__!.store.getState().setUI({ enableHourPlanning: true }));

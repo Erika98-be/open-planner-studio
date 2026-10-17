@@ -60,7 +60,6 @@
       "startHour": "Start (time)",
       "endHour": "Slut (time)",
       "hoursPerDay": "Timer pr. dag",
-      "netHoursPerDay": "Nettotimer pr. dag",
       "holidaysSection": "Helligdage",
       "holidayName": "Beskrivelse",
       "from": "Fra",

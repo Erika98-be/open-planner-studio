@@ -60,7 +60,6 @@
       "startHour": "Початок (година)",
       "endHour": "Завершення (година)",
       "hoursPerDay": "Годин на день",
-      "netHoursPerDay": "Чисті години на день",
       "holidaysSection": "Свята",
       "holidayName": "Опис",
       "from": "Від",
