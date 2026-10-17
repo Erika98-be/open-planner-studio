@@ -1,5 +1,6 @@
 import { current, isDraft } from 'immer';
 import type { Task } from '@/types/task';
+import type { Project } from '@/types/project';
 
 /**
  * PRESTATIE — lees een takenlijst PLAIN, ook als het een Immer-draft is.
@@ -125,6 +126,22 @@ export function applyWbsNumbering(tasks: Task[]): void {
     const code = codes.get(view[i].id);
     if (code !== undefined && code !== view[i].wbsCode) tasks[i].wbsCode = code;
   }
+}
+
+/**
+ * Openroute (eigenaarsbesluit 2026-10-17): draagt het geopende bestand geen `wbsAutoNumber`-vlag,
+ * dan zet het openen "WBS auto" aan als ELKE WBS-code al precies de boomnummering is
+ * ({@link deriveWbsCodes} — dezelfde nummering als "WBS auto" en "Hernummer WBS", geen tweede
+ * kopie). Een leeg bestand telt ook: er is niets te herschrijven, en zo gedraagt het zich als een
+ * nieuw project (`state/defaults.ts`). Eén afwijking, een lege code of een eigen opbouw
+ * (P6 "OCEC9730") ⇒ ongewijzigd. Een vlag uit het bestand (ook `false`, uit `OPS_ProjectSettings`)
+ * blijft staan. De codes veranderen nooit. Puur: geeft hetzelfde object terug als er niets verandert.
+ */
+export function inferWbsAutoNumberOnOpen(project: Project, tasks: readonly Task[]): Project {
+  if (project.wbsAutoNumber !== undefined) return project;
+  const codes = deriveWbsCodes(tasks);
+  if (!tasks.every(task => codes.get(task.id) === task.wbsCode)) return project;
+  return { ...project, wbsAutoNumber: true };
 }
 
 /**
