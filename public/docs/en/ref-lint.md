@@ -94,7 +94,7 @@ You can have both on at once; a second click on a button turns that side off aga
 ### Planning › Structure
 
 - **Codes & fields** — opens the *Codes & fields* window for activity codes and custom fields. See [Codes and custom fields](docs://howto-codes-en-velden).
-- **WBS auto** — turns automatic numbering of the WBS codes on or off. Default: off. On: the whole tree is renumbered at once, the codes then follow every structure change, and the *WBS Code* field in the panel and the dialog is disabled.
+- **WBS auto** — turns automatic numbering of the WBS codes on or off. Default: on in a new project. In an opened file without this setting: on if the file is empty or if all codes already match the numbering of the tree, otherwise off. On: the whole tree is renumbered at once, the codes then follow every structure change, and the *WBS Code* field in the panel and the dialog is disabled.
 - **Renumber WBS** — renumbers the WBS codes once, following the position in the tree (1.2.3). Disabled while *WBS auto* is on.
 - **Templates** — drop-down with saved WBS templates, each with its number of tasks and relations. A click inserts the template under the selected task, or at the top level without a selection. The bin icon deletes a template. Without templates it says how to save one (right-click a summary task, *Save branch as template*). See [Saving and inserting WBS templates](docs://howto-wbs-sjablonen).
 - **Indent** — makes the selected tasks subtasks of the task before them. Disabled without a selection and as soon as you are filtering, grouping or sorting; the tooltip then says *Not available while filtering/grouping/sorting*.
