@@ -59,6 +59,32 @@ interface MenuRect {
 
 const MENU_GAP = 4;
 const MENU_MAX_HEIGHT = 280;
+/** Vanaf zoveel opties tekent de open lijst alleen de zichtbare rijen (plus een buffer). Een lijst
+ *  met duizenden opties (bv. "Bovenliggende taak" in een groot P6-project) opende anders pas na
+ *  ruim een seconde. Korte lijsten tekenen alle opties, zoals altijd. */
+export const SELECT_VIRTUAL_THRESHOLD = 200;
+const VIRTUAL_BUFFER = 8;
+/** PageUp/PageDown in een niet-gevirtualiseerde lijst: zoveel rijen per stap. */
+const PAGE_ROWS_FALLBACK = 10;
+
+/** Eén canvas voor alle breedtemetingen: meet de labels zonder er DOM-nodes voor te maken. */
+let measureContext: CanvasRenderingContext2D | null = null;
+function measureLabels(labels: readonly string[], font: string): number {
+  if (!measureContext) measureContext = document.createElement('canvas').getContext('2d');
+  if (!measureContext) return 0;
+  measureContext.font = font;
+  let widest = 0;
+  for (const label of labels) widest = Math.max(widest, measureContext.measureText(label).width);
+  return widest;
+}
+
+/** Rijhoogte van een gevirtualiseerde optie: de `min-height: 2rem` uit Select.css, als vaste hoogte. */
+function virtualRowHeight(): number {
+  const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
+  return (Number.isFinite(rem) && rem > 0 ? rem : 16) * 2;
+}
+
+const px = (value: string): number => parseFloat(value) || 0;
 
 export function Select({
   value,
@@ -80,6 +106,10 @@ export function Select({
   const [open, setOpen] = useState(autoOpen);
   const [highlight, setHighlight] = useState(-1);
   const [rect, setRect] = useState<MenuRect | null>(null);
+  const [scrollTop, setScrollTop] = useState(0);
+  const virtual = options.length > SELECT_VIRTUAL_THRESHOLD;
+  // Breedte van het langste label, per optielijst en lettertype maar één keer gemeten.
+  const labelWidthCache = useRef<{ options: SelectOption[]; font: string; width: number } | null>(null);
 
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -94,13 +124,11 @@ export function Select({
   const selectedLabel = selectedIndex >= 0 ? options[selectedIndex].label : undefined;
 
   const firstEnabled = options.findIndex(o => !o.disabled);
-  // De keuzelijst leest deze twee waarden uitsluitend op de gesloten→open-grens. Tijdens een
-  // open sessie mogen nieuwe opties de toetsenbordcursor niet terugzetten; bij een volgende open
-  // sessie moeten de dan actuele selectie en eerste geldige optie juist wel worden gebruikt.
+  // De keuzelijst leest deze waarde uitsluitend op de gesloten→open-grens. Tijdens een open sessie
+  // mogen nieuwe opties de toetsenbordcursor niet terugzetten; bij een volgende open sessie moet de
+  // dan actuele selectie juist wel worden gebruikt.
   const selectedIndexRef = useRef(selectedIndex);
-  const firstEnabledRef = useRef(firstEnabled);
   selectedIndexRef.current = selectedIndex;
-  firstEnabledRef.current = firstEnabled;
   const lastEnabled = (() => {
     for (let i = options.length - 1; i >= 0; i--) if (!options[i].disabled) return i;
     return -1;
@@ -129,7 +157,11 @@ export function Select({
   useLayoutEffect(() => {
     if (!open) return;
     computeRect();
-    const onScrollOrResize = () => computeRect();
+    // Het scrollen van de lijst zelf verplaatst de trigger niet; dat hoeft geen nieuwe meting.
+    const onScrollOrResize = (e: Event) => {
+      if (e.target instanceof Node && menuRef.current?.contains(e.target)) return;
+      computeRect();
+    };
     window.addEventListener('scroll', onScrollOrResize, true);
     window.addEventListener('resize', onScrollOrResize);
     return () => {
@@ -143,15 +175,40 @@ export function Select({
   // keer hetzelfde begin). In LTR lijnt het uit op de linkerrand van de trigger en schuift het naar
   // links als het rechts buiten het venster valt. In RTL lijnt het uit op de rechterrand en groeit
   // het naar links; het blijft altijd binnen het venster.
+  //
+  // Een gevirtualiseerde lijst tekent niet alle opties, dus `max-content` kent het langste label
+  // niet. Daar meet een canvas alle labels in het lettertype van de lijst; de opvulling, het
+  // i-icoon, de rand en de scrollbalk komen uit de getekende rijen.
   useLayoutEffect(() => {
     if (!open || !rect || !menuRef.current) return;
     const menu = menuRef.current;
+    if (virtual) {
+      const label = menu.querySelector<HTMLElement>('.ops-select__option-label');
+      const option = label?.closest<HTMLElement>('.ops-select__option');
+      if (label && option) {
+        const ls = getComputedStyle(label);
+        const font = `${ls.fontStyle} ${ls.fontWeight} ${ls.fontSize} ${ls.fontFamily}`;
+        const cached = labelWidthCache.current;
+        const widest = cached && cached.options === options && cached.font === font
+          ? cached.width
+          : measureLabels(options.map(o => o.label), font);
+        labelWidthCache.current = { options, font, width: widest };
+        const os = getComputedStyle(option);
+        const info = options.some(o => o.description)
+          ? (menu.querySelector<HTMLElement>('.ops-select__option-info')?.offsetWidth ?? 30)
+          : 0;
+        const ms = getComputedStyle(menu);
+        const chrome = menu.offsetWidth - menu.clientWidth + px(ms.paddingLeft) + px(ms.paddingRight);
+        const wanted = Math.ceil(widest + px(os.paddingLeft) + px(os.paddingRight) + info + chrome) + 2;
+        menu.style.width = `${Math.min(Math.max(rect.width, wanted), window.innerWidth - MENU_GAP * 4)}px`;
+      }
+    }
     const width = menu.offsetWidth;
     const minLeft = MENU_GAP * 2;
     const maxLeft = window.innerWidth - MENU_GAP * 2 - width;
     const wanted = rect.rtl ? rect.right - width : rect.left;
     menu.style.left = `${Math.max(minLeft, Math.min(wanted, maxLeft))}px`;
-  }, [open, rect]);
+  }, [open, rect, virtual, options]);
 
   // Bij autoOpen begint de trigger nooit gefocust vanuit de gewone
   // klik-/tabvolgorde (de gridcel-editor mount 'm rechtstreeks) — zonder deze focus werken
@@ -161,20 +218,32 @@ export function Select({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // On open, initialise highlight to the selected (or first enabled) option.
+  // Bij openen is de gekozen optie actief. Hoort `value` bij geen enkele optie (een plaatshouder
+  // zoals "Verplaatsen naar…"), dan is er GEEN actieve optie: anders kiest een extra Enter of Spatie
+  // meteen de eerste optie. Pijl-omlaag maakt dan de eerste optie actief.
   useEffect(() => {
     if (open) {
-      setHighlight(
-        selectedIndexRef.current >= 0 ? selectedIndexRef.current : firstEnabledRef.current,
-      );
+      setHighlight(selectedIndexRef.current);
+      setScrollTop(0);
     }
   }, [open]);
 
-  // Keep the highlighted option scrolled into view.
+  // Keep the highlighted option scrolled into view. In een gevirtualiseerde lijst bestaat de rij
+  // misschien nog niet: dan rekent de lijst de scrollpositie uit de rijhoogte.
+  const menuReady = rect !== null;
   useEffect(() => {
     if (!open || highlight < 0) return;
+    const menu = menuRef.current;
+    if (virtual && menu) {
+      const row = virtualRowHeight();
+      const top = px(getComputedStyle(menu).paddingTop) + highlight * row;
+      if (top < menu.scrollTop) menu.scrollTop = top;
+      else if (top + row > menu.scrollTop + menu.clientHeight) menu.scrollTop = top + row - menu.clientHeight;
+      setScrollTop(menu.scrollTop);
+      return;
+    }
     optionRefs.current[highlight]?.scrollIntoView({ block: 'nearest' });
-  }, [open, highlight]);
+  }, [open, highlight, virtual, menuReady]);
 
   // Outside-click / focus-out closing.
   useEffect(() => {
@@ -193,14 +262,16 @@ export function Select({
     if (returnFocus) triggerRef.current?.focus();
   }, []);
 
+  // Dezelfde optie opnieuw kiezen sluit alleen de lijst, net als een native `<select>`: geen
+  // `onChange`. Anders wiste bv. dezelfde curve opnieuw kiezen een geïmporteerde P6-curve.
   const selectAt = useCallback(
     (index: number) => {
       const opt = options[index];
       if (!opt || opt.disabled) return;
-      onChange(opt.value);
+      if (opt.value !== value) onChange(opt.value);
       close();
     },
-    [options, onChange, close],
+    [options, value, onChange, close],
   );
 
   const moveHighlight = useCallback(
@@ -208,7 +279,8 @@ export function Select({
       setHighlight(prev => {
         const n = options.length;
         if (n === 0) return -1;
-        let i = prev;
+        // Zonder actieve optie begint omlaag bij de eerste en omhoog bij de laatste optie.
+        let i = prev < 0 ? (dir === 1 ? -1 : n) : prev;
         for (let step = 0; step < n; step++) {
           i = (i + dir + n) % n;
           if (!options[i].disabled) return i;
@@ -217,6 +289,26 @@ export function Select({
       });
     },
     [options],
+  );
+
+  /** PageUp/PageDown: een schermhoogte verder, zonder rond te lopen; landt op een geldige optie. */
+  const pageHighlight = useCallback(
+    (dir: 1 | -1) => {
+      const menu = menuRef.current;
+      const rows = virtual && menu
+        ? Math.max(1, Math.floor(menu.clientHeight / virtualRowHeight()) - 1)
+        : PAGE_ROWS_FALLBACK;
+      setHighlight(prev => {
+        const n = options.length;
+        if (n === 0) return -1;
+        const from = prev < 0 ? (dir === 1 ? -1 : n) : prev;
+        const target = Math.min(n - 1, Math.max(0, from + dir * rows));
+        for (let i = target; i >= 0 && i < n; i -= dir) if (!options[i].disabled) return i;
+        for (let i = target; i >= 0 && i < n; i += dir) if (!options[i].disabled) return i;
+        return prev;
+      });
+    },
+    [options, virtual],
   );
 
   const runTypeahead = useCallback(
@@ -267,6 +359,14 @@ export function Select({
         e.preventDefault();
         if (lastEnabled >= 0) setHighlight(lastEnabled);
         break;
+      case 'PageDown':
+        e.preventDefault();
+        pageHighlight(1);
+        break;
+      case 'PageUp':
+        e.preventDefault();
+        pageHighlight(-1);
+        break;
       case 'Enter':
       case ' ':
         e.preventDefault();
@@ -274,8 +374,11 @@ export function Select({
         // dezelfde Enter ook nog doorbubbelen naar een omringende "Enter commit"-handler (zoals de
         // gridcel-editor), die de keuze dan een TWEEDE keer zou verwerken. Grid-integratie roept de
         // commit zelf al aan vanuit onChange (zie TaskCellEditor); dit voorkomt dat dubbel gebeurt.
+        // Dezelfde waarde opnieuw kiezen roept geen onChange aan; dan mag de Enter wél door, zodat
+        // de gridcel-editor zijn (ongewijzigde) waarde vastlegt en sluit. Zonder actieve optie kiest
+        // Enter of Spatie niets.
         if (highlight >= 0) {
-          e.stopPropagation();
+          if (options[highlight]?.value !== value) e.stopPropagation();
           selectAt(highlight);
         }
         break;
@@ -301,6 +404,66 @@ export function Select({
   // (dit project heeft géén jsdom) — createPortal(..., document.body) crasht dan op een ontbrekend
   // `document`. `typeof document !== 'undefined'` maakt de portal SSR-veilig: de menu-portal
   // bestaat pas zinvol zodra de component in een echte browser draait.
+  // Gevirtualiseerd: alleen de rijen in beeld (plus een buffer), met lege vlakken erboven en
+  // eronder zodat de scrollbalk de hele lijst voorstelt.
+  const rowHeight = virtual && open && rect && typeof document !== 'undefined' ? virtualRowHeight() : 0;
+  const windowStart = rowHeight ? Math.max(0, Math.floor(scrollTop / rowHeight) - VIRTUAL_BUFFER) : 0;
+  const windowEnd = rowHeight && rect
+    ? Math.min(options.length, Math.ceil((scrollTop + rect.maxHeight) / rowHeight) + VIRTUAL_BUFFER)
+    : options.length;
+  const renderOption = (opt: SelectOption, i: number) => {
+    const isSelected = opt.value === value;
+    const isHighlighted = i === highlight;
+    return (
+      <div
+        key={opt.value}
+        id={`${listboxId}-opt-${i}`}
+        ref={el => {
+          optionRefs.current[i] = el;
+        }}
+        role="option"
+        data-value={opt.value}
+        aria-selected={isSelected}
+        aria-disabled={opt.disabled || undefined}
+        aria-setsize={virtual ? options.length : undefined}
+        aria-posinset={virtual ? i + 1 : undefined}
+        style={virtual ? { height: rowHeight, flexShrink: 0, boxSizing: 'border-box' } : undefined}
+        className={
+          'ops-select__option' +
+          (isHighlighted ? ' is-highlighted' : '') +
+          (isSelected ? ' is-selected' : '') +
+          (opt.disabled ? ' is-disabled' : '')
+        }
+        onMouseEnter={() => !opt.disabled && setHighlight(i)}
+        onMouseDown={e => {
+          // Prevent the trigger from losing focus before we handle the click.
+          e.preventDefault();
+        }}
+        onClick={() => selectAt(i)}
+      >
+        <span className="ops-select__option-label">{opt.label}</span>
+        {opt.description && (
+          <>
+            {/* i-icoon: alleen voor muis en tik (de focus blijft op de trigger); een klik
+                toont de uitleg en kiest de optie NIET. Schermlezers krijgen de uitleg via
+                `aria-describedby` op de trigger (verborgen spans ná de opties, zodat de tekst van de optie
+                zelf alleen het label blijft). */}
+            <span
+              className="ops-select__option-info"
+              title={opt.description}
+              data-tooltip-instant="true"
+              data-tooltip-lead={opt.description.includes('\n') ? 'true' : undefined}
+              data-ops-select-option-info={opt.value}
+              aria-hidden="true"
+              onClick={e => e.stopPropagation()}
+            >
+              <Info size={14} aria-hidden="true" />
+            </span>
+          </>
+        )}
+      </div>
+    );
+  };
   const menu =
     open && rect && typeof document !== 'undefined'
       ? createPortal(
@@ -312,10 +475,12 @@ export function Select({
               highlight >= 0 ? `${listboxId}-opt-${highlight}` : undefined
             }
             className="ops-select__menu"
+            onScroll={virtual ? e => setScrollTop(e.currentTarget.scrollTop) : undefined}
             style={{
               left: rect.left,
               minWidth: rect.width,
-              width: 'max-content',
+              // Gevirtualiseerd zet de breedtemeting hierboven de breedte zelf.
+              ...(virtual ? {} : { width: 'max-content' }),
               maxWidth: window.innerWidth - MENU_GAP * 4,
               maxHeight: rect.maxHeight,
               ...(rect.openUp
@@ -323,57 +488,17 @@ export function Select({
                 : { top: rect.top }),
             }}
           >
-            {options.map((opt, i) => {
-              const isSelected = opt.value === value;
-              const isHighlighted = i === highlight;
-              return (
-                <div
-                  key={opt.value}
-                  id={`${listboxId}-opt-${i}`}
-                  ref={el => {
-                    optionRefs.current[i] = el;
-                  }}
-                  role="option"
-                  data-value={opt.value}
-                  aria-selected={isSelected}
-                  aria-disabled={opt.disabled || undefined}
-                  className={
-                    'ops-select__option' +
-                    (isHighlighted ? ' is-highlighted' : '') +
-                    (isSelected ? ' is-selected' : '') +
-                    (opt.disabled ? ' is-disabled' : '')
-                  }
-                  onMouseEnter={() => !opt.disabled && setHighlight(i)}
-                  onMouseDown={e => {
-                    // Prevent the trigger from losing focus before we handle the click.
-                    e.preventDefault();
-                  }}
-                  onClick={() => selectAt(i)}
-                >
-                  <span className="ops-select__option-label">{opt.label}</span>
-                  {opt.description && (
-                    <>
-                      {/* i-icoon: alleen voor muis en tik (de focus blijft op de trigger); een klik
-                          toont de uitleg en kiest de optie NIET. Schermlezers krijgen de uitleg via
-                          `aria-describedby` op de trigger (verborgen spans ná de opties, zodat de tekst van de optie
-                          zelf alleen het label blijft). */}
-                      <span
-                        className="ops-select__option-info"
-                        title={opt.description}
-                        data-tooltip-instant="true"
-                        data-tooltip-lead={opt.description.includes('\n') ? 'true' : undefined}
-                        data-ops-select-option-info={opt.value}
-                        aria-hidden="true"
-                        onClick={e => e.stopPropagation()}
-                      >
-                        <Info size={14} aria-hidden="true" />
-                      </span>
-                    </>
-                  )}
-                </div>
-              );
-            })}
-            {options.map((opt, i) => opt.description
+            {virtual ? (
+              <>
+                <div aria-hidden="true" style={{ height: windowStart * rowHeight, flexShrink: 0 }} />
+                {options.slice(windowStart, windowEnd).map((opt, k) => renderOption(opt, windowStart + k))}
+                <div aria-hidden="true" style={{ height: (options.length - windowEnd) * rowHeight, flexShrink: 0 }} />
+                {highlight >= 0 && options[highlight]?.description
+                  ? <span id={descriptionId(highlight)} hidden>{options[highlight].description}</span>
+                  : null}
+              </>
+            ) : options.map(renderOption)}
+            {!virtual && options.map((opt, i) => opt.description
               ? <span key={`desc-${opt.value}`} id={descriptionId(i)} hidden>{opt.description}</span>
               : null)}
           </div>,

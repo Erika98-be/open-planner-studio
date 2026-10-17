@@ -107,6 +107,42 @@ test('Ctrl+Z na een muiskeuze zet de keuze terug; in de open lijst doet Ctrl+Z n
   expect(await taskIds(page)).toEqual([id]);
 });
 
+test('dezelfde optie opnieuw kiezen roept geen onChange aan (klik, Enter, Spatie)', async ({ page, ops: _ops }) => {
+  const { id } = await seedPanel(page, true);
+  const trigger = page.locator('button[aria-haspopup="listbox"][aria-label="Calendar"]');
+  // Spion op de storeactie achter de kalenderkeuze in het paneel (alleen tellen, gedrag blijft).
+  await page.evaluate(() => {
+    const store = window.__OPS__!.store;
+    const original = store.getState().setTaskCalendar;
+    const w = window as unknown as { __calendarCalls: number };
+    w.__calendarCalls = 0;
+    store.setState({
+      setTaskCalendar: (...args: Parameters<typeof original>) => { w.__calendarCalls++; return original(...args); },
+    });
+  });
+  const calls = () => page.evaluate(() => (window as unknown as { __calendarCalls: number }).__calendarCalls);
+
+  await trigger.click();
+  await menu(page).getByRole('option', { name: LONG_CALENDAR }).click();
+  await expect(menu(page)).toHaveCount(0);
+  expect(await calls()).toBe(1);
+  const chosen = await page.evaluate(taskId => window.__OPS__!.store.getState().tasks.find(t => t.id === taskId)!.calendarId, id);
+
+  // Klik op de al gekozen optie: de lijst sluit, geen onChange.
+  await trigger.click();
+  await menu(page).getByRole('option', { name: LONG_CALENDAR }).click();
+  await expect(menu(page)).toHaveCount(0);
+  // Enter+Enter en Spatie+Spatie: openen en de actieve (gekozen) optie opnieuw kiezen.
+  for (const key of ['Enter', ' ']) {
+    await page.keyboard.press(key);
+    await expect(menu(page)).toBeVisible();
+    await page.keyboard.press(key);
+    await expect(menu(page)).toHaveCount(0);
+  }
+  expect(await calls()).toBe(1);
+  expect(await page.evaluate(taskId => window.__OPS__!.store.getState().tasks.find(t => t.id === taskId)!.calendarId, id)).toBe(chosen);
+});
+
 test('− en 0 in de open lijst zoomen de Gantt niet', async ({ page, ops: _ops }) => {
   const { trigger } = await seedPanel(page);
 
@@ -244,6 +280,84 @@ test('Tabel: één Escape in een open keuzelijst-cel sluit de lijst én annuleer
     await expect.poll(() => cell.evaluate(el => el.contains(document.activeElement))).toBe(true);
     expect(await taskOf()).toEqual(before);
   }
+});
+
+test('lange lijst: alleen de zichtbare opties in de DOM; toetsen, scrollen en breedte werken over alle opties', async ({ page, ops: _ops }) => {
+  const COUNT = 600;
+  const LAST = `${LONG_TASK} (laatste)`;
+  const ids = await seedProject(page, Array.from({ length: COUNT }, (_, i) => ({
+    name: i === COUNT - 1 ? LAST : `Taak-${String(i + 1).padStart(3, '0')}`,
+    start: '2026-09-07', finish: '2026-09-10', durationDays: 4,
+  })));
+  await page.evaluate(taskId => window.__OPS__!.store.getState().setUI({ showTaskDialog: true, editingTaskId: taskId }), ids[0]);
+  const dialog = page.getByRole('dialog');
+  await expect(dialog).toBeVisible();
+  const trigger = dialog.locator(`button[aria-haspopup="listbox"][aria-label="${parentTaskLabel('en')}"]`);
+  await trigger.click();
+  const list = menu(page);
+  await expect(list).toBeVisible();
+
+  // Veel minder optie-nodes dan opties; aria-setsize noemt het echte aantal.
+  const options = list.locator('[role="option"]');
+  const setsize = Number(await options.first().getAttribute('aria-setsize'));
+  expect(setsize).toBeGreaterThanOrEqual(COUNT - 1);
+  const rendered = await options.count();
+  expect(rendered).toBeGreaterThan(0);
+  expect(rendered).toBeLessThan(100);
+
+  const active = () => list.locator('.ops-select__option.is-highlighted');
+  const expectActiveInView = async (name: RegExp | string) => {
+    await expect(active()).toHaveCount(1);
+    await expect(active()).toContainText(name);
+    await expect(active()).toBeInViewport();
+    const activeId = await active().getAttribute('id');
+    await expect(list).toHaveAttribute('aria-activedescendant', activeId!);
+  };
+
+  // End: de laatste optie is actief en staat in beeld; het langste label past helemaal.
+  await page.keyboard.press('End');
+  await expectActiveInView(LAST);
+  await expect(active()).toHaveAttribute('aria-posinset', String(setsize));
+  const fit = await list.evaluate(el => {
+    const label = el.querySelector<HTMLElement>('.ops-select__option.is-highlighted .ops-select__option-label')!;
+    const r = el.getBoundingClientRect();
+    return { clipped: label.scrollWidth > label.clientWidth + 0.5, left: r.left, right: r.right, viewport: window.innerWidth };
+  });
+  expect(fit.clipped).toBe(false);
+  expect(fit.left).toBeGreaterThanOrEqual(0);
+  expect(fit.right).toBeLessThanOrEqual(fit.viewport);
+
+  // Home, PageDown en PageUp.
+  await page.keyboard.press('Home');
+  await expect(active()).toHaveAttribute('aria-posinset', '1');
+  await expect(active()).toBeInViewport();
+  await page.keyboard.press('PageDown');
+  const afterPage = Number(await active().getAttribute('aria-posinset'));
+  expect(afterPage).toBeGreaterThan(2);
+  await expect(active()).toBeInViewport();
+  await page.keyboard.press('PageUp');
+  await expect(active()).toHaveAttribute('aria-posinset', '1');
+
+  // Typeahead vindt een optie ver buiten het getekende stuk. Het label is "<WBS> — <naam>" (of alleen
+  // de naam); typ het begin tot de eerste spatie, want een spatie kiest de actieve optie.
+  const target = await page.evaluate(taskId => {
+    const t = window.__OPS__!.store.getState().tasks.find(x => x.id === taskId)!;
+    return { label: `${t.wbsCode ? `${t.wbsCode} — ` : ''}${t.name}`, name: t.name };
+  }, ids[449]);
+  await page.keyboard.type(target.label.split(' ')[0], { delay: 20 });
+  await expectActiveInView(target.name);
+
+  // Scrollen met het muiswiel naar onderen toont de laatste optie.
+  await page.keyboard.press('Escape');
+  await expect(list).toHaveCount(0);
+  await trigger.click();
+  await expect(list).toBeVisible();
+  await list.hover();
+  for (let i = 0; i < 40 && !(await list.getByRole('option', { name: LAST }).isVisible()); i++) {
+    await page.mouse.wheel(0, 4000);
+  }
+  await expect(list.getByRole('option', { name: LAST })).toBeInViewport();
+  expect(await options.count()).toBeLessThan(100);
 });
 
 /** Elke optie past volledig: geen afgeknipt label, en de lijst ligt binnen het venster. */
