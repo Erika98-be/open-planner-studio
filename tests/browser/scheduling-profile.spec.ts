@@ -116,7 +116,7 @@ test('rekenprofiel: XER opent als P6 met melding, wissel naar MS Project herbere
     // naam wissen + projectnaam wijzigen + Enter ⇒ dialoog blijft open, niets opgeslagen.
     const projectNameBefore = await page.evaluate(() => window.__OPS__!.store.getState().project.name);
     await page.locator('button.ribbon-tab').filter({ hasText: /^(Settings|Instellingen)$/ }).click();
-    await page.locator('button.ribbon-btn').filter({ hasText: /^(Project settings|Project\u00ad?instellingen)$/ }).click();
+    await page.locator('button.ribbon-btn').filter({ hasText: /^(Project\s+settings|Project\u00ad?instellingen)$/ }).click();
     const dialog = page.locator('[data-ops-project-dialog="info"]');
     await expect(dialog).toBeVisible();
     await dialog.locator('input').first().fill('Nieuwe projectnaam');
@@ -469,7 +469,7 @@ test('rekenprofiel: na Ctrl+Z en Ctrl+Y volgt het profielblok de store, ook in d
   // De dialoogvariant (Instellingen → Projectinfo): ook daar is de keuzelijst gelijk aan de store na
   // Ctrl+Y en Ctrl+Z.
   await page.locator('button.ribbon-tab').filter({ hasText: /^(Settings|Instellingen)$/ }).click();
-  await page.locator('button.ribbon-btn').filter({ hasText: /^(Project settings|Project\u00ad?instellingen)$/ }).click();
+  await page.locator('button.ribbon-btn').filter({ hasText: /^(Project\s+settings|Project\u00ad?instellingen)$/ }).click();
   const dialog = page.locator('[data-ops-project-dialog="info"]');
   await expect(dialog).toBeVisible();
   const dialogSelect = profileSelect(dialog);

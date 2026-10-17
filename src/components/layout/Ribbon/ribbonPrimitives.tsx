@@ -133,9 +133,9 @@ function ribbonButton(
   // Zonder eigen tooltip valt het label terug als tooltip: in de icoon-only-standen (handmatig
   // ingeklapt, of automatisch gedegradeerd) is het label verborgen en zou de knop anders volstrekt
   // naamloos zijn. Een expliciete `title` (bv. de Relatie-knop) wint. Een zacht afbreekstreepje
-  // (U+00AD, bv. nl "Project­instellingen") hoort alleen bij het afbreken van het label, niet in
-  // de tooltip of de toegankelijke naam.
-  const tip = title ?? label.replace(/\u00ad/g, '');
+  // (U+00AD, bv. nl "Project­instellingen") of een harde regelafbreking (en "Project\nsettings")
+  // hoort alleen bij het afbreken van het label, niet in de tooltip of de toegankelijke naam.
+  const tip = title ?? label.replace(/\u00ad/g, '').replace(/\s*\n\s*/g, ' ');
   return (
     <button
       className={cls.join(' ')}

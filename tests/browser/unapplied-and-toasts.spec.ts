@@ -195,7 +195,7 @@ async function seedToasts(page: Page): Promise<void> {
 
 async function openProjectInfoDialog(page: Page): Promise<void> {
   await page.locator('.ribbon-tabs button').filter({ hasText: /^(Settings|Instellingen)$/ }).click();
-  await page.locator('button.ribbon-btn').filter({ hasText: /^(Project settings|Project\u00ad?instellingen)$/ }).click();
+  await page.locator('button.ribbon-btn').filter({ hasText: /^(Project\s+settings|Project\u00ad?instellingen)$/ }).click();
   await expect(page.locator('[data-ops-project-dialog="info"]')).toBeVisible();
 }
 

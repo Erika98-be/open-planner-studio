@@ -207,8 +207,8 @@ function NavItem({ icon, label, active, onClick, tourAnchor }: {
       {...(tourAnchor ? { 'data-tour-anchor': tourAnchor } : {})}
     >
       <span className="backstage-nav-icon">{icon}</span>
-      {/* De zijbalk is breed genoeg; een zacht afbreekstreepje uit een lintlabel hoort niet in de knopnaam. */}
-      {label.replace(/\u00ad/g, '')}
+      {/* De zijbalk is breed genoeg; een afbreekstreepje of regelafbreking uit een lintlabel hoort niet in de knopnaam. */}
+      {label.replace(/\u00ad/g, '').replace(/\s*\n\s*/g, ' ')}
     </button>
   );
 }
