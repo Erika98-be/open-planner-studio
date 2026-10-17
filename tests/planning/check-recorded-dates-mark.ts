@@ -262,9 +262,9 @@ eq('zonder recordedUnrecordedAxes: lateFinish toont gewoon de datum',
 //     echte berekening. Een bewerkt bestand MET `SourceFormat` is in de modus opgeslagen en opent
 //     sinds 2026-10-17 weer in de modus ("zoals je het achterliet", zie check-recorded-dates 7aj6c).
 //  2. Hetzelfde bestand ONBEWERKT, in de modus opgeslagen: "Niet vastgelegd" is het eerlijke antwoord.
-// MUTATIEBEWIJS: zet de poort in `recordedGridBinding` terug op `recorded ? … : undefined` ⇒ de
-// asserties onder 2 tonen dan nog steeds "Niet vastgelegd" maar onder 1 blijft alles groen; het
-// aanbod-pad zelf bewaakt check-recorded-dates 8a.
+// Onder 1 is er geen vastlegging meer, dus de modus-poort in `recordedGridBinding` wordt hier niet
+// geraakt: 1 is een tegenproef op de echte store (onze berekening in de kolommen). Dat buiten de modus
+// geen vastlegging blijft staan, bewaakt check-recorded-dates 8a.
 {
   const S = () => useAppStore.getState();
   const eigenIfc = (importPristine: boolean) => ({
