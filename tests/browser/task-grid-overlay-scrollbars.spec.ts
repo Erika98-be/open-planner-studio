@@ -488,3 +488,41 @@ test('Ctrl+End toont de laatste rij boven de horizontale balk', async ({ page, o
   expect(geometry.activeBottom).toBeLessThanOrEqual(geometry.hBarTop + 0.5);
   expect(Math.abs(geometry.scrollTop - geometry.maxScrollTop)).toBeLessThanOrEqual(1);
 });
+
+// Tabel na de Gantt in een kleiner venster (review #362; bestond al op main): de oude grens van
+// de Gantt mag de store niet klemmen. Anders blijft `view.scrollY` achter bij het raster en toont
+// het raster onderaan lege rijen.
+test('Tabel na de Gantt in een kleiner venster: store volgt het raster tot onderaan', async ({ page, ops: _ops }) => {
+  await seedProject(page, Array.from({ length: 200 }, (_, index) => ({
+    name: `Tabelrij ${index + 1}`,
+    start: '2026-09-07',
+    finish: '2026-09-11',
+    durationDays: 5,
+  })));
+  await expect(page.locator('.gantt-task-grid [data-testid="task-grid-vscroll"]')).toBeVisible();
+  await page.getByRole('button', { name: /^(Table|Tabel)$/ }).click();
+  const viewport = page.viewportSize()!;
+  await page.setViewportSize({ width: viewport.width, height: Math.max(420, viewport.height - 260) });
+  const shell = '[data-task-grid-surface-id="full-task-grid"] .task-grid-shell';
+  const core = page.locator(`${shell} .task-grid-core`);
+  await expect(page.locator(`${shell} [data-testid="task-grid-vscroll"]`)).toBeVisible();
+  const coreBox = await box(core);
+  await page.mouse.move(coreBox.x + coreBox.width / 2, coreBox.y + coreBox.height / 2);
+  for (let step = 0; step < 20; step++) await page.mouse.wheel(0, 800);
+  await settledScrollTop(core);
+  const geometry = await page.evaluate(selector => {
+    const grid = document.querySelector<HTMLElement>(selector)!;
+    const rect = grid.getBoundingClientRect();
+    const rowNear = (y: number) => document.elementFromPoint(rect.left + 40, y)
+      ?.closest<HTMLElement>('[data-grid-data-row]') ?? null;
+    return {
+      scrollTop: grid.scrollTop,
+      maxScrollTop: grid.scrollHeight - grid.clientHeight,
+      // Net boven de eindstrook en de balk moet een echte rij liggen, geen lege ruimte.
+      rowAtBottom: rowNear(rect.bottom - 8 - 12) !== null,
+    };
+  }, `${shell} .task-grid-core`);
+  expect(Math.abs(geometry.scrollTop - geometry.maxScrollTop)).toBeLessThanOrEqual(1);
+  await expect.poll(() => state(page).then(snapshot => snapshot.view.scrollY)).toBe(geometry.scrollTop);
+  expect(geometry.rowAtBottom).toBe(true);
+});

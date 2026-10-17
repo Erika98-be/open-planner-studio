@@ -12,6 +12,7 @@ import {
   scrollbarScale,
   scrollbarRangeRatio,
   computeTimelineZoom,
+  clearGanttScrollBounds,
   computeEffectiveViewStart,
   computeFitToProject,
   computeFocusTaskHorizontal,
@@ -158,6 +159,9 @@ export function useGanttViewportCoordinator(
       height,
     ));
   }, [primaryContentWidth]);
+
+  // Gaat de Gantt uit beeld (bv. naar de Tabel-weergave), dan gelden zijn grenzen niet meer.
+  useEffect(() => clearGanttScrollBounds, []);
 
   const onSecondarySize = useCallback((width: number) => {
     setSecondaryChartWidth(previous => Math.abs(previous - width) > 1 ? width : previous);

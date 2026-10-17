@@ -373,6 +373,16 @@ export function setGanttScrollBounds(bounds: { maxScrollX: number; maxScrollY: n
   maxScrollY = Number.isFinite(bounds.maxScrollY) ? Math.max(0, bounds.maxScrollY) : null;
 }
 
+/**
+ * Vergeet de grenzen. De Gantt roept dit aan als hij uit beeld gaat (`useGanttViewportCoordinator`).
+ * Anders klemde de oude Gantt-grens de store in de Tabel-weergave, die een ander venster en dus een
+ * ander bereik heeft: de store bleef achter bij de DOM en het raster toonde lege rijen (review #362).
+ */
+export function clearGanttScrollBounds(): void {
+  maxScrollX = null;
+  maxScrollY = null;
+}
+
 export function clampGanttScroll(x: number, y: number): { x: number; y: number } {
   return {
     x: maxScrollX !== null ? Math.min(x, maxScrollX) : x,
