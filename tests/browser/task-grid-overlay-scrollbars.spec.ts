@@ -407,18 +407,48 @@ test('een verouderd scroll-event van balk of store zet het raster niet terug', a
 
   // 2. Store -> raster: het raster meldt 600 aan de store en schuift direct daarna door naar 650
   //    (zoals een lopende wielanimatie). De store-prop 600 is dan een echo en mag niet terug.
+  //    Het native scroll-event van die 650 komt in WebKitGTK pas ná de nieuwe render. Een
+  //    capture-listener op `window` houdt het hier zolang tegen; daarna meldt het raster zich weer.
   await page.evaluate(() => {
     const grid = document.querySelector<HTMLElement>('.gantt-task-grid .task-grid-core')!;
-    const onScroll = () => {
-      if (Math.round(grid.scrollTop) !== 600) return;
-      grid.removeEventListener('scroll', onScroll);
-      grid.scrollTop = 650;
+    const win = window as unknown as { __echoBlock?: boolean; __echoBlocker?: (event: Event) => void };
+    win.__echoBlock = false;
+    win.__echoBlocker = event => {
+      if (win.__echoBlock && event.target === grid) event.stopImmediatePropagation();
     };
-    grid.addEventListener('scroll', onScroll);
+    window.addEventListener('scroll', win.__echoBlocker, true);
     grid.scrollTop = 600;
+    grid.dispatchEvent(new Event('scroll'));
+    win.__echoBlock = true;
+    grid.scrollTop = 650;
   });
   await settle();
   await settle();
+  await page.evaluate(() => {
+    const grid = document.querySelector<HTMLElement>('.gantt-task-grid .task-grid-core')!;
+    const win = window as unknown as { __echoBlock?: boolean; __echoBlocker?: (event: Event) => void };
+    win.__echoBlock = false;
+    window.removeEventListener('scroll', win.__echoBlocker!, true);
+    grid.dispatchEvent(new Event('scroll'));
+  });
+  await settle();
   expect(await core.evaluate((node: HTMLElement) => node.scrollTop)).toBe(650);
   await expect.poll(() => state(page).then(snapshot => snapshot.view.scrollY)).toBe(650);
+
+  // 3. Raster -> balk: de balk schrijft 800 in het raster en schuift zelf door naar 1000 (zoals een
+  //    lopende wielanimatie boven de balk). Het late scroll-event van het raster meldt nog 800; dat
+  //    is een echo en mag de balk niet terugzetten. Anders blijft het raster op 800 steken.
+  await page.evaluate(() => {
+    const grid = document.querySelector<HTMLElement>('.gantt-task-grid .task-grid-core')!;
+    const bar = document.querySelector<HTMLElement>('.gantt-task-grid [data-testid="task-grid-vscroll"]')!;
+    bar.scrollTop = 800;
+    bar.dispatchEvent(new Event('scroll'));
+    bar.scrollTop = 1000;
+    grid.dispatchEvent(new Event('scroll'));
+  });
+  await settle();
+  await settle();
+  expect(await vBar.evaluate((node: HTMLElement) => node.scrollTop)).toBe(1000);
+  expect(await core.evaluate((node: HTMLElement) => node.scrollTop)).toBe(1000);
+  await expect.poll(() => state(page).then(snapshot => snapshot.view.scrollY)).toBe(1000);
 });
