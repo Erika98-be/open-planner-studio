@@ -1347,3 +1347,16 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   (store-wacht slikt sprong, claim Shift+wiel, opruimen) ⇒ worker. **Keuze eigenaar:** Shift+wiel boven de verticale
   balk schuift in de PR horizontaal, op main (WebKitGTK) verticaal.
 - Eigenaar weg om ~19:25; werk stopt vóór 00:00 (zondag). Agents hebben een harde grens 23:15.
+- **Correctie orkestrator bij checkstap 37:** OCEC9730 (Roads) heeft géén afwijkend restwerk: rest 617,14 = inzet ×
+  restduur (sinds #361 is de inzet het resttempo); alleen *begroot* (240) wijkt af. Een duurbewerking rekent het
+  restwerk opnieuw uit, zoals P6 bij dit taaktype; begroot blijft. Aan de eigenaar gemeld.
+- **Meting restwerk (Opus 5.5, main 9341d6e34):** groep a (alleen verricht) / b (begroot wijkt af) / c (rest wijkt af
+  van inzet × restduur): Roads 123/36/0, rehab-2 11.973/1.439/0, MER-1 0/31/89 (kunstmatig), HarbourPointe 1/23/97,
+  Harbour Point Baseline 0/0/35. Groep c: 136× FIXED_DURATION_RATE, 163× FIXED_DURATION_WORK (MER); 270 niet gestart.
+  .mpp levert nooit werkvelden. In de store overschrijft een duurbewerking het restwerk nergens — **per ongeluk**:
+  niet-gestarte uurtaken houden hun oude `remainingMinutes` (VERMOED: balk en restduur lopen uit elkaar) ⇒ expert.
+  MSP/P6: P6 volgt het Duration Type zonder vraag; voor een MSP-keuzevraag geen Microsoft-bron gevonden.
+- **#366 hercheck: JA ná bijwerken met main + groene CI** ⇒ worker (bijwerken, bewaking `mppReader.ts:916` zonder
+  corpus, PR-tekst). **#376 (hernoeming) klaar**, CI groen ⇒ review. **#375 fixronde klaar** (b08f124f1, CI groen) ⇒ hercheck.
+- **#371 review ronde 2: JA na twee kleine fixes** (test M2, `state.md:42` + verouderde commentaren) ⇒ worker. Open voor
+  de eigenaar: grijs blok vervangt oranje bij deels vastgelegde taak — vervangen of aanvullen?
