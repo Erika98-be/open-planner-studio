@@ -307,7 +307,7 @@ Nu geeft de validatie 0 fouten, met en zonder `--rules`, voor elk nieuw project 
 GlobalIds" voor de uitzondering).
 
 **Schema.** De kop is het schema van het project (`Project.ifcSchema`, issue #292): standaard
-`IFC4X3_ADD2` (IFC 4.3.2.0, ISO 16739-1:2024), in *Projectinfo* ook IFC 4.3 of IFC4. De writer schrijft in
+`IFC4X3_ADD2` (IFC 4.3.2.0, ISO 16739-1:2024), in *Projectinstellingen* ook IFC 4.3 of IFC4. De writer schrijft in
 de drie dezelfde inhoud. De schema's verschillen wel in de toegestane enum-waarden: `INSPECTION` in
 IfcTaskTypeEnum bestaat bijvoorbeeld alleen in IFC 4.3. De poort toetst daarom elk bestand tegen het
 schema in zijn kop, en schrijft het rijke project in alle drie.

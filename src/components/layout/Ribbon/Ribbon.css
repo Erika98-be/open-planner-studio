@@ -211,6 +211,9 @@
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   word-break: break-word;
+  /* Een `\n` in een vertaling (en "Project\nsettings") breekt het label af; gewone spaties blijven
+     gewoon terugloop. */
+  white-space: pre-line;
   flex-shrink: 1;
 }
 

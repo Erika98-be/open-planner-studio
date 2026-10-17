@@ -45,11 +45,11 @@ test('get_project_info toont de SS-lag-variant (projectoptie) expliciet', async 
     { lagCalendar: 'successor', startToStartLagFrom: 'actualStart' }, 'projectopties letterlijk');
 });
 
-test('update_project weigert schedulingOptions (ook de SS-lag-variant) met een verwijzing naar Projectinfo', async () => {
+test('update_project weigert schedulingOptions (ook de SS-lag-variant) met een verwijzing naar Projectinstellingen', async () => {
   S().newProject();
   const res = await call('planner_update_project', { schedulingOptions: { startToStartLagFrom: 'actualStart' } });
-  assert(!res.ok && /startToStartLagFrom/.test(res.error) && /Project info/.test(res.error),
-    `weigertekst noemt de optie en Projectinfo: ${res.ok ? '' : res.error}`);
+  assert(!res.ok && /startToStartLagFrom/.test(res.error) && /Project settings/.test(res.error),
+    `weigertekst noemt de optie en Projectinstellingen: ${res.ok ? '' : res.error}`);
 });
 
 // Nivelleerfundament: `schedulingOptions.leveling` komt letterlijk en alleen-lezen mee; schrijven via de
@@ -76,11 +76,11 @@ test('update_project weigert leveling met de reden "gelezen, nog niet toegepast"
     `weigertekst noemt leveling en dat het nog niet wordt toegepast: ${res.ok ? '' : res.error}`);
 });
 
-test('update_project weigert schedulingProfile met een verwijzing naar Projectinfo', async () => {
+test('update_project weigert schedulingProfile met een verwijzing naar Projectinstellingen', async () => {
   S().newProject();
   const res = await call('planner_update_project', { schedulingProfile: { id: 'p6' } });
   assert(!res.ok, 'moet weigeren');
-  assert(!res.ok && /Project info/.test(res.error), `weigertekst noemt Projectinfo: ${res.ok ? '' : res.error}`);
+  assert(!res.ok && /Project settings/.test(res.error), `weigertekst noemt Projectinstellingen: ${res.ok ? '' : res.error}`);
 });
 
 await run();
