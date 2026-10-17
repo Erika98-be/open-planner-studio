@@ -362,7 +362,7 @@ export function readMSPDI(content: string): ImportResult {
     const effCalId = effCalIdOfUid(taskCalUid);
     const isHour = hourModeCalIds.has(effCalId);
     const effCal = calById.get(effCalId) ?? calendar;
-    const effHpd = calById.get(effCalId)?.hoursPerDay ?? hoursPerDay;
+    const effHpd = effCal.hoursPerDay;
     // Het werk van een toewijzing rekent met de opgeslagen uren per dag, net als `mspdiWriter` hem schrijft
     // (`<Work>` = dagen × `hoursPerDay`). Met de werktijd zou een dagtaak van 5 d op 8 u/dag met blokken
     // van 10 u haar 40 u als vastgelegd werk terugkrijgen, en bij een langere duur niet meer meegroeien.

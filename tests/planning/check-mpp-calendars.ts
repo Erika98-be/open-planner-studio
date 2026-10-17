@@ -134,9 +134,12 @@ function mppDayToIso(raw: number): string {
 // I4/T6-assertieblok hieronder (die de gematerialiseerde datum controleert) 'm zien.
 const HOLIDAY_FROM_DAY = 15005;
 
-/** `baseBands`: de blokken van ma–vr op de basiskalender (calId 1). Standaard één blok 08:00–17:00. */
+/** `baseBands`: de blokken van ma–vr op de basiskalender (calId 1). Standaard één blok 08:00–17:00.
+ *  `task`: optioneel de kalender van de taak (standaard calId 5; -1 = geen, dus de projectkalender) en
+ *  de speling in tienden van een minuut (free/start/finish slack, fixed-offsets 24/28/32). */
 function buildI4T6FixtureBytes(
   baseBands: { startMinutes: number; durationMinutes: number }[] = [{ startMinutes: 480, durationMinutes: 540 }],
+  task: { calendarUniqueId?: number; slackTenths?: number } = {},
 ): Uint8Array {
   // ── Taak (minimaal — alleen om calendarUniqueId=5 te dragen). FixedData op de LETTERLIJKE
   // default-offsets uit fieldMap14.ts (geen TASK_FIELD_MAP meegegeven, spiegelt check-mpp-import.ts
@@ -154,6 +157,11 @@ function buildI4T6FixtureBytes(
     view.setUint16(68, 0, true);
     view.setUint16(70, opts.finishDays, true);
     view.setInt32(118, opts.calendarUniqueId, true);
+    if (task.slackTenths !== undefined) {
+      view.setInt32(24, task.slackTenths, true); // FREE_SLACK
+      view.setInt32(28, task.slackTenths, true); // START_SLACK
+      view.setInt32(32, task.slackTenths, true); // FINISH_SLACK
+    }
     return out;
   }
   function buildTaskFixedMetaRecord(offsetIntoFixedData: number): Uint8Array {
@@ -170,7 +178,7 @@ function buildI4T6FixtureBytes(
     v.setInt32(8, 4, true);
     [dummy, dummy, dummy, metaTask].forEach((item, i) => taskFixedMetaBlob.set(item, 16 + i * 47));
   }
-  const dataTask = buildTaskFixedDataRecord({ uniqueId: 10, id: 1, startDays: 15000, finishDays: 15001, calendarUniqueId: 5 });
+  const dataTask = buildTaskFixedDataRecord({ uniqueId: 10, id: 1, startDays: 15000, finishDays: 15001, calendarUniqueId: task.calendarUniqueId ?? 5 });
   const taskFixedDataBlob = new Uint8Array(4 * 130);
   taskFixedDataBlob.set(dataTask, 3 * 130); // index 3 = het echte taakrecord
 
@@ -306,6 +314,22 @@ function buildI4T6FixtureBytes(
   truthy('#366 .mpp: beide kalenders zijn uurkalender (testvoorwaarde)', !!r.calendar.workTime && !!derived?.workTime);
   truthy(`#366 .mpp: projectkalender houdt MINUTES_PER_DAY 8 u na de promotie (kreeg ${r.calendar.hoursPerDay})`, r.calendar.hoursPerDay === 8);
   truthy(`#366 .mpp: afgeleide kalender volgt de blokken, 10 u (kreeg ${derived?.hoursPerDay})`, derived?.hoursPerDay === 10);
+}
+
+// PR #366: de speling van een urentaak telt in werktijd per dag van de taakkalender (`effHoursPerDay`),
+// niet in de opgeslagen `hoursPerDay`. Zonder corpus: de taak staat op de projectkalender (8 u opgeslagen,
+// blokken van 10 u). 6000 tienden = 600 min = 1 dag van 10 u; met `cal.hoursPerDay` zou het 1,25 zijn.
+{
+  const r = readMPP(buildI4T6FixtureBytes(
+    [{ startMinutes: 420, durationMinutes: 300 }, { startMinutes: 750, durationMinutes: 300 }],
+    { calendarUniqueId: -1, slackTenths: 6000 },
+  ));
+  const task = r.tasks[0];
+  truthy('#366 .mpp speling: taak op de projectkalender (testvoorwaarde)', !!task && task.calendarId === undefined && r.calendar.hoursPerDay === 8 && !!r.calendar.workTime);
+  truthy('#366 .mpp speling: urentaak (testvoorwaarde)', task?.time.durationUnit === 'hours');
+  const rec = task ? r.recordedTimes?.[task.id] : undefined;
+  truthy(`#366 .mpp speling: totale speling 1 dag van 10 u (kreeg ${rec?.totalFloat})`, rec?.totalFloat === 1);
+  truthy(`#366 .mpp speling: vrije speling 1 dag van 10 u (kreeg ${rec?.freeFloat})`, rec?.freeFloat === 1);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════

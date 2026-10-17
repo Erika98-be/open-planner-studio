@@ -911,7 +911,8 @@ function readP6XmlProject(scope: P6XmlScope): P6XmlProjectRead {
     // dagtaak op een urenkalender blijft een dagtaak (eenheid uit de OPS-marker), maar haar datums
     // (ook de actuals) houden hun echte tijd.
     const hourDates = hourModeCalIds.has(effCalId);
-    const effHpd = calById.get(effCalId)?.hoursPerDay ?? hoursPerDay;
+    const effCal = calById.get(effCalId) ?? calendar;
+    const effHpd = effCal.hoursPerDay;
     // Datum-parser: uur ⇒ echte tijd (`parseInstant`+`formatInstant`), dag ⇒ tijd-strippen.
     const plannedStart = importDateTime(plannedStartRaw, hourDates);
     const plannedFinish = importDateTime(plannedFinishRaw, hourDates);
@@ -927,7 +928,7 @@ function readP6XmlProject(scope: P6XmlScope): P6XmlProjectRead {
         // Op een uurkalender in werktijd per dag, zoals XER (`readXerRecordedTimes`): de werktijd rekent
         // en toont (eigenaarsbesluit 2026-10-15, "een dag"); de opgeslagen `HoursPerDay` telt hier niet.
         return Number.isFinite(hours)
-          ? recordedFloatDays(hours * 60, effHoursPerDay(calById.get(effCalId) ?? calendar) * 60)
+          ? recordedFloatDays(hours * 60, effHoursPerDay(effCal) * 60)
           : undefined;
       };
       const criticalRaw = getElementText(actEl, 'IsCritical');
@@ -963,7 +964,7 @@ function readP6XmlProject(scope: P6XmlScope): P6XmlProjectRead {
     // `hourTaskScheduleDuration`; dag ⇒ `Math.round(uren/hpd)` met de opgeslagen `HoursPerDay`.
     const durationMinutes = isHour ? Math.round(plannedDuration * 60) : undefined;
     const durationDays = isHour
-      ? hourTaskScheduleDuration(durationMinutes!, calById.get(effCalId) ?? calendar)
+      ? hourTaskScheduleDuration(durationMinutes!, effCal)
       : p6HoursToDays(plannedDuration, effHpd);
     const isMilestone = p6Type.includes('Milestone');
     // P6 onderscheidt Start/Finish Milestone — bewaar de soort expliciet.
