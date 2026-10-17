@@ -16,7 +16,7 @@ Een **baseline** is een foto van de planning op een bepaald moment, meestal het 
 
 Het voorbeeld hieronder gebruikt het rekenprofiel *Open Planner Studio*, waarmee een nieuw project rekent. Verderop staat wat er in de profielen Primavera P6 en Microsoft Project anders is.
 
-De app rekent niet vanzelf door. Na elke wijziging in voortgang of statusdatum meldt de statusbalk *Verouderd — herbereken (F5)*. Druk op **Bereken** (F5), bijvoorbeeld via *Planning › Planning › Bereken*. Staat *Automatisch berekenen* aan (onder *Instellingen › Project › Instellingen*, tabblad *Planning*, kopje *Berekenen*), dan doet de app dat zelf.
+De app rekent niet vanzelf door. Na elke wijziging in voortgang of statusdatum meldt de statusbalk *Verouderd — herbereken (F5)*. Druk op **Bereken** (F5), bijvoorbeeld via *Planning › Planning › Bereken*. Staat *Automatisch berekenen* aan (onder *Instellingen › Project › App-instellingen*, tabblad *Planning*, kopje *Berekenen*), dan doet de app dat zelf.
 
 ### De statusdatum
 
@@ -137,7 +137,7 @@ De oplevering blijft in beide gevallen vrijdag 6 augustus: het schilderwerk had 
 
 ### Andere rekenprofielen
 
-In de profielen Primavera P6 en Microsoft Project eindigt het schilderwerk in dit voorbeeld op dezelfde data (27 en 22 juli). Ze verschillen op deze punten. Het zijn conventies van het profiel; je vindt ze bij *Instellingen › Project › Projectinfo*, in het blok *Rekenprofiel en reken-opties*.
+In de profielen Primavera P6 en Microsoft Project eindigt het schilderwerk in dit voorbeeld op dezelfde data (27 en 22 juli). Ze verschillen op deze punten. Het zijn conventies van het profiel; je vindt ze bij *Instellingen › Project › Projectinstellingen*, in het blok *Rekenprofiel en reken-opties*.
 
 - In het profiel Microsoft Project schuift werk dat niet begonnen is niet naar de statusdatum (conventie *Niet-gestarte taken niet naar de statusdatum*). Zet je in het voorbeeld hierboven alleen een statusdatum en vul je niets in, dan blijft de oplevering in dat profiel vrijdag 6 augustus.
 - In het profiel Microsoft Project begint het restwerk ook niet eerder dan de werkelijke start plus de al verstreken duur (conventie *Restwerk hervat na de al verstreken duur*). Dat is een extra ondergrens naast de statusdatum: de laatste van de twee telt. Neem *Binnenspouwblad metselen* (5 werkdagen), begonnen op dinsdag 29 juni en op woensdag 30 juni, de statusdatum, op 40 % (twee ploegen metselen tegelijk, dus na één dag is al 40 % klaar). Alles ervoor is klaar volgens planning. Open Planner Studio en Primavera P6 laten de taak eindigen op vrijdag 2 juli; Microsoft Project op maandag 5 juli, want dinsdag 29 juni plus 2 verstreken werkdagen is donderdag 1 juli, na de statusdatum.

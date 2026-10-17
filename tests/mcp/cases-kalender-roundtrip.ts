@@ -14,7 +14,7 @@
 //   3. `libraryOrigin` mag mee maar wordt genegeerd en gemeld (`ignoredFields`);
 //   4. hetzelfde via `planner_batch` (schemapoort);
 //   5. NETTO UREN OP EEN KALENDER MET PAUZE (resources-kalenders REVIEW §3, ronde 3 / G1): MCP doet
-//      wat de kalenderdialoog doet. Daar is "Netto-uren per dag" een niet-bewerkbare afleiding uit
+//      wat de kalenderdialoog doet. Daar is "Standaard werkdag" een niet-bewerkbare afleiding uit
 //      werkdag − pauze (`simpleBreakPatch`/`simpleBreakNetHours`). Een `hoursPerDay` die daar niet mee
 //      klopt wordt zacht geweigerd met de velden die de AI wél moet wijzigen; een gelijke waarde is
 //      een no-op. Een legacy-kalender zonder pauzevelden valt buiten dit besluit: daar blijft

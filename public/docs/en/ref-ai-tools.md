@@ -43,7 +43,7 @@ All tools an AI assistant can call through the bridge, by group, with what they 
 
 ## Project and calendars
 
-- `planner_update_project` (change) — name, description, author, company, start date, end date, status date, progress mode and the project default for the work rule. The start date is the anchor for new tasks. If the assistant sets it later, only loose tasks move along (without a predecessor and without a constraint that sets a lower bound, such as *Start no earlier than*) and the response reports how many as `anchorsClamped`; the rest of the schedule stays put, see [New project and Project info](docs://ref-projectinfo). The status date is not a label but the reference date of the calculation: on a schedule without progress, everything moves along. The end date is metadata only.
+- `planner_update_project` (change) — name, description, author, company, start date, end date, status date, progress mode and the project default for the work rule. The start date is the anchor for new tasks. If the assistant sets it later, only loose tasks move along (without a predecessor and without a constraint that sets a lower bound, such as *Start no earlier than*) and the response reports how many as `anchorsClamped`; the rest of the schedule stays put, see [New project and Project settings](docs://ref-projectinfo). The status date is not a label but the reference date of the calculation: on a schedule without progress, everything moves along. The end date is metadata only.
 - `planner_move_project` (change) — move the whole existing schedule to a new start date. The calendars do not move along, so the end can jump by a different number of days than the start. Baselines stay, unless the assistant explicitly has them move too. See [Moving a project](docs://howto-project-verplaatsen).
 - `planner_update_calendar` (change, bulk) — change or create calendars: working days, working hours, break, hour bands, holidays (generate for a country and region, or specify literally) and working exceptions. It cannot change which calendar is the project calendar.
 
@@ -117,5 +117,5 @@ Per task the assistant cannot set: hammock, manual scheduling, a second constrai
 
 - [How the AI link works](docs://uitleg-ai-koppeling): why the bridge is set up this way and what the assistant may and may not do.
 - [Connecting an AI assistant (MCP)](docs://howto-ai-assistent-koppelen): start the bridge, connect, install the skill.
-- [Settings](docs://ref-instellingen): the two AI switches.
+- [App settings](docs://ref-instellingen): the two AI switches.
 - [Notifications and warnings](docs://ref-meldingen): the AI dot in the status bar.

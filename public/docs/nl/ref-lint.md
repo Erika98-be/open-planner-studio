@@ -11,9 +11,9 @@ Het lint bovenin het scherm heeft tabbladen, en elk tabblad heeft groepen met kn
 
 ## Bestand
 
-Klik je op *Bestand*, dan neemt een eigen scherm (de Backstage) de werkruimte over. Het heeft geen lint. *Terug* sluit het weer. Heb je bij *Projectinfo* een wijziging gemaakt die je niet hebt toegepast, dan vraagt de app eerst wat hij ermee moet doen.
+Klik je op *Bestand*, dan neemt een eigen scherm (de Backstage) de werkruimte over. Het heeft geen lint. *Terug* sluit het weer. Heb je bij *Projectinstellingen* een wijziging gemaakt die je niet hebt toegepast, dan vraagt de app eerst wat hij ermee moet doen.
 
-- **Nieuw** — opent het venster *Nieuw project* en sluit de Backstage. De velden staan in [Nieuw project en Projectinfo](docs://ref-projectinfo).
+- **Nieuw** — opent het venster *Nieuw project* en sluit de Backstage. De velden staan in [Nieuw project en Projectinstellingen](docs://ref-projectinfo).
 - **Openen** — kiest een bestand en opent het als document. Sluit de Backstage.
 - **Recent** — lijst met recent geopende projecten; een klik opent het. Alleen zichtbaar als de omgeving bestanden kan heropenen: in de desktop-app en in browsers die bestandstoegang bieden, zoals Chrome en Edge. In andere browsers staat de knop er wel, maar blijft de pagina leeg.
 - **Voorbeelden** — meegeleverde voorbeeldplanningen, verdeeld in *Volledige showcase-planningen* (badge *Alle functies*) en *Eenvoudige voorbeelden*. Een klik opent er een in een nieuw tabblad.
@@ -22,8 +22,8 @@ Klik je op *Bestand*, dan neemt een eigen scherm (de Backstage) de werkruimte ov
 - **Exporteren** — kaarten per exportformaat, met een omschrijving. Een klik zet het project om en slaat het op, en brengt je terug naar *Start*. Heeft de planning een kring, dan staat de fout in de Backstage en blijf je daar. Is het project aan een resourcebibliotheek gekoppeld, dan staat eronder het vinkje *Bibliotheekbestand ernaast opslaan*; dat werkt alleen bij de IFC-kaart.
 - **Importeren** — bovenaan de kaart *Voortgang bijwerken uit een blad* (uitgeschakeld zonder taken), daaronder de importers die extensies toevoegen.
 - **Afdruk** — de knop *Open afdrukvoorbeeld* brengt je naar het tabblad *Rapport*.
-- **Projectinfo** — de metadata en het rekenprofiel van dit project. Wijzigingen werken pas na *Toepassen*. Zie [Nieuw project en Projectinfo](docs://ref-projectinfo) en [Rekenprofielen en conventies](docs://uitleg-rekenprofielen).
-- **Instellingen** — dezelfde instellingen als het venster *Instellingen*.
+- **Projectinstellingen** — de metadata en het rekenprofiel van dit project. Wijzigingen werken pas na *Toepassen*. Zie [Nieuw project en Projectinstellingen](docs://ref-projectinfo) en [Rekenprofielen en conventies](docs://uitleg-rekenprofielen).
+- **App-instellingen** — dezelfde instellingen als het venster *App-instellingen*.
 - **Extensies** — beheer en installatie van extensies; zie [Een extensie installeren en beheren](docs://howto-extensie-installeren).
 - **Bibliotheek** — beheer van resourcebibliotheken; zie [Resourcebibliotheken beheren en delen](docs://howto-bibliotheken-beheren).
 - **Help** — de ingebouwde documentatie, ook met F1. Het zoekveld zoekt in titels, koppen en de tekst zelf. De artikelen staan in vier secties: *Tutorials*, *How-to*, *Uitleg* en *Referentie*. Bij *Documentatietaal* kies je *Volg de app-taal*, *Nederlands* of *English*. De Help bestaat alleen in het Nederlands en het Engels: staat de app in een andere taal, dan lees je de Engelse versie, met een melding. De keuze blijft op dit apparaat bewaard, los van de taal van de app. Ook vanuit een venster of paneel kom je in Help: veel vensters en de panelen *Eigenschappen*, *Resources* en *Waarschuwingen* hebben rechtsboven een vraagteken (*Help bij dit onderdeel*), dat Help opent op het artikel over dat venster of paneel. Heb je in het venster iets ingevuld dat nog niet is opgeslagen, dan vraagt de app eerst *Opslaan*, *Annuleren* (je invoer weggooien) of *Terug* (in het venster blijven); daarna sluit het venster en opent Help. Een paar vensters, zoals *Taak bewerken* en *Resources nivelleren*, vragen dat altijd. Zonder invoer opent Help meteen.
@@ -46,14 +46,14 @@ Klik je op *Bestand*, dan neemt een eigen scherm (de Backstage) de werkruimte ov
 
 ### Start › Taken
 
-- **Taak** — voegt een taak toe met de naam *Nieuwe taak*, met een duur van 5 werkdagen en beginnend op de projectstart. (Staat *Urenplanning inschakelen* aan en is de *Standaardeenheid voor nieuwe taken* in *Projectinfo* uren, dan is de duur 5 uur.) Is er een taak geselecteerd en staat de weergave in de gewone boom, dan komt hij direct onder de onderste geselecteerde taak (tooltip *Nieuwe taak direct onder de selectie*). Is er geen selectie, dan komt hij onderaan (tooltip *Nieuwe taak onderaan de lijst*). Is er wel een selectie maar wordt er gefilterd, gegroepeerd of gesorteerd, dan komt hij ook onderaan en meldt een strook *Niet beschikbaar tijdens filteren/groeperen/sorteren*. De nieuwe taak wordt de enige selectie, de Gantt springt ernaartoe en de naam staat klaar om te overschrijven in het paneel *Eigenschappen*.
+- **Taak** — voegt een taak toe met de naam *Nieuwe taak*, met een duur van 5 werkdagen en beginnend op de projectstart. (Staat *Urenplanning inschakelen* aan en is de *Standaardeenheid voor nieuwe taken* in *Projectinstellingen* uren, dan is de duur 5 uur.) Is er een taak geselecteerd en staat de weergave in de gewone boom, dan komt hij direct onder de onderste geselecteerde taak (tooltip *Nieuwe taak direct onder de selectie*). Is er geen selectie, dan komt hij onderaan (tooltip *Nieuwe taak onderaan de lijst*). Is er wel een selectie maar wordt er gefilterd, gegroepeerd of gesorteerd, dan komt hij ook onderaan en meldt een strook *Niet beschikbaar tijdens filteren/groeperen/sorteren*. De nieuwe taak wordt de enige selectie, de Gantt springt ernaartoe en de naam staat klaar om te overschrijven in het paneel *Eigenschappen*.
 - **Mijlpaal ▾** — keuzemenu dat een mijlpaal (duur 0) op dezelfde plek zet als *Taak*. *Startmijlpaal* en *Eindmijlpaal* zetten de soort mijlpaal; de nieuwe mijlpaal heet *Nieuwe mijlpaal* en krijgt taaktype *Overig*. *Inspectiemoment (verplicht)* maakt een eindmijlpaal met taaktype *Keuring/Inspectie* en de vlag *Verplicht (contractueel)*, met de naam *Nieuw inspectiemoment*.
 - **Relatie ▾** — keuzemenu met vier vaste acties; de hoofdknop verandert nooit van betekenis. Zie *Planning › Relaties* voor de vier acties.
 - **Taak splitsen** — zet de splits-modus aan of uit. Aan: een strook onder het lint legt uit dat je op een balk klikt waar de onderbreking begint en naar rechts sleept voor de lengte. Uitgeschakeld als de Gantt niet in beeld is (op de tabbladen *Tabel*, *IFC*, *Rapport* en onder het volledige resourcepaneel); de tooltip zegt dan *Alleen beschikbaar als de Gantt in beeld is*. Zie [Een taak splitsen](docs://howto-taak-splitsen).
 
 ### Start › Planning
 
-- **Bereken** — rekent de planning door: datums, speling, kritiek pad en resourcebelasting. Dat gebeurt nooit vanzelf, tenzij je *Automatisch berekenen* aanzet (*Instellingen*, tabblad *Planning*, kop *Berekenen*). Zolang de planning verouderd is, staat onderaan *Verouderd — herbereken (F5)*.
+- **Bereken** — rekent de planning door: datums, speling, kritiek pad en resourcebelasting. Dat gebeurt nooit vanzelf, tenzij je *Automatisch berekenen* aanzet (*App-instellingen*, tabblad *Planning*, kop *Berekenen*). Zolang de planning verouderd is, staat onderaan *Verouderd — herbereken (F5)*.
 
 ### Start › Zoomen
 
@@ -94,7 +94,7 @@ Je kunt beide tegelijk aan hebben; een tweede klik op een knop zet die kant weer
 ### Planning › Structuur
 
 - **Codes & velden** — opent het venster *Codes & velden* voor activity codes en gebruikersvelden. Zie [Codes en eigen velden](docs://howto-codes-en-velden).
-- **WBS auto** — zet automatisch nummeren van de WBS-codes aan of uit. Standaard: uit. Aan: de hele boom wordt meteen hernummerd, de codes volgen daarna elke structuurwijziging en het veld *WBS Code* in het paneel en de dialoog wordt uitgeschakeld.
+- **WBS auto** — zet automatisch nummeren van de WBS-codes aan of uit. Standaard: aan in een nieuw project. In een geopend bestand zonder deze instelling: aan als het bestand leeg is of als alle codes al gelijk zijn aan de nummering van de boom, anders uit. Aan: de hele boom wordt meteen hernummerd, de codes volgen daarna elke structuurwijziging en het veld *WBS Code* in het paneel en de dialoog wordt uitgeschakeld.
 - **Hernummer WBS** — nummert de WBS-codes eenmalig opnieuw volgens de boompositie (1.2.3). Uitgeschakeld zolang *WBS auto* aan staat.
 - **Sjablonen** — uitklapmenu met opgeslagen WBS-sjablonen, elk met het aantal taken en relaties. Een klik voegt het sjabloon in onder de geselecteerde taak, of op het hoogste niveau zonder selectie. Het prullenbakje verwijdert een sjabloon. Zonder sjablonen staat er hoe je er een bewaart (rechtsklik op een samenvattingstaak, *Bewaar tak als sjabloon*). Zie [WBS-sjablonen bewaren en invoegen](docs://howto-wbs-sjablonen).
 - **Inspringen** — maakt de geselecteerde taken subtaak van hun voorgaande taak. Uitgeschakeld zonder selectie en zodra er gefilterd, gegroepeerd of gesorteerd wordt; de tooltip zegt dan *Niet beschikbaar tijdens filteren/groeperen/sorteren*.
@@ -152,7 +152,7 @@ Deze groep staat ook op *Tabel* en *Rapport*.
 
 ### Beeld › Weergave
 
-- **Kolommen…**, **Filteren…**, **Groeperen…** en **Sorteren…** — alleen zichtbaar als *Klassieke weergaveknoppen tonen* aan staat (*Instellingen*, tabblad *Geavanceerd*, kop *Legacy-functies*). Standaard: uit. *Kolommen…* brengt je naar *Tabel* en opent daar de kolomkiezer. *Filteren…* opent meteen het filtervenster zolang er geen opgeslagen filter is; met opgeslagen filters opent het een menu met *Filteren…*, *Wissen* (alleen als er een filter actief is) en de opgeslagen filters. *Groeperen…* laat twee niveaus toe. *Sorteren…* laat meer niveaus toe. Een knop licht op als die weergave actief is. In het nieuwe lint doe je dit met layoutknoppen; zie [Een layout maken en gebruiken](docs://howto-layouts-gebruiken).
+- **Kolommen…**, **Filteren…**, **Groeperen…** en **Sorteren…** — alleen zichtbaar als *Klassieke weergaveknoppen tonen* aan staat (*App-instellingen*, tabblad *Geavanceerd*, kop *Legacy-functies*). Standaard: uit. *Kolommen…* brengt je naar *Tabel* en opent daar de kolomkiezer. *Filteren…* opent meteen het filtervenster zolang er geen opgeslagen filter is; met opgeslagen filters opent het een menu met *Filteren…*, *Wissen* (alleen als er een filter actief is) en de opgeslagen filters. *Groeperen…* laat twee niveaus toe. *Sorteren…* laat meer niveaus toe. Een knop licht op als die weergave actief is. In het nieuwe lint doe je dit met layoutknoppen; zie [Een layout maken en gebruiken](docs://howto-layouts-gebruiken).
 
 ### Beeld › Overzicht
 
@@ -192,8 +192,8 @@ Deze groep heeft dezelfde naam als die op *Planning*, maar bevat de tekenopties 
 
 ### Instellingen › Project
 
-- **Projectinfo** — opent het venster *Projectinfo*: de metadata van het project en, in het blok *Rekenprofiel en reken-opties*, hoe het project rekent. Zie [Nieuw project en Projectinfo](docs://ref-projectinfo).
-- **Instellingen** — opent het venster *Instellingen* met de tabbladen *Weergave*, *Planning* en *Geavanceerd*. Dezelfde instellingen staan onder *Bestand › Instellingen*.
+- **Projectinstellingen** — opent het venster *Projectinstellingen*: de metadata van het project en, in het blok *Rekenprofiel en reken-opties*, hoe het project rekent. Zie [Nieuw project en Projectinstellingen](docs://ref-projectinfo).
+- **App-instellingen** — opent het venster *App-instellingen* met de tabbladen *Weergave*, *Planning* en *Geavanceerd*. Dezelfde instellingen staan onder *Bestand › App-instellingen*.
 
 ### Instellingen › Kalender
 
@@ -223,7 +223,7 @@ Het tabblad toont in de werkruimte het IFC-paneel. Het lint heeft hier geen knop
 
 ## AI
 
-Het tabblad *AI* bestaat alleen als *AI-modus inschakelen* aan staat (*Instellingen*, tabblad *Geavanceerd*, kop *AI-modus*). Standaard: uit. Uitzetten haalt het tabblad weg en stopt de bridge. Een AI-assistent werkt met je planning via een MCP-bridge die je hier start. Zie [Een AI-assistent koppelen (MCP)](docs://howto-ai-assistent-koppelen).
+Het tabblad *AI* bestaat alleen als *AI-modus inschakelen* aan staat (*App-instellingen*, tabblad *Geavanceerd*, kop *AI-modus*). Standaard: uit. Uitzetten haalt het tabblad weg en stopt de bridge. Een AI-assistent werkt met je planning via een MCP-bridge die je hier start. Zie [Een AI-assistent koppelen (MCP)](docs://howto-ai-assistent-koppelen).
 
 ### AI › Server
 

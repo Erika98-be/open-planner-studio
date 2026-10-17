@@ -12,7 +12,7 @@ De bridge werkt alleen in de desktop-app. Zet je AI-modus in de browser aan, dan
 
 ### 1. AI-modus aanzetten
 
-1. Kies *Instellingen › Project › Instellingen*. Je kunt ook *Bestand › Instellingen* kiezen, of het tandwiel bovenaan.
+1. Kies *Instellingen › Project › App-instellingen*. Je kunt ook *Bestand › App-instellingen* kiezen, of het tandwiel bovenaan.
 2. Kies het tabblad *Geavanceerd* en zet *AI-modus inschakelen* aan. Het tabblad *AI* verschijnt in het lint.
 3. Wil je dat de bridge meteen live is zodra de app start, zet dan ook *Bridge automatisch starten* aan. Dat schakelt alleen als AI-modus aanstaat en werkt alleen in de desktop-app. Standaard staat het uit, want een poort openen is een bewuste keuze.
 
@@ -98,4 +98,4 @@ Of de assistent de gids echt heeft gelezen, zie je in het *Activiteitenpaneel*: 
 - [Hoe de AI-koppeling werkt](docs://uitleg-ai-koppeling): wat de koppeling is, waarom de assistent in je open project werkt en wat hij niet mag.
 - [AI-tools](docs://ref-ai-tools): alle `planner_*`-tools per groep, de foutcodes en hoe lang backups bewaard blijven.
 - [Goed plannen](docs://gids-goed-plannen): de planningsprincipes; de assistent krijgt ze in een Engelse versie met de tools erbij.
-- [Instellingen](docs://ref-instellingen): de AI-instellingen.
+- [App-instellingen](docs://ref-instellingen): de AI-instellingen.

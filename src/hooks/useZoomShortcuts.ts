@@ -25,7 +25,7 @@ export function useZoomShortcuts({
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       // Niet onderscheppen terwijl de gebruiker in een veld typt of kiest.
-      if (isTypingTarget(e.target)) return;
+      if (isTypingTarget(e.target, e)) return;
 
       const container = containerRef.current;
       if (!container) return;

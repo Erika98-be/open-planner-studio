@@ -872,7 +872,6 @@
     },
     "worktime": {
       "section": "Arbejdstimer",
-      "derivedHpd": "Udledte timer/dag:",
       "saveAsPreset": "Gem som forudindstilling…",
       "saveAsPresetHint": "Gem de aktuelle arbejdstimer som din egen forudindstilling (på denne enhed), så du kan genbruge dem i ethvert projekt.",
       "perWeekday": "Angiv pr. ugedag…",

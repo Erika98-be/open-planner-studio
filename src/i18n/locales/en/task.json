@@ -181,7 +181,7 @@
       "calendar": "Choose a calendar from the list.",
       "calendarNotFound": "The chosen calendar does not exist.",
       "calendarHours": "The calendar of this task has no working hours per day.",
-      "hourPlanningDisabled": "Hour planning is switched off in the settings.",
+      "hourPlanningDisabled": "Hour planning is switched off in the App settings.",
       "durationConversionNotExact": "This duration cannot be converted to the other unit exactly.",
       "milestoneRequired": "This field only applies to milestones.",
       "milestoneUnavailable": "A summary task with subtasks cannot become a milestone.",
@@ -286,6 +286,7 @@
       "externalRelations_one": "{{count}} external relationship",
       "externalRelations_other": "{{count}} external relationships",
       "baselineMissing": "Not present in this baseline",
+      "baselineOldDay": "This baseline was saved by an older version that counted a day differently. The duration variance is therefore not correct. Take the baseline again.",
       "baselineVarianceStart": "Start variance",
       "baselineVarianceFinish": "Finish variance",
       "baselineVarianceDuration": "Duration variance"

@@ -140,7 +140,7 @@
     "milestoneClearedOnPhase_other": "{{count}} tasks are no longer milestones.",
     "phaseRefusedNoAssignableChild": "'{{phase}}' cannot become a summary task: its assignments have nowhere to go, because none of the new subtasks can carry assignments (a milestone or summary task). Nothing was changed.",
     "phaseRefusedDuplicateResource": "'{{phase}}' cannot become a summary task: the assignment of {{resource}} cannot move to the new subtask '{{child}}', because it already has {{resource}}. Nothing was changed.",
-    "schedulingProfileApplied": "This project calculates as {{profile}}. Change it via File → Project info → Calculation profile and options.",
+    "schedulingProfileApplied": "This project calculates as {{profile}}. Change it via File → Project settings → Calculation profile and options.",
     "schedulingTemplateSaved": "Template “{{name}}” saved.",
     "schedulingTemplateLimit": "Template not saved: there are already {{max}} templates. Delete a template first.",
     "schedulingTemplateStorageFailed": "Template not saved: the app storage is full or not available.",
@@ -237,7 +237,7 @@
     "collapseAll": "Collapse all"
   },
   "settings": {
-    "title": "Settings",
+    "title": "App settings",
     "appearanceTab": "Appearance",
     "planningTab": "Planning",
     "advancedTab": "Advanced",
@@ -884,7 +884,7 @@
       "decreaseBreakDuration": "Decrease break duration by 15 minutes",
       "start": "Break starts",
       "duration": "Break duration (minutes)",
-      "hint": "Set a break start and duration; net hours and working-time bands are derived automatically. Set duration to 0 for a continuous working day.",
+      "hint": "Set a break start and duration; the standard workday and working-time bands are derived automatically. Set duration to 0 for a continuous working day.",
       "errors": {
         "invalidDuration": "Break duration must be a whole number of minutes of 0 or more.",
         "outsideWorkingDay": "The break must fall entirely within the configured working day.",
@@ -898,7 +898,6 @@
     },
     "worktime": {
       "section": "Working times",
-      "derivedHpd": "Derived hours/day:",
       "saveAsPreset": "Save as preset…",
       "saveAsPresetHint": "Save the current working times as your own preset (on this device) so you can reuse them in any project.",
       "perWeekday": "Set per weekday…",
@@ -1156,7 +1155,7 @@
     "warnPast": "The new start date is in the past.",
     "noTasks": "This project has no tasks yet; only the project dates shift.",
     "invalidDate": "Choose a valid date.",
-    "invalidCurrentStart": "The project has no valid start date; set it first in Project info.",
+    "invalidCurrentStart": "The project has no valid start date; set it first in Project settings.",
     "apply": "Move",
     "calcError": "The schedule could not be calculated: {{error}}"
   },
@@ -1566,8 +1565,8 @@
   },
   "ifcSchemaQuestion": {
     "title": "Which IFC schema to save in?",
-    "body": "This file was saved as {{schema}}. The app saves as IFC 4.3 ADD2 by default, the schema of IfcOpenShell and Bonsai. Do you want to keep this file as {{schema}}? You can change this later in Project info.",
-    "bodyUnwritable": "This file was saved as {{schema}}. The app cannot write that schema. Choose the schema in which the app saves it. You can change this later in Project info.",
+    "body": "This file was saved as {{schema}}. The app saves as IFC 4.3 ADD2 by default, the schema of IfcOpenShell and Bonsai. Do you want to keep this file as {{schema}}? You can change this later in Project settings.",
+    "bodyUnwritable": "This file was saved as {{schema}}. The app cannot write that schema. Choose the schema in which the app saves it. You can change this later in Project settings.",
     "keep": "Keep {{schema}}",
     "toDefault": "Save as IFC 4.3 ADD2"
   }

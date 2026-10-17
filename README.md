@@ -91,11 +91,11 @@ achter. Voor de details en de architectuurbeslissingen: [AGENTS.md](AGENTS.md)
 | **Planning** | CPM, Relaties beheren, Kalender, Structuur (codes/velden, in-/uitspringen), Baselines |
 | **Resources** | Resources toewijzen, histogram, nivellering |
 | **Beeld** | Zoom, Tijdschaal, Panelen, Groeperen/filteren |
-| **Instellingen** | Project info, Kalender, Taalinstelling |
+| **Instellingen** | Projectinstellingen, App-instellingen, Kalender, Sneltoetsen |
 | **Tabel** | Spreadsheet-achtige tabelweergave, één klik bewerkt een cel |
 | **IFC** | IFC 4.3 code-editor met genereren/toepassen |
 | **Rapport** | Live afdrukvoorbeeld met instelbare opties |
-| **AI** *(standaard uit, aan te zetten in Instellingen)* | MCP-bridge starten/verbinden, veiligheidsvlaggen, activiteitenlog |
+| **AI** *(standaard uit, aan te zetten in App-instellingen)* | MCP-bridge starten/verbinden, veiligheidsvlaggen, activiteitenlog |
 
 Plus **Bestand** — de Backstage: recent, voorbeelden, importeren/exporteren,
 printen, projectgegevens, instellingen, extensies, bibliotheek en help.

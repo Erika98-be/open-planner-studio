@@ -181,7 +181,7 @@
       "calendar": "Kies een kalender uit de lijst.",
       "calendarNotFound": "De gekozen kalender bestaat niet.",
       "calendarHours": "De kalender van deze taak heeft geen werkuren per dag.",
-      "hourPlanningDisabled": "Urenplanning staat uit in de instellingen.",
+      "hourPlanningDisabled": "Urenplanning staat uit in de App-instellingen.",
       "durationConversionNotExact": "Deze duur is niet exact naar de andere eenheid om te rekenen.",
       "milestoneRequired": "Dit veld geldt alleen voor mijlpalen.",
       "milestoneUnavailable": "Een samenvattingstaak met subtaken kan geen mijlpaal worden.",
@@ -286,6 +286,7 @@
       "externalRelations_one": "{{count}} externe relatie",
       "externalRelations_other": "{{count}} externe relaties",
       "baselineMissing": "Niet aanwezig in deze baseline",
+      "baselineOldDay": "Deze baseline is opgeslagen met een oudere versie, die een dag anders telde. De afwijking in duur klopt daarom niet. Neem de baseline opnieuw.",
       "baselineVarianceStart": "Startafwijking",
       "baselineVarianceFinish": "Eindafwijking",
       "baselineVarianceDuration": "Duurafwijking"

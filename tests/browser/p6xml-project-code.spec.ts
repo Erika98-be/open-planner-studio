@@ -29,7 +29,7 @@ async function openMulti(page: Page): Promise<void> {
 /** Instellingen → Projectinfo, het naamveld leegmaken en typen, de primaire knop. */
 async function renameActive(page: Page, from: string, to: string): Promise<void> {
   await page.locator('button.ribbon-tab').filter({ hasText: /^(Settings|Instellingen)$/ }).click();
-  await page.locator('button.ribbon-btn').filter({ hasText: /^(Project info|Projectinfo)$/ }).click();
+  await page.locator('button.ribbon-btn').filter({ hasText: /^(Project\s+settings|Project\u00ad?instellingen)$/ }).click();
   const dialog = page.locator('[data-ops-project-dialog="info"]');
   await expect(dialog).toBeVisible();
   const nameField = dialog.locator('[data-ops-project-name]');
@@ -68,7 +68,7 @@ test('P6 XML: tabblad, titelbalk, venstertitel en sluitdialoog "Naam (code)"; Pr
     })).toEqual(['Nieuwe naam', 'B-BOUW']);
 
     // 5. Projectinfo opnieuw: nog steeds alleen de (nieuwe) naam.
-    await page.locator('button.ribbon-btn').filter({ hasText: /^(Project info|Projectinfo)$/ }).click();
+    await page.locator('button.ribbon-btn').filter({ hasText: /^(Project\s+settings|Project\u00ad?instellingen)$/ }).click();
     const dialog = page.locator('[data-ops-project-dialog="info"]');
     await expect(dialog).toBeVisible();
     await expect(dialog.locator('[data-ops-project-name]')).toHaveValue('Nieuwe naam');

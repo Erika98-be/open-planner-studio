@@ -29,7 +29,7 @@ If you received an extension as a file, install it like this.
 2. At the top right, click *ZIP* for a ZIP file, or *JS* for a separate JavaScript file.
 3. Choose the file. The window *Install extension?* opens, as above.
 
-A ZIP file must contain a `manifest.json` and the main file of the extension. If you install an extension that is already installed, the new version replaces the old one. If the app cannot install the file, for example because a ZIP file is damaged, nothing happens: the app shows no error message for ZIP and JS, and the extension does not appear in the list. The reason is in the debug terminal, though. Turn it on with *Settings › Project › Settings*, tab *Advanced*, *Enable debug terminal*, and open it with the button *Show debug terminal* in the status bar. There it says, for example, *[Extensies] ZIP-installatie mislukt: Error: Geen manifest.json gevonden in ZIP* (the app words this technical text in Dutch).
+A ZIP file must contain a `manifest.json` and the main file of the extension. If you install an extension that is already installed, the new version replaces the old one. If the app cannot install the file, for example because a ZIP file is damaged, nothing happens: the app shows no error message for ZIP and JS, and the extension does not appear in the list. The reason is in the debug terminal, though. Turn it on with *Settings › Project › App settings*, tab *Advanced*, *Enable debug terminal*, and open it with the button *Show debug terminal* in the status bar. There it says, for example, *[Extensies] ZIP-installatie mislukt: Error: Geen manifest.json gevonden in ZIP* (the app words this technical text in Dutch).
 
 ### Read the permission question
 
