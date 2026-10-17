@@ -578,7 +578,8 @@ export interface UIState {
   compressNonWorkdays: boolean;               // persisted — default UIT
   /** session — id van het document waarvan het geladen bestand uur-data bevat terwijl Urenplanning
    *  uit staat; `null` = geen melding. Een id en geen vlag: de strook hoort bij DAT document. Een
-   *  nieuw of ander document toont hem niet, terug naar dat document wel. Geen enkel wisselpad
+   *  nieuw of ander document toont hem niet, terug naar dat document wel. Grens: opent u twee
+   *  bestanden met uur-data, dan houdt alleen het laatst geopende de strook. Geen enkel wisselpad
    *  hoeft hem dus te wissen. */
   hourDataNotice: string | null;
   /** session — teller voor de "structuur vergrendeld"-melding: elke geweigerde

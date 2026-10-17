@@ -143,8 +143,14 @@ test('sjabloon met fasen en latere start: zoom blijft gelijk, fasen in raster en
   await dialog.getByRole('button', { name: /^(Fasering-template|Phasing template|Template)/i }).first().click();
   await page.getByRole('option', { name: /^(Woningbouw|Residential)/i }).click();
   // Een latere start dan vandaag: de fasen beginnen op de projectstart en moeten in beeld staan.
+  // De verse view start op vandaag en de klok staat niet vast; daarom ligt de start altijd één jaar
+  // na vandaag. Een vaste datum zou vanaf die dag niets meer bewijzen.
+  const later = new Date();
+  later.setFullYear(later.getFullYear() + 1, later.getMonth(), 1);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const laterIso = `${later.getFullYear()}-${pad(later.getMonth() + 1)}-01`;
   await dialog.getByRole('group', { name: /^(Startdatum|Start date)$/i }).locator('input').first().click();
-  await page.keyboard.type('01032027');
+  await page.keyboard.type(`01${pad(later.getMonth() + 1)}${later.getFullYear()}`);
   await page.keyboard.press('Tab');
   await dialog.locator('[data-ops-project-primary]').click();
   await expect(dialog).toBeHidden();
@@ -159,6 +165,6 @@ test('sjabloon met fasen en latere start: zoom blijft gelijk, fasen in raster en
   )).toBeVisible();
   const first = after.tasks[0]!;
   await expect.poll(() => page.evaluate(id => window.__OPS__!.gantt.taskBarPoint(id), first.id)).not.toBeNull();
-  expect((await projectView(page)).startDate).toBe('2027-03-01');
+  expect((await projectView(page)).startDate).toBe(laterIso);
   await expectProjectStartAtOrigin(page);
 });
