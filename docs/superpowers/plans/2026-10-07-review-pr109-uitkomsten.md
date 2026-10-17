@@ -1295,3 +1295,10 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
 - **#363 vierde ronde klaar:** kop c5ed700a1, CI 16/16, bijgewerkt met main; wacht op de merge van #367 (gidsen).
   **Checkstap 28 #363: goed** (⚠ en uitleg bij een oude baseline, licht en donker). Fout in mijn stap: de kolommen
   staan in de tab *Tabel*, niet achter een knop in *Start*.
+- **Checkstap 29 #210 (wordt fase/mijlpaal):** weigeren bij mijlpaal goed. Eigenaar zag de melding "Toewijzing verplaatst"
+  de eerste keer niet, de tweede keer wel (info-melding staat 5 s; Haiku-herhaling gaf hem 3×). **Besluit eigenaar
+  2026-10-17:** het automatisch verplaatsen gaat eruit; de app vraagt het altijd (venster *Taak wordt een fase*:
+  Annuleren / Toewijzing verwijderen / Verplaatsen naar subtaak; verplaatsen uit met oranje uitleg als de subtaak de
+  resource al heeft), **optie 1: altijd vragen, geen "niet meer vragen"**. Bron oud besluit ("besluit van de eigenaar"
+  in PR #210, 2026-09-25) niet terug te vinden. Bevindingen: Esc na Insert haalt bij de eigenaar de selectie weg (bij
+  Haiku niet); na inspringen twee taken WBS 1.3.6.2 (onderzoek loopt).
