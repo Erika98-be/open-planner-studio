@@ -173,6 +173,79 @@ test('Escape in een open lijst in de taakdialoog sluit alleen de lijst; het conc
   await expect(dialog).toHaveCount(0);
 });
 
+test('taakdialoog: Ctrl+Z en Ctrl+V na een muiskeuze veranderen niets achter de dialoog', async ({ page, ops: _ops }) => {
+  const [first, second] = await seedProject(page, [
+    { name: 'Fundering', start: '2026-09-07', finish: '2026-09-10', durationDays: 4 },
+    { name: 'Metselwerk', start: '2026-09-11', finish: '2026-09-16', durationDays: 4 },
+  ]);
+  // Iets op het klembord, zodat Ctrl+V echt iets zou plakken.
+  await page.evaluate(id => {
+    const s = window.__OPS__!.store.getState();
+    s.selectTask(id);
+    s.copyTasks();
+    s.setUI({ showTaskDialog: true, editingTaskId: id });
+  }, second);
+  const snapshot = () => page.evaluate(() => JSON.stringify(window.__OPS__!.store.getState().tasks.map(t => [t.id, t.name, t.parentId ?? null])));
+  const before = await snapshot();
+  const dialog = page.getByRole('dialog');
+  await expect(dialog).toBeVisible();
+
+  // Muiskeuze: de focus staat daarna op de dichte trigger, in de modale dialoog.
+  const parent = dialog.locator(`button[aria-haspopup="listbox"][aria-label="${parentTaskLabel('en')}"]`);
+  await parent.click();
+  await menu(page).getByRole('option', { name: /Fundering/ }).click();
+  await expect(menu(page)).toHaveCount(0);
+  await expect(parent).toBeFocused();
+  await expect(parent).toContainText('Fundering');
+
+  // In een dialoog staat de keuze in het concept. De globale undo en plakken mogen hier niet af.
+  await page.keyboard.press('ControlOrMeta+z');
+  await page.keyboard.press('ControlOrMeta+v');
+  await expect(dialog).toBeVisible();
+  await expect(parent).toContainText('Fundering');
+  expect(await snapshot()).toBe(before);
+  expect(await taskIds(page)).toEqual([first, second]);
+});
+
+test('Tabel: één Escape in een open keuzelijst-cel sluit de lijst én annuleert de bewerking', async ({ page, ops: _ops }) => {
+  const [id] = await seedProject(page, [
+    { name: 'Metselwerk', start: '2026-09-07', finish: '2026-09-10', durationDays: 4 },
+  ]);
+  await page.evaluate(() => {
+    const store = window.__OPS__!.store.getState();
+    const columns = store.taskGridSurfaces['full-task-grid'].columns;
+    const wanted = ['task.constraint.type', 'task.isMilestone'] as (typeof columns)[number]['id'][];
+    const missing = wanted.filter(w => !columns.some(c => c.id === w));
+    if (missing.length) {
+      store.commitTaskGridColumns('full-task-grid', 'Keuzelijstkolommen voor browsertest', [
+        ...columns,
+        ...missing.map(w => ({ id: w, width: 180, pinned: false })),
+      ]);
+    }
+    store.setUI({ activeRibbonTab: 'table' });
+  });
+  const taskOf = () => page.evaluate(taskId => {
+    const t = window.__OPS__!.store.getState().tasks.find(x => x.id === taskId)!;
+    return { constraint: t.constraint?.type ?? 'ASAP', milestone: t.isMilestone };
+  }, id);
+  const before = await taskOf();
+
+  for (const [column, kind] of [['task.constraint.type', 'enum'], ['task.isMilestone', 'boolean']] as const) {
+    const cell = page.locator(`[data-task-grid-surface-id="full-task-grid"] [data-grid-row-key="${id}"][data-grid-column-id="${column}"]`);
+    await cell.click();
+    await page.keyboard.press('Enter');
+    const editor = page.locator(`[data-task-editor-kind="${kind}"]`);
+    await expect(editor).toBeVisible();
+    await expect(menu(page)).toBeVisible();
+
+    await page.keyboard.press('Escape');
+    await expect(menu(page)).toHaveCount(0);
+    await expect(editor).toHaveCount(0);
+    await expect.poll(() => cell.evaluate(el => el.contains(document.activeElement))).toBe(true);
+    expect(await taskOf()).toEqual(before);
+  }
+});
+
 /** Elke optie past volledig: geen afgeknipt label, en de lijst ligt binnen het venster. */
 async function expectOptionsFit(page: Page): Promise<{ menu: DOMRect; widest: number }> {
   const result = await menu(page).evaluate(el => {

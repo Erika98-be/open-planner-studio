@@ -252,6 +252,12 @@ export function TaskCellEditor({
     } as KeyboardEvent<HTMLElement>);
   };
 
+  // Escape in een keuzelijst-editor (enum/boolean): annuleer de celbewerking vóórdat `Select` de
+  // toets ziet. `Select` stopt Escape in een open lijst; zonder deze capture bleef de editor open.
+  const cancelOnEscapeCapture = (e: KeyboardEvent<HTMLElement>, inputProps: GridEditorInputProps) => {
+    if (e.key === 'Escape') inputProps.onKeyDown(e);
+  };
+
   return (
     <GridEditorHost
       cell={cell}
@@ -395,15 +401,18 @@ export function TaskCellEditor({
           // bewerken geen uitgeklapte lijst — pijltjes cyclen alleen de waarde, zonder overzicht van
           // alle opties. `Select` (src/components/common/Select.tsx) is het volwaardige
           // component (open/highlight/typeahead/Enter-commit/Escape-annuleer) — hier met `autoOpen`
-          // zodat de volledige lijst er meteen staat. `onKeyDown={inputProps.onKeyDown}` op de
-          // WRAPPER (niet op Select zelf, dat kent die prop niet) vangt Escape door: Select's eigen
-          // Escape-afhandeling stopt de propagatie niet, dus dezelfde toets sluit zowel de lijst als
-          // annuleert de celbewerking. Enter/klik op een optie roept `onChange` hieronder aan, die
-          // de commit ZELF triggert via een synthetische Enter naar `inputProps.onKeyDown` — Select
-          // stopt bij een echte keuze wél de propagatie van zijn eigen Enter, dus geen dubbele commit.
+          // zodat de volledige lijst er meteen staat. Select stopt Escape in een open lijst (anders
+          // sloot dezelfde toets ook een omringende dialoog). Daarom vangt de WRAPPER Escape al in de
+          // capture-fase af (`cancelOnEscapeCapture`): één Escape sluit de lijst én annuleert de
+          // celbewerking, zoals vroeger. `onKeyDown={inputProps.onKeyDown}` op de wrapper (niet op
+          // Select zelf, dat kent die prop niet) blijft voor de overige toetsen. Enter/klik op een
+          // optie roept `onChange` hieronder aan, die de commit ZELF triggert via een synthetische
+          // Enter naar `inputProps.onKeyDown` — Select stopt bij een echte keuze wél de propagatie
+          // van zijn eigen Enter, dus geen dubbele commit.
           <div
             className="task-grid-editor-input"
             data-task-editor-kind="enum"
+            onKeyDownCapture={e => cancelOnEscapeCapture(e, inputProps)}
             onKeyDown={inputProps.onKeyDown}
           >
             <Select
@@ -423,6 +432,7 @@ export function TaskCellEditor({
           <div
             className="task-grid-editor-input"
             data-task-editor-kind="boolean"
+            onKeyDownCapture={e => cancelOnEscapeCapture(e, inputProps)}
             onKeyDown={inputProps.onKeyDown}
           >
             <Select
