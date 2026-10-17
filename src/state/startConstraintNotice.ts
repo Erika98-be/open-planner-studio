@@ -52,7 +52,7 @@ export function startEditNotifications(
   if (blocked.length === 1) {
     const [{ name, constraint }] = blocked;
     out.push({
-      severity: 'info',
+      severity: 'error',
       messageKey: constraint.date ? 'notifications.startBlockedByConstraint' : 'notifications.startBlockedByConstraintNoDate',
       params: constraint.date
         ? { name, type: constraint.type, date: displayDateTime(constraint.date, notation, timeNotation) }
@@ -61,7 +61,7 @@ export function startEditNotifications(
     });
   } else if (blocked.length > 1) {
     out.push({
-      severity: 'info',
+      severity: 'error',
       messageKey: 'notifications.startBlockedByConstraintMany',
       params: { count: blocked.length },
       helpArticleId: HELP_ARTICLE_ID,

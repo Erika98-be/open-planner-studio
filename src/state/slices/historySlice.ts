@@ -180,7 +180,7 @@ export const createHistorySlice: AppSliceFactory<HistorySlice> = (runtime) => (s
     runtime.resetUndoCoalescing();
     if (stranded > 0) {
       get().notify({
-        severity: 'info',
+        severity: 'error',
         messageKey: 'notifications.taskEditRevertBlocked',
         dedupeKey: 'task-edit-revert-blocked',
       });

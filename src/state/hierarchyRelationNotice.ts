@@ -64,7 +64,7 @@ export function notifyHierarchyCycle(
   cycle: readonly string[],
 ): void {
   state.notify({
-    severity: 'info',
+    severity: 'error',
     messageKey: 'notifications.hierarchyCycle',
     params: { cycle: cycleLabel(state.tasks, cycle) },
     // Samenvouwen: herhaald op Alt+Shift+→ drukken levert één regel met een teller op.

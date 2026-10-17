@@ -537,7 +537,7 @@ export function useBarDrag({
       actualLockRef.current = null;
       if (lock?.tried && notify) {
         notify({
-          severity: 'info',
+          severity: 'error',
           messageKey: lock.kind === 'finish' ? 'notifications.dragDatesAreActual' : 'notifications.dragStartIsActual',
           params: { name: lock.name },
           helpArticleId: BASELINES_PROGRESS_HELP_ARTICLE_ID,

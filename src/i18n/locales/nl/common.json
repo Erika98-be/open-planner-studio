@@ -161,7 +161,7 @@
     "xerArchiveReasonMetadataInvalid": "Reden: de bronbytes kloppen, maar de daaruit afgeleide gegevens zijn onbruikbaar.",
     "xerArchiveReasonStructure": "Reden: de opbouw van het archief in het IFC klopt niet (dubbel, herordend of verkeerd gekoppeld).",
     "statusDateSetToday": "Statusdatum op vandaag gezet ({{date}}).",
-    "durationBelowDoneWork": "‘{{name}}’ is al voor {{percent}}% gedaan: een duur korter dan het gedane werk kan niet. De duur is niet gewijzigd.",
+    "durationBelowDoneWork": "'{{name}}' is al voor {{percent}}% gedaan: een duur korter dan het gedane werk kan niet. De duur is niet gewijzigd.",
     "tutorialOfferLater": "Je vindt de tutorials altijd in Help › Tutorials.",
     "tutorialOfferUnavailable": "De tutorials konden nu niet worden geïnstalleerd of gestart. In Help › Tutorials kun je het later opnieuw proberen.",
     "p6xmlImportEmpty": "In dit bestand staan geen activiteiten die de app kan lezen.",

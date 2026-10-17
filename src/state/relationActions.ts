@@ -52,7 +52,7 @@ export function createRelationDraftWithFeedback(relation: Omit<Sequence, 'id'>):
   const verdict = relationAddVerdict(st.tasks, st.sequences, relation);
   if (!verdict.ok) {
     st.notify({
-      severity: 'info',
+      severity: 'error',
       messageKey: REJECTION_MESSAGE[verdict.reason],
       // Een kring noemt zijn taken: "Fundering → Grondwerk → Fundering" zegt meteen welke bestaande
       // relatie de gebruiker eerst moet omdraaien of weghalen.

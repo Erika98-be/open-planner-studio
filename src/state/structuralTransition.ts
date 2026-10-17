@@ -266,14 +266,14 @@ export function phaseRefusalNotice(
   const phase = shortName(taskName(s, refusal.phaseId));
   if (refusal.kind === 'noAssignableChild') {
     return {
-      severity: 'info',
+      severity: 'error',
       messageKey: 'notifications.phaseRefusedNoAssignableChild',
       params: { phase },
       dedupeKey: `phase-refused-${refusal.phaseId}`,
     };
   }
   return {
-    severity: 'info',
+    severity: 'error',
     messageKey: 'notifications.phaseRefusedDuplicateResource',
     params: {
       phase,
@@ -293,7 +293,7 @@ export function milestoneRefusalNotices(
     const group = refused.filter(r => r.refusal === reason);
     if (group.length === 0) continue;
     notices.push({
-      severity: 'info',
+      severity: 'error',
       messageKey: reason === 'assignments'
         ? 'notifications.milestoneRefusedAssignments'
         : 'notifications.milestoneRefusedSummary',

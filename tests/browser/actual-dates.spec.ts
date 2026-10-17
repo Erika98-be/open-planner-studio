@@ -144,8 +144,9 @@ test('werkelijke datums: Start van een gestarte taak is alleen-lezen in het pane
   await page.mouse.move(grabX + Math.max(3 * zoom, 40), bar.y, { steps: 6 });
   await page.mouse.up();
 
-  // Er staat ook nog de openmelding van de XER; zoek de sleepmelding op haar tekst.
-  const dragNotice = page.locator('.ops-toast[role="status"]').filter({ hasText: /(actual dates|werkelijke datums)/ });
+  // Er staat ook nog de openmelding van de XER; zoek de sleepmelding op haar tekst. Het is een
+  // weigering, dus rood en blijvend (eigenaarsbesluit 2026-10-17).
+  const dragNotice = page.locator('.ops-toast.toast-error[role="alert"]').filter({ hasText: /(actual dates|werkelijke datums)/ });
   await expect(dragNotice).toHaveCount(1);
   await expect(dragNotice).toContainText('Voltooid');
   const after = await page.evaluate(id => {

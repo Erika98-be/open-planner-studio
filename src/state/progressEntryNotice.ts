@@ -28,7 +28,7 @@ export function statusDateSetTodayNotice(date: string, notation: DateNotation): 
  */
 export function durationBelowDoneWorkNotice(task: { id: string; name: string; time: { completion: number } }): NotifyInput {
   return {
-    severity: 'info',
+    severity: 'error',
     messageKey: 'notifications.durationBelowDoneWork',
     params: { name: task.name, percent: Math.round(task.time.completion * 100) },
     dedupeKey: `duration-below-done-work:${task.id}`,
