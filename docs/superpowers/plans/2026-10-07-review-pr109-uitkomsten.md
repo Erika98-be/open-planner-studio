@@ -1384,3 +1384,10 @@ pop-up per formaat (besluit 6). Besluit 7 (Kritiek) vraagt geen code. #109 is hi
   statusdatum verdwijnen stil), "Niet aangepast: …" onwaar bij deels geschreven plak, vaste `dedupeKey` op meldingen
   met een aantal, zinsvolgorde gids ⇒ fixronde bij de maker. **Open voor de eigenaar:** "+ Taak" bij filter maakt de
   taak wél (onderaan) en toont de rode strook "Niet beschikbaar tijdens filteren/groeperen/sorteren" — tekst klopt niet.
+- **Hercheck #368: NEE ⇒ JA na twee testasserties** (AUTO ⇒ undefined, "(geen)" ⇒ null); Enter in *Taak bewerken* op
+  een dichte `Select` slaat niet op (anders dan native op main, gelijk aan andere `Select`'s); gezette secundaire MSO
+  buiten de lijst ziet eruit als placeholder ⇒ fixronde bij de maker.
+- **Hercheck #374: NEE** — Delete/Backspace en F5 werken nog terwijl de vraag openstaat; vangnet gooit de keuze stil
+  weg; ?-knop opent Help achter *Taak bewerken* ⇒ fixronde bij de maker. **Open voor de eigenaar:** telt voortgang die
+  in de app geboekt is (bijv. 60 %) als "verricht werk" voor de waarschuwing? Nu alleen opgeslagen `actualWorkMinutes`
+  (uit MSP/P6/XER); de belasting rekent voortgang wel als gedaan.
