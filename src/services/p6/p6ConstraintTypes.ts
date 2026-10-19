@@ -30,13 +30,25 @@ export const P6_CONSTRAINT_KINDS: readonly {
  * Label én token → OPS-constraint, voor de lezer. Het token blijft leesbaar: OPS-exports tot en met
  * deze fix schreven `CS_*` in P6 XML. Een soft-soort heeft geen `hard`-sleutel.
  */
-export const P6_CONSTRAINT_BY_CODE_OR_LABEL: Readonly<Record<string, { type: ConstraintType; hard?: boolean }>> =
+const P6_CONSTRAINT_BY_CODE_OR_LABEL: Readonly<Record<string, { type: ConstraintType; hard?: boolean }>> =
   Object.fromEntries(P6_CONSTRAINT_KINDS.flatMap(k => {
     const value = { type: k.type, ...(k.hard ? { hard: true } : {}) };
     return [[k.label, value], [k.token, value]];
   }));
 
-/** OPS-constraint → PMXML-label. `ASAP` ⇒ geen constraint ⇒ `undefined`. Soft `MSO`/`MFO` blijven
+/**
+ * Label of token → OPS-constraint; onbekend ⇒ `undefined`. Alleen eigen sleutels: een waarde als
+ * `toString`, `constructor` of `__proto__` mag geen prototype-sleutel raken (dat gaf een constraint
+ * zonder soort). `Object.hasOwn` kan niet: de tsconfig-lib is ES2020.
+ */
+export function p6ConstraintFromCodeOrLabel(value: string): { type: ConstraintType; hard?: boolean } | undefined {
+  return Object.prototype.hasOwnProperty.call(P6_CONSTRAINT_BY_CODE_OR_LABEL, value)
+    ? P6_CONSTRAINT_BY_CODE_OR_LABEL[value]
+    : undefined;
+}
+
+/** OPS-constraint → PMXML-label. Zoekt in de lijst `P6_CONSTRAINT_KINDS` (geen sleutelopzoeking, dus
+ *  geen prototype-risico). `ASAP` ⇒ geen constraint ⇒ `undefined`. Soft `MSO`/`MFO` blijven
  *  soft (`Start On`/`Finish On`); alleen `hard` wordt `Mandatory …`. */
 export function p6ConstraintLabel(c: TaskConstraint): string | undefined {
   if (c.type === 'ASAP') return undefined;
