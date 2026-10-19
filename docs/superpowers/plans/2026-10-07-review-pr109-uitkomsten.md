@@ -1674,3 +1674,5 @@ Testversie (release-check, poort 3049) is NIET bijgewerkt met de PR's van vandaa
   inzet aan." Zin 3 ("De app past de inzet niet aan …") vervalt. Andere talen: hash niet op actueel, vertaalronde vóór de
   release (V11). ⇒ worker (Opus 5.5) in #380. Links checkstap #371 nagelopen (Haiku 5.5): MER-1 A0038 drie regels,
   rehab-2 V3105190 (alleen via `qa-wbs`) twee regels, geen grijs blok.
+- **Checkstap #371 (één oranje blok): goed** — eigenaar 2026-10-19: "top". **#371 gemerged in main → e5d7f6173**
+  (kop e69682241, CI 16/16, review JA, geen conflict met main 7c1c16925).
