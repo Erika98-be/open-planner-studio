@@ -1503,3 +1503,10 @@ Testversie (release-check, poort 3049) is NIET bijgewerkt met de PR's van vandaa
   Delete/Backspace onder andere dialogen verwijdert de geselecteerde taak erachter (`shortcutRegistry.ts:274-287`).
 - Testversie: worker bouwt `claude/release-check-4` (origin/main + QA-hulpjes + #368, #371, #375, #377, #374, #369,
   #376) in de release-check-worktree, poort 3049.
+- **Testversie klaar:** `claude/release-check-4` kop 3692c3550 (lokaal, geen upstream), poort 3049, pid 141092. Koppen:
+  #368 eaa1e9f9b, #371 d65eaf1e2, #375 6482ec995, #377 0db9c489b, #374 ef5a565f5, #369 0c4864098 (ronde 5 nog niet
+  erin), #376 8d8b34bde. Conflicten in `taskSlice.ts` en gidsen opgelost; integratiefix gids (oude termen) in 3692c3550.
+- **#379 nieuw (expert Opus 5.5): IFC-rondgang Miraya/0402.** Miraya: MSPDI-uitzondering `00:00`–`00:00` las als
+  `{0,0}` (nul werk), IFC-lezer maakt `{0,1440}` ⇒ fix in `mspdiReader.ts` (`canonicalExceptionBands`). 0402: dagkalender
+  0–24 werd na IFC een 24-u-uurkalender ⇒ writer zet `IsHourCalendar = .F.`. Corpus 58 andere 0/0/0; regel A gehouden;
+  CI groen ⇒ review loopt. VERVOLG: EC00850 kale datum op uurkalender (besluit), TU2.0 afronding 1e-7, extensie-API.
