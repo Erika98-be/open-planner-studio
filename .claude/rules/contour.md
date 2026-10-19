@@ -42,7 +42,8 @@ curvenaam (dat was een fout van de vroegere writer; de lezer accepteert die naam
 De IFC-lezer leidt resource-ids af uit het GlobalId (`res-ifc-<GlobalId>`) en mapt `contour.resourceId`
 daarom terug (`remapContourResourceIds` → `mappedResourceId`: zelfde id, anders
 `ifcGuid128(ifcObjectSeed('res', id))`, anders de oude `ifcGuid(id)`). Bewerken in de UI (etappe contour-UI + fasen-editor): `ContourDialog.tsx`
-achter de knop **Urenverdeling…** per toewijzing in `TaskAssignmentsSection` — in FASEN (aaneengesloten
+achter de knop **Urenverdeling…** per toewijzing in `TaskAssignmentsSection` (onder de uitklapknop op de
+resourcenaam, `data-ops-assignment-expand`) — in FASEN (aaneengesloten
 werkdagen met één inzet, `src/engine/contour/contourPhases.ts`: run-length over de werkdagslots,
 splitsen/samenvoegen/grens/inzet), als sleepbare SVG-strook (`ContourPhaseStrip.tsx`, in het venster,
 dus buiten de Gantt-renderergrenzen) én als tabel; vorm-als-data, toepassen/loslaten — op het pure

@@ -35,13 +35,13 @@ A task without an assignment has nothing to tie together, so the rule does nothi
 
 ### Seeing and changing the work
 
-For a task with assignments, a *Work (rem.)* column appears in the *Assignments* block of the *Properties* panel, next to *Units/day*. That is the remaining work of that resource in hours. A small padlock above a column shows what the rule holds: *Units/day* with *Fixed duration and units* and with *Fixed units*, *Work (rem.)* with *Fixed duration and work* and with *Fixed work*.
+For a task with assignments, a *Work (h)* column appears in the *Assignments* block of the *Properties* panel, next to *Units*. That is the remaining work of that resource in hours. A small padlock above a column shows what the rule holds: *Units* with *Fixed duration and units* and with *Fixed units*, *Work (h)* with *Fixed duration and work* and with *Fixed work*.
 
 If you want to change the work yourself, type the hours in the field and press Enter. The app does not accept a value of 0 or less: the field jumps back to the previous value.
 
 ### Seeing what happens
 
-If you choose a rule, no number changes yet. Under a rule that protects work, the app only fixes the current work, so *Work (rem.)* has a stored value. Only at the next change does the rule decide what moves along. Change the *Units/day*, for example, and see what happens to the duration and the work.
+If you choose a rule, no number changes yet. Under a rule that protects work, the app only fixes the current work, so *Work (h)* has a stored value. Only at the next change does the rule decide what moves along. Change the *Units*, for example, and see what happens to the duration and the work.
 
 If that changes the task's duration, the status bar says *Out of date — recalculate (F5)*. Press **Calculate** (F5), for example via *Home › Schedule › Calculate*, to see the new dates. If *Calculate automatically* is on (same *Planning* tab, heading *Calculation*), the app does this itself.
 
@@ -58,11 +58,11 @@ If that changes the task's duration, the status bar says *Out of date — recalc
 
 **The duration changes without me changing it.** Under *Fixed work* and *Fixed units* the duration follows from units and work. If you change one of those or the number of resources, the app adjusts the duration, rounded up to whole work days. For a task in hours the app rounds up to whole minutes.
 
-**The work does not exactly match units × duration.** Rounding can cause that. Next to *Work (rem.)* a warning sign then appears, *Differs from units × duration*. The histogram follows the stored work.
+**The work does not exactly match units × duration.** Rounding can cause that. In the *Work (h)* field a warning sign then appears, *Differs from units × duration*. The histogram follows the stored work.
 
-**Material does not count.** For a material resource *Work (rem.)* shows a dash. Material never drives the duration.
+**Material does not count.** For a material resource *Work (h)* shows a dash. Material never drives the duration.
 
-**A task with progress.** The rule works on the remaining part. So *Work (rem.)* shows only what still has to happen.
+**A task with progress.** The rule works on the remaining part. So *Work (h)* shows only what still has to happen.
 
 **Undoing.** Choosing a rule, and every change that the rule calculates, is one step for *Undo* (Ctrl+Z). The rule is then gone again, but the *Work rule* field stays in view.
 
