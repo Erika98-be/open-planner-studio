@@ -1464,3 +1464,13 @@ Testversie (release-check, poort 3049) is NIET bijgewerkt met de PR's van vandaa
 - Besluit restwerk aan de eigenaar voorgelegd (opties 1 vragen / 2 uitrekenen zoals P6 met melding / 3 houden;
   aanbeveling 2). Feit E-1010 (Harbour Point DCP-03 Baseline, XER): TT_Task, DT_FixedDrtn, niet gestart, duur 80 u;
   Design Engineer target_qty 320, remain_qty 320, target_qty_per_hr 1, remain_qty_per_hr 0.
+- **Besluit eigenaar 2026-10-19: restwerk bij een duurwijziging = optie 2** ("doe maar 2"). Onder een regel waarbij het
+  werk de duur volgt (FIXED_DURATION_RATE, P6 *Fixed Duration & Units/Time*) rekent de app het restwerk opnieuw uit,
+  ook als het uit het bestand kwam en afweek (E-1010 320 → 72/88 u), net als P6 (spec 2026-09-04 §2.2 [P3]). De
+  planner hoort het via (1) één melding direct na de wijziging, alleen als een afwijkende bestandswaarde verdwijnt
+  (bij plakken in veel rijen één melding met aantal), met Ctrl+Z; (2) de bestaande ⚠ in het taakpaneel verdwijnt.
+  Markering in de tabel (punt 2) volgt als apart besluit. Eigenaar vroeg eerst: "hoe informeren we de user daarover
+  toch?" ⇒ antwoord melding + ⚠ ⇒ akkoord. Hiermee ook de fix *Resterend volgt de duur niet* (niet-gestart) ⇒ expert.
+- #369 fixronde 3 klaar (1d344db36, CI groen) ⇒ delta-review loopt. #368 CI groen (eaa1e9f9b; fout zat in de spec:
+  focussprong van `TaskDialog` na 30 ms) ⇒ wacht op visuele check eigenaar. #371 CI groen (a8bbe85b9; twee checks
+  verouderd door `recordedSourceFormat`, geen productiecode) ⇒ hercheck loopt. #374 afmaken loopt.
