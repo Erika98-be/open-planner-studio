@@ -1549,3 +1549,6 @@ Testversie (release-check, poort 3049) is NIET bijgewerkt met de PR's van vandaa
   (`pendingCloseDocId`), Backstage/Rapport/IFC (Delete verwijdert onzichtbare taak, ook op main), gidsen, commentaren.
   VERVOLG: F5/Ctrl+S onder modaal venster (na #374).
 - Eigenaar vroeg 2026-10-19 "wat moet ik beslissen?" ⇒ besluit tabel-markering opnieuw uitgelegd (aanbeveling 1).
+- **Besluit eigenaar 2026-10-19: restwerk in de tabel = optie 1** ("1"): dezelfde gele ⚠ als in het taakpaneel in de
+  kolom *Resterend werk (uren)*, alleen bij een afwijking (criterium `storedWorkDeviates` uit #380), tooltip met de
+  zin "Wijzig je de duur, dan rekent de app het opnieuw uit." ⇒ bij de maker van #380 ná diens fixronde (zelfde PR).
