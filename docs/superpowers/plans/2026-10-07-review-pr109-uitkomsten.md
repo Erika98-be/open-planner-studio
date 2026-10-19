@@ -1535,3 +1535,6 @@ Testversie (release-check, poort 3049) is NIET bijgewerkt met de PR's van vandaa
 - **#381 nieuw (worker Opus 5.5): bewerktoetsen dicht onder een venster** (8fa0cc6ad, CI groen; Delete, Backspace,
   Ctrl+Z/Y/Shift+Z, Ctrl+V, Ctrl+C via `isShortcutBlockedByDialog()`; zoom blijft) ⇒ review loopt. VERVOLG: F5/Ctrl+S
   onder een venster (besluit), Ctrl+Shift+S zonder poort in dev.
+- **#382 nieuw (worker Opus 5.5): P6 XML-lezer leest constraintlabels** (a6d1b7e72, CI groen; 9 labels + 9 tokens uit
+  MPXJ `ConstraintTypeHelper`; OZB-14: 20 constraints terug, projecteinde schuift in 6 projecten) ⇒ review loopt.
+  Vervolg: de eigen P6 XML-writer schrijft `CS_*`-tokens ⇒ worker `claude/p6xml-writer-labels`.
