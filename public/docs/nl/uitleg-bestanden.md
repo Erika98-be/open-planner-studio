@@ -4,7 +4,7 @@ Wat staat er eigenlijk in het bestand dat je opslaat? En wat gebeurt er met je p
 
 ## Het begrip
 
-Open Planner Studio heeft één eigen bestandsformaat: **IFC**, een open uitwisselformaat voor bouwinformatie van buildingSMART. De app schrijft het IFC-schema van het project, standaard IFC 4.3 ADD2 (zie [Het IFC-schema kiezen](docs://howto-ifc-schema-kiezen)); in de exportlijst heet het *IFC*. Er is geen tweede, eigen projectbestand. *Opslaan* schrijft je hele project als IFC-bestand (`.ifc`) en *Openen* leest zo'n bestand weer terug. Wil je zien wat er in het bestand komt? Het tabblad *IFC* toont de IFC-tekst van je project; *Genereer IFC* ververst die tekst.
+Open Planner Studio heeft één eigen bestandsformaat: **IFC**, een open uitwisselformaat voor bouwinformatie van buildingSMART. De app schrijft het IFC-schema van het project, standaard IFC 4.3 ADD2 (zie [Het IFC-schema kiezen](docs://howto-ifc-schema-kiezen)); in de exportlijst heet het *IFC*. Er is geen tweede, eigen projectbestand. *Opslaan* schrijft je hele project als IFC-bestand (`.ifc`) en *Openen* leest zo'n bestand weer terug. Wil je zien wat er in het bestand komt? Het tabblad *IFC* is een editor die de IFC-tekst van je project toont; *Genereer IFC* ververst die tekst en *Kopieer* zet haar op het klembord. Pas je de tekst aan, dan laadt *Toepassen* haar als je project. Dat vervangt het project dat in dat tabblad staat volledig.
 
 Alle andere formaten zijn **adapters**: vertalers tussen het model van een ander programma en dat van de app. De app leest CSV, MS Project XML, Primavera P6 XML, MS Project-bestanden (`.mpp`) en Primavera-bestanden (`.xer`). Ze schrijft CSV, MS Project XML, Primavera P6 XML en twee voortgangsbladen. Naar `.mpp` of `.xer` kun je niet exporteren.
 

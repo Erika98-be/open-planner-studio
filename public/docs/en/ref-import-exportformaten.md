@@ -20,15 +20,15 @@ Per file format: whether you can open, save and export it, what does and does no
 
 ## IFC
 
-**Open** — yes, `.ifc`. The app reads IFC4 and IFC 4.3 (also ADD2). Calculation profile: the one in the file.
+**Open** — yes, `.ifc`. The app reads IFC4 and IFC 4.3 (also ADD2). A file in another schema, such as IFC2X3, opens too. At the first save you then choose a schema that the app can write (see [Choosing the IFC schema](docs://howto-ifc-schema-kiezen)). Calculation profile: the one in the file.
 
-**Save** — yes, and it is the only format that saves. *Save* writes your whole project as an IFC file. The file becomes the save target.
+**Save** — yes, and it is the only format that saves. *Save* writes your whole project as an IFC file, in the IFC schema of the project (IFC 4.3 ADD2 by default). The file becomes the save target.
 
 **Export** — yes, as *IFC*, in the IFC schema of the project (default IFC 4.3 ADD2). Default name: the project name with the extension `.ifc`. If your project is linked to a resource library, the checkbox *Save library file alongside* is below the cards in *File › Export*. Ticked, the app asks for a place for *projectname-bibliotheek.ifc* after the project. The checkbox is not in the list on the *Home* tab.
 
 **What goes along** — everything that belongs to the project: tasks with structure, duration, dates and progress; relations with lag; constraints and deadlines; calendars; resources and assignments, including the hour distribution; baselines; activity codes and custom fields; notes; external links to other projects; interruptions; work rules and task types; the project settings such as the status date, the progress mode, the calculation profile and the calculation options; the link with a resource library. For a project from a `.xer`, the original source file goes along too. A custom task type is stored as the IFC type `USERDEFINED` with its name in the ObjectType field, so other IFC programs read the task normally; the app also keeps the fixed id of the type, so renaming does not break the link. If someone opens the file on another computer, the type appears there under *From this project*, not in their own *My task types*.
 
-**What does not go along** — how you have set up the screen (zoom, scroll position, selected task, collapsed phases, chosen filter and grouping) and the app settings ([App settings](docs://ref-instellingen)). The *IFC* tab shows the IFC text of your project.
+**What does not go along** — how you have set up the screen (zoom, scroll position, selected task, collapsed phases, chosen filter and grouping) and the app settings ([App settings](docs://ref-instellingen)). The *IFC* tab is an editor with the IFC text of your project. *Generate IFC* refreshes it, *Copy* puts it on the clipboard and *Apply* loads the text as your project, replacing the project in that tab.
 
 ## MS Project XML (MSPDI)
 
@@ -41,6 +41,8 @@ Per file format: whether you can open, save and export it, what does and does no
 **What goes along** — tasks with structure (level and WBS), duration, dates and progress; relations with lag, also in hours or percentages; constraints, including the deadline; calendars, including task and resource calendars; resources and assignments, including the curve or hour distribution; the status date; the critical threshold, as a whole number of work days of 0 or more with *Total float ≤ threshold*; the description of a task (as a note); the work rule of a task (as the MS Project task type); a custom task type, in a free field (`ExtendedAttribute`) that the app reads back and that MS Project may ignore. Of your baselines only the active one goes along, as baseline 0. A task in hours keeps its unit, and a milestone its kind (start, finish or automatic).
 
 **What does not go along** — notes (the checklist on a task), external links to other projects, activity codes and custom fields, a second constraint, the marking *Manually scheduled*, the leveling delay, the resume and stop point of an out-of-sequence task, the conventions *Remaining work resumes after the elapsed duration* and *Don't move unstarted tasks to the status date* of an MS Project profile, and the other calculation options. Interrupted tasks without an hour distribution go along without their interruptions.
+
+**Holidays when opening.** A derived calendar inherits the exceptions of its base calendar. A calendar with its own work week and no exceptions gets no holidays. Only a bare calendar, without a base calendar, work week or exceptions, keeps the standard Dutch holidays. If holidays are missing, your finish date can differ: see [Generating holidays and the construction holiday](docs://howto-feestdagen-genereren).
 
 **What changes on the way** — a constraint *Must start on (MSO)* or *Must finish on (MFO)* without the choice *Mandatory (pin logic)* becomes *Start no earlier than (SNET)* or *Finish no earlier than (FNET)*. A hammock becomes an ordinary task with calculated dates. MS Project XML stores the hours per day only for the project calendar. Another calendar with its own hours per day gets its working time as hours per day when you open the file: 8 hours per day with working times of 10 hours becomes 10. A task in days on such a calendar then gets shorter, for example 4 days instead of 5.
 
@@ -63,6 +65,8 @@ Per file format: whether you can open, save and export it, what does and does no
 **Open** — yes. The app recognises an `.xml` file as P6 XML by the root element `APIBusinessObjects`. Calculation profile: *Open Planner Studio*.
 
 **Several projects in one file.** Each project with activities opens in its own tab, named *Project name (Project ID)*. The app skips a project without activities. The active tab is the project with the most activities. The app does not carry over a relation to another project, nor an activity that belongs to no project. After opening, the app reports how many projects it opened.
+
+**Holidays when opening.** The same rules apply as for MS Project XML: a calendar with its own work week and no exceptions gets no holidays.
 
 **Baselines.** A `<BaselineProject>` in the file becomes a baseline of its project. The baseline that P6 marks as active is also active in the app.
 
@@ -91,6 +95,14 @@ Per file format: whether you can open, save and export it, what does and does no
 **What goes along** — the WBS structure and activities with duration, dates, constraints and progress; relations with lag; calendars; resources with assignments; activity codes; custom fields (UDFs); notes; the scheduling settings of P6. An activity of the type *Level of Effort* becomes a hammock. A baseline project becomes the active baseline of the project that refers to it. A relation between two projects is kept by the app as source data.
 
 **Rate of an assignment.** If work remains, the remaining rate (`remain_qty_per_hr`) becomes the *Units/day*. Otherwise it is the planned rate (`target_qty_per_hr`). The planned, actual and remaining work stay as in the file. For material the planned rate stays.
+
+**A free Saturday or Sunday that is not in the file.** Some P6 exports move a free weekend day inside a block of several free days to the Friday before or the Monday after. If the calendar works on Saturday or Sunday, that day would wrongly become a working day. If the app sees that pattern in a block of at least three free days, it makes that weekend day free after all. In the calendar the day is called *Calendar exception (weekend reconstruction)*, and it counts in the line *N calendar findings.* of the message. On a calendar that does not work at the weekend, nothing changes.
+
+**Float up to the project finish, without a finish date.** Is the P6 option on to calculate float up to the project finish, but does the file have no finish date for the project and no planned finish date for any activity? Then the app turns off the option *Calculate float up to the project finish date*. It then calculates the late dates back from the latest early finish. That counts in the line *N P6 scheduling settings used safe fallbacks.*
+
+**Completed activities on the data date.** Some files do not record the actual dates of a completed activity, but a window on the data date. In the view *Dates as recorded* such an activity is then a narrow bar on the data date. If recalculating puts it in a different place, it counts in the number of tasks that the strip gives. The convention *Completed task in the data-date window* calculates such a window, and only with that convention does a completed task get a real float through the calculation option *Completed task: late dates from the data date*. This convention is an approximation: the app saw this behaviour only in P3 output, and Primavera does not confirm it anywhere. That is why it is off in every built-in profile, also under *Primavera P6*. You turn it on in the block *Calculation profile and options*; the project then gets a custom profile. See [Calculation options and conventions](docs://ref-rekenopties-en-conventies).
+
+**Numbers with a comma as decimal separator.** P6 records the decimal separator and the thousands separator in the table `CURRTYPE`. The app reads those characters before it converts durations, work and float. If that information is missing, the app uses a point as decimal separator. If the file still contains numbers with a decimal comma, the app opens nothing. That way a schedule with wrongly read numbers never opens.
 
 **What does not go along** — a project without activities, and a relation between two projects as a real relation in your schedule. See [Opening a Primavera P6 file (.xer)](docs://howto-xer-openen).
 
