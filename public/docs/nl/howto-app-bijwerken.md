@@ -30,8 +30,8 @@ In de browser doet deze knop niets bijzonders: het venster meldt meteen *Je gebr
 
 ### Lezen wat er nieuw is
 
-1. Start je de desktop-app voor het eerst in een andere versie dan de vorige keer, of na een verse installatie, dan opent vanzelf een venster. Het heet *Je bent bijgewerkt!*
-2. Bovenaan staat de sprong van de vorige naar de nieuwe versie. Na een verse installatie staat er alleen de nieuwe versie.
+1. Start je de desktop-app voor het eerst in een andere versie dan de vorige keer, dan opent vanzelf een venster. Het heet *Je bent bijgewerkt!* Na een verse installatie opent het niet: de eerste start is geen update. Wil je het toch zien, gebruik dan de knop *Wat is er nieuw* (zie onder).
+2. Bovenaan staat de sprong van de vorige naar de nieuwe versie. Bij de knop *Wat is er nieuw* staat alleen de nieuwe versie.
 3. Heeft de app voor deze versie een samenvatting ingebouwd, dan zie je één hoofdpunt en vier kleinere punten. Bij het hoofdpunt kan een knop *Lees de gids* staan. Anders zie je alleen de versiesprong en wat hieronder staat.
 4. Met *Volledige release notes* open je de changelog op GitHub. Slaagt dat niet, dan staat er *De release notes konden niet worden geopend.*
 5. Onder *Deze update in cijfers* staan het aantal dagen sinds de vorige release, het aantal commits en het aantal toegevoegde regels code. Kan de app het verschil in grootte van het installatiepakket opzoeken, dan staat dat er ook. Elk cijfer staat er alleen als het beschikbaar is.

@@ -1,12 +1,13 @@
 # Meldingen en waarschuwingen
 
-De app zegt op drie plekken wat er aan de hand is: de statusbalk onderaan, het paneel *Waarschuwingen* in de rechterkolom en de meldingen die tijdelijk onderin het scherm verschijnen. Dit artikel geeft per plek wat je ziet, wanneer het verschijnt en wat je eraan kunt doen. Waarom een planning kritiek of overbezet is, staat in [Kritiek pad en speling](docs://uitleg-kritiek-pad); overbezetting oplossen in [Overbezetting oplossen](docs://howto-overbezetting-oplossen); relaties leggen in [Relaties leggen](docs://howto-relaties-leggen).
+De app zegt op vier plekken wat er aan de hand is: de statusbalk onderaan, het paneel *Waarschuwingen* in de rechterkolom, de meldingen die tijdelijk onderin het scherm verschijnen en de stroken onder het lint. Dit artikel geeft per plek wat je ziet, wanneer het verschijnt en wat je eraan kunt doen. Waarom een planning kritiek of overbezet is, staat in [Kritiek pad en speling](docs://uitleg-kritiek-pad); overbezetting oplossen in [Overbezetting oplossen](docs://howto-overbezetting-oplossen); relaties leggen in [Relaties leggen](docs://howto-relaties-leggen).
 
-## Het verschil tussen de drie
+## Het verschil tussen de vier
 
 - **Statusbalk** — een vaste regel met tellers. Ze komen uit de laatste berekening en blijven staan tot je opnieuw rekent.
 - **Paneel Waarschuwingen** — de lijst achter die tellers, met alles wat de laatste berekening vond, en een klik brengt je bij de taak, relatie of resource. Het is afgeleid van de laatste berekening; er wordt niets bewaard.
 - **Meldingen** — korte berichten over iets wat je zojuist deed (opslaan mislukt, relatie geweigerd, import gelezen). Ze verdwijnen weer en staan niet in het paneel.
+- **Strook onder het lint** — een gekleurde strook met uitleg en één knop. Hij hoort bij een stand van het document of van een modus en blijft staan zolang die stand geldt. Zie *De stroken onder het lint*.
 
 ## De statusbalk
 
@@ -54,9 +55,19 @@ De balk onderaan toont van links naar rechts:
 - *Urentaak '{taak}' heeft geen geldige werktijden in zijn kalender* — een taak in uren op een kalender zonder werkuren.
 - *Ongeldige startdatum voor taak '{taak}'* — de startdatum van de taak is niet geldig.
 
+## De stroken onder het lint
+
+Een strook staat direct onder het lint, boven de werkruimte. Hij heeft een tekst en één knop. Een strook van een modus heeft geen kruisje; de andere sluit je met het kruisje. De vijf stroken:
+
+- **Relatiemodus** — *Relatiemodus: sleep in de Gantt van de ene balk naar de andere om een relatie te leggen. Esc stopt.* Staat zolang de relatiemodus aan staat. Knop: *Stoppen*. Zie [Relaties leggen](docs://howto-relaties-leggen).
+- **Splits-modus** — *Klik op een balk op de dag waar de onderbreking begint en sleep naar rechts voor de lengte. Esc stopt.* Staat zolang *Taak splitsen* aan staat. Knop: *Stoppen*.
+- **Urenplanning in het bestand** — *Dit bestand bevat urenplanning.* Verschijnt als een geopend bestand urenplanning bevat terwijl *Urenplanning inschakelen* uit staat. Knop: *Urenplanning aanzetten*. Zie [Urenplanning aanzetten](docs://howto-urenplanning-aanzetten).
+- **Structuur vergrendeld** — *Niet beschikbaar tijdens filteren/groeperen/sorteren*. Verschijnt als inspringen of uitspringen wordt geweigerd omdat de takenlijst is gefilterd, gegroepeerd of gesorteerd. Knop: *Wissen*, die filter, groepering en sortering opheft.
+- **Datums zoals opgeslagen** — na het openen van een bestand waarvan herberekenen datums verschoof: *Herberekening verschoof N van de M taken ten opzichte van de datums in het bestand.* met de knop *Opgeslagen datums tonen*. Zolang de weergave aan staat: *Je ziet de datums zoals ze in het bestand staan …* met de knop *Herberekenen*. Zie [Datums zoals opgeslagen](docs://uitleg-datums-zoals-opgeslagen).
+
 ## Meldingen
 
-De meldingen verschijnen onderin het scherm, ook in de tabel, in Backstage en in de presentatiemodus. Een melding is een *fout* of *info*. Een fout blijft staan tot je op het kruisje klikt; een info verdwijnt na 5 seconden, en die timers beginnen opnieuw zodra de stapel verandert. Elke melding heeft rechtsboven een kruisje (tooltip *Melding sluiten*) waarmee je hem meteen sluit. Een klik op de tekst van de melding doet niets. Er staan er hooguit drie tegelijk: komt er een vierde, dan verdwijnt eerst de oudste info, en is er geen info, dan de oudste melding, zodat een fout nooit door een info wordt verdrongen. De stapel schuift weg van de knoppen van een open dialoog en van plakkende actiebalken. Een melding bij het openen van een bestand blijft ook staan tot je op het kruisje klikt, als de app bij het openen data heeft ingevuld, vervangen, gerepareerd of weggelaten: een regel over parser- of kalenderbevindingen, getalnotatieproblemen, enum-terugvallen, P6-planningsinstellingen met veilige terugval, een beschermende baseline-terugval, genegeerde baselineverwijzingen, activiteiten zonder geplande start die een start kregen, relaties tussen projecten of activiteiten zonder project die niet zijn overgenomen (P6 XML) of een onbruikbaar XER-bronarchief, en de meldingen over dubbele id's en relaties die niet meerekenen. Staat er alleen informatie zonder zo'n wijziging in (zoals het aantal projecten, documenten of de tekstcodering), dan verdwijnt de melding na 5 seconden.
+De meldingen verschijnen onderin het scherm, ook in de tabel, in Backstage en in de presentatiemodus. Een melding is een *fout* of *info*. Een fout blijft staan tot je op het kruisje klikt; een info verdwijnt na 5 seconden (een melding met veel uitleg blijft langer), en die timers beginnen opnieuw zodra de stapel verandert. Elke melding heeft rechtsboven een kruisje (tooltip *Melding sluiten*) waarmee je hem meteen sluit. Een klik op de tekst van de melding doet niets. Er staan er hooguit drie tegelijk: komt er een vierde, dan verdwijnt eerst de oudste info, en is er geen info, dan de oudste melding, zodat een fout nooit door een info wordt verdrongen. De stapel schuift weg van de knoppen van een open dialoog en van plakkende actiebalken. Een melding bij het openen van een bestand blijft ook staan tot je op het kruisje klikt, als de app bij het openen data heeft ingevuld, vervangen, gerepareerd of weggelaten: een regel over parser- of kalenderbevindingen, getalnotatieproblemen, enum-terugvallen, P6-planningsinstellingen met veilige terugval, een beschermende baseline-terugval, genegeerde baselineverwijzingen, activiteiten zonder geplande start die een start kregen, relaties tussen projecten of activiteiten zonder project die niet zijn overgenomen (P6 XML) of een onbruikbaar XER-bronarchief, en de meldingen over dubbele id's en relaties die niet meerekenen. Staat er alleen informatie zonder zo'n wijziging in (zoals het aantal projecten, documenten of de tekstcodering), dan verdwijnt de melding na 5 seconden.
 
 - **Teller ×N** — een melding met een vaste sleutel vouwt een herhaling samen tot één regel met een teller, bijvoorbeeld een opslagfout die steeds terugkomt of een geweigerde relatie die je herhaalt. Niet elke melding doet dat.
 - **Lees meer** — sommige meldingen hebben een link *Lees meer* of een eigen onderwerp (bijvoorbeeld *Werkregels uitgelegd*) naar de gids in Backstage › Help.
@@ -68,8 +79,8 @@ De lijst hieronder is een keuze, gegroepeerd naar onderwerp. Waar het niet staat
 
 - **Opslaan mislukt** (fout) — *Opslaan mislukt* met de reden eronder. Bij opslaan, opslaan als en het exporteren van een rapport.
 - **Opgeslagen als download** (info) — *Opgeslagen als download: '{naam}' staat nu in je downloadmap. …* Bij *Opslaan als* en exporteren, als de omgeving de app niet rechtstreeks naar de gekozen plek laat schrijven. Twee downloads vlak na elkaar vouwen samen.
-- **Opslaan als download (uitleg)** (info) — *Opgeslagen als download: '{naam}' staat in je downloadmap. Deze browser laat de app niet naar een eigen plek schrijven, …* Bij *Opslaan* in een browser die alleen via een download bewaart. Eén keer per sessie, met een link naar de uitleg over bestanden.
-- **Browser schrijft niet terug** (info) — *Deze browser laat de app niet terugschrijven naar '{naam}'. …* Bij *Opslaan* van een project met een bestand, als de browser opnieuw om een plek moet vragen. Eén keer per sessie, met een link naar de uitleg over bestanden.
+- **Opslaan als download (uitleg)** (info, 15 seconden) — *Opgeslagen als download: '{naam}' staat in je downloadmap. Deze browser laat de app niet naar een eigen plek schrijven, …* Bij *Opslaan* in een browser die alleen via een download bewaart. Eén keer per sessie, met een link naar de uitleg over bestanden.
+- **Browser schrijft niet terug** (info, 15 seconden) — *Deze browser laat de app niet terugschrijven naar '{naam}'. …* Bij *Opslaan* van een project met een bestand, als de browser opnieuw om een plek moet vragen. Eén keer per sessie, met een link naar de uitleg over bestanden.
 - **Automatisch opslaan mislukt** (fout) — *Automatisch opslaan mislukt* met de reden. Geldt voor het automatisch opslaan naar het bestand en voor het crashherstel.
 - **Bibliotheek kon niet worden opgeslagen** (fout) — *Bibliotheek kon niet worden opgeslagen*, bij het opslaan van de resourcebibliotheek.
 - **Bestand openen mislukt** (fout) — *Bestand openen mislukt* met de reden. Bij een voorbeeld, een recent bestand of een importbestand.
@@ -107,6 +118,12 @@ De lijst hieronder is een keuze, gegroepeerd naar onderwerp. Waar het niet staat
 - **Cellen overgeslagen bij plakken** (info) — *N cellen overgeslagen: ze zijn read-only (bijvoorbeeld een automatisch genummerde WBS-code of een berekende kolom).*
 - **Verwijzingen leeggemaakt bij plakken** (info) — *N verwijzingen bestonden niet in dit document en zijn leeggemaakt (taakkalenders, eigen taaktypes, activity codes of gebruikersvelden uit het brondocument).*
 - **Werkregel paste duren aan** (info) — *De werkregel heeft na de kalenderwijziging de duur van N taken aangepast (werk blijft, uren per dag veranderden).* Met een link *Werkregels uitgelegd*.
+
+### Primavera P6 XML
+
+- **P6 XML-bestand geopend** (info) — *P6 XML-bestand geopend: N projectdocumenten.* Na het openen van een P6 XML-bestand.
+- **Niet overgenomen** (blijft staan) — *N relaties tussen projecten zijn niet als relatie overgenomen.* en *N activiteiten zonder project zijn niet ingelezen.* Controleer of je planning compleet is.
+- **Leeg of onbruikbaar** (fout) — er opent niets. Drie redenen: *In dit bestand staan geen activiteiten die de app kan lezen.*, *De activiteiten hebben geen ObjectId. …* en *Het bestand gebruikt XER-kolomnamen … Open de .xer zelf.*
 
 ### Primavera (XER)
 
