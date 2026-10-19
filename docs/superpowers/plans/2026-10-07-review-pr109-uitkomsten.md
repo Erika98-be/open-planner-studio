@@ -1631,3 +1631,7 @@ Testversie (release-check, poort 3049) is NIET bijgewerkt met de PR's van vandaa
   verschil weg te werken." klopt niet bij *Vast werk* / *Vaste duur en werk*; V11 in 26 locales telt een oude vertaling
   nu als actueel; V12 MER-1 toont 89 ⚠ (duur 0 met opgeslagen restwerk). Review ronde 2 stopte op de sessielimiet
   (HTTP 429) en is om 15:10 hervat bij dezelfde reviewer (Opus 5.5).
+- **Selectie leeg na geweigerde sleep: bestaand gedrag op main, niet door #375** (Explore Haiku 5.5 + orkestrator
+  `git diff origin/main claude/weigering-rood`). De balk schuift niet mee, dus de muis gaat los boven lege ruimte; de
+  daaropvolgende `click` loopt in `onClick` naar `deselectAll()` (`useGanttPointerCoordinator.ts:210-211`, gelijk op main).
+  #375 wijzigt alleen de melding in `useBarDrag.ts` (info ⇒ rode weigering). ⇒ VERVOLG, los van #375.
