@@ -1490,3 +1490,8 @@ Testversie (release-check, poort 3049) is NIET bijgewerkt met de PR's van vandaa
   op de statusdag lijkt op schema; komt door deze PR) + dubbele modusregel (`isHourCalendar` in `subdayIo.ts:553`) +
   PR-tekst ⇒ kleine ronde bij de maker. Rest VERVOLG (verborgen tijd in `taskMutationRules.ts`, printlabel, tijdveld
   zonder statusdatum, test dialoog, opruimen).
+- **#377 ronde 2 klaar** (0db9c489b, CI 16/16): voortgangslijn in uurmodus op het tijdstip (scherm + print, mutanten M9/M10
+  rood); één modusregel `isHourModeCalendar` (kopie in `subdayIo.ts` weg, 8 aanroepers); `ifcWriter.ts:1274` eigen
+  variant ⇒ VERVOLG. Review was al JA ⇒ wacht op visuele check eigenaar.
+- **#369 fixronde 4 klaar** (0c4864098, CI groen; B1 in alle talen, V1 focus terug, V4, gedeelde `decimalSeparatorOf`)
+  ⇒ delta-review loopt.
