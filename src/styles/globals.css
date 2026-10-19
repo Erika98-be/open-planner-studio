@@ -1864,6 +1864,53 @@ body {
   }
 }
 
+/* Toewijzingen in het taakpaneel: één regel per resource (naam, inzet, werk, verwijderen). De lijst is
+   één raster; kop en regels zijn er een subgrid van, zodat elke kolom precies onder zijn kop staat en zo
+   breed is als het breedste van kop en getal — niet breder. Curve, urenverdeling en verplaatsen staan
+   onder de uitklapknop op de naam (`grid-column: 1 / -1`). Op de smalste rail krijgt de naam een eigen
+   regel en lijnen de getallen eronder uit. */
+.assignment-list {
+  container-type: inline-size;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto 1rem;
+  column-gap: 0.5rem;
+  row-gap: 0.25rem;
+  align-items: center;
+}
+
+.assignment-list--no-work { grid-template-columns: minmax(0, 1fr) auto 1rem; }
+
+.assignment-header,
+.assignment-row {
+  grid-column: 1 / -1;
+  display: grid;
+  /* Terugval voor een webview zonder subgrid: zelfde kolommen per regel (kan een paar px verschuiven). */
+  grid-template-columns: minmax(0, 1fr) auto auto 1rem;
+  grid-template-columns: subgrid;
+  column-gap: 0.5rem;
+  row-gap: 0.25rem;
+  align-items: center;
+}
+
+.assignment-name { grid-column: 1; }
+.assignment-units { grid-column: 2; justify-self: end; }
+.assignment-work { grid-column: 3; justify-self: end; }
+.assignment-remove { grid-column: -2; justify-self: center; }
+.assignment-details { grid-column: 1 / -1; }
+
+/* Getalvelden: vier tekens breed. Het zijn tekstvelden (`UnitsInput` met `locale`), dus zonder
+   spinknop; het getal toont hooguit twee decimalen. Hogere specificiteit dan `.input` (width: 100%),
+   dat verderop in dit bestand staat. */
+.assignment-list .assignment-number {
+  width: 4em;
+}
+
+@container (max-width: 14rem) {
+  .assignment-row > .assignment-name { grid-column: 1 / -1; }
+  .assignment-header > .assignment-name { display: none; }
+}
+
+/* Het WBS-nummer is navigatie, geen kaal tekstlabel. De semantische tracekleur blijft als vaste
 /* Het WBS-nummer is navigatie, geen kaal tekstlabel. De semantische tracekleur blijft als vaste
    rolmarkering zichtbaar; de tekst en focusring gebruiken de contrastrijke themakleur. De rol staat
    daarnaast uitgeschreven in de toegankelijke knopnaam, zodat kleur niet de enige informatiedrager

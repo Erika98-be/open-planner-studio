@@ -1,11 +1,11 @@
-import { useMemo, useState } from 'react';
+import { useId, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppStore } from '@/state/appStore';
 import type { ResourceCurve } from '@/types/resource';
 import { UnitsInput } from '@/components/common/UnitsInput';
 import { Select, type SelectOption } from '@/components/common/Select';
 import { decimalSeparatorOf, localizeDecimalPoint } from '@/utils/reportNumber';
-import { AlertTriangle, BarChart3, Lock, Trash2 } from 'lucide-react';
+import { AlertTriangle, BarChart3, ChevronRight, Lock, Trash2 } from 'lucide-react';
 import { RESOURCE_CURVES, CURVE_KEY } from './shared';
 import { isSummaryTask } from '@/utils/taskHierarchy';
 import { assignmentCurveState, contouredAssignmentIds } from '@/engine/contour/curveState';
@@ -18,6 +18,8 @@ import { taskTypesUnlocked } from '@/state/taskTypesVisibility';
 import { taskCalendarHoursPerDay } from '@/utils/taskDefaults';
 import type { Task } from '@/types/task';
 import { createMoveCandidateLookup } from './moveCandidates';
+import { ensureThemeVisible, resourceDisplayColor } from '@/engine/renderer/resourcePalette';
+import { useResolvedUITheme } from '@/hooks/useResolvedUITheme';
 
 /** Pseudowaarden van de curve-dropdown voor de twee data-toestanden van de contour-engine:
  *  een opgeslagen contour (de dropdown is dan uitgeschakeld — loslaten gaat via het
@@ -75,8 +77,13 @@ function MoveToSelect({ label, candidates, onMove }: {
  * Toewijzingen (incl. "verplaats naar…") — sectie van
  * `TaskPropertiesPanel`. RELATIONEEL/storeful: roept `assignResource`/
  * `updateAssignment`/`unassignResource`/`moveAssignment` rechtstreeks aan, identiek in paneel
- * én dialoog. Contour-UI: per toewijzing een knop naar `ContourDialog` (urenverdeling
- * per werkdag); een toewijzing mét opgeslagen contour toont dat in de curve-dropdown.
+ * én dialoog.
+ *
+ * Eén regel per resource in een raster met de kop erboven (CSS `.assignment-list`, zelfde opzet als de
+ * relatielijst): naam, inzet, werk (alleen met "Toon werkregels en werk") en verwijderen. De naam is
+ * een uitklapknop; daaronder staan curve, de knop naar `ContourDialog` (urenverdeling per werkdag) en
+ * "Verplaats naar…". Een afwijkende curve of een eigen urenverdeling blijft ook dichtgeklapt zichtbaar
+ * als icoon naast de naam (indeling goedgekeurd door de eigenaar, 2026-10-19).
  */
 export function TaskAssignmentsSection({ taskId }: { taskId: string }) {
   const { t, i18n } = useTranslation('task');
@@ -88,7 +95,7 @@ export function TaskAssignmentsSection({ taskId }: { taskId: string }) {
   const updateAssignment = useAppStore(s => s.updateAssignment);
   const unassignResource = useAppStore(s => s.unassignResource);
   const moveAssignment = useAppStore(s => s.moveAssignment);
-  // Kolom "Werk (rest)" + slotjes op de beschermde hoek(en).
+  // Kolom "Werk" + slotjes op de beschermde hoek(en).
   const setAssignmentWork = useAppStore(s => s.setAssignmentWork);
   const notify = useAppStore(s => s.notify);
   // "1,500" in en of "1.500" in nl: 1500 of 1,5? Geen gok; de waarde blijft. De melding noemt het
@@ -101,7 +108,11 @@ export function TaskAssignmentsSection({ taskId }: { taskId: string }) {
   const defaultWorkRule = useAppStore(s => s.project.defaultWorkRule);
   const calendars = useAppStore(s => s.calendars);
   const projectCalendar = useAppStore(s => s.calendar);
+  const darkTheme = useResolvedUITheme() === 'dark';
   const [contourAssignmentId, setContourAssignmentId] = useState<string | null>(null);
+  // Welke toewijzingen uitgeklapt staan (curve, urenverdeling, verplaatsen). Alleen voor deze weergave.
+  const [expanded, setExpanded] = useState<ReadonlySet<string>>(() => new Set());
+  const detailsIdBase = useId();
   // Eén index per (taken, toewijzingen) — zie `moveCandidates.ts`. Vóór de vroege uitstap: hooks.
   const moveLookup = useMemo(() => createMoveCandidateLookup(tasks, assignments), [tasks, assignments]);
 
@@ -134,6 +145,13 @@ export function TaskAssignmentsSection({ taskId }: { taskId: string }) {
     return Math.round((minutes / 60) * 100) / 100;
   };
   const lockTitle = t('properties.assignments.locked', { rule: t(`workRule.${rule}`) });
+  const toggleExpanded = (id: string) => setExpanded(prev => {
+    const next = new Set(prev);
+    if (!next.delete(id)) next.add(id);
+    return next;
+  });
+  const numberInputClass = 'assignment-number input !text-small !px-1 !py-0.5 !h-6 text-right';
+  const mutedStyle = { color: 'var(--theme-text-muted)' };
 
   return (
     <>
@@ -150,144 +168,209 @@ export function TaskAssignmentsSection({ taskId }: { taskId: string }) {
           {taskAssignments.length === 0 && (
             <span className="!text-small text-text-secondary">{t('properties.assignments.empty')}</span>
           )}
-          {showWork && taskAssignments.length > 0 && (
-            // De kop hoort bij de TWEEDE regel van elke toewijzing (inzet,
-            // werk, curve, acties); het slotje is een eigen `shrink-0`-icoon naast een kop die mag
-            // afbreken, zodat "EENH./DAG" het nooit tot 0 px wegdrukt.
-            <div className="flex items-end gap-1 text-caption leading-3 uppercase tracking-wide" style={{ color: 'var(--theme-text-muted)' }} data-ops-assignment-header>
-              <span className="w-[calc(var(--text-small)*5)] shrink-0 flex items-end justify-end gap-0.5" title={unitsProtected ? lockTitle : undefined} data-ops-assignment-lock-units={unitsProtected ? 'locked' : 'free'}>
-                {unitsProtected && <Lock size={9} className="shrink-0" />}<span className="min-w-0 text-right">{t('properties.assignments.unitsPerDay')}</span>
-              </span>
-              <span className="w-[calc(var(--text-small)*5)] shrink-0 flex items-end justify-end gap-0.5" title={workProtected ? lockTitle : t('properties.assignments.workHint')} data-ops-assignment-lock-work={workProtected ? 'locked' : 'free'}>
-                {workProtected && <Lock size={9} className="shrink-0" />}<span className="min-w-0 text-right">{t('properties.assignments.work')}</span>
-              </span>
-              <span className="flex-1" />
-            </div>
-          )}
-          {taskAssignments.map(a => {
-            const res = resources.find(r => r.id === a.resourceId);
-            // Alleen "is er een kandidaat?" per render; de lijst zelf bouwt `MoveToSelect` pas bij openen.
-            const canMove = moveLookup.has(taskId, a.resourceId);
-            const curveState = assignmentCurveState(a, contouredIds.has(a.id));
-            const contoured = curveState === 'contoured';
-            const importedCurve = curveState === 'imported';
-            const curveValue = contoured ? CONTOURED : importedCurve ? IMPORTED_CURVE : curveState;
-            const curveOptions: SelectOption[] = [
-              ...(contoured ? [{ value: CONTOURED, label: t('properties.assignments.contoured') }] : []),
-              ...(importedCurve ? [{ value: IMPORTED_CURVE, label: t('properties.assignments.importedCurve'), disabled: true }] : []),
-              ...RESOURCE_CURVES.map(c => ({ value: c, label: tCommon(CURVE_KEY[c]) })),
-            ];
-            const isMaterial = res?.type === 'MATERIAL';
-            // Opgeslagen werk dat afwijkt van inzet × restduur krijgt een markering (zelfde regel
-            // als de planningssuite toetst). Hij staat naast de naam, niet in de veldenregel.
-            const deviation = showWork && !isMaterial
-              ? assignmentWorkDeviation(task, a.unitsPerDay, a.remainingWorkMinutes, hoursPerDay, contourOf.has(a.id))
-              : null;
-            return (
-              // Drie regels, zodat in het smalste paneel niets wordt afgeknipt (eigenaar 2026-10-15):
-              // 1. naam (afkappen met title, nooit 0 px), ⚠ en verwijderknop;
-              // 2. inzet, werk en de curvegroep (curve + histogramknop). De curvegroep is zo breed als
-              //    het langste curvelabel (`fitWidestOption`); past hij niet meer naast inzet en werk,
-              //    dan schuift hij als geheel naar een eigen regel (`flex-wrap`);
-              // 3. "Verplaatsen naar…" over de volle breedte, alleen als er een kandidaat is.
-              <div key={a.id} className="flex flex-col gap-1 !text-small" data-ops-assignment-row={a.id}>
-                <div className="flex items-center gap-1 min-w-0">
-                  <span className="flex-1 min-w-0 truncate font-medium" title={res?.name} data-ops-assignment-name>{res?.name || '?'}</span>
-                  {deviation && (
-                    <span
-                      className="shrink-0 inline-flex items-center"
-                      style={{ color: 'var(--theme-warning-text)' }}
-                      title={t('properties.assignments.workDeviatesHint', deviation)}
-                      aria-label={t('properties.assignments.workDeviates')}
-                      role="img"
-                      data-ops-assignment-work-deviates={`${deviation.stored}/${deviation.derived}`}
-                    >
-                      <AlertTriangle size={12} aria-hidden />
-                    </span>
-                  )}
-                  <button onClick={() => unassignResource(a.id)} className="shrink-0 p-0.5 rounded" style={{ color: 'var(--error)' }} title={t('properties.assignments.remove')} aria-label={t('properties.assignments.remove')} data-ops-assignment-remove>
-                    <Trash2 size={12} />
-                  </button>
-                </div>
-                <div className="flex flex-wrap items-center gap-1 min-w-0" data-ops-assignment-fields>
-                  <UnitsInput
-                    value={a.unitsPerDay}
-                    locale={i18n.language}
-                    commitOnBlur
-                    onAmbiguous={notifyAmbiguous}
-                    // De exacte opgeslagen waarde, met het decimaalteken van de taal.
-                    title={`${t('properties.assignments.unitsPerDay')}: ${localizeDecimalPoint(String(a.unitsPerDay), i18n.language)}`}
-                    ariaLabel={`${t('properties.assignments.unitsPerDay')} — ${res?.name ?? a.resourceId}`}
-                    onCommit={n => updateAssignment(a.id, { unitsPerDay: n })}
-                    className="input !text-small !px-1 !py-0.5 !h-6 !w-[calc(var(--text-small)*5)] shrink-0 text-right"
-                  />
-                  {showWork && (isMaterial ? (
-                    <span className="w-[calc(var(--text-small)*5)] shrink-0 text-right text-text-secondary" data-ops-assignment-work="material">—</span>
-                  ) : (
-                    <span className="shrink-0 flex items-center" data-ops-assignment-work={a.remainingWorkMinutes !== undefined ? 'stored' : 'derived'}>
-                      {/* Werk in uren: zelfde veld als de inzet. Het commit pas op Enter/blur —
-                          anders zou elke toetsaanslag ("6" op weg naar "64") een eigen
-                          driehoekstap, undo-stap en contour-nazorg afvuren. Opslag is in hele
-                          minuten: wat afrondt tot 0 minuten ("0,004" uur) is ongeldig, niet een
-                          stille weigering in `setAssignmentWork`. */}
-                      <UnitsInput
-                        value={remainingHoursOf(a.id, a.unitsPerDay, a.remainingWorkMinutes)}
-                        title={t('properties.assignments.workHint')}
-                        ariaLabel={`${t('properties.assignments.work')} — ${res?.name ?? a.resourceId}`}
-                        onCommit={hours => setAssignmentWork(a.id, Math.round(hours * 60))}
-                        accepts={hours => Math.round(hours * 60) >= 1}
-                        commitOnBlur
-                        className="input !text-small !px-1 !py-0.5 !h-6 !w-[calc(var(--text-small)*5)] text-right"
-                        locale={i18n.language}
-                        onAmbiguous={notifyAmbiguous}
-                      />
-                    </span>
-                  ))}
-                  {/* Bewust GEEN `shrink-0` op de groep of de omhulling: bij een smal paneel met een
-                      grote tekstschaal (uk/ru/pl op 125 %) mag de groep dan krimpen, en de trigger
-                      krimpt met een ellips in plaats van buiten het paneel te vallen. */}
-                  <div className="flex items-center gap-1" data-ops-assignment-curve-group>
-                    <div title={contoured ? t('properties.assignments.contouredHint') : t('properties.assignments.curve')} data-ops-assignment-curve={curveValue}>
-                      <Select
-                        value={curveValue}
-                        disabled={contoured}
-                        aria-label={t('properties.assignments.curve')}
-                        options={curveOptions}
-                        fitWidestOption
-                        onChange={v => {
-                          // Dezelfde keuze opnieuw komt hier niet: `Select` roept zonder
-                          // `onReselect` geen `onChange` aan. Belangrijk, want `updateAssignment` met
-                          // `curve` wist de geïmporteerde exacte curve (`curveValues`, P6/MSPDI); de
-                          // spec "dezelfde curve opnieuw" bewaakt dat.
-                          if (v === CONTOURED || v === IMPORTED_CURVE) return;
-                          updateAssignment(a.id, { curve: v as ResourceCurve });
-                        }}
-                        className="ops-select__trigger--compact"
-                      />
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setContourAssignmentId(a.id)}
-                      className="shrink-0 inline-flex items-center justify-center h-6 w-6 rounded hover:bg-surface-hover"
-                      style={{ color: contoured ? 'var(--theme-accent)' : undefined }}
-                      title={t('properties.assignments.contour')}
-                      aria-label={t('properties.assignments.contour')}
-                      data-ops-assignment-contour={contoured ? 'contoured' : 'formula'}
-                    >
-                      <BarChart3 size={12} />
-                    </button>
-                  </div>
-                </div>
-                {canMove && (
-                  <MoveToSelect
-                    label={t('properties.assignments.moveTo')}
-                    candidates={() => moveLookup.list(taskId, a.resourceId)}
-                    onMove={target => moveAssignment(a.id, target)}
-                  />
+          {taskAssignments.length > 0 && (
+            <div className={`assignment-list !text-small${showWork ? '' : ' assignment-list--no-work'}`}>
+              {/* Kop in hetzelfde raster als de regels (subgrid): elke kop staat recht boven zijn kolom,
+                  en een lange vertaling maakt de kolom breder in plaats van af te breken. */}
+              <div className="assignment-header text-caption leading-3 uppercase tracking-wide" style={mutedStyle} data-ops-assignment-header>
+                <span className="assignment-name min-w-0 truncate ps-[16px]">{t('properties.assignments.resource')}</span>
+                <span
+                  className="assignment-units flex items-center gap-0.5 whitespace-nowrap"
+                  title={showWork && unitsProtected ? lockTitle : t('properties.assignments.unitsPerDay')}
+                  data-ops-assignment-lock-units={showWork ? (unitsProtected ? 'locked' : 'free') : undefined}
+                >
+                  {showWork && unitsProtected && <Lock size={9} className="shrink-0" />}
+                  <span>{t('properties.assignments.units')}</span>
+                </span>
+                {showWork && (
+                  <span
+                    className="assignment-work flex items-center gap-0.5 whitespace-nowrap"
+                    title={workProtected ? lockTitle : t('properties.assignments.workHint')}
+                    data-ops-assignment-lock-work={workProtected ? 'locked' : 'free'}
+                  >
+                    {workProtected && <Lock size={9} className="shrink-0" />}
+                    <span>{t('properties.assignments.workHours')}</span>
+                  </span>
                 )}
               </div>
-            );
-          })}
+              {taskAssignments.map(a => {
+                const res = resources.find(r => r.id === a.resourceId);
+                const resName = res?.name || '?';
+                // Alleen "is er een kandidaat?" per render; de lijst zelf bouwt `MoveToSelect` pas bij openen.
+                const canMove = moveLookup.has(taskId, a.resourceId);
+                const curveState = assignmentCurveState(a, contouredIds.has(a.id));
+                const contoured = curveState === 'contoured';
+                const importedCurve = curveState === 'imported';
+                const curveValue = contoured ? CONTOURED : importedCurve ? IMPORTED_CURVE : curveState;
+                const curveOptions: SelectOption[] = [
+                  ...(contoured ? [{ value: CONTOURED, label: t('properties.assignments.contoured') }] : []),
+                  ...(importedCurve ? [{ value: IMPORTED_CURVE, label: t('properties.assignments.importedCurve'), disabled: true }] : []),
+                  ...RESOURCE_CURVES.map(c => ({ value: c, label: tCommon(CURVE_KEY[c]) })),
+                ];
+                const curveLabel = contoured
+                  ? t('properties.assignments.contoured')
+                  : importedCurve
+                    ? t('properties.assignments.importedCurve')
+                    : tCommon(CURVE_KEY[curveState]);
+                // Ook dichtgeklapt zichtbaar: alles behalve de gewone gelijkmatige verdeling.
+                const curveMarked = curveValue !== 'UNIFORM';
+                const open = expanded.has(a.id);
+                const detailsId = `${detailsIdBase}-${a.id}`;
+                const isMaterial = res?.type === 'MATERIAL';
+                // Opgeslagen werk dat afwijkt van inzet × restduur krijgt een markering (zelfde regel
+                // als de planningssuite toetst). Hij staat binnen het werkveld, zodat de kolom niet
+                // breder wordt.
+                const deviation = showWork && !isMaterial
+                  ? assignmentWorkDeviation(task, a.unitsPerDay, a.remainingWorkMinutes, hoursPerDay, contourOf.has(a.id))
+                  : null;
+                return (
+                  // Eén regel in het raster van de lijst (subgrid): naam, inzet, werk, verwijderen. Op de
+                  // smalste rail (≤ 14rem) krijgt de naam een eigen regel en staan de getallen eronder.
+                  // Uitgeklapt volgt onder de regel: curve, urenverdeling en "Verplaats naar…".
+                  <div key={a.id} className="assignment-row" data-ops-assignment-row={a.id}>
+                    <button
+                      type="button"
+                      onClick={() => toggleExpanded(a.id)}
+                      aria-expanded={open}
+                      aria-controls={detailsId}
+                      title={t('properties.assignments.detailsHint')}
+                      className="assignment-name flex min-w-0 items-center gap-1 rounded-[4px] py-0.5 text-start hover:bg-surface-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
+                      data-ops-assignment-expand={open ? 'open' : 'closed'}
+                    >
+                      <ChevronRight
+                        size={12}
+                        aria-hidden="true"
+                        className={`shrink-0 text-text-secondary transition-transform ${open ? 'rotate-90' : 'rtl:-scale-x-100'}`}
+                      />
+                      <span
+                        aria-hidden="true"
+                        className="h-[1em] w-[1em] shrink-0 rounded-[3px]"
+                        style={{ background: res ? ensureThemeVisible(resourceDisplayColor(res), darkTheme) : 'var(--theme-border)' }}
+                      />
+                      <span className="min-w-0 truncate font-medium" title={resName} data-ops-assignment-name>{resName}</span>
+                      {curveMarked && (
+                        <span
+                          className="inline-flex shrink-0 items-center"
+                          style={{ color: 'var(--theme-accent)' }}
+                          title={`${t('properties.assignments.curve')}: ${curveLabel}`}
+                          data-ops-assignment-curve-mark={curveValue}
+                        >
+                          <BarChart3 size={11} aria-hidden="true" />
+                        </span>
+                      )}
+                    </button>
+                    <UnitsInput
+                      value={a.unitsPerDay}
+                      locale={i18n.language}
+                      commitOnBlur
+                      onAmbiguous={notifyAmbiguous}
+                      // De exacte opgeslagen waarde, met het decimaalteken van de taal.
+                      title={`${t('properties.assignments.unitsPerDay')}: ${localizeDecimalPoint(String(a.unitsPerDay), i18n.language)}`}
+                      ariaLabel={`${t('properties.assignments.unitsPerDay')} — ${res?.name ?? a.resourceId}`}
+                      onCommit={n => updateAssignment(a.id, { unitsPerDay: n })}
+                      className={`assignment-units ${numberInputClass}`}
+                    />
+                    {showWork && (isMaterial ? (
+                      <span className="assignment-work pe-1 text-right text-text-secondary" data-ops-assignment-work="material">—</span>
+                    ) : (
+                      <span className="assignment-work relative flex items-center" data-ops-assignment-work={a.remainingWorkMinutes !== undefined ? 'stored' : 'derived'}>
+                        {/* Werk in uren: zelfde veld als de inzet. Het commit pas op Enter/blur —
+                            anders zou elke toetsaanslag ("6" op weg naar "64") een eigen
+                            driehoekstap, undo-stap en contour-nazorg afvuren. Opslag is in hele
+                            minuten: wat afrondt tot 0 minuten ("0,004" uur) is ongeldig, niet een
+                            stille weigering in `setAssignmentWork`. */}
+                        <UnitsInput
+                          value={remainingHoursOf(a.id, a.unitsPerDay, a.remainingWorkMinutes)}
+                          title={t('properties.assignments.workHint')}
+                          ariaLabel={`${t('properties.assignments.work')} — ${res?.name ?? a.resourceId}`}
+                          onCommit={hours => setAssignmentWork(a.id, Math.round(hours * 60))}
+                          accepts={hours => Math.round(hours * 60) >= 1}
+                          commitOnBlur
+                          className={`${numberInputClass}${deviation ? ' !ps-4' : ''}`}
+                          locale={i18n.language}
+                          onAmbiguous={notifyAmbiguous}
+                        />
+                        {deviation && (
+                          <span
+                            className="absolute start-1 top-1/2 inline-flex -translate-y-1/2 items-center"
+                            style={{ color: 'var(--theme-warning-text)' }}
+                            title={t('properties.assignments.workDeviatesHint', deviation)}
+                            aria-label={t('properties.assignments.workDeviates')}
+                            role="img"
+                            data-ops-assignment-work-deviates={`${deviation.stored}/${deviation.derived}`}
+                          >
+                            <AlertTriangle size={10} aria-hidden />
+                          </span>
+                        )}
+                      </span>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() => unassignResource(a.id)}
+                      className="assignment-remove rounded p-0.5"
+                      style={{ color: 'var(--error)' }}
+                      title={t('properties.assignments.remove')}
+                      aria-label={t('properties.assignments.remove')}
+                      data-ops-assignment-remove
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                    {open && (
+                      <div
+                        id={detailsId}
+                        className="assignment-details ms-1.5 mb-1 flex min-w-0 flex-col gap-1 border-s ps-3"
+                        style={{ borderColor: 'var(--theme-border-light)' }}
+                        data-ops-assignment-details
+                      >
+                        <div className="flex min-w-0 items-center gap-2">
+                          <span className="shrink-0" style={mutedStyle}>{t('properties.assignments.curve')}</span>
+                          <div
+                            className="min-w-0 flex-1"
+                            title={contoured ? t('properties.assignments.contouredHint') : t('properties.assignments.curve')}
+                            data-ops-assignment-curve={curveValue}
+                          >
+                            <Select
+                              value={curveValue}
+                              disabled={contoured}
+                              aria-label={t('properties.assignments.curve')}
+                              options={curveOptions}
+                              onChange={v => {
+                                // Dezelfde keuze opnieuw komt hier niet: `Select` roept zonder
+                                // `onReselect` geen `onChange` aan. Belangrijk, want `updateAssignment` met
+                                // `curve` wist de geïmporteerde exacte curve (`curveValues`, P6/MSPDI); de
+                                // spec "dezelfde curve opnieuw" bewaakt dat.
+                                if (v === CONTOURED || v === IMPORTED_CURVE) return;
+                                updateAssignment(a.id, { curve: v as ResourceCurve });
+                              }}
+                              className="ops-select__trigger--compact"
+                            />
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setContourAssignmentId(a.id)}
+                          className="dependency-add-button"
+                          style={contoured ? { color: 'var(--theme-accent)' } : undefined}
+                          title={contoured ? t('properties.assignments.contouredHint') : undefined}
+                          data-ops-assignment-contour={contoured ? 'contoured' : 'formula'}
+                        >
+                          <BarChart3 size={12} aria-hidden="true" />
+                          {t('properties.assignments.contour')}
+                        </button>
+                        {canMove && (
+                          <MoveToSelect
+                            label={t('properties.assignments.moveTo')}
+                            candidates={() => moveLookup.list(taskId, a.resourceId)}
+                            onMove={target => moveAssignment(a.id, target)}
+                          />
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
           {availableResources.length > 0 ? (
             <div data-ops-assignment-add>
               <Select
