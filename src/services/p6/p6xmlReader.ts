@@ -1,5 +1,6 @@
 import { nameWithProjectCode } from '@/utils/projectCodeName';
 import { P6XmlImportError } from './p6xmlErrors';
+import { P6_CONSTRAINT_BY_CODE_OR_LABEL } from './p6ConstraintTypes';
 import { Task, TaskConstraint, ConstraintType } from '@/types/task';
 import type { P6CompletePctType, P6DurationType } from '@/types/task';
 import { createDefaultTaskTime } from '@/utils/taskDefaults';
@@ -174,37 +175,12 @@ function p6HoursToDays(hours: number, hoursPerDay: number): number {
 
 /**
  * P6-constraintsoort → OPS-constraint. Echte P6 XML (PMXML) schrijft `<PrimaryConstraintType>` en
- * `<SecondaryConstraintType>` als Engels label (`Start On or After`); de eigen writer schrijft (nog)
- * het XER-token (`CS_MSOA`, `p6ConstraintCode`). Beide schrijfwijzen worden gelezen, zodat echte P6
- * XML én de round-trip met de eigen writer werken. Labels en paren geverifieerd tegen MPXJ
- * `ConstraintTypeHelper` (`XML_TYPE_MAP` ↔ `XER_TYPE_MAP`); `XmlProjectReader` leest primair én
- * secundair via dezelfde tabel. De harde `Mandatory Start`/`Mandatory Finish` (`CS_MANDSTART`/
- * `CS_MANDFIN`) komen terug als `MSO`/`MFO` mét `hard:true`; de soft-soorten als hun OPS-equivalent.
- */
-const P6_CONSTRAINT_BY_CODE_OR_LABEL: Readonly<Record<string, { type: ConstraintType; hard?: boolean }>> = {
-  // PMXML-labels (MPXJ `ConstraintTypeHelper.XML_TYPE_MAP`)
-  'Start On': { type: 'MSO' },
-  'Start On or After': { type: 'SNET' },
-  'Start On or Before': { type: 'SNLT' },
-  'Finish On': { type: 'MFO' },
-  'Finish On or After': { type: 'FNET' },
-  'Finish On or Before': { type: 'FNLT' },
-  'As Late As Possible': { type: 'ALAP' },
-  'Mandatory Start': { type: 'MSO', hard: true },
-  'Mandatory Finish': { type: 'MFO', hard: true },
-  // XER-tokens (MPXJ `ConstraintTypeHelper.XER_TYPE_MAP`; eigen writer, `p6ConstraintCode`)
-  CS_MSO: { type: 'MSO' },
-  CS_MSOA: { type: 'SNET' },
-  CS_MSOB: { type: 'SNLT' },
-  CS_MEO: { type: 'MFO' },
-  CS_MEOA: { type: 'FNET' },
-  CS_MEOB: { type: 'FNLT' },
-  CS_ALAP: { type: 'ALAP' },
-  CS_MANDSTART: { type: 'MSO', hard: true },
-  CS_MANDFIN: { type: 'MFO', hard: true },
-};
-
-/**
+ * `<SecondaryConstraintType>` als Engels label (`Start On or After`); de eigen writer schrijft het
+ * label sinds deze fix ook, maar oudere OPS-exports dragen het XER-token (`CS_MSOA`). Beide
+ * schrijfwijzen worden gelezen, via de gedeelde tabel `P6_CONSTRAINT_BY_CODE_OR_LABEL`
+ * (`p6ConstraintTypes.ts`, bron MPXJ `ConstraintTypeHelper`). De harde `Mandatory Start`/
+ * `Mandatory Finish` komen terug als `MSO`/`MFO` mét `hard:true`.
+ *
  * `<Primary|SecondaryConstraintType>` → OPS-constraint. Leeg ⇒ `undefined` (ASAP). Een onbekende
  * waarde ⇒ `undefined` mét waarschuwing, zodat een vreemd label zichtbaar blijft (zoals bij
  * `<DurationType>`).
