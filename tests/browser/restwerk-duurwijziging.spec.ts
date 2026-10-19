@@ -150,6 +150,11 @@ test('tabel: ⚠ in Resterend werk bij afwijkend restwerk, met de uitleg van het
   await expect(warning(deviatingId)).toHaveAttribute('title', HINT_320_80);
   await expect(warning(deviatingId)).toHaveAttribute('aria-label', HINT_320_80);
   await expect(warning(okId)).toHaveCount(0);
+  // Aanwijzen met de muis: de app-tooltip toont dezelfde tekst.
+  await warning(deviatingId).hover();
+  await expect(page.locator('.ops-tooltip[role="tooltip"]')).toHaveText(HINT_320_80);
+  await page.mouse.move(5, 5);
+  await expect(page.locator('.ops-tooltip[role="tooltip"]')).toHaveCount(0);
 
   // Dezelfde tekst als het ⚠ in het paneel Toewijzingen.
   await page.evaluate((id) => window.__OPS__!.store.getState().selectTask(id), deviatingId);
