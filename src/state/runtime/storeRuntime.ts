@@ -10,6 +10,7 @@ import type { AppState } from '../appStore';
 import { markDateMutation } from '../scheduleStale';
 import { markDocumentEdited } from '@/state/documentEdited';
 import { emitExtensionEvent, type HostEventName } from '@/services/extensionEvents';
+import type { RecomputedRemainingWork } from '@/engine/work/workRuleApply';
 
 /** Bestaande publieke naam; de grens wordt per session-historyscope afgedwongen. */
 export const MAX_UNDO = MAX_SESSION_HISTORY_EVENTS_PER_SCOPE;
@@ -27,6 +28,8 @@ export interface StoreRuntimeOptions {
 
 interface ActiveMcpLease extends McpTransactionLease {
   timephasedLossTaskIds: Set<string>;
+  /** Bewaard, afwijkend restwerk dat een duurbewerking in deze transactie opnieuw uitrekende. */
+  recomputedWork: RecomputedRemainingWork[];
 }
 
 interface PendingDocumentMutation {
@@ -84,6 +87,10 @@ export interface StoreRuntime {
   enterMcpTransaction(): McpTransactionLease;
   recordMcpTimephasedLoss(lease: McpTransactionLease, taskId: string): void;
   countMcpTimephasedLoss(lease: McpTransactionLease): number;
+  /** Herschreven afwijkend restwerk (`settleDurationEdit`) op de lease: de transactie meldt het één
+   *  keer bij succes en de envelop noemt het (`remainingWorkRecomputed`). */
+  recordMcpRecomputedWork(lease: McpTransactionLease, items: readonly RecomputedRemainingWork[]): void;
+  mcpRecomputedWork(lease: McpTransactionLease): readonly RecomputedRemainingWork[];
   exitMcpTransaction(lease: McpTransactionLease): void;
   /**
    * Monotone teller die bij ELKE undoable mutatie in deze context omhoog gaat — óók bij een
@@ -318,6 +325,7 @@ export function createStoreRuntime(opts?: StoreRuntimeOptions): StoreRuntime {
       const lease: ActiveMcpLease = {
         token: Symbol('mcp-transaction'),
         timephasedLossTaskIds: new Set<string>(),
+        recomputedWork: [],
       };
       activeMcpLease = lease;
       return lease;
@@ -329,6 +337,14 @@ export function createStoreRuntime(opts?: StoreRuntimeOptions): StoreRuntime {
 
     countMcpTimephasedLoss(lease) {
       return requireActiveLease(lease).timephasedLossTaskIds.size;
+    },
+
+    recordMcpRecomputedWork(lease, items) {
+      if (items.length > 0) requireActiveLease(lease).recomputedWork.push(...items);
+    },
+
+    mcpRecomputedWork(lease) {
+      return requireActiveLease(lease).recomputedWork;
     },
 
     exitMcpTransaction(lease) {

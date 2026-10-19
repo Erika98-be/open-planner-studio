@@ -119,6 +119,8 @@
     "xerArchiveReasonStructure": "理由: IFC 内のアーカイブ構造が正しくありません（重複、並べ替え、または誤った関連付け）。",
     "statusDateSetToday": "状態日を今日（{{date}}）に設定しました。",
     "durationBelowDoneWork": "「{{name}}」はすでに {{percent}}% 完了しています。完了済みの作業より短い期間にはできません。期間は変更されていません。",
+    "remainingWorkRecomputed": "「{{name}}」の残り作業を再計算しました: {{before}} 時間 → {{after}} 時間（値はファイルからのものでした）。Ctrl+Z で元に戻せます。",
+    "remainingWorkRecomputedMany_other": "{{count}} 件のタスクの残り作業を再計算しました（値はファイルからのものでした）。Ctrl+Z で元に戻せます。",
     "tutorialOfferLater": "チュートリアルはいつでも ヘルプ › チュートリアル にあります。",
     "tutorialOfferUnavailable": "現在、チュートリアルをインストールまたは開始できませんでした。後で ヘルプ › チュートリアル からもう一度お試しください。"
   },

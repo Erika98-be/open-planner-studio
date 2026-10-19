@@ -3,6 +3,7 @@
 // regel toetst die de UI toont.
 import type { Task } from '@/types/task';
 import { remainingMinutesOf } from './workRuleApply';
+import { storedWorkDeviates } from './workDeviation';
 
 /**
  * Opgeslagen restwerk dat afwijkt van inzet × restduur krijgt een markering — géén stille
@@ -20,7 +21,7 @@ export function assignmentWorkDeviation(
   if (storedRemainingMinutes === undefined || contoured) return null;
   const derived = remainingMinutesOf(task, { hoursPerDay }) * unitsPerDay;
   const stored = storedRemainingMinutes;
-  if (Math.abs(stored - derived) <= Math.max(1, 0.01 * Math.max(stored, derived))) return null;
+  if (!storedWorkDeviates(stored, derived)) return null;
   const hours = (minutes: number) => Math.round((minutes / 60) * 100) / 100;
   return { stored: hours(stored), derived: hours(derived) };
 }

@@ -46,13 +46,19 @@ import {
   captureCalendarChange, captureTriangle, carryRemainingThroughDurationEdit, durationEditRefusal, planWorkEdit, commitTrianglePlan,
   captureProgressWork, settleProgressWork, syncAssignmentWorkToContour,
   settleCalendarChange, settleDurationAftermath, settleDurationEdit, settleRuleChange,
-  type DurationEditProgress,
+  type DurationEditProgress, type RecomputedRemainingWork,
 } from '@/engine/work/workRuleApply';
+import { remainingWorkRecomputedNotice } from '../remainingWorkNotice';
 import type { WorkRule } from '@/types/workRule';
 import { markDocumentEdited } from '@/state/documentEdited';
 
 export type McpTransactionResult<T> =
-  | { ok: true; value: T; timephasedGuidanceLost: number }
+  | {
+    ok: true; value: T; timephasedGuidanceLost: number;
+    /** Bewaard, afwijkend restwerk dat een duurbewerking in deze transactie opnieuw uitrekende
+     *  (`settleDurationEdit`); leeg als er niets herschreven is. */
+    remainingWorkRecomputed: readonly RecomputedRemainingWork[];
+  }
   | { ok: false; error: string };
 
 type Synchronous<T> = T extends PromiseLike<unknown> ? never : T;
@@ -121,6 +127,9 @@ function createMcpDraft(
   const { store, runtime } = context;
   const recordTimephasedLoss = (taskId: string): void => {
     runtime.recordMcpTimephasedLoss(activeLease(), taskId);
+  };
+  const recordRecomputedWork = (items: readonly RecomputedRemainingWork[]): void => {
+    runtime.recordMcpRecomputedWork(activeLease(), items);
   };
 
   /** Nazorg bij een duur uit de werkdriehoek — `settleDurationAftermath` (één
@@ -455,7 +464,7 @@ function createMcpDraft(
         lost = applyDurationChangeRules(task, oldWorkMinutes, contourHpd, {
           keepWork: contourKeepsWork(task, s.project.defaultWorkRule),
         }) || lost;
-        settleDurationEdit(task, s.assignments, triangle);
+        recordRecomputedWork(settleDurationEdit(task, s.assignments, triangle).recomputedWork);
       }
       settleProgressWork(task, s.assignments, progressWork);
       if ('workRule' in updates && task.workRule !== workRule) {
@@ -568,7 +577,7 @@ function createMcpDraft(
         lost = applyDurationChangeRules(task, oldWorkMinutes, contourHpd, {
           keepWork: contourKeepsWork(task, s.project.defaultWorkRule),
         }) || lost;
-        settleDurationEdit(task, s.assignments, triangle);
+        recordRecomputedWork(settleDurationEdit(task, s.assignments, triangle).recomputedWork);
       }
       // `workRule` via de driehoek-bewuste route, ná de duurpatch.
       if ('workRule' in top && task.workRule !== workRule) {
@@ -607,7 +616,9 @@ function createMcpDraft(
       const hoursPerDay = taskCalendarHoursPerDay(task, s.calendars, s.calendar);
       refusal = taskSplitRefusal(task, pieces, hoursPerDay);
       if (refusal) return;
-      if (applyTaskSplits(s, task, pieces, hoursPerDay)) recordTimephasedLoss(taskId);
+      const outcome = applyTaskSplits(s, task, pieces, hoursPerDay);
+      if (outcome.timephasedLost) recordTimephasedLoss(taskId);
+      recordRecomputedWork(outcome.recomputedWork);
       markDocumentEdited(s);
     });
     return refusal;
@@ -1103,7 +1114,7 @@ export function createMcpTransactions(context: AppStoreContext): McpTransactions
       if (!dataChanged) {
         store.setState(restoreDocument);
         runtime.resetUndoCoalescing();
-        return { ok: true, value, timephasedGuidanceLost: 0 };
+        return { ok: true, value, timephasedGuidanceLost: 0, remainingWorkRecomputed: [] };
       }
 
       const cpm = store.getState().cpmResult;
@@ -1119,7 +1130,12 @@ export function createMcpTransactions(context: AppStoreContext): McpTransactions
         const state = store.getState();
         notifyTimephasedLoss(state.notify, state.activeDocumentId, lostCount);
       }
-      return { ok: true, value, timephasedGuidanceLost: lostCount };
+      // Herschreven afwijkend restwerk: één in-app melding per geslaagde transactie (dezelfde als de
+      // UI-routes; de transactie is één undo-stap, dus Ctrl+Z zet het terug), en de envelop noemt het.
+      const remainingWorkRecomputed = [...runtime.mcpRecomputedWork(lease)];
+      const workNotice = remainingWorkRecomputedNotice(remainingWorkRecomputed);
+      if (workNotice) store.getState().notify(workNotice);
+      return { ok: true, value, timephasedGuidanceLost: lostCount, remainingWorkRecomputed };
     } finally {
       currentLease = null;
       runtime.exitMcpTransaction(lease);

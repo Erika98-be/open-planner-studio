@@ -119,6 +119,8 @@
     "xerArchiveReasonStructure": "原因：存档在 IFC 中的结构不正确（重复、重新排序或关联错误）。",
     "statusDateSetToday": "状态日期已设为今天（{{date}}）。",
     "durationBelowDoneWork": "“{{name}}”已完成 {{percent}}%：工期不能短于已完成的工作。工期未更改。",
+    "remainingWorkRecomputed": "已重新计算“{{name}}”的剩余工时：{{before}} 小时 → {{after}} 小时（该值来自文件）。按 Ctrl+Z 可恢复。",
+    "remainingWorkRecomputedMany_other": "已重新计算 {{count}} 个任务的剩余工时（这些值来自文件）。按 Ctrl+Z 可恢复。",
     "tutorialOfferLater": "你随时可以在 帮助 › 教程 中找到这些教程。",
     "tutorialOfferUnavailable": "目前无法安装或启动教程。你可以稍后在 帮助 › 教程 中重试。"
   },

@@ -347,6 +347,7 @@ export const createUiSlice: AppSlice<UiSlice> = (set, get) => ({
           existing.severity = n.severity;
           existing.messageKey = n.messageKey;
           existing.params = n.params;
+          existing.numberParams = n.numberParams;
           existing.detail = n.detail;
           // Optionele velden (detailregels, gidslink) alleen aanraken wanneer de nieuwe melding ze
           // werkelijk meebrengt, zodat een dedupe-update ze niet wist.

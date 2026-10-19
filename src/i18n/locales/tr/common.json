@@ -155,6 +155,9 @@
     "xerArchiveReasonStructure": "Neden: arşivin IFC içindeki yapısı hatalı (yinelenmiş, yeniden sıralanmış veya yanlış bağlanmış).",
     "statusDateSetToday": "Durum tarihi bugüne ayarlandı ({{date}}).",
     "durationBelowDoneWork": "“{{name}}” zaten %{{percent}} tamamlandı: yapılmış işten kısa bir süre olamaz. Süre değiştirilmedi.",
+    "remainingWorkRecomputed": "“{{name}}” için kalan iş yeniden hesaplandı: {{before}} sa → {{after}} sa (değer dosyadan geliyordu). Ctrl+Z geri alır.",
+    "remainingWorkRecomputedMany_one": "{{count}} görevin kalan işi yeniden hesaplandı (değer dosyadan geliyordu). Ctrl+Z geri alır.",
+    "remainingWorkRecomputedMany_other": "{{count}} görevin kalan işi yeniden hesaplandı (değerler dosyadan geliyordu). Ctrl+Z geri alır.",
     "tutorialOfferLater": "Eğitimleri her zaman Yardım › Eğitimler bölümünde bulabilirsiniz.",
     "tutorialOfferUnavailable": "Eğitimler şu anda yüklenemedi veya başlatılamadı. Daha sonra Yardım › Eğitimler bölümünden yeniden deneyebilirsiniz."
   },

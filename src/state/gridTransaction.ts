@@ -28,8 +28,9 @@ import { markDateMutation, snapshotsEqual } from './transaction';
 import {
   captureCalendarChange, captureTriangle, remainingMinutesOf, settleAssignmentPlan, settleCalendarChange,
   settleDurationAftermath, settleDurationEdit, settleRuleChange, settleWorkEdit, type AssignmentSettleOp,
-  captureProgressWork, settleProgressWork,
+  captureProgressWork, settleProgressWork, type RecomputedRemainingWork,
 } from '@/engine/work/workRuleApply';
+import { remainingWorkRecomputedNotice } from './remainingWorkNotice';
 import { contourKeepsWork, taskCalendarHoursPerDay, taskWorkMinutesOf } from '@/utils/taskDefaults';
 import { generateId } from '@/utils/id';
 import { sameValue } from '@/utils/sameValue';
@@ -556,6 +557,8 @@ function applyCellEdits(
   timephasedGuidanceLost: boolean;
   skippedReadOnlyCount: number;
   startNotice?: StartEditNotice;
+  /** Bewaard, afwijkend restwerk dat een duurcel opnieuw uitrekende (`settleDurationEdit`). */
+  recomputedWork?: readonly RecomputedRemainingWork[];
 }, readonly CellValidationError[]> {
   const first = edits[0];
   if (!first) return { ok: true, value: { timephasedGuidanceLost: false, skippedReadOnlyCount: 0 } };
@@ -752,6 +755,7 @@ function applyCellEdits(
   let changed = false;
   let timephasedGuidanceLost = false;
   let scheduleStale = false;
+  let recomputedWork: readonly RecomputedRemainingWork[] = [];
   const calendarEdits = finalEdits.filter(edit => String(edit.columnId) === 'task.calendarId');
   if (calendarEdits.length > 0) {
     const before = captureCalendarChange(task, assignmentsForTask, state);
@@ -784,7 +788,7 @@ function applyCellEdits(
     timephasedGuidanceLost ||= planned.value.timephasedGuidanceLost;
     scheduleStale ||= planned.value.scheduleStale;
     state.tasks[taskIndex] = planned.value.task;
-    settleDurationEdit(state.tasks[taskIndex], state.assignments, triangle);
+    recomputedWork = settleDurationEdit(state.tasks[taskIndex], state.assignments, triangle).recomputedWork;
     settleProgressWork(state.tasks[taskIndex], state.assignments, progressWork);
     // Een typewissel in het raster legt — net als
     // `setTaskWorkRule` — onder een werkbeschermende regel het huidige restwerk vast.
@@ -804,7 +808,7 @@ function applyCellEdits(
       : undefined;
   return {
     ok: true,
-    value: { timephasedGuidanceLost, skippedReadOnlyCount, startNotice },
+    value: { timephasedGuidanceLost, skippedReadOnlyCount, startNotice, recomputedWork },
   };
 }
 
@@ -855,6 +859,8 @@ export function prepareGridMutation(
   const appliedRelationWrites: RelationSetIntent[] = [];
   let skippedReadOnlyFromTransaction = 0;
   const startNotices: StartEditNotice[] = [];
+  // Herschreven afwijkend restwerk over ALLE taken van deze transactie (plakken/doorvullen): één melding.
+  const recomputedWork: RecomputedRemainingWork[] = [];
   const isolated = produce(state as AppState, draft => {
     // Welke taken hebben een voorganger (getypte start ⇒ SNET)? Lui: alleen een getypte
     // start vraagt ernaar, en dan één keer per transactie. Cellen verzetten geen relaties of
@@ -909,6 +915,7 @@ export function prepareGridMutation(
           if (applied.value.timephasedGuidanceLost) timephasedLossTaskIds.add(write.taskId);
           skippedReadOnlyFromTransaction += applied.value.skippedReadOnlyCount;
           if (applied.value.startNotice) startNotices.push(applied.value.startNotice);
+          if (applied.value.recomputedWork) recomputedWork.push(...applied.value.recomputedWork);
         }
         if (taskWrites.some(item => String(item.columnId) === 'task.isMilestone')) {
           assignmentValidationTaskIds.add(write.taskId);
@@ -1027,6 +1034,8 @@ export function prepareGridMutation(
     }
   });
   if (errors.length > 0) return { ok: false, errors };
+  const workNotice = remainingWorkRecomputedNotice(recomputedWork);
+  if (workNotice) notifications.push(workNotice);
 
   const after = createSnapshot(isolated);
   let viewRows: readonly ViewRow[];

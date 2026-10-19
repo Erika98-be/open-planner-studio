@@ -191,6 +191,10 @@
     "xerArchiveReasonStructure": "Motivo: la estructura del archivo en el IFC no es correcta (duplicada, reordenada o mal vinculada).",
     "statusDateSetToday": "Fecha de estado fijada en hoy ({{date}}).",
     "durationBelowDoneWork": "«{{name}}» ya está hecha en un {{percent}} %: una duración menor que el trabajo ya realizado no es posible. La duración no se ha cambiado.",
+    "remainingWorkRecomputed": "Trabajo restante de «{{name}}» recalculado: {{before}} h → {{after}} h (el valor venía del archivo). Ctrl+Z lo restablece.",
+    "remainingWorkRecomputedMany_one": "Trabajo restante de {{count}} tarea recalculado (el valor venía del archivo). Ctrl+Z lo restablece.",
+    "remainingWorkRecomputedMany_many": "Trabajo restante de {{count}} tareas recalculado (los valores venían del archivo). Ctrl+Z los restablece.",
+    "remainingWorkRecomputedMany_other": "Trabajo restante de {{count}} tareas recalculado (los valores venían del archivo). Ctrl+Z los restablece.",
     "tutorialOfferLater": "Siempre encontrarás los tutoriales en Ayuda › Tutoriales.",
     "tutorialOfferUnavailable": "Ahora no se han podido instalar ni iniciar los tutoriales. Puedes volver a intentarlo más tarde en Ayuda › Tutoriales."
   },

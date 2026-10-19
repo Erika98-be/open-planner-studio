@@ -351,6 +351,11 @@ export type NotificationMessageKey =
   // Restduur: een nieuwe duur korter dan het gedane werk van een lopende taak is
   // geweigerd — zie `runningDurationChange` in engine/taskMutationRules.ts. Parameters `name`, `percent`.
   | 'notifications.durationBelowDoneWork'
+  // Een duurbewerking rekende een bewaard, afwijkend restwerk opnieuw uit (eigenaarsbesluit
+  // 2026-10-19) — zie `state/remainingWorkNotice.ts`. Eén taak: `name` + `numberParams`
+  // `before`/`after` (uren); meer taken: meervoud, `count`.
+  | 'notifications.remainingWorkRecomputed'
+  | 'notifications.remainingWorkRecomputedMany'
   // Tutorialvraag na de eerste voltooide rondleiding (`TutorialOfferDialog`): "later" bij Nee of een
   // geweigerde installatie, "unavailable" als ophalen/installeren/starten niet lukte.
   | 'notifications.tutorialOfferLater'
@@ -388,6 +393,12 @@ export interface AppNotification {
   messageKey: NotificationMessageKey;
   /** Interpolatie-parameters voor `t()`. */
   params?: Record<string, string | number>;
+  /** Getallen voor dezelfde interpolatie die `NotificationHost` pas bij het tonen in de notatie van
+   *  de app-taal zet (`formatReportNumber`: hoogstens twee decimalen, Latijnse cijfers, het
+   *  decimaalteken van de taal). Zo blijft de store taalvrij en volgt het getal een taalwissel.
+   *  Niet voor `count`: dat blijft een kaal getal in `params`, want i18next kiest er de
+   *  meervoudsvorm mee. */
+  numberParams?: Record<string, number>;
   /** Rauwe technische tekst (`err.message`) — BEWUST onvertaald. */
   detail?: string;
   /** Optionele, vertaalde feiten onder de hoofdboodschap (bv. één XER-bestandsverslag). */

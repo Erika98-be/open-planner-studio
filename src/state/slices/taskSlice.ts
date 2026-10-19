@@ -39,8 +39,9 @@ import type { RelationTree } from '@/engine/scheduler/relationRules';
 import { notifyTimephasedLoss } from '../timephasedLossNotice';
 import {
   captureCalendarChange, captureTriangle, carryRemainingThroughDurationEdit, durationEditRefusal, settleCalendarChange,
-  settleDurationEdit, settleRuleChange, captureProgressWork, settleProgressWork,
+  settleDurationEdit, settleRuleChange, captureProgressWork, settleProgressWork, type RecomputedRemainingWork,
 } from '@/engine/work/workRuleApply';
+import { remainingWorkRecomputedNotice } from '../remainingWorkNotice';
 import type { WorkRule } from '@/types/workRule';
 import type { AppSlice, AppSliceFactory, NotifyInput, SiblingDirection } from './types';
 import type { AppState } from '../appStore';
@@ -903,6 +904,8 @@ export const createTaskSlice: AppSliceFactory<TaskSlice> = (runtime) => (set, ge
     // een lopende producer aanroepen). `true` alleen bij een ECHT verlies, zie taskDefaults.ts.
     let lostTimephasedGuidance = false;
     let refusedNotices: NotifyInput[] = [];
+    // Herschreven afwijkend restwerk (`settleDurationEdit`) — gemeld ná de producer, zoals hierboven.
+    let recomputedWork: RecomputedRemainingWork[] = [];
     set((s) => {
       const idx = taskIndexById(s, id); // basis-zoektocht: geen proxy per taak (zie de helper)
       if (idx < 0) return; // onbekend id: geen snapshot, geen loze undo-stap.
@@ -1005,9 +1008,11 @@ export const createTaskSlice: AppSliceFactory<TaskSlice> = (runtime) => (set, ge
         lostTimephasedGuidance = applyDurationChangeRules(task, oldWorkMinutes, contourHpd, {
           keepWork: contourKeepsWork(task, s.project.defaultWorkRule),
         }) || lostTimephasedGuidance;
-        // Werk beschermd ⇒ inzet = W / R'; anders volgt een aanwezig werkveld de nieuwe duur.
-        // Onder de standaardregel zonder werkvelden gebeurt er niets.
-        settleDurationEdit(task, s.assignments, triangle);
+        // De restduur van een niet-gestarte taak volgt de duur; daarna: werk beschermd ⇒
+        // inzet = W / R', anders volgt een aanwezig werkveld de nieuwe restduur (ook een afwijkend
+        // werk uit het bestand — dat meldt hij terug). Onder de standaardregel zonder werkvelden
+        // verandert er aan de toewijzingen niets.
+        recomputedWork = settleDurationEdit(task, s.assignments, triangle).recomputedWork;
       }
       settleProgressWork(task, s.assignments, progressWork);
       if ('workRule' in updates && task.workRule !== workRule) {
@@ -1038,6 +1043,8 @@ export const createTaskSlice: AppSliceFactory<TaskSlice> = (runtime) => (set, ge
     });
     for (const notice of refusedNotices) get().notify(notice);
     if (lostTimephasedGuidance) notifyTimephasedLoss(get().notify, get().activeDocumentId, 1);
+    const workNotice = remainingWorkRecomputedNotice(recomputedWork);
+    if (workNotice) get().notify(workNotice);
     get().recomputeViewRows();
   },
 
@@ -1057,6 +1064,7 @@ export const createTaskSlice: AppSliceFactory<TaskSlice> = (runtime) => (set, ge
   setTaskSplits: (taskId, pieces, opts) => {
     // Verlies van MSP-sturing — zie `updateTask` hierboven: `notify` doet zelf een `set()`.
     let lostTimephasedGuidance = false;
+    let recomputedWork: RecomputedRemainingWork[] = [];
     let refusal: SplitRefusal | null = null;
     set((s) => {
       // (1) Weigeren — vóór élke draftmutatie, dus geen snapshot en geen halve state.
@@ -1074,12 +1082,16 @@ export const createTaskSlice: AppSliceFactory<TaskSlice> = (runtime) => (set, ge
 
       // (3)–(7) Het gedeelde lichaam (`splitMutations.ts`, ook de MCP-draft): gaten, werkduur,
       // contour, tijdbasis-gevolgen en de eigen finish.
-      lostTimephasedGuidance = applyTaskSplits(s, task, pieces, hoursPerDay);
+      const outcome = applyTaskSplits(s, task, pieces, hoursPerDay);
+      lostTimephasedGuidance = outcome.timephasedLost;
+      recomputedWork = outcome.recomputedWork;
 
       // (8) `markScheduleStale` via `finishMutation` — nooit de vlag rechtstreeks.
       runtime.finishMutation(s, { stale: true });
     });
     if (lostTimephasedGuidance) notifyTimephasedLoss(get().notify, get().activeDocumentId, 1);
+    const workNotice = remainingWorkRecomputedNotice(recomputedWork);
+    if (workNotice) get().notify(workNotice);
     get().recomputeViewRows();
     return refusal;
   },
