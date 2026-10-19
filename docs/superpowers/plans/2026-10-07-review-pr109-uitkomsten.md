@@ -1474,3 +1474,14 @@ Testversie (release-check, poort 3049) is NIET bijgewerkt met de PR's van vandaa
 - #369 fixronde 3 klaar (1d344db36, CI groen) ⇒ delta-review loopt. #368 CI groen (eaa1e9f9b; fout zat in de spec:
   focussprong van `TaskDialog` na 30 ms) ⇒ wacht op visuele check eigenaar. #371 CI groen (a8bbe85b9; twee checks
   verouderd door `recordedSourceFormat`, geen productiecode) ⇒ hercheck loopt. #374 afmaken loopt.
+- **#375** klaar (6482ec995, CI groen): drie specs groen; relatiekolom: typen geeft celfout (bedoeld), plakken gaf
+  "Niet aangepast" terwijl de relatie wél geschreven werd ⇒ één regel `wroteTaskIds.add` ⇒ wacht op check eigenaar + punt 5.
+- **Delta-review #369: NEE** — B1 BLOKKEERT: in nl/de/pt/tr wordt "1.500" stil 1,5 (`decimalInput.ts:70-72`) ⇒ fixronde 4
+  bij de maker (met V1 focus terug na Ctrl+S, V4 "0,500" in en, helper delen met `reportNumber.ts`). #378 gebruikt
+  `parsePositiveDecimal` niet (`Number(typed.replace(',', '.'))`) ⇒ na #369 de helper gebruiken (eis voor review #378).
+- **#377 fixronde klaar** (592622377, bijgewerkt met main, CI groen): predicaat `isHourModeCalendar` (`types/calendar.ts:116`)
+  gedeeld met `CalendarEngine`; tijdveld/lijn op tijdstip alleen in uurmodus ⇒ review loopt.
+- **Hercheck #371: JA** (geen BLOKKEERT; MER-1 0/132 en rehab-2 0/6978 verschoven, main 132/132). Gidszin r. 99 nl/en
+  rechtgezet door de orkestrator (d65eaf1e2). VERVOLG in de PR-body. **Fout op main gevonden:** Miraya.xml (MSPDI) verliest
+  planningsinvoer bij IFC-rondgang (64 taken, mijlpaal 23-01-2027 → 08-06-2027) ⇒ expert `claude/ifc-rondgang-miraya`.
+- Besluit tabel-markering (punt 2) voorgelegd: 1 ⚠ in de cel / 2 berekende waarde erachter / 3 eigen kolom; aanbeveling 1.
