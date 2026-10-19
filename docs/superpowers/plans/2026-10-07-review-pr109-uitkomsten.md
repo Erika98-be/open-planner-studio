@@ -1712,3 +1712,20 @@ Testversie (release-check, poort 3049) is NIET bijgewerkt met de PR's van vandaa
   duur" vs "nieuwe restduur" (tekstvraag), slotje vs ⚠ bij effort-driven. **Vóór main: main erin** (6 bestanden,
   additief). Eigenaar vroeg een sessie op de aia-server (GPT-6.1-Sol) die main erin merget; T3-tools hier reiken alleen
   de laptop-omgeving, SSH naar aia09-mp50 geweigerd ⇒ kant-en-klare opdracht aan de eigenaar gegeven.
+
+### Stand bij het stoppen (2026-10-19, ±17:30)
+- main 4c747d73a, CI + CodeQL + deploy groen. Vandaag gemerged: #379, #368, #382, #383, #386, #385, #381, #384, #371,
+  #377, #375 (11).
+- **#376** 8d8b34bde: review JA, checkstap (namen + punt 7, plek *Taaktypes gebruiken* = App-instellingen › Planning ›
+  Berekenen) **gegeven, nog geen oordeel** ("prima, we gaan stoppen" niet als oordeel geteld). Botst met main; merget
+  als laatste (`i18n:resolve`).
+- **#380** 71d909a48: delta-review V10 JA; **botst met main** (6 bestanden, additief). Eigenaar wil dit door een sessie op
+  de aia-server (GPT-6.1-Sol) laten doen; project wordt daar aangemaakt. Kant-en-klare opdracht staat in het gesprek.
+  Daarna: #380 in de testversie, checkstap Harbour Point E-1010, merge. Tekstvraag VERVOLG: "nieuwe duur" vs "restduur".
+- **#374** 7a57b51b7 (worker fixronde 4 liep nog: knoppen binnen het venster + main erin); botst weer met main na #375.
+  Daarna: delta-review, testversie, checkstap (A De Akkers 4.2, B rehab-2 V3101040), besluit 3.
+- **#362** 7bd4eae62: 108 commits achter main; desktopcheck + keuze Shift+wiel; kan na de release.
+- Punt 8 (i-tekst *Standaard werkdag*, #366) open. #369, #378 geparkeerd.
+- Release draait de eigenaar zelf in een aparte sessie; deze thread levert gemergede PR's + overdracht.
+- Testversie `claude/release-check-4` 08c74a68c (#371, #375 nieuw; #377 0db9c489b; #374 ef5a565f5 oud; #376); dev-server
+  3049 blijft draaien. `public/qa-files/harbour-point-dcp03.xer` lokaal (gitignored).
