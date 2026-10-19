@@ -1641,3 +1641,9 @@ Testversie (release-check, poort 3049) is NIET bijgewerkt met de PR's van vandaa
   ná V10), V12 bevestigd als bron (MER-1 mist duurkolommen en CALENDAR), materiaal telt mee in `own.length === 1`,
   twee terugvallen uren/dag, contract `CapturedTriangle.assignments` (VERMOED), testgat tooltip meer regels.
   Advies reviewer: V10+V11 in één tekstronde vóór de release. ⇒ eigenaarscheck #380 (DCP-03) + tekstbesluit V10, na #375.
+- **Delta-review #371 optie 3: JA** (reviewer Opus 5.5; één blok altijd `alert--info`, Ontbreekt-regel alleen bij
+  'partly-unrecorded'; mutanten "regel weg" en "`alert--neutral` terug" rood; verify:i18n/docs, tsc, planning- en
+  browserspecs exit 0). VERVOLG in de PR: gidszin CSV-export (`uitleg-datums-zoals-opgeslagen.md:50`, uit deze delta;
+  reviewer raadt aan vóór merge, volgens de regel VERVOLG), Ontbreekt-regel soms de tweede, testtitel, opruimen.
+  Orkestrator verbeterde de PR-tekst over de plek van `data-ops-task-recorded-dates-missing`. ⇒ testversie bijwerken
+  na de #375-check, dan korte eigenaarscheck, dan merge.
