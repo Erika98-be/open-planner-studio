@@ -153,3 +153,45 @@ test('inspringen bij een gesorteerde lijst: rode strook met role=alert, blijft s
   await strip.getByTitle('Close', { exact: true }).click();
   await expect(strip).toHaveCount(0);
 });
+
+// Plakken over een alleen-lezen cel én de relatiekolom: de relatie is wél geschreven, dus de rode
+// melding noemt de taak bij "Niet toegepast bij", niet bij "Niet aangepast" (reviewronde 3, PR #375).
+test('plakken over een alleen-lezen cel en de relatiekolom: de taak staat bij "Niet toegepast bij"', async ({ page, context, ops: _ops }) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  await page.setViewportSize({ width: 1600, height: 1000 });
+  const [b, c] = await page.evaluate(() => {
+    const s = window.__OPS__!.store.getState();
+    s.setProject({ name: 'Plakken', startDate: '2026-06-01' });
+    const a = s.addTask({ name: 'Fundering', time: { scheduleDuration: 5 } as never });
+    const b = window.__OPS__!.store.getState().addTask({ name: 'Metselwerk', time: { scheduleDuration: 4 } as never });
+    const c = window.__OPS__!.store.getState().addTask({ name: 'Afwerking', time: { scheduleDuration: 3 } as never });
+    window.__OPS__!.store.getState().addSequence({ predecessorId: a, successorId: b, type: 'FINISH_START', lagDays: 0 });
+    window.__OPS__!.store.getState().runCPM();
+    const st = window.__OPS__!.store.getState();
+    st.setUI({ activeRibbonTab: 'table' });
+    const columns = st.taskGridSurfaces['full-task-grid'].columns
+      .filter(col => ['task.wbsCode', 'task.name', 'task.time.totalFloat'].includes(col.id));
+    st.commitTaskGridColumns('full-task-grid', 'Relatiekolom voor browsertest', [
+      ...columns, { id: 'relation.predecessors' as (typeof columns)[number]['id'], width: 240, pinned: false },
+    ]);
+    return [b, c];
+  });
+  const cell = (row: string, col: string) =>
+    page.locator(`[data-task-grid-surface-id="full-task-grid"] [data-grid-row-key="${row}"][data-grid-column-id="${col}"]`);
+  // Kopieer de voorgangers van Metselwerk, plak "9<tab>…" op de speling (alleen-lezen) van Afwerking.
+  await cell(b, 'relation.predecessors').click();
+  await page.keyboard.press('Control+C');
+  const copied = await page.evaluate(() => navigator.clipboard.readText());
+  expect(copied).toBe('1 FS');
+  await page.evaluate((text) => navigator.clipboard.writeText(text), `9\t${copied}`);
+  await cell(c, 'task.time.totalFloat').click();
+  await page.keyboard.press('Control+V');
+
+  const refusal = page.locator('.ops-toast', { hasText: /Skipped 1 cell/ });
+  await expect(refusal).toHaveCount(1);
+  await expect(refusal).toHaveClass(/toast-error/);
+  await expect(refusal).toHaveAttribute('role', 'alert');
+  await expect(refusal).toContainText('Not applied for: Afwerking.');
+  await expect(refusal).not.toContainText('Not changed');
+  expect(await page.evaluate((id) => window.__OPS__!.store.getState().sequences.filter(s => s.successorId === id).length, c)).toBe(1);
+});

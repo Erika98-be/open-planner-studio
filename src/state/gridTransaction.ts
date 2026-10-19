@@ -942,6 +942,7 @@ export function prepareGridMutation(
           timephasedLossTaskIds.add(taskId);
         }
       } else {
+        wroteTaskIds.add(write.taskId);
         const applied = applyRelationSet(
           draft as AppState,
           write,
