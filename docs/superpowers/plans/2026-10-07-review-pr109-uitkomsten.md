@@ -1608,3 +1608,7 @@ Testversie (release-check, poort 3049) is NIET bijgewerkt met de PR's van vandaa
 - **#384 fixronde klaar** (08e238e2a, CI 16/16; writer schrijft blokken met pauze, alle acht vormen gelijk na rondgang,
   corpus 0 taken anders) ⇒ delta-review loopt. **#381 ronde 3 klaar** (0e91eccff, CI 16/16; resourcepaneel-poort,
   `edit.copy`) ⇒ delta-review loopt.
+- **Delta-review #381 ronde 3: JA** (reviewer Opus 5.5; volledig resourcepaneel dicht op elk tabblad, gedockt/Tabel
+  open; redenering tegen `isGanttWorkspaceVisible` klopt). VERVOLG in de PR (structuurtoetsen Alt+pijl/Ctrl+M onder
+  verborgen lijst, positieve tests, Ctrl+C bij tekstselectie, MCP-vlaggen, tekst). **#381 gemerged in main → 62ab1d714**
+  (kop 0e91eccff, CI 16/16).
