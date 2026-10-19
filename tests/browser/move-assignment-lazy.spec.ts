@@ -22,6 +22,8 @@ test('verplaats naar…: opties pas na openen, keuze verplaatst de toewijzing', 
     return r;
   }, { a, c });
 
+  // "Verplaats naar…" staat onder de uitklapknop op de resourcenaam.
+  await page.locator('[data-ops-assignment-row] [data-ops-assignment-expand]').first().click();
   const move = page.locator('[data-ops-assignment-row] [data-ops-assignment-move]').first();
   const trigger = move.getByRole('button');
   await expect(move).toBeVisible();
@@ -43,8 +45,8 @@ test('verplaats naar…: opties pas na openen, keuze verplaatst de toewijzing', 
   await trigger.focus();
   await expect(move).toHaveAttribute('data-ops-assignment-move-options', '1');
   await expect(page.getByRole('listbox')).toHaveCount(0);
-  // Focus weg ⇒ de lijst valt weer weg.
-  await page.locator('[data-ops-assignment-name]').first().click();
+  // Focus weg ⇒ de lijst valt weer weg. (Klik op de kop: een klik op de naam zou de details dichtklappen.)
+  await page.locator('[data-ops-assignment-header]').click();
   await expect(move).toHaveAttribute('data-ops-assignment-move-options', '0');
 
   // Openen met de muis bouwt de lijst: alleen B (C draagt de resource al, A is de bron).
@@ -79,5 +81,7 @@ test('verplaats naar…: zonder kandidaat geen keuzelijst', async ({ page, ops: 
     s.selectTask(a);
   }, { a, b });
   await expect(page.locator('[data-ops-assignment-row]')).toHaveCount(1);
+  await page.locator('[data-ops-assignment-row] [data-ops-assignment-expand]').first().click();
+  await expect(page.locator('[data-ops-assignment-details]')).toBeVisible();
   await expect(page.locator('[data-ops-assignment-move]')).toHaveCount(0);
 });

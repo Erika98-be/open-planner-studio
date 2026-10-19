@@ -6,7 +6,10 @@ import { barPoint, expect, seedProject, test, waitForOps, waitForWelcomeDialog }
 //    zelf wijzigt;
 // 2. bij de standaard- én de smalste paneelbreedte is geen veld of knop afgeknipt, ook niet in een
 //    rij met ⚠ (afwijkend opgeslagen werk);
-// 3. curve, "Verplaatsen naar…" en "Resource toewijzen" zijn de eigen keuzelijst, nooit native.
+// 3. curve, "Verplaats naar…" en "Resource toewijzen" zijn de eigen keuzelijst, nooit native;
+// 4. (eigenaar 2026-10-19) één regel per resource: naam, inzet, werk en verwijderen naast elkaar,
+//    elke kop recht boven zijn kolom. Curve, urenverdeling en verplaatsen staan onder de uitklapknop
+//    op de naam. Op de smalste rail staat de naam op een eigen regel, de getallen eronder.
 // De brug zet alleen fixtures (taken, resources, toewijzingen, paneelbreedte) en leest state; de
 // geteste handelingen zijn echte klikken en toetsaanslagen.
 
@@ -39,6 +42,14 @@ async function seedBlock(page: Page, panelWidth: number) {
     return { unitsId: asgA.id, warnId: asgB.id };
   }, { id: taskId, panelWidth, exact: EXACT });
   return { taskId, otherId, ...ids };
+}
+
+/** Klapt elke toewijzing uit (echte klik op de naam): curve, urenverdeling en verplaatsen. */
+async function expandAll(page: Page) {
+  const closed = page.locator('[data-ops-assignment-expand="closed"]');
+  const n = await closed.count();
+  for (let i = 0; i < n; i++) await closed.first().click();
+  await expect(page.locator('[data-ops-assignment-expand="open"]')).toHaveCount(n);
 }
 
 const assignmentOf = (page: Page, id: string) => page.evaluate(
@@ -103,13 +114,18 @@ for (const width of [280, 200]) {
     await expect.poll(() => page.evaluate(() => window.__OPS__!.store.getState().ui.rightPanelWidth)).toBe(width);
     const warnRow = page.locator(`[data-ops-assignment-row="${warnId}"]`);
     await expect(warnRow.locator('[data-ops-assignment-work-deviates]')).toBeVisible();
-    // Elke toewijzingsrij heeft een "Verplaatsen naar…" (Voegwerk is een kandidaat).
-    await expect(page.locator('[data-ops-assignment-move]')).toHaveCount(2);
+    // De ⚠ staat binnen het werkveld, niet op de naam.
+    const warnBox = (await warnRow.locator('[data-ops-assignment-work-deviates]').boundingBox())!;
+    const workBox = (await warnRow.locator('[data-ops-assignment-work] input').boundingBox())!;
+    expect(warnBox.x).toBeGreaterThanOrEqual(workBox.x);
+    expect(warnBox.x + warnBox.width).toBeLessThanOrEqual(workBox.x + workBox.width);
+    // Dicht: geen curve of verplaatsen in de regel.
+    await expect(page.locator('[data-ops-assignment-move]')).toHaveCount(0);
 
-    const report = await page.evaluate(() => {
+    const measure = () => page.evaluate(() => {
       const rail = document.querySelector('[data-ops-rail]')!.getBoundingClientRect();
       const els = [...document.querySelectorAll<HTMLElement>(
-        '[data-ops-assignment-row] input, [data-ops-assignment-row] button, [data-ops-assignment-row] .ops-select__value, [data-ops-assignment-row] .ops-select__value-text, [data-ops-assignment-add] .ops-select__value',
+        '[data-ops-assignment-row] input, [data-ops-assignment-row] button, [data-ops-assignment-row] .ops-select__value, [data-ops-assignment-row] .ops-select__value-text, [data-ops-assignment-add] .ops-select__value, [data-ops-assignment-lock-units], [data-ops-assignment-lock-work]',
       )];
       return {
         count: els.length,
@@ -119,10 +135,19 @@ for (const width of [280, 200]) {
           return r.width < 1 || r.left < rail.left - 0.5 || r.right > rail.right + 0.5;
         }).map(el => el.outerHTML.slice(0, 100)),
         // De zichtbare curvetekst in de trigger: hele label, geen ellips.
-        curveText: [...document.querySelectorAll<HTMLElement>('[data-ops-assignment-curve] .ops-select__value-text')]
+        curveText: [...document.querySelectorAll<HTMLElement>('[data-ops-assignment-curve] .ops-select__value')]
           .map(el => ({ text: el.textContent, fits: el.scrollWidth <= el.clientWidth + 0.5 })),
       };
     });
+    const closed = await measure();
+    expect(closed.count).toBeGreaterThan(7);
+    expect(closed.clipped).toEqual([]);
+    expect(closed.outside).toEqual([]);
+
+    // Uitgeklapt: elke toewijzingsrij heeft een "Verplaats naar…" (Voegwerk is een kandidaat).
+    await expandAll(page);
+    await expect(page.locator('[data-ops-assignment-move]')).toHaveCount(2);
+    const report = await measure();
     expect(report.count).toBeGreaterThan(10);
     expect(report.clipped).toEqual([]);
     expect(report.outside).toEqual([]);
@@ -131,11 +156,60 @@ for (const width of [280, 200]) {
   });
 }
 
+// Eigenaar 2026-10-19: één regel per resource. Bij 280 px staan naam, inzet, werk en verwijderen op
+// hetzelfde verticale midden, en elke kop recht boven zijn veld. Op de smalste rail (200 px, container
+// ≤ 14rem) staat de naam op een eigen regel en de getallen samen eronder.
+for (const width of [280, 200]) {
+  test(`regel: indeling bij paneelbreedte ${width} px`, async ({ page, ops: _ops }) => {
+    const { unitsId, warnId } = await seedBlock(page, width);
+    await expect.poll(() => page.evaluate(() => window.__OPS__!.store.getState().ui.rightPanelWidth)).toBe(width);
+    const header = page.locator('[data-ops-assignment-header]');
+    await expect(header).toBeVisible();
+    for (const id of [unitsId, warnId]) {
+      const row = page.locator(`[data-ops-assignment-row="${id}"]`);
+      const box = async (sel: string) => (await row.locator(sel).first().boundingBox())!;
+      const mid = (b: { y: number; height: number }) => b.y + b.height / 2;
+      const name = await box('[data-ops-assignment-name]');
+      const units = await box('input');
+      const work = await box('[data-ops-assignment-work] input');
+      const remove = await box('[data-ops-assignment-remove]');
+      // Inzet, werk en verwijderen staan altijd samen op één regel.
+      expect(Math.abs(mid(work) - mid(units))).toBeLessThan(3);
+      expect(Math.abs(mid(remove) - mid(units))).toBeLessThan(3);
+      if (width === 280) {
+        expect(Math.abs(mid(name) - mid(units))).toBeLessThan(3);
+      } else {
+        expect(name.y + name.height).toBeLessThanOrEqual(units.y + 0.5);
+      }
+      // Rechterranden van kop en veld vallen samen.
+      const right = (b: { x: number; width: number }) => b.x + b.width;
+      const hUnits = (await header.locator('[data-ops-assignment-lock-units]').boundingBox())!;
+      const hWork = (await header.locator('[data-ops-assignment-lock-work]').boundingBox())!;
+      expect(Math.abs(right(hUnits) - right(units))).toBeLessThan(1);
+      expect(Math.abs(right(hWork) - right(work))).toBeLessThan(1);
+    }
+    // De naam is een uitklapknop; de details staan onder de regel en verdwijnen weer.
+    const expand = page.locator(`[data-ops-assignment-row="${unitsId}"] [data-ops-assignment-expand]`);
+    await expect(expand).toHaveAttribute('aria-expanded', 'false');
+    await expand.click();
+    await expect(expand).toHaveAttribute('aria-expanded', 'true');
+    // `useId` geeft tekens als « en : in het id; daarom een attribuutselector, geen #id.
+    const details = page.locator(`[id="${await expand.getAttribute('aria-controls')}"]`);
+    await expect(details).toHaveAttribute('data-ops-assignment-details');
+    const unitsBox = (await page.locator(`[data-ops-assignment-row="${unitsId}"] input`).first().boundingBox())!;
+    expect((await details.boundingBox())!.y).toBeGreaterThanOrEqual(unitsBox.y + unitsBox.height - 0.5);
+    await expand.click();
+    await expect(details).toHaveCount(0);
+  });
+}
+
 test('keuzelijsten: geen native select; curve, verplaatsen en toewijzen werken met muis en toetsenbord', async ({ page, ops: _ops }) => {
   const { taskId, otherId, unitsId, warnId } = await seedBlock(page, 280);
   const block = page.locator('[data-ops-assignment-row]');
   await expect(block).toHaveCount(2);
   // In het hele paneel staat in dit blok geen enkele native keuzelijst meer.
+  await expect(page.locator('[data-ops-assignment-row] select, [data-ops-assignment-add] select')).toHaveCount(0);
+  await expandAll(page);
   await expect(page.locator('[data-ops-assignment-row] select, [data-ops-assignment-add] select')).toHaveCount(0);
 
   // Curve met de muis: trigger openen, optie aanklikken.
@@ -204,6 +278,14 @@ test('curve: dezelfde curve opnieuw kiezen laat de geïmporteerde P6-curve staan
       a.curveValues = Array.from({ length: 21 }, (_, i) => 21 - i);
     });
   }, unitsId);
+  // Dicht: het curve-icoon naast de naam toont dat de curve niet Uniform is.
+  await expect(page.locator(`[data-ops-assignment-row="${unitsId}"] [data-ops-assignment-curve-mark]`)).toHaveAttribute('data-ops-assignment-curve-mark', 'FRONT_LOADED');
+  // Uitklappen met het toetsenbord. (Een muisklik op de naam laat de muis staan waar de lijst straks
+  // openklapt; de aangewezen optie wordt dan de actieve, en Enter kiest die.)
+  const expand = page.locator(`[data-ops-assignment-row="${unitsId}"] [data-ops-assignment-expand]`);
+  await expand.focus();
+  await page.keyboard.press('Enter');
+  await expect(expand).toHaveAttribute('aria-expanded', 'true');
   const curve = page.locator(`[data-ops-assignment-row="${unitsId}"] [data-ops-assignment-curve] button`);
   await expect(curve).toHaveAttribute('data-value', 'FRONT_LOADED');
   expect((await assignmentOf(page, unitsId))!.curveValues).toBe(21);
@@ -419,6 +501,7 @@ test('curve: bij 200 px en 125 % in uk valt de knop binnen het paneel', async ({
   await page.evaluate(() => window.__OPS__!.store.getState().setUI({ uiFontScale: 125 }));
   // Het paneel draagt de veldenregel; de rand van de rail is de rand van het paneel.
   await expect.poll(() => page.evaluate(() => window.__OPS__!.store.getState().ui.rightPanelWidth)).toBe(200);
+  await expandAll(page);
   const report = await page.evaluate(() => {
     const rail = document.querySelector('[data-ops-rail]')!.getBoundingClientRect();
     return [...document.querySelectorAll<HTMLElement>('[data-ops-assignment-curve] button, [data-ops-assignment-contour]')]
