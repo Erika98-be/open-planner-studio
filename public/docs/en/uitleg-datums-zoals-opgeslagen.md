@@ -96,7 +96,7 @@ What if it is different?
 
 **Saving in the view keeps the dates of the source package.** The IFC file then holds what the source package said, not what the app would calculate.
 
-**After editing, the dates from the file do not come back.** If you edit, save and reopen a project, you only see the app's own calculation. Open the source file again if you want to see the dates from the source package.
+**After an edit that can change the dates, the dates from the file do not come back.** If you left the view by such an edit, you only see the app's own calculation after saving and reopening. Changing a name does not count: the view then stays on (see *Saving and reopening*). Open the source file again if you want to see the dates from the source package.
 
 ## See also
 

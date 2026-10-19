@@ -96,7 +96,7 @@ Wat als het anders is?
 
 **Opslaan in de weergave bewaart de datums van het bronpakket.** Het IFC-bestand bevat dan wat het bronpakket zei, niet wat de app zou uitrekenen.
 
-**Na bewerken komen de datums uit het bestand niet terug.** Bewerk, bewaar en heropen je een project, dan zie je alleen nog de eigen berekening. Open het bronbestand opnieuw als je de datums uit het bronpakket wilt zien.
+**Na een bewerking die de datums kan veranderen, komen de datums uit het bestand niet terug.** Verliet je de weergave door zo'n bewerking, dan zie je na bewaren en heropenen alleen nog de eigen berekening. Een naam wijzigen telt niet: dan blijft de weergave staan (zie *Opslaan en heropenen*). Open het bronbestand opnieuw als je de datums uit het bronpakket wilt zien.
 
 ## Zie ook
 
