@@ -57,6 +57,16 @@ export function shouldYieldClipboardShortcutToTaskGrid(event: {
   return !!(event.target as ClosestTarget | null)?.closest?.('.task-grid-core');
 }
 
+/**
+ * Forceer een hangende onBlur-commit (inzet, werk, duur, …) vóór een sneltoets die opslaat of
+ * herberekent. Alleen tekstvelden hebben zo'n commit; een keuzelijst-trigger houdt de focus.
+ * Eén mechanisme voor het sneltoets-register én de productie-voorpoort hieronder.
+ */
+function commitPendingTextEdit(target: EventTarget | null): void {
+  const el = target as HTMLElement | null;
+  if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable)) el.blur();
+}
+
 export function useKeyboardShortcuts() {
   // Alleen nog nodig voor de losstaande productie-only browser-sneltoets-voorpoort hieronder
   // (bewust ongemoeid gelaten, zie shortcutRegistry.ts). Alle overige sneltoetsen lopen via
@@ -74,6 +84,9 @@ export function useKeyboardShortcuts() {
       if (isProduction && isBrowserShortcut(e)) {
         e.preventDefault();
         const ctrlB = e.ctrlKey || e.metaKey;
+        // Herberekenen en opslaan lezen de store: commit eerst een getypte waarde in het actieve
+        // veld (zelfde blur als het register hieronder), anders slaat Ctrl+S de oude waarde op.
+        if (e.key === 'F5' || (ctrlB && e.key.toLowerCase() === 's')) commitPendingTextEdit(e.target);
         if (e.key === 'F5') runCPM();
         else if (ctrlB && e.shiftKey && e.key.toLowerCase() === 's') void saveFileAs();
         else if (ctrlB && e.key.toLowerCase() === 's') void saveFile();
@@ -107,12 +120,8 @@ export function useKeyboardShortcuts() {
         if (typing && !entry.allowInInput) continue;
         if (entry.when && !entry.when()) continue;
 
-        if (entry.allowInInput && typing
-          && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
-          // Forceer een eventuele hangende onBlur-commit vóórdat we herberekenen/opslaan/etc. Alleen
-          // tekstvelden hebben zo'n commit; een keuzelijst-trigger houdt de focus (zoals op main).
-          target.blur();
-        }
+        // Forceer een eventuele hangende onBlur-commit vóórdat we herberekenen/opslaan/etc.
+        if (entry.allowInInput && typing) commitPendingTextEdit(target);
         if (!entry.skipPreventDefault) e.preventDefault();
         entry.run(useAppStore.getState());
         return;

@@ -43,3 +43,30 @@ export function formatDecimalInput(n: number, locale: string): string {
   }
   return fmt ? fmt.format(n) : String(Number(n.toPrecision(3)));
 }
+
+const decimalSeparators = new Map<string, string>();
+
+/** Het decimaalteken van de app-taal in de getalnotatie van de app (Latijnse cijfers). */
+function decimalSeparatorOf(locale: string): string {
+  let sep = decimalSeparators.get(locale);
+  if (sep === undefined) {
+    try {
+      sep = new Intl.NumberFormat(`${locale}-u-nu-latn`).formatToParts(1.5)
+        .find(p => p.type === 'decimal')?.value ?? '.';
+    } catch {
+      sep = '.';
+    }
+    decimalSeparators.set(locale, sep);
+  }
+  return sep;
+}
+
+/**
+ * Dubbelzinnige invoer: een komma gevolgd door precies drie cijfers ("1,500") in een taal met een
+ * PUNT als decimaalteken (en). Een Engelse planner bedoelt daar vaak 1500 (duizendtal), maar
+ * `parsePositiveDecimal` leest 1,5. Zo'n invoer wordt geweigerd: geen stille gok. In een taal met
+ * een komma als decimaalteken (nl) is "1,500" gewoon 1,5 en niet dubbelzinnig.
+ */
+export function isAmbiguousThousands(text: string, locale: string): boolean {
+  return /^\d+,\d{3}$/.test(text.trim()) && decimalSeparatorOf(locale) !== ',';
+}

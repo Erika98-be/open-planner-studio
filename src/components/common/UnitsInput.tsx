@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
-import { formatDecimalInput, parsePositiveDecimal } from '@/utils/decimalInput';
+import { formatDecimalInput, isAmbiguousThousands, parsePositiveDecimal } from '@/utils/decimalInput';
 
 /**
  * Strikt-positief eenheden-invoerveld. Houdt een lokale draft-string bij zodat de gebruiker vrij
@@ -23,9 +23,14 @@ import { formatDecimalInput, parsePositiveDecimal } from '@/utils/decimalInput';
  *   een omringende dialoog slaat dan niet op (zoals het duurveld). Escape met een draft
  *   zet alleen dit veld terug (de toets stopt hier); Escape zonder draft gaat door (sluit de
  *   dialoog).
+ *
+ * Met `locale` in een taal met een punt als decimaalteken (en) is "1,500" dubbelzinnig (1500 of
+ * 1,5?): ongeldig, geen commit, en bij het afronden een melding via `onAmbiguous`
+ * (`isAmbiguousThousands`).
  */
 export function UnitsInput({
   value, onCommit, className = '', title, ariaLabel, onKeyDown, gridCell, locale, commitOnBlur = false, accepts,
+  onAmbiguous,
 }: {
   value: number;
   onCommit: (n: number) => void;
@@ -42,12 +47,16 @@ export function UnitsInput({
   commitOnBlur?: boolean;
   /** Extra eis bovenop "> 0"; `false` ⇒ ongeldig (rode rand, geen commit). */
   accepts?: (n: number) => boolean;
+  /** Afronden met een dubbelzinnige invoer ("1,500" in en): de waarde blijft, de aanroeper meldt. */
+  onAmbiguous?: (text: string) => void;
 }) {
   // `null` = de gebruiker typt niet; het veld toont dan de opgeslagen waarde.
   const [draft, setDraftState] = useState<string | null>(null);
   const shownValue = locale ? formatDecimalInput(value, locale) : String(value);
   const text = draft ?? shownValue;
+  const ambiguous = (s: string) => !!locale && isAmbiguousThousands(s, locale);
   const parseValid = (s: string) => {
+    if (ambiguous(s)) return null;
     const n = parsePositiveDecimal(s);
     return n !== null && (!accepts || accepts(n)) ? n : null;
   };
@@ -56,8 +65,8 @@ export function UnitsInput({
   // De laatste draft en de laatste props, synchroon bijgewerkt: de unmount-cleanup en een blur die
   // direct na Enter volgt lezen ze zonder op een render te wachten.
   const draftRef = useRef<string | null>(null);
-  const latest = useRef({ value, shownValue, onCommit, parseValid });
-  latest.current = { value, shownValue, onCommit, parseValid };
+  const latest = useRef({ value, shownValue, onCommit, parseValid, ambiguous, onAmbiguous });
+  latest.current = { value, shownValue, onCommit, parseValid, ambiguous, onAmbiguous };
   const setDraft = (d: string | null) => { draftRef.current = d; setDraftState(d); };
 
   /** Commit de openstaande draft als die geldig is en echt iets anders zegt dan er stond. */
@@ -67,6 +76,7 @@ export function UnitsInput({
     if (d === null) return;
     const { value: v, shownValue: shown, onCommit: commit, parseValid: parse } = latest.current;
     if (d.trim() === shown) return; // één teken wissen en terugtypen is geen wijziging
+    if (latest.current.ambiguous(d)) { latest.current.onAmbiguous?.(d.trim()); return; }
     const n = parse(d);
     if (n !== null && n !== v) commit(n);
   };

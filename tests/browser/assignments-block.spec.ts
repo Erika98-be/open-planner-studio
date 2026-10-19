@@ -281,6 +281,50 @@ for (const locale of ['nl', 'en']) {
   });
 }
 
+// Hercheck PR #369: in een taal met een punt als decimaalteken (en) bedoelt "1,500" vaak 1500.
+// Geen stille gok op 1,5: de waarde blijft, met een melding in het meldingenkanaal. In nl is
+// "1,500" eenduidig 1,5; "1.5" in en blijft gewoon werken.
+for (const locale of ['en', 'nl']) {
+  test(`invoer (${locale}): "1,500" is ${locale === 'en' ? 'dubbelzinnig en wordt geweigerd' : 'gewoon 1,5'}`, async ({ page, ops: _ops }) => {
+    await useLocale(page, locale);
+    const { unitsId, warnId } = await seedBlock(page, 280);
+    const units = page.locator(`[data-ops-assignment-row="${unitsId}"] input`).first();
+    const work = page.locator(`[data-ops-assignment-row="${warnId}"] [data-ops-assignment-work] input`);
+    const toast = page.locator('.ops-toast-message', { hasText: '1,500' });
+
+    await units.click();
+    await units.press('Control+a');
+    await page.keyboard.type('1,500');
+    await page.keyboard.press('Enter');
+    if (locale === 'nl') {
+      await expect.poll(async () => (await assignmentOf(page, unitsId))!.units).toBe(1.5);
+      await expect(toast).toHaveCount(0);
+      return;
+    }
+    await expect(toast).toBeVisible();
+    await expect(toast).toContainText('ambiguous');
+    expect((await assignmentOf(page, unitsId))!.units).toBe(EXACT);
+    await expect(units).toHaveValue('1.78');
+
+    // Werk: hetzelfde veld, dezelfde regel (ook bij verlaten met Tab).
+    const workBefore = (await assignmentOf(page, warnId))!.work;
+    await work.click();
+    await work.press('Control+a');
+    await page.keyboard.type('2,000');
+    await expect(work).toHaveAttribute('aria-invalid', 'true');
+    await page.keyboard.press('Tab');
+    expect((await assignmentOf(page, warnId))!.work).toBe(workBefore);
+    await expect(page.locator('.ops-toast-message', { hasText: '2,000' })).toBeVisible();
+
+    // Eenduidige invoer blijft werken.
+    await units.click();
+    await units.press('Control+a');
+    await page.keyboard.type('1.5');
+    await page.keyboard.press('Enter');
+    await expect.poll(async () => (await assignmentOf(page, unitsId))!.units).toBe(1.5);
+  });
+}
+
 test('inzet: een kleine geldige waarde toont meer cijfers en geen rode rand', async ({ page, ops: _ops }) => {
   const { unitsId } = await seedBlock(page, 280);
   await page.evaluate((id) => window.__OPS__!.store.getState().updateAssignment(id, { unitsPerDay: 0.004 }), unitsId);

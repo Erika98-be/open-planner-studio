@@ -90,6 +90,11 @@ export function TaskAssignmentsSection({ taskId }: { taskId: string }) {
   const moveAssignment = useAppStore(s => s.moveAssignment);
   // Kolom "Werk (rest)" + slotjes op de beschermde hoek(en).
   const setAssignmentWork = useAppStore(s => s.setAssignmentWork);
+  const notify = useAppStore(s => s.notify);
+  // "1,500" in een taal met een punt als decimaalteken: 1500 of 1,5? Geen gok; de waarde blijft.
+  const notifyAmbiguous = (text: string) => notify({
+    severity: 'error', messageKey: 'notifications.ambiguousThousands', params: { text },
+  });
   const unlocked = useAppStore(s => taskTypesUnlocked(s));
   const defaultWorkRule = useAppStore(s => s.project.defaultWorkRule);
   const calendars = useAppStore(s => s.calendars);
@@ -207,6 +212,7 @@ export function TaskAssignmentsSection({ taskId }: { taskId: string }) {
                     value={a.unitsPerDay}
                     locale={i18n.language}
                     commitOnBlur
+                    onAmbiguous={notifyAmbiguous}
                     // De exacte opgeslagen waarde, met het decimaalteken van de taal.
                     title={`${t('properties.assignments.unitsPerDay')}: ${localizeDecimalPoint(String(a.unitsPerDay), i18n.language)}`}
                     ariaLabel={`${t('properties.assignments.unitsPerDay')} — ${res?.name ?? a.resourceId}`}
@@ -231,6 +237,7 @@ export function TaskAssignmentsSection({ taskId }: { taskId: string }) {
                         commitOnBlur
                         className="input !text-small !px-1 !py-0.5 !h-6 !w-[calc(var(--text-small)*5)] text-right"
                         locale={i18n.language}
+                        onAmbiguous={notifyAmbiguous}
                       />
                     </span>
                   ))}
