@@ -136,12 +136,14 @@ export function buildEnvelope(ctx: McpContext): McpEnvelope {
  * Blijft die lijst en deze in sync — beide spiegelen de modale overlays van de app.
  */
 const BLOCKING_UI_FLAGS = [
+  // De sluitvraag ("wijzigingen opslaan?") gebruikt geen `Dialog`, maar is wel modaal.
+  'pendingCloseDocId',
   'showTaskDialog', 'showProjectSettings', 'showProjectInfoDialog', 'showSettingsDialog',
   'showCalendarDialog', 'showUpdateDialog', 'showNewProjectDialog', 'showFeedbackDialog',
   'showStructureDialog', 'showLevelingDialog', 'showBaselineDialog', 'showColumnsDialog',
   'showFilterDialog', 'showLayoutsDialog', 'showProjectOverview', 'presentationMode',
   'showTourOverlay', 'showWelcomeDialog', 'showTutorialOffer', 'showProgressImportDialog', 'pendingActualStartQuestion',
-  'pendingSiteOpen', 'pendingSiteSave', 'pendingIfcSchemaQuestion', 'pendingCloseDocId',
+  'pendingSiteOpen', 'pendingSiteSave', 'pendingIfcSchemaQuestion',
 ] as const;
 
 /** Naam van de eerste open blokkerende ui-vlag, of null wanneer er geen open staat. */
