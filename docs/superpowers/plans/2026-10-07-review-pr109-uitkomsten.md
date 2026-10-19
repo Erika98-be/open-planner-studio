@@ -1516,3 +1516,15 @@ Testversie (release-check, poort 3049) is NIET bijgewerkt met de PR's van vandaa
   eigenaarscheck nodig).
 - Nieuw: expert `claude/mspdi-werktijd-minuten` (0402: MSPDI-lezer neemt van `00:08:00`–`00:16:00` alleen het uur ⇒
   0–24 met 7 werkdagen). Haiku loopt na of Delete onder een open venster de taak erachter verwijdert.
+- **#369 ronde 5 klaar** (d84e74878, CI groen na herstart): `UnitsInput` zonder draft krijgt `data-ops-app-keys`;
+  `isTypingTarget` stuurt Ctrl+Z/Y/Shift+Z en kale Escape door naar de app (niet in aria-modal); "01.500" geweigerd.
+  Diff gelezen door de orkestrator; geen nieuwe review (klein, achter een markering) ⇒ wacht op check eigenaar.
+  Testversie: #369 bijgewerkt (57fdc7513). **Let op:** CI-flake `task-grid-performance` (`selectieAdapter` 2,01 ms bij
+  grens 2 ms) — waarschijnlijk ook de rode CI van #378.
+- **#380 nieuw (expert Opus 5.5): restwerk volgt duurwijziging** (besluit optie 2), CI groen ⇒ review loopt. Lost ook
+  (a)/(b)/(c) op. Nieuwe fout gevonden: overbezetting door afrondingsruis (`ResourceLoad.ts:409`, 585) ⇒ worker
+  `claude/overbezet-ruis`.
+- **Delete/Backspace onder een open venster verwijdert de taak erachter: BEVESTIGD** (Haiku; kalender, Taak bewerken op
+  Cancel, Projectinstellingen, App-instellingen) ⇒ worker `claude/delete-onder-venster`.
+- **P6 XML-constraints gaan verloren: BEVESTIGD** (orkestrator): PMXML schrijft labels ("Start On or After"),
+  `p6CodeToConstraint` kent alleen `CS_*` ⇒ worker `claude/p6xml-constraintlabels` (ook andere enum-velden nalopen).
