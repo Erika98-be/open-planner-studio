@@ -1619,3 +1619,15 @@ Testversie (release-check, poort 3049) is NIET bijgewerkt met de PR's van vandaa
   PR-tekst (0402 "global" is projectkalender: 4 verzameltaken 18 d ⇒ 14,07 d, datums gelijk). VERVOLG in de PR: bekende
   grens breed (1103 kalenders/86 bestanden na eigen export), `ToTime`-minuten in terugval, één-blok-venster, OPS-marker,
   P6-writer pauze. **#384 gemerged in main → 7c1c16925** (kop 08e238e2a, CI 16/16).
+- **Checkstap #375 stap 4 — bevinding eigenaar:** "hij verscheen gewoon, onder de taak die ik geselecteerd heb, zonder
+  melding"; groepen zichtbaar en knop oranje. **Repro (Haiku 5.5):** layout aan + selectie ⇒ strook + nieuwe taak
+  achteraan (WBS 8); layout twee keer geklikt (uit) ⇒ direct onder de selectie (WBS 4.15), geen strook; na de geweigerde
+  sleep uit stap 3 is de selectie leeg ⇒ achteraan (WBS 8), geen strook. Nieuwe bevinding: selectie gaat verloren na
+  een geweigerde sleep (nog na te gaan of main dat ook doet). ⇒ eigenaar doet stap 4 opnieuw (WBS + strook).
+- **#371 optie 3 gebouwd** (worker Opus 5.5; f85318372 + schermbewijs e69682241, main erin 47d6eaa94; CI 16/16):
+  blok altijd `alert--info`, derde regel "Ontbreekt: …" bij 'partly-unrecorded'; gidsen nl/en bijgewerkt. ⇒ delta-review
+  loopt (reviewer Opus 5.5).
+- **#380 tabel-⚠ gebouwd** (910d8a7c2, CI groen). Maker meldt: V10 hintzin "De app past de inzet niet aan om het
+  verschil weg te werken." klopt niet bij *Vast werk* / *Vaste duur en werk*; V11 in 26 locales telt een oude vertaling
+  nu als actueel; V12 MER-1 toont 89 ⚠ (duur 0 met opgeslagen restwerk). Review ronde 2 stopte op de sessielimiet
+  (HTTP 429) en is om 15:10 hervat bij dezelfde reviewer (Opus 5.5).
