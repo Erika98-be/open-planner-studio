@@ -1495,3 +1495,6 @@ Testversie (release-check, poort 3049) is NIET bijgewerkt met de PR's van vandaa
   variant ⇒ VERVOLG. Review was al JA ⇒ wacht op visuele check eigenaar.
 - **#369 fixronde 4 klaar** (0c4864098, CI groen; B1 in alle talen, V1 focus terug, V4, gedeelde `decimalSeparatorOf`)
   ⇒ delta-review loopt.
+- **Delta-review #369 ronde 4: JA** (B1 weg in alle 14 talen; 31 invoeren × 14 talen). Bevinding 1 (Ctrl+Z na F5/Ctrl+S
+  doet veld-undo; store blijft 2.25, veld toont 1; `isDirty` false) door V1 ⇒ door de orkestrator als BLOKKEERT ingedeeld
+  (F5 + Ctrl+Z = wat-als, gewoon werk) ⇒ ronde 5 bij de maker, met "01.500" en commentaar/tests.
