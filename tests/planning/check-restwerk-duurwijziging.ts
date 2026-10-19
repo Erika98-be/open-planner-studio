@@ -29,7 +29,8 @@ import { buildWriteIFCInput } from '@/state/ifcSaveInput';
 import { readXerArchiveIFC } from './xerArchiveTestReader';
 import { isMultiDocumentImport, type ImportResult } from '@/services/importTypes';
 import { assignmentWorkDeviation } from '@/engine/work/assignmentWorkDeviation';
-import { remainingMinutesOf, totalMinutesOf } from '@/engine/work/workRuleApply';
+import { captureTriangle, remainingMinutesOf, settleDurationEdit, totalMinutesOf } from '@/engine/work/workRuleApply';
+import { workDaySlotsToPeriods } from '@/engine/contour/contourEdit';
 import { assignmentDayUnits } from '@/engine/scheduler/ResourceLoad';
 import { createDefaultTaskTime, taskCalendarHoursPerDay } from '@/utils/taskDefaults';
 import type { CellEditIntent } from '@/types/taskGrid';
@@ -345,6 +346,37 @@ openFixture();
   const e = byCode('E-1010');
   S().updateTask(e.id, { time: { ...e.time, completion: 0.25 } });
   eq('m2 alleen voortgang: geen melding over restwerk', workNotices(), []);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+console.log('-- (n) contract: de restregel van settleDurationEdit raakt alleen niet-gestarte taken --');
+openFixture();
+{
+  // Een gestarte taak krijgt haar nieuwe rest van `carryRemainingThroughDurationEdit`, vóór deze stap.
+  // Roept een route `settleDurationEdit` aan zonder die stap, dan zet de restregel hier niets
+  // (geen rest = duur × (1 − %), dat zou het gedane werk verschuiven).
+  const t = byCode('E-1050');
+  const captured = captureTriangle(t, S().assignments, S());
+  useAppStore.setState((s) => {
+    const d = s.tasks.find((x) => x.id === t.id)!;
+    d.time.durationMinutes = 88 * H;
+    d.time.scheduleDuration = 11;
+    settleDurationEdit(d, s.assignments, captured);
+  });
+  eq('n1 gestarte taak zonder meeschuifstap: de restregel laat de rest staan (40 h)', byCode('E-1050').time.remainingMinutes, 40 * H);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+console.log('-- (o) een toewijzing met eigen urenverdeling telt niet mee voor de melding --');
+openFixture();
+{
+  // Hetzelfde criterium als het waarschuwingsteken: met een contour vormt die de inzet per dag zelf.
+  const t = byCode('E-1010');
+  S().setAssignmentContour(asg('7500').id, workDaySlotsToPeriods(Array.from({ length: 10 }, () => 32 * H), t.splitGaps, 8 * H));
+  useAppStore.setState((s) => { s.ui.notifications = []; });
+  eq('o0 voorwaarde: restwerk = de contoursom, 320 h', asg('7500').remainingWorkMinutes, 320 * H);
+  setHours('E-1010', 72);
+  eq('o1 duur 80 → 72 h met contour: geen melding', workNotices(), []);
 }
 
 if (diffs.length > 0) {
