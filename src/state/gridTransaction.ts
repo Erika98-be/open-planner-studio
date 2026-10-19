@@ -13,7 +13,7 @@ import {
   planTaskAssignmentSet,
   type TaskAssignmentApplyIndexes,
 } from '@/engine/taskGrid/assignmentPlan';
-import { isHourCalendar } from '@/services/subdayIo';
+import { isHourModeCalendar } from '@/types/calendar';
 import { CalendarEngine } from '@/engine/scheduler/CalendarEngine';
 import { signedWorkDaysBetween } from '@/engine/variance';
 import { effectiveCalendarOf, effHoursPerDay } from '@/utils/taskDuration';
@@ -512,7 +512,7 @@ export function buildTaskEditPlanEnvironment(state: AppState, task: Task): TaskE
     statusDate: state.project.statusDate,
     calendarIds: new Set([state.calendar.id, ...state.calendars.map(calendar => calendar.id)]),
     effectiveHoursPerDay: effHoursPerDay(effectiveCalendar),
-    hourMode: isHourCalendar(effectiveCalendar) === true,
+    hourMode: isHourModeCalendar(effectiveCalendar) === true,
     effectiveCalendar,
     calendarFor: (calendarId) => resolveCalendar(calendarId, state.calendars, state.calendar),
     enableHourPlanning: state.ui.enableHourPlanning,

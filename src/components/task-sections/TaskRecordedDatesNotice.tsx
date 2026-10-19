@@ -1,32 +1,39 @@
 import { useTranslation } from 'react-i18next';
 import { useAppStore } from '@/state/appStore';
-import { recordedNoticeState } from '@/state/recordedDatesSelectors';
-import { recordedDatesTaskActiveKey } from '@/components/layout/recordedDatesNoticeText';
+import { recordedNoticeState, recordedTaskWillShift, unrecordedAxes } from '@/state/recordedDatesSelectors';
+import { recordedDatesTaskMissingKey, recordedDatesTaskShownKey } from '@/components/layout/recordedDatesNoticeText';
 import { RECORDED_DATES_HELP_ARTICLE_ID } from '@/state/helpArticles';
+import type { RecordedTaskAxis } from '@/types/taskGrid';
+
+/** De ontbrekende assen in gewone woorden: de namen van de bestaande tabelkolommen. */
+const AXIS_COLUMN_KEY: Record<RecordedTaskAxis, 'taskGrid.columns.lateStart' | 'taskGrid.columns.lateFinish' | 'taskGrid.columns.totalFloat' | 'taskGrid.columns.freeFloat'> = {
+  ls: 'taskGrid.columns.lateStart',
+  lf: 'taskGrid.columns.lateFinish',
+  tf: 'taskGrid.columns.totalFloat',
+  ff: 'taskGrid.columns.freeFloat',
+};
 
 /**
- * "Datums zoals opgeslagen" — herkomstmarkering op het
- * eigenschappenpaneel. 1-op-1 gemodelleerd naar `TaskTimephasedNotice.tsx`: puur afgeleid van
- * bestaande documentstate (`recordedDates`/`datesAsRecorded`) via `recordedTaskMark`
- * (`src/state/recordedDatesSelectors.ts`) — geen eigen `Task`-veld, geen `DOCUMENT_FIELDS`-impact.
+ * "Datums zoals opgeslagen" — het infoblok bovenaan de sectie *Tijd* (`TaskTimeFields`), direct
+ * boven de datumvelden waar het over gaat. Puur afgeleid van bestaande documentstate
+ * (`recordedDates`/`datesAsRecorded`) via `recordedNoticeState` (`src/state/recordedDatesSelectors.ts`)
+ * — geen eigen `Task`-veld, geen `DOCUMENT_FIELDS`-impact.
  *
- * Drie toestanden, in deze volgorde afgewogen:
- *  - 'active' (`badge--blue`, neutrale/positieve infotoestand): de modus staat AAN
- *    (`datesAsRecorded`) én deze taak heeft een vastlegging — het scherm toont de datums uit het
- *    bestand voor deze taak (Primavera's eigen datums bij een XER-herkomst), niet onze herberekening. Krijgt voorrang boven de andere twee: IN de
- *    modus is "wijkt af" geen zinvol signaal (`recordedTaskMark` levert daar per constructie nooit
- *    `'deviates'`, zie die docstring — het scherm staat immers al gelijk aan de vastlegging).
- *  - 'deviates' (`badge--red`): BUITEN de modus wijkt de vroege start/einde van deze taak af van
- *    wat het bestand vastlegde (`recordedTaskMark` levert hier `'deviates'`).
- *  - 'partly-unrecorded' (`badge--gray`): de vastlegging zelf is onvolledig — een of meer van
- *    laat-start/-einde/totale/vrije speling ontbreekt in het bestand. Geldt in en buiten de modus;
- *    de late-/floatkolommen in de taaktabel tonen dit al per as ("niet vastgelegd" —
- *    `taskColumnRegistry.ts`'s `recordedAxisFormat`), deze badge signaleert het ook hier.
- * Geen vastlegging voor deze taak (`recordedDates?.times[task.id]` ontbreekt) ⇒ niets renderen
- * — zoals `TaskTimephasedNotice` voor een taak zonder MSP-herkomst.
+ * Alleen in de modus (er is geen aanbod-stand meer, eigenaar 2026-10-17, optie 1). Altijd één
+ * oranje blok (`alert--info`), met per regel een eigen `<span>`:
+ *  1. deze taak toont de datums uit het bestand, niet onze berekening;
+ *  2. verandert hij bij herberekenen of niet (`recordedTaskWillShift`, dezelfde meting als de teller
+ *     in de strook). Onbekend (slapend hersteld document zonder meting) ⇒ deze regel valt weg;
+ *  3. alleen als `recordedNoticeState` 'partly-unrecorded' zegt: het bestand legde voor deze taak
+ *     niet alles vast, met de namen van de tabelkolommen. Zelfde bron als de kolom `recorded.source`,
+ *     zodat blok en kolom over dezelfde taak niet uit elkaar kunnen lopen.
+ * Eigenaar 2026-10-19, besluit 4, optie 3: één oranje blok; de ontbrekende velden als derde regel.
+ * Het grijze blok (`alert--neutral`) voor deze stand is vervallen: daardoor zag een planner bij een
+ * XER zonder `free_float_hr_cnt` (MER-1) bij geen enkele taak dat de datums uit Primavera komen.
+ * Geen vastlegging voor deze taak ⇒ niets renderen.
  *
- * Stijlprecedent: dezelfde `badge`-klasse en dezelfde drie kleuren als de bibliotheek-
- * afwijkingsbadges (`ResourcePanel.tsx`) en `TaskTimephasedNotice.tsx`. Geen nieuwe CSS.
+ * "Primavera" alleen wanneer de vastlegging echt van P6 komt (`isPrimaveraRecordedOrigin`); anders
+ * de neutrale tekst. Zelfde beslisregel als de strook.
  *
  * RELATIONEEL/storeful (zelfde classificatie als `TaskTimephasedNotice`/`TaskFreePeriodWarning`):
  * puur lezend, `taskId`-only.
@@ -40,32 +47,31 @@ export function TaskRecordedDatesNotice({ taskId }: { taskId: string }) {
   const openHelpArticle = useAppStore(s => s.openHelpArticle);
 
   if (!task) return null;
-  const rec = recordedDates?.times[task.id];
-  if (!rec) return null;
-
-  // De keuze zelf staat in `recordedNoticeState` (pure selector, headless getest): in de modus
-  // wint "deels niet vastgelegd" van "actief", zodat deze badge en de kolom `recorded.source`
-  // over dezelfde taak niet uit elkaar kunnen lopen.
   const state = recordedNoticeState(recordedDates, datesAsRecorded, task);
   if (!state) return null;
+  const origin = recordedDates?.origin;
 
-  // Bronafhankelijke woordkeuze: "Primavera" alleen wanneer de
-  // vastlegging echt van P6 komt (`origin` 'xer'/'xer-archive'); de algemene route van elk ander formaat
-  // krijgt de neutrale tekst. Zelfde beslisregel als de strook (`recordedDatesActiveKey`).
-  const label = state === 'active'
-    ? t(recordedDatesTaskActiveKey(recordedDates?.origin))
-    : state === 'deviates' ? t('properties.recordedDatesDeviates') : t('properties.recordedDatesPartlyUnrecorded');
-  const badgeClass = state === 'active' ? 'badge--blue' : state === 'deviates' ? 'badge--red' : 'badge--gray';
+  // Elke zin een eigen regel: een spatie tussen zinnen is taalafhankelijk (zh/ja kennen hem niet).
+  const sentences: string[] = [t(recordedDatesTaskShownKey(origin))];
+  const willShift = recordedTaskWillShift(recordedDates, datesAsRecorded, task.id);
+  if (willShift !== undefined) {
+    sentences.push(willShift ? t('properties.recordedDatesWillShift') : t('properties.recordedDatesWillStay'));
+  }
+  const missing = state === 'partly-unrecorded';
+  if (missing) {
+    const fields = unrecordedAxes(recordedDates?.times[task.id]).map(axis => t(AXIS_COLUMN_KEY[axis])).join(', ');
+    sentences.push(t(recordedDatesTaskMissingKey(origin), { fields }));
+  }
 
+  // Infoblok over de volle breedte (eigenaar, 2026-10-17): de zin liep als badge buiten het paneel.
+  // Zelfde `alert`-patroon als de andere infoblokken; kleur alleen uit het thema.
   return (
-    <div className="flex items-center gap-2 flex-wrap">
-      <span
-        className={`badge ${badgeClass} shrink-0`}
-        title={label}
-        data-ops-task-recorded-dates={state}
-      >
-        {label}
-      </span>
+    <div
+      className="alert alert--info flex flex-col items-start gap-1 break-words"
+      data-ops-task-recorded-dates="active"
+      data-ops-task-recorded-dates-missing={missing ? '' : undefined}
+    >
+      {sentences.map((sentence, i) => <span key={i} data-ops-task-recorded-dates-sentence={i}>{sentence}</span>)}
       <button
         type="button"
         className="ops-textlink !text-body"

@@ -5,6 +5,7 @@
 // het deel boven de capaciteitslijn in rood (P6-patroon). Thema-bewust via CSS-variabelen.
 // Welke x bij kiezer en plot hoort, staat op één plek: `histogramLayout` hieronder.
 import type { ViewState } from '@/types/view';
+import { exceedsCapacity } from '@/engine/scheduler/capacityTolerance';
 import { parseDate, formatDate, addCalendarDays } from '@/utils/dateUtils';
 import { readHistogramPalette, type HistogramPalette } from './themePalette';
 import { dateToX as axisDateToX, type GanttAxis } from './timeAxis';
@@ -16,7 +17,7 @@ export interface HistogramSeries {
   load: Record<string, number>;
   /** iso-datum → capaciteit op die dag. */
   capacity: Record<string, number>;
-  /** iso-datums waar load > capacity. */
+  /** iso-datums waar `exceedsCapacity(load, capacity)` (marge tegen rekenruis). */
   overSet: Set<string>;
 }
 
@@ -411,7 +412,7 @@ export class HistogramRenderer {
       const capY = unitToY(capVal);
 
       if (loadVal > 0) {
-        const overCap = loadVal > capVal + 1e-9;
+        const overCap = exceedsCapacity(loadVal, capVal);
         const topY = unitToY(loadVal);
         const bx = x + barInset;
         const bw = Math.max(1, dayW - barInset * 2);

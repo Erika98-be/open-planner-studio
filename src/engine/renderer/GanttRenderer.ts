@@ -1,10 +1,12 @@
 import { Task } from '@/types/task';
 import type { BaselineOverlay } from '@/types/baseline';
 import { Sequence } from '@/types/sequence';
-import type { ViewState, BarSplitMode, DurationDisplay, TimeNotation } from '@/types/view';
+import type { ViewState, BarSplitMode, DateNotation, DurationDisplay, TimeNotation } from '@/types/view';
+import { displayDateTime } from '@/utils/displayDate';
+import { statusDateAsUsed, statusDateInstant } from '@/utils/statusDateTime';
 import { formatAxisClock } from '@/utils/displayTime';
 import { parseDate, parseInstant, addCalendarDays, diffCalendarDays, isoDayOfWeek, getWeekNumberFor, utcDayStart, localNowOnDayAxis, MS_PER_DAY } from '@/utils/dateUtils';
-import { holidayEndDate, WorkCalendar } from '@/types/calendar';
+import { holidayEndDate, isHourModeCalendar, WorkCalendar } from '@/types/calendar';
 import { calendarWithEffectiveWorkTime } from '@/utils/effectiveWorkTime';
 import { effHoursPerDay, formatTaskDurationDisplay, taskDurationMinutes } from '@/utils/taskDuration';
 import { formatDuration, DEFAULT_DURATION_SUFFIXES, type DurationSuffixes } from '@/utils/durationFormat';
@@ -132,6 +134,8 @@ export interface GanttRenderOptions {
   weekStartDay?: 'monday' | 'sunday';        // default 'monday'
   /** Instelling Tijdnotatie voor de tijdschaal Uur/Kwartier (`13:00` of `1 PM`). Default '24h'. */
   timeNotation?: TimeNotation;
+  /** Instelling Datumnotatie voor het statusdatumlabel (`20-09-2006`). Default 'dmy', zoals de app. */
+  dateNotation?: DateNotation;
   enableQuarterHourZoom?: boolean;            // default false
   /** Effectieve kalender per taak-id (`task.calendarId` → bibliotheek, anders
    *  projectkalender). Bepaalt per taak of hij uur-modus is (sub-dag-balkpositie) en levert de
@@ -783,7 +787,7 @@ export class GanttRenderer {
     if (!this.opts.statusDate || this.opts.showStatusDateLine === false) return;
     if (this.opts.showProgressLine !== false) return;
     const ctx = this.ctx;
-    const x = this.dateToX(parseDate(this.opts.statusDate));
+    const x = this.statusDateX(this.opts.statusDate);
     if (x >= 0 && x < this.opts.canvasWidth) {
       ctx.strokeStyle = this.colors.statusDate;
       ctx.lineWidth = 2;
@@ -807,16 +811,39 @@ export class GanttRenderer {
    *
    * Het vlakje staat rechts van de lijn, tenzij het dan buiten het canvas zou vallen — dan links.
    */
+  /**
+   * X van de statusdatum op de tijdas (lijn, label en voortgangslijn delen hem). Rekent de
+   * projectkalender in uur-modus (`isHourModeCalendar`, dezelfde regel als de solver), dan staat de
+   * lijn op het tijdstip, zoals een uurtaakbalk: op de kalenderas is dat de fractie van de kalenderdag
+   * (17:00 = 17/24 van de dagbreedte, ook bij dagzoom); op de werkdag-as bepaalt die as zelf de positie.
+   * In dag-modus, of zonder tijd: het begin van de dag, want de solver gebruikt de tijd dan niet
+   * (besluit orkestrator 2026-10-19: toon wat de motor gebruikt).
+   */
+  statusDateX(iso: string): number {
+    return this.dateToX(statusDateInstant(iso, isHourModeCalendar(this.opts.calendar)));
+  }
+
+  /**
+   * De tekst van het statusdatumlabel: de datum in de Datumnotatie, plus de tijd in de Tijdnotatie als
+   * de rekenkern die tijd gebruikt (`usesTime`). Statisch en puur, zodat een check hem zonder canvas leest.
+   */
+  static statusDateBadgeLabel(iso: string, usesTime: boolean, dateNotation: DateNotation = 'dmy', timeNotation: TimeNotation = '24h'): string {
+    return displayDateTime(statusDateAsUsed(iso, usesTime), dateNotation, timeNotation);
+  }
+
   private drawStatusDateBadge(): void {
     const iso = this.opts.statusDate;
     if (!iso) return;
     // Geen markering zichtbaar ⇒ ook geen label. (Beide vlaggen zijn default-aan: `!== false`.)
     if (this.opts.showStatusDateLine === false && this.opts.showProgressLine === false) return;
     const { canvasWidth, headerHeight } = this.opts;
-    const x = this.dateToX(parseDate(iso));
+    const x = this.statusDateX(iso);
     if (x < 0 || x >= canvasWidth) return;
 
-    const label = iso.slice(0, 10);
+    // Datum in de Datumnotatie (besluit eigenaar 2026-10-17: niet de ruwe ISO-tekst), plus de tijd in
+    // de Tijdnotatie als de solver die tijd gebruikt (uur-modus): `20-09-2006 17:00`.
+    const label = GanttRenderer.statusDateBadgeLabel(
+      iso, isHourModeCalendar(this.opts.calendar), this.opts.dateNotation, this.opts.timeNotation);
     this.ctx.save();
     const h = GanttRenderer.DRAG_BADGE_H;
     const w = this.pillWidth(label);
@@ -867,8 +894,12 @@ export class GanttRenderer {
   private drawProgressLine(): void {
     if (!this.opts.statusDate || this.opts.showProgressLine === false) return;
     const ctx = this.ctx;
-    const statusDay = parseDate(this.opts.statusDate);
-    const statusX = this.dateToX(statusDay);
+    // Referentie voor "klaar/niet gestart": in dag-modus de kalenderdag, in uur-modus het tijdstip —
+    // dezelfde keuze als lijn en solver (`isHourModeCalendar`). Anders liep een taak van 08:00–12:00
+    // zonder voortgang bij statusdatum 17:00 dezelfde dag "op schema" (geen uitstulping).
+    const usesTime = isHourModeCalendar(this.opts.calendar);
+    const statusRef = usesTime ? statusDateInstant(this.opts.statusDate, true) : parseDate(this.opts.statusDate);
+    const statusX = this.statusDateX(this.opts.statusDate);
     const { headerHeight, canvasHeight, canvasWidth, rowHeight } = this.opts;
 
     ctx.save();
@@ -901,13 +932,13 @@ export class GanttRenderer {
       if (task && !isZeroDurationMilestone(task) && isLeafTask(task)) {
         const geo = this.barGeometry(task);
         const c = Math.max(0, Math.min(1, task.time.completion || 0));
-        // Dagniveau-vergelijking t.o.v. de statusdatum (ook voor uur-taken: alleen de
-        // kalenderdag telt hier mee, niet het uur) — zo blijft "op de statusdatum" stabiel.
-        // Op de UTC-as, net als `statusDay`: lokale getters maakten dit tijdzone-afhankelijk.
-        const finishDay = utcDayStart(geo.end);
-        const startDay = utcDayStart(geo.start);
-        const fullyDoneByStatus = c >= 1 && finishDay <= statusDay;
-        const notYetStarted = c === 0 && startDay >= statusDay;
+        // Dag-modus: vergelijking per kalenderdag, zo blijft "op de statusdatum" stabiel. Op de
+        // UTC-as, net als `statusRef`: lokale getters maakten dit tijdzone-afhankelijk.
+        // Uur-modus: op het tijdstip van balk en statusdatum.
+        const finishRef = usesTime ? geo.end : utcDayStart(geo.end);
+        const startRef = usesTime ? geo.start : utcDayStart(geo.start);
+        const fullyDoneByStatus = c >= 1 && finishRef <= statusRef;
+        const notYetStarted = c === 0 && startRef >= statusRef;
         if (!fullyDoneByStatus && !notYetStarted) {
           progressX = geo.x1 + (geo.x2 - geo.x1) * c;
         }

@@ -11,8 +11,8 @@ import { ActivityCodeType, CustomFieldDef, CustomFieldType, CustomFieldValue } f
 import { Baseline } from '@/types/baseline';
 import type { CustomTaskType } from '@/types/taskType';
 import {
-  deriveHoursPerDay, effectiveCalendarByTask, minutesToClock, minutesToIsoDuration, scalarHourFromClock,
-  taskMinutesForWrite,
+  canonicalizeBands, clockToMinutes, deriveHoursPerDay, effectiveCalendarByTask, minutesToClock, minutesToIsoDuration,
+  scalarHourFromClock, taskMinutesForWrite,
 } from '@/services/subdayIo';
 import { effectiveWorkTimeBands } from '@/utils/effectiveWorkTime';
 import type { ImportResult, RecordedSourceFormat } from '@/services/importTypes';
@@ -1011,6 +1011,10 @@ interface WriteCalendarResult {
   /** De `IFCTIMEPERIOD`s zijn de EFFECTIEVE banden van een SCALAIRE kalender (een urentaak
    *  gebruikt hem), niet de expliciete `workTime` van een uurkalender. */
   materializedScalarBands: boolean;
+  /** Een DAGkalender zonder gematerialiseerde blokken, waarvan de lezer de ene geschreven periode zelf
+   *  als afwijkend ziet (`canonicalizeBands`: een hele dag of over middernacht) en dus zonder markering
+   *  zou promoveren naar een uurkalender. */
+  scalarPeriodReadsAsHour: boolean;
   /** `WorkingTimes` draagt meer dan één weekgroep (werkblokken die per weekdag verschillen, zie
    *  `weekBandGroups`). Dan is de scalar werktijd niet eenduidig uit de periodes af te leiden: een
    *  oudere lezer neemt de eerste groep, deze lezer de eerste werkdag met blokken. */
@@ -1081,6 +1085,7 @@ function writeCalendar(
   // Work time recurrence (weekdays)
   let firstPeriod: [string, string] | undefined;
   let perDayWeek = false;
+  let scalarPeriodReadsAsHour = false;
   const workTime = cal.workTime ?? (includeEffectiveScalarBands ? effectiveWorkTimeBands(cal) : undefined);
   // Werkblokken die per weekdag verschillen ⇒ meer groepen, elk een eigen `IFCWORKTIME` (zie
   // `weekBandGroups`). Een uniforme week (één groep) en een kalender zonder blokken nemen de tak
@@ -1133,6 +1138,13 @@ function writeCalendar(
       const timePeriodId = addLine(ctx, '_timeperiod', `IFCTIMEPERIOD('${startTime}','${endTime}')`);
       timePeriodRefs = `#${timePeriodId}`;
       firstPeriod = [startTime, endTime];
+      // Leest de lezer deze ene periode zelf als afwijkend (een hele dag 00:00–24:00, of over
+      // middernacht; `canonicalizeBands`), dan promoveert hij de dagkalender zonder markering naar een
+      // uurkalender, met de dagsom als uren per dag (0402ScheduleMSP.xml: 8 ⇒ 24). Zelfde toets als de
+      // lezer, op dezelfde klokstrings.
+      const s = clockToMinutes(startTime);
+      const e = clockToMinutes(endTime);
+      scalarPeriodReadsAsHour = s != null && e != null && canonicalizeBands({ 1: [{ start: s, end: e }] }).deviates;
     }
     // WeekdayComponent en TimePeriods zijn OPTIONAL SET/LIST [1:?]: een lege lijst `()` is ongeldig,
     // dus leeg ⇒ `$` (een kalender zonder werkdagen, of een uurkalender zonder blokken). De lezer leest
@@ -1199,6 +1211,7 @@ function writeCalendar(
       ? { start: scalarHourFromClock(firstPeriod[0]), end: scalarHourFromClock(firstPeriod[1]) }
       : undefined,
     materializedScalarBands: !cal.workTime && workTime !== undefined,
+    scalarPeriodReadsAsHour,
     perDayWeek,
     readerHourCalendarHoursPerDay: cal.workTime ? writtenWeekHoursPerDay(groups) : undefined,
   };
@@ -1246,6 +1259,9 @@ function writtenWeekHoursPerDay(groups: readonly WeekBandGroup[]): number {
  *  - `IsHourCalendar = .F.`: alleen wanneer de `IFCTIMEPERIOD`s gematerialiseerde effectieve banden van
  *    een SCALAIRE kalender zijn (een urentaak gebruikt hem). IFC zelf ziet daar gewoon de lunchpauze
  *    (interop); de OPS-lezer weet zo dat de kalender scalair was en promoveert hem niet naar uur-modus.
+ *    Ook bij een SCALAIRE kalender waarvan de lezer de ene periode zelf als afwijkend ziet (een hele dag
+ *    00:00–24:00, of over middernacht; `scalarPeriodReadsAsHour`): zonder markering werd zo'n
+ *    dagkalender na heropenen een uurkalender met de dagsom als uren per dag.
  */
 function writeCalendarGenerationMeta(
   ctx: WriteContext,
@@ -1255,8 +1271,9 @@ function writeCalendarGenerationMeta(
 ): void {
   const {
     calStepId, workingExceptionStepIds, readerScalarHours, materializedScalarBands, perDayWeek,
-    readerHourCalendarHoursPerDay,
+    readerHourCalendarHoursPerDay, scalarPeriodReadsAsHour,
   } = written;
+  const markScalar = materializedScalarBands || scalarPeriodReadsAsHour;
   const gen = cal.generation;
   // De uren per dag die de lezer zonder deze eigenschap zou afleiden: bij een dagkalender
   // einde − begin, bij een uurkalender de modale dagsom van de geschreven blokken.
@@ -1279,7 +1296,7 @@ function writeCalendarGenerationMeta(
   const needsWorkEndHour = Number.isFinite(cal.workEndHour)
     && (perDayWeek || readerScalarHours?.end !== cal.workEndHour);
   if (!gen && !cal.libraryOrigin && !needsHoursPerDayOverride && !hasWorkingExceptions
-    && !hasSimpleBreak && !isHourCalendar && !materializedScalarBands && !needsWorkStartHour && !needsWorkEndHour
+    && !hasSimpleBreak && !isHourCalendar && !markScalar && !needsWorkStartHour && !needsWorkEndHour
     && !hasP6Source && !hasRejectedPenaltyDiagnostic) return;
   const props: number[] = [];
   if (gen) {
@@ -1329,7 +1346,7 @@ function writeCalendarGenerationMeta(
   if (isHourCalendar) {
     props.push(addLine(ctx, `_opscal_hourmode_${cal.id}`,
       `IFCPROPERTYSINGLEVALUE('IsHourCalendar',$,IFCBOOLEAN(.T.),$)`));
-  } else if (materializedScalarBands) {
+  } else if (markScalar) {
     props.push(addLine(ctx, `_opscal_hourmode_${cal.id}`,
       `IFCPROPERTYSINGLEVALUE('IsHourCalendar',$,IFCBOOLEAN(.F.),$)`));
   }

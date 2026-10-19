@@ -212,7 +212,61 @@ const baseOptions = (over: Partial<PrintOptions> = {}): PrintOptions => ({
   ok(bulges.length >= 1 && bulges.every(b => b.x > spineX), 'progress: t-norm stulpt rechts uit (completion 0.6)');
   const lastBar = Math.max(...roundRects.filter(r => r.h > 10).map(r => r.seq));
   ok(ln.seq > lastBar, 'progress: de referentielijn ligt boven alle activiteitbalken');
-  ok(texts.some(t => t.text === 'Voortgangsdatum'), 'progress: de exportkop benoemt de voortgangsdatum');
+  ok(texts.some(t => t.text === 'Voortgangsdatum 07-01-2026'), 'progress: de exportkop benoemt de voortgangsdatum, in de datumnotatie');
+}
+{
+  // Statuslijn met tijd (besluit eigenaar 2026-10-17): dezelfde positieregel als het scherm
+  // (`statusDateInstant`): 12:00 ligt op de helft van de dagbreedte, zonder tijd op het begin van de
+  // dag. Het label noemt de datum in de datumnotatie plus de tijd in de tijdnotatie.
+  const lineX = (statusDate: string, over: Partial<PrintOptions> = {}) => {
+    const r = record(FIX_TASKS, [], cal, baseOptions({ statusLine: 'statusDate', statusDate, ...over }));
+    const d = r.paths.filter(p => p.dash.length === 2 && p.dash[0] === 5);
+    return { x: d.length === 1 ? d[0].pts[0].x : NaN, texts: r.texts };
+  };
+  // Uur-modus (projectkalender met werktijdblokken): de solver gebruikt de tijd, dus lijn en label ook.
+  const BAND = [{ start: 7 * 60, end: 15 * 60 }];
+  const hourCal = { ...cal, workTime: { byWeekday: { 1: BAND, 2: BAND, 3: BAND, 4: BAND, 5: BAND, 6: BAND, 7: BAND } } } as WorkCalendar;
+  const lineXIn = (calendar: WorkCalendar, statusDate: string, over: Partial<PrintOptions> = {}) => {
+    const r = record(FIX_TASKS, [], calendar, baseOptions({ statusLine: 'statusDate', statusDate, ...over }));
+    const d = r.paths.filter(p => p.dash.length === 2 && p.dash[0] === 5);
+    return { x: d.length === 1 ? d[0].pts[0].x : NaN, texts: r.texts };
+  };
+  const day = lineX('2026-01-07');
+  const next = lineX('2026-01-08');
+  const noon = lineXIn(hourCal, '2026-01-07T12:00');
+  const five = lineXIn(hourCal, '2026-01-07T17:00', { dateNotation: 'mdy', timeNotation: '12h' });
+  // Dag-modus (deze `cal` heeft geen werktijdblokken): de solver negeert de tijd ⇒ lijn op de dagrand,
+  // label zonder tijd, zoals op main (besluit orkestrator 2026-10-19).
+  const dayFive = lineX('2026-01-07T17:00');
+  ok(Math.abs(dayFive.x - day.x) < 0.01, `dag-modus: statuslijn 17:00 op de dagrand (got ${dayFive.x.toFixed(2)}, verwacht ${day.x.toFixed(2)})`);
+  ok(dayFive.texts.some(t => t.text === 'Statusdatum 07-01-2026'), 'dag-modus: statuslabel zonder tijd');
+
+  // Voortgangslijn in uur-modus vergelijkt op het tijdstip (review 2026-10-19): een niet-gestarte taak
+  // van 08:00–12:00 op de statusdag is bij statusdatum 17:00 achter ⇒ uitstulping. In dag-modus per
+  // dag: zelfde dag ⇒ niet gestart ⇒ rechte lijn.
+  const T_LATE = mkTask('t-ochtend', 'Ochtendwerk', { time: mkTime({
+    earlyStart: '2026-01-07T08:00', earlyFinish: '2026-01-07T12:00',
+    scheduleStart: '2026-01-07T08:00', scheduleFinish: '2026-01-07T12:00', completion: 0,
+  }) });
+  const progressPts = (calendar: WorkCalendar) => {
+    const r = record([T_LATE], [], calendar, baseOptions({ statusLine: 'progress', statusDate: '2026-01-07T17:00' }));
+    const d = r.paths.filter(p => p.dash.length === 2 && p.dash[0] === 5);
+    return d.length === 1 ? d[0].pts : [];
+  };
+  const hourPts = progressPts(hourCal);
+  const dayPts = progressPts(cal);
+  ok(hourPts.length > 2 && hourPts.some(p => p.x < hourPts[0].x - 1),
+    `uur-modus: voortgangslijn stulpt uit bij een achterlopende ochtendtaak (x ${hourPts.map(p => p.x.toFixed(1)).join(',')})`);
+  ok(dayPts.length > 2 && dayPts.every(p => Math.abs(p.x - dayPts[0].x) < 0.01),
+    `dag-modus: per dag ⇒ niet gestart, rechte voortgangslijn (x ${dayPts.map(p => p.x.toFixed(1)).join(',')})`);
+  const width = next.x - day.x;
+  ok(width > 0 && Math.abs(noon.x - (day.x + width / 2)) < 0.01,
+    `statuslijn 12:00: halverwege de dag (got ${noon.x.toFixed(2)}, verwacht ${(day.x + width / 2).toFixed(2)})`);
+  ok(Math.abs(five.x - (day.x + width * 17 / 24)) < 0.01,
+    `statuslijn 17:00: op 17/24 van de dag (got ${five.x.toFixed(2)}, verwacht ${(day.x + width * 17 / 24).toFixed(2)})`);
+  ok(day.texts.some(t => t.text === 'Statusdatum 07-01-2026'), 'statuslabel zonder tijd: alleen de datum in de datumnotatie');
+  ok(noon.texts.some(t => t.text === 'Statusdatum 07-01-2026 12:00'), 'statuslabel met tijd: datum + tijd (24 uur)');
+  ok(five.texts.some(t => t.text === 'Statusdatum 01-07-2026 5:00 PM'), 'statuslabel volgt datum- en tijdnotatie (mdy, 12 uur)');
 }
 {
   // 'none' en ontbrekende statusDate: geen enkele statuslijn.
