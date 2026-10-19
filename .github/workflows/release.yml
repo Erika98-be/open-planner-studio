@@ -284,14 +284,41 @@ jobs:
       - name: Install frontend dependencies (npm ci)
         run: npm ci
 
+      # macOS-signing en notarisatie met de organisatie-secrets (APPLE_*), zelfde
+      # route als open-pdf-studio. Notarisatie via een App Store Connect API-key:
+      # Apple-ID + app-wachtwoord gaf daar een blijvende HTTP 500 op de notary-API.
+      # tauri-action importeert het certificaat zelf in een tijdelijke keychain;
+      # alleen de .p8-sleutel moet als bestand klaarstaan.
+      - name: Write App Store Connect API key (macOS)
+        if: matrix.platform == 'macos-latest'
+        env:
+          APPLE_API_KEY_CONTENT: ${{ secrets.APPLE_API_KEY_CONTENT }}
+        run: |
+          printf '%s' "$APPLE_API_KEY_CONTENT" > "$RUNNER_TEMP/apple-api-key.p8"
+          chmod 600 "$RUNNER_TEMP/apple-api-key.p8"
+
       - name: Build Tauri app
         uses: tauri-apps/tauri-action@action-v0.6.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Alleen de macOS-leg krijgt de Apple-secrets; Linux krijgt lege waarden.
+          APPLE_CERTIFICATE: ${{ matrix.platform == 'macos-latest' && secrets.APPLE_CERTIFICATE || '' }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ matrix.platform == 'macos-latest' && secrets.APPLE_CERTIFICATE_PASSWORD || '' }}
+          APPLE_SIGNING_IDENTITY: ${{ matrix.platform == 'macos-latest' && secrets.APPLE_SIGNING_IDENTITY || '' }}
+          APPLE_API_ISSUER: ${{ matrix.platform == 'macos-latest' && secrets.APPLE_API_ISSUER || '' }}
+          APPLE_API_KEY: ${{ matrix.platform == 'macos-latest' && secrets.APPLE_API_KEY || '' }}
+          APPLE_API_KEY_PATH: ${{ matrix.platform == 'macos-latest' && format('{0}/apple-api-key.p8', runner.temp) || '' }}
+          APPLE_TEAM_ID: ${{ matrix.platform == 'macos-latest' && secrets.APPLE_TEAM_ID || '' }}
         with:
           args: ${{ matrix.args }}
           releaseId: ${{ needs.create-release.outputs.release_id }}
           includeUpdaterJson: true
+
+      # Faalt de release als de dmg niet gesigneerd, niet genotariseerd of niet
+      # door Gatekeeper geaccepteerd is. De draft blijft dan staan (niet gepubliceerd).
+      - name: Verify macOS signature and notarization
+        if: matrix.platform == 'macos-latest'
+        run: bash scripts/macos-verify-dmg.sh src-tauri/target/universal-apple-darwin/release/bundle/dmg
 
   build-windows:
     needs: [create-release, build-linux-mac]
