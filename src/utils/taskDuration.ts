@@ -1,7 +1,7 @@
 import type { Task } from '@/types/task';
-import type { WorkCalendar } from '@/types/calendar';
+import { isHourModeCalendar, type WorkCalendar } from '@/types/calendar';
 import type { TFunction } from 'i18next';
-import { isHourCalendar, deriveHoursPerDay } from '@/services/subdayIo';
+import { deriveHoursPerDay } from '@/services/subdayIo';
 import { formatDuration, type DurationSuffixes } from '@/utils/durationFormat';
 import { formatReportNumber } from '@/utils/reportNumber';
 import type { DurationDisplay } from '@/types/view';
@@ -39,7 +39,7 @@ export function effectiveCalendarOf(
  * (Bevinding 8), anders de opgegeven scalar `hoursPerDay`.
  */
 export function effHoursPerDay(cal: WorkCalendar): number {
-  return isHourCalendar(cal) ? deriveHoursPerDay(cal.workTime!, cal.hoursPerDay) : cal.hoursPerDay;
+  return isHourModeCalendar(cal) ? deriveHoursPerDay(cal.workTime!, cal.hoursPerDay) : cal.hoursPerDay;
 }
 
 /**
@@ -207,7 +207,7 @@ export function detectMixedCalendars(
   const consider = (cal: WorkCalendar) => {
     const hpd = effHoursPerDay(cal);
     hpdSet.add(hpd);
-    const hour = isHourCalendar(cal);
+    const hour = isHourModeCalendar(cal);
     if (!seen.has(cal.id)) seen.set(cal.id, { id: cal.id, name: cal.name, hpd, isHour: hour });
   };
   consider(projectCal);

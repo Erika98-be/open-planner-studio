@@ -7,7 +7,7 @@ import type { Task, ExternalLink } from '@/types/task';
 import { externalSourceSide } from '@/engine/externalLinks';
 import { formatExternalLagShort, parseExternalLagInput } from '@/engine/taskGrid/relationFormat';
 import { effectiveCalendarOf } from '@/utils/taskDuration';
-import { isHourCalendar } from '@/services/subdayIo';
+import { isHourModeCalendar } from '@/types/calendar';
 import { buildImportLabels } from '@/i18n/importLabels';
 import { EXTERNAL_LINKS_HELP_ARTICLE_ID } from '@/state/helpArticles';
 import { computedFinish, computedStart } from '@/utils/taskDates';
@@ -101,7 +101,7 @@ export function ExternalLinkDialog({ taskId, linkId, onClose }: { taskId: string
   const existing = tasks.find(task => task.id === taskId)?.externalLinks?.find(link => link.id === linkId);
   const ownerTask = tasks.find(task => task.id === taskId);
   const ownerHourMode = enableHourPlanning && !!ownerTask
-    && isHourCalendar(effectiveCalendarOf(ownerTask, calendar, calendars));
+    && isHourModeCalendar(effectiveCalendarOf(ownerTask, calendar, calendars));
 
   // Alleen pad-refs zijn read-only te parsen (parseExternalSource is Tauri-only).
   const recent = useMemo(
