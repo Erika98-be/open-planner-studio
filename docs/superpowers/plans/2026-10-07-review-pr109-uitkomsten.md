@@ -1647,3 +1647,5 @@ Testversie (release-check, poort 3049) is NIET bijgewerkt met de PR's van vandaa
   reviewer raadt aan vóór merge, volgens de regel VERVOLG), Ontbreekt-regel soms de tweede, testtitel, opruimen.
   Orkestrator verbeterde de PR-tekst over de plek van `data-ops-task-recorded-dates-missing`. ⇒ testversie bijwerken
   na de #375-check, dan korte eigenaarscheck, dan merge.
+- **Checkstap #375 stap 4 opnieuw: goed** — eigenaar 2026-10-19: "dit werkt nu perfect" (strook + taak onderaan, zoals
+  de repro). De eerste poging gaf waarschijnlijk een andere stand van de layoutknop. ⇒ oordeel stap 1–3 en 5 gevraagd.
