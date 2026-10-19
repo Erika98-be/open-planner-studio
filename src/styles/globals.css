@@ -1934,8 +1934,12 @@ body {
   transition: background-color 120ms ease, text-decoration-thickness 120ms ease;
 }
 
-/* Rolmarkering: even groot als het kleurvierkantje bij de toewijzingen (1em). Een voorganger is een
-   rondje, een opvolger een vierkantje — de vorm draagt de rol, niet alleen de kleur (issue #65). */
+/* Rolmarkering: even groot als het kleurvierkantje bij de toewijzingen (1em), zonder losse rand. Een
+   voorganger is een rondje, een opvolger een vierkantje — de vorm draagt de rol, niet alleen de kleur
+   (issue #65). Op donker en hoog contrast halen de tracekleuren zelf ≥ 4,7:1. Op licht halen ze dat
+   niet (goud 2,1:1, paars 2,6:1 tegen #FAFAFA); daar krijgt de vorm een rand in zijn eigen kleur,
+   30 % donkerder (≥ 4:1), zodat hij als één vorm leest en niet als een ring (eigenaar 2026-10-19:
+   "er zit nog steeds een wit rondje omheen"). */
 .dependency-wbs-link::before {
   content: '';
   display: inline-block;
@@ -1945,7 +1949,10 @@ body {
   margin-inline-end: 5px;
   vertical-align: -0.15em;
   background: var(--dependency-role-color);
-  border: 1px solid var(--theme-text);
+}
+
+[data-theme="light"] .dependency-wbs-link::before {
+  border: 1px solid color-mix(in srgb, var(--dependency-role-color) 70%, #000);
 }
 
 .dependency-wbs-link[data-dependency-role="predecessor"]::before {

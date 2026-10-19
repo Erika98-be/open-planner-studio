@@ -136,10 +136,22 @@ expectSource(
   css,
   /\.dependency-wbs-link\s*\{[\s\S]*?color:\s*var\(--theme-text\);/,
 );
+// Eigenaar 2026-10-19: geen losse (witte) ring meer om de markering. Op licht haalt de tracekleur
+// zelf geen 3:1, daar krijgt de vorm een rand in een donkerdere tint van zijn eigen kleur.
 expectSource(
-  'rolmarkering behoudt de tracekleur met een contrastrijke buitenlijn',
+  'rolmarkering gebruikt de tracekleur',
   css,
-  /\.dependency-wbs-link::before\s*\{[\s\S]*?background:\s*var\(--dependency-role-color\);[\s\S]*?border:\s*1px solid var\(--theme-text\);/,
+  /\.dependency-wbs-link::before\s*\{[^}]*?background:\s*var\(--dependency-role-color\);/,
+);
+rejectSource(
+  'rolmarkering heeft geen ring in de tekstkleur',
+  css,
+  /\.dependency-wbs-link::before\s*\{[^}]*?border:[^;]*var\(--theme-text\)/,
+);
+expectSource(
+  'rolmarkering op licht: rand in een donkerdere tint van de eigen kleur',
+  css,
+  /\[data-theme="light"\]\s*\.dependency-wbs-link::before\s*\{[^}]*?border:\s*1px solid color-mix\(in srgb, var\(--dependency-role-color\)/,
 );
 expectSource(
   'voorganger en opvolger verschillen zichtbaar in vorm, niet alleen in kleur',
