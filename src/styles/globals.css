@@ -1934,14 +1934,16 @@ body {
   transition: background-color 120ms ease, text-decoration-thickness 120ms ease;
 }
 
+/* Rolmarkering: even groot als het kleurvierkantje bij de toewijzingen (1em). Een voorganger is een
+   rondje, een opvolger een vierkantje — de vorm draagt de rol, niet alleen de kleur (issue #65). */
 .dependency-wbs-link::before {
   content: '';
   display: inline-block;
   box-sizing: border-box;
-  width: 6px;
-  height: 10px;
-  margin-inline-end: 4px;
-  vertical-align: -1px;
+  width: 1em;
+  height: 1em;
+  margin-inline-end: 5px;
+  vertical-align: -0.15em;
   background: var(--dependency-role-color);
   border: 1px solid var(--theme-text);
 }
@@ -1951,7 +1953,7 @@ body {
 }
 
 .dependency-wbs-link[data-dependency-role="successor"]::before {
-  border-radius: 1px;
+  border-radius: 3px;
 }
 
 .dependency-wbs-link:hover {
