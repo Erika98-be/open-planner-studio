@@ -1538,3 +1538,9 @@ Testversie (release-check, poort 3049) is NIET bijgewerkt met de PR's van vandaa
 - **#382 nieuw (worker Opus 5.5): P6 XML-lezer leest constraintlabels** (a6d1b7e72, CI groen; 9 labels + 9 tokens uit
   MPXJ `ConstraintTypeHelper`; OZB-14: 20 constraints terug, projecteinde schuift in 6 projecten) ⇒ review loopt.
   Vervolg: de eigen P6 XML-writer schrijft `CS_*`-tokens ⇒ worker `claude/p6xml-writer-labels`.
+- **#383 nieuw (worker Opus 5.5): capaciteitsmarge** (22958af0f, CI groen; `CAPACITY_EPS = 1e-9` + `exceedsCapacity` op
+  zes plekken incl. nivelleerder) ⇒ review loopt.
+- **Review #380: NEE** — B1 BLOKKEERT prestaties: `deviatingStoredWork` filtert de volledige toewijzingen-draft bij elke
+  P6-duurbewerking (rehab-2 plakken 4.762 rijen 360 s vs 4 s main; paneel 170 vs 90 ms). Verder klopt het op echte
+  bestanden (E-1010 80 → 72: 72/72, één melding, undo byte-gelijk; F5 en IFC-rondgang zonder wijziging). ⇒ fixronde bij
+  de maker met V1 (sleepmelding toont eerste i.p.v. eindwaarde) en V2-tekst; V3–V9 VERVOLG.
