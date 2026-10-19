@@ -1532,3 +1532,6 @@ Testversie (release-check, poort 3049) is NIET bijgewerkt met de PR's van vandaa
   constraint ASAP — geen taak in dit bestand heeft een andere) en `&qa-wbs=4.25` (mijlpaal "Topping out reached", soort
   eindmijlpaal), elk met `&qa-thema=licht|donker`. Codelijst onderaan opent omlaag met maxHeight = ruimte tot de rand en
   scrollt (orkestrator bekeek `/tmp/check368b/code-open-licht.png`; geen fout).
+- **#381 nieuw (worker Opus 5.5): bewerktoetsen dicht onder een venster** (8fa0cc6ad, CI groen; Delete, Backspace,
+  Ctrl+Z/Y/Shift+Z, Ctrl+V, Ctrl+C via `isShortcutBlockedByDialog()`; zoom blijft) ⇒ review loopt. VERVOLG: F5/Ctrl+S
+  onder een venster (besluit), Ctrl+Shift+S zonder poort in dev.
