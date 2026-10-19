@@ -1,5 +1,7 @@
 // De statusdatumlijn staat op het echte tijdstip van de statusdatum (besluit eigenaar 2026-10-17:
-// label en lijn zeggen hetzelfde). De ECHTE GanttRenderer met een opnemende 2D-context-stub (zelfde
+// label en lijn zeggen hetzelfde) — maar alleen als de solver die tijd gebruikt: projectkalender in
+// uur-modus (besluit orkestrator 2026-10-19: toon wat de motor gebruikt). In dag-modus blijven lijn
+// en label op de dagrand, zonder tijd, zoals op main. De ECHTE GanttRenderer met een opnemende 2D-context-stub (zelfde
 // opzet als check-arrow-hour-anchor.ts). Vóór de fix kapte `parseDate` de tijd weg: de lijn stond op
 // het begin van de dag terwijl het label "17:00" zei.
 //
@@ -8,7 +10,8 @@
 //
 //  §1 gestippelde statusdatumlijn (voortgangslijn uit): 17:00, 12:00 en zonder tijd, op drie zooms.
 //  §2 voortgangslijn (de rechte rug op een niet-gestarte taak) ligt op dezelfde X.
-//  §3 het label staat naast die X (rechts, 4 px).
+//  §3 het label staat naast die X (rechts, 4 px) en noemt de tijd alleen in uur-modus.
+//  Elke § draait twee keer: dag-kalender (lijn op de dagrand) en uur-kalender (lijn op het tijdstip).
 //
 // Draait via run.sh. Exit 0 = alles groen.
 const g = globalThis as unknown as Record<string, unknown>;
@@ -19,6 +22,7 @@ import { useAppStore } from '@/state/appStore';
 import { GanttRenderer } from '@/engine/renderer/GanttRenderer';
 import { readGanttPalette } from '@/engine/renderer/themePalette';
 import { parseDate } from '@/utils/dateUtils';
+import type { WorkCalendar } from '@/types/calendar';
 
 const S = () => useAppStore.getState();
 let checks = 0;
@@ -60,13 +64,20 @@ useAppStore.setState((s) => {
 S().recomputeViewRows();
 
 const DAY = '2026-03-02';
-const CASES: Array<[string, number]> = [[`${DAY}T17:00`, 17 / 24], [`${DAY}T12:00`, 12 / 24], [DAY, 0]];
+// [statusdatum, fractie van de dag in uur-modus, labeltekst in uur-modus]
+const CASES: Array<[string, number, string]> = [
+  [`${DAY}T17:00`, 17 / 24, '02-03-2026 17:00'], [`${DAY}T12:00`, 12 / 24, '02-03-2026 12:00'], [DAY, 0, '02-03-2026'],
+];
+const BAND = [{ start: 7 * 60, end: 16 * 60 }];
+const DAY_CAL: WorkCalendar = S().calendar;
+const HOUR_CAL: WorkCalendar = { ...DAY_CAL, id: 'uur', workTime: { byWeekday: { 1: BAND, 2: BAND, 3: BAND, 4: BAND, 5: BAND, 6: [], 7: [] } } } as WorkCalendar;
+ok('voorwaarde: de standaardkalender rekent in dag-modus', !DAY_CAL.workTime);
 
-function render(statusDate: string, zoom: number, progress: boolean) {
+function render(calendar: WorkCalendar, statusDate: string, zoom: number, progress: boolean) {
   const rec = makeCtx();
   const st = S();
   const r = new GanttRenderer(rec.ctx, {
-    rows: st.viewRows, sequences: st.sequences, calendar: st.calendar,
+    rows: st.viewRows, sequences: st.sequences, calendar,
     view: { ...st.view, zoom, scrollX: 0, scrollY: 0, viewStartDate: '2026-02-23' },
     selectedTaskIds: [], canvasWidth: 2400, canvasHeight: 300, rowHeight: 28, headerHeight: 50, palette,
     barSplitMode: 'never', statusDate, showStatusDateLine: true, showProgressLine: progress,
@@ -76,27 +87,33 @@ function render(statusDate: string, zoom: number, progress: boolean) {
   return { ...rec, dayStartX: r.dateToX(parseDate(DAY)) };
 }
 
-for (const zoom of [24, 48, 96]) {
-  for (const [statusDate, fraction] of CASES) {
-    // §1 gestippelde lijn
-    const a = render(statusDate, zoom, false);
-    const want = a.dayStartX + fraction * zoom;
-    const vertical = a.lines.filter(p => p.length === 4 && p[0] === p[2]);
-    ok(`§1 zoom ${zoom} ${statusDate}: één statusdatumlijn`, vertical.length === 1, `${vertical.length} lijnen`);
-    if (vertical.length === 1) {
-      ok(`§1 zoom ${zoom} ${statusDate}: lijn op ${(fraction * 24).toFixed(0)}:00 van de dag`,
-        Math.abs(vertical[0][0] - want) < 0.01, `lijn ${vertical[0][0].toFixed(2)}, verwacht ${want.toFixed(2)}`);
-    }
-    // §3 label rechts naast de lijn (vlakje begint 4 px rechts; tekst nog de padding verder)
-    const label = a.texts.find(x => x.text.startsWith('02-03-2026'));
-    ok(`§3 zoom ${zoom} ${statusDate}: label naast de lijn`, !!label && label.x > want + 4 && label.x < want + 20,
-      label ? `label ${label.x.toFixed(2)}, lijn ${want.toFixed(2)}` : 'geen label');
+for (const [mode, calendar] of [['dag', DAY_CAL], ['uur', HOUR_CAL]] as const) {
+  for (const zoom of [24, 48, 96]) {
+    for (const [statusDate, hourFraction, hourLabel] of CASES) {
+      const fraction = mode === 'uur' ? hourFraction : 0;
+      const wantLabel = mode === 'uur' ? hourLabel : '02-03-2026';
+      const tag = `${mode} zoom ${zoom} ${statusDate}`;
+      // §1 gestippelde lijn
+      const a = render(calendar, statusDate, zoom, false);
+      const want = a.dayStartX + fraction * zoom;
+      const vertical = a.lines.filter(p => p.length === 4 && p[0] === p[2]);
+      ok(`§1 ${tag}: één statusdatumlijn`, vertical.length === 1, `${vertical.length} lijnen`);
+      if (vertical.length === 1) {
+        ok(`§1 ${tag}: lijn op ${(fraction * 24).toFixed(0)}:00 van de dag`,
+          Math.abs(vertical[0][0] - want) < 0.01, `lijn ${vertical[0][0].toFixed(2)}, verwacht ${want.toFixed(2)}`);
+      }
+      // §3 label rechts naast de lijn (vlakje begint 4 px rechts; tekst nog de padding verder)
+      const label = a.texts.find(x => x.text.startsWith('02-03-2026'));
+      ok(`§3 ${tag}: label naast de lijn`, !!label && label.x > want + 4 && label.x < want + 20,
+        label ? `label ${label.x.toFixed(2)}, lijn ${want.toFixed(2)}` : 'geen label');
+      ok(`§3 ${tag}: labeltekst`, label?.text === wantLabel, `kreeg ${JSON.stringify(label?.text)}, verwacht ${JSON.stringify(wantLabel)}`);
 
-    // §2 voortgangslijn: rechte rug op de rij van de niet-gestarte taak
-    const b = render(statusDate, zoom, true);
-    const spine = b.lines.flat().filter((_, i) => i % 2 === 0);
-    ok(`§2 zoom ${zoom} ${statusDate}: voortgangslijn op dezelfde X`,
-      spine.length > 0 && spine.every(x => Math.abs(x - want) < 0.01), `x ${spine.map(x => x.toFixed(2)).join(',')}, verwacht ${want.toFixed(2)}`);
+      // §2 voortgangslijn: rechte rug op de rij van de niet-gestarte taak
+      const b = render(calendar, statusDate, zoom, true);
+      const spine = b.lines.flat().filter((_, i) => i % 2 === 0);
+      ok(`§2 ${tag}: voortgangslijn op dezelfde X`,
+        spine.length > 0 && spine.every(x => Math.abs(x - want) < 0.01), `x ${spine.map(x => x.toFixed(2)).join(',')}, verwacht ${want.toFixed(2)}`);
+    }
   }
 }
 

@@ -6,6 +6,7 @@ import { DateTextInput } from '@/components/common/DateTextInput';
 import { answerActualStartQuestion, type ActualStartAnswers } from '@/state/actualStartQuestion';
 import { actualStartAnswerIssue } from '@/engine/progressEntry';
 import { displayDate, displayDateTime } from '@/utils/displayDate';
+import { statusDateAsUsed, statusDateUsesTime } from '@/utils/statusDateTime';
 import type { ActualStartQuestionItem, ActualStartQuestionRequest } from '@/state/slices/types';
 
 /**
@@ -40,8 +41,10 @@ function issueOf(value: string, item: ActualStartQuestionItem): Issue | null {
 function ActualStartDialogBody({ request }: { request: ActualStartQuestionRequest }) {
   const { t } = useTranslation('common');
   const notation = useAppStore(s => s.ui.dateNotation);
-  // De statusdatum mét tijd als hij er een draagt (besluit eigenaar 2026-10-17).
+  // De statusdatum mét tijd als de solver die tijd gebruikt (uur-modus; besluit orkestrator 2026-10-19).
   const timeNotation = useAppStore(s => s.ui.timeNotation);
+  const usesTime = useAppStore(s => statusDateUsesTime(s.calendar));
+  const statusText = (iso: string) => displayDateTime(statusDateAsUsed(iso, usesTime), notation, timeNotation);
   const [answers, setAnswers] = useState<ActualStartAnswers>(() => Object.fromEntries(
     request.items.map(item => [item.taskId, item.latest.slice(0, 10)]),
   ));
@@ -71,8 +74,8 @@ function ActualStartDialogBody({ request }: { request: ActualStartQuestionReques
 
   const first = request.items[0];
   const intro = request.items.length === 1
-    ? t('actualStartQuestion.introOne', { name: first.taskName, statusDate: displayDateTime(first.statusDate, notation, timeNotation) })
-    : t('actualStartQuestion.introMany', { statusDate: displayDateTime(first.statusDate, notation, timeNotation) });
+    ? t('actualStartQuestion.introOne', { name: first.taskName, statusDate: statusText(first.statusDate) })
+    : t('actualStartQuestion.introMany', { statusDate: statusText(first.statusDate) });
 
   return (
     <Dialog
@@ -106,7 +109,7 @@ function ActualStartDialogBody({ request }: { request: ActualStartQuestionReques
                   {issue === 'required'
                     ? t('actualStartQuestion.required')
                     : issue === 'afterStatusDate'
-                      ? t('actualStartQuestion.afterStatusDate', { date: displayDateTime(item.statusDate, notation, timeNotation) })
+                      ? t('actualStartQuestion.afterStatusDate', { date: statusText(item.statusDate) })
                       : t('actualStartQuestion.afterActualFinish', { date: latest })}
                 </span>
               )}

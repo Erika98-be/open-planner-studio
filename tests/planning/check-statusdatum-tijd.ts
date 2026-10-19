@@ -2,7 +2,8 @@ import './domStub';
 // Statusdatum met tijd (besluit eigenaar 2026-10-17): de tijd is zichtbaar en wijzigbaar in het lint,
 // en het Gantt-label volgt de datum- en tijdnotatie. Deze check toetst de headless kant.
 //
-//  §1 de regels van het lint: wanneer het tijdveld zichtbaar is, en hoe een tijd wordt gezet/weggehaald.
+//  §1 de regels van het lint: het tijdveld is zichtbaar precies als de solver de tijd gebruikt
+//     (projectkalender in uur-modus, besluit orkestrator 2026-10-19), en hoe een tijd wordt gezet/weggehaald.
 //  §2 het Gantt-label: datum in de Datumnotatie, tijd in de Tijdnotatie, nooit ruwe ISO.
 //  §3 de echte route: de MSPDI-fixture openen (17:00), de tijd naar 12:00 zetten (`setStatusDate`):
 //     één undo-stap, planning verouderd; na doorrekenen schuift het vroegste einde 22-09 ⇒ 21-09.
@@ -19,7 +20,10 @@ import { createAppStoreContext } from '@/state/appStore';
 import { writeP6XMLWithReport } from '@/services/p6/p6xmlWriter';
 import { writeMSPDI } from '@/services/msproject/mspdiWriter';
 import { GanttRenderer } from '@/engine/renderer/GanttRenderer';
-import { statusDateMinutes, statusDateShowsTime, withStatusTime } from '@/utils/statusDateTime';
+import { statusDateAsUsed, statusDateMinutes, statusDateUsesTime, withStatusTime } from '@/utils/statusDateTime';
+import { CalendarEngine } from '@/engine/scheduler/CalendarEngine';
+import { createDefaultCalendar } from '@/engine/calendar/defaultCalendar';
+import type { WorkCalendar } from '@/types/calendar';
 import type { DocumentPayload } from '@/state/documentContract';
 import type { OpenedImport } from '@/services/importTypes';
 import { installDOMParser } from './xmldom-shim';
@@ -47,10 +51,15 @@ const quiet = <T>(fn: () => T): T => {
 };
 
 // ── §1 ──────────────────────────────────────────────────────────────────────
-same('§1 geen tijd, geen urenplanning ⇒ alleen datum', statusDateShowsTime('2006-09-20', false), false);
-same('§1 geen statusdatum, geen urenplanning ⇒ alleen datum', statusDateShowsTime(undefined, false), false);
-same('§1 tijd in de statusdatum ⇒ tijdveld', statusDateShowsTime('2006-09-20T17:00', false), true);
-same('§1 urenplanning aan ⇒ tijdveld', statusDateShowsTime('2006-09-20', true), true);
+const dayCal = createDefaultCalendar();
+const hourCal = { ...dayCal, workTime: { byWeekday: { 1: [{ start: 480, end: 1020 }] } } } as WorkCalendar;
+same('§1 dagkalender ⇒ geen tijdveld', statusDateUsesTime(dayCal), false);
+same('§1 uurkalender ⇒ tijdveld', statusDateUsesTime(hourCal), true);
+// Zelfde predicaat als de rekenkern: `CalendarEngine.isHourMode` van de projectkalender.
+same('§1 dagkalender: zelfde uitkomst als de rekenkern', statusDateUsesTime(dayCal), new CalendarEngine(dayCal).isHourMode);
+same('§1 uurkalender: zelfde uitkomst als de rekenkern', statusDateUsesTime(hourCal), new CalendarEngine(hourCal).isHourMode);
+same('§1 dag-modus: label zonder tijd', statusDateAsUsed('2006-09-20T17:00', false), '2006-09-20');
+same('§1 uur-modus: label met tijd', statusDateAsUsed('2006-09-20T17:00', true), '2006-09-20T17:00');
 same('§1 minuten van 17:00', statusDateMinutes('2006-09-20T17:00'), 1020);
 same('§1 minuten zonder tijd', statusDateMinutes('2006-09-20'), undefined);
 same('§1 tijd zetten', withStatusTime('2006-09-20T17:00', 720), '2006-09-20T12:00');
@@ -60,11 +69,12 @@ same('§1 tijd zonder datum bestaat niet', withStatusTime(undefined, 720), undef
 
 // ── §2 ──────────────────────────────────────────────────────────────────────
 const label = GanttRenderer.statusDateBadgeLabel;
-same('§2 dmy + tijd', label('2006-09-20T17:00', 'dmy', '24h'), '20-09-2006 17:00');
-same('§2 dmy zonder tijd', label('2006-09-20', 'dmy', '24h'), '20-09-2006');
-same('§2 mdy + 12 uur', label('2006-09-20T17:00', 'mdy', '12h'), '09-20-2006 5:00 PM');
-same('§2 ymd', label('2006-09-20T12:00', 'ymd', '24h'), '2006-09-20 12:00');
-same('§2 standaard (geen notatie meegegeven) = dmy 24 uur', label('2006-09-20T12:00'), '20-09-2006 12:00');
+same('§2 dmy + tijd', label('2006-09-20T17:00', true, 'dmy', '24h'), '20-09-2006 17:00');
+same('§2 dmy zonder tijd', label('2006-09-20', true, 'dmy', '24h'), '20-09-2006');
+same('§2 mdy + 12 uur', label('2006-09-20T17:00', true, 'mdy', '12h'), '09-20-2006 5:00 PM');
+same('§2 ymd', label('2006-09-20T12:00', true, 'ymd', '24h'), '2006-09-20 12:00');
+same('§2 standaard (geen notatie meegegeven) = dmy 24 uur', label('2006-09-20T12:00', true), '20-09-2006 12:00');
+same('§2 dag-modus: tijd valt weg', label('2006-09-20T17:00', false, 'dmy', '24h'), '20-09-2006');
 
 // ── §3 ──────────────────────────────────────────────────────────────────────
 const OPEN = { filePath: null, fileHandle: null, recompute: true, fit: false, hourDataNotice: false, linkedOpen: true } as const;
@@ -78,6 +88,7 @@ const undoDepth = (s: ReturnType<typeof openStore>) => s.getState().historyEvent
 
 const store = openStore(await parseOpenedFile({ name: 'statusdatum-1700.xml', text: FIXTURE }));
 same('§3 MSPDI-lezer houdt 17:00', store.getState().project.statusDate, '2006-09-20T17:00');
+same('§3 fixture-projectkalender rekent in uur-modus', statusDateUsesTime(store.getState().calendar), true);
 store.getState().runCPM();
 same('§3 met 17:00 eindigt het restwerk op 22-09', finishOf(store.getState())?.slice(0, 10), '2006-09-22');
 const depth = undoDepth(store);

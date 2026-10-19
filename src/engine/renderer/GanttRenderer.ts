@@ -3,7 +3,7 @@ import type { BaselineOverlay } from '@/types/baseline';
 import { Sequence } from '@/types/sequence';
 import type { ViewState, BarSplitMode, DateNotation, DurationDisplay, TimeNotation } from '@/types/view';
 import { displayDateTime } from '@/utils/displayDate';
-import { statusDateInstant } from '@/utils/statusDateTime';
+import { statusDateAsUsed, statusDateInstant, statusDateUsesTime } from '@/utils/statusDateTime';
 import { formatAxisClock } from '@/utils/displayTime';
 import { parseDate, parseInstant, addCalendarDays, diffCalendarDays, isoDayOfWeek, getWeekNumberFor, utcDayStart, localNowOnDayAxis, MS_PER_DAY } from '@/utils/dateUtils';
 import { holidayEndDate, WorkCalendar } from '@/types/calendar';
@@ -812,20 +812,23 @@ export class GanttRenderer {
    * Het vlakje staat rechts van de lijn, tenzij het dan buiten het canvas zou vallen — dan links.
    */
   /**
-   * X van de statusdatum op de tijdas (lijn, label en voortgangslijn delen hem). Met een tijd
-   * (`YYYY-MM-DDTHH:mm`) staat de lijn op dat tijdstip, zoals een uurtaakbalk: `statusDateInstant`
-   * (gedeeld met de printexport) en dezelfde `dateToX` van de as. Op de kalenderas is dat de fractie van de kalenderdag (17:00 =
-   * 17/24 van de dagbreedte, ook bij dagzoom); op de werkdag-as bepaalt die as zelf de positie.
-   * Zonder tijd: het begin van de dag, zoals altijd (besluit eigenaar 2026-10-17: label en lijn
-   * zeggen hetzelfde).
+   * X van de statusdatum op de tijdas (lijn, label en voortgangslijn delen hem). Rekent de
+   * projectkalender in uur-modus (`statusDateUsesTime`, dezelfde regel als de solver), dan staat de
+   * lijn op het tijdstip, zoals een uurtaakbalk: op de kalenderas is dat de fractie van de kalenderdag
+   * (17:00 = 17/24 van de dagbreedte, ook bij dagzoom); op de werkdag-as bepaalt die as zelf de positie.
+   * In dag-modus, of zonder tijd: het begin van de dag, want de solver gebruikt de tijd dan niet
+   * (besluit orkestrator 2026-10-19: toon wat de motor gebruikt).
    */
   statusDateX(iso: string): number {
-    return this.dateToX(statusDateInstant(iso));
+    return this.dateToX(statusDateInstant(iso, statusDateUsesTime(this.opts.calendar)));
   }
 
-  /** De tekst van het statusdatumlabel. Statisch en puur, zodat een check hem zonder canvas leest. */
-  static statusDateBadgeLabel(iso: string, dateNotation: DateNotation = 'dmy', timeNotation: TimeNotation = '24h'): string {
-    return displayDateTime(iso, dateNotation, timeNotation);
+  /**
+   * De tekst van het statusdatumlabel: de datum in de Datumnotatie, plus de tijd in de Tijdnotatie als
+   * de rekenkern die tijd gebruikt (`usesTime`). Statisch en puur, zodat een check hem zonder canvas leest.
+   */
+  static statusDateBadgeLabel(iso: string, usesTime: boolean, dateNotation: DateNotation = 'dmy', timeNotation: TimeNotation = '24h'): string {
+    return displayDateTime(statusDateAsUsed(iso, usesTime), dateNotation, timeNotation);
   }
 
   private drawStatusDateBadge(): void {
@@ -837,9 +840,10 @@ export class GanttRenderer {
     const x = this.statusDateX(iso);
     if (x < 0 || x >= canvasWidth) return;
 
-    // Datum in de Datumnotatie, plus de tijd in de Tijdnotatie als de statusdatum er een draagt
-    // (besluit eigenaar 2026-10-17): `20-09-2006 17:00`, niet de ruwe ISO-tekst.
-    const label = GanttRenderer.statusDateBadgeLabel(iso, this.opts.dateNotation, this.opts.timeNotation);
+    // Datum in de Datumnotatie (besluit eigenaar 2026-10-17: niet de ruwe ISO-tekst), plus de tijd in
+    // de Tijdnotatie als de solver die tijd gebruikt (uur-modus): `20-09-2006 17:00`.
+    const label = GanttRenderer.statusDateBadgeLabel(
+      iso, statusDateUsesTime(this.opts.calendar), this.opts.dateNotation, this.opts.timeNotation);
     this.ctx.save();
     const h = GanttRenderer.DRAG_BADGE_H;
     const w = this.pillWidth(label);

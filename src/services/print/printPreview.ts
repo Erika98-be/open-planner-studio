@@ -36,7 +36,7 @@ import { formatReportNumber } from '@/utils/reportNumber';
 import type { BaselineOverlay } from '@/types/baseline';
 import { ellipsize } from '@/engine/renderer/textFit';
 import { displayDate, displayDateTime } from '@/utils/displayDate';
-import { statusDateInstant } from '@/utils/statusDateTime';
+import { statusDateAsUsed, statusDateInstant, statusDateUsesTime } from '@/utils/statusDateTime';
 import { shownStart, shownFinish, floatBandEnd } from '@/utils/taskDates';
 import { effectiveCalendarOf, effHoursPerDay, formatTaskDurationText } from '@/utils/taskDuration';
 import type { DurationSuffixes } from '@/utils/durationFormat';
@@ -1200,9 +1200,9 @@ export function renderReport(
   let drawStatusReferenceLine: (() => void) | null = null;
   if (options.statusDate && options.statusLine && options.statusLine !== 'none') {
     // `statusDay` blijft de kalenderdag voor de vergelijkingen hieronder; de X volgt het tijdstip
-    // met dezelfde regel als het scherm (`statusDateInstant`, besluit eigenaar 2026-10-17).
+    // met dezelfde regel als het scherm (`statusDateInstant`): alleen in uur-modus, net als de solver.
     const statusDay = parseDate(options.statusDate);
-    statusLineX = dateToX(statusDateInstant(options.statusDate));
+    statusLineX = dateToX(statusDateInstant(options.statusDate, statusDateUsesTime(calendar)));
     if (statusLineX > m.tableWidth && statusLineX < canvasWidth) {
       drawStatusReferenceLine = () => {
         d2d.strokeStyle = PRINT_COLORS.today;
@@ -1573,7 +1573,7 @@ export function renderReport(
   // ---- TIMELINE HEADER ----
   drawTimelineHeader(
     d2d, m, canvasWidth, minDate, calendarDays, timelineDates, compressed, zoom, dateToX, options,
-    todayVisible ? todayX : null, statusLineX, windowOnCalendarAxis,
+    todayVisible ? todayX : null, statusLineX, windowOnCalendarAxis, statusDateUsesTime(calendar),
   );
 
   // ---- TASK TABLE ----
@@ -1976,6 +1976,9 @@ function drawTimelineHeader(
   /** Tijdvenster dat op de kalender-as is teruggevallen (geen werkdag erin): dan óók de
    *  weekenddagen nummeren, anders staat er geen enkel dagcijfer. */
   showWeekendDayNumbers = false,
+  /** Rekent de projectkalender met de tijd van de statusdatum (`statusDateUsesTime`)? Alleen dan
+   *  noemt het statuslabel de tijd. */
+  statusUsesTime = false,
 ) {
   const top = m.projectHeaderHeight;
   const h = m.timelineHeaderHeight;
@@ -2000,7 +2003,7 @@ function drawTimelineHeader(
     : reserveHeaderLineLabel(d2d, m, canvasWidth, statusLineX,
       `${options.statusLine === 'progress'
         ? options.labels?.progressDate ?? 'Voortgangsdatum'
-        : options.labels?.statusDate ?? 'Statusdatum'} ${displayDateTime(options.statusDate, options.dateNotation ?? 'dmy', options.timeNotation ?? '24h')}`);
+        : options.labels?.statusDate ?? 'Statusdatum'} ${displayDateTime(statusDateAsUsed(options.statusDate!, statusUsesTime), options.dateNotation ?? 'dmy', options.timeNotation ?? '24h')}`);
 
   // Background
   d2d.fillStyle = PRINT_COLORS.headerBg;

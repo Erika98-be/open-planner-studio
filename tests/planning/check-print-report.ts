@@ -223,10 +223,23 @@ const baseOptions = (over: Partial<PrintOptions> = {}): PrintOptions => ({
     const d = r.paths.filter(p => p.dash.length === 2 && p.dash[0] === 5);
     return { x: d.length === 1 ? d[0].pts[0].x : NaN, texts: r.texts };
   };
+  // Uur-modus (projectkalender met werktijdblokken): de solver gebruikt de tijd, dus lijn en label ook.
+  const BAND = [{ start: 7 * 60, end: 15 * 60 }];
+  const hourCal = { ...cal, workTime: { byWeekday: { 1: BAND, 2: BAND, 3: BAND, 4: BAND, 5: BAND, 6: BAND, 7: BAND } } } as WorkCalendar;
+  const lineXIn = (calendar: WorkCalendar, statusDate: string, over: Partial<PrintOptions> = {}) => {
+    const r = record(FIX_TASKS, [], calendar, baseOptions({ statusLine: 'statusDate', statusDate, ...over }));
+    const d = r.paths.filter(p => p.dash.length === 2 && p.dash[0] === 5);
+    return { x: d.length === 1 ? d[0].pts[0].x : NaN, texts: r.texts };
+  };
   const day = lineX('2026-01-07');
   const next = lineX('2026-01-08');
-  const noon = lineX('2026-01-07T12:00');
-  const five = lineX('2026-01-07T17:00', { dateNotation: 'mdy', timeNotation: '12h' });
+  const noon = lineXIn(hourCal, '2026-01-07T12:00');
+  const five = lineXIn(hourCal, '2026-01-07T17:00', { dateNotation: 'mdy', timeNotation: '12h' });
+  // Dag-modus (deze `cal` heeft geen werktijdblokken): de solver negeert de tijd ⇒ lijn op de dagrand,
+  // label zonder tijd, zoals op main (besluit orkestrator 2026-10-19).
+  const dayFive = lineX('2026-01-07T17:00');
+  ok(Math.abs(dayFive.x - day.x) < 0.01, `dag-modus: statuslijn 17:00 op de dagrand (got ${dayFive.x.toFixed(2)}, verwacht ${day.x.toFixed(2)})`);
+  ok(dayFive.texts.some(t => t.text === 'Statusdatum 07-01-2026'), 'dag-modus: statuslabel zonder tijd');
   const width = next.x - day.x;
   ok(width > 0 && Math.abs(noon.x - (day.x + width / 2)) < 0.01,
     `statuslijn 12:00: halverwege de dag (got ${noon.x.toFixed(2)}, verwacht ${(day.x + width / 2).toFixed(2)})`);
