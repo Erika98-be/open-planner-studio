@@ -47,7 +47,7 @@ Van een taak die gestart is, kun je de start niet meer intypen. In het taakraste
 
 De app rekent in deze weergave niets door. Ze toont alleen wat het bestand vastlegde. Speling en kritiek pad zie je dus alleen als het bestand ze bevat. Legt het bestand geen kritieke taken vast, dan meldt de statusbalk 0 kritieke taken. Dat zegt niets over het kritieke pad in het pakket zelf. Wat alleen uit een berekening komt, bestaat in deze weergave niet: welke relaties de planning bepalen, geschonden constraints, taken die buiten hun volgorde lopen en bijna-kritieke taken.
 
-Legt het bestand van een taak niet alles vast, dan zie je in het paneel *Eigenschappen* een grijs blok, bijvoorbeeld *Primavera heeft voor deze taak niet alles opgeslagen. Ontbreekt: Laatste start, Totale speling.* Bij een andere bron staat er *Het bestand bevat voor deze taak niet alles.* De ontbrekende waarden hebben dezelfde namen als de kolommen in het taakraster. In een CSV-export blijven de kolommen *Critical* en *Total Float* voor zo'n taak leeg, in plaats van een verzonnen nul.
+Legt het bestand van een taak niet alles vast, dan krijgt het oranje blok in het paneel *Eigenschappen* een derde regel, bijvoorbeeld *Primavera heeft voor deze taak niet alles opgeslagen. Ontbreekt: Vrije speling.* Bij een andere bron staat er *Het bestand bevat voor deze taak niet alles.* De eerste twee regels blijven staan: je ziet dus ook bij zo'n taak dat de datums uit het bestand komen en of de taak bij herberekenen verandert. De ontbrekende waarden hebben dezelfde namen als de kolommen in het taakraster. In een CSV-export blijven de kolommen *Critical* en *Total Float* voor zo'n taak leeg, in plaats van een verzonnen nul.
 
 ### De weergave verlaten
 

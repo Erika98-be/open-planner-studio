@@ -99,6 +99,8 @@ export function recordedTaskMark(
  * tabelkolom, zodat de twee oppervlakken over dezelfde taak nooit iets anders kunnen zeggen:
  * `'partly-unrecorded'` zodra de vastlegging assen mist, anders `'active'` ("deze taak toont de
  * datums uit het bestand"). Buiten de modus of zonder vastlegging voor deze taak: `undefined`.
+ * Het blok is in beide standen oranje; `'partly-unrecorded'` voegt alleen de derde regel toe
+ * (eigenaar 2026-10-19, besluit 4, optie 3).
  */
 export function recordedNoticeState(
   recorded: RecordedDatesState | null,

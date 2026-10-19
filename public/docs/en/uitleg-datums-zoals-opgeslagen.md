@@ -47,7 +47,7 @@ For a task that has started, you can no longer type the start. In the task grid,
 
 In this view the app calculates nothing. It only shows what the file recorded. So you only see float and critical path if the file contains them. If the file records no critical tasks, the status bar reports 0 critical tasks. That says nothing about the critical path in the package itself. What only comes out of a calculation does not exist in this view: which relations drive the schedule, violated constraints, tasks that run out of sequence and near-critical tasks.
 
-If the file does not record everything for a task, you see a grey block in the *Properties* panel, for example *Primavera did not save everything for this task. Missing: Late start, Total float.* With another source it says *The file does not contain everything for this task.* The missing values have the same names as the columns in the task grid. In a CSV export the columns *Critical* and *Total Float* stay empty for such a task, instead of an invented zero.
+If the file does not record everything for a task, the orange block in the *Properties* panel gets a third line, for example *Primavera did not save everything for this task. Missing: Free float.* With another source it says *The file does not contain everything for this task.* The first two lines stay: so for such a task you also see that the dates come from the file and whether the task changes when you recalculate. The missing values have the same names as the columns in the task grid. In a CSV export the columns *Critical* and *Total Float* stay empty for such a task, instead of an invented zero.
 
 ### Leaving the view
 
@@ -74,7 +74,7 @@ If you save after you left the view, by recalculating or by an edit that can cha
 
 Suppose you open a Primavera file *Uitbouw* (extension) with two tasks, on a calendar without holidays. In 2027, 6 May is Ascension Day and 17 May is Whit Monday: with holidays in the calendar the dates come out differently. *Fundering storten* (pour foundation) takes 5 working days, *Metselwerk* (brickwork) 10 working days, and Metselwerk follows Fundering with a Finish-Start relation. The file records that Fundering runs from Monday 3 May to Friday 7 May 2027 and Metselwerk from Monday 17 May to Friday 28 May 2027: a week after the earliest start the relation allows. The planned start of Metselwerk in the file is Monday 10 May 2027.
 
-Right after opening you see the dates from the file. The status bar says *End: 28-05-2027* and *Critical path: 2 tasks, 20 work days*. The bar reports that 1 task differs when recalculating, Both tasks show the orange block *You see the dates Primavera saved, not the app's calculation.* Below it, Metselwerk says *Recalculating changes this task.* and Fundering says *Recalculating leaves this task the same.*
+Right after opening you see the dates from the file. The status bar says *End: 28-05-2027* and *Critical path: 2 tasks, 20 work days*. The bar reports that 1 task differs when recalculating. Both tasks show the orange block *You see the dates Primavera saved, not the app's calculation.* Below it, Metselwerk says *Recalculating changes this task.* and Fundering says *Recalculating leaves this task the same.*
 
 On *Recalculate*, Fundering stays on 3 to 7 May. Metselwerk now starts on Monday 10 May, the working day after Fundering ends, and finishes on Friday 21 May. The schedule ends on 21 May 2027 and spans 15 working days instead of 20. The critical path consists of the same 2 tasks.
 

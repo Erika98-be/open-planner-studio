@@ -1,8 +1,10 @@
 // "Datums zoals opgeslagen" in het eigenschappenpaneel als infoblok (eigenaar, 2026-10-17). De oude
 // badge (hoofdletters, `white-space: nowrap`) liep met een hele zin buiten het paneel en stond los in
 // het midden. Nu: een `alert`-blok over de volle breedte, direct boven de datumvelden onder *Tijd*,
-// met per stand een themakleur (oranje = actief, grijs = deels niet vastgelegd). Teksten en het
-// vervallen van de aanbod-stand (dus geen 'wijkt af' meer): eigenaar, 2026-10-17, optie 1.
+// altijd oranje (`alert--info`). Teksten en het vervallen van de aanbod-stand (dus geen 'wijkt af'
+// meer): eigenaar, 2026-10-17, optie 1. Een taak waarvoor het bestand niet alles bewaarde, krijgt
+// géén grijs blok meer maar hetzelfde oranje blok met de ontbrekende velden als derde regel
+// (eigenaar 2026-10-19, besluit 4, optie 3).
 // Echte gebruikersflow: een .xer via de ribbonknop Openen en de bestandskiezer, en een klik op de
 // taakrij. `window.__OPS__` zet alleen de paneelbreedte (fixture), leest taak-id's en zet het thema
 // voor het schermbewijs.
@@ -52,6 +54,8 @@ const SHOWN_PRIMAVERA = /^(Je ziet de datums die Primavera opsloeg, niet de bere
 const WILL_SHIFT = /^(Bij herberekenen verandert deze taak\.|Recalculating changes this task\.)$/;
 const WILL_STAY = /^(Bij herberekenen blijft deze taak gelijk\.|Recalculating leaves this task the same\.)$/;
 const MISSING_PRIMAVERA = /^(Primavera heeft voor deze taak niet alles opgeslagen\. Ontbreekt: Laatste start, Laatste einde, Totale speling, Vrije speling\.|Primavera did not save everything for this task\. Missing: Late start, Late finish, Total float, Free float\.)$/;
+// A3 legt alleen het vroege paar vast; zijn start valt op zondag 1 maart, dus herberekenen verschuift hem.
+const A3_RECALC = WILL_SHIFT;
 const sentence = (block: Locator, i: number) => block.locator(`[data-ops-task-recorded-dates-sentence="${i}"]`);
 
 const panel = (page: Page) => page.locator('[data-ops-rail-panel="properties"]');
@@ -75,15 +79,16 @@ async function resolveColor(page: Page, css: string): Promise<string> {
   }, css);
 }
 
-const EXPECTED_BORDER: Record<string, string> = {
-  active: 'var(--theme-accent)',
-  'partly-unrecorded': 'color-mix(in srgb, var(--color-text-primary) 35%, var(--theme-surface))',
-};
-
-/** Het blok voor `state`: boven de datumvelden, binnen de paneelbreedte, gewone letters, themakleur. */
-async function expectBlock(page: Page, state: string): Promise<Locator> {
-  const block = panel(page).locator(`[data-ops-task-recorded-dates="${state}"]`);
+/** Het blok: boven de datumvelden, binnen de paneelbreedte, gewone letters, oranje themakleur van
+ *  `alert--info`. `missing` = de derde regel (ontbrekende velden) hoort er wel/niet bij. */
+async function expectBlock(page: Page, missing: boolean): Promise<Locator> {
+  const block = panel(page).locator('[data-ops-task-recorded-dates="active"]');
   await expect(block).toBeVisible();
+  await expect(panel(page).locator('[data-ops-task-recorded-dates]')).toHaveCount(1);
+  await expect(block).toHaveClass(/(^|\s)alert--info(\s|$)/);
+  await expect(panel(page).locator('[data-ops-task-recorded-dates].alert--neutral')).toHaveCount(0);
+  if (missing) await expect(block).toHaveAttribute('data-ops-task-recorded-dates-missing', '');
+  else await expect(block).not.toHaveAttribute('data-ops-task-recorded-dates-missing');
   await block.scrollIntoViewIfNeeded();
 
   // Plek: onder de kop *Tijd* en direct boven het veld Start.
@@ -119,7 +124,7 @@ async function expectBlock(page: Page, state: string): Promise<Locator> {
   expect(style.transform).toBe('none');
   expect(style.whiteSpace).not.toMatch(/nowrap/);
   expect(parseFloat(style.borderWidth)).toBeGreaterThan(0);
-  expect(style.border).toBe(await resolveColor(page, EXPECTED_BORDER[state]));
+  expect(style.border).toBe(await resolveColor(page, 'var(--theme-accent)'));
   return block;
 }
 
@@ -156,18 +161,25 @@ for (const width of [280, 200] as const) {
 
     // Oranje, met per taak de tweede zin: A1 verschuift bij herberekenen, A2 niet.
     await clickTask(page, ids.a1);
-    const a1 = await expectBlock(page, 'active');
+    const a1 = await expectBlock(page, false);
     await expect(sentence(a1, 0)).toHaveText(SHOWN_PRIMAVERA);
     await expect(sentence(a1, 1)).toHaveText(WILL_SHIFT);
+    await expect(sentence(a1, 2)).toHaveCount(0);
     await clickTask(page, ids.a2);
-    const a2 = await expectBlock(page, 'active');
+    const a2 = await expectBlock(page, false);
     await expect(sentence(a2, 0)).toHaveText(SHOWN_PRIMAVERA);
     await expect(sentence(a2, 1)).toHaveText(WILL_STAY);
+    await expect(sentence(a2, 2)).toHaveCount(0);
 
-    // Grijs: de ontbrekende waarden met de kolomnamen, zonder vaktaal.
+    // Ook oranje, met drie regels: herkomst, herberekenen, en de ontbrekende waarden met de
+    // kolomnamen, zonder vaktaal. Eén "Lees meer".
     await clickTask(page, ids.a3);
-    const a3 = await expectBlock(page, 'partly-unrecorded');
-    await expect(sentence(a3, 0)).toHaveText(MISSING_PRIMAVERA);
+    const a3 = await expectBlock(page, true);
+    await expect(sentence(a3, 0)).toHaveText(SHOWN_PRIMAVERA);
+    await expect(sentence(a3, 1)).toHaveText(A3_RECALC);
+    await expect(sentence(a3, 2)).toHaveText(MISSING_PRIMAVERA);
+    await expect(a3.locator('[data-ops-task-recorded-dates-sentence]')).toHaveCount(3);
+    await expect(a3.locator('button')).toHaveCount(1);
     await expect(a3).not.toContainText(/vastlegging|late-\/speling/i);
 
     // Geen aanbod-stand meer: na herberekenen is er geen blok en geen strook.
@@ -191,10 +203,10 @@ test('datums zoals opgeslagen: schermbewijs nl en en, licht en donker', async ({
       return { a1: s.tasks.find(t => t.wbsCode === 'A1')!.id, a2: s.tasks.find(t => t.wbsCode === 'A2')!.id, a3: s.tasks.find(t => t.wbsCode === 'A3')!.id };
     });
     await clickTask(page, ids.a1);
-    await expectBlock(page, 'active');
+    await expectBlock(page, false);
     await shoot(page, `actief-${code}`);
     await clickTask(page, ids.a3);
-    await expectBlock(page, 'partly-unrecorded');
+    await expectBlock(page, true);
     await shoot(page, `deels-${code}`);
   }
 });
