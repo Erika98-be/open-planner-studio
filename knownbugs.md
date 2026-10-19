@@ -367,6 +367,12 @@ en noem het in je rapport of PR-tekst.
      docs-pakketten hebben sinds #323 een zegel (`build/translate-seal/`); de termbase-pakketten niet, terwijl
      agents in dezelfde map schrijven. Voorstel: dezelfde `seal`/`sealErrors` in `prepare`/`apply-terms`.
      Gevonden in de review van #323 (Opus, 2026-10-12), in de code aangewezen. — S
+119. **`i18n:resolve` wijzigt na elke merge met `main` alle 26 `i18n/ui-sources/<taal>.json`.** Daar staat
+     nog een hash voor `calendar.worktime.derivedHpd`, een sleutel die in `src/i18n/locales/nl/common.json`
+     niet meer bestaat. `i18n:resolve` schuift die wees-sleutel naar het eind van elk bestand, zodat een PR
+     zonder vertaalwerk 26 bestanden ruis meekrijgt. Gezien na de merge van `origin/main` (62ab1d714) in
+     `t3/resources-sidebar-rework`, 2026-10-19; `verify:i18n` blijft groen zonder die wijziging. Voorstel:
+     de wees-hash eenmalig uit alle `ui-sources` halen. — B
 
 ## Tests
 
