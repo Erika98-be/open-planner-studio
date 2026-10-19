@@ -173,6 +173,7 @@
     "refusedRelationNamesMore_other": "Not created: {{names}} and {{count}} more relations.",
     "tutorialOfferLater": "You can always find the tutorials in Help › Tutorials.",
     "tutorialOfferUnavailable": "The tutorials could not be installed or started right now. You can try again later in Help › Tutorials.",
+    "taskAddedAtEnd": "The new task was added at the end. While filtering, grouping or sorting, the app cannot place it below your selection.",
     "p6xmlImportEmpty": "This file contains no activities the app can read.",
     "p6xmlImportEmptyNoObjectIds": "The activities have no ObjectId, so the app cannot link them. This is not standard Primavera P6 XML.",
     "p6xmlImportEmptyXerColumns": "The file uses XER column names (such as task_code) instead of P6 XML fields. Open the .xer file itself.",

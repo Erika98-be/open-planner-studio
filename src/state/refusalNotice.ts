@@ -1,4 +1,4 @@
-import type { NotificationDetailLine, NotifyInput } from './slices/types';
+import type { NotificationDetailLine, NotifyInput, UIState } from './slices/types';
 
 /**
  * Weigeringen in het meldingenkanaal (eigenaarsbesluiten 2026-10-17).
@@ -9,6 +9,9 @@ import type { NotificationDetailLine, NotifyInput } from './slices/types';
  * zo te missen. Dat geldt ook als een DEEL van de handeling lukte ("weigering = rood"); de melding
  * noemt dan via {@link refusedNamesLine} wat niet is aangepast.
  *
+ * Levensduur (eigenaarsbesluit 2026-10-19 5b): een weigering gaat ook weg bij een documentwissel en
+ * na elke undo- of redo-stap — zie {@link clearRefusals}. Een echte fout blijft daar wél staan.
+ *
  * De vlag `refusal` onderscheidt een weigering van een echte fout (bv. opslaan mislukt): bij een
  * volle stapel gaat een weigering eerder weg (`notify` in uiSlice). Zo duwen herhaalde weigeringen
  * een echte fout nooit weg.
@@ -18,6 +21,32 @@ import type { NotificationDetailLine, NotifyInput } from './slices/types';
  */
 export function refusalNotice(notice: Omit<NotifyInput, 'severity' | 'refusal'>): NotifyInput {
   return { ...notice, severity: 'error', refusal: true };
+}
+
+/**
+ * Wis alle weigeringen (eigenaarsbesluit 2026-10-19 5b): meldingen met `refusal: true` en de strook
+ * `StructureLockedNotice`. Een weigering gaat over één handeling in één document. Na een
+ * documentwissel staat hij anders boven een ander document; na een undo- of redo-stap klopt hij
+ * meestal niet meer met wat de gebruiker ziet.
+ *
+ * Aanroepers, allemaal BINNEN hun eigen `set` en vóór iets anders meldt:
+ *  - elke wissel van actief document (`resetDocumentScopedUI` in documentSlice) en het laden van
+ *    een project in het actieve tabblad (`applyLoadedProject`, ook via `loadState`);
+ *  - elke toegepaste undo- of redo-stap (`applyHistoryEvent` in historySlice). Elke route (sneltoets,
+ *    lint, titelbalk, MCP `planner_undo`) loopt via die store-actie.
+ *
+ * Volgorde: eerst wissen, dan melden. Een weigering die de wissel of de undo zelf oplevert, komt
+ * pas ná deze `set` binnen (via `notify`) en blijft dus staan. Voor de strook geldt hetzelfde via
+ * `structureLockedClearedAt`: een nieuwere poging hoogt de teller daarboven op.
+ *
+ * ALLEEN weigeringen. Een echte fout (bv. opslaan mislukt), een waarschuwing of een info blijft:
+ * meldingen zijn verder app-globaal en staan niet in de undo-stack (`check-notifications`).
+ */
+export function clearRefusals(ui: UIState): void {
+  if (ui.notifications.some((n) => n.refusal)) {
+    ui.notifications = ui.notifications.filter((n) => !n.refusal);
+  }
+  ui.structureLockedClearedAt = ui.structureLockedNotice;
 }
 
 /** Hoeveel namen een detailregel hooguit noemt; de rest telt als "en nog N". */

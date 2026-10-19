@@ -36,6 +36,7 @@ import {
 import { sameIFCSource, type IFCSaveSource } from '../ifcSaveInput';
 import { withXerArchiveIssueNotice } from '../xerArchiveIssueNotice';
 import { scheduleFailedNotice } from '../scheduleErrorNotice';
+import { clearRefusals } from '../refusalNotice';
 import {
   mergeCalendarLibrarySettle, notifyCalendarLibrarySettle, NO_CALENDAR_LIBRARY_SETTLE, type CalendarLibrarySettle,
 } from '../calendarTasks';
@@ -95,6 +96,9 @@ function resetDocumentScopedUI(s: AppState): void {
   // dialoog openstaat (zie hasBlockingDialogOpen/BLOCKING_UI_FLAGS + de when-guards op Ctrl/⌘1-9 en
   // Ctrl+O). Gaat dit wél af, dan is er een wisselroute gemist; dat is een bug, geen normaal gedrag.
   s.ui.showProgressImportDialog = false;
+  // Weigeringen horen bij het uitgaande document (eigenaarsbesluit 2026-10-19 5b): weg, en ze komen
+  // niet terug bij terugwisselen. Echte fouten en infos blijven (`clearRefusals`).
+  clearRefusals(s.ui);
 }
 
 function publishActivation(s: AppState, activation: DocumentActivationMaterialization): void {

@@ -173,6 +173,7 @@
     "refusedRelationNamesMore_other": "Niet aangemaakt: {{names}} en nog {{count}} relaties.",
     "tutorialOfferLater": "Je vindt de tutorials altijd in Help › Tutorials.",
     "tutorialOfferUnavailable": "De tutorials konden nu niet worden geïnstalleerd of gestart. In Help › Tutorials kun je het later opnieuw proberen.",
+    "taskAddedAtEnd": "De nieuwe taak staat achteraan. Tijdens filteren, groeperen of sorteren kan de app hem niet onder je selectie zetten.",
     "p6xmlImportEmpty": "In dit bestand staan geen activiteiten die de app kan lezen.",
     "p6xmlImportEmptyNoObjectIds": "De activiteiten hebben geen ObjectId. Daardoor kan de app ze niet koppelen. Dit is geen gewone Primavera P6 XML.",
     "p6xmlImportEmptyXerColumns": "Het bestand gebruikt XER-kolomnamen (zoals task_code) in plaats van P6 XML-velden. Open de .xer zelf.",

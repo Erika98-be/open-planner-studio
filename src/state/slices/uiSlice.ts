@@ -161,6 +161,7 @@ export function createDefaultUI(): UIState {
     hourDataNotice: null,
     showTaskTypes: false,
     structureLockedNotice: 0,
+    structureLockedClearedAt: 0,
     showShortcutsDialog: false,
     showBenchmarkDialog: false,
     showStatsDialog: false,

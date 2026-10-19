@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { ListTree } from 'lucide-react';
 import { useAppStore } from '@/state/appStore';
 import { isTreeMode } from '@/engine/view/visibleRows';
+import { clearViewArrangement } from '@/state/viewArrangement';
 import { NoticeStrip } from './NoticeStrip';
 
 /**
@@ -12,13 +13,18 @@ import { NoticeStrip } from './NoticeStrip';
  * de drie view-standen te wissen. `ui.structureLockedNotice` is een TELLER: elke nieuwe poging hoogt
  * hem op, zodat de melding ook opnieuw verschijnt als hij weggeklikt was. Geen verdwijn-timer: een
  * weigering die vanzelf weggaat, is te missen.
+ *
+ * Wel weg na een undo- of redo-stap en bij een documentwissel, net als elke andere weigering
+ * (eigenaarsbesluit 2026-10-19 5b, `clearRefusals` in state/refusalNotice.ts).
+ *
+ * *Taak* met een selectie gebruikt deze strook NIET meer (eigenaarsbesluit 2026-10-19 5a): die taak
+ * komt er wél, achteraan, en meldt dat met een rode toast. De strook blijft voor wat echt geweigerd
+ * wordt: in-/uitspringen, rijslepen, *Invoegen boven/onder* (Insert, Ctrl+I).
  */
 export function StructureLockedNotice() {
   const { t } = useTranslation('common');
   const seq = useAppStore((s) => s.ui.structureLockedNotice);
-  const setFilter = useAppStore((s) => s.setFilter);
-  const setGroup = useAppStore((s) => s.setGroup);
-  const setSort = useAppStore((s) => s.setSort);
+  const clearedAt = useAppStore((s) => s.ui.structureLockedClearedAt);
   // De strook zelf is app-globaal (`ui.structureLockedNotice` wordt niet per document geswapt),
   // maar de standen die "Wissen" opruimt zijn dat WÉL. Daarom hangen we hem aan het actieve
   // document en aan de boommodus.
@@ -48,14 +54,18 @@ export function StructureLockedNotice() {
     setVisible(true);
   }, [seq]);
 
+  // Undo, redo of documentwissel ⇒ `clearRefusals` zet `clearedAt` op de huidige teller ⇒ weg.
+  // BEWUST ná het teller-effect en met de vergelijking `clearedAt === seq`: een poging die ná het
+  // wissen kwam, hoogde de teller daarboven op en blijft staan (eerst wissen, dan melden), ook als
+  // React beide wijzigingen in één commit verwerkt.
+  useEffect(() => {
+    if (clearedAt === seq) setVisible(false);
+  }, [clearedAt, seq]);
+
   if (!visible) return null;
 
   const clearView = () => {
-    // Drie losse setters — er is geen gecombineerde clear-actie. Elk van deze roept intern al
-    // recomputeViewRows() aan.
-    setFilter(null);
-    setGroup([]);
-    setSort([]);
+    clearViewArrangement(useAppStore.getState());
     setVisible(false);
   };
 

@@ -15,7 +15,7 @@ import type { StoreRuntime } from '../runtime/storeRuntime';
 import type { AppSlice, AppSliceFactory } from './types';
 import { overlaysToUi } from '../layoutView';
 import { persistOverlays } from '../overlaySettings';
-import { refusalNotice } from '@/state/refusalNotice';
+import { clearRefusals, refusalNotice } from '@/state/refusalNotice';
 
 export interface HistorySessionMark {
   sequence: number;
@@ -101,6 +101,12 @@ function applyHistoryEvent(
   set((state) => {
     const stored = state.historyEvents.find(item => item.id === event.id);
     if (!stored || stored.state !== (direction === 'undo' ? 'applied' : 'undone')) return;
+    // Eigenaarsbesluit 2026-10-19 5b: na elke undo- en redo-stap verdwijnen de weigeringen (rode
+    // meldingen met `refusal` en de strook). Alleen als er echt een stap is gezet; een Ctrl+Z zonder
+    // iets terug te draaien laat ze staan. Hier, aan het BEGIN van dezelfde `set`: alles wat ná de
+    // stap nog meldt, komt later binnen en blijft staan (eerst wissen, dan melden). Echte fouten
+    // blijven — zie `clearRefusals`.
+    clearRefusals(state.ui);
 
     for (const target of targets) {
       if (target.kind === 'document-data') {
