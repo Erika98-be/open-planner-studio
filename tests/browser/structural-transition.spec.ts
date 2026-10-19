@@ -461,8 +461,22 @@ test('verricht werk in het Nederlands: de canonieke zin', async ({ page, ops: _o
   await cancelButton(page).click();
 });
 
-test('alle globale sneltoetsen staan dicht onder de vraag: Delete, Backspace, F5, Insert (review #374)', async ({ page, ops: _ops }) => {
+test('alle globale sneltoetsen staan dicht onder de vraag: Delete, Backspace, F5, Ctrl+S, Insert (review #374)', async ({ page, ops: _ops }) => {
   const { L, N } = await seedAssignedLeaf(page);
+  // Elke download telt: een doorgelaten Ctrl+S of Ctrl+Shift+S geeft er een.
+  let downloads = 0;
+  page.on('download', () => { downloads++; });
+  // Alleen lezen: na de app-listener (zelfde doel, later geregistreerd) zien of F5/Ctrl+S de
+  // browseractie (herladen, pagina opslaan) tegenhielden. Headless herlaadt F5 niet vanzelf.
+  await page.evaluate(() => {
+    const seen: Record<string, boolean> = {};
+    (window as unknown as { __phaseKeys: Record<string, boolean> }).__phaseKeys = seen;
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'F5' || ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's')) {
+        seen[`${e.shiftKey ? 'Shift+' : ''}${e.key.length === 1 ? e.key.toLowerCase() : e.key}`] = e.defaultPrevented;
+      }
+    });
+  });
   // Planning verouderd, zodat een doorgelaten F5 zichtbaar is (stale gaat dan uit).
   await page.evaluate((n) => {
     const s = window.__OPS__!.store.getState();
@@ -483,12 +497,19 @@ test('alle globale sneltoetsen staan dicht onder de vraag: Delete, Backspace, F5
   const depth = (await state(page)).undoDepth;
 
   // Na ELKE toets apart nagaan: twee doorgelaten toetsen mogen elkaar niet opheffen (Delete + Ctrl+Z).
-  for (const key of ['Delete', 'Backspace', 'F5', 'Insert', 'Alt+Shift+ArrowLeft', 'Control+d', 'Control+z', 'Control+y']) {
+  for (const key of ['Delete', 'Backspace', 'F5', 'Control+s', 'Control+Shift+s', 'Insert', 'Alt+Shift+ArrowLeft', 'Control+d', 'Control+z', 'Control+y']) {
     await page.keyboard.press(key);
     await expect(dialog(page), key).toBeVisible();
     expect(await snapshot(), key).toBe(before);
     expect((await state(page)).undoDepth, key).toBe(depth);
   }
+  // Opslaan liep niet: geen download, geen schemavraag, geen tweede venster.
+  await page.waitForTimeout(500);
+  expect(downloads).toBe(0);
+  expect(await page.evaluate(() => window.__OPS__!.store.getState().ui.pendingIfcSchemaQuestion ?? null)).toBeNull();
+  // De browseractie van F5 (herladen) en Ctrl+S (pagina opslaan) is tegengehouden, ook in dev.
+  expect(await page.evaluate(() => (window as unknown as { __phaseKeys: Record<string, boolean> }).__phaseKeys))
+    .toEqual({ F5: true, s: true, 'Shift+s': true });
 
   await moveButton(page).click();
   await expect(dialog(page)).toBeHidden();
@@ -511,4 +532,42 @@ test('Taak bewerken: Delete onder de vraag verwijdert de bewerkte taak niet (rev
   await expect(taskDialog).toBeVisible();
   await expect(taskDialog).toContainText('Edit task');
   expect(await page.evaluate((n) => window.__OPS__!.store.getState().tasks.some(t => t.id === n), N)).toBe(true);
+});
+
+test('vangnet: verandert de vraag terwijl het venster open is, dan wijzigt de keuze niets en volgt een melding (review #374)', async ({ page, ops: _ops }) => {
+  const { L, N } = await seedAssignedLeaf(page);
+  await selectRow(page, N);
+  await page.keyboard.press('Alt+Shift+ArrowRight');
+  await expect(dialog(page)).toBeVisible();
+  await expect(dialog(page).locator('[data-ops-phase-dialog-text]')).toContainText('the assignment of Metselaar?');
+  // Fixture: iets buiten de sneltoetsen (bijv. een extensie) wijst intussen een tweede resource toe.
+  // Het venster noemt alleen Metselaar; "Verwijderen" mag Opperman niet stil meenemen.
+  await page.evaluate((l) => {
+    const s = () => window.__OPS__!.store.getState();
+    const R2 = s().addResource({ name: 'Opperman', type: 'LABOR', description: '', maxUnits: 1 });
+    s().assignResource(l, R2, 1);
+  }, L);
+  const before = await fingerprint(page);
+  const depth = (await state(page)).undoDepth;
+
+  await removeButton(page).click();
+  await expect(dialog(page)).toBeHidden();
+  // Niets gewijzigd: N staat nog op de wortel, beide toewijzingen staan nog op L.
+  expect(await fingerprint(page)).toBe(before);
+  expect((await state(page)).undoDepth).toBe(depth);
+  expect(await parentOf(page, N)).toBeNull();
+  expect(await assignmentTaskIds(page)).toEqual([L, L]);
+  // De keuze is niet stil weggegooid: een melding via het ene meldingenkanaal.
+  await expect(page.locator('.ops-toast', {
+    hasText: 'The tasks or assignments changed while the question was open. Nothing was changed; please try again.',
+  })).toBeVisible();
+
+  // Opnieuw proberen werkt: de nieuwe vraag noemt beide resources.
+  await selectRow(page, N);
+  await page.keyboard.press('Alt+Shift+ArrowRight');
+  await expect(dialog(page).locator('[data-ops-phase-dialog-text]')).toContainText('Metselaar and Opperman');
+  await moveButton(page).click();
+  await expect(dialog(page)).toBeHidden();
+  expect(await parentOf(page, N)).toBe(L);
+  expect(await assignmentTaskIds(page)).toEqual([N, N]);
 });
