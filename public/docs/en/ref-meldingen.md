@@ -1,12 +1,13 @@
 # Notifications and warnings
 
-The app tells you what is going on in three places: the status bar at the bottom, the *Warnings* panel in the right-hand column and the notifications that appear briefly at the bottom of the screen. This article says for each place what you see, when it appears and what you can do about it. Why a schedule is critical or overallocated is in [Critical path and float](docs://uitleg-kritiek-pad); resolving overallocation is in [Resolving overallocation](docs://howto-overbezetting-oplossen); making relations is in [Creating relations](docs://howto-relaties-leggen).
+The app tells you what is going on in four places: the status bar at the bottom, the *Warnings* panel in the right-hand column, the notifications that appear briefly at the bottom of the screen and the strips under the ribbon. This article says for each place what you see, when it appears and what you can do about it. Why a schedule is critical or overallocated is in [Critical path and float](docs://uitleg-kritiek-pad); resolving overallocation is in [Resolving overallocation](docs://howto-overbezetting-oplossen); making relations is in [Adding relations](docs://howto-relaties-leggen).
 
-## The difference between the three
+## The difference between the four
 
 - **Status bar** — a fixed line with counters. They come from the last calculation and stay until you calculate again.
 - **Warnings panel** — the list behind those counters, with everything the last calculation found, and a click takes you to the task, relation or resource. It is derived from the last calculation; nothing is stored.
 - **Notifications** — short messages about something you just did (saving failed, relation refused, import read). They disappear again and are not in the panel.
+- **Strip under the ribbon** — a coloured strip with an explanation and one button. It belongs to a state of the document or of a mode and stays as long as that state applies. See *The strips under the ribbon*.
 
 ## The status bar
 
@@ -54,9 +55,19 @@ The bar at the bottom shows, from left to right:
 - *Hour task '{task}' has no valid working hours in its calendar* — a task in hours on a calendar without working hours.
 - *Invalid start date for task '{task}'* — the start date of the task is not valid.
 
+## The strips under the ribbon
+
+A strip sits directly under the ribbon, above the workspace. It has a text and one button. A strip for a mode has no cross; you close the others with the cross. The five strips:
+
+- **Link mode** — *Link mode: drag from one bar to another in the Gantt to create a relation. Press Esc to stop.* It stays as long as link mode is on. Button: *Stop*. See [Adding relations](docs://howto-relaties-leggen).
+- **Split mode** — *Click a bar on the day the break starts and drag right for its length. Press Esc to stop.* It stays as long as *Split task* is on. Button: *Stop*.
+- **Hour planning in the file** — *This file contains hour-based planning.* It appears when an opened file contains hour planning while *Enable hour planning* is off. Button: *Enable hour planning*. See [Turning on hour planning](docs://howto-urenplanning-aanzetten).
+- **Structure locked** — *Not available while filtering/grouping/sorting*. It appears when indenting or outdenting is refused because the task list is filtered, grouped or sorted. Button: *Clear*, which removes the filter, grouping and sorting.
+- **Dates as recorded** — after opening a file where recalculating moved dates: *Recalculation moved N of M tasks away from the dates in the file.* with the button *Show recorded dates*. While the view is on: *You're viewing the dates as recorded in the file …* with the button *Recalculate*. See [Dates as recorded](docs://uitleg-datums-zoals-opgeslagen).
+
 ## Notifications
 
-Notifications appear at the bottom of the screen, also in the table, in Backstage and in presentation mode. A notification is an *error* or *info*. An error stays until you click the cross; an info disappears after 5 seconds, and those timers start again as soon as the stack changes. Each notification has a cross at the top right (tooltip *Close notification*) that closes it at once. A click on the text of the notification does nothing. At most three are shown at once: if a fourth comes, the oldest info goes first, and if there is no info, the oldest notification, so an error is never pushed out by an info. The stack moves away from the buttons of an open dialog and from sticky action bars. A notification when opening a file also stays until you click the cross if the app filled in, replaced, repaired or left out data while opening: a line about parser or calendar findings, number format problems, enum fallbacks, P6 scheduling settings with a safe fallback, a protective baseline fallback, ignored baseline references, activities without a planned start that were given a start, relationships between projects or activities without a project that were not imported (P6 XML) or an unusable XER source archive, and the notifications about duplicate ids and relations that are not calculated. If it only contains information without such a change (such as the number of projects, documents or the text encoding), the notification disappears after 5 seconds.
+Notifications appear at the bottom of the screen, also in the table, in Backstage and in presentation mode. A notification is an *error* or *info*. An error stays until you click the cross; an info disappears after 5 seconds (a notification with a lot of explanation stays longer), and those timers start again as soon as the stack changes. Each notification has a cross at the top right (tooltip *Close notification*) that closes it at once. A click on the text of the notification does nothing. At most three are shown at once: if a fourth comes, the oldest info goes first, and if there is no info, the oldest notification, so an error is never pushed out by an info. The stack moves away from the buttons of an open dialog and from sticky action bars. A notification when opening a file also stays until you click the cross if the app filled in, replaced, repaired or left out data while opening: a line about parser or calendar findings, number format problems, enum fallbacks, P6 scheduling settings with a safe fallback, a protective baseline fallback, ignored baseline references, activities without a planned start that were given a start, relationships between projects or activities without a project that were not imported (P6 XML) or an unusable XER source archive, and the notifications about duplicate ids and relations that are not calculated. If it only contains information without such a change (such as the number of projects, documents or the text encoding), the notification disappears after 5 seconds.
 
 - **Counter ×N** — a notification with a fixed key folds a repeat into one line with a counter, for example a save error that keeps coming back or a refused relation that you repeat. Not every notification does that.
 - **Read more** — some notifications have a *Read more* link or a topic of their own (for example *Work rules explained*) to the guide in Backstage › Help.
@@ -68,8 +79,8 @@ The list below is a selection, grouped by topic. Where it does not say otherwise
 
 - **Saving failed** (error) — *Failed to save* with the reason below it. When saving, saving as and exporting a report.
 - **Saved as a download** (info) — *Saved as a download: '{name}' is now in your downloads folder. …* With *Save As* and exports, when the environment does not let the app write directly to the location you picked. Two downloads right after each other fold together.
-- **Saved as a download (explanation)** (info) — *Saved as a download: '{name}' is in your downloads folder. This browser does not let the app write to a place of its own, …* With *Save* in a browser that only saves through a download. Once per session, with a link to the explanation of files.
-- **Browser does not write back** (info) — *This browser does not let the app write back to '{name}'. …* With *Save* of a project that has a file, when the browser has to ask for a place again. Once per session, with a link to the explanation of files.
+- **Saved as a download (explanation)** (info, 15 seconds) — *Saved as a download: '{name}' is in your downloads folder. This browser does not let the app write to a place of its own, …* With *Save* in a browser that only saves through a download. Once per session, with a link to the explanation of files.
+- **Browser does not write back** (info, 15 seconds) — *This browser does not let the app write back to '{name}'. …* With *Save* of a project that has a file, when the browser has to ask for a place again. Once per session, with a link to the explanation of files.
 - **Auto-save failed** (error) — *Auto-save failed* with the reason. Applies to auto-saving to the file and to crash recovery.
 - **Library could not be saved** (error) — *Library could not be saved*, when saving the resource library.
 - **Opening a file failed** (error) — *Failed to open file* with the reason. For an example, a recent file or an imported file.
@@ -107,6 +118,12 @@ The list below is a selection, grouped by topic. Where it does not say otherwise
 - **Cells skipped on paste** (info) — *Skipped N cells: they are read-only (for example an auto-numbered WBS code or a calculated column).*
 - **References cleared on paste** (info) — *N references did not exist in this document and were cleared (task calendars, custom task types, activity codes or custom fields from the source document).*
 - **Work rule adjusted durations** (info) — *After the calendar change the work rule adjusted the duration of N tasks (work stays, hours per day changed).* With a link *Work rules explained*.
+
+### Primavera P6 XML
+
+- **P6 XML file opened** (info) — *P6 XML file opened: N project documents.* After opening a P6 XML file.
+- **Not imported** (stays) — *N relationships between projects were not imported as relationships.* and *N activities without a project were not read.* Check whether your schedule is complete.
+- **Empty or unusable** (error) — nothing opens. Three reasons: *This file contains no activities the app can read.*, *The activities have no ObjectId. …* and *The file uses XER column names … Open the .xer file itself.*
 
 ### Primavera (XER)
 
