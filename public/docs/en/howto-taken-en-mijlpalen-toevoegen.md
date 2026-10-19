@@ -82,7 +82,7 @@ A new task does not change the other dates yet. The status bar says *Out of date
 
 **Every new task starts on the project start.** Without relations a task waits for nothing. Add relations, see [Adding relations](docs://howto-relaties-leggen).
 
-**Filtering, grouping or sorting is on.** The order you see is then not the order of the schedule. With a task selected, *Task* and *Milestone ▾* add the new task at the bottom, and the strip *Not available while filtering/grouping/sorting* appears. *Insert above* and *Insert below* are refused, with the same strip. The *Clear* button in the strip removes filter, grouping and sorting in one go. That is not part of *Undo*: Ctrl+Z does not bring them back.
+**Filtering, grouping or sorting is on.** The order you see is then not the order of the schedule. With a task selected, *Task* and *Milestone ▾* add the new task at the bottom. A red notification then says *The new task was added at the end. While filtering, grouping or sorting, the app cannot place it below your selection.* *Insert above* and *Insert below* are refused, with the strip *Not available while filtering/grouping/sorting*. The *Clear* button in the notification or in the strip removes filter, grouping and sorting in one go. That is not part of *Undo*: Ctrl+Z does not bring them back.
 
 **A subtask under a task with resource assignments.** The task becomes a summary task, and a summary task carries no assignments itself. The app moves the assignments to the new subtask and tells you. If that is not possible, for example because you chose *Add milestone* and a milestone cannot carry assignments, the app adds nothing and says why.
 
