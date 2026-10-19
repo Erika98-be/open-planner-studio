@@ -1,6 +1,7 @@
 import type { Baseline, BaselineTask } from '@/types/baseline';
 import type { Resource, ResourceAssignment, ResourceCurve } from '@/types/resource';
 import type { Task } from '@/types/task';
+import type { WorkRule } from '@/types/workRule';
 import type { DurationDisplay, TimeNotation } from '@/types/view';
 import type { TaskRelationIndex } from '@/engine/taskGrid/relationIndex';
 
@@ -164,6 +165,10 @@ export interface TaskColumnContext {
   /** De werkregelkolommen bestaan alleen wanneer de weergave
    *  ontsloten is (instelling of documentontsluiting, `taskTypesUnlocked`). */
   taskTypesUnlocked?: boolean;
+  /** `Project.defaultWorkRule` — de regel van een taak zonder eigen regel. De uitleg bij het ⚠ in
+   *  *Resterend werk* kiest daarmee dezelfde slotzin als het paneel en als de duurbewerking zelf
+   *  (besluit V10). Ontbreekt ⇒ FIXED_DURATION_RATE, net als `effectiveWorkRule`. */
+  defaultWorkRule?: WorkRule;
   /** Instelling Tijdnotatie voor de weergave- en kopieertekst van datum-met-tijd; ontbreekt ⇒ `'24h'`.
    *  De parser accepteert beide notaties; de opgeslagen waarde blijft ISO. */
   timeNotation?: TimeNotation;

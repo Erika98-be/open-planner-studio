@@ -723,7 +723,6 @@
     "calendar.holidayErrors.invalidEnd": "d227d8daa1833d29",
     "calendar.holidayErrors.endBeforeStart": "7c5ca74463553ade",
     "calendar.worktime.section": "20a432fde60ec952",
-    "calendar.worktime.derivedHpd": "a1b14da23f5c3a20",
     "calendar.worktime.saveAsPreset": "513b6fba796786aa",
     "calendar.worktime.saveAsPresetHint": "1e452af1991342ae",
     "calendar.worktime.perWeekday": "46940497044b113a",
@@ -1156,7 +1155,8 @@
     "siteFiles.nameLabel": "d30b9bde7867797b",
     "siteFiles.saveHint": "af6f8cf36ca1c2fc",
     "siteFiles.saveToSite": "31b52b3976d4fe4d",
-    "siteFiles.toThisPc": "d951ec29c7fbc529"
+    "siteFiles.toThisPc": "d951ec29c7fbc529",
+    "calendar.worktime.derivedHpd": "a1b14da23f5c3a20"
   },
   "task": {
     "contourDialog.title": "2c88619a7af281e3",
@@ -1574,7 +1574,6 @@
     "properties.assignments.work": "def07e59001aa0bf",
     "properties.assignments.workHint": "3ba3a50257921c91",
     "properties.assignments.workDeviates": "b079e20d178ac8e8",
-    "properties.assignments.workDeviatesHint": "4bc79b3456882831",
     "properties.assignments.locked": "4dc95df3eb70fb6d",
     "properties.notes.title": "2b05cf9650368742",
     "properties.notes.add": "b77a2bd9651966f5",
@@ -2125,7 +2124,6 @@
     "ribbon.calendarDialog.startHour": "67254cfe6428ff5c",
     "ribbon.calendarDialog.endHour": "8314d27de4882272",
     "ribbon.calendarDialog.hoursPerDay": "ced37df99e8df16f",
-    "ribbon.calendarDialog.netHoursPerDay": "71f69c021582c154",
     "ribbon.calendarDialog.holidaysSection": "dffe92f38577f14d",
     "ribbon.calendarDialog.holidayName": "57607924aef38216",
     "ribbon.calendarDialog.from": "71dbb3a7c4859327",
@@ -2436,6 +2434,7 @@
     "commands.undo": "22161ff107643c81",
     "commands.redo": "317d53d568d624a2",
     "commands.zoomIn": "38532e02dbabab1c",
-    "commands.zoomOut": "f61db514902f41ec"
+    "commands.zoomOut": "f61db514902f41ec",
+    "ribbon.calendarDialog.netHoursPerDay": "71f69c021582c154"
   }
 }

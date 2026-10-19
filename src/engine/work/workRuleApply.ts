@@ -35,7 +35,7 @@ import {
 } from '@/utils/taskDefaults';
 import {
   applyAssignmentAdded, applyAssignmentRemoved, applyDurationEdit, applyRuleChange, applySlotChange,
-  applyUnitsEdit, applyWorkEdit, type TriangleAssignment, type TriangleState,
+  applyUnitsEdit, applyWorkEdit, durationEditKeepsWork, type TriangleAssignment, type TriangleState,
 } from '@/engine/work/workTriangle';
 
 export interface WorkRuleContext {
@@ -51,6 +51,15 @@ export interface WorkRuleContext {
  *  FIXED_DURATION_RATE. */
 export function effectiveWorkRule(task: Pick<Task, 'workRule'>, defaultWorkRule?: WorkRule): WorkRule {
   return task.workRule ?? defaultWorkRule ?? DEFAULT_WORK_RULE;
+}
+
+/** Blijft bewaard restwerk van deze taak staan bij een duurbewerking? Dezelfde regel en dezelfde
+ *  effort-driven-uitzondering als {@link triangleStateOf} → `applyDurationEdit` (besluit V10). */
+export function durationEditKeepsWorkOf(
+  task: Pick<Task, 'workRule' | 'mspTaskType' | 'effortDriven'>,
+  defaultWorkRule?: WorkRule,
+): boolean {
+  return durationEditKeepsWork(effectiveWorkRule(task, defaultWorkRule), effectiveEffortDriven(task));
 }
 
 /** De regel werkt alleen op gewone bladtaken op werktijd (dag- én uurmodus). */

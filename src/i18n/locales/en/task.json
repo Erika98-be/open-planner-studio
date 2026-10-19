@@ -478,9 +478,11 @@
       "work": "Work (rem.)",
       "workHint": "Remaining work in hours; the work rule decides whether duration or units move.",
       "workDeviates": "Differs from units × duration",
-      "workDeviatesHint": "Stored work {{stored}} h differs from units × remaining duration ({{derived}} h). The histogram follows the stored work across the whole task duration. The app does not change the units to remove the difference. If you change the duration, the app recalculates the work.",
-      "workDeviatesMany": "Stored work differs from units × remaining duration:\n{{lines}}\nIf you change the duration, the app recalculates the work.",
+      "workDeviatesHint": "Stored work {{stored}} h differs from units × remaining duration ({{derived}} h). The histogram follows the stored work across the whole task duration. {{durationEffect}}",
+      "workDeviatesMany": "Stored work differs from units × remaining duration:\n{{lines}}\n{{durationEffect}}",
       "workDeviatesLine": "{{name}}: {{stored}} h (units × remaining duration: {{derived}} h)",
+      "workDeviatesFollowsDuration": "The app does not change this by itself. If you change the duration, the app replaces this work with units × new duration. You then get a notice; Ctrl+Z undoes it.",
+      "workDeviatesKeepsWork": "The app does not change this by itself. If you change the duration, this work stays and the app adjusts the units.",
       "locked": "Protected by the work rule {{rule}}"
     },
     "notes": {

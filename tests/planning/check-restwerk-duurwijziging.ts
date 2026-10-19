@@ -28,7 +28,9 @@ import { writeIFC } from '@/services/ifc/ifcWriter';
 import { buildWriteIFCInput } from '@/state/ifcSaveInput';
 import { readXerArchiveIFC } from './xerArchiveTestReader';
 import { isMultiDocumentImport, type ImportResult } from '@/services/importTypes';
-import { assignmentWorkDeviation } from '@/engine/work/assignmentWorkDeviation';
+import fs from 'node:fs';
+import path from 'node:path';
+import { assignmentWorkDeviation, workDeviationEffectKey } from '@/engine/work/assignmentWorkDeviation';
 import { captureTriangle, remainingMinutesOf, settleDurationEdit, totalMinutesOf } from '@/engine/work/workRuleApply';
 import { workDaySlotsToPeriods } from '@/engine/contour/contourEdit';
 import { assignmentDayUnits } from '@/engine/scheduler/ResourceLoad';
@@ -424,13 +426,13 @@ console.log('-- (p) tabel: ⚠ in de kolom Resterend werk (eigenaarsbesluit 2026
   };
   openFixture();
   eq('p1 E-1010 (320 h op 80 h, één toewijzing): ⚠ met de uitleg van het paneel',
-    warningOf('E-1010'), { kind: 'remaining-work-deviates', text: 'workDeviatesHint{"stored":320,"derived":80}' });
+    warningOf('E-1010'), { kind: 'remaining-work-deviates', text: 'workDeviatesHint{"stored":320,"derived":80,"durationEffect":"workDeviatesFollowsDuration{}"}' });
   eq('p2 E-1060 (restwerk klopt): geen ⚠', warningOf('E-1060'), null);
   eq('p3 Roads A15131 (geen toewijzing): geen ⚠', warningOf('A15131'), null);
   setHours('E-1010', 72);
   eq('p4 na een duurwijziging rekent de app het restwerk uit: ⚠ weg', warningOf('E-1010'), null);
   S().undo();
-  eq('p5 na Ctrl+Z: ⚠ terug', warningOf('E-1010'), { kind: 'remaining-work-deviates', text: 'workDeviatesHint{"stored":320,"derived":80}' });
+  eq('p5 na Ctrl+Z: ⚠ terug', warningOf('E-1010'), { kind: 'remaining-work-deviates', text: 'workDeviatesHint{"stored":320,"derived":80,"durationEffect":"workDeviatesFollowsDuration{}"}' });
 
   // Twee toewijzingen, één wijkt af: één ⚠ met per afwijkende toewijzing naam en getallen.
   const e1020 = byCode('E-1020');
@@ -438,7 +440,10 @@ console.log('-- (p) tabel: ⚠ in de kolom Resterend werk (eigenaarsbesluit 2026
   eq('p6 E-1020 met twee toewijzingen (Design Engineer 2 wijkt af): één ⚠, naam en getallen',
     warningOf('E-1020'), {
       kind: 'remaining-work-deviates',
-      text: `workDeviatesMany${JSON.stringify({ lines: `workDeviatesLine${JSON.stringify({ name: 'Design Engineer 2', stored: 160, derived: 40 })}` })}`,
+      text: `workDeviatesMany${JSON.stringify({
+        lines: `workDeviatesLine${JSON.stringify({ name: 'Design Engineer 2', stored: 160, derived: 40 })}`,
+        durationEffect: 'workDeviatesFollowsDuration{}',
+      })}`,
     });
 
   // Contour: die vormt de inzet per dag zelf — dezelfde uitzondering als het paneel.
@@ -453,6 +458,105 @@ console.log('-- (p) tabel: ⚠ in de kolom Resterend werk (eigenaarsbesluit 2026
   const engineer = asg('7500').resourceId;
   useAppStore.setState((s) => { s.resources.find((r) => r.id === engineer)!.type = 'MATERIAL'; });
   eq('p9 materiaal met afwijkend restwerk: geen ⚠', warningOf('E-1010'), null);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+console.log('-- (q) besluit V10: de slotzin van de uitleg volgt de regel, in tabel en paneel gelijk --');
+{
+  // De ECHTE Nederlandse tekst (src/i18n/locales/nl/task.json), met dezelfde {{…}}-invulling als i18next.
+  const nlTask = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'src/i18n/locales/nl/task.json'), 'utf8')) as Record<string, unknown>;
+  const nlText = (key: string, values?: Readonly<Record<string, string | number>>): string => {
+    const raw = key.split('.').reduce<unknown>((node, part) => (node as Record<string, unknown> | undefined)?.[part], nlTask);
+    if (typeof raw !== 'string') throw new Error(`nl-tekst ${key} ontbreekt`);
+    return raw.replace(/\{\{(\w+)\}\}/g, (_m, name: string) => String(values?.[name] ?? `{{${name}}}`));
+  };
+  const FOLLOWS = 'De app verandert dit niet vanzelf. Wijzig je de duur, dan vervangt de app dit werk door inzet × nieuwe duur. Je krijgt dan een melding; Ctrl+Z zet het terug.';
+  const KEEPS = 'De app verandert dit niet vanzelf. Wijzig je de duur, dan blijft dit werk staan en past de app de inzet aan.';
+  eq('q0 nl-bron: de twee slotzinnen letterlijk zoals besloten',
+    [nlText('properties.assignments.workDeviatesFollowsDuration'), nlText('properties.assignments.workDeviatesKeepsWork')], [FOLLOWS, KEEPS]);
+  // Tabel: de echte rasteradapter met de projectstandaard, precies zoals FullTaskGrid hem doorgeeft.
+  const tableText = (code: string): string | null => {
+    const s = S();
+    const adapter = createTaskGridAdapter({
+      projectId: s.project.id, tasks: s.tasks, sequences: s.sequences, cpmResult: s.cpmResult,
+      assignments: s.assignments, resources: s.resources, baselines: s.baselines,
+      activityCodeTypes: s.activityCodeTypes, customFieldDefs: s.customFieldDefs, customTaskTypes: s.customTaskTypes,
+      scheduleStale: s.scheduleStale, wbsAutoNumber: false, taskTypesUnlocked: true,
+      defaultWorkRule: s.project.defaultWorkRule,
+      effectiveHoursPerDay: (t) => effHoursPerDay(effectiveCalendarOf(t, s.calendar, s.calendars)),
+      labelForColumn: (k) => k, labelForText: nlText,
+      numberLocale: 'nl', surfaceId: 'full-task-grid', rows: s.viewRows, selectedTaskIds: [],
+    });
+    const row = s.viewRows.find((r) => r.kind === 'task' && r.task.id === byCode(code).id)!;
+    return adapter.getCell(row.rowKey, taskColumnId('assignment.remainingWork'))?.warning?.text ?? null;
+  };
+  // Paneel: dezelfde invulling als `TaskAssignmentsSection` (hint + slotzin uit workDeviationEffectKey).
+  const panelText = (code: string, sourceId: string): string | null => {
+    const d = deviationOf(code, sourceId);
+    return d && nlText('properties.assignments.workDeviatesHint', {
+      ...d, durationEffect: nlText(workDeviationEffectKey(byCode(code), S().project.defaultWorkRule)),
+    });
+  };
+  const hint = (stored: number, derived: number, slot: string) =>
+    `Opgeslagen werk ${stored} u wijkt af van inzet × resterende duur (${derived} u). Het histogram volgt het opgeslagen werk over de hele taakduur. ${slot}`;
+
+  // Per regel: de zin in tabel en paneel, en dan de echte duurwijziging — de zin moet kloppen met wat er gebeurt.
+  const cases: { label: string; code: string; src: string; prep?: () => void; keeps: boolean }[] = [
+    { label: 'Vaste duur en inzet (E-1010)', code: 'E-1010', src: '7500', keeps: false },
+    { label: 'Vaste inzet (E-1070)', code: 'E-1070', src: '7506', keeps: false },
+    { label: 'Vast werk (E-1030)', code: 'E-1030', src: '7502', keeps: true },
+    { label: 'Vaste duur en werk (E-1040)', code: 'E-1040', src: '7503', keeps: true },
+    {
+      label: 'Vaste duur en werk, MSP effort-driven (E-1040)', code: 'E-1040', src: '7503', keeps: false,
+      prep: () => useAppStore.setState((s) => {
+        const t = s.tasks.find((x) => x.wbsCode === 'E-1040')!;
+        t.mspTaskType = 'FIXED_DURATION'; t.effortDriven = true;
+      }),
+    },
+    {
+      label: 'geen eigen regel, projectstandaard Vast werk (E-1010)', code: 'E-1010', src: '7500', keeps: true,
+      prep: () => useAppStore.setState((s) => {
+        delete s.tasks.find((x) => x.wbsCode === 'E-1010')!.workRule;
+        s.project.defaultWorkRule = 'FIXED_WORK';
+      }),
+    },
+    {
+      label: 'geen eigen regel, projectstandaard Vaste duur en inzet (E-1030)', code: 'E-1030', src: '7502', keeps: false,
+      prep: () => useAppStore.setState((s) => {
+        delete s.tasks.find((x) => x.wbsCode === 'E-1030')!.workRule;
+        s.project.defaultWorkRule = 'FIXED_DURATION_RATE';
+      }),
+    },
+    {
+      label: 'geen eigen regel, geen projectstandaard (E-1030)', code: 'E-1030', src: '7502', keeps: false,
+      prep: () => useAppStore.setState((s) => {
+        delete s.tasks.find((x) => x.wbsCode === 'E-1030')!.workRule;
+        delete s.project.defaultWorkRule;
+      }),
+    },
+  ];
+  for (const c of cases) {
+    openFixture();
+    c.prep?.();
+    const slot = c.keeps ? KEEPS : FOLLOWS;
+    const d = deviationOf(c.code, c.src)!;
+    eq(`q1 ${c.label}: tabel toont de slotzin "${c.keeps ? 'werk blijft' : 'werk volgt de duur'}"`, tableText(c.code), hint(d.stored, d.derived, slot));
+    eq(`q2 ${c.label}: paneel toont dezelfde tekst als de tabel`, panelText(c.code, c.src), tableText(c.code));
+    const before = asg(c.src).remainingWorkMinutes;
+    setHours(c.code, 72);
+    const stayed = asg(c.src).remainingWorkMinutes === before;
+    eq(`q3 ${c.label}: de duurwijziging doet wat de zin zegt (werk bleef staan: ${c.keeps})`, stayed, c.keeps);
+    eq(`q4 ${c.label}: melding alleen als het werk vervangen werd`, workNotices().length > 0, !c.keeps);
+  }
+
+  // Meer toewijzingen: één slotzin onder de regels.
+  openFixture();
+  S().assignResource(byCode('E-1020').id, asg('7500').resourceId, 1);
+  eq('q5 twee toewijzingen (Vaste duur en inzet): de regels en daaronder één slotzin', tableText('E-1020'),
+    `Opgeslagen werk wijkt af van inzet × resterende duur:\nDesign Engineer 2: 160 u (inzet × resterende duur: 40 u)\n${FOLLOWS}`);
+  useAppStore.setState((s) => { s.tasks.find((x) => x.wbsCode === 'E-1020')!.workRule = 'FIXED_WORK'; });
+  eq('q6 dezelfde taak onder Vast werk: de andere slotzin', tableText('E-1020'),
+    `Opgeslagen werk wijkt af van inzet × resterende duur:\nDesign Engineer 2: 160 u (inzet × resterende duur: 40 u)\n${KEEPS}`);
 }
 
 if (diffs.length > 0) {

@@ -1,6 +1,6 @@
 import { WORK_RULES } from '@/types/workRule';
 import { remainingMinutesOf, workRuleApplies } from '@/engine/work/workRuleApply';
-import { assignmentWorkDeviation } from '@/engine/work/assignmentWorkDeviation';
+import { assignmentWorkDeviation, workDeviationEffectKey } from '@/engine/work/assignmentWorkDeviation';
 import { matchContoursToAssignments } from '@/engine/contour/contourEngine';
 import type { Baseline, BaselineTask } from '@/types/baseline';
 import { RESOURCE_CURVES, type ResourceAssignment, type ResourceCurve } from '@/types/resource';
@@ -736,11 +736,14 @@ function remainingWorkWarning(task: Task, ctx: TaskColumnContext): TaskCellWarni
     if (deviation) hits.push({ name: resource?.name ?? assignment.resourceId, ...deviation });
   }
   if (hits.length === 0) return null;
-  const label = (key: string, values: Readonly<Record<string, string | number>>) => ctx.labelForText?.(key, values) ?? '';
+  const label = (key: string, values?: Readonly<Record<string, string | number>>) => ctx.labelForText?.(key, values) ?? '';
+  // Slotzin per regel (besluit V10): dezelfde keuze als het paneel en als de duurbewerking zelf.
+  const durationEffect = label(workDeviationEffectKey(task, ctx.defaultWorkRule));
   const text = own.length === 1
-    ? label('properties.assignments.workDeviatesHint', { stored: hits[0].stored, derived: hits[0].derived })
+    ? label('properties.assignments.workDeviatesHint', { stored: hits[0].stored, derived: hits[0].derived, durationEffect })
     : label('properties.assignments.workDeviatesMany', {
       lines: hits.map(hit => label('properties.assignments.workDeviatesLine', hit)).join('\n'),
+      durationEffect,
     });
   return { kind: 'remaining-work-deviates', text };
 }

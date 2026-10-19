@@ -95,7 +95,7 @@ Onder Vast werk zet je de inzet op 3. Het werk is 32 uur, dus de duur wordt 32 �
 
 Met twee resources met verschillende inzet werkt het net zo. Zet je onder Vast werk een tweede resource, bijvoorbeeld *Stukadoor 2*, met inzet 2 bij de stukadoor met inzet 1, dan verdeelt de app de 32 uur in de verhouding 1 : 2, dus 10,7 en 21,3 uur. Beide hebben dan 1,33 werkdagen nodig. De duur wordt 2 werkdagen.
 
-Ook een bestand uit P6 of MS Project kan een *Werk (rest)* bevatten dat niet gelijk is aan inzet × restduur. Dan staat hetzelfde waarschuwingsteken. Wijzig je de duur van zo'n taak, dan rekent de app het restwerk opnieuw uit, ook als het uit het bestand kwam. Bij *Vaste duur en inzet* en *Vaste inzet* wordt het restwerk inzet × nieuwe restduur. Bij *Vaste duur en werk* en *Vast werk* blijft het werk staan en past de inzet zich aan. Verdwijnt zo een restwerk uit het bestand, dan krijg je een melding met het oude en het nieuwe aantal uren. Met Ctrl+Z zet je de oude waarde terug.
+Ook een bestand uit P6 of MS Project kan een *Werk (rest)* bevatten dat niet gelijk is aan inzet × restduur. Dan staat hetzelfde waarschuwingsteken. Uit zichzelf verandert de app dit werk niet. Wijzig je de duur van zo'n taak, dan volgt de app de werkregel, ook als het restwerk uit het bestand kwam. Bij *Vaste duur en inzet* en *Vaste inzet* wordt het restwerk inzet × nieuwe restduur. Bij *Vaste duur en werk* en *Vast werk* blijft het werk staan en past de inzet zich aan. Verdwijnt zo een restwerk uit het bestand, dan krijg je een melding met het oude en het nieuwe aantal uren. Met Ctrl+Z zet je de oude waarde terug. De uitleg bij het waarschuwingsteken zegt per taak welk van de twee gebeurt.
 
 ### Een andere kalender
 
