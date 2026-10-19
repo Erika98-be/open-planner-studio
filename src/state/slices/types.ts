@@ -410,6 +410,10 @@ export interface AppNotification {
   detailParams?: Record<string, string | number>;
   /** Samenvouw-sleutel: een tweede melding met dezelfde sleutel wordt één regel met een teller. */
   dedupeKey?: string;
+  /** Met `dedupeKey`: een tweede melding met dezelfde sleutel VERVANGT de inhoud zonder dat de
+   *  teller oploopt — voor een melding die een lopende bewerking bijwerkt (de restwerkmelding toont
+   *  tijdens één balksleep steeds de eindwaarde, zonder "×N"). */
+  replaceOnDedupe?: boolean;
   /** Aantal samengevouwen voorkomens; 1 bij de eerste. */
   count: number;
   /** Optioneel — id van een in-app-documentatieartikel (`public/docs/<taal>/<id>.md`) dat deze

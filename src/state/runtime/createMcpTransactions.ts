@@ -464,7 +464,7 @@ function createMcpDraft(
         lost = applyDurationChangeRules(task, oldWorkMinutes, contourHpd, {
           keepWork: contourKeepsWork(task, s.project.defaultWorkRule),
         }) || lost;
-        recordRecomputedWork(settleDurationEdit(task, s.assignments, triangle).recomputedWork);
+        recordRecomputedWork(settleDurationEdit(task, triangle).recomputedWork);
       }
       settleProgressWork(task, s.assignments, progressWork);
       if ('workRule' in updates && task.workRule !== workRule) {
@@ -577,7 +577,7 @@ function createMcpDraft(
         lost = applyDurationChangeRules(task, oldWorkMinutes, contourHpd, {
           keepWork: contourKeepsWork(task, s.project.defaultWorkRule),
         }) || lost;
-        recordRecomputedWork(settleDurationEdit(task, s.assignments, triangle).recomputedWork);
+        recordRecomputedWork(settleDurationEdit(task, triangle).recomputedWork);
       }
       // `workRule` via de driehoek-bewuste route, ná de duurpatch.
       if ('workRule' in top && task.workRule !== workRule) {

@@ -266,12 +266,18 @@ bestand.**
   niet gestart, inzet 1, restwerk 320 h op 80 h): duur 80 → 72 h ⇒ restwerk 320 → 72 h.
 - Werkbeschermend (FIXED_WORK, FIXED_DURATION_WORK): het werk blijft, de inzet volgt (synchronisatie-
   tabel §2.2, [P3]).
-- Dit geldt voor gestarte én niet-gestarte taken; de restduur volgt altijd de duurbewerking. Een
-  niet-gestarte taak met een expliciet restveld krijgt rest = nieuwe duur.
+- Dit geldt voor gestarte én niet-gestarte taken. Een niet-gestarte taak met een expliciet restveld
+  krijgt rest = nieuwe duur. Een gestarte taak krijgt rest = oude rest + duurverschil
+  (`carryRemainingThroughDurationEdit`).
+- **Uitzondering (stand 2026-10-19, ook op main):** een splitsbewerking op een GESTARTE taak
+  (`applyTaskSplits`, `src/state/splitMutations.ts`) roept die meeschuifstap niet aan. De rest blijft
+  daar staan en het restwerk volgt alleen als de rest verandert. Staat op de VERVOLG-lijst van #380.
 - Melding alleen als een bewaard `remainingWorkMinutes` dat afweek van inzet × restduur (hetzelfde
   criterium als het waarschuwingsteken, `assignmentWorkDeviation`) door de bewerking verdwijnt. Eén
   melding per transactie via het meldingenkanaal; Ctrl+Z zet de bewaarde waarde in één stap terug,
-  inclusief het waarschuwingsteken. MCP vraagt niets; de envelop noemt het herschreven restwerk
+  inclusief het waarschuwingsteken. Binnen één gecoalesceerde undo-stap (een balksleep, toetsaanslagen
+  in het paneel) wordt dezelfde melding bijgewerkt: hij toont het restwerk vóór de eerste stap en de
+  eindwaarde. MCP vraagt niets; de envelop noemt het herschreven restwerk
   (`remainingWorkRecomputed`).
 - Nooit iets bij openen of herberekenen (3.1-5): alleen bij bewerkingen.
 

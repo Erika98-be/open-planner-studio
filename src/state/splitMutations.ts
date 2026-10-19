@@ -85,7 +85,7 @@ export function applyTaskSplits(
     // `keepGaps`: de gatenlijst hierboven is al op de NIEUWE werkduur gerekend — nog een keer
     // laten schalen zou dubbel zijn.
     rescaleTaskContours(task, oldWorkMinutes, hoursPerDay, contourKeepsWork(task, s.project.defaultWorkRule), { keepGaps: true });
-    recomputedWork = settleDurationEdit(task, s.assignments, triangle).recomputedWork;
+    recomputedWork = settleDurationEdit(task, triangle).recomputedWork;
   }
 
   // (5) Contour meeverhuizen: dagslots lezen met de OUDE gaten (de as waarop het profiel nu

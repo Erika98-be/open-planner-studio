@@ -41,7 +41,7 @@ import {
   captureCalendarChange, captureTriangle, carryRemainingThroughDurationEdit, durationEditRefusal, settleCalendarChange,
   settleDurationEdit, settleRuleChange, captureProgressWork, settleProgressWork, type RecomputedRemainingWork,
 } from '@/engine/work/workRuleApply';
-import { remainingWorkRecomputedNotice } from '../remainingWorkNotice';
+import { mergeStepRecomputedWork, remainingWorkRecomputedNotice } from '../remainingWorkNotice';
 import type { WorkRule } from '@/types/workRule';
 import type { AppSlice, AppSliceFactory, NotifyInput, SiblingDirection } from './types';
 import type { AppState } from '../appStore';
@@ -793,6 +793,33 @@ function settlePhaseTransitions(s: AppState, transitions: readonly PhaseTransiti
 }
 
 /** Buiten de producer: meldingen en belasting. */
+/**
+ * Meldt herschreven afwijkend restwerk (`settleDurationEdit`) ná de producer. Zonder `coalesceKey`:
+ * één melding per bewerking. Met `coalesceKey` (balksleep, toetsaanslagen in het paneel) horen alle
+ * stappen bij één undo-stap: de melding wordt ter plekke bijgewerkt en toont de EINDWAARDE, met het
+ * "vóór" van de eerste stap (dat zet Ctrl+Z terug) — zie `mergeStepRecomputedWork`.
+ */
+function notifyRecomputedWork(
+  runtime: StoreRuntime,
+  get: () => AppState,
+  fresh: readonly RecomputedRemainingWork[],
+  coalesceKey: string | undefined,
+): void {
+  if (!coalesceKey) {
+    const notice = remainingWorkRecomputedNotice(fresh);
+    if (notice) get().notify(notice);
+    return;
+  }
+  const carried = runtime.coalescedRecomputedWork(coalesceKey);
+  if (carried.length === 0 && fresh.length === 0) return;
+  const s = get();
+  const { items, notify } = mergeStepRecomputedWork(carried, fresh,
+    (id) => s.assignments.find((a) => a.id === id)?.remainingWorkMinutes);
+  runtime.setCoalescedRecomputedWork(coalesceKey, items);
+  const notice = remainingWorkRecomputedNotice(notify, { dedupeKey: `remaining-work:${coalesceKey}` });
+  if (notice) s.notify(notice);
+}
+
 function finishStructural(get: () => AppState, outcome: StructuralOutcome): void {
   for (const notice of outcome.notices) get().notify(notice);
   if (outcome.lostSteering > 0) notifyTimephasedLoss(get().notify, get().activeDocumentId, outcome.lostSteering);
@@ -1012,7 +1039,7 @@ export const createTaskSlice: AppSliceFactory<TaskSlice> = (runtime) => (set, ge
         // inzet = W / R', anders volgt een aanwezig werkveld de nieuwe restduur (ook een afwijkend
         // werk uit het bestand — dat meldt hij terug). Onder de standaardregel zonder werkvelden
         // verandert er aan de toewijzingen niets.
-        recomputedWork = settleDurationEdit(task, s.assignments, triangle).recomputedWork;
+        recomputedWork = settleDurationEdit(task, triangle).recomputedWork;
       }
       settleProgressWork(task, s.assignments, progressWork);
       if ('workRule' in updates && task.workRule !== workRule) {
@@ -1043,8 +1070,7 @@ export const createTaskSlice: AppSliceFactory<TaskSlice> = (runtime) => (set, ge
     });
     for (const notice of refusedNotices) get().notify(notice);
     if (lostTimephasedGuidance) notifyTimephasedLoss(get().notify, get().activeDocumentId, 1);
-    const workNotice = remainingWorkRecomputedNotice(recomputedWork);
-    if (workNotice) get().notify(workNotice);
+    notifyRecomputedWork(runtime, get, recomputedWork, opts?.coalesceKey);
     get().recomputeViewRows();
   },
 
@@ -1090,8 +1116,7 @@ export const createTaskSlice: AppSliceFactory<TaskSlice> = (runtime) => (set, ge
       runtime.finishMutation(s, { stale: true });
     });
     if (lostTimephasedGuidance) notifyTimephasedLoss(get().notify, get().activeDocumentId, 1);
-    const workNotice = remainingWorkRecomputedNotice(recomputedWork);
-    if (workNotice) get().notify(workNotice);
+    notifyRecomputedWork(runtime, get, recomputedWork, opts?.coalesceKey);
     get().recomputeViewRows();
     return refusal;
   },

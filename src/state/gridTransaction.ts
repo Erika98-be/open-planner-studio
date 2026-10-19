@@ -788,7 +788,7 @@ function applyCellEdits(
     timephasedGuidanceLost ||= planned.value.timephasedGuidanceLost;
     scheduleStale ||= planned.value.scheduleStale;
     state.tasks[taskIndex] = planned.value.task;
-    recomputedWork = settleDurationEdit(state.tasks[taskIndex], state.assignments, triangle).recomputedWork;
+    recomputedWork = settleDurationEdit(state.tasks[taskIndex], triangle).recomputedWork;
     settleProgressWork(state.tasks[taskIndex], state.assignments, progressWork);
     // Een typewissel in het raster legt — net als
     // `setTaskWorkRule` — onder een werkbeschermende regel het huidige restwerk vast.

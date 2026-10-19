@@ -229,7 +229,7 @@ openFixture();
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-console.log('-- (g) Gantt-sleep: drie stappen met één coalesceKey ⇒ één melding, één undo-stap --');
+console.log('-- (g) Gantt-sleep: drie stappen met één coalesceKey ⇒ één melding met de eindwaarde, één undo-stap --');
 openFixture();
 {
   const events0 = S().historyEvents.length;
@@ -237,10 +237,22 @@ openFixture();
   setHours('E-1010', 88, { coalesceKey: 'sleep-1' });
   setHours('E-1010', 92, { coalesceKey: 'sleep-1' });
   eq('g1 restwerk volgt tot 92 h', asg('7500').remainingWorkMinutes, 92 * H);
-  eq('g2 één melding (alleen de eerste stap had een afwijkend restwerk)', workNotices().map((n) => n.numberParams), [{ before: 320, after: 84 }]);
+  // Alleen de eerste stap ziet een afwijkend restwerk; de melding toont toch de eindwaarde, met het
+  // "vóór" dat Ctrl+Z terugzet (review #380, V1).
+  eq('g2 één melding met de eindwaarde: 320 → 92 h', workNotices().map((n) => n.numberParams), [{ before: 320, after: 92 }]);
+  eq('g2b dezelfde melding bijgewerkt, geen teller', S().ui.notifications.filter((n) => n.messageKey.startsWith('notifications.remainingWorkRecomputed')).map((n) => n.count), [1]);
   eq('g3 één undo-stap', S().historyEvents.length - events0, 1);
   S().undo();
   eq('g4 undo: terug naar 80 h en 320 h', [byCode('E-1010').time.durationMinutes, asg('7500').remainingWorkMinutes], [80 * H, 320 * H]);
+  // Een nieuw gebaar met dezelfde sleutel ná de undo is een nieuwe undo-stap: geen oude items mee.
+  useAppStore.setState((s) => { s.ui.notifications = []; });
+  setHours('E-1010', 72, { coalesceKey: 'sleep-1' });
+  eq('g5 na undo: nieuwe melding 320 → 72 h', workNotices().map((n) => n.numberParams), [{ before: 320, after: 72 }]);
+  // Een ander event ertussen (een gewone bewerking van een andere taak) breekt de reeks af.
+  setHours('E-1060', 81);
+  useAppStore.setState((s) => { s.ui.notifications = []; });
+  setHours('E-1010', 64, { coalesceKey: 'sleep-1' });
+  eq('g6 andere bewerking ertussen: geen melding meer (72 h klopte al)', workNotices(), []);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -363,12 +375,13 @@ openFixture();
   // Roept een route `settleDurationEdit` aan zonder die stap, dan zet de restregel hier niets
   // (geen rest = duur × (1 − %), dat zou het gedane werk verschuiven).
   const t = byCode('E-1050');
-  const captured = captureTriangle(t, S().assignments, S());
   useAppStore.setState((s) => {
     const d = s.tasks.find((x) => x.id === t.id)!;
+    // Momentopname in dezelfde draft: de settle schrijft in de toewijzingen uit de momentopname.
+    const captured = captureTriangle(d, s.assignments, s);
     d.time.durationMinutes = 88 * H;
     d.time.scheduleDuration = 11;
-    settleDurationEdit(d, s.assignments, captured);
+    settleDurationEdit(d, captured);
   });
   eq('n1 gestarte taak zonder meeschuifstap: de restregel laat de rest staan (40 h)', byCode('E-1050').time.remainingMinutes, 40 * H);
 }

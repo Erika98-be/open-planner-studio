@@ -286,15 +286,23 @@ export interface CapturedTriangle {
   /** Kopie van `task.time` op het moment van de momentopname — `settleDurationEdit` ziet daaraan of
    *  de bewerking de voortgang zelf aanraakte en of de taak nog niet gestart was. */
   time: TaskTime;
+  /** De toewijzingen van DEZE taak: dezelfde objecten (in een draft: dezelfde proxies) als in de lijst
+   *  bij `captureTriangle`, in die volgorde. `settleDurationEdit` schrijft hierin terug, zodat een
+   *  duurbewerking niet nog eens over alle toewijzingen van het project loopt (rehab-2: 52.640 per
+   *  geplakte rij). Geldig zolang de aanroeper tussen momentopname en settle geen toewijzing
+   *  toevoegt, verwijdert of vervangt; alle aanroepers muteren daar alleen de taak. */
+  assignments: ResourceAssignment[];
 }
 
 /** Stap 1 als momentopname VÓÓR een mutatie; `null` wanneer de regel niet op deze taak werkt. */
 export function captureTriangle(task: Task, assignments: readonly ResourceAssignment[], deps: WorkRuleDeps): CapturedTriangle | null {
   if (!workRuleApplies(task)) return null;
   const ctx = workRuleContextOf(task, deps);
+  // Eén keer filteren; `triangleStateOf` filtert daarna alleen deze korte lijst.
+  const own = assignments.filter((a) => a.taskId === task.id);
   return {
-    state: triangleStateOf(task, assignments, ctx), ctx, totalMinutes: totalMinutesOf(task, ctx),
-    finishBasis: hourInputFinishBasis(task), time: { ...task.time },
+    state: triangleStateOf(task, own, ctx), ctx, totalMinutes: totalMinutesOf(task, ctx),
+    finishBasis: hourInputFinishBasis(task), time: { ...task.time }, assignments: own,
   };
 }
 
@@ -331,9 +339,12 @@ const NO_DURATION_CHANGE: DurationEditWriteBack = { ...NO_CHANGE, recomputedWork
  *     elke voortgangsbewerking). Zonder deze stap bleef een uit het bestand gelezen restveld (P6
  *     `remain_drtn_hr_cnt`, MSP `RemainingDuration`) op de oude duur staan: *Resterend* en de balk
  *     liepen uiteen, de driehoek zag geen wijziging, en een latere werkelijke start op 0 % liet het
- *     restwerk alsnog springen. Een LOPENDE taak heeft dit al gehad
- *     (`carryRemainingThroughDurationEdit`, vóór deze stap). Gaf de bewerking zelf voortgang of
- *     een restduur op, dan wint die opgave.
+ *     restwerk alsnog springen. Een LOPENDE taak hoort dit al gehad te hebben
+ *     (`carryRemainingThroughDurationEdit`, vóór deze stap: `updateTask`, raster, MCP-draft). Gaf de
+ *     bewerking zelf voortgang of een restduur op, dan wint die opgave.
+ *     UITZONDERING (ook op main): `applyTaskSplits` (splitMutations.ts) roept de meeschuifstap niet
+ *     aan. Op een GESTARTE taak met een expliciet restveld blijft de rest bij een splitsbewerking dus
+ *     staan, en volgen inzet en werk niet. VERVOLG op #380.
  *  2. De kern verdeelt inzet en werk naar de nieuwe restduur volgens de regel van de taak
  *     (`applyDurationEdit`): werk beschermd ⇒ inzet = W ÷ R'; anders wordt een aanwezig werkveld
  *     R' × inzet — óók als het uit het bestand kwam en afweek (P6 doet dat zonder vraag,
@@ -343,7 +354,7 @@ const NO_DURATION_CHANGE: DurationEditWriteBack = { ...NO_CHANGE, recomputedWork
  *
  * Onder FIXED_DURATION_RATE zonder werkvelden verandert er aan de toewijzingen niets.
  */
-export function settleDurationEdit(task: Task, assignments: ResourceAssignment[], captured: CapturedTriangle | null): DurationEditWriteBack {
+export function settleDurationEdit(task: Task, captured: CapturedTriangle | null): DurationEditWriteBack {
   if (!captured) return NO_DURATION_CHANGE;
   // Poort: een voortgangsbewerking (`completion`/`remainingTime`) verandert de REST maar niet
   // de duur — dat is geen duurbewerking en raakt de driehoek niet.
@@ -353,11 +364,14 @@ export function settleDurationEdit(task: Task, assignments: ResourceAssignment[]
   if (Math.abs(newRemaining - captured.state.remainingMinutes) < 1e-6) return NO_DURATION_CHANGE;
   const result = applyDurationEdit(captured.state, newRemaining);
   if (!result.ok) return NO_DURATION_CHANGE;
-  const deviating = deviatingStoredWork(task, assignments, captured.state);
-  const written = applyTriangleResult(task, assignments, captured.state, result.state, captured.ctx, { skipDuration: true });
+  // Alleen de toewijzingen van deze taak (uit de momentopname): de terugschrijfstap en het
+  // afwijkcriterium zoeken dan in een handvol objecten, niet in alle toewijzingen van het project.
+  const own = captured.assignments;
+  const deviating = deviatingStoredWork(task, own, captured.state);
+  const written = applyTriangleResult(task, own, captured.state, result.state, captured.ctx, { skipDuration: true });
   const recomputedWork: RecomputedRemainingWork[] = [];
   for (const before of deviating) {
-    const after = assignments.find((a) => a.id === before.id);
+    const after = own.find((a) => a.id === before.id);
     if (!after || after.remainingWorkMinutes === undefined) continue;
     if (Math.abs(after.remainingWorkMinutes - before.minutes) <= 1e-6) continue; // werk beschermd: bleef staan
     recomputedWork.push({
@@ -390,17 +404,17 @@ function followRemainingOfUnstartedTask(task: Task, before: TaskTime): void {
 
 /** De werkresources van de taak waarvan het BEWAARDE restwerk vóór de bewerking afweek van
  *  inzet × restduur — hetzelfde criterium als het waarschuwingsteken (`assignmentWorkDeviation`):
- *  materiaal en een toewijzing met contour tellen niet mee. */
+ *  materiaal en een toewijzing met contour tellen niet mee. `own` = de toewijzingen van de taak. */
 function deviatingStoredWork(
   task: Task,
-  assignments: readonly ResourceAssignment[],
+  own: readonly ResourceAssignment[],
   before: TriangleState,
 ): { id: string; minutes: number }[] {
   const out: { id: string; minutes: number }[] = [];
-  const siblings = assignments.filter((a) => a.taskId === task.id);
+  const contoured = (task.timephasedContours?.length ?? 0) > 0;
   for (const a of before.assignments) {
     if (!a.drivesDuration || a.remainingWorkMinutes === undefined) continue;
-    if (contourIndexForAssignment(task.timephasedContours, siblings, a.id) >= 0) continue;
+    if (contoured && contourIndexForAssignment(task.timephasedContours, own, a.id) >= 0) continue;
     if (!storedWorkDeviates(a.remainingWorkMinutes, before.remainingMinutes * a.unitsPerDay)) continue;
     out.push({ id: a.id, minutes: a.remainingWorkMinutes });
   }
