@@ -212,8 +212,8 @@ const P6_CONSTRAINT_BY_CODE_OR_LABEL: Readonly<Record<string, { type: Constraint
 function p6ConstraintFromXml(raw: string, tag: string): { type: ConstraintType; hard?: boolean } | undefined {
   const value = raw.trim();
   if (!value) return undefined;
-  const known = P6_CONSTRAINT_BY_CODE_OR_LABEL[value];
-  if (known) return known;
+  // Eigen sleutel: een waarde als `toString` of `__proto__` mag geen prototype-sleutel raken.
+  if (Object.prototype.hasOwnProperty.call(P6_CONSTRAINT_BY_CODE_OR_LABEL, value)) return P6_CONSTRAINT_BY_CODE_OR_LABEL[value];
   console.warn(`P6-XML-import: onbekende <${tag}>-waarde '${value}' — constraint blijft afwezig.`);
   return undefined;
 }

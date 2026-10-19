@@ -81,6 +81,13 @@ async function main(): Promise<void> {
     eq('1u onbekende waarde ⇒ geen constraint', r.tasks.find(t => t.wbsCode === 'U')?.constraint, undefined);
   }
 
+  // Een waarde die als prototype-sleutel bestaat (`toString`, `constructor`) is ook onbekend.
+  {
+    const r = readP6XML(project(activity(1, 'T', 'toString') + activity(2, 'C', 'constructor')));
+    eq('1p toString ⇒ geen constraint', r.tasks.find(t => t.wbsCode === 'T')?.constraint, undefined);
+    eq('1p constructor ⇒ geen constraint', r.tasks.find(t => t.wbsCode === 'C')?.constraint, undefined);
+  }
+
   // (3) Round-trip met de eigen writer: wat OPS schrijft, leest OPS terug.
   {
     const first = readP6XML(project(TABLE.map(([label], i) => activity(200 + i, `R${i}`, label)).join('')));
