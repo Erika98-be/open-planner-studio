@@ -1,4 +1,4 @@
-import { formatReportNumber } from '@/utils/reportNumber';
+import { decimalSeparatorOf, formatReportNumber } from '@/utils/reportNumber';
 
 /**
  * Invoer en weergave van een positief decimaal getal in een tekstveld (inzet en werk in het blok
@@ -44,29 +44,14 @@ export function formatDecimalInput(n: number, locale: string): string {
   return fmt ? fmt.format(n) : String(Number(n.toPrecision(3)));
 }
 
-const decimalSeparators = new Map<string, string>();
-
-/** Het decimaalteken van de app-taal in de getalnotatie van de app (Latijnse cijfers). */
-function decimalSeparatorOf(locale: string): string {
-  let sep = decimalSeparators.get(locale);
-  if (sep === undefined) {
-    try {
-      sep = new Intl.NumberFormat(`${locale}-u-nu-latn`).formatToParts(1.5)
-        .find(p => p.type === 'decimal')?.value ?? '.';
-    } catch {
-      sep = '.';
-    }
-    decimalSeparators.set(locale, sep);
-  }
-  return sep;
-}
-
 /**
- * Dubbelzinnige invoer: een komma gevolgd door precies drie cijfers ("1,500") in een taal met een
- * PUNT als decimaalteken (en). Een Engelse planner bedoelt daar vaak 1500 (duizendtal), maar
- * `parsePositiveDecimal` leest 1,5. Zo'n invoer wordt geweigerd: geen stille gok. In een taal met
- * een komma als decimaalteken (nl) is "1,500" gewoon 1,5 en niet dubbelzinnig.
+ * Dubbelzinnige invoer: een getal (niet beginnend met 0) met een punt of komma gevolgd door precies
+ * drie cijfers, waarbij dat teken NIET het decimaalteken van de taal is. "1,500" in en of "1.500"
+ * in nl/de/pt/tr bedoelt vaak 1500 (duizendtal), maar `parsePositiveDecimal` leest overal 1,5.
+ * Zo'n invoer wordt geweigerd: geen stille gok. Met het decimaalteken van de taal ("1,500" in nl)
+ * is hij eenduidig; "0,500" kan geen duizendtal zijn.
  */
 export function isAmbiguousThousands(text: string, locale: string): boolean {
-  return /^\d+,\d{3}$/.test(text.trim()) && decimalSeparatorOf(locale) !== ',';
+  const m = /^[1-9]\d*([.,])\d{3}$/.exec(text.trim());
+  return m !== null && m[1] !== decimalSeparatorOf(locale);
 }

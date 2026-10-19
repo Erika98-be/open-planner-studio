@@ -267,5 +267,12 @@ test('Ctrl+S direct na het typen van een inzet slaat de nieuwe inzet op', async 
   const ifc = readFileSync(await (await download).path(), 'utf8');
   expect(ifc).toMatch(/IFCTEXT\('3\.25\|/);
 
+  // De focus staat weer in het veld: Backspace verwijdert de geselecteerde taak niet.
+  await expect(input).toBeFocused();
+  const rowsBefore = await taskRows(page).count();
+  await page.keyboard.press('Backspace');
+  await page.waitForTimeout(300);
+  expect(await taskRows(page).count()).toBe(rowsBefore);
+
   expect(seen.pageErrors).toEqual([]);
 });

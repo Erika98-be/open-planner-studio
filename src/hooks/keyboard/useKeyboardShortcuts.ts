@@ -61,10 +61,17 @@ export function shouldYieldClipboardShortcutToTaskGrid(event: {
  * Forceer een hangende onBlur-commit (inzet, werk, duur, …) vóór een sneltoets die opslaat of
  * herberekent. Alleen tekstvelden hebben zo'n commit; een keuzelijst-trigger houdt de focus.
  * Eén mechanisme voor het sneltoets-register én de productie-voorpoort hieronder.
+ *
+ * De blur commit synchroon (React-onBlur ⇒ store), dus de store is bijgewerkt vóór de actie draait.
+ * Daarna gaat de focus terug naar het veld als het nog in de pagina staat: anders ligt hij op
+ * `body` en verwijdert een volgende Backspace de geselecteerde taak. Het veld heeft dan geen draft
+ * meer, dus het terugzetten commit niet opnieuw.
  */
 function commitPendingTextEdit(target: EventTarget | null): void {
   const el = target as HTMLElement | null;
-  if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable)) el.blur();
+  if (!el || !(el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable)) return;
+  el.blur();
+  if (el.isConnected) el.focus({ preventScroll: true });
 }
 
 export function useKeyboardShortcuts() {

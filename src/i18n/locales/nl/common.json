@@ -72,7 +72,7 @@
     "mppLegacy": "Dit .mpp-bestand gebruikt een oud formaat (Project 2007 of ouder). Exporteer het in MS Project als XML (Bestand → Opslaan als → XML) en open dat bestand.",
     "mppEncrypted": "Dit .mpp-bestand is met een wachtwoord beveiligd. Exporteer het in MS Project als XML (Bestand → Opslaan als → XML) en open dat bestand.",
     "saveFailed": "Opslaan mislukt",
-    "ambiguousThousands": "\"{{text}}\" is dubbelzinnig: bedoelt u een decimaal getal of duizendtallen? Typ decimalen met een punt (1.5) en duizendtallen zonder scheidingsteken (1500). De waarde is niet gewijzigd.",
+    "ambiguousThousands": "\"{{text}}\" is dubbelzinnig: bedoelt u een decimaal getal of duizendtallen? Typ decimalen met \"{{separator}}\" ({{example}}) en duizendtallen zonder scheidingsteken (1500). De waarde is niet gewijzigd.",
     "siteSaveConflict": "Niet opgeslagen: '{{name}}' is op de site intussen door iemand anders gewijzigd. Je wijzigingen staan nog in de app. Kies Opslaan als om ze als nieuw bestand te bewaren.",
     "siteFileGone": "'{{name}}' staat niet meer op de site. Het bestand is uit Recent gehaald.",
     "savedViaDownload": "Opgeslagen als download: '{{name}}' staat nu in je downloadmap. Deze omgeving staat de app niet toe rechtstreeks naar de gekozen locatie te schrijven.",

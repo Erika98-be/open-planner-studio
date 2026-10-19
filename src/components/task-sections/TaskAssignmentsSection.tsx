@@ -4,7 +4,7 @@ import { useAppStore } from '@/state/appStore';
 import type { ResourceCurve } from '@/types/resource';
 import { UnitsInput } from '@/components/common/UnitsInput';
 import { Select, type SelectOption } from '@/components/common/Select';
-import { localizeDecimalPoint } from '@/utils/reportNumber';
+import { decimalSeparatorOf, formatReportNumber, localizeDecimalPoint } from '@/utils/reportNumber';
 import { AlertTriangle, BarChart3, Lock, Trash2 } from 'lucide-react';
 import { RESOURCE_CURVES, CURVE_KEY } from './shared';
 import { isSummaryTask } from '@/utils/taskHierarchy';
@@ -91,9 +91,11 @@ export function TaskAssignmentsSection({ taskId }: { taskId: string }) {
   // Kolom "Werk (rest)" + slotjes op de beschermde hoek(en).
   const setAssignmentWork = useAppStore(s => s.setAssignmentWork);
   const notify = useAppStore(s => s.notify);
-  // "1,500" in een taal met een punt als decimaalteken: 1500 of 1,5? Geen gok; de waarde blijft.
+  // "1,500" in en of "1.500" in nl: 1500 of 1,5? Geen gok; de waarde blijft. De melding noemt het
+  // decimaalteken van de taal met een voorbeeld in de getalnotatie van de app.
   const notifyAmbiguous = (text: string) => notify({
-    severity: 'error', messageKey: 'notifications.ambiguousThousands', params: { text },
+    severity: 'error', messageKey: 'notifications.ambiguousThousands',
+    params: { text, separator: decimalSeparatorOf(i18n.language), example: formatReportNumber(1.5, i18n.language) },
   });
   const unlocked = useAppStore(s => taskTypesUnlocked(s));
   const defaultWorkRule = useAppStore(s => s.project.defaultWorkRule);

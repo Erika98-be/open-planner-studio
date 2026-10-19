@@ -281,47 +281,81 @@ for (const locale of ['nl', 'en']) {
   });
 }
 
-// Hercheck PR #369: in een taal met een punt als decimaalteken (en) bedoelt "1,500" vaak 1500.
-// Geen stille gok op 1,5: de waarde blijft, met een melding in het meldingenkanaal. In nl is
-// "1,500" eenduidig 1,5; "1.5" in en blijft gewoon werken.
-for (const locale of ['en', 'nl']) {
-  test(`invoer (${locale}): "1,500" is ${locale === 'en' ? 'dubbelzinnig en wordt geweigerd' : 'gewoon 1,5'}`, async ({ page, ops: _ops }) => {
+// Hercheck PR #369: "1,500" in en en "1.500" in nl bedoelen vaak 1500 (duizendtal). Geen stille gok
+// op 1,5: rode rand, de waarde blijft, en een melding die het decimaalteken van de taal noemt. Met
+// het decimaalteken van de taal is de invoer eenduidig; "0,500" kan geen duizendtal zijn.
+const AMBIGUITY = {
+  en: { bad: '1,500', badWork: '2,000', ok: '1.5', zero: '0,500', hint: '"." (1.5)' },
+  nl: { bad: '1.500', badWork: '15.000', ok: '1,500', zero: '0.500', hint: '"," (1,5)' },
+} as const;
+for (const locale of ['en', 'nl'] as const) {
+  const c = AMBIGUITY[locale];
+  test(`invoer (${locale}): "${c.bad}" is dubbelzinnig en wordt geweigerd, "${c.ok}" en "${c.zero}" niet`, async ({ page, ops: _ops }) => {
     await useLocale(page, locale);
     const { unitsId, warnId } = await seedBlock(page, 280);
     const units = page.locator(`[data-ops-assignment-row="${unitsId}"] input`).first();
     const work = page.locator(`[data-ops-assignment-row="${warnId}"] [data-ops-assignment-work] input`);
-    const toast = page.locator('.ops-toast-message', { hasText: '1,500' });
+    const shown = locale === 'nl' ? '1,78' : '1.78';
 
     await units.click();
     await units.press('Control+a');
-    await page.keyboard.type('1,500');
+    await page.keyboard.type(c.bad);
+    await expect(units).toHaveAttribute('aria-invalid', 'true');
     await page.keyboard.press('Enter');
-    if (locale === 'nl') {
-      await expect.poll(async () => (await assignmentOf(page, unitsId))!.units).toBe(1.5);
-      await expect(toast).toHaveCount(0);
-      return;
-    }
+    const toast = page.locator('.ops-toast-message', { hasText: c.bad });
     await expect(toast).toBeVisible();
-    await expect(toast).toContainText('ambiguous');
+    await expect(toast).toContainText(c.hint);
     expect((await assignmentOf(page, unitsId))!.units).toBe(EXACT);
-    await expect(units).toHaveValue('1.78');
+    await expect(units).toHaveValue(shown);
 
     // Werk: hetzelfde veld, dezelfde regel (ook bij verlaten met Tab).
     const workBefore = (await assignmentOf(page, warnId))!.work;
     await work.click();
     await work.press('Control+a');
-    await page.keyboard.type('2,000');
+    await page.keyboard.type(c.badWork);
     await expect(work).toHaveAttribute('aria-invalid', 'true');
     await page.keyboard.press('Tab');
     expect((await assignmentOf(page, warnId))!.work).toBe(workBefore);
-    await expect(page.locator('.ops-toast-message', { hasText: '2,000' })).toBeVisible();
+    await expect(page.locator('.ops-toast-message', { hasText: c.badWork })).toBeVisible();
 
-    // Eenduidige invoer blijft werken.
+    // Eenduidige invoer blijft werken: het decimaalteken van de taal, en een getal dat met 0 begint.
     await units.click();
     await units.press('Control+a');
-    await page.keyboard.type('1.5');
+    await page.keyboard.type(c.ok);
+    await expect(units).toHaveAttribute('aria-invalid', 'false');
     await page.keyboard.press('Enter');
     await expect.poll(async () => (await assignmentOf(page, unitsId))!.units).toBe(1.5);
+    await units.click();
+    await units.press('Control+a');
+    await page.keyboard.type(c.zero);
+    await expect(units).toHaveAttribute('aria-invalid', 'false');
+    await page.keyboard.press('Enter');
+    await expect.poll(async () => (await assignmentOf(page, unitsId))!.units).toBe(0.5);
+  });
+}
+
+// Hercheck PR #369 (V1): Ctrl+S en F5 committen het veld en zetten de focus daarna terug. Anders
+// ligt de focus op `body` en verwijdert een volgende Backspace de geselecteerde taak.
+for (const key of ['Control+s', 'F5'] as const) {
+  test(`inzet: ${key} commit één keer en houdt de focus; Backspace verwijdert de taak niet`, async ({ page, ops: _ops }) => {
+    const { taskId, unitsId } = await seedBlock(page, 280);
+    const units = page.locator(`[data-ops-assignment-row="${unitsId}"] input`).first();
+    const history = () => page.evaluate(() => window.__OPS__!.store.getState().historyEvents.length);
+    await units.click();
+    await units.press('Control+a');
+    await page.keyboard.type('2.5');
+    const before = await history();
+    const download = key === 'Control+s' ? page.waitForEvent('download') : null;
+    await page.keyboard.press(key);
+    await download;
+    expect((await assignmentOf(page, unitsId))!.units).toBe(2.5);
+    expect(await history()).toBe(before + 1);
+    await expect(units).toBeFocused();
+    await page.keyboard.press('Backspace');
+    expect(await page.evaluate((id) => window.__OPS__!.store.getState().tasks.some(t => t.id === id), taskId)).toBe(true);
+    // De Backspace ging naar het veld; verlaten met Escape zet het terug zonder commit.
+    await page.keyboard.press('Escape');
+    expect((await assignmentOf(page, unitsId))!.units).toBe(2.5);
   });
 }
 
