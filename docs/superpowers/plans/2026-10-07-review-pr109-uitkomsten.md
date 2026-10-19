@@ -1552,3 +1552,10 @@ Testversie (release-check, poort 3049) is NIET bijgewerkt met de PR's van vandaa
 - **Besluit eigenaar 2026-10-19: restwerk in de tabel = optie 1** ("1"): dezelfde gele ⚠ als in het taakpaneel in de
   kolom *Resterend werk (uren)*, alleen bij een afwijking (criterium `storedWorkDeviates` uit #380), tooltip met de
   zin "Wijzig je de duur, dan rekent de app het opnieuw uit." ⇒ bij de maker van #380 ná diens fixronde (zelfde PR).
+- **Review #382: JA** (labels exact gelijk aan MPXJ/XSD; afwijkingen van P6 in OZB-14 62 → 17, geen taak slechter).
+  Orkestrator fixte punt 1 (prototype-sleutel; check 1p + mutant rood) in 5e283d6be; PR-tekst bijgewerkt ⇒ merge na CI.
+- **Review #383: JA** (nivelleerder bit-gelijk). Orkestrator: `ganttRenderOptions.ts:168` via `exceedsCapacity` +
+  commentaren (adf7663f3); VERVOLG relatieve marge > 1e5/dag ⇒ merge na CI.
+- **#384 nieuw (expert Opus 5.5): MSPDI-werktijd op de minuut** (8c3257d0d; één-blok-werkdag nam alleen het uur; ook
+  writer `7.5:00:00`); corpus 164 bestanden: alleen 0402 "global" anders ⇒ review loopt (let op: 08:00-start op
+  07:30-kalender). CI-tijdflake `task-grid-performance` ⇒ worker `claude/perf-flake`.
