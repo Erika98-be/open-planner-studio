@@ -173,23 +173,49 @@ function p6HoursToDays(hours: number, hoursPerDay: number): number {
 }
 
 /**
- * P6 `CS_*`-code → OPS-constraint (spiegel van `p6ConstraintCode` in de writer). De harde
- * `CS_MANDSTART`/`CS_MANDFIN` komen terug als `MSO`/`MFO` mét `hard:true`; de soft-typen als hun
- * OPS-equivalent. Onbekende code ⇒ `undefined` (veld afwezig).
+ * P6-constraintsoort → OPS-constraint. Echte P6 XML (PMXML) schrijft `<PrimaryConstraintType>` en
+ * `<SecondaryConstraintType>` als Engels label (`Start On or After`); de eigen writer schrijft (nog)
+ * het XER-token (`CS_MSOA`, `p6ConstraintCode`). Beide schrijfwijzen worden gelezen, zodat echte P6
+ * XML én de round-trip met de eigen writer werken. Labels en paren geverifieerd tegen MPXJ
+ * `ConstraintTypeHelper` (`XML_TYPE_MAP` ↔ `XER_TYPE_MAP`); `XmlProjectReader` leest primair én
+ * secundair via dezelfde tabel. De harde `Mandatory Start`/`Mandatory Finish` (`CS_MANDSTART`/
+ * `CS_MANDFIN`) komen terug als `MSO`/`MFO` mét `hard:true`; de soft-soorten als hun OPS-equivalent.
  */
-function p6CodeToConstraint(code: string): { type: ConstraintType; hard?: boolean } | undefined {
-  switch (code) {
-    case 'CS_MSO': return { type: 'MSO' };
-    case 'CS_MSOA': return { type: 'SNET' };
-    case 'CS_MSOB': return { type: 'SNLT' };
-    case 'CS_MEO': return { type: 'MFO' };
-    case 'CS_MEOA': return { type: 'FNET' };
-    case 'CS_MEOB': return { type: 'FNLT' };
-    case 'CS_ALAP': return { type: 'ALAP' };
-    case 'CS_MANDSTART': return { type: 'MSO', hard: true };
-    case 'CS_MANDFIN': return { type: 'MFO', hard: true };
-    default: return undefined;
-  }
+const P6_CONSTRAINT_BY_CODE_OR_LABEL: Readonly<Record<string, { type: ConstraintType; hard?: boolean }>> = {
+  // PMXML-labels (MPXJ `ConstraintTypeHelper.XML_TYPE_MAP`)
+  'Start On': { type: 'MSO' },
+  'Start On or After': { type: 'SNET' },
+  'Start On or Before': { type: 'SNLT' },
+  'Finish On': { type: 'MFO' },
+  'Finish On or After': { type: 'FNET' },
+  'Finish On or Before': { type: 'FNLT' },
+  'As Late As Possible': { type: 'ALAP' },
+  'Mandatory Start': { type: 'MSO', hard: true },
+  'Mandatory Finish': { type: 'MFO', hard: true },
+  // XER-tokens (MPXJ `ConstraintTypeHelper.XER_TYPE_MAP`; eigen writer, `p6ConstraintCode`)
+  CS_MSO: { type: 'MSO' },
+  CS_MSOA: { type: 'SNET' },
+  CS_MSOB: { type: 'SNLT' },
+  CS_MEO: { type: 'MFO' },
+  CS_MEOA: { type: 'FNET' },
+  CS_MEOB: { type: 'FNLT' },
+  CS_ALAP: { type: 'ALAP' },
+  CS_MANDSTART: { type: 'MSO', hard: true },
+  CS_MANDFIN: { type: 'MFO', hard: true },
+};
+
+/**
+ * `<Primary|SecondaryConstraintType>` → OPS-constraint. Leeg ⇒ `undefined` (ASAP). Een onbekende
+ * waarde ⇒ `undefined` mét waarschuwing, zodat een vreemd label zichtbaar blijft (zoals bij
+ * `<DurationType>`).
+ */
+function p6ConstraintFromXml(raw: string, tag: string): { type: ConstraintType; hard?: boolean } | undefined {
+  const value = raw.trim();
+  if (!value) return undefined;
+  // Eigen sleutel: een waarde als `toString` of `__proto__` mag geen prototype-sleutel raken.
+  if (Object.prototype.hasOwnProperty.call(P6_CONSTRAINT_BY_CODE_OR_LABEL, value)) return P6_CONSTRAINT_BY_CODE_OR_LABEL[value];
+  console.warn(`P6-XML-import: onbekende <${tag}>-waarde '${value}' — constraint blijft afwezig.`);
+  return undefined;
 }
 
 // P6-XML (PMXML) draagt `<DurationType>` als Engels label, niet als het XER-token
@@ -974,13 +1000,13 @@ function readP6XmlProject(scope: P6XmlScope): P6XmlProjectRead {
 
     const parentId = wbsObjId >= 0 ? wbsObjIdToId.get(wbsObjId) || null : null;
 
-    // Datumconstraints: primair + secundair uit de `CS_*`-codes. Secundair is altijd soft
+    // Datumconstraints: primair + secundair uit het PMXML-label of de `CS_*`-code. Secundair is altijd soft
     // (P6-invariant) ⇒ `hard` wordt gedropt. Datum: uur ⇒ echte tijd, dag ⇒ tijd-strippen.
     const parseCstrDate = (raw: string): string => importDateTime(raw, hourDates);
     let constraint: TaskConstraint | undefined;
     const primCode = getElementText(actEl, 'PrimaryConstraintType');
     if (primCode) {
-      const mapped = p6CodeToConstraint(primCode);
+      const mapped = p6ConstraintFromXml(primCode, 'PrimaryConstraintType');
       if (mapped) {
         const cdateRaw = getElementText(actEl, 'PrimaryConstraintDate');
         constraint = {
@@ -993,7 +1019,7 @@ function readP6XmlProject(scope: P6XmlScope): P6XmlProjectRead {
     let constraint2: TaskConstraint | undefined;
     const secCode = getElementText(actEl, 'SecondaryConstraintType');
     if (secCode) {
-      const mapped2 = p6CodeToConstraint(secCode);
+      const mapped2 = p6ConstraintFromXml(secCode, 'SecondaryConstraintType');
       if (mapped2) {
         const cdate2Raw = getElementText(actEl, 'SecondaryConstraintDate');
         constraint2 = {
