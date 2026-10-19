@@ -31,7 +31,7 @@ Open *Planning › Structure › Templates* and click the small bin to the right
 
 ### What is in a template
 
-For each task, a template keeps the name, the description, the task type, whether it is a milestone, and the duration in days. Of the relations it keeps those between two tasks inside the branch, with type and lag.
+For each task, a template keeps the name, the description, the task type, whether it is a milestone, and the duration in days. Of the relations it keeps those between two tasks inside the branch, with type and lag. A lag in hours (`4h`) is not kept and becomes 0. A lag in work days, calendar days or percent is kept.
 
 Everything else stays behind: dates, progress and actual dates, resource assignments, codes and custom fields (see [Codes and custom fields](docs://howto-codes-en-velden)), the calendar, constraints and deadlines, the priority, a custom task type, for a milestone the kind and the tick *Mandatory (contractual)*, and relations with tasks outside the branch. After inserting you fill those in again: assignments, codes, calendar and constraints are empty, and all tasks start on the project start.
 

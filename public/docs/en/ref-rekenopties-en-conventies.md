@@ -131,6 +131,7 @@ These options come from a Primavera P6 `.xer` file and are read-only. The block 
 ## See also
 
 - [Calculation profiles and conventions](docs://uitleg-rekenprofielen): why P6 and MS Project calculate differently and how a profile works.
+- [Choosing or building a calculation profile](docs://howto-rekenprofiel-kiezen): choose, switch or build a profile.
 - [Dates as recorded](docs://uitleg-datums-zoals-opgeslagen): why an imported schedule can show other dates than your package.
 - [Critical path and float](docs://uitleg-kritiek-pad): what critical, total and free float mean.
 - [Relations and lag](docs://uitleg-relaties): lag and the calendar in which it counts.

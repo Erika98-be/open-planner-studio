@@ -258,6 +258,14 @@
       "kind": "uitleg"
     },
     {
+      "id": "howto-rekenprofiel-kiezen",
+      "title": {
+        "nl": "Een rekenprofiel kiezen of samenstellen",
+        "en": "Choosing or building a calculation profile"
+      },
+      "kind": "howto"
+    },
+    {
       "id": "howto-baseline-opslaan-en-beheren",
       "title": {
         "nl": "Een baseline opslaan en beheren",

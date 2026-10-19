@@ -43,7 +43,7 @@ Bij een mijlpaal staat er één veld, *Werkelijke datum*.
 2. Dubbelklik op een cel, typ de waarde en druk op Enter. Een percentage typ je als `50` of `50%`, een datum als `25-06-2027`, een resterende duur als `1`.
 3. Bij *Status* druk je na een dubbelklik op Enter en kies je *Niet gestart*, *Bezig* of *Voltooid*.
 
-Typ je een resterende duur, dan rekent de app het percentage terug: bij een taak van 2 werkdagen geeft een rest van 1 een percentage van 50. Een rest van 0 maakt de taak voltooid. Kies je bij *Status* *Niet gestart*, dan gaat het percentage naar 0 en verdwijnen de werkelijke datums.
+Typ je een resterende duur, dan rekent de app het percentage terug: bij een taak van 2 werkdagen geeft een rest van 1 een percentage van 50. Een rest van 0 maakt de taak voltooid. De kolom *Werkelijke duur* (ook in de categorie *Voortgang*) werkt andersom: typ hoeveel werk al gedaan is, en de app rekent het percentage uit. Bij een taak van 4 werkdagen geeft een werkelijke duur van 1 een percentage van 25. Kies je bij *Status* *Niet gestart*, dan gaat het percentage naar 0 en verdwijnen de werkelijke datums.
 
 **Alles van één taak in het venster Taak bewerken.** Klik met de rechtermuisknop op de taak en kies *Bewerken...*. De voortgangsvelden staan er ook. Ze gelden pas als je op *Opslaan* klikt.
 
