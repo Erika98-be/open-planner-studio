@@ -51,6 +51,7 @@
     "notifications.mppLegacy": "7bb4221aad8f40b2",
     "notifications.mppEncrypted": "2102dc4a416bd1e5",
     "notifications.saveFailed": "78d5deb251805ab4",
+    "notifications.ambiguousThousands": "7046ee19ecb23d1c",
     "notifications.siteSaveConflict": "4ef4b3599adbfacb",
     "notifications.siteFileGone": "f59781ed870e16e9",
     "notifications.savedViaDownload": "3da03862324d48ea",
@@ -2243,7 +2244,6 @@
     "ribbon.calendarDialog.startHour": "67254cfe6428ff5c",
     "ribbon.calendarDialog.endHour": "8314d27de4882272",
     "ribbon.calendarDialog.hoursPerDay": "ced37df99e8df16f",
-    "ribbon.calendarDialog.netHoursPerDay": "71f69c021582c154",
     "ribbon.calendarDialog.standardWorkday": "472909ca51b24905",
     "ribbon.calendarDialog.standardWorkdayInfo": "dab2e675d02969ff",
     "ribbon.calendarDialog.standardWorkdayInfoLabel": "cf1150f0be0b69b8",
@@ -2574,6 +2574,7 @@
     "commands.undo": "22161ff107643c81",
     "commands.redo": "317d53d568d624a2",
     "commands.zoomIn": "38532e02dbabab1c",
-    "commands.zoomOut": "f61db514902f41ec"
+    "commands.zoomOut": "f61db514902f41ec",
+    "ribbon.calendarDialog.netHoursPerDay": "71f69c021582c154"
   }
 }
