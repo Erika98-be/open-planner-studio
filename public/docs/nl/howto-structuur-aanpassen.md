@@ -60,7 +60,7 @@ Heeft die subtaak dezelfde resource al, of is er geen geschikte subtaak, dan is 
 
 Staat er op een toewijzing al verricht werk, dan noemt het oranje blok per resource hoeveel uur, bijvoorbeeld *Op de toewijzing van Metselaar staat al 8 uur verricht werk. Verwijderen gooit dat weg.* De knop *Annuleren* is dan de standaardknop: Enter verandert niets. Wil je de toewijzing toch verwijderen, klik dan zelf op *Toewijzing verwijderen*.
 
-Zolang het venster open is, werkt geen enkele sneltoets buiten het venster, ook *Ongedaan*, *Plakken*, Delete en F5 niet. Maakt één handeling meer samenvattingstaken tegelijk, dan toont het venster per taak de resources, en je keuze geldt voor allemaal. Eén keer *Ongedaan* (Ctrl+Z) draait de hele handeling terug.
+Zolang het venster open is, werkt geen enkele sneltoets buiten het venster, ook *Ongedaan*, *Plakken*, Delete, F5 en Ctrl+S niet. Maakt één handeling meer samenvattingstaken tegelijk, dan toont het venster per taak de resources, en je keuze geldt voor allemaal. Eén keer *Ongedaan* (Ctrl+Z) draait de hele handeling terug.
 
 **Een relatie zou een kring maken.** De relaties van een samenvattingstaak gelden ook voor haar subtaken. Zou een verplaatsing daardoor een kring maken, dan weigert de app hem, met de melding *Deze verplaatsing zou een kring in de planning maken (…)*. Er verandert dan niets.
 

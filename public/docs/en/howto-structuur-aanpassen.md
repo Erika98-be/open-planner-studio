@@ -60,7 +60,7 @@ If that subtask already has the same resource, or there is no suitable subtask, 
 
 If an assignment already has actual work, the orange block tells you how many hours per resource, for example *The assignment of Metselaar already has 8 hours of actual work. Removing it discards that work.* *Cancel* is then the default button: Enter changes nothing. If you still want to remove the assignment, click *Remove assignment* yourself.
 
-While the window is open, no shortcut outside the window works, including *Undo*, *Paste*, Delete and F5. If one action creates more summary tasks at once, the window shows the resources per task, and your choice applies to all of them. One *Undo* (Ctrl+Z) reverts the whole action.
+While the window is open, no shortcut outside the window works, including *Undo*, *Paste*, Delete, F5 and Ctrl+S. If one action creates more summary tasks at once, the window shows the resources per task, and your choice applies to all of them. One *Undo* (Ctrl+Z) reverts the whole action.
 
 **A relation would create a cycle.** The relations of a summary task also apply to its subtasks. If a move would create a cycle because of that, the app refuses it, with the message *This move would create a cycle in the schedule (…)*. Nothing changes.
 
