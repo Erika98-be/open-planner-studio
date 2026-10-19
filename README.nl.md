@@ -26,7 +26,7 @@ Het draait in je browser zonder installatie, of als kleine native desktop-app op
 
 ## Probeer het
 
-**[Open de browserversie](https://open-planner-studio.open-aec.com/)**. Kies *Bestand, Voorbeelden* om een realistisch project te laden en begin te klikken.
+**[Open de browserversie](https://open-planner-studio.open-aec.com/)**. Hij start met een realistisch voorbeeldproject, dus je kunt meteen beginnen met klikken. Meer voorbeelden staan onder *Bestand › Voorbeelden*.
 
 ## Download
 
@@ -38,13 +38,13 @@ Elke release staat op de [releasepagina](https://github.com/OpenAEC-Foundation/o
 | **macOS** | `.dmg` (universeel: Apple silicon en Intel) |
 | **Linux** | `.deb`, `.rpm`, `.AppImage`, of de [Snap Store](https://snapcraft.io/open-planner-studio) |
 
-De desktop-app kan zichzelf bijwerken. Hij is gebouwd met Tauri 2: kleine installers, met de webweergave van het systeem. Het Rust-deel is een dunne native schil met drie commando's. De rekenkern is TypeScript en draait identiek in de browser en op de desktop.
+Geïnstalleerde apps werken zichzelf bij als er een nieuwe versie is (Windows, macOS, `.deb`, `.rpm` en AppImage). De Snap-versie werkt bij via de Snap Store.
 
 ## Waarom gebruiken?
 
 - **Gratis en open.** LGPL-3.0. Geen licentiekosten, geen account, geen vendor lock-in.
 - **Open formaten.** IFC 4.3 is het eigen projectformaat. Er is geen privé binair formaat.
-- **Werkt met je bestaande bestanden.** Open MS Project- en Primavera P6-bestanden en exporteer naar MS Project XML en P6 XML.
+- **Werkt met je bestaande bestanden.** Open Microsoft Project- (`.mpp`, `.xml`) en Primavera P6-bestanden (`.xer`, `.xml`) en exporteer naar MS Project XML, P6 XML en CSV.
 - **Rekenregels naar keuze.** Reken per project met de conventies van Primavera P6, Microsoft Project of Open Planner Studio.
 - **Gemaakt voor de bouw.** Feestdagen, bouwvak, werkkalenders, keuringsmomenten, fasering, resource-nivellering.
 - **Klaar voor AI.** Een ingebouwde MCP-server laat een AI-assistent je planning lezen en bewerken, met veiligheidsschakelaars die jij beheert.
@@ -126,6 +126,10 @@ OPS is jonge software. Ken deze punten voordat je erop vertrouwt:
 - **Rekenpariteit is gemeten, niet gegarandeerd.** OPS volgt de conventies van P6 en MS Project dicht, maar een bijzondere planning kan toch anders rekenen. Vergelijk kritieke uitkomsten voordat je iets overdraagt.
 
 Iets gevonden? [Maak een issue aan](https://github.com/OpenAEC-Foundation/open-planner-studio/issues).
+
+## Onder de motorkap
+
+De desktop-app is gebouwd met Tauri 2, dus de installers zijn klein en gebruiken de webweergave van het systeem. Het Rust-deel is een dunne native schil met drie commando's. De rekenkern is geschreven in TypeScript. Het is dezelfde code in de browser en op de desktop. De interface is React 19 en de Gantt-tijdlijn wordt getekend op een Canvas 2D-vlak.
 
 ## Snel starten (ontwikkelaars)
 

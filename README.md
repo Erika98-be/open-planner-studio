@@ -26,7 +26,7 @@ It runs in your browser with nothing to install, or as a small native desktop ap
 
 ## Try it
 
-**[Open the browser version](https://open-planner-studio.open-aec.com/)**. Choose *File, Examples* to load a realistic project and start clicking.
+**[Open the browser version](https://open-planner-studio.open-aec.com/)**. It starts with a realistic example project, so you can start clicking right away. More examples are under *File › Examples*.
 
 ## Download
 
@@ -38,13 +38,13 @@ Every release is on the [releases page](https://github.com/OpenAEC-Foundation/op
 | **macOS** | `.dmg` (universal: Apple silicon and Intel) |
 | **Linux** | `.deb`, `.rpm`, `.AppImage`, or the [Snap Store](https://snapcraft.io/open-planner-studio) |
 
-The desktop app can update itself. <!-- TODO verify: updater per platform --> The desktop app is built with Tauri 2: the installers are small and use the system web view. The Rust part is a thin native shell with three commands. The scheduling engine is TypeScript and runs identically in the browser and on the desktop.
+Installed apps update themselves when a new version is out (Windows, macOS, `.deb`, `.rpm` and AppImage). The Snap version updates through the Snap Store.
 
 ## Why use it?
 
 - **Free and open.** LGPL-3.0. No licence fees, no account, no lock-in.
 - **Open formats.** IFC 4.3 is the native project format. There is no private binary format.
-- **Works with your existing files.** Open MS Project and Primavera P6 files, and export to MS Project XML and P6 XML.
+- **Works with your existing files.** Open Microsoft Project (`.mpp`, `.xml`) and Primavera P6 (`.xer`, `.xml`) files, and export to MS Project XML, P6 XML and CSV.
 - **Scheduling rules you can choose.** Calculate with Primavera P6, Microsoft Project or Open Planner Studio conventions, per project.
 - **Built for construction.** Public holidays, building-trade holidays, work calendars, inspection milestones, phasing, resource levelling.
 - **AI-ready.** A built-in MCP server lets an AI assistant read and edit your schedule, with safety switches you control.
@@ -126,6 +126,10 @@ OPS is young software. Know these before you rely on it:
 - **Calculation parity is measured, not guaranteed.** OPS follows P6 and MS Project conventions closely, but an exotic schedule can still calculate differently. Compare critical results before you hand off.
 
 Found something? [Open an issue](https://github.com/OpenAEC-Foundation/open-planner-studio/issues).
+
+## Under the hood
+
+The desktop app is built with Tauri 2, so the installers are small and use the web view of the system. The Rust part is a thin native shell with three commands. The scheduling engine is written in TypeScript. It is the same code in the browser and on the desktop. The user interface is React 19, and the Gantt timeline is drawn on a Canvas 2D surface.
 
 ## Quick start (developers)
 
