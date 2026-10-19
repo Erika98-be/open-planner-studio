@@ -135,18 +135,24 @@ const focusTask = async (page, taskName, zoom) => {
 };
 
 /** Open het showcase-voorbeeld, rekent door en zet de Gantt op de kritieke Tower A-keten. */
-async function showcaseReady(page) {
+async function showcaseReady(page, { zoom, wide = false } = {}) {
   await openExample(page, SHOWCASE);
   await calculate(page);
   await dismissNotices(page);
-  await focusTask(page, 'Slab, floor 1 — Tower A');
+  if (wide) {
+    // Breder takenraster (Duur past) en geen eigenschappenpaneel: meer ruimte voor de tijdlijn.
+    await ops(page, () => window.__OPS__.store.getState().setUI({ leftPanelWidth: 400, showPropertiesPanel: false }));
+    await page.waitForTimeout(500);
+  }
+  await focusTask(page, 'Slab, floor 1 — Tower A', zoom);
+  if (zoom != null) await focusTask(page, 'Slab, floor 1 — Tower A'); // opnieuw centreren op de gekozen schaal
 }
 
 // ---------------------------------------------------------------- de beelden
 
 const SHOTS = {
   async hero(page) {
-    await showcaseReady(page);
+    await showcaseReady(page, { zoom: 12, wide: true });
     await tab(page, 'Home');
   },
 
@@ -156,8 +162,9 @@ const SHOTS = {
     // Float-band aan (echte klik op de ribbonknop) zodat de speling van niet-kritieke taken zichtbaar is.
     const floatOn = await ops(page, () => window.__OPS__.store.getState().ui.showFloatBand);
     if (!floatOn) await page.getByRole('button', { name: /^Float band/ }).first().click();
-    await ops(page, () => window.__OPS__.store.getState().setUI({ showPropertiesPanel: false }));
-    await focusTask(page, 'Slab, floor 1 — Tower A', 4);
+    await ops(page, () => window.__OPS__.store.getState().setUI({ leftPanelWidth: 400, showPropertiesPanel: false }));
+    await focusTask(page, 'Slab, floor 1 — Tower A', 12);
+    await focusTask(page, 'Slab, floor 1 — Tower A');
   },
 
   async 'table-editing'(page) {
@@ -188,6 +195,7 @@ const SHOTS = {
     await openExample(page, SHOWCASE);
     await calculate(page);
     await dismissNotices(page);
+    await ops(page, () => window.__OPS__.store.getState().setUI({ showPropertiesPanel: false }));
     await tab(page, 'Resources');
     await page.getByRole('button', { name: /^Histogram$/ }).first().click();
     await page.waitForTimeout(800);
@@ -230,6 +238,7 @@ const SHOTS = {
 
   async 'help-viewer'(page) {
     await openExample(page, SHOWCASE);
+    await dismissNotices(page);
     await ops(page, () => window.__OPS__.store.getState().openHelpArticle('uitleg-kritiek-pad'));
     await page.waitForTimeout(1500);
   },
