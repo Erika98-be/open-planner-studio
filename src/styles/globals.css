@@ -1864,6 +1864,52 @@ body {
   }
 }
 
+/* Toewijzingen in het taakpaneel: één regel per resource (naam, inzet, werk, verwijderen), met de kop
+   in hetzelfde raster zodat elke kolom precies onder zijn kop staat — dezelfde opzet als de relatielijst
+   hierboven. Curve, urenverdeling en verplaatsen staan onder de uitklapknop op de naam. De getalkolommen
+   schalen met de tekstrol mee, zodat "0.267" ook op 125 % past. Op de smalste rail krijgt de naam een
+   eigen regel en lijnen de getallen eronder uit. */
+.assignment-list {
+  container-type: inline-size;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  --assignment-number-col: calc(var(--text-small) * 5.5);
+}
+
+.assignment-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--assignment-number-col) var(--assignment-number-col) 1rem;
+  grid-template-areas: "name units work remove";
+  column-gap: 0.25rem;
+  align-items: center;
+}
+
+.assignment-list--no-work .assignment-grid {
+  grid-template-columns: minmax(0, 1fr) var(--assignment-number-col) 1rem;
+  grid-template-areas: "name units remove";
+}
+
+.assignment-name { grid-area: name; }
+.assignment-units { grid-area: units; }
+.assignment-work { grid-area: work; }
+.assignment-remove { grid-area: remove; }
+
+@container (max-width: 14rem) {
+  .assignment-row > .assignment-grid {
+    grid-template-areas:
+      "name name name name"
+      ". units work remove";
+    row-gap: 0.25rem;
+  }
+  .assignment-list--no-work .assignment-row > .assignment-grid {
+    grid-template-areas:
+      "name name name"
+      ". units remove";
+  }
+  .assignment-header .assignment-name { display: none; }
+}
+
 /* Het WBS-nummer is navigatie, geen kaal tekstlabel. De semantische tracekleur blijft als vaste
    rolmarkering zichtbaar; de tekst en focusring gebruiken de contrastrijke themakleur. De rol staat
    daarnaast uitgeschreven in de toegankelijke knopnaam, zodat kleur niet de enige informatiedrager

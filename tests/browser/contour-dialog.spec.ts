@@ -40,6 +40,8 @@ test('fasen-editor: splitsen, inzet typen, grens slepen, toepassen, undo en losl
 
   const row = page.locator('[data-ops-assignment-row]').first();
   await expect(row).toBeVisible();
+  // Curve en Urenverdeling… staan onder de uitklapknop op de resourcenaam.
+  await row.locator('[data-ops-assignment-expand]').click();
   const contourButton = row.locator('[data-ops-assignment-contour]');
   await expect(contourButton).toHaveAttribute('data-ops-assignment-contour', 'formula');
   await contourButton.click();

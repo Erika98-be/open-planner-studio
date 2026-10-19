@@ -1,9 +1,9 @@
-import { useMemo, useState, type KeyboardEvent } from 'react';
+import { useId, useMemo, useState, type KeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppStore } from '@/state/appStore';
 import type { ResourceCurve } from '@/types/resource';
 import { UnitsInput } from '@/components/common/UnitsInput';
-import { AlertTriangle, BarChart3, Lock, Trash2 } from 'lucide-react';
+import { AlertTriangle, BarChart3, ChevronRight, Lock, Trash2 } from 'lucide-react';
 import { RESOURCE_CURVES, CURVE_KEY } from './shared';
 import { isSummaryTask } from '@/utils/taskHierarchy';
 import { assignmentCurveState, contouredAssignmentIds } from '@/engine/contour/curveState';
@@ -16,6 +16,8 @@ import { taskTypesUnlocked } from '@/state/taskTypesVisibility';
 import { taskCalendarHoursPerDay } from '@/utils/taskDefaults';
 import type { Task } from '@/types/task';
 import { createMoveCandidateLookup } from './moveCandidates';
+import { ensureThemeVisible, resourceDisplayColor } from '@/engine/renderer/resourcePalette';
+import { useResolvedUITheme } from '@/hooks/useResolvedUITheme';
 
 /** Pseudowaarden van de curve-dropdown voor de twee data-toestanden van de contour-engine:
  *  een opgeslagen contour (de dropdown is dan uitgeschakeld — loslaten gaat via het
@@ -82,7 +84,7 @@ function MoveToSelect({ label, candidates, onMove }: {
       onMouseDown={() => setOpen(true)}
       onBlur={() => setOpen(false)}
       onChange={e => { if (e.target.value) onMove(e.target.value); }}
-      className="input !text-small !px-1 !py-0.5 flex-1 min-w-0 !w-auto"
+      className="input !text-small !px-1.5 !py-0.5"
       data-ops-assignment-move={open ? 'open' : 'closed'}
     >
       <option value="">{label}</option>
@@ -99,8 +101,13 @@ function MoveToSelect({ label, candidates, onMove }: {
  * Toewijzingen (incl. "verplaats naar…") — sectie van
  * `TaskPropertiesPanel`. RELATIONEEL/storeful: roept `assignResource`/
  * `updateAssignment`/`unassignResource`/`moveAssignment` rechtstreeks aan, identiek in paneel
- * én dialoog. Contour-UI: per toewijzing een knop naar `ContourDialog` (urenverdeling
- * per werkdag); een toewijzing mét opgeslagen contour toont dat in de curve-dropdown.
+ * én dialoog.
+ *
+ * Eén regel per resource in een raster met de kop erboven (CSS `.assignment-list`, zelfde opzet als de
+ * relatielijst): naam, inzet, werk (alleen met "Toon werkregels en werk") en verwijderen. De naam is
+ * een uitklapknop; daaronder staan curve, de knop naar `ContourDialog` (urenverdeling per werkdag) en
+ * "verplaats naar…". Een afwijkende curve of een eigen urenverdeling blijft ook dichtgeklapt zichtbaar
+ * als icoon naast de naam.
  */
 export function TaskAssignmentsSection({ taskId }: { taskId: string }) {
   const { t } = useTranslation('task');
@@ -112,13 +119,17 @@ export function TaskAssignmentsSection({ taskId }: { taskId: string }) {
   const updateAssignment = useAppStore(s => s.updateAssignment);
   const unassignResource = useAppStore(s => s.unassignResource);
   const moveAssignment = useAppStore(s => s.moveAssignment);
-  // Kolom "Werk (rest)" + slotjes op de beschermde hoek(en).
+  // Kolom "Werk" + slotjes op de beschermde hoek(en).
   const setAssignmentWork = useAppStore(s => s.setAssignmentWork);
   const unlocked = useAppStore(s => taskTypesUnlocked(s));
   const defaultWorkRule = useAppStore(s => s.project.defaultWorkRule);
   const calendars = useAppStore(s => s.calendars);
   const projectCalendar = useAppStore(s => s.calendar);
+  const darkTheme = useResolvedUITheme() === 'dark';
   const [contourAssignmentId, setContourAssignmentId] = useState<string | null>(null);
+  // Welke toewijzingen uitgeklapt staan (curve, urenverdeling, verplaatsen). Alleen voor deze weergave.
+  const [expanded, setExpanded] = useState<ReadonlySet<string>>(() => new Set());
+  const detailsIdBase = useId();
   // Eén index per (taken, toewijzingen) — zie `moveCandidates.ts`. Vóór de vroege uitstap: hooks.
   const moveLookup = useMemo(() => createMoveCandidateLookup(tasks, assignments), [tasks, assignments]);
 
@@ -151,6 +162,13 @@ export function TaskAssignmentsSection({ taskId }: { taskId: string }) {
     return Math.round((minutes / 60) * 100) / 100;
   };
   const lockTitle = t('properties.assignments.locked', { rule: t(`workRule.${rule}`) });
+  const toggleExpanded = (id: string) => setExpanded(prev => {
+    const next = new Set(prev);
+    if (!next.delete(id)) next.add(id);
+    return next;
+  });
+  const numberInputClass = 'input !text-small !px-1 !py-0.5 text-right';
+  const mutedStyle = { color: 'var(--theme-text-muted)' };
 
   return (
     <>
@@ -167,116 +185,185 @@ export function TaskAssignmentsSection({ taskId }: { taskId: string }) {
           {taskAssignments.length === 0 && (
             <span className="!text-small text-text-secondary">{t('properties.assignments.empty')}</span>
           )}
-          {showWork && taskAssignments.length > 0 && (
-            // De kop hoort bij de TWEEDE regel van elke toewijzing (inzet,
-            // werk, curve, acties); het slotje is een eigen `shrink-0`-icoon naast een kop die mag
-            // afbreken, zodat "EENH./DAG" het nooit tot 0 px wegdrukt.
-            <div className="flex items-end gap-1 text-caption leading-3 uppercase tracking-wide" style={{ color: 'var(--theme-text-muted)' }} data-ops-assignment-header>
-              <span className="w-[calc(var(--text-small)*5)] shrink-0 flex items-end justify-end gap-0.5" title={unitsProtected ? lockTitle : undefined} data-ops-assignment-lock-units={unitsProtected ? 'locked' : 'free'}>
-                {unitsProtected && <Lock size={9} className="shrink-0" />}<span className="min-w-0 text-right">{t('properties.assignments.unitsPerDay')}</span>
-              </span>
-              <span className="w-[calc(var(--text-small)*5)] shrink-0 flex items-end justify-end gap-0.5" title={workProtected ? lockTitle : t('properties.assignments.workHint')} data-ops-assignment-lock-work={workProtected ? 'locked' : 'free'}>
-                {workProtected && <Lock size={9} className="shrink-0" />}<span className="min-w-0 text-right">{t('properties.assignments.work')}</span>
-              </span>
-              <span className="flex-1" />
+          {taskAssignments.length > 0 && (
+            <div className={`assignment-list !text-small${showWork ? '' : ' assignment-list--no-work'}`}>
+              {/* Kop in hetzelfde raster als de regels: elke kop staat recht boven zijn kolom. Het slotje
+                  is een eigen `shrink-0`-icoon naast een kop die mag afbreken (lange vertalingen). */}
+              <div className="assignment-grid assignment-header text-caption leading-3 uppercase tracking-wide items-end" style={mutedStyle} data-ops-assignment-header>
+                <span className="assignment-name min-w-0 truncate ps-[16px]">{t('properties.assignments.resource')}</span>
+                <span
+                  className="assignment-units flex min-w-0 items-end justify-end gap-0.5"
+                  title={showWork && unitsProtected ? lockTitle : t('properties.assignments.unitsPerDay')}
+                  data-ops-assignment-lock-units={showWork ? (unitsProtected ? 'locked' : 'free') : undefined}
+                >
+                  {showWork && unitsProtected && <Lock size={9} className="shrink-0" />}
+                  <span className="min-w-0 text-right">{t('properties.assignments.units')}</span>
+                </span>
+                {showWork && (
+                  <span
+                    className="assignment-work flex min-w-0 items-end justify-end gap-0.5"
+                    title={workProtected ? lockTitle : t('properties.assignments.workHint')}
+                    data-ops-assignment-lock-work={workProtected ? 'locked' : 'free'}
+                  >
+                    {workProtected && <Lock size={9} className="shrink-0" />}
+                    <span className="min-w-0 text-right">{t('properties.assignments.workHours')}</span>
+                  </span>
+                )}
+              </div>
+              {taskAssignments.map(a => {
+                const res = resources.find(r => r.id === a.resourceId);
+                const resName = res?.name || '?';
+                // Alleen "is er een kandidaat?" per render; de lijst zelf bouwt `MoveToSelect` pas bij openen.
+                const canMove = moveLookup.has(taskId, a.resourceId);
+                const curveState = assignmentCurveState(a, contouredIds.has(a.id));
+                const contoured = curveState === 'contoured';
+                const importedCurve = curveState === 'imported';
+                const curveValue = contoured ? CONTOURED : importedCurve ? IMPORTED_CURVE : curveState;
+                const curveLabel = curveState === 'contoured'
+                  ? t('properties.assignments.contoured')
+                  : curveState === 'imported'
+                    ? t('properties.assignments.importedCurve')
+                    : tCommon(CURVE_KEY[curveState]);
+                // Ook dichtgeklapt zichtbaar: alles behalve de gewone gelijkmatige verdeling.
+                const curveMarked = curveValue !== 'UNIFORM';
+                const open = expanded.has(a.id);
+                const detailsId = `${detailsIdBase}-${a.id}`;
+                const deviation = showWork && res?.type !== 'MATERIAL'
+                  ? assignmentWorkDeviation(task, a.unitsPerDay, a.remainingWorkMinutes, hoursPerDay, contourOf.has(a.id))
+                  : null;
+                return (
+                  <div key={a.id} className="assignment-row flex flex-col gap-1" data-ops-assignment-row={a.id}>
+                    <div className="assignment-grid">
+                      <button
+                        type="button"
+                        onClick={() => toggleExpanded(a.id)}
+                        aria-expanded={open}
+                        aria-controls={detailsId}
+                        title={t('properties.assignments.detailsHint')}
+                        className="assignment-name flex min-w-0 items-center gap-1 rounded-[4px] py-0.5 text-start hover:bg-surface-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
+                        data-ops-assignment-expand={open ? 'open' : 'closed'}
+                      >
+                        <ChevronRight
+                          size={12}
+                          aria-hidden="true"
+                          className={`shrink-0 text-text-secondary transition-transform ${open ? 'rotate-90' : 'rtl:-scale-x-100'}`}
+                        />
+                        <span
+                          aria-hidden="true"
+                          className="h-3 w-1.5 shrink-0 rounded-sm"
+                          style={{ background: res ? ensureThemeVisible(resourceDisplayColor(res), darkTheme) : 'var(--theme-border)' }}
+                        />
+                        <span className="min-w-0 truncate font-medium" title={resName} data-ops-assignment-name>{resName}</span>
+                        {curveMarked && (
+                          <span
+                            className="inline-flex shrink-0 items-center"
+                            style={{ color: 'var(--theme-accent)' }}
+                            title={`${t('properties.assignments.curve')}: ${curveLabel}`}
+                            data-ops-assignment-curve-mark={curveValue}
+                          >
+                            <BarChart3 size={11} aria-hidden="true" />
+                          </span>
+                        )}
+                      </button>
+                      <UnitsInput
+                        value={a.unitsPerDay}
+                        title={`${t('properties.assignments.unitsPerDay')}: ${a.unitsPerDay}`}
+                        ariaLabel={`${t('properties.assignments.unitsPerDay')} — ${res?.name ?? a.resourceId}`}
+                        onCommit={n => updateAssignment(a.id, { unitsPerDay: n })}
+                        className={`assignment-units ${numberInputClass}`}
+                      />
+                      {showWork && (res?.type === 'MATERIAL' ? (
+                        <span className="assignment-work pe-1 text-right text-text-secondary" data-ops-assignment-work="material">—</span>
+                      ) : (
+                        <span className="assignment-work relative flex items-center" data-ops-assignment-work={a.remainingWorkMinutes !== undefined ? 'stored' : 'derived'}>
+                          <WorkHoursInput
+                            value={remainingHoursOf(a.id, a.unitsPerDay, a.remainingWorkMinutes)}
+                            title={t('properties.assignments.workHint')}
+                            ariaLabel={`${t('properties.assignments.work')} — ${res?.name ?? a.resourceId}`}
+                            onCommit={hours => setAssignmentWork(a.id, Math.round(hours * 60))}
+                            className={`${numberInputClass}${deviation ? ' !ps-4' : ''}`}
+                          />
+                          {deviation && (
+                            // Opgeslagen werk dat afwijkt van inzet × restduur krijgt een markering
+                            // (zelfde regel als de planningssuite toetst), binnen het veld zodat de kolom
+                            // niet breder wordt.
+                            <span
+                              className="pointer-events-auto absolute start-1 top-1/2 inline-flex -translate-y-1/2 items-center"
+                              style={{ color: 'var(--theme-warning-text)' }}
+                              title={t('properties.assignments.workDeviatesHint', deviation)}
+                              aria-label={t('properties.assignments.workDeviates')}
+                              role="img"
+                              data-ops-assignment-work-deviates={`${deviation.stored}/${deviation.derived}`}
+                            >
+                              <AlertTriangle size={10} aria-hidden />
+                            </span>
+                          )}
+                        </span>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => unassignResource(a.id)}
+                        className="assignment-remove justify-self-center rounded p-0.5"
+                        style={{ color: 'var(--error)' }}
+                        title={t('properties.assignments.remove')}
+                        aria-label={t('properties.assignments.remove')}
+                        data-ops-assignment-remove
+                      >
+                        <Trash2 size={10} />
+                      </button>
+                    </div>
+                    {open && (
+                      <div
+                        id={detailsId}
+                        className="ms-1.5 mb-1 flex flex-col gap-1 border-s ps-3"
+                        style={{ borderColor: 'var(--theme-border-light)' }}
+                        data-ops-assignment-details
+                      >
+                        <label className="flex min-w-0 items-center gap-2">
+                          <span className="shrink-0" style={mutedStyle}>{t('properties.assignments.curve')}</span>
+                          <select
+                            value={curveValue}
+                            disabled={contoured}
+                            title={contoured ? t('properties.assignments.contouredHint') : t('properties.assignments.curve')}
+                            onChange={e => {
+                              if (e.target.value === CONTOURED || e.target.value === IMPORTED_CURVE) return;
+                              updateAssignment(a.id, { curve: e.target.value as ResourceCurve });
+                            }}
+                            className="input !text-small !px-1.5 !py-0.5 min-w-0 flex-1 !w-auto disabled:opacity-60"
+                            data-ops-assignment-curve
+                          >
+                            {contoured && <option value={CONTOURED}>{t('properties.assignments.contoured')}</option>}
+                            {importedCurve && <option value={IMPORTED_CURVE} disabled>{t('properties.assignments.importedCurve')}</option>}
+                            {RESOURCE_CURVES.map(c => (
+                              <option key={c} value={c}>{tCommon(CURVE_KEY[c])}</option>
+                            ))}
+                          </select>
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => setContourAssignmentId(a.id)}
+                          className="dependency-add-button"
+                          style={contoured ? { color: 'var(--theme-accent)' } : undefined}
+                          title={contoured ? t('properties.assignments.contouredHint') : undefined}
+                          data-ops-assignment-contour={contoured ? 'contoured' : 'formula'}
+                        >
+                          <BarChart3 size={10} aria-hidden="true" />
+                          {t('properties.assignments.contour')}
+                        </button>
+                        {canMove && (
+                          <MoveToSelect
+                            label={t('properties.assignments.moveTo')}
+                            candidates={() => moveLookup.list(taskId, a.resourceId)}
+                            onMove={target => moveAssignment(a.id, target)}
+                          />
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
-          {taskAssignments.map(a => {
-            const res = resources.find(r => r.id === a.resourceId);
-            // Alleen "is er een kandidaat?" per render; de lijst zelf bouwt `MoveToSelect` pas bij openen.
-            const canMove = moveLookup.has(taskId, a.resourceId);
-            const curveState = assignmentCurveState(a, contouredIds.has(a.id));
-            const contoured = curveState === 'contoured';
-            const importedCurve = curveState === 'imported';
-            const curveValue = contoured ? CONTOURED : importedCurve ? IMPORTED_CURVE : curveState;
-            return (
-              // Twee regels — de naam op volle breedte (afkappen met title,
-              // nooit 0 px) met de verwijderknop, daaronder inzet, werk, curve en acties.
-              <div key={a.id} className="flex flex-col gap-0.5 !text-small" data-ops-assignment-row={a.id}>
-                <div className="flex items-center gap-1 min-w-0">
-                  <span className="flex-1 min-w-0 truncate font-medium" title={res?.name} data-ops-assignment-name>{res?.name || '?'}</span>
-                  <button onClick={() => unassignResource(a.id)} className="shrink-0 p-0.5 rounded" style={{ color: 'var(--error)' }} title={t('properties.assignments.remove')} aria-label={t('properties.assignments.remove')} data-ops-assignment-remove>
-                    <Trash2 size={10} />
-                  </button>
-                </div>
-                <div className="flex items-center gap-1 min-w-0">
-                  <UnitsInput
-                    value={a.unitsPerDay}
-                    title={`${t('properties.assignments.unitsPerDay')}: ${a.unitsPerDay}`}
-                    ariaLabel={`${t('properties.assignments.unitsPerDay')} — ${res?.name ?? a.resourceId}`}
-                    onCommit={n => updateAssignment(a.id, { unitsPerDay: n })}
-                    className="input !text-small !px-1 !py-0.5 !w-[calc(var(--text-small)*5)] shrink-0 text-right"
-                  />
-                  {showWork && (res?.type === 'MATERIAL' ? (
-                    <span className="w-[calc(var(--text-small)*5)] shrink-0 text-right text-text-secondary" data-ops-assignment-work="material">—</span>
-                  ) : (
-                    <span className="shrink-0 flex items-center gap-0.5" data-ops-assignment-work={a.remainingWorkMinutes !== undefined ? 'stored' : 'derived'}>
-                      <WorkHoursInput
-                        value={remainingHoursOf(a.id, a.unitsPerDay, a.remainingWorkMinutes)}
-                        title={t('properties.assignments.workHint')}
-                        ariaLabel={`${t('properties.assignments.work')} — ${res?.name ?? a.resourceId}`}
-                        onCommit={hours => setAssignmentWork(a.id, Math.round(hours * 60))}
-                        className="input !text-small !px-1 !py-0.5 !w-[calc(var(--text-small)*5)] text-right"
-                      />
-                      {(() => {
-                        // Opgeslagen werk dat afwijkt van inzet × restduur krijgt een markering
-                        // (zelfde regel als de planningssuite toetst).
-                        const deviation = assignmentWorkDeviation(task, a.unitsPerDay, a.remainingWorkMinutes, hoursPerDay, contourOf.has(a.id));
-                        return deviation && (
-                          <span
-                            className="shrink-0 inline-flex items-center"
-                            style={{ color: 'var(--theme-warning-text)' }}
-                            title={t('properties.assignments.workDeviatesHint', deviation)}
-                            aria-label={t('properties.assignments.workDeviates')}
-                            role="img"
-                            data-ops-assignment-work-deviates={`${deviation.stored}/${deviation.derived}`}
-                          >
-                            <AlertTriangle size={11} aria-hidden />
-                          </span>
-                        );
-                      })()}
-                    </span>
-                  ))}
-                  <select
-                    value={curveValue}
-                    disabled={contoured}
-                    title={contoured ? t('properties.assignments.contouredHint') : t('properties.assignments.curve')}
-                    aria-label={t('properties.assignments.curve')}
-                    onChange={e => {
-                      if (e.target.value === CONTOURED || e.target.value === IMPORTED_CURVE) return;
-                      updateAssignment(a.id, { curve: e.target.value as ResourceCurve });
-                    }}
-                    className="input !text-small !px-1 !py-0.5 flex-1 min-w-0 !w-auto disabled:opacity-60"
-                    data-ops-assignment-curve
-                  >
-                    {contoured && <option value={CONTOURED}>{t('properties.assignments.contoured')}</option>}
-                    {importedCurve && <option value={IMPORTED_CURVE} disabled>{t('properties.assignments.importedCurve')}</option>}
-                    {RESOURCE_CURVES.map(c => (
-                      <option key={c} value={c}>{tCommon(CURVE_KEY[c])}</option>
-                    ))}
-                  </select>
-                  <button
-                    type="button"
-                    onClick={() => setContourAssignmentId(a.id)}
-                    className="shrink-0 p-0.5 rounded"
-                    style={{ color: contoured ? 'var(--theme-accent)' : undefined }}
-                    title={t('properties.assignments.contour')}
-                    aria-label={t('properties.assignments.contour')}
-                    data-ops-assignment-contour={contoured ? 'contoured' : 'formula'}
-                  >
-                    <BarChart3 size={10} />
-                  </button>
-                  {canMove && (
-                    <MoveToSelect
-                      label={t('properties.assignments.moveTo')}
-                      candidates={() => moveLookup.list(taskId, a.resourceId)}
-                      onMove={target => moveAssignment(a.id, target)}
-                    />
-                  )}
-                </div>
-              </div>
-            );
-          })}
           {availableResources.length > 0 ? (
             <select
               value=""

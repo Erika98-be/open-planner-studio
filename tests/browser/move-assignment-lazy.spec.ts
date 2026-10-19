@@ -22,6 +22,8 @@ test('verplaats naar…: opties pas na openen, keuze verplaatst de toewijzing', 
     return r;
   }, { a, c });
 
+  // "Verplaats naar…" staat onder de uitklapknop op de resourcenaam.
+  await page.locator('[data-ops-assignment-row] [data-ops-assignment-expand]').first().click();
   const move = page.locator('[data-ops-assignment-row] [data-ops-assignment-move]').first();
   await expect(move).toBeVisible();
   // Dicht: alleen de plaatshouder, geen kandidatenlijst in de DOM.
@@ -56,5 +58,7 @@ test('verplaats naar…: zonder kandidaat geen keuzelijst', async ({ page, ops: 
     s.selectTask(a);
   }, { a, b });
   await expect(page.locator('[data-ops-assignment-row]')).toHaveCount(1);
+  await page.locator('[data-ops-assignment-row] [data-ops-assignment-expand]').first().click();
+  await expect(page.locator('[data-ops-assignment-details]')).toBeVisible();
   await expect(page.locator('[data-ops-assignment-move]')).toHaveCount(0);
 });
