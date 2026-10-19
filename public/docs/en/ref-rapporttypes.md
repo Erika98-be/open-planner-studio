@@ -120,7 +120,7 @@ Where the project stands on the status date. Options under *Report options*.
 
 **Near-critical ≤ (wd):** — Default: 5. As with the Look-ahead.
 
-The block *Summary* shows *Status date*, *Period*, *Look ahead until*, *Baseline finish*, *Forecast finish*, *Δ finish (wd)*, *Planned* (with *(baseline)* or *(current schedule)*), *Actual*, and the counts *Complete*, *In progress*, *Not started*, *Overdue* and *Critical*. Planned and actual are weighted by the duration of the tasks. Planned measures against the baseline if there is an active baseline, otherwise against the current schedule. The sections are *Completed in the past period*, *In progress*, *Starting in the next period*, *Overdue* and *Open critical activities*; a task can be in more than one section.
+The block *Summary* shows *Status date*, *Period*, *Look ahead until*, *Baseline finish*, *Forecast finish*, *Δ finish (wd)*, *Planned* (with *(baseline)* or *(current schedule)*), *Actual*, and the counts *Complete*, *In progress*, *Not started*, *Overdue* and *Critical*. Planned and actual are weighted by the duration of the tasks. Planned measures against the baseline if there is an active baseline, otherwise against the current schedule. The sections are *Completed in the past period*, *In progress*, *Starting in the next period*, *Overdue* and *Open critical activities*; a task can be in more than one section. Every section has the same columns: *WBS*, *Name*, *Baseline finish*, *Forecast finish*, *Compl.*, *Rem. (wd)*, *TF (wd)*, *Critical* and *Status*. The status per row is *Complete*, *In progress*, *Not started*, *Should have started* or *Should have finished*.
 
 ## Schedule health
 
@@ -177,7 +177,7 @@ Per resource the activities it is attached to: what is this crew or crane doing?
 
 **Include completed tasks** — Default: off. Effect: on also includes the assignments of completed activities.
 
-The rows are per resource, and within a resource by start. The block *Summary* counts *Resources*, *Assignments* and *Tasks without a resource*. The columns include the resource, the task, start and finish, *Rem. (wd)*, *Units/day*, *Compl.*, *Critical* and *Status*.
+The rows are per resource, and within a resource by start. The block *Summary* counts *Resources*, *Assignments* and *Tasks without a resource*. The columns are *Resource*, *Type*, *WBS*, *Name*, *Start*, *Finish*, *Rem. (wd)*, *Units/day*, *Compl.*, *Critical* and *Status*. *Resource* and *Type* appear only on the first row of a resource. The status per row is the same as in the Progress report: *Complete*, *In progress*, *Not started*, *Should have started* or *Should have finished*.
 
 ## WBS summary
 
