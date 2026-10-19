@@ -1635,3 +1635,9 @@ Testversie (release-check, poort 3049) is NIET bijgewerkt met de PR's van vandaa
   `git diff origin/main claude/weigering-rood`). De balk schuift niet mee, dus de muis gaat los boven lege ruimte; de
   daaropvolgende `click` loopt in `onClick` naar `deselectAll()` (`useGanttPointerCoordinator.ts:210-211`, gelijk op main).
   #375 wijzigt alleen de melding in `useBarDrag.ts` (info ⇒ rode weigering). ⇒ VERVOLG, los van #375.
+- **Delta-review #380 ronde 2: JA** (reviewer Opus 5.5; B1 opgelost, tabel-⚠ goedkoop, toets gelijk aan paneel,
+  undo/redo/documentwissel/IFC heel). Alles VERVOLG, in de PR gezet: V10 (tooltip zegt onder *Vast werk* het tegendeel;
+  voorstel slotzin per regel), V11 (11 talen "berekent het werk opnieuw", twee sleutels alleen nl/en; één vertaalronde
+  ná V10), V12 bevestigd als bron (MER-1 mist duurkolommen en CALENDAR), materiaal telt mee in `own.length === 1`,
+  twee terugvallen uren/dag, contract `CapturedTriangle.assignments` (VERMOED), testgat tooltip meer regels.
+  Advies reviewer: V10+V11 in één tekstronde vóór de release. ⇒ eigenaarscheck #380 (DCP-03) + tekstbesluit V10, na #375.
