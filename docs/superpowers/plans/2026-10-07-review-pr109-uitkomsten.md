@@ -1510,3 +1510,9 @@ Testversie (release-check, poort 3049) is NIET bijgewerkt met de PR's van vandaa
   `{0,0}` (nul werk), IFC-lezer maakt `{0,1440}` ⇒ fix in `mspdiReader.ts` (`canonicalExceptionBands`). 0402: dagkalender
   0–24 werd na IFC een 24-u-uurkalender ⇒ writer zet `IsHourCalendar = .F.`. Corpus 58 andere 0/0/0; regel A gehouden;
   CI groen ⇒ review loopt. VERVOLG: EC00850 kale datum op uurkalender (besluit), TU2.0 afronding 1e-7, extensie-API.
+- **Review #379: JA** (geen BLOKKEERT; MPXJ bevestigt `00:00`–`00:00` = 24 u; eerste openen Miraya: 64 anders, 59 nu exact
+  gelijk aan opgeslagen datums, 0 slechter; `IsHourCalendar = .F.` bestond al en oudere versie negeert het). PR-tekst
+  gecorrigeerd (measure:profiles meet geen MSPDI) + VERVOLG. **#379 gemerged in main → ee552dc35** (geen UI, geen
+  eigenaarscheck nodig).
+- Nieuw: expert `claude/mspdi-werktijd-minuten` (0402: MSPDI-lezer neemt van `00:08:00`–`00:16:00` alleen het uur ⇒
+  0–24 met 7 werkdagen). Haiku loopt na of Delete onder een open venster de taak erachter verwijdert.
