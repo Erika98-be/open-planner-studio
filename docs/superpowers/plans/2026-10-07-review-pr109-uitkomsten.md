@@ -1563,3 +1563,6 @@ Testversie (release-check, poort 3049) is NIET bijgewerkt met de PR's van vandaa
   98f556ce6** (kop eaa1e9f9b, CI 16/16).
 - #369: orkestrator zette de melding "dubbelzinnig getal" in je-vorm (was "bedoelt u"; app gebruikt je) via
   `i18n:add --update` met alle 14 bestaande vertalingen (5ee8f0cb7); testversie bijgewerkt (398d19c03) ⇒ checkstap #369.
+- **#385 nieuw (worker Opus 5.5): P6 XML-writer schrijft constraintlabels** (3ab44ac21, gestapeld op #382 a6d1b7e72;
+  gedeelde tabel `src/services/p6/p6ConstraintTypes.ts`). Let op: #382 kreeg daarna 5e283d6be (eigen-sleutelcontrole in de
+  lezer) ⇒ na de merge van #382 moet #385 bijgewerkt worden met main en die controle in de gedeelde helper houden.
