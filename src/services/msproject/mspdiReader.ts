@@ -971,9 +971,11 @@ function applyCalendarBody(
   const rawByWeekday: Partial<Record<1 | 2 | 3 | 4 | 5 | 6 | 7, { start: number; end: number }[]>> = {};
 
   // Eerste werkdag van de standaardwerkweek (voor de scalaire uren hieronder): de tijden van het
-  // eerste `WorkingTime`-element (één blok: de oude afleiding) en de leesbare blokken (meer blokken).
+  // eerste `WorkingTime`-element (alleen nog de terugval voor een onleesbare kloktijd), de leesbare
+  // blokken en de ISO-weekdag (voor de canonieke blokken na `canonicalizeBands`).
   let firstWorkingTime: { from: string; to: string } | undefined;
   let firstDayBands: { start: number; end: number }[] | undefined;
+  let firstDayIso: 1 | 2 | 3 | 4 | 5 | 6 | 7 | undefined;
 
   // `week` is de effectieve standaardwerkweek (eigen dagen, en bij een afgeleide kalender de rest van
   // de basis — `effectiveWeek`). `null` ⇒ geen werkweek bekend: de werkweek en uren van
@@ -987,6 +989,7 @@ function applyCalendarBody(
     if (!firstWorkingTime && day.firstTime) {
       firstWorkingTime = day.firstTime;
       firstDayBands = day.bands;
+      firstDayIso = isoDay as 1;
     }
   }
 
@@ -1000,6 +1003,11 @@ function applyCalendarBody(
   // niet het eerste `WorkingTime` van de hele kalender: dat kan van een uitzondering of een tijdelijke
   // werkweek zijn (een kalender zonder eigen `WeekDays` houdt zo zijn standaarduren).
   const blocked = firstDayBands && firstDayBands.length > 1 ? workDayFromBlocks(firstDayBands) : undefined;
+  // Canoniek per dag zelf, niet uit `bands`: staat dezelfde `DayType` twee keer in het bestand, dan
+  // draagt `rawByWeekday` de laatste en de scalaire dag de eerste.
+  const singleBand = firstDayBands?.length === 1 && firstDayIso
+    ? canonicalizeBands({ [firstDayIso]: firstDayBands }).bands.byWeekday[firstDayIso][0]
+    : undefined;
   if (blocked) {
     // Meer blokken: begin eerste / einde laatste blok (MS Projects 08:00–12:00 + 13:00–17:00 ⇒ 8–17),
     // zoals de P6 XML- en XER-lezer. De tussenwaarde `hoursPerDay` vóór promotie is NETTO (de som van
@@ -1008,7 +1016,17 @@ function applyCalendarBody(
     calendar.workStartHour = blocked.startHour;
     calendar.workEndHour = blocked.endHour;
     calendar.hoursPerDay = deriveHoursPerDay(bands, blocked.netHours);
+  } else if (singleBand) {
+    // Eén blok: begin, einde en uren per dag op de minuut, uit de canonieke vorm van
+    // `canonicalizeBands` (`end > start`; `00:00:00`–`00:00:00` is 0–1440, een nachtblok 22:00–06:00
+    // is 1320–1800 ⇒ 22–30, zoals vroeger). Vroeger telde alleen het uurdeel van de kloktijd: 07:30–16:00
+    // werd 7–16 met 9 uur per dag, en `00:08:00`–`00:16:00` (8 minuten, 0402ScheduleMSP.xml) werd 0–24.
+    calendar.workStartHour = singleBand.start / 60;
+    calendar.workEndHour = singleBand.end / 60;
+    calendar.hoursPerDay = (singleBand.end - singleBand.start) / 60;
   } else if (firstWorkingTime) {
+    // Terugval voor een kloktijd zonder `HH:MM`-vorm (`clockToMinutes` geeft dan geen blok): het
+    // uurdeel, zoals vroeger.
     const fromTime = firstWorkingTime.from;
     const toTime = firstWorkingTime.to;
     if (fromTime) {

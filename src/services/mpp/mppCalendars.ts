@@ -210,8 +210,9 @@ function buildCalendarFromDays(name: string, days: ReadonlyArray<DayResolution>,
     cal.workEndHour = blocked.endHour;
     cal.hoursPerDay = deriveHoursPerDay(bands, blocked.netHours);
   } else if (scalarDay) {
-    // FLOOR op beide grenzen — spiegelt mspdiReader's `parseInt(toTime.split(':')[0])` (het
-    // hele-uurdeel van de kloktijd); `Math.ceil` gaf bij 17:30 een te hoge `hoursPerDay`.
+    // FLOOR op beide grenzen (het hele-uurdeel van de kloktijd); `Math.ceil` gaf bij 17:30 een te hoge
+    // `hoursPerDay`. Let op: de MSPDI-lezer leest één blok sinds 2026-10-19 op de minuut
+    // (`applyCalendarBody`); deze lezer nog niet.
     cal.workStartHour = Math.floor(scalarDay[0].start / 60);
     cal.workEndHour = Math.floor(scalarDay[0].end / 60);
     cal.hoursPerDay = cal.workEndHour - cal.workStartHour;

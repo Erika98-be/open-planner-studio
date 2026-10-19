@@ -184,10 +184,12 @@ function writeCalendarBlock(
     } else if (isWorkDay) {
       lines.push(`${indent(5)}<WorkingTimes>`);
       lines.push(`${indent(6)}<WorkingTime>`);
-      lines.push(`${indent(7)}<FromTime>${String(cal.workStartHour).padStart(2, '0')}:00:00</FromTime>`);
-      // Via `minutesToClock`: een 24/7-dagkalender (`workEndHour` 24) wordt `00:00:00` — een geldige
-      // kloktijd (middernacht), zoals MS Project's eigen "24 Hours"-kalender — en niet `24:00:00`.
-      lines.push(`${indent(7)}<ToTime>${minutesToClock(cal.workEndHour * 60)}</ToTime>`);
+      // Op de minuut via `minutesToClock`: een werkdag van 07:30 (`workStartHour` 7,5, uit de
+      // kalenderdialoog of een bestand) werd hier `7.5:00:00`, een ongeldige kloktijd die de lezer
+      // overslaat. Een 24/7-dagkalender (`workEndHour` 24) wordt `00:00:00` — een geldige kloktijd
+      // (middernacht), zoals MS Project's eigen "24 Hours"-kalender — en niet `24:00:00`.
+      lines.push(`${indent(7)}<FromTime>${minutesToClock(Math.round(cal.workStartHour * 60))}</FromTime>`);
+      lines.push(`${indent(7)}<ToTime>${minutesToClock(Math.round(cal.workEndHour * 60))}</ToTime>`);
       lines.push(`${indent(6)}</WorkingTime>`);
       lines.push(`${indent(5)}</WorkingTimes>`);
     }
