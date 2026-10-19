@@ -1652,3 +1652,8 @@ Testversie (release-check, poort 3049) is NIET bijgewerkt met de PR's van vandaa
 - **Checkstap #375: goed** — eigenaar 2026-10-19: "goed" (stap 1–3 en 5: meldingen duidelijk, rood en blijvend tot ×,
   ook in donker). ⇒ besluit 5 in twee delen: 5a tekst strook bij *Taak* (taak komt wél, onderaan; strook zegt "Niet
   beschikbaar …"; gedrag sinds 40c8660e8, 2026-08-27, bouwkeuze), 5b rode weigering na Ctrl+Z/documentwissel.
+- **Besluit 5a (#375): optie 1, maar als toast** — eigenaar 2026-10-19: "dit maar dan niet zo'n balk maar zo'n toast".
+  *Taak* met selectie onder filter/groep/sortering: taak achteraan + rode weigeringstoast (via `refusalNotice`, blijft tot
+  ×) "De nieuwe taak staat achteraan. Tijdens filteren, groeperen of sorteren kan de app hem niet onder je selectie
+  zetten." In-/uitspringen houden de strook. *Wissen* in de toast vraagt een nieuwe `NotificationAction`-soort en is
+  alleen veilig als de toast bij een documentwissel verdwijnt ⇒ hangt aan 5b. Bouw samen met 5b in één ronde.
