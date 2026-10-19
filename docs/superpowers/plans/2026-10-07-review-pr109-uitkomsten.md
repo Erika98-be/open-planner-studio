@@ -1612,3 +1612,10 @@ Testversie (release-check, poort 3049) is NIET bijgewerkt met de PR's van vandaa
   open; redenering tegen `isGanttWorkspaceVisible` klopt). VERVOLG in de PR (structuurtoetsen Alt+pijl/Ctrl+M onder
   verborgen lijst, positieve tests, Ctrl+C bij tekstselectie, MCP-vlaggen, tekst). **#381 gemerged in main → 62ab1d714**
   (kop 0e91eccff, CI 16/16).
+- **Besluit 4 (#371): optie 3** — eigenaar 2026-10-19: "3". Eén oranje blok met drie regels (datums uit het bestand,
+  verandert/blijft, "Ontbreekt: …"); het grijze blok voor datums vervalt. ⇒ worker (Opus 5.5) bouwt in #371, daarna review.
+- **Checkstap #375 gegeven** (A duur te kort, B kring, C *Taak* bij sortering, D gestarte balk slepen; showcase 4.14).
+- **Delta-review #384: JA** (reviewer Opus 5.5; 20 d blijft 20 d). Orkestrator verbeterde twee corpusclaims in de
+  PR-tekst (0402 "global" is projectkalender: 4 verzameltaken 18 d ⇒ 14,07 d, datums gelijk). VERVOLG in de PR: bekende
+  grens breed (1103 kalenders/86 bestanden na eigen export), `ToTime`-minuten in terugval, één-blok-venster, OPS-marker,
+  P6-writer pauze. **#384 gemerged in main → 7c1c16925** (kop 08e238e2a, CI 16/16).
