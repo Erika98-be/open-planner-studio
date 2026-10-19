@@ -1667,3 +1667,10 @@ Testversie (release-check, poort 3049) is NIET bijgewerkt met de PR's van vandaa
   ná de nieuwe kop van #375. Let op bij de merge naar main: wie als tweede gaat, lost dit conflict op.
 - **Worker (Opus 5.5) bouwt 5a+5b in #375** (merge main, toast + *Wissen*-actie, weigeringen weg bij documentwissel en
   undo/redo, specs, mutanten, CI). Haiku 5.5 loopt de links voor de korte check #371 na (MER-1 A0038, rehab-2 V3105190).
+- **Besluit V10 (#380): optie 1** — eigenaar 2026-10-19: "1". Slotzin van de ⚠-uitleg per taaktype (paneel, tabel,
+  `workDeviatesMany`): *Vaste duur en inzet*/*Vaste inzet* "De app verandert dit niet vanzelf. Wijzig je de duur, dan
+  vervangt de app dit werk door inzet × nieuwe duur. Je krijgt dan een melding; Ctrl+Z zet het terug."; *Vast werk*/
+  *Vaste duur en werk* "De app verandert dit niet vanzelf. Wijzig je de duur, dan blijft dit werk staan en past de app de
+  inzet aan." Zin 3 ("De app past de inzet niet aan …") vervalt. Andere talen: hash niet op actueel, vertaalronde vóór de
+  release (V11). ⇒ worker (Opus 5.5) in #380. Links checkstap #371 nagelopen (Haiku 5.5): MER-1 A0038 drie regels,
+  rehab-2 V3105190 (alleen via `qa-wbs`) twee regels, geen grijs blok.
