@@ -1661,3 +1661,9 @@ Testversie (release-check, poort 3049) is NIET bijgewerkt met de PR's van vandaa
   wissel van document en na Ctrl+Z. Orkestrator-invulling: ook na Ctrl+Y (zelfde soort stap); alleen `refusal`, geen
   echte fouten of infos; elke undo-route (sneltoets, lint). Gevolg 5a: de *Taak*-toast krijgt *Wissen* (veilig, want weg
   bij documentwissel). ⇒ worker (Opus 5.5) bouwt 5a+5b in #375.
+- **Testversie** (`claude/release-check-4`, poort 3049): #371 e69682241 erin (461bee58c, schoon). #380 910d8a7c2 botst
+  met #375 (i18n `ui-sources` ×27, nl/en `common.json`/`task.json`, ko/tr `common.json`, `ref-tabelkolommen.md`,
+  `slices/types.ts`; o.a. `durationBelowDoneWork`: #375 recht aanhalingsteken, #380 ‘ ’) ⇒ merge afgebroken; #380 erin
+  ná de nieuwe kop van #375. Let op bij de merge naar main: wie als tweede gaat, lost dit conflict op.
+- **Worker (Opus 5.5) bouwt 5a+5b in #375** (merge main, toast + *Wissen*-actie, weigeringen weg bij documentwissel en
+  undo/redo, specs, mutanten, CI). Haiku 5.5 loopt de links voor de korte check #371 na (MER-1 A0038, rehab-2 V3105190).
