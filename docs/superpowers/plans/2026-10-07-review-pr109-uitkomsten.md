@@ -1566,3 +1566,5 @@ Testversie (release-check, poort 3049) is NIET bijgewerkt met de PR's van vandaa
 - **#385 nieuw (worker Opus 5.5): P6 XML-writer schrijft constraintlabels** (3ab44ac21, gestapeld op #382 a6d1b7e72;
   gedeelde tabel `src/services/p6/p6ConstraintTypes.ts`). Let op: #382 kreeg daarna 5e283d6be (eigen-sleutelcontrole in de
   lezer) ⇒ na de merge van #382 moet #385 bijgewerkt worden met main en die controle in de gedeelde helper houden.
+- **#382 gemerged in main → 4ddfb35b0** (kop 5e283d6be, CI 16/16). **#383 gemerged in main → 69685cf6c** (kop adf7663f3,
+  CI 16/16). #385 ⇒ bijwerken met main bij de maker (eigen-sleutelcontrole in de gedeelde tabel houden), daarna review.
