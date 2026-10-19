@@ -1649,3 +1649,6 @@ Testversie (release-check, poort 3049) is NIET bijgewerkt met de PR's van vandaa
   na de #375-check, dan korte eigenaarscheck, dan merge.
 - **Checkstap #375 stap 4 opnieuw: goed** — eigenaar 2026-10-19: "dit werkt nu perfect" (strook + taak onderaan, zoals
   de repro). De eerste poging gaf waarschijnlijk een andere stand van de layoutknop. ⇒ oordeel stap 1–3 en 5 gevraagd.
+- **Checkstap #375: goed** — eigenaar 2026-10-19: "goed" (stap 1–3 en 5: meldingen duidelijk, rood en blijvend tot ×,
+  ook in donker). ⇒ besluit 5 in twee delen: 5a tekst strook bij *Taak* (taak komt wél, onderaan; strook zegt "Niet
+  beschikbaar …"; gedrag sinds 40c8660e8, 2026-08-27, bouwkeuze), 5b rode weigering na Ctrl+Z/documentwissel.
