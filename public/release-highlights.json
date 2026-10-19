@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "product": "open-planner-studio",
-  "generated": "2026-10-19T11:10:44.332Z",
+  "generated": "2026-10-19T11:22:05.310Z",
   "releases": [
     {
       "version": "2026.10.0",
@@ -498,6 +498,496 @@
               "category": "گزارش‌ها",
               "title": "گزارش‌ها و چیدمان‌های جدید",
               "description": "نمودار منابع، بررسی DCMA و چیدمان با یک کلیک.",
+              "icon": "library"
+            }
+          ]
+        },
+        "ru": {
+          "primary": {
+            "category": "ИМПОРТ P6",
+            "title": "Откройте файлы Primavera P6",
+            "description": "Открывайте .xer напрямую: каждый проект на своей вкладке, с датами, рассчитанными в P6.",
+            "icon": "import",
+            "docsId": "howto-xer-openen"
+          },
+          "secondary": [
+            {
+              "category": "ПРОФИЛИ РАСЧЕТА",
+              "title": "Считайте как P6 или MS Project",
+              "description": "Выберите профиль расчета и смотрите даты так, как их сохранила другая программа.",
+              "icon": "relations"
+            },
+            {
+              "category": "ЗАДАЧИ",
+              "title": "Больше контроля над задачами",
+              "description": "Выберите, что остается фиксированным для задачи, и разделяйте полосы на диаграмме Ганта.",
+              "icon": "tasks"
+            },
+            {
+              "category": "ХОД ВЫПОЛНЕНИЯ",
+              "title": "Ход выполнения через таблицу",
+              "description": "Экспортируйте и импортируйте ход выполнения в CSV или .xlsx.",
+              "icon": "examples"
+            },
+            {
+              "category": "ОТЧЕТЫ",
+              "title": "Новые отчеты и макеты",
+              "description": "Диаграмма ресурсов, проверка DCMA и макеты в один клик.",
+              "icon": "library"
+            }
+          ]
+        },
+        "uk": {
+          "primary": {
+            "category": "ІМПОРТ P6",
+            "title": "Відкривайте файли Primavera P6",
+            "description": "Відкривайте .xer напряму: кожен проєкт на власній вкладці, з датами, обчисленими в P6.",
+            "icon": "import",
+            "docsId": "howto-xer-openen"
+          },
+          "secondary": [
+            {
+              "category": "ПРОФІЛІ ОБЧИСЛЕНЬ",
+              "title": "Обчислюйте як P6 або MS Project",
+              "description": "Виберіть профіль обчислень і бачте дати так, як їх зберегла інша програма.",
+              "icon": "relations"
+            },
+            {
+              "category": "ЗАВДАННЯ",
+              "title": "Більше контролю над завданнями",
+              "description": "Виберіть, що лишається фіксованим для завдання, і розділяйте смуги на діаграмі Ганта.",
+              "icon": "tasks"
+            },
+            {
+              "category": "ПРОГРЕС",
+              "title": "Прогрес через електронну таблицю",
+              "description": "Експортуйте й імпортуйте прогрес у CSV або .xlsx.",
+              "icon": "examples"
+            },
+            {
+              "category": "ЗВІТИ",
+              "title": "Нові звіти та макети",
+              "description": "Діаграма ресурсів, перевірка DCMA і макети одним кліком.",
+              "icon": "library"
+            }
+          ]
+        },
+        "cs": {
+          "primary": {
+            "category": "IMPORT P6",
+            "title": "Otevírejte soubory Primavera P6",
+            "description": "Otevřete .xer přímo, každý projekt na vlastní kartě, s daty vypočtenými v P6.",
+            "icon": "import",
+            "docsId": "howto-xer-openen"
+          },
+          "secondary": [
+            {
+              "category": "PROFILY VÝPOČTU",
+              "title": "Počítejte jako P6 nebo MS Project",
+              "description": "Vyberte profil výpočtu a zobrazte data tak, jak je uložil jiný program.",
+              "icon": "relations"
+            },
+            {
+              "category": "ÚKOLY",
+              "title": "Větší kontrola nad úkoly",
+              "description": "Vyberte, co zůstane u úkolu pevné, a dělte pruhy v Ganttově diagramu.",
+              "icon": "tasks"
+            },
+            {
+              "category": "PRŮBĚH",
+              "title": "Průběh přes tabulku",
+              "description": "Exportujte a importujte průběh jako CSV nebo .xlsx.",
+              "icon": "examples"
+            },
+            {
+              "category": "SESTAVY",
+              "title": "Nové sestavy a rozložení",
+              "description": "Diagram zdrojů, kontrola DCMA a rozložení jedním klikem.",
+              "icon": "library"
+            }
+          ]
+        },
+        "sk": {
+          "primary": {
+            "category": "IMPORT P6",
+            "title": "Otvárajte súbory Primavera P6",
+            "description": "Otvorte .xer priamo, každý projekt na vlastnej karte, s dátumami vypočítanými v P6.",
+            "icon": "import",
+            "docsId": "howto-xer-openen"
+          },
+          "secondary": [
+            {
+              "category": "PROFILY VÝPOČTU",
+              "title": "Počítajte ako P6 alebo MS Project",
+              "description": "Vyberte profil výpočtu a zobrazte dátumy tak, ako ich uložil iný program.",
+              "icon": "relations"
+            },
+            {
+              "category": "ÚLOHY",
+              "title": "Väčšia kontrola nad úlohami",
+              "description": "Vyberte, čo zostane pri úlohe pevné, a delte pruhy v Ganttovom diagrame.",
+              "icon": "tasks"
+            },
+            {
+              "category": "POSTUP",
+              "title": "Postup cez tabuľku",
+              "description": "Exportujte a importujte postup ako CSV alebo .xlsx.",
+              "icon": "examples"
+            },
+            {
+              "category": "ZOSTAVY",
+              "title": "Nové zostavy a rozloženia",
+              "description": "Diagram zdrojov, kontrola DCMA a rozloženia jedným kliknutím.",
+              "icon": "library"
+            }
+          ]
+        },
+        "sr": {
+          "primary": {
+            "category": "УВОЗ P6",
+            "title": "Отворите Primavera P6 датотеке",
+            "description": "Отворите .xer директно, сваки пројекат на својој картици, са датумима које је израчунао P6.",
+            "icon": "import",
+            "docsId": "howto-xer-openen"
+          },
+          "secondary": [
+            {
+              "category": "ПРОФИЛИ ИЗРАЧУНАВАЊА",
+              "title": "Рачунајте као P6 или MS Project",
+              "description": "Изаберите профил израчунавања и видите датуме онако како их је сачувао други програм.",
+              "icon": "relations"
+            },
+            {
+              "category": "ЗАДАЦИ",
+              "title": "Више контроле над задацима",
+              "description": "Изаберите шта остаје фиксно по задатку и делите траке у Гантовом дијаграму.",
+              "icon": "tasks"
+            },
+            {
+              "category": "НАПРЕДАК",
+              "title": "Напредак преко табеле",
+              "description": "Извезите и увезите напредак као CSV или .xlsx.",
+              "icon": "examples"
+            },
+            {
+              "category": "ИЗВЕШТАЈИ",
+              "title": "Нови извештаји и изгледи",
+              "description": "Дијаграм ресурса, DCMA провера и изгледи једним кликом.",
+              "icon": "library"
+            }
+          ]
+        },
+        "hr": {
+          "primary": {
+            "category": "UVOZ P6",
+            "title": "Otvarajte Primavera P6 datoteke",
+            "description": "Otvorite .xer izravno, svaki projekt na vlastitoj kartici, s datumima koje je izračunao P6.",
+            "icon": "import",
+            "docsId": "howto-xer-openen"
+          },
+          "secondary": [
+            {
+              "category": "PROFILI IZRAČUNA",
+              "title": "Računajte kao P6 ili MS Project",
+              "description": "Odaberite profil izračuna i vidite datume onako kako ih je spremio drugi program.",
+              "icon": "relations"
+            },
+            {
+              "category": "ZADACI",
+              "title": "Više kontrole nad zadacima",
+              "description": "Odaberite što ostaje fiksno po zadatku i dijelite trake u Ganttovu dijagramu.",
+              "icon": "tasks"
+            },
+            {
+              "category": "NAPREDAK",
+              "title": "Napredak putem proračunske tablice",
+              "description": "Izvezite i uvezite napredak kao CSV ili .xlsx.",
+              "icon": "examples"
+            },
+            {
+              "category": "IZVJEŠĆA",
+              "title": "Nova izvješća i izgledi",
+              "description": "Dijagram resursa, DCMA provjera i izgledi jednim klikom.",
+              "icon": "library"
+            }
+          ]
+        },
+        "bg": {
+          "primary": {
+            "category": "ИМПОРТ НА P6",
+            "title": "Отваряйте файлове на Primavera P6",
+            "description": "Отворете .xer директно, всеки проект в отделен раздел, с датите, изчислени от P6.",
+            "icon": "import",
+            "docsId": "howto-xer-openen"
+          },
+          "secondary": [
+            {
+              "category": "ПРОФИЛИ НА ИЗЧИСЛЕНИЕ",
+              "title": "Изчислявайте като P6 или MS Project",
+              "description": "Изберете профил на изчисление и вижте датите така, както другата програма ги е записала.",
+              "icon": "relations"
+            },
+            {
+              "category": "ЗАДАЧИ",
+              "title": "Повече контрол върху задачите",
+              "description": "Изберете какво остава фиксирано за задача и разделяйте лентите в диаграмата на Гант.",
+              "icon": "tasks"
+            },
+            {
+              "category": "НАПРЕДЪК",
+              "title": "Напредък чрез електронна таблица",
+              "description": "Експортирайте и импортирайте напредъка като CSV или .xlsx.",
+              "icon": "examples"
+            },
+            {
+              "category": "ОТЧЕТИ",
+              "title": "Нови отчети и оформления",
+              "description": "Диаграма на ресурсите, проверка на DCMA и оформления с едно щракване.",
+              "icon": "library"
+            }
+          ]
+        },
+        "hu": {
+          "primary": {
+            "category": "P6-IMPORT",
+            "title": "Nyissa meg a Primavera P6 fájlokat",
+            "description": "Nyissa meg a .xer fájlt közvetlenül, minden projekt külön lapon, a P6 által számított dátumokkal.",
+            "icon": "import",
+            "docsId": "howto-xer-openen"
+          },
+          "secondary": [
+            {
+              "category": "SZÁMÍTÁSI PROFILOK",
+              "title": "Számoljon úgy, mint a P6 vagy az MS Project",
+              "description": "Válasszon számítási profilt, és lássa a dátumokat úgy, ahogy a másik program rögzítette.",
+              "icon": "relations"
+            },
+            {
+              "category": "TEVÉKENYSÉGEK",
+              "title": "Több kontroll a tevékenységek felett",
+              "description": "Válassza ki, mi marad rögzített tevékenységenként, és ossza fel a sávokat a Gantt-diagramon.",
+              "icon": "tasks"
+            },
+            {
+              "category": "ELŐREHALADÁS",
+              "title": "Előrehaladás táblázaton keresztül",
+              "description": "Exportálja és importálja az előrehaladást CSV vagy .xlsx formátumban.",
+              "icon": "examples"
+            },
+            {
+              "category": "JELENTÉSEK",
+              "title": "Új jelentések és elrendezések",
+              "description": "Erőforrás-diagram, DCMA-ellenőrzés és elrendezések egy kattintással.",
+              "icon": "library"
+            }
+          ]
+        },
+        "ro": {
+          "primary": {
+            "category": "IMPORT P6",
+            "title": "Deschideți fișiere Primavera P6",
+            "description": "Deschideți .xer direct, fiecare proiect în propria filă, cu datele calculate de P6.",
+            "icon": "import",
+            "docsId": "howto-xer-openen"
+          },
+          "secondary": [
+            {
+              "category": "PROFILURI DE CALCUL",
+              "title": "Calculați ca P6 sau MS Project",
+              "description": "Alegeți un profil de calcul și vedeți datele așa cum le-a înregistrat celălalt program.",
+              "icon": "relations"
+            },
+            {
+              "category": "ACTIVITĂȚI",
+              "title": "Mai mult control asupra activităților",
+              "description": "Alegeți ce rămâne fix pentru fiecare activitate și scindați barele în Gantt.",
+              "icon": "tasks"
+            },
+            {
+              "category": "PROGRES",
+              "title": "Progres printr-o foaie de calcul",
+              "description": "Exportați și importați progresul ca CSV sau .xlsx.",
+              "icon": "examples"
+            },
+            {
+              "category": "RAPOARTE",
+              "title": "Rapoarte și aspecte noi",
+              "description": "Diagramă de resurse, verificare DCMA și aspecte cu un clic.",
+              "icon": "library"
+            }
+          ]
+        },
+        "sv": {
+          "primary": {
+            "category": "P6-IMPORT",
+            "title": "Öppna Primavera P6-filer",
+            "description": "Öppna .xer direkt, varje projekt i en egen flik, med datumen som P6 beräknade.",
+            "icon": "import",
+            "docsId": "howto-xer-openen"
+          },
+          "secondary": [
+            {
+              "category": "BERÄKNINGSPROFILER",
+              "title": "Beräkna som P6 eller MS Project",
+              "description": "Välj en beräkningsprofil och se datumen som det andra programmet registrerade dem.",
+              "icon": "relations"
+            },
+            {
+              "category": "UPPGIFTER",
+              "title": "Mer kontroll över uppgifter",
+              "description": "Välj vad som ligger fast per uppgift och dela staplar i Gantt.",
+              "icon": "tasks"
+            },
+            {
+              "category": "FRAMDRIFT",
+              "title": "Framdrift via ett kalkylblad",
+              "description": "Exportera och importera framdrift som CSV eller .xlsx.",
+              "icon": "examples"
+            },
+            {
+              "category": "RAPPORTER",
+              "title": "Nya rapporter och layouter",
+              "description": "Resursdiagram, DCMA-kontroll och layouter med ett klick.",
+              "icon": "library"
+            }
+          ]
+        },
+        "nb": {
+          "primary": {
+            "category": "P6-IMPORT",
+            "title": "Åpne Primavera P6-filer",
+            "description": "Åpne .xer direkte, hvert prosjekt i sin egen fane, med datoene slik P6 beregnet dem.",
+            "icon": "import",
+            "docsId": "howto-xer-openen"
+          },
+          "secondary": [
+            {
+              "category": "BEREGNINGSPROFILER",
+              "title": "Beregn som P6 eller MS Project",
+              "description": "Velg en beregningsprofil og se datoene slik det andre programmet registrerte dem.",
+              "icon": "relations"
+            },
+            {
+              "category": "AKTIVITETER",
+              "title": "Mer kontroll over aktiviteter",
+              "description": "Velg hva som ligger fast per aktivitet, og del stolper i Gantt.",
+              "icon": "tasks"
+            },
+            {
+              "category": "FREMDRIFT",
+              "title": "Fremdrift via et regneark",
+              "description": "Eksporter og importer fremdrift som CSV eller .xlsx.",
+              "icon": "examples"
+            },
+            {
+              "category": "RAPPORTER",
+              "title": "Nye rapporter og oppsett",
+              "description": "Ressursdiagram, DCMA-kontroll og oppsett med ett klikk.",
+              "icon": "library"
+            }
+          ]
+        },
+        "da": {
+          "primary": {
+            "category": "P6-IMPORT",
+            "title": "Åbn Primavera P6-filer",
+            "description": "Åbn .xer direkte, hvert projekt i sin egen fane, med datoerne som P6 beregnede dem.",
+            "icon": "import",
+            "docsId": "howto-xer-openen"
+          },
+          "secondary": [
+            {
+              "category": "BEREGNINGSPROFILER",
+              "title": "Beregn som P6 eller MS Project",
+              "description": "Vælg en beregningsprofil og se datoerne, som det andet program registrerede dem.",
+              "icon": "relations"
+            },
+            {
+              "category": "OPGAVER",
+              "title": "Mere kontrol over opgaver",
+              "description": "Vælg, hvad der ligger fast pr. opgave, og del bjælker i Gantt.",
+              "icon": "tasks"
+            },
+            {
+              "category": "FREMDRIFT",
+              "title": "Fremdrift via et regneark",
+              "description": "Eksportér og importér fremdrift som CSV eller .xlsx.",
+              "icon": "examples"
+            },
+            {
+              "category": "RAPPORTER",
+              "title": "Nye rapporter og layouts",
+              "description": "Ressourcediagram, DCMA-kontrol og layouts med ét klik.",
+              "icon": "library"
+            }
+          ]
+        },
+        "fi": {
+          "primary": {
+            "category": "P6-TUONTI",
+            "title": "Avaa Primavera P6 -tiedostoja",
+            "description": "Avaa .xer suoraan, jokainen projekti omalla välilehdellään, P6:n laskemin päivämäärin.",
+            "icon": "import",
+            "docsId": "howto-xer-openen"
+          },
+          "secondary": [
+            {
+              "category": "LASKENTAPROFIILIT",
+              "title": "Laske kuten P6 tai MS Project",
+              "description": "Valitse laskentaprofiili ja katso päivämäärät sellaisina kuin toinen ohjelma ne tallensi.",
+              "icon": "relations"
+            },
+            {
+              "category": "TEHTÄVÄT",
+              "title": "Enemmän hallintaa tehtäviin",
+              "description": "Valitse, mikä pysyy kiinteänä tehtävää kohden, ja jaa palkkeja Gantt-kaaviossa.",
+              "icon": "tasks"
+            },
+            {
+              "category": "EDISTYMINEN",
+              "title": "Edistyminen taulukkolaskennan kautta",
+              "description": "Vie ja tuo edistyminen CSV- tai .xlsx-muodossa.",
+              "icon": "examples"
+            },
+            {
+              "category": "RAPORTIT",
+              "title": "Uudet raportit ja asettelut",
+              "description": "Resurssikaavio, DCMA-tarkistus ja asettelut yhdellä napsautuksella.",
+              "icon": "library"
+            }
+          ]
+        },
+        "lo": {
+          "primary": {
+            "category": "ນຳເຂົ້າ P6",
+            "title": "ເປີດໄຟລ໌ Primavera P6",
+            "description": "ເປີດ .xer ໂດຍກົງ, ແຕ່ລະໂຄງການຢູ່ແຖບຂອງຕົນເອງ, ພ້ອມວັນທີທີ່ P6 ຄິດໄລ່.",
+            "icon": "import",
+            "docsId": "howto-xer-openen"
+          },
+          "secondary": [
+            {
+              "category": "ໂປຣໄຟລ໌ການຄິດໄລ່",
+              "title": "ຄິດໄລ່ຄືກັບ P6 ຫຼື MS Project",
+              "description": "ເລືອກໂປຣໄຟລ໌ການຄິດໄລ່ ແລະ ເບິ່ງວັນທີຕາມທີ່ໂປຣແກຣມອື່ນບັນທຶກໄວ້.",
+              "icon": "relations"
+            },
+            {
+              "category": "ໜ້າວຽກ",
+              "title": "ຄວບຄຸມໜ້າວຽກໄດ້ຫຼາຍຂຶ້ນ",
+              "description": "ເລືອກສິ່ງທີ່ຄົງທີ່ຕໍ່ໜ້າວຽກ ແລະ ແຍກແຖບໃນ Gantt.",
+              "icon": "tasks"
+            },
+            {
+              "category": "ຄວາມຄືບໜ້າ",
+              "title": "ຄວາມຄືບໜ້າຜ່ານສະເປຣດຊີດ",
+              "description": "ສົ່ງອອກ ແລະ ນຳເຂົ້າຄວາມຄືບໜ້າເປັນ CSV ຫຼື .xlsx.",
+              "icon": "examples"
+            },
+            {
+              "category": "ລາຍງານ",
+              "title": "ລາຍງານ ແລະ ຮູບແບບໃໝ່",
+              "description": "ແຜນພາບຊັບພະຍາກອນ, ການກວດ DCMA ແລະ ຮູບແບບດ້ວຍຄລິກດຽວ.",
               "icon": "library"
             }
           ]

@@ -1,3 +1,4 @@
+import { LOCALES, type Locale } from '@/i18n/locales';
 import { isRecord } from '@/utils/guards';
 
 /** Lokale, versiegebonden gegevens voor de visuele update-dialoog.
@@ -9,8 +10,31 @@ import { isRecord } from '@/utils/guards';
 export const HIGHLIGHT_ICONS = ['import', 'library', 'relations', 'tasks', 'examples'] as const;
 export type HighlightIcon = (typeof HIGHLIGHT_ICONS)[number];
 
-export const RELEASE_HIGHLIGHT_LOCALES = ['nl', 'en', 'fr', 'de', 'es', 'zh', 'it', 'pt', 'pl', 'tr', 'ar', 'ja', 'ko', 'fa'] as const;
-export type ReleaseHighlightLocale = (typeof RELEASE_HIGHLIGHT_LOCALES)[number];
+// Besluit eigenaar 2026-10-19: vanaf v2026.10.0 krijgt elk versieblok copy in alle UI-talen
+// (de lijst `LOCALES`, geen tweede lijst). Blokken van vóór 2026.10.0 zijn uitgebracht met de
+// veertien oorspronkelijke talen en blijven zo; die eisen we ook niet achteraf in 28 talen.
+// Een ontbrekende locale valt bij het tonen terug op `en` (zie getReleaseHighlightsFromCatalog).
+export const RELEASE_HIGHLIGHT_LOCALES = LOCALES;
+export type ReleaseHighlightLocale = Locale;
+export const LEGACY_RELEASE_HIGHLIGHT_LOCALES = ['nl', 'en', 'fr', 'de', 'es', 'zh', 'it', 'pt', 'pl', 'tr', 'ar', 'ja', 'ko', 'fa'] as const;
+export type LegacyReleaseHighlightLocale = (typeof LEGACY_RELEASE_HIGHLIGHT_LOCALES)[number];
+/** Eerste versie waarvoor alle UI-talen verplicht zijn. */
+export const ALL_LOCALES_FROM_VERSION = '2026.10.0';
+
+function versionParts(version: string): number[] {
+  return version.replace(/^v/i, '').split('.').map(part => Number.parseInt(part, 10) || 0);
+}
+
+/** Locales die het versieblok van `version` verplicht moet bevatten. */
+export function requiredHighlightLocales(version: string): readonly ReleaseHighlightLocale[] {
+  const a = versionParts(version);
+  const b = versionParts(ALL_LOCALES_FROM_VERSION);
+  for (let i = 0; i < Math.max(a.length, b.length); i++) {
+    const diff = (a[i] ?? 0) - (b[i] ?? 0);
+    if (diff !== 0) return diff > 0 ? RELEASE_HIGHLIGHT_LOCALES : LEGACY_RELEASE_HIGHLIGHT_LOCALES;
+  }
+  return RELEASE_HIGHLIGHT_LOCALES;
+}
 
 export interface LocalizedReleaseHighlight {
   readonly category: string;
@@ -56,7 +80,8 @@ export interface VersionedReleaseHighlights {
   readonly primary: PrimaryHighlightDefinition;
   readonly secondary: FourSecondaryHighlightDefinitions;
   readonly stats: ReleaseStats;
-  readonly copy: Readonly<Record<ReleaseHighlightLocale, LocalizedReleaseCopy>>;
+  /** De oorspronkelijke veertien talen zijn altijd verplicht; de rest vanaf 2026.10.0 (runtime-validatie). */
+  readonly copy: Readonly<Record<LegacyReleaseHighlightLocale, LocalizedReleaseCopy>> & Partial<Record<ReleaseHighlightLocale, LocalizedReleaseCopy>>;
 }
 
 export type ReleaseHighlightCatalog = Readonly<Record<string, VersionedReleaseHighlights>>;
@@ -115,6 +140,20 @@ export const RELEASE_HIGHLIGHT_CATALOG = defineReleaseHighlightCatalog({
       ja: [{ category: 'P6 インポート', title: 'Primavera P6 ファイルを開く', description: '.xer を直接開き、プロジェクトごとにタブで表示し、P6 が計算した日付を保ちます。' }, { category: '計算プロファイル', title: 'P6 や MS Project のように計算', description: '計算プロファイルを選び、他のソフトが記録した日付を表示します。' }, { category: 'タスク', title: 'タスクをより細かく制御', description: 'タスクごとに固定する項目を選び、ガントでバーを分割します。' }, { category: '進捗', title: 'スプレッドシートで進捗を更新', description: '進捗を CSV または .xlsx でエクスポート／インポートします。' }, { category: 'レポート', title: '新しいレポートとレイアウト', description: 'リソース図、DCMA チェック、ワンクリックのレイアウト。' }],
       ko: [{ category: 'P6 가져오기', title: 'Primavera P6 파일 열기', description: '.xer를 바로 열고 프로젝트마다 탭으로 표시하며 P6가 계산한 날짜를 유지합니다.' }, { category: '계산 프로필', title: 'P6나 MS Project처럼 계산', description: '계산 프로필을 선택하고 다른 프로그램이 기록한 날짜를 봅니다.' }, { category: '작업', title: '작업을 더 세밀하게 제어', description: '작업별로 고정할 항목을 선택하고 간트에서 막대를 분할합니다.' }, { category: '진행률', title: '스프레드시트로 진행률 갱신', description: '진행률을 CSV 또는 .xlsx로 내보내고 가져옵니다.' }, { category: '보고서', title: '새 보고서와 레이아웃', description: '리소스 다이어그램, DCMA 점검, 한 번 클릭 레이아웃.' }],
       fa: [{ category: 'درون‌ریزی P6', title: 'فایل‌های Primavera P6 را باز کنید', description: 'فایل .xer را مستقیم باز کنید؛ هر پروژه در یک زبانه، با تاریخ‌هایی که P6 محاسبه کرده است.' }, { category: 'پروفایل محاسبه', title: 'مثل P6 یا MS Project محاسبه کنید', description: 'پروفایل محاسبه را انتخاب کنید و تاریخ‌ها را همان‌طور که برنامه دیگر ثبت کرده ببینید.' }, { category: 'وظایف', title: 'کنترل بیشتر روی وظایف', description: 'برای هر وظیفه مشخص کنید چه چیزی ثابت بماند و نوارها را در گانت تقسیم کنید.' }, { category: 'پیشرفت', title: 'پیشرفت از طریق صفحه‌گسترده', description: 'پیشرفت را با CSV یا .xlsx خروجی بگیرید و وارد کنید.' }, { category: 'گزارش‌ها', title: 'گزارش‌ها و چیدمان‌های جدید', description: 'نمودار منابع، بررسی DCMA و چیدمان با یک کلیک.' }],
+      ru: [{ category: 'ИМПОРТ P6', title: 'Откройте файлы Primavera P6', description: 'Открывайте .xer напрямую: каждый проект на своей вкладке, с датами, рассчитанными в P6.' }, { category: 'ПРОФИЛИ РАСЧЕТА', title: 'Считайте как P6 или MS Project', description: 'Выберите профиль расчета и смотрите даты так, как их сохранила другая программа.' }, { category: 'ЗАДАЧИ', title: 'Больше контроля над задачами', description: 'Выберите, что остается фиксированным для задачи, и разделяйте полосы на диаграмме Ганта.' }, { category: 'ХОД ВЫПОЛНЕНИЯ', title: 'Ход выполнения через таблицу', description: 'Экспортируйте и импортируйте ход выполнения в CSV или .xlsx.' }, { category: 'ОТЧЕТЫ', title: 'Новые отчеты и макеты', description: 'Диаграмма ресурсов, проверка DCMA и макеты в один клик.' }],
+      uk: [{ category: 'ІМПОРТ P6', title: 'Відкривайте файли Primavera P6', description: 'Відкривайте .xer напряму: кожен проєкт на власній вкладці, з датами, обчисленими в P6.' }, { category: 'ПРОФІЛІ ОБЧИСЛЕНЬ', title: 'Обчислюйте як P6 або MS Project', description: 'Виберіть профіль обчислень і бачте дати так, як їх зберегла інша програма.' }, { category: 'ЗАВДАННЯ', title: 'Більше контролю над завданнями', description: 'Виберіть, що лишається фіксованим для завдання, і розділяйте смуги на діаграмі Ганта.' }, { category: 'ПРОГРЕС', title: 'Прогрес через електронну таблицю', description: 'Експортуйте й імпортуйте прогрес у CSV або .xlsx.' }, { category: 'ЗВІТИ', title: 'Нові звіти та макети', description: 'Діаграма ресурсів, перевірка DCMA і макети одним кліком.' }],
+      cs: [{ category: 'IMPORT P6', title: 'Otevírejte soubory Primavera P6', description: 'Otevřete .xer přímo, každý projekt na vlastní kartě, s daty vypočtenými v P6.' }, { category: 'PROFILY VÝPOČTU', title: 'Počítejte jako P6 nebo MS Project', description: 'Vyberte profil výpočtu a zobrazte data tak, jak je uložil jiný program.' }, { category: 'ÚKOLY', title: 'Větší kontrola nad úkoly', description: 'Vyberte, co zůstane u úkolu pevné, a dělte pruhy v Ganttově diagramu.' }, { category: 'PRŮBĚH', title: 'Průběh přes tabulku', description: 'Exportujte a importujte průběh jako CSV nebo .xlsx.' }, { category: 'SESTAVY', title: 'Nové sestavy a rozložení', description: 'Diagram zdrojů, kontrola DCMA a rozložení jedním klikem.' }],
+      sk: [{ category: 'IMPORT P6', title: 'Otvárajte súbory Primavera P6', description: 'Otvorte .xer priamo, každý projekt na vlastnej karte, s dátumami vypočítanými v P6.' }, { category: 'PROFILY VÝPOČTU', title: 'Počítajte ako P6 alebo MS Project', description: 'Vyberte profil výpočtu a zobrazte dátumy tak, ako ich uložil iný program.' }, { category: 'ÚLOHY', title: 'Väčšia kontrola nad úlohami', description: 'Vyberte, čo zostane pri úlohe pevné, a delte pruhy v Ganttovom diagrame.' }, { category: 'POSTUP', title: 'Postup cez tabuľku', description: 'Exportujte a importujte postup ako CSV alebo .xlsx.' }, { category: 'ZOSTAVY', title: 'Nové zostavy a rozloženia', description: 'Diagram zdrojov, kontrola DCMA a rozloženia jedným kliknutím.' }],
+      sr: [{ category: 'УВОЗ P6', title: 'Отворите Primavera P6 датотеке', description: 'Отворите .xer директно, сваки пројекат на својој картици, са датумима које је израчунао P6.' }, { category: 'ПРОФИЛИ ИЗРАЧУНАВАЊА', title: 'Рачунајте као P6 или MS Project', description: 'Изаберите профил израчунавања и видите датуме онако како их је сачувао други програм.' }, { category: 'ЗАДАЦИ', title: 'Више контроле над задацима', description: 'Изаберите шта остаје фиксно по задатку и делите траке у Гантовом дијаграму.' }, { category: 'НАПРЕДАК', title: 'Напредак преко табеле', description: 'Извезите и увезите напредак као CSV или .xlsx.' }, { category: 'ИЗВЕШТАЈИ', title: 'Нови извештаји и изгледи', description: 'Дијаграм ресурса, DCMA провера и изгледи једним кликом.' }],
+      hr: [{ category: 'UVOZ P6', title: 'Otvarajte Primavera P6 datoteke', description: 'Otvorite .xer izravno, svaki projekt na vlastitoj kartici, s datumima koje je izračunao P6.' }, { category: 'PROFILI IZRAČUNA', title: 'Računajte kao P6 ili MS Project', description: 'Odaberite profil izračuna i vidite datume onako kako ih je spremio drugi program.' }, { category: 'ZADACI', title: 'Više kontrole nad zadacima', description: 'Odaberite što ostaje fiksno po zadatku i dijelite trake u Ganttovu dijagramu.' }, { category: 'NAPREDAK', title: 'Napredak putem proračunske tablice', description: 'Izvezite i uvezite napredak kao CSV ili .xlsx.' }, { category: 'IZVJEŠĆA', title: 'Nova izvješća i izgledi', description: 'Dijagram resursa, DCMA provjera i izgledi jednim klikom.' }],
+      bg: [{ category: 'ИМПОРТ НА P6', title: 'Отваряйте файлове на Primavera P6', description: 'Отворете .xer директно, всеки проект в отделен раздел, с датите, изчислени от P6.' }, { category: 'ПРОФИЛИ НА ИЗЧИСЛЕНИЕ', title: 'Изчислявайте като P6 или MS Project', description: 'Изберете профил на изчисление и вижте датите така, както другата програма ги е записала.' }, { category: 'ЗАДАЧИ', title: 'Повече контрол върху задачите', description: 'Изберете какво остава фиксирано за задача и разделяйте лентите в диаграмата на Гант.' }, { category: 'НАПРЕДЪК', title: 'Напредък чрез електронна таблица', description: 'Експортирайте и импортирайте напредъка като CSV или .xlsx.' }, { category: 'ОТЧЕТИ', title: 'Нови отчети и оформления', description: 'Диаграма на ресурсите, проверка на DCMA и оформления с едно щракване.' }],
+      hu: [{ category: 'P6-IMPORT', title: 'Nyissa meg a Primavera P6 fájlokat', description: 'Nyissa meg a .xer fájlt közvetlenül, minden projekt külön lapon, a P6 által számított dátumokkal.' }, { category: 'SZÁMÍTÁSI PROFILOK', title: 'Számoljon úgy, mint a P6 vagy az MS Project', description: 'Válasszon számítási profilt, és lássa a dátumokat úgy, ahogy a másik program rögzítette.' }, { category: 'TEVÉKENYSÉGEK', title: 'Több kontroll a tevékenységek felett', description: 'Válassza ki, mi marad rögzített tevékenységenként, és ossza fel a sávokat a Gantt-diagramon.' }, { category: 'ELŐREHALADÁS', title: 'Előrehaladás táblázaton keresztül', description: 'Exportálja és importálja az előrehaladást CSV vagy .xlsx formátumban.' }, { category: 'JELENTÉSEK', title: 'Új jelentések és elrendezések', description: 'Erőforrás-diagram, DCMA-ellenőrzés és elrendezések egy kattintással.' }],
+      ro: [{ category: 'IMPORT P6', title: 'Deschideți fișiere Primavera P6', description: 'Deschideți .xer direct, fiecare proiect în propria filă, cu datele calculate de P6.' }, { category: 'PROFILURI DE CALCUL', title: 'Calculați ca P6 sau MS Project', description: 'Alegeți un profil de calcul și vedeți datele așa cum le-a înregistrat celălalt program.' }, { category: 'ACTIVITĂȚI', title: 'Mai mult control asupra activităților', description: 'Alegeți ce rămâne fix pentru fiecare activitate și scindați barele în Gantt.' }, { category: 'PROGRES', title: 'Progres printr-o foaie de calcul', description: 'Exportați și importați progresul ca CSV sau .xlsx.' }, { category: 'RAPOARTE', title: 'Rapoarte și aspecte noi', description: 'Diagramă de resurse, verificare DCMA și aspecte cu un clic.' }],
+      sv: [{ category: 'P6-IMPORT', title: 'Öppna Primavera P6-filer', description: 'Öppna .xer direkt, varje projekt i en egen flik, med datumen som P6 beräknade.' }, { category: 'BERÄKNINGSPROFILER', title: 'Beräkna som P6 eller MS Project', description: 'Välj en beräkningsprofil och se datumen som det andra programmet registrerade dem.' }, { category: 'UPPGIFTER', title: 'Mer kontroll över uppgifter', description: 'Välj vad som ligger fast per uppgift och dela staplar i Gantt.' }, { category: 'FRAMDRIFT', title: 'Framdrift via ett kalkylblad', description: 'Exportera och importera framdrift som CSV eller .xlsx.' }, { category: 'RAPPORTER', title: 'Nya rapporter och layouter', description: 'Resursdiagram, DCMA-kontroll och layouter med ett klick.' }],
+      nb: [{ category: 'P6-IMPORT', title: 'Åpne Primavera P6-filer', description: 'Åpne .xer direkte, hvert prosjekt i sin egen fane, med datoene slik P6 beregnet dem.' }, { category: 'BEREGNINGSPROFILER', title: 'Beregn som P6 eller MS Project', description: 'Velg en beregningsprofil og se datoene slik det andre programmet registrerte dem.' }, { category: 'AKTIVITETER', title: 'Mer kontroll over aktiviteter', description: 'Velg hva som ligger fast per aktivitet, og del stolper i Gantt.' }, { category: 'FREMDRIFT', title: 'Fremdrift via et regneark', description: 'Eksporter og importer fremdrift som CSV eller .xlsx.' }, { category: 'RAPPORTER', title: 'Nye rapporter og oppsett', description: 'Ressursdiagram, DCMA-kontroll og oppsett med ett klikk.' }],
+      da: [{ category: 'P6-IMPORT', title: 'Åbn Primavera P6-filer', description: 'Åbn .xer direkte, hvert projekt i sin egen fane, med datoerne som P6 beregnede dem.' }, { category: 'BEREGNINGSPROFILER', title: 'Beregn som P6 eller MS Project', description: 'Vælg en beregningsprofil og se datoerne, som det andet program registrerede dem.' }, { category: 'OPGAVER', title: 'Mere kontrol over opgaver', description: 'Vælg, hvad der ligger fast pr. opgave, og del bjælker i Gantt.' }, { category: 'FREMDRIFT', title: 'Fremdrift via et regneark', description: 'Eksportér og importér fremdrift som CSV eller .xlsx.' }, { category: 'RAPPORTER', title: 'Nye rapporter og layouts', description: 'Ressourcediagram, DCMA-kontrol og layouts med ét klik.' }],
+      fi: [{ category: 'P6-TUONTI', title: 'Avaa Primavera P6 -tiedostoja', description: 'Avaa .xer suoraan, jokainen projekti omalla välilehdellään, P6:n laskemin päivämäärin.' }, { category: 'LASKENTAPROFIILIT', title: 'Laske kuten P6 tai MS Project', description: 'Valitse laskentaprofiili ja katso päivämäärät sellaisina kuin toinen ohjelma ne tallensi.' }, { category: 'TEHTÄVÄT', title: 'Enemmän hallintaa tehtäviin', description: 'Valitse, mikä pysyy kiinteänä tehtävää kohden, ja jaa palkkeja Gantt-kaaviossa.' }, { category: 'EDISTYMINEN', title: 'Edistyminen taulukkolaskennan kautta', description: 'Vie ja tuo edistyminen CSV- tai .xlsx-muodossa.' }, { category: 'RAPORTIT', title: 'Uudet raportit ja asettelut', description: 'Resurssikaavio, DCMA-tarkistus ja asettelut yhdellä napsautuksella.' }],
+      lo: [{ category: 'ນຳເຂົ້າ P6', title: 'ເປີດໄຟລ໌ Primavera P6', description: 'ເປີດ .xer ໂດຍກົງ, ແຕ່ລະໂຄງການຢູ່ແຖບຂອງຕົນເອງ, ພ້ອມວັນທີທີ່ P6 ຄິດໄລ່.' }, { category: 'ໂປຣໄຟລ໌ການຄິດໄລ່', title: 'ຄິດໄລ່ຄືກັບ P6 ຫຼື MS Project', description: 'ເລືອກໂປຣໄຟລ໌ການຄິດໄລ່ ແລະ ເບິ່ງວັນທີຕາມທີ່ໂປຣແກຣມອື່ນບັນທຶກໄວ້.' }, { category: 'ໜ້າວຽກ', title: 'ຄວບຄຸມໜ້າວຽກໄດ້ຫຼາຍຂຶ້ນ', description: 'ເລືອກສິ່ງທີ່ຄົງທີ່ຕໍ່ໜ້າວຽກ ແລະ ແຍກແຖບໃນ Gantt.' }, { category: 'ຄວາມຄືບໜ້າ', title: 'ຄວາມຄືບໜ້າຜ່ານສະເປຣດຊີດ', description: 'ສົ່ງອອກ ແລະ ນຳເຂົ້າຄວາມຄືບໜ້າເປັນ CSV ຫຼື .xlsx.' }, { category: 'ລາຍງານ', title: 'ລາຍງານ ແລະ ຮູບແບບໃໝ່', description: 'ແຜນພາບຊັບພະຍາກອນ, ການກວດ DCMA ແລະ ຮູບແບບດ້ວຍຄລິກດຽວ.' }],
     },
   },
   '2026.9.0': {
@@ -165,7 +204,7 @@ export function getReleaseHighlightsFromCatalog(catalog: ReleaseHighlightCatalog
   const normalizedVersion = version.replace(/^v/i, '');
   const release = catalog[normalizedVersion];
   if (!release) return null;
-  const copy = release.copy[locale.split('-')[0] as ReleaseHighlightLocale] ?? release.copy.en;
+  const copy = release.copy[locale.split('-')[0] as ReleaseHighlightLocale] ?? release.copy.en; // terugval op en voor een ontbrekende locale
   const [primaryCopy, secondaryOne, secondaryTwo, secondaryThree, secondaryFour] = copy;
   return {
     version: normalizedVersion,
@@ -236,11 +275,12 @@ export function validateReleaseHighlightCatalog(catalog: ReleaseHighlightCatalog
     errors.push(`${normalizedVersion}: locale copy ontbreekt`);
   } else {
     const locales = Object.keys(copy);
-    const missing = RELEASE_HIGHLIGHT_LOCALES.filter(locale => !(locale in copy));
+    const required = requiredHighlightLocales(normalizedVersion);
+    const missing = required.filter(locale => !(locale in copy));
     const extra = locales.filter(locale => !(RELEASE_HIGHLIGHT_LOCALES as readonly string[]).includes(locale));
     if (missing.length) errors.push(`${normalizedVersion}: ontbrekende locales: ${missing.join(', ')}`);
     if (extra.length) errors.push(`${normalizedVersion}: onbekende locales: ${extra.join(', ')}`);
-    for (const locale of RELEASE_HIGHLIGHT_LOCALES) {
+    for (const locale of required) {
       const localizedCopy = copy[locale];
       if (!Array.isArray(localizedCopy) || localizedCopy.length !== 5) {
         errors.push(`${normalizedVersion}: ${locale} verwacht primary plus exact 4 secondary teksten`);
