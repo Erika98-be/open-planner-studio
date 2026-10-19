@@ -10,7 +10,7 @@ import { expect, test } from './fixtures/ops';
 const H = 60;
 const BAND = [{ start: 480, end: 960 }];
 
-interface SeedTask { name: string; hours: number; workHours?: number }
+interface SeedTask { name: string; hours: number; workHours?: number; workRule?: 'FIXED_WORK' | 'FIXED_DURATION_RATE' }
 
 async function seed(page: Page, tasks: SeedTask[]): Promise<string[]> {
   return page.evaluate(({ inputs, band }) => {
@@ -37,6 +37,7 @@ async function seed(page: Page, tasks: SeedTask[]): Promise<string[]> {
       // Zoals na een P6-import: een expliciete restduur en een bewaard restwerk.
       ops.store.setState((st) => {
         st.tasks.find(t => t.id === id)!.time.remainingMinutes = input.hours * 60;
+        if (input.workRule) st.tasks.find(t => t.id === id)!.workRule = input.workRule;
         const a = st.assignments.find(x => x.taskId === id);
         if (a && input.workHours !== undefined) a.remainingWorkMinutes = input.workHours * 60;
       });
@@ -121,10 +122,20 @@ test('tabel: één waarde plakken in twee rijen ⇒ beide herrekend, één meldi
 // Tabel-⚠ (eigenaarsbesluit 2026-10-19, optie 1): de kolom *Resterend werk (uren)* toont hetzelfde ⚠
 // als *Werk (rest)* in het paneel Toewijzingen, met dezelfde uitleg als title. De kolom zetten is een
 // fixture (dezelfde voorkeur als via de kolomkiezer); de duur typen en Ctrl+Z zijn echte toetsen.
-const HINT_320_80 = new RegExp(`^(${[
-  'Opgeslagen werk 320 u wijkt af van inzet × resterende duur (80 u). Het histogram volgt het opgeslagen werk over de hele taakduur. De app past de inzet niet aan om het verschil weg te werken. Wijzig je de duur, dan rekent de app het opnieuw uit.',
-  'Stored work 320 h differs from units × remaining duration (80 h). The histogram follows the stored work across the whole task duration. The app does not change the units to remove the difference. If you change the duration, the app recalculates the work.',
-].map(text => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})$`);
+// De slotzin hangt af van de regel (besluit V10, eigenaar 2026-10-19, optie 1).
+const exactly = (texts: string[]) => new RegExp(`^(${texts.map(text => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})$`);
+const HINT_NL = 'Opgeslagen werk 320 u wijkt af van inzet × resterende duur (80 u). Het histogram volgt het opgeslagen werk over de hele taakduur.';
+const HINT_EN = 'Stored work 320 h differs from units × remaining duration (80 h). The histogram follows the stored work across the whole task duration.';
+// Vaste duur en inzet (de standaard): de app vervangt het werk bij een duurwijziging.
+const HINT_320_80 = exactly([
+  `${HINT_NL} De app verandert dit niet vanzelf. Wijzig je de duur, dan vervangt de app dit werk door inzet × nieuwe duur. Je krijgt dan een melding; Ctrl+Z zet het terug.`,
+  `${HINT_EN} The app does not change this by itself. If you change the duration, the app replaces this work with units × new duration. You then get a notice; Ctrl+Z undoes it.`,
+]);
+// Vast werk: het werk blijft staan, de inzet past zich aan.
+const HINT_320_80_KEEPS = exactly([
+  `${HINT_NL} De app verandert dit niet vanzelf. Wijzig je de duur, dan blijft dit werk staan en past de app de inzet aan.`,
+  `${HINT_EN} The app does not change this by itself. If you change the duration, this work stays and the app adjusts the units.`,
+]);
 
 test('tabel: ⚠ in Resterend werk bij afwijkend restwerk, met de uitleg van het paneel; weg na een duurwijziging, terug na Ctrl+Z', async ({ page, ops: _ops }) => {
   const [deviatingId, okId] = await seed(page, [
@@ -177,4 +188,38 @@ test('tabel: ⚠ in Resterend werk bij afwijkend restwerk, met de uitleg van het
   await expect.poll(() => workOf(page, deviatingId)).toEqual({ duration: 80 * H, rest: 80 * H, work: 320 * H });
   await expect(warning(deviatingId)).toHaveCount(1);
   await expect(warning(deviatingId)).toHaveAttribute('title', HINT_320_80);
+});
+
+test('tabel: ⚠-uitleg bij Vast werk zegt dat het werk blijft; een duurwijziging laat het werk staan, zonder melding', async ({ page, ops: _ops }) => {
+  const [taskId] = await seed(page, [{ name: 'Vast werk', hours: 80, workHours: 320, workRule: 'FIXED_WORK' }]);
+  await page.evaluate(() => {
+    const s = window.__OPS__!.store.getState();
+    const columns = s.taskGridSurfaces['full-task-grid'].columns;
+    s.setTaskGridColumns('full-task-grid', [
+      ...columns,
+      { id: 'assignment.remainingWork', width: 200, pinned: false } as unknown as (typeof columns)[number],
+    ]);
+  });
+  await page.getByRole('button', { name: /^(Table|Tabel)$/ }).click();
+  const cell = (column: string) => page.locator(
+    `[data-task-grid-surface-id="full-task-grid"] [data-grid-row-key="${taskId}"][data-grid-column-id="${column}"]`,
+  );
+  const warning = cell('assignment.remainingWork').locator('[data-ops-remaining-work-deviates]');
+  await expect(warning).toHaveAttribute('title', HINT_320_80_KEEPS);
+  await warning.hover();
+  await expect(page.locator('.ops-tooltip[role="tooltip"]')).toHaveText(HINT_320_80_KEEPS);
+  await page.mouse.move(5, 5);
+
+  // Het paneel kiest dezelfde slotzin.
+  await page.evaluate((id) => window.__OPS__!.store.getState().selectTask(id), taskId);
+  await expect(page.locator('[data-ops-assignment-work-deviates]')).toHaveAttribute('title', HINT_320_80_KEEPS);
+
+  // En de app doet wat de zin zegt: duur 80 → 72 h ⇒ het werk blijft 320 h, geen melding.
+  const duration = cell('task.time.scheduleDuration');
+  await duration.click();
+  await page.keyboard.press('Enter');
+  await duration.locator('input').fill('72h');
+  await page.keyboard.press('Enter');
+  await expect.poll(() => workOf(page, taskId)).toEqual({ duration: 72 * H, rest: 72 * H, work: 320 * H });
+  await expect(page.locator('.ops-toast', { hasText: /(Remaining work of|Restwerk van)/ })).toHaveCount(0);
 });
