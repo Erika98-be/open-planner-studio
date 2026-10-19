@@ -171,11 +171,18 @@ test('5b: weigering ⇒ ander document openen ⇒ toast weg, en terug naar het e
   const { toast } = await refuseDuration(page);
 
   await openExample(page, /Refurbishment/);
-  await expect.poll(() => page.evaluate(() => window.__OPS__!.store.getState().activeDocumentId)).not.toBe(akkers);
+  const other = await page.evaluate(() => window.__OPS__!.store.getState().activeDocumentId);
+  expect(other).not.toBe(akkers);
   await expect(toast).toHaveCount(0);
 
   await page.locator(`[data-ops-tab="${akkers}"]`).click();
   await expect.poll(() => page.evaluate(() => window.__OPS__!.store.getState().activeDocumentId)).toBe(akkers);
+  await expect(toast).toHaveCount(0);
+
+  // Alleen een tabwissel (geen openen): opnieuw weigeren in De Akkers, dan het andere tabblad.
+  await refuseDuration(page);
+  await page.locator(`[data-ops-tab="${other}"]`).click();
+  await expect.poll(() => page.evaluate(() => window.__OPS__!.store.getState().activeDocumentId)).toBe(other);
   await expect(toast).toHaveCount(0);
 });
 
