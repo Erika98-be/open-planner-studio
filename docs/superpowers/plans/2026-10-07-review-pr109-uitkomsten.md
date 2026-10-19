@@ -1729,3 +1729,9 @@ Testversie (release-check, poort 3049) is NIET bijgewerkt met de PR's van vandaa
 - Release draait de eigenaar zelf in een aparte sessie; deze thread levert gemergede PR's + overdracht.
 - Testversie `claude/release-check-4` 08c74a68c (#371, #375 nieuw; #377 0db9c489b; #374 ef5a565f5 oud; #376); dev-server
   3049 blijft draaien. `public/qa-files/harbour-point-dcp03.xer` lokaal (gitignored).
+- **Worker #374 gestopt op verzoek eigenaar.** Gepusht: 47bee015f (main 973d934e0 erin) + 7a57b51b7 (knoppen binnen het
+  venster). Worktree `fase-vraag-toewijzing` staat **midden in een tweede merge** met main 4c747d73a (UU
+  `ref-meldingen.md` nl/en; main's bewaking wil dat `phaseQuestionOutdated` als weigering of uitzondering wordt
+  ingedeeld). Volgende keer: die merge afmaken (of `git merge --abort`) en CI op de nieuwe kop.
+- aia-sessie opnieuw geprobeerd: T3-tools hier zien alleen de laptop-omgeving (5 projecten, geen aia) ⇒ eigenaar start
+  de sessie zelf op de aia-server met de opdracht uit het gesprek.
