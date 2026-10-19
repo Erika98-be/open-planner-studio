@@ -170,9 +170,6 @@ export interface LevelingResult {
   gaps: Record<string, TaskSplitGap[]>;
 }
 
-// Float-tolerantie tegen rekenruis: `exceedsCapacity` uit `capacityTolerance.ts` (gedeeld met
-// belasting, histogram en resourcebibliotheek).
-
 // Harde bovengrens voor de kandidaat-scan wanneer er een poolitem-grootboek MET
 // horizon is meegegeven (`ledger.horizonIso`) — die kan de scan voorbij de gewone, taak-eigen
 // `scanLimit` duwen. Zelfde orde als `CalendarEngine`s eigen `MAX_DAYS`-veiligheidsgrens.

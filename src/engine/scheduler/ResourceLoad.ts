@@ -257,7 +257,7 @@ export interface ResourceLoadResult {
   load: Record<string, DailyLoad>;
   /** resourceId → per-dag-capaciteit (kalender × maxUnits/availabilitySteps; 0 op niet-werkdagen). */
   capacity: Record<string, DailyLoad>;
-  /** resourceId → ISO-datums waar load > capacity. */
+  /** resourceId → ISO-datums waar `exceedsCapacity(load, capacity)` (marge tegen rekenruis). */
   overallocatedDays: Record<string, string[]>;
   /** resourceId → ISO-datum → reden, uitsluitend voor de datums in `overallocatedDays`. */
   overallocatedReasons: Record<string, Record<string, OverallocationReason>>;

@@ -17,7 +17,7 @@ export interface HistogramSeries {
   load: Record<string, number>;
   /** iso-datum → capaciteit op die dag. */
   capacity: Record<string, number>;
-  /** iso-datums waar load > capacity. */
+  /** iso-datums waar `exceedsCapacity(load, capacity)` (marge tegen rekenruis). */
   overSet: Set<string>;
 }
 
