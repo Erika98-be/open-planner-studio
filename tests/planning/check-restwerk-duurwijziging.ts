@@ -79,6 +79,8 @@ const xer = [
   taskRow('6006', 'E-1050', 'Gestart', 'DT_FixedDrtn', 'TK_Active', '50', '80', '40', '2024-01-09 08:00'),
   // Controle: restwerk = inzet × restduur (80 h), dus geen melding.
   taskRow('6007', 'E-1060', 'Klopt al', 'DT_FixedDrtn', 'TK_NotStart', '0', '80', '80'),
+  // Vaste inzet (DT_FixedRate): restwerk volgt inzet × restduur, net als vaste duur en inzet.
+  taskRow('6008', 'E-1070', 'Vaste inzet', 'DT_FixedRate', 'TK_NotStart', '0', '80', '80'),
   '%T\tRSRC',
   '%F\trsrc_id\trsrc_name\trsrc_type\tclndr_id\tdef_qty_per_hr\tunit_id',
   '%R\t4500\tDesign Engineer\tRT_Labor\tC1\t1\t',
@@ -91,6 +93,7 @@ const xer = [
   '%R\t7503\tP1\t6004\t4500\tRT_Labor\t1\t0\t320\t320\t0\t0',
   '%R\t7504\tP1\t6006\t4500\tRT_Labor\t1\t0\t320\t320\t0\t0',
   '%R\t7505\tP1\t6007\t4500\tRT_Labor\t1\t0\t80\t80\t0\t0',
+  '%R\t7506\tP1\t6008\t4500\tRT_Labor\t1\t0\t320\t320\t0\t0',
   '%E',
 ].join('\n');
 
@@ -192,6 +195,10 @@ openFixture();
   setHours('E-1040', 64);
   eq('d5 Vaste duur en werk: rest 64 h, restwerk blijft 320 h, inzet 5', [byCode('E-1040').time.remainingMinutes, asg('7503').remainingWorkMinutes, asg('7503').unitsPerDay], [64 * H, 320 * H, 5]);
   eq('d6 Vaste duur en werk: geen melding', workNotices(), []);
+  eq('d7 voorwaarde: E-1070 is vaste inzet met een bewaard restwerk van 320 h', [byCode('E-1070').workRule, asg('7506').remainingWorkMinutes], ['FIXED_RATE', 320 * H]);
+  setHours('E-1070', 72);
+  eq('d8 Vaste inzet: rest 72 h, restwerk = inzet × nieuwe restduur = 72 h, inzet blijft 1', [byCode('E-1070').time.remainingMinutes, asg('7506').remainingWorkMinutes, asg('7506').unitsPerDay], [72 * H, 72 * H, 1]);
+  eq('d9 Vaste inzet: één melding 320 → 72 h', workNotices().map((n) => [n.key, n.numberParams]), [['notifications.remainingWorkRecomputed', { before: 320, after: 72 }]]);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
