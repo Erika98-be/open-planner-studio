@@ -1544,3 +1544,8 @@ Testversie (release-check, poort 3049) is NIET bijgewerkt met de PR's van vandaa
   P6-duurbewerking (rehab-2 plakken 4.762 rijen 360 s vs 4 s main; paneel 170 vs 90 ms). Verder klopt het op echte
   bestanden (E-1010 80 → 72: 72/72, één melding, undo byte-gelijk; F5 en IFC-rondgang zonder wijziging). ⇒ fixronde bij
   de maker met V1 (sleepmelding toont eerste i.p.v. eindwaarde) en V2-tekst; V3–V9 VERVOLG.
+- **Review #381: NEE** — BLOKKEERT: poort telt `presentationMode` mee ⇒ Delete/Ctrl+Z werken niet meer in de presentatie
+  (gids belooft het wel). Besluit orkestrator: gids blijft gelden ⇒ fixronde bij de maker, met sluitvraag
+  (`pendingCloseDocId`), Backstage/Rapport/IFC (Delete verwijdert onzichtbare taak, ook op main), gidsen, commentaren.
+  VERVOLG: F5/Ctrl+S onder modaal venster (na #374).
+- Eigenaar vroeg 2026-10-19 "wat moet ik beslissen?" ⇒ besluit tabel-markering opnieuw uitgelegd (aanbeveling 1).
