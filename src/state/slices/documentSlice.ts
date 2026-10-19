@@ -36,6 +36,7 @@ import {
 import { sameIFCSource, type IFCSaveSource } from '../ifcSaveInput';
 import { withXerArchiveIssueNotice } from '../xerArchiveIssueNotice';
 import { scheduleFailedNotice } from '../scheduleErrorNotice';
+import { clearRefusals } from '../refusalNotice';
 import {
   mergeCalendarLibrarySettle, notifyCalendarLibrarySettle, NO_CALENDAR_LIBRARY_SETTLE, type CalendarLibrarySettle,
 } from '../calendarTasks';
@@ -95,6 +96,9 @@ function resetDocumentScopedUI(s: AppState): void {
   // dialoog openstaat (zie hasBlockingDialogOpen/BLOCKING_UI_FLAGS + de when-guards op Ctrl/⌘1-9 en
   // Ctrl+O). Gaat dit wél af, dan is er een wisselroute gemist; dat is een bug, geen normaal gedrag.
   s.ui.showProgressImportDialog = false;
+  // Weigeringen horen bij het uitgaande document (eigenaarsbesluit 2026-10-19 5b): weg, en ze komen
+  // niet terug bij terugwisselen. Echte fouten en infos blijven (`clearRefusals`).
+  clearRefusals(s.ui);
 }
 
 function publishActivation(s: AppState, activation: DocumentActivationMaterialization): void {
@@ -624,8 +628,9 @@ export const createDocumentSlice: AppSliceFactory<DocumentSlice> = (runtime) => 
       try {
         const rawPayload = payloadFromInput(candidate);
         const p = prepareLoadedPayload(rawPayload, { recompute: true });
-        // Crashherstel herstelt het aanbod "datums zoals opgeslagen" (`recordedFields`, elk
-        // formaat) EN de modusvlag van vóór de crash —
+        // Crashherstel herstelt "datums zoals opgeslagen" (`recordedFields`, elk formaat) alleen
+        // als de modus vóór de crash aan stond; anders vergeet het de opgeslagen datums (geen
+        // aanbod-stand meer, eigenaar 2026-10-17). De modusvlag komt
         // uit de recovery-metadata (`candidate.datesAsRecorded`), dus een OPGESCHREVEN feit en
         // geen heuristiek: crashherstel is het hervatten van een sessie, geen heropening, en mag
         // dus niet opnieuw beslissen. `rawPayload.tasks` is bewust de PRE-solve array —

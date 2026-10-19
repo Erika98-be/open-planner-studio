@@ -1,5 +1,5 @@
 import type { MilestoneKind, Task } from '@/types/task';
-import type { WorkCalendar, WorkTimeBands } from '@/types/calendar';
+import { isHourModeCalendar, type WorkCalendar, type WorkTimeBands } from '@/types/calendar';
 import { effectiveWorkTimeBands, firstBlockedDay, seedScalarBands } from '@/utils/effectiveWorkTime';
 // Writers moeten ook door tests/extensies aangeleverde objecten zonder `durationUnit`
 // veilig kunnen bewaren — `taskDurationUnit` draagt dezelfde legacy-regel als de documentmigratie.
@@ -549,10 +549,6 @@ export function exportCalendarLayout(tasks: Task[], calendar: WorkCalendar, reso
   return { libraryCalendars, calendarNumber, effCalByTask, hourTaskCalendarIds };
 }
 
-/** Een kalender is uur-modus zodra `workTime` aanwezig is. */
-export function isHourCalendar(cal: WorkCalendar | undefined): boolean {
-  return !!cal?.workTime;
-}
 
 /** Een urentaak kan gepland worden wanneer expliciete óf afleidbare geldige werkbands bestaan. */
 export function hasConcreteWorkBlocks(calendar: WorkCalendar): boolean {
@@ -566,7 +562,7 @@ export function hasConcreteWorkBlocks(calendar: WorkCalendar): boolean {
  * nooit stil wegronden.
  */
 export function fileHasHourData(tasks: Task[], calendars: WorkCalendar[]): boolean {
-  if (calendars.some(isHourCalendar)) return true;
+  if (calendars.some(isHourModeCalendar)) return true;
   return tasks.some((t) => taskDurationUnit(t) === 'hours');
 }
 
