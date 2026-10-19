@@ -1447,3 +1447,20 @@ Testversie (release-check, poort 3049) is NIET bijgewerkt met de PR's van vandaa
 - **#378 werk-decimalen** (nieuw, concept): kop 179e2e8ef; CI liep nog bij de stop. Tabelkolommen + cel-editor +
   contourvenster/histogram-as in taalnotatie, max 2 decimalen, onveranderd = geen schrijfactie. Overlapt met #369
   (`taskColumnRegistry.ts`, helper `parsePositiveDecimal`) ⇒ na #369 samenvoegen.
+
+## Maandag 2026-10-19
+
+- Stand bij start (gemeten): main 35bcfdfc9 (CI groen); alle negen PR's open (niet gemerged), koppen gelijk aan de
+  overdracht. CI rood: #368 (browser 4-4, `task-panel-selects`), #371 (planning: verzameltaak-voortgang 3/55 en
+  verzameltaak-werkelijke datums 3/66 — door #371, main is groen), #378 (planning: `task-grid-performance` 1/27).
+  #362, #377, #378 achter op main (18 commits).
+- Gestart: #371 expert (Opus 5.5 xhigh: CI-rood + PR-tekst); #368, #369 (BLOKKEERT 1 blur vóór Ctrl+S/F5, 3 "1,500"
+  weigeren in en), #375 (specs + relatiekolom-gat), #377 (BLOKKEERT; besluit orkestrator: tijdveld en lijn op tijdstip
+  alleen als de solver de tijd gebruikt, zelfde predicaat als `CPMSolver.ts`) worker (Opus 5.5 medium).
+- **Hercheck #376 (reviewer Opus 5.5): JA, geen BLOKKEERT** ⇒ visuele check eigenaar, merget als laatste (bijwerken met
+  main, `i18n:resolve` bij conflict). VERVOLG-lijst in de PR-body gezet (26 locales oud, `workRule.info`, en "Duration
+  Type in P6" botst met kolom *Duration type*, wiki-bronnen, MCP-melding r. 828, betekeniswissel in releasetekst,
+  "kies je het", CSV-kop `taaktype`).
+- Besluit restwerk aan de eigenaar voorgelegd (opties 1 vragen / 2 uitrekenen zoals P6 met melding / 3 houden;
+  aanbeveling 2). Feit E-1010 (Harbour Point DCP-03 Baseline, XER): TT_Task, DT_FixedDrtn, niet gestart, duur 80 u;
+  Design Engineer target_qty 320, remain_qty 320, target_qty_per_hr 1, remain_qty_per_hr 0.
