@@ -1676,3 +1676,9 @@ Testversie (release-check, poort 3049) is NIET bijgewerkt met de PR's van vandaa
   rehab-2 V3105190 (alleen via `qa-wbs`) twee regels, geen grijs blok.
 - **Checkstap #371 (één oranje blok): goed** — eigenaar 2026-10-19: "top". **#371 gemerged in main → e5d7f6173**
   (kop e69682241, CI 16/16, review JA, geen conflict met main 7c1c16925).
+- **#375 5a+5b gebouwd** (worker Opus 5.5; bfdced4bd, main 7c1c16925 erin zonder conflict, CI groen): toast
+  `notifications.taskAddedAtEnd` + *Wissen* (`viewArrangement.ts`), `clearRefusals` bij documentwissel en undo/redo
+  (store-actie), strook met twee tellers; `check-refusal-lifetime.ts` (24) + `refusal-lifetime.spec.ts` (4); 9 mutanten
+  rood. Eigen keuzes: redo wist ook; openen in leeg tabblad/`loadState` = wissel; *Annuleren* in taakdialoog wist (via
+  undo); *Mijlpaal ▾* krijgt dezelfde "taak"-toast; teller ×2. ⇒ delta-review loopt (reviewer Opus 5.5).
+- **#374 botst met main** (`taskSlice.ts`) ⇒ bijwerken na de check. Haiku 5.5 loopt de links voor checkstap #377 na.
