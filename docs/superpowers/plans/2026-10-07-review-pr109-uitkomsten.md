@@ -1528,3 +1528,7 @@ Testversie (release-check, poort 3049) is NIET bijgewerkt met de PR's van vandaa
   Cancel, Projectinstellingen, App-instellingen) ⇒ worker `claude/delete-onder-venster`.
 - **P6 XML-constraints gaan verloren: BEVESTIGD** (orkestrator): PMXML schrijft labels ("Start On or After"),
   `p6CodeToConstraint` kent alleen `CS_*` ⇒ worker `claude/p6xml-constraintlabels` (ook andere enum-velden nalopen).
+- Checklinks #368 klaar (Haiku): `?qa=showcase-rijwoningen-de-akkers.ifc&qa-wbs=4.1` (taak met codes House/Discipline;
+  constraint ASAP — geen taak in dit bestand heeft een andere) en `&qa-wbs=4.25` (mijlpaal "Topping out reached", soort
+  eindmijlpaal), elk met `&qa-thema=licht|donker`. Codelijst onderaan opent omlaag met maxHeight = ruimte tot de rand en
+  scrollt (orkestrator bekeek `/tmp/check368b/code-open-licht.png`; geen fout).
