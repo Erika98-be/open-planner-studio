@@ -1583,3 +1583,8 @@ Testversie (release-check, poort 3049) is NIET bijgewerkt met de PR's van vandaa
 - **Delta-review #381 ronde 2: NEE** — BLOKKEERT: onder het volledige resourcepaneel verwijdert Delete nog een verborgen
   taak (`isTaskListOutOfView` kijkt alleen naar tabbladen; `isGanttWorkspaceVisible` bestaat al) ⇒ ronde 3 bij de maker
   (+ Ctrl+C in Backstage-Help, commentaren). Presentatie en sluitvraag werken; app kan niet vastlopen.
+- **Voorbereiding checkstap #371 (Haiku 4.5):** `public/qa-files/mer1-in-modus-opgeslagen.ifc` (MER-1 geopend, in de
+  modus één naam gewijzigd, opgeslagen); links `?qa=mer1-in-modus-opgeslagen.ifc&qa-wbs=MER-A-0038&qa-tab=table`.
+  Strook: "Je ziet de planning zoals Primavera hem opsloeg; bij herberekenen wijken 89 taken af." Grijs blok: "Primavera
+  heeft voor deze taak niet alles opgeslagen. Ontbreekt: Vrije speling." Datums van 3 taken gelijk vóór en na. Oranje blok
+  komt in MER-1 niet voor (XER zonder `free_float_hr_cnt`) ⇒ tweede Haiku zoekt een oranje voorbeeld in Roads/rehab-2.
