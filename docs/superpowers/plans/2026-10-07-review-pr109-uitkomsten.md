@@ -1573,3 +1573,8 @@ Testversie (release-check, poort 3049) is NIET bijgewerkt met de PR's van vandaa
   07:00–16:00 + 60 min: main én PR 18 d) — writer schrijft één blok zonder pauze (`mspdiWriter.ts:184-195`). Gewone
   Nederlandse bouwwerkdag ⇒ fixronde bij de maker (writer met pauzeblokken, 0402 "global" representatieve dag,
   `scalarHourFromClock`, opruimen, tekst). #384 nog niet mergen.
+- **Checkstap #369 overgeslagen** — eigenaar 2026-10-19: "dit skippen we even, daar ben ik met een andere sessie al mee
+  bezig … ik bedoel het toewijzingenpanneel". ⇒ #369 (kop 5ee8f0cb7) en #378 (hangt aan #369) niet aanraken tot de
+  eigenaar het zegt. Volgende checks: #375 en #371 (links worden voorbereid door Haiku).
+- **#381 fixronde klaar** (d7c01a627, CI groen: presentatie werkt weer; sluitvraag, Backstage, Rapport/IFC dicht) ⇒
+  delta-review loopt.
