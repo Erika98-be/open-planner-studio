@@ -94,11 +94,12 @@ export interface ProjectInfoPanelContentProps {
  *    inhoudelijk gelijke instellingen; anders één undo-stap + `runCPM()` + telling).
  *
  * STALE-DRAFT-GUARD: `ProjectInfoSection` in Backstage blijft
- * gemount zolang de gebruiker op die pagina staat. `nav.switchDocumentN` (Ctrl+1..9) en `edit.undo`/
- * `edit.redo` (Ctrl+Z/Y) hebben GEEN `when`-guard tegen open dialogen/Backstage (zie
- * `shortcutRegistry.ts`) en negeren alleen invoervelden-met-focus (`isTypingTarget`) — dus een klik
- * buiten een veld gevolgd door zo'n sneltoets kan het ACTIEVE document verwisselen terwijl deze
- * component met de OUDE `useState`-waarden gemount blijft. Twee onafhankelijke vangnetten:
+ * gemount zolang de gebruiker op die pagina staat. `edit.undo`/`edit.redo` (Ctrl+Z/Y) zijn alleen
+ * dicht onder een modaal venster, NIET in Backstage (zie `isEditShortcutBlocked` in
+ * `shortcutRegistry.ts`), en negeren invoervelden-met-focus (`isTypingTarget`) — dus een klik buiten
+ * een veld gevolgd door Ctrl+Z/Y kan `project` wijzigen terwijl deze component met de OUDE
+ * `useState`-waarden gemount blijft. De draftbewaking blokkeert een documentwissel (Ctrl+1..9,
+ * `isDocumentLeaveBlocked`). Twee onafhankelijke vangnetten:
  *  (a) re-init-effect op `activeDocumentId` (documentwissel — swapt `project` als geheel, dus dít is
  *      het bewezen identiteitssignaal; zie hieronder waarom NIET op undo).
  *  (b) `companyTouched`/`calcTouched`: de bibliotheek-(ont)koppeling en de rekenprofiel-tak

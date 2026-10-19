@@ -49,6 +49,19 @@ export const TASK_GRID_PERFORMANCE_BUDGETS = Object.freeze({
   pasteCommitMs: 3_000,
 });
 
+// De selectie→adaptermeting duurt per keer maar ~0,2–0,5 ms. Twee warmups zijn dan te weinig voor
+// de JIT: de eerste samples lopen nog in onge-optimaliseerde code en zijn 4–10× trager (lokaal
+// gemeten 1,6–4,4 ms). Op een drukke CI-runner met twee kernen duurt het optimaliseren langer, zodat
+// soms de helft van de negen samples nog traag was en de mediaan net over 2 ms kwam (CI 2026-10-19:
+// 2,01 en 2,02 ms; normaal 0,16–0,31 ms). Daarom krijgt alleen deze goedkope meting 30 warmups en
+// 21 meetruns. De poort blijft de mediaan tegen dezelfde 2 ms. De bewaakte regressie (adapterdomein
+// en relatie-index bij iedere selectie opnieuw bouwen) zit in iedere sample, dus extra warmups
+// verbergen hem niet.
+export const TASK_GRID_SELECTION_ADAPTER_PROTOCOL = Object.freeze({
+  warmups: 30,
+  runs: 21,
+});
+
 export interface TaskGridPerformanceFixture {
   counts: typeof TASK_GRID_PERFORMANCE_COUNTS;
   tasks: readonly Task[];
@@ -72,6 +85,8 @@ export interface TaskGridPerformanceBenchmark {
   budgetsMs: typeof TASK_GRID_PERFORMANCE_BUDGETS;
   warmups: number;
   runs: number;
+  /** Eigen protocol voor de goedkope selectie→adaptermeting; zie TASK_GRID_SELECTION_ADAPTER_PROTOCOL. */
+  selectionAdapterProtocol: { warmups: number; runs: number };
   samplesMs: TaskGridPerformanceSamples;
   mediansMs: {
     relationIndex: number;
@@ -244,7 +259,7 @@ export function runTaskGridPerformanceBenchmark(
     const selectedRow = adapter.rows[selectedAdapterTask];
     return adapter.rowMetaByKey.size
       + (selectedRow?.kind === 'data' && selectedRow.selected ? 1 : 0);
-  }, warmups, runs);
+  }, TASK_GRID_SELECTION_ADAPTER_PROTOCOL.warmups, TASK_GRID_SELECTION_ADAPTER_PROTOCOL.runs);
   const virtualWindow = measure(() => {
     const result = computeVirtualWindow(virtualInput);
     return result.startIndex + result.endIndexExclusive;
@@ -260,6 +275,7 @@ export function runTaskGridPerformanceBenchmark(
     budgetsMs: TASK_GRID_PERFORMANCE_BUDGETS,
     warmups,
     runs,
+    selectionAdapterProtocol: { ...TASK_GRID_SELECTION_ADAPTER_PROTOCOL },
     samplesMs: { relationIndex, navigationCommands, selectionCommands, selectionAdapter, virtualWindow },
     mediansMs: {
       relationIndex: median(relationIndex),

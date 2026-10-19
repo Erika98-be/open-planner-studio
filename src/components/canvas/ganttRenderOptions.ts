@@ -26,6 +26,7 @@ import { CalendarEngine } from '@/engine/scheduler/CalendarEngine';
 import { diffDays, parseDate } from '@/utils/dateUtils';
 import { resolveTaskFinish } from '@/utils/ganttViewport';
 import { knownDrivingSequenceIds } from '@/engine/scheduler/drivingInfo';
+import { exceedsCapacity } from '@/engine/scheduler/capacityTolerance';
 
 /** Overlay-datums uit de actieve baseline, keyed op Task.id. */
 export { buildBaselineOverlay };
@@ -165,7 +166,7 @@ export function buildHistogramSeries(
     if (cp) for (const iso in cp) aggCap[iso] = (aggCap[iso] ?? 0) + cp[iso];
   }
   const overSet = new Set<string>();
-  for (const iso in aggLoad) if (aggLoad[iso] > (aggCap[iso] ?? 0) + 1e-9) overSet.add(iso);
+  for (const iso in aggLoad) if (exceedsCapacity(aggLoad[iso], aggCap[iso] ?? 0)) overSet.add(iso);
   return { load: aggLoad, capacity: aggCap, overSet };
 }
 
