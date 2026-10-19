@@ -88,7 +88,7 @@
     "mppLegacy": "Este archivo .mpp usa un formato antiguo (Project 2007 o anterior). Expórtalo en MS Project como XML (Archivo → Guardar como → XML) y abre ese archivo.",
     "mppEncrypted": "Este archivo .mpp está protegido con contraseña. Expórtalo en MS Project como XML (Archivo → Guardar como → XML) y abre ese archivo.",
     "saveFailed": "No se pudo guardar",
-    "ambiguousThousands": "«{{text}}» es ambiguo: ¿número decimal o miles? Escriba los decimales con «{{separator}}» ({{example}}) y los miles sin separador (1500). El valor no se ha cambiado.",
+    "ambiguousThousands": "«{{text}}» es ambiguo: ¿número decimal o miles? Escriba los decimales con «{{separator}}» (1{{separator}}5) y los miles sin separador (1500). El valor no se ha cambiado.",
     "siteSaveConflict": "No guardado: '{{name}}' fue modificado en el sitio por otra persona mientras tanto. Sus cambios siguen en la aplicación. Elija Guardar como para conservarlos como un archivo nuevo.",
     "siteFileGone": "'{{name}}' ya no está en el sitio. El archivo se ha quitado de Recientes.",
     "savedViaDownload": "Guardado como descarga: '{{name}}' está ahora en tu carpeta de descargas. Este entorno no permite que la aplicación escriba directamente en la ubicación elegida.",

@@ -285,8 +285,8 @@ for (const locale of ['nl', 'en']) {
 // op 1,5: rode rand, de waarde blijft, en een melding die het decimaalteken van de taal noemt. Met
 // het decimaalteken van de taal is de invoer eenduidig; "0,500" kan geen duizendtal zijn.
 const AMBIGUITY = {
-  en: { bad: '1,500', badWork: '2,000', ok: '1.5', zero: '0,500', hint: '"." (1.5)' },
-  nl: { bad: '1.500', badWork: '15.000', ok: '1,500', zero: '0.500', hint: '"," (1,5)' },
+  en: { bad: '1,500', badWork: '2,000', leadingZero: '01,500', ok: '1.5', zero: '0,500', hint: '"." (1.5)' },
+  nl: { bad: '1.500', badWork: '15.000', leadingZero: '01.500', ok: '1,500', zero: '0.500', hint: '"," (1,5)' },
 } as const;
 for (const locale of ['en', 'nl'] as const) {
   const c = AMBIGUITY[locale];
@@ -307,6 +307,15 @@ for (const locale of ['en', 'nl'] as const) {
     await expect(toast).toContainText(c.hint);
     expect((await assignmentOf(page, unitsId))!.units).toBe(EXACT);
     await expect(units).toHaveValue(shown);
+
+    // Voorloopnullen maken het niet eenduidig: "01.500" is nog steeds 1500 of 1,5.
+    await units.click();
+    await units.press('Control+a');
+    await page.keyboard.type(c.leadingZero);
+    await expect(units).toHaveAttribute('aria-invalid', 'true');
+    await page.keyboard.press('Enter');
+    await expect(page.locator('.ops-toast-message', { hasText: c.leadingZero })).toBeVisible();
+    expect((await assignmentOf(page, unitsId))!.units).toBe(EXACT);
 
     // Werk: hetzelfde veld, dezelfde regel (ook bij verlaten met Tab).
     const workBefore = (await assignmentOf(page, warnId))!.work;
@@ -343,19 +352,51 @@ for (const key of ['Control+s', 'F5'] as const) {
     const history = () => page.evaluate(() => window.__OPS__!.store.getState().historyEvents.length);
     await units.click();
     await units.press('Control+a');
-    await page.keyboard.type('2.5');
+    await page.keyboard.type('2.75');
     const before = await history();
     const download = key === 'Control+s' ? page.waitForEvent('download') : null;
     await page.keyboard.press(key);
     await download;
-    expect((await assignmentOf(page, unitsId))!.units).toBe(2.5);
+    expect((await assignmentOf(page, unitsId))!.units).toBe(2.75);
     expect(await history()).toBe(before + 1);
     await expect(units).toBeFocused();
     await page.keyboard.press('Backspace');
     expect(await page.evaluate((id) => window.__OPS__!.store.getState().tasks.some(t => t.id === id), taskId)).toBe(true);
-    // De Backspace ging naar het veld; verlaten met Escape zet het terug zonder commit.
+    // De Backspace ging naar het veld en wist precies één teken; Escape zet het veld terug zonder commit.
+    await expect(units).toHaveValue('2.7');
     await page.keyboard.press('Escape');
-    expect((await assignmentOf(page, unitsId))!.units).toBe(2.5);
+    expect((await assignmentOf(page, unitsId))!.units).toBe(2.75);
+  });
+}
+
+// Ronde 5 PR #369: na Ctrl+S of F5 staat de focus weer in het veld, zonder draft. Ctrl+Z is dan de
+// app-undo (store én veld terug), Ctrl+Y de app-redo, en Escape heft de taakselectie op. Een
+// veld-undo zou alleen de tekst terugzetten en bij wegklikken een nieuwe historiestap maken.
+for (const key of ['F5', 'Control+s'] as const) {
+  test(`inzet: na ${key} zijn Ctrl+Z, Ctrl+Y en Escape van de app`, async ({ page, ops: _ops }) => {
+    const { taskId, unitsId } = await seedBlock(page, 280);
+    const units = page.locator(`[data-ops-assignment-row="${unitsId}"] input`).first();
+    await units.click();
+    await units.press('Control+a');
+    await page.keyboard.type('2.25');
+    const download = key === 'Control+s' ? page.waitForEvent('download') : null;
+    await page.keyboard.press(key);
+    await download;
+    expect((await assignmentOf(page, unitsId))!.units).toBe(2.25);
+    await expect(units).toBeFocused();
+
+    await page.keyboard.press('Control+z');
+    await expect.poll(async () => (await assignmentOf(page, unitsId))!.units).toBe(EXACT);
+    await expect(units).toHaveValue(/^1[.,]78$/);
+    await page.keyboard.press('Control+y');
+    await expect.poll(async () => (await assignmentOf(page, unitsId))!.units).toBe(2.25);
+    await expect(units).toHaveValue(/^2[.,]25$/);
+
+    expect(await page.evaluate(() => window.__OPS__!.store.getState().selectedTaskIds)).toEqual([taskId]);
+    await units.focus();
+    await page.keyboard.press('Escape');
+    await expect.poll(() => page.evaluate(() => window.__OPS__!.store.getState().selectedTaskIds)).toEqual([]);
+    expect((await assignmentOf(page, unitsId))!.units).toBe(2.25);
   });
 }
 

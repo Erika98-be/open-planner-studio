@@ -45,13 +45,13 @@ export function formatDecimalInput(n: number, locale: string): string {
 }
 
 /**
- * Dubbelzinnige invoer: een getal (niet beginnend met 0) met een punt of komma gevolgd door precies
- * drie cijfers, waarbij dat teken NIET het decimaalteken van de taal is. "1,500" in en of "1.500"
+ * Dubbelzinnige invoer: een getal met een geheel deel > 0 ("1", "01", "15") en een punt of komma
+ * gevolgd door precies drie cijfers, waarbij dat teken NIET het decimaalteken van de taal is. "1,500" in en of "1.500"
  * in nl/de/pt/tr bedoelt vaak 1500 (duizendtal), maar `parsePositiveDecimal` leest overal 1,5.
  * Zo'n invoer wordt geweigerd: geen stille gok. Met het decimaalteken van de taal ("1,500" in nl)
- * is hij eenduidig; "0,500" kan geen duizendtal zijn.
+ * is hij eenduidig; "0,500" kan geen duizendtal zijn, "01.500" wel (voorloopnullen tellen niet).
  */
 export function isAmbiguousThousands(text: string, locale: string): boolean {
-  const m = /^[1-9]\d*([.,])\d{3}$/.exec(text.trim());
+  const m = /^0*[1-9]\d*([.,])\d{3}$/.exec(text.trim());
   return m !== null && m[1] !== decimalSeparatorOf(locale);
 }

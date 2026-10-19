@@ -23,9 +23,13 @@ import { formatDecimalInput, isAmbiguousThousands, parsePositiveDecimal } from '
  *   een omringende dialoog slaat dan niet op (zoals het duurveld). Escape met een draft
  *   zet alleen dit veld terug (de toets stopt hier); Escape zonder draft gaat door (sluit de
  *   dialoog).
+ *   Zonder draft toont het veld de opgeslagen waarde en zijn Ctrl+Z, Ctrl+Y, Ctrl+Shift+Z en
+ *   Escape van de app (`data-ops-app-keys`, zie `isTypingTarget`): ook als de focus na Ctrl+S of
+ *   F5 in het veld terugkwam, maakt Ctrl+Z dan de app-stap ongedaan, geen veld-undo.
  *
- * Met `locale` in een taal met een punt als decimaalteken (en) is "1,500" dubbelzinnig (1500 of
- * 1,5?): ongeldig, geen commit, en bij het afronden een melding via `onAmbiguous`
+ * Met `locale` is een getal met een punt of komma en precies drie cijfers erachter dubbelzinnig als
+ * dat teken niet het decimaalteken van de taal is: "1,500" in en, "1.500" in nl/de/pt/tr (1500 of
+ * 1,5?). Ongeldig, geen commit, en bij het afronden een melding via `onAmbiguous`
  * (`isAmbiguousThousands`).
  */
 export function UnitsInput({
@@ -96,6 +100,7 @@ export function UnitsInput({
       aria-label={ariaLabel}
       aria-invalid={invalid}
       data-ops-grid-cell={gridCell}
+      data-ops-app-keys={commitOnBlur && draft === null ? 'true' : undefined}
       onKeyDown={e => {
         if (commitOnBlur && e.key === 'Enter') {
           // Enter is van dit veld: commit en verlaat het veld (Ctrl+Z is daarna de app-undo). De
