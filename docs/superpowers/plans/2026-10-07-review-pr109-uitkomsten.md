@@ -1578,3 +1578,8 @@ Testversie (release-check, poort 3049) is NIET bijgewerkt met de PR's van vandaa
   eigenaar het zegt. Volgende checks: #375 en #371 (links worden voorbereid door Haiku).
 - **#381 fixronde klaar** (d7c01a627, CI groen: presentatie werkt weer; sluitvraag, Backstage, Rapport/IFC dicht) ⇒
   delta-review loopt.
+- **#386 nieuw (worker Opus 5.5): CI-tijdflake `selectionAdapter`** (e7623d998; 30 warmups/21 runs alleen voor die meting,
+  grens gelijk; 20× lokaal 0 rood; mutanten rood) ⇒ korte review loopt.
+- **Delta-review #381 ronde 2: NEE** — BLOKKEERT: onder het volledige resourcepaneel verwijdert Delete nog een verborgen
+  taak (`isTaskListOutOfView` kijkt alleen naar tabbladen; `isGanttWorkspaceVisible` bestaat al) ⇒ ronde 3 bij de maker
+  (+ Ctrl+C in Backstage-Help, commentaren). Presentatie en sluitvraag werken; app kan niet vastlopen.
