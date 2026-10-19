@@ -1682,3 +1682,8 @@ Testversie (release-check, poort 3049) is NIET bijgewerkt met de PR's van vandaa
   rood. Eigen keuzes: redo wist ook; openen in leeg tabblad/`loadState` = wissel; *Annuleren* in taakdialoog wist (via
   undo); *Mijlpaal ▾* krijgt dezelfde "taak"-toast; teller ×2. ⇒ delta-review loopt (reviewer Opus 5.5).
 - **#374 botst met main** (`taskSlice.ts`) ⇒ bijwerken na de check. Haiku 5.5 loopt de links voor checkstap #377 na.
+- **Testversie:** #375 bfdced4bd erin (08c74a68c; conflicten documentSlice beide regels, ref-lint/ref-meldingen nl/en
+  #375-tekst met #376-namen; typecheck en verify:docs exit 0).
+- **Checkstap #377 (statusdatum met tijd, alleen uurmodus): goed** — eigenaar 2026-10-19: "top" (ook het
+  orkestratorbesluit: tijd alleen bij uurmodus). **#377 gemerged in main → 973d934e0** (kop 0db9c489b, CI 16/16, review
+  JA; merged boom zonder aanroep van de verwijderde `isHourCalendar`).
