@@ -1568,3 +1568,8 @@ Testversie (release-check, poort 3049) is NIET bijgewerkt met de PR's van vandaa
   lezer) ⇒ na de merge van #382 moet #385 bijgewerkt worden met main en die controle in de gedeelde helper houden.
 - **#382 gemerged in main → 4ddfb35b0** (kop 5e283d6be, CI 16/16). **#383 gemerged in main → 69685cf6c** (kop adf7663f3,
   CI 16/16). #385 ⇒ bijwerken met main bij de maker (eigen-sleutelcontrole in de gedeelde tabel houden), daarna review.
+- **Review #384: JA** volgens de reviewer, maar orkestrator deelt bevinding 1 in als BLOKKEERT: MSPDI-rondgang van een
+  bibliotheek-dagkalender met pauze (08:00–16:30 + 30 min: main 20 d, PR 19 d; 07:00–15:30 + 30 min idem; standaard
+  07:00–16:00 + 60 min: main én PR 18 d) — writer schrijft één blok zonder pauze (`mspdiWriter.ts:184-195`). Gewone
+  Nederlandse bouwwerkdag ⇒ fixronde bij de maker (writer met pauzeblokken, 0402 "global" representatieve dag,
+  `scalarHourFromClock`, opruimen, tekst). #384 nog niet mergen.
