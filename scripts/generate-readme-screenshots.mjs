@@ -219,9 +219,12 @@ const SHOTS = {
     await page.waitForTimeout(800);
   },
 
-  async import(page) {
+  // Bestandsformaten: de exportkaarten van de Backstage (IFC, MS Project XML, P6 XML, CSV, voortgangsbladen).
+  async formats(page) {
+    await openExample(page, SHOWCASE);
+    await dismissNotices(page);
     await page.locator('.ribbon-tab--file').first().click();
-    await page.locator('button.backstage-nav-item').filter({ hasText: /^Import$/ }).click();
+    await page.locator('button.backstage-nav-item').filter({ hasText: /^Export$/ }).click();
     await page.waitForTimeout(800);
   },
 
@@ -269,11 +272,12 @@ async function recordDemo(browser, url) {
     const r = spawnSync('ffmpeg', ['-v', 'error', '-y', ...args], { stdio: 'inherit' });
     if (r.status !== 0) throw new Error(`ffmpeg faalde: ${args.join(' ')}`);
   };
+  const TRIM = '3.5'; // de eerste seconden tonen nog het lege startscherm
   const fps = 10;
   const scale = `fps=${fps},scale=960:-1:flags=lanczos`;
-  run(['-i', src, '-vf', `${scale},palettegen=max_colors=96:stats_mode=diff`, palette]);
-  run(['-i', src, '-i', palette, '-lavfi', `${scale}[x];[x][1:v]paletteuse=dither=bayer:bayer_scale=5:diff_mode=rectangle`, gif]);
-  run(['-i', src, '-vf', 'fps=25,scale=1280:-2:flags=lanczos', '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-crf', '26', '-movflags', '+faststart', mp4]);
+  run(['-ss', TRIM, '-i', src, '-vf', `${scale},palettegen=max_colors=96:stats_mode=diff`, palette]);
+  run(['-ss', TRIM, '-i', src, '-i', palette, '-lavfi', `${scale}[x];[x][1:v]paletteuse=dither=bayer:bayer_scale=5:diff_mode=rectangle`, gif]);
+  run(['-ss', TRIM, '-i', src, '-vf', 'fps=25,scale=1280:-2:flags=lanczos', '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-crf', '26', '-movflags', '+faststart', mp4]);
   rmSync(dir, { recursive: true, force: true });
   console.log(`demo.gif ${(statSync(gif).size / 1048576).toFixed(1)} MB, demo.mp4 ${(statSync(mp4).size / 1048576).toFixed(1)} MB`);
 }
@@ -290,8 +294,30 @@ async function demoScript(page) {
 }
 
 async function demoLinkAndRecalc(page, pause) {
-  // Wordt in een volgende stap uitgewerkt zodra het UI-verloop vaststaat.
-  await pause(500);
+  const row = name => page.getByText(name, { exact: true }).first();
+  // 1. Twee taken kiezen en een relatie leggen via Link, Link selected tasks.
+  await row('Set up site').click();
+  await pause(900);
+  await page.keyboard.down('Control');
+  await row('Pour ground floor slab').click();
+  await page.keyboard.up('Control');
+  await pause(1200);
+  await page.getByRole('button', { name: /^Link/ }).first().click();
+  await pause(900);
+  await page.getByText('Link selected tasks', { exact: true }).click();
+  await pause(2000);
+  // 2. De eerste taak langer maken: dan loopt zijn nieuwe relatie het kritieke pad in.
+  await row('Set up site').click();
+  await pause(900);
+  const duration = page.getByText('Duration', { exact: true }).last().locator('xpath=following::input[1]');
+  await duration.click();
+  await page.keyboard.press('Control+a');
+  await page.keyboard.type('20');
+  await page.keyboard.press('Enter');
+  await pause(1500);
+  // 3. Herberekenen: het kritieke pad (rood) en de einddatum in de statusbalk veranderen.
+  await page.getByRole('button', { name: /^Calculate/ }).first().click();
+  await pause(4000);
 }
 
 // ---------------------------------------------------------------- main

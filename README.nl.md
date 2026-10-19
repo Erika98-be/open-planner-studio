@@ -57,7 +57,7 @@ Geïnstalleerde apps werken zichzelf bij als er een nieuwe versie is (Windows, m
 | ![Kritiek pad](docs/images/readme/critical-path.png) **Kritiek pad en speling** | ![Tabel bewerken](docs/images/readme/table-editing.png) **Taaktabel als spreadsheet** |
 | ![Resourcehistogram](docs/images/readme/resources-histogram.png) **Resourcehistogram en nivellering** | ![Kalender](docs/images/readme/calendar-dialog.png) **Kalenders en werktijd** |
 | ![Rapportvoorbeeld](docs/images/readme/report-preview.png) **Rapporten met live voorbeeld** | ![AI-tab](docs/images/readme/ai-tab.png) **AI-assistent (MCP)** |
-| ![Importeren](docs/images/readme/import.png) **Andere formaten importeren** | ![Help](docs/images/readme/help-viewer.png) **Help in de app** |
+| ![Exportformaten](docs/images/readme/formats.png) **Exporteren naar andere formaten** | ![Help](docs/images/readme/help-viewer.png) **Help in de app** |
 
 ## Geavanceerd plannen
 
@@ -93,7 +93,7 @@ Elf rapporttypen, met live voorbeeld, te exporteren naar PDF (A4 tot A1):
 
 Gantt-diagram, Resourcediagram, Mijlpalenoverzicht, Afwijking, Vooruitblik, Kritiek en bijna-kritiek, Voortgangsrapport, Planningsgezondheid, Resourcebelasting, Resourcetoewijzingen, WBS-samenvatting.
 
-Rapporten kunnen een rapportageperiode beslaan, vergelijken met een baseline en het filter en de groepering van je scherm volgen. Zie [Rapporttypen](public/docs/nl/ref-rapporttypes.md).
+Rapporten kunnen een rapportageperiode beslaan, vergelijken met een baseline en het filter en de groepering van je scherm volgen (Gantt-diagram). Zie [Rapporttypen](public/docs/nl/ref-rapporttypes.md).
 
 ## AI-first
 
@@ -110,6 +110,7 @@ Een juiste planningsberekening is de kernbelofte, dus die wordt gemeten. De geta
 - **Browsertests.** 119 Playwright-specs bedienen echt Chromium met echte muis- en toetsenbordevents (`tests/browser/`).
 - **MS Project-getrouwheid.** Een vastgepinde baseline van 216 `.mpp`-bestanden (3.413 taken) legt vast dat na herberekening elke start en elk einde gelijk is aan de datums die MS Project in het bestand bewaarde. De bestanden zelf staan niet in deze repository, dus deze poort draait alleen op een machine die ze heeft. De baseline staat in [`tests/planning/mpp-fidelity-baseline.json`](tests/planning/mpp-fidelity-baseline.json).
 - **Primavera P6-vergelijking.** 93 openbare `.xer`-bestanden zijn op herkomst geclassificeerd. Negen daarvan, door P6 zelf doorgerekend, dienen als referentie ([`tests/planning/xer-corpus-manifest.json`](tests/planning/xer-corpus-manifest.json)).
+- **Vijf suites** draaien achter `npm test`: `planning`, `library`, `mcp`, `dev-server` en `browser`.
 - CI draait de hele poort (`npm run verify`) bij elke pull request. Een rode suite blokkeert de deploy en de release.
 
 ## Huidige beperkingen
@@ -118,7 +119,7 @@ OPS is jonge software. Ken deze punten voordat je erop vertrouwt:
 
 - **`.mpp` en `.xer` zijn alleen-lezen.** Je kunt geen van beide schrijven. Opslaan gaat naar IFC. Exporteer naar MS Project XML of P6 XML om een planning terug te geven.
 - **`.mpp` neemt geen baselines, kosten, tarieven, notities of eigen velden mee.** Bestanden van MS Project 2007 of ouder en met wachtwoord beveiligde bestanden worden geweigerd.
-- **Geen kostenbeheer.** OPS plant tijd en resources; het houdt geen kosten bij. <!-- TODO verify -->
+- **Geen kostenbeheer.** Resources kunnen een uurtarief hebben, maar OPS kent geen kostenrapporten of kostencurves. Het plant tijd en resources.
 - **Relaties tussen projecten gebruiken een vaste ankerdatum.** Ze worden niet live herberekend met het andere project.
 - **De P6 XML-export laat** baselines, deadlines, activiteitcodes, eigen velden en notities weg.
 - **De MCP-server vraagt de desktop-app.** In de browser is het AI-tabblad zichtbaar, maar de bridge start niet.

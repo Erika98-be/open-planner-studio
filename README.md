@@ -57,7 +57,7 @@ Installed apps update themselves when a new version is out (Windows, macOS, `.de
 | ![Critical path](docs/images/readme/critical-path.png) **Critical path and float** | ![Table editing](docs/images/readme/table-editing.png) **Spreadsheet-style task table** |
 | ![Resource histogram](docs/images/readme/resources-histogram.png) **Resource histogram and levelling** | ![Calendar](docs/images/readme/calendar-dialog.png) **Calendars and working time** |
 | ![Report preview](docs/images/readme/report-preview.png) **Reports with live preview** | ![AI tab](docs/images/readme/ai-tab.png) **AI assistant (MCP)** |
-| ![Import](docs/images/readme/import.png) **Importing other formats** | ![Help](docs/images/readme/help-viewer.png) **In-app help** |
+| ![Export formats](docs/images/readme/formats.png) **Export to other formats** | ![Help](docs/images/readme/help-viewer.png) **In-app help** |
 
 ## Advanced scheduling
 
@@ -93,7 +93,7 @@ Eleven report types, with a live preview, exported to PDF (A4 to A1):
 
 Gantt chart, Resource diagram, Milestone overview, Variance, Look-ahead, Critical and near-critical, Progress report, Schedule health, Resource loading, Resource assignments, WBS summary.
 
-Reports can cover a reporting period, compare against a baseline and follow the filter and grouping of your screen. <!-- TODO verify per report --> See [Report types](public/docs/en/ref-rapporttypes.md).
+Reports can cover a reporting period, compare against a baseline and follow the filter and grouping of your screen (Gantt chart). See [Report types](public/docs/en/ref-rapporttypes.md).
 
 ## AI-first
 
@@ -110,6 +110,7 @@ Scheduling correctness is the core promise, so it is measured. The numbers below
 - **Browser tests.** 119 Playwright specs drive real Chromium with real mouse and keyboard events (`tests/browser/`).
 - **MS Project fidelity.** A pinned baseline of 216 `.mpp` files (3,413 tasks) records that after recalculation every start and finish equals the dates MS Project saved in the file. The files themselves are not in this repository, so this gate runs only on a machine that has them. The baseline is in [`tests/planning/mpp-fidelity-baseline.json`](tests/planning/mpp-fidelity-baseline.json).
 - **Primavera P6 comparison.** 93 public `.xer` files are classified by origin. Nine of them, calculated by P6 itself, serve as the reference ([`tests/planning/xer-corpus-manifest.json`](tests/planning/xer-corpus-manifest.json)).
+- **Five suites** run behind `npm test`: `planning`, `library`, `mcp`, `dev-server` and `browser`.
 - CI runs the whole gate (`npm run verify`) on every pull request. A red suite blocks the deploy and the release.
 
 ## Current limitations
@@ -118,7 +119,7 @@ OPS is young software. Know these before you rely on it:
 
 - **`.mpp` and `.xer` are read-only.** You cannot write either format. Save goes to IFC. Export to MS Project XML or P6 XML to hand a schedule back.
 - **`.mpp` does not bring baselines, costs, rates, notes or custom fields.** Files from MS Project 2007 or older, and password-protected files, are refused.
-- **No cost management.** OPS schedules time and resources; it does not track cost. <!-- TODO verify -->
+- **No cost management.** Resources can carry an hourly rate, but OPS has no cost reports or cost curves. It schedules time and resources.
 - **Cross-project relations use a fixed anchor date.** They are not recalculated live with the other project.
 - **P6 XML export drops** baselines, deadlines, activity codes, custom fields and notes.
 - **The MCP server needs the desktop app.** In the browser the AI tab is visible but the bridge does not start.
