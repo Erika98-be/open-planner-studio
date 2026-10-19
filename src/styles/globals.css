@@ -1881,7 +1881,7 @@ body {
   transition: background-color 120ms ease, text-decoration-thickness 120ms ease;
 }
 
-/* Rolmarkering: even groot als het kleurvierkantje bij de toewijzingen (1em), zonder losse rand. Een
+/* Rolmarkering: 1em groot (zo hoog als de tekst; was 6×10 px), zonder losse rand. Een
    voorganger is een rondje, een opvolger een vierkantje — de vorm draagt de rol, niet alleen de kleur
    (issue #65). Op donker en hoog contrast halen de tracekleuren zelf ≥ 4,7:1. Op licht halen ze dat
    niet (goud 2,1:1, paars 2,6:1 tegen #FAFAFA); daar krijgt de vorm een rand in zijn eigen kleur,
