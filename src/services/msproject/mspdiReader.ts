@@ -867,6 +867,17 @@ function readWorkingTimes(parent: Element): { bands: { start: number; end: numbe
   return { bands, first };
 }
 
+/** De banden van een werkende uitzondering in de canonieke vorm van `WorkingException.bands`
+ *  (`end > start`, zie `types/calendar.ts`). Een tijdvak dat op of vóór zijn begin eindigt, loopt over
+ *  middernacht en krijgt `+1440`. MS Project (en een Asta-export) schrijft een hele werkdag als
+ *  `00:00:00`–`00:00:00`; zonder deze stap werd dat `{0, 0}`: nul werkminuten in de uurrekening. De
+ *  werkweek loopt al via `canonicalizeBands`, de P6 XML-, XER- en `.mpp`-lezer leveren al canoniek, en
+ *  de IFC-lezer canoniseert bij het teruglezen. Zonder deze stap rekende F5 dus vóór en ná een
+ *  IFC-rondgang anders (Miraya.xml, 2026-10-19). */
+function canonicalExceptionBands(bands: { start: number; end: number }[]): { start: number; end: number }[] {
+  return bands.map((b) => (b.end <= b.start ? { start: b.start, end: b.end + 1440 } : b));
+}
+
 /** Leest alle `<Exception>`-elementen van één `<Calendar>` in RUWE vorm — geklemd op
  *  `MAX_CALENDAR_EXCEPTIONS` (gedeeld met de MPP-kant via `@/services/calendarRecurrence`). Spiegelt
  *  MSPDIReader.readException's guard: een record zonder BEIDE FromDate/ToDate wordt overgeslagen
@@ -900,7 +911,7 @@ function readRawMspdiExceptions(calEl: Element): RawException[] {
     const dayWorking = getElementInt(exc, 'DayWorking', 0) === 1;
     const name = getElementText(exc, 'Name');
 
-    const bands = dayWorking ? readWorkingTimes(exc).bands : [];
+    const bands = dayWorking ? canonicalExceptionBands(readWorkingTimes(exc).bands) : [];
 
     const recurring = readMspdiRecurringData(exc, fromDate, toDate);
     if (!recurring && !toDate) continue; // niet-recurrent bereik zonder einddatum: geen bruikbaar bereik
@@ -927,7 +938,7 @@ function readLegacyDayExceptions(calEl: Element): RawException[] {
     const fromDateRaw = getElementText(timePeriod, 'FromDate');
     const toDateRaw = getElementText(timePeriod, 'ToDate');
     if (!fromDateRaw || !toDateRaw) continue;
-    const { bands } = readWorkingTimes(wd);
+    const bands = canonicalExceptionBands(readWorkingTimes(wd).bands);
     out.push({
       fromDate: parseDate(parseMSPDate(fromDateRaw)),
       toDate: parseDate(parseMSPDate(toDateRaw)),
