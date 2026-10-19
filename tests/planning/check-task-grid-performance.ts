@@ -6,6 +6,7 @@ import type { GridSelectionState } from '@/engine/taskGrid/selection';
 import {
   TASK_GRID_PERFORMANCE_BUDGETS,
   TASK_GRID_PERFORMANCE_COUNTS,
+  TASK_GRID_SELECTION_ADAPTER_PROTOCOL,
   createTaskGridPerformanceFixture,
   runTaskGridPerformanceBenchmark,
 } from './taskGridPerformanceHarness';
@@ -39,10 +40,15 @@ eq('Generator houdt een stabiele controlevingerafdruk', fixture.fingerprint,
   'task-0|task-49999|sequence-0:task-0>task-1|sequence-99999:task-49999>task-1');
 
 const result = runTaskGridPerformanceBenchmark(fixture);
-eq('Iedere tijdmeting gebruikt exact twee warmups', result.warmups, 2);
-eq('Iedere tijdmeting gebruikt exact negen meetruns', result.runs, 9);
+eq('Iedere zware tijdmeting gebruikt exact twee warmups', result.warmups, 2);
+eq('Iedere zware tijdmeting gebruikt exact negen meetruns', result.runs, 9);
+eq('Selectie→adaptermeting gebruikt exact 30 warmups en 21 meetruns',
+  result.selectionAdapterProtocol, { warmups: 30, runs: 21 });
+eq('Selectie→adapterprotocol komt uit de gedeelde constante',
+  result.selectionAdapterProtocol, { ...TASK_GRID_SELECTION_ADAPTER_PROTOCOL });
 for (const [name, samples] of Object.entries(result.samplesMs) as Array<[string, number[]]>) {
-  eq(`${name} bewaart negen ruwe meetwaarden`, samples.length, 9);
+  const expectedRuns = name === 'selectionAdapter' ? 21 : 9;
+  eq(`${name} bewaart ${expectedRuns} ruwe meetwaarden`, samples.length, expectedRuns);
   ok(`${name} bevat uitsluitend eindige niet-negatieve tijden`,
     samples.every(sample => Number.isFinite(sample) && sample >= 0));
 }
