@@ -1583,7 +1583,7 @@ Testversie (release-check, poort 3049) is NIET bijgewerkt met de PR's van vandaa
 - **Delta-review #381 ronde 2: NEE** — BLOKKEERT: onder het volledige resourcepaneel verwijdert Delete nog een verborgen
   taak (`isTaskListOutOfView` kijkt alleen naar tabbladen; `isGanttWorkspaceVisible` bestaat al) ⇒ ronde 3 bij de maker
   (+ Ctrl+C in Backstage-Help, commentaren). Presentatie en sluitvraag werken; app kan niet vastlopen.
-- **Voorbereiding checkstap #371 (Haiku 4.5):** `public/qa-files/mer1-in-modus-opgeslagen.ifc` (MER-1 geopend, in de
+- **Voorbereiding checkstap #371 (Haiku 5.5):** `public/qa-files/mer1-in-modus-opgeslagen.ifc` (MER-1 geopend, in de
   modus één naam gewijzigd, opgeslagen); links `?qa=mer1-in-modus-opgeslagen.ifc&qa-wbs=MER-A-0038&qa-tab=table`.
   Strook: "Je ziet de planning zoals Primavera hem opsloeg; bij herberekenen wijken 89 taken af." Grijs blok: "Primavera
   heeft voor deze taak niet alles opgeslagen. Ontbreekt: Vrije speling." Datums van 3 taken gelijk vóór en na. Oranje blok
@@ -1593,7 +1593,7 @@ Testversie (release-check, poort 3049) is NIET bijgewerkt met de PR's van vandaa
   standaardparameters, tekst). **#386 gemerged in main → 8c4249b5b** (kop e7623d998, CI 16/16).
 - **#385 bijgewerkt met main** (4c95a9a54; eigen-sleutelcontrole in helper `p6ConstraintFromCodeOrLabel`, tabel niet meer
   geëxporteerd, mutant rood, CI 16/16) ⇒ review loopt.
-- **Voorbereiding checkstap #375 (Haiku 4.5):** A–D in licht en donker, alle weigeringen rood en blijvend, × werkt.
+- **Voorbereiding checkstap #375 (Haiku 5.5):** A–D in licht en donker, alle weigeringen rood en blijvend, × werkt.
   C: "+ Taak" met selectie onder sortering toont de rode strook én voegt achteraan toe (`addTaskNearSelection`, bewuste
   terugval) ⇒ hoort bij besluit 5. Oranje voorbeeld #371: rehab-2.xer, taak V3105190 (Roads opent niet in de modus: geen
   verschoven taken). MER-1 toont Duur 0d: de XER heeft geen duurkolommen (bron, geen fout van #371).
@@ -1603,3 +1603,8 @@ Testversie (release-check, poort 3049) is NIET bijgewerkt met de PR's van vandaa
 - **#380 fixronde klaar** (808c3052b, CI groen; plakken weer op main-niveau, sleepmelding toont eindwaarde; paneel
   niet-gestarte taak ~40 ms trager door bedoeld wegschrijven inzet) ⇒ maker bouwt nu het tabel-⚠ (optie 1) in dezelfde
   PR; tooltip = paneeltekst `workDeviatesHint` + "Wijzig je de duur, dan rekent de app het opnieuw uit." Daarna review.
+- **Checkstap #371 (heropenen in de modus, grijs blok): goed** — eigenaar 2026-10-19: "check #371 keur ik goed".
+  (Correctie: de voorbereidende agents draaiden op Haiku 5.5, niet 4.5.) ⇒ besluit 4: grijs vervangt of vult oranje aan.
+- **#384 fixronde klaar** (08e238e2a, CI 16/16; writer schrijft blokken met pauze, alle acht vormen gelijk na rondgang,
+  corpus 0 taken anders) ⇒ delta-review loopt. **#381 ronde 3 klaar** (0e91eccff, CI 16/16; resourcepaneel-poort,
+  `edit.copy`) ⇒ delta-review loopt.
