@@ -1588,3 +1588,12 @@ Testversie (release-check, poort 3049) is NIET bijgewerkt met de PR's van vandaa
   Strook: "Je ziet de planning zoals Primavera hem opsloeg; bij herberekenen wijken 89 taken af." Grijs blok: "Primavera
   heeft voor deze taak niet alles opgeslagen. Ontbreekt: Vrije speling." Datums van 3 taken gelijk vóór en na. Oranje blok
   komt in MER-1 niet voor (XER zonder `free_float_hr_cnt`) ⇒ tweede Haiku zoekt een oranje voorbeeld in Roads/rehab-2.
+- **Review #386: JA** (reviewer Opus 5.5; mutant 3/3 rood bij 30/21, marge 1,7× i.p.v. ≥ 2,4×; geen cache die warmups
+  kan misbruiken). VERVOLG in de PR (marge in evidence-doc, oorzaak = mediaan vangt pieken, tautologische check, oude
+  standaardparameters, tekst). **#386 gemerged in main → 8c4249b5b** (kop e7623d998, CI 16/16).
+- **#385 bijgewerkt met main** (4c95a9a54; eigen-sleutelcontrole in helper `p6ConstraintFromCodeOrLabel`, tabel niet meer
+  geëxporteerd, mutant rood, CI 16/16) ⇒ review loopt.
+- **Voorbereiding checkstap #375 (Haiku 4.5):** A–D in licht en donker, alle weigeringen rood en blijvend, × werkt.
+  C: "+ Taak" met selectie onder sortering toont de rode strook én voegt achteraan toe (`addTaskNearSelection`, bewuste
+  terugval) ⇒ hoort bij besluit 5. Oranje voorbeeld #371: rehab-2.xer, taak V3105190 (Roads opent niet in de modus: geen
+  verschoven taken). MER-1 toont Duur 0d: de XER heeft geen duurkolommen (bron, geen fout van #371).
