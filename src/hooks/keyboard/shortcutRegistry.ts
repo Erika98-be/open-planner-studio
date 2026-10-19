@@ -220,12 +220,16 @@ export const SHORTCUTS: ShortcutDef[] = [
   },
 
   // --- Bewerken ---
+  // Alle bewerktoetsen hieronder (behalve Escape) zijn dicht zolang een modaal venster openstaat:
+  // anders verwijdert Delete/Backspace met de focus op een knop in het kalendervenster of in
+  // *Taak bewerken* de geselecteerde taak áchter het venster, en werkt Ctrl+Z/Y/V op een planning
+  // die de gebruiker niet ziet. Tekstvelden in het venster vallen al eerder af (`isTypingTarget`).
   {
     id: 'edit.copy',
     combo: { key: 'c', mod: true },
     category: 'edit',
     labelKey: 'shortcuts.edit.copy',
-    when: hasSelection,
+    when: () => hasSelection() && !isShortcutBlockedByDialog(),
     run: (store) => store.copyTasks(),
   },
   {
@@ -233,6 +237,7 @@ export const SHORTCUTS: ShortcutDef[] = [
     combo: { key: 'v', mod: true },
     category: 'edit',
     labelKey: 'context.paste',
+    when: () => !isShortcutBlockedByDialog(),
     run: (store) => store.pasteTasks(),
   },
   {
@@ -240,6 +245,7 @@ export const SHORTCUTS: ShortcutDef[] = [
     combo: { key: 'z', mod: true },
     category: 'edit',
     labelKey: 'menu:commands.undo',
+    when: () => !isShortcutBlockedByDialog(),
     run: COMMANDS.undo.run,
   },
   {
@@ -247,6 +253,7 @@ export const SHORTCUTS: ShortcutDef[] = [
     combo: { key: 'y', mod: true },
     category: 'edit',
     labelKey: 'menu:commands.redo',
+    when: () => !isShortcutBlockedByDialog(),
     run: COMMANDS.redo.run,
   },
   {
@@ -254,6 +261,7 @@ export const SHORTCUTS: ShortcutDef[] = [
     combo: { key: 'z', mod: true, shift: true },
     category: 'edit',
     labelKey: 'menu:commands.redo', // zelfde actie/label als edit.redo — alternatieve combinatie
+    when: () => !isShortcutBlockedByDialog(),
     run: COMMANDS.redo.run,
   },
   {
@@ -261,7 +269,7 @@ export const SHORTCUTS: ShortcutDef[] = [
     combo: { key: 'Delete' },
     category: 'edit',
     labelKey: 'context.delete',
-    when: hasSelection,
+    when: () => hasSelection() && !isShortcutBlockedByDialog(),
     run: COMMANDS.delete.run,
   },
   {
@@ -269,7 +277,7 @@ export const SHORTCUTS: ShortcutDef[] = [
     combo: { key: 'Backspace' },
     category: 'edit',
     labelKey: 'context.delete',
-    when: hasSelection,
+    when: () => hasSelection() && !isShortcutBlockedByDialog(),
     run: COMMANDS.delete.run,
   },
   // Let op volgorde: MOET na `view.exitFullscreen` staan (zie bestandskop).
