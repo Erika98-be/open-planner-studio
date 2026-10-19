@@ -26,7 +26,7 @@ Klik je op *Bestand*, dan neemt een eigen scherm (de Backstage) de werkruimte ov
 - **App-instellingen** — dezelfde instellingen als het venster *App-instellingen*.
 - **Extensies** — beheer en installatie van extensies; zie [Een extensie installeren en beheren](docs://howto-extensie-installeren).
 - **Bibliotheek** — beheer van resourcebibliotheken; zie [Resourcebibliotheken beheren en delen](docs://howto-bibliotheken-beheren).
-- **Help** — de ingebouwde documentatie, ook met F1. Het zoekveld zoekt in titels, koppen en de tekst zelf. De artikelen staan in vier secties: *Tutorials*, *How-to*, *Uitleg* en *Referentie*. Bij *Documentatietaal* kies je *Volg de app-taal*, *Nederlands* of *English*. De Help bestaat alleen in het Nederlands en het Engels: staat de app in een andere taal, dan lees je de Engelse versie, met een melding. De keuze blijft op dit apparaat bewaard, los van de taal van de app. Ook vanuit een venster of paneel kom je in Help: veel vensters en de panelen *Eigenschappen*, *Resources* en *Waarschuwingen* hebben rechtsboven een vraagteken (*Help bij dit onderdeel*), dat Help opent op het artikel over dat venster of paneel. Heb je in het venster iets ingevuld dat nog niet is opgeslagen, dan vraagt de app eerst *Opslaan*, *Annuleren* (je invoer weggooien) of *Terug* (in het venster blijven); daarna sluit het venster en opent Help. Een paar vensters, zoals *Taak bewerken* en *Resources nivelleren*, vragen dat altijd. Zonder invoer opent Help meteen.
+- **Help** — de ingebouwde documentatie, ook met F1. Het zoekveld zoekt in titels, koppen en de tekst zelf. De artikelen staan in vier secties: *Tutorials*, *How-to*, *Uitleg* en *Referentie*. Bij *Documentatietaal* kies je *Volg de app-taal* of een taal uit de lijst. Nederlands en Engels zijn de brontalen; de andere talen hebben de artikelen die al vertaald zijn. Ontbreekt een artikel in jouw taal, dan lees je de Engelse versie, met een melding. De keuze blijft op dit apparaat bewaard, los van de taal van de app. Ook vanuit een venster of paneel kom je in Help: veel vensters en de panelen *Eigenschappen*, *Resources* en *Waarschuwingen* hebben rechtsboven een vraagteken (*Help bij dit onderdeel*), dat Help opent op het artikel over dat venster of paneel. Heb je in het venster iets ingevuld dat nog niet is opgeslagen, dan vraagt de app eerst *Opslaan*, *Annuleren* (je invoer weggooien) of *Terug* (in het venster blijven); daarna sluit het venster en opent Help. Een paar vensters, zoals *Taak bewerken* en *Resources nivelleren*, vragen dat altijd. Zonder invoer opent Help meteen.
 - **Rondleiding starten** — sluit de Backstage en start de rondleiding bij stap 1.
 - **Sluit project** — sluit het actieve document. Heeft het niet-opgeslagen wijzigingen, dan vraagt de app om bevestiging.
 
@@ -175,6 +175,14 @@ Deze groep staat ook op *Tabel* en *Rapport*.
 - **Eigensch.** — toont of verbergt het paneel *Eigenschappen* in de rechterkolom. Standaard: aan. Zie [Taakdialoog en eigenschappenpaneel](docs://ref-taak-eigenschappen).
 
 De knoppen *Resources*, *Resourcedock* en *Histogram* zijn dezelfde als op *Resources*, en *Waarschuwingen* is dezelfde als op *Planning*.
+
+**De rechterkolom.** De kolom rechts van de Gantt staat er zodra minstens één van de panelen *Eigenschappen*, *Resourcedock* of *Waarschuwingen* aan staat. Staat er geen aan, dan is er geen kolom. Neemt een volledig paneel de werkruimte over, bijvoorbeeld het volledige resourcepaneel, dan verdwijnt de kolom. Alleen op het tabblad *Tabel* blijft hij staan.
+
+- **Breedte** — sleep de scheiding tussen werkruimte en kolom. Eén breedte geldt voor alle panelen in de kolom.
+- **Verdeling** — staan er twee panelen aan, dan sleep je de grens tussen hen. Staat er één aan, dan vult dat paneel de hele kolom.
+- **Inklappen** — de knop *Zijkolom inklappen* in de kopbalk verbergt de kolom. Een smalle strip met de knop *Zijkolom uitklappen* haalt hem terug, met dezelfde panelen als eerst.
+- **Sluiten** — elk paneel heeft een kruisje in zijn kopbalk. Dat is dezelfde schakelaar als de lintknop.
+- **Volledig paneel** — in het resourcedock opent de knop *Volledig paneel* het volledige resourcepaneel.
 
 ### Beeld › Baselines & voortgang
 
