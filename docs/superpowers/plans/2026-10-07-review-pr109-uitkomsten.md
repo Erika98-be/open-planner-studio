@@ -1597,3 +1597,9 @@ Testversie (release-check, poort 3049) is NIET bijgewerkt met de PR's van vandaa
   C: "+ Taak" met selectie onder sortering toont de rode strook én voegt achteraan toe (`addTaskNearSelection`, bewuste
   terugval) ⇒ hoort bij besluit 5. Oranje voorbeeld #371: rehab-2.xer, taak V3105190 (Roads opent niet in de modus: geen
   verschoven taken). MER-1 toont Duur 0d: de XER heeft geen duurkolommen (bron, geen fout van #371).
+- **Review #385: JA** (reviewer Opus 5.5; labels gelijk aan MPXJ, corpusrondgang 26 constraints 0 verschillen, oude
+  `CS_*` leest nog). VERVOLG in de PR (harde secundaire constraint ongetest, verwachte labels uit eigen tabel, ongeldige
+  secundaire paren in fixture, `__proto__`-test, opruimen). **#385 gemerged in main → 13ab78bcc** (kop 4c95a9a54, CI 16/16).
+- **#380 fixronde klaar** (808c3052b, CI groen; plakken weer op main-niveau, sleepmelding toont eindwaarde; paneel
+  niet-gestarte taak ~40 ms trager door bedoeld wegschrijven inzet) ⇒ maker bouwt nu het tabel-⚠ (optie 1) in dezelfde
+  PR; tooltip = paneeltekst `workDeviatesHint` + "Wijzig je de duur, dan rekent de app het opnieuw uit." Daarna review.
