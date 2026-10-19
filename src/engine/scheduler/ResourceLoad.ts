@@ -3,6 +3,7 @@
 // functie die zowel het histogram als de nivelleerder voedt) en `computeResourceLoad`
 // (dag-granulaire belasting/capaciteit/overallocatie over alle resources+toewijzingen).
 import type { Resource, ResourceAssignment, ResourceCurve } from '@/types/resource';
+import { exceedsCapacity } from '@/engine/scheduler/capacityTolerance';
 import { groupBy } from '@/utils/collections';
 import { isLeafTask, isSummaryTask } from '@/utils/taskHierarchy';
 import type { Task, TaskTimephasedContour } from '@/types/task';
@@ -256,7 +257,7 @@ export interface ResourceLoadResult {
   load: Record<string, DailyLoad>;
   /** resourceId → per-dag-capaciteit (kalender × maxUnits/availabilitySteps; 0 op niet-werkdagen). */
   capacity: Record<string, DailyLoad>;
-  /** resourceId → ISO-datums waar load > capacity. */
+  /** resourceId → ISO-datums waar `exceedsCapacity(load, capacity)` (marge tegen rekenruis). */
   overallocatedDays: Record<string, string[]>;
   /** resourceId → ISO-datum → reden, uitsluitend voor de datums in `overallocatedDays`. */
   overallocatedReasons: Record<string, Record<string, OverallocationReason>>;
@@ -310,7 +311,7 @@ export interface ResourceLoadResult {
  *     niet werken, dus is dat een echt (en niet een vals-positief) conflict.
  *  5. Materiaal telt gewoon mee voor overallocatie (de nivelleerder slaat het over, deze functie
  *     bewust niet).
- *  6. overallocatedDays = dagen waar load > capacity, met per dag de reden in `overallocatedReasons`:
+ *  6. overallocatedDays = dagen waar load > capacity (met de marge uit `capacityTolerance.ts`), met per dag de reden in `overallocatedReasons`:
  *     `non-working-day` als de resourcekalender die dag geen werkdag is (punt 4), anders
  *     `over-capacity`. De reden komt uit dezelfde `isWorkDay`-vraag als de capaciteit — geen tweede
  *     definitie van "werkdag".
@@ -406,7 +407,7 @@ export function computeResourceLoad(
     const flagged: string[] = [];
     const reasons: Record<string, OverallocationReason> = {};
     for (const iso of Object.keys(bucket)) {
-      if (bucket[iso] > (cap[iso] ?? 0)) {
+      if (exceedsCapacity(bucket[iso], cap[iso] ?? 0)) {
         flagged.push(iso);
         reasons[iso] = nonWorkingDays?.has(iso) ? 'non-working-day' : 'over-capacity';
       }
@@ -582,7 +583,7 @@ export function computeHistogramReport(input: HistogramInput): HistogramReport {
     const overDays = new Set<string>();
     for (const [iso, l] of dailyLoad) {
       const cap = engine.isWorkDay(parseDate(iso)) ? maxUnitsOn(resource, iso) : 0;
-      if (l > cap) overDays.add(iso);
+      if (exceedsCapacity(l, cap)) overDays.add(iso);
     }
     const resAssignments = perAssignment.filter(pa => pa.resourceId === resource.id);
 

@@ -40,6 +40,7 @@
 // landt per document al uitsluitend op werkdagen van dát document), en binnen-document-
 // overbezetting telt gewoon mee in de som (de vraag is bedrijfsbreed).
 import type { Resource, ResourceAssignment } from '@/types/resource';
+import { exceedsCapacity } from '@/engine/scheduler/capacityTolerance';
 import type { Task } from '@/types/task';
 import type { Sequence } from '@/types/sequence';
 import type { WorkCalendar } from '@/types/calendar';
@@ -209,7 +210,8 @@ export interface OccupancyRow {
  * geen datums) levert géén booking — de fantoomrij-guard. Een rij bestaat alleen bij minstens één
  * booking (geteld of ongeteld); `anyStale` staat zodra er een stale document in het overzicht
  * voorkomt — geteld-met-informatieve-⚠ óf vangnet-ongeteld.
- * Conflictdefinitie: som over getelde documenten > `maxUnitsOn(poolItem, dag)` — strikt
+ * Conflictdefinitie: som over getelde documenten > `maxUnitsOn(poolItem, dag)` (met de marge uit
+ * `capacityTolerance.ts`, tegen rekenruis) — strikt
  * groter; som == capaciteit is géén conflict. `conflictDays` is oplopend gesorteerd. Rijvolgorde
  * is de poolvolgorde (deterministisch; de weergave sorteert zelf op conflicten/naam).
  *
@@ -363,7 +365,7 @@ export function computeLibraryOccupancy(
         totalPeak = sum;
         peakDay = iso;
       }
-      if (sum > maxUnitsOn(poolItem, iso)) conflictDays.push(iso);
+      if (exceedsCapacity(sum, maxUnitsOn(poolItem, iso))) conflictDays.push(iso);
     }
 
     rows.push({
