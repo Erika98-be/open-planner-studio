@@ -158,3 +158,28 @@ test('op het tabblad IFC verwijdert Delete geen taak', async ({ page, ops: _ops 
   await page.keyboard.press('Backspace');
   expect(await taskCount(page)).toBe(3);
 });
+
+test('onder het volledige resourcepaneel verwijderen Delete en Backspace geen taak', async ({ page, ops: _ops }) => {
+  await seedAndSelect(page);
+  await page.evaluate(() => window.__OPS__!.store.getState().setUI({
+    activeRibbonTab: 'resources', showResourcePanel: true, resourcePanelDocked: false,
+  }));
+
+  await pressDeleteKeys(page, page.getByRole('button', { name: 'New resource in project' }).first());
+  expect(await taskCount(page)).toBe(3);
+});
+
+test('Ctrl+C in Backstage › Help laat het gewone kopiëren met rust', async ({ page, ops: _ops }) => {
+  await seedAndSelect(page);
+  await page.evaluate(() => window.__OPS__!.store.getState().setUI({ activeRibbonTab: 'file', backstageSection: 'help' }));
+  await page.getByRole('button', { name: 'Back', exact: true }).first().focus();
+  // Deze luisteraar komt ná die van de app, en ziet dus of de app de toets heeft afgevangen.
+  await page.evaluate(() => {
+    const w = window as unknown as { __copyPrevented?: boolean };
+    window.addEventListener('keydown', (e) => {
+      if (e.key.toLowerCase() === 'c' && e.ctrlKey) w.__copyPrevented = e.defaultPrevented;
+    });
+  });
+  await page.keyboard.press('Control+c');
+  expect(await page.evaluate(() => (window as unknown as { __copyPrevented?: boolean }).__copyPrevented)).toBe(false);
+});

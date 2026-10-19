@@ -32,15 +32,15 @@ De gebouwde app (desktop en de webversie op de site) blokkeert bovendien een aan
 
 ## Bewerken
 
-**Ctrl+C** — *Kopiëren*: kopieert de geselecteerde taken. Alleen met een selectie. Niet in een dialoog. In het taakraster kopieert Ctrl+C de geselecteerde cellen; dat regelt het raster zelf.
+**Ctrl+C** — *Kopiëren*: kopieert de geselecteerde taken. Alleen met een selectie. Niet in een dialoog. Niet in *Bestand*, niet op de tabbladen *Rapport* en *IFC* en niet als het volledige resourcepaneel openstaat. In het taakraster kopieert Ctrl+C de geselecteerde cellen; dat regelt het raster zelf.
 
-**Ctrl+V** — *Plakken*: plakt gekopieerde taken. Niet in een dialoog. Niet in *Bestand* en niet op de tabbladen *Rapport* en *IFC*, want daar staat de takenlijst niet in beeld. In het taakraster plakt het de cellen.
+**Ctrl+V** — *Plakken*: plakt gekopieerde taken. Niet in een dialoog. Niet in *Bestand*, niet op de tabbladen *Rapport* en *IFC* en niet als het volledige resourcepaneel openstaat, want daar staat de takenlijst niet in beeld. In het taakraster plakt het de cellen.
 
 **Ctrl+Z** — *Ongedaan maken*. Niet in een dialoog: sluit eerst het venster.
 
 **Ctrl+Y** of **Ctrl+Shift+Z** — *Opnieuw*: herhaalt wat je ongedaan maakte. Niet in een dialoog.
 
-**Delete** of **Backspace** — *Verwijderen*: verwijdert de geselecteerde taken. Alleen met een selectie. Niet in een dialoog. Niet in *Bestand* en niet op de tabbladen *Rapport* en *IFC*, want daar staat de takenlijst niet in beeld. In een cel van het taakraster wissen Delete en Backspace alleen de celinhoud (zie *Tabel*).
+**Delete** of **Backspace** — *Verwijderen*: verwijdert de geselecteerde taken. Alleen met een selectie. Niet in een dialoog. Niet in *Bestand*, niet op de tabbladen *Rapport* en *IFC* en niet als het volledige resourcepaneel openstaat, want daar staat de takenlijst niet in beeld. In een cel van het taakraster wissen Delete en Backspace alleen de celinhoud (zie *Tabel*).
 
 **F2** — *Bewerken...*: opent de taakdialoog voor de eerste geselecteerde taak. Alleen met een selectie. Niet in een dialoog. In een cel van het taakraster start F2 het bewerken van de cel.
 

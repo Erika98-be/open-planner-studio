@@ -124,14 +124,21 @@ function isEditShortcutBlocked(): boolean {
 }
 
 /**
- * Delete/Backspace/Ctrl+V werken alleen als de planning in beeld is. In Backstage (tabblad `file`)
- * en op de tabbladen Rapport en IFC staat de takenlijst niet in beeld; daar verwijderde Delete met de
- * focus op bv. *Terug* of *Exporteer PDF* een taak die de gebruiker niet zag. Ctrl+Z blijft daar wel
- * werken (Projectinstellingen in Backstage leunt erop). De presentatie toont altijd de Gantt.
+ * Delete/Backspace/Ctrl+C/Ctrl+V werken alleen als de planning in beeld is. In Backstage (tabblad
+ * `file`), op de tabbladen Rapport en IFC en onder het VOLLEDIGE resourcepaneel staat de takenlijst
+ * niet in beeld; daar verwijderde Delete met de focus op bv. *Terug*, *Exporteer PDF* of de lintknop
+ * *Resources* een taak die de gebruiker niet zag, en ving Ctrl+C het kopiëren van gidstekst weg.
+ * Ctrl+Z blijft daar wel werken (Projectinstellingen in Backstage leunt erop). De presentatie toont
+ * altijd de Gantt.
+ *
+ * Bewust niet `isGanttWorkspaceVisible` (`state/ganttVisibility.ts`): die is ook `false` op het
+ * tabblad Tabel, en daar staat de takenlijst juist wél in beeld. Wel dezelfde paneelregel: een
+ * gedockt resourcepaneel deelt de werkruimte met de planning, een volledig paneel vervangt hem.
  */
 function isTaskListOutOfView(): boolean {
   const ui = useAppStore.getState().ui;
   if (ui.presentationMode) return false;
+  if (ui.showResourcePanel && !ui.resourcePanelDocked) return true;
   return ui.activeRibbonTab === 'file' || ui.activeRibbonTab === 'report' || ui.activeRibbonTab === 'ifc';
 }
 
@@ -251,14 +258,14 @@ export const SHORTCUTS: ShortcutDef[] = [
   // (`isEditShortcutBlocked`; de presentatiemodus telt daar bewust niet mee): anders verwijdert
   // Delete/Backspace met de focus op een knop in het kalendervenster of in *Taak bewerken* de
   // geselecteerde taak áchter het venster, en werkt Ctrl+Z/Y/V op een planning die de gebruiker niet
-  // ziet. Delete/Backspace/Ctrl+V zijn ook dicht als de takenlijst niet in beeld is
+  // ziet. Delete/Backspace/Ctrl+C/Ctrl+V zijn ook dicht als de takenlijst niet in beeld is
   // (`isTaskListOutOfView`). Tekstvelden vallen al eerder af (`isTypingTarget`).
   {
     id: 'edit.copy',
     combo: { key: 'c', mod: true },
     category: 'edit',
     labelKey: 'shortcuts.edit.copy',
-    when: () => hasSelection() && !isEditShortcutBlocked(),
+    when: () => hasSelection() && !isEditShortcutBlocked() && !isTaskListOutOfView(),
     run: (store) => store.copyTasks(),
   },
   {

@@ -32,15 +32,15 @@ The built app (desktop and the web version on the site) also blocks a number of 
 
 ## Edit
 
-**Ctrl+C** — *Copy*: copies the selected tasks. Only with a selection. Not in a dialog. In the task grid Ctrl+C copies the selected cells; the grid handles that itself.
+**Ctrl+C** — *Copy*: copies the selected tasks. Only with a selection. Not in a dialog. Not in *File*, not on the *Report* and *IFC* tabs and not while the full resource panel is open. In the task grid Ctrl+C copies the selected cells; the grid handles that itself.
 
-**Ctrl+V** — *Paste*: pastes copied tasks. Not in a dialog. Not in *File* and not on the *Report* and *IFC* tabs, because the task list is not in view there. In the task grid it pastes the cells.
+**Ctrl+V** — *Paste*: pastes copied tasks. Not in a dialog. Not in *File*, not on the *Report* and *IFC* tabs and not while the full resource panel is open, because the task list is not in view there. In the task grid it pastes the cells.
 
 **Ctrl+Z** — *Undo*. Not in a dialog: close the window first.
 
 **Ctrl+Y** or **Ctrl+Shift+Z** — *Redo*: repeats what you undid. Not in a dialog.
 
-**Delete** or **Backspace** — *Delete*: deletes the selected tasks. Only with a selection. Not in a dialog. Not in *File* and not on the *Report* and *IFC* tabs, because the task list is not in view there. In a cell of the task grid, Delete and Backspace only clear the cell content (see *Table*).
+**Delete** or **Backspace** — *Delete*: deletes the selected tasks. Only with a selection. Not in a dialog. Not in *File*, not on the *Report* and *IFC* tabs and not while the full resource panel is open, because the task list is not in view there. In a cell of the task grid, Delete and Backspace only clear the cell content (see *Table*).
 
 **F2** — *Edit...*: opens the task dialog for the first selected task. Only with a selection. Not in a dialog. In a cell of the task grid, F2 starts editing the cell.
 

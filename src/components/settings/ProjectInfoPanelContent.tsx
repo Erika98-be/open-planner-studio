@@ -98,8 +98,8 @@ export interface ProjectInfoPanelContentProps {
  * dicht onder een modaal venster, NIET in Backstage (zie `isEditShortcutBlocked` in
  * `shortcutRegistry.ts`), en negeren invoervelden-met-focus (`isTypingTarget`) — dus een klik buiten
  * een veld gevolgd door Ctrl+Z/Y kan `project` wijzigen terwijl deze component met de OUDE
- * `useState`-waarden gemount blijft. Een documentwissel (Ctrl+1..9) blokkeert de draftbewaking
- * (`isDocumentLeaveBlocked`); vangnet (a) blijft voor elke andere wisselroute. Twee onafhankelijke vangnetten:
+ * `useState`-waarden gemount blijft. De draftbewaking blokkeert een documentwissel (Ctrl+1..9,
+ * `isDocumentLeaveBlocked`). Twee onafhankelijke vangnetten:
  *  (a) re-init-effect op `activeDocumentId` (documentwissel — swapt `project` als geheel, dus dít is
  *      het bewezen identiteitssignaal; zie hieronder waarom NIET op undo).
  *  (b) `companyTouched`/`calcTouched`: de bibliotheek-(ont)koppeling en de rekenprofiel-tak
