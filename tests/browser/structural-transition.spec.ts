@@ -571,3 +571,122 @@ test('vangnet: verandert de vraag terwijl het venster open is, dan wijzigt de ke
   expect(await parentOf(page, N)).toBe(L);
   expect(await assignmentTaskIds(page)).toEqual([N, N]);
 });
+
+// Fixronde 4 (#374): een lange taaknaam op de verplaatsknop duwde Annuleren links buiten het venster
+// (De Akkers, 4.2 "Upper floor slab — House 1": "nnuleren"). Alle drie de knoppen liggen altijd
+// binnen het venster; de verplaatsknop kapt zijn label af met een ellips, de volledige tekst staat
+// in `title` en de naam volledig in de vraag erboven.
+const LONG_CHILD = 'Upper floor slab — House 1 — reinforcement, formwork and pouring of the in-situ concrete (phase 2)';
+const SHOTS = process.env.OPS_FASE_VRAAG_SHOTS;
+
+async function expectButtonsInsideDialog(page: Page, label: string): Promise<void> {
+  const panel = (await dialog(page).boundingBox())!;
+  for (const button of [cancelButton(page), removeButton(page), moveButton(page)]) {
+    const box = (await button.boundingBox())!;
+    const where = `${label}: ${await button.getAttribute('class')} ${JSON.stringify(box)} in ${JSON.stringify(panel)}`;
+    expect(box.x, where).toBeGreaterThanOrEqual(panel.x);
+    expect(box.x + box.width, where).toBeLessThanOrEqual(panel.x + panel.width);
+    expect(box.y + box.height, where).toBeLessThanOrEqual(panel.y + panel.height);
+    // Geen knop is tot niets geknepen: Annuleren en Verwijderen tonen hun hele label.
+    expect(box.width, where).toBeGreaterThan(40);
+  }
+  for (const button of [cancelButton(page), removeButton(page)]) {
+    expect(await button.evaluate(el => el.scrollWidth <= el.clientWidth), `${label}: label past`).toBe(true);
+  }
+}
+
+async function seedLongChild(page: Page): Promise<{ L: string; N: string }> {
+  const { L, N } = await seedAssignedLeaf(page);
+  await page.evaluate(({ id, name }) => window.__OPS__!.store.getState().updateTask(id, { name }), { id: N, name: LONG_CHILD });
+  return { L, N };
+}
+
+async function checkAllSizesAndThemes(page: Page, label: string, shotName?: string): Promise<void> {
+  for (const viewport of [{ width: 1600, height: 1000 }, { width: 1024, height: 768 }]) {
+    await page.setViewportSize(viewport);
+    for (const theme of ['light', 'dark'] as const) {
+      await page.evaluate(t => window.__OPS__!.store.getState().setUI({ uiTheme: t }), theme);
+      await expectButtonsInsideDialog(page, `${label} ${viewport.width} ${theme}`);
+      if (SHOTS && shotName) {
+        await page.waitForTimeout(200);
+        await dialog(page).screenshot({ path: `${SHOTS}/${shotName}-${viewport.width}-${theme === 'light' ? 'licht' : 'donker'}.png` });
+      }
+    }
+  }
+  await page.evaluate(() => window.__OPS__!.store.getState().setUI({ uiTheme: 'light' }));
+}
+
+test('lange subtaaknaam: alle knoppen binnen het venster, label afgekapt, volledige naam in title (fixronde 4 #374)', async ({ page, ops: _ops }) => {
+  const { L, N } = await seedLongChild(page);
+  await selectRow(page, N);
+  await page.keyboard.press('Alt+Shift+ArrowRight');
+  await expect(dialog(page)).toBeVisible();
+
+  // De naam staat volledig in de vraag; de knop draagt het volledige label als tooltip en kapt af.
+  await expect(dialog(page).locator('[data-ops-phase-dialog-text]')).toContainText(LONG_CHILD);
+  await expect(moveButton(page)).toHaveAttribute('title', `Move to '${LONG_CHILD}'`);
+  await expect(moveButton(page)).toHaveText(`Move to '${LONG_CHILD}'`);
+  expect(await moveButton(page).locator('[data-ops-phase-move-label]').evaluate(el => el.scrollWidth > el.clientWidth)).toBe(true);
+  // Volgorde, primaire stijl en focus blijven zoals ze waren.
+  await expect(dialog(page).locator('button[data-ops-phase-cancel], button[data-ops-phase-remove], button[data-ops-phase-move]'))
+    .toHaveText(['Cancel', 'Remove assignment', `Move to '${LONG_CHILD}'`]);
+  await expect(moveButton(page)).toHaveClass(/btn--primary/);
+  await expect(moveButton(page)).toBeFocused();
+
+  await checkAllSizesAndThemes(page, 'en', 'en-lang');
+
+  // De afgekapte knop werkt gewoon.
+  await moveButton(page).click();
+  await expect(dialog(page)).toBeHidden();
+  expect(await parentOf(page, N)).toBe(L);
+  expect(await assignmentTaskIds(page)).toEqual([N]);
+});
+
+test('lange subtaaknaam met verricht werk in het Nederlands: Annuleren primair en binnen het venster (fixronde 4 #374)', async ({ page, ops: _ops }) => {
+  await page.evaluate(() => localStorage.setItem('ops-locale', 'nl'));
+  await page.reload();
+  await waitForOps(page);
+  await waitForWelcomeDialog(page);
+  await page.evaluate(() => {
+    const s = window.__OPS__!.store.getState();
+    s.newProject();
+    s.setUI({ showWelcomeDialog: false, showTourOverlay: false, activeRibbonTab: 'start' });
+  });
+  const { N } = await seedLongChild(page);
+  await page.evaluate(() => window.__OPS__!.store.setState((s) => { s.assignments[0].actualWorkMinutes = 450; }));
+  await selectRow(page, N);
+  await page.keyboard.press('Alt+Shift+ArrowRight');
+  await expect(dialog(page)).toBeVisible();
+  await expect(cancelButton(page)).toBeFocused();
+  await expect(cancelButton(page)).toHaveClass(/btn--primary/);
+  await expect(cancelButton(page)).toHaveText('Annuleren');
+  await expect(moveButton(page)).toHaveAttribute('title', `Verplaatsen naar '${LONG_CHILD}'`);
+
+  await checkAllSizesAndThemes(page, 'nl', 'nl-verricht-werk');
+  await cancelButton(page).click();
+  await expect(dialog(page)).toBeHidden();
+});
+
+test('lange subtaaknaam in het Arabisch (RTL): alle knoppen binnen het venster (fixronde 4 #374)', async ({ page, ops: _ops }) => {
+  await page.evaluate(() => localStorage.setItem('ops-locale', 'ar'));
+  await page.reload();
+  await waitForOps(page);
+  await waitForWelcomeDialog(page);
+  await page.evaluate(() => {
+    const s = window.__OPS__!.store.getState();
+    s.newProject();
+    s.setUI({ showWelcomeDialog: false, showTourOverlay: false, activeRibbonTab: 'start' });
+  });
+  await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
+  const { N } = await seedLongChild(page);
+  await selectRow(page, N);
+  await page.keyboard.press('Alt+Shift+ArrowRight');
+  await expect(dialog(page)).toBeVisible();
+  await expect(moveButton(page)).toBeFocused();
+  // Engelse terugvaltekst: het label loopt links-naar-rechts, de ellips staat aan het einde (rechts).
+  expect(await moveButton(page).locator('[data-ops-phase-move-label]').evaluate(el => getComputedStyle(el).direction)).toBe('ltr');
+
+  await checkAllSizesAndThemes(page, 'ar', 'ar-lang');
+  await cancelButton(page).click();
+  await expect(dialog(page)).toBeHidden();
+});

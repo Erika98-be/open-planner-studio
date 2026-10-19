@@ -92,6 +92,10 @@ function PhaseAssignmentDialogBody({ question }: { question: PhaseAssignmentQues
   const moveLabel = targetName
     ? withIsolatedNames(name => t('phaseAssignmentQuestion.moveTo', { child: name(targetName) }))
     : t('phaseAssignmentQuestion.moveToSubtasks');
+  // Het volledige label als tooltip: op de knop kapt een lange taaknaam af met een ellips.
+  const moveTitle = targetName
+    ? t('phaseAssignmentQuestion.moveTo', { child: targetName })
+    : t('phaseAssignmentQuestion.moveToSubtasks');
 
   return (
     <Dialog
@@ -156,11 +160,14 @@ function PhaseAssignmentDialogBody({ question }: { question: PhaseAssignmentQues
             </div>
           )}
         </div>
-        <div className="flex justify-end gap-3 px-4 py-3 border-t border-border">
+        {/* Eén regel, alle knoppen binnen het venster: Annuleren en Verwijderen krimpen niet; de
+            verplaatsknop krimpt en kapt zijn label af met een ellips (`truncate`, CSS — de tekst zelf
+            blijft heel, voor `title` en schermlezers). De naam staat volledig in de vraag erboven. */}
+        <div className="flex justify-end gap-3 px-4 py-3 border-t border-border min-w-0">
           <button
             ref={primaryKind === 'cancel' ? primaryRef : undefined}
             onClick={cancel}
-            className={primaryKind === 'cancel' ? primaryClass : secondaryClass}
+            className={`${primaryKind === 'cancel' ? primaryClass : secondaryClass} shrink-0`}
             data-ops-phase-cancel
           >
             {t('cancel')}
@@ -168,7 +175,7 @@ function PhaseAssignmentDialogBody({ question }: { question: PhaseAssignmentQues
           <button
             ref={primaryKind === 'remove' ? primaryRef : undefined}
             onClick={() => answer('remove')}
-            className={primaryKind === 'remove' ? primaryClass : secondaryClass}
+            className={`${primaryKind === 'remove' ? primaryClass : secondaryClass} shrink-0`}
             data-ops-phase-remove
           >
             {t('phaseAssignmentQuestion.remove', { count: assignmentCount })}
@@ -177,11 +184,14 @@ function PhaseAssignmentDialogBody({ question }: { question: PhaseAssignmentQues
             ref={primaryKind === 'move' ? primaryRef : undefined}
             onClick={() => answer('move')}
             disabled={!canMove}
-            className={primaryKind === 'move' ? primaryClass : secondaryClass}
+            className={`${primaryKind === 'move' ? primaryClass : secondaryClass} min-w-0`}
+            title={moveTitle}
             data-ops-phase-move
           >
-            {/* Eén flex-item: de knop heeft `gap`, anders komt er ruimte rond de <bdi>. */}
-            <span>{moveLabel}</span>
+            {/* Eén flex-item: de knop heeft `gap`, anders komt er ruimte rond de <bdi>. `dir="auto"`
+                volgt de richting van de vertaalde zin (de <bdi> met de naam telt niet mee), zodat de
+                ellips aan het einde van die zin staat, ook bij de Engelse terugvaltekst in ar/fa. */}
+            <span className="truncate" dir="auto" data-ops-phase-move-label>{moveLabel}</span>
           </button>
         </div>
     </Dialog>
