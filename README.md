@@ -82,7 +82,8 @@ IFC 4.3 is the native format. Every other format is an adapter. What works per f
 | **Primavera P6 XML** | Yes, several projects per file | Export |
 | **Primavera P6 `.xer`** | Yes, read-only | No |
 | **CSV** | Yes | Export |
-| **Progress sheet** (Excel, CSV) | Update progress of the open project | Export |
+
+Progress can also go through a spreadsheet: export a progress sheet (`.xlsx` or `.csv`), fill it in on site, and read it back into the open project.
 
 Some data does not survive every format, for example baselines in `.mpp`, or activity codes in MS Project XML. The documentation lists exactly what goes along and what changes. The `.mpp` reader was written for OPS and is derived from the structure knowledge of [MPXJ](https://github.com/joniles/mpxj) (LGPL-2.1).
 

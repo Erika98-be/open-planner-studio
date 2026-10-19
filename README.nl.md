@@ -82,7 +82,8 @@ IFC 4.3 is het eigen formaat. Elk ander formaat is een adapter. Wat werkt per fo
 | **Primavera P6 XML** | Ja, meerdere projecten per bestand | Export |
 | **Primavera P6 `.xer`** | Ja, alleen lezen | Nee |
 | **CSV** | Ja | Export |
-| **Voortgangsblad** (Excel, CSV) | Werkt de voortgang van het open project bij | Export |
+
+Voortgang kan ook via een spreadsheet: exporteer een voortgangsblad (`.xlsx` of `.csv`), vul het op de bouwplaats in en lees het terug in het open project.
 
 Niet elk gegeven overleeft elk formaat, bijvoorbeeld baselines in `.mpp` of activiteitcodes in MS Project XML. De documentatie noemt precies wat meegaat en wat verandert. De `.mpp`-lezer is voor OPS geschreven en is afgeleid van de structuurkennis van [MPXJ](https://github.com/joniles/mpxj) (LGPL-2.1).
 
