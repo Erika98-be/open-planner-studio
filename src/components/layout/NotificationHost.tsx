@@ -6,6 +6,7 @@ import type { AppNotification } from '@/state/slices/types';
 import { notificationDetailText } from '@/utils/notificationDetail';
 import { subscribeDialogStack } from '@/hooks/useDialogKeys';
 import { leaveBackstageGuarded } from '@/components/backstage/backstageLeaveGuard';
+import { clearViewArrangement } from '@/state/viewArrangement';
 import {
   measureToastPlacement, samePlacement, subscribeToastLayout, toastAvoidElements, type ToastPlacement,
 } from './toastPlacement';
@@ -192,13 +193,22 @@ export function NotificationHost() {
             </button>
           )}
           {n.action && (
-            // De serialiseerbare actie uit de store (o.a. rekenprofielen); sluit de melding na de actie.
+            // De serialiseerbare actie uit de store (o.a. rekenprofielen, *Wissen* bij *Taak*); sluit
+            // de melding na de actie.
             <button
               type="button"
               className="ops-textlink ops-toast-readmore"
               data-ops-notification-action={n.action.kind}
               onClick={() => {
                 const action = n.action!;
+                if (action.kind === 'clearViewArrangement') {
+                  // *Wissen* (eigenaarsbesluit 2026-10-19 5a): filter, groepering en sortering van
+                  // het actieve document uit. De melding hoort altijd bij dat document: een
+                  // documentwissel wist weigeringen (`clearRefusals`, 5b).
+                  clearViewArrangement(useAppStore.getState());
+                  dismissNotification(n.id);
+                  return;
+                }
                 const go = () => {
                   setUI({ activeRibbonTab: 'file', backstageSection: action.section });
                   dismissNotification(n.id);
