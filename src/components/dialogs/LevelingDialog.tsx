@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Dialog, DialogHeader } from '@/components/common/Dialog';
 import type { LevelingResult } from '@/engine/scheduler/ResourceLeveler';
 import { distributeUnits } from '@/engine/scheduler/ResourceLoad';
+import { exceedsCapacity } from '@/engine/scheduler/capacityTolerance';
 import { parseDate } from '@/utils/dateUtils';
 import { LEVELING_REASON_KEY } from '@/utils/levelingReasonKey';
 import { levelInBackground, LevelingCancelledError, type BackgroundLeveling } from '@/services/leveling/backgroundLeveling';
@@ -149,7 +150,7 @@ export function LevelingDialog() {
           if (!res) continue;
           const days = distributeUnits(a.unitsPerDay, task.time.scheduleDuration, a.curve ?? 'UNIFORM');
           const peak = days.length > 0 ? Math.max(...days) : 0;
-          if (peak > res.maxUnits + 1e-9) {
+          if (exceedsCapacity(peak, res.maxUnits)) {
             const gap = peak - res.maxUnits;
             if (!worst || gap > worst.peak - worst.capacity) {
               worst = { resource: res.name || res.id, peak, capacity: res.maxUnits };

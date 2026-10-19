@@ -37,6 +37,7 @@
 // gezet — exact de route die `applyLeveling`→`runCPM` straks echt neemt. Zo bevat de preview óók
 // niet-geresourcete FS-opvolgers die pas via de forward pass meeschuiven.
 import type { Task, TaskSplitGap } from '@/types/task';
+import { exceedsCapacity } from '@/engine/scheduler/capacityTolerance';
 import type { Sequence } from '@/types/sequence';
 import type { Resource, ResourceAssignment } from '@/types/resource';
 import type { WorkCalendar } from '@/types/calendar';
@@ -168,10 +169,6 @@ export interface LevelingResult {
    *  `allowSplits` blijft dit altijd `{}`. */
   gaps: Record<string, TaskSplitGap[]>;
 }
-
-// Float-tolerantie: dag-granulaire eenheden zijn honderdsten (largestRemainderRound); een
-// kleine epsilon voorkomt dat 1.0000000001 > 1.0 een fantoomconflict oplevert.
-const EPS = 1e-9;
 
 // Harde bovengrens voor de kandidaat-scan wanneer er een poolitem-grootboek MET
 // horizon is meegegeven (`ledger.horizonIso`) — die kan de scan voorbij de gewone, taak-eigen
@@ -973,8 +970,8 @@ export function levelResources(
         // botsen, ook niet als een ANDERE (bv. vastgepinde) taak die dag overboekt; anders een
         // fantoomconflict van DEZE taak (`check-leveler-seam.ts` geval 3).
         if (arr[i] <= 0) continue;
-        if (bookedOn(resId, occ[i]) + arr[i] > capacityOf(resId, occ[i]) + EPS) conflicts.push(occ[i]);
-        else if (poolItem !== null && arr[i] > ledger!.residualOn(poolItem, occ[i]) + EPS) conflicts.push(occ[i]);
+        if (exceedsCapacity(bookedOn(resId, occ[i]) + arr[i], capacityOf(resId, occ[i]))) conflicts.push(occ[i]);
+        else if (poolItem !== null && exceedsCapacity(arr[i], ledger!.residualOn(poolItem, occ[i]))) conflicts.push(occ[i]);
       }
     }
     return {
@@ -1008,7 +1005,7 @@ export function levelResources(
   ): LevelingReason {
     for (const [resId, arr] of byRes) {
       const peak = arr.length > 0 ? maxOf(arr) : 0;
-      if (peak > maxCapacityOf(resId) + EPS) return 'INTRINSIC_OVERRUN';
+      if (exceedsCapacity(peak, maxCapacityOf(resId))) return 'INTRINSIC_OVERRUN';
     }
     if (ceilingUnreachable) return 'CEILING_UNREACHABLE';
     if (!calendarFeasibleSeen) return 'CALENDAR_MISMATCH';
@@ -1045,8 +1042,8 @@ export function levelResources(
       const poolItem = ledger ? ledger.poolItemOf(resId) : null;
       for (let i = 0; i < arr.length && i < occ.length; i++) {
         if (arr[i] <= 0) continue;
-        if (bookedOn(resId, occ[i]) + arr[i] > capacityOf(resId, occ[i]) + EPS) { poolBlockedOnly = false; return false; }
-        if (poolItem !== null && arr[i] > ledger!.residualOn(poolItem, occ[i]) + EPS) return false;
+        if (exceedsCapacity(bookedOn(resId, occ[i]) + arr[i], capacityOf(resId, occ[i]))) { poolBlockedOnly = false; return false; }
+        if (poolItem !== null && exceedsCapacity(arr[i], ledger!.residualOn(poolItem, occ[i]))) return false;
       }
     }
     return true;
@@ -1083,9 +1080,9 @@ export function levelResources(
       if (i >= arr.length) continue; // geen vraag op deze curve-index voor deze resource
       const amt = arr[i];
       if (amt <= 0) continue;
-      if (bookedOn(resId, iso) + amt > capacityOf(resId, iso) + EPS) return false;
+      if (exceedsCapacity(bookedOn(resId, iso) + amt, capacityOf(resId, iso))) return false;
       const poolItem = ledger ? ledger.poolItemOf(resId) : null;
-      if (poolItem !== null && amt > ledger!.residualOn(poolItem, iso) + EPS) return false;
+      if (poolItem !== null && exceedsCapacity(amt, ledger!.residualOn(poolItem, iso))) return false;
     }
     return true;
   }
