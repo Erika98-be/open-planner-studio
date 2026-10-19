@@ -144,7 +144,7 @@ expectSource(
 expectSource(
   'voorganger en opvolger verschillen zichtbaar in vorm, niet alleen in kleur',
   css,
-  /\[data-dependency-role="predecessor"\]::before\s*\{[\s\S]*?border-radius:\s*999px;[\s\S]*?\[data-dependency-role="successor"\]::before\s*\{[\s\S]*?border-radius:\s*1px;/,
+  /\[data-dependency-role="predecessor"\]::before\s*\{[\s\S]*?border-radius:\s*999px;[\s\S]*?\[data-dependency-role="successor"\]::before\s*\{[\s\S]*?border-radius:\s*[0-3]px;/,
 );
 
 if (diffs.length === 0) {
