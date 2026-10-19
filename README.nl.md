@@ -1,124 +1,151 @@
+[English](README.md) · **Nederlands**
+
+<div align="center">
+
 # Open Planner Studio
 
-[![Version](https://img.shields.io/github/package-json/v/OpenAEC-Foundation/open-planner-studio?label=versie&color=blue)](https://github.com/OpenAEC-Foundation/open-planner-studio/releases)
+**Open-source bouwplanning. Kritiek pad, MS Project- en Primavera P6-bestanden, IFC 4.3 als eigen formaat en een ingebouwde AI-koppeling.**
+
+[![Versie](https://img.shields.io/github/package-json/v/OpenAEC-Foundation/open-planner-studio?label=versie&color=blue)](https://github.com/OpenAEC-Foundation/open-planner-studio/releases)
 [![Downloads](https://img.shields.io/github/downloads/OpenAEC-Foundation/open-planner-studio/total?label=downloads&color=success)](https://github.com/OpenAEC-Foundation/open-planner-studio/releases)
 [![CI](https://github.com/OpenAEC-Foundation/open-planner-studio/actions/workflows/ci.yml/badge.svg)](https://github.com/OpenAEC-Foundation/open-planner-studio/actions/workflows/ci.yml)
-[![Live deploy](https://github.com/OpenAEC-Foundation/open-planner-studio/actions/workflows/live.yml/badge.svg)](https://open-planner-studio.open-aec.com)
-[![Testsuites](https://img.shields.io/badge/testsuites-planning%20%C2%B7%20library%20%C2%B7%20mcp%20%C2%B7%20dev--server%20%C2%B7%20browser-informational)](tests/planning/README.md)
 [![Talen](https://img.shields.io/badge/talen-28-informational)](src/i18n/config.ts)
-[![License](https://img.shields.io/github/license/OpenAEC-Foundation/open-planner-studio)](#licentie)
+[![Licentie](https://img.shields.io/github/license/OpenAEC-Foundation/open-planner-studio)](#licentie)
 
-Open-source bouwplanningapplicatie voor de bouwsector. Native IFC-bestandsformaat.
+### [Probeer in de browser](https://open-planner-studio.open-aec.com/) &nbsp;·&nbsp; [Download](https://github.com/OpenAEC-Foundation/open-planner-studio/releases/latest)
 
-![Open Planner Studio](screenshot.png)
+![Open Planner Studio: Gantt-diagram met kritiek pad](docs/images/readme/hero.png)
 
-## Kenmerken
+![Demo: project openen, relatie leggen, herberekenen, kritiek pad lezen](docs/images/readme/demo.gif)
 
-- **Gantt-diagrammen** met interactieve Canvas-rendering, drag & drop (ook verticaal, om taken te herschikken of te herparenten), en zoom
-- **Critical Path Method (CPM)** — automatische berekening kritiek pad en float
-- **Work Breakdown Structure (WBS)** — hierarchische taakstructuur met inklapbare hoofdstukken
-- **IFC-native** — opslaan en openen in IFC 4.3 (buildingSMART standaard)
-- **Ribbon toolbar** — Microsoft Office-achtige ribbon met tabbladen
-- **Meertalig** — 28 talen: Nederlands, English, Français, Deutsch, Español, 中文, Italiano, Português, Polski, Türkçe, العربية, 日本語, 한국어, فارسی, Русский, Українська, Čeština, Slovenčina, Српски, Hrvatski, Български, Magyar, Română, Svenska, Norsk bokmål, Dansk, Suomi, ລາວ (incl. RTL voor Arabisch en Perzisch)
-- **Tabelweergave** — spreadsheet-achtige editor: één klik op een cel bewerkt hem direct
-- **Resourcebibliotheken** — resources en kalenders in een gedeelde, bedrijfsbrede bibliotheek waar meerdere projecten uit putten, met herkomststempels per item
-- **AI-assistent (MCP)** — de app kan zichzelf openstellen als MCP-server, zodat een AI-assistent live met de open planning meewerkt, met veiligheidsvlaggen (pauze/alleen-lezen/auto-backup) en een activiteitenlog
-- **Rapportage** — live afdrukvoorbeeld in de ribbon met instelbare opties
-- **Context menu** — rechtermuisknop voor snelle acties op taken
-- **Bouwsector-specifiek** — feestdagen, bouwvak, inspectiemomenten, fasering
-- **Basis voor 4D BIM** — IFC 4.3 als native formaat; koppeling van taken aan bouwelementen uit een IFC-gebouwmodel staat op de roadmap
+</div>
 
-![Rapport Tab](screenshot-rapport.png)
+Open Planner Studio (OPS) is een gratis planningsprogramma voor de bouw. Het rekent een planning door met de Critical Path Method, opent en schrijft de bestandsformaten die planners al gebruiken, en slaat op in IFC 4.3, de open standaard voor bouwinformatie.
 
-![Context Menu](screenshot-context-menu.png)
+Het draait in je browser zonder installatie, of als kleine native desktop-app op Windows, macOS en Linux.
 
-## Snel starten
+## Probeer het
+
+**[Open de browserversie](https://open-planner-studio.open-aec.com/)**. Kies *Bestand, Voorbeelden* om een realistisch project te laden en begin te klikken.
+
+## Download
+
+Elke release staat op de [releasepagina](https://github.com/OpenAEC-Foundation/open-planner-studio/releases/latest).
+
+| Platform | Installatiebestand |
+|----------|--------------------|
+| **Windows** | `.exe`-installer (x64) |
+| **macOS** | `.dmg` (universeel: Apple silicon en Intel) |
+| **Linux** | `.deb`, `.rpm`, `.AppImage`, of de [Snap Store](https://snapcraft.io/open-planner-studio) |
+
+De desktop-app kan zichzelf bijwerken. Hij is gebouwd met Tauri 2: kleine installers, met de webweergave van het systeem. Het Rust-deel is een dunne native schil met drie commando's. De rekenkern is TypeScript en draait identiek in de browser en op de desktop.
+
+## Waarom gebruiken?
+
+- **Gratis en open.** LGPL-3.0. Geen licentiekosten, geen account, geen vendor lock-in.
+- **Open formaten.** IFC 4.3 is het eigen projectformaat. Er is geen privé binair formaat.
+- **Werkt met je bestaande bestanden.** Open MS Project- en Primavera P6-bestanden en exporteer naar MS Project XML en P6 XML.
+- **Rekenregels naar keuze.** Reken per project met de conventies van Primavera P6, Microsoft Project of Open Planner Studio.
+- **Gemaakt voor de bouw.** Feestdagen, bouwvak, werkkalenders, keuringsmomenten, fasering, resource-nivellering.
+- **Klaar voor AI.** Een ingebouwde MCP-server laat een AI-assistent je planning lezen en bewerken, met veiligheidsschakelaars die jij beheert.
+- **Meertalig.** 28 talen, ook Arabisch en Perzisch (van rechts naar links).
+
+## Schermafbeeldingen
+
+| | |
+|---|---|
+| ![Kritiek pad](docs/images/readme/critical-path.png) **Kritiek pad en speling** | ![Tabel bewerken](docs/images/readme/table-editing.png) **Taaktabel als spreadsheet** |
+| ![Resourcehistogram](docs/images/readme/resources-histogram.png) **Resourcehistogram en nivellering** | ![Kalender](docs/images/readme/calendar-dialog.png) **Kalenders en werktijd** |
+| ![Rapportvoorbeeld](docs/images/readme/report-preview.png) **Rapporten met live voorbeeld** | ![AI-tab](docs/images/readme/ai-tab.png) **AI-assistent (MCP)** |
+| ![Importeren](docs/images/readme/import.png) **Andere formaten importeren** | ![Help](docs/images/readme/help-viewer.png) **Help in de app** |
+
+## Geavanceerd plannen
+
+- **Critical Path Method** met totale, vrije en storende speling, negatieve speling, en een herberekening die je zelf start (of zet op automatisch).
+- **Alle acht constrainttypen:** zo vroeg mogelijk, zo laat mogelijk, start/einde niet eerder dan, start/einde niet later dan, moet starten op, moet eindigen op (eventueel verplicht, "pin logic"), plus deadlines. Zie [Constraints](public/docs/nl/uitleg-constraints.md).
+- **Alle vier de relatietypen** (FS, SS, FF, SF) met positieve en negatieve lag, in dagen of uren.
+- **Hammocktaken** (level of effort) die het werk volgen waaraan ze hangen. Zie [Een hammock maken](public/docs/nl/howto-hammock.md).
+- **Externe relaties (tussen projecten).** Een taak kan afhangen van een taak in een ander projectbestand via een vaste ankerdatum. De koppeling is niet live: het andere project wordt niet herberekend. Zie [Externe relaties](public/docs/nl/howto-externe-relaties.md).
+- **Bijna-kritieke taken** met een drempel die je zelf instelt, en **meerdere speling-paden** (pad 1, 2, 3 ...) om meer te zien dan de ene langste keten.
+- **Rekenprofielen.** Drie ingebouwde profielen: *Open Planner Studio*, *Primavera P6* en *Microsoft Project*. Een profiel is een set conventies voor de punten waar beide programma's anders rekenen. Zie [Rekenprofielen](public/docs/nl/uitleg-rekenprofielen.md).
+- Werkstructuur (WBS), baselines, voortgang en statusdatum, taken splitsen, werkregels (taaktypen), urenplanning, resource-nivellering en een bezettingsoverzicht over projecten heen.
+
+## Interoperabiliteit
+
+IFC 4.3 is het eigen formaat. Elk ander formaat is een adapter. Wat werkt per formaat (alle details in [Import- en exportformaten](public/docs/nl/ref-import-exportformaten.md)):
+
+| Formaat | Openen | Opslaan / exporteren |
+|---------|--------|----------------------|
+| **IFC** (4 en 4.3) | Ja | Ja, het enige formaat waarin je opslaat. Bevat het hele project |
+| **MS Project XML** (MSPDI) | Ja | Export |
+| **MS Project `.mpp`** (2010 t/m 2021) | Ja, alleen lezen | Nee |
+| **Primavera P6 XML** | Ja, meerdere projecten per bestand | Export |
+| **Primavera P6 `.xer`** | Ja, alleen lezen | Nee |
+| **CSV** | Ja | Export |
+| **Voortgangsblad** (Excel, CSV) | Werkt de voortgang van het open project bij | Export |
+
+Niet elk gegeven overleeft elk formaat, bijvoorbeeld baselines in `.mpp` of activiteitcodes in MS Project XML. De documentatie noemt precies wat meegaat en wat verandert. De `.mpp`-lezer is voor OPS geschreven en is afgeleid van de structuurkennis van [MPXJ](https://github.com/joniles/mpxj) (LGPL-2.1).
+
+## Rapportage
+
+Elf rapporttypen, met live voorbeeld, te exporteren naar PDF (A4 tot A1):
+
+Gantt-diagram, Resourcediagram, Mijlpalenoverzicht, Afwijking, Vooruitblik, Kritiek en bijna-kritiek, Voortgangsrapport, Planningsgezondheid, Resourcebelasting, Resourcetoewijzingen, WBS-samenvatting.
+
+Rapporten kunnen een rapportageperiode beslaan, vergelijken met een baseline en het filter en de groepering van je scherm volgen. Zie [Rapporttypen](public/docs/nl/ref-rapporttypes.md).
+
+## AI-first
+
+OPS kan een lokale **MCP-server** (Model Context Protocol) draaien, zodat een AI-assistent werkt met de planning die je open hebt. Hij biedt 41 `planner_*`-tools om taken, relaties, resources, kalenders, baselines en documenten te lezen en te wijzigen. Jij bepaalt wat de assistent mag: pauze, alleen-lezen, automatische back-ups en een activiteitenlog staan op het tabblad *AI*. De server staat standaard uit en draait alleen in de desktop-app.
+
+Zie [Een AI-assistent koppelen](public/docs/nl/howto-ai-assistent-koppelen.md) en de [toolreferentie](public/docs/nl/ref-ai-tools.md).
+
+## Testen en betrouwbaarheid
+
+Een juiste planningsberekening is de kernbelofte, dus die wordt gemeten. De getallen komen uit deze repository op het moment van schrijven.
+
+- **573 datagedreven planningscases** in 24 batterijen (`tests/planning/cases-*.json`). De verwachte waarden zijn met de hand uit de CPM-theorie berekend, niet overgenomen uit de uitvoer van de motor.
+- **393 aanvullende contractchecks** (`tests/planning/check-*.ts`), en een run van de hele planningssuite onder vijf tijdzones.
+- **Browsertests.** 119 Playwright-specs bedienen echt Chromium met echte muis- en toetsenbordevents (`tests/browser/`).
+- **MS Project-getrouwheid.** Een vastgepinde baseline van 216 `.mpp`-bestanden (3.413 taken) legt vast dat na herberekening elke start en elk einde gelijk is aan de datums die MS Project in het bestand bewaarde. De bestanden zelf staan niet in deze repository, dus deze poort draait alleen op een machine die ze heeft. De baseline staat in [`tests/planning/mpp-fidelity-baseline.json`](tests/planning/mpp-fidelity-baseline.json).
+- **Primavera P6-vergelijking.** 93 openbare `.xer`-bestanden zijn op herkomst geclassificeerd. Negen daarvan, door P6 zelf doorgerekend, dienen als referentie ([`tests/planning/xer-corpus-manifest.json`](tests/planning/xer-corpus-manifest.json)).
+- CI draait de hele poort (`npm run verify`) bij elke pull request. Een rode suite blokkeert de deploy en de release.
+
+## Huidige beperkingen
+
+OPS is jonge software. Ken deze punten voordat je erop vertrouwt:
+
+- **`.mpp` en `.xer` zijn alleen-lezen.** Je kunt geen van beide schrijven. Opslaan gaat naar IFC. Exporteer naar MS Project XML of P6 XML om een planning terug te geven.
+- **`.mpp` neemt geen baselines, kosten, tarieven, notities of eigen velden mee.** Bestanden van MS Project 2007 of ouder en met wachtwoord beveiligde bestanden worden geweigerd.
+- **Geen kostenbeheer.** OPS plant tijd en resources; het houdt geen kosten bij. <!-- TODO verify -->
+- **Relaties tussen projecten gebruiken een vaste ankerdatum.** Ze worden niet live herberekend met het andere project.
+- **De P6 XML-export laat** baselines, deadlines, activiteitcodes, eigen velden en notities weg.
+- **De MCP-server vraagt de desktop-app.** In de browser is het AI-tabblad zichtbaar, maar de bridge start niet.
+- **4D BIM staat op de roadmap, is niet gebouwd.** Taken koppelen aan elementen van een IFC-gebouwmodel kan nog niet.
+- **Bekende problemen.** [`knownbugs.md`](knownbugs.md) noemt openstaande problemen, bijvoorbeeld rond enkele constraint-randgevallen en urenplanning van voortgang.
+- **Rekenpariteit is gemeten, niet gegarandeerd.** OPS volgt de conventies van P6 en MS Project dicht, maar een bijzondere planning kan toch anders rekenen. Vergelijk kritieke uitkomsten voordat je iets overdraagt.
+
+Iets gevonden? [Maak een issue aan](https://github.com/OpenAEC-Foundation/open-planner-studio/issues).
+
+## Snel starten (ontwikkelaars)
 
 ```bash
-# Installeer dependencies (ci, niet install — de lockfile is bindend)
-npm ci
-
-# Start de dev-server; hij print zelf op welke poort hij draait
-npm run dev
+npm ci        # niet "install": de lockfile is bindend
+npm run dev   # print zelf de poort
 ```
 
-`npm run dev` wijst deze map een vaste poort toe in het bereik 3007–3106 en houdt
-die vast over herstarts heen, zodat meerdere kopieën van de repo naast elkaar
-kunnen draaien zonder elkaars poort af te pakken.
+Vereist Node 22. Rust is alleen nodig voor `npm run tauri:dev` en `npm run tauri:build`.
 
-Meebouwen? Zie [CONTRIBUTING.md](CONTRIBUTING.md).
+Stack: Tauri 2, React 19 en TypeScript, Canvas 2D voor de Gantt-tijdlijn, Zustand en Immer, TailwindCSS 4, Vite, react-i18next.
 
-## Technologiestack
+Voor architectuur, de testpoort en conventies: lees [CONTRIBUTING.md](CONTRIBUTING.md) en [AGENTS.md](AGENTS.md). De roadmap staat in [PLAN.md](PLAN.md). Meld beveiligingsproblemen via [SECURITY.md](SECURITY.md), niet via een issue.
 
-| Laag | Technologie |
-|------|-------------|
-| Desktop | Tauri 2 |
-| Frontend | React 19 + TypeScript |
-| Rendering | HTML5 Canvas 2D |
-| State | Zustand + Immer |
-| Styling | TailwindCSS 4 + component-CSS |
-| i18n | react-i18next (28 talen) |
-| Build | Vite 7 |
-
-## Projectstructuur
-
-```
-src/
-  components/        # React-schil: ribbon (incl. ribbon/ai), backstage, panelen, dialogen, canvas-chrome
-  engine/            # renderer/ (Canvas 2D), scheduler/ (CPM + resources), calendar/, view/
-  services/          # ifc/ (het native formaat) · import/export (csv, msproject, p6)
-                     # · fileAccess/ (Tauri↔web) · recovery/ · print/ · pdf/ · updater/
-                     # · feedback/ · library/ · mcp/ · benchmark/ · debug/
-  state/             # Zustand+Immer store: slices/ + het documentcontract
-  extensions/        # Extensiesysteem (types, api, loader, service)
-  i18n/              # Vertalingen, 28 talen × 4 namespaces
-  hooks/  types/  utils/  styles/
-public/docs/         # In-app handleiding: 77 artikelen in nl+en (bron), andere talen via de vertaalstraat (how-to, uitleg, referentie; voedt ook de wiki)
-examples/            # Voorbeeldplanningen in IFC
-tests/               # planning · library · mcp · dev-server · browser
-src-tauri/           # De Rust-schil (dun: precies drie native commands)
-```
-
-Deze boom is bewust grofmazig — een uitgeschreven versie loopt binnen een maand
-achter. Voor de details en de architectuurbeslissingen: [AGENTS.md](AGENTS.md)
-(de kern) en de per-onderdeel-uitwerking in [`.claude/rules/`](.claude/rules/).
-
-## Ribbon Tabs
-
-| Tab | Functie |
-|-----|---------|
-| **Start** | Bestand, Bewerken, Taken toevoegen, CPM berekenen, Zoom |
-| **Planning** | CPM, Relaties beheren, Kalender, Structuur (codes/velden, in-/uitspringen), Baselines |
-| **Resources** | Resources toewijzen, histogram, nivellering |
-| **Beeld** | Zoom, Tijdschaal, Panelen, Groeperen/filteren |
-| **Instellingen** | Projectinstellingen, App-instellingen, Kalender, Sneltoetsen |
-| **Tabel** | Spreadsheet-achtige tabelweergave, één klik bewerkt een cel |
-| **IFC** | IFC 4.3 code-editor met genereren/toepassen |
-| **Rapport** | Live afdrukvoorbeeld met instelbare opties |
-| **AI** *(standaard uit, aan te zetten in App-instellingen)* | MCP-bridge starten/verbinden, veiligheidsvlaggen, activiteitenlog |
-
-Plus **Bestand** — de Backstage: recent, voorbeelden, importeren/exporteren,
-printen, projectgegevens, instellingen, extensies, bibliotheek en help.
-
-## Architectuur
-
-Onderdeel van de OpenAEC-Foundation-familie van desktop-apps, die een gedeeld patroon delen (Tauri 2 + React + Canvas, Office-achtige ribbon, `lucide-react`). De algehele shell volgt [Open 2D Studio](https://github.com/OpenAEC-Foundation/Open-2D-Studio) en [Open FEM2D Studio](https://github.com/OpenAEC-Foundation/Open-FEM2D-Studio); het [extensiesysteem](docs/extensions.md) en de huidige styling zijn gemodelleerd naar [Open Calc Studio](https://github.com/OpenAEC-Foundation/open-calc-studio).
-
-Zie [PLAN.md](PLAN.md) voor de roadmap. Let op: hoofdstuk 4 daarvan is een
-aangenomen ontwerp uit de ontwerpfase en beschrijft de huidige code niet — er
-staat een waarschuwing boven.
-
-## Voorbeelden
-
-Zie de [`examples/`](examples/) map voor voorbeeldplanningen in IFC-formaat.
-
-## Bijdragen
-
-Zie [CONTRIBUTING.md](CONTRIBUTING.md) — opzetten, de poort (`npm run verify`,
-met de vijf testsuites `planning`/`library`/`mcp`/`dev-server`/`browser`), en de
-vier dingen die het vaakst stil misgaan. Beveiligingsproblemen niet via een
-issue maar via [SECURITY.md](SECURITY.md).
+Open Planner Studio hoort bij de familie apps van de [OpenAEC Foundation](https://github.com/OpenAEC-Foundation).
 
 ## Licentie
 
-LGPL-3.0
+LGPL-3.0. Zie [LICENSE](LICENSE).
+
+## Handelsmerken
+
+Microsoft Project is een handelsmerk van Microsoft Corporation. Oracle Primavera P6 is een handelsmerk van Oracle. Open Planner Studio is een onafhankelijk project en is niet verbonden aan, goedgekeurd door of gesponsord door Microsoft of Oracle. Deze namen staan er alleen om bestandscompatibiliteit te beschrijven.
