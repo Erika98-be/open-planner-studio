@@ -289,8 +289,14 @@ test('Taak bewerken: Enter op de dichte constraint-keuzelijst opent de lijst en 
   const { taskId } = await seedPanelTask(page);
   await page.evaluate(id => window.__OPS__!.store.getState().setUI({ showTaskDialog: true, editingTaskId: id }), taskId);
   const dialog = page.locator('[data-ops-task-dialog]');
+  await expect(dialog).toBeVisible();
+  // De dialoog zet na openen (±30 ms) zelf de focus op het naamveld. Wacht daarop: anders kan die
+  // focussprong tussen `trigger.focus()` en Enter vallen. Enter op het naamveld slaat de dialoog
+  // op en de lijst opent nooit (zo faalde CI-run 39059235118 onder belasting).
+  await expect(dialog.locator('[data-ops-task-name]')).toBeFocused();
   const trigger = dialog.getByRole('button', { name: /^(Constraint|Beperking)$/ });
   await trigger.focus();
+  await expect(trigger).toBeFocused();
   await page.keyboard.press('Enter');
   await expect(page.locator('.ops-select__menu')).toBeVisible();
   await expect(dialog).toBeVisible();
