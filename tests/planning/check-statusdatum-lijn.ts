@@ -11,6 +11,7 @@
 //  §1 gestippelde statusdatumlijn (voortgangslijn uit): 17:00, 12:00 en zonder tijd, op drie zooms.
 //  §2 voortgangslijn (de rechte rug op een niet-gestarte taak) ligt op dezelfde X.
 //  §3 het label staat naast die X (rechts, 4 px) en noemt de tijd alleen in uur-modus.
+//  §4 voortgangslijn in uur-modus vergelijkt op het tijdstip (achterlopende taak), dag-modus per dag.
 //  Elke § draait twee keer: dag-kalender (lijn op de dagrand) en uur-kalender (lijn op het tijdstip).
 //
 // Draait via run.sh. Exit 0 = alles groen.
@@ -115,6 +116,31 @@ for (const [mode, calendar] of [['dag', DAY_CAL], ['uur', HOUR_CAL]] as const) {
         spine.length > 0 && spine.every(x => Math.abs(x - want) < 0.01), `x ${spine.map(x => x.toFixed(2)).join(',')}, verwacht ${want.toFixed(2)}`);
     }
   }
+}
+
+// §4 achterlopende taak in uur-modus (review 2026-10-19): een niet-gestarte taak van 08:00–12:00 op
+// de statusdag, statusdatum 17:00. In uur-modus vergelijkt de voortgangslijn op het tijdstip: de taak
+// had al moeten lopen ⇒ uitstulping naar het begin van de balk (08:00). In dag-modus blijft de
+// vergelijking per dag: zelfde dag ⇒ "niet gestart", rechte lijn op de dagrand.
+const late = S().addTask({ name: 'Ochtendwerk' });
+useAppStore.setState((s) => {
+  const task = s.tasks.find((x) => x.id === late)!;
+  Object.assign(task.time, {
+    earlyStart: `${DAY}T08:00`, earlyFinish: `${DAY}T12:00`, scheduleStart: `${DAY}T08:00`, scheduleFinish: `${DAY}T12:00`, completion: 0,
+  });
+});
+S().recomputeViewRows();
+for (const zoom of [24, 96]) {
+  const hour = render(HOUR_CAL, `${DAY}T17:00`, zoom, true);
+  const statusX = hour.dayStartX + (17 / 24) * zoom;
+  const barStartX = hour.dayStartX + (8 / 24) * zoom;
+  const xs = hour.lines.flat().filter((_, i) => i % 2 === 0);
+  ok(`§4 uur zoom ${zoom}: voortgangslijn stulpt uit naar 08:00 (achterlopende taak)`,
+    xs.some(x => Math.abs(x - barStartX) < 0.01), `x ${xs.map(x => x.toFixed(2)).join(',')}, verwacht ook ${barStartX.toFixed(2)} (status ${statusX.toFixed(2)})`);
+  const day = render(DAY_CAL, `${DAY}T17:00`, zoom, true);
+  const dxs = day.lines.flat().filter((_, i) => i % 2 === 0);
+  ok(`§4 dag zoom ${zoom}: per dag ⇒ niet gestart, rechte lijn op de dagrand`,
+    dxs.length > 0 && dxs.every(x => Math.abs(x - day.dayStartX) < 0.01), `x ${dxs.map(x => x.toFixed(2)).join(',')}, verwacht ${day.dayStartX.toFixed(2)}`);
 }
 
 if (fails.length) {

@@ -24,7 +24,8 @@ import { DateTextInput } from '@/components/common/DateTextInput';
 import { TimeInput, TIME_STEP_MINUTES } from '@/components/common/TimeInput';
 import { useTimeNotation } from '@/hooks/displayDate';
 import { formatClock, parseClock } from '@/utils/displayTime';
-import { statusDateMinutes, statusDateUsesTime, withStatusTime } from '@/utils/statusDateTime';
+import { statusDateMinutes, withStatusTime } from '@/utils/statusDateTime';
+import { isHourModeCalendar } from '@/types/calendar';
 import { ExtensionIcon } from '@/components/common/ExtensionIcon';
 import { isLeafTask } from '@/utils/taskHierarchy';
 import { RibbonTab, type Layout, type TimeScale } from '@/state/slices/types';
@@ -83,7 +84,7 @@ export function BaselinesProgressGroupContent() {
   const setProgressMode = useAppStore(s => s.setProgressMode);
   // Tijdveld alleen als de solver de tijd van de statusdatum gebruikt: projectkalender in uur-modus
   // (besluit orkestrator 2026-10-19: toon wat de motor gebruikt). De schakelaar Urenplanning telt niet.
-  const showTime = useAppStore(s => statusDateUsesTime(s.calendar));
+  const showTime = useAppStore(s => isHourModeCalendar(s.calendar));
 
   const onManageBaselines = () => setUI({ showBaselineDialog: true });
 
@@ -178,7 +179,7 @@ export function BaselinesProgressGroupContent() {
 
 /**
  * Tijdveld naast de statusdatum (besluit eigenaar 2026-10-17). Zichtbaar volgens
- * `statusDateUsesTime` (projectkalender in uur-modus); de tijd volgt de instelling Tijdnotatie, de
+ * `isHourModeCalendar` (projectkalender in uur-modus); de tijd volgt de instelling Tijdnotatie, de
  * opslag blijft ISO 24 uur. Het datumveld ernaast houdt het tijddeel vast bij een datumwijziging
  * (`dateCommitValue` in `DateTextInput`).
  *

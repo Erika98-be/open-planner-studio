@@ -15,7 +15,7 @@ import { ConfirmDialog } from '@/components/dialogs/ConfirmDialog';
 import { NewProfileDialog } from '@/components/settings/NewProfileDialog';
 import type { BuiltInProfileId, ConventionKey, ProjectSchedulingOptions, SchedulingProfile } from '@/types/project';
 import { generateId } from '@/utils/id';
-import { isHourCalendar } from '@/services/subdayIo';
+import { isHourModeCalendar } from '@/types/calendar';
 import { effHoursPerDay } from '@/utils/taskDuration';
 import {
   choiceOf, conventionsEditable, editConvention, hasValidProfileName, isModifiedBuiltIn, newProfileFrom, optionDeviations,
@@ -215,7 +215,7 @@ export function SchedulingProfileSection({ mode, value, onChange }: SchedulingPr
   // Reken-opties: 'auto' voor afwezig, en thresholdHours die bij een bewerking niet wegvalt.
   const hpd = effHoursPerDay(projectCal);
   const hourUnit = enableHourPlanning
-    && (durationDisplay === 'hours' || (durationDisplay === 'auto' && isHourCalendar(projectCal)));
+    && (durationDisplay === 'hours' || (durationDisplay === 'auto' && isHourModeCalendar(projectCal)));
   const crit = so.criticalDefinition;
   const critMode = crit?.mode ?? 'totalFloat';
   const hoursThreshold = crit?.thresholdHours !== undefined;

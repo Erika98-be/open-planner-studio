@@ -6,7 +6,8 @@ import { DateTextInput } from '@/components/common/DateTextInput';
 import { answerActualStartQuestion, type ActualStartAnswers } from '@/state/actualStartQuestion';
 import { actualStartAnswerIssue } from '@/engine/progressEntry';
 import { displayDate, displayDateTime } from '@/utils/displayDate';
-import { statusDateAsUsed, statusDateUsesTime } from '@/utils/statusDateTime';
+import { statusDateAsUsed } from '@/utils/statusDateTime';
+import { isHourModeCalendar } from '@/types/calendar';
 import type { ActualStartQuestionItem, ActualStartQuestionRequest } from '@/state/slices/types';
 
 /**
@@ -43,7 +44,7 @@ function ActualStartDialogBody({ request }: { request: ActualStartQuestionReques
   const notation = useAppStore(s => s.ui.dateNotation);
   // De statusdatum mét tijd als de solver die tijd gebruikt (uur-modus; besluit orkestrator 2026-10-19).
   const timeNotation = useAppStore(s => s.ui.timeNotation);
-  const usesTime = useAppStore(s => statusDateUsesTime(s.calendar));
+  const usesTime = useAppStore(s => isHourModeCalendar(s.calendar));
   const statusText = (iso: string) => displayDateTime(statusDateAsUsed(iso, usesTime), notation, timeNotation);
   const [answers, setAnswers] = useState<ActualStartAnswers>(() => Object.fromEntries(
     request.items.map(item => [item.taskId, item.latest.slice(0, 10)]),

@@ -20,10 +20,10 @@ import { createAppStoreContext } from '@/state/appStore';
 import { writeP6XMLWithReport } from '@/services/p6/p6xmlWriter';
 import { writeMSPDI } from '@/services/msproject/mspdiWriter';
 import { GanttRenderer } from '@/engine/renderer/GanttRenderer';
-import { statusDateAsUsed, statusDateMinutes, statusDateUsesTime, withStatusTime } from '@/utils/statusDateTime';
+import { statusDateAsUsed, statusDateMinutes, withStatusTime } from '@/utils/statusDateTime';
 import { CalendarEngine } from '@/engine/scheduler/CalendarEngine';
 import { createDefaultCalendar } from '@/engine/calendar/defaultCalendar';
-import type { WorkCalendar } from '@/types/calendar';
+import { isHourModeCalendar, type WorkCalendar } from '@/types/calendar';
 import type { DocumentPayload } from '@/state/documentContract';
 import type { OpenedImport } from '@/services/importTypes';
 import { installDOMParser } from './xmldom-shim';
@@ -53,11 +53,11 @@ const quiet = <T>(fn: () => T): T => {
 // ── §1 ──────────────────────────────────────────────────────────────────────
 const dayCal = createDefaultCalendar();
 const hourCal = { ...dayCal, workTime: { byWeekday: { 1: [{ start: 480, end: 1020 }] } } } as WorkCalendar;
-same('§1 dagkalender ⇒ geen tijdveld', statusDateUsesTime(dayCal), false);
-same('§1 uurkalender ⇒ tijdveld', statusDateUsesTime(hourCal), true);
+same('§1 dagkalender ⇒ geen tijdveld', isHourModeCalendar(dayCal), false);
+same('§1 uurkalender ⇒ tijdveld', isHourModeCalendar(hourCal), true);
 // Zelfde predicaat als de rekenkern: `CalendarEngine.isHourMode` van de projectkalender.
-same('§1 dagkalender: zelfde uitkomst als de rekenkern', statusDateUsesTime(dayCal), new CalendarEngine(dayCal).isHourMode);
-same('§1 uurkalender: zelfde uitkomst als de rekenkern', statusDateUsesTime(hourCal), new CalendarEngine(hourCal).isHourMode);
+same('§1 dagkalender: zelfde uitkomst als de rekenkern', isHourModeCalendar(dayCal), new CalendarEngine(dayCal).isHourMode);
+same('§1 uurkalender: zelfde uitkomst als de rekenkern', isHourModeCalendar(hourCal), new CalendarEngine(hourCal).isHourMode);
 same('§1 dag-modus: label zonder tijd', statusDateAsUsed('2006-09-20T17:00', false), '2006-09-20');
 same('§1 uur-modus: label met tijd', statusDateAsUsed('2006-09-20T17:00', true), '2006-09-20T17:00');
 same('§1 minuten van 17:00', statusDateMinutes('2006-09-20T17:00'), 1020);
@@ -88,7 +88,7 @@ const undoDepth = (s: ReturnType<typeof openStore>) => s.getState().historyEvent
 
 const store = openStore(await parseOpenedFile({ name: 'statusdatum-1700.xml', text: FIXTURE }));
 same('§3 MSPDI-lezer houdt 17:00', store.getState().project.statusDate, '2006-09-20T17:00');
-same('§3 fixture-projectkalender rekent in uur-modus', statusDateUsesTime(store.getState().calendar), true);
+same('§3 fixture-projectkalender rekent in uur-modus', isHourModeCalendar(store.getState().calendar), true);
 store.getState().runCPM();
 same('§3 met 17:00 eindigt het restwerk op 22-09', finishOf(store.getState())?.slice(0, 10), '2006-09-22');
 const depth = undoDepth(store);

@@ -240,6 +240,25 @@ const baseOptions = (over: Partial<PrintOptions> = {}): PrintOptions => ({
   const dayFive = lineX('2026-01-07T17:00');
   ok(Math.abs(dayFive.x - day.x) < 0.01, `dag-modus: statuslijn 17:00 op de dagrand (got ${dayFive.x.toFixed(2)}, verwacht ${day.x.toFixed(2)})`);
   ok(dayFive.texts.some(t => t.text === 'Statusdatum 07-01-2026'), 'dag-modus: statuslabel zonder tijd');
+
+  // Voortgangslijn in uur-modus vergelijkt op het tijdstip (review 2026-10-19): een niet-gestarte taak
+  // van 08:00–12:00 op de statusdag is bij statusdatum 17:00 achter ⇒ uitstulping. In dag-modus per
+  // dag: zelfde dag ⇒ niet gestart ⇒ rechte lijn.
+  const T_LATE = mkTask('t-ochtend', 'Ochtendwerk', { time: mkTime({
+    earlyStart: '2026-01-07T08:00', earlyFinish: '2026-01-07T12:00',
+    scheduleStart: '2026-01-07T08:00', scheduleFinish: '2026-01-07T12:00', completion: 0,
+  }) });
+  const progressPts = (calendar: WorkCalendar) => {
+    const r = record([T_LATE], [], calendar, baseOptions({ statusLine: 'progress', statusDate: '2026-01-07T17:00' }));
+    const d = r.paths.filter(p => p.dash.length === 2 && p.dash[0] === 5);
+    return d.length === 1 ? d[0].pts : [];
+  };
+  const hourPts = progressPts(hourCal);
+  const dayPts = progressPts(cal);
+  ok(hourPts.length > 2 && hourPts.some(p => p.x < hourPts[0].x - 1),
+    `uur-modus: voortgangslijn stulpt uit bij een achterlopende ochtendtaak (x ${hourPts.map(p => p.x.toFixed(1)).join(',')})`);
+  ok(dayPts.length > 2 && dayPts.every(p => Math.abs(p.x - dayPts[0].x) < 0.01),
+    `dag-modus: per dag ⇒ niet gestart, rechte voortgangslijn (x ${dayPts.map(p => p.x.toFixed(1)).join(',')})`);
   const width = next.x - day.x;
   ok(width > 0 && Math.abs(noon.x - (day.x + width / 2)) < 0.01,
     `statuslijn 12:00: halverwege de dag (got ${noon.x.toFixed(2)}, verwacht ${(day.x + width / 2).toFixed(2)})`);

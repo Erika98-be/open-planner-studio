@@ -1,7 +1,7 @@
 import { Task } from '@/types/task';
 import { Sequence } from '@/types/sequence';
-import { WorkCalendar } from '@/types/calendar';
-import { parseDate, formatDate, addCalendarDays, getWeekNumberFor, diffCalendarDays, isoDayOfWeek, utcDayStart, localNowOnDayAxis } from '@/utils/dateUtils';
+import { isHourModeCalendar, WorkCalendar } from '@/types/calendar';
+import { parseDate, parseInstant, formatDate, addCalendarDays, getWeekNumberFor, diffCalendarDays, isoDayOfWeek, utcDayStart, localNowOnDayAxis } from '@/utils/dateUtils';
 import { CalendarEngine } from '@/engine/scheduler/CalendarEngine';
 import type { DateNotation, DurationDisplay, TimeNotation } from '@/types/view';
 import type { Draw2D } from '@/services/pdf/draw2d';
@@ -36,7 +36,7 @@ import { formatReportNumber } from '@/utils/reportNumber';
 import type { BaselineOverlay } from '@/types/baseline';
 import { ellipsize } from '@/engine/renderer/textFit';
 import { displayDate, displayDateTime } from '@/utils/displayDate';
-import { statusDateAsUsed, statusDateInstant, statusDateUsesTime } from '@/utils/statusDateTime';
+import { statusDateAsUsed, statusDateInstant } from '@/utils/statusDateTime';
 import { shownStart, shownFinish, floatBandEnd } from '@/utils/taskDates';
 import { effectiveCalendarOf, effHoursPerDay, formatTaskDurationText } from '@/utils/taskDuration';
 import type { DurationSuffixes } from '@/utils/durationFormat';
@@ -1199,10 +1199,12 @@ export function renderReport(
   let statusLineX: number | null = null;
   let drawStatusReferenceLine: (() => void) | null = null;
   if (options.statusDate && options.statusLine && options.statusLine !== 'none') {
-    // `statusDay` blijft de kalenderdag voor de vergelijkingen hieronder; de X volgt het tijdstip
-    // met dezelfde regel als het scherm (`statusDateInstant`): alleen in uur-modus, net als de solver.
+    // De X volgt het tijdstip met dezelfde regel als het scherm (`statusDateInstant`): alleen in
+    // uur-modus, net als de solver. De klaar/niet-gestart-vergelijking hieronder volgt dezelfde modus.
+    const statusUsesTime = isHourModeCalendar(calendar);
     const statusDay = parseDate(options.statusDate);
-    statusLineX = dateToX(statusDateInstant(options.statusDate, statusDateUsesTime(calendar)));
+    const statusInstant = statusDateInstant(options.statusDate, statusUsesTime);
+    statusLineX = dateToX(statusInstant);
     if (statusLineX > m.tableWidth && statusLineX < canvasWidth) {
       drawStatusReferenceLine = () => {
         d2d.strokeStyle = PRINT_COLORS.today;
@@ -1213,9 +1215,9 @@ export function renderReport(
           d2d.moveTo(statusLineX!, chartTop);
           d2d.lineTo(statusLineX!, chartBottom);
         } else {
-          // progress: spine + per leaf-rij een zigzag naar de voortgangspositie (MSP-stijl). De
-          // dagniveau-vergelijking t.o.v. de statusdatum (niet het uur) houdt "op de statusdatum"
-          // stabiel — gespiegeld aan GanttRenderer.drawProgressLine.
+          // progress: spine + per leaf-rij een zigzag naar de voortgangspositie (MSP-stijl). In
+          // dag-modus vergelijkt hij per dag (houdt "op de statusdatum" stabiel), in uur-modus op het
+          // tijdstip — gespiegeld aan GanttRenderer.drawProgressLine.
           d2d.moveTo(statusLineX!, chartTop);
           for (let i = 0; i < printRows.length; i++) {
             const rowTop = rowToY(i);
@@ -1229,11 +1231,11 @@ export function renderReport(
               const bx1 = dateToX(s);
               const bx2 = dateToX(f) + zoom;
               const c = Math.max(0, Math.min(1, row.task.time.completion || 0));
-              const finishDay = utcDayStart(f).getTime();
-              const startDay = utcDayStart(s).getTime();
-              const statusUtc = utcDayStart(statusDay).getTime();
-              const fullyDone = c >= 1 && finishDay <= statusUtc;
-              const notStarted = c === 0 && startDay >= statusUtc;
+              const finishRef = statusUsesTime ? parseInstant(shownFinish(row.task)).getTime() : utcDayStart(f).getTime();
+              const startRef = statusUsesTime ? parseInstant(shownStart(row.task)).getTime() : utcDayStart(s).getTime();
+              const statusRef = statusUsesTime ? statusInstant.getTime() : utcDayStart(statusDay).getTime();
+              const fullyDone = c >= 1 && finishRef <= statusRef;
+              const notStarted = c === 0 && startRef >= statusRef;
               if (!fullyDone && !notStarted) px = clampX(bx1 + (bx2 - bx1) * c);
             }
             d2d.lineTo(statusLineX!, rowTop);
@@ -1573,7 +1575,7 @@ export function renderReport(
   // ---- TIMELINE HEADER ----
   drawTimelineHeader(
     d2d, m, canvasWidth, minDate, calendarDays, timelineDates, compressed, zoom, dateToX, options,
-    todayVisible ? todayX : null, statusLineX, windowOnCalendarAxis, statusDateUsesTime(calendar),
+    todayVisible ? todayX : null, statusLineX, windowOnCalendarAxis, isHourModeCalendar(calendar),
   );
 
   // ---- TASK TABLE ----
@@ -1976,7 +1978,7 @@ function drawTimelineHeader(
   /** Tijdvenster dat op de kalender-as is teruggevallen (geen werkdag erin): dan óók de
    *  weekenddagen nummeren, anders staat er geen enkel dagcijfer. */
   showWeekendDayNumbers = false,
-  /** Rekent de projectkalender met de tijd van de statusdatum (`statusDateUsesTime`)? Alleen dan
+  /** Rekent de projectkalender met de tijd van de statusdatum (`isHourModeCalendar`)? Alleen dan
    *  noemt het statuslabel de tijd. */
   statusUsesTime = false,
 ) {

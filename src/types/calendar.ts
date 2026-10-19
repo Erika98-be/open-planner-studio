@@ -108,13 +108,17 @@ export interface Holiday {
 }
 
 /**
- * De ENE modusregel van de rekenkern: een kalender rekent in uur-modus zodra hij `workTime` draagt,
- * anders in dag-modus. `CalendarEngine` leidt zijn `isHourMode` hier uit af; de solver leest de
- * statusdatum via die modus van de PROJECTkalender (`CPMSolver.parseIn`). Wie moet weten of de tijd
- * van de statusdatum meetelt, gebruikt deze functie (via `statusDateUsesTime`), geen eigen kopie.
+ * De ENE modusregel: een kalender rekent in uur-modus zodra hij `workTime` draagt, anders in
+ * dag-modus. `CalendarEngine` leidt zijn `isHourMode` hier uit af; UI, MCP en adapters gebruiken
+ * deze functie, geen eigen kopie.
+ *
+ * Statusdatum: de solver leest hem via de modus van de PROJECTkalender (`CPMSolver.parseIn`), dus
+ * de tijd telt alleen mee als `isHourModeCalendar(projectkalender)`. Besluit orkestrator
+ * 2026-10-19: toon wat de motor gebruikt — tijdveld in het lint, lijn op het tijdstip en de tijd in
+ * label/print/dialoog alleen dan.
  */
-export function isHourModeCalendar(calendar: Pick<WorkCalendar, 'workTime'>): boolean {
-  return !!calendar.workTime;
+export function isHourModeCalendar(calendar: Pick<WorkCalendar, 'workTime'> | undefined): boolean {
+  return !!calendar?.workTime;
 }
 
 /** Een lege einddatum uit de kalenderdialoog is een eendaagse feestdag. */

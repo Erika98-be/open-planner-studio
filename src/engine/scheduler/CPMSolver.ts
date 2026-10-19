@@ -1619,8 +1619,8 @@ export class CPMSolver {
 
     // Werkdag-gesnapte statusdatum. Ongeldig/afwezig ⇒ null (alle voortgangstakken no-op).
     // Uur-projectkalender ⇒ instant-snap via `nextWorkInstant`; dag ⇒ `nextWorkDay`.
-    // De UI volgt deze keuze via `statusDateUsesTime` (`utils/statusDateTime.ts`): tijdveld in het lint
-    // en lijn op het tijdstip alleen als de projectkalender in uur-modus rekent (`isHourModeCalendar`).
+    // De UI volgt deze keuze met dezelfde regel (`isHourModeCalendar` op de projectkalender): tijdveld
+    // in het lint en lijn op het tijdstip alleen in uur-modus.
     const dd = this.options.dataDate ? this.parseIn(this.projectEngine, this.options.dataDate) : null;
     this.dataDate = dd && !isNaN(dd.getTime()) ? this.snapOnOrAfter(this.projectEngine, dd) : null;
     this.rawDataDate = this.dataDate === null ? null : dd;

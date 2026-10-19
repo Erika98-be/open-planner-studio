@@ -1,6 +1,5 @@
 import { formatClock } from '@/utils/displayTime';
 import { parseDate, parseInstant } from '@/utils/dateUtils';
-import { isHourModeCalendar, type WorkCalendar } from '@/types/calendar';
 
 /**
  * De statusdatum met of zonder tijd (besluit eigenaar 2026-10-17).
@@ -8,24 +7,13 @@ import { isHourModeCalendar, type WorkCalendar } from '@/types/calendar';
  * `project.statusDate` is `YYYY-MM-DD` of `YYYY-MM-DDTHH:mm`. MS Project bewaart de statusdatum op een
  * tijd (vaak 17:00) en die tijd telt mee voor het restwerk: 17:00 en 12:00 op dezelfde dag geven een
  * halve dag verschil — maar alleen als de projectkalender in uur-modus rekent. Daarom toont het lint
- * de tijd, en laat hem wijzigen, precies wanneer de rekenkern hem gebruikt (`statusDateUsesTime`).
+ * de tijd, en laat hem wijzigen, precies wanneer de rekenkern hem gebruikt (`isHourModeCalendar`).
  */
 
 /** Minuten-vanaf-middernacht van het tijddeel, of `undefined` als de statusdatum geen tijd draagt. */
 export function statusDateMinutes(statusDate: string | undefined): number | undefined {
   const m = /^\d{4}-\d{2}-\d{2}T(\d{2}):(\d{2})/.exec(statusDate ?? '');
   return m ? Number(m[1]) * 60 + Number(m[2]) : undefined;
-}
-
-/**
- * Gebruikt de rekenkern de tijd van de statusdatum? Dat hangt af van de PROJECTkalender: de solver leest
- * de statusdatum met `parseIn(projectEngine, …)` — uur-modus ⇒ met tijd, dag-modus ⇒ alleen de datum
- * (`CPMSolver.ts`, de regel boven `this.dataDate =`). De modus komt uit `isHourModeCalendar`, dezelfde
- * functie die `CalendarEngine.isHourMode` zet. Besluit orkestrator 2026-10-19: toon wat de motor
- * gebruikt — het tijdveld in het lint én de lijn op het tijdstip alleen als dit `true` is.
- */
-export function statusDateUsesTime(projectCalendar: Pick<WorkCalendar, 'workTime'>): boolean {
-  return isHourModeCalendar(projectCalendar);
 }
 
 /**
@@ -49,7 +37,7 @@ export function withStatusTime(statusDate: string | undefined, minutes: number |
 
 /**
  * Het tijdstip van de statusdatum op de tijdas — de ene positieregel voor scherm (`GanttRenderer`) en
- * print (`printPreview`). Rekent de kern met de tijd (`usesTime`, zie `statusDateUsesTime`):
+ * print (`printPreview`). Rekent de kern met de tijd (`usesTime`, zie `isHourModeCalendar`):
  * `parseInstant`, zoals een uurtaakbalk (kalendertijd; 17:00 = 17/24 van de dag op de lineaire as).
  * Anders, of zonder tijd: het begin van de dag (`parseDate`), zoals de solver in dag-modus.
  */
