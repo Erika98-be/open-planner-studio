@@ -1687,3 +1687,8 @@ Testversie (release-check, poort 3049) is NIET bijgewerkt met de PR's van vandaa
 - **Checkstap #377 (statusdatum met tijd, alleen uurmodus): goed** — eigenaar 2026-10-19: "top" (ook het
   orkestratorbesluit: tijd alleen bij uurmodus). **#377 gemerged in main → 973d934e0** (kop 0db9c489b, CI 16/16, review
   JA; merged boom zonder aanroep van de verwijderde `isHourCalendar`).
+- **Delta-review #375 5a+5b: JA** (reviewer Opus 5.5; `clearRefusals` alleen `refusal`, wissen aan begin van
+  `applyHistoryEvent`, alle undo-routes en documentwissels gedekt; M1–M4 zelf rood). VERVOLG in de PR: **toasttekst
+  "staat achteraan" klopt niet bij sorteren (taak bovenaan) en filteren (soms onzichtbaar) ⇒ eigenaarspunt na de check**;
+  zinsvolgorde `ref-meldingen.md:59`; `REFUSAL_KEYS` mist de sleutel; toast blijft na zelf filter uitzetten; weigering
+  vlak vóór tabwissel (VERMOED); commentaar, tests, schermbewijs, opruimen. ⇒ korte eigenaarscheck van de toast.
