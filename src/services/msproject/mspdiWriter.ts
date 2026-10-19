@@ -150,7 +150,6 @@ function writeCalendarBlock(
   cal: WorkCalendar,
   uid: number,
   isBaseCalendar: boolean,
-  includeEffectiveScalarBands = false,
 ): void {
   lines.push(`${indent(2)}<Calendar>`);
   lines.push(`${indent(3)}<UID>${uid}</UID>`);
@@ -162,9 +161,14 @@ function writeCalendarBlock(
     const isWorkDay = cal.workDays.includes(day);
     const mspDay = day === 7 ? 1 : day + 1;
 
-    // UUR-kalender ⇒ ALLE banden van deze weekdag als aparte <WorkingTime>-blokken; een wrap-band
-    // emitteert het eind als tijd-van-de-dag (`end % 1440`).
-    const workTime = cal.workTime ?? (includeEffectiveScalarBands ? effectiveWorkTimeBands(cal) : undefined);
+    // ALLE blokken van deze weekdag als aparte <WorkingTime>-blokken; een wrap-band emitteert het eind
+    // als tijd-van-de-dag (`end % 1440`). Uurkalender: zijn eigen blokken. Dagkalender: zijn effectieve
+    // blokken, dus met de pauze (07:00–16:00 met 8 uur ⇒ 07:00–12:00 + 13:00–16:00), zoals MS Project
+    // zelf een werkdag schrijft. Eén blok begin–einde verloor de pauze: MS Project rekende dan met 9 uur
+    // per dag, en een bibliotheekkalender (geen eigen `<MinutesPerDay>`) kwam terug met 9 uur per dag.
+    // Alleen zonder geldige effectieve blokken (bv. meer uren per dag dan de werkdag lang is) blijft het
+    // ene blok begin–einde hieronder.
+    const workTime = cal.workTime ?? effectiveWorkTimeBands(cal);
     const hourBands = workTime ? (workTime.byWeekday[day as 1] ?? []) : null;
     const dayWorking = hourBands ? hourBands.length > 0 : isWorkDay;
     lines.push(`${indent(4)}<WeekDay>`);
@@ -422,13 +426,13 @@ export function writeMSPDI(
   // Calendars: UID 1 = projectkalender (basiskalender); overige bibliotheekkalenders krijgen UID 2,
   // 3, ... — dezelfde `writeCalendarBlock` parametrisch hergebruikt.
   const {
-    libraryCalendars, calendarNumber: calUidMap, effCalByTask, hourTaskCalendarIds,
+    libraryCalendars, calendarNumber: calUidMap, effCalByTask,
   } = exportCalendarLayout(tasks, calendar, resourceCalendars);
 
   lines.push(`${indent(1)}<Calendars>`);
-  writeCalendarBlock(lines, indent, calendar, 1, true, hourTaskCalendarIds.has(calendar.id));
+  writeCalendarBlock(lines, indent, calendar, 1, true);
   for (const cal of libraryCalendars) {
-    writeCalendarBlock(lines, indent, cal, calUidMap.get(cal.id)!, false, hourTaskCalendarIds.has(cal.id));
+    writeCalendarBlock(lines, indent, cal, calUidMap.get(cal.id)!, false);
   }
   lines.push(`${indent(1)}</Calendars>`);
 
