@@ -36,7 +36,7 @@ Voor de balkkleur kies je *Beeld › Baselines & voortgang › Balkkleuren*, dan
 
 ## Valkuilen en wat de app dan doet
 
-**Verwijderen haalt de waarden bij de taken weg.** Verwijder je een codetype, een waarde of een veld met het prullenbakje, dan vraagt de app niet om bevestiging, en de toewijzingen op alle taken verdwijnen mee. Een groepering of sortering op dat codetype of veld vervalt ook. *Ongedaan* (Ctrl+Z) brengt het codetype, de waarde of het veld en de ingevulde waarden terug, maar niet de groepering of sortering: die stel je opnieuw in.
+**Verwijderen haalt de waarden bij de taken weg.** Verwijder je een codetype, een waarde of een veld met het prullenbakje, dan vraagt de app niet om bevestiging, en de toewijzingen op alle taken verdwijnen mee. Een groepering of sortering op dat codetype of veld vervalt ook. *Ongedaan* (Ctrl+Z, sluit eerst het venster) brengt het codetype, de waarde of het veld en de ingevulde waarden terug, maar niet de groepering of sortering: die stel je opnieuw in.
 
 **Twee waarden met dezelfde code.** *Waarde toevoegen* nummert door op het aantal waarden dat er is. Verwijder je er één en voeg je er een toe, dan kan er dus een code dubbel voorkomen. Typ je die code in een kolomcel, dan weigert de app dat met *Deze activiteitencodewaarde komt meerdere keren voor. Kies hem uit de lijst.* Geef elke waarde een eigen code.
 

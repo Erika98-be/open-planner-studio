@@ -1,4 +1,4 @@
-import { Task, TaskConstraint } from '@/types/task';
+import { Task } from '@/types/task';
 import { Sequence, SequenceType } from '@/types/sequence';
 import { isoDayOfWeek, parseDate } from '@/utils/dateUtils';
 import { Resource, ResourceAssignment, ResourceType, ResourceCurve } from '@/types/resource';
@@ -16,6 +16,7 @@ import { isLeafTask, isSummaryTask } from '@/utils/taskHierarchy';
 import { flattenOrder } from '@/utils/wbs';
 import type { CustomTaskType } from '@/types/taskType';
 import { encodeCustomTaskType, OPS_DURATION_UNIT_NAME, toXmlDateTime } from '@/services/xmlInterchange';
+import { p6ConstraintLabel } from './p6ConstraintTypes';
 import { leaf, node, renderP6XmlWithReport, P6_ID_MAX_LENGTH, type P6Node } from './p6xmlSchemaOrder';
 import { taskDurationUnit } from '@/engine/scheduler/duration';
 import { computedStart, computedFinish } from '@/utils/taskDates';
@@ -87,27 +88,6 @@ export const P6_LINK_TYPE: Record<SequenceType, string> = {
 /** NotebookTopic voor de taakbeschrijving (`<ActivityNote>`); de reader herkent hem aan de naam. */
 export const OPS_DESCRIPTION_TOPIC_NAME = 'OPS Description';
 const OPS_DESCRIPTION_TOPIC_OBJECT_ID = 900000002;
-
-/**
- * OPS-constraint → P6 `CS_*`-code. Soft-typen mappen 1-op-1 op P6's soft constraints
- * (`CS_MSO/MSOA/MSOB/MEO/MEOA/MEOB/ALAP`); de logica-brekende harde MSO/MFO-pin op
- * `CS_MANDSTART`/`CS_MANDFIN` (P6 kent soft én hard native). `ASAP` ⇒ geen constraint ⇒ `undefined`.
- * De P6-XML-elementnamen (`PrimaryConstraintType` etc.) volgen de MPXJ-PMXML-conventie
- * (github.com/joniles/mpxj — PrimaveraPMFileWriter); alleen de XER-kolomnamen (`cstr_type`) zijn
- * tegen Oracle-documentatie geverifieerd.
- */
-function p6ConstraintCode(c: TaskConstraint): string | undefined {
-  switch (c.type) {
-    case 'ASAP': return undefined;
-    case 'ALAP': return 'CS_ALAP';
-    case 'SNET': return 'CS_MSOA';
-    case 'SNLT': return 'CS_MSOB';
-    case 'FNET': return 'CS_MEOA';
-    case 'FNLT': return 'CS_MEOB';
-    case 'MSO': return c.hard ? 'CS_MANDSTART' : 'CS_MSO';
-    case 'MFO': return c.hard ? 'CS_MANDFIN' : 'CS_MEO';
-  }
-}
 
 /** Status zoals P6 hem leest: in lijn met voortgang en actuals (in OPS kan `task.status` achterlopen
  *  op een gewijzigd percentage; P6 laat de status leiden). */
@@ -490,10 +470,11 @@ export function writeP6XMLWithReport(
     // activity-kalender).
     const remainingHours = isHour && task.time.remainingMinutes != null ? task.time.remainingMinutes / 60
       : task.time.remainingTime != null ? durationToP6Hours(task.time.remainingTime, effHpd) : undefined;
-    // Datumconstraints: primair + secundair als P6 `CS_*`-codes. ASAP ⇒ geen element. Secundair is
-    // altijd soft (P6 native `SecondaryConstraintType`).
-    const code = task.constraint ? p6ConstraintCode(task.constraint) : undefined;
-    const code2 = task.constraint2 ? p6ConstraintCode(task.constraint2) : undefined;
+    // Datumconstraints: primair + secundair als PMXML-label (`Start On or After`), zoals echte P6 XML
+    // en MPXJ `XmlProjectWriter` (`ConstraintTypeHelper.getXmlFromInstance`); niet het XER-token
+    // `CS_*`. ASAP ⇒ geen element. Secundair is altijd soft (P6 native `SecondaryConstraintType`).
+    const code = task.constraint ? p6ConstraintLabel(task.constraint) : undefined;
+    const code2 = task.constraint2 ? p6ConstraintLabel({ ...task.constraint2, hard: false }) : undefined;
     const udfs: P6Node[] = [
       // De duurwaarde in P6 is altijd uren. Deze Activity-Text-UDF bewaart apart of OPS de taak als
       // werkdag of als exacte werkuren moet herlezen. P6 zet de UDF-waarde van een activiteit IN de

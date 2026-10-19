@@ -13,7 +13,7 @@ Alle toetscombinaties van de app, gegroepeerd zoals in het venster *Sneltoetsen*
 **Wanneer een toets niet werkt.** Elke regel noemt zijn beperkingen. Drie regels gelden bijna overal:
 
 - In een invoerveld, een keuzelijst of een tekstvak vangt de app geen toetsen af, zodat je gewoon kunt typen. Uitzondering: F5, Ctrl+S, F11 en Esc tijdens de presentatie werken ook in een veld. In de gebouwde app (desktop en de webversie op de site) geldt dat ook voor Ctrl+Shift+S, Ctrl+O en Ctrl+N.
-- Staat er een dialoog of een ander venster open, dan werken de toetsen die hieronder *Niet in een dialoog* heten niet. Dat geldt ook voor de presentatiemodus, de rondleiding, de welkomstdialoog en de vragen die op een antwoord wachten, zoals de toestemming bij het installeren van een extensie.
+- Staat er een dialoog of een ander venster open, dan werken de toetsen die hieronder *Niet in een dialoog* heten niet. Dat geldt ook voor de rondleiding, de welkomstdialoog en de vragen die op een antwoord wachten, zoals de vraag of je wijzigingen wilt opslaan en de toestemming bij het installeren van een extensie. In de presentatiemodus werken de meeste van deze toetsen ook niet. Uitzondering: de bewerktoetsen Ctrl+C, Ctrl+V, Ctrl+Z, Ctrl+Y en Delete/Backspace werken in de presentatie wel.
 - Documentwissels (Ctrl+1 tot en met 9, Ctrl+N, Ctrl+O) werken ook niet zolang *Bestand › Projectinstellingen* wijzigingen bevat die je nog niet met *Toepassen* hebt bevestigd. Verwerp of pas ze eerst toe.
 
 ## Bestand
@@ -32,15 +32,15 @@ De gebouwde app (desktop en de webversie op de site) blokkeert bovendien een aan
 
 ## Bewerken
 
-**Ctrl+C** — *Kopiëren*: kopieert de geselecteerde taken. Alleen met een selectie. In het taakraster kopieert Ctrl+C de geselecteerde cellen; dat regelt het raster zelf.
+**Ctrl+C** — *Kopiëren*: kopieert de geselecteerde taken. Alleen met een selectie. Niet in een dialoog. Niet in *Bestand*, niet op de tabbladen *Rapport* en *IFC* en niet als het volledige resourcepaneel openstaat. In het taakraster kopieert Ctrl+C de geselecteerde cellen; dat regelt het raster zelf.
 
-**Ctrl+V** — *Plakken*: plakt gekopieerde taken. In het taakraster plakt het de cellen.
+**Ctrl+V** — *Plakken*: plakt gekopieerde taken. Niet in een dialoog. Niet in *Bestand*, niet op de tabbladen *Rapport* en *IFC* en niet als het volledige resourcepaneel openstaat, want daar staat de takenlijst niet in beeld. In het taakraster plakt het de cellen.
 
-**Ctrl+Z** — *Ongedaan maken*.
+**Ctrl+Z** — *Ongedaan maken*. Niet in een dialoog: sluit eerst het venster.
 
-**Ctrl+Y** of **Ctrl+Shift+Z** — *Opnieuw*: herhaalt wat je ongedaan maakte.
+**Ctrl+Y** of **Ctrl+Shift+Z** — *Opnieuw*: herhaalt wat je ongedaan maakte. Niet in een dialoog.
 
-**Delete** of **Backspace** — *Verwijderen*: verwijdert de geselecteerde taken. Alleen met een selectie. In een cel van het taakraster wissen Delete en Backspace alleen de celinhoud (zie *Tabel*).
+**Delete** of **Backspace** — *Verwijderen*: verwijdert de geselecteerde taken. Alleen met een selectie. Niet in een dialoog. Niet in *Bestand*, niet op de tabbladen *Rapport* en *IFC* en niet als het volledige resourcepaneel openstaat, want daar staat de takenlijst niet in beeld. In een cel van het taakraster wissen Delete en Backspace alleen de celinhoud (zie *Tabel*).
 
 **F2** — *Bewerken...*: opent de taakdialoog voor de eerste geselecteerde taak. Alleen met een selectie. Niet in een dialoog. In een cel van het taakraster start F2 het bewerken van de cel.
 
