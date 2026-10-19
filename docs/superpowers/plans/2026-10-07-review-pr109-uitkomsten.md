@@ -1692,3 +1692,9 @@ Testversie (release-check, poort 3049) is NIET bijgewerkt met de PR's van vandaa
   "staat achteraan" klopt niet bij sorteren (taak bovenaan) en filteren (soms onzichtbaar) ⇒ eigenaarspunt na de check**;
   zinsvolgorde `ref-meldingen.md:59`; `REFUSAL_KEYS` mist de sleutel; toast blijft na zelf filter uitzetten; weigering
   vlak vóór tabwissel (VERMOED); commentaar, tests, schermbewijs, opruimen. ⇒ korte eigenaarscheck van de toast.
+- **Voorbereiding checkstap #374 (Haiku 5.5):** A De Akkers 4.2 (X 4.1 met Masonry crew + Bricklayers) ⇒ venster klopt,
+  focus *Verplaatsen*, maar **knop *Annuleren* valt 21 px links buiten het venster ("nnuleren") door de lange naam in de
+  primaire knop** ⇒ orkestrator: BLOKKEERT (gewone taaknamen) ⇒ fixronde 4 bij worker (Opus 5.5) + main erin
+  (conflict `taskSlice.ts`). B rehab-2 V3101040 (X V3101010 met 2456/800/80 uur verricht werk) ⇒ oranje blok met drie
+  regels verricht werk + "Verplaatsen kan niet: … heeft REP al", focus en primair op *Annuleren*, *Verplaatsen* uit.
+  Checkstap #375 (toast) gegeven.
