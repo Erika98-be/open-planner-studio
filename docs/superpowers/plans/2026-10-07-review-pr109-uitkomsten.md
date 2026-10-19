@@ -1657,3 +1657,7 @@ Testversie (release-check, poort 3049) is NIET bijgewerkt met de PR's van vandaa
   ×) "De nieuwe taak staat achteraan. Tijdens filteren, groeperen of sorteren kan de app hem niet onder je selectie
   zetten." In-/uitspringen houden de strook. *Wissen* in de toast vraagt een nieuwe `NotificationAction`-soort en is
   alleen veilig als de toast bij een documentwissel verdwijnt ⇒ hangt aan 5b. Bouw samen met 5b in één ronde.
+- **Besluit 5b (#375): optie 3** — eigenaar 2026-10-19: "3". Rode weigeringen (toast én strook) verdwijnen bij een
+  wissel van document en na Ctrl+Z. Orkestrator-invulling: ook na Ctrl+Y (zelfde soort stap); alleen `refusal`, geen
+  echte fouten of infos; elke undo-route (sneltoets, lint). Gevolg 5a: de *Taak*-toast krijgt *Wissen* (veilig, want weg
+  bij documentwissel). ⇒ worker (Opus 5.5) bouwt 5a+5b in #375.
