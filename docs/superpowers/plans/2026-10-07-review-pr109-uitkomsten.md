@@ -1698,3 +1698,8 @@ Testversie (release-check, poort 3049) is NIET bijgewerkt met de PR's van vandaa
   (conflict `taskSlice.ts`). B rehab-2 V3101040 (X V3101010 met 2456/800/80 uur verricht werk) ⇒ oranje blok met drie
   regels verricht werk + "Verplaatsen kan niet: … heeft REP al", focus en primair op *Annuleren*, *Verplaatsen* uit.
   Checkstap #375 (toast) gegeven.
+- **#380 V10 gebouwd** (worker Opus 5.5; 71d909a48, main 7c1c16925 erin zonder conflict, CI groen): één beslissing
+  `durationEditKeepsWork(rule, effortDriven)` (`workTriangle.ts`) voor gedrag én uitleg (afwijking van reviewvoorstel:
+  effort-driven *Vaste duur en werk* volgt de duur); `defaultWorkRule` in de rastercontext; sleutels
+  `workDeviatesFollowsDuration`/`workDeviatesKeepsWork`; 26 locales niet actueel (hash weg), `verify:translations` rood
+  tot de vertaalronde; M1–M3 rood. ⇒ delta-review loopt (reviewer Opus 5.5). Dev-server 3021 van de worker gestopt.
