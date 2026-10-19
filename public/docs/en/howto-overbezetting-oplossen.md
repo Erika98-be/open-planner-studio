@@ -24,7 +24,7 @@ If a task is selected, the histogram shows only the load of that task and only t
 ### 2. Pick a solution
 
 - **More capacity.** If a second bricklayer really is coming, set *Max units* to 2 (see [Managing resources](docs://howto-resources-beheren)). The overallocation is then gone.
-- **Fewer units per day.** Lower the *Units/day* or choose another curve for the assignment (see [Assigning resources with a curve](docs://howto-resource-toewijzen)).
+- **Fewer units per day.** Lower the *Units* or choose another curve for the assignment (see [Assigning resources with a curve](docs://howto-resource-toewijzen)).
 - **Put tasks one after the other.** Add a relation between the two tasks, so that the second only starts once the first is finished (see [Adding relations](docs://howto-relaties-leggen)).
 - **Leveling.** The app makes a task start later.
 
