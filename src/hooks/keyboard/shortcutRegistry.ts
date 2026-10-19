@@ -79,6 +79,10 @@ export function hasBlockingDialogOpen(ui: UIState = useAppStore.getState().ui): 
     // De schemavraag bij opslaan wacht op een keuze; de opslaanroute houdt intussen de
     // schrijfvergrendeling vast.
     ui.pendingIfcSchemaQuestion !== null ||
+    // De sluitvraag ("wijzigingen opslaan?") is modaal, maar gebruikt geen `Dialog` en staat dus
+    // niet op de dialoogstapel. Zonder deze vlag verwijderde Delete een taak terwijl de vraag
+    // openstond, en zette *Opslaan* die verwijdering daarna in het bestand.
+    ui.pendingCloseDocId !== null ||
     // Handmatig koppelwerk in de voortgangsimportdialoog hangt aan taak-id's van
     // ÉÉN document en leeft alleen in de dialoog — een documentwissel moet onmogelijk zijn zolang
     // hij openstaat, niet: dat werk over de wissel heen bewaren.
@@ -106,6 +110,29 @@ export function isShortcutBlockedByDialog(): boolean {
  */
 export function isDocumentLeaveBlocked(): boolean {
   return isShortcutBlockedByDialog() || isBackstageLeaveGuardActive();
+}
+
+/**
+ * Poort voor de bewerktoetsen (Delete/Backspace, Ctrl+C/V/Z/Y/Shift+Z): dicht onder elk modaal
+ * venster, net als {@link isShortcutBlockedByDialog}, maar NIET in de presentatiemodus. De gids
+ * `howto-presentatie` belooft dat Delete en Ctrl+Z daar blijven werken; de presentatie is een
+ * weergave, geen venster.
+ */
+function isEditShortcutBlocked(): boolean {
+  const ui = useAppStore.getState().ui;
+  return isAnyDialogOpen() || hasBlockingDialogOpen({ ...ui, presentationMode: false });
+}
+
+/**
+ * Delete/Backspace/Ctrl+V werken alleen als de planning in beeld is. In Backstage (tabblad `file`)
+ * en op de tabbladen Rapport en IFC staat de takenlijst niet in beeld; daar verwijderde Delete met de
+ * focus op bv. *Terug* of *Exporteer PDF* een taak die de gebruiker niet zag. Ctrl+Z blijft daar wel
+ * werken (Projectinstellingen in Backstage leunt erop). De presentatie toont altijd de Gantt.
+ */
+function isTaskListOutOfView(): boolean {
+  const ui = useAppStore.getState().ui;
+  if (ui.presentationMode) return false;
+  return ui.activeRibbonTab === 'file' || ui.activeRibbonTab === 'report' || ui.activeRibbonTab === 'ifc';
 }
 
 function hasSelection(): boolean {
@@ -220,16 +247,18 @@ export const SHORTCUTS: ShortcutDef[] = [
   },
 
   // --- Bewerken ---
-  // Alle bewerktoetsen hieronder (behalve Escape) zijn dicht zolang een modaal venster openstaat:
-  // anders verwijdert Delete/Backspace met de focus op een knop in het kalendervenster of in
-  // *Taak bewerken* de geselecteerde taak áchter het venster, en werkt Ctrl+Z/Y/V op een planning
-  // die de gebruiker niet ziet. Tekstvelden in het venster vallen al eerder af (`isTypingTarget`).
+  // Alle bewerktoetsen hieronder (behalve Escape) zijn dicht zolang een modaal venster openstaat
+  // (`isEditShortcutBlocked`; de presentatiemodus telt daar bewust niet mee): anders verwijdert
+  // Delete/Backspace met de focus op een knop in het kalendervenster of in *Taak bewerken* de
+  // geselecteerde taak áchter het venster, en werkt Ctrl+Z/Y/V op een planning die de gebruiker niet
+  // ziet. Delete/Backspace/Ctrl+V zijn ook dicht als de takenlijst niet in beeld is
+  // (`isTaskListOutOfView`). Tekstvelden vallen al eerder af (`isTypingTarget`).
   {
     id: 'edit.copy',
     combo: { key: 'c', mod: true },
     category: 'edit',
     labelKey: 'shortcuts.edit.copy',
-    when: () => hasSelection() && !isShortcutBlockedByDialog(),
+    when: () => hasSelection() && !isEditShortcutBlocked(),
     run: (store) => store.copyTasks(),
   },
   {
@@ -237,7 +266,7 @@ export const SHORTCUTS: ShortcutDef[] = [
     combo: { key: 'v', mod: true },
     category: 'edit',
     labelKey: 'context.paste',
-    when: () => !isShortcutBlockedByDialog(),
+    when: () => !isEditShortcutBlocked() && !isTaskListOutOfView(),
     run: (store) => store.pasteTasks(),
   },
   {
@@ -245,7 +274,7 @@ export const SHORTCUTS: ShortcutDef[] = [
     combo: { key: 'z', mod: true },
     category: 'edit',
     labelKey: 'menu:commands.undo',
-    when: () => !isShortcutBlockedByDialog(),
+    when: () => !isEditShortcutBlocked(),
     run: COMMANDS.undo.run,
   },
   {
@@ -253,7 +282,7 @@ export const SHORTCUTS: ShortcutDef[] = [
     combo: { key: 'y', mod: true },
     category: 'edit',
     labelKey: 'menu:commands.redo',
-    when: () => !isShortcutBlockedByDialog(),
+    when: () => !isEditShortcutBlocked(),
     run: COMMANDS.redo.run,
   },
   {
@@ -261,7 +290,7 @@ export const SHORTCUTS: ShortcutDef[] = [
     combo: { key: 'z', mod: true, shift: true },
     category: 'edit',
     labelKey: 'menu:commands.redo', // zelfde actie/label als edit.redo — alternatieve combinatie
-    when: () => !isShortcutBlockedByDialog(),
+    when: () => !isEditShortcutBlocked(),
     run: COMMANDS.redo.run,
   },
   {
@@ -269,7 +298,7 @@ export const SHORTCUTS: ShortcutDef[] = [
     combo: { key: 'Delete' },
     category: 'edit',
     labelKey: 'context.delete',
-    when: () => hasSelection() && !isShortcutBlockedByDialog(),
+    when: () => hasSelection() && !isEditShortcutBlocked() && !isTaskListOutOfView(),
     run: COMMANDS.delete.run,
   },
   {
@@ -277,7 +306,7 @@ export const SHORTCUTS: ShortcutDef[] = [
     combo: { key: 'Backspace' },
     category: 'edit',
     labelKey: 'context.delete',
-    when: () => hasSelection() && !isShortcutBlockedByDialog(),
+    when: () => hasSelection() && !isEditShortcutBlocked() && !isTaskListOutOfView(),
     run: COMMANDS.delete.run,
   },
   // Let op volgorde: MOET na `view.exitFullscreen` staan (zie bestandskop).

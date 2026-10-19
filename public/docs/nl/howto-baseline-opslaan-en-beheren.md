@@ -28,7 +28,7 @@ Pas in de lijst de naam aan. De wijziging geldt meteen; je hoeft niet op *Opslaa
 
 ### Een baseline verwijderen
 
-Klik in de lijst op het prullenbakje bij de baseline. Verwijder je de actieve baseline, dan vraagt de app *De actieve baseline verwijderen?*. Daarna wordt de nieuwste baseline die overblijft de actieve. Is er geen andere, dan is er geen actieve baseline meer en verdwijnt de overlay. Met Ctrl+Z haal je een verwijderde baseline terug.
+Klik in de lijst op het prullenbakje bij de baseline. Verwijder je de actieve baseline, dan vraagt de app *De actieve baseline verwijderen?*. Daarna wordt de nieuwste baseline die overblijft de actieve. Is er geen andere, dan is er geen actieve baseline meer en verdwijnt de overlay. Een verwijderde baseline haal je terug met Ctrl+Z. Sluit eerst het venster; in een venster werkt Ctrl+Z niet.
 
 ### Afwijkingen in de takentabel
 

@@ -87,3 +87,74 @@ test('zonder venster verwijdert Delete de geselecteerde taak wel', async ({ page
   await expect.poll(() => taskCount(page)).toBe(2);
   expect(await page.evaluate((taskId) => window.__OPS__!.store.getState().tasks.some(t => t.id === taskId), id)).toBe(false);
 });
+
+test('in de presentatiemodus verwijdert Delete de taak en zet Ctrl+Z hem terug', async ({ page, ops: _ops }) => {
+  // De gids `howto-presentatie` belooft dit; de presentatie is een weergave, geen venster.
+  const id = await seedAndSelect(page);
+  await page.evaluate(() => window.__OPS__!.store.getState().setPresentationMode(true));
+  await expect.poll(() => page.evaluate(() => window.__OPS__!.store.getState().ui.presentationMode)).toBe(true);
+  await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+
+  await page.keyboard.press('Delete');
+  await expect.poll(() => taskCount(page)).toBe(2);
+  await page.keyboard.press('Control+z');
+  await expect.poll(() => taskCount(page)).toBe(3);
+  expect(await page.evaluate((taskId) => window.__OPS__!.store.getState().tasks.some(t => t.id === taskId), id)).toBe(true);
+});
+
+test('Delete en Backspace met de sluitvraag open verwijderen de taak niet', async ({ page, ops: _ops }) => {
+  await seedAndSelect(page);
+  await page.evaluate(() => {
+    const s = window.__OPS__!.store.getState();
+    s.setUI({ pendingCloseDocId: s.activeDocumentId });
+  });
+  const dialog = page.locator('[data-ops-close-dialog]');
+  await expect(dialog).toBeVisible();
+
+  await pressDeleteKeys(page, dialog.getByRole('button', { name: 'Cancel', exact: true }));
+  expect(await taskCount(page)).toBe(3);
+  await expect(dialog).toBeVisible();
+});
+
+test('in Backstage verwijdert Delete geen taak, maar zet Ctrl+Z wel terug', async ({ page, ops: _ops }) => {
+  await seedAndSelect(page);
+  // Eerst een verwijdering in de planning, zodat Ctrl+Z in Backstage iets terug te zetten heeft.
+  await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+  await page.keyboard.press('Delete');
+  await expect.poll(() => taskCount(page)).toBe(2);
+  await page.evaluate(() => {
+    const s = window.__OPS__!.store.getState();
+    s.selectTask(s.tasks[0]!.id);
+    s.setUI({ activeRibbonTab: 'file', backstageSection: 'recent' });
+  });
+
+  await pressDeleteKeys(page, page.getByRole('button', { name: 'Back', exact: true }).first());
+  expect(await taskCount(page)).toBe(2);
+
+  await page.keyboard.press('Control+z');
+  await expect.poll(() => taskCount(page)).toBe(3);
+});
+
+test('op het tabblad Rapport verwijderen Delete en Backspace geen taak en plakt Ctrl+V niets', async ({ page, ops: _ops }) => {
+  await seedAndSelect(page);
+  await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+  await page.keyboard.press('Control+c');
+  await page.evaluate(() => window.__OPS__!.store.getState().setUI({ activeRibbonTab: 'report' }));
+
+  await pressDeleteKeys(page, page.getByRole('button', { name: 'Export PDF' }).first());
+  expect(await taskCount(page)).toBe(3);
+  // Apart meten: zou Delete toch werken, dan zet een plakactie het aantal anders weer op 3.
+  await page.keyboard.press('Control+v');
+  expect(await taskCount(page)).toBe(3);
+});
+
+test('op het tabblad IFC verwijdert Delete geen taak', async ({ page, ops: _ops }) => {
+  await seedAndSelect(page);
+  await page.evaluate(() => {
+    window.__OPS__!.store.getState().setUI({ activeRibbonTab: 'ifc' });
+    (document.activeElement as HTMLElement | null)?.blur();
+  });
+  await page.keyboard.press('Delete');
+  await page.keyboard.press('Backspace');
+  expect(await taskCount(page)).toBe(3);
+});
