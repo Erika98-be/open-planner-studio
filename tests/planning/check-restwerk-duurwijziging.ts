@@ -33,6 +33,9 @@ import { captureTriangle, remainingMinutesOf, settleDurationEdit, totalMinutesOf
 import { workDaySlotsToPeriods } from '@/engine/contour/contourEdit';
 import { assignmentDayUnits } from '@/engine/scheduler/ResourceLoad';
 import { createDefaultTaskTime, taskCalendarHoursPerDay } from '@/utils/taskDefaults';
+import { createTaskGridAdapter } from '@/engine/taskGrid/taskGridAdapter';
+import { taskColumnId } from '@/engine/taskGrid/fieldIds';
+import { effectiveCalendarOf, effHoursPerDay } from '@/utils/taskDuration';
 import type { CellEditIntent } from '@/types/taskGrid';
 import type { Task } from '@/types/task';
 import type { ResourceAssignment } from '@/types/resource';
@@ -397,6 +400,59 @@ openFixture();
   eq('o0 voorwaarde: restwerk = de contoursom, 320 h', asg('7500').remainingWorkMinutes, 320 * H);
   setHours('E-1010', 72);
   eq('o1 duur 80 → 72 h met contour: geen melding', workNotices(), []);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+console.log('-- (p) tabel: ⚠ in de kolom Resterend werk (eigenaarsbesluit 2026-10-19, optie 1) --');
+{
+  // De echte rasteradapter met de kolom `assignment.remainingWork`. De tekst komt uit een stub die
+  // sleutel en waarden teruggeeft, zodat de check ziet WELKE uitleg met WELKE getallen er staat.
+  const warningOf = (code: string) => {
+    const s = S();
+    const adapter = createTaskGridAdapter({
+      projectId: s.project.id, tasks: s.tasks, sequences: s.sequences, cpmResult: s.cpmResult,
+      assignments: s.assignments, resources: s.resources, baselines: s.baselines,
+      activityCodeTypes: s.activityCodeTypes, customFieldDefs: s.customFieldDefs, customTaskTypes: s.customTaskTypes,
+      scheduleStale: s.scheduleStale, wbsAutoNumber: false, taskTypesUnlocked: true,
+      effectiveHoursPerDay: (t) => effHoursPerDay(effectiveCalendarOf(t, s.calendar, s.calendars)),
+      labelForColumn: (k) => k,
+      labelForText: (k, v) => (k.startsWith('properties.assignments.') ? `${k.slice('properties.assignments.'.length)}${JSON.stringify(v ?? {})}` : k),
+      numberLocale: 'nl', surfaceId: 'full-task-grid', rows: s.viewRows, selectedTaskIds: [],
+    });
+    const row = s.viewRows.find((r) => r.kind === 'task' && r.task.id === byCode(code).id)!;
+    return adapter.getCell(row.rowKey, taskColumnId('assignment.remainingWork'))?.warning ?? null;
+  };
+  openFixture();
+  eq('p1 E-1010 (320 h op 80 h, één toewijzing): ⚠ met de uitleg van het paneel',
+    warningOf('E-1010'), { kind: 'remaining-work-deviates', text: 'workDeviatesHint{"stored":320,"derived":80}' });
+  eq('p2 E-1060 (restwerk klopt): geen ⚠', warningOf('E-1060'), null);
+  eq('p3 Roads A15131 (geen toewijzing): geen ⚠', warningOf('A15131'), null);
+  setHours('E-1010', 72);
+  eq('p4 na een duurwijziging rekent de app het restwerk uit: ⚠ weg', warningOf('E-1010'), null);
+  S().undo();
+  eq('p5 na Ctrl+Z: ⚠ terug', warningOf('E-1010'), { kind: 'remaining-work-deviates', text: 'workDeviatesHint{"stored":320,"derived":80}' });
+
+  // Twee toewijzingen, één wijkt af: één ⚠ met per afwijkende toewijzing naam en getallen.
+  const e1020 = byCode('E-1020');
+  S().assignResource(e1020.id, asg('7500').resourceId, 1);
+  eq('p6 E-1020 met twee toewijzingen (Design Engineer 2 wijkt af): één ⚠, naam en getallen',
+    warningOf('E-1020'), {
+      kind: 'remaining-work-deviates',
+      text: `workDeviatesMany${JSON.stringify({ lines: `workDeviatesLine${JSON.stringify({ name: 'Design Engineer 2', stored: 160, derived: 40 })}` })}`,
+    });
+
+  // Contour: die vormt de inzet per dag zelf — dezelfde uitzondering als het paneel.
+  openFixture();
+  const t = byCode('E-1010');
+  S().setAssignmentContour(asg('7500').id, workDaySlotsToPeriods(Array.from({ length: 10 }, () => 32 * H), t.splitGaps, 8 * H));
+  eq('p7 voorwaarde: restwerk 320 h op 80 h, nu met contour', [asg('7500').remainingWorkMinutes, byCode('E-1010').time.remainingMinutes], [320 * H, 80 * H]);
+  eq('p8 met contour: geen ⚠ (zoals het paneel)', warningOf('E-1010'), null);
+
+  // Materiaal telt niet mee (het paneel toont daar "—").
+  openFixture();
+  const engineer = asg('7500').resourceId;
+  useAppStore.setState((s) => { s.resources.find((r) => r.id === engineer)!.type = 'MATERIAL'; });
+  eq('p9 materiaal met afwijkend restwerk: geen ⚠', warningOf('E-1010'), null);
 }
 
 if (diffs.length > 0) {

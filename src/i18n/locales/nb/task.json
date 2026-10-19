@@ -458,7 +458,7 @@
       "work": "Arbeid (gjenst.)",
       "workHint": "Gjenstående arbeid i timer. Arbeidsregelen avgjør om varighet eller tildelingsenheter endrer seg.",
       "workDeviates": "Avviker fra tildelingsenheter × varighet",
-      "workDeviatesHint": "Lagret arbeid {{stored}} t avviker fra tildelingsenheter × gjenstående varighet ({{derived}} t). Histogrammet følger det lagrede arbeidet over hele aktivitetens varighet. Tildelingsenhetene blir stående slik filen ga dem.",
+      "workDeviatesHint": "Lagret arbeid {{stored}} t avviker fra tildelingsenheter × gjenstående varighet ({{derived}} t). Histogrammet følger det lagrede arbeidet over hele aktivitetens varighet. Tildelingsenhetene blir stående slik filen ga dem. Hvis du endrer varigheten, regner appen det ut på nytt.",
       "locked": "Beskyttet av arbeidsregelen {{rule}}"
     },
     "notes": {

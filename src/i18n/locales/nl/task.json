@@ -478,7 +478,9 @@
       "work": "Werk (rest)",
       "workHint": "Resterend werk in uren; de werkregel bepaalt of de duur of de inzet meebeweegt.",
       "workDeviates": "Wijkt af van inzet × duur",
-      "workDeviatesHint": "Opgeslagen werk {{stored}} u wijkt af van inzet × resterende duur ({{derived}} u). Het histogram volgt het opgeslagen werk over de hele taakduur. De app past de inzet niet aan om het verschil weg te werken.",
+      "workDeviatesHint": "Opgeslagen werk {{stored}} u wijkt af van inzet × resterende duur ({{derived}} u). Het histogram volgt het opgeslagen werk over de hele taakduur. De app past de inzet niet aan om het verschil weg te werken. Wijzig je de duur, dan rekent de app het opnieuw uit.",
+      "workDeviatesMany": "Opgeslagen werk wijkt af van inzet × resterende duur:\n{{lines}}\nWijzig je de duur, dan rekent de app het opnieuw uit.",
+      "workDeviatesLine": "{{name}}: {{stored}} u (inzet × resterende duur: {{derived}} u)",
       "locked": "Beschermd door de werkregel {{rule}}"
     },
     "notes": {

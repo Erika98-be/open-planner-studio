@@ -1,5 +1,7 @@
 import { WORK_RULES } from '@/types/workRule';
 import { remainingMinutesOf, workRuleApplies } from '@/engine/work/workRuleApply';
+import { assignmentWorkDeviation } from '@/engine/work/assignmentWorkDeviation';
+import { matchContoursToAssignments } from '@/engine/contour/contourEngine';
 import type { Baseline, BaselineTask } from '@/types/baseline';
 import { RESOURCE_CURVES, type ResourceAssignment, type ResourceCurve } from '@/types/resource';
 import type { ActivityCodeType, CustomFieldDef, CustomFieldValue } from '@/types/structure';
@@ -11,6 +13,7 @@ import type {
   GridResult,
   GridWriteIntent,
   RecordedTaskAxis,
+  TaskCellWarning,
   TaskAssignmentToken,
   TaskColumnCategory,
   TaskColumnContext,
@@ -278,6 +281,7 @@ function editableColumn(config: EditableColumnConfig): TaskColumnDescriptor {
     copy,
     editText: config.editText,
     tooltip: config.tooltip,
+    ...(config.warning ? { warning: config.warning } : {}),
     parse: config.parse,
     validate: config.validate,
     planWrite,
@@ -709,6 +713,38 @@ function assignmentWorkTokens(task: Task, ctx: TaskColumnContext): TaskAssignmen
   }));
 }
 
+/**
+ * Het ⚠ in de kolom *Resterend werk (uren)* (eigenaarsbesluit 2026-10-19, optie 1): dezelfde toets als
+ * het ⚠ naast *Werk (rest)* in het paneel Toewijzingen (`TaskAssignmentsSection`), dus
+ * `assignmentWorkDeviation` met de contouruitzondering, zonder materiaal en alleen waar de regel werkt.
+ * Eén toewijzing in de cel ⇒ precies de uitleg van het paneel. Meer toewijzingen ⇒ één ⚠ met per
+ * afwijkende toewijzing de naam en de twee getallen, zodat je ziet welke het is.
+ */
+function remainingWorkWarning(task: Task, ctx: TaskColumnContext): TaskCellWarning | null {
+  if (!workRuleApplies(task)) return null;
+  const own = assignments(task, ctx);
+  if (own.length === 0) return null;
+  const hoursPerDay = effectiveHoursPerDay(task, ctx);
+  const contourOf = matchContoursToAssignments(task.timephasedContours, own);
+  const hits: { name: string; stored: number; derived: number }[] = [];
+  for (const assignment of own) {
+    const resource = ctx.resourcesById.get(assignment.resourceId);
+    if (resource?.type === 'MATERIAL') continue;
+    const deviation = assignmentWorkDeviation(
+      task, assignment.unitsPerDay, assignment.remainingWorkMinutes, hoursPerDay, contourOf.has(assignment.id),
+    );
+    if (deviation) hits.push({ name: resource?.name ?? assignment.resourceId, ...deviation });
+  }
+  if (hits.length === 0) return null;
+  const label = (key: string, values: Readonly<Record<string, string | number>>) => ctx.labelForText?.(key, values) ?? '';
+  const text = own.length === 1
+    ? label('properties.assignments.workDeviatesHint', { stored: hits[0].stored, derived: hits[0].derived })
+    : label('properties.assignments.workDeviatesMany', {
+      lines: hits.map(hit => label('properties.assignments.workDeviatesLine', hit)).join('\n'),
+    });
+  return { kind: 'remaining-work-deviates', text };
+}
+
 function assignmentById(task: Task, ctx: TaskColumnContext, token: TaskAssignmentToken): ResourceAssignment {
   return assignments(task, ctx).find(item => item.id === token.assignmentId)
     ?? { id: token.assignmentId ?? '', taskId: task.id, resourceId: token.resourceId, unitsPerDay: token.unitsPerDay };
@@ -1128,6 +1164,8 @@ function fixedAssignmentColumns(): TaskColumnDescriptor[] {
       ),
       editText: (task, ctx) => assignmentWorkTokens(task, ctx)
         .map(item => `${assignmentLabel(assignmentById(task, ctx, item), ctx)}: ${workHoursText(item.remainingWorkMinutes)}`).join('; '),
+      // ⚠ bij opgeslagen restwerk dat afwijkt van inzet × restduur, zoals in het paneel Toewijzingen.
+      warning: (_value, task, ctx) => remainingWorkWarning(task, ctx),
       parse: parseAssignmentWork,
       validate: (value, task, ctx) => validateAssignmentWorkTokens(value, task, ctx),
       planWrite: (value, task) => success([{

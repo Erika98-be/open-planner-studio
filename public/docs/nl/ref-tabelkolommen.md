@@ -69,7 +69,7 @@ Standaard toont de tabel naast de Gantt *WBS*, *Taaknaam* en *Duur*. De tabel op
 - **Toewijzingscurve** — de curve per resource, als `Naam: Uniform`. Bewerkbaar bij een taak met toewijzingen.
 - **Start werkvenster** en **Einde werkvenster** — het werkvenster per resource, uit een geïmporteerd bestand, als `Naam: datum`. Alleen-lezen.
 - **Begroot werk (uren)** en **Verricht werk (uren)** — het begrote en verrichte werk per resource in uren, als `Naam: 12`, uit een geïmporteerd bestand. Alleen-lezen.
-- **Resterend werk (uren)** — het resterende werk per resource in uren, als `Naam: 6`: het opgeslagen werk, anders restduur × inzet. Bewerkbaar bij een taak met toewijzingen waarop een werkregel werkt. Alleen zichtbaar in de kiezer als de werkregels zichtbaar zijn.
+- **Resterend werk (uren)** — het resterende werk per resource in uren, als `Naam: 6`: het opgeslagen werk, anders restduur × inzet. Bewerkbaar bij een taak met toewijzingen waarop een werkregel werkt. Alleen zichtbaar in de kiezer als de werkregels zichtbaar zijn. Een geel ⚠ in de cel betekent dat het opgeslagen werk afwijkt van inzet × restduur, net als het ⚠ bij *Werk (rest)* in het taakpaneel.
 
 ## Voortgang
 

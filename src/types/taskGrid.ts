@@ -185,7 +185,9 @@ export type TaskColumnDescriptor = TaskColumnDescriptorFields & TaskColumnLabelS
 /** Een kleine ⚠ in een cel, met uitleg als tooltip. `kind` geeft de cel een vaste selector
  *  (`data-ops-<kind>`); `text` is de vertaalde uitleg. */
 export interface TaskCellWarning {
-  kind: 'baseline-old-day';
+  /** Wordt `data-ops-<kind>` op het ⚠ (`GridCell`). `remaining-work-deviates`: opgeslagen restwerk wijkt
+   *  af van inzet × restduur (kolom *Resterend werk*, zelfde toets als het paneel Toewijzingen). */
+  kind: 'baseline-old-day' | 'remaining-work-deviates';
   text: string;
 }
 

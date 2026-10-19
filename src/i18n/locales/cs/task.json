@@ -466,7 +466,7 @@
       "work": "Práce (zbývá)",
       "workHint": "Zbývající práce v hodinách. Pravidlo pevné veličiny určuje, zda se pohne doba trvání, nebo jednotky přiřazení.",
       "workDeviates": "Liší se od jednotek přiřazení × doby trvání",
-      "workDeviatesHint": "Uložená práce {{stored}} h se liší od jednotek přiřazení × zbývající doby trvání ({{derived}} h). Histogram sleduje uloženou práci po celou dobu trvání úkolu; jednotky přiřazení zůstávají tak, jak je uvedl soubor.",
+      "workDeviatesHint": "Uložená práce {{stored}} h se liší od jednotek přiřazení × zbývající doby trvání ({{derived}} h). Histogram sleduje uloženou práci po celou dobu trvání úkolu; jednotky přiřazení zůstávají tak, jak je uvedl soubor. Při změně doby trvání ji aplikace přepočítá.",
       "locked": "Chráněno pravidlem pevné veličiny {{rule}}"
     },
     "notes": {

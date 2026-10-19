@@ -117,3 +117,59 @@ test('tabel: één waarde plakken in twee rijen ⇒ beide herrekend, één meldi
   await expect.poll(() => workOf(page, firstId)).toEqual({ duration: 80 * H, rest: 80 * H, work: 320 * H });
   await expect.poll(() => workOf(page, secondId)).toEqual({ duration: 40 * H, rest: 40 * H, work: 160 * H });
 });
+
+// Tabel-⚠ (eigenaarsbesluit 2026-10-19, optie 1): de kolom *Resterend werk (uren)* toont hetzelfde ⚠
+// als *Werk (rest)* in het paneel Toewijzingen, met dezelfde uitleg als title. De kolom zetten is een
+// fixture (dezelfde voorkeur als via de kolomkiezer); de duur typen en Ctrl+Z zijn echte toetsen.
+const HINT_320_80 = new RegExp(`^(${[
+  'Opgeslagen werk 320 u wijkt af van inzet × resterende duur (80 u). Het histogram volgt het opgeslagen werk over de hele taakduur. De app past de inzet niet aan om het verschil weg te werken. Wijzig je de duur, dan rekent de app het opnieuw uit.',
+  'Stored work 320 h differs from units × remaining duration (80 h). The histogram follows the stored work across the whole task duration. The app does not change the units to remove the difference. If you change the duration, the app recalculates the work.',
+].map(text => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})$`);
+
+test('tabel: ⚠ in Resterend werk bij afwijkend restwerk, met de uitleg van het paneel; weg na een duurwijziging, terug na Ctrl+Z', async ({ page, ops: _ops }) => {
+  const [deviatingId, okId] = await seed(page, [
+    { name: 'Mobilise Design Team', hours: 80, workHours: 320 },
+    { name: 'Klopt al', hours: 40, workHours: 40 },
+  ]);
+  await page.evaluate(() => {
+    const s = window.__OPS__!.store.getState();
+    const columns = s.taskGridSurfaces['full-task-grid'].columns;
+    s.setTaskGridColumns('full-task-grid', [
+      ...columns,
+      { id: 'assignment.remainingWork', width: 200, pinned: false } as unknown as (typeof columns)[number],
+    ]);
+  });
+  await page.getByRole('button', { name: /^(Table|Tabel)$/ }).click();
+  const cell = (id: string, column: string) => page.locator(
+    `[data-task-grid-surface-id="full-task-grid"] [data-grid-row-key="${id}"][data-grid-column-id="${column}"]`,
+  );
+  const warning = (id: string) => cell(id, 'assignment.remainingWork').locator('[data-ops-remaining-work-deviates]');
+
+  await expect(cell(deviatingId, 'assignment.remainingWork')).toContainText('Design Engineer: 320');
+  await expect(warning(deviatingId)).toHaveCount(1);
+  await expect(warning(deviatingId)).toHaveAttribute('title', HINT_320_80);
+  await expect(warning(deviatingId)).toHaveAttribute('aria-label', HINT_320_80);
+  await expect(warning(okId)).toHaveCount(0);
+
+  // Dezelfde tekst als het ⚠ in het paneel Toewijzingen.
+  await page.evaluate((id) => window.__OPS__!.store.getState().selectTask(id), deviatingId);
+  const panelWarning = page.locator('[data-ops-assignment-work-deviates]');
+  await expect(panelWarning).toHaveCount(1);
+  expect(await panelWarning.getAttribute('title')).toBe(await warning(deviatingId).getAttribute('title'));
+
+  // Duur 80 → 72 h in de tabel: de app rekent het restwerk opnieuw uit, het ⚠ verdwijnt.
+  const duration = cell(deviatingId, 'task.time.scheduleDuration');
+  await duration.click();
+  await page.keyboard.press('Enter');
+  await duration.locator('input').fill('72h');
+  await page.keyboard.press('Enter');
+  await expect.poll(() => workOf(page, deviatingId)).toEqual({ duration: 72 * H, rest: 72 * H, work: 72 * H });
+  await expect(cell(deviatingId, 'assignment.remainingWork')).toContainText('Design Engineer: 72');
+  await expect(warning(deviatingId)).toHaveCount(0);
+
+  // Ctrl+Z: 320 h en het ⚠ terug.
+  await page.keyboard.press('Control+z');
+  await expect.poll(() => workOf(page, deviatingId)).toEqual({ duration: 80 * H, rest: 80 * H, work: 320 * H });
+  await expect(warning(deviatingId)).toHaveCount(1);
+  await expect(warning(deviatingId)).toHaveAttribute('title', HINT_320_80);
+});

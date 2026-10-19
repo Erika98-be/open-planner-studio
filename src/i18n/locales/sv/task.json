@@ -458,7 +458,7 @@
       "work": "Arbete (kvar)",
       "workHint": "Återstående arbete i timmar. Arbetsregeln avgör om varaktighet eller tilldelningsenheter ändras.",
       "workDeviates": "Avviker från tilldelningsenheter × varaktighet",
-      "workDeviatesHint": "Sparat arbete {{stored}} h avviker från tilldelningsenheter × återstående varaktighet ({{derived}} h). Histogrammet följer det sparade arbetet över hela uppgiftens varaktighet. Tilldelningsenheterna behålls som filen angav dem.",
+      "workDeviatesHint": "Sparat arbete {{stored}} h avviker från tilldelningsenheter × återstående varaktighet ({{derived}} h). Histogrammet följer det sparade arbetet över hela uppgiftens varaktighet. Tilldelningsenheterna behålls som filen angav dem. Om du ändrar varaktigheten räknar appen om det.",
       "locked": "Skyddad av arbetsregeln {{rule}}"
     },
     "notes": {

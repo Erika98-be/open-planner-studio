@@ -458,7 +458,7 @@
       "work": "Munka (hátr.)",
       "workHint": "A hátralévő munka órában van megadva; a munkaszabály dönti el, hogy az időtartam vagy a hozzárendelt mennyiség változik.",
       "workDeviates": "Eltér a hozzárendelt mennyiség × időtartam szorzattól",
-      "workDeviatesHint": "A mentett munka {{stored}} óra eltér a hozzárendelt mennyiség × hátralévő időtartam szorzatától ({{derived}} óra). A hisztogram a mentett munkát követi a tevékenység teljes időtartamán; a hozzárendelt mennyiség a fájlban megadott értéken marad.",
+      "workDeviatesHint": "A mentett munka {{stored}} óra eltér a hozzárendelt mennyiség × hátralévő időtartam szorzatától ({{derived}} óra). A hisztogram a mentett munkát követi a tevékenység teljes időtartamán; a hozzárendelt mennyiség a fájlban megadott értéken marad. Az időtartam módosításakor az alkalmazás újraszámolja a munkát.",
       "locked": "Védett a(z) {{rule}} munkaszabály által"
     },
     "notes": {

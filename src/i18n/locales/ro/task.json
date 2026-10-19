@@ -462,7 +462,7 @@
       "work": "Lucru (rămas)",
       "workHint": "Lucru rămas în ore; regula de lucru stabilește dacă se modifică durata sau unitățile de atribuire.",
       "workDeviates": "Diferă de unități de atribuire × durată",
-      "workDeviatesHint": "Lucrul salvat {{stored}} h diferă de unități de atribuire × durata rămasă ({{derived}} h). Histograma urmează lucrul salvat pe toată durata activității; unitățile de atribuire rămân cum le-a dat fișierul.",
+      "workDeviatesHint": "Lucrul salvat {{stored}} h diferă de unități de atribuire × durata rămasă ({{derived}} h). Histograma urmează lucrul salvat pe toată durata activității; unitățile de atribuire rămân cum le-a dat fișierul. La modificarea duratei, aplicația îl recalculează.",
       "locked": "Protejat de regula de lucru {{rule}}"
     },
     "notes": {

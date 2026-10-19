@@ -463,7 +463,7 @@
       "work": "Trabajo (rest.)",
       "workHint": "Trabajo restante en horas; la regla de trabajo decide si se mueve la duración o las unidades.",
       "workDeviates": "Difiere de unidades × duración",
-      "workDeviatesHint": "El trabajo guardado {{stored}} h difiere de unidades × duración restante ({{derived}} h). El histograma sigue el trabajo guardado durante toda la tarea; las unidades quedan como las dio el archivo.",
+      "workDeviatesHint": "El trabajo guardado {{stored}} h difiere de unidades × duración restante ({{derived}} h). El histograma sigue el trabajo guardado durante toda la tarea; las unidades quedan como las dio el archivo. Si cambia la duración, la aplicación lo recalcula.",
       "locked": "Protegido por la regla de trabajo {{rule}}"
     },
     "notes": {
