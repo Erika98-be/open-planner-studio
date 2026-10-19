@@ -1485,3 +1485,8 @@ Testversie (release-check, poort 3049) is NIET bijgewerkt met de PR's van vandaa
   rechtgezet door de orkestrator (d65eaf1e2). VERVOLG in de PR-body. **Fout op main gevonden:** Miraya.xml (MSPDI) verliest
   planningsinvoer bij IFC-rondgang (64 taken, mijlpaal 23-01-2027 → 08-06-2027) ⇒ expert `claude/ifc-rondgang-miraya`.
 - Besluit tabel-markering (punt 2) voorgelegd: 1 ⚠ in de cel / 2 berekende waarde erachter / 3 eigen kolom; aanbeveling 1.
+- **#374 fixronde 3 klaar** (ef5a565f5, CI groen; ook F5/Ctrl+S in dev tegengehouden; zes mutanten) ⇒ hercheck loopt.
+- **Review #377: JA** (geen BLOKKEERT). Bevinding 1 (voortgangslijn in uurmodus vergelijkt per dag ⇒ achterlopende taak
+  op de statusdag lijkt op schema; komt door deze PR) + dubbele modusregel (`isHourCalendar` in `subdayIo.ts:553`) +
+  PR-tekst ⇒ kleine ronde bij de maker. Rest VERVOLG (verborgen tijd in `taskMutationRules.ts`, printlabel, tijdveld
+  zonder statusdatum, test dialoog, opruimen).
