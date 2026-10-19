@@ -1703,3 +1703,7 @@ Testversie (release-check, poort 3049) is NIET bijgewerkt met de PR's van vandaa
   effort-driven *Vaste duur en werk* volgt de duur); `defaultWorkRule` in de rastercontext; sleutels
   `workDeviatesFollowsDuration`/`workDeviatesKeepsWork`; 26 locales niet actueel (hash weg), `verify:translations` rood
   tot de vertaalronde; M1–M3 rood. ⇒ delta-review loopt (reviewer Opus 5.5). Dev-server 3021 van de worker gestopt.
+- **Checkstap #375 (toast bij *Taak*): goed** — eigenaar 2026-10-19: "perfect" (ook de tekst bij Resourcediagram;
+  reviewpunt "achteraan bij sorteren" blijft VERVOLG). **#375 gemerged in main → 4c747d73a** (kop bfdced4bd, CI 16/16,
+  delta-review JA). ⇒ #380 moet nu main erin (bekend conflict met #375). Volgende checkstap: #376 + punt 7 (plek
+  *Taaktypes gebruiken*); Haiku 5.5 zet de links klaar.
