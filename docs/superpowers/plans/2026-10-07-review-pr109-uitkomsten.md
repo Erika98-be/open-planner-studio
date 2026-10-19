@@ -1707,3 +1707,8 @@ Testversie (release-check, poort 3049) is NIET bijgewerkt met de PR's van vandaa
   reviewpunt "achteraan bij sorteren" blijft VERVOLG). **#375 gemerged in main → 4c747d73a** (kop bfdced4bd, CI 16/16,
   delta-review JA). ⇒ #380 moet nu main erin (bekend conflict met #375). Volgende checkstap: #376 + punt 7 (plek
   *Taaktypes gebruiken*); Haiku 5.5 zet de links klaar.
+- **Delta-review #380 V10: JA** (reviewer Opus 5.5; extractie zuiver, effort-driven-keuze klopt). VERVOLG in de PR:
+  projectstandaard in de UI ongetest (2 mutanten overleven), voltooide taak, *Vast werk* met restwerk 0, tekst "nieuwe
+  duur" vs "nieuwe restduur" (tekstvraag), slotje vs ⚠ bij effort-driven. **Vóór main: main erin** (6 bestanden,
+  additief). Eigenaar vroeg een sessie op de aia-server (GPT-6.1-Sol) die main erin merget; T3-tools hier reiken alleen
+  de laptop-omgeving, SSH naar aia09-mp50 geweigerd ⇒ kant-en-klare opdracht aan de eigenaar gegeven.
