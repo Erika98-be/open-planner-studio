@@ -47,7 +47,7 @@ Installed apps update themselves when a new version is out (Windows, macOS, `.de
 - **Works with your existing files.** Open Microsoft Project (`.mpp`, `.xml`) and Primavera P6 (`.xer`, `.xml`) files, and export to MS Project XML, P6 XML and CSV.
 - **Scheduling rules you can choose.** Calculate with Primavera P6, Microsoft Project or Open Planner Studio conventions, per project.
 - **Built for construction.** Public holidays, building-trade holidays, work calendars, inspection milestones, phasing, resource levelling.
-- **AI-ready.** A built-in MCP server lets an AI assistant read and edit your schedule, with safety switches you control.
+- **AI assistants.** A built-in MCP server lets an AI assistant read and edit your schedule, with safety switches you control.
 - **Multilingual.** 28 languages, including right-to-left Arabic and Persian.
 
 ## Screenshots
@@ -95,7 +95,7 @@ Gantt chart, Resource diagram, Milestone overview, Variance, Look-ahead, Critica
 
 Reports can cover a reporting period, compare against a baseline and follow the filter and grouping of your screen (Gantt chart). See [Report types](public/docs/en/ref-rapporttypes.md).
 
-## AI-first
+## AI assistants (MCP)
 
 OPS can run a local **MCP server** (Model Context Protocol) so that an AI assistant works with the schedule you have open. It offers 41 `planner_*` tools to read and change tasks, relations, resources, calendars, baselines and documents. You decide what the assistant may do: pause, read-only mode, automatic backups and an activity log are on the *AI* tab. The server is off by default and runs in the desktop app only.
 

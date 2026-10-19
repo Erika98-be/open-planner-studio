@@ -47,7 +47,7 @@ Geïnstalleerde apps werken zichzelf bij als er een nieuwe versie is (Windows, m
 - **Werkt met je bestaande bestanden.** Open Microsoft Project- (`.mpp`, `.xml`) en Primavera P6-bestanden (`.xer`, `.xml`) en exporteer naar MS Project XML, P6 XML en CSV.
 - **Rekenregels naar keuze.** Reken per project met de conventies van Primavera P6, Microsoft Project of Open Planner Studio.
 - **Gemaakt voor de bouw.** Feestdagen, bouwvak, werkkalenders, keuringsmomenten, fasering, resource-nivellering.
-- **Klaar voor AI.** Een ingebouwde MCP-server laat een AI-assistent je planning lezen en bewerken, met veiligheidsschakelaars die jij beheert.
+- **AI-assistenten.** Een ingebouwde MCP-server laat een AI-assistent je planning lezen en bewerken, met veiligheidsschakelaars die jij beheert.
 - **Meertalig.** 28 talen, ook Arabisch en Perzisch (van rechts naar links).
 
 ## Schermafbeeldingen
@@ -95,7 +95,7 @@ Gantt-diagram, Resourcediagram, Mijlpalenoverzicht, Afwijking, Vooruitblik, Krit
 
 Rapporten kunnen een rapportageperiode beslaan, vergelijken met een baseline en het filter en de groepering van je scherm volgen (Gantt-diagram). Zie [Rapporttypen](public/docs/nl/ref-rapporttypes.md).
 
-## AI-first
+## AI-assistenten (MCP)
 
 OPS kan een lokale **MCP-server** (Model Context Protocol) draaien, zodat een AI-assistent werkt met de planning die je open hebt. Hij biedt 41 `planner_*`-tools om taken, relaties, resources, kalenders, baselines en documenten te lezen en te wijzigen. Jij bepaalt wat de assistent mag: pauze, alleen-lezen, automatische back-ups en een activiteitenlog staan op het tabblad *AI*. De server staat standaard uit en draait alleen in de desktop-app.
 
