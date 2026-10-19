@@ -1498,3 +1498,8 @@ Testversie (release-check, poort 3049) is NIET bijgewerkt met de PR's van vandaa
 - **Delta-review #369 ronde 4: JA** (B1 weg in alle 14 talen; 31 invoeren × 14 talen). Bevinding 1 (Ctrl+Z na F5/Ctrl+S
   doet veld-undo; store blijft 2.25, veld toont 1; `isDirty` false) door V1 ⇒ door de orkestrator als BLOKKEERT ingedeeld
   (F5 + Ctrl+Z = wat-als, gewoon werk) ⇒ ronde 5 bij de maker, met "01.500" en commentaar/tests.
+- **Hercheck #374: JA** (geen BLOKKEERT; poort kan niet blijven hangen; #369 + #374 schoon samen). VERVOLG in de PR-body
+  (zoomtoetsen onder de vraag, dubbele vraagopbouw per route, melding onder modal). **Mogelijke fout op main (VERMOED):**
+  Delete/Backspace onder andere dialogen verwijdert de geselecteerde taak erachter (`shortcutRegistry.ts:274-287`).
+- Testversie: worker bouwt `claude/release-check-4` (origin/main + QA-hulpjes + #368, #371, #375, #377, #374, #369,
+  #376) in de release-check-worktree, poort 3049.
