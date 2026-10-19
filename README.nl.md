@@ -122,7 +122,7 @@ OPS is jonge software. Ken deze punten voordat je erop vertrouwt:
 - **Relaties tussen projecten gebruiken een vaste ankerdatum.** Ze worden niet live herberekend met het andere project.
 - **De P6 XML-export laat** baselines, deadlines, activiteitcodes, eigen velden en notities weg.
 - **De MCP-server vraagt de desktop-app.** In de browser is het AI-tabblad zichtbaar, maar de bridge start niet.
-- **4D BIM staat op de roadmap, is niet gebouwd.** Taken koppelen aan elementen van een IFC-gebouwmodel kan nog niet.
+- **4D BIM staat op de roadmap, is niet gebouwd.** Taken koppelen aan elementen van een IFC-gebouwmodel kan nog niet. Omdat de planning een standaard IFC 4.3-bestand is, kun je hem nu al samenvoegen met een gebouwmodel en taken aan elementen koppelen in andere IFC-tools, zoals IfcOpenShell of Bonsai. Zie [Het IFC-schema kiezen](public/docs/nl/howto-ifc-schema-kiezen.md). Over de werking van die tools geven we geen garanties.
 - **Bekende problemen.** [`knownbugs.md`](knownbugs.md) noemt openstaande problemen, bijvoorbeeld rond enkele constraint-randgevallen en urenplanning van voortgang.
 - **Rekenpariteit is gemeten, niet gegarandeerd.** OPS volgt de conventies van P6 en MS Project dicht, maar een bijzondere planning kan toch anders rekenen. Vergelijk kritieke uitkomsten voordat je iets overdraagt.
 
@@ -131,6 +131,13 @@ Iets gevonden? [Maak een issue aan](https://github.com/OpenAEC-Foundation/open-p
 ## Onder de motorkap
 
 De desktop-app is gebouwd met Tauri 2, dus de installers zijn klein en gebruiken de webweergave van het systeem. Het Rust-deel is een dunne native schil met drie commando's. De rekenkern is geschreven in TypeScript. Het is dezelfde code in de browser en op de desktop. De interface is React 19 en de Gantt-tijdlijn wordt getekend op een Canvas 2D-vlak.
+
+## Bijdragen
+
+- **Probeer het op een echt project** en meld bugs of ontbrekende functies: [maak een issue aan](https://github.com/OpenAEC-Foundation/open-planner-studio/issues/new).
+- **Deel ideeën of stel vragen** in [GitHub Discussions](https://github.com/OpenAEC-Foundation/open-planner-studio/discussions).
+- **Stuur testbestanden.** `.mpp`-, `.xer`- en P6 XML-bestanden helpen ons de import te verbeteren. Zie [de discussie over testbestanden](https://github.com/OpenAEC-Foundation/open-planner-studio/discussions/71). Haal eerst vertrouwelijke gegevens weg.
+- **Schrijf code.** Lees [CONTRIBUTING.md](CONTRIBUTING.md) en open een pull request.
 
 ## Snel starten (ontwikkelaars)
 

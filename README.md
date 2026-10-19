@@ -122,7 +122,7 @@ OPS is young software. Know these before you rely on it:
 - **Cross-project relations use a fixed anchor date.** They are not recalculated live with the other project.
 - **P6 XML export drops** baselines, deadlines, activity codes, custom fields and notes.
 - **The MCP server needs the desktop app.** In the browser the AI tab is visible but the bridge does not start.
-- **4D BIM is on the roadmap, not built.** Linking tasks to elements of an IFC building model is not implemented yet.
+- **4D BIM is on the roadmap, not built.** Linking tasks to elements of an IFC building model is not implemented yet. Because the schedule is a standard IFC 4.3 file, you can already merge it with a building model and link tasks to elements in other IFC tools, such as IfcOpenShell or Bonsai. See [Choosing the IFC schema](public/docs/en/howto-ifc-schema-kiezen.md). We give no guarantees about how those tools behave.
 - **Known issues.** [`knownbugs.md`](knownbugs.md) lists open problems, for example around some constraint edge cases and the hour-based scheduling of progress.
 - **Calculation parity is measured, not guaranteed.** OPS follows P6 and MS Project conventions closely, but an exotic schedule can still calculate differently. Compare critical results before you hand off.
 
@@ -131,6 +131,13 @@ Found something? [Open an issue](https://github.com/OpenAEC-Foundation/open-plan
 ## Under the hood
 
 The desktop app is built with Tauri 2, so the installers are small and use the web view of the system. The Rust part is a thin native shell with three commands. The scheduling engine is written in TypeScript. It is the same code in the browser and on the desktop. The user interface is React 19, and the Gantt timeline is drawn on a Canvas 2D surface.
+
+## Contributing
+
+- **Try it on a real project** and report bugs or missing features: [open an issue](https://github.com/OpenAEC-Foundation/open-planner-studio/issues/new).
+- **Share ideas or ask questions** in [GitHub Discussions](https://github.com/OpenAEC-Foundation/open-planner-studio/discussions).
+- **Send test files.** `.mpp`, `.xer` and P6 XML files help us improve the import. See [the discussion on test files](https://github.com/OpenAEC-Foundation/open-planner-studio/discussions/71). Remove confidential data first.
+- **Write code.** Read [CONTRIBUTING.md](CONTRIBUTING.md) and open a pull request.
 
 ## Quick start (developers)
 
