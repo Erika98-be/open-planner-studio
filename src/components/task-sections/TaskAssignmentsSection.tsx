@@ -187,26 +187,26 @@ export function TaskAssignmentsSection({ taskId }: { taskId: string }) {
           )}
           {taskAssignments.length > 0 && (
             <div className={`assignment-list !text-small${showWork ? '' : ' assignment-list--no-work'}`}>
-              {/* Kop in hetzelfde raster als de regels: elke kop staat recht boven zijn kolom. Het slotje
-                  is een eigen `shrink-0`-icoon naast een kop die mag afbreken (lange vertalingen). */}
-              <div className="assignment-grid assignment-header text-caption leading-3 uppercase tracking-wide items-end" style={mutedStyle} data-ops-assignment-header>
+              {/* Kop in hetzelfde raster als de regels (subgrid): elke kop staat recht boven zijn kolom,
+                  en een lange vertaling maakt de kolom breder in plaats van af te breken. */}
+              <div className="assignment-header text-caption leading-3 uppercase tracking-wide" style={mutedStyle} data-ops-assignment-header>
                 <span className="assignment-name min-w-0 truncate ps-[16px]">{t('properties.assignments.resource')}</span>
                 <span
-                  className="assignment-units flex min-w-0 items-end justify-end gap-0.5"
+                  className="assignment-units flex items-center gap-0.5 whitespace-nowrap"
                   title={showWork && unitsProtected ? lockTitle : t('properties.assignments.unitsPerDay')}
                   data-ops-assignment-lock-units={showWork ? (unitsProtected ? 'locked' : 'free') : undefined}
                 >
                   {showWork && unitsProtected && <Lock size={9} className="shrink-0" />}
-                  <span className="min-w-0 text-right">{t('properties.assignments.units')}</span>
+                  <span>{t('properties.assignments.units')}</span>
                 </span>
                 {showWork && (
                   <span
-                    className="assignment-work flex min-w-0 items-end justify-end gap-0.5"
+                    className="assignment-work flex items-center gap-0.5 whitespace-nowrap"
                     title={workProtected ? lockTitle : t('properties.assignments.workHint')}
                     data-ops-assignment-lock-work={workProtected ? 'locked' : 'free'}
                   >
                     {workProtected && <Lock size={9} className="shrink-0" />}
-                    <span className="min-w-0 text-right">{t('properties.assignments.workHours')}</span>
+                    <span>{t('properties.assignments.workHours')}</span>
                   </span>
                 )}
               </div>
@@ -232,8 +232,7 @@ export function TaskAssignmentsSection({ taskId }: { taskId: string }) {
                   ? assignmentWorkDeviation(task, a.unitsPerDay, a.remainingWorkMinutes, hoursPerDay, contourOf.has(a.id))
                   : null;
                 return (
-                  <div key={a.id} className="assignment-row flex flex-col gap-1" data-ops-assignment-row={a.id}>
-                    <div className="assignment-grid">
+                  <div key={a.id} className="assignment-row" data-ops-assignment-row={a.id}>
                       <button
                         type="button"
                         onClick={() => toggleExpanded(a.id)}
@@ -250,7 +249,7 @@ export function TaskAssignmentsSection({ taskId }: { taskId: string }) {
                         />
                         <span
                           aria-hidden="true"
-                          className="h-3 w-1.5 shrink-0 rounded-sm"
+                          className="h-[1em] w-[1em] shrink-0 rounded-[3px]"
                           style={{ background: res ? ensureThemeVisible(resourceDisplayColor(res), darkTheme) : 'var(--theme-border)' }}
                         />
                         <span className="min-w-0 truncate font-medium" title={resName} data-ops-assignment-name>{resName}</span>
@@ -270,7 +269,7 @@ export function TaskAssignmentsSection({ taskId }: { taskId: string }) {
                         title={`${t('properties.assignments.unitsPerDay')}: ${a.unitsPerDay}`}
                         ariaLabel={`${t('properties.assignments.unitsPerDay')} — ${res?.name ?? a.resourceId}`}
                         onCommit={n => updateAssignment(a.id, { unitsPerDay: n })}
-                        className={`assignment-units ${numberInputClass}`}
+                        className={`assignment-units assignment-number ${numberInputClass}`}
                       />
                       {showWork && (res?.type === 'MATERIAL' ? (
                         <span className="assignment-work pe-1 text-right text-text-secondary" data-ops-assignment-work="material">—</span>
@@ -281,7 +280,7 @@ export function TaskAssignmentsSection({ taskId }: { taskId: string }) {
                             title={t('properties.assignments.workHint')}
                             ariaLabel={`${t('properties.assignments.work')} — ${res?.name ?? a.resourceId}`}
                             onCommit={hours => setAssignmentWork(a.id, Math.round(hours * 60))}
-                            className={`${numberInputClass}${deviation ? ' !ps-4' : ''}`}
+                            className={`assignment-number ${numberInputClass}${deviation ? ' !ps-4' : ''}`}
                           />
                           {deviation && (
                             // Opgeslagen werk dat afwijkt van inzet × restduur krijgt een markering
@@ -303,7 +302,7 @@ export function TaskAssignmentsSection({ taskId }: { taskId: string }) {
                       <button
                         type="button"
                         onClick={() => unassignResource(a.id)}
-                        className="assignment-remove justify-self-center rounded p-0.5"
+                        className="assignment-remove rounded p-0.5"
                         style={{ color: 'var(--error)' }}
                         title={t('properties.assignments.remove')}
                         aria-label={t('properties.assignments.remove')}
@@ -311,11 +310,10 @@ export function TaskAssignmentsSection({ taskId }: { taskId: string }) {
                       >
                         <Trash2 size={10} />
                       </button>
-                    </div>
                     {open && (
                       <div
                         id={detailsId}
-                        className="ms-1.5 mb-1 flex flex-col gap-1 border-s ps-3"
+                        className="assignment-details ms-1.5 mb-1 flex flex-col gap-1 border-s ps-3"
                         style={{ borderColor: 'var(--theme-border-light)' }}
                         data-ops-assignment-details
                       >

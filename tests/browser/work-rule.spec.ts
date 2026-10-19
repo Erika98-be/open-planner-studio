@@ -229,12 +229,14 @@ test('toewijzingstabel: inzet 0.267 past volledig in het veld op 125 % en staat 
     ctx.font = `${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
     const text = ctx.measureText(el.value).width;
     const content = el.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
-    return { text, content };
+    return { text, content, appearance: cs.appearance };
   });
   // Chromium reserveert in een `type="number"` altijd ruimte voor de (onzichtbare) spinknop, ook
-  // zonder hover — gemeten ±15 px; dáárdoor viel de "7" weg terwijl de tekst zelf wel paste.
-  const SPIN_BUTTON_PX = 15;
-  expect(fit.text + SPIN_BUTTON_PX).toBeLessThanOrEqual(fit.content);
+  // zonder hover — gemeten ±15 px; dáárdoor viel de "7" weg terwijl de tekst zelf wel paste. Sinds de
+  // herbouw van 2026-10-19 staat de spinknop in deze lijst uit (`appearance: textfield`, zie
+  // `.assignment-number` in globals.css), zodat het veld vier tekens breed kan zijn.
+  expect(fit.appearance).toBe('textfield');
+  expect(fit.text).toBeLessThanOrEqual(fit.content);
 });
 
 // Gebruikstest #170, G3: de taaktypes-detailregel in de bestandsmelding (.mpp/XER) heeft een EIGEN
