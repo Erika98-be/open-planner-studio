@@ -130,12 +130,16 @@ export function buildEnvelope(ctx: McpContext): McpEnvelope {
 // --- Dialoog-guard ------------------------------------------------------------------------------
 
 /**
- * De ui-vlaggen die `hasBlockingDialogOpen()` (shortcutRegistry) als blokkerend beschouwt, in
- * dezelfde volgorde. `hasBlockingDialogOpen()` is de gezaghebbende boolean-poort; deze lijst dient
- * alleen om de fout te BENOEMEN met welke vlag open staat ("fout benoemt wélke dialoog/overlay").
- * Blijft die lijst en deze in sync — beide spiegelen de modale overlays van de app.
+ * De ui-vlaggen die `hasBlockingDialogOpen()` (shortcutRegistry) als blokkerend beschouwt.
+ * `hasBlockingDialogOpen()` is de gezaghebbende boolean-poort; deze lijst dient alleen om de fout te
+ * BENOEMEN met welke vlag open staat ("fout benoemt wélke dialoog/overlay"). De volgorde bepaalt
+ * alleen welke naam wint als er meer tegelijk open staan; ze volgt die van `hasBlockingDialogOpen()`
+ * niet overal (`pendingCloseDocId` staat hier bovenaan, daar achteraan). Houd wel de INHOUD van beide
+ * in sync — beide spiegelen de modale overlays van de app.
  */
 const BLOCKING_UI_FLAGS = [
+  // De sluitvraag ("wijzigingen opslaan?") gebruikt geen `Dialog`, maar is wel modaal.
+  'pendingCloseDocId',
   'showTaskDialog', 'showProjectSettings', 'showProjectInfoDialog', 'showSettingsDialog',
   'showCalendarDialog', 'showUpdateDialog', 'showNewProjectDialog', 'showFeedbackDialog',
   'showStructureDialog', 'showLevelingDialog', 'showBaselineDialog', 'showColumnsDialog',
