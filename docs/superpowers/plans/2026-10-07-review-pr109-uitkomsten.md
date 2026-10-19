@@ -1559,3 +1559,7 @@ Testversie (release-check, poort 3049) is NIET bijgewerkt met de PR's van vandaa
 - **#384 nieuw (expert Opus 5.5): MSPDI-werktijd op de minuut** (8c3257d0d; één-blok-werkdag nam alleen het uur; ook
   writer `7.5:00:00`); corpus 164 bestanden: alleen 0402 "global" anders ⇒ review loopt (let op: 08:00-start op
   07:30-kalender). CI-tijdflake `task-grid-performance` ⇒ worker `claude/perf-flake`.
+- **Checkstap #368 (keuzelijsten taakpaneel): goed** — eigenaar 2026-10-19: "top, werkt". **#368 gemerged in main →
+  98f556ce6** (kop eaa1e9f9b, CI 16/16).
+- #369: orkestrator zette de melding "dubbelzinnig getal" in je-vorm (was "bedoelt u"; app gebruikt je) via
+  `i18n:add --update` met alle 14 bestaande vertalingen (5ee8f0cb7); testversie bijgewerkt (398d19c03) ⇒ checkstap #369.
