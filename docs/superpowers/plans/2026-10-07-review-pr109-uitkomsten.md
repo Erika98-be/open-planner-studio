@@ -1846,3 +1846,8 @@ Testversie (release-check, poort 3049) is NIET bijgewerkt met de PR's van vandaa
   automatisch berekenen aan neemt via `focus()` opnieuw een rekenblokkade ⇒ oude einddatum ook in het IFC
   (`useKeyboardShortcuts.ts:74`, `useTextEntryAutoCalcHold.ts:20`). VERVOLG: onveranderd bevestigen hangt af van de
   spelling (`1,78` vs `1.78`); dubbel commentaar `globals.css:1913`. ⇒ fixronde bij de integratie-worker (Opus 5.5).
+- **Eigenaar 2026-10-20: "op dit punt ben je echt te voorzichtig … je kunt best meer tegelijk doen."** ⇒ merge zodra de
+  PR-CI groen is, niet wachten op main-CI, parallel werken (vastgelegd in `~/.claude/AGENTS.md`).
+- **#400 gemerged in main (d396e1ee7)** — `--admin --match-head-commit 93e95ac04`; CSV-delta door orkestrator gelezen
+  (klein; `@/i18n/config` gebruikt de i18next-singleton); enige rode tests = `feedback-studio.spec.ts` (ook rood op main).
+- Overdracht voor de release-sessie: `2026-10-20-overdracht-release.md`.
