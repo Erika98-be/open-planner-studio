@@ -241,7 +241,7 @@ async function main(): Promise<void> {
   eq('2a2 één toewijzing ingelezen (de verwijderde niet)', result.assignments.length, 1);
   eq('2a drie taken ingelezen', result.tasks.map(t => t.name), ['Fundering', 'Deelproject installaties', 'Oplevering (extern)']);
   eq('2b verslag', result.msProjectReport, {
-    format: 'mpp', baselines: 4, baselineWorkCost: 0, assignmentBaselineDates: 0, hourTaskBaselineTimes: 0, customFields: 3, notes: 4, hyperlinks: 2, fixedCosts: 1, resourceRates: 1,
+    format: 'mpp', baselines: 4, baselineWorkCost: 0, assignmentBaselineDates: 0, customFields: 3, notes: 4, hyperlinks: 2, fixedCosts: 1, resourceRates: 1,
     subprojects: 1, externalTasks: 1, manualTasks: 0, levelingDelays: 0, inactiveTasks: 0, criticalSlackLimitDays: 3,
   });
   // De lezer neemt geen aantekening, baseline of kritiek-drempel over (het verslag klopt dus).

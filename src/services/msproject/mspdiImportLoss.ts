@@ -3,7 +3,7 @@
 //
 // Elke categorie hieronder is een element dat `mspdiReader.ts` aantoonbaar niet leest (zie het
 // commentaar per regel). Wat de lezer wel overneemt, telt niet: taaknotities (`<Notes>` → omschrijving),
-// de datums en duur van Baseline 0 van een taak (het tijdstip van een urentaak niet, zie `hourTaskBaselineTimes`), taak- en resourcekalenders, deadlines, `CriticalSlackLimit`, constraints, het
+// de datums en duur van Baseline 0 van een taak (bij een urentaak met tijdstip), taak- en resourcekalenders, deadlines, `CriticalSlackLimit`, constraints, het
 // standaardtarief (`<StandardRate>` → kostprijs per uur) en de onderbrekingen uit `<TimephasedData>`.
 // Terugkerende taken tellen bewust niet: MS Project schrijft de keren als gewone subtaken mee.
 import { directChildText } from '@/services/xmlDom';
@@ -56,12 +56,7 @@ export type ConsumedExtendedAttribute = (fieldId: string, value: string) => bool
  * Telt per categorie wat `readMSPDI` niet overneemt. `isConsumed` zegt welke extended attributes de
  * lezer zelf gebruikte (de OPS-markers), zodat een bestand dat de app zelf schreef geen melding geeft.
  */
-export function scanMspdiImportLoss(
-  root: Element,
-  isConsumed: ConsumedExtendedAttribute,
-  /** UID's van de taken die de lezer als urentaak inleest (`hourModeCalIds`, mspdiReader.ts). */
-  hourTaskUids: ReadonlySet<number> = new Set(),
-): MsProjectImportReport {
+export function scanMspdiImportLoss(root: Element, isConsumed: ConsumedExtendedAttribute): MsProjectImportReport {
   const report = emptyMsProjectImportReport('mspdi');
   const customFieldIds = new Set<string>();
   const baselineNumbers = new Set<number>();
@@ -102,20 +97,6 @@ export function scanMspdiImportLoss(
     const at = (tag: string) => mspdiWallClock(directChildText(baseline, tag));
     return { start: at('Start'), finish: at('Finish') };
   };
-  /**
-   * Of een baselinetijd meer zegt dan de datum die de lezer bewaart. De app tekent een baseline per hele
-   * dag (van het begin van de startdag tot het einde van de einddag), dus een start op de standaard
-   * begintijd van het project en een einde op de standaard eindtijd (`<DefaultStartTime>`/
-   * `<DefaultFinishTime>`, zonder element 08:00 en 17:00) zeggen niets extra. Dat geldt ook voor het
-   * dag-anker: zo schrijft de app zelf een datum zonder tijd (`toXmlDateTime`).
-   */
-  const clock = (tag: string, fallback: string) => (directChildText(root, tag) || fallback).slice(0, 5);
-  const anchor = DAY_TIME_ANCHOR.slice(0, 5);
-  const plainStart = new Set([anchor, clock('DefaultStartTime', '08:00')]);
-  const plainFinish = new Set([anchor, clock('DefaultFinishTime', '17:00')]);
-  const timeLost = (dates: { start?: string; finish?: string }) =>
-    (dates.start !== undefined && !plainStart.has(dates.start.slice(11)))
-    || (dates.finish !== undefined && !plainFinish.has(dates.finish.slice(11)));
   /** Baseline 0-datums per taak-UID: die komen WEL over (de taakbaseline van de lezer). */
   const taskBaseline0 = new Map<string, { start?: string; finish?: string }>();
 
@@ -149,9 +130,6 @@ export function scanMspdiImportLoss(
     collectBaselines(task);
     const taskDates = baseline0Dates(task);
     if (taskDates) taskBaseline0.set(String(uid), taskDates);
-    // Urentaak: de lezer bewaart van haar baseline alleen de datum (`parseMSPDate`), dus een tijdstip gaat
-    // verloren. Bij een dagtaak is de datum alles (review ronde 4 #392).
-    if (taskDates && hourTaskUids.has(uid) && timeLost(taskDates)) report.hourTaskBaselineTimes++;
     collectExtendedAttributes(task);
     if (hasHyperlink(task)) report.hyperlinks++;
     // `<FixedCost>`: de lezer leest geen kosten.

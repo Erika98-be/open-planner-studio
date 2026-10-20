@@ -200,8 +200,6 @@
     "msProjectLostBaselineWorkCost_other": "For {{count}} tasks, resources or assignments, the work or cost in Baseline 0 was not imported.",
     "msProjectLostAssignmentBaselineDates_one": "For {{count}} assignment the baseline differs from the task; that difference was not imported.",
     "msProjectLostAssignmentBaselineDates_other": "For {{count}} assignments the baseline differs from the task; that difference was not imported.",
-    "msProjectLostHourTaskBaselineTimes_one": "For {{count}} hourly task, only the date of the baseline was kept, not the time.",
-    "msProjectLostHourTaskBaselineTimes_other": "For {{count}} hourly tasks, only the date of the baseline was kept, not the time.",
     "msProjectLostCustomFields_one": "{{count}} custom field with values (custom field or outline code) was not imported.",
     "msProjectLostCustomFields_other": "{{count}} custom fields with values (custom fields and outline codes) were not imported.",
     "msProjectLostNotes_one": "{{count}} note was not imported.",

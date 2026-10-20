@@ -100,7 +100,7 @@ async function main(): Promise<void> {
   eq('1a vier taken ingelezen (ook subproject, externe en inactieve taak)', result.tasks.map(t => t.name),
     ['Fundering', 'Deelproject installaties', 'Oplevering (extern)', 'Reserve']);
   eq('1b verslag', result.msProjectReport, {
-    format: 'mspdi', baselines: 2, baselineWorkCost: 0, assignmentBaselineDates: 0, hourTaskBaselineTimes: 0, customFields: 3, notes: 2, hyperlinks: 2, fixedCosts: 1, resourceRates: 2,
+    format: 'mspdi', baselines: 2, baselineWorkCost: 0, assignmentBaselineDates: 0, customFields: 3, notes: 2, hyperlinks: 2, fixedCosts: 1, resourceRates: 2,
     subprojects: 1, externalTasks: 1, manualTasks: 1, levelingDelays: 1, inactiveTasks: 1, criticalSlackLimitDays: 0,
   });
   // Wat de lezer wél overneemt, telt niet: de taakaantekening, baseline 0 en het standaardtarief.
@@ -197,8 +197,9 @@ async function main(): Promise<void> {
   eq('6i zelfde wandklokdatum, andere zone-aanduiding: niets verloren',
     zoned('2026-03-02T08:00:00', '2026-03-02T08:00:00Z'), undefined);
 
-  // 6j–6n Tijdstip (review ronde 4). Een urentaak (tijden buiten het dag-anker ⇒ uurkalender, zoals de
-  //       lezer beslist met `hourModeCalIds`) leest haar baseline alleen als datum in.
+  // 6j–6l Tijdstip (review ronde 4 en 5). Een urentaak (tijden buiten het dag-anker ⇒ uurkalender, zoals
+  //       de lezer beslist met `hourModeCalIds`) leest haar baseline met tijd in, net als haar eigen
+  //       datums (orkestratorbesluit fixronde 5: de oorzaak oplossen in plaats van het verlies melden).
   const hourTask = (uid: number, start: string, finish: string, extra = '') => `<Task><UID>${uid}</UID><ID>${uid}</ID><Name>Taak ${uid}</Name>
     <OutlineLevel>1</OutlineLevel><Start>2026-03-02T09:00:00</Start><Finish>2026-03-02T12:00:00</Finish><Duration>PT3H0M0S</Duration>
     <Baseline><Number>0</Number><Start>${start}</Start><Finish>${finish}</Finish><Duration>PT3H0M0S</Duration></Baseline>${extra}</Task>`;
@@ -206,35 +207,39 @@ async function main(): Promise<void> {
     <Resources><Resource><UID>1</UID><ID>1</ID><Name>Kraan</Name><Type>1</Type></Resource></Resources>
     <Assignments><Assignment><UID>1</UID><TaskUID>1</TaskUID><ResourceUID>1</ResourceUID><Units>1</Units>
       <Baseline><Number>0</Number><Start>${start}</Start><Finish>${finish}</Finish></Baseline></Assignment></Assignments>`));
-  // 6j Zelfde dag, ander tijdstip: de toewijzing wijkt af van de taak.
+  const baselineDates = (r: { baselines?: { tasks: { start: string; finish: string }[] }[] }) =>
+    r.baselines?.[0]?.tasks.map(t => [t.start, t.finish]);
+  // 6j Zelfde dag, ander tijdstip: de toewijzing wijkt af van de taak (toewijzingsbaselines bewaart de app niet).
   const sameDay = withAssignment(hourTask(1, '2026-03-02T09:00:00', '2026-03-02T12:00:00'), '2026-03-02T10:00:00', '2026-03-02T11:00:00');
   eq('6j urentaak 09–12, toewijzing 10–11 op dezelfde dag: afwijking gemeld', sameDay.msProjectReport?.assignmentBaselineDates, 1);
-  eq('6j2 toewijzing gelijk aan de taak, ook in tijd: geen afwijking',
-    withAssignment(hourTask(1, '2026-03-02T09:00:00', '2026-03-02T12:00:00'), '2026-03-02T09:00:00', '2026-03-02T12:00:00').msProjectReport?.assignmentBaselineDates, 0);
-  // 6k Twee urentaken met verschillende baselinetijden op dezelfde dag lezen identiek in ⇒ eigen regel.
+  eq('6j2 toewijzing gelijk aan de taak, ook in tijd: geen verslag',
+    withAssignment(hourTask(1, '2026-03-02T09:00:00', '2026-03-02T12:00:00'), '2026-03-02T09:00:00', '2026-03-02T12:00:00').msProjectReport, undefined);
+  // 6k Twee urentaken met verschillende baselinetijden op dezelfde dag: elk haar eigen tijden, geen verslag.
   const hourBaselines = readMSPDI(wrap(`<Tasks>${hourTask(1, '2026-03-02T09:00:00', '2026-03-02T12:00:00')}
     ${hourTask(2, '2026-03-02T11:00:00', '2026-03-02T14:00:00')}</Tasks>`));
   eq('6k urentaken ingelezen in uurmodus', hourBaselines.tasks.map(t => t.time.durationUnit), ['hours', 'hours']);
-  eq('6k2 tijdstip van twee urentaakbaselines verloren', hourBaselines.msProjectReport?.hourTaskBaselineTimes, 2);
-  eq('6k3 eigen regel in de melding', msProjectImportNotice([hourBaselines])?.detailLines?.map(l => [l.messageKey, l.params?.count]),
-    [['notifications.msProjectLostHourTaskBaselineTimes', 2]]);
-  // 6l Een dagtaak (datums op het dag-anker ⇒ dagmodus): de datum is alles wat telt ⇒ geen verslag, ook
-  //    niet bij een baseline met tijden.
+  eq('6k2 baselines met hun tijden', baselineDates(hourBaselines),
+    [['2026-03-02T09:00', '2026-03-02T12:00'], ['2026-03-02T11:00', '2026-03-02T14:00']]);
+  eq('6k3 geen verslag', hourBaselines.msProjectReport, undefined);
+  // 6l Een dagtaak (datums op het dag-anker ⇒ dagmodus): de baseline blijft alleen een datum, zoals op main.
   const dayTask = (start: string, finish: string) => readMSPDI(wrap(`<Tasks><Task><UID>1</UID><ID>1</ID><Name>Dag</Name>
     <OutlineLevel>1</OutlineLevel><Start>2026-03-02T08:00:00</Start><Finish>2026-03-03T08:00:00</Finish><Duration>PT16H0M0S</Duration>
     <Baseline><Number>0</Number><Start>${start}</Start><Finish>${finish}</Finish><Duration>PT16H0M0S</Duration></Baseline></Task></Tasks>`));
   const day0817 = dayTask('2026-03-02T08:00:00', '2026-03-03T17:00:00');
-  eq('6l dagtaak met baseline 08:00–17:00: dagmodus, geen verslag', [day0817.tasks[0]?.time.durationUnit, day0817.msProjectReport], ['days', undefined]);
-  eq('6l2 dagtaak met baseline 09:00–12:00: geen verslag', dayTask('2026-03-02T09:00:00', '2026-03-02T12:00:00').msProjectReport, undefined);
-  // 6l3/6l4 Urentaak: een baseline op de standaard begin- en eindtijd van het project zegt niets meer dan de
-  //      datum (de app tekent een baseline per hele dag); een ander einde wel.
-  eq('6l3 urentaak, baseline 08:00–17:00 (projectstandaard): geen verslag',
-    readMSPDI(wrap(`<Tasks>${hourTask(1, '2026-03-02T08:00:00', '2026-03-03T17:00:00')}</Tasks>`)).msProjectReport, undefined);
-  eq('6l4 urentaak, baseline 08:00–16:00: tijdstip verloren',
-    readMSPDI(wrap(`<Tasks>${hourTask(1, '2026-03-02T08:00:00', '2026-03-03T16:00:00')}</Tasks>`)).msProjectReport?.hourTaskBaselineTimes, 1);
-  eq('6l5 andere projectstandaard (09:00–17:30) telt mee',
-    readMSPDI(wrap(`<DefaultStartTime>09:00:00</DefaultStartTime><DefaultFinishTime>17:30:00</DefaultFinishTime>
-      <Tasks>${hourTask(1, '2026-03-02T09:00:00', '2026-03-03T17:30:00')}</Tasks>`)).msProjectReport, undefined);
+  eq('6l dagtaak met baseline 08:00–17:00: dagmodus, alleen datum, geen verslag',
+    [day0817.tasks[0]?.time.durationUnit, baselineDates(day0817), day0817.msProjectReport], ['days', [['2026-03-02', '2026-03-03']], undefined]);
+  eq('6l2 dagtaak met baseline 09:00–12:00: alleen datum, geen verslag',
+    (r => [baselineDates(r), r.msProjectReport])(dayTask('2026-03-02T09:00:00', '2026-03-02T12:00:00')), [[['2026-03-02', '2026-03-02']], undefined]);
+  // 6l3 Het scenario van review ronde 5: urentaak nu 09:00–12:00, baseline 08:00–17:00 op dezelfde dag.
+  //     Ingelezen met tijd; na herexport staat er weer 08:00–17:00 (niet 08:00–08:00).
+  const review5 = readMSPDI(wrap(`<Tasks>${hourTask(1, '2026-03-02T08:00:00', '2026-03-02T17:00:00')}</Tasks>`));
+  eq('6l3 baseline 08:00–17:00 met tijd ingelezen, geen verslag',
+    [review5.tasks[0]?.time.durationUnit, baselineDates(review5), review5.msProjectReport], ['hours', [['2026-03-02T08:00', '2026-03-02T17:00']], undefined]);
+  const review5Xml = writeMSPDI(review5.project, review5.calendar, review5.tasks, review5.sequences, review5.resources, review5.assignments,
+    review5.resourceCalendars ?? [], review5.baselines ?? [], review5.activeBaselineId ?? null);
+  const exported = /<Baseline>\s*<Number>0<\/Number>\s*<Start>([^<]*)<\/Start>\s*<Finish>([^<]*)<\/Finish>/.exec(review5Xml);
+  eq('6l4 herexport: baseline 08:00–17:00', exported?.slice(1), ['2026-03-02T08:00:00', '2026-03-02T17:00:00']);
+  eq('6l5 herexport leest identiek terug', baselineDates(readMSPDI(review5Xml)), baselineDates(review5));
   // 6m/6n VERVOLG 12: onleesbare datumtekst telt als ontbrekend, niet als afwijking.
   eq('6m toewijzing met NA: geen afwijking', assignmentBaseline('NA', 'NA').msProjectReport, undefined);
   eq('6n toewijzing met een niet-bestaande datum: geen afwijking',
@@ -250,7 +255,7 @@ async function main(): Promise<void> {
   // (5) De sleutels bestaan in nl en en (geen lege toast).
   for (const loc of ['nl', 'en']) {
     const json = JSON.parse(readFileSync(new URL(`../../src/i18n/locales/${loc}/common.json`, import.meta.url), 'utf8')) as { notifications: Record<string, string> };
-    for (const key of ['msProjectImportLoss', 'msProjectLostBaselineWorkCost_one', 'msProjectLostBaselineWorkCost_other', 'msProjectLostAssignmentBaselineDates_one', 'msProjectLostAssignmentBaselineDates_other', 'msProjectLostHourTaskBaselineTimes_one', 'msProjectLostHourTaskBaselineTimes_other', 'msProjectLostExtraBaselines_one', 'msProjectLostExtraBaselines_other',
+    for (const key of ['msProjectImportLoss', 'msProjectLostBaselineWorkCost_one', 'msProjectLostBaselineWorkCost_other', 'msProjectLostAssignmentBaselineDates_one', 'msProjectLostAssignmentBaselineDates_other', 'msProjectLostExtraBaselines_one', 'msProjectLostExtraBaselines_other',
       'msProjectLostManualTasks_one', 'msProjectLostManualTasks_other', 'msProjectLostInactiveTasks_one', 'msProjectLostInactiveTasks_other']) {
       eq(`5 ${loc}: ${key}`, typeof json.notifications[key], 'string');
     }

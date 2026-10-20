@@ -200,8 +200,6 @@
     "msProjectLostBaselineWorkCost_other": "Bij {{count}} taken, resources of toewijzingen zijn werk of kosten uit Baseline 0 niet overgenomen.",
     "msProjectLostAssignmentBaselineDates_one": "Bij {{count}} toewijzing wijkt de baseline af van de taak; die afwijking is niet overgenomen.",
     "msProjectLostAssignmentBaselineDates_other": "Bij {{count}} toewijzingen wijkt de baseline af van de taak; die afwijking is niet overgenomen.",
-    "msProjectLostHourTaskBaselineTimes_one": "Bij {{count}} urentaak is van de baseline alleen de datum overgenomen, niet het tijdstip.",
-    "msProjectLostHourTaskBaselineTimes_other": "Bij {{count}} urentaken is van de baseline alleen de datum overgenomen, niet het tijdstip.",
     "msProjectLostCustomFields_one": "{{count}} eigen veld met waarden (aangepast veld of overzichtscode) is niet overgenomen.",
     "msProjectLostCustomFields_other": "{{count}} eigen velden met waarden (aangepaste velden en overzichtscodes) zijn niet overgenomen.",
     "msProjectLostNotes_one": "{{count}} aantekening is niet overgenomen.",
