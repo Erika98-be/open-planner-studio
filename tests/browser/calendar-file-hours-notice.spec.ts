@@ -13,6 +13,9 @@
 import type { Locator, Page } from '@playwright/test';
 import { expect, test } from './fixtures/ops';
 
+// Schermbewijs alleen op verzoek: `OPS_WERKDAG_BLOK_SHOTS=<map>` (patroon `task-recorded-dates-block.spec.ts`).
+const SHOTS = process.env.OPS_WERKDAG_BLOK_SHOTS;
+
 type Clock = readonly [string, string];
 const calendarData = (band: Clock) => {
   // P6 telt de dagen vanaf zondag (1); 2..6 = ma..vr.
@@ -67,6 +70,27 @@ async function openCalendarDialog(page: Page): Promise<Locator> {
 const netHours = (dialog: Locator) => dialog.locator('[data-ops-simple-break-net-hours]');
 const notice = (dialog: Locator) => dialog.locator('[data-ops-file-hours-per-day-notice]');
 
+/** Uitsnede rond *Standaard werkdag* (en het blok, als het er staat), in licht en donker of alleen licht. */
+async function shoot(page: Page, dialog: Locator, name: string, themes: readonly ('light' | 'dark')[]): Promise<void> {
+  if (!SHOTS) return;
+  const before = await page.evaluate(() => window.__OPS__!.store.getState().ui.uiTheme);
+  for (const theme of themes) {
+    await page.evaluate(t => window.__OPS__!.store.getState().setUI({ uiTheme: t }), theme);
+    await page.waitForTimeout(300);
+    const d = (await dialog.boundingBox())!;
+    const label = (await dialog.locator('[data-ops-standard-workday-info]').boundingBox())!;
+    const below = (await notice(dialog).count()) > 0
+      ? (await notice(dialog).boundingBox())!
+      : (await netHours(dialog).boundingBox())!;
+    const top = Math.max(label.y - 90, d.y);
+    await page.screenshot({
+      path: `${SHOTS}/${name}-${theme === 'light' ? 'licht' : 'donker'}.png`,
+      clip: { x: d.x, y: top, width: d.width, height: below.y + below.height + 70 - top },
+    });
+  }
+  await page.evaluate(t => window.__OPS__!.store.getState().setUI({ uiTheme: t }), before);
+}
+
 test('kalendervenster: afwijkende uren per dag uit het bestand (8 bij 10 u) geeft één oranje blok onder het getal',
   async ({ page, ops: _ops }) => {
     await openXer(page, LANGE_DAGEN);
@@ -78,6 +102,7 @@ test('kalendervenster: afwijkende uren per dag uit het bestand (8 bij 10 u) geef
     await expect(notice(dialog)).toHaveText(NOTICE_8_10);
     // Het bestaande oranje infoblok van de app, kleur uit het thema (`--theme-accent`).
     await expect(notice(dialog)).toHaveClass(/\balert\b.*\balert--info\b/);
+    await shoot(page, dialog, 'blok-8-bij-10', ['light', 'dark']);
     const colors = await notice(dialog).evaluate((el) => {
       const probe = document.createElement('span');
       probe.style.color = 'var(--theme-accent)';
@@ -106,6 +131,7 @@ test('kalendervenster: zonder afwijking geen blok (XER 10 bij 10 u)', async ({ p
   const dialog = await openCalendarDialog(page);
   await expect(netHours(dialog)).toHaveText('10.00 h');
   await expect(notice(dialog)).toHaveCount(0);
+  await shoot(page, dialog, 'geen-blok-10-bij-10', ['light']);
 });
 
 test('kalendervenster: de standaardkalender van een nieuw project (dagkalender) toont geen blok',
