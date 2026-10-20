@@ -388,7 +388,7 @@ eq('4a finish voorbij deadline ⇒ gemeld, binnen/op de deadline niet', recDeadl
 
 // ── (4b) Deadline zonder tijd in uur-modus: dezelfde grens na berekenen én in de modus ─────────
 // Review PR #402, punt 3. De solver leest een deadline zonder tijd als het einde van de werkdag
-// (`deadlineBound.ts`, knownbugs 119 van het ontwerp "alleen uren"). De reconstructie vergeleek
+// (`deadlineBound.ts`, knownbugs 138 van het ontwerp "alleen uren"). De reconstructie vergeleek
 // strings (`'2026-07-06T16:00' > '2026-07-06'`) en meldde dezelfde taak A als gemist zodra een
 // afwijkende vastlegging van een ANDERE taak (B) de opgeslagen-datumsmodus aanzette. Route: de
 // echte `applyLoadedProject` met een eigen IFC en een bron-orakel (`recordedTimesOrigin: 'xer'`).

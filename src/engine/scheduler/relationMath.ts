@@ -533,7 +533,7 @@ function isDayTaskOnBands(task: Task, eng: CalendarEngine): boolean {
 }
 
 /**
- * Knownbugs 123: een eindmoment `moment` op een blokbegin van `lagEng` als het vorige blokeinde,
+ * Knownbugs 142: een eindmoment `moment` op een blokbegin van `lagEng` als het vorige blokeinde,
  * maar ALLEEN als dat voor de dagtaak die het leest (`readerEng`) werkelijk dezelfde grens is: daar
  * een geldig eindmoment (`(start,end]`) en geen werktijd tussen beide. Anders blijft `moment`
  * staan (het gedrag van vóór de fix). Voorbeeld waar het NIET mag: de opvolger heeft op dat
@@ -646,14 +646,14 @@ function forwardHour(
           reqFinish = landRawInstant(deps, se, predResult.ef, succElapsed);
         } else if (pe.isHourMode && lagEng.isHourMode && !predEndsBeginOfDay
           && isDayTaskOnBands(successor, se)) {
-          // Knownbugs 123 van het ontwerp "alleen uren": `shiftLagPred` normaliseert vooruit, dus een
+          // Knownbugs 142 van het ontwerp "alleen uren": `shiftLagPred` normaliseert vooruit, dus een
           // geëiste finish op een blokeinde (vr 16:00) wordt bij lag 0 het volgende blokbegin
           // (ma 07:00), en een lead kan op een blokbegin landen. `startFromFinish` leest die finish
           // voor een dagtaak als kalenderdag (`utcDayStart`): één werkdag te laat. Als eindmoment
           // hoort een blokbegin bij het vorige blokeinde, mits dat voor de opvolger dezelfde grens is
           // en niet vóór de rauwe voorgangerfinish ligt (`previousBlockEndIfSame`). Een urentaak
           // trekt zelf al achteruit af (`subtractWorkMinutes`), dus alleen de dagtaak.
-          // `bg123-*` in `cases-hours-blokgrenzen.json`.
+          // `bg142-*` in `cases-hours-blokgrenzen.json`.
           reqFinish = previousBlockEndIfSame(deps, lagEng, se, lagged, predResult.ef);
         } else {
           reqFinish = lagged;
@@ -829,7 +829,7 @@ function backwardHour(
         return deps.snapOnOrBefore(pe, new Date(succLf.getTime() - elapsedMin()));
       }
       const predLf = deps.shiftLagPred(lagEng, succLf, seq, predTask, -1);       // pred.LF
-      // Spiegel van de forward-FF hierboven (knownbugs 123): een late finish op een blokbegin leest
+      // Spiegel van de forward-FF hierboven (knownbugs 142): een late finish op een blokbegin leest
       // een dagtaak-voorganger in `subDuration` als de dag erna. Alleen een dagtaak op werkblokken;
       // een urentaak houdt het bestaande gedrag (bij P6 regelt `p6BackwardLagFinishBoundary` dit).
       if (se.isHourMode && lagEng.isHourMode && isDayTaskOnBands(predTask, pe)) {

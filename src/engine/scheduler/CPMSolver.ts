@@ -2223,9 +2223,9 @@ export class CPMSolver {
           // Een WERKTIJD-vertraging telt werkminuten op (`addWorkingMinutesSigned`) en kan exact op
           // een blokeinde landen (di 16:00). Als start is dat het volgende blokbegin (wo 08:00);
           // zonder deze snap gaf `addDurationChecked`s band-eind-wacht (voor een rauw wortel-anker)
-          // een vroeg einde gelijk aan de start: duur nul (knownbugs 121 van het ontwerp "alleen
+          // een vroeg einde gelijk aan de start: duur nul (knownbugs 140 van het ontwerp "alleen
           // uren"). `snapSuccessorEarlyStart` laat een eindmijlpaal op het blokeinde staan, net als na
-          // een relatie. Binnen een blok is dit een no-op. `bg121-*` in `cases-hours-blokgrenzen.json`.
+          // een relatie. Binnen een blok is dit een no-op. `bg140-*` in `cases-hours-blokgrenzen.json`.
           earlyStart = this.snapSuccessorEarlyStart(cal, earlyStart, task);
         }
       }
@@ -2967,8 +2967,8 @@ export class CPMSolver {
       // (`nextWorkInstant`) en kan op een blokbegin landen (anker wo 08:00 ⇒ late finish wo 08:00).
       // Als eindmoment is dat het vorige blokeinde (di 16:00): zelfde punt op de tijdas, dus de
       // speling verandert niet, maar de getoonde late finish en de dag die een dagtaak eruit leest
-      // wel (knownbugs 122 van het ontwerp "alleen uren"). Mijlpaal en ELAPSEDTIME-taak blijven
-      // ongemoeid. `bg122-*` in `cases-hours-blokgrenzen.json`.
+      // wel (knownbugs 141 van het ontwerp "alleen uren"). Mijlpaal en ELAPSEDTIME-taak blijven
+      // ongemoeid. `bg141-*` in `cases-hours-blokgrenzen.json`.
       if (isZeroDurationMilestone(task) || isElapsedTask(task)) return shifted;
       return this.snapOnOrBefore(eng, shifted);
     }

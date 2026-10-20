@@ -419,7 +419,7 @@ export function computeScheduleResults(input: ScheduleAnalysisInput): CPMResult 
         if (!cd) continue;
         const dW = snapOnOrBefore(cal, cd);
         // Een startbeperking van een URENtaak vergelijkt met het eerstvolgende werkmoment (knownbugs
-        // 120 van het ontwerp "alleen uren"): `snapOnOrBefore` zet een datum op een blokbegin (di 08:00)
+        // 139 van het ontwerp "alleen uren"): `snapOnOrBefore` zet een datum op een blokbegin (di 08:00)
         // terug naar het vorige blokeinde (ma 16:00), en een taak die precies op di 08:00 start gold
         // dan als geschonden. Op de tijdas zijn beide hetzelfde punt, en de solver rekent de late
         // start van een urentaak ook zo (`finishFromStart` loopt vanaf het volgende blokbegin). Een

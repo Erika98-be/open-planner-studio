@@ -12,7 +12,7 @@ const MS_PER_MIN = 60_000;
  * (`CPMSolver.calendarFor`; in de reconstructie `resolveCalendar` + `engineForTaskCalendar`), niet
  * die van het project.
  *
- * Dag-modus: de werkdag op of vóór de datum (`prevWorkDay`), zoals altijd. Uur-modus (knownbugs 119
+ * Dag-modus: de werkdag op of vóór de datum (`prevWorkDay`), zoals altijd. Uur-modus (knownbugs 138
  * van het ontwerp "alleen uren"): een datum zonder tijd is het EINDE van die werkdag — het einde van
  * het laatste werkblok dat op die datum begint, zoals een dagtaak dezelfde datum leest. Werkt die
  * datum niet (weekend, feestdag), dan het laatste blokeinde vóór het einde van die datum. Een
