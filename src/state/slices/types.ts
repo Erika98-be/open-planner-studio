@@ -284,6 +284,7 @@ export type NotificationMessageKey =
   | 'notifications.msProjectLostBaselines'
   | 'notifications.msProjectLostExtraBaselines'
   | 'notifications.msProjectLostBaselineWorkCost'
+  | 'notifications.msProjectLostAssignmentBaselineDates'
   | 'notifications.msProjectLostCustomFields'
   | 'notifications.msProjectLostNotes'
   | 'notifications.msProjectLostHyperlinks'

@@ -420,6 +420,10 @@ export interface MsProjectImportReport {
    *  Baseline 0 alleen de taakdatums, de duur en de mijlpaalstatus over. (`.mpp` leest geen enkele
    *  baseline; daar telt alles onder `baselines`.) */
   baselineWorkCost: number;
+  /** Alleen MSPDI: toewijzingen waarvan een Baseline 0-datum afwijkt van die van hun taak. De lezer
+   *  bewaart alleen de taakbaseline, dus de afwijking gaat verloren. Gelijke datums tellen niet.
+   *  (`.mpp`: daar komt geen enkele baseline over; alles telt onder `baselines`.) */
+  assignmentBaselineDates: number;
   /** Eigen velden (extended attributes, ook opzoekwaarden, en overzichtscodes) met minstens één waarde:
    *  aantal verschillende velden over taken, resources en toewijzingen. De OPS-eigen transportvelden
    *  tellen niet mee. `.mpp`: vlaggen (ja/nee-velden) zijn bitvelden en worden niet geteld. */
@@ -453,7 +457,7 @@ export interface MsProjectImportReport {
 /** Een leeg verslag: alles 0. */
 export function emptyMsProjectImportReport(format: MsProjectImportReport['format']): MsProjectImportReport {
   return {
-    format, baselines: 0, baselineWorkCost: 0, customFields: 0, notes: 0, hyperlinks: 0, fixedCosts: 0, resourceRates: 0,
+    format, baselines: 0, baselineWorkCost: 0, assignmentBaselineDates: 0, customFields: 0, notes: 0, hyperlinks: 0, fixedCosts: 0, resourceRates: 0,
     subprojects: 0, externalTasks: 0, manualTasks: 0, levelingDelays: 0, inactiveTasks: 0,
     criticalSlackLimitDays: 0,
   };

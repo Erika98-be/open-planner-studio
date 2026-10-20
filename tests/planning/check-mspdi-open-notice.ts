@@ -100,7 +100,7 @@ async function main(): Promise<void> {
   eq('1a vier taken ingelezen (ook subproject, externe en inactieve taak)', result.tasks.map(t => t.name),
     ['Fundering', 'Deelproject installaties', 'Oplevering (extern)', 'Reserve']);
   eq('1b verslag', result.msProjectReport, {
-    format: 'mspdi', baselines: 2, baselineWorkCost: 0, customFields: 3, notes: 2, hyperlinks: 2, fixedCosts: 1, resourceRates: 2,
+    format: 'mspdi', baselines: 2, baselineWorkCost: 0, assignmentBaselineDates: 0, customFields: 3, notes: 2, hyperlinks: 2, fixedCosts: 1, resourceRates: 2,
     subprojects: 1, externalTasks: 1, manualTasks: 1, levelingDelays: 1, inactiveTasks: 1, criticalSlackLimitDays: 0,
   });
   // Wat de lezer wél overneemt, telt niet: de taakaantekening, baseline 0 en het standaardtarief.
@@ -169,6 +169,21 @@ async function main(): Promise<void> {
     <Assignments><Assignment><UID>1</UID><TaskUID>1</TaskUID><ResourceUID>1</ResourceUID><Units>1</Units>
       <Baseline><Number>1</Number><Start>2026-03-02T08:00:00</Start><Work>PT16H0M0S</Work></Baseline></Assignment></Assignments>`)).msProjectReport;
   eq('6d baseline 1 op een toewijzing, baseline 0-werk op een resource', [onAssignment?.baselines, onAssignment?.baselineWorkCost], [1, 1]);
+  // 6f/6g Baseline 0-datums van een toewijzing (review ronde 2): de app bewaart alleen de taakbaseline.
+  //       Gelijk aan de taak ⇒ niets verloren; afwijkend ⇒ een eigen regel.
+  const assignmentBaseline = (start: string, finish: string) => readMSPDI(wrap(`<Tasks>${task(1, 'Fundering', `<Baseline><Number>0</Number>
+      <Start>2026-03-02T08:00:00</Start><Finish>2026-03-03T17:00:00</Finish><Duration>PT16H0M0S</Duration></Baseline>`)}</Tasks>
+    <Resources><Resource><UID>1</UID><ID>1</ID><Name>Kraan</Name><Type>1</Type></Resource></Resources>
+    <Assignments><Assignment><UID>1</UID><TaskUID>1</TaskUID><ResourceUID>1</ResourceUID><Units>1</Units>
+      <Baseline><Number>0</Number><Start>${start}</Start><Finish>${finish}</Finish></Baseline></Assignment></Assignments>`));
+  const same = assignmentBaseline('2026-03-02T08:00:00', '2026-03-03T17:00:00');
+  eq('6f toewijzingsbaseline gelijk aan de taak: geen verslag', [same.assignments.length, same.msProjectReport], [1, undefined]);
+  const differs = assignmentBaseline('2026-03-02T08:00:00', '2026-03-05T17:00:00');
+  eq('6g toewijzingsbaseline wijkt af: eigen telling', [differs.msProjectReport?.assignmentBaselineDates, differs.msProjectReport?.baselines,
+    differs.msProjectReport?.baselineWorkCost], [1, 0, 0]);
+  eq('6g2 eigen regel in de melding', msProjectImportNotice([differs])?.detailLines?.map(l => [l.messageKey, l.params?.count]),
+    [['notifications.msProjectLostAssignmentBaselineDates', 1]]);
+
   // 6e De baselinezin beweert niets over Baseline 0.
   for (const loc of ['nl', 'en']) {
     const json = JSON.parse(readFileSync(new URL(`../../src/i18n/locales/${loc}/common.json`, import.meta.url), 'utf8')) as { notifications: Record<string, string> };
@@ -179,7 +194,7 @@ async function main(): Promise<void> {
   // (5) De sleutels bestaan in nl en en (geen lege toast).
   for (const loc of ['nl', 'en']) {
     const json = JSON.parse(readFileSync(new URL(`../../src/i18n/locales/${loc}/common.json`, import.meta.url), 'utf8')) as { notifications: Record<string, string> };
-    for (const key of ['msProjectImportLoss', 'msProjectLostBaselineWorkCost_one', 'msProjectLostBaselineWorkCost_other', 'msProjectLostExtraBaselines_one', 'msProjectLostExtraBaselines_other',
+    for (const key of ['msProjectImportLoss', 'msProjectLostBaselineWorkCost_one', 'msProjectLostBaselineWorkCost_other', 'msProjectLostAssignmentBaselineDates_one', 'msProjectLostAssignmentBaselineDates_other', 'msProjectLostExtraBaselines_one', 'msProjectLostExtraBaselines_other',
       'msProjectLostManualTasks_one', 'msProjectLostManualTasks_other', 'msProjectLostInactiveTasks_one', 'msProjectLostInactiveTasks_other']) {
       eq(`5 ${loc}: ${key}`, typeof json.notifications[key], 'string');
     }

@@ -60,8 +60,8 @@ export function scanMspdiImportLoss(root: Element, isConsumed: ConsumedExtendedA
         || nonZero(directChildText(baseline, 'Cost'));
       if (number === 0) {
         const workCost = nonZeroDuration(directChildText(baseline, 'Work')) || nonZero(directChildText(baseline, 'Cost'));
-        // Op een resource of toewijzing neemt de lezer niets van Baseline 0 over; de datums van een
-        // toewijzing staan al op de taak, dus alleen werk en kosten tellen.
+        // Op een resource of toewijzing neemt de lezer niets van Baseline 0 over. Werk en kosten tellen
+        // hier; de datums van een toewijzing vergelijkt de toewijzingslus met die van de taak.
         if (workCost) workCostLost = true;
       } else if (hasDates || hasAmounts) {
         baselineNumbers.add(number);
@@ -69,6 +69,19 @@ export function scanMspdiImportLoss(root: Element, isConsumed: ConsumedExtendedA
     }
     if (workCostLost) report.baselineWorkCost++;
   };
+
+  /** Baseline 0-datums van een element (`Start`/`Finish` als tijdstip), of `undefined`. */
+  const baseline0Dates = (el: Element): { start?: number; finish?: number } | undefined => {
+    const baseline = directChildren(el, 'Baseline').find(b => directChildText(b, 'Number') === '0');
+    if (!baseline) return undefined;
+    const at = (tag: string) => {
+      const ms = Date.parse(directChildText(baseline, tag));
+      return Number.isFinite(ms) ? ms : undefined;
+    };
+    return { start: at('Start'), finish: at('Finish') };
+  };
+  /** Baseline 0-datums per taak-UID: die komen WEL over (de taakbaseline van de lezer). */
+  const taskBaseline0 = new Map<string, { start?: number; finish?: number }>();
 
   const hasHyperlink = (el: Element) => ['Hyperlink', 'HyperlinkAddress', 'HyperlinkSubAddress']
     .some(tag => directChildText(el, tag) !== '');
@@ -98,6 +111,8 @@ export function scanMspdiImportLoss(root: Element, isConsumed: ConsumedExtendedA
     if (uid === 0 && directChildText(task, 'OutlineLevel') === '0') continue;
 
     collectBaselines(task);
+    const taskDates = baseline0Dates(task);
+    if (taskDates) taskBaseline0.set(String(uid), taskDates);
     collectExtendedAttributes(task);
     if (hasHyperlink(task)) report.hyperlinks++;
     // `<FixedCost>`: de lezer leest geen kosten.
@@ -137,6 +152,17 @@ export function scanMspdiImportLoss(root: Element, isConsumed: ConsumedExtendedA
   for (const assignment of directChildren(directChild(root, 'Assignments') ?? root, 'Assignment')) {
     if (directChildText(assignment, 'Notes') !== '') report.notes++;
     collectBaselines(assignment);
+    // Baseline 0-datums van een toewijzing: de app bewaart alleen de taakbaseline. Gelijk aan die van
+    // de taak ⇒ niets verloren; wijkt een datum af (of heeft de taak er geen), dan gaat die afwijking
+    // verloren (orkestratorbesluit fixronde 2 #392: alleen afwijkingen melden, anders krijgt bijna elk
+    // bestand met een baseline een melding).
+    const own = baseline0Dates(assignment);
+    if (own) {
+      const ofTask = taskBaseline0.get(directChildText(assignment, 'TaskUID'));
+      const differs = (['start', 'finish'] as const)
+        .some(key => own[key] !== undefined && own[key] !== ofTask?.[key]);
+      if (differs) report.assignmentBaselineDates++;
+    }
     collectExtendedAttributes(assignment);
     if (hasHyperlink(assignment)) report.hyperlinks++;
   }

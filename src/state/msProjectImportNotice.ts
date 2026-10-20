@@ -24,6 +24,7 @@ function lines(report: MsProjectImportReport): [number, LineKey][] {
       ? 'notifications.msProjectLostExtraBaselines'
       : 'notifications.msProjectLostBaselines'],
     [report.baselineWorkCost, 'notifications.msProjectLostBaselineWorkCost'],
+    [report.assignmentBaselineDates, 'notifications.msProjectLostAssignmentBaselineDates'],
     [report.customFields, 'notifications.msProjectLostCustomFields'],
     [report.notes, 'notifications.msProjectLostNotes'],
     [report.hyperlinks, 'notifications.msProjectLostHyperlinks'],
