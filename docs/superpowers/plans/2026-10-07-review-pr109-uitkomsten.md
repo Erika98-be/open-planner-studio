@@ -1819,3 +1819,11 @@ Testversie (release-check, poort 3049) is NIET bijgewerkt met de PR's van vandaa
 - Vraag eigenaar: toewijzingenpaneel geland? Nee: #389 (andere sessie, op #369) open (niet gemerged), concept, laatst
   bijgewerkt 2026-10-19 12:21; #369 open (niet gemerged), concept, conflicten met main.
 - CSV-lag "u" komt uit ca38bed84 (2026-09-24, technische fix uur-lags), geen eerder eigenaarsbesluit gevonden.
+- **Besluit eigenaar 2026-10-20, CSV-lag in #400: optie 2** — uurteken volgt de app-taal (nl `3FS+2u`, en `3FS+2h`,
+  talen zonder leesbare afkorting `u`). Afgewezen: altijd `h` (aanbeveling orkestrator), altijd `u`. Fixronde bij de
+  maker (Opus 5.5), met twee VERVOLG-punten van de check en de no-op eruit.
+- **Eigenaar 2026-10-20 over #369/#389: "merge ze, ze veranderen alleen de resourceweergaven toch?"** Nagelopen: niet
+  alleen weergave — ook sneltoetsen (`useKeyboardShortcuts.ts`, `isTypingTarget.ts`: Ctrl+S/F5, Ctrl+Z/Y, Escape),
+  getalinvoer (`decimalInput.ts`), `reportNumber.ts`, tabelkolommen, gidsen; conflicten met main (gidsen, i18n) en
+  botsing met de hernoeming #376. ⇒ integratie-PR op eigen branch `claude/integratie-toewijzingen` (worker Opus 5.5),
+  daarna review (GPT-6.1-Sol) + CI, dan merge; #369/#389 daarna sluiten als opgenomen.
