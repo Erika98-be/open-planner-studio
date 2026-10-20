@@ -105,33 +105,41 @@ verandert nooit meer.
   afgebroken), dan verwijdert de rerun die draft en begint opnieuw. Een nieuwe bouw = een nieuwe run met een nieuw
   `run_number`.
 - **Manifesten vervangen.** `gh release upload --clobber` verwijdert en uploadt opnieuw; in dat korte venster geeft
-  endpoint 1 een 404 en faalt een kanaalcheck (stil bij opstarten, foutmelding bij een handmatige check). Faalt de
-  upload, dan ontbreekt het manifest tot de volgende publicatie; herstel = de publicatiejob opnieuw draaien. Geen
-  verdere garantie.
-- **Bewaren.** Een opruimstap verwijdert generaties (release + tag) ouder dan de nieuwste 10, behalve de generatie
-  waar een `nightly-*.json` naar wijst. Een gebruiker die net een manifest las, kan zijn download dus afmaken.
-- **Eén slot.** Dev-publicatie, Nightly en de opruimstap delen de `concurrency`-groep `channels-publish`, zonder
-  annuleren. Alleen de bouwjobs mogen geannuleerd worden.
+  endpoint 1 een 404 en faalt een kanaalcheck (stil bij opstarten, foutmelding bij een handmatige check). Stopt de job
+  halverwege, dan wijzen de manifesten van één kanaal deels naar de oude en deels naar de nieuwe generatie. Herstel:
+  de publicatie van dezelfde generatie opnieuw draaien (toegestaan als de versie ≥ de hoogste versie in de
+  kanaalmanifesten is; review r3, bevinding 2).
+- **Geen opruimen in de eerste versie** (review r3, bevinding 3). Generaties blijven staan; elke manifest-URL blijft dus
+  geldig. Opruimen met een bewaartijd ná de laatste kanaalverwijzing staat op de vervolglijst.
+- **Eén slot met wachtrij.** Dev-publicatie en Nightly delen de `concurrency`-groep `channels-publish` met
+  `cancel-in-progress: false` én `queue: max` (review r3, bevinding 1: zonder wachtrij annuleert een nieuwe wachtende
+  run de vorige wachtende, dus kon een Dev-publicatie de zaterdag-Nightly laten vervallen). Alleen de bouwjobs mogen
+  geannuleerd worden.
 
 ## Workflow `.github/workflows/prerelease.yml` (Dev)
 
 - `on: workflow_run` van `ci.yml`, `types: [completed]`, `branches: [main]`; alleen verder bij `conclusion == success`
   en `event == push`, en dan precies voor `head_sha` van die run (zelfde patroon als `live.yml`). Plus
   `workflow_dispatch` (bouwt de `main`-tip, alleen met een geslaagde CI-push-run voor die SHA).
+- Vóór het bouwen: `head_sha` moet gelijk zijn aan de actuele `main`-tip; anders overslaan (review r3, bevinding 4: een
+  herhaalde oude CI-run houdt zijn oude SHA en zou anders oude code als nieuwste Dev publiceren).
 - Bouwjobs: `concurrency`-groep `prerelease-build`, `cancel-in-progress: true`: een nieuwere merge vervangt een lopende
-  bouw. De publicatiejob zit in `channels-publish` en publiceert alleen als zijn versie hoger is dan die in de huidige
-  `dev-*.json`.
+  bouw. De publicatiejob zit in `channels-publish` en publiceert alleen als zijn versie ≥ de hoogste versie in de
+  huidige `dev-*.json` is.
 - **Gedeeld met `release.yml`, via `workflow_call`:** alleen bouwen (matrix Linux, macOS universal, Windows),
   Authenticode-signing en het opnieuw signeren van de Windows-updater-ZIP. Input: SHA, versie; secrets expliciet
   doorgegeven. Publiceren, `latest.json` en de download-URL's blijven per workflow eigen (review r1, bevinding 4:
   de huidige re-sign-stap haalt `latest.json` op en bouwt URL's via `/releases/latest/`). Geen algemeen releaseframework.
-- Publicatie: generatie `dev-<versie>` aanmaken (zie boven), dan `dev-*.json` op `channels` vervangen, dan opruimen.
+- Publicatie: generatie `dev-<versie>` aanmaken met `gh release create --draft --target <SHA>` (zie boven), na publicatie
+  de URL's als `/releases/download/dev-<versie>/<asset>` schrijven (nooit de `untagged-*`-URL van de draft), dan
+  `dev-*.json` op `channels` vervangen.
 - Release-tekst: versie, commit en `git log --oneline` sinds de vorige generatie.
 
 ## Workflow `.github/workflows/nightly.yml`
 
 - `on: schedule: cron '0 18 * * 6'` (zaterdag 20:00 zomertijd, 19:00 wintertijd) en `workflow_dispatch`.
-- Draait in `channels-publish`. Leest de huidige `dev-*.json`: dat wijst naar één vaste generatie. Slaat over (groene
+- Draait in `channels-publish` (met `queue: max`). Leest de huidige `dev-*.json`; promoveert alleen als ze allemaal
+  naar dezelfde generatie wijzen (anders faalt hij met een melding: Dev-publicatie eerst herstellen). Slaat over (groene
   run, melding in de samenvatting) als `nightly-*.json` al naar die generatie wijst (alleen bij `schedule`).
 - Schrijft `nightly-*.json` met dezelfde inhoud als de `dev-*.json` (zelfde URL's, versie en handtekening). Geen bouw,
   geen kopie van bouwsels, geen signing.
@@ -194,6 +202,6 @@ AUR-pakket:
 - Snap `edge`-kanaal.
 - Een AUR-Nightly-pakket (`open-planner-studio-nightly-bin`); kan later met dezelfde workflow.
 - Automatisch installeren via `pacman` vanuit de app.
-- Bewaren van oudere bouwen (per kanaal is er steeds één).
+- Opruimen van oude Dev-generaties (vervolglijst).
 - Een testkanaal voor de webversie (`live.yml` blijft `main`).
 
