@@ -18,7 +18,11 @@ blokkerende planningcheck als `scripts/bench-task-grid.mjs` gebruikt:
 - een afzonderlijke selectie→adapterfixture van 3.000 taken en 2.999 relaties, waarbij het
   selectie-onafhankelijke adapterdomein één keer vooraf wordt gebouwd.
 
-Iedere tijdmeting krijgt twee warmups. Het gerapporteerde getal is de mediaan van negen runs. De
+Iedere tijdmeting krijgt twee warmups. Het gerapporteerde getal is de mediaan van negen runs.
+Uitzondering (2026-10-19): de selectie→adaptermeting krijgt 30 warmups en de mediaan van 21 runs.
+Met twee warmups liepen de eerste samples nog in onge-optimaliseerde code; op CI kwam de mediaan
+daardoor soms net boven 2 ms (2,01 en 2,02 ms) terwijl hij normaal 0,16–0,31 ms is. De 2-ms-poort
+zelf is niet gewijzigd. De
 generator- en rij-indexbouw vallen buiten de gemeten tijd; relation-index, navigatie, selectie en
 `computeVirtualWindow` zijn de echte productie-implementaties.
 

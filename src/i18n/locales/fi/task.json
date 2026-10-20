@@ -406,10 +406,6 @@
     "timephasedActive": "Seuraa MS Projectin tuntijakautumista",
     "timephasedLost": "MS Projectin päivämääräikkuna ei ole enää käytössä muokkauksen jälkeen — tuntijakautuminen pysyy voimassa ja tallessa tiedostossa",
     "timephasedContoured": "Oma tuntijakautuminen",
-    "recordedDatesActive": "Näyttää Primaveran omat tallennetut päivämäärät tälle tehtävälle",
-    "recordedDatesActiveNeutral": "Näyttää tiedostoon tallennetut päivämäärät tälle tehtävälle",
-    "recordedDatesDeviates": "Poikkeaa tallennetuista päivämääristä",
-    "recordedDatesPartlyUnrecorded": "Tallennus on osittain puutteellinen — katso myöhäis- ja pelivarasarakkeet",
     "completion": "Edistyminen (%)",
     "progress": {
       "actualStart": "Toteutunut alkamispäivä",
@@ -458,7 +454,7 @@
       "work": "Työ (jäljellä)",
       "workHint": "Jäljellä oleva työ tunteina; työsääntö ratkaisee, liikkuuko kesto vai kuormitusaste.",
       "workDeviates": "Poikkeaa kuormitusasteesta × kestosta",
-      "workDeviatesHint": "Tallennettu työ {{stored}} h poikkeaa kuormitusasteesta × jäljellä olevasta kestosta ({{derived}} h). Histogrammi seuraa tallennettua työtä koko tehtävän keston ajan; kuormitusaste pysyy sellaisena kuin tiedosto sen antoi.",
+      "workDeviatesHint": "Tallennettu työ {{stored}} h poikkeaa kuormitusasteesta × jäljellä olevasta kestosta ({{derived}} h). Histogrammi seuraa tallennettua työtä koko tehtävän keston ajan; kuormitusaste pysyy sellaisena kuin tiedosto sen antoi. Jos muutat kestoa, ohjelma laskee työn uudelleen.",
       "locked": "Työsäännön {{rule}} suojaama"
     },
     "notes": {

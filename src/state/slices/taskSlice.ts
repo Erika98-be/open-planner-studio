@@ -39,8 +39,9 @@ import type { RelationTree } from '@/engine/scheduler/relationRules';
 import { notifyTimephasedLoss } from '../timephasedLossNotice';
 import {
   captureCalendarChange, captureTriangle, carryRemainingThroughDurationEdit, durationEditRefusal, settleCalendarChange,
-  settleDurationEdit, settleRuleChange, captureProgressWork, settleProgressWork,
+  settleDurationEdit, settleRuleChange, captureProgressWork, settleProgressWork, type RecomputedRemainingWork,
 } from '@/engine/work/workRuleApply';
+import { mergeStepRecomputedWork, remainingWorkRecomputedNotice } from '../remainingWorkNotice';
 import type { WorkRule } from '@/types/workRule';
 import type { AppSlice, AppSliceFactory, NotifyInput, SiblingDirection } from './types';
 import type { AppState } from '../appStore';
@@ -792,10 +793,64 @@ function settlePhaseTransitions(s: AppState, transitions: readonly PhaseTransiti
 }
 
 /** Buiten de producer: meldingen en belasting. */
+/**
+ * Meldt herschreven afwijkend restwerk (`settleDurationEdit`) ná de producer. Zonder `coalesceKey`:
+ * één melding per bewerking. Met `coalesceKey` (balksleep, toetsaanslagen in het paneel) horen alle
+ * stappen bij één undo-stap: de melding wordt ter plekke bijgewerkt en toont de EINDWAARDE, met het
+ * "vóór" van de eerste stap (dat zet Ctrl+Z terug) — zie `mergeStepRecomputedWork`.
+ */
+function notifyRecomputedWork(
+  runtime: StoreRuntime,
+  get: () => AppState,
+  fresh: readonly RecomputedRemainingWork[],
+  coalesceKey: string | undefined,
+): void {
+  if (!coalesceKey) {
+    const notice = remainingWorkRecomputedNotice(fresh);
+    if (notice) get().notify(notice);
+    return;
+  }
+  const carried = runtime.coalescedRecomputedWork(coalesceKey);
+  if (carried.length === 0 && fresh.length === 0) return;
+  const s = get();
+  const { items, notify } = mergeStepRecomputedWork(carried, fresh,
+    (id) => s.assignments.find((a) => a.id === id)?.remainingWorkMinutes);
+  runtime.setCoalescedRecomputedWork(coalesceKey, items);
+  const notice = remainingWorkRecomputedNotice(notify, { dedupeKey: `remaining-work:${coalesceKey}` });
+  if (notice) s.notify(notice);
+}
+
 function finishStructural(get: () => AppState, outcome: StructuralOutcome): void {
   for (const notice of outcome.notices) get().notify(notice);
   if (outcome.lostSteering > 0) notifyTimephasedLoss(get().notify, get().activeDocumentId, outcome.lostSteering);
   if (outcome.assignmentsMoved) get().recomputeResourceLoad();
+}
+
+/**
+ * Taakvelden die geen datum en geen planning raken. Dezelfde velden die het taakraster zonder
+ * `scheduleStale` schrijft (route `task-field` zonder `task.priority`, plus `activity-code` en
+ * `custom-field`, zie `expectedRoute`/`applyOneCellEdit` in `taskEditPlan.ts`).
+ *  - `taskType`/`customTaskTypeId`: een IFC-classificatie; de motor leest ze niet.
+ *  - `workRule`: `settleRuleChange` legt hooguit het restwerk vast ("Typewissel: geen enkel getal
+ *    verandert", `applyRuleChange` in `workTriangle.ts`) — hetzelfde als `setTaskWorkRule`, dat
+ *    daarom ook zonder `stale` sluit.
+ *
+ * Gebruik: een patch die ALLEEN deze velden verandert, laat "datums zoals opgeslagen" staan (de
+ * getoonde datums blijven dan kloppen met het bestand). Zie de gids `uitleg-datums-zoals-opgeslagen`:
+ * "Een naam wijzigen doet dat niet."
+ */
+const DATE_NEUTRAL_TASK_FIELDS: ReadonlySet<string> = new Set([
+  'name', 'description', 'wbsCode', 'color', 'notes', 'activityCodes', 'customFields',
+  'taskType', 'customTaskTypeId', 'workRule',
+]);
+
+function changesOnlyDateNeutralFields(before: Task, after: Task): boolean {
+  const keys = new Set([...Object.keys(before), ...Object.keys(after)]) as Set<keyof Task>;
+  for (const key of keys) {
+    if (sameValue(before[key], after[key])) continue;
+    if (!DATE_NEUTRAL_TASK_FIELDS.has(key)) return false;
+  }
+  return true;
 }
 
 export const createTaskSlice: AppSliceFactory<TaskSlice> = (runtime) => (set, get) => ({
@@ -903,6 +958,8 @@ export const createTaskSlice: AppSliceFactory<TaskSlice> = (runtime) => (set, ge
     // een lopende producer aanroepen). `true` alleen bij een ECHT verlies, zie taskDefaults.ts.
     let lostTimephasedGuidance = false;
     let refusedNotices: NotifyInput[] = [];
+    // Herschreven afwijkend restwerk (`settleDurationEdit`) — gemeld ná de producer, zoals hierboven.
+    let recomputedWork: RecomputedRemainingWork[] = [];
     set((s) => {
       const idx = taskIndexById(s, id); // basis-zoektocht: geen proxy per taak (zie de helper)
       if (idx < 0) return; // onbekend id: geen snapshot, geen loze undo-stap.
@@ -924,7 +981,7 @@ export const createTaskSlice: AppSliceFactory<TaskSlice> = (runtime) => (set, ge
           hasAssignments: s.assignments.some(a => a.taskId === id),
         });
         if (refusal) {
-          refusedNotices = milestoneRefusalNotices([{ name: task.name, refusal }]);
+          refusedNotices = milestoneRefusalNotices([{ id: task.id, name: task.name, refusal }]);
           return;
         }
       }
@@ -939,6 +996,10 @@ export const createTaskSlice: AppSliceFactory<TaskSlice> = (runtime) => (set, ge
       // (TaskDialog.handleSave) — ⇒ net als een onbekend id: geen snapshot, geen isDirty, geen
       // gevolgregel en dus ook geen melding.
       if (sameValue(task, next)) return;
+      // In "datums zoals opgeslagen" laat een patch die alleen datumneutrale velden echt verandert
+      // (naam, omschrijving, …) de modus staan — zie `DATE_NEUTRAL_TASK_FIELDS`. Gemeten vóór de
+      // mutatie, op dezelfde merge als de no-op-guard hierboven.
+      const keepsRecordedMode = s.datesAsRecorded && changesOnlyDateNeutralFields(task, next);
       // Een nieuwe duur korter dan het gedane werk van een
       // lopende taak wordt geweigerd — vóór de snapshot, dus niets veranderd, met een melding
       // (paneel, Gantt, extensie-API). Dezelfde regel die hieronder de rest laat meeschuiven, zie
@@ -1005,9 +1066,11 @@ export const createTaskSlice: AppSliceFactory<TaskSlice> = (runtime) => (set, ge
         lostTimephasedGuidance = applyDurationChangeRules(task, oldWorkMinutes, contourHpd, {
           keepWork: contourKeepsWork(task, s.project.defaultWorkRule),
         }) || lostTimephasedGuidance;
-        // Werk beschermd ⇒ inzet = W / R'; anders volgt een aanwezig werkveld de nieuwe duur.
-        // Onder de standaardregel zonder werkvelden gebeurt er niets.
-        settleDurationEdit(task, s.assignments, triangle);
+        // De restduur van een niet-gestarte taak volgt de duur; daarna: werk beschermd ⇒
+        // inzet = W / R', anders volgt een aanwezig werkveld de nieuwe restduur (ook een afwijkend
+        // werk uit het bestand — dat meldt hij terug). Onder de standaardregel zonder werkvelden
+        // verandert er aan de toewijzingen niets.
+        recomputedWork = settleDurationEdit(task, triangle).recomputedWork;
       }
       settleProgressWork(task, s.assignments, progressWork);
       if ('workRule' in updates && task.workRule !== workRule) {
@@ -1033,11 +1096,14 @@ export const createTaskSlice: AppSliceFactory<TaskSlice> = (runtime) => (set, ge
       // kalender — aan de INVOERKANT, nooit vanuit de solve. Zie `reconcileHourInputFinish`. BEWUST
       // NA `clearLevelingGaps`: anders telt het einde nivelleergaten mee die deze bewerking wist.
       reconcileHourInputFinish(task, finishBasis, resolveCalendar(task.calendarId, s.calendars, s.calendar));
-      // Datum-rakende mutatie (duur/start/constraint/mijlpaal → planning verouderd tot F5).
-      runtime.finishMutation(s, { stale: true });
+      // Datum-rakende mutatie (duur/start/constraint/mijlpaal → planning verouderd tot F5). Alleen
+      // een datumneutrale patch ín de modus laat de modus staan; buiten de modus blijft dit pad
+      // ongewijzigd `stale`.
+      runtime.finishMutation(s, { stale: !keepsRecordedMode });
     });
     for (const notice of refusedNotices) get().notify(notice);
     if (lostTimephasedGuidance) notifyTimephasedLoss(get().notify, get().activeDocumentId, 1);
+    notifyRecomputedWork(runtime, get, recomputedWork, opts?.coalesceKey);
     get().recomputeViewRows();
   },
 
@@ -1057,6 +1123,7 @@ export const createTaskSlice: AppSliceFactory<TaskSlice> = (runtime) => (set, ge
   setTaskSplits: (taskId, pieces, opts) => {
     // Verlies van MSP-sturing — zie `updateTask` hierboven: `notify` doet zelf een `set()`.
     let lostTimephasedGuidance = false;
+    let recomputedWork: RecomputedRemainingWork[] = [];
     let refusal: SplitRefusal | null = null;
     set((s) => {
       // (1) Weigeren — vóór élke draftmutatie, dus geen snapshot en geen halve state.
@@ -1074,12 +1141,15 @@ export const createTaskSlice: AppSliceFactory<TaskSlice> = (runtime) => (set, ge
 
       // (3)–(7) Het gedeelde lichaam (`splitMutations.ts`, ook de MCP-draft): gaten, werkduur,
       // contour, tijdbasis-gevolgen en de eigen finish.
-      lostTimephasedGuidance = applyTaskSplits(s, task, pieces, hoursPerDay);
+      const outcome = applyTaskSplits(s, task, pieces, hoursPerDay);
+      lostTimephasedGuidance = outcome.timephasedLost;
+      recomputedWork = outcome.recomputedWork;
 
       // (8) `markScheduleStale` via `finishMutation` — nooit de vlag rechtstreeks.
       runtime.finishMutation(s, { stale: true });
     });
     if (lostTimephasedGuidance) notifyTimephasedLoss(get().notify, get().activeDocumentId, 1);
+    notifyRecomputedWork(runtime, get, recomputedWork, opts?.coalesceKey);
     get().recomputeViewRows();
     return refusal;
   },
@@ -1292,7 +1362,7 @@ export const createTaskSlice: AppSliceFactory<TaskSlice> = (runtime) => (set, ge
   insertWbsTemplate: (template, parentId) => {
     if (template.tasks.length === 0) return null;
     let newRootId: string | null = null;
-    let skippedRelations = 0;
+    let skippedRelations: string[] = [];
     const outcome = emptyOutcome();
     set((s) => {
       const idMap = new Map<string, string>();

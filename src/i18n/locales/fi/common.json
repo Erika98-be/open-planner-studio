@@ -59,12 +59,8 @@
     "xerImportUnsupportedSemantics_other": "{{count}} P6-aikataulutusasetusta käytti turvallista varavaihtoehtoa.",
     "xerImportDatesAsRecorded_one": "{{count}} tehtävä näyttää päivämäärät sellaisina kuin Primavera ne tallensi (ei laskettuina uudelleen).",
     "xerImportDatesAsRecorded_other": "{{count}} tehtävää näyttää päivämäärät sellaisina kuin Primavera ne tallensi (ei laskettuina uudelleen).",
-    "xerImportDatesAsRecordedOffer_one": "{{count}} tehtävä poikkeaa tiedoston päivämääristä. Ne voi näyttää.",
-    "xerImportDatesAsRecordedOffer_other": "{{count}} tehtävää poikkeaa tiedoston päivämääristä. Ne voi näyttää.",
     "importDatesAsRecorded_one": "{{count}} tehtävä näyttää päivämäärät sellaisina kuin ne ovat tiedostossa (ei laskettuina uudelleen).",
     "importDatesAsRecorded_other": "{{count}} tehtävää näyttää päivämäärät sellaisina kuin ne ovat tiedostossa (ei laskettuina uudelleen).",
-    "importDatesAsRecordedOffer_one": "{{count}} tehtävä poikkeaa tiedoston päivämääristä. Ne voi näyttää.",
-    "importDatesAsRecordedOffer_other": "{{count}} tehtävää poikkeaa tiedoston päivämääristä. Ne voi näyttää.",
     "xerExportLoss": "Vienti muotoon {{format}} menettää XER-lähdetiedot.",
     "mppLegacy": "Tämä .mpp-tiedosto on vanhassa muodossa (Project 2007 tai vanhempi). Vie se MS Projectissa XML-muodossa (Tiedosto → Tallenna nimellä → XML) ja avaa se.",
     "mppEncrypted": "Tämä .mpp-tiedosto on suojattu salasanalla. Vie se MS Projectissa XML-muodossa (Tiedosto → Tallenna nimellä → XML) ja avaa se.",
@@ -150,7 +146,7 @@
     "xerArchiveReasonMetadataInvalid": "Syy: lähdetavut ovat ehjiä, mutta niistä johdetut tiedot ovat käyttökelvottomia.",
     "xerArchiveReasonStructure": "Syy: arkiston rakenne IFC-tiedostossa on väärin (kaksoiskappale, väärässä järjestyksessä tai väärin liitetty).",
     "statusDateSetToday": "Raportointipäivä asetettu tähän päivään ({{date}}).",
-    "durationBelowDoneWork": "‘{{name}}’ on jo {{percent}} % tehty: kesto, joka on lyhyempi kuin tehty työ, ei ole mahdollinen. Kestoa ei muutettu.",
+    "durationBelowDoneWork": "'{{name}}' on jo {{percent}} % tehty: kesto, joka on lyhyempi kuin tehty työ, ei ole mahdollinen. Kestoa ei muutettu.",
     "tutorialOfferLater": "Opetusohjelmat löytyvät aina kohdasta Ohje › Opetusohjelmat.",
     "tutorialOfferUnavailable": "Opetusohjelmia ei voitu asentaa tai käynnistää juuri nyt. Myöhemmin uudelleen voi yrittää kohdassa Ohje › Opetusohjelmat."
   },
@@ -1001,16 +997,12 @@
     "enable": "Ota tuntisuunnittelu käyttöön"
   },
   "recordedDates": {
-    "offer_one": "Kun tehtävät laskettiin uudelleen, {{count}}/{{total}} tehtävän päivämäärä poikkesi tiedoston päivämääristä.",
-    "offer_other": "Kun tehtävät laskettiin uudelleen, {{count}}/{{total}} tehtävää poikkesi tiedoston päivämääristä.",
     "activeCount_one": "Aikataulu näytetään sellaisena kuin Primavera sen tallensi. Kun lasketaan uudelleen, {{count}} tehtävä siirtyisi.",
     "activeCount_other": "Aikataulu näytetään sellaisena kuin Primavera sen tallensi. Kun lasketaan uudelleen, {{count}} tehtävää siirtyisi.",
     "activeCountNeutral_one": "Päivämäärät näytetään sellaisina kuin ne ovat tiedostossa. Kun lasketaan uudelleen, {{count}} tehtävä siirtyisi.",
     "activeCountNeutral_other": "Päivämäärät näytetään sellaisina kuin ne ovat tiedostossa. Kun lasketaan uudelleen, {{count}} tehtävää siirtyisi.",
-    "show": "Näytä tallennetut päivämäärät",
     "active": "Päivämäärät näytetään sellaisina kuin ne ovat tiedostossa. Tehtäviä ei ole laskettu uudelleen.",
     "recalculate": "Laske uudelleen",
-    "markDeviates": "Poikkeaa",
     "markPartlyUnrecorded": "Osittain kirjaamatta",
     "notRecorded": "Ei kirjattu"
   },

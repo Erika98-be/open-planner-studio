@@ -13,7 +13,7 @@ import {
   planTaskAssignmentSet,
   type TaskAssignmentApplyIndexes,
 } from '@/engine/taskGrid/assignmentPlan';
-import { isHourCalendar } from '@/services/subdayIo';
+import { isHourModeCalendar } from '@/types/calendar';
 import { CalendarEngine } from '@/engine/scheduler/CalendarEngine';
 import { signedWorkDaysBetween } from '@/engine/variance';
 import { effectiveCalendarOf, effHoursPerDay } from '@/utils/taskDuration';
@@ -28,8 +28,9 @@ import { markDateMutation, snapshotsEqual } from './transaction';
 import {
   captureCalendarChange, captureTriangle, remainingMinutesOf, settleAssignmentPlan, settleCalendarChange,
   settleDurationAftermath, settleDurationEdit, settleRuleChange, settleWorkEdit, type AssignmentSettleOp,
-  captureProgressWork, settleProgressWork,
+  captureProgressWork, settleProgressWork, type RecomputedRemainingWork,
 } from '@/engine/work/workRuleApply';
+import { remainingWorkRecomputedNotice } from './remainingWorkNotice';
 import { contourKeepsWork, taskCalendarHoursPerDay, taskWorkMinutesOf } from '@/utils/taskDefaults';
 import { generateId } from '@/utils/id';
 import { sameValue } from '@/utils/sameValue';
@@ -59,6 +60,7 @@ import type {
 } from '@/types/taskGrid';
 import type { ViewRow } from '@/engine/view/visibleRows';
 import { markDocumentEdited } from '@/state/documentEdited';
+import { refusalNotice, refusedNamesLine } from './refusalNotice';
 
 export interface PreparedGridMutation {
   documentId: string;
@@ -74,6 +76,10 @@ export interface PreparedGridMutation {
    *  berekend (clipboard.ts) of conditioneel bleken (deze module, applyCellEdits) — bij een echte
    *  Ctrl+V-paste in plaats van de hele transactie te blokkeren. 0 buiten die route. */
   skippedReadOnlyCount: number;
+  /** Taken met overgeslagen cellen waarin NIETS is geschreven ("Niet aangepast: …"), en taken met
+   *  overgeslagen cellen waarin een andere cel wél is geschreven ("Niet toegepast bij: …"). */
+  skippedReadOnlyUntouchedTaskIds?: readonly string[];
+  skippedReadOnlyPartialTaskIds?: readonly string[];
   label: string;
 }
 
@@ -512,7 +518,7 @@ export function buildTaskEditPlanEnvironment(state: AppState, task: Task): TaskE
     statusDate: state.project.statusDate,
     calendarIds: new Set([state.calendar.id, ...state.calendars.map(calendar => calendar.id)]),
     effectiveHoursPerDay: effHoursPerDay(effectiveCalendar),
-    hourMode: isHourCalendar(effectiveCalendar) === true,
+    hourMode: isHourModeCalendar(effectiveCalendar) === true,
     effectiveCalendar,
     calendarFor: (calendarId) => resolveCalendar(calendarId, state.calendars, state.calendar),
     enableHourPlanning: state.ui.enableHourPlanning,
@@ -556,6 +562,8 @@ function applyCellEdits(
   timephasedGuidanceLost: boolean;
   skippedReadOnlyCount: number;
   startNotice?: StartEditNotice;
+  /** Bewaard, afwijkend restwerk dat een duurcel opnieuw uitrekende (`settleDurationEdit`). */
+  recomputedWork?: readonly RecomputedRemainingWork[];
 }, readonly CellValidationError[]> {
   const first = edits[0];
   if (!first) return { ok: true, value: { timephasedGuidanceLost: false, skippedReadOnlyCount: 0 } };
@@ -752,6 +760,7 @@ function applyCellEdits(
   let changed = false;
   let timephasedGuidanceLost = false;
   let scheduleStale = false;
+  let recomputedWork: readonly RecomputedRemainingWork[] = [];
   const calendarEdits = finalEdits.filter(edit => String(edit.columnId) === 'task.calendarId');
   if (calendarEdits.length > 0) {
     const before = captureCalendarChange(task, assignmentsForTask, state);
@@ -784,7 +793,7 @@ function applyCellEdits(
     timephasedGuidanceLost ||= planned.value.timephasedGuidanceLost;
     scheduleStale ||= planned.value.scheduleStale;
     state.tasks[taskIndex] = planned.value.task;
-    settleDurationEdit(state.tasks[taskIndex], state.assignments, triangle);
+    recomputedWork = settleDurationEdit(state.tasks[taskIndex], triangle).recomputedWork;
     settleProgressWork(state.tasks[taskIndex], state.assignments, progressWork);
     // Een typewissel in het raster legt — net als
     // `setTaskWorkRule` — onder een werkbeschermende regel het huidige restwerk vast.
@@ -798,13 +807,13 @@ function applyCellEdits(
   // constraint tegenhield — die laat de taak juist ongemoeid, dus daar geldt `changed` niet.
   const snet = planned.value.task.constraint;
   const startNotice: StartEditNotice | undefined = planned.value.startBlocked
-    ? { kind: 'blocked', name: planned.value.task.name, constraint: planned.value.startBlocked }
+    ? { kind: 'blocked', name: planned.value.task.name, constraint: planned.value.startBlocked, taskId: planned.value.task.id }
     : planned.value.changed && planned.value.startConstraint && snet?.date
       ? { kind: 'snet', name: planned.value.task.name, date: snet.date, change: planned.value.startConstraint }
       : undefined;
   return {
     ok: true,
-    value: { timephasedGuidanceLost, skippedReadOnlyCount, startNotice },
+    value: { timephasedGuidanceLost, skippedReadOnlyCount, startNotice, recomputedWork },
   };
 }
 
@@ -854,7 +863,15 @@ export function prepareGridMutation(
   const assignmentValidationTaskIds = new Set<string>();
   const appliedRelationWrites: RelationSetIntent[] = [];
   let skippedReadOnlyFromTransaction = 0;
+  const skippedReadOnlyTaskIds = new Set<string>();
+  // Taken waarin deze transactie iets schreef (een cel die niet is overgeslagen, of een toewijzing).
+  const wroteTaskIds = new Set<string>();
+  for (const intent of intents) {
+    if (intent.kind === 'paste') for (const id of intent.skippedReadOnlyTaskIds ?? []) skippedReadOnlyTaskIds.add(id);
+  }
   const startNotices: StartEditNotice[] = [];
+  // Herschreven afwijkend restwerk over ALLE taken van deze transactie (plakken/doorvullen): één melding.
+  const recomputedWork: RecomputedRemainingWork[] = [];
   const isolated = produce(state as AppState, draft => {
     // Welke taken hebben een voorganger (getypte start ⇒ SNET)? Lui: alleen een getypte
     // start vraagt ernaar, en dan één keer per transactie. Cellen verzetten geen relaties of
@@ -908,12 +925,16 @@ export function prepareGridMutation(
           }
           if (applied.value.timephasedGuidanceLost) timephasedLossTaskIds.add(write.taskId);
           skippedReadOnlyFromTransaction += applied.value.skippedReadOnlyCount;
+          if (applied.value.skippedReadOnlyCount > 0) skippedReadOnlyTaskIds.add(write.taskId);
+          if (taskWrites.length > applied.value.skippedReadOnlyCount) wroteTaskIds.add(write.taskId);
           if (applied.value.startNotice) startNotices.push(applied.value.startNotice);
+          if (applied.value.recomputedWork) recomputedWork.push(...applied.value.recomputedWork);
         }
         if (taskWrites.some(item => String(item.columnId) === 'task.isMilestone')) {
           assignmentValidationTaskIds.add(write.taskId);
         }
       } else if (write.kind === 'assignment-set') {
+        wroteTaskIds.add(write.taskId);
         assignmentValidationTaskIds.add(write.taskId);
         const applied = applyAssignmentSet(
           draft,
@@ -928,6 +949,7 @@ export function prepareGridMutation(
           timephasedLossTaskIds.add(taskId);
         }
       } else {
+        wroteTaskIds.add(write.taskId);
         const applied = applyRelationSet(
           draft as AppState,
           write,
@@ -1027,6 +1049,8 @@ export function prepareGridMutation(
     }
   });
   if (errors.length > 0) return { ok: false, errors };
+  const workNotice = remainingWorkRecomputedNotice(recomputedWork);
+  if (workNotice) notifications.push(workNotice);
 
   const after = createSnapshot(isolated);
   let viewRows: readonly ViewRow[];
@@ -1058,6 +1082,8 @@ export function prepareGridMutation(
       notifications: [...notifications, ...startEditNotifications(startNotices, state.ui.dateNotation, state.ui.timeNotation)],
       timephasedLossCount: timephasedLossTaskIds.size,
       skippedReadOnlyCount: skippedReadOnlyFromPlanning + skippedReadOnlyFromTransaction,
+      skippedReadOnlyUntouchedTaskIds: [...skippedReadOnlyTaskIds].filter(id => !wroteTaskIds.has(id)),
+      skippedReadOnlyPartialTaskIds: [...skippedReadOnlyTaskIds].filter(id => wroteTaskIds.has(id)),
       label: normalized.value.length === 1 ? 'Cel bewerken' : 'Cellen bewerken',
     },
   };
@@ -1104,12 +1130,22 @@ function commitPreparedAgainstStore(
   // Ongeacht `changed` — ook een paste die UITSLUITEND read-only doelcellen raakte
   // (dus per saldo niets schreef) moet de gebruiker vertellen dat er iets is overgeslagen, anders
   // oogt de paste als een stille no-op.
+  // Een weigering (rood, blijvend), ook als de rest wél geschreven is. De detailregels noemen de
+  // taken waarin niets is aangepast, en apart de taken waarin een andere cel wél is geschreven. Geen
+  // samenvouwsleutel: het aantal staat in de tekst, en twee verschillende plakacties zijn twee meldingen.
   if (prepared.skippedReadOnlyCount > 0) {
-    get().notify({
-      severity: 'info',
+    const tasks = get().tasks;
+    const names = (ids: readonly string[] | undefined) => (ids ?? [])
+      .map(id => tasks.find(task => task.id === id)?.name)
+      .filter((name): name is string => !!name);
+    get().notify(refusalNotice({
       messageKey: 'notifications.pasteSkippedReadOnly',
       params: { count: prepared.skippedReadOnlyCount },
-    });
+      detailLines: [
+        ...refusedNamesLine(names(prepared.skippedReadOnlyUntouchedTaskIds), 'untouched'),
+        ...refusedNamesLine(names(prepared.skippedReadOnlyPartialTaskIds), 'notApplied'),
+      ],
+    }));
   }
   return { ok: true, value: undefined };
 }

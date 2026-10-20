@@ -273,17 +273,15 @@ export type NotificationMessageKey =
   // `recordedDates.shifted` over alle documenten van dit bestand (één regel, ook bij twaalf
   // projecten — zie `xerImportNotice`/`applyOpenedImport`).
   | 'notifications.xerImportDatesAsRecorded'
-  | 'notifications.xerImportDatesAsRecordedOffer'
   | 'notifications.p6xmlImportEmpty'
   | 'notifications.p6xmlImportEmptyNoObjectIds'
   | 'notifications.p6xmlImportEmptyXerColumns'
   | 'notifications.p6xmlImportOpened'
   | 'notifications.p6xmlImportCrossProjectRelations'
   | 'notifications.p6xmlImportUnassignedActivities'
-  // Dezelfde twee regels, formaatneutraal,
+  // Dezelfde regel, formaatneutraal,
   // voor P6 XML/MSPDI/.mpp/CSV/IFC — één melding per geopend bestand (`applyOpenedImport`).
   | 'notifications.importDatesAsRecorded'
-  | 'notifications.importDatesAsRecordedOffer'
   | 'notifications.xerExportLoss'
   | 'notifications.mppSourceScheduleNotes'
   | 'notifications.projectStartAnchorsClamped'
@@ -351,21 +349,44 @@ export type NotificationMessageKey =
   // Restduur: een nieuwe duur korter dan het gedane werk van een lopende taak is
   // geweigerd — zie `runningDurationChange` in engine/taskMutationRules.ts. Parameters `name`, `percent`.
   | 'notifications.durationBelowDoneWork'
+  // Een duurbewerking rekende een bewaard, afwijkend restwerk opnieuw uit (eigenaarsbesluit
+  // 2026-10-19) — zie `state/remainingWorkNotice.ts`. Eén taak: `name` + `numberParams`
+  // `before`/`after` (uren); meer taken: meervoud, `count`.
+  | 'notifications.remainingWorkRecomputed'
+  | 'notifications.remainingWorkRecomputedMany'
+  // Detailregel onder een weigering die meer taken of relaties raakt: welke niet zijn aangepast /
+  // aangemaakt (`refusedNamesLine` in state/refusalNotice.ts). `names`, en bij `More` ook `count`.
+  | 'notifications.refusedTaskNames'
+  | 'notifications.refusedTaskNamesMore'
+  | 'notifications.notAppliedTaskNames'
+  | 'notifications.notAppliedTaskNamesMore'
+  | 'notifications.refusedRelationNames'
+  | 'notifications.refusedRelationNamesMore'
   // Tutorialvraag na de eerste voltooide rondleiding (`TutorialOfferDialog`): "later" bij Nee of een
   // geweigerde installatie, "unavailable" als ophalen/installeren/starten niet lukte.
   | 'notifications.tutorialOfferLater'
-  | 'notifications.tutorialOfferUnavailable';
+  | 'notifications.tutorialOfferUnavailable'
+  // *Taak* met een selectie buiten boommodus (filter/groepering/sortering): de taak staat achteraan
+  // in plaats van onder de selectie — `addTaskNearSelection` in state/taskInsertActions.ts
+  // (eigenaarsbesluit 2026-10-19 5a). Rode weigering met de actie `clearViewArrangement`.
+  | 'notifications.taskAddedAtEnd';
 
-/** Het actielabel van een melding is een i18n-sleutel in `common`. */
-export type NotificationActionLabelKey = 'notifications.actions.openProjectInfo' | 'notifications.actions.openHelp';
+/** Het actielabel van een melding is een i18n-sleutel in `common`. `view.filter.clear` ("Wissen")
+ *  is hetzelfde label als op de strook `StructureLockedNotice`. */
+export type NotificationActionLabelKey =
+  | 'notifications.actions.openProjectInfo'
+  | 'notifications.actions.openHelp'
+  | 'view.filter.clear';
 
 /** Een SERIALISEERBARE vervolgactie op een melding (geen functies in de store). `NotificationHost`
- *  voert hem uit; nieuwe soorten krijgen een eigen `kind`. */
-export interface NotificationAction {
-  kind: 'openBackstageSection';
-  section: BackstageSection;
-  labelKey: NotificationActionLabelKey;
-}
+ *  voert hem uit en sluit daarna de melding; nieuwe soorten krijgen een eigen `kind`.
+ *  - `openBackstageSection`: open Bestand › `section` (rekenprofielen, tutorials);
+ *  - `clearViewArrangement`: wis filter, groepering en sortering van het ACTIEVE document
+ *    (eigenaarsbesluit 2026-10-19 5a). Veilig omdat een weigering bij een documentwissel verdwijnt
+ *    (5b, `clearRefusals` in uiSlice): de knop staat dus nooit boven een ander document. */
+export type NotificationAction =
+  | { kind: 'openBackstageSection'; section: BackstageSection; labelKey: NotificationActionLabelKey }
+  | { kind: 'clearViewArrangement'; labelKey: NotificationActionLabelKey };
 
 /** Een vertaalde detailregel onder een toast. Anders dan `detail` is deze tekst altijd
  * gebruikerszichtbaar en dus via dezelfde gesloten sleutelunie en i18n-keten getypeerd. */
@@ -388,6 +409,12 @@ export interface AppNotification {
   messageKey: NotificationMessageKey;
   /** Interpolatie-parameters voor `t()`. */
   params?: Record<string, string | number>;
+  /** Getallen voor dezelfde interpolatie die `NotificationHost` pas bij het tonen in de notatie van
+   *  de app-taal zet (`formatReportNumber`: hoogstens twee decimalen, Latijnse cijfers, het
+   *  decimaalteken van de taal). Zo blijft de store taalvrij en volgt het getal een taalwissel.
+   *  Niet voor `count`: dat blijft een kaal getal in `params`, want i18next kiest er de
+   *  meervoudsvorm mee. */
+  numberParams?: Record<string, number>;
   /** Rauwe technische tekst (`err.message`) — BEWUST onvertaald. */
   detail?: string;
   /** Optionele, vertaalde feiten onder de hoofdboodschap (bv. één XER-bestandsverslag). */
@@ -399,6 +426,10 @@ export interface AppNotification {
   detailParams?: Record<string, string | number>;
   /** Samenvouw-sleutel: een tweede melding met dezelfde sleutel wordt één regel met een teller. */
   dedupeKey?: string;
+  /** Met `dedupeKey`: een tweede melding met dezelfde sleutel VERVANGT de inhoud zonder dat de
+   *  teller oploopt — voor een melding die een lopende bewerking bijwerkt (de restwerkmelding toont
+   *  tijdens één balksleep steeds de eindwaarde, zonder "×N"). */
+  replaceOnDedupe?: boolean;
   /** Aantal samengevouwen voorkomens; 1 bij de eerste. */
   count: number;
   /** Optioneel — id van een in-app-documentatieartikel (`public/docs/<taal>/<id>.md`) dat deze
@@ -416,6 +447,10 @@ export interface AppNotification {
    *  een openingsmelding waarbij de app data invulde, verving, repareerde of wegliet — zie
    *  `state/openNoticeSticky.ts` voor de regel. Geen fout: de kleur blijft die van een info. */
   sticky?: boolean;
+  /** Een WEIGERING: de app heeft een handeling van de gebruiker niet uitgevoerd (eigenaarsbesluit
+   *  2026-10-17). Maak hem alleen via `state/refusalNotice.ts`. Een weigering is rood en blijft
+   *  staan, maar duwt bij een volle stapel nooit een echte fout of een blijvende info weg. */
+  refusal?: boolean;
 }
 
 /** Wat een aanroeper meegeeft; `id` en `count` vult de store. */
@@ -586,6 +621,11 @@ export interface UIState {
    *  structuurpoging hoogt hem op, zodat de melding ook opnieuw verschijnt als hij al zichtbaar
    *  was. 0 = niets te tonen. */
   structureLockedNotice: number;
+  /** session — de waarde van `structureLockedNotice` op het moment dat de weigeringen voor het
+   *  laatst zijn gewist (documentwissel, undo, redo — `clearRefusals` in uiSlice, eigenaarsbesluit
+   *  2026-10-19 5b). Gelijk aan `structureLockedNotice` ⇒ de strook gaat weg; een nieuwere
+   *  weigering hoogt de teller op en blijft dus staan. */
+  structureLockedClearedAt: number;
   // --- Sneltoetsen ---
   /** session — sneltoetsen-overzichtsdialoog (Ctrl/Cmd+/, `ShortcutsDialog`) open. */
   showShortcutsDialog: boolean;

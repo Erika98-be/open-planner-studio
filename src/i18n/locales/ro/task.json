@@ -410,10 +410,6 @@
     "timephasedActive": "Urmează distribuția orelor din MS Project",
     "timephasedLost": "Fereastra de date din MS Project nu mai este aplicată după editare — distribuția orelor rămâne valabilă și se păstrează în fișier",
     "timephasedContoured": "Distribuție proprie a orelor",
-    "recordedDatesActive": "Afișează datele salvate de Primavera pentru această activitate",
-    "recordedDatesActiveNeutral": "Afișează datele așa cum sunt în fișier pentru această activitate",
-    "recordedDatesDeviates": "Diferă de datele salvate",
-    "recordedDatesPartlyUnrecorded": "Înregistrare parțial incompletă — vedeți coloanele pentru târziu și marjă",
     "completion": "Progres (%)",
     "progress": {
       "actualStart": "Început efectiv",
@@ -462,7 +458,7 @@
       "work": "Lucru (rămas)",
       "workHint": "Lucru rămas în ore; regula de lucru stabilește dacă se modifică durata sau unitățile de atribuire.",
       "workDeviates": "Diferă de unități de atribuire × durată",
-      "workDeviatesHint": "Lucrul salvat {{stored}} h diferă de unități de atribuire × durata rămasă ({{derived}} h). Histograma urmează lucrul salvat pe toată durata activității; unitățile de atribuire rămân cum le-a dat fișierul.",
+      "workDeviatesHint": "Lucrul salvat {{stored}} h diferă de unități de atribuire × durata rămasă ({{derived}} h). Histograma urmează lucrul salvat pe toată durata activității; unitățile de atribuire rămân cum le-a dat fișierul. La modificarea duratei, aplicația îl recalculează.",
       "locked": "Protejat de regula de lucru {{rule}}"
     },
     "notes": {
