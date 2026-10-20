@@ -13,6 +13,9 @@
 // ook de vector-PDF) die niet kent. Zo zijn scherm en papier per constructie gelijk. De strepen
 // liggen vast aan `anchorX` (de linkerkant van de strook), dus ze schuiven mee bij pannen.
 
+import { parseDate, parseInstant } from '@/utils/dateUtils';
+import { finishInstant } from '@/utils/taskDates';
+
 /** Kleurplaats van een baseline in de strook: 0 = actief, 1 en 2 = de vergelijkingsbaselines. */
 export type BaselineSlot = 0 | 1 | 2;
 
@@ -27,6 +30,46 @@ export interface BaselineBar {
 export interface BaselineMilestone {
   slot: BaselineSlot;
   x: number;
+}
+
+/** Begin en einde van één baseline van één taak, zoals de baseline ze bewaart. */
+export interface BaselineSpan {
+  start: string;
+  finish: string;
+  isMilestone: boolean;
+}
+
+/** Plaats van één baseline op de tijdas: een strook of een mijlpaal. */
+export type BaselineSpanX = { kind: 'bar'; x1: number; x2: number } | { kind: 'milestone'; x: number };
+
+/**
+ * Zet één baseline om naar x, met dezelfde regel als de taakbalk (`barGeometry` in de renderer):
+ *  - datum mét tijd (urentaak, bv. een MSPDI-baseline van een urentaak): `[start, einde)` op het
+ *    tijdstip zelf, zonder een hele dag erbij; een mijlpaal op haar tijdstip;
+ *  - datum zonder tijd (dagtaak): de hele dag, `[start, einde + 1 dag)`; een mijlpaal midden op de dag.
+ * Scherm en afdruk geven hun eigen as mee (`dateToX`, ook de werkdag-as) en hun daggrootte.
+ * Onleesbare datums geven `null`.
+ */
+export function baselineSpanX(
+  span: BaselineSpan,
+  dateToX: (date: Date) => number,
+  dayWidth: number,
+): BaselineSpanX | null {
+  const startStr = span.start || span.finish;
+  const finishStr = span.finish || span.start;
+  if (!startStr) return null;
+  const hourMode = startStr.includes('T') || finishStr.includes('T');
+  const start = hourMode ? parseInstant(startStr) : parseDate(startStr);
+  if (Number.isNaN(start.getTime())) return null;
+  if (span.isMilestone) {
+    return { kind: 'milestone', x: hourMode ? dateToX(start) : dateToX(start) + dayWidth / 2 };
+  }
+  // Uur-einde zonder tijd (een dagkind als laatste) loopt tot het einde van die dag: `finishInstant`.
+  const end = hourMode ? finishInstant(finishStr) : parseDate(finishStr);
+  if (Number.isNaN(end.getTime())) return null;
+  const x1 = dateToX(start);
+  const x2 = hourMode ? dateToX(end) : dateToX(end) + dayWidth;
+  return { kind: 'bar', x1, x2 };
 }
 
 /** Eén stuk van de strook met de baselines die er liggen (oplopend op plaats). */

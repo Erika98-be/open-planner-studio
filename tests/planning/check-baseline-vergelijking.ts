@@ -22,7 +22,7 @@ import { GanttRenderer } from '@/engine/renderer/GanttRenderer';
 import { PRINT_PALETTE } from '@/engine/renderer/themePalette';
 import {
   baselineDiamonds, baselineStripPieces, paintBaselineStrip,
-  type BaselineBar, type BaselineSlot, type StripPainter,
+  baselineSpanX, type BaselineBar, type BaselineSlot, type StripPainter,
 } from '@/engine/renderer/baselineStrip';
 import { renderReport, type PrintOptions } from '@/services/print/printPreview';
 import type { Draw2D, TextAlign, TextBaseline } from '@/services/pdf/draw2d';
@@ -298,9 +298,10 @@ function piecesPerRow(fills: Fill[]): Piece[][] {
   });
 }
 
-// Scherm: de echte GanttRenderer met een opnemende context.
-const screenFills: Fill[] = [];
-{
+type Comparisons = { slot: 1 | 2; overlay: BaselineOverlay }[];
+/** Scherm: de echte GanttRenderer met een opnemende context. */
+function renderScreen(tasks: Task[], ov0: BaselineOverlay, comps: Comparisons, over: { zoom?: number; compress?: boolean } = {}): Fill[] {
+  const fills: Fill[] = [];
   let path: [number, number][] = [];
   const st = { fillStyle: '', strokeStyle: '' };
   const noop = () => {};
@@ -311,7 +312,7 @@ const screenFills: Fill[] = [];
     fillRect: noop, strokeRect: noop, clearRect: noop, beginPath: () => { path = []; }, closePath: noop,
     moveTo: (x: number, y: number) => { path.push([x, y]); }, lineTo: (x: number, y: number) => { path.push([x, y]); },
     arc: noop, arcTo: noop, ellipse: noop, rect: noop, roundRect: noop,
-    fill: () => { screenFills.push({ color: st.fillStyle, pts: path }); },
+    fill: () => { fills.push({ color: st.fillStyle, pts: path }); },
     stroke: noop, save: noop, restore: noop, clip: noop, translate: noop, scale: noop, rotate: noop,
     setLineDash: noop, getLineDash: () => [], fillText: noop, strokeText: noop,
     measureText: (t: string) => ({ width: String(t).length * 6 }),
@@ -320,20 +321,22 @@ const screenFills: Fill[] = [];
   };
   const st0 = S();
   const renderer = new GanttRenderer(ctx as unknown as CanvasRenderingContext2D, {
-    rows: [bar, ms].map(t => ({ kind: 'task' as const, rowKey: t.id, task: t, depth: 0, dimmed: false })),
+    rows: tasks.map(t => ({ kind: 'task' as const, rowKey: t.id, task: t, depth: 0, dimmed: false })),
     sequences: [], calendar: st0.calendar,
-    view: { ...st0.view, scrollX: 0, scrollY: 0, zoom: 30 },
-    selectedTaskIds: [], canvasWidth: 2400, canvasHeight: 300, rowHeight: 32, headerHeight: 60,
-    showBaselineOverlay: true, baselineOverlay: overlay0, baselineComparisons: comparisons,
+    view: { ...st0.view, scrollX: 0, scrollY: 0, zoom: over.zoom ?? 30 },
+    compressNonWorkdays: over.compress,
+    selectedTaskIds: [], canvasWidth: 4000, canvasHeight: 300, rowHeight: 32, headerHeight: 60,
+    showBaselineOverlay: true, baselineOverlay: ov0, baselineComparisons: comps,
     activityCodeTypes: [], customFieldDefs: [], taskTypeLabels: {}, barColorNoneLabel: '(geen)',
     resources: [], assignments: [],
   });
   renderer.render();
+  return fills;
 }
 
-// Afdruk: de echte renderReport (raster-preview én vector-PDF) met een opnemende Draw2D.
-const printFills: Fill[] = [];
-{
+/** Afdruk: de echte renderReport (raster-preview én vector-PDF) met een opnemende Draw2D. */
+function renderPrint(tasks: Task[], ov0: BaselineOverlay, comps: Comparisons, over: { zoom?: number; compress?: boolean } = {}) {
+  const fills: Fill[] = [];
   let path: [number, number][] | null = null;
   const st = { font: '10px x', fillStyle: '', strokeStyle: '', lineWidth: 0, textAlign: 'left' as TextAlign, textBaseline: 'alphabetic' as TextBaseline };
   const noop = () => {};
@@ -346,21 +349,26 @@ const printFills: Fill[] = [];
     get textBaseline() { return st.textBaseline; }, set textBaseline(v) { st.textBaseline = v; },
     setLineDash: noop, fillRect: noop, strokeRect: noop,
     beginPath() { path = []; }, moveTo(x, y) { (path ??= []).push([x, y]); }, lineTo(x, y) { (path ??= []).push([x, y]); },
-    closePath: noop, fill() { if (path) printFills.push({ color: st.fillStyle, pts: path }); path = null; },
+    closePath: noop, fill() { if (path) fills.push({ color: st.fillStyle, pts: path }); path = null; },
     stroke() { path = null; }, roundRect: noop, fillText: noop,
     measureText: (t: string) => ({ width: t.length * 6 }),
   };
   const options = {
     showCritical: false, showFloat: false, showDeps: false, showWeekends: true, showLegend: false,
-    showTaskNames: false, showCompletion: false, autoFit: false, customZoom: 22,
+    showTaskNames: false, showCompletion: false, autoFit: false, customZoom: over.zoom ?? 22,
+    compressNonWorkdays: over.compress,
     paperSize: 'A3', orientation: 'landscape', companyName: 'Test',
     barColorSelection: { mode: 'critical' }, activityCodeTypes: [], customFieldDefs: [],
     taskTypeLabels: {}, barColorNoneLabel: '(geen)',
-    showBaselineOverlay: true, baselineOverlay: overlay0, baselineComparisons: comparisons,
+    showBaselineOverlay: true, baselineOverlay: ov0, baselineComparisons: comps,
     labels: { noTasks: '-', printed: '-', today: '-', statusDate: '-', progressDate: '-', legend: {}, tableHeaders: {} },
   } as unknown as PrintOptions;
-  renderReport(() => d2d, [bar, ms], [], S().calendar, 'P', options);
+  const dims = renderReport(() => d2d, tasks, [], S().calendar, 'P', options);
+  return { fills, dims };
 }
+
+const screenFills = renderScreen([bar, ms], overlay0, comparisons);
+const printFills = renderPrint([bar, ms], overlay0, comparisons).fills;
 
 const screen = piecesPerRow(screenFills);
 const print = piecesPerRow(printFills);
@@ -374,6 +382,46 @@ eq(screen[0]?.map(p => [p.base, p.stripes]), [
 eq(screen[1]?.map(p => [p.base, p.stripes]), [
   [P.baseline, [P.baselineCompare1]], [P.baselineCompare2, []],
 ], 'C mijlpaalrij: één gestreepte ruit op de gedeelde datum, één losse ruit');
+
+// ══ D. Baselines met tijd (urentaken) ═════════════════════════════════════════════════════════
+// Een baseline mét tijd staat op haar tijdstip, zoals de taakbalk (`barGeometry`): A 09:00–10:00 en
+// B 14:00–15:00 op dezelfde dag raken elkaar niet. Een datum zonder tijd blijft een hele dag.
+{
+  const dayX = (d: Date) => (d.getTime() - Date.UTC(2026, 9, 20)) / 86_400_000 * 240;
+  eq(baselineSpanX({ start: '2026-10-20T09:00', finish: '2026-10-20T10:00', isMilestone: false }, dayX, 240),
+    { kind: 'bar', x1: 90, x2: 100 }, 'D uurbaseline 09:00–10:00 bij 240 px/dag: [90, 100]');
+  eq(baselineSpanX({ start: '2026-10-20T14:00', finish: '2026-10-20T15:00', isMilestone: false }, dayX, 240),
+    { kind: 'bar', x1: 140, x2: 150 }, 'D uurbaseline 14:00–15:00: [140, 150]');
+  eq(baselineSpanX({ start: '2026-10-20', finish: '2026-10-21', isMilestone: false }, dayX, 240),
+    { kind: 'bar', x1: 0, x2: 480 }, 'D dagbaseline 20–21 okt: twee hele dagen');
+  eq(baselineSpanX({ start: '2026-10-20T15:30', finish: '2026-10-20T15:30', isMilestone: true }, dayX, 240),
+    { kind: 'milestone', x: 155 }, 'D uurmijlpaal op 15:30');
+  eq(baselineSpanX({ start: '2026-10-20', finish: '2026-10-20', isMilestone: true }, dayX, 240),
+    { kind: 'milestone', x: 120 }, 'D dagmijlpaal midden op de dag');
+  eq(baselineSpanX({ start: '2026-10-20T09:00', finish: '2026-10-21', isMilestone: false }, dayX, 240),
+    { kind: 'bar', x1: 90, x2: 480 }, 'D uurstart met dag-einde (21 okt): tot het einde van die dag');
+  eq(baselineSpanX({ start: 'kapot', finish: 'kapot', isMilestone: false }, dayX, 240), null, 'D onleesbare datum: niets');
+
+  // Echte renderer en echte afdruk: twee losse stukken, en twee losse ruiten.
+  const day = s0;
+  const hourOv = (from: string, to: string, msAt: string): BaselineOverlay => new Map([
+    [bar.id, { start: `${day}T${from}`, finish: `${day}T${to}`, isMilestone: false }],
+    [ms.id, { start: `${m0}T${msAt}`, finish: `${m0}T${msAt}`, isMilestone: true }],
+  ]);
+  const hA = hourOv('09:00', '10:00', '09:00');
+  const hB = [{ slot: 1 as const, overlay: hourOv('14:00', '15:00', '15:00') }];
+  for (const compress of [false, true]) {
+    const label = compress ? 'werkdag-as' : 'kalender-as';
+    const scr = piecesPerRow(renderScreen([bar, ms], hA, hB, { zoom: 240, compress }));
+    const prt = piecesPerRow(renderPrint([bar, ms], hA, hB, { zoom: 240, compress }).fills);
+    eq(scr[0]?.map(p => [p.x1, p.x2, p.base, p.stripes.length]), [[0, 0.16, P.baseline, 0], [0.84, 1, P.baselineCompare1, 0]],
+      `D scherm (${label}): 09–10 en 14–15 zijn twee losse effen stukken, geen valse overlap`);
+    eq(scr[1]?.length, 2, `D scherm (${label}): mijlpalen om 09:00 en 15:00 zijn twee ruiten`);
+    eq(prt[0], scr[0], `D afdruk (${label}): dezelfde stukken als het scherm`);
+    // Ruiten: scherm en papier hebben een andere ruitgrootte, dus alleen het aantal vergelijken.
+    eq(prt[1]?.length, 2, `D afdruk (${label}): mijlpalen om 09:00 en 15:00 zijn twee ruiten`);
+  }
+}
 
 if (failures > 0) {
   console.log(`   XX check-baseline-vergelijking: ${failures} van ${checks} controles mislukt`);

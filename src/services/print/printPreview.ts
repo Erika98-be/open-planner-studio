@@ -35,7 +35,7 @@ import type { RowAssignment, RowCurve } from '@/engine/reports/resourceGantt';
 import { formatReportNumber } from '@/utils/reportNumber';
 import type { BaselineOverlay } from '@/types/baseline';
 import {
-  baselineDiamonds, baselineDiamondSize, baselineStripPieces, paintBaselineStrip,
+  baselineDiamonds, baselineDiamondSize, baselineSpanX, baselineStripPieces, paintBaselineStrip,
   type BaselineBar, type BaselineMilestone, type BaselineSlot,
 } from '@/engine/renderer/baselineStrip';
 
@@ -1529,13 +1529,16 @@ export function renderReport(
       for (const layer of layers) {
         const entry = layer.overlay.get(task.id);
         if (!entry) continue;
-        if (entry.isMilestone) {
-          const x = dateToX(parseDate(entry.start)) + zoom / 2;
-          if (!windowed || (x >= m.tableWidth && x <= canvasWidth)) milestones.push({ slot: layer.slot, x });
+        // Dezelfde uurregel als op het scherm (`baselineSpanX`): een baseline mét tijd staat op
+        // haar tijdstip, een dagbaseline beslaat hele dagen.
+        const pos = baselineSpanX(entry, dateToX, zoom);
+        if (!pos) continue;
+        if (pos.kind === 'milestone') {
+          if (!windowed || (pos.x >= m.tableWidth && pos.x <= canvasWidth)) milestones.push({ slot: layer.slot, x: pos.x });
           continue;
         }
-        const x1 = clampX(dateToX(parseDate(entry.start)));
-        const x2 = clampX(dateToX(parseDate(entry.finish)) + zoom);
+        const x1 = clampX(pos.x1);
+        const x2 = clampX(pos.x2);
         if (!windowed || x2 > x1) bars.push({ slot: layer.slot, x1, x2: Math.max(x2, x1 + 2) });
       }
       const pieces = baselineStripPieces(bars);

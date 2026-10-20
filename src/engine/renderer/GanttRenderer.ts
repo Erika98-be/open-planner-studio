@@ -31,7 +31,7 @@ import { classifyTraceTask, isRelationOutsideTrace, type TaskTrace } from '@/eng
 import { ellipsize } from './textFit';
 import { barLayout, type BarLayout } from './rowGeometry';
 import {
-  baselineDiamonds, baselineDiamondSize, baselineStripPieces, paintBaselineStrip,
+  baselineDiamonds, baselineDiamondSize, baselineSpanX, baselineStripPieces, paintBaselineStrip,
   type BaselineBar, type BaselineMilestone, type BaselineSlot,
 } from './baselineStrip';
 import { canvasFont, type TextRole } from './textRoles';
@@ -999,15 +999,15 @@ export class GanttRenderer {
     const zoom = this.opts.view.zoom;
     const bars: BaselineBar[] = [];
     const milestones: BaselineMilestone[] = [];
+    const toX = (d: Date) => this.dateToX(d);
     for (const layer of layers) {
       const entry = layer.overlay.get(task.id);
       if (!entry) continue;
-      if (entry.isMilestone) {
-        milestones.push({ slot: layer.slot, x: this.dateToX(parseDate(entry.start)) + zoom / 2 });
-        continue;
-      }
-      const x1 = this.dateToX(parseDate(entry.start));
-      bars.push({ slot: layer.slot, x1, x2: Math.max(this.dateToX(parseDate(entry.finish)) + zoom, x1 + 2) });
+      // Dezelfde uurregel als de taakbalk (`barGeometry`), gedeeld met de afdruk.
+      const pos = baselineSpanX(entry, toX, zoom);
+      if (!pos) continue;
+      if (pos.kind === 'milestone') milestones.push({ slot: layer.slot, x: pos.x });
+      else bars.push({ slot: layer.slot, x1: pos.x1, x2: Math.max(pos.x2, pos.x1 + 2) });
     }
     const pieces = baselineStripPieces(bars);
     const diamonds = baselineDiamonds(milestones);
