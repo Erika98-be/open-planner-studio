@@ -1840,3 +1840,9 @@ Testversie (release-check, poort 3049) is NIET bijgewerkt met de PR's van vandaa
 - **Main rood op e98b83e48** (#395 feedbackvenster, andere sessie, 10:52); main CI op 0c8d1aedc (#362) geannuleerd door
   die push. Eigen CI van #395 (e54f9cdef, zonder #362) groen. Lokaal 2× 15 passed op zowel e98b83e48 als e54f9cdef ⇒
   alleen in CI. Diagnose + fix-PR: expert (Opus 5.5, xhigh), branch `claude/fix-feedback-maxdepth`; rol #362 uitzoeken.
+- **Review #401 (9a70f075d, GPT-6.1-Sol, xhigh): NEE** — drie BLOKKEERT, alle BEVESTIGD: (1) openstaande inzet-draft
+  belandt bij een documentwissel via `planner_duplicate_document` in het nieuwe document (`UnitsInput.tsx:91`,
+  `documentSlice.ts:369`); (2) werkveld knipt `306,5` af tot `306,` bij 280 px (`globals.css:1905`); (3) Ctrl+S met
+  automatisch berekenen aan neemt via `focus()` opnieuw een rekenblokkade ⇒ oude einddatum ook in het IFC
+  (`useKeyboardShortcuts.ts:74`, `useTextEntryAutoCalcHold.ts:20`). VERVOLG: onveranderd bevestigen hangt af van de
+  spelling (`1,78` vs `1.78`); dubbel commentaar `globals.css:1913`. ⇒ fixronde bij de integratie-worker (Opus 5.5).
