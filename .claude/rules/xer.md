@@ -5,6 +5,7 @@ paths:
   - "src/services/recovery/recoverySnapshot.ts"
   - "src/services/xerExportLoss.ts"
   - "src/state/xerArchiveIssueNotice.ts"
+  - "src/state/xerExportNotice.ts"
   - "src/utils/xerDocumentName.ts"
   - "src/services/formatRegistry.ts"
   - "src/services/mcp/tools/xerProvenanceTools.ts"
@@ -97,3 +98,28 @@ recept en verboden omwegen in `scripts/README.md`; de cel-baseline per rekenprof
 `npm run test:browser:x11` legt lokaal (headed, met corpus en desktopdisplay) aanvullend schermbewijs vast;
 hij vervangt de corpusloze CI-poort niet.
 Gebruikersgidsen: `public/docs/{nl,en}/howto-xer-openen.md` en `uitleg-datums-zoals-opgeslagen.md`.
+
+### De XER-schrijver (#391)
+
+`src/services/xer/xerWriter.ts` (`writeXER`) schrijft een `.xer` uit de documentstate; `exportAs('xer')`
+in `fileSlice.ts` roept hem aan en slaat de bytes op via `saveBytesDialog`. Vier regels:
+(1) **Verlies wordt geteld, nooit stil.** Elke soort die XER niet draagt, telt de writer als
+`XerWriteLoss` (vaste volgorde `LOSS_ORDER`); `state/xerExportNotice.ts` maakt er één melding met een
+detailregel per soort van. Een nieuw OPS-gegeven dat de writer niet schrijft, krijgt een eigen code én
+een `notifications.exportXerLossItem.*`-sleutel. De algemene XER-bronmelding (`xerExportLoss.ts`) valt
+bij `xer` weg; haar bron-categorieën worden de regel `sourceDetails`.
+(2) **Bak 2 en bak 4 alleen via catalogi.** De PROJECT-kolommen `plan_start_date`/`plan_end_date`/
+`critical_drtn_hr_cnt` staan in `XER_PROJECT_PLANNING_COLUMNS` (drie gepinde uitzonderingen in
+`check-xer-field-whitelist.ts`), de vastgelegde rekenuitvoer komt uit `XER_RECORDED_OUTPUT_COLUMNS` in
+`xerRecordedTimes.ts`. Schrijf nooit zo'n kolomnaam als letterlijke string.
+(3) **OPS-markeringen** (`xerOpsMarkers.ts`): de writer zet twee UDF's, `OPS_TaskDurationUnit` (TASK) en
+`OPS_HourCalendars` (PROJECT). Alleen dan leest `readXER` het bestand als OPS-export: geen
+uurmodus-promotie uit kloktijden, maar de modus per kalender uit de lijst en de eenheid per taak uit de
+UDF. Zonder die UDF leest een bestand precies als voorheen; `xerMetadata.ts` filtert de markeringen
+uit de eigen velden.
+(4) **Geplande datums** (`target_*`) = `scheduleStart`/`scheduleFinish` (het omgekeerde van de lezer),
+niet de berekende datums: onder P6-herkomst leest de lezer `target_*` als ondergrens.
+Codering: Windows-1252 (MPXJ-default, BEVESTIGD in de MPXJ-bron); past een teken niet, dan UTF-8 zonder BOM
+met een `nonLatinText`-verlies. Bewijs: `tests/planning/check-xer-writer.ts` (rondgang, zelfde datums en
+speling na `solveProject`, XER → OPS → XER → OPS op `tests/browser/fixtures/xer`, byte-gelijke tweede en
+derde export). Een import in P6 zelf is niet getest.

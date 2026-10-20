@@ -5,6 +5,8 @@ import { writeCSV, writeProgressSheetCSV } from '@/services/csv/csvWriter';
 import { flattenOrder, inferWbsAutoNumberOnOpen } from '@/utils/wbs';
 import { writeMSPDI } from '@/services/msproject/mspdiWriter';
 import { writeP6XMLWithReport } from '@/services/p6/p6xmlWriter';
+import { writeXER, type XerWriteLoss } from '@/services/xer/xerWriter';
+import { exportXerLossNotice } from '@/state/xerExportNotice';
 import { countSplitTasksWithoutContour } from '@/services/contourIo';
 import { openFileDialog, saveFileDialog, saveBytesDialog, saveToRef, readFromRef, readBytesFromRef, saveTargetRef, type FileRef, type SaveOutcome } from '@/services/fileAccess';
 import { isSiteConflict, isSiteNotFound, siteErrorMessage, siteStorageAvailable } from '@/services/fileAccess/siteHost';
@@ -1100,6 +1102,7 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
       let payload: string | Uint8Array;
       let ext: string;
       let p6Truncated = 0;
+      let xerLoss: readonly XerWriteLoss[] | null = null;
       let filters: { name: string; extensions: string[] }[];
       let mime: string | undefined;
       // Het slanke voortgangsblad krijgt een eigen bestandsnaamsuffix
@@ -1199,6 +1202,26 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
           ext = 'xml';
           filters = [{ name: 'XML Files', extensions: ['xml'] }];
           break;
+        case 'xer': {
+          // P6 Resource-ID's uit een eerdere XER-import gaan ongewijzigd terug (`rsrc_short_name`).
+          const resourceCodes = new Map<string, string>();
+          for (const source of state.xerSourceArchive?.readModel.resourceCatalog.rows.resources ?? []) {
+            const code = source.rawRow?.cells.rsrc_short_name?.trim();
+            if (code) resourceCodes.set(source.internalId, code);
+          }
+          const written = writeXER({
+            project: state.project, calendar: state.calendar, calendars: state.calendars,
+            tasks: state.tasks, sequences: state.sequences, resources: state.resources, assignments: state.assignments,
+            baselineCount: state.baselines.length,
+            projectCode: documentProjectCode(state.project, state.xerImportMetadata),
+            resourceCodes,
+          });
+          payload = written.bytes;
+          xerLoss = written.loss;
+          ext = 'xer';
+          filters = [{ name: 'Primavera XER', extensions: ['xer'] }];
+          break;
+        }
         case 'ifc':
         default:
           // Een export vraagt niets; een open vraag die niet bij de kop past gaat niet mee (#336).
@@ -1221,7 +1244,11 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
       if (!outcome) return { ok: true, warnings: [] };
       if (exportGoesToRecents(format)) await pushRecent(outcome.ref, outcome.name);
       noticeIfDownloaded(outcome);
-      if (warnings.length > 0) {
+      if (xerLoss) {
+        // XER: één melding met alles wat niet (precies) meeging, ook de XER-broninformatie.
+        const notice = exportXerLossNotice(xerLoss, warnings.flatMap(w => w.categories));
+        if (notice) get().notify(notice);
+      } else if (warnings.length > 0) {
         get().notify({
           severity: 'info',
           messageKey: 'notifications.xerExportLoss',
