@@ -16,7 +16,8 @@
  * Dikte van de zwevende schuifbalken over takenlijst en Gantt, en daarmee ook de eindstrook onder
  * de laatste rij. Eén waarde voor alle drie: de strook van een overlay is precies één balk dik (geen
  * dode klikzone ernaast) en de eindstrook houdt precies één balk vrij. `globals.css` gebruikt
- * dezelfde 8 px voor `::-webkit-scrollbar`.
+ * dezelfde 8 px voor `::-webkit-scrollbar` (Chromium, WebKitGTK). Daarom staan `scrollbar-width`/
+ * `scrollbar-color` daar alleen in een Firefox-tak: anders zetten die de 8px-regel uit.
  */
 export const OVERLAY_SCROLLBAR_SIZE = 8;
 

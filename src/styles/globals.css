@@ -1717,19 +1717,26 @@ body {
 /* Zwevende scrollbalken over de Gantt-kaart (issue #35). De balken van de Gantt zijn overlays
    BINNEN het pane in plaats van een eigen goot/rij eromheen, zodat de kaart en de takenlijst tot
    de rand doorlopen. Een dekkende track zou dat weer tenietdoen — die legt alsnog een 8px strook
-   over het canvas — dus alleen de duim is zichtbaar. De DIKTE blijft de 8px hierboven: die is
-   gelijk aan `OVERLAY_SCROLLBAR_SIZE` (engine/taskGrid/scrollExtent.ts), waarmee de overlay-strook precies één
-   scrollbalk breed/hoog is en er geen dode klikzone naast de balk ontstaat.
+   over het canvas — dus alleen de duim is zichtbaar. In Chromium en WebKitGTK komt de dikte uit de
+   8px-regel `::-webkit-scrollbar` hierboven. Die is gelijk aan `OVERLAY_SCROLLBAR_SIZE`
+   (engine/taskGrid/scrollExtent.ts): de overlay-strook is zo precies één balk breed/hoog, zonder
+   dode klikzone naast de balk. Firefox gebruikt `scrollbar-width: thin` (zie de @supports-regel).
    De zwevende balken van de takenlijst (`.task-grid-overlay-scrollbar`) delen deze stijl, zodat
    beide er hetzelfde uitzien. */
-.gantt-overlay-scrollbar,
-.task-grid-overlay-scrollbar {
-  scrollbar-width: thin;
-  scrollbar-color: var(--theme-scrollbar-thumb) transparent;
-}
 .gantt-overlay-scrollbar::-webkit-scrollbar-track,
 .task-grid-overlay-scrollbar::-webkit-scrollbar-track {
   background: transparent;
+}
+/* De standaardeigenschappen gelden alleen voor Firefox, dat geen ::-webkit-scrollbar kent. In Chromium
+   (>= 121) en WebKitGTK zet `scrollbar-width`/`scrollbar-color` de ::-webkit-scrollbar-regels uit.
+   WebKitGTK tekent dan zijn eigen Adwaita-overlaybalk: 3 px dun, en bij aanwijzen afgeknipt in de
+   strook van 8 px (eigenaarscheck desktopapp 2026-10-20, PR #362). */
+@supports not selector(::-webkit-scrollbar) {
+  .gantt-overlay-scrollbar,
+  .task-grid-overlay-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: var(--theme-scrollbar-thumb) transparent;
+  }
 }
 
 /* Selection */
