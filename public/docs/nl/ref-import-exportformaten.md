@@ -86,7 +86,7 @@ Per bestandsformaat: of je het kunt openen, opslaan en exporteren, wat er wel en
 
 **Opslaan** — nee, en er is geen opslagdoel: *Opslaan* schrijft een nieuw IFC-bestand, met het oorspronkelijke `.xer` erin.
 
-**Exporteren** — ja, als *Primavera P6 XER* (*Voor Oracle Primavera P6, als .xer-bestand.*). Standaardnaam: de projectnaam met `.xer`, met het project-ID tussen haakjes als het project er een heeft. Exporteer je een project uit een `.xer` naar CSV, MS Project XML of P6 XML, dan meldt de app dat XER-broninformatie verloren gaat, ook als je het project tussendoor als IFC hebt opgeslagen. Naar IFC gaat niets verloren.
+**Exporteren** — ja, als *Primavera P6 XER* (*Voor Oracle Primavera P6, als .xer-bestand.*). Standaardnaam: de projectnaam met `.xer`, met het project-ID tussen haakjes als het project er een heeft. Heeft het project geen project-ID, dan schrijft de app de projectnaam als project-ID (hooguit 40 tekens). Activiteit-ID's en WBS-codes zijn in P6 uniek en hooguit 40 tekens; een lege, dubbele of te lange code past de app aan en ze meldt hoeveel. Exporteer je een project uit een `.xer` naar CSV, MS Project XML of P6 XML, dan meldt de app dat XER-broninformatie verloren gaat, ook als je het project tussendoor als IFC hebt opgeslagen. Naar IFC gaat niets verloren.
 
 **Wat de export meeneemt** — de WBS-structuur; activiteiten met duur, geplande en werkelijke datums, voortgang en twee constraints; relaties met lag; kalenders met werktijden, vrije dagen en werkende uitzonderingen; resources (arbeid, materieel en materiaal) met tarief en beschikbaarheid; toewijzingen met tempo, werk en urenverdeling; aantekeningen; de statusdatum; de planningsinstellingen van P6. De berekende datums en de speling staan er ook in. P6 toont ze tot je het project in P6 opnieuw doorrekent.
 
@@ -94,7 +94,7 @@ Per bestandsformaat: of je het kunt openen, opslaan en exporteren, wat er wel en
 
 **Tekens.** De app schrijft het bestand in Windows-1252, zoals P6. Past een teken daar niet in, zoals *Ł*, dan schrijft ze het hele bestand in UTF-8 en meldt ze hoeveel tekens het zijn. Controleer de tekst dan na de import in P6.
 
-**Terug openen.** Een `.xer` uit de app opent weer als *Primavera P6*. Een taak in dagen komt terug in dagen, een taak in uren in uren. Daarvoor schrijft de app twee eigen velden: *OPS_TaskDurationUnit* op de activiteit en *OPS_HourCalendars* op het project. P6 toont ze als gewone eigen velden. De app leest ze bij het openen en toont ze niet als eigen veld.
+**Terug openen.** Een `.xer` uit de app opent weer als *Primavera P6*. Een taak in dagen komt terug in dagen, een taak in uren in uren. Daarvoor schrijft de app twee eigen velden: *OPS_TaskDurationUnit* op de activiteit en *OPS_ExportInfo* op het project. P6 toont ze als gewone eigen velden. De app gebruikt ze alleen als elke activiteit van het project zo'n veld heeft. Voeg je in P6 een activiteit toe, dan opent de app het project als een gewoon P6-bestand en toont ze de twee velden als eigen velden.
 
 **Niet getest in P6 zelf.** De app toetst de export door hem zelf terug te lezen. Een import in Primavera P6 zelf is nog niet getest.
 

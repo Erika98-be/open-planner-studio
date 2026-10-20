@@ -86,7 +86,7 @@ Per file format: whether you can open, save and export it, what does and does no
 
 **Save** — no, and there is no save target: *Save* writes a new IFC file, with the original `.xer` inside.
 
-**Export** — yes, as *Primavera P6 XER* (*For Oracle Primavera P6, as a .xer file.*). Default name: the project name with `.xer`, with the project ID in brackets if the project has one. If you export a project from a `.xer` to CSV, MS Project XML or P6 XML, the app reports that XER source information is lost, even if you saved the project as IFC in between. To IFC nothing is lost.
+**Export** — yes, as *Primavera P6 XER* (*For Oracle Primavera P6, as a .xer file.*). Default name: the project name with `.xer`, with the project ID in brackets if the project has one. If the project has no project ID, the app writes the project name as the project ID (at most 40 characters). Activity IDs and WBS codes are unique in P6 and at most 40 characters; the app adjusts an empty, duplicate or too long code and reports how many. If you export a project from a `.xer` to CSV, MS Project XML or P6 XML, the app reports that XER source information is lost, even if you saved the project as IFC in between. To IFC nothing is lost.
 
 **What the export includes** — the WBS structure; activities with duration, planned and actual dates, progress and two constraints; relations with lag; calendars with work times, days off and working exceptions; resources (labor, equipment and material) with rate and availability; assignments with rate, work and work distribution; notes; the status date; the scheduling settings of P6. The calculated dates and the float are also in the file. P6 shows them until you calculate the project again in P6.
 
@@ -94,7 +94,7 @@ Per file format: whether you can open, save and export it, what does and does no
 
 **Characters.** The app writes the file in Windows-1252, as P6 does. If a character does not fit, such as *Ł*, it writes the whole file in UTF-8 and reports how many characters there are. Then check the text after the import in P6.
 
-**Opening it again.** An `.xer` from the app opens again as *Primavera P6*. A task in days comes back in days, a task in hours in hours. For this the app writes two custom fields: *OPS_TaskDurationUnit* on the activity and *OPS_HourCalendars* on the project. P6 shows them as normal custom fields. The app reads them when it opens the file and does not show them as custom fields.
+**Opening it again.** An `.xer` from the app opens again as *Primavera P6*. A task in days comes back in days, a task in hours in hours. For this the app writes two custom fields: *OPS_TaskDurationUnit* on the activity and *OPS_ExportInfo* on the project. P6 shows them as normal custom fields. The app only uses them if every activity of the project has such a field. If you add an activity in P6, the app opens the project as a normal P6 file and shows the two fields as custom fields.
 
 **Not tested in P6 itself.** The app tests the export by reading it back itself. An import in Primavera P6 itself has not been tested yet.
 

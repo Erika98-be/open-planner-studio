@@ -115,13 +115,17 @@ bij `xer` weg; haar bron-categorieën worden de regel `sourceDetails`.
 `check-xer-field-whitelist.ts`), de vastgelegde rekenuitvoer komt uit `XER_RECORDED_OUTPUT_COLUMNS` in
 `xerRecordedTimes.ts`. Schrijf nooit zo'n kolomnaam als letterlijke string.
 (3) **OPS-markeringen** (`xerOpsMarkers.ts`): de writer zet twee UDF's, `OPS_TaskDurationUnit` (TASK) en
-`OPS_HourCalendars` (PROJECT). Alleen dan leest `readXER` het bestand als OPS-export: geen
-uurmodus-promotie uit kloktijden, maar de modus per kalender uit de lijst en de eenheid per taak uit de
-UDF. Zonder die UDF leest een bestand precies als voorheen; `xerMetadata.ts` filtert de markeringen
-uit de eigen velden.
+`OPS_ExportInfo` (PROJECT, `ops-xer-1;hourCalendars=<clndr_id's>`). De herkenning is streng (review PR #393):
+precies één definitie van elk, een geldige waarde voor het project én een eenheidswaarde voor ELKE
+activiteit van het project. Alleen dan leest `readXER` dat project als OPS-export (geen uurmodus-promotie
+uit kloktijden, maar de modus per kalender uit de lijst en de eenheid per taak uit de UDF), en filtert
+`xerMetadata.ts` de markeringen uit de eigen velden (alleen als elk project in het bestand herkend is).
+Anders leest het bestand exact als op main; `check-xer-writer-review.ts` (R1) pint dat.
 (4) **Geplande datums** (`target_*`) = `scheduleStart`/`scheduleFinish` (het omgekeerde van de lezer),
 niet de berekende datums: onder P6-herkomst leest de lezer `target_*` als ondergrens.
 Codering: Windows-1252 (MPXJ-default, BEVESTIGD in de MPXJ-bron); past een teken niet, dan UTF-8 zonder BOM
-met een `nonLatinText`-verlies. Bewijs: `tests/planning/check-xer-writer.ts` (rondgang, zelfde datums en
+met een `nonLatinText`-verlies (hoe P6 dat leest is VERMOED, niet bewezen). Project-ID zonder eigen code = de
+projectnaam (geen `OPS:`-code; `xerProjectCode` filtert niets). Codes (activiteit, WBS per ouder, resource):
+eerst normaliseren, dan lengte (40) en uniciteit (`uniqueCode`). Bewijs: `tests/planning/check-xer-writer.ts` (rondgang, zelfde datums en
 speling na `solveProject`, XER → OPS → XER → OPS op `tests/browser/fixtures/xer`, byte-gelijke tweede en
 derde export). Een import in P6 zelf is niet getest.
