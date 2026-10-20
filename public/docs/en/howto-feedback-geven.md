@@ -9,20 +9,23 @@ The schedule calculates something you do not understand, a button does not do wh
 ## Steps
 
 1. Click the button *Give feedback* at the top of the window. That button is always in the title bar. Its text changes every ten minutes: *Give feedback*, *Report a bug* and *Add a new feature*. It is always the same button. The window *Send feedback* opens.
-2. Choose *Bug* for something that does not work as it should, or *Feature request* for an idea. *Bug* is selected by default.
-3. Fill in the *Title* and then the *Description*, for example: which task you changed, what you expected and what you saw. Without a title, or with fewer than 10 characters together, the button *Send* is grey. A short line under the form then says what is missing.
+2. Choose the kind of report. *Something's not working* is for an error: something does not do what it should. *Idea* is for something you miss or want to be different. *Question or comment* is for the rest. *Something's not working* is selected by default.
+3. Fill in the *Title* and then the *Description*. The empty fields show an example: a title such as *E.g. Critical path jumps after saving*, and for the description the question *What did you do, what did you expect, and what happened?* As long as the button *Send* is grey, a grey line next to it says why, for example *Enter a title.* or that you write at least 10 characters in the title and description together.
 4. If you want a reply, fill in your *Email address*. That field is optional. The app remembers the address after a successful report, so it is already there next time.
-5. If you want to show something, turn on *Attach screenshot*. The app then makes a picture of the app without this window. A moment later you see a small preview. With *Annotate* an editor opens in which you put arrows, rectangles, freehand lines and text on the picture. There you choose the color, take back your last action with *Undo* or start over with *Clear all*. Click *Done* when you are satisfied.
-6. Click *Send*. While sending, the button says *Sending…*.
-7. You see *Thank you, your report has been sent.* If an issue on GitHub was made for your report, there is also the button *View on GitHub*. Click *Close*.
+5. If you want to show something, turn on *Attach screenshot*. The app then makes a picture of the app without this window. A moment later you see a small preview with three buttons next to it: *Annotate*, *Retake* and *Remove*.
+6. *Annotate* opens an editor. In it you put arrows, rectangles, freehand lines and text on the picture. With *Cover* you draw a black area over something that must not go along, such as a name or an amount. That part is then really gone from the picture the app sends. You choose the color, take back your last action with *Undo* or start over with *Clear all*. Click *Done* to keep your changes, or *Cancel* (or Esc) to throw them away.
+7. *Retake* makes a new screenshot and clears your annotations. *Remove* removes the screenshot and turns the checkbox off.
+8. Look at the grey line *Sent along* under the form. It shows what the app sends along itself: the version, the operating system and the language, for example *Sent along: v2026.10.1 · Windows · English*.
+9. Click *Send*. While sending, the button says *Sending…*.
+10. You see *Thank you, your report has been sent.* If an issue on GitHub was made for your report, there is also the button *View on GitHub*. Click *Close*.
 
 ## Where your report goes
 
-The app sends your report to Open Feedback Studio by OpenAEC. You do not need an account for that, also not on GitHub. The makers see your report in their overview. If the app is linked to GitHub there, Open Feedback Studio also turns it into a public issue on GitHub, with the label *bug* or *enhancement*. Under your description there is then a line with the version of Open Planner Studio, your operating system and the language of the app.
+The app sends your report to Open Feedback Studio by OpenAEC. You do not need an account for that, also not on GitHub. The makers see your report in their overview. If the app is linked to GitHub there, Open Feedback Studio also turns it into a public issue on GitHub. With *Something's not working* the issue gets the label *bug*, with *Idea* the label *enhancement*. Under your description there is then a line with the version of Open Planner Studio, your operating system and the language of the app.
 
 ## Pitfalls and what the app does then
 
-**Your report can become public.** Do not put anything in it that you do not want to share. That also goes for the screenshot: the picture shows everything that is visible in the app at that moment, such as task names and resources of your project. The app makes the screenshot at the moment you turn on *Attach screenshot*. So make sure the screen is right before you do that, and leave out what you do not want to show.
+**Your report can become public.** Do not put anything in it that you do not want to share. That also goes for the screenshot: the picture shows everything that is visible in the app at that moment, such as task names and resources of your project. The app makes the screenshot at the moment you turn on *Attach screenshot*. If the screen is not right yet, close the window, set the screen right, open the window again and click *Retake*. Use *Cover* to hide what you do not want to show.
 
 **The screenshot is too large.** The app makes the screenshot smaller before sending. If it is still too large after that, your report goes without a picture. The thank-you screen then says *The screenshot was too large and was not sent.*
 
@@ -39,7 +42,7 @@ The app sends your report to Open Feedback Studio by OpenAEC. You do not need an
 
 **The screenshot fails.** It says *Screenshot capture failed. You can still send feedback without a screenshot.* The checkbox goes off and you can send your report without a picture.
 
-**You have typed a lot and click beside the window by accident.** That does not close the window, so your text stays. Esc or *Cancel* does close it, and then your text is gone. While sending, Esc does not close the window.
+**You close the window before you send.** Esc, *Cancel* and the cross close the window, but your report is kept as a draft. When you open the window again, the kind, your text, the email address and the screenshot with annotations are still there. The draft is kept as long as the app is open; after you quit the app it is gone. After a successful report the form is empty again. If you want to start over yourself, click *Clear* at the bottom left. A click beside the window does not close it. While sending, Esc does not close the window.
 
 ## See also
 
