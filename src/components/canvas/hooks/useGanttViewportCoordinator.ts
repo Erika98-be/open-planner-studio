@@ -43,6 +43,11 @@ import { shownFinish, shownStart } from '@/utils/taskDates';
 /** Verticale schuifhoogte van de Gantt: dezelfde als die van de takenlijst (rijen, spookregel en
  * eindstrook, zie `scrollExtent.ts`). Anders kan de takenlijst verder schuiven dan de Gantt en
  * lopen de rijen onderaan uit elkaar. */
+/** Breedte van het pane waar een zwevende horizontale balk in ligt (zijn ouder), = de kaartbreedte. */
+function hScrollViewportWidth(element: HTMLElement): number {
+  return element.parentElement?.clientWidth ?? element.clientWidth;
+}
+
 function ganttScrollContentHeight(
   current: Pick<GanttViewportCoordinatorInput, 'rows' | 'rowHeight' | 'view'>,
 ): number {
@@ -333,6 +338,9 @@ export function useGanttViewportCoordinator(
   // Scrollbalk ↔ scrollX via `scrollbarRangeRatio` (1 zolang de inhoud onder de elementgrens blijft):
   // de spacer is `inhoud × scrollbarScale` breed, de omrekening beeldt de scrollbare bereiken op
   // elkaar af zodat de duim precies tot het einde loopt.
+  // De balk kan smaller zijn dan zijn pane (hij begint pas na de splittergrijpzone, zie GanttCanvas)
+  // en zijn spacer is dan even veel smaller. Het venster in de omrekening is daarom de pane-breedte
+  // (de ouder van de balk), niet `clientWidth` van de balk zelf.
   const primaryScrollbarScale = scrollbarScale(primaryContentWidth);
   const secondaryScrollbarScale = scrollbarScale(secondaryContentWidth);
   const contentWidthsRef = useRef({ primary: primaryContentWidth, secondary: secondaryContentWidth });
@@ -340,7 +348,7 @@ export function useGanttViewportCoordinator(
   useEffect(() => {
     const element = primaryHScrollRef.current;
     if (!element) return;
-    const target = input.view.scrollX * scrollbarRangeRatio(primaryContentWidth, element.clientWidth);
+    const target = input.view.scrollX * scrollbarRangeRatio(primaryContentWidth, hScrollViewportWidth(element));
     if (Math.abs(element.scrollLeft - target) > 1) {
       element.scrollLeft = target;
     }
@@ -348,7 +356,7 @@ export function useGanttViewportCoordinator(
   useEffect(() => {
     const element = secondaryHScrollRef.current;
     if (!element || !splitView) return;
-    const target = splitView.secondaryScrollX * scrollbarRangeRatio(secondaryContentWidth, element.clientWidth);
+    const target = splitView.secondaryScrollX * scrollbarRangeRatio(secondaryContentWidth, hScrollViewportWidth(element));
     if (Math.abs(element.scrollLeft - target) > 1) {
       element.scrollLeft = target;
     }
@@ -356,7 +364,7 @@ export function useGanttViewportCoordinator(
   const onPrimaryHorizontalScroll = useCallback((event: React.UIEvent<HTMLDivElement>) => {
     const current = latest.current;
     const el = event.currentTarget;
-    const ratio = scrollbarRangeRatio(contentWidthsRef.current.primary, el.clientWidth);
+    const ratio = scrollbarRangeRatio(contentWidthsRef.current.primary, hScrollViewportWidth(el));
     const scrollX = el.scrollLeft / ratio;
     // Geschaald: een scroll-event dat alleen onze eigen (afgeronde) terugschrijving weerkaatst, mag
     // de exacte scrollX niet overschrijven.
@@ -367,7 +375,7 @@ export function useGanttViewportCoordinator(
     const current = latest.current;
     const currentSplit = current.view.splitView;
     const el = event.currentTarget;
-    const ratio = scrollbarRangeRatio(contentWidthsRef.current.secondary, el.clientWidth);
+    const ratio = scrollbarRangeRatio(contentWidthsRef.current.secondary, hScrollViewportWidth(el));
     const scrollX = el.scrollLeft / ratio;
     if (!currentSplit || Math.abs(currentSplit.secondaryScrollX - scrollX) * ratio <= 1) return;
     current.setSplitView({ ...currentSplit, secondaryScrollX: Math.max(0, scrollX) });

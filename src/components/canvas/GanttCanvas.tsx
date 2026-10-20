@@ -67,6 +67,7 @@ import { useGanttRowDragBridge } from './ganttRowDragBridge';
 import { TASK_ROW_HEIGHT } from '@/engine/taskGrid/rowHeight';
 // Dikte van de zwevende balken: één gedeelde waarde met de takenlijst (zie scrollExtent.ts).
 import { OVERLAY_SCROLLBAR_SIZE } from '@/engine/taskGrid/scrollExtent';
+import { GANTT_WORKSPACE_SPLITTER_GRIP } from './ganttSplitter';
 import type { HistogramRenderInput } from './hooks/ganttCoordinatorTypes';
 import { shownFinish, shownStart } from '@/utils/taskDates';
 
@@ -813,6 +814,17 @@ export function GanttCanvas({
       ) : null, miniMapHost)
     : null;
 
+  // De splittergrijpzone ligt over de Gantt-rand aan de kant van de takenlijst: links in ltr, rechts
+  // in ar/fa. De pane-rij is altijd ltr, dus in ar/fa raakt het SECUNDAIRE pane de splitter zodra de
+  // splitsing aan staat. Het pane dat de splitter raakt, laat zijn balk pas na de zone beginnen en
+  // maakt de spacer even veel smaller: zo blijft het schuifbereik gelijk aan dat van de kaart.
+  const splitterOnLeft = histogramPickerSide === 'left';
+  const primaryHScrollInset = {
+    left: splitterOnLeft ? GANTT_WORKSPACE_SPLITTER_GRIP : 0,
+    right: !splitterOnLeft && !splitView ? GANTT_WORKSPACE_SPLITTER_GRIP : 0,
+  };
+  const secondaryHScrollInsetRight = !splitterOnLeft && splitView ? GANTT_WORKSPACE_SPLITTER_GRIP : 0;
+
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       {/* Pane-rij. De scrollbalken zijn ZWEVENDE overlays binnen deze rij en binnen de panes
@@ -944,10 +956,10 @@ export function GanttCanvas({
           ref={hScrollRef}
           data-testid="gantt-hscroll"
           className="gantt-overlay-scrollbar absolute overflow-x-auto overflow-y-hidden"
-          style={{ left: 0, right: 0, bottom: 0, height: OVERLAY_SCROLLBAR_SIZE, zIndex: 4 }}
+          style={{ left: primaryHScrollInset.left, right: primaryHScrollInset.right, bottom: 0, height: OVERLAY_SCROLLBAR_SIZE, zIndex: 4 }}
           onScroll={viewport.scrollHandlers.onPrimaryHorizontalScroll}
         >
-          <div style={{ width: Math.max(1, viewport.primary.scrollbarWidth), height: 1 }} />
+          <div style={{ width: Math.max(1, viewport.primary.scrollbarWidth - primaryHScrollInset.left - primaryHScrollInset.right), height: 1 }} />
         </div>
       </div>
       {/* Secundair pane: eigen tijdvenster, gedeelde rijen + verticale scroll */}
@@ -975,10 +987,10 @@ export function GanttCanvas({
               ref={hScrollSecondaryRef}
               data-testid="gantt-hscroll-secondary"
               className="gantt-overlay-scrollbar absolute overflow-x-auto overflow-y-hidden"
-              style={{ left: 0, right: 0, bottom: 0, height: OVERLAY_SCROLLBAR_SIZE, zIndex: 4 }}
+              style={{ left: 0, right: secondaryHScrollInsetRight, bottom: 0, height: OVERLAY_SCROLLBAR_SIZE, zIndex: 4 }}
               onScroll={viewport.scrollHandlers.onSecondaryHorizontalScroll}
             >
-              <div style={{ width: Math.max(1, viewport.secondary?.scrollbarWidth ?? 0), height: 1 }} />
+              <div style={{ width: Math.max(1, (viewport.secondary?.scrollbarWidth ?? 0) - secondaryHScrollInsetRight), height: 1 }} />
             </div>
           </div>
         </>
