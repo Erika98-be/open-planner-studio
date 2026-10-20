@@ -139,8 +139,7 @@ Alles staat op de prerelease met tag `channels` en titel "Kanalen" (`prerelease:
   run, melding in de samenvatting) als `nightly-*.json` al naar die generatie wijst (alleen bij `schedule`).
 - Schrijft `nightly-*.json` met dezelfde inhoud als de `dev-*.json` (zelfde URL's, versie en handtekening). Geen bouw,
   geen kopie van bouwsels, geen signing.
-- Een vaste link voor testers ("download de nieuwste Nightly") wijst naar de release-pagina van die generatie; de
-  release-tekst van `channels` noemt welke generatie Nightly en Dev nu zijn.
+- Testers downloaden via de release "Kanalen"; de release-tekst noemt welke versie Dev en Nightly nu zijn.
 
 ## Beide workflows
 
@@ -198,6 +197,5 @@ AUR-pakket:
 - Snap `edge`-kanaal.
 - Een AUR-Nightly-pakket (`open-planner-studio-nightly-bin`); kan later met dezelfde workflow.
 - Automatisch installeren via `pacman` vanuit de app.
-- Opruimen van oude Dev-generaties (vervolglijst).
 - Een testkanaal voor de webversie (`live.yml` blijft `main`).
 
