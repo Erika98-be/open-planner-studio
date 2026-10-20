@@ -1812,3 +1812,10 @@ Testversie (release-check, poort 3049) is NIET bijgewerkt met de PR's van vandaa
   (ook en) — besluit eigenaar nodig; regressiecheck plakt niet terug; no-op-wijziging `TaskCpmResultSection.tsx:22`.
 - Main CI op c5adb94f7 (#398, alleen docs) rood: `delete-under-dialog.spec.ts:40` (*Cancel* in Taak bewerken krijgt
   geen focus). CI op 6b0f278e8 was geannuleerd door de push van c5adb94f7. Herhaling van de rode job loopt.
+- **Hercheck #362 eigenaar 2026-10-20: Gantt-balk links "goed".** Main b02d2958b (#397, #399 "CI sneller", andere
+  sessie) raakt `check-focus-task.ts` ook ⇒ main in #362 gemerged in een losse worktree (8a3cdbdf1, desktopapp eigenaar
+  niet herladen); typecheck, check-focus-task, gantt-coordinate-contracts, gantt-workspace, browser-shards exit 0.
+  Wacht op CI 8a3cdbdf1 + groene main CI ⇒ merge.
+- Vraag eigenaar: toewijzingenpaneel geland? Nee: #389 (andere sessie, op #369) open (niet gemerged), concept, laatst
+  bijgewerkt 2026-10-19 12:21; #369 open (niet gemerged), concept, conflicten met main.
+- CSV-lag "u" komt uit ca38bed84 (2026-09-24, technische fix uur-lags), geen eerder eigenaarsbesluit gevonden.
