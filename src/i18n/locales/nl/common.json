@@ -980,7 +980,9 @@
       "bandEnd": "Einde van het blok",
       "shiftPreset": "Ploeg",
       "breakHint": "Een gat tussen twee banden is een pauze — pas de tijden naar wens aan."
-    }
+    },
+    "defaultConstructionName": "Bouwkalender NL",
+    "defaultStandardName": "Standaardkalender"
   },
   "view": {
     "structureLockedHint": "Niet beschikbaar tijdens filteren/groeperen/sorteren",

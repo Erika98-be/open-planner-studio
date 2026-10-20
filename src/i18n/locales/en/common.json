@@ -980,7 +980,9 @@
       "bandEnd": "Block end",
       "shiftPreset": "Shift",
       "breakHint": "A gap between two bands is a break — adjust the times as needed."
-    }
+    },
+    "defaultConstructionName": "Construction calendar NL",
+    "defaultStandardName": "Standard calendar"
   },
   "view": {
     "structureLockedHint": "Not available while filtering/grouping/sorting",
