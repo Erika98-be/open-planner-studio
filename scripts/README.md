@@ -31,7 +31,7 @@ de `verify:i18n`-poort. De overige scripts draaien via hun npm-script in de kete
 
 | script | npm-script | doet |
 |---|---|---|
-| `verify-parts.mjs` | `.github/workflows/ci.yml` (job `verify`) | verdeelt de stappen van `npm run verify` — rechtstreeks gelezen uit `package.json` — over de parallelle CI-delen; een niet-ingedeelde stap valt in `static`. `--list` toont de indeling, `--check-ci` eist dat de CI-matrix elk deel draait |
+| `verify-parts.mjs` | `.github/workflows/ci.yml` (job `verify`) | verdeelt de stappen van `npm run verify` — rechtstreeks gelezen uit `package.json` — over de parallelle CI-delen; een niet-ingedeelde stap valt in `static`. `--list` toont de indeling, `--check-ci` eist dat de CI-matrix elk deel draait en dat de browsershards samen precies `1/n` … `n/n` zijn |
 | `i18n-diff.mjs` | `verify:i18n` | ontbrekende vertaalsleutels t.o.v. `nl`, met CLDR-pluralcategorieën. Fout: een gat in `en`, of een halve meervoudsfamilie in welke taal ook. Rapport (exit 0, één regel per taal; `--verbose` noemt de sleutels): een sleutel die in een andere taal helemaal ontbreekt (besluit B5) |
 | `verify-i18n-keys.mjs` | `verify:i18n` | geen cast (`as 'a.b'`) op een vertaalsleutel in `src/`: zo'n cast zet de typecheck van die sleutel uit (`as const` mag); bewezen door `tests/planning/check-i18n-keys.ts` |
 | `i18n-fmt.ts` | `verify:i18n` (met `--check`) en `npm run i18n:fmt` (schrijven) | de vaste opmaak van alle 112 locale-bestanden: één sleutel per regel, volgorde van `nl`, meervoudsfamilies in CLDR-volgorde |
@@ -499,7 +499,8 @@ Maak een baseline daarom nooit langs ze heen:
 
 | script | aangeroepen door | doet |
 |---|---|---|
-| `run-browser-tests.mjs` | `npm run test:browser`; unit-test `tests/dev-server/browser-runner.test.mjs` | reserveert voor deze worktree een poort in de browsertestbaan (`allocateNamedPort(root, 'browser')`), controleert dat de Playwright-headless-shell start (anders een melding met het installatiecommando) en start `playwright test` met `OPS_BROWSER_TEST_PORT` en `OPS_DEV_INSTANCE`; extra argumenten gaan door naar Playwright (CI gebruikt zo `--shard=`) |
+| `run-browser-tests.mjs` | `npm run test:browser`; unit-test `tests/dev-server/browser-runner.test.mjs` | reserveert voor deze worktree een poort in de browsertestbaan (`allocateNamedPort(root, 'browser')`), controleert dat de Playwright-headless-shell start (anders een melding met het installatiecommando) en start `playwright test` met `OPS_BROWSER_TEST_PORT` en `OPS_DEV_INSTANCE`; extra argumenten gaan door naar Playwright; `--duration-shard=k/n` (zo draait CI) wordt een `--test-list` met de specs van die shard uit `browser-shards.mjs` |
+| `browser-shards.mjs` | `run-browser-tests.mjs` (`--duration-shard`); unit-test `tests/dev-server/browser-shards.test.mjs` | verdeelt de browserspecs op gemeten duur (`tests/browser/spec-durations.json`, langste eerst naar de lichtste shard) over de CI-shards; elke spec in precies één shard, ook zonder meting; `node scripts/browser-shards.mjs 4` toont de indeling, `--update "<bron>" <joblogs>` ververst de duren uit de CI-logs van een groene run |
 | `browser-test-server.mjs` | `webServer.command` in `playwright.config.ts`; `tests/dev-server/integration.sh` | leest `OPS_BROWSER_TEST_PORT` (moet in de browserbaan liggen), claimt het guard-slot voor die poort en start Vite op `127.0.0.1` (Playwright pollt bewust IPv4); geeft het slot bij afsluiten weer vrij |
 
 ## Handmatige hulpmiddelen (geen aanroeper)

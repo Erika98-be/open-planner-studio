@@ -30,7 +30,7 @@ const eq = (label: string, got: unknown, want: unknown) => {
 };
 const close = (label: string, got: number, want: number, eps = 0.001) => {
   checks++;
-  if (Math.abs(got - want) > eps) {
+  if (!(Math.abs(got - want) <= eps)) {
     diffs.push(`${label}: verwacht ≈${want}, kreeg ${got}`);
   }
 };
