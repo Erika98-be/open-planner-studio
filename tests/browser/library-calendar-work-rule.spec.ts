@@ -98,7 +98,7 @@ test('bibliotheekkalender bewerken: werkdag tot 14:00 ververst de gekoppelde pro
   await expect(workEnd).toHaveValue('16:00');
   await workEnd.fill('14:00');
   await workEnd.press('Enter');
-  await expect(dialog.locator('[data-ops-simple-break-net-hours]')).toHaveText(/^6 [hu]$/);
+  await expect(dialog.locator('[data-ops-simple-break-net-hours]')).toHaveText(/^6[hu]$/);
   await dialog.getByRole('button', { name: /^(Apply|Toepassen)$/ }).click();
   await expect(dialog).toBeHidden();
 

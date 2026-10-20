@@ -103,7 +103,7 @@ export function WorkTimeEditor({
               <span className="w-8 font-medium text-text-secondary">
                 {tMenu(`ribbon.calendarDialog.days.${wd}`)}
               </span>
-              <span className="!text-small text-text-secondary tabular-nums">
+              <span className="!text-small text-text-secondary tabular-nums" data-ops-worktime-day-hours>
                 {tMenu('ribbon.calendarDialog.hoursValue', { hours: formatReportNumber(dayMinutes(wd) / 60, i18n.language) })}
               </span>
               <div className="flex-1" />
