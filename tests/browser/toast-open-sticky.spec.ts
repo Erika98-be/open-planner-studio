@@ -20,31 +20,45 @@ async function openXer(page: Page, name: string): Promise<void> {
 
 const openToast = (page: Page) => page.locator('.ops-toast', { hasText: /XER file opened/ });
 
+// De tijd loopt via `page.clock` (geen echte wachttijd, testaudit 2026-10-20). De klok gaat aan vóór het
+// openen, zodat de 5s-timer van de melding al op de nepklok staat; tot `runFor` loopt hij gewoon mee met
+// de echte tijd. Controle dat de klok die timerroute echt vooruitzet: een gewone info die er tegelijk
+// staat, is na dezelfde 6 s wel weg (zelfde opzet als refusal-red.spec.ts).
+async function stickyAfterSixSeconds(page: Page): Promise<void> {
+  const toast = openToast(page);
+  await expect(toast).toBeVisible();
+  await page.evaluate(() => window.__OPS__!.store.getState().notify({ severity: 'info', messageKey: 'notifications.templateSaved', params: { name: 'klokcontrole' } }));
+  const control = page.locator('.ops-toast.toast-info', { hasText: /klokcontrole/ });
+  await expect(control).toBeVisible();
+  await page.clock.runFor(6_000);
+  await expect(control).toHaveCount(0);
+  await expect(toast).toBeVisible();
+  await toast.locator('[data-ops-toast-close]').click();
+  await expect(toast).toHaveCount(0);
+}
+
 // PR #296 (op main) laat de XER-lezer een ontbrekende geplande start melden
 // (`notifications.xerImportMissingPlannedStarts`, opgenomen in `openNoticeSticky.ts`).
 test('XER met een ontbrekende geplande start: de openingsmelding blijft staan tot het kruisje', async ({ page, ops: _ops }) => {
+  await page.clock.install();
   await openXer(page, 'zonder-geplande-start.xer');
-  const toast = openToast(page);
-  await expect(toast).toBeVisible();
-  await page.waitForTimeout(6000);
-  await expect(toast).toBeVisible();
-  await toast.locator('[data-ops-toast-close]').click();
-  await expect(toast).toHaveCount(0);
+  await stickyAfterSixSeconds(page);
 });
 
 test('XER met een onbekend taaktype (enum-terugval): de openingsmelding blijft staan tot het kruisje', async ({ page, ops: _ops }) => {
+  await page.clock.install();
   await openXer(page, 'onbekend-taaktype.xer');
-  const toast = openToast(page);
-  await expect(toast).toBeVisible();
-  await page.waitForTimeout(6000);
-  await expect(toast).toBeVisible();
-  await toast.locator('[data-ops-toast-close]').click();
-  await expect(toast).toHaveCount(0);
+  await stickyAfterSixSeconds(page);
 });
 
 test('XER zonder bijzonderheden: de openingsmelding verdwijnt vanzelf na 5 s', async ({ page, ops: _ops }) => {
+  await page.clock.install();
   await openXer(page, 'zonder-bijzonderheden.xer');
   const toast = openToast(page);
   await expect(toast).toBeVisible();
-  await expect(toast).toHaveCount(0, { timeout: 8000 });
+  // Na 3 s staat hij er nog (niet te vroeg weg), na 5 s is hij weg.
+  await page.clock.runFor(3_000);
+  await expect(toast).toBeVisible();
+  await page.clock.runFor(2_000);
+  await expect(toast).toHaveCount(0);
 });

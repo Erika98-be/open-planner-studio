@@ -353,7 +353,21 @@ siteTest('sluiten met Opslaan: de site-vraag ligt boven de sluitvraag en het tab
   await expect.poll(() => page.evaluate((id) => window.__OPS__!.store.getState().documents.some((d) => d.id === id), closing)).toBe(false);
 });
 
-siteTest('AutoSave: voor een site-bestand grijs met eigen uitleg, en de timer schrijft nooit naar de site', async ({ page, ops: _ops }) => {
+// AutoSave op de nepklok (testaudit 2026-10-20: dit kostte 13 s echte wachttijd). De klok gaat aan vóór het
+// laden van de app (deze fixture draait vóór `ops` navigeert), dus ook een al ingeplande AutoSave-ronde staat
+// op de nepklok; tot `runFor` loopt hij gewoon mee met de echte tijd.
+const siteClockTest = siteTest.extend({
+  page: async ({ page }, use) => {
+    await page.clock.install();
+    await use(page);
+  },
+});
+
+/** isDirty van een (ook niet-actief) document. */
+const dirtyOf = (page: Page, id: string) => page.evaluate((docId) => window.__OPS__!.store.getState()
+  .getOpenDocumentPayloads().find((d) => d.id === docId)?.payload.isDirty, id);
+
+siteClockTest('AutoSave: voor een site-bestand grijs met eigen uitleg, en de timer schrijft nooit naar de site', async ({ page, ops: _ops }) => {
   const toggle = page.locator('[data-ops-autosave]');
   await openFromSiteDialog(page, 'p1');
   // Besluit #309: automatisch opslaan naar de site bestaat niet (elke ronde zou een nieuwe versie maken).
@@ -366,9 +380,34 @@ siteTest('AutoSave: voor een site-bestand grijs met eigen uitleg, en de timer sc
   // Ook met de vlag aan (alleen als fixture te zetten) schrijft de timer niets naar de site.
   await page.evaluate(() => window.__OPS__!.store.getState().setAutoSaveToFile(true));
   await makeDirty(page, 'Niet automatisch');
-  await page.waitForTimeout(13_000);
+  const siteDoc = (await doc(page)).activeDocumentId;
+
+  // Controle dat de AutoSave-ronde echt voorbijkomt: een tweede document met een (fixture-)FSA-handle en
+  // AutoSave aan. Dezelfde timer schrijft dat document wel weg (het wordt schoon); zonder die controle zou
+  // "geen site-save" ook groen zijn als de timer nooit liep.
+  const controlDoc = await page.evaluate(() => {
+    const store = window.__OPS__!.store;
+    const id = store.getState().newDocument();
+    store.setState({
+      filePath: 'klokcontrole.ifc',
+      fileHandle: {
+        queryPermission: async () => 'granted',
+        createWritable: async () => ({ write: async () => {}, close: async () => {} }),
+      },
+    } as never);
+    store.getState().setAutoSaveToFile(true);
+    store.getState().addTask({ name: 'Klokcontrole' });
+    return id;
+  });
+  await expect.poll(() => dirtyOf(page, controlDoc)).toBe(true);
+  await page.locator(`[data-testid="document-tab"][data-ops-tab="${siteDoc}"]`).click();
+  await expect.poll(() => doc(page).then((d) => d.activeDocumentId)).toBe(siteDoc);
+
+  await page.clock.runFor(13_000);
+  await expect.poll(() => dirtyOf(page, controlDoc)).toBe(false);
   expect(await saves(page)).toEqual([]);
   expect((await doc(page)).isDirty).toBe(true);
+  expect(await dirtyOf(page, siteDoc)).toBe(true);
   await expect(toggle).toHaveAttribute('aria-checked', 'false');
 });
 
