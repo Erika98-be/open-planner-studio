@@ -1452,6 +1452,17 @@
         { "pred": "Q", "succ": "K2", "type": "FINISH_START", "lag": 0 },
         { "pred": "P", "succ": "X", "type": "START_FINISH", "lag": 0 }
       ],
+      "minuteModel": {
+        "reason": "CONV-SF",
+        "note": "T8: X eindigt op het startmoment van P (wo 07:00), dus X werkt ma en di.",
+        "expect": {
+          "tasks": {
+            "X": {
+              "es": "2026-06-01"
+            }
+          }
+        }
+      },
       "expect": {
         "tasks": {
           "Q": { "es": "2026-06-01", "ef": "2026-06-02" },
@@ -1501,6 +1512,23 @@
         { "pred": "Z", "succ": "X", "type": "FINISH_START", "lag": 0 },
         { "pred": "X", "succ": "P", "type": "START_FINISH", "lag": 0 }
       ],
+      "minuteModel": {
+        "reason": "CONV-SF",
+        "note": "T8: K1 en K2 eindigen op het startmoment van X (ma 08-06 07:00), dus ze werken tot en met vr.",
+        "expect": {
+          "tasks": {
+            "K1": {
+              "es": "2026-06-03"
+            },
+            "K2": {
+              "es": "2026-06-01"
+            },
+            "P": {
+              "es": "2026-06-01"
+            }
+          }
+        }
+      },
       "expect": {
         "tasks": {
           "Z": { "es": "2026-06-01", "ef": "2026-06-05" },

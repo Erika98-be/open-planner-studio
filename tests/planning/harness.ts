@@ -72,9 +72,116 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { generateId } from '@/utils/id';
 import { isAncestorRelation, relationCycle } from '@/state/relationRules';
+import { writeFileSync } from 'node:fs';
+import { capturePayload } from '@/state/documentContract';
+import {
+  migrateToMinuteModel, normalizeTaskDate, taskDateContext, taskDateFieldSide, DayClockCache,
+  MINUTE_MODEL_TIME_MODEL, type TaskDateContext, type TaskDateField,
+} from '@/state/migrations/minuteModel';
+import { dayStartInstant, isDateOnly, workdayOfInstant } from '@/engine/calendar/workdayRules';
+import { calendarForEngine } from '@/utils/effectiveWorkTime';
+import { isElapsedTask, isPinnedComplete } from '@/engine/scheduler/duration';
+import { isSummaryTask } from '@/utils/taskHierarchy';
+import type { WorkCalendar } from '@/types/calendar';
 
 const S = () => useAppStore.getState();
 const CLEAN_WORKDAYS = [1, 2, 3, 4, 5];
+
+// ════════════════════════════════════════════════════════════════════════════════════════════════
+//  MINUTENMODEL (fase F0 van "alleen uren", spec docs/superpowers/specs/2026-10-20-alleen-uren-design.md
+//  §6.1). Met OPS_MINUTE_MODEL_RUN=1 of =2 rekent de harness elke DAGcase op de tijdas in minuten en
+//  vergelijkt hij op dagniveau. Zonder de variabele verandert er niets.
+//
+//  - Run 1 (dagenmaat, het OPS-profiel na besluit B1): taken, lags en nivelleervertraging blijven in
+//    dagen. Run 2 (urenmaat, zoals de conventie dagenmaat "uit" na F3): duur en lag gaan bij de invoer
+//    naar minuten (werktijd per dag van de taak- of voorgangerkalender; kalendertijd × 1440).
+//  - Laadgrens: de case wordt gebouwd zoals altijd. Vlak voor de eerste berekening loopt de
+//    productiefunctie `migrateToMinuteModel` over de payload (een oud bestand: normalisatie D1–D7 en T1),
+//    krijgt elke kalender zijn werkblokken (`calendarForEngine`, wat de motor na F2 zelf doet), en leest
+//    de harness de projectstart met D1 en de statusdatum met D5 (de motorregel van F2).
+//  - Vergelijker: elke verwachte datum zonder tijd gaat door dezelfde regel van zijn veld en wordt met
+//    de werkdag van een moment (§0) vergeleken met de gekregen waarde, in de klok van de taak. Speling
+//    met 10⁻⁶. Verwachte dag-getallen (duur, projectduur, variance) met 10⁻⁶; een gekregen getal dat
+//    geen geheel aantal dagen is, staat als "~ niet geheel" in de uitvoer. Het projecteinde en de late
+//    finish van een kalendertijd-taak zonder opvolger lezen anders dan D3 per veld; zie
+//    `minuteComparer`. Een verwachte waarde MET tijd (alleen in `minuteModel.expect`) vergelijkt exact.
+//  - Redencodes: een case die bewust anders uitkomt, draagt `minuteModel: { reason, expect, note }`. In
+//    de runs van die code geldt `expect` met de velden uit `minuteModel.expect` erover. Haalt de run
+//    dat doel nog niet, dan is de status BEWUST_ROOD en staat de case in het vangnet.
+//  - Hulp bij analyseren: OPS_MINUTE_MODEL_VERBOSE=1 toont per afwijkende case de verschillen,
+//    OPS_MINUTE_MODEL_DEBUG=1 daarbij de datums van alle taken uit de motor.
+//  - Vangnet: de cases die niet gelijk zijn (na de redencodes) staan per run en per batterij in
+//    `minute-model-runs.json`. Een afwijking van die lijst is rood. Bijwerken: zie tests/planning/README.md.
+// ════════════════════════════════════════════════════════════════════════════════════════════════
+const MM_RUN_ENV = process.env.OPS_MINUTE_MODEL_RUN;
+const MM_RUN: 0 | 1 | 2 = MM_RUN_ENV === '1' ? 1 : MM_RUN_ENV === '2' ? 2 : 0;
+if (MM_RUN_ENV !== undefined && MM_RUN_ENV !== '' && MM_RUN === 0) {
+  console.log(`XX OPS_MINUTE_MODEL_RUN="${MM_RUN_ENV}": verwacht 1 of 2`);
+  process.exit(1);
+}
+/** Run 2: dagduur en daglag gaan bij de invoer naar minuten. */
+const MM_HOURS = MM_RUN === 2;
+const MM_LABEL = MM_RUN === 1 ? 'run 1 (dagenmaat)' : 'run 2 (urenmaat)';
+/** Hulpmiddel bij het analyseren: zet per afwijkende case de motordatums in de uitvoer. */
+const MM_DEBUG = process.env.OPS_MINUTE_MODEL_DEBUG === '1';
+/** De case kan niet naar het minutenmodel (bijv. een duur die geen geheel aantal minuten is). */
+class NotConvertible extends Error {}
+const MM_DATETIME_RE = /\d{4}-\d\d-\d\dT\d\d:\d\d/;
+
+/** Reden waarom een case al een URENcase is (dan hoort hij niet bij de runs), of null. Dezelfde
+ *  indeling als de meting in §10 (branch claude/uren-poc-meting): 422 dagcases en 138 urencases. */
+function hourCaseReason(c: Case): string | null {
+  // De hele case, zoals de meting; alleen de eigen sleutel `minuteModel` telt niet mee.
+  const { minuteModel: _mm, ...rest } = c;
+  void _mm;
+  const s = JSON.stringify(rest);
+  if (s.includes('"workTime"')) return 'workTime';
+  if (MM_DATETIME_RE.test(s)) return 'datetime';
+  if (s.includes('"lagMinutes"')) return 'lagMinutes';
+  if (s.includes('"remainingMinutes"')) return 'remainingMinutes';
+  if (s.includes('"levelingDelayMinutes"')) return 'levelingDelayMinutes';
+  for (const t of c.tasks ?? []) {
+    if (typeof t.dur === 'string' && !/^\d+d$/i.test(t.dur.trim())) return `dur "${t.dur}"`;
+  }
+  for (const l of c.links ?? []) if (typeof l.lag === 'string') return `lag "${l.lag}"`;
+  return null;
+}
+
+function intMinutes(v: number, label: string): number {
+  if (Math.abs(v - Math.round(v)) > 1e-9) throw new NotConvertible(`${label}: ${v} min is geen geheel aantal minuten`);
+  return Math.round(v);
+}
+
+/** De laadgrens van het minutenmodel (zie boven): migratie, werkblokken voor elke kalender, en de
+ *  projectdatums zoals de motor ze na F2 leest (start D1, statusdatum D5 = D1). */
+function minuteModelLoad(): void {
+  const { payload } = migrateToMinuteModel(capturePayload(S()));
+  const projectClock = new DayClockCache(payload.calendar, payload.calendars).calendarClock(undefined);
+  const project = S().project;
+  const startDate = dayStartInstant(projectClock, project.startDate) ?? project.startDate;
+  const statusDate = project.statusDate
+    ? (dayStartInstant(projectClock, project.statusDate) ?? project.statusDate)
+    : undefined;
+  const withBlocks = (cal: WorkCalendar): WorkCalendar => calendarForEngine(cal);
+  useAppStore.setState((s) => {
+    s.tasks = payload.tasks as typeof s.tasks;
+    s.baselines = payload.baselines as typeof s.baselines;
+    s.calendar = withBlocks(payload.calendar) as typeof s.calendar;
+    s.calendars = payload.calendars.map(withBlocks) as typeof s.calendars;
+    s.project.startDate = startDate;
+    if (statusDate !== undefined) s.project.statusDate = statusDate;
+  });
+}
+
+/** Normalisatie bij invoer ná de laadgrens (F2 doet dat in de store-acties): dezelfde functie over de
+ *  payload; een moment blijft een moment, dus alleen nieuwe datums zonder tijd veranderen. */
+function minuteModelNormalizeInput(): void {
+  const { payload } = migrateToMinuteModel(capturePayload(S()), { timeModel: MINUTE_MODEL_TIME_MODEL });
+  useAppStore.setState((s) => {
+    s.tasks = payload.tasks as typeof s.tasks;
+    s.baselines = payload.baselines as typeof s.baselines;
+  });
+}
 
 type Shift = 'FIRST' | 'SECOND' | 'THIRD' | 'USERDEFINED';
 type Cal = {
@@ -259,6 +366,18 @@ interface Case {
   /** Vrije toelichting in het casusbestand — puur documentatie, de harness doet er niets mee. */
   note?: string;
   expect?: CaseExpect;
+  /** Minutenmodel (fase F0 "alleen uren", spec §6.1): deze case komt BEWUST anders uit op de tijdas in
+   *  minuten. Alleen gelezen met OPS_MINUTE_MODEL_RUN; een gewone run negeert dit veld. */
+  minuteModel?: MinuteModelCase;
+}
+
+/** Redencode van een dagcase in het minutenmodel (spec §6.1, §4.5). `expect` geeft alleen de velden die
+ *  anders uitkomen; ze gaan over `expect` heen in de runs waarin de code geldt. */
+interface MinuteModelCase {
+  reason: ReasonCode;
+  expect?: CaseExpect;
+  /** Waarom deze uitkomst bewust anders is (bron of besluit). */
+  note?: string;
 }
 
 // ── Verwachtingen ────────────────────────────────────────────────────────────────────────────────
@@ -495,6 +614,15 @@ function buildAndSolve(c: Case): {
     } else {
       durDays = t.dur ?? 1;
     }
+    // Minutenmodel, run 2 (urenmaat): dagduur ⇒ minuten (werktijd per dag van de taakkalender;
+    // kalendertijd × 1440). `durationMinutesRaw` test juist een dagtaak met een vreemd minuutveld.
+    if (MM_HOURS && durMinutes === undefined) {
+      if (t.durationMinutesRaw !== undefined) {
+        throw new NotConvertible(`taak "${t.name}": durationMinutesRaw test juist een dagtaak met een vreemd minuutveld`);
+      }
+      const factor = t.durationType === 'ELAPSEDTIME' ? 1440 : effHoursPerDayFor(t.calendar) * 60;
+      durMinutes = intMinutes(durDays * factor, `taak "${t.name}" duur`);
+    }
     // De case-DSL vertegenwoordigt de twee native invoervormen expliciet. Dit is ook de
     // deterministische legacy-migratie die de productiecode toepast (minuten aanwezig => uren);
     // de kalender bepaalt deze identiteit nooit. `durationMinutesRaw` blijft juist een expliciete
@@ -523,6 +651,9 @@ function buildAndSolve(c: Case): {
           relType: e.relType,
           ...(e.lag !== undefined ? { lagDays: e.lag } : {}),
           ...(e.lagMinutes !== undefined ? { lagMinutes: e.lagMinutes } : {}),
+          // Minutenmodel, run 2: daglag ⇒ minuten in de taakkalender.
+          ...(MM_HOURS && e.lag && e.lagMinutes === undefined
+            ? { lagMinutes: intMinutes(e.lag * effHoursPerDayFor(t.calendar) * 60, `externe lag ${t.name}`) } : {}),
           anchorDate: e.anchorDate,
           sourceRef: {
             projectId: e.sourceProject ?? 'ext-project',
@@ -565,6 +696,13 @@ function buildAndSolve(c: Case): {
       const mins = parseDuration(l.lag, predHpd);
       if (mins == null) throw new Error(`relatie ${l.pred}->${l.succ}: onparseerbare lag "${l.lag}"`);
       lagMinutes = mins;
+    }
+    // Minutenmodel, run 2: daglag ⇒ minuten, in de VOORGANGER-kalender (LAG_CALENDAR); kalendertijd
+    // × 1440. `lagDays` blijft staan (zoals de IFC-lezer beide velden vult); een procentlag blijft.
+    if (MM_HOURS && lagMinutes === undefined && lagDaysVal) {
+      const predCalName = c.tasks.find((t) => t.name === l.pred)?.calendar;
+      const factor = l.lagUnit === 'ELAPSEDTIME' ? 1440 : effHoursPerDayFor(predCalName) * 60;
+      lagMinutes = intMinutes(lagDaysVal * factor, `lag ${l.pred}->${l.succ}`);
     }
     const seqInput = {
       predecessorId: ids[l.pred], successorId: ids[l.succ], type: l.type as any,
@@ -668,6 +806,20 @@ function buildAndSolve(c: Case): {
     }
   }
 
+  // Minutenmodel: run 2 houdt een latere duurwijziging in dagen ook in minuten bij (de taak is een
+  // urentaak geworden).
+  const mmDurPatch = (taskName: string, dur: number): { durationMinutes?: number } => {
+    if (!MM_HOURS) return {};
+    const tk = S().tasks.find((x) => x.id === ids[taskName]);
+    if (!tk || tk.time.durationUnit !== 'hours') return {};
+    const ct = c.tasks.find((x) => x.name === taskName);
+    const factor = ct?.durationType === 'ELAPSEDTIME' ? 1440 : effHoursPerDayFor(ct?.calendar) * 60;
+    return { durationMinutes: intMinutes(dur * factor, `setDuration ${taskName}`) };
+  };
+
+  // Minutenmodel: de laadgrens, vlak voor de eerste berekening (zie minuteModelLoad).
+  if (MM_RUN) minuteModelLoad();
+
   S().runCPM();
 
   // Baselines & variance (fase 2.6 golf 1): baseline vastleggen, muteren, herberekenen.
@@ -678,7 +830,7 @@ function buildAndSolve(c: Case): {
         const tid = ids[m.setDuration.task];
         if (!tid) throw new Error(`varianceMutations.setDuration: onbekende taak "${m.setDuration.task}"`);
         const task = S().tasks.find((t) => t.id === tid)!;
-        S().updateTask(tid, { time: { ...task.time, scheduleDuration: m.setDuration.dur } });
+        S().updateTask(tid, { time: { ...task.time, scheduleDuration: m.setDuration.dur, ...mmDurPatch(m.setDuration.task, m.setDuration.dur) } });
       } else if ('deleteTask' in m) {
         const tid = ids[m.deleteTask.task];
         if (!tid) throw new Error(`varianceMutations.deleteTask: onbekende taak "${m.deleteTask.task}"`);
@@ -688,9 +840,13 @@ function buildAndSolve(c: Case): {
         if (ids[a.name]) throw new Error(`varianceMutations.addTask: dubbele taaknaam "${a.name}"`);
         const start = a.start ?? (c.anchor ?? '2026-06-01');
         const dur = a.milestone ? 0 : (a.dur ?? 1);
+        // Minutenmodel, run 2: een nieuwe taak is een urentaak (werktijd per dag van het project).
+        const addTime = MM_HOURS
+          ? { ...createDefaultTaskTime(start, dur, 'hours'), durationMinutes: intMinutes(dur * effHoursPerDayFor(undefined) * 60, `varianceMutations ${a.name}`) }
+          : createDefaultTaskTime(start, dur);
         const nid = S().addTask({
           name: a.name, isMilestone: !!a.milestone, parentId: null,
-          time: createDefaultTaskTime(start, dur),
+          time: addTime,
         });
         ids[a.name] = nid;
         for (const l of a.links ?? []) {
@@ -698,10 +854,13 @@ function buildAndSolve(c: Case): {
           if (!ids[l.succ]) throw new Error(`varianceMutations.addTask.links: onbekende opvolger "${l.succ}"`);
           S().addSequence({
             predecessorId: ids[l.pred], successorId: ids[l.succ], type: l.type as any, lagDays: l.lag ?? 0,
+            ...(MM_HOURS && l.lag ? { lagMinutes: intMinutes(l.lag * effHoursPerDayFor(undefined) * 60, 'varianceMutations lag') } : {}),
           });
         }
       }
     }
+    // Minutenmodel: een nieuwe taak kwam met datums zonder tijd binnen; de store normaliseert die na F2.
+    if (MM_RUN) minuteModelNormalizeInput();
     S().runCPM();
   }
 
@@ -743,7 +902,7 @@ function buildAndSolve(c: Case): {
       const tid = ids[op.setDuration.task];
       if (!tid) throw new Error(`afterCPM.setDuration: onbekende taak "${op.setDuration.task}"`);
       const task = S().tasks.find(t => t.id === tid)!;
-      S().updateTask(tid, { time: { ...task.time, scheduleDuration: op.setDuration.dur } });
+      S().updateTask(tid, { time: { ...task.time, scheduleDuration: op.setDuration.dur, ...mmDurPatch(op.setDuration.task, op.setDuration.dur) } });
     } else if ('assign' in op) {
       const tid = ids[op.assign.task];
       if (!tid) throw new Error(`afterCPM.assign: onbekende taak "${op.assign.task}"`);
@@ -761,7 +920,12 @@ function buildAndSolve(c: Case): {
       });
       S().applyLeveling(r);
     } else if ('moveProject' in op) {
-      S().moveProject(op.moveProject.newStart, { shiftBaselines: !!op.moveProject.shiftBaselines });
+      // Minutenmodel: de nieuwe projectstart zoals de motor hem na F2 leest (D1 op de projectkalender).
+      const newStart = MM_RUN
+        ? (dayStartInstant(new DayClockCache(S().calendar, S().calendars).calendarClock(undefined), op.moveProject.newStart)
+          ?? op.moveProject.newStart)
+        : op.moveProject.newStart;
+      S().moveProject(newStart, { shiftBaselines: !!op.moveProject.shiftBaselines });
     } else if ('addCalendarAsDefault' in op) {
       const { id: _cid, ...calBase } = S().calendar;
       void _cid;
@@ -770,7 +934,14 @@ function buildAndSolve(c: Case): {
     } else if ('setLevelingDelay' in op) {
       const tid = ids[op.setLevelingDelay.task];
       if (!tid) throw new Error(`afterCPM.setLevelingDelay: onbekende taak "${op.setLevelingDelay.task}"`);
-      S().updateTask(tid, { levelingDelay: op.setLevelingDelay.days });
+      // Minutenmodel, run 2: de vertraging ook in minuten (werktijd per dag van de taakkalender).
+      S().updateTask(tid, MM_HOURS
+        ? {
+            levelingDelay: op.setLevelingDelay.days,
+            levelingDelayMinutes: intMinutes(op.setLevelingDelay.days
+              * effHoursPerDayFor(c.tasks.find((x) => x.name === op.setLevelingDelay.task)?.calendar) * 60, 'levelingDelay'),
+          }
+        : { levelingDelay: op.setLevelingDelay.days });
     }
   }
 
@@ -917,25 +1088,88 @@ function runSourceParity(): string[] {
   return diffs;
 }
 
-function runCase(c: Case) {
+type Built = ReturnType<typeof buildAndSolve>;
+
+/** Uitkomst van één case. `status` alleen in een minutenmodel-run. */
+interface CaseResult {
+  id: string; title: string; pass: boolean; diffs: string[];
+  status?: MinuteStatus;
+  /** Minutenmodel: de case is rood op de OORSPRONKELIJKE verwachting (zonder redencode) — de telling
+   *  die met de meting in §10 te vergelijken is. */
+  rawRed?: boolean;
+  reason?: ReasonCode;
+  notes?: string[];
+}
+
+function runCase(c: Case): CaseResult {
+  if (MM_RUN) return runMinuteCase(c);
   if (c.sourceParity) {
     const diffs = runSourceParity();
     return { id: c.id, title: c.title, pass: diffs.length === 0, diffs };
   }
-  const diffs: string[] = [];
-  let ids: Record<string, string> = {};
-  let resIds: Record<string, string> = {};
-  let codeTypeIds: Record<string, string> = {};
-  let codeValueIds: Record<string, Record<string, string>> = {};
-  let fieldDefIds: Record<string, string> = {};
-  let previewResult: LevelingResult | null = null;
+  let built: Built;
   try {
-    ({ ids, resIds, codeTypeIds, codeValueIds, fieldDefIds, previewResult } = buildAndSolve(c));
+    built = buildAndSolve(c);
   } catch (e) {
     return { id: c.id, title: c.title, pass: false, diffs: [`THREW: ${String(e)}`] };
   }
+  const diffs = evaluateCase(c, c.expect ?? {}, built, EXACT);
+  return { id: c.id, title: c.title, pass: diffs.length === 0, diffs };
+}
+
+/** Minutenmodel: dezelfde case op de tijdas in minuten, beoordeeld op dagniveau (zie bovenin). */
+function runMinuteCase(c: Case): CaseResult {
+  const why = hourCaseReason(c);
+  if (why) return { id: c.id, title: c.title, pass: true, diffs: [`urencase (${why})`], status: 'UREN' };
+  if (c.sourceParity) {
+    const diffs = runSourceParity();
+    const pass = diffs.length === 0;
+    return { id: c.id, title: c.title, pass, diffs, status: pass ? 'GELIJK' : 'ROOD', rawRed: !pass };
+  }
+  let built: Built;
+  try {
+    built = buildAndSolve(c);
+  } catch (e) {
+    if (e instanceof NotConvertible) {
+      return { id: c.id, title: c.title, pass: false, diffs: [`niet omzetbaar: ${e.message}`], status: 'NIET_OMZETBAAR', rawRed: true };
+    }
+    return { id: c.id, title: c.title, pass: false, diffs: [`THREW: ${String(e)}`], status: 'ROOD', rawRed: true };
+  }
+  const cmp = minuteComparer(built.ids);
+  const rawDiffs = evaluateCase(c, c.expect ?? {}, built, cmp);
+  const reason = activeReason(c);
+  const diffs = reason ? evaluateCase(c, mergeExpect(c.expect ?? {}, c.minuteModel!.expect ?? {}), built, cmp) : rawDiffs;
+  const pass = diffs.length === 0;
+  const status: MinuteStatus = reason
+    ? (pass ? (rawDiffs.length === 0 ? 'GELIJK' : 'BEWUST') : 'BEWUST_ROOD')
+    : (pass ? 'GELIJK' : 'ROOD');
+  const notes = [...new Set(cmp.notes)];
+  if (reason && rawDiffs.length === 0) {
+    notes.push(pass
+      ? `redencode ${reason} is in ${MM_LABEL} niet nodig: de oorspronkelijke verwachting klopt`
+      : `${MM_LABEL} geeft nog de oorspronkelijke uitkomst; het doel van ${reason} is hier nog niet gehaald`);
+  }
+  if (MM_DEBUG && (!pass || rawDiffs.length > 0)) {
+    for (const t of S().tasks) {
+      const tt = t.time;
+      notes.push(`debug ${t.name}: unit=${tt.durationUnit} type=${tt.durationType} es=${tt.earlyStart} ef=${tt.earlyFinish} `
+        + `ls=${tt.lateStart} lf=${tt.lateFinish} tf=${tt.totalFloat} ff=${tt.freeFloat}`
+        + `${tt.actualStart ? ` as=${tt.actualStart}` : ''}${tt.actualFinish ? ` af=${tt.actualFinish}` : ''}`
+        + `${t.deadline ? ` dl=${t.deadline}` : ''}${t.constraint ? ` c=${t.constraint.type}@${t.constraint.date}` : ''}`);
+    }
+    notes.push(`debug project: start=${S().project.startDate} status=${S().project.statusDate ?? '-'} end=${S().cpmResult?.projectEnd}`);
+  }
+  return {
+    id: c.id, title: c.title, pass, diffs, status, rawRed: rawDiffs.length > 0,
+    ...(reason ? { reason } : {}), notes,
+  };
+}
+
+/** Beoordeelt de staat na `buildAndSolve` tegen `exp`. Leest alleen; mag dus twee keer draaien. */
+function evaluateCase(c: Case, exp: CaseExpect, built: Built, cmp: Comparer): string[] {
+  const { ids, resIds, codeTypeIds, codeValueIds, fieldDefIds, previewResult } = built;
+  const diffs: string[] = [];
   const cpm = S().cpmResult;
-  const exp = c.expect ?? {};
 
   // Fout-verwachting
   if (exp.error !== undefined) {
@@ -953,7 +1187,7 @@ function runCase(c: Case) {
       for (const [k, wv] of Object.entries<any>(want)) {
         const gk = KEYMAP[k] ?? k;
         const gv = (got as any)[gk];
-        if (gv !== wv) diffs.push(`${name}.${k}: verwacht ${JSON.stringify(wv)}, kreeg ${JSON.stringify(gv)}`);
+        if (!cmp.taskField(name, k, gv, wv)) diffs.push(`${name}.${k}: verwacht ${JSON.stringify(wv)}, kreeg ${JSON.stringify(gv)}`);
       }
     }
   }
@@ -1077,7 +1311,7 @@ function runCase(c: Case) {
 
   // Projectstartdatum (pakket D1): het metadataveld dat `moveProject` exact op de gekozen datum zet
   // — en dat een `undo` weer moet terugdraaien (move-12; bewaakt dat `project` in de undo-snapshot zit).
-  if (exp.projectStartDate !== undefined && S().project.startDate !== exp.projectStartDate)
+  if (exp.projectStartDate !== undefined && !cmp.projectDate(S().project.startDate, exp.projectStartDate, 'scheduleStart'))
     diffs.push(`projectStartDate: verwacht ${exp.projectStartDate}, kreeg ${S().project.startDate}`);
 
   // Baseline-taakdatums (pakket D1, §1.6): bewaakt dat een baseline standaard NIET meeschuift, zodat
@@ -1090,16 +1324,20 @@ function runCase(c: Case) {
         const bt = active.tasks.find((x) => x.taskId === ids[name]);
         if (!bt) { diffs.push(`baselineTasks: taak "${name}" niet in de baseline`); continue; }
         for (const [k, wv] of Object.entries<any>(want)) {
-          if ((bt as any)[k] !== wv)
-            diffs.push(`baselineTasks.${name}.${k}: verwacht ${JSON.stringify(wv)}, kreeg ${JSON.stringify((bt as any)[k])}`);
+          const gv = (bt as any)[k];
+          const ok = k === 'start' ? cmp.taskDate(name, gv, wv, 'baselineStart')
+            : k === 'finish' ? cmp.taskDate(name, gv, wv, cmp.shownFinishField(name))
+              : k === 'duration' ? cmp.dayNumber(`baselineTasks.${name}.duration`, gv, wv)
+                : gv === wv;
+          if (!ok) diffs.push(`baselineTasks.${name}.${k}: verwacht ${JSON.stringify(wv)}, kreeg ${JSON.stringify(gv)}`);
         }
       }
     }
   }
 
-  if (exp.projectEnd !== undefined && cpm?.projectEnd !== exp.projectEnd)
+  if (exp.projectEnd !== undefined && !cmp.projectDate(cpm?.projectEnd, exp.projectEnd, 'earlyFinish'))
     diffs.push(`projectEnd: verwacht ${exp.projectEnd}, kreeg ${cpm?.projectEnd}`);
-  if (exp.projectDuration !== undefined && cpm?.projectDuration !== exp.projectDuration)
+  if (exp.projectDuration !== undefined && !cmp.dayNumber('projectDuration', cpm?.projectDuration, exp.projectDuration))
     diffs.push(`projectDuration: verwacht ${exp.projectDuration}, kreeg ${cpm?.projectDuration}`);
 
   // "Verouderd"-vlag (A6): staat de planning-stale-vlag op de verwachte waarde na de afterCPM-ops?
@@ -1123,7 +1361,7 @@ function runCase(c: Case) {
       diffs.push('previewExpect: geen LevelingResult (levelResources gaf niets terug)');
     } else {
       const pe = c.previewExpect;
-      if (pe.projectEndAfter !== undefined && pr.projectEndAfter !== pe.projectEndAfter)
+      if (pe.projectEndAfter !== undefined && !cmp.projectDate(pr.projectEndAfter, pe.projectEndAfter, 'earlyFinish'))
         diffs.push(`preview.projectEndAfter: verwacht ${pe.projectEndAfter}, kreeg ${pr.projectEndAfter}`);
       if (pe.shiftedTasks) {
         const got = Object.keys(pr.shifts).map(tid => nameOf(tid, ids)).sort();
@@ -1190,11 +1428,15 @@ function runCase(c: Case) {
         const got = rowByName[name];
         if (!got) { diffs.push(`variance-rij "${name}" niet gevonden`); continue; }
         for (const [k, wv] of Object.entries<any>(want)) {
-          if (got[k] !== wv) diffs.push(`variance.${name}.${k}: verwacht ${JSON.stringify(wv)}, kreeg ${JSON.stringify(got[k])}`);
+          const ok = k === 'baselineStart' || k === 'currentStart' ? cmp.taskDate(name, got[k], wv, 'actualStart')
+            : k === 'baselineFinish' || k === 'currentFinish' ? cmp.taskDate(name, got[k], wv, cmp.shownFinishField(name))
+              : k === 'deltaStart' || k === 'deltaFinish' ? cmp.dayNumber(`variance.${name}.${k}`, got[k], wv)
+                : got[k] === wv;
+          if (!ok) diffs.push(`variance.${name}.${k}: verwacht ${JSON.stringify(wv)}, kreeg ${JSON.stringify(got[k])}`);
         }
       }
     }
-    if (exp.variance.projectEndDelta !== undefined && vres.projectEndDelta !== exp.variance.projectEndDelta)
+    if (exp.variance.projectEndDelta !== undefined && !cmp.dayNumber('variance.projectEndDelta', vres.projectEndDelta, exp.variance.projectEndDelta))
       diffs.push(`variance.projectEndDelta: verwacht ${exp.variance.projectEndDelta}, kreeg ${vres.projectEndDelta}`);
   }
 
@@ -1284,7 +1526,145 @@ function runCase(c: Case) {
     }
   }
 
-  return { id: c.id, title: c.title, pass: diffs.length === 0, diffs };
+  return diffs;
+}
+
+// ── Minutenmodel: vergelijker en redencodes ─────────────────────────────────────────────────────
+
+/** Hoe `evaluateCase` waarden vergelijkt: exact (gewone run) of op dagniveau (minutenmodel). */
+interface Comparer {
+  /** Een veld uit `expect.tasks[naam]`. */
+  taskField(name: string, key: string, got: unknown, want: unknown): boolean;
+  /** Een datum op projectniveau. Begin: projectkalender. Einde: de betekenis van de taak die het zet. */
+  projectDate(got: unknown, want: unknown, field: TaskDateField): boolean;
+  /** Een datum van een taak buiten `expect.tasks` (baseline, variance), in de klok van die taak. */
+  taskDate(name: string, got: unknown, want: unknown, field: TaskDateField): boolean;
+  /** Een getal in werkdagen (duur, projectduur, variance-delta). */
+  dayNumber(label: string, got: unknown, want: unknown): boolean;
+  /** Het veld dat het GETOONDE einde van een taak draagt (`shownFinish`): voltooid ⇒ het werkelijke
+   *  einde (inclusief), anders het vroege einde (exclusief bij kalendertijd). */
+  shownFinishField(name: string): TaskDateField;
+  readonly notes: string[];
+}
+
+const EXACT: Comparer = {
+  taskField: (_n, _k, got, want) => got === want,
+  projectDate: (got, want) => got === want,
+  taskDate: (_n, got, want) => got === want,
+  dayNumber: (_l, got, want) => got === want,
+  shownFinishField: () => 'baselineFinish',
+  notes: [],
+};
+
+const TASK_DATE_FIELD: Record<string, TaskDateField> = {
+  es: 'earlyStart', ef: 'earlyFinish', ls: 'lateStart', lf: 'lateFinish',
+};
+
+/** Vergelijker op dagniveau (§0 "gelijk op dagniveau"): de verwachte datum zonder tijd gaat door de
+ *  regel van zijn veld (D1–D7, met D3 voor kalendertijd), daarna vergelijkt de werkdag van een moment
+ *  beide kanten in de klok van de taak. Speling met 10⁻⁶.
+ *
+ *  Twee aanvullingen op §6.1, omdat D3 per veld daar niet volstaat (F0-bevinding, msp-14/-22/-31/-33):
+ *  - Het projecteinde is in het dagpad het grootste vroege einde. De datum heeft dus de betekenis van
+ *    `earlyFinish` van de taak die het einde zet: exclusief bij een kalendertijd-taak (D3), anders D2
+ *    in de kalender van die taak. Die taak is de eerste bladtaak met dat vroege einde in de uitkomst;
+ *    zonder zo'n taak (bijv. een nivelleervoorbeeld) geldt D2 in de projectkalender.
+ *  - D3 noemt `lateFinish` van een kalendertijd-taak inclusief: het dagpad rekent hem als opvolgerstart
+ *    min één kalenderdag. Zonder opvolger, deadline of beperking komt hij uit het projecteinde en heeft
+ *    hij diens betekenis (msp-14: lf = ef = projecteinde, exclusief). */
+function minuteComparer(ids: Record<string, string>): Comparer {
+  const clocks = new DayClockCache(S().calendar, S().calendars);
+  const projectCtx: TaskDateContext = { clock: clocks.calendarClock(undefined), milestoneKind: null };
+  const taskOf = (name: string) => S().tasks.find((x) => x.id === ids[name]);
+  const ctxOf = (name: string): TaskDateContext => {
+    const t = taskOf(name);
+    return t ? taskDateContext(t, clocks) : projectCtx;
+  };
+  const endSetterCtx = (got: unknown): TaskDateContext => {
+    if (typeof got !== 'string') return projectCtx;
+    const t = S().tasks.find((x) => !isSummaryTask(x) && x.time.earlyFinish === got);
+    return t ? taskDateContext(t, clocks) : projectCtx;
+  };
+  /** Kalendertijd-taak waarvan de late finish uit het projecteinde komt (zie hierboven). */
+  const lateFinishFromProjectEnd = (name: string): boolean => {
+    const t = taskOf(name);
+    if (!t || !isElapsedTask(t) || t.deadline || t.constraint || t.constraint2) return false;
+    if (t.externalLinks?.some((l) => l.direction === 'successor')) return false;
+    return !S().sequences.some((q) => q.predecessorId === t.id);
+  };
+  const notes: string[] = [];
+  const sameDay = (got: unknown, want: unknown, field: TaskDateField, ctx: TaskDateContext): boolean => {
+    if (typeof want !== 'string' || typeof got !== 'string' || !isDateOnly(want)) return got === want;
+    const side = taskDateFieldSide(field);
+    const w = normalizeTaskDate(want, field, ctx) ?? want;
+    const g = normalizeTaskDate(got, field, ctx) ?? got;
+    return workdayOfInstant(ctx.clock, w, side) === workdayOfInstant(ctx.clock, g, side);
+  };
+  const near = (got: unknown, want: unknown): boolean =>
+    (typeof got === 'number' && typeof want === 'number' ? Math.abs(got - want) <= 1e-6 : got === want);
+  const dayNumber = (label: string, got: unknown, want: unknown): boolean => {
+    if (typeof got === 'number' && Math.abs(got - Math.round(got)) > 1e-6) notes.push(`~ niet geheel: ${label} = ${got}`);
+    return near(got, want);
+  };
+  return {
+    notes,
+    taskField(name, key, got, want) {
+      const field = TASK_DATE_FIELD[key];
+      if (field === 'lateFinish' && lateFinishFromProjectEnd(name))
+        return sameDay(got, want, 'earlyFinish', endSetterCtx(S().cpmResult?.projectEnd));
+      if (field) return sameDay(got, want, field, ctxOf(name));
+      if (key === 'tf' || key === 'ff' || key === 'intf') return near(got, want);
+      if (key === 'scheduleDuration') return dayNumber(`${name}.scheduleDuration`, got, want);
+      return got === want;
+    },
+    projectDate: (got, want, field) =>
+      sameDay(got, want, field, field === 'earlyFinish' ? endSetterCtx(got) : projectCtx),
+    taskDate: (name, got, want, field) => sameDay(got, want, field, ctxOf(name)),
+    dayNumber,
+    shownFinishField(name) {
+      const t = taskOf(name);
+      return t && isPinnedComplete(t.time) ? 'baselineFinishCompleted' : 'baselineFinish';
+    },
+  };
+}
+
+/** De redencodes van §6.1 en de runs waarin ze gelden. */
+const REASON_RUNS = {
+  'CONV-SF': [1, 2],
+  'PCT-LAG-EXACT': [1, 2],
+  'REST-EXACT': [1, 2],
+  'KALENDERTIJD-EINDE': [1, 2],
+  'PROFIEL-URENMAAT': [2],
+} as const satisfies Record<string, readonly (1 | 2)[]>;
+type ReasonCode = keyof typeof REASON_RUNS;
+
+/** Status van een dagcase in een minutenmodel-run. GELIJK = gelijk op dagniveau; ROOD = niet gelijk,
+ *  zonder redencode; BEWUST = met redencode gelijk aan `minuteModel.expect`; BEWUST_ROOD = de redencode
+ *  geldt, maar de uitkomst is ook niet `minuteModel.expect` (het doel is nog niet gehaald);
+ *  NIET_OMZETBAAR = de case past niet in het minutenmodel; UREN = urencase, telt niet mee. */
+type MinuteStatus = 'GELIJK' | 'ROOD' | 'BEWUST' | 'BEWUST_ROOD' | 'NIET_OMZETBAAR' | 'UREN';
+
+function activeReason(c: Case): ReasonCode | null {
+  const mm = c.minuteModel;
+  if (!mm || !MM_RUN) return null;
+  return (REASON_RUNS[mm.reason] as readonly number[]).includes(MM_RUN) ? mm.reason : null;
+}
+
+/** `expect` met de velden uit `minuteModel.expect` erover: per taak per veld, per baseline-taak per
+ *  veld; elke andere sleutel vervangt de oude. */
+function mergeExpect(base: CaseExpect, over: CaseExpect): CaseExpect {
+  const out: CaseExpect = { ...base, ...over };
+  if (base.tasks || over.tasks) {
+    const tasks: Record<string, TaskExpect> = { ...(base.tasks ?? {}) };
+    for (const [name, t] of Object.entries(over.tasks ?? {})) tasks[name] = { ...(tasks[name] ?? {}), ...t };
+    out.tasks = tasks;
+  }
+  if (base.baselineTasks || over.baselineTasks) {
+    const bt: NonNullable<CaseExpect['baselineTasks']> = { ...(base.baselineTasks ?? {}) };
+    for (const [name, t] of Object.entries(over.baselineTasks ?? {})) bt[name] = { ...(bt[name] ?? {}), ...t };
+    out.baselineTasks = bt;
+  }
+  return out;
 }
 
 // ════════════════════════════════════════════════════════════════════════════════════════════════
@@ -1315,8 +1695,10 @@ const CASE_KEYS = {
   level: true, levelPreview: true,
   baseline: true, varianceMutations: true,
   afterCPM: true, previewExpect: true,
-  expect: true,
+  expect: true, minuteModel: true,
 } satisfies Record<keyof Case, true>;
+
+const MINUTE_MODEL_KEYS = { reason: true, expect: true, note: true } satisfies Record<keyof MinuteModelCase, true>;
 
 const EXPECT_KEYS = {
   error: true, tasks: true,
@@ -1387,34 +1769,130 @@ function validateCaseKeys(file: string, raw: unknown, index: number): string[] {
     }
   }
 
-  const exp = raw.expect;
-  if (exp !== undefined) {
-    if (!isPlainObject(exp)) {
-      errs.push(`${where}: "expect" is geen object`);
+  validateExpectKeys(where, 'expect', raw.expect, errs);
+
+  // Minutenmodel: dezelfde controle voor de redencode en haar verwachting.
+  const mm = raw.minuteModel;
+  if (mm !== undefined) {
+    if (!isPlainObject(mm)) {
+      errs.push(`${where}: "minuteModel" is geen object`);
     } else {
-      for (const k of Object.keys(exp)) {
-        if (!known(EXPECT_KEYS, k)) errs.push(`${where}: onbekende sleutel "${k}" in expect`);
+      for (const k of Object.keys(mm)) {
+        if (!known(MINUTE_MODEL_KEYS, k)) errs.push(`${where}: onbekende sleutel "${k}" in minuteModel`);
       }
-      const tasks = exp.tasks;
-      if (tasks !== undefined) {
-        if (!isPlainObject(tasks)) {
-          errs.push(`${where}: "expect.tasks" is geen object`);
-        } else {
-          for (const [taskName, want] of Object.entries(tasks)) {
-            if (!isPlainObject(want)) {
-              errs.push(`${where}: "expect.tasks.${taskName}" is geen object`);
-              continue;
-            }
-            for (const k of Object.keys(want)) {
-              if (!known(TASK_EXPECT_KEYS, k))
-                errs.push(`${where}: onbekende sleutel "${k}" in expect.tasks."${taskName}"`);
-            }
-          }
-        }
+      if (typeof mm.reason !== 'string' || !known(REASON_RUNS, mm.reason)) {
+        errs.push(`${where}: minuteModel.reason ${JSON.stringify(mm.reason)} is geen redencode (${Object.keys(REASON_RUNS).join(', ')})`);
       }
+      validateExpectKeys(where, 'minuteModel.expect', mm.expect, errs);
     }
   }
   return errs;
+}
+
+/** Sleutels van een verwachting (`expect` of `minuteModel.expect`) en van haar taken. */
+function validateExpectKeys(where: string, label: string, exp: unknown, errs: string[]): void {
+  if (exp === undefined) return;
+  if (!isPlainObject(exp)) {
+    errs.push(`${where}: "${label}" is geen object`);
+    return;
+  }
+  for (const k of Object.keys(exp)) {
+    if (!known(EXPECT_KEYS, k)) errs.push(`${where}: onbekende sleutel "${k}" in ${label}`);
+  }
+  const tasks = exp.tasks;
+  if (tasks === undefined) return;
+  if (!isPlainObject(tasks)) {
+    errs.push(`${where}: "${label}.tasks" is geen object`);
+    return;
+  }
+  for (const [taskName, want] of Object.entries(tasks)) {
+    if (!isPlainObject(want)) {
+      errs.push(`${where}: "${label}.tasks.${taskName}" is geen object`);
+      continue;
+    }
+    for (const k of Object.keys(want)) {
+      if (!known(TASK_EXPECT_KEYS, k))
+        errs.push(`${where}: onbekende sleutel "${k}" in ${label}.tasks."${taskName}"`);
+    }
+  }
+}
+
+// ── Minutenmodel: uitvoer per batterij en het vangnet ──────────────────────────────────────────
+const MM_RUNS_FILE = join(dirname(fileURLToPath(import.meta.url)), 'minute-model-runs.json');
+const MM_VERBOSE = process.env.OPS_MINUTE_MODEL_VERBOSE === '1';
+/** Batterij → de dagcases die na de redencodes niet gelijk zijn (ROOD, BEWUST_ROOD, NIET_OMZETBAAR). */
+const mmNotEqual: Record<string, string[]> = {};
+const mmTotals = { day: 0, rawRed: 0, GELIJK: 0, ROOD: 0, BEWUST: 0, BEWUST_ROOD: 0, NIET_OMZETBAAR: 0, UREN: 0 };
+
+function reportMinuteBattery(name: string, results: CaseResult[]): void {
+  const n = (st: MinuteStatus) => results.filter((r) => r.status === st).length;
+  const dayResults = results.filter((r) => r.status !== 'UREN');
+  const rawRed = dayResults.filter((r) => r.rawRed).length;
+  mmTotals.day += dayResults.length;
+  mmTotals.rawRed += rawRed;
+  for (const st of ['GELIJK', 'ROOD', 'BEWUST', 'BEWUST_ROOD', 'NIET_OMZETBAAR', 'UREN'] as const) mmTotals[st] += n(st);
+  console.log(`MM ${MM_LABEL} ${name}: dagcases ${dayResults.length}, rood zonder redencodes ${rawRed}; `
+    + `na redencodes gelijk ${n('GELIJK')}, rood ${n('ROOD')}, bewust ${n('BEWUST')}, bewust maar rood ${n('BEWUST_ROOD')}, `
+    + `niet omzetbaar ${n('NIET_OMZETBAAR')}; urencases overgeslagen ${n('UREN')}`);
+  for (const r of dayResults) {
+    // Machineleesbaar: run, batterij, case, status, rood zonder redencodes, redencode.
+    if (r.status !== 'GELIJK' || r.rawRed) {
+      console.log(`MMCASE\t${MM_RUN}\t${name}\t${r.id}\t${r.status}\t${r.rawRed ? 'rauw-rood' : 'rauw-gelijk'}\t${r.reason ?? '-'}`);
+    }
+    if (r.status !== 'GELIJK' && r.status !== 'BEWUST' && MM_VERBOSE) {
+      for (const d of r.diffs) console.log(`       - ${d}`);
+    }
+    for (const note of r.notes ?? []) console.log(`   ~ [${r.id}] ${note}`);
+  }
+  mmNotEqual[name] = dayResults
+    .filter((r) => r.status === 'ROOD' || r.status === 'BEWUST_ROOD' || r.status === 'NIET_OMZETBAAR')
+    .map((r) => r.id)
+    .sort();
+}
+
+/** Totaal en het vangnet: de niet-gelijke cases per batterij tegen `minute-model-runs.json`. Met
+ *  OPS_MINUTE_MODEL_UPDATE=1 schrijft hij de lijst van deze run voor de gedraaide batterijen. */
+function finishMinuteRun(): boolean {
+  const t = mmTotals;
+  console.log(`MM ${MM_LABEL} TOTAAL: dagcases ${t.day}, rood zonder redencodes ${t.rawRed}; na redencodes gelijk ${t.GELIJK}, `
+    + `rood ${t.ROOD}, bewust ${t.BEWUST}, bewust maar rood ${t.BEWUST_ROOD}, niet omzetbaar ${t.NIET_OMZETBAAR}; `
+    + `urencases overgeslagen ${t.UREN}`);
+  const key = `run${MM_RUN}`;
+  let file: Record<string, unknown> = {};
+  try {
+    file = JSON.parse(readFileSync(MM_RUNS_FILE, 'utf8'));
+  } catch {
+    file = {};
+  }
+  const pinned = (file[key] ?? {}) as Record<string, string[]>;
+  if (process.env.OPS_MINUTE_MODEL_UPDATE === '1') {
+    const next: Record<string, string[]> = { ...pinned, ...mmNotEqual };
+    file[key] = Object.fromEntries(Object.keys(next).sort().map((b) => [b, next[b]]));
+    writeFileSync(MM_RUNS_FILE, `${JSON.stringify(file, null, 2)}\n`);
+    console.log(`OK  minutenmodel ${MM_LABEL}: minute-model-runs.json bijgewerkt (${Object.keys(mmNotEqual).length} batterij(en))`);
+    return true;
+  }
+  let ok = true;
+  for (const [battery, list] of Object.entries(mmNotEqual)) {
+    const want = pinned[battery];
+    if (!Array.isArray(want)) {
+      console.log(`XX  minutenmodel ${MM_LABEL}: batterij ${battery} ontbreekt in minute-model-runs.json (zie tests/planning/README.md)`);
+      ok = false;
+      continue;
+    }
+    const added = list.filter((id) => !want.includes(id));
+    const gone = want.filter((id) => !list.includes(id));
+    if (added.length > 0) {
+      console.log(`XX  minutenmodel ${MM_LABEL} ${battery}: nieuw niet gelijk op dagniveau: ${added.join(', ')}`);
+      ok = false;
+    }
+    if (gone.length > 0) {
+      console.log(`XX  minutenmodel ${MM_LABEL} ${battery}: nu wel gelijk, haal uit minute-model-runs.json: ${gone.join(', ')}`);
+      ok = false;
+    }
+  }
+  if (ok) console.log(`OK  minutenmodel ${MM_LABEL}: de niet-gelijke cases kloppen met minute-model-runs.json`);
+  return ok;
 }
 
 const files = process.argv.slice(2);
@@ -1447,6 +1925,10 @@ for (const file of files) {
     continue;
   }
   const results = cases.map(runCase);
+  if (MM_RUN) {
+    reportMinuteBattery(name, results);
+    continue;
+  }
   const passed = results.filter((r) => r.pass).length;
   grandPass += passed;
   grandTotal += results.length;
@@ -1458,6 +1940,10 @@ for (const file of files) {
     console.log(`   x [${r.id}] ${r.title}`);
     for (const d of r.diffs) console.log(`       - ${d}`);
   }
+}
+if (MM_RUN) {
+  if (!finishMinuteRun()) anyFail = true;
+  process.exit(anyFail ? 1 : 0);
 }
 console.log(`\nTOTAAL: ${grandPass}/${grandTotal}${anyFail ? '  (FALEN)' : '  (alles groen)'}`);
 process.exit(anyFail ? 1 : 0);
