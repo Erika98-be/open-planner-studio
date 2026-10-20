@@ -18,6 +18,9 @@ function isTextEntry(target: EventTarget | null): boolean {
 export function useTextEntryAutoCalcHold() {
   const release = useRef<(() => void) | null>(null);
   const hold = useCallback((event: FocusEvent | FormEvent) => {
+    // Een focus die Ctrl+S/F5 na het committen terugzet (`data-ops-refocus`, useKeyboardShortcuts)
+    // is geen nieuwe invoer: de bewerking is af. Pas verder typen (`onInput`) houdt weer vast.
+    if ((event.target as HTMLElement | null)?.dataset?.opsRefocus === 'true') return;
     if (!release.current && isTextEntry(event.target)) release.current = holdAutoCalc();
   }, []);
   const done = useCallback(() => {

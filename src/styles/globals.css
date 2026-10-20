@@ -1934,19 +1934,26 @@ body {
 .assignment-remove { grid-column: -2; justify-self: center; }
 .assignment-details { grid-column: 1 / -1; }
 
-/* Getalvelden: vier tekens breed. Het zijn tekstvelden (`UnitsInput` met `locale`), dus zonder
-   spinknop; het getal toont hooguit twee decimalen. Hogere specificiteit dan `.input` (width: 100%),
+/* Getalvelden: minstens vier tekens breed, en breder als het getoonde getal langer is ("306,5",
+   "1234,5"). `UnitsInput` zet `--ops-num-chars` op het aantal getoonde tekens; de cijfers zijn
+   tabelcijfers, dus één cijfer is precies 1ch. Daarbij: de padding (px-1), de rand, en bij de
+   waarschuwing in het werkveld de extra padding voor het icoon (`--ops-num-pad`). De kolom is `auto`,
+   dus hij groeit mee; de naamkolom (minmax(0, 1fr)) geeft de ruimte. Het zijn tekstvelden
+   (`UnitsInput` met `locale`), dus zonder spinknop. Hogere specificiteit dan `.input` (width: 100%),
    dat verderop in dit bestand staat. */
 .assignment-list .assignment-number {
-  width: 4em;
+  --ops-num-pad: 0px;
+  font-variant-numeric: tabular-nums;
+  width: max(4em, calc((var(--ops-num-chars, 4) + 0.5) * 1ch + 0.5rem + 2px + var(--ops-num-pad)));
 }
+
+.assignment-list .assignment-number--flag { --ops-num-pad: 0.75rem; }
 
 @container (max-width: 14rem) {
   .assignment-row > .assignment-name { grid-column: 1 / -1; }
   .assignment-header > .assignment-name { display: none; }
 }
 
-/* Het WBS-nummer is navigatie, geen kaal tekstlabel. De semantische tracekleur blijft als vaste
 /* Het WBS-nummer is navigatie, geen kaal tekstlabel. De semantische tracekleur blijft als vaste
    rolmarkering zichtbaar; de tekst en focusring gebruiken de contrastrijke themakleur. De rol staat
    daarnaast uitgeschreven in de toegankelijke knopnaam, zodat kleur niet de enige informatiedrager

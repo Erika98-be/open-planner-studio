@@ -1,4 +1,5 @@
 import type { Page } from '@playwright/test';
+import { readFileSync } from 'node:fs';
 import { barPoint, expect, seedProject, test, waitForOps, waitForWelcomeDialog } from './fixtures/ops';
 
 // Het blok *Toewijzingen* in het taakpaneel (eigenaar 2026-10-15, testversie met Roads A10530):
@@ -630,3 +631,114 @@ test('werk: een waarde die tot 0 minuten afrondt is ongeldig', async ({ page, op
   await page.keyboard.press('Tab');
   await expect.poll(async () => (await assignmentOf(page, warnId))!.work).toBe(1);
 });
+
+// Review #401 punt 1: een documentwissel die niet met een klik begint (MCP `planner_duplicate_document`
+// roept `duplicateDocument` aan) laat de focus en de draft in het inzetveld staan. De open invoer hoort
+// bij de BRON: hij moet daar staan (en de bron gewijzigd maken) vóór de bron wordt vastgelegd, en dus
+// ook in de kopie. Vroeger kreeg alleen de kopie hem, via de unmount-commit van het veld.
+test('documentwissel zonder blur (MCP-dupliceren): de open inzet landt in de bron, en de kopie volgt', async ({ page, ops: _ops }) => {
+  const { unitsId } = await seedBlock(page, 280);
+  await page.evaluate(() => window.__OPS__!.store.setState(st => { st.isDirty = false; }));
+  const units = page.locator(`[data-ops-assignment-row="${unitsId}"] input`).first();
+  await units.click();
+  await units.press('Control+a');
+  await page.keyboard.type('3');
+  await expect(units).toBeFocused();
+  // De handeling van de agent (MCP-handler ⇒ store-actie), terwijl de gebruiker nog in het veld staat.
+  const ids = await page.evaluate(() => {
+    const s = window.__OPS__!.store.getState();
+    const src = s.activeDocumentId;
+    const copy = s.duplicateDocument();
+    return { src, copy };
+  });
+  const read = () => page.evaluate(({ src, copy, id }) => {
+    const docs = window.__OPS__!.store.getState().getOpenDocumentPayloads();
+    const of = (doc: string) => docs.find(d => d.id === doc)!.payload;
+    return {
+      src: of(src).assignments.find(a => a.id === id)!.unitsPerDay,
+      srcDirty: of(src).isDirty,
+      copy: of(copy).assignments.find(a => a.id === id)!.unitsPerDay,
+    };
+  }, { ...ids, id: unitsId });
+  expect(await read()).toEqual({ src: 3, srcDirty: true, copy: 3 });
+  // De kopie start zonder selectie: het veld unmount, en schrijft dan niets meer (geen draft).
+  await expect(units).toHaveCount(0);
+  expect(await read()).toEqual({ src: 3, srcDirty: true, copy: 3 });
+});
+
+// Review #401 punt 2: het werkveld groeit mee met de getoonde waarde, ook met de ⚠ ervoor. Een
+// opgeslagen werk van 306,5 of 1234,5 uur stond eerder afgeknipt als "306,".
+for (const locale of ['nl', 'en', 'ar', 'fa'] as const) {
+  for (const width of [280, 200]) {
+    test(`werk (${locale}, ${width} px): 306,5 en 1234,5 passen in het veld, ook met de ⚠`, async ({ page, ops: _ops }) => {
+      await useLocale(page, locale);
+      const { warnId } = await seedBlock(page, width);
+      const work = page.locator(`[data-ops-assignment-row="${warnId}"] [data-ops-assignment-work] input`);
+      for (const minutes of [306.5 * 60, 1234.5 * 60]) {
+        await page.evaluate(({ id, minutes }) => window.__OPS__!.store.setState(st => {
+          st.assignments.find(x => x.id === id)!.remainingWorkMinutes = minutes;
+        }), { id: warnId, minutes });
+        await expect(work).toHaveValue(/^(306|1234)\D5$/);
+        await expect(page.locator(`[data-ops-assignment-row="${warnId}"] [data-ops-assignment-work-deviates]`)).toBeVisible();
+        const fit = await page.evaluate(() => {
+          const rail = document.querySelector('[data-ops-rail]')!.getBoundingClientRect();
+          return [...document.querySelectorAll<HTMLInputElement>('[data-ops-assignment-row] input')].map(el => {
+            const r = el.getBoundingClientRect();
+            return { value: el.value, fits: el.scrollWidth <= el.clientWidth + 0.5, inRail: r.left >= rail.left - 0.5 && r.right <= rail.right + 0.5 };
+          }).filter(x => !x.fits || !x.inRail);
+        });
+        expect(fit).toEqual([]);
+      }
+    });
+  }
+}
+
+// Review #401 punt 3: met Automatisch berekenen aan commit Ctrl+S/F5 het veld, rekent de planning
+// door vóór het opslaan, en het terugzetten van de focus neemt GEEN nieuwe rekenblokkade.
+for (const key of ['Control+s', 'F5'] as const) {
+  test(`automatisch berekenen: ${key} in het inzetveld rekent door en blokkeert daarna niet`, async ({ page, ops: _ops }) => {
+    const [taskId] = await seedProject(page, [
+      { name: 'Metselwerk', start: '2026-09-07', finish: '2026-09-10', durationDays: 4 },
+    ]);
+    const asgId = await page.evaluate((id) => {
+      const s = window.__OPS__!.store.getState();
+      const r = s.addResource({ name: 'Metselaar', type: 'LABOR', description: '', maxUnits: 4 });
+      s.assignResource(id, r, 1);
+      s.updateTask(id, { manuallyScheduled: false });
+      s.setUI({ showPropertiesPanel: true, rightPanelCollapsed: false, showTaskTypes: true, rightPanelWidth: 280, autoCalcCPM: true });
+      s.setTaskWorkRule(id, 'FIXED_WORK');
+      s.runCPM();
+      s.selectTask(id);
+      return window.__OPS__!.store.getState().assignments.find(a => a.taskId === id)!.id;
+    }, taskId);
+    const state = () => page.evaluate((id) => {
+      const s = window.__OPS__!.store.getState();
+      const t = s.tasks.find(x => x.id === id)!;
+      return { finish: t.time.earlyFinish.slice(0, 10), stale: s.scheduleStale };
+    }, taskId);
+    expect(await state()).toEqual({ finish: '2026-09-10', stale: false });
+
+    const units = page.locator(`[data-ops-assignment-row="${asgId}"] input`).first();
+    await units.click();
+    await units.press('Control+a');
+    await page.keyboard.type('2');
+    const download = key === 'Control+s' ? page.waitForEvent('download') : null;
+    await page.keyboard.press(key);
+    // Vast werk: inzet 2 ⇒ duur 2 dagen ⇒ einde 8 september. Doorgerekend vóór het opslaan.
+    expect(await state()).toEqual({ finish: '2026-09-08', stale: false });
+    if (download) {
+      const ifc = readFileSync((await (await download).path())!, 'utf8');
+      // IfcTaskTime: vroegste en laatste start/einde (na ScheduleStart/-Finish, de brondata) zijn
+      // doorgerekend — einde 8 september, niet de oude 10 september.
+      const taskTime = ifc.split('\n').find(l => l.includes("IFCTASKTIME('Metselwerk Time'"))!;
+      expect(taskTime).toContain("'2026-09-07T07:00:00','2026-09-08T07:00:00','2026-09-07T07:00:00','2026-09-08T07:00:00'");
+    }
+    await expect(units).toBeFocused();
+
+    // De focus staat weer in het veld, zonder rekenblokkade: wordt de planning daarna verouderd
+    // (fixture: zoals na een wijziging door een agent), dan rekent automatisch berekenen door.
+    await page.evaluate(() => window.__OPS__!.store.setState(st => { st.scheduleStale = true; }));
+    await expect.poll(() => state().then(s => s.stale), { timeout: 3000 }).toBe(false);
+    await expect(units).toBeFocused();
+  });
+}

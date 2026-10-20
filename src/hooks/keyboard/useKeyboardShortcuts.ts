@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useAppStore } from '@/state/appStore';
+import { isAutoCalcHeld } from '@/state/editHold';
 import { isTauri } from '@/utils/platform';
 import { SHORTCUTS, isDocumentLeaveBlocked, isGlobalShortcutFrozen, matchesCombo } from './shortcutRegistry';
 import { isTypingTarget } from './isTypingTarget';
@@ -63,15 +64,26 @@ export function shouldYieldClipboardShortcutToTaskGrid(event: {
  * Eén mechanisme voor het sneltoets-register én de productie-voorpoort hieronder.
  *
  * De blur commit synchroon (React-onBlur ⇒ store), dus de store is bijgewerkt vóór de actie draait.
+ * De bewerking is daarmee af: staat Automatisch berekenen aan, dan rekent de planning hier meteen
+ * door (wat de auto-calc anders 100 ms later deed), zodat Ctrl+S het doorgerekende schema opslaat.
+ *
  * Daarna gaat de focus terug naar het veld als het nog in de pagina staat: anders ligt hij op
  * `body` en verwijdert een volgende Backspace de geselecteerde taak. Het veld heeft dan geen draft
- * meer, dus het terugzetten commit niet opnieuw.
+ * meer, dus het terugzetten commit niet opnieuw. `data-ops-refocus` zegt tegen
+ * `useTextEntryAutoCalcHold` dat deze focus geen nieuwe invoer is: zonder die markering nam het
+ * terugzetten meteen weer een rekenblokkade en bleef de planning verouderd (review #401, punt 3).
+ * Typt de gebruiker daarna verder, dan houdt `onInput` de berekening weer vast.
  */
 function commitPendingTextEdit(target: EventTarget | null): void {
   const el = target as HTMLElement | null;
   if (!el || !(el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable)) return;
   el.blur();
-  if (el.isConnected) el.focus({ preventScroll: true });
+  const s = useAppStore.getState();
+  if (s.ui.autoCalcCPM && s.scheduleStale && !isAutoCalcHeld()) s.runCPM();
+  if (el.isConnected) {
+    el.dataset.opsRefocus = 'true';
+    try { el.focus({ preventScroll: true }); } finally { delete el.dataset.opsRefocus; }
+  }
 }
 
 export function useKeyboardShortcuts() {

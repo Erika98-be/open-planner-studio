@@ -14,6 +14,7 @@ import { withXerArchiveIssueNotice } from '@/state/xerArchiveIssueNotice';
 import { P6XmlImportError } from '@/services/p6/p6xmlErrors';
 import { withOpenNoticeSticky } from '@/state/openNoticeSticky';
 import { clearRefusals } from '@/state/refusalNotice';
+import { flushPendingTextEdits } from '@/state/pendingTextEdits';
 import { P6XML_IMPORT_HELP_ARTICLE_ID, RECORDED_DATES_HELP_ARTICLE_ID, XER_IMPORT_HELP_ARTICLE_ID } from '@/state/helpArticles';
 import { formatNoticeToShow } from '@/services/formatNotice';
 import { openDialogFilters, binaryExtensions, readFormatForFile, parseOpenedFile, importErrorMessageKey, saveTargetFor, readFormatInput, readIFCWithXerReconstruction, type ExportFormat } from '@/services/formatRegistry';
@@ -759,6 +760,8 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
 
   return {
     applyLoadedProject: (parsed, opts) => {
+      // Open veldinvoer hoort bij het document dat nu vervangen wordt (zie pendingTextEdits.ts).
+      flushPendingTextEdits();
       const current = get();
       const filePath = opts.filePath !== undefined ? opts.filePath : current.filePath;
       // Dubbele id's uit een kapot of vreemd bestand eerst uniek maken; de store sleutelt op id.

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { formatDecimalInput, isAmbiguousThousands, parsePositiveDecimal } from '@/utils/decimalInput';
+import { registerPendingTextEdit } from '@/state/pendingTextEdits';
 
 /**
  * Strikt-positief eenheden-invoerveld. Houdt een lokale draft-string bij zodat de gebruiker vrij
@@ -90,6 +91,18 @@ export function UnitsInput({
   // eslint-disable-next-line react-hooks/exhaustive-deps -- alleen bij unmount; leest via refs
   useEffect(() => () => { if (commitOnBlur) flush(); }, []);
 
+  // Een documentwissel zonder blur (MCP-dupliceren, sneltoets) commit de draft EERST in het
+  // brondocument (`flushPendingTextEdits` in documentSlice/fileSlice). Anders schreef de
+  // unmount-commit hierboven in het nieuwe actieve document (review #401, punt 1).
+  useEffect(() => {
+    if (!commitOnBlur) return;
+    return registerPendingTextEdit(() => {
+      if (draftRef.current === null) return;
+      flush();
+      setDraftState(null);
+    });
+  }, [commitOnBlur]);
+
   return (
     <input
       {...(locale
@@ -130,7 +143,12 @@ export function UnitsInput({
         setDraft(null);
       }}
       className={className}
-      style={invalid ? { borderColor: 'var(--error)', boxShadow: '0 0 0 1px var(--error)' } : undefined}
+      // `--ops-num-chars`: het aantal tekens dat het veld nu toont. Een raster dat het veld laat
+      // meegroeien (`.assignment-number` in globals.css) rekent er zijn breedte mee uit.
+      style={{
+        ['--ops-num-chars' as string]: text.length,
+        ...(invalid ? { borderColor: 'var(--error)', boxShadow: '0 0 0 1px var(--error)' } : {}),
+      }}
     />
   );
 }

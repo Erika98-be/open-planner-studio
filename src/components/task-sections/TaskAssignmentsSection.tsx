@@ -288,7 +288,7 @@ export function TaskAssignmentsSection({ taskId }: { taskId: string }) {
                           onCommit={hours => setAssignmentWork(a.id, Math.round(hours * 60))}
                           accepts={hours => Math.round(hours * 60) >= 1}
                           commitOnBlur
-                          className={`${numberInputClass}${deviation ? ' !ps-4' : ''}`}
+                          className={`${numberInputClass}${deviation ? ' assignment-number--flag !ps-4' : ''}`}
                           locale={i18n.language}
                           onAmbiguous={notifyAmbiguous}
                         />
