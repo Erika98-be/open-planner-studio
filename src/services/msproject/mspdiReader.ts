@@ -12,7 +12,8 @@ import { normalizeImportedProgress, deriveImportedWorkRules, rebuildImportedHier
 import { emptyMissingScheduleDates, importDateTime, isoDatePrefixOrToday, parseImportedInstant, resolveMissingScheduleDates } from '@/services/importDates';
 import { tenthsOfMinutesToDays } from '@/services/importDurations';
 import { descendantText, toInt, toFloat } from '@/services/xmlDom';
-import type { ImportResult } from '@/services/importTypes';
+import { hasMsProjectImportLoss, type ImportResult } from '@/services/importTypes';
+import { scanMspdiImportLoss } from '@/services/msproject/mspdiImportLoss';
 import type { CustomTaskType } from '@/types/taskType';
 import {
   MSP_LINK_TYPE_CODE,
@@ -492,8 +493,11 @@ export function readMSPDI(content: string): ImportResult {
       if (getElementInt(bEl, 'Number', -1) !== 0) continue;
       baselineEntries.push({
         taskId: id,
-        start: parseMSPDate(getElementText(bEl, 'Start')),
-        finish: parseMSPDate(getElementText(bEl, 'Finish')),
+        // Dezelfde modus als de taakdatums: een urentaak houdt het tijdstip van haar baseline
+        // (`YYYY-MM-DDTHH:mm`, zoals `saveBaseline` hem zelf vastlegt), een dagtaak alleen de datum
+        // (PR #392, fixronde 5).
+        start: importDateTime(getElementText(bEl, 'Start'), isHour),
+        finish: importDateTime(getElementText(bEl, 'Finish'), isHour),
         // Dezelfde dag als de taakduur (`mspdiBaselineDays`), anders leest een 24/7-taak haar eigen
         // baseline als 2,33 dagen terug, of een urentaak van 1870 u op 8 u/dag met blokken van 10 u
         // haar baseline als 234 d naast een taak van 187 d.
@@ -734,6 +738,13 @@ export function readMSPDI(content: string): ImportResult {
   normalizeImportedProgress(tasks, project.statusDate);
   deriveImportedWorkRules(tasks); // werkregel uit <Type>/<EffortDriven>
 
+  // Importverslag (issue #391): wat deze lezer niet overneemt. De OPS-transportvelden die hierboven
+  // zijn gebruikt, tellen niet als eigen veld.
+  const msProjectReport = scanMspdiImportLoss(root, (fieldId, value) =>
+    (durationUnitMarkerFieldId !== null && fieldId === durationUnitMarkerFieldId)
+    || (opsMilestoneKindMarkerEnabled && fieldId === OPS_MILESTONE_KIND_FIELD_ID)
+    || (fieldId === OPS_CUSTOM_TASK_TYPE_FIELD_ID && decodeCustomTaskType(value) !== undefined));
+
   return {
     project,
     calendar,
@@ -742,6 +753,7 @@ export function readMSPDI(content: string): ImportResult {
     resources,
     assignments,
     resourceCalendars,
+    ...(hasMsProjectImportLoss(msProjectReport) ? { msProjectReport } : {}),
     customTaskTypes: [...customTaskTypes.values()],
     baselines,
     activeBaselineId,

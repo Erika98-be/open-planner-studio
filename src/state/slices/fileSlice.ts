@@ -43,6 +43,7 @@ import { runProjectFileWrite } from '@/services/fileAccess/writeCoordinator';
 import { askIfcSchema, ifcSchemaQuestionFor } from '@/services/ifc/ifcSchemaQuestion';
 import { applyIfcSchemaChoice } from '../ifcSchemaChoice';
 import { withSchedulingProfileNotice } from '../schedulingProfileNotice';
+import { msProjectImportNotice } from '../msProjectImportNotice';
 import type { ImportLabelT } from '@/i18n/importLabels';
 import { parseableHourSuffix } from '@/utils/durationFormat';
 import i18next from 'i18next';
@@ -957,7 +958,8 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
       // De XER-rapportage is bestandsbreed en identiek op iedere XER-resultaatview. Plaats deze
       // pas ná de volledige lus, anders ontstaat er één toast per nieuw document. Andere formats
       // leveren geen `xer`-metadata en houden hun bestaande, stille openpad.
-      // De andere formaten hebben geen eigen openingsmelding, maar wél dezelfde ene regel over
+      // MSPDI/.mpp melden wat niet is overgenomen (`msProjectImportNotice`). De andere formaten hebben
+      // geen eigen openingsmelding, maar wél dezelfde ene regel over
       // "datums zoals opgeslagen" — formaatneutraal verwoord. `withRecordedDatesNotice` hangt die
       // regel aan een al bestaande melding (bv. de profielmelding van een `.mpp`) in plaats van hem
       // via `!notice` te laten verdringen (zie de helper). Rekenprofielen: één melding per geopend
@@ -972,7 +974,8 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
           withSchedulingProfileNotice(
             results,
             xerImportNotice(results, datesAsRecordedShownTotal)
-              ?? p6xmlImportNotice(results),
+              ?? p6xmlImportNotice(results)
+              ?? msProjectImportNotice(results),
             openedDocumentIds[0] ?? '',
           ),
           freshShownTotal,

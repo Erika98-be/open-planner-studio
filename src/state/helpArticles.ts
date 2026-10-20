@@ -38,6 +38,9 @@ export const STRUCTURE_HELP_ARTICLE_ID = 'howto-structuur-aanpassen';
 /** MS Project-import: tijdgefaseerde gegevens (contouren) die niet meekwamen. */
 export const MPP_TIMEPHASED_HELP_ARTICLE_ID = 'howto-mpp-openen';
 
+/** MS Project (.mpp en MSPDI .xml): de openingsmelding over wat niet is overgenomen. */
+export const MS_PROJECT_IMPORT_HELP_ARTICLE_ID = 'howto-mpp-openen';
+
 /** Primavera P6 (.xer): openen, exportverlies, onbruikbaar bronarchief. */
 export const XER_IMPORT_HELP_ARTICLE_ID = 'howto-xer-openen';
 
