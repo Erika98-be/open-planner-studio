@@ -33,6 +33,7 @@ import { taskDurationUnit } from '@/engine/scheduler/duration';
 import { CONTOUR_SHAPE_VALUES, CURVE_TO_SHAPE, isFlatCurveValues } from '@/engine/contour/contourEngine';
 import { XER_DURATION_TYPE_TOKEN } from '@/engine/work/workRuleMapping';
 import { effectiveWorkRule, remainingMinutesOf } from '@/engine/work/workRuleApply';
+import { DEFAULT_WORK_RULE } from '@/types/workRule';
 import { exportCalendarLayout, taskMinutesForWrite } from '@/services/subdayIo';
 import { countSplitTasksWithoutContour } from '@/services/contourIo';
 import { calendarForEngine, effectiveWorkTimeBands } from '@/utils/effectiveWorkTime';
@@ -540,7 +541,8 @@ export function writeXER(input: XerWriteInput): XerWriteResult {
     clndr_id: calIds.get(calendar.id)!, task_code_base: '1000', task_code_step: '10', priority_num: '10',
     wbs_max_sum_level: '0', strgy_priority_num: '100',
     last_recalc_date: instants.write(project.statusDate, 'midnight', calendar),
-    def_duration_type: XER_DURATION_TYPE_TOKEN[project.defaultWorkRule ?? 'FIXED_DURATION_WORK'], def_qty_type: 'QT_Hour', add_by_name: 'admin', def_rate_type: 'COST_PER_QTY',
+    // De effectieve projectstandaard, ook zonder eigen keuze (`DEFAULT_WORK_RULE`, review ronde 2 E1).
+    def_duration_type: XER_DURATION_TYPE_TOKEN[project.defaultWorkRule ?? DEFAULT_WORK_RULE], def_qty_type: 'QT_Hour', add_by_name: 'admin', def_rate_type: 'COST_PER_QTY',
     act_this_per_link_flag: 'Y', def_task_type: 'TT_Task', act_pct_link_flag: 'N',
     critical_path_type: crit?.mode === 'longestPath' ? 'CT_DrivPath' : 'CT_TotFloat',
     def_rollup_dates_flag: 'Y', rem_target_link_flag: 'Y', reset_planned_flag: 'N', allow_neg_act_flag: 'N',
@@ -789,17 +791,23 @@ export function writeXER(input: XerWriteInput): XerWriteResult {
     // Tarief en beschikbaarheid: één RSRCRATE-rij per stap; zonder stappen één rij met de vaste
     // capaciteit (`maxUnits`) als maximale inzet, ook zonder tarief (review PR #393, punt 4). P6
     // onderscheidt standaardinzet (`def_qty_per_hr`) en maximale capaciteit (`max_qty_per_hr`).
+    // Materiaal: OPS kent capaciteit en inzet per DAG, XER per uur. De toewijzingen delen de dag door
+    // de uren per dag (TASKRSRC hieronder); de capaciteit moet dezelfde schaal krijgen, anders is
+    // 80 m³/dag op 80 m³/dag in P6 12,5 % bezet (review PR #393 ronde 2, punt C). `def_qty_per_hr`
+    // blijft ongeschaald: dat leest `readXER` als `maxUnits` (de lezer blijft ongewijzigd).
+    const capacityHpd = resCal.hoursPerDay > 0 ? resCal.hoursPerDay : 8;
+    const capacity = (units: number) => (res.type === 'MATERIAL' ? units / capacityHpd : units);
     const steps = res.availabilitySteps ?? [];
     if (steps.length > 0) {
       for (const step of steps) {
         rateRows.push({
-          rsrc_rate_id: String(rateId++), rsrc_id: resIds.get(res.id)!, max_qty_per_hr: num(step.maxUnits),
+          rsrc_rate_id: String(rateId++), rsrc_id: resIds.get(res.id)!, max_qty_per_hr: num(capacity(step.maxUnits)),
           cost_per_qty: num(res.costPerHour), start_date: `${step.from.slice(0, 10)} 00:00`,
         });
       }
     } else {
       rateRows.push({
-        rsrc_rate_id: String(rateId++), rsrc_id: resIds.get(res.id)!, max_qty_per_hr: num(res.maxUnits),
+        rsrc_rate_id: String(rateId++), rsrc_id: resIds.get(res.id)!, max_qty_per_hr: num(capacity(res.maxUnits)),
         cost_per_qty: num(res.costPerHour), start_date: instants.write(project.startDate, 'midnight', calendar),
       });
     }
