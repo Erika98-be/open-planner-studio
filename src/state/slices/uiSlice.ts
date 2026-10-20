@@ -116,6 +116,7 @@ export function createDefaultUI(): UIState {
     showNewOrOpenProjectDialog: false,
     pendingTaskNameFocusId: null,
     showFeedbackDialog: false,
+    feedbackEmail: '',
     showStructureDialog: false,
     traceMode: 'off',
     showResourcePanel: false,

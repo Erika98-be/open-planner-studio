@@ -1,11 +1,12 @@
 /**
  * Feedback-service — niet-UI-logica voor het feedback-systeem.
  *
- * Verantwoordelijkheden:
- * - GitHub-issue-URL bouwen (title, labels, body)
- * - Screenshot naar klembord kopiëren (web: ClipboardItem PNG; Tauri: raw-RGBA-weg)
- * - Screenshot opslaan als bestand (Tauri: appDataDir/feedback/; web: download-anchor)
- * - URL openen in de browser (Tauri: shell-open; web: window.open)
+ * Hoofdweg: `submitFeedback()` post de melding naar Open Feedback Studio (OpenAEC). Die server
+ * zet de melding in zijn dashboard en maakt zelf een GitHub-issue (met soortlabel) als de
+ * beheerder de app aan een repo heeft gekoppeld. De gebruiker heeft dus geen GitHub-account nodig.
+ *
+ * Terugval (alleen als versturen mislukt door netwerk, server of timeout): `prepareGitHubFallback()`
+ * bouwt de oude GitHub-new-issue-URL en zet een screenshot op het klembord en als bestand klaar.
  *
  * KRITIEK: alle @tauri-apps/*-imports zijn DYNAMISCH en gated achter isTauri().
  */
@@ -15,6 +16,22 @@ import i18n from '@/i18n/config';
 import { dataUrlToBytes } from '@/utils/dataUrl';
 import { GITHUB_REPO } from '@/services/githubRepo';
 
+// ─── Open Feedback Studio: één plek voor endpoint en app-id ────────────────────
+export const FEEDBACK_ENDPOINT = 'https://open-feedback-studio.pages.dev/api/feedback';
+export const FEEDBACK_APP_ID = 'open-planner-studio';
+/** Na deze tijd breekt het versturen af en telt het als netwerkfout. */
+export const FEEDBACK_TIMEOUT_MS = 20_000;
+/** Grenzen van de server voor `message` (in tekens). */
+export const FEEDBACK_MESSAGE_MIN = 10;
+export const FEEDBACK_MESSAGE_MAX = 5000;
+/** De server neemt samen max 1 MB aan afbeeldingen; wij blijven daar ruim onder. */
+export const FEEDBACK_IMAGE_MAX_BYTES = 900 * 1024;
+/** Kwaliteiten die we per afmeting proberen, van hoog naar laag. */
+const SCREENSHOT_QUALITIES = [0.9, 0.85, 0.8, 0.75];
+/** Past het op volle resolutie niet, dan per stap deze factor smaller, tot deze minimale breedte. */
+const SCREENSHOT_SHRINK_STEP = 0.8;
+const SCREENSHOT_MIN_WIDTH = 480;
+
 export type FeedbackType = 'bug' | 'feature';
 
 export interface FeedbackPayload {
@@ -23,6 +40,33 @@ export interface FeedbackPayload {
   description: string;
   /** Volledig geflattende PNG als dataURL (screenshot + annotaties), of null. */
   screenshotDataUrl: string | null;
+}
+
+/** Soorten fout die de dialoog vertaald toont. `failed` = netwerk, timeout, 5xx, geblokkeerd of
+ *  onbekend: dan biedt de dialoog de GitHub-terugval aan. */
+export type FeedbackErrorKind = 'validation' | 'rateLimited' | 'duplicate' | 'failed';
+
+export class FeedbackSubmitError extends Error {
+  readonly kind: FeedbackErrorKind;
+  constructor(kind: FeedbackErrorKind, detail: string) {
+    super(detail);
+    this.name = 'FeedbackSubmitError';
+    this.kind = kind;
+  }
+}
+
+export interface SubmitFeedbackInput extends FeedbackPayload {
+  /** Optioneel e-mailadres voor een reactie; leeg = niet meesturen. */
+  email: string;
+}
+
+export interface SubmitFeedbackResult {
+  /** Het issue dat de server aanmaakte, of null (app niet aan een repo gekoppeld). Geen fout. */
+  githubIssueUrl: string | null;
+  /** Er was een screenshot, maar het bleef na verkleinen te groot en ging niet mee. */
+  screenshotDropped: boolean;
+  /** Grootte (bytes) van het meegestuurde screenshot, of null zonder screenshot. */
+  screenshotBytes: number | null;
 }
 
 export interface SendResult {
@@ -75,6 +119,155 @@ async function getPlatform(): Promise<string> {
     }
   }
   return navigator.platform || 'unknown';
+}
+
+/** Eenvoudige vormcontrole van een e-mailadres (de server controleert ook; max 254 tekens). */
+export function isValidFeedbackEmail(email: string): boolean {
+  const e = email.trim();
+  return e.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
+}
+
+/** De tekst die de gebruiker zelf schreef, zoals hij in `message` komt (zonder metaregel). */
+export function feedbackUserText(title: string, description: string): string {
+  const t = title.trim();
+  const d = description.trim();
+  return d ? `${t}\n\n${d}` : t;
+}
+
+/** `message` voor de server: titel, lege regel, omschrijving en een metaregel. */
+export function buildFeedbackMessage(payload: Pick<FeedbackPayload, 'title' | 'description'>, os: string, locale: string): string {
+  return `${feedbackUserText(payload.title, payload.description)}\n\n---\nOpen Planner Studio v${__APP_VERSION__} · ${os} · ${locale}`;
+}
+
+function loadImage(dataUrl: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error('Screenshot kon niet worden geladen'));
+    img.src = dataUrl;
+  });
+}
+
+function canvasToBlob(canvas: HTMLCanvasElement, type: string, quality: number): Promise<Blob | null> {
+  return new Promise(resolve => canvas.toBlob(resolve, type, quality));
+}
+
+let webpSupport: boolean | null = null;
+/** Schrijft deze browser WebP? Een canvas zonder WebP-encoder geeft stil een PNG terug. */
+function canEncodeWebp(): boolean {
+  if (webpSupport === null) {
+    const c = document.createElement('canvas');
+    c.width = c.height = 1;
+    webpSupport = c.toDataURL('image/webp').startsWith('data:image/webp');
+  }
+  return webpSupport;
+}
+
+/**
+ * Maak een screenshot klaar voor de upload, onder {@link FEEDBACK_IMAGE_MAX_BYTES}:
+ * 1. volle resolutie als WebP, kwaliteit 0.9 en dalend tot 0.75;
+ * 2. pas als dat niet past, stap voor stap smaller (zelfde kwaliteitsreeks per stap);
+ * 3. zonder WebP-encoder dezelfde aanpak met JPEG.
+ * Geeft null als het ook op de kleinste breedte niet past.
+ */
+export async function prepareScreenshotForUpload(dataUrl: string): Promise<Blob | null> {
+  const img = await loadImage(dataUrl);
+  const type = canEncodeWebp() ? 'image/webp' : 'image/jpeg';
+  let width = img.width;
+  for (;;) {
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(width));
+    canvas.height = Math.max(1, Math.round(img.height * (width / img.width)));
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+    // JPEG kent geen transparantie: eerst wit, zodat doorzichtige delen niet zwart worden.
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    for (const quality of SCREENSHOT_QUALITIES) {
+      const blob = await canvasToBlob(canvas, type, quality);
+      if (blob && blob.size <= FEEDBACK_IMAGE_MAX_BYTES) return blob;
+    }
+    if (width <= SCREENSHOT_MIN_WIDTH) return null;
+    width = Math.max(SCREENSHOT_MIN_WIDTH, width * SCREENSHOT_SHRINK_STEP);
+  }
+}
+
+function errorKindForStatus(status: number): FeedbackErrorKind {
+  if (status === 400) return 'validation';
+  if (status === 409) return 'duplicate';
+  if (status === 429) return 'rateLimited';
+  return 'failed';
+}
+
+/**
+ * Verstuur de melding naar Open Feedback Studio.
+ * Zonder screenshot: JSON. Met screenshot: multipart met één verkleinde afbeelding.
+ * Gooit {@link FeedbackSubmitError} bij elke fout; de dialoog vertaalt `kind`.
+ * Het honeypotveld `website` gaat nooit mee.
+ */
+export async function submitFeedback(input: SubmitFeedbackInput): Promise<SubmitFeedbackResult> {
+  const os = await getPlatform();
+  const fields: Record<string, string> = {
+    app: FEEDBACK_APP_ID,
+    category: input.type === 'bug' ? 'bug' : 'feature',
+    message: buildFeedbackMessage(input, os, i18n.language),
+    appVersion: __APP_VERSION__,
+  };
+  const email = input.email.trim();
+  if (email) fields.email = email;
+
+  let image: Blob | null = null;
+  let screenshotDropped = false;
+  if (input.screenshotDataUrl) {
+    try {
+      image = await prepareScreenshotForUpload(input.screenshotDataUrl);
+    } catch (err) {
+      console.warn('Screenshot verkleinen mislukt:', err);
+      image = null;
+    }
+    screenshotDropped = image === null;
+  }
+
+  let body: BodyInit;
+  const headers: Record<string, string> = {};
+  if (image) {
+    const form = new FormData();
+    for (const [k, v] of Object.entries(fields)) form.append(k, v);
+    const ext = image.type === 'image/webp' ? 'webp' : 'jpg';
+    form.append('screenshot', image, `screenshot.${ext}`);
+    body = form; // de browser zet zelf de multipart-boundary
+  } else {
+    body = JSON.stringify(fields);
+    headers['Content-Type'] = 'application/json';
+  }
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), FEEDBACK_TIMEOUT_MS);
+  let response: Response;
+  try {
+    response = await fetch(FEEDBACK_ENDPOINT, { method: 'POST', body, headers, signal: controller.signal });
+  } catch (err) {
+    throw new FeedbackSubmitError('failed', err instanceof Error ? err.message : String(err));
+  } finally {
+    clearTimeout(timer);
+  }
+
+  let json: unknown = null;
+  try { json = await response.json(); } catch { /* geen JSON: status beslist */ }
+  const data = (json && typeof json === 'object' ? json : {}) as { success?: unknown; githubIssueUrl?: unknown; error?: unknown };
+
+  if (!response.ok || data.success !== true) {
+    const detail = typeof data.error === 'string' ? data.error : `HTTP ${response.status}`;
+    throw new FeedbackSubmitError(response.ok ? 'failed' : errorKindForStatus(response.status), detail);
+  }
+
+  return {
+    githubIssueUrl: typeof data.githubIssueUrl === 'string' && data.githubIssueUrl.startsWith('https://')
+      ? data.githubIssueUrl : null,
+    screenshotDropped,
+    screenshotBytes: image ? image.size : null,
+  };
 }
 
 /**
@@ -207,7 +400,8 @@ export async function openFeedbackUrl(url: string): Promise<void> {
 }
 
 /**
- * Bereid de feedback-verzending voor en geef het resultaat terug.
+ * TERUGVAL — alleen als `submitFeedback()` mislukte door netwerk, server of timeout.
+ * Bereid de oude GitHub-weg voor en geef het resultaat terug.
  * Opent ZELF de GitHub-URL NIET — dat doet de dialoog op het juiste moment
  * (pad A meteen, pad B pas na "OK"), via openFeedbackUrl().
  *
@@ -218,7 +412,7 @@ export async function openFeedbackUrl(url: string): Promise<void> {
  *   3. Retourneer savedPath + githubUrl zodat de UI de plak-instructie kan tonen
  *      en de URL pas na "OK" opent.
  */
-export async function sendFeedback(payload: FeedbackPayload): Promise<SendResult> {
+export async function prepareGitHubFallback(payload: FeedbackPayload): Promise<SendResult> {
   const os = await getPlatform();
   const url = buildGitHubUrl(payload, os);
 

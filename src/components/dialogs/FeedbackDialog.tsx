@@ -1,36 +1,64 @@
 /**
- * FeedbackDialog — feedback-knop → GitHub issue.
+ * FeedbackDialog — feedback-knop → Open Feedback Studio (OpenAEC).
  *
  * Patroon: vergelijkbaar met UpdateDialog.tsx / SettingsDialog.tsx.
  * - Overlay + paneel, sluiten via setUI en Escape-handler. Bewust GEEN backdrop-close:
  *   de dialoog bevat een tekstveld, en een klik naast het paneel mag getypte tekst niet weggooien.
  * - Alle tekst via t('feedback.xxx') (common-namespace).
- * - @tauri-apps/* UITSLUITEND dynamisch geïmporteerd binnen isTauri()-branches.
+ * - @tauri-apps/* UITSLUITEND dynamisch geïmporteerd binnen isTauri()-branches (in de service).
  * - Screenshot via modern-screenshot domToPng; dialoog uitgefilterd.
  * - Annotatie: gedelegeerd aan <ScreenshotAnnotator/> (thumbnail + grote editor).
- * - Twee verstuur-paden: PAD A (geen screenshot) / PAD B (met screenshot + klembord).
+ * - Hoofdweg: `submitFeedback()` post naar de API; daarna het bedankscherm.
+ * - Terugval bij een netwerk- of serverfout: de knop "Open op GitHub" volgt de oude weg
+ *   (PAD A: URL meteen open; PAD B: screenshot op klembord + plak-instructie).
  */
 
 import { useState, useCallback, useRef } from 'react';
 import { useAppStore } from '@/state/appStore';
 import { useTranslation } from 'react-i18next';
 import { X } from 'lucide-react';
-import { sendFeedback, openFeedbackUrl, type FeedbackType, type SendResult } from '@/services/feedback/feedbackService';
+import {
+  submitFeedback,
+  prepareGitHubFallback,
+  openFeedbackUrl,
+  feedbackUserText,
+  isValidFeedbackEmail,
+  FeedbackSubmitError,
+  FEEDBACK_MESSAGE_MIN,
+  type FeedbackErrorKind,
+  type FeedbackType,
+  type SendResult,
+  type SubmitFeedbackResult,
+} from '@/services/feedback/feedbackService';
+import { saveFeedbackEmail } from '@/utils/settingsStore';
 import { useDialogKeys } from '@/hooks/useDialogKeys';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
 import { ScreenshotAnnotator } from './ScreenshotAnnotator';
 import './FeedbackDialog.css';
+
+/** Max lengtes van de velden: samen met de metaregel blijft `message` onder de servergrens (5000). */
+const TITLE_MAX = 200;
+const DESCRIPTION_MAX = 4600;
+
+const ERROR_KEYS = {
+  validation: 'feedback.errorValidation',
+  rateLimited: 'feedback.errorRateLimited',
+  duplicate: 'feedback.errorDuplicate',
+  failed: 'feedback.errorFailed',
+} as const satisfies Record<FeedbackErrorKind, string>;
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function FeedbackDialog() {
   const { t } = useTranslation('common');
   const setUI = useAppStore(s => s.setUI);
+  const storedEmail = useAppStore(s => s.ui.feedbackEmail);
 
   // Form-state
   const [feedbackType, setFeedbackType] = useState<FeedbackType>('bug');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [email, setEmail] = useState(storedEmail);
   const [attachScreenshot, setAttachScreenshot] = useState(false);
 
   // Screenshot-state
@@ -43,7 +71,10 @@ export function FeedbackDialog() {
 
   // Verstuur-state
   const [sending, setSending] = useState(false);
-  const [result, setResult] = useState<SendResult | null>(null);
+  const [submitError, setSubmitError] = useState<FeedbackErrorKind | null>(null);
+  const [sent, setSent] = useState<SubmitFeedbackResult | null>(null);
+  // Terugval PAD B: plak-instructie voor GitHub.
+  const [fallback, setFallback] = useState<SendResult | null>(null);
 
   const close = useCallback(() => setUI({ showFeedbackDialog: false }), [setUI]);
 
@@ -54,6 +85,20 @@ export function FeedbackDialog() {
   // Escape sluit de dialoog (niet tijdens versturen: dan is de handler `undefined` en doet de
   // hook niets). De overlay zelf blijft custom CSS-chrome — geen `Dialog`-migratie hier.
   useDialogKeys({ onCancel: sending ? undefined : close });
+
+  // ── Validatie vooraf ───────────────────────────────────────────────────────
+  const trimmedEmail = email.trim();
+  const emailOk = trimmedEmail === '' || isValidFeedbackEmail(trimmedEmail);
+  const titleOk = title.trim().length > 0;
+  const lengthOk = feedbackUserText(title, description).length >= FEEDBACK_MESSAGE_MIN;
+  const formHint: string | null = !titleOk
+    ? t('feedback.titleRequired')
+    : !lengthOk
+      ? t('feedback.tooShort')
+      : !emailOk
+        ? t('feedback.emailInvalid')
+        : null;
+  const canSubmit = !sending && !capturing && formHint === null;
 
   // ── Screenshot maken ───────────────────────────────────────────────────────
   const captureScreenshot = useCallback(async () => {
@@ -91,33 +136,59 @@ export function FeedbackDialog() {
     }
   }, [screenshotDataUrl, captureScreenshot]);
 
-  // ── Versturen ────────────────────────────────────────────────────────────
+  // De geflattende PNG uit de annotator (screenshot + annotaties); is er nog niet geannoteerd,
+  // dan de rauwe screenshot.
+  const flatScreenshot = (): string | null =>
+    attachScreenshot ? (annotatedDataUrl ?? screenshotDataUrl) : null;
+
+  // ── Versturen (hoofdweg) ─────────────────────────────────────────────────
   const handleSubmit = async () => {
-    if (!title.trim()) return;
+    if (!canSubmit) return;
     setSending(true);
+    setSubmitError(null);
     try {
-      // De geflattende PNG uit de annotator (screenshot + annotaties); is er nog
-      // niet geannoteerd, dan de rauwe screenshot.
-      const flatDataUrl: string | null =
-        attachScreenshot ? (annotatedDataUrl ?? screenshotDataUrl) : null;
-      const res = await sendFeedback({
+      const res = await submitFeedback({
         type: feedbackType,
         title: title.trim(),
         description: description.trim(),
-        screenshotDataUrl: flatDataUrl,
+        screenshotDataUrl: flatScreenshot(),
+        email: trimmedEmail,
       });
-      // PAD B (mét screenshot): toon de plak-instructie; GitHub opent PAS nadat
-      // de gebruiker daar op "OK" klikt (zo staat de screenshot al op het
-      // klembord vóór de issue-pagina opent).
+      if (trimmedEmail !== storedEmail) {
+        setUI({ feedbackEmail: trimmedEmail });
+        void saveFeedbackEmail(trimmedEmail);
+      }
+      setSent(res);
+    } catch (err) {
+      console.warn('Feedback versturen mislukt:', err);
+      setSubmitError(err instanceof FeedbackSubmitError ? err.kind : 'failed');
+    } finally {
+      setSending(false);
+    }
+  };
+
+  // ── Terugval: de oude GitHub-weg ─────────────────────────────────────────
+  const handleGitHubFallback = async () => {
+    setSending(true);
+    try {
+      const flat = flatScreenshot();
+      const res = await prepareGitHubFallback({
+        type: feedbackType,
+        title: title.trim(),
+        description: description.trim(),
+        screenshotDataUrl: flat,
+      });
+      // PAD B (mét screenshot): toon de plak-instructie; GitHub opent PAS nadat de gebruiker daar
+      // op "OK" klikt (zo staat de screenshot al op het klembord vóór de issue-pagina opent).
       // PAD A (zónder screenshot): geen plakstap → open GitHub meteen en sluit.
-      if (flatDataUrl) {
-        setResult(res);
+      if (flat) {
+        setFallback(res);
       } else {
         await openFeedbackUrl(res.githubUrl);
         close();
       }
     } catch (err) {
-      console.error('Feedback versturen mislukt:', err);
+      console.error('GitHub-terugval mislukt:', err);
     } finally {
       setSending(false);
     }
@@ -150,8 +221,16 @@ export function FeedbackDialog() {
 
         {/* Body */}
         <div className="feedback-dialog-body">
-          {result ? (
-            /* ── Bevestigingsstap (PAD B na versturen) ── */
+          {sent ? (
+            /* ── Bedankscherm (hoofdweg geslaagd) ── */
+            <div className="feedback-confirm" data-feedback-sent>
+              <p className="feedback-confirm-title" role="status">{t('feedback.sentTitle')}</p>
+              {sent.screenshotDropped && (
+                <p className="feedback-confirm-fallback">{t('feedback.sentScreenshotDropped')}</p>
+              )}
+            </div>
+          ) : fallback ? (
+            /* ── Terugval PAD B: plak-instructie voor GitHub ── */
             <div className="feedback-confirm">
               <p className="feedback-confirm-title">{t('feedback.instructionTitle')}</p>
               <ol className="feedback-confirm-steps">
@@ -160,9 +239,9 @@ export function FeedbackDialog() {
                 <li>{t('feedback.instructionStep3')}</li>
                 <li>{t('feedback.instructionStep4')}</li>
               </ol>
-              {result.savedPath && (
+              {fallback.savedPath && (
                 <p className="feedback-confirm-fallback">
-                  {t('feedback.instructionFallback', { path: result.savedPath })}
+                  {t('feedback.instructionFallback', { path: fallback.savedPath })}
                 </p>
               )}
             </div>
@@ -174,12 +253,14 @@ export function FeedbackDialog() {
                 <button
                   className={`feedback-type-btn${feedbackType === 'bug' ? ' active' : ''}`}
                   onClick={() => setFeedbackType('bug')}
+                  disabled={sending}
                 >
                   {t('feedback.typeBug')}
                 </button>
                 <button
                   className={`feedback-type-btn${feedbackType === 'feature' ? ' active' : ''}`}
                   onClick={() => setFeedbackType('feature')}
+                  disabled={sending}
                 >
                   {t('feedback.typeFeature')}
                 </button>
@@ -187,26 +268,48 @@ export function FeedbackDialog() {
 
               {/* Titel */}
               <div className="feedback-field">
-                <label className="feedback-label">{t('feedback.fieldTitle')}</label>
+                <label className="feedback-label" htmlFor="feedback-title">{t('feedback.fieldTitle')}</label>
                 <input
+                  id="feedback-title"
                   className="feedback-input"
                   type="text"
                   value={title}
                   onChange={e => setTitle(e.target.value)}
                   placeholder={t('feedback.fieldTitle')}
+                  maxLength={TITLE_MAX}
+                  readOnly={sending}
                   autoFocus
                 />
               </div>
 
               {/* Omschrijving */}
               <div className="feedback-field">
-                <label className="feedback-label">{t('feedback.fieldDescription')}</label>
+                <label className="feedback-label" htmlFor="feedback-description">{t('feedback.fieldDescription')}</label>
                 <textarea
+                  id="feedback-description"
                   className="feedback-textarea"
                   value={description}
                   onChange={e => setDescription(e.target.value)}
                   placeholder={t('feedback.fieldDescription')}
+                  maxLength={DESCRIPTION_MAX}
+                  readOnly={sending}
                   rows={4}
+                />
+              </div>
+
+              {/* E-mailadres (optioneel) */}
+              <div className="feedback-field">
+                <label className="feedback-label" htmlFor="feedback-email">{t('feedback.fieldEmail')}</label>
+                <input
+                  id="feedback-email"
+                  className="feedback-input"
+                  type="email"
+                  autoComplete="email"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  maxLength={254}
+                  readOnly={sending}
+                  aria-invalid={!emailOk}
                 />
               </div>
 
@@ -217,6 +320,7 @@ export function FeedbackDialog() {
                     type="checkbox"
                     checked={attachScreenshot}
                     onChange={e => handleAttachToggle(e.target.checked)}
+                    disabled={sending}
                   />
                   <span>{t('feedback.attachScreenshot')}</span>
                 </label>
@@ -237,16 +341,44 @@ export function FeedbackDialog() {
                   onChange={setAnnotatedDataUrl}
                 />
               )}
+
+              {/* Fout bij versturen (vertaald; de ingevulde tekst blijft staan) */}
+              {submitError && (
+                <p className="feedback-error" role="alert" data-feedback-error={submitError}>
+                  {t(ERROR_KEYS[submitError])}
+                </p>
+              )}
+
+              {/* Waarom de knop grijs is */}
+              {formHint && (title.length > 0 || description.length > 0 || !emailOk) && (
+                <p className="feedback-hint" data-feedback-hint>{formHint}</p>
+              )}
+
+              <p className="feedback-privacy">{t('feedback.privacy')}</p>
             </>
           )}
         </div>
 
         {/* Footer */}
         <div className="feedback-dialog-footer">
-          {result ? (
+          {sent ? (
+            <>
+              {sent.githubIssueUrl && (
+                <button
+                  className="btn btn--sm btn--secondary"
+                  onClick={() => { if (sent.githubIssueUrl) void openFeedbackUrl(sent.githubIssueUrl); }}
+                >
+                  {t('feedback.viewOnGithub')}
+                </button>
+              )}
+              <button className="btn btn--sm btn--primary" onClick={close} autoFocus>
+                {t('feedback.close')}
+              </button>
+            </>
+          ) : fallback ? (
             <button
               className="btn btn--sm btn--primary"
-              onClick={() => { void openFeedbackUrl(result.githubUrl); close(); }}
+              onClick={() => { void openFeedbackUrl(fallback.githubUrl); close(); }}
             >
               {t('feedback.openGithub')}
             </button>
@@ -259,12 +391,21 @@ export function FeedbackDialog() {
               >
                 {t('feedback.cancel')}
               </button>
+              {submitError === 'failed' && (
+                <button
+                  className="btn btn--sm btn--secondary"
+                  onClick={() => void handleGitHubFallback()}
+                  disabled={sending}
+                >
+                  {t('feedback.fallbackGithub')}
+                </button>
+              )}
               <button
                 className="btn btn--sm btn--primary"
                 onClick={() => void handleSubmit()}
-                disabled={sending || !title.trim()}
+                disabled={!canSubmit}
               >
-                {t('feedback.submit')}
+                {sending ? t('feedback.sending') : t('feedback.submit')}
               </button>
             </>
           )}

@@ -177,6 +177,20 @@
   border-radius: var(--radius-md);
 }
 
+/* Hint (waarom Versturen grijs is) en privacyregel */
+.feedback-hint {
+  font-size: var(--text-body);
+  color: var(--theme-text-muted);
+  margin: 0;
+}
+
+.feedback-privacy {
+  font-size: var(--text-caption);
+  color: var(--theme-text-muted);
+  margin: 0;
+  line-height: 1.5;
+}
+
 /* Bevestigingsstap */
 .feedback-confirm {
   display: flex;

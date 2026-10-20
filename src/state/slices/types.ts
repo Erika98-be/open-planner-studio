@@ -534,6 +534,9 @@ export interface UIState {
   /** Een pas gemaakte taak krijgt éénmalig de naamfocus in het eigenschappenpaneel. */
   pendingTaskNameFocusId: string | null;
   showFeedbackDialog: boolean;              // session — feedback-dialoog open
+  /** persisted (`ops-feedbackEmail`) — het optionele e-mailadres uit de feedbackdialoog, onthouden na
+   *  een geslaagde melding. Geen paneelinstelling: het hoort bij het formulier zelf. */
+  feedbackEmail: string;
   showStructureDialog: boolean;             // session — codes & velden-beheer open
   traceMode: TraceMode;                     // session — path tracing rond de geselecteerde taak
   showResourcePanel: boolean;               // session — resource-beheerpaneel (full-panel) open
