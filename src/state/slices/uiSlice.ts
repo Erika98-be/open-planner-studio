@@ -167,6 +167,7 @@ export function createDefaultUI(): UIState {
     showStatsDialog: false,
     pendingExtensionConsent: null,
     pendingActualStartQuestion: null,
+    pendingPhaseAssignmentQuestion: null,
     pendingSiteOpen: null,
     pendingSiteSave: null,
     pendingIfcSchemaQuestion: null,
