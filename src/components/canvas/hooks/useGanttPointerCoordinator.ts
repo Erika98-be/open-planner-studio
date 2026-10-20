@@ -439,7 +439,7 @@ export function useGanttPointerCoordinator(
       else splitGesture.clearHover();
       return;
     }
-    // PROTOTYPE (issue #391): op de baselinestrook toont de tooltip welke baselines daar liggen. De balk-
+    // Issue #391: op de baselinestrook toont de tooltip welke baselines daar liggen. De balk-
     // hit-test beslaat de hele rijhoogte, dus deze controle gaat vóór; slepen werkt daar gewoon.
     const baselineHit = renderer.getBaselineAt(x, y);
     if (hit) {

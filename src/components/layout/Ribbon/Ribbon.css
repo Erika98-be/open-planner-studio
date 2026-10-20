@@ -587,7 +587,7 @@
   align-self: stretch;
 }
 
-/* PROTOTYPE (issue #391): grote gesplitste lintknop (Baseline-overlay), zoals Plakken in Word.
+/* Issue #391: grote gesplitste lintknop (Baseline-overlay), zoals Plakken in Word.
    Eén kolom van 66px (de hoogte van een grote knop): boven het pictogram (aan/uit), onder het label
    met ▾ (menu). Beide delen delen de rand en de actieve achtergrond; een dunne lijn scheidt ze. */
 .ribbon-split-large {

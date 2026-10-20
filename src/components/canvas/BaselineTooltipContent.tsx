@@ -3,7 +3,7 @@ import { useDisplayDate } from '@/hooks/displayDate';
 import type { Task } from '@/types/task';
 import type { BaselineLayer, BaselineLayerSlot } from '@/types/baseline';
 
-/** PROTOTYPE (issue #391): CSS-kleur per baselineplaats; dezelfde thema-tokens als de tekenlaag. */
+/** Issue #391: CSS-kleur per baselineplaats; dezelfde thema-tokens als de tekenlaag. */
 export const BASELINE_SLOT_COLOR: Record<BaselineLayerSlot, string> = {
   0: 'var(--theme-bar-baseline, #6B7280)',
   1: 'var(--theme-bar-baseline-compare-1, #0891B2)',
@@ -25,7 +25,7 @@ export function BaselineSwatch({ slot }: { slot: BaselineLayerSlot }) {
 }
 
 /**
- * PROTOTYPE (issue #391): hovertooltip op een stuk van de baselinestrook. Noemt de taak en daaronder
+ * Issue #391: hovertooltip op een stuk van de baselinestrook. Noemt de taak en daaronder
  * elke baseline die in dat stuk ligt: kleurstrookje, naam (de actieve met "actief"), start en einde.
  */
 export function BaselineTooltipContent({ task, slots, layers }: {

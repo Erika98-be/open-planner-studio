@@ -48,7 +48,7 @@ import { saveHistogramHeight } from '@/utils/settingsStore';
 // De pure afleidingen achter de weergave + de opbouw van `GanttRenderOptions`. Ze staan apart
 // zodat ze headless te controleren zijn; de `useMemo`-aanroepen hieronder blijven
 // bewust in dit component staan (zie de kop van dat bestand voor waarom).
-import { buildBaselineLayers, type BaselineLayer } from '@/types/baseline';
+import { buildBaselineLayers, comparisonOverlays } from '@/types/baseline';
 import { BaselineTooltipContent } from './BaselineTooltipContent';
 import {
   buildBaselineOverlay,
@@ -67,7 +67,7 @@ import { editableSplitPieces } from './hooks/useBarDrag';
 import { removeGap } from '@/engine/scheduler/splitEdit';
 import { useGanttRowDragBridge } from './ganttRowDragBridge';
 import { TASK_ROW_HEIGHT } from '@/engine/taskGrid/rowHeight';
-import type { HistogramRenderInput } from './hooks/ganttCoordinatorTypes';
+import type { GanttTooltipState, HistogramRenderInput } from './hooks/ganttCoordinatorTypes';
 import { shownFinish, shownStart } from '@/utils/taskDates';
 
 // Basisgeometrie op Tekengrootte 100%: de component leidt hieruit de EFFECTIEVE
@@ -230,7 +230,7 @@ export function GanttCanvas({
   const showStatusDateLine = useAppStore(s => s.ui.showStatusDateLine);
   const baselines = useAppStore(s => s.baselines);
   const activeBaselineId = useAppStore(s => s.activeBaselineId);
-  const comparedBaselineIds = useAppStore(s => s.ui.comparedBaselineIds);
+  const comparedBaselineIds = useAppStore(s => s.comparedBaselineIds);
   const setHistogramResource = useAppStore(s => s.setHistogramResource);
 
   const scopedTaskResources = useMemo(
@@ -531,17 +531,12 @@ export function GanttCanvas({
     () => buildBaselineOverlay(baselines, activeBaselineId),
     [baselines, activeBaselineId],
   );
-  // PROTOTYPE (issue #391): de lagen die de Gantt tekent (actief + tot twee vergelijkingen).
+  // De baselines die de Gantt tekent: actief + tot twee vergelijkingen (issue #391).
   const baselineLayers = useMemo(
     () => buildBaselineLayers(baselines, activeBaselineId, comparedBaselineIds),
     [baselines, activeBaselineId, comparedBaselineIds],
   );
-  const baselineComparisons = useMemo(
-    () => baselineLayers
-      .filter((layer): layer is BaselineLayer & { slot: 1 | 2 } => layer.slot !== 0)
-      .map(layer => ({ slot: layer.slot, overlay: layer.overlay })),
-    [baselineLayers],
-  );
+  const baselineComparisons = useMemo(() => comparisonOverlays(baselineLayers), [baselineLayers]);
 
   // Path tracing rond de (eerst) geselecteerde taak: transitieve voorgangers/opvolgers, met de
   // driving-ketens apart zodat de renderer die sterker kan tinten (MSP Task Path-conventie).
@@ -735,6 +730,19 @@ export function GanttCanvas({
     if (task) selectTask(task.id, e.ctrlKey || e.metaKey, e.shiftKey);
     else deselectAll();
   }, [secondaryCanvasRef, secondaryRendererRef, selectTask, deselectAll, headerHeight]);
+
+  // Hover op de baselinestrook in het secundaire paneel: alleen de baselinetooltip (dit paneel kent
+  // verder geen hover). Zelfde hit-test als het primaire paneel (`GanttRenderer.getBaselineAt`).
+  const [secondaryTooltip, setSecondaryTooltip] = useState<GanttTooltipState | null>(null);
+  const handleSecondaryMouseMove = useCallback((e: ReactMouseEvent<HTMLCanvasElement>) => {
+    const canvas = secondaryCanvasRef.current;
+    const renderer = secondaryRendererRef.current;
+    if (!canvas || !renderer) return;
+    const rect = canvas.getBoundingClientRect();
+    const y = e.clientY - rect.top;
+    const hit = y >= headerHeight ? renderer.getBaselineAt(e.clientX - rect.left, y) : null;
+    setSecondaryTooltip(hit ? { x: e.clientX, y: e.clientY, task: hit.task, baselineSlots: hit.slots } : null);
+  }, [secondaryCanvasRef, secondaryRendererRef, headerHeight]);
 
   const { contextMenu, relationPopover, tooltip } = pointer;
   const boxSelectState = pointer.overlays.boxSelect;
@@ -960,6 +968,11 @@ export function GanttCanvas({
               : <TaskTooltipContent task={tooltip.task} />}
           </HoverTooltip>
         )}
+        {secondaryTooltip?.baselineSlots && (
+          <HoverTooltip left={secondaryTooltip.x + 16} top={secondaryTooltip.y - 10}>
+            <BaselineTooltipContent task={secondaryTooltip.task} slots={secondaryTooltip.baselineSlots} layers={baselineLayers} />
+          </HoverTooltip>
+        )}
 
         {/* De horizontale balk rekent volledig in lokale tijdlijncoördinaten. */}
         <div
@@ -991,6 +1004,8 @@ export function GanttCanvas({
               tabIndex={0}
               className="absolute inset-0 outline-none"
               onClick={handleSecondaryClick}
+              onMouseMove={handleSecondaryMouseMove}
+              onMouseLeave={() => setSecondaryTooltip(null)}
             />
             {/* Eigen zwevende horizontale balk voor het secundaire tijdvenster. */}
             <div

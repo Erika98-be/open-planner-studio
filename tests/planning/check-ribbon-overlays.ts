@@ -25,7 +25,7 @@ const eq = (label: string, got: unknown, want: unknown) => {
 const overlays = RIBBON_TABS.beeld.find(group => group.id === 'overlays');
 const bars = RIBBON_TABS.beeld.find(group => group.id === 'bars');
 eq('Baselines & Progress-groep bestaat', !!overlays, true);
-// PROTOTYPE (issue #391): de balkweergave staat in een eigen groep "Balken".
+// Issue #391: de balkweergave staat in een eigen groep "Balken".
 eq('Balken-groep bestaat, direct na Baselines & Progress',
   RIBBON_TABS.beeld.findIndex(group => group.id === 'bars'),
   RIBBON_TABS.beeld.findIndex(group => group.id === 'overlays') + 1);

@@ -132,7 +132,6 @@ export function createDefaultUI(): UIState {
     showBaselineDialog: false,
     showMoveProjectDialog: false,
     showBaselineOverlay: true,
-    comparedBaselineIds: [null, null],
     showProgressLine: true,
     showStatusDateLine: true,
     showResourceAccent: false,   // opt-in: expliciet aanzetten

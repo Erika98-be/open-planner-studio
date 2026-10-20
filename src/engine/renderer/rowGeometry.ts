@@ -25,7 +25,7 @@ export interface BarLayout {
  * Balkgeometrie binnen een rij van `rowHeight`.
  *
  * Onder de balk ligt een vrije strook (`barOffset`): 1 px lucht, dan het resource-accent, dan de
- * baseline. PROTOTYPE (issue #391, meerdere baselines): de baselinestrook is dikker gemaakt voor de
+ * baseline. Issue #391 (meerdere baselines): de baselinestrook is dikker gemaakt voor de
  * zichtbaarheid van de kleuren en strepen. Zonder accent vult hij de hele vrije strook (~5 px bij
  * rijhoogte 32); staat er een accent, dan krijgt hij wat onder het accent overblijft (~2,4 px, de
  * oude dikte). Zo blijft alles binnen de rij en wordt de taakbalk nooit kleiner. De schuine banden

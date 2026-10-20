@@ -607,10 +607,6 @@ export interface UIState {
   showBaselineDialog: boolean;              // session — baseline-dialoog open
   showMoveProjectDialog: boolean;           // session — "Project verplaatsen…"-dialoog open
   showBaselineOverlay: boolean;             // persisted — baseline-onderbalk in de Gantt
-  /** PROTOTYPE (issue #391) — session: tot twee extra baselines die de Gantt naast de actieve toont.
-   *  Vaste plaatsen: plaats 0 en 1 houden elk hun eigen kleur, ook als de andere plaats leeg wordt.
-   *  Alleen UI-state: niet in het document en niet in de instellingen. */
-  comparedBaselineIds: [string | null, string | null];
   showProgressLine: boolean;                // persisted — voortgangslijn in de Gantt
   showStatusDateLine: boolean;              // persisted — statusdatumlijn in de Gantt
   /** Dun streepje in de resourcekleur onder taakbalken (scherm-accent; de balkvulling zelf

@@ -325,7 +325,7 @@ const SCENES: Record<string, Scene> = {
       return `[data-ops-assignment-row="${a.id}"] [data-ops-assignment-work-deviates]`;
     },
   },
-  // PROTOTYPE (issue #391): meerdere baselines tegelijk in de Gantt, in één gestreepte strook.
+  // Issue #391: meerdere baselines tegelijk in de Gantt, in één gestreepte strook.
   // Drie baselines: "Contract" (actief) plus "Herplanning maart" en "Herplanning juni". De
   // verschuivingen wisselen per taak, zodat alle gevallen in beeld komen: drie baselines die deels
   // overlappen (stukken met 1, 2 en 3 kleuren), twee die precies samenvallen, en drie die elkaar niet
@@ -373,7 +373,7 @@ const SCENES: Record<string, Scene> = {
         s.baselines.push(maart, juni);
         s.activeBaselineId = contractId;
         s.ui.showBaselineOverlay = true;
-        s.ui.comparedBaselineIds = [maart.id, juni.id];
+        s.comparedBaselineIds = [maart.id, juni.id];
       });
       (await waitFor('[data-ops-ribbon-tab="beeld"]')).click();
       // In een verse browser komt het welkomstvenster soms pas ná het begin van de scène.

@@ -4,10 +4,10 @@ import { Check, LayoutGrid } from 'lucide-react';
 import { Popover } from '@/components/common/Popover';
 import { useAppStore } from '@/state/appStore';
 import { BASELINE_SLOT_COLOR } from '@/components/canvas/BaselineTooltipContent';
-import { buildBaselineLayers, toggleComparedBaseline, MAX_COMPARED_BASELINES } from '@/types/baseline';
+import { buildBaselineLayers, MAX_COMPARED_BASELINES } from '@/types/baseline';
 
 /**
- * PROTOTYPE (issue #391): grote gesplitste lintknop Baseline-overlay, zoals Plakken in Word.
+ * Issue #391: grote gesplitste lintknop Baseline-overlay, zoals Plakken in Word.
  *
  * - Het bovenste deel (pictogram) zet de overlay aan of uit, precies zoals de oude knop.
  * - Het onderste deel (label + ▾) opent het menu "Toon in de Gantt": per baseline een vinkje en een
@@ -28,8 +28,8 @@ export function BaselineOverlaySplitButton() {
   const setOverlays = useAppStore(s => s.setOverlays);
   const baselines = useAppStore(s => s.baselines);
   const activeBaselineId = useAppStore(s => s.activeBaselineId);
-  const compared = useAppStore(s => s.ui.comparedBaselineIds);
-  const setUI = useAppStore(s => s.setUI);
+  const compared = useAppStore(s => s.comparedBaselineIds);
+  const toggleCompared = useAppStore(s => s.toggleComparedBaseline);
 
   const layers = useMemo(
     () => buildBaselineLayers(baselines, activeBaselineId, compared),
@@ -109,7 +109,7 @@ export function BaselineOverlaySplitButton() {
               className={`ribbon-check-item${disabled ? ' is-disabled' : ''}`}
               onClick={() => {
                 if (disabled) return;
-                setUI({ comparedBaselineIds: toggleComparedBaseline(compared, b.id) });
+                toggleCompared(b.id);
               }}
             >
               <span className={`ribbon-check-box${checked ? ' is-checked' : ''}`} aria-hidden="true">

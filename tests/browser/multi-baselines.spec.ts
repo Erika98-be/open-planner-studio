@@ -1,4 +1,4 @@
-// PROTOTYPE (issue #391): meerdere baselines tegelijk in de Gantt, in één gestreepte strook. Opent de
+// Issue #391: meerdere baselines tegelijk in de Gantt, in één gestreepte strook. Opent de
 // kijkscène `?qaScene=meerdere-baselines` (drie baselines; "Contract" actief, twee extra aan) en
 // controleert met echte klikken en hovers: de gesplitste knop Baseline-overlay met het menu "Toon in
 // de Gantt", de legenda en de tooltip op stukken met één, twee en drie baselines. `__OPS__` leest
@@ -15,7 +15,7 @@ async function shot(page: Page, name: string, clip?: { x: number; y: number; wid
   await page.screenshot({ path: join(SHOTS, name), clip });
 }
 
-const compared = (page: Page) => page.evaluate(() => window.__OPS__!.store.getState().ui.comparedBaselineIds);
+const compared = (page: Page) => page.evaluate(() => window.__OPS__!.store.getState().comparedBaselineIds);
 const idOf = (page: Page, name: string) => page.evaluate(n => window.__OPS__!.store.getState().baselines
   .find(b => b.name === n)!.id, name);
 

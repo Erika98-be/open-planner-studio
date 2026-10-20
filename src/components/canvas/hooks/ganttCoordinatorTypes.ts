@@ -160,7 +160,7 @@ export interface GanttTooltipState {
   x: number;
   y: number;
   task: Task;
-  /** PROTOTYPE (issue #391): gezet als de muis op de baselinestrook staat: de baselines in dat stuk
+  /** Issue #391: gezet als de muis op de baselinestrook staat: de baselines in dat stuk
    *  (0 = actief, 1/2 = vergelijking). */
   baselineSlots?: (0 | 1 | 2)[];
 }

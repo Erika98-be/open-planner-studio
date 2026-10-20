@@ -757,7 +757,7 @@ const beeldTab: RibbonTabConfig = [
     ],
   },
   {
-    // PROTOTYPE (issue #391): de oude groep "Baselines & voortgang" is gesplitst. Hier staan alleen nog
+    // Issue #391: de oude groep "Baselines & voortgang" is gesplitst. Hier staan alleen nog
     // de baseline- en voortgangslijnen; de balkweergave (kleuren, accent, speling, relatielijnen) staat
     // in de groep "Balken" hierna.
     id: 'overlays', labelKey: 'menu:ribbon.baselines',

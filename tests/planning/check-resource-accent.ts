@@ -152,7 +152,7 @@ const accents = (rects: Rect[]) => rects.filter(r => r.h === ACCENT_H && r.y > H
     ok(baseline.y + baseline.h <= HDRH + ROWH,
       `baseline-combinatie: gestapelde baseline blijft binnen de rij (eindigt ${baseline.y + baseline.h}, rij eindigt ${HDRH + ROWH})`);
   }
-  // PROTOTYPE (issue #391): de baselinestrook is dikker; zonder accent vult hij de hele vrije strook,
+  // Issue #391: de baselinestrook is dikker; zonder accent vult hij de hele vrije strook,
   // met accent krijgt hij wat onder het accent overblijft. Beide uit `barLayout`.
   const alone = render(false, { baseline: true }).shapes.find(sh => sh.fill === '#6B7280' && sh.h < 10);
   ok(!!alone && Math.abs(alone.h - barLayout(ROWH).baselineHeight) < 1e-9, 'baseline-hoogte zonder accent volgt barLayout');

@@ -183,7 +183,7 @@ export interface GanttPalette {
   milestone: string;
   float: string;
   baseline: string;
-  /** PROTOTYPE (issue #391): kleuren van vergelijkingsbaseline 1 en 2 (onder de actieve, grijze). */
+  /** Issue #391: kleuren van vergelijkingsbaseline 1 en 2 (naast de actieve, grijze, in dezelfde strook). */
   baselineCompare1: string;
   baselineCompare2: string;
   selected: string;
@@ -350,6 +350,9 @@ export const PRINT_PALETTE = {
   normalDark: '#1d4ed8',
   milestone: '#7C3AED',
   baseline: '#6B7280',
+  // Vergelijkingsbaselines (issue #391): de tinten van het lichte schermthema; papier is wit.
+  baselineCompare1: '#0891B2',
+  baselineCompare2: '#C026D3',
   uncategorized: BRAND.ghost, // '#94A3B8' — ontbrekende categoriewaarde
   float: '#10B981',
   dependency: '#9CA3AF',
