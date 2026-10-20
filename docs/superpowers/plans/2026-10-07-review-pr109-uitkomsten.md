@@ -1803,3 +1803,8 @@ Testversie (release-check, poort 3049) is NIET bijgewerkt met de PR's van vandaa
   (`parseableHourSuffix`); CSV-export blijft taalneutraal "+2u". Orkestrator merget main c5adb94f7 erin (e4233d914,
   geen conflict; typecheck, verify:i18n, verify:docs, check-uren-zonder-spatie, check-translate-docs exit 0).
   Review (GPT-6.1-Sol, xhigh) gestart. Korte check eigenaar volgt na #362.
+- **#362 delta-review 66fb22292 → 37c6b1731 (GPT-6.1-Sol, xhigh): JA**, geen BLOKKEERT. Splitterfix klopt (zelfde
+  schuifbereik), variant C geeft 8 px in Chromium en WebKitGTK, merge-tree schoon tegen c5adb94f7. VERVOLG (in PR):
+  Firefox 153 meldt `selector(::-webkit-scrollbar)` als ondersteund ⇒ `@supports not`-tak geldt daar niet;
+  omrekening blijft na vensterverkleining tijdelijk ~66 kaartpx achter bij geschaalde spacers (bestond al);
+  secundaire assertie in `gantt-hscroll-splitter.spec.ts:98` te zwak. Wacht op blik eigenaar.
