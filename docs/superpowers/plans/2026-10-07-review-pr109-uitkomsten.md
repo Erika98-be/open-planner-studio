@@ -1748,3 +1748,8 @@ Testversie (release-check, poort 3049) is NIET bijgewerkt met de PR's van vandaa
   (`TaskAssignmentsSection.tsx` ⚠-blok, `ref-tabelkolommen.md`) zoals in de testversie opgelost. Daarna merge-review
   (GPT-6.1-Sol), CI, merge.
 - **#374**: worker (Opus 5.5, medium) maakt de merge met main 4c747d73a af en deelt `phaseQuestionOutdated` in.
+- **Punt 8 (i-tekst *Standaard werkdag*, uit review #366): eigenaar 2026-10-20 optie 2.** Oranje blok onder
+  *Standaard werkdag* als de opgeslagen `hoursPerDay` (uit P6/MSP) afwijkt van de berekende dagsom: "Het bestand heeft
+  een eigen werkdag van 8 u. Die gaat mee bij export naar MS Project en P6. …". Gedrag ongewijzigd (besluit 2026-10-15
+  blijft). Alternatieven: 1 zo laten, 3 één zin in de tooltip. Worker (Opus 5.5, medium) bouwt op
+  `claude/standaard-werkdag-blok`; daarna review (GPT-6.1-Sol), testversie, checkstap.
