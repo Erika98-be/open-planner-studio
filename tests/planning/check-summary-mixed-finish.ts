@@ -28,7 +28,7 @@ function eq(label: string, actual: unknown, expected: unknown): void {
 }
 function near(label: string, actual: number | undefined, expected: number | undefined, tol = 0.01): void {
   checks++;
-  if (actual === undefined || expected === undefined || Math.abs(actual - expected) > tol) {
+  if (actual === undefined || expected === undefined || !(Math.abs(actual - expected) <= tol)) {
     diffs.push(`${label}: kreeg ${actual?.toFixed(2)}, verwacht ${expected?.toFixed(2)}`);
   }
 }

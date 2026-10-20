@@ -39,7 +39,7 @@ function nativeDuration(task: Task): number {
     : task.time.scheduleDuration;
 }
 import type { Sequence } from '@/types/sequence';
-import type { WorkCalendar } from '@/types/calendar';
+import { isHourModeCalendar, type WorkCalendar } from '@/types/calendar';
 import type { Baseline } from '@/types/baseline';
 import { computeHistogramReport, histogramWindows } from '@/engine/scheduler/ResourceLoad';
 import { computeVariance, type VarianceRow } from '@/engine/variance';
@@ -204,7 +204,7 @@ function calendarSummary(cal: WorkCalendar) {
     workDays: cal.workDays,
     hoursPerDay: cal.hoursPerDay,
     holidayRanges: cal.holidays.length,
-    isHourCalendar: !!cal.workTime,
+    isHourCalendar: isHourModeCalendar(cal),
   };
 }
 
@@ -1053,7 +1053,7 @@ export const readTools: McpToolDef[] = [
     name: 'planner_get_project_overview',
     description:
       'Complete WBS tree, compact: per task `id` (the stable Task.id — exactly what every mutating tool ' +
-      'needs), wbs, name, dur (working days), start/end (early dates), prog (0-100), crit, ms (milestone), ' +
+      'needs), wbs, name, dur (in the task\'s own unit) with durUnit (`days` | `hours`), start/end (early dates), prog (0-100), crit, ms (milestone), ' +
       'and on nested rows depth (2+; root = 1), parent (wbs), parentId (stable; use this and not `parent` to ' +
       'reconstruct the tree — WBS codes can be free text or duplicated) and outgoing relationships in short ' +
       'notation "→2.3 FS+2d #seq-7", where the part after `#` is the SEQUENCE ID (pass that straight to ' +

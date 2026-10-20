@@ -24,7 +24,16 @@ De eerste regel van de melding noemt het aantal geopende tabbladen. Daaronder st
 - *1 externe koppeling bewaard.* Een relatie tussen twee projecten. De app bewaart hem als brongegeven, maar maakt er geen relatie van in je planning.
 - *12 taken tonen de datums zoals Primavera ze opsloeg (niet herberekend).* Het aantal taken waarvan je in de weergave *Datums zoals opgeslagen* de datums van Primavera ziet: alle taken waarvan het bestand datums vastlegde, niet alleen de afwijkende.
 
-De overige regels zijn diagnose van het lezen zelf: het aantal geziene projecten, een overgeslagen leeg project, een genegeerde losse baselineverwijzing, een andere tekencodering dan gewone UTF-8 (de melding noemt welke: bij Arabische, Cyrillische of Griekse tekst kiest de app de passende Windows-codetabel, anders Windows-1252), activiteiten zonder geplande start (die beginnen op de statusdatum of de projectstart uit het bestand) en tellers voor bevindingen in de tabellen, de kalenders en de getallen, voor onbekende veldwaarden en voor P6-planningsinstellingen die de app door een veilige keuze verving. Ze vragen niets van je. *Lees meer* opent de Help over het openen van Primavera-bestanden.
+De overige regels zijn diagnose van het lezen zelf. Ze vragen niets van je:
+
+- het aantal geziene projecten;
+- een overgeslagen leeg project;
+- een genegeerde losse baselineverwijzing;
+- een andere tekencodering dan gewone UTF-8 (de melding noemt welke: bij Arabische, Cyrillische of Griekse tekst kiest de app de passende Windows-codetabel, anders Windows-1252);
+- activiteiten zonder geplande start (die beginnen op de statusdatum of de projectstart uit het bestand);
+- tellers voor bevindingen in de tabellen, de kalenders en de getallen, voor onbekende veldwaarden en voor P6-planningsinstellingen die de app door een veilige keuze verving.
+
+*Lees meer* opent de Help over het openen van Primavera-bestanden.
 
 ## Valkuilen en wat de app dan doet
 
@@ -36,13 +45,13 @@ De overige regels zijn diagnose van het lezen zelf: het aantal geziene projecten
 
 **Een export naar CSV, MS Project XML of P6 XML verliest gegevens.** De app waarschuwt: *Bij export naar CSV gaat XER-broninformatie verloren.* IFC verliest niets.
 
-**Een vrije zaterdag of zondag die niet in het bestand staat.** Sommige P6-exports schuiven een vrije weekenddag in een blok van meer vrije dagen naar de vrijdag ervoor of de maandag erna. Werkt de kalender op zaterdag of zondag, dan zou die dag zo ten onrechte een werkdag worden. Ziet de app dat patroon in een blok van minstens drie vrije dagen, dan maakt ze die weekenddag alsnog vrij. De dag heet in de kalender *Calendar exception (weekend reconstruction)* en telt mee in de regel *N kalenderbevindingen.* van de melding. Op een kalender die in het weekend niet werkt, verandert er niets.
+**Een vrije zaterdag of zondag die niet in het bestand staat.** De app kan zo'n weekenddag zelf vrij maken. De dag heet dan *Calendar exception (weekend reconstruction)* in de kalender. Het patroon staat in [Import- en exportformaten](docs://ref-import-exportformaten).
 
-**Speling tot het projecteinde, zonder einddatum.** Staat in P6 de optie aan om de speling tot het projecteinde te rekenen, maar staat in het bestand geen einddatum voor het project en geen geplande einddatum voor een activiteit? Dan zet de app de optie *Speling rekenen tot de einddatum van het project* uit. De late datums rekent ze dan terug vanaf het laatste vroege einde. Dat telt mee in de regel *N P6-planningsinstellingen met veilige terugval.*
+**Speling tot het projecteinde, zonder einddatum.** Mist het bestand een einddatum, dan zet de app de optie *Speling rekenen tot de einddatum van het project* uit. Dat staat in de regel *N P6-planningsinstellingen met veilige terugval.* Details staan in [Import- en exportformaten](docs://ref-import-exportformaten).
 
-**Voltooide activiteiten op de statusdatum.** Sommige bestanden leggen voor een voltooide activiteit niet haar werkelijke datums vast, maar een venster op de statusdatum. In de weergave *Datums zoals opgeslagen* staat zo'n activiteit dan als een smalle balk op de statusdatum. Komt ze na herberekenen op een andere plek, dan telt ze mee in het aantal taken dat de strook noemt. De conventie *Voltooide taak in het statusdatumvenster* rekent zo'n venster na, en alleen met die conventie krijgt een voltooide taak via de reken-optie *Voltooide taak: late datums vanaf de statusdatum* een echte speling. Deze conventie is een benadering: de app zag dit gedrag alleen in P3-uitvoer, en Primavera bevestigt het nergens. Daarom staat ze in elk ingebouwd profiel uit, ook onder *Primavera P6*. Je zet haar aan in het blok *Rekenprofiel en reken-opties*; het project krijgt dan een eigen profiel. Zie [Rekenopties en conventies](docs://ref-rekenopties-en-conventies).
+**Voltooide activiteiten op de statusdatum.** Een voltooide activiteit kan in de weergave *Datums zoals opgeslagen* als smalle balk op de statusdatum staan. Dat is geen fout van je bestand. De uitleg en de bijbehorende conventie staan in [Import- en exportformaten](docs://ref-import-exportformaten).
 
-**Getallen met een komma als decimaalteken.** P6 legt het decimaalteken en het scheidingsteken voor duizendtallen vast in de tabel `CURRTYPE`. De app leest die tekens voordat ze duren, werk en speling omzet. Ontbreekt die informatie, dan gebruikt de app een punt als decimaalteken. Staan er dan toch getallen met een decimale komma in het bestand, dan opent de app niets. Zo opent er nooit een planning met verkeerd gelezen getallen.
+**Getallen met een komma als decimaalteken.** Kan de app het decimaalteken niet betrouwbaar vaststellen, dan opent ze het bestand niet. Zo opent er nooit een planning met verkeerd gelezen getallen. Vraag de afzender dan een nieuwe export.
 
 **Een bestand dat de app niet kan lezen.** Je krijgt een foutmelding, met de reden erbij. Enkele voorbeelden:
 

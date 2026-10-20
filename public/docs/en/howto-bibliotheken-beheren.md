@@ -72,7 +72,7 @@ The checkbox only works for the IFC export, not for the other export formats. Yo
 
 **Two planners, two libraries.** The app does not synchronize libraries between computers. The import window always shows a warning about it: *Note: libraries are not synchronized between machines. If two planners work with the same resource library, the libraries may diverge. If your organization shares crews across operating companies, deliberately choose one shared pool.*
 
-**Replacing overwrites everything.** Everything you had in the chosen library is gone, and a library change falls outside *Undo*. Export first if you are unsure.
+**Replacing overwrites everything.** Everything you had in the chosen library is gone, and a library change falls outside *Undo*. Export first if you are unsure. Your projects keep their copies. The app updates copies that still exist in the new file. Copies that are no longer in it get the marking *no longer in the library* and keep working. If a copy differs, the window *Link resource library* opens (see [Using the resource library](docs://howto-resourcebibliotheek-gebruiken)).
 
 **Deleting a calendar from the list happens immediately.** The app does not ask for confirmation, whereas deleting a resource does. That looks like a shortcoming. Library changes fall outside *Undo*.
 

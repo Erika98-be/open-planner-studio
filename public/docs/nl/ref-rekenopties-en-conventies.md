@@ -86,7 +86,7 @@ Deze conventies staan in elk ingebouwd profiel uit, ook onder Primavera P6. Alle
 
 **Eindmijlpaal als grensvenster** — Een eindmijlpaal mag op twee aangrenzende kalendergrenzen staan: de vroege start aan het begin van een werkblok en het vroege einde aan het einde van het vorige blok. Aan de late kant krijgt een eindmijlpaal zonder opvolger, maar met voorgangers, zijn vroege datums als late datums en legt zo druk terug op zijn keten, tenzij *Speling rekenen tot de einddatum van het project* aan staat. Zijn vrije speling blijft de ruimte tot het projecteinde. Voorwaarden: Het grensvenster (vroege start en vroeg einde op twee grenzen) geldt alleen als het bestand de mijlpaal zo plande: gepland einde vóór geplande start. De druk op de keten geldt voor elke eindmijlpaal zonder opvolger. Alleen gezien in P3-uitvoer; geen effect op P6-doorgerekende bestanden. Standaard: uit in elk ingebouwd profiel.
 
-**Voltooide taak in het statusdatumvenster** — Een voltooide taak krijgt als vroege datums het venster van de statusdatum, en dat venster telt mee voor het projecteinde en de speling. Voorwaarden: Alleen met een statusdatum, voor voltooide taken uit een `.xer`-bestand met voortgangstype duur en duurtype *Vaste duur en werk* (in P6: Fixed Duration & Units); geen mijlpalen. Vereist *Lopende taak: vroege start = begin van het restwerk*. Alleen gezien in P3-uitvoer. Standaard: uit in elk ingebouwd profiel.
+**Voltooide taak in het statusdatumvenster** — Een voltooide taak krijgt als vroege datums het venster van de statusdatum, en dat venster telt mee voor het projecteinde en de speling. Voorwaarden: Alleen met een statusdatum, voor voltooide taken uit een `.xer`-bestand met voortgangstype duur en taaktype *Vaste duur en werk* (in P6: Fixed Duration & Units); geen mijlpalen. Vereist *Lopende taak: vroege start = begin van het restwerk*. Alleen gezien in P3-uitvoer. Standaard: uit in elk ingebouwd profiel.
 
 **Voltooide LOE via het werkelijke einde** — Een voltooide LOE-activiteit met alleen een start-startingang en zonder opvolger volgt de route via haar werkelijke einde in plaats van de gewone hammockroute. Voorwaarden: Alleen voor taken uit een `.xer`-bestand; vereist *Lopende taak: vroege start = begin van het restwerk*, *Werkelijke datums behouden in de terugwaartse berekening* en *Werkelijke datums exact overnemen*. Alleen gezien in P3-uitvoer. Standaard: uit in elk ingebouwd profiel.
 
@@ -131,6 +131,7 @@ Deze opties komen uit een `.xer`-bestand van Primavera P6 en zijn alleen te leze
 ## Zie ook
 
 - [Rekenprofielen en conventies](docs://uitleg-rekenprofielen): waarom P6 en MS Project anders rekenen en hoe een profiel werkt.
+- [Een rekenprofiel kiezen of samenstellen](docs://howto-rekenprofiel-kiezen): een profiel kiezen, wisselen of zelf samenstellen.
 - [Datums zoals opgeslagen](docs://uitleg-datums-zoals-opgeslagen): waarom een geïmporteerde planning andere datums kan tonen dan je pakket.
 - [Kritiek pad en speling](docs://uitleg-kritiek-pad): wat kritiek, totale en vrije speling betekenen.
 - [Relaties en lag](docs://uitleg-relaties): lag en de kalender waarin hij telt.

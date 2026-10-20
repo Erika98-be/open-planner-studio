@@ -10,7 +10,7 @@ import { assignmentCurveState, contouredAssignmentIds } from '@/engine/contour/c
 import { ContourDialog } from '@/components/dialogs/ContourDialog';
 import { matchContoursToAssignments } from '@/engine/contour/contourEngine';
 import { effectiveWorkRule, remainingMinutesOf, workRuleApplies } from '@/engine/work/workRuleApply';
-import { assignmentWorkDeviation } from '@/engine/work/assignmentWorkDeviation';
+import { assignmentWorkDeviation, workDeviationEffectKey } from '@/engine/work/assignmentWorkDeviation';
 import { ruleProtectsWork } from '@/engine/work/workTriangle';
 import { taskTypesUnlocked } from '@/state/taskTypesVisibility';
 import { taskCalendarHoursPerDay } from '@/utils/taskDefaults';
@@ -226,7 +226,11 @@ export function TaskAssignmentsSection({ taskId }: { taskId: string }) {
                           <span
                             className="shrink-0 inline-flex items-center"
                             style={{ color: 'var(--theme-warning-text)' }}
-                            title={t('properties.assignments.workDeviatesHint', deviation)}
+                            title={t('properties.assignments.workDeviatesHint', {
+                              ...deviation,
+                              // Slotzin per regel (besluit V10): dezelfde keuze als de tabel en de duurbewerking.
+                              durationEffect: t(workDeviationEffectKey(task, defaultWorkRule)),
+                            })}
                             aria-label={t('properties.assignments.workDeviates')}
                             role="img"
                             data-ops-assignment-work-deviates={`${deviation.stored}/${deviation.derived}`}
