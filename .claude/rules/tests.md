@@ -30,4 +30,15 @@ dagen als `playwright-*`-artefact. Testhandelingen lopen via echte browser-event
 `window.__OPS__`-brug mag deterministische fixtures zetten en domeinstate of Canvasgeometrie lezen,
 maar mag de geteste gebruikershandeling niet vervangen.
 
+**Een nieuwe browsertest breidt eerst een bestaand scenario uit** (besluit eigenaar, 2026-10-20). Een
+scenario is een spec die een werkroute van een planner doorloopt en onderweg controleert, zoals "resource
+toevoegen → naam weigeren → tarief zetten → kleur kiezen → Ctrl+Z". Zoek vóór je een spec-bestand
+aanmaakt een spec die dezelfde route al doorloopt (zelfde paneel, dialoog of raster) en voeg daar je stap
+en je controle aan toe. Een nieuw spec-bestand alleen voor een nieuwe werkroute. Reden: elke browsertest
+start de app opnieuw (2–8 s), en een los bestand per review-opmerking liet de suite groeien tot 126 specs
+en 31 minuten rekentijd, met meerdere specs voor dezelfde route. Randgevallen en varianten (veel
+invoerwaarden) horen in `tests/planning/` zonder browser; in de browser alleen wat alleen een browser
+ziet: toetsen, focus, klikken, slepen en de koppeling tussen UI en store. Bron: testaudit en review van
+2026-10-20.
+
 Draai de planningssuite na elke wijziging aan planningscode. Tussenregels als "(alles groen)" of "TZ …: groen" gaan elk alleen over hun eigen deel — ze verschijnen ook als de run als geheel rood is. De **laatste regel** (`EINDOORDEEL planningssuite: GROEN (exit 0)` of `… ROOD …`) volgt wél altijd de exitcode; de exitcode blijft het oordeel. Een nieuwe `tests/planning/check-*.ts` draait vanzelf mee in de volledige run, inclusief de tijdzone-matrix — een eigen `bundle_check`-regel in `run.sh` is alleen nodig voor een check met een omgevingsvariabele of zonder tijdzone-matrix. Een `grep` op faalregels is een handig extraatje maar **geen poort**: `grep '^XX'` werkt alleen voor `tests/planning/`. De bibliotheeksuite print zijn faalregels **ingesprongen** (`console.log(\`   XX ${msg}\`)` in `tests/library/check-*.ts`), dus `grep -c '^XX'` geeft daar 0 terwijl de suite rood staat — gemeten 2026-07-28. Gebruik `grep -c 'XX '` als je toch wilt tellen, en laat de exitcode altijd het oordeel vellen. `npm run verify` is de poort — één definitie in `package.json`. De release- en deploy-gate draaien hem in één keer; CI draait precies dezelfde stappen, verdeeld over parallelle jobs door `scripts/verify-parts.mjs` (dat de stappen uit die ene definitie leest), dus wat lokaal groen is, is ook in CI groen. Zie `tests/planning/README.md` voor het toevoegen van cases.
