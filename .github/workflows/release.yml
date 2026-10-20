@@ -288,7 +288,8 @@ jobs:
       # route als open-pdf-studio. Notarisatie via een App Store Connect API-key:
       # Apple-ID + app-wachtwoord gaf daar een blijvende HTTP 500 op de notary-API.
       # tauri-action importeert het certificaat zelf in een tijdelijke keychain;
-      # alleen de .p8-sleutel moet als bestand klaarstaan.
+      # alleen de .p8-sleutel moet als bestand klaarstaan. Ook de dmg-notarisatie
+      # na de build gebruikt dit bestand.
       - name: Write App Store Connect API key (macOS)
         if: matrix.platform == 'macos-latest'
         env:
@@ -314,11 +315,50 @@ jobs:
           releaseId: ${{ needs.create-release.outputs.release_id }}
           includeUpdaterJson: true
 
-      # Faalt de release als de dmg niet gesigneerd, niet genotariseerd of niet
-      # door Gatekeeper geaccepteerd is. De draft blijft dan staan (niet gepubliceerd).
-      - name: Verify macOS signature and notarization
+      # tauri-action notariseert en stapelt alleen de app; de dmg eromheen wordt
+      # alleen gesigneerd (en is hierboven al zo naar de draft geüpload). Daarom
+      # notariseren en stapelen we de dmg zelf, met dezelfde API-key.
+      - name: Notarize and staple dmg (macOS)
+        if: matrix.platform == 'macos-latest'
+        env:
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+          APPLE_API_KEY_PATH: ${{ runner.temp }}/apple-api-key.p8
+        run: bash scripts/macos-notarize-dmg.sh src-tauri/target/universal-apple-darwin/release/bundle/dmg
+
+      # Faalt de release als de dmg of de app niet gesigneerd, niet genotariseerd of
+      # niet door Gatekeeper geaccepteerd is. De draft blijft dan staan (niet
+      # gepubliceerd): build-windows en publish-release hangen via `needs` aan deze job.
+      - name: Verify macOS signature and notarization (dmg and app)
         if: matrix.platform == 'macos-latest'
         run: bash scripts/macos-verify-dmg.sh src-tauri/target/universal-apple-darwin/release/bundle/dmg
+
+      # Vervang de dmg die tauri-action vóór de notarisatie uploadde door precies
+      # het gecontroleerde bestand. GitHub maakt van spaties in een assetnaam
+      # punten; we uploaden onder die puntnaam, zodat --clobber het bestaande
+      # asset vervangt in plaats van er een tweede naast te zetten. Daarna eisen
+      # we één dmg op de release met dezelfde sha256 als het lokale bestand.
+      - name: Replace dmg on the draft with the notarized dmg (macOS)
+        if: matrix.platform == 'macos-latest'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ needs.create-release.outputs.version }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          DMG_PATH="$(find src-tauri/target/universal-apple-darwin/release/bundle/dmg -name '*.dmg' -print -quit)"
+          test -n "$DMG_PATH"
+          ASSET_NAME="$(basename "$DMG_PATH" | tr ' ' '.')"
+          mkdir -p "$RUNNER_TEMP/dmg-upload" "$RUNNER_TEMP/dmg-check"
+          cp "$DMG_PATH" "$RUNNER_TEMP/dmg-upload/$ASSET_NAME"
+          gh release upload "$VERSION" "$RUNNER_TEMP/dmg-upload/$ASSET_NAME" --clobber --repo "$REPO"
+          DMG_COUNT="$(gh release view "$VERSION" --repo "$REPO" --json assets --jq '[.assets[] | select(.name | endswith(".dmg"))] | length')"
+          test "$DMG_COUNT" = 1 || { echo "::error::verwacht 1 dmg op de release, gevonden: $DMG_COUNT" >&2; exit 1; }
+          gh release download "$VERSION" --pattern "$ASSET_NAME" --dir "$RUNNER_TEMP/dmg-check" --repo "$REPO"
+          LOCAL_SHA="$(shasum -a 256 "$DMG_PATH" | cut -d' ' -f1)"
+          RELEASE_SHA="$(shasum -a 256 "$RUNNER_TEMP/dmg-check/$ASSET_NAME" | cut -d' ' -f1)"
+          echo "sha256 lokaal: $LOCAL_SHA, op de release: $RELEASE_SHA ($ASSET_NAME)"
+          test "$LOCAL_SHA" = "$RELEASE_SHA"
 
   build-windows:
     needs: [create-release, build-linux-mac]
