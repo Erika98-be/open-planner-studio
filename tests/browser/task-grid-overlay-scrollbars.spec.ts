@@ -457,6 +457,9 @@ test('een verouderd scroll-event van balk of store zet het raster niet terug', a
 // terwijl het scroll-event van het raster (van 800) nog onderweg is. Prop 500 is dan een echte sprong
 // terug, geen echo van het raster: het raster moet terug naar 500. Een capture-listener op `window`
 // houdt de scroll-events van het raster zolang tegen, zoals WebKitGTK ze laat aflevert.
+// Beide assen: verticaal via `view.scrollY`, horizontaal via `taskGridSurfaces[…].scrollX` (elk met
+// een eigen `reportedRef`-reset in DataGridCore). Horizontaal met een smalle lijst, zodat de kolommen
+// genoeg schuifruimte hebben.
 test('een store-sprong heen en terug vóór het scroll-event van het raster eindigt op de laatste stand', async ({ page, ops: _ops }) => {
   await seedProject(page, Array.from({ length: 120 }, (_, index) => ({
     name: `Sprongrij ${index + 1}`,
@@ -464,42 +467,60 @@ test('een store-sprong heen en terug vóór het scroll-event van het raster eind
     finish: '2026-09-11',
     durationDays: 5,
   })));
+  await page.evaluate(() => window.__OPS__!.store.getState().setUI({ leftPanelWidth: 200 }));
   const core = page.locator('.gantt-task-grid .task-grid-core');
   await expect(page.locator('.gantt-task-grid [data-testid="task-grid-vscroll"]')).toBeVisible();
   const settle = () => page.evaluate(() => new Promise<void>(resolve => {
     requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(resolve, 50)));
   }));
-  const storeY = () => state(page).then(snapshot => snapshot.view.scrollY);
 
-  // Het raster meldt zelf 500 aan de store: dat is nu de gemelde stand.
-  await core.evaluate((node: HTMLElement) => { node.scrollTop = 500; });
-  await expect.poll(storeY).toBe(500);
-  await settle();
+  for (const axis of ['top', 'left'] as const) {
+    const domProp: 'scrollTop' | 'scrollLeft' = axis === 'top' ? 'scrollTop' : 'scrollLeft';
+    const storeValue = () => page.evaluate(a => {
+      const s = window.__OPS__!.store.getState();
+      return a === 'top' ? s.view.scrollY : s.taskGridSurfaces['gantt-task-grid'].scrollX;
+    }, axis);
+    const range = await core.evaluate((node: HTMLElement, a) => (a === 'top'
+      ? node.scrollHeight - node.clientHeight
+      : node.scrollWidth - node.clientWidth), axis);
+    expect(range, `schuifruimte ${axis}`).toBeGreaterThanOrEqual(60);
+    const near = Math.min(500, Math.round(range / 3));
+    const far = Math.min(800, Math.round((range * 2) / 3));
+    const domValue = () => core.evaluate((node: HTMLElement, p: 'scrollTop' | 'scrollLeft') => node[p], domProp);
+    const storeWrite = (value: number) => page.evaluate(([a, v]) => {
+      const s = window.__OPS__!.store.getState();
+      if (a === 'top') s.setScroll(s.view.scrollX, v);
+      else s.setTaskGridScrollX('gantt-task-grid', v);
+    }, [axis, value] as const);
 
-  await page.evaluate(() => {
-    const grid = document.querySelector<HTMLElement>('.gantt-task-grid .task-grid-core')!;
-    const win = window as unknown as { __jumpBlocker?: (event: Event) => void };
-    win.__jumpBlocker = event => { if (event.target === grid) event.stopImmediatePropagation(); };
-    window.addEventListener('scroll', win.__jumpBlocker, true);
-    const s = window.__OPS__!.store.getState();
-    s.setScroll(s.view.scrollX, 800);
-  });
-  await settle();
-  expect(await core.evaluate((node: HTMLElement) => node.scrollTop)).toBe(800);
-  await page.evaluate(() => {
-    const s = window.__OPS__!.store.getState();
-    s.setScroll(s.view.scrollX, 500);
-  });
-  await settle();
-  await page.evaluate(() => {
-    const grid = document.querySelector<HTMLElement>('.gantt-task-grid .task-grid-core')!;
-    const win = window as unknown as { __jumpBlocker?: (event: Event) => void };
-    window.removeEventListener('scroll', win.__jumpBlocker!, true);
-    grid.dispatchEvent(new Event('scroll'));
-  });
-  await settle();
-  expect(await core.evaluate((node: HTMLElement) => node.scrollTop)).toBe(500);
-  await expect.poll(storeY).toBe(500);
+    // Het raster meldt zelf `near` aan de store: dat is nu de gemelde stand.
+    await core.evaluate((node: HTMLElement, [p, v]: readonly ['scrollTop' | 'scrollLeft', number]) => {
+      node[p] = v;
+    }, [domProp, near] as const);
+    await expect.poll(storeValue).toBe(near);
+    await settle();
+
+    await page.evaluate(() => {
+      const grid = document.querySelector<HTMLElement>('.gantt-task-grid .task-grid-core')!;
+      const win = window as unknown as { __jumpBlocker?: (event: Event) => void };
+      win.__jumpBlocker = event => { if (event.target === grid) event.stopImmediatePropagation(); };
+      window.addEventListener('scroll', win.__jumpBlocker, true);
+    });
+    await storeWrite(far);
+    await settle();
+    expect(await domValue()).toBe(far);
+    await storeWrite(near);
+    await settle();
+    await page.evaluate(() => {
+      const grid = document.querySelector<HTMLElement>('.gantt-task-grid .task-grid-core')!;
+      const win = window as unknown as { __jumpBlocker?: (event: Event) => void };
+      window.removeEventListener('scroll', win.__jumpBlocker!, true);
+      grid.dispatchEvent(new Event('scroll'));
+    });
+    await settle();
+    expect(await domValue(), `raster ${axis}`).toBe(near);
+    await expect.poll(storeValue).toBe(near);
+  }
 });
 
 // Ctrl+End (review #362): de laatste rij eindigt boven de zwevende horizontale balk, niet eronder.
