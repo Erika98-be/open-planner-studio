@@ -1753,3 +1753,7 @@ Testversie (release-check, poort 3049) is NIET bijgewerkt met de PR's van vandaa
   een eigen werkdag van 8 u. Die gaat mee bij export naar MS Project en P6. …". Gedrag ongewijzigd (besluit 2026-10-15
   blijft). Alternatieven: 1 zo laten, 3 één zin in de tooltip. Worker (Opus 5.5, medium) bouwt op
   `claude/standaard-werkdag-blok`; daarna review (GPT-6.1-Sol), testversie, checkstap.
+- **#362: eigenaar 2026-10-20 optie 1 — mee in deze release** (tegen mijn advies optie 2, "na de release"). Gemeten:
+  main zat er NIET in via de aia-sessie (die deed alleen #380); kop 7bd4eae62, 125 commits achter main. Worker (Opus 5.5,
+  medium) merget main bd9205df3 erin; daarna review (GPT-6.1-Sol), hercheck eigenaar in de desktopapp (muiswiel +
+  touchpad) en keuze Shift+wiel boven de verticale balk.
