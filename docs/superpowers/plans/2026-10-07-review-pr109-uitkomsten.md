@@ -1834,3 +1834,9 @@ Testversie (release-check, poort 3049) is NIET bijgewerkt met de PR's van vandaa
   geen botsing met #381. merge-tree schoon met main e98b83e48 (#395, andere sessie) en met #400. VERVOLG: tooltip
   inzetveld "Eenh./dag" vs kolomkop "Inzet". Review (GPT-6.1-Sol, xhigh) gestart — #369 ronde 5 en #389 nooit eerder
   gereviewd.
+- **#400 fixronde CSV klaar** (93e95ac04): CSV-lag volgt app-taal via `writeCSV(lagHourSuffix)`; check 57 punten
+  (terugplakken + vaste `lagMinutes`), no-op weg, gidszin `ref-import-exportformaten.md`; mutanten rood. CI groen
+  behalve `verify (browser 3-4)`: `feedback-studio.spec.ts` "Maximum update depth exceeded" — zelfde fout als main.
+- **Main rood op e98b83e48** (#395 feedbackvenster, andere sessie, 10:52); main CI op 0c8d1aedc (#362) geannuleerd door
+  die push. Eigen CI van #395 (e54f9cdef, zonder #362) groen. Lokaal 2× 15 passed op zowel e98b83e48 als e54f9cdef ⇒
+  alleen in CI. Diagnose + fix-PR: expert (Opus 5.5, xhigh), branch `claude/fix-feedback-maxdepth`; rol #362 uitzoeken.
