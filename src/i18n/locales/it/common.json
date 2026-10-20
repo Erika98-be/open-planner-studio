@@ -83,6 +83,7 @@
     "mppLegacy": "Questo file .mpp utilizza un formato precedente (Project 2007 o versioni precedenti). Esportalo da MS Project come XML (File → Salva con nome → XML) e apri quel file.",
     "mppEncrypted": "Questo file .mpp è protetto da password. Esportalo da MS Project come XML (File → Salva con nome → XML) e apri quel file.",
     "saveFailed": "Salvataggio non riuscito",
+    "ambiguousThousands": "«{{text}}» è ambiguo: numero decimale o migliaia? Scrivi i decimali con «{{separator}}» (1{{separator}}5) e le migliaia senza separatore (1500). Il valore non è stato modificato.",
     "siteSaveConflict": "Non salvato: '{{name}}' è stato modificato nel frattempo sul sito da qualcun altro. Le tue modifiche sono ancora nell'app. Scegli Salva come per conservarle come nuovo file.",
     "siteFileGone": "'{{name}}' non è più sul sito. Il file è stato rimosso da Recenti.",
     "savedViaDownload": "Salvato come download: '{{name}}' si trova ora nella cartella dei download. Questo ambiente non consente all'applicazione di scrivere direttamente nella posizione scelta.",

@@ -11,6 +11,7 @@ import { markDateMutation } from '../scheduleStale';
 import { markDocumentEdited } from '@/state/documentEdited';
 import { emitExtensionEvent, type HostEventName } from '@/services/extensionEvents';
 import type { RecomputedRemainingWork } from '@/engine/work/workRuleApply';
+import { createPendingTextEdits, type PendingTextEdits } from '../pendingTextEdits';
 
 /** Bestaande publieke naam; de grens wordt per session-historyscope afgedwongen. */
 export const MAX_UNDO = MAX_SESSION_HISTORY_EVENTS_PER_SCOPE;
@@ -24,6 +25,10 @@ export interface StoreRuntimeOptions {
    *  scratch-instantie (`scratchDocument.ts`): extensies zijn app-globaal geregistreerd en zouden
    *  anders cijfers krijgen van een document waar de gebruiker niet naar kijkt. Default `true`. */
   emitHostEvents?: boolean;
+  /** Register van open tekstinvoer van de UI die bij DEZE context hoort (`pendingTextEdits.ts`).
+   *  Default een eigen, leeg register: een scratch- of testcontext rondt nooit de invoer van de
+   *  zichtbare app af. Alleen `appStoreContext` krijgt `mountedPendingTextEdits`. */
+  pendingTextEdits?: PendingTextEdits;
 }
 
 interface ActiveMcpLease extends McpTransactionLease {
@@ -68,6 +73,9 @@ export interface StoreRuntime {
     label?: string,
   ): SessionHistoryEvent | null;
   resetUndoCoalescing(): void;
+  /** Rond open tekstinvoer van deze context af (commit, dan de eigen rekenblokkade vrij). Elke
+   *  actie die de actieve documentpayload vastlegt of vervangt, roept dit EERST aan. */
+  finishPendingTextEdits(): void;
   /**
    * Open een bewerksessie (de taakdialoog). Zolang hij open staat krijgt elk
    * event dat via de interactieve route (`finishUndoable`, dus buiten batch en MCP-lease) ontstaat
@@ -151,6 +159,7 @@ export function snapshotsEqual(left: Snapshot, right: Snapshot): boolean {
  * pending producers, coalescing, batchdiepte en MCP-leases blijven in deze contextclosure.
  */
 export function createStoreRuntime(opts?: StoreRuntimeOptions): StoreRuntime {
+  const pendingTextEdits = opts?.pendingTextEdits ?? createPendingTextEdits();
   const pendingByDraft = new WeakMap<object, PendingDocumentMutation>();
   let coalesce: CoalesceMarker | null = null;
   let batchDepth = 0;
@@ -294,6 +303,9 @@ export function createStoreRuntime(opts?: StoreRuntimeOptions): StoreRuntime {
       return recordDocumentDataHistoryDelta(state, label, documentId, before, after);
     },
 
+    finishPendingTextEdits() {
+      pendingTextEdits.finish();
+    },
     resetUndoCoalescing() {
       coalesce = null;
     },

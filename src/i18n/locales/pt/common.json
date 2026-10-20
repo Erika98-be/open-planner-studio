@@ -83,6 +83,7 @@
     "mppLegacy": "Este ficheiro .mpp usa um formato antigo (Project 2007 ou anterior). Exporte-o no MS Project como XML (Ficheiro → Guardar como → XML) e abra esse ficheiro.",
     "mppEncrypted": "Este ficheiro .mpp está protegido por senha. Exporte-o no MS Project como XML (Ficheiro → Guardar como → XML) e abra esse ficheiro.",
     "saveFailed": "Falha ao salvar",
+    "ambiguousThousands": "\"{{text}}\" é ambíguo: número decimal ou milhares? Escreva decimais com \"{{separator}}\" (1{{separator}}5) e milhares sem separador (1500). O valor não foi alterado.",
     "siteSaveConflict": "Não guardado: '{{name}}' foi entretanto alterado no site por outra pessoa. As suas alterações continuam na aplicação. Escolha Guardar como para as manter num novo ficheiro.",
     "siteFileGone": "'{{name}}' já não está no site. O ficheiro foi removido de Recentes.",
     "savedViaDownload": "Guardado como transferência: '{{name}}' está agora na sua pasta de transferências. Este ambiente não permite que a aplicação escreva diretamente no local escolhido.",

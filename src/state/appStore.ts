@@ -25,6 +25,7 @@ import {
 } from './gridTransaction';
 import { createStoreRuntime, type StoreRuntime, type StoreRuntimeOptions } from './runtime/storeRuntime';
 import { bindScratchDocumentContextFactory } from './runtime/scratchDocument';
+import { mountedPendingTextEdits } from './pendingTextEdits';
 
 // Consumenten blijven ExportFormat uit '@/state/appStore' importeren.
 export type { ExportFormat } from './slices/fileSlice';
@@ -109,7 +110,7 @@ export function createAppStore(): AppStore {
 }
 
 /** De gemounte productinterface blijft exact één appcontext gebruiken. */
-export const appStoreContext = createAppStoreContext();
+export const appStoreContext = createAppStoreContext({ pendingTextEdits: mountedPendingTextEdits });
 export const useAppStore = appStoreContext.store;
 bindDefaultGridTransactionStore(useAppStore.getState, useAppStore.setState);
 // De headless scratch-instantie (`runtime/scratchDocument.ts`) bouwt eigen, wegwerpbare contexten.

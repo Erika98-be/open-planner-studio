@@ -165,7 +165,7 @@ const REFUSAL_KEYS = [
   'startBlockedByConstraint', 'startBlockedByConstraintNoDate', 'startBlockedByConstraintMany',
   'dragStartIsActual', 'dragDatesAreActual', 'milestoneRefusedAssignments', 'milestoneRefusedSummary',
   'phaseRefusedNoAssignableChild', 'phaseRefusedDuplicateResource', 'taskEditRevertBlocked', 'pasteSkippedReadOnly',
-  'relationsSkippedOnInsert', 'schedulingTemplateLimit', 'phaseQuestionOutdated',
+  'relationsSkippedOnInsert', 'schedulingTemplateLimit', 'phaseQuestionOutdated', 'ambiguousThousands',
 ];
 const NOT_A_REFUSAL: Record<string, string> = {
   extHelpProjectOpenFailed: 'storing (bestand niet te openen), echte fout',
