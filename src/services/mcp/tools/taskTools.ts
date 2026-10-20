@@ -467,7 +467,7 @@ const updateTasks: BatchStepTool = {
     'and the percentage adjusts (10 d at 40% → 12 d ⇒ 8 d left, 33%); the result reports those tasks in ' +
     '`progressAdjusted` (completion in percent, remaining in the task\'s own unit). A duration shorter than ' +
     'the work done is softly refused per item. On every duration change (started or not) the remaining ' +
-    'duration follows and the assignments follow the task\'s rule, like P6: under a rule where work follows ' +
+    'duration follows and the assignments follow the task type (`workRule`), like P6: under a task type where work follows ' +
     'the duration, remaining work = units × new remaining duration, also when the stored remaining work came ' +
     'from the file and differed; such overwritten values are listed in the envelope field ' +
     '`remainingWorkRecomputed` (hours before/after) — report them to the user. Lever tip: hypothetical overrun = duration or SNET constraint ' +
