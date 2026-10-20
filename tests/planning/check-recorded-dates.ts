@@ -23,6 +23,7 @@ import {
   type RecordedTime,
 } from '@/engine/scheduler/recordedDates';
 import { createDefaultCalendar } from '@/engine/calendar/defaultCalendar';
+import { createDefaultTaskTime } from '@/utils/taskDefaults';
 import type { ImportResult } from '@/services/importTypes';
 import type { Task } from '@/types/task';
 import { createAppStoreContext, useAppStore } from '@/state/appStore';
@@ -383,6 +384,64 @@ const infoDeadline = captureRecordedDates(
 );
 const recDeadline = cpmResultFromRecorded(infoDeadline.times, [overDeadline, binnenDeadline, opDeadline], cal);
 eq('4a finish voorbij deadline ⇒ gemeld, binnen/op de deadline niet', recDeadline.missedDeadlineTaskIds, ['a']);
+
+// ── (4b) Deadline zonder tijd in uur-modus: dezelfde grens na berekenen én in de modus ─────────
+// Review PR #402, punt 3. De solver leest een deadline zonder tijd als het einde van de werkdag
+// (`deadlineBound.ts`, knownbugs 119 van het ontwerp "alleen uren"). De reconstructie vergeleek
+// strings (`'2026-07-06T16:00' > '2026-07-06'`) en meldde dezelfde taak A als gemist zodra een
+// afwijkende vastlegging van een ANDERE taak (B) de opgeslagen-datumsmodus aanzette. Route: de
+// echte `applyLoadedProject` met een eigen IFC en een bron-orakel (`recordedTimesOrigin: 'xer'`).
+{
+  const band = [{ start: 480, end: 960 }];
+  S().newProject();
+  const h8 = {
+    ...S().calendar, workDays: [1, 2, 3, 4, 5], holidays: [],
+    workTime: { byWeekday: { 1: band, 2: band, 3: band, 4: band, 5: band, 6: [], 7: [] } },
+  };
+  S().setCalendar(h8);
+  const urentaak = () => {
+    const time = createDefaultTaskTime('2026-07-06', 1, 'hours');
+    time.durationMinutes = 480;
+    return time;
+  };
+  S().addTask({ name: 'A', time: urentaak(), deadline: '2026-07-06' });
+  S().addTask({ name: 'B', time: urentaak(), deadline: '2026-07-06' });
+  S().runCPM();
+  const naam = (ids: string[] | undefined) =>
+    (ids ?? []).map((id) => S().tasks.find((t) => t.id === id)?.name).sort();
+  eq('4b na berekenen: A en B eindigen ma 16:00 op de deadline-dag ⇒ niet gemist',
+    naam(S().cpmResult?.missedDeadlineTaskIds), []);
+
+  const parsed = readIFC(writeIFC(buildWriteIFCInput(S())));
+  const times = captureRecordedDates(parsed.tasks, parsed.recordedFields).times;
+  const idB = parsed.tasks.find((t) => t.name === 'B')!.id;
+  times[idB] = { ...times[idB], start: '2026-07-07T08:00', finish: '2026-07-07T16:00' };
+  S().newProject();
+  S().applyLoadedProject(
+    { ...parsed, recordedFields: undefined, recordedTimes: times, recordedTimesOrigin: 'xer' },
+    { filePath: null, recompute: true },
+  );
+  eq('4c de afwijkende vastlegging van B zet de modus aan', S().datesAsRecorded, true);
+  eq('4d in de modus: A (klaar op de deadline-dag 16:00) niet gemist, B (een dag later) wel',
+    naam(S().cpmResult?.missedDeadlineTaskIds), ['B']);
+
+  // Pure laag, dezelfde grens: een deadline MET tijd is dat moment; een deadline op een feestdag
+  // of in het weekend telt tot het laatste blokeinde ervóór (zoals de solver, `deadlineBound`).
+  const calH8 = { ...h8, holidays: [{ name: 'vrij', startDate: '2026-07-08', endDate: '2026-07-08' }] };
+  const uur = (id: string, finish: string, deadline: string) =>
+    mk(id, { durationUnit: 'hours', durationMinutes: 480, earlyStart: finish.slice(0, 10) + 'T08:00', earlyFinish: finish },
+      { deadline });
+  const puur = [
+    uur('opDag', '2026-07-06T16:00', '2026-07-06'),
+    uur('metTijd', '2026-07-06T16:00', '2026-07-06T12:00'),
+    uur('feestdagOk', '2026-07-07T16:00', '2026-07-08'),
+    uur('feestdagTeLaat', '2026-07-09T16:00', '2026-07-08'),
+    uur('weekendOk', '2026-07-10T16:00', '2026-07-11'),
+  ];
+  const puurInfo = captureRecordedDates(puur, Object.fromEntries(puur.map((t) => [t.id, ['earlyStart', 'earlyFinish'] as const])));
+  eq('4e deadline zonder tijd, met tijd, op een feestdag en in het weekend: dezelfde grens als de solver',
+    cpmResultFromRecorded(puurInfo.times, puur, calH8).missedDeadlineTaskIds, ['metTijd', 'feestdagTeLaat']);
+}
 
 // ── (5) projectDuration — regressietest voor de TZ-bug (issue-#63-review, MOET 1 van een vorige
 // review-ronde) ────────────────────────────────────────────────────────────────────────────────

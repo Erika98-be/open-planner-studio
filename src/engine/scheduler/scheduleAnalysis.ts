@@ -6,7 +6,7 @@ import type { CpmBackwardFloatTrace, CpmFreeFloatSource, CPMResult, CPMTaskResul
 import { formatInstant, type DateMode } from '@/utils/dateUtils';
 import { drivingPredecessorWalker } from './graphWalk';
 import { projectDurationOf } from './projectDuration';
-import { isZeroDurationMilestone, taskDurationUnit } from './duration';
+import { isElapsedTask, isZeroDurationMilestone, taskDurationUnit } from './duration';
 import { isLeafTask } from '@/utils/taskHierarchy';
 import { explainP6CompletedDataDateWindowResolved } from '@/engine/scheduler/p6CompletedTargetWindow';
 import {
@@ -427,8 +427,12 @@ export function computeScheduleResults(input: ScheduleAnalysisInput): CPMResult 
         // start van een urentaak ook zo (`finishFromStart` loopt vanaf het volgende blokbegin). Een
         // DAGtaak op werkblokken blijft bewust bij `snapOnOrBefore`: haar late start leest de solver
         // daar nog als de dag ervóór (speling -1), en de melding moet die speling blijven verklaren.
-        // Een eindbeperking en dag-modus blijven ongewijzigd.
-        const dS = cal.isHourMode && taskDurationUnit(task) === 'hours' ? snapOnOrAfter(cal, cd) : dW;
+        // Een ELAPSEDTIME-taak blijft ook bij `snapOnOrBefore`: zij mag buiten werktijd starten
+        // (di 18:00), en een snap naar het volgende werkmoment (wo 08:00) verborg dan een echte
+        // schending. Een eindbeperking en dag-modus blijven ongewijzigd.
+        const dS = cal.isHourMode && taskDurationUnit(task) === 'hours' && !isElapsedTask(task)
+          ? snapOnOrAfter(cal, cd)
+          : dW;
         const ct = cc.type;
         if (((ct === 'SNLT' || ct === 'MSO') && early.es > dS)
           || ((ct === 'FNLT' || ct === 'MFO') && early.ef > dW)) {

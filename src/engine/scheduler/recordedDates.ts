@@ -2,7 +2,8 @@ import type { Task, TaskTimeComputed, TaskTimeInput } from '@/types/task';
 import { rollupSummaryTasks } from './applyCpmResult';
 import { isLeafTask, isSummaryTask } from '@/utils/taskHierarchy';
 import type { WorkCalendar } from '@/types/calendar';
-import type { CPMResult, CPMTaskResult } from './CPMSolver';
+import { engineForTaskCalendar, type CPMResult, type CPMTaskResult } from './CPMSolver';
+import { deadlineBound } from './deadlineBound';
 import { writeSummaryProgress, type SummaryProgress } from './summaryProgress';
 import { CalendarEngine } from './CalendarEngine';
 import { parseInstant } from '@/utils/dateUtils';
@@ -344,20 +345,11 @@ export function shiftedTaskIds(tasks: Task[], times: Record<string, RecordedTime
  * bestand) en hier bewust niet gedicht — dichten vraagt een derde presence-registratie
  * (`scheduleDuration`) die deze module niet heeft.
  *
- * ÉÉN SCHERP AFGEBAKENDE AFWIJKING van `scheduleAnalysis.ts`: `missedDeadlineTaskIds` vergelijkt hier met simpele stringvergelijking
- * (`rec.finish > task.deadline`); de solver rekent i.p.v. daarvan met instants en met
- * `CPMSolver.deadlineBound` (dag-modus: `cal.prevWorkDay(deadline)`), over de KALENDER VAN DIE TAAK
- * (`calendarFor(task)`). In dag-modus en met ÉÉN kalender
- * (de enige die deze functie kent — haar `calendar`-parameter) lopen de twee BEWIJSBAAR NOOIT uiteen:
- * `prevWorkDay(dl) ≤ dl`, en er bestaat op diezelfde kalender geen werkdag strikt tussen
- * `prevWorkDay(dl)` en `dl`. Divergentie vereist dus een taak op een ANDERE kalender dan de
- * meegegeven kalender (`task.calendarId` wijst naar een resource-/bibliotheekkalender) — een geval
- * dat deze pure reconstructiefunctie sowieso niet kan zien, want ze krijgt maar één kalender mee.
- * Dichttrekken vraagt per-taak-kalenders die ze bewust niet heeft (ze reconstrueert — ze solvet niet).
- * In uur-modus lopen ze wél uiteen BINNEN één kalender: de solver leest een deadline zonder tijd als
- * het einde van de werkdag (het laatste blokeinde van die datum; knownbugs 119 van het ontwerp "alleen
- * uren"), dus een `rec.finish` OP de deadline-dag (`'2026-07-06T16:00' > '2026-07-06'`) meldt hier
- * "gemist" en in de solver niet. Hier bewust niet gedicht: deze functie vergelijkt strings.
+ * `missedDeadlineTaskIds` gebruikt dezelfde deadlinegrens als de solver (`deadlineBound.ts`), met
+ * de engine die de solver voor die taak op de projectkalender kiest (`engineForTaskCalendar`). Zo
+ * spreken de melding na een berekening en de melding in de opgeslagen-datumsmodus elkaar niet tegen.
+ * Een taak op een ANDERE kalender (`task.calendarId` naar een bibliotheekkalender) ziet deze functie
+ * niet: ze krijgt alleen de projectkalender mee (ze reconstrueert, ze solvet niet).
  *
  * `projectStart`/`projectEnd` worden hieronder met stringvergelijking
  * (`<`/`>`) bepaald. Bij GEMENGDE dag/uur-formaten binnen dezelfde taakset (bv. `'2026-03-09T17:00'`
@@ -375,6 +367,7 @@ export function cpmResultFromRecorded(
   const out = new Map<string, CPMTaskResult>();
   const criticalPath: string[] = [];
   const missedDeadlineTaskIds: string[] = [];
+  const engines = new Map<string, CalendarEngine>();
   let projectEnd = '';
   let projectStart = '';
 
@@ -396,7 +389,11 @@ export function cpmResultFromRecorded(
       isCritical: rec.isCritical ?? false,
     });
     if (rec.isCritical) criticalPath.push(task.id);
-    if (task.deadline && rec.finish > task.deadline) missedDeadlineTaskIds.push(task.id);
+    if (task.deadline) {
+      const bound = deadlineBound(task.deadline, engineForTaskCalendar(engines, calendar, task));
+      const finish = parseInstant(rec.finish);
+      if (bound && !isNaN(finish.getTime()) && finish > bound) missedDeadlineTaskIds.push(task.id);
+    }
     if (!projectStart || rec.start < projectStart) projectStart = rec.start;
     if (rec.finish > projectEnd) projectEnd = rec.finish;
   }

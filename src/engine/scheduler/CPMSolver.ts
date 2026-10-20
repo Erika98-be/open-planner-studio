@@ -15,6 +15,7 @@ import {
   taskDurationUnit, writeDerivedSpan, isPinnedComplete, isPinnedInProgress, isElapsedTask,
 } from './duration';
 import { computeScheduleResults } from './scheduleAnalysis';
+import { deadlineBound as deadlineBoundOn } from './deadlineBound';
 import { hasValidP6SuspendResume } from '@/utils/p6SuspendResume';
 import {
   explainP6CompletedDataDateWindowResolved,
@@ -3044,31 +3045,10 @@ export class CPMSolver {
     return lf;
   }
 
-  /**
-   * De late-finish-grens van de zachte deadline van `task`, of null zonder (geldige) deadline. Eén
-   * definitie voor de backward pass (`applyBackwardBound`) én de melding "deadline gemist"
-   * (`scheduleAnalysis`), zodat speling en melding hetzelfde moment gebruiken.
-   *
-   * Dag-modus: de werkdag op of vóór de datum (`prevWorkDay`), ongewijzigd. Uur-modus (knownbugs 119
-   * van het ontwerp "alleen uren"): een datum zonder tijd is het EINDE van die werkdag — het einde van
-   * het laatste werkblok dat op die datum begint, zoals een dagtaak dezelfde datum leest. Werkt die
-   * datum niet (weekend, feestdag), dan het laatste blokeinde vóór het einde van die datum. Vroeger
-   * werd de datum 00:00 van die dag (via `prevWorkDay`), één werkdag te krap. Een deadline MET tijd
-   * (bv. uit MSPDI) is dat moment zelf, teruggezet naar een werkmoment; `parseDate` liet de tijd vallen.
-   */
+  /** De grens van de zachte deadline van `task` op `eng` — één definitie, gedeeld met de analyse en
+   *  de reconstructie uit opgeslagen datums: zie `deadlineBound.ts` (knownbugs 119). */
   private deadlineBound(task: Task, eng: CalendarEngine): Date | null {
-    if (!task.deadline) return null;
-    if (!eng.isHourMode) {
-      const dl = parseDate(task.deadline);
-      return isNaN(dl.getTime()) ? null : eng.prevWorkDay(dl);
-    }
-    if (task.deadline.includes('T')) {
-      const at = parseInstant(task.deadline);
-      return isNaN(at.getTime()) ? null : eng.prevWorkInstant(at);
-    }
-    const day = parseDate(task.deadline);
-    if (isNaN(day.getTime())) return null;
-    return this.dayLastBandEnd(eng, day) ?? eng.prevWorkInstant(new Date(day.getTime() + MS_PER_DAY));
+    return deadlineBoundOn(task.deadline, eng);
   }
 
   /**

@@ -1,5 +1,5 @@
 {
-  "_readme": "Regressiebatterij voor vijf fouten in het urenpad bij blokgrenzen (knownbugs 119-123 van het ontwerp claude/uren-spec, 'alleen uren'). Kalender H8 = ma-vr 08:00-16:00; B2 = ma-vr 07:00-12:00 + 13:00-16:00. Urentaken ('8u') verwachten datetime; dagtaken op een kalender met werkblokken rekenen ook in de uur-engine en tonen datetime. Verwachtingen: met de hand op de tijdas, of het dag-orakel (zelfde case in een dag-batterij) vertaald naar blokbegin/blokeinde. De ids 'bg<nr>-...' verwijzen naar het knownbug-nummer; cases met 'controle' in de titel waren vóór de fix al groen en bewaken dat de fix niet te ver gaat.",
+  "_readme": "Regressiebatterij voor vijf fouten in het urenpad bij blokgrenzen (knownbugs 119-123 van het ontwerp claude/uren-spec, 'alleen uren'). Kalender H8 = ma-vr 08:00-16:00; B2 = ma-vr 07:00-12:00 + 13:00-16:00. Urentaken ('8u') verwachten datetime; dagtaken op een kalender met werkblokken rekenen ook in de uur-engine en tonen datetime. Verwachtingen: met de hand op de tijdas, of het dag-orakel (zelfde case in een dag-batterij) vertaald naar blokbegin/blokeinde. De ids 'bg<nr>-...' verwijzen naar het knownbug-nummer; titels met 'Review #402' zijn regressies uit de review van PR #402 (FF bij een afwijkende opvolgerkalender en na een ELAPSEDTIME-voorganger, SNLT bij een ELAPSEDTIME-taak); cases met 'controle' in de titel waren vóór de fix al groen en bewaken dat de fix niet te ver gaat.",
   "cases": [
     {
       "id": "bg119-deadline-zonder-tijd-gehaald",
@@ -308,6 +308,150 @@
         "tasks": {
           "B": {"es": "2026-06-08T07:00", "ef": "2026-06-09T16:00"}
         }
+      }
+    },
+    {
+      "id": "bg123-ff-opvolger-eigen-kalender-vrije-dag",
+      "title": "Review #402 punt 1. A 6 d (dagtaak, projectkalender ma-vr 08-16) eindigt ma 07-13 16:00. B 1 d op een eigen kalender waarop ma 07-13 vrij is, FF lag 0. Het vorige blokeinde van A (ma 16:00) is voor B geen eindgrens: B eindigt di 07-14, niet vóór A (vr 07-10, zoals 04c34fa1e gaf). A speling 1 (gelijk aan main).",
+      "anchor": "2026-07-06",
+      "calendar": {"workTime": {"byWeekday": {"1": [{"start": 480, "end": 960}], "2": [{"start": 480, "end": 960}], "3": [{"start": 480, "end": 960}], "4": [{"start": 480, "end": 960}], "5": [{"start": 480, "end": 960}], "6": [], "7": []}}},
+      "calendars": [{"name": "Bvrij", "workTime": {"byWeekday": {"1": [{"start": 480, "end": 960}], "2": [{"start": 480, "end": 960}], "3": [{"start": 480, "end": 960}], "4": [{"start": 480, "end": 960}], "5": [{"start": 480, "end": 960}], "6": [], "7": []}}, "holidays": [{"name": "vrij", "startDate": "2026-07-13", "endDate": "2026-07-13"}]}],
+      "tasks": [
+        {"name": "A", "dur": 6},
+        {"name": "B", "dur": 1, "calendar": "Bvrij"}
+      ],
+      "links": [{"pred": "A", "succ": "B", "type": "FINISH_FINISH", "lag": 0}],
+      "expect": {
+        "tasks": {
+          "A": {"ef": "2026-07-13T16:00", "tf": 1},
+          "B": {"es": "2026-07-14T08:00", "ef": "2026-07-14T16:00"}
+        }
+      }
+    },
+    {
+      "id": "bg123-ff-na-elapsed-voorganger",
+      "title": "Review #402 punt 1. A 24 klokuren ELAPSEDTIME vanaf ma 08:00 eindigt di 08:00 (rauw). Dagtaak B 1 d, FF lag 0: B mag niet vóór di 08:00 eindigen, dus di 08:00-16:00 (04c34fa1e: ma 08:00-16:00). Gelijk aan main.",
+      "anchor": "2026-07-06",
+      "calendar": {"workTime": {"byWeekday": {"1": [{"start": 480, "end": 960}], "2": [{"start": 480, "end": 960}], "3": [{"start": 480, "end": 960}], "4": [{"start": 480, "end": 960}], "5": [{"start": 480, "end": 960}], "6": [], "7": []}}},
+      "tasks": [
+        {"name": "A", "dur": "24u", "durationType": "ELAPSEDTIME", "start": "2026-07-06T08:00"},
+        {"name": "B", "dur": 1}
+      ],
+      "links": [{"pred": "A", "succ": "B", "type": "FINISH_FINISH", "lag": 0}],
+      "expect": {
+        "tasks": {
+          "A": {"ef": "2026-07-07T08:00"},
+          "B": {"es": "2026-07-07T08:00", "ef": "2026-07-07T16:00"}
+        }
+      }
+    },
+    {
+      "id": "bg123-ff-na-elapsed-voorganger-op-blokeinde",
+      "title": "Review #402 punt 1, controle. A 8 klokuren ELAPSEDTIME vanaf ma 08:00 eindigt precies op het blokeinde ma 16:00. Dagtaak B 1 d, FF lag 0: B ma 08:00-16:00 (main gaf di, de oude 123-fout).",
+      "anchor": "2026-07-06",
+      "calendar": {"workTime": {"byWeekday": {"1": [{"start": 480, "end": 960}], "2": [{"start": 480, "end": 960}], "3": [{"start": 480, "end": 960}], "4": [{"start": 480, "end": 960}], "5": [{"start": 480, "end": 960}], "6": [], "7": []}}},
+      "tasks": [
+        {"name": "A", "dur": "8u", "durationType": "ELAPSEDTIME", "start": "2026-07-06T08:00"},
+        {"name": "B", "dur": 1}
+      ],
+      "links": [{"pred": "A", "succ": "B", "type": "FINISH_FINISH", "lag": 0}],
+      "expect": {
+        "tasks": {
+          "A": {"ef": "2026-07-06T16:00"},
+          "B": {"es": "2026-07-06T08:00", "ef": "2026-07-06T16:00"}
+        }
+      }
+    },
+    {
+      "id": "bg120-elapsed-snlt-buiten-werktijd",
+      "title": "Review #402 punt 2. A 4 klokuren ELAPSEDTIME start di 18:00 (buiten werktijd), SNLT di 16:00. Echt geschonden (late start di 16:00, speling -2/24). 04c34fa1e vergeleek met wo 08:00 en meldde niets.",
+      "anchor": "2026-07-06",
+      "calendar": {"workTime": {"byWeekday": {"1": [{"start": 480, "end": 960}], "2": [{"start": 480, "end": 960}], "3": [{"start": 480, "end": 960}], "4": [{"start": 480, "end": 960}], "5": [{"start": 480, "end": 960}], "6": [], "7": []}}},
+      "tasks": [
+        {"name": "A", "dur": "4u", "durationType": "ELAPSEDTIME", "start": "2026-07-07T18:00", "constraint": {"type": "SNLT", "date": "2026-07-07T16:00"}}
+      ],
+      "expect": {
+        "tasks": {
+          "A": {"es": "2026-07-07T18:00", "ls": "2026-07-07T16:00", "tf": -0.08333333333333333}
+        },
+        "violatedConstraintsSet": ["A"]
+      }
+    },
+    {
+      "id": "bg120-elapsed-snlt-in-pauze",
+      "title": "Review #402 punt 2, landing in de pauze. Kalender 07-12 + 13-16. A 4 klokuren ELAPSEDTIME start di 12:30 (pauze), SNLT di 12:00: geschonden. 04c34fa1e vergeleek met 13:00.",
+      "anchor": "2026-07-06",
+      "calendar": {"workTime": {"byWeekday": {"1": [{"start": 420, "end": 720}, {"start": 780, "end": 960}], "2": [{"start": 420, "end": 720}, {"start": 780, "end": 960}], "3": [{"start": 420, "end": 720}, {"start": 780, "end": 960}], "4": [{"start": 420, "end": 720}, {"start": 780, "end": 960}], "5": [{"start": 420, "end": 720}, {"start": 780, "end": 960}], "6": [], "7": []}}},
+      "tasks": [
+        {"name": "A", "dur": "4u", "durationType": "ELAPSEDTIME", "start": "2026-07-07T12:30", "constraint": {"type": "SNLT", "date": "2026-07-07T12:00"}}
+      ],
+      "expect": {
+        "tasks": {
+          "A": {"es": "2026-07-07T12:30", "ls": "2026-07-07T12:00"}
+        },
+        "violatedConstraintsSet": ["A"]
+      }
+    },
+    {
+      "id": "bg120-elapsed-snlt-na-blokeinde",
+      "title": "Review #402 punt 2. SNLT di 17:00 (na het blokeinde), A 4 klokuren ELAPSEDTIME start di 16:30. De solver zet de late start op di 16:00 (speling negatief), dus geschonden. Het letterlijke moment (17:00) zou de schending verbergen; daarom blijft ELAPSEDTIME bij snapOnOrBefore, zoals main.",
+      "anchor": "2026-07-06",
+      "calendar": {"workTime": {"byWeekday": {"1": [{"start": 480, "end": 960}], "2": [{"start": 480, "end": 960}], "3": [{"start": 480, "end": 960}], "4": [{"start": 480, "end": 960}], "5": [{"start": 480, "end": 960}], "6": [], "7": []}}},
+      "tasks": [
+        {"name": "A", "dur": "4u", "durationType": "ELAPSEDTIME", "start": "2026-07-07T16:30", "constraint": {"type": "SNLT", "date": "2026-07-07T17:00"}}
+      ],
+      "expect": {
+        "tasks": {
+          "A": {"ls": "2026-07-07T16:00", "tf": -0.020833333333333332}
+        },
+        "violatedConstraintsSet": ["A"]
+      }
+    },
+    {
+      "id": "bg121-nivelleervertraging-voor-de-pauze",
+      "title": "Knownbugs 121, landing vóór de pauze. Kalender 07-12 + 13-16. P 8u (ma), A 8u met vertraging 300 min: di 07:00 + 5 werkuur = di 12:00 (blokeinde vóór de pauze). A start di 13:00 en eindigt wo 12:00 (main toonde start 12:00).",
+      "anchor": "2026-07-06",
+      "calendar": {"workTime": {"byWeekday": {"1": [{"start": 420, "end": 720}, {"start": 780, "end": 960}], "2": [{"start": 420, "end": 720}, {"start": 780, "end": 960}], "3": [{"start": 420, "end": 720}, {"start": 780, "end": 960}], "4": [{"start": 420, "end": 720}, {"start": 780, "end": 960}], "5": [{"start": 420, "end": 720}, {"start": 780, "end": 960}], "6": [], "7": []}}},
+      "tasks": [
+        {"name": "P", "dur": "8u"},
+        {"name": "A", "dur": "8u", "levelingDelayMinutes": 300}
+      ],
+      "links": [{"pred": "P", "succ": "A", "type": "FINISH_START"}],
+      "expect": {
+        "tasks": {
+          "A": {"es": "2026-07-07T13:00", "ef": "2026-07-08T12:00"}
+        }
+      }
+    },
+    {
+      "id": "bg122-externe-opvolger-na-de-pauze",
+      "title": "Knownbugs 122, anker op het blokbegin na de pauze. Kalender 07-12 + 13-16. A 8u (ma) met externe FS-opvolger, anker di 13:00: late finish di 12:00 (main: 13:00). B 40u.",
+      "anchor": "2026-07-06",
+      "calendar": {"workTime": {"byWeekday": {"1": [{"start": 420, "end": 720}, {"start": 780, "end": 960}], "2": [{"start": 420, "end": 720}, {"start": 780, "end": 960}], "3": [{"start": 420, "end": 720}, {"start": 780, "end": 960}], "4": [{"start": 420, "end": 720}, {"start": 780, "end": 960}], "5": [{"start": 420, "end": 720}, {"start": 780, "end": 960}], "6": [], "7": []}}},
+      "tasks": [
+        {"name": "A", "dur": "8u", "externalLinks": [{"direction": "successor", "relType": "FS", "anchorDate": "2026-07-07T13:00"}]},
+        {"name": "B", "dur": "40u"}
+      ],
+      "expect": {
+        "tasks": {
+          "A": {"lf": "2026-07-07T12:00"}
+        }
+      }
+    },
+    {
+      "id": "bg119-deadline-op-feestdag",
+      "title": "Knownbugs 119, feestdag. Wo 07-08 is vrij. A 16u (ma-di), deadline '2026-07-08': het laatste blokeinde vóór het einde van die datum = di 16:00. lf di 16:00, speling 0, niet gemist (main: di 00:00, speling -1, gemist). B 40u.",
+      "anchor": "2026-07-06",
+      "calendar": {"workTime": {"byWeekday": {"1": [{"start": 480, "end": 960}], "2": [{"start": 480, "end": 960}], "3": [{"start": 480, "end": 960}], "4": [{"start": 480, "end": 960}], "5": [{"start": 480, "end": 960}], "6": [], "7": []}}, "holidays": [{"name": "vrij", "startDate": "2026-07-08", "endDate": "2026-07-08"}]},
+      "tasks": [
+        {"name": "A", "dur": "16u", "deadline": "2026-07-08"},
+        {"name": "B", "dur": "40u"}
+      ],
+      "expect": {
+        "tasks": {
+          "A": {"ef": "2026-07-07T16:00", "lf": "2026-07-07T16:00", "tf": 0}
+        },
+        "missedDeadlinesSet": []
       }
     }
   ]
