@@ -1,9 +1,11 @@
 // Issue #391: meerdere baselines tegelijk in de Gantt, in één gestreepte strook. Opent de
 // kijkscène `?qaScene=meerdere-baselines` (drie baselines; "Contract" actief, twee extra aan) en
 // controleert met echte klikken en hovers: de gesplitste knop Baseline-overlay met het menu "Toon in
-// de Gantt", de legenda en de tooltip op stukken met één, twee en drie baselines. `__OPS__` leest
+// de Gantt", de legenda en de tooltip op stukken met één, twee en drie baselines, en dat de keuze
+// opslaan (Ctrl+S) en heropenen (Openen + bestandskiezer) overleeft. `__OPS__` leest
 // alleen. Met `OPS_QA_SHOTS=<map>` legt de spec schermbeelden vast voor de ontwerpbeoordeling.
 import { mkdirSync } from 'node:fs';
+import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures/ops';
@@ -47,7 +49,7 @@ async function visibleBars(page: Page) {
   });
 }
 
-test('meerdere baselines: gesplitste knop, menu, legenda en tooltip per stuk', async ({ page, ops: _ops }) => {
+test('meerdere baselines: gesplitste knop, menu, legenda en tooltip per stuk', async ({ page, browser, ops: _ops }) => {
   test.setTimeout(150_000);
   await page.setViewportSize({ width: 1600, height: 900 });
   await openScene(page);
@@ -129,6 +131,42 @@ test('meerdere baselines: gesplitste knop, menu, legenda en tooltip per stuk', a
   await expect(legend).toHaveText(/Contract.*Herplanning juni/);
   await menu.locator(`[data-ops-baseline-menu-item="${maart}"]`).click();
   expect(await compared(page)).toEqual([maart, juni]);
+
+  // De keuze hoort bij het document: maart uit, opslaan (Ctrl+S geeft in de browser een download)
+  // en het bestand opnieuw openen in een verse pagina via Openen en de bestandskiezer.
+  await menu.locator(`[data-ops-baseline-menu-item="${maart}"]`).click();
+  expect(await compared(page)).toEqual([null, juni]);
+  await page.locator('[data-ops-baseline-menu-toggle]').click();
+  await expect(menu).toHaveCount(0);
+  const download = page.waitForEvent('download');
+  await page.keyboard.press('Control+s');
+  const saved = await readFile((await (await download).path())!);
+  expect(saved.toString('utf8')).toContain('ComparedBaselineIds');
+
+  // Een verse browsercontext: in dezelfde context biedt de app terecht crashherstel aan.
+  const fresh = await browser.newContext({ viewport: page.viewportSize() ?? undefined });
+  const reopened = await fresh.newPage();
+  await reopened.goto('/');
+  await expect.poll(() => reopened.evaluate(() => !!window.__OPS__?.store)).toBe(true);
+  await reopened.evaluate(() => window.__OPS__!.store.getState().setUI({ showWelcomeDialog: false, showTourOverlay: false }));
+  await reopened.locator('[data-ops-ribbon-tab="start"]').click();
+  const openButton = reopened.locator('button.ribbon-btn').filter({ hasText: /^(Open|Openen)$/ });
+  const chooser = reopened.waitForEvent('filechooser');
+  await openButton.click();
+  await (await chooser).setFiles({ name: 'meerdere-baselines.ifc', mimeType: 'application/octet-stream', buffer: saved });
+  await expect.poll(() => reopened.evaluate(() => window.__OPS__!.store.getState().baselines.map(b => b.name)))
+    .toEqual(['Contract', 'Herplanning maart', 'Herplanning juni']);
+  const names = () => reopened.evaluate(() => {
+    const s = window.__OPS__!.store.getState();
+    const name = (id: string | null) => (id ? s.baselines.find(b => b.id === id)?.name ?? '?' : null);
+    return [name(s.activeBaselineId), ...s.comparedBaselineIds.map(name)];
+  });
+  expect(await names()).toEqual(['Contract', null, 'Herplanning juni']);
+  // De Gantt toont na heropenen precies die keuze (legenda in de statusbalk).
+  const reopenedLegend = reopened.locator('[data-ops-baseline-legend]');
+  await expect(reopenedLegend).toHaveText(/Contract.*Herplanning juni/);
+  await expect(reopenedLegend).not.toContainText('Herplanning maart');
+  await fresh.close();
 });
 
 test('meerdere baselines: 2×-schermbeeld van de strepen (alleen met OPS_QA_SHOTS)', async ({ browser }) => {
