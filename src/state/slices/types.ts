@@ -349,6 +349,11 @@ export type NotificationMessageKey =
   // Restduur: een nieuwe duur korter dan het gedane werk van een lopende taak is
   // geweigerd — zie `runningDurationChange` in engine/taskMutationRules.ts. Parameters `name`, `percent`.
   | 'notifications.durationBelowDoneWork'
+  // Een duurbewerking rekende een bewaard, afwijkend restwerk opnieuw uit (eigenaarsbesluit
+  // 2026-10-19) — zie `state/remainingWorkNotice.ts`. Eén taak: `name` + `numberParams`
+  // `before`/`after` (uren); meer taken: meervoud, `count`.
+  | 'notifications.remainingWorkRecomputed'
+  | 'notifications.remainingWorkRecomputedMany'
   // Detailregel onder een weigering die meer taken of relaties raakt: welke niet zijn aangepast /
   // aangemaakt (`refusedNamesLine` in state/refusalNotice.ts). `names`, en bij `More` ook `count`.
   | 'notifications.refusedTaskNames'
@@ -404,6 +409,12 @@ export interface AppNotification {
   messageKey: NotificationMessageKey;
   /** Interpolatie-parameters voor `t()`. */
   params?: Record<string, string | number>;
+  /** Getallen voor dezelfde interpolatie die `NotificationHost` pas bij het tonen in de notatie van
+   *  de app-taal zet (`formatReportNumber`: hoogstens twee decimalen, Latijnse cijfers, het
+   *  decimaalteken van de taal). Zo blijft de store taalvrij en volgt het getal een taalwissel.
+   *  Niet voor `count`: dat blijft een kaal getal in `params`, want i18next kiest er de
+   *  meervoudsvorm mee. */
+  numberParams?: Record<string, number>;
   /** Rauwe technische tekst (`err.message`) — BEWUST onvertaald. */
   detail?: string;
   /** Optionele, vertaalde feiten onder de hoofdboodschap (bv. één XER-bestandsverslag). */
@@ -415,6 +426,10 @@ export interface AppNotification {
   detailParams?: Record<string, string | number>;
   /** Samenvouw-sleutel: een tweede melding met dezelfde sleutel wordt één regel met een teller. */
   dedupeKey?: string;
+  /** Met `dedupeKey`: een tweede melding met dezelfde sleutel VERVANGT de inhoud zonder dat de
+   *  teller oploopt — voor een melding die een lopende bewerking bijwerkt (de restwerkmelding toont
+   *  tijdens één balksleep steeds de eindwaarde, zonder "×N"). */
+  replaceOnDedupe?: boolean;
   /** Aantal samengevouwen voorkomens; 1 bij de eerste. */
   count: number;
   /** Optioneel — id van een in-app-documentatieartikel (`public/docs/<taal>/<id>.md`) dat deze

@@ -69,7 +69,7 @@ By default the table next to the Gantt shows *WBS*, *Task name* and *Duration*. 
 - **Assignment curve** — the curve per resource, as `Name: Uniform`. Editable on a task with assignments.
 - **Work window start** and **Work window finish** — the work window per resource, from an imported file, as `Name: date`. Read-only.
 - **Planned work (hours)** and **Actual work (hours)** — the planned and actual work per resource in hours, as `Name: 12`, from an imported file. Read-only.
-- **Remaining work (hours)** — the remaining work per resource in hours, as `Name: 6`: the stored work, otherwise remaining duration × units. Editable on a task with assignments on which a work rule applies. Only visible in the picker when the work rules are visible.
+- **Remaining work (hours)** — the remaining work per resource in hours, as `Name: 6`: the stored work, otherwise remaining duration × units. Editable on a task with assignments on which a work rule applies. Only visible in the picker when the work rules are visible. A yellow ⚠ in the cell means that the stored work differs from units × remaining duration, like the ⚠ at *Work (rem.)* in the task panel.
 
 ## Progress
 

@@ -151,6 +151,9 @@
     "xerArchiveReasonStructure": "Grund: Der Aufbau des Archivs in der IFC stimmt nicht (doppelt, umsortiert oder falsch verknüpft).",
     "statusDateSetToday": "Statusdatum auf heute gesetzt ({{date}}).",
     "durationBelowDoneWork": "„{{name}}“ ist bereits zu {{percent}} % erledigt: Eine Dauer, die kürzer ist als die bereits geleistete Arbeit, ist nicht möglich. Die Dauer wurde nicht geändert.",
+    "remainingWorkRecomputed": "Restarbeit von „{{name}}“ neu berechnet: {{before}} h → {{after}} h (der Wert stammte aus der Datei). Ctrl+Z stellt ihn wieder her.",
+    "remainingWorkRecomputedMany_one": "Restarbeit von {{count}} Vorgang neu berechnet (der Wert stammte aus der Datei). Ctrl+Z stellt sie wieder her.",
+    "remainingWorkRecomputedMany_other": "Restarbeit von {{count}} Vorgängen neu berechnet (die Werte stammten aus der Datei). Ctrl+Z stellt sie wieder her.",
     "tutorialOfferLater": "Du findest die Tutorials jederzeit unter Hilfe › Tutorials.",
     "tutorialOfferUnavailable": "Die Tutorials konnten gerade nicht installiert oder gestartet werden. Unter Hilfe › Tutorials kannst du es später erneut versuchen."
   },

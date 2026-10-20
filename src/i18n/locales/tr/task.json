@@ -455,7 +455,7 @@
       "work": "İş (kalan)",
       "workHint": "Saat cinsinden kalan iş; iş kuralı sürenin mi yoksa birimlerin mi değişeceğine karar verir.",
       "workDeviates": "Birim × süreden farklı",
-      "workDeviatesHint": "Kaydedilmiş iş {{stored}} sa, birim × kalan süreden ({{derived}} sa) farklı. Histogram kaydedilmiş işi tüm görev süresi boyunca izler; birimler dosyadaki gibi kalır.",
+      "workDeviatesHint": "Kaydedilmiş iş {{stored}} sa, birim × kalan süreden ({{derived}} sa) farklı. Histogram kaydedilmiş işi tüm görev süresi boyunca izler; birimler dosyadaki gibi kalır. Süreyi değiştirirseniz uygulama işi yeniden hesaplar.",
       "locked": "{{rule}} iş kuralı tarafından korunuyor"
     },
     "notes": {
