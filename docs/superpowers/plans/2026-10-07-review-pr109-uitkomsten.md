@@ -1856,3 +1856,8 @@ Testversie (release-check, poort 3049) is NIET bijgewerkt met de PR's van vandaa
   (#397 via #395). #362 speelt geen rol (zonder #362 ook 8/8 rood). Fix: alleen terugzetten als de vlag aan staat;
   regressietest 107 toetsen, mutant 5/5 rood. CI 16/16; diff door orkestrator gelezen; `--admin --match-head-commit`.
 - **Main-CI groen op 5266893af** (#404). Release-sessie mag taggen vanaf deze kop. #401 fixronde loopt nog.
+- **#401 fixronde klaar** (7600794768f8, CI 16/16; main 5266893af erin): (1) nieuw `pendingTextEdits.ts` — open invoer
+  wordt vóór elke documentwissel/-vervanging in het brondocument gecommit; (2) inzet/werk groeien mee; (3) Ctrl+S/F5
+  met automatisch berekenen aan rekent door vóór opslaan, terugkerende focus zonder nieuwe rekenblokkade. Elk met
+  regressietest + mutant. Flake `delete-under-dialog.spec.ts:40` eenmaal in CI (lokaal 8/8). Delta-review
+  (GPT-6.1-Sol, xhigh) gestart.
