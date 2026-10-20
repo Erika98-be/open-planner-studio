@@ -1861,3 +1861,9 @@ Testversie (release-check, poort 3049) is NIET bijgewerkt met de PR's van vandaa
   met automatisch berekenen aan rekent door vóór opslaan, terugkerende focus zonder nieuwe rekenblokkade. Elk met
   regressietest + mutant. Flake `delete-under-dialog.spec.ts:40` eenmaal in CI (lokaal 8/8). Delta-review
   (GPT-6.1-Sol, xhigh) gestart.
+- **Delta-review #401 (7600794768f8, GPT-6.1-Sol): NEE** — twee BLOKKEERT, BEVESTIGD: (1) herladen/desktopafsluiten met
+  focus in het inzetveld ⇒ open invoer weg zonder sluitvraag (`useAutoSave.ts:178`, `useAppCloseGuard.ts:39`);
+  (2) MCP-dupliceren tijdens typen commit de inzet maar laat de rekenblokkade staan ⇒ oud einde, ook in het IFC
+  (`documentSlice.ts:375`, `useTextEntryAutoCalcHold.ts:26`). VERVOLG: register niet aan de eigen storecontext
+  gebonden; overflow bij absurd lange getallen; dubbele berekening op F5 (eruit). ⇒ fixronde 2 bij de integratie-worker.
+  #401 haalt de release-tag waarschijnlijk niet ⇒ volgende release (staat zo in de overdracht).
