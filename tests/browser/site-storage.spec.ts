@@ -355,7 +355,7 @@ siteTest('sluiten met Opslaan: de site-vraag ligt boven de sluitvraag en het tab
 
 // AutoSave op de nepklok (testaudit 2026-10-20: dit kostte 13 s echte wachttijd). De klok gaat aan vóór het
 // laden van de app (deze fixture draait vóór `ops` navigeert), dus ook een al ingeplande AutoSave-ronde staat
-// op de nepklok; tot `runFor` loopt hij gewoon mee met de echte tijd.
+// op de nepklok; tot de test hem stilzet loopt hij gewoon mee met de echte tijd.
 const siteClockTest = siteTest.extend({
   page: async ({ page }, use) => {
     await page.clock.install();
@@ -403,6 +403,10 @@ siteClockTest('AutoSave: voor een site-bestand grijs met eigen uitleg, en de tim
   await page.locator(`[data-testid="document-tab"][data-ops-tab="${siteDoc}"]`).click();
   await expect.poll(() => doc(page).then((d) => d.activeDocumentId)).toBe(siteDoc);
 
+  // Klok stil (sprong van 500 ms; `pauseAt` mag niet naar het verleden), dan precies 13 s vooruit. Daarna
+  // laat de poll alleen de async schrijfronde afronden; de echte tijd zet geen timer meer verder (review PR #399).
+  const now = await page.evaluate(() => Date.now());
+  await page.clock.pauseAt(now + 500);
   await page.clock.runFor(13_000);
   await expect.poll(() => dirtyOf(page, controlDoc)).toBe(false);
   expect(await saves(page)).toEqual([]);
