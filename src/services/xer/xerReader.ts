@@ -47,6 +47,7 @@ import { deriveImportedWorkRules } from '@/services/importNormalize';
 import { emptyMissingScheduleDates, resolveMissingScheduleDates } from '@/services/importDates';
 import { taskWorkMinutes as activityWorkMinutesOf } from '@/engine/contour/contourEngine';
 import { readXerCalendars } from './xerCalendarData';
+import { readXerOpsMarkers, type XerOpsMarkers } from './xerOpsMarkers';
 import { sourceInstant } from './xerInstant';
 import { readXerRecordedTimes } from './xerRecordedTimes';
 import { buildXerMetadataCatalog, materializeXerMetadata, type XerMetadataCatalog } from './xerMetadata';
@@ -581,6 +582,7 @@ function readXerProject(
   metadataCatalog: XerMetadataCatalog,
   taskResourceRowsByProject: ReadonlyMap<string, readonly XerRow[]>,
   projectRowsIndex: XerProjectRowsIndex,
+  opsMarkers?: XerOpsMarkers,
 ): XerReadResult {
   const projectRow = scheduleOptionsIndex.projectRowsById.get(projectId)?.row;
   if (!projectRow) {
@@ -627,7 +629,7 @@ function readXerProject(
     }
   }
 
-  const calendars = readXerCalendars(tables);
+  const calendars = readXerCalendars(tables, { opsExport: opsMarkers !== undefined });
   const calendarList: WorkCalendar[] = [...calendars.calendars];
   // P6 kan een geldige project-/taakexport zonder CALENDAR-tabel leveren. De projectverwijzing
   // blijft dan bruikbaar als id en krijgt de smalle default ma-vr 08:00-16:00; geen lokale
@@ -651,7 +653,7 @@ function readXerProject(
   // Een expliciet TASK-tijdstip is bronbewijs voor uurmodus. Dit gebeurt vóór datum-/duurmapping,
   // zodat geen minuut wordt afgerond en lege clndr_data via de bestaande kalenderbanden promoveert.
   const hourSignalCalendarIds = new Set<string>();
-  for (const row of activityRows) {
+  for (const row of opsMarkers ? [] : activityRows) {
     const calendarId = row.cells.clndr_id || projectCalendar.id;
     if ([
       row.cells.target_start_date,
@@ -668,7 +670,23 @@ function readXerProject(
     }
   }
   const plannedWindowCalendarIds = new Set<string>();
-  for (const calendar of calendarList) {
+  // OPS-export (`xerOpsMarkers.ts`): de uurmodus per kalender staat in de markering (de kalenders die
+  // in OPS in uren rekenden, plus die van een urentaak), niet in de kloktijden. De banden zelf blijven
+  // geregistreerd; alleen de afwijking (lunchpauze) telt hier niet als signaal.
+  const opsHourCalendarIds = new Set(opsMarkers?.hourCalendarIds ?? []);
+  if (opsMarkers) {
+    for (const row of activityRows) {
+      if (opsMarkers.taskUnits.get(row.cells.task_id) === 'hours') opsHourCalendarIds.add(row.cells.clndr_id || projectCalendar.id);
+    }
+  }
+  for (const calendar of opsMarkers ? calendarList : []) {
+    const periodHoursPerDay = calendar.hoursPerDay;
+    const info = getCalendarBands(calendar);
+    if (promoteHourCalendar(calendar, info ? { ...info, deviates: false } : undefined, opsHourCalendarIds.has(calendar.id), false)) {
+      calendar.hoursPerDay = periodHoursPerDay;
+    }
+  }
+  for (const calendar of opsMarkers ? [] : calendarList) {
     if (inferBlankCalendarBands(tables, calendar, activityRows, projectCalendar.id)) {
       plannedWindowCalendarIds.add(calendar.id);
     }
@@ -850,6 +868,17 @@ function readXerProject(
       }
     } else if (p6RemainingHours !== null) {
       time.remainingTime = p6RemainingHours / hoursPerDay;
+    }
+    // OPS-export: een dagtaak op een uurkalender blijft een dagtaak (zelfde regel als de P6 XML-lezer).
+    if (hourMode && opsMarkers?.taskUnits.get(row.cells.task_id) === 'days') {
+      const minutesPerDay = hoursPerDay * 60;
+      time.durationUnit = 'days';
+      time.scheduleDuration = durationMinutes / minutesPerDay;
+      delete time.durationMinutes;
+      if (time.remainingMinutes !== undefined) {
+        time.remainingTime = time.remainingMinutes / minutesPerDay;
+        delete time.remainingMinutes;
+      }
     }
     if (actualStart) time.actualStart = actualStart;
     if (actualFinish) time.actualFinish = actualFinish;
@@ -1205,6 +1234,7 @@ export function readXER(bytes: Uint8Array): XerOpenResult {
   const metadataCatalog = buildXerMetadataCatalog(tables);
   const taskResourceRowsByProject = indexXerTaskResourceRows(tables);
   const projectRowsIndex = indexXerProjectRows(tables);
+  const opsMarkers = readXerOpsMarkers(tables);
   const unresolvedRelation = projectRowsIndex.relationResolutionIssues[0];
   if (unresolvedRelation) {
     if (unresolvedRelation.reason === 'dangling') {
@@ -1231,6 +1261,7 @@ export function readXER(bytes: Uint8Array): XerOpenResult {
       metadataCatalog,
       taskResourceRowsByProject,
       projectRowsIndex,
+      opsMarkers,
     ),
   );
   // Precies één frozen bytearchief per ingelezen bestand. De projectmappers leveren alleen views;
