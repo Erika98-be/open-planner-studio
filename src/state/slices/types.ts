@@ -36,6 +36,7 @@ import type { McpServerStatus } from '@/services/mcp/contracts';
 import type { SiteOpenRequest, SiteSaveRequest } from '@/services/fileAccess/siteDialogs';
 import type { IfcSchemaQuestion } from '@/services/ifc/ifcSchemaQuestion';
 import type { FormatNoticeKind } from '@/services/formatNoticeKinds';
+import type { FeedbackDraft } from '@/services/feedback/feedbackDraft';
 export type { McpServerStatus };
 
 export type WeekStartDay = 'monday' | 'sunday';
@@ -537,6 +538,10 @@ export interface UIState {
   /** persisted (`ops-feedbackEmail`) — het optionele e-mailadres uit de feedbackdialoog, onthouden na
    *  een geslaagde melding. Geen paneelinstelling: het hoort bij het formulier zelf. */
   feedbackEmail: string;
+  /** Session — het bewaarde feedbackconcept (soort, tekst, e-mail, screenshot + annotaties). Blijft
+   *  staan na Esc/Annuleren/sluiten; leeg na een geslaagde verzending of *Leegmaken*. Bewust niet in
+   *  het document en niet in localStorage. */
+  feedbackDraft: FeedbackDraft | null;
   showStructureDialog: boolean;             // session — codes & velden-beheer open
   traceMode: TraceMode;                     // session — path tracing rond de geselecteerde taak
   showResourcePanel: boolean;               // session — resource-beheerpaneel (full-panel) open

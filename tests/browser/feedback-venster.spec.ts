@@ -1,0 +1,269 @@
+import { expect, test, seedProject } from './fixtures/ops';
+import type { Locator, Page, Request, Route } from '@playwright/test';
+
+// Het feedbackvenster: bewaard concept, Leegmaken, drie soorten, hint bij de grijze knop,
+// de regel Meegestuurd, Afdekken en Annuleren in de editor. Elke test vangt de API af met
+// `page.route`: er gaat NOOIT een echte melding naar productie. De handelingen zijn echte klikken
+// en toetsaanslagen; de verstuurde body lezen we uit het afgevangen verzoek.
+
+const ENDPOINT = 'https://open-feedback-studio.pages.dev/api/feedback';
+const TITLE = 'Balk springt terug';
+const DESCRIPTION = 'Na slepen van de balk staat hij weer op de oude plek.';
+
+interface Captured {
+  contentType: string;
+  json: Record<string, unknown> | null;
+  form: FormData | null;
+}
+
+async function capture(request: Request): Promise<Captured> {
+  const contentType = request.headers()['content-type'] ?? '';
+  if (contentType.startsWith('multipart/form-data')) {
+    const body = request.postDataBuffer() ?? Buffer.alloc(0);
+    const form = await new Response(new Uint8Array(body), { headers: { 'content-type': contentType } }).formData();
+    return { contentType, json: null, form };
+  }
+  return { contentType, json: JSON.parse(request.postData() ?? 'null') as Record<string, unknown>, form: null };
+}
+
+async function mockApi(page: Page): Promise<Captured[]> {
+  const seen: Captured[] = [];
+  await page.route(ENDPOINT, async (route: Route) => {
+    seen.push(await capture(route.request()));
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      headers: { 'access-control-allow-origin': '*' },
+      body: JSON.stringify({ success: true, githubIssueUrl: null, imageKeys: [] }),
+    });
+  });
+  return seen;
+}
+
+async function openDialog(page: Page) {
+  await page.locator('[data-tour-anchor="feedback-button"]').click();
+  const dialog = page.getByRole('dialog', { name: 'Send feedback' });
+  await expect(dialog).toBeVisible();
+  return dialog;
+}
+
+async function typeInto(page: Page, field: Locator, text: string) {
+  await field.click();
+  await page.keyboard.type(text);
+}
+
+async function seed(page: Page) {
+  await seedProject(page, [
+    { name: 'Fundering', start: '2026-03-02', finish: '2026-03-06', durationDays: 5 },
+    { name: 'Ruwbouw', start: '2026-03-09', finish: '2026-03-20', durationDays: 10 },
+    { name: 'Afbouw', start: '2026-03-23', finish: '2026-04-03', durationDays: 10 },
+  ]);
+}
+
+/** Sleep op het editorcanvas van (fx0,fy0) naar (fx1,fy1), als fracties van het canvas. */
+async function dragOnCanvas(page: Page, fx0: number, fy0: number, fx1: number, fy1: number) {
+  const canvas = page.locator('canvas.annotator-editor-canvas');
+  await expect.poll(() => canvas.evaluate(el => (el as HTMLCanvasElement).width)).toBeGreaterThan(0);
+  const b = (await canvas.boundingBox())!;
+  await page.mouse.move(b.x + b.width * fx0, b.y + b.height * fy0);
+  await page.mouse.down();
+  await page.mouse.move(b.x + b.width * ((fx0 + fx1) / 2), b.y + b.height * ((fy0 + fy1) / 2));
+  await page.mouse.move(b.x + b.width * fx1, b.y + b.height * fy1);
+  await page.mouse.up();
+}
+
+test('concept blijft na Esc en heropenen; Leegmaken wist het', async ({ page, ops }) => {
+  void ops;
+  const seen = await mockApi(page);
+  let dialog = await openDialog(page);
+  await dialog.getByRole('button', { name: 'Idea' }).click();
+  await typeInto(page, dialog.getByLabel('Title'), TITLE);
+  await typeInto(page, dialog.getByLabel('Description'), DESCRIPTION);
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeHidden();
+
+  dialog = await openDialog(page);
+  await expect(dialog.getByLabel('Title')).toHaveValue(TITLE);
+  await expect(dialog.getByLabel('Description')).toHaveValue(DESCRIPTION);
+  await expect(dialog.getByRole('button', { name: 'Idea' })).toHaveAttribute('aria-pressed', 'true');
+
+  // Het kruisje bewaart het concept ook.
+  await dialog.getByRole('button', { name: 'Cancel' }).first().click();
+  await expect(dialog).toBeHidden();
+  dialog = await openDialog(page);
+  await expect(dialog.getByLabel('Title')).toHaveValue(TITLE);
+
+  await dialog.getByRole('button', { name: 'Clear', exact: true }).click();
+  await expect(dialog.getByLabel('Title')).toHaveValue('');
+  await expect(dialog.getByLabel('Description')).toHaveValue('');
+  await expect(dialog.getByRole('button', { name: "Something's not working" })).toHaveAttribute('aria-pressed', 'true');
+  await expect(dialog.getByRole('button', { name: 'Clear', exact: true })).toHaveCount(0);
+
+  // Ook na sluiten en heropenen blijft het leeg.
+  await page.keyboard.press('Escape');
+  dialog = await openDialog(page);
+  await expect(dialog.getByLabel('Title')).toHaveValue('');
+  expect(seen).toHaveLength(0);
+});
+
+test('soort Vraag of opmerking stuurt category general; na versturen is het concept leeg', async ({ page, ops }) => {
+  void ops;
+  const seen = await mockApi(page);
+  let dialog = await openDialog(page);
+  await dialog.getByRole('button', { name: 'Question or comment' }).click();
+  await typeInto(page, dialog.getByLabel('Title'), TITLE);
+  await typeInto(page, dialog.getByLabel('Description'), DESCRIPTION);
+
+  // De regel Meegestuurd toont wat de metaregel meestuurt.
+  const metaLine = dialog.locator('[data-feedback-meta]');
+  await expect(metaLine).toHaveText(/^Sent along: v\S+ · .+ · English$/);
+  const shownOs = (await metaLine.textContent())!.split(' · ')[1];
+  const shownVersion = (await metaLine.textContent())!.split(' · ')[0].replace('Sent along: v', '');
+
+  await dialog.getByRole('button', { name: 'Send', exact: true }).click();
+  await expect(dialog.getByText('Thank you, your report has been sent.')).toBeVisible();
+  expect(seen).toHaveLength(1);
+  const body = seen[0].json!;
+  expect(body.category).toBe('general');
+  expect(String(body.message).endsWith(`Open Planner Studio v${shownVersion} · ${shownOs} · en`)).toBe(true);
+  expect(['Windows', 'macOS', 'Linux']).toContain(shownOs);
+
+  await dialog.getByRole('button', { name: 'Close' }).last().click();
+  dialog = await openDialog(page);
+  await expect(dialog.getByLabel('Title')).toHaveValue('');
+  await expect(dialog.getByRole('button', { name: "Something's not working" })).toHaveAttribute('aria-pressed', 'true');
+});
+
+test('grijze knop: een rustige hint zegt waarom', async ({ page, ops }) => {
+  void ops;
+  const dialog = await openDialog(page);
+  const send = dialog.getByRole('button', { name: 'Send', exact: true });
+  await expect(send).toBeDisabled();
+  const hint = dialog.locator('[data-feedback-hint]');
+  await expect(hint).toHaveText('Enter a title.');
+  await expect(send).toHaveAccessibleDescription('Enter a title.');
+  await expect(dialog.getByRole('alert')).toHaveCount(0);
+  await expect(dialog.getByLabel('Title')).toHaveAttribute('placeholder', 'E.g. Critical path jumps after saving');
+  await expect(dialog.getByLabel('Description')).toHaveAttribute('placeholder', 'What did you do, what did you expect, and what happened?');
+
+  await typeInto(page, dialog.getByLabel('Title'), 'Kort');
+  await expect(hint).toHaveText('Write at least 10 characters in the title and description together.');
+  await page.keyboard.type(' maar lang genoeg');
+  await expect(send).toBeEnabled();
+  await expect(hint).toHaveCount(0);
+});
+
+test('afdekken: het gebied is egaal in de verstuurde afbeelding', async ({ page, ops }) => {
+  void ops;
+  test.setTimeout(90_000);
+  await seed(page);
+  const seen = await mockApi(page);
+  const dialog = await openDialog(page);
+  await typeInto(page, dialog.getByLabel('Title'), TITLE);
+  await typeInto(page, dialog.getByLabel('Description'), DESCRIPTION);
+  await dialog.getByLabel('Attach screenshot').check();
+  const thumb = dialog.locator('.screenshot-annotator-thumb-img');
+  await expect(thumb).toBeVisible({ timeout: 20_000 });
+
+  const rawSrc = (await thumb.getAttribute('src'))!;
+
+  await dialog.getByRole('button', { name: 'Annotate' }).click();
+  await page.locator('.annotator-editor').getByRole('button', { name: 'Cover' }).click();
+  // Een vlak over het midden-links van de app (raster en kop: daar staat tekst).
+  await dragOnCanvas(page, 0.02, 0.05, 0.45, 0.6);
+  await page.locator('.annotator-editor').getByRole('button', { name: 'Done' }).click();
+  await expect(page.locator('.annotator-editor')).toHaveCount(0);
+
+  await dialog.getByRole('button', { name: 'Send', exact: true }).click();
+  await expect(dialog.getByText('Thank you, your report has been sent.')).toBeVisible({ timeout: 20_000 });
+  expect(seen).toHaveLength(1);
+  const files = [...seen[0].form!.values()].filter((v): v is File => typeof v !== 'string');
+  expect(files).toHaveLength(1);
+  const b64 = Buffer.from(await files[0].arrayBuffer()).toString('base64');
+  const type = files[0].type;
+
+  // Lees de verstuurde afbeelding en meet een raster van punten binnen het afgedekte gebied.
+  const sample = (src: string) => page.evaluate(async (src) => {
+    const bmp = await createImageBitmap(await (await fetch(src)).blob());
+    const c = document.createElement('canvas');
+    c.width = bmp.width; c.height = bmp.height;
+    const ctx = c.getContext('2d')!;
+    ctx.drawImage(bmp, 0, 0);
+    const out: number[][] = [];
+    for (const fx of [0.06, 0.15, 0.25, 0.35, 0.41]) {
+      for (const fy of [0.1, 0.2, 0.3, 0.4, 0.55]) {
+        const d = ctx.getImageData(Math.round(fx * c.width), Math.round(fy * c.height), 1, 1).data;
+        out.push([d[0], d[1], d[2]]);
+      }
+    }
+    return out;
+  }, src);
+  // Tegencontrole: in het ruwe screenshot is dat gebied niet egaal zwart.
+  const raw = await sample(rawSrc);
+  expect(raw.some(([r, g, b]) => Math.max(r, g, b) > 40), 'het ruwe gebied hoort inhoud te hebben').toBe(true);
+  const samples = await sample(`data:${type};base64,${b64}`);
+  for (const [r, g, b] of samples) {
+    expect(Math.max(r, g, b), `pixel ${r},${g},${b} hoort zwart te zijn`).toBeLessThanOrEqual(12);
+  }
+});
+
+test('annuleren in de editor gooit een getekende vorm weg; Esc sluit alleen de editor', async ({ page, ops }) => {
+  void ops;
+  test.setTimeout(60_000);
+  await seed(page);
+  const dialog = await openDialog(page);
+  await dialog.getByLabel('Attach screenshot').check();
+  const thumb = dialog.locator('.screenshot-annotator-thumb-img');
+  await expect(thumb).toBeVisible({ timeout: 20_000 });
+  const before = await thumb.getAttribute('src');
+  const editor = page.locator('.annotator-editor');
+  const undo = editor.getByTitle('Undo');
+
+  // Ronde 1: tekenen en Annuleren.
+  await dialog.getByRole('button', { name: 'Annotate' }).click();
+  await editor.getByRole('button', { name: 'Rectangle' }).click();
+  await dragOnCanvas(page, 0.2, 0.2, 0.5, 0.5);
+  await expect(undo).toBeEnabled();
+  await editor.getByRole('button', { name: 'Cancel' }).click();
+  await expect(editor).toHaveCount(0);
+  expect(await thumb.getAttribute('src')).toBe(before);
+  await dialog.getByRole('button', { name: 'Annotate' }).click();
+  await expect(undo).toBeDisabled();
+
+  // Ronde 2: tekenen en Esc — de editor sluit, het venster blijft open.
+  await editor.getByRole('button', { name: 'Rectangle' }).click();
+  await dragOnCanvas(page, 0.2, 0.2, 0.5, 0.5);
+  await expect(undo).toBeEnabled();
+  await page.keyboard.press('Escape');
+  await expect(editor).toHaveCount(0);
+  await expect(dialog).toBeVisible();
+  expect(await thumb.getAttribute('src')).toBe(before);
+
+  // Ronde 3: tekenen en Klaar — de vorm blijft, ook na sluiten en heropenen van het venster.
+  await dialog.getByRole('button', { name: 'Annotate' }).click();
+  await expect(undo).toBeDisabled();
+  await editor.getByRole('button', { name: 'Rectangle' }).click();
+  await dragOnCanvas(page, 0.2, 0.2, 0.5, 0.5);
+  await editor.getByRole('button', { name: 'Done' }).click();
+  await expect(editor).toHaveCount(0);
+  await expect.poll(() => thumb.getAttribute('src')).not.toBe(before);
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeHidden();
+  const again = await openDialog(page);
+  await expect(again.getByLabel('Attach screenshot')).toBeChecked();
+  await again.getByRole('button', { name: 'Annotate' }).click();
+  await expect(undo).toBeEnabled();
+  await editor.getByRole('button', { name: 'Cancel' }).click();
+
+  // Opnieuw maken wist de annotaties.
+  await again.getByRole('button', { name: 'Retake' }).click();
+  await expect(again.locator('.screenshot-annotator-thumb-img')).toBeVisible({ timeout: 20_000 });
+  await again.getByRole('button', { name: 'Annotate' }).click();
+  await expect(undo).toBeDisabled();
+  await editor.getByRole('button', { name: 'Cancel' }).click();
+
+  // Weghalen zet het vinkje uit.
+  await again.getByRole('button', { name: 'Remove' }).click();
+  await expect(again.getByLabel('Attach screenshot')).not.toBeChecked();
+  await expect(again.locator('.screenshot-annotator-thumb-img')).toHaveCount(0);
+});

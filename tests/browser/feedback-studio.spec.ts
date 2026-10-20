@@ -114,7 +114,7 @@ test('succes met githubIssueUrl: de knop Bekijk op GitHub verschijnt', async ({ 
   void ops;
   await mockApi(page, ok('https://github.com/OpenAEC-Foundation/open-planner-studio/issues/999'));
   const dialog = await fillForm(page);
-  await dialog.getByRole('button', { name: 'Feature request' }).click();
+  await dialog.getByRole('button', { name: 'Idea' }).click();
   await dialog.getByRole('button', { name: 'Send', exact: true }).click();
   await expect(dialog.getByText('Thank you, your report has been sent.')).toBeVisible();
   await expect(dialog.getByRole('button', { name: 'View on GitHub' })).toBeVisible();

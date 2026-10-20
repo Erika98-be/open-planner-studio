@@ -32,7 +32,8 @@ const SCREENSHOT_QUALITIES = [0.9, 0.85, 0.8, 0.75];
 const SCREENSHOT_SHRINK_STEP = 0.8;
 const SCREENSHOT_MIN_WIDTH = 480;
 
-export type FeedbackType = 'bug' | 'feature';
+import type { FeedbackType } from './feedbackDraft';
+export type { FeedbackType } from './feedbackDraft';
 
 export interface FeedbackPayload {
   type: FeedbackType;
@@ -82,8 +83,9 @@ export interface SendResult {
  * De body verschilt naargelang er een screenshot is (PAD A vs PAD B).
  */
 function buildGitHubUrl(payload: FeedbackPayload, os: string): string {
-  const label = payload.type === 'bug' ? 'bug' : 'enhancement';
-  const typeLabel = payload.type === 'bug' ? 'Bug' : 'Feature request';
+  // `general` (vraag of opmerking) krijgt geen bug/enhancement-label.
+  const label = payload.type === 'bug' ? 'bug' : payload.type === 'feature' ? 'enhancement' : null;
+  const typeLabel = payload.type === 'bug' ? 'Bug' : payload.type === 'feature' ? 'Feature request' : 'Question or comment';
   const locale = i18n.language;
 
   let body: string;
@@ -101,7 +103,8 @@ function buildGitHubUrl(payload: FeedbackPayload, os: string): string {
   }
 
   const enc = encodeURIComponent;
-  return `https://github.com/${GITHUB_REPO}/issues/new?title=${enc(payload.title)}&labels=${enc(label)}&body=${enc(body)}`;
+  const labels = label ? `&labels=${enc(label)}` : '';
+  return `https://github.com/${GITHUB_REPO}/issues/new?title=${enc(payload.title)}${labels}&body=${enc(body)}`;
 }
 
 /**
@@ -119,6 +122,24 @@ async function getPlatform(): Promise<string> {
     }
   }
   return navigator.platform || 'unknown';
+}
+
+/** Leesbare naam van het besturingssysteem (Windows, macOS, Linux); anders wat er is. */
+export function readableOsName(raw: string): string {
+  const r = raw.toLowerCase();
+  if (/mac|darwin/.test(r)) return 'macOS';
+  if (/iphone|ipad|ios/.test(r)) return 'iOS';
+  if (r.includes('android')) return 'Android';
+  if (r.includes('win')) return 'Windows';
+  if (r.includes('linux')) return 'Linux';
+  return raw || 'unknown';
+}
+
+/** Wat de metaregel meestuurt. Eén bron: de dialoog toont precies dit (regel *Meegestuurd*). */
+export interface FeedbackMeta { version: string; os: string; locale: string; }
+
+export async function getFeedbackMeta(): Promise<FeedbackMeta> {
+  return { version: __APP_VERSION__, os: readableOsName(await getPlatform()), locale: i18n.language };
 }
 
 /** Eenvoudige vormcontrole van een e-mailadres (de server controleert ook; max 254 tekens). */
@@ -207,12 +228,12 @@ function errorKindForStatus(status: number): FeedbackErrorKind {
  * Het honeypotveld `website` gaat nooit mee.
  */
 export async function submitFeedback(input: SubmitFeedbackInput): Promise<SubmitFeedbackResult> {
-  const os = await getPlatform();
+  const meta = await getFeedbackMeta();
   const fields: Record<string, string> = {
     app: FEEDBACK_APP_ID,
-    category: input.type === 'bug' ? 'bug' : 'feature',
-    message: buildFeedbackMessage(input, os, i18n.language),
-    appVersion: __APP_VERSION__,
+    category: input.type,
+    message: buildFeedbackMessage(input, meta.os, meta.locale),
+    appVersion: meta.version,
   };
   const email = input.email.trim();
   if (email) fields.email = email;
@@ -413,7 +434,7 @@ export async function openFeedbackUrl(url: string): Promise<void> {
  *      en de URL pas na "OK" opent.
  */
 export async function prepareGitHubFallback(payload: FeedbackPayload): Promise<SendResult> {
-  const os = await getPlatform();
+  const { os } = await getFeedbackMeta();
   const url = buildGitHubUrl(payload, os);
 
   if (!payload.screenshotDataUrl) {

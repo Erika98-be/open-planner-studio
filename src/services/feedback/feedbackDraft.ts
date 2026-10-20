@@ -31,5 +31,5 @@ export interface FeedbackDraft {
   /** Screenshot + annotaties geflattend, of null zolang er niet geannoteerd is. */
   annotatedDataUrl: string | null;
   /** De vormen, zodat de gebruiker bij heropenen verder kan annoteren. */
-  shapes: readonly AnnotationShape[];
+  shapes: AnnotationShape[];
 }
