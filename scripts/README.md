@@ -31,7 +31,7 @@ de `verify:i18n`-poort. De overige scripts draaien via hun npm-script in de kete
 
 | script | npm-script | doet |
 |---|---|---|
-| `verify-parts.mjs` | `.github/workflows/ci.yml` (job `verify`) | verdeelt de stappen van `npm run verify` — rechtstreeks gelezen uit `package.json` — over de parallelle CI-delen; een niet-ingedeelde stap valt in `static`. `--list` toont de indeling, `--check-ci` eist dat de CI-matrix elk deel draait |
+| `verify-parts.mjs` | `.github/workflows/ci.yml` (job `verify`) | verdeelt de stappen van `npm run verify` — rechtstreeks gelezen uit `package.json` — over de parallelle CI-delen; een niet-ingedeelde stap valt in `static`. `--list` toont de indeling, `--check-ci` eist dat de CI-matrix elk deel draait en dat de browsershards samen precies `1/n` … `n/n` zijn |
 | `i18n-diff.mjs` | `verify:i18n` | ontbrekende vertaalsleutels t.o.v. `nl`, met CLDR-pluralcategorieën. Fout: een gat in `en`, of een halve meervoudsfamilie in welke taal ook. Rapport (exit 0, één regel per taal; `--verbose` noemt de sleutels): een sleutel die in een andere taal helemaal ontbreekt (besluit B5) |
 | `verify-i18n-keys.mjs` | `verify:i18n` | geen cast (`as 'a.b'`) op een vertaalsleutel in `src/`: zo'n cast zet de typecheck van die sleutel uit (`as const` mag); bewezen door `tests/planning/check-i18n-keys.ts` |
 | `i18n-fmt.ts` | `verify:i18n` (met `--check`) en `npm run i18n:fmt` (schrijven) | de vaste opmaak van alle 112 locale-bestanden: één sleutel per regel, volgorde van `nl`, meervoudsfamilies in CLDR-volgorde |
@@ -499,12 +499,13 @@ Maak een baseline daarom nooit langs ze heen:
 
 | script | aangeroepen door | doet |
 |---|---|---|
-| `run-browser-tests.mjs` | `npm run test:browser`; unit-test `tests/dev-server/browser-runner.test.mjs` | reserveert voor deze worktree een poort in de browsertestbaan (`allocateNamedPort(root, 'browser')`), controleert dat de Playwright-headless-shell start (anders een melding met het installatiecommando) en start `playwright test` met `OPS_BROWSER_TEST_PORT` en `OPS_DEV_INSTANCE`; extra argumenten gaan door naar Playwright (CI gebruikt zo `--shard=`) |
+| `run-browser-tests.mjs` | `npm run test:browser`; unit-test `tests/dev-server/browser-runner.test.mjs` | reserveert voor deze worktree een poort in de browsertestbaan (`allocateNamedPort(root, 'browser')`), controleert dat de Playwright-headless-shell start (anders een melding met het installatiecommando) en start `playwright test` met `OPS_BROWSER_TEST_PORT` en `OPS_DEV_INSTANCE`; extra argumenten gaan door naar Playwright; `--duration-shard=k/n` (zo draait CI) wordt een `--test-list` met de specs van die shard uit `browser-shards.mjs` |
+| `browser-shards.mjs` | `run-browser-tests.mjs` (`--duration-shard`); unit-test `tests/dev-server/browser-shards.test.mjs` | verdeelt de browserspecs op gemeten duur (`tests/browser/spec-durations.json`, langste eerst naar de lichtste shard) over de CI-shards; elke spec in precies één shard, ook zonder meting; `node scripts/browser-shards.mjs 4` toont de indeling, `--update "<bron>" <joblogs>` ververst de duren uit de CI-logs van een groene run |
 | `browser-test-server.mjs` | `webServer.command` in `playwright.config.ts`; `tests/dev-server/integration.sh` | leest `OPS_BROWSER_TEST_PORT` (moet in de browserbaan liggen), claimt het guard-slot voor die poort en start Vite op `127.0.0.1` (Playwright pollt bewust IPv4); geeft het slot bij afsluiten weer vrij |
 
 ## Handmatige hulpmiddelen (geen aanroeper)
 
-Deze vier worden door geen npm-script, workflow, ander script of test aangeroepen; ze zijn alleen met
+Deze vijf worden door geen npm-script, workflow, ander script of test aangeroepen; ze zijn alleen met
 de hand te draaien (en worden genoemd in bewijsdocumenten onder `docs/superpowers/evidence/`, of in
 het geval van `ops-test-client.mjs` nergens). Daarmee wijken ze af van de regel bovenaan.
 
@@ -513,6 +514,7 @@ het geval van `ops-test-client.mjs` nergens). Daarmee wijken ze af van de regel 
 | `bench-task-grid.mjs` | `node scripts/bench-task-grid.mjs [--out PAD] [--compare VORIG.json]` | bundelt `tests/planning/taskGridPerformanceHarness.ts` met esbuild, draait de taakraster-benchmark op de synthetische fixture en schrijft een JSON-rapport (standaard `task-grid-benchmark.json` in de huidige map) met medianen, budgetoordelen en, met `--compare`, een vlag bij meer dan 25% regressie. De blokkerende variant is `tests/planning/check-task-grid-performance.ts` |
 | `bench-task-grid-product.mjs` | `node scripts/bench-task-grid-product.mjs --url URL --fixture PAD [--label NAAM] [--revision HASH] [--warmups 2] [--runs 9] [--tasks 10000] [--out PAD]` | productmeting van de klik op de linttab **Tabel** in een draaiende dev-build (hij heeft `window.__OPS__` nodig): serveert de IFC-fixture lokaal, start headless `/usr/bin/google-chrome` (hard pad) via CDP en rapporteert medianen als JSON. Zie `docs/superpowers/evidence/tabel-overhaul-performance.md` |
 | `verify-task-grid-spreadsheet.mjs` | `node scripts/verify-task-grid-spreadsheet.mjs <absoluut-soffice-pad>` | klembordcontract van het taakraster tegen een echte spreadsheet: bouwt TSV met de productie-serializer, laat LibreOffice Calc die naar XLSX en terug converteren en controleert met de productieparser dat alle cellen (incl. OPS-EXT/1-suffix) exact terugkomen. Vereist LibreOffice |
+| `ifc-schema-table.py` | `source <venv met ifcopenshell>/bin/activate; python -I scripts/ifc-schema-table.py > tests/planning/ifcSchemaTable.ts` | leidt de attribuut- en enumtabellen per IFC-schema (IFC4X3_ADD2, IFC4X3, IFC4) af voor de poort `tests/planning/check-ifc-schema.ts`. CI draait geen Python: draai het met de hand opnieuw na een nieuwe writer-entiteit (zie `docs/ifc-round-trip.md`) |
 | `ops-test-client.mjs` | `node scripts/ops-test-client.mjs <ops-test-map> '<json-opdracht met id>'` | stuurt één opdracht naar het dev-only Tauri-testkanaal van `src/utils/devBridge.ts` (`<appDataDir>/ops-test/cmd.json`, atomair geschreven) en wacht maximaal 15 s op een `res.json` met hetzelfde id; exit 0 bij `ok: true`. Werkt alleen tegen een draaiende `npm run tauri:dev` |
 
 ## Platformbouw (OpenAEC-app op Frappe)

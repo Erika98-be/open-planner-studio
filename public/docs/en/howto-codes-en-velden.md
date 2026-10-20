@@ -36,7 +36,7 @@ For the bar colour choose *View › Baselines & progress › Bar colors*, then *
 
 ## Pitfalls and what the app does
 
-**Deleting removes the values on the tasks.** If you delete a code type, a value or a field with the bin, the app does not ask for confirmation, and the assignments on all tasks disappear with it. A grouping or sorting on that code type or field lapses too. *Undo* (Ctrl+Z) brings back the code type, value or field and the filled-in values, but not the grouping or sorting: you set those up again.
+**Deleting removes the values on the tasks.** If you delete a code type, a value or a field with the bin, the app does not ask for confirmation, and the assignments on all tasks disappear with it. A grouping or sorting on that code type or field lapses too. *Undo* (Ctrl+Z, close the window first) brings back the code type, value or field and the filled-in values, but not the grouping or sorting: you set those up again.
 
 **Two values with the same code.** *Add value* numbers on from the number of values there are. If you delete one and add one, a code can therefore occur twice. If you type that code in a column cell, the app refuses with *This activity code value occurs more than once. Choose it from the list.* Give every value its own code.
 

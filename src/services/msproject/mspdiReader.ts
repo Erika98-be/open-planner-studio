@@ -2,7 +2,7 @@ import { Task, TaskConstraint, ConstraintType, type MilestoneKind } from '@/type
 import { Sequence, SequenceType } from '@/types/sequence';
 import { Resource, ResourceAssignment } from '@/types/resource';
 import { Project } from '@/types/project';
-import { WorkCalendar } from '@/types/calendar';
+import type { WorkCalendar, WorkTimeBands } from '@/types/calendar';
 import { effHoursPerDay, hourTaskScheduleDuration } from '@/utils/taskDuration';
 import { createDefaultCalendar } from '@/engine/calendar/defaultCalendar';
 import { Baseline, BaselineTask } from '@/types/baseline';
@@ -31,6 +31,7 @@ import {
 import {
   canonicalizeBands, clockToMinutes, hasNonAnchorTime, isSubDayMinutes,
   milestoneKindAt, promoteHourCalendars, registerCalendarBands, workDayFromBlocks, deriveHoursPerDay,
+  scalarHourFromClock,
 } from '@/services/subdayIo';
 
 // MSPDI-uitzonderingssemantiek gebruikt dezelfde `buildContributions` (record-opbouw MET budgetklem
@@ -50,7 +51,7 @@ import {
 import type { RecurrenceSpec, RawException, HolidayBudget } from '@/services/calendarRecurrence';
 import { CalendarEngine } from '@/engine/scheduler/CalendarEngine';
 import { resolveCalendar } from '@/engine/scheduler/resolveCalendar';
-import { calendarForEngine } from '@/utils/effectiveWorkTime';
+import { calendarForEngine, seedScalarBands } from '@/utils/effectiveWorkTime';
 import { MSPDI_WORKCONTOUR_CONTOURED } from '@/engine/contour/contourEngine';
 import {
   absoluteItemsToContourPeriods, attachContours, collectContour, mspdiValueToMinutes, type AbsoluteWorkItem,
@@ -332,6 +333,14 @@ export function readMSPDI(content: string): ImportResult {
   // MSPDI valt terug op de scalar-synth zodra de geregistreerde canonical geen werkdag draagt
   // (preferCanonicalWhenEmpty = false) — zie `promoteHourCalendar`.
   const hourModeCalIds = promoteHourCalendars(calById, id => cSignalCalIds.has(id), false);
+  // Een uurkalender rekent met zijn blokken; de pauzevelden van een dagkalender met pauze
+  // (`applyCalendarBody`) horen daar niet bij. De lezer zet ze nergens anders.
+  for (const id of hourModeCalIds) {
+    const promoted = calById.get(id);
+    if (!promoted) continue;
+    delete promoted.simpleBreakStartMinute;
+    delete promoted.simpleBreakDurationMinutes;
+  }
   // `<MinutesPerDay>` (authoritatief voor de projectkalender, zie `readCalendars`) gaat na de promotie
   // terug, zoals bij XER en IFC: de omrekening tussen dagen en uren mag afwijken van de blokken.
   if (projectFileHoursPerDay !== undefined) calendar.hoursPerDay = projectFileHoursPerDay;
@@ -867,6 +876,38 @@ function readWorkingTimes(parent: Element): { bands: { start: number; end: numbe
   return { bands, first };
 }
 
+/** De banden van een werkende uitzondering in de canonieke vorm van `WorkingException.bands`
+ *  (`end > start`, zie `types/calendar.ts`). Een tijdvak dat op of vóór zijn begin eindigt, loopt over
+ *  middernacht en krijgt `+1440`. MS Project (en een Asta-export) schrijft een hele werkdag als
+ *  `00:00:00`–`00:00:00`; zonder deze stap werd dat `{0, 0}`: nul werkminuten in de uurrekening. De
+ *  werkweek loopt al via `canonicalizeBands`, de P6 XML-, XER- en `.mpp`-lezer leveren al canoniek, en
+ *  de IFC-lezer canoniseert bij het teruglezen. Zonder deze stap rekende F5 dus vóór en ná een
+ *  IFC-rondgang anders (Miraya.xml, 2026-10-19). Ook gebruikt voor het ene blok van de scalaire
+ *  werkdag (`applyCalendarBody`): dezelfde regel als `canonicalizeBands`. */
+function canonicalExceptionBands(bands: { start: number; end: number }[]): { start: number; end: number }[] {
+  return bands.map((b) => (b.end <= b.start ? { start: b.start, end: b.end + 1440 } : b));
+}
+
+/** Twee bloklijsten met dezelfde begin- en eindminuten, in dezelfde volgorde. */
+function sameBlocks(
+  a: ReadonlyArray<{ start: number; end: number }>, b: ReadonlyArray<{ start: number; end: number }>,
+): boolean {
+  return a.length === b.length && a.every((x, i) => x.start === b[i].start && x.end === b[i].end);
+}
+
+/** De blokken die elke werkdag met blokken deelt (canonieke banden); `'verschilt'` als twee werkdagen
+ *  andere blokken hebben; `undefined` als geen dag blokken heeft. */
+function sharedWeekBlocks(bands: WorkTimeBands): ReadonlyArray<{ start: number; end: number }> | 'verschilt' | undefined {
+  let shared: ReadonlyArray<{ start: number; end: number }> | undefined;
+  for (let wd = 1 as 1 | 2 | 3 | 4 | 5 | 6 | 7; wd <= 7; wd = (wd + 1) as 1 | 2 | 3 | 4 | 5 | 6 | 7) {
+    const day = bands.byWeekday[wd];
+    if (day.length === 0) continue;
+    if (!shared) shared = day;
+    else if (!sameBlocks(shared, day)) return 'verschilt';
+  }
+  return shared;
+}
+
 /** Leest alle `<Exception>`-elementen van één `<Calendar>` in RUWE vorm — geklemd op
  *  `MAX_CALENDAR_EXCEPTIONS` (gedeeld met de MPP-kant via `@/services/calendarRecurrence`). Spiegelt
  *  MSPDIReader.readException's guard: een record zonder BEIDE FromDate/ToDate wordt overgeslagen
@@ -900,7 +941,7 @@ function readRawMspdiExceptions(calEl: Element): RawException[] {
     const dayWorking = getElementInt(exc, 'DayWorking', 0) === 1;
     const name = getElementText(exc, 'Name');
 
-    const bands = dayWorking ? readWorkingTimes(exc).bands : [];
+    const bands = dayWorking ? canonicalExceptionBands(readWorkingTimes(exc).bands) : [];
 
     const recurring = readMspdiRecurringData(exc, fromDate, toDate);
     if (!recurring && !toDate) continue; // niet-recurrent bereik zonder einddatum: geen bruikbaar bereik
@@ -927,7 +968,7 @@ function readLegacyDayExceptions(calEl: Element): RawException[] {
     const fromDateRaw = getElementText(timePeriod, 'FromDate');
     const toDateRaw = getElementText(timePeriod, 'ToDate');
     if (!fromDateRaw || !toDateRaw) continue;
-    const { bands } = readWorkingTimes(wd);
+    const bands = canonicalExceptionBands(readWorkingTimes(wd).bands);
     out.push({
       fromDate: parseDate(parseMSPDate(fromDateRaw)),
       toDate: parseDate(parseMSPDate(toDateRaw)),
@@ -953,16 +994,14 @@ function readLegacyDayExceptions(calEl: Element): RawException[] {
  */
 function applyCalendarBody(
   calEl: Element, calendar: WorkCalendar, budget: HolidayBudget,
-  inherit: { declared: boolean; base: WorkCalendar | null }, week: WeekEntry[] | null,
+  inherit: { declared: boolean; base: WorkCalendar | null }, week: WeekEntry[] | null, opsFile: boolean,
 ): void {
   const workDays: number[] = [];
   // ALLE <WorkingTime>-banden per weekdag lezen → rauwe banden voor de uur-modus-beslissing.
   const rawByWeekday: Partial<Record<1 | 2 | 3 | 4 | 5 | 6 | 7, { start: number; end: number }[]>> = {};
 
-  // Eerste werkdag van de standaardwerkweek (voor de scalaire uren hieronder): de tijden van het
-  // eerste `WorkingTime`-element (één blok: de oude afleiding) en de leesbare blokken (meer blokken).
-  let firstWorkingTime: { from: string; to: string } | undefined;
-  let firstDayBands: { start: number; end: number }[] | undefined;
+  // Werkdagen met tijden: daaruit komt de scalaire werkdag (hieronder).
+  const timedDays: WeekEntry[] = [];
 
   // `week` is de effectieve standaardwerkweek (eigen dagen, en bij een afgeleide kalender de rest van
   // de basis — `effectiveWeek`). `null` ⇒ geen werkweek bekend: de werkweek en uren van
@@ -973,23 +1012,55 @@ function applyCalendarBody(
     const isoDay = day.dayType === 1 ? 7 : day.dayType - 1;
     workDays.push(isoDay);
     if (day.bands.length > 0) rawByWeekday[isoDay as 1] = day.bands;
-    if (!firstWorkingTime && day.firstTime) {
-      firstWorkingTime = day.firstTime;
-      firstDayBands = day.bands;
-    }
+    if (day.firstTime) timedDays.push(day);
   }
+  // De scalaire werkdag: de eerste werkdag met tijden in MS Project-volgorde (zondag eerst,
+  // `SCALAR_DAY_ORDER`), niet in bestandsvolgorde: de eigen schrijver zet maandag eerst, en dan koos een
+  // rondgang een andere dag. Daarvan de tijden van het eerste `WorkingTime`-element (alleen nog de
+  // terugval voor een onleesbare kloktijd) en de leesbare blokken.
+  const scalarDay = [...timedDays].sort((a, b) => a.dayType - b.dayType)[0];
+  const firstWorkingTime = scalarDay?.firstTime;
+  const firstDayBands = scalarDay?.bands;
 
   if (workDays.length > 0) {
     calendar.workDays = workDays.sort((a, b) => a - b);
   }
 
   const { bands, deviates } = canonicalizeBands(rawByWeekday);
+  const shared = sharedWeekBlocks(bands);
+  // Dagkalender met pauze uit een eigen export: de schrijver zet de effectieve blokken van een
+  // dagkalender (`effectiveWorkTimeBands`) op elke werkdag, dus twee gelijke blokken per werkdag. Alleen
+  // in een bestand van OPS zelf (de OPS-marker): een bestand van MS Project met 08:00–12:00 +
+  // 13:00–17:00 blijft een uurkalender, zoals de `.mpp`-lezer hem leest. Een echte pauze tussen de
+  // blokken, binnen de dag.
+  const dayWithBreak = opsFile && Array.isArray(shared) && shared.length === 2
+    && shared[0].end < shared[1].start && shared[1].end <= 1440
+    ? shared : undefined;
+  // Uurkalender bij een afwijking van de enkelvoudige werkdag (`canonicalizeBands`: meer blokken,
+  // over middernacht, een hele dag), en bij werkdagen met verschillende blokken: één werkdag voor de hele
+  // week kan dat niet bewaren. Zo'n kalender las vroeger als dagkalender met de werktijd van de eerste
+  // werkdag op alle werkdagen (0402ScheduleMSP.xml: zondag 00:08–00:16, ma–vr 08:00–16:00).
+  const hourShape = (deviates && !dayWithBreak) || shared === 'verschilt';
 
   // Scalaire werkdag (dag-pad, en wat de kalenderdialoog toont) uit de standaardwerkweek hierboven,
   // niet het eerste `WorkingTime` van de hele kalender: dat kan van een uitzondering of een tijdelijke
   // werkweek zijn (een kalender zonder eigen `WeekDays` houdt zo zijn standaarduren).
   const blocked = firstDayBands && firstDayBands.length > 1 ? workDayFromBlocks(firstDayBands) : undefined;
-  if (blocked) {
+  const singleBand = firstDayBands?.length === 1 ? canonicalExceptionBands(firstDayBands)[0] : undefined;
+  if (dayWithBreak) {
+    // Begin, einde en uren per dag op de minuut. De pauze krijgt alleen eigen velden als de afleiding
+    // zonder pauzevelden (`seedScalarBands`: het verschil rond 12:00) andere blokken geeft; zo komt
+    // een kalender zonder pauzevelden (de standaard 07:00–16:00, 8 uur) ook zo terug.
+    const [first, second] = dayWithBreak;
+    const net = (first.end - first.start) + (second.end - second.start);
+    calendar.workStartHour = first.start / 60;
+    calendar.workEndHour = second.end / 60;
+    calendar.hoursPerDay = net / 60;
+    if (!sameBlocks(seedScalarBands(first.start, second.end, net / 60), dayWithBreak)) {
+      calendar.simpleBreakStartMinute = first.end;
+      calendar.simpleBreakDurationMinutes = second.start - first.end;
+    }
+  } else if (blocked) {
     // Meer blokken: begin eerste / einde laatste blok (MS Projects 08:00–12:00 + 13:00–17:00 ⇒ 8–17),
     // zoals de P6 XML- en XER-lezer. De tussenwaarde `hoursPerDay` vóór promotie is NETTO (de som van
     // de blokken, modaal over de week — precies wat `promoteHourCalendar` daarna zet); einde min begin
@@ -997,15 +1068,24 @@ function applyCalendarBody(
     calendar.workStartHour = blocked.startHour;
     calendar.workEndHour = blocked.endHour;
     calendar.hoursPerDay = deriveHoursPerDay(bands, blocked.netHours);
+  } else if (singleBand) {
+    // Eén blok: begin, einde en uren per dag op de minuut, in de canonieke vorm (`end > start`;
+    // `00:00:00`–`00:00:00` is 0–1440, een nachtblok 22:00–06:00 is 1320–1800 ⇒ 22–30). Vroeger telde
+    // alleen het uurdeel van de kloktijd: 07:30–16:00 werd 7–16 met 9 uur per dag.
+    calendar.workStartHour = singleBand.start / 60;
+    calendar.workEndHour = singleBand.end / 60;
+    calendar.hoursPerDay = (singleBand.end - singleBand.start) / 60;
   } else if (firstWorkingTime) {
+    // Terugval voor een kloktijd zonder `HH:MM`-vorm (`clockToMinutes` geeft dan geen blok): het
+    // getal vóór de eerste `:`. Een oudere eigen export schreef 07:30 als `7.5:00:00`; dat wordt 7,5.
     const fromTime = firstWorkingTime.from;
     const toTime = firstWorkingTime.to;
     if (fromTime) {
-      const h = parseInt(fromTime.split(':')[0]);
+      const h = scalarHourFromClock(fromTime);
       if (!isNaN(h)) calendar.workStartHour = h;
     }
     if (toTime) {
-      const h = parseInt(toTime.split(':')[0]);
+      const h = scalarHourFromClock(toTime);
       // `00:00:00` als eindtijd is middernacht ná de start (MS Project's eigen "24 Hours"-kalender en
       // onze writer schrijven dat zo) ⇒ 24, niet 0.
       if (!isNaN(h)) calendar.workEndHour = h <= calendar.workStartHour ? h + 24 : h;
@@ -1014,7 +1094,7 @@ function applyCalendarBody(
     if (calendar.hoursPerDay <= 0) calendar.hoursPerDay = 8;
   }
 
-  registerCalendarBands(calendar, { canonical: bands, deviates });
+  registerCalendarBands(calendar, { canonical: bands, deviates: hourShape });
 
   // Uitzonderingen (holidays + werkende uitzonderingen + recurrente expansie) via
   // `buildContributions` + `resolveContributions`. Welke feestdagen een kalender krijgt:
@@ -1108,6 +1188,8 @@ function readCalendars(root: Element, budget: HolidayBudget): {
   projectFileHoursPerDay?: number;
 } {
   const fileMinutesPerDay = getElementInt(root, 'MinutesPerDay');
+  // Een bestand van OPS zelf (de OPS-taakeenheid is gedefinieerd): zie `dayWithBreak` in `applyCalendarBody`.
+  const opsFile = opsDurationUnitFieldId(root) !== null;
   const projectFileHoursPerDay = fileMinutesPerDay > 0 ? fileMinutesPerDay / 60 : undefined;
   const calendarsRoot = root.getElementsByTagName('Calendars')[0];
   const allEls = new Map<number, Element>();
@@ -1181,7 +1263,7 @@ function readCalendars(root: Element, budget: HolidayBudget): {
     // MSPDI kent geen regelset-herkomst — createDefaultCalendar() zet 'm altijd (nieuwe projecten zijn
     // per definitie gegenereerd); een uit MSPDI gelezen kalender is dat niet.
     delete cal.generation;
-    applyCalendarBody(calEl, cal, budget, { declared: declaredBase, base }, week);
+    applyCalendarBody(calEl, cal, budget, { declared: declaredBase, base }, week, opsFile);
     if (uid === projectCalUid) {
       // `<MinutesPerDay>` op projectniveau is authoritatief voor de projectkalender en overschrijft de
       // WorkingTime-afgeleide waarde uit applyCalendarBody. Alleen voor de projectkalender: een

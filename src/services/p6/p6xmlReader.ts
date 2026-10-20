@@ -1,5 +1,6 @@
 import { nameWithProjectCode } from '@/utils/projectCodeName';
 import { P6XmlImportError } from './p6xmlErrors';
+import { p6ConstraintFromCodeOrLabel } from './p6ConstraintTypes';
 import { Task, TaskConstraint, ConstraintType } from '@/types/task';
 import type { P6CompletePctType, P6DurationType } from '@/types/task';
 import { createDefaultTaskTime } from '@/utils/taskDefaults';
@@ -173,23 +174,25 @@ function p6HoursToDays(hours: number, hoursPerDay: number): number {
 }
 
 /**
- * P6 `CS_*`-code → OPS-constraint (spiegel van `p6ConstraintCode` in de writer). De harde
- * `CS_MANDSTART`/`CS_MANDFIN` komen terug als `MSO`/`MFO` mét `hard:true`; de soft-typen als hun
- * OPS-equivalent. Onbekende code ⇒ `undefined` (veld afwezig).
+ * P6-constraintsoort → OPS-constraint. Echte P6 XML (PMXML) schrijft `<PrimaryConstraintType>` en
+ * `<SecondaryConstraintType>` als Engels label (`Start On or After`); de eigen writer schrijft het
+ * label sinds deze fix ook, maar oudere OPS-exports dragen het XER-token (`CS_MSOA`). Beide
+ * schrijfwijzen worden gelezen, via de gedeelde helper `p6ConstraintFromCodeOrLabel`
+ * (`p6ConstraintTypes.ts`, bron MPXJ `ConstraintTypeHelper`). De harde `Mandatory Start`/
+ * `Mandatory Finish` komen terug als `MSO`/`MFO` mét `hard:true`.
+ *
+ * `<Primary|SecondaryConstraintType>` → OPS-constraint. Leeg ⇒ `undefined` (ASAP). Een onbekende
+ * waarde ⇒ `undefined` mét waarschuwing, zodat een vreemd label zichtbaar blijft (zoals bij
+ * `<DurationType>`).
  */
-function p6CodeToConstraint(code: string): { type: ConstraintType; hard?: boolean } | undefined {
-  switch (code) {
-    case 'CS_MSO': return { type: 'MSO' };
-    case 'CS_MSOA': return { type: 'SNET' };
-    case 'CS_MSOB': return { type: 'SNLT' };
-    case 'CS_MEO': return { type: 'MFO' };
-    case 'CS_MEOA': return { type: 'FNET' };
-    case 'CS_MEOB': return { type: 'FNLT' };
-    case 'CS_ALAP': return { type: 'ALAP' };
-    case 'CS_MANDSTART': return { type: 'MSO', hard: true };
-    case 'CS_MANDFIN': return { type: 'MFO', hard: true };
-    default: return undefined;
-  }
+function p6ConstraintFromXml(raw: string, tag: string): { type: ConstraintType; hard?: boolean } | undefined {
+  const value = raw.trim();
+  if (!value) return undefined;
+  // Eigen sleutel (in de helper): een waarde als `toString` of `__proto__` raakt geen prototype-sleutel.
+  const known = p6ConstraintFromCodeOrLabel(value);
+  if (known) return known;
+  console.warn(`P6-XML-import: onbekende <${tag}>-waarde '${value}' — constraint blijft afwezig.`);
+  return undefined;
 }
 
 // P6-XML (PMXML) draagt `<DurationType>` als Engels label, niet als het XER-token
@@ -974,13 +977,13 @@ function readP6XmlProject(scope: P6XmlScope): P6XmlProjectRead {
 
     const parentId = wbsObjId >= 0 ? wbsObjIdToId.get(wbsObjId) || null : null;
 
-    // Datumconstraints: primair + secundair uit de `CS_*`-codes. Secundair is altijd soft
+    // Datumconstraints: primair + secundair uit het PMXML-label of de `CS_*`-code. Secundair is altijd soft
     // (P6-invariant) ⇒ `hard` wordt gedropt. Datum: uur ⇒ echte tijd, dag ⇒ tijd-strippen.
     const parseCstrDate = (raw: string): string => importDateTime(raw, hourDates);
     let constraint: TaskConstraint | undefined;
     const primCode = getElementText(actEl, 'PrimaryConstraintType');
     if (primCode) {
-      const mapped = p6CodeToConstraint(primCode);
+      const mapped = p6ConstraintFromXml(primCode, 'PrimaryConstraintType');
       if (mapped) {
         const cdateRaw = getElementText(actEl, 'PrimaryConstraintDate');
         constraint = {
@@ -993,7 +996,7 @@ function readP6XmlProject(scope: P6XmlScope): P6XmlProjectRead {
     let constraint2: TaskConstraint | undefined;
     const secCode = getElementText(actEl, 'SecondaryConstraintType');
     if (secCode) {
-      const mapped2 = p6CodeToConstraint(secCode);
+      const mapped2 = p6ConstraintFromXml(secCode, 'SecondaryConstraintType');
       if (mapped2) {
         const cdate2Raw = getElementText(actEl, 'SecondaryConstraintDate');
         constraint2 = {

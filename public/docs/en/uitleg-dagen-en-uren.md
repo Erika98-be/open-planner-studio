@@ -20,7 +20,7 @@ You use hours for work that does not fit in whole days: a crane you hire for twe
 
 Every calendar has **working-time blocks** for each work day (called *bands* in the app). The standard calendar has 07:00 to 12:00 and 13:00 to 16:00. The gap is the break. The app derives those blocks from the calendar's *Start (hour)*, *End (hour)* and break; you do not have to set anything for it. If you set blocks of your own per weekday, those take precedence.
 
-The **standard workday** is the workday that occurs most often; its length is the sum of its blocks. So it is not an average: with Monday at 16 hours and Tuesday to Friday at 10 hours, the standard workday is 10 hours. If the work days differ in length, the most common daily total applies, and in a tie the highest. With four days of 8 hours and a Friday of 5 hours, the standard workday is therefore 8 hours. A calendar with its own hours per day (for example from Primavera P6) also calculates with this daily total, and the calendar window shows it. Its own value is kept for the export. A task of 1870 hours on blocks of 10 hours therefore lasts 187 days, even if its own value is 8 hours per day.
+The **standard workday** is the workday that occurs most often; its length is the sum of its blocks. So it is not an average: with Monday at 16 hours and Tuesday to Friday at 10 hours, the standard workday is 10 hours. If the work days differ in length, the most common daily total applies, and in a tie the highest. With four days of 8 hours and a Friday of 5 hours, the standard workday is therefore 8 hours. A calendar with its own hours per day (for example from Primavera P6) also calculates with this daily total, and the calendar window shows it. Its own value is kept for the export. If it differs, the calendar window shows an orange block below *Standard workday*. A task of 1870 hours on blocks of 10 hours therefore lasts 187 days, even if its own value is 8 hours per day.
 
 ### A task in hours
 
@@ -91,7 +91,7 @@ In tutorial 4, on hour planning, you plan a crane job in hours yourself.
 
 **"8 hours is 1 day."** Only if the calendar has days of 8 hours. On the calendar with the free Friday afternoon, 5 days is 37 hours, not 40.
 
-**"If I set more hours per day, my day task finishes sooner."** No. A day task counts whole work days. The hours per day only change what a day is worth in hours, for example in the display and for a lag in hours. Only for a task with resources and the work rule *Fixed work* or *Fixed units* does the duration change with it, because the work stays the same: 40 hours of work is 5 days at 8 hours per day and 7 days at 6 hours per day.
+**"If I set more hours per day, my day task finishes sooner."** No. A day task counts whole work days. The hours per day only change what a day is worth in hours, for example in the display and for a lag in hours. Only for a task with resources and the task type *Fixed work* or *Fixed units* does the duration change with it, because the work stays the same: 40 hours of work is 5 days at 8 hours per day and 7 days at 6 hours per day.
 
 **"A task of 8 hours lasts one day."** Only if it starts at the beginning of the day. If it starts later, like *Adjust elements* on Tuesday at 11:00, it runs on into the next day.
 

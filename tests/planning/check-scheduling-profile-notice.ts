@@ -49,7 +49,7 @@ const merged = withSchedulingProfileNotice(
 eq('08 XER: samengevoegd, geen tweede toast', merged?.messageKey, 'notifications.xerImportOpened');
 eq('09 XER: profielregel bovenaan', merged?.detailLines?.[0],
   { messageKey: 'notifications.schedulingProfileApplied', params: { profile: 'Primavera P6' } });
-eq('10 XER: actie erbij, XER-gids blijft lees-meer', [merged?.action?.section, merged?.helpArticleId], ['project-info', 'howto-xer-openen']);
+eq('10 XER: actie erbij, XER-gids blijft lees-meer', [merged?.action?.kind === 'openBackstageSection' ? merged.action.section : undefined, merged?.helpArticleId], ['project-info', 'howto-xer-openen']);
 eq('11 XER zonder profielvoorstel: ongewijzigd', withSchedulingProfileNotice([importOf(undefined, undefined)], xerNotice, 'd'), xerNotice);
 eq('11b eigen profiel ⇒ zijn naam', withSchedulingProfileNotice(
   [importOf({ baseId: 'p6', id: 'eigen', name: 'Mijn P6', overrides: {} }, 'p6')], undefined, 'd')?.params, { profile: 'Mijn P6' });

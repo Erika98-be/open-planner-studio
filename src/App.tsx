@@ -70,6 +70,7 @@ const ExtensionConsentDialog = EXTENSIONS_ENABLED
   ? lazy(() => import('@/components/dialogs/ExtensionConsentDialog').then(m => ({ default: m.ExtensionConsentDialog })))
   : () => null;
 const ActualStartDialog = lazy(() => import('@/components/dialogs/ActualStartDialog').then(m => ({ default: m.ActualStartDialog })));
+const PhaseAssignmentDialog = lazy(() => import('@/components/dialogs/PhaseAssignmentDialog').then(m => ({ default: m.PhaseAssignmentDialog })));
 const SiteOpenDialog = lazy(() => import('@/components/dialogs/SiteOpenDialog').then(m => ({ default: m.SiteOpenDialog })));
 const FormatNoticeDialog = lazy(() => import('@/components/dialogs/FormatNoticeDialog').then(m => ({ default: m.FormatNoticeDialog })));
 const SiteSaveDialog = lazy(() => import('@/components/dialogs/SiteSaveDialog').then(m => ({ default: m.SiteSaveDialog })));
@@ -322,8 +323,7 @@ function AppContent() {
           dan op een balk waar de onderbreking begint en sleep naar rechts voor de lengte. */}
       <SplitModeNotice />
 
-      {/* "Datums zoals opgeslagen"-strook: aanbod ná het laden van een bestand waarvan
-          herberekening de datums verschoof, of de modus zelf zolang hij aan staat. Bewust BOVEN de
+      {/* "Datums zoals opgeslagen"-strook: de modus zolang hij aan staat. Bewust BOVEN de
           `activeTab === 'file'`-vertakking (net als de meldingen hierboven), zodat de strook
           zichtbaar blijft in élke weergave — Gantt, tabel, rapport én Backstage. */}
       <RecordedDatesNotice />
@@ -448,6 +448,9 @@ function AppContent() {
             zou beginnen). Rendert alleen bij `ui.pendingActualStartQuestion`; stapelt boven
             "Taak bewerken". */}
         <ActualStartDialog />
+        {/* "Taak wordt een samenvattingstaak": rendert alleen bij `ui.pendingPhaseAssignmentQuestion`; stapelt
+            boven "Taak bewerken". */}
+        <PhaseAssignmentDialog />
         {/* Opslag via de site: renderen alleen bij `ui.pendingSiteOpen` / `ui.pendingSiteSave`. */}
         <SiteOpenDialog />
         <SiteSaveDialog />

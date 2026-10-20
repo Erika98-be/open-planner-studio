@@ -1,6 +1,7 @@
 import { useId, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppStore } from '@/state/appStore';
+import { refusalNotice } from '@/state/refusalNotice';
 import type { ResourceCurve } from '@/types/resource';
 import { UnitsInput } from '@/components/common/UnitsInput';
 import { Select, type SelectOption } from '@/components/common/Select';
@@ -12,7 +13,7 @@ import { assignmentCurveState, contouredAssignmentIds } from '@/engine/contour/c
 import { ContourDialog } from '@/components/dialogs/ContourDialog';
 import { matchContoursToAssignments } from '@/engine/contour/contourEngine';
 import { effectiveWorkRule, remainingMinutesOf, workRuleApplies } from '@/engine/work/workRuleApply';
-import { assignmentWorkDeviation } from '@/engine/work/assignmentWorkDeviation';
+import { assignmentWorkDeviation, workDeviationEffectKey } from '@/engine/work/assignmentWorkDeviation';
 import { ruleProtectsWork } from '@/engine/work/workTriangle';
 import { taskTypesUnlocked } from '@/state/taskTypesVisibility';
 import { taskCalendarHoursPerDay } from '@/utils/taskDefaults';
@@ -80,7 +81,7 @@ function MoveToSelect({ label, candidates, onMove }: {
  * én dialoog.
  *
  * Eén regel per resource in een raster met de kop erboven (CSS `.assignment-list`, zelfde opzet als de
- * relatielijst): naam, inzet, werk (alleen met "Toon werkregels en werk") en verwijderen. De naam is
+ * relatielijst): naam, inzet, werk (alleen met "Taaktypes gebruiken" of een bestand met taaktypes) en verwijderen. De naam is
  * een uitklapknop; daaronder staan curve, de knop naar `ContourDialog` (urenverdeling per werkdag) en
  * "Verplaats naar…". Een afwijkende curve of een eigen urenverdeling blijft ook dichtgeklapt zichtbaar
  * als icoon naast de naam (indeling goedgekeurd door de eigenaar, 2026-10-19).
@@ -99,11 +100,12 @@ export function TaskAssignmentsSection({ taskId }: { taskId: string }) {
   const setAssignmentWork = useAppStore(s => s.setAssignmentWork);
   const notify = useAppStore(s => s.notify);
   // "1,500" in en of "1.500" in nl: 1500 of 1,5? Geen gok; de waarde blijft. De melding noemt het
-  // decimaalteken van de taal (de vertaling bouwt er het voorbeeld 1{{separator}}5 mee).
-  const notifyAmbiguous = (text: string) => notify({
-    severity: 'error', messageKey: 'notifications.ambiguousThousands',
+  // decimaalteken van de taal (de vertaling bouwt er het voorbeeld 1{{separator}}5 mee). Het is een
+  // weigering ("De waarde is niet gewijzigd."): rood en blijvend via refusalNotice (#375/#396).
+  const notifyAmbiguous = (text: string) => notify(refusalNotice({
+    messageKey: 'notifications.ambiguousThousands',
     params: { text, separator: decimalSeparatorOf(i18n.language) },
-  });
+  }));
   const unlocked = useAppStore(s => taskTypesUnlocked(s));
   const defaultWorkRule = useAppStore(s => s.project.defaultWorkRule);
   const calendars = useAppStore(s => s.calendars);
@@ -294,7 +296,11 @@ export function TaskAssignmentsSection({ taskId }: { taskId: string }) {
                           <span
                             className="absolute start-1 top-1/2 inline-flex -translate-y-1/2 items-center"
                             style={{ color: 'var(--theme-warning-text)' }}
-                            title={t('properties.assignments.workDeviatesHint', deviation)}
+                            title={t('properties.assignments.workDeviatesHint', {
+                              ...deviation,
+                              // Slotzin per regel (besluit V10): dezelfde keuze als de tabel en de duurbewerking.
+                              durationEffect: t(workDeviationEffectKey(task, defaultWorkRule)),
+                            })}
                             aria-label={t('properties.assignments.workDeviates')}
                             role="img"
                             data-ops-assignment-work-deviates={`${deviation.stored}/${deviation.derived}`}
