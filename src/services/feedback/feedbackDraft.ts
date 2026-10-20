@@ -26,6 +26,8 @@ export interface FeedbackDraft {
   description: string;
   email: string;
   attachScreenshot: boolean;
+  /** Gaf een eerdere poging met dit concept `uncertain`? Dan telt een 409 als "al aangekomen". */
+  hadUncertain: boolean;
   /** Het rauwe screenshot (zonder annotaties), of null. */
   screenshotDataUrl: string | null;
   /** Screenshot + annotaties geflattend, of null zolang er niet geannoteerd is. */

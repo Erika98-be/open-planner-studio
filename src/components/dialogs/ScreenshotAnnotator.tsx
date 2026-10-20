@@ -19,7 +19,9 @@
  *  - Inline tekst-invoer: <input> absoluut op de klikpositie t.o.v. het canvas
  */
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
 import { useTranslation } from 'react-i18next';
 import { ArrowUpRight, Square, Pen, Type, Undo2, Trash2, Pencil, EyeOff, RefreshCw, X } from 'lucide-react';
 import type { AnnotationShape, AnnotationPoint, AnnotationText } from '@/services/feedback/feedbackDraft';
@@ -170,12 +172,49 @@ interface ScreenshotAnnotatorProps {
   onRemove: () => void;
   /** Knoppen uit (tijdens versturen). */
   disabled?: boolean;
+  /** Meldt of de editor openstaat (ook tijdens het flattenen na *Klaar*). Zolang hij openstaat,
+   *  maakt de ouder de rest van het venster `inert` en kan er niet verstuurd worden. */
+  onEditorOpenChange?: (open: boolean) => void;
+}
+
+/** Het editorpaneel met een eigen focus-trap: Tab blijft in de editor zolang die openstaat. */
+function EditorPanel({ label, children }: { label: string; children: ReactNode }) {
+  const panelRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(panelRef);
+  // `useFocusTrap` luistert op het paneel. Na tekenen op het canvas (niet focusbaar) staat de focus
+  // op `body`; Tab zou dan naar de app erachter gaan. Daarom ook op document: Tab buiten het paneel
+  // zet de focus terug op het eerste focusbare element van de editor.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const panel = panelRef.current;
+      if (e.key !== 'Tab' || !panel || panel.contains(document.activeElement)) return;
+      e.preventDefault();
+      const items = Array.from(panel.querySelectorAll<HTMLElement>('button:not([disabled]), input:not([disabled])'))
+        .filter(el => el.getClientRects().length > 0);
+      (e.shiftKey ? items[items.length - 1] : items[0])?.focus();
+    };
+    document.addEventListener('keydown', onKey, true);
+    return () => document.removeEventListener('keydown', onKey, true);
+  }, []);
+  return (
+    <div
+      ref={panelRef}
+      className="annotator-editor"
+      role="dialog"
+      aria-modal="true"
+      aria-label={label}
+      onClick={e => e.stopPropagation()}
+    >
+      {children}
+    </div>
+  );
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function ScreenshotAnnotator({
   screenshotDataUrl, previewDataUrl, shapes: committedShapes, onChange, onRetake, onRemove, disabled = false,
+  onEditorOpenChange,
 }: ScreenshotAnnotatorProps) {
   const { t } = useTranslation('common');
 
@@ -197,6 +236,12 @@ export function ScreenshotAnnotator({
   shapesRef.current = shapes;
 
   const thumbnailUrl = previewDataUrl ?? screenshotDataUrl;
+
+  // De ouder volgt of de editor openstaat (versturen blokkeren, de rest van het venster inert).
+  useEffect(() => {
+    onEditorOpenChange?.(editorOpen);
+  }, [editorOpen, onEditorOpenChange]);
+  useEffect(() => () => onEditorOpenChange?.(false), [onEditorOpenChange]);
 
   // ── Canvas: afmetingen synchroniseren met screenshot bij openen ───────────
   useEffect(() => {
@@ -405,16 +450,14 @@ export function ScreenshotAnnotator({
         </div>
       </div>
 
-      {/* Bijna-schermvullende editor-overlay */}
-      {editorOpen && (
+      {/* Bijna-schermvullende editor-overlay. Via een portal buiten het feedbackvenster, zodat de
+          ouder dat venster `inert` kan maken: de focus kan dan niet naar *Versturen* erachter. */}
+      {editorOpen && createPortal(
         <div
           className="annotator-editor-backdrop"
           onClick={() => void closeEditor()}
         >
-          <div
-            className="annotator-editor"
-            onClick={e => e.stopPropagation()}
-          >
+          <EditorPanel label={t('feedback.annotate')}>
             {/* Toolbar */}
             <div className="annotator-editor-toolbar">
               <button
@@ -548,8 +591,9 @@ export function ScreenshotAnnotator({
                 )}
               </div>
             </div>
-          </div>
-        </div>
+          </EditorPanel>
+        </div>,
+        document.body,
       )}
     </>
   );

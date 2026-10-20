@@ -50,6 +50,7 @@ const ERROR_KEYS = {
   rateLimited: 'feedback.errorRateLimited',
   duplicate: 'feedback.errorDuplicate',
   failed: 'feedback.errorFailed',
+  uncertain: 'feedback.errorUncertain',
 } as const satisfies Record<FeedbackErrorKind, string>;
 
 const TYPE_KEYS = {
@@ -99,7 +100,11 @@ export function FeedbackDialog() {
   // Verstuur-state
   const [sending, setSending] = useState(false);
   const [submitError, setSubmitError] = useState<FeedbackErrorKind | null>(null);
-  const [sent, setSent] = useState<SubmitFeedbackResult | null>(null);
+  const [sent, setSent] = useState<(SubmitFeedbackResult & { alreadyArrived?: boolean }) | null>(null);
+  // Gaf een eerdere poging met dit concept `uncertain`? Dan betekent een 409 (dubbel) op een
+  // volgende poging: de eerste is toch aangekomen. Dat is een succes, geen fout.
+  // Hoort bij het concept: sluiten en heropenen na een timeout ziet een 409 nog als "al aangekomen".
+  const [hadUncertain, setHadUncertain] = useState(initialDraft?.hadUncertain ?? false);
   // Terugval PAD B: plak-instructie voor GitHub.
   const [fallback, setFallback] = useState<SendResult | null>(null);
 
@@ -110,7 +115,7 @@ export function FeedbackDialog() {
   const draftIsEmpty = feedbackType === 'bug' && title === '' && description === ''
     && email.trim() === storedEmail.trim() && !attachScreenshot;
   const draft: FeedbackDraft | null = draftIsEmpty ? null : {
-    type: feedbackType, title, description, email, attachScreenshot,
+    type: feedbackType, title, description, email, attachScreenshot, hadUncertain,
     screenshotDataUrl: attachScreenshot ? screenshotDataUrl : null,
     annotatedDataUrl: attachScreenshot ? annotatedDataUrl : null,
     shapes: attachScreenshot ? shapes : [],
@@ -152,7 +157,10 @@ export function FeedbackDialog() {
       : !emailOk
         ? t('feedback.emailInvalid')
         : null;
-  const canSubmit = !sending && !capturing && formHint === null;
+  // Zolang de annotatie-editor openstaat (ook tijdens het flattenen na *Klaar*) kan er niet verstuurd
+  // worden: anders gaat het screenshot zonder de laatste annotaties (en zonder afdekking) mee.
+  const [annotatorOpen, setAnnotatorOpen] = useState(false);
+  const canSubmit = !sending && !capturing && !annotatorOpen && formHint === null;
 
   // ── Screenshot maken ───────────────────────────────────────────────────────
   const captureScreenshot = useCallback(async () => {
@@ -210,6 +218,7 @@ export function FeedbackDialog() {
     setShapes([]);
     setCaptureError(null);
     setSubmitError(null);
+    setHadUncertain(false);
     setFeedbackDraft(null);
   }, [storedEmail, setFeedbackDraft]);
 
@@ -240,7 +249,15 @@ export function FeedbackDialog() {
       setSent(res);
     } catch (err) {
       console.warn('Feedback versturen mislukt:', err);
-      setSubmitError(err instanceof FeedbackSubmitError ? err.kind : 'failed');
+      const kind: FeedbackErrorKind = err instanceof FeedbackSubmitError ? err.kind : 'failed';
+      if (kind === 'duplicate' && hadUncertain) {
+        discardDraftRef.current = true;
+        setFeedbackDraft(null);
+        setSent({ githubIssueUrl: null, screenshotDropped: false, screenshotBytes: null, alreadyArrived: true });
+        return;
+      }
+      if (kind === 'uncertain') setHadUncertain(true);
+      setSubmitError(kind);
     } finally {
       setSending(false);
     }
@@ -279,6 +296,8 @@ export function FeedbackDialog() {
       <div
         ref={dialogRef}
         className="feedback-dialog"
+        // Annotatie-editor open: het venster is inert (geen focus, geen klik), de editor heeft de focus.
+        inert={annotatorOpen}
         onClick={e => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
@@ -303,7 +322,9 @@ export function FeedbackDialog() {
           {sent ? (
             /* ── Bedankscherm (hoofdweg geslaagd) ── */
             <div className="feedback-confirm" data-feedback-sent>
-              <p className="feedback-confirm-title" role="status">{t('feedback.sentTitle')}</p>
+              <p className="feedback-confirm-title" role="status">
+                {sent.alreadyArrived ? t('feedback.sentAlready') : t('feedback.sentTitle')}
+              </p>
               {sent.screenshotDropped && (
                 <p className="feedback-confirm-fallback">{t('feedback.sentScreenshotDropped')}</p>
               )}
@@ -421,6 +442,7 @@ export function FeedbackDialog() {
                   onChange={handleAnnotated}
                   onRetake={() => void captureScreenshot()}
                   onRemove={() => handleAttachToggle(false)}
+                  onEditorOpenChange={setAnnotatorOpen}
                   disabled={sending}
                 />
               )}

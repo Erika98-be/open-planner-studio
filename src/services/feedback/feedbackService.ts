@@ -19,8 +19,14 @@ import { GITHUB_REPO } from '@/services/githubRepo';
 // ─── Open Feedback Studio: één plek voor endpoint en app-id ────────────────────
 export const FEEDBACK_ENDPOINT = 'https://open-feedback-studio.pages.dev/api/feedback';
 export const FEEDBACK_APP_ID = 'open-planner-studio';
-/** Na deze tijd breekt het versturen af en telt het als netwerkfout. */
+/** Na deze tijd breekt het versturen af (verbinden, antwoord én lezen van de body samen). */
 export const FEEDBACK_TIMEOUT_MS = 20_000;
+let timeoutMs = FEEDBACK_TIMEOUT_MS;
+/** Alleen in de dev-build: de browsertest zet een korte timeout, zodat hij geen 20 s wacht. */
+export function setFeedbackTimeoutForTests(ms: number | null): void {
+  if (!import.meta.env.DEV) return;
+  timeoutMs = ms ?? FEEDBACK_TIMEOUT_MS;
+}
 /** Grenzen van de server voor `message` (in tekens). */
 export const FEEDBACK_MESSAGE_MIN = 10;
 export const FEEDBACK_MESSAGE_MAX = 5000;
@@ -43,9 +49,13 @@ export interface FeedbackPayload {
   screenshotDataUrl: string | null;
 }
 
-/** Soorten fout die de dialoog vertaald toont. `failed` = netwerk, timeout, 5xx, geblokkeerd of
- *  onbekend: dan biedt de dialoog de GitHub-terugval aan. */
-export type FeedbackErrorKind = 'validation' | 'rateLimited' | 'duplicate' | 'failed';
+/** Soorten fout die de dialoog vertaald toont.
+ *  - `failed`: zeker niet aangekomen (5xx, geblokkeerd, of offline vóór verzenden). Alleen dan
+ *    biedt de dialoog de GitHub-terugval aan.
+ *  - `uncertain`: timeout of netwerkfout nadat het verzoek weg kon zijn. De server kan de melding
+ *    dan toch verwerken (hij gaat door na ons afbreken), dus géén GitHub-terugval: dat zou dubbel
+ *    geven. Een volgende poging die 409 krijgt, telt in de dialoog als aangekomen. */
+export type FeedbackErrorKind = 'validation' | 'rateLimited' | 'duplicate' | 'failed' | 'uncertain';
 
 export class FeedbackSubmitError extends Error {
   readonly kind: FeedbackErrorKind;
@@ -214,6 +224,24 @@ export async function prepareScreenshotForUpload(dataUrl: string): Promise<Blob 
   }
 }
 
+function errorDetail(err: unknown): string {
+  return err instanceof Error ? `${err.name}: ${err.message}` : String(err);
+}
+
+/** Laat `promise` verwerpen zodra `signal` afbreekt, ook als de onderliggende bron het signaal
+ *  niet volgt (bijvoorbeeld een body-stream die stilvalt). */
+function raceAbort<T>(promise: Promise<T>, signal: AbortSignal): Promise<T> {
+  if (signal.aborted) return Promise.reject(new DOMException('Afgebroken', 'AbortError'));
+  return new Promise<T>((resolve, reject) => {
+    const onAbort = () => reject(new DOMException('Time-out', 'AbortError'));
+    signal.addEventListener('abort', onAbort, { once: true });
+    promise.then(
+      v => { signal.removeEventListener('abort', onAbort); resolve(v); },
+      e => { signal.removeEventListener('abort', onAbort); reject(e instanceof Error ? e : new Error(String(e))); },
+    );
+  });
+}
+
 function errorKindForStatus(status: number): FeedbackErrorKind {
   if (status === 400) return 'validation';
   if (status === 409) return 'duplicate';
@@ -263,24 +291,52 @@ export async function submitFeedback(input: SubmitFeedbackInput): Promise<Submit
     headers['Content-Type'] = 'application/json';
   }
 
+  // De timeout dekt het hele verzoek: verbinden, de headers én het lezen van de body. Een body
+  // die stilvalt, breekt dus ook af. `raceAbort` laat ook een stream die het signaal negeert
+  // stoppen.
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), FEEDBACK_TIMEOUT_MS);
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   let response: Response;
+  let data: { success?: unknown; githubIssueUrl?: unknown; error?: unknown } = {};
   try {
-    response = await fetch(FEEDBACK_ENDPOINT, { method: 'POST', body, headers, signal: controller.signal });
-  } catch (err) {
-    throw new FeedbackSubmitError('failed', err instanceof Error ? err.message : String(err));
+    try {
+      response = await raceAbort(
+        fetch(FEEDBACK_ENDPOINT, { method: 'POST', body, headers, signal: controller.signal }),
+        controller.signal,
+      );
+    } catch (err) {
+      // Offline vóór verzenden: zeker niet aangekomen. Elke andere netwerkfout of timeout kan
+      // na het versturen van de body vallen, en dan weten we het niet.
+      const offline = typeof navigator !== 'undefined' && navigator.onLine === false;
+      throw new FeedbackSubmitError(offline ? 'failed' : 'uncertain', errorDetail(err));
+    }
+
+    if (!response.ok) {
+      // De status beslist; de body is alleen een detail voor de console.
+      let detail = `HTTP ${response.status}`;
+      try {
+        const json = await raceAbort(response.json() as Promise<unknown>, controller.signal);
+        if (json && typeof json === 'object' && typeof (json as { error?: unknown }).error === 'string') {
+          detail = (json as { error: string }).error;
+        }
+      } catch { /* geen of trage body: status volstaat */ }
+      throw new FeedbackSubmitError(errorKindForStatus(response.status), detail);
+    }
+
+    try {
+      const json = await raceAbort(response.json() as Promise<unknown>, controller.signal);
+      if (json && typeof json === 'object') data = json as typeof data;
+    } catch (err) {
+      // 2xx, maar de body kwam niet (op tijd) binnen: de server kan hem verwerkt hebben.
+      throw new FeedbackSubmitError('uncertain', errorDetail(err));
+    }
   } finally {
     clearTimeout(timer);
   }
 
-  let json: unknown = null;
-  try { json = await response.json(); } catch { /* geen JSON: status beslist */ }
-  const data = (json && typeof json === 'object' ? json : {}) as { success?: unknown; githubIssueUrl?: unknown; error?: unknown };
-
-  if (!response.ok || data.success !== true) {
-    const detail = typeof data.error === 'string' ? data.error : `HTTP ${response.status}`;
-    throw new FeedbackSubmitError(response.ok ? 'failed' : errorKindForStatus(response.status), detail);
+  if (data.success !== true) {
+    // 2xx zonder `success: true`: geen bewijs van ontvangst, maar ook geen weigering.
+    throw new FeedbackSubmitError('uncertain', typeof data.error === 'string' ? data.error : 'geen success in antwoord');
   }
 
   return {

@@ -267,3 +267,97 @@ test('annuleren in de editor gooit een getekende vorm weg; Esc sluit alleen de e
   await expect(again.getByLabel('Attach screenshot')).not.toBeChecked();
   await expect(again.locator('.screenshot-annotator-thumb-img')).toHaveCount(0);
 });
+
+test('editor open: Tab bereikt Versturen niet en Enter verstuurt niets; na Klaar is de upload afgedekt', async ({ page, ops }) => {
+  void ops;
+  test.setTimeout(90_000);
+  await seed(page);
+  const seen = await mockApi(page);
+  const dialog = await openDialog(page);
+  await typeInto(page, dialog.getByLabel('Title'), TITLE);
+  await typeInto(page, dialog.getByLabel('Description'), DESCRIPTION);
+  await dialog.getByLabel('Attach screenshot').check();
+  await expect(dialog.locator('.screenshot-annotator-thumb-img')).toBeVisible({ timeout: 20_000 });
+
+  await dialog.getByRole('button', { name: 'Annotate' }).click();
+  const editor = page.locator('.annotator-editor');
+  await editor.getByRole('button', { name: 'Cover' }).click();
+  await dragOnCanvas(page, 0.02, 0.05, 0.45, 0.6);
+
+  // Probeer met het toetsenbord bij Versturen te komen, vooruit en achteruit. Komt de focus daar
+  // toch, dan drukt de test op Enter (zo vond de review de fout).
+  for (const key of ['Tab', 'Shift+Tab']) {
+    for (let i = 0; i < 30; i++) {
+      await page.keyboard.press(key);
+      const where = await page.evaluate(() => {
+        const a = document.activeElement as HTMLElement | null;
+        return {
+          inEditor: !!a?.closest('.annotator-editor'),
+          isSend: a?.tagName === 'BUTTON' && a.textContent?.trim() === 'Send',
+        };
+      });
+      if (where.isSend) await page.keyboard.press('Enter');
+      expect(where.isSend, `${key} ${i + 1}: focus op Versturen terwijl de editor openstaat`).toBe(false);
+      expect(where.inEditor, `${key} ${i + 1}: focus buiten de editor`).toBe(true);
+    }
+  }
+  await expect(editor).toBeVisible();
+  expect(seen, 'geen verzending terwijl de editor openstaat').toHaveLength(0);
+
+  await editor.getByRole('button', { name: 'Done' }).click();
+  await expect(editor).toHaveCount(0);
+  await dialog.getByRole('button', { name: 'Send', exact: true }).click();
+  await expect(dialog.getByText('Thank you, your report has been sent.')).toBeVisible({ timeout: 20_000 });
+  expect(seen).toHaveLength(1);
+  const file = [...seen[0].form!.values()].find((v): v is File => typeof v !== 'string')!;
+  const samples = await page.evaluate(async ({ b64, type }) => {
+    const bmp = await createImageBitmap(await (await fetch(`data:${type};base64,${b64}`)).blob());
+    const c = document.createElement('canvas');
+    c.width = bmp.width; c.height = bmp.height;
+    const ctx = c.getContext('2d')!;
+    ctx.drawImage(bmp, 0, 0);
+    return [[0.1, 0.2], [0.25, 0.35], [0.4, 0.5]].map(([fx, fy]) =>
+      Array.from(ctx.getImageData(Math.round(fx * c.width), Math.round(fy * c.height), 1, 1).data.slice(0, 3)));
+  }, { b64: Buffer.from(await file.arrayBuffer()).toString('base64'), type: file.type });
+  for (const [r, g, b] of samples) {
+    expect(Math.max(r, g, b), `pixel ${r},${g},${b} hoort zwart te zijn`).toBeLessThanOrEqual(12);
+  }
+});
+
+test('onzeker hoort bij het concept: na sluiten en heropenen telt een 409 als al aangekomen', async ({ page, ops }) => {
+  ops.acceptError(/status of 409/);
+  await page.evaluate(async () => {
+    const modulePath = '/src/services/feedback/feedbackService.ts';
+    const mod = await import(/* @vite-ignore */ modulePath) as typeof import('@/services/feedback/feedbackService');
+    mod.setFeedbackTimeoutForTests(400);
+  });
+  let calls = 0;
+  const hanging: Route[] = [];
+  await page.route(ENDPOINT, async route => {
+    calls += 1;
+    if (calls === 1) { hanging.push(route); return; } // eerste poging: geen antwoord op tijd
+    await route.fulfill({
+      status: 409, contentType: 'application/json',
+      headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify({ error: 'Duplicate feedback' }),
+    });
+  });
+  let dialog = await openDialog(page);
+  await typeInto(page, dialog.getByLabel('Title'), TITLE);
+  await typeInto(page, dialog.getByLabel('Description'), DESCRIPTION);
+  await dialog.getByRole('button', { name: 'Send', exact: true }).click();
+  await expect(dialog.getByRole('alert')).toHaveText(/^We are not sure whether your report arrived\./, { timeout: 5_000 });
+
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeHidden();
+  dialog = await openDialog(page);
+  await expect(dialog.getByLabel('Title')).toHaveValue(TITLE);
+  await dialog.getByRole('button', { name: 'Send', exact: true }).click();
+  await expect(dialog.getByText('Your report had already arrived.')).toBeVisible();
+  expect(calls).toBe(2);
+
+  // Ook dit is een geslaagde afloop: het concept is weg.
+  await dialog.getByRole('button', { name: 'Close' }).last().click();
+  dialog = await openDialog(page);
+  await expect(dialog.getByLabel('Title')).toHaveValue('');
+  for (const r of hanging) await r.abort().catch(() => { /* al afgebroken door de client */ });
+});
