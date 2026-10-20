@@ -71,6 +71,36 @@ en noem het in je rapport of PR-tekst.
     bewaart "lopend" nu (`IfcTask.Status` = 'STARTED', #357); de motor plant de
     vastgelegde rest in (optie 3) na de release, in het rekenprofielen-spoor. — B voor de OPS-kant (gemeten),
     S voor de P6-kant
+119. **Een deadline zonder tijd is bij een urentaak één werkdag te krap.** De motor leest `2026-07-06` als
+    het begin van die dag (00:00) en zet de late finish op `eng.prevWorkDay(dl)` (`CPMSolver.ts:3025-3029`);
+    de analyse doet hetzelfde voor "deadline gemist" (`scheduleAnalysis.ts:426-429`). Een dagtaak leest
+    dezelfde datum als het einde van die dag. Nagespeeld met de planningsharness (kalender ma-vr 08-16,
+    taak A 8 u vanaf ma 2026-07-06, deadline `2026-07-06`): A eindigt ma 16:00, maar krijgt speling −1 en
+    staat in de lijst gemiste deadlines; verwacht speling 0. Voorstel: een datum zonder tijd als deadline
+    betekent het einde van het laatste werkblok van die dag. Spec: `2026-10-20-alleen-uren-design.md` §4. — B
+120. **Een zachte MSO of SNLT op een blokbegin geldt bij een urentaak als geschonden.** De analyse zet de
+    beperkingsdatum met `snapOnOrBefore` terug (`scheduleAnalysis.ts:418`). Op een blokbegin (di 08:00)
+    geeft dat het einde van het vorige werkblok (ma 16:00); de taak start di 08:00 en "schendt" dan de
+    beperking (`scheduleAnalysis.ts:420-421`). Nagespeeld met de planningsharness (kalender ma-vr 08-16,
+    taak A 8 u, MSO zacht op `2026-07-07T08:00`): A start op de beperking, maar staat in de lijst
+    geschonden beperkingen. Voorstel: voor startbeperkingen `snapOnOrAfter` gebruiken, of vergelijken op
+    hetzelfde moment op de tijdas. Spec §4. — B
+121. **Een nivelleervertraging die op een blokeinde landt, verdwijnt bij een urentaak.** `shiftByLevelingDelay`
+    telt de minuten op met `addWorkingMinutesSigned` (`CPMSolver.ts:1382`) en landt op het einde van een werkblok
+    (di 16:00). Daarna geldt de regel "start op een exact blokeinde loopt vanaf het volgende blokbegin"
+    alleen voor de duur, niet voor de vroege start (`CPMSolver.ts:1232-1234`). Nagespeeld met de
+    planningsharness (kalender ma-vr 08-16, P 8 u, FS naar A 8 u, `levelingDelayMinutes` 480): A krijgt
+    vroege start en vroeg einde allebei `2026-07-07T16:00`, dus duur nul op het scherm; verwacht wo 08:00 tot
+    wo 16:00. Verwant: staan `levelingDelay` en `levelingDelayMinutes` er allebei, dan neemt de motor de
+    eerste tak (`CPMSolver.ts:2205-2207`), zonder de `!noPreds`-wacht en zonder de snap voor een verstreken
+    vertraging; volgens `docs/TODO.md:180` komt dat vandaag niet voor. Spec §4. — B
+122. **De late finish van een taak met een externe opvolger staat op het volgende blokbegin.** Bij een
+    urentaak met een externe FS-opvolger (anker wo 08:00, lag 0) wordt de late finish wo 08:00 in plaats van
+    di 16:00 (`CPMSolver.ts:2954-2956`, `addWorkingMinutesSigned` op het anker zonder terug te zetten naar
+    het vorige blokeinde). De speling klopt (1 d), alleen de getoonde datum verschilt. Nagespeeld met de
+    planningsharness (kalender ma-vr 08-16, A 8 u, een tweede taak van 40 u zodat het projecteinde niet
+    begrenst). Voorstel: een eindmoment op een blokbegin altijd terugzetten naar het vorige blokeinde.
+    Spec §4. — B
 
 ## Tabel, invoer en bediening
 
