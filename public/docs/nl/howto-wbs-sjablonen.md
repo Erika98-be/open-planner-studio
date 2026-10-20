@@ -31,7 +31,7 @@ Open *Planning › Structuur › Sjablonen* en klik op het prullenbakje rechts n
 
 ### Wat er in een sjabloon zit
 
-Een sjabloon bewaart per taak de naam, de omschrijving, de werksoort, of het een mijlpaal is, en de duur in dagen. Van de relaties bewaart hij die tussen twee taken binnen de tak, met type en lag.
+Een sjabloon bewaart per taak de naam, de omschrijving, de werksoort, of het een mijlpaal is, en de duur in dagen. Van de relaties bewaart hij die tussen twee taken binnen de tak, met type en lag. Een lag in uren (`4u`) gaat niet mee en wordt 0. Een lag in werkdagen, kalenderdagen of procent gaat wel mee.
 
 Al het andere gaat niet mee: datums, voortgang en werkelijke datums, resource-toewijzingen, codes en eigen velden (zie [Codes en eigen velden](docs://howto-codes-en-velden)), de kalender, constraints en deadlines, de prioriteit, een eigen werksoort, bij een mijlpaal het soort en het vinkje *Verplicht (contractueel)*, en relaties met taken buiten de tak. Na het invoegen vul je die opnieuw in: toewijzingen, codes, kalender en constraints staan leeg, en alle taken beginnen op de projectstart.
 

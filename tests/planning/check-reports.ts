@@ -40,7 +40,7 @@ const ok = (label: string, cond: boolean, info = '') => {
 };
 const near = (label: string, got: number | undefined, want: number, tol = 0.05) => {
   checks++;
-  if (got === undefined || Math.abs(got - want) > tol) diffs.push(`${label}: verwacht ≈${want}, kreeg ${got}`);
+  if (got === undefined || !(Math.abs(got - want) <= tol)) diffs.push(`${label}: verwacht ≈${want}, kreeg ${got}`);
 };
 
 // ── Scenario ─────────────────────────────────────────────────────────────────────────────────────
