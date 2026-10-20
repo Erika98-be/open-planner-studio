@@ -324,7 +324,7 @@ test('editor open: Tab bereikt Versturen niet en Enter verstuurt niets; na Klaar
   }
 });
 
-test('onzeker hoort bij het concept: na sluiten en heropenen telt een 409 als al aangekomen', async ({ page, ops }) => {
+test('onzeker hoort bij het concept: na heropenen geen GitHub, een 409 geeft al binnen met het formulier', async ({ page, ops }) => {
   ops.acceptError(/status of 409/);
   await page.evaluate(async () => {
     const modulePath = '/src/services/feedback/feedbackService.ts';
@@ -351,12 +351,17 @@ test('onzeker hoort bij het concept: na sluiten en heropenen telt een 409 als al
   await expect(dialog).toBeHidden();
   dialog = await openDialog(page);
   await expect(dialog.getByLabel('Title')).toHaveValue(TITLE);
+  await expect(dialog.getByRole('button', { name: 'Open on GitHub' })).toHaveCount(0);
   await dialog.getByRole('button', { name: 'Send', exact: true }).click();
-  await expect(dialog.getByText('Your report had already arrived.')).toBeVisible();
+  await expect(dialog.getByRole('status')).toHaveText(
+    'We have already received this report. Want to add something? Then change the text and send it again.');
+  await expect(dialog.getByLabel('Title')).toHaveValue(TITLE);
+  await expect(dialog.getByLabel('Description')).toHaveValue(DESCRIPTION);
   expect(calls).toBe(2);
 
-  // Ook dit is een geslaagde afloop: het concept is weg.
-  await dialog.getByRole('button', { name: 'Close' }).last().click();
+  // Sluiten vanuit "al binnen": de melding is binnen, dus het concept is weg.
+  await dialog.locator('.feedback-dialog-footer').getByRole('button', { name: 'Close' }).click();
+  await expect(dialog).toBeHidden();
   dialog = await openDialog(page);
   await expect(dialog.getByLabel('Title')).toHaveValue('');
   for (const r of hanging) await r.abort().catch(() => { /* al afgebroken door de client */ });

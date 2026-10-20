@@ -29,13 +29,14 @@ The app sends your report to Open Feedback Studio by OpenAEC. You do not need an
 
 **The screenshot is too large.** The app makes the screenshot smaller before sending. If it is still too large after that, your report goes without a picture. The thank-you screen then says *The screenshot was too large and was not sent.*
 
-**Sending does not work.** A message appears in the window and your text stays. There are five cases:
+**Sending does not work.** A message appears in the window and your text stays. There are four cases:
 
 - *The report was not accepted.* Check the text and the email address. A report that is mostly links is refused.
 - *You have sent many reports in a short time.* Try again in an hour.
-- *This report was already sent in the last 24 hours.* The same report then does not come in a second time.
-- *Sending failed.* There is no connection or the server does not answer. Try again, or click *Open on GitHub*.
-- *We are not sure whether your report arrived.* The connection dropped after the app had sent your report. Your text stays and there is no button *Open on GitHub*. Wait a minute and click *Send* again. If your report was already there, you see *Your report had already arrived.* This also works if you close the window in between and open it again.
+- *Sending failed.* There is no connection or the server does not answer. Try again, or click *Open on GitHub*. That button is not there if an earlier attempt was uncertain (see below).
+- *We are not sure whether your report arrived. Wait a minute and then send it again; if it is already there, we will see that automatically.* The connection dropped after the app had sent your report. Your text stays. There is no button *Open on GitHub*, because your report can still come in. That stays so until your report is sent or already received, also if you close the window in between and open it again.
+
+**Your report is already received.** If you send a report that is already there, the form stays with this above it: *We have already received this report. Want to add something? Then change the text and send it again.* Your text stays and your email address is remembered. Click *Close* if you do not want to add anything; the form is empty next time.
 
 **Open on GitHub.** This is the route without Open Feedback Studio. For this you do need an account on GitHub. Without a screenshot the GitHub page on which you create a new issue opens straight away in your browser, with your title and description already filled in. With a screenshot you first see *Almost done — your screenshot is on the clipboard.* with four steps. Click *OK, go to GitHub*, click inside the large text area of the issue page and press Ctrl+V (Cmd+V on a Mac). Then click *Submit new issue* at the bottom. Only then is your report sent.
 

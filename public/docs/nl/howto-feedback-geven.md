@@ -29,13 +29,14 @@ De app verstuurt je melding naar Open Feedback Studio van OpenAEC. Je hebt daar 
 
 **Het screenshot is te groot.** De app verkleint het screenshot voor het versturen. Blijft het daarna nog te groot, dan gaat je melding zonder afbeelding. Het bedankscherm zegt dan *Het screenshot was te groot en is niet meegestuurd.*
 
-**Versturen lukt niet.** Er staat een melding in het venster en je tekst blijft staan. Er zijn vijf gevallen:
+**Versturen lukt niet.** Er staat een melding in het venster en je tekst blijft staan. Er zijn vier gevallen:
 
 - *De melding is niet geaccepteerd.* Controleer de tekst en het e-mailadres. Een melding die vooral uit links bestaat, wordt geweigerd.
 - *Je hebt in korte tijd veel meldingen verstuurd.* Probeer het over een uur opnieuw.
-- *Deze melding is in de afgelopen 24 uur al verstuurd.* Dezelfde melding komt dan niet nog een keer binnen.
-- *Versturen is niet gelukt.* Er is geen verbinding of de server antwoordt niet. Probeer het opnieuw, of klik op *Open op GitHub*.
-- *We weten niet zeker of je melding is aangekomen.* De verbinding viel weg nadat de app je melding had verstuurd. Je tekst blijft staan en er is geen knop *Open op GitHub*. Wacht een minuut en klik opnieuw op *Versturen*. Was je melding er al, dan zie je *Je melding was al aangekomen.* Dat werkt ook als je het venster tussendoor sluit en weer opent.
+- *Versturen is niet gelukt.* Er is geen verbinding of de server antwoordt niet. Probeer het opnieuw, of klik op *Open op GitHub*. Die knop staat er niet als een eerdere poging onzeker was (zie hieronder).
+- *We weten niet zeker of je melding is aangekomen. Wacht een minuut en verstuur hem dan opnieuw; als hij er al is, zien we dat vanzelf.* De verbinding viel weg nadat de app je melding had verstuurd. Je tekst blijft staan. Er is geen knop *Open op GitHub*, want je melding kan nog binnenkomen. Dat blijft zo tot je melding verstuurd of al binnen is, ook als je het venster tussendoor sluit en weer opent.
+
+**Je melding is al binnen.** Verstuur je een melding die er al is, dan blijft het formulier staan met erboven: *Deze melding is al bij ons binnen. Wil je iets toevoegen? Pas dan de tekst aan en verstuur opnieuw.* Je tekst blijft staan en je e-mailadres wordt onthouden. Klik op *Sluiten* als je niets wilt toevoegen; het formulier is de volgende keer leeg.
 
 **Open op GitHub.** Dit is de weg zonder Open Feedback Studio. Hiervoor heb je wel een account op GitHub nodig. Zonder screenshot opent de pagina van GitHub waarop je een nieuw issue maakt meteen in je browser, met je titel en omschrijving al ingevuld. Met screenshot zie je eerst *Bijna klaar — je screenshot staat op het klembord.* met vier stappen. Klik op *OK, ga naar GitHub*, klik op de issuepagina in het grote tekstvak en druk op Ctrl+V (Cmd+V op een Mac). Klik daarna onderaan op *Submit new issue*. Pas dan is je melding verstuurd.
 

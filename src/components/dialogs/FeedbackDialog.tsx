@@ -37,7 +37,7 @@ import {
 import { saveFeedbackEmail } from '@/utils/settingsStore';
 import { useDialogKeys } from '@/hooks/useDialogKeys';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
-import type { AnnotationShape, FeedbackDraft, FeedbackUncertainAttempt } from '@/services/feedback/feedbackDraft';
+import type { AnnotationShape, FeedbackDraft } from '@/services/feedback/feedbackDraft';
 import { ScreenshotAnnotator } from './ScreenshotAnnotator';
 import './FeedbackDialog.css';
 
@@ -45,13 +45,13 @@ import './FeedbackDialog.css';
 const TITLE_MAX = 200;
 const DESCRIPTION_MAX = 4600;
 
+// `duplicate` (409) is geen fout maar de toestand "al binnen" (`alreadyIn`).
 const ERROR_KEYS = {
   validation: 'feedback.errorValidation',
   rateLimited: 'feedback.errorRateLimited',
-  duplicate: 'feedback.errorDuplicate',
   failed: 'feedback.errorFailed',
   uncertain: 'feedback.errorUncertain',
-} as const satisfies Record<FeedbackErrorKind, string>;
+} as const satisfies Record<Exclude<FeedbackErrorKind, 'duplicate'>, string>;
 
 const TYPE_KEYS = {
   bug: 'feedback.typeBug',
@@ -99,15 +99,13 @@ export function FeedbackDialog() {
 
   // Verstuur-state
   const [sending, setSending] = useState(false);
-  const [submitError, setSubmitError] = useState<FeedbackErrorKind | null>(null);
-  const [sent, setSent] = useState<(SubmitFeedbackResult & { alreadyArrived?: boolean }) | null>(null);
-  // Wat er werkelijk verstuurd is bij de laatste poging die `uncertain` gaf. Alleen als een
-  // volgende poging precies hetzelfde verstuurt, betekent een 409 (dubbel): de eerste is toch
-  // aangekomen. Is er iets veranderd (bijv. een e-mailadres erbij), dan is dat nooit verwerkt en
-  // blijft een 409 de gewone foutmelding. Het screenshot telt mee via zijn dataURL.
-  // Hoort bij het concept: sluiten en heropenen na een timeout ziet een gelijke 409 nog als aangekomen.
-  const [uncertainAttempt, setUncertainAttempt] = useState<FeedbackUncertainAttempt | null>(
-    initialDraft?.uncertainAttempt ?? null);
+  const [submitError, setSubmitError] = useState<keyof typeof ERROR_KEYS | null>(null);
+  const [sent, setSent] = useState<SubmitFeedbackResult | null>(null);
+  // 409 = "al binnen": het formulier blijft staan met een rustige melding; er gaat niets verloren.
+  const [alreadyIn, setAlreadyIn] = useState(false);
+  // Onopgeloste onzekere poging: die kan alsnog binnenkomen, dus nooit GitHub. Hoort bij het concept,
+  // zodat de vlag sluiten en heropenen overleeft.
+  const [hadUncertain, setHadUncertain] = useState(initialDraft?.hadUncertain ?? false);
   // Terugval PAD B: plak-instructie voor GitHub.
   const [fallback, setFallback] = useState<SendResult | null>(null);
 
@@ -118,7 +116,7 @@ export function FeedbackDialog() {
   const draftIsEmpty = feedbackType === 'bug' && title === '' && description === ''
     && email.trim() === storedEmail.trim() && !attachScreenshot;
   const draft: FeedbackDraft | null = draftIsEmpty ? null : {
-    type: feedbackType, title, description, email, attachScreenshot, uncertainAttempt,
+    type: feedbackType, title, description, email, attachScreenshot, hadUncertain,
     screenshotDataUrl: attachScreenshot ? screenshotDataUrl : null,
     annotatedDataUrl: attachScreenshot ? annotatedDataUrl : null,
     shapes: attachScreenshot ? shapes : [],
@@ -131,6 +129,13 @@ export function FeedbackDialog() {
   useEffect(() => () => {
     setFeedbackDraft(discardDraftRef.current ? null : draftRef.current);
   }, [setFeedbackDraft]);
+
+  /** *Sluiten* vanuit "al binnen": de melding is binnen, dus het concept gaat weg. */
+  const closeAlreadyIn = () => {
+    discardDraftRef.current = true;
+    setFeedbackDraft(null);
+    close();
+  };
 
   // ── Wat er meegaat (regel *Meegestuurd*): dezelfde bron als de metaregel van de service ──
   const [meta, setMeta] = useState<FeedbackMeta | null>(null);
@@ -231,7 +236,8 @@ export function FeedbackDialog() {
     setShapes([]);
     setCaptureError(null);
     setSubmitError(null);
-    setUncertainAttempt(null);
+    setHadUncertain(false);
+    setAlreadyIn(false);
     setFeedbackDraft(null);
   }, [storedEmail, setFeedbackDraft]);
 
@@ -241,45 +247,44 @@ export function FeedbackDialog() {
     attachScreenshot ? (annotatedDataUrl ?? screenshotDataUrl) : null;
 
   // ── Versturen (hoofdweg) ─────────────────────────────────────────────────
-  // Eén succesafhandeling voor gewoon succes én "al aangekomen": ook dan wordt het e-mailadres bewaard
-  // en is het concept weg.
-  const onSent = (res: SubmitFeedbackResult, alreadyArrived: boolean) => {
+  // Succes en 409 ("al binnen") sluiten een onzekere poging af en bewaren het e-mailadres.
+  const settle = () => {
+    setHadUncertain(false);
     if (trimmedEmail !== storedEmail) {
       setUI({ feedbackEmail: trimmedEmail });
       void saveFeedbackEmail(trimmedEmail);
     }
-    discardDraftRef.current = true;
-    setFeedbackDraft(null);
-    setSent({ ...res, alreadyArrived });
   };
 
   const handleSubmit = async () => {
     if (!canSubmit) return;
     setSending(true);
     setSubmitError(null);
-    const input = {
-      type: feedbackType,
-      title: title.trim(),
-      description: description.trim(),
-      screenshotDataUrl: flatScreenshot(),
-      email: trimmedEmail,
-    };
-    const attempt: FeedbackUncertainAttempt = {
-      fields: JSON.stringify([input.type, input.title, input.description, input.email]),
-      screenshot: input.screenshotDataUrl,
-    };
+    setAlreadyIn(false);
     try {
-      onSent(await submitFeedback(input), false);
+      const res = await submitFeedback({
+        type: feedbackType,
+        title: title.trim(),
+        description: description.trim(),
+        screenshotDataUrl: flatScreenshot(),
+        email: trimmedEmail,
+      });
+      settle();
+      discardDraftRef.current = true;
+      setFeedbackDraft(null);
+      setSent(res);
     } catch (err) {
       console.warn('Feedback versturen mislukt:', err);
       const kind: FeedbackErrorKind = err instanceof FeedbackSubmitError ? err.kind : 'failed';
-      const prev = uncertainAttempt;
-      if (kind === 'duplicate' && prev && prev.fields === attempt.fields && prev.screenshot === attempt.screenshot) {
-        onSent({ githubIssueUrl: null, screenshotDropped: false, screenshotBytes: null }, true);
+      if (kind === 'duplicate') {
+        settle();
+        setAlreadyIn(true);
         return;
       }
-      if (kind === 'uncertain') setUncertainAttempt(attempt);
-      setSubmitError(kind);
+      const uncertainNow = hadUncertain || kind === 'uncertain';
+      if (kind === 'uncertain') setHadUncertain(true);
+      // Na een onzekere poging blijft ook een zekere mislukking "onzeker": geen GitHub-knop.
+      setSubmitError(kind === 'failed' && uncertainNow ? 'uncertain' : kind);
     } finally {
       setSending(false);
     }
@@ -344,9 +349,7 @@ export function FeedbackDialog() {
           {sent ? (
             /* ── Bedankscherm (hoofdweg geslaagd) ── */
             <div className="feedback-confirm" data-feedback-sent>
-              <p className="feedback-confirm-title" role="status">
-                {sent.alreadyArrived ? t('feedback.sentAlready') : t('feedback.sentTitle')}
-              </p>
+              <p className="feedback-confirm-title" role="status">{t('feedback.sentTitle')}</p>
               {sent.screenshotDropped && (
                 <p className="feedback-confirm-fallback">{t('feedback.sentScreenshotDropped')}</p>
               )}
@@ -370,6 +373,7 @@ export function FeedbackDialog() {
           ) : (
             /* ── Formulier ── */
             <>
+              {alreadyIn && <p className="feedback-confirm-fallback" role="status">{t('feedback.alreadyIn')}</p>}
               {/* Type-schakelaar */}
               <div className="feedback-type-row">
                 {TYPES.map(type => (
@@ -531,10 +535,10 @@ export function FeedbackDialog() {
               )}
               <button
                 className="btn btn--sm btn--secondary"
-                onClick={close}
+                onClick={alreadyIn ? closeAlreadyIn : close}
                 disabled={sending}
               >
-                {t('feedback.cancel')}
+                {alreadyIn ? t('feedback.close') : t('feedback.cancel')}
               </button>
               {submitError === 'failed' && (
                 <button

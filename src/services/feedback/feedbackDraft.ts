@@ -20,18 +20,15 @@ export type AnnotationShape = AnnotationArrow | AnnotationRect | AnnotationMask 
 /** Soort melding; gelijk aan de `category` die de server krijgt. */
 export type FeedbackType = 'bug' | 'feature' | 'general';
 
-/** De verstuurde invoer van een onzekere poging: velden (soort, titel, omschrijving, e-mail) en screenshot. */
-export interface FeedbackUncertainAttempt { fields: string; screenshot: string | null; }
-
 export interface FeedbackDraft {
   type: FeedbackType;
   title: string;
   description: string;
   email: string;
   attachScreenshot: boolean;
-  /** Wat de laatste poging met uitkomst `uncertain` verstuurde, of null. Alleen een gelijke herhaling
-   *  met een 409 telt als "al aangekomen". */
-  uncertainAttempt: FeedbackUncertainAttempt | null;
+  /** Er is een onopgeloste onzekere poging (`uncertain`): dan nooit *Open op GitHub*. Weg na succes,
+   *  na "al binnen" en na *Leegmaken*. */
+  hadUncertain: boolean;
   /** Het rauwe screenshot (zonder annotaties), of null. */
   screenshotDataUrl: string | null;
   /** Screenshot + annotaties geflattend, of null zolang er niet geannoteerd is. */
