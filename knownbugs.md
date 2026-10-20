@@ -119,6 +119,20 @@ en noem het in je rapport of PR-tekst.
     (dagkalender ma-vr): een kalendertijd-taak van 1 d vanaf ma 1 jun krijgt einde 2 jun, en haar FS-opvolger
     begint wo 3 jun in plaats van di 2 jun; met FNLT ma 1 jun krijgt ze speling −1, terwijl ze om middernacht
     klaar is. In uur-modus klopt het wel (`msp-19`). — B
+126. **Een dagtaak op werkblokken met SNLT of MSO op een blokbegin krijgt een late start één werkdag te
+    vroeg** (speling −1). Dezelfde familie als 123 en groep 12 uit de spec `2026-10-20-alleen-uren-design.md`
+    (§10.3). Daarom geldt de fix voor 120 in #402 alleen voor urentaken. Gemeld door de bouwer van #402
+    (`claude/uren-f1a-urenpadfouten`). — B (volgens de bouwer van #402; niet door deze agent herhaald)
+127. **Bij FF tussen urentaken staat de late finish van de voorganger op een blokbegin**, in het OPS- en het
+    MSP-profiel. Alleen de getoonde datum verschilt; de speling klopt. In het P6-profiel lost conventie B2
+    (`p6BackwardLagFinishBoundary`, `registry.ts:156`) het op; voor MSP is het een conventievraag. Gemeld door
+    de bouwer van #402. — B (volgens de bouwer van #402; niet door deze agent herhaald)
+128. **Een FNLT of FNET zonder tijd wordt bij een urentaak 00:00 van die dag.** Volgens regel D2 van de spec
+    `2026-10-20-alleen-uren-design.md` (§4.2) hoort dat het einde van het laatste werkblok van die dag te zijn.
+    Gemeld door de bouwer van #402. — B (volgens de bouwer van #402; niet door deze agent herhaald)
+129. **"Datums zoals opgeslagen" meldt een deadline zonder tijd bij een urentaak als gemist als de taak op de
+    deadline-dag eindigt.** De solver doet dat na #402 niet meer. De review van #402 beoordeelt of dit punt
+    in #402 zelf hoort; dan vervalt deze entry. Gemeld door de bouwer van #402. — B (volgens de bouwer van #402; niet door deze agent herhaald)
 
 ## Tabel, invoer en bediening
 
@@ -370,6 +384,17 @@ en noem het in je rapport of PR-tekst.
     `tests/planning/check-xer-status-afleiden.ts` pint het huidige gedrag vast. In het XER-corpus komt het
     geval 0 keer voor. Gevonden bij de review van #358. Voorstel: een onbekende status behandelen als een lege
     (afleiden uit de voortgang, melding blijft), zoals MPXJ; besluit van de eigenaar nodig. — B
+131. **OPS v2026.9.0 maakt van een kalender in een nieuw IFC-bestand een urenkalender zonder werktijd zodra
+    een taak op die kalender een tijd ≠ 07:00 of een `PT`-duur heeft.** Oorzaak: v2026.9.0 leest
+    `WorkingTimes` van `IfcWorkCalendar` op plek 5; sinds #336 staat daar Identification (aanvaard verlies,
+    `docs/ifc-round-trip.md:351-356` en `:436-460`). De geregistreerde werkblokken zijn dan leeg, en de
+    promotie met een tijdsignaal kiest die lege werkblokken (`promoteHourCalendar` met
+    `preferCanonicalWhenEmpty`, `src/services/subdayIo.ts` op tag v2026.9.0). Nagemeten met de lezer en de
+    solver van v2026.9.0 in Node: een bestand van main met een urentaak van 480 min op de standaardkalender
+    geeft `workTime` met lege werkblokken op alle zeven dagen; na doorrekenen heeft de urentaak duur 0
+    (begin en einde do 07:00). `docs/ifc-round-trip.md` noemt alleen "werkuren terug naar 07–16"; dit gevolg
+    staat er niet bij. Voorstel: de releasetekst noemt het, naast het aanvaarde verlies van de kalenders.
+    Gevonden bij fixronde 2 van de spec `2026-10-20-alleen-uren-design.md` (§5.4). — B
 
 ## Rondleiding, Help en extensie-gidsen
 
@@ -447,6 +472,10 @@ en noem het in je rapport of PR-tekst.
 
 104. **Geen automatische test voor de zegels en `check-docs`** (`scripts/translate/cli.ts`). In #323 alleen met
      de hand nagespeeld. De CLI werkt vanuit `process.cwd()`, dus een test in een tijdelijke map kan. — S
+
+130. **`check-reports.ts` (`monthLabel`) hangt af van de taalinstelling van de machine.** Rood als de machine in
+     de systeemtaal nl_NL draait, groen met `LANG=en_US.UTF-8`. Gemeld door de coördinator op 2026-10-20; niet
+     door deze agent nagespeeld. — S
 
 ## Wensen en open taken (geen bug)
 

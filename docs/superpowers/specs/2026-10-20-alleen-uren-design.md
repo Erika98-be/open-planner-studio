@@ -8,7 +8,11 @@
 - **Review:** ronde 1 (GPT-6.1-Sol, Codex, reasoning xhigh; oordeel NEE) is verwerkt: de laadgrens en B5 (§5.2),
   de normalisatie en de markering (§3.6, §5.2), de adapters in de eerste release (§7), de belasting per werkdag
   (§3.11), de beperkte N1/N2 (§4.3), de statusregel (§4.2), `project.endDate` (§4.2), de eindsemantiek van
-  kalendertijd (§4.2) en de vervolgpunten (§6, B2, B4, §5.4).
+  kalendertijd (§4.2) en de vervolgpunten (§6, B2, B4, §5.4). Ronde 2 (zelfde reviewer; oordeel NEE) is
+  verwerkt: het undocontract van B5 met twee snapshots (§5.2), de schrijfregel per kalender in IFC (§3.6, §5.4),
+  de normalisatie van de vastlegging (§5.2), de B5-overgang op elke route die rekent (§5.2), de opslag van de
+  lagmaat (§3.3), de vraag per kandidaat in de nivelleerder (§3.11), het baseline-einde bij kalendertijd (§4.2),
+  de foutgrens van de lopers (§3.14) en twee tegenstrijdige teksten (§3.12, B8).
 - **Schrijver:** expert-agent (Opus 5.5), branch `claude/uren-spec`, vanaf `main` `adaf9ab37`.
 - **Regelnummers** gelden voor `adaf9ab37`. Elke verwijzing is zelf gelezen. Waar een feit uit de
   Haiku-inventaris komt en niet zelf is nagelezen, staat "(inventaris)".
@@ -89,7 +93,13 @@ nodig heeft. Het document gebruikt daarna steeds precies deze woorden.
   kalender van de taak. Bij kalendertijd zijn de dagranden 00:00 en 24:00.
 - **Klokdatum:** de datum van een moment op de klok, van 00:00 tot 23:59. Het eindmoment wo 06:00 van een
   nachtblok heeft klokdatum wo en werkdag di.
-- **Normalisatie:** het omzetten van een datum zonder tijd naar een moment, met de regels D1–D6 (§4.2).
+- **Normalisatie:** het omzetten van een datum zonder tijd naar een moment, met de regels D1–D7 (§4.2).
+- **Afleidbaar moment:** een moment dat de normalisatie van zijn werkdag, met de regel van zijn veld, precies
+  teruggeeft. Op de standaardkalender: een start om 07:00 en een einde om 16:00. Niet afleidbaar: een start om
+  11:00.
+- **Ankerkalender / letterlijke kalender:** hoe OPS de datums van de taken op een kalender in IFC schrijft
+  (§3.6). Op een ankerkalender is elk moment afleidbaar en gaat het als datum. Op een letterlijke kalender gaat
+  elk moment met zijn echte tijd.
 
 ## 1. Doel en reden
 
@@ -168,7 +178,8 @@ De modus van een engine volgt uit de kalender: `this.mode = isHourModeCalendar(c
   (`CalendarEngine.ts:878-880`), daarna `nextWorkDay(ceilToWorkDay(…))` (`:885-888`).
 - Urenpad: het einde is een eindmoment. Een opvolger kan op dat moment: `predDoneAt` = einde, daarna
   `nextWorkInstant` (`:879`, `:886`).
-- Een einddatum zonder tijd wordt bij het lezen de volgende dag 00:00 (`finishInstant`, `src/utils/taskDates.ts:120-122`).
+- Een einddatum zonder tijd wordt bij het lezen de volgende dag 00:00 (`finishInstant`,
+  `src/utils/taskDates.ts:120-122`).
 - Een eindmoment op een blokeinde en het volgende blokbegin liggen op de tijdas uit elkaar, maar er zit geen
   werktijd tussen. Voor de rekenkern zijn ze dus gelijkwaardig. Het urenpad kiest per plek een van de twee.
   Daar zitten de meeste verschillen uit §10.
@@ -244,11 +255,11 @@ typewijziging. "Fase" verwijst naar §7.
     houdt begin, einde, uren per dag en pauze. Er is geen migratie van kalenderdata.
   - "1 d" in de urenmaat = de werktijd per dag. `hoursPerDay` is alleen nog een exportwaarde
     (`MinutesPerDay`, `mspdiWriter.ts:365`) en de bron voor `seedScalarBands`.
-  - Technische keuze T1, uren per dag groter dan de spanne (bijvoorbeeld 08:00–16:00 met 10 u): bij het
-    openen verlengt OPS het einde tot begin + uren per dag (08:00–18:00) en meldt dat één keer. Reden: de uren
-    per dag bepalen nu de duur van elke dagtaak in de export (I9); de spanne is vaak een oude standaardwaarde.
-    Het alternatief, de uren per dag verlagen, verandert de duur van taken. Een ongeldige pauze (`effectiveWorkTime.ts:26-28`)
-    vervalt op dezelfde manier, met melding.
+  - Technische keuze T1, uren per dag groter dan de spanne (bijvoorbeeld 08:00–16:00 met 10 u): bij het openen
+    verlengt OPS het einde tot begin + uren per dag (08:00–18:00) en meldt dat één keer. Reden: de uren per dag
+    bepalen nu de duur van elke dagtaak in de export (I9); de spanne is vaak een oude standaardwaarde. Het
+    alternatief, de uren per dag verlagen, verandert de duur van taken. Een ongeldige pauze
+    (`effectiveWorkTime.ts:26-28`) vervalt op dezelfde manier, met melding.
   - Een scalaire kalender uit een import blijft scalair opgeslagen. Promoveren (`promoteHourCalendar`) is dan
     alleen nog nodig voor de weergave (B2).
 - **Typewijziging:** geen in `WorkCalendar` (`src/types/calendar.ts:8-58`). `CalendarEngine` verliest het
@@ -294,6 +305,38 @@ typewijziging. "Fase" verwijst naar §7.
 - **Procentlag (besluit B7):** een deel van de duur van de voorganger, in de maat van de voorganger, exact op
   de minuut, in elk profiel (zoals nu het urenpad, `CPMSolver.ts:1395-1397`). De afronding op hele dagen van het
   dagpad (`:261-264`) verdwijnt in F2. Er komt geen conventie voor.
+- **Opslag van de maat (technische keuze T21; review ronde 2, punt 5).** De maat van een lag wordt bewaard en
+  hersteld zoals de maat van een taak, ook na een profielwissel. Nu gaat ze verloren. `lagDays: 0.5` en
+  `lagMinutes: 240` geven in MSPDI dezelfde bytes (`LinkLag` 2400, `LagFormat` 7; `lagFields`,
+  `mspdiWriter.ts:126-143`; BEVESTIGD door review ronde 2). In IFC leest v2026.9.0 `P0.5D` als 5 dagen, en een
+  kalendertijd-lag `P1.5D` ook (BEVESTIGD, §10.5). Op de voorbeeldweek telt het verschil: een FS-lag van 0,5 d
+  dagenmaat na een einde do 16:00 is de helft van de vrijdag van 6 u, dus 3 u (opvolger vr 10:00); een lag van
+  240 min urenmaat is 4 u (opvolger vr 11:00).
+  - *IFC (F3):* urenmaat `PT…` (zoals nu). Dagenmaat in hele dagen `P{n}D` (zoals nu). Dagenmaat met een breuk
+    `PT…` = werkdagen × werktijd per dag van de lagkalender, plus het aantal werkdagen in een JSON-kaart
+    `DayMeasureLagDays` (naam voorlopig) in `OPS_Sequences`, met de GUID van de relatie als sleutel. Die pset en
+    die vorm bestaan al (`P6StartAtPredecessorFinishBoundarySequenceGuids`, `ifcWriter.ts:1527-1545`), want een
+    `IfcRelSequence` kan geen pset dragen. Kalendertijd in hele dagen `P{n}D` met `ELAPSEDTIME` (zoals nu);
+    kalendertijd met een breuk `PT…` (dagen × 1440 min) met `ELAPSEDTIME`, plus het aantal dagen in dezelfde
+    kaart. Procentlag `IFCRATIOMEASURE` (zoals nu). De lezer geeft een relatie uit de kaart `lagDays` en geen
+    `lagMinutes`; elke andere relatie leest hij zoals nu.
+  - *Waarom deze vorm:* v2026.9.0 leest `PT4H0M0S` als lag van 240 min en `PT36H0M0S` met `ELAPSEDTIME` als
+    2160 kalenderminuten; `OPS_Sequences` kent hij niet (BEVESTIGD, §10.5). Hij leest dus een urenmaat-lag met
+    dezelfde lengte, nooit 5 dagen. Het is de kleinste vorm: een kaart alleen voor een breuk in dagen; een lag in
+    hele dagen of in uren zegt zijn maat al met de duurvorm.
+  - *MSPDI en P6 XML (F5a):* de lengte in minuten, zoals nu (dagenmaat: werkdagen × werktijd per dag van de
+    lagkalender, I7). Daarnaast de OPS-markering, zoals bij de taak (T15): een tekstveld op de opvolger met per
+    voorganger het aantal werkdagen van elke lag in dagenmaat. MSPDI: een `ExtendedAttribute` naast
+    `OPS_TaskDurationUnit` (`mspdiWriter.ts:43-45`). P6 XML: een UDF naast die voor de eenheid
+    (`p6xmlReader.ts:590-598`). Zonder markering maakt de lezer een lag in urenmaat (T15). Kalendertijd heeft
+    geen markering nodig: `LagFormat` 8 (ed) of 6 (eu) zegt de eenheid, en de lezer rondt niet meer af (I2).
+    Of MSP en P6 zo'n veld bij hun eigen opslaan bewaren, is niet getoetst (geen MSP of P6 op deze machine).
+  - *Profielwissel:* de lag verandert niet, alleen de conventie (§3.14). De schrijver bewaart de maat in elk
+    profiel; onder het P6-profiel staat in `PT…` precies wat dat profiel rekent.
+  - *Regressie (F3 voor IFC, F5a voor de adapters):* op de voorbeeldweek drie relaties naast elkaar: FS 0,5 d
+    dagenmaat, FS 240 min urenmaat en FS 1,5 ed. Na IFC ⇒ OPS, MSPDI ⇒ OPS, P6 XML ⇒ OPS en OPS-profiel ⇒
+    P6-profiel ⇒ OPS-profiel: dezelfde velden, en de opvolgers van de eerste twee op vr 10:00 en vr 11:00. Onder
+    het P6-profiel staan die twee allebei op vr 11:00.
 - **Typewijziging:** geen. `lagDays` blijft verplicht in het type.
 
 ### 3.4 Speling
@@ -339,14 +382,36 @@ typewijziging. "Fase" verwijst naar §7.
   worden niet omgezet opgeslagen. De motor leest ze met een vaste regel: start D1, statusdatum D5, einde D2
   (§4.2). Reden: de statusregel vergelijkt een werkelijke datum op dagniveau als de statusdatum geen tijd heeft
   (`isActualPastStatusDate`, `taskMutationRules.ts:11-16`); dat onderscheid moet blijven bestaan.
-- **Opslaan in IFC (F2, T17):** een moment dat gelijk is aan de normalisatie van zijn datum (D1, D2 of D3),
-  schrijft OPS zoals nu: als datum met het anker `T07:00:00` (`ifcWriter.ts:100-104`). Elk ander moment schrijft
-  OPS met zijn echte tijd, en de taak krijgt in de OPS-pset de vlag "tijden letterlijk". Met die vlag neemt de
-  lezer elke tijd letterlijk, ook 07:00; zonder de vlag geldt het anker zoals nu. Reden: een echt moment om 07:00
-  (bijvoorbeeld een start om 07:00 op een kalender die om 06:00 begint) is anders niet te onderscheiden van het
-  anker. Een urentaak heeft die vlag niet nodig: de lezer herkent haar al aan de `PT`-duur. Een kalendertijd-taak
-  schrijft OPS altijd met echte tijden en de vlag; zo is D3 per veld (§4.2) alleen nodig voor oude bestanden.
-  Gevolgen voor v2026.9.0: §5.4.
+- **Opslaan in IFC: per kalender een anker of echte tijden (F2, technische keuze T17; herzien na review
+  ronde 2, punt 2).** De lezer van v2026.9.0 beslist per kalender. Heeft één taak op een kalender een tijd ≠ 07:00
+  of een `PT`-duur die geen hele dag is, dan maakt hij er een urenkalender van, en leest hij elke tijd van elke
+  taak op die kalender letterlijk (`applyHourModeIFC`, r.654-714 op de tag; BEVESTIGD, §5.4). Een vlag per taak
+  (ronde 1) past daar niet bij. Voorbeeld van de review: een voltooide dagtaak met werkelijk begin 11:00 en
+  werkelijk einde op het anker 07:00 leest v2026.9.0 als einde 07:00, vóór het begin. Daarom één regel per
+  kalender:
+  - **Letterlijke kalender:** een kalender met eigen werkblokken, of een kalender waarop minstens één taak een
+    `PT`-duur heeft of een moment dat niet afleidbaar is (§0). "Op een kalender" betekent: de effectieve kalender
+    van de taak (`effectiveCalendarByTask`, `ifcWriter.ts:387`), zoals de lezer van v2026.9.0 hem ook kiest. Op zo'n
+    kalender schrijft OPS elk startachtig en eindachtig veld van elke taak met de echte tijd, ook 07:00. De
+    kalender krijgt in `OPS_Calendar` de eigenschap `LiteralTimes = .T.` (naam voorlopig). Een scalaire
+    letterlijke kalender krijgt daarnaast de effectieve werkblokken met `IsHourCalendar = .F.`, zoals nu een
+    kalender met een urentaak (`ifcWriter.ts:388-393`, `:1259-1262`); de voorwaarde wordt "letterlijke
+    kalender".
+  - **Ankerkalender:** elke andere kalender. Elk veld gaat als datum: in `IfcTaskTime` met het anker
+    `T07:00:00` (`ifcWriter.ts:100-104`), in een pset als `IFCDATE` (`ifcDateValue`, `ifcPsets.ts:169-175`). De
+    datum is de werkdag waaruit de normalisatie precies dit moment teruggeeft.
+  - **Lezen:** op een kalender met `LiteralTimes` is elke tijd van elke taak het moment. Op elke andere kalender
+    geldt de leesregel van nu (een urenkalender letterlijk; op een kalender met `IsHourCalendar = .F.` alleen de
+    urentaken, `ifcReader.ts:1472-1473`; anders het anker), met daarna de normalisatie. Zo leest een bestand van
+    vóór F2 precies zoals nu. De eigenschap hangt niet aan `TimeModel`, want die markering staat niet in elk
+    nieuw bestand (§5.2). v2026.9.0 leest `OPS_Calendar` per eigenschapsnaam en slaat een onbekende naam over
+    (gelezen in de code van de tag, `extractCalendarHourMode` en de lezers ervoor).
+  - **Velden:** de slots van `IfcTaskTime`, beperkingen en deadline (`OPS_Constraints`), `stop`/`resume`
+    (`OPS_Resume`) en de baseline-taken in `OPS_Baselines` (per baseline-taak de kalender van haar taak; bestaat
+    de taak niet meer, dan de projectkalender). Een niet-afleidbaar moment in elk van die velden maakt de kalender
+    letterlijk.
+  - **Gevolg:** één niet-afleidbaar moment maakt de hele kalender letterlijk. Voor de nieuwe OPS is dat
+    verliesvrij. Wat v2026.9.0 ermee doet, staat in §5.4. De vlag "tijden letterlijk" uit ronde 1 vervalt.
 
 ### 3.7 Kalendertijd
 
@@ -359,7 +424,7 @@ typewijziging. "Fase" verwijst naar §7.
 ### 3.8 Migratie
 
 Zie §5. Eén zuivere functie op de laadgrens (`payloadFromImport`), deterministisch en idempotent. De
-normalisatie draait altijd; de markering `TimeModel` stuurt alleen de melding van B5.
+normalisatie draait altijd; de markering `TimeModel` stuurt alleen de B5-overgang.
 
 ### 3.9 Rekenkern
 
@@ -382,21 +447,24 @@ normalisatie draait altijd; de markering `TimeModel` stuurt alleen de melding va
   voor duur, rest en lag, in beide maten. Reden (review ronde 1, BEVESTIGD): de huidige MSPDI-route maakt van
   2,5 d met 1,5 d rest bij teruglezen 3 d met 2 d rest, ook met de OPS-markering (`mspdiReader.ts:174`, `:465`);
   F3 maakt precies zulke data. F5b (.mpp, XER, het 08:00-anker) mag later.
-- **Lezen (F5a, .mpp en XER in F5b):** MSPDI, .mpp, P6 XML en XER maken altijd taken in de urenmaat, en lezen duur, rest en lag in
-  minuten zonder afronding. Dat lost I1–I5 op. Uitzondering: draagt de taak de OPS-markering voor de eenheid
-  (MSPDI-veld via `opsDurationUnitFieldId`, `mspdiReader.ts:246`; P6-UDF, `p6xmlReader.ts:590`), dan komt de
-  dagenmaat terug, met werkdagen = minuten ÷ werktijd per dag. Nu maakt de XER-lezer een dagtaak op een
-  kalender zonder tijdsignaal (`xerReader.ts:831-834`); dat verdwijnt. Een lezer maakt alleen nog een
-  urenkalender als de kalender per dag verschilt of eigen werkblokken heeft; anders blijft hij scalair (§3.1).
+- **Lezen (F5a, .mpp en XER in F5b):** MSPDI, .mpp, P6 XML en XER maken altijd taken in de urenmaat, en lezen duur,
+  rest en lag in minuten zonder afronding. Dat lost I1–I5 op. Uitzondering: draagt de taak de OPS-markering voor de
+  eenheid (MSPDI-veld via `opsDurationUnitFieldId`, `mspdiReader.ts:246`; P6-UDF, `p6xmlReader.ts:590`), dan komt de
+  dagenmaat terug, met werkdagen = minuten ÷ werktijd per dag. Nu maakt de XER-lezer een dagtaak op een kalender
+  zonder tijdsignaal (`xerReader.ts:831-834`); dat verdwijnt. Een lezer maakt alleen nog een urenkalender als de
+  kalender per dag verschilt of eigen werkblokken heeft; anders blijft hij scalair (§3.1).
 - **Schrijven:** urenmaat: minuten. Dagenmaat: werkdagen × werktijd per dag (technische keuze T13), plus de
   OPS-markering. Reden: dat is precies wat het P6- en het MSP-profiel rekenen, het hangt niet af van de plek,
   en OPS → P6 → OPS geeft de dagenmaat terug. Nu gebruikt `taskMinutesForWrite` het opgeslagen `hoursPerDay`
   (`subdayIo.ts:574-577`, aangeroepen met `effCal.hoursPerDay`, `mspdiWriter.ts:475-479`); dat wordt de
   werktijd per dag (F3). Verder in F5a: lag rekent met de taakkalender (I7); procentlag gaat naar P6 als minuten
   (I6). In F5b: een einde krijgt de echte tijd, niet het anker 08:00 (I8).
-- **IFC (F3):** urenmaat: `PT…H…M`. Dagenmaat in hele dagen: `P{n}D`, zoals nu; een oudere OPS leest dan een
-  gewone dagtaak. Dagenmaat met een breuk: `PT…H…M` (werkdagen × werktijd per dag) plus in de OPS-pset de maat
-  en het aantal werkdagen; een oudere OPS leest dan een urentaak. Speling: §3.4. Kalender: §5.4.
+- **IFC (F3, technische keuze T21):** één regel voor duur, rest en lag. Urenmaat: `PT…H…M`. Dagenmaat in hele
+  dagen: `P{n}D`, zoals nu; een oudere OPS leest dan een gewone dagtaak. Dagenmaat met een breuk: `PT…H…M`
+  (werkdagen × werktijd per dag) plus in de OPS-pset van de taak het aantal werkdagen; een oudere OPS leest dan
+  een urentaak. Kalendertijd met een breuk (nu `P0Y0M1.5D`, `ifcDuration`, `ifcWriter.ts:139-143`, door
+  v2026.9.0 gelezen als 5): `PT…` met `ELAPSEDTIME` plus het aantal dagen in de OPS-pset. Nooit een gebroken
+  `P…D`. De lag: §3.3. Speling: §3.4. Kalender: §5.4.
 - **Ongelijke dagen (I9):** een dagenmaat-taak van 5 d op de voorbeeldweek eindigt in het OPS-profiel vr 14:00.
   MSP en P6 rekenen 40 u en eindigen ma 09:00. Dat verschil is bewust (B1). Onder het P6- of MSP-profiel
   rekent OPS zelf ook ma 09:00.
@@ -414,7 +482,21 @@ normalisatie draait altijd; de markering `TimeModel` stuurt alleen de melding va
   werkblokken van die dag. Urenmaat: werkminuten van de taak op die dag ÷ (werktijd per dag × 60). Dagenmaat: het
   deel van de werktijd van die dag (wo 11:00–16:00 = 4 van 8 u = 0,5). Inzet × dat deel = de belasting van die
   dag. Het histogram en de contourdialoog (`ContourDialog.tsx`) delen nu `taskWorkDayIsos`; de nivelleerder telt
-  apart met dezelfde regel in hele dagen (`ResourceLeveler.ts:425`). Alle drie krijgen de nieuwe verdeling.
+  apart met dezelfde regel in hele dagen (`ResourceLeveler.ts:425`). Alle drie krijgen één gedeelde functie die
+  voor een plaatsing de werkdagen met hun deel geeft, ook met onderbrekingen (`splitGaps`). Een curve, een
+  contour of opgeslagen werk (`assignmentDayUnits`, `ResourceLoad.ts:150-191`) verdeelt het werk zoals nu over
+  die dagen; het deel van de eerste en de laatste dag weegt mee. De precieze weging is werk voor F3.
+- **Nivelleerder: vraag per kandidaat (review ronde 2, punt 6, BEVESTIGD).** Nu berekent de nivelleerder de vraag
+  per taak één keer (`demandByTask`, `ResourceLeveler.ts:442-458`). Bij elke kandidaat schuift alleen de lijst
+  met dagen mee (`occurrenceFor`, `:427-435`); de vraag zelf hergebruikt hij (`findSlot`, `:876`; `bookDemandAt`,
+  `:523-526`). Met de nieuwe regel hangt de verdeling van de plaats af. Voorbeeld van de review: een urenmaat-taak
+  van 8 u, inzet 1, vanaf vr 07:00 met 6 werkuren op vrijdag geeft vr 0,75 en ma 0,25. Vanaf ma 07:00 geeft ze
+  ma 1. De oude vorm verschoven geeft ma 0,75. Met een bestaande last van 0,25 op maandag keurt de toets dan
+  1,0 goed, terwijl de geplaatste taak 1,25 boekt. Regel: de nivelleerder bepaalt voor elke kandidaat de dagen
+  én de vraag per dag met de gedeelde functie, en boekt met dezelfde uitkomst. De cache gaat per taak en
+  startmoment (nu per startdatum, `:428-431`). Na toepassen is de geboekte last per resource en per dag gelijk
+  aan het histogram. Regressie (F3): het voorbeeld hierboven met capaciteit 1; de kandidaat ma 07:00 wordt
+  geweigerd, en na toepassen zijn nivelleerder en histogram gelijk. Nivelleren op uurniveau is niet nodig.
 - **Werk, urenmaat:** de werkdriehoek rondt niet meer af op hele dagen (F3; `workTriangle.ts:100-111`,
   `workRuleApply.ts:195-198`).
 - **Werk, dagenmaat (technische keuze T14):** werk = werkdagen × inzet × werktijd per dag. Zo rekent de
@@ -427,10 +509,12 @@ normalisatie draait altijd; de markering `TimeModel` stuurt alleen de melding va
 
 ### 3.12 UI
 
-- Invoer: een kaal getal volgt de maat van de taak; bij een nieuwe taak de standaardmaat. "4u" kan altijd. Hoe
-  de dagenmaat en de urenmaat te onderscheiden zijn in de tabel en bij invoer, is besluit B8. Of een breuk in
-  de dagenmaat ("2,5") mag zonder Urenplanning, hangt aan B2; `parseDuration` weigert decimalen nu
-  (`durationFormat.ts:40-41`). Een lag in dagen wordt niet meer afgerond (`lagFormat.ts:73`).
+- Invoer (herzien na review ronde 2): in elke optie houdt een kaal getal de maat van de taak, en krijgt een nieuwe
+  taak de standaardmaat (§3.2). Wat "d" en "u" betekenen en of een eenheid de maat verandert, is besluit B8 (de opties
+  noemen het per optie). Of uren ("4u") en breuken ("2,5") te typen zijn met de schakelaar Urenplanning uit, is
+  besluit B2 (met de schakelaar aan kan het altijd): in optie 1 altijd; in optie 2 een breuk wel en uren niet; in
+  optie 3 geen van beide. `parseDuration` weigert decimalen nu (`durationFormat.ts:40-41`). Een lag in dagen wordt
+  niet meer afgerond (`lagFormat.ts:73`).
 - Weergave: volgens de instelling Duurweergave en B8. Datums: B4.
 - Gantt: bij dagzoom snapt slepen per werkdag, van blokbegin tot blokeinde; bij uurzoom per uur of kwartier
   (`timelineSnap.ts:12-28`).
@@ -466,14 +550,21 @@ normalisatie draait altijd; de markering `TimeModel` stuurt alleen de melding va
   (`verify:conventions` eist dat). Uit ⇒ een dagenmaat-taak, een lag in dagenmaat en een dagenmaat-rest tellen
   als urenmaat, met de werktijd per dag van de effectieve kalender.
 - **Lopers voor de dagenmaat:** vooruit telt elke werkdag als 1, hoe lang ook; binnen een dag telt het deel van
-  de werktijd van die dag. Achteruit is de spiegel. Een feestdag en een niet-werkdag tellen 0; een werkende
-  uitzondering telt 1, ook met minder uren. De lopers komen in `CalendarEngine` naast de minutenlopers
-  (`addWorkMinutes`, `CalendarEngine.ts:772`), met een check dat vooruit en achteruit elkaars spiegel zijn.
-- **Afronding en spiegel (review ronde 1, punt 9):** de lopers rekenen intern in hele minuten. Het deel van een
-  dag wordt `Math.round(deel × werkminuten van die dag)`; een moment ligt dus altijd op een hele minuut. Spiegeleis:
-  vooruit en dan achteruit geeft exact het beginmoment terug als dat moment zelf uit de lopers komt; voor
-  willekeurige invoer mag het verschil hooguit 1 minuut zijn. Een breuk in werkdagen gaat met 6 decimalen naar
-  IFC (`ifcDayNumber`, `ifcWriter.ts:121-137`); dat is nauwkeurig tot ruim onder een minuut.
+  de werktijd van die dag. Achteruit telt op dezelfde manier terug. Een feestdag en een niet-werkdag tellen 0;
+  een werkende uitzondering telt 1, ook met minder uren. De lopers komen in `CalendarEngine` naast de
+  minutenlopers (`addWorkMinutes`, `CalendarEngine.ts:772`), met een check dat vooruit en dan achteruit binnen
+  de foutgrens hieronder blijft.
+- **Afronding en foutgrens (review ronde 1 punt 9; herzien na ronde 2 punt 8):** de lopers rekenen in hele
+  minuten. Het deel van een dag wordt `Math.round(deel × werkminuten van die dag)`; een moment ligt dus altijd op
+  een hele minuut. Een exacte spiegel is daarmee niet haalbaar. Voorbeeld van de review (BEVESTIGD): vrijdag 8 u,
+  werkende zaterdag 1 u, begin vr 07:03, duur 1 d. Na vrijdag blijft 3/480 d over; op zaterdag is dat
+  `Math.round(60 × 3/480)` = 0 min. Terug komt op vr 07:00: 3 minuten verschil. **Foutgrens:** vooruit en dan
+  achteruit verschilt hooguit ½ + ½ × (werkminuten van de begindag ÷ werkminuten van de einddag) minuut. In het
+  voorbeeld is dat 0,5 + 0,5 × 480/60 = 4,5 min; bij gelijke dagen hooguit 1 minuut. Afleiding: de einddag rondt
+  af met hooguit een halve minuut van die dag; teruggeteld weegt dat op de begindag in de verhouding van de twee
+  daglengtes, en de begindag rondt zelf ook een halve minuut af. Dit ontwerp bouwt geen verborgen rest om het
+  verschil te voorkomen. Een breuk in werkdagen gaat met 6 decimalen naar de OPS-pset (`ifcDayNumber`,
+  `ifcWriter.ts:121-137`); dat is nauwkeurig tot ruim onder een minuut.
 - **Wisselen van profiel:** de taak verandert niet; alleen de conventie. Afwijkingen blijven letterlijk staan
   (`switchProfile`), dus P6 → OPS → P6 geeft het origineel.
 - **Oude bestanden (technische keuze T12; de code vraagt hier iets anders dan de uitwerking).** Ontbreekt de
@@ -570,6 +661,14 @@ Zo zette de meting het ook om.
   het statusmoment. Reden: in het dagpad mogen beide op dezelfde dag vallen, en een werkelijke datum is een feit.
   De invoer moet dit ook toelaten; zie de statusregel hieronder. F1 zoekt de klem die groep 9 rood maakt (niet
   vastgesteld in dit ontwerp).
+- **D7 mijlpaal (fixronde 2):** een mijlpaal heeft één moment voor al zijn start- en eindvelden. Een datum zonder
+  tijd wordt D2 bij een FINISH-mijlpaal en D1 bij een START-mijlpaal (`MilestoneKind`,
+  `src/types/task.ts:177-182`). Zonder soort beslist de hint `AtDayEnd` in `OPS_Milestone`: de schrijver zet hem
+  op een ankerkalender als de mijlpaal op het einde van zijn werkdag staat. Zonder hint (oud bestand, ander
+  programma) D1. Reden: met alleen D1 en D2 per veld krijgt een mijlpaal begin 07:00 en einde 16:00. Dan is hij
+  op een ankerkalender nooit afleidbaar, en wordt elke kalender met een mijlpaal letterlijk (§3.6). Of D1 voor een
+  oud bestand de werkelijke datum van een voltooide mijlpaal zonder soort gelijk houdt op dagniveau, toetst F0
+  met een dagcase (VERMOED).
 
 **D3 per veld: wat de datum van een kalendertijd-taak nu betekent** (review ronde 1, punt 8). Het dagpad schrijft
 het einde als start + n kalenderdagen, maar leest de datum daarna als inclusief. Probes (BEVESTIGD, harness):
@@ -580,12 +679,24 @@ FNLT ma 1 jun krijgt ze speling −1; een werkelijk einde 2 jun (ingevoerd) laat
 |---|---|---|---|
 | `earlyFinish`, `scheduleFinish` | de motor: start + n kalenderdagen | exclusief: 00:00 van die datum | 00:00 van die datum |
 | `lateFinish` | de motor: opvolgerstart − 1 kalenderdag (`addCalendarDays(target, -1)`, zie `msp-18`) | inclusief: einde van die datum | 24:00 van die datum |
-| einde van een baseline-taak | kopie van het getoonde einde (`shownFinish`, `baselineSlice.ts:41`) | meestal exclusief (uit `earlyFinish`) | 00:00 van die datum |
+| einde van een baseline-taak | kopie van het getoonde einde (`shownFinish`, `baselineSlice.ts:41`): `actualFinish` bij een voltooide taak, anders `earlyFinish` (`taskDates.ts:63-65`) | die van het veld waaruit hij kwam; dat staat niet in het bestand | dezelfde omzetting als het veld waaruit `shownFinish` bij het openen leest: voltooid (`isPinnedComplete`) ⇒ 24:00, anders 00:00; taak bestaat niet meer ⇒ 00:00 |
 | `actualFinish` | de planner, of `defaultActualFinish` (statusdatum of `earlyFinish`, `taskMutationRules.ts:29-34`) | inclusief bij invoer | 24:00 van die datum |
 | FNET/FNLT/MFO, `deadline`, `stop` | de planner | inclusief | 24:00 van die datum |
 
 Gevolg: een werkelijk einde dat uit `earlyFinish` is overgenomen, schuift een dag op; de melding van B5 telt het.
 Na de omzetting is het einde overal exclusief. Wat daardoor bewust anders uitkomt (groep 6), staat in §4.5.
+
+**Het baseline-einde (review ronde 2, punt 7, BEVESTIGD).** De eerdere regel (altijd 00:00) maakte een afwijking
+die alleen uit de omzetting kwam. Probe van de review: werkelijk einde en pas opgeslagen baseline-einde zijn beide
+2 jun; de oude regel maakte daar 3 jun 00:00 en 2 jun 00:00 van, een dag afwijking. Nu krijgt het baseline-einde
+dezelfde omzetting als het getoonde einde waarmee de afwijking het vergelijkt (`variance.ts:69`, `:79`). Beide
+schuiven dus even ver: een passende baseline (afwijking 0) blijft passend, en de afstand in kalendertijd tussen
+baseline en getoond einde blijft gelijk. Grens: een baseline uit de tijd dat de taak nog niet voltooid was, kwam
+uit `earlyFinish` en krijgt nu 24:00. Welke betekenis hij toen had, staat nergens; de regel kiest daarom voor de
+vergelijking van nu. Regressie (F2): een oud bestand met een voltooide kalendertijd-taak en een baseline die
+direct na het voltooien is opgeslagen ⇒ afwijking 0; dezelfde taak met een baseline-einde twee dagen eerder ⇒ de
+afstand blijft twee kalenderdagen. Het begin van een baseline-taak is startachtig (00:00), net als `actualStart`
+en `earlyStart`; daar speelt het niet.
 
 **De statusregel (F1, technische keuze T19; review ronde 1, punt 6).** Nu vergelijkt `isActualPastStatusDate`
 (`taskMutationRules.ts:11-16`) op dagniveau als de statusdatum geen tijd heeft, en op het moment als hij wel een
@@ -714,7 +825,7 @@ werkdagen, niet op de kalendertijd-lag; VERMOED hoort hij bij groep 12 (FF).
 | Resourcebibliotheek | IndexedDB `ops-library` / `ops-library.json` (`libraryStore.ts:4,13`) | kalenders blijven scalair (§3.1); geen omzetting nodig |
 | WBS-sjablonen | `localStorage` (`src/utils/wbsTemplates.ts`; `durationDays` uit `scheduleDuration`, r.93) | omzetten bij het toepassen, niet bij het lezen; zie de bijvangst onder deze tabel |
 | Werktijdpresets | `localStorage` `ops-workTimePresets` (`settingsStore.ts:561-567`) (inventaris) | al werkblokken; niets |
-| Baselines | in het IFC-bestand (`src/types/baseline.ts:11-13,36-37`) | datums met D1/D2; duur in werkdagen blijft, minuten erbij (F3) |
+| Baselines | in het IFC-bestand (`src/types/baseline.ts:11-13,36-37`) | datums met de regels van §4.2 (het einde bij kalendertijd zoals het getoonde einde); duur in werkdagen blijft, minuten erbij (F3) |
 | Imports MSPDI, .mpp, P6 XML, XER, CSV | adapters | omzetting bij het lezen (F5a en F5b); daarna dezelfde normalisatie in `payloadFromImport` |
 
 Bijvangst: een WBS-sjabloon bewaart van een urentaak het afgeleide dagengetal (`scheduleDuration`, r.93), niet
@@ -724,11 +835,11 @@ de minuten. Dat valt buiten dit ontwerp en hoort in `knownbugs.md` als het beves
 
 **De laadgrens (review ronde 1, punt 1, BEVESTIGD).** Een laadroute die rekent, rekent vóór `hydratePayload`:
 `applyLoadedProject` bouwt de payload (`payloadFromImport`, `fileSlice.ts:766`), rekent in
-`prepareLoadedPayload` (`documentActivation.ts:262-279`, de solve op `:274`) en publiceert pas daarna
-(`hydratePayload`, `fileSlice.ts:813`). Openen (`fileSlice.ts:1021`, `:1490`), `loadState` (`projectSlice.ts:596`)
-en het herstel van het actieve document (`documentSlice.ts:630`) rekenen zo. Het laadpad wist ook de undo-historie
-van het document (`removeSessionHistoryForDocumentFromState`, `fileSlice.ts:809`) en pusht zelf geen snapshot
-(`documentActivation.ts:318-321`). De eerdere plek in het documentcontract (`fromPayload`,
+`prepareLoadedPayload` (`fileSlice.ts:790`; `documentActivation.ts:262-279`, de solve op `:274`) en publiceert pas
+daarna (`hydratePayload`, `fileSlice.ts:813`). Openen (`fileSlice.ts:1021`, `:1490`), `loadState`
+(`projectSlice.ts:596`) en het herstel van het actieve document (`documentSlice.ts:629-630`) rekenen zo. Het laadpad
+wist ook de undo-historie van het document (`removeSessionHistoryForDocumentFromState`, `fileSlice.ts:809`) en
+pusht zelf geen snapshot (`documentActivation.ts:318-321`). De eerdere plek in het documentcontract (`fromPayload`,
 `documentContract.ts:245-247`) loopt pas bij het publiceren, dus na de eerste berekening.
 
 - **Waar:** een zuivere functie `migrateToMinuteModel(payload) ⇒ { payload, report }` (naam voorlopig) aan het
@@ -738,53 +849,116 @@ van het document (`removeSessionHistoryForDocumentFromState`, `fileSlice.ts:809`
   gebouwd en getest, in F2 aangesloten.
 - **Wat: twee delen.**
   - *Normalisatie* (altijd, T17): elke datum zonder tijd in een startachtig of eindachtig taakveld wordt een
-    moment (D1–D6). Een moment blijft een moment. Dit draait voor elk bestand, ook voor een nieuw bestand met
-    `TimeModel`, want ook zo'n bestand kan een datum zonder tijd dragen (het anker, §3.6; een ander programma).
-  - *Schemamigratie* (alleen een oud bestand): kalenderherstel T1, de profielregel T12, en het klaarzetten van de
-    melding van B5.
-- **De markering:** `OPS_Project.TimeModel = 'MINUTES-1'` in elk bestand vanaf F2. Ze betekent: "dit bestand is
-  met het minutenmodel berekend". Ze stuurt alleen de schemamigratie en de melding; de normalisatie draait altijd.
-  Ze betekent niet "de tijden zijn letterlijk"; dat zegt de vlag per taak uit §3.6.
+    moment (D1–D7). Een moment blijft een moment. Dit draait voor elk bestand, ook voor een nieuw bestand met
+    `TimeModel`, want ook zo'n bestand draagt datums zonder tijd (een ankerkalender, §3.6; een ander programma).
+  - *Schemamigratie* (alleen een oud bestand): kalenderherstel T1, de profielregel T12, en de documentvlag
+    "omzetting open" voor B5 (hieronder).
+- **De vastlegging van "datums zoals opgeslagen" (review ronde 2, punt 3, BEVESTIGD).** Die zit niet in de payload
+  maar in `parsed.recordedTimes`. `applyRecordedTimesToTasks` schrijft haar waarden later rechtstreeks in de taken
+  (`src/engine/scheduler/recordedDates.ts:486-505`). De `.mpp`-lezer zet daar datums zonder tijd in (`formatField`,
+  `mppReader.ts:791-792`, gebruikt op `:922-923`), en die lezer blijft tot F5b. Probe van de review: payload met
+  07:00–16:00; na `applyRecordedDatesOnLoad` staat weer 2026-06-01 zonder tijd in de taak. Regel: de enige toegang,
+  `captureAllowed` (`documentActivation.ts:362-367`), krijgt de kalenders van de payload mee en normaliseert elke
+  vastgelegde waarde vóór de vergelijking (`shiftedTaskIds`) en vóór de publicatie. Elke waarde krijgt de regel van
+  het taakveld waarin ze terechtkomt (`recordedDates.ts:494-497`, `:504`): `start` en `lateStart` startachtig,
+  `finish` en `lateFinish` eindachtig, `summaryProgress.actualStart`/`actualFinish` als werkelijke datums, met D3 en
+  D7 waar die gelden. Zo geldt het op beide paden: `applyRecordedDatesOnLoad` (`:375`) en `applyRestoredRecordedMode`
+  (`:440`). De bron zelf (`recordedFields`, het XER-archief) blijft onveranderd.
+- **De markering:** `OPS_Project.TimeModel = 'MINUTES-1'`. Ze betekent: "de datums in dit bestand zijn met het
+  minutenmodel berekend". Ze stuurt alleen de schemamigratie en de B5-overgang. De schrijver zet haar vanaf F2,
+  behalve zolang de vlag "omzetting open" aan staat. Zo komt de overgang terug na opslaan of na een crash, als
+  het document nog niet omgezet was. Hoe de lezer tijden leest, hangt niet aan deze markering maar aan
+  `LiteralTimes` per kalender (§3.6). De normalisatie draait altijd.
 - **Deterministisch en idempotent:** twee keer draaien geeft hetzelfde.
 
-**B5 op de laadgrens (besluit B5, uitgewerkt).**
+**B5: de overgang van een oud bestand (besluit B5, uitgewerkt; technische keuze T22; herzien na review ronde 2,
+punt 1 en 4).**
 
-- **Vóór-snapshot:** bij een oud bestand op een laadroute die rekent, publiceert het laadpad in één `set` eerst de
-  omgezette payload zonder herberekening: de opgeslagen datums als momenten, `cpmResult: null`, verouderd via
-  `markScheduleStale`. Daarna past het de herberekening toe als één undo-stap (`beginUndoable` → toepassen →
-  `finishUndoable`). Ctrl+Z geeft de opgeslagen datums terug, met de markering "verouderd"; Ctrl+Y rekent weer.
-  Dit is een bewuste uitzondering op "een laadpad pusht geen snapshot" (`documentActivation.ts:318-321`), alleen
-  voor een oud bestand.
-- **Melding:** één melding via het meldingskanaal, na de publicatie. Ze telt de taken waarvan het getoonde begin of
-  einde (`shownStart`/`shownFinish`, zoals `recordedDatesDeviate`, `recordedDates.ts:276-290`) niet gelijk is op
-  dagniveau tussen de opgeslagen en de herberekende datums, en noemt de grootste verschuiving in werkdagen.
-  Verschuift er niets, dan komt er geen melding (voorstel van dit ontwerp).
-- **`isDirty`:** wordt `true` na de herberekening van een oud bestand (voorstel). Reden: opslaan verandert het
-  bestand (`TimeModel` en de nieuwe datums).
+- **De vlag "omzetting open":** een documentveld (naam voorlopig `minuteModelPending`) in `DOCUMENT_FIELDS`,
+  met snapshot zoals `datesAsRecorded`, niet in IFC. De schemamigratie zet hem aan bij een oud bestand. De
+  B5-overgang zet hem uit. Gaat het document in de modus "datums zoals opgeslagen", dan gaat hij ook uit (zie
+  onder).
+- **De overgang: twee snapshots, één event.** De route bouwt de *onberekende* payload:
+  `prepareLoadedPayload(payload, { recompute: false })` (kalendersync zonder solve), met `scheduleStale: true`,
+  `cpmResult: null` en de vlag aan. Daarna de *berekende* payload: dezelfde functie met `recompute: true`, plus de
+  bibliotheekgrens (`materializeLibraryBoundary`, `fileSlice.ts:799`), met de vlag uit. In één `set`: historie van
+  het document wissen (`fileSlice.ts:809`), de berekende payload publiceren (`hydratePayload`, `:813`) en één event
+  registreren met `before` = `snapshotOfPayload(onberekend)` en `after` = `snapshotOfPayload(berekend)`
+  (`snapshot.ts:114`; `recordSessionHistoryDeltas`, `sessionHistory.ts:459-480`, met `nonEdit: true` zoals F5,
+  `sessionHistory.ts:88-98`). Geen `beginUndoable`: `createSnapshot` leest via `originalAppState` de toestand van
+  vóór de hele producer (`snapshot.ts:95-103`). Een vóór-snapshot daarmee bevat dus het vorige, lege document
+  (review ronde 2, BEVESTIGD: Ctrl+Z maakte het geladen project leeg). Probe van deze ronde (BEVESTIGD, §10.5):
+  met twee expliciete snapshots geeft Ctrl+Z het geladen project met B op 15 jun en verouderd, en Ctrl+Y weer
+  8 jun. De bibliotheekgrens zit alleen in `after`: Ctrl+Z geeft het document zoals het in het bestand stond.
+- **Alleen bij een verschuiving.** Het event, de melding en `isDirty` komen alleen als minstens één taak
+  verschuift. Besluit eigenaar, zoals review ronde 2 het doorgeeft: "`isDirty` alleen bij een daadwerkelijke
+  verschuiving, niet na iedere herberekening van een oud bestand" (de oorspronkelijke bron van dit besluit heeft
+  deze agent niet gezien). Verschuiven = het getoonde begin of einde (`shownStart`/`shownFinish`, zoals
+  `recordedDatesDeviate`, `src/engine/scheduler/recordedDates.ts:276-290`) is niet gelijk op dagniveau (§0)
+  tussen de onberekende en de berekende payload. Verschuift er niets, dan geen event, geen melding, en `isDirty`
+  blijft `false`; de vlag gaat wel uit. Een verschil binnen één werkdag telt niet (bijvoorbeeld een einde 15:12
+  in plaats van 16:00 door B3): de oude datum zonder tijd zegt daar niets over. Gevolg: zo'n verschil is niet met
+  Ctrl+Z terug te halen. Undo en redo maken een document altijd gewijzigd (`snapshot.ts:225-228`).
+- **Melding:** één melding via het meldingskanaal, na de publicatie. Ze telt de verschoven taken en noemt de
+  grootste verschuiving in werkdagen. Gaat het om een ander document dan het actieve, dan noemt ze dat document.
+- **Elke route die blijvend rekent, kent de vlag (review ronde 2, punt 4, BEVESTIGD).** Gevonden met grep op
+  `solveProject(` en `runInScratchDocument(` in `src/state`:
+  1. *Het laadpad:* openen, `loadState`, site, extensie-import (`fileSlice.ts:760-813`) en het actieve document
+     bij herstel (`documentSlice.ts:629-695`, de historie gaat daar op `:695` weg). De overgang direct, zoals
+     hierboven.
+  2. *`runCPM` op het actieve document* (`scheduleSlice.ts:85-147`) met de vlag aan: de overgang in plaats van
+     het gewone pad. Buiten de modus "datums zoals opgeslagen" pusht `runCPM` zelf geen snapshot; hij ververst
+     alleen het `after` van het laatste event (`refreshLatestDocumentDataHistoryAfter`, `:131`, `:147`). De
+     overgang slaat dat verversen over en registreert een eigen event. Zo landt de verschuiving niet in een
+     eerdere bewerking. Dit dekt een slapend hersteld document na activeren: F5 en automatisch berekenen
+     (`useAutoCalcCPM.ts:23-30`). `switchDocument` rekent zelf niet (`documentActivation.ts:421`).
+  3. *Binnen een omvattend event:* een MCP-transactie (`createMcpTransactions.ts`), een bulkbewerking
+     (`batchTool.ts`) of de bibliotheekverdeling over slapende documenten (`runInScratchDocument`,
+     `librarySlice.ts:1391`; het event op `:1436`). Daar heeft het event al de onberekende toestand als `before`.
+     De overgang registreert dan geen eigen event; ze telt, meldt en zet de vlag uit. De meldingen van een
+     scratch-run gaan pas na de publicatie naar het kanaal (`librarySlice.ts:1379-1383`, `:1473`).
+  4. *`recalculateStaleSleepingDocuments`* (`documentSlice.ts:735-800`), aangeroepen door het bezettingsoverzicht
+     met automatisch berekenen aan (`ResourceOccupancyView.tsx:222-228`): slaat een document met de vlag over
+     (`:746`), en de teller `staleSleepingCount` (`ResourceOccupancyView.tsx:199`) telt het niet. Het overzicht
+     rekent zo'n document alleen vluchtig, zoals met automatisch berekenen uit. Reden: een melding en een
+     undo-stap voor een document dat de planner niet bekijkt, zijn onduidelijk; bij activeren komt route 2.
+     Probe van de review: zonder deze regel wordt een opgeslagen start 15 jun op de achtergrond 1 jun, zonder
+     event, en na activeren en `runCPM` blijft de historie leeg.
+  Elke nieuwe route die blijvend rekent, moet de vlag kennen. F2 zet een check die `solveProject(` en
+  `runInScratchDocument(` in `src/state` telt tegen deze lijst.
 - **"Datums zoals opgeslagen":** zet het laadpad die modus aan (`applyRecordedDatesOnLoad`,
-  `documentActivation.ts:369-401`), dan komen er geen aparte melding en geen extra undo-stap. De modus toont de
-  opgeslagen datums al, en zijn strook telt de verschuiving (`recordedDates.shifted`). De eerste Bereken daarna
-  verlaat de modus en pusht zelf een snapshot (`runCPM`).
-- **Slapend herstel:** een slapend hersteld document rekent niet bij het herstel (`payloadFromInput` zet
-  `scheduleStale: true`). Het krijgt een documentveld "omzetting nog niet gemeld" (in `DOCUMENT_FIELDS`, niet in
-  IFC). De eerste `runCPM` op dat document geeft de melding; `runCPM` pusht al een snapshot, dus Ctrl+Z werkt.
-  Grens: crasht de app nog eens vóór die Bereken, dan draagt de nieuwe herstelkopie `TimeModel` en vervalt de
-  melding.
-- **Documentwissel:** de undo-stap en het veld horen bij het document, zoals elke undo-stap; een wissel verandert
-  niets.
+  `documentActivation.ts:369-401`), dan komen er geen melding en geen event, en de vlag gaat uit. De modus toont
+  de opgeslagen datums al (genormaliseerd, zie boven), en zijn strook telt de verschuiving
+  (`recordedDates.shifted`). De eerste Bereken daarna verlaat de modus en pusht zelf een snapshot
+  (`scheduleSlice.ts:110-113`). Hetzelfde voor een slapend document dat in de modus hersteld wordt
+  (`applyRestoredRecordedMode`).
+- **Documentwissel:** het event en de vlag horen bij het document; een wissel verandert niets. Ctrl+Z zet de vlag
+  terug (hij zit in de snapshot); de volgende Bereken doet de overgang dan opnieuw, met een nieuw event en een
+  nieuwe melding.
 - **Beperking:** de telling vergelijkt de opgeslagen datums met de nieuwe berekening. Was het bestand al verouderd
   opgeslagen, dan telt die achterstand mee.
 
-**Regressiegevallen (F2):** (1) eigen IFC zonder `TimeModel` waarin B 15–19 jun staat en de nieuwe motor 8–12 jun
-geeft: na openen B 8–12 jun, één undo-stap, melding "1 taak, 5 werkdagen"; Ctrl+Z ⇒ 15–19 jun en verouderd.
-(2) Hetzelfde bestand in de modus "datums zoals opgeslagen": geen melding, geen undo-stap. (3) Hetzelfde bestand
-als slapend herstel: de melding bij de eerste Bereken. (4) Een bestand met `TimeModel` en een datum zonder tijd
-uit een ander programma: de datum wordt een moment, geen melding.
+**Regressiegevallen (F2):**
+
+1. Eigen IFC zonder `TimeModel` waarin B 15–19 jun staat en de nieuwe motor 8–12 jun geeft: na openen B 8–12 jun,
+   één event, melding "1 taak, 5 werkdagen", `isDirty` waar. Ctrl+Z ⇒ het geladen project (niet het vorige
+   document) met B 15–19 jun en verouderd. Ctrl+Y ⇒ 8–12 jun.
+2. Een oud bestand waarin niets verschuift: geen event, geen melding, `isDirty` onwaar.
+3. Het bestand van (1) in de modus "datums zoals opgeslagen": geen melding, geen event. Een `.mpp`-vastlegging
+   zonder tijd (urentaak 07:00–16:00, vastgelegd als 2026-06-01) staat na het laden als moment in de taak.
+4. Het bestand van (1) als slapend herstel, automatisch berekenen aan, bezettingsoverzicht open: het document
+   blijft verouderd en zonder event. Na activeren: één event, de melding, Ctrl+Z ⇒ 15–19 jun.
+5. Slapend herstel, automatisch berekenen uit, eerst een bewerking en dan F5: twee events. Ctrl+Z haalt eerst de
+   omzetting terug, daarna de bewerking.
+6. Een MCP-transactie en de bibliotheekverdeling op een document met de vlag: één event (dat van de transactie of
+   de verdeling), wel de melding, en daarna is de vlag uit.
+7. Een bestand met `TimeModel` en een datum zonder tijd uit een ander programma: de datum wordt een moment, geen
+   melding.
 
 ### 5.3 Wat er verschuift bij het openen van een oud bestand
 
 Openen rekent meteen (§5.2): wat verschuift, ziet de planner direct na het openen, met de melding van B5 en
-Ctrl+Z. Een slapend hersteld document rekent pas bij de eerste Bereken. Elke bestaande dagtaak wordt een
+Ctrl+Z. Een slapend hersteld document rekent pas na activeren (route 2 in §5.2). Elke bestaande dagtaak wordt een
 dagenmaat-taak en elke urentaak een urenmaat-taak; daarvoor verandert er niets aan de data (`durationUnit`
 blijft). Dit kan verschuiven:
 
@@ -801,26 +975,41 @@ blijft). Dit kan verschuiven:
 
 ### 5.4 Forward-compat: een oudere OPS leest een nieuw bestand
 
-De laatste release is v2026.9.0. Wat die versie doet met een nieuw bestand (gelezen in
-`git show v2026.9.0:src/services/ifc/ifcReader.ts`):
+De laatste release is v2026.9.0. **Vooraf: de kalenders van een nieuw bestand leest v2026.9.0 al verkeerd.** Sinds
+#336 schrijft OPS `IfcWorkCalendar` met 9 attributen. v2026.9.0 leest daardoor `WorkingTimes`, `ExceptionTimes` en
+de ploeg op de verkeerde plek: werkweek, werkuren, feestdagen en ploeg van elke kalender gaan verloren. Dat
+verlies is aanvaard (eigenaar 2026-10-13, "alles in één keer"; `docs/ifc-round-trip.md:351-356`, gemeten op
+`:436-460`). Dit ontwerp kan dat niet herstellen. Het doel voor v2026.9.0 is daarom: (1) hij leest de datums en
+de hoeveelheden (duur, rest, lag, speling) zoals ze geschreven zijn; (2) dit ontwerp maakt het verlies niet groter
+dan nodig.
+
+Gemeten met de lezer van v2026.9.0, gebundeld uit de broncode van de tag en gedraaid in Node (niet in de
+desktopapp); probe in §10.5:
 
 | Nieuwe vorm | v2026.9.0 doet | Gevolg | Maatregel |
 |---|---|---|---|
-| Duur met tijddeel `PT…H…M` | wordt een urentaak (`parseTaskTime` r.957-969) | goed, als de kalender de goede werkblokken heeft | zie volgende rij |
-| Een taak met een tijd ≠ 07:00 of een `PT`-duur op een scalaire kalender | ziet een tijdsignaal (`hasNonAnchorTime`, r.679) en promoveert de kalender met de geschreven perioden (r.654-714); hij kent `IsHourCalendar = .F.` niet (r.1618 leest alleen `true`) | bij één periode 07:00–16:00: een blok van 9 u, alle urentaken 1 u per dag langer | de bestaande route uitbreiden (review ronde 1): de writer schrijft voor een scalaire kalender met een urentaak al de effectieve werkblokken (07:00–12:00 + 13:00–16:00) met `IsHourCalendar = .F.` (`ifcWriter.ts:388-393`, `:1259-1262`), en de nieuwe lezer zet de scalaire vorm terug (`ifcReader.ts:1455-1462`). De voorwaarde "een urentaak gebruikt hem" wordt "een taak met een `PT`-duur of met de vlag tijden letterlijk gebruikt hem". Een eigen eigenschap `ScalarForm` is niet nodig |
-| Dagtaak met momenten die gelijk zijn aan D1/D2 van hun datum | het anker `T07:00:00`, zoals nu (T17) | gewone dagtaak op het dagpad | — |
-| Gebroken `P…D` | `(-?\d+)D`: 2.5 ⇒ 5 (r.512-513) | verkeerde speling of duur | nooit een gebroken `P…D` schrijven (§3.4, §3.10) |
-| Dagenmaat-taak in hele dagen | `P{n}D`, zoals nu | gewone dagtaak | — |
-| Dagenmaat-taak met een breuk | `PT…H…M` plus de maat in de OPS-pset; de pset-eigenschap is onbekend en wordt genegeerd (VERMOED) | urentaak met werkdagen × werktijd per dag; bij gelijke dagen gelijk op dagniveau, bij ongelijke dagen niet | geen; zo'n taak bestaat pas na F3 |
-| Conventies dagenmaat en B6 in `OPS_SchedulingProfile` | v2026.9.0 kent deze pset niet (§3.14) | geen | — |
-| `OPS_Project.TimeModel`, de vlag tijden letterlijk | genegeerd (VERMOED) | een letterlijke 07:00 leest v2026.9.0 als datum zonder tijd | geen; een moment om 07:00 dat niet D1 of D2 is, is zeldzaam |
+| Ankerkalender: elk veld als datum met `T07:00:00` (W0) | leest de datums | datums goed; de kalender wordt ma–vr 07–16, zonder de echte feestdagen en met één onechte op de dag van inlezen (aanvaard verlies, `docs/ifc-round-trip.md:444-449`) | — |
+| Letterlijke kalender met gemengde taken (W1: voltooide dagtaak 11:00–16:00, dagtaak 07:00–16:00, urentaak 07:00–16:00, kalendertijd-taak 00:00–00:00) | ziet een tijdsignaal (`hasNonAnchorTime`, r.679), promoveert de kalender en leest elke tijd letterlijk (r.654-714) | elk moment goed (BEVESTIGD). Maar de kalender wordt een urenkalender zonder werkblokken: v2026.9.0 las `WorkingTimes` niet, en de promotie neemt die lege werkblokken (knownbugs 131). Na Bereken in v2026.9.0 heeft de urentaak duur 0 | dit gebeurt nu al op `main` met elke urentaak. Daarom alleen letterlijk waar het moet (§3.6) |
+| Zelfde zonder urentaak (W2) | het tijdsignaal komt nu van 11:00 en 16:00 | zoals W1 | zoals W1 |
+| Duur met tijddeel `PT…H…M` | urentaak (`parseTaskTime` r.957-969) | goede duur; kalender zoals hierboven | — |
+| Gebroken `P…D` (duur, rest, speling, lag) | `(-?\d+)D`: `P0.5D` ⇒ 5 (r.512-513; voor een lag BEVESTIGD, ook `P1.5D` met `ELAPSEDTIME` ⇒ 5) | verkeerde hoeveelheid | nooit schrijven (T5, T21). Dat gebeurt nu al bij een kalendertijd-lag of een geïmporteerde breuk |
+| Dagenmaat in hele dagen | `P{n}D`, zoals nu | gewone dagtaak of lag in dagen | — |
+| Breuk in dagenmaat of kalendertijd (duur, rest, lag) | `PT…`: urentaak, of lag in minuten (BEVESTIGD: `PT4H0M0S` ⇒ 240 min; `PT36H0M0S` met `ELAPSEDTIME` ⇒ 2160 kalenderminuten) | dezelfde lengte, in de urenmaat | geen; de nieuwe OPS herstelt de maat uit de OPS-pset (T21) |
+| Extra property in `OPS_Sequences` | kent de pset niet (BEVESTIGD) | genegeerd | — |
+| Conventies dagenmaat en B6 in `OPS_SchedulingProfile` | kent deze pset niet (§3.14) | geen | — |
+| `OPS_Project.TimeModel`; `AtDayEnd` in `OPS_Milestone`; `LiteralTimes` in `OPS_Calendar` | `OPS_Calendar` leest hij per eigenschapsnaam (gelezen in de code); de andere twee: genegeerd (VERMOED) | — | — |
+| Datum in een pset als `IFCDATETIME` (beperking, deadline op een letterlijke kalender) | niet gemeten | VERMOED: het moment met seconden | F2 meet het |
 
-F2 verandert het formaat al een klein beetje: `TimeModel`, de vlag tijden letterlijk en echte tijden voor
-momenten die niet uit hun datum volgen (T10, T17). Een planning in hele dagen schrijft F2 nog zoals nu. F3
-verandert meer (maat, breuken, speling in minuten). F2 en F3 moeten daarom elk de lezer van tag v2026.9.0
-draaien op de nieuwe voorbeeldbestanden en vastleggen dat de datums op dagniveau gelijk blijven. Precedent: de
-review van #355 las nieuwe bestanden met de tags v2026.7.1–v2026.9.0 (`2026-10-07-review-pr109-uitkomsten.md`
-r.799 op `origin/claude/review-pr109-log`). Een vaste CI-stap kan, maar is niet nodig.
+De rij "een blok van 9 u" uit ronde 1 vervalt: v2026.9.0 leest de geschreven werkblokken helemaal niet.
+
+F2 verandert het formaat al een klein beetje: `TimeModel`, de schrijfregel per kalender met `LiteralTimes`, en
+`AtDayEnd` (T10, T17, D7). Een planning in hele dagen schrijft F2 nog als ankerkalender, zoals nu. F3 verandert meer
+(maat, breuken, speling in minuten, de lagkaart). F2 en F3 draaien daarom elk de lezer van tag v2026.9.0 op de nieuwe
+voorbeeldbestanden en op W0, W1, W2 en de lagvormen. Toets: elke gelezen datum en hoeveelheid is gelijk aan wat de
+nieuwe OPS schreef (op dagniveau bij een ankerkalender). Wat v2026.9.0 daarna berekent, valt onder het aanvaarde
+verlies van de kalenders. Precedent: de review van #355 las nieuwe bestanden met de tags v2026.7.1–v2026.9.0
+(`2026-10-07-review-pr109-uitkomsten.md` r.799 op `origin/claude/review-pr109-log`). Een vaste CI-stap kan, maar is
+niet nodig.
 
 ## 6. Teststrategie
 
@@ -858,10 +1047,17 @@ r.799 op `origin/claude/review-pr109-log`). Een vaste CI-stap kan, maar is niet 
   `msp-28` pint een fout en draait om als F1 die repareert (§4.5).
 - De tijdzone-matrix blijft (de tijdas is UTC; geen wijziging).
 - **Nieuwe checks in F3:** de lopers van de dagenmaat (voorbeeldweek, breuk, feestdag, werkende uitzondering,
-  nachtblok; vooruit en achteruit elkaars spiegel binnen de tolerantie uit §3.14); P6 ⇒ OPS ⇒ P6 geeft dezelfde
-  taken en hetzelfde profiel; de regel T12 (een pset zonder de sleutel: basis P6 ⇒ uit, basis OPS ⇒ aan); vast
-  werk ⇒ urenmaat; de standaardmaat per profiel; een dagenmaat-taak met een breuk door IFC heen en terug; de
-  belasting per werkdag (§3.11: wo 0,5, do 1, vr 1, ma 0,5, in histogram, contourdialoog en nivelleerder).
+  nachtblok; vooruit en dan achteruit binnen de foutgrens uit §3.14, met willekeurige begins en het voorbeeld
+  vr 07:03 met een zaterdag van 1 u); P6 ⇒ OPS ⇒ P6 geeft dezelfde taken en hetzelfde profiel; de regel T12 (een
+  pset zonder de sleutel: basis P6 ⇒ uit, basis OPS ⇒ aan); vast werk ⇒ urenmaat; de standaardmaat per profiel;
+  een dagenmaat-taak met een breuk en een kalendertijd-taak met een breuk door IFC heen en terug; de drie lagen uit
+  §3.3 door IFC en door een profielwissel; de belasting per werkdag (§3.11: wo 0,5, do 1, vr 1, ma 0,5, in
+  histogram, contourdialoog en nivelleerder); de nivelleerder per kandidaat (§3.11: ma 07:00 geweigerd,
+  nivelleerder en histogram gelijk na toepassen).
+- **Nieuwe checks in F2 (fixronde 2):** de B5-regressiegevallen 1–7 (§5.2); een telcheck op de routes die blijvend
+  rekenen (§5.2); de schrijfregel per kalender (§3.6): een ankerkalender schrijft alleen datums, een letterlijke
+  kalender alleen echte momenten, ook in de psets, en W0, W1 en W2 lezen in de nieuwe OPS en in v2026.9.0 terug
+  zoals in §5.4; D7 (START, FINISH, zonder soort met en zonder `AtDayEnd`); het baseline-einde (§4.2).
 
 ### 6.2 Check-batterijen
 
@@ -871,10 +1067,12 @@ r.799 op `origin/claude/review-pr109-log`). Een vaste CI-stap kan, maar is niet 
   - F2: `check-dag-is-werktijd.ts`, `check-calendar-hours.ts`, `check-advanced-cpm.ts`, `check-p6-ff-day-hour.ts`,
     `check-dag-uur-lag.ts`: verwachte datums worden momenten; het gedrag op dagniveau blijft. (VERMOED per
     check, op naam en inhoud gekozen; F2 stelt het per check vast.)
-  - F2, de laadgrens en B5 (review ronde 1, punt 9): `check-document-activation.ts` (laadberekening, Ctrl+Z na
-    het openen van een oud bestand), `check-recorded-dates.ts`, `check-recorded-dates-library.ts` en
-    `check-recorded-dates-mark.ts` (de modus "datums zoals opgeslagen" en slapend herstel),
-    `check-document-contract.ts` (normalisatie bij laden en wissel), `check-calendar-mirror.ts`.
+  - F2, de laadgrens en B5 (review ronde 1, punt 9; ronde 2, punt 1, 3 en 4): `check-document-activation.ts`
+    (laadberekening, Ctrl+Z na het openen van een oud bestand), `check-recorded-dates.ts`,
+    `check-recorded-dates-library.ts` en `check-recorded-dates-mark.ts` (de modus "datums zoals opgeslagen", de
+    genormaliseerde vastlegging en slapend herstel), `check-document-contract.ts` (normalisatie bij laden en wissel;
+    de vlag "omzetting open" in `DOCUMENT_FIELDS`), `check-calendar-mirror.ts`, en de checks van het
+    bezettingsoverzicht en de bibliotheekverdeling (route 3 en 4 in §5.2).
   - F3: `check-baseline-oude-dagtelling.ts`, `check-ifc-roundtrip.ts` (het IFC-formaat verandert);
     `check-work-rule-store.ts`, `check-work-rule-mapping.ts`, `check-work-rule-library.ts`,
     `check-work-rule-explain.ts` (werkregel en bibliotheekwissel met de dagenmaat en vast werk);
@@ -885,8 +1083,9 @@ r.799 op `origin/claude/review-pr109-log`). Een vaste CI-stap kan, maar is niet 
     `check-xer-x7-hour-mode.ts`, `check-xer-calendar-data.ts`, `check-xer-recorded-roundtrip.ts`: verwachte duren
     veranderen. Per check één regel in de PR met de reden.
   - F6: checks die de dagpadcode zelf testen, verdwijnen met die code.
-- Elke fase zet een mutatiebewijs bij de nieuwe regels (N1–N3, D1–D6, D3 per veld, de statusregel, T1, T12, T17
-  en de belastingverdeling): de check moet rood worden als de regel wegvalt.
+- Elke fase zet een mutatiebewijs bij de nieuwe regels (N1–N3, D1–D7, D3 per veld met het baseline-einde, de
+  statusregel, T1, T12, T17, T21, T22, de belastingverdeling en de vraag per kandidaat): de check moet rood
+  worden als de regel wegvalt.
 - Browser en MCP: 83 bestanden in `tests/browser` en `tests/mcp` noemen `durationUnit`, `werkdag` of
   `scheduleDuration` (grep). Die gaan mee in F4 en F7.
 
@@ -906,9 +1105,9 @@ r.799 op `origin/claude/review-pr109-log`). Een vaste CI-stap kan, maar is niet 
 
 ### 6.5 Prestaties
 
-Niet gemeten. Rekenen in minuten loopt over werkblokken in plaats van over dagen. De engine bewaart de
-werkblokken per dag in een cache (`bandCache`, gevuld door `bandsStartingOn`, `CalendarEngine.ts:620-644`). F2 meet met `check-bulk-scale.ts` en
-`check-lange-keten.ts` en op het grootste corpusbestand (rehab-2), voor en na.
+Niet gemeten. Rekenen in minuten loopt over werkblokken in plaats van over dagen. De engine bewaart de werkblokken per
+dag in een cache (`bandCache`, gevuld door `bandsStartingOn`, `CalendarEngine.ts:620-644`). F2 meet met
+`check-bulk-scale.ts` en `check-lange-keten.ts` en op het grootste corpusbestand (rehab-2), voor en na.
 
 ## 7. Fasering en risico's
 
@@ -916,8 +1115,8 @@ werkblokken per dag in een cache (`bandCache`, gevuld door `bandsStartingOn`, `C
 
 | # | Risico | Gevolg | Wat het afdekt |
 |---|---|---|---|
-| R1 | Stille datumverschuiving in oude bestanden | een planner ziet na het openen andere datums zonder te weten waarom | migratie op de laadgrens, melding en undo-stap (B5, §5.2); dagcases met redencodes; voorbeeldensnapshot |
-| R2 | Een oudere OPS leest een nieuw bestand verkeerd | werkblok van 9 u in plaats van 8 u; speling 2,5 d wordt 5 d | effectieve werkblokken via de bestaande route, het anker voor afleidbare momenten, nooit gebroken `P…D`, toets met de lezer van v2026.9.0 in F2 en F3 (§5.4) |
+| R1 | Stille datumverschuiving in oude bestanden | een planner ziet na het openen andere datums zonder te weten waarom | migratie op de laadgrens; de B5-overgang met twee snapshots en de melding op elke route die rekent (§5.2); dagcases met redencodes; voorbeeldensnapshot |
+| R2 | Een oudere OPS leest een nieuw bestand verkeerd | speling 2,5 d wordt 5 d; een anker 07:00 wordt een echt einde 07:00 | de kalenders zijn al verloren (aanvaard, #336); ankerkalender voor afleidbare momenten, echte tijden per hele kalender (T17), nooit gebroken `P…D` (T21), toets met de lezer van v2026.9.0 in F2 en F3 (§5.4) |
 | R3 | De urenpad-dagtaak is minder rijp dan de urenpad-urentaak, en na B1 rekent elke dagenmaat-taak zo | 58 rode dagcases, waarvan 25 een vaste fout van één werkdag | F1 repareert eerst; F2 pas als run 1 groen is op de redencodes na |
 | R4 | P6-conventies gaan gelden voor projecten met een dagkalender | andere datums in P6-profielprojecten | vlag "kalender had eigen werkblokken" (T11); `measure:profiles` met corpus |
 | R5 | De webversie krijgt een halve verbouwing | `live.yml` deployt elke groene push op `main` (`.github/workflows/live.yml:11-15,38-40`) | de integratiebranch (§7.3) |
@@ -928,7 +1127,8 @@ werkblokken per dag in een cache (`bandCache`, gevuld door `bandsStartingOn`, `C
 | R10 | Een P6- of MSP-project uit een nieuw bestand rekent toch in de dagenmaat | rekent niet zoals P6 of MSP | T12 met mutatiebewijs (§3.14) |
 | R11 | Een grensregel verandert bestaande uurplanningen | urencases en MSP- of P6-corpusgedrag breken | N0–N3 alleen op benoemde plekken; `z13-*` en de 138 urencases als bewaking (§4.3) |
 | R12 | Data uit F3 overleeft een export niet | 2,5 d wordt na MSPDI 3 d | F5a in de eerste release (§3.10) |
-| R13 | Belasting op de verkeerde dagen | histogram en nivellering kloppen niet bij een start midden op de dag | belasting per werkdag uit momenten in F3 (§3.11) |
+| R13 | Belasting op de verkeerde dagen | histogram en nivellering kloppen niet bij een start midden op de dag | belasting per werkdag uit momenten in F3, de nivelleerder per kandidaat (§3.11) |
+| R14 | De maat van een lag gaat verloren | 0,5 d dagenmaat wordt na opslaan of export 240 min urenmaat; op een korte vrijdag 3 u ⇒ 4 u | T21: de lagkaart in IFC (F3), de markering in MSPDI en P6 XML (F5a), regressie met beide maten (§3.3) |
 
 ### 7.2 Fasen
 
@@ -937,7 +1137,7 @@ fase nodig heeft. Besluiten die vóór een fase moeten vallen: B2, B4 en B8 vó�
 
 **F0 — Meting en vangnet (alleen tests en een ongebruikte functie).**
 - Bestanden: nieuwe `src/state/migrations/minuteModel.ts` (§5.2, nog niet aangesloten); de functie "werkdag van
-  een moment" en de regels D1–D6 (met D3 per veld); `tests/planning/harness.ts` (omzetting met die functies, de
+  een moment" en de regels D1–D7 (met D3 per veld); `tests/planning/harness.ts` (omzetting met die functies, de
   vergelijker en de twee runs uit §6.1); redencodes in de cases; voorbeeldensnapshot; checks voor de
   migratiefunctie en de werkdagfunctie (nachtblok, 24:00, kalendertijd).
 - Risico: laag. De app verandert niet.
@@ -954,36 +1154,45 @@ fase nodig heeft. Besluiten die vóór een fase moeten vallen: B2, B4 en B8 vó�
 - Toets: 138 urencases groen (op `msp-28` na, bewust); de vijf `z13-*`-cases groen; een nieuwe case per knownbug
   en per grensplek, met mutatiebewijs; de regressiegevallen van de statusregel in dialoog, raster en MCP; volledige
   planningssuite.
+- Stand (2026-10-20): PR #402 (`claude/uren-f1a-urenpadfouten`, naar `main`) is open (niet gemerged), concept. Hij
+  pakt knownbugs 119–123 aan. Volgens de bouwer blijven daarna open, en ze horen bij F1: knownbugs 126 (een dagtaak op
+  werkblokken met SNLT/MSO op een blokbegin, één werkdag te vroeg; groep 12, dus de fix voor 120 geldt daar alleen
+  voor urentaken), 127 (late finish op een blokbegin bij FF tussen urentaken; in P6 dekt conventie B2
+  `p6BackwardLagFinishBoundary` het, voor MSP een conventievraag), 128 (FNLT/FNET zonder tijd wordt 00:00; regel D2)
+  en 129 (deadline zonder tijd in "datums zoals opgeslagen"; misschien nog in #402). De entries 119–123 gaan op deze
+  branch pas weg als #402 in `main` staat.
 
 **F2 — Kern: motor op werkblokken voor elke kalender.**
-- Inhoud: elke engine via `calendarForEngine`; elke dagtaak loopt als urenpad-dagtaak, in hele dagen. De
-  conventie dagenmaat bestaat dan nog niet; dat is het gedrag van nu op een urenkalender, in elk profiel. De
-  migratie op de laadgrens met normalisatie, B5 (undo-stap, melding, modus, slapend herstel) en T1 (§5.2);
-  normalisatie bij elke invoer (§3.6); de projectdatums met D1/D5/D2 (§4.2); het kalendertijd-einde (T16); het
-  opslaan van momenten met `TimeModel` en de vlag tijden letterlijk (T17, §3.6); de conventie van B6; de
-  procentlag exact (B7); T11.
+- Inhoud: elke engine via `calendarForEngine`; elke dagtaak loopt als urenpad-dagtaak, in hele dagen. De conventie
+  dagenmaat bestaat dan nog niet; dat is het gedrag van nu op een urenkalender, in elk profiel. De migratie op de
+  laadgrens met normalisatie (ook van de vastlegging), D7 en het baseline-einde (§4.2), T1 en de B5-overgang met twee
+  snapshots, de vlag "omzetting open" en alle routes die rekenen (§5.2); normalisatie bij elke invoer (§3.6); de
+  projectdatums met D1/D5/D2 (§4.2); het kalendertijd-einde (T16); `TimeModel` (§5.2), de schrijfregel per kalender
+  met `LiteralTimes` en `AtDayEnd` (T17, §3.6); de conventie van B6; de procentlag exact (B7); T11.
 - Bestanden: `CPMSolver.ts` (`engineForTaskCalendar`, projectengine `:515`), `applyCpmResult.ts`,
-  `documentContract.ts`, `documentActivation.ts`, `fileSlice.ts`, `documentSlice.ts`, `taskSlice.ts`,
-  `taskDates.ts`, `registry.ts`, `ifcWriter.ts`, `ifcReader.ts`.
+  `documentContract.ts`, `documentActivation.ts`, `fileSlice.ts`, `documentSlice.ts`, `scheduleSlice.ts`,
+  `librarySlice.ts`, `ResourceOccupancyView.tsx`, `taskSlice.ts`, `taskDates.ts`, `registry.ts`, `ifcWriter.ts`,
+  `ifcReader.ts`, `ifcPsets.ts`.
 - Risico: hoog (R1, R2, R3, R4, R8).
-- Toets: run 1 groen op dagniveau via de echte motor, op de redencodes na; de regressiegevallen van §5.2; de
-  projecteinde-case (§4.2); voorbeeldensnapshot exact; de lezer van v2026.9.0 op de nieuwe voorbeeldbestanden;
-  `measure:profiles` met corpus; prestatiemeting.
+- Toets: run 1 groen op dagniveau via de echte motor, op de redencodes na; de regressiegevallen 1–7 van §5.2; de
+  projecteinde-case en het baseline-einde (§4.2); voorbeeldensnapshot exact; de lezer van v2026.9.0 op de nieuwe
+  voorbeeldbestanden en op W0, W1 en W2 (§5.4); `measure:profiles` met corpus; prestatiemeting.
 
 **F3 — De dagenmaat (eigen fase).**
 - Inhoud: de conventie dagenmaat met T12 (§3.14); lopers voor een dagenmaat met een breuk, met de afronding en
-  de spiegeltolerantie uit §3.14; onder P6 en MSP tellen een dagenmaat-taak, een lag in dagenmaat en een
+  de foutgrens uit §3.14 (T23); onder P6 en MSP tellen een dagenmaat-taak, een lag in dagenmaat en een
   dagenmaat-rest als urenmaat; vast werk ⇒ urenmaat; de standaardmaat (store en Projectinstellingen, §3.2);
   werkdriehoek T14, de urenmaat zonder afronding; de rest exact (B3); de belasting per werkdag uit momenten in
-  histogram, contourdialoog en nivelleerder (§3.11); speling in minuten (§3.4); IFC: maat en breuk (§3.10), de
-  uitgebreide voorwaarde voor effectieve werkblokken (§5.4); MCP-teksten over de maat (§3.13).
+  histogram, contourdialoog en nivelleerder, met de vraag per kandidaat (§3.11); speling in minuten (§3.4); IFC:
+  maat en breuk voor duur, rest en lag, met de lagkaart in `OPS_Sequences` (T21, §3.3, §3.10); de lopers met de
+  foutgrens (§3.14); MCP-teksten over de maat (§3.13).
 - Bestanden: `registry.ts`, `schedulingOptionsRead.ts`, `CalendarEngine.ts`, `CPMSolver.ts`, `relationMath.ts`,
   `workTriangle.ts`, `workRuleApply.ts`, `ResourceLoad.ts`, `ResourceLeveler.ts`, `splitWalk.ts`, `taskSlice.ts`,
   `ProjectInfoPanelContent.tsx`, `ifcWriter.ts`, `ifcReader.ts`, `ifcTaskSlots.ts`, `sequenceFields.ts`,
   `taskFields.ts`.
 - Risico: hoog (R1, R2, R7, R10, R13).
-- Toets: run 1 en run 2 (§6.1); de nieuwe checks uit §6.1 en §6.2; de lezer van v2026.9.0; migratiemelding over
-  de voorbeelden en het corpus; `measure:profiles` met corpus.
+- Toets: run 1 en run 2 (§6.1); de nieuwe checks uit §6.1 en §6.2; de lezer van v2026.9.0 op de lagvormen en de
+  breuken (§5.4); migratiemelding over de voorbeelden en het corpus; `measure:profiles` met corpus.
 
 **F4 — UI op momenten en maten (B2, B4 en B8 vooraf).**
 - Inhoud: datuminvoer volgens §3.6 (de store normaliseert al sinds F2); weergave volgens B4; de schrijfwijze en de
@@ -996,12 +1205,15 @@ fase nodig heeft. Besluiten die vóór een fase moeten vallen: B2, B4 en B8 vó�
 - Toets: browsertests (`smoke.spec.ts` en gerichte specs); één checkstap voor de eigenaar (licht en donker).
 
 **F5a — Verliesvrije adapters voor duur, rest en lag (hoort bij de eerste release).**
-- Inhoud: I1, I2, I3, I5, I6, I7 (§1.3); T13 en T15 (§3.10); de OPS-markering voor de maat heen en terug.
+- Inhoud: I1, I2, I3, I5, I6, I7 (§1.3); T13 en T15 (§3.10); de OPS-markering voor de maat van taak en lag heen
+  en terug (T21, §3.3).
 - Bestanden: `mspdiReader.ts`, `mspdiWriter.ts`, `p6xmlReader.ts`, `p6xmlWriter.ts`, `importDurations.ts`,
   `subdayIo.ts`.
 - Risico: middel (R12).
 - Toets: OPS ⇒ MSPDI ⇒ OPS en OPS ⇒ P6 XML ⇒ OPS geven een dagenmaat-taak van 2,5 d met 1,5 d rest terug als
-  2,5 d met 1,5 d rest, en een lag van 0,5 d en 1,5 ed ongewijzigd; `check-mpp-fidelity.ts`; `measure:profiles`.
+  2,5 d met 1,5 d rest; de drie lagen uit §3.3 (0,5 d dagenmaat, 240 min urenmaat, 1,5 ed) komen ongewijzigd
+  terug, met de opvolgers op de voorbeeldweek op vr 10:00 en vr 11:00; `check-mpp-fidelity.ts`;
+  `measure:profiles`.
 
 **F5b — De overige adapters (mag later).**
 - Inhoud: I4 (.mpp), de XER-lezer (`xerReader.ts:831-834`), I8 (het 08:00-anker).
@@ -1036,10 +1248,14 @@ fase nodig heeft. Besluiten die vóór een fase moeten vallen: B2, B4 en B8 vó�
   F4 ziet een planner niet welke maat een taak heeft (R9), en een breuk is niet te typen. De vertalingen voor
   alle 28 talen komen zoals altijd vóór de release (`verify:translations`).
 - F5b, F6 en F7 mogen na de PR naar `main`, als gewone PR's.
+- F1 loopt nu via PR #402 rechtstreeks naar `main` (stand 2026-10-20, zie F1). Lezing van dit ontwerp: dat botst niet
+  met de integratiebranch: F1 repareert fouten van het huidige urenpad en verandert geen dagpad, dus de webversie
+  krijgt geen halve verbouwing. De integratiebranch neemt F1 mee als hij wordt bijgewerkt met `main`.
 
 ## 8. Besluiten en open besluiten
 
-Besloten op 2026-10-20: B1, B1a, B3, B5, B6 en B7. Open: B2, B4 en B8; ze moeten vallen vóór F4 (§7.2).
+Besloten op 2026-10-20: B1, B1a, B3, B5, B6 en B7, en bij B5 de regel voor `isDirty` (doorgegeven door review
+ronde 2). Open: B2, B4 en B8; ze moeten vallen vóór F4 (§7.2).
 
 ### B1. Wat is één dag (welke maat)? — besloten: optie 3, een maat per taak
 
@@ -1125,8 +1341,8 @@ altijd in minuten, en een dagenmaat-taak kan een breuk hebben. De schakelaar kom
 **Gevolg in elke optie (review ronde 1, punt 10).** Na B1a komt de urenmaat veel voor: elke import uit MSP en P6
 (T15), elke taak onder het P6- en het MSP-profiel, en elke taak met vast werk. Met de schakelaar uit (de
 standaard) blokkeert `hourEditBlocked` (`TaskDurationField.tsx:56`) nu het bewerken van zo'n taak. Die blokkade
-vervalt daarom in elke optie: gewone duurinvoer in d blijft voor elke taak werken ("5" of "5d" is bij een
-urenmaat-taak 5 × de werktijd per dag). De opties verschillen alleen in wat er met de schakelaar uit niet kan.
+vervalt daarom in elke optie: de duur van elke taak is te bewerken. Wat een getal of een eenheid dan betekent,
+staat bij B8. De opties hieronder verschillen alleen in wat er met de schakelaar uit niet kan.
 
 **Voorbeeld** (standaardkalender). Taak A, dagenmaat, 2,5 d vanaf ma 1 jun 07:00 ⇒ einde wo 3 jun 11:00.
 Opvolger B (FS, 3 d) ⇒ wo 3 jun 11:00 tot ma 8 jun 11:00.
@@ -1139,8 +1355,10 @@ Opvolger B (FS, 3 d) ⇒ wo 3 jun 11:00 tot ma 8 jun 11:00.
    `durationFormat.ts:40-41`), geen uurinvoer, geen uurzoom. A kan niet 2,5 d worden. Een urenmaat-taak is in
    hele d te bewerken; een geïmporteerde duur van 38 u blijft staan tot de planner hem verandert. Aan: breuken,
    uren, tijden. Een taak die midden op een dag begint (uit een import, of na een urenmaat-voorganger), toont
-   zijn datum volgens B4. Let op bij B8 optie 2: daar toont een urenmaat-taak in het OPS-profiel uren, terwijl de
-   planner met de schakelaar uit alleen dagen kan typen.
+   zijn datum volgens B4. Let op bij B8 optie 2: daar toont een urenmaat-taak in het OPS-profiel uren, en een
+   kaal getal bij zo'n taak is uren. Met de schakelaar uit is dat uurinvoer: het geeft een melding. "5d" werkt
+   wel en maakt de taak een dagenmaat-taak van 5 werkdagen. Zo betekent een getal nooit iets anders door de
+   stand van de schakelaar.
 
 **Aanbeveling: optie 3.** Een planner die nooit met uren werkt, ziet niets veranderen; wie breuken of uren wil,
 zet de schakelaar aan. De motor rekent in beide standen in minuten. Knownbugs 24 (de schakelaar uit bij een
@@ -1216,15 +1434,17 @@ verschoven taken en de grootste verschuiving. Ctrl+Z zet het terug."
 gemaakt met een oudere versie. 3 taken liggen na de berekening op een andere dag; de grootste verschuiving is 1
 werkdag." Ctrl+Z zet de opgeslagen datums terug.
 
-**Uitwerking (§5.2, herzien na review ronde 1, punt 1).**
-- Een bestand is oud als `OPS_Project.TimeModel` ontbreekt. Openen rekent meteen (`prepareLoadedPayload`); de
+**Uitwerking (§5.2, herzien na review ronde 1, punt 1, en ronde 2, punt 1 en 4).**
+- Een bestand is oud als `OPS_Project.TimeModel` ontbreekt. Een document dat nog niet omgezet was, schrijft de
+  markering ook niet (§5.2). Openen rekent meteen (`prepareLoadedPayload`); de
   migratie zit daarom vóór die berekening, in `payloadFromImport`.
-- Ctrl+Z werkt via een vóór-snapshot: het laadpad publiceert eerst de omgezette opgeslagen datums en past de
-  herberekening toe als één undo-stap.
+- Ctrl+Z werkt via twee expliciete snapshots in één event: de onberekende en de berekende payload (§5.2,
+  herzien na review ronde 2; de eerdere opzet met `beginUndoable` na het publiceren bewaarde het vorige document).
 - "Verschoven" betekent: niet gelijk op dagniveau (§0) tegenover de datums uit het bestand.
-- In de modus "datums zoals opgeslagen" komt geen aparte melding; bij een slapend hersteld document komt de
-  melding bij de eerste Bereken.
-- Voorstel van dit ontwerp (het besluit zegt het niet): verschuift er niets, dan komt er geen melding.
+- Event, melding en `isDirty` alleen als er iets verschuift (besluit eigenaar, doorgegeven door review ronde 2).
+  Verschuift er niets, dan ziet de planner niets en is het document niet gewijzigd.
+- In de modus "datums zoals opgeslagen" komt geen aparte melding. Een slapend hersteld document krijgt de
+  overgang bij de eerste berekening na activeren; elke route die blijvend rekent, kent de vlag (§5.2).
 - Afgewezen: een dialoog vooraf met de lijst taken (optie 2) en niets melden (optie 3).
 
 **Wie, wanneer, bron:** de eigenaar, 2026-10-20, via de coördinator in dit gesprek. Precedent: een
@@ -1269,18 +1489,21 @@ voorbeeldweek eindigt de eerste vr 14:00 en de tweede ma 09:00. De planner moet 
 geldt. MSP schrijft "5 ed" voor kalendertijd (5 × 24 u); OPS gebruikt "ed" al bij een lag (`lagFormat.ts:62`).
 Onder het P6- en het MSP-profiel bestaat de dagenmaat niet; daar is "d" altijd de urenmaat.
 
-1. **Een eigen afkorting voor de dagenmaat, bijvoorbeeld "wd" (werkdag).** Dagenmaat "5 wd"; urenmaat "5 d" of
-   "40 u"; kalendertijd "7 ed". Invoer "5wd" geeft een dagenmaat-taak, "5d" een urenmaat-taak; een kaal getal
-   volgt de standaardmaat. Voordeel: elk getal zegt zijn maat, ook in een export of een rapport; "d" betekent
-   hetzelfde als in MSP en P6. Nadeel: elke bestaande dagtaak toont voortaan "wd"; een nieuwe afkorting in 28
-   talen.
+1. **Een eigen afkorting voor de dagenmaat, bijvoorbeeld "wd" (werkdag).** Dagenmaat "5 wd"; urenmaat "5 d" of "40 u";
+   kalendertijd "7 ed". Invoer "5wd" maakt de taak dagenmaat, "5d" of "40u" urenmaat; een kaal getal houdt de maat van
+   de taak, en een nieuwe taak krijgt de standaardmaat. Voordeel: elk getal zegt zijn maat, ook in een export of een
+   rapport; "d" betekent hetzelfde als in MSP en P6. Nadeel: elke bestaande dagtaak toont voortaan "wd"; een nieuwe
+   afkorting in 28 talen.
 2. **"d" is de dagenmaat; de urenmaat staat altijd in uren.** In het OPS-profiel: dagenmaat "5 d", urenmaat
-   "40 u". Onder het P6- en het MSP-profiel: "5 d" is de urenmaat, zoals in P6 en MSP. Voordeel: een
+   "40 u". Onder het P6- en het MSP-profiel: "5 d" is de urenmaat, zoals in P6 en MSP. Invoer in het
+   OPS-profiel: "5d" maakt de taak dagenmaat, "40u" urenmaat; een kaal getal houdt de maat van de taak, in de
+   eenheid die de tabel toont (bij een urenmaat-taak dus uren); een nieuwe taak krijgt de standaardmaat. Voordeel: een
    OPS-planner ziet wat hij nu ziet (een dagtaak in d, een urentaak in u); geen nieuwe afkorting. Nadeel: in het
    OPS-profiel toont een urenmaat-taak nooit dagen, ook niet met Duurweergave "Altijd dagen"; na een
    profielwissel betekent "d" iets anders.
 3. **Overal "d", plus een kolom of teken voor de maat.** "5 d" in beide maten; een kolom "Maat" toont
-   "werkdagen" of "uren". Voordeel: de tabel blijft rustig. Nadeel: het getal alleen is dubbelzinnig, ook in een
+   "werkdagen" of "uren". Invoer: een kaal getal en "d" houden de maat van de taak; "u" maakt haar urenmaat; de
+   maat wissel je in de kolom. Voordeel: de tabel blijft rustig. Nadeel: het getal alleen is dubbelzinnig, ook in een
    export, een rapport of het klembord.
 
 **Aanbeveling: optie 2.** Reden: het OPS-profiel toont dan wat het nu toont, en binnen één profiel heeft "d" één
@@ -1292,7 +1515,7 @@ gewend zijn.
 | # | Keuze | Reden |
 |---|---|---|
 | T1 | Uren per dag > spanne: einde verlengen, melden | §3.1 |
-| T2 | Regels D1–D6 voor datums zonder tijd, met D3 per veld | §4.2 |
+| T2 | Regels D1–D7 voor datums zonder tijd, met D3 per veld (ook het baseline-einde) en D7 voor mijlpalen | §4.2; review ronde 2, punt 7 |
 | T3 | 24:00-regel | §4.2, B4 |
 | T4 | Grensregels N0–N3, alleen op benoemde plekken (herzien na review ronde 1) | §4.3; een algemene snap breekt `z13-*` en P6-grenzen |
 | T5 | Speling in IFC als hele dagen plus minuten in de pset | §3.4, forward-compat |
@@ -1300,17 +1523,20 @@ gewend zijn.
 | T7 | `durationUnit`, `scheduleDuration` en `lagDays` blijven | ze dragen de dagenmaat (B1); IFC, MCP en de extensie-API kennen ze al |
 | T8 | SF volgt het urenpad, in elk profiel | de dagpaduitkomst (één werkdag overlap) volgt uit het inclusieve einde, niet uit een planningsregel; MSP en P6 rekenen zo (niet getoetst). Moet SF ook een besluit worden, dan krijgt het een nummer zoals B6 |
 | T9 | Migratie in `payloadFromImport`, vóór iedere laadberekening (herzien na review ronde 1) | §5.2; het documentcontract loopt pas na de eerste berekening |
-| T10 | IFC-formaat: in F2 alleen `TimeModel`, de vlag tijden letterlijk en echte tijden voor niet-afleidbare momenten; de rest in F3 | §5.4; een planning in hele dagen blijft leesbaar voor v2026.9.0 |
+| T10 | IFC-formaat: in F2 alleen `TimeModel`, de schrijfregel per kalender met `LiteralTimes` (T17) en `AtDayEnd` (D7); de rest in F3 | §5.4; een planning in hele dagen blijft een ankerkalender en v2026.9.0 leest haar datums goed |
 | T11 | P6-conventies op een vlag "kalender had eigen werkblokken" | hun bereik verandert niet stil |
 | T12 | Ontbrekende sleutel van de conventies dagenmaat en B6 ⇒ de waarde van de basis | §3.14; een P6- of MSP-project rekent anders niet zoals P6 of MSP |
 | T13 | Export van een dagenmaat-taak = werkdagen × werktijd per dag, plus de OPS-markering | §3.10; gelijk aan het P6- en het MSP-profiel, los van de plek |
 | T14 | Werk van een dagenmaat-taak = werkdagen × inzet × werktijd per dag | §3.11; gelijk in elk profiel, zoals de werkdriehoek nu al rekent |
 | T15 | Lezers maken altijd de urenmaat, behalve met de OPS-markering | §3.10; P6 en MSP kennen alleen de urenmaat |
 | T16 | Het einde van een kalendertijd-taak is overal exclusief | §3.7, §4.2, §4.5 rij 6; het dagpad las het half inclusief (knownbugs 125); `msp-19` pint het exclusieve gedrag al |
-| T17 | Normalisatie altijd en bij elke invoer; `TimeModel` stuurt alleen B5; het anker alleen voor afleidbare momenten, anders echte tijden met de vlag tijden letterlijk | §3.6, §5.2; review ronde 1, punt 2 |
+| T17 | Normalisatie altijd en bij elke invoer, ook van de vastlegging; `TimeModel` stuurt alleen B5 en ontbreekt zolang de omzetting open is; in IFC per kalender: een ankerkalender als elk moment afleidbaar is, anders overal echte tijden met `LiteralTimes` | §3.6, §5.2; review ronde 1, punt 2; ronde 2, punt 2 en 3 |
 | T18 | Projectdatums blijven opgeslagen zoals ingevoerd; de motor leest start D1, statusdatum D5, einde D2 | §3.6, §4.2; review ronde 1, punt 7 |
 | T19 | Eén statusregel voor werkelijke datums, met de werkdag in de kalender van de taak | §4.2; review ronde 1, punt 6 |
-| T20 | Belasting per werkdag uit start- en eindmoment | §3.11; review ronde 1, punt 4 |
+| T20 | Belasting per werkdag uit start- en eindmoment, met één gedeelde functie; de nivelleerder bepaalt vraag en dagen per kandidaat | §3.11; review ronde 1, punt 4; ronde 2, punt 6 |
+| T21 | De maat van duur, rest en lag gaat verliesvrij mee: nooit een gebroken `P…D`; een breuk in dagen als `PT…` plus het aantal dagen in een OPS-pset (voor een lag een kaart in `OPS_Sequences`); in MSPDI en P6 XML een OPS-markering, ook voor de lag | §3.3, §3.10; review ronde 2, punt 5; kleinste vorm die v2026.9.0 niet verkeerd leest (BEVESTIGD) |
+| T22 | De B5-overgang: twee expliciete snapshots in één `nonEdit`-event, alleen bij een verschuiving; een documentvlag "omzetting open" die elke route die blijvend rekent kent | §5.2; review ronde 2, punt 1 en 4 |
+| T23 | Lopers van de dagenmaat in hele minuten, zonder verborgen rest; foutgrens ½ + ½ × (begindag ÷ einddag) minuut | §3.14; review ronde 2, punt 8 |
 
 ## 9. Wat dit oplost
 
@@ -1323,10 +1549,15 @@ Knownbugs (nummers uit `knownbugs.md`):
 - **55** voltooide urentaak met alleen datums als actuals: F1 (D1/D2 voor werkelijke datums). VERMOED.
 - **84** MCP noemt `dur` werkdagen: F7.
 - **119–122** (nieuw, uit de meting): deadline, zachte MSO, nivelleervertraging, externe opvolger: F1.
-- **123** (nieuw): FF tussen dagtaken op een kalender met werkblokken één werkdag te laat: F1.
+- **123** (nieuw): FF tussen dagtaken op een kalender met werkblokken één werkdag te laat: F1. PR #402 pakt 119–123
+  aan (open (niet gemerged), concept, stand 2026-10-20).
 - **124** (nieuw, review ronde 1): belasting van een taak die midden op een dag begint, op de verkeerde dagen: F3
   (§3.11).
 - **125** (nieuw, review ronde 1): het einde van een kalendertijd-taak half inclusief in het dagpad: F2 (T16).
+- **126–129** (nieuw, gemeld door de bouwer van #402): wat na #402 open blijft in het urenpad: F1 (§7.2).
+- **131** (nieuw, fixronde 2): v2026.9.0 maakt van een kalender met een tijdsignaal een urenkalender zonder
+  werktijd. Dit ontwerp lost het niet op (aanvaard verlies van de kalenders, §5.4); het houdt het beperkt tot
+  letterlijke kalenders (T17).
 - **24** de schakelaar Urenplanning uit bij werkblokken: hoort bij B2, lost het niet vanzelf op.
 - **81** voortgang zonder werkelijke datums: raakt D5/D6, lost het niet op.
 
@@ -1433,22 +1664,49 @@ Met dezelfde harness (gebundeld uit `tests/planning/harness.ts`), case-bestanden
 - Voorbeeldweek, 24-uurskalender, werkende zaterdag van 4 u, SF+0, FNET/FNLT zonder tijd, voortgang 32 %:
   uitkomsten in §4.4.
 
+Fixronde 2 (expert-agent, Opus 5.5), script `/tmp/uren-fix2/probe.ts`, log `/tmp/uren-fix2/probe.log`. De lezer
+van v2026.9.0 is gebundeld uit de broncode van de tag (gelijk aan `git show v2026.9.0:…`, nagekeken voor
+`ifcReader.ts`, `subdayIo.ts`, `effectiveWorkTime.ts` en `calendar.ts`); de huidige schrijver komt van deze branch.
+
+- W1 (§5.4): standaardkalender met een voltooide dagtaak A 11:00–16:00, een voltooide dagtaak B 07:00–16:00, een
+  urentaak H 480 min 07:00–16:00 en een kalendertijd-taak E 1 d van 00:00 tot 00:00; elk veld met de echte tijd.
+  v2026.9.0 leest A, B, H en E met precies die momenten, in alle velden (vroeg, laat, werkelijk). Zijn kalender:
+  `workTime` met lege werkblokken op alle zeven dagen. Zijn solver (`/tmp/uren-fix2/oldsolve.ts`) geeft daarna H
+  begin en einde do 07:00.
+- W2: W1 met H als dagtaak (`P0Y0M1D`): dezelfde momenten, dezelfde lege kalender.
+- W0: ankerkalender, dagtaken 1 jun en 3–4 jun: v2026.9.0 leest de datums; geen `workTime`.
+- Lag (oud | nieuw): `P0.5D` ⇒ 5 d | 0,5 d. `PT4H0M0S` ⇒ 240 min | 240 min. `P1.5D` met `ELAPSEDTIME` ⇒ 5 d |
+  1,5 d. `PT36H0M0S` met `ELAPSEDTIME` ⇒ 2160 min | 2160 min. `P2D` ⇒ 2 d | 2 d. Een extra property
+  `DayMeasureLagDays` in `OPS_Sequences`: v2026.9.0 leest de lag als 240 min; de huidige lezer leest de lag en de
+  bestaande grensvlag gewoon.
+- B5 (§5.2): `hydratePayload` met de berekende payload en één event met `snapshotOfPayload` van de onberekende en
+  de berekende payload, in één `set`. Na laden B 8 jun 07:00, één event, `isDirty` waar. Ctrl+Z: project
+  `geladen-project`, taak `opgeslagen` met 15 jun, verouderd. Ctrl+Y: 8 jun 07:00.
+
 ## 11. Wat niet gecontroleerd is
 
 - `measure:profiles` met het P6-corpus (geen `OPS_XER_CORPUS` op deze machine).
 - Het gedrag van MSP en P6 zelf bij SF, losse mijlpalen, procentlag, het einde van een kalendertijd-taak, het
   08:00-anker (I8) en ongelijke dagen. Het P6- en het MSP-profiel moeten dat gedrag volgen; F1 legt het vast met
   een bron.
-- Hoe OPS v2026.9.0 een nieuw bestand leest: alleen door de code van die tag te lezen, niet door het te draaien.
+- Hoe OPS v2026.9.0 een nieuw bestand leest: gemeten met zijn lezer en solver in Node (§10.5), niet in de
+  desktopapp. Niet gemeten: een datum als `IFCDATETIME` in een pset, en wat v2026.9.0 bij opslaan met de nieuwe
+  velden doet.
 - De plek van de klem in groep 9, en of `lagadv-ff-lead-ed` echt bij groep 12 hoort.
 - Prestaties van de motor op werkblokken voor alle kalenders.
 - Hoe vaak gebruikersbestanden ongelijke dagen hebben.
 - T12 wijkt af van een registerregel ("nooit de basiswaarde"); een reviewer moet nagaan of er nog een route is
   die `legacyValue` direct leest.
-- Of de lopers voor de dagenmaat de spiegeltolerantie van §3.14 halen bij een werkende uitzondering en bij een
-  nachtblok. Dat is ontwerpwerk voor F3.
-- Of het laadpad de vóór-snapshot en de herberekening in één `set` kan publiceren zonder de bestaande
-  laadinvarianten te breken (§5.2). Dat is ontwerpwerk voor F2.
+- Of de foutgrens van §3.14 ook bij een nachtblok geldt. De afleiding gaat uit van werkminuten per werkdag; een
+  nachtblok hoort bij de dag waarop het begint, dus VERMOED wel. F3 toetst het.
+- De B5-overgang is in een losse store-probe nagespeeld (§10.5), niet in het echte laadpad. Of de bibliotheekgrens
+  alleen in `after` geen andere laadinvariant breekt, stelt F2 vast.
+- Of MSP en P6 een `ExtendedAttribute` of UDF voor de lagmaat bewaren als een planner het bestand daar opslaat
+  (§3.3).
+- Of D1 voor een mijlpaal zonder soort in een oud bestand de werkelijke datum gelijk houdt op dagniveau (D7).
+- De precieze weging van een curve, contour of opgeslagen werk over een eerste en laatste deeldag (§3.11), en wat
+  de vraag per kandidaat de nivelleerder aan tijd kost.
+- De punten van knownbugs 126–129 zijn gemeld door de bouwer van #402 en niet door deze agent nagespeeld.
 - De MSPDI-round-trip met 2,5 d en 1,5 d rest is door de reviewer gemeten, niet door deze agent herhaald.
 - CSV als exportroute voor duur, rest en lag is niet nagelopen.
 
