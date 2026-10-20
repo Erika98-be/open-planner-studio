@@ -1768,3 +1768,12 @@ Testversie (release-check, poort 3049) is NIET bijgewerkt met de PR's van vandaa
 - **#362**: main bd9205df3 erin ⇒ 66fb22292, geen conflicten, CI 16/16; delta-review (GPT-6.1-Sol) loopt.
 - **#394** (punt 8, oranje blok *Standaard werkdag*): concept-PR, CI 16/16; review (GPT-6.1-Sol) loopt; worker zet hem in
   de testversie (`?qa=oude-baseline.ifc&qa-dialog=kalender`).
+- **#396** (vervolg na #380): review (GPT-6.1-Sol) JA ⇒ **gemerged in main adaf9ab37**; CI main groen.
+- **#374 besluit 3: eigenaar optie 3** — titel blijft *Taak wordt een samenvattingstaak*; voortgang op een taak die
+  samenvattingstaak wordt ⇒ **vervolg na de release** (alle gestarte taken, met of zonder toewijzingen). Main adaf9ab37
+  erin (498f0321d, schoon), CI 16/16 ⇒ **gemerged in main 56ba6218a**.
+- **#394 check eigenaar**: "vrij veel komma's" (8,00 u … 10,00 u) en "h" boven vs "u" in het blok ("raar"); rest "top" ⇒
+  fixronde (worker Opus 5.5): uur-getallen in het kalendervenster zonder overbodige nullen, eenheid via i18n (nl "u").
+- **#362 desktopcheck eigenaar** (tauri:dev in `zwevende-balken`, poort 3070): balken "lichten op een vreemde manier op"
+  bij hover en zijn "veel te dun; eerst was hij veel dikker" (ook de Gantt-balk); vermoeden eigenaar: lagenvolgorde.
+  Expert (Opus 5.5, xhigh) meet onzichtbaar in WebKitGTK (dikte, hover, elementFromPoint) en proeft fixrichtingen.
