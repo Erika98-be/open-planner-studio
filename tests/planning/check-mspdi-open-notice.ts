@@ -184,6 +184,19 @@ async function main(): Promise<void> {
   eq('6g2 eigen regel in de melding', msProjectImportNotice([differs])?.detailLines?.map(l => [l.messageKey, l.params?.count]),
     [['notifications.msProjectLostAssignmentBaselineDates', 1]]);
 
+  // 6h/6i Tijdzones (review ronde 3): de lezer bewaart de WANDKLOKDATUM (`parseMSPDate`: de eerste
+  //       tien tekens), dus de vergelijking ook — niet het absolute tijdstip, en los van de
+  //       systeemtijdzone (de check draait mee in de tijdzonematrix van run.sh).
+  const zoned = (taskStart: string, assignmentStart: string) => readMSPDI(wrap(`<Tasks>${task(1, 'Fundering', `<Baseline><Number>0</Number>
+      <Start>${taskStart}</Start><Finish>2026-03-05T17:00:00</Finish></Baseline>`)}</Tasks>
+    <Resources><Resource><UID>1</UID><ID>1</ID><Name>Kraan</Name><Type>1</Type></Resource></Resources>
+    <Assignments><Assignment><UID>1</UID><TaskUID>1</TaskUID><ResourceUID>1</ResourceUID><Units>1</Units>
+      <Baseline><Number>0</Number><Start>${assignmentStart}</Start><Finish>2026-03-05T17:00:00</Finish></Baseline></Assignment></Assignments>`)).msProjectReport;
+  eq('6h zelfde tijdstip, andere wandklokdatum: verloren datum gemeld',
+    zoned('2026-03-02T23:00:00Z', '2026-03-03T00:00:00+01:00')?.assignmentBaselineDates, 1);
+  eq('6i zelfde wandklokdatum, andere zone-aanduiding: niets verloren',
+    zoned('2026-03-02T08:00:00', '2026-03-02T08:00:00Z'), undefined);
+
   // 6e De baselinezin beweert niets over Baseline 0.
   for (const loc of ['nl', 'en']) {
     const json = JSON.parse(readFileSync(new URL(`../../src/i18n/locales/${loc}/common.json`, import.meta.url), 'utf8')) as { notifications: Record<string, string> };

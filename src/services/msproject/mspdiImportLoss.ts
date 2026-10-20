@@ -7,6 +7,7 @@
 // standaardtarief (`<StandardRate>` → kostprijs per uur) en de onderbrekingen uit `<TimephasedData>`.
 // Terugkerende taken tellen bewust niet: MS Project schrijft de keren als gewone subtaken mee.
 import { directChildText } from '@/services/xmlDom';
+import { isoDatePrefixOrToday } from '@/services/importDates';
 import { emptyMsProjectImportReport, type MsProjectImportReport } from '@/services/importTypes';
 
 /** Directe kinderen van `parent` met deze tag. MSPDI nest `<Baseline>`, `<ExtendedAttribute>` en
@@ -70,18 +71,23 @@ export function scanMspdiImportLoss(root: Element, isConsumed: ConsumedExtendedA
     if (workCostLost) report.baselineWorkCost++;
   };
 
-  /** Baseline 0-datums van een element (`Start`/`Finish` als tijdstip), of `undefined`. */
-  const baseline0Dates = (el: Element): { start?: number; finish?: number } | undefined => {
+  /**
+   * Baseline 0-datums van een element, of `undefined`. Volgens de conventie van de lezer: die bewaart van
+   * een taakbaseline de WANDKLOKDATUM (`parseMSPDate` → `isoDatePrefixOrToday`, de eerste tien tekens),
+   * zonder zone-omrekening. Vergelijk dus die datum, niet het absolute tijdstip (`Date.parse` hing af
+   * van de zone-aanduiding en van de systeemtijdzone; review ronde 3 #392).
+   */
+  const baseline0Dates = (el: Element): { start?: string; finish?: string } | undefined => {
     const baseline = directChildren(el, 'Baseline').find(b => directChildText(b, 'Number') === '0');
     if (!baseline) return undefined;
     const at = (tag: string) => {
-      const ms = Date.parse(directChildText(baseline, tag));
-      return Number.isFinite(ms) ? ms : undefined;
+      const raw = directChildText(baseline, tag);
+      return raw ? isoDatePrefixOrToday(raw) : undefined;
     };
     return { start: at('Start'), finish: at('Finish') };
   };
   /** Baseline 0-datums per taak-UID: die komen WEL over (de taakbaseline van de lezer). */
-  const taskBaseline0 = new Map<string, { start?: number; finish?: number }>();
+  const taskBaseline0 = new Map<string, { start?: string; finish?: string }>();
 
   const hasHyperlink = (el: Element) => ['Hyperlink', 'HyperlinkAddress', 'HyperlinkSubAddress']
     .some(tag => directChildText(el, tag) !== '');
