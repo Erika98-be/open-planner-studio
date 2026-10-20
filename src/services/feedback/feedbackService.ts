@@ -49,7 +49,7 @@ export interface FeedbackPayload {
 }
 
 /** Soorten fout die de dialoog vertaald toont.
- *  - `failed`: zeker niet aangekomen (5xx, geblokkeerd, of offline vóór verzenden). Alleen dan
+ *  - `failed`: zeker niet aangekomen (5xx, geblokkeerd, of offline vóór de fetch). Alleen dan
  *    biedt de dialoog de GitHub-terugval aan.
  *  - `uncertain`: timeout of netwerkfout nadat het verzoek weg kon zijn. De server kan de melding
  *    dan toch verwerken (hij gaat door na ons afbreken), dus géén GitHub-terugval: dat zou dubbel
@@ -273,6 +273,13 @@ export async function submitFeedback(input: SubmitFeedbackInput): Promise<Submit
   // De timeout dekt het hele verzoek: verbinden, de headers én het lezen van de body. Een body
   // die stilvalt, breekt dus ook af. `raceAbort` laat ook een stream die het signaal negeert
   // stoppen.
+  // Offline vóór verzenden: zeker niet aangekomen, dus niet versturen en `failed` (GitHub-terugval
+  // mag). Dit moet VÓÓR de fetch: valt de verbinding pas weg tijdens het verzoek, dan kan de server
+  // de melding al verwerkt hebben, en dan is het `uncertain`.
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+    throw new FeedbackSubmitError('failed', 'offline vóór verzenden');
+  }
+
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   let response: Response;
@@ -284,10 +291,8 @@ export async function submitFeedback(input: SubmitFeedbackInput): Promise<Submit
         controller.signal,
       );
     } catch (err) {
-      // Offline vóór verzenden: zeker niet aangekomen. Elke andere netwerkfout of timeout kan
-      // na het versturen van de body vallen, en dan weten we het niet.
-      const offline = typeof navigator !== 'undefined' && navigator.onLine === false;
-      throw new FeedbackSubmitError(offline ? 'failed' : 'uncertain', errorDetail(err));
+      // De fetch is gestart: elke netwerkfout of timeout kan na het versturen van de body vallen.
+      throw new FeedbackSubmitError('uncertain', errorDetail(err));
     }
 
     if (!response.ok) {

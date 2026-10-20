@@ -179,13 +179,69 @@ test('5xx: zeker niet aangekomen, de knop Open op GitHub volgt de oude weg', asy
 });
 
 test('offline vóór verzenden: zeker niet aangekomen, Open op GitHub', async ({ page, ops }) => {
-  ops.acceptError(/ERR_INTERNET_DISCONNECTED|net::ERR_FAILED|Failed to fetch/);
+  void ops; // geen fetch, dus ook geen netwerkfout in de console
+  let fetched = 0;
+  await page.exposeFunction('__countFeedbackFetch', () => { fetched += 1; });
+  await page.evaluate((endpoint) => {
+    const realFetch = window.fetch.bind(window);
+    window.fetch = (input, init) => {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+      if (url === endpoint) void (window as unknown as { __countFeedbackFetch: () => Promise<void> }).__countFeedbackFetch();
+      return realFetch(input, init);
+    };
+  }, ENDPOINT);
   const dialog = await fillForm(page);
   await page.context().setOffline(true);
   await dialog.getByRole('button', { name: 'Send', exact: true }).click();
   await expect(dialog.getByRole('alert')).toHaveText(FAILED);
   await expect(dialog.getByRole('button', { name: 'Open on GitHub' })).toBeVisible();
+  expect(fetched, 'offline vóór verzenden: de app hoort niet te versturen').toBe(0);
   await page.context().setOffline(false);
+});
+
+test('R2-1: online gestart, verbinding valt weg tijdens het verzoek: onzeker, geen GitHub', async ({ page, ops }) => {
+  ops.acceptError(/net::ERR_FAILED|ERR_INTERNET_DISCONNECTED|Failed to fetch/);
+  let calls = 0;
+  await page.route(ENDPOINT, async route => {
+    calls += 1;
+    // Het verzoek is al vertrokken; nu valt de verbinding weg en faalt de fetch.
+    await page.context().setOffline(true);
+    await route.abort('internetdisconnected');
+  });
+  const dialog = await fillForm(page);
+  await dialog.getByRole('button', { name: 'Send', exact: true }).click();
+  await expect(dialog.getByRole('alert')).toHaveText(UNCERTAIN);
+  await expect(dialog.getByRole('button', { name: 'Open on GitHub' })).toHaveCount(0);
+  await expect(dialog.getByLabel('Title')).toHaveValue(TITLE);
+  expect(calls).toBe(1);
+  await page.context().setOffline(false);
+});
+
+test('R2-3: gewijzigde herhaling (e-mail erbij) + 409 = duplicaatfout, formulier blijft', async ({ page, ops }) => {
+  ops.acceptError(/status of 409/);
+  await shortTimeout(page, 400);
+  let calls = 0;
+  const hanging: Route[] = [];
+  await page.route(ENDPOINT, async route => {
+    calls += 1;
+    if (calls === 1) { hanging.push(route); return; }
+    await json(409, { error: 'Duplicate feedback' })(route);
+  });
+  const dialog = await fillForm(page);
+  await dialog.getByRole('button', { name: 'Send', exact: true }).click();
+  await expect(dialog.getByRole('alert')).toHaveText(UNCERTAIN, { timeout: 5_000 });
+
+  const emailField = dialog.getByLabel('Email address (optional, for a reply)');
+  await emailField.click();
+  await page.keyboard.type('planner@example.com');
+  await dialog.getByRole('button', { name: 'Send', exact: true }).click();
+  await expect(dialog.getByRole('alert')).toHaveText('This report was already sent in the last 24 hours.');
+  await expect(dialog.getByText('Your report had already arrived.')).toHaveCount(0);
+  await expect(dialog.getByLabel('Title')).toHaveValue(TITLE);
+  await expect(dialog.getByLabel('Description')).toHaveValue(DESCRIPTION);
+  await expect(emailField).toHaveValue('planner@example.com');
+  expect(calls).toBe(2);
+  for (const r of hanging) await r.abort().catch(() => { /* verzoek al afgebroken door de client */ });
 });
 
 test('netwerkfout na verzenden (abort): onzeker, geen GitHub-knop, tekst blijft', async ({ page, ops }) => {
@@ -199,7 +255,7 @@ test('netwerkfout na verzenden (abort): onzeker, geen GitHub-knop, tekst blijft'
   await expect(dialog.getByLabel('Description')).toHaveValue(DESCRIPTION);
 });
 
-test('B1: timeout geeft onzeker; een 409 op de volgende poging telt als aangekomen', async ({ page, ops }) => {
+test('B1/R2-3: timeout geeft onzeker; een gelijke herhaling met 409 telt als aangekomen', async ({ page, ops }) => {
   ops.acceptError(/status of 409/);
   await shortTimeout(page, 400);
   let calls = 0;
@@ -210,6 +266,8 @@ test('B1: timeout geeft onzeker; een 409 op de volgende poging telt als aangekom
     await json(409, { error: 'Duplicate feedback' })(route);
   });
   const dialog = await fillForm(page);
+  await dialog.getByLabel('Email address (optional, for a reply)').click();
+  await page.keyboard.type('b1@example.com');
   await dialog.getByRole('button', { name: 'Send', exact: true }).click();
   await expect(dialog.getByRole('alert')).toHaveText(UNCERTAIN, { timeout: 5_000 });
   await expect(dialog.getByRole('button', { name: 'Open on GitHub' })).toHaveCount(0);
@@ -219,6 +277,8 @@ test('B1: timeout geeft onzeker; een 409 op de volgende poging telt als aangekom
   await expect(dialog.getByText('Your report had already arrived.')).toBeVisible();
   await expect(dialog.getByRole('button', { name: 'View on GitHub' })).toHaveCount(0);
   expect(calls).toBe(2);
+  // Eén succesafhandeling: ook bij "al aangekomen" is het e-mailadres bewaard.
+  expect(await page.evaluate(() => localStorage.getItem('ops-feedbackEmail'))).toBe('b1@example.com');
   for (const r of hanging) await r.abort().catch(() => { /* verzoek al afgebroken door de client */ });
 });
 
