@@ -214,11 +214,12 @@ function canonicalLag(lag: ExternalLagFields): ExternalLag {
   return { lagDays: 0 };
 }
 
-export function formatExternalLagShort(lag: ExternalLagFields): string {
+/** Korte lagtekst van een externe relatie; `hourSuffix` volgt de app-taal ("+2u" nl, "+2h" en). */
+export function formatExternalLagShort(lag: ExternalLagFields, hourSuffix: 'u' | 'h' = 'u'): string {
   const canonical = canonicalLag(lag);
   if (canonical.lagMinutes !== undefined) {
     const hours = canonical.lagMinutes / 60;
-    return hours === 0 ? '' : `${hours > 0 ? '+' : ''}${trimNumber(hours, 2)}u`;
+    return hours === 0 ? '' : `${hours > 0 ? '+' : ''}${trimNumber(hours, 2)}${hourSuffix}`;
   }
   const days = canonical.lagDays ?? 0;
   return days === 0 ? '' : `${days > 0 ? '+' : ''}${days}d`;
@@ -311,7 +312,11 @@ function payloadJson(payload: ExternalRelationClipboardV1): string {
   return JSON.stringify(orderedPayload(payload));
 }
 
-export function formatExternalRelationClipboard(ownerTaskId: string, link: ExternalLink): string {
+export function formatExternalRelationClipboard(
+  ownerTaskId: string,
+  link: ExternalLink,
+  hourSuffix: 'u' | 'h' = 'u',
+): string {
   const origin: ExternalRelationOrigin = { ownerTaskId, direction: link.direction, linkId: link.id };
   const lag = canonicalLag(link);
   const payload: ExternalRelationClipboardV1 = {
@@ -324,13 +329,13 @@ export function formatExternalRelationClipboard(ownerTaskId: string, link: Exter
     anchorDate: link.anchorDate,
     sourceMissing: link.sourceMissing,
   };
-  const visible = `${canonicalExternalSourceLabel(link.sourceRef)} ${link.relType}${formatExternalLagShort(lag)}`;
+  const visible = `${canonicalExternalSourceLabel(link.sourceRef)} ${link.relType}${formatExternalLagShort(lag, hourSuffix)}`;
   return `${visible}${TOKEN_MARKER}${encodeBase64Url(payloadJson(payload))}${TOKEN_END}`;
 }
 
 /** Zichtbare helft van de canonieke clipboardvorm, voor celchips en editortekst. */
-export function formatExternalRelationVisible(link: ExternalLink): string {
-  return `${canonicalExternalSourceLabel(link.sourceRef)} ${link.relType}${formatExternalLagShort(canonicalLag(link))}`;
+export function formatExternalRelationVisible(link: ExternalLink, hourSuffix: 'u' | 'h' = 'u'): string {
+  return `${canonicalExternalSourceLabel(link.sourceRef)} ${link.relType}${formatExternalLagShort(canonicalLag(link), hourSuffix)}`;
 }
 
 function validString(value: unknown, maxLength: number, allowEmpty = false): value is string {

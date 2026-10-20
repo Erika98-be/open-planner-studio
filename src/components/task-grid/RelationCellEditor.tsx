@@ -15,6 +15,7 @@ import { AlertTriangle, Zap } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { HoverTooltip } from '@/components/canvas/HoverTooltip';
+import { parseableHourSuffix } from '@/utils/durationFormat';
 import { TaskTooltipContent, TooltipRow } from '@/components/canvas/TaskTooltipContent';
 import {
   externalAnchorSideIsCompatible,
@@ -234,6 +235,7 @@ export function RelationCellEditor({
   onOpenExternal,
 }: RelationCellEditorProps) {
   const { t } = useTranslation('task');
+  const { t: tCommon } = useTranslation('common');
   const validationProps = {
     'aria-invalid': inputProps['aria-invalid'],
     'aria-describedby': inputProps['aria-describedby'],
@@ -265,7 +267,10 @@ export function RelationCellEditor({
     const values: Record<string, string> = {};
     for (const token of tokens) {
       if (token.kind === 'external') {
-        values[token.relationId ?? token.external.origin.linkId] = formatExternalLagShort(token.external.lag);
+        values[token.relationId ?? token.external.origin.linkId] = formatExternalLagShort(
+          token.external.lag,
+          parseableHourSuffix(tCommon('duration.suffixHour')),
+        );
       }
     }
     return values;

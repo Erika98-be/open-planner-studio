@@ -12,14 +12,14 @@ Een kraan huur je per uur, niet per dag. Een stort van zes uur past niet in een 
 
 1. Kies *Instellingen › Project › App-instellingen* en open het tabblad *Planning*.
 2. Zet onder *Urenplanning* het vinkje bij *Urenplanning inschakelen* aan. Het werkt meteen. In de melding *Dit bestand bevat urenplanning.* doet de knop *Urenplanning aanzetten* hetzelfde.
-3. Daaronder staat *Gemengde dag/uur-planning toestaan*, standaard aan. Met die instelling kies je per taak of hij in dagen of uren telt. Zet je hem uit, dan verdwijnt de keuzelijst *Duureenheid*. Je kunt dan nog wel een duur met een eenheid typen, zoals `12h`.
+3. Daaronder staat *Gemengde dag/uur-planning toestaan*, standaard aan. Met die instelling kies je per taak of hij in dagen of uren telt. Zet je hem uit, dan verdwijnt de keuzelijst *Duureenheid*. Je kunt dan nog wel een duur met een eenheid typen, zoals `12u`.
 
 Daarmee verandert er meer dan alleen de duur van een taak: onder *Beeld › Tijdschaal* kun je de schaal *Uur* kiezen, in het venster *Kalenders* kan een gewone kalender werktijdblokken krijgen (het blok *Werktijden*; een kalender die al blokken heeft, toont dat blok altijd), en het venster *Nieuw project* krijgt de keuzes *Ploeg* en *Standaardeenheid voor nieuwe taken*.
 
 ### Een taak in uren plannen
 
 1. Selecteer de taak en kijk in het paneel *Eigenschappen* bij *Tijd* naar het veld *Duur*.
-2. Typ de duur met een eenheid en druk op Enter: `12h` (of `12u`) voor twaalf uur, `1h 30m` voor anderhalf uur. Ook `1.5h` mag. Een getal zonder eenheid telt in de eenheid die de taak al heeft.
+2. Typ de duur met een eenheid en druk op Enter: `12u` (of `12h`) voor twaalf uur, `1u 30m` voor anderhalf uur. Ook `1.5u` mag. Een getal zonder eenheid telt in de eenheid die de taak al heeft.
 3. Wil je een bestaande taak omzetten, kies dan bij *Duureenheid* de eenheid *Uren*. De app rekent de duur meteen om, bijvoorbeeld van `2` dagen naar `16` uur. Wil je terug, gebruik dan *Ongedaan maken*.
 4. Terug naar dagen kan met `2d` of met de eenheid *Dagen*.
 5. Druk op **Bereken** (F5), bijvoorbeeld via *Start › Planning › Bereken*. De taak heeft nu een start en einde met een kloktijd.
@@ -36,7 +36,7 @@ Een nieuwe taak begint dan met 5 uur in plaats van 5 dagen. Bestaande taken vera
 
 **Geen geldige werktijden.** Heeft de kalender van de taak geen bruikbare werktijden, dan meldt de app *Deze kalender heeft geen geldige werktijden. Controleer de werkdagen en werktijden.* Bij het doorrekenen kan de melding *Urentaak 'naam' heeft geen geldige werktijden in zijn kalender* komen.
 
-**Geen decimalen bij dagen.** Een duur in dagen is een geheel getal. `1.5d` geeft de melding *Voer een geheel aantal dagen of uren in, bijvoorbeeld 2d of 12h.* Wil je anderhalve dag, reken dan in uren.
+**Geen decimalen bij dagen.** Een duur in dagen is een geheel getal. `1.5d` geeft de melding *Voer een geheel aantal dagen of uren in, bijvoorbeeld 2d of 12u.* Wil je anderhalve dag, reken dan in uren.
 
 **Een omzetting die niet exact kan.** Twaalf uur past niet in hele dagen van 8 uur. De app meldt dan *Deze duur kan op de huidige kalender niet exact naar gehele dagen worden omgezet. De bestaande eenheid blijft behouden; voer zelf een nieuwe geldige waarde in.* en laat de eenheid staan.
 

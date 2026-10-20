@@ -6,7 +6,7 @@ Een taak van 2 dagen en een taak van 16 uur lijken hetzelfde, maar de app rekent
 
 Een **dagtaak** heeft een duur in hele werkdagen, bijvoorbeeld `5d`. Hij bezet volle werkdagen. Op de standaardkalender heeft hij een start- en einddatum zonder tijd.
 
-Een **urentaak** heeft een duur in werkuren, bijvoorbeeld `12h` of `1h 30m`. Hij heeft een start en een einde met een kloktijd, bijvoorbeeld dinsdag 11:00.
+Een **urentaak** heeft een duur in werkuren, bijvoorbeeld `12u` of `1u 30m`. Hij heeft een start en een einde met een kloktijd, bijvoorbeeld dinsdag 11:00.
 
 De eenheid hoort bij de taak, niet bij het project. Je kunt dagtaken en urentaken in één planning mengen. Dat heet **gemengde planning**.
 
@@ -34,9 +34,9 @@ De app telt hele werkdagen. De uren per dag doen daarbij niet mee. Een taak van 
 
 Een dag is de standaard werkdag van de kalender van de taak. De app gebruikt dat op drie plekken:
 
-- Bij *Duurweergave*. Onder *Instellingen › Project › App-instellingen*, tabblad *Weergave*, kies je *Automatisch (eigen eenheid per taak)*, *Altijd dagen* of *Altijd uren*. Een taak van 18 uur toont bij *Altijd dagen* als `2,25d(18h)`: de eigen eenheid blijft tussen haakjes staan.
+- Bij *Duurweergave*. Onder *Instellingen › Project › App-instellingen*, tabblad *Weergave*, kies je *Automatisch (eigen eenheid per taak)*, *Altijd dagen* of *Altijd uren*. Een taak van 18 uur toont bij *Altijd dagen* als `2,25d(18u)`: de eigen eenheid blijft tussen haakjes staan.
 - Bij een lag in uren na een dagtaak (zie *Afronden*).
-- Als je de eenheid van een taak wisselt. De app telt dan de dagen vanaf de start van de taak, elke dag met zijn eigen uren, en zet de duur meteen om als de uitkomst exact klopt. Twee dagen worden `16h`. Op een kalender waar de vrijdag 5 uur heeft, worden 5 dagen vanaf maandag `37h`. Twaalf uur kan op een kalender met dagen van 8 uur niet in hele dagen: de app houdt de eenheid dan zoals hij is.
+- Als je de eenheid van een taak wisselt. De app telt dan de dagen vanaf de start van de taak, elke dag met zijn eigen uren, en zet de duur meteen om als de uitkomst exact klopt. Twee dagen worden `16u`. Op een kalender waar de vrijdag 5 uur heeft, worden 5 dagen vanaf maandag `37u`. Twaalf uur kan op een kalender met dagen van 8 uur niet in hele dagen: de app houdt de eenheid dan zoals hij is.
 
 ### Dagtaken en urentaken door elkaar
 
@@ -52,7 +52,7 @@ De app rondt af, of wijst af, op vier plekken:
 
 - **Een dagtaak na een urentaak** begint op de eerstvolgende werkdag. De urentaak wordt zo als het ware naar boven afgerond op hele dagen.
 - **Een lag in uren** telt in de lag-kalender, standaard die van de voorganger. Is de voorganger een dagtaak op een kalender zonder eigen werktijdblokken, zoals de standaardkalender, dan rekent de app de lag om naar hele werkdagen: de lag gedeeld door de uren van de standaard werkdag, afgerond op een heel getal; een halve dag gaat omhoog. Bij 8 uur per dag telt 1 uur als 0 dagen, 4 uur als 1 dag en 12 uur als 2 dagen. Dat geldt ook als de opvolger een urentaak is. Is de voorganger een urentaak, of heeft zijn kalender eigen werktijdblokken, dan telt de lag exact in werkuren en telt de pauze niet mee.
-- **Een duur in dagen** is altijd een geheel getal. Typ je `1.5d`, dan meldt de app *Voer een geheel aantal dagen of uren in, bijvoorbeeld 2d of 12h.* Een duur in uren mag wel `1.5h` zijn, of `1h 30m`.
+- **Een duur in dagen** is altijd een geheel getal. Typ je `1.5d`, dan meldt de app *Voer een geheel aantal dagen of uren in, bijvoorbeeld 2d of 12u.* Een duur in uren mag wel `1.5u` zijn, of `1u 30m`.
 - **Een eenheidswissel** gebeurt alleen als de uitkomst exact klopt (zie hierboven).
 
 ## Rekenvoorbeeld: de kraan

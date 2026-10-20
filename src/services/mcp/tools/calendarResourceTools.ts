@@ -679,9 +679,9 @@ function netHoursReason(item: CalendarItem, existing: CalendarBase): string | nu
   return `\`hoursPerDay\` ${hoursLabel(item.hoursPerDay)} does not match this calendar: with a break the net ` +
     'hours are DERIVED from working day minus break, like the non-editable "Standard workday" in the ' +
     `calendar dialog — here ${clockLabel(start)}–${clockLabel(end)} with ${pause} min break = ` +
-    `${hoursLabel(net)} h net. Leave \`hoursPerDay\` out, or change the working day ` +
+    `${hoursLabel(net)}h net. Leave \`hoursPerDay\` out, or change the working day ` +
     '(`workStartHour`/`workEndHour`, in HOURS) or the break duration (`simpleBreakDurationMinutes`, in ' +
-    `MINUTES) so that working day minus break becomes ${hoursLabel(item.hoursPerDay)} h` +
+    `MINUTES) so that working day minus break becomes ${hoursLabel(item.hoursPerDay)}h` +
     `${(examples.length > 0 ? ` (e.g. ${examples.join(' or ')})` : '')}`;
 }
 

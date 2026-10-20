@@ -19,7 +19,7 @@ export function TaskCpmResultSection({ taskId }: { taskId: string }) {
   // TS onafgerond ("1.6666666666666667") naast een afgeronde VS ("2").
   const days = (value: number) => formatWorkDaysText(value, {
     locale: i18n.language,
-    suffixes: { day: ` ${tCommon('daysLong')}`, hour: 'h', minute: 'm' },
+    suffixes: { day: ` ${tCommon('daysLong')}`, hour: tCommon('duration.suffixHour'), minute: tCommon('duration.suffixMinute') },
   });
 
   return (
