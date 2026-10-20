@@ -26,6 +26,7 @@ import { createDefaultCalendar } from '@/engine/calendar/defaultCalendar';
 import { createDefaultTaskTime } from '@/utils/taskDefaults';
 import type { ImportResult } from '@/services/importTypes';
 import type { Task } from '@/types/task';
+import type { WorkTimeBands } from '@/types/calendar';
 import { createAppStoreContext, useAppStore } from '@/state/appStore';
 import { recoveryInputFromParsed } from '@/state/documentContract';
 import { LOCALES } from '../../scripts/i18n-tools';
@@ -281,7 +282,7 @@ const volInfo = captureRecordedDates(
   { a: ['earlyStart', 'earlyFinish', 'totalFloat', 'isCritical'],
     b: ['earlyStart', 'earlyFinish', 'totalFloat', 'isCritical'] },
 );
-const rec = cpmResultFromRecorded(volInfo.times, [mk('a'), mk('b')], cal);
+const rec = cpmResultFromRecorded(volInfo.times, [mk('a'), mk('b')], cal, []);
 eq('3a projecteinde = laatste opgeslagen finish', rec.projectEnd, '2026-03-13');
 eq('3b kritiek pad uit isCritical', rec.criticalPath, ['a']);
 eq('3c criticalPaths[0] === criticalPath', rec.criticalPaths[0], rec.criticalPath);
@@ -305,7 +306,7 @@ eq('3h floatPathByTask blijft leeg', rec.floatPathByTask, {});
 // Zonder isCritical in het bestand: géén kritiek pad beweren. Schedule-paar aanwezig (MOET 1),
 // anders wordt 'a' hier overgeslagen en toont deze reconstructie niets.
 const zonderKritiek = cpmResultFromRecorded(
-  captureRecordedDates([mk('a')], { a: ['scheduleStart', 'scheduleFinish'] }).times, [mk('a')], cal,
+  captureRecordedDates([mk('a')], { a: ['scheduleStart', 'scheduleFinish'] }).times, [mk('a')], cal, [],
 );
 eq('3i zonder isCritical geen kritiek pad', zonderKritiek.criticalPath, []);
 eq('3j zonder isCritical ook criticalPaths leeg', zonderKritiek.criticalPaths, [[]]);
@@ -322,10 +323,10 @@ eq('3o isCritical-default = false', zonderKritiek.tasks.get('a')?.isCritical, fa
 
 // KLEIN-13: `times` gevuld maar `tasks` leeg ⇒ niets te reconstrueren (de functie filtert `tasks`,
 // niet `times`), en een volledig lege taaklijst/tijdlijst crasht niet en geeft het lege resultaat.
-const legeTasks = cpmResultFromRecorded(volInfo.times, [], cal);
+const legeTasks = cpmResultFromRecorded(volInfo.times, [], cal, []);
 eq('3p times gevuld maar tasks leeg ⇒ leeg resultaat', legeTasks.tasks.size, 0);
 eq('3q times gevuld maar tasks leeg ⇒ geen projecteinde', legeTasks.projectEnd, '');
-const legeBeide = cpmResultFromRecorded({}, [], cal);
+const legeBeide = cpmResultFromRecorded({}, [], cal, []);
 eq('3r volledig leeg ⇒ projectDuration 0', legeBeide.projectDuration, 0);
 
 // ── (3B) applyRecordedTimesToTasks — gedeelde kern (XER-etappeplan §3.4, taak T3) ─────────────
@@ -349,8 +350,8 @@ eq('3r volledig leeg ⇒ projectDuration 0', legeBeide.projectDuration, 0);
     [mk('a', { earlyStart: '2026-09-01', earlyFinish: '2026-09-05', totalFloat: 2, isCritical: true })],
     { a: ['earlyStart', 'earlyFinish', 'totalFloat', 'isCritical'] },
   ).times;
-  const kernResult = applyRecordedTimesToTasks(kernTasks, kernTimes, cal);
-  const verwachtResult = cpmResultFromRecorded(kernTimes, kernTasks, cal);
+  const kernResult = applyRecordedTimesToTasks(kernTasks, kernTimes, cal, []);
+  const verwachtResult = cpmResultFromRecorded(kernTimes, kernTasks, cal, []);
   eq('3s applyRecordedTimesToTasks levert hetzelfde CPMResult als cpmResultFromRecorded op dezelfde times',
     kernResult, verwachtResult);
   const aNa = kernTasks.find((t) => t.id === 'a')!;
@@ -382,7 +383,7 @@ const infoDeadline = captureRecordedDates(
   [overDeadline, binnenDeadline, opDeadline],
   { a: ['earlyStart', 'earlyFinish'], b: ['earlyStart', 'earlyFinish'], d: ['earlyStart', 'earlyFinish'] },
 );
-const recDeadline = cpmResultFromRecorded(infoDeadline.times, [overDeadline, binnenDeadline, opDeadline], cal);
+const recDeadline = cpmResultFromRecorded(infoDeadline.times, [overDeadline, binnenDeadline, opDeadline], cal, []);
 eq('4a finish voorbij deadline ⇒ gemeld, binnen/op de deadline niet', recDeadline.missedDeadlineTaskIds, ['a']);
 
 // ── (4b) Deadline zonder tijd in uur-modus: dezelfde grens na berekenen én in de modus ─────────
@@ -440,7 +441,58 @@ eq('4a finish voorbij deadline ⇒ gemeld, binnen/op de deadline niet', recDeadl
   ];
   const puurInfo = captureRecordedDates(puur, Object.fromEntries(puur.map((t) => [t.id, ['earlyStart', 'earlyFinish'] as const])));
   eq('4e deadline zonder tijd, met tijd, op een feestdag en in het weekend: dezelfde grens als de solver',
-    cpmResultFromRecorded(puurInfo.times, puur, calH8).missedDeadlineTaskIds, ['metTijd', 'feestdagTeLaat']);
+    cpmResultFromRecorded(puurInfo.times, puur, calH8, []).missedDeadlineTaskIds, ['metTijd', 'feestdagTeLaat']);
+}
+
+// ── (4f/4g) Deadline van een taak op een EIGEN kalender: de taakkalender, ook in de modus ─────
+// Review PR #402 ronde 2, punt 1. De reconstructie gaf altijd de projectkalender aan de
+// deadlinegrens, ook voor een taak met `calendarId`. Project ma–vr, taak A op een kalender met
+// zaterdagwerk: klaar za 11 juli, deadline zo 12 juli. Na berekenen niet gemist (de solver leest de
+// grens op A's kalender: za). In de modus werd A gemist (grens op de projectkalender: vr), zonder
+// datumwijziging. B staat op de projectkalender en is in de modus echt te laat (de controle dat de
+// melding niet gewoon wegvalt). 4f is een dagtaak, 4g een urentaak; route: de echte
+// `applyLoadedProject` met een eigen IFC, zoals 4b–4d.
+for (const [label, uur] of [['4f dagtaak', false], ['4g urentaak', true]] as const) {
+  const banden = (dagen: number[]) => ({
+    byWeekday: Object.fromEntries([1, 2, 3, 4, 5, 6, 7].map((d) => [d, dagen.includes(d) ? [{ start: 480, end: 960 }] : []])),
+  }) as WorkTimeBands;
+  S().newProject();
+  S().setCalendar({
+    ...S().calendar, workDays: [1, 2, 3, 4, 5], holidays: [],
+    workTime: uur ? banden([1, 2, 3, 4, 5]) : undefined,
+  });
+  S().setProject({ startDate: '2026-07-06' });
+  const { id: _projectCalId, ...projectCal } = S().calendar;
+  const zaterdagId = S().addCalendar({
+    ...projectCal, name: 'Zaterdagwerk', workDays: [1, 2, 3, 4, 5, 6],
+    workTime: uur ? banden([1, 2, 3, 4, 5, 6]) : undefined,
+  });
+  const tijd = (start: string) => createDefaultTaskTime(start, uur ? 8 : 1, uur ? 'hours' : 'days');
+  const idA = S().addTask({ name: 'A', time: tijd('2026-07-11'), deadline: '2026-07-12' });
+  S().setTaskCalendar(idA, zaterdagId);
+  S().addTask({ name: 'B', time: tijd('2026-07-06'), deadline: '2026-07-17' });
+  S().runCPM();
+  const naam = (ids: string[] | undefined) =>
+    (ids ?? []).map((id) => S().tasks.find((t) => t.id === id)?.name).sort();
+  const eindeA = () => S().tasks.find((t) => t.name === 'A')?.time.earlyFinish;
+  eq(`${label}: na berekenen eindigt A za 11 juli op de zaterdagkalender, niets gemist`,
+    [eindeA(), naam(S().cpmResult?.missedDeadlineTaskIds)], [uur ? '2026-07-11T16:00' : '2026-07-11', []]);
+
+  const parsed = readIFC(writeIFC(buildWriteIFCInput(S())));
+  const times = captureRecordedDates(parsed.tasks, parsed.recordedFields).times;
+  const idB = parsed.tasks.find((t) => t.name === 'B')!.id;
+  times[idB] = uur
+    ? { ...times[idB], start: '2026-07-20T08:00', finish: '2026-07-20T16:00' }
+    : { ...times[idB], start: '2026-07-20', finish: '2026-07-20' };
+  S().newProject();
+  S().applyLoadedProject(
+    { ...parsed, recordedFields: undefined, recordedTimes: times, recordedTimesOrigin: 'xer' },
+    { filePath: null, recompute: true },
+  );
+  eq(`${label}: in de modus houdt A zijn eigen kalender en datum, alleen B (ma 20 juli) is gemist`,
+    [S().datesAsRecorded, S().tasks.find((t) => t.name === 'A')?.calendarId !== undefined, eindeA(),
+      naam(S().cpmResult?.missedDeadlineTaskIds)],
+    [true, true, uur ? '2026-07-11T16:00' : '2026-07-11', ['B']]);
 }
 
 // ── (5) projectDuration — regressietest voor de TZ-bug (issue-#63-review, MOET 1 van een vorige
@@ -457,7 +509,7 @@ const capHour = captureRecordedDates(
   })],
   { a: ['earlyStart', 'earlyFinish', 'totalFloat', 'isCritical'] },
 );
-const recHour = cpmResultFromRecorded(capHour.times, [mk('a')], cal);
+const recHour = cpmResultFromRecorded(capHour.times, [mk('a')], cal, []);
 eq('5a projectDuration TZ-onafhankelijk (uur-modus, ma t/m vr)', recHour.projectDuration, 5);
 
 // ── (6) Mijlpaal-alleen-uitzondering (hercontrole kwaliteitsreview, volgend op GRAAG-6) ──────────
@@ -467,7 +519,7 @@ eq('5a projectDuration TZ-onafhankelijk (uur-modus, ma t/m vr)', recHour.project
 const mijlpaalOpEenDag = mk('a', { earlyStart: '2026-03-02', earlyFinish: '2026-03-02' }, { isMilestone: true });
 const recMijlpaal = cpmResultFromRecorded(
   captureRecordedDates([mijlpaalOpEenDag], { a: ['earlyStart', 'earlyFinish'] }).times,
-  [mijlpaalOpEenDag], cal,
+  [mijlpaalOpEenDag], cal, [],
 );
 eq('6a uitsluitend mijlpaal op één dag ⇒ projectDuration 0', recMijlpaal.projectDuration, 0);
 
@@ -476,7 +528,7 @@ eq('6a uitsluitend mijlpaal op één dag ⇒ projectDuration 0', recMijlpaal.pro
 const werkOpEenDag = mk('b', { earlyStart: '2026-03-02', earlyFinish: '2026-03-02' });
 const recWerk = cpmResultFromRecorded(
   captureRecordedDates([werkOpEenDag], { b: ['earlyStart', 'earlyFinish'] }).times,
-  [werkOpEenDag], cal,
+  [werkOpEenDag], cal, [],
 );
 eq('6b echte werk-taak op één dag ⇒ projectDuration 1', recWerk.projectDuration, 1);
 
@@ -1397,7 +1449,7 @@ const inMode = (ifcText: string): ImportResult => ({ ...offerOnly(ifcText), reco
     A: { start: '2026-03-02', finish: '2026-03-06', lateStart: '2026-03-09', lateFinish: '2026-03-13', totalFloat: 5, freeFloat: 0, isCritical: false },
     B: { start: '2026-03-09', finish: '2026-03-13', lateStart: '2026-03-09', lateFinish: '2026-03-13', totalFloat: 0, freeFloat: 0, isCritical: true },
   };
-  const cpm = applyRecordedTimesToTasks(tasks, times, createDefaultCalendar());
+  const cpm = applyRecordedTimesToTasks(tasks, times, createDefaultCalendar(), []);
   const s = tasks[0].time;
   eq('15a de samenvatting omspant de VASTGELEGDE kinderen (vroege zijde)',
     [s.earlyStart, s.earlyFinish], ['2026-03-02', '2026-03-13']);
@@ -1411,7 +1463,7 @@ const inMode = (ifcText: string): ImportResult => ({ ...offerOnly(ifcText), reco
     (() => {
       const alone: Task = { ...summary, id: 'S2', childIds: ['C'], time: { ...summary.time } } as Task;
       const c = leaf('C', 'S2', '2026-09-01', '2026-09-05');
-      applyRecordedTimesToTasks([alone, c], {}, createDefaultCalendar());
+      applyRecordedTimesToTasks([alone, c], {}, createDefaultCalendar(), []);
       return [alone.time.earlyStart, alone.time.earlyFinish];
     })(), ['2026-09-01', '2026-09-05']);
   // Her-check R1: de opgerolde samenvatting staat óók in het cpmResult — Gantt/taakraster
@@ -1433,7 +1485,7 @@ const inMode = (ifcText: string): ImportResult => ({ ...offerOnly(ifcText), reco
       RA: { start: '2026-03-02', finish: '2026-03-06', lateStart: '2026-03-09', lateFinish: '2026-03-13', totalFloat: 5, freeFloat: 0, isCritical: false },
       RB: { start: '2026-03-09', finish: '2026-03-13', lateStart: '2026-03-09', lateFinish: '2026-03-13', totalFloat: 0, freeFloat: 0, isCritical: true },
     };
-    const rCpm = applyRecordedTimesToTasks(rTasks, rTimes, createDefaultCalendar());
+    const rCpm = applyRecordedTimesToTasks(rTasks, rTimes, createDefaultCalendar(), []);
     const r = rTasks[0].time;
     eq('15g een samenvatting mét eigen vastlegging blijft staan zoals het bestand haar gaf (geen rollup eroverheen)',
       [r.earlyStart, r.earlyFinish, r.lateStart, r.lateFinish, r.totalFloat, r.freeFloat, r.isCritical],

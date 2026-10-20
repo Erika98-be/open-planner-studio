@@ -15,7 +15,7 @@ import {
   taskDurationUnit, writeDerivedSpan, isPinnedComplete, isPinnedInProgress, isElapsedTask,
 } from './duration';
 import { computeScheduleResults } from './scheduleAnalysis';
-import { deadlineBound as deadlineBoundOn } from './deadlineBound';
+import { deadlineBound } from './deadlineBound';
 import { hasValidP6SuspendResume } from '@/utils/p6SuspendResume';
 import {
   explainP6CompletedDataDateWindowResolved,
@@ -1688,7 +1688,6 @@ export class CPMSolver {
       progressCalendarFor: (t) => this.progressCalendarFor(t),
       signedFloat: (a, b, eng, task) => this.signedFloat(a, b, eng, task),
       constraintInstant: (c, eng) => this.constraintInstant(c, eng),
-      deadlineBound: (t, eng) => this.deadlineBound(t, eng),
       snapOnOrAfter: (eng, d) => this.snapOnOrAfter(eng, d),
       snapOnOrBefore: (eng, d) => this.snapOnOrBefore(eng, d),
       modeOf: (eng) => this.modeOf(eng),
@@ -3040,15 +3039,9 @@ export class CPMSolver {
         if (bound && bound < lf) lf = bound;
       }
     }
-    const dlW = this.deadlineBound(task, eng);
+    const dlW = deadlineBound(task.deadline, eng);
     if (dlW && dlW < lf) lf = dlW;
     return lf;
-  }
-
-  /** De grens van de zachte deadline van `task` op `eng` — één definitie, gedeeld met de analyse en
-   *  de reconstructie uit opgeslagen datums: zie `deadlineBound.ts` (knownbugs 119). */
-  private deadlineBound(task: Task, eng: CalendarEngine): Date | null {
-    return deadlineBoundOn(task.deadline, eng);
   }
 
   /**

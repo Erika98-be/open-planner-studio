@@ -1,5 +1,5 @@
 {
-  "_readme": "Regressiebatterij voor vijf fouten in het urenpad bij blokgrenzen (knownbugs 119-123 van het ontwerp claude/uren-spec, 'alleen uren'). Kalender H8 = ma-vr 08:00-16:00; B2 = ma-vr 07:00-12:00 + 13:00-16:00. Urentaken ('8u') verwachten datetime; dagtaken op een kalender met werkblokken rekenen ook in de uur-engine en tonen datetime. Verwachtingen: met de hand op de tijdas, of het dag-orakel (zelfde case in een dag-batterij) vertaald naar blokbegin/blokeinde. De ids 'bg<nr>-...' verwijzen naar het knownbug-nummer; titels met 'Review #402' zijn regressies uit de review van PR #402 (FF bij een afwijkende opvolgerkalender en na een ELAPSEDTIME-voorganger, SNLT bij een ELAPSEDTIME-taak); cases met 'controle' in de titel waren vóór de fix al groen en bewaken dat de fix niet te ver gaat.",
+  "_readme": "Regressiebatterij voor vijf fouten in het urenpad bij blokgrenzen (knownbugs 119-123 van het ontwerp claude/uren-spec, 'alleen uren'). Kalender H8 = ma-vr 08:00-16:00; B2 = ma-vr 07:00-12:00 + 13:00-16:00. Urentaken ('8u') verwachten datetime; dagtaken op een kalender met werkblokken rekenen ook in de uur-engine en tonen datetime. Verwachtingen: met de hand op de tijdas, of het dag-orakel (zelfde case in een dag-batterij) vertaald naar blokbegin/blokeinde. De ids 'bg<nr>-...' verwijzen naar het knownbug-nummer; titels met 'Review #402' zijn regressies uit de review van PR #402 (FF bij een afwijkende opvolgerkalender en na een ELAPSEDTIME-voorganger, SNLT bij een ELAPSEDTIME-taak en, in ronde 2, bij een urenmijlpaal buiten werktijd); cases met 'controle' in de titel waren vóór de fix al groen en bewaken dat de fix niet te ver gaat.",
   "cases": [
     {
       "id": "bg119-deadline-zonder-tijd-gehaald",
@@ -405,6 +405,36 @@
           "A": {"ls": "2026-07-07T16:00", "tf": -0.020833333333333332}
         },
         "violatedConstraintsSet": ["A"]
+      }
+    },
+    {
+      "id": "bg120-mijlpaal-0u-snlt-buiten-werktijd-start",
+      "title": "Review #402 ronde 2, punt 2. START-mijlpaal 0u op di 18:00 (buiten werktijd), SNLT di 16:00. Echt geschonden, zoals main en zoals dezelfde mijlpaal met 0d. 3c2a0bd19 vergeleek met wo 08:00 en meldde niets; een nulduurmijlpaal blijft daarom bij snapOnOrBefore.",
+      "anchor": "2026-07-06",
+      "calendar": {"workTime": {"byWeekday": {"1": [{"start": 480, "end": 960}], "2": [{"start": 480, "end": 960}], "3": [{"start": 480, "end": 960}], "4": [{"start": 480, "end": 960}], "5": [{"start": 480, "end": 960}], "6": [], "7": []}}},
+      "tasks": [
+        {"name": "M", "milestone": true, "milestoneKind": "START", "dur": "0u", "start": "2026-07-07T18:00", "constraint": {"type": "SNLT", "date": "2026-07-07T16:00"}}
+      ],
+      "expect": {
+        "tasks": {
+          "M": {"es": "2026-07-07T18:00", "ls": "2026-07-07T16:00", "tf": 0}
+        },
+        "violatedConstraintsSet": ["M"]
+      }
+    },
+    {
+      "id": "bg120-mijlpaal-0u-snlt-buiten-werktijd-finish",
+      "title": "Review #402 ronde 2, punt 2. FINISH-mijlpaal 0u op di 18:00 (buiten werktijd), SNLT di 16:00. Echt geschonden, zoals main en zoals dezelfde mijlpaal met 0d. 3c2a0bd19 vergeleek met wo 08:00 en meldde niets; een nulduurmijlpaal blijft daarom bij snapOnOrBefore.",
+      "anchor": "2026-07-06",
+      "calendar": {"workTime": {"byWeekday": {"1": [{"start": 480, "end": 960}], "2": [{"start": 480, "end": 960}], "3": [{"start": 480, "end": 960}], "4": [{"start": 480, "end": 960}], "5": [{"start": 480, "end": 960}], "6": [], "7": []}}},
+      "tasks": [
+        {"name": "M", "milestone": true, "milestoneKind": "FINISH", "dur": "0u", "start": "2026-07-07T18:00", "constraint": {"type": "SNLT", "date": "2026-07-07T16:00"}}
+      ],
+      "expect": {
+        "tasks": {
+          "M": {"es": "2026-07-07T18:00", "ls": "2026-07-07T16:00", "tf": 0}
+        },
+        "violatedConstraintsSet": ["M"]
       }
     },
     {

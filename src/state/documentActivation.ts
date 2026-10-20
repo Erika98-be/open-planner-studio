@@ -407,7 +407,9 @@ export function applyRecordedDatesOnLoad(
  * betekent.
  */
 function enterRecordedDatesMode(payload: DocumentPayload, times: Record<string, RecordedTime>): void {
-  payload.cpmResult = applyRecordedTimesToTasks(payload.tasks, times, payload.calendar);
+  // De kalenderregistratie gaat mee: de deadlinegrens van een taak op een eigen kalender leest die
+  // kalender, net als na een berekening (review PR #402 ronde 2).
+  payload.cpmResult = applyRecordedTimesToTasks(payload.tasks, times, payload.calendar, payload.calendars);
   payload.datesAsRecorded = true;
   // `prepareLoadedPayload` zette hem bij een geslaagde solve al zo; expliciet houden — nooit een
   // rechtstreekse `= true` ELDERS, alleen deze bewuste `= false`.

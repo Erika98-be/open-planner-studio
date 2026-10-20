@@ -4,6 +4,7 @@ import { isLeafTask, isSummaryTask } from '@/utils/taskHierarchy';
 import type { WorkCalendar } from '@/types/calendar';
 import { engineForTaskCalendar, type CPMResult, type CPMTaskResult } from './CPMSolver';
 import { deadlineBound } from './deadlineBound';
+import { resolveCalendar } from './resolveCalendar';
 import { writeSummaryProgress, type SummaryProgress } from './summaryProgress';
 import { CalendarEngine } from './CalendarEngine';
 import { parseInstant } from '@/utils/dateUtils';
@@ -345,11 +346,12 @@ export function shiftedTaskIds(tasks: Task[], times: Record<string, RecordedTime
  * bestand) en hier bewust niet gedicht — dichten vraagt een derde presence-registratie
  * (`scheduleDuration`) die deze module niet heeft.
  *
- * `missedDeadlineTaskIds` gebruikt dezelfde deadlinegrens als de solver (`deadlineBound.ts`), met
- * de engine die de solver voor die taak op de projectkalender kiest (`engineForTaskCalendar`). Zo
- * spreken de melding na een berekening en de melding in de opgeslagen-datumsmodus elkaar niet tegen.
- * Een taak op een ANDERE kalender (`task.calendarId` naar een bibliotheekkalender) ziet deze functie
- * niet: ze krijgt alleen de projectkalender mee (ze reconstrueert, ze solvet niet).
+ * `missedDeadlineTaskIds` gebruikt dezelfde deadlinegrens als de solver (`deadlineBound.ts`), op de
+ * engine die de solver voor die taak kiest: eerst de taakkalender (`resolveCalendar` op
+ * `task.calendarId` en de kalenderregistratie `calendars`, terugval de projectkalender), dan de
+ * uur-/dagregel (`engineForTaskCalendar`) — zoals `CPMSolver.calendarFor`. Zo spreken de melding na
+ * een berekening en de melding in de opgeslagen-datumsmodus elkaar niet tegen, ook niet voor een taak
+ * op een eigen kalender (review PR #402 ronde 2).
  *
  * `projectStart`/`projectEnd` worden hieronder met stringvergelijking
  * (`<`/`>`) bepaald. Bij GEMENGDE dag/uur-formaten binnen dezelfde taakset (bv. `'2026-03-09T17:00'`
@@ -363,6 +365,7 @@ export function cpmResultFromRecorded(
   times: Record<string, RecordedTime>,
   tasks: Task[],
   calendar: WorkCalendar,
+  calendars: WorkCalendar[],
 ): CPMResult {
   const out = new Map<string, CPMTaskResult>();
   const criticalPath: string[] = [];
@@ -390,7 +393,8 @@ export function cpmResultFromRecorded(
     });
     if (rec.isCritical) criticalPath.push(task.id);
     if (task.deadline) {
-      const bound = deadlineBound(task.deadline, engineForTaskCalendar(engines, calendar, task));
+      const eng = engineForTaskCalendar(engines, resolveCalendar(task.calendarId, calendars, calendar), task);
+      const bound = deadlineBound(task.deadline, eng);
       const finish = parseInstant(rec.finish);
       if (bound && !isNaN(finish.getTime()) && finish > bound) missedDeadlineTaskIds.push(task.id);
     }
@@ -465,7 +469,7 @@ export function cpmResultFromRecorded(
  * Schrijf de vastlegging in de taken en lever het gereconstrueerde `CPMResult` — ÉÉN implementatie
  * voor de laadroute (`enterRecordedDatesMode` in `documentActivation.ts`). Muteert `tasks` IN-PLACE (een Immer-draft óf een
  * payload-kloon — de aanroeper bepaalt welke) en geeft daarna hetzelfde `CPMResult` terug als
- * `cpmResultFromRecorded(times, tasks, calendar)` op diezelfde, nu-bijgewerkte taken zou geven.
+ * `cpmResultFromRecorded(times, tasks, calendar, calendars)` op diezelfde, nu-bijgewerkte taken zou geven.
  *
  * DE TERUGVALLEN BINNEN DEZE KERN ZIJN BEWUST: `TaskTime.lateStart` is een
  * verplichte `string`, `totalFloat`/`freeFloat` verplichte `number`s (`TaskTimeComputed`,
@@ -486,6 +490,7 @@ export function applyRecordedTimesToTasks(
   tasks: Task[],
   times: Record<string, RecordedTime>,
   calendar: WorkCalendar,
+  calendars: WorkCalendar[],
 ): CPMResult {
   for (const task of tasks) {
     const rec = times[task.id];
@@ -523,5 +528,5 @@ export function applyRecordedTimesToTasks(
     task.time.isNearCritical = undefined;
     task.time.floatPath = undefined;
   }
-  return cpmResultFromRecorded(times, tasks, calendar);
+  return cpmResultFromRecorded(times, tasks, calendar, calendars);
 }

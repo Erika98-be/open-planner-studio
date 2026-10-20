@@ -7,6 +7,7 @@ import { formatInstant, type DateMode } from '@/utils/dateUtils';
 import { drivingPredecessorWalker } from './graphWalk';
 import { projectDurationOf } from './projectDuration';
 import { isElapsedTask, isZeroDurationMilestone, taskDurationUnit } from './duration';
+import { deadlineBound } from './deadlineBound';
 import { isLeafTask } from '@/utils/taskHierarchy';
 import { explainP6CompletedDataDateWindowResolved } from '@/engine/scheduler/p6CompletedTargetWindow';
 import {
@@ -53,9 +54,6 @@ export interface ScheduleAnalysisInput {
   signedFloat: (a: Date, b: Date, eng: CalendarEngine, task?: Task) => number;
   /** Formaatgebonden projectie voor relationship free float; generieke kalenderalgebra blijft fysiek. */
   constraintInstant: (c: TaskConstraint | undefined, eng: CalendarEngine) => Date | null;
-  /** De late-finish-grens van de zachte deadline (`CPMSolver.deadlineBound`), of null. Dezelfde
-   *  definitie als in de backward pass, zodat "deadline gemist" en de speling niet uiteenlopen. */
-  deadlineBound: (task: Task, eng: CalendarEngine) => Date | null;
   snapOnOrAfter: (eng: CalendarEngine, d: Date) => Date;
   snapOnOrBefore: (eng: CalendarEngine, d: Date) => Date;
   modeOf: (eng: CalendarEngine) => DateMode;
@@ -76,7 +74,7 @@ export function computeScheduleResults(input: ScheduleAnalysisInput): CPMResult 
     truncatedLeadIds, hardPinViolatedIds, hammockNoFinishDriverIds,
     projectEngine,
     calendarFor, progressCalendarFor, signedFloat,
-    constraintInstant, deadlineBound, snapOnOrAfter, snapOnOrBefore, modeOf,
+    constraintInstant, snapOnOrAfter, snapOnOrBefore, modeOf,
     backwardFloatTrace, completedPhysicalPoints,
   } = input;
 
@@ -427,10 +425,12 @@ export function computeScheduleResults(input: ScheduleAnalysisInput): CPMResult 
         // start van een urentaak ook zo (`finishFromStart` loopt vanaf het volgende blokbegin). Een
         // DAGtaak op werkblokken blijft bewust bij `snapOnOrBefore`: haar late start leest de solver
         // daar nog als de dag ervóór (speling -1), en de melding moet die speling blijven verklaren.
-        // Een ELAPSEDTIME-taak blijft ook bij `snapOnOrBefore`: zij mag buiten werktijd starten
-        // (di 18:00), en een snap naar het volgende werkmoment (wo 08:00) verborg dan een echte
-        // schending. Een eindbeperking en dag-modus blijven ongewijzigd.
-        const dS = cal.isHourMode && taskDurationUnit(task) === 'hours' && !isElapsedTask(task)
+        // Een ELAPSEDTIME-taak en een nulduurmijlpaal blijven ook bij `snapOnOrBefore`: zij mogen
+        // buiten werktijd liggen (di 18:00), en een snap naar het volgende werkmoment (wo 08:00)
+        // verborg dan een echte schending (review PR #402, ronde 1 en 2). Een eindbeperking en
+        // dag-modus blijven ongewijzigd.
+        const dS = cal.isHourMode && taskDurationUnit(task) === 'hours'
+          && !isElapsedTask(task) && !isZeroDurationMilestone(task)
           ? snapOnOrAfter(cal, cd)
           : dW;
         const ct = cc.type;
@@ -439,7 +439,7 @@ export function computeScheduleResults(input: ScheduleAnalysisInput): CPMResult 
           if (!violatedConstraintTaskIds.includes(taskId)) violatedConstraintTaskIds.push(taskId);
         }
       }
-      const dlW = deadlineBound(task, cal);
+      const dlW = deadlineBound(task.deadline, cal);
       if (dlW && early.ef > dlW) missedDeadlineTaskIds.push(taskId);
     }
 

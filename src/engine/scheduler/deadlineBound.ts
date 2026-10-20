@@ -8,7 +8,9 @@ const MS_PER_MIN = 60_000;
  * zijn. Null zonder (geldige) deadline. Eén definitie voor de backward pass
  * (`CPMSolver.applyBackwardBound`), de melding "deadline gemist" (`scheduleAnalysis`) en de
  * reconstructie uit opgeslagen datums (`recordedDates.cpmResultFromRecorded`), zodat speling en
- * melding in beide modi hetzelfde moment gebruiken.
+ * melding in beide modi hetzelfde moment gebruiken. `eng` is altijd de engine van de TAAKkalender
+ * (`CPMSolver.calendarFor`; in de reconstructie `resolveCalendar` + `engineForTaskCalendar`), niet
+ * die van het project.
  *
  * Dag-modus: de werkdag op of vóór de datum (`prevWorkDay`), zoals altijd. Uur-modus (knownbugs 119
  * van het ontwerp "alleen uren"): een datum zonder tijd is het EINDE van die werkdag — het einde van

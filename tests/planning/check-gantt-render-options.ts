@@ -551,7 +551,7 @@ eq('28 geen CPM: geen missedDeadlineTaskIds', optsNoCpm.missedDeadlineTaskIds, u
 // canvasbewerking. Onbekend ⇒ `undefined` ⇒ neutraal doorgetrokken; de overige lijsten blijven.
 const recordedRecon = cpmResultFromRecorded(
   { [idA]: buildRecordedTime({ start: '2027-03-01', finish: '2027-03-05' })! },
-  S().tasks, calendar,
+  S().tasks, calendar, [],
 );
 const optsRecorded = buildGanttRenderOptions({ ...baseInput, cpmResult: recordedRecon });
 eq('28b opgeslagen datums: geen driving-informatie ⇒ drivingSequenceIds undefined', optsRecorded.drivingSequenceIds, undefined);
