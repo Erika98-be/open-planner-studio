@@ -269,7 +269,8 @@ test('kalendervenster: netto-uren per dag toont de werktijd van de blokken, live
   async ({ page, ops: _ops }) => {
     // Besluit eigenaar 2026-10-15 (optie 1): ma–vr 08:00–18:00 (10 klokuren) met day_hr_cnt 8. Het veld toont
     // 10; het is de enige plek met dat getal (de regel "Derived hours/day" in het blok Werktijden is weg). De
-    // opgeslagen 8 (P6-omrekenfactor) toont het venster niet, maar blijft bewaard.
+    // opgeslagen 8 (P6-omrekenfactor) staat niet in het veld, maar blijft bewaard. Sinds besluit 2026-10-20 (punt 8,
+    // optie 2) noemt een oranje blok onder het veld hem: `calendar-file-hours-notice.spec.ts`.
     await openXer(page, xer('Dagploeg 10 u', ON_MA_VR(['08:00', '18:00']), 8));
     await expect.poll(() => calendarState(page).then((s) => [s.workDays, s.hoursPerDay])).toEqual([[1, 2, 3, 4, 5], 8]);
 
