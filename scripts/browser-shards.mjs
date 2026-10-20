@@ -14,8 +14,9 @@
 // `playwright test --list` vindt, en dat geen spec in twee shards zit.
 //
 //   node scripts/browser-shards.mjs 4          # toon de indeling over 4 shards met geschatte duur
+//   node scripts/browser-shards.mjs --update "CI-run <id>" shard-*.log   # duren uit de joblogs van een run
 //   node scripts/run-browser-tests.mjs --duration-shard=2/4   # draai shard 2 van 4 (zo doet CI het)
-import { readdirSync, readFileSync } from 'node:fs';
+import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import process from 'node:process';
@@ -90,8 +91,50 @@ export function shardFiles(root, current, total) {
   return assignShards(listSpecFiles(root), readDurations(root), total)[current - 1].files;
 }
 
+/**
+ * Seconden per spec uit de log van een CI-browserjob (GitHub-tijdstempel vóór elke regel, Playwrights
+ * `line`-reporter): per test de tijd tot de start van de volgende test, de laatste tot de regel
+ * "N passed". Opgeteld per spec. Dezelfde maat als de audit gebruikte (startvensters).
+ */
+export function durationsFromJobLog(text) {
+  const starts = [];
+  let end = null;
+  for (const line of text.split('\n')) {
+    const start = /^(\S+Z) \[\d+\/\d+\] \[[^\]]+\] › tests\/browser\/([^:]+):/.exec(line);
+    if (start) starts.push({ at: Date.parse(start[1]), spec: start[2] });
+    const passed = /^(\S+Z)\s+\d+ passed/.exec(line);
+    if (passed) end = Date.parse(passed[1]);
+  }
+  const seconds = {};
+  starts.forEach(({ at, spec }, i) => {
+    const next = i + 1 < starts.length ? starts[i + 1].at : end;
+    if (next !== null) seconds[spec] = (seconds[spec] ?? 0) + (next - at) / 1000;
+  });
+  return seconds;
+}
+
 const isCli = Boolean(process.argv[1]) && resolve(process.argv[1]) === fileURLToPath(import.meta.url);
-if (isCli) {
+if (isCli && process.argv[2] === '--update') {
+  // node scripts/browser-shards.mjs --update <bron> <joblog>...  (de logs van ALLE shards van één groene run,
+  // bv. `gh api repos/<repo>/actions/jobs/<id>/logs > shard-1.log`). Vervangt de duren in het bestand.
+  const root = resolve(fileURLToPath(import.meta.url), '..', '..');
+  const [source, ...logs] = process.argv.slice(3);
+  if (!source || logs.length === 0) {
+    console.error('Gebruik: node scripts/browser-shards.mjs --update <bron, bv. "CI-run 123"> <joblog>...');
+    process.exit(2);
+  }
+  const seconds = {};
+  for (const log of logs) Object.assign(seconds, durationsFromJobLog(readFileSync(log, 'utf8')));
+  const existing = listSpecFiles(root).map((f) => f.slice(SPEC_DIR.length + 1));
+  const missing = existing.filter((spec) => !(spec in seconds));
+  const rounded = Object.fromEntries(Object.keys(seconds).filter((spec) => existing.includes(spec)).sort()
+    .map((spec) => [spec, Math.round(seconds[spec] * 10) / 10]));
+  const file = join(root, DURATIONS_FILE);
+  const current = JSON.parse(readFileSync(file, 'utf8'));
+  writeFileSync(file, `${JSON.stringify({ ...current, _bron: source, seconds: rounded }, null, 2)}\n`);
+  console.log(`${Object.keys(rounded).length} specs bijgewerkt uit ${logs.length} log(s)`
+    + `${missing.length ? `; zonder meting (krijgen de mediaan): ${missing.join(', ')}` : ''}`);
+} else if (isCli) {
   const root = resolve(fileURLToPath(import.meta.url), '..', '..');
   const total = Number(process.argv[2] ?? 4);
   const shards = assignShards(listSpecFiles(root), readDurations(root), total);

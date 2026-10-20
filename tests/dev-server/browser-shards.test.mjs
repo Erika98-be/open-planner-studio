@@ -7,7 +7,7 @@ import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import {
-  SPEC_DIR, assignShards, listSpecFiles, parseShard, readDurations, shardFiles,
+  SPEC_DIR, assignShards, durationsFromJobLog, listSpecFiles, parseShard, readDurations, shardFiles,
 } from '../../scripts/browser-shards.mjs';
 import { extractDurationShard, runBrowserTests } from '../../scripts/run-browser-tests.mjs';
 
@@ -44,6 +44,17 @@ test('assignShards verdeelt elke spec precies één keer, deterministisch, langs
   // f heeft geen meting en krijgt de mediaan van de bekende (gesorteerd 1,1,8,9,10 ⇒ 8).
   assert.deepEqual(shards.map((s) => s.seconds), [11, 10, 16]);
   assert.deepEqual(shards.map((s) => s.files.length), [2, 2, 2]);
+});
+
+test('durationsFromJobLog telt per spec de vensters tot de volgende start, de laatste tot "passed"', () => {
+  const log = [
+    '2026-10-20T09:00:00.000Z Running 3 tests using 1 worker',
+    '2026-10-20T09:00:01.000Z [1/3] [chromium] › tests/browser/a.spec.ts:3:1 › eerste',
+    '2026-10-20T09:00:04.500Z [2/3] [chromium] › tests/browser/sub/b.spec.ts:9:1 › tweede',
+    '2026-10-20T09:00:06.000Z [3/3] [chromium] › tests/browser/a.spec.ts:20:1 › derde',
+    '2026-10-20T09:00:10.000Z   3 passed (9.0s)',
+  ].join('\n');
+  assert.deepEqual(durationsFromJobLog(log), { 'a.spec.ts': 7.5, 'sub/b.spec.ts': 1.5 });
 });
 
 test('parseShard en extractDurationShard: geldige en ongeldige vormen', () => {

@@ -73,8 +73,9 @@ waardoor alle lange tutorialspecs samen in de laatste shard vielen. Elke spec ko
 shard, ook zonder meting (dan de mediaan); `tests/dev-server/browser-shards.test.mjs` bewaakt dat de
 shards samen exact de specs zijn die `playwright test --list` vindt. `node scripts/browser-shards.mjs 4`
 toont de indeling. Een nieuwe spec hoeft niet in `spec-durations.json`; een verwijderde of hernoemde
-spec moet eruit (die test faalt anders). Bijwerken van de duren: neem per spec de som van de
-testduren uit een groene CI-run (de Playwright-uitvoer per shard) en zet die in `seconds`.
+spec moet eruit (die test faalt anders). Bijwerken van de duren: haal de joblogs van alle vier
+shards van één groene run op (`gh api repos/<repo>/actions/jobs/<job-id>/logs > shard-1.log`, …) en
+draai `node scripts/browser-shards.mjs --update "CI-run <id>" shard-*.log`.
 Lokaal draait `node scripts/run-browser-tests.mjs --duration-shard=2/4` dezelfde shard als CI.
 
 ## X11/XWayland-browserharnas voor XER (`npm run test:browser:x11`)
