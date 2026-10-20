@@ -63,7 +63,7 @@ import type {
 import type { WorkCalendar } from '@/types/calendar';
 import { effHoursPerDay, hourTaskScheduleDuration } from '@/utils/taskDuration';
 import type { Resource, ResourceType } from '@/types/resource';
-import type { ImportLabels, ImportResult } from '@/services/importTypes';
+import { hasMsProjectImportLoss, type ImportLabels, type ImportResult } from '@/services/importTypes';
 import { generateId } from '@/utils/id';
 import { formatDate, formatInstant, parseInstant, localTodayIso } from '@/utils/dateUtils';
 import { normalizeImportedProgress, deriveImportedWorkRules, reconstructResourceIds } from '@/services/importNormalize';
@@ -88,6 +88,7 @@ import {
 import { readCalendars, promoteCalendarsForHourMode, type CalendarReadResult } from './mppCalendars';
 import { MAX_VAR_TEXT_BYTES, clampRemainingDurationTenths, clampManualDurationTenths, clampLevelingDelayTenths } from './limits';
 import { readRelations, readResources, readAssignments, readAssignmentTimephasedRaw } from './mppEntities';
+import { scanMppImportLoss } from './mppImportLoss';
 import { builtInProfile } from '@/engine/scheduler/conventions/registry';
 import { buildRecordedTime, leafRecordedTimes, recordedFloatDays, type RecordedTime } from '@/engine/scheduler/recordedDates';
 import {
@@ -1661,6 +1662,13 @@ export function readMPP(bytes: Uint8Array, labels?: ImportLabels): ImportResult 
 
   // Pas ná beide mutatielussen staan `splitGaps` en de timephased-velden op de taak.
   const scheduleNotes = countScheduleNotes(tasks);
+  // Importverslag (issue #391): wat deze lezer niet overneemt (`mppImportLoss.ts`).
+  const msProjectReport = scanMppImportLoss({
+    cfb, taskFieldMap, resourceFieldMap,
+    taskUniqueIds: new Set(taskIdByUniqueId.keys()),
+    resourceUniqueIds: new Set(resourceIdByUniqueId.keys()),
+    criticalSlackLimitDays: criticalSlackLimitDaysOf(projectProps),
+  });
 
   return {
     project,
@@ -1675,6 +1683,7 @@ export function readMPP(bytes: Uint8Array, labels?: ImportLabels): ImportResult 
     // Alleen gezet als ≥1 taak een signaal draagt, zodat `fileSlice.ts` met
     // `parsed.sourceScheduleNotes?.total` volstaat.
     ...(scheduleNotes.total > 0 ? { sourceScheduleNotes: scheduleNotes } : {}),
+    ...(hasMsProjectImportLoss(msProjectReport) ? { msProjectReport } : {}),
     // Alleen bladtaken — zie `leafRecordedTimes`.
     ...(() => {
       const leafTimes = leafRecordedTimes(tasks, recordedTimes);

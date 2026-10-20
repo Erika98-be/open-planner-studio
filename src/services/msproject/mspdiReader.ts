@@ -12,7 +12,8 @@ import { normalizeImportedProgress, deriveImportedWorkRules, rebuildImportedHier
 import { emptyMissingScheduleDates, importDateTime, isoDatePrefixOrToday, parseImportedInstant, resolveMissingScheduleDates } from '@/services/importDates';
 import { tenthsOfMinutesToDays } from '@/services/importDurations';
 import { descendantText, toInt, toFloat } from '@/services/xmlDom';
-import type { ImportResult } from '@/services/importTypes';
+import { hasMsProjectImportLoss, type ImportResult } from '@/services/importTypes';
+import { scanMspdiImportLoss } from '@/services/msproject/mspdiImportLoss';
 import type { CustomTaskType } from '@/types/taskType';
 import {
   MSP_LINK_TYPE_CODE,
@@ -734,6 +735,13 @@ export function readMSPDI(content: string): ImportResult {
   normalizeImportedProgress(tasks, project.statusDate);
   deriveImportedWorkRules(tasks); // werkregel uit <Type>/<EffortDriven>
 
+  // Importverslag (issue #391): wat deze lezer niet overneemt. De OPS-transportvelden die hierboven
+  // zijn gebruikt, tellen niet als eigen veld.
+  const msProjectReport = scanMspdiImportLoss(root, (fieldId, value) =>
+    (durationUnitMarkerFieldId !== null && fieldId === durationUnitMarkerFieldId)
+    || (opsMilestoneKindMarkerEnabled && fieldId === OPS_MILESTONE_KIND_FIELD_ID)
+    || (fieldId === OPS_CUSTOM_TASK_TYPE_FIELD_ID && decodeCustomTaskType(value) !== undefined));
+
   return {
     project,
     calendar,
@@ -742,6 +750,7 @@ export function readMSPDI(content: string): ImportResult {
     resources,
     assignments,
     resourceCalendars,
+    ...(hasMsProjectImportLoss(msProjectReport) ? { msProjectReport } : {}),
     customTaskTypes: [...customTaskTypes.values()],
     baselines,
     activeBaselineId,
