@@ -1827,3 +1827,5 @@ Testversie (release-check, poort 3049) is NIET bijgewerkt met de PR's van vandaa
   getalinvoer (`decimalInput.ts`), `reportNumber.ts`, tabelkolommen, gidsen; conflicten met main (gidsen, i18n) en
   botsing met de hernoeming #376. ⇒ integratie-PR op eigen branch `claude/integratie-toewijzingen` (worker Opus 5.5),
   daarna review (GPT-6.1-Sol) + CI, dan merge; #369/#389 daarna sluiten als opgenomen.
+- **#362 gemerged in main (0c8d1aedc)** — `gh pr merge --admin --match-head-commit 8a3cdbdf1` na review JA, CI 16/16 op
+  8a3cdbdf1, hercheck eigenaar "goed", main CI b02d2958b groen. Override gebruikt.
