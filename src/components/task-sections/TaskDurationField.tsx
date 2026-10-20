@@ -14,18 +14,20 @@ import {
   type ParsedTaskDuration,
 } from '@/utils/taskDurationInput';
 import { hasConcreteWorkBlocks } from '@/services/subdayIo';
-import { hourTaskScheduleDuration } from '@/utils/taskDuration';
+import { durationSuffixesFrom, hourTaskScheduleDuration } from '@/utils/taskDuration';
+import type { DurationSuffixes } from '@/utils/durationFormat';
 import { isZeroDurationMilestone } from '@/engine/scheduler/duration';
 import type { WorkCalendar } from '@/types/calendar';
 import type { Task, TaskDurationUnit } from '@/types/task';
 
-/** De duur zoals het duurveld hem noemt, bijv. `12h` of `12h 30m`; voor de niet-exactmelding. */
-function durationText(task: Task): string {
-  if (task.time.durationUnit === 'days') return `${task.time.scheduleDuration}d`;
+/** De duur zoals het duurveld hem noemt, bijv. `12u` of `12u 30m` (nl), `12h` (en); voor de
+ *  niet-exactmelding. De afkortingen komen uit de taal (eigenaarsbesluit 2026-10-20). */
+function durationText(task: Task, suffixes: DurationSuffixes): string {
+  if (task.time.durationUnit === 'days') return `${task.time.scheduleDuration}${suffixes.day}`;
   const minutes = task.time.durationMinutes ?? 0;
   const hours = Math.floor(minutes / 60);
   const rest = minutes % 60;
-  return rest === 0 ? `${hours}h` : `${hours}h ${rest}m`;
+  return rest === 0 ? `${hours}${suffixes.hour}` : `${hours}${suffixes.hour} ${rest}${suffixes.minute}`;
 }
 
 export function TaskDurationField({ task, calendar, onChange }: {
@@ -34,6 +36,7 @@ export function TaskDurationField({ task, calendar, onChange }: {
   onChange: (patch: Partial<Task>) => void;
 }) {
   const { t } = useTranslation('task');
+  const { t: tCommon } = useTranslation('common');
   const enableHourPlanning = useAppStore((s) => s.ui.enableHourPlanning);
   const allowMixedDayHour = useAppStore((s) => s.ui.allowMixedDayHour);
   const seed = formatTaskDurationInput(task);
@@ -122,7 +125,7 @@ export function TaskDurationField({ task, calendar, onChange }: {
     const next = convertTaskDurationUnit(task, target, calendar);
     if (!next) {
       setMessage(null);
-      setNotExact(durationText(task));
+      setNotExact(durationText(task, durationSuffixesFrom(tCommon)));
       return;
     }
     apply(next);

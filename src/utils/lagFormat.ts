@@ -15,18 +15,31 @@ type LagFields = Pick<Sequence, 'lagDays' | 'lagUnit' | 'lagPercent' | 'lagMinut
  * lagMinutes → lagDays. Een relatie met een gezette `lagMinutes` toont dus de UREN-vorm, nooit
  * een van `lagDays` afgeleide dag-vorm (die voor een minuut-lag toch altijd 0 is, zie
  * `parseLagInput`/`mspdiReader`).
+ *
+ * `hourSuffix` (eigenaarsbesluit 2026-10-20): de schermen geven de uur-afkorting van de app-taal door
+ * (`parseableHourSuffix`: "+2u" in nl, "+2h" in en). Zonder argument blijft het `u`: de taalneutrale
+ * vorm voor bestanden (CSV) en de engine-rapporten.
  */
-export function formatLagShort(seq: LagFields): string {
+export function formatLagShort(seq: LagFields, hourSuffix: 'u' | 'h' = 'u'): string {
   const e = seq.lagUnit === 'ELAPSEDTIME' ? 'e' : '';
   if (isFiniteNumber(seq.lagPercent)) {
     return `${seq.lagPercent >= 0 ? '+' : ''}${seq.lagPercent}${e}%`;
   }
   if (isFiniteNumber(seq.lagMinutes) && seq.lagMinutes !== 0) {
     const hours = seq.lagMinutes / 60;
-    return `${hours >= 0 ? '+' : ''}${trimNumber(hours, 2)}${e}u`;
+    return `${hours >= 0 ? '+' : ''}${trimNumber(hours, 2)}${e}${hourSuffix}`;
   }
   if (!seq.lagDays) return '';
   return `${seq.lagDays > 0 ? '+' : ''}${seq.lagDays}${e}d`;
+}
+
+/**
+ * Zet de uur-eenheid van een taalneutrale lagtekst ("+2u", "+3eu" uit `formatLagShort` zonder
+ * argument, bijv. in het gezondheidsrapport) om naar de afkorting van de app-taal. Andere lagteksten
+ * ("+2d", "+50%") blijven gelijk.
+ */
+export function localizeLagHourSuffix(lag: string, hourSuffix: 'u' | 'h'): string {
+  return lag.replace(/^([+-]?\d+(?:[.,]\d+)?e?)u$/, `$1${hourSuffix}`);
 }
 
 /**
@@ -40,9 +53,9 @@ const LAG_INPUT = new RegExp(`^([+-]?\\d+(?:[.,]\\d+)?)(${LAG_UNIT_SUFFIXES})?$`
 /**
  * Parse gebruikersinvoer naar lag-velden. Accepteert "2", "+2", "-1", "2d", "3ed", "50%",
  * "-25e%" (hoofdletterongevoelig, spaties genegeerd), én uren: "2u"/"2h" (werktijd-uren,
- * minuut-precies) en "3eu"/"3eh" (elapsed uren — kalonderuren, 24/7). `u` is de weergave-vorm
- * (taalonafhankelijk, net als `d`); `h` wordt ALLEEN als invoer geaccepteerd, symmetrisch met
- * `parseDuration` in `durationFormat.ts` (invoer blijft taalonafhankelijk d/u/h/m).
+ * minuut-precies) en "3eu"/"3eh" (elapsed uren — kalonderuren, 24/7). De weergave volgt de app-taal
+ * (`u` in nl, `h` in en, zie `formatLagShort`); de invoer blijft taalonafhankelijk d/u/h/m, symmetrisch
+ * met `parseDuration` in `durationFormat.ts`.
  *
  * Kale getallen = werkdagen. Geeft null terug bij onparseerbare invoer; lege invoer = lag 0
  * (werkdagen). Elke branche zet de NIET-gebruikte lag-velden expliciet op `undefined`/0 —
