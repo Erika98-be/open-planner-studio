@@ -81,12 +81,23 @@ function main(argv) {
     const inCi = new Set([...yaml.matchAll(/^\s*-?\s*part:\s*['"]?([\w-]+)['"]?\s*$/gm)].map(m => m[1]));
     const missing = Object.keys(parts).filter(p => !inCi.has(p));
     const extra = [...inCi].filter(p => !(p in parts));
-    if (missing.length || extra.length) {
+    // De browsershards (`shard: k/n`) moeten samen 1..n zijn, elk één keer, met één n: een vergeten of
+    // dubbele shard laat anders stil een deel van de specs ongetest (testaudit 2026-10-20, rapport E).
+    const shards = [...yaml.matchAll(/^\s*shard:\s*['"]?(\d+)\/(\d+)['"]?\s*$/gm)].map(m => [Number(m[1]), Number(m[2])]);
+    const totals = [...new Set(shards.map(([, n]) => n))];
+    const shardProblem = shards.length === 0 ? null
+      : totals.length !== 1 ? `verschillende totalen (${totals.join(', ')})`
+      : [...shards.map(([k]) => k)].sort((a, b) => a - b).join(',') !== Array.from({ length: totals[0] }, (_, i) => i + 1).join(',')
+        ? `shards ${shards.map(([k, n]) => `${k}/${n}`).join(', ')} zijn niet precies 1..${totals[0]}`
+        : null;
+    if (missing.length || extra.length || shardProblem) {
       if (missing.length) console.log(`XX  ci.yml draait deel/delen niet: ${missing.join(', ')} — voeg een matrixregel \`part: <naam>\` toe`);
       if (extra.length) console.log(`XX  ci.yml noemt onbekende delen: ${extra.join(', ')} (zie --list)`);
+      if (shardProblem) console.log(`XX  ci.yml browsershards: ${shardProblem}`);
       return 1;
     }
-    console.log(`OK  verify-parts: ci.yml draait alle ${Object.keys(parts).length} delen (${Object.keys(parts).join(', ')})`);
+    console.log(`OK  verify-parts: ci.yml draait alle ${Object.keys(parts).length} delen (${Object.keys(parts).join(', ')})`
+      + `${shards.length ? `, browser in ${shards.length} shards` : ''}`);
     return 0;
   }
 
