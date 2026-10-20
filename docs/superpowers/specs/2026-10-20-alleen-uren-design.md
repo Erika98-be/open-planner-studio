@@ -886,7 +886,7 @@ Twee metingen met dezelfde dagcases. Beide zetten elke dagcase vóór het rekene
   na te bouwen.
 - **Nulmeting** zonder vlag: groen.
 - Varianten van M1: statusdatum als einde van de dag ⇒ `cases-progress` 17 rood in plaats van 3; mijlpalen als
-  dagtaak laten ⇒ dezelfde telling.
+  dagtaak laten ⇒ dezelfde telling in de 9 batterijen waarin dat gemeten is.
 
 ### 10.2 Uitkomst
 
