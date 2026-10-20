@@ -39,7 +39,7 @@ function nativeDuration(task: Task): number {
     : task.time.scheduleDuration;
 }
 import type { Sequence } from '@/types/sequence';
-import type { WorkCalendar } from '@/types/calendar';
+import { isHourModeCalendar, type WorkCalendar } from '@/types/calendar';
 import type { Baseline } from '@/types/baseline';
 import { computeHistogramReport, histogramWindows } from '@/engine/scheduler/ResourceLoad';
 import { computeVariance, type VarianceRow } from '@/engine/variance';
@@ -204,7 +204,7 @@ function calendarSummary(cal: WorkCalendar) {
     workDays: cal.workDays,
     hoursPerDay: cal.hoursPerDay,
     holidayRanges: cal.holidays.length,
-    isHourCalendar: !!cal.workTime,
+    isHourCalendar: isHourModeCalendar(cal),
   };
 }
 

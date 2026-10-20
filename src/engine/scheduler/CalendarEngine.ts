@@ -1,4 +1,4 @@
-import { holidayEndDate, WorkCalendar, type WorkTimeBands } from '@/types/calendar';
+import { holidayEndDate, isHourModeCalendar, WorkCalendar, type WorkTimeBands } from '@/types/calendar';
 import { parseDate, isoDayOfWeek, addCalendarDays, formatDate, diffCalendarDays, MS_PER_DAY, utcDayIndex } from '@/utils/dateUtils';
 
 /** Eén gematerialiseerd werk-interval, absolute UTC-ms, half-open `[start, end)`. */
@@ -120,7 +120,7 @@ export class CalendarEngine {
       .sort((a, b) => a - b);
     // ── Modus-detectie + uur-setup. Afwezige `workTime` ⇒ dag-modus:
     //    dan wordt niets hieronder geraakt en draaien de bevroren dag-lussen ongewijzigd.
-    this.mode = calendar.workTime ? 'hour' : 'day';
+    this.mode = isHourModeCalendar(calendar) ? 'hour' : 'day';
     if (this.mode === 'hour') {
       this.derivedHpd = this.computeDerivedHoursPerDay();
       this.standardWorkdayBands = this.computeStandardWorkdayBands();

@@ -96,7 +96,7 @@ en noem het in je rapport of PR-tekst.
 13. **Tabelkolom *Kleur*** wordt in IFC bewaard, maar geen balk of rapport gebruikt hem. — B
 14. **Ctrl+M en rechtsklik *Mijlpaal toevoegen*** maken een mijlpaal van type Keuring. Ctrl+M zet hem
     bovendien altijd onderaan en opent het paneel niet (gaat buiten `taskInsertActions` om). Het lint geeft
-    een mijlpaal een ander type: *Startmijlpaal* en *Eindmijlpaal* zetten `USERDEFINED` (taaktype *Overig*),
+    een mijlpaal een ander type: *Startmijlpaal* en *Eindmijlpaal* zetten `USERDEFINED` (werksoort *Overig*),
     en `check-tutorial-project.ts` legt dat laatste vast als bedoeld. Het type hangt dus van de route af
     (`shortcutRegistry.ts:376-380`, `GanttCanvas.tsx:403,1020`, `FullTaskGrid.tsx:799,1313`,
     `ribbonWidgets.tsx:188`). — B

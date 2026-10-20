@@ -13,7 +13,7 @@ All key combinations of the app, grouped as in the *Keyboard Shortcuts* window. 
 **When a key does not work.** Every entry names its restrictions. Three rules apply almost everywhere:
 
 - In an input field, a drop-down list or a text box the app does not intercept keys, so you can simply type. Exceptions: F5, Ctrl+S, F11 and Esc during the presentation also work in a field. If the focus is on a closed drop-down list, the keys with Ctrl also work, for example Ctrl+Z after a choice (not Ctrl+Delete and Ctrl+Backspace). That does not hold in an open list or in a dialog. In the built app (desktop and the web version on the site) that also holds for Ctrl+Shift+S, Ctrl+O and Ctrl+N.
-- While a dialog or another window is open, the keys marked *Not in a dialog* below do not work. That also holds for presentation mode, the tour, the welcome dialog and the questions that wait for an answer, such as the consent when installing an extension.
+- While a dialog or another window is open, the keys marked *Not in a dialog* below do not work. That also holds for the tour, the welcome dialog and the questions that wait for an answer, such as the question whether to save your changes and the consent when installing an extension. Most of these keys do not work in presentation mode either. Exception: the edit keys Ctrl+C, Ctrl+V, Ctrl+Z, Ctrl+Y and Delete/Backspace do work during the presentation.
 - Document switches (Ctrl+1 to 9, Ctrl+N, Ctrl+O) also do not work while *File › Project settings* holds changes that you have not yet confirmed with *Apply*. Discard or apply them first.
 
 ## File
@@ -32,15 +32,15 @@ The built app (desktop and the web version on the site) also blocks a number of 
 
 ## Edit
 
-**Ctrl+C** — *Copy*: copies the selected tasks. Only with a selection. In the task grid Ctrl+C copies the selected cells; the grid handles that itself.
+**Ctrl+C** — *Copy*: copies the selected tasks. Only with a selection. Not in a dialog. Not in *File*, not on the *Report* and *IFC* tabs and not while the full resource panel is open. In the task grid Ctrl+C copies the selected cells; the grid handles that itself.
 
-**Ctrl+V** — *Paste*: pastes copied tasks. In the task grid it pastes the cells.
+**Ctrl+V** — *Paste*: pastes copied tasks. Not in a dialog. Not in *File*, not on the *Report* and *IFC* tabs and not while the full resource panel is open, because the task list is not in view there. In the task grid it pastes the cells.
 
-**Ctrl+Z** — *Undo*.
+**Ctrl+Z** — *Undo*. Not in a dialog: close the window first.
 
-**Ctrl+Y** or **Ctrl+Shift+Z** — *Redo*: repeats what you undid.
+**Ctrl+Y** or **Ctrl+Shift+Z** — *Redo*: repeats what you undid. Not in a dialog.
 
-**Delete** or **Backspace** — *Delete*: deletes the selected tasks. Only with a selection. In a cell of the task grid, Delete and Backspace only clear the cell content (see *Table*).
+**Delete** or **Backspace** — *Delete*: deletes the selected tasks. Only with a selection. Not in a dialog. Not in *File*, not on the *Report* and *IFC* tabs and not while the full resource panel is open, because the task list is not in view there. In a cell of the task grid, Delete and Backspace only clear the cell content (see *Table*).
 
 **F2** — *Edit...*: opens the task dialog for the first selected task. Only with a selection. Not in a dialog. In a cell of the task grid, F2 starts editing the cell.
 

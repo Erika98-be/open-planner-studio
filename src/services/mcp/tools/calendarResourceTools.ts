@@ -40,7 +40,7 @@ import { diffDays } from '@/utils/dateUtils';
 import { hoursPerDayForBlocks, workDaysFromBands, workDaysSetPatch } from '@/services/subdayIo';
 import { effHoursPerDay } from '@/utils/taskDuration';
 import type { GeneratorCountry, HolidayGenParams } from '@/engine/calendar/generateCalendarHolidays';
-import type { CalendarGeneration, Holiday, WorkCalendar, WorkingException, WorkTimeBands } from '@/types/calendar';
+import { isHourModeCalendar, type CalendarGeneration, type Holiday, type WorkCalendar, type WorkingException, type WorkTimeBands } from '@/types/calendar';
 import { isResourceCurve, isValidUnits, RESOURCE_CURVES, type ResourceCurve } from '@/types/resource';
 import type { Project } from '@/types/project';
 import type { LevelingOptions, LevelingResult } from '@/engine/scheduler/ResourceLeveler';
@@ -767,7 +767,7 @@ function calendarFieldPatch(item: CalendarItem, existing: CalendarBase): Partial
 // worden gemeld; `durationUnit`, `scheduleDuration` en `durationMinutes` blijven onaangeroerd.
 
 function calendarMode(cal: Pick<WorkCalendar, 'workTime'>): 'hour' | 'day' {
-  return cal.workTime ? 'hour' : 'day';
+  return isHourModeCalendar(cal) ? 'hour' : 'day';
 }
 
 /**
@@ -1502,7 +1502,7 @@ const manageAssignments: BatchStepTool = {
     '`remainingWorkMinutes`), `update` (`assignmentId` + `unitsPerDay`, `curve` and/or ' +
     '`remainingWorkMinutes`), `move` (`assignmentId` to another `taskId`) or `remove` (`assignmentId`). The ' +
     'ids and field names are exactly those of the read tools (get_task/list_resources), so you can put them ' +
-    'straight back. WORK RULE (task type, `workRule` on the task — see planner_update_tasks): work = ' +
+    'straight back. TASK TYPE (`workRule` on the task — see planner_update_tasks): work = ' +
     'remaining duration × units, and the rule determines which corner moves along. Under ' +
     'FIXED_WORK/FIXED_RATE a `unitsPerDay` change or adding/removing a resource therefore changes the TASK ' +
     'DURATION; `remainingWorkMinutes` (remaining work in work minutes, > 0) lengthens/shortens the task ' +
@@ -1542,7 +1542,7 @@ const manageAssignments: BatchStepTool = {
               exclusiveMinimum: 0,
               description:
                 'For `add` or `update`: REMAINING work of this assignment in WORK minutes (8 hours = 480). ' +
-                'The work rule of the task determines what moves along: the duration (FIXED_WORK/FIXED_RATE) ' +
+                'The task type of the task (`workRule`) determines what moves along: the duration (FIXED_WORK/FIXED_RATE) ' +
                 'or the units (FIXED_DURATION_*). Only on an ordinary leaf task on working time; material ' +
                 'does not count towards the duration.',
             },
@@ -2066,7 +2066,7 @@ const updateProject: BatchStepTool = {
         type: ['string', 'null'],
         enum: [...WORK_RULES, null],
         description:
-          'Project default work rule (task type) for tasks without their own `workRule` — see ' +
+          'Project default task type (`workRule`) for tasks without their own `workRule` — see ' +
           'planner_update_tasks `fields.workRule` for the four values. null = the default ' +
           'FIXED_DURATION_RATE. Switching changes no number.',
       },

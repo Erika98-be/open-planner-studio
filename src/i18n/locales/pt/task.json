@@ -411,10 +411,6 @@
     "timephasedActive": "Segue a distribuição de horas do MS Project",
     "timephasedLost": "Distribuição de horas do MS Project não é mais aplicada após a edição — a distribuição original permanece guardada no ficheiro",
     "timephasedContoured": "Distribuição de horas própria",
-    "recordedDatesActive": "Mostra as datas próprias registadas pelo Primavera para esta tarefa",
-    "recordedDatesActiveNeutral": "Mostra as datas tal como registadas no ficheiro para esta tarefa",
-    "recordedDatesDeviates": "Diverge das datas registadas",
-    "recordedDatesPartlyUnrecorded": "Registo parcialmente incompleto — ver as colunas de fim tardio/folga",
     "completion": "Progresso (%)",
     "progress": {
       "actualStart": "Início real",
@@ -463,7 +459,7 @@
       "work": "Trabalho (rest.)",
       "workHint": "Trabalho restante em horas; a regra de trabalho decide se a duração ou as unidades se movem.",
       "workDeviates": "Difere de unidades × duração",
-      "workDeviatesHint": "O trabalho guardado {{stored}} h difere de unidades × duração restante ({{derived}} h). O histograma segue o trabalho guardado ao longo de toda a tarefa; as unidades ficam como o ficheiro as deu.",
+      "workDeviatesHint": "O trabalho guardado {{stored}} h difere de unidades × duração restante ({{derived}} h). O histograma segue o trabalho guardado ao longo de toda a tarefa; as unidades ficam como o ficheiro as deu. Se alterar a duração, a aplicação recalcula-o.",
       "locked": "Protegido pela regra de trabalho {{rule}}"
     },
     "notes": {

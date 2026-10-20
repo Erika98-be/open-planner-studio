@@ -51,7 +51,7 @@ Right-click the task and choose *Add subtask*. The new task goes at the bottom o
 The three kinds differ like this:
 
 - A *Start milestone* belongs at the start of the day, a *Finish milestone* at the end of the day. In the Gantt the diamond sits at the left or right of the day column respectively. It matters for the successor too. Say a milestone is on Tuesday 29 September 2026 and a task follows it with a Finish-Start relation: after a start milestone that task begins on that same Tuesday, after a finish milestone on Wednesday 30 September.
-- An *Inspection point (mandatory)* is a finish milestone with the task type *Inspection* and the tick *Mandatory (contractual)*.
+- An *Inspection point (mandatory)* is a finish milestone with the work category *Inspection* and the tick *Mandatory (contractual)*.
 
 ### Turning an existing task into a milestone
 
@@ -62,7 +62,7 @@ If you turn it off again, it stays an ordinary task with duration 0: enter a dur
 ### Other ways
 
 - Ctrl+M (⌘+M on a Mac) puts a new milestone at the bottom of the list, even if a task is selected. The *Properties* panel does not open.
-- A milestone that you make with Ctrl+M or through the right-click menu gets the task type *Inspection*. A *Start milestone* or *Finish milestone* from *Milestone ▾* gets *Other*. Change the task type in *Properties* if you need to.
+- A milestone that you make with Ctrl+M or through the right-click menu gets the work category *Inspection*. A *Start milestone* or *Finish milestone* from *Milestone ▾* gets *Other*. Change the work category in *Properties* if you need to.
 - *Add milestone* in a task's right-click menu makes the milestone a subtask of that task, not a sibling.
 
 ### Copying a task or a whole branch
@@ -73,7 +73,7 @@ If you turn it off again, it stays an ordinary task with duration 0: enter a dur
 
 The copy has the same name, the same dates and the same progress. It goes in as a sibling of the selected task (with several: the one you clicked first), at the bottom among those siblings. If nothing is selected, it goes at the bottom of the list. The copied tasks are selected afterwards, the WBS codes (each task's number in the tree, such as 1.2; see [Adjusting the structure](docs://howto-structuur-aanpassen)) are determined again and the schedule is out of date.
 
-The clipboard is shared by the whole app, so you can also paste into another document. What does not exist there, such as a task calendar, a custom task type, an activity code or a custom field, the app clears and tells you.
+The clipboard is shared by the whole app, so you can also paste into another document. What does not exist there, such as a task calendar, a custom work category, an activity code or a custom field, the app clears and tells you.
 
 ### Afterwards
 
@@ -83,7 +83,7 @@ A new task does not change the other dates yet. The status bar says *Out of date
 
 **Every new task starts on the project start.** Without relations a task waits for nothing. Add relations, see [Adding relations](docs://howto-relaties-leggen).
 
-**Filtering, grouping or sorting is on.** The order you see is then not the order of the schedule. With a task selected, *Task* and *Milestone ▾* add the new task at the bottom, and the strip *Not available while filtering/grouping/sorting* appears. *Insert above* and *Insert below* are refused, with the same strip. The *Clear* button in the strip removes filter, grouping and sorting in one go. That is not part of *Undo*: Ctrl+Z does not bring them back.
+**Filtering, grouping or sorting is on.** The order you see is then not the order of the schedule. With a task selected, *Task* and *Milestone ▾* add the new task at the bottom. A red notification then says *The new task was added at the end. While filtering, grouping or sorting, the app cannot place it below your selection.* *Insert above* and *Insert below* are refused, with the strip *Not available while filtering/grouping/sorting*. The *Clear* button in the notification or in the strip removes filter, grouping and sorting in one go. That is not part of *Undo*: Ctrl+Z does not bring them back.
 
 **A subtask under a task with resource assignments.** The task becomes a summary task, and a summary task carries no assignments itself. The app moves the assignments to the new subtask and tells you. If that is not possible, for example because you chose *Add milestone* and a milestone cannot carry assignments, the app adds nothing and says why.
 
