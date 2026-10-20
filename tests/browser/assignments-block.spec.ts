@@ -742,3 +742,92 @@ for (const key of ['Control+s', 'F5'] as const) {
     await expect(units).toBeFocused();
   });
 }
+
+/** Eén taak van vier dagen vanaf 7 september, automatisch gepland, taaktype Vast werk, inzet 1,
+ *  Automatisch berekenen aan, document opgeslagen (niet gewijzigd). */
+async function seedFixedWorkAutoCalc(page: Page) {
+  const [taskId] = await seedProject(page, [
+    { name: 'Metselwerk', start: '2026-09-07', finish: '2026-09-10', durationDays: 4 },
+  ]);
+  const asgId = await page.evaluate((id) => {
+    const s = window.__OPS__!.store.getState();
+    const r = s.addResource({ name: 'Metselaar', type: 'LABOR', description: '', maxUnits: 4 });
+    s.assignResource(id, r, 1);
+    s.updateTask(id, { manuallyScheduled: false });
+    s.setUI({ showPropertiesPanel: true, rightPanelCollapsed: false, showTaskTypes: true, rightPanelWidth: 280, autoCalcCPM: true });
+    s.setTaskWorkRule(id, 'FIXED_WORK');
+    s.runCPM();
+    window.__OPS__!.store.setState(st => { st.isDirty = false; });
+    s.selectTask(id);
+    return window.__OPS__!.store.getState().assignments.find(a => a.taskId === id)!.id;
+  }, taskId!);
+  return { taskId: taskId!, asgId };
+}
+
+// Delta-review #401 punt 1: een browsertab sluiten of herladen met de focus nog in het inzetveld.
+// `beforeunload` rondt de open invoer eerst af; het document is dan gewijzigd en de browser vraagt
+// of je wilt vertrekken. Vroeger: geen vraag, en de getypte 3 was weg.
+test('afsluiten met de focus in het inzetveld: de invoer staat in de store en de sluitvraag komt', async ({ page, ops: _ops }) => {
+  const { asgId } = await seedFixedWorkAutoCalc(page);
+  const units = page.locator(`[data-ops-assignment-row="${asgId}"] input`).first();
+  await units.click();
+  await units.press('Control+a');
+  await page.keyboard.type('3');
+  await expect(units).toBeFocused();
+  const dialogs: string[] = [];
+  page.on('dialog', (d) => { dialogs.push(d.type()); void d.dismiss(); });
+  await page.close({ runBeforeUnload: true });
+  await expect.poll(() => dialogs).toEqual(['beforeunload']);
+  expect(page.isClosed()).toBe(false);
+  expect(await page.evaluate((id) => {
+    const s = window.__OPS__!.store.getState();
+    return { units: s.assignments.find(a => a.id === id)!.unitsPerDay, dirty: s.isDirty };
+  }, asgId)).toEqual({ units: 3, dirty: true });
+});
+
+// Delta-review #401 punt 2: MCP-dupliceren terwijl de inzet nog openstaat, met Automatisch berekenen
+// aan. De invoer wordt afgerond (commit) én de eigen rekenblokkade van die bewerking gaat vrij: de
+// kopie rekent door naar einde 8 september, en Ctrl+S slaat dat doorgerekende schema op.
+test('MCP-dupliceren met open inzet en automatisch berekenen: de kopie rekent door, Ctrl+S slaat het nieuwe einde op', async ({ page, ops: _ops }) => {
+  const { taskId, asgId } = await seedFixedWorkAutoCalc(page);
+  const units = page.locator(`[data-ops-assignment-row="${asgId}"] input`).first();
+  await units.click();
+  await units.press('Control+a');
+  await page.keyboard.type('2');
+  await expect(units).toBeFocused();
+  // De handeling van de agent (MCP-handler ⇒ store-actie), terwijl de gebruiker nog in het veld staat.
+  await page.evaluate(() => window.__OPS__!.store.getState().duplicateDocument());
+  await expect(units).toHaveCount(0);
+  const copyState = () => page.evaluate((id) => {
+    const s = window.__OPS__!.store.getState();
+    const t = s.tasks.find(x => x.id === id)!;
+    return { duration: t.time.scheduleDuration, finish: t.time.earlyFinish.slice(0, 10), stale: s.scheduleStale };
+  }, taskId);
+  await expect.poll(copyState, { timeout: 3000 }).toEqual({ duration: 2, finish: '2026-09-08', stale: false });
+
+  const download = page.waitForEvent('download');
+  await page.keyboard.press('Control+s');
+  const ifc = readFileSync((await (await download).path())!, 'utf8');
+  const taskTime = ifc.split('\n').find(l => l.includes("IFCTASKTIME('Metselwerk Time'"))!;
+  expect(taskTime).toContain("'P0Y0M2D'");
+  expect(taskTime).toContain("'2026-09-07T07:00:00','2026-09-08T07:00:00','2026-09-07T07:00:00','2026-09-08T07:00:00'");
+});
+
+// Delta-review #401 vervolg 5: F5 in het inzetveld met Automatisch berekenen aan rekent precies één
+// keer (geen extra berekening vóór de gewone F5-actie).
+test('F5 in het inzetveld met automatisch berekenen: één berekening', async ({ page, ops: _ops }) => {
+  const { asgId } = await seedFixedWorkAutoCalc(page);
+  await page.evaluate(() => {
+    let solves = 0;
+    window.__OPS__!.store.subscribe((s, p) => { if (s.cpmResult !== p.cpmResult) solves++; });
+    Object.defineProperty(window, '__f5Solves', { configurable: true, get: () => solves });
+  });
+  const solves = () => page.evaluate(() => (window as unknown as { __f5Solves: number }).__f5Solves);
+  const units = page.locator(`[data-ops-assignment-row="${asgId}"] input`).first();
+  await units.click();
+  await units.press('Control+a');
+  await page.keyboard.type('2');
+  await page.keyboard.press('F5');
+  await page.waitForTimeout(400); // ook een eventuele auto-calc na 100 ms telt mee
+  expect(await solves()).toBe(1);
+});

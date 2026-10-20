@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { formatDecimalInput, isAmbiguousThousands, parsePositiveDecimal } from '@/utils/decimalInput';
-import { registerPendingTextEdit } from '@/state/pendingTextEdits';
+import { mountedPendingTextEdits } from '@/state/pendingTextEdits';
 
 /**
  * Strikt-positief eenheden-invoerveld. Houdt een lokale draft-string bij zodat de gebruiker vrij
@@ -91,15 +91,17 @@ export function UnitsInput({
   // eslint-disable-next-line react-hooks/exhaustive-deps -- alleen bij unmount; leest via refs
   useEffect(() => () => { if (commitOnBlur) flush(); }, []);
 
-  // Een documentwissel zonder blur (MCP-dupliceren, sneltoets) commit de draft EERST in het
-  // brondocument (`flushPendingTextEdits` in documentSlice/fileSlice). Anders schreef de
-  // unmount-commit hierboven in het nieuwe actieve document (review #401, punt 1).
+  // Een route zonder blur (MCP-documentwissel, herladen, desktopafsluiten) rondt de draft eerst af
+  // via het register (`pendingTextEdits.ts`). Anders schreef de unmount-commit hierboven in het
+  // nieuwe actieve document, of ging de invoer bij afsluiten stil verloren (review #401).
   useEffect(() => {
     if (!commitOnBlur) return;
-    return registerPendingTextEdit(() => {
-      if (draftRef.current === null) return;
-      flush();
-      setDraftState(null);
+    return mountedPendingTextEdits.register({
+      commit: () => {
+        if (draftRef.current === null) return;
+        flush();
+        setDraftState(null);
+      },
     });
   }, [commitOnBlur]);
 

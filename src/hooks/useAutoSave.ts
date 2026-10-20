@@ -1,5 +1,5 @@
 import { useEffect, type MutableRefObject } from 'react';
-import { useAppStore } from '@/state/appStore';
+import { appStoreContext, useAppStore } from '@/state/appStore';
 import { isTauri } from '@/utils/platform';
 import { writeIFC } from '@/services/ifc/ifcWriter';
 import { ifcSchemaBlocksSilentWrite } from '@/services/ifc/ifcSchemaQuestion';
@@ -175,6 +175,9 @@ export function useAutoSave(autoSaveEnabled: MutableRefObject<boolean>): void {
   useEffect(() => {
     if (isTauri()) return;
     const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      // Eerst open veldinvoer afronden (review #401): een getypte inzet zonder blur maakt het
+      // document pas hier gewijzigd, en hoort de sluitwaarschuwing te krijgen.
+      appStoreContext.runtime.finishPendingTextEdits();
       const dirty = useAppStore.getState().getOpenDocumentPayloads().some((d) => d.payload.isDirty);
       if (!dirty) return;
       e.preventDefault();

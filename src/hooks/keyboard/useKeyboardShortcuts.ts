@@ -66,6 +66,7 @@ export function shouldYieldClipboardShortcutToTaskGrid(event: {
  * De blur commit synchroon (React-onBlur ⇒ store), dus de store is bijgewerkt vóór de actie draait.
  * De bewerking is daarmee af: staat Automatisch berekenen aan, dan rekent de planning hier meteen
  * door (wat de auto-calc anders 100 ms later deed), zodat Ctrl+S het doorgerekende schema opslaat.
+ * Niet bij F5 (`recalculate: false`): die sneltoets rekent zelf, één keer.
  *
  * Daarna gaat de focus terug naar het veld als het nog in de pagina staat: anders ligt hij op
  * `body` en verwijdert een volgende Backspace de geselecteerde taak. Het veld heeft dan geen draft
@@ -74,12 +75,13 @@ export function shouldYieldClipboardShortcutToTaskGrid(event: {
  * terugzetten meteen weer een rekenblokkade en bleef de planning verouderd (review #401, punt 3).
  * Typt de gebruiker daarna verder, dan houdt `onInput` de berekening weer vast.
  */
-function commitPendingTextEdit(target: EventTarget | null): void {
+function commitPendingTextEdit(target: EventTarget | null, opts: { recalculate: boolean }): void {
   const el = target as HTMLElement | null;
   if (!el || !(el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable)) return;
   el.blur();
+  // Alleen vóór opslaan; F5 rekent zelf al (anders twee solves en bij een kring een melding ×2).
   const s = useAppStore.getState();
-  if (s.ui.autoCalcCPM && s.scheduleStale && !isAutoCalcHeld()) s.runCPM();
+  if (opts.recalculate && s.ui.autoCalcCPM && s.scheduleStale && !isAutoCalcHeld()) s.runCPM();
   if (el.isConnected) {
     el.dataset.opsRefocus = 'true';
     try { el.focus({ preventScroll: true }); } finally { delete el.dataset.opsRefocus; }
@@ -113,7 +115,9 @@ export function useKeyboardShortcuts() {
         const ctrlB = e.ctrlKey || e.metaKey;
         // Herberekenen en opslaan lezen de store: commit eerst een getypte waarde in het actieve
         // veld (zelfde blur als het register hieronder), anders slaat Ctrl+S de oude waarde op.
-        if (e.key === 'F5' || (ctrlB && e.key.toLowerCase() === 's')) commitPendingTextEdit(e.target);
+        if (e.key === 'F5' || (ctrlB && e.key.toLowerCase() === 's')) {
+          commitPendingTextEdit(e.target, { recalculate: e.key !== 'F5' });
+        }
         if (e.key === 'F5') runCPM();
         else if (ctrlB && e.shiftKey && e.key.toLowerCase() === 's') void saveFileAs();
         else if (ctrlB && e.key.toLowerCase() === 's') void saveFile();
@@ -148,7 +152,7 @@ export function useKeyboardShortcuts() {
         if (entry.when && !entry.when()) continue;
 
         // Forceer een eventuele hangende onBlur-commit vóórdat we herberekenen/opslaan/etc.
-        if (entry.allowInInput && typing) commitPendingTextEdit(target);
+        if (entry.allowInInput && typing) commitPendingTextEdit(target, { recalculate: entry.id !== 'file.recalculate' });
         if (!entry.skipPreventDefault) e.preventDefault();
         entry.run(useAppStore.getState());
         return;
