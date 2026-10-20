@@ -19,6 +19,9 @@ import { effectiveCalendarOf, effHoursPerDay } from '@/utils/taskDuration';
 import { parseDuration } from '@/utils/durationFormat';
 import { parseTaskDurationInput } from '@/utils/taskDurationInput';
 import { parseLagInput } from '@/utils/lagFormat';
+import { writeCSV } from '@/services/csv/csvWriter';
+import { readCSV } from '@/services/csv/csvReader';
+import { parseableHourSuffix } from '@/utils/durationFormat';
 import type { TaskColumnId } from '@/types/taskGrid';
 import type { TaskTime } from '@/types/task';
 
@@ -59,6 +62,37 @@ function rowKeyOf(taskId: string): string {
 const DURATION = taskColumnId('task.time.scheduleDuration') as TaskColumnId;
 const PREDECESSORS = 'relation.predecessors' as TaskColumnId;
 
+/** De ene relatie A → B. */
+const seqAB = () => S().sequences.find(q => q.predecessorId === A && q.successorId === B)!.id;
+const lagOf = () => {
+  const q = S().sequences.find(x => x.id === seqAB())!;
+  return { lagDays: q.lagDays, lagMinutes: q.lagMinutes };
+};
+
+/** Plak `text` in de cel Voorgangers van B zoals de gebruiker doet (planEdit → gridtransactie). */
+function pasteRelation(text: string): { lagDays: number; lagMinutes?: number } | string {
+  const plan = adapter().planEdit(rowKeyOf(B), PREDECESSORS, text);
+  if (!plan.ok) return `geweigerd: ${plan.errors.map(e => e.code).join(',')}`;
+  const res = runGridMutation(plan.value);
+  if (!res.ok) return 'transactie geweigerd';
+  return lagOf();
+}
+
+/** CSV-export zoals `fileSlice` hem aanroept, met het uurteken van de huidige app-taal. */
+function exportCsv(): string {
+  const s = S();
+  return writeCSV(s.project, s.calendar, s.tasks, s.sequences, s.resources, s.assignments, s.customTaskTypes,
+    undefined, parseableHourSuffix(i18n.t('common:duration.suffixHour')));
+}
+
+/** De lag van de ene relatie na `readCSV`. */
+function csvLag(csv: string): { lagDays: number; lagMinutes?: number } | string {
+  const result = readCSV(csv);
+  if (result.sequences.length !== 1) return `${result.sequences.length} relaties`;
+  const q = result.sequences[0];
+  return { lagDays: q.lagDays, lagMinutes: q.lagMinutes };
+}
+
 function durationCell(taskId: string) {
   const a = adapter();
   return a.getCell(rowKeyOf(taskId), DURATION);
@@ -93,6 +127,11 @@ for (const [lang, u] of [['nl', 'u'], ['en', 'h']] as const) {
   eq(`${lang} 1b kopieertekst Duur is 80${u}`, cell.copyText, `80${u}`);
   const pred = adapter().getCell(rowKeyOf(B), PREDECESSORS)!;
   eq(`${lang} 1c voorgangerscel toont de lag als +2${u}`, pred.text, `${wbsA} FS+2${u}`);
+  // 1d. De getoonde tekst terugplakken in de cel geeft weer precies 2 uur (review-VERVOLG a). Eerst de
+  //     lag op 0 zetten, zodat de plak echt iets moet doen.
+  S().updateSequence(seqAB(), { lagDays: 0, lagMinutes: undefined });
+  eq(`${lang} 1d0 lag eerst op 0`, lagOf(), { lagDays: 0, lagMinutes: undefined });
+  eq(`${lang} 1d terugplakken van "${pred.text}" ⇒ lagMinutes 120`, pasteRelation(pred.text), { lagDays: 0, lagMinutes: 120 });
 
   // 2. Restwerkmelding (de tekst van het meldingenkanaal met de parameters uit de store).
   eq(`${lang} 2 restwerkmelding zonder spatie`,
@@ -112,13 +151,37 @@ eq('4a parseDuration "80u"', parseDuration('80u', 8), 80 * H);
 eq('4b parseDuration "80h"', parseDuration('80h', 8), 80 * H);
 eq('4c parseTaskDurationInput "80u"', parseTaskDurationInput('80u', 'hours'), { unit: 'hours', durationMinutes: 80 * H, explicitUnit: true });
 eq('4d parseTaskDurationInput "80h"', parseTaskDurationInput('80h', 'days'), { unit: 'hours', durationMinutes: 80 * H, explicitUnit: true });
-eq('4e parseLagInput "+2u" en "+2h" gelijk', parseLagInput('+2u'), parseLagInput('+2h'));
+// Tegen een vaste waarde, niet tegen elkaar: tweemaal `null` mag niet slagen (review-VERVOLG b).
+const LAG_2H = { lagDays: 0, lagUnit: undefined, lagPercent: undefined, lagMinutes: 120 };
+eq('4e parseLagInput "+2u" ⇒ 120 minuten', parseLagInput('+2u'), LAG_2H);
+eq('4f parseLagInput "+2h" ⇒ 120 minuten', parseLagInput('+2h'), LAG_2H);
+eq('4g parseLagInput "+3eh" ⇒ 180 elapsed minuten', parseLagInput('+3eh'),
+  { lagDays: 0, lagUnit: 'ELAPSEDTIME', lagPercent: undefined, lagMinutes: 180 });
 
 // 5. Andere talen volgen in de vertaalronde: een afkorting die de parser niet kent ("ч") houdt de lag
 //    leesbaar als "+2u", zodat bewerken en plakken blijven werken.
 await setLocale('ru');
 const ruPred = adapter().getCell(rowKeyOf(B), PREDECESSORS)!;
 eq('5 ru: lag blijft parsebaar (+2u)', ruPred.text, `${wbsA} FS+2u`);
+S().updateSequence(seqAB(), { lagDays: 0, lagMinutes: undefined });
+eq('5b ru: terugplakken van "+2u" ⇒ lagMinutes 120', pasteRelation(ruPred.text), { lagDays: 0, lagMinutes: 120 });
+
+// 6. CSV-export (eigenaarsbesluit 2026-10-20, optie 2): het uurteken van de lag volgt de app-taal.
+//    Elk bestand leest in elke app-taal terug als precies 120 minuten.
+const csvByLang: Record<string, string> = {};
+for (const [lang, u] of [['nl', 'u'], ['en', 'h'], ['ru', 'u']] as const) {
+  await setLocale(lang);
+  const csv = exportCsv();
+  csvByLang[lang] = csv;
+  eq(`6a ${lang}: CSV-voorganger is ${wbsA}FS+2${u}`, csv.includes(`;${wbsA}FS+2${u};`), true);
+  eq(`6b ${lang}: geen ander uurteken in de CSV`, csv.includes(`${wbsA}FS+2${u === 'u' ? 'h' : 'u'}`), false);
+}
+for (const readLang of ['nl', 'en', 'ru'] as const) {
+  await setLocale(readLang);
+  for (const writeLang of ['nl', 'en', 'ru'] as const) {
+    eq(`6c CSV uit ${writeLang}, gelezen in ${readLang} ⇒ lagMinutes 120`, csvLag(csvByLang[writeLang]), { lagDays: 0, lagMinutes: 120 });
+  }
+}
 
 if (diffs.length) {
   for (const d of diffs) console.log(`XX  uren-zonder-spatie: ${d}`);

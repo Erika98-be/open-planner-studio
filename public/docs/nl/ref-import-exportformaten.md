@@ -114,7 +114,7 @@ Per bestandsformaat: of je het kunt openen, opslaan en exporteren, wat er wel en
 
 **Exporteren** — ja, als *CSV (;)* (*Universele tabel-export. Alle taken met datums en duur.*), op de kaart *CSV (puntkomma-gescheiden)*. Het bestand heeft een puntkomma als scheidingsteken, staat in UTF-8 met een BOM en heeft Engelse kolomkoppen.
 
-**Wat meegaat** — per taak deze kolommen: `OPS Task ID`, `WBS`, `Outline Level`, `Name`, `Duration (days)`, `Start`, `Finish`, `Predecessors`, `Task Type`, `OPS Custom Task Type ID`, `Status`, `Completion (%)`, `Actual Start`, `Actual Finish`, `Critical`, `Total Float` en `Description`. De kolom `Task Type` bevat de werksoort. Voltooiing staat in hele procenten.
+**Wat meegaat** — per taak deze kolommen: `OPS Task ID`, `WBS`, `Outline Level`, `Name`, `Duration (days)`, `Start`, `Finish`, `Predecessors`, `Task Type`, `OPS Custom Task Type ID`, `Status`, `Completion (%)`, `Actual Start`, `Actual Finish`, `Critical`, `Total Float` en `Description`. De kolom `Task Type` bevat de werksoort. Voltooiing staat in hele procenten. Een lag in uren krijgt het uurteken van de taal van de app: `1.2FS+2u` in het Nederlands, `1.2FS+2h` in het Engels. Openen leest beide.
 
 **Wat niet meegaat** — resources, toewijzingen, kalenders, constraints, deadlines, baselines en de statusdatum. Staan de datums in de weergave *Datums zoals opgeslagen*, dan laat de export `Critical` en `Total Float` leeg voor taken waarvan het bronbestand dat niet vastlegde.
 

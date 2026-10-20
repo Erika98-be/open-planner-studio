@@ -44,6 +44,7 @@ import { askIfcSchema, ifcSchemaQuestionFor } from '@/services/ifc/ifcSchemaQues
 import { applyIfcSchemaChoice } from '../ifcSchemaChoice';
 import { withSchedulingProfileNotice } from '../schedulingProfileNotice';
 import type { ImportLabelT } from '@/i18n/importLabels';
+import { parseableHourSuffix } from '@/utils/durationFormat';
 import { invalidateDocumentRedo, removeSessionHistoryForDocumentFromState } from '../sessionHistory';
 import { scheduleFailedNotice } from '../scheduleErrorNotice';
 import { browserSaveNotice } from '../browserSaveNotice';
@@ -1163,17 +1164,23 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
           nameOverride = `${suggestedFileBase(state)}-voortgang.${ext}`;
           break;
         }
-        case 'csv':
+        case 'csv': {
+          // Dynamische import, zelfde reden als bij `progress-csv`: `@/i18n/config` heeft een
+          // randeffect bij het laden. Alleen voor het uurteken van de lag.
+          const { default: i18n } = await import('@/i18n/config');
           payload = writeCSV(
             state.project, state.calendar, state.tasks,
             state.sequences, state.resources, state.assignments, state.customTaskTypes,
             // In "datums zoals opgeslagen" mag een niet-vastgelegde as niet als verzonnen 0/No
             // het bestand in. Buiten de modus: `undefined`.
             unrecordedExportGate(state.recordedDates, state.datesAsRecorded),
+            // Lag in uren met het teken van de app-taal (eigenaarsbesluit 2026-10-20, optie 2).
+            parseableHourSuffix(i18n.t('duration.suffixHour', { ns: 'common' })),
           );
           ext = 'csv';
           filters = [{ name: 'CSV Files', extensions: ['csv'] }];
           break;
+        }
         case 'mspdi':
           payload = writeMSPDI(
             state.project, state.calendar, state.tasks,
