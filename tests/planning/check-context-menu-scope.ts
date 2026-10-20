@@ -494,27 +494,38 @@ function verseVier(): { a: string; b: string; c: string; d: string } {
       S().ui.structureLockedNotice - meldingVoor, 1);
   }
 
-  // 10c — "+ Taak" blijft werken, maar achteraan en mét melding.
+  // 10c — "+ Taak" blijft werken, maar achteraan en mét melding. Eigenaarsbesluit 2026-10-19 5a:
+  // GEEN strook ("Niet beschikbaar" klopt niet: de taak komt er wél), maar een rode weigeringstoast
+  // met de actie *Wissen*.
   {
     const { b } = verseGegroepeerd();
     S().selectTasks([b], false);
+    for (const n of [...S().ui.notifications]) S().dismissNotification(n.id);
     const meldingVoor = S().ui.structureLockedNotice;
     addTaskNearSelection({ name: 'Nieuw' });
     eq('72 gegroepeerd: "+ Taak" voegt nog steeds toe, maar achteraan',
       namen(), ['Taak A', 'Taak B', 'Taak C', 'Taak D', 'Nieuw']);
-    eq('73 gegroepeerd: "+ Taak" meldt waarom de plaatsing wegviel',
-      S().ui.structureLockedNotice - meldingVoor, 1);
+    eq('73 gegroepeerd: "+ Taak" geeft GEEN strook (5a)',
+      S().ui.structureLockedNotice - meldingVoor, 0);
+    const toast = S().ui.notifications.map(n => ({
+      messageKey: n.messageKey, severity: n.severity, refusal: n.refusal, action: n.action,
+    }));
+    eq('73b gegroepeerd: "+ Taak" meldt de plaatsing met een rode toast + Wissen (5a)', toast, [{
+      messageKey: 'notifications.taskAddedAtEnd', severity: 'error', refusal: true,
+      action: { kind: 'clearViewArrangement', labelKey: 'view.filter.clear' },
+    }]);
   }
 
   // 10d — zonder selectie is er niets positioneels: geen melding, gewoon achteraan, in elke weergave.
   {
     verseGegroepeerd();
     S().deselectAll();
+    for (const n of [...S().ui.notifications]) S().dismissNotification(n.id);
     const meldingVoor = S().ui.structureLockedNotice;
     addTaskNearSelection({ name: 'Nieuw' });
     eq('74 gegroepeerd zonder selectie: achteraan, zonder melding',
-      [namen(), S().ui.structureLockedNotice - meldingVoor],
-      [['Taak A', 'Taak B', 'Taak C', 'Taak D', 'Nieuw'], 0]);
+      [namen(), S().ui.structureLockedNotice - meldingVoor, S().ui.notifications.length],
+      [['Taak A', 'Taak B', 'Taak C', 'Taak D', 'Nieuw'], 0, 0]);
   }
   {
     verseGegroepeerd();

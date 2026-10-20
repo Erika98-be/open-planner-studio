@@ -13,6 +13,7 @@ import { askSiteOpen, askSiteSave, type SiteOpenChoice } from '@/services/fileAc
 import { withXerArchiveIssueNotice } from '@/state/xerArchiveIssueNotice';
 import { P6XmlImportError } from '@/services/p6/p6xmlErrors';
 import { withOpenNoticeSticky } from '@/state/openNoticeSticky';
+import { clearRefusals } from '@/state/refusalNotice';
 import { P6XML_IMPORT_HELP_ARTICLE_ID, RECORDED_DATES_HELP_ARTICLE_ID, XER_IMPORT_HELP_ARTICLE_ID } from '@/state/helpArticles';
 import { formatNoticeToShow } from '@/services/formatNotice';
 import { openDialogFilters, binaryExtensions, readFormatForFile, parseOpenedFile, importErrorMessageKey, saveTargetFor, readFormatInput, readIFCWithXerReconstruction, type ExportFormat } from '@/services/formatRegistry';
@@ -802,6 +803,9 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
         mode: opts.linkedOpen ? 'open-boundary' : 'silent-switch',
       });
       set((s) => {
+        // Een ander project in dit tabblad: de weigeringen over het vorige gaan weg, net als bij een
+        // documentwissel (eigenaarsbesluit 2026-10-19 5b). Vóór de meldingen hieronder.
+        clearRefusals(s.ui);
         removeSessionHistoryForDocumentFromState(s, s.activeDocumentId);
         if (activation.invalidateRedoScope) {
           invalidateDocumentRedo(s, s.activeDocumentId);

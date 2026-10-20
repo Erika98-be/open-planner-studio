@@ -36,6 +36,7 @@ import {
 import { sameIFCSource, type IFCSaveSource } from '../ifcSaveInput';
 import { withXerArchiveIssueNotice } from '../xerArchiveIssueNotice';
 import { scheduleFailedNotice } from '../scheduleErrorNotice';
+import { clearRefusals } from '../refusalNotice';
 import {
   mergeCalendarLibrarySettle, notifyCalendarLibrarySettle, NO_CALENDAR_LIBRARY_SETTLE, type CalendarLibrarySettle,
 } from '../calendarTasks';
@@ -97,6 +98,9 @@ function resetDocumentScopedUI(s: AppState): void {
   s.ui.showProgressImportDialog = false;
   // Zelfde vangnet: "Taak wordt een samenvattingstaak" noemt taken van het vorige document.
   s.ui.pendingPhaseAssignmentQuestion = null;
+  // Weigeringen horen bij het uitgaande document (eigenaarsbesluit 2026-10-19 5b): weg, en ze komen
+  // niet terug bij terugwisselen. Echte fouten en infos blijven (`clearRefusals`).
+  clearRefusals(s.ui);
 }
 
 function publishActivation(s: AppState, activation: DocumentActivationMaterialization): void {

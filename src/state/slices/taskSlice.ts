@@ -26,6 +26,7 @@ import {
   detachFromParent, attachToParent, isSelfOrDescendant, removeTaskSubtrees, siblingIds,
 } from '@/state/taskTree';
 import { milestoneRefusal } from '@/engine/taskMilestoneTransition';
+import { refusalNotice } from '@/state/refusalNotice';
 import {
   applyPhaseTransitions, firstChildGains, milestoneRefusalNotices, phaseAssignmentQuestion, phaseRefusalNotice,
   phaseTransitionNotices, planPhaseTransitions, type PendingChild, type PhaseAssignmentChoice,
@@ -940,7 +941,9 @@ export const createTaskSlice: AppSliceFactory<TaskSlice> = (runtime) => (set, ge
     set((s) => { s.ui.pendingPhaseAssignmentQuestion = null; });
     if (choice === null || !run) return;
     if (JSON.stringify(recheck?.() ?? null) !== JSON.stringify(asked)) {
-      get().notify({ severity: 'info', messageKey: 'notifications.phaseQuestionOutdated', dedupeKey: 'phase-question-outdated' });
+      // Een weigering: de planner koos, de app voerde de keuze niet uit (eigenaarsbesluit 2026-10-17,
+      // "weigering = rood"; definitie in `refusalNotice.ts`).
+      get().notify(refusalNotice({ messageKey: 'notifications.phaseQuestionOutdated', dedupeKey: 'phase-question-outdated' }));
       return;
     }
     run(choice);
@@ -1091,7 +1094,7 @@ export const createTaskSlice: AppSliceFactory<TaskSlice> = (runtime) => (set, ge
           hasAssignments: s.assignments.some(a => a.taskId === id),
         });
         if (refusal) {
-          refusedNotices = milestoneRefusalNotices([{ name: task.name, refusal }]);
+          refusedNotices = milestoneRefusalNotices([{ id: task.id, name: task.name, refusal }]);
           return;
         }
       }
@@ -1465,7 +1468,7 @@ export const createTaskSlice: AppSliceFactory<TaskSlice> = (runtime) => (set, ge
   insertWbsTemplate: (template, parentId, opts) => {
     if (template.tasks.length === 0) return null;
     let newRootId: string | null = null;
-    let skippedRelations = 0;
+    let skippedRelations: string[] = [];
     const outcome = emptyOutcome();
     const mode = opts?.phaseAssignments ?? 'ask';
     const asked: { question: PhaseAssignmentQuestion | null } = { question: null };
