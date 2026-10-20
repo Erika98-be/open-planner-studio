@@ -112,8 +112,10 @@ export function FeedbackDialog() {
   const close = useCallback(() => setUI({ showFeedbackDialog: false }), [setUI]);
 
   // ── Concept bewaren ───────────────────────────────────────────────────────
-  // Leeg = niets ingevuld; dan bewaren we geen concept.
-  const draftIsEmpty = feedbackType === 'bug' && title === '' && description === ''
+  // Leeg = niets ingevuld; dan bewaren we geen concept. Een soort kiezen is geen inhoud: alleen
+  // titel, omschrijving, een ander e-mailadres dan het opgeslagen adres of een screenshot tellen.
+  // De soort gaat wel mee in het concept als er inhoud is.
+  const draftIsEmpty = title.trim() === '' && description.trim() === ''
     && email.trim() === storedEmail.trim() && !attachScreenshot;
   const draft: FeedbackDraft | null = draftIsEmpty ? null : {
     type: feedbackType, title, description, email, attachScreenshot, hadUncertain,
@@ -144,6 +146,13 @@ export function FeedbackDialog() {
     close();
   };
 
+  // Eén afleiding voor sluiten (voetknop, kruisje en Esc): is er iets te bewaren, dan heet de knop
+  // *Bewaren en sluiten* en blijft het concept staan; anders (leeg formulier, verstuurd, "al binnen")
+  // gewoon *Sluiten*. Vanuit "al binnen" wist sluiten het concept.
+  const keepsDraft = !sent && !alreadyIn && !draftIsEmpty;
+  const closeLabel = keepsDraft ? t('feedback.saveAndClose') : t('feedback.close');
+  const closeWindow = alreadyIn ? closeAlreadyIn : close;
+
   // ── Wat er meegaat (regel *Meegestuurd*): dezelfde bron als de metaregel van de service ──
   const [meta, setMeta] = useState<FeedbackMeta | null>(null);
   useEffect(() => {
@@ -158,7 +167,7 @@ export function FeedbackDialog() {
 
   // Escape sluit de dialoog (niet tijdens versturen: dan is de handler `undefined` en doet de
   // hook niets). De overlay zelf blijft custom CSS-chrome — geen `Dialog`-migratie hier.
-  useDialogKeys({ onCancel: sending ? undefined : close });
+  useDialogKeys({ onCancel: sending ? undefined : closeWindow });
 
   // ── Validatie vooraf ───────────────────────────────────────────────────────
   const trimmedEmail = email.trim();
@@ -342,10 +351,10 @@ export function FeedbackDialog() {
           <span className="feedback-dialog-title">{t('feedback.title')}</span>
           <button
             className="modal-close-btn"
-            onClick={close}
+            onClick={closeWindow}
             disabled={sending}
-            title={t('feedback.cancel')}
-            aria-label={t('feedback.cancel')}
+            title={closeLabel}
+            aria-label={closeLabel}
           >
             <X size={16} />
           </button>
@@ -540,12 +549,13 @@ export function FeedbackDialog() {
                   {t('feedback.clearDraft')}
                 </button>
               )}
+              {/* Eén knop: *Bewaren en sluiten* of *Sluiten* (zie `keepsDraft`). */}
               <button
                 className="btn btn--sm btn--secondary"
-                onClick={alreadyIn ? closeAlreadyIn : close}
+                onClick={closeWindow}
                 disabled={sending}
               >
-                {alreadyIn ? t('feedback.close') : t('feedback.cancel')}
+                {closeLabel}
               </button>
               {submitError === 'failed' && (
                 <button

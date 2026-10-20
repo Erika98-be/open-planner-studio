@@ -87,8 +87,15 @@ test('concept blijft na Esc en heropenen; Leegmaken wist het', async ({ page, op
   await expect(dialog.getByLabel('Description')).toHaveValue(DESCRIPTION);
   await expect(dialog.getByRole('button', { name: 'Idea' })).toHaveAttribute('aria-pressed', 'true');
 
-  // Het kruisje bewaart het concept ook.
-  await dialog.getByRole('button', { name: 'Cancel' }).first().click();
+  // Het kruisje (Bewaren en sluiten) bewaart het concept ook.
+  await dialog.locator('.feedback-dialog-header').getByRole('button', { name: 'Save and close' }).click();
+  await expect(dialog).toBeHidden();
+  dialog = await openDialog(page);
+  await expect(dialog.getByLabel('Title')).toHaveValue(TITLE);
+
+  // De voetknop Bewaren en sluiten ook (er is geen Annuleren meer in het venster).
+  await expect(dialog.locator('.feedback-dialog-footer').getByRole('button', { name: 'Cancel' })).toHaveCount(0);
+  await dialog.locator('.feedback-dialog-footer').getByRole('button', { name: 'Save and close' }).click();
   await expect(dialog).toBeHidden();
   dialog = await openDialog(page);
   await expect(dialog.getByLabel('Title')).toHaveValue(TITLE);
@@ -360,7 +367,7 @@ test('onzeker hoort bij het concept: na heropenen geen GitHub, een 409 geeft al 
   expect(calls).toBe(2);
 
   // Sluiten vanuit "al binnen": de melding is binnen, dus het concept is weg.
-  await dialog.locator('.feedback-dialog-footer').getByRole('button', { name: 'Close' }).click();
+  await dialog.locator('.feedback-dialog-footer').getByRole('button', { name: 'Close', exact: true }).click();
   await expect(dialog).toBeHidden();
   dialog = await openDialog(page);
   await expect(dialog.getByLabel('Title')).toHaveValue('');
@@ -421,19 +428,59 @@ test('al binnen, dan een aanvulling typen: de melding gaat weg en sluiten bewaar
   const notice = dialog.getByText('We have already received this report.', { exact: false });
   await expect(notice).toBeVisible();
   const footer = dialog.locator('.feedback-dialog-footer');
-  await expect(footer.getByRole('button', { name: 'Close' })).toBeVisible();
+  await expect(footer.getByRole('button', { name: 'Close', exact: true })).toBeVisible();
 
   const ADDITION = ' Het gebeurt ook na een herstart.';
   await typeInto(page, dialog.getByLabel('Description'), ADDITION);
   await expect(notice).toHaveCount(0);
-  await expect(footer.getByRole('button', { name: 'Close' })).toHaveCount(0);
-  await expect(footer.getByRole('button', { name: 'Cancel' })).toBeVisible();
   await expect(footer.getByRole('button', { name: 'Send', exact: true })).toBeEnabled();
+  await expect(footer.getByRole('button', { name: 'Close', exact: true })).toHaveCount(0);
 
-  await footer.getByRole('button', { name: 'Cancel' }).click();
+  await footer.getByRole('button', { name: 'Save and close' }).click();
   await expect(dialog).toBeHidden();
   dialog = await openDialog(page);
   await expect(dialog.getByLabel('Title')).toHaveValue(TITLE);
   await expect(dialog.getByLabel('Description')).toHaveValue(DESCRIPTION + ADDITION);
   expect(calls).toBe(1);
+});
+
+test('sluitknop: leeg formulier Sluiten, na typen Bewaren en sluiten, en de tekst blijft bewaard', async ({ page, ops }) => {
+  void ops;
+  let dialog = await openDialog(page);
+  const footer = dialog.locator('.feedback-dialog-footer');
+  const header = dialog.locator('.feedback-dialog-header');
+  await expect(footer.getByRole('button', { name: 'Close', exact: true })).toBeVisible();
+  await expect(header.getByRole('button', { name: 'Close', exact: true })).toBeVisible();
+  await expect(footer.getByRole('button', { name: 'Save and close' })).toHaveCount(0);
+
+  await typeInto(page, dialog.getByLabel('Title'), TITLE);
+  await expect(footer.getByRole('button', { name: 'Save and close' })).toBeVisible();
+  await expect(header.getByRole('button', { name: 'Save and close' })).toBeVisible();
+  await expect(footer.getByRole('button', { name: 'Close', exact: true })).toHaveCount(0);
+
+  await footer.getByRole('button', { name: 'Save and close' }).click();
+  await expect(dialog).toBeHidden();
+  dialog = await openDialog(page);
+  await expect(dialog.getByLabel('Title')).toHaveValue(TITLE);
+  await expect(dialog.locator('.feedback-dialog-footer').getByRole('button', { name: 'Save and close' })).toBeVisible();
+});
+
+test('sluitknop: een soort kiezen is geen inhoud', async ({ page, ops }) => {
+  void ops;
+  const dialog = await openDialog(page);
+  const footer = dialog.locator('.feedback-dialog-footer');
+  const header = dialog.locator('.feedback-dialog-header');
+  const kinds = ["Something's not working", 'Idea', 'Question or comment'];
+  for (const kind of kinds) {
+    await dialog.getByRole('button', { name: kind }).click();
+    await expect(footer.getByRole('button', { name: 'Close', exact: true }), `${kind}: leeg`).toBeVisible();
+    await expect(header.getByRole('button', { name: 'Close', exact: true }), `${kind}: leeg (kruisje)`).toBeVisible();
+    await expect(footer.getByRole('button', { name: 'Save and close' })).toHaveCount(0);
+  }
+  await typeInto(page, dialog.getByLabel('Title'), TITLE);
+  for (const kind of kinds) {
+    await dialog.getByRole('button', { name: kind }).click();
+    await expect(footer.getByRole('button', { name: 'Save and close' }), `${kind}: met titel`).toBeVisible();
+    await expect(header.getByRole('button', { name: 'Save and close' }), `${kind}: met titel (kruisje)`).toBeVisible();
+  }
 });

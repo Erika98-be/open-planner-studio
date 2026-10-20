@@ -251,7 +251,7 @@ test('(a) 409 zonder voorgeschiedenis: "al binnen", formulier blijft, Sluiten sl
   await expect(dialog.getByRole('button', { name: 'Open on GitHub' })).toHaveCount(0);
   await expect(dialog.getByLabel('Title')).toHaveValue(TITLE);
   await expect(dialog.getByLabel('Description')).toHaveValue(DESCRIPTION);
-  await dialog.getByRole('button', { name: 'Close', exact: true }).click();
+  await dialog.locator('.feedback-dialog-footer').getByRole('button', { name: 'Close', exact: true }).click();
   await expect(dialog).toBeHidden();
 });
 

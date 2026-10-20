@@ -517,6 +517,7 @@
     "clearDraft": "Clear",
     "clearDraftTitle": "Clear all fields and the screenshot",
     "close": "Close",
+    "saveAndClose": "Save and close",
     "tools": {
       "arrow": "Arrow",
       "rectangle": "Rectangle",
