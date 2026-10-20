@@ -168,6 +168,7 @@ export function createDefaultUI(): UIState {
     showStatsDialog: false,
     pendingExtensionConsent: null,
     pendingActualStartQuestion: null,
+    pendingPhaseAssignmentQuestion: null,
     pendingSiteOpen: null,
     pendingSiteSave: null,
     pendingIfcSchemaQuestion: null,
@@ -345,10 +346,11 @@ export const createUiSlice: AppSlice<UiSlice> = (set, get) => ({
       if (n.dedupeKey) {
         const existing = s.ui.notifications.find((x) => x.dedupeKey === n.dedupeKey);
         if (existing) {
-          existing.count += 1;
+          if (n.replaceOnDedupe !== true) existing.count += 1;
           existing.severity = n.severity;
           existing.messageKey = n.messageKey;
           existing.params = n.params;
+          existing.numberParams = n.numberParams;
           existing.detail = n.detail;
           // Optionele velden (detailregels, gidslink) alleen aanraken wanneer de nieuwe melding ze
           // werkelijk meebrengt, zodat een dedupe-update ze niet wist.

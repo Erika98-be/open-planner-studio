@@ -6,6 +6,8 @@ paths:
   - "src/state/taskTypesNotice.ts"
   - "src/state/taskTypesVisibility.ts"
   - "src/state/gridTransaction.ts"
+  - "src/state/assignmentMutations.ts"
+  - "src/state/splitMutations.ts"
   - "src/state/runtime/createMcpTransactions.ts"
   - "src/state/slices/taskSlice.ts"
   - "src/state/slices/resourceSlice.ts"
@@ -27,9 +29,10 @@ FIXED_DURATION_RATE (standaard, het gedrag van vóór de etappe) | FIXED_DURATIO
 FIXED_RATE, anders `Project.defaultWorkRule`. De pure kern `src/engine/work/workTriangle.ts` werkt op de
 RESTERENDE toestand (werk = restduur × inzet; W en I opgeslagen, R afgeleid en naar boven afgerond op hele
 dagen/minuten); de brug `src/engine/work/workRuleApply.ts` (`captureTriangle` vóór de mutatie → `settle…`
-erna) is op vier plekken bedraad: `taskSlice.updateTask`/`setTaskWorkRule`,
-`resourceSlice.assignResource`/`updateAssignment`/`unassignResource`/`moveAssignment`/`removeResource`/
-`setAssignmentWork`, `gridTransaction.ts` en de MCP-tweeling in `createMcpTransactions.ts`.
+erna) is bedraad in `taskSlice.updateTask`/`setTaskWorkRule`,
+de gedeelde muteerlichamen `src/state/assignmentMutations.ts` (toewijzingen en resources; gebruikt door
+`resourceSlice` én de MCP-draft) en `src/state/splitMutations.ts` (splits), `gridTransaction.ts` en de
+MCP-tweeling in `createMcpTransactions.ts`.
 
 Een duur die uit de driehoek komt (inzet/werk/resource erbij-eraf onder FIXED_WORK/FIXED_RATE) zet
 `scheduleStale` en loopt door `settleDurationAftermath` (contour + importsplits herschalen, Z8-venster en

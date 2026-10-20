@@ -10,7 +10,7 @@ De velden van het venster *Nieuw project* en van *Projectinstellingen*: wat elk 
 
 ## Aanmaken, Toepassen en annuleren
 
-**Aanmaken** (in *Nieuw project*) maakt het project en opent het in een eigen tabblad. **Toepassen** (in *Projectinstellingen*) schrijft je wijzigingen naar het project.
+**Aanmaken** (in *Nieuw project*) maakt het project. Is je huidige tabblad leeg en ongewijzigd, dan gebruikt de app dat tabblad; anders opent het project in een nieuw tabblad. **Toepassen** (in *Projectinstellingen*) schrijft je wijzigingen naar het project.
 
 - **Pas bij Toepassen.** Je typt in een concept. Het project verandert pas als je op *Toepassen* klikt. *Toepassen* schrijft alleen wat je echt hebt gewijzigd, in één stap in *Ongedaan*. Klik je op *Toepassen* zonder iets te wijzigen, dan gebeurt er niets en komt er geen stap bij.
 - **Annuleren, het kruisje en Esc** sluiten het venster zonder iets te bewaren. Een klik náást het venster sluit het niet: wat je al had ingetypt blijft staan.

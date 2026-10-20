@@ -454,7 +454,7 @@
       "work": "Arbejde (rest.)",
       "workHint": "Resterende arbejde i timer; arbejdsreglen afgør om varighed eller tildelingsenheder ændrer sig.",
       "workDeviates": "Afviger fra tildelingsenheder × varighed",
-      "workDeviatesHint": "Gemt arbejde {{stored}} t afviger fra tildelingsenheder × resterende varighed ({{derived}} t). Histogrammet følger det gemte arbejde over hele opgavens varighed; enhederne bliver som filen gav dem.",
+      "workDeviatesHint": "Gemt arbejde {{stored}} t afviger fra tildelingsenheder × resterende varighed ({{derived}} t). Histogrammet følger det gemte arbejde over hele opgavens varighed; enhederne bliver som filen gav dem. Hvis du ændrer varigheden, genberegner appen det.",
       "locked": "Beskyttet af arbejdsreglen {{rule}}"
     },
     "notes": {

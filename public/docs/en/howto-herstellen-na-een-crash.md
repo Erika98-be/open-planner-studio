@@ -9,7 +9,7 @@ The laptop died, the app froze or the browser tab crashed, and you had not yet s
 ## Steps
 
 1. Start the app again. In the browser you reload the same tab: the recovery copy belongs to that one tab.
-2. If the app found copies, the window *Restore unsaved work* appears: *Open Planner Studio did not close normally. The following documents had unsaved changes that can be restored:* For each project it shows the name, the path of the file if the project has a file (in the browser only the file name), the number of tasks and the time of the copy, for example *21 tasks* and *Saved: Sep 29, 2026, 9:41 AM*. The window can also show projects that you had not changed.
+2. If the app found copies, the window *Restore unsaved work* appears: *Open Planner Studio did not close normally. The following documents had unsaved changes that can be restored:* For each project it shows the name, the path of the file if the project has a file (in the browser only the file name), the number of tasks and the time of the copy, for example *21 tasks* and *Saved: Sep 29, 2026 9:41 AM*. The time follows your *Time format* setting. The window can also show projects that you had not changed.
 3. Choose *Restore*. The app opens all projects in the list, each in a tab, with the state of the last copy. Enter does the same.
 4. Check your projects and save them straight away with Ctrl+S.
 

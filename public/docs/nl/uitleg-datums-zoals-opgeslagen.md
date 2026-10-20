@@ -54,7 +54,7 @@ Legt het bestand van een taak niet alles vast, dan krijgt het oranje blok in het
 Je verlaat de weergave op twee manieren:
 
 - Klik in de strook op *Herberekenen*, of kies *Bereken* (F5). De app rekent door met haar eigen regels.
-- Wijzig iets waardoor de datums kunnen veranderen, zoals de duur van een taak of een nieuwe taak. De app verlaat de weergave en rekent meteen door, ook als *Automatisch berekenen* uit staat. Een naam, omschrijving, taaktype of werkregel wijzigen doet dat niet: dan blijft de weergave aan.
+- Wijzig iets waardoor de datums kunnen veranderen, zoals de duur van een taak of een nieuwe taak. De app verlaat de weergave en rekent meteen door, ook als *Automatisch berekenen* uit staat. Een naam, omschrijving, werksoort of taaktype wijzigen doet dat niet: dan blijft de weergave aan.
 
 Een kalenderwijziging uit de resourcebibliotheek laat de weergave aan en de datums uit het bestand staan, maar werkt het getal in de strook bij.
 

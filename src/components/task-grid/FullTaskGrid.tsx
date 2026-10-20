@@ -443,6 +443,8 @@ export function TaskGridSurface({
     // vastgelegd"-tak hangt aan `datesAsRecorded`.
     ...recordedGridBinding(recordedDates, datesAsRecorded),
     taskTypesUnlocked: showTaskTypes || taskTypesVisible,
+    // Zelfde effectieve regel als het paneel en de duurbewerking (uitleg bij het ⚠, besluit V10).
+    defaultWorkRule: project.defaultWorkRule,
     labelForColumn: labelKey => resolveColumnLabel(
       labelKey,
       key => tTask(key, { defaultValue: key }),
@@ -459,7 +461,7 @@ export function TaskGridSurface({
   }), [
     activityCodeTypes, assignments, baselines, calendar, calendarEngine, calendarOptions, calendars,
     cpmResult, customFieldDefs, customTaskTypes, datesAsRecorded, dateNotation, timeNotation, durationDisplay, project.id,
-    project.wbsAutoNumber, recordedDates, resources, scheduleStale, sequences, showTaskTypes,
+    project.defaultWorkRule, project.wbsAutoNumber, recordedDates, resources, scheduleStale, sequences, showTaskTypes,
     taskTypesVisible, tCommon, tTask, taskI18n.language, tasks, textDirection, showGhostRow, ghostTask,
   ]);
   // Vastleggen op de spookregel: maak de taak (onderaan, op het niveau van de laatste taak) en schrijf
