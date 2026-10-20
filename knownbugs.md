@@ -109,7 +109,6 @@ en noem het in je rapport of PR-tekst.
 21. ***Rapport › Afdruk*** doet op het tabblad Rapport niets. — B
 60. **Duur-kolom afgeknipt** in de standaard Gantt-weergave (WBS 60 + Taaknaam 240 + Duur 60 + de
     "+"-kolom): je leest "2c" in plaats van "2d", op 1600 én 1366 px breed. — B
-63. **"Werkelijke einde"** (kolomnaam, `task.json:55`) tegenover "Werkelijk einde" elders (`common.json`). — S
 90. **Een klik in een getalveld selecteert de waarde niet: typen voegt toe.** Duur in Eigenschappen: na één klik
     staat de cursor achter de 5 (selectie 1–1), dus `2` wordt 52 dagen en bij een urentaak `6h` na de 1 wordt
     16h; Max. eenheden in de nieuwe rij van het resourcepaneel: `2` wordt 21. Een dubbelklik selecteert de
