@@ -128,7 +128,7 @@ function forcedWorkTime(base: WorkCalendar, workDays: number[], hpd: number, lab
 /** Start-achtige datum ⇒ begin van de eerste band van die dag. Niet-werkdag ⇒ ongewijzigd
  *  (middernacht; de solver snapt dat vooruit, net als dagmodus). */
 function startLike(d: string, eng: CalendarEngine): string {
-  if (DATETIME_RE.test(d)) return d;
+  if (DATETIME_RE.test(d) || isNaN(parseDate(d).getTime())) return d; // ongeldig: solver geeft de fout
   const bands = eng.effectiveBandsOn(parseDate(d));
   if (bands.length === 0) return d;
   return `${d}T${hhmm(bands[0].start)}`;
@@ -136,7 +136,7 @@ function startLike(d: string, eng: CalendarEngine): string {
 /** Finish-achtige datum ⇒ einde van de laatste band van die dag. Niet-werkdag ⇒ volgende dag 00:00
  *  (de solver snapt dat terug naar het vorige bandeinde, net als een inclusieve dag-finish). */
 function finishLike(d: string, eng: CalendarEngine): string {
-  if (DATETIME_RE.test(d)) return d;
+  if (DATETIME_RE.test(d) || isNaN(parseDate(d).getTime())) return d;
   const bands = eng.effectiveBandsOn(parseDate(d));
   if (bands.length === 0) return `${addDaysIso(d, 1)}T00:00`;
   const end = bands[bands.length - 1].end;
@@ -740,7 +740,11 @@ function buildAndSolve(c: Case): {
 
   // Voortgang + statusdatum (fase 2.6) — vóór runCPM zodat de solver-voortgangstakken meelopen.
   // OPS_FORCE_HOURS: statusdatum = data date = begin van de dag ⇒ start-achtig (projectkalender).
-  if (c.statusDate) S().setStatusDate(projStart(c.statusDate));
+  if (c.statusDate) {
+    // Variant OPS_FORCE_HOURS_STATUS=finish: statusdatum als einde van die dag.
+    S().setStatusDate(FORCE_HOURS && process.env.OPS_FORCE_HOURS_STATUS === 'finish'
+      ? finishLike(c.statusDate, engOf(undefined)) : projStart(c.statusDate));
+  }
   if (c.scheduleOptions?.progressMode) S().setProgressMode(c.scheduleOptions.progressMode);
   // Reken-opties (fase 2.9, §3.4) op het project — vóór runCPM zodat de solver ze meeneemt.
   if (c.schedulingOptions) {
@@ -1372,7 +1376,7 @@ function runCaseInner(c: Case): { id: string; title: string; pass: boolean; diff
         const got = rowByName[name];
         if (!got) { diffs.push(`variance-rij "${name}" niet gevonden`); continue; }
         for (const [k, wv] of Object.entries<any>(want)) {
-          if (got[k] !== wv) diffs.push(`variance.${name}.${k}: verwacht ${JSON.stringify(wv)}, kreeg ${JSON.stringify(got[k])}`);
+          if (!dateEq(got[k], wv)) diffs.push(`variance.${name}.${k}: verwacht ${JSON.stringify(wv)}, kreeg ${JSON.stringify(got[k])}`);
         }
       }
     }
