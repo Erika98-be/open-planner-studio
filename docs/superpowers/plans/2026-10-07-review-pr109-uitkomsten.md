@@ -1798,3 +1798,8 @@ Testversie (release-check, poort 3049) is NIET bijgewerkt met de PR's van vandaa
   regressietest beide assen (96aee0d7c), contractcheck bijgewerkt (37c6b1731). Delta-review (GPT-6.1-Sol, xhigh)
   gestart. Desktopapp van de eigenaar herladen op 37c6b1731; korte blik op de linkerkant van de Gantt-balk volgt.
 - #394 gemerged in main (6b0f278e8). Daarna #398 (andere sessie) gemerged in main (c5adb94f7).
+- **#400 "Uren overal als 10u (nl) en 10h (en)"** (worker Opus 5.5, branch `claude/uren-zonder-spatie`): CI groen op
+  2c271de71. Eigen keuzes maker: lag nl "+2u"/en "+2h", taal zonder parsebare afkorting valt terug op "u"
+  (`parseableHourSuffix`); CSV-export blijft taalneutraal "+2u". Orkestrator merget main c5adb94f7 erin (e4233d914,
+  geen conflict; typecheck, verify:i18n, verify:docs, check-uren-zonder-spatie, check-translate-docs exit 0).
+  Review (GPT-6.1-Sol, xhigh) gestart. Korte check eigenaar volgt na #362.
