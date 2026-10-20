@@ -2,6 +2,7 @@
 // parseExternalSource, fileTools.parseByExtension, devBridge.openFromPath) plus de bijbehorende
 // exportlijst (Backstage).
 
+import type { XerWriteInput, XerWriteResult } from '@/services/xerWriteTypes';
 import { readIFC, type IfcReadOptions } from '@/services/ifc/ifcReader';
 import {
   precomputeSha256, XER_SOURCE_ARCHIVE_COMPACT_STORAGE_FORMAT, XER_SOURCE_ARCHIVE_RECOVERY_REFERENCE_FORMAT,
@@ -272,6 +273,15 @@ export function importErrorMessageKey(
 }
 
 // ── Export-kant ──
+
+/**
+ * De XER-schrijver, achter dezelfde lazy grens als de XER-lezer (`services/xer/` is een eigen chunk,
+ * `check-xer-chunk-boundary.ts`): de hoofdbundel laadt hem pas bij een XER-export.
+ */
+export async function writeXerExport(input: XerWriteInput): Promise<XerWriteResult> {
+  const { writeXER } = await import('@/services/xer/xerWriter');
+  return writeXER(input);
+}
 
 export type ExportFormat = 'ifc' | 'csv' | 'mspdi' | 'p6' | 'xer' | 'progress-csv' | 'progress-xlsx';
 

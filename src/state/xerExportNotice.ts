@@ -1,4 +1,4 @@
-import type { XerWriteLoss } from '@/services/xer/xerWriter';
+import type { XerWriteLoss } from '@/services/xerWriteTypes';
 import type { XerExportLossCategory } from '@/services/xerExportLoss';
 import type { NotificationDetailLine, NotifyInput } from './slices/types';
 import { XER_EXPORT_HELP_ARTICLE_ID } from './helpArticles';

@@ -102,7 +102,9 @@ Gebruikersgidsen: `public/docs/{nl,en}/howto-xer-openen.md` en `uitleg-datums-zo
 ### De XER-schrijver (#391)
 
 `src/services/xer/xerWriter.ts` (`writeXER`) schrijft een `.xer` uit de documentstate; `exportAs('xer')`
-in `fileSlice.ts` roept hem aan en slaat de bytes op via `saveBytesDialog`. Vier regels:
+in `fileSlice.ts` laadt hem lazy via `writeXerExport` (`formatRegistry.ts`, dezelfde chunkgrens als de
+lezer) en slaat de bytes op via `saveBytesDialog`. Het contract (invoer, uitvoer, verliescodes,
+`LOSS_ORDER`) staat buiten de lazy map in `src/services/xerWriteTypes.ts`. Vier regels:
 (1) **Verlies wordt geteld, nooit stil.** Elke soort die XER niet draagt, telt de writer als
 `XerWriteLoss` (vaste volgorde `LOSS_ORDER`); `state/xerExportNotice.ts` maakt er één melding met een
 detailregel per soort van. Een nieuw OPS-gegeven dat de writer niet schrijft, krijgt een eigen code én

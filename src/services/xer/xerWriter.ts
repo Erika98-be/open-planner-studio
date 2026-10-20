@@ -24,7 +24,7 @@ import type { WorkCalendar } from '@/types/calendar';
 import { holidayEndDate } from '@/types/calendar';
 import type { Task } from '@/types/task';
 import type { Sequence, SequenceType } from '@/types/sequence';
-import type { Resource, ResourceAssignment } from '@/types/resource';
+import type { ResourceAssignment } from '@/types/resource';
 import { CalendarEngine } from '@/engine/scheduler/CalendarEngine';
 import { effectiveSchedulingOptions, resolveConventions, builtInConventions, CONVENTION_KEYS } from '@/engine/scheduler/conventions/registry';
 import { expandSummaryRelations } from '@/engine/scheduler/expandSummaryRelations';
@@ -46,52 +46,14 @@ import {
 import { P6_MAX_LENGTH } from '@/services/p6/p6xmlSchemaOrder';
 import { XER_RECORDED_OUTPUT_COLUMNS } from './xerRecordedTimes';
 import { OPS_XER_DURATION_UNIT_LABEL, OPS_XER_HOUR_CALENDARS_LABEL } from './xerOpsMarkers';
+import { LOSS_ORDER, type XerWriteInput, type XerWriteLossCode, type XerWriteResult } from '@/services/xerWriteTypes';
 
 // ── Contract ─────────────────────────────────────────────────────────────────────────────────────
 
-/** Eén soort verlies. De melding toont per code één regel met het aantal (`exportXerLossNotice`). */
-export type XerWriteLossCode =
-  | 'taskDescriptions' | 'activityCodes' | 'customFields' | 'externalLinks' | 'baselines'
-  | 'deadlines' | 'customTaskTypes' | 'taskCategories' | 'manualTasks' | 'elapsedDurations'
-  | 'levelingDelays' | 'splits' | 'percentLags' | 'elapsedLags' | 'summaryRelations'
-  | 'summaryAssignments' | 'resourceTypes' | 'libraryLinks' | 'holidayNames' | 'noteStatus'
-  | 'truncatedNames' | 'changedIds' | 'nonLatinText' | 'projectDetails' | 'schedulingRules'
-  | 'summaryNotes' | 'priorities';
-
-export interface XerWriteLoss {
-  readonly code: XerWriteLossCode;
-  readonly count: number;
-}
-
-export interface XerWriteInput {
-  project: Project;
-  /** Projectkalender. */
-  calendar: WorkCalendar;
-  /** De kalenderbibliotheek (mag de projectkalender bevatten). */
-  calendars: readonly WorkCalendar[];
-  tasks: readonly Task[];
-  sequences: readonly Sequence[];
-  resources: readonly Resource[];
-  assignments: readonly ResourceAssignment[];
-  /** Alleen geteld voor het verliesverslag: XER-baselines zijn aparte projecten (nog niet geschreven). */
-  baselineCount?: number;
-  /** P6 Project-ID van het document (`documentProjectCode`); leeg ⇒ `OPS:` + intern id. */
-  projectCode?: string | null;
-  /** Bewaarde P6 Resource-ID's (`rsrc_short_name`) per resource-id, uit een eerdere XER-import. */
-  resourceCodes?: ReadonlyMap<string, string>;
-  /** Exportdatum in de `ERMHDR`-kop; weglaten ⇒ vandaag. Tests geven een vaste datum. */
-  exportDate?: string;
-}
-
-export interface XerWriteResult {
-  /** De bestandsinhoud als tekst (regels met `\r\n`, zoals P6). */
-  text: string;
-  /** De bytes in `encoding`. */
-  bytes: Uint8Array;
-  /** `windows-1252` als elk teken past, anders `utf-8` (zonder BOM) en een `nonLatinText`-verlies. */
-  encoding: 'windows-1252' | 'utf-8';
-  loss: readonly XerWriteLoss[];
-}
+// Het contract (invoer, uitvoer, verliescodes) staat buiten deze map in `xerWriteTypes.ts`: de
+// store en de melding gebruiken het zonder de lazy XER-chunk te laden (`check-xer-chunk-boundary.ts`).
+export type { XerWriteInput, XerWriteLoss, XerWriteLossCode, XerWriteResult } from '@/services/xerWriteTypes';
+export { LOSS_ORDER } from '@/services/xerWriteTypes';
 
 // ── Vaste P6-tokens ─────────────────────────────────────────────────────────────────────────────
 
@@ -903,11 +865,3 @@ export function writeXER(input: XerWriteInput): XerWriteResult {
   return { text: content, bytes, encoding, loss };
 }
 
-/** Vaste volgorde van de regels in de melding. */
-export const LOSS_ORDER: readonly XerWriteLossCode[] = [
-  'schedulingRules', 'baselines', 'summaryRelations', 'summaryAssignments', 'percentLags', 'elapsedLags',
-  'elapsedDurations', 'manualTasks', 'levelingDelays', 'splits', 'deadlines', 'externalLinks',
-  'activityCodes', 'customFields', 'customTaskTypes', 'taskCategories', 'priorities', 'taskDescriptions',
-  'summaryNotes', 'noteStatus',
-  'resourceTypes', 'libraryLinks', 'holidayNames', 'projectDetails', 'truncatedNames', 'changedIds', 'nonLatinText',
-];

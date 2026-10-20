@@ -5,7 +5,7 @@ import { writeCSV, writeProgressSheetCSV } from '@/services/csv/csvWriter';
 import { flattenOrder, inferWbsAutoNumberOnOpen } from '@/utils/wbs';
 import { writeMSPDI } from '@/services/msproject/mspdiWriter';
 import { writeP6XMLWithReport } from '@/services/p6/p6xmlWriter';
-import { writeXER, type XerWriteLoss } from '@/services/xer/xerWriter';
+import type { XerWriteLoss } from '@/services/xerWriteTypes';
 import { exportXerLossNotice } from '@/state/xerExportNotice';
 import { countSplitTasksWithoutContour } from '@/services/contourIo';
 import { openFileDialog, saveFileDialog, saveBytesDialog, saveToRef, readFromRef, readBytesFromRef, saveTargetRef, type FileRef, type SaveOutcome } from '@/services/fileAccess';
@@ -18,7 +18,7 @@ import { withOpenNoticeSticky } from '@/state/openNoticeSticky';
 import { clearRefusals } from '@/state/refusalNotice';
 import { P6XML_IMPORT_HELP_ARTICLE_ID, RECORDED_DATES_HELP_ARTICLE_ID, XER_IMPORT_HELP_ARTICLE_ID } from '@/state/helpArticles';
 import { formatNoticeToShow } from '@/services/formatNotice';
-import { openDialogFilters, binaryExtensions, readFormatForFile, parseOpenedFile, importErrorMessageKey, saveTargetFor, readFormatInput, readIFCWithXerReconstruction, type ExportFormat } from '@/services/formatRegistry';
+import { openDialogFilters, binaryExtensions, readFormatForFile, parseOpenedFile, importErrorMessageKey, saveTargetFor, readFormatInput, readIFCWithXerReconstruction, writeXerExport, type ExportFormat } from '@/services/formatRegistry';
 import { loadRecents, addRecent, removeRecent, type RecentEntry } from '@/services/fileAccess/recentFiles';
 import { HOST_EVENTS } from '@/services/extensionEvents';
 import type { AppSliceFactory, NotifyInput, NotificationDetailLine } from './types';
@@ -1209,7 +1209,7 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
             const code = source.rawRow?.cells.rsrc_short_name?.trim();
             if (code) resourceCodes.set(source.internalId, code);
           }
-          const written = writeXER({
+          const written = await writeXerExport({
             project: state.project, calendar: state.calendar, calendars: state.calendars,
             tasks: state.tasks, sequences: state.sequences, resources: state.resources, assignments: state.assignments,
             baselineCount: state.baselines.length,
