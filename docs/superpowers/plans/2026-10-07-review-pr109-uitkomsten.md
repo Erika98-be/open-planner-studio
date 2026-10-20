@@ -1786,3 +1786,6 @@ Testversie (release-check, poort 3049) is NIET bijgewerkt met de PR's van vandaa
   C committen, splitter-overlap, main erin.
 - **#394 fixronde** (7c1719746): "10 u", blok "… 8 u … hier 10 u."; delta-review (GPT-6.1-Sol) JA, VERVOLG RTL "h 7.75",
   `TaskDurationField` `${hours}h`. Testversie 2faa4e497. Hercheck eigenaar volgt.
+- **Eigenaar 2026-10-20, besluit eenheid:** "ik wil overal 10u in het nederlands en 10h in het engels" (geen spatie).
+  Hercheck #394 donker goed. ⇒ #394 nu: kalendervenster "10u"/"10h" + RTL-isolatie (worker Opus 5.5). Rest van de app
+  (kolom *Duur* "80h" in nl, zinnen "320 u", gidsen, invoer): inventaris (Explore, Haiku 5.5) ⇒ voorstel eigen PR.
