@@ -82,7 +82,7 @@ Een nieuwe taak verandert nog niets aan de andere datums. De statusbalk meldt *V
 
 **Elke nieuwe taak begint op de projectstart.** Zonder relaties wacht een taak op niets. Leg relaties, zie [Relaties leggen](docs://howto-relaties-leggen).
 
-**Filteren, groeperen of sorteren staat aan.** Dan is de getoonde volgorde niet de volgorde van de planning. Met een geselecteerde taak voegen *Taak* en *Mijlpaal ▾* de nieuwe taak onderaan toe, en verschijnt de strook *Niet beschikbaar tijdens filteren/groeperen/sorteren*. *Invoegen boven* en *Invoegen onder* worden dan geweigerd, met dezelfde strook. Met de knop *Wissen* in de strook haal je filter, groepering en sortering in één keer weg. Dat staat niet in *Ongedaan*: Ctrl+Z brengt ze niet terug.
+**Filteren, groeperen of sorteren staat aan.** Dan is de getoonde volgorde niet de volgorde van de planning. Met een geselecteerde taak voegen *Taak* en *Mijlpaal ▾* de nieuwe taak onderaan toe. Een rode melding zegt dan *De nieuwe taak staat achteraan. Tijdens filteren, groeperen of sorteren kan de app hem niet onder je selectie zetten.* *Invoegen boven* en *Invoegen onder* worden dan geweigerd, met de strook *Niet beschikbaar tijdens filteren/groeperen/sorteren*. Met de knop *Wissen* in de melding of in de strook haal je filter, groepering en sortering in één keer weg. Dat staat niet in *Ongedaan*: Ctrl+Z brengt ze niet terug.
 
 **Een subtaak onder een taak met resource-toewijzingen.** De taak wordt een samenvattingstaak, en die draagt zelf geen toewijzingen. De app verplaatst de toewijzingen naar de nieuwe subtaak en meldt dat. Kan dat niet, bijvoorbeeld omdat je *Mijlpaal toevoegen* koos en een mijlpaal geen toewijzingen mag dragen, dan voegt de app niets toe en zegt hij waarom.
 

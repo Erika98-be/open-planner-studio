@@ -214,20 +214,22 @@ function reset() {
   const rawOld = readIFC(oldFile).tasks.find(t => t.name === 'Fase')!;
   eq('Fixture: het bestand draagt de bevroren fasewaarde', [rawOld.time.completion, rawOld.status], [0.62, 'STARTED']);
 
-  // Integratie groep B × main (heropen-beleid, eigenaarsbesluit 2026-09-24 "beperken"): een eigen
-  // IFC biedt "datums zoals opgeslagen" alleen nog aan als het bestand zijn oorspronkelijke bron
-  // noemt (`recordedSourceFormat`, geschreven in de modus). Het "oude" bestand hier stamt dus uit
-  // een MSPDI-import; de fasevoortgang-regel die deze sectie bewaakt, verandert daar niet door.
-  const parsedOld = readIFC(oldFile);
-  parsedOld.recordedSourceFormat = 'mspdi';
-  S().applyLoadedProject(parsedOld, { filePath: null, recompute: true });
+  // Dit deel toetst openen BUITEN de modus: het bestand is buiten de modus opgeslagen en draagt dus
+  // geen `recordedSourceFormat` (`ifcSaveInput.ts` schrijft die alleen in de modus). Tot #371 zette
+  // deze fixture die bronvlag wél, alleen zodat openen de modus AANBOOD (heropen-beleid 2026-09-24).
+  // Sinds #371 (eigenaar, 2026-10-17, "zoals je het achterliet") opent een eigen IFC mét bronvlag
+  // weer IN de modus, en daar toont de fase haar opgeslagen voortgang (het tweede deel hieronder).
+  S().applyLoadedProject(readIFC(oldFile), { filePath: null, recompute: true });
   eq('Openen: de fase krijgt de afgeleide voortgang, niet de bevroren bestandswaarde',
     { completion: byName('Fase').time.completion, status: byName('Fase').status }, { completion: 1, status: 'COMPLETED' });
   const resaved = readIFC(writeIFC(buildWriteIFCInput(S()))).tasks.find(t => t.name === 'Fase')!;
   eq('Openen + opslaan: het bestand draagt nu de afgeleide waarde', [resaved.time.completion, resaved.status], [1, 'COMPLETED']);
 
-  ok('Fixture: openen bood "datums zoals opgeslagen" aan', !!S().recordedDates);
-  S().showRecordedDates();
+  // Geen aanbod-stand meer (eigenaar, 2026-10-17): een buiten de modus opgeslagen eigen IFC vergeet
+  // de opgeslagen datums. Hetzelfde bestand als ONBEWERKT (vlag aan) opent in de modus.
+  ok('Fixture (buiten de modus opgeslagen): openen vergeet de opgeslagen datums', S().recordedDates === null && !S().datesAsRecorded);
+  S().applyLoadedProject({ ...readIFC(oldFile), recordedSourceFormat: 'mspdi', importPristine: true }, { filePath: null, recompute: true });
+  ok('Fixture (onbewerkt): opent in "datums zoals opgeslagen"', S().datesAsRecorded);
   eq('"Datums zoals opgeslagen": de fase toont haar opgeslagen voortgang',
     { completion: byName('Fase').time.completion, status: byName('Fase').status }, { completion: 0.62, status: 'STARTED' });
   eq('"Datums zoals opgeslagen": WBS-rapport volgt de opgeslagen waarde', wbsCompletion(byName('Fase').id), 0.62);

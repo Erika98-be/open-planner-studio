@@ -437,13 +437,14 @@ export function TaskGridSurface({
     signedWorkDaysBetween: (fromIso, toIso) => signedWorkDaysBetween(calendarEngine, fromIso, toIso),
     // ⚠ bij een baseline van een urentaak met de oude dagtelling (alleen weergave).
     baselineOldDay: createBaselineOldDayCheck(calendar, calendars),
-    // "Datums zoals opgeslagen" — `undefined` op documenten zonder
-    // vastlegging, dus de kolom `recorded.source` en de "niet vastgelegd"-tak op late/float
+    // "Datums zoals opgeslagen" — `undefined` buiten de modus, dus de kolom `recorded.source` en de "niet vastgelegd"-tak op late/float
     // bestaan dan niet (`available`-gates in taskColumnRegistry.ts). De poort per naad staat in
     // `recordedGridBinding` (gedeeld met `gridTransaction.ts`, headless getest): de "niet
-    // vastgelegd"-tak hangt aan `datesAsRecorded`, niet aan het loutere bestaan van een aanbod.
+    // vastgelegd"-tak hangt aan `datesAsRecorded`.
     ...recordedGridBinding(recordedDates, datesAsRecorded),
     taskTypesUnlocked: showTaskTypes || taskTypesVisible,
+    // Zelfde effectieve regel als het paneel en de duurbewerking (uitleg bij het ⚠, besluit V10).
+    defaultWorkRule: project.defaultWorkRule,
     labelForColumn: labelKey => resolveColumnLabel(
       labelKey,
       key => tTask(key, { defaultValue: key }),
@@ -460,7 +461,7 @@ export function TaskGridSurface({
   }), [
     activityCodeTypes, assignments, baselines, calendar, calendarEngine, calendarOptions, calendars,
     cpmResult, customFieldDefs, customTaskTypes, datesAsRecorded, dateNotation, timeNotation, durationDisplay, project.id,
-    project.wbsAutoNumber, recordedDates, resources, scheduleStale, sequences, showTaskTypes,
+    project.defaultWorkRule, project.wbsAutoNumber, recordedDates, resources, scheduleStale, sequences, showTaskTypes,
     taskTypesVisible, tCommon, tTask, taskI18n.language, tasks, textDirection, showGhostRow, ghostTask,
   ]);
   // Vastleggen op de spookregel: maak de taak (onderaan, op het niveau van de laatste taak) en schrijf

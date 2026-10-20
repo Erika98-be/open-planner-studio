@@ -28,7 +28,7 @@ Change the name in the list. The change applies immediately; you do not have to 
 
 ### Deleting a baseline
 
-Click the small wastebasket next to the baseline in the list. If you delete the active baseline, the app asks *Delete the active baseline?*. Afterwards the newest remaining baseline becomes the active one. If there is no other, there is no active baseline any more and the overlay disappears. With Ctrl+Z you bring back a deleted baseline.
+Click the small wastebasket next to the baseline in the list. If you delete the active baseline, the app asks *Delete the active baseline?*. Afterwards the newest remaining baseline becomes the active one. If there is no other, there is no active baseline any more and the overlay disappears. You bring back a deleted baseline with Ctrl+Z. Close the window first; Ctrl+Z does not work inside a window.
 
 ### Variances in the task table
 

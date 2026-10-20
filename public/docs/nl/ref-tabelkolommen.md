@@ -69,7 +69,7 @@ Standaard toont de tabel naast de Gantt *WBS*, *Taaknaam* en *Duur*. De tabel op
 - **Toewijzingscurve** — de curve per resource, als `Naam: Uniform`. Bewerkbaar bij een taak met toewijzingen.
 - **Start werkvenster** en **Einde werkvenster** — het werkvenster per resource, uit een geïmporteerd bestand, als `Naam: datum`. Alleen-lezen.
 - **Begroot werk (uren)** en **Verricht werk (uren)** — het begrote en verrichte werk per resource in uren, als `Naam: 12`, uit een geïmporteerd bestand. Alleen-lezen.
-- **Resterend werk (uren)** — het resterende werk per resource in uren, als `Naam: 6`: het opgeslagen werk, anders restduur × inzet. Bewerkbaar bij een taak met toewijzingen waarop een taaktype werkt. Alleen zichtbaar in de kiezer als de taaktypes zichtbaar zijn.
+- **Resterend werk (uren)** — het resterende werk per resource in uren, als `Naam: 6`: het opgeslagen werk, anders restduur × inzet. Bewerkbaar bij een taak met toewijzingen waarop een taaktype werkt. Alleen zichtbaar in de kiezer als de taaktypes zichtbaar zijn. Een geel ⚠ in de cel betekent dat het opgeslagen werk afwijkt van inzet × restduur, net als het ⚠ bij *Werk (rest)* in het taakpaneel.
 
 ## Voortgang
 
@@ -96,7 +96,7 @@ Alle kolommen in deze categorie zijn alleen-lezen.
 - **Interfererende speling** — totale speling min vrije speling.
 - **Bijna kritiek** — *Ja* voor een bijna-kritieke taak. Alleen gevuld als *Bijna-kritiek markeren* aan staat (*Projectinstellingen*, blok *Rekenprofiel en reken-opties*); anders een streepje.
 - **Spelingpad** — het nummer van het spelingpad, 1 voor het meest kritieke. Alleen gevuld als *Meerdere speling-paden* aan staat; anders een streepje.
-- **Herkomst (opgeslagen datums)** — bij een bestand met vastgelegde datums: *Wijkt af* of *Deels niet vastgelegd*. Alleen zichtbaar in de kiezer bij zo'n bestand. Bij een niet vastgelegde as staat *Niet vastgelegd* in de late-datum- en spelingkolommen.
+- **Herkomst (opgeslagen datums)** — zolang de app de datums uit het bestand toont: *Deels niet vastgelegd* bij een taak waarvan het bestand niet alles bevat. Alleen zichtbaar in de kiezer in die weergave. Bij een niet vastgelegde as staat *Niet vastgelegd* in de late-datum- en spelingkolommen.
 
 Zie [Kritiek pad en speling](docs://uitleg-kritiek-pad).
 

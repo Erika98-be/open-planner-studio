@@ -506,11 +506,12 @@ function roundTrip(label: string, tk: Task[], seq: Sequence[], cal: WorkCalendar
     try { return { out: fn(), warns }; } finally { console.warn = orig; }
   };
 
-  // (a) P6 mapping-tabel béíde richtingen: writer emitteert de CS_*-code, reader leest 'm terug.
+  // (a) P6 mapping-tabel béíde richtingen: writer emitteert het PMXML-label (MPXJ
+  //     `ConstraintTypeHelper.XML_TYPE_MAP`), reader leest 'm terug.
   const P6_MAP: [ConstraintType, string, boolean][] = [
-    ['ALAP', 'CS_ALAP', false], ['SNET', 'CS_MSOA', false], ['SNLT', 'CS_MSOB', false],
-    ['FNET', 'CS_MEOA', false], ['FNLT', 'CS_MEOB', false], ['MSO', 'CS_MSO', false],
-    ['MFO', 'CS_MEO', false], ['MSO', 'CS_MANDSTART', true], ['MFO', 'CS_MANDFIN', true],
+    ['ALAP', 'As Late As Possible', false], ['SNET', 'Start On or After', false], ['SNLT', 'Start On or Before', false],
+    ['FNET', 'Finish On or After', false], ['FNLT', 'Finish On or Before', false], ['MSO', 'Start On', false],
+    ['MFO', 'Finish On', false], ['MSO', 'Mandatory Start', true], ['MFO', 'Mandatory Finish', true],
   ];
   for (const [type, code, hard] of P6_MAP) {
     const tk = mkT({ constraint: { type, ...(type === 'ALAP' ? {} : { date: D }), ...(hard ? { hard: true } : {}) } });
@@ -536,8 +537,8 @@ function roundTrip(label: string, tk: Task[], seq: Sequence[], cal: WorkCalendar
   }
 
   // (c) De soft↔hard-VAL: soft MSO/MFO mag op MSPDI NIET naar code 2/3 (hard) — degradeert naar
-  //     SNET(4)/FNET(6) mét warn; op P6 blijft soft MSO/MFO exact (CS_MSO/CS_MEO).
-  for (const [type, mspCode, p6Code] of [['MSO', 4, 'CS_MSO'], ['MFO', 6, 'CS_MEO']] as const) {
+  //     SNET(4)/FNET(6) mét warn; op P6 blijft soft MSO/MFO exact (`Start On`/`Finish On`).
+  for (const [type, mspCode, p6Code] of [['MSO', 4, 'Start On'], ['MFO', 6, 'Finish On']] as const) {
     const tk = mkT({ constraint: { type, date: D } });
     const { out: mspXml, warns } = withWarns(() => writeMSPDI(dayProj, dayCal, tk, [], [], []));
     assert(mspXml.includes(`<ConstraintType>${mspCode}</ConstraintType>`), `MSPDI soft ${type} → code ${mspCode} (NIET hard 2/3)`);
@@ -546,7 +547,7 @@ function roundTrip(label: string, tk: Task[], seq: Sequence[], cal: WorkCalendar
     eq(`MSPDI soft ${type} leest terug als soft ${type === 'MSO' ? 'SNET' : 'FNET'}`, withWarns(() => readT('MSPDI', tk)).out.constraint?.type, type === 'MSO' ? 'SNET' : 'FNET');
     // P6: soft MSO/MFO behoudt semantiek (geen degradatie) — zowel in de GESCHREVEN code als
     // teruggelezen. De code-assertie ontbrak: `p6Code` stond wel in de tabel maar werd nooit
-    // gebruikt, dus een writer die stil naar CS_MANDSTART/CS_MANDFIN (hard) zou zakken bleef
+    // gebruikt, dus een writer die stil naar `Mandatory Start`/`Mandatory Finish` (hard) zou zakken bleef
     // ongezien zolang de reader het type maar terugvond.
     const p6Xml = writeP6XML(dayProj, dayCal, tk, [], [], []);
     assert(p6Xml.includes(`<PrimaryConstraintType>${p6Code}</PrimaryConstraintType>`), `P6 soft ${type} → ${p6Code}`);

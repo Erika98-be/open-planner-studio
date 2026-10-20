@@ -238,6 +238,14 @@ vroeger (de klokuren). v2026.9.0 leest de blokken van een nieuw bestand al niet 
 `HoursPerDay` in plaats van 8. Toetsen: `check-ifc-urenperdag-blokken.ts`, `check-ifc-urenperdag-corpus.ts`
 (met `OPS_XER_CORPUS`) en §10 van `check-ifc-calendar-identity.ts`.
 
+Een dagkalender met werktijd 00:00–24:00 schrijft één periode '00:00:00'–'24:00:00'. De reader ziet die
+periode zelf als afwijkend (een hele dag, `canonicalizeBands`) en promoveerde de kalender zonder markering
+naar een uurkalender met 24 uur per dag; de bewaarde `HoursPerDay` verloor het van de promotie. Daarom
+krijgt zo'n dagkalender `IsHourCalendar = .F.` (`scalarPeriodReadsAsHour` in `ifcWriter.ts`), net als een
+dagkalender met gematerialiseerde blokken. Dezelfde toets geldt voor een periode over middernacht. Andere
+dagkalenders krijgen geen markering. Een bestand van vóór deze regel leest nog als uurkalender. Toets:
+`check-ifc-dagkalender-hele-dag.ts`.
+
 Het verborgen dagengetal van een urentaak volgt `hoursPerDay` niet (eigenaarsbesluit 2026-10-15, optie 2:
 "een dag is de echte werktijd"). `scheduleDuration` is daar werkminuten ÷ de werktijd per dag van de
 taakkalender, bij een uurkalender de modale dagsom van de blokken (`hourTaskScheduleDuration` in

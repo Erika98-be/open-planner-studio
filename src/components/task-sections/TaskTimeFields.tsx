@@ -13,6 +13,7 @@ import { Task } from '@/types/task';
 import { DateTextInput } from '@/components/common/DateTextInput';
 import { Field } from './shared';
 import { TaskDurationField } from './TaskDurationField';
+import { TaskRecordedDatesNotice } from './TaskRecordedDatesNotice';
 
 /**
  * Start + gedeelde taakduur — sectie van `TaskPropertiesPanel`. Dialoog en paneel monteren
@@ -55,6 +56,9 @@ export function TaskTimeFields({ task, onChange }: {
       <div className="h-px" style={{ background: 'var(--theme-border-light)' }} />
       <span className="ui-card-header !text-small !leading-4">{t('properties.time')}</span>
 
+      {/* "Datums zoals opgeslagen" gaat over deze datums: het blok staat er direct boven (eigenaar, 2026-10-17). */}
+      <TaskRecordedDatesNotice taskId={task.id} />
+
       {/* In de smalle rechterrail zou de helft van een tweekolomsrij de duurwaarde weer tot een
           strookje drukken. Start en duur blijven dezelfde velden, maar krijgen hier elk de volle
           paneelbreedte; de dialoog heeft onafhankelijk daarvan voldoende ruimte voor twee kolommen. */}
@@ -77,7 +81,7 @@ export function TaskTimeFields({ task, onChange }: {
               // melden, en het veld laat de invoer los (`false`).
               const blocking = constraintBlockingStart(task, driven);
               if (blocking) {
-                notifyStartEdit(state.notify, [{ kind: 'blocked', name: task.name, constraint: blocking }], state.ui.dateNotation, state.ui.timeNotation);
+                notifyStartEdit(state.notify, [{ kind: 'blocked', name: task.name, constraint: blocking, taskId: task.id }], state.ui.dateNotation, state.ui.timeNotation);
                 return false;
               }
               // Voorganger? Dan wordt de getypte start een SNET. Anker en beperking in één patch,

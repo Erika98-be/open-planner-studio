@@ -406,10 +406,6 @@
     "timephasedActive": "Følger timefordelingen fra MS Project",
     "timephasedLost": "Datovindue fra MS Project er ikke længere anvendt efter redigering — timefordelingen selv gælder stadig og gemmes",
     "timephasedContoured": "Egen timefordeling",
-    "recordedDatesActive": "Viser Primaveras egne gemte datoer for denne opgave",
-    "recordedDatesActiveNeutral": "Viser datoerne som de står i filen for denne opgave",
-    "recordedDatesDeviates": "Afviger fra de gemte datoer",
-    "recordedDatesPartlyUnrecorded": "Registreringen er delvis ufuldstændig — se kolonnerne for seneste datoer og slæk.",
     "completion": "Fremdrift (%)",
     "progress": {
       "actualStart": "Faktisk startdato",
@@ -458,7 +454,7 @@
       "work": "Arbejde (rest.)",
       "workHint": "Resterende arbejde i timer; arbejdsreglen afgør om varighed eller tildelingsenheder ændrer sig.",
       "workDeviates": "Afviger fra tildelingsenheder × varighed",
-      "workDeviatesHint": "Gemt arbejde {{stored}} t afviger fra tildelingsenheder × resterende varighed ({{derived}} t). Histogrammet følger det gemte arbejde over hele opgavens varighed; enhederne bliver som filen gav dem.",
+      "workDeviatesHint": "Gemt arbejde {{stored}} t afviger fra tildelingsenheder × resterende varighed ({{derived}} t). Histogrammet følger det gemte arbejde over hele opgavens varighed; enhederne bliver som filen gav dem. Hvis du ændrer varigheden, genberegner appen det.",
       "locked": "Beskyttet af arbejdsreglen {{rule}}"
     },
     "notes": {

@@ -40,7 +40,7 @@ import { diffDays } from '@/utils/dateUtils';
 import { hoursPerDayForBlocks, workDaysFromBands, workDaysSetPatch } from '@/services/subdayIo';
 import { effHoursPerDay } from '@/utils/taskDuration';
 import type { GeneratorCountry, HolidayGenParams } from '@/engine/calendar/generateCalendarHolidays';
-import type { CalendarGeneration, Holiday, WorkCalendar, WorkingException, WorkTimeBands } from '@/types/calendar';
+import { isHourModeCalendar, type CalendarGeneration, type Holiday, type WorkCalendar, type WorkingException, type WorkTimeBands } from '@/types/calendar';
 import { isResourceCurve, isValidUnits, RESOURCE_CURVES, type ResourceCurve } from '@/types/resource';
 import type { Project } from '@/types/project';
 import type { LevelingOptions, LevelingResult } from '@/engine/scheduler/ResourceLeveler';
@@ -767,7 +767,7 @@ function calendarFieldPatch(item: CalendarItem, existing: CalendarBase): Partial
 // worden gemeld; `durationUnit`, `scheduleDuration` en `durationMinutes` blijven onaangeroerd.
 
 function calendarMode(cal: Pick<WorkCalendar, 'workTime'>): 'hour' | 'day' {
-  return cal.workTime ? 'hour' : 'day';
+  return isHourModeCalendar(cal) ? 'hour' : 'day';
 }
 
 /**

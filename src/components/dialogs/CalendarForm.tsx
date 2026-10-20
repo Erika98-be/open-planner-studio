@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Info, Plus, Trash2, X } from 'lucide-react';
-import type { WorkCalendar, Holiday, WorkTimeBands } from '@/types/calendar';
+import { isHourModeCalendar, type WorkCalendar, type Holiday, type WorkTimeBands } from '@/types/calendar';
 import { accentChipClass, CalendarGeneratorFields } from './CalendarGeneratorFields';
 import { WorkTimeEditor } from './WorkTimeEditor';
 import { DateTextInput } from '@/components/common/DateTextInput';
@@ -9,7 +9,7 @@ import { StepButtons, TimeInput, TIME_STEP_MINUTES } from '@/components/common/T
 import { formatClock, parseClock } from '@/utils/displayTime';
 import { useAppStore } from '@/state/appStore';
 import {
-  isHourCalendar, hoursPerDayForBlocks, workDayTogglePatch, workDaysFromBands, workDaysSetPatch,
+  hoursPerDayForBlocks, workDayTogglePatch, workDaysFromBands, workDaysSetPatch,
   type WorkTimeSessionStart,
 } from '@/services/subdayIo';
 import { generateId } from '@/utils/id';
@@ -99,7 +99,7 @@ export function CalendarForm({
   // pauze bestaan dan niet als veld (die zouden `workTime` niet raken). Urenplanning bepaalt alleen of
   // een eenvoudige kalender werkblokken kan KRIJGEN (presets, "Per weekdag instellen…").
   // Besluit eigenaar 2026-10-13 (optie 2), vervangt de alleen-lezen-stand uit #334.
-  const hourMode = isHourCalendar(draft);
+  const hourMode = isHourModeCalendar(draft);
   const showWorkTimeSection = enableHourPlanning || hourMode;
   const scalarBreakError = calendarScalarBreakIssue(draft);
   // Oude scalar-kalenders hebben nog geen velden, maar hun zichtbare waarden moeten het bestaande

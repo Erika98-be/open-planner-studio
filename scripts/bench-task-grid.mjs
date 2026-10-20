@@ -100,7 +100,12 @@ const report = {
     buildHash: buildHash(),
   },
   counts: benchmark.counts,
-  protocol: { warmups: benchmark.warmups, runs: benchmark.runs, statistic: 'median' },
+  protocol: {
+    warmups: benchmark.warmups,
+    runs: benchmark.runs,
+    selectionAdapter: benchmark.selectionAdapterProtocol,
+    statistic: 'median',
+  },
   budgetsMs: benchmark.budgetsMs,
   mediansMs,
   samplesMs,

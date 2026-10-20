@@ -9,9 +9,9 @@ import {
   isDefaultProfile, resolveConventions, switchProfile,
 } from '@/engine/scheduler/conventions/registry';
 import { MAX_PROFILE_ID_LENGTH, MAX_PROFILE_NAME_LENGTH } from '@/services/ifc/schedulingOptionsRead';
-import { fileHasHourData, isHourCalendar } from '@/services/subdayIo';
+import { fileHasHourData } from '@/services/subdayIo';
 import type { Task } from '@/types/task';
-import type { WorkCalendar } from '@/types/calendar';
+import { isHourModeCalendar, type WorkCalendar } from '@/types/calendar';
 
 /** Wat het blok bewerkt: het profiel en de projectopties van één project. */
 export interface SchedulingSettingsDraft {
@@ -336,6 +336,6 @@ export function ssLagHasHourPlanning(
   options: ProjectSchedulingOptions | undefined, tasks: Task[], calendar: WorkCalendar, calendars: readonly WorkCalendar[],
 ): boolean {
   if (options?.lagCalendar === '24hour') return true;
-  if (options?.lagCalendar === 'projectDefault') return isHourCalendar(calendar);
+  if (options?.lagCalendar === 'projectDefault') return isHourModeCalendar(calendar);
   return fileHasHourData(tasks, [calendar, ...calendars]);
 }

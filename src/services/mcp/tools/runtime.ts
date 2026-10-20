@@ -130,12 +130,16 @@ export function buildEnvelope(ctx: McpContext): McpEnvelope {
 // --- Dialoog-guard ------------------------------------------------------------------------------
 
 /**
- * De ui-vlaggen die `hasBlockingDialogOpen()` (shortcutRegistry) als blokkerend beschouwt, in
- * dezelfde volgorde. `hasBlockingDialogOpen()` is de gezaghebbende boolean-poort; deze lijst dient
- * alleen om de fout te BENOEMEN met welke vlag open staat ("fout benoemt wélke dialoog/overlay").
- * Blijft die lijst en deze in sync — beide spiegelen de modale overlays van de app.
+ * De ui-vlaggen die `hasBlockingDialogOpen()` (shortcutRegistry) als blokkerend beschouwt.
+ * `hasBlockingDialogOpen()` is de gezaghebbende boolean-poort; deze lijst dient alleen om de fout te
+ * BENOEMEN met welke vlag open staat ("fout benoemt wélke dialoog/overlay"). De volgorde bepaalt
+ * alleen welke naam wint als er meer tegelijk open staan; ze volgt die van `hasBlockingDialogOpen()`
+ * niet overal (`pendingCloseDocId` staat hier bovenaan, daar achteraan). Houd wel de INHOUD van beide
+ * in sync — beide spiegelen de modale overlays van de app.
  */
 const BLOCKING_UI_FLAGS = [
+  // De sluitvraag ("wijzigingen opslaan?") gebruikt geen `Dialog`, maar is wel modaal.
+  'pendingCloseDocId',
   'showTaskDialog', 'showProjectSettings', 'showProjectInfoDialog', 'showSettingsDialog',
   'showCalendarDialog', 'showUpdateDialog', 'showNewProjectDialog', 'showFeedbackDialog',
   'showStructureDialog', 'showLevelingDialog', 'showBaselineDialog', 'showColumnsDialog',
@@ -414,6 +418,14 @@ export async function runMutateTool(
   if (backupPath) envelope.backupCreated = backupPath;
   // Zie het docblok bij `McpEnvelope.timephasedGuidanceLost`.
   if (res.timephasedGuidanceLost > 0) envelope.timephasedGuidanceLost = res.timephasedGuidanceLost;
+  // Zie het docblok bij `McpEnvelope.remainingWorkRecomputed`.
+  if (res.remainingWorkRecomputed.length > 0) {
+    const hours = (minutes: number) => Math.round((minutes / 60) * 100) / 100;
+    envelope.remainingWorkRecomputed = res.remainingWorkRecomputed.map((item) => ({
+      taskId: item.taskId, taskName: item.taskName, assignmentId: item.assignmentId, resourceId: item.resourceId,
+      beforeHours: hours(item.beforeMinutes), afterHours: hours(item.afterMinutes),
+    }));
+  }
   const outcome = res.value;
   const ok: McpToolResult = { ok: true, envelope, data: outcome.data };
   if (outcome.itemRejections && outcome.itemRejections.length > 0) {

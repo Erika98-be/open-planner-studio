@@ -14,7 +14,8 @@ The status date is the day on which you take stock. Set it before you enter prog
 
 1. Go to *Planning › Baselines & progress › Status date*.
 2. Type the date in the three boxes for day, month and year (in the order of your date notation), for example 28, 06 and 2027, and press Enter. The app jumps to the next box by itself.
-3. With the small cross next to the field you empty the status date again.
+3. Does the project calendar have working-time blocks (the *Working times* block in the *Calendars* window)? Then the app calculates in hours and a time field shows on the right, for example 17:00. Type another time, for example 12:00, and press Enter. If you empty the time field, only the date remains. If you change only the date, the time stays. The time follows your time notation (24 or 12 hours). Without working-time blocks the app calculates in whole days: then there is no time field and the status date line sits at the start of the day.
+4. With the small cross next to the field you empty the status date again.
 
 If you take stock on Friday after working hours, set the status date to the next working day, Monday. The app plans the remaining work from the start of the status date.
 
