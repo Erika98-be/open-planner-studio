@@ -1777,3 +1777,12 @@ Testversie (release-check, poort 3049) is NIET bijgewerkt met de PR's van vandaa
 - **#362 desktopcheck eigenaar** (tauri:dev in `zwevende-balken`, poort 3070): balken "lichten op een vreemde manier op"
   bij hover en zijn "veel te dun; eerst was hij veel dikker" (ook de Gantt-balk); vermoeden eigenaar: lagenvolgorde.
   Expert (Opus 5.5, xhigh) meet onzichtbaar in WebKitGTK (dikte, hover, elementFromPoint) en proeft fixrichtingen.
+- **#362 oorzaak dunne balk** (expert Opus 5.5, WebKitGTK 2.52.6 onzichtbaar gemeten): `scrollbar-width`/`scrollbar-color`
+  zetten in WebKit de `::-webkit-scrollbar`-regels uit ⇒ Adwaita-overlaybalk (3 px; bij hover 8 px op 6–14 px van de
+  rand, afgeknipt in de 8px-strook). Geen lagenprobleem (elementFromPoint 40/40 op de balk); splitter dekt eerste 5 px
+  van de Gantt-balk. Gantt-balk dun sinds d647ac172 (#35, 2026-07-28). Variant C (`@supports not selector(::-webkit-scrollbar)`)
+  live in de desktopapp: eigenaar "verder is het heel goed"; bevinding: Gantt-balk verdwijnt een klein stukje onder de
+  tabel. **Shift+wiel boven de verticale balk: eigenaar optie 1** (overal horizontaal). Fixronde (worker Opus 5.5):
+  C committen, splitter-overlap, main erin.
+- **#394 fixronde** (7c1719746): "10 u", blok "… 8 u … hier 10 u."; delta-review (GPT-6.1-Sol) JA, VERVOLG RTL "h 7.75",
+  `TaskDurationField` `${hours}h`. Testversie 2faa4e497. Hercheck eigenaar volgt.
