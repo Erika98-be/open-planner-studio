@@ -177,6 +177,10 @@ const NOT_A_REFUSAL: Record<string, string> = {
   xerImportEmptyProjectsSkipped: 'openingsmelding bij import (eigenaarsbesluit: niet rood)',
   summaryRelationsDropped: 'openingsmelding bij import (eigenaarsbesluit: niet rood)',
   p6xmlImportUnassignedActivities: 'openingsmelding bij import (eigenaarsbesluit: niet rood)',
+  // Importverslag MS Project (#391): detailregels onder een openingsmelding, zoals P6 XML.
+  ...Object.fromEntries(['Baselines', 'ExtraBaselines', 'BaselineWorkCost', 'AssignmentBaselineDates', 'CustomFields', 'Notes', 'Hyperlinks', 'FixedCosts', 'ResourceRates',
+    'Subprojects', 'ExternalTasks', 'ManualTasks', 'LevelingDelays', 'InactiveTasks', 'CriticalSlack']
+    .map(c => [`msProjectLost${c}`, 'openingsmelding bij import (eigenaarsbesluit: niet rood)'])),
   notAppliedTaskNames: 'detailregel onder een weigering', notAppliedTaskNamesMore: 'detailregel onder een weigering',
   refusedRelationNames: 'detailregel onder een weigering', refusedRelationNamesMore: 'detailregel onder een weigering',
   refusedTaskNames: 'detailregel onder een weigering', refusedTaskNamesMore: 'detailregel onder een weigering',
