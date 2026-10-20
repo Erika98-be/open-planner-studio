@@ -58,7 +58,10 @@ import type { ResourceType, ResourceCurve } from '@/types/resource';
 import type { LevelingResult } from '@/engine/scheduler/ResourceLeveler';
 import { CalendarEngine } from '@/engine/scheduler/CalendarEngine';
 import { parseDuration } from '@/utils/durationFormat';
-import type { WorkTimeBands, WorkingException } from '@/types/calendar';
+import type { WorkTimeBands, WorkingException, WorkCalendar } from '@/types/calendar';
+import { seedScalarBands, seedScalarWorkTime } from '@/utils/effectiveWorkTime';
+import { parseDate, formatDate } from '@/utils/dateUtils';
+import { taskDurationUnit } from '@/engine/scheduler/duration';
 import { computeVariance } from '@/engine/variance';
 import {
   computeViewRows, isTreeMode, encodeBandKey, firstRowIndexByTask, NONE_RAWKEY,
@@ -75,6 +78,75 @@ import { isAncestorRelation, relationCycle } from '@/state/relationRules';
 
 const S = () => useAppStore.getState();
 const CLEAN_WORKDAYS = [1, 2, 3, 4, 5];
+
+// ════════════════════════════════════════════════════════════════════════════════════════════════
+//  WEGWERP-METING (claude/uren-poc-meting): OPS_FORCE_HOURS=1 zet elke DAGcase vóór het rekenen om
+//  naar het URENpad. Elke kalender krijgt banden uit `seedScalarBands`, elke duur/lag wordt minuten,
+//  datums zonder tijd krijgen een tijd. De comparator vergelijkt dan een verwachte `YYYY-MM-DD` met
+//  de eerste 10 tekens, en tf/ff/intf met tolerantie 1e-6. Zonder de vlag verandert er niets.
+//  OPS_FORCE_HOURS_MILESTONE=days houdt nulduur-mijlpalen als dagtaak (variant).
+// ════════════════════════════════════════════════════════════════════════════════════════════════
+const FORCE_HOURS = process.env.OPS_FORCE_HOURS === '1';
+const FORCE_HOURS_MS_DAYS = process.env.OPS_FORCE_HOURS_MILESTONE === 'days';
+class NotConvertible extends Error {}
+const DATETIME_RE = /\d{4}-\d\d-\d\dT\d\d:\d\d/;
+const MS_PER_DAY = 86_400_000;
+const pad2 = (n: number) => String(n).padStart(2, '0');
+const hhmm = (min: number) => `${pad2(Math.floor(min / 60))}:${pad2(min % 60)}`;
+const addDaysIso = (d: string, n: number) => formatDate(new Date(parseDate(d).getTime() + n * MS_PER_DAY));
+
+/** Reden waarom een case al een URENcase is (dan hoort hij niet bij de meting), of null. */
+function hourCaseReason(c: Case): string | null {
+  const s = JSON.stringify(c);
+  if (s.includes('"workTime"')) return 'workTime';
+  if (DATETIME_RE.test(s)) return 'datetime';
+  if (s.includes('"lagMinutes"')) return 'lagMinutes';
+  if (s.includes('"remainingMinutes"')) return 'remainingMinutes';
+  if (s.includes('"levelingDelayMinutes"')) return 'levelingDelayMinutes';
+  for (const t of c.tasks ?? []) {
+    if (typeof t.dur === 'string' && !/^\d+d$/i.test(t.dur.trim())) return `dur "${t.dur}"`;
+  }
+  for (const l of c.links ?? []) if (typeof l.lag === 'string') return `lag "${l.lag}"`;
+  return null;
+}
+
+/** Banden voor een scalaire kalender, of NotConvertible als er geen af te leiden zijn. */
+function forcedWorkTime(base: WorkCalendar, workDays: number[], hpd: number, label: string): WorkTimeBands {
+  const bands = seedScalarBands(
+    base.workStartHour * 60, base.workEndHour * 60, hpd,
+    base.simpleBreakStartMinute, base.simpleBreakDurationMinutes,
+  );
+  if (bands.length === 0) {
+    throw new NotConvertible(`${label}: geen banden af te leiden (hpd ${hpd}, spanne ${base.workStartHour}-${base.workEndHour})`);
+  }
+  return seedScalarWorkTime(
+    workDays, base.workStartHour, base.workEndHour, hpd,
+    base.simpleBreakStartMinute, base.simpleBreakDurationMinutes,
+  );
+}
+
+/** Start-achtige datum ⇒ begin van de eerste band van die dag. Niet-werkdag ⇒ ongewijzigd
+ *  (middernacht; de solver snapt dat vooruit, net als dagmodus). */
+function startLike(d: string, eng: CalendarEngine): string {
+  if (DATETIME_RE.test(d)) return d;
+  const bands = eng.effectiveBandsOn(parseDate(d));
+  if (bands.length === 0) return d;
+  return `${d}T${hhmm(bands[0].start)}`;
+}
+/** Finish-achtige datum ⇒ einde van de laatste band van die dag. Niet-werkdag ⇒ volgende dag 00:00
+ *  (de solver snapt dat terug naar het vorige bandeinde, net als een inclusieve dag-finish). */
+function finishLike(d: string, eng: CalendarEngine): string {
+  if (DATETIME_RE.test(d)) return d;
+  const bands = eng.effectiveBandsOn(parseDate(d));
+  if (bands.length === 0) return `${addDaysIso(d, 1)}T00:00`;
+  const end = bands[bands.length - 1].end;
+  return `${addDaysIso(d, Math.floor(end / 1440))}T${hhmm(end % 1440)}`;
+}
+const isStartConstraint = (type: string) => type === 'SNET' || type === 'SNLT' || type === 'MSO';
+function intMinutes(v: number, label: string): number {
+  if (Math.abs(v - Math.round(v)) > 1e-9) throw new NotConvertible(`${label}: ${v} min is geen geheel aantal minuten`);
+  return Math.round(v);
+}
 
 type Shift = 'FIRST' | 'SECOND' | 'THIRD' | 'USERDEFINED';
 type Cal = {
@@ -384,9 +456,20 @@ function buildAndSolve(c: Case): {
     // Z7-fixronde-2 (MIDDEN): alleen wanneer expliciet gegeven ⇒ hoursPerDay-override. Afwezig ⇒
     // de default van `base` (8) — byte-identiek voor elke bestaande case (additief, zie Cal se doc).
     ...(c.calendar?.hoursPerDay != null ? { hoursPerDay: c.calendar.hoursPerDay } : {}),
+    // OPS_FORCE_HOURS: banden uit de scalaire velden (07-16/8 ⇒ 07-12 + 13-16).
+    ...(FORCE_HOURS ? {
+      workTime: forcedWorkTime(base, c.calendar?.workDays ?? CLEAN_WORKDAYS,
+        c.calendar?.hoursPerDay ?? base.hoursPerDay, 'projectkalender'),
+    } : {}),
   } as any);
   const anchor = c.anchor ?? '2026-06-01';
-  S().setProject({ startDate: anchor });
+  // OPS_FORCE_HOURS: engine van een (al omgezette) kalender, voor de datum-mapping.
+  const engOf = (calName: string | undefined): CalendarEngine => {
+    const wc = calName ? S().calendars.find((x) => x.id === calByName[calName]) : S().calendar;
+    return new CalendarEngine((wc ?? S().calendar) as any);
+  };
+  const projStart = (d: string) => (FORCE_HOURS ? startLike(d, engOf(undefined)) : d);
+  S().setProject({ startDate: projStart(anchor) });
 
   // Benoemde bibliotheek-kalenders (fase 2.8a, §10.1) — vóór de taken zodat setTaskCalendar kan verwijzen.
   const calByName: Record<string, string> = {};
@@ -403,6 +486,12 @@ function buildAndSolve(c: Case): {
       ...(cal.shift ? { shift: cal.shift } : {}),
       // T13 (§T2-afwijking): zie de gelijknamige toevoeging bij setCalendar hierboven.
       ...(cal.workingExceptions ? { workingExceptions: cal.workingExceptions } : {}),
+      // OPS_FORCE_HOURS: eigen banden op de EIGEN werkdagen (de gespreide project-workTime zou op
+      // de werkdagen van de projectkalender staan).
+      ...(FORCE_HOURS ? {
+        workTime: forcedWorkTime(calBase as WorkCalendar, cal.workDays ?? CLEAN_WORKDAYS,
+          calBase.hoursPerDay, `kalender "${cal.name}"`),
+      } : {}),
     });
   }
 
@@ -432,6 +521,10 @@ function buildAndSolve(c: Case): {
         name: `${r.name} kalender`,
         workDays: r.calendar.workDays ?? CLEAN_WORKDAYS,
         holidays: r.calendar.holidays ?? [],
+        ...(FORCE_HOURS ? {
+          workTime: forcedWorkTime(calBase as WorkCalendar, r.calendar.workDays ?? CLEAN_WORKDAYS,
+            calBase.hoursPerDay, `resourcekalender "${r.name}"`),
+        } : {}),
       });
     }
     const resId = S().addResource({
@@ -495,11 +588,26 @@ function buildAndSolve(c: Case): {
     } else {
       durDays = t.dur ?? 1;
     }
+    // OPS_FORCE_HOURS: dagduur ⇒ minuten (WORKTIME: × hpd × 60 van de taakkalender; ELAPSEDTIME: × 1440).
+    const isZeroMs = !!t.milestone && durDays === 0;
+    if (FORCE_HOURS && durMinutes === undefined && !(isZeroMs && FORCE_HOURS_MS_DAYS)) {
+      if (t.durationMinutesRaw !== undefined) {
+        throw new NotConvertible(`taak "${t.name}": durationMinutesRaw test juist een dagtaak met vreemd minuutveld`);
+      }
+      const factor = t.durationType === 'ELAPSEDTIME' ? 1440 : effHoursPerDayFor(t.calendar) * 60;
+      durMinutes = intMinutes(durDays * factor, `taak "${t.name}" duur`);
+    }
+    const tEng = FORCE_HOURS ? engOf(t.calendar) : null;
+    const mapStart = (d: string) => (tEng ? startLike(d, tEng) : d);
+    const mapFinish = (d: string) => (tEng ? finishLike(d, tEng) : d);
+    const mapConstraint = <C extends { type: string; date?: string }>(k: C): C =>
+      (tEng && k.date ? { ...k, date: isStartConstraint(k.type) ? mapStart(k.date) : mapFinish(k.date) } : k);
+    const lagFactor = (tEng?.hoursPerDay ?? 0) * 60;
     // De case-DSL vertegenwoordigt de twee native invoervormen expliciet. Dit is ook de
     // deterministische legacy-migratie die de productiecode toepast (minuten aanwezig => uren);
     // de kalender bepaalt deze identiteit nooit. `durationMinutesRaw` blijft juist een expliciete
     // dagtaak met een vreemd oud minuutveld, zodat "expliciete eenheid wint" gericht testbaar blijft.
-    const time = createDefaultTaskTime(start, durDays, durMinutes !== undefined ? 'hours' : 'days');
+    const time = createDefaultTaskTime(mapStart(start), durDays, durMinutes !== undefined ? 'hours' : 'days');
     if (durMinutes !== undefined) time.durationMinutes = durMinutes;
     // Rauwe override (§8.3-invariant): zet `durationMinutes` los van `scheduleDuration`.
     if (t.durationMinutesRaw !== undefined) time.durationMinutes = t.durationMinutesRaw;
@@ -513,8 +621,8 @@ function buildAndSolve(c: Case): {
       ...(t.milestoneKind ? { milestoneKind: t.milestoneKind } : {}),
       ...(t.priority !== undefined ? { priority: t.priority } : {}),
       ...(t.mandatory !== undefined ? { mandatory: t.mandatory } : {}),
-      ...(t.constraint ? { constraint: t.constraint as any } : {}),
-      ...(t.constraint2 ? { constraint2: t.constraint2 as any } : {}),
+      ...(t.constraint ? { constraint: mapConstraint(t.constraint) as any } : {}),
+      ...(t.constraint2 ? { constraint2: mapConstraint(t.constraint2) as any } : {}),
       ...(t.hammock ? { isHammock: true } : {}),
       ...(t.externalLinks ? {
         externalLinks: t.externalLinks.map((e, i) => ({
@@ -523,7 +631,14 @@ function buildAndSolve(c: Case): {
           relType: e.relType,
           ...(e.lag !== undefined ? { lagDays: e.lag } : {}),
           ...(e.lagMinutes !== undefined ? { lagMinutes: e.lagMinutes } : {}),
-          anchorDate: e.anchorDate,
+          // OPS_FORCE_HOURS: daglag ⇒ minuten in de taakkalender; anker naar het juiste dagdeel.
+          ...(tEng && e.lag && e.lagMinutes === undefined
+            ? { lagMinutes: intMinutes(e.lag * lagFactor, `externe lag ${t.name}`) } : {}),
+          anchorDate: !tEng ? e.anchorDate
+            : (e.direction === 'predecessor'
+              ? (e.relType === 'FS' || e.relType === 'FF')
+              : (e.relType === 'FF' || e.relType === 'SF'))
+              ? mapFinish(e.anchorDate) : mapStart(e.anchorDate),
           sourceRef: {
             projectId: e.sourceProject ?? 'ext-project',
             taskId: e.sourceTask ?? 'ext-task',
@@ -532,7 +647,7 @@ function buildAndSolve(c: Case): {
           sourceMissing: e.sourceMissing ?? false,
         })),
       } : {}),
-      ...(t.deadline ? { deadline: t.deadline } : {}),
+      ...(t.deadline ? { deadline: mapFinish(t.deadline) } : {}),
       // Z0 (etappe "nul afwijkingen"): typecontract-doorgifte — de solver leest deze velden nog
       // NERGENS (Task.splitGaps/manuallyScheduled/levelingDelayMinutes/levelingDelayElapsed bestaan
       // alleen als type). Alle vier zijn per veld mutatie-bewezen doorgegeven aan `addTask`: de case
@@ -565,6 +680,13 @@ function buildAndSolve(c: Case): {
       const mins = parseDuration(l.lag, predHpd);
       if (mins == null) throw new Error(`relatie ${l.pred}->${l.succ}: onparseerbare lag "${l.lag}"`);
       lagMinutes = mins;
+    }
+    // OPS_FORCE_HOURS: daglag ⇒ minuten. WORKTIME in de VOORGANGER-kalender (LAG_CALENDAR default),
+    // ELAPSEDTIME × 1440. `lagDays` blijft staan (zoals de IFC-lezer beide velden vult); lagPercent blijft.
+    if (FORCE_HOURS && lagMinutes === undefined && lagDaysVal) {
+      const predCalName = c.tasks.find((t) => t.name === l.pred)?.calendar;
+      const factor = l.lagUnit === 'ELAPSEDTIME' ? 1440 : effHoursPerDayFor(predCalName) * 60;
+      lagMinutes = intMinutes(lagDaysVal * factor, `lag ${l.pred}->${l.succ}`);
     }
     const seqInput = {
       predecessorId: ids[l.pred], successorId: ids[l.succ], type: l.type as any,
@@ -617,7 +739,8 @@ function buildAndSolve(c: Case): {
   }
 
   // Voortgang + statusdatum (fase 2.6) — vóór runCPM zodat de solver-voortgangstakken meelopen.
-  if (c.statusDate) S().setStatusDate(c.statusDate);
+  // OPS_FORCE_HOURS: statusdatum = data date = begin van de dag ⇒ start-achtig (projectkalender).
+  if (c.statusDate) S().setStatusDate(projStart(c.statusDate));
   if (c.scheduleOptions?.progressMode) S().setProgressMode(c.scheduleOptions.progressMode);
   // Reken-opties (fase 2.9, §3.4) op het project — vóór runCPM zodat de solver ze meeneemt.
   if (c.schedulingOptions) {
@@ -631,12 +754,17 @@ function buildAndSolve(c: Case): {
   }
   for (const t of c.tasks) {
     const id = ids[t.name];
+    // OPS_FORCE_HOURS: actualStart/resume/timephasedStartAnchor start-achtig, actualFinish/stop/
+    // timephasedFinishFloor finish-achtig, in de taakkalender.
+    const pEng = FORCE_HOURS ? engOf(t.calendar) : null;
+    const pS = (d: string) => (pEng ? startLike(d, pEng) : d);
+    const pF = (d: string) => (pEng ? finishLike(d, pEng) : d);
     if (t.rawCompletion !== undefined) {
       const task = S().tasks.find((x) => x.id === id)!;
       S().updateTask(id, { time: { ...task.time, completion: t.rawCompletion } });
     }
-    if (t.actualStart !== undefined) S().setActualStart(id, t.actualStart);
-    if (t.actualFinish !== undefined) S().setActualFinish(id, t.actualFinish);
+    if (t.actualStart !== undefined) S().setActualStart(id, pS(t.actualStart));
+    if (t.actualFinish !== undefined) S().setActualFinish(id, pF(t.actualFinish));
     if (t.completion !== undefined) S().setTaskProgress(id, t.completion);
     // remainingMinutes RAUW ná completion (uur-voortgang, §5.3): `setTaskProgress` leidt de restduur
     // van een urentaak af uit de voortgang (`applyRemainingDuration`); deze override komt daarna, via
@@ -648,11 +776,11 @@ function buildAndSolve(c: Case): {
     // Z12-herwerk — resume/stop, zelfde rauwe-override-vorm als remainingMinutes hierboven.
     if (t.resume !== undefined) {
       const task = S().tasks.find((x) => x.id === id)!;
-      S().updateTask(id, { time: { ...task.time, resume: t.resume } });
+      S().updateTask(id, { time: { ...task.time, resume: pS(t.resume) } });
     }
     if (t.stop !== undefined) {
       const task = S().tasks.find((x) => x.id === id)!;
-      S().updateTask(id, { time: { ...task.time, stop: t.stop } });
+      S().updateTask(id, { time: { ...task.time, stop: pF(t.stop) } });
     }
     // Z13: `timephasedStartAnchor`/`timephasedFinishFloor` zijn TOP-LEVEL `Task`-velden (geen
     // `time`-subveld) — `updateTask`'s `Object.assign(s.tasks[idx], rest)` (taskSlice.ts) zet ze
@@ -661,12 +789,22 @@ function buildAndSolve(c: Case): {
     // net als `levelingDelay` elders in dit bestand (regel ~743) al voor een ander top-level veld
     // doet.
     if (t.timephasedStartAnchor !== undefined) {
-      S().updateTask(id, { timephasedStartAnchor: t.timephasedStartAnchor });
+      S().updateTask(id, { timephasedStartAnchor: pS(t.timephasedStartAnchor) });
     }
     if (t.timephasedFinishFloor !== undefined) {
-      S().updateTask(id, { timephasedFinishFloor: t.timephasedFinishFloor });
+      S().updateTask(id, { timephasedFinishFloor: pF(t.timephasedFinishFloor) });
     }
   }
+
+  // OPS_FORCE_HOURS: een latere duurwijziging in dagen ⇒ ook de minuten (de taak is een urentaak).
+  const forcedDurPatch = (taskName: string, dur: number): { durationMinutes?: number } => {
+    if (!FORCE_HOURS) return {};
+    const tk = S().tasks.find((x) => x.id === ids[taskName]);
+    if (!tk || taskDurationUnit(tk) !== 'hours') return {};
+    const ct = c.tasks.find((x) => x.name === taskName);
+    const factor = ct?.durationType === 'ELAPSEDTIME' ? 1440 : effHoursPerDayFor(ct?.calendar) * 60;
+    return { durationMinutes: intMinutes(dur * factor, `setDuration ${taskName}`) };
+  };
 
   S().runCPM();
 
@@ -678,7 +816,7 @@ function buildAndSolve(c: Case): {
         const tid = ids[m.setDuration.task];
         if (!tid) throw new Error(`varianceMutations.setDuration: onbekende taak "${m.setDuration.task}"`);
         const task = S().tasks.find((t) => t.id === tid)!;
-        S().updateTask(tid, { time: { ...task.time, scheduleDuration: m.setDuration.dur } });
+        S().updateTask(tid, { time: { ...task.time, scheduleDuration: m.setDuration.dur, ...forcedDurPatch(m.setDuration.task, m.setDuration.dur) } });
       } else if ('deleteTask' in m) {
         const tid = ids[m.deleteTask.task];
         if (!tid) throw new Error(`varianceMutations.deleteTask: onbekende taak "${m.deleteTask.task}"`);
@@ -688,9 +826,13 @@ function buildAndSolve(c: Case): {
         if (ids[a.name]) throw new Error(`varianceMutations.addTask: dubbele taaknaam "${a.name}"`);
         const start = a.start ?? (c.anchor ?? '2026-06-01');
         const dur = a.milestone ? 0 : (a.dur ?? 1);
+        const addTime = FORCE_HOURS && !(a.milestone && FORCE_HOURS_MS_DAYS)
+          ? { ...createDefaultTaskTime(startLike(start, engOf(undefined)), dur, 'hours'),
+              durationMinutes: intMinutes(dur * engOf(undefined).hoursPerDay * 60, `varianceMutations ${a.name}`) }
+          : createDefaultTaskTime(start, dur);
         const nid = S().addTask({
           name: a.name, isMilestone: !!a.milestone, parentId: null,
-          time: createDefaultTaskTime(start, dur),
+          time: addTime,
         });
         ids[a.name] = nid;
         for (const l of a.links ?? []) {
@@ -698,6 +840,7 @@ function buildAndSolve(c: Case): {
           if (!ids[l.succ]) throw new Error(`varianceMutations.addTask.links: onbekende opvolger "${l.succ}"`);
           S().addSequence({
             predecessorId: ids[l.pred], successorId: ids[l.succ], type: l.type as any, lagDays: l.lag ?? 0,
+            ...(FORCE_HOURS && l.lag ? { lagMinutes: intMinutes(l.lag * engOf(undefined).hoursPerDay * 60, 'varianceMutations lag') } : {}),
           });
         }
       }
@@ -743,7 +886,7 @@ function buildAndSolve(c: Case): {
       const tid = ids[op.setDuration.task];
       if (!tid) throw new Error(`afterCPM.setDuration: onbekende taak "${op.setDuration.task}"`);
       const task = S().tasks.find(t => t.id === tid)!;
-      S().updateTask(tid, { time: { ...task.time, scheduleDuration: op.setDuration.dur } });
+      S().updateTask(tid, { time: { ...task.time, scheduleDuration: op.setDuration.dur, ...forcedDurPatch(op.setDuration.task, op.setDuration.dur) } });
     } else if ('assign' in op) {
       const tid = ids[op.assign.task];
       if (!tid) throw new Error(`afterCPM.assign: onbekende taak "${op.assign.task}"`);
@@ -761,7 +904,7 @@ function buildAndSolve(c: Case): {
       });
       S().applyLeveling(r);
     } else if ('moveProject' in op) {
-      S().moveProject(op.moveProject.newStart, { shiftBaselines: !!op.moveProject.shiftBaselines });
+      S().moveProject(projStart(op.moveProject.newStart), { shiftBaselines: !!op.moveProject.shiftBaselines });
     } else if ('addCalendarAsDefault' in op) {
       const { id: _cid, ...calBase } = S().calendar;
       void _cid;
@@ -770,7 +913,10 @@ function buildAndSolve(c: Case): {
     } else if ('setLevelingDelay' in op) {
       const tid = ids[op.setLevelingDelay.task];
       if (!tid) throw new Error(`afterCPM.setLevelingDelay: onbekende taak "${op.setLevelingDelay.task}"`);
-      S().updateTask(tid, { levelingDelay: op.setLevelingDelay.days });
+      S().updateTask(tid, FORCE_HOURS
+        ? { levelingDelay: op.setLevelingDelay.days,
+            levelingDelayMinutes: intMinutes(op.setLevelingDelay.days * effHoursPerDayFor(c.tasks.find((x) => x.name === op.setLevelingDelay.task)?.calendar) * 60, 'levelingDelay') }
+        : { levelingDelay: op.setLevelingDelay.days });
     }
   }
 
@@ -917,7 +1063,35 @@ function runSourceParity(): string[] {
   return diffs;
 }
 
-function runCase(c: Case) {
+// OPS_FORCE_HOURS-comparator: verwachte `YYYY-MM-DD` tegen de eerste 10 tekens; dagfloat met 1e-6.
+const DATE_ONLY_RE = /^\d{4}-\d\d-\d\d$/;
+const FLOAT_KEYS = new Set(['tf', 'ff', 'intf']);
+function dateEq(got: unknown, want: unknown): boolean {
+  if (FORCE_HOURS && typeof want === 'string' && DATE_ONLY_RE.test(want) && typeof got === 'string') {
+    return got.slice(0, 10) === want;
+  }
+  return got === want;
+}
+function fieldEq(key: string, got: unknown, want: unknown): boolean {
+  if (FORCE_HOURS && FLOAT_KEYS.has(key) && typeof got === 'number' && typeof want === 'number') {
+    return Math.abs(got - want) <= 1e-6;
+  }
+  return dateEq(got, want);
+}
+
+type CaseStatus = 'PASS' | 'FAIL' | 'NIET_OMZETBAAR' | 'UUR_OVERGESLAGEN';
+
+function runCase(c: Case): { id: string; title: string; pass: boolean; diffs: string[]; status: CaseStatus } {
+  const r = runCaseInner(c);
+  const status: CaseStatus = (r as any).status ?? (r.pass ? 'PASS' : 'FAIL');
+  return { ...r, status };
+}
+
+function runCaseInner(c: Case): { id: string; title: string; pass: boolean; diffs: string[]; status?: CaseStatus } {
+  if (FORCE_HOURS) {
+    const why = hourCaseReason(c);
+    if (why) return { id: c.id, title: c.title, pass: true, diffs: [`al een urencase (${why})`], status: 'UUR_OVERGESLAGEN' };
+  }
   if (c.sourceParity) {
     const diffs = runSourceParity();
     return { id: c.id, title: c.title, pass: diffs.length === 0, diffs };
@@ -932,10 +1106,18 @@ function runCase(c: Case) {
   try {
     ({ ids, resIds, codeTypeIds, codeValueIds, fieldDefIds, previewResult } = buildAndSolve(c));
   } catch (e) {
+    if (e instanceof NotConvertible) {
+      return { id: c.id, title: c.title, pass: true, diffs: [`niet omzetbaar: ${e.message}`], status: 'NIET_OMZETBAAR' };
+    }
     return { id: c.id, title: c.title, pass: false, diffs: [`THREW: ${String(e)}`] };
   }
   const cpm = S().cpmResult;
   const exp = c.expect ?? {};
+  if (FORCE_HOURS && process.env.OPS_FORCE_HOURS_DEBUG === '1') {
+    for (const t of S().tasks) {
+      console.log(`DBG ${c.id} ${t.name} unit=${t.time.durationUnit} min=${t.time.durationMinutes} es=${t.time.earlyStart} ef=${t.time.earlyFinish} tf=${t.time.totalFloat} cal.workTime=${!!S().calendar.workTime}`);
+    }
+  }
 
   // Fout-verwachting
   if (exp.error !== undefined) {
@@ -953,7 +1135,7 @@ function runCase(c: Case) {
       for (const [k, wv] of Object.entries<any>(want)) {
         const gk = KEYMAP[k] ?? k;
         const gv = (got as any)[gk];
-        if (gv !== wv) diffs.push(`${name}.${k}: verwacht ${JSON.stringify(wv)}, kreeg ${JSON.stringify(gv)}`);
+        if (!fieldEq(k, gv, wv)) diffs.push(`${name}.${k}: verwacht ${JSON.stringify(wv)}, kreeg ${JSON.stringify(gv)}`);
       }
     }
   }
@@ -1077,7 +1259,7 @@ function runCase(c: Case) {
 
   // Projectstartdatum (pakket D1): het metadataveld dat `moveProject` exact op de gekozen datum zet
   // — en dat een `undo` weer moet terugdraaien (move-12; bewaakt dat `project` in de undo-snapshot zit).
-  if (exp.projectStartDate !== undefined && S().project.startDate !== exp.projectStartDate)
+  if (exp.projectStartDate !== undefined && !dateEq(S().project.startDate, exp.projectStartDate))
     diffs.push(`projectStartDate: verwacht ${exp.projectStartDate}, kreeg ${S().project.startDate}`);
 
   // Baseline-taakdatums (pakket D1, §1.6): bewaakt dat een baseline standaard NIET meeschuift, zodat
@@ -1090,14 +1272,14 @@ function runCase(c: Case) {
         const bt = active.tasks.find((x) => x.taskId === ids[name]);
         if (!bt) { diffs.push(`baselineTasks: taak "${name}" niet in de baseline`); continue; }
         for (const [k, wv] of Object.entries<any>(want)) {
-          if ((bt as any)[k] !== wv)
+          if (!dateEq((bt as any)[k], wv))
             diffs.push(`baselineTasks.${name}.${k}: verwacht ${JSON.stringify(wv)}, kreeg ${JSON.stringify((bt as any)[k])}`);
         }
       }
     }
   }
 
-  if (exp.projectEnd !== undefined && cpm?.projectEnd !== exp.projectEnd)
+  if (exp.projectEnd !== undefined && !dateEq(cpm?.projectEnd, exp.projectEnd))
     diffs.push(`projectEnd: verwacht ${exp.projectEnd}, kreeg ${cpm?.projectEnd}`);
   if (exp.projectDuration !== undefined && cpm?.projectDuration !== exp.projectDuration)
     diffs.push(`projectDuration: verwacht ${exp.projectDuration}, kreeg ${cpm?.projectDuration}`);
@@ -1123,7 +1305,7 @@ function runCase(c: Case) {
       diffs.push('previewExpect: geen LevelingResult (levelResources gaf niets terug)');
     } else {
       const pe = c.previewExpect;
-      if (pe.projectEndAfter !== undefined && pr.projectEndAfter !== pe.projectEndAfter)
+      if (pe.projectEndAfter !== undefined && !dateEq(pr.projectEndAfter, pe.projectEndAfter))
         diffs.push(`preview.projectEndAfter: verwacht ${pe.projectEndAfter}, kreeg ${pr.projectEndAfter}`);
       if (pe.shiftedTasks) {
         const got = Object.keys(pr.shifts).map(tid => nameOf(tid, ids)).sort();
@@ -1447,6 +1629,14 @@ for (const file of files) {
     continue;
   }
   const results = cases.map(runCase);
+  if (FORCE_HOURS) {
+    const n = (st: CaseStatus) => results.filter((r) => r.status === st).length;
+    for (const r of results) console.log(`CASE\t${name}\t${r.id}\t${r.status}`);
+    console.log(`FORCE_HOURS ${name}: dagcases=${results.length - n('UUR_OVERGESLAGEN')} pass=${n('PASS')} fail=${n('FAIL')} niet_omzetbaar=${n('NIET_OMZETBAAR')} uur_overgeslagen=${n('UUR_OVERGESLAGEN')}`);
+    for (const r of results) {
+      if (r.status === 'NIET_OMZETBAAR') console.log(`   ~ [${r.id}] ${r.diffs.join('; ')}`);
+    }
+  }
   const passed = results.filter((r) => r.pass).length;
   grandPass += passed;
   grandTotal += results.length;
