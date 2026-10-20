@@ -599,6 +599,14 @@ export class CalendarEngine {
     return [];
   }
 
+  /** De werkblokken van de typische werkdag (de "normale werkdag" van {@link computeStandardWorkdayBands},
+   *  dezelfde dag die `hoursPerDay` bepaalt), als verse kopie in minuten van de dag. Leeg in dag-modus.
+   *  Voor regel D4 van de dagregels (`src/engine/calendar/workdayRules.ts`): een datum zonder werkblok
+   *  krijgt de blokken van deze dag. Leest alleen; geen rekenpad gebruikt dit. */
+  typicalWorkdayBands(): ReadonlyArray<Readonly<{ start: number; end: number }>> {
+    return this.mode === 'hour' ? this.standardWorkdayBands.map((b) => ({ start: b.start, end: b.end })) : [];
+  }
+
   // ── Band-materialisatie (venster-gebaseerd, gememoized op het kalender-object) ──
 
   /** UTC-middernacht-ms van de dag die `ms` bevat (epoch is op UTC-middernacht uitgelijnd). */
