@@ -1851,3 +1851,7 @@ Testversie (release-check, poort 3049) is NIET bijgewerkt met de PR's van vandaa
 - **#400 gemerged in main (d396e1ee7)** — `--admin --match-head-commit 93e95ac04`; CSV-delta door orkestrator gelezen
   (klein; `@/i18n/config` gebruikt de i18next-singleton); enige rode tests = `feedback-studio.spec.ts` (ook rood op main).
 - Overdracht voor de release-sessie: `2026-10-20-overdracht-release.md`.
+- **#404 gemerged in main (5266893af)** — oorzaak rode main (expert Opus 5.5, BEVESTIGD): `FeedbackDialog.tsx` effect
+  `setAlreadyIn(false)` bij elke toets ⇒ na ~50 snelle toetsen "Maximum update depth exceeded" en een verloren teken
+  (#397 via #395). #362 speelt geen rol (zonder #362 ook 8/8 rood). Fix: alleen terugzetten als de vlag aan staat;
+  regressietest 107 toetsen, mutant 5/5 rood. CI 16/16; diff door orkestrator gelezen; `--admin --match-head-commit`.

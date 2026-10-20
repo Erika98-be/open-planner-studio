@@ -6,10 +6,9 @@ Deze overdracht is de stand van 2026-10-20; controleer elke PR-status opnieuw me
 ## Stand van main
 
 - Main na deze releasecheck: `d396e1ee7` (#400). Andere sessies mergen ook in main.
-- **Main-CI is rood** sinds `e98b83e48` (#395 feedbackvenster, andere sessie): `tests/browser/feedback-studio.spec.ts`
-  geeft "Maximum update depth exceeded", alleen in CI (lokaal 2× 15 passed). Eigen CI van #395 was groen zonder #362.
-  Een expert (Opus 5.5) zoekt de oorzaak op `claude/fix-feedback-maxdepth` en opent een fix-PR. **Release pas na een
-  groene main.**
+- Main-CI was rood sinds `e98b83e48` (#395): "Maximum update depth exceeded" in het feedbackvenster na ~50 snelle
+  toetsen (ook een echte gebruikersfout: er viel een teken weg). Gerepareerd in **#404** (`5266893af`). Controleer de
+  main-CI op die commit vóór de tag.
 
 ## Gemerged vanuit deze releasecheck (2026-10-20)
 
@@ -22,6 +21,7 @@ Deze overdracht is de stand van 2026-10-20; controleer elke PR-status opnieuw me
 | #394 | Kalendervenster: oranje blok als het bestand een eigen werkdag heeft | ja |
 | #362 | Zwevende schuifbalken in takenlijst en Gantt (8 px, ook in de desktopapp) | ja |
 | #400 | Uren overal als **10u** (nl) en **10h** (en), zonder spatie; CSV-lag volgt de app-taal | ja |
+| #404 | Feedbackvenster: geen weggevallen teken en geen fout meer bij snel typen | ja (fix van #395) |
 
 ## Open
 
@@ -34,7 +34,7 @@ Deze overdracht is de stand van 2026-10-20; controleer elke PR-status opnieuw me
 
 ## Vóór de release
 
-1. **Main groen** (zie boven).
+1. **Main groen** op of na `5266893af` (#404).
 2. **Vertaalronde 26 talen** voor de nieuwe en gewijzigde teksten uit #376, #380, #394, #400 (en #401 als die landt).
    `verify:translations` is rood door deze achterstand (`verify` zelf niet).
 3. **Tutorial 5 in de extensions-repo** (live van main, alle appversies) tegelijk aanpassen aan de hernoeming van #376.
