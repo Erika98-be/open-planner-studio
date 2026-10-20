@@ -7,7 +7,7 @@ import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import {
-  SPEC_DIR, assignShards, durationsFromJobLog, listSpecFiles, parseShard, readDurations, shardFiles,
+  SPEC_DIR, assignShards, durationsFromJobLog, listSpecFiles, mergeJobDurations, parseShard, readDurations, shardFiles,
 } from '../../scripts/browser-shards.mjs';
 import { extractDurationShard, runBrowserTests } from '../../scripts/run-browser-tests.mjs';
 
@@ -55,6 +55,18 @@ test('durationsFromJobLog telt per spec de vensters tot de volgende start, de la
     '2026-10-20T09:00:10.000Z   3 passed (9.0s)',
   ].join('\n');
   assert.deepEqual(durationsFromJobLog(log), { 'a.spec.ts': 7.5, 'sub/b.spec.ts': 1.5 });
+});
+
+test('mergeJobDurations corrigeert per log voor de runnersnelheid en middelt per spec', () => {
+  const reference = { 'a.spec.ts': 10, 'b.spec.ts': 20, 'c.spec.ts': 40 };
+  // Log 1 liep op een runner die twee keer zo traag is; log 2 op normale snelheid, met een nieuwe spec d.
+  const slow = { 'a.spec.ts': 20, 'b.spec.ts': 40, 'c.spec.ts': 80 };
+  const normal = { 'a.spec.ts': 10, 'b.spec.ts': 20, 'd.spec.ts': 6 };
+  const merged = mergeJobDurations([slow, normal], reference);
+  assert.deepEqual(Object.keys(merged).sort(), ['a.spec.ts', 'b.spec.ts', 'c.spec.ts', 'd.spec.ts']);
+  for (const [spec, want] of Object.entries({ 'a.spec.ts': 10, 'b.spec.ts': 20, 'c.spec.ts': 40, 'd.spec.ts': 6 })) {
+    assert.ok(Math.abs(merged[spec] - want) < 1e-9, `${spec}: ${merged[spec]} ≠ ${want}`);
+  }
 });
 
 test('parseShard en extractDurationShard: geldige en ongeldige vormen', () => {

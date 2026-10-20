@@ -113,18 +113,43 @@ export function durationsFromJobLog(text) {
   return seconds;
 }
 
+/**
+ * Voeg de duren van meerdere joblogs samen, gecorrigeerd voor de snelheid van de runner. GitHub-runners
+ * verschillen per job tot ±25 % in snelheid (gemeten op PR #399: 0,80–1,23 keer, gelijk over alle specs
+ * van één job). Per log is de factor de mediaan van gemeten/referentie over de specs die in beide staan;
+ * de gecorrigeerde duren worden per spec gemiddeld. Twee rondes, de tweede met de uitkomst als referentie.
+ */
+export function mergeJobDurations(logs, reference) {
+  let ref = reference;
+  for (let round = 0; round < 2; round++) {
+    const total = {};
+    const count = {};
+    for (const seconds of logs) {
+      const ratios = Object.keys(seconds).filter((spec) => ref[spec] > 3).map((spec) => seconds[spec] / ref[spec])
+        .sort((a, b) => a - b);
+      const factor = ratios.length > 0 ? ratios[Math.floor(ratios.length / 2)] : 1;
+      for (const [spec, value] of Object.entries(seconds)) {
+        total[spec] = (total[spec] ?? 0) + value / factor;
+        count[spec] = (count[spec] ?? 0) + 1;
+      }
+    }
+    ref = Object.fromEntries(Object.keys(total).map((spec) => [spec, total[spec] / count[spec]]));
+  }
+  return ref;
+}
+
 const isCli = Boolean(process.argv[1]) && resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 if (isCli && process.argv[2] === '--update') {
-  // node scripts/browser-shards.mjs --update <bron> <joblog>...  (de logs van ALLE shards van één groene run,
-  // bv. `gh api repos/<repo>/actions/jobs/<id>/logs > shard-1.log`). Vervangt de duren in het bestand.
+  // node scripts/browser-shards.mjs --update <bron> <joblog>...  (de logs van alle shards van één of meer
+  // groene runs, bv. `gh api repos/<repo>/actions/jobs/<id>/logs > shard-1.log`). Vervangt de duren in het
+  // bestand door het runnergecorrigeerde gemiddelde (`mergeJobDurations`).
   const root = resolve(fileURLToPath(import.meta.url), '..', '..');
   const [source, ...logs] = process.argv.slice(3);
   if (!source || logs.length === 0) {
     console.error('Gebruik: node scripts/browser-shards.mjs --update <bron, bv. "CI-run 123"> <joblog>...');
     process.exit(2);
   }
-  const seconds = {};
-  for (const log of logs) Object.assign(seconds, durationsFromJobLog(readFileSync(log, 'utf8')));
+  const seconds = mergeJobDurations(logs.map((log) => durationsFromJobLog(readFileSync(log, 'utf8'))), readDurations(root));
   const existing = listSpecFiles(root).map((f) => f.slice(SPEC_DIR.length + 1));
   const missing = existing.filter((spec) => !(spec in seconds));
   const rounded = Object.fromEntries(Object.keys(seconds).filter((spec) => existing.includes(spec)).sort()

@@ -75,7 +75,9 @@ shards samen exact de specs zijn die `playwright test --list` vindt. `node scrip
 toont de indeling. Een nieuwe spec hoeft niet in `spec-durations.json`; een verwijderde of hernoemde
 spec moet eruit (die test faalt anders). Bijwerken van de duren: haal de joblogs van alle vier
 shards van één groene run op (`gh api repos/<repo>/actions/jobs/<job-id>/logs > shard-1.log`, …) en
-draai `node scripts/browser-shards.mjs --update "CI-run <id>" shard-*.log`.
+draai `node scripts/browser-shards.mjs --update "CI-run <id>" shard-*.log`. Meer runs tegelijk mag
+en is beter: GitHub-runners verschillen per job tot ±25 % in snelheid, dus het script corrigeert elke
+log met de mediaanverhouding tot de huidige duren en middelt daarna per spec.
 Lokaal draait `node scripts/run-browser-tests.mjs --duration-shard=2/4` dezelfde shard als CI.
 
 ## X11/XWayland-browserharnas voor XER (`npm run test:browser:x11`)
