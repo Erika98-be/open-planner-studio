@@ -3,8 +3,10 @@
 - **Datum:** 2026-10-20.
 - **Stand:** ontwerp; er is nog niets gebouwd. Besloten door de eigenaar op 2026-10-20: B1 (een maat per taak;
   de dagenmaat alleen in het OPS-profiel), B1a (standaardmaat dagenmaat in het OPS-profiel, vast werk altijd
-  urenmaat), B3 (rest exact), B5 (berekenen en melden), B6 (losse mijlpaal aan het einde van de werkdag in het
-  OPS-profiel) en B7 (procentlag exact). Open: B2, B4 en B8 (§8).
+  urenmaat), B2 (de schakelaar Urenplanning verdwijnt), B3 (rest exact), B4 (een datum toont alleen een tijd
+  midden op de werkdag), B5 (berekenen en melden), B6 (losse mijlpaal aan het einde van de werkdag in het
+  OPS-profiel), B7 (procentlag exact) en B8 ("d" is in het OPS-profiel de dagenmaat; de urenmaat staat in u). Er
+  zijn geen open besluiten (§8).
 - **Review:** ronde 1 (GPT-6.1-Sol, Codex, reasoning xhigh; oordeel NEE) is verwerkt: de laadgrens en B5 (§5.2),
   de normalisatie en de markering (§3.6, §5.2), de adapters in de eerste release (§7), de belasting per werkdag
   (§3.11), de beperkte N1/N2 (§4.3), de statusregel (§4.2), `project.endDate` (§4.2), de eindsemantiek van
@@ -18,9 +20,10 @@
   bibliotheekverdeling in het omvattende event (§5.2); vast werk bij B2 en B8; de relatiesleutel met type (§3.3);
   `LiteralTimes` als schrijfkeuze per document (§3.6); de `isDirty`-regel is een keuze van de orkestrator. Ronde 4
   (zelfde reviewer; oordeel NEE, één punt) is verwerkt: een MCP-transactie met alleen metadata houdt de modus
-  (§5.2, route 3; §6.1).
+  (§5.2, route 3; §6.1). Ronde 5 (zelfde reviewer; oordeel JA, één VERVOLG) is verwerkt: een werkregelwissel via
+  MCP volgt de classificatie van de UI vóór de gevolgregels (§5.2, route 3; §6.1).
 - **Schrijver:** expert-agent (Opus 5.5), branch `claude/uren-spec`, vanaf `main` `adaf9ab37`; in fixronde 4
-  bijgewerkt met `main` `5266893af`.
+  bijgewerkt met `main` `5266893af`; fixronde 5 op dezelfde stand.
 - **Regelnummers** gelden voor `adaf9ab37`. Elke verwijzing is zelf gelezen. Waar een feit uit de
   Haiku-inventaris komt en niet zelf is nagelezen, staat "(inventaris)".
 - **Zekerheid:** BEVESTIGD = zelf gemeten of in de code gelezen. VERMOED = afgeleid, niet getoetst.
@@ -163,7 +166,8 @@ Bij I9 is de OPS-kant gemeten met de planningsharness: dagtaak 5 d ⇒ einde `20
 einde `2026-06-08T09:00`. Bij I10 is de leesregel van v2026.9.0 in Node nagerekend: `P0Y0M2.5D` ⇒ 5,
 `-P0Y0M0.375D` ⇒ −375.
 
-Daarnaast staan op de grens dag/uur al bekende fouten: knownbugs 1, 2 en 23, en de nieuwe 138–142 (§9).
+Daarnaast staan op de grens dag/uur al bekende fouten: knownbugs 1 en 2, en de nieuwe 138–142 (§9; over 23 zie
+daar).
 
 ## 2. Huidige stand
 
@@ -239,7 +243,7 @@ gezet is, anders `tf ≤ critThreshold`. Vrije speling per relatie: `scheduleAna
   `src/utils/durationFormat.ts:40-41,46-70`). Slepen in de Gantt rondt bij een dagtaak af op hele dagen
   (`useBarDrag.ts:463`).
 - Telling op `adaf9ab37`: `isHourMode` komt 162 keer voor in `src/`, waarvan 106 in `src/engine/scheduler/`;
-  `taskDurationUnit(` 54 keer; `enableHourPlanning` 208 keer in 91 bestanden.
+  `taskDurationUnit(` 54 keer; `enableHourPlanning` 208 keer in 91 bestanden, waarvan 35 in `src/` (§3.12).
 
 ## 3. Doelmodel per onderwerp
 
@@ -268,7 +272,7 @@ typewijziging. "Fase" verwijst naar §7.
     alternatief, de uren per dag verlagen, verandert de duur van taken. Een ongeldige pauze
     (`effectiveWorkTime.ts:26-28`) vervalt op dezelfde manier, met melding.
   - Een scalaire kalender uit een import blijft scalair opgeslagen. Promoveren (`promoteHourCalendar`) is dan
-    alleen nog nodig voor de weergave (B2).
+    alleen nog nodig voor de weergave.
 - **Typewijziging:** geen in `WorkCalendar` (`src/types/calendar.ts:8-58`). `CalendarEngine` verliest het
   onderscheid tussen dagkalender en urenkalender (`mode`, `:123`) in F6.
 
@@ -291,13 +295,13 @@ typewijziging. "Fase" verwijst naar §7.
   vast werk volgt de duur uit een vast aantal werkuren, en in de dagenmaat past dat niet altijd op de uren van
   de kalender. Op de voorbeeldweek heeft 3 d van wo t/m vr 22 werkuren, terwijl het werk 24 u is (T14).
 - **Nieuwe taken (besluit B1a):** de bestaande projectinstelling "Standaardeenheid voor nieuwe taken"
-  (`project.defaultTaskDurationUnit`, `src/types/project.ts:533`; UI `ProjectInfoPanelContent.tsx:140,569-578`;
-  i18n `settings.defaultTaskDurationUnit`, `src/i18n/locales/nl/common.json:297-298`) wordt "Standaardmaat voor
-  nieuwe taken", met de keuzes dagenmaat en urenmaat. Standaard: dagenmaat in het OPS-profiel. Onder het P6- of
-  MSP-profiel staat hij vast op urenmaat, met een korte uitleg. De huidige voorwaarde (Urenplanning aan en een
-  kalender met werkblokken: `canDefaultToHours`, `ProjectInfoPanelContent.tsx:186,350`; `taskSlice.ts:890-894`)
-  vervalt, want elke kalender heeft werkblokken. Een bestand zonder het veld krijgt de standaard van zijn
-  profiel.
+  (`project.defaultTaskDurationUnit`, `src/types/project.ts:533`; UI `ProjectInfoPanelContent.tsx:140,569-578`; i18n
+  `settings.defaultTaskDurationUnit`, `src/i18n/locales/nl/common.json:297-298`) wordt "Standaardmaat voor nieuwe
+  taken", met de keuzes dagenmaat en urenmaat. Standaard: dagenmaat in het OPS-profiel. Onder het P6- of MSP-profiel
+  staat hij vast op urenmaat, met een korte uitleg. De huidige voorwaarde (Urenplanning aan en een kalender met
+  werkblokken: `canDefaultToHours`, `ProjectInfoPanelContent.tsx:186,350`; `taskSlice.ts:890-894`; in de taakdialoog
+  `TaskDialog.tsx:67`) vervalt: de schakelaar verdwijnt (B2), en elke kalender heeft werkblokken. Een bestand zonder
+  het veld krijgt de standaard van zijn profiel.
 - **Typewijziging:** geen nieuw veld. De doc-comments van `TaskDurationUnit` (`src/types/task.ts:80`),
   `scheduleDuration` en `defaultTaskDurationUnit` krijgen de nieuwe betekenis.
 
@@ -394,7 +398,8 @@ typewijziging. "Fase" verwijst naar §7.
   begin eerste werkblok (startachtig) of einde laatste werkblok (eindachtig), zoals de standaard begintijd en
   eindtijd in MSP; de tabel toont standaard alleen de datum.
 - **Toets:** klopt, met aanvullingen uit de meting en de review: niet-werkdagen, kalendertijd-taken,
-  nachtblokken, de statusregel en de projectdatums (§4.2). De weergave is besluit B4.
+  nachtblokken, de statusregel en de projectdatums (§4.2). De weergave volgt besluit B4: een tijd alleen als het
+  moment midden op de werkdag valt.
 - **Doel (F2):** elk startachtig en eindachtig taakveld is na het laden en na elke invoer een moment
   `YYYY-MM-DDTHH:mm`. Het type blijft `string`.
 - **Normalisatie is geen eenmalige migratie (technische keuze T17).** Ze draait op elke laadroute, ook voor een
@@ -546,20 +551,111 @@ normalisatie draait altijd; de markering `TimeModel` stuurt alleen de B5-overgan
 
 ### 3.12 UI
 
-- Invoer (herzien na review ronde 2): in elke optie houdt een kaal getal de maat van de taak, en krijgt een nieuwe
-  taak de standaardmaat (§3.2). Wat "d" en "u" betekenen en of een eenheid de maat verandert, is besluit B8 (de opties
-  noemen het per optie). Of uren ("4u") en breuken ("2,5") te typen zijn met de schakelaar Urenplanning uit, is
-  besluit B2 (met de schakelaar aan kan het altijd): in optie 1 altijd; in optie 2 een breuk wel en uren niet; in
-  optie 3 geen van beide. `parseDuration` weigert decimalen nu (`durationFormat.ts:40-41`). Een lag in dagen wordt
-  niet meer afgerond (`lagFormat.ts:73`).
-- Weergave: volgens de instelling Duurweergave en B8. Datums: B4.
-- Gantt: bij dagzoom snapt slepen per werkdag, van blokbegin tot blokeinde; bij uurzoom per uur of kwartier
-  (`timelineSnap.ts:12-28`).
-- Projectinstellingen: "Standaardmaat voor nieuwe taken" (§3.2) en het profielblok met de nieuwe conventie
+- **Invoer van de duur (besluiten B8 en B2).** In het OPS-profiel maakt "5d" de taak dagenmaat en "40u" urenmaat. Een
+  kaal getal houdt de maat van de taak, in de eenheid die de tabel toont: "3" is 3 d bij een dagenmaat-taak en 3 u bij
+  een urenmaat-taak. Een nieuwe taak krijgt de standaardmaat (§3.2). Vast werk is altijd urenmaat: "5d" wordt 5 × de
+  werktijd per dag. Onder het P6- en het MSP-profiel is "d" de urenmaat. Breuken ("2,5") en uren ("4u") zijn voor
+  iedereen te typen, want de schakelaar Urenplanning verdwijnt (B2). Nu weigert `parseDuration` decimalen
+  (`durationFormat.ts:40-41`). Een lag in dagen wordt niet meer afgerond (`lagFormat.ts:73`).
+- **Weergave.** De duur volgens B8: in het OPS-profiel een dagenmaat-taak in d en een urenmaat-taak in u; onder het
+  P6- en het MSP-profiel volgens de instelling Duurweergave, zoals nu. In het OPS-profiel verandert Duurweergave de
+  duur van een taak dus niet meer. B8 noemt dat nadeel voor een urenmaat-taak; dit ontwerp past het ook toe op een
+  dagenmaat-taak, anders betekent "u" in het OPS-profiel twee dingen (VERMOED: zo bedoeld). Datums volgens B4: een
+  tijd alleen als het moment midden op de werkdag valt.
+- **Gantt.** Bij dagzoom snapt slepen per werkdag, van blokbegin tot blokeinde; bij uurzoom per uur of kwartier
+  (`timelineSnap.ts:12-28`). De grenzen van dagzoom en uurzoom staan hieronder (T24).
+- **Projectinstellingen.** "Standaardmaat voor nieuwe taken" (§3.2) en het profielblok met de nieuwe conventie
   (§3.14).
-- De schakelaar Urenplanning (`uiSlice.ts:155`, `settingsRegistry.ts:188`): besluit B2. In elke optie vervalt de
-  blokkade van een urenmaat-taak (`hourEditBlocked`, `TaskDurationField.tsx:56`); na B1a komt die maat te vaak
-  voor (import, P6- en MSP-profiel, vast werk).
+- **De schakelaar Urenplanning verdwijnt (besluit B2, optie 1).** Uitwerking voor F4:
+  - *Opslag.* `enableHourPlanning` verdwijnt uit `UIState` (`types.ts:603`), uit de standaardwaarden
+    (`uiSlice.ts:155`), uit het register (`settingsRegistry.ts:188`) en uit `settingsStore.ts`
+    (`saveEnableHourPlanning`, `:513-515`). De oude sleutel `ops-enableHourPlanning` blijft ongelezen in
+    localStorage staan (T25). Reden: niets leest hem nog, en opruimen vraagt een blijvend codepad (`removeLocal`,
+    `settingsStore.ts:55-57`) voor een sleutel zonder gevolg. Een oudere OPS op dezelfde opslag houdt zo zijn eigen
+    stand. Zo doet OPS het al met de oude sleutel van de layouts (`settingsStore.ts:386-389`).
+  - *Leesplekken.* `enableHourPlanning` staat in 35 bestanden in `src/` (grep op `adaf9ab37` en op `5266893af`,
+    allebei 35). Elke leesplek gedraagt zich als "aan", met twee uitzonderingen: de meldingen die vervallen en de
+    zoomgrenzen (beide hieronder). De tabel na deze lijst noemt per bestand wat er verandert.
+  - *Meldingen die vervallen.* De strook `HourDataNotice.tsx` ("Dit bestand bevat urenplanning", met de knop
+    "Urenplanning aanzetten"), met de mount `App.tsx:41,311`, het veld `hourDataNotice` (`types.ts:619`,
+    `uiSlice.ts:161`) en de optie `hourDataNotice` van het laadpad (`fileSlice.ts:355`, `:818-825`, `:1023`, `:1492`;
+    `projectSlice.ts:598`; `devBridge.ts:104`). `fileHasHourData` blijft, want het rekenprofiel gebruikt hem
+    (`schedulingProfileDraft.ts:340`). De MCP-melding over de schakelaar bij een nieuwe urenkalender
+    (`calendarResourceTools.ts:1267-1277`) vervalt ook. Dat is een regel in `warnings`, geen weigering.
+  - *i18n-sleutels die vervallen*, in alle 28 talen. In `common`: `settings.hourPlanningSection`,
+    `settings.enableHourPlanning`, `settings.enableHourPlanningHint`, `hourData.notice` en `hourData.enable`. In
+    `task`: `taskGrid.validation.hourPlanningDisabled`, `duration.enableHourPlanningFirst` en
+    `duration.enableHourPlanning`. F4 haalt ook de controle `hasConcreteWorkBlocks` bij de invoer en de standaardmaat
+    weg (§3.2, want elke kalender heeft werkblokken); dan vervalt ook `duration.requiresWorkBlocks`
+    (`TaskDurationField.tsx:102,117`, `ProjectInfoPanelContent.tsx:578`).
+  - *Tijdkop en slepen.* De eigenaar belooft: bij dagzoom sleept een taak per hele dag. Alleen de schakelaar als "aan"
+    lezen breekt dat (BEVESTIGD, probe `/tmp/uren-fix5/tiers.ts`, §10.5). Vanaf zoom 80 geeft `pickTiers`
+    (`timelineTiers.ts:91-114`) dan de uurband, en `hourSnapMinutesFor` (`timelineSnap.ts:12-15`) 60 minuten. De
+    voorinstelling Dag (zoom 100, `timelineTiers.ts:15`) sleept dan een urentaak per uur (`useBarDrag.ts:299,365`), en
+    na F2 elke taak, want dan heeft elke taak momenten. Daarom krijgen `pickTiers`, `hourSnapMinutesFor`,
+    `scaleFromZoom` en `maxGanttZoom` geen schakelaar meer, maar vaste grenzen (technische keuze T24):
+    - zoom onder `MAX_DAY_ZOOM` (400, `timelineTiers.ts:23`): zoals nu met de schakelaar uit; vanaf 80 de rijen
+      maand, week en dag; slepen per hele dag (een urenmaat-taak per 1440 min, een dagenmaat-taak per werkdag);
+    - vanaf 400: dag en uur, slepen per uur; de schaal heet Uur (`scaleFromZoom`, nu vanaf 300 met de schakelaar);
+    - met Kwartierzoom vanaf 1000 (`MAX_HOUR_ZOOM`, `timelineTiers.ts:25`): uur en kwartier, slepen per 15 min;
+    - `maxGanttZoom`: 4000 met Kwartierzoom, anders 1000. De voorinstelling Uur (1000) staat altijd in de lijst;
+    - gevolg: wie nu de schakelaar aan heeft, ziet tussen zoom 80 en 400 geen uurrij meer en sleept daar per dag.
+      Wie hem uit heeft, ziet tot zoom 400 niets veranderen. De grenzen zijn een voorstel (VERMOED: goed leesbaar);
+      F4 toetst ze in de checkstap.
+  - *Blijft.* Duurweergave (`durationDisplay`) en Kwartierzoom (`enableQuarterHourZoom`) blijven aparte
+    instellingen. Vast werk blijft altijd urenmaat (B1a). De sub-instelling "Gemengde dag/uur-planning toestaan"
+    (`allowMixedDayHour`, `SettingsPanelContent.tsx:339-346`) verliest haar voorwaarde: `showUnitControls` wordt
+    `allowMixedDayHour` (`TaskDurationField.tsx:57`). Voorstel: zij verhuist naar het blok Duurweergave
+    (`SettingsPanelContent.tsx:236-247`), en de kop "Urenplanning" vervalt. F4 legt dat voor in de checkstap.
+  - *Gidsen, tutorials en tests.* 15 nl- en 16 en-gidsen noemen Urenplanning (grep op `adaf9ab37`; 17 en 18 op
+    `5266893af`). Het artikel `howto-urenplanning-aanzetten` (`public/docs/manifest.json:173`) vervalt; zijn id staat
+    niet in `src/` (grep). Krijgt het een nieuwe naam, dan krijgt het een alias in de manifest. De tutorials 4 tot en
+    met 7 zetten de schakelaar aan (`tests/browser/tutorials/tut-4.ts:37,41`, `tut-5.ts:17,56-59`, `tut-6.ts:49`,
+    `tut-7.ts:21`); die stap vervalt. De generator `scripts/tutorial-project.ts:438,537` zet hem ook. Tutorial 4 van
+    de tutorial-extensie leest `localStorage['ops-enableHourPlanning']` (knownbugs 45); die extensie moet mee
+    (VERMOED: buiten deze repo). In `tests/` noemen 37 bestanden `enableHourPlanning` (38 op `5266893af`).
+  - *Knownbugs 24* ("Urenplanning uit bij een kalender met werktijdblokken") verdwijnt met de schakelaar. Het punt
+    staat al niet meer in `knownbugs.md`: `e977abf4a` (2026-10-19) haalde het als verouderd weg.
+
+De 35 bestanden in `src/` (regels op `adaf9ab37`):
+
+| # | Bestand | Wat verandert |
+|---|---|---|
+| 1 | `state/slices/types.ts:603` | veld weg, ook `hourDataNotice` (`:619`) |
+| 2 | `state/slices/uiSlice.ts:155,314` | standaardwaarde weg; `maxGanttZoom` zonder schakelaar; `hourDataNotice` (`:161`) weg |
+| 3 | `utils/settingsRegistry.ts:188` | registratie weg |
+| 4 | `utils/settingsStore.ts:513-515` | `saveEnableHourPlanning` weg; het commentaar `:510-512` bijwerken |
+| 5 | `components/settings/SettingsPanelContent.tsx:67,328-347` | schakelaar en kop weg; `allowMixedDayHour` zonder voorwaarde (zie *Blijft*) |
+| 6 | `components/layout/HourDataNotice.tsx:22` | bestand weg, met de mount `App.tsx:41,311` |
+| 7 | `state/slices/fileSlice.ts:819` | de melding `:818-825` weg, met de optie `hourDataNotice` |
+| 8 | `services/mcp/tools/calendarResourceTools.ts:1270` | de MCP-melding `:1267-1277` weg |
+| 9 | `components/task-sections/TaskDurationField.tsx:37,56-57,101-102,112-113,132,245-246` | `hourEditBlocked` en de knop "Urenplanning inschakelen" weg; `showUnitControls` = `allowMixedDayHour`; "4u" geeft geen melding meer |
+| 10 | `components/dialogs/TaskDialog.tsx:58,67` | `newTaskUnit` = de standaardmaat (B1a) |
+| 11 | `state/slices/taskSlice.ts:890` | de maat van een nieuwe taak = de standaardmaat; de voorwaarde `:890-894` vervalt (§3.2) |
+| 12 | `engine/taskGrid/taskEditPlan.ts:82,312,411-413` | omgevingsveld en de weigering `hourPlanningDisabled` weg |
+| 13 | `state/gridTransaction.ts:524` | omgevingsveld weg |
+| 14 | `utils/taskDuration.ts:171-182` | de ongebruikte parameter van `formatTaskDurationDisplay` weg (`void enableHourPlanning`) |
+| 15 | `components/canvas/TaskTooltipContent.tsx:40,47` | argument weg |
+| 16 | `components/task-sections/TaskBasicFields.tsx:12` | alleen commentaar |
+| 17 | `components/dialogs/CalendarForm.tsx:74,103` | de werktijdsectie altijd zichtbaar (`showWorkTimeSection`) |
+| 18 | `components/settings/ProjectInfoPanelContent.tsx:184,337,350,563,611` | ploegpreset en standaardmaat altijd zichtbaar; `canDefaultToHours` (`:186`) vervalt; een nieuw project krijgt de gekozen standaardmaat |
+| 19 | `components/settings/SchedulingProfileSection.tsx:145,219` | `hourUnit` volgt alleen Duurweergave en de kalender |
+| 20 | `components/dialogs/ExternalLinkDialog.tsx:97,103` | `ownerHourMode` volgt alleen de kalender |
+| 21 | `engine/renderer/timelineTiers.ts:32-35,44-50,91-114` | geen schakelaar; de grenzen van T24 |
+| 22 | `components/canvas/hooks/timelineSnap.ts:12-13` | geen schakelaarparameter |
+| 23 | `components/canvas/hooks/useBarDrag.ts:141,198,225,318,570` | parameter weg |
+| 24 | `components/canvas/hooks/useSplitGesture.ts:69,90,97` | parameter weg |
+| 25 | `components/canvas/hooks/useGanttPointerCoordinator.ts:44,109,138` | doorgeven weg |
+| 26 | `components/canvas/hooks/ganttCoordinatorTypes.ts:87,208` | veld weg |
+| 27 | `components/canvas/hooks/useGanttViewportCoordinator.ts:202,216,247,256,398` | doorgeven weg |
+| 28 | `components/canvas/GanttCanvas.tsx:126,269,481,624,636,678,692` | selector en doorgeven weg |
+| 29 | `engine/renderer/GanttRenderer.ts:147,432,1020` | optie weg |
+| 30 | `hooks/useGanttZoom.ts:12,28,37-42` | parameter weg |
+| 31 | `utils/ganttViewport.ts:214,231` | parameter weg |
+| 32 | `state/slices/viewSlice.ts:185,197` | `maxGanttZoom` zonder schakelaar |
+| 33 | `components/layout/Ribbon/ribbonWidgets.tsx:1057,1077,1085` | de schaal Uur altijd in de lijst |
+| 34 | `components/dialogs/LayoutsDialog.tsx:73,161` | de schaal Uur altijd in de lijst |
+| 35 | `components/layout/StatusBar/StatusBar.tsx:27,102` | het schaallabel zonder schakelaar |
 
 ### 3.13 Publieke surface (F3 en F7)
 
@@ -1025,6 +1121,25 @@ punt 1 en 4, en ronde 3, punt 1 en 3).**
        er komt geen tweede lijst. Probe van deze ronde (§10.5): met deze regel smal nagebootst houdt B na de
        naamwijziging via de echte tool 15 jun 07:00 en de modus; Ctrl+Z zet de naam terug en de modus blijft. Een
        duurwijziging, en naam plus duur samen, verlaten de modus en rekenen.
+     - *Een werkregelwissel deelt de classificatie van vóór de gevolgregels (review ronde 5, VERVOLG, BEVESTIGD;
+       implementatie-eis voor F2).* `workRule` staat in `DATE_NEUTRAL_TASK_FIELDS`, maar de werkregelbrug schrijft
+       gevolgen in velden die er niet in staan. `settleRuleChange` (`workRuleApply.ts:523`) legt restwerk vast, en
+       `reconcileContourWork` (`:237-256`) herschrijft `task.timephasedContours` (`:255`) als de contour afwijkt.
+       De UI classificeert de patch vóór die gevolgregels (`updateTask`, `taskSlice.ts:1002`; `setTaskWorkRule`,
+       `:1110-1121`, sluit zonder `stale`) en houdt de modus. De eindtoets hierboven vergelijkt de toestand ná de
+       gevolgregels en rekent dus wel. Probe van de review: taakduur 480 min, inzet 1, een contour van 240 min,
+       geen vastgelegd restwerk; `workRule: FIXED_WORK` via MCP ⇒ B springt van 15 naar 1 jun, modus uit. Regel:
+       de drie draft-primitieven die `settleRuleChange` aanroepen, classificeren hun eigen wijziging vóór de
+       gevolgregels, met dezelfde `changesOnlyDateNeutralFields` en op dezelfde merge als hun no-op-guard, net als
+       `updateTask`. Dat zijn `updateTaskFields` (merge `createMcpTransactions.ts:420`, brug `:470-473`),
+       `patchTaskFields` (`:536-537`, `:583-586`) en `setTaskWorkRule` (`:852-860`; alleen de regel verandert, dus
+       datumneutraal). Is de wijziging datumneutraal, dan legt de transactie per taak de velden vast die de brug
+       daarna schreef: het verschil vóór en na `settleRuleChange`. De eindtoets legt die waarden over de taak uit de
+       bestaande snapshot en vergelijkt dan. De snapshot zelf blijft de echte vóór-toestand voor undo en rollback.
+       Eén gedeelde functie doet dat voor de eindtoets en voor `recomputeMidBatch`. Er komt geen tweede veldlijst
+       en geen nieuwe classificatielaag. Een andere planningswijziging aan dezelfde taak in dezelfde transactie
+       blijft zichtbaar in de vergelijking en laat rekenen. Probe van deze ronde (§10.5): met deze regel houdt B
+       15 jun 07:00 en de modus, met hetzelfde restwerk en dezelfde contour als dezelfde wissel in de UI.
      - *De bibliotheekverdeling op het actieve document (review ronde 3, punt 3, BEVESTIGD):* die loopt via
        `applyLeveling` (`librarySlice.ts:1407-1416`), en `latestDocumentDataEventSince` (`:1417`) wijst daarna
        het jongste event van het document aan. Met een eigen B5-event kwamen er twee events; `undoDistribution`
@@ -1081,6 +1196,12 @@ punt 1 en 4, en ronde 3, punt 1 en 3).**
 10. Het bestand van (1), Ctrl+Z, daarna `planner_update_tasks` met alleen `fields.name` voor B (review ronde 4): B
     houdt 15 jun 07:00, de modus blijft aan, de naam is gewijzigd, één undo-stap; Ctrl+Z zet de naam terug en de
     modus blijft. Controle: dezelfde aanroep met een duur verlaat de modus en rekent.
+11. Het bestand van (1), Ctrl+Z; B heeft inzet 1, een contour van 240 min over haar 480 min en geen vastgelegd
+    restwerk. Daarna `planner_update_tasks` met alleen `workRule: 'FIXED_WORK'` voor B (review ronde 5): B houdt
+    15 jun 07:00, de modus blijft aan, en restwerk en contour zijn gelijk aan dezelfde wissel in de UI
+    (`setTaskWorkRule`); één undo-stap. Ctrl+Z zet werkregel, restwerk en contour terug, en de modus blijft.
+    Hetzelfde in een batch met een leesstap (`recomputeMidBatch`). Controle: dezelfde aanroep met een duur verlaat
+    de modus en rekent.
 
 ### 5.3 Wat er verschuift bij het openen van een oud bestand
 
@@ -1108,7 +1229,8 @@ de ploeg op de verkeerde plek: werkweek, werkuren, feestdagen en ploeg van elke 
 verlies is aanvaard (eigenaar 2026-10-13, "alles in één keer"; `docs/ifc-round-trip.md:351-356`, gemeten op
 `:436-460`). Dit ontwerp kan dat niet herstellen. Het doel voor v2026.9.0 is daarom: (1) hij leest de datums en
 de hoeveelheden (duur, rest, lag, speling) zoals ze geschreven zijn; (2) dit ontwerp maakt het verlies niet groter
-dan nodig.
+dan nodig. De release-tekst noemt knownbugs 150 naast dat aanvaarde verlies (eigenaar 2026-10-20, geen bezwaar;
+§7.3).
 
 Gemeten met de lezer van v2026.9.0, gebundeld uit de broncode van de tag en gedraaid in Node (niet in de
 desktopapp); probe in §10.5:
@@ -1181,11 +1303,13 @@ niet nodig.
   §3.3 door IFC en door een profielwissel; de belasting per werkdag (§3.11: wo 0,5, do 1, vr 1, ma 0,5, in
   histogram, contourdialoog en nivelleerder); de nivelleerder per kandidaat (§3.11: ma 07:00 geweigerd,
   nivelleerder en histogram gelijk na toepassen).
-- **Nieuwe checks in F2 (fixronde 2, 3 en 4):** de B5-regressiegevallen 1–10 (§5.2), met geval 2 (Automatisch
+- **Nieuwe checks in F2 (fixronde 2 tot en met 5):** de B5-regressiegevallen 1–11 (§5.2), met geval 2 (Automatisch
   berekenen aan en Ctrl+Z) als storetest met de echte hooks; MCP-regressies in `tests/mcp/cases-recorded-dates.ts`
   (geval 10): de B5-overgang, Ctrl+Z, daarna `planner_update_tasks` met alleen `fields.name`, en B houdt 15 jun 07:00
   met de modus aan; hetzelfde in een gewone importmodus (knownbugs 152) en in een batch met een leesstap
-  (`recomputeMidBatch`); een duurwijziging als controle verlaat de modus; een telcheck op de routes die blijvend
+  (`recomputeMidBatch`); een duurwijziging als controle verlaat de modus; geval 11 (review ronde 5): alleen
+  `workRule: 'FIXED_WORK'` bij een afwijkende contour houdt de modus, met restwerk en contour gelijk aan dezelfde
+  wissel in de UI, ook in een batch, en met een duur erbij rekent hij; een telcheck op de routes die blijvend
   rekenen, met route 2 of 3 per aanroep van `runCPM` (§5.2); de schrijfregel per kalender (§3.6): een ankerkalender
   schrijft alleen datums, een letterlijke kalender alleen echte momenten, ook in de psets, en W0, W1 en W2 lezen in de
   nieuwe OPS en in v2026.9.0 terug zoals in §5.4; D7 (START, FINISH, zonder soort met en zonder `AtDayEnd`); het
@@ -1255,7 +1379,7 @@ dag in een cache (`bandCache`, gevuld door `bandsStartingOn`, `CalendarEngine.ts
 | R6 | Veel tests veranderen tegelijk | een reviewer ziet niet welke wijziging bedoeld is | redencodes; per fase alleen de eigen tests |
 | R7 | Werk en kosten veranderen als de afronding verdwijnt | rapporten tonen andere getallen | F3 meet op de voorbeelden en meldt het in de PR |
 | R8 | Prestaties | grote projecten rekenen trager | meting in F2 (§6.5) |
-| R9 | Twee maten in één project | een planner ziet niet welke maat een taak heeft | B8; F4 in dezelfde release (§7.3) |
+| R9 | Twee maten in één project | een planner ziet niet welke maat een taak heeft | B8; F4 op de integratiebranch vóór de PR naar `main` (§7.3) |
 | R10 | Een P6- of MSP-project uit een nieuw bestand rekent toch in de dagenmaat | rekent niet zoals P6 of MSP | T12 met mutatiebewijs (§3.14) |
 | R11 | Een grensregel verandert bestaande uurplanningen | urencases en MSP- of P6-corpusgedrag breken | N0–N3 alleen op benoemde plekken; `z13-*` en de 138 urencases als bewaking (§4.3) |
 | R12 | Data uit F3 overleeft een export niet | 2,5 d wordt na MSPDI 3 d | F5a in de eerste release (§3.10) |
@@ -1265,7 +1389,7 @@ dag in een cache (`bandCache`, gevuld door `bandsStartingOn`, `CalendarEngine.ts
 ### 7.2 Fasen
 
 Elke fase is een eigen PR op de integratiebranch (§7.3), wordt los groen en verandert geen gedrag dat een latere
-fase nodig heeft. Besluiten die vóór een fase moeten vallen: B2, B4 en B8 vóór F4. B3, B6 en B7 zijn besloten.
+fase nodig heeft. Alle besluiten zijn gevallen (§8); B2, B4 en B8 (2026-10-20) bepalen F4.
 
 **F0 — Meting en vangnet (alleen tests en een ongebruikte functie).**
 - Bestanden: nieuwe `src/state/migrations/minuteModel.ts` (§5.2, nog niet aangesloten); de functie "werkdag van
@@ -1308,7 +1432,7 @@ fase nodig heeft. Besluiten die vóór een fase moeten vallen: B2, B4 en B8 vó�
   `schedulingProfileSlice.ts`, `createMcpTransactions.ts`, `batchTool.ts`, `CalendarDialog.tsx`,
   `useExitRecordedDates.ts`).
 - Risico: hoog (R1, R2, R3, R4, R8).
-- Toets: run 1 groen op dagniveau via de echte motor, op de redencodes na; de regressiegevallen 1–10 van §5.2; de
+- Toets: run 1 groen op dagniveau via de echte motor, op de redencodes na; de regressiegevallen 1–11 van §5.2; de
   projecteinde-case en het baseline-einde (§4.2); voorbeeldensnapshot exact; de lezer van v2026.9.0 op de nieuwe
   voorbeeldbestanden en op W0, W1 en W2 (§5.4); `measure:profiles` met corpus; prestatiemeting.
 
@@ -1329,15 +1453,25 @@ fase nodig heeft. Besluiten die vóór een fase moeten vallen: B2, B4 en B8 vó�
 - Toets: run 1 en run 2 (§6.1); de nieuwe checks uit §6.1 en §6.2; de lezer van v2026.9.0 op de lagvormen en de
   breuken (§5.4); migratiemelding over de voorbeelden en het corpus; `measure:profiles` met corpus.
 
-**F4 — UI op momenten en maten (B2, B4 en B8 vooraf).**
-- Inhoud: datuminvoer volgens §3.6 (de store normaliseert al sinds F2); weergave volgens B4; de schrijfwijze en de
-  invoer van de maat volgens B8; breuken in de dagenmaat (`durationFormat.ts:40-41`) en lag zonder afronding
-  (`lagFormat.ts:73`, I12) voor zover B2 dat toelaat; de blokkade van urenmaat-taken weg
-  (`TaskDurationField.tsx:56`); slepen per werkdag; de schakelaar volgens B2; rapporten; gidsen nl/en.
-- Bestanden: `TaskDurationField.tsx`, `durationFormat.ts`, `lagFormat.ts`, `useBarDrag.ts`, `timelineSnap.ts`,
-  `DateTextInput`, `reportCommon.ts`, `uiSlice.ts`, `settingsRegistry.ts`, `public/docs/{nl,en}/`.
+**F4 — UI op momenten en maten (B2, B4 en B8 besloten).**
+- Werkwijze: een fase-PR op `claude/uren-integratie`, net als F0–F3 en F5a. De PR naar `main` komt pas als F4 daar
+  staat (§7.3).
+- Inhoud: datuminvoer volgens §3.6 (de store normaliseert al sinds F2); de datumweergave volgens B4 (een tijd alleen
+  midden op de werkdag); de schrijfwijze en de invoer van de maat volgens B8 ("d" is in het OPS-profiel de
+  dagenmaat, de urenmaat staat in u); breuken in de dagenmaat (`durationFormat.ts:40-41`) en lag zonder afronding
+  (`lagFormat.ts:73`, I12), voor iedereen; de schakelaar Urenplanning weg (B2), met de 35 bestanden, de oude
+  sleutel, de meldingen en de i18n-sleutels uit §3.12; de blokkade van urenmaat-taken weg
+  (`TaskDurationField.tsx:56`); slepen per werkdag en de zoomgrenzen van T24 (§3.12); rapporten; gidsen nl/en (ook
+  `howto-urenplanning-aanzetten`) en de tutorials 4 tot en met 7.
+- Bestanden: de 35 bestanden uit §3.12, plus `App.tsx`, `projectSlice.ts`, `devBridge.ts`, `durationFormat.ts`,
+  `lagFormat.ts`, `DateTextInput`, `reportCommon.ts`, `scripts/tutorial-project.ts`, `tests/browser/tutorials/`, de
+  locales en `public/docs/{nl,en}/`.
 - Risico: middel; zichtbaar voor elke gebruiker (R9).
-- Toets: browsertests (`smoke.spec.ts` en gerichte specs); één checkstap voor de eigenaar (licht en donker).
+- Toets: browsertests (`smoke.spec.ts` en gerichte specs): de voorinstelling Dag sleept een urenmaat-taak per hele
+  dag en Uur per uur; een opgeslagen `ops-enableHourPlanning` (aan of uit) verandert niets; een urenmaat-taak is te
+  bewerken; "5d", "40u" en een kaal getal volgens B8, ook bij vast werk; de datums volgens B4 met de voorbeelden uit
+  §8. `verify:i18n` zonder de vervallen sleutels. Eén checkstap voor de eigenaar (licht en donker), met de
+  zoomgrenzen en de plek van `allowMixedDayHour`.
 
 **F5a — Verliesvrije adapters voor duur, rest en lag (hoort bij de eerste release).**
 - Inhoud: I1, I2, I3, I5, I6, I7 (§1.3); T13 en T15 (§3.10); de OPS-markering voor de maat van taak en lag heen
@@ -1379,19 +1513,24 @@ fase nodig heeft. Besluiten die vóór een fase moeten vallen: B2, B4 en B8 vó�
   in één release. In deze fasering: F2 en F3, via de ene PR naar `main`.
 - **Ook in die release (review ronde 1):** F5a (verliesvrije adapters) en de belasting per werkdag (in F3). Reden:
   F3 maakt data die anders bij de eerste export of in het histogram fout gaat.
-- **Voorstel (nog geen besluit):** F4 gaat mee, met de gidsen nl/en en de MCP-teksten over de maat. Reden: zonder
-  F4 ziet een planner niet welke maat een taak heeft (R9), en een breuk is niet te typen. De vertalingen voor
-  alle 28 talen komen zoals altijd vóór de release (`verify:translations`).
+- **F4 komt vanzelf in dezelfde release (eigenaar 2026-10-20).** F4 is een fase-PR op `claude/uren-integratie`,
+  net als F0–F3 en F5a. De PR naar `main` komt pas als F4 daar staat. De eigenaar wees erop dat de omzetting
+  alleen via die ene PR naar `main` gaat; zo komt ze samen met het scherm in één release. Het eerdere voorstel
+  "F4 gaat mee" vervalt daarmee. Reden voor de volgorde: zonder F4 ziet een planner niet welke maat een taak heeft
+  (R9), en een breuk is niet te typen. De gidsen nl/en horen bij F4, de MCP-teksten over de maat bij F3. De
+  vertalingen voor alle 28 talen komen zoals altijd vóór de release (`verify:translations`).
+- **Release-tekst (eigenaar 2026-10-20, geen bezwaar):** de release-tekst noemt knownbugs 150 naast het aanvaarde
+  verlies van de kalenders (§5.4). Dat is: v2026.9.0 maakt van een kalender met een tijdsignaal een urenkalender
+  zonder werktijd.
 - F5b, F6 en F7 mogen na de PR naar `main`, als gewone PR's.
 - F1 loopt nu via PR #402 rechtstreeks naar `main` (stand 2026-10-20, zie F1). Lezing van dit ontwerp: dat botst niet
   met de integratiebranch: F1 repareert fouten van het huidige urenpad en verandert geen dagpad, dus de webversie
   krijgt geen halve verbouwing. De integratiebranch neemt F1 mee als hij wordt bijgewerkt met `main`.
 
-## 8. Besluiten en open besluiten
+## 8. Besluiten
 
-Besloten op 2026-10-20: B1, B1a, B3, B5, B6 en B7. De regel voor `isDirty` bij B5 is geen besluit van de eigenaar,
-maar een technische keuze van de orkestrator (2026-10-20; §5.2). Open: B2, B4 en B8; ze moeten vallen vóór F4
-(§7.2).
+Besloten op 2026-10-20: B1, B1a, B2, B3, B4, B5, B6, B7 en B8. De regel voor `isDirty` bij B5 is geen besluit van de
+eigenaar, maar een technische keuze van de orkestrator (2026-10-20; §5.2). Er zijn geen open besluiten.
 
 ### B1. Wat is één dag (welke maat)? — besloten: optie 3, een maat per taak
 
@@ -1465,43 +1604,42 @@ ontwerp staat in §3.2.
 
 **Wie, wanneer, bron:** de eigenaar, 2026-10-20, via de coördinator in dit gesprek.
 
-### B2. De schakelaar Urenplanning — open (vóór F4)
+### B2. De schakelaar Urenplanning — besloten: optie 1, weg
 
-**Wat het is.** Nu blokkeert de schakelaar zonder vinkje het bewerken van een urentaak
-(`TaskDurationField.tsx:56`). Hij bepaalt ook of het kalendervenster werktijd toont en of de uurzoom bestaat
-(inventaris). Hij staat standaard uit (`uiSlice.ts:155`). Nieuwe taken worden nu alleen urentaken met de
-schakelaar aan (`taskSlice.ts:890-894`); na B1a beslist de standaardmaat dat. Na de verbouwing rekent de motor
-altijd in minuten, en een dagenmaat-taak kan een breuk hebben. De schakelaar komt uit fase 2.8b (2.8b-spec
-§6.8, "drie blijvende instellingen"). Een eerder besluit over weghalen is niet terug te vinden.
+**Besluit (eigenaar, 2026-10-20, letterlijk via de coördinator):** "die schakelaar urenplanning moet gewoon weg denk
+ik of niet?" De coördinator stemde in. Zijn reden: B4 optie 2 beschermt de planner die in hele dagen werkt al, want
+zo'n planning toont geen tijden.
 
-**Gevolg in elke optie (review ronde 1, punt 10).** Na B1a komt de urenmaat veel voor: elke import uit MSP en P6
-(T15), elke taak onder het P6- en het MSP-profiel, en elke taak met vast werk. Met de schakelaar uit (de
-standaard) blokkeert `hourEditBlocked` (`TaskDurationField.tsx:56`) nu het bewerken van zo'n taak. Die blokkade
-vervalt daarom in elke optie: de duur van elke taak is te bewerken. Wat een getal of een eenheid dan betekent,
-staat bij B8. De opties hieronder verschillen alleen in wat er met de schakelaar uit niet kan.
+**Wat het was.** Zonder vinkje blokkeerde de schakelaar het bewerken van een urentaak (`TaskDurationField.tsx:56`).
+Hij bepaalde ook of het kalendervenster werktijd toont (`CalendarForm.tsx:103`) en of de uurzoom bestaat
+(`timelineTiers.ts:32-35`, `:111`). Hij stond standaard uit (`uiSlice.ts:155`). De schakelaar komt uit fase 2.8b
+(2.8b-spec §6.8, "drie blijvende instellingen"). Een eerder besluit over weghalen is niet terug te vinden.
 
-**Voorbeeld** (standaardkalender). Taak A, dagenmaat, 2,5 d vanaf ma 1 jun 07:00 ⇒ einde wo 3 jun 11:00.
-Opvolger B (FS, 3 d) ⇒ wo 3 jun 11:00 tot ma 8 jun 11:00.
+**Wat de planner ziet.** De App-instellingen hebben geen schakelaar Urenplanning meer. Iedereen kan breuken ("2,5")
+en uren ("4u") typen en de duur van elke taak bewerken. Het kalendervenster toont altijd de werktijd;
+Projectinstellingen tonen altijd de standaardmaat en de ploegpresets; de schaal Uur staat altijd in de lijst. Bij
+de voorinstelling Dag sleept een taak per hele dag, zoals nu met de schakelaar uit; per uur slepen begint bij zoom
+400 (T24). Voorbeeld (standaardkalender): taak A, dagenmaat, 2,5 d vanaf ma 1 jun 07:00 ⇒ einde wo 3 jun 11:00;
+opvolger B (FS, 3 d) ⇒ wo 3 jun 11:00 tot ma 8 jun 11:00. De tabel toont bij A "einde wo 3 jun 11:00" (B4).
 
-1. **Weg.** Iedereen kan breuken en uren typen. A en B staan zoals hierboven; de datums volgens B4.
-2. **Alleen de uren.** Uit: geen uurinvoer ("4u"), geen werkblokken per weekdag in het kalendervenster, geen
-   uurzoom. Een breuk in de dagenmaat ("2,5") mag wel. Een urenmaat-taak is in d te bewerken. A en B staan zoals
-   hierboven.
-3. **Uit = alleen hele dagen.** Uit: alleen hele getallen ("2,5" geeft een foutmelding, zoals nu:
-   `durationFormat.ts:40-41`), geen uurinvoer, geen uurzoom. A kan niet 2,5 d worden. Een urenmaat-taak is in
-   hele d te bewerken; een geïmporteerde duur van 38 u blijft staan tot de planner hem verandert. Aan: breuken,
-   uren, tijden. Een taak die midden op een dag begint (uit een import, of na een urenmaat-voorganger), toont
-   zijn datum volgens B4. Let op bij B8 optie 2: daar toont een urenmaat-taak in het OPS-profiel uren, en een
-   kaal getal bij zo'n taak is uren. Met de schakelaar uit is dat uurinvoer: het geeft een melding. "5d" werkt
-   wel en maakt de taak een dagenmaat-taak van 5 werkdagen. Zo betekent een getal nooit iets anders door de
-   stand van de schakelaar. Uitzondering (review ronde 3, punt 4): een taak met vast werk blijft altijd urenmaat
-   (B1a, §3.2). Bij zo'n taak geeft "5d" 5 × de werktijd per dag in de urenmaat (40 u op de standaardkalender),
-   ook met de schakelaar uit; de tabel toont daarna "40 u". Een invoer in hele dagen blijft zo mogelijk, en vast
-   werk wordt nooit dagenmaat.
+**Afweging.** Dit ontwerp beval optie 3 aan: uit = alleen hele dagen, zodat een planner die nooit met uren werkt,
+niets ziet veranderen. De eigenaar koos optie 1. Wat optie 3 beschermde, doen nu andere regels: B4 toont een tijd
+alleen midden op de werkdag, dus een planning in hele dagen ziet eruit zoals nu; een kaal getal houdt de maat van de
+taak (B8); bij dagzoom sleept een taak per hele dag (T24). Wat optie 3 nog meer gaf: een duur in hele dagen was
+afgedwongen. Dat valt weg. Na B1a komt de urenmaat vaak voor (elke import uit MSP en P6, T15; elke taak onder het
+P6- en het MSP-profiel; elke taak met vast werk), dus de blokkade van `hourEditBlocked` moest in elke optie weg
+(review ronde 1, punt 10).
 
-**Aanbeveling: optie 3.** Een planner die nooit met uren werkt, ziet niets veranderen; wie breuken of uren wil,
-zet de schakelaar aan. De motor rekent in beide standen in minuten. Knownbugs 24 (de schakelaar uit bij een
-kalender met werkblokken) hoort bij dezelfde PR.
+**Uitwerking:** §3.12 (de 35 bestanden, de oude sleutel in localStorage, de meldingen en i18n-sleutels die
+vervallen, de zoomgrenzen, de gidsen en tutorials) en F4 (§7.2). Duurweergave en Kwartierzoom blijven aparte
+instellingen. Vast werk blijft altijd urenmaat (B1a): "5d" geeft bij zo'n taak 5 × de werktijd per dag in de
+urenmaat. Knownbugs 24 hoort hierbij; het punt staat al niet meer in `knownbugs.md` (§9).
+
+**Afgewezen:** optie 2 (alleen de uren uit: geen "4u", geen werkblokken per weekdag in het kalendervenster, geen
+uurzoom, wel breuken) en optie 3 (uit = alleen hele dagen, zoals nu).
+
+**Wie, wanneer, bron:** de eigenaar, 2026-10-20, via de coördinator in dit gesprek. De aanbeveling van dit ontwerp
+was optie 3.
 
 ### B3. Restduur bij voortgang in procenten — besloten: exact
 
@@ -1521,47 +1659,57 @@ melding van B5 telt ze. De dagcases krijgen waar nodig `REST-EXACT` (§6.1).
 
 **Wie, wanneer, bron:** de eigenaar, 2026-10-20, via de coördinator in dit gesprek.
 
-### B4. Datumweergave als een taak midden op een dag begint of eindigt — open (vóór F4)
+### B4. Datumweergave als een taak midden op een dag begint of eindigt — besloten: optie 2
+
+**Besluit (eigenaar, 2026-10-20, via de coördinator):** optie 2. Een datum toont alleen een tijd als het moment
+midden op de werkdag valt. De regel hieronder geldt precies zo: de startkolom zonder tijd op het begin van de
+werkdag, de eindkolom zonder tijd op het einde ervan, de regel voor de mijlpaal, de 24:00-regel bij de dag ervoor,
+en de nachtploeg bij de dag waarop hij begint.
 
 **Wat het is.** Na de verbouwing kan een taak midden op een dag beginnen of eindigen. Voorbeelden: A en B uit
 B2 (wo 3 jun 11:00); een taak van 5 d onder het P6-profiel op de voorbeeldweek (ma 09:00); een taak op een
 24-uurskalender (00:00). De eigenaar vroeg wanneer iets "midden op de werkdag" telt. Het begrip daarvoor is de
 dagrand (§0).
 
-1. **Alleen de datum.** De tabel toont bij A "einde wo 3 jun" en bij B "start wo 3 jun". De tijd staat alleen in
-   de taakdialoog. Nadeel: A en B lijken een dag te overlappen.
-2. **De datum, en de tijd alleen buiten de dagrand.** Precies (voorstel van de coördinator, uitgewerkt):
-   - De startkolom toont geen tijd als het moment het begin is van het eerste werkblok van zijn werkdag, in de
-     kalender van de taak.
-   - De eindkolom toont geen tijd als het moment het einde is van het laatste werkblok van zijn werkdag.
-   - Een mijlpaal heeft één moment. Hij toont geen tijd als dat moment op een van beide dagranden valt.
-   - Elk ander moment toont datum en tijd. Voorbeelden op de standaardkalender (07:00–12:00 + 13:00–16:00): een
-     start om 13:00 na de pauze "wo 3 jun 13:00"; een einde om 12:00 vóór de pauze "wo 3 jun 12:00"; een start om
-     16:00 (een rauw anker, §4.3) "ma 1 jun 16:00"; een einde om 07:00 "di 2 jun 07:00".
-   - **Welke datum.** Zonder tijd staat de werkdag (§0). Met tijd staat de klokdatum, met een tijd van 00:00 tot
-     23:59. OPS toont nooit "24:00".
-   - **De 24:00-regel** is een bijzonder geval van de eindregel: een einde om 00:00 dat het laatste werkblok van
-     de dag ervoor sluit (een 24-uurskalender, of kalendertijd met dagranden 00:00 en 24:00), toont de datum van
-     die dag zonder tijd. Een kalendertijd-taak van 1 d vanaf ma 00:00 toont dus "einde ma 1 jun".
-   - **24:00 tegenover 00:00 (review ronde 1, punt 10).** "ma 1 jun" in de eindkolom betekent "tot het einde van
-     ma". "di 2 jun 00:00" verschijnt alleen als 00:00 geen dagrand is, bijvoorbeeld midden in een nachtblok.
-     "ma 1 jun 00:00" is het begin van ma, nooit het einde. Zo kan de vorige datum nooit met 00:00 verschijnen.
-   - **Nachtploeg 22:00–06:00** (elke werkdag ma–vr; het blok hoort bij de dag waarop het begint): een start di
-     22:00 toont "di 2 jun"; een einde wo 06:00 sluit het laatste blok van werkdag di en toont "di 2 jun"; een
-     einde wo 02:00 toont "wo 3 jun 02:00". Een taak van één nacht toont dus "di 2 jun – di 2 jun", net als een
-     dagtaak van één dag. Het alternatief is de klokdatum zonder tijd ("wo 3 jun"); dan toont één nacht
-     "di 2 jun – wo 3 jun", en de 24:00-regel wordt de enige uitzondering. Dit ontwerp kiest de werkdag, omdat de
-     24:00-regel en de vergelijking op dagniveau (§0) die ook gebruiken.
-3. **Altijd datum en tijd.** De klokdatum met de kloktijd: "vr 5 jun 16:00", "ma 8 jun 07:00", een einde om
-   middernacht "di 2 jun 00:00", een nachtploeg "wo 3 jun 06:00".
+**De regel** (voorstel van de coördinator, uitgewerkt in fixronde 1):
 
-Voor optie 1 en 2 geldt de 24:00-regel (§4.2).
+- De startkolom toont geen tijd als het moment het begin is van het eerste werkblok van zijn werkdag, in de
+  kalender van de taak.
+- De eindkolom toont geen tijd als het moment het einde is van het laatste werkblok van zijn werkdag.
+- Een mijlpaal heeft één moment. Hij toont geen tijd als dat moment op een van beide dagranden valt.
+- Elk ander moment toont datum en tijd. Voorbeelden op de standaardkalender (07:00–12:00 + 13:00–16:00): een
+  start om 13:00 na de pauze "wo 3 jun 13:00"; een einde om 12:00 vóór de pauze "wo 3 jun 12:00"; een start om
+  16:00 (een rauw anker, §4.3) "ma 1 jun 16:00"; een einde om 07:00 "di 2 jun 07:00".
+- **Welke datum.** Zonder tijd staat de werkdag (§0). Met tijd staat de klokdatum, met een tijd van 00:00 tot
+  23:59. OPS toont nooit "24:00".
+- **De 24:00-regel** is een bijzonder geval van de eindregel: een einde om 00:00 dat het laatste werkblok van
+  de dag ervoor sluit (een 24-uurskalender, of kalendertijd met dagranden 00:00 en 24:00), toont de datum van
+  die dag zonder tijd. Een kalendertijd-taak van 1 d vanaf ma 00:00 toont dus "einde ma 1 jun".
+- **24:00 tegenover 00:00 (review ronde 1, punt 10).** "ma 1 jun" in de eindkolom betekent "tot het einde van
+  ma". "di 2 jun 00:00" verschijnt alleen als 00:00 geen dagrand is, bijvoorbeeld midden in een nachtblok.
+  "ma 1 jun 00:00" is het begin van ma, nooit het einde. Zo kan de vorige datum nooit met 00:00 verschijnen.
+- **Nachtploeg 22:00–06:00** (elke werkdag ma–vr; het blok hoort bij de dag waarop het begint): een start di
+  22:00 toont "di 2 jun"; een einde wo 06:00 sluit het laatste blok van werkdag di en toont "di 2 jun"; een
+  einde wo 02:00 toont "wo 3 jun 02:00". Een taak van één nacht toont dus "di 2 jun – di 2 jun", net als een
+  dagtaak van één dag. Het alternatief is de klokdatum zonder tijd ("wo 3 jun"); dan toont één nacht
+  "di 2 jun – wo 3 jun", en de 24:00-regel wordt de enige uitzondering. Dit ontwerp kiest de werkdag, omdat de
+  24:00-regel en de vergelijking op dagniveau (§0) die ook gebruiken.
 
-**Aanbeveling: optie 2, zoals hierboven uitgewerkt.** Een planning in hele dagen ziet er uit zoals nu; een
-moment midden op de dag valt op. Met Urenplanning aan altijd de tijd (optie 3). Bron: voor de statusdatum besloot
-de orkestrator op 2026-10-19 "toon wat de motor gebruikt" (`src/types/calendar.ts:115-118`). Optie 2 trekt dat
-door naar taakdatums. De precieze regel komt van de coördinator (2026-10-20, fixronde 1); een besluit van de
-eigenaar is er nog niet.
+De 24:00-regel is ook technische keuze T3 (§4.2).
+
+**Wat de planner ziet.** Een planning in hele dagen ziet eruit zoals nu: alleen datums. Een moment midden op de dag
+valt op door de tijd erbij: bij A "einde wo 3 jun 11:00", bij B "start wo 3 jun 11:00".
+
+**Afgewezen:** optie 1 (alleen de datum, de tijd alleen in de taakdialoog; A en B lijken dan een dag te overlappen) en
+optie 3 (altijd de klokdatum met de kloktijd: "vr 5 jun 16:00", een einde om middernacht "di 2 jun 00:00", een
+nachtploeg "wo 3 jun 06:00"). De eerdere aanbeveling gaf optie 3 aan wie Urenplanning aan had. Die schakelaar
+verdwijnt (B2), dus optie 2 geldt voor iedereen.
+
+**Bron van de regel:** voor de statusdatum besloot de orkestrator op 2026-10-19 "toon wat de motor gebruikt"
+(`src/types/calendar.ts:115-118`). B4 trekt dat door naar taakdatums.
+
+**Wie, wanneer, bron:** de eigenaar, 2026-10-20, via de coördinator in dit gesprek. De precieze regel komt van de
+coördinator (2026-10-20, fixronde 1).
 
 ### B5. Wat ziet een planner bij het openen van een oud bestand? — besloten: berekenen en melden
 
@@ -1625,37 +1773,40 @@ begint B ma 8 jun 07:00.
 
 **Wie, wanneer, bron:** de eigenaar, 2026-10-20, via de coördinator in dit gesprek.
 
-### B8. Schrijfwijze van de dagenmaat in de tabel — open (vóór F4)
+### B8. Schrijfwijze van de dagenmaat in de tabel — besloten: optie 2
+
+**Besluit (eigenaar, 2026-10-20, via de coördinator):** optie 2. In het OPS-profiel is "d" de dagenmaat en staat de
+urenmaat altijd in "u". Onder het P6- en het MSP-profiel is "d" de urenmaat.
 
 **Wat het is.** In het OPS-profiel kunnen een dagenmaat-taak en een urenmaat-taak naast elkaar staan. "5 d"
-betekent dan twee dingen: 5 werkdagen (dagenmaat), of 5 × de werktijd per dag = 40 u (urenmaat). Op de
+kan dan twee dingen betekenen: 5 werkdagen (dagenmaat), of 5 × de werktijd per dag = 40 u (urenmaat). Op de
 voorbeeldweek eindigt de eerste vr 14:00 en de tweede ma 09:00. De planner moet in de tabel zien welke maat
 geldt. MSP schrijft "5 ed" voor kalendertijd (5 × 24 u); OPS gebruikt "ed" al bij een lag (`lagFormat.ts:62`).
-Onder het P6- en het MSP-profiel bestaat de dagenmaat niet; daar is "d" altijd de urenmaat.
 
-1. **Een eigen afkorting voor de dagenmaat, bijvoorbeeld "wd" (werkdag).** Dagenmaat "5 wd"; urenmaat "5 d" of "40 u";
-   kalendertijd "7 ed". Invoer "5wd" maakt de taak dagenmaat, "5d" of "40u" urenmaat; een kaal getal houdt de maat van
-   de taak, en een nieuwe taak krijgt de standaardmaat. Voordeel: elk getal zegt zijn maat, ook in een export of een
-   rapport; "d" betekent hetzelfde als in MSP en P6. Nadeel: elke bestaande dagtaak toont voortaan "wd"; een nieuwe
-   afkorting in 28 talen.
-2. **"d" is de dagenmaat; de urenmaat staat altijd in uren.** In het OPS-profiel: dagenmaat "5 d", urenmaat
-   "40 u". Onder het P6- en het MSP-profiel: "5 d" is de urenmaat, zoals in P6 en MSP. Invoer in het
-   OPS-profiel: "5d" maakt de taak dagenmaat, "40u" urenmaat; een kaal getal houdt de maat van de taak, in de
-   eenheid die de tabel toont (bij een urenmaat-taak dus uren); een nieuwe taak krijgt de standaardmaat. Voordeel: een
-   OPS-planner ziet wat hij nu ziet (een dagtaak in d, een urentaak in u); geen nieuwe afkorting. Nadeel: in het
-   OPS-profiel toont een urenmaat-taak nooit dagen, ook niet met Duurweergave "Altijd dagen"; na een
-   profielwissel betekent "d" iets anders.
-3. **Overal "d", plus een kolom of teken voor de maat.** "5 d" in beide maten; een kolom "Maat" toont
-   "werkdagen" of "uren". Invoer: een kaal getal en "d" houden de maat van de taak; "u" maakt haar urenmaat; de
-   maat wissel je in de kolom. Voordeel: de tabel blijft rustig. Nadeel: het getal alleen is dubbelzinnig, ook in een
-   export, een rapport of het klembord.
+**Wat de planner ziet en typt** (OPS-profiel, voorbeeldweek):
+- Een dagenmaat-taak toont "5 d" en eindigt vr 14:00. Een urenmaat-taak toont "40 u" en eindigt ma 09:00.
+- "5d" maakt de taak dagenmaat; "40u" maakt haar urenmaat.
+- Een kaal getal houdt de maat van de taak, in de eenheid die de tabel toont: "3" is 3 d bij een dagenmaat-taak en
+  3 u bij een urenmaat-taak.
+- Een nieuwe taak krijgt de standaardmaat (B1a).
+- Vast werk is altijd urenmaat (B1a; review ronde 3, punt 4). Geen invoer maakt zo'n taak dagenmaat: "5d" wordt
+  5 × de werktijd per dag in de urenmaat (40 u op de standaardkalender), en de tabel toont daarna "40 u".
+- Onder het P6- en het MSP-profiel is "5 d" de urenmaat (5 × de werktijd per dag), zoals in P6 en MSP. Na een
+  profielwissel betekent "d" dus iets anders.
+- In het OPS-profiel toont een urenmaat-taak nooit dagen, ook niet met Duurweergave "Altijd dagen". Dit ontwerp leest
+  dat ook omgekeerd: een dagenmaat-taak toont daar nooit uren (§3.12; VERMOED: zo bedoeld).
 
-**Vast werk, in elke optie (review ronde 3, punt 4).** Een taak met vast werk is altijd urenmaat (B1a). Geen invoer
-maakt haar dagenmaat: "5d" (optie 2 en 3) of "5wd" (optie 1) wordt 5 × de werktijd per dag in de urenmaat.
+**Verband met het besluit van 2026-10-15 ("een dag", §3.1; `docs/ifc-round-trip.md:249-256`).** Dat besluit blijft
+gelden voor de urenmaat. "1 d" in de urenmaat is de werktijd per dag van de taakkalender, niet `hoursPerDay`. Dat
+geldt voor "5d" bij vast werk, voor "d" onder het P6- en het MSP-profiel, en voor het verborgen dagengetal
+`scheduleDuration` van een urenmaat-taak (`hourTaskScheduleDuration`, `taskDuration.ts:65-68`). In het OPS-profiel
+ziet de planner dat dagengetal niet meer in de tabel, want daar staat een urenmaat-taak in u.
 
-**Aanbeveling: optie 2.** Reden: het OPS-profiel toont dan wat het nu toont, en binnen één profiel heeft "d" één
-betekenis. Kies optie 1 als een eenduidig getal in exports en rapporten zwaarder weegt dan wat planners nu
-gewend zijn.
+**Afgewezen:** optie 1 (een eigen afkorting "wd" voor de dagenmaat: een nieuwe afkorting in 28 talen, en elke
+bestaande dagtaak toont voortaan "wd") en optie 3 (overal "d", met een kolom voor de maat: het getal alleen is
+dubbelzinnig, ook in een export, een rapport of het klembord).
+
+**Wie, wanneer, bron:** de eigenaar, 2026-10-20, via de coördinator in dit gesprek. Dit ontwerp beval optie 2 aan.
 
 ### Technische keuzes die dit ontwerp zelf neemt
 
@@ -1682,8 +1833,10 @@ gewend zijn.
 | T19 | Eén statusregel voor werkelijke datums, met de werkdag in de kalender van de taak | §4.2; review ronde 1, punt 6 |
 | T20 | Belasting per werkdag uit start- en eindmoment, met één gedeelde functie; de nivelleerder bepaalt vraag en dagen per kandidaat | §3.11; review ronde 1, punt 4; ronde 2, punt 6 |
 | T21 | De maat van duur, rest en lag gaat verliesvrij mee: nooit een gebroken `P…D`; het standaardveld draagt altijd de lengte; een breuk in dagen krijgt een record `[dagen, geschreven minuten]` in een bestaande OPS-pset (voor een lag `OPS_Sequences`), en de dagen tellen alleen zolang het standaardveld de geschreven minuten draagt; in MSPDI en P6 XML hetzelfde record in de OPS-markering, per relatie met voorganger en type | §3.3, §3.10; review ronde 2, punt 5, en ronde 3, punt 2 en 5; kleinste vorm die v2026.9.0 niet verkeerd leest (BEVESTIGD) |
-| T22 | De B5-overgang: één functie voor elke route; de vóór-toestand is de modus "datums zoals opgeslagen" met de vlag aan; een MCP-transactie met alleen metadata (`DATE_NEUTRAL_TASK_FIELDS`) houdt de modus; twee expliciete snapshots in één `nonEdit`-event, of het omvattende event van de actie; alleen bij een verschuiving (de `isDirty`-regel van de orkestrator, 2026-10-20); een documentvlag "omzetting open" die elke route die blijvend rekent kent | §5.2; review ronde 2, punt 1 en 4, en ronde 3, punt 1 en 3 |
+| T22 | De B5-overgang: één functie voor elke route; de vóór-toestand is de modus "datums zoals opgeslagen" met de vlag aan; een MCP-transactie met alleen metadata (`DATE_NEUTRAL_TASK_FIELDS`) houdt de modus, ook bij een werkregelwissel: de primitief classificeert vóór de gevolgregels, en de eindtoets legt de gevolgen over de snapshot; twee expliciete snapshots in één `nonEdit`-event, of het omvattende event van de actie; alleen bij een verschuiving (de `isDirty`-regel van de orkestrator, 2026-10-20); een documentvlag "omzetting open" die elke route die blijvend rekent kent | §5.2; review ronde 2, punt 1 en 4; ronde 3, punt 1 en 3; ronde 4; ronde 5 (VERVOLG) |
 | T23 | Lopers van de dagenmaat in hele minuten, zonder verborgen rest; foutgrens ½ + ½ × (begindag ÷ einddag) minuut | §3.14; review ronde 2, punt 8 |
+| T24 | Zoomgrenzen zonder schakelaar: onder 400 de dagband en slepen per dag; vanaf 400 dag en uur; met Kwartierzoom vanaf 1000 uur en kwartier; maximum 1000 of 4000 | §3.12; houdt de belofte "bij dagzoom per hele dag" na B2 |
+| T25 | De oude sleutel `ops-enableHourPlanning` blijft ongelezen staan | §3.12; geen blijvend opruimpad; zo ook bij de layouts |
 
 ## 9. Wat dit oplost
 
@@ -1692,7 +1845,8 @@ Knownbugs (nummers uit `knownbugs.md`):
 - **1** uur-lag op een externe relatie genegeerd bij een dagtaak: F2 (geen dagtak meer in
   `externalForwardBound`/`externalBackwardBound`, `CPMSolver.ts:2922`, `:2948`). VERMOED.
 - **2** dagtaak na urentaak op een kalender met werkblokken eindigt te vroeg: F1/F2 (N1, één pad). VERMOED.
-- **23** Za aan telt voor dagtaken, niet voor urentaken: F2 (één pad). VERMOED.
+- **23** Za aan telt voor dagtaken, niet voor urentaken: F2 (één pad). VERMOED. Het punt stond in `knownbugs.md` op
+  `adaf9ab37`; `e977abf4a` (2026-10-19) haalde het als verouderd weg. Niet nagelopen of het gedrag nog bestaat.
 - **55** voltooide urentaak met alleen datums als actuals: F1 (D1/D2 voor werkelijke datums). VERMOED.
 - **84** MCP noemt `dur` werkdagen: F7.
 - **138–141** (nieuw, uit de meting): deadline, zachte MSO, nivelleervertraging, externe opvolger: F1.
@@ -1707,7 +1861,8 @@ Knownbugs (nummers uit `knownbugs.md`):
   letterlijke kalenders (T17).
 - **152** (nieuw, fixronde 4): een MCP-wijziging van alleen een taaknaam verlaat "datums zoals opgeslagen": F2
   (§5.2, route 3).
-- **24** de schakelaar Urenplanning uit bij werkblokken: hoort bij B2, lost het niet vanzelf op.
+- **24** de schakelaar Urenplanning uit bij werkblokken: vervalt met de schakelaar (B2, F4). Het punt staat al niet
+  meer in `knownbugs.md` (`e977abf4a`, 2026-10-19, als verouderd).
 - **81** voortgang zonder werkelijke datums: raakt D5/D6, lost het niet op.
 
 TODO (`docs/TODO.md`):
@@ -1861,6 +2016,29 @@ de berekening over als het document in de modus staat en alleen velden uit `DATE
 - Met regel: `duration: 2, durationUnit: 'days'` ⇒ modus uit, B 1 jun 07:00, één berekening. Naam en duur samen:
   hetzelfde.
 
+Fixronde 5 (expert-agent, Opus 5.5), map `/tmp/uren-fix5/`: `probe.ts`, `classification.ts`, `build.cjs`; logs
+`probe-nieuw.log` en `probe-ronde4.log` (beide exit 0). Harness van review ronde 5: de echte `appStoreContext`, de
+echte hooks met een vervangen `useEffect`, de echte `planner_update_tasks` en `planner_batch`. De regel van route 3
+is smal nagebootst: de drie draft-primitieven classificeren hun patch vóór `settleRuleChange` met de echte
+`changesOnlyDateNeutralFields`; bij een datumneutrale patch legt de transactie de velden vast die de brug schreef;
+de eindtoets en `recomputeMidBatch` leggen die over de taak uit de snapshot. Taak B: 480 min, inzet 1, contour
+240 min, geen vastgelegd restwerk; B5-vóór-toestand na Ctrl+Z.
+
+- UI (`setTaskWorkRule`, `FIXED_WORK`): B 15 jun 07:00, modus aan, nul berekeningen; restwerk 480 min, contour
+  480 min.
+- Regel van ronde 4 (zonder vastlegging van de gevolgen): `planner_update_tasks` met `workRule: 'FIXED_WORK'` ⇒ B
+  1 jun 07:00, modus uit, één berekening (de VERVOLG van review ronde 5).
+- Nieuwe regel, dezelfde aanroep: B 15 jun 07:00, modus aan, nul berekeningen; tijd, contour en restwerk gelijk aan
+  de UI. De brug schreef `timephasedContours` en `workRule`. Ctrl+Z zet werkregel, restwerk en contour terug; de
+  modus blijft. `draft.setTaskWorkRule` rechtstreeks en een batch (werkregel, lezen, naam, lezen): ook modus aan,
+  beide lezingen 15 jun 07:00, één undo-stap.
+- Controles met de nieuwe regel: werkregel plus duur ⇒ rekent, modus uit; een batch met eerst een duur en dan een
+  werkregel ⇒ rekent; alleen de contour schrijven in een transactie ⇒ rekent (er is geen tweede lijst).
+- Tijdkop (§3.12, T24): `/tmp/uren-fix5/tiers.ts`, log `tiers.log` (exit 0). Op zoom 80, 100, 300 en 399 geeft
+  `pickTiers` met de schakelaar de rij uur en `hourSnapMinutesFor` 60 min, zonder schakelaar de rij dag en 1440 min.
+  Op zoom 400 met Kwartierzoom en schakelaar: kwartier, 15 min. `scaleFromZoom` geeft Uur vanaf 300 met de
+  schakelaar; `maxGanttZoom` is 400 zonder schakelaar en zonder Kwartierzoom, anders 1000 of 4000.
+
 ## 11. Wat niet gecontroleerd is
 
 - `measure:profiles` met het P6-corpus (geen `OPS_XER_CORPUS` op deze machine).
@@ -1893,4 +2071,9 @@ de berekening over als het document in de modus staat en alleen velden uit `DATE
 - De punten van knownbugs 145–148 zijn gemeld door de bouwer van #402 en niet door deze agent nagespeeld.
 - De MSPDI-round-trip met 2,5 d en 1,5 d rest is door de reviewer gemeten, niet door deze agent herhaald.
 - CSV als exportroute voor duur, rest en lag is niet nagelopen.
+- De werkregel van route 3 (review ronde 5) is smal nagebootst (§10.5), niet als productcode. Andere gevolgregels
+  die op een datumneutrale patch volgen, zijn niet gezocht; de regel dekt alleen `settleRuleChange`.
+- De zoomgrenzen van T24 (400 en 1000) zijn niet op leesbaarheid gemeten; F4 toetst ze in de checkstap.
+- Of `allowMixedDayHour` na B8 nog iets toevoegt, is niet onderzocht. Of de tutorial-extensie in een andere repo
+  staat, is niet nagekeken.
 
