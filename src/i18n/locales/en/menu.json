@@ -60,6 +60,7 @@
       "startHour": "Start (hour)",
       "endHour": "End (hour)",
       "hoursPerDay": "Hours per day",
+      "hoursValue": "{{hours}} h",
       "standardWorkday": "Standard workday",
       "standardWorkdayInfo": "The length of the workday that occurs most often. The app uses it to convert a day into hours.",
       "standardWorkdayInfoLabel": "Explanation of the standard workday",

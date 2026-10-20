@@ -1,10 +1,11 @@
-import { useState, useEffect, useMemo, useId } from 'react';
+import { useState, useEffect, useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Info, Plus, Trash2, X } from 'lucide-react';
 import { isHourModeCalendar, type WorkCalendar, type Holiday, type WorkTimeBands } from '@/types/calendar';
 import { accentChipClass, CalendarGeneratorFields } from './CalendarGeneratorFields';
 import { WorkTimeEditor } from './WorkTimeEditor';
 import { DateTextInput } from '@/components/common/DateTextInput';
+import { formatReportNumber } from '@/utils/reportNumber';
 import { StepButtons, TimeInput, TIME_STEP_MINUTES } from '@/components/common/TimeInput';
 import { formatClock, parseClock } from '@/utils/displayTime';
 import { useAppStore } from '@/state/appStore';
@@ -118,10 +119,10 @@ export function CalendarForm({
   const [scalarTimeIssues, setScalarTimeIssues] = useState<Partial<Record<ScalarTimeField, ScalarTimeIssue>>>({});
   const appHoursPerDay = effHoursPerDay(draft);
   const showFileHoursNotice = draft.workDays.length > 0 && hoursPerDayDiffers(draft.hoursPerDay, appHoursPerDay);
-  const netHoursFormatter = useMemo(
-    () => new Intl.NumberFormat(i18n.language, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-    [i18n.language],
-  );
+  // Eén opmaak voor alle uur-getallen in dit venster (check eigenaar 2026-10-20): de getalnotatie van
+  // de taal zonder overbodige nullen ("10", "7,5", "7,75"; `formatReportNumber`), met "u"/"h" alleen
+  // via i18n. Het oranje blok draagt de eenheid in zijn eigen zin; hier alleen het getal.
+  const formatHours = (hours: number) => formatReportNumber(hours, i18n.language);
 
   useEffect(() => {
     setWorkStartText(formatClock(draft.workStartHour * 60, timeNotation));
@@ -607,7 +608,7 @@ export function CalendarForm({
             data-ops-simple-break-net-hours
           >
             {/* Zonder werkdagen weigert de solver de kalender (`noWorkingDays`): geen getal. */}
-            {draft.workDays.length === 0 ? '—' : `${netHoursFormatter.format(appHoursPerDay)} h`}
+            {draft.workDays.length === 0 ? '—' : tMenu('ribbon.calendarDialog.hoursValue', { hours: formatHours(appHoursPerDay) })}
           </output>
         </div>
       </div>
@@ -619,8 +620,8 @@ export function CalendarForm({
       {showFileHoursNotice && (
         <div className="alert alert--info break-words" data-ops-file-hours-per-day-notice>
           {tMenu('ribbon.calendarDialog.fileHoursPerDayNotice', {
-            fileHours: netHoursFormatter.format(draft.hoursPerDay),
-            appHours: netHoursFormatter.format(appHoursPerDay),
+            fileHours: formatHours(draft.hoursPerDay),
+            appHours: formatHours(appHoursPerDay),
           })}
         </div>
       )}

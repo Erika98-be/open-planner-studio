@@ -67,7 +67,7 @@ test('kalenderdialoog rangschikt beide zichtbare weekdagrijen volgens de eerste 
 
   await page.evaluate(() => window.__OPS__!.store.getState().setUI({ weekStartDay: 'monday' }));
   await expect(firstWeekday).toHaveText('Mon');
-  await expect(dialog.locator('[data-ops-simple-break-net-hours]')).toHaveText('8.00 h');
+  await expect(dialog.locator('[data-ops-simple-break-net-hours]')).toHaveText('8 h');
   await expect(dialog.locator('[data-ops-worktime-editor]')).not.toContainText(/\d(?:\.\d+)?u\b/);
 
   await dialog.locator('[data-ops-cal-apply]').click();
@@ -131,11 +131,11 @@ test('scalar HH:MM-bediening leidt netto uren af, stapt per kwartier en blokkeer
   await expect(workStartUp).toHaveAttribute('title', 'Increase time by 15 minutes');
   await expect(workStartUp).toHaveAttribute('aria-label', 'Increase time by 15 minutes');
   expect(await dialog.locator('[data-ops-scalar-time-step]').evaluateAll(buttons => buttons.every(button => !/^(calendar|ribbon)\./.test(button.getAttribute('title') ?? '') && !/^(calendar|ribbon)\./.test(button.getAttribute('aria-label') ?? '')))).toBe(true);
-  await expect(netHours).toHaveText('8.00 h');
+  await expect(netHours).toHaveText('8 h');
   await expect(netHours.locator('input')).toHaveCount(0);
   await expect(dialog.getByText('Standard workday', { exact: true })).toBeVisible();
   // Het label is gekoppeld aan het veld: een schermlezer noemt de naam bij het getal.
-  await expect(dialog.getByLabel('Standard workday', { exact: true })).toHaveText('8.00 h');
+  await expect(dialog.getByLabel('Standard workday', { exact: true })).toHaveText('8 h');
   await expect(dialog).not.toContainText('ribbon.calendarDialog.standardWorkday');
 
   await dialog.locator('[data-ops-scalar-time-step="work-start-up"]').click();
@@ -143,17 +143,17 @@ test('scalar HH:MM-bediening leidt netto uren af, stapt per kwartier en blokkeer
   await expect(netHours).toHaveText('7.75 h');
   await workStart.press('ArrowDown');
   await expect(workStart).toHaveValue('07:00');
-  await expect(netHours).toHaveText('8.00 h');
+  await expect(netHours).toHaveText('8 h');
 
   await durationUp.click();
   await expect(pauseDuration).toHaveValue('75');
   await expect(netHours).toHaveText('7.75 h');
   await pauseDuration.press('ArrowDown');
   await expect(pauseDuration).toHaveValue('60');
-  await expect(netHours).toHaveText('8.00 h');
+  await expect(netHours).toHaveText('8 h');
   await pauseDuration.fill('0');
   await pauseDuration.press('Enter');
-  await expect(netHours).toHaveText('9.00 h');
+  await expect(netHours).toHaveText('9 h');
   await pauseDuration.press('ArrowDown');
   await expect(pauseDuration).toHaveValue('0');
   await pauseDuration.fill('60');
@@ -164,7 +164,7 @@ test('scalar HH:MM-bediening leidt netto uren af, stapt per kwartier en blokkeer
   await expect(workEnd).toHaveValue('24:00');
   await workEnd.press('ArrowUp');
   await expect(workEnd).toHaveValue('24:00');
-  await expect(netHours).toHaveText('24.00 h');
+  await expect(netHours).toHaveText('24 h');
   await dialog.getByRole('button', { name: 'Mon–Fri' }).click();
   await expect(workStart).toHaveValue('07:00');
   await expect(workEnd).toHaveValue('16:00');
@@ -233,13 +233,13 @@ test('netto-uren blijft in beide urenplanningstanden een afgeleide output', asyn
   });
   const dialog = page.locator('[data-ops-calendar-dialog]');
   const netHours = dialog.locator('[data-ops-simple-break-net-hours]');
-  await expect(netHours).toHaveText('8.00 h');
+  await expect(netHours).toHaveText('8 h');
   await expect(netHours.locator('input')).toHaveCount(0);
   await expect(dialog.getByText('Standard workday', { exact: true })).toBeVisible();
   await expect(dialog.locator('input[type="number"][value="8"]')).toHaveCount(0);
 
   await page.evaluate(() => window.__OPS__!.store.getState().setUI({ enableHourPlanning: true }));
-  await expect(netHours).toHaveText('8.00 h');
+  await expect(netHours).toHaveText('8 h');
   await expect(netHours.locator('input')).toHaveCount(0);
   await expect(dialog.locator('input[type="number"][value="8"]')).toHaveCount(0);
   await dialog.locator('[data-ops-cal-cancel]').click();
@@ -251,11 +251,11 @@ test('netto-uren toont een streepje als een eenvoudige kalender geen werkdag hee
   await page.evaluate(() => window.__OPS__!.store.getState().setUI({ showCalendarDialog: true, enableHourPlanning: false }));
   const dialog = page.locator('[data-ops-calendar-dialog]');
   const netHours = dialog.locator('[data-ops-simple-break-net-hours]');
-  await expect(netHours).toHaveText('8.00 h');
+  await expect(netHours).toHaveText('8 h');
   for (const day of ['Mon', 'Tue', 'Wed', 'Thu', 'Fri']) await dialog.getByRole('button', { name: day, exact: true }).click();
   await expect(netHours).toHaveText('—');
   await dialog.getByRole('button', { name: 'Mon', exact: true }).click();
-  await expect(netHours).toHaveText('8.00 h');
+  await expect(netHours).toHaveText('8 h');
   await dialog.locator('[data-ops-cal-cancel]').click();
   expect(await page.evaluate(() => window.__OPS__!.store.getState().calendar.hoursPerDay)).toBe(8);
 });
@@ -322,7 +322,7 @@ test('kalenderdialoog: kalender met werkblokken toont bij urenplanning uit het b
     await expect(dialog.locator('[data-ops-worktime-section]')).toBeVisible();
     await expect(dialog.locator('[data-ops-worktime-editor]')).toBeVisible();
     await expect.poll(() => blocksOf(dialog, 1)).toEqual(['08:00', '12:00', '13:00', '17:00']);
-    await expect(dialog.locator('[data-ops-simple-break-net-hours]')).toHaveText(/^8[.,]00 h$/);
+    await expect(dialog.locator('[data-ops-simple-break-net-hours]')).toHaveText(/^8 h$/);
     // Geen gewone velden en geen infoblok uit #334: alleen het blok Werktijden telt.
     for (const sel of ['#ops-work-start', '#ops-work-end', '#ops-simple-break-start', '#ops-simple-break-duration',
       '[data-ops-calendar-blocks-notice]', '[data-ops-calendar-enable-hour-planning]']) {
@@ -469,7 +469,7 @@ const calendarBlocks = (page: import('@playwright/test').Page) => page.evaluate(
 test('kalenderdialoog: Continu bij een kalender met blokken zet alle dagen 00:00–24:00 en 24 uur', async ({ page, ops: _ops }) => {
   const dialog = await openMspdiAndCalendarDialog(page, mspdiWithBlocks([['08:00', '12:00'], ['13:00', '17:00']]));
   await dialog.locator('[data-ops-calendar-preset-continuous]').click();
-  await expect(dialog.locator('[data-ops-simple-break-net-hours]')).toHaveText(/^24[.,]00 h$/);
+  await expect(dialog.locator('[data-ops-simple-break-net-hours]')).toHaveText(/^24 h$/);
   await dialog.locator('[data-ops-cal-apply]').click();
   const allDay = [{ start: 0, end: 1440 }];
   await expect.poll(() => calendarBlocks(page)).toEqual({

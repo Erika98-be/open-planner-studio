@@ -60,6 +60,7 @@
       "startHour": "Begin (uur)",
       "endHour": "Einde (uur)",
       "hoursPerDay": "Uren per dag",
+      "hoursValue": "{{hours}} u",
       "standardWorkday": "Standaard werkdag",
       "standardWorkdayInfo": "De lengte van de werkdag die het vaakst voorkomt. Hiermee rekent de app een dag om naar uren.",
       "standardWorkdayInfoLabel": "Uitleg bij de standaard werkdag",

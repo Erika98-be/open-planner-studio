@@ -3,6 +3,7 @@ import { Plus, Trash2, Copy } from 'lucide-react';
 import type { WorkTimeBands } from '@/types/calendar';
 import { ISO_WEEK_DAYS, orderedWeekDays } from '@/utils/weekDays';
 import { MinuteTimeInput } from '@/components/common/TimeInput';
+import { formatReportNumber } from '@/utils/reportNumber';
 type WD = 1 | 2 | 3 | 4 | 5 | 6 | 7;
 
 /**
@@ -53,7 +54,7 @@ export function WorkTimeEditor({
   onChange: (bands: WorkTimeBands) => void;
   weekStartDay: 'monday' | 'sunday';
 }) {
-  const { t: tMenu } = useTranslation('menu');
+  const { t: tMenu, i18n } = useTranslation('menu');
   const { t: tCommon } = useTranslation('common');
 
   const setDay = (wd: WD, list: { start: number; end: number }[]) => {
@@ -103,7 +104,7 @@ export function WorkTimeEditor({
                 {tMenu(`ribbon.calendarDialog.days.${wd}`)}
               </span>
               <span className="!text-small text-text-secondary tabular-nums">
-                {(dayMinutes(wd) / 60).toFixed(2)}h
+                {tMenu('ribbon.calendarDialog.hoursValue', { hours: formatReportNumber(dayMinutes(wd) / 60, i18n.language) })}
               </span>
               <div className="flex-1" />
               <button type="button" onClick={() => addBand(wd)}

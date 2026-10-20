@@ -12,6 +12,7 @@
 // `window.__OPS__` wordt alleen gebruikt om de store te LEZEN.
 import type { Locator, Page } from '@playwright/test';
 import { expect, test } from './fixtures/ops';
+import { LOCALE_CASES, chooseLocale } from './fixtures/locale';
 
 // Schermbewijs alleen op verzoek: `OPS_WERKDAG_BLOK_SHOTS=<map>` (patroon `task-recorded-dates-block.spec.ts`).
 const SHOTS = process.env.OPS_WERKDAG_BLOK_SHOTS;
@@ -43,8 +44,13 @@ const LANGE_DAGEN = xer('Lange dagen', ['07:00', '17:00'], 8);
 // Zelfde blokken, day_hr_cnt gelijk aan de dagsom: geen afwijking.
 const GELIJK = xer('Gewone dagen', ['07:00', '17:00'], 10);
 
-const NOTICE_8_10 = 'The file has its own workday of 8.00 h. It is kept on export to MS Project and P6. '
-  + 'There a day counts 8.00 h, here 10.00 h.';
+// Uur-getallen in de getalnotatie van de taal, zonder overbodige nullen, met de eenheid uit i18n
+// (check eigenaar 2026-10-20: geen "8,00" en geen "h" naast "u").
+const NOTICE_8_10 = 'The file has its own workday of 8 h. It is kept on export to MS Project and P6. '
+  + 'There a day counts 8 h, here 10 h.';
+const NOTICE_8_10_NL = 'Het bestand heeft een eigen werkdag van 8 u. Die gaat mee bij export naar MS Project en P6. '
+  + 'Daar telt een dag 8 u, hier 10 u.';
+const NL = LOCALE_CASES.find((c) => c.code === 'nl')!;
 
 async function openXer(page: Page, text: string): Promise<void> {
   const openButton = page.locator('button.ribbon-btn').filter({ hasText: /^(Open|Openen)$/ });
@@ -91,18 +97,37 @@ async function shoot(page: Page, dialog: Locator, name: string, themes: readonly
   await page.evaluate(t => window.__OPS__!.store.getState().setUI({ uiTheme: t }), before);
 }
 
+/** Uitsnede van de eerste weekdagen in *Werktijden* (uren per weekdag), in licht en donker. */
+async function shootWeekdays(page: Page, dialog: Locator, name: string): Promise<void> {
+  if (!SHOTS) return;
+  const before = await page.evaluate(() => window.__OPS__!.store.getState().ui.uiTheme);
+  for (const theme of ['light', 'dark'] as const) {
+    await page.evaluate(t => window.__OPS__!.store.getState().setUI({ uiTheme: t }), theme);
+    await page.waitForTimeout(300);
+    const first = dialog.locator('[data-ops-worktime-day="1"]');
+    await first.scrollIntoViewIfNeeded();
+    const top = (await first.boundingBox())!;
+    const last = (await dialog.locator('[data-ops-worktime-day="2"]').boundingBox())!;
+    await page.screenshot({
+      path: `${SHOTS}/${name}-${theme === 'light' ? 'licht' : 'donker'}.png`,
+      clip: { x: top.x - 16, y: top.y - 16, width: top.width + 32, height: last.y + last.height + 16 - (top.y - 16) },
+    });
+  }
+  await page.evaluate(t => window.__OPS__!.store.getState().setUI({ uiTheme: t }), before);
+}
+
 test('kalendervenster: afwijkende uren per dag uit het bestand (8 bij 10 u) geeft één oranje blok onder het getal',
   async ({ page, ops: _ops }) => {
     await openXer(page, LANGE_DAGEN);
     await expect.poll(() => storedCalendar(page).then((c) => [c.name, c.hoursPerDay])).toEqual(['Lange dagen', 8]);
 
     const dialog = await openCalendarDialog(page);
-    await expect(netHours(dialog)).toHaveText('10.00 h');
+    await expect(netHours(dialog)).toHaveText('10 h');
+    await expect(dialog.locator('[data-ops-worktime-day="1"]')).toContainText('10 h');
     await expect(notice(dialog)).toHaveCount(1);
     await expect(notice(dialog)).toHaveText(NOTICE_8_10);
     // Het bestaande oranje infoblok van de app, kleur uit het thema (`--theme-accent`).
     await expect(notice(dialog)).toHaveClass(/\balert\b.*\balert--info\b/);
-    await shoot(page, dialog, 'blok-8-bij-10', ['light', 'dark']);
     const colors = await notice(dialog).evaluate((el) => {
       const probe = document.createElement('span');
       probe.style.color = 'var(--theme-accent)';
@@ -129,9 +154,8 @@ test('kalendervenster: zonder afwijking geen blok (XER 10 bij 10 u)', async ({ p
   await openXer(page, GELIJK);
   await expect.poll(() => storedCalendar(page).then((c) => [c.name, c.hoursPerDay])).toEqual(['Gewone dagen', 10]);
   const dialog = await openCalendarDialog(page);
-  await expect(netHours(dialog)).toHaveText('10.00 h');
+  await expect(netHours(dialog)).toHaveText('10 h');
   await expect(notice(dialog)).toHaveCount(0);
-  await shoot(page, dialog, 'geen-blok-10-bij-10', ['light']);
 });
 
 test('kalendervenster: de standaardkalender van een nieuw project (dagkalender) toont geen blok',
@@ -151,20 +175,20 @@ test('kalendervenster: blokken naar een dagsom van 8 u laten het blok live verdw
   const monBand = dialog.locator('[data-ops-worktime-day="1"] [data-ops-band]').first().locator('[data-ops-time-input]');
   await monBand.nth(1).fill('15:00');
   await monBand.nth(1).press('Tab');
-  await expect(dialog.locator('[data-ops-worktime-day="1"]')).toContainText('8.00h');
-  await expect(netHours(dialog)).toHaveText('10.00 h');
+  await expect(dialog.locator('[data-ops-worktime-day="1"]')).toContainText('8 h');
+  await expect(netHours(dialog)).toHaveText('10 h');
   await expect(notice(dialog)).toHaveText(NOTICE_8_10);
 
   // Kopiëren naar alle werkdagen: elke dag 8 u, gelijk aan het getal uit het bestand. Het blok verdwijnt.
   await dialog.locator('[data-ops-worktime-day="1"]').getByTitle('Copy to all workdays').click();
-  await expect(dialog.locator('[data-ops-worktime-day="5"]')).toContainText('8.00h');
-  await expect(netHours(dialog)).toHaveText('8.00 h');
+  await expect(dialog.locator('[data-ops-worktime-day="5"]')).toContainText('8 h');
+  await expect(netHours(dialog)).toHaveText('8 h');
   await expect(notice(dialog)).toHaveCount(0);
 
   // Terug naar 10 u op ma: nog steeds modaal 8 (di–vr), dus nog steeds geen blok.
   await monBand.nth(1).fill('17:00');
   await monBand.nth(1).press('Tab');
-  await expect(netHours(dialog)).toHaveText('8.00 h');
+  await expect(netHours(dialog)).toHaveText('8 h');
   await expect(notice(dialog)).toHaveCount(0);
 });
 
@@ -174,6 +198,40 @@ test('kalendervenster: een preset vervangt het getal uit het bestand, het blok v
   const dialog = await openCalendarDialog(page);
   await expect(notice(dialog)).toHaveText(NOTICE_8_10);
   await dialog.locator('[data-ops-preset="two-shift"]').click();
-  await expect(netHours(dialog)).toHaveText('16.00 h');
+  await expect(netHours(dialog)).toHaveText('16 h');
   await expect(notice(dialog)).toHaveCount(0);
+});
+
+// In het Nederlands: komma als decimaalteken, geen overbodige nullen en overal "u" (ook bij *Standaard
+// werkdag* en de weekdagen in *Werktijden*). De taal kiest de test met echte klikken in Instellingen.
+test('kalendervenster in het Nederlands: "10 u", "8 u" en "7,5 u", geen "10,00 h"', async ({ page, ops: _ops }) => {
+  await openXer(page, LANGE_DAGEN);
+  await expect.poll(() => storedCalendar(page).then((c) => c.hoursPerDay)).toBe(8);
+  await chooseLocale(page, NL);
+  const dialog = await openCalendarDialog(page);
+  await expect(netHours(dialog)).toHaveText('10 u');
+  await expect(notice(dialog)).toHaveText(NOTICE_8_10_NL);
+  const monday = dialog.locator('[data-ops-worktime-day="1"]');
+  await expect(monday).toContainText('10 u');
+  await expect(monday).not.toContainText('h');
+  await shoot(page, dialog, 'blok-8-bij-10', ['light', 'dark']);
+
+  // Ma 07:00–14:30: 7,5 u met een komma; de dagsom die het vaakst voorkomt (10 u) en het blok blijven.
+  const monBand = monday.locator('[data-ops-band]').first().locator('[data-ops-time-input]');
+  await monBand.nth(1).fill('14:30');
+  await monBand.nth(1).press('Tab');
+  await expect(monday).toContainText('7,5 u');
+  await expect(netHours(dialog)).toHaveText('10 u');
+  await expect(notice(dialog)).toHaveText(NOTICE_8_10_NL);
+  await shootWeekdays(page, dialog, 'werktijden-per-weekdag');
+});
+
+test('kalendervenster in het Nederlands: zonder afwijking "10 u" en geen blok', async ({ page, ops: _ops }) => {
+  await openXer(page, GELIJK);
+  await expect.poll(() => storedCalendar(page).then((c) => c.hoursPerDay)).toBe(10);
+  await chooseLocale(page, NL);
+  const dialog = await openCalendarDialog(page);
+  await expect(netHours(dialog)).toHaveText('10 u');
+  await expect(notice(dialog)).toHaveCount(0);
+  await shoot(page, dialog, 'geen-blok-10-bij-10', ['light']);
 });
