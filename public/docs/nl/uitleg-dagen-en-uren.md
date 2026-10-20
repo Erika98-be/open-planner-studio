@@ -6,7 +6,7 @@ Een taak van 2 dagen en een taak van 16 uur lijken hetzelfde, maar de app rekent
 
 Een **dagtaak** heeft een duur in hele werkdagen, bijvoorbeeld `5d`. Hij bezet volle werkdagen. Op de standaardkalender heeft hij een start- en einddatum zonder tijd.
 
-Een **urentaak** heeft een duur in werkuren, bijvoorbeeld `12h` of `1h 30m`. Hij heeft een start en een einde met een kloktijd, bijvoorbeeld dinsdag 11:00.
+Een **urentaak** heeft een duur in werkuren, bijvoorbeeld `12u` of `1u 30m`. Hij heeft een start en een einde met een kloktijd, bijvoorbeeld dinsdag 11:00.
 
 De eenheid hoort bij de taak, niet bij het project. Je kunt dagtaken en urentaken in één planning mengen. Dat heet **gemengde planning**.
 
@@ -20,7 +20,7 @@ Uren gebruik je voor werk dat niet in hele dagen past: een kraan die je twaalf u
 
 Elke kalender heeft per werkdag **werktijdblokken** (in de app *banden* genoemd). De standaardkalender heeft 07:00 tot 12:00 en 13:00 tot 16:00. Het gat is de pauze. Die blokken leidt de app af uit *Begin (uur)*, *Einde (uur)* en de pauze van de kalender; je hoeft er niets voor in te stellen. Stel je per weekdag eigen blokken in, dan zijn die leidend.
 
-De **standaard werkdag** is de werkdag die het vaakst voorkomt; zijn lengte is de som van zijn blokken. Het is dus geen gemiddelde: met maandag 16 uur en dinsdag tot en met vrijdag 10 uur is de standaard werkdag 10 uur. Verschilt de lengte van de werkdagen, dan geldt de meest voorkomende dagsom, en bij gelijkspel de hoogste. Bij een week van vier dagen van 8 uur en een vrijdag van 5 uur is de standaard werkdag dus 8 uur. Ook een kalender met eigen uren per dag (bijvoorbeeld uit Primavera P6) rekent met deze dagsom, en het kalendervenster toont hem. De eigen waarde blijft bewaard voor de export. Een taak van 1870 uur op blokken van 10 uur duurt dus 187 dagen, ook als de eigen waarde 8 uur per dag is.
+De **standaard werkdag** is de werkdag die het vaakst voorkomt; zijn lengte is de som van zijn blokken. Het is dus geen gemiddelde: met maandag 16 uur en dinsdag tot en met vrijdag 10 uur is de standaard werkdag 10 uur. Verschilt de lengte van de werkdagen, dan geldt de meest voorkomende dagsom, en bij gelijkspel de hoogste. Bij een week van vier dagen van 8 uur en een vrijdag van 5 uur is de standaard werkdag dus 8 uur. Ook een kalender met eigen uren per dag (bijvoorbeeld uit Primavera P6) rekent met deze dagsom, en het kalendervenster toont hem. De eigen waarde blijft bewaard voor de export. Wijkt hij af, dan toont het kalendervenster een oranje blok onder *Standaard werkdag*. Een taak van 1870 uur op blokken van 10 uur duurt dus 187 dagen, ook als de eigen waarde 8 uur per dag is.
 
 ### Een taak in uren
 
@@ -34,9 +34,9 @@ De app telt hele werkdagen. De uren per dag doen daarbij niet mee. Een taak van 
 
 Een dag is de standaard werkdag van de kalender van de taak. De app gebruikt dat op drie plekken:
 
-- Bij *Duurweergave*. Onder *Instellingen › Project › App-instellingen*, tabblad *Weergave*, kies je *Automatisch (eigen eenheid per taak)*, *Altijd dagen* of *Altijd uren*. Een taak van 18 uur toont bij *Altijd dagen* als `2,25d(18h)`: de eigen eenheid blijft tussen haakjes staan.
+- Bij *Duurweergave*. Onder *Instellingen › Project › App-instellingen*, tabblad *Weergave*, kies je *Automatisch (eigen eenheid per taak)*, *Altijd dagen* of *Altijd uren*. Een taak van 18 uur toont bij *Altijd dagen* als `2,25d(18u)`: de eigen eenheid blijft tussen haakjes staan.
 - Bij een lag in uren na een dagtaak (zie *Afronden*).
-- Als je de eenheid van een taak wisselt. De app telt dan de dagen vanaf de start van de taak, elke dag met zijn eigen uren, en zet de duur meteen om als de uitkomst exact klopt. Twee dagen worden `16h`. Op een kalender waar de vrijdag 5 uur heeft, worden 5 dagen vanaf maandag `37h`. Twaalf uur kan op een kalender met dagen van 8 uur niet in hele dagen: de app houdt de eenheid dan zoals hij is.
+- Als je de eenheid van een taak wisselt. De app telt dan de dagen vanaf de start van de taak, elke dag met zijn eigen uren, en zet de duur meteen om als de uitkomst exact klopt. Twee dagen worden `16u`. Op een kalender waar de vrijdag 5 uur heeft, worden 5 dagen vanaf maandag `37u`. Twaalf uur kan op een kalender met dagen van 8 uur niet in hele dagen: de app houdt de eenheid dan zoals hij is.
 
 ### Dagtaken en urentaken door elkaar
 
@@ -52,7 +52,7 @@ De app rondt af, of wijst af, op vier plekken:
 
 - **Een dagtaak na een urentaak** begint op de eerstvolgende werkdag. De urentaak wordt zo als het ware naar boven afgerond op hele dagen.
 - **Een lag in uren** telt in de lag-kalender, standaard die van de voorganger. Is de voorganger een dagtaak op een kalender zonder eigen werktijdblokken, zoals de standaardkalender, dan rekent de app de lag om naar hele werkdagen: de lag gedeeld door de uren van de standaard werkdag, afgerond op een heel getal; een halve dag gaat omhoog. Bij 8 uur per dag telt 1 uur als 0 dagen, 4 uur als 1 dag en 12 uur als 2 dagen. Dat geldt ook als de opvolger een urentaak is. Is de voorganger een urentaak, of heeft zijn kalender eigen werktijdblokken, dan telt de lag exact in werkuren en telt de pauze niet mee.
-- **Een duur in dagen** is altijd een geheel getal. Typ je `1.5d`, dan meldt de app *Voer een geheel aantal dagen of uren in, bijvoorbeeld 2d of 12h.* Een duur in uren mag wel `1.5h` zijn, of `1h 30m`.
+- **Een duur in dagen** is altijd een geheel getal. Typ je `1.5d`, dan meldt de app *Voer een geheel aantal dagen of uren in, bijvoorbeeld 2d of 12u.* Een duur in uren mag wel `1.5u` zijn, of `1u 30m`.
 - **Een eenheidswissel** gebeurt alleen als de uitkomst exact klopt (zie hierboven).
 
 ## Rekenvoorbeeld: de kraan
@@ -91,7 +91,7 @@ In tutorial 4, over urenplanning, plan je zelf een kraaninzet in uren.
 
 **"8 uur is 1 dag."** Alleen als de kalender dagen van 8 uur heeft. Op de kalender met de vrije vrijdagmiddag is 5 dagen 37 uur, geen 40.
 
-**"Als ik meer uren per dag instel, is mijn dagtaak sneller klaar."** Nee. Een dagtaak telt hele werkdagen. De uren per dag veranderen alleen wat een dag in uren waard is, bijvoorbeeld bij de weergave en bij een lag in uren. Alleen bij een taak met resources en de werkregel *Vast werk* of *Vaste inzet* verandert de duur mee, omdat het werk gelijk blijft: 40 uur werk is 5 dagen bij 8 uur per dag en 7 dagen bij 6 uur per dag.
+**"Als ik meer uren per dag instel, is mijn dagtaak sneller klaar."** Nee. Een dagtaak telt hele werkdagen. De uren per dag veranderen alleen wat een dag in uren waard is, bijvoorbeeld bij de weergave en bij een lag in uren. Alleen bij een taak met resources en het taaktype *Vast werk* of *Vaste inzet* verandert de duur mee, omdat het werk gelijk blijft: 40 uur werk is 5 dagen bij 8 uur per dag en 7 dagen bij 6 uur per dag.
 
 **"Een urentaak van 8 uur duurt één dag."** Alleen als hij aan het begin van de dag start. Begint hij later, zoals *Stelwerk* op dinsdag 11:00, dan loopt hij door in de volgende dag.
 

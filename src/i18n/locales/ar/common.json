@@ -287,6 +287,13 @@
     "xerArchiveReasonStructure": "السبب: بنية الأرشيف داخل IFC غير صحيحة (مكررة أو معاد ترتيبها أو مرتبطة بشكل خاطئ).",
     "statusDateSetToday": "ضُبط تاريخ الحالة على اليوم ({{date}}).",
     "durationBelowDoneWork": "تم إنجاز «{{name}}» بنسبة {{percent}}% بالفعل: لا يمكن أن تكون المدة أقصر من العمل المنجز. لم تتغير المدة.",
+    "remainingWorkRecomputed": "أُعيد حساب العمل المتبقي لـ «{{name}}»: {{before}} س ← {{after}} س (جاءت القيمة من الملف). يعيدها Ctrl+Z.",
+    "remainingWorkRecomputedMany_zero": "لم يُعَد حساب العمل المتبقي لأي مهمة.",
+    "remainingWorkRecomputedMany_one": "أُعيد حساب العمل المتبقي لمهمة واحدة (جاءت القيمة من الملف). يعيدها Ctrl+Z.",
+    "remainingWorkRecomputedMany_two": "أُعيد حساب العمل المتبقي لمهمتين (جاءت القيم من الملف). يعيدها Ctrl+Z.",
+    "remainingWorkRecomputedMany_few": "أُعيد حساب العمل المتبقي لـ {{count}} مهام (جاءت القيم من الملف). يعيدها Ctrl+Z.",
+    "remainingWorkRecomputedMany_many": "أُعيد حساب العمل المتبقي لـ {{count}} مهمة (جاءت القيم من الملف). يعيدها Ctrl+Z.",
+    "remainingWorkRecomputedMany_other": "أُعيد حساب العمل المتبقي لـ {{count}} من المهام (جاءت القيم من الملف). يعيدها Ctrl+Z.",
     "tutorialOfferLater": "تجد الدروس التعليمية دائمًا في المساعدة › الدروس التعليمية.",
     "tutorialOfferUnavailable": "تعذّر الآن تثبيت الدروس التعليمية أو بدؤها. يمكنك المحاولة مرة أخرى لاحقًا من المساعدة › الدروس التعليمية."
   },

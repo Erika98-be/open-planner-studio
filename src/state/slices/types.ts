@@ -36,6 +36,7 @@ import type { McpServerStatus } from '@/services/mcp/contracts';
 import type { SiteOpenRequest, SiteSaveRequest } from '@/services/fileAccess/siteDialogs';
 import type { IfcSchemaQuestion } from '@/services/ifc/ifcSchemaQuestion';
 import type { FormatNoticeKind } from '@/services/formatNoticeKinds';
+import type { FeedbackDraft } from '@/services/feedback/feedbackDraft';
 export type { McpServerStatus };
 
 export type WeekStartDay = 'monday' | 'sunday';
@@ -236,6 +237,7 @@ export type NotificationMessageKey =
   | 'notifications.milestoneClearedOnPhase'
   | 'notifications.phaseRefusedNoAssignableChild'
   | 'notifications.phaseRefusedDuplicateResource'
+  | 'notifications.phaseQuestionOutdated'
   | 'notifications.mppLegacy'
   | 'notifications.mppEncrypted'
   | 'notifications.xerInvalidInput'
@@ -366,6 +368,11 @@ export type NotificationMessageKey =
   // Restduur: een nieuwe duur korter dan het gedane werk van een lopende taak is
   // geweigerd — zie `runningDurationChange` in engine/taskMutationRules.ts. Parameters `name`, `percent`.
   | 'notifications.durationBelowDoneWork'
+  // Een duurbewerking rekende een bewaard, afwijkend restwerk opnieuw uit (eigenaarsbesluit
+  // 2026-10-19) — zie `state/remainingWorkNotice.ts`. Eén taak: `name` + `numberParams`
+  // `before`/`after` (uren); meer taken: meervoud, `count`.
+  | 'notifications.remainingWorkRecomputed'
+  | 'notifications.remainingWorkRecomputedMany'
   // Detailregel onder een weigering die meer taken of relaties raakt: welke niet zijn aangepast /
   // aangemaakt (`refusedNamesLine` in state/refusalNotice.ts). `names`, en bij `More` ook `count`.
   | 'notifications.refusedTaskNames'
@@ -421,6 +428,12 @@ export interface AppNotification {
   messageKey: NotificationMessageKey;
   /** Interpolatie-parameters voor `t()`. */
   params?: Record<string, string | number>;
+  /** Getallen voor dezelfde interpolatie die `NotificationHost` pas bij het tonen in de notatie van
+   *  de app-taal zet (`formatReportNumber`: hoogstens twee decimalen, Latijnse cijfers, het
+   *  decimaalteken van de taal). Zo blijft de store taalvrij en volgt het getal een taalwissel.
+   *  Niet voor `count`: dat blijft een kaal getal in `params`, want i18next kiest er de
+   *  meervoudsvorm mee. */
+  numberParams?: Record<string, number>;
   /** Rauwe technische tekst (`err.message`) — BEWUST onvertaald. */
   detail?: string;
   /** Optionele, vertaalde feiten onder de hoofdboodschap (bv. één XER-bestandsverslag). */
@@ -432,6 +445,10 @@ export interface AppNotification {
   detailParams?: Record<string, string | number>;
   /** Samenvouw-sleutel: een tweede melding met dezelfde sleutel wordt één regel met een teller. */
   dedupeKey?: string;
+  /** Met `dedupeKey`: een tweede melding met dezelfde sleutel VERVANGT de inhoud zonder dat de
+   *  teller oploopt — voor een melding die een lopende bewerking bijwerkt (de restwerkmelding toont
+   *  tijdens één balksleep steeds de eindwaarde, zonder "×N"). */
+  replaceOnDedupe?: boolean;
   /** Aantal samengevouwen voorkomens; 1 bij de eerste. */
   count: number;
   /** Optioneel — id van een in-app-documentatieartikel (`public/docs/<taal>/<id>.md`) dat deze
@@ -474,6 +491,34 @@ export interface ActualStartQuestionItem {
 
 export interface ActualStartQuestionRequest {
   items: ActualStartQuestionItem[];
+}
+
+/** Eén taak die door de handeling een fase wordt en toewijzingen draagt (`structuralTransition.ts`,
+ *  `phaseAssignmentQuestion`). Namen zijn vooraf opgezocht: de vraag toont ze zoals ze nu zijn. */
+export interface PhaseAssignmentQuestionItem {
+  phaseId: string;
+  phaseName: string;
+  /** Aantal nieuwe subtaken, en de naam van de eerste (voor "krijgt de subtaak '…'"). */
+  childCount: number;
+  firstChildName: string;
+  /** De eerste nieuwe subtaak die toewijzingen mag dragen; `null` ⇒ er is er geen. */
+  targetId: string | null;
+  targetName: string | null;
+  /** De resources van de toewijzingen van de fase, in volgorde. */
+  resourceNames: string[];
+  /** Toewijzingen met verricht werk (actuals), die Verwijderen zou weggooien (eigenaarsbesluit
+   *  2026-10-17: het venster noemt ze en zet de focus op Annuleren). */
+  actualWork: { resourceName: string; minutes: number }[];
+  /** Waarom verplaatsen niet kan; `null` ⇒ het kan. */
+  blocked:
+    | null
+    | { kind: 'noAssignableChild' }
+    | { kind: 'duplicateResource'; resourceNames: string[] };
+}
+
+/** De vraag "Taak wordt een samenvattingstaak" (eigenaarsbesluit 2026-10-17): één vraag voor de hele handeling. */
+export interface PhaseAssignmentQuestion {
+  items: PhaseAssignmentQuestionItem[];
 }
 
 export interface UIState {
@@ -536,6 +581,13 @@ export interface UIState {
   /** Een pas gemaakte taak krijgt éénmalig de naamfocus in het eigenschappenpaneel. */
   pendingTaskNameFocusId: string | null;
   showFeedbackDialog: boolean;              // session — feedback-dialoog open
+  /** persisted (`ops-feedbackEmail`) — het optionele e-mailadres uit de feedbackdialoog, onthouden na
+   *  een geslaagde melding. Geen paneelinstelling: het hoort bij het formulier zelf. */
+  feedbackEmail: string;
+  /** Session — het bewaarde feedbackconcept (soort, tekst, e-mail, screenshot + annotaties). Blijft
+   *  staan na Esc/Annuleren/sluiten; leeg na een geslaagde verzending of *Leegmaken*. Bewust niet in
+   *  het document en niet in localStorage. */
+  feedbackDraft: FeedbackDraft | null;
   showStructureDialog: boolean;             // session — codes & velden-beheer open
   traceMode: TraceMode;                     // session — path tracing rond de geselecteerde taak
   showResourcePanel: boolean;               // session — resource-beheerpaneel (full-panel) open
@@ -649,6 +701,10 @@ export interface UIState {
    *  `state/actualStartQuestion.ts` (een promise-resolver hoort niet in state thuis, zoals bij
    *  `pendingExtensionConsent`). Modaal: telt mee in `hasBlockingDialogOpen`. */
   pendingActualStartQuestion: ActualStartQuestionRequest | null;
+  /** session — de openstaande vraag "Taak wordt een samenvattingstaak" (`PhaseAssignmentDialog`), of `null`.
+   *  Draagt alleen de VRAAG; de handeling die op het antwoord wacht staat in de taakslice
+   *  (`answerPhaseAssignmentQuestion`), niet in state. Modaal: telt mee in `hasBlockingDialogOpen`. */
+  pendingPhaseAssignmentQuestion: PhaseAssignmentQuestion | null;
   /** session — de openstaande vraag "Openen van de site" (issue #309), of `null`. Draagt alleen de
    *  VRAAG; het antwoord gaat via de resolver in `state/siteDialogBridge.ts` (zoals bij
    *  `pendingExtensionConsent`). Modaal: telt mee in `hasBlockingDialogOpen`. */

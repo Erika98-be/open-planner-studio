@@ -10,8 +10,9 @@ paths:
 
 ## Docs
 
-- [PLAN.md](PLAN.md) — large project plan, source of truth for the **roadmap**. ⚠️ Alleen voor de roadmap: §4 "Mappenstructuur" is vervallen (de ontwerpfase-boom is verwijderd, er staat alleen een verwijzing). Voor de werkelijke structuur: dit bestand en `AGENTS.md`.
+- [PLAN.md](PLAN.md) — ontwerpfase-document: visie, marktonderzoek en het oorspronkelijke fasenplan. ⚠️ Niet de actuele stand: §3, §4, §5.2, §8, §9 en §10 zijn verouderd en de vinkjes worden niet bijgehouden. Voor de werkelijke structuur: dit bestand en `AGENTS.md`; voor openstaand werk: `docs/TODO.md`.
 - [docs/TODO.md](docs/TODO.md) — lopende to-do-lijst met dingen die nog gedaan moeten worden.
+- [docs/xer-recovery-guardrails.md](docs/xer-recovery-guardrails.md) — de randvoorwaarden voor herstel van een XER-bronarchief (zie de `xer`-rule).
 - [docs/ifc-round-trip.md](docs/ifc-round-trip.md) — **hoe je een veld toevoegt dat een opslaan/laden overleeft.** IFC is het native formaat, dus domeindata die niet round-trippt is bij het volgende openen weg; dit is de route langs writer, reader, fixture en canon-tabel, plus waar de compiler je tegenhoudt.
 - [docs/recepten/](docs/recepten/) — dezelfde receptvorm als `docs/ifc-round-trip.md` voor andere terugkerende klussen: een nieuwe `planner_*`-MCP-tool, een nieuwe instelling, een nieuwe vertaalsleutel, een nieuw ribbontabblad, een tekstgrootte kiezen/toevoegen, een nieuwe in-app gids en een nieuwe rekenconventie.
 - [docs/CHANGELOG.md](docs/CHANGELOG.md) — per **uitgebrachte** versie de uitgebreide beschrijving (Engels). Wordt alleen tijdens een release bijgewerkt (zie de `release`-skill) — geen `Ongepubliceerd`-kop, geen commit-dump.

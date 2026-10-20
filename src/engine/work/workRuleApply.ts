@@ -18,8 +18,9 @@ import type { WorkCalendar } from '@/types/calendar';
 import type { Project } from '@/types/project';
 import type { Resource, ResourceAssignment } from '@/types/resource';
 import type { Task, TaskTime } from '@/types/task';
-import { applyProgressInvariants, hourRemainingDays } from '@/engine/taskMutationRules';
+import { applyProgressInvariants, applyRemainingDuration, hourRemainingDays } from '@/engine/taskMutationRules';
 import { DEFAULT_WORK_RULE, type WorkRule } from '@/types/workRule';
+import { storedWorkDeviates } from '@/engine/work/workDeviation';
 import { contourIndexForAssignment, taskWorkMinutes } from '@/engine/contour/contourEngine';
 import { resolveCalendar } from '@/engine/scheduler/resolveCalendar';
 import { taskDurationUnit } from '@/engine/scheduler/duration';
@@ -34,7 +35,7 @@ import {
 } from '@/utils/taskDefaults';
 import {
   applyAssignmentAdded, applyAssignmentRemoved, applyDurationEdit, applyRuleChange, applySlotChange,
-  applyUnitsEdit, applyWorkEdit, type TriangleAssignment, type TriangleState,
+  applyUnitsEdit, applyWorkEdit, durationEditKeepsWork, type TriangleAssignment, type TriangleState,
 } from '@/engine/work/workTriangle';
 
 export interface WorkRuleContext {
@@ -50,6 +51,15 @@ export interface WorkRuleContext {
  *  FIXED_DURATION_RATE. */
 export function effectiveWorkRule(task: Pick<Task, 'workRule'>, defaultWorkRule?: WorkRule): WorkRule {
   return task.workRule ?? defaultWorkRule ?? DEFAULT_WORK_RULE;
+}
+
+/** Blijft bewaard restwerk van deze taak staan bij een duurbewerking? Dezelfde regel en dezelfde
+ *  effort-driven-uitzondering als {@link triangleStateOf} → `applyDurationEdit` (besluit V10). */
+export function durationEditKeepsWorkOf(
+  task: Pick<Task, 'workRule' | 'mspTaskType' | 'effortDriven'>,
+  defaultWorkRule?: WorkRule,
+): boolean {
+  return durationEditKeepsWork(effectiveWorkRule(task, defaultWorkRule), effectiveEffortDriven(task));
 }
 
 /** De regel werkt alleen op gewone bladtaken op werktijd (dag- én uurmodus). */
@@ -282,37 +292,142 @@ export interface CapturedTriangle {
   /** De basis van het ingevoerde einde (`hourInputFinishBasis`) op het moment van de momentopname —
    *  voor `settleDurationAftermath` wanneer de driehoek de duur verandert. */
   finishBasis: HourInputFinishBasis;
+  /** Kopie van `task.time` op het moment van de momentopname — `settleDurationEdit` ziet daaraan of
+   *  de bewerking de voortgang zelf aanraakte en of de taak nog niet gestart was. */
+  time: TaskTime;
+  /** De toewijzingen van DEZE taak: dezelfde objecten (in een draft: dezelfde proxies) als in de lijst
+   *  bij `captureTriangle`, in die volgorde. `settleDurationEdit` schrijft hierin terug, zodat een
+   *  duurbewerking niet nog eens over alle toewijzingen van het project loopt (rehab-2: 52.640 per
+   *  geplakte rij). Geldig zolang de aanroeper tussen momentopname en settle geen toewijzing
+   *  toevoegt, verwijdert of vervangt; alle aanroepers muteren daar alleen de taak. */
+  assignments: ResourceAssignment[];
 }
 
 /** Stap 1 als momentopname VÓÓR een mutatie; `null` wanneer de regel niet op deze taak werkt. */
 export function captureTriangle(task: Task, assignments: readonly ResourceAssignment[], deps: WorkRuleDeps): CapturedTriangle | null {
   if (!workRuleApplies(task)) return null;
   const ctx = workRuleContextOf(task, deps);
+  // Eén keer filteren; `triangleStateOf` filtert daarna alleen deze korte lijst.
+  const own = assignments.filter((a) => a.taskId === task.id);
   return {
-    state: triangleStateOf(task, assignments, ctx), ctx, totalMinutes: totalMinutesOf(task, ctx),
-    finishBasis: hourInputFinishBasis(task),
+    state: triangleStateOf(task, own, ctx), ctx, totalMinutes: totalMinutesOf(task, ctx),
+    finishBasis: hourInputFinishBasis(task), time: { ...task.time }, assignments: own,
   };
 }
 
 const NO_CHANGE: TriangleWriteBack = { durationChanged: false, changedAssignmentIds: [] };
 
+/** Eén toewijzing waarvan een duurbewerking een BEWAARD restwerk herschreef dat afweek van
+ *  inzet × restduur (het criterium van het waarschuwingsteken, `storedWorkDeviates`). Zo'n waarde
+ *  kwam uit het bestand (P6 `remain_qty`, MSP `RemainingWork`) of uit een eerdere bewerking; de
+ *  aanroeper meldt het (eigenaarsbesluit 2026-10-19, spec taaktypes §3.5). */
+export interface RecomputedRemainingWork {
+  taskId: string;
+  taskName: string;
+  assignmentId: string;
+  resourceId: string;
+  /** Restwerk vóór en ná de bewerking, in werkminuten. */
+  beforeMinutes: number;
+  afterMinutes: number;
+}
+
+export interface DurationEditWriteBack extends TriangleWriteBack {
+  /** De herschreven afwijkende restwerken; leeg als er niets te melden is. */
+  recomputedWork: RecomputedRemainingWork[];
+}
+
+const NO_DURATION_CHANGE: DurationEditWriteBack = { ...NO_CHANGE, recomputedWork: [] };
+
 /**
- * Duur gewijzigd — aanroepen NÁDAT de aanroeper `task.time` heeft gezet, met de
- * momentopname van daarvóór. De nieuwe restduur wordt uit de taak zelf gelezen; de kern verdeelt
- * er inzet en werk naar. De duur zelf wordt hier NIET herschreven (die is al gezet; in dagmodus is
- * ze al geheel, in uurmodus al in minuten). Onder FIXED_DURATION_RATE zonder werkvelden verandert
- * niets.
+ * Duur gewijzigd — aanroepen NÁDAT de aanroeper `task.time` heeft gezet, met de momentopname van
+ * daarvóór. De ENE plek voor alle routes (`taskSlice.updateTask` = paneel, dialoog, Gantt-sleep en
+ * extensies; het taakraster: cel, plakken, doorvullen; de MCP-draft; splitsen). Drie stappen:
+ *
+ *  1. De restduur volgt de duur. Een NIET-gestarte taak (0 %, geen werkelijke datums) met een
+ *     expliciet restveld krijgt rest = nieuwe duur (`applyRemainingDuration`, dezelfde afleiding als
+ *     elke voortgangsbewerking). Zonder deze stap bleef een uit het bestand gelezen restveld (P6
+ *     `remain_drtn_hr_cnt`, MSP `RemainingDuration`) op de oude duur staan: *Resterend* en de balk
+ *     liepen uiteen, de driehoek zag geen wijziging, en een latere werkelijke start op 0 % liet het
+ *     restwerk alsnog springen. Een LOPENDE taak hoort dit al gehad te hebben
+ *     (`carryRemainingThroughDurationEdit`, vóór deze stap: `updateTask`, raster, MCP-draft). Gaf de
+ *     bewerking zelf voortgang of een restduur op, dan wint die opgave.
+ *     UITZONDERING (ook op main): `applyTaskSplits` (splitMutations.ts) roept de meeschuifstap niet
+ *     aan. Op een GESTARTE taak met een expliciet restveld blijft de rest bij een splitsbewerking dus
+ *     staan, en volgen inzet en werk niet. VERVOLG op #380.
+ *  2. De kern verdeelt inzet en werk naar de nieuwe restduur volgens de regel van de taak
+ *     (`applyDurationEdit`): werk beschermd ⇒ inzet = W ÷ R'; anders wordt een aanwezig werkveld
+ *     R' × inzet — óók als het uit het bestand kwam en afweek (P6 doet dat zonder vraag,
+ *     eigenaarsbesluit 2026-10-19). De duur zelf wordt hier NIET herschreven (die is al gezet).
+ *  3. Elk bewaard restwerk dat afweek van inzet × restduur en nu herschreven is, komt terug in
+ *     `recomputedWork`; de aanroeper meldt het één keer per transactie.
+ *
+ * Onder FIXED_DURATION_RATE zonder werkvelden verandert er aan de toewijzingen niets.
  */
-export function settleDurationEdit(task: Task, assignments: ResourceAssignment[], captured: CapturedTriangle | null): TriangleWriteBack {
-  if (!captured) return NO_CHANGE;
+export function settleDurationEdit(task: Task, captured: CapturedTriangle | null): DurationEditWriteBack {
+  if (!captured) return NO_DURATION_CHANGE;
   // Poort: een voortgangsbewerking (`completion`/`remainingTime`) verandert de REST maar niet
   // de duur — dat is geen duurbewerking en raakt de driehoek niet.
-  if (Math.abs(totalMinutesOf(task, captured.ctx) - captured.totalMinutes) < 1e-6) return NO_CHANGE;
+  if (Math.abs(totalMinutesOf(task, captured.ctx) - captured.totalMinutes) < 1e-6) return NO_DURATION_CHANGE;
+  followRemainingOfUnstartedTask(task, captured.time);
   const newRemaining = remainingMinutesOf(task, captured.ctx);
-  if (Math.abs(newRemaining - captured.state.remainingMinutes) < 1e-6) return NO_CHANGE;
+  if (Math.abs(newRemaining - captured.state.remainingMinutes) < 1e-6) return NO_DURATION_CHANGE;
   const result = applyDurationEdit(captured.state, newRemaining);
-  if (!result.ok) return NO_CHANGE;
-  return applyTriangleResult(task, assignments, captured.state, result.state, captured.ctx, { skipDuration: true });
+  if (!result.ok) return NO_DURATION_CHANGE;
+  // Alleen de toewijzingen van deze taak (uit de momentopname): de terugschrijfstap en het
+  // afwijkcriterium zoeken dan in een handvol objecten, niet in alle toewijzingen van het project.
+  const own = captured.assignments;
+  const deviating = deviatingStoredWork(task, own, captured.state);
+  const written = applyTriangleResult(task, own, captured.state, result.state, captured.ctx, { skipDuration: true });
+  const recomputedWork: RecomputedRemainingWork[] = [];
+  for (const before of deviating) {
+    const after = own.find((a) => a.id === before.id);
+    if (!after || after.remainingWorkMinutes === undefined) continue;
+    if (Math.abs(after.remainingWorkMinutes - before.minutes) <= 1e-6) continue; // werk beschermd: bleef staan
+    recomputedWork.push({
+      taskId: task.id, taskName: task.name, assignmentId: after.id, resourceId: after.resourceId,
+      beforeMinutes: before.minutes, afterMinutes: after.remainingWorkMinutes,
+    });
+  }
+  return { ...written, recomputedWork };
+}
+
+/**
+ * Stap 1 van {@link settleDurationEdit}: een niet-gestarte taak met een expliciet restveld krijgt
+ * rest = volledige nieuwe duur. Niet-gestart = 0 % en geen werkelijke start of einde, vóór én ná de
+ * bewerking (een lopende taak regelt `carryRemainingThroughDurationEdit`, een voltooide houdt rest 0).
+ * Niet als de bewerking zelf een voortgangsveld of restduur wijzigde (die opgave wint), en niet op een
+ * mijlpaal (die blijft zonder restveld, zoals in `carryRemainingThroughDurationEdit`). Zonder
+ * restveld hoeft er niets: de rest is dan al de afleiding uit de duur.
+ */
+function followRemainingOfUnstartedTask(task: Task, before: TaskTime): void {
+  const t = task.time;
+  if (task.isMilestone) return;
+  if (t.remainingTime === undefined && t.remainingMinutes === undefined) return;
+  const unstarted = (time: TaskTime) => !(time.completion > 0) && !time.actualStart && !time.actualFinish;
+  if (!unstarted(before) || !unstarted(t)) return;
+  const progressTouched = t.completion !== before.completion
+    || t.remainingTime !== before.remainingTime || t.remainingMinutes !== before.remainingMinutes;
+  if (progressTouched) return;
+  applyRemainingDuration(task);
+}
+
+/** De werkresources van de taak waarvan het BEWAARDE restwerk vóór de bewerking afweek van
+ *  inzet × restduur — hetzelfde criterium als het waarschuwingsteken (`assignmentWorkDeviation`):
+ *  materiaal en een toewijzing met contour tellen niet mee. `own` = de toewijzingen van de taak. */
+function deviatingStoredWork(
+  task: Task,
+  own: readonly ResourceAssignment[],
+  before: TriangleState,
+): { id: string; minutes: number }[] {
+  const out: { id: string; minutes: number }[] = [];
+  const contoured = (task.timephasedContours?.length ?? 0) > 0;
+  for (const a of before.assignments) {
+    if (!a.drivesDuration || a.remainingWorkMinutes === undefined) continue;
+    if (contoured && contourIndexForAssignment(task.timephasedContours, own, a.id) >= 0) continue;
+    if (!storedWorkDeviates(a.remainingWorkMinutes, before.remainingMinutes * a.unitsPerDay)) continue;
+    out.push({ id: a.id, minutes: a.remainingWorkMinutes });
+  }
+  return out;
 }
 
 /**

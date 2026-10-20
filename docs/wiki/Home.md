@@ -24,8 +24,8 @@ The manual is organised by what you want to do at that moment:
 - **Reference** — look something up: [The ribbon, tab by tab](docs://ref-lint), [Task dialog and properties panel](docs://ref-taak-eigenschappen), [Settings](docs://ref-instellingen), [Keyboard shortcuts](docs://ref-sneltoetsen), [Import and export formats](docs://ref-import-exportformaten) and more.
 - **[Changelog](Changelog)** — notable changes per release.
 
-The same manual is built into the app (**Help**, or **F1**), in English and Dutch. In the other
-interface languages the app shows the English text, with a short notice; translations will follow.
+The same manual is built into the app (**Help**, or **F1**), in all 28 interface languages.
+English and Dutch are the sources; an article that is not yet translated shows the English text with a short notice.
 
 ## Contribute
 

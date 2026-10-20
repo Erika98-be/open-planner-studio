@@ -59,6 +59,7 @@ import {
   appendGhostRow,
   GHOST_ROW_KEY,
   GHOST_TASK_ID,
+  hasGhostRow,
   intentsTouchGhost,
   isGhostTaskId,
   lastTaskRow,
@@ -340,7 +341,7 @@ export function TaskGridSurface({
   const constructionMode = useAppStore(state => state.ui.constructionMode);
   // De spookregel onderaan (review 2026-10-06, punt 1; zie `engine/taskGrid/ghostRow.ts`). Alleen
   // in de boomweergave: daar is "onderaan" ook de plek waar de nieuwe taak landt.
-  const showGhostRow = isTreeMode(view);
+  const showGhostRow = hasGhostRow(view);
   const ghostTask = useMemo<Task>(() => {
     const last = lastTaskRow(viewRows);
     const parentId = last?.task.parentId ?? null;
@@ -443,6 +444,8 @@ export function TaskGridSurface({
     // vastgelegd"-tak hangt aan `datesAsRecorded`.
     ...recordedGridBinding(recordedDates, datesAsRecorded),
     taskTypesUnlocked: showTaskTypes || taskTypesVisible,
+    // Zelfde effectieve regel als het paneel en de duurbewerking (uitleg bij het ⚠, besluit V10).
+    defaultWorkRule: project.defaultWorkRule,
     labelForColumn: labelKey => resolveColumnLabel(
       labelKey,
       key => tTask(key, { defaultValue: key }),
@@ -459,7 +462,7 @@ export function TaskGridSurface({
   }), [
     activityCodeTypes, assignments, baselines, calendar, calendarEngine, calendarOptions, calendars,
     cpmResult, customFieldDefs, customTaskTypes, datesAsRecorded, dateNotation, timeNotation, durationDisplay, project.id,
-    project.wbsAutoNumber, recordedDates, resources, scheduleStale, sequences, showTaskTypes,
+    project.defaultWorkRule, project.wbsAutoNumber, recordedDates, resources, scheduleStale, sequences, showTaskTypes,
     taskTypesVisible, tCommon, tTask, taskI18n.language, tasks, textDirection, showGhostRow, ghostTask,
   ]);
   // Vastleggen op de spookregel: maak de taak (onderaan, op het niveau van de laatste taak) en schrijf

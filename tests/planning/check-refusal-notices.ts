@@ -27,6 +27,7 @@ import { notifyHierarchyCycle } from '@/state/hierarchyRelationNotice';
 import { createRelationWithFeedback } from '@/state/relationActions';
 import { REFUSED_NAMES_SHOWN } from '@/state/refusalNotice';
 import { notifyRelationsSkipped } from '@/state/insertedBranch';
+import { remainingWorkRecomputedNotice } from '@/state/remainingWorkNotice';
 import type { NotifyInput } from '@/state/slices/types';
 
 const S = () => useAppStore.getState();
@@ -164,7 +165,7 @@ const REFUSAL_KEYS = [
   'startBlockedByConstraint', 'startBlockedByConstraintNoDate', 'startBlockedByConstraintMany',
   'dragStartIsActual', 'dragDatesAreActual', 'milestoneRefusedAssignments', 'milestoneRefusedSummary',
   'phaseRefusedNoAssignableChild', 'phaseRefusedDuplicateResource', 'taskEditRevertBlocked', 'pasteSkippedReadOnly',
-  'relationsSkippedOnInsert', 'schedulingTemplateLimit',
+  'relationsSkippedOnInsert', 'schedulingTemplateLimit', 'phaseQuestionOutdated',
 ];
 const NOT_A_REFUSAL: Record<string, string> = {
   extHelpProjectOpenFailed: 'storing (bestand niet te openen), echte fout',
@@ -183,7 +184,22 @@ const NOT_A_REFUSAL: Record<string, string> = {
   notAppliedTaskNames: 'detailregel onder een weigering', notAppliedTaskNamesMore: 'detailregel onder een weigering',
   refusedRelationNames: 'detailregel onder een weigering', refusedRelationNamesMore: 'detailregel onder een weigering',
   refusedTaskNames: 'detailregel onder een weigering', refusedTaskNamesMore: 'detailregel onder een weigering',
+  remainingWorkRecomputed: 'geslaagde duurwijziging; het restwerk is echt herrekend',
+  remainingWorkRecomputedMany: 'geslaagde duurwijziging; het restwerk is echt herrekend',
 };
+// De twee restwerkmeldingen raken REFUSAL_SOUND nu niet; de uitzondering hierboven legt vast dat
+// dat zo hoort. Hier: ze blijven info, zonder weigeringsvlag (review #380).
+const work = (taskId: string, assignmentId: string) => ({
+  taskId, taskName: `Taak ${taskId}`, assignmentId, resourceId: 'r1', beforeMinutes: 19200, afterMinutes: 4800,
+});
+for (const [label, notice] of [
+  ['één taak', remainingWorkRecomputedNotice([work('a', 'a1')])],
+  ['meer taken', remainingWorkRecomputedNotice([work('a', 'a1'), work('b', 'b1')])],
+] as const) {
+  eq(`4c restwerkmelding (${label}) is info zonder refusal`,
+    { messageKey: notice?.messageKey, severity: notice?.severity, refusal: notice?.refusal },
+    { messageKey: label === 'één taak' ? 'notifications.remainingWorkRecomputed' : 'notifications.remainingWorkRecomputedMany', severity: 'info', refusal: undefined });
+}
 const REFUSAL_SOUND = /niet toegepast|niet aangemaakt|niet gewijzigd|niets gewijzigd|niets verplaatst|kan geen|kan niet|kunnen geen|niet toegestaan|bestaat al|overgeslagen|niet teruggedraaid|verschuift niet|verschuiven niet|niet opgeslagen|niet verwijderd|geweigerd|niet mogelijk|niet ingelezen|niet overgenomen|kon niet|konden niet|niet aangepast/i;
 const nlCommon = JSON.parse(readFileSync(fileURLToPath(new URL('../../src/i18n/locales/nl/common.json', import.meta.url)), 'utf8')) as { notifications: Record<string, unknown> };
 const soundsLike = new Set<string>();

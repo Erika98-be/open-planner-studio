@@ -219,6 +219,11 @@
     "xerArchiveReasonStructure": "Powód: struktura archiwum w IFC jest nieprawidłowa (zdublowana, przestawiona lub błędnie powiązana).",
     "statusDateSetToday": "Datę statusu ustawiono na dziś ({{date}}).",
     "durationBelowDoneWork": "„{{name}}” jest już wykonane w {{percent}}%: czas trwania krótszy niż wykonana praca jest niemożliwy. Czas trwania nie został zmieniony.",
+    "remainingWorkRecomputed": "Przeliczono ponownie pozostałą pracę „{{name}}”: {{before}} h → {{after}} h (wartość pochodziła z pliku). Ctrl+Z ją przywraca.",
+    "remainingWorkRecomputedMany_one": "Przeliczono ponownie pozostałą pracę {{count}} zadania (wartość pochodziła z pliku). Ctrl+Z ją przywraca.",
+    "remainingWorkRecomputedMany_few": "Przeliczono ponownie pozostałą pracę {{count}} zadań (wartości pochodziły z pliku). Ctrl+Z je przywraca.",
+    "remainingWorkRecomputedMany_many": "Przeliczono ponownie pozostałą pracę {{count}} zadań (wartości pochodziły z pliku). Ctrl+Z je przywraca.",
+    "remainingWorkRecomputedMany_other": "Przeliczono ponownie pozostałą pracę {{count}} zadania (wartości pochodziły z pliku). Ctrl+Z je przywraca.",
     "tutorialOfferLater": "Samouczki zawsze znajdziesz w Pomoc › Samouczki.",
     "tutorialOfferUnavailable": "Nie udało się teraz zainstalować ani uruchomić samouczków. Możesz spróbować ponownie później w Pomoc › Samouczki."
   },
