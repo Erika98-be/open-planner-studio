@@ -71,21 +71,21 @@ en noem het in je rapport of PR-tekst.
     bewaart "lopend" nu (`IfcTask.Status` = 'STARTED', #357); de motor plant de
     vastgelegde rest in (optie 3) na de release, in het rekenprofielen-spoor. — B voor de OPS-kant (gemeten),
     S voor de P6-kant
-119. **Een deadline zonder tijd is bij een urentaak één werkdag te krap.** De motor leest `2026-07-06` als
+138. **Een deadline zonder tijd is bij een urentaak één werkdag te krap.** De motor leest `2026-07-06` als
     het begin van die dag (00:00) en zet de late finish op `eng.prevWorkDay(dl)` (`CPMSolver.ts:3025-3029`);
     de analyse doet hetzelfde voor "deadline gemist" (`scheduleAnalysis.ts:426-429`). Een dagtaak leest
     dezelfde datum als het einde van die dag. Nagespeeld met de planningsharness (kalender ma-vr 08-16,
     taak A 8 u vanaf ma 2026-07-06, deadline `2026-07-06`): A eindigt ma 16:00, maar krijgt speling −1 en
     staat in de lijst gemiste deadlines; verwacht speling 0. Voorstel: een datum zonder tijd als deadline
     betekent het einde van het laatste werkblok van die dag. Spec: `2026-10-20-alleen-uren-design.md` §4. — B
-120. **Een zachte MSO of SNLT op een blokbegin geldt bij een urentaak als geschonden.** De analyse zet de
+139. **Een zachte MSO of SNLT op een blokbegin geldt bij een urentaak als geschonden.** De analyse zet de
     beperkingsdatum met `snapOnOrBefore` terug (`scheduleAnalysis.ts:418`). Op een blokbegin (di 08:00)
     geeft dat het einde van het vorige werkblok (ma 16:00); de taak start di 08:00 en "schendt" dan de
     beperking (`scheduleAnalysis.ts:420-421`). Nagespeeld met de planningsharness (kalender ma-vr 08-16,
     taak A 8 u, MSO zacht op `2026-07-07T08:00`): A start op de beperking, maar staat in de lijst
     geschonden beperkingen. Voorstel: voor startbeperkingen `snapOnOrAfter` gebruiken, of vergelijken op
     hetzelfde moment op de tijdas. Spec §4. — B
-121. **Een nivelleervertraging die op een blokeinde landt, verdwijnt bij een urentaak.** `shiftByLevelingDelay`
+140. **Een nivelleervertraging die op een blokeinde landt, verdwijnt bij een urentaak.** `shiftByLevelingDelay`
     telt de minuten op met `addWorkingMinutesSigned` (`CPMSolver.ts:1382`) en landt op het einde van een werkblok
     (di 16:00). Daarna geldt de regel "start op een exact blokeinde loopt vanaf het volgende blokbegin"
     alleen voor de duur, niet voor de vroege start (`CPMSolver.ts:1232-1234`). Nagespeeld met de
@@ -94,43 +94,43 @@ en noem het in je rapport of PR-tekst.
     wo 16:00. Verwant: staan `levelingDelay` en `levelingDelayMinutes` er allebei, dan neemt de motor de
     eerste tak (`CPMSolver.ts:2205-2207`), zonder de `!noPreds`-wacht en zonder de snap voor een verstreken
     vertraging; volgens `docs/TODO.md:180` komt dat vandaag niet voor. Spec §4. — B
-122. **De late finish van een taak met een externe opvolger staat op het volgende blokbegin.** Bij een
+141. **De late finish van een taak met een externe opvolger staat op het volgende blokbegin.** Bij een
     urentaak met een externe FS-opvolger (anker wo 08:00, lag 0) wordt de late finish wo 08:00 in plaats van
     di 16:00 (`CPMSolver.ts:2954-2956`, `addWorkingMinutesSigned` op het anker zonder terug te zetten naar
     het vorige blokeinde). De speling klopt (1 d), alleen de getoonde datum verschilt. Nagespeeld met de
     planningsharness (kalender ma-vr 08-16, A 8 u, een tweede taak van 40 u zodat het projecteinde niet
     begrenst). Voorstel: een eindmoment op een blokbegin altijd terugzetten naar het vorige blokeinde.
     Spec §4. — B
-123. **Een FF-relatie tussen dagtaken op een kalender met werkblokken schuift de opvolger één werkdag te
+142. **Een FF-relatie tussen dagtaken op een kalender met werkblokken schuift de opvolger één werkdag te
     laat.** Nagespeeld met de planningsharness (kalender ma-vr 07-12 + 13-16 als werkblokken, dagtaak A 5 d,
     dagtaak B 2 d, FF lag 0): B loopt van vr 07:00 tot ma 16:00 in plaats van do 07:00 tot vr 16:00, en A
     krijgt speling 1 in plaats van 0. Op een kalender zonder werkblokken klopt het wel. De meting in de spec
     (§10, urenpad-dagtaak) vond dezelfde fout van één werkdag in 25 dagcases: FF-relaties, eindbeperkingen,
     SNLT/MSO achteruit en hangmatten. VERMOED: een eindmoment op een blokeinde telt voor een dagtaak als het
     begin van de volgende werkdag. — B
-124. **De belasting van een taak die midden op een dag begint, staat op de verkeerde dagen.** De verdeling telt
+143. **De belasting van een taak die midden op een dag begint, staat op de verkeerde dagen.** De verdeling telt
     hele werkdagen vanaf de startdatum (`taskWorkDayIsos`/`enumerateTaskWorkDays`, `ResourceLoad.ts:236-240`;
     de nivelleerder net zo, `ResourceLeveler.ts:425`). Nagespeeld in de store (kalender ma-vr 07-12 + 13-16,
     urentaak 24 u van wo 3 jun 11:00 tot ma 8 jun 11:00, inzet 1): belasting wo 1, do 1, vr 1 en niets op
     maandag; verwacht wo 0,5, do 1, vr 1, ma 0,5. Gevonden in review ronde 1 van de spec
     `2026-10-20-alleen-uren-design.md` (§3.11). — B
-125. **Het einde van een kalendertijd-taak is in het dagpad half inclusief.** Het dagpad schrijft het einde als
+144. **Het einde van een kalendertijd-taak is in het dagpad half inclusief.** Het dagpad schrijft het einde als
     start + n kalenderdagen, maar leest die datum daarna als de laatste dag. Nagespeeld met de planningsharness
     (dagkalender ma-vr): een kalendertijd-taak van 1 d vanaf ma 1 jun krijgt einde 2 jun, en haar FS-opvolger
     begint wo 3 jun in plaats van di 2 jun; met FNLT ma 1 jun krijgt ze speling −1, terwijl ze om middernacht
     klaar is. In uur-modus klopt het wel (`msp-19`). — B
-126. **Een dagtaak op werkblokken met SNLT of MSO op een blokbegin krijgt een late start één werkdag te
-    vroeg** (speling −1). Dezelfde familie als 123 en groep 12 uit de spec `2026-10-20-alleen-uren-design.md`
-    (§10.3). Daarom geldt de fix voor 120 in #402 alleen voor urentaken. Gemeld door de bouwer van #402
+145. **Een dagtaak op werkblokken met SNLT of MSO op een blokbegin krijgt een late start één werkdag te
+    vroeg** (speling −1). Dezelfde familie als 142 en groep 12 uit de spec `2026-10-20-alleen-uren-design.md`
+    (§10.3). Daarom geldt de fix voor 139 in #402 alleen voor urentaken. Gemeld door de bouwer van #402
     (`claude/uren-f1a-urenpadfouten`). — B (volgens de bouwer van #402; niet door deze agent herhaald)
-127. **Bij FF tussen urentaken staat de late finish van de voorganger op een blokbegin**, in het OPS- en het
+146. **Bij FF tussen urentaken staat de late finish van de voorganger op een blokbegin**, in het OPS- en het
     MSP-profiel. Alleen de getoonde datum verschilt; de speling klopt. In het P6-profiel lost conventie B2
     (`p6BackwardLagFinishBoundary`, `registry.ts:156`) het op; voor MSP is het een conventievraag. Gemeld door
     de bouwer van #402. — B (volgens de bouwer van #402; niet door deze agent herhaald)
-128. **Een FNLT of FNET zonder tijd wordt bij een urentaak 00:00 van die dag.** Volgens regel D2 van de spec
+147. **Een FNLT of FNET zonder tijd wordt bij een urentaak 00:00 van die dag.** Volgens regel D2 van de spec
     `2026-10-20-alleen-uren-design.md` (§4.2) hoort dat het einde van het laatste werkblok van die dag te zijn.
     Gemeld door de bouwer van #402. — B (volgens de bouwer van #402; niet door deze agent herhaald)
-129. **"Datums zoals opgeslagen" meldt een deadline zonder tijd bij een urentaak als gemist als de taak op de
+148. **"Datums zoals opgeslagen" meldt een deadline zonder tijd bij een urentaak als gemist als de taak op de
     deadline-dag eindigt.** De solver doet dat na #402 niet meer. De review van #402 beoordeelt of dit punt
     in #402 zelf hoort; dan vervalt deze entry. Gemeld door de bouwer van #402. — B (volgens de bouwer van #402; niet door deze agent herhaald)
 
@@ -327,6 +327,15 @@ en noem het in je rapport of PR-tekst.
     `updates.installing` staat achter `isDownloading` (`status.kind === 'downloading'`), terwijl de tekst
     `isReadyToInstall` (`'readyToInstall'`) vraagt (`UpdateDialog.tsx:125-128,205-208`). Na de download springt
     het venster naar *Herstarten…* (`:225-229`). Alleen in de code gezien. — S
+152. **Een MCP-wijziging van alleen een taaknaam verlaat "datums zoals opgeslagen" en rekent de planning door.**
+     `planner_update_tasks` met alleen `fields.name`: de MCP-transactie roept na elke datawijziging `runCPM` aan
+     (`createMcpTransactions.ts:1094-1103`), en `runCPM` verlaat de modus (`scheduleSlice.ts:110-113`). In de UI
+     blijft de modus bij dezelfde wijziging staan (`DATE_NEUTRAL_TASK_FIELDS` en `changesOnlyDateNeutralFields`
+     in `taskSlice.ts`). Nagespeeld in Node met de echte tool, op een document in de modus na een MSPDI-import:
+     taak B ging van 15 jun 07:00 naar 1 jun 07:00, en de modus ging uit (`/tmp/uren-fix4/probe.log`). Gevonden
+     door review ronde 4 van de spec "alleen uren"; de regel en de regressie staan in die spec (§5.2, route 3;
+     §6.1). VERMOED, niet nagespeeld: `recomputeMidBatch` (`batchTool.ts:234-240`) doet hetzelfde in een batch met
+     een leesstap. — B
 
 ## Bestanden en herstel
 
@@ -433,7 +442,7 @@ en noem het in je rapport of PR-tekst.
     `tests/planning/check-xer-status-afleiden.ts` pint het huidige gedrag vast. In het XER-corpus komt het
     geval 0 keer voor. Gevonden bij de review van #358. Voorstel: een onbekende status behandelen als een lege
     (afleiden uit de voortgang, melding blijft), zoals MPXJ; besluit van de eigenaar nodig. — B
-131. **OPS v2026.9.0 maakt van een kalender in een nieuw IFC-bestand een urenkalender zonder werktijd zodra
+150. **OPS v2026.9.0 maakt van een kalender in een nieuw IFC-bestand een urenkalender zonder werktijd zodra
     een taak op die kalender een tijd ≠ 07:00 of een `PT`-duur heeft.** Oorzaak: v2026.9.0 leest
     `WorkingTimes` van `IfcWorkCalendar` op plek 5; sinds #336 staat daar Identification (aanvaard verlies,
     `docs/ifc-round-trip.md:351-356` en `:436-460`). De geregistreerde werkblokken zijn dan leeg, en de
@@ -544,16 +553,18 @@ en noem het in je rapport of PR-tekst.
 104. **Geen automatische test voor de zegels en `check-docs`** (`scripts/translate/cli.ts`). In #323 alleen met
      de hand nagespeeld. De CLI werkt vanuit `process.cwd()`, dus een test in een tijdelijke map kan. — S
 
-130. **`check-reports.ts` (`monthLabel`) hangt af van de taalinstelling van de machine.** Rood als de machine in
+149. **`check-reports.ts` (`monthLabel`) hangt af van de taalinstelling van de machine.** Rood als de machine in
      de systeemtaal nl_NL draait, groen met `LANG=en_US.UTF-8`. Gemeld door de coördinator op 2026-10-20; niet
      door deze agent nagespeeld. — S
 
-137. **De feedbacktests in de browsersuite falen in CI wisselvallig met "Maximum update depth exceeded".** Gezien
+151. **De feedbacktests in de browsersuite falen in CI wisselvallig met "Maximum update depth exceeded".** Gezien
      in de job `verify (browser 2-4)`: op PR #402 vier tests in `tests/browser/feedback-venster.spec.ts`; op `main`
      `e98b83e48` (#395, run 39410998771) acht tests in `tests/browser/feedback-studio.spec.ts`; ook op de branch
      `claude/uren-zonder-spatie`. Per run falen andere feedbacktests, en een herhaling van de job wordt groen.
      Gemeld door de bouwer van #402 via de coördinator (2026-10-20); niet lokaal gedraaid en niet door deze agent
-     nagespeeld. (Nummer 137: `main` gebruikt al 119–136.) — S
+     nagespeeld. PR #404 (gemerged in `main` op 2026-10-20) haalt volgens zijn beschrijving de oorzaak weg in
+     `FeedbackDialog.tsx`. Een branch zonder #404 kan de fout nog geven. Weghalen als de CI op branches met #404
+     groen blijft. — S
 
 ## Wensen en open taken (geen bug)
 
