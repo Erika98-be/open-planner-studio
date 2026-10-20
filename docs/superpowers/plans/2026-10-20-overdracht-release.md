@@ -5,7 +5,7 @@ Deze overdracht is de stand van 2026-10-20; controleer elke PR-status opnieuw me
 
 ## Stand van main
 
-- Main na deze releasecheck: `5266893af` (#404, na #400 `d396e1ee7`). Andere sessies mergen ook in main.
+- Main na deze releasecheck: `012da2900` (#401; daarvoor #404 `5266893af`, #400 `d396e1ee7`). Andere sessies mergen ook in main.
 - Main-CI was rood sinds `e98b83e48` (#395): "Maximum update depth exceeded" in het feedbackvenster na ~50 snelle
   toetsen (ook een echte gebruikersfout: er viel een teken weg). Gerepareerd in **#404** (`5266893af`). Controleer de
   main-CI op die commit vóór de tag. **Groen bevestigd (2026-10-20).**
@@ -22,20 +22,18 @@ Deze overdracht is de stand van 2026-10-20; controleer elke PR-status opnieuw me
 | #362 | Zwevende schuifbalken in takenlijst en Gantt (8 px, ook in de desktopapp) | ja |
 | #400 | Uren overal als **10u** (nl) en **10h** (en), zonder spatie; CSV-lag volgt de app-taal | ja |
 | #404 | Feedbackvenster: geen weggevallen teken en geen fout meer bij snel typen | ja (fix van #395) |
+| #401 | Toewijzingenpaneel (#369 + #389): één regel per resource, inzet op twee decimalen, niets afgeknipt, eigen keuzelijsten; Ctrl+S/F5 slaat het veld op waarin je typt | ja |
 
 ## Open
 
-- **#401** "Integratie toewijzingenpaneel: #369 + #389" — review (GPT-6.1-Sol) **NEE**, drie BLOKKEERT (draft in
-  verkeerd document bij dupliceren via MCP; werkveld knipt `306,5` af bij 280 px; Ctrl+S met automatisch berekenen aan
-  laat een oude einddatum staan). Fixronde loopt (worker Opus 5.5). Merge zodra fix + review JA + PR-CI groen; anders
-  volgende release. Na de merge: #369 en #389 sluiten als "opgenomen in #401".
-- **#378** werk-decimalen: geparkeerd, hangt aan #369; conflicteert met main.
+- #369 staat door #401 als gemerged; #389 gesloten als "opgenomen in #401".
+- **#378** werk-decimalen: geparkeerd; #369 is nu binnen, maar #378 conflicteert met main en moet de helper `parsePositiveDecimal` gaan gebruiken. Niet voor deze release.
 - PR's van andere sessies (o.a. #387–#393, #395–#399) vallen buiten deze overdracht.
 
 ## Vóór de release
 
-1. **Main groen** op of na `5266893af` (#404).
-2. **Vertaalronde 26 talen** voor de nieuwe en gewijzigde teksten uit #376, #380, #394, #400 (en #401 als die landt).
+1. **Main groen** op of na `012da2900` (#401).
+2. **Vertaalronde 26 talen** voor de nieuwe en gewijzigde teksten uit #376, #380, #394, #400 en #401.
    `verify:translations` is rood door deze achterstand (`verify` zelf niet).
 3. **Tutorial 5 in de extensions-repo** (live van main, alle appversies) tegelijk aanpassen aan de hernoeming van #376.
 4. **Releasetekst** noemt: de hernoeming *Werksoort*/*Taaktype* (#376), de uurnotatie "10u"/"10h" (#400), en de punten
@@ -47,7 +45,7 @@ Deze overdracht is de stand van 2026-10-20; controleer elke PR-status opnieuw me
 - #362: Firefox 153 meldt `selector(::-webkit-scrollbar)` als ondersteund ⇒ daar `scrollbar-width: auto`; omrekening na
   vensterverkleining tijdelijk ~66 kaartpx achter bij zeer lange planningen; zwakke assertie secundair pane;
   `Ribbon.css` heeft hetzelfde schuifbalkpatroon.
-- #401 (als hij landt): onveranderd bevestigen hangt af van de spelling (`1,78` vs `1.78`); tooltip "Eenh./dag" vs
+- #401: zeer lange getallen geven nog overflow bij 200 px; onveranderd bevestigen hangt af van de spelling (`1,78` vs `1.78`); tooltip "Eenh./dag" vs
   kolomkop "Inzet".
 
 ## Na de release (besluiten eigenaar)

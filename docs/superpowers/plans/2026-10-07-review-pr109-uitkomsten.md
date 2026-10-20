@@ -1867,3 +1867,8 @@ Testversie (release-check, poort 3049) is NIET bijgewerkt met de PR's van vandaa
   (`documentSlice.ts:375`, `useTextEntryAutoCalcHold.ts:26`). VERVOLG: register niet aan de eigen storecontext
   gebonden; overflow bij absurd lange getallen; dubbele berekening op F5 (eruit). ⇒ fixronde 2 bij de integratie-worker.
   #401 haalt de release-tag waarschijnlijk niet ⇒ volgende release (staat zo in de overdracht).
+- **Eigenaar 2026-10-20 over delta-review #401: "bizar kleine dingetjes … als je binnen een half uur klaar bent mag je
+  doorgaan."** Fixronde 2 was bij het stoppen al af (WIP `3b870300b`: afsluiten rondt open invoer af, dupliceren geeft
+  de eigen rekenblokkade vrij, register per storecontext, F5 één solve). Eigenaar kiest optie 1: fixes op #401,
+  diff door orkestrator gelezen, geen derde review. **#401 gemerged in main (012da2900)**, CI 16/16 op 3b870300b,
+  `--admin --match-head-commit`. #369 door GitHub als gemerged gemarkeerd; #389 gesloten ("opgenomen in #401").
