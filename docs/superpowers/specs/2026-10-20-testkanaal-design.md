@@ -16,6 +16,7 @@ Op Nightly meldt de bestaande updatedialoog de nieuwste testbouw, net als een ge
 | B2 | Eigen updatekanaal in de app, met een keuzelijst in Instellingen (zoals "Update track" in T3 Code). | gebruiker, 2026-10-20 | Testers krijgen nieuwe testbouwen vanzelf; terug naar Stabiel kan altijd. |
 | B3 | Geen nieuw Rust-commando. Het kanaal loopt via de `target`-optie van `check()` en een tweede endpoint. | voorstel orkestrator, 2026-10-20 | `AGENTS.md`: Rust blijft dun, elk commando is publiek oppervlak. |
 | B4 | Naam van het kanaal: "Nightly" (keuzelijst Stabiel / Nightly). Dezelfde naam voor tag, versie-achtervoegsel, target en workflow. | gebruiker, 2026-10-20 | Gangbare naam voor het kanaal met de nieuwste bouw; zegt niets over hoe vaak er gebouwd wordt. |
+| B5 | Arch-gebruikers krijgen een AUR-pakket `open-planner-studio-bin` (herverpakte `.deb` van de stabiele release). Updates gaan via `yay`/`paru`; de app installeert op Arch zelf niets en doet daar wat hij bij Snap doet. | gebruiker, 2026-10-20 | Dat verwachten Arch-gebruikers; de Tauri-updater kan geen pacman-pakket installeren (alleen AppImage, deb, rpm: `updater.rs` r. 1197-1214). |
 
 Eerder besluit: `docs/superpowers/plans/2026-06-24-auto-update-cross-platform.md` r. 93 zei "Geen nightly-kanaal nu
 (optioneel later: rolling prerelease met `includeUpdaterJson: false`)". Dit ontwerp is dat "later".
@@ -94,9 +95,38 @@ met `allowDowngrades: true`. De updatedialoog biedt dan de huidige stabiele vers
 - Na het wisselen van kanaal: meteen een stille controle.
 - Teksten via `t(...)` in `nl` + `en`. Gids: het bestaande artikel over updates krijgt een stuk over het Nightly-kanaal.
 
+## Linux-pakketten
+
+Feiten (release v2026.9.0, 2026-10-20): de release levert al `.rpm` (`Open.Planner.Studio-2026.9.0-1.x86_64.rpm`) en
+`latest.json` heeft `linux-x86_64-rpm`. RPM werkt dus al, ook met de updater.
+
+`install_kind` (`src-tauri/src/commands/mod.rs:38`) geeft op Linux `appimage`, `snap` of anders `deb`. Een RPM- of
+AUR-installatie heet nu dus `deb`. Voor Stabiel maakt dat weinig uit (de updater kiest zelf via de bundle-type-stempel),
+maar voor Nightly kiest de app het manifest en voor AUR moet de app weten dat hij níét zelf mag installeren.
+Daarom breidt dit werk het bestaande commando uit (geen nieuw commando):
+
+- `rpm`: het programma hoort bij een rpm-pakket (bijv. `rpm -qf` op het eigen pad, of de bundle-type-stempel).
+- `aur`: het programma is via pacman geïnstalleerd (`/var/lib/pacman/local/open-planner-studio-bin-*` bestaat).
+  De herverpakte `.deb` draagt de stempel `deb`; zonder deze detectie probeert de updater op Arch `dpkg -i`.
+
+`aur` gedraagt zich als `snap`: geen stille opstartcheck (`useUpdateCheck.ts:39`), bij een handmatige check een melding
+"Werk bij via je pakketbeheer (`yay -Syu`)" in plaats van een installatieknop (`UpdateDialog.tsx:133`), geen asset in
+`releaseInfo.ts`, en geen Nightly-keuzelijst.
+
+AUR-pakket:
+
+- `packaging/aur/PKGBUILD` (+ `.SRCINFO`) in deze repo; `source` = de `.deb` van de GitHub-release, met `sha256sums`.
+  Het pakket pakt `data.tar` uit naar `/usr` en zet de afhankelijkheden (`webkit2gtk-4.1`, `gtk3`, …) in `depends`.
+- Workflow `aur.yml`: start na een geslaagde `release.yml` (zoals `snap.yml`), vult versie en checksum in, test
+  `makepkg` in een `archlinux`-container en pusht naar `ssh://aur@aur.archlinux.org/open-planner-studio-bin.git`.
+- Nodig van de gebruiker: een AUR-account voor de OpenAEC Foundation en de privésleutel als secret `AUR_SSH_PRIVATE_KEY`
+  (vermelden in `docs/release-secrets.md`).
+
 ## Niet in scope
 
 - Snap `edge`-kanaal.
+- Een AUR-Nightly-pakket (`open-planner-studio-nightly-bin`); kan later met dezelfde workflow.
+- Automatisch installeren via `pacman` vanuit de app.
 - Bewaren van oudere testbouwen (er is er steeds één).
 - Een testkanaal voor de webversie (`live.yml` blijft `main`).
 
