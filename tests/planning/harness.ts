@@ -1042,7 +1042,7 @@ function runCase(c: Case) {
       const name = Object.entries(ids).find(([, i]) => i === t.id)?.[0] ?? t.name;
       if (it.interferingFloat === undefined) {
         diffs.push(`intf-invariant: leaf "${name}" mist interferingFloat`);
-      } else if (Math.abs(it.interferingFloat - (it.totalFloat - it.freeFloat)) > 1e-9) {
+      } else if (!(Math.abs(it.interferingFloat - (it.totalFloat - it.freeFloat)) <= 1e-9)) {
         diffs.push(`intf-invariant: "${name}" intf=${it.interferingFloat} ≠ tf−ff=${it.totalFloat - it.freeFloat}`);
       }
     }
