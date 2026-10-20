@@ -1757,3 +1757,14 @@ Testversie (release-check, poort 3049) is NIET bijgewerkt met de PR's van vandaa
   main zat er NIET in via de aia-sessie (die deed alleen #380); kop 7bd4eae62, 125 commits achter main. Worker (Opus 5.5,
   medium) merget main bd9205df3 erin; daarna review (GPT-6.1-Sol), hercheck eigenaar in de desktopapp (muiswiel +
   touchpad) en keuze Shift+wiel boven de verticale balk.
+- **CI main bd9205df3 rood** (browser 2-4): `refusal-lifetime.spec.ts:175` (5b, documentwissel) — race in `openExample`
+  (wacht op `tasks.length > 5`, bij het tweede voorbeeld al waar). Boom = 6dfdb90f4 (daar groen) ⇒ flaky; rerun groen,
+  deploy liep daarna. Fix in vervolg-PR `claude/vervolg-na-380` (worker Opus 5.5), samen met hashes, NOT_A_REFUSAL, MCP-term.
+- **#376**: merge-review (GPT-6.1-Sol) JA ⇒ **gemerged in main 9d38d1fab** (`--admin`). VERVOLG naar de vervolg-PR.
+- **#374**: delta-review (GPT-6.1-Sol) JA, geen bevindingen; testversie bea6b2f65; checkstap A/B: eigenaar "goed".
+  Besluit 3 open. Meting (Haiku 5.5, De Akkers 4.1 op 60 %, gestart 07-04-2027): geen oranje blok (geen opgeslagen
+  werkvelden ⇒ `settleProgressWork` schrijft geen `actualWorkMinutes`); na *Bereken* krijgt 4.1 de voortgang en start
+  van de subtaak (100 %, 15-04); Ctrl+Z zet 60 % en 07-04 terug. Zelfde bij *Verwijderen*.
+- **#362**: main bd9205df3 erin ⇒ 66fb22292, geen conflicten, CI 16/16; delta-review (GPT-6.1-Sol) loopt.
+- **#394** (punt 8, oranje blok *Standaard werkdag*): concept-PR, CI 16/16; review (GPT-6.1-Sol) loopt; worker zet hem in
+  de testversie (`?qa=oude-baseline.ifc&qa-dialog=kalender`).
