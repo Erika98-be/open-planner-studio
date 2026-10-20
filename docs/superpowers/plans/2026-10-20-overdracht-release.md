@@ -8,7 +8,7 @@ Deze overdracht is de stand van 2026-10-20; controleer elke PR-status opnieuw me
 - Main na deze releasecheck: `5266893af` (#404, na #400 `d396e1ee7`). Andere sessies mergen ook in main.
 - Main-CI was rood sinds `e98b83e48` (#395): "Maximum update depth exceeded" in het feedbackvenster na ~50 snelle
   toetsen (ook een echte gebruikersfout: er viel een teken weg). Gerepareerd in **#404** (`5266893af`). Controleer de
-  main-CI op die commit vóór de tag.
+  main-CI op die commit vóór de tag. **Groen bevestigd (2026-10-20).**
 
 ## Gemerged vanuit deze releasecheck (2026-10-20)
 

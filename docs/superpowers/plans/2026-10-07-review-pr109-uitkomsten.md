@@ -1855,3 +1855,4 @@ Testversie (release-check, poort 3049) is NIET bijgewerkt met de PR's van vandaa
   `setAlreadyIn(false)` bij elke toets ⇒ na ~50 snelle toetsen "Maximum update depth exceeded" en een verloren teken
   (#397 via #395). #362 speelt geen rol (zonder #362 ook 8/8 rood). Fix: alleen terugzetten als de vlag aan staat;
   regressietest 107 toetsen, mutant 5/5 rood. CI 16/16; diff door orkestrator gelezen; `--admin --match-head-commit`.
+- **Main-CI groen op 5266893af** (#404). Release-sessie mag taggen vanaf deze kop. #401 fixronde loopt nog.
