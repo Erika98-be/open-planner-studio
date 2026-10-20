@@ -23,7 +23,8 @@ If the file contains tasks with splits, leveling or a resource-driven schedule, 
 - inserted projects (subprojects): the app reads them as a normal task, without the link to the other file;
 - external tasks from another project: the app reads them as a normal task;
 - baselines: from an `.mpp` the app takes over no baseline, from MS Project XML only Baseline 0 of tasks, and of that only the dates and the duration (not the work and cost, and no baselines of resources and assignments);
-- with MS Project XML: an assignment whose baseline has other dates than its task. The app keeps only the baseline of the task; if they are the same, nothing is lost and the app reports nothing;
+- with MS Project XML: an assignment whose baseline has other dates than its task. The app keeps only the baseline of the task; if they are the same, nothing is lost and the app reports nothing. A different time on the same day also counts as a difference;
+- with MS Project XML: the time of the baseline of an hourly task. The app keeps only the date of that baseline. A baseline from 09:00 to 12:00 comes in as that day. A baseline that starts and ends at the default times of the project (usually 08:00 and 17:00) does not count: the app draws a baseline per whole day anyway. With a day task nothing is lost;
 - custom fields with values, such as custom fields, values from a lookup table and outline codes (the app does not count yes/no fields in an `.mpp`);
 - notes (also a note with only a picture) on resources and assignments, and from an `.mpp` also on tasks (from MS Project XML the note of a task comes along as its description);
 - hyperlinks;

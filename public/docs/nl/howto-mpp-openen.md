@@ -23,7 +23,8 @@ Bevat het bestand taken met onderbrekingen, nivellering of een resource-gedreven
 - ingevoegde projecten (subprojecten): de app leest ze als gewone taak, zonder de koppeling naar het andere bestand;
 - externe taken uit een ander project: de app leest ze als gewone taak;
 - baselines: uit een `.mpp` neemt de app geen baseline over, uit MS Project XML alleen Baseline 0 van taken, en daarvan alleen de datums en de duur (werk en kosten niet, en ook geen baselines van resources en toewijzingen);
-- bij MS Project XML: een toewijzing waarvan de baseline andere datums heeft dan haar taak. De app bewaart alleen de baseline van de taak; is die gelijk, dan gaat er niets verloren en meldt de app niets;
+- bij MS Project XML: een toewijzing waarvan de baseline andere datums heeft dan haar taak. De app bewaart alleen de baseline van de taak; is die gelijk, dan gaat er niets verloren en meldt de app niets. Ook een afwijkend tijdstip op dezelfde dag telt als afwijking;
+- bij MS Project XML: het tijdstip van de baseline van een urentaak. De app bewaart van die baseline alleen de datum. Een baseline van 09:00 tot 12:00 komt dus binnen als die dag. Een baseline die begint en eindigt op de standaardtijden van het project (meestal 08:00 en 17:00) telt niet: de app tekent een baseline toch per hele dag. Bij een dagtaak gaat er niets verloren;
 - eigen velden met waarden, zoals aangepaste velden, waarden uit een opzoektabel en overzichtscodes (ja/nee-velden in een `.mpp` telt de app niet);
 - aantekeningen (ook een aantekening met alleen een afbeelding) bij resources en toewijzingen, en uit een `.mpp` ook bij taken (uit MS Project XML komt de aantekening van een taak mee als beschrijving);
 - hyperlinks;

@@ -317,6 +317,8 @@ export function readMSPDI(content: string): ImportResult {
   const calById = new Map<string, WorkCalendar>([calendar, ...resourceCalendars].map(c => [c.id, c]));
   const effCalIdOfUid = (calUid: number): string => calUidToId.get(calUid) ?? calendar.id;
   const taskHourById = new Map<string, boolean>();
+  /** Taak-UID's in uurmodus, voor het importverslag (`hourTaskBaselineTimes`). */
+  const hourTaskUids = new Set<number>();
 
   const cSignalCalIds = new Set<string>();
   for (let i = 0; i < taskElements.length; i++) {
@@ -549,6 +551,7 @@ export function readMSPDI(content: string): ImportResult {
     });
     outlineLevels.push(getElementText(te, 'OutlineLevel') ? outlineLevel : undefined);
     taskHourById.set(id, isHour);
+    if (isHour) hourTaskUids.add(uid);
 
     // Parse predecessor links within task element
     const predLinks = te.getElementsByTagName('PredecessorLink');
@@ -740,7 +743,7 @@ export function readMSPDI(content: string): ImportResult {
   const msProjectReport = scanMspdiImportLoss(root, (fieldId, value) =>
     (durationUnitMarkerFieldId !== null && fieldId === durationUnitMarkerFieldId)
     || (opsMilestoneKindMarkerEnabled && fieldId === OPS_MILESTONE_KIND_FIELD_ID)
-    || (fieldId === OPS_CUSTOM_TASK_TYPE_FIELD_ID && decodeCustomTaskType(value) !== undefined));
+    || (fieldId === OPS_CUSTOM_TASK_TYPE_FIELD_ID && decodeCustomTaskType(value) !== undefined), hourTaskUids);
 
   return {
     project,

@@ -329,6 +329,13 @@ en noem het in je rapport of PR-tekst.
     plaatshoudersrecord. Gemeten met MPXJ's `junit/data/mpp14resource.mpp`: *Wade Golden* en *Jon Iles*
     worden MATERIAL, in `mspdiresource.xml` (dezelfde planning) LABOR. Gevonden bij het importverslag
     (#391). Voorstel: records korter dan de volle maat overslaan, zoals MPXJ. — B
+121. **MSPDI: de baseline van een urentaak verliest haar tijdstip.** `readMSPDI` leest Baseline 0 van een taak
+    met `parseMSPDate` (`src/services/msproject/mspdiReader.ts`, de lus "Baseline 0": alleen de eerste tien
+    tekens), ook als de taak in uurmodus binnenkomt (`isHour`). Het baselinemodel draagt al een tijd: de app
+    bewaart zelf `shownStart`/`shownFinish` (`baselineSlice.ts`), bij een urentaak `YYYY-MM-DDTHH:mm`, en
+    `mspdiWriter` schrijft die tijd ook. Twee urentaken met baselines 09:00–12:00 en 11:00–14:00 op dezelfde dag
+    komen dus identiek binnen. Het importverslag meldt dit nu (`hourTaskBaselineTimes`, #392). Voorstel: lees de
+    baselinedatums net als de taakdatums met `importDateTime(raw, isHour)`. — B
 
 ## Rondleiding, Help en extensie-gidsen
 

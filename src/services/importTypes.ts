@@ -424,6 +424,11 @@ export interface MsProjectImportReport {
    *  bewaart alleen de taakbaseline, dus de afwijking gaat verloren. Gelijke datums tellen niet.
    *  (`.mpp`: daar komt geen enkele baseline over; alles telt onder `baselines`.) */
   assignmentBaselineDates: number;
+  /** Alleen MSPDI: urentaken (de lezer leest ze in uurmodus, `hourModeCalIds`) met een Baseline 0-start of
+   *  -einde op een ander tijdstip dan de standaard begin- of eindtijd van het project (of het dag-anker).
+   *  De lezer bewaart van de taakbaseline alleen de datum, dus dat tijdstip gaat verloren. Een dagtaak
+   *  telt niet: daar is de datum alles. */
+  hourTaskBaselineTimes: number;
   /** Eigen velden (extended attributes, ook opzoekwaarden, en overzichtscodes) met minstens één waarde:
    *  aantal verschillende velden over taken, resources en toewijzingen. De OPS-eigen transportvelden
    *  tellen niet mee. `.mpp`: vlaggen (ja/nee-velden) zijn bitvelden en worden niet geteld. */
@@ -457,7 +462,7 @@ export interface MsProjectImportReport {
 /** Een leeg verslag: alles 0. */
 export function emptyMsProjectImportReport(format: MsProjectImportReport['format']): MsProjectImportReport {
   return {
-    format, baselines: 0, baselineWorkCost: 0, assignmentBaselineDates: 0, customFields: 0, notes: 0, hyperlinks: 0, fixedCosts: 0, resourceRates: 0,
+    format, baselines: 0, baselineWorkCost: 0, assignmentBaselineDates: 0, hourTaskBaselineTimes: 0, customFields: 0, notes: 0, hyperlinks: 0, fixedCosts: 0, resourceRates: 0,
     subprojects: 0, externalTasks: 0, manualTasks: 0, levelingDelays: 0, inactiveTasks: 0,
     criticalSlackLimitDays: 0,
   };

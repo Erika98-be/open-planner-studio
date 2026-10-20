@@ -3,11 +3,11 @@
 //
 // Elke categorie hieronder is een element dat `mspdiReader.ts` aantoonbaar niet leest (zie het
 // commentaar per regel). Wat de lezer wel overneemt, telt niet: taaknotities (`<Notes>` → omschrijving),
-// de datums en duur van Baseline 0 van een taak, taak- en resourcekalenders, deadlines, `CriticalSlackLimit`, constraints, het
+// de datums en duur van Baseline 0 van een taak (het tijdstip van een urentaak niet, zie `hourTaskBaselineTimes`), taak- en resourcekalenders, deadlines, `CriticalSlackLimit`, constraints, het
 // standaardtarief (`<StandardRate>` → kostprijs per uur) en de onderbrekingen uit `<TimephasedData>`.
 // Terugkerende taken tellen bewust niet: MS Project schrijft de keren als gewone subtaken mee.
 import { directChildText } from '@/services/xmlDom';
-import { isoDatePrefixOrToday } from '@/services/importDates';
+import { DAY_TIME_ANCHOR } from '@/services/xmlInterchange';
 import { emptyMsProjectImportReport, type MsProjectImportReport } from '@/services/importTypes';
 
 /** Directe kinderen van `parent` met deze tag. MSPDI nest `<Baseline>`, `<ExtendedAttribute>` en
@@ -33,6 +33,22 @@ const nonZero = (text: string): boolean => {
 /** Een ISO-duur (`PT80H0M0S`) met een getal ≠ 0. */
 const nonZeroDuration = (text: string): boolean => /[1-9]/.test(text);
 
+/**
+ * Wandkloktijd `YYYY-MM-DDTHH:mm` van een MSPDI-datum, zonder zone-omrekening: een zone-aanduiding
+ * (`Z`, `+01:00`) en seconden vallen weg, want de lezer rekent ook niet om (review ronde 3 #392). Een
+ * datum zonder tijd krijgt het dag-anker (`toXmlDateTime` schrijft dat zo). Onleesbare tekst (`NA`) of
+ * een niet-bestaande datum (`2026-02-30`) ⇒ `undefined`: telt als ontbrekend, niet als afwijking.
+ */
+export function mspdiWallClock(raw: string): string | undefined {
+  const m = /^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}))?/.exec(raw.trim());
+  if (!m) return undefined;
+  const [, y, mo, d, hh = DAY_TIME_ANCHOR.slice(0, 2), mm = DAY_TIME_ANCHOR.slice(3, 5)] = m;
+  const day = new Date(Date.UTC(Number(y), Number(mo) - 1, Number(d)));
+  if (day.getUTCFullYear() !== Number(y) || day.getUTCMonth() !== Number(mo) - 1 || day.getUTCDate() !== Number(d)) return undefined;
+  if (Number(hh) > 23 || Number(mm) > 59) return undefined;
+  return `${y}-${mo}-${d}T${hh}:${mm}`;
+}
+
 /** Of een `<ExtendedAttribute>` door de lezer zelf is gebruikt (de OPS-transportvelden). */
 export type ConsumedExtendedAttribute = (fieldId: string, value: string) => boolean;
 
@@ -40,7 +56,12 @@ export type ConsumedExtendedAttribute = (fieldId: string, value: string) => bool
  * Telt per categorie wat `readMSPDI` niet overneemt. `isConsumed` zegt welke extended attributes de
  * lezer zelf gebruikte (de OPS-markers), zodat een bestand dat de app zelf schreef geen melding geeft.
  */
-export function scanMspdiImportLoss(root: Element, isConsumed: ConsumedExtendedAttribute): MsProjectImportReport {
+export function scanMspdiImportLoss(
+  root: Element,
+  isConsumed: ConsumedExtendedAttribute,
+  /** UID's van de taken die de lezer als urentaak inleest (`hourModeCalIds`, mspdiReader.ts). */
+  hourTaskUids: ReadonlySet<number> = new Set(),
+): MsProjectImportReport {
   const report = emptyMsProjectImportReport('mspdi');
   const customFieldIds = new Set<string>();
   const baselineNumbers = new Set<number>();
@@ -72,20 +93,29 @@ export function scanMspdiImportLoss(root: Element, isConsumed: ConsumedExtendedA
   };
 
   /**
-   * Baseline 0-datums van een element, of `undefined`. Volgens de conventie van de lezer: die bewaart van
-   * een taakbaseline de WANDKLOKDATUM (`parseMSPDate` → `isoDatePrefixOrToday`, de eerste tien tekens),
-   * zonder zone-omrekening. Vergelijk dus die datum, niet het absolute tijdstip (`Date.parse` hing af
-   * van de zone-aanduiding en van de systeemtijdzone; review ronde 3 #392).
+   * Baseline 0-start en -einde van een element als wandkloktijd (`mspdiWallClock`: datum + tijd, zonder
+   * zone-omrekening en dus los van de systeemtijdzone; review ronde 3 en 4 #392), of `undefined`.
    */
   const baseline0Dates = (el: Element): { start?: string; finish?: string } | undefined => {
     const baseline = directChildren(el, 'Baseline').find(b => directChildText(b, 'Number') === '0');
     if (!baseline) return undefined;
-    const at = (tag: string) => {
-      const raw = directChildText(baseline, tag);
-      return raw ? isoDatePrefixOrToday(raw) : undefined;
-    };
+    const at = (tag: string) => mspdiWallClock(directChildText(baseline, tag));
     return { start: at('Start'), finish: at('Finish') };
   };
+  /**
+   * Of een baselinetijd meer zegt dan de datum die de lezer bewaart. De app tekent een baseline per hele
+   * dag (van het begin van de startdag tot het einde van de einddag), dus een start op de standaard
+   * begintijd van het project en een einde op de standaard eindtijd (`<DefaultStartTime>`/
+   * `<DefaultFinishTime>`, zonder element 08:00 en 17:00) zeggen niets extra. Dat geldt ook voor het
+   * dag-anker: zo schrijft de app zelf een datum zonder tijd (`toXmlDateTime`).
+   */
+  const clock = (tag: string, fallback: string) => (directChildText(root, tag) || fallback).slice(0, 5);
+  const anchor = DAY_TIME_ANCHOR.slice(0, 5);
+  const plainStart = new Set([anchor, clock('DefaultStartTime', '08:00')]);
+  const plainFinish = new Set([anchor, clock('DefaultFinishTime', '17:00')]);
+  const timeLost = (dates: { start?: string; finish?: string }) =>
+    (dates.start !== undefined && !plainStart.has(dates.start.slice(11)))
+    || (dates.finish !== undefined && !plainFinish.has(dates.finish.slice(11)));
   /** Baseline 0-datums per taak-UID: die komen WEL over (de taakbaseline van de lezer). */
   const taskBaseline0 = new Map<string, { start?: string; finish?: string }>();
 
@@ -119,6 +149,9 @@ export function scanMspdiImportLoss(root: Element, isConsumed: ConsumedExtendedA
     collectBaselines(task);
     const taskDates = baseline0Dates(task);
     if (taskDates) taskBaseline0.set(String(uid), taskDates);
+    // Urentaak: de lezer bewaart van haar baseline alleen de datum (`parseMSPDate`), dus een tijdstip gaat
+    // verloren. Bij een dagtaak is de datum alles (review ronde 4 #392).
+    if (taskDates && hourTaskUids.has(uid) && timeLost(taskDates)) report.hourTaskBaselineTimes++;
     collectExtendedAttributes(task);
     if (hasHyperlink(task)) report.hyperlinks++;
     // `<FixedCost>`: de lezer leest geen kosten.
@@ -159,8 +192,8 @@ export function scanMspdiImportLoss(root: Element, isConsumed: ConsumedExtendedA
     if (directChildText(assignment, 'Notes') !== '') report.notes++;
     collectBaselines(assignment);
     // Baseline 0-datums van een toewijzing: de app bewaart alleen de taakbaseline. Gelijk aan die van
-    // de taak ⇒ niets verloren; wijkt een datum af (of heeft de taak er geen), dan gaat die afwijking
-    // verloren (orkestratorbesluit fixronde 2 #392: alleen afwijkingen melden, anders krijgt bijna elk
+    // de taak (datum én tijd) ⇒ niets verloren; wijkt een wandkloktijd af (of heeft de taak er geen), dan
+    // gaat die afwijking verloren (orkestratorbesluit fixronde 2 #392: alleen afwijkingen melden, anders krijgt bijna elk
     // bestand met een baseline een melding).
     const own = baseline0Dates(assignment);
     if (own) {

@@ -38,6 +38,7 @@ export const STICKY_OPEN_NOTICE_KEYS: ReadonlySet<string> = new Set<Notification
   'notifications.msProjectLostExtraBaselines',
   'notifications.msProjectLostBaselineWorkCost',
   'notifications.msProjectLostAssignmentBaselineDates',
+  'notifications.msProjectLostHourTaskBaselineTimes',
   'notifications.msProjectLostCustomFields',
   'notifications.msProjectLostNotes',
   'notifications.msProjectLostHyperlinks',
