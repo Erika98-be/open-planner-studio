@@ -346,16 +346,18 @@ export function shiftedTaskIds(tasks: Task[], times: Record<string, RecordedTime
  *
  * ÉÉN SCHERP AFGEBAKENDE AFWIJKING van `scheduleAnalysis.ts`: `missedDeadlineTaskIds` vergelijkt hier met simpele stringvergelijking
  * (`rec.finish > task.deadline`); de solver rekent i.p.v. daarvan met instants en met
- * `cal.prevWorkDay(deadline)`, over de KALENDER VAN DIE TAAK (`calendarFor(task)`). Met ÉÉN kalender
+ * `CPMSolver.deadlineBound` (dag-modus: `cal.prevWorkDay(deadline)`), over de KALENDER VAN DIE TAAK
+ * (`calendarFor(task)`). In dag-modus en met ÉÉN kalender
  * (de enige die deze functie kent — haar `calendar`-parameter) lopen de twee BEWIJSBAAR NOOIT uiteen:
  * `prevWorkDay(dl) ≤ dl`, en er bestaat op diezelfde kalender geen werkdag strikt tussen
  * `prevWorkDay(dl)` en `dl`. Divergentie vereist dus een taak op een ANDERE kalender dan de
  * meegegeven kalender (`task.calendarId` wijst naar een resource-/bibliotheekkalender) — een geval
  * dat deze pure reconstructiefunctie sowieso niet kan zien, want ze krijgt maar één kalender mee.
  * Dichttrekken vraagt per-taak-kalenders die ze bewust niet heeft (ze reconstrueert — ze solvet niet).
- * Er is wél één echte extra divergentie die BINNEN één kalender kan optreden: uur-modus met
- * `rec.finish` exact op `'…T00:00'` van de deadline-dag — de stringvergelijking hier meldt "gemist",
- * de solver niet (middernacht hoort bij de vorige werkdag, `prevWorkDay`-semantiek).
+ * In uur-modus lopen ze wél uiteen BINNEN één kalender: de solver leest een deadline zonder tijd als
+ * het einde van de werkdag (het laatste blokeinde van die datum; knownbugs 119 van het ontwerp "alleen
+ * uren"), dus een `rec.finish` OP de deadline-dag (`'2026-07-06T16:00' > '2026-07-06'`) meldt hier
+ * "gemist" en in de solver niet. Hier bewust niet gedicht: deze functie vergelijkt strings.
  *
  * `projectStart`/`projectEnd` worden hieronder met stringvergelijking
  * (`<`/`>`) bepaald. Bij GEMENGDE dag/uur-formaten binnen dezelfde taakset (bv. `'2026-03-09T17:00'`

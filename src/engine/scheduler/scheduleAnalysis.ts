@@ -3,7 +3,7 @@ import type { SchedulingOptions } from '@/types/project';
 import type { Sequence } from '@/types/sequence';
 import type { CalendarEngine } from './CalendarEngine';
 import type { CpmBackwardFloatTrace, CpmFreeFloatSource, CPMResult, CPMTaskResult } from './CPMSolver';
-import { parseDate, formatInstant, type DateMode } from '@/utils/dateUtils';
+import { formatInstant, type DateMode } from '@/utils/dateUtils';
 import { drivingPredecessorWalker } from './graphWalk';
 import { projectDurationOf } from './projectDuration';
 import { isZeroDurationMilestone } from './duration';
@@ -53,6 +53,9 @@ export interface ScheduleAnalysisInput {
   signedFloat: (a: Date, b: Date, eng: CalendarEngine, task?: Task) => number;
   /** Formaatgebonden projectie voor relationship free float; generieke kalenderalgebra blijft fysiek. */
   constraintInstant: (c: TaskConstraint | undefined, eng: CalendarEngine) => Date | null;
+  /** De late-finish-grens van de zachte deadline (`CPMSolver.deadlineBound`), of null. Dezelfde
+   *  definitie als in de backward pass, zodat "deadline gemist" en de speling niet uiteenlopen. */
+  deadlineBound: (task: Task, eng: CalendarEngine) => Date | null;
   snapOnOrAfter: (eng: CalendarEngine, d: Date) => Date;
   snapOnOrBefore: (eng: CalendarEngine, d: Date) => Date;
   modeOf: (eng: CalendarEngine) => DateMode;
@@ -73,7 +76,7 @@ export function computeScheduleResults(input: ScheduleAnalysisInput): CPMResult 
     truncatedLeadIds, hardPinViolatedIds, hammockNoFinishDriverIds,
     projectEngine,
     calendarFor, progressCalendarFor, signedFloat,
-    constraintInstant, snapOnOrAfter, snapOnOrBefore, modeOf,
+    constraintInstant, deadlineBound, snapOnOrAfter, snapOnOrBefore, modeOf,
     backwardFloatTrace, completedPhysicalPoints,
   } = input;
 
@@ -417,18 +420,21 @@ export function computeScheduleResults(input: ScheduleAnalysisInput): CPMResult 
         const cd = constraintInstant(cc, cal);
         if (!cd) continue;
         const dW = snapOnOrBefore(cal, cd);
+        // Een startbeperking vergelijkt in uur-modus met het eerstvolgende werkmoment (knownbugs 120
+        // van het ontwerp "alleen uren"): `snapOnOrBefore` zet een datum op een blokbegin (di 08:00)
+        // terug naar het vorige blokeinde (ma 16:00), en een taak die precies op di 08:00 start gold
+        // dan als geschonden. Op de tijdas zijn beide hetzelfde punt; voor een urentaak rekent de
+        // solver de late start ook zo (`finishFromStart` loopt vanaf het volgende blokbegin). Een
+        // eindbeperking blijft `snapOnOrBefore` gebruiken. Dag-modus blijft ongewijzigd.
+        const dS = cal.isHourMode ? snapOnOrAfter(cal, cd) : dW;
         const ct = cc.type;
-        if (((ct === 'SNLT' || ct === 'MSO') && early.es > dW)
+        if (((ct === 'SNLT' || ct === 'MSO') && early.es > dS)
           || ((ct === 'FNLT' || ct === 'MFO') && early.ef > dW)) {
           if (!violatedConstraintTaskIds.includes(taskId)) violatedConstraintTaskIds.push(taskId);
         }
       }
-      if (task.deadline) {
-        const dl = parseDate(task.deadline);
-        if (!isNaN(dl.getTime()) && early.ef > cal.prevWorkDay(dl)) {
-          missedDeadlineTaskIds.push(taskId);
-        }
-      }
+      const dlW = deadlineBound(task, cal);
+      if (dlW && early.ef > dlW) missedDeadlineTaskIds.push(taskId);
     }
 
     // Serialisatie: de MODUS van de eigen kalender is de enige discriminator — dag-taak ⇒

@@ -1687,6 +1687,7 @@ export class CPMSolver {
       progressCalendarFor: (t) => this.progressCalendarFor(t),
       signedFloat: (a, b, eng, task) => this.signedFloat(a, b, eng, task),
       constraintInstant: (c, eng) => this.constraintInstant(c, eng),
+      deadlineBound: (t, eng) => this.deadlineBound(t, eng),
       snapOnOrAfter: (eng, d) => this.snapOnOrAfter(eng, d),
       snapOnOrBefore: (eng, d) => this.snapOnOrBefore(eng, d),
       modeOf: (eng) => this.modeOf(eng),
@@ -2218,6 +2219,14 @@ export class CPMSolver {
         const taskElapsedForSnap = isElapsedTask(task);
         if (!taskElapsedForSnap && task.levelingDelayElapsed) {
           earlyStart = this.snapOnOrAfter(cal, earlyStart);
+        } else if (!taskElapsedForSnap && cal.isHourMode) {
+          // Een WERKTIJD-vertraging telt werkminuten op (`addWorkingMinutesSigned`) en kan exact op
+          // een blokeinde landen (di 16:00). Als start is dat het volgende blokbegin (wo 08:00);
+          // zonder deze snap gaf `addDurationChecked`s band-eind-wacht (voor een rauw wortel-anker)
+          // een vroeg einde gelijk aan de start: duur nul (knownbugs 121 van het ontwerp "alleen
+          // uren"). `snapSuccessorEarlyStart` laat een eindmijlpaal op het blokeinde staan, net als na
+          // een relatie. Binnen een blok is dit een no-op. `bg121-*` in `cases-hours-blokgrenzen.json`.
+          earlyStart = this.snapSuccessorEarlyStart(cal, earlyStart, task);
         }
       }
 
@@ -2953,7 +2962,15 @@ export class CPMSolver {
     const finishSide = rel === 'FS' || rel === 'FF';   // eerste teken F ⇒ mijn finish; S ⇒ mijn start
     if (eng.isHourMode) {
       const shifted = eng.addWorkingMinutesSigned(anchor, -this.externalLagMinutes(link, eng));
-      return finishSide ? shifted : this.finishFromStart(eng, shifted, task);
+      if (!finishSide) return this.finishFromStart(eng, shifted, task);
+      // FS/FF: de grens is een EINDmoment. `addWorkingMinutesSigned` normaliseert vooruit
+      // (`nextWorkInstant`) en kan op een blokbegin landen (anker wo 08:00 ⇒ late finish wo 08:00).
+      // Als eindmoment is dat het vorige blokeinde (di 16:00): zelfde punt op de tijdas, dus de
+      // speling verandert niet, maar de getoonde late finish en de dag die een dagtaak eruit leest
+      // wel (knownbugs 122 van het ontwerp "alleen uren"). Mijlpaal en ELAPSEDTIME-taak blijven
+      // ongemoeid. `bg122-*` in `cases-hours-blokgrenzen.json`.
+      if (isZeroDurationMilestone(task) || isElapsedTask(task)) return shifted;
+      return this.snapOnOrBefore(eng, shifted);
     }
     const lag = this.externalLagDays(link);
     const base = rel === 'FS' ? eng.prevWorkDayBefore(anchor) : eng.prevWorkDay(anchor);
@@ -3022,14 +3039,36 @@ export class CPMSolver {
         if (bound && bound < lf) lf = bound;
       }
     }
-    if (task.deadline) {
-      const dl = parseDate(task.deadline);
-      if (!isNaN(dl.getTime())) {
-        const dlW = eng.prevWorkDay(dl);
-        if (dlW < lf) lf = dlW;
-      }
-    }
+    const dlW = this.deadlineBound(task, eng);
+    if (dlW && dlW < lf) lf = dlW;
     return lf;
+  }
+
+  /**
+   * De late-finish-grens van de zachte deadline van `task`, of null zonder (geldige) deadline. Eén
+   * definitie voor de backward pass (`applyBackwardBound`) én de melding "deadline gemist"
+   * (`scheduleAnalysis`), zodat speling en melding hetzelfde moment gebruiken.
+   *
+   * Dag-modus: de werkdag op of vóór de datum (`prevWorkDay`), ongewijzigd. Uur-modus (knownbugs 119
+   * van het ontwerp "alleen uren"): een datum zonder tijd is het EINDE van die werkdag — het einde van
+   * het laatste werkblok dat op die datum begint, zoals een dagtaak dezelfde datum leest. Werkt die
+   * datum niet (weekend, feestdag), dan het laatste blokeinde vóór het einde van die datum. Vroeger
+   * werd de datum 00:00 van die dag (via `prevWorkDay`), één werkdag te krap. Een deadline MET tijd
+   * (bv. uit MSPDI) is dat moment zelf, teruggezet naar een werkmoment; `parseDate` liet de tijd vallen.
+   */
+  private deadlineBound(task: Task, eng: CalendarEngine): Date | null {
+    if (!task.deadline) return null;
+    if (!eng.isHourMode) {
+      const dl = parseDate(task.deadline);
+      return isNaN(dl.getTime()) ? null : eng.prevWorkDay(dl);
+    }
+    if (task.deadline.includes('T')) {
+      const at = parseInstant(task.deadline);
+      return isNaN(at.getTime()) ? null : eng.prevWorkInstant(at);
+    }
+    const day = parseDate(task.deadline);
+    if (isNaN(day.getTime())) return null;
+    return this.dayLastBandEnd(eng, day) ?? eng.prevWorkInstant(new Date(day.getTime() + MS_PER_DAY));
   }
 
   /**
