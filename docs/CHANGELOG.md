@@ -184,6 +184,14 @@ including a fidelity measurement against P6's own calculated output and the 216-
 - **Gantt additions:** the float band can be switched off (issue #130), a task name moves to the
   right of the bar when it does not fit, and progress is drawn on phase bars.
 
+- **Opening an MS Project file now reports what was not imported.** An MSPDI (.xml) or .mpp file
+  gets, like .xer and P6 XML, one notice that stays until you close it, with a line per category the
+  reader did not take over: baselines (also Baseline 1–10 and the work or cost in Baseline 0), custom
+  fields and outline codes, notes, hyperlinks, fixed costs, rates, inserted projects and external
+  tasks, and for MSPDI also manually scheduled and inactive tasks and leveling delays, for .mpp the
+  critical threshold. A file that lost nothing, or that the app wrote itself, gives no notice, and the
+  .mpp notice keeps the calculation-profile line first. The counting lives in `mspdiImportLoss.ts` and
+  `mppImportLoss.ts`; the readers themselves did not change for it (part of issue #391).
 ### Changed
 - **The *Task type* field is now called *Work category*, so that *Task type* can mean what it means
   in MS Project and P6.** The field from v2026.9.0 that holds a category such as *Construction*,
@@ -296,6 +304,26 @@ including a fidelity measurement against P6's own calculated output and the 216-
   (community contributions).
 - **Document tabs use arrow buttons instead of a scrollbar**, are semantic, focus-safe and
   race-free, and the close cross and tab name are placed correctly in right-to-left languages.
+- **The *Assignments* block in the task panel has one row per resource.** A header names *Resource*,
+  *Units* and *Work (h)*; each resource is one line with a colour square, the name, the two fields and
+  a bin. Click the name to show *Curve*, *Hour distribution…* and *Move to…* below it (a bar icon
+  next to the name shows a curve other than *Uniform* or an own distribution, also when collapsed).
+  *Units* shows at most two decimals (the exact value is in the tooltip) and accepts a comma or a
+  point; a value that could be a decimal or thousands, such as `1,500` in English or `1.500` in Dutch,
+  is refused with a red notice and the value stays. The number fields grow with the shown value, so
+  `306,5` or `1234,5` is not cut off at 200 or 280 px, and the warning triangle sits inside the work
+  field. Curve, move and assign use the app's own drop-down lists instead of the browser's.
+  *Ctrl+S* and *F5* save the field you are typing in (the field is committed, automatic calculation
+  runs, then the file is saved), and afterwards *Ctrl+Z*, *Ctrl+Y* and *Esc* belong to the app again.
+  An unfinished entry is committed before the document is switched, duplicated, closed, reloaded or
+  the desktop app closes, so it never lands in the wrong document or is lost. This brings together
+  the work of #369 and #389 (`TaskAssignmentsSection.tsx`, `UnitsInput.tsx`, `pendingTextEdits.ts`).
+- **The macOS installers are signed and notarized.** The release workflow signs the app and the dmg
+  with the OpenAEC Foundation Developer ID, has Apple notarize both and staples the ticket, and then
+  checks the dmg with `codesign`, Gatekeeper (`spctl`: *Notarized Developer ID*) and
+  `stapler validate`. A failing check keeps the release as a draft, so Windows and publishing wait. A
+  test build on the pull request (`macos-sign-check.yml`) passed these checks; a real release has not
+  run it yet (`scripts/macos-notarize-dmg.sh`, `scripts/macos-verify-dmg.sh`, `release.yml`).
 - **Engineering and release process.** `AGENTS.md` is the single instruction source, the CI runs
   the full verify in parallel parts (deploy now waits for a green CI run), a translation release
   gate and a documentation audit skill were added, code comments were trimmed across the codebase,
@@ -400,6 +428,18 @@ including a fidelity measurement against P6's own calculated output and the 216-
   hanging `onLoad` times out after 15 s, `api.ui.showNotification` is visible to the user, a failed
   extension importer reports an error, and the ZIP download has an idle limit.
 
+- **The coloured marker before the WBS number in *Dependencies* no longer looks odd.** It was a pill or
+  rectangle of 6 × 10 px with a ring in the text colour (white on dark). It is now 1em, the size of the
+  colour square at *Assignments*: a circle for a predecessor and a square with 3 px rounding for a
+  successor, so the role is still in the shape and not only in the colour (issue #65). The ring is
+  gone. On the light theme the gold and purple have too little contrast against the panel (2.1:1 and
+  2.6:1), so only there the shape gets an edge in a 30% darker tint of its own colour
+  (`src/styles/globals.css`, `check-dependency-presentation.ts`).
+- **MSPDI import read the baseline of an hour task as a date only.** The reader took the time of the
+  task dates, but not of *Baseline 0* Start and Finish, so the baseline of a task from 09:00 to 12:00
+  lost its times and no longer matched a baseline set in the app. *Baseline 0* now uses the same mode
+  as the task dates: an hour task keeps the time, a day task keeps the date, as before
+  (`importDateTime` in `mspdiReader.ts`, `check-mspdi-hour-baseline.ts`).
 ### Documentation
 - Rewrote the user documentation according to Diátaxis (how-to, reference, explanation): the 31
   articles of v2026.9.0 became 79 in Dutch and English, translated into all other languages, with
