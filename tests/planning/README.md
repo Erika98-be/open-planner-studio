@@ -102,10 +102,10 @@ guards; alles wat de JSON-batterij niet kan zien omdat het niet via de solver lo
 
 ### Gedeelde fixtures (`tests/fixtures/`)
 
-Fixtures die door MEER DAN ÉÉN suite gebruikt worden staan in `tests/fixtures/` — nu alleen
-`recordedDatesIfc.ts`, de IFC van issue #63 (twee taken, één FS-relatie, opgeslagen datums die niet
-uit de logica volgen), gedeeld door `check-recorded-dates.ts` en `tests/mcp/cases-recorded-dates.ts`.
-Eén bron, zodat de twee batterijen niet uit elkaar lopen over wat het geval precies ís. Fixtures die
+Fixtures die door MEER DAN ÉÉN suite gebruikt worden staan in `tests/fixtures/`: `recordedDatesIfc.ts`
+(de IFC van issue #63: twee taken, één FS-relatie, opgeslagen datums die niet uit de logica volgen) en
+`recordedTimesFormats.ts` (de "datums zoals opgeslagen"-formaten). Zoek de gebruikers met grep; noem ze hier niet.
+Eén bron, zodat de batterijen niet uit elkaar lopen over wat het geval precies ís. Fixtures die
 maar één batterij dient horen gewoon in die batterij thuis.
 
 ## Een geval toevoegen

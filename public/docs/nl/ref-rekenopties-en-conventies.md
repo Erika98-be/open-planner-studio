@@ -131,6 +131,7 @@ Deze opties komen uit een `.xer`-bestand van Primavera P6 en zijn alleen te leze
 ## Zie ook
 
 - [Rekenprofielen en conventies](docs://uitleg-rekenprofielen): waarom P6 en MS Project anders rekenen en hoe een profiel werkt.
+- [Een rekenprofiel kiezen of samenstellen](docs://howto-rekenprofiel-kiezen): een profiel kiezen, wisselen of zelf samenstellen.
 - [Datums zoals opgeslagen](docs://uitleg-datums-zoals-opgeslagen): waarom een geïmporteerde planning andere datums kan tonen dan je pakket.
 - [Kritiek pad en speling](docs://uitleg-kritiek-pad): wat kritiek, totale en vrije speling betekenen.
 - [Relaties en lag](docs://uitleg-relaties): lag en de kalender waarin hij telt.

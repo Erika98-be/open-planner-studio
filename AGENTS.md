@@ -31,7 +31,7 @@ replace the corpus-free CI gate.
 One battery: `bash tests/planning/run.sh cases-<x>.json` or `bash tests/planning/run.sh check-<x>.ts`.
 A new `check-*.ts` runs automatically (also in the timezone matrix); add your own `if bundle_check` line in
 `tests/planning/run.sh` only for an environment variable, a fixed order or no matrix (grep a neighbouring check).
-New `cases-*.json`: extend `EXPECTED_BATTERIES` — do not read run.sh (~1.7k lines) in full.
+New `cases-*.json`: extend `EXPECTED_BATTERIES` — do not read run.sh (~2k lines) in full.
 
 **`npm run verify` is one definition, in `package.json`** — the release gate runs that line; ci.yml runs the same
 steps in parallel jobs via `scripts/verify-parts.mjs`, which reads them from that definition. The deploy (live.yml)
@@ -129,8 +129,9 @@ Node 22 (see CI). Rust stable only for the `tauri:*` commands.
   `filePath`/`fileHandle`; derive the save
   target only via `saveTargetRef`. Dev: `?fakeSite=1` installs a fake site. Detail: `docs/platformbouw.md`.
 - **IFC 4.3 is the native format**; there is no JSON project format. New domain data must round-trip through
-  `ifcWriter`/`ifcReader`, or it is gone after saving. CSV/MSPDI/P6/`.mpp`/`.xer` are adapters. Route:
-  `docs/ifc-round-trip.md`.
+  `ifcWriter`/`ifcReader`, or it is gone after saving. CSV/MSPDI/P6/`.mpp`/`.xer` are adapters. The file schema is
+  per project (`Project.ifcSchema`, default `IFC4X3_ADD2`); never write silently in another one. Route:
+  `docs/ifc-round-trip.md`; depth in the `tauri-ifc` rule.
 - **Document contract.** New project data belongs in `DOCUMENT_FIELDS` (`src/state/documentContract.ts`),
   otherwise it does not survive a document switch, undo, crash recovery or save. A `DocumentPayload` field
   missing from that list is a compile error.
@@ -201,7 +202,7 @@ Node 22 (see CI). Rust stable only for the `tauri:*` commands.
   before reporting a "new" bug.
 - **User-visible feature ⇒ guide** in `public/docs/{nl,en}/` plus a manifest entry (recipe
   `docs/recepten/in-app-gids.md`). You write `nl` + `en` (the sources, required), organised by Diátaxis (`kind`:
-  how-to, explanation, reference; the tutorials ship as an extension); the other locales come from the translation
+  `howto`, `uitleg`, `referentie`; the tutorials ship as an extension); the other locales come from the translation
   pipeline (`public/docs/<locale>/` + a generated `index.json`, structure hashes in `i18n/docs-sources/`), and an
   article missing in a locale reads English with a notice.
   Renaming an article needs an alias in the manifest; ids the app uses live in `src/state/helpArticles.ts`.
@@ -246,10 +247,11 @@ Single-context: one `GLOSSARY.md` and `docs/adr/` at the root, created lazily. S
 | `taaktypes` | work rules / task types (`src/engine/work/`) |
 | `gantt-splits` | renderer, canvas interaction, task grid, splits |
 | `reports` | reports, PDF, print |
-| `ui-shell` | layout, ribbon, backstage, panels, dialogs |
+| `import-export` | progress sheet (Excel/CSV), XLSX, ZIP services |
+| `ui-shell` | layout, ribbon, backstage, panels, dialogs, first-start tour |
 | `text-roles` | the six text roles (`*.tsx`, `*.css`) |
 | `i18n` | `src/i18n/`, i18n scripts and tests |
-| `settings-autosave` | settings, auto-save, recovery, stats |
+| `settings-autosave` | settings, auto-save, recovery, clean quit, stats |
 | `extensions` | extension system |
 | `mcp` | MCP bridge and `planner_*` tools |
 | `library` | resource library |
@@ -265,8 +267,9 @@ last two: `public/skills/<name>/SKILL.md`, copied byte-identically; they are the
 `planner_get_planning_guide` hands out, next to the English agent guide `public/agent/planning-guide.md`).
 
 Recipes: `docs/recepten/` (MCP tool, setting, translation key, ribbon tab, text size, in-app guide,
-scheduling convention) and `docs/ifc-round-trip.md`. Self-test: `docs/self-test-harness.md`. Roadmap: `PLAN.md`
-(§4 obsolete). Design docs: start at `docs/superpowers/README.md` — read them as *why*, not as *what exists*.
+scheduling convention) and `docs/ifc-round-trip.md`. Self-test: `docs/self-test-harness.md`.
+Open work: `docs/TODO.md`. `PLAN.md` is the design-phase plan, not the current state.
+Design docs: start at `docs/superpowers/README.md` — read them as *why*, not as *what exists*.
 
 ## Key paths
 
