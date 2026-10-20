@@ -435,7 +435,7 @@ export function ScreenshotAnnotator({
           />
         </div>
         <div className="screenshot-annotator-actions">
-          <button type="button" className="screenshot-annotator-action" onClick={openEditor} disabled={disabled}>
+          <button type="button" className="screenshot-annotator-action" onClick={openEditor} disabled={disabled} data-annotate-button>
             <Pencil size={14} aria-hidden />
             <span>{t('feedback.annotate')}</span>
           </button>

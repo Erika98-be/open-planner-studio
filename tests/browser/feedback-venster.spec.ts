@@ -361,3 +361,40 @@ test('onzeker hoort bij het concept: na sluiten en heropenen telt een 409 als al
   await expect(dialog.getByLabel('Title')).toHaveValue('');
   for (const r of hanging) await r.abort().catch(() => { /* al afgebroken door de client */ });
 });
+
+test('na Klaar, Annuleren en Esc staat de focus op Annoteren en blijft Tab in het venster', async ({ page, ops }) => {
+  void ops;
+  test.setTimeout(90_000);
+  await seed(page);
+  const dialog = await openDialog(page);
+  await dialog.getByLabel('Attach screenshot').check();
+  await expect(dialog.locator('.screenshot-annotator-thumb-img')).toBeVisible({ timeout: 20_000 });
+  const annotate = dialog.getByRole('button', { name: 'Annotate' });
+  const editor = page.locator('.annotator-editor');
+  const focusInfo = () => page.evaluate(() => {
+    const a = document.activeElement as HTMLElement | null;
+    return { inDialog: !!a?.closest('.feedback-dialog'), text: a?.textContent?.trim() ?? '', tag: a?.tagName ?? '' };
+  });
+
+  const closers: Array<[string, () => Promise<void>]> = [
+    ['Klaar', () => editor.getByRole('button', { name: 'Done' }).click()],
+    ['Annuleren', () => editor.getByRole('button', { name: 'Cancel' }).click()],
+    ['Esc', () => page.keyboard.press('Escape')],
+  ];
+  for (const [label, closeEditor] of closers) {
+    await annotate.click();
+    await editor.getByRole('button', { name: 'Rectangle' }).click();
+    await dragOnCanvas(page, 0.2, 0.2, 0.4, 0.4);
+    await closeEditor();
+    await expect(editor).toHaveCount(0);
+    await expect(annotate, `${label}: focus terug op Annoteren`).toBeFocused();
+    for (const key of ['Tab', 'Shift+Tab', 'Shift+Tab']) {
+      await page.keyboard.press(key);
+      const f = await focusInfo();
+      expect(f.inDialog, `${label} ${key}: focus buiten het venster (${f.tag} "${f.text}")`).toBe(true);
+    }
+    await annotate.focus();
+  }
+  // Niets achter het venster is geopend.
+  await expect(page.getByRole('dialog')).toHaveCount(1);
+});

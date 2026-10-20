@@ -163,6 +163,16 @@ export function FeedbackDialog() {
   // Zolang de annotatie-editor openstaat (ook tijdens het flattenen na *Klaar*) kan er niet verstuurd
   // worden: anders gaat het screenshot zonder de laatste annotaties (en zonder afdekking) mee.
   const [annotatorOpen, setAnnotatorOpen] = useState(false);
+  // Na het sluiten van de editor (Klaar, Annuleren, Esc) de focus terug op *Annoteren*. Dat kan pas
+  // als `inert` van het venster af is, dus hier na de commit van de ouder; de focus-trap van de
+  // editor probeert het eerder, terwijl het venster nog inert is, en dan valt de focus op `body`.
+  const annotatorWasOpen = useRef(false);
+  useEffect(() => {
+    if (annotatorWasOpen.current && !annotatorOpen) {
+      dialogRef.current?.querySelector<HTMLElement>('[data-annotate-button]')?.focus();
+    }
+    annotatorWasOpen.current = annotatorOpen;
+  }, [annotatorOpen]);
   const canSubmit = !sending && !capturing && !annotatorOpen && formHint === null;
 
   // ── Screenshot maken ───────────────────────────────────────────────────────
