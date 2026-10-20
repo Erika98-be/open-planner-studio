@@ -25,8 +25,8 @@ bouwen), `dispatcher.ts`, `schemaValidate.ts` (schema's worden in de dispatcher 
 binnen `planner_batch` — een draaiboek mag de poort niet omzeilen), `toolRegistry.ts`/`toolIndex.ts`,
 `staleGuard.ts` (`ensureFreshSchedule`; leestools met berekende waarden rekenen via
 `freshenScheduleForRead` in `tools/runtime.ts` zelf bij, behalve in "datums zoals opgeslagen", tijdens een
-lopende bewerking (`editHold.ts`) en na een mislukte berekening met ongewijzigde invoer (`failedSolveGate.ts`)), `backup.ts` (AI-backups per document in `appDataDir`,
-`MAX_PER_DOC = 10`) en `activityLog.ts` (ring-buffer achter het AI-activiteitenpaneel). De 41
+lopende bewerking (`editHold.ts`) en na een mislukte berekening met ongewijzigde invoer (`failedSolveGate.ts`)), `backup.ts` (AI-backups per document onder `<appDataDir>/ai-backups/<docId>/`, uitgedund volgens
+`BACKUP_RETENTION`: alles van de laatste 7 dagen (max. 20), daarna één per week tot 30 dagen, één per maand tot een jaar, daarna één per jaar) en `activityLog.ts` (ring-buffer achter het AI-activiteitenpaneel). De 41
 `planner_*`-tools staan in `src/services/mcp/tools/` (taken, relaties, resources, kalender, project,
 baselines, documenten/bestanden, leestools, XER/P6-bronprovenance, en `planner_batch` als transactionele executor met
 temp-id-resolutie).

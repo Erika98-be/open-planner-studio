@@ -166,6 +166,21 @@ export function canonicalizeBands(
 export const deriveHoursPerDay = modalBandHoursPerDay;
 
 /**
+ * Wijkt de opgeslagen `hoursPerDay` af van de uren per dag die uit de werktijd volgen? Strikte
+ * ongelijkheid, geen marge. Eén regel voor drie plekken:
+ *  - de IFC-schrijver schrijft `HoursPerDay` alleen bij een afwijking (`writeCalendarGenerationMeta`;
+ *    `docs/ifc-round-trip.md`, "Uren per dag bij een blokkenkalender");
+ *  - de uren per dag volgen de blokken alleen zonder afwijking ({@link hoursPerDayFollowsBlocks});
+ *  - het kalendervenster toont alleen bij een afwijking het oranje blok onder *Standaard werkdag*
+ *    (besluit eigenaar 2026-10-20, punt 8, optie 2).
+ * `derived` is `undefined` of `NaN` als er niets af te leiden is; dat telt als afwijking, zoals in de
+ * schrijver. Een aanroeper die dan geen afwijking wil, vangt dat zelf af.
+ */
+export function hoursPerDayDiffers(stored: number, derived: number | undefined): boolean {
+  return stored !== derived;
+}
+
+/**
  * De scalaire werkdag van één dag met werkblokken: begin van het EERSTE blok, einde van het LAATSTE
  * blok en de netto uren (som van de blokken). Eén definitie voor de MSPDI-, `.mpp`- en IFC-lezer en
  * voor de resourcebibliotheek (fix werkdag-einde, 2026-10): MS Projects 08:00–12:00 + 13:00–17:00 is
@@ -243,7 +258,7 @@ export type WorkTimeSessionStart = Pick<WorkCalendar, 'workTime' | 'hoursPerDay'
 export function hoursPerDayFollowsBlocks(start: WorkTimeSessionStart): boolean {
   if (!start.workTime) return true;
   const modal = deriveHoursPerDay(start.workTime, NaN);
-  return Number.isNaN(modal) || start.hoursPerDay === modal;
+  return Number.isNaN(modal) || !hoursPerDayDiffers(start.hoursPerDay, modal);
 }
 
 /**
