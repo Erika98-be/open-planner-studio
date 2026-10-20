@@ -32,6 +32,7 @@ import { resolveEffectiveLagDays } from '@/engine/scheduler/CPMSolver';
 import { taskDurationUnit } from '@/engine/scheduler/duration';
 import { CONTOUR_SHAPE_VALUES, CURVE_TO_SHAPE, isFlatCurveValues } from '@/engine/contour/contourEngine';
 import { XER_DURATION_TYPE_TOKEN } from '@/engine/work/workRuleMapping';
+import { effectiveWorkRule, remainingMinutesOf } from '@/engine/work/workRuleApply';
 import { exportCalendarLayout, taskMinutesForWrite } from '@/services/subdayIo';
 import { countSplitTasksWithoutContour } from '@/services/contourIo';
 import { calendarForEngine, effectiveWorkTimeBands } from '@/utils/effectiveWorkTime';
@@ -45,7 +46,7 @@ import {
 } from '@/services/p6/p6xmlWriter';
 import { P6_MAX_LENGTH } from '@/services/p6/p6xmlSchemaOrder';
 import { XER_RECORDED_OUTPUT_COLUMNS } from './xerRecordedTimes';
-import { OPS_XER_DURATION_UNIT_LABEL, OPS_XER_HOUR_CALENDARS_LABEL } from './xerOpsMarkers';
+import { OPS_XER_DURATION_UNIT_LABEL, OPS_XER_EXPORT_INFO_LABEL, opsXerExportInfoValue } from './xerOpsMarkers';
 import { LOSS_ORDER, type XerWriteInput, type XerWriteLossCode, type XerWriteResult } from '@/services/xerWriteTypes';
 
 // ── Contract ─────────────────────────────────────────────────────────────────────────────────────
@@ -135,6 +136,42 @@ function clip(value: string, max: number, counter: { truncated: number }): strin
   if (chars.length <= max) return value;
   counter.truncated++;
   return chars.slice(0, max).join('');
+}
+
+/** Een code zoals hij in de XER-cel komt (vóór `text()`): geen tab of regeleinde, geen witruimte
+ *  aan de randen. Normaliseren gebeurt VÓÓR de controle op lengte en uniciteit. */
+function normalizeCode(value: string | undefined): string {
+  return (value ?? '').replace(/[\t\r\n]+/g, ' ').trim();
+}
+
+/**
+ * Een unieke code van hooguit `max` tekens (review PR #393, punt 8). Eerst normaliseren en inkorten
+ * (geteld als `truncated`), dan pas de uniciteit; een achtervoegsel `-2`, `-3`, … komt binnen de grens
+ * (de basis wordt zo nodig korter). `changed` telt elke code die de schrijver moest aanpassen.
+ */
+function uniqueCode(
+  raw: string | undefined, max: number, used: Set<string>, fallback: () => string,
+  counter: { truncated: number }, changes: { changed: number },
+): string {
+  let code = clip(normalizeCode(raw), max, counter);
+  if (!code || used.has(code)) {
+    const base = code || fallback();
+    let n = code ? 2 : 1;
+    let candidate = code ? '' : clipChars(base, max);
+    while (!candidate || used.has(candidate)) {
+      const suffix = `-${n++}`;
+      candidate = `${clipChars(base, Math.max(1, max - suffix.length))}${suffix}`;
+    }
+    code = candidate;
+    changes.changed++;
+  }
+  used.add(code);
+  return code;
+}
+
+function clipChars(value: string, max: number): string {
+  const chars = Array.from(value);
+  return chars.length <= max ? value : chars.slice(0, max).join('');
 }
 
 /** P6-sleutels zijn gehele getallen. Een bestaande numerieke bron-id (uit een eerdere XER) blijft
@@ -245,6 +282,32 @@ function isoDaysInclusive(start: string, end: string): string[] {
   return out;
 }
 
+function nextIsoDay(date: string): string {
+  return new Date(Date.parse(`${date}T00:00:00Z`) + 86_400_000).toISOString().slice(0, 10);
+}
+
+/** De werktijd op één kalenderdatum (minuten 0–1440): de banden die die dag beginnen, afgekapt op
+ *  middernacht, plus het deel na middernacht van de banden die de dag ervoor begonnen. */
+function workOnDate(engine: CalendarEngine, date: string): { start: number; end: number }[] {
+  const day = parseDate(date);
+  const prev = parseDate(new Date(Date.parse(`${date}T00:00:00Z`) - 86_400_000).toISOString().slice(0, 10));
+  const pieces: { start: number; end: number }[] = [];
+  for (const b of engine.effectiveBandsOn(prev)) if (b.end > 1440) pieces.push({ start: Math.max(0, b.start - 1440), end: Math.min(1440, b.end - 1440) });
+  for (const b of engine.effectiveBandsOn(day)) if (b.start < 1440) pieces.push({ start: b.start, end: Math.min(1440, b.end) });
+  pieces.sort((x, y) => x.start - y.start);
+  const merged: { start: number; end: number }[] = [];
+  for (const piece of pieces) {
+    const last = merged[merged.length - 1];
+    if (last && piece.start <= last.end) last.end = Math.max(last.end, piece.end);
+    else if (piece.end > piece.start) merged.push({ ...piece });
+  }
+  return merged;
+}
+
+function sameBands(a: readonly { start: number; end: number }[], b: readonly { start: number; end: number }[]): boolean {
+  return a.length === b.length && a.every((band, i) => band.start === b[i].start && band.end === b[i].end);
+}
+
 /**
  * `CALENDAR.clndr_data` in de vorm die `decodeXerCalendarData` leest: `DaysOfWeek` met P6-dagnummers
  * (1 = zondag … 7 = zaterdag), daarna `Exceptions` met één record per datum (`d` = dagen sinds
@@ -270,6 +333,22 @@ function calendarData(cal: WorkCalendar): string {
       if (bands.length === 0) bands = week[firstWorkday];
       if (bands.length === 0) bands = [{ start: cal.workStartHour * 60, end: cal.workEndHour * 60 }];
       byDate.set(date, bandRecords(splitWholeDay(bands).map(b => ({ start: b.start, end: Math.min(b.end, 1440) }))));
+    }
+  }
+  // Uurkalender: schrijf per datum wat de rekenkern die dag WERKELIJK als werktijd ziet (00:00–24:00),
+  // ook de ochtendstaart van een band die de dag ervoor over middernacht liep (review PR #393, punt 6).
+  // Dat geldt voor elke uitzonderings- of feestdag én de dag erna; die dag-erna krijgt alleen een
+  // eigen uitzondering als ze afwijkt van haar gewone weekpatroon.
+  const engine = new CalendarEngine(calendarForEngine(cal));
+  if (engine.isHourMode) {
+    const explicit = new Set(byDate.keys());
+    const candidates = new Set<string>();
+    for (const date of explicit) { candidates.add(date); candidates.add(nextIsoDay(date)); }
+    for (const date of candidates) {
+      const bands = workOnDate(engine, date);
+      const weekday = week[isoDayOfWeek(parseDate(date))];
+      if (!explicit.has(date) && sameBands(bands, weekday)) continue;
+      byDate.set(date, bandRecords(bands));
     }
   }
   const exceptions = [...byDate.keys()].sort().map((date, index) => {
@@ -402,7 +481,6 @@ export function writeXER(input: XerWriteInput): XerWriteResult {
     if (count > 0) losses.set(code, (losses.get(code) ?? 0) + count);
   };
   const counter = { truncated: 0 };
-  let changedIds = 0;
 
   const tasks = [...flattenOrder([...input.tasks])];
   const taskById = new Map(tasks.map(t => [t.id, t]));
@@ -418,6 +496,14 @@ export function writeXER(input: XerWriteInput): XerWriteResult {
 
   // ── Identiteiten ─────────────────────────────────────────────────────────────────────────────
   const identity = p6ProjectIdentity(project, input.projectCode);
+  // Het P6 Project-ID: de eigen code van het document, anders de projectnaam (review PR #393, punt 2).
+  // Geen `OPS:`-code: die zou na heropenen als code van de gebruiker gelden. Een naam als ID toont de
+  // app na heropenen niet dubbel (`nameWithProjectCode`: naam = code ⇒ alleen de naam).
+  const ownProjectCode = normalizeCode(input.projectCode ?? undefined);
+  const projectCode = ownProjectCode
+    ? clip(ownProjectCode, P6_MAX_LENGTH.Project.Id, counter)
+    : clipChars(normalizeCode(identity.name) || 'Project', P6_MAX_LENGTH.Project.Id);
+  const codeChanges = { changed: 0 };
   const projId = /^[1-9]\d{0,14}$/.test(leafTasks[0]?.p6ProjectId ?? '') ? leafTasks[0]!.p6ProjectId! : '1';
   const calIds = allocateIds(allCalendars, c => c.id, c => c.id);
   const taskIds = allocateIds(leafTasks, t => t.id, t => t.p6TaskId ?? t.id);
@@ -450,11 +536,11 @@ export function writeXER(input: XerWriteInput): XerWriteResult {
     proj_id: projId, fy_start_month_num: '1', rsrc_self_add_flag: 'Y', allow_complete_flag: 'Y',
     rsrc_multi_assign_flag: 'Y', checkout_flag: 'N', project_flag: 'Y', step_complete_flag: 'N',
     batch_sum_flag: 'Y', name_sep_char: '.', def_complete_pct_type: 'CP_Drtn',
-    proj_short_name: text(clip(identity.id, P6_MAX_LENGTH.Project.Id, counter)),
+    proj_short_name: text(projectCode),
     clndr_id: calIds.get(calendar.id)!, task_code_base: '1000', task_code_step: '10', priority_num: '10',
     wbs_max_sum_level: '0', strgy_priority_num: '100',
     last_recalc_date: instants.write(project.statusDate, 'midnight', calendar),
-    def_duration_type: 'DT_FixedDUR2', def_qty_type: 'QT_Hour', add_by_name: 'admin', def_rate_type: 'COST_PER_QTY',
+    def_duration_type: XER_DURATION_TYPE_TOKEN[project.defaultWorkRule ?? 'FIXED_DURATION_WORK'], def_qty_type: 'QT_Hour', add_by_name: 'admin', def_rate_type: 'COST_PER_QTY',
     act_this_per_link_flag: 'Y', def_task_type: 'TT_Task', act_pct_link_flag: 'N',
     critical_path_type: crit?.mode === 'longestPath' ? 'CT_DrivPath' : 'CT_TotFloat',
     def_rollup_dates_flag: 'Y', rem_target_link_flag: 'Y', reset_planned_flag: 'N', allow_neg_act_flag: 'N',
@@ -509,22 +595,29 @@ export function writeXER(input: XerWriteInput): XerWriteResult {
   const order = new Map(tasks.map((t, i) => [t.id, i + 1]));
   const wbsRows: Cells[] = [];
   const nodeName = foldedRoot ? foldedRoot.name : identity.name;
-  const nodeCode = foldedRoot?.wbsCode?.trim() || identity.id;
+  const nodeCode = foldedRoot?.wbsCode?.trim() || projectCode;
+  // WBS-codes: uniek per ouder (P6), na normalisatie en binnen de grens.
+  const usedWbsCodes = new Map<string, Set<string>>();
+  const wbsCodeFor = (parentWbsId: string, raw: string | undefined, fallback: () => string): string => {
+    let used = usedWbsCodes.get(parentWbsId);
+    if (!used) { used = new Set(); usedWbsCodes.set(parentWbsId, used); }
+    return uniqueCode(raw, P6_MAX_LENGTH.WBS.Code, used, fallback, counter, codeChanges);
+  };
   wbsRows.push({
     wbs_id: projectNodeId, proj_id: projId, seq_num: '0', est_wt: '1', proj_node_flag: 'Y', sum_data_flag: 'N',
-    status_code: 'WS_Open', wbs_short_name: text(clip(nodeCode, P6_MAX_LENGTH.WBS.Code, counter)),
+    status_code: 'WS_Open', wbs_short_name: text(wbsCodeFor('', nodeCode, () => 'WBS')),
     wbs_name: text(clip(nodeName, P6_MAX_LENGTH.WBS.Name, counter)), parent_wbs_id: '',
   });
   for (const wbs of wbsTasks) {
     if (wbs === foldedRoot) continue;
-    let code = wbs.wbsCode?.trim();
-    if (!code) { code = String(order.get(wbs.id)); changedIds++; }
+    const parentWbsId = wbsIdOf(wbs.parentId);
+    const code = wbsCodeFor(parentWbsId, wbs.wbsCode, () => String(order.get(wbs.id)));
     wbsRows.push({
       wbs_id: wbsIds.get(wbs.id)!, proj_id: projId, seq_num: String(order.get(wbs.id)), est_wt: '1',
       proj_node_flag: 'N', sum_data_flag: 'N', status_code: 'WS_Open',
-      wbs_short_name: text(clip(code, P6_MAX_LENGTH.WBS.Code, counter)),
+      wbs_short_name: text(code),
       wbs_name: text(clip(wbs.name || code, P6_MAX_LENGTH.WBS.Name, counter)),
-      parent_wbs_id: wbsIdOf(wbs.parentId),
+      parent_wbs_id: parentWbsId,
     });
   }
 
@@ -534,34 +627,29 @@ export function writeXER(input: XerWriteInput): XerWriteResult {
   for (const task of leafTasks) {
     const cal = effCal(task);
     const hpd = cal.hoursPerDay > 0 ? cal.hoursPerDay : 8;
-    const isHour = taskDurationUnit(task) === 'hours';
     const durationHours = task.isMilestone ? 0 : taskMinutesForWrite(task, hpd) / 60;
     const status = XER_STATUS_TOKEN[taskStatusToP6(task)];
-    const remainingHours = task.isMilestone ? 0
-      : isHour && task.time.remainingMinutes != null ? task.time.remainingMinutes / 60
-        : task.time.remainingTime != null ? task.time.remainingTime * hpd
-          : status === 'TK_Complete' ? 0
-            : status === 'TK_NotStart' ? durationHours
-              : durationHours * (1 - Math.max(0, Math.min(1, task.time.completion)));
-    // Activiteit-ID: uniek en niet leeg (P6 eist dat).
-    let code = clip(task.wbsCode?.trim() ?? '', P6_MAX_LENGTH.Activity.Id, counter);
-    if (!code || usedCodes.has(code)) {
-      const base = code || 'A';
-      let n = code ? 2 : (order.get(task.id) ?? 1) * 10;
-      while (usedCodes.has(`${base}${code ? '-' : ''}${n}`)) n++;
-      code = `${base}${code ? '-' : ''}${n}`;
-      changedIds++;
-    }
-    usedCodes.add(code);
+    // Restduur: dezelfde afleiding als de solver en de werkregelbrug (`remainingMinutesOf`).
+    const remainingHours = task.isMilestone || status === 'TK_Complete' ? 0
+      : remainingMinutesOf(task, { hoursPerDay: hpd }) / 60;
+    // Activiteit-ID: uniek, niet leeg en hooguit 40 tekens, ná normalisatie (P6 eist dat).
+    const code = uniqueCode(task.wbsCode, P6_MAX_LENGTH.Activity.Id, usedCodes, () => `A${(order.get(task.id) ?? 1) * 10}`, counter, codeChanges);
     const milestoneSide = task.milestoneKind === 'FINISH' ? 'finish' : 'start';
     const startSide = task.isMilestone ? milestoneSide : 'start';
     const finishSide = task.isMilestone ? milestoneSide : 'finish';
     const constraintSide = (type: string | undefined): 'start' | 'finish' =>
       type === 'MFO' || type === 'FNET' || type === 'FNLT' ? 'finish' : 'start';
-    const durationType = task.workRule ? XER_DURATION_TYPE_TOKEN[task.workRule] : task.p6DurationType ?? '';
+    // De EFFECTIEVE werkregel: eigen regel, anders de projectstandaard (review PR #393, punt 3). Alleen
+    // een taak zonder beide houdt haar P6-duurtype uit de bron, of anders de standaardregel.
+    const ruleSource = task.workRule ?? project.defaultWorkRule;
+    const durationType = ruleSource
+      ? XER_DURATION_TYPE_TOKEN[effectiveWorkRule(task, project.defaultWorkRule)]
+      : task.p6DurationType ?? XER_DURATION_TYPE_TOKEN[effectiveWorkRule(task)];
+    // Activiteittype: mijlpaal, hammock (TT_LOE), anders het P6-type uit de bron als dat een gewone
+    // activiteit is (TT_Rsrc, TT_WBS: review PR #393, punt 7), anders TT_Task.
     const taskType = task.isMilestone ? (task.milestoneKind === 'FINISH' ? 'TT_FinMile' : 'TT_Mile')
       : task.isHammock ? 'TT_LOE'
-        : task.p6ActivityType === 'TT_Rsrc' ? 'TT_Rsrc' : 'TT_Task';
+        : task.p6ActivityType === 'TT_Rsrc' || task.p6ActivityType === 'TT_WBS' ? task.p6ActivityType : 'TT_Task';
     const priority = XER_PRIORITY.reduce((best, entry) =>
       Math.abs(entry[0] - task.priority) < Math.abs(best[0] - task.priority) ? entry : best, XER_PRIORITY[3]);
     const pct = num(Math.max(0, Math.min(1, task.time.completion)) * 100);
@@ -688,15 +776,7 @@ export function writeXER(input: XerWriteInput): XerWriteResult {
     const p6Type = resourceTypeToP6(res.type);
     if (res.type === 'CREW' || res.type === 'SUBCONTRACTOR') lose('resourceTypes', 1);
     if (res.libraryOrigin) lose('libraryLinks', 1);
-    let shortName = clip((input.resourceCodes?.get(res.id) ?? res.name).trim(), P6_MAX_LENGTH.Resource.Id, counter);
-    if (!shortName || usedShortNames.has(shortName)) {
-      const base = shortName || 'R';
-      let n = 2;
-      while (usedShortNames.has(`${base}-${n}`)) n++;
-      shortName = `${base}-${n}`;
-      changedIds++;
-    }
-    usedShortNames.add(shortName);
+    const shortName = uniqueCode(input.resourceCodes?.get(res.id) ?? res.name, P6_MAX_LENGTH.Resource.Id, usedShortNames, () => 'R', counter, codeChanges);
     const resCal = (res.calendarId && calendarById.get(res.calendarId)) || calendar;
     rsrcRows.push({
       rsrc_id: resIds.get(res.id)!, parent_rsrc_id: res.parentId ? resIds.get(res.parentId) ?? '' : '',
@@ -706,8 +786,9 @@ export function writeXER(input: XerWriteInput): XerWriteResult {
       active_flag: 'Y', curr_id: '1', unit_id: res.unitOfMeasure ? unitIds.get(res.unitOfMeasure.trim()) ?? '' : '',
       rsrc_type: XER_RESOURCE_TYPE[p6Type], rsrc_notes: noteText(res.description ?? ''),
     });
-    // Tarief en beschikbaarheid: één RSRCRATE-rij per stap; zonder stappen één rij met alleen het
-    // tarief (max. inzet leeg, zodat de lezer geen stap verzint).
+    // Tarief en beschikbaarheid: één RSRCRATE-rij per stap; zonder stappen één rij met de vaste
+    // capaciteit (`maxUnits`) als maximale inzet, ook zonder tarief (review PR #393, punt 4). P6
+    // onderscheidt standaardinzet (`def_qty_per_hr`) en maximale capaciteit (`max_qty_per_hr`).
     const steps = res.availabilitySteps ?? [];
     if (steps.length > 0) {
       for (const step of steps) {
@@ -716,9 +797,9 @@ export function writeXER(input: XerWriteInput): XerWriteResult {
           cost_per_qty: num(res.costPerHour), start_date: `${step.from.slice(0, 10)} 00:00`,
         });
       }
-    } else if (res.costPerHour !== undefined) {
+    } else {
       rateRows.push({
-        rsrc_rate_id: String(rateId++), rsrc_id: resIds.get(res.id)!, max_qty_per_hr: '',
+        rsrc_rate_id: String(rateId++), rsrc_id: resIds.get(res.id)!, max_qty_per_hr: num(res.maxUnits),
         cost_per_qty: num(res.costPerHour), start_date: instants.write(project.startDate, 'midnight', calendar),
       });
     }
@@ -762,8 +843,13 @@ export function writeXER(input: XerWriteInput): XerWriteResult {
     const planned = a.plannedUnitsPerDay ?? a.unitsPerDay;
     const taskHours = task.isMilestone ? 0 : taskMinutesForWrite(task, hpd) / 60;
     const targetQty = a.plannedWorkMinutes !== undefined ? a.plannedWorkMinutes / 60 : taskHours * perHour(planned);
-    const actualQty = a.actualWorkMinutes !== undefined ? a.actualWorkMinutes / 60 : 0;
-    const remainQty = a.remainingWorkMinutes !== undefined ? a.remainingWorkMinutes / 60 : Math.max(0, targetQty - actualQty);
+    // Restwerk: het vastgelegde veld, anders afgeleid zoals de werkregelbrug het doet: effectieve
+    // restduur × resterende inzet (`remainingWorkOf`; review PR #393, punt 5). Niet begroot − verricht:
+    // zonder vastgelegd verricht werk is dat de hele begroting.
+    const remainingTaskHours = task.isMilestone ? 0 : remainingMinutesOf(task, { hoursPerDay: hpd }) / 60;
+    const remainQty = a.remainingWorkMinutes !== undefined ? a.remainingWorkMinutes / 60 : remainingTaskHours * perHour(a.unitsPerDay);
+    // Verricht werk: het vastgelegde veld, anders begroot − rest (het werk dat de voortgang al dekt).
+    const actualQty = a.actualWorkMinutes !== undefined ? a.actualWorkMinutes / 60 : Math.max(0, targetQty - remainQty);
     assignmentRows.push({
       taskrsrc_id: String(assignmentId++), task_id: taskIds.get(task.id)!, proj_id: projId, cost_qty_link_flag: 'Y',
       role_id: '', rsrc_id: resIds.get(res.id)!, remain_qty: num(remainQty), target_qty: num(targetQty),
@@ -822,12 +908,12 @@ export function writeXER(input: XerWriteInput): XerWriteResult {
   // `readXER` een eigen export in dezelfde modus terugleest. P6 ziet twee gewone eigen velden.
   tables.push(table('UDFTYPE', UDFTYPE_COLUMNS, [
     { udf_type_id: '900000001', table_name: 'TASK', udf_type_name: 'user_field_900000001', udf_type_label: OPS_XER_DURATION_UNIT_LABEL, logical_data_type: 'FT_TEXT', super_flag: 'N' },
-    { udf_type_id: '900000002', table_name: 'PROJECT', udf_type_name: 'user_field_900000002', udf_type_label: OPS_XER_HOUR_CALENDARS_LABEL, logical_data_type: 'FT_TEXT', super_flag: 'N' },
+    { udf_type_id: '900000002', table_name: 'PROJECT', udf_type_name: 'user_field_900000002', udf_type_label: OPS_XER_EXPORT_INFO_LABEL, logical_data_type: 'FT_TEXT', super_flag: 'N' },
   ]));
   const hourCalendarIds = allCalendars.filter(c => c.workTime).map(c => calIds.get(c.id)!);
   tables.push(table('UDFVALUE', UDFVALUE_COLUMNS, [
     ...leafTasks.map(task => ({ udf_type_id: '900000001', fk_id: taskIds.get(task.id)!, proj_id: projId, udf_text: taskDurationUnit(task) })),
-    ...(hourCalendarIds.length > 0 ? [{ udf_type_id: '900000002', fk_id: projId, proj_id: projId, udf_text: hourCalendarIds.join(',') }] : []),
+    { udf_type_id: '900000002', fk_id: projId, proj_id: projId, udf_text: opsXerExportInfoValue(hourCalendarIds) },
   ]));
   if (memoRows.length > 0) {
     tables.push(table('MEMOTYPE', MEMOTYPE_COLUMNS, [{
@@ -849,7 +935,7 @@ export function writeXER(input: XerWriteInput): XerWriteResult {
   const content = `${lines.join('\r\n')}\r\n`;
 
   lose('truncatedNames', counter.truncated);
-  lose('changedIds', changedIds);
+  lose('changedIds', codeChanges.changed);
   const encoded = encodeWindows1252(content);
   let bytes: Uint8Array;
   let encoding: XerWriteResult['encoding'];

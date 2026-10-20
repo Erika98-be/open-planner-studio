@@ -20,6 +20,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readXER, type XerReadResult } from '@/services/xer/xerReader';
+import { parseXerTables } from '@/services/xer/xerTables';
 import { writeXER, encodeWindows1252, type XerWriteInput, type XerWriteResult } from '@/services/xer/xerWriter';
 import { isMultiDocumentImport, type ImportResult } from '@/services/importTypes';
 import { readIFC } from '@/services/ifc/ifcReader';
@@ -36,6 +37,7 @@ import type { WorkCalendar } from '@/types/calendar';
 import type { Resource, ResourceAssignment } from '@/types/resource';
 import type { Project } from '@/types/project';
 import { CalendarEngine } from '@/engine/scheduler/CalendarEngine';
+import { effectiveWorkRule, remainingMinutesOf, totalMinutesOf } from '@/engine/work/workRuleApply';
 import { calendarForEngine } from '@/utils/effectiveWorkTime';
 import { parseDate, parseInstant } from '@/utils/dateUtils';
 
@@ -227,6 +229,68 @@ function compareRoundTrip(label: string, original: Doc, written: XerWriteResult,
     if (Math.abs(other.maxUnits - res.maxUnits) > 1e-9) deviations.push(`${label}: resource '${res.name}' max ${res.maxUnits} → ${other.maxUnits}`);
     if ((res.costPerHour ?? null) !== (other.costPerHour ?? null)) deviations.push(`${label}: resource '${res.name}' tarief ${res.costPerHour} → ${other.costPerHour}`);
   }
+  // Werkregel, activiteittype en werk per toewijzing (review PR #393, punten 3, 5 en 7).
+  for (const task of original.tasks.filter(isLeafTask)) {
+    const other = backTasks.get(task.name);
+    if (!other) continue;
+    const where = `${label} '${task.name}'`;
+    const rule1 = effectiveWorkRule(task, original.project.defaultWorkRule);
+    const rule2 = effectiveWorkRule(other, reread.project.defaultWorkRule);
+    if (!task.isMilestone && rule1 !== rule2) deviations.push(`${where}: werkregel ${rule1} → ${rule2}`);
+    if (!task.isMilestone && !task.isHammock) {
+      const type1 = task.p6ActivityType === 'TT_WBS' || task.p6ActivityType === 'TT_Rsrc' ? task.p6ActivityType : 'TT_Task';
+      if (type1 !== (other.p6ActivityType ?? 'TT_Task')) deviations.push(`${where}: activiteittype ${type1} → ${other.p6ActivityType}`);
+    }
+  }
+  const workOf = (doc: Doc, a: ResourceAssignment) => {
+    const task = doc.tasks.find(t => t.id === a.taskId)!;
+    const ctx = { hoursPerDay: effCal(doc, task).hoursPerDay };
+    const planned = a.plannedWorkMinutes ?? (task.isMilestone ? 0 : totalMinutesOf(task, ctx)) * (a.plannedUnitsPerDay ?? a.unitsPerDay);
+    const remaining = a.remainingWorkMinutes ?? (task.isMilestone ? 0 : remainingMinutesOf(task, ctx)) * a.unitsPerDay;
+    const actual = a.actualWorkMinutes ?? Math.max(0, planned - remaining);
+    return [planned, remaining, actual].map(v => Math.round(v));
+  };
+  for (const a of original.assignments) {
+    if (!isLeafTask(original.tasks.find(t => t.id === a.taskId))) continue;
+    if (original.resources.find(r => r.id === a.resourceId)?.type === 'MATERIAL') continue; // hoeveelheid, geen werk
+    const other = a2.get(asgKey(original, a));
+    if (!other) continue;
+    const w1 = workOf(original, a);
+    const w2 = workOf(reread, other);
+    if (w1.some((v, i) => Math.abs(v - w2[i]) > 1)) deviations.push(`${label}: toewijzing ${asgKey(original, a)} werk begroot/rest/verricht ${w1.join('/')} → ${w2.join('/')} min`);
+  }
+  // Kalenders: werkminuten per kalenderdag over het projectbereik (ook nachtbanden en uitzonderingen).
+  for (const cal of [original.calendar, ...original.calendars]) {
+    const other = cal === original.calendar ? reread.calendar : [reread.calendar, ...reread.calendars].find(c => c.name === cal.name);
+    if (!other) { deviations.push(`${label}: kalender '${cal.name}' ontbreekt`); continue; }
+    const e1 = new CalendarEngine(calendarForEngine(cal));
+    const e2 = new CalendarEngine(calendarForEngine(other));
+    const from = parseDate(original.project.startDate.slice(0, 10)).getTime() - 31 * 86_400_000;
+    const bad: string[] = [];
+    for (let d = 0; d < 500 && bad.length < 3; d++) {
+      const a = new Date(from + d * 86_400_000);
+      const b = new Date(from + (d + 1) * 86_400_000);
+      const m1 = e1.isHourMode ? e1.workMinutesBetween(a, b) : (e1.isWorkDay(a) ? 1 : 0);
+      const m2 = e1.isHourMode ? e2.workMinutesBetween(a, b) : (e2.isWorkDay(a) ? 1 : 0);
+      if (m1 !== m2) bad.push(`${a.toISOString().slice(0, 10)} ${m1} → ${m2}`);
+    }
+    if (bad.length > 0) deviations.push(`${label}: kalender '${cal.name}' werktijd per dag: ${bad.join(', ')}`);
+  }
+  // Wat P6 te zien krijgt: TASKRSRC begroot/rest/verricht (uren) = het effectieve werk van het
+  // origineel (review punt 5: afgeleid restwerk is restduur × inzet, niet de hele begroting).
+  const parsed = parseXerTables(written.bytes);
+  const cellsOf = (name: string) => (parsed.tables.get(name)?.rows ?? []).map(r => r.cells);
+  const codeByTaskId = new Map(cellsOf('TASK').map(c => [c.task_id, c.task_code]));
+  const nameByRsrcId = new Map(cellsOf('RSRC').map(c => [c.rsrc_id, c.rsrc_name]));
+  for (const row of cellsOf('TASKRSRC')) {
+    const task = original.tasks.find(t => isLeafTask(t) && t.wbsCode === codeByTaskId.get(row.task_id));
+    const res = original.resources.find(r => r.name === nameByRsrcId.get(row.rsrc_id));
+    const a = task && res && original.assignments.find(x => x.taskId === task.id && x.resourceId === res.id);
+    if (!a || res?.type === 'MATERIAL') continue;
+    const want = workOf(original, a).map(v => Math.round(v / 60 * 100) / 100);
+    const got = [row.target_qty, row.remain_qty, row.act_reg_qty].map(v => Math.round(Number(v) * 100) / 100);
+    if (want.some((v, i) => Math.abs(v - got[i]) > 0.02)) deviations.push(`${label}: TASKRSRC ${task!.name}/${res!.name} begroot/rest/verricht ${want.join('/')} → ${got.join('/')} u`);
+  }
   void written;
   return { deviations };
 }
@@ -296,6 +360,8 @@ function synthetic(): Doc {
   project.schedulingProfile = builtInProfile('p6');
   project.schedulingOptions = { p6CompletedLateFromRemainingWindow: true, lagCalendar: 'predecessor', totalFloatMode: 'finish', criticalDefinition: { mode: 'totalFloat', thresholdHours: 0 } };
   project.progressMode = 'RETAINED_LOGIC';
+  // Geërfde werkregel (review PR #393, punt 3): geen taak heeft een eigen regel.
+  project.defaultWorkRule = 'FIXED_WORK';
   const calendar: WorkCalendar = {
     id: 'cal-default', name: 'Werkweek', description: '', workDays: [1, 2, 3, 4, 5],
     workStartHour: 7, workEndHour: 16, hoursPerDay: 8,
@@ -305,6 +371,13 @@ function synthetic(): Doc {
     id: 'cal-zes', name: 'Zesdaagse week', description: '', workDays: [1, 2, 3, 4, 5, 6],
     workStartHour: 6, workEndHour: 14, hoursPerDay: 8, holidays: [],
     workingExceptions: [{ name: 'Inhaaldag', startDate: '2026-03-08', endDate: '2026-03-08', bands: [{ start: 360, end: 840 }] }],
+  };
+  // Uurkalender met een nachtband en een werkende uitzondering over middernacht (review punt 6).
+  const night: WorkCalendar = {
+    id: 'cal-nacht', name: 'Nachtploeg', description: '', workDays: [1, 2, 3, 4, 5], workStartHour: 22, workEndHour: 6, hoursPerDay: 8,
+    workTime: { byWeekday: { 1: [{ start: 1320, end: 1800 }], 2: [{ start: 1320, end: 1800 }], 3: [{ start: 1320, end: 1800 }], 4: [{ start: 1320, end: 1800 }], 5: [{ start: 1320, end: 1800 }], 6: [], 7: [] } },
+    holidays: [{ name: 'Vrij', startDate: '2026-03-25', endDate: '2026-03-25' }],
+    workingExceptions: [{ name: 'Zaterdagnacht', startDate: '2026-03-14', endDate: '2026-03-14', bands: [{ start: 1320, end: 1800 }] }],
   };
   let n = 0;
   const task = (name: string, start: string, days: number, extra: Partial<Task> = {}): Task => ({
@@ -325,7 +398,7 @@ function synthetic(): Doc {
   const e = task('Afbouw', '2026-04-06', 8, { parentId: s2.id, constraint: { type: 'ALAP' }, priority: 750 });
   const f = task('Oplevering', '2026-04-30', 0, { isMilestone: true, milestoneKind: 'FINISH', constraint: { type: 'MFO', date: '2026-06-12', hard: true } });
   const g = task('Installaties', '2026-04-01', 3, { parentId: s2.id, constraint: { type: 'MSO', date: '2026-04-15' } });
-  const h = task('Keuring', '2026-04-01', 1, { parentId: s2.id, constraint: { type: 'SNLT', date: '2026-06-01' } });
+  const h = task('Keuring', '2026-04-01', 1, { parentId: s2.id, constraint: { type: 'SNLT', date: '2026-06-01' }, p6ActivityType: 'TT_WBS' });
   const i = task('Schoonmaak', '2026-04-01', 2, { parentId: s2.id, constraint: { type: 'FNET', date: '2026-04-20' } });
   s1.childIds = [a.id, b.id];
   s2.childIds = [m1.id, c.id, d.id, e.id, g.id, h.id, i.id];
@@ -350,6 +423,7 @@ function synthetic(): Doc {
     { id: 'res-timmerman', name: 'Timmerman', type: 'LABOR', description: 'Ploeg van twee', maxUnits: 2, costPerHour: 55 },
     { id: 'res-beton', name: 'Beton', type: 'MATERIAL', description: '', maxUnits: 0, unitOfMeasure: 'm3', costPerHour: 120 },
     { id: 'res-kraan', name: 'Kraan', type: 'EQUIPMENT', description: '', maxUnits: 1, calendarId: sixDay.id },
+    { id: 'res-bewaking', name: 'Bewaking', type: 'LABOR', description: '', maxUnits: 1, calendarId: night.id },
   ];
   const assignments: ResourceAssignment[] = [
     { id: 'as1', taskId: a.id, resourceId: 'res-timmerman', unitsPerDay: 1 },
@@ -357,7 +431,7 @@ function synthetic(): Doc {
     { id: 'as3', taskId: b.id, resourceId: 'res-beton', unitsPerDay: 12 },
     { id: 'as4', taskId: c.id, resourceId: 'res-kraan', unitsPerDay: 1, curve: 'BELL' },
   ];
-  return { project, calendar, calendars: [calendar, sixDay], tasks, sequences, resources, assignments };
+  return { project, calendar, calendars: [calendar, sixDay, night], tasks, sequences, resources, assignments };
 }
 
 // ── (a)+(b) synthetisch ──────────────────────────────────────────────────────────────────────────
@@ -405,7 +479,7 @@ function synthetic(): Doc {
   eq('S26 projectcode als proj_short_name', back.xer.scheduleOptions.sourceRows.find(r => r.table === 'PROJECT')?.cells.proj_short_name, 'RND-01');
   // Verliesverslag: dit project heeft feestdagnamen, een beschrijving bij een resource (gaat mee),
   // en geen andere verliezen.
-  eq('S27 verliesverslag', written.loss, [{ code: 'holidayNames', count: 3 }]);
+  eq('S27 verliesverslag', written.loss, [{ code: 'holidayNames', count: 5 }]);
   // Vastgelegde rekenuitvoer reist mee als "Datums zoals opgeslagen".
   const rec = back.recordedTimes?.[back.tasks.find(t => t.name === 'Gevel')!.id];
   const gevel = doc.tasks.find(t => t.name === 'Gevel')!;
@@ -510,7 +584,7 @@ function synthetic(): Doc {
       eq(`X3 ${file} ${t1.wbsCode}: naam, code, status`, [t2.name, t2.wbsCode, t2.status], [t1.name, t1.wbsCode, t1.status]);
       eq(`X4 ${file} ${t1.wbsCode}: duur en restduur (min)`, [t2.time.durationMinutes, t2.time.remainingMinutes], [t1.time.durationMinutes, t1.time.remainingMinutes]);
       eq(`X5 ${file} ${t1.wbsCode}: geplande start en einde`, [t2.time.scheduleStart, t2.time.scheduleFinish], [t1.time.scheduleStart, t1.time.scheduleFinish]);
-      eq(`X6 ${file} ${t1.wbsCode}: type, duurtype, werkregel`, [t2.p6ActivityType, t2.p6DurationType, t2.workRule], [t1.p6ActivityType === 'TT_WBS' ? 'TT_Task' : t1.p6ActivityType, t1.p6DurationType, t1.workRule]);
+      eq(`X6 ${file} ${t1.wbsCode}: type, duurtype, werkregel`, [t2.p6ActivityType, t2.p6DurationType, t2.workRule], [t1.p6ActivityType, t1.p6DurationType, t1.workRule]);
       eq(`X7 ${file} ${t1.wbsCode}: kalender`, effCal(doc2, t2).name, effCal(doc1, t1).name);
     }
     eq(`X8 ${file}: kalenderbanden`, doc2.calendar.workTime, doc1.calendar.workTime);

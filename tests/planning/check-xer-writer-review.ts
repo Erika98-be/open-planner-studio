@@ -24,6 +24,7 @@ import { createDefaultTaskTime } from '@/utils/taskDefaults';
 import { CalendarEngine } from '@/engine/scheduler/CalendarEngine';
 import { calendarForEngine } from '@/utils/effectiveWorkTime';
 import { parseDate } from '@/utils/dateUtils';
+import { remainingMinutesOf } from '@/engine/work/workRuleApply';
 import type { Task } from '@/types/task';
 import type { WorkCalendar } from '@/types/calendar';
 import type { Resource, ResourceAssignment } from '@/types/resource';
@@ -53,7 +54,8 @@ function rowsOf(bytes: Uint8Array, name: string): Record<string, string>[] {
 function planOf(r: ImportResult): unknown {
   return {
     project: { ...r.project, createdAt: undefined, modifiedAt: undefined },
-    calendar: r.calendar, calendars: r.resourceCalendars ?? [], tasks: r.tasks, sequences: r.sequences,
+    // Eigen-veldwaarden op taken tellen hier niet: die horen juist zichtbaar te blijven (R1c/R1f).
+    calendar: r.calendar, calendars: r.resourceCalendars ?? [], tasks: r.tasks.map(t => ({ ...t, customFields: undefined })), sequences: r.sequences,
     resources: r.resources, assignments: r.assignments,
   };
 }
@@ -194,7 +196,10 @@ function leaf(name: string, days: number, extra: Partial<Task> = {}): Task {
   eq('R5a begroot, rest, verricht (uren)', [tr.target_qty, tr.remain_qty, tr.act_reg_qty], ['80', '40', '40']);
   const back = read(w.bytes);
   const a = back.assignments[0];
-  eq('R5b heropend: restwerk 2400 min', a?.remainingWorkMinutes, 2400);
+  const backTask = back.tasks.find(x => x.name === 'Half')!;
+  // Effectief restwerk zoals de werkregelbrug het ziet (`remainingWorkOf`): het veld, anders restduur × inzet.
+  const effectiveRemaining = a?.remainingWorkMinutes ?? remainingMinutesOf(backTask, { hoursPerDay: 8 }) * (a?.unitsPerDay ?? 0);
+  eq('R5b heropend: effectief restwerk 2400 min, verricht 2400 min', [effectiveRemaining, a?.actualWorkMinutes], [2400, 2400]);
 }
 
 // ── R6: werkende uitzondering over middernacht ───────────────────────────────────────────────────

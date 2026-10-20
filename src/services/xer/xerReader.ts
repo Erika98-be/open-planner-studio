@@ -582,7 +582,6 @@ function readXerProject(
   metadataCatalog: XerMetadataCatalog,
   taskResourceRowsByProject: ReadonlyMap<string, readonly XerRow[]>,
   projectRowsIndex: XerProjectRowsIndex,
-  opsMarkers?: XerOpsMarkers,
 ): XerReadResult {
   const projectRow = scheduleOptionsIndex.projectRowsById.get(projectId)?.row;
   if (!projectRow) {
@@ -629,6 +628,9 @@ function readXerProject(
     }
   }
 
+  // Alleen een volledig herkende OPS-export van DIT project (`xerOpsMarkers.ts`); anders de gewone
+  // P6-regels, precies als zonder markeringen.
+  const opsMarkers: XerOpsMarkers | undefined = readXerOpsMarkers(tables, projectId, activityRows);
   const calendars = readXerCalendars(tables, { opsExport: opsMarkers !== undefined });
   const calendarList: WorkCalendar[] = [...calendars.calendars];
   // P6 kan een geldige project-/taakexport zonder CALENDAR-tabel leveren. De projectverwijzing
@@ -1234,7 +1236,6 @@ export function readXER(bytes: Uint8Array): XerOpenResult {
   const metadataCatalog = buildXerMetadataCatalog(tables);
   const taskResourceRowsByProject = indexXerTaskResourceRows(tables);
   const projectRowsIndex = indexXerProjectRows(tables);
-  const opsMarkers = readXerOpsMarkers(tables);
   const unresolvedRelation = projectRowsIndex.relationResolutionIssues[0];
   if (unresolvedRelation) {
     if (unresolvedRelation.reason === 'dangling') {
@@ -1261,7 +1262,6 @@ export function readXER(bytes: Uint8Array): XerOpenResult {
       metadataCatalog,
       taskResourceRowsByProject,
       projectRowsIndex,
-      opsMarkers,
     ),
   );
   // Precies één frozen bytearchief per ingelezen bestand. De projectmappers leveren alleen views;
