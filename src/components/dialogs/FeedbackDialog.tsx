@@ -45,6 +45,7 @@ const ERROR_KEYS = {
   rateLimited: 'feedback.errorRateLimited',
   duplicate: 'feedback.errorDuplicate',
   failed: 'feedback.errorFailed',
+  uncertain: 'feedback.errorUncertain',
 } as const satisfies Record<FeedbackErrorKind, string>;
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -72,7 +73,10 @@ export function FeedbackDialog() {
   // Verstuur-state
   const [sending, setSending] = useState(false);
   const [submitError, setSubmitError] = useState<FeedbackErrorKind | null>(null);
-  const [sent, setSent] = useState<SubmitFeedbackResult | null>(null);
+  const [sent, setSent] = useState<(SubmitFeedbackResult & { alreadyArrived?: boolean }) | null>(null);
+  // Gaf een eerdere poging in deze dialoogsessie `uncertain`? Dan betekent een 409 (dubbel) op een
+  // volgende poging: de eerste is toch aangekomen. Dat is een succes, geen fout.
+  const hadUncertain = useRef(false);
   // Terugval PAD B: plak-instructie voor GitHub.
   const [fallback, setFallback] = useState<SendResult | null>(null);
 
@@ -161,7 +165,13 @@ export function FeedbackDialog() {
       setSent(res);
     } catch (err) {
       console.warn('Feedback versturen mislukt:', err);
-      setSubmitError(err instanceof FeedbackSubmitError ? err.kind : 'failed');
+      const kind: FeedbackErrorKind = err instanceof FeedbackSubmitError ? err.kind : 'failed';
+      if (kind === 'duplicate' && hadUncertain.current) {
+        setSent({ githubIssueUrl: null, screenshotDropped: false, screenshotBytes: null, alreadyArrived: true });
+        return;
+      }
+      if (kind === 'uncertain') hadUncertain.current = true;
+      setSubmitError(kind);
     } finally {
       setSending(false);
     }
@@ -224,7 +234,9 @@ export function FeedbackDialog() {
           {sent ? (
             /* ── Bedankscherm (hoofdweg geslaagd) ── */
             <div className="feedback-confirm" data-feedback-sent>
-              <p className="feedback-confirm-title" role="status">{t('feedback.sentTitle')}</p>
+              <p className="feedback-confirm-title" role="status">
+                {sent.alreadyArrived ? t('feedback.sentAlready') : t('feedback.sentTitle')}
+              </p>
               {sent.screenshotDropped && (
                 <p className="feedback-confirm-fallback">{t('feedback.sentScreenshotDropped')}</p>
               )}
@@ -339,6 +351,7 @@ export function FeedbackDialog() {
                 <ScreenshotAnnotator
                   screenshotDataUrl={screenshotDataUrl}
                   onChange={setAnnotatedDataUrl}
+                  disabled={sending}
                 />
               )}
 

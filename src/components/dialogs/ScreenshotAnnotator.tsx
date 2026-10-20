@@ -141,11 +141,13 @@ interface ScreenshotAnnotatorProps {
   screenshotDataUrl: string;
   /** Wordt aangeroepen als de editor sluit, met de geflattende PNG-dataURL. */
   onChange: (flattenedDataUrl: string) => void;
+  /** Tijdens versturen: *Annoteren* staat uit, want de upload is al opgebouwd. */
+  disabled?: boolean;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function ScreenshotAnnotator({ screenshotDataUrl, onChange }: ScreenshotAnnotatorProps) {
+export function ScreenshotAnnotator({ screenshotDataUrl, onChange, disabled = false }: ScreenshotAnnotatorProps) {
   const { t } = useTranslation('common');
 
   const [editorOpen, setEditorOpen] = useState(false);
@@ -349,6 +351,7 @@ export function ScreenshotAnnotator({ screenshotDataUrl, onChange }: ScreenshotA
         <button
           className="screenshot-annotator-open-btn"
           onClick={openEditor}
+          disabled={disabled}
           title={t('feedback.annotate')}
         >
           <Pencil size={16} />

@@ -139,13 +139,31 @@ test('429: vertaalde fout, de ingevulde tekst blijft staan, geen GitHub-terugval
   await expect(dialog.getByRole('button', { name: 'Open on GitHub' })).toHaveCount(0);
 });
 
-test('netwerkfout: vertaalde fout en de knop Open op GitHub', async ({ page, ops }) => {
-  ops.acceptError(/net::ERR_FAILED|Failed to fetch/);
-  await mockApi(page, async route => { await route.abort('failed'); });
+const UNCERTAIN = 'We are not sure whether your report arrived. Wait a minute and then send it again; if it is already there, we will see that automatically.';
+const FAILED = 'Sending failed. Check your internet connection and try again, or open the report on GitHub.';
+
+/** Korte timeout in de dev-build (zelfde module-instantie als de dialoog), zodat de test geen 20 s wacht. */
+async function shortTimeout(page: Page, ms: number) {
+  await page.evaluate(async (value) => {
+    const modulePath = '/src/services/feedback/feedbackService.ts';
+    const mod = await import(/* @vite-ignore */ modulePath) as typeof import('@/services/feedback/feedbackService');
+    mod.setFeedbackTimeoutForTests(value);
+  }, ms);
+}
+
+const json = (status: number, body: unknown) => async (route: Route) => {
+  await route.fulfill({
+    status, contentType: 'application/json',
+    headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify(body),
+  });
+};
+
+test('5xx: zeker niet aangekomen, de knop Open op GitHub volgt de oude weg', async ({ page, ops }) => {
+  ops.acceptError(/status of 503/);
+  await mockApi(page, json(503, { error: 'Service unavailable' }));
   const dialog = await fillForm(page);
   await dialog.getByRole('button', { name: 'Send', exact: true }).click();
-  await expect(dialog.getByRole('alert')).toHaveText(
-    'Sending failed. Check your internet connection and try again, or open the report on GitHub.');
+  await expect(dialog.getByRole('alert')).toHaveText(FAILED);
   await expect(dialog.getByRole('button', { name: 'Open on GitHub' })).toBeVisible();
   await expect(dialog.getByLabel('Title')).toHaveValue(TITLE);
 
@@ -158,6 +176,102 @@ test('netwerkfout: vertaalde fout en de knop Open op GitHub', async ({ page, ops
   expect(opened.url()).toContain('github.com/OpenAEC-Foundation/open-planner-studio/issues/new');
   expect(decodeURIComponent(opened.url())).toContain(TITLE);
   await opened.close();
+});
+
+test('offline vóór verzenden: zeker niet aangekomen, Open op GitHub', async ({ page, ops }) => {
+  ops.acceptError(/ERR_INTERNET_DISCONNECTED|net::ERR_FAILED|Failed to fetch/);
+  const dialog = await fillForm(page);
+  await page.context().setOffline(true);
+  await dialog.getByRole('button', { name: 'Send', exact: true }).click();
+  await expect(dialog.getByRole('alert')).toHaveText(FAILED);
+  await expect(dialog.getByRole('button', { name: 'Open on GitHub' })).toBeVisible();
+  await page.context().setOffline(false);
+});
+
+test('netwerkfout na verzenden (abort): onzeker, geen GitHub-knop, tekst blijft', async ({ page, ops }) => {
+  ops.acceptError(/net::ERR_FAILED|Failed to fetch/);
+  await mockApi(page, async route => { await route.abort('failed'); });
+  const dialog = await fillForm(page);
+  await dialog.getByRole('button', { name: 'Send', exact: true }).click();
+  await expect(dialog.getByRole('alert')).toHaveText(UNCERTAIN);
+  await expect(dialog.getByRole('button', { name: 'Open on GitHub' })).toHaveCount(0);
+  await expect(dialog.getByLabel('Title')).toHaveValue(TITLE);
+  await expect(dialog.getByLabel('Description')).toHaveValue(DESCRIPTION);
+});
+
+test('B1: timeout geeft onzeker; een 409 op de volgende poging telt als aangekomen', async ({ page, ops }) => {
+  ops.acceptError(/status of 409/);
+  await shortTimeout(page, 400);
+  let calls = 0;
+  const hanging: Route[] = [];
+  await page.route(ENDPOINT, async route => {
+    calls += 1;
+    if (calls === 1) { hanging.push(route); return; } // eerste poging: de server antwoordt niet op tijd
+    await json(409, { error: 'Duplicate feedback' })(route);
+  });
+  const dialog = await fillForm(page);
+  await dialog.getByRole('button', { name: 'Send', exact: true }).click();
+  await expect(dialog.getByRole('alert')).toHaveText(UNCERTAIN, { timeout: 5_000 });
+  await expect(dialog.getByRole('button', { name: 'Open on GitHub' })).toHaveCount(0);
+  await expect(dialog.getByLabel('Title')).toHaveValue(TITLE);
+
+  await dialog.getByRole('button', { name: 'Send', exact: true }).click();
+  await expect(dialog.getByText('Your report had already arrived.')).toBeVisible();
+  await expect(dialog.getByRole('button', { name: 'View on GitHub' })).toHaveCount(0);
+  expect(calls).toBe(2);
+  for (const r of hanging) await r.abort().catch(() => { /* verzoek al afgebroken door de client */ });
+});
+
+test('409 zonder eerdere onzekere poging: gewone melding voor een dubbele melding', async ({ page, ops }) => {
+  ops.acceptError(/status of 409/);
+  await mockApi(page, json(409, { error: 'Duplicate feedback' }));
+  const dialog = await fillForm(page);
+  await dialog.getByRole('button', { name: 'Send', exact: true }).click();
+  await expect(dialog.getByRole('alert')).toHaveText('This report was already sent in the last 24 hours.');
+  await expect(dialog.getByRole('button', { name: 'Open on GitHub' })).toHaveCount(0);
+});
+
+test('B1: headers meteen, body valt stil: de timeout slaat ook dan toe', async ({ page, ops }) => {
+  void ops;
+  await shortTimeout(page, 400);
+  // De body-stream die nooit sluit kan Playwright niet nabootsen met route.fulfill; daarom levert
+  // een vervangen fetch voor alleen dit endpoint een 200 met een stilvallende body. De
+  // gebruikershandeling (klikken op Versturen) blijft echt.
+  await page.evaluate((endpoint) => {
+    const realFetch = window.fetch.bind(window);
+    window.fetch = (input, init) => {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+      if (url !== endpoint) return realFetch(input, init);
+      const stalled = new ReadableStream<Uint8Array>({ start() { /* nooit data, nooit sluiten */ } });
+      return Promise.resolve(new Response(stalled, { status: 200, headers: { 'content-type': 'application/json' } }));
+    };
+  }, ENDPOINT);
+  const dialog = await fillForm(page);
+  await dialog.getByRole('button', { name: 'Send', exact: true }).click();
+  await expect(dialog.getByRole('alert')).toHaveText(UNCERTAIN, { timeout: 5_000 });
+  await expect(dialog.getByRole('button', { name: 'Open on GitHub' })).toHaveCount(0);
+  await expect(dialog.getByRole('button', { name: 'Send', exact: true })).toBeEnabled();
+});
+
+test('B2: tijdens versturen staan Annoteren en het screenshot-vinkje uit', async ({ page, ops }) => {
+  void ops;
+  test.setTimeout(60_000);
+  let release: (() => void) | null = null;
+  const held = new Promise<void>(resolve => { release = resolve; });
+  await mockApi(page, async route => { await held; await ok(null)(route); });
+  const dialog = await fillForm(page);
+  await dialog.getByLabel('Attach screenshot').check();
+  await expect(dialog.locator('.screenshot-annotator-thumb-img')).toBeVisible({ timeout: 20_000 });
+  const annotate = dialog.getByRole('button', { name: 'Annotate' });
+  await expect(annotate).toBeEnabled();
+
+  await dialog.getByRole('button', { name: 'Send', exact: true }).click();
+  await expect(dialog.getByRole('button', { name: 'Sending…' })).toBeDisabled();
+  await expect(annotate).toBeDisabled();
+  await expect(dialog.getByLabel('Attach screenshot')).toBeDisabled();
+
+  release!();
+  await expect(dialog.getByText('Thank you, your report has been sent.')).toBeVisible({ timeout: 20_000 });
 });
 
 test('met screenshot: multipart met één verkleinde afbeelding onder 1 MB', async ({ page, ops }) => {
