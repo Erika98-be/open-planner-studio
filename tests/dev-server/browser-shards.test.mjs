@@ -154,6 +154,12 @@ test('verify-parts --check-ci: de browsershards in ci.yml zijn samen precies 1..
     for (const [label, broken] of [
       ['dubbele shard', yaml.replace('shard: 3/4', 'shard: 2/4')],
       ['ontbrekende shard', yaml.replace(/^.*shard: 4\/4.*\n/m, '')],
+      // Review PR #399: het record van shard 4/4 naar een ander deel verhuisd; de shardregels zelf kloppen nog.
+      ['shard 4/4 bij een ander deel', (() => {
+        const at = yaml.indexOf('shard: 4/4');
+        const partAt = yaml.lastIndexOf('part: browser', at);
+        return `${yaml.slice(0, partAt)}part: static${yaml.slice(partAt + 'part: browser'.length)}`;
+      })()],
     ]) {
       assert.notEqual(broken, yaml, `${label}: de fixture wijzigt ci.yml`);
       const file = join(dir, 'ci.yml');
