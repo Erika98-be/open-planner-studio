@@ -129,6 +129,7 @@
       "workWindowFinish": "Slutdato for arbejdsvindue",
       "workWindowStart": "Startdato for arbejdsvindue",
       "workRule": "Arbejdsregel",
+      "assignmentPlannedUnits": "Planlagte tildelingsenheder pr. dag",
       "assignmentPlannedWork": "Planlagt arbejde (timer)",
       "assignmentActualWork": "Faktisk arbejde (timer)",
       "assignmentRemainingWork": "Resterende arbejde (timer)"
@@ -153,6 +154,7 @@
       "scheduleFinishNotManual": "Planlagt slutdato gælder kun for en manuelt planlagt opgave. Ændr slutdatoen via kolonnen Slutdato eller via varigheden.",
       "finishFromDuration": "For denne opgave følger slutdatoen af startdatoen og varigheden. Ændr startdatoen eller varigheden.",
       "finishBeforeStart": "Slutdatoen ligger før startdatoen.",
+      "startIsActual": "Denne opgave er startet; startdatoen er en faktisk startdato. Ændr den via fremdriften.",
       "finishIsActual": "Denne opgave er færdig, så slutdatoen er en faktisk slutdato. Ændr den via fremdriften.",
       "invalid": "Den indtastede værdi er ikke gyldig.",
       "relationToken": "Brug fx 1.2 FS+2d.",
@@ -284,6 +286,7 @@
       "externalRelations_one": "{{count}} ekstern afhængighed",
       "externalRelations_other": "{{count}} eksterne afhængigheder",
       "baselineMissing": "Ikke til stede i denne oprindelige plan",
+      "baselineOldDay": "Den oprindelige plan er gemt med en ældre version, der talte en dag anderledes. Afvigelsen i varighed er derfor ikke korrekt. Gem den oprindelige plan igen.",
       "baselineVarianceStart": "Startafvigelse",
       "baselineVarianceFinish": "Slutafvigelse",
       "baselineVarianceDuration": "Varighedsafvigelse"
@@ -358,7 +361,24 @@
     "FIXED_RATE": "Faste enheder",
     "label": "Arbejdsregel",
     "projectDefault": "Projektstandard ({{rule}})",
-    "none": "Projektstandard"
+    "none": "Projektstandard",
+    "explain": {
+      "followsWork": "Arbejdet følger af varigheden og tildelingsenhederne.",
+      "followsUnits": "Tildelingsenhederne følger af varigheden og arbejdet.",
+      "followsDuration": "Varigheden følger af arbejdet og tildelingsenhederne.",
+      "followsUnitsFromWork": "Tildelingsenhederne følger af arbejdet.",
+      "workAdjustsUnits": "Ændrer du arbejdet, tilpasser tildelingsenhederne sig.",
+      "unitsAdjustsWork": "Ændrer du tildelingsenhederne, tilpasser arbejdet sig.",
+      "durationAdjustsUnits": "Ændrer du varigheden, tilpasser tildelingsenhederne sig.",
+      "durationAdjustsWork": "Ændrer du varigheden, tilpasser arbejdet sig.",
+      "unitsOrDurationAdjustsWork": "Ændrer du tildelingsenhederne eller varigheden, tilpasser arbejdet sig.",
+      "resourceAddsWork": "En ekstra ressource tilføjer arbejde.",
+      "resourceSharesWork": "En ekstra ressource overtager en del af arbejdet; tildelingsenhederne pr. ressource falder.",
+      "resourceShorter": "En ekstra ressource gør opgaven kortere.",
+      "resourceShorterWholeDays": "En ekstra ressource gør opgaven kortere, afrundet til hele dage.",
+      "resourceAddsWorkSameDuration": "En ekstra ressource tilføjer arbejde; varigheden forbliver den samme."
+    },
+    "info": "Forklaring af opgavetypen"
   },
   "properties": {
     "task": "Opgave",
@@ -406,6 +426,12 @@
     "timephasedActive": "Følger timefordelingen fra MS Project",
     "timephasedLost": "Datovindue fra MS Project er ikke længere anvendt efter redigering — timefordelingen selv gælder stadig og gemmes",
     "timephasedContoured": "Egen timefordeling",
+    "recordedDatesShown": "Du ser de datoer, som Primavera gemte, ikke appens beregning.",
+    "recordedDatesShownNeutral": "Du ser de datoer, som stod i filen, ikke appens beregning.",
+    "recordedDatesWillShift": "Når du genberegner, ændrer denne opgave sig.",
+    "recordedDatesWillStay": "Når du genberegner, forbliver denne opgave uændret.",
+    "recordedDatesMissing": "Primavera har ikke gemt alt for denne opgave. Mangler: {{fields}}.",
+    "recordedDatesMissingNeutral": "Filen indeholder ikke alt for denne opgave. Mangler: {{fields}}.",
     "completion": "Fremdrift (%)",
     "progress": {
       "actualStart": "Faktisk startdato",
@@ -455,6 +481,10 @@
       "workHint": "Resterende arbejde i timer; arbejdsreglen afgør om varighed eller tildelingsenheder ændrer sig.",
       "workDeviates": "Afviger fra tildelingsenheder × varighed",
       "workDeviatesHint": "Gemt arbejde {{stored}} t afviger fra tildelingsenheder × resterende varighed ({{derived}} t). Histogrammet følger det gemte arbejde over hele opgavens varighed; enhederne bliver som filen gav dem. Hvis du ændrer varigheden, genberegner appen det.",
+      "workDeviatesMany": "Det gemte arbejde afviger fra tildelingsenheder × resterende varighed:\n{{lines}}\n{{durationEffect}}",
+      "workDeviatesLine": "{{name}}: {{stored}}t (tildelingsenheder × resterende varighed: {{derived}}t)",
+      "workDeviatesFollowsDuration": "Appen ændrer ikke dette selv. Ændrer du varigheden, erstatter appen dette arbejde med tildelingsenheder × ny varighed. Du får så en meddelelse; Ctrl+Z fortryder det.",
+      "workDeviatesKeepsWork": "Appen ændrer ikke dette selv. Ændrer du varigheden, bliver dette arbejde stående, og appen tilpasser tildelingsenhederne.",
       "locked": "Beskyttet af arbejdsreglen {{rule}}"
     },
     "notes": {

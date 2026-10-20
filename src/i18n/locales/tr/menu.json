@@ -60,6 +60,11 @@
       "startHour": "Başlangıç (saat)",
       "endHour": "Bitiş (saat)",
       "hoursPerDay": "Günlük saat",
+      "hoursValue": "{{hours}} sa",
+      "standardWorkday": "Standart iş günü",
+      "standardWorkdayInfo": "En sık görülen iş günü uzunluğudur. Uygulama bir günü bununla saate dönüştürür.",
+      "standardWorkdayInfoLabel": "Standart iş günü açıklaması",
+      "fileHoursPerDayNotice": "Dosyada iş günü {{fileHours}} sa olarak ayarlı. Bu, MS Project ve P6'ya dışa aktarımda korunur. Orada bir gün {{fileHours}} sa, burada {{appHours}} sa sayılır.",
       "holidaysSection": "Tatiller",
       "holidayName": "Açıklama",
       "from": "Başlangıç",
@@ -148,6 +153,9 @@
     "manageBaselines": "Temel planları yönet…",
     "statusDate": "Durum tarihi",
     "statusDateClear": "Durum tarihini temizle",
+    "statusDateTime": "Durum tarihi saati",
+    "statusDateTimeLater": "Saat ileri",
+    "statusDateTimeEarlier": "Saat geri",
     "progressMode": "İlerleme modu",
     "progressModeRetained": "Retained Logic",
     "progressModeOverride": "Progress Override",
@@ -232,6 +240,7 @@
       "ssLagEarlyStart": "Erken başlangıç (kalan iş başlangıcı)",
       "ssLagActualStart": "Gerçek başlangıç (durum tarihi)",
       "ssLagNeedsConvention": "Yalnızca “{{convention}}” kuralı açıkken geçerlidir.",
+      "ssLagNeedsHourPlanning": "Yalnızca saat planlamasıyla çalışır: bantlar veya saat cinsinden görevler içeren bir takvim. Bu projede seçilen gecikme takvimi ikisini de içermiyor.",
       "criticalDefinition": "Kritik tanımı",
       "critTotalFloat": "Toplam bolluk ≤ eşik",
       "critLongestPath": "En uzun yol",
@@ -252,6 +261,12 @@
       "maxPaths": "Maks. yol",
       "tfAuto": "Otomatik (varsayılan)",
       "critThresholdHours": "Eşik (saat, görev takvimine göre)"
+    },
+    "ifcSchema": {
+      "label": "Kaydederken IFC şeması",
+      "optionIfc4x3": "IFC 4.3",
+      "optionIfc4x3Add2": "IFC 4.3 ADD2 (varsayılan)",
+      "optionIfc4": "IFC4"
     }
   },
   "newProject": {

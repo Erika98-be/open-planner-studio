@@ -129,6 +129,7 @@
       "workWindowFinish": "Sfârșit fereastră de lucru",
       "workWindowStart": "Început fereastră de lucru",
       "workRule": "Regulă de lucru",
+      "assignmentPlannedUnits": "Unități de atribuire planificate pe zi",
       "assignmentPlannedWork": "Lucru planificat (ore)",
       "assignmentActualWork": "Lucru real (ore)",
       "assignmentRemainingWork": "Lucru rămas (ore)"
@@ -153,6 +154,7 @@
       "scheduleFinishNotManual": "Sfârșitul planificat se aplică doar unei activități planificate manual. Modificați sfârșitul în coloana Sfârșit sau prin durată.",
       "finishFromDuration": "Pentru această activitate, sfârșitul rezultă din început și din durată. Modificați începutul sau durata.",
       "finishBeforeStart": "Sfârșitul este înainte de început.",
+      "startIsActual": "Această activitate a început; începutul ei este începutul efectiv. Modificați-l prin progres.",
       "finishIsActual": "Această activitate este finalizată; sfârșitul este sfârșitul efectiv. Modificați-l prin progres.",
       "invalid": "Valoarea introdusă nu este validă.",
       "relationToken": "Utilizați, de exemplu, 1.2 FS+2d.",
@@ -288,6 +290,7 @@
       "externalRelations_few": "{{count}} legături între proiecte",
       "externalRelations_other": "{{count}} de legături între proiecte",
       "baselineMissing": "Nu există în această referință",
+      "baselineOldDay": "Această referință a fost salvată cu o versiune mai veche, care număra o zi altfel. De aceea varianța duratei nu este corectă. Creați din nou referința.",
       "baselineVarianceStart": "Varianță de început",
       "baselineVarianceFinish": "Varianță de sfârșit",
       "baselineVarianceDuration": "Varianță de durată"
@@ -362,7 +365,24 @@
     "FIXED_RATE": "Unități fixe",
     "label": "Regulă de lucru",
     "projectDefault": "Standard de proiect ({{rule}})",
-    "none": "Standard de proiect"
+    "none": "Standard de proiect",
+    "explain": {
+      "followsWork": "Lucrul rezultă din durată și din unități de atribuire.",
+      "followsUnits": "Unitățile de atribuire rezultă din durată și din lucru.",
+      "followsDuration": "Durata rezultă din lucru și din unități de atribuire.",
+      "followsUnitsFromWork": "Unitățile de atribuire rezultă din lucru.",
+      "workAdjustsUnits": "Dacă modificați lucrul, unitățile de atribuire se ajustează.",
+      "unitsAdjustsWork": "Dacă modificați unitățile de atribuire, lucrul se ajustează.",
+      "durationAdjustsUnits": "Dacă modificați durata, unitățile de atribuire se ajustează.",
+      "durationAdjustsWork": "Dacă modificați durata, lucrul se ajustează.",
+      "unitsOrDurationAdjustsWork": "Dacă modificați unitățile de atribuire sau durata, lucrul se ajustează.",
+      "resourceAddsWork": "O resursă suplimentară adaugă lucru.",
+      "resourceSharesWork": "O resursă suplimentară preia o parte din lucru; unitățile de atribuire pe resursă scad.",
+      "resourceShorter": "O resursă suplimentară face activitatea mai scurtă.",
+      "resourceShorterWholeDays": "O resursă suplimentară face activitatea mai scurtă, rotunjită la zile întregi.",
+      "resourceAddsWorkSameDuration": "O resursă suplimentară adaugă lucru; durata rămâne aceeași."
+    },
+    "info": "Explicație despre tipul de activitate"
   },
   "properties": {
     "task": "Activitate",
@@ -410,6 +430,12 @@
     "timephasedActive": "Urmează distribuția orelor din MS Project",
     "timephasedLost": "Fereastra de date din MS Project nu mai este aplicată după editare — distribuția orelor rămâne valabilă și se păstrează în fișier",
     "timephasedContoured": "Distribuție proprie a orelor",
+    "recordedDatesShown": "Vedeți datele salvate de Primavera, nu calculul aplicației.",
+    "recordedDatesShownNeutral": "Vedeți datele care se aflau în fișier, nu calculul aplicației.",
+    "recordedDatesWillShift": "La recalculare, această activitate se modifică.",
+    "recordedDatesWillStay": "La recalculare, această activitate rămâne neschimbată.",
+    "recordedDatesMissing": "Primavera nu a salvat totul pentru această activitate. Lipsește: {{fields}}.",
+    "recordedDatesMissingNeutral": "Fișierul nu conține totul pentru această activitate. Lipsește: {{fields}}.",
     "completion": "Progres (%)",
     "progress": {
       "actualStart": "Început efectiv",
@@ -459,6 +485,10 @@
       "workHint": "Lucru rămas în ore; regula de lucru stabilește dacă se modifică durata sau unitățile de atribuire.",
       "workDeviates": "Diferă de unități de atribuire × durată",
       "workDeviatesHint": "Lucrul salvat {{stored}} h diferă de unități de atribuire × durata rămasă ({{derived}} h). Histograma urmează lucrul salvat pe toată durata activității; unitățile de atribuire rămân cum le-a dat fișierul. La modificarea duratei, aplicația îl recalculează.",
+      "workDeviatesMany": "Lucrul salvat diferă de unități de atribuire × durată rămasă:\n{{lines}}\n{{durationEffect}}",
+      "workDeviatesLine": "{{name}}: {{stored}}h (unități de atribuire × durată rămasă: {{derived}}h)",
+      "workDeviatesFollowsDuration": "Aplicația nu modifică acest lucru de la sine. Dacă modificați durata, aplicația înlocuiește acest lucru cu unități de atribuire × durata nouă. Apoi primiți o notificare; Ctrl+Z îl readuce.",
+      "workDeviatesKeepsWork": "Aplicația nu modifică acest lucru de la sine. Dacă modificați durata, acest lucru rămâne și aplicația ajustează unitățile de atribuire.",
       "locked": "Protejat de regula de lucru {{rule}}"
     },
     "notes": {

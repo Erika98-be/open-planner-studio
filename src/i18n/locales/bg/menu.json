@@ -60,6 +60,11 @@
       "startHour": "Начало (час)",
       "endHour": "Завършване (час)",
       "hoursPerDay": "Часове на ден",
+      "hoursValue": "{{hours}}ч",
+      "standardWorkday": "Стандартен работен ден",
+      "standardWorkdayInfo": "Дължината на работния ден, която се среща най-често. С нея приложението превръща ден в часове.",
+      "standardWorkdayInfoLabel": "Обяснение за стандартния работен ден",
+      "fileHoursPerDayNotice": "Файлът има собствен работен ден от {{fileHours}}ч. При експорт към MS Project и P6 той се запазва. Там един ден се брои за {{fileHours}}ч, тук — за {{appHours}}ч.",
       "holidaysSection": "Празнични дни",
       "holidayName": "Описание",
       "from": "От",
@@ -148,6 +153,9 @@
     "manageBaselines": "Управлявай базови линии…",
     "statusDate": "Дата на състоянието",
     "statusDateClear": "Изчисти дата на състоянието",
+    "statusDateTime": "Час на датата на състоянието",
+    "statusDateTimeLater": "По-късен час",
+    "statusDateTimeEarlier": "По-ранен час",
     "progressMode": "Режим на отчитане на напредъка",
     "progressModeRetained": "Retained Logic",
     "progressModeOverride": "Progress Override",
@@ -232,6 +240,7 @@
       "ssLagEarlyStart": "Ранно начало (начало на остатъка)",
       "ssLagActualStart": "Действително начало (дата на състоянието)",
       "ssLagNeedsConvention": "Важи само ако правилото за изчисление „{{convention}}“ е включено.",
+      "ssLagNeedsHourPlanning": "Работи само при планиране по часове: календар с интервали или задачи в часове. Този проект няма нито едно от двете на избрания календар за време на отстъп.",
       "criticalDefinition": "Определение за критичност",
       "critTotalFloat": "Общ резерв ≤ праг",
       "critLongestPath": "Най-дълъг път",
@@ -252,6 +261,12 @@
       "maxPaths": "Макс. пътища",
       "tfAuto": "Автоматично (по подразбиране)",
       "critThresholdHours": "Праг (часове, по календар на задачата)"
+    },
+    "ifcSchema": {
+      "label": "IFC схема при запазване",
+      "optionIfc4x3": "IFC 4.3",
+      "optionIfc4x3Add2": "IFC 4.3 ADD2 (по подразбиране)",
+      "optionIfc4": "IFC4"
     }
   },
   "newProject": {

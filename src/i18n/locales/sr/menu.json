@@ -60,6 +60,11 @@
       "startHour": "Почетак (сат)",
       "endHour": "Завршетак (сат)",
       "hoursPerDay": "Сати по дану",
+      "hoursValue": "{{hours}}ч",
+      "standardWorkday": "Стандардни радни дан",
+      "standardWorkdayInfo": "Дужина радног дана која се најчешће појављује. Помоћу ње апликација претвара дан у сате.",
+      "standardWorkdayInfoLabel": "Објашњење за стандардни радни дан",
+      "fileHoursPerDayNotice": "Датотека има сопствени радни дан од {{fileHours}}ч. Он се задржава при извозу у MS Project и P6. Тамо се дан рачуна као {{fileHours}}ч, а овде као {{appHours}}ч.",
       "holidaysSection": "Празници",
       "holidayName": "Опис",
       "from": "Од",
@@ -149,6 +154,9 @@
     "manageBaselines": "Управљај основним линијама…",
     "statusDate": "Датум статуса",
     "statusDateClear": "Обриши датум статуса",
+    "statusDateTime": "Време датума статуса",
+    "statusDateTimeLater": "Време касније",
+    "statusDateTimeEarlier": "Време раније",
     "progressMode": "Режим напретка",
     "progressModeRetained": "Retained Logic",
     "progressModeOverride": "Progress Override",
@@ -233,6 +241,7 @@
       "ssLagEarlyStart": "Најранији почетак (почетак преосталог посла)",
       "ssLagActualStart": "Стварни почетак (датум статуса)",
       "ssLagNeedsConvention": "Важи само када је правило израчунавања „{{convention}}” укључено.",
+      "ssLagNeedsHourPlanning": "Ради само ако је укључено планирање по сатима: календар са блоковима или задацима у сатима. Овај пројекат нема ниједно од ова два у изабраном календару за кашњења.",
       "criticalDefinition": "Дефиниција критичности",
       "critTotalFloat": "Укупна временска резерва ≤ гранична вредност",
       "critLongestPath": "Најдужа путања",
@@ -253,6 +262,12 @@
       "maxPaths": "Макс. путања",
       "tfAuto": "Аутоматски (подразумевано)",
       "critThresholdHours": "Гранична вредност (сати, по календару задатка)"
+    },
+    "ifcSchema": {
+      "label": "IFC шема при чувању",
+      "optionIfc4x3": "IFC 4.3",
+      "optionIfc4x3Add2": "IFC 4.3 ADD2 (подразумевано)",
+      "optionIfc4": "IFC4"
     }
   },
   "newProject": {

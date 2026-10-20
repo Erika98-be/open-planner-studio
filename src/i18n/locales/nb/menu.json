@@ -60,6 +60,11 @@
       "startHour": "Start (time)",
       "endHour": "Slutt (time)",
       "hoursPerDay": "Timer per dag",
+      "hoursValue": "{{hours}}t",
+      "standardWorkday": "Standardarbeidsdag",
+      "standardWorkdayInfo": "Lengden på arbeidsdagen som forekommer oftest. Appen bruker den til å regne om en dag til timer.",
+      "standardWorkdayInfoLabel": "Forklaring til standardarbeidsdag",
+      "fileHoursPerDayNotice": "Filen har en egen arbeidsdag på {{fileHours}}t. Den beholdes ved eksport til MS Project og P6. Der regnes én dag som {{fileHours}}t, her {{appHours}}t.",
       "holidaysSection": "Helligdager",
       "holidayName": "Beskrivelse",
       "from": "Fra",
@@ -148,6 +153,9 @@
     "manageBaselines": "Administrer grunnlinjer…",
     "statusDate": "Statusdato",
     "statusDateClear": "Tøm statusdato",
+    "statusDateTime": "Tid for statusdato",
+    "statusDateTimeLater": "Senere tid",
+    "statusDateTimeEarlier": "Tidligere tid",
     "progressMode": "Fremdriftsmodus",
     "progressModeRetained": "Retained Logic",
     "progressModeOverride": "Progress Override",
@@ -232,6 +240,7 @@
       "ssLagEarlyStart": "Tidligste start (start på restarbeid)",
       "ssLagActualStart": "Faktisk start (statusdato)",
       "ssLagNeedsConvention": "Fungerer bare når beregningsregelen «{{convention}}» er på.",
+      "ssLagNeedsHourPlanning": "Gjelder bare ved timeplanlegging: en kalender med tidsbånd eller aktiviteter i timer. Dette prosjektet har ingen av delene i den valgte forsinkelseskalenderen.",
       "criticalDefinition": "Definisjon av kritisk",
       "critTotalFloat": "Totalslakk ≤ terskelverdi",
       "critLongestPath": "Lengste sti",
@@ -252,6 +261,12 @@
       "maxPaths": "Maks. stier",
       "tfAuto": "Automatisk (standard)",
       "critThresholdHours": "Terskelverdi (timer, per aktivitetskalender)"
+    },
+    "ifcSchema": {
+      "label": "IFC-skjema ved lagring",
+      "optionIfc4x3": "IFC 4.3",
+      "optionIfc4x3Add2": "IFC 4.3 ADD2 (standard)",
+      "optionIfc4": "IFC4"
     }
   },
   "newProject": {

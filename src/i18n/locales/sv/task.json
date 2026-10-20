@@ -129,6 +129,7 @@
       "workWindowFinish": "Slut på arbetsfönster",
       "workWindowStart": "Start på arbetsfönster",
       "workRule": "Arbetsregel",
+      "assignmentPlannedUnits": "Planerade tilldelningsenheter per dag",
       "assignmentPlannedWork": "Planerat arbete (timmar)",
       "assignmentActualWork": "Verkligt arbete (timmar)",
       "assignmentRemainingWork": "Återstående arbete (timmar)"
@@ -153,6 +154,7 @@
       "scheduleFinishNotManual": "Planerat slut gäller bara för en manuellt schemalagd uppgift. Ändra slutet via kolumnen Slut eller via varaktigheten.",
       "finishFromDuration": "För den här uppgiften följer slutet av start och varaktighet. Ändra start eller varaktighet.",
       "finishBeforeStart": "Slutet ligger före starten.",
+      "startIsActual": "Den här uppgiften har startat. Dess start är den verkliga starten. Ändra den via framdriften.",
       "finishIsActual": "Den här uppgiften är klar. Slutet är det verkliga slutet. Ändra det via framdriften.",
       "invalid": "Det angivna värdet är inte giltigt.",
       "relationToken": "Använd till exempel 1.2 FS+2d.",
@@ -284,6 +286,7 @@
       "externalRelations_one": "{{count}} externt samband",
       "externalRelations_other": "{{count}} externa samband",
       "baselineMissing": "Finns inte i den här baslinjen",
+      "baselineOldDay": "Den här baslinjen sparades med en äldre version, som räknade en dag annorlunda. Avvikelsen i varaktighet stämmer därför inte. Ta baslinjen på nytt.",
       "baselineVarianceStart": "Startavvikelse",
       "baselineVarianceFinish": "Slutavvikelse",
       "baselineVarianceDuration": "Varaktighetsavvikelse"
@@ -358,7 +361,24 @@
     "FIXED_RATE": "Fasta enheter",
     "label": "Arbetsregel",
     "projectDefault": "Projektstandard ({{rule}})",
-    "none": "Projektstandard"
+    "none": "Projektstandard",
+    "explain": {
+      "followsWork": "Arbetet följer av varaktigheten och tilldelningsenheten.",
+      "followsUnits": "Tilldelningsenheten följer av varaktigheten och arbetet.",
+      "followsDuration": "Varaktigheten följer av arbetet och tilldelningsenheten.",
+      "followsUnitsFromWork": "Tilldelningsenheten följer av arbetet.",
+      "workAdjustsUnits": "Om du ändrar arbetet, anpassas tilldelningsenheten.",
+      "unitsAdjustsWork": "Om du ändrar tilldelningsenheten, anpassas arbetet.",
+      "durationAdjustsUnits": "Om du ändrar varaktigheten, anpassas tilldelningsenheten.",
+      "durationAdjustsWork": "Om du ändrar varaktigheten, anpassas arbetet.",
+      "unitsOrDurationAdjustsWork": "Om du ändrar tilldelningsenheten eller varaktigheten, anpassas arbetet.",
+      "resourceAddsWork": "En extra resurs lägger till arbete.",
+      "resourceSharesWork": "En extra resurs tar över en del av arbetet; tilldelningsenheten per resurs minskar.",
+      "resourceShorter": "En extra resurs gör uppgiften kortare.",
+      "resourceShorterWholeDays": "En extra resurs gör uppgiften kortare, avrundat till hela dagar.",
+      "resourceAddsWorkSameDuration": "En extra resurs lägger till arbete; varaktigheten förblir densamma."
+    },
+    "info": "Förklaring till uppgiftstypen"
   },
   "properties": {
     "task": "Uppgift",
@@ -406,6 +426,12 @@
     "timephasedActive": "Följer timfördelningen från MS Project",
     "timephasedLost": "MS Project-datumfönstret tillämpas inte längre efter redigering. Timfördelningen gäller fortfarande och sparas i filen.",
     "timephasedContoured": "Egen timfördelning",
+    "recordedDatesShown": "Du ser de datumen som Primavera sparade, inte appens beräkning.",
+    "recordedDatesShownNeutral": "Du ser de datumen som fanns i filen, inte appens beräkning.",
+    "recordedDatesWillShift": "När du beräknar om ändras den här uppgiften.",
+    "recordedDatesWillStay": "När du beräknar om förblir den här uppgiften oförändrad.",
+    "recordedDatesMissing": "Primavera sparade inte allt för den här uppgiften. Saknas: {{fields}}.",
+    "recordedDatesMissingNeutral": "Filen innehåller inte allt för den här uppgiften. Saknas: {{fields}}.",
     "completion": "Framdrift (%)",
     "progress": {
       "actualStart": "Verklig start",
@@ -455,6 +481,10 @@
       "workHint": "Återstående arbete i timmar. Arbetsregeln avgör om varaktighet eller tilldelningsenheter ändras.",
       "workDeviates": "Avviker från tilldelningsenheter × varaktighet",
       "workDeviatesHint": "Sparat arbete {{stored}} h avviker från tilldelningsenheter × återstående varaktighet ({{derived}} h). Histogrammet följer det sparade arbetet över hela uppgiftens varaktighet. Tilldelningsenheterna behålls som filen angav dem. Om du ändrar varaktigheten räknar appen om det.",
+      "workDeviatesMany": "Sparat arbete avviker från tilldelningsenhet × återstående varaktighet:\n{{lines}}\n{{durationEffect}}",
+      "workDeviatesLine": "{{name}}: {{stored}} h (tilldelningsenhet × återstående varaktighet: {{derived}} h)",
+      "workDeviatesFollowsDuration": "Appen ändrar inte detta av sig själv. Om du ändrar varaktigheten ersätter appen det här arbetet med tilldelningsenhet × ny varaktighet. Du får då ett meddelande. Ctrl+Z ångrar det.",
+      "workDeviatesKeepsWork": "Appen ändrar inte detta av sig själv. Om du ändrar varaktigheten står det här arbetet kvar och appen anpassar tilldelningsenheten.",
       "locked": "Skyddad av arbetsregeln {{rule}}"
     },
     "notes": {

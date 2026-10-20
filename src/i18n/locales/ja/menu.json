@@ -60,6 +60,11 @@
       "startHour": "開始（時）",
       "endHour": "終了（時）",
       "hoursPerDay": "1日の時間数",
+      "hoursValue": "{{hours}}時間",
+      "standardWorkday": "標準稼働日",
+      "standardWorkdayInfo": "最も頻繁に現れる稼働日の長さです。アプリはこの値を使って、1日を時間に換算します。",
+      "standardWorkdayInfoLabel": "標準稼働日の説明",
+      "fileHoursPerDayNotice": "このファイルには独自の稼働日があります。その長さは{{fileHours}}時間です。この値は MS Project と P6 へのエクスポート時にも保持されます。そちらでは1日を{{fileHours}}時間、ここでは{{appHours}}時間として数えます。",
       "holidaysSection": "祝日",
       "holidayName": "説明",
       "from": "開始",
@@ -147,6 +152,9 @@
     "manageBaselines": "ベースラインを管理…",
     "statusDate": "状態日",
     "statusDateClear": "状態日を解除",
+    "statusDateTime": "状態日の時刻",
+    "statusDateTimeLater": "時刻を後ろへ",
+    "statusDateTimeEarlier": "時刻を前へ",
     "progressMode": "進捗モード",
     "progressModeRetained": "Retained Logic",
     "progressModeOverride": "Progress Override",
@@ -231,6 +239,7 @@
       "ssLagEarlyStart": "最早開始（残作業の開始）",
       "ssLagActualStart": "実績開始（データ日付）",
       "ssLagNeedsConvention": "規則「{{convention}}」がオンのときのみ適用されます。",
+      "ssLagNeedsHourPlanning": "時間計画でのみ有効です。カレンダーに帯があるか、タスクが時間単位である必要があります。このプロジェクトは、選択したラグ用カレンダーのどちらも満たしていません。",
       "criticalDefinition": "クリティカルの定義",
       "critTotalFloat": "トータルフロート ≤ しきい値",
       "critLongestPath": "最長パス",
@@ -251,6 +260,12 @@
       "maxPaths": "最大パス数",
       "tfAuto": "自動（既定）",
       "critThresholdHours": "しきい値（時間、タスクカレンダーごと）"
+    },
+    "ifcSchema": {
+      "label": "保存時のIFCスキーマ",
+      "optionIfc4x3": "IFC 4.3",
+      "optionIfc4x3Add2": "IFC 4.3 ADD2 (既定)",
+      "optionIfc4": "IFC4"
     }
   },
   "newProject": {

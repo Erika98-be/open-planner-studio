@@ -60,6 +60,11 @@
       "startHour": "Início (hora)",
       "endHour": "Fim (hora)",
       "hoursPerDay": "Horas por dia",
+      "hoursValue": "{{hours}}h",
+      "standardWorkday": "Dia útil padrão",
+      "standardWorkdayInfo": "A duração do dia útil que ocorre mais vezes. Com ela, a aplicação converte um dia em horas.",
+      "standardWorkdayInfoLabel": "Explicação sobre o dia útil padrão",
+      "fileHoursPerDayNotice": "O ficheiro tem um dia útil próprio de {{fileHours}}h. Esse valor mantém-se na exportação para MS Project e P6. Aí um dia conta {{fileHours}}h, aqui {{appHours}}h.",
       "holidaysSection": "Feriados",
       "holidayName": "Descrição",
       "from": "De",
@@ -149,6 +154,9 @@
     "manageBaselines": "Gerir linhas de base…",
     "statusDate": "Data de estado",
     "statusDateClear": "Limpar data de estado",
+    "statusDateTime": "Hora da data de estado",
+    "statusDateTimeLater": "Hora mais tarde",
+    "statusDateTimeEarlier": "Hora mais cedo",
     "progressMode": "Modo de progresso",
     "progressModeRetained": "Retained Logic",
     "progressModeOverride": "Progress Override",
@@ -233,6 +241,7 @@
       "ssLagEarlyStart": "Início antecipado (início do trabalho restante)",
       "ssLagActualStart": "Início real (data de estado)",
       "ssLagNeedsConvention": "Só se aplica quando a convenção «{{convention}}» está ativada.",
+      "ssLagNeedsHourPlanning": "Só se aplica com planeamento por horas: um calendário com faixas de trabalho ou tarefas em horas. Este projeto não tem nenhum dos dois no calendário de desfasamento escolhido.",
       "criticalDefinition": "Definição de crítico",
       "critTotalFloat": "Folga total ≤ limiar",
       "critLongestPath": "Caminho mais longo",
@@ -253,6 +262,12 @@
       "maxPaths": "Caminhos máx.",
       "tfAuto": "Automático (predefinido)",
       "critThresholdHours": "Limiar (horas, por calendário da tarefa)"
+    },
+    "ifcSchema": {
+      "label": "Esquema IFC ao guardar",
+      "optionIfc4x3": "IFC 4.3",
+      "optionIfc4x3Add2": "IFC 4.3 ADD2 (padrão)",
+      "optionIfc4": "IFC4"
     }
   },
   "newProject": {

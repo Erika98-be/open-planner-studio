@@ -129,6 +129,7 @@
       "workWindowFinish": "Munkaablak befejezése",
       "workWindowStart": "Munkaablak kezdése",
       "workRule": "Munkaszabály",
+      "assignmentPlannedUnits": "Tervezett hozzárendelt mennyiség/nap",
       "assignmentPlannedWork": "Tervezett munka (óra)",
       "assignmentActualWork": "Tényleges munka (óra)",
       "assignmentRemainingWork": "Hátralévő munka (óra)"
@@ -153,6 +154,7 @@
       "scheduleFinishNotManual": "A tervezett befejezés csak kézzel ütemezett tevékenységnél érvényes. Módosítsa a befejezést a Befejezés oszlopban, vagy az időtartamon keresztül.",
       "finishFromDuration": "Ennél a tevékenységnél a befejezés a kezdésből és az időtartamból adódik. Módosítsa a kezdést vagy az időtartamot.",
       "finishBeforeStart": "A befejezés a kezdés előtt van.",
+      "startIsActual": "Ez a tevékenység már elindult; a kezdés a tényleges kezdés. Ezt az előrehaladáson keresztül módosítsa.",
       "finishIsActual": "Ez a tevékenység kész; a befejezés a tényleges befejezés. Módosítsa ezt az előrehaladáson keresztül.",
       "invalid": "A megadott érték nem érvényes.",
       "relationToken": "Használjon például ilyen formát: 1.2 FS+2d.",
@@ -284,6 +286,7 @@
       "externalRelations_one": "{{count}} projektközi kapcsolat",
       "externalRelations_other": "{{count}} projektközi kapcsolat",
       "baselineMissing": "Nem szerepel ebben az alaptervben",
+      "baselineOldDay": "Ezt az alaptervet egy régebbi verzió mentette, amely eggyel másképp számolta a napot. Ezért az időtartam-eltérés nem helyes. Készítse el újra az alaptervet.",
       "baselineVarianceStart": "Kezdési eltérés",
       "baselineVarianceFinish": "Befejezési eltérés",
       "baselineVarianceDuration": "Időtartam-eltérés"
@@ -358,7 +361,24 @@
     "FIXED_RATE": "Rögzített egységek",
     "label": "Munkaszabály",
     "projectDefault": "Projektalapbeállítás ({{rule}})",
-    "none": "Projektalapbeállítás"
+    "none": "Projektalapbeállítás",
+    "explain": {
+      "followsWork": "A munka az időtartamból és a hozzárendelt mennyiségből adódik.",
+      "followsUnits": "A hozzárendelt mennyiség az időtartamból és a munkából adódik.",
+      "followsDuration": "Az időtartam a munkából és a hozzárendelt mennyiségből adódik.",
+      "followsUnitsFromWork": "A hozzárendelt mennyiség a munkából adódik.",
+      "workAdjustsUnits": "Ha módosítja a munkát, a hozzárendelt mennyiség igazodik.",
+      "unitsAdjustsWork": "Ha módosítja a hozzárendelt mennyiséget, a munka igazodik.",
+      "durationAdjustsUnits": "Ha módosítja az időtartamot, a hozzárendelt mennyiség igazodik.",
+      "durationAdjustsWork": "Ha módosítja az időtartamot, a munka igazodik.",
+      "unitsOrDurationAdjustsWork": "Ha módosítja a hozzárendelt mennyiséget vagy az időtartamot, a munka igazodik.",
+      "resourceAddsWork": "Egy további erőforrás munkát ad hozzá.",
+      "resourceSharesWork": "Egy további erőforrás átveszi a munka egy részét; erőforrásonként csökken a hozzárendelt mennyiség.",
+      "resourceShorter": "Egy további erőforrás lerövidíti a tevékenységet.",
+      "resourceShorterWholeDays": "Egy további erőforrás lerövidíti a tevékenységet, egész napokra kerekítve.",
+      "resourceAddsWorkSameDuration": "Egy további erőforrás munkát ad hozzá; az időtartam ugyanaz marad."
+    },
+    "info": "A tevékenységtípus magyarázata"
   },
   "properties": {
     "task": "Tevékenység",
@@ -406,6 +426,12 @@
     "timephasedActive": "Az MS Project órás eloszlását követi",
     "timephasedLost": "Az MS Project dátumablaka a szerkesztés után már nincs alkalmazva — az órás eloszlás maga továbbra is érvényes, és a fájlban marad",
     "timephasedContoured": "Saját órás eloszlás",
+    "recordedDatesShown": "A Primavera által mentett dátumokat látja, nem az alkalmazás számítását.",
+    "recordedDatesShownNeutral": "A fájlban szereplő dátumokat látja, nem az alkalmazás számítását.",
+    "recordedDatesWillShift": "Újraszámításkor ez a tevékenység megváltozik.",
+    "recordedDatesWillStay": "Újraszámításkor ez a tevékenység változatlan marad.",
+    "recordedDatesMissing": "A Primavera nem mentett el mindent ehhez a tevékenységhez. Hiányzik: {{fields}}.",
+    "recordedDatesMissingNeutral": "A fájl nem tartalmaz mindent ehhez a tevékenységhez. Hiányzik: {{fields}}.",
     "completion": "Előrehaladás (%)",
     "progress": {
       "actualStart": "Tényleges kezdés",
@@ -455,6 +481,10 @@
       "workHint": "A hátralévő munka órában van megadva; a munkaszabály dönti el, hogy az időtartam vagy a hozzárendelt mennyiség változik.",
       "workDeviates": "Eltér a hozzárendelt mennyiség × időtartam szorzattól",
       "workDeviatesHint": "A mentett munka {{stored}} óra eltér a hozzárendelt mennyiség × hátralévő időtartam szorzatától ({{derived}} óra). A hisztogram a mentett munkát követi a tevékenység teljes időtartamán; a hozzárendelt mennyiség a fájlban megadott értéken marad. Az időtartam módosításakor az alkalmazás újraszámolja a munkát.",
+      "workDeviatesMany": "A mentett munka eltér a hozzárendelt mennyiség × hátralévő időtartam értékétől:\n{{lines}}\n{{durationEffect}}",
+      "workDeviatesLine": "{{name}}: {{stored}}ó (hozzárendelt mennyiség × hátralévő időtartam: {{derived}}ó)",
+      "workDeviatesFollowsDuration": "Az alkalmazás ezt nem módosítja magától. Ha módosítja az időtartamot, az alkalmazás ezt a munkát a hozzárendelt mennyiség × új időtartam értékével helyettesíti. Ekkor értesítést kap; a Ctrl+Z visszavonja.",
+      "workDeviatesKeepsWork": "Az alkalmazás ezt nem módosítja magától. Ha módosítja az időtartamot, ez a munka megmarad, és az alkalmazás igazítja a hozzárendelt mennyiséget.",
       "locked": "Védett a(z) {{rule}} munkaszabály által"
     },
     "notes": {

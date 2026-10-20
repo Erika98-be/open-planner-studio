@@ -60,6 +60,11 @@
       "startHour": "开始（时）",
       "endHour": "结束（时）",
       "hoursPerDay": "每日工时",
+      "hoursValue": "{{hours}}小时",
+      "standardWorkday": "标准工作日",
+      "standardWorkdayInfo": "最常出现的工作日长度。应用程序用它把一天换算成小时。",
+      "standardWorkdayInfoLabel": "标准工作日说明",
+      "fileHoursPerDayNotice": "该文件有自己的工作日，长度为{{fileHours}}小时。导出到 MS Project 和 P6 时会保留。在那里一天计为{{fileHours}}小时，在这里计为{{appHours}}小时。",
       "holidaysSection": "假日",
       "holidayName": "描述",
       "from": "从",
@@ -147,6 +152,9 @@
     "manageBaselines": "管理基线…",
     "statusDate": "状态日期",
     "statusDateClear": "清除状态日期",
+    "statusDateTime": "状态日期的时间",
+    "statusDateTimeLater": "时间推后",
+    "statusDateTimeEarlier": "时间提前",
     "progressMode": "进度模式",
     "progressModeRetained": "Retained Logic",
     "progressModeOverride": "Progress Override",
@@ -231,6 +239,7 @@
       "ssLagEarlyStart": "最早开始（剩余工作开始）",
       "ssLagActualStart": "实际开始（数据日期）",
       "ssLagNeedsConvention": "仅在惯例“{{convention}}”开启时生效。",
+      "ssLagNeedsHourPlanning": "仅在小时计划下生效：日历需包含工作时段，或任务以小时计算。本项目所选的延隔日历两者都没有。",
       "criticalDefinition": "关键定义",
       "critTotalFloat": "总浮时 ≤ 阈值",
       "critLongestPath": "最长路径",
@@ -251,6 +260,12 @@
       "maxPaths": "最大路径数",
       "tfAuto": "自动（默认）",
       "critThresholdHours": "阈值（小时，按任务日历）"
+    },
+    "ifcSchema": {
+      "label": "保存时的 IFC 架构",
+      "optionIfc4x3": "IFC 4.3",
+      "optionIfc4x3Add2": "IFC 4.3 ADD2（默认）",
+      "optionIfc4": "IFC4"
     }
   },
   "newProject": {

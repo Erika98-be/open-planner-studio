@@ -60,6 +60,11 @@
       "startHour": "Beginn (Stunde)",
       "endHour": "Ende (Stunde)",
       "hoursPerDay": "Stunden pro Tag",
+      "hoursValue": "{{hours}}h",
+      "standardWorkday": "Standard-Arbeitstag",
+      "standardWorkdayInfo": "Die Länge des Arbeitstags, der am häufigsten vorkommt. Damit rechnet die App einen Tag in Stunden um.",
+      "standardWorkdayInfoLabel": "Erläuterung zum Standard-Arbeitstag",
+      "fileHoursPerDayNotice": "Die Datei hat einen eigenen Arbeitstag von {{fileHours}}h. Er wird beim Export nach MS Project und P6 übernommen. Dort zählt ein Tag {{fileHours}}h, hier {{appHours}}h.",
       "holidaysSection": "Feiertage",
       "holidayName": "Beschreibung",
       "from": "Von",
@@ -148,6 +153,9 @@
     "manageBaselines": "Baselines verwalten…",
     "statusDate": "Statusdatum",
     "statusDateClear": "Statusdatum leeren",
+    "statusDateTime": "Uhrzeit des Statusdatums",
+    "statusDateTimeLater": "Uhrzeit später",
+    "statusDateTimeEarlier": "Uhrzeit früher",
     "progressMode": "Fortschrittsmodus",
     "progressModeRetained": "Retained Logic",
     "progressModeOverride": "Progress Override",
@@ -232,6 +240,7 @@
       "ssLagEarlyStart": "Frühester Anfang (Restarbeitsbeginn)",
       "ssLagActualStart": "Ist-Anfang (Stichtag)",
       "ssLagNeedsConvention": "Gilt nur, wenn die Konvention „{{convention}}“ aktiv ist.",
+      "ssLagNeedsHourPlanning": "Gilt nur bei Stundenplanung: Dann braucht der Kalender Bänder oder Vorgänge in Stunden. Dieses Projekt hat auf dem gewählten Zeitabstands-Kalender keins von beiden.",
       "criticalDefinition": "Kritisch-Definition",
       "critTotalFloat": "Gesamtpuffer ≤ Schwelle",
       "critLongestPath": "Längster Pfad",
@@ -252,6 +261,12 @@
       "maxPaths": "Max. Pfade",
       "tfAuto": "Automatisch (Standard)",
       "critThresholdHours": "Schwelle (Stunden, pro Vorgangskalender)"
+    },
+    "ifcSchema": {
+      "label": "IFC-Schema beim Speichern",
+      "optionIfc4x3": "IFC 4.3",
+      "optionIfc4x3Add2": "IFC 4.3 ADD2 (Standard)",
+      "optionIfc4": "IFC4"
     }
   },
   "newProject": {

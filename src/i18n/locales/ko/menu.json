@@ -60,6 +60,11 @@
       "startHour": "시작 (시)",
       "endHour": "종료 (시)",
       "hoursPerDay": "일일 근무 시간",
+      "hoursValue": "{{hours}}시간",
+      "standardWorkday": "표준 근무일",
+      "standardWorkdayInfo": "가장 자주 나오는 근무일 길이입니다. 앱은 이 길이로 하루를 시간으로 환산합니다.",
+      "standardWorkdayInfoLabel": "표준 근무일 설명",
+      "fileHoursPerDayNotice": "이 파일에는 {{fileHours}}시간짜리 자체 근무일이 있습니다. 이 값은 MS Project 및 P6로 내보낼 때 유지됩니다. 거기서는 하루가 {{fileHours}}시간으로 계산되고, 여기서는 {{appHours}}시간으로 계산됩니다.",
       "holidaysSection": "공휴일",
       "holidayName": "설명",
       "from": "시작",
@@ -147,6 +152,9 @@
     "manageBaselines": "기준선 관리…",
     "statusDate": "상태 날짜",
     "statusDateClear": "상태 날짜 지우기",
+    "statusDateTime": "상태 날짜 시간",
+    "statusDateTimeLater": "시간 늦추기",
+    "statusDateTimeEarlier": "시간 앞당기기",
     "progressMode": "진행 모드",
     "progressModeRetained": "Retained Logic",
     "progressModeOverride": "Progress Override",
@@ -231,6 +239,7 @@
       "ssLagEarlyStart": "빠른 시작(잔여 작업 시작)",
       "ssLagActualStart": "실제 시작(데이터 날짜)",
       "ssLagNeedsConvention": "규칙 “{{convention}}”이(가) 켜져 있을 때만 적용됩니다.",
+      "ssLagNeedsHourPlanning": "시간 단위 계획에서만 적용됩니다. 구간이 있는 달력이나 시간 단위 작업이 필요합니다. 이 프로젝트의 선택한 지연 달력에는 둘 다 없습니다.",
       "criticalDefinition": "주공정 정의",
       "critTotalFloat": "총 여유 ≤ 임계값",
       "critLongestPath": "최장 경로",
@@ -251,6 +260,12 @@
       "maxPaths": "최대 경로 수",
       "tfAuto": "자동(기본값)",
       "critThresholdHours": "임계값(시간, 작업 달력 기준)"
+    },
+    "ifcSchema": {
+      "label": "저장 시 IFC 스키마",
+      "optionIfc4x3": "IFC 4.3",
+      "optionIfc4x3Add2": "IFC 4.3 ADD2 (기본)",
+      "optionIfc4": "IFC4"
     }
   },
   "newProject": {

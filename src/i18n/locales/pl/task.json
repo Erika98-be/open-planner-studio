@@ -129,6 +129,7 @@
       "workWindowFinish": "Koniec okna pracy",
       "workWindowStart": "Początek okna pracy",
       "workRule": "Reguła pracy",
+      "assignmentPlannedUnits": "Planowane jednostki dziennie",
       "assignmentPlannedWork": "Praca planowana (godziny)",
       "assignmentActualWork": "Praca rzeczywista (godziny)",
       "assignmentRemainingWork": "Praca pozostała (godziny)"
@@ -293,6 +294,7 @@
       "externalRelations_many": "{{count}} relacji zewnętrznych",
       "externalRelations_other": "{{count}} relacji zewnętrznej",
       "baselineMissing": "Brak w tym planie bazowym",
+      "baselineOldDay": "Ten plan bazowy zapisała starsza wersja, która liczyła dzień inaczej. Odchylenie czasu trwania dlatego nie jest poprawne. Zapisz plan bazowy ponownie.",
       "baselineVarianceStart": "Odchylenie rozpoczęcia",
       "baselineVarianceFinish": "Odchylenie zakończenia",
       "baselineVarianceDuration": "Odchylenie czasu trwania"
@@ -367,7 +369,24 @@
     "FIXED_RATE": "Stałe jednostki",
     "label": "Reguła pracy",
     "projectDefault": "Domyślna dla projektu ({{rule}})",
-    "none": "Domyślna dla projektu"
+    "none": "Domyślna dla projektu",
+    "explain": {
+      "followsWork": "Praca wynika z czasu trwania i jednostek.",
+      "followsUnits": "Jednostki wynikają z czasu trwania i pracy.",
+      "followsDuration": "Czas trwania wynika z pracy i jednostek.",
+      "followsUnitsFromWork": "Jednostki wynikają z pracy.",
+      "workAdjustsUnits": "Zmień pracę, a jednostki się dostosują.",
+      "unitsAdjustsWork": "Zmień jednostki, a praca się dostosuje.",
+      "durationAdjustsUnits": "Zmień czas trwania, a jednostki się dostosują.",
+      "durationAdjustsWork": "Zmień czas trwania, a praca się dostosuje.",
+      "unitsOrDurationAdjustsWork": "Zmień jednostki lub czas trwania, a praca się dostosuje.",
+      "resourceAddsWork": "Dodatkowy zasób dodaje pracę.",
+      "resourceSharesWork": "Dodatkowy zasób przejmuje część pracy; jednostki na zasób maleją.",
+      "resourceShorter": "Dodatkowy zasób skraca zadanie.",
+      "resourceShorterWholeDays": "Dodatkowy zasób skraca zadanie, zaokrąglone do pełnych dni.",
+      "resourceAddsWorkSameDuration": "Dodatkowy zasób dodaje pracę; czas trwania pozostaje taki sam."
+    },
+    "info": "Wyjaśnienie typu zadania"
   },
   "properties": {
     "task": "Zadanie",
@@ -415,6 +434,12 @@
     "timephasedActive": "Podąża za rozkładem godzin z MS Project",
     "timephasedLost": "Rozkład godzin z MS Project nie jest już stosowany po edycji — pierwotny rozkład pozostaje zachowany w pliku",
     "timephasedContoured": "Własny rozkład godzin",
+    "recordedDatesShown": "Widzisz daty zapisane przez Primaverę, a nie obliczenia aplikacji.",
+    "recordedDatesShownNeutral": "Widzisz daty, które były w pliku, a nie obliczenia aplikacji.",
+    "recordedDatesWillShift": "Przy przeliczeniu to zadanie się zmieni.",
+    "recordedDatesWillStay": "Przy przeliczeniu to zadanie pozostanie bez zmian.",
+    "recordedDatesMissing": "Primavera nie zapisała dla tego zadania wszystkiego. Brakuje: {{fields}}.",
+    "recordedDatesMissingNeutral": "Plik nie zawiera dla tego zadania wszystkiego. Brakuje: {{fields}}.",
     "completion": "Postęp (%)",
     "progress": {
       "actualStart": "Rzeczywisty początek",
@@ -464,6 +489,10 @@
       "workHint": "Pozostała praca w godzinach; reguła pracy decyduje, czy zmienia się czas trwania, czy jednostki.",
       "workDeviates": "Różni się od jednostek × czasu trwania",
       "workDeviatesHint": "Zapisana praca {{stored}} h różni się od jednostek × pozostałego czasu trwania ({{derived}} h). Histogram podąża za zapisaną pracą przez cały czas trwania zadania; jednostki pozostają takie jak w pliku. Jeśli zmienisz czas trwania, aplikacja przeliczy ją ponownie.",
+      "workDeviatesMany": "Zapisana praca różni się od jednostek × pozostałego czasu trwania:\n{{lines}}\n{{durationEffect}}",
+      "workDeviatesLine": "{{name}}: {{stored}} h (jednostki × pozostały czas trwania: {{derived}} h)",
+      "workDeviatesFollowsDuration": "Aplikacja sama tego nie zmienia. Jeśli zmienisz czas trwania, aplikacja zastąpi tę pracę wynikiem: jednostki × nowy czas trwania. Pojawi się wtedy komunikat. Ctrl+Z cofa zmianę.",
+      "workDeviatesKeepsWork": "Aplikacja sama tego nie zmienia. Jeśli zmienisz czas trwania, ta praca zostanie, a aplikacja dostosuje jednostki.",
       "locked": "Chronione przez regułę pracy {{rule}}"
     },
     "notes": {

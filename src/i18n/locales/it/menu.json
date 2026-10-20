@@ -60,6 +60,11 @@
       "startHour": "Inizio (ora)",
       "endHour": "Fine (ora)",
       "hoursPerDay": "Ore al giorno",
+      "hoursValue": "{{hours}}h",
+      "standardWorkday": "Giorno lavorativo standard",
+      "standardWorkdayInfo": "La durata del giorno lavorativo che ricorre più spesso. Con questo valore l'app converte un giorno in ore.",
+      "standardWorkdayInfoLabel": "Spiegazione del giorno lavorativo standard",
+      "fileHoursPerDayNotice": "Il file ha un proprio giorno lavorativo di {{fileHours}}h. Questo valore viene mantenuto all'esportazione verso MS Project e P6. Lì un giorno vale {{fileHours}}h, qui {{appHours}}h.",
       "holidaysSection": "Festività",
       "holidayName": "Descrizione",
       "from": "Da",
@@ -149,6 +154,9 @@
     "manageBaselines": "Gestisci baseline…",
     "statusDate": "Data di stato",
     "statusDateClear": "Cancella data di stato",
+    "statusDateTime": "Ora della data di stato",
+    "statusDateTimeLater": "Ora più tardi",
+    "statusDateTimeEarlier": "Ora più presto",
     "progressMode": "Modalità di progresso",
     "progressModeRetained": "Retained Logic",
     "progressModeOverride": "Progress Override",
@@ -233,6 +241,7 @@
       "ssLagEarlyStart": "Inizio anticipato (inizio del lavoro rimanente)",
       "ssLagActualStart": "Inizio effettivo (data di stato)",
       "ssLagNeedsConvention": "Si applica solo se la convenzione «{{convention}}» è attiva.",
+      "ssLagNeedsHourPlanning": "Funziona solo con la pianificazione oraria: serve un calendario con fasce orarie o attività in ore. Questo progetto non ha nessuno dei due nel calendario scelto per i ritardi.",
       "criticalDefinition": "Definizione di critico",
       "critTotalFloat": "Margine totale ≤ soglia",
       "critLongestPath": "Percorso più lungo",
@@ -253,6 +262,12 @@
       "maxPaths": "Percorsi max.",
       "tfAuto": "Automatico (predefinito)",
       "critThresholdHours": "Soglia (ore, per calendario attività)"
+    },
+    "ifcSchema": {
+      "label": "Schema IFC al salvataggio",
+      "optionIfc4x3": "IFC 4.3",
+      "optionIfc4x3Add2": "IFC 4.3 ADD2 (predefinito)",
+      "optionIfc4": "IFC4"
     }
   },
   "newProject": {

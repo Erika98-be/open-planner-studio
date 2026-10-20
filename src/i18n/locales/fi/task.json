@@ -129,6 +129,7 @@
       "workWindowFinish": "Työikkunan loppu",
       "workWindowStart": "Työikkunan alku",
       "workRule": "Työsääntö",
+      "assignmentPlannedUnits": "Suunn. kuormitusaste/pv",
       "assignmentPlannedWork": "Suunniteltu työ (tuntia)",
       "assignmentActualWork": "Toteutunut työmäärä (tuntia)",
       "assignmentRemainingWork": "Jäljellä oleva työ (tuntia)"
@@ -153,6 +154,7 @@
       "scheduleFinishNotManual": "Suunniteltu loppu koskee vain manuaalisesti ajoitettua tehtävää. Loppu muutetaan Loppu-sarakkeessa tai kestossa.",
       "finishFromDuration": "Tässä tehtävässä loppu määräytyy alun ja keston mukaan. Muuta alkua tai kestoa.",
       "finishBeforeStart": "Loppu on ennen alkua.",
+      "startIsActual": "Tehtävä on jo alkanut; sen alkamispäivä on toteutunut alkamispäivä. Muuta se edistymisen kautta.",
       "finishIsActual": "Tämä tehtävä on valmis. Sen loppu on toteutunut valmistumispäivä. Muuta sitä edistymisen kautta.",
       "invalid": "Syötetty arvo ei ole kelvollinen.",
       "relationToken": "Käytä esimerkiksi muotoa 1.2 FS+2d.",
@@ -284,6 +286,7 @@
       "externalRelations_one": "{{count}} ulkoinen riippuvuus",
       "externalRelations_other": "{{count}} ulkoista riippuvuutta",
       "baselineMissing": "Ei ole tässä perustason suunnitelmassa",
+      "baselineOldDay": "Tämä perustaso on tallennettu vanhemmalla versiolla, joka laski päivän toisin. Kestojen ero ei siksi pidä paikkaansa. Ota perustaso uudelleen.",
       "baselineVarianceStart": "Alkamispäivän ero",
       "baselineVarianceFinish": "Valmistumispäivän ero",
       "baselineVarianceDuration": "Keston ero"
@@ -358,7 +361,24 @@
     "FIXED_RATE": "Kiinteä yksikkömäärä",
     "label": "Työsääntö",
     "projectDefault": "Projektin oletus ({{rule}})",
-    "none": "Projektin oletus"
+    "none": "Projektin oletus",
+    "explain": {
+      "followsWork": "Työ seuraa kestosta ja kuormitusasteesta.",
+      "followsUnits": "Kuormitusaste seuraa kestosta ja työstä.",
+      "followsDuration": "Kesto seuraa työstä ja kuormitusasteesta.",
+      "followsUnitsFromWork": "Kuormitusaste seuraa työstä.",
+      "workAdjustsUnits": "Kun työtä muutetaan, kuormitusaste mukautuu.",
+      "unitsAdjustsWork": "Kun kuormitusastetta muutetaan, työ mukautuu.",
+      "durationAdjustsUnits": "Kun kestoa muutetaan, kuormitusaste mukautuu.",
+      "durationAdjustsWork": "Kun kestoa muutetaan, työ mukautuu.",
+      "unitsOrDurationAdjustsWork": "Kun kuormitusastetta tai kestoa muutetaan, työ mukautuu.",
+      "resourceAddsWork": "Lisäresurssi lisää työtä.",
+      "resourceSharesWork": "Lisäresurssi ottaa osan työstä; kunkin resurssin kuormitusaste laskee.",
+      "resourceShorter": "Lisäresurssi lyhentää tehtävää.",
+      "resourceShorterWholeDays": "Lisäresurssi lyhentää tehtävää, pyöristettynä kokonaisiin päiviin.",
+      "resourceAddsWorkSameDuration": "Lisäresurssi lisää työtä; kesto pysyy samana."
+    },
+    "info": "Tehtävätyypin selitys"
   },
   "properties": {
     "task": "Tehtävä",
@@ -406,6 +426,12 @@
     "timephasedActive": "Seuraa MS Projectin tuntijakautumista",
     "timephasedLost": "MS Projectin päivämääräikkuna ei ole enää käytössä muokkauksen jälkeen — tuntijakautuminen pysyy voimassa ja tallessa tiedostossa",
     "timephasedContoured": "Oma tuntijakautuminen",
+    "recordedDatesShown": "Näkyvissä ovat Primaveran tallentamat päivämäärät, ei sovelluksen laskenta.",
+    "recordedDatesShownNeutral": "Näkyvissä ovat tiedostossa olleet päivämäärät, ei sovelluksen laskenta.",
+    "recordedDatesWillShift": "Kun lasketaan uudelleen, tämä tehtävä muuttuu.",
+    "recordedDatesWillStay": "Kun lasketaan uudelleen, tämä tehtävä pysyy samana.",
+    "recordedDatesMissing": "Primavera ei tallentanut tälle tehtävälle kaikkea. Puuttuu: {{fields}}.",
+    "recordedDatesMissingNeutral": "Tiedosto ei sisällä kaikkea tälle tehtävälle. Puuttuu: {{fields}}.",
     "completion": "Edistyminen (%)",
     "progress": {
       "actualStart": "Toteutunut alkamispäivä",
@@ -455,6 +481,10 @@
       "workHint": "Jäljellä oleva työ tunteina; työsääntö ratkaisee, liikkuuko kesto vai kuormitusaste.",
       "workDeviates": "Poikkeaa kuormitusasteesta × kestosta",
       "workDeviatesHint": "Tallennettu työ {{stored}} h poikkeaa kuormitusasteesta × jäljellä olevasta kestosta ({{derived}} h). Histogrammi seuraa tallennettua työtä koko tehtävän keston ajan; kuormitusaste pysyy sellaisena kuin tiedosto sen antoi. Jos muutat kestoa, ohjelma laskee työn uudelleen.",
+      "workDeviatesMany": "Tallennettu työ poikkeaa kuormitusasteen × jäljellä olevan keston tuloksesta:\n{{lines}}\n{{durationEffect}}",
+      "workDeviatesLine": "{{name}}: {{stored}} h (kuormitusaste × jäljellä oleva kesto: {{derived}} h)",
+      "workDeviatesFollowsDuration": "Sovellus ei muuta tätä itsestään. Kun kestoa muutetaan, sovellus korvaa tämän työn arvolla kuormitusaste × uusi kesto. Silloin tulee ilmoitus; Ctrl+Z palauttaa muutoksen.",
+      "workDeviatesKeepsWork": "Sovellus ei muuta tätä itsestään. Kun kestoa muutetaan, tämä työ pysyy ennallaan ja sovellus mukauttaa kuormitusasteen.",
       "locked": "Työsäännön {{rule}} suojaama"
     },
     "notes": {

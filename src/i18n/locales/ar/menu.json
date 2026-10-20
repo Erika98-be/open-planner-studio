@@ -60,6 +60,11 @@
       "startHour": "البداية (ساعة)",
       "endHour": "النهاية (ساعة)",
       "hoursPerDay": "ساعات في اليوم",
+      "hoursValue": "{{hours}}س",
+      "standardWorkday": "يوم عمل قياسي",
+      "standardWorkdayInfo": "طول يوم العمل الأكثر تكراراً. يستخدمه التطبيق لتحويل اليوم إلى ساعات.",
+      "standardWorkdayInfoLabel": "شرح يوم العمل القياسي",
+      "fileHoursPerDayNotice": "للملف يوم عمل خاص به مدته {{fileHours}}س. ويُراعى ذلك عند التصدير إلى MS Project وP6. هناك يُحسب اليوم بـ {{fileHours}}س، وهنا بـ {{appHours}}س.",
       "holidaysSection": "العطلات الرسمية",
       "holidayName": "الوصف",
       "from": "من",
@@ -152,6 +157,9 @@
     "manageBaselines": "إدارة خطوط الأساس…",
     "statusDate": "تاريخ الحالة",
     "statusDateClear": "مسح تاريخ الحالة",
+    "statusDateTime": "وقت تاريخ الحالة",
+    "statusDateTimeLater": "وقت لاحق",
+    "statusDateTimeEarlier": "وقت سابق",
     "progressMode": "وضع التقدم",
     "progressModeRetained": "Retained Logic",
     "progressModeOverride": "Progress Override",
@@ -236,6 +244,7 @@
       "ssLagEarlyStart": "البداية المبكرة (بدء العمل المتبقي)",
       "ssLagActualStart": "البدء الفعلي (تاريخ البيانات)",
       "ssLagNeedsConvention": "ينطبق فقط عند تفعيل الاصطلاح «{{convention}}».",
+      "ssLagNeedsHourPlanning": "يعمل فقط مع التخطيط بالساعات: تقويم يحتوي على نطاقات أو مهام بالساعات. لا يحتوي هذا المشروع على أيٍّ منهما في تقويم التأخير المختار.",
       "criticalDefinition": "تعريف الحرج",
       "critTotalFloat": "الفائض الكلي ≤ العتبة",
       "critLongestPath": "المسار الأطول",
@@ -256,6 +265,12 @@
       "maxPaths": "الحد الأقصى للمسارات",
       "tfAuto": "تلقائي (افتراضي)",
       "critThresholdHours": "العتبة (ساعات، حسب تقويم المهمة)"
+    },
+    "ifcSchema": {
+      "label": "مخطط IFC عند الحفظ",
+      "optionIfc4x3": "IFC 4.3",
+      "optionIfc4x3Add2": "IFC 4.3 ADD2 (افتراضي)",
+      "optionIfc4": "IFC4"
     }
   },
   "newProject": {

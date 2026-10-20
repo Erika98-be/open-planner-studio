@@ -129,6 +129,7 @@
       "workWindowFinish": "工作窗口结束",
       "workWindowStart": "工作窗口开始",
       "workRule": "工作规则",
+      "assignmentPlannedUnits": "每日计划单位",
       "assignmentPlannedWork": "计划工时（小时）",
       "assignmentActualWork": "实际工时（小时）",
       "assignmentRemainingWork": "剩余工时（小时）"
@@ -281,6 +282,7 @@
       "internalRelations_other": "{{count}} 个内部关系",
       "externalRelations_other": "{{count}} 个外部关系",
       "baselineMissing": "此基准中不存在",
+      "baselineOldDay": "此基线由旧版本保存，该版本计算一天的方式不同。因此工期差异不正确。请重新保存基线。",
       "baselineVarianceStart": "开始差异",
       "baselineVarianceFinish": "完成差异",
       "baselineVarianceDuration": "工期差异"
@@ -355,7 +357,24 @@
     "FIXED_RATE": "固定单位",
     "label": "工作规则",
     "projectDefault": "项目默认（{{rule}}）",
-    "none": "项目默认"
+    "none": "项目默认",
+    "explain": {
+      "followsWork": "工时由工期和单位得出。",
+      "followsUnits": "单位由工期和工时得出。",
+      "followsDuration": "工期由工时和单位得出。",
+      "followsUnitsFromWork": "单位由工时得出。",
+      "workAdjustsUnits": "如果你修改工时，单位会随之调整。",
+      "unitsAdjustsWork": "如果你修改单位，工时会随之调整。",
+      "durationAdjustsUnits": "如果你修改工期，单位会随之调整。",
+      "durationAdjustsWork": "如果你修改工期，工时会随之调整。",
+      "unitsOrDurationAdjustsWork": "如果你修改单位或工期，工时会随之调整。",
+      "resourceAddsWork": "额外的资源会增加工时。",
+      "resourceSharesWork": "额外的资源会分担一部分工时；每个资源的单位会下降。",
+      "resourceShorter": "额外的资源会缩短任务。",
+      "resourceShorterWholeDays": "额外的资源会缩短任务，结果取整到整天。",
+      "resourceAddsWorkSameDuration": "额外的资源会增加工时；工期保持不变。"
+    },
+    "info": "任务类型说明"
   },
   "properties": {
     "task": "任务",
@@ -403,6 +422,12 @@
     "timephasedActive": "跟随 MS Project 的工时分布",
     "timephasedLost": "编辑后不再应用 MS Project 的工时分布——原始分布仍保留在文件中",
     "timephasedContoured": "自定义工时分布",
+    "recordedDatesShown": "你看到的是 Primavera 保存的日期，而不是应用的计算结果。",
+    "recordedDatesShownNeutral": "你看到的是文件中的日期，而不是应用的计算结果。",
+    "recordedDatesWillShift": "重新计算时，此任务会发生变化。",
+    "recordedDatesWillStay": "重新计算时，此任务保持不变。",
+    "recordedDatesMissing": "Primavera 没有为此任务保存全部数据。缺少：{{fields}}。",
+    "recordedDatesMissingNeutral": "文件中没有此任务的全部数据。缺少：{{fields}}。",
     "completion": "进度（%）",
     "progress": {
       "actualStart": "实际开始",
@@ -452,6 +477,10 @@
       "workHint": "剩余工时（小时）；工作规则决定工期或单位随之变化。",
       "workDeviates": "与单位 × 工期不一致",
       "workDeviatesHint": "已保存的工时 {{stored}} 小时与单位 × 剩余工期（{{derived}} 小时）不一致。直方图按整个任务工期分布已保存的工时；单位保持文件中的值。如果更改工期，应用会重新计算工时。",
+      "workDeviatesMany": "保存的工时与单位 × 剩余工期不一致：\n{{lines}}\n{{durationEffect}}",
+      "workDeviatesLine": "{{name}}：{{stored}} 小时（单位 × 剩余工期：{{derived}} 小时）",
+      "workDeviatesFollowsDuration": "应用不会自动修改此项。如果你修改工期，应用会用单位 × 新工期替换这部分工时。随后会出现提示；按 Ctrl+Z 可以撤销。",
+      "workDeviatesKeepsWork": "应用不会自动修改此项。如果你修改工期，这部分工时保持不变，应用会调整单位。",
       "locked": "受工作规则 {{rule}} 保护"
     },
     "notes": {

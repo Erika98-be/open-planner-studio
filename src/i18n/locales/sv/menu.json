@@ -60,6 +60,11 @@
       "startHour": "Start (timme)",
       "endHour": "Slut (timme)",
       "hoursPerDay": "Timmar per dag",
+      "hoursValue": "{{hours}}h",
+      "standardWorkday": "Standardarbetsdag",
+      "standardWorkdayInfo": "Längden på den arbetsdag som förekommer oftast. Appen använder den för att räkna om en dag till timmar.",
+      "standardWorkdayInfoLabel": "Förklaring till standardarbetsdag",
+      "fileHoursPerDayNotice": "Filen har en egen arbetsdag på {{fileHours}}h. Den följer med vid export till MS Project och P6. Där räknas en dag som {{fileHours}}h, här {{appHours}}h.",
       "holidaysSection": "Helgdagar",
       "holidayName": "Beskrivning",
       "from": "Från",
@@ -148,6 +153,9 @@
     "manageBaselines": "Hantera baslinjer…",
     "statusDate": "Rapportdatum",
     "statusDateClear": "Töm rapportdatum",
+    "statusDateTime": "Tid för rapportdatum",
+    "statusDateTimeLater": "Senare tid",
+    "statusDateTimeEarlier": "Tidigare tid",
     "progressMode": "Framdriftsläge",
     "progressModeRetained": "Retained Logic",
     "progressModeOverride": "Progress Override",
@@ -232,6 +240,7 @@
       "ssLagEarlyStart": "Tidigaste start (återstående start)",
       "ssLagActualStart": "Verklig start (rapportdatum)",
       "ssLagNeedsConvention": "Gäller endast när beräkningsregeln ”{{convention}}” är på.",
+      "ssLagNeedsHourPlanning": "Gäller bara vid timplanering. Det kräver en kalender med band för arbetstid eller uppgifter i timmar. Det här projektet saknar båda på den valda fördröjningskalendern.",
       "criticalDefinition": "Definition av kritisk",
       "critTotalFloat": "Totalt slack ≤ tröskelvärde",
       "critLongestPath": "Längsta väg",
@@ -252,6 +261,12 @@
       "maxPaths": "Max. vägar",
       "tfAuto": "Automatiskt (standard)",
       "critThresholdHours": "Tröskelvärde (timmar, per uppgiftskalender)"
+    },
+    "ifcSchema": {
+      "label": "IFC-schema vid sparning",
+      "optionIfc4x3": "IFC 4.3",
+      "optionIfc4x3Add2": "IFC 4.3 ADD2 (standard)",
+      "optionIfc4": "IFC4"
     }
   },
   "newProject": {

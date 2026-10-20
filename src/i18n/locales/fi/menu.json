@@ -60,6 +60,11 @@
       "startHour": "Alku (tunti)",
       "endHour": "Loppu (tunti)",
       "hoursPerDay": "Tuntia päivässä",
+      "hoursValue": "{{hours}} h",
+      "standardWorkday": "Vakiotyöpäivä",
+      "standardWorkdayInfo": "Työpäivän pituus, joka esiintyy useimmin. Sovellus muuntaa tämän avulla päivän tunneiksi.",
+      "standardWorkdayInfoLabel": "Vakiotyöpäivän selite",
+      "fileHoursPerDayNotice": "Tiedoston oma työpäivä on {{fileHours}} h. Se säilyy viennissä MS Projectiin ja P6:een. Siellä päivä on {{fileHours}} h, täällä {{appHours}} h.",
       "holidaysSection": "Vapaapäivät",
       "holidayName": "Kuvaus",
       "from": "Alkaen",
@@ -148,6 +153,9 @@
     "manageBaselines": "Hallitse perustason suunnitelmia…",
     "statusDate": "Raportointipäivä",
     "statusDateClear": "Tyhjennä raportointipäivä",
+    "statusDateTime": "Raportointipäivän aika",
+    "statusDateTimeLater": "Myöhempi aika",
+    "statusDateTimeEarlier": "Aikaisempi aika",
     "progressMode": "Edistymistapa",
     "progressModeRetained": "Retained Logic",
     "progressModeOverride": "Progress Override",
@@ -232,6 +240,7 @@
       "ssLagEarlyStart": "Varhaisin alkamispäivä (jäljellä oleva työ)",
       "ssLagActualStart": "Toteutunut alkamispäivä (raportointipäivä)",
       "ssLagNeedsConvention": "Toimii vain, kun laskentasääntö ”{{convention}}” on käytössä.",
+      "ssLagNeedsHourPlanning": "Toimii vain tuntisuunnittelussa: kalenterissa on lohkoja tai tehtäviä, joiden kesto on tunneissa. Tässä projektissa kumpaakaan ei ole valitussa viivekalenterissa.",
       "criticalDefinition": "Kriittisyyden määritelmä",
       "critTotalFloat": "Kokonaispelivara ≤ kynnysarvo",
       "critLongestPath": "Pisin polku",
@@ -252,6 +261,12 @@
       "maxPaths": "Max. polkuja",
       "tfAuto": "Automaattinen (oletus)",
       "critThresholdHours": "Kynnysarvo (tunteina, tehtävän kalenterin mukaan)"
+    },
+    "ifcSchema": {
+      "label": "IFC-skeema tallennettaessa",
+      "optionIfc4x3": "IFC 4.3",
+      "optionIfc4x3Add2": "IFC 4.3 ADD2 (oletus)",
+      "optionIfc4": "IFC4"
     }
   },
   "newProject": {

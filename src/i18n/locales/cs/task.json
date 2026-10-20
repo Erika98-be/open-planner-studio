@@ -129,6 +129,7 @@
       "workWindowFinish": "Dokončení pracovního okna",
       "workWindowStart": "Zahájení pracovního okna",
       "workRule": "Pravidlo pevné veličiny",
+      "assignmentPlannedUnits": "Plánované jednotky přiřazení za den",
       "assignmentPlannedWork": "Plánovaná práce (hodiny)",
       "assignmentActualWork": "Skutečná práce (hodiny)",
       "assignmentRemainingWork": "Zbývající práce (hodiny)"
@@ -153,6 +154,7 @@
       "scheduleFinishNotManual": "Plánované dokončení platí jen pro ručně plánovaný úkol. Změňte dokončení ve sloupci Dokončení nebo změňte dobu trvání.",
       "finishFromDuration": "U tohoto úkolu vyplývá dokončení ze zahájení a doby trvání. Změňte zahájení nebo dobu trvání.",
       "finishBeforeStart": "Dokončení je před zahájením.",
+      "startIsActual": "Tento úkol byl zahájen; jeho začátek je skutečné zahájení. Změňte jej prostřednictvím průběhu.",
       "finishIsActual": "Tento úkol je dokončen; dokončení je skutečné dokončení. Změňte to přes průběh.",
       "invalid": "Zadaná hodnota není platná.",
       "relationToken": "Použijte například 1.2 FS+2d.",
@@ -292,6 +294,7 @@
       "externalRelations_many": "{{count}} vazby mezi projekty",
       "externalRelations_other": "{{count}} vazeb mezi projekty",
       "baselineMissing": "Není obsaženo v tomto směrném plánu",
+      "baselineOldDay": "Tento směrný plán byl uložen starší verzí, která počítala den jinak. Odchylka doby trvání proto není správná. Vytvořte směrný plán znovu.",
       "baselineVarianceStart": "Odchylka zahájení",
       "baselineVarianceFinish": "Odchylka dokončení",
       "baselineVarianceDuration": "Odchylka doby trvání"
@@ -366,7 +369,24 @@
     "FIXED_RATE": "Pevné jednotky",
     "label": "Pravidlo pevné veličiny",
     "projectDefault": "Výchozí pro projekt ({{rule}})",
-    "none": "Výchozí pro projekt"
+    "none": "Výchozí pro projekt",
+    "explain": {
+      "followsWork": "Práce vyplývá z doby trvání a jednotek přiřazení.",
+      "followsUnits": "Jednotky přiřazení vyplývají z doby trvání a práce.",
+      "followsDuration": "Doba trvání vyplývá z práce a jednotek přiřazení.",
+      "followsUnitsFromWork": "Jednotky přiřazení vyplývají z práce.",
+      "workAdjustsUnits": "Změníte-li práci, jednotky přiřazení se upraví.",
+      "unitsAdjustsWork": "Změníte-li jednotky přiřazení, práce se upraví.",
+      "durationAdjustsUnits": "Změníte-li dobu trvání, jednotky přiřazení se upraví.",
+      "durationAdjustsWork": "Změníte-li dobu trvání, práce se upraví.",
+      "unitsOrDurationAdjustsWork": "Změníte-li jednotky přiřazení nebo dobu trvání, práce se upraví.",
+      "resourceAddsWork": "Další zdroj přidá práci.",
+      "resourceSharesWork": "Další zdroj převezme část práce; jednotky přiřazení na jeden zdroj klesnou.",
+      "resourceShorter": "Další zdroj zkrátí úkol.",
+      "resourceShorterWholeDays": "Další zdroj zkrátí úkol, zaokrouhleno na celé dny.",
+      "resourceAddsWorkSameDuration": "Další zdroj přidá práci; doba trvání zůstane stejná."
+    },
+    "info": "Vysvětlení typu úkolu"
   },
   "properties": {
     "task": "Úkol",
@@ -414,6 +434,12 @@
     "timephasedActive": "Řídí se rozložením práce v čase z MS Project",
     "timephasedLost": "Datumové okno z MS Project se po úpravě už neuplatňuje. Rozložení práce v čase dál platí a zachová se v souboru.",
     "timephasedContoured": "Vlastní rozložení práce v čase",
+    "recordedDatesShown": "Vidíte data, která uložila Primavera, nikoli výpočet aplikace.",
+    "recordedDatesShownNeutral": "Vidíte data, která byla v souboru, nikoli výpočet aplikace.",
+    "recordedDatesWillShift": "Při přepočítání se tento úkol změní.",
+    "recordedDatesWillStay": "Při přepočítání zůstane tento úkol beze změny.",
+    "recordedDatesMissing": "Primavera pro tento úkol neuložila všechny údaje. Chybí: {{fields}}.",
+    "recordedDatesMissingNeutral": "Soubor pro tento úkol neobsahuje všechny údaje. Chybí: {{fields}}.",
     "completion": "Průběh (%)",
     "progress": {
       "actualStart": "Skutečné zahájení",
@@ -463,6 +489,10 @@
       "workHint": "Zbývající práce v hodinách. Pravidlo pevné veličiny určuje, zda se pohne doba trvání, nebo jednotky přiřazení.",
       "workDeviates": "Liší se od jednotek přiřazení × doby trvání",
       "workDeviatesHint": "Uložená práce {{stored}} h se liší od jednotek přiřazení × zbývající doby trvání ({{derived}} h). Histogram sleduje uloženou práci po celou dobu trvání úkolu; jednotky přiřazení zůstávají tak, jak je uvedl soubor. Při změně doby trvání ji aplikace přepočítá.",
+      "workDeviatesMany": "Uložená práce se liší od jednotek přiřazení × zbývající doby trvání:\n{{lines}}\n{{durationEffect}}",
+      "workDeviatesLine": "{{name}}: {{stored}}h (jednotky přiřazení × zbývající doba trvání: {{derived}}h)",
+      "workDeviatesFollowsDuration": "Aplikace to sama nemění. Změníte-li dobu trvání, aplikace nahradí tuto práci součinem jednotek přiřazení a nové doby trvání. Potom dostanete upozornění; Ctrl+Z to vrátí zpět.",
+      "workDeviatesKeepsWork": "Aplikace to sama nemění. Změníte-li dobu trvání, tato práce zůstane beze změny a aplikace upraví jednotky přiřazení.",
       "locked": "Chráněno pravidlem pevné veličiny {{rule}}"
     },
     "notes": {

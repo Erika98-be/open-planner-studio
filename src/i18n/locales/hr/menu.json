@@ -60,6 +60,11 @@
       "startHour": "Početak (sat)",
       "endHour": "Završetak (sat)",
       "hoursPerDay": "Sati po danu",
+      "hoursValue": "{{hours}}h",
+      "standardWorkday": "Standardni radni dan",
+      "standardWorkdayInfo": "Duljina radnog dana koja se najčešće pojavljuje. Aplikacija je koristi za pretvaranje dana u sate.",
+      "standardWorkdayInfoLabel": "Objašnjenje standardnog radnog dana",
+      "fileHoursPerDayNotice": "Datoteka ima vlastiti radni dan od {{fileHours}}h. On se zadržava pri izvozu u MS Project i P6. Tamo dan traje {{fileHours}}h, ovdje {{appHours}}h.",
       "holidaysSection": "Praznici",
       "holidayName": "Opis",
       "from": "Od",
@@ -149,6 +154,9 @@
     "manageBaselines": "Upravljaj temeljnim planovima…",
     "statusDate": "Datum stanja",
     "statusDateClear": "Ukloni datum stanja",
+    "statusDateTime": "Vrijeme datuma stanja",
+    "statusDateTimeLater": "Vrijeme kasnije",
+    "statusDateTimeEarlier": "Vrijeme ranije",
     "progressMode": "Način praćenja napretka",
     "progressModeRetained": "Retained Logic",
     "progressModeOverride": "Progress Override",
@@ -233,6 +241,7 @@
       "ssLagEarlyStart": "Najraniji početak (početak preostalog rada)",
       "ssLagActualStart": "Stvarni početak (datum stanja)",
       "ssLagNeedsConvention": "Radi samo ako je pravilo izračuna „{{convention}}” uključeno.",
+      "ssLagNeedsHourPlanning": "Radi samo pri planiranju u satima. Ovaj projekt na odabranom kalendaru za vrijeme odgode nema ni blok ni zadatak u satima.",
       "criticalDefinition": "Definicija kritičnosti",
       "critTotalFloat": "Ukupan slobodni hod ≤ prag",
       "critLongestPath": "Najdulji put",
@@ -253,6 +262,12 @@
       "maxPaths": "Maks. putova",
       "tfAuto": "Automatski (standardno)",
       "critThresholdHours": "Prag (sati, po kalendaru zadatka)"
+    },
+    "ifcSchema": {
+      "label": "IFC shema pri spremanju",
+      "optionIfc4x3": "IFC 4.3",
+      "optionIfc4x3Add2": "IFC 4.3 ADD2 (zadano)",
+      "optionIfc4": "IFC4"
     }
   },
   "newProject": {

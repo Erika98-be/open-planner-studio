@@ -60,6 +60,11 @@
       "startHour": "شروع (ساعت)",
       "endHour": "پایان (ساعت)",
       "hoursPerDay": "ساعت در روز",
+      "hoursValue": "{{hours}}س",
+      "standardWorkday": "روز کاری استاندارد",
+      "standardWorkdayInfo": "طول روز کاری‌ای که بیشتر پیش می‌آید. نرم‌افزار با آن یک روز را به ساعت تبدیل می‌کند.",
+      "standardWorkdayInfoLabel": "توضیح روز کاری استاندارد",
+      "fileHoursPerDayNotice": "فایل روز کاری خاص خودش را دارد: {{fileHours}}س. این روز کاری هنگام صدور به MS Project و P6 حفظ می‌شود. آنجا یک روز {{fileHours}}س به حساب می‌آید، اینجا {{appHours}}س.",
       "holidaysSection": "تعطیلات",
       "holidayName": "توضیحات",
       "from": "از",
@@ -148,6 +153,9 @@
     "manageBaselines": "مدیریت خطوط مبنا…",
     "statusDate": "تاریخ وضعیت",
     "statusDateClear": "پاک کردن تاریخ وضعیت",
+    "statusDateTime": "زمان تاریخ وضعیت",
+    "statusDateTimeLater": "زمان دیرتر",
+    "statusDateTimeEarlier": "زمان زودتر",
     "progressMode": "حالت پیشرفت",
     "progressModeRetained": "Retained Logic",
     "progressModeOverride": "Progress Override",
@@ -232,6 +240,7 @@
       "ssLagEarlyStart": "شروع زودهنگام (شروع کار باقی‌مانده)",
       "ssLagActualStart": "شروع واقعی (تاریخ وضعیت)",
       "ssLagNeedsConvention": "فقط وقتی اعمال می‌شود که قرارداد «{{convention}}» روشن باشد.",
+      "ssLagNeedsHourPlanning": "فقط در برنامه‌ریزی ساعتی کار می‌کند: یک تقویم با بازه‌های کاری یا وظیفه‌هایی بر حسب ساعت. این پروژه در تقویم تأخیرِ انتخاب‌شده هیچ‌کدام را ندارد.",
       "criticalDefinition": "تعریف بحرانی",
       "critTotalFloat": "شناوری کل ≤ آستانه",
       "critLongestPath": "طولانی‌ترین مسیر",
@@ -252,6 +261,12 @@
       "maxPaths": "حداکثر مسیرها",
       "tfAuto": "خودکار (پیش‌فرض)",
       "critThresholdHours": "آستانه (ساعت، بر اساس تقویم کار)"
+    },
+    "ifcSchema": {
+      "label": "طرح‌واره IFC هنگام ذخیره",
+      "optionIfc4x3": "IFC 4.3",
+      "optionIfc4x3Add2": "IFC 4.3 ADD2 (پیش‌فرض)",
+      "optionIfc4": "IFC4"
     }
   },
   "newProject": {

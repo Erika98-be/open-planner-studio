@@ -129,6 +129,7 @@
       "workWindowFinish": "پایان بازه کاری",
       "workWindowStart": "شروع بازه کاری",
       "workRule": "قاعده کار",
+      "assignmentPlannedUnits": "واحدهای برنامه‌ریزی‌شده در روز",
       "assignmentPlannedWork": "کار برنامه‌ریزی‌شده (ساعت)",
       "assignmentActualWork": "کار انجام‌شده (ساعت)",
       "assignmentRemainingWork": "کار باقی‌مانده (ساعت)"
@@ -285,6 +286,7 @@
       "externalRelations_one": "{{count}} رابطه خارجی",
       "externalRelations_other": "{{count}} رابطه خارجی",
       "baselineMissing": "در این خط مبنا وجود ندارد",
+      "baselineOldDay": "این خط مبنا با نسخهٔ قدیمی‌تری ذخیره شده که یک روز را متفاوت می‌شمرد. بنابراین انحراف مدت درست نیست. خط مبنا را دوباره بگیرید.",
       "baselineVarianceStart": "انحراف شروع",
       "baselineVarianceFinish": "انحراف پایان",
       "baselineVarianceDuration": "انحراف مدت"
@@ -359,7 +361,24 @@
     "FIXED_RATE": "واحدهای ثابت",
     "label": "قاعدهٔ کار",
     "projectDefault": "پیش‌فرض پروژه ({{rule}})",
-    "none": "پیش‌فرض پروژه"
+    "none": "پیش‌فرض پروژه",
+    "explain": {
+      "followsWork": "کار از مدت و واحد به دست می‌آید.",
+      "followsUnits": "واحد از مدت و کار به دست می‌آید.",
+      "followsDuration": "مدت از کار و واحد به دست می‌آید.",
+      "followsUnitsFromWork": "واحد از کار به دست می‌آید.",
+      "workAdjustsUnits": "اگر کار را تغییر دهید، واحد تنظیم می‌شود.",
+      "unitsAdjustsWork": "اگر واحد را تغییر دهید، کار تنظیم می‌شود.",
+      "durationAdjustsUnits": "اگر مدت را تغییر دهید، واحد تنظیم می‌شود.",
+      "durationAdjustsWork": "اگر مدت را تغییر دهید، کار تنظیم می‌شود.",
+      "unitsOrDurationAdjustsWork": "اگر واحد یا مدت را تغییر دهید، کار تنظیم می‌شود.",
+      "resourceAddsWork": "یک منبع اضافی بر کار می‌افزاید.",
+      "resourceSharesWork": "یک منبع اضافی بخشی از کار را بر عهده می‌گیرد؛ واحد هر منبع کاهش می‌یابد.",
+      "resourceShorter": "یک منبع اضافی وظیفه را کوتاه‌تر می‌کند.",
+      "resourceShorterWholeDays": "یک منبع اضافی وظیفه را کوتاه‌تر می‌کند و به روزهای کامل گرد می‌شود.",
+      "resourceAddsWorkSameDuration": "یک منبع اضافی بر کار می‌افزاید؛ مدت ثابت می‌ماند."
+    },
+    "info": "توضیح دربارهٔ نوع وظیفه"
   },
   "properties": {
     "task": "وظیفه",
@@ -407,6 +426,12 @@
     "timephasedActive": "توزیع ساعات MS Project را دنبال می‌کند",
     "timephasedLost": "توزیع ساعات MS Project پس از ویرایش دیگر اعمال نمی‌شود — توزیع اصلی در فایل نگه داشته می‌شود",
     "timephasedContoured": "توزیع ساعات مخصوص",
+    "recordedDatesShown": "شما تاریخ‌هایی را می‌بینید که Primavera ذخیره کرده است، نه محاسبهٔ برنامه.",
+    "recordedDatesShownNeutral": "شما تاریخ‌هایی را می‌بینید که در فایل آمده بود، نه محاسبهٔ برنامه.",
+    "recordedDatesWillShift": "هنگام محاسبهٔ دوباره، این وظیفه تغییر می‌کند.",
+    "recordedDatesWillStay": "هنگام محاسبهٔ دوباره، این وظیفه ثابت می‌ماند.",
+    "recordedDatesMissing": "Primavera برای این وظیفه همه‌چیز را ذخیره نکرده است. ناموجود: {{fields}}.",
+    "recordedDatesMissingNeutral": "فایل برای این وظیفه همه‌چیز را ندارد. ناموجود: {{fields}}.",
     "completion": "پیشرفت (%)",
     "progress": {
       "actualStart": "شروع واقعی",
@@ -456,6 +481,10 @@
       "workHint": "کار باقی‌مانده به ساعت؛ قاعدهٔ کار تعیین می‌کند مدت یا واحدها تغییر کنند.",
       "workDeviates": "با واحد × مدت فرق دارد",
       "workDeviatesHint": "کار ذخیره‌شده {{stored}} ساعت با واحد × مدت باقی‌مانده ({{derived}} ساعت) فرق دارد. هیستوگرام کار ذخیره‌شده را در سراسر مدت وظیفه دنبال می‌کند؛ واحدها همان مقدار پرونده می‌مانند. اگر مدت را تغییر دهید، برنامه کار را دوباره محاسبه می‌کند.",
+      "workDeviatesMany": "کار ذخیره‌شده با واحد × مدت باقی‌مانده فرق دارد:\n{{lines}}\n{{durationEffect}}",
+      "workDeviatesLine": "{{name}}: {{stored}} ساعت (واحد × مدت باقی‌مانده: {{derived}} ساعت)",
+      "workDeviatesFollowsDuration": "برنامه این را خودبه‌خود تغییر نمی‌دهد. اگر مدت را تغییر دهید، برنامه این کار را با واحد × مدت جدید جایگزین می‌کند. سپس یک اعلان دریافت می‌کنید؛ Ctrl+Z آن را برمی‌گرداند.",
+      "workDeviatesKeepsWork": "برنامه این را خودبه‌خود تغییر نمی‌دهد. اگر مدت را تغییر دهید، این کار باقی می‌ماند و برنامه واحد را تنظیم می‌کند.",
       "locked": "محافظت‌شده توسط قاعدهٔ کار {{rule}}"
     },
     "notes": {

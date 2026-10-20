@@ -60,6 +60,11 @@
       "startHour": "ເລີ່ມຕົ້ນ (ໂມງ)",
       "endHour": "ສິ້ນສຸດ (ໂມງ)",
       "hoursPerDay": "ຊົ່ວໂມງຕໍ່ມື້",
+      "hoursValue": "{{hours}}ຊມ",
+      "standardWorkday": "ມື້ເຮັດວຽກມາດຕະຖານ",
+      "standardWorkdayInfo": "ຄວາມຍາວຂອງມື້ເຮັດວຽກທີ່ເກີດຂຶ້ນເລື້ອຍທີ່ສຸດ. ແອັບໃຊ້ຄ່ານີ້ເພື່ອແປງມື້ເປັນຊົ່ວໂມງ.",
+      "standardWorkdayInfoLabel": "ຄຳອະທິບາຍກ່ຽວກັບມື້ເຮັດວຽກມາດຕະຖານ",
+      "fileHoursPerDayNotice": "ໄຟລ໌ນີ້ມີມື້ເຮັດວຽກຂອງຕົນເອງ {{fileHours}}ຊມ. ມັນຖືກເກັບໄວ້ເມື່ອສົ່ງອອກໄປ MS Project ແລະ P6. ທີ່ນັ້ນ ໜຶ່ງມື້ນັບເປັນ {{fileHours}}ຊມ, ທີ່ນີ້ນັບເປັນ {{appHours}}ຊມ.",
       "holidaysSection": "ວັນພັກ",
       "holidayName": "ລາຍລະອຽດ",
       "from": "ຕັ້ງແຕ່",
@@ -147,6 +152,9 @@
     "manageBaselines": "ຈັດການແຜນຖານ…",
     "statusDate": "ວັນທີສະຖານະ",
     "statusDateClear": "ລ້າງວັນທີສະຖານະ",
+    "statusDateTime": "ເວລາຂອງວັນທີສະຖານະ",
+    "statusDateTimeLater": "ເວລາຕໍ່ມາ",
+    "statusDateTimeEarlier": "ເວລາກ່ອນໜ້າ",
     "progressMode": "ຮູບແບບຄວາມຄືບໜ້າ",
     "progressModeRetained": "ຮັກສາຕາມເງື່ອນໄຂເດີມ (Retained Logic)",
     "progressModeOverride": "ຂ້າມເງື່ອນໄຂເດີມ (Progress Override)",
@@ -231,6 +239,7 @@
       "ssLagEarlyStart": "ເລີ່ມຕົ້ນໄວສຸດ (ເວລາເລີ່ມຕົ້ນທີ່ເຫຼືອ)",
       "ssLagActualStart": "ເລີ່ມຕົ້ນຕົວຈິງ (ວັນທີຂໍ້ມູນ)",
       "ssLagNeedsConvention": "ໃຊ້ໄດ້ສະເພາະເມື່ອເປີດຂໍ້ກຳນົດ “{{convention}}” ເທົ່ານັ້ນ.",
+      "ssLagNeedsHourPlanning": "ໃຊ້ໄດ້ພຽງແຕ່ໃນການວາງແຜນລາຍຊົ່ວໂມງ: ປະຕິທິນທີ່ມີຊ່ວງເວລາເຮັດວຽກ ຫຼື ໜ້າວຽກເປັນຊົ່ວໂມງ. ໂຄງການນີ້ບໍ່ມີທັງສອງຢ່າງ ໃນປະຕິທິນ Lag ທີ່ເລືອກ.",
       "criticalDefinition": "ນິຍາມເສັ້ນທາງວິກິດ",
       "critTotalFloat": "ໄລຍະຜ່ອນຜັນລວມ ≤ ເກນກຳນົດ",
       "critLongestPath": "ເສັ້ນທາງທີ່ຍາວທີ່ສຸດ",
@@ -251,6 +260,12 @@
       "maxPaths": "ຈຳນວນເສັ້ນທາງສູງສຸດ",
       "tfAuto": "ອັດຕະໂນມັດ (ຄ່າເລີ່ມຕົ້ນ)",
       "critThresholdHours": "ເກນກຳນົດ (ຊົ່ວໂມງ, ຕາມປະຕິທິນວຽກ)"
+    },
+    "ifcSchema": {
+      "label": "ສະກີມ IFC ເມື່ອບັນທຶກ",
+      "optionIfc4x3": "IFC 4.3",
+      "optionIfc4x3Add2": "IFC 4.3 ADD2 (ຄ່າເລີ່ມຕົ້ນ)",
+      "optionIfc4": "IFC4"
     }
   },
   "newProject": {

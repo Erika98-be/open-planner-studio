@@ -60,6 +60,11 @@
       "startHour": "Début (heure)",
       "endHour": "Fin (heure)",
       "hoursPerDay": "Heures par jour",
+      "hoursValue": "{{hours}} h",
+      "standardWorkday": "Jour ouvré standard",
+      "standardWorkdayInfo": "La durée du jour ouvré le plus fréquent. L'application s'en sert pour convertir un jour en heures.",
+      "standardWorkdayInfoLabel": "Explication du jour ouvré standard",
+      "fileHoursPerDayNotice": "Le fichier a son propre jour ouvré de {{fileHours}} h. Il est conservé lors de l'export vers MS Project et P6. Là-bas, un jour compte {{fileHours}} h, ici {{appHours}} h.",
       "holidaysSection": "Jours fériés",
       "holidayName": "Description",
       "from": "Du",
@@ -149,6 +154,9 @@
     "manageBaselines": "Gérer les références…",
     "statusDate": "Date d'état",
     "statusDateClear": "Effacer la date d'état",
+    "statusDateTime": "Heure de la date d'état",
+    "statusDateTimeLater": "Heure plus tard",
+    "statusDateTimeEarlier": "Heure plus tôt",
     "progressMode": "Mode d'avancement",
     "progressModeRetained": "Retained Logic",
     "progressModeOverride": "Progress Override",
@@ -233,6 +241,7 @@
       "ssLagEarlyStart": "Début au plus tôt (début du reste à faire)",
       "ssLagActualStart": "Début réel (date d'état)",
       "ssLagNeedsConvention": "S'applique uniquement si la convention « {{convention}} » est activée.",
+      "ssLagNeedsHourPlanning": "Ne s'applique qu'avec la planification horaire : un calendrier avec des plages ou des tâches en heures. Ce projet n'a ni l'un ni l'autre sur le calendrier de décalage choisi.",
       "criticalDefinition": "Définition du critique",
       "critTotalFloat": "Marge totale ≤ seuil",
       "critLongestPath": "Chemin le plus long",
@@ -253,6 +262,12 @@
       "maxPaths": "Chemins max.",
       "tfAuto": "Automatique (par défaut)",
       "critThresholdHours": "Seuil (heures, par calendrier de tâche)"
+    },
+    "ifcSchema": {
+      "label": "Schéma IFC à l'enregistrement",
+      "optionIfc4x3": "IFC 4.3",
+      "optionIfc4x3Add2": "IFC 4.3 ADD2 (par défaut)",
+      "optionIfc4": "IFC4"
     }
   },
   "newProject": {

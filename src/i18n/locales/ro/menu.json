@@ -60,6 +60,11 @@
       "startHour": "Început (oră)",
       "endHour": "Sfârșit (oră)",
       "hoursPerDay": "Ore pe zi",
+      "hoursValue": "{{hours}}h",
+      "standardWorkday": "Zi lucrătoare standard",
+      "standardWorkdayInfo": "Lungimea care apare cel mai des pentru ziua lucrătoare. Aplicația o folosește pentru a converti o zi în ore.",
+      "standardWorkdayInfoLabel": "Explicație pentru ziua lucrătoare standard",
+      "fileHoursPerDayNotice": "Fișierul are propria zi lucrătoare de {{fileHours}}h. Aceasta se păstrează la exportul în MS Project și P6. Acolo o zi are {{fileHours}}h, aici {{appHours}}h.",
       "holidaysSection": "Sărbători",
       "holidayName": "Descriere",
       "from": "De la",
@@ -149,6 +154,9 @@
     "manageBaselines": "Gestionare referințe…",
     "statusDate": "Data raportului de stare",
     "statusDateClear": "Golire data raportului de stare",
+    "statusDateTime": "Ora datei raportului de stare",
+    "statusDateTimeLater": "Ora mai târziu",
+    "statusDateTimeEarlier": "Ora mai devreme",
     "progressMode": "Mod de progres",
     "progressModeRetained": "Retained Logic",
     "progressModeOverride": "Progress Override",
@@ -233,6 +241,7 @@
       "ssLagEarlyStart": "Început cel mai devreme (începutul lucrului rămas)",
       "ssLagActualStart": "Început efectiv (data raportului de stare)",
       "ssLagNeedsConvention": "Funcționează doar dacă convenția de calcul „{{convention}}” este activă.",
+      "ssLagNeedsHourPlanning": "Se aplică numai la planificarea pe ore: un calendar cu intervale de lucru sau cu activități în ore. Acest proiect nu are niciuna dintre ele în calendarul de decalaj ales.",
       "criticalDefinition": "Definiția drumului critic",
       "critTotalFloat": "Marjă totală ≤ prag",
       "critLongestPath": "Drum cel mai lung",
@@ -253,6 +262,12 @@
       "maxPaths": "Max. drumuri",
       "tfAuto": "Automat (implicit)",
       "critThresholdHours": "Prag (ore, pe calendarul activității)"
+    },
+    "ifcSchema": {
+      "label": "Schema IFC la salvare",
+      "optionIfc4x3": "IFC 4.3",
+      "optionIfc4x3Add2": "IFC 4.3 ADD2 (implicit)",
+      "optionIfc4": "IFC4"
     }
   },
   "newProject": {

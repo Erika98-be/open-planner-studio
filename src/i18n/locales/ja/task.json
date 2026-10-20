@@ -129,6 +129,7 @@
       "workWindowFinish": "作業枠の終了",
       "workWindowStart": "作業枠の開始",
       "workRule": "作業ルール",
+      "assignmentPlannedUnits": "1日あたりの計画された単位数",
       "assignmentPlannedWork": "計画作業（時間）",
       "assignmentActualWork": "実績作業（時間）",
       "assignmentRemainingWork": "残作業（時間）"
@@ -281,6 +282,7 @@
       "internalRelations_other": "内部依存関係 {{count}} 件",
       "externalRelations_other": "外部関係 {{count}} 件",
       "baselineMissing": "このベースラインには存在しません",
+      "baselineOldDay": "このベースラインは、1日の数え方が異なる旧バージョンで保存されました。そのため、期間の差異は正しくありません。ベースラインを取り直してください。",
       "baselineVarianceStart": "開始差異",
       "baselineVarianceFinish": "終了差異",
       "baselineVarianceDuration": "期間差異"
@@ -355,7 +357,24 @@
     "FIXED_RATE": "固定単位",
     "label": "作業ルール",
     "projectDefault": "プロジェクトの既定（{{rule}}）",
-    "none": "プロジェクトの既定"
+    "none": "プロジェクトの既定",
+    "explain": {
+      "followsWork": "作業は期間と単位数から決まります。",
+      "followsUnits": "単位数は期間と作業から決まります。",
+      "followsDuration": "期間は作業と単位数から決まります。",
+      "followsUnitsFromWork": "単位数は作業から決まります。",
+      "workAdjustsUnits": "作業を変更すると、単位数が調整されます。",
+      "unitsAdjustsWork": "単位数を変更すると、作業が調整されます。",
+      "durationAdjustsUnits": "期間を変更すると、単位数が調整されます。",
+      "durationAdjustsWork": "期間を変更すると、作業が調整されます。",
+      "unitsOrDurationAdjustsWork": "単位数または期間を変更すると、作業が調整されます。",
+      "resourceAddsWork": "追加のリソースは作業を増やします。",
+      "resourceSharesWork": "追加のリソースが作業の一部を引き継ぎます。リソースごとの単位数は下がります。",
+      "resourceShorter": "追加のリソースにより、タスクが短くなります。",
+      "resourceShorterWholeDays": "追加のリソースにより、タスクが短くなります。結果は日単位に丸められます。",
+      "resourceAddsWorkSameDuration": "追加のリソースは作業を増やします。期間は同じままです。"
+    },
+    "info": "タスク種類の説明"
   },
   "properties": {
     "task": "タスク",
@@ -403,6 +422,12 @@
     "timephasedActive": "MS Project の時間配分に従っています",
     "timephasedLost": "編集後、MS Project の時間配分は適用されなくなりました — 元の配分はファイルに保存されたままです",
     "timephasedContoured": "独自の時間配分",
+    "recordedDatesShown": "表示されているのは Primavera が保存した日付です。アプリの計算結果ではありません。",
+    "recordedDatesShownNeutral": "表示されているのは、ファイルに記録されていた日付です。アプリの計算結果ではありません。",
+    "recordedDatesWillShift": "再計算すると、このタスクは変わります。",
+    "recordedDatesWillStay": "再計算しても、このタスクは変わりません。",
+    "recordedDatesMissing": "このタスクについて、Primavera は一部の情報を保存していません。不足している項目: {{fields}}。",
+    "recordedDatesMissingNeutral": "このタスクについて、ファイルには一部の情報がありません。不足している項目: {{fields}}。",
     "completion": "進捗（%）",
     "progress": {
       "actualStart": "実績開始",
@@ -452,6 +477,10 @@
       "workHint": "残作業（時間）。期間と単位のどちらが変わるかは作業ルールが決めます。",
       "workDeviates": "単位 × 期間と一致しません",
       "workDeviatesHint": "保存済み作業 {{stored}} 時間は単位 × 残り期間（{{derived}} 時間）と一致しません。ヒストグラムは保存済み作業をタスク期間全体に配分します。単位はファイルの値のままです。期間を変更すると、アプリが作業を再計算します。",
+      "workDeviatesMany": "保存されている作業が、単位数 × 残存期間と異なります:\n{{lines}}\n{{durationEffect}}",
+      "workDeviatesLine": "{{name}}: {{stored}}h（単位数 × 残存期間: {{derived}}h）",
+      "workDeviatesFollowsDuration": "アプリはこれを自動では変更しません。期間を変更すると、アプリはこの作業を単位数 × 新しい期間に置き換えます。その場合は通知が表示されます。Ctrl+Z で元に戻せます。",
+      "workDeviatesKeepsWork": "アプリはこれを自動では変更しません。期間を変更すると、この作業はそのまま残り、アプリが単位数を調整します。",
       "locked": "作業ルール {{rule}} により保護"
     },
     "notes": {

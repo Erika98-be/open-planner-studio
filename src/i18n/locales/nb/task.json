@@ -129,6 +129,7 @@
       "workWindowFinish": "Slutt arbeidsvindu",
       "workWindowStart": "Start arbeidsvindu",
       "workRule": "Arbeidsregel",
+      "assignmentPlannedUnits": "Planlagte tildelingsenheter per dag",
       "assignmentPlannedWork": "Planlagt arbeid (timer)",
       "assignmentActualWork": "Faktisk arbeid (timer)",
       "assignmentRemainingWork": "Gjenstående arbeid (timer)"
@@ -153,6 +154,7 @@
       "scheduleFinishNotManual": "Planlagt slutt gjelder bare for en manuelt planlagt aktivitet. Endre slutt i kolonnen Slutt eller i varigheten.",
       "finishFromDuration": "For denne aktiviteten følger slutten av start og varighet. Endre start eller varighet.",
       "finishBeforeStart": "Slutten ligger før starten.",
+      "startIsActual": "Denne aktiviteten er startet; starten er den faktiske starten. Endre den via fremdriften.",
       "finishIsActual": "Denne aktiviteten er ferdig; slutten er den faktiske slutten. Endre den via fremdriften.",
       "invalid": "Verdien du skrev inn er ugyldig.",
       "relationToken": "Bruk for eksempel 1.2 FS+2d.",
@@ -284,6 +286,7 @@
       "externalRelations_one": "{{count}} kobling mellom prosjekter",
       "externalRelations_other": "{{count}} koblinger mellom prosjekter",
       "baselineMissing": "Ikke med i denne grunnlinjen",
+      "baselineOldDay": "Grunnlinjen ble lagret med en eldre versjon som talte en dag annerledes. Avviket i varighet stemmer derfor ikke. Ta grunnlinjen på nytt.",
       "baselineVarianceStart": "Startavvik",
       "baselineVarianceFinish": "Sluttavvik",
       "baselineVarianceDuration": "Varighetsavvik"
@@ -358,7 +361,24 @@
     "FIXED_RATE": "Faste enheter",
     "label": "Arbeidsregel",
     "projectDefault": "Prosjektstandard ({{rule}})",
-    "none": "Prosjektstandard"
+    "none": "Prosjektstandard",
+    "explain": {
+      "followsWork": "Arbeid følger av varighet og tildelingsenheter.",
+      "followsUnits": "Tildelingsenhetene følger av varighet og arbeid.",
+      "followsDuration": "Varigheten følger av arbeid og tildelingsenheter.",
+      "followsUnitsFromWork": "Tildelingsenhetene følger av arbeidet.",
+      "workAdjustsUnits": "Endrer du arbeidet, tilpasser tildelingsenhetene seg.",
+      "unitsAdjustsWork": "Endrer du tildelingsenhetene, tilpasser arbeidet seg.",
+      "durationAdjustsUnits": "Endrer du varigheten, tilpasser tildelingsenhetene seg.",
+      "durationAdjustsWork": "Endrer du varigheten, tilpasser arbeidet seg.",
+      "unitsOrDurationAdjustsWork": "Endrer du tildelingsenhetene eller varigheten, tilpasser arbeidet seg.",
+      "resourceAddsWork": "En ekstra ressurs legger til arbeid.",
+      "resourceSharesWork": "En ekstra ressurs tar over en del av arbeidet; tildelingsenhetene per ressurs synker.",
+      "resourceShorter": "En ekstra ressurs gjør aktiviteten kortere.",
+      "resourceShorterWholeDays": "En ekstra ressurs gjør aktiviteten kortere, avrundet til hele dager.",
+      "resourceAddsWorkSameDuration": "En ekstra ressurs legger til arbeid; varigheten er uendret."
+    },
+    "info": "Forklaring av aktivitetstype"
   },
   "properties": {
     "task": "Aktivitet",
@@ -406,6 +426,12 @@
     "timephasedActive": "Følger timefordelingen fra MS Project",
     "timephasedLost": "Datovinduet fra MS Project brukes ikke lenger etter redigering. Timefordelingen selv gjelder fortsatt og blir lagret i filen.",
     "timephasedContoured": "Egen timefordeling",
+    "recordedDatesShown": "Du ser datoene Primavera lagret, ikke appens beregning.",
+    "recordedDatesShownNeutral": "Du ser datoene som lå i filen, ikke appens beregning.",
+    "recordedDatesWillShift": "Ved å omberegne endres denne aktiviteten.",
+    "recordedDatesWillStay": "Ved å omberegne forblir denne aktiviteten uendret.",
+    "recordedDatesMissing": "Primavera har ikke lagret alt for denne aktiviteten. Mangler: {{fields}}.",
+    "recordedDatesMissingNeutral": "Filen inneholder ikke alt for denne aktiviteten. Mangler: {{fields}}.",
     "completion": "Fremdrift (%)",
     "progress": {
       "actualStart": "Faktisk start",
@@ -455,6 +481,10 @@
       "workHint": "Gjenstående arbeid i timer. Arbeidsregelen avgjør om varighet eller tildelingsenheter endrer seg.",
       "workDeviates": "Avviker fra tildelingsenheter × varighet",
       "workDeviatesHint": "Lagret arbeid {{stored}} t avviker fra tildelingsenheter × gjenstående varighet ({{derived}} t). Histogrammet følger det lagrede arbeidet over hele aktivitetens varighet. Tildelingsenhetene blir stående slik filen ga dem. Hvis du endrer varigheten, regner appen det ut på nytt.",
+      "workDeviatesMany": "Lagret arbeid avviker fra tildelingsenheter × gjenstående varighet:\n{{lines}}\n{{durationEffect}}",
+      "workDeviatesLine": "{{name}}: {{stored}}t (tildelingsenheter × gjenstående varighet: {{derived}}t)",
+      "workDeviatesFollowsDuration": "Appen endrer ikke dette av seg selv. Endrer du varigheten, erstatter appen dette arbeidet med tildelingsenheter × ny varighet. Du får da et varsel; Ctrl+Z angrer det.",
+      "workDeviatesKeepsWork": "Appen endrer ikke dette av seg selv. Endrer du varigheten, blir dette arbeidet stående, og appen tilpasser tildelingsenhetene.",
       "locked": "Beskyttet av arbeidsregelen {{rule}}"
     },
     "notes": {

@@ -129,6 +129,7 @@
       "workWindowFinish": "نهاية نافذة العمل",
       "workWindowStart": "بداية نافذة العمل",
       "workRule": "قاعدة العمل",
+      "assignmentPlannedUnits": "الوحدات المخططة لكل يوم",
       "assignmentPlannedWork": "العمل المخطط (ساعات)",
       "assignmentActualWork": "العمل الفعلي (ساعات)",
       "assignmentRemainingWork": "العمل المتبقي (ساعات)"
@@ -301,6 +302,7 @@
       "externalRelations_many": "{{count}} علاقة خارجية",
       "externalRelations_other": "{{count}} علاقة خارجية",
       "baselineMissing": "غير موجود في هذا الخط الأساس",
+      "baselineOldDay": "خط الأساس هذا مُحفوظ بإصدار أقدم، كان يحسب اليوم بطريقة مختلفة. لذلك لا يكون انحراف المدة صحيحًا. أعِد حفظ خط الأساس.",
       "baselineVarianceStart": "انحراف البدء",
       "baselineVarianceFinish": "انحراف الانتهاء",
       "baselineVarianceDuration": "انحراف المدة"
@@ -375,7 +377,24 @@
     "FIXED_RATE": "وحدات ثابتة",
     "label": "قاعدة العمل",
     "projectDefault": "الافتراضي للمشروع ({{rule}})",
-    "none": "الافتراضي للمشروع"
+    "none": "الافتراضي للمشروع",
+    "explain": {
+      "followsWork": "يُحسب العمل من المدة والوحدات.",
+      "followsUnits": "تُحسب الوحدات من المدة والعمل.",
+      "followsDuration": "تُحسب المدة من العمل والوحدات.",
+      "followsUnitsFromWork": "تُحسب الوحدات من العمل.",
+      "workAdjustsUnits": "عند تغيير العمل، تتكيّف الوحدات.",
+      "unitsAdjustsWork": "عند تغيير الوحدات، يتكيّف العمل.",
+      "durationAdjustsUnits": "عند تغيير المدة، تتكيّف الوحدات.",
+      "durationAdjustsWork": "عند تغيير المدة، يتكيّف العمل.",
+      "unitsOrDurationAdjustsWork": "عند تغيير الوحدات أو المدة، يتكيّف العمل.",
+      "resourceAddsWork": "يُضيف مورد إضافي عملًا.",
+      "resourceSharesWork": "يتولّى مورد إضافي جزءًا من العمل؛ وتنخفض الوحدات لكل مورد.",
+      "resourceShorter": "يجعل مورد إضافي المهمة أقصر.",
+      "resourceShorterWholeDays": "يجعل مورد إضافي المهمة أقصر، مقرّبًا إلى أيام كاملة.",
+      "resourceAddsWorkSameDuration": "يُضيف مورد إضافي عملًا؛ وتبقى المدة كما هي."
+    },
+    "info": "شرح نوع المهمة"
   },
   "properties": {
     "task": "المهمة",
@@ -423,6 +442,12 @@
     "timephasedActive": "تتبع توزيع الساعات من MS Project",
     "timephasedLost": "لم يعد توزيع الساعات من MS Project مطبقًا بعد التعديل — يبقى التوزيع الأصلي محفوظًا في الملف",
     "timephasedContoured": "توزيع ساعات خاص",
+    "recordedDatesShown": "تظهر التواريخ التي حفظها Primavera، لا حساب التطبيق.",
+    "recordedDatesShownNeutral": "تظهر التواريخ الموجودة في الملف، لا حساب التطبيق.",
+    "recordedDatesWillShift": "عند إعادة الحساب، تتغيّر هذه المهمة.",
+    "recordedDatesWillStay": "عند إعادة الحساب، تبقى هذه المهمة كما هي.",
+    "recordedDatesMissing": "لم يحفظ Primavera كل البيانات لهذه المهمة. الناقص: {{fields}}.",
+    "recordedDatesMissingNeutral": "لا يحتوي الملف على كل البيانات لهذه المهمة. الناقص: {{fields}}.",
     "completion": "التقدم (%)",
     "progress": {
       "actualStart": "البداية الفعلية",
@@ -472,6 +497,10 @@
       "workHint": "العمل المتبقي بالساعات؛ تحدد قاعدة العمل ما إذا كانت المدة أم الوحدات تتغير.",
       "workDeviates": "يختلف عن الوحدات × المدة",
       "workDeviatesHint": "العمل المحفوظ {{stored}} س يختلف عن الوحدات × المدة المتبقية ({{derived}} س). يتبع المدرج التكراري العمل المحفوظ على مدى المهمة كلها؛ تبقى الوحدات كما وردت في الملف. إذا غيّرت المدة، يعيد التطبيق حسابه.",
+      "workDeviatesMany": "العمل المحفوظ يختلف عن الوحدات × المدة المتبقية:\n{{lines}}\n{{durationEffect}}",
+      "workDeviatesLine": "{{name}}: {{stored}} س (الوحدات × المدة المتبقية: {{derived}} س)",
+      "workDeviatesFollowsDuration": "لا يغيّر التطبيق هذا تلقائيًا. عند تغيير المدة، يستبدل التطبيق هذا العمل بالوحدات × المدة الجديدة، وتظهر لك رسالة تنبيه. اضغط Ctrl+Z للتراجع عنه.",
+      "workDeviatesKeepsWork": "لا يغيّر التطبيق هذا تلقائيًا. عند تغيير المدة، يبقى هذا العمل كما هو، ويعدّل التطبيق الوحدات.",
       "locked": "محمي بقاعدة العمل {{rule}}"
     },
     "notes": {

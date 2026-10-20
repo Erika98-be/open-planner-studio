@@ -60,6 +60,11 @@
       "startHour": "Začiatok (hodina)",
       "endHour": "Dokončenie (hodina)",
       "hoursPerDay": "Hodín za deň",
+      "hoursValue": "{{hours}} h",
+      "standardWorkday": "Štandardný pracovný deň",
+      "standardWorkdayInfo": "Dĺžka pracovného dňa, ktorý sa vyskytuje najčastejšie. Aplikácia podľa nej prepočítava deň na hodiny.",
+      "standardWorkdayInfoLabel": "Vysvetlenie štandardného pracovného dňa",
+      "fileHoursPerDayNotice": "Súbor má vlastný pracovný deň s dĺžkou {{fileHours}} h. Pri exporte do MS Project a P6 sa zachová. Tam má deň {{fileHours}} h, tu {{appHours}} h.",
       "holidaysSection": "Sviatky",
       "holidayName": "Popis",
       "from": "Od",
@@ -150,6 +155,9 @@
     "manageBaselines": "Spravovať pôvodné plány…",
     "statusDate": "Dátum kontroly stavu",
     "statusDateClear": "Vymazať dátum kontroly stavu",
+    "statusDateTime": "Čas dátumu kontroly stavu",
+    "statusDateTimeLater": "Čas neskôr",
+    "statusDateTimeEarlier": "Čas skôr",
     "progressMode": "Režim postupu",
     "progressModeRetained": "Retained Logic",
     "progressModeOverride": "Progress Override",
@@ -234,6 +242,7 @@
       "ssLagEarlyStart": "Skorý začiatok (začiatok zostávajúcej práce)",
       "ssLagActualStart": "Skutočný začiatok (dátum kontroly stavu)",
       "ssLagNeedsConvention": "Funguje len vtedy, keď je pravidlo výpočtu „{{convention}}” zapnuté.",
+      "ssLagNeedsHourPlanning": "Platí len pri plánovaní v hodinách. To znamená kalendár s blokmi pracovného času alebo úlohy v hodinách. Tento projekt nemá ani jedno z nich v zvolenom kalendári pre oneskorenie.",
       "criticalDefinition": "Definícia kritického stavu",
       "critTotalFloat": "Celková časová rezerva ≤ prahová hodnota",
       "critLongestPath": "Najdlhšia cesta",
@@ -254,6 +263,12 @@
       "maxPaths": "Max. počet ciest",
       "tfAuto": "Automaticky (predvolené)",
       "critThresholdHours": "Prahová hodnota (hodiny, podľa kalendára úlohy)"
+    },
+    "ifcSchema": {
+      "label": "Schéma IFC pri ukladaní",
+      "optionIfc4x3": "IFC 4.3",
+      "optionIfc4x3Add2": "IFC 4.3 ADD2 (predvolené)",
+      "optionIfc4": "IFC4"
     }
   },
   "newProject": {

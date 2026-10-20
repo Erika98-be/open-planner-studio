@@ -129,6 +129,7 @@
       "workWindowFinish": "Fin de ventana de trabajo",
       "workWindowStart": "Inicio de ventana de trabajo",
       "workRule": "Regla de trabajo",
+      "assignmentPlannedUnits": "Unidades planificadas por día",
       "assignmentPlannedWork": "Trabajo previsto (horas)",
       "assignmentActualWork": "Trabajo real (horas)",
       "assignmentRemainingWork": "Trabajo restante (horas)"
@@ -289,6 +290,7 @@
       "externalRelations_many": "{{count}} relaciones externas",
       "externalRelations_other": "{{count}} relaciones externas",
       "baselineMissing": "No está presente en esta línea base",
+      "baselineOldDay": "Esta línea base se guardó con una versión anterior, que contaba un día de otra forma. Por eso la variación de duración no es correcta. Vuelva a guardar la línea base.",
       "baselineVarianceStart": "Variación de inicio",
       "baselineVarianceFinish": "Variación de finalización",
       "baselineVarianceDuration": "Variación de duración"
@@ -363,7 +365,24 @@
     "FIXED_RATE": "Unidades fijas",
     "label": "Regla de trabajo",
     "projectDefault": "Valor predeterminado del proyecto ({{rule}})",
-    "none": "Predeterminado del proyecto"
+    "none": "Predeterminado del proyecto",
+    "explain": {
+      "followsWork": "El trabajo se calcula a partir de la duración y las unidades.",
+      "followsUnits": "Las unidades se calculan a partir de la duración y el trabajo.",
+      "followsDuration": "La duración se calcula a partir del trabajo y las unidades.",
+      "followsUnitsFromWork": "Las unidades se calculan a partir del trabajo.",
+      "workAdjustsUnits": "Si cambia el trabajo, las unidades se ajustan.",
+      "unitsAdjustsWork": "Si cambian las unidades, el trabajo se ajusta.",
+      "durationAdjustsUnits": "Si cambia la duración, las unidades se ajustan.",
+      "durationAdjustsWork": "Si cambia la duración, el trabajo se ajusta.",
+      "unitsOrDurationAdjustsWork": "Si cambian las unidades o la duración, el trabajo se ajusta.",
+      "resourceAddsWork": "Un recurso adicional añade trabajo.",
+      "resourceSharesWork": "Un recurso adicional asume una parte del trabajo; las unidades por recurso bajan.",
+      "resourceShorter": "Un recurso adicional acorta la tarea.",
+      "resourceShorterWholeDays": "Un recurso adicional acorta la tarea, redondeada a días completos.",
+      "resourceAddsWorkSameDuration": "Un recurso adicional añade trabajo; la duración no cambia."
+    },
+    "info": "Explicación del tipo de tarea"
   },
   "properties": {
     "task": "Tarea",
@@ -411,6 +430,12 @@
     "timephasedActive": "Sigue la distribución de horas de MS Project",
     "timephasedLost": "La distribución de horas de MS Project ya no se aplica tras la edición — la distribución original se conserva en el archivo",
     "timephasedContoured": "Distribución de horas propia",
+    "recordedDatesShown": "Verá las fechas que guardó Primavera, no el cálculo de la aplicación.",
+    "recordedDatesShownNeutral": "Verá las fechas que había en el archivo, no el cálculo de la aplicación.",
+    "recordedDatesWillShift": "Al recalcular, esta tarea cambia.",
+    "recordedDatesWillStay": "Al recalcular, esta tarea se mantiene igual.",
+    "recordedDatesMissing": "Primavera no guardó todo para esta tarea. Falta: {{fields}}.",
+    "recordedDatesMissingNeutral": "El archivo no contiene todo para esta tarea. Falta: {{fields}}.",
     "completion": "Progreso (%)",
     "progress": {
       "actualStart": "Inicio real",
@@ -460,6 +485,10 @@
       "workHint": "Trabajo restante en horas; la regla de trabajo decide si se mueve la duración o las unidades.",
       "workDeviates": "Difiere de unidades × duración",
       "workDeviatesHint": "El trabajo guardado {{stored}} h difiere de unidades × duración restante ({{derived}} h). El histograma sigue el trabajo guardado durante toda la tarea; las unidades quedan como las dio el archivo. Si cambia la duración, la aplicación lo recalcula.",
+      "workDeviatesMany": "El trabajo guardado difiere de unidades × duración restante:\n{{lines}}\n{{durationEffect}}",
+      "workDeviatesLine": "{{name}}: {{stored}}h (unidades × duración restante: {{derived}}h)",
+      "workDeviatesFollowsDuration": "La aplicación no cambia esto por sí sola. Si cambia la duración, la aplicación sustituye este trabajo por unidades × nueva duración. Recibirá entonces un aviso; Ctrl+Z lo deshace.",
+      "workDeviatesKeepsWork": "La aplicación no cambia esto por sí sola. Si cambia la duración, este trabajo se mantiene y la aplicación ajusta las unidades.",
       "locked": "Protegido por la regla de trabajo {{rule}}"
     },
     "notes": {

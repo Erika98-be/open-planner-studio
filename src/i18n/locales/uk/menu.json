@@ -60,6 +60,11 @@
       "startHour": "Початок (година)",
       "endHour": "Завершення (година)",
       "hoursPerDay": "Годин на день",
+      "hoursValue": "{{hours}} год",
+      "standardWorkday": "Стандартний робочий день",
+      "standardWorkdayInfo": "Тривалість робочого дня, яка трапляється найчастіше. За нею застосунок перераховує день у години.",
+      "standardWorkdayInfoLabel": "Пояснення до стандартного робочого дня",
+      "fileHoursPerDayNotice": "Файл має власний робочий день {{fileHours}} год. Він переноситься під час експорту в MS Project і P6. Там день дорівнює {{fileHours}} год, а тут — {{appHours}} год.",
       "holidaysSection": "Свята",
       "holidayName": "Опис",
       "from": "Від",
@@ -150,6 +155,9 @@
     "manageBaselines": "Керувати базовими планами…",
     "statusDate": "Дата звітування про стан",
     "statusDateClear": "Очистити дату звітування про стан",
+    "statusDateTime": "Час дати звітування про стан",
+    "statusDateTimeLater": "Час пізніше",
+    "statusDateTimeEarlier": "Час раніше",
     "progressMode": "Режим прогресу",
     "progressModeRetained": "Retained Logic",
     "progressModeOverride": "Progress Override",
@@ -234,6 +242,7 @@
       "ssLagEarlyStart": "Ранній початок (початок залишку роботи)",
       "ssLagActualStart": "Фактичний початок (дата звітування про стан)",
       "ssLagNeedsConvention": "Працює, лише якщо ввімкнено правило обчислень «{{convention}}».",
+      "ssLagNeedsHourPlanning": "Планування за годинами: працює лише з календарем, що має інтервали або завдання в годинах. Цей проєкт не має жодного з цих двох у вибраному календарі для затримки.",
       "criticalDefinition": "Визначення критичності",
       "critTotalFloat": "Загальний часовий резерв ≤ граничне значення",
       "critLongestPath": "Найдовший шлях",
@@ -254,6 +263,12 @@
       "maxPaths": "Макс. шляхів",
       "tfAuto": "Автоматично (за замовчуванням)",
       "critThresholdHours": "Граничне значення (години, за календарем завдання)"
+    },
+    "ifcSchema": {
+      "label": "Схема IFC під час збереження",
+      "optionIfc4x3": "IFC 4.3",
+      "optionIfc4x3Add2": "IFC 4.3 ADD2 (за замовчуванням)",
+      "optionIfc4": "IFC4"
     }
   },
   "newProject": {

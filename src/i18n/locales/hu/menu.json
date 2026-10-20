@@ -60,6 +60,11 @@
       "startHour": "Kezdés (óra)",
       "endHour": "Befejezés (óra)",
       "hoursPerDay": "Napi óraszám",
+      "hoursValue": "{{hours}} ó",
+      "standardWorkday": "Szokásos munkanap",
+      "standardWorkdayInfo": "A leggyakrabban előforduló munkanap hossza. Az alkalmazás ezzel számítja át a napokat órákra.",
+      "standardWorkdayInfoLabel": "Magyarázat a szokásos munkanaphoz",
+      "fileHoursPerDayNotice": "A fájlnak saját munkanapja van: {{fileHours}} ó. Exportáláskor ez megmarad az MS Projectben és a P6-ban. Ott egy nap {{fileHours}} órát számít, itt {{appHours}} órát.",
       "holidaysSection": "Ünnepnapok",
       "holidayName": "Megnevezés",
       "from": "Ettől",
@@ -148,6 +153,9 @@
     "manageBaselines": "Alapterv kezelése…",
     "statusDate": "Állapotdátum",
     "statusDateClear": "Állapotdátum törlése",
+    "statusDateTime": "Az állapotdátum időpontja",
+    "statusDateTimeLater": "Későbbi idő",
+    "statusDateTimeEarlier": "Korábbi idő",
     "progressMode": "Előrehaladási mód",
     "progressModeRetained": "Retained Logic",
     "progressModeOverride": "Progress Override",
@@ -232,6 +240,7 @@
       "ssLagEarlyStart": "Korai kezdés (hátralévő munka kezdete)",
       "ssLagActualStart": "Tényleges kezdés (állapotdátum)",
       "ssLagNeedsConvention": "Csak akkor működik, ha a(z) „{{convention}}” ütemezési szabály be van kapcsolva.",
+      "ssLagNeedsHourPlanning": "Csak óraalapú tervezésnél működik: egy naptár idősávokkal, vagy tevékenységek órában. Ennek a projektnek a kiválasztott késleltetési naptárán sincs egyik sem.",
       "criticalDefinition": "Kritikus definíció",
       "critTotalFloat": "Teljes tartalékidő ≤ küszöbérték",
       "critLongestPath": "Leghosszabb útvonal",
@@ -252,6 +261,12 @@
       "maxPaths": "Max. útvonalak",
       "tfAuto": "Automatikus (alapértelmezett)",
       "critThresholdHours": "Küszöbérték (óra, tevékenységnaptáranként)"
+    },
+    "ifcSchema": {
+      "label": "IFC-séma mentéskor",
+      "optionIfc4x3": "IFC 4.3",
+      "optionIfc4x3Add2": "IFC 4.3 ADD2 (alapértelmezett)",
+      "optionIfc4": "IFC4"
     }
   },
   "newProject": {

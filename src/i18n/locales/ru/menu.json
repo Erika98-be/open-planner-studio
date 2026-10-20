@@ -60,6 +60,11 @@
       "startHour": "Начало (час)",
       "endHour": "Окончание (час)",
       "hoursPerDay": "Часов в день",
+      "hoursValue": "{{hours}}ч",
+      "standardWorkday": "Стандартный рабочий день",
+      "standardWorkdayInfo": "Длина рабочего дня, которая встречается чаще всего. По ней приложение переводит день в часы.",
+      "standardWorkdayInfoLabel": "Пояснение к стандартному рабочему дню",
+      "fileHoursPerDayNotice": "Файл имеет собственный рабочий день {{fileHours}}ч. Он сохраняется при экспорте в MS Project и P6. Там день считается {{fileHours}}ч, здесь — {{appHours}}ч.",
       "holidaysSection": "Праздничные дни",
       "holidayName": "Описание",
       "from": "С",
@@ -150,6 +155,9 @@
     "manageBaselines": "Управлять базовыми планами…",
     "statusDate": "Дата отчета о состоянии",
     "statusDateClear": "Очистить дату отчета о состоянии",
+    "statusDateTime": "Время даты отчета о состоянии",
+    "statusDateTimeLater": "Время позже",
+    "statusDateTimeEarlier": "Время раньше",
     "progressMode": "Режим учета выполнения",
     "progressModeRetained": "Retained Logic",
     "progressModeOverride": "Progress Override",
@@ -234,6 +242,7 @@
       "ssLagEarlyStart": "Раннее начало (начало оставшейся длительности)",
       "ssLagActualStart": "Фактическое начало (дата отчета о состоянии)",
       "ssLagNeedsConvention": "Работает, только если правило расчета «{{convention}}» включено.",
+      "ssLagNeedsHourPlanning": "Работает только в режиме почасового планирования: нужен календарь с рабочими блоками или задачами в часах. В этом проекте в выбранном календаре для задержек нет ни того, ни другого.",
       "criticalDefinition": "Определение критичности",
       "critTotalFloat": "Общий резерв времени ≤ пороговое значение",
       "critLongestPath": "Самый длинный путь",
@@ -254,6 +263,12 @@
       "maxPaths": "Макс. путей",
       "tfAuto": "Автоматически (по умолчанию)",
       "critThresholdHours": "Пороговое значение (часов, по календарю задачи)"
+    },
+    "ifcSchema": {
+      "label": "Схема IFC при сохранении",
+      "optionIfc4x3": "IFC 4.3",
+      "optionIfc4x3Add2": "IFC 4.3 ADD2 (по умолчанию)",
+      "optionIfc4": "IFC4"
     }
   },
   "newProject": {

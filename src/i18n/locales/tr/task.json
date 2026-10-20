@@ -129,6 +129,7 @@
       "workWindowFinish": "Çalışma penceresi bitişi",
       "workWindowStart": "Çalışma penceresi başlangıcı",
       "workRule": "İş kuralı",
+      "assignmentPlannedUnits": "Günlük planlanmış birim",
       "assignmentPlannedWork": "Planlanan iş (saat)",
       "assignmentActualWork": "Gerçek iş (saat)",
       "assignmentRemainingWork": "Kalan iş (saat)"
@@ -285,6 +286,7 @@
       "externalRelations_one": "{{count}} dış ilişki",
       "externalRelations_other": "{{count}} dış ilişki",
       "baselineMissing": "Bu temel planda bulunmuyor",
+      "baselineOldDay": "Bu temel plan, bir gün farklı sayan eski bir sürümle kaydedildi. Bu yüzden süre sapması doğru değil. Temel planı yeniden alın.",
       "baselineVarianceStart": "Başlangıç sapması",
       "baselineVarianceFinish": "Bitiş sapması",
       "baselineVarianceDuration": "Süre sapması"
@@ -359,7 +361,24 @@
     "FIXED_RATE": "Sabit birimler",
     "label": "İş kuralı",
     "projectDefault": "Proje varsayılanı ({{rule}})",
-    "none": "Proje varsayılanı"
+    "none": "Proje varsayılanı",
+    "explain": {
+      "followsWork": "Bu iş, süre ve birim ile hesaplanır.",
+      "followsUnits": "Birim, süre ve iş ile hesaplanır.",
+      "followsDuration": "Süre, iş ve birim ile hesaplanır.",
+      "followsUnitsFromWork": "Birim, işe göre belirlenir.",
+      "workAdjustsUnits": "İşi değiştirirseniz, birim buna göre değişir.",
+      "unitsAdjustsWork": "Birimi değiştirirseniz, iş buna göre değişir.",
+      "durationAdjustsUnits": "Süreyi değiştirirseniz, birim buna göre değişir.",
+      "durationAdjustsWork": "Süreyi değiştirirseniz, iş buna göre değişir.",
+      "unitsOrDurationAdjustsWork": "Birimi veya süreyi değiştirirseniz, iş buna göre değişir.",
+      "resourceAddsWork": "Ek bir kaynak iş ekler.",
+      "resourceSharesWork": "Ek bir kaynak işin bir kısmını üstlenir; kaynak başına birim azalır.",
+      "resourceShorter": "Ek bir kaynak görevi kısaltır.",
+      "resourceShorterWholeDays": "Ek bir kaynak görevi kısaltır; tam günlere yuvarlanır.",
+      "resourceAddsWorkSameDuration": "Ek bir kaynak iş ekler; süre aynı kalır."
+    },
+    "info": "Görev türü hakkında açıklama"
   },
   "properties": {
     "task": "Görev",
@@ -407,6 +426,12 @@
     "timephasedActive": "MS Project'ten gelen saat dağılımını izliyor",
     "timephasedLost": "Düzenlemeden sonra MS Project'ten gelen saat dağılımı artık uygulanmıyor — özgün dağılım dosyada saklı kalıyor",
     "timephasedContoured": "Özel saat dağılımı",
+    "recordedDatesShown": "Primavera'nın kaydettiği tarihleri görürsünüz, uygulamanın hesabını değil.",
+    "recordedDatesShownNeutral": "Dosyada yer alan tarihleri görürsünüz, uygulamanın hesabını değil.",
+    "recordedDatesWillShift": "Yeniden hesaplamada bu görev değişir.",
+    "recordedDatesWillStay": "Yeniden hesaplamada bu görev aynı kalır.",
+    "recordedDatesMissing": "Primavera bu görev için her şeyi kaydetmedi. Eksik: {{fields}}.",
+    "recordedDatesMissingNeutral": "Dosya bu görev için her şeyi içermiyor. Eksik: {{fields}}.",
     "completion": "İlerleme (%)",
     "progress": {
       "actualStart": "Gerçek başlangıç",
@@ -456,6 +481,10 @@
       "workHint": "Saat cinsinden kalan iş; iş kuralı sürenin mi yoksa birimlerin mi değişeceğine karar verir.",
       "workDeviates": "Birim × süreden farklı",
       "workDeviatesHint": "Kaydedilmiş iş {{stored}} sa, birim × kalan süreden ({{derived}} sa) farklı. Histogram kaydedilmiş işi tüm görev süresi boyunca izler; birimler dosyadaki gibi kalır. Süreyi değiştirirseniz uygulama işi yeniden hesaplar.",
+      "workDeviatesMany": "Kaydedilen iş, birim × kalan süre ile uyuşmuyor:\n{{lines}}\n{{durationEffect}}",
+      "workDeviatesLine": "{{name}}: {{stored}} sa (birim × kalan süre: {{derived}} sa)",
+      "workDeviatesFollowsDuration": "Uygulama bunu kendiliğinden değiştirmez. Süreyi değiştirirseniz, uygulama bu işi birim × yeni süre ile değiştirir. Ardından bir bildirim alırsınız; Ctrl+Z bunu geri alır.",
+      "workDeviatesKeepsWork": "Uygulama bunu kendiliğinden değiştirmez. Süreyi değiştirirseniz, bu iş olduğu gibi kalır ve uygulama birimi ayarlar.",
       "locked": "{{rule}} iş kuralı tarafından korunuyor"
     },
     "notes": {
