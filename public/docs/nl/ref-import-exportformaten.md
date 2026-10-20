@@ -32,7 +32,7 @@ Per bestandsformaat: of je het kunt openen, opslaan en exporteren, wat er wel en
 
 ## MS Project XML (MSPDI)
 
-**Openen** — ja. De app herkent een `.xml`-bestand als MS Project XML aan het hoofdelement `Project` in de namespace van MS Project (of zonder namespace). Rekenprofiel: *Open Planner Studio*.
+**Openen** — ja. De app herkent een `.xml`-bestand als MS Project XML aan het hoofdelement `Project` in de namespace van MS Project (of zonder namespace). Rekenprofiel: *Open Planner Studio*. Na het openen zegt de app in één melding wat ze niet heeft overgenomen; zie [Een MS Project-bestand (.mpp) openen](docs://howto-mpp-openen).
 
 **Opslaan** — nee. Zo'n project krijgt geen opslagdoel.
 
@@ -46,7 +46,7 @@ Per bestandsformaat: of je het kunt openen, opslaan en exporteren, wat er wel en
 
 ## MS Project-bestand (`.mpp`)
 
-**Openen** — ja, van MS Project 2010 tot en met 2021. Rekenprofiel: *Microsoft Project*. De app leest het bestand alleen: ze verandert je `.mpp` nooit. Een bestand van MS Project 2007 of ouder, en een bestand met wachtwoord, weigert ze met een melding die verwijst naar de XML-export van MS Project.
+**Openen** — ja, van MS Project 2010 tot en met 2021. Rekenprofiel: *Microsoft Project*. De app leest het bestand alleen: ze verandert je `.mpp` nooit. Een bestand van MS Project 2007 of ouder, en een bestand met wachtwoord, weigert ze met een melding die verwijst naar de XML-export van MS Project. Na het openen zegt de app in één melding wat ze niet heeft overgenomen.
 
 **Opslaan** — nee, en er is geen opslagdoel: *Opslaan* schrijft een nieuw IFC-bestand.
 
@@ -54,7 +54,7 @@ Per bestandsformaat: of je het kunt openen, opslaan en exporteren, wat er wel en
 
 **Wat meegaat** — taken met structuur, duur en constraints; relaties met lag; kalenders; resources en toewijzingen; voortgang; een WBS-code die je in MS Project zelf invulde. De datums en speling die MS Project zelf uitrekende, leest de app ook, voor de weergave *Datums zoals opgeslagen*.
 
-**Wat niet meegaat** — baselines, kosten en tarieven, aantekeningen en de eigen velden van MS Project. Zie [Een MS Project-bestand (.mpp) openen](docs://howto-mpp-openen).
+**Wat niet meegaat** — baselines, kosten en tarieven, aantekeningen, hyperlinks, de eigen velden van MS Project, de koppeling van subprojecten en externe taken, en de drempel voor kritiek. Zie [Een MS Project-bestand (.mpp) openen](docs://howto-mpp-openen).
 
 **Herkomst en licentie** — de `.mpp`-lezer is geschreven voor Open Planner Studio en afgeleid van de broncode en structuurkennis van MPXJ (`github.com/joniles/mpxj`, Jon Iles e.a.), een Java-bibliotheek onder LGPL-2.1. Structuur en veldconstanten zijn naar TypeScript overgezet. Open Planner Studio zelf is open source onder LGPL-3.0. De `.xer`-lezer is geen overname: daarvoor is MPXJ alleen als bron van begrip geraadpleegd.
 

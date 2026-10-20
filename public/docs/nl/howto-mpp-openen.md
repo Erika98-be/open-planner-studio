@@ -18,7 +18,20 @@ Bevat het bestand taken met onderbrekingen, nivellering of een resource-gedreven
 
 ## Valkuilen en wat de app dan doet
 
-**Niet alles komt mee.** Baselines, kosten en tarieven, aantekeningen en de eigen velden van MS Project neemt de app niet over. Een WBS-code die je zelf in MS Project invulde, neemt ze wel over; anders nummert ze de taken volgens de structuur.
+**Niet alles komt mee.** Na het openen zegt de app in één melding wat ze niet heeft overgenomen: *Niet alles uit dit MS Project-bestand is overgenomen.* Daaronder staat per onderdeel een regel met het aantal, bijvoorbeeld *2 baselines zijn niet overgenomen.* Bij een `.mpp` staat de zin over het rekenprofiel uit stap 3 dan als eerste regel in deze melding. De melding blijft staan tot je op het kruisje klikt. Gaat er niets verloren, dan krijg je deze melding niet. Een regel kan gaan over:
+
+- ingevoegde projecten (subprojecten): de app leest ze als gewone taak, zonder de koppeling naar het andere bestand;
+- externe taken uit een ander project: de app leest ze als gewone taak;
+- baselines: uit een `.mpp` neemt de app geen baseline over, uit MS Project XML alleen Baseline 0;
+- eigen velden met waarden, zoals aangepaste velden en overzichtscodes (ja/nee-velden in een `.mpp` telt de app niet);
+- aantekeningen bij resources en toewijzingen, en uit een `.mpp` ook bij taken (uit MS Project XML komt de aantekening van een taak mee als beschrijving);
+- hyperlinks;
+- de vaste kosten van taken;
+- de tarieven van resources: uit een `.mpp` geen enkel tarief, uit MS Project XML alleen het standaardtarief;
+- alleen bij MS Project XML: handmatig geplande taken (de app plant ze automatisch), inactieve taken (ze tellen mee in de berekening) en de nivelleringsvertraging;
+- alleen bij een `.mpp`: de drempel voor kritiek uit MS Project; de app rekent met drempel 0.
+
+Een WBS-code die je zelf in MS Project invulde, neemt de app wel over; anders nummert ze de taken volgens de structuur.
 
 **Een bestand van MS Project 2007 of ouder.** De app weigert het en meldt: *Dit .mpp-bestand gebruikt een oud formaat (Project 2007 of ouder). Exporteer het in MS Project als XML (Bestand → Opslaan als → XML) en open dat bestand.* Achter de melding staat een technische reden in het Engels.
 
@@ -26,7 +39,7 @@ Bevat het bestand taken met onderbrekingen, nivellering of een resource-gedreven
 
 **Een bestand dat geen `.mpp` blijkt.** Je krijgt *Bestand openen mislukt*, met een technische reden erbij.
 
-**De XML-route rekent anders.** Open je de MS Project XML-export in plaats van het `.mpp`, dan rekent de app met het rekenprofiel *Open Planner Studio* en zie je de melding over *Microsoft Project* niet. De datums kunnen dan anders uitkomen dan bij het `.mpp`-bestand.
+**De XML-route rekent anders.** Open je de MS Project XML-export in plaats van het `.mpp`, dan rekent de app met het rekenprofiel *Open Planner Studio* en zie je de melding over *Microsoft Project* niet. De datums kunnen dan anders uitkomen dan bij het `.mpp`-bestand. Ook bij de XML-export zegt de app wat ze niet overneemt; zie *Niet alles komt mee*.
 
 **Een bewerking laat MS Project's sturing los.** Bewerk je een taak waarvan het datumvenster uit MS Project de planning stuurde, dan meldt de app eenmalig per project: *Het datumvenster uit MS Project stuurt 2 taken niet meer na deze bewerking; de urenverdeling zelf blijft gelden en in het bestand bewaard.* Bij één taak staat de melding in het enkelvoud.
 

@@ -220,7 +220,8 @@ async function main(): Promise<void> {
   const notices = S().ui.notifications.filter(n => n.messageKey === 'notifications.msProjectImportLoss');
   eq('3a één verslag', notices.length, 1);
   const notice = notices[0];
-  eq('3b regels', notice?.detailLines?.map(l => [l.messageKey, l.params?.count]), [
+  eq('3b regels', notice?.detailLines?.filter(l => l.messageKey !== 'notifications.importDatesAsRecorded')
+    .map(l => [l.messageKey, l.params?.count]), [
     ['notifications.schedulingProfileApplied', undefined],
     ['notifications.msProjectLostSubprojects', 1],
     ['notifications.msProjectLostExternalTasks', 1],
@@ -231,9 +232,7 @@ async function main(): Promise<void> {
     ['notifications.msProjectLostHyperlinks', 2],
     ['notifications.msProjectLostFixedCosts', 1],
     ['notifications.msProjectLostResourceRates', 1],
-  ].concat(notice?.detailLines?.some(l => l.messageKey === 'notifications.importDatesAsRecorded')
-    ? [['notifications.importDatesAsRecorded', notice.detailLines.find(l => l.messageKey === 'notifications.importDatesAsRecorded')?.params?.count]]
-    : []));
+  ]);
   eq('3c info, blijft staan, gids', [notice?.severity, notice?.sticky, notice?.helpArticleId], ['info', true, 'howto-mpp-openen']);
   eq('3d geen tweede melding met hetzelfde verslag', S().ui.notifications.filter(n => n.messageKey.startsWith('notifications.msProject')).length, 1);
 

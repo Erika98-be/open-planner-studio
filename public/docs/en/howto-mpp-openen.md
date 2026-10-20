@@ -18,7 +18,20 @@ If the file contains tasks with splits, leveling or a resource-driven schedule, 
 
 ## Pitfalls and what the app does then
 
-**Not everything comes along.** The app does not take over baselines, costs and rates, notes and the custom fields of MS Project. A WBS code that you filled in yourself in MS Project is taken over; otherwise the app numbers the tasks according to the structure.
+**Not everything comes along.** After opening, the app tells you in one message what it did not take over: *Not everything in this MS Project file was imported.* Below it there is one line per item with the number, for example *2 baselines were not imported.* For an `.mpp` the sentence about the calculation profile from step 3 is then the first line of this message. The message stays until you click the cross. If nothing is lost, you do not get this message. A line can be about:
+
+- inserted projects (subprojects): the app reads them as a normal task, without the link to the other file;
+- external tasks from another project: the app reads them as a normal task;
+- baselines: from an `.mpp` the app takes over no baseline, from MS Project XML only Baseline 0;
+- custom fields with values, such as custom fields and outline codes (the app does not count yes/no fields in an `.mpp`);
+- notes on resources and assignments, and from an `.mpp` also on tasks (from MS Project XML the note of a task comes along as its description);
+- hyperlinks;
+- the fixed costs of tasks;
+- the rates of resources: from an `.mpp` no rate at all, from MS Project XML only the standard rate;
+- only with MS Project XML: manually scheduled tasks (the app schedules them automatically), inactive tasks (they are included in the calculation) and the leveling delay;
+- only with an `.mpp`: the critical threshold from MS Project; the app uses threshold 0.
+
+A WBS code that you filled in yourself in MS Project is taken over; otherwise the app numbers the tasks according to the structure.
 
 **A file from MS Project 2007 or older.** The app refuses it and reports: *This .mpp file uses an older format (Project 2007 or earlier). In MS Project, export it as XML (File → Save As → XML) and open that file.* Below the message the app adds a technical reason in English.
 
@@ -26,7 +39,7 @@ If the file contains tasks with splits, leveling or a resource-driven schedule, 
 
 **A file that turns out not to be an `.mpp`.** You get *Failed to open file*, with a technical reason.
 
-**The XML route calculates differently.** If you open the MS Project XML export instead of the `.mpp`, the app calculates with the calculation profile *Open Planner Studio* and you do not see the message about *Microsoft Project*. The dates can then come out differently than with the `.mpp` file.
+**The XML route calculates differently.** If you open the MS Project XML export instead of the `.mpp`, the app calculates with the calculation profile *Open Planner Studio* and you do not see the message about *Microsoft Project*. The dates can then come out differently than with the `.mpp` file. With the XML export too, the app tells you what it does not take over; see *Not everything comes along*.
 
 **An edit lets go of MS Project's steering.** If you edit a task whose planning was driven by MS Project's date window, the app reports once per project: *MS Project's date window no longer drives 2 tasks after this edit; the hour distribution itself still applies and stays in the file.* For one task the message is in the singular.
 

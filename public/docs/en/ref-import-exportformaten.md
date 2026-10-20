@@ -32,7 +32,7 @@ Per file format: whether you can open, save and export it, what does and does no
 
 ## MS Project XML (MSPDI)
 
-**Open** — yes. The app recognises an `.xml` file as MS Project XML by the root element `Project` in the MS Project namespace (or without a namespace). Calculation profile: *Open Planner Studio*.
+**Open** — yes. The app recognises an `.xml` file as MS Project XML by the root element `Project` in the MS Project namespace (or without a namespace). Calculation profile: *Open Planner Studio*. After opening, the app tells you in one message what it did not take over; see [Opening an MS Project file (.mpp)](docs://howto-mpp-openen).
 
 **Save** — no. Such a project gets no save target.
 
@@ -46,7 +46,7 @@ Per file format: whether you can open, save and export it, what does and does no
 
 ## MS Project file (`.mpp`)
 
-**Open** — yes, from MS Project 2010 through 2021. Calculation profile: *Microsoft Project*. The app only reads the file: it never changes your `.mpp`. A file from MS Project 2007 or older, and a password-protected file, it refuses with a message that points to the XML export of MS Project.
+**Open** — yes, from MS Project 2010 through 2021. Calculation profile: *Microsoft Project*. The app only reads the file: it never changes your `.mpp`. A file from MS Project 2007 or older, and a password-protected file, it refuses with a message that points to the XML export of MS Project. After opening, the app tells you in one message what it did not take over.
 
 **Save** — no, and there is no save target: *Save* writes a new IFC file.
 
@@ -54,7 +54,7 @@ Per file format: whether you can open, save and export it, what does and does no
 
 **What goes along** — tasks with structure, duration and constraints; relations with lag; calendars; resources and assignments; progress; a WBS code that you filled in yourself in MS Project. The dates and float that MS Project calculated itself are read too, for the view *Dates as recorded*.
 
-**What does not go along** — baselines, costs and rates, notes and the custom fields of MS Project. See [Opening an MS Project file (.mpp)](docs://howto-mpp-openen).
+**What does not go along** — baselines, costs and rates, notes, hyperlinks, the custom fields of MS Project, the link of subprojects and external tasks, and the critical threshold. See [Opening an MS Project file (.mpp)](docs://howto-mpp-openen).
 
 **Origin and license** — the `.mpp` reader was written for Open Planner Studio and is derived from the source code and structural knowledge of MPXJ (`github.com/joniles/mpxj`, Jon Iles et al.), a Java library under LGPL-2.1. Structure and field constants were ported to TypeScript. Open Planner Studio itself is open source under LGPL-3.0. The `.xer` reader is not a derivative: MPXJ was only consulted there as a source of understanding.
 
