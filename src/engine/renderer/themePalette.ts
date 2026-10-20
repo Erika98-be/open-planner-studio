@@ -183,6 +183,9 @@ export interface GanttPalette {
   milestone: string;
   float: string;
   baseline: string;
+  /** PROTOTYPE (issue #391): kleuren van vergelijkingsbaseline 1 en 2 (onder de actieve, grijze). */
+  baselineCompare1: string;
+  baselineCompare2: string;
   selected: string;
   dependency: string;
   today: string;
@@ -230,6 +233,9 @@ export function readGanttPalette(): GanttPalette {
     milestone: v('--theme-bar-milestone', BRAND.milestone),
     float: v('--theme-bar-float', '#059669'),
     baseline: v('--theme-bar-baseline', BRAND.baseline),
+    // Vergelijkingsbaselines: per thema een eigen tint (licht donkerder, donker lichter), zie globals.css.
+    baselineCompare1: v('--theme-bar-baseline-compare-1', '#0891B2'),
+    baselineCompare2: v('--theme-bar-baseline-compare-2', '#C026D3'),
     selected: v('--theme-accent', '#B45309'),
     dependency: BRAND.dependency,
     today: v('--theme-accent', '#B45309'),

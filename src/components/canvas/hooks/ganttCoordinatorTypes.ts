@@ -160,6 +160,8 @@ export interface GanttTooltipState {
   x: number;
   y: number;
   task: Task;
+  /** PROTOTYPE (issue #391): gezet als de muis op een baselinelaag staat (0 = actief, 1/2 = vergelijking). */
+  baselineSlot?: 0 | 1 | 2;
 }
 
 export interface GanttRelationPopoverState {

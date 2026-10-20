@@ -325,6 +325,56 @@ const SCENES: Record<string, Scene> = {
       return `[data-ops-assignment-row="${a.id}"] [data-ops-assignment-work-deviates]`;
     },
   },
+  // PROTOTYPE (issue #391): meerdere baselines tegelijk in de Gantt. Drie baselines met
+  // verschillende datums: "Contract" (actief, grijs) plus "Herplanning maart" en "Herplanning juni"
+  // in "Vergelijk met". Hoe later de taak, hoe groter de uitloop sinds het contract.
+  'meerdere-baselines': {
+    run: async () => {
+      await openExample('showcase-verbouwing-eengezinswoning.ifc');
+      const { addCalendarDays, formatDate, parseDate } = await import('@/utils/dateUtils');
+      // Het voorbeeld heeft al een baseline; de scène begint met precies deze drie.
+      useAppStore.setState(s => { s.baselines = []; s.activeBaselineId = null; });
+      const contractId = useAppStore.getState().saveBaseline('Contract');
+      const contract = useAppStore.getState().baselines.find(b => b.id === contractId)!;
+      const order = [...contract.tasks].sort((a, b) => a.start.localeCompare(b.start));
+      const n = Math.max(1, order.length - 1);
+      const rank = new Map(order.map((t, i) => [t.taskId, i / n]));
+      const shift = (iso: string, days: number) => (iso
+        ? formatDate(addCalendarDays(parseDate(iso), days)) + iso.slice(10)
+        : iso);
+      // `drift(f)` = dagen die een taak op plaats f (0 = eerste, 1 = laatste) vóór het huidige plan lag.
+      const derive = (name: string, drift: (f: number) => number) => ({
+        ...contract,
+        id: `${contractId}-${name.replace(/\s+/g, '-').toLowerCase()}`,
+        name,
+        tasks: contract.tasks.map(t => {
+          const d = -Math.round(drift(rank.get(t.taskId) ?? 0));
+          return { ...t, start: shift(t.start, d), finish: shift(t.finish, d) };
+        }),
+      });
+      const maart = derive('Herplanning maart', f => 6 + 10 * f);
+      const juni = derive('Herplanning juni', f => (f < 0.3 ? 0 : 7 * f));
+      const contractShifted = derive('Contract', f => 4 + 24 * f);
+      useAppStore.setState(s => {
+        const i = s.baselines.findIndex(b => b.id === contractId);
+        s.baselines[i] = { ...contractShifted, id: contractId };
+        s.baselines.push(maart, juni);
+        s.activeBaselineId = contractId;
+        s.ui.showBaselineOverlay = true;
+        s.ui.comparedBaselineIds = [maart.id, juni.id];
+      });
+      (await waitFor('[data-ops-ribbon-tab="beeld"]')).click();
+      // In een verse browser komt het welkomstvenster soms pas ná het begin van de scène.
+      for (let i = 0; i < 20; i++) {
+        if (document.querySelector('[data-ops-welcome-dialog]')) {
+          await clickText('[data-ops-welcome-dialog]', ['Overslaan', 'Skip']);
+          break;
+        }
+        await sleep(150);
+      }
+      return '[data-ops-compare-baselines]';
+    },
+  },
 };
 
 export async function runQaScene(name: string): Promise<void> {

@@ -586,7 +586,10 @@
     "customFieldSuffix": "custom field"
   },
   "tooltip": {
-    "status": "Status"
+    "status": "Status",
+    "baselineActive": "Active baseline",
+    "baselineCompared": "Comparison baseline",
+    "baselineTask": "Task"
   },
   "externalLinks": {
     "action": "External link…",

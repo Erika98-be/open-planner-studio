@@ -586,7 +586,10 @@
     "customFieldSuffix": "eigen veld"
   },
   "tooltip": {
-    "status": "Status"
+    "status": "Status",
+    "baselineActive": "Actieve baseline",
+    "baselineCompared": "Vergelijkingsbaseline",
+    "baselineTask": "Taak"
   },
   "externalLinks": {
     "action": "Externe koppeling…",

@@ -29,7 +29,7 @@ import { computeSplitSegments } from './splitBarGeometry';
 import { isLeafTask, isSummaryTask } from '@/utils/taskHierarchy';
 import { classifyTraceTask, isRelationOutsideTrace, type TaskTrace } from '@/engine/taskGrid/trace';
 import { ellipsize } from './textFit';
-import { barLayout, type BarLayout } from './rowGeometry';
+import { barLayout, baselineStack, type BarLayout } from './rowGeometry';
 import { canvasFont, type TextRole } from './textRoles';
 import { shownStart, shownFinish, floatBandEnd, finishInstant } from '@/utils/taskDates';
 
@@ -78,6 +78,15 @@ function cachedArrowEntries(sequences: Sequence[], rows: ViewRow[], rowIndexByTa
   return entries;
 }
 
+/** PROTOTYPE (issue #391): één getekende baselinelaag van één taak, in canvascoördinaten. */
+interface BaselineHitRect {
+  slot: 0 | 1 | 2;
+  x1: number;
+  x2: number;
+  y1: number;
+  y2: number;
+}
+
 export interface GanttRenderOptions {
   /** DE gedeelde zichtbare-rijenlijst: de renderer flattent NIET zelf — tabel en Gantt consumeren
    *  exact dezelfde `viewRows` uit de store, zodat rij i in beide hetzelfde is (bandkoppen incluis). */
@@ -123,6 +132,9 @@ export interface GanttRenderOptions {
   assignments?: import('@/types/resource').ResourceAssignment[];
   /** Overlay-datums uit de actieve baseline, keyed op Task.id (alleen leaf-taken). */
   baselineOverlay?: BaselineOverlay;
+  /** PROTOTYPE (issue #391): tot twee extra baselines, gestapeld onder de actieve. `slot` bepaalt
+   *  de vaste kleur (`baselineCompare1`/`baselineCompare2`). */
+  baselineComparisons?: { slot: 1 | 2; overlay: BaselineOverlay }[];
   canvasWidth: number;
   canvasHeight: number;
   rowHeight: number;
@@ -308,6 +320,8 @@ export class GanttRenderer {
   private ctx: CanvasRenderingContext2D;
   private opts: GanttRenderOptions;
   private colors: GanttPalette;
+  /** PROTOTYPE (issue #391): getekende baselinevlakken per taak uit de laatste ronde, voor hover. */
+  private baselineHits = new Map<string, { task: Task; rects: BaselineHitRect[] }>();
 
   // Computed
   private viewStart: Date;
@@ -958,46 +972,84 @@ export class GanttRenderer {
     ctx.restore();
   }
 
-  /** Baseline-onderbalk: dunne balk (of ruit voor mijlpalen) in de baseline-kleur
-   *  onder de hoofdbalk, uit de actieve-baseline-overlay. Alleen als de taak een baseline-entry heeft. */
+  /** Baseline-onderbalken: dunne balk (of ruit voor mijlpalen) per baselinelaag onder de hoofdbalk.
+   *  Laag 0 is de actieve baseline (grijs, huidig uiterlijk); PROTOTYPE (issue #391): daaronder tot
+   *  twee vergelijkingsbaselines, elk in een vaste eigen kleur. Alleen lagen met een entry voor deze
+   *  taak tellen mee; de stapelplaats volgt de lagen die aan staan, zodat de kleurvolgorde vast is. */
   private drawBaselineOverlay(task: Task, y: number, height: number, resourceAccentHeight = 0): void {
-    const overlay = this.opts.baselineOverlay;
-    if (!overlay || this.opts.showBaselineOverlay === false) return;
-    const entry = overlay.get(task.id);
-    if (!entry) return;
+    if (this.opts.showBaselineOverlay === false) return;
+    const layers: { slot: 0 | 1 | 2; overlay: BaselineOverlay }[] = [];
+    if (this.opts.baselineOverlay) layers.push({ slot: 0, overlay: this.opts.baselineOverlay });
+    for (const c of this.opts.baselineComparisons ?? []) layers.push(c);
+    if (layers.length === 0) return;
 
-    const ctx = this.ctx;
-    const zoom = this.opts.view.zoom;
     // Resource-accent en baseline delen de vrije strook onder de hoofdbalk met VASTE hoogtes uit
     // `barLayout`: de baseline is even dik met of zonder accent en past in beide gevallen binnen
     // de rij. Staat er een accent, dan schuift de baseline eronder.
     const baseY = y + height + 1 + resourceAccentHeight;
-    const baseHeight = this.bar.baselineHeight;
-    ctx.fillStyle = this.colors.baseline;
+    const available = this.bar.barOffset - 1 - resourceAccentHeight;
+    const stack = baselineStack(this.bar.baselineHeight, available, layers.length);
+    const zoom = this.opts.view.zoom;
+    const ctx = this.ctx;
+    const hits: BaselineHitRect[] = [];
 
-    if (entry.isMilestone) {
-      // Kleine ruit in baseline-kleur op de baseline-datum.
-      const x = this.dateToX(parseDate(entry.start)) + zoom / 2;
-      if (x < 0 || x >= this.opts.canvasWidth) return;
-      const cy = baseY + baseHeight / 2;
-      const s = baseHeight;
+    layers.forEach((layer, i) => {
+      const entry = layer.overlay.get(task.id);
+      if (!entry) return;
+      const top = baseY + stack[i].offset;
+      const h = stack[i].height;
+      ctx.fillStyle = layer.slot === 0
+        ? this.colors.baseline
+        : layer.slot === 1 ? this.colors.baselineCompare1 : this.colors.baselineCompare2;
+
+      if (entry.isMilestone) {
+        // Kleine ruit in de laagkleur op de baseline-datum. Met één laag even groot als altijd;
+        // gestapeld minstens 2 px, anders is de ruit geen ruit meer.
+        const x = this.dateToX(parseDate(entry.start)) + zoom / 2;
+        if (x < 0 || x >= this.opts.canvasWidth) return;
+        const cy = top + h / 2;
+        const sz = layers.length === 1 ? h : Math.max(2, h);
+        ctx.beginPath();
+        ctx.moveTo(x, cy - sz);
+        ctx.lineTo(x + sz, cy);
+        ctx.lineTo(x, cy + sz);
+        ctx.lineTo(x - sz, cy);
+        ctx.closePath();
+        ctx.fill();
+        hits.push({ slot: layer.slot, x1: x - sz, x2: x + sz, y1: top, y2: top + h });
+        return;
+      }
+
+      const x1 = this.dateToX(parseDate(entry.start));
+      const x2 = this.dateToX(parseDate(entry.finish)) + zoom;
+      if (x2 < 0 || x1 >= this.opts.canvasWidth) return;
+      const width = Math.max(x2 - x1, 2);
       ctx.beginPath();
-      ctx.moveTo(x, cy - s);
-      ctx.lineTo(x + s, cy);
-      ctx.lineTo(x, cy + s);
-      ctx.lineTo(x - s, cy);
-      ctx.closePath();
+      ctx.roundRect(x1, top, width, h, Math.min(1, h / 2));
       ctx.fill();
-      return;
-    }
+      hits.push({ slot: layer.slot, x1, x2: x1 + width, y1: top, y2: top + h });
+    });
+    if (hits.length) this.baselineHits.set(task.id, { task, rects: hits });
+  }
 
-    const x1 = this.dateToX(parseDate(entry.start));
-    const x2 = this.dateToX(parseDate(entry.finish)) + zoom;
-    if (x2 < 0 || x1 >= this.opts.canvasWidth) return;
-    const width = Math.max(x2 - x1, 2);
-    ctx.beginPath();
-    ctx.roundRect(x1, baseY, width, baseHeight, 1);
-    ctx.fill();
+  /** PROTOTYPE (issue #391): welke baselinelaag ligt onder de muis? Leest de vlakken die de laatste
+   *  teken-ronde vastlegde (zelfde geometrie als getekend). De lagen zijn maar 1–3 px hoog; daarom
+   *  telt een marge van 2 px boven en onder de stapel mee, en wint de dichtstbijzijnde laag. */
+  getBaselineAt(canvasX: number, canvasY: number): { task: Task; slot: 0 | 1 | 2 } | null {
+    const task = this.getTaskAtY(canvasY);
+    if (!task) return null;
+    const hit = this.baselineHits.get(task.id);
+    if (!hit) return null;
+    const PAD_Y = 2;
+    const PAD_X = 3;
+    let best: { slot: 0 | 1 | 2; dist: number } | null = null;
+    for (const r of hit.rects) {
+      if (canvasX < r.x1 - PAD_X || canvasX > r.x2 + PAD_X) continue;
+      if (canvasY < r.y1 - PAD_Y || canvasY > r.y2 + PAD_Y) continue;
+      const dist = Math.abs(canvasY - (r.y1 + r.y2) / 2);
+      if (!best || dist < best.dist) best = { slot: r.slot, dist };
+    }
+    return best ? { task: hit.task, slot: best.slot } : null;
   }
 
   private drawTimelineHeader(): void {
@@ -1223,6 +1275,7 @@ export class GanttRenderer {
   }
 
   private drawTaskBars(): void {
+    this.baselineHits.clear();
     const { barHeight, barOffset } = this.bar;
 
     // Path tracing: betrokken taken krijgen de trace-tint (driving-keten sterker), de rest dimt.

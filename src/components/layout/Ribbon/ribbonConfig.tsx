@@ -21,6 +21,7 @@ import { isTreeMode } from '@/engine/view/visibleRows';
 import { hasLevelingOutput } from '@/utils/taskDefaults';
 import { isGanttWorkspaceVisible } from '@/state/ganttVisibility';
 import type { RibbonTab, UIState } from '@/state/slices/types';
+import { CompareBaselinesPicker } from './CompareBaselinesPicker';
 import {
   BaselinesProgressGroupContent, MilestoneDropdown, RelationDropdown, TemplatesDropdown, RecentFilesDropdown,
   ScreenColorsPopoverButton,
@@ -786,6 +787,8 @@ const beeldTab: RibbonTabConfig = [
           },
         ],
       },
+      // PROTOTYPE (issue #391): tot twee extra baselines naast de actieve in de Gantt.
+      { kind: 'component', id: 'compareBaselines', Component: CompareBaselinesPicker },
       // De vaste linthoogte draagt drie kleine knoppen per stack. Kleurmodus en resource-accent
       // vormen daarom samen de tweede verticale kolom, niet twee losse horizontale groepsitems.
       {

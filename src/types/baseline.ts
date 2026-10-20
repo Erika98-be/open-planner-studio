@@ -51,3 +51,61 @@ export function buildBaselineOverlay(
   }
   return map;
 }
+
+// ── PROTOTYPE (issue #391): meerdere baselines tegelijk in de Gantt ─────────────────────────────
+
+/** Vaste kleurplaats van een baselinelaag: 0 = de actieve baseline (grijs, zoals altijd),
+ *  1 en 2 = de twee vergelijkingsbaselines, elk met een eigen kleur. */
+export type BaselineLayerSlot = 0 | 1 | 2;
+
+/** Eén getekende baselinelaag in de Gantt. */
+export interface BaselineLayer {
+  slot: BaselineLayerSlot;
+  baselineId: string;
+  name: string;
+  overlay: BaselineOverlay;
+}
+
+/** Maximaal aantal extra baselines naast de actieve. */
+export const MAX_COMPARED_BASELINES = 2;
+
+/** De lagen die de Gantt tekent, van boven naar onder: eerst de actieve baseline, dan de
+ *  vergelijkingsplaatsen 1 en 2. Een plaats met een onbekend id of met het id van de actieve
+ *  baseline telt niet mee (die staat al bovenaan); de andere plaats houdt haar kleur. */
+export function buildBaselineLayers(
+  baselines: Baseline[],
+  activeBaselineId: string | null | undefined,
+  compared: readonly (string | null)[],
+): BaselineLayer[] {
+  const layers: BaselineLayer[] = [];
+  const add = (id: string | null | undefined, slot: BaselineLayerSlot) => {
+    if (!id) return;
+    if (slot !== 0 && id === activeBaselineId) return;
+    const baseline = baselines.find(b => b.id === id);
+    if (!baseline) return;
+    const overlay = buildBaselineOverlay(baselines, id);
+    if (!overlay) return;
+    layers.push({ slot, baselineId: id, name: baseline.name, overlay });
+  };
+  add(activeBaselineId, 0);
+  compared.slice(0, MAX_COMPARED_BASELINES).forEach((id, i) => add(id, (i + 1) as BaselineLayerSlot));
+  return layers;
+}
+
+/** Zet een baseline in of uit de vergelijking. Aan: de eerste lege plaats (vol = geen wijziging).
+ *  Uit: alleen die plaats wordt leeg, zodat de andere baseline haar kleur houdt. */
+export function toggleComparedBaseline(
+  compared: readonly [string | null, string | null],
+  id: string,
+): [string | null, string | null] {
+  const next: [string | null, string | null] = [compared[0], compared[1]];
+  const at = next.indexOf(id);
+  if (at >= 0) {
+    next[at] = null;
+    return next;
+  }
+  const free = next.indexOf(null);
+  if (free < 0) return next;
+  next[free] = id;
+  return next;
+}
