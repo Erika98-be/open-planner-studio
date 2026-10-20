@@ -346,6 +346,8 @@ export const createDocumentSlice: AppSliceFactory<DocumentSlice> = (runtime) => 
   ...initialDocumentRegistry(),
 
   newDocument: () => {
+    // Open veldinvoer hoort bij het document dat nu actief is (zie pendingTextEdits.ts).
+    runtime.finishPendingTextEdits();
     const state = get();
     const outgoing = capturePayload(state);
     const newId = generateId('doc');
@@ -367,6 +369,9 @@ export const createDocumentSlice: AppSliceFactory<DocumentSlice> = (runtime) => 
   },
 
   duplicateDocument: (name) => {
+    // Eerst open veldinvoer in de bron committen: die hoort in de bron én (dus) in de kopie, en niet
+    // alleen in de kopie via de unmount van het veld (review #401, punt 1).
+    runtime.finishPendingTextEdits();
     // Een documentwissel breekt een lopende coalesce-reeks af (zie switchDocument): de kopie mag niet
     // stilzwijgend verdergaan op de undo-stap van de bron.
     runtime.resetUndoCoalescing();
@@ -458,8 +463,9 @@ export const createDocumentSlice: AppSliceFactory<DocumentSlice> = (runtime) => 
   },
 
   switchDocument: (id) => {
+    if (id === get().activeDocumentId) return;
+    runtime.finishPendingTextEdits(); // open veldinvoer hoort bij het uitgaande document (pendingTextEdits.ts)
     const state = get();
-    if (id === state.activeDocumentId) return;
     // Een documentwissel breekt een lopende coalesce-reeks af: terugswitchen mag niet
     // stilzwijgend verdergaan op de undo-stap van vóór de wissel.
     runtime.resetUndoCoalescing();
@@ -492,6 +498,7 @@ export const createDocumentSlice: AppSliceFactory<DocumentSlice> = (runtime) => 
   },
 
   closeDocument: (id) => {
+    runtime.finishPendingTextEdits(); // open veldinvoer hoort bij het document dat nu actief is
     const state = get();
     if (!state.documents.some((d) => d.id === id)) return;
 
@@ -599,6 +606,7 @@ export const createDocumentSlice: AppSliceFactory<DocumentSlice> = (runtime) => 
 
   restoreDocuments: (docs, activeId) => {
     if (docs.length === 0) return { skippedIds: [] };
+    runtime.finishPendingTextEdits(); // open veldinvoer hoort bij het document dat nu actief is
     // Herstel leest per document een ZELFSTANDIG IFC; identieke gevalideerde XER-bron-
     // archieven worden hier weer één gedeelde referentie vóór er payloads van gemaakt worden
     // (rehab-2 alleen al draagt 52.640 retained TASKRSRC-rijen). Deze stap GOOIT bewust bij een

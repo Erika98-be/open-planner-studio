@@ -67,6 +67,7 @@
     "mppLegacy": "Bu .mpp dosyası eski bir biçim kullanıyor (Project 2007 veya daha eski). MS Project'te XML olarak dışa aktarın (Dosya → Farklı Kaydet → XML) ve o dosyayı açın.",
     "mppEncrypted": "Bu .mpp dosyası parola ile korunuyor. MS Project'te XML olarak dışa aktarın (Dosya → Farklı Kaydet → XML) ve o dosyayı açın.",
     "saveFailed": "Kaydetme başarısız",
+    "ambiguousThousands": "\"{{text}}\" belirsiz: ondalık sayı mı, binler mi? Ondalıkları \"{{separator}}\" ile (1{{separator}}5), binleri ayırıcı olmadan (1500) yazın. Değer değiştirilmedi.",
     "siteSaveConflict": "Kaydedilmedi: '{{name}}' bu arada sitede başka biri tarafından değiştirildi. Değişiklikleriniz hâlâ uygulamada. Yeni bir dosya olarak saklamak için Farklı kaydet komutunu kullanın.",
     "siteFileGone": "'{{name}}' artık sitede yok. Dosya Son açılanlar listesinden kaldırıldı.",
     "savedViaDownload": "İndirme olarak kaydedildi: '{{name}}' artık indirmeler klasörünüzde. Bu ortam uygulamanın seçtiğiniz konuma doğrudan yazmasına izin vermiyor.",

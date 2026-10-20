@@ -97,6 +97,7 @@
     "mppLegacy": "Ten plik .mpp używa starszego formatu (Project 2007 lub starszy). Wyeksportuj go w MS Project jako XML (Plik → Zapisz jako → XML) i otwórz ten plik.",
     "mppEncrypted": "Ten plik .mpp jest zabezpieczony hasłem. Wyeksportuj go w MS Project jako XML (Plik → Zapisz jako → XML) i otwórz ten plik.",
     "saveFailed": "Nie udało się zapisać",
+    "ambiguousThousands": "„{{text}}” jest niejednoznaczne: liczba dziesiętna czy tysiące? Wpisz część dziesiętną z „{{separator}}” (1{{separator}}5), a tysiące bez separatora (1500). Wartość nie została zmieniona.",
     "siteSaveConflict": "Nie zapisano: '{{name}}' został w międzyczasie zmieniony w witrynie przez kogoś innego. Twoje zmiany nadal są w aplikacji. Wybierz Zapisz jako, aby zachować je jako nowy plik.",
     "siteFileGone": "'{{name}}' nie ma już w witrynie. Plik został usunięty z listy Ostatnie.",
     "savedViaDownload": "Zapisano jako pobrany plik: '{{name}}' znajduje się teraz w folderze pobierania. To środowisko nie pozwala aplikacji zapisywać bezpośrednio w wybranej lokalizacji.",

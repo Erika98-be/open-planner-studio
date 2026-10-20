@@ -24,7 +24,7 @@ Is een taak geselecteerd, dan toont het histogram alleen de belasting van die ta
 ### 2. Kies een oplossing
 
 - **Meer capaciteit.** Komt er echt een tweede metselaar, zet dan *Max. eenheden* op 2 (zie [Resources beheren](docs://howto-resources-beheren)). De overbezetting is dan weg.
-- **Minder inzet per dag.** Verlaag de *Eenh./dag* of kies een andere curve bij de toewijzing (zie [Resources toewijzen met een curve](docs://howto-resource-toewijzen)).
+- **Minder inzet per dag.** Verlaag de *Inzet* of kies een andere curve bij de toewijzing (zie [Resources toewijzen met een curve](docs://howto-resource-toewijzen)).
 - **Taken achter elkaar zetten.** Leg een relatie tussen de twee taken, zodat de tweede pas begint als de eerste klaar is (zie [Relaties leggen](docs://howto-relaties-leggen)).
 - **Nivelleren.** De app laat een taak later beginnen.
 

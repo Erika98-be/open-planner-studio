@@ -762,6 +762,8 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
 
   return {
     applyLoadedProject: (parsed, opts) => {
+      // Open veldinvoer hoort bij het document dat nu vervangen wordt (zie pendingTextEdits.ts).
+      runtime.finishPendingTextEdits();
       const current = get();
       const filePath = opts.filePath !== undefined ? opts.filePath : current.filePath;
       // Dubbele id's uit een kapot of vreemd bestand eerst uniek maken; de store sleutelt op id.

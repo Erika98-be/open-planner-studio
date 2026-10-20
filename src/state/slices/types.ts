@@ -191,6 +191,10 @@ export type NotificationMessageKey =
   // Parameters `name` (extensienaam) en `message` (onvertaalde extensietekst, als platte tekst).
   | 'notifications.extensionMessage'
   | 'notifications.saveFailed'
+  // Inzet/werk (blok Toewijzingen): "1,500" in en of "1.500" in nl is dubbelzinnig (1500 of 1,5)
+  // en wordt geweigerd. Parameters `text` (de getypte invoer) en `separator` (decimaalteken van de
+  // taal; de vertaling toont het voorbeeld als 1{{separator}}5).
+  | 'notifications.ambiguousThousands'
   // Opslag via de site (issue #309): de site weigerde omdat het bestand intussen verder is
   // (`code === 'conflict'`). Parameter `name`. Het document blijft gewijzigd.
   | 'notifications.siteSaveConflict'
