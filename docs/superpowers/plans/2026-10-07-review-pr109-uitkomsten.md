@@ -1829,3 +1829,8 @@ Testversie (release-check, poort 3049) is NIET bijgewerkt met de PR's van vandaa
   daarna review (GPT-6.1-Sol) + CI, dan merge; #369/#389 daarna sluiten als opgenomen.
 - **#362 gemerged in main (0c8d1aedc)** — `gh pr merge --admin --match-head-commit 8a3cdbdf1` na review JA, CI 16/16 op
   8a3cdbdf1, hercheck eigenaar "goed", main CI b02d2958b groen. Override gebruikt.
+- **#401 integratie toewijzingen (#369 + #389)** (worker Opus 5.5): kop 9a70f075d, CI 16/16 groen; main b02d2958b
+  erin; termen #376 goedgezet, "dubbelzinnig getal" via `refusalNotice()` in `REFUSAL_KEYS` (mutant: spec rood),
+  geen botsing met #381. merge-tree schoon met main e98b83e48 (#395, andere sessie) en met #400. VERVOLG: tooltip
+  inzetveld "Eenh./dag" vs kolomkop "Inzet". Review (GPT-6.1-Sol, xhigh) gestart — #369 ronde 5 en #389 nooit eerder
+  gereviewd.
