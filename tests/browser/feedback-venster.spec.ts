@@ -484,3 +484,28 @@ test('sluitknop: een soort kiezen is geen inhoud', async ({ page, ops }) => {
     await expect(header.getByRole('button', { name: 'Save and close' }), `${kind}: met titel (kruisje)`).toBeVisible();
   }
 });
+
+// Echte toetsaanslagen (CDP `Input.dispatchKeyEvent`, wat ook `page.keyboard` gebruikt), maar elke
+// toets direct na de vorige, zonder op de pagina te wachten. Zo typt een snelle typist, en zo liep
+// de CI vast: een extra render per toets bleef open tot de volgende toets. React telde elke toets
+// dan als geneste update en gooide na 50 toetsen "Maximum update depth exceeded"; een teken viel weg.
+async function typeFast(page: Page, text: string) {
+  const cdp = await page.context().newCDPSession(page);
+  const sent: Array<Promise<unknown>> = [];
+  for (const key of text) {
+    sent.push(cdp.send('Input.dispatchKeyEvent', { type: 'keyDown', key, text: key, unmodifiedText: key }));
+    sent.push(cdp.send('Input.dispatchKeyEvent', { type: 'keyUp', key }));
+  }
+  await Promise.all(sent);
+  await cdp.detach();
+}
+
+test('snel typen: geen teken valt weg en React blijft onder de grens voor geneste updates', async ({ page, ops }) => {
+  void ops;
+  const dialog = await openDialog(page);
+  // Ruim boven de grens van 50: twee keer de omschrijving, 107 tekens.
+  const LONG = `${DESCRIPTION} ${DESCRIPTION}`;
+  await dialog.getByLabel('Description').click();
+  await typeFast(page, LONG);
+  await expect(dialog.getByLabel('Description')).toHaveValue(LONG);
+});

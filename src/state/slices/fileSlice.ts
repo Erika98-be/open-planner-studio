@@ -45,6 +45,8 @@ import { askIfcSchema, ifcSchemaQuestionFor } from '@/services/ifc/ifcSchemaQues
 import { applyIfcSchemaChoice } from '../ifcSchemaChoice';
 import { withSchedulingProfileNotice } from '../schedulingProfileNotice';
 import type { ImportLabelT } from '@/i18n/importLabels';
+import { parseableHourSuffix } from '@/utils/durationFormat';
+import i18next from 'i18next';
 import { invalidateDocumentRedo, removeSessionHistoryForDocumentFromState } from '../sessionHistory';
 import { scheduleFailedNotice } from '../scheduleErrorNotice';
 import { browserSaveNotice } from '../browserSaveNotice';
@@ -1166,17 +1168,26 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
           nameOverride = `${suggestedFileBase(state)}-voortgang.${ext}`;
           break;
         }
-        case 'csv':
+        case 'csv': {
+          // Uurteken van de lag uit de i18next-singleton die `@/i18n/config` in de app initialiseert.
+          // Bewust NIET `@/i18n/config` laden: dat raakt bij het laden `document` aan en breekt
+          // headless checks (zie check-xer-export-loss). Niet geïnitialiseerd ⇒ terugval `u`.
+          const hourSuffix = i18next.isInitialized
+            ? i18next.t('duration.suffixHour', { ns: 'common' })
+            : undefined;
           payload = writeCSV(
             state.project, state.calendar, state.tasks,
             state.sequences, state.resources, state.assignments, state.customTaskTypes,
             // In "datums zoals opgeslagen" mag een niet-vastgelegde as niet als verzonnen 0/No
             // het bestand in. Buiten de modus: `undefined`.
             unrecordedExportGate(state.recordedDates, state.datesAsRecorded),
+            // Lag in uren met het teken van de app-taal (eigenaarsbesluit 2026-10-20, optie 2).
+            parseableHourSuffix(hourSuffix),
           );
           ext = 'csv';
           filters = [{ name: 'CSV Files', extensions: ['csv'] }];
           break;
+        }
         case 'mspdi':
           payload = writeMSPDI(
             state.project, state.calendar, state.tasks,

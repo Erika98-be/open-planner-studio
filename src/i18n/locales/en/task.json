@@ -459,7 +459,7 @@
     "jumpToTask": "Go to task {{wbs}}",
     "relationPopoverTitle": "Relation type",
     "driving": "Driving relationship",
-    "lag": "Lag (e.g. 2d, 3ed, 2u, 50%, -25e%)",
+    "lag": "Lag (e.g. 2d, 3ed, 2h, 50%, -25e%)",
     "recalculate": "Calculate",
     "assignments": {
       "title": "Assignments",
@@ -484,9 +484,9 @@
       "detailsHint": "Show curve, hour distribution and move",
       "workHint": "Remaining work in hours; the task type decides whether duration or units move.",
       "workDeviates": "Differs from units × duration",
-      "workDeviatesHint": "Stored work {{stored}} h differs from units × remaining duration ({{derived}} h). The histogram follows the stored work across the whole task duration. {{durationEffect}}",
+      "workDeviatesHint": "Stored work {{stored}}h differs from units × remaining duration ({{derived}}h). The histogram follows the stored work across the whole task duration. {{durationEffect}}",
       "workDeviatesMany": "Stored work differs from units × remaining duration:\n{{lines}}\n{{durationEffect}}",
-      "workDeviatesLine": "{{name}}: {{stored}} h (units × remaining duration: {{derived}} h)",
+      "workDeviatesLine": "{{name}}: {{stored}}h (units × remaining duration: {{derived}}h)",
       "workDeviatesFollowsDuration": "The app does not change this by itself. If you change the duration, the app replaces this work with units × new duration. You then get a notice; Ctrl+Z undoes it.",
       "workDeviatesKeepsWork": "The app does not change this by itself. If you change the duration, this work stays and the app adjusts the units.",
       "locked": "Protected by the task type {{rule}}"

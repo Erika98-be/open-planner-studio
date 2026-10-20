@@ -43,7 +43,7 @@ function gridCell(taskId: string, column: string): string | undefined {
     scheduleStale: s.scheduleStale, wbsAutoNumber: false,
     effectiveHoursPerDay: t => effHoursPerDay(effectiveCalendarOf(t, s.calendar, s.calendars)),
     labelForColumn: k => k,
-    labelForText: k => ({ 'duration.suffixDay': 'd', 'duration.suffixHour': 'h', 'duration.suffixMinute': 'm' } as Record<string, string>)[k] ?? k,
+    labelForText: k => ({ 'duration.suffixDay': 'd', 'duration.suffixHour': 'u', 'duration.suffixMinute': 'm' } as Record<string, string>)[k] ?? k,
     numberLocale: 'nl',
     surfaceId: 'full-task-grid', rows: s.viewRows, selectedTaskIds: [],
   });
@@ -86,11 +86,11 @@ S().setStatusDate('2026-06-01T10:00');
 S().setTaskProgress(A, 0.4);
 S().runCPM();
 eq('2 opzet: A loopt nog tot 13:00 (3 uur werk)', [taskOf(A).time.completion, taskOf(A).time.earlyFinish], [0.4, '2026-06-01T13:00']);
-eq('2a raster Resterende duur A', gridCell(A, 'task.time.remainingTime'), '3h');
+eq('2a raster Resterende duur A', gridCell(A, 'task.time.remainingTime'), '3u');
 const progress = renderToStaticMarkup(createElement(TaskProgressFields, {
   task: taskOf(A), onSetProgress: () => ({ ok: true as const }), onSetActualStart: () => ({ ok: true as const }), onSetActualFinish: () => ({ ok: true as const }),
 }));
-eq('2b paneel Resterend A', /<input[^>]*value="([^"]*)"[^>]*disabled/.exec(progress)?.[1] ?? /<input[^>]*disabled[^>]*value="([^"]*)"/.exec(progress)?.[1], '3h');
+eq('2b paneel Resterend A', /<input[^>]*value="([^"]*)"[^>]*disabled/.exec(progress)?.[1] ?? /<input[^>]*disabled[^>]*value="([^"]*)"/.exec(progress)?.[1], '3u');
 eq('2c paneel-label zonder "(werkdagen)" (de waarde draagt haar eenheid)', progress.includes('(werkdagen)'), false);
 // Een dagtaak: gehele speling en restduur, nu met eenheid. D (3d) wordt de langste taak.
 const D = S().addTask({ name: 'D dagtaak', time: { scheduleDuration: 3 } as TaskTime });
