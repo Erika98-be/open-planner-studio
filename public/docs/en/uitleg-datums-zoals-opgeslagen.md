@@ -54,7 +54,7 @@ If the file does not record everything for a task, the orange block in the *Prop
 You leave the view in two ways:
 
 - Click *Recalculate* in the bar, or choose *Calculate* (F5). The app calculates with its own rules.
-- Change something that can alter the dates, such as the duration of a task or a new task. The app leaves the view and recalculates straight away, even if *Calculate automatically* is off. Changing a name, description, task type or work rule does not do that: the view stays on.
+- Change something that can alter the dates, such as the duration of a task or a new task. The app leaves the view and recalculates straight away, even if *Calculate automatically* is off. Changing a name, description, work category or task type does not do that: the view stays on.
 
 A calendar change from the resource library keeps the view on and the dates from the file in place, but updates the number in the bar.
 
