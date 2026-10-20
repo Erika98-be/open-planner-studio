@@ -176,6 +176,25 @@ for (const [lang, u] of [['nl', 'u'], ['en', 'h'], ['ru', 'u']] as const) {
   eq(`6a ${lang}: CSV-voorganger is ${wbsA}FS+2${u}`, csv.includes(`;${wbsA}FS+2${u};`), true);
   eq(`6b ${lang}: geen ander uurteken in de CSV`, csv.includes(`${wbsA}FS+2${u === 'u' ? 'h' : 'u'}`), false);
 }
+// 6d. Dezelfde keuze via de echte route: de store (`exportAs('csv')`, zoals de knop Exporteren), die
+//     het uurteken zelf uit de app-taal haalt. De download wordt opgevangen (web-backend → Blob).
+const g = globalThis as unknown as Record<string, any>;
+const captured: string[] = [];
+const saved = { Blob: g.Blob, URL: g.URL, createElement: g.document.createElement };
+g.Blob = class { constructor(parts: unknown[]) { captured.push(parts.join('')); } };
+g.URL = { createObjectURL: () => 'blob:uren', revokeObjectURL: () => undefined };
+g.document.createElement = () => ({ href: '', download: '', click: () => undefined });
+for (const [lang, u] of [['nl', 'u'], ['en', 'h'], ['ru', 'u']] as const) {
+  await setLocale(lang);
+  const before = captured.length;
+  const res = await S().exportAs('csv');
+  const csv = captured.length > before ? captured[captured.length - 1] : '';
+  eq(`6d ${lang}: exportAs('csv') slaagt`, res.ok, true);
+  eq(`6d ${lang}: exportAs('csv') schrijft ${wbsA}FS+2${u}`, csv.includes(`;${wbsA}FS+2${u};`), true);
+  eq(`6d ${lang}: die export leest terug als 120 minuten`, csvLag(csv), { lagDays: 0, lagMinutes: 120 });
+}
+g.Blob = saved.Blob; g.URL = saved.URL; g.document.createElement = saved.createElement;
+
 for (const readLang of ['nl', 'en', 'ru'] as const) {
   await setLocale(readLang);
   for (const writeLang of ['nl', 'en', 'ru'] as const) {
