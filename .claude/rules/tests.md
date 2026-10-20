@@ -31,14 +31,25 @@ dagen als `playwright-*`-artefact. Testhandelingen lopen via echte browser-event
 maar mag de geteste gebruikershandeling niet vervangen.
 
 **Een nieuwe browsertest breidt eerst een bestaand scenario uit** (besluit eigenaar, 2026-10-20). Een
-scenario is een spec die een werkroute van een planner doorloopt en onderweg controleert, zoals "resource
-toevoegen → naam weigeren → tarief zetten → kleur kiezen → Ctrl+Z". Zoek vóór je een spec-bestand
-aanmaakt een spec die dezelfde route al doorloopt (zelfde paneel, dialoog of raster) en voeg daar je stap
-en je controle aan toe. Een nieuw spec-bestand alleen voor een nieuwe werkroute. Reden: elke browsertest
-start de app opnieuw (2–8 s), en een los bestand per review-opmerking liet de suite groeien tot 126 specs
-en 31 minuten rekentijd, met meerdere specs voor dezelfde route. Randgevallen en varianten (veel
-invoerwaarden) horen in `tests/planning/` zonder browser; in de browser alleen wat alleen een browser
-ziet: toetsen, focus, klikken, slepen en de koppeling tussen UI en store. Bron: testaudit en review van
-2026-10-20.
+scenario is één `test()`-blok dat een werkroute van een planner doorloopt en onderweg controleert, zoals
+"resource toevoegen → lege naam weigeren → tarief zetten → kleur kiezen → Ctrl+Z". Een werkroute ligt vast
+door haar beginstand (fixture, document, weergave) en het doel van de gebruiker. Elk `test()`-blok start de
+app opnieuw (de `ops`-fixture in `tests/browser/fixtures/ops.ts`); een nieuw blok in een bestaand bestand
+kost dus net zoveel als een nieuw bestand.
+
+1. Zoek een `test()`-blok met dezelfde beginstand en hetzelfde doel. Voeg je handeling en je controle daar
+   toe, als stap in de route.
+2. Bestaat zo'n blok niet, schrijf dan een nieuw `test()`-blok in het spec-bestand waar de route bij hoort.
+   Een nieuw spec-bestand alleen voor een route die in geen bestaand bestand past.
+3. Een groot bestand of een lange route is geen reden voor een nieuw blok. Wel een reden: een andere
+   beginstand, of een stap die de rest van de route onbruikbaar maakt (bijv. een document wisselen of de
+   app herladen).
+
+In de browser hoort alles wat alleen een echte browser laat zien: toetsen, focus, klikken, slepen,
+animatieframes en de koppeling tussen UI en store, óók als het een randgeval is (bijv. de focusrace in
+`table-editor.spec.ts`). Rekenlogica en lange invoermatrices (veel waarden voor dezelfde handeling) horen in
+`tests/planning/`, zonder browser. Reden: de suite groeide tot 126 spec-bestanden en ongeveer 31 minuten
+opgetelde testtijd over de vier CI-shards (CI-run 39275828606), met meerdere bestanden en blokken voor
+dezelfde route. Bron: testaudit en review van 2026-10-20.
 
 Draai de planningssuite na elke wijziging aan planningscode. Tussenregels als "(alles groen)" of "TZ …: groen" gaan elk alleen over hun eigen deel — ze verschijnen ook als de run als geheel rood is. De **laatste regel** (`EINDOORDEEL planningssuite: GROEN (exit 0)` of `… ROOD …`) volgt wél altijd de exitcode; de exitcode blijft het oordeel. Een nieuwe `tests/planning/check-*.ts` draait vanzelf mee in de volledige run, inclusief de tijdzone-matrix — een eigen `bundle_check`-regel in `run.sh` is alleen nodig voor een check met een omgevingsvariabele of zonder tijdzone-matrix. Een `grep` op faalregels is een handig extraatje maar **geen poort**: `grep '^XX'` werkt alleen voor `tests/planning/`. De bibliotheeksuite print zijn faalregels **ingesprongen** (`console.log(\`   XX ${msg}\`)` in `tests/library/check-*.ts`), dus `grep -c '^XX'` geeft daar 0 terwijl de suite rood staat — gemeten 2026-07-28. Gebruik `grep -c 'XX '` als je toch wilt tellen, en laat de exitcode altijd het oordeel vellen. `npm run verify` is de poort — één definitie in `package.json`. De release- en deploy-gate draaien hem in één keer; CI draait precies dezelfde stappen, verdeeld over parallelle jobs door `scripts/verify-parts.mjs` (dat de stappen uit die ene definitie leest), dus wat lokaal groen is, is ook in CI groen. Zie `tests/planning/README.md` voor het toevoegen van cases.

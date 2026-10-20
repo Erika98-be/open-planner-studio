@@ -92,10 +92,14 @@ Node 22 (see CI). Rust stable only for the `tauri:*` commands.
   check is red, fix it and push again. A red suite blocks both deploy and release.
 - Browser tests use real browser events. The dev-only `window.__OPS__` bridge may set fixtures and read state,
   but never replace the user action under test.
-- **A new browser test extends an existing scenario first.** Before you add a `tests/browser/*.spec.ts`
-  file, find a spec that already walks the same user route (same panel, dialog or grid) and add your step
-  and assertion there; a new spec file only for a new route. Every browser test pays an app start; edge
-  cases and variants belong in `tests/planning/`. Detail: `.claude/rules/tests.md`.
+- **A new browser test extends an existing scenario first.** Every `test()` block starts the app again
+  (`tests/browser/fixtures/ops.ts`), so a new block in an existing file costs as much as a new file. A user
+  route is fixed by its start state and the user's goal: find the `test()` block with the same start state
+  and goal and add your action and assertion as a step in it. A new block only for another start state or a
+  step that would break the rest of the route; a new spec file only for a route no existing file fits.
+  Browser-only behaviour (keys, focus, clicks, drags, animation frames, UI↔store wiring) stays in the
+  browser, edge cases included; scheduling logic and long input matrices belong in `tests/planning/`.
+  Detail: `.claude/rules/tests.md`.
 - Never assume port 3007: read it from the dev-server output or `.claude/launch.json`.
 
 ### Which check after which change
