@@ -403,3 +403,37 @@ test('na Klaar, Annuleren en Esc staat de focus op Annoteren en blijft Tab in he
   // Niets achter het venster is geopend.
   await expect(page.getByRole('dialog')).toHaveCount(1);
 });
+
+test('al binnen, dan een aanvulling typen: de melding gaat weg en sluiten bewaart de aanvulling', async ({ page, ops }) => {
+  ops.acceptError(/status of 409/);
+  let calls = 0;
+  await page.route(ENDPOINT, async route => {
+    calls += 1;
+    await route.fulfill({
+      status: 409, contentType: 'application/json',
+      headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify({ error: 'Duplicate feedback' }),
+    });
+  });
+  let dialog = await openDialog(page);
+  await typeInto(page, dialog.getByLabel('Title'), TITLE);
+  await typeInto(page, dialog.getByLabel('Description'), DESCRIPTION);
+  await dialog.getByRole('button', { name: 'Send', exact: true }).click();
+  const notice = dialog.getByText('We have already received this report.', { exact: false });
+  await expect(notice).toBeVisible();
+  const footer = dialog.locator('.feedback-dialog-footer');
+  await expect(footer.getByRole('button', { name: 'Close' })).toBeVisible();
+
+  const ADDITION = ' Het gebeurt ook na een herstart.';
+  await typeInto(page, dialog.getByLabel('Description'), ADDITION);
+  await expect(notice).toHaveCount(0);
+  await expect(footer.getByRole('button', { name: 'Close' })).toHaveCount(0);
+  await expect(footer.getByRole('button', { name: 'Cancel' })).toBeVisible();
+  await expect(footer.getByRole('button', { name: 'Send', exact: true })).toBeEnabled();
+
+  await footer.getByRole('button', { name: 'Cancel' }).click();
+  await expect(dialog).toBeHidden();
+  dialog = await openDialog(page);
+  await expect(dialog.getByLabel('Title')).toHaveValue(TITLE);
+  await expect(dialog.getByLabel('Description')).toHaveValue(DESCRIPTION + ADDITION);
+  expect(calls).toBe(1);
+});

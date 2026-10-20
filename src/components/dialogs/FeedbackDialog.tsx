@@ -130,6 +130,13 @@ export function FeedbackDialog() {
     setFeedbackDraft(discardDraftRef.current ? null : draftRef.current);
   }, [setFeedbackDraft]);
 
+  // Eén plek: elke wijziging in het formulier (soort, tekst, e-mail, screenshot aan/uit, opnieuw
+  // maken, annotaties) verlaat "al binnen". Dan is het een nieuwe, nog niet verstuurde aanvulling:
+  // de melding verdwijnt, de knoppen zijn weer *Annuleren* + *Versturen*, en sluiten bewaart het concept.
+  useEffect(() => {
+    setAlreadyIn(false);
+  }, [feedbackType, title, description, email, attachScreenshot, screenshotDataUrl, annotatedDataUrl, shapes]);
+
   /** *Sluiten* vanuit "al binnen": de melding is binnen, dus het concept gaat weg. */
   const closeAlreadyIn = () => {
     discardDraftRef.current = true;
