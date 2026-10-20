@@ -31,7 +31,7 @@ import { classifyTraceTask, isRelationOutsideTrace, type TaskTrace } from '@/eng
 import { ellipsize } from './textFit';
 import { barLayout, type BarLayout } from './rowGeometry';
 import {
-  baselineDiamonds, baselineDiamondSize, baselineSpanX, baselineStripPieces, paintBaselineStrip,
+  baselineDiamonds, baselineDiamondSize, baselineSpanX, baselineStripPieces, paintBaselineStrip, widenShortRuns,
   type BaselineBar, type BaselineMilestone, type BaselineSlot,
 } from './baselineStrip';
 import { canvasFont, type TextRole } from './textRoles';
@@ -1014,9 +1014,10 @@ export class GanttRenderer {
       const pos = baselineSpanX(entry, toX, zoom);
       if (!pos) continue;
       if (pos.kind === 'milestone') milestones.push({ slot: layer.slot, x: pos.x });
-      else bars.push({ slot: layer.slot, x1: pos.x1, x2: Math.max(pos.x2, pos.x1 + 2) });
+      // Echte grenzen: de minimumbreedte komt pas na de opdeling (`widenShortRuns`).
+      else bars.push({ slot: layer.slot, x1: pos.x1, x2: Math.max(pos.x2, pos.x1 + 1e-6) });
     }
-    const pieces = baselineStripPieces(bars);
+    const pieces = widenShortRuns(baselineStripPieces(bars), 2);
     const diamonds = baselineDiamonds(milestones);
     if (pieces.length === 0 && diamonds.length === 0) return;
     const diamondSize = baselineDiamondSize(h);

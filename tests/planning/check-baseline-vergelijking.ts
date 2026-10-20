@@ -25,7 +25,7 @@ import { PRINT_PALETTE } from '@/engine/renderer/themePalette';
 import { barLayout, MIN_BAR_HEIGHT_PX, MIN_BAR_HEIGHT_RATIO } from '@/engine/renderer/rowGeometry';
 import {
   baselineDiamonds, baselineStripPieces, paintBaselineStrip,
-  baselineSpanX, type BaselineBar, type BaselineSlot, type StripPainter,
+  baselineSpanX, widenShortRuns, type BaselineBar, type BaselineSlot, type StripPainter,
 } from '@/engine/renderer/baselineStrip';
 import { renderReport, type PrintOptions } from '@/services/print/printPreview';
 import type { Draw2D, TextAlign, TextBaseline } from '@/services/pdf/draw2d';
@@ -69,7 +69,8 @@ eq(sig([{ slot: 0, x1: 0, x2: 10 }, { slot: 1, x1: 20, x2: 30 }, { slot: 2, x1: 
 eq(baselineDiamonds([{ slot: 1, x: 40 }, { slot: 0, x: 40 }]), [{ x: 40, slots: [0, 1] }],
   'A mijlpaal op dezelfde datum: één ruit met beide baselines');
 eq(baselineDiamonds([{ slot: 0, x: 40 }, { slot: 1, x: 40.2 }, { slot: 2, x: 80 }]),
-  [{ x: 40, slots: [0, 1] }, { x: 80, slots: [2] }], 'A mijlpalen: op 0,5 px samen, verder los');
+  [{ x: 40, slots: [0] }, { x: 40.2, slots: [1] }, { x: 80, slots: [2] }],
+  'A mijlpalen: alleen op precies hetzelfde moment samen (0,2 px uit elkaar = twee ruiten)');
 eq(baselineDiamonds([{ slot: 0, x: 40 }, { slot: 0, x: 40 }]), [{ x: 40, slots: [0] }],
   'A mijlpaal: dezelfde baseline twee keer telt één keer');
 
@@ -303,7 +304,7 @@ function piecesPerRow(fills: Fill[]): Piece[][] {
 
 type Comparisons = { slot: 1 | 2; overlay: BaselineOverlay }[];
 /** Scherm: de echte GanttRenderer met een opnemende context. */
-function renderScreen(tasks: Task[], ov0: BaselineOverlay, comps: Comparisons, over: { zoom?: number; compress?: boolean } = {}): Fill[] {
+function renderScreen(tasks: Task[], ov0: BaselineOverlay, comps: Comparisons, over: { zoom?: number; compress?: boolean; keep?: { r?: GanttRenderer } } = {}): Fill[] {
   const fills: Fill[] = [];
   let path: [number, number][] = [];
   const st = { fillStyle: '', strokeStyle: '' };
@@ -334,6 +335,7 @@ function renderScreen(tasks: Task[], ov0: BaselineOverlay, comps: Comparisons, o
     resources: [], assignments: [],
   });
   renderer.render();
+  if (over.keep) over.keep.r = renderer;
   return fills;
 }
 
@@ -538,6 +540,67 @@ eq(Math.round(barLayout(32, { resourceAccent: true, baselines: true }).barHeight
   ok(strips.length >= 2 && strips.every(b => Math.abs((b.y2 - b.y1) - lay.baselineHeight) < 1e-6),
     `F renderer: elke strook is ${lay.baselineHeight} px, ook onder het accent`);
   ok(strips.every(b => b.y2 <= 60 + 2 * rh + 1e-6) && strips[0].y2 <= 60 + rh + 1e-6, 'F renderer: strook blijft binnen de rij');
+}
+
+// ══ G. Korte baselines: geen valse overlap door de minimumbreedte (review ronde 2) ════════════════
+// De opdeling in stukken en de hover rekenen met de echte grenzen. Een minimumbreedte geldt pas bij
+// het tekenen, per groep aansluitende stukken, en loopt nooit over een buur heen.
+{
+  // Puur: aansluitend kort (1,25 + 1,25 px) blijft twee effen stukken; los kort wordt 2 px zonder de buur te raken.
+  const adj = widenShortRuns(baselineStripPieces([{ slot: 0, x1: 100, x2: 101.25 }, { slot: 1, x1: 101.25, x2: 102.5 }]), 2);
+  eq(adj.map(p => [p.x1, p.x2, p.slots]), [[100, 101.25, [0]], [101.25, 102.5, [1]]], 'G aansluitend kort: twee stukken, ongewijzigd');
+  const tiny = widenShortRuns(baselineStripPieces([{ slot: 0, x1: 100, x2: 100.2 }, { slot: 1, x1: 100.2, x2: 100.4 }]), 2);
+  eq(tiny.map(p => p.slots), [[0], [1]], 'G aansluitend heel kort: geen gestreept stuk');
+  ok(tiny[1].x2 - tiny[0].x1 >= 2 - 1e-9 && tiny[0].x2 === 100.2, 'G aansluitend heel kort: de groep wordt 2 px, de naad blijft staan');
+  const loose = widenShortRuns(baselineStripPieces([{ slot: 0, x1: 100, x2: 100.5 }, { slot: 1, x1: 101, x2: 101.5 }]), 2);
+  eq(loose.map(p => p.slots), [[0], [1]], 'G los heel kort: twee effen stukken');
+  ok(loose.every((p, i) => i === 0 || p.x1 >= loose[i - 1].x2 - 1e-9), 'G los heel kort: verlengd stuk loopt niet over de buur');
+  eq(widenShortRuns(baselineStripPieces([{ slot: 0, x1: 10, x2: 10.5 }]), 2).map(p => [p.x1, p.x2]), [[10, 12]], 'G één korte baseline: 2 px naar rechts, zoals voorheen');
+
+  // Echte renderer en echte afdruk bij 30, 5 en 0,5 px/dag (de laagste zoomstap).
+  const day = s0;
+  const cases: { zoom: number; label: string; a: [string, string]; b: [string, string]; c?: [string, string] }[] = [
+    { zoom: 30, label: '30 px/dag, uren aansluitend', a: [`${day}T09:00`, `${day}T10:00`], b: [`${day}T10:00`, `${day}T11:00`] },
+    { zoom: 5, label: '5 px/dag, uren aansluitend', a: [`${day}T09:00`, `${day}T10:00`], b: [`${day}T10:00`, `${day}T11:00`] },
+    { zoom: 5, label: '5 px/dag, uren los', a: [`${day}T09:00`, `${day}T10:00`], b: [`${day}T12:00`, `${day}T13:00`] },
+    { zoom: 0.5, label: '0,5 px/dag, dagen aansluitend + los', a: [day, day], b: [addDays(day, 1), addDays(day, 1)], c: [addDays(day, 6), addDays(day, 6)] },
+  ];
+  for (const c of cases) {
+    const ov = (r: [string, string]): BaselineOverlay => new Map([[bar.id, { start: r[0], finish: r[1], isMilestone: false }]]);
+    const comps: Comparisons = [{ slot: 1, overlay: ov(c.b) }];
+    if (c.c) comps.push({ slot: 2, overlay: ov(c.c) });
+    const keep: { r?: GanttRenderer } = {};
+    const scr = renderScreen([bar], ov(c.a), comps, { zoom: c.zoom, keep });
+    const prt = renderPrint([bar], ov(c.a), comps, { zoom: c.zoom }).fills;
+    const sp = piecesPerRow(scr)[0] ?? [];
+    const pp = piecesPerRow(prt)[0] ?? [];
+    ok(sp.length > 0 && sp.every(p => p.stripes.length === 0), `G scherm ${c.label}: geen strepen (kreeg ${J(sp.map(p => p.stripes))})`);
+    ok(pp.length > 0 && pp.every(p => p.stripes.length === 0), `G afdruk ${c.label}: geen strepen`);
+    // Hover: langs de hele strook meldt getBaselineAt nooit twee baselines tegelijk.
+    const strip = scr.filter(f => BASE_COLORS.has(f.color)).map(f => bbox(f.pts));
+    const y = strip.length ? (strip[0].y1 + strip[0].y2) / 2 : 0;
+    const lo = Math.min(...strip.map(b => b.x1)) - 1;
+    const hi = Math.max(...strip.map(b => b.x2)) + 1;
+    let multi = 0;
+    for (let x = lo; x <= hi; x += 0.05) if ((keep.r?.getBaselineAt(x, y)?.slots.length ?? 0) > 1) multi++;
+    eq(multi, 0, `G hover ${c.label}: geen plek met twee baselines`);
+  }
+
+  // Mijlpalen met tijd: 09:00 en 09:30 zijn twee momenten, ook op lage zoom; 09:00 en 09:00 delen één ruit.
+  for (const zoom of [30, 5, 0.5]) {
+    const msOv = (t: string): BaselineOverlay => new Map([[ms.id, { start: `${m0}T${t}`, finish: `${m0}T${t}`, isMilestone: true }]]);
+    const keep: { r?: GanttRenderer } = {};
+    const fillsDiff = renderScreen([ms], msOv('09:00'), [{ slot: 1, overlay: msOv('09:30') }], { zoom, keep });
+    ok(!fillsDiff.some(f => f.color === PRINT_PALETTE.baselineCompare1 && fillsDiff.some(g => g.color === PRINT_PALETTE.baseline && bbox(g.pts).x1 <= bbox(f.pts).x1 && bbox(g.pts).x2 >= bbox(f.pts).x2 && fillsDiff.indexOf(g) === fillsDiff.indexOf(f) - 1)),
+      `G mijlpalen ${zoom} px/dag: 09:00 en 09:30 geven geen gestreepte ruit`);
+    const d = fillsDiff.filter(f => BASE_COLORS.has(f.color)).map(f => bbox(f.pts));
+    const cy = d.length ? (d[0].y1 + d[0].y2) / 2 : 0;
+    let multi = 0;
+    for (const b of d) for (let x = b.x1; x <= b.x2; x += 0.05) if ((keep.r?.getBaselineAt(x, cy)?.slots.length ?? 0) > 1) multi++;
+    eq(multi, 0, `G mijlpalen ${zoom} px/dag: hover meldt nooit beide`);
+    const same = renderScreen([ms], msOv('09:00'), [{ slot: 1, overlay: msOv('09:00') }], { zoom });
+    ok(same.some(f => f.color === PRINT_PALETTE.baselineCompare1), `G mijlpalen ${zoom} px/dag: zelfde tijdstip = één gestreepte ruit`);
+  }
 }
 
 if (failures > 0) {

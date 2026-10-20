@@ -110,11 +110,40 @@ export function baselineStripPieces(bars: readonly BaselineBar[]): BaselineStrip
   return pieces;
 }
 
-/** Groepeert baseline-mijlpalen per x (op 0,5 px): baselines op dezelfde datum delen één ruit. */
+/**
+ * Minimale zichtbare breedte, toegepast NA de opdeling (scherm en afdruk gelijk). Een groep stukken
+ * die op elkaar aansluiten, wordt samen minstens `minWidth` breed: eerst naar rechts tot de volgende
+ * groep, de rest naar links tot de vorige. Alleen de buitenste stukken groeien; de naden en de
+ * baselines per stuk blijven gelijk, dus er ontstaat nooit een nieuwe streepzone en een stuk loopt
+ * nooit over een buur heen. De opdeling zelf en de hover rekenen met de echte grenzen.
+ */
+export function widenShortRuns(pieces: readonly BaselineStripPiece[], minWidth: number): BaselineStripPiece[] {
+  const out = pieces.map(p => ({ ...p }));
+  let i = 0;
+  while (i < out.length) {
+    let j = i;
+    while (j + 1 < out.length && out[j + 1].x1 === out[j].x2) j++;
+    const width = out[j].x2 - out[i].x1;
+    if (width < minWidth) {
+      const nextStart = j + 1 < out.length ? out[j + 1].x1 : Infinity;
+      const prevEnd = i > 0 ? out[i - 1].x2 : -Infinity;
+      let need = minWidth - width;
+      const right = Math.min(need, nextStart - out[j].x2);
+      out[j].x2 += right;
+      need -= right;
+      if (need > 0) out[i].x1 -= Math.min(need, out[i].x1 - prevEnd);
+    }
+    i = j + 1;
+  }
+  return out;
+}
+
+/** Groepeert baseline-mijlpalen op hetzelfde moment (dezelfde x): die delen één ruit. Twee momenten
+ *  die op lage zoom dicht bij elkaar liggen, blijven twee ruiten (geen valse overlap). */
 export function baselineDiamonds(milestones: readonly BaselineMilestone[]): BaselineDiamond[] {
   const byX = new Map<number, BaselineSlot[]>();
   for (const m of milestones) {
-    const x = Math.round(m.x * 2) / 2;
+    const x = Math.round(m.x * 1e6) / 1e6;
     const list = byX.get(x) ?? [];
     if (!list.includes(m.slot)) list.push(m.slot);
     byX.set(x, list);

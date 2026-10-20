@@ -35,7 +35,7 @@ import type { RowAssignment, RowCurve } from '@/engine/reports/resourceGantt';
 import { formatReportNumber } from '@/utils/reportNumber';
 import { baselineReach, type BaselineOverlay } from '@/types/baseline';
 import {
-  baselineDiamonds, baselineDiamondSize, baselineSpanX, baselineStripPieces, paintBaselineStrip,
+  baselineDiamonds, baselineDiamondSize, baselineSpanX, baselineStripPieces, paintBaselineStrip, widenShortRuns,
   type BaselineBar, type BaselineMilestone, type BaselineSlot,
 } from '@/engine/renderer/baselineStrip';
 
@@ -1555,9 +1555,10 @@ export function renderReport(
         }
         const x1 = clampX(pos.x1);
         const x2 = clampX(pos.x2);
-        if (!windowed || x2 > x1) bars.push({ slot: layer.slot, x1, x2: Math.max(x2, x1 + 2) });
+        // Echte grenzen: de minimumbreedte komt pas na de opdeling (`widenShortRuns`), zoals op het scherm.
+        if (!windowed || x2 > x1) bars.push({ slot: layer.slot, x1, x2: Math.max(x2, x1 + 1e-6) });
       }
-      const pieces = baselineStripPieces(bars);
+      const pieces = widenShortRuns(baselineStripPieces(bars), 2);
       const diamonds = baselineDiamonds(milestones);
       if (pieces.length || diamonds.length) {
         const baseHeight = Math.max(2, barHeight * 0.28);
