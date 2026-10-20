@@ -81,6 +81,11 @@ function parseNumberChoice(allowed: readonly number[]) {
   return (raw: unknown): number | undefined => snapToChoice(allowed, raw);
 }
 
+/** Feedback-e-mailadres: alleen een tekst van max 254 tekens (de servergrens); leeg mag. */
+function parseFeedbackEmail(raw: unknown): string | undefined {
+  return typeof raw === 'string' && raw.length <= 254 ? raw : undefined;
+}
+
 const WHEEL_FUNCTIONS: WheelFunction[] = ['vertical', 'horizontal', 'zoom'];
 
 // Een ModifierMap is alleen geldig als hij een strikte bijectie over de drie wielfuncties is (elk
@@ -202,6 +207,10 @@ export const SETTINGS: SettingDescriptor[] = [
 
   // Uitleg na het openen van een ander formaat dan IFC: de formaten waarvoor hij uit staat.
   setting({ key: 'formatNoticeHidden', field: 'formatNoticeHidden', parse: parseFormatNoticeHidden }),
+
+  // Feedbackdialoog: het optionele e-mailadres voor een reactie. Geen paneelinstelling; de dialoog
+  // vult het veld ermee in en bewaart het na een geslaagde melding (`saveFeedbackEmail`).
+  setting({ key: 'feedbackEmail', field: 'feedbackEmail', parse: parseFeedbackEmail }),
 ];
 
 /** Hydrateert álle opstart-instellingen uit localStorage tot één `setUI`-patch voor

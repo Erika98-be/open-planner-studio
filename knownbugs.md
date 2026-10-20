@@ -117,6 +117,14 @@ en noem het in je rapport of PR-tekst.
     Playwright-proeven; de tutorials zeggen daarom nu "dubbelklik". Voorstel: de inhoud selecteren bij focus,
     zoals de tabelcel waarin typen al vervangt. Eenh./dag (Toewijzen ▾ en het blok Toewijzingen) niet apart
     gemeten. — B
+135. **Vinkjes lijken op keuzerondjes.** De app-brede stijl `input[type="checkbox"]`
+    (`src/styles/globals.css:2477`) geeft een vak van 15 px met `border-radius: var(--radius-sm)` (6 px) en
+    zonder vinkteken. Het vak oogt daardoor rond, en aangevinkt is het een gevuld oranje rondje. Gezien bij
+    *Screenshot bijvoegen* in het feedbackvenster. Voorstel: een kleinere radius (2–3 px) en een vinkteken. — S
+136. **`.btn--secondary` valt meer op dan de primaire knop ernaast.** De stijl (`src/styles/globals.css:2207`)
+    heeft een rand van 2 px in tekstkleur. Naast de oranje primaire knop trekt de secundaire knop zo de
+    aandacht, bijvoorbeeld *Annuleren* naast *Versturen* in het feedbackvenster. Voorstel: een rand van 1 px in
+    `--theme-control-border`. — S
 
 ## Kalenders
 
@@ -485,13 +493,6 @@ en noem het in je rapport of PR-tekst.
     zonder naar de volgende kolom te gaan. Bij snel invoeren via de spookregel (typ naam, Tab, typ duur)
     verwacht je het Excel-gedrag: vastleggen en een kolom verder (Shift+Tab terug). Gezien bij review
     vader, punt 1. — B
-106. **De feedbackknop zet bij een gewone gebruiker geen label `bug`/`enhancement`.** `feedbackService.ts`
-    (`buildGitHubUrl`) zet het label via `labels=` in de `/issues/new`-URL; GitHub past die parameter alleen toe
-    voor wie labelrechten op de repo heeft. Het issue komt dus zonder soortlabel binnen. `needs-triage` komt er
-    sinds `.github/workflows/triage-new-issues.yml` wel bij. Voorstel: die workflow leidt het soortlabel af uit de
-    regel `Type: Bug`/`Type: Feature request` onderaan de body. Afgeleid uit de GitHub-documentatie over
-    query-parameters, niet nagespeeld met een account zonder rechten. — S
-
 133. **Het venster *Werkelijke start opgeven* heeft geen ?-knop** (`ActualStartDialog.tsx:82`,
     `DialogHeader` zonder `help`). Het doel zou `howto-voortgang-bijwerken` zijn. — B
 134. **Werkelijke start en einde: paneel en dialoog weigeren een start na het einde niet, raster en startvraag
