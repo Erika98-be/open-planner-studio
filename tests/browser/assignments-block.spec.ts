@@ -387,6 +387,12 @@ for (const locale of ['en', 'nl'] as const) {
     const toast = page.locator('.ops-toast-message', { hasText: c.bad });
     await expect(toast).toBeVisible();
     await expect(toast).toContainText(c.hint);
+    // Een weigering ("De waarde is niet gewijzigd."): rood en blijvend, via refusalNotice (#375/#396).
+    expect(await page.evaluate(() => {
+      const n = window.__OPS__!.store.getState().ui.notifications
+        .find(x => x.messageKey === 'notifications.ambiguousThousands');
+      return n && { severity: n.severity, refusal: n.refusal === true };
+    })).toEqual({ severity: 'error', refusal: true });
     expect((await assignmentOf(page, unitsId))!.units).toBe(EXACT);
     await expect(units).toHaveValue(shown);
 
