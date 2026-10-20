@@ -11,7 +11,7 @@ import { ActivityCodeType, CustomFieldDef, CustomFieldType, CustomFieldValue } f
 import { Baseline } from '@/types/baseline';
 import type { CustomTaskType } from '@/types/taskType';
 import {
-  canonicalizeBands, clockToMinutes, deriveHoursPerDay, effectiveCalendarByTask, minutesToClock, minutesToIsoDuration,
+  canonicalizeBands, clockToMinutes, deriveHoursPerDay, hoursPerDayDiffers, effectiveCalendarByTask, minutesToClock, minutesToIsoDuration,
   scalarHourFromClock, taskMinutesForWrite,
 } from '@/services/subdayIo';
 import { effectiveWorkTimeBands } from '@/utils/effectiveWorkTime';
@@ -1280,7 +1280,7 @@ function writeCalendarGenerationMeta(
   const derivedHoursPerDay = cal.workTime
     ? readerHourCalendarHoursPerDay
     : cal.workEndHour - cal.workStartHour;
-  const needsHoursPerDayOverride = cal.hoursPerDay !== derivedHoursPerDay;
+  const needsHoursPerDayOverride = hoursPerDayDiffers(cal.hoursPerDay, derivedHoursPerDay);
   const hasWorkingExceptions = workingExceptionStepIds.length > 0;
   const hasP6Source = cal.p6Source === 'XER';
   const hasRejectedPenaltyDiagnostic = cal.p6NonWorkPenaltyDatesState === 'REJECTED';
