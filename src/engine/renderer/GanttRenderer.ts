@@ -372,7 +372,13 @@ export class GanttRenderer {
   constructor(ctx: CanvasRenderingContext2D, opts: GanttRenderOptions) {
     this.ctx = ctx;
     this.opts = opts;
-    this.bar = barLayout(opts.rowHeight);
+    // Accent én baselines samen maken de balken van de hele weergave iets lager (besluit
+    // 2026-10-20, zie `barLayout`). "Baselines" = de overlay staat aan en er is iets te tekenen.
+    this.bar = barLayout(opts.rowHeight, {
+      resourceAccent: !!opts.showResourceAccent,
+      baselines: opts.showBaselineOverlay !== false
+        && (!!opts.baselineOverlay || (opts.baselineComparisons?.length ?? 0) > 0),
+    });
     this.colors = opts.palette ?? readGanttPalette();
 
     this.viewStart = parseDate(opts.view.viewStartDate);
@@ -995,7 +1001,8 @@ export class GanttRenderer {
     if (layers.length === 0) return;
 
     const top = y + height + 1 + resourceAccentHeight;
-    const h = resourceAccentHeight > 0 ? this.bar.baselineHeightWithAccent : this.bar.baselineHeight;
+    // Even dik met of zonder accent (besluit 2026-10-20): de balk maakt er plaats voor.
+    const h = this.bar.baselineHeight;
     const zoom = this.opts.view.zoom;
     const bars: BaselineBar[] = [];
     const milestones: BaselineMilestone[] = [];

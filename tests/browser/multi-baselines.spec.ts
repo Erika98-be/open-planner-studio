@@ -284,3 +284,21 @@ test('meerdere baselines: het menu past in het venster bij 30 baselines; de lijs
   const itemBox = (await item.boundingBox())!;
   expect(itemBox.y + itemBox.height).toBeLessThanOrEqual(hint.y + 1);
 });
+
+test('meerdere baselines: resource-accent en baselines samen, licht en donker (alleen met OPS_QA_SHOTS)', async ({ browser }) => {
+  test.skip(!SHOTS, 'alleen voor de ontwerpbeoordeling');
+  test.setTimeout(90_000);
+  const context = await browser.newContext({ deviceScaleFactor: 2, viewport: { width: 1600, height: 900 } });
+  const page = await context.newPage();
+  await openScene(page);
+  // Eigenaarsbesluit 2026-10-20: met accent én baselines wordt de balk lager, de strook blijft 5 px.
+  await page.evaluate(() => window.__OPS__!.store.getState().setUI({ showResourceAccent: true }));
+  const bars = await visibleBars(page);
+  for (const theme of ['light', 'dark'] as const) {
+    await page.evaluate(t => window.__OPS__!.store.getState().setUI({ uiTheme: t }), theme);
+    await page.waitForTimeout(400);
+    const top = bars[1].y - 20;
+    await shot(page, `accent-en-baselines-${theme}.png`, { x: 364, y: top, width: 620, height: 230 });
+  }
+  await context.close();
+});

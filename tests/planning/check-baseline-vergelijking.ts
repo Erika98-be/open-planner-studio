@@ -22,6 +22,7 @@ import { GanttRenderer } from '@/engine/renderer/GanttRenderer';
 import { computeEffectiveViewStart, computeFitToProject, computeScrollToDate } from '@/utils/ganttViewport';
 import { buildSharedAxis, computeContentSpanDays } from '@/components/canvas/ganttRenderOptions';
 import { PRINT_PALETTE } from '@/engine/renderer/themePalette';
+import { barLayout, MIN_BAR_HEIGHT_PX, MIN_BAR_HEIGHT_RATIO } from '@/engine/renderer/rowGeometry';
 import {
   baselineDiamonds, baselineStripPieces, paintBaselineStrip,
   baselineSpanX, type BaselineBar, type BaselineSlot, type StripPainter,
@@ -468,6 +469,75 @@ eq(screen[1]?.map(p => [p.base, p.stripes]), [
     `E rapport: de julistrook ligt in het tijdgebied (tabel tot ${rep.dims.tableWidth}), kreeg ${julyBox ? `${julyBox.x1}..${julyBox.x2}` : 'niets'}`);
   const plain = renderPrint([t], octOv, []);
   ok(rep.dims.width > plain.dims.width, 'E rapport: met juli-vergelijking is de as breder dan zonder');
+}
+
+// ══ F. Resource-accent én baselines (eigenaarsbesluit 2026-10-20) ══════════════════════════════
+// De balk wordt iets lager; accent en baselinestrook houden hun eigen dikte. Eén van beide aan:
+// niets verandert. Alles blijft binnen de rij.
+for (const rh of [16, 20, 24, 32, 40, 48]) {
+  const plain = barLayout(rh);
+  const accentOnly = barLayout(rh, { resourceAccent: true });
+  const baselineOnly = barLayout(rh, { baselines: true });
+  const both = barLayout(rh, { resourceAccent: true, baselines: true });
+  eq(accentOnly, plain, `F rij ${rh}: alleen accent verandert niets`);
+  eq(baselineOnly, plain, `F rij ${rh}: alleen baselines verandert niets`);
+  eq(both.baselineHeight, plain.baselineHeight, `F rij ${rh}: strook even hoog als zonder accent`);
+  eq(both.accentHeight, plain.accentHeight, `F rij ${rh}: accent even hoog als zonder baselines`);
+  const bottom = both.barOffset + both.barHeight + 1 + both.accentHeight + both.baselineHeight;
+  ok(bottom <= rh + 1e-9, `F rij ${rh}: balk + 1 px + accent + strook past in de rij (eindigt ${bottom})`);
+  ok(both.barHeight <= plain.barHeight && both.barHeight >= Math.max(MIN_BAR_HEIGHT_PX, rh * MIN_BAR_HEIGHT_RATIO) - 1e-9,
+    `F rij ${rh}: balk krimpt, niet onder de ondergrens (${both.barHeight})`);
+  if (rh >= 24) eq(both.barOffset, plain.barOffset, `F rij ${rh}: de balk houdt zijn bovenkant`);
+}
+eq(Math.round(barLayout(32, { resourceAccent: true, baselines: true }).barHeight * 10) / 10, 16.6, 'F rij 32: balk 16,6 px (was 19,2)');
+{
+  // De echte renderer: met accent én baselines liggen accent en strook onder een lagere balk, de
+  // strook even dik als zonder accent; elke balk in de weergave is even hoog.
+  const rh = 32;
+  const lay = barLayout(rh, { resourceAccent: true, baselines: true });
+  const fills: Fill[] = [];
+  const rects: { y: number; h: number; color: string }[] = [];
+  const round: { y: number; h: number }[] = [];
+  let path: [number, number][] = [];
+  const st = { fillStyle: '' };
+  const noop = () => {};
+  const ctx = {
+    lineWidth: 1, font: '', textAlign: '', textBaseline: '', globalAlpha: 1, lineCap: '', lineJoin: '', shadowBlur: 0, shadowColor: '',
+    set fillStyle(v: string) { st.fillStyle = v; }, get fillStyle() { return st.fillStyle; }, strokeStyle: '',
+    fillRect: (_x: number, y: number, _w: number, h: number) => { rects.push({ y, h, color: st.fillStyle }); },
+    strokeRect: noop, clearRect: noop, beginPath: () => { path = []; }, closePath: noop,
+    moveTo: (x: number, y: number) => { path.push([x, y]); }, lineTo: (x: number, y: number) => { path.push([x, y]); },
+    arc: noop, arcTo: noop, ellipse: noop, rect: noop,
+    roundRect: (_x: number, y: number, _w: number, h: number) => { round.push({ y, h }); },
+    fill: () => { fills.push({ color: st.fillStyle, pts: path }); },
+    stroke: noop, save: noop, restore: noop, clip: noop, translate: noop, scale: noop, rotate: noop,
+    setLineDash: noop, getLineDash: () => [], fillText: noop, strokeText: noop,
+    measureText: (t: string) => ({ width: String(t).length * 6 }),
+    createLinearGradient: () => ({ addColorStop: noop }), createPattern: () => null,
+    quadraticCurveTo: noop, bezierCurveTo: noop, drawImage: noop,
+  };
+  const st0 = S();
+  const withRes = { ...bar, id: bar.id };
+  const other = { ...bar, id: 'zonder-resource', name: 'Zonder resource' } as Task;
+  const ov: BaselineOverlay = new Map([[bar.id, { start: s0, finish: addDays(s0, 3), isMilestone: false }], [other.id, { start: s0, finish: addDays(s0, 3), isMilestone: false }]]);
+  const renderer = new GanttRenderer(ctx as unknown as CanvasRenderingContext2D, {
+    rows: [withRes, other].map(t => ({ kind: 'task' as const, rowKey: t.id, task: t, depth: 0, dimmed: false })),
+    sequences: [], calendar: st0.calendar, view: { ...st0.view, scrollX: 0, scrollY: 0, zoom: 30 },
+    selectedTaskIds: [], canvasWidth: 2000, canvasHeight: 200, rowHeight: rh, headerHeight: 60,
+    showBaselineOverlay: true, baselineOverlay: ov, showResourceAccent: true,
+    resources: [{ id: 'r1', name: 'Ploeg', type: 'LABOR', description: '', maxUnits: 1, color: '#111111' }],
+    assignments: [{ id: 'a1', taskId: bar.id, resourceId: 'r1', unitsPerDay: 1 }],
+    activityCodeTypes: [], customFieldDefs: [], taskTypeLabels: {}, barColorNoneLabel: '(geen)',
+  });
+  renderer.render();
+  const bars = round.filter(r => Math.abs(r.h - lay.barHeight) < 1e-6);
+  eq(bars.length >= 2, true, 'F renderer: beide rijen (met en zonder resource) hebben een balk van de lagere hoogte');
+  const accent = rects.find(r => r.color === '#111111' && Math.abs(r.h - lay.accentHeight) < 1e-6);
+  ok(!!accent && Math.abs(accent.y - (60 + lay.barOffset + lay.barHeight + 1)) < 1e-6, 'F renderer: accent 1 px onder de balk');
+  const strips = fills.filter(f => f.color === PRINT_PALETTE.baseline).map(f => bbox(f.pts));
+  ok(strips.length >= 2 && strips.every(b => Math.abs((b.y2 - b.y1) - lay.baselineHeight) < 1e-6),
+    `F renderer: elke strook is ${lay.baselineHeight} px, ook onder het accent`);
+  ok(strips.every(b => b.y2 <= 60 + 2 * rh + 1e-6) && strips[0].y2 <= 60 + rh + 1e-6, 'F renderer: strook blijft binnen de rij');
 }
 
 if (failures > 0) {

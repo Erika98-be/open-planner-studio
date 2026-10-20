@@ -164,12 +164,12 @@ const accents = (rects: Rect[]) => rects.filter(r => r.h === ACCENT_H && r.y > H
     ok(baseline.y + baseline.h <= HDRH + ROWH,
       `baseline-combinatie: gestapelde baseline blijft binnen de rij (eindigt ${baseline.y + baseline.h}, rij eindigt ${HDRH + ROWH})`);
   }
-  // Issue #391: de baselinestrook is dikker; zonder accent vult hij de hele vrije strook,
-  // met accent krijgt hij wat onder het accent overblijft. Beide uit `barLayout`.
+  // Issue #391 + eigenaarsbesluit 2026-10-20: de baseline is even dik met of zonder accent
+  // (regel uit fe70487a2); met beide aan wordt de balk lager. Beide uit `barLayout`.
   const alone = render(false, { baseline: true }).polys.find(sh => sh.fill === '#6B7280' && sh.h < 10);
   ok(!!alone && Math.abs(alone.h - barLayout(ROWH).baselineHeight) < 1e-9, 'baseline-hoogte zonder accent volgt barLayout');
-  ok(!!baseline && Math.abs(baseline.h - barLayout(ROWH).baselineHeightWithAccent) < 1e-9,
-    `baseline-hoogte met accent volgt barLayout (got ${baseline?.h})`);
+  ok(!!baseline && Math.abs(baseline.h - barLayout(ROWH).baselineHeight) < 1e-9,
+    `baseline-hoogte met accent is dezelfde als zonder (got ${baseline?.h})`);
   ok(!!alone && alone.y + alone.h <= HDRH + ROWH, 'baseline zonder accent blijft binnen de rij');
 }
 
