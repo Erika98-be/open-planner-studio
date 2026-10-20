@@ -9,7 +9,7 @@ import { StepButtons, TimeInput, TIME_STEP_MINUTES } from '@/components/common/T
 import { formatClock, parseClock } from '@/utils/displayTime';
 import { useAppStore } from '@/state/appStore';
 import {
-  hoursPerDayForBlocks, workDayTogglePatch, workDaysFromBands, workDaysSetPatch,
+  hoursPerDayDiffers, hoursPerDayForBlocks, workDayTogglePatch, workDaysFromBands, workDaysSetPatch,
   type WorkTimeSessionStart,
 } from '@/services/subdayIo';
 import { generateId } from '@/utils/id';
@@ -116,6 +116,8 @@ export function CalendarForm({
   const [simpleBreakDurationText, setSimpleBreakDurationText] = useState(() =>
     String(draft.simpleBreakDurationMinutes ?? inferredSimpleBreakDuration));
   const [scalarTimeIssues, setScalarTimeIssues] = useState<Partial<Record<ScalarTimeField, ScalarTimeIssue>>>({});
+  const appHoursPerDay = effHoursPerDay(draft);
+  const showFileHoursNotice = draft.workDays.length > 0 && hoursPerDayDiffers(draft.hoursPerDay, appHoursPerDay);
   const netHoursFormatter = useMemo(
     () => new Intl.NumberFormat(i18n.language, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
     [i18n.language],
@@ -605,10 +607,23 @@ export function CalendarForm({
             data-ops-simple-break-net-hours
           >
             {/* Zonder werkdagen weigert de solver de kalender (`noWorkingDays`): geen getal. */}
-            {draft.workDays.length === 0 ? '—' : `${netHoursFormatter.format(effHoursPerDay(draft))} h`}
+            {draft.workDays.length === 0 ? '—' : `${netHoursFormatter.format(appHoursPerDay)} h`}
           </output>
         </div>
       </div>
+      {/* Eigen werkdag uit het bestand (besluit eigenaar 2026-10-20, punt 8, optie 2). De opgeslagen
+          `hoursPerDay` (XER `day_hr_cnt`, P6 XML `HoursPerDay`, MSPDI `MinutesPerDay`) telt niet mee in
+          het rekenwerk (een dag is de werktijd, `effHoursPerDay`), maar gaat ongewijzigd mee bij export.
+          Alleen tonen, niets veranderen. Zelfde vergelijking als de IFC-schrijver (`hoursPerDayDiffers`);
+          het blok volgt de draft live. Een dagkalender wijkt nooit af: daar ís `hoursPerDay` het getal. */}
+      {showFileHoursNotice && (
+        <div className="alert alert--info break-words" data-ops-file-hours-per-day-notice>
+          {tMenu('ribbon.calendarDialog.fileHoursPerDayNotice', {
+            fileHours: netHoursFormatter.format(draft.hoursPerDay),
+            appHours: netHoursFormatter.format(appHoursPerDay),
+          })}
+        </div>
+      )}
       {!hourMode && (
         <>
         <div className="grid grid-cols-2 gap-3" data-ops-simple-break>
