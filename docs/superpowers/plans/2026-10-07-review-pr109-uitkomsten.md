@@ -1735,3 +1735,16 @@ Testversie (release-check, poort 3049) is NIET bijgewerkt met de PR's van vandaa
   ingedeeld). Volgende keer: die merge afmaken (of `git merge --abort`) en CI op de nieuwe kop.
 - aia-sessie opnieuw geprobeerd: T3-tools hier zien alleen de laptop-omgeving (5 projecten, geen aia) ⇒ eigenaar start
   de sessie zelf op de aia-server met de opdracht uit het gesprek.
+
+### 2026-10-20
+- **Reviews voortaan op GPT-6.1-Sol** (Codex, reasoning xhigh, via T3 `delegate_task`), met houding en rapportvorm van
+  de vaste reviewer letterlijk in de brief (eigenaar 2026-10-20; vastgelegd in `~/.claude/AGENTS.md`).
+- **#380**: aia-sessie merget main erin ⇒ 6dfdb90f4, CI groen. Merge-review (GPT-6.1-Sol): **JA**, geen BLOKKEERT;
+  VERVOLG: `remainingWorkRecomputed*` niet expliciet in `NOT_A_REFUSAL` (`check-refusal-notices.ts:169`). Testversie
+  60da1c2d0 (#380 erbij; dev-server 3049 herstart). Checkstap E-1010 (⚠-uitleg + melding na duurwijziging): eigenaar
+  "prima"; tekst "nieuwe duur" blijft. **Gemerged in main** bd9205df3 (`--admin`, `--match-head-commit`).
+- **#376**: checkstap namen + punt 7: eigenaar "prima" ⇒ namen goed, *Taaktypes gebruiken* blijft in App-instellingen ›
+  Planning › Berekenen. Worker (Opus 5.5, medium) merget main bd9205df3 erin; bekende conflicten met #380
+  (`TaskAssignmentsSection.tsx` ⚠-blok, `ref-tabelkolommen.md`) zoals in de testversie opgelost. Daarna merge-review
+  (GPT-6.1-Sol), CI, merge.
+- **#374**: worker (Opus 5.5, medium) maakt de merge met main 4c747d73a af en deelt `phaseQuestionOutdated` in.
