@@ -325,9 +325,11 @@ const SCENES: Record<string, Scene> = {
       return `[data-ops-assignment-row="${a.id}"] [data-ops-assignment-work-deviates]`;
     },
   },
-  // PROTOTYPE (issue #391): meerdere baselines tegelijk in de Gantt. Drie baselines met
-  // verschillende datums: "Contract" (actief, grijs) plus "Herplanning maart" en "Herplanning juni"
-  // in "Vergelijk met". Hoe later de taak, hoe groter de uitloop sinds het contract.
+  // PROTOTYPE (issue #391): meerdere baselines tegelijk in de Gantt, in één gestreepte strook.
+  // Drie baselines: "Contract" (actief) plus "Herplanning maart" en "Herplanning juni". De
+  // verschuivingen wisselen per taak, zodat alle gevallen in beeld komen: drie baselines die deels
+  // overlappen (stukken met 1, 2 en 3 kleuren), twee die precies samenvallen, en drie die elkaar niet
+  // raken. Bij de mijlpalen vallen Contract en maart op dezelfde datum (één gestreepte ruit).
   'meerdere-baselines': {
     run: async () => {
       await openExample('showcase-verbouwing-eengezinswoning.ifc');
@@ -336,25 +338,35 @@ const SCENES: Record<string, Scene> = {
       useAppStore.setState(s => { s.baselines = []; s.activeBaselineId = null; });
       const contractId = useAppStore.getState().saveBaseline('Contract');
       const contract = useAppStore.getState().baselines.find(b => b.id === contractId)!;
-      const order = [...contract.tasks].sort((a, b) => a.start.localeCompare(b.start));
-      const n = Math.max(1, order.length - 1);
-      const rank = new Map(order.map((t, i) => [t.taskId, i / n]));
+      const order = [...contract.tasks].filter(t => !t.isMilestone).sort((a, b) => a.start.localeCompare(b.start));
+      const rank = new Map(order.map((t, i) => [t.taskId, i]));
       const shift = (iso: string, days: number) => (iso
         ? formatDate(addCalendarDays(parseDate(iso), days)) + iso.slice(10)
         : iso);
-      // `drift(f)` = dagen die een taak op plaats f (0 = eerste, 1 = laatste) vóór het huidige plan lag.
-      const derive = (name: string, drift: (f: number) => number) => ({
+      // Verschuiving in kalenderdagen per baseline [contract, maart, juni], per soort taak.
+      const SHIFTS: Record<'deels' | 'gelijk' | 'los', [number, number, number]> = {
+        deels: [-4, -2, 0],    // overlappen deels: stukken met 1, 2 en 3 baselines
+        gelijk: [-3, -3, 0],   // contract en maart vallen samen: gestreept in twee kleuren
+        los: [-20, -10, 0],    // raken elkaar niet: drie losse effen stukken
+      };
+      const kindOf = (taskId: string) => {
+        const i = rank.get(taskId);
+        if (i === undefined) return null; // mijlpaal
+        return (['deels', 'gelijk', 'los'] as const)[i % 3];
+      };
+      const derive = (name: string, which: 0 | 1 | 2) => ({
         ...contract,
         id: `${contractId}-${name.replace(/\s+/g, '-').toLowerCase()}`,
         name,
         tasks: contract.tasks.map(t => {
-          const d = -Math.round(drift(rank.get(t.taskId) ?? 0));
+          const kind = kindOf(t.taskId);
+          const d = kind ? SHIFTS[kind][which] : [-4, -4, 0][which];
           return { ...t, start: shift(t.start, d), finish: shift(t.finish, d) };
         }),
       });
-      const maart = derive('Herplanning maart', f => 6 + 10 * f);
-      const juni = derive('Herplanning juni', f => (f < 0.3 ? 0 : 7 * f));
-      const contractShifted = derive('Contract', f => 4 + 24 * f);
+      const contractShifted = derive('Contract', 0);
+      const maart = derive('Herplanning maart', 1);
+      const juni = derive('Herplanning juni', 2);
       useAppStore.setState(s => {
         const i = s.baselines.findIndex(b => b.id === contractId);
         s.baselines[i] = { ...contractShifted, id: contractId };
@@ -372,7 +384,7 @@ const SCENES: Record<string, Scene> = {
         }
         await sleep(150);
       }
-      return '[data-ops-compare-baselines]';
+      return '[data-ops-baseline-split]';
     },
   },
 };

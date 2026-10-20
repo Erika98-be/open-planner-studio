@@ -1,96 +1,148 @@
-// PROTOTYPE (issue #391): meerdere baselines tegelijk in de Gantt. Opent de kijkscène
-// `?qaScene=meerdere-baselines` (drie baselines; "Contract" actief, twee in "Vergelijk met") en
-// controleert met echte klikken en hovers: de keuzelijst met vinkjes, de legenda en de tooltip op een
-// baselinelaag. `__OPS__` leest alleen. Met `OPS_QA_SHOTS=<map>` legt de spec schermbeelden vast
-// (licht, donker, open keuzelijst) voor de ontwerpbeoordeling.
+// PROTOTYPE (issue #391): meerdere baselines tegelijk in de Gantt, in één gestreepte strook. Opent de
+// kijkscène `?qaScene=meerdere-baselines` (drie baselines; "Contract" actief, twee extra aan) en
+// controleert met echte klikken en hovers: de gesplitste knop Baseline-overlay met het menu "Toon in
+// de Gantt", de legenda en de tooltip op stukken met één, twee en drie baselines. `__OPS__` leest
+// alleen. Met `OPS_QA_SHOTS=<map>` legt de spec schermbeelden vast voor de ontwerpbeoordeling.
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures/ops';
 
 const SHOTS = process.env.OPS_QA_SHOTS;
-async function shot(page: Page, name: string): Promise<void> {
+async function shot(page: Page, name: string, clip?: { x: number; y: number; width: number; height: number }): Promise<void> {
   if (!SHOTS) return;
   mkdirSync(SHOTS, { recursive: true });
-  await page.screenshot({ path: join(SHOTS, name) });
+  await page.screenshot({ path: join(SHOTS, name), clip });
 }
 
 const compared = (page: Page) => page.evaluate(() => window.__OPS__!.store.getState().ui.comparedBaselineIds);
 const idOf = (page: Page, name: string) => page.evaluate(n => window.__OPS__!.store.getState().baselines
   .find(b => b.name === n)!.id, name);
 
-test('meerdere baselines: Vergelijk met, legenda en tooltip per laag', async ({ page, ops: _ops }) => {
-  test.setTimeout(90_000);
-  await page.setViewportSize({ width: 1600, height: 900 });
+async function openScene(page: Page): Promise<void> {
   await page.goto('/?qaScene=meerdere-baselines');
-  const picker = page.locator('[data-ops-compare-baselines]');
-  await expect(picker).toBeVisible({ timeout: 20_000 });
+  await expect(page.locator('[data-ops-baseline-split]')).toBeVisible({ timeout: 20_000 });
   await expect.poll(() => page.evaluate(() => window.__OPS__!.store.getState().baselines.map(b => b.name)))
     .toEqual(['Contract', 'Herplanning maart', 'Herplanning juni']);
-  const maart = await idOf(page, 'Herplanning maart');
-  const juni = await idOf(page, 'Herplanning juni');
-  expect(await compared(page)).toEqual([maart, juni]);
-
-  // Legenda in de statusbalk: de actieve baseline eerst, dan de twee vergelijkingen, elk met een eigen kleurblokje.
-  const legend = page.locator('[data-ops-baseline-legend]');
-  await expect(legend).toHaveText(/Contract.*Herplanning maart.*Herplanning juni/);
-  await expect(legend.locator('[data-ops-baseline-swatch]')).toHaveCount(3);
-
   // Het welkomstvenster kan ná de scène nog opkomen (verse browser); het hoort niet bij deze check.
   await page.evaluate(() => window.__OPS__!.store.getState().setUI({ showWelcomeDialog: false, showTourOverlay: false }));
   await expect(page.locator('[data-ops-welcome-dialog]')).toHaveCount(0);
   // Weg met de omlijning van de kijkscène voor de schermbeelden.
-  await picker.evaluate(el => { el.style.outline = ''; });
-  for (const theme of ['light', 'dark'] as const) {
+  const split = page.locator('[data-ops-baseline-split]');
+  await expect.poll(() => split.evaluate(el => el.style.outline)).not.toBe('');
+  await split.evaluate(el => { el.style.outline = ''; });
+}
+
+/** Viewportpunten van de zichtbare taken met een baseline: balkmidden, links en rechts. */
+async function visibleBars(page: Page) {
+  return page.evaluate(() => {
+    const s = window.__OPS__!.store.getState();
+    const g = window.__OPS__!.gantt;
+    const ids = new Set(s.baselines[0].tasks.filter(t => !t.isMilestone).map(t => t.taskId));
+    return s.tasks.filter(t => ids.has(t.id)).flatMap(t => {
+      const left = g.taskBarPoint(t.id, 'left', 'primary');
+      const right = g.taskBarPoint(t.id, 'right', 'primary');
+      return left && right ? [{ id: t.id, name: t.name, y: left.y, left: left.x, right: right.x }] : [];
+    });
+  });
+}
+
+test('meerdere baselines: gesplitste knop, menu, legenda en tooltip per stuk', async ({ page, ops: _ops }) => {
+  test.setTimeout(150_000);
+  await page.setViewportSize({ width: 1600, height: 900 });
+  await openScene(page);
+  const maart = await idOf(page, 'Herplanning maart');
+  const juni = await idOf(page, 'Herplanning juni');
+  expect(await compared(page)).toEqual([maart, juni]);
+  // De scène opent het menu niet zelf.
+  await expect(page.locator('[data-ops-baseline-menu]')).toHaveCount(0);
+
+  // Legenda in de statusbalk: de actieve baseline eerst, dan de twee extra, elk met een kleurstrookje.
+  const legend = page.locator('[data-ops-baseline-legend]');
+  await expect(legend).toHaveText(/Contract.*Herplanning maart.*Herplanning juni/);
+  await expect(legend.locator('[data-ops-baseline-swatch]')).toHaveCount(3);
+
+  for (const theme of ['light', 'dark', 'high-contrast'] as const) {
     await page.evaluate(t => window.__OPS__!.store.getState().setUI({ uiTheme: t }), theme);
     await page.waitForTimeout(400);
     await shot(page, `meerdere-baselines-${theme}.png`);
   }
   await page.evaluate(() => window.__OPS__!.store.getState().setUI({ uiTheme: 'light' }));
+  await page.waitForTimeout(300);
 
-  // Hover op elke baselinelaag van één taak: per laag op een x binnen die laag (uit de eigen as van
-  // de renderer), en een paar y-waarden onder de balk. De tooltip noemt de laag.
-  const probe = await page.evaluate(() => {
-    const s = window.__OPS__!.store.getState();
-    const g = window.__OPS__!.gantt;
-    const byName = (n: string) => s.baselines.find(b => b.name === n)!;
-    const layers = [byName('Contract'), byName('Herplanning maart'), byName('Herplanning juni')];
-    // Een taak waarvan alle drie de lagen binnen de tijdlijn vallen (canvas-x tussen 5 en 900).
-    const startOf = (l: typeof layers[number], id: string) => l.tasks.find(x => x.taskId === id)?.start;
-    const task = s.tasks.find(t => !t.isMilestone && g.taskBarPoint(t.id, 'left', 'primary') !== null
-      && layers.every(l => { const st = startOf(l, t.id); const x = st ? g.dateX(st) : null; return x !== null && x > 5 && x < 900; }))!;
-    const left = g.taskBarPoint(task.id, 'left', 'primary')!;
-    const barX = g.dateX(task.time.earlyStart ?? task.time.scheduleStart)!;
-    const xs = layers.map(l => left.x - barX + g.dateX(startOf(l, task.id)!)! + 3);
-    return { id: task.id, y: left.y, xs };
+  // Hover over de strook onder elke zichtbare taak, van links naar rechts: de tooltip noemt per stuk
+  // de baselines die daar liggen. De scène zorgt voor stukken met 1, 2 en 3 baselines.
+  const bars = await visibleBars(page);
+  expect(bars.length).toBeGreaterThan(3);
+  const seen = new Map<string, string>();
+  const stripDy = await page.evaluate(() => {
+    // Balkhoogte 0,6·rij, dan 1 px lucht, dan de strook: het midden van de strook onder het balkmidden.
+    const rowH = 32 * (window.__OPS__!.store.getState().ui.uiFontScale ?? 100) / 100;
+    return rowH * 0.3 + 1 + 2.5;
   });
-  const seen = new Set<string>();
-  for (const [slot, x] of probe.xs.entries()) {
-    for (let dy = 8; dy <= 18; dy += 0.5) {
-      await page.mouse.move(x, probe.y + dy);
-      const tip = page.locator(`[data-ops-baseline-tooltip="${slot}"]`);
-      if (await tip.count()) {
-        seen.add(String(slot));
-        if (slot === 2) await shot(page, 'meerdere-baselines-tooltip.png');
-        break;
+  for (const bar of bars.slice(0, 6)) {
+    for (let x = bar.left - 260; x <= bar.right + 10; x += 6) {
+      if (x < 380) continue;
+      await page.mouse.move(x, bar.y + stripDy);
+      const tip = page.locator('[data-ops-baseline-tooltip]');
+      if (!(await tip.count())) continue;
+      const slots = (await tip.getAttribute('data-ops-baseline-tooltip'))!;
+      if (!seen.has(slots)) {
+        seen.set(slots, (await tip.textContent()) ?? '');
+        if (slots === '0,1,2') await shot(page, 'meerdere-baselines-tooltip.png');
       }
     }
   }
-  expect([...seen].sort()).toEqual(['0', '1', '2']);
   await page.mouse.move(5, 5);
+  const keys = [...seen.keys()];
+  expect(keys.some(k => k.split(',').length === 1)).toBe(true);
+  expect(keys.some(k => k.split(',').length === 2)).toBe(true);
+  expect(keys).toContain('0,1,2');
+  expect(seen.get('0,1,2')).toMatch(/Contract.*Herplanning maart.*Herplanning juni/);
 
-  // Keuzelijst: alleen de niet-actieve baselines, beide aangevinkt; uitvinken laat de lijst open en
-  // maakt alleen die plaats leeg.
-  await picker.locator('.ops-select__trigger').click();
-  const list = page.getByRole('listbox');
-  await expect(list.getByRole('option')).toHaveCount(2);
-  await expect(list.getByRole('option', { name: 'Herplanning maart' })).toHaveAttribute('aria-selected', 'true');
-  await expect(list.getByRole('option', { name: 'Herplanning juni' })).toHaveAttribute('aria-selected', 'true');
-  await shot(page, 'meerdere-baselines-keuzelijst.png');
-  await list.getByRole('option', { name: 'Herplanning maart' }).click();
-  await expect(list).toBeVisible();
+  // Knopdeel: overlay uit en weer aan, zoals de oude knop.
+  const main = page.locator('[data-ops-ribbon-item="toggleBaselineOverlay"]');
+  await main.click();
+  await expect.poll(() => page.evaluate(() => window.__OPS__!.store.getState().ui.showBaselineOverlay)).toBe(false);
+  await main.click();
+  await expect.poll(() => page.evaluate(() => window.__OPS__!.store.getState().ui.showBaselineOverlay)).toBe(true);
+
+  // Pijltje: menu "Toon in de Gantt". Actief bovenaan, altijd aan; de andere twee aangevinkt.
+  await page.locator('[data-ops-baseline-menu-toggle]').click();
+  const menu = page.locator('[data-ops-baseline-menu]');
+  await expect(menu).toBeVisible();
+  const items = menu.getByRole('menuitemcheckbox');
+  await expect(items).toHaveCount(3);
+  await expect(items.nth(0)).toContainText('Contract');
+  await expect(items.nth(0)).toHaveAttribute('aria-checked', 'true');
+  await expect(items.nth(0)).toHaveAttribute('aria-disabled', 'true');
+  await expect(items.nth(1)).toHaveAttribute('aria-checked', 'true');
+  await expect(items.nth(2)).toHaveAttribute('aria-checked', 'true');
+  await shot(page, 'meerdere-baselines-menu.png');
+  // De actieve uitvinken kan niet.
+  await items.nth(0).click({ force: true });
+  expect(await compared(page)).toEqual([maart, juni]);
+  // maart uit: het menu blijft open, alleen die plaats wordt leeg.
+  await menu.locator(`[data-ops-baseline-menu-item="${maart}"]`).click();
+  await expect(menu).toBeVisible();
   expect(await compared(page)).toEqual([null, juni]);
   await expect(legend).toHaveText(/Contract.*Herplanning juni/);
-  await list.getByRole('option', { name: 'Herplanning maart' }).click();
+  await menu.locator(`[data-ops-baseline-menu-item="${maart}"]`).click();
   expect(await compared(page)).toEqual([maart, juni]);
+});
+
+test('meerdere baselines: 2×-schermbeeld van de strepen (alleen met OPS_QA_SHOTS)', async ({ browser }) => {
+  test.skip(!SHOTS, 'alleen voor de ontwerpbeoordeling');
+  test.setTimeout(90_000);
+  const context = await browser.newContext({ deviceScaleFactor: 2, viewport: { width: 1600, height: 900 } });
+  const page = await context.newPage();
+  await openScene(page);
+  const bars = await visibleBars(page);
+  for (const theme of ['light', 'dark'] as const) {
+    await page.evaluate(t => window.__OPS__!.store.getState().setUI({ uiTheme: t }), theme);
+    await page.waitForTimeout(400);
+    const top = bars[1].y - 20;
+    await shot(page, `meerdere-baselines-2x-${theme}.png`, { x: 364, y: top, width: 620, height: 230 });
+  }
+  await context.close();
 });

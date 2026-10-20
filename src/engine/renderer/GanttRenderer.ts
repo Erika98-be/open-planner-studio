@@ -29,7 +29,7 @@ import { computeSplitSegments } from './splitBarGeometry';
 import { isLeafTask, isSummaryTask } from '@/utils/taskHierarchy';
 import { classifyTraceTask, isRelationOutsideTrace, type TaskTrace } from '@/engine/taskGrid/trace';
 import { ellipsize } from './textFit';
-import { barLayout, baselineStack, type BarLayout } from './rowGeometry';
+import { barLayout, type BarLayout } from './rowGeometry';
 import { canvasFont, type TextRole } from './textRoles';
 import { shownStart, shownFinish, floatBandEnd, finishInstant } from '@/utils/taskDates';
 
@@ -80,7 +80,8 @@ function cachedArrowEntries(sequences: Sequence[], rows: ViewRow[], rowIndexByTa
 
 /** PROTOTYPE (issue #391): één getekende baselinelaag van één taak, in canvascoördinaten. */
 interface BaselineHitRect {
-  slot: 0 | 1 | 2;
+  /** De baselines (kleurplaatsen) die in dit stuk liggen. */
+  slots: (0 | 1 | 2)[];
   x1: number;
   x2: number;
   y1: number;
@@ -290,6 +291,33 @@ function getCrossHatch(ctx: CanvasRenderingContext2D, strokeColor: string, size:
 
 /** Tegelmaat (px) van de kruisarcering op de spelingsband. */
 const FLOAT_HATCH_SIZE = 5;
+
+/**
+ * PROTOTYPE (issue #391): schuine strepen (45°) die om de beurt de gegeven kleuren tonen, voor een
+ * stuk baselinestrook waar meerdere baselines overlappen. Elke band is `width` px breed (horizontaal
+ * gemeten); de tegel is `kleuren × width` in het vierkant, zodat de banden naadloos doorlopen.
+ * Gememoized per kleurcombinatie en breedte, zoals de andere vulpatronen.
+ */
+function getBaselineStripes(ctx: CanvasRenderingContext2D, colors: readonly string[], width: number): CanvasPattern | null {
+  const size = colors.length * width;
+  return tilePattern(ctx, `baseline-stripes|${colors.join('|')}|${width}`, size, (p) => {
+    // Band i ligt waar x + y in [i·w, (i+1)·w) valt, plus dezelfde band één periode verder.
+    for (let i = 0; i < colors.length; i++) {
+      p.fillStyle = colors[i];
+      for (const shift of [0, size]) {
+        const c1 = i * width + shift;
+        const c2 = c1 + width;
+        p.beginPath();
+        p.moveTo(c1, 0);
+        p.lineTo(c2, 0);
+        p.lineTo(c2 - size, size);
+        p.lineTo(c1 - size, size);
+        p.closePath();
+        p.fill();
+      }
+    }
+  });
+}
 /** Taaknaam naast de balk: afstand tot de balk, maximale breedte en de dikte van de rand in de
  *  achtergrondkleur (px). */
 const OUTSIDE_LABEL_GAP = 6;  // vanaf de knik van de eigen uitgaande relatie (`ARROW_STUB`), niet vanaf de balk
@@ -972,10 +1000,28 @@ export class GanttRenderer {
     ctx.restore();
   }
 
-  /** Baseline-onderbalken: dunne balk (of ruit voor mijlpalen) per baselinelaag onder de hoofdbalk.
-   *  Laag 0 is de actieve baseline (grijs, huidig uiterlijk); PROTOTYPE (issue #391): daaronder tot
-   *  twee vergelijkingsbaselines, elk in een vaste eigen kleur. Alleen lagen met een entry voor deze
-   *  taak tellen mee; de stapelplaats volgt de lagen die aan staan, zodat de kleurvolgorde vast is. */
+  /** Kleur van een baselineplaats: 0 = actief (huidige baselinekleur), 1/2 = vergelijking. */
+  private baselineColor(slot: 0 | 1 | 2): string {
+    return slot === 0 ? this.colors.baseline : slot === 1 ? this.colors.baselineCompare1 : this.colors.baselineCompare2;
+  }
+
+  /** Vulling voor een stuk waar `slots` liggen: effen bij één baseline, schuine strepen bij meer. */
+  private baselineFill(slots: (0 | 1 | 2)[], anchorX: number, anchorY: number): string | CanvasPattern {
+    if (slots.length === 1) return this.baselineColor(slots[0]);
+    const pattern = getBaselineStripes(this.ctx, slots.map(sl => this.baselineColor(sl)), this.bar.baselineStripeWidth);
+    if (!pattern) return this.baselineColor(slots[0]);
+    anchorPattern(pattern, anchorX, anchorY);
+    return pattern;
+  }
+
+  /**
+   * Baselinestrook onder de hoofdbalk. Op main is dat één baseline (de actieve); PROTOTYPE (issue
+   * #391): ook tot twee vergelijkingsbaselines, in ÉÉN strook. De strook wordt per taak op de
+   * grenzen van de baselines in stukken verdeeld: één baseline ⇒ effen in haar kleur; twee of drie
+   * ⇒ schuine strepen in precies die kleuren. De buitenkant is de vereniging van de ronde balkjes
+   * per baseline (straal = halve hoogte), dus losse baselines blijven losse ronde stukken.
+   * Mijlpalen: een ruit per datum; vallen meerdere baselines op dezelfde datum, dan één gestreepte.
+   */
   private drawBaselineOverlay(task: Task, y: number, height: number, resourceAccentHeight = 0): void {
     if (this.opts.showBaselineOverlay === false) return;
     const layers: { slot: 0 | 1 | 2; overlay: BaselineOverlay }[] = [];
@@ -983,73 +1029,95 @@ export class GanttRenderer {
     for (const c of this.opts.baselineComparisons ?? []) layers.push(c);
     if (layers.length === 0) return;
 
-    // Resource-accent en baseline delen de vrije strook onder de hoofdbalk met VASTE hoogtes uit
-    // `barLayout`: de baseline is even dik met of zonder accent en past in beide gevallen binnen
-    // de rij. Staat er een accent, dan schuift de baseline eronder.
-    const baseY = y + height + 1 + resourceAccentHeight;
-    const available = this.bar.barOffset - 1 - resourceAccentHeight;
-    const stack = baselineStack(this.bar.baselineHeight, available, layers.length);
+    const top = y + height + 1 + resourceAccentHeight;
+    const h = resourceAccentHeight > 0 ? this.bar.baselineHeightWithAccent : this.bar.baselineHeight;
     const zoom = this.opts.view.zoom;
     const ctx = this.ctx;
     const hits: BaselineHitRect[] = [];
 
-    layers.forEach((layer, i) => {
+    const bars: { slot: 0 | 1 | 2; x1: number; x2: number }[] = [];
+    const diamonds = new Map<number, (0 | 1 | 2)[]>();
+    for (const layer of layers) {
       const entry = layer.overlay.get(task.id);
-      if (!entry) return;
-      const top = baseY + stack[i].offset;
-      const h = stack[i].height;
-      ctx.fillStyle = layer.slot === 0
-        ? this.colors.baseline
-        : layer.slot === 1 ? this.colors.baselineCompare1 : this.colors.baselineCompare2;
-
+      if (!entry) continue;
       if (entry.isMilestone) {
-        // Kleine ruit in de laagkleur op de baseline-datum. Met één laag even groot als altijd;
-        // gestapeld minstens 2 px, anders is de ruit geen ruit meer.
-        const x = this.dateToX(parseDate(entry.start)) + zoom / 2;
-        if (x < 0 || x >= this.opts.canvasWidth) return;
-        const cy = top + h / 2;
-        const sz = layers.length === 1 ? h : Math.max(2, h);
-        ctx.beginPath();
-        ctx.moveTo(x, cy - sz);
-        ctx.lineTo(x + sz, cy);
-        ctx.lineTo(x, cy + sz);
-        ctx.lineTo(x - sz, cy);
-        ctx.closePath();
-        ctx.fill();
-        hits.push({ slot: layer.slot, x1: x - sz, x2: x + sz, y1: top, y2: top + h });
-        return;
+        const x = Math.round((this.dateToX(parseDate(entry.start)) + zoom / 2) * 2) / 2;
+        const list = diamonds.get(x) ?? [];
+        list.push(layer.slot);
+        diamonds.set(x, list);
+        continue;
       }
-
       const x1 = this.dateToX(parseDate(entry.start));
-      const x2 = this.dateToX(parseDate(entry.finish)) + zoom;
-      if (x2 < 0 || x1 >= this.opts.canvasWidth) return;
-      const width = Math.max(x2 - x1, 2);
+      const x2 = Math.max(this.dateToX(parseDate(entry.finish)) + zoom, x1 + 2);
+      if (x2 < 0 || x1 >= this.opts.canvasWidth) continue;
+      bars.push({ slot: layer.slot, x1, x2 });
+    }
+
+    if (bars.length === 1) {
+      // Eén baseline: één effen rond balkje, zoals op main (geen clip nodig).
+      const b = bars[0];
+      ctx.fillStyle = this.baselineColor(b.slot);
       ctx.beginPath();
-      ctx.roundRect(x1, top, width, h, Math.min(1, h / 2));
+      ctx.roundRect(b.x1, top, b.x2 - b.x1, h, h / 2);
       ctx.fill();
-      hits.push({ slot: layer.slot, x1, x2: x1 + width, y1: top, y2: top + h });
-    });
+      hits.push({ slots: [b.slot], x1: b.x1, x2: b.x2, y1: top, y2: top + h });
+    } else if (bars.length > 1) {
+      const radius = h / 2;
+      const left = Math.min(...bars.map(b => b.x1));
+      ctx.save();
+      // Buitenkant: vereniging van de ronde balkjes per baseline.
+      ctx.beginPath();
+      for (const b of bars) ctx.roundRect(b.x1, top, b.x2 - b.x1, h, radius);
+      ctx.clip();
+      // Stukken op de grenzen van de baselines.
+      const edges = [...new Set(bars.flatMap(b => [b.x1, b.x2]))].sort((a, b) => a - b);
+      for (let i = 0; i < edges.length - 1; i++) {
+        const a = edges[i];
+        const b = edges[i + 1];
+        if (b - a <= 0) continue;
+        const slots = bars.filter(bar => bar.x1 <= a && bar.x2 >= b).map(bar => bar.slot).sort();
+        if (slots.length === 0) continue;
+        ctx.fillStyle = this.baselineFill(slots, left, top);
+        // Een halve pixel overlap tegen een naad tussen twee stukken.
+        ctx.fillRect(a, top, b - a + 0.5, h);
+        hits.push({ slots, x1: a, x2: b, y1: top, y2: top + h });
+      }
+      ctx.restore();
+    }
+
+    // Mijlpalen: ruit op de baselinedatum, even hoog als de strook plus een beetje.
+    const sz = Math.max(2.4, h * 0.8);
+    const cy = top + h / 2;
+    for (const [x, slots] of diamonds) {
+      if (x < -sz || x >= this.opts.canvasWidth + sz) continue;
+      slots.sort();
+      ctx.fillStyle = this.baselineFill(slots, x - sz, cy - sz);
+      ctx.beginPath();
+      ctx.moveTo(x, cy - sz);
+      ctx.lineTo(x + sz, cy);
+      ctx.lineTo(x, cy + sz);
+      ctx.lineTo(x - sz, cy);
+      ctx.closePath();
+      ctx.fill();
+      hits.push({ slots, x1: x - sz, x2: x + sz, y1: cy - sz, y2: cy + sz });
+    }
     if (hits.length) this.baselineHits.set(task.id, { task, rects: hits });
   }
 
-  /** PROTOTYPE (issue #391): welke baselinelaag ligt onder de muis? Leest de vlakken die de laatste
-   *  teken-ronde vastlegde (zelfde geometrie als getekend). De lagen zijn maar 1–3 px hoog; daarom
-   *  telt een marge van 2 px boven en onder de stapel mee, en wint de dichtstbijzijnde laag. */
-  getBaselineAt(canvasX: number, canvasY: number): { task: Task; slot: 0 | 1 | 2 } | null {
+  /** PROTOTYPE (issue #391): welke baselines liggen onder de muis? Leest de stukken die de laatste
+   *  teken-ronde vastlegde (zelfde geometrie als getekend), met een marge van 2 px boven en onder. */
+  getBaselineAt(canvasX: number, canvasY: number): { task: Task; slots: (0 | 1 | 2)[] } | null {
     const task = this.getTaskAtY(canvasY);
     if (!task) return null;
     const hit = this.baselineHits.get(task.id);
     if (!hit) return null;
-    const PAD_Y = 2;
-    const PAD_X = 3;
-    let best: { slot: 0 | 1 | 2; dist: number } | null = null;
+    const PAD = 2;
     for (const r of hit.rects) {
-      if (canvasX < r.x1 - PAD_X || canvasX > r.x2 + PAD_X) continue;
-      if (canvasY < r.y1 - PAD_Y || canvasY > r.y2 + PAD_Y) continue;
-      const dist = Math.abs(canvasY - (r.y1 + r.y2) / 2);
-      if (!best || dist < best.dist) best = { slot: r.slot, dist };
+      if (canvasX < r.x1 || canvasX > r.x2) continue;
+      if (canvasY < r.y1 - PAD || canvasY > r.y2 + PAD) continue;
+      return { task: hit.task, slots: r.slots };
     }
-    return best ? { task: hit.task, slot: best.slot } : null;
+    return null;
   }
 
   private drawTimelineHeader(): void {
@@ -2164,7 +2232,7 @@ export class GanttRenderer {
    *  - de SPELINGSBAND, baseline-onderbalk, constraint-pins en aantekening-badges tellen NIET.
    *    De speling-band kan tientallen dagen breed zijn; hem als obstakel meenemen zou pijlen
    *    kilometers laten omlopen (spaghetti) voor een strook die maar een halve balkhoogte hoog is.
-   *    De andere drie zijn punt-glyphs c.q. liggen buiten de goot (baseline eindigt op 0,89·rowHeight,
+   *    De andere drie zijn punt-glyphs c.q. liggen buiten de goot (baseline eindigt op ~0,99·rowHeight sinds de dikkere strook van het prototype #391 — pijlen in de goot kunnen hem raken,
    *    de goot ligt op de rijgrens).
    */
   private buildRowObstacles(): RowObstacles {

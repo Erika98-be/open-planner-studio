@@ -1,0 +1,129 @@
+import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Check, ChevronDown, LayoutGrid } from 'lucide-react';
+import { Popover } from '@/components/common/Popover';
+import { useAppStore } from '@/state/appStore';
+import { BASELINE_SLOT_COLOR } from '@/components/canvas/BaselineTooltipContent';
+import { buildBaselineLayers, toggleComparedBaseline, MAX_COMPARED_BASELINES } from '@/types/baseline';
+
+/**
+ * PROTOTYPE (issue #391): gesplitste lintknop Baseline-overlay.
+ *
+ * - Het knopdeel zet de overlay aan of uit, precies zoals de oude knop.
+ * - Het pijltje opent het menu "Toon in de Gantt": per baseline een vinkje en een kleurstrookje.
+ *   De actieve baseline staat bovenaan, is altijd aan en draagt "actief". Maximaal drie tegelijk;
+ *   daarna zijn de overige vinkjes uitgeschakeld.
+ *
+ * Het lint had nog geen gesplitste knop; dit volgt het popoverpatroon van Balkkleuren
+ * (`ScreenColorsPopoverButton`): `Popover` met `ribbon-btn small` als trigger. De keuze is alleen
+ * UI-state (`ui.comparedBaselineIds`), niet in het document en niet in de instellingen.
+ */
+export function BaselineOverlaySplitButton() {
+  const { t: tMenu } = useTranslation('menu');
+  const [open, setOpen] = useState(false);
+  const showBaselineOverlay = useAppStore(s => s.ui.showBaselineOverlay);
+  const setOverlays = useAppStore(s => s.setOverlays);
+  const baselines = useAppStore(s => s.baselines);
+  const activeBaselineId = useAppStore(s => s.activeBaselineId);
+  const compared = useAppStore(s => s.ui.comparedBaselineIds);
+  const setUI = useAppStore(s => s.setUI);
+
+  const layers = useMemo(
+    () => buildBaselineLayers(baselines, activeBaselineId, compared),
+    [baselines, activeBaselineId, compared],
+  );
+  const slotOf = (id: string) => layers.find(l => l.baselineId === id)?.slot;
+  const full = layers.filter(l => l.slot !== 0).length >= MAX_COMPARED_BASELINES;
+  // Actief bovenaan, daarna de overige in de volgorde van Baselines beheren.
+  const ordered = [
+    ...baselines.filter(b => b.id === activeBaselineId),
+    ...baselines.filter(b => b.id !== activeBaselineId),
+  ];
+
+  const label = tMenu('ribbon.toggleBaselineOverlay');
+  const menuLabel = tMenu('ribbon.baselineMenuOpen');
+
+  return (
+    <Popover
+      open={open}
+      onClose={() => setOpen(false)}
+      panelStyle={{
+        marginTop: 2, zIndex: 9999, minWidth: 240, maxWidth: 320, padding: 6,
+        display: 'flex', flexDirection: 'column', gap: 2,
+      }}
+      trigger={
+        <div className={`ribbon-split${showBaselineOverlay ? ' active' : ''}`} data-ops-baseline-split>
+          <button
+            className={`ribbon-btn small ribbon-split-main${showBaselineOverlay ? ' active' : ''}`}
+            title={label}
+            aria-label={label}
+            aria-pressed={showBaselineOverlay}
+            data-ops-ribbon-item="toggleBaselineOverlay"
+            onClick={() => setOverlays({ baseline: !showBaselineOverlay })}
+          >
+            <span className="ribbon-btn-icon"><LayoutGrid size={14} /></span>
+            <span className="ribbon-btn-label">{label}</span>
+          </button>
+          <button
+            className={`ribbon-btn small ribbon-split-arrow${showBaselineOverlay ? ' active' : ''}${open ? ' open' : ''}`}
+            title={menuLabel}
+            aria-label={menuLabel}
+            aria-haspopup="menu"
+            aria-expanded={open}
+            data-ops-baseline-menu-toggle
+            onClick={() => setOpen(o => !o)}
+          >
+            <ChevronDown size={12} />
+          </button>
+        </div>
+      }
+    >
+      <div role="menu" aria-label={tMenu('ribbon.baselineMenu')} data-ops-baseline-menu>
+        <div className="ribbon-info" style={{ fontWeight: 600, padding: '2px 6px 4px' }}>
+          {tMenu('ribbon.baselineMenu')}
+        </div>
+        {ordered.length === 0 && (
+          <div className="ribbon-info" style={{ padding: '2px 6px', whiteSpace: 'normal', maxWidth: 280 }}>{tMenu('ribbon.baselineMenuEmpty')}</div>
+        )}
+        {ordered.map(b => {
+          const isActive = b.id === activeBaselineId;
+          const slot = slotOf(b.id);
+          const checked = slot !== undefined;
+          const disabled = isActive || (!checked && full);
+          return (
+            <button
+              key={b.id}
+              role="menuitemcheckbox"
+              aria-checked={checked}
+              aria-disabled={disabled || undefined}
+              data-ops-baseline-menu-item={b.id}
+              className={`ribbon-check-item${disabled ? ' is-disabled' : ''}`}
+              onClick={() => {
+                if (disabled) return;
+                setUI({ comparedBaselineIds: toggleComparedBaseline(compared, b.id) });
+              }}
+            >
+              <span className={`ribbon-check-box${checked ? ' is-checked' : ''}`} aria-hidden="true">
+                {checked && <Check size={11} strokeWidth={3} />}
+              </span>
+              <span
+                className={`ribbon-check-strip${checked ? '' : ' is-empty'}`}
+                style={checked ? { background: BASELINE_SLOT_COLOR[slot] } : undefined}
+                aria-hidden="true"
+              />
+              <span className="ribbon-check-label">{b.name}</span>
+              {isActive && <span className="ribbon-check-note">{tMenu('ribbon.baselineMenuActive')}</span>}
+            </button>
+          );
+        })}
+        <div
+          className="ribbon-info"
+          data-ops-baseline-menu-hint
+          style={{ padding: '6px 6px 2px', borderTop: '1px solid var(--theme-border)', marginTop: 4, whiteSpace: 'normal', maxWidth: 280 }}
+        >
+          {tMenu('ribbon.baselineMenuHint')}
+        </div>
+      </div>
+    </Popover>
+  );
+}

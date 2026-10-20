@@ -179,45 +179,6 @@
   cursor: not-allowed;
 }
 
-/* Meerkeuze (`selectedValues`): een vinkvak per optie draagt de keuze; de rij zelf blijft neutraal,
-   anders lezen drie gevulde rijen als drie losse "huidige waarden". */
-.ops-select__menu--multi .ops-select__option.is-selected {
-  background: transparent;
-  color: var(--theme-text);
-}
-
-.ops-select__menu--multi .ops-select__option.is-selected.is-highlighted {
-  background: var(--theme-hover);
-  color: var(--theme-text);
-}
-
-.ops-select__option-check {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  width: 14px;
-  height: 14px;
-  margin-inline-end: var(--sp-2);
-  border: 1.5px solid var(--theme-control-border);
-  border-radius: 3px;
-  background: var(--theme-input-bg);
-}
-
-.ops-select__option-check.is-checked {
-  border-color: var(--theme-accent);
-  background: var(--theme-accent);
-  color: var(--theme-accent-on);
-}
-
-.ops-select__option-swatch {
-  flex-shrink: 0;
-  width: 14px;
-  height: 4px;
-  margin-inline-end: var(--sp-2);
-  border-radius: 1px;
-}
-
 /* RTL: flip the chevron so it sits on the leading edge naturally; logical
    properties above handle padding/text alignment. */
 [dir="rtl"] .ops-select__trigger {

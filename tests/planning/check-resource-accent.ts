@@ -139,7 +139,7 @@ const accents = (rects: Rect[]) => rects.filter(r => r.h === ACCENT_H && r.y > H
 
 // Baseline en resource-accent zijn twee onafhankelijke onderbalken. Als beide aan staan, mogen ze
 // elkaar niet bedekken: de baseline begint pas onder het volledige resource-accent. De baseline
-// houdt in elke combinatie dezelfde hoogte (`barLayout`), met of zonder accent.
+// krijgt zijn hoogte uit `barLayout`: met accent de rest van de strook.
 {
   const { fillRects, shapes } = render(true, { baseline: true });
   const a = accents(fillRects);
@@ -152,10 +152,13 @@ const accents = (rects: Rect[]) => rects.filter(r => r.h === ACCENT_H && r.y > H
     ok(baseline.y + baseline.h <= HDRH + ROWH,
       `baseline-combinatie: gestapelde baseline blijft binnen de rij (eindigt ${baseline.y + baseline.h}, rij eindigt ${HDRH + ROWH})`);
   }
+  // PROTOTYPE (issue #391): de baselinestrook is dikker; zonder accent vult hij de hele vrije strook,
+  // met accent krijgt hij wat onder het accent overblijft. Beide uit `barLayout`.
   const alone = render(false, { baseline: true }).shapes.find(sh => sh.fill === '#6B7280' && sh.h < 10);
-  ok(!!alone && !!baseline && Math.abs(alone.h - baseline.h) < 1e-9,
-    `baseline-hoogte gelijk met en zonder accent (alleen ${alone?.h}, met accent ${baseline?.h})`);
-  ok(!!alone && Math.abs(alone.h - barLayout(ROWH).baselineHeight) < 1e-9, 'baseline-hoogte volgt barLayout');
+  ok(!!alone && Math.abs(alone.h - barLayout(ROWH).baselineHeight) < 1e-9, 'baseline-hoogte zonder accent volgt barLayout');
+  ok(!!baseline && Math.abs(baseline.h - barLayout(ROWH).baselineHeightWithAccent) < 1e-9,
+    `baseline-hoogte met accent volgt barLayout (got ${baseline?.h})`);
+  ok(!!alone && alone.y + alone.h <= HDRH + ROWH, 'baseline zonder accent blijft binnen de rij');
 }
 
 // ── Donker thema: te donkere resourcekleuren verlicht (#21 user-bevinding) ──────────────────────

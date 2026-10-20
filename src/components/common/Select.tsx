@@ -7,7 +7,7 @@ import {
   useState,
 } from 'react';
 import { createPortal } from 'react-dom';
-import { Check, ChevronDown, Info } from 'lucide-react';
+import { ChevronDown, Info } from 'lucide-react';
 import './Select.css';
 
 export type SelectOption = {
@@ -21,8 +21,6 @@ export type SelectOption = {
    *  `aria-describedby` naar de uitleg, zodat een schermlezer hem voorleest. Zonder `description`
    *  verandert er niets aan de keuzelijst. */
   description?: string;
-  /** Optionele kleur (CSS-waarde): een blokje vóór het label, bv. de kleur van een baselinelaag. */
-  swatch?: string;
 };
 
 interface SelectProps {
@@ -54,11 +52,6 @@ interface SelectProps {
    *  `onChange` NIET aan, zoals een native `<select>`. Wie die keuze toch moet horen (de gridcel-
    *  editor legt vast en sluit bij elke keuze), geeft deze callback mee. */
   onReselect?: (value: string) => void;
-  /** Meerkeuze met vinkjes (PROTOTYPE, issue #391). Gezet ⇒ elke optie in deze lijst staat
-   *  aangevinkt; kiezen roept `onChange` met de waarde van die optie aan (de aanroeper zet hem aan
-   *  of uit) en de lijst BLIJFT open, zodat je meer opties kunt aanvinken. `value` doet dan niets;
-   *  de trigger toont `valueLabel` of `placeholder`. */
-  selectedValues?: readonly string[];
 }
 
 interface MenuRect {
@@ -114,9 +107,7 @@ export function Select({
   'aria-describedby': ariaDescribedBy,
   fitWidestOption = false,
   onReselect,
-  selectedValues,
 }: SelectProps) {
-  const multi = selectedValues !== undefined;
   const reactId = useId();
   const listboxId = `${id ?? reactId}-listbox`;
 
@@ -285,15 +276,11 @@ export function Select({
     (index: number) => {
       const opt = options[index];
       if (!opt || opt.disabled) return;
-      if (multi) {
-        onChange(opt.value);
-        return;
-      }
       if (opt.value !== value) onChange(opt.value);
       else onReselect?.(opt.value);
       close();
     },
-    [options, value, onChange, onReselect, close, multi],
+    [options, value, onChange, onReselect, close],
   );
 
   const moveHighlight = useCallback(
@@ -437,7 +424,7 @@ export function Select({
     ? Math.min(options.length, Math.ceil((scrollTop + rect.maxHeight) / rowHeight) + VIRTUAL_BUFFER)
     : options.length;
   const renderOption = (opt: SelectOption, i: number) => {
-    const isSelected = multi ? selectedValues.includes(opt.value) : opt.value === value;
+    const isSelected = opt.value === value;
     const isHighlighted = i === highlight;
     return (
       <div
@@ -466,14 +453,6 @@ export function Select({
         }}
         onClick={() => selectAt(i)}
       >
-        {multi && (
-          <span className={'ops-select__option-check' + (isSelected ? ' is-checked' : '')} aria-hidden="true">
-            {isSelected && <Check size={12} />}
-          </span>
-        )}
-        {opt.swatch && (
-          <span className="ops-select__option-swatch" style={{ background: opt.swatch }} aria-hidden="true" />
-        )}
         <span className="ops-select__option-label">{opt.label}</span>
         {opt.description && (
           <>
@@ -504,11 +483,10 @@ export function Select({
             ref={menuRef}
             id={listboxId}
             role="listbox"
-            aria-multiselectable={multi || undefined}
             aria-activedescendant={
               highlight >= 0 ? `${listboxId}-opt-${highlight}` : undefined
             }
-            className={'ops-select__menu' + (multi ? ' ops-select__menu--multi' : '')}
+            className="ops-select__menu"
             onScroll={virtual ? e => setScrollTop(e.currentTarget.scrollTop) : undefined}
             style={{
               left: rect.left,

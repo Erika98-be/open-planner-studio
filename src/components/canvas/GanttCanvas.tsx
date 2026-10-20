@@ -955,8 +955,8 @@ export function GanttCanvas({
             TaskTooltipContent, gedeeld met de WBS-sprongknop in het eigenschappenpaneel. */}
         {tooltip && (
           <HoverTooltip left={tooltip.x + 16} top={tooltip.y - 10}>
-            {tooltip.baselineSlot !== undefined
-              ? <BaselineTooltipContent task={tooltip.task} slot={tooltip.baselineSlot} layers={baselineLayers} />
+            {tooltip.baselineSlots !== undefined
+              ? <BaselineTooltipContent task={tooltip.task} slots={tooltip.baselineSlots} layers={baselineLayers} />
               : <TaskTooltipContent task={tooltip.task} />}
           </HoverTooltip>
         )}

@@ -8,7 +8,7 @@ import {
   Tags, ListOrdered, Hash,
   IndentIncrease, IndentDecrease,
   Users, BarChart3, Scale, Eraser, ChevronLeft, ChevronRight,
-  ArrowLeftToLine, ArrowRightToLine, LayoutGrid, Spline, TrendingUp, CalendarDays, Palette, MoveHorizontal,
+  ArrowLeftToLine, ArrowRightToLine, Spline, TrendingUp, CalendarDays, Palette, MoveHorizontal,
   Keyboard, PanelRight,
   CalendarClock, ChevronsDownUp, ChevronsUpDown, Columns3, AlertTriangle,
   FileDown, FileUp, Scissors,
@@ -21,7 +21,7 @@ import { isTreeMode } from '@/engine/view/visibleRows';
 import { hasLevelingOutput } from '@/utils/taskDefaults';
 import { isGanttWorkspaceVisible } from '@/state/ganttVisibility';
 import type { RibbonTab, UIState } from '@/state/slices/types';
-import { CompareBaselinesPicker } from './CompareBaselinesPicker';
+import { BaselineOverlaySplitButton } from './BaselineOverlaySplitButton';
 import {
   BaselinesProgressGroupContent, MilestoneDropdown, RelationDropdown, TemplatesDropdown, RecentFilesDropdown,
   ScreenColorsPopoverButton,
@@ -761,14 +761,8 @@ const beeldTab: RibbonTabConfig = [
     items: [
       {
         kind: 'stack', id: 'overlaysStack', items: [
-          {
-            kind: 'small', id: 'toggleBaselineOverlay', icon: <LayoutGrid size={14} />, labelKey: 'menu:ribbon.toggleBaselineOverlay',
-            use: () => {
-              const showBaselineOverlay = useAppStore(s => s.ui.showBaselineOverlay);
-              const setOverlays = useAppStore(s => s.setOverlays);
-              return { active: showBaselineOverlay, onClick: () => setOverlays({ baseline: !showBaselineOverlay }) };
-            },
-          },
+          // PROTOTYPE (issue #391): gesplitste knop — klik = overlay aan/uit, pijltje = welke baselines.
+          { kind: 'component', id: 'toggleBaselineOverlay', Component: BaselineOverlaySplitButton },
           {
             kind: 'small', id: 'toggleProgressLine', icon: <TrendingUp size={14} />, labelKey: 'menu:ribbon.toggleProgressLine',
             use: () => {
@@ -787,8 +781,6 @@ const beeldTab: RibbonTabConfig = [
           },
         ],
       },
-      // PROTOTYPE (issue #391): tot twee extra baselines naast de actieve in de Gantt.
-      { kind: 'component', id: 'compareBaselines', Component: CompareBaselinesPicker },
       // De vaste linthoogte draagt drie kleine knoppen per stack. Kleurmodus en resource-accent
       // vormen daarom samen de tweede verticale kolom, niet twee losse horizontale groepsitems.
       {

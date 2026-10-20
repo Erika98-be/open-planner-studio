@@ -587,9 +587,7 @@
   },
   "tooltip": {
     "status": "Status",
-    "baselineActive": "Actieve baseline",
-    "baselineCompared": "Vergelijkingsbaseline",
-    "baselineTask": "Taak"
+    "baselineActive": "actief"
   },
   "externalLinks": {
     "action": "Externe koppeling…",

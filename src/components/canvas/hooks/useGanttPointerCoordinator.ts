@@ -439,7 +439,7 @@ export function useGanttPointerCoordinator(
       else splitGesture.clearHover();
       return;
     }
-    // PROTOTYPE (issue #391): op een baselinelaag toont de tooltip welke baseline het is. De balk-
+    // PROTOTYPE (issue #391): op de baselinestrook toont de tooltip welke baselines daar liggen. De balk-
     // hit-test beslaat de hele rijhoogte, dus deze controle gaat vóór; slepen werkt daar gewoon.
     const baselineHit = renderer.getBaselineAt(x, y);
     if (hit) {
@@ -448,12 +448,12 @@ export function useGanttPointerCoordinator(
       else if (grip.edge === 'left' || grip.edge === 'right') setHoverCursor('ew-resize');
       else setHoverCursor('grab');
       setTooltip(baselineHit
-        ? { x: event.clientX, y: event.clientY, task: baselineHit.task, baselineSlot: baselineHit.slot }
+        ? { x: event.clientX, y: event.clientY, task: baselineHit.task, baselineSlots: baselineHit.slots }
         : { x: event.clientX, y: event.clientY, task: hit.task });
       return;
     }
     if (baselineHit) {
-      setTooltip({ x: event.clientX, y: event.clientY, task: baselineHit.task, baselineSlot: baselineHit.slot });
+      setTooltip({ x: event.clientX, y: event.clientY, task: baselineHit.task, baselineSlots: baselineHit.slots });
       setHoverCursor('default');
       return;
     }
