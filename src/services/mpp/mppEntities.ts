@@ -32,6 +32,7 @@ import {
 import type { CalendarReadResult } from './mppCalendars';
 import { MAX_VAR_TEXT_BYTES } from './limits';
 import type { AssignmentTimephasedRaw } from './mppTimephased';
+import { selectAssignmentRecords } from './mppRecords';
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════
 // Relaties (TBkndCons), resources (TBkndRsc) en assignments (TBkndAssn).
@@ -363,12 +364,6 @@ function readResourcesUnsafe(
   return { resources, resourceIdByUniqueId };
 }
 
-/** TBkndAssn/FixedMeta-itemgrootte (MPP14Reader.java: `new FixedMeta(..., 34)`). */
-const ASSIGNMENT_FIXED_META_ITEM_SIZE = 34;
-/** TBkndAssn/FixedData-itemgrootte — GEEN meta-afgeleide offset/grootte, contigue blokken van 110
- *  bytes vanaf offset 0 (MPP14Reader.java: `new FixedData(110, ...)`, de `withoutMeta`-variant). */
-const ASSIGNMENT_FIXED_DATA_ITEM_SIZE = 110;
-
 /** Poort van `ResourceAssignmentFactory.process` — `"   114"/TBkndAssn` → `ResourceAssignment[]`,
  *  met mspdiReader's `unitsPerDay`-afleiding. Geëxporteerd voor `check-mpp-relations.ts`. */
 export function readAssignments(
@@ -391,39 +386,17 @@ function readAssignmentsUnsafe(
   resourceIdByUniqueId: ReadonlyMap<number, string>,
 ): ResourceAssignment[] {
   const label = '"   114"/TBkndAssn';
-  const fixedMetaBytes = cfb.getStream(['   114', 'TBkndAssn', 'FixedMeta']);
-  const fixedDataBytes = cfb.getStream(['   114', 'TBkndAssn', 'FixedData']);
-  const varMetaBytes = cfb.getStream(['   114', 'TBkndAssn', 'VarMeta']);
-  if (!fixedMetaBytes || !fixedDataBytes || !varMetaBytes) return [];
-
-  const fixedMeta = FixedMeta.withItemSize(fixedMetaBytes, ASSIGNMENT_FIXED_META_ITEM_SIZE, `${label}/FixedMeta`);
-  const fixedData = FixedData.withoutMeta(ASSIGNMENT_FIXED_DATA_ITEM_SIZE, fixedDataBytes, `${label}/FixedData`);
-  const varMeta = new VarMeta12(varMetaBytes, `${label}/VarMeta`);
-
   const uniqueIdOffset = fixedOffsetOf(assignmentFieldMap, AssignmentFieldId.UniqueId);
   const taskUidOffset = fixedOffsetOf(assignmentFieldMap, AssignmentFieldId.TaskUniqueId);
   const resourceUidOffset = fixedOffsetOf(assignmentFieldMap, AssignmentFieldId.ResourceUniqueId);
   const unitsOffset = fixedOffsetOf(assignmentFieldMap, AssignmentFieldId.Units);
   if (uniqueIdOffset === null || taskUidOffset === null || resourceUidOffset === null) return [];
+  // De recordselectie (verwijderd, geen var-data) is gedeeld met het importverslag (`mppRecords.ts`).
+  const selected = selectAssignmentRecords(cfb, uniqueIdOffset);
+  if (!selected) return [];
 
   const assignments: ResourceAssignment[] = [];
-  // Geklemd (FixedMeta.getItemCount) — ResourceAssignmentFactory.java gebruikt de RUWE headerwaarde.
-  const itemCount = fixedMeta.getItemCount();
-  for (let index = 0; index < itemCount; index++) {
-    const meta = fixedMeta.getByteArrayValue(index);
-    // Verwijderd-vlag: hier een enkele BYTE (`meta[0] !== 0`), NIET de SHORT-check van TBkndCons
-    // hierboven — spiegelt ResourceAssignmentFactory.java letterlijk (`meta[0] != 0`).
-    if (!meta || meta.length < 8 || meta[0] !== 0) continue;
-
-    const offset = getInt(meta, 4, `${label}/FixedMeta offset`);
-    const dataIndex = fixedData.getIndexFromOffset(offset);
-    if (dataIndex === -1) continue;
-    const data = fixedData.getByteArrayValue(dataIndex);
-    if (!data || data.length < uniqueIdOffset + 4) continue;
-
-    const uid = getInt(data, uniqueIdOffset, `${label}/FixedData uniqueId`);
-    if (!varMeta.containsKey(uid)) continue; // spiegelt `assnVarMeta.getUniqueIdentifierSet().contains(varDataId)`
-
+  for (const { data } of selected.records) {
     if (data.length < taskUidOffset + 4 || data.length < resourceUidOffset + 4) continue;
     const taskUid = getInt(data, taskUidOffset, `${label}/FixedData taskUid`);
     const resourceUid = getInt(data, resourceUidOffset, `${label}/FixedData resourceUid`);

@@ -285,6 +285,23 @@ export type NotificationMessageKey =
   | 'notifications.p6xmlImportOpened'
   | 'notifications.p6xmlImportCrossProjectRelations'
   | 'notifications.p6xmlImportUnassignedActivities'
+  // MS Project (MSPDI `.xml` en `.mpp`): wat de lezer niet overnam (`msProjectImportNotice`, issue #391).
+  | 'notifications.msProjectImportLoss'
+  | 'notifications.msProjectLostBaselines'
+  | 'notifications.msProjectLostExtraBaselines'
+  | 'notifications.msProjectLostBaselineWorkCost'
+  | 'notifications.msProjectLostAssignmentBaselineDates'
+  | 'notifications.msProjectLostCustomFields'
+  | 'notifications.msProjectLostNotes'
+  | 'notifications.msProjectLostHyperlinks'
+  | 'notifications.msProjectLostFixedCosts'
+  | 'notifications.msProjectLostResourceRates'
+  | 'notifications.msProjectLostSubprojects'
+  | 'notifications.msProjectLostExternalTasks'
+  | 'notifications.msProjectLostManualTasks'
+  | 'notifications.msProjectLostLevelingDelays'
+  | 'notifications.msProjectLostInactiveTasks'
+  | 'notifications.msProjectLostCriticalSlack'
   // Dezelfde regel, formaatneutraal,
   // voor P6 XML/MSPDI/.mpp/CSV/IFC — één melding per geopend bestand (`applyOpenedImport`).
   | 'notifications.importDatesAsRecorded'

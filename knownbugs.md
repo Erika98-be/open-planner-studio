@@ -371,6 +371,13 @@ en noem het in je rapport of PR-tekst.
     `tests/planning/check-xer-status-afleiden.ts` pint het huidige gedrag vast. In het XER-corpus komt het
     geval 0 keer voor. Gevonden bij de review van #358. Voorstel: een onbekende status behandelen als een lege
     (afleiden uit de voortgang, melding blijft), zoals MPXJ; besluit van de eigenaar nodig. — B
+119. **`.mpp`: een werkresource kan als materiaal binnenkomen.** `readResources`
+    (`src/services/mpp/mppEntities.ts`) koppelt een resource aan het EERSTE FixedData-record met dezelfde
+    uid, ook als dat een kort plaatshoudersrecord van 16 bytes is. MPXJ's `createResourceMap` slaat records
+    korter dan de volle maat over. Gevolg: type (meta-item van de verkeerde index) en `maxUnits` komen uit het
+    plaatshoudersrecord. Gemeten met MPXJ's `junit/data/mpp14resource.mpp`: *Wade Golden* en *Jon Iles*
+    worden MATERIAL, in `mspdiresource.xml` (dezelfde planning) LABOR. Gevonden bij het importverslag
+    (#391). Voorstel: records korter dan de volle maat overslaan, zoals MPXJ. — B
 
 127. **IFC-tab *Toepassen* wist de bibliotheekkoppeling en zet *Niet opgeslagen* uit.** *Toepassen*
     (`IFCPanel.tsx:57-62`) roept `loadState` aan zonder `linkedOpen`; `applyLoadedProject` wist dan `companyId`
@@ -470,6 +477,10 @@ en noem het in je rapport of PR-tekst.
 
 104. **Geen automatische test voor de zegels en `check-docs`** (`scripts/translate/cli.ts`). In #323 alleen met
      de hand nagespeeld. De CLI werkt vanuit `process.cwd()`, dus een test in een tijdelijke map kan. — S
+
+120. **`delete-under-dialog.spec.ts` (regel 40) faalt soms op focus.** In CI-run 39384273333 (PR #392, browser
+    1-4): `expect(locator).toBeFocused()` gaf `inactive`. Na een herhaling van de job groen, zonder wijziging;
+    de PR raakt geen dialoog- of focuscode. Wisselvallig, oorzaak niet onderzocht. — S
 
 ## Wensen en open taken (geen bug)
 
