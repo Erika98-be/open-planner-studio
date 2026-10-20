@@ -42,8 +42,8 @@ kost dus net zoveel als een nieuw bestand.
 2. Bestaat zo'n blok niet, schrijf dan een nieuw `test()`-blok in het spec-bestand waar de route bij hoort.
    Een nieuw spec-bestand alleen voor een route die in geen bestaand bestand past.
 3. Een groot bestand of een lange route is geen reden voor een nieuw blok. Wel een reden: een andere
-   beginstand, of een stap die de rest van de route onbruikbaar maakt (bijv. een document wisselen of de
-   app herladen).
+   beginstand of een ander doel (stap 2), of een stap die de rest van de route onbruikbaar maakt (bijv. een
+   document wisselen of de app herladen).
 
 In de browser hoort alles wat alleen een echte browser laat zien: toetsen, focus, klikken, slepen,
 animatieframes en de koppeling tussen UI en store, óók als het een randgeval is (bijv. de focusrace in
