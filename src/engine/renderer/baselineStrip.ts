@@ -101,12 +101,16 @@ function clipConvex(subject: readonly Pt[], clip: readonly Pt[]): Pt[] {
   for (let i = 0; i < clip.length && out.length > 0; i++) {
     const [ax, ay] = clip[i];
     const [bx, by] = clip[(i + 1) % clip.length];
-    const inside = ([x, y]: Pt) => (bx - ax) * (y - ay) - (by - ay) * (x - ax) >= 0;
+    // Een punt op de rand telt als binnen, met een kleine marge voor afrondfouten. Strepen en
+    // ruitranden lopen allebei onder 45°: zonder marge geeft een (bijna) evenwijdige rand een
+    // snijpunt ver buiten de vorm.
+    const len = Math.hypot(bx - ax, by - ay);
+    const inside = ([x, y]: Pt) => (bx - ax) * (y - ay) - (by - ay) * (x - ax) >= -1e-9 * len;
     const cross = ([px, py]: Pt, [qx, qy]: Pt): Pt => {
       const a1 = by - ay, b1 = ax - bx, c1 = a1 * ax + b1 * ay;
       const a2 = qy - py, b2 = px - qx, c2 = a2 * px + b2 * py;
       const det = a1 * b2 - a2 * b1;
-      return det === 0 ? [px, py] : [(b2 * c1 - b1 * c2) / det, (a1 * c2 - a2 * c1) / det];
+      return Math.abs(det) <= 1e-9 * len * Math.hypot(a2, b2) ? [px, py] : [(b2 * c1 - b1 * c2) / det, (a1 * c2 - a2 * c1) / det];
     };
     const input = out;
     out = [];
