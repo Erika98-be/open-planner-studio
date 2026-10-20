@@ -256,3 +256,31 @@ test('meerdere baselines: een vergelijkingsbaseline ver vóór de taken is berei
   expect(x!).toBeGreaterThanOrEqual(0);
   expect(x!).toBeLessThan(bounds.width);
 });
+
+test('meerdere baselines: het menu past in het venster bij 30 baselines; de lijst scrolt', async ({ page, ops: _ops }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  // Fixture: één taak en 30 baselines (revisie 0 … 29); de laatste is actief.
+  await page.evaluate(() => {
+    const s = window.__OPS__!.store.getState();
+    s.setUI({ showWelcomeDialog: false, showTourOverlay: false });
+    s.addTask({ name: 'Taak' });
+    s.runCPM();
+    for (let i = 0; i < 30; i++) s.saveBaseline(`Revisie ${i}`);
+  });
+  await page.locator('[data-ops-ribbon-tab="beeld"]').click();
+  await page.locator('[data-ops-baseline-menu-toggle]').click();
+  const menu = page.locator('[data-ops-baseline-menu]');
+  await expect(menu).toBeVisible();
+  const box = (await menu.boundingBox())!;
+  expect(box.y + box.height).toBeLessThanOrEqual(800);
+  // De voetregel blijft zichtbaar binnen het venster.
+  const hint = (await page.locator('[data-ops-baseline-menu-hint]').boundingBox())!;
+  expect(hint.y + hint.height).toBeLessThanOrEqual(800);
+  // De laatste niet-actieve baseline in de lijst is aan te klikken (de lijst scrolt ernaar).
+  const last = await page.evaluate(() => window.__OPS__!.store.getState().baselines.find(b => b.name === 'Revisie 28')!.id);
+  const item = menu.locator(`[data-ops-baseline-menu-item="${last}"]`);
+  await item.click({ timeout: 5_000 });
+  expect(await compared(page)).toEqual([last, null]);
+  const itemBox = (await item.boundingBox())!;
+  expect(itemBox.y + itemBox.height).toBeLessThanOrEqual(hint.y + 1);
+});

@@ -50,6 +50,7 @@ export function BaselineOverlaySplitButton() {
     <Popover
       open={open}
       onClose={() => setOpen(false)}
+      fitViewport
       panelStyle={{
         marginTop: 2, zIndex: 9999, minWidth: 240, maxWidth: 320, padding: 6,
         display: 'flex', flexDirection: 'column', gap: 2,
@@ -87,48 +88,59 @@ export function BaselineOverlaySplitButton() {
         </div>
       }
     >
-      <div role="menu" aria-label={tMenu('ribbon.baselineMenu')} data-ops-baseline-menu>
-        <div className="ribbon-info" style={{ fontWeight: 600, padding: '2px 6px 4px' }}>
+      {/* Kop en voetregel blijven staan; alleen de lijst scrolt als het venster te laag is. */}
+      <div
+        role="menu"
+        aria-label={tMenu('ribbon.baselineMenu')}
+        data-ops-baseline-menu
+        style={{ display: 'flex', flexDirection: 'column', minHeight: 0, flex: '1 1 auto' }}
+      >
+        <div className="ribbon-info" style={{ fontWeight: 600, padding: '2px 6px 4px', flex: 'none' }}>
           {tMenu('ribbon.baselineMenu')}
         </div>
         {ordered.length === 0 && (
           <div className="ribbon-info" style={{ padding: '2px 6px', whiteSpace: 'normal', maxWidth: 280 }}>{tMenu('ribbon.baselineMenuEmpty')}</div>
         )}
-        {ordered.map(b => {
-          const isActive = b.id === activeBaselineId;
-          const slot = slotOf(b.id);
-          const checked = slot !== undefined;
-          const disabled = isActive || (!checked && full);
-          return (
-            <button
-              key={b.id}
-              role="menuitemcheckbox"
-              aria-checked={checked}
-              aria-disabled={disabled || undefined}
-              data-ops-baseline-menu-item={b.id}
-              className={`ribbon-check-item${disabled ? ' is-disabled' : ''}`}
-              onClick={() => {
-                if (disabled) return;
-                toggleCompared(b.id);
-              }}
-            >
-              <span className={`ribbon-check-box${checked ? ' is-checked' : ''}`} aria-hidden="true">
-                {checked && <Check size={11} strokeWidth={3} />}
-              </span>
-              <span
-                className={`ribbon-check-strip${checked ? '' : ' is-empty'}`}
-                style={checked ? { background: BASELINE_SLOT_COLOR[slot] } : undefined}
-                aria-hidden="true"
-              />
-              <span className="ribbon-check-label">{b.name}</span>
-              {isActive && <span className="ribbon-check-note">{tMenu('ribbon.baselineMenuActive')}</span>}
-            </button>
-          );
-        })}
+        <div
+          data-ops-baseline-menu-list
+          style={{ display: 'flex', flexDirection: 'column', overflowY: 'auto', minHeight: 0, flex: '1 1 auto' }}
+        >
+          {ordered.map(b => {
+            const isActive = b.id === activeBaselineId;
+            const slot = slotOf(b.id);
+            const checked = slot !== undefined;
+            const disabled = isActive || (!checked && full);
+            return (
+              <button
+                key={b.id}
+                role="menuitemcheckbox"
+                aria-checked={checked}
+                aria-disabled={disabled || undefined}
+                data-ops-baseline-menu-item={b.id}
+                className={`ribbon-check-item${disabled ? ' is-disabled' : ''}`}
+                onClick={() => {
+                  if (disabled) return;
+                  toggleCompared(b.id);
+                }}
+              >
+                <span className={`ribbon-check-box${checked ? ' is-checked' : ''}`} aria-hidden="true">
+                  {checked && <Check size={11} strokeWidth={3} />}
+                </span>
+                <span
+                  className={`ribbon-check-strip${checked ? '' : ' is-empty'}`}
+                  style={checked ? { background: BASELINE_SLOT_COLOR[slot] } : undefined}
+                  aria-hidden="true"
+                />
+                <span className="ribbon-check-label">{b.name}</span>
+                {isActive && <span className="ribbon-check-note">{tMenu('ribbon.baselineMenuActive')}</span>}
+              </button>
+            );
+          })}
+        </div>
         <div
           className="ribbon-info"
           data-ops-baseline-menu-hint
-          style={{ padding: '6px 6px 2px', borderTop: '1px solid var(--theme-border)', marginTop: 4, whiteSpace: 'normal', maxWidth: 280 }}
+          style={{ padding: '6px 6px 2px', borderTop: '1px solid var(--theme-border)', marginTop: 4, whiteSpace: 'normal', maxWidth: 280, flex: 'none' }}
         >
           {tMenu('ribbon.baselineMenuHint')}
         </div>
