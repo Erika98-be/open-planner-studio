@@ -36,6 +36,7 @@ export const STICKY_OPEN_NOTICE_KEYS: ReadonlySet<string> = new Set<Notification
   // MS Project (MSPDI en .mpp, `msProjectImportNotice`): elke regel noemt iets dat niet is overgenomen.
   'notifications.msProjectLostBaselines',
   'notifications.msProjectLostExtraBaselines',
+  'notifications.msProjectLostBaselineWorkCost',
   'notifications.msProjectLostCustomFields',
   'notifications.msProjectLostNotes',
   'notifications.msProjectLostHyperlinks',

@@ -22,9 +22,9 @@ If the file contains tasks with splits, leveling or a resource-driven schedule, 
 
 - inserted projects (subprojects): the app reads them as a normal task, without the link to the other file;
 - external tasks from another project: the app reads them as a normal task;
-- baselines: from an `.mpp` the app takes over no baseline, from MS Project XML only Baseline 0;
-- custom fields with values, such as custom fields and outline codes (the app does not count yes/no fields in an `.mpp`);
-- notes on resources and assignments, and from an `.mpp` also on tasks (from MS Project XML the note of a task comes along as its description);
+- baselines: from an `.mpp` the app takes over no baseline, from MS Project XML only Baseline 0 of tasks, and of that only the dates and the duration (not the work and cost, and no baselines of resources and assignments);
+- custom fields with values, such as custom fields, values from a lookup table and outline codes (the app does not count yes/no fields in an `.mpp`);
+- notes (also a note with only a picture) on resources and assignments, and from an `.mpp` also on tasks (from MS Project XML the note of a task comes along as its description);
 - hyperlinks;
 - the fixed costs of tasks;
 - the rates of resources: from an `.mpp` no rate at all, from MS Project XML only the standard rate;

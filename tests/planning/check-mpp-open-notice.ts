@@ -80,17 +80,21 @@ function taskFieldMap(): Uint8Array {
   return out;
 }
 
+interface FixtureAssignment { uid: number; deleted?: boolean; vars: Record<number, Uint8Array> }
 interface FixtureTask { uid: number; name: string; fixedCost?: number; vars?: Record<number, Uint8Array> }
 interface Fixture {
   tasks: FixtureTask[];
   resourceVars: Record<number, Uint8Array>;
-  assignmentVars: Record<number, Uint8Array>;
+  /** Toewijzingen aan taak 10 en resource 1; `deleted` zet de verwijdermarkering (FixedMeta-byte 0). */
+  assignments: FixtureAssignment[];
   criticalSlackLimit?: number;
 }
 
 const RECORD = 140;
 const TASK_META_ITEM = 47;
 const RESOURCE_META_ITEM = 37;
+const ASSIGNMENT_META_ITEM = 34;
+const ASSIGNMENT_RECORD = 110;
 const START_DAYS = 15000;
 
 function buildMpp(fx: Fixture): Uint8Array {
@@ -121,8 +125,21 @@ function buildMpp(fx: Fixture): Uint8Array {
   new DataView(rscMeta.buffer).setUint32(0, 0xfadfadba, true);
   new DataView(rscMeta.buffer).setInt32(8, 1, true);
   const rscVars = varBlocks({ 1: { 1: utf16('Timmerman'), ...fx.resourceVars } });
-  // Eén toewijzing (uid 1), alleen var-data: `readAssignments` slaat de toewijzing zonder FixedData over.
-  const asnVars = varBlocks({ 1: fx.assignmentVars });
+  // Toewijzingen: FixedMeta (34 bytes/item, byte 0 = verwijderd, offset @4) en FixedData (110 bytes/record:
+  // uid @0, taak @4, resource @8, eenheden @46), zoals `readAssignments` ze leest.
+  const asnMeta = new Uint8Array(16 + fx.assignments.length * ASSIGNMENT_META_ITEM);
+  const amv = new DataView(asnMeta.buffer);
+  amv.setUint32(0, 0xfadfadba, true); amv.setInt32(8, fx.assignments.length, true);
+  const asnRecords = fx.assignments.map((assignment, i) => {
+    asnMeta[16 + i * ASSIGNMENT_META_ITEM] = assignment.deleted ? 1 : 0;
+    amv.setInt32(16 + i * ASSIGNMENT_META_ITEM + 4, i * ASSIGNMENT_RECORD, true);
+    const record = new Uint8Array(ASSIGNMENT_RECORD);
+    const view = new DataView(record.buffer);
+    view.setInt32(0, assignment.uid, true); view.setInt32(4, 10, true); view.setInt32(8, 1, true);
+    view.setFloat64(46, 10000, true);
+    return record;
+  });
+  const asnVars = varBlocks(Object.fromEntries(fx.assignments.map(a => [a.uid, a.vars])));
 
   const props = encodePropsEntries([
     { key: 37748738, data: mppTimestampBytes(0, START_DAYS) },
@@ -146,7 +163,10 @@ function buildMpp(fx: Fixture): Uint8Array {
           FixedMeta: { data: rscMeta }, FixedData: { data: rscRecord },
           VarMeta: { data: rscVars.meta }, Var2Data: { data: rscVars.data },
         } },
-        TBkndAssn: { children: { VarMeta: { data: asnVars.meta }, Var2Data: { data: asnVars.data } } },
+        TBkndAssn: { children: {
+          FixedMeta: { data: asnMeta }, FixedData: { data: concatBytes(...asnRecords) },
+          VarMeta: { data: asnVars.meta }, Var2Data: { data: asnVars.data },
+        } },
       },
     },
   };
@@ -154,6 +174,9 @@ function buildMpp(fx: Fixture): Uint8Array {
 }
 
 const NOTE = latin1('{\\rtf1\\ansi{\\fonttbl{\\f0 Arial;}}\\viewkind4\\pard\\f0\\fs20 Let op: wapening keuren\\par}');
+/** Alleen een geplakte afbeelding (Word/RichEdit-vorm) en alleen Unicode-tekst (`\\uN`). */
+const PICTURE_NOTE = latin1('{\\rtf1\\ansi{\\fonttbl{\\f0 Arial;}}\\pard{\\*\\shppict{\\pict\\pngblip 89504e47}}{\\nonshppict{\\pict\\wmetafile8 0100}}\\par}');
+const UNICODE_NOTE = latin1('{\\rtf1\\ansi\\uc0\\u9629\\u20013\\par}');
 const EMPTY_NOTE = latin1('{\\rtf1\\ansi{\\fonttbl{\\f0 Arial;}}{\\*\\generator Riched20;}\\viewkind4\\pard\\f0\\fs20\\par}');
 
 const LOSSY: Fixture = {
@@ -165,8 +188,10 @@ const LOSSY: Fixture = {
       483: mppTimestampBytes(10200, START_DAYS + 2), // baseline 1 (BASELINE1_ESTIMATED_FINISH)
       51: utf16('Kavel 3', true), // TEXT1
     } },
-    { uid: 11, name: 'Deelproject installaties', vars: { 458: int32(1000) } }, // SUBPROJECT_TASKS_UNIQUEID_OFFSET
-    { uid: 12, name: 'Oplevering (extern)', vars: { 255: int32(7) } }, // SUBPROJECT_TASK_ID
+    // SUBPROJECT_TASKS_UNIQUEID_OFFSET; alleen baselinewerk in baseline 2 (BASELINE2_WORK).
+    { uid: 11, name: 'Deelproject installaties', vars: { 458: int32(1000), 496: double(48000) } },
+    // SUBPROJECT_TASK_ID; een aantekening met alleen een afbeelding.
+    { uid: 12, name: 'Oplevering (extern)', vars: { 255: int32(7), 15: PICTURE_NOTE } },
   ],
   resourceVars: {
     20: NOTE, // NOTES
@@ -174,17 +199,22 @@ const LOSSY: Fixture = {
     62: rateTable(55), // COST_RATE_B
     8: utf16('Ploeg A', true), // TEXT1
   },
-  assignmentVars: { 71: NOTE, 88: utf16('Ploeg A', true) }, // NOTES, TEXT1
+  assignments: [
+    // NOTES, TEXT1, en alleen baselinekosten in baseline 3 (BASELINE3_COST).
+    { uid: 1, vars: { 71: NOTE, 88: utf16('Ploeg A', true), 308: double(500) } },
+    // Verwijderd: de lezer slaat hem over, dus het verslag ook (NOTES, TEXT2).
+    { uid: 2, deleted: true, vars: { 71: NOTE, 89: utf16('Ploeg B', true) } },
+  ],
   criticalSlackLimit: 3,
 };
 
 const CLEAN: Fixture = {
   tasks: [
-    { uid: 10, name: 'Fundering', fixedCost: 0, vars: { 15: EMPTY_NOTE, 43: NA_TIMESTAMP, 44: NA_TIMESTAMP, 51: utf16('', true), 87: double(0), 458: int32(0), 255: int32(0) } },
+    { uid: 10, name: 'Fundering', fixedCost: 0, vars: { 15: EMPTY_NOTE, 1: double(0), 6: double(0), 43: NA_TIMESTAMP, 44: NA_TIMESTAMP, 51: utf16('', true), 87: double(0), 458: int32(0), 255: int32(0) } },
     { uid: 11, name: 'Metselwerk' },
   ],
   resourceVars: { 20: EMPTY_NOTE, 62: rateTable(0) },
-  assignmentVars: { 71: EMPTY_NOTE },
+  assignments: [{ uid: 1, vars: { 71: EMPTY_NOTE, 16: double(0), 32: double(0), 146: NA_TIMESTAMP } }],
   criticalSlackLimit: 0,
 };
 
@@ -202,13 +232,16 @@ async function main(): Promise<void> {
   eq('1a aantekening met tekst', rtfHasVisibleText(NOTE), true);
   eq('1b aantekening zonder tekst (alleen opmaak)', rtfHasVisibleText(EMPTY_NOTE), false);
   eq('1c escape telt als tekst', rtfHasVisibleText(latin1('{\\rtf1\\ansi \\\'e9\\par}')), true);
+  eq('1d alleen een afbeelding telt als inhoud', rtfHasVisibleText(PICTURE_NOTE), true);
+  eq('1e alleen Unicode-tekst telt als tekst', rtfHasVisibleText(UNICODE_NOTE), true);
 
   // (2) Elke categorie: de telling uit de lezer.
   let parsed = await open('verslag.mpp', buildMpp(LOSSY));
   const result = activeImportResult(parsed);
+  eq('2a2 één toewijzing ingelezen (de verwijderde niet)', result.assignments.length, 1);
   eq('2a drie taken ingelezen', result.tasks.map(t => t.name), ['Fundering', 'Deelproject installaties', 'Oplevering (extern)']);
   eq('2b verslag', result.msProjectReport, {
-    format: 'mpp', baselines: 2, customFields: 3, notes: 3, hyperlinks: 2, fixedCosts: 1, resourceRates: 1,
+    format: 'mpp', baselines: 4, baselineWorkCost: 0, customFields: 3, notes: 4, hyperlinks: 2, fixedCosts: 1, resourceRates: 1,
     subprojects: 1, externalTasks: 1, manualTasks: 0, levelingDelays: 0, inactiveTasks: 0, criticalSlackLimitDays: 3,
   });
   // De lezer neemt geen aantekening, baseline of kritiek-drempel over (het verslag klopt dus).
@@ -226,9 +259,9 @@ async function main(): Promise<void> {
     ['notifications.msProjectLostSubprojects', 1],
     ['notifications.msProjectLostExternalTasks', 1],
     ['notifications.msProjectLostCriticalSlack', 3],
-    ['notifications.msProjectLostBaselines', 2],
+    ['notifications.msProjectLostBaselines', 4],
     ['notifications.msProjectLostCustomFields', 3],
-    ['notifications.msProjectLostNotes', 3],
+    ['notifications.msProjectLostNotes', 4],
     ['notifications.msProjectLostHyperlinks', 2],
     ['notifications.msProjectLostFixedCosts', 1],
     ['notifications.msProjectLostResourceRates', 1],
@@ -247,7 +280,7 @@ async function main(): Promise<void> {
   // (5) De sleutels bestaan in nl en en (geen lege toast).
   for (const loc of ['nl', 'en']) {
     const json = JSON.parse(readFileSync(new URL(`../../src/i18n/locales/${loc}/common.json`, import.meta.url), 'utf8')) as { notifications: Record<string, string> };
-    const keys = ['msProjectImportLoss', ...['Baselines', 'ExtraBaselines', 'CustomFields', 'Notes', 'Hyperlinks', 'FixedCosts', 'ResourceRates',
+    const keys = ['msProjectImportLoss', ...['Baselines', 'BaselineWorkCost', 'ExtraBaselines', 'CustomFields', 'Notes', 'Hyperlinks', 'FixedCosts', 'ResourceRates',
       'Subprojects', 'ExternalTasks', 'ManualTasks', 'LevelingDelays', 'InactiveTasks', 'CriticalSlack']
       .flatMap(c => [`msProjectLost${c}_one`, `msProjectLost${c}_other`])];
     for (const key of keys) eq(`5 ${loc}: ${key}`, typeof json.notifications[key], 'string');

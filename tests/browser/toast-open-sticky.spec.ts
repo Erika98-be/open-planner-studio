@@ -68,7 +68,7 @@ test('MS Project XML met een extra baseline en een hyperlink: het verslag blijft
   await expect.poll(() => state(page).then(snapshot => snapshot.tasks.length)).toBe(1);
   const toast = msProjectToast(page);
   await expect(toast).toBeVisible();
-  await expect(toast).toContainText('1 extra baseline (Baseline 1–10) was not imported.');
+  await expect(toast).toContainText('1 baseline (Baseline 1–10) was not imported.');
   await expect(toast).toContainText('1 hyperlink was not imported.');
   await page.waitForTimeout(6000);
   await expect(toast).toBeVisible();

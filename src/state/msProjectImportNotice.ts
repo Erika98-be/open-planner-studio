@@ -23,6 +23,7 @@ function lines(report: MsProjectImportReport): [number, LineKey][] {
     [report.baselines, report.format === 'mspdi'
       ? 'notifications.msProjectLostExtraBaselines'
       : 'notifications.msProjectLostBaselines'],
+    [report.baselineWorkCost, 'notifications.msProjectLostBaselineWorkCost'],
     [report.customFields, 'notifications.msProjectLostCustomFields'],
     [report.notes, 'notifications.msProjectLostNotes'],
     [report.hyperlinks, 'notifications.msProjectLostHyperlinks'],

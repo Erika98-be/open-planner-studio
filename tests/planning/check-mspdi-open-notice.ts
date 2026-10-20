@@ -100,7 +100,7 @@ async function main(): Promise<void> {
   eq('1a vier taken ingelezen (ook subproject, externe en inactieve taak)', result.tasks.map(t => t.name),
     ['Fundering', 'Deelproject installaties', 'Oplevering (extern)', 'Reserve']);
   eq('1b verslag', result.msProjectReport, {
-    format: 'mspdi', baselines: 2, customFields: 3, notes: 2, hyperlinks: 2, fixedCosts: 1, resourceRates: 2,
+    format: 'mspdi', baselines: 2, baselineWorkCost: 0, customFields: 3, notes: 2, hyperlinks: 2, fixedCosts: 1, resourceRates: 2,
     subprojects: 1, externalTasks: 1, manualTasks: 1, levelingDelays: 1, inactiveTasks: 1, criticalSlackLimitDays: 0,
   });
   // Wat de lezer wél overneemt, telt niet: de taakaantekening, baseline 0 en het standaardtarief.
@@ -150,10 +150,36 @@ async function main(): Promise<void> {
   eq('4b eigen taaktype teruggelezen', reread.tasks[0]?.customTaskTypeId, 'ctt-1');
   eq('4c geen verslag bij een eigen bestand', reread.msProjectReport, undefined);
 
+  // (6) Regressies uit de review van #392.
+  const only = (inner: string) => readMSPDI(wrap(`<Tasks>${task(1, 'Fundering', inner)}</Tasks>`)).msProjectReport;
+  // 6a/6b Overzichtscode en opzoekwaarde: MSPDI bewaart ze zonder `<Value>`; de lezer leest ze niet.
+  eq('6a alleen een ingevulde overzichtscode', only(`<OutlineCode><FieldID>188744096</FieldID><ValueID>1</ValueID>
+    <ValueGUID>47FA4ABF-2BDE-4397-8F4A-D44F2E2B1ACD</ValueGUID></OutlineCode>`)?.customFields, 1);
+  eq('6b alleen een opzoekwaarde (ValueID, geen Value)', only(`<ExtendedAttribute><FieldID>188743734</FieldID><ValueID>3</ValueID></ExtendedAttribute>`)?.customFields, 1);
+  // 6c Baseline 0 komt mee met datums en duur, niet met werk en kosten.
+  const workCost = only(`<Baseline><Number>0</Number><Start>2026-03-02T08:00:00</Start><Finish>2026-03-03T17:00:00</Finish>
+    <Duration>PT16H0M0S</Duration><Work>PT80H0M0S</Work><Cost>25000</Cost></Baseline>`);
+  eq('6c baseline 0 met werk en kosten', [workCost?.baselines, workCost?.baselineWorkCost], [0, 1]);
+  eq('6c2 baseline 0 met nul-werk en nul-kosten: niets verloren', only(`<Baseline><Number>0</Number><Start>2026-03-02T08:00:00</Start>
+    <Work>PT0H0M0S</Work><Cost>0</Cost></Baseline>`), undefined);
+  // 6d Baselines op toewijzingen en resources.
+  const onAssignment = readMSPDI(wrap(`<Tasks>${task(1, 'Fundering')}</Tasks>
+    <Resources><Resource><UID>1</UID><ID>1</ID><Name>Timmerman</Name><Type>1</Type>
+      <Baseline><Number>0</Number><Work>PT16H0M0S</Work></Baseline></Resource></Resources>
+    <Assignments><Assignment><UID>1</UID><TaskUID>1</TaskUID><ResourceUID>1</ResourceUID><Units>1</Units>
+      <Baseline><Number>1</Number><Start>2026-03-02T08:00:00</Start><Work>PT16H0M0S</Work></Baseline></Assignment></Assignments>`)).msProjectReport;
+  eq('6d baseline 1 op een toewijzing, baseline 0-werk op een resource', [onAssignment?.baselines, onAssignment?.baselineWorkCost], [1, 1]);
+  // 6e De baselinezin beweert niets over Baseline 0.
+  for (const loc of ['nl', 'en']) {
+    const json = JSON.parse(readFileSync(new URL(`../../src/i18n/locales/${loc}/common.json`, import.meta.url), 'utf8')) as { notifications: Record<string, string> };
+    eq(`6e ${loc}: baselinezin noemt Baseline 0 niet`, ['msProjectLostExtraBaselines_one', 'msProjectLostExtraBaselines_other']
+      .map(key => json.notifications[key]?.includes('Baseline 0')), [false, false]);
+  }
+
   // (5) De sleutels bestaan in nl en en (geen lege toast).
   for (const loc of ['nl', 'en']) {
     const json = JSON.parse(readFileSync(new URL(`../../src/i18n/locales/${loc}/common.json`, import.meta.url), 'utf8')) as { notifications: Record<string, string> };
-    for (const key of ['msProjectImportLoss', 'msProjectLostExtraBaselines_one', 'msProjectLostExtraBaselines_other',
+    for (const key of ['msProjectImportLoss', 'msProjectLostBaselineWorkCost_one', 'msProjectLostBaselineWorkCost_other', 'msProjectLostExtraBaselines_one', 'msProjectLostExtraBaselines_other',
       'msProjectLostManualTasks_one', 'msProjectLostManualTasks_other', 'msProjectLostInactiveTasks_one', 'msProjectLostInactiveTasks_other']) {
       eq(`5 ${loc}: ${key}`, typeof json.notifications[key], 'string');
     }

@@ -412,10 +412,15 @@ export interface P6XmlImportReport {
  */
 export interface MsProjectImportReport {
   format: 'mspdi' | 'mpp';
-  /** Baselines met gegevens die niet zijn overgenomen (aantal verschillende baselines). MSPDI: 1–10
-   *  (baseline 0 komt mee); `.mpp`: 0–10 (de lezer leest geen baseline). */
+  /** Baselines die helemaal niet zijn overgenomen (aantal verschillende baselines met gegevens op een
+   *  taak, resource of toewijzing: datums, duur, werk of kosten). MSPDI: 1–10; `.mpp`: 0–10 (de lezer
+   *  leest geen baseline). */
   baselines: number;
-  /** Eigen velden (extended attributes, aangepaste velden, overzichtscodes) met minstens één waarde:
+  /** Alleen MSPDI: taken, resources en toewijzingen met werk of kosten in Baseline 0. De lezer neemt van
+   *  Baseline 0 alleen de taakdatums, de duur en de mijlpaalstatus over. (`.mpp` leest geen enkele
+   *  baseline; daar telt alles onder `baselines`.) */
+  baselineWorkCost: number;
+  /** Eigen velden (extended attributes, ook opzoekwaarden, en overzichtscodes) met minstens één waarde:
    *  aantal verschillende velden over taken, resources en toewijzingen. De OPS-eigen transportvelden
    *  tellen niet mee. `.mpp`: vlaggen (ja/nee-velden) zijn bitvelden en worden niet geteld. */
   customFields: number;
@@ -448,7 +453,7 @@ export interface MsProjectImportReport {
 /** Een leeg verslag: alles 0. */
 export function emptyMsProjectImportReport(format: MsProjectImportReport['format']): MsProjectImportReport {
   return {
-    format, baselines: 0, customFields: 0, notes: 0, hyperlinks: 0, fixedCosts: 0, resourceRates: 0,
+    format, baselines: 0, baselineWorkCost: 0, customFields: 0, notes: 0, hyperlinks: 0, fixedCosts: 0, resourceRates: 0,
     subprojects: 0, externalTasks: 0, manualTasks: 0, levelingDelays: 0, inactiveTasks: 0,
     criticalSlackLimitDays: 0,
   };

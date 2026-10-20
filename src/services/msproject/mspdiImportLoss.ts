@@ -3,7 +3,7 @@
 //
 // Elke categorie hieronder is een element dat `mspdiReader.ts` aantoonbaar niet leest (zie het
 // commentaar per regel). Wat de lezer wel overneemt, telt niet: taaknotities (`<Notes>` → omschrijving),
-// baseline 0, taak- en resourcekalenders, deadlines, `CriticalSlackLimit`, constraints, het
+// de datums en duur van Baseline 0 van een taak, taak- en resourcekalenders, deadlines, `CriticalSlackLimit`, constraints, het
 // standaardtarief (`<StandardRate>` → kostprijs per uur) en de onderbrekingen uit `<TimephasedData>`.
 // Terugkerende taken tellen bewust niet: MS Project schrijft de keren als gewone subtaken mee.
 import { directChildText } from '@/services/xmlDom';
@@ -29,6 +29,9 @@ const nonZero = (text: string): boolean => {
   return Number.isFinite(n) && n !== 0;
 };
 
+/** Een ISO-duur (`PT80H0M0S`) met een getal ≠ 0. */
+const nonZeroDuration = (text: string): boolean => /[1-9]/.test(text);
+
 /** Of een `<ExtendedAttribute>` door de lezer zelf is gebruikt (de OPS-transportvelden). */
 export type ConsumedExtendedAttribute = (fieldId: string, value: string) => boolean;
 
@@ -41,14 +44,49 @@ export function scanMspdiImportLoss(root: Element, isConsumed: ConsumedExtendedA
   const customFieldIds = new Set<string>();
   const baselineNumbers = new Set<number>();
 
+  /**
+   * Baselines van een taak, resource of toewijzing. De lezer neemt alleen Baseline 0 van een TAAK over,
+   * en daarvan alleen `Start`, `Finish` en `Duration` (mspdiReader.ts, "Baseline 0"). Elke andere
+   * baseline met gegevens telt als niet overgenomen; werk of kosten in Baseline 0 tellen apart.
+   */
+  const collectBaselines = (el: Element) => {
+    let workCostLost = false;
+    for (const baseline of directChildren(el, 'Baseline')) {
+      const number = Number.parseInt(directChildText(baseline, 'Number'), 10);
+      if (!Number.isFinite(number) || number < 0 || number > 10) continue;
+      const hasDates = ['Start', 'Finish'].some(tag => directChildText(baseline, tag) !== '');
+      const hasAmounts = nonZeroDuration(directChildText(baseline, 'Duration'))
+        || nonZeroDuration(directChildText(baseline, 'Work'))
+        || nonZero(directChildText(baseline, 'Cost'));
+      if (number === 0) {
+        const workCost = nonZeroDuration(directChildText(baseline, 'Work')) || nonZero(directChildText(baseline, 'Cost'));
+        // Op een resource of toewijzing neemt de lezer niets van Baseline 0 over; de datums van een
+        // toewijzing staan al op de taak, dus alleen werk en kosten tellen.
+        if (workCost) workCostLost = true;
+      } else if (hasDates || hasAmounts) {
+        baselineNumbers.add(number);
+      }
+    }
+    if (workCostLost) report.baselineWorkCost++;
+  };
+
   const hasHyperlink = (el: Element) => ['Hyperlink', 'HyperlinkAddress', 'HyperlinkSubAddress']
     .some(tag => directChildText(el, tag) !== '');
+  /** Eigen velden: `<ExtendedAttribute>` met een waarde (`Value`) of een opzoekwaarde (`ValueID`/
+   *  `ValueGUID`), en ingevulde overzichtscodes (`<OutlineCode>` met `ValueID`/`ValueGUID`). De lezer
+   *  leest van beide alleen de OPS-transportvelden. */
   const collectExtendedAttributes = (el: Element) => {
     for (const attr of directChildren(el, 'ExtendedAttribute')) {
       const fieldId = directChildText(attr, 'FieldID');
       const value = directChildText(attr, 'Value');
-      if (!fieldId || value === '' || isConsumed(fieldId, value)) continue;
+      const lookup = directChildText(attr, 'ValueID') !== '' || directChildText(attr, 'ValueGUID') !== '';
+      if (!fieldId || (value === '' && !lookup) || isConsumed(fieldId, value)) continue;
       customFieldIds.add(fieldId);
+    }
+    for (const code of directChildren(el, 'OutlineCode')) {
+      const fieldId = directChildText(code, 'FieldID');
+      if (!fieldId || (directChildText(code, 'ValueID') === '' && directChildText(code, 'ValueGUID') === '')) continue;
+      customFieldIds.add(`outline:${fieldId}`);
     }
   };
 
@@ -59,14 +97,7 @@ export function scanMspdiImportLoss(root: Element, isConsumed: ConsumedExtendedA
     if (!Number.isFinite(uid) || uid < 0) continue;
     if (uid === 0 && directChildText(task, 'OutlineLevel') === '0') continue;
 
-    // Baselines 1–10: de lezer neemt alleen `<Number>0</Number>` (mspdiReader.ts, "Baseline 0").
-    for (const baseline of directChildren(task, 'Baseline')) {
-      const number = Number.parseInt(directChildText(baseline, 'Number'), 10);
-      if (!Number.isFinite(number) || number < 1 || number > 10) continue;
-      if (['Start', 'Finish', 'Duration', 'Work'].some(tag => directChildText(baseline, tag) !== '')) {
-        baselineNumbers.add(number);
-      }
-    }
+    collectBaselines(task);
     collectExtendedAttributes(task);
     if (hasHyperlink(task)) report.hyperlinks++;
     // `<FixedCost>`: de lezer leest geen kosten.
@@ -88,6 +119,7 @@ export function scanMspdiImportLoss(root: Element, isConsumed: ConsumedExtendedA
     if (!Number.isFinite(uid) || uid < 0) continue;
     // Resourcenotities: de lezer zet `description` op ''.
     if (directChildText(resource, 'Notes') !== '') report.notes++;
+    collectBaselines(resource);
     collectExtendedAttributes(resource);
     if (hasHyperlink(resource)) report.hyperlinks++;
     // Tarieven: alleen `<StandardRate>` komt mee (kostprijs per uur).
@@ -104,6 +136,7 @@ export function scanMspdiImportLoss(root: Element, isConsumed: ConsumedExtendedA
 
   for (const assignment of directChildren(directChild(root, 'Assignments') ?? root, 'Assignment')) {
     if (directChildText(assignment, 'Notes') !== '') report.notes++;
+    collectBaselines(assignment);
     collectExtendedAttributes(assignment);
     if (hasHyperlink(assignment)) report.hyperlinks++;
   }
