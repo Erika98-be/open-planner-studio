@@ -12,6 +12,8 @@ import type { ReportingPeriod } from '@/engine/reports';
 import { isTableReportType } from '@/utils/reportSettings';
 import { solveOptionsFor } from '@/engine/scheduler/solveInput';
 import { SEQUENCE_TYPE_OPTIONS } from '@/types/sequence';
+import { localizeLagHourSuffix } from '@/utils/lagFormat';
+import { parseableHourSuffix } from '@/utils/durationFormat';
 import {
   type ReportContext, type LookAheadRow, type CriticalRow, type ProgressRow, type HealthCheck, type HealthItem,
   type DcmaMetric, DCMA_DAYS, type ResourceLoadingRow, type ResourceAssignmentRow, type WbsSummaryRow,
@@ -256,8 +258,8 @@ function healthDetailText(t: T, dd: DD, item: HealthItem): string {
   if (d.reason) parts.push(t(`tableReports.health.reason_${d.reason}`));
   if (d.constraintType) parts.push(d.constraintType);
   if (d.relationType) parts.push(SEQUENCE_TYPE_OPTIONS.find(o => o.value === d.relationType)?.label ?? d.relationType);
-  // De engine levert de lag taalneutraal ("+1.5d", `formatLagShort`); hier krijgt hij hetzelfde
-  // decimaalteken als `dd.num(d.float)` verderop in dezelfde cel.
+  // De engine levert de lag taalneutraal ("+1.5d", "+2u", `formatLagShort`); hier krijgt hij hetzelfde
+  // decimaalteken als `dd.num(d.float)` verderop in dezelfde cel, en de uur-afkorting van de taal.
   if (d.lag) parts.push(t('tableReports.health.detail_lag', { value: dd.lagText(d.lag) }));
   else if (d.days !== undefined) parts.push(t('tableReports.health.detail_days', { value: dd.num(d.days) }));
   if (d.float !== undefined) parts.push(t('tableReports.health.detail_float', { value: dd.num(d.float) }));
@@ -482,14 +484,15 @@ export function useTableReportSpec(reportType: ReportType, options: TableReportO
   const dates = useDisplayDate();
   const { ctx, stale } = useReportContext();
   const locale = i18n.language;
+  const hourSuffix = parseableHourSuffix(tCommon('duration.suffixHour'));
   // Getallen in de app-taal (komma in nl/de/fr): dezelfde notatie als de toewijzingskolommen van het
   // resourcediagram (`formatReportNumber`), zodat de rapporten in één paneel niet uiteenlopen.
   const dd = useMemo<DD>(() => ({
     ...dates,
     num: n => formatReportNumber(n, locale),
     signed: n => formatSignedReportNumber(n, locale),
-    lagText: lag => localizeDecimalPoint(lag, locale),
-  }), [dates, locale]);
+    lagText: lag => localizeDecimalPoint(localizeLagHourSuffix(lag, hourSuffix), locale),
+  }), [dates, locale, hourSuffix]);
   // "Datums zoals opgeslagen": in de modus lezen de
   // rapporten `task.time` zoals de tabel, maar zónder de "niet vastgelegd"-poort van de kolommen —
   // een as die het bestand niet vastlegde staat er dan als leeg/0. Eén melding bovenaan elk rapport

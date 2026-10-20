@@ -13,6 +13,7 @@ import type {
 import type { CellValidationError, GridResult, TaskColumnContext } from '@/types/taskGrid';
 import type { Task } from '@/types/task';
 import { formatLagShort } from '@/utils/lagFormat';
+import { parseableHourSuffix } from '@/utils/durationFormat';
 
 const INTERNAL_TYPES = ['FS', 'SS', 'FF', 'SF'] as const;
 
@@ -133,9 +134,12 @@ export function buildRelationCellItems(input: {
   entries: readonly TaskRelationEntry[];
   context: TaskColumnContext;
 }): readonly RelationCellItem[] {
+  // Lag in uren in de taal van de app ("+2u" nl, "+2h" en; eigenaarsbesluit 2026-10-20). De tekst wordt
+  // ook weer ingelezen (bewerken, plakken), dus alleen een afkorting die de parser kent.
+  const hourSuffix = parseableHourSuffix(input.context.labelForText?.('duration.suffixHour'));
   return input.entries.map((entry, index): RelationCellItem => {
     if (entry.kind === 'external') {
-      const clipboardText = formatExternalRelationClipboard(input.ownerTaskId, entry.link);
+      const clipboardText = formatExternalRelationClipboard(input.ownerTaskId, entry.link, hourSuffix);
       const parsed = parseExternalRelationClipboard(clipboardText, {
         ownerTaskId: input.ownerTaskId,
         direction: input.direction,
@@ -147,7 +151,7 @@ export function buildRelationCellItems(input: {
         kind: 'external',
         relationId: entry.link.id,
         direction: input.direction,
-        label: formatExternalRelationVisible(entry.link),
+        label: formatExternalRelationVisible(entry.link, hourSuffix),
         clipboardText,
         otherTaskId: entry.otherTaskId,
         driving: false,
@@ -159,7 +163,7 @@ export function buildRelationCellItems(input: {
 
     const otherTask = input.context.tasksById.get(entry.otherTaskId);
     const relType = shortType(entry);
-    const lagText = formatLagShort(entry.sequence);
+    const lagText = formatLagShort(entry.sequence, hourSuffix);
     const label = `${otherTask?.wbsCode ?? entry.otherTaskId} ${relType}${lagText}`;
     const analysis = input.context.relationIndex.analysisBySequenceId.get(entry.sequence.id);
     return {
