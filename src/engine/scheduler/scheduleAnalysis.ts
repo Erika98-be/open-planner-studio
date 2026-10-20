@@ -6,7 +6,7 @@ import type { CpmBackwardFloatTrace, CpmFreeFloatSource, CPMResult, CPMTaskResul
 import { formatInstant, type DateMode } from '@/utils/dateUtils';
 import { drivingPredecessorWalker } from './graphWalk';
 import { projectDurationOf } from './projectDuration';
-import { isZeroDurationMilestone } from './duration';
+import { isZeroDurationMilestone, taskDurationUnit } from './duration';
 import { isLeafTask } from '@/utils/taskHierarchy';
 import { explainP6CompletedDataDateWindowResolved } from '@/engine/scheduler/p6CompletedTargetWindow';
 import {
@@ -420,13 +420,15 @@ export function computeScheduleResults(input: ScheduleAnalysisInput): CPMResult 
         const cd = constraintInstant(cc, cal);
         if (!cd) continue;
         const dW = snapOnOrBefore(cal, cd);
-        // Een startbeperking vergelijkt in uur-modus met het eerstvolgende werkmoment (knownbugs 120
-        // van het ontwerp "alleen uren"): `snapOnOrBefore` zet een datum op een blokbegin (di 08:00)
+        // Een startbeperking van een URENtaak vergelijkt met het eerstvolgende werkmoment (knownbugs
+        // 120 van het ontwerp "alleen uren"): `snapOnOrBefore` zet een datum op een blokbegin (di 08:00)
         // terug naar het vorige blokeinde (ma 16:00), en een taak die precies op di 08:00 start gold
-        // dan als geschonden. Op de tijdas zijn beide hetzelfde punt; voor een urentaak rekent de
-        // solver de late start ook zo (`finishFromStart` loopt vanaf het volgende blokbegin). Een
-        // eindbeperking blijft `snapOnOrBefore` gebruiken. Dag-modus blijft ongewijzigd.
-        const dS = cal.isHourMode ? snapOnOrAfter(cal, cd) : dW;
+        // dan als geschonden. Op de tijdas zijn beide hetzelfde punt, en de solver rekent de late
+        // start van een urentaak ook zo (`finishFromStart` loopt vanaf het volgende blokbegin). Een
+        // DAGtaak op werkblokken blijft bewust bij `snapOnOrBefore`: haar late start leest de solver
+        // daar nog als de dag ervóór (speling -1), en de melding moet die speling blijven verklaren.
+        // Een eindbeperking en dag-modus blijven ongewijzigd.
+        const dS = cal.isHourMode && taskDurationUnit(task) === 'hours' ? snapOnOrAfter(cal, cd) : dW;
         const ct = cc.type;
         if (((ct === 'SNLT' || ct === 'MSO') && early.es > dS)
           || ((ct === 'FNLT' || ct === 'MFO') && early.ef > dW)) {
