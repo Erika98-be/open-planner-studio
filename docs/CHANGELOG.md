@@ -185,18 +185,17 @@ including a fidelity measurement against P6's own calculated output and the 216-
   right of the bar when it does not fit, and progress is drawn on phase bars.
 
 ### Changed
-- **Two terms were renamed, so that the app uses the words of MS Project and P6.** The old *Task
-  type* field (a category such as *Construction*, *Installation* or *Other*) is now called **Work
-  category**, with *Custom work category* for your own entries (Dutch: *Werksoort*). The old *Work
-  rule* (Fixed duration and units, Fixed duration and work, Fixed work, Fixed units) is now called
-  **Task type**, like Task Type in MS Project and Duration Type in P6 (Dutch: *Taaktype*). The
-  setting *Show work rules and work* is now *Use task types*, with a new explanation: a file that
-  carries task types or stored work shows them even when the setting is off. The panel field, the
-  task-grid column, dialogs, notices, the Help (titles and text), the agent texts and the MCP tool
+- **The *Task type* field is now called *Work category*, so that *Task type* can mean what it means
+  in MS Project and P6.** The field from v2026.9.0 that holds a category such as *Construction*,
+  *Installation* or *Other* is now **Work category**, with *Custom work category* for your own entries
+  (Dutch: *Werksoort*). **Task type** is now the new choice per task between Fixed duration and units,
+  Fixed duration and work, Fixed work and Fixed units, like Task Type in MS Project and Duration Type in
+  P6 (Dutch: *Taaktype*); it was called *Work rule* during development. The setting is *Use task
+  types*: a file that carries task types or stored work shows them even when the setting is off. The
+  panel field, the task-grid column, dialogs, notices, the Help, the agent texts and the MCP tool
   descriptions follow; the MCP descriptions name both terms, so an agent recognises either. Only the
   visible words changed: no data, IFC property, MCP parameter (`taskType`, `workRule`) or file format
-  name (the CSV column `Task Type` still holds the work category). The other 26 languages fall
-  back to English for these strings until the translation pipeline has filled them.
+  name (the CSV column `Task Type` still holds the work category).
 - **Hours are written the same everywhere: `10h` in English and `10u` in Dutch, without a space.**
   This covers the *Duration* column, the Gantt bar labels, tooltips, the properties panel, print and
   reports, the remaining-work notice (`320u → 88u`), the work deviation on assignments, and lags in
