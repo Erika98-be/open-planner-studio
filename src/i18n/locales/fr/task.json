@@ -459,7 +459,7 @@
       "work": "Travail (rest.)",
       "workHint": "Travail restant en heures ; la règle de travail décide si la durée ou les unités bougent.",
       "workDeviates": "Diffère de unités × durée",
-      "workDeviatesHint": "Le travail enregistré {{stored}} h diffère de unités × durée restante ({{derived}} h). L’histogramme suit le travail enregistré sur toute la durée de la tâche ; les unités restent celles du fichier.",
+      "workDeviatesHint": "Le travail enregistré {{stored}} h diffère de unités × durée restante ({{derived}} h). L’histogramme suit le travail enregistré sur toute la durée de la tâche ; les unités restent celles du fichier. Si vous modifiez la durée, l’application le recalcule.",
       "locked": "Protégé par la règle de travail {{rule}}"
     },
     "notes": {

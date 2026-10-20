@@ -9,6 +9,7 @@ import type { Sequence } from '@/types/sequence';
 import type { ActivityCodeType, CustomFieldDef } from '@/types/structure';
 import type { Task } from '@/types/task';
 import type { CustomTaskType } from '@/types/taskType';
+import type { WorkRule } from '@/types/workRule';
 import type { DateNotation, DurationDisplay, TimeNotation } from '@/types/view';
 import type { CPMResult } from '@/engine/scheduler/CPMSolver';
 import { classifyTraceTask, taskGridTraceClass, type TaskTrace } from '@/engine/taskGrid/trace';
@@ -139,6 +140,8 @@ export interface CreateTaskGridAdapterDomainInput {
   numberLocale?: string;
   /** Zie `TaskColumnContext.taskTypesUnlocked`. */
   taskTypesUnlocked?: boolean;
+  /** Zie `TaskColumnContext.defaultWorkRule`. */
+  defaultWorkRule?: WorkRule;
 }
 
 export interface CreateTaskGridAdapterProjectionInput {
@@ -256,6 +259,7 @@ export function createTaskGridAdapterDomain(
     recordedMark: input.recordedMark,
     recordedUnrecordedAxes: input.recordedUnrecordedAxes,
     taskTypesUnlocked: input.taskTypesUnlocked,
+    defaultWorkRule: input.defaultWorkRule,
     timeNotation: input.timeNotation,
   };
   const descriptors = buildTaskColumnRegistry({
