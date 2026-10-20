@@ -32,7 +32,7 @@ Deze overdracht is de stand van 2026-10-20; controleer elke PR-status opnieuw me
 
 ## Vóór de release
 
-1. **Main groen** op of na `012da2900` (#401).
+1. **Main groen** op of na `012da2900` (#401). **Groen bevestigd (2026-10-20).**
 2. **Vertaalronde 26 talen** voor de nieuwe en gewijzigde teksten uit #376, #380, #394, #400 en #401.
    `verify:translations` is rood door deze achterstand (`verify` zelf niet).
 3. **Tutorial 5 in de extensions-repo** (live van main, alle appversies) tegelijk aanpassen aan de hernoeming van #376.

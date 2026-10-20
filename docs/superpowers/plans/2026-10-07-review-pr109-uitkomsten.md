@@ -1872,3 +1872,6 @@ Testversie (release-check, poort 3049) is NIET bijgewerkt met de PR's van vandaa
   de eigen rekenblokkade vrij, register per storecontext, F5 één solve). Eigenaar kiest optie 1: fixes op #401,
   diff door orkestrator gelezen, geen derde review. **#401 gemerged in main (012da2900)**, CI 16/16 op 3b870300b,
   `--admin --match-head-commit`. #369 door GitHub als gemerged gemarkeerd; #389 gesloten ("opgenomen in #401").
+- **Main-CI groen op 012da2900** (#401). Releasecheck klaar; release-sessie neemt over via `2026-10-20-overdracht-release.md`.
+  Opgeruimd: worktrees uren-zonder-spatie, integratie-toewijzingen, fix-feedback-maxdepth, review-400/401-sol(-r2).
+  Testversie (poort 3049) gestopt; worktree `release-check` (branch `claude/release-check-4`, alleen lokaal) blijft staan.
