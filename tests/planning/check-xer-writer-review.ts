@@ -247,6 +247,32 @@ function leaf(name: string, days: number, extra: Partial<Task> = {}): Task {
   eq('R8e heropend: vier taken', back.tasks.filter(t => t.childIds.length === 0).length, 4);
 }
 
+// ── Ronde 2, C: materiaalcapaciteit op dezelfde uurschaal als de materiaalinzet ─────────────────
+{
+  const input = baseInput();
+  const t = leaf('Storten', 2);
+  input.tasks.push(t);
+  input.resources.push({ id: 'beton', name: 'Beton', type: 'MATERIAL', description: '', maxUnits: 80, unitOfMeasure: 'm3' });
+  input.resources.push({ id: 'zand', name: 'Zand', type: 'MATERIAL', description: '', maxUnits: 80, unitOfMeasure: 'm3',
+    availabilitySteps: [{ from: '2026-06-01', maxUnits: 40 }] });
+  input.assignments.push({ id: 'a1', taskId: t.id, resourceId: 'beton', unitsPerDay: 80 });
+  input.assignments.push({ id: 'a2', taskId: t.id, resourceId: 'zand', unitsPerDay: 40 });
+  const w = writeXER(input);
+  const rsrc = rowsOf(w.bytes, 'RSRC');
+  const idOf = (name: string) => rsrc.find(r => r.rsrc_name === name)?.rsrc_id;
+  const rate = (name: string) => Number(rowsOf(w.bytes, 'RSRCRATE').find(r => r.rsrc_id === idOf(name))?.max_qty_per_hr);
+  const use = (name: string) => Number(rowsOf(w.bytes, 'TASKRSRC').find(r => r.rsrc_id === idOf(name))?.target_qty_per_hr);
+  eq('C1 vaste capaciteit: capaciteit/inzet in de XER = 80/80 (volledig bezet)', rate('Beton') / use('Beton'), 1);
+  eq('C2 capaciteitsstap: capaciteit/inzet in de XER = 40/40', rate('Zand') / use('Zand'), 1);
+}
+
+// ── Ronde 2, E1: de effectieve projectstandaard, ook zonder eigen keuze ──────────────────────────
+{
+  const input = baseInput();
+  input.tasks.push(leaf('Gewoon', 3));
+  eq('E1 zonder projectstandaard: def_duration_type = DT_FixedDrtn (FIXED_DURATION_RATE)', rowsOf(writeXER(input).bytes, 'PROJECT')[0].def_duration_type, 'DT_FixedDrtn');
+}
+
 if (diffs.length === 0) {
   console.log(`OK  xer-writer-review: ${checks} checks groen`);
   process.exit(0);
