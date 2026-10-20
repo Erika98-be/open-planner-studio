@@ -1793,3 +1793,8 @@ Testversie (release-check, poort 3049) is NIET bijgewerkt met de PR's van vandaa
   (worker Opus 5.5): nl `duration.suffixHour` h → u, zinnen "{{x}} u" → "{{x}}u", en "{{x}} h" → "{{x}}h", vaste
   plekken in code, gidsen. Woorden ("uur"/"hours"), dagen en minuten blijven; invoer accepteert al u en h;
   kalendervenster zit in #394. Alternatief: 2 na de release.
+- **#362 fixronde klaar** (worker Opus 5.5), head 37c6b1731, CI 16/16 groen: variant C (2bf2c7f6d), Gantt-balk begint
+  na de 5px-grijpzone van de splitter, ltr/rtl/gesplitst (26b1d6a6b), main 56ba6218a erin (138af28e0),
+  regressietest beide assen (96aee0d7c), contractcheck bijgewerkt (37c6b1731). Delta-review (GPT-6.1-Sol, xhigh)
+  gestart. Desktopapp van de eigenaar herladen op 37c6b1731; korte blik op de linkerkant van de Gantt-balk volgt.
+- #394 gemerged in main (6b0f278e8). Daarna #398 (andere sessie) gemerged in main (c5adb94f7).
