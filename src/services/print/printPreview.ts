@@ -33,7 +33,7 @@ import type { BarColorSelection } from '@/types/barColor';
 import type { ViewRow } from '@/engine/view/visibleRows';
 import type { RowAssignment, RowCurve } from '@/engine/reports/resourceGantt';
 import { formatReportNumber } from '@/utils/reportNumber';
-import type { BaselineOverlay } from '@/types/baseline';
+import { baselineReach, type BaselineOverlay } from '@/types/baseline';
 import {
   baselineDiamonds, baselineDiamondSize, baselineSpanX, baselineStripPieces, paintBaselineStrip,
   type BaselineBar, type BaselineMilestone, type BaselineSlot,
@@ -1002,6 +1002,22 @@ export function renderReport(
       const lastBandDay = addCalendarDays(bandEnd, -1);
       if (lastBandDay > maxDate) maxDate = lastBandDay;
     }
+  }
+
+  // De baselinestrook hoort in het automatische bereik: een vergelijkingsbaseline die ver vóór of
+  // na de huidige taken ligt, valt anders onder de tabel of buiten het blad (issue #391).
+  if (options.showBaselineOverlay) {
+    const overlays: BaselineOverlay[] = [];
+    if (options.baselineOverlay) overlays.push(options.baselineOverlay);
+    for (const c of options.baselineComparisons ?? []) overlays.push(c.overlay);
+    // Alleen de baselines van de afgedrukte taken; per taak hooguit drie opzoekingen.
+    const reach = baselineReach(overlays.map(o => {
+      const own: BaselineOverlay = new Map();
+      for (const t of flatTasks) { const e = o.get(t.id); if (e) own.set(t.id, e); }
+      return own;
+    }));
+    if (reach.earliest) { const d = parseDate(reach.earliest); if (d < minDate) minDate = d; }
+    if (reach.latest) { const d = parseDate(reach.latest); if (d > maxDate) maxDate = d; }
   }
 
   if (options.timeWindow) {

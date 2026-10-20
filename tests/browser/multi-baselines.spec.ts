@@ -217,3 +217,42 @@ test('meerdere baselines: lint Beeld breed en smal (alleen met OPS_QA_SHOTS)', a
   await page.evaluate(() => window.__OPS__!.store.getState().setUI({ ribbonCompact: false }));
   await context.close();
 });
+
+test('meerdere baselines: een vergelijkingsbaseline ver vóór de taken is bereikbaar door te pannen', async ({ page, ops: _ops }) => {
+  // Fixture: taak op 20–21 okt met actieve baseline "Okt", en een baseline "Juli" (1–31 juli) die
+  // de gebruiker via het menu aanzet. Het pannen is een echte wiel-handeling.
+  await page.evaluate(() => {
+    const ops = window.__OPS__!;
+    const s = ops.store.getState();
+    s.setUI({ showWelcomeDialog: false, showTourOverlay: false, scrollMode: 'position', positionDivision: 'left-right', showBaselineOverlay: true });
+    s.setProject({ startDate: '2026-10-20' });
+    const id = s.addTask({ name: 'Oktobertaak' });
+    s.updateTask(id, { duration: 2 } as never);
+    s.runCPM();
+    s.saveBaseline('Okt');
+    ops.store.setState(st => {
+      st.baselines.unshift({
+        id: 'bl-juli', name: 'Juli', createdAt: '2026-06-01T00:00:00Z', projectEnd: '', projectDuration: 0,
+        tasks: [{ taskId: id, start: '2026-07-01', finish: '2026-07-31', duration: 31, isMilestone: false }],
+      });
+    });
+    s.setViewStartDate('2026-10-20');
+    s.setZoom(30);
+    s.setScroll(0, 0);
+  });
+  await page.locator('[data-ops-ribbon-tab="beeld"]').click();
+  await page.locator('[data-ops-baseline-menu-toggle]').click();
+  await page.locator('[data-ops-baseline-menu-item="bl-juli"]').click();
+  expect(await compared(page)).toEqual(['bl-juli', null]);
+  await page.locator('[data-ops-baseline-menu-toggle]').click();
+
+  const bounds = (await page.getByTestId('gantt-primary-canvas').boundingBox())!;
+  await page.mouse.move(bounds.x + bounds.width * 0.8, bounds.y + bounds.height * 0.6);
+  await page.mouse.wheel(0, -200_000);
+  await expect.poll(() => page.evaluate(() => window.__OPS__!.store.getState().view.scrollX)).toBe(0);
+  // Helemaal links staat 1 juli in beeld (oorsprong = 1 juli − 14 dagen), niet links buiten de tijdlijn.
+  const x = await page.evaluate(() => window.__OPS__!.gantt.dateX('2026-07-01'));
+  expect(x).not.toBeNull();
+  expect(x!).toBeGreaterThanOrEqual(0);
+  expect(x!).toBeLessThan(bounds.width);
+});

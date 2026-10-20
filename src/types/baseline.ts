@@ -128,6 +128,42 @@ export function comparisonOverlays(layers: readonly BaselineLayer[]): { slot: 1 
     .map(layer => ({ slot: layer.slot, overlay: layer.overlay }));
 }
 
+/** Eerste en laatste dag (`YYYY-MM-DD`) die de getoonde baselines beslaan, of `null`. */
+export interface BaselineReach {
+  earliest: string | null;
+  latest: string | null;
+}
+
+const DAY_RE = /^\d{4}-\d{2}-\d{2}/;
+
+/**
+ * Het bereik van de baselines die de Gantt tekent (actief + vergelijkingen). De tijdas, het
+ * scrollbereik en het rapportbereik nemen dit mee, zodat een vergelijkingsbaseline die ver vóór of
+ * na de huidige taken ligt, bereikbaar blijft. Alleen de dag telt (een tijd valt binnen die dag).
+ */
+export function baselineReach(overlays: Iterable<BaselineOverlay>): BaselineReach {
+  let earliest: string | null = null;
+  let latest: string | null = null;
+  for (const overlay of overlays) {
+    for (const entry of overlay.values()) {
+      const s = entry.start.slice(0, 10);
+      const f = (entry.finish || entry.start).slice(0, 10);
+      if (DAY_RE.test(s) && (earliest === null || s < earliest)) earliest = s;
+      if (DAY_RE.test(f) && (latest === null || f > latest)) latest = f;
+    }
+  }
+  return { earliest, latest };
+}
+
+/** {@link baselineReach} van de baselines die de Gantt tekent: de actieve plus de vergelijkingen. */
+export function shownBaselineReach(
+  baselines: Baseline[],
+  activeBaselineId: string | null | undefined,
+  compared: readonly (string | null)[] | undefined,
+): BaselineReach {
+  return baselineReach(buildBaselineLayers(baselines, activeBaselineId, compared ?? []).map(l => l.overlay));
+}
+
 /** Zet een baseline in of uit de vergelijking. Aan: de eerste lege plaats (vol = geen wijziging).
  *  Uit: alleen die plaats wordt leeg, zodat de andere baseline haar kleur houdt. */
 export function toggleComparedBaseline(

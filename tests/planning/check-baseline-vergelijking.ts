@@ -19,6 +19,8 @@ import { buildWriteIFCInput } from '@/state/ifcSaveInput';
 import { writeIFC } from '@/services/ifc/ifcWriter';
 import { readIFC } from '@/services/ifc/ifcReader';
 import { GanttRenderer } from '@/engine/renderer/GanttRenderer';
+import { computeEffectiveViewStart, computeFitToProject, computeScrollToDate } from '@/utils/ganttViewport';
+import { buildSharedAxis, computeContentSpanDays } from '@/components/canvas/ganttRenderOptions';
 import { PRINT_PALETTE } from '@/engine/renderer/themePalette';
 import {
   baselineDiamonds, baselineStripPieces, paintBaselineStrip,
@@ -26,7 +28,7 @@ import {
 } from '@/engine/renderer/baselineStrip';
 import { renderReport, type PrintOptions } from '@/services/print/printPreview';
 import type { Draw2D, TextAlign, TextBaseline } from '@/services/pdf/draw2d';
-import type { BaselineOverlay } from '@/types/baseline';
+import { shownBaselineReach, type Baseline, type BaselineOverlay } from '@/types/baseline';
 import type { Task } from '@/types/task';
 
 // Node-shim (zelfde als check-resource-accent): readGanttPalette leest CSS-variabelen.
@@ -421,6 +423,51 @@ eq(screen[1]?.map(p => [p.base, p.stripes]), [
     // Ruiten: scherm en papier hebben een andere ruitgrootte, dus alleen het aantal vergelijken.
     eq(prt[1]?.length, 2, `D afdruk (${label}): mijlpalen om 09:00 en 15:00 zijn twee ruiten`);
   }
+}
+
+// ══ E. Een vergelijkingsbaseline ver van de taken blijft bereikbaar ══════════════════════════════
+// Taak 20–21 okt, vergelijkingsbaseline 1–31 juli. De tijdas (oorsprong), Ctrl+Home, Inpassen en het
+// rapport nemen de getoonde baselines mee; zonder baselines verandert er niets.
+{
+  const octTime = { ...bar.time, earlyStart: '2026-10-20', earlyFinish: '2026-10-21', scheduleStart: '2026-10-20', scheduleFinish: '2026-10-21' };
+  const t = { ...bar, time: octTime, actualStart: undefined, actualFinish: undefined } as Task;
+  const julyBl: Baseline = { id: 'bl-juli', name: 'Juli', createdAt: '2026-06-01T00:00:00Z', projectEnd: '', projectDuration: 0,
+    tasks: [{ taskId: t.id, start: '2026-07-01', finish: '2026-07-31', duration: 31, isMilestone: false }] };
+  const octBl: Baseline = { id: 'bl-okt', name: 'Okt', createdAt: '2026-09-01T00:00:00Z', projectEnd: '', projectDuration: 0,
+    tasks: [{ taskId: t.id, start: '2026-10-20', finish: '2026-10-21', duration: 2, isMilestone: false }] };
+  const reach = shownBaselineReach([octBl, julyBl], octBl.id, [julyBl.id, null]);
+  eq(reach, { earliest: '2026-07-01', latest: '2026-10-21' }, 'E bereik: actief okt + vergelijking juli');
+  eq(shownBaselineReach([octBl, julyBl], octBl.id, [null, null]), { earliest: '2026-10-20', latest: '2026-10-21' },
+    'E bereik zonder vergelijking: alleen de actieve');
+  eq(computeEffectiveViewStart([t], '2026-10-20'), '2026-10-06', 'E oorsprong zonder baselines: ongewijzigd (taakstart − 14)');
+  eq(computeEffectiveViewStart([t], '2026-10-20', reach.earliest), '2026-06-17', 'E oorsprong met juli-baseline: 1 juli − 14');
+
+  const zoom = 30;
+  const state = { tasks: [t], view: { viewStartDate: '2026-10-20', zoom }, project: {}, baselines: [octBl, julyBl], activeBaselineId: octBl.id, comparedBaselineIds: [julyBl.id, null] };
+  eq(computeScrollToDate('2026-07-01', state), (14 - 3) * zoom, 'E Ctrl+Home-rekenregel: 1 juli ligt op de nieuwe oorsprong');
+  eq(computeScrollToDate('2026-10-20', { ...state, baselines: undefined }), (14 - 3) * zoom, 'E Ctrl+Home zonder baselines: ongewijzigd');
+
+  const fit = computeFitToProject([t], 600, false, false, undefined, reach.earliest);
+  const fitPlain = computeFitToProject([t], 600, false, false);
+  ok(!!fit && !!fitPlain && fit.zoom === fitPlain.zoom && fit.viewStartDate === fitPlain.viewStartDate,
+    'E Inpassen: zoom en eerste dag blijven de taken');
+  eq(fit && Math.round(fit.scrollX / fit.zoom), 14 + 111, 'E Inpassen: scroll vanaf de nieuwe oorsprong (17 juni) naar 20 okt');
+
+  // Scrollbereik: een baseline NA de taken telt mee als laatste dag.
+  const spanAxis = buildSharedAxis({ calendar: S().calendar, compressNonWorkdays: false, viewStartDate: '2026-10-06', chartOriginX: 0, zoom: 1, scrollX: 0 });
+  const span = computeContentSpanDays([t], '2026-10-06', false, spanAxis, ['2028-01-31']);
+  ok((span ?? 0) >= 482, `E scrollbereik reikt tot de laatste baselinedag, kreeg ${span}`);
+
+  // Rapport: de julistrook valt niet onder de tabel.
+  const julyOv: BaselineOverlay = new Map([[t.id, { start: '2026-07-01', finish: '2026-07-31', isMilestone: false }]]);
+  const octOv: BaselineOverlay = new Map([[t.id, { start: '2026-10-20', finish: '2026-10-21', isMilestone: false }]]);
+  const rep = renderPrint([t], octOv, [{ slot: 1, overlay: julyOv }]);
+  const julyFills = rep.fills.filter(f => f.color === PRINT_PALETTE.baselineCompare1);
+  const julyBox = julyFills.length ? bbox(julyFills.flatMap(f => f.pts)) : null;
+  ok(!!julyBox && julyBox.x1 >= rep.dims.tableWidth - 0.5 && julyBox.x2 <= rep.dims.width + 0.5,
+    `E rapport: de julistrook ligt in het tijdgebied (tabel tot ${rep.dims.tableWidth}), kreeg ${julyBox ? `${julyBox.x1}..${julyBox.x2}` : 'niets'}`);
+  const plain = renderPrint([t], octOv, []);
+  ok(rep.dims.width > plain.dims.width, 'E rapport: met juli-vergelijking is de as breder dan zonder');
 }
 
 if (failures > 0) {

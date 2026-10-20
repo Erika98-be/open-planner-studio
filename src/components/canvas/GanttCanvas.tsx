@@ -48,7 +48,7 @@ import { saveHistogramHeight } from '@/utils/settingsStore';
 // De pure afleidingen achter de weergave + de opbouw van `GanttRenderOptions`. Ze staan apart
 // zodat ze headless te controleren zijn; de `useMemo`-aanroepen hieronder blijven
 // bewust in dit component staan (zie de kop van dat bestand voor waarom).
-import { buildBaselineLayers, comparisonOverlays } from '@/types/baseline';
+import { buildBaselineLayers, comparisonOverlays, shownBaselineReach } from '@/types/baseline';
 import { BaselineTooltipContent } from './BaselineTooltipContent';
 import {
   buildBaselineOverlay,
@@ -252,8 +252,14 @@ export function GanttCanvas({
     resource => resource.id === histogramResourceId,
   ) ? histogramResourceId : undefined;
 
+  // Bereik van de getoonde baselines: de tijdas en het scrollbereik nemen het mee (issue #391).
+  const baselineReach = useMemo(
+    () => shownBaselineReach(baselines, activeBaselineId, comparedBaselineIds),
+    [baselines, activeBaselineId, comparedBaselineIds],
+  );
   const viewport = useGanttViewportCoordinator({
     tasks,
+    baselineReach,
     rows: viewRows,
     calendar,
     view,
