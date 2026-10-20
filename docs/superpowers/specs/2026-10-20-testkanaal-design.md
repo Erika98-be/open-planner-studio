@@ -23,7 +23,8 @@ Op Nightly of Dev meldt de bestaande updatedialoog de nieuwste bouw van dat kana
 | B4 | Naam van het kanaal: "Nightly" (keuzelijst Stabiel / Nightly). Dezelfde naam voor tag, versie-achtervoegsel, target en workflow. | gebruiker, 2026-10-20 | Gangbare naam voor het kanaal met de nieuwste bouw; zegt niets over hoe vaak er gebouwd wordt. |
 | B5 | Arch-gebruikers krijgen een AUR-pakket `open-planner-studio-bin` (herverpakte `.deb` van de stabiele release). Updates gaan via `yay`/`paru`; de app installeert op Arch zelf niets en doet daar wat hij bij Snap doet. | gebruiker, 2026-10-20 | Dat verwachten Arch-gebruikers; de Tauri-updater kan geen pacman-pakket installeren (alleen AppImage, deb, rpm: `updater.rs` r. 1197-1214). |
 | B6 | Derde kanaal Dev: een bouw na elke groene CI-run op `main`. | gebruiker, 2026-10-20 | Nieuwste stand testen zonder te wachten op zaterdag. |
-| B6a | Elke Dev-bouw is een eigen, onveranderlijke prerelease `dev-<versie>`. Nightly bouwt en kopieert niets: hij zet alleen de Nightly-manifesten op een bestaande Dev-bouw. Eén gedeelde teller voor het versienummer. | voorstel orkestrator, 2026-10-20 | Geen dubbele bouw van dezelfde commit; versies over kanalen heen blijven oplopend. |
+| B6a | Nightly bouwt en kopieert niets: hij zet alleen de Nightly-manifesten op een bestaande Dev-bouw. Eén gedeelde teller voor het versienummer. | voorstel orkestrator, 2026-10-20 | Geen dubbele bouw van dezelfde commit; versies over kanalen heen blijven oplopend. |
+| B7 | Alle Dev- en Nightly-bestanden en -manifesten staan op één vaste prerelease `channels` (titel "Kanalen") in deze repo, niet op een release per bouw. Opruimen: alleen bestanden waar een kanaal naar wijst, plus de vorige Dev-bouw, blijven staan. | gebruiker, 2026-10-20 ("bouw maar, we kunnen het in elk geval proberen") | Een release per bouw zette ~20 prereleases per dag op de Releases-pagina, duwde de stabiele release uit de 30 die `releaseInfo.ts` ophaalt en vervuilde de downloadcijfers. Eigen server (optie 1) vraagt serverbeheer dat nu niet geregeld is. |
 
 Eerder besluit: `docs/superpowers/plans/2026-06-24-auto-update-cross-platform.md` r. 93 zei "Geen nightly-kanaal nu
 (optioneel later: rolling prerelease met `includeUpdaterJson: false`)". Dit ontwerp is dat "later".
@@ -59,7 +60,7 @@ Nieuwe `plugins.updater.endpoints`:
   een dynamisch manifest voor precies die bundel. Ontbreekt het, dan valt de check terug op `latest.json`; met een eigen
   target vindt die geen platform-sleutel en geeft een fout. De app toont die fout alleen bij een handmatige controle.
 - Alle kanaalmanifesten staan op één vaste prerelease `channels` (alleen `.json`). Dat is een vast adres, geen
-  transactie. De bouwsels staan op een eigen prerelease per Dev-bouw (zie "Generaties").
+  transactie. De bouwsels staan op dezelfde release (zie "Eén release Kanalen").
 - Bestaande installaties hebben het oude endpoint ingebakken en blijven op Stabiel. Alleen bouwen ná deze wijziging
   hebben de keuzelijst.
 
@@ -91,30 +92,28 @@ komt die hoger is: de eerstvolgende maandversie. Zo werkt het ook bij Chrome. De
 "Je blijft op deze versie tot er een nieuwere stabiele versie is." Wie meteen terug wil, installeert de stabiele
 download opnieuw.
 
-## Generaties (review r2, bevindingen 1-3)
+## Eén release "Kanalen" (B7; vervangt de generaties per release uit review r2/r3)
 
-Een **generatie** is één Dev-bouw: versie, SHA en de volledige set assets op een eigen prerelease met tag
-`dev-<versie>` (bijv. `dev-2026.9.1042`, `prerelease: true`, `make_latest: "false"`). Een gepubliceerde generatie
-verandert nooit meer.
+Alles staat op de prerelease met tag `channels` en titel "Kanalen" (`prerelease: true`, nooit latest).
 
-- **Zichtbaar pas als compleet.** De release wordt als draft aangemaakt, alle assets gaan erop, dan pas wordt hij
-  gepubliceerd. Een draft is voor gebruikers onzichtbaar en heeft geen werkende download-URL's. Pas daarna schrijft de
-  workflow de manifesten.
-- **Opnieuw draaien is veilig.** Bestaat `dev-<versie>` al als gepubliceerde release, dan bouwt een rerun niets en
-  schrijft alleen de manifesten opnieuw (dezelfde versie houdt dezelfde bytes). Bestaat hij als draft (vorige poging
-  afgebroken), dan verwijdert de rerun die draft en begint opnieuw. Een nieuwe bouw = een nieuwe run met een nieuw
-  `run_number`.
+- **Bestanden met versie in de naam.** Elke Dev-bouw uploadt zijn bestanden met het versienummer in de naam. Een
+  bestand met een bepaalde naam verandert dus nooit; een rerun van dezelfde versie uploadt alleen wat ontbreekt
+  (bestaat een naam al met andere grootte/inhoud, dan faalt de job: dezelfde versie houdt dezelfde bytes).
+- **Volgorde.** Eerst alle bestanden van de nieuwe bouw, dan pas de `dev-*.json` vervangen, dan opruimen. Een
+  half geüploade bouw wordt door geen manifest genoemd.
 - **Manifesten vervangen.** `gh release upload --clobber` verwijdert en uploadt opnieuw; in dat korte venster geeft
   endpoint 1 een 404 en faalt een kanaalcheck (stil bij opstarten, foutmelding bij een handmatige check). Stopt de job
-  halverwege, dan wijzen de manifesten van één kanaal deels naar de oude en deels naar de nieuwe generatie. Herstel:
-  de publicatie van dezelfde generatie opnieuw draaien (toegestaan als de versie ≥ de hoogste versie in de
-  kanaalmanifesten is; review r3, bevinding 2).
-- **Geen opruimen in de eerste versie** (review r3, bevinding 3). Generaties blijven staan; elke manifest-URL blijft dus
-  geldig. Opruimen met een bewaartijd ná de laatste kanaalverwijzing staat op de vervolglijst.
+  halverwege, dan wijzen de manifesten deels naar oud en deels naar nieuw. Herstel: dezelfde publicatie opnieuw
+  draaien (toegestaan als de versie ≥ de hoogste versie in de kanaalmanifesten is).
+- **Opruimen.** Na het vervangen van de manifesten blijven alleen staan: de bestanden waar een `dev-*.json` of
+  `nightly-*.json` naar wijst, en die van de vorige Dev-bouw. Een download die op de vorige Dev-bouw begon, kan zo
+  afmaken. Twee publicaties binnen enkele minuten kunnen een download van twee bouwen terug breken; de app meldt dan
+  een fout en opnieuw proberen werkt.
+- **Release-tekst.** Bovenaan: per kanaal de versie, commit en tijd. Wordt bij elke publicatie herschreven.
 - **Eén slot met wachtrij.** Dev-publicatie en Nightly delen de `concurrency`-groep `channels-publish` met
-  `cancel-in-progress: false` én `queue: max` (review r3, bevinding 1: zonder wachtrij annuleert een nieuwe wachtende
-  run de vorige wachtende, dus kon een Dev-publicatie de zaterdag-Nightly laten vervallen). Alleen de bouwjobs mogen
-  geannuleerd worden.
+  `cancel-in-progress: false` én `queue: max` (review r3, bevinding 1). Alleen de bouwjobs mogen geannuleerd worden.
+- **Overslaan in eigen tooling.** `scripts/download-stats.mjs` telt `channels` niet mee; `releaseInfo.ts` gebruikt
+  hem niet als stabiele release. De app linkt bij een testbouw naar `releases/tag/channels`.
 
 ## Workflow `.github/workflows/prerelease.yml` (Dev)
 
@@ -130,10 +129,7 @@ verandert nooit meer.
   Authenticode-signing en het opnieuw signeren van de Windows-updater-ZIP. Input: SHA, versie; secrets expliciet
   doorgegeven. Publiceren, `latest.json` en de download-URL's blijven per workflow eigen (review r1, bevinding 4:
   de huidige re-sign-stap haalt `latest.json` op en bouwt URL's via `/releases/latest/`). Geen algemeen releaseframework.
-- Publicatie: generatie `dev-<versie>` aanmaken met `gh release create --draft --target <SHA>` (zie boven), na publicatie
-  de URL's als `/releases/download/dev-<versie>/<asset>` schrijven (nooit de `untagged-*`-URL van de draft), dan
-  `dev-*.json` op `channels` vervangen.
-- Release-tekst: versie, commit en `git log --oneline` sinds de vorige generatie.
+- Publicatie: zie "Eén release Kanalen" (bestanden → `dev-*.json` → opruimen → release-tekst).
 
 ## Workflow `.github/workflows/nightly.yml`
 
