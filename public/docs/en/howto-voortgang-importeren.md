@@ -28,8 +28,8 @@ The Excel sheet is protected, without a password: only the three fill-in columns
 
 For each task the site manager fills in:
 
-- `Completion (%)`: 0 up to and including 100. In the Excel sheet decimals are allowed (for example 33.3); in the CSV the instruction asks for whole numbers.
-- `Actual Start` and `Actual Finish`: in Excel as a date in your own regional setting; in the CSV as dd-mm-yyyy.
+- `Completion (%)`: 0 up to and including 100. The app also reads decimals, with a comma or a point (for example 33,3 or 33.3). The instruction in the CSV still asks for whole numbers: a spreadsheet with a different regional setting can read 8,38 as 838.
+- `Actual Start` and `Actual Finish`: in Excel as a date in your own regional setting; in the CSV as dd-mm-yyyy or as yyyy-mm-dd.
 
 Whatever stays empty changes nothing. So an empty cell does not clear existing progress either; that can only be done in the app. A task that has not started, he leaves completely empty.
 
