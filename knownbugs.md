@@ -101,6 +101,13 @@ en noem het in je rapport of PR-tekst.
     planningsharness (kalender ma-vr 08-16, A 8 u, een tweede taak van 40 u zodat het projecteinde niet
     begrenst). Voorstel: een eindmoment op een blokbegin altijd terugzetten naar het vorige blokeinde.
     Spec §4. — B
+123. **Een FF-relatie tussen dagtaken op een kalender met werkblokken schuift de opvolger één werkdag te
+    laat.** Nagespeeld met de planningsharness (kalender ma-vr 07-12 + 13-16 als werkblokken, dagtaak A 5 d,
+    dagtaak B 2 d, FF lag 0): B loopt van vr 07:00 tot ma 16:00 in plaats van do 07:00 tot vr 16:00, en A
+    krijgt speling 1 in plaats van 0. Op een kalender zonder werkblokken klopt het wel. De meting in de spec
+    (§10, urenpad-dagtaak) vond dezelfde fout van één werkdag in 25 dagcases: FF-relaties, eindbeperkingen,
+    SNLT/MSO achteruit en hangmatten. VERMOED: een eindmoment op een blokeinde telt voor een dagtaak als het
+    begin van de volgende werkdag. — B
 
 ## Tabel, invoer en bediening
 
