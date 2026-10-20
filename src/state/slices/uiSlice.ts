@@ -1,4 +1,5 @@
 import type { UIState, AppSlice, AppNotification, NotifyInput } from './types';
+import type { FeedbackDraft } from '@/services/feedback/feedbackDraft';
 import type { McpServerStatus } from '@/services/mcp/contracts';
 import { MCP_DEFAULT_PORT, peekTheme } from '@/utils/settingsStore';
 import { detectSystemPrefersDark } from '@/utils/theme';
@@ -11,6 +12,8 @@ import { AI_MODE_AVAILABLE } from '@/utils/buildFlags';
 export interface UiSlice {
   ui: UIState;
   setUI: (updates: Partial<UIState>) => void;
+  /** Bewaar (of wis met null) het feedbackconcept; sessiestate, geen undo, geen document. */
+  setFeedbackDraft: (draft: FeedbackDraft | null) => void;
   /** MCP-bridge: schrijf de serverstatus (uit/live/poort-bezet/fout) — gevoed door
    *  `server.ts` uit de `mcp://status`-events + de start-fout. */
   setAiServerStatus: (status: McpServerStatus) => void;
@@ -116,6 +119,8 @@ export function createDefaultUI(): UIState {
     showNewOrOpenProjectDialog: false,
     pendingTaskNameFocusId: null,
     showFeedbackDialog: false,
+    feedbackEmail: '',
+    feedbackDraft: null,
     showStructureDialog: false,
     traceMode: 'off',
     showResourcePanel: false,
@@ -209,6 +214,9 @@ export function createDefaultUI(): UIState {
 
 export const createUiSlice: AppSlice<UiSlice> = (set, get) => ({
   ui: createDefaultUI(),
+
+  setFeedbackDraft: (draft) =>
+    set((s) => { s.ui.feedbackDraft = draft; }),
 
   setUI: (updates) =>
     set((s) => {
