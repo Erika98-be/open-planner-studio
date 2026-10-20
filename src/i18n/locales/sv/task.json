@@ -406,10 +406,6 @@
     "timephasedActive": "Följer timfördelningen från MS Project",
     "timephasedLost": "MS Project-datumfönstret tillämpas inte längre efter redigering. Timfördelningen gäller fortfarande och sparas i filen.",
     "timephasedContoured": "Egen timfördelning",
-    "recordedDatesActive": "Visar Primaveras egna sparade datum för den här uppgiften",
-    "recordedDatesActiveNeutral": "Visar datumen så som de står i filen för den här uppgiften",
-    "recordedDatesDeviates": "Avviker från de sparade datumen",
-    "recordedDatesPartlyUnrecorded": "Lagringen är delvis ofullständig. Se kolumnerna senaste start/slack.",
     "completion": "Framdrift (%)",
     "progress": {
       "actualStart": "Verklig start",
@@ -458,7 +454,7 @@
       "work": "Arbete (kvar)",
       "workHint": "Återstående arbete i timmar. Arbetsregeln avgör om varaktighet eller tilldelningsenheter ändras.",
       "workDeviates": "Avviker från tilldelningsenheter × varaktighet",
-      "workDeviatesHint": "Sparat arbete {{stored}} h avviker från tilldelningsenheter × återstående varaktighet ({{derived}} h). Histogrammet följer det sparade arbetet över hela uppgiftens varaktighet. Tilldelningsenheterna behålls som filen angav dem.",
+      "workDeviatesHint": "Sparat arbete {{stored}} h avviker från tilldelningsenheter × återstående varaktighet ({{derived}} h). Histogrammet följer det sparade arbetet över hela uppgiftens varaktighet. Tilldelningsenheterna behålls som filen angav dem. Om du ändrar varaktigheten räknar appen om det.",
       "locked": "Skyddad av arbetsregeln {{rule}}"
     },
     "notes": {

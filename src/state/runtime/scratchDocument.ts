@@ -72,9 +72,11 @@ function harvestNotifications(store: AppStore): NotifyInput[] {
     severity: n.severity,
     messageKey: n.messageKey,
     params: n.params,
+    numberParams: n.numberParams,
     detail: n.detail,
     dedupeKey: n.dedupeKey,
     helpArticleId: n.helpArticleId,
+    ...(n.refusal ? { refusal: true } : {}),
   }));
   if (raw.length > 0) store.setState((s) => { s.ui.notifications = []; });
   return out;

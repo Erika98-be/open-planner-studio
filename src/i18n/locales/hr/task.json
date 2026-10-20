@@ -410,10 +410,6 @@
     "timephasedActive": "Slijedi raspodjelu sati iz MS Projecta",
     "timephasedLost": "Prozor datuma iz MS Projecta više se ne primjenjuje nakon uređivanja — sama raspodjela sati i dalje vrijedi i ostaje spremljena u datoteci",
     "timephasedContoured": "Vlastita raspodjela sati",
-    "recordedDatesActive": "Prikazuje datume koje je Primavera sama spremila za ovaj zadatak",
-    "recordedDatesActiveNeutral": "Prikazuje datume kako su za ovaj zadatak zapisani u datoteci",
-    "recordedDatesDeviates": "Odstupa od spremljenih datuma",
-    "recordedDatesPartlyUnrecorded": "Zapis je djelomično nepotpun — pogledajte stupce za kasne datume i vremensku rezervu",
     "completion": "Napredak (%)",
     "progress": {
       "actualStart": "Stvarni početak",
@@ -462,7 +458,7 @@
       "work": "Rad (preostalo)",
       "workHint": "Preostali posao u satima; pravilo rada određuje hoće li se trajanje ili jedinice dodjele pomicati.",
       "workDeviates": "Odstupa od jedinica dodjele × trajanja",
-      "workDeviatesHint": "Spremljeni rad {{stored}} h odstupa od jedinica dodjele × preostalog trajanja ({{derived}} h). Histogram prati spremljeni rad kroz cijelo trajanje zadatka; jedinice dodjele ostaju kako ih je datoteka dala.",
+      "workDeviatesHint": "Spremljeni rad {{stored}} h odstupa od jedinica dodjele × preostalog trajanja ({{derived}} h). Histogram prati spremljeni rad kroz cijelo trajanje zadatka; jedinice dodjele ostaju kako ih je datoteka dala. Pri promjeni trajanja aplikacija ga ponovno izračunava.",
       "locked": "Zaštićeno: pravilo rada {{rule}}"
     },
     "notes": {

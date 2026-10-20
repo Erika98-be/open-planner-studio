@@ -145,7 +145,7 @@ const BLOCKING_UI_FLAGS = [
   'showStructureDialog', 'showLevelingDialog', 'showBaselineDialog', 'showColumnsDialog',
   'showFilterDialog', 'showLayoutsDialog', 'showProjectOverview', 'presentationMode',
   'showTourOverlay', 'showWelcomeDialog', 'showTutorialOffer', 'showProgressImportDialog', 'pendingActualStartQuestion',
-  'pendingSiteOpen', 'pendingSiteSave', 'pendingIfcSchemaQuestion',
+  'pendingPhaseAssignmentQuestion', 'pendingSiteOpen', 'pendingSiteSave', 'pendingIfcSchemaQuestion',
 ] as const;
 
 /** Naam van de eerste open blokkerende ui-vlag, of null wanneer er geen open staat. */
@@ -418,6 +418,14 @@ export async function runMutateTool(
   if (backupPath) envelope.backupCreated = backupPath;
   // Zie het docblok bij `McpEnvelope.timephasedGuidanceLost`.
   if (res.timephasedGuidanceLost > 0) envelope.timephasedGuidanceLost = res.timephasedGuidanceLost;
+  // Zie het docblok bij `McpEnvelope.remainingWorkRecomputed`.
+  if (res.remainingWorkRecomputed.length > 0) {
+    const hours = (minutes: number) => Math.round((minutes / 60) * 100) / 100;
+    envelope.remainingWorkRecomputed = res.remainingWorkRecomputed.map((item) => ({
+      taskId: item.taskId, taskName: item.taskName, assignmentId: item.assignmentId, resourceId: item.resourceId,
+      beforeHours: hours(item.beforeMinutes), afterHours: hours(item.afterMinutes),
+    }));
+  }
   const outcome = res.value;
   const ok: McpToolResult = { ok: true, envelope, data: outcome.data };
   if (outcome.itemRejections && outcome.itemRejections.length > 0) {
