@@ -58,6 +58,10 @@ Hoe verder je uitzoomt, hoe minder rasterlijnen er staan. Bij 8 pixels per dag o
 
 De taaknaam staat in de balk als hij er helemaal in past. Past hij niet, bijvoorbeeld als je uitzoomt, dan staat de volledige naam rechts achter de balk.
 
+### Details van een taak bekijken
+
+Houd de muis stil op een balk. Er verschijnt een kaartje met de naam van de taak, *WBS*, *Duur*, *Start*, *Einde*, *Status*, *Kritiek* en *Totale speling*. Tijdens slepen, pannen, een selectiekader of een rechtsklikmenu is het kaartje weg.
+
 ## Valkuilen en wat de app dan doet
 
 **De start verschuift niet.** Heeft de taak een voorganger én een andere constraint dan SNET, bijvoorbeeld *Zo laat mogelijk (ALAP)*, dan past de app het verslepen van de start niet toe. Na het loslaten meldt de app welke constraint de start tegenhoudt. Pas die constraint aan om de start te verzetten. De rechterrand werkt wel, want die verandert alleen de duur.

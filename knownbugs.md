@@ -134,12 +134,34 @@ en noem het in je rapport of PR-tekst.
     deadline-dag eindigt.** De solver doet dat na #402 niet meer. De review van #402 beoordeelt of dit punt
     in #402 zelf hoort; dan vervalt deze entry. Gemeld door de bouwer van #402. — B (volgens de bouwer van #402; niet door deze agent herhaald)
 
+119. **Een WBS-sjabloon verliest een lag in uren.** `wbsTemplates.ts:99-105` neemt per relatie `lagDays`,
+    `lagUnit` en `lagPercent` mee, maar niet `lagMinutes`. Een relatie met lag `4u` komt na het invoegen van
+    het sjabloon zonder lag terug, zonder melding. Gezien in de code (`Sequence.lagMinutes`,
+    `types/sequence.ts:23`); niet in de app nagespeeld. Voorstel: `lagMinutes` meenemen in
+    `WbsTemplateSequence`. — S
+120. **Lag `-1,5` rondt naar −1 dag, de motor naar −2.** `parseLagInput` rondt met `Math.round(num)`
+    (`lagFormat.ts:73`, JavaScript rondt −1,5 naar −1), terwijl de solver half van nul af rondt
+    (`CPMSolver.ts:272-279`, `Math.sign(raw) * Math.round(Math.abs(raw))`). Een lead die je als `-1,5`
+    typt, wordt dus anders opgeslagen dan dezelfde lead in uren wordt gerekend. Alleen in de code gezien. — S
+121. **Nivelleervenster: de piekmelding blijft leeg bij een eigen urenverdeling of capaciteitsstappen.** De
+    nivelleerder kiest `INTRINSIC_OVERRUN` op de echte dagwaarden (`assignmentDayUnits`) en op
+    `maxCapacityOf` met stappen (`ResourceLeveler.ts`); het venster vult de details in met `distributeUnits` en
+    de vlakke `res.maxUnits` (`LevelingDialog.tsx:141-165`, `:293-304`). Dan ontbreken resource, piek en
+    capaciteit in de melding. Niet nagespeeld. Zie ook 9. — S
+122. **Nivelleervenster: onder *Resterende conflicten* staat altijd "Deze taken passen niet binnen hun
+    speling"**, ook zonder smoothing (`LevelingDialog.tsx:282`, `resource.leveling.remainingConflictsHint`).
+    De tekst noemt een oorzaak die niet voor elk conflict geldt. Zie ook 9. — B
+
 ## Tabel, invoer en bediening
 
 12. **Tabelkolom *Kalender*** toont en bewerkt het interne kalender-id (`cal-…`) in plaats van de naam. — B
 13. **Tabelkolom *Kleur*** wordt in IFC bewaard, maar geen balk of rapport gebruikt hem. — B
 14. **Ctrl+M en rechtsklik *Mijlpaal toevoegen*** maken een mijlpaal van type Keuring. Ctrl+M zet hem
-    bovendien altijd onderaan en opent het paneel niet (gaat buiten `taskInsertActions` om). — B
+    bovendien altijd onderaan en opent het paneel niet (gaat buiten `taskInsertActions` om). Het lint geeft
+    een mijlpaal een ander type: *Startmijlpaal* en *Eindmijlpaal* zetten `USERDEFINED` (werksoort *Overig*),
+    en `check-tutorial-project.ts` legt dat laatste vast als bedoeld. Het type hangt dus van de route af
+    (`shortcutRegistry.ts:376-380`, `GanttCanvas.tsx:403,1020`, `FullTaskGrid.tsx:799,1313`,
+    `ribbonWidgets.tsx:188`). — B
 15. **Rechtsklikmenu op een lege plek** (*Nieuwe taak*, *Plakken*) is dode code: geen route opent het. — B
 16. **Taken kopiëren** heeft geen zichtbare bediening; alleen Ctrl+C/V met de Gantt in focus. — B
 17. **Verwijderen zonder bevestiging**: `confirm.deleteTask` staat in de locales maar wordt nergens gebruikt. — S
@@ -157,16 +179,28 @@ en noem het in je rapport of PR-tekst.
     Playwright-proeven; de tutorials zeggen daarom nu "dubbelklik". Voorstel: de inhoud selecteren bij focus,
     zoals de tabelcel waarin typen al vervangt. Eenh./dag (Toewijzen ▾ en het blok Toewijzingen) niet apart
     gemeten. — B
+135. **Vinkjes lijken op keuzerondjes.** De app-brede stijl `input[type="checkbox"]`
+    (`src/styles/globals.css:2477`) geeft een vak van 15 px met `border-radius: var(--radius-sm)` (6 px) en
+    zonder vinkteken. Het vak oogt daardoor rond, en aangevinkt is het een gevuld oranje rondje. Gezien bij
+    *Screenshot bijvoegen* in het feedbackvenster. Voorstel: een kleinere radius (2–3 px) en een vinkteken. — S
+136. **`.btn--secondary` valt meer op dan de primaire knop ernaast.** De stijl (`src/styles/globals.css:2207`)
+    heeft een rand van 2 px in tekstkleur. Naast de oranje primaire knop trekt de secundaire knop zo de
+    aandacht, bijvoorbeeld *Annuleren* naast *Versturen* in het feedbackvenster. Voorstel: een rand van 1 px in
+    `--theme-control-border`. — S
 
 ## Kalenders
 
 22. **Goede Vrijdag en Bevrijdingsdag** hebben `optional: true`, maar dat wordt nergens gelezen: ze worden
     altijd gegenereerd. — B
-23. **Dagknoppen en werktijdblokken lopen uit elkaar**: *Za* aan telt voor dagtaken, niet voor urentaken. — S
-24. **Urenplanning uit bij een kalender met werktijdblokken**: Begin/Einde/Pauze wijzigen `hoursPerDay`, maar
-    niet de blokken. — S
 25. **Kalendernaam in de wizard** is hardgecodeerd *Bouwkalender NL*, ook in het Engels (de
     tutorialgenerator schrijft *Construction calendar NL*). — B
+
+123. **Hint *Opnieuw genereren* telt een jaar te ver.** "Feestdagen dekken {van}–{tot}; project loopt tot
+    {jaar}" toont `projectYearSpan.to` (`CalendarForm.tsx:764`). Dat is het einddatumjaar plus 1
+    (`computeGenerateSpan`, `generateCalendarHolidays.ts:58-71`; zonder einddatum startjaar plus 3). Een
+    project dat in 2029 eindigt, meldt "project loopt tot 2030". De Help-voorbeelden
+    (`uitleg-kalenders.md`, `howto-feestdagen-genereren.md`) volgen die tekst. Voorstel: het einde zelf tonen,
+    of de tekst "tot en met {jaar}" noemen. — B
 
 ## Bibliotheek, bezetting, extensies, AI
 
@@ -278,9 +312,24 @@ en noem het in je rapport of PR-tekst.
     vergelijking. Symbolische links worden ook niet opgelost. Afgeleid uit de code door de review van #336,
     niet op een Mac nagespeeld. — S
 
+124. **`planner_update_calendar` `generate` dekt het projecteinde niet als `endDate` gezet is.**
+    `calendarSpan` (`calendarResourceTools.ts:585-590`) neemt `project.endDate || cpmResult.projectEnd`. Een
+    `endDate` gaat dus voor het berekende einde. Loopt de planning daarna door, dan krijgen die jaren geen
+    feestdagen en komt er geen waarschuwing; opnieuw genereren helpt niet, want de spanne blijft op `endDate`
+    staan. Nagespeeld in een scratch-script (agent-audit 2026-10-19). Anders dan 88 (geen rekenresultaat).
+    De UI-regeneratie gebruikt dezelfde `computeGenerateSpan` (`ResourceCalendarDialog.tsx:57`); of dat daar
+    bedoeld is, is niet uitgezocht. Voorstel: het latere van `endDate` en het berekende einde nemen, of een
+    `warnings`-regel geven. — B
+125. **De eerste bibliotheek heet hardgecodeerd "Mijn resourcebibliotheek"**, ook in de Engelse app
+    (`types/library.ts:63`). Ook de terugvalnamen "Nieuwe resourcebibliotheek" (`librarySlice.ts:414`,
+    `libraryOps.ts:463`). Valt buiten 29. — B
+126. **Updatevenster: de tekst *Bezig met installeren…* is niet te bereiken.** De balk met
+    `updates.installing` staat achter `isDownloading` (`status.kind === 'downloading'`), terwijl de tekst
+    `isReadyToInstall` (`'readyToInstall'`) vraagt (`UpdateDialog.tsx:125-128,205-208`). Na de download springt
+    het venster naar *Herstarten…* (`:225-229`). Alleen in de code gezien. — S
+
 ## Bestanden en herstel
 
-34. **Opslaan-knop in de titelbalk** heeft de tooltip "Opslaan als…". — S
 35. **Showcase-voorbeelden openen als gewijzigd** (`applyDemoLibraryToShowcaseProject`). — S
 36. **Herstelvenster na een gewone herlaad** in de browser, ook als alles was opgeslagen. — S
 37. ***Herstellen* verwijdert ook onleesbare kopieën.** — S
@@ -396,6 +445,16 @@ en noem het in je rapport of PR-tekst.
     staat er niet bij. Voorstel: de releasetekst noemt het, naast het aanvaarde verlies van de kalenders.
     Gevonden bij fixronde 2 van de spec `2026-10-20-alleen-uren-design.md` (§5.4). — B
 
+127. **IFC-tab *Toepassen* wist de bibliotheekkoppeling en zet *Niet opgeslagen* uit.** *Toepassen*
+    (`IFCPanel.tsx:57-62`) roept `loadState` aan zonder `linkedOpen`; `applyLoadedProject` wist dan `companyId`
+    en `companyName` (`fileSlice.ts:797-799`) en `isDirty` wordt `false` (`documentContract.ts:489`). Een
+    gewijzigd project lijkt zo opgeslagen, en sluiten vraagt niets. Nagespeeld met het voorbeeld plus
+    bibliotheek en een gewijzigde taaknaam: vóór `isDirty` true, erna false, `companyName` null, de wijziging
+    blijft aanwezig. Voorstel: `isDirty` laten staan en de koppeling behouden. — B
+128. **CSV: een datum in een onleesbare vorm wordt stil "vandaag".** `csvDateOrToday` valt terug op
+    `localTodayIso()` (`importDates.ts:71-74`, gebruikt door `csvReader.ts:135`). De Help noemt alleen de drie
+    geldige vormen. Of er elders een melding voor komt, is niet nagegaan. Niet nagespeeld. — S
+
 ## Rondleiding, Help en extensie-gidsen
 
 51. **Histogram-tooltip "0 taken dragen bij"** op de startdag van een urentaak: `contributingTaskNames` in
@@ -440,6 +499,18 @@ en noem het in je rapport of PR-tekst.
      docs-pakketten hebben sinds #323 een zegel (`build/translate-seal/`); de termbase-pakketten niet, terwijl
      agents in dezelfde map schrijven. Voorstel: dezelfde `seal`/`sealErrors` in `prepare`/`apply-terms`.
      Gevonden in de review van #323 (Opus, 2026-10-12), in de code aangewezen. — S
+
+129. **Het blok *CPM Resultaat* toont "1 dagen"** bij 1 dag speling: `TaskCpmResultSection.tsx:20-23` plakt
+    altijd `common:daysLong` ("dagen") achter het getal. Niet in de app nagespeeld. — S
+130. **De omschrijving van het voorbeeld *Refurbishment & Extension of a Family Home*** belooft een conflict
+    dat "'Distribute' can resolve" (`public/examples/manifest.json:7`, getoond in `Backstage.tsx`). Er is geen
+    Verdelen-knop; alleen de kern bestaat (`distributeUnits`, `ResourceLoad.ts`). — B
+131. **Engelse titel van het venster na een update is "You're up to date!"** (`en/common.json`
+    `updates.justUpdated.title`). De Nederlandse is "Je bent bijgewerkt!". In het Engels leest dat als "geen
+    update nodig". Voorstel: "You've been updated!". — B
+132. ***Voortgang bijwerken uit een blad* zegt "Kies een teruggestuurd CSV-blad"** (nl) en "Pick a returned
+    CSV sheet" (en), terwijl het venster ook `.xlsx` opent (`ProgressImportDialog.tsx:176-180`,
+    `common.json` `progressImport.intro`). — B
 
 ## Tests
 
@@ -506,9 +577,13 @@ en noem het in je rapport of PR-tekst.
     zonder naar de volgende kolom te gaan. Bij snel invoeren via de spookregel (typ naam, Tab, typ duur)
     verwacht je het Excel-gedrag: vastleggen en een kolom verder (Shift+Tab terug). Gezien bij review
     vader, punt 1. — B
-106. **De feedbackknop zet bij een gewone gebruiker geen label `bug`/`enhancement`.** `feedbackService.ts`
-    (`buildGitHubUrl`) zet het label via `labels=` in de `/issues/new`-URL; GitHub past die parameter alleen toe
-    voor wie labelrechten op de repo heeft. Het issue komt dus zonder soortlabel binnen. `needs-triage` komt er
-    sinds `.github/workflows/triage-new-issues.yml` wel bij. Voorstel: die workflow leidt het soortlabel af uit de
-    regel `Type: Bug`/`Type: Feature request` onderaan de body. Afgeleid uit de GitHub-documentatie over
-    query-parameters, niet nagespeeld met een account zonder rechten. — S
+133. **Het venster *Werkelijke start opgeven* heeft geen ?-knop** (`ActualStartDialog.tsx:82`,
+    `DialogHeader` zonder `help`). Het doel zou `howto-voortgang-bijwerken` zijn. — B
+134. **Werkelijke start en einde: paneel en dialoog weigeren een start na het einde niet, raster en startvraag
+    wel.** `planProgressEntry` controleert `isActualFinishBeforeStart` alleen bij een antwoord op de startvraag
+    (`progressEntry.ts:181`), terwijl `taskEditPlan.ts:625-632` het in het raster altijd doet. Een getypte start
+    10-09 bij een einde 10-05 (of een einde 09-20 bij een start 10-01) wordt in het paneel en de
+    taakdialoog geaccepteerd. Nagespeeld met `planProgressEntry` in een scratch-script (2026-10-19). Voorstel:
+    de controle ook zonder antwoord uitvoeren. De Help (`ref-taak-eigenschappen`) beschrijft nu het raster
+    en de startvraag. — B
+

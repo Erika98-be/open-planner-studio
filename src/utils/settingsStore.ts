@@ -609,6 +609,12 @@ export async function saveTutorialOfferAnswered(value: boolean): Promise<void> {
   await setSetting('tutorialOfferAnswered', value);
 }
 
+// Feedbackdialoog: het optionele e-mailadres, bewaard na een geslaagde melding. Bewust als
+// rauwe string (`setSetting` schrijft een string ongewijzigd), de load-kant loopt via het register.
+export async function saveFeedbackEmail(value: string): Promise<void> {
+  await setSetting('feedbackEmail', value);
+}
+
 // "Je bent net geüpdatet"-detectie (fase "kleine dingen"): de laatst gestarte appversie. Bij de
 // volgende start vergelijken we deze met `getVersion()`; verschillen ze, dan is er net geüpdatet.
 // Ontbreekt de sleutel, dan hangt het af van de welkomstvlag (`detectJustUpdated`): een echte eerste

@@ -4,6 +4,7 @@ import { AlertTriangle, OctagonAlert, CheckCircle2, RefreshCw } from 'lucide-rea
 import { useAppStore } from '@/state/appStore';
 import { useDisplayDate } from '@/hooks/displayDate';
 import { formatLagShort } from '@/utils/lagFormat';
+import { parseableHourSuffix } from '@/utils/durationFormat';
 import { localizeDecimalPoint } from '@/utils/reportNumber';
 import { SEQUENCE_TYPE_OPTIONS } from '@/types/sequence';
 import {
@@ -115,7 +116,9 @@ export function WarningsPanel() {
         const seq = seqById.get(tg.sequenceId);
         const type = seq ? (SEQUENCE_TYPE_OPTIONS.find(o => o.value === seq.type)?.label ?? seq.type) : '';
         // Weergave-only: het decimaalteken van de app-taal, net als het gezondheidsrapport.
-        const lag = seq ? localizeDecimalPoint(formatLagShort(seq), i18n.language) : '';
+        const lag = seq
+          ? localizeDecimalPoint(formatLagShort(seq, parseableHourSuffix(t('duration.suffixHour'))), i18n.language)
+          : '';
         const relation = t('warnings.target.relation', {
           predecessor: taskLabel(tg.predecessorId), successor: taskLabel(tg.successorId),
         });

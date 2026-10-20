@@ -45,7 +45,7 @@ export const TUTORIAL_4: TutorialScript = {
       do: setDuration(T.pour, '6h'),
       expect: [
         { state: (s, lang) => [...taskIs(s, lang, T.pour, { minutes: 360 }), ...(s.stale ? [] : ['niet verouderd'])] },
-        { see: { cell: { task: T.pour, column: l('Duur', 'Duration') } }, text: '6h' },
+        { see: { cell: { task: T.pour, column: l('Duur', 'Duration') } }, text: l('6u', '6h') },
         status('Verouderd — herbereken (F5)', 'Out of date — recalculate (F5)'),
       ],
     },

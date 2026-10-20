@@ -402,8 +402,8 @@ api.events.on(sdk.hostEvents.tutorialRequested, (d) => {
 
 ## Installing
 
-File → Extensions → **ZIP** or **JS** (a local file), or via the **Browse** tab (catalog:
-`OpenAEC-Foundation/open-planner-studio-extensions`).
+Backstage → Extensions: **Install from ZIP file** or **Install from JS file** (a local file) on the
+**Installed** tab, or the **Browse** tab (catalog: `OpenAEC-Foundation/open-planner-studio-extensions`).
 
 For a standalone `.js` file the manifest may be a comment block at the top:
 
@@ -411,9 +411,27 @@ For a standalone `.js` file the manifest may be a comment block at the top:
 /** @manifest { "id": "my-extension", "name": "My Extension", "version": "1.0.0", "minAppVersion": "0.0.0", "author": "Me", "description": "…", "category": "Utility", "main": "main.js", "permissions": [] } */
 ```
 
+### Installing and trust
+
+- **Consent.** Installing asks for confirmation once, showing name, version, author, origin (catalog or
+  local file, and whether the download was verified against a checksum) and the declared permissions as
+  *intended use*, not as a restriction. If you decline, nothing is stored; an installed earlier version
+  keeps running. If the app cannot ask, it does not install.
+- **Checksum.** A catalog entry with a `sha256` is verified; a mismatch (or an unreadable hash) refuses the
+  download. Without a `sha256` the app installs and logs that the download is unverified.
+- **Validation.** Manifest fields are parsed one by one with type and length limits; `id` is required, at
+  most 128 characters, lowercase letters, digits, dot, underscore and dash. Fresh input with an unknown
+  permission is invalid. Paths must be relative (no `..`, no backslashes).
+- **ZIP limits.** Unpacked entries are limited to 24 MiB per file and 48 MiB in total; Zip64 archives are
+  refused.
+- **Quarantine.** An installed record that fails validation at startup is not executed. Its card has no
+  on/off switch and can still be removed; it does not block other extensions.
+- **Raw host globals.** `__TAURI_INTERNALS__`, `__TAURI__` and `__OPS__` are shadowed as `undefined` inside
+  extension code.
+
 ## Limitations
 
-- The sandbox is light: extension code runs via `new Function(...)` and has access to `window`,
+- There is no JavaScript sandbox: extension code runs via `new Function(...)` and has access to `window`,
   `document` and `fetch`. Permissions are enforced hard (default-deny) for `ribbon`/`events`/
   `pdf-fonts`/`importSource`/`help`, in warn mode for `backstage`, and are purely informational for
   `filesystem`/`network`. Only install extensions you trust.

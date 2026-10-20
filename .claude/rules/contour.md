@@ -8,6 +8,7 @@ paths:
   - "src/components/task-sections/TaskAssignmentsSection.tsx"
   - "src/utils/taskDefaults.ts"
   - "src/state/slices/resourceSlice.ts"
+  - "src/state/assignmentMutations.ts"
   - "tests/planning/check-contour-*"
 ---
 
@@ -30,8 +31,8 @@ de CPM-datums van een import blijven bij laag 3/4 van de Z8-beslistabel en `spli
 fidelity-poort bewaakt dat. Een duurwijziging (`taskSlice.updateTask`, `createMcpTransactions`,
 `taskEditPlan`) herschaalt de contour én de importsplits proportioneel via `taskDefaults.ts`'s
 `rescaleTaskContours` (actuals blijven; werkbehoud volgt de effectieve werkregel via
-`workRuleApply.ts`'s `contourKeepsWork` — zonder eigen `workRule` geldt nog `mspTaskType ===
-'FIXED_WORK'`); een datum-/kalender-/toewijzingswijziging raakt de as niet (een kalenderwissel
+`taskDefaults.ts`'s `contourKeepsWork` — zonder eigen `workRule` telt `mspTaskType === 'FIXED_WORK'`
+of een werkbeschermende `Project.defaultWorkRule`); een datum-/kalender-/toewijzingswijziging raakt de as niet (een kalenderwissel
 herschaalt de as wél van oude naar nieuwe werkminuten — zie de `taaktypes`-rule). Verandert het
 restwerk van een toewijzing mét contour, dan zakt de contourhoogte mee (`reconcileContourWork`, "vorm
 blijft, hoogte zakt"). `src/services/contourIo.ts` is de adapterlaag:

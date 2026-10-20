@@ -58,7 +58,7 @@ function workOf(page: Page, taskId: string): Promise<{ duration?: number; rest?:
   }, taskId);
 }
 
-const ONE = /(Remaining work of ‘Mobilise Design Team’ recalculated: 320 h → 72 h \(the value came from the file\)\. Ctrl\+Z restores it\.|Restwerk van ‘Mobilise Design Team’ opnieuw uitgerekend: 320 u → 72 u \(de waarde kwam uit het bestand\)\. Ctrl\+Z zet het terug\.)/;
+const ONE = /(Remaining work of ‘Mobilise Design Team’ recalculated: 320h → 72h \(the value came from the file\)\. Ctrl\+Z restores it\.|Restwerk van ‘Mobilise Design Team’ opnieuw uitgerekend: 320u → 72u \(de waarde kwam uit het bestand\)\. Ctrl\+Z zet het terug\.)/;
 const MANY = /(Remaining work of 2 tasks recalculated|Restwerk van 2 taken opnieuw uitgerekend)/;
 
 test('paneel: duur 80 → 72 h ⇒ restwerk 72 h, één melding; Ctrl+Z zet 320 h en het waarschuwingsteken terug', async ({ page, ops: _ops }) => {
@@ -124,8 +124,8 @@ test('tabel: één waarde plakken in twee rijen ⇒ beide herrekend, één meldi
 // fixture (dezelfde voorkeur als via de kolomkiezer); de duur typen en Ctrl+Z zijn echte toetsen.
 // De slotzin hangt af van de regel (besluit V10, eigenaar 2026-10-19, optie 1).
 const exactly = (texts: string[]) => new RegExp(`^(${texts.map(text => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})$`);
-const HINT_NL = 'Opgeslagen werk 320 u wijkt af van inzet × resterende duur (80 u). Het histogram volgt het opgeslagen werk over de hele taakduur.';
-const HINT_EN = 'Stored work 320 h differs from units × remaining duration (80 h). The histogram follows the stored work across the whole task duration.';
+const HINT_NL = 'Opgeslagen werk 320u wijkt af van inzet × resterende duur (80u). Het histogram volgt het opgeslagen werk over de hele taakduur.';
+const HINT_EN = 'Stored work 320h differs from units × remaining duration (80h). The histogram follows the stored work across the whole task duration.';
 // Vaste duur en inzet (de standaard): de app vervangt het werk bij een duurwijziging.
 const HINT_320_80 = exactly([
   `${HINT_NL} De app verandert dit niet vanzelf. Wijzig je de duur, dan vervangt de app dit werk door inzet × nieuwe duur. Je krijgt dan een melding; Ctrl+Z zet het terug.`,

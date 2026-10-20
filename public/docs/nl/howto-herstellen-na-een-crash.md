@@ -9,7 +9,7 @@ De laptop viel uit, de app liep vast of het browsertabblad crashte, en je had de
 ## Stappen
 
 1. Start de app opnieuw. In de browser laad je hetzelfde tabblad opnieuw: de herstelkopie hoort bij dat ene tabblad.
-2. Heeft de app kopieën gevonden, dan verschijnt het venster *Niet-opgeslagen werk herstellen*: *Open Planner Studio is niet normaal afgesloten. De volgende documenten hadden niet-opgeslagen wijzigingen die hersteld kunnen worden:* Per project staat er de naam, het pad van het bestand als het project een bestand heeft (in de browser alleen de bestandsnaam), het aantal taken en het tijdstip van de kopie, bijvoorbeeld *21 taken* en *Opgeslagen: 29 sep 2026, 09:41*. Het venster kan ook projecten tonen die je niet had gewijzigd.
+2. Heeft de app kopieën gevonden, dan verschijnt het venster *Niet-opgeslagen werk herstellen*: *Open Planner Studio is niet normaal afgesloten. De volgende documenten hadden niet-opgeslagen wijzigingen die hersteld kunnen worden:* Per project staat er de naam, het pad van het bestand als het project een bestand heeft (in de browser alleen de bestandsnaam), het aantal taken en het tijdstip van de kopie, bijvoorbeeld *21 taken* en *Opgeslagen: 29 sep 2026 09:41*. De tijd staat in de notatie van je instelling *Tijdnotatie*. Het venster kan ook projecten tonen die je niet had gewijzigd.
 3. Kies *Herstellen*. De app opent alle projecten uit de lijst, elk in een tabblad, met de stand van de laatste kopie. Enter doet hetzelfde.
 4. Kijk je projecten na en sla ze meteen op met Ctrl+S.
 

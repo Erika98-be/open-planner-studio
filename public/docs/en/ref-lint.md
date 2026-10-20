@@ -26,7 +26,7 @@ Clicking *File* makes a screen of its own (the Backstage) take over the workspac
 - **App settings** — the same settings as the *App settings* window.
 - **Extensions** — management and installation of extensions; see [Installing and managing an extension](docs://howto-extensie-installeren).
 - **Library** — management of resource libraries; see [Managing and sharing resource libraries](docs://howto-bibliotheken-beheren).
-- **Help** — the built-in documentation, also with F1. The search field searches titles, headings and the text itself. The articles are in four sections: *Tutorials*, *How-to guides*, *Explanation* and *Reference*. Under *Documentation language* you choose *Follow app language*, *Nederlands* or *English*. Help only exists in Dutch and English: if the app is in another language, you read the English version, with a notice. The choice is kept on this device, separately from the language of the app. You can also reach Help from a window or panel: many windows and the panels *Properties*, *Resources* and *Warnings* have a question mark at the top right (*Help on this topic*), which opens Help on the article about that window or panel. If you entered something in the window that is not saved yet, the app first asks *Save*, *Cancel* (discard your input) or *Back* (stay in the window); then the window closes and Help opens. A few windows, such as *Edit task* and *Level resources*, always ask. Without input, Help opens straight away.
+- **Help** — the built-in documentation, also with F1. The search field searches titles, headings and the text itself. The articles are in four sections: *Tutorials*, *How-to guides*, *Explanation* and *Reference*. Under *Documentation language* you choose *Follow app language* or a language from the list. Dutch and English are the source languages; the other languages have the articles that are already translated. If an article is missing in your language, you read the English version, with a notice. The choice is kept on this device, separately from the language of the app. You can also reach Help from a window or panel: many windows and the panels *Properties*, *Resources* and *Warnings* have a question mark at the top right (*Help on this topic*), which opens Help on the article about that window or panel. If you entered something in the window that is not saved yet, the app first asks *Save*, *Cancel* (discard your input) or *Back* (stay in the window); then the window closes and Help opens. A few windows, such as *Edit task* and *Level resources*, always ask. Without input, Help opens straight away.
 - **Start tour** — closes the Backstage and starts the tour at step 1.
 - **Close project** — closes the active document. If it has unsaved changes, the app asks for confirmation.
 
@@ -175,6 +175,14 @@ This group is also on *Table* and *Report*.
 - **Properties** — shows or hides the *Properties* panel in the right-hand column. Default: on. See [Task dialog and properties panel](docs://ref-taak-eigenschappen).
 
 The *Resources*, *Resource dock* and *Histogram* buttons are the same as on *Resources*, and *Warnings* is the same as on *Planning*.
+
+**The right-hand column.** The column to the right of the Gantt is there as soon as at least one of the panels *Properties*, *Resource dock* or *Warnings* is on. If none is on, there is no column. If a full panel takes over the workspace, for example the full resource panel, the column disappears. Only on the *Table* tab does it stay.
+
+- **Width** — drag the divider between the workspace and the column. One width applies to all panels in the column.
+- **Split** — if two panels are on, drag the border between them. If one is on, that panel fills the whole column.
+- **Collapse** — the button *Collapse side column* in the header hides the column. A narrow strip with the button *Expand side column* brings it back, with the same panels as before.
+- **Close** — every panel has a cross in its header. It is the same switch as the ribbon button.
+- **Full panel** — in the resource dock, the button *Full panel* opens the full resource panel.
 
 ### View › Baselines & progress
 

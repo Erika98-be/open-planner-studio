@@ -110,8 +110,8 @@ Voor elke niet-`nl`-locale en elk namespace-bestand: verzamel alle sleutelpaden 
 naar de paden die DIE locale zou moeten hebben, en meld wat ontbreekt. Twee dingen maken dit meer dan
 een letterlijke sleutelvergelijking:
 
-- **Geen letterlijke kopie-eis.** `expectedPathsFor()` herschrijft elk meervoudspad (`..._one`,
-  `..._other`, …) naar de categorieën die de DOELTAAL volgens CLDR kent — niet die van `nl`.
+- **Geen letterlijke kopie-eis.** `expectedUnitsFor()` zet elke meervoudsfamilie (`..._one`,
+  `..._other`, …) om naar de categorieën die de DOELTAAL volgens CLDR kent — niet die van `nl`.
 - **CLDR bepaalt de categorieën, niet `nl`.** `categoriesFor(locale)` vraagt
   `new Intl.PluralRules(locale).resolvedOptions().pluralCategories` op. Voorbeeld: `nl`/`en` kennen
   `one`+`other`; `zh`/`ja`/`ko` kennen alléén `other` (een `..._one`-sleutel zou daar dus ten
