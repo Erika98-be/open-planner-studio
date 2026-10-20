@@ -37,7 +37,7 @@ For an existing project you choose the profile under *Settings › Project › P
 
 Until you press *Apply*, a change exists only in the form. With *Apply* the app recalculates the schedule straight away, even if *Calculate automatically* is off. If tasks moved, it says how many, for example *After applying, 4 tasks moved.* The whole switch is one step for *Undo*. If you press *Undo* or *Redo* while Project settings is open, the block follows the state of the project. If you had already changed something in the block yourself, your choice stays and a yellow block says that *Apply* puts that choice back.
 
-The three built-in profiles cannot be changed. For other conventions, click *New profile* next to the list. The app asks for a name and suggests *Copy of* the chosen profile, for example *Copy of Open Planner Studio*. With *Create* you get a custom profile with the same conventions, and the part *Conventions of this profile* expands. Now you can switch each convention on or off. The project uses the new profile after *Apply*. You can give the custom profile another name and keep it with *Save as template* for other projects in this app. The app reports that the template was saved, or why that failed. *Delete template* asks for confirmation first. The project always carries its own copy: if you change the template later, the project does not change with it.
+The three built-in profiles cannot be changed. For other conventions you make a custom profile; you can also keep it as a template for other projects in this app. The project always carries its own copy: if you change the template later, the project does not change with it. The steps are in [Choosing or building a calculation profile](docs://howto-rekenprofiel-kiezen).
 
 ### When the app chooses a profile itself
 
@@ -113,6 +113,7 @@ Here the dates differ. Two conventions in the group *Progress as in Microsoft Pr
 
 ## See also
 
+- [Choosing or building a calculation profile](docs://howto-rekenprofiel-kiezen): choose, switch or build a profile.
 - [Progress, status date and baseline](docs://uitleg-voortgang): what the status date and the remaining work do, with the differences per profile.
 - [Choosing the progress mode](docs://howto-voortgangsmodus-kiezen): choosing Retained Logic or Progress Override.
 - [Critical path and float](docs://uitleg-kritiek-pad): the calculation options for critical and float.

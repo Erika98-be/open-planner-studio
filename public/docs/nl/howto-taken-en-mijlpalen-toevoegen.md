@@ -62,6 +62,7 @@ Zet je het weer uit, dan blijft het een gewone taak met duur 0: vul zelf een duu
 ### Andere manieren
 
 - Ctrl+M (op een Mac ⌘+M) zet een nieuwe mijlpaal onderaan de lijst, ook als er een taak geselecteerd is. Het paneel *Eigenschappen* gaat daarbij niet open.
+- Een mijlpaal die je met Ctrl+M of via het rechtermuismenu maakt, krijgt de werksoort *Keuring/Inspectie*. Een *Start-* of *Eindmijlpaal* uit *Mijlpaal ▾* krijgt *Overig*. Pas de werksoort zo nodig aan in *Eigenschappen*.
 - *Mijlpaal toevoegen* in het rechtermuismenu van een taak maakt de mijlpaal een subtaak van die taak, niet een zustertaak.
 
 ### Een taak of hele tak kopiëren
