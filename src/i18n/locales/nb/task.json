@@ -406,10 +406,6 @@
     "timephasedActive": "Følger timefordelingen fra MS Project",
     "timephasedLost": "Datovinduet fra MS Project brukes ikke lenger etter redigering. Timefordelingen selv gjelder fortsatt og blir lagret i filen.",
     "timephasedContoured": "Egen timefordeling",
-    "recordedDatesActive": "Viser Primaveras egne lagrede datoer for denne aktiviteten",
-    "recordedDatesActiveNeutral": "Viser datoene slik de står i filen for denne aktiviteten",
-    "recordedDatesDeviates": "Avviker fra de lagrede datoene",
-    "recordedDatesPartlyUnrecorded": "Registreringen er delvis ufullstendig. Se kolonnene for seneste dato og slakk.",
     "completion": "Fremdrift (%)",
     "progress": {
       "actualStart": "Faktisk start",
@@ -458,7 +454,7 @@
       "work": "Arbeid (gjenst.)",
       "workHint": "Gjenstående arbeid i timer. Arbeidsregelen avgjør om varighet eller tildelingsenheter endrer seg.",
       "workDeviates": "Avviker fra tildelingsenheter × varighet",
-      "workDeviatesHint": "Lagret arbeid {{stored}} t avviker fra tildelingsenheter × gjenstående varighet ({{derived}} t). Histogrammet følger det lagrede arbeidet over hele aktivitetens varighet. Tildelingsenhetene blir stående slik filen ga dem.",
+      "workDeviatesHint": "Lagret arbeid {{stored}} t avviker fra tildelingsenheter × gjenstående varighet ({{derived}} t). Histogrammet følger det lagrede arbeidet over hele aktivitetens varighet. Tildelingsenhetene blir stående slik filen ga dem. Hvis du endrer varigheten, regner appen det ut på nytt.",
       "locked": "Beskyttet av arbeidsregelen {{rule}}"
     },
     "notes": {

@@ -10,7 +10,7 @@ The fields of the *New project* window and of *Project settings*: what each fiel
 
 ## Create, Apply and cancel
 
-**Create** (in *New project*) makes the project and opens it in a tab of its own. **Apply** (in *Project settings*) writes your changes to the project.
+**Create** (in *New project*) makes the project. If your current tab is empty and unchanged, the app uses that tab; otherwise the project opens in a new tab. **Apply** (in *Project settings*) writes your changes to the project.
 
 - **Only at Apply.** You type into a draft. The project changes only when you click *Apply*. *Apply* writes only what you actually changed, in one step in *Undo*. If you click *Apply* without changing anything, nothing happens and no step is added.
 - **Cancel, the cross and Esc** close the window without saving anything. A click next to the window does not close it: what you had typed stays.

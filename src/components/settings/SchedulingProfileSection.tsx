@@ -15,7 +15,7 @@ import { ConfirmDialog } from '@/components/dialogs/ConfirmDialog';
 import { NewProfileDialog } from '@/components/settings/NewProfileDialog';
 import type { BuiltInProfileId, ConventionKey, ProjectSchedulingOptions, SchedulingProfile } from '@/types/project';
 import { generateId } from '@/utils/id';
-import { isHourCalendar } from '@/services/subdayIo';
+import { isHourModeCalendar } from '@/types/calendar';
 import { effHoursPerDay } from '@/utils/taskDuration';
 import {
   choiceOf, conventionsEditable, editConvention, hasValidProfileName, isModifiedBuiltIn, newProfileFrom, optionDeviations,
@@ -26,6 +26,7 @@ import {
   totalFloatModeToUi, withCriticalMode, withCriticalThreshold, withDefaultOptions,
   SOURCE_ONLY_OPTION_KEYS, type ProfileChoice, type SchedulingSettingsDraft, type SourceOnlyOptionKey, type TotalFloatModeUi,
 } from '@/state/schedulingProfileDraft';
+import { refusalNotice } from '@/state/refusalNotice';
 
 interface SchedulingProfileSectionProps {
   /** 'wizard' = alleen de keuzelijst; een keuze past meteen de standaardopties van dat profiel toe.
@@ -114,7 +115,8 @@ export function SchedulingProfileSection({ mode, value, onChange }: SchedulingPr
       setTemplates(loadCustomProfiles());
       notify({ severity: 'info', messageKey: 'notifications.schedulingTemplateSaved', params: { name }, dedupeKey: `scheduling-template-saved:${p.id}` });
     } else if (result === 'limit') {
-      notify({ severity: 'error', messageKey: 'notifications.schedulingTemplateLimit', params: { max: MAX_CUSTOM_PROFILES }, dedupeKey: 'scheduling-template-limit' });
+      // Een weigering (niets opgeslagen), geen storing: rood met de vlag `refusal`.
+      notify(refusalNotice({ messageKey: 'notifications.schedulingTemplateLimit', params: { max: MAX_CUSTOM_PROFILES }, dedupeKey: 'scheduling-template-limit' }));
     } else if (result === 'storage') {
       notify({ severity: 'error', messageKey: 'notifications.schedulingTemplateStorageFailed', dedupeKey: 'scheduling-template-storage' });
     } else {
@@ -215,7 +217,7 @@ export function SchedulingProfileSection({ mode, value, onChange }: SchedulingPr
   // Reken-opties: 'auto' voor afwezig, en thresholdHours die bij een bewerking niet wegvalt.
   const hpd = effHoursPerDay(projectCal);
   const hourUnit = enableHourPlanning
-    && (durationDisplay === 'hours' || (durationDisplay === 'auto' && isHourCalendar(projectCal)));
+    && (durationDisplay === 'hours' || (durationDisplay === 'auto' && isHourModeCalendar(projectCal)));
   const crit = so.criticalDefinition;
   const critMode = crit?.mode ?? 'totalFloat';
   const hoursThreshold = crit?.thresholdHours !== undefined;

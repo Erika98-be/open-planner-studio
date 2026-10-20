@@ -16,7 +16,7 @@ Een wijziging werkt direct. Er is geen knop *Toepassen* en geen *Annuleren*.
 
 **Volg systeemthema** — laat het kleurenschema van je besturingssysteem kiezen. Standaard: uit. Effect: de app is *Licht* of *Donker*, naar wat je systeem heeft; de drie themakaarten staan dan uit. *Hoog contrast* volgt je systeem niet: dat kies je zelf. Zet je de schakelaar uit, dan blijft het thema staan dat op dat moment in beeld was. Waar: *Weergave*, onder *Thema*.
 
-**Taal** — de taal van de interface. Standaard: de taal van je browser of systeem als de app die kent, anders Engels. Effect: alle teksten in de app; de veertien talen staan gesorteerd op hun korte code. Arabisch en Perzisch spiegelen de interface van rechts naar links. De taal van de Help-artikelen stel je apart in, bij *Documentatietaal* in *Bestand › Help*. Waar: *Weergave*.
+**Taal** — de taal van de interface. Standaard: de taal van je browser of systeem als de app die kent, anders Engels. Effect: alle teksten in de app; de talen staan gesorteerd op hun korte code. Arabisch en Perzisch spiegelen de interface van rechts naar links. De taal van de Help-artikelen stel je apart in, bij *Documentatietaal* in *Bestand › Help*. Waar: *Weergave*.
 
 **Lettertype** — het lettertype van de hele interface. Keuze uit *Standaard*, *Systeem*, *Met schreef* en *Monospace*. Standaard: *Standaard*. Effect: koppen en tekst in het venster, en de tekst in de Gantt en het histogram. Een webapp volgt het lettertype van je systeem niet vanzelf; daarom kies je het hier. Waar: *Weergave*.
 
@@ -26,7 +26,7 @@ Een wijziging werkt direct. Er is geen knop *Toepassen* en geen *Annuleren*.
 
 **Tijdnotatie** — hoe kloktijden in de app staan. Keuze uit *24 uur (13:00)* en *12 uur (1:00 PM)*. Standaard: *24 uur (13:00)*. Effect: de tijden in het kalendervenster, de datum met tijd van taken in uren (tabel, splitsingen, meldingen) en de tijdschaal *Uur* in de Gantt. In een tijdveld mag je beide vormen typen: *13:00*, *1300*, *13*, *1:00 PM* of *1 pm*. Middernacht als einde van de dag is *24:00* of *12:00 AM*. Bestanden en berekeningen veranderen niet: die blijven 24 uur. Waar: *Weergave*.
 
-**Duurweergave** — in welke eenheid de duur van een taak staat. Keuze uit *Automatisch (eigen eenheid per taak)*, *Altijd dagen* en *Altijd uren*. Standaard: *Automatisch (eigen eenheid per taak)*. Effect: in het taakraster, de balklabels van de Gantt, de tooltip, de afdruk en de rapporten. Bij *Automatisch* toont een dagtaak dagen en een urentaak uren. Bij *Altijd dagen* of *Altijd uren* rekent de app om met de uren per dag van de taakkalender en zet, als de eenheid van de taak verschilt, de eigen eenheid erachter tussen haakjes, bijvoorbeeld `2,25d(18h)`. Alleen de weergave verandert; de taak houdt haar eigen eenheid. Waar: *Weergave*.
+**Duurweergave** — in welke eenheid de duur van een taak staat. Keuze uit *Automatisch (eigen eenheid per taak)*, *Altijd dagen* en *Altijd uren*. Standaard: *Automatisch (eigen eenheid per taak)*. Effect: in het taakraster, de balklabels van de Gantt, de tooltip, de afdruk en de rapporten. Bij *Automatisch* toont een dagtaak dagen en een urentaak uren. Bij *Altijd dagen* of *Altijd uren* rekent de app om met de uren per dag van de taakkalender en zet, als de eenheid van de taak verschilt, de eigen eenheid erachter tussen haakjes, bijvoorbeeld `2,25d(18u)`. Alleen de weergave verandert; de taak houdt haar eigen eenheid. Waar: *Weergave*.
 
 **Documentwissel-stijl** — hoe je wisselt tussen geopende projecten. Keuze uit *Horizontale tabbladen*, *Verticale tabbladen* en *Pil*. Standaard: *Horizontale tabbladen*. Effect: bij *Horizontale tabbladen* staat een tabbalk onder het lint; bij *Verticale tabbladen* een projectbalk links; bij *Pil* een kleine projectknop in de titelbalk. Waar: *Weergave*.
 
@@ -46,7 +46,7 @@ Een wijziging werkt direct. Er is geen knop *Toepassen* en geen *Annuleren*.
 
 ## Tabblad Planning
 
-**Bouwmodus inschakelen** — bouwgerichte beginwaarden voor nieuwe projecten. Standaard: aan. Effect: aan geeft een nieuw project de kalender *Bouwkalender NL* met de Nederlandse feestdagen, laat je bij het genereren van feestdagen een bouwvak kiezen, biedt de fasesjablonen *Woningbouw* en *Utiliteitsbouw / renovatie* aan en geeft nieuwe taken het taaktype *Bouw*. Uit geeft de kalender *Standaardkalender* zonder feestdagen, alleen het sjabloon *Leeg* en het taaktype *Overig*. Een nieuwe taak onder een bovenliggende taak met een taaktype neemt eerst dat taaktype over; *Bouw* of *Overig* geldt daarna. Bestaande taken en kalenders veranderen niet. Waar: *Planning*.
+**Bouwmodus inschakelen** — bouwgerichte beginwaarden voor nieuwe projecten. Standaard: aan. Effect: aan geeft een nieuw project de kalender *Bouwkalender NL* met de Nederlandse feestdagen, laat je bij het genereren van feestdagen een bouwvak kiezen, biedt de fasesjablonen *Woningbouw* en *Utiliteitsbouw / renovatie* aan en geeft nieuwe taken de werksoort *Bouw*. Uit geeft de kalender *Standaardkalender* zonder feestdagen, alleen het sjabloon *Leeg* en de werksoort *Overig*. Een nieuwe taak onder een bovenliggende taak met een werksoort neemt eerst die werksoort over; *Bouw* of *Overig* geldt daarna. Bestaande taken en kalenders veranderen niet. Waar: *Planning*.
 
 **Urenplanning inschakelen** — plannen in werkuren naast werkdagen. Standaard: uit. Effect: de tijdschaal *Uur* verschijnt onder *Beeld › Tijdschaal*, in het venster *Kalenders* kan een gewone kalender werktijdblokken krijgen (het blok *Werktijden*; een kalender die al blokken heeft, toont dat blok altijd), en het venster *Nieuw project* krijgt de keuzes *Ploeg* en *Standaardeenheid voor nieuwe taken*. Ook *Projectinstellingen* krijgt de keuze *Standaardeenheid voor nieuwe taken*. Uit werkt de app dag-granulair. Taken die al in uren staan blijven bestaan en rekenen mee; hun duur bewerk je pas als je urenplanning aanzet. Waar: *Planning*, onder *Urenplanning*. Zie [Urenplanning aanzetten](docs://howto-urenplanning-aanzetten).
 
@@ -56,7 +56,7 @@ Een wijziging werkt direct. Er is geen knop *Toepassen* en geen *Annuleren*.
 
 **Automatisch berekenen** — rekent de planning door zodra ze verouderd is. Standaard: uit. Effect: uit betekent dat je zelf op *Bereken* drukt (F5). Aan laat de app na een wijziging van taken, relaties of kalender de planning binnen een fractie van een seconde herberekenen. Tijdens een sleepgebaar of terwijl je in een veld typt, wacht de app en rekent hij één keer als je klaar bent. Na een mislukte berekening rekent hij pas opnieuw nadat je iets hebt gewijzigd. Waar: *Planning*, onder *Berekenen*.
 
-**Toon werkregels en werk** — de werkregel- en werkvelden in de app. Standaard: uit. Effect: aan toont het veld *Werkregel* bij een taak en de kolom voor werk bij de toewijzingen, en maakt de tabelkolom *Werkregel* beschikbaar. Uit verbergt ze; de duur en de inzet blijven staan en het werk rekent mee. Een project dat al werkregel- of werkgegevens bevat, bijvoorbeeld uit een `.mpp`- of `.xer`-bestand, toont ze altijd, ook als de instelling uit staat. Waar: *Planning*, onder *Berekenen*. Zie [Werkregels: duur, inzet en werk](docs://uitleg-werkregels).
+**Taaktypes gebruiken** — de taaktype- en werkvelden in de app. Standaard: uit. Effect: aan toont het veld *Taaktype* bij een taak en de kolom voor werk bij de toewijzingen, en maakt de tabelkolom *Taaktype* beschikbaar. Uit verbergt ze; de duur en de inzet blijven staan en het werk rekent mee. Een project dat al taaktype- of werkgegevens bevat, bijvoorbeeld uit een `.mpp`- of `.xer`-bestand, toont ze altijd, ook als de instelling uit staat. Waar: *Planning*, onder *Berekenen*. Zie [Taaktypes: duur, inzet en werk](docs://uitleg-werkregels).
 
 ## Tabblad Geavanceerd
 
@@ -117,5 +117,5 @@ Deze keuzes bewaart de app ook op dit apparaat, maar je stelt ze in bij het onde
 - [Rekenopties en conventies](docs://ref-rekenopties-en-conventies): de opties die bij een project horen.
 - [Urenplanning aanzetten](docs://howto-urenplanning-aanzetten): de stappen bij de schakelaar *Urenplanning inschakelen*.
 - [Dagen en uren](docs://uitleg-dagen-en-uren): hoe de app dagen en uren telt.
-- [Werkregels: duur, inzet en werk](docs://uitleg-werkregels): wat *Toon werkregels en werk* zichtbaar maakt.
+- [Taaktypes: duur, inzet en werk](docs://uitleg-werkregels): wat *Taaktypes gebruiken* zichtbaar maakt.
 - [Sneltoetsen](docs://ref-sneltoetsen): alle toetsen van de app, ook die voor zoomen en scrollen.

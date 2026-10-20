@@ -2,6 +2,7 @@ import { useAppStore } from '@/state/appStore';
 import { firstRowIndexByTask, isTreeMode } from '@/engine/view/visibleRows';
 import type { Task } from '@/types/task';
 import { lastTaskRow } from '@/engine/taskGrid/ghostRow';
+import { refusalNotice } from '@/state/refusalNotice';
 
 /**
  * Waar landt een NIEUWE taak?
@@ -112,15 +113,35 @@ export function canInsertRelative(): boolean {
 }
 
 /**
- * Meld dat de weergave positioneel invoegen tegenhoudt.
+ * Meld dat de weergave positioneel invoegen WEIGERT (route 2: *Invoegen boven/onder*, Insert,
+ * Ctrl+I). De handeling gebeurt niet.
  *
- * BEWUST `notifyStructureLocked()` en niet het generieke `notify()`: dit is de melding voor
- * geweigerde structuurmutaties (`StructureLockedNotice`), inclusief de
- * knop die filter/groepering/sortering in één klik wist. Een tweede kanaal ernaast zou dezelfde
- * situatie op twee manieren verwoorden.
+ * Dezelfde melding als in-/uitspringen en rijslepen: de strook `StructureLockedNotice` ("Niet
+ * beschikbaar tijdens filteren/groeperen/sorteren"), met de knop die filter/groepering/sortering in
+ * één klik wist. Route 1 (*Taak*) gebruikt hem NIET: daar komt de taak er wél, zie
+ * {@link meldAchteraan}.
  */
 function meldGeblokkeerd(): void {
   useAppStore.getState().notifyStructureLocked();
+}
+
+/** Samenvouwsleutel: herhaald *Taak* onder dezelfde weergave geeft één regel met een teller. */
+const TASK_ADDED_AT_END_KEY = 'task-added-at-end';
+
+/**
+ * Meld dat *Taak* de nieuwe taak achteraan zette in plaats van onder de selectie (route 1, buiten
+ * boommodus). Eigenaarsbesluit 2026-10-19 5a: GEEN strook, want "Niet beschikbaar" klopt hier niet
+ * (de taak komt er wél), maar een rode weigeringstoast. De plaatsing is geweigerd, dus "weigering =
+ * rood" (besluit 2026-10-17): blijft tot het kruisje, weg bij een documentwissel of undo/redo
+ * (5b). De knop *Wissen* (`clearViewArrangement`) zet filter, groepering en sortering uit, net als
+ * op de strook.
+ */
+function meldAchteraan(): void {
+  useAppStore.getState().notify(refusalNotice({
+    messageKey: 'notifications.taskAddedAtEnd',
+    dedupeKey: TASK_ADDED_AT_END_KEY,
+    action: { kind: 'clearViewArrangement', labelKey: 'view.filter.clear' },
+  }));
 }
 
 /**
@@ -133,19 +154,21 @@ function meldGeblokkeerd(): void {
  * Bij een meervoudige selectie is "onder de selectie" de ONDERSTE taak in schermvolgorde (zie
  * `insertAnchorForScope`) — niet de laatst aangeklikte, en niet ergens midden in de selectie.
  *
- * Buiten pure boommodus valt hij terug op regel 2 (achteraan) plus de structuurmelding. Bewust géén
- * volledige weigering zoals bij route 2 hieronder: "+ Taak" is een TOEVOEG-actie met een
- * positie-voorkeur, niet een positie-commando. Weigeren zou betekenen dat je in een gegroepeerde
- * weergave helemaal geen taak meer kunt aanmaken. Wat er wegvalt is alleen de plaatsing, en dát is
- * wat de melding uitlegt.
+ * Buiten pure boommodus valt hij terug op regel 2 (achteraan) plus een rode toast die dat zegt
+ * ({@link meldAchteraan}, eigenaarsbesluit 2026-10-19 5a). Bewust géén volledige weigering zoals bij
+ * route 2 hieronder: "+ Taak" is een TOEVOEG-actie met een positie-voorkeur, niet een
+ * positie-commando. Weigeren zou betekenen dat je in een gegroepeerde weergave helemaal geen taak
+ * meer kunt aanmaken. Wat er wegvalt is alleen de plaatsing, en dát is wat de toast uitlegt. De
+ * toast komt ná `addTask`: de taak staat er al als de gebruiker hem leest.
  */
 export function addTaskNearSelection(partial: NewTaskInput): string {
   const store = useAppStore.getState();
   const scope = store.selectedTaskIds;
   if (scope.length === 0) return finishNewTask(store.addTask(partial));
   if (!canInsertRelative()) {
-    meldGeblokkeerd();
-    return finishNewTask(store.addTask(partial));
+    const id = finishNewTask(store.addTask(partial));
+    meldAchteraan();
+    return id;
   }
   const anchorId = insertAnchorForScope(scope, 'below');
   return finishNewTask(store.addTask(anchorId ? { ...partial, position: { anchorId, where: 'below' } } : partial));

@@ -32,7 +32,7 @@ The schedule as a bar chart, with a table on the left and a timeline on the righ
 
 **Font size:** — size of text and table in the report. Choose from 90%, 100%, 110% and 125%. Default: 100%. Effect: with a larger font, text, rows and table grow and the timeline loses width. Independent of *Text size* in the settings.
 
-**Bar colors:** — what the colour of a bar depends on. Choose from *Critical path*, *Per task — automatic* and *By category*, with a drop-down *Category field* for *By category*. Default: *Critical path*. Effect: this is the same choice as *Bar colors* on the *View* tab: if you change it here, the Gantt on screen changes with it. If the chosen field does not exist in this project, it says *This field does not exist in this project. Task type is used temporarily.*
+**Bar colors:** — what the colour of a bar depends on. Choose from *Critical path*, *Per task — automatic* and *By category*, with a drop-down *Category field* for *By category*. Default: *Critical path*. Effect: this is the same choice as *Bar colors* on the *View* tab: if you change it here, the Gantt on screen changes with it. If the chosen field does not exist in this project, it says *This field does not exist in this project. Work category is used temporarily.*
 
 **Status line:** — a line at the status date. Choose from *None*, *Status date line* and *Progress line*. Default: *None*. Effect: *Status date line* draws a line at the status date; *Progress line* draws the zigzag line that bulges to the progress of each task. If the project has no status date, it says *Set a status date first* and the report draws nothing.
 
@@ -120,7 +120,7 @@ Where the project stands on the status date. Options under *Report options*.
 
 **Near-critical ≤ (wd):** — Default: 5. As with the Look-ahead.
 
-The block *Summary* shows *Status date*, *Period*, *Look ahead until*, *Baseline finish*, *Forecast finish*, *Δ finish (wd)*, *Planned* (with *(baseline)* or *(current schedule)*), *Actual*, and the counts *Complete*, *In progress*, *Not started*, *Overdue* and *Critical*. Planned and actual are weighted by the duration of the tasks. Planned measures against the baseline if there is an active baseline, otherwise against the current schedule. The sections are *Completed in the past period*, *In progress*, *Starting in the next period*, *Overdue* and *Open critical activities*; a task can be in more than one section.
+The block *Summary* shows *Status date*, *Period*, *Look ahead until*, *Baseline finish*, *Forecast finish*, *Δ finish (wd)*, *Planned* (with *(baseline)* or *(current schedule)*), *Actual*, and the counts *Complete*, *In progress*, *Not started*, *Overdue* and *Critical*. Planned and actual are weighted by the duration of the tasks. Planned measures against the baseline if there is an active baseline, otherwise against the current schedule. The sections are *Completed in the past period*, *In progress*, *Starting in the next period*, *Overdue* and *Open critical activities*; a task can be in more than one section. Every section has the same columns: *WBS*, *Name*, *Baseline finish*, *Forecast finish*, *Compl.*, *Rem. (wd)*, *TF (wd)*, *Critical* and *Status*. The status per row is *Complete*, *In progress*, *Not started*, *Should have started* or *Should have finished*.
 
 ## Schedule health
 
@@ -177,7 +177,7 @@ Per resource the activities it is attached to: what is this crew or crane doing?
 
 **Include completed tasks** — Default: off. Effect: on also includes the assignments of completed activities.
 
-The rows are per resource, and within a resource by start. The block *Summary* counts *Resources*, *Assignments* and *Tasks without a resource*. The columns include the resource, the task, start and finish, *Rem. (wd)*, *Units/day*, *Compl.*, *Critical* and *Status*.
+The rows are per resource, and within a resource by start. The block *Summary* counts *Resources*, *Assignments* and *Tasks without a resource*. The columns are *Resource*, *Type*, *WBS*, *Name*, *Start*, *Finish*, *Rem. (wd)*, *Units/day*, *Compl.*, *Critical* and *Status*. *Resource* and *Type* appear only on the first row of a resource. The status per row is the same as in the Progress report: *Complete*, *In progress*, *Not started*, *Should have started* or *Should have finished*.
 
 ## WBS summary
 

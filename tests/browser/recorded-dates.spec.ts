@@ -103,9 +103,10 @@ test('datums zoals opgeslagen: een XER met restverschillen opent in de modus, me
     s.selectTask(taskId);
     s.setUI({ showPropertiesPanel: true, rightPanelCollapsed: false });
   }, ids.earlyOnly);
-  await expect(page.locator('[data-ops-task-recorded-dates="partly-unrecorded"]')).toBeVisible();
+  // Besluit 4 (eigenaar 2026-10-19, optie 3): één oranje blok, de ontbrekende velden als derde regel.
+  await expect(page.locator('[data-ops-task-recorded-dates="active"][data-ops-task-recorded-dates-missing]')).toBeVisible();
   await page.evaluate((taskId) => { window.__OPS__!.store.getState().selectTask(taskId); }, ids.deviates);
-  const activeBadge = page.locator('[data-ops-task-recorded-dates="active"]');
+  const activeBadge = page.locator('[data-ops-task-recorded-dates="active"]:not([data-ops-task-recorded-dates-missing])');
   await expect(activeBadge).toBeVisible();
   await expect(activeBadge).toContainText(/Primavera/);
 

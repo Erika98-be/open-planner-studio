@@ -1,6 +1,7 @@
 import type { Baseline, BaselineTask } from '@/types/baseline';
 import type { Resource, ResourceAssignment, ResourceCurve } from '@/types/resource';
 import type { Task } from '@/types/task';
+import type { WorkRule } from '@/types/workRule';
 import type { DurationDisplay, TimeNotation } from '@/types/view';
 import type { TaskRelationIndex } from '@/engine/taskGrid/relationIndex';
 
@@ -14,7 +15,7 @@ export type TaskColumnId = string & { readonly __taskColumnId: unique symbol };
  * `@/state/*` afhangt; `recordedDatesSelectors.ts` importeert ze hier weer type-only vandaan.
  */
 export type RecordedTaskAxis = 'ls' | 'lf' | 'tf' | 'ff';
-export type RecordedTaskMark = 'deviates' | 'partly-unrecorded' | undefined;
+export type RecordedTaskMark = 'partly-unrecorded' | undefined;
 
 export type GridResult<T, E> =
   | { ok: true; value: T }
@@ -122,6 +123,8 @@ export interface PasteIntent {
    *  tijdens de transactie ontdekte overgeslagen cellen (conditioneel read-only) bovenop voor de
    *  ÉÉN geaggregeerde melding. */
   skippedReadOnlyCount?: number;
+  /** De taken van die overgeslagen cellen, voor de weigering ("Niet aangepast: …"). */
+  skippedReadOnlyTaskIds?: string[];
 }
 
 export type GridIntent = GridWriteIntent | PasteIntent;
@@ -153,7 +156,7 @@ export interface TaskColumnContext {
    *  Dan tonen Baselineduur en Duurafwijking een ⚠. Ontbreekt ⇒ nooit een ⚠ (alleen weergave). */
   baselineOldDay?: (task: Task, baselineTask: BaselineTask) => boolean;
   /** "Datums zoals opgeslagen" — badge voor de kolom `recorded.source`.
-   *  `undefined` op documenten zonder vastlegging (`recordedDates === null`), dus de kolom bestaat
+   *  `undefined` buiten de modus (`recordedDates === null`), dus de kolom bestaat
    *  dan niet: `available(ctx) => ctx.recordedMark !== undefined`. */
   recordedMark?: (task: Task) => RecordedTaskMark;
   /** Welke late-/floatassen het BESTAND niet vastlegde voor deze taak — de bestaande late-/float-
@@ -164,6 +167,10 @@ export interface TaskColumnContext {
   /** De werkregelkolommen bestaan alleen wanneer de weergave
    *  ontsloten is (instelling of documentontsluiting, `taskTypesUnlocked`). */
   taskTypesUnlocked?: boolean;
+  /** `Project.defaultWorkRule` — de regel van een taak zonder eigen regel. De uitleg bij het ⚠ in
+   *  *Resterend werk* kiest daarmee dezelfde slotzin als het paneel en als de duurbewerking zelf
+   *  (besluit V10). Ontbreekt ⇒ FIXED_DURATION_RATE, net als `effectiveWorkRule`. */
+  defaultWorkRule?: WorkRule;
   /** Instelling Tijdnotatie voor de weergave- en kopieertekst van datum-met-tijd; ontbreekt ⇒ `'24h'`.
    *  De parser accepteert beide notaties; de opgeslagen waarde blijft ISO. */
   timeNotation?: TimeNotation;
@@ -185,7 +192,9 @@ export type TaskColumnDescriptor = TaskColumnDescriptorFields & TaskColumnLabelS
 /** Een kleine ⚠ in een cel, met uitleg als tooltip. `kind` geeft de cel een vaste selector
  *  (`data-ops-<kind>`); `text` is de vertaalde uitleg. */
 export interface TaskCellWarning {
-  kind: 'baseline-old-day';
+  /** Wordt `data-ops-<kind>` op het ⚠ (`GridCell`). `remaining-work-deviates`: opgeslagen restwerk wijkt
+   *  af van inzet × restduur (kolom *Resterend werk*, zelfde toets als het paneel Toewijzingen). */
+  kind: 'baseline-old-day' | 'remaining-work-deviates';
   text: string;
 }
 
