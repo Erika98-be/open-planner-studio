@@ -159,7 +159,7 @@ const bbox = (pts: [number, number][]) => {
 
 // ══ B. Het documentveld ════════════════════════════════════════════════════════════════════════
 S().newProject();
-const tA = S().addTask({ name: 'Ruwbouw' });
+S().addTask({ name: 'Ruwbouw' });
 S().addTask({ name: 'Oplevering', isMilestone: true });
 S().runCPM();
 const blA = S().saveBaseline('A');
