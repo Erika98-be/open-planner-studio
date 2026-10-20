@@ -319,11 +319,11 @@ including a fidelity measurement against P6's own calculated output and the 216-
   the desktop app closes, so it never lands in the wrong document or is lost. This brings together
   the work of #369 and #389 (`TaskAssignmentsSection.tsx`, `UnitsInput.tsx`, `pendingTextEdits.ts`).
 - **The macOS installers are signed and notarized.** The release workflow signs the app and the dmg
-  with the OpenAEC Foundation Developer ID, has Apple notarize both and staples the ticket, and then
+  with a Developer ID certificate, has Apple notarize both and staples the ticket, and then
   checks the dmg with `codesign`, Gatekeeper (`spctl`: *Notarized Developer ID*) and
-  `stapler validate`. A failing check keeps the release as a draft, so Windows and publishing wait. A
-  test build on the pull request (`macos-sign-check.yml`) passed these checks; a real release has not
-  run it yet (`scripts/macos-notarize-dmg.sh`, `scripts/macos-verify-dmg.sh`, `release.yml`).
+  `stapler validate`. A failing check keeps the release as a draft, so Windows and publishing wait;
+  pull requests that touch signing run the same checks in `macos-sign-check.yml`
+  (`scripts/macos-notarize-dmg.sh`, `scripts/macos-verify-dmg.sh`, `release.yml`).
 - **Engineering and release process.** `AGENTS.md` is the single instruction source, the CI runs
   the full verify in parallel parts (deploy now waits for a green CI run), a translation release
   gate and a documentation audit skill were added, code comments were trimmed across the codebase,
