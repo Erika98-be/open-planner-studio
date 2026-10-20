@@ -1,21 +1,24 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Check, ChevronDown, LayoutGrid } from 'lucide-react';
+import { Check, LayoutGrid } from 'lucide-react';
 import { Popover } from '@/components/common/Popover';
 import { useAppStore } from '@/state/appStore';
 import { BASELINE_SLOT_COLOR } from '@/components/canvas/BaselineTooltipContent';
 import { buildBaselineLayers, toggleComparedBaseline, MAX_COMPARED_BASELINES } from '@/types/baseline';
 
 /**
- * PROTOTYPE (issue #391): gesplitste lintknop Baseline-overlay.
+ * PROTOTYPE (issue #391): grote gesplitste lintknop Baseline-overlay, zoals Plakken in Word.
  *
- * - Het knopdeel zet de overlay aan of uit, precies zoals de oude knop.
- * - Het pijltje opent het menu "Toon in de Gantt": per baseline een vinkje en een kleurstrookje.
+ * - Het bovenste deel (pictogram) zet de overlay aan of uit, precies zoals de oude knop.
+ * - Het onderste deel (label + ▾) opent het menu "Toon in de Gantt": per baseline een vinkje en een
+ *   kleurstrookje.
  *   De actieve baseline staat bovenaan, is altijd aan en draagt "actief". Maximaal drie tegelijk;
  *   daarna zijn de overige vinkjes uitgeschakeld.
  *
- * Het lint had nog geen gesplitste knop; dit volgt het popoverpatroon van Balkkleuren
- * (`ScreenColorsPopoverButton`): `Popover` met `ribbon-btn small` als trigger. De keuze is alleen
+ * Het lint had nog geen gesplitste knop. Dit hergebruikt het patroon van de grote knop Relatie
+ * (`RelationDropdown`): een `Popover` met een grote `ribbon-btn` en "▾" achter het label. In de smalle
+ * pictogramweergave (automatische inpassing, `data-ribbon-mini`) blijft het een eigen kolom: groot
+ * pictogram boven, alleen ▾ eronder. De keuze is alleen
  * UI-state (`ui.comparedBaselineIds`), niet in het document en niet in de instellingen.
  */
 export function BaselineOverlaySplitButton() {
@@ -52,20 +55,24 @@ export function BaselineOverlaySplitButton() {
         display: 'flex', flexDirection: 'column', gap: 2,
       }}
       trigger={
-        <div className={`ribbon-split${showBaselineOverlay ? ' active' : ''}`} data-ops-baseline-split>
+        <div className={`ribbon-split-large${showBaselineOverlay ? ' active' : ''}`} data-ops-baseline-split>
+          {/* Bovenste deel: overlay aan/uit. Het label staat verborgen in dit deel (de automatische
+              inpassing van het lint zoekt knoppen met pictogram én label); zichtbaar staat het
+              in het onderste deel, zoals bij Plakken in Word. */}
           <button
-            className={`ribbon-btn small ribbon-split-main${showBaselineOverlay ? ' active' : ''}`}
+            className={`ribbon-btn ribbon-split-top${showBaselineOverlay ? ' active' : ''}`}
             title={label}
             aria-label={label}
             aria-pressed={showBaselineOverlay}
             data-ops-ribbon-item="toggleBaselineOverlay"
             onClick={() => setOverlays({ baseline: !showBaselineOverlay })}
           >
-            <span className="ribbon-btn-icon"><LayoutGrid size={14} /></span>
-            <span className="ribbon-btn-label">{label}</span>
+            <span className="ribbon-btn-icon"><LayoutGrid size={20} /></span>
+            <span className="ribbon-btn-label ribbon-split-top-label">{label}</span>
           </button>
+          {/* Onderste deel: label met ▾ (zoals de knop Relatie), opent het menu. */}
           <button
-            className={`ribbon-btn small ribbon-split-arrow${showBaselineOverlay ? ' active' : ''}${open ? ' open' : ''}`}
+            className={`ribbon-split-bottom${showBaselineOverlay ? ' active' : ''}${open ? ' open' : ''}`}
             title={menuLabel}
             aria-label={menuLabel}
             aria-haspopup="menu"
@@ -73,7 +80,9 @@ export function BaselineOverlaySplitButton() {
             data-ops-baseline-menu-toggle
             onClick={() => setOpen(o => !o)}
           >
-            <ChevronDown size={12} />
+            {/* Breed: "label ▾" loopt als één tekst door (zoals Relatie ▾). Smal: alleen de losse ▾. */}
+            <span className="ribbon-btn-label">{label} ▾</span>
+            <span className="ribbon-split-caret" aria-hidden="true">▾</span>
           </button>
         </div>
       }

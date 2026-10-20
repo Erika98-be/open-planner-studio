@@ -757,12 +757,15 @@ const beeldTab: RibbonTabConfig = [
     ],
   },
   {
+    // PROTOTYPE (issue #391): de oude groep "Baselines & voortgang" is gesplitst. Hier staan alleen nog
+    // de baseline- en voortgangslijnen; de balkweergave (kleuren, accent, speling, relatielijnen) staat
+    // in de groep "Balken" hierna.
     id: 'overlays', labelKey: 'menu:ribbon.baselines',
     items: [
+      // Grote gesplitste knop (zoals Plakken in Word): boven = overlay aan/uit, onder = menu.
+      { kind: 'component', id: 'toggleBaselineOverlay', Component: BaselineOverlaySplitButton },
       {
         kind: 'stack', id: 'overlaysStack', items: [
-          // PROTOTYPE (issue #391): gesplitste knop — klik = overlay aan/uit, pijltje = welke baselines.
-          { kind: 'component', id: 'toggleBaselineOverlay', Component: BaselineOverlaySplitButton },
           {
             kind: 'small', id: 'toggleProgressLine', icon: <TrendingUp size={14} />, labelKey: 'menu:ribbon.toggleProgressLine',
             use: () => {
@@ -781,6 +784,11 @@ const beeldTab: RibbonTabConfig = [
           },
         ],
       },
+    ],
+  },
+  {
+    id: 'bars', labelKey: 'menu:ribbon.barsGroup',
+    items: [
       // De vaste linthoogte draagt drie kleine knoppen per stack. Kleurmodus en resource-accent
       // vormen daarom samen de tweede verticale kolom, niet twee losse horizontale groepsitems.
       {

@@ -146,3 +146,36 @@ test('meerdere baselines: 2×-schermbeeld van de strepen (alleen met OPS_QA_SHOT
   }
   await context.close();
 });
+
+test('meerdere baselines: lint Beeld breed en smal (alleen met OPS_QA_SHOTS)', async ({ browser }) => {
+  test.skip(!SHOTS, 'alleen voor de ontwerpbeoordeling');
+  test.setTimeout(120_000);
+  const context = await browser.newContext({ viewport: { width: 1600, height: 900 } });
+  const page = await context.newPage();
+  await openScene(page);
+  for (const width of [1600, 1000]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.waitForTimeout(500);
+    const mini = await page.locator('[data-ops-ribbon-item="toggleBaselineOverlay"]').evaluate(el => el.hasAttribute('data-ribbon-mini'));
+    console.log(`breedte ${width}: Baseline-overlay smal=${mini}`);
+    for (const theme of ['light', 'dark'] as const) {
+      await page.evaluate(t => window.__OPS__!.store.getState().setUI({ uiTheme: t }), theme);
+      await page.waitForTimeout(400);
+      await shot(page, `lint-${width === 1600 ? 'breed' : 'smal'}-${theme}.png`, { x: 0, y: 0, width, height: 160 });
+    }
+    await page.evaluate(() => window.__OPS__!.store.getState().setUI({ uiTheme: 'light' }));
+    await page.locator('[data-ops-baseline-menu-toggle]').click();
+    await expect(page.locator('[data-ops-baseline-menu]')).toBeVisible();
+    await shot(page, `lint-${width === 1600 ? 'breed' : 'smal'}-menu.png`, { x: 0, y: 0, width, height: 300 });
+    await page.keyboard.press('Escape');
+    await page.mouse.click(width - 200, 600);
+    await expect(page.locator('[data-ops-baseline-menu]')).toHaveCount(0);
+  }
+  // Handmatig ingeklapt lint (40px-strip): pictogram en ▾ naast elkaar.
+  await page.setViewportSize({ width: 1600, height: 900 });
+  await page.evaluate(() => window.__OPS__!.store.getState().setUI({ ribbonCompact: true }));
+  await page.waitForTimeout(400);
+  await shot(page, 'lint-ingeklapt-light.png', { x: 0, y: 0, width: 1600, height: 110 });
+  await page.evaluate(() => window.__OPS__!.store.getState().setUI({ ribbonCompact: false }));
+  await context.close();
+});

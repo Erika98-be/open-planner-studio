@@ -587,40 +587,147 @@
   align-self: stretch;
 }
 
-/* PROTOTYPE (issue #391): gesplitste kleine lintknop (Baseline-overlay). Knopdeel en pijltje lezen
-   als één knop: samen dezelfde rand en achtergrond, met een dunne scheidingslijn ertussen. */
-.ribbon-split {
+/* PROTOTYPE (issue #391): grote gesplitste lintknop (Baseline-overlay), zoals Plakken in Word.
+   Eén kolom van 66px (de hoogte van een grote knop): boven het pictogram (aan/uit), onder het label
+   met ▾ (menu). Beide delen delen de rand en de actieve achtergrond; een dunne lijn scheidt ze. */
+.ribbon-split-large {
   display: flex;
+  flex-direction: column;
   align-items: stretch;
-  border-radius: var(--radius-sm);
+  height: 66px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
 }
 
-.ribbon-split .ribbon-btn.small.ribbon-split-main {
-  border-start-end-radius: 0;
-  border-end-end-radius: 0;
-  padding-inline-end: 6px;
+.ribbon-split-large.active {
+  background: var(--theme-active);
+  border-color: var(--theme-active-border);
 }
 
-.ribbon-split .ribbon-btn.small.ribbon-split-arrow {
-  min-width: 0;
-  width: 16px;
-  padding: 0;
+.ribbon-split-large > .ribbon-btn.ribbon-split-top {
+  height: 34px;
+  min-width: 54px;
+  padding: 3px 6px 0;
   gap: 0;
   justify-content: center;
-  border-start-start-radius: 0;
-  border-end-start-radius: 0;
-  border-inline-start: 1px solid var(--theme-border);
-  color: var(--theme-text-dim);
+  border: none;
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+  background: transparent;
 }
 
-.ribbon-split .ribbon-btn.small.ribbon-split-arrow.active {
-  border-inline-start-color: var(--theme-accent-on);
+/* Het label van het bovenste deel is er alleen voor de automatische inpassing; zichtbaar staat het onder. */
+.ribbon-split-large > .ribbon-btn.ribbon-split-top .ribbon-split-top-label { display: none; }
+
+.ribbon-split-bottom {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: 0;
+  padding: 0 4px 2px;
+  border: none;
+  border-top: 1px solid transparent;
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+  background: transparent;
+  color: var(--theme-text-dim);
+  cursor: pointer;
+}
+
+.ribbon-split-large > .ribbon-btn.ribbon-split-top:hover,
+.ribbon-split-bottom:hover,
+.ribbon-split-bottom.open {
+  background: var(--theme-hover);
+}
+
+.ribbon-split-large:hover .ribbon-split-bottom {
+  border-top-color: var(--theme-border);
+}
+
+.ribbon-split-large.active > .ribbon-btn.ribbon-split-top:hover,
+.ribbon-split-large.active .ribbon-split-bottom:hover,
+.ribbon-split-large.active .ribbon-split-bottom.open {
+  background: var(--theme-active-border);
+}
+
+.ribbon-split-large.active .ribbon-split-bottom {
+  border-top-color: color-mix(in srgb, var(--theme-accent-on) 35%, transparent);
+}
+
+.ribbon-split-bottom .ribbon-btn-label {
+  color: inherit;
+}
+
+.ribbon-split-large.active .ribbon-split-bottom,
+.ribbon-split-large.active .ribbon-split-bottom .ribbon-btn-label {
   color: var(--theme-accent-on);
 }
 
-.ribbon-split .ribbon-btn.small.ribbon-split-arrow.open {
-  background: var(--theme-hover);
-  color: var(--theme-text);
+.ribbon-split-caret {
+  display: none;
+  flex-shrink: 0;
+  font-size: var(--text-small);
+  line-height: 1;
+}
+
+.ribbon-split-bottom:focus,
+.ribbon-split-large > .ribbon-btn.ribbon-split-top:focus {
+  outline: none;
+}
+
+.ribbon-split-bottom:focus-visible,
+.ribbon-split-large > .ribbon-btn.ribbon-split-top:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--theme-accent);
+}
+
+/* Smalle pictogramweergave (automatische inpassing zet `data-ribbon-mini` op het bovenste deel):
+   de knop blijft een eigen kolom met het pictogram boven en alleen ▾ recht eronder. Het label
+   verdwijnt, zodat de kolom smal wordt. Specifieker dan `.ribbon-btn[data-ribbon-mini]`. */
+.ribbon-split-large > .ribbon-btn.ribbon-split-top[data-ribbon-mini] {
+  flex-direction: column;
+  height: 34px;
+  width: auto;
+  min-width: 34px;
+  padding: 3px 4px 0;
+}
+
+.ribbon-split-large > .ribbon-btn.ribbon-split-top[data-ribbon-mini] .ribbon-btn-icon {
+  width: 28px;
+  height: 28px;
+}
+
+.ribbon-split-large > .ribbon-btn.ribbon-split-top[data-ribbon-mini] .ribbon-btn-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.ribbon-split-large:has(> .ribbon-split-top[data-ribbon-mini]) .ribbon-split-bottom .ribbon-btn-label {
+  display: none;
+}
+
+.ribbon-split-large:has(> .ribbon-split-top[data-ribbon-mini]) .ribbon-split-caret,
+.ribbon-container.compact .ribbon-split-caret {
+  display: inline;
+}
+
+/* Handmatig ingeklapt lint (40px-strip, alleen pictogrammen): pictogram en ▾ naast elkaar. */
+.ribbon-container.compact .ribbon-split-large {
+  flex-direction: row;
+  height: 28px;
+  border-radius: var(--radius-sm);
+}
+
+.ribbon-container.compact .ribbon-split-large > .ribbon-btn.ribbon-split-top {
+  height: 26px;
+  min-width: 0;
+  padding: 2px 4px;
+  border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+}
+
+.ribbon-container.compact .ribbon-split-bottom {
+  padding: 0 4px;
+  border-top: none;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
 }
 
 /* Menuregel met vinkje + kleurstrookje (menu "Toon in de Gantt"). */

@@ -148,6 +148,7 @@
     "overallocationCount_other": "{{count}} resources",
     "overallocationNone": "Geen",
     "baselines": "Baselines & voortgang",
+    "barsGroup": "Balken",
     "manageBaselines": "Baselines beheren…",
     "statusDate": "Statusdatum",
     "statusDateClear": "Statusdatum leegmaken",
