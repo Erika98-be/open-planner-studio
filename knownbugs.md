@@ -407,6 +407,10 @@ en noem het in je rapport of PR-tekst.
 104. **Geen automatische test voor de zegels en `check-docs`** (`scripts/translate/cli.ts`). In #323 alleen met
      de hand nagespeeld. De CLI werkt vanuit `process.cwd()`, dus een test in een tijdelijke map kan. — S
 
+120. **`delete-under-dialog.spec.ts` (regel 40) faalt soms op focus.** In CI-run 39384273333 (PR #392, browser
+    1-4): `expect(locator).toBeFocused()` gaf `inactive`. Na een herhaling van de job groen, zonder wijziging;
+    de PR raakt geen dialoog- of focuscode. Wisselvallig, oorzaak niet onderzocht. — S
+
 ## Wensen en open taken (geen bug)
 
 45. **Extensie-API**: extensies kunnen geen relatie of kalender gericht wijzigen en de selectie niet lezen.
