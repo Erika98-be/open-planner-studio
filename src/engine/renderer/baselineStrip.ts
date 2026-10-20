@@ -30,6 +30,9 @@ export interface BaselineBar {
 export interface BaselineMilestone {
   slot: BaselineSlot;
   x: number;
+  /** Het moment van de mijlpaal (`baselineSpanX`). Mijlpalen delen alleen een ruit bij hetzelfde
+   *  moment: op de werkdag-as vallen ook verschillende momenten (za en zo) op dezelfde x. */
+  moment?: string;
 }
 
 /** Begin en einde van één baseline van één taak, zoals de baseline ze bewaart. */
@@ -40,7 +43,7 @@ export interface BaselineSpan {
 }
 
 /** Plaats van één baseline op de tijdas: een strook of een mijlpaal. */
-export type BaselineSpanX = { kind: 'bar'; x1: number; x2: number } | { kind: 'milestone'; x: number };
+export type BaselineSpanX = { kind: 'bar'; x1: number; x2: number } | { kind: 'milestone'; x: number; moment: string };
 
 /**
  * Zet één baseline om naar x, met dezelfde regel als de taakbalk (`barGeometry` in de renderer):
@@ -62,7 +65,9 @@ export function baselineSpanX(
   const start = hourMode ? parseInstant(startStr) : parseDate(startStr);
   if (Number.isNaN(start.getTime())) return null;
   if (span.isMilestone) {
-    return { kind: 'milestone', x: hourMode ? dateToX(start) : dateToX(start) + dayWidth / 2 };
+    // Moment: een tijdstip, of een hele dag (dagmijlpaal). Twee mijlpalen met hetzelfde moment delen een ruit.
+    const moment = `${hourMode ? 'T' : 'D'}${start.getTime()}`;
+    return { kind: 'milestone', x: hourMode ? dateToX(start) : dateToX(start) + dayWidth / 2, moment };
   }
   // Uur-einde zonder tijd (een dagkind als laatste) loopt tot het einde van die dag: `finishInstant`.
   const end = hourMode ? finishInstant(finishStr) : parseDate(finishStr);
@@ -138,17 +143,21 @@ export function widenShortRuns(pieces: readonly BaselineStripPiece[], minWidth: 
   return out;
 }
 
-/** Groepeert baseline-mijlpalen op hetzelfde moment (dezelfde x): die delen één ruit. Twee momenten
- *  die op lage zoom dicht bij elkaar liggen, blijven twee ruiten (geen valse overlap). */
+/** Groepeert baseline-mijlpalen op hun moment (`moment`, anders de x): mijlpalen op hetzelfde moment
+ *  delen één ruit. Verschillende momenten blijven aparte ruiten, ook als ze op dezelfde x vallen
+ *  (lage zoom, of za en zo op de werkdag-as): geen valse overlap. De volgorde is de tekenvolgorde:
+ *  op x, en bij gelijke x in de volgorde van de invoer (de laatste ligt bovenop). */
 export function baselineDiamonds(milestones: readonly BaselineMilestone[]): BaselineDiamond[] {
-  const byX = new Map<number, BaselineSlot[]>();
-  for (const m of milestones) {
-    const x = Math.round(m.x * 1e6) / 1e6;
-    const list = byX.get(x) ?? [];
-    if (!list.includes(m.slot)) list.push(m.slot);
-    byX.set(x, list);
-  }
-  return [...byX.entries()].sort((a, b) => a[0] - b[0]).map(([x, slots]) => ({ x, slots: slots.sort(bySlot) }));
+  const byMoment = new Map<string, { x: number; slots: BaselineSlot[]; order: number }>();
+  milestones.forEach((m, order) => {
+    const key = m.moment ?? `x${Math.round(m.x * 1e6) / 1e6}`;
+    const group = byMoment.get(key) ?? { x: m.x, slots: [], order };
+    if (!group.slots.includes(m.slot)) group.slots.push(m.slot);
+    byMoment.set(key, group);
+  });
+  return [...byMoment.values()]
+    .sort((a, b) => a.x - b.x || a.order - b.order)
+    .map(g => ({ x: g.x, slots: g.slots.sort(bySlot) }));
 }
 
 /** Halve diagonaal van een baseline-mijlpaalruit bij strookhoogte `h` (scherm en afdruk gelijk). */

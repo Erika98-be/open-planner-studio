@@ -400,9 +400,9 @@ eq(screen[1]?.map(p => [p.base, p.stripes]), [
   eq(baselineSpanX({ start: '2026-10-20', finish: '2026-10-21', isMilestone: false }, dayX, 240),
     { kind: 'bar', x1: 0, x2: 480 }, 'D dagbaseline 20–21 okt: twee hele dagen');
   eq(baselineSpanX({ start: '2026-10-20T15:30', finish: '2026-10-20T15:30', isMilestone: true }, dayX, 240),
-    { kind: 'milestone', x: 155 }, 'D uurmijlpaal op 15:30');
+    { kind: 'milestone', x: 155, moment: `T${Date.UTC(2026, 9, 20, 15, 30)}` }, 'D uurmijlpaal op 15:30');
   eq(baselineSpanX({ start: '2026-10-20', finish: '2026-10-20', isMilestone: true }, dayX, 240),
-    { kind: 'milestone', x: 120 }, 'D dagmijlpaal midden op de dag');
+    { kind: 'milestone', x: 120, moment: `D${Date.UTC(2026, 9, 20)}` }, 'D dagmijlpaal midden op de dag');
   eq(baselineSpanX({ start: '2026-10-20T09:00', finish: '2026-10-21', isMilestone: false }, dayX, 240),
     { kind: 'bar', x1: 90, x2: 480 }, 'D uurstart met dag-einde (21 okt): tot het einde van die dag');
   eq(baselineSpanX({ start: 'kapot', finish: 'kapot', isMilestone: false }, dayX, 240), null, 'D onleesbare datum: niets');
@@ -600,6 +600,78 @@ eq(Math.round(barLayout(32, { resourceAccent: true, baselines: true }).barHeight
     eq(multi, 0, `G mijlpalen ${zoom} px/dag: hover meldt nooit beide`);
     const same = renderScreen([ms], msOv('09:00'), [{ slot: 1, overlay: msOv('09:00') }], { zoom });
     ok(same.some(f => f.color === PRINT_PALETTE.baselineCompare1), `G mijlpalen ${zoom} px/dag: zelfde tijdstip = één gestreepte ruit`);
+  }
+}
+
+// ══ H. Gelijke pixels zijn geen gelijke momenten; de hover volgt de bovenste vorm (review ronde 3) ═══
+// Op de werkdag-as vallen tijdstippen in het weekend op dezelfde x. Mijlpalen groeperen op hun
+// moment, niet op hun x. Een strook zonder breedte op de as (helemaal in niet-werktijd) wordt niet
+// getekend en telt niet mee. De hover geeft de baseline van de bovenste getekende vorm.
+{
+  // Eerste zaterdag na de start van de mijlpaaltaak (de standaardkalender werkt ma–vr).
+  const sat = (() => { let d = m0; while (new Date(`${d}T00:00:00Z`).getUTCDay() !== 6) d = addDays(d, 1); return d; })();
+  const sun = addDays(sat, 1);
+  const fri = addDays(sat, -1);
+  const msOv = (iso: string): BaselineOverlay => new Map([[ms.id, { start: iso, finish: iso, isMilestone: true }]]);
+  const barOv = (from: string, to: string): BaselineOverlay => new Map([[bar.id, { start: from, finish: to, isMilestone: false }]]);
+  const baseFills = (fills: Fill[]) => fills.filter(f => BASE_COLORS.has(f.color));
+  const centerOf = (f: Fill) => { const b = bbox(f.pts); return { x: (b.x1 + b.x2) / 2, y: (b.y1 + b.y2) / 2 }; };
+
+  for (const compress of [true, false]) {
+    const axis = compress ? 'werkdag-as' : 'kalender-as';
+    for (const zoom of [30, 5]) {
+      // Mijlpalen za 09:00 (actief) en zo 09:00 (vergelijking): twee momenten, dus twee effen ruiten.
+      const keep: { r?: GanttRenderer } = {};
+      const scr = renderScreen([ms], msOv(`${sat}T09:00`), [{ slot: 1, overlay: msOv(`${sun}T09:00`) }], { zoom, compress, keep });
+      const prt = renderPrint([ms], msOv(`${sat}T09:00`), [{ slot: 1, overlay: msOv(`${sun}T09:00`) }], { zoom, compress }).fills;
+      eq(baseFills(scr).map(f => f.color), [PRINT_PALETTE.baseline, PRINT_PALETTE.baselineCompare1],
+        `H ${axis} ${zoom} px/dag scherm: za en zo 09:00 zijn twee effen ruiten (geen strepen)`);
+      eq(baseFills(prt).map(f => f.color), [PRINT_PALETTE.baseline, PRINT_PALETTE.baselineCompare1],
+        `H ${axis} ${zoom} px/dag afdruk: za en zo 09:00 zijn twee effen ruiten`);
+      // Hover op het midden van de bovenste (laatst getekende) ruit: die baseline, alleen die.
+      const top = baseFills(scr)[1];
+      if (top) {
+        const c = centerOf(top);
+        eq(keep.r?.getBaselineAt(c.x, c.y)?.slots, [1], `H ${axis} ${zoom} px/dag hover: midden van de bovenste ruit geeft die baseline`);
+      }
+      // Uurstroken za 09–10 en zo 09–10.
+      const keepB: { r?: GanttRenderer } = {};
+      const sb = renderScreen([bar], barOv(`${sat}T09:00`, `${sat}T10:00`), [{ slot: 1, overlay: barOv(`${sun}T09:00`, `${sun}T10:00`) }], { zoom, compress, keep: keepB });
+      const pb = renderPrint([bar], barOv(`${sat}T09:00`, `${sat}T10:00`), [{ slot: 1, overlay: barOv(`${sun}T09:00`, `${sun}T10:00`) }], { zoom, compress }).fills;
+      const sbPieces = piecesPerRow(sb)[0] ?? [];
+      ok(sbPieces.every(p => p.stripes.length === 0), `H ${axis} ${zoom} px/dag scherm: uurstroken za/zo zonder strepen (kreeg ${J(sbPieces)})`);
+      ok((piecesPerRow(pb)[0] ?? []).every(p => p.stripes.length === 0), `H ${axis} ${zoom} px/dag afdruk: uurstroken za/zo zonder strepen`);
+      let multi = 0;
+      for (const f of baseFills(sb)) { const b = bbox(f.pts); for (let x = b.x1 - 1; x <= b.x2 + 1; x += 0.05) if ((keepB.r?.getBaselineAt(x, (b.y1 + b.y2) / 2)?.slots.length ?? 0) > 1) multi++; }
+      eq(multi, 0, `H ${axis} ${zoom} px/dag hover: uurstroken za/zo nooit samen`);
+      if (compress) {
+        eq(baseFills(sb).length, 0, `H werkdag-as ${zoom} px/dag: een strook helemaal in het weekend wordt niet getekend`);
+        // Een strook met werktijd erin blijft gewoon staan.
+        const fr = renderScreen([bar], barOv(`${fri}T09:00`, `${fri}T10:00`), [{ slot: 1, overlay: barOv(`${sun}T09:00`, `${sun}T10:00`) }], { zoom, compress });
+        eq(baseFills(fr).map(f => f.color), [PRINT_PALETTE.baseline], `H werkdag-as ${zoom} px/dag: vrijdagstrook blijft, zondagstrook valt weg`);
+      }
+    }
+  }
+
+  // Bij 5 px/dag liggen 09:00 en 09:30 0,1 px uit elkaar; de cyaan ruit van 09:30 ligt bovenop.
+  {
+    const keep: { r?: GanttRenderer } = {};
+    const scr = renderScreen([ms], msOv(`${m0}T09:00`), [{ slot: 1, overlay: msOv(`${m0}T09:30`) }], { zoom: 5, keep });
+    const [under, top] = baseFills(scr);
+    const ct = centerOf(top);
+    eq(keep.r?.getBaselineAt(ct.x, ct.y)?.slots, [1], 'H 5 px/dag: hover op de zichtbare (bovenste) ruit geeft 09:30, niet 09:00');
+    const bu = bbox(under.pts);
+    eq(keep.r?.getBaselineAt(bu.x1 + 0.03, (bu.y1 + bu.y2) / 2)?.slots, [0], 'H 5 px/dag: links, waar alleen 09:00 ligt, geeft 09:00');
+  }
+  // Stroken: de hover geeft precies de baselines van het stuk onder de muis.
+  {
+    const keep: { r?: GanttRenderer } = {};
+    const scr = renderScreen([bar], layer(0, 4, 0), [{ slot: 1, overlay: layer(2, 7, 0) }], { zoom: 30, keep });
+    const strip = baseFills(scr).map(f => bbox(f.pts));
+    const y = (strip[0].y1 + strip[0].y2) / 2;
+    const x0 = Math.min(...strip.map(b => b.x1));
+    const at = (day: number) => keep.r?.getBaselineAt(x0 + day * 30 + 15, y)?.slots;
+    eq([at(1), at(3), at(6)], [[0], [0, 1], [1]], 'H 30 px/dag stroken: hover geeft effen actief, gestreept beide, effen vergelijking');
   }
 }
 

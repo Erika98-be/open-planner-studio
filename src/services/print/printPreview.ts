@@ -1550,13 +1550,14 @@ export function renderReport(
         const pos = baselineSpanX(entry, dateToX, zoom);
         if (!pos) continue;
         if (pos.kind === 'milestone') {
-          if (!windowed || (pos.x >= m.tableWidth && pos.x <= canvasWidth)) milestones.push({ slot: layer.slot, x: pos.x });
+          if (!windowed || (pos.x >= m.tableWidth && pos.x <= canvasWidth)) milestones.push({ slot: layer.slot, x: pos.x, moment: pos.moment });
           continue;
         }
         const x1 = clampX(pos.x1);
         const x2 = clampX(pos.x2);
-        // Echte grenzen: de minimumbreedte komt pas na de opdeling (`widenShortRuns`), zoals op het scherm.
-        if (!windowed || x2 > x1) bars.push({ slot: layer.slot, x1, x2: Math.max(x2, x1 + 1e-6) });
+        // Echte grenzen: de minimumbreedte komt pas na de opdeling (`widenShortRuns`), zoals op het
+        // scherm. Een strook zonder breedte op de as (helemaal in niet-werktijd) wordt niet getekend.
+        if (x2 > x1) bars.push({ slot: layer.slot, x1, x2 });
       }
       const pieces = widenShortRuns(baselineStripPieces(bars), 2);
       const diamonds = baselineDiamonds(milestones);

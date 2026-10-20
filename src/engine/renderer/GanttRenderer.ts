@@ -1013,9 +1013,10 @@ export class GanttRenderer {
       // Dezelfde uurregel als de taakbalk (`barGeometry`), gedeeld met de afdruk.
       const pos = baselineSpanX(entry, toX, zoom);
       if (!pos) continue;
-      if (pos.kind === 'milestone') milestones.push({ slot: layer.slot, x: pos.x });
-      // Echte grenzen: de minimumbreedte komt pas na de opdeling (`widenShortRuns`).
-      else bars.push({ slot: layer.slot, x1: pos.x1, x2: Math.max(pos.x2, pos.x1 + 1e-6) });
+      if (pos.kind === 'milestone') milestones.push({ slot: layer.slot, x: pos.x, moment: pos.moment });
+      // Echte grenzen: de minimumbreedte komt pas na de opdeling (`widenShortRuns`). Een strook
+      // zonder breedte op de as (helemaal in niet-werktijd op de werkdag-as) wordt niet getekend.
+      else if (pos.x2 > pos.x1) bars.push({ slot: layer.slot, x1: pos.x1, x2: pos.x2 });
     }
     const pieces = widenShortRuns(baselineStripPieces(bars), 2);
     const diamonds = baselineDiamonds(milestones);
@@ -1044,7 +1045,10 @@ export class GanttRenderer {
     const hit = this.baselineHits.get(task.id);
     if (!hit) return null;
     const PAD = 2;
-    for (const r of hit.rects) {
+    // Omgekeerde tekenvolgorde: de bovenste getekende vorm wint (bv. een ruit die net over een
+    // andere ligt).
+    for (let i = hit.rects.length - 1; i >= 0; i--) {
+      const r = hit.rects[i];
       if (canvasX < r.x1 || canvasX > r.x2) continue;
       if (canvasY < r.y1 - PAD || canvasY > r.y2 + PAD) continue;
       return { task: hit.task, slots: r.slots };
