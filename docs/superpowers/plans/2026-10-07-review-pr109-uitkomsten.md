@@ -1808,3 +1808,7 @@ Testversie (release-check, poort 3049) is NIET bijgewerkt met de PR's van vandaa
   Firefox 153 meldt `selector(::-webkit-scrollbar)` als ondersteund ⇒ `@supports not`-tak geldt daar niet;
   omrekening blijft na vensterverkleining tijdelijk ~66 kaartpx achter bij geschaalde spacers (bestond al);
   secundaire assertie in `gantt-hscroll-splitter.spec.ts:98` te zwak. Wacht op blik eigenaar.
+- **#400 review e4233d914 (GPT-6.1-Sol, xhigh): JA**, geen BLOKKEERT. VERVOLG (in PR): CSV-export lag altijd "+2u"
+  (ook en) — besluit eigenaar nodig; regressiecheck plakt niet terug; no-op-wijziging `TaskCpmResultSection.tsx:22`.
+- Main CI op c5adb94f7 (#398, alleen docs) rood: `delete-under-dialog.spec.ts:40` (*Cancel* in Taak bewerken krijgt
+  geen focus). CI op 6b0f278e8 was geannuleerd door de push van c5adb94f7. Herhaling van de rode job loopt.
