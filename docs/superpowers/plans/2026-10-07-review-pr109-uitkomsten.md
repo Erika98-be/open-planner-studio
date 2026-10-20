@@ -1789,3 +1789,7 @@ Testversie (release-check, poort 3049) is NIET bijgewerkt met de PR's van vandaa
 - **Eigenaar 2026-10-20, besluit eenheid:** "ik wil overal 10u in het nederlands en 10h in het engels" (geen spatie).
   Hercheck #394 donker goed. ⇒ #394 nu: kalendervenster "10u"/"10h" + RTL-isolatie (worker Opus 5.5). Rest van de app
   (kolom *Duur* "80h" in nl, zinnen "320 u", gidsen, invoer): inventaris (Explore, Haiku 5.5) ⇒ voorstel eigen PR.
+- **Eenheid in de hele app: eigenaar 2026-10-20 optie 1** — vóór de release, eigen PR `claude/uren-zonder-spatie`
+  (worker Opus 5.5): nl `duration.suffixHour` h → u, zinnen "{{x}} u" → "{{x}}u", en "{{x}} h" → "{{x}}h", vaste
+  plekken in code, gidsen. Woorden ("uur"/"hours"), dagen en minuten blijven; invoer accepteert al u en h;
+  kalendervenster zit in #394. Alternatief: 2 na de release.
