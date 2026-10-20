@@ -108,6 +108,17 @@ en noem het in je rapport of PR-tekst.
     (§10, urenpad-dagtaak) vond dezelfde fout van één werkdag in 25 dagcases: FF-relaties, eindbeperkingen,
     SNLT/MSO achteruit en hangmatten. VERMOED: een eindmoment op een blokeinde telt voor een dagtaak als het
     begin van de volgende werkdag. — B
+124. **De belasting van een taak die midden op een dag begint, staat op de verkeerde dagen.** De verdeling telt
+    hele werkdagen vanaf de startdatum (`taskWorkDayIsos`/`enumerateTaskWorkDays`, `ResourceLoad.ts:236-240`;
+    de nivelleerder net zo, `ResourceLeveler.ts:425`). Nagespeeld in de store (kalender ma-vr 07-12 + 13-16,
+    urentaak 24 u van wo 3 jun 11:00 tot ma 8 jun 11:00, inzet 1): belasting wo 1, do 1, vr 1 en niets op
+    maandag; verwacht wo 0,5, do 1, vr 1, ma 0,5. Gevonden in review ronde 1 van de spec
+    `2026-10-20-alleen-uren-design.md` (§3.11). — B
+125. **Het einde van een kalendertijd-taak is in het dagpad half inclusief.** Het dagpad schrijft het einde als
+    start + n kalenderdagen, maar leest die datum daarna als de laatste dag. Nagespeeld met de planningsharness
+    (dagkalender ma-vr): een kalendertijd-taak van 1 d vanaf ma 1 jun krijgt einde 2 jun, en haar FS-opvolger
+    begint wo 3 jun in plaats van di 2 jun; met FNLT ma 1 jun krijgt ze speling −1, terwijl ze om middernacht
+    klaar is. In uur-modus klopt het wel (`msp-19`). — B
 
 ## Tabel, invoer en bediening
 
