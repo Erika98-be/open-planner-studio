@@ -917,7 +917,7 @@
       "cancel": "Annuleren"
     },
     "regen": {
-      "hint": "Feestdagen dekken {{from}}–{{to}}; project loopt tot {{year}}. Opnieuw genereren?",
+      "hint": "Feestdagen dekken {{from}}–{{to}}; opnieuw genereren tot en met {{year}}?",
       "button": "Opnieuw genereren"
     },
     "countryName": {

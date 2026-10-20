@@ -917,7 +917,7 @@
       "cancel": "Cancel"
     },
     "regen": {
-      "hint": "Holidays cover {{from}}–{{to}}; project runs to {{year}}. Regenerate?",
+      "hint": "Holidays cover {{from}}–{{to}}; regenerate through {{year}}?",
       "button": "Regenerate"
     },
     "countryName": {
