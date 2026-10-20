@@ -37,7 +37,7 @@ import {
 import { saveFeedbackEmail } from '@/utils/settingsStore';
 import { useDialogKeys } from '@/hooks/useDialogKeys';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
-import type { AnnotationShape, FeedbackDraft } from '@/services/feedback/feedbackDraft';
+import type { AnnotationShape, FeedbackDraft, FeedbackUncertainAttempt } from '@/services/feedback/feedbackDraft';
 import { ScreenshotAnnotator } from './ScreenshotAnnotator';
 import './FeedbackDialog.css';
 
@@ -101,10 +101,13 @@ export function FeedbackDialog() {
   const [sending, setSending] = useState(false);
   const [submitError, setSubmitError] = useState<FeedbackErrorKind | null>(null);
   const [sent, setSent] = useState<(SubmitFeedbackResult & { alreadyArrived?: boolean }) | null>(null);
-  // Gaf een eerdere poging met dit concept `uncertain`? Dan betekent een 409 (dubbel) op een
-  // volgende poging: de eerste is toch aangekomen. Dat is een succes, geen fout.
-  // Hoort bij het concept: sluiten en heropenen na een timeout ziet een 409 nog als "al aangekomen".
-  const [hadUncertain, setHadUncertain] = useState(initialDraft?.hadUncertain ?? false);
+  // Wat er werkelijk verstuurd is bij de laatste poging die `uncertain` gaf. Alleen als een
+  // volgende poging precies hetzelfde verstuurt, betekent een 409 (dubbel): de eerste is toch
+  // aangekomen. Is er iets veranderd (bijv. een e-mailadres erbij), dan is dat nooit verwerkt en
+  // blijft een 409 de gewone foutmelding. Het screenshot telt mee via zijn dataURL.
+  // Hoort bij het concept: sluiten en heropenen na een timeout ziet een gelijke 409 nog als aangekomen.
+  const [uncertainAttempt, setUncertainAttempt] = useState<FeedbackUncertainAttempt | null>(
+    initialDraft?.uncertainAttempt ?? null);
   // Terugval PAD B: plak-instructie voor GitHub.
   const [fallback, setFallback] = useState<SendResult | null>(null);
 
@@ -115,7 +118,7 @@ export function FeedbackDialog() {
   const draftIsEmpty = feedbackType === 'bug' && title === '' && description === ''
     && email.trim() === storedEmail.trim() && !attachScreenshot;
   const draft: FeedbackDraft | null = draftIsEmpty ? null : {
-    type: feedbackType, title, description, email, attachScreenshot, hadUncertain,
+    type: feedbackType, title, description, email, attachScreenshot, uncertainAttempt,
     screenshotDataUrl: attachScreenshot ? screenshotDataUrl : null,
     annotatedDataUrl: attachScreenshot ? annotatedDataUrl : null,
     shapes: attachScreenshot ? shapes : [],
@@ -218,7 +221,7 @@ export function FeedbackDialog() {
     setShapes([]);
     setCaptureError(null);
     setSubmitError(null);
-    setHadUncertain(false);
+    setUncertainAttempt(null);
     setFeedbackDraft(null);
   }, [storedEmail, setFeedbackDraft]);
 
@@ -228,35 +231,44 @@ export function FeedbackDialog() {
     attachScreenshot ? (annotatedDataUrl ?? screenshotDataUrl) : null;
 
   // ── Versturen (hoofdweg) ─────────────────────────────────────────────────
+  // Eén succesafhandeling voor gewoon succes én "al aangekomen": ook dan wordt het e-mailadres bewaard
+  // en is het concept weg.
+  const onSent = (res: SubmitFeedbackResult, alreadyArrived: boolean) => {
+    if (trimmedEmail !== storedEmail) {
+      setUI({ feedbackEmail: trimmedEmail });
+      void saveFeedbackEmail(trimmedEmail);
+    }
+    discardDraftRef.current = true;
+    setFeedbackDraft(null);
+    setSent({ ...res, alreadyArrived });
+  };
+
   const handleSubmit = async () => {
     if (!canSubmit) return;
     setSending(true);
     setSubmitError(null);
+    const input = {
+      type: feedbackType,
+      title: title.trim(),
+      description: description.trim(),
+      screenshotDataUrl: flatScreenshot(),
+      email: trimmedEmail,
+    };
+    const attempt: FeedbackUncertainAttempt = {
+      fields: JSON.stringify([input.type, input.title, input.description, input.email]),
+      screenshot: input.screenshotDataUrl,
+    };
     try {
-      const res = await submitFeedback({
-        type: feedbackType,
-        title: title.trim(),
-        description: description.trim(),
-        screenshotDataUrl: flatScreenshot(),
-        email: trimmedEmail,
-      });
-      if (trimmedEmail !== storedEmail) {
-        setUI({ feedbackEmail: trimmedEmail });
-        void saveFeedbackEmail(trimmedEmail);
-      }
-      discardDraftRef.current = true;
-      setFeedbackDraft(null);
-      setSent(res);
+      onSent(await submitFeedback(input), false);
     } catch (err) {
       console.warn('Feedback versturen mislukt:', err);
       const kind: FeedbackErrorKind = err instanceof FeedbackSubmitError ? err.kind : 'failed';
-      if (kind === 'duplicate' && hadUncertain) {
-        discardDraftRef.current = true;
-        setFeedbackDraft(null);
-        setSent({ githubIssueUrl: null, screenshotDropped: false, screenshotBytes: null, alreadyArrived: true });
+      const prev = uncertainAttempt;
+      if (kind === 'duplicate' && prev && prev.fields === attempt.fields && prev.screenshot === attempt.screenshot) {
+        onSent({ githubIssueUrl: null, screenshotDropped: false, screenshotBytes: null }, true);
         return;
       }
-      if (kind === 'uncertain') setHadUncertain(true);
+      if (kind === 'uncertain') setUncertainAttempt(attempt);
       setSubmitError(kind);
     } finally {
       setSending(false);
