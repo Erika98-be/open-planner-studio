@@ -12,7 +12,11 @@
   verwerkt: het undocontract van B5 met twee snapshots (§5.2), de schrijfregel per kalender in IFC (§3.6, §5.4),
   de normalisatie van de vastlegging (§5.2), de B5-overgang op elke route die rekent (§5.2), de opslag van de
   lagmaat (§3.3), de vraag per kandidaat in de nivelleerder (§3.11), het baseline-einde bij kalendertijd (§4.2),
-  de foutgrens van de lopers (§3.14) en twee tegenstrijdige teksten (§3.12, B8).
+  de foutgrens van de lopers (§3.14) en twee tegenstrijdige teksten (§3.12, B8). Ronde 3 (zelfde reviewer; oordeel
+  NEE) is verwerkt: de vóór-toestand van B5 is de modus "datums zoals opgeslagen", zodat Automatisch berekenen een
+  Ctrl+Z niet ongedaan maakt (§5.2); één leidende hoeveelheid voor de lagmaat (§3.3, §3.10); de actieve
+  bibliotheekverdeling in het omvattende event (§5.2); vast werk bij B2 en B8; de relatiesleutel met type (§3.3);
+  `LiteralTimes` als schrijfkeuze per document (§3.6); de `isDirty`-regel is een keuze van de orkestrator.
 - **Schrijver:** expert-agent (Opus 5.5), branch `claude/uren-spec`, vanaf `main` `adaf9ab37`.
 - **Regelnummers** gelden voor `adaf9ab37`. Elke verwijzing is zelf gelezen. Waar een feit uit de
   Haiku-inventaris komt en niet zelf is nagelezen, staat "(inventaris)".
@@ -305,38 +309,59 @@ typewijziging. "Fase" verwijst naar §7.
 - **Procentlag (besluit B7):** een deel van de duur van de voorganger, in de maat van de voorganger, exact op
   de minuut, in elk profiel (zoals nu het urenpad, `CPMSolver.ts:1395-1397`). De afronding op hele dagen van het
   dagpad (`:261-264`) verdwijnt in F2. Er komt geen conventie voor.
-- **Opslag van de maat (technische keuze T21; review ronde 2, punt 5).** De maat van een lag wordt bewaard en
-  hersteld zoals de maat van een taak, ook na een profielwissel. Nu gaat ze verloren. `lagDays: 0.5` en
-  `lagMinutes: 240` geven in MSPDI dezelfde bytes (`LinkLag` 2400, `LagFormat` 7; `lagFields`,
+- **Opslag van de maat (technische keuze T21; review ronde 2, punt 5; herzien na ronde 3, punt 2 en 5).** De maat
+  van een lag wordt bewaard en hersteld zoals de maat van een taak, ook na een profielwissel. Nu gaat ze verloren.
+  `lagDays: 0.5` en `lagMinutes: 240` geven in MSPDI dezelfde bytes (`LinkLag` 2400, `LagFormat` 7; `lagFields`,
   `mspdiWriter.ts:126-143`; BEVESTIGD door review ronde 2). In IFC leest v2026.9.0 `P0.5D` als 5 dagen, en een
   kalendertijd-lag `P1.5D` ook (BEVESTIGD, §10.5). Op de voorbeeldweek telt het verschil: een FS-lag van 0,5 d
   dagenmaat na een einde do 16:00 is de helft van de vrijdag van 6 u, dus 3 u (opvolger vr 10:00); een lag van
   240 min urenmaat is 4 u (opvolger vr 11:00).
+  - *Eén leidende hoeveelheid (review ronde 3, punt 2, BEVESTIGD).* In ronde 2 stond het aantal dagen naast de
+    `PT`-duur, en de lezer liet de dagen winnen. Wijzigt een ander programma alleen de `PT`-duur (`PT4H0M0S` ⇒
+    `PT6H0M0S`), dan maakte de lezer er weer 0,5 d van: twee uur wijziging weg. Nu draagt het standaardveld altijd
+    de lengte, in elk formaat. OPS schrijft er alleen maatinformatie naast. Voor een breuk in dagen is dat een
+    record `[dagen, geschreven minuten]`: het exacte aantal dagen en de minuten die OPS op dat moment in het
+    standaardveld schreef. De lezer gebruikt de dagen alleen als het standaardveld nog precies die minuten draagt
+    (op de hele minuut). Anders heeft een ander programma de lengte gewijzigd. Dan geldt het standaardveld, in de
+    urenmaat (bij kalendertijd in kalenderminuten), zoals voor een relatie zonder record. Reden voor de urenmaat:
+    het standaardveld betekent werktijd in minuten; zo blijft de wijziging precies staan, in elk profiel en op
+    elke dag. Reden voor de dagen in het record: de `PT`-vorm rondt op hele minuten (`minutesToIsoDuration`,
+    `subdayIo.ts:79-86`), dus minuten ÷ werktijd per dag geeft niet altijd de dagen terug. Bij 7 u 36 min
+    werktijd per dag wordt 0,3 d 136,8 min, geschreven als `PT2H17M0S`, en dat is terug 0,30044 d (BEVESTIGD,
+    §10.5).
   - *IFC (F3):* urenmaat `PT…` (zoals nu). Dagenmaat in hele dagen `P{n}D` (zoals nu). Dagenmaat met een breuk
-    `PT…` = werkdagen × werktijd per dag van de lagkalender, plus het aantal werkdagen in een JSON-kaart
-    `DayMeasureLagDays` (naam voorlopig) in `OPS_Sequences`, met de GUID van de relatie als sleutel. Die pset en
-    die vorm bestaan al (`P6StartAtPredecessorFinishBoundarySequenceGuids`, `ifcWriter.ts:1527-1545`), want een
-    `IfcRelSequence` kan geen pset dragen. Kalendertijd in hele dagen `P{n}D` met `ELAPSEDTIME` (zoals nu);
-    kalendertijd met een breuk `PT…` (dagen × 1440 min) met `ELAPSEDTIME`, plus het aantal dagen in dezelfde
-    kaart. Procentlag `IFCRATIOMEASURE` (zoals nu). De lezer geeft een relatie uit de kaart `lagDays` en geen
-    `lagMinutes`; elke andere relatie leest hij zoals nu.
+    `PT…` = werkdagen × werktijd per dag van de lagkalender, plus het record. Alle records staan in één eigenschap
+    `DayMeasureLags` (naam voorlopig) in de bestaande pset `OPS_Sequences`, als JSON met de GUID van de relatie
+    als sleutel, bijvoorbeeld `{"<guid>": [0.5, 240]}`. Die pset en die vorm bestaan al
+    (`P6StartAtPredecessorFinishBoundarySequenceGuids`, `writeSequenceMeta`, `ifcWriter.ts:1521-1543`), want een
+    `IfcRelSequence` kan geen pset dragen. Er komt geen nieuwe pset. Kalendertijd in hele dagen `P{n}D` met
+    `ELAPSEDTIME` (zoals nu); kalendertijd met een breuk `PT…` (dagen × 1440 min) met `ELAPSEDTIME`, plus het
+    record. Procentlag `IFCRATIOMEASURE` (zoals nu). Elke relatie zonder geldig record leest de lezer zoals nu.
   - *Waarom deze vorm:* v2026.9.0 leest `PT4H0M0S` als lag van 240 min en `PT36H0M0S` met `ELAPSEDTIME` als
     2160 kalenderminuten; `OPS_Sequences` kent hij niet (BEVESTIGD, §10.5). Hij leest dus een urenmaat-lag met
-    dezelfde lengte, nooit 5 dagen. Het is de kleinste vorm: een kaart alleen voor een breuk in dagen; een lag in
-    hele dagen of in uren zegt zijn maat al met de duurvorm.
+    dezelfde lengte, nooit 5 dagen. Het is de kleinste vorm: een record alleen voor een breuk in dagen; een lag
+    in hele dagen of in uren zegt zijn maat al met de duurvorm.
   - *MSPDI en P6 XML (F5a):* de lengte in minuten, zoals nu (dagenmaat: werkdagen × werktijd per dag van de
-    lagkalender, I7). Daarnaast de OPS-markering, zoals bij de taak (T15): een tekstveld op de opvolger met per
-    voorganger het aantal werkdagen van elke lag in dagenmaat. MSPDI: een `ExtendedAttribute` naast
-    `OPS_TaskDurationUnit` (`mspdiWriter.ts:43-45`). P6 XML: een UDF naast die voor de eenheid
-    (`p6xmlReader.ts:590-598`). Zonder markering maakt de lezer een lag in urenmaat (T15). Kalendertijd heeft
-    geen markering nodig: `LagFormat` 8 (ed) of 6 (eu) zegt de eenheid, en de lezer rondt niet meer af (I2).
-    Of MSP en P6 zo'n veld bij hun eigen opslaan bewaren, is niet getoetst (geen MSP of P6 op deze machine).
+    lagkalender, I7). Daarnaast de OPS-markering, zoals bij de taak (T15): één tekstveld op de opvolger met het
+    record per relatie. MSPDI: een `ExtendedAttribute` naast `OPS_TaskDurationUnit` (`mspdiWriter.ts:43-45`). P6
+    XML: een UDF naast die voor de eenheid (`p6xmlReader.ts:590-598`). De sleutel is de voorganger plus het
+    relatietype, bijvoorbeeld `12:SS` (review ronde 3, punt 5). Reden: de store staat tussen hetzelfde takenpaar
+    één relatie per type toe (`relationAddVerdict`, `src/state/relationRules.ts:39-44`). Een SS + 0,5 d en een
+    FF + 0,25 d tussen dezelfde taken krijgen zo elk een eigen record; twee relaties met dezelfde voorganger,
+    opvolger en type bestaan niet. Dezelfde leesregel: de dagen tellen alleen als `LinkLag` (MSPDI) of `Lag`
+    (P6 XML) nog de geschreven minuten draagt. Zonder record, of bij een andere lengte, maakt de lezer een lag in
+    urenmaat (T15). Kalendertijd heeft geen markering nodig: `LagFormat` 8 (ed) of 6 (eu) zegt de eenheid, en de
+    lezer rondt niet meer af (I2). Of MSP en P6 zo'n veld bij hun eigen opslaan bewaren, is niet getoetst (geen
+    MSP of P6 op deze machine).
   - *Profielwissel:* de lag verandert niet, alleen de conventie (§3.14). De schrijver bewaart de maat in elk
     profiel; onder het P6-profiel staat in `PT…` precies wat dat profiel rekent.
   - *Regressie (F3 voor IFC, F5a voor de adapters):* op de voorbeeldweek drie relaties naast elkaar: FS 0,5 d
     dagenmaat, FS 240 min urenmaat en FS 1,5 ed. Na IFC ⇒ OPS, MSPDI ⇒ OPS, P6 XML ⇒ OPS en OPS-profiel ⇒
     P6-profiel ⇒ OPS-profiel: dezelfde velden, en de opvolgers van de eerste twee op vr 10:00 en vr 11:00. Onder
-    het P6-profiel staan die twee allebei op vr 11:00.
+    het P6-profiel staan die twee allebei op vr 11:00. Daarnaast een gewijzigde lag: in het bestand verandert
+    alleen het standaardveld van de eerste relatie (IFC `PT4H0M0S` ⇒ `PT6H0M0S`; MSPDI `LinkLag`; P6 XML `Lag`).
+    De nieuwe OPS leest dan 360 min urenmaat, net als v2026.9.0; het record telt niet. En twee relaties tussen
+    hetzelfde takenpaar (SS + 0,5 d, FF + 0,25 d) door MSPDI en P6 XML heen en terug.
 - **Typewijziging:** geen. `lagDays` blijft verplicht in het type.
 
 ### 3.4 Speling
@@ -391,7 +416,7 @@ typewijziging. "Fase" verwijst naar §7.
   kalender:
   - **Letterlijke kalender:** een kalender met eigen werkblokken, of een kalender waarop minstens één taak een
     `PT`-duur heeft of een moment dat niet afleidbaar is (§0). "Op een kalender" betekent: de effectieve kalender
-    van de taak (`effectiveCalendarByTask`, `ifcWriter.ts:387`), zoals de lezer van v2026.9.0 hem ook kiest. Op zo'n
+    van de taak (`effectiveCalendarByTask`, `ifcWriter.ts:388`), zoals de lezer van v2026.9.0 hem ook kiest. Op zo'n
     kalender schrijft OPS elk startachtig en eindachtig veld van elke taak met de echte tijd, ook 07:00. De
     kalender krijgt in `OPS_Calendar` de eigenschap `LiteralTimes = .T.` (naam voorlopig). Een scalaire
     letterlijke kalender krijgt daarnaast de effectieve werkblokken met `IsHourCalendar = .F.`, zoals nu een
@@ -406,6 +431,11 @@ typewijziging. "Fase" verwijst naar §7.
     vóór F2 precies zoals nu. De eigenschap hangt niet aan `TimeModel`, want die markering staat niet in elk
     nieuw bestand (§5.2). v2026.9.0 leest `OPS_Calendar` per eigenschapsnaam en slaat een onbekende naam over
     (gelezen in de code van de tag, `extractCalendarHourMode` en de lezers ervoor).
+  - **Een schrijfkeuze per document (review ronde 3).** `LiteralTimes` is geen veld van de kalender in de store
+    of in de resourcebibliotheek. De schrijver leidt het bij elke save opnieuw af uit de taken van dit document.
+    Dezelfde bibliotheekkalender kan zo in het ene document een ankerkalender zijn en in het andere letterlijk.
+    De lezer gebruikt het alleen om dit bestand te lezen en zet het niet in de kalender; de kalenderhash
+    (`computeCalendarHash`, `src/services/library/libraryOps.ts:391`) ziet het dus nooit.
   - **Velden:** de slots van `IfcTaskTime`, beperkingen en deadline (`OPS_Constraints`), `stop`/`resume`
     (`OPS_Resume`) en de baseline-taken in `OPS_Baselines` (per baseline-taak de kalender van haar taak; bestaat
     de taak niet meer, dan de projectkalender). Een niet-afleidbaar moment in elk van die velden maakt de kalender
@@ -450,21 +480,25 @@ normalisatie draait altijd; de markering `TimeModel` stuurt alleen de B5-overgan
 - **Lezen (F5a, .mpp en XER in F5b):** MSPDI, .mpp, P6 XML en XER maken altijd taken in de urenmaat, en lezen duur,
   rest en lag in minuten zonder afronding. Dat lost I1–I5 op. Uitzondering: draagt de taak de OPS-markering voor de
   eenheid (MSPDI-veld via `opsDurationUnitFieldId`, `mspdiReader.ts:246`; P6-UDF, `p6xmlReader.ts:590`), dan komt de
-  dagenmaat terug, met werkdagen = minuten ÷ werktijd per dag. Nu maakt de XER-lezer een dagtaak op een kalender
+  dagenmaat terug. Met een record (T21, §3.3) zijn dat de exacte dagen, zolang de duur nog de geschreven minuten
+  draagt; bij een andere duur de urenmaat. Zonder record (hele dagen, of een bestand van vóór F5a) werkdagen =
+  minuten ÷ werktijd per dag, zoals nu. Nu maakt de XER-lezer een dagtaak op een kalender
   zonder tijdsignaal (`xerReader.ts:831-834`); dat verdwijnt. Een lezer maakt alleen nog een urenkalender als de
   kalender per dag verschilt of eigen werkblokken heeft; anders blijft hij scalair (§3.1).
 - **Schrijven:** urenmaat: minuten. Dagenmaat: werkdagen × werktijd per dag (technische keuze T13), plus de
-  OPS-markering. Reden: dat is precies wat het P6- en het MSP-profiel rekenen, het hangt niet af van de plek,
-  en OPS → P6 → OPS geeft de dagenmaat terug. Nu gebruikt `taskMinutesForWrite` het opgeslagen `hoursPerDay`
-  (`subdayIo.ts:574-577`, aangeroepen met `effCal.hoursPerDay`, `mspdiWriter.ts:475-479`); dat wordt de
-  werktijd per dag (F3). Verder in F5a: lag rekent met de taakkalender (I7); procentlag gaat naar P6 als minuten
-  (I6). In F5b: een einde krijgt de echte tijd, niet het anker 08:00 (I8).
-- **IFC (F3, technische keuze T21):** één regel voor duur, rest en lag. Urenmaat: `PT…H…M`. Dagenmaat in hele
-  dagen: `P{n}D`, zoals nu; een oudere OPS leest dan een gewone dagtaak. Dagenmaat met een breuk: `PT…H…M`
-  (werkdagen × werktijd per dag) plus in de OPS-pset van de taak het aantal werkdagen; een oudere OPS leest dan
-  een urentaak. Kalendertijd met een breuk (nu `P0Y0M1.5D`, `ifcDuration`, `ifcWriter.ts:139-143`, door
-  v2026.9.0 gelezen als 5): `PT…` met `ELAPSEDTIME` plus het aantal dagen in de OPS-pset. Nooit een gebroken
-  `P…D`. De lag: §3.3. Speling: §3.4. Kalender: §5.4.
+  OPS-markering, en bij een breuk het record (T21). Reden: dat is precies wat het P6- en het MSP-profiel rekenen, het
+  hangt niet af van de plek, en OPS → P6 → OPS geeft de dagenmaat terug. Nu gebruikt `taskMinutesForWrite` het
+  opgeslagen `hoursPerDay` (`subdayIo.ts:574-577`, aangeroepen met `effCal.hoursPerDay`, `mspdiWriter.ts:475-479`);
+  dat wordt de werktijd per dag (F3). Verder in F5a: lag rekent met de taakkalender (I7); procentlag gaat naar P6 als
+  minuten (I6). In F5b: een einde krijgt de echte tijd, niet het anker 08:00 (I8).
+- **IFC (F3, technische keuze T21):** één regel voor duur, rest en lag: het standaardveld draagt de lengte, en
+  een breuk in dagen krijgt het record `[dagen, geschreven minuten]` met de leesregel uit §3.3. Urenmaat:
+  `PT…H…M`. Dagenmaat in hele dagen: `P{n}D`, zoals nu; een oudere OPS leest dan een gewone dagtaak. Dagenmaat
+  met een breuk: `PT…H…M` (werkdagen × werktijd per dag) plus het record; een oudere OPS leest dan een urentaak.
+  Kalendertijd met een breuk (nu `P0Y0M1.5D`, `ifcDuration`, `ifcWriter.ts:139-143`, door v2026.9.0 gelezen als
+  5): `PT…` met `ELAPSEDTIME` plus het record. Voor duur en rest staan de records in één eigenschap van een
+  bestaande per-taak-pset (voorlopig `OPS_WorkRule`, `ifcPsets.ts:712-724`, want de werkregelbrug beheert duur en
+  werk); er komt geen nieuwe pset. Nooit een gebroken `P…D`. De lag: §3.3. Speling: §3.4. Kalender: §5.4.
 - **Ongelijke dagen (I9):** een dagenmaat-taak van 5 d op de voorbeeldweek eindigt in het OPS-profiel vr 14:00.
   MSP en P6 rekenen 40 u en eindigen ma 09:00. Dat verschil is bewust (B1). Onder het P6- of MSP-profiel
   rekent OPS zelf ook ma 09:00.
@@ -872,51 +906,106 @@ pusht zelf geen snapshot (`documentActivation.ts:318-321`). De eerdere plek in h
 - **Deterministisch en idempotent:** twee keer draaien geeft hetzelfde.
 
 **B5: de overgang van een oud bestand (besluit B5, uitgewerkt; technische keuze T22; herzien na review ronde 2,
-punt 1 en 4).**
+punt 1 en 4, en ronde 3, punt 1 en 3).**
 
 - **De vlag "omzetting open":** een documentveld (naam voorlopig `minuteModelPending`) in `DOCUMENT_FIELDS`,
-  met snapshot zoals `datesAsRecorded`, niet in IFC. De schemamigratie zet hem aan bij een oud bestand. De
-  B5-overgang zet hem uit. Gaat het document in de modus "datums zoals opgeslagen", dan gaat hij ook uit (zie
-  onder).
-- **De overgang: twee snapshots, één event.** De route bouwt de *onberekende* payload:
-  `prepareLoadedPayload(payload, { recompute: false })` (kalendersync zonder solve), met `scheduleStale: true`,
-  `cpmResult: null` en de vlag aan. Daarna de *berekende* payload: dezelfde functie met `recompute: true`, plus de
-  bibliotheekgrens (`materializeLibraryBoundary`, `fileSlice.ts:799`), met de vlag uit. In één `set`: historie van
-  het document wissen (`fileSlice.ts:809`), de berekende payload publiceren (`hydratePayload`, `:813`) en één event
-  registreren met `before` = `snapshotOfPayload(onberekend)` en `after` = `snapshotOfPayload(berekend)`
-  (`snapshot.ts:114`; `recordSessionHistoryDeltas`, `sessionHistory.ts:459-480`, met `nonEdit: true` zoals F5,
-  `sessionHistory.ts:88-98`). Geen `beginUndoable`: `createSnapshot` leest via `originalAppState` de toestand van
-  vóór de hele producer (`snapshot.ts:95-103`). Een vóór-snapshot daarmee bevat dus het vorige, lege document
-  (review ronde 2, BEVESTIGD: Ctrl+Z maakte het geladen project leeg). Probe van deze ronde (BEVESTIGD, §10.5):
-  met twee expliciete snapshots geeft Ctrl+Z het geladen project met B op 15 jun en verouderd, en Ctrl+Y weer
-  8 jun. De bibliotheekgrens zit alleen in `after`: Ctrl+Z geeft het document zoals het in het bestand stond.
+  met snapshot zoals `datesAsRecorded` (`documentContract.ts:272`), niet in IFC. De schemamigratie zet hem aan
+  bij een oud bestand. De B5-overgang zet hem uit. Opent het laadpad het document in de modus "datums zoals
+  opgeslagen" omdat het bestand zo is opgeslagen, dan gaat hij ook uit (zie onder).
+- **Eén functie voor de overgang (review ronde 3).** Eén zuivere functie (naam voorlopig
+  `minuteModelTransition`, in `src/state/`) doet het hele protocol. Invoer: de onberekende payload, de berekende
+  payload en de vastlegging. Uitvoer: de vóór-toestand, de berekende payload met de vlag uit, de verschoven taken
+  en de melding. Elke route roept alleen deze functie aan. De routes verschillen in één ding: registreert de
+  route het event zelf, of zit de overgang al in een omvattend event (route 3). Geen aanroeper bouwt een eigen
+  versie.
+- **De vóór-toestand is de modus "datums zoals opgeslagen" (review ronde 3, punt 1, BEVESTIGD).** In ronde 2 was
+  de vóór-toestand onberekend en verouderd (`scheduleStale: true`). Met Automatisch berekenen aan plant
+  `useAutoCalcCPM` dan na 100 ms een `runCPM` (`useAutoCalcCPM.ts:23-30`), en die maakt de Ctrl+Z ongedaan. Probe
+  van de review: na Ctrl+Z 15 jun, kort daarna weer 1 jun. Nu is de vóór-toestand de onberekende payload in de
+  modus:
+  - *De vastlegging* = de datums die het document vóór de berekening toonde. Op het laadpad (route 1): de
+    ingelezen slots (`recordedFields`), via dezelfde normaliserende vastlegging als achter `captureAllowed`
+    (`documentActivation.ts:362-367`), maar zonder de bronpoort; een eigen IFC zonder bron komt daar niet door
+    (`:354-355`). Op de andere routes: begin, einde, laat begin en laat einde zoals ze nu in de taken staan, als
+    kant-en-klare vastlegging (laag 0, `recordedDates.ts:204-215`).
+  - *De toestand:* `recordedDates` met die vastlegging, met `shifted` en `shiftedTaskIds` (zie "Alleen bij een
+    verschuiving") en `origin: 'ifc-own'`, zonder `sourceFormat`; `datesAsRecorded: true`; `cpmResult` uit
+    `applyRecordedTimesToTasks` (`recordedDates.ts:486`); `scheduleStale: false`; de vlag aan. Dat is de toestand
+    die `enterRecordedDatesMode` nu al maakt (`documentActivation.ts:409-415`), plus de vlag.
+  - *Na Ctrl+Z* ziet de planner de opgeslagen datums met de bestaande strook "Je ziet de datums zoals ze in het
+    bestand staan; bij herberekenen wijkt 1 taak af." (`recordedDates.activeCountNeutral`,
+    `src/i18n/locales/nl/common.json:1043-1044`) en de knop Herberekenen. Automatisch berekenen doet niets, want
+    het document is niet verouderd (`useAutoCalcCPM.ts:23`). `markScheduleStale` doet in de modus niets
+    (`scheduleStale.ts:8`).
+  - *De datums blijven staan* tot een van twee dingen gebeurt. (a) Bereken: `runCPM` in de modus pusht zelf een
+    snapshot (`scheduleSlice.ts:110-113`), dus één nieuw event. (b) Een echte planningsbewerking: die verlaat de
+    modus in haar eigen event (`markDateMutation`, `scheduleStale.ts:15-25`), en `useExitRecordedDates` rekent
+    direct daarna, ook met Automatisch berekenen uit (`useExitRecordedDates.ts:55`; `needsExitRecompute`,
+    `recordedDatesExit.ts:61-68`). Een bewerking die de planning niet raakt (een naam), laat de modus staan. In
+    beide gevallen doet `runCPM` met de vlag aan de overgang: melding en vlag uit.
+  - *Probe van deze ronde* (BEVESTIGD, §10.5): met deze vóór-toestand, Automatisch berekenen aan en de twee hooks
+    regel voor regel nagebouwd, staat B na Ctrl+Z ook na 250 ms op 15 jun, zonder berekening; na een naamwijziging
+    ook. F5 geeft 1 jun met één nieuw event; een tweede Ctrl+Z weer 15 jun. Een taak verwijderen in de modus
+    rekent meteen door (1 jun, niet verouderd), en één Ctrl+Z geeft de modus met 15 jun en de taak terug.
+    Controle met de vóór-toestand van ronde 2: na 250 ms weer 1 jun.
+- **Het event: twee snapshots, één event.** `before` = `snapshotOfPayload(vóór-toestand)`, `after` =
+  `snapshotOfPayload(berekend)` (`snapshot.ts:114`), één event via `recordSessionHistoryDeltas`
+  (`sessionHistory.ts:459-480`) met `nonEdit: true` zoals F5 (`sessionHistory.ts:88-98`). Geen `beginUndoable`:
+  `createSnapshot` leest via `originalAppState` de toestand van vóór de hele producer (`snapshot.ts:95-103`); op
+  het laadpad is dat het vorige document (review ronde 2, BEVESTIGD: Ctrl+Z maakte het geladen project leeg). Op
+  route 1 gaat alles in één `set`: historie van het document wissen (`fileSlice.ts:809`), de berekende payload
+  publiceren (`hydratePayload`, `:813`) en het event registreren. De berekende payload komt uit
+  `prepareLoadedPayload(payload, { recompute: true })` (`fileSlice.ts:790`) met de bibliotheekgrens
+  (`materializeLibraryBoundary`, `:799`); die grens zit alleen in `after`. Staat het document al in de modus (na
+  Ctrl+Z), dan pusht `runCPM` zelf de snapshot, en voegt de functie alleen de melding en de vlag toe.
 - **Alleen bij een verschuiving.** Het event, de melding en `isDirty` komen alleen als minstens één taak
-  verschuift. Besluit eigenaar, zoals review ronde 2 het doorgeeft: "`isDirty` alleen bij een daadwerkelijke
-  verschuiving, niet na iedere herberekening van een oud bestand" (de oorspronkelijke bron van dit besluit heeft
-  deze agent niet gezien). Verschuiven = het getoonde begin of einde (`shownStart`/`shownFinish`, zoals
-  `recordedDatesDeviate`, `src/engine/scheduler/recordedDates.ts:276-290`) is niet gelijk op dagniveau (§0)
-  tussen de onberekende en de berekende payload. Verschuift er niets, dan geen event, geen melding, en `isDirty`
-  blijft `false`; de vlag gaat wel uit. Een verschil binnen één werkdag telt niet (bijvoorbeeld een einde 15:12
-  in plaats van 16:00 door B3): de oude datum zonder tijd zegt daar niets over. Gevolg: zo'n verschil is niet met
-  Ctrl+Z terug te halen. Undo en redo maken een document altijd gewijzigd (`snapshot.ts:225-228`).
+  verschuift. Dat is een technische keuze van de orkestrator (2026-10-20), geen besluit van de eigenaar:
+  "`isDirty` alleen bij een daadwerkelijke verschuiving, niet na iedere herberekening van een oud bestand".
+  Verschuiven = de taak staat in `shiftedTaskIds` (`recordedDates.ts:301-308`): het getoonde begin of einde
+  (`recordedDatesDeviate`, `:276-290`) verschilt van de vastlegging. Dat is precies de telling van de strook. Zo
+  tonen melding, event en strook één getal. (Ronde 2 vergeleek op dagniveau. Dan kon de strook na Ctrl+Z een
+  ander getal tonen dan de melding, en een verschil binnen een werkdag was niet met Ctrl+Z terug te halen.)
+  Verschuift er niets, dan geen event, geen melding, en `isDirty` blijft `false`; de vlag gaat wel uit. Undo en
+  redo maken een document altijd gewijzigd (`snapshot.ts:225-228`).
 - **Melding:** één melding via het meldingskanaal, na de publicatie. Ze telt de verschoven taken en noemt de
-  grootste verschuiving in werkdagen. Gaat het om een ander document dan het actieve, dan noemt ze dat document.
-- **Elke route die blijvend rekent, kent de vlag (review ronde 2, punt 4, BEVESTIGD).** Gevonden met grep op
-  `solveProject(` en `runInScratchDocument(` in `src/state`:
+  grootste verschuiving in werkdagen, met één decimaal. Gaat het om een ander document dan het actieve, dan noemt
+  ze dat document.
+- **Elke route die blijvend rekent, kent de vlag (review ronde 2, punt 4; ronde 3, punt 3).** Gevonden met grep op
+  `solveProject(`, `runInScratchDocument(` en `runCPM()` in `src/` (24 aanroepen van `runCPM()`; `qaScenes.ts:165` is
+  alleen voor ontwikkeling, en `retainActiveDocument.ts:197` rekent na `loadState`, dus na route 1, als de vlag al uit
+  is):
   1. *Het laadpad:* openen, `loadState`, site, extensie-import (`fileSlice.ts:760-813`) en het actieve document
      bij herstel (`documentSlice.ts:629-695`, de historie gaat daar op `:695` weg). De overgang direct, zoals
      hierboven.
-  2. *`runCPM` op het actieve document* (`scheduleSlice.ts:85-147`) met de vlag aan: de overgang in plaats van
-     het gewone pad. Buiten de modus "datums zoals opgeslagen" pusht `runCPM` zelf geen snapshot; hij ververst
-     alleen het `after` van het laatste event (`refreshLatestDocumentDataHistoryAfter`, `:131`, `:147`). De
-     overgang slaat dat verversen over en registreert een eigen event. Zo landt de verschuiving niet in een
-     eerdere bewerking. Dit dekt een slapend hersteld document na activeren: F5 en automatisch berekenen
-     (`useAutoCalcCPM.ts:23-30`). `switchDocument` rekent zelf niet (`documentActivation.ts:421`).
-  3. *Binnen een omvattend event:* een MCP-transactie (`createMcpTransactions.ts`), een bulkbewerking
-     (`batchTool.ts`) of de bibliotheekverdeling over slapende documenten (`runInScratchDocument`,
-     `librarySlice.ts:1391`; het event op `:1436`). Daar heeft het event al de onberekende toestand als `before`.
-     De overgang registreert dan geen eigen event; ze telt, meldt en zet de vlag uit. De meldingen van een
-     scratch-run gaan pas na de publicatie naar het kanaal (`librarySlice.ts:1379-1383`, `:1473`).
+  2. *`runCPM` zonder omvattend event* (`scheduleSlice.ts:85-147`) met de vlag aan: F5 (`useKeyboardShortcuts.ts:77`,
+     `shortcutRegistry.ts:188`), de knoppen Bereken en Herberekenen (`ribbonConfig.tsx:123`,
+     `RecordedDatesNotice.tsx:45`, `WarningsPanel.tsx:160`), Automatisch berekenen (`useAutoCalcCPM.ts:30`), de
+     exportwacht (`fileSlice.ts:1079`, `:1244`; de PDF-export, `ReportPanel.tsx:1275`), `recalculate` van de
+     extensie-API (`extensionApi.ts:304`) en `ensureFreshSchedule` (`src/services/mcp/staleGuard.ts:57`). De overgang
+     registreert een eigen event en ververst niet het `after` van het vorige event
+     (`refreshLatestDocumentDataHistoryAfter`, `scheduleSlice.ts:131`, `:147`). Zo landt de verschuiving niet in een
+     eerdere bewerking. Dit dekt ook een slapend hersteld document na activeren. `switchDocument` rekent zelf niet
+     (`documentActivation.ts:421`).
+  3. *Binnen een omvattend event:* een MCP-transactie (`createMcpTransactions.ts`, `runCPM` op `:1100`), een
+     bulkbewerking (`batchTool.ts:235`), de bibliotheekverdeling over slapende documenten (`runInScratchDocument`,
+     `librarySlice.ts:1391`; het event op `:1436`), en elke actie die direct na haar eigen mutatie zelf `runCPM`
+     aanroept: `applyLeveling` (`scheduleSlice.ts:224`), `clearLeveling` (`:246`), `setProject`
+     (`projectSlice.ts:254`), `moveProject` (`:376`), de profielwissel (`schedulingProfileSlice.ts:79`), de twee
+     voortgangsimporten (`fileSlice.ts:1316`, `:1419`), het kalendervenster na `commitCalendarLibrary`
+     (`CalendarDialog.tsx:88`) en `useExitRecordedDates` (`useExitRecordedDates.ts:55`, de herberekening na een
+     bewerking die de modus verliet). Het event van zo'n actie heeft de toestand van vóór de actie al als `before`. De
+     aanroeper geeft `runCPM` daarom één optie mee ("binnen een event"). De functie registreert dan geen eigen event,
+     maar telt, meldt en zet de vlag uit, en `runCPM` ververst het `after` van dat event zoals nu. De meldingen van
+     een scratch-run gaan pas na de publicatie naar het kanaal (`librarySlice.ts:1379-1383`, `:1473`). Ctrl+Z van zo'n
+     event geeft de toestand van vóór de actie terug, met de vlag aan. Stond het document toen in de modus, dan blijft
+     het daar. Was het verouderd en staat Automatisch berekenen aan, dan volgt route 2: een eigen event met de
+     melding, en Ctrl+Z daarvan geeft de modus. Met Automatisch berekenen aan is een actief document met de vlag
+     alleen kort verouderd: route 2 zet het binnen 100 ms om.
+     - *De bibliotheekverdeling op het actieve document (review ronde 3, punt 3, BEVESTIGD):* die loopt via
+       `applyLeveling` (`librarySlice.ts:1407-1416`), en `latestDocumentDataEventSince` (`:1417`) wijst daarna
+       het jongste event van het document aan. Met een eigen B5-event kwamen er twee events; `undoDistribution`
+       draaide dan alleen het B5-event terug en de vertraging van twee dagen bleef. Met de optie blijft er één
+       event, en draait `undoDistribution` de vertraging en de verschuiving samen terug.
   4. *`recalculateStaleSleepingDocuments`* (`documentSlice.ts:735-800`), aangeroepen door het bezettingsoverzicht
      met automatisch berekenen aan (`ResourceOccupancyView.tsx:222-228`): slaat een document met de vlag over
      (`:746`), en de teller `staleSleepingCount` (`ResourceOccupancyView.tsx:199`) telt het niet. Het overzicht
@@ -924,17 +1013,19 @@ punt 1 en 4).**
      undo-stap voor een document dat de planner niet bekijkt, zijn onduidelijk; bij activeren komt route 2.
      Probe van de review: zonder deze regel wordt een opgeslagen start 15 jun op de achtergrond 1 jun, zonder
      event, en na activeren en `runCPM` blijft de historie leeg.
-  Elke nieuwe route die blijvend rekent, moet de vlag kennen. F2 zet een check die `solveProject(` en
-  `runInScratchDocument(` in `src/state` telt tegen deze lijst.
-- **"Datums zoals opgeslagen":** zet het laadpad die modus aan (`applyRecordedDatesOnLoad`,
-  `documentActivation.ts:369-401`), dan komen er geen melding en geen event, en de vlag gaat uit. De modus toont
-  de opgeslagen datums al (genormaliseerd, zie boven), en zijn strook telt de verschuiving
-  (`recordedDates.shifted`). De eerste Bereken daarna verlaat de modus en pusht zelf een snapshot
-  (`scheduleSlice.ts:110-113`). Hetzelfde voor een slapend document dat in de modus hersteld wordt
+  Elke nieuwe route die blijvend rekent, moet de vlag kennen. F2 zet een check die `solveProject(`,
+  `runInScratchDocument(` en de aanroepen van `runCPM` in `src/` telt tegen deze lijst, met per aanroep route 2
+  of 3.
+- **"Datums zoals opgeslagen" bij het laden:** zet het laadpad die modus aan omdat het bestand in de modus is
+  opgeslagen (`applyRecordedDatesOnLoad`, `documentActivation.ts:369-401`), dan komen er geen melding en geen
+  event, en de vlag gaat uit. De modus toont de opgeslagen datums al (genormaliseerd, zie boven), en zijn strook
+  telt de verschuiving (`recordedDates.shifted`). De eerste Bereken daarna verlaat de modus en pusht zelf een
+  snapshot (`scheduleSlice.ts:110-113`). Hetzelfde voor een slapend document dat in de modus hersteld wordt
   (`applyRestoredRecordedMode`).
-- **Documentwissel:** het event en de vlag horen bij het document; een wissel verandert niets. Ctrl+Z zet de vlag
-  terug (hij zit in de snapshot); de volgende Bereken doet de overgang dan opnieuw, met een nieuw event en een
-  nieuwe melding.
+- **Documentwissel, opslaan en herstel:** het event en de vlag horen bij het document; een wissel verandert
+  niets. Ctrl+Z zet de modus terug met de vlag aan. Opslaan in die toestand schrijft geen `TimeModel` (de vlag
+  staat aan) en geen `SourceFormat`, want de vastlegging heeft geen `sourceFormat` (`ifcSaveInput.ts:97-98`). Na
+  heropenen of na een crash doet het laadpad de overgang dus opnieuw, met melding en Ctrl+Z.
 - **Beperking:** de telling vergelijkt de opgeslagen datums met de nieuwe berekening. Was het bestand al verouderd
   opgeslagen, dan telt die achterstand mee.
 
@@ -942,17 +1033,26 @@ punt 1 en 4).**
 
 1. Eigen IFC zonder `TimeModel` waarin B 15–19 jun staat en de nieuwe motor 8–12 jun geeft: na openen B 8–12 jun,
    één event, melding "1 taak, 5 werkdagen", `isDirty` waar. Ctrl+Z ⇒ het geladen project (niet het vorige
-   document) met B 15–19 jun en verouderd. Ctrl+Y ⇒ 8–12 jun.
-2. Een oud bestand waarin niets verschuift: geen event, geen melding, `isDirty` onwaar.
-3. Het bestand van (1) in de modus "datums zoals opgeslagen": geen melding, geen event. Een `.mpp`-vastlegging
-   zonder tijd (urentaak 07:00–16:00, vastgelegd als 2026-06-01) staat na het laden als moment in de taak.
-4. Het bestand van (1) als slapend herstel, automatisch berekenen aan, bezettingsoverzicht open: het document
-   blijft verouderd en zonder event. Na activeren: één event, de melding, Ctrl+Z ⇒ 15–19 jun.
-5. Slapend herstel, automatisch berekenen uit, eerst een bewerking en dan F5: twee events. Ctrl+Z haalt eerst de
-   omzetting terug, daarna de bewerking.
-6. Een MCP-transactie en de bibliotheekverdeling op een document met de vlag: één event (dat van de transactie of
-   de verdeling), wel de melding, en daarna is de vlag uit.
-7. Een bestand met `TimeModel` en een datum zonder tijd uit een ander programma: de datum wordt een moment, geen
+   document) in de modus, met B 15–19 jun, de strook "bij herberekenen wijkt 1 taak af", niet verouderd. Ctrl+Y ⇒
+   8–12 jun.
+2. Het bestand van (1) met Automatisch berekenen aan (review ronde 3, punt 1): na Ctrl+Z blijft B 15–19 jun staan,
+   ook na 250 ms, en ook na een naamwijziging. Bereken ⇒ 8–12 jun, de melding, één nieuw event, de vlag uit.
+   Opnieuw Ctrl+Z en dan een taak verwijderen ⇒ direct 8–12 jun; één Ctrl+Z ⇒ de modus met de taak terug en
+   15–19 jun.
+3. Een oud bestand waarin niets verschuift: geen event, geen melding, `isDirty` onwaar.
+4. Het bestand van (1), in de modus opgeslagen: geen melding, geen event. Een `.mpp`-vastlegging zonder tijd
+   (urentaak 07:00–16:00, vastgelegd als 2026-06-01) staat na het laden als moment in de taak.
+5. Het bestand van (1) als slapend herstel, automatisch berekenen aan, bezettingsoverzicht open: het document
+   blijft verouderd en zonder event. Na activeren: één event en de melding. Ctrl+Z ⇒ de modus met 15–19 jun, en
+   die blijft staan.
+6. Slapend herstel, automatisch berekenen uit, eerst een bewerking en dan F5: twee events. Ctrl+Z ⇒ eerst de
+   modus met de bewerking, daarna de toestand van vóór de bewerking.
+7. Een MCP-transactie en de bibliotheekverdeling (op een slapend en op het actieve document) met de vlag: één
+   event per document (dat van de transactie of de verdeling), wel de melding, en daarna is de vlag uit.
+   `undoDistribution` zet ook op het actieve document de vertraging en de verschuiving samen terug.
+8. Opslaan na Ctrl+Z van (1) en opnieuw openen: het bestand heeft geen `TimeModel` en geen `SourceFormat`; de
+   overgang en de melding komen opnieuw.
+9. Een bestand met `TimeModel` en een datum zonder tijd uit een ander programma: de datum wordt een moment, geen
    melding.
 
 ### 5.3 Wat er verschuift bij het openen van een oud bestand
@@ -994,7 +1094,7 @@ desktopapp); probe in §10.5:
 | Duur met tijddeel `PT…H…M` | urentaak (`parseTaskTime` r.957-969) | goede duur; kalender zoals hierboven | — |
 | Gebroken `P…D` (duur, rest, speling, lag) | `(-?\d+)D`: `P0.5D` ⇒ 5 (r.512-513; voor een lag BEVESTIGD, ook `P1.5D` met `ELAPSEDTIME` ⇒ 5) | verkeerde hoeveelheid | nooit schrijven (T5, T21). Dat gebeurt nu al bij een kalendertijd-lag of een geïmporteerde breuk |
 | Dagenmaat in hele dagen | `P{n}D`, zoals nu | gewone dagtaak of lag in dagen | — |
-| Breuk in dagenmaat of kalendertijd (duur, rest, lag) | `PT…`: urentaak, of lag in minuten (BEVESTIGD: `PT4H0M0S` ⇒ 240 min; `PT36H0M0S` met `ELAPSEDTIME` ⇒ 2160 kalenderminuten) | dezelfde lengte, in de urenmaat | geen; de nieuwe OPS herstelt de maat uit de OPS-pset (T21) |
+| Breuk in dagenmaat of kalendertijd (duur, rest, lag) | `PT…`: urentaak, of lag in minuten (BEVESTIGD: `PT4H0M0S` ⇒ 240 min; `PT36H0M0S` met `ELAPSEDTIME` ⇒ 2160 kalenderminuten) | dezelfde lengte, in de urenmaat | geen; de nieuwe OPS herstelt de maat uit het record in de OPS-pset, zolang het standaardveld de geschreven minuten draagt (T21) |
 | Extra property in `OPS_Sequences` | kent de pset niet (BEVESTIGD) | genegeerd | — |
 | Conventies dagenmaat en B6 in `OPS_SchedulingProfile` | kent deze pset niet (§3.14) | geen | — |
 | `OPS_Project.TimeModel`; `AtDayEnd` in `OPS_Milestone`; `LiteralTimes` in `OPS_Calendar` | `OPS_Calendar` leest hij per eigenschapsnaam (gelezen in de code); de andere twee: genegeerd (VERMOED) | — | — |
@@ -1004,9 +1104,9 @@ De rij "een blok van 9 u" uit ronde 1 vervalt: v2026.9.0 leest de geschreven wer
 
 F2 verandert het formaat al een klein beetje: `TimeModel`, de schrijfregel per kalender met `LiteralTimes`, en
 `AtDayEnd` (T10, T17, D7). Een planning in hele dagen schrijft F2 nog als ankerkalender, zoals nu. F3 verandert meer
-(maat, breuken, speling in minuten, de lagkaart). F2 en F3 draaien daarom elk de lezer van tag v2026.9.0 op de nieuwe
-voorbeeldbestanden en op W0, W1, W2 en de lagvormen. Toets: elke gelezen datum en hoeveelheid is gelijk aan wat de
-nieuwe OPS schreef (op dagniveau bij een ankerkalender). Wat v2026.9.0 daarna berekent, valt onder het aanvaarde
+(maat, breuken, speling in minuten, de records van T21). F2 en F3 draaien daarom elk de lezer van tag v2026.9.0 op de
+nieuwe voorbeeldbestanden en op W0, W1, W2 en de lagvormen. Toets: elke gelezen datum en hoeveelheid is gelijk aan wat
+de nieuwe OPS schreef (op dagniveau bij een ankerkalender). Wat v2026.9.0 daarna berekent, valt onder het aanvaarde
 verlies van de kalenders. Precedent: de review van #355 las nieuwe bestanden met de tags v2026.7.1–v2026.9.0
 (`2026-10-07-review-pr109-uitkomsten.md` r.799 op `origin/claude/review-pr109-log`). Een vaste CI-stap kan, maar is
 niet nodig.
@@ -1054,10 +1154,11 @@ niet nodig.
   §3.3 door IFC en door een profielwissel; de belasting per werkdag (§3.11: wo 0,5, do 1, vr 1, ma 0,5, in
   histogram, contourdialoog en nivelleerder); de nivelleerder per kandidaat (§3.11: ma 07:00 geweigerd,
   nivelleerder en histogram gelijk na toepassen).
-- **Nieuwe checks in F2 (fixronde 2):** de B5-regressiegevallen 1–7 (§5.2); een telcheck op de routes die blijvend
-  rekenen (§5.2); de schrijfregel per kalender (§3.6): een ankerkalender schrijft alleen datums, een letterlijke
-  kalender alleen echte momenten, ook in de psets, en W0, W1 en W2 lezen in de nieuwe OPS en in v2026.9.0 terug
-  zoals in §5.4; D7 (START, FINISH, zonder soort met en zonder `AtDayEnd`); het baseline-einde (§4.2).
+- **Nieuwe checks in F2 (fixronde 2 en 3):** de B5-regressiegevallen 1–9 (§5.2), met geval 2 (Automatisch berekenen
+  aan en Ctrl+Z) als storetest met de echte hooks; een telcheck op de routes die blijvend rekenen, met route 2 of 3
+  per aanroep van `runCPM` (§5.2); de schrijfregel per kalender (§3.6): een ankerkalender schrijft alleen datums, een
+  letterlijke kalender alleen echte momenten, ook in de psets, en W0, W1 en W2 lezen in de nieuwe OPS en in v2026.9.0
+  terug zoals in §5.4; D7 (START, FINISH, zonder soort met en zonder `AtDayEnd`); het baseline-einde (§4.2).
 
 ### 6.2 Check-batterijen
 
@@ -1115,7 +1216,7 @@ dag in een cache (`bandCache`, gevuld door `bandsStartingOn`, `CalendarEngine.ts
 
 | # | Risico | Gevolg | Wat het afdekt |
 |---|---|---|---|
-| R1 | Stille datumverschuiving in oude bestanden | een planner ziet na het openen andere datums zonder te weten waarom | migratie op de laadgrens; de B5-overgang met twee snapshots en de melding op elke route die rekent (§5.2); dagcases met redencodes; voorbeeldensnapshot |
+| R1 | Stille datumverschuiving in oude bestanden | een planner ziet na het openen andere datums zonder te weten waarom | migratie op de laadgrens; de B5-overgang via één functie, met de modus als vóór-toestand en de melding op elke route die rekent (§5.2); dagcases met redencodes; voorbeeldensnapshot |
 | R2 | Een oudere OPS leest een nieuw bestand verkeerd | speling 2,5 d wordt 5 d; een anker 07:00 wordt een echt einde 07:00 | de kalenders zijn al verloren (aanvaard, #336); ankerkalender voor afleidbare momenten, echte tijden per hele kalender (T17), nooit gebroken `P…D` (T21), toets met de lezer van v2026.9.0 in F2 en F3 (§5.4) |
 | R3 | De urenpad-dagtaak is minder rijp dan de urenpad-urentaak, en na B1 rekent elke dagenmaat-taak zo | 58 rode dagcases, waarvan 25 een vaste fout van één werkdag | F1 repareert eerst; F2 pas als run 1 groen is op de redencodes na |
 | R4 | P6-conventies gaan gelden voor projecten met een dagkalender | andere datums in P6-profielprojecten | vlag "kalender had eigen werkblokken" (T11); `measure:profiles` met corpus |
@@ -1128,7 +1229,7 @@ dag in een cache (`bandCache`, gevuld door `bandsStartingOn`, `CalendarEngine.ts
 | R11 | Een grensregel verandert bestaande uurplanningen | urencases en MSP- of P6-corpusgedrag breken | N0–N3 alleen op benoemde plekken; `z13-*` en de 138 urencases als bewaking (§4.3) |
 | R12 | Data uit F3 overleeft een export niet | 2,5 d wordt na MSPDI 3 d | F5a in de eerste release (§3.10) |
 | R13 | Belasting op de verkeerde dagen | histogram en nivellering kloppen niet bij een start midden op de dag | belasting per werkdag uit momenten in F3, de nivelleerder per kandidaat (§3.11) |
-| R14 | De maat van een lag gaat verloren | 0,5 d dagenmaat wordt na opslaan of export 240 min urenmaat; op een korte vrijdag 3 u ⇒ 4 u | T21: de lagkaart in IFC (F3), de markering in MSPDI en P6 XML (F5a), regressie met beide maten (§3.3) |
+| R14 | De maat van een lag gaat verloren | 0,5 d dagenmaat wordt na opslaan of export 240 min urenmaat; op een korte vrijdag 3 u ⇒ 4 u | T21: het record in `OPS_Sequences` (F3) en in de markering van MSPDI en P6 XML (F5a), met het standaardveld leidend; regressie met beide maten en met een gewijzigde lag (§3.3) |
 
 ### 7.2 Fasen
 
@@ -1172,9 +1273,11 @@ fase nodig heeft. Besluiten die vóór een fase moeten vallen: B2, B4 en B8 vó�
 - Bestanden: `CPMSolver.ts` (`engineForTaskCalendar`, projectengine `:515`), `applyCpmResult.ts`,
   `documentContract.ts`, `documentActivation.ts`, `fileSlice.ts`, `documentSlice.ts`, `scheduleSlice.ts`,
   `librarySlice.ts`, `ResourceOccupancyView.tsx`, `taskSlice.ts`, `taskDates.ts`, `registry.ts`, `ifcWriter.ts`,
-  `ifcReader.ts`, `ifcPsets.ts`.
+  `ifcReader.ts`, `ifcPsets.ts`, en de aanroepers van `runCPM` uit route 3 (§5.2: `projectSlice.ts`,
+  `schedulingProfileSlice.ts`, `createMcpTransactions.ts`, `batchTool.ts`, `CalendarDialog.tsx`,
+  `useExitRecordedDates.ts`).
 - Risico: hoog (R1, R2, R3, R4, R8).
-- Toets: run 1 groen op dagniveau via de echte motor, op de redencodes na; de regressiegevallen 1–7 van §5.2; de
+- Toets: run 1 groen op dagniveau via de echte motor, op de redencodes na; de regressiegevallen 1–9 van §5.2; de
   projecteinde-case en het baseline-einde (§4.2); voorbeeldensnapshot exact; de lezer van v2026.9.0 op de nieuwe
   voorbeeldbestanden en op W0, W1 en W2 (§5.4); `measure:profiles` met corpus; prestatiemeting.
 
@@ -1184,12 +1287,13 @@ fase nodig heeft. Besluiten die vóór een fase moeten vallen: B2, B4 en B8 vó�
   dagenmaat-rest als urenmaat; vast werk ⇒ urenmaat; de standaardmaat (store en Projectinstellingen, §3.2);
   werkdriehoek T14, de urenmaat zonder afronding; de rest exact (B3); de belasting per werkdag uit momenten in
   histogram, contourdialoog en nivelleerder, met de vraag per kandidaat (§3.11); speling in minuten (§3.4); IFC:
-  maat en breuk voor duur, rest en lag, met de lagkaart in `OPS_Sequences` (T21, §3.3, §3.10); de lopers met de
+  maat en breuk voor duur, rest en lag, met de records van T21 in `OPS_Sequences` en een bestaande per-taak-pset
+  (§3.3, §3.10); de lopers met de
   foutgrens (§3.14); MCP-teksten over de maat (§3.13).
 - Bestanden: `registry.ts`, `schedulingOptionsRead.ts`, `CalendarEngine.ts`, `CPMSolver.ts`, `relationMath.ts`,
   `workTriangle.ts`, `workRuleApply.ts`, `ResourceLoad.ts`, `ResourceLeveler.ts`, `splitWalk.ts`, `taskSlice.ts`,
-  `ProjectInfoPanelContent.tsx`, `ifcWriter.ts`, `ifcReader.ts`, `ifcTaskSlots.ts`, `sequenceFields.ts`,
-  `taskFields.ts`.
+  `ProjectInfoPanelContent.tsx`, `ifcWriter.ts`, `ifcReader.ts`, `ifcPsets.ts`, `ifcTaskSlots.ts`,
+  `sequenceFields.ts`, `taskFields.ts`.
 - Risico: hoog (R1, R2, R7, R10, R13).
 - Toets: run 1 en run 2 (§6.1); de nieuwe checks uit §6.1 en §6.2; de lezer van v2026.9.0 op de lagvormen en de
   breuken (§5.4); migratiemelding over de voorbeelden en het corpus; `measure:profiles` met corpus.
@@ -1254,8 +1358,9 @@ fase nodig heeft. Besluiten die vóór een fase moeten vallen: B2, B4 en B8 vó�
 
 ## 8. Besluiten en open besluiten
 
-Besloten op 2026-10-20: B1, B1a, B3, B5, B6 en B7, en bij B5 de regel voor `isDirty` (doorgegeven door review
-ronde 2). Open: B2, B4 en B8; ze moeten vallen vóór F4 (§7.2).
+Besloten op 2026-10-20: B1, B1a, B3, B5, B6 en B7. De regel voor `isDirty` bij B5 is geen besluit van de eigenaar,
+maar een technische keuze van de orkestrator (2026-10-20; §5.2). Open: B2, B4 en B8; ze moeten vallen vóór F4
+(§7.2).
 
 ### B1. Wat is één dag (welke maat)? — besloten: optie 3, een maat per taak
 
@@ -1358,7 +1463,10 @@ Opvolger B (FS, 3 d) ⇒ wo 3 jun 11:00 tot ma 8 jun 11:00.
    zijn datum volgens B4. Let op bij B8 optie 2: daar toont een urenmaat-taak in het OPS-profiel uren, en een
    kaal getal bij zo'n taak is uren. Met de schakelaar uit is dat uurinvoer: het geeft een melding. "5d" werkt
    wel en maakt de taak een dagenmaat-taak van 5 werkdagen. Zo betekent een getal nooit iets anders door de
-   stand van de schakelaar.
+   stand van de schakelaar. Uitzondering (review ronde 3, punt 4): een taak met vast werk blijft altijd urenmaat
+   (B1a, §3.2). Bij zo'n taak geeft "5d" 5 × de werktijd per dag in de urenmaat (40 u op de standaardkalender),
+   ook met de schakelaar uit; de tabel toont daarna "40 u". Een invoer in hele dagen blijft zo mogelijk, en vast
+   werk wordt nooit dagenmaat.
 
 **Aanbeveling: optie 3.** Een planner die nooit met uren werkt, ziet niets veranderen; wie breuken of uren wil,
 zet de schakelaar aan. De motor rekent in beide standen in minuten. Knownbugs 24 (de schakelaar uit bij een
@@ -1431,18 +1539,23 @@ OPS rekent een oud bestand gewoon door. Daarna volgt één melding via het meldi
 verschoven taken en de grootste verschuiving. Ctrl+Z zet het terug."
 
 **Wat de planner ziet.** Direct na het openen van een oud bestand één melding, bijvoorbeeld: "Dit bestand is
-gemaakt met een oudere versie. 3 taken liggen na de berekening op een andere dag; de grootste verschuiving is 1
-werkdag." Ctrl+Z zet de opgeslagen datums terug.
+gemaakt met een oudere versie. 3 taken hebben na de berekening een ander begin of einde; de grootste verschuiving
+is 1 werkdag." Ctrl+Z zet de opgeslagen datums terug, met de strook van "datums zoals opgeslagen". Die datums
+blijven staan tot Bereken of een planningsbewerking, ook met Automatisch berekenen aan.
 
-**Uitwerking (§5.2, herzien na review ronde 1, punt 1, en ronde 2, punt 1 en 4).**
+**Uitwerking (§5.2, herzien na review ronde 1, punt 1, ronde 2, punt 1 en 4, en ronde 3, punt 1 en 3).**
 - Een bestand is oud als `OPS_Project.TimeModel` ontbreekt. Een document dat nog niet omgezet was, schrijft de
   markering ook niet (§5.2). Openen rekent meteen (`prepareLoadedPayload`); de
   migratie zit daarom vóór die berekening, in `payloadFromImport`.
-- Ctrl+Z werkt via twee expliciete snapshots in één event: de onberekende en de berekende payload (§5.2,
-  herzien na review ronde 2; de eerdere opzet met `beginUndoable` na het publiceren bewaarde het vorige document).
-- "Verschoven" betekent: niet gelijk op dagniveau (§0) tegenover de datums uit het bestand.
-- Event, melding en `isDirty` alleen als er iets verschuift (besluit eigenaar, doorgegeven door review ronde 2).
-  Verschuift er niets, dan ziet de planner niets en is het document niet gewijzigd.
+- Eén functie doet de overgang voor elke route (§5.2).
+- Ctrl+Z werkt via twee expliciete snapshots in één event. De vóór-toestand is het onberekende document in de
+  modus "datums zoals opgeslagen", niet verouderd; zo rekent Automatisch berekenen het niet meteen weer door
+  (review ronde 3). De eerdere opzet met `beginUndoable` na het publiceren bewaarde het vorige document (ronde 2).
+- "Verschoven" betekent: het getoonde begin of einde verschilt van de datums uit het bestand. Dat is dezelfde
+  telling als de strook van de modus.
+- Event, melding en `isDirty` alleen als er iets verschuift. Dat is een technische keuze van de orkestrator
+  (2026-10-20), geen besluit van de eigenaar. Verschuift er niets, dan ziet de planner niets en is het document
+  niet gewijzigd.
 - In de modus "datums zoals opgeslagen" komt geen aparte melding. Een slapend hersteld document krijgt de
   overgang bij de eerste berekening na activeren; elke route die blijvend rekent, kent de vlag (§5.2).
 - Afgewezen: een dialoog vooraf met de lijst taken (optie 2) en niets melden (optie 3).
@@ -1506,6 +1619,9 @@ Onder het P6- en het MSP-profiel bestaat de dagenmaat niet; daar is "d" altijd d
    maat wissel je in de kolom. Voordeel: de tabel blijft rustig. Nadeel: het getal alleen is dubbelzinnig, ook in een
    export, een rapport of het klembord.
 
+**Vast werk, in elke optie (review ronde 3, punt 4).** Een taak met vast werk is altijd urenmaat (B1a). Geen invoer
+maakt haar dagenmaat: "5d" (optie 2 en 3) of "5wd" (optie 1) wordt 5 × de werktijd per dag in de urenmaat.
+
 **Aanbeveling: optie 2.** Reden: het OPS-profiel toont dan wat het nu toont, en binnen één profiel heeft "d" één
 betekenis. Kies optie 1 als een eenduidig getal in exports en rapporten zwaarder weegt dan wat planners nu
 gewend zijn.
@@ -1530,12 +1646,12 @@ gewend zijn.
 | T14 | Werk van een dagenmaat-taak = werkdagen × inzet × werktijd per dag | §3.11; gelijk in elk profiel, zoals de werkdriehoek nu al rekent |
 | T15 | Lezers maken altijd de urenmaat, behalve met de OPS-markering | §3.10; P6 en MSP kennen alleen de urenmaat |
 | T16 | Het einde van een kalendertijd-taak is overal exclusief | §3.7, §4.2, §4.5 rij 6; het dagpad las het half inclusief (knownbugs 125); `msp-19` pint het exclusieve gedrag al |
-| T17 | Normalisatie altijd en bij elke invoer, ook van de vastlegging; `TimeModel` stuurt alleen B5 en ontbreekt zolang de omzetting open is; in IFC per kalender: een ankerkalender als elk moment afleidbaar is, anders overal echte tijden met `LiteralTimes` | §3.6, §5.2; review ronde 1, punt 2; ronde 2, punt 2 en 3 |
+| T17 | Normalisatie altijd en bij elke invoer, ook van de vastlegging; `TimeModel` stuurt alleen B5 en ontbreekt zolang de omzetting open is; in IFC per kalender: een ankerkalender als elk moment afleidbaar is, anders overal echte tijden met `LiteralTimes`, per document bij elke save afgeleid | §3.6, §5.2; review ronde 1, punt 2; ronde 2, punt 2 en 3; ronde 3 |
 | T18 | Projectdatums blijven opgeslagen zoals ingevoerd; de motor leest start D1, statusdatum D5, einde D2 | §3.6, §4.2; review ronde 1, punt 7 |
 | T19 | Eén statusregel voor werkelijke datums, met de werkdag in de kalender van de taak | §4.2; review ronde 1, punt 6 |
 | T20 | Belasting per werkdag uit start- en eindmoment, met één gedeelde functie; de nivelleerder bepaalt vraag en dagen per kandidaat | §3.11; review ronde 1, punt 4; ronde 2, punt 6 |
-| T21 | De maat van duur, rest en lag gaat verliesvrij mee: nooit een gebroken `P…D`; een breuk in dagen als `PT…` plus het aantal dagen in een OPS-pset (voor een lag een kaart in `OPS_Sequences`); in MSPDI en P6 XML een OPS-markering, ook voor de lag | §3.3, §3.10; review ronde 2, punt 5; kleinste vorm die v2026.9.0 niet verkeerd leest (BEVESTIGD) |
-| T22 | De B5-overgang: twee expliciete snapshots in één `nonEdit`-event, alleen bij een verschuiving; een documentvlag "omzetting open" die elke route die blijvend rekent kent | §5.2; review ronde 2, punt 1 en 4 |
+| T21 | De maat van duur, rest en lag gaat verliesvrij mee: nooit een gebroken `P…D`; het standaardveld draagt altijd de lengte; een breuk in dagen krijgt een record `[dagen, geschreven minuten]` in een bestaande OPS-pset (voor een lag `OPS_Sequences`), en de dagen tellen alleen zolang het standaardveld de geschreven minuten draagt; in MSPDI en P6 XML hetzelfde record in de OPS-markering, per relatie met voorganger en type | §3.3, §3.10; review ronde 2, punt 5, en ronde 3, punt 2 en 5; kleinste vorm die v2026.9.0 niet verkeerd leest (BEVESTIGD) |
+| T22 | De B5-overgang: één functie voor elke route; de vóór-toestand is de modus "datums zoals opgeslagen" met de vlag aan; twee expliciete snapshots in één `nonEdit`-event, of het omvattende event van de actie; alleen bij een verschuiving (de `isDirty`-regel van de orkestrator, 2026-10-20); een documentvlag "omzetting open" die elke route die blijvend rekent kent | §5.2; review ronde 2, punt 1 en 4, en ronde 3, punt 1 en 3 |
 | T23 | Lopers van de dagenmaat in hele minuten, zonder verborgen rest; foutgrens ½ + ½ × (begindag ÷ einddag) minuut | §3.14; review ronde 2, punt 8 |
 
 ## 9. Wat dit oplost
@@ -1683,6 +1799,23 @@ van v2026.9.0 is gebundeld uit de broncode van de tag (gelijk aan `git show v202
   de berekende payload, in één `set`. Na laden B 8 jun 07:00, één event, `isDirty` waar. Ctrl+Z: project
   `geladen-project`, taak `opgeslagen` met 15 jun, verouderd. Ctrl+Y: 8 jun 07:00.
 
+Fixronde 3 (expert-agent, Opus 5.5), script `/tmp/uren-fix3/probe.ts`, log `/tmp/uren-fix3/probe.log` (exit 0). De
+nieuwe vlag en de nieuwe IFC-eigenschap bestaan nog niet; de probe bootst ze smal na met bestaande productcode.
+
+- B5 en Automatisch berekenen (§5.2): store met `autoCalcCPM: true`; `useAutoCalcCPM` en `useExitRecordedDates`
+  regel voor regel nagebouwd als store-abonnement met dezelfde timers (100 ms en 0 ms) en dezelfde guards
+  (`createFailedSolveGate`, `leftRecordedDatesMode`, `needsExitRecompute`). Taak B opgeslagen op 15 jun 07:00,
+  berekend 1 jun; taak C verschuift niet. Vóór-toestand van ronde 2 (verouderd): na Ctrl+Z 15 jun, na 250 ms
+  1 jun, één automatische berekening (de fout van review ronde 3). Vóór-toestand als modus: na Ctrl+Z 15 jun, in
+  de modus, niet verouderd, strooktelling 1, `isDirty` waar; na 250 ms nog 15 jun en nul berekeningen; na een
+  naamwijziging ook. F5: 1 jun, de modus uit, één nieuw event. Tweede Ctrl+Z: 15 jun, nul berekeningen. Taak C
+  verwijderen: direct de modus uit en verouderd, na 250 ms 1 jun en niet verouderd (één berekening, via de
+  verlaat-hook). Ctrl+Z: 15 jun, C terug, in de modus.
+- Lag (§3.3): IFC met FS `PT4H0M0S` (240 min) en het record `{"<guid>": [0.5, 240]}` in `OPS_Sequences`. Ongewijzigd:
+  de standaardlezer geeft 240 min, de leesregel 0,5 d. Alleen het standaardveld naar `PT6H0M0S`: de standaardlezer
+  geeft 360 min, de leesregel houdt 360 min urenmaat (het record telt niet). v2026.9.0 leest 240 en 360 min.
+  Afronding: 0,3 d × 456 min = 136,8 ⇒ `PT2H17M0S` ⇒ 137 min ⇒ 0,30044 d; met het record 0,3 d.
+
 ## 11. Wat niet gecontroleerd is
 
 - `measure:profiles` met het P6-corpus (geen `OPS_XER_CORPUS` op deze machine).
@@ -1699,8 +1832,12 @@ van v2026.9.0 is gebundeld uit de broncode van de tag (gelijk aan `git show v202
   die `legacyValue` direct leest.
 - Of de foutgrens van §3.14 ook bij een nachtblok geldt. De afleiding gaat uit van werkminuten per werkdag; een
   nachtblok hoort bij de dag waarop het begint, dus VERMOED wel. F3 toetst het.
-- De B5-overgang is in een losse store-probe nagespeeld (§10.5), niet in het echte laadpad. Of de bibliotheekgrens
-  alleen in `after` geen andere laadinvariant breekt, stelt F2 vast.
+- De B5-overgang is in een losse store-probe nagespeeld (§10.5), niet in het echte laadpad. De twee hooks zijn in
+  de probe nagebouwd, niet als React-hook gedraaid. Of de bibliotheekgrens alleen in `after` geen andere
+  laadinvariant breekt, stelt F2 vast. De melding bij het verlaten van de modus met de vlag aan is niet nagespeeld,
+  want de vlag bestaat nog niet.
+- De optie "binnen een event" voor `runCPM` (route 3) is niet nagespeeld; de actieve bibliotheekverdeling is alleen
+  in de code gelezen en door de reviewer gemeten.
 - Of MSP en P6 een `ExtendedAttribute` of UDF voor de lagmaat bewaren als een planner het bestand daar opslaat
   (§3.3).
 - Of D1 voor een mijlpaal zonder soort in een oud bestand de werkelijke datum gelijk houdt op dagniveau (D7).
