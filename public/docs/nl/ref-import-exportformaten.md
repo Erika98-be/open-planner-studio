@@ -20,15 +20,15 @@ Per bestandsformaat: of je het kunt openen, opslaan en exporteren, wat er wel en
 
 ## IFC
 
-**Openen** — ja, `.ifc`. De app leest IFC4 en IFC 4.3 (ook ADD2). Rekenprofiel: dat uit het bestand.
+**Openen** — ja, `.ifc`. De app leest IFC4 en IFC 4.3 (ook ADD2). Een bestand in een ander schema, zoals IFC2X3, opent ook. Bij het eerste opslaan kies je dan een schema dat de app kan schrijven (zie [Het IFC-schema kiezen](docs://howto-ifc-schema-kiezen)). Rekenprofiel: dat uit het bestand.
 
-**Opslaan** — ja, en het is het enige formaat dat opslaat. *Opslaan* schrijft je hele project als IFC-bestand. Het bestand wordt het opslagdoel.
+**Opslaan** — ja, en het is het enige formaat dat opslaat. *Opslaan* schrijft je hele project als IFC-bestand, in het IFC-schema van het project (standaard IFC 4.3 ADD2). Het bestand wordt het opslagdoel.
 
 **Exporteren** — ja, als *IFC*, in het IFC-schema van het project (standaard IFC 4.3 ADD2). Standaardnaam: de projectnaam met de extensie `.ifc`. Is je project gekoppeld aan een resourcebibliotheek, dan staat in *Bestand › Exporteren* onder de kaarten het vakje *Bibliotheekbestand ernaast opslaan*. Aangevinkt vraagt de app na het project ook om een plek voor *projectnaam-bibliotheek.ifc*. Het vakje staat niet in de lijst op het tabblad *Start*.
 
 **Wat meegaat** — alles wat bij het project hoort: taken met structuur, duur, datums en voortgang; relaties met lag; constraints en deadlines; kalenders; resources en toewijzingen, ook de urenverdeling; baselines; activiteitcodes en eigen velden; aantekeningen; externe koppelingen naar andere projecten; onderbrekingen; taaktypes en eigen werksoorten; de projectinstellingen zoals de statusdatum, de voortgangsmodus, het rekenprofiel en de reken-opties; de koppeling met een resourcebibliotheek. Bij een project uit een `.xer` gaat ook het oorspronkelijke bronbestand mee. Een eigen werksoort staat erin als het IFC-type `USERDEFINED` met de naam in het veld ObjectType, zodat andere IFC-programma's de taak gewoon lezen; daarnaast bewaart de app het vaste id van de werksoort, zodat hernoemen de koppeling niet breekt. Opent iemand het bestand op een andere computer, dan staat de werksoort daar onder *Uit dit project*, niet in diens eigen *Mijn werksoorten*.
 
-**Wat niet meegaat** — hoe je het scherm hebt ingesteld (zoom, scrollpositie, geselecteerde taak, ingeklapte fasen, gekozen filter en groepering) en de app-instellingen ([App-instellingen](docs://ref-instellingen)). Het tabblad *IFC* toont de IFC-tekst van je project.
+**Wat niet meegaat** — hoe je het scherm hebt ingesteld (zoom, scrollpositie, geselecteerde taak, ingeklapte fasen, gekozen filter en groepering) en de app-instellingen ([App-instellingen](docs://ref-instellingen)). Het tabblad *IFC* is een editor met de IFC-tekst van je project. *Genereer IFC* ververst haar, *Kopieer* zet haar op het klembord en *Toepassen* laadt de tekst als je project, ter vervanging van het project in dat tabblad.
 
 ## MS Project XML (MSPDI)
 
@@ -41,6 +41,8 @@ Per bestandsformaat: of je het kunt openen, opslaan en exporteren, wat er wel en
 **Wat meegaat** — taken met structuur (niveau en WBS), duur, datums en voortgang; relaties met lag, ook in uren of procenten; constraints, ook de deadline; kalenders, ook taak- en resourcekalenders; resources en toewijzingen, ook de curve of urenverdeling; de statusdatum; de kritiek-drempel, als een heel aantal werkdagen van 0 of meer bij *Totale speling ≤ drempel*; de beschrijving van een taak (als notitie); het taaktype van een taak (als MS Project-taaktype); een eigen werksoort, in een vrij veld (`ExtendedAttribute`) dat de app terugleest en dat MS Project mag negeren. Van je baselines gaat alleen de actieve mee, als baseline 0. Een taak in uren behoudt haar eenheid, en een mijlpaal haar soort (start, einde of automatisch).
 
 **Wat niet meegaat** — aantekeningen (de checklist bij een taak), externe koppelingen naar andere projecten, activiteitcodes en eigen velden, een tweede constraint, de markering *Handmatig gepland*, de nivelleervertraging, het hervat- en stoppunt bij een uit-volgorde-taak, de conventies *Restwerk hervat na de al verstreken duur* en *Niet-gestarte taken niet naar de statusdatum* van een MS Project-profiel, en de overige reken-opties. Onderbroken taken zonder urenverdeling gaan zonder hun onderbrekingen mee.
+
+**Feestdagen bij openen.** Een afgeleide kalender erft de uitzonderingen van zijn basiskalender. Een kalender met een eigen werkweek en zonder uitzonderingen krijgt geen feestdagen. Alleen een kale kalender, zonder basiskalender, werkweek of uitzonderingen, houdt de Nederlandse standaardfeestdagen. Ontbreken er feestdagen, dan kan je einddatum afwijken: zie [Feestdagen en bouwvak genereren](docs://howto-feestdagen-genereren).
 
 **Wat verandert onderweg** — een constraint *Moet starten op (MSO)* of *Moet eindigen op (MFO)* zonder de keuze *Verplicht (pin logica)* wordt *Start niet eerder dan (SNET)* of *Eindig niet eerder dan (FNET)*. Een hammock wordt een gewone taak met berekende datums. MS Project XML kent de uren per dag alleen voor de projectkalender. Een andere kalender met eigen uren per dag krijgt bij openen de werktijd als uren per dag: 8 uur per dag bij werktijden van 10 uur wordt 10. Een taak in dagen op zo'n kalender wordt dan korter, bijvoorbeeld 4 dagen in plaats van 5.
 
@@ -63,6 +65,8 @@ Per bestandsformaat: of je het kunt openen, opslaan en exporteren, wat er wel en
 **Openen** — ja. De app herkent een `.xml`-bestand als P6 XML aan het hoofdelement `APIBusinessObjects`. Rekenprofiel: *Open Planner Studio*.
 
 **Meerdere projecten in één bestand.** Elk project met activiteiten opent in een eigen tabblad, met de naam *Projectnaam (Project-ID)*. Een project zonder activiteiten slaat de app over. Het actieve tabblad is het project met de meeste activiteiten. Een relatie naar een ander project neemt de app niet mee, en ook geen activiteit die bij geen project hoort. Na het openen meldt de app hoeveel projecten ze opende.
+
+**Feestdagen bij openen.** Hier gelden dezelfde regels als bij MS Project XML: een kalender met een eigen werkweek en zonder uitzonderingen krijgt geen feestdagen.
 
 **Baselines.** Een `<BaselineProject>` in het bestand wordt een baseline van zijn project. De baseline die P6 als actief aanwijst, is ook in de app actief.
 
@@ -91,6 +95,14 @@ Per bestandsformaat: of je het kunt openen, opslaan en exporteren, wat er wel en
 **Wat meegaat** — de WBS-structuur en activiteiten met duur, datums, constraints en voortgang; relaties met lag; kalenders; resources met toewijzingen; activiteitcodes; eigen velden (UDF's); aantekeningen; de planningsinstellingen van P6. Een activiteit van het type *Level of Effort* wordt een hammock. Een baselineproject wordt de actieve baseline van het project dat ernaar verwijst. Een relatie tussen twee projecten bewaart de app als brongegeven.
 
 **Tempo van een toewijzing.** Is er nog werk te doen, dan wordt het resterende tempo (`remain_qty_per_hr`) de *Eenh./dag*. Anders is dat het begrote tempo (`target_qty_per_hr`). Het begrote werk, het verrichte werk en het resterende werk blijven zoals in het bestand. Bij materiaal blijft het begrote tempo staan.
+
+**Een vrije zaterdag of zondag die niet in het bestand staat.** Sommige P6-exports schuiven een vrije weekenddag in een blok van meer vrije dagen naar de vrijdag ervoor of de maandag erna. Werkt de kalender op zaterdag of zondag, dan zou die dag zo ten onrechte een werkdag worden. Ziet de app dat patroon in een blok van minstens drie vrije dagen, dan maakt ze die weekenddag alsnog vrij. De dag heet in de kalender *Calendar exception (weekend reconstruction)* en telt mee in de regel *N kalenderbevindingen.* van de melding. Op een kalender die in het weekend niet werkt, verandert er niets.
+
+**Speling tot het projecteinde, zonder einddatum.** Staat in P6 de optie aan om de speling tot het projecteinde te rekenen, maar staat in het bestand geen einddatum voor het project en geen geplande einddatum voor een activiteit? Dan zet de app de optie *Speling rekenen tot de einddatum van het project* uit. De late datums rekent ze dan terug vanaf het laatste vroege einde. Dat telt mee in de regel *N P6-planningsinstellingen met veilige terugval.*
+
+**Voltooide activiteiten op de statusdatum.** Sommige bestanden leggen voor een voltooide activiteit niet haar werkelijke datums vast, maar een venster op de statusdatum. In de weergave *Datums zoals opgeslagen* staat zo'n activiteit dan als een smalle balk op de statusdatum. Komt ze na herberekenen op een andere plek, dan telt ze mee in het aantal taken dat de strook noemt. De conventie *Voltooide taak in het statusdatumvenster* rekent zo'n venster na, en alleen met die conventie krijgt een voltooide taak via de reken-optie *Voltooide taak: late datums vanaf de statusdatum* een echte speling. Deze conventie is een benadering: de app zag dit gedrag alleen in P3-uitvoer, en Primavera bevestigt het nergens. Daarom staat ze in elk ingebouwd profiel uit, ook onder *Primavera P6*. Je zet haar aan in het blok *Rekenprofiel en reken-opties*; het project krijgt dan een eigen profiel. Zie [Rekenopties en conventies](docs://ref-rekenopties-en-conventies).
+
+**Getallen met een komma als decimaalteken.** P6 legt het decimaalteken en het scheidingsteken voor duizendtallen vast in de tabel `CURRTYPE`. De app leest die tekens voordat ze duren, werk en speling omzet. Ontbreekt die informatie, dan gebruikt de app een punt als decimaalteken. Staan er dan toch getallen met een decimale komma in het bestand, dan opent de app niets. Zo opent er nooit een planning met verkeerd gelezen getallen.
 
 **Wat niet meegaat** — een project zonder activiteiten, en een relatie tussen twee projecten als echte relatie in je planning. Zie [Een Primavera P6-bestand (.xer) openen](docs://howto-xer-openen).
 

@@ -62,6 +62,7 @@ If you turn it off again, it stays an ordinary task with duration 0: enter a dur
 ### Other ways
 
 - Ctrl+M (⌘+M on a Mac) puts a new milestone at the bottom of the list, even if a task is selected. The *Properties* panel does not open.
+- A milestone that you make with Ctrl+M or through the right-click menu gets the work category *Inspection*. A *Start milestone* or *Finish milestone* from *Milestone ▾* gets *Other*. Change the work category in *Properties* if you need to.
 - *Add milestone* in a task's right-click menu makes the milestone a subtask of that task, not a sibling.
 
 ### Copying a task or a whole branch

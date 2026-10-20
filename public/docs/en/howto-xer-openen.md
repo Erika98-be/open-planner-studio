@@ -24,7 +24,16 @@ The first line of the message names the number of opened tabs. Below it are only
 - *1 external link preserved.* A relation between two projects. The app keeps it as source data, but does not turn it into a relation in your schedule.
 - *12 tasks show the dates as Primavera recorded them (not recalculated).* The number of tasks for which the view *Dates as recorded* shows Primavera's dates: every task for which the file recorded dates, not only the ones that differ.
 
-The other lines are diagnostics of the reading itself: the number of projects found, a skipped empty project, an ignored dangling baseline reference, a text encoding other than plain UTF-8 (the notice names which one: for Arabic, Cyrillic or Greek text the app picks the matching Windows code page, otherwise Windows-1252), activities without a planned start (they start on the data date or the project start from the file) and counters for findings in the tables, the calendars and the numbers, for unknown field values and for P6 scheduling settings that the app replaced by a safe choice. They ask nothing of you. *Read more* opens the Help about opening Primavera files.
+The other lines are diagnostics of the reading itself. They ask nothing of you:
+
+- the number of projects found;
+- a skipped empty project;
+- an ignored dangling baseline reference;
+- a text encoding other than plain UTF-8 (the notice names which one: for Arabic, Cyrillic or Greek text the app picks the matching Windows code page, otherwise Windows-1252);
+- activities without a planned start (they start on the data date or the project start from the file);
+- counters for findings in the tables, the calendars and the numbers, for unknown field values and for P6 scheduling settings that the app replaced by a safe choice.
+
+*Read more* opens the Help about opening Primavera files.
 
 ## Pitfalls and what the app does then
 
@@ -36,13 +45,13 @@ The other lines are diagnostics of the reading itself: the number of projects fo
 
 **An export to CSV, MS Project XML or P6 XML loses data.** The app warns: *Exporting to CSV loses XER source information.* IFC loses nothing.
 
-**A free Saturday or Sunday that is not in the file.** Some P6 exports move a free weekend day inside a block of several free days to the Friday before or the Monday after. If the calendar works on Saturday or Sunday, that day would wrongly become a working day. If the app sees that pattern in a block of at least three free days, it makes that weekend day free after all. In the calendar the day is called *Calendar exception (weekend reconstruction)*, and it counts in the line *N calendar findings.* of the message. On a calendar that does not work at the weekend, nothing changes.
+**A free Saturday or Sunday that is not in the file.** The app can make such a weekend day free itself. The day is then called *Calendar exception (weekend reconstruction)* in the calendar. The pattern is in [Import and export formats](docs://ref-import-exportformaten).
 
-**Float up to the project finish, without a finish date.** Is the P6 option on to calculate float up to the project finish, but does the file have no finish date for the project and no planned finish date for any activity? Then the app turns off the option *Calculate float up to the project finish date*. It then calculates the late dates back from the latest early finish. That counts in the line *N P6 scheduling settings used safe fallbacks.*
+**Float up to the project finish, without a finish date.** If the file has no finish date, the app turns off the option *Calculate float up to the project finish date*. That counts in the line *N P6 scheduling settings used safe fallbacks.* Details are in [Import and export formats](docs://ref-import-exportformaten).
 
-**Completed activities on the data date.** Some files do not record the actual dates of a completed activity, but a window on the data date. In the view *Dates as recorded* such an activity is then a narrow bar on the data date. If recalculating puts it in a different place, it counts in the number of tasks that the strip gives. The convention *Completed task in the data-date window* calculates such a window, and only with that convention does a completed task get a real float through the calculation option *Completed task: late dates from the data date*. This convention is an approximation: the app saw this behaviour only in P3 output, and Primavera does not confirm it anywhere. That is why it is off in every built-in profile, also under *Primavera P6*. You turn it on in the block *Calculation profile and options*; the project then gets a custom profile. See [Calculation options and conventions](docs://ref-rekenopties-en-conventies).
+**Completed activities on the data date.** A completed activity can show as a narrow bar on the data date in the view *Dates as recorded*. That is not a fault in your file. The explanation and the related convention are in [Import and export formats](docs://ref-import-exportformaten).
 
-**Numbers with a comma as decimal separator.** P6 records the decimal separator and the thousands separator in the table `CURRTYPE`. The app reads those characters before it converts durations, work and float. If that information is missing, the app uses a point as decimal separator. If the file still contains numbers with a decimal comma, the app opens nothing. That way a schedule with wrongly read numbers never opens.
+**Numbers with a comma as decimal separator.** If the app cannot determine the decimal separator reliably, it does not open the file. That way a schedule with wrongly read numbers never opens. Ask the sender for a new export.
 
 **A file the app cannot read.** You get an error message, with the reason. A few examples:
 

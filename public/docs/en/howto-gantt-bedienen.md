@@ -58,6 +58,10 @@ The further you zoom out, the fewer grid lines there are. At 8 pixels per day or
 
 The task name is shown in the bar if it fits completely. If it does not fit, for example when you zoom out, the full name is shown to the right of the bar.
 
+### Looking at the details of a task
+
+Hold the mouse still on a bar. A small card appears with the name of the task, *WBS*, *Duration*, *Start*, *Finish*, *Status*, *Critical* and *Total float*. During dragging, panning, a selection box or a right-click menu the card is gone.
+
 ## Pitfalls and what the app does then
 
 **The start does not move.** If the task has a predecessor and a constraint other than SNET, for example *As late as possible (ALAP)*, the app does not apply the dragged start. After you let go, the app says which constraint holds the start back. Change that constraint to move the start. The right edge does work, because it only changes the duration.
