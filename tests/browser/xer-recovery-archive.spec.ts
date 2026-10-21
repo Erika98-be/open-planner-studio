@@ -3,7 +3,7 @@
 // gebruikershandelingen: een .xer met twee projecten via de ribbonknop Openen en de bestandskiezer, een
 // taaknaam wijzigen in de tabel, herladen, en Herstellen in het herstelvenster. `window.__OPS__` en
 // IndexedDB worden alleen GELEZEN. Het tweede geval zet vóór de app-start een oude (v1) database met
-// een snapshot waarin het archief nog ingebed zit — zoals een vorige versie hem achterliet — en bewijst
+// een leesbare snapshot met ingebed archief én een onleesbare kopie — en bewijst
 // dat de upgrade naar v2 die snapshot nog herstelt.
 import type { Locator, Page } from '@playwright/test';
 import { expect, test } from './fixtures/ops';
@@ -152,7 +152,7 @@ test('crashherstel: een XER met twee projecten komt terug mét archief, uit éé
   expect(restored.flatMap(doc => doc.tasks)).toContain(RENAMED);
 });
 
-test('crashherstel: een oude v1-database met ingebed archief wordt na de upgrade nog hersteld', async ({ page, ops: _ops }) => {
+test('crashherstel: oude v1-snapshot herstelt en onleesbare kopie blijft bewaard na nieuwe auto-save', async ({ page, ops }) => {
   test.setTimeout(90_000);
   // Fixture, vóór de app-start: de app is door de `ops`-fixture al geladen en heeft `ops-recovery` op v2
   // gezet. Daarom eerst weg van de app naar een statisch bestand, de database wissen, en daar een v1-
@@ -160,6 +160,7 @@ test('crashherstel: een oude v1-database met ingebed archief wordt na de upgrade
   // gemaakt met de eigen lezer/writer via de dev-server. Daarna pas de app openen.
   await page.goto('/icon.png');
   const sessionId = 'oude-sessie-v1';
+  ops.acceptError('Failed to read recovery document: doc-corrupt');
   await page.evaluate(async ({ xer, sid }) => {
     // Paden als variabele: de dev-server (Vite) levert de bronmodules; de testtypecheck kent ze niet.
     const readerPath = '/src/services/xer/xerReader.ts';
@@ -185,9 +186,13 @@ test('crashherstel: een oude v1-database met ingebed archief wordt na de upgrade
         const store = tx.objectStore('records');
         const now = Date.now();
         store.put({ id: `${sid}::doc::doc-oud`, kind: 'doc', sessionId: sid, docId: 'doc-oud', ifc, addedAt: now });
+        store.put({ id: `${sid}::doc::doc-corrupt`, kind: 'doc', sessionId: sid, docId: 'doc-corrupt', ifc: 'BROKEN_RECOVERY_FIXTURE', addedAt: now });
         store.put({
           id: `${sid}::manifest`, kind: 'manifest', sessionId: sid, version: 4, activeDocumentId: 'doc-oud',
-          documents: [{ id: 'doc-oud', ifc: `${sid}::doc::doc-oud`, filePath: null, isDirty: true, datesAsRecorded: false }],
+          documents: [
+            { id: 'doc-oud', ifc: `${sid}::doc::doc-oud`, filePath: null, isDirty: true, datesAsRecorded: false },
+            { id: 'doc-corrupt', ifc: `${sid}::doc::doc-corrupt`, filePath: null, isDirty: true, datesAsRecorded: false },
+          ],
           addedAt: now,
         });
         tx.oncomplete = () => { db.close(); resolve(); };
@@ -210,4 +215,18 @@ test('crashherstel: een oude v1-database met ingebed archief wordt na de upgrade
   const db = await readRecoveryDb(page, 'Fundering');
   expect(db.version).toBe(2);
   expect(db.stores.sort()).toEqual(['records', 'xer-archives']);
+
+  // Niet alleen direct na Herstellen kijken: ook de eerstvolgende echte auto-save
+  // moet de onleesbare kopie bewaren. Bewerk daarom het herstelde document via de tabel.
+  const edited = 'Herstel na gedeeltelijk herstel';
+  await page.getByRole('button', { name: /^(Table|Tabel)$/ }).click();
+  const taskId = await page.evaluate(() => window.__OPS__!.store.getState().tasks[0]!.id);
+  const cell = taskCell(page, taskId, 'task.name');
+  await cell.click();
+  await page.keyboard.press('Enter');
+  await cell.locator('input').fill(edited);
+  await page.keyboard.press('Enter');
+  await expect.poll(() => readRecoveryDb(page, edited), { timeout: 30_000, intervals: [500] })
+    .toMatchObject({ snapshotHasName: true });
+  expect((await readRecoveryDb(page, 'BROKEN_RECOVERY_FIXTURE')).snapshotHasName).toBe(true);
 });

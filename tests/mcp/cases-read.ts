@@ -243,6 +243,28 @@ test('list_tasks zonder_relaties: vindt precies de leaf-wezen (geen verzameltake
   // WEES en KIND zijn beide leaves zonder relatie; PARENT is een verzameltaak (uitgesloten).
   assertEq(foundNames, ['KIND', 'WEES'], 'precies de leaf-wezen, verzameltaak uitgesloten');
   assert(!data.tasks.some((t: any) => t.id === p || t.id === q), 'gelinkte taken zijn geen wees');
+  // Een relatie op een fase geldt ook voor diep geneste bladtaken, niet voor losse zustertakken.
+  const sub = S().addTask({ name: 'SUB', parentId: parent, time: createDefaultTaskTime('2026-06-01', 1) });
+  S().addTask({ name: 'DIEP', parentId: sub, time: createDefaultTaskTime('2026-06-01', 1) });
+  const names = () => callOk('planner_list_tasks', { zonder_relaties: true, limit: 1000 }).tasks.map((t: any) => t.name).sort();
+  assertEq(names(), ['DIEP', 'KIND', 'WEES'], 'zonder faserelatie blijven de kinderen wezen');
+  const incoming = S().addSequence({ predecessorId: p, successorId: parent, type: 'START_START', lagDays: 0 });
+  if (!incoming) throw new Error('Faserelatie moet kunnen worden toegevoegd: incoming');
+  assertEq(names(), ['WEES'], 'inkomende faserelatie verbindt alle afstammelingen');
+  S().removeSequence(incoming);
+  const outgoing = S().addSequence({ predecessorId: parent, successorId: q, type: 'FINISH_START', lagDays: 0 });
+  if (!outgoing) throw new Error('Faserelatie moet kunnen worden toegevoegd: outgoing');
+  assertEq(names(), ['WEES'], 'uitgaande faserelatie verbindt ook diep geneste kinderen');
+  S().removeSequence(outgoing);
+  const nested = S().addSequence({ predecessorId: sub, successorId: q, type: 'FINISH_START', lagDays: 0 });
+  if (!nested) throw new Error('Faserelatie moet kunnen worden toegevoegd: nested');
+  assertEq(names(), ['KIND', 'WEES'], 'relatie op subfase verbindt geen zustertak');
+  S().removeSequence(nested);
+  assertEq(names(), ['DIEP', 'KIND', 'WEES'], 'verwijderde relaties worden niet gecachet');
+  const page = callOk('planner_list_tasks', { zonder_relaties: true, limit: 1 });
+  assertEq(page.total, 3, 'paginatotaal telt de gefilterde wezen');
+  assertEq(page.tasks.length, 1, 'paginering blijft werken');
+
 });
 
 // =================================================================================================

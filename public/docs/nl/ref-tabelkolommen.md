@@ -76,7 +76,7 @@ Standaard toont de tabel naast de Gantt *WBS*, *Taaknaam* en *Duur*. De tabel op
 - **Status** — *Niet gestart*, *Bezig* of *Voltooid*. Bewerkbaar, behalve bij een samenvattingstaak.
 - **Voortgang** — het percentage, als `40%`. Bewerkbaar met een getal van 0 tot 100, behalve bij een samenvattingstaak.
 - **Werkelijke start** — de datum waarop de taak begon. Bewerkbaar, behalve bij een samenvattingstaak.
-- **Werkelijke einde** — de datum waarop de taak klaar was. Bewerkbaar, behalve bij een samenvattingstaak.
+- **Werkelijk einde** — de datum waarop de taak klaar was. Bewerkbaar, behalve bij een samenvattingstaak.
 - **Werkelijke duur** — de werkelijke duur, als getal. Bewerkbaar, behalve bij een samenvattingstaak.
 - **Resterend** — de restduur, in de eenheid van de taak. Bewerkbaar, behalve bij een samenvattingstaak.
 - **Hervattingsdatum** en **Stopdatum** — de hervatting en de stop van een lopende taak uit een MS Project- of Primavera-bestand. Alleen-lezen.

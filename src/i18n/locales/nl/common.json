@@ -17,6 +17,7 @@
     "extHelpProjectOpenFailed": "Het projectbestand {{file}} van de extensie {{name}} kon niet worden geopend.",
     "extImportFailed": "Importeren met {{name}} is mislukt.",
     "extensionMessage": "Extensie {{name}}: {{message}}",
+    "extensionInstallFailed": "De extensie kon niet worden geïnstalleerd. Controleer het bestand en probeer opnieuw.",
     "xerInvalidInput": "XER-import vereist de oorspronkelijke bestandsbytes.",
     "xerInvalidFile": "Dit bestand is geen geldig of ondersteund XER-bestand.",
     "xerInvalidEncoding": "De tekencodering van dit XER-bestand is ongeldig of afgekapt.",
