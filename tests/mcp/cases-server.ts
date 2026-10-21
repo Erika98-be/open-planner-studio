@@ -29,6 +29,8 @@ import {
   generateToken,
   createRequestHandler,
   MCP_QUEUE_DEADLINE_MS,
+  MCP_MAX_SESSIONS,
+  type McpResponseEvent,
   createStatusHandler,
   attemptBridgeStart,
   buildMcpContext,
@@ -530,6 +532,55 @@ test('createRequestHandler: initialize (nieuwe MCP-sessie) wist het drift-anker 
   await handler({ id: 32, body: JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'tools/call' }) });
   await handler({ id: 33, body: JSON.stringify({ jsonrpc: '2.0', id: 3, method: 'initialize' }) });
   assertEq(seen, [null, 'doc-A', null], 'binnen een sessie blijft het anker; initialize begint zonder');
+});
+
+test('createRequestHandler: sessies — eigen anker per Mcp-Session-Id, onbekend ⇒ 404, begrensd (review PR #439)', async () => {
+  const emitted: McpResponseEvent[] = [];
+  const seen: Array<[string | null, string | null]> = [];
+  let next = 0;
+  // De handler bindt bij elke tools/call aan het doc uit de body, maar alleen als er nog geen anker is.
+  const handler = createRequestHandler({
+    emit: (_e, p) => { emitted.push(p as McpResponseEvent); },
+    buildContext: buildMcpContext,
+    newSessionId: () => `s${++next}`,
+    handleMessage: async (body, ctx) => {
+      const msg = JSON.parse(body) as { id: number; method: string; params?: { doc?: string } };
+      if (msg.method === 'initialize' && msg.params?.doc === 'fail') {
+        return JSON.stringify({ jsonrpc: '2.0', id: msg.id, error: { code: -32600, message: 'nee' } });
+      }
+      seen.push([msg.params?.doc ?? null, ctx.expectedDocId]);
+      if (msg.method === 'tools/call' && ctx.expectedDocId === null) ctx.expectedDocId = msg.params?.doc ?? null;
+      return JSON.stringify({ jsonrpc: '2.0', id: msg.id, result: {} });
+    },
+  });
+  let rid = 100;
+  const send = async (method: string, sessionId?: string, doc?: string) => {
+    await handler({ id: ++rid, body: JSON.stringify({ jsonrpc: '2.0', id: rid, method, params: doc ? { doc } : {} }), sessionId });
+    return emitted[emitted.length - 1];
+  };
+
+  const initA = await send('initialize');
+  assertEq(initA.sessionId, 's1', 'een geslaagde initialize krijgt een sessie-id');
+  await send('tools/call', 's1', 'doc-1');                   // A bindt doc-1
+  const initB = await send('initialize');
+  assertEq(initB.sessionId, 's2', 'tweede client krijgt een eigen sessie-id');
+  await send('tools/call', 's1', 'x');                       // A: anker moet doc-1 blijven
+  await send('tools/call', 's2', 'doc-2');                   // B bindt zijn eigen doc
+  assertEq(seen.slice(-2), [['x', 'doc-1'], ['doc-2', null]], 'ankers per sessie, niet gedeeld');
+
+  const legacy = await send('tools/call', undefined, 'doc-L');
+  assertEq([legacy.sessionId, legacy.status], [undefined, undefined], 'zonder header: gewoon antwoord, geen sessie');
+  const unknown = await send('tools/call', 'bestaat-niet');
+  assertEq([unknown.status, unknown.body], [404, ''], 'onbekende sessie ⇒ 404 zonder body');
+
+  const failed = await send('initialize', undefined, 'fail');
+  assertEq(failed.sessionId, undefined, 'mislukte initialize krijgt geen sessie-id');
+
+  for (let i = 0; i < MCP_MAX_SESSIONS; i++) await send('initialize');
+  const evicted = await send('tools/call', 's1');
+  assertEq(evicted.status, 404, `na ${MCP_MAX_SESSIONS} nieuwere sessies is de oudste vergeten`);
+  const newest = await send('tools/call', `s${next}`);
+  assertEq(newest.status, undefined, 'de nieuwste sessie bestaat nog');
 });
 
 const REQ_BODY = JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'ping' });

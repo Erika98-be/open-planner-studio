@@ -42,7 +42,10 @@ koppeling met het Help-artikel; `tests/mcp/cases-agent-texts.ts` houdt elke `pla
 Veiligheid is state, geen conventie: `ui.aiMode` (de hele AI-tab en bridge verschijnen pas hierdoor),
 `ui.aiPaused`, `ui.aiReadOnly` en `ui.aiServerStatus` leven in `uiSlice`; de per-request `McpContext`
 leest ze live, plus een drift-anker (`expectedDocId`) zodat een tool nooit op het verkeerde document
-landt; het anker leeft per verbinding en een `initialize` (nieuwe MCP-sessie) wist het.
+landt. Het anker leeft per MCP-sessie (`Mcp-Session-Id`): een geslaagde `initialize` maakt een nieuwe sessie
+met een leeg anker, Rust zet de id als header en geeft hem bij latere requests door, en `createRequestHandler`
+houdt per sessie het anker bij (maximaal `MCP_MAX_SESSIONS`, onbekende id ⇒ `404`). Requests zonder header
+delen één anker, dat een `initialize` wist.
 `createRequestHandler` (`server.ts`) verwerkt requests strikt na elkaar en voert een request dat langer
 dan `MCP_QUEUE_DEADLINE_MS` (110 s, net onder Rusts 120 s-time-out) in de wachtrij stond niet meer uit
 (`-32001`): de client had er al een 504 voor, dus uitvoeren zou bij een retry dubbel muteren. Instellingen staan onder de bekende `ops-`-prefix (`ops-aiMode`, `ops-aiAutostart` — default
@@ -57,8 +60,9 @@ route. `tests/mcp/cases-toolregistry.ts` is het mechanische vangnet dat een verg
 (of een spookregistratie zonder broncode) mechanisch afvangt.
 
 **Externe client.** `tests/mcp/cases-externe-client.ts` toetst de bridge met de officiële SDK-client over echt HTTP.
-De HTTP-schil daar is `tests/mcp/bridgeMirror.ts`, een spiegel van `mcp_bridge.rs`; een driftcheck leest het
-Rust-bestand. Verander je de HTTP-laag in Rust (statuscodes, volgorde van de poorten, limieten), pas dan
-`bridgeMirror.ts` mee aan. Dezelfde controles (`tests/mcp/externalClient.ts`) draaien in
-`.github/workflows/mcp-real-app.yml` tegen de echte Rust-bridge in een Tauri-dev-build. Wat geleverd is en wat
+De HTTP-schil daar is `tests/mcp/bridgeMirror.ts`, een met de hand bijgehouden kopie van `mcp_bridge.rs`; hij
+bewijst niets over Rust zelf. Verander je de HTTP-laag in Rust (statuscodes, volgorde van de poorten, limieten,
+sessieheader), pas dan `bridgeMirror.ts` mee aan. Dezelfde controles (`tests/mcp/externalClient.ts`) draaien in
+`.github/workflows/mcp-real-app.yml` tegen de echte Rust-bridge in een Tauri-dev-build; die job draait ook de
+Rust-unit-tests van de bridge (`cargo test … mcp_bridge`), die geen andere workflow draait. Wat geleverd is en wat
 niet: `docs/mcp-verificatie.md`.

@@ -3,7 +3,7 @@ name: MCP echte app
 # Externe-clienttest tegen de ECHTE desktop-app: een Tauri-dev-build onder xvfb, de echte Rust-bridge
 # (`src-tauri/src/mcp_bridge.rs`) en de officiële MCP-client (`@modelcontextprotocol/sdk`). Zelfde
 # controles als `tests/mcp/cases-externe-client.ts` (dat in `npm test` tegen een Node-spiegel van de
-# bridge draait). Bewust NIET in de verplichte CI-keten: hij bouwt de Rust-app (~10-15 min) en hangt
+# bridge draait) en de Rust-unit-tests van de bridge (die draait geen andere workflow). Bewust NIET in de verplichte CI-keten: hij bouwt de Rust-app (~10-15 min) en hangt
 # af van WebKitGTK onder xvfb. Hij draait alleen als de MCP-route verandert, of met de hand.
 on:
   pull_request:
@@ -11,8 +11,11 @@ on:
       - main
     paths:
       - 'src-tauri/src/mcp_bridge.rs'
-      - 'src-tauri/src/lib.rs'
+      - 'src-tauri/src/main.rs'
       - 'src-tauri/Cargo.toml'
+      - 'src-tauri/Cargo.lock'
+      - 'package.json'
+      - 'package-lock.json'
       - 'src/services/mcp/**'
       - 'src/hooks/useAiAutostart.ts'
       - 'src/utils/devBridge.ts'
@@ -56,6 +59,13 @@ jobs:
 
       - name: Install frontend dependencies (npm ci)
         run: npm ci
+
+      # De Rust-unit-tests van mcp_bridge.rs draait verder geen enkele workflow. `dist/` hoeft alleen te
+      # bestaan: de standaardfeature `custom-protocol` sluit de frontend in bij het compileren.
+      - name: Rust-unit-tests van de bridge
+        run: |
+          mkdir -p dist
+          cargo test --manifest-path src-tauri/Cargo.toml mcp_bridge
 
       - name: Externe client tegen de echte app
         run: bash tests/mcp/realApp/run.sh

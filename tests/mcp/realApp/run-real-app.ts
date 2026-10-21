@@ -51,6 +51,9 @@ const probe: AppProbe = {
   taskCount: async () => ((await ops('getState')) as { tasks: number }).tasks,
   undo: async () => { await ops('dispatch', { action: 'undo', args: [] }); },
   setSafety: async (flags) => { await ops('dispatch', { action: 'setUI', args: [flags] }); },
+  newDocument: async () => ((await ops('dispatch', { action: 'newDocument', args: [] })) as { ret: string }).ret,
+  closeDocument: async (id) => { await ops('dispatch', { action: 'closeDocument', args: [id] }); },
+  switchDocument: async (id) => { await ops('dispatch', { action: 'switchDocument', args: [id] }); },
 };
 
 // AI-modus + automatisch starten aan, zoals de gebruiker in Instellingen doet; `useAiAutostart`

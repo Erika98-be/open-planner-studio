@@ -11,11 +11,17 @@ legt vast wat de app als MCP-server levert, wat niet, en welke test het bewijst.
 - Streamable HTTP, alleen `POST http://127.0.0.1:<poort>/mcp` (standaard 3877, instelling `ops-mcpPort`). De app
   toont het endpoint als `http://localhost:<poort>/mcp`.
 - Antwoord altijd `200 application/json` met één JSON-RPC-bericht. Geen SSE, geen GET-stream (`405`, `Allow:
-  POST`), geen sessie-id, geen JSON-RPC-batch (`-32600`). Een notificatie krijgt `200` met een lege body, niet
+  POST`), geen JSON-RPC-batch (`-32600`). Een notificatie krijgt `200` met een lege body, niet
   `202` zoals de spec vraagt (knownbugs 137).
 - Requests lopen strikt één voor één. Na 120 s wachten geeft de bridge `504`; een request dat langer dan 110 s
   in de rij stond, voert de app niet meer uit (`-32001`).
 - Body groter dan 50 MiB: `413`. Ander pad: `404`.
+- Sessies volgens de spec: een geslaagde `initialize` krijgt een nieuwe `Mcp-Session-Id` (16 willekeurige bytes,
+  hex) in de antwoordheader. De client stuurt die header daarna mee. Een onbekende of vergeten sessie-id krijgt
+  `404` zonder body; de client begint dan een nieuwe sessie. De app onthoudt per bridge-start de 32 laatst
+  gebruikte sessies. Een request zonder sessie-header werkt nog (voor clients die de header niet terugsturen),
+  maar zulke clients delen één documentanker. Een `DELETE` om een sessie te beëindigen krijgt `405`; dat mag
+  volgens de spec. De sessietabel staat in TypeScript (`createRequestHandler`); Rust geeft de header alleen door.
 - Protocolversies: de app kent `2025-06-18`, `2025-03-26` en `2024-11-05` en antwoordt met die van de client als
   hij er een van kent, anders met `2025-06-18`. De SDK-client 1.32.1 vraagt `2025-11-25` en accepteert
   `2025-06-18`.
@@ -41,8 +47,10 @@ legt vast wat de app als MCP-server levert, wat niet, en welke test het bewijst.
 - *Alleen lezen* (`ui.aiReadOnly`): elke wijzigende tool krijgt `READ_ONLY`; lezen werkt. *Pauzeren*
   (`ui.aiPaused`): elke wijzigende tool krijgt `PAUSED`. Een open dialoog blokkeert alle tools behalve
   `planner_get_planning_guide`.
-- Drift-anker: de eerste mutatie van een verbinding bindt aan het actieve document; wisselt de gebruiker van
-  tabblad, dan krijgt de volgende mutatie `DOC_DRIFT`.
+- Drift-anker per sessie: de eerste mutatie van een sessie bindt aan het actieve document; wisselt de gebruiker
+  van tabblad, dan krijgt de volgende mutatie van die sessie `DOC_DRIFT`. Een tweede client die `initialize`
+  doet, krijgt een eigen sessie en wist het anker van de eerste niet (review PR #439). Clients zonder
+  sessie-header delen één anker, en een `initialize` wist dat gedeelde anker.
 
 ## Mutatie, undo en backup
 
@@ -58,19 +66,28 @@ legt vast wat de app als MCP-server levert, wat niet, en welke test het bewijst.
    `@modelcontextprotocol/sdk` (`Client` + `StreamableHTTPClientTransport`, devDependency, vast op 1.32.1)
    praat over echt HTTP met `tests/mcp/bridgeMirror.ts`: een Node-host die het HTTP-contract van
    `mcp_bridge.rs` nabootst rond de echte `createRequestHandler`, dispatcher en tools op een eigen headless
-   storecontext. Een driftcheck in hetzelfde bestand leest de constanten en de volgorde van de controles uit
-   het Rust-bestand. Getoetst: initialize (protocolversie, serverInfo, capabilities, instructions), ping,
+   storecontext. De host is een kopie van de Rust-HTTP-laag en bewijst niets over Rust zelf; dat doet punt 2.
+   Getoetst: initialize (protocolversie, serverInfo, capabilities, instructions, `Mcp-Session-Id`), ping,
    `tools/list` (aantal en annotaties per tool gelijk aan de registry), een leestool, `planner_add_tasks` en
    `planner_batch` elk precies één undo-stap en één backup, `READ_ONLY` en `PAUSED` zonder undo-stap of
-   backup, `401` (geen token, fout token, ander scheme), `403` (Origin), `404` en `405`.
+   backup (direct na elke weigering geteld), twee clients (A krijgt `DOC_DRIFT` na een tabwissel, ook nadat B
+   een sessie begon; B werkt in het actieve document), onbekende sessie `404`, een request zonder sessie-header
+   werkt, `401` (geen token, fout token, ander scheme), `403` (Origin), `404` en `405`. De sessietabel zelf
+   (eigen anker per sessie, `404`, mislukte `initialize` zonder sessie, de grens van 32) toetst
+   `tests/mcp/cases-server.ts`.
    Draaien: `bash tests/mcp/run.sh cases-externe-client.ts`.
 2. **`.github/workflows/mcp-real-app.yml`** (apart, niet in de verplichte CI; draait op een PR die de MCP-route
    raakt, en met de hand). Bouwt de Tauri-dev-app onder xvfb, zet via het ops-test-kanaal
    (`src/utils/devBridge.ts`, opdrachten `dispatch` en `mcpConnection`) AI-modus en automatisch starten aan,
-   en draait dezelfde SDK-controles (`tests/mcp/externalClient.ts`) tegen de echte Rust-bridge.
+   en draait dezelfde SDK-controles (`tests/mcp/externalClient.ts`) tegen de echte Rust-bridge. Dezelfde job
+   draait de Rust-unit-tests van `mcp_bridge.rs` (`cargo test … mcp_bridge`); die draaien in geen andere
+   workflow.
    Script: `tests/mcp/realApp/run.sh` (weigert zonder `CI=true` of `OPS_MCP_REAL_APP=1`, omdat het in de
    appDataDir schrijft).
-3. **Handmatig, 2026-10-21**, tegen de spiegel uit punt 1 (niet tegen de desktop-app):
+3. **Handmatig, 2026-10-21**, tegen de spiegel uit punt 1 (niet tegen de desktop-app). Een loggende proxy
+   ervoor liet zien dat Claude Code en `mcp-remote` de `Mcp-Session-Id` na `initialize` bij elk volgend request
+   meesturen. Claude Code stuurt vóór `initialize` eerst `server/discover`; dat krijgt `-32601` en hij gaat
+   gewoon door.
    - Claude Code 2.1.306 met precies het configuratiefragment uit de app (`--mcp-config`): las het project en
      voegde een taak toe. `claude mcp add --transport http … --header "Authorization: Bearer …"` schrijft
      hetzelfde fragment (`type: "http"`, `url`, `headers`).

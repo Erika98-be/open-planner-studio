@@ -16,6 +16,12 @@ export interface AppProbe {
   undo(): Promise<void>;
   /** Zet de veiligheidsvlaggen die de gebruiker op het AI-tabblad zet. */
   setSafety(flags: { aiPaused?: boolean; aiReadOnly?: boolean }): Promise<void>;
+  /** Nieuw document (tabblad) openen; wordt actief. Geeft het id. */
+  newDocument(): Promise<string>;
+  /** Een open document sluiten. */
+  closeDocument(id: string): Promise<void>;
+  /** Naar een open document wisselen. */
+  switchDocument(id: string): Promise<void>;
 }
 
 export interface ExpectedServer {
@@ -77,7 +83,7 @@ async function expectConnectStatus(url: string, headers: Record<string, string>,
 
 interface ToolOutcome {
   isError: boolean;
-  structured: { ok?: boolean; code?: string; [k: string]: unknown };
+  structured: { ok?: boolean; code?: string; envelope?: { activeDocumentId?: string }; [k: string]: unknown };
 }
 
 async function callTool(client: Client, name: string, args: Record<string, unknown>): Promise<ToolOutcome> {
@@ -105,6 +111,8 @@ export function externalClientChecks(
     afterWrite?: () => Promise<void> | void;
     afterBatch?: () => Promise<void> | void;
     beforeMutation?: () => Promise<void> | void;
+    /** Direct na elke geweigerde mutatie: de route toetst dat er niets veranderde sinds `beforeMutation`. */
+    afterRefusal?: (label: string) => Promise<void> | void;
   } = {},
 ): ClientCheck[] {
   const auth = { Authorization: `Bearer ${env.token}` };
@@ -113,9 +121,11 @@ export function externalClientChecks(
 
   return [
     {
-      name: 'initialize: protocolversie, serverInfo, capabilities en instructions',
+      name: 'initialize: protocolversie, serverInfo, capabilities, instructions en Mcp-Session-Id',
       fn: async () => {
         ({ client, transport } = await connectClient(env.url, auth));
+        assert(typeof transport.sessionId === 'string' && transport.sessionId.length > 0,
+          'de server hoort na initialize een Mcp-Session-Id te geven');
         assertSame(transport.protocolVersion, env.expected.protocolVersion, 'onderhandelde protocolversie');
         assertSame(client.getServerVersion(), { name: env.expected.name, version: env.expected.version }, 'serverInfo');
         assertSame(client.getServerCapabilities(), { tools: {} }, 'capabilities: alleen tools (geen resources/prompts)');
@@ -187,6 +197,7 @@ export function externalClientChecks(
           assert(res.isError, 'add_tasks hoort isError te geven in alleen-lezen');
           assertSame(res.structured.code, 'READ_ONLY', 'foutcode');
           assertSame(await env.probe.taskCount(), before, 'geen taken bij weigering');
+          await extra.afterRefusal?.('READ_ONLY');
           const read = await callTool(client, 'planner_get_project_info', {});
           assert(!read.isError, 'leestool hoort te werken in alleen-lezen');
         } finally {
@@ -205,10 +216,78 @@ export function externalClientChecks(
           assert(res.isError, 'add_tasks hoort isError te geven bij pauze');
           assertSame(res.structured.code, 'PAUSED', 'foutcode');
           assertSame(await env.probe.taskCount(), before, 'geen taken bij weigering');
+          await extra.afterRefusal?.('PAUSED');
         } finally {
           await env.probe.setSafety({ aiPaused: false });
         }
         await client.close();
+      },
+    },
+    {
+      name: 'twee clients: een initialize van B wist het documentanker van A niet (review PR #439)',
+      fn: async () => {
+        const a = await connectClient(env.url, auth);
+        let docB: string | null = null;
+        let docA: string | null = null;
+        try {
+          const before = await env.probe.taskCount();
+          const first = await callTool(a.client, 'planner_add_tasks', { tasks: [{ tempId: 'tmp-a1', name: 'Sessie A', duration: 1 }] });
+          assert(!first.isError, `A: eerste mutatie faalde: ${JSON.stringify(first.structured)}`);
+          docA = first.structured.envelope?.activeDocumentId ?? null;
+          assert(docA, 'A: envelop zonder activeDocumentId');
+          assertSame(await env.probe.taskCount(), before + 1, 'taken in het eerste document na A');
+
+          docB = await env.probe.newDocument();
+          assert(docB !== docA, 'nieuw document hoort een ander id te hebben');
+          const drift = await callTool(a.client, 'planner_add_tasks', { tasks: [{ tempId: 'tmp-a2', name: 'Sessie A drift', duration: 1 }] });
+          assertSame(drift.structured.code, 'DOC_DRIFT', 'A na tabwissel');
+
+          // B begint een sessie (de route uit de review) en doet nog niets anders.
+          const b = await connectClient(env.url, auth);
+          try {
+            assert(b.transport.sessionId && b.transport.sessionId !== a.transport.sessionId,
+              'B hoort een eigen sessie-id te krijgen');
+            const again = await callTool(a.client, 'planner_add_tasks', { tasks: [{ tempId: 'tmp-a3', name: 'Sessie A na B', duration: 1 }] });
+            assertSame(again.structured.code, 'DOC_DRIFT', 'A na initialize van B: anker van A hoort te blijven');
+            assertSame(await env.probe.taskCount(), 0, 'niets van A in het tweede document');
+
+            const fromB = await callTool(b.client, 'planner_add_tasks', { tasks: [{ tempId: 'tmp-b1', name: 'Sessie B', duration: 1 }] });
+            assert(!fromB.isError, `B: mutatie faalde: ${JSON.stringify(fromB.structured)}`);
+            assertSame(fromB.structured.envelope?.activeDocumentId, docB, 'B werkt in het actieve (tweede) document');
+            assertSame(await env.probe.taskCount(), 1, 'taak van B in het tweede document');
+          } finally {
+            await b.client.close();
+          }
+        } finally {
+          await a.client.close();
+          if (docB) await env.probe.closeDocument(docB);
+          if (docA) await env.probe.switchDocument(docA);
+        }
+        // Opruimen: de taak van A in het eerste document is één undo-stap.
+        const withA = await env.probe.taskCount();
+        await env.probe.undo();
+        assertSame(await env.probe.taskCount(), withA - 1, 'taak van A met één undo weg');
+      },
+    },
+    {
+      name: 'onbekende sessie-id ⇒ 404; zonder sessie-header werkt een request nog (oude clients)',
+      fn: async () => {
+        const list = JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/list' });
+        const unknown = await fetch(env.url, {
+          method: 'POST',
+          headers: { ...auth, 'Content-Type': 'application/json', 'Mcp-Session-Id': 'onbekende-sessie' },
+          body: list,
+        });
+        assertSame(unknown.status, 404, 'status bij onbekende sessie');
+        assertSame(await unknown.text(), '', 'geen body bij 404');
+        const legacy = await fetch(env.url, {
+          method: 'POST',
+          headers: { ...auth, 'Content-Type': 'application/json' },
+          body: list,
+        });
+        assertSame(legacy.status, 200, 'status zonder sessie-header');
+        const parsed = (await legacy.json()) as { result?: { tools?: unknown[] } };
+        assertSame(parsed.result?.tools?.length, env.expected.tools.length, 'tools/list zonder sessie-header');
       },
     },
     {

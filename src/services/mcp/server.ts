@@ -2,7 +2,8 @@
 //
 // Deze module bedient de Tauri-only bridge: token verzekeren, `mcp_bridge_start`/`mcp_bridge_stop`
 // invoken, en de twee Tauri-events koppelen aan de dispatcher + de ui-state:
-//   - `mcp://request`  {id, body}  → `handleMcpMessage(body, ctx)` → emit `mcp://response` {id, body}
+//   - `mcp://request`  {id, body, sessionId?} → `handleMcpMessage(body, ctx)` → emit `mcp://response`
+//     {id, body, sessionId?, status?} (sessie-afhandeling: zie `createRequestHandler`)
 //   - `mcp://status`   {state, port, message} → `setAiServerStatus(...)`
 //
 // HARDE REPO-REGEL: een top-niveau `import` van `@tauri-apps/*` breekt de web-build. Daarom staan
@@ -199,6 +200,38 @@ export interface RequestHandlerDeps {
   handleMessage: (body: string, ctx: McpContext) => Promise<string>;
   /** Klok in ms (test-injectie; echt: `Date.now`). */
   now?: () => number;
+  /** Nieuwe sessie-id (test-injectie; echt: 16 crypto-random bytes, hex). */
+  newSessionId?: () => string;
+}
+
+/** Eén request zoals Rust het doorgeeft: de body plus de `Mcp-Session-Id`-header als die er was. */
+export interface McpRequestEvent {
+  id: number;
+  body: string;
+  sessionId?: string | null;
+}
+
+/** Het antwoord terug naar Rust. `sessionId` ⇒ Rust zet de `Mcp-Session-Id`-header; `status` ⇒ Rust
+ *  antwoordt met die HTTP-status in plaats van 200 (alleen 404 voor een onbekende sessie). */
+export interface McpResponseEvent {
+  id: number;
+  body: string;
+  sessionId?: string;
+  status?: number;
+}
+
+/**
+ * Zoveel MCP-sessies (elk met een eigen drift-anker) onthoudt één bridge-start. Daarboven valt de
+ * langst niet gebruikte weg; die client krijgt `404` en begint volgens de spec een nieuwe sessie.
+ */
+export const MCP_MAX_SESSIONS = 32;
+
+function randomSessionId(): string {
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  let hex = '';
+  for (const b of bytes) hex += b.toString(16).padStart(2, '0');
+  return hex;
 }
 
 /**
@@ -314,10 +347,21 @@ function recordRequestActivity(reqBody: string, respBody: string, durationMs: nu
  * terug als `mcp://response` met HETZELFDE Rust-correlatie-id. Óók een notificatie (lege respons-
  * body) wordt geëmit — de Rust-loop correleert op id en wacht altijd op een antwoord, dus een
  * uitgebleven emit zou daar in een timeout lopen.
+ *
+ * SESSIES (MCP streamable HTTP, `Mcp-Session-Id`; review PR #439). Elke geslaagde `initialize` krijgt
+ * een nieuwe sessie-id; Rust zet die als header op het antwoord en geeft de header van latere requests
+ * door. Het drift-anker hoort bij de sessie: een tweede client die `initialize` doet, wist niet langer
+ * het anker van de eerste (anders landde een mutatie van A na `DOC_DRIFT` alsnog op het andere
+ * tabblad). Een onbekende sessie-id (verlopen, of na een herstart van de bridge) krijgt `404` zonder
+ * body, zodat de client volgens de spec opnieuw initialiseert. Een request ZONDER sessie-header
+ * (een client die de header niet terugstuurt) gebruikt één gedeeld anker, zoals vóór de sessies; een
+ * `initialize` wist dat gedeelde anker ook, zodat zo'n client na een herstart niets erft. De
+ * sessietabel zit hier en niet in Rust: alleen deze laag weet of een antwoord een geslaagde
+ * `initialize` is, en Rust blijft zo protocol-onwetend.
  */
 export function createRequestHandler(
   deps: RequestHandlerDeps,
-): (payload: { id: number; body: string }) => Promise<void> {
+): (payload: McpRequestEvent) => Promise<void> {
   // Het drift-anker leeft per VERBINDING (= per handler, dus per bridge-start), niet per request:
   // `buildContext` levert elk request een verse ctx met `expectedDocId: null`. Zonder deze overdracht
   // bond elke eerste mutatie van ieder request opnieuw aan het dán actieve document, zodat een
@@ -325,7 +369,10 @@ export function createRequestHandler(
   // tabblad landde; ook het verzetten door `switch_document`/`new_document`/`duplicate_document`/
   // `import_schedule` ging met de weggegooide ctx verloren. `tempIdMap` blijft bewust per request
   // (batch-only, de batch-executor bezit hem).
-  let expectedDocId: string | null = null;
+  let legacyAnchor: string | null = null;
+  // Anker per sessie; de Map-volgorde is de gebruiksvolgorde (oudste eerst) voor het begrenzen.
+  const sessions = new Map<string, string | null>();
+  const newSessionId = deps.newSessionId ?? randomSessionId;
   // Requests strikt NA elkaar (audit 2026-09-26). Rust houdt één request tegelijk in de lucht, maar
   // geeft dat slot na zijn time-out (120 s) vrij terwijl de webview nog aan het oude request werkt;
   // zonder deze keten liep het volgende request (vaak een retry van dezelfde import) bij elke await
@@ -334,12 +381,29 @@ export function createRequestHandler(
   // een nieuw request: een import opent dan wel een tweede tabblad (geen ontdubbeling op pad).
   let tail: Promise<void> = Promise.resolve();
   const now = deps.now ?? Date.now;
-  const handleOne = async (payload: { id: number; body: string }, arrivedAt: number): Promise<void> => {
+  const handleOne = async (payload: McpRequestEvent, arrivedAt: number): Promise<void> => {
+    const isInitialize = requestMethod(payload.body) === 'initialize';
+    const incoming = typeof payload.sessionId === 'string' && payload.sessionId !== '' ? payload.sessionId : null;
     // Een nieuwe MCP-sessie (`initialize`) begint zonder anker: anders erfde een herstarte client
     // de documentbinding van de vorige en kreeg hij DOC_DRIFT op een tabblad dat hij nooit zag.
-    if (requestMethod(payload.body) === 'initialize') expectedDocId = null;
+    let session: string | null = null;
+    if (isInitialize) {
+      legacyAnchor = null;
+    } else if (incoming !== null) {
+      if (!sessions.has(incoming)) {
+        await deps.emit('mcp://response', { id: payload.id, body: '', status: 404 } satisfies McpResponseEvent);
+        return;
+      }
+      session = incoming;
+      // Opnieuw invoegen = als laatst gebruikt markeren.
+      const anchor = sessions.get(session)!;
+      sessions.delete(session);
+      sessions.set(session, anchor);
+    }
     const ctx = deps.buildContext();
-    if (ctx.expectedDocId === null) ctx.expectedDocId = expectedDocId;
+    if (ctx.expectedDocId === null) {
+      ctx.expectedDocId = isInitialize ? null : session !== null ? sessions.get(session)! : legacyAnchor;
+    }
     const start = performance.now();
     let body: string;
     try {
@@ -351,11 +415,22 @@ export function createRequestHandler(
       // een JSON-RPC-fout terugsturen, anders wacht de client tot de Rust-time-out.
       body = internalErrorResponse(payload.body, error);
     } finally {
-      expectedDocId = ctx.expectedDocId;
+      if (session !== null) {
+        if (sessions.has(session)) sessions.set(session, ctx.expectedDocId);
+      } else if (!isInitialize) {
+        legacyAnchor = ctx.expectedDocId;
+      }
+    }
+    const response: McpResponseEvent = { id: payload.id, body };
+    if (isInitialize && isResultResponse(body)) {
+      const id = newSessionId();
+      sessions.set(id, null);
+      while (sessions.size > MCP_MAX_SESSIONS) sessions.delete(sessions.keys().next().value!);
+      response.sessionId = id;
     }
     // Leg de aanroep vast in het activiteitenlog (notificaties = lege body worden overgeslagen).
     recordRequestActivity(payload.body, body, performance.now() - start);
-    await deps.emit('mcp://response', { id: payload.id, body });
+    await deps.emit('mcp://response', response);
   };
   return (payload) => {
     const arrivedAt = now();
@@ -363,6 +438,14 @@ export function createRequestHandler(
     tail = run.catch((error) => { console.error('MCP: antwoord versturen mislukt:', error); });
     return run;
   };
+}
+
+/** Is dit een geslaagd JSON-RPC-antwoord (met `result`, zonder `error`)? */
+function isResultResponse(rawBody: string): boolean {
+  try {
+    const parsed = JSON.parse(rawBody) as { result?: unknown; error?: unknown };
+    return !!parsed && typeof parsed === 'object' && 'result' in parsed && !('error' in parsed);
+  } catch { return false; }
 }
 
 /** De `method` van een enkel JSON-RPC-request, of null (batch-array, onparseerbaar). */
@@ -525,7 +608,7 @@ export function createBridgeController(deps: BridgeDeps): BridgeController {
       });
       const onStatus = createStatusHandler({ setStatus: deps.setStatus });
 
-      const unReq = await deps.listen<{ id: number; body: string }>('mcp://request', (p) => { void onRequest(p); });
+      const unReq = await deps.listen<McpRequestEvent>('mcp://request', (p) => { void onRequest(p); });
       const unStatus = await deps.listen<{ state: string; port: number; message?: string }>('mcp://status', (p) => { onStatus(p); });
       unlisteners = [unReq, unStatus];
 

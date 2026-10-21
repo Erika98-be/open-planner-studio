@@ -18,6 +18,12 @@
 //!      `mcp://response` `{id, body}` (id-correlatie op een mpsc-kanaal).
 //!   5. Timeout 120 s ⇒ `504` met een JSON-RPC-foutobject.
 //!   6. Antwoord-body 1-op-1 terug als `200 application/json`.
+//!   7. Sessies (MCP streamable HTTP): een aanwezige `Mcp-Session-Id`-header gaat
+//!      als `sessionId` mee in het request-event. Geeft de webview een `sessionId`
+//!      terug (alleen na een geslaagde `initialize`), dan zet de bridge die als
+//!      `Mcp-Session-Id`-header op het antwoord. Geeft de webview `status: 404`
+//!      (onbekende sessie), dan antwoordt de bridge `404` zonder body. De
+//!      sessietabel zelf leeft in TS (`createRequestHandler`); Rust kent geen MCP.
 //!
 //! Status (`mcp://status` `{state, port, message}`) wordt geëmit bij
 //! start/stop/fout zodat de frontend-store hem kan tonen.
@@ -46,6 +52,11 @@ const INTERNAL_BODY: &str =
 /// geheugen ingelezen maar met `413` geweigerd — beschermt tegen een lokaal
 /// proces dat de bridge probeert plat te leggen met een enorme upload.
 const MAX_BODY_BYTES: u64 = 50 * 1024 * 1024;
+
+/// De sessie-header van MCP streamable HTTP.
+const SESSION_HEADER: &str = "Mcp-Session-Id";
+/// Bovengrens voor een sessie-id die de webview teruggeeft (TS maakt er 32 hex-tekens van).
+const MAX_SESSION_ID_LEN: usize = 128;
 
 // ---------------------------------------------------------------------------
 // Pure, headless-testbare bouwstenen (geen webview, geen sockets).
@@ -96,11 +107,53 @@ fn origin_present(origin_header: Option<&str>) -> bool {
     matches!(origin_header, Some(v) if !v.is_empty())
 }
 
+/// Mag deze waarde als `Mcp-Session-Id` op een antwoord? De spec staat alleen
+/// zichtbare ASCII toe (0x21–0x7E); leeg of te lang weigeren we ook.
+fn valid_session_id(value: &str) -> bool {
+    !value.is_empty()
+        && value.len() <= MAX_SESSION_ID_LEN
+        && value.bytes().all(|b| (0x21..=0x7e).contains(&b))
+}
+
+/// De `Mcp-Session-Id` van een binnenkomend request, ongewijzigd doorgegeven
+/// (TS zoekt hem op; een onbekende waarde krijgt daar `404`). Leeg telt als afwezig.
+fn incoming_session_id(header: Option<&str>) -> Option<String> {
+    header.filter(|v| !v.is_empty()).map(str::to_string)
+}
+
+/// De HTTP-status van een antwoord uit de webview. Alleen `404` (onbekende
+/// sessie) mag de webview kiezen; al het andere wordt `200`.
+fn reply_status(status: Option<u16>) -> u16 {
+    match status {
+        Some(404) => 404,
+        _ => 200,
+    }
+}
+
+/// Wat de webview op één request teruggeeft.
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct Reply {
+    body: String,
+    session_id: Option<String>,
+    status: Option<u16>,
+}
+
+impl Reply {
+    #[cfg(test)]
+    fn body(body: &str) -> Self {
+        Self {
+            body: body.to_string(),
+            session_id: None,
+            status: None,
+        }
+    }
+}
+
 /// Correleert forwarded requests met hun antwoord uit de webview. Elke request
 /// krijgt een monotoon id + een eenmalig mpsc-kanaal; het `mcp://response`-event
 /// resolvet dat id, de HTTP-loop wacht met timeout op zijn kanaal.
 struct Pending {
-    map: Mutex<HashMap<u64, Sender<String>>>,
+    map: Mutex<HashMap<u64, Sender<Reply>>>,
     next_id: AtomicU64,
 }
 
@@ -113,7 +166,7 @@ impl Pending {
     }
 
     /// Registreer een nieuwe in-flight request. Geeft het id + de ontvangkant.
-    fn register(&self) -> (u64, Receiver<String>) {
+    fn register(&self) -> (u64, Receiver<Reply>) {
         let id = self.next_id.fetch_add(1, Ordering::SeqCst);
         let (tx, rx) = channel();
         self.map.lock().unwrap_or_else(|e| e.into_inner()).insert(id, tx);
@@ -122,9 +175,9 @@ impl Pending {
 
     /// Lever het antwoord af bij het wachtende kanaal. `false` = onbekend id
     /// (al getimeout/opgeruimd of nooit bestaan) — het antwoord wordt genegeerd.
-    fn resolve(&self, id: u64, body: String) -> bool {
+    fn resolve(&self, id: u64, reply: Reply) -> bool {
         match self.map.lock().unwrap().remove(&id) {
-            Some(tx) => tx.send(body).is_ok(),
+            Some(tx) => tx.send(reply).is_ok(),
             None => false,
         }
     }
@@ -141,10 +194,10 @@ impl Pending {
     fn wait(
         &self,
         id: u64,
-        rx: &Receiver<String>,
+        rx: &Receiver<Reply>,
         timeout: Duration,
         shutdown: &AtomicBool,
-    ) -> Option<String> {
+    ) -> Option<Reply> {
         let deadline = Instant::now() + timeout;
         loop {
             if shutdown.load(Ordering::SeqCst) {
@@ -178,12 +231,31 @@ impl Pending {
 struct McpRequestPayload {
     id: u64,
     body: String,
+    #[serde(rename = "sessionId", skip_serializing_if = "Option::is_none")]
+    session_id: Option<String>,
 }
 
 #[derive(serde::Deserialize)]
 struct McpResponsePayload {
     id: u64,
     body: String,
+    #[serde(default, rename = "sessionId")]
+    session_id: Option<String>,
+    #[serde(default)]
+    status: Option<u16>,
+}
+
+impl McpResponsePayload {
+    fn into_reply(self) -> (u64, Reply) {
+        (
+            self.id,
+            Reply {
+                body: self.body,
+                session_id: self.session_id,
+                status: self.status,
+            },
+        )
+    }
 }
 
 #[derive(Clone, serde::Serialize)]
@@ -244,6 +316,29 @@ fn respond_json(request: tiny_http::Request, status: u16, body: &str) {
     let _ = request.respond(response);
 }
 
+/// Antwoord uit de webview terug naar de client: `404` zonder body bij een
+/// onbekende sessie, anders `200 application/json` met de body 1-op-1, plus de
+/// `Mcp-Session-Id`-header als de webview een (geldige) sessie-id meegaf.
+fn respond_reply(request: tiny_http::Request, reply: Reply) {
+    let status = reply_status(reply.status);
+    if status != 200 {
+        respond_empty(request, status);
+        return;
+    }
+    let content_type =
+        tiny_http::Header::from_bytes(&b"Content-Type"[..], &b"application/json"[..]).unwrap();
+    let mut response = tiny_http::Response::from_string(reply.body)
+        .with_status_code(200)
+        .with_header(content_type);
+    if let Some(sid) = reply.session_id.filter(|s| valid_session_id(s)) {
+        let header = tiny_http::Header::from_bytes(SESSION_HEADER.as_bytes(), sid.as_bytes());
+        if let Ok(header) = header {
+            response = response.with_header(header);
+        }
+    }
+    let _ = request.respond(response);
+}
+
 fn respond_empty(request: tiny_http::Request, status: u16) {
     let _ = request.respond(tiny_http::Response::empty(status));
 }
@@ -288,12 +383,14 @@ fn handle_request(
         respond_empty(request, 401);
         return;
     }
-    forward_to_webview(request, pending, inflight, app, shutdown);
+    let session_id = incoming_session_id(find_header(&request, SESSION_HEADER));
+    forward_to_webview(request, session_id, pending, inflight, app, shutdown);
 }
 
 /// (3)+(4)+(5)+(6): serieel forwarden en op het antwoord wachten.
 fn forward_to_webview(
     mut request: tiny_http::Request,
+    session_id: Option<String>,
     pending: &Pending,
     inflight: &Mutex<()>,
     app: &tauri::AppHandle,
@@ -320,7 +417,12 @@ fn forward_to_webview(
     let _slot = inflight.lock().unwrap_or_else(|e| e.into_inner());
 
     let (id, rx) = pending.register();
-    if app.emit("mcp://request", McpRequestPayload { id, body }).is_err() {
+    let payload = McpRequestPayload {
+        id,
+        body,
+        session_id,
+    };
+    if app.emit("mcp://request", payload).is_err() {
         pending.cancel(id);
         respond_json(request, 500, INTERNAL_BODY);
         return;
@@ -328,7 +430,7 @@ fn forward_to_webview(
 
     // (5)/(6): wacht met timeout; body 1-op-1 terug, of 504.
     match pending.wait(id, &rx, RESPONSE_TIMEOUT, shutdown) {
-        Some(resp_body) => respond_json(request, 200, &resp_body),
+        Some(reply) => respond_reply(request, reply),
         None => respond_json(request, 504, TIMEOUT_BODY),
     }
 }
@@ -392,7 +494,8 @@ pub fn mcp_bridge_start(
     let pending_for_listener = pending.clone();
     let listener = app.listen("mcp://response", move |event| {
         if let Ok(resp) = serde_json::from_str::<McpResponsePayload>(event.payload()) {
-            pending_for_listener.resolve(resp.id, resp.body);
+            let (id, reply) = resp.into_reply();
+            pending_for_listener.resolve(id, reply);
         }
     });
 
@@ -529,9 +632,9 @@ mod tests {
         let p = Pending::new();
         let sd = AtomicBool::new(false);
         let (id, rx) = p.register();
-        assert!(p.resolve(id, "hallo".to_string()));
+        assert!(p.resolve(id, Reply::body("hallo")));
         let got = p.wait(id, &rx, Duration::from_secs(1), &sd);
-        assert_eq!(got, Some("hallo".to_string()));
+        assert_eq!(got, Some(Reply::body("hallo")));
     }
 
     #[test]
@@ -542,11 +645,11 @@ mod tests {
         let p2 = p.clone();
         let joiner = std::thread::spawn(move || {
             std::thread::sleep(Duration::from_millis(50));
-            assert!(p2.resolve(id, "wereld".to_string()));
+            assert!(p2.resolve(id, Reply::body("wereld")));
         });
         let got = p.wait(id, &rx, Duration::from_secs(2), &sd);
         joiner.join().unwrap();
-        assert_eq!(got, Some("wereld".to_string()));
+        assert_eq!(got, Some(Reply::body("wereld")));
     }
 
     #[test]
@@ -566,7 +669,7 @@ mod tests {
         let got = p.wait(id, &rx, Duration::from_millis(120), &sd);
         assert_eq!(got, None);
         // Slot is opgeruimd: een laat antwoord vindt geen ontvanger meer.
-        assert!(!p.resolve(id, "te-laat".to_string()));
+        assert!(!p.resolve(id, Reply::body("te-laat")));
     }
 
     #[test]
@@ -581,7 +684,7 @@ mod tests {
     #[test]
     fn pending_resolve_unknown_id_is_false() {
         let p = Pending::new();
-        assert!(!p.resolve(9999, "spook".to_string()));
+        assert!(!p.resolve(9999, Reply::body("spook")));
     }
 
     #[test]
@@ -598,5 +701,70 @@ mod tests {
         let v: serde_json::Value = serde_json::from_str(INTERNAL_BODY).unwrap();
         assert_eq!(v["jsonrpc"], "2.0");
         assert_eq!(v["error"]["code"], -32603);
+    }
+
+    #[test]
+    fn session_id_validation_follows_the_spec() {
+        assert!(valid_session_id("0123456789abcdef0123456789abcdef"));
+        assert!(valid_session_id("!~"));
+        assert!(!valid_session_id(""));
+        assert!(!valid_session_id("met spatie"));
+        assert!(!valid_session_id("regel\neinde"));
+        assert!(!valid_session_id("é"));
+        assert!(!valid_session_id(&"a".repeat(MAX_SESSION_ID_LEN + 1)));
+        assert!(valid_session_id(&"a".repeat(MAX_SESSION_ID_LEN)));
+    }
+
+    #[test]
+    fn incoming_session_id_passes_through_and_ignores_empty() {
+        assert_eq!(incoming_session_id(Some("abc")), Some("abc".to_string()));
+        assert_eq!(incoming_session_id(Some("")), None);
+        assert_eq!(incoming_session_id(None), None);
+    }
+
+    #[test]
+    fn webview_may_only_choose_404() {
+        assert_eq!(reply_status(None), 200);
+        assert_eq!(reply_status(Some(404)), 404);
+        assert_eq!(reply_status(Some(200)), 200);
+        assert_eq!(reply_status(Some(500)), 200);
+        assert_eq!(reply_status(Some(302)), 200);
+    }
+
+    #[test]
+    fn request_payload_carries_session_id_only_when_present() {
+        let with = serde_json::to_value(McpRequestPayload {
+            id: 7,
+            body: "{}".to_string(),
+            session_id: Some("s1".to_string()),
+        })
+        .unwrap();
+        assert_eq!(with["sessionId"], "s1");
+        let without = serde_json::to_value(McpRequestPayload {
+            id: 8,
+            body: "{}".to_string(),
+            session_id: None,
+        })
+        .unwrap();
+        assert!(without.get("sessionId").is_none());
+    }
+
+    #[test]
+    fn response_payload_reads_optional_session_and_status() {
+        let plain: McpResponsePayload = serde_json::from_str(r#"{"id":1,"body":"x"}"#).unwrap();
+        assert_eq!(plain.into_reply(), (1, Reply::body("x")));
+        let full: McpResponsePayload =
+            serde_json::from_str(r#"{"id":2,"body":"","sessionId":"s9","status":404}"#).unwrap();
+        assert_eq!(
+            full.into_reply(),
+            (
+                2,
+                Reply {
+                    body: String::new(),
+                    session_id: Some("s9".to_string()),
+                    status: Some(404),
+                }
+            )
+        );
     }
 }

@@ -7,24 +7,19 @@
 // `mcp://request`-event doet. Alles ná de HTTP-laag (dispatcher, tools, store, undo) is dus productie-
 // code; alleen de HTTP-schil hieronder is een kopie.
 //
-// SPIEGEL VAN `src-tauri/src/mcp_bridge.rs` (stand 2026-10-21). Wijzigt de Rust-kant, pas dan deze
-// host mee aan. `cases-externe-client.ts` leest het Rust-bestand en faalt als de constanten of de
-// volgorde van de poorten hieronder er niet meer mee kloppen (driftcheck).
-//   - bind_addr            (rs :56-58)   uitsluitend 127.0.0.1
-//   - RESPONSE_TIMEOUT     (rs :36)      120 s ⇒ 504 + TIMEOUT_BODY (rs :39-40)
-//   - INTERNAL_BODY        (rs :42-43)   bij onleesbare body (400) of mislukte emit (500)
-//   - MAX_BODY_BYTES       (rs :48)      50 MiB ⇒ 413 zonder body
-//   - handle_request       (rs :263-292) volgorde: Origin (403) → methode (405 + `Allow: POST`) →
-//                                        pad `/mcp`, query genegeerd (404) → Bearer-token (401)
-//   - is_authorized        (rs :80-91)   scheme hoofdletterongevoelig, token exact (constante tijd)
-//   - origin_present       (rs :95-97)   alleen een NIET-lege Origin telt
-//   - forward_to_webview   (rs :295-334) strikt één request tegelijk; antwoord 1-op-1 als
-//                                        `200 application/json`, ook een lege body (notificatie)
-//   - respond_empty        (rs :247-249) 401/403/404/405/413 zonder body en zonder Content-Type
+// NAGEBOUWD NAAR `src-tauri/src/mcp_bridge.rs` (stand 2026-10-21). Dit is een kopie, geen bewijs voor
+// het Rust-gedrag: dat toetst `.github/workflows/mcp-real-app.yml` met dezelfde controles tegen de echte
+// bridge. Wijzigt de Rust-HTTP-laag, pas deze host dan met de hand mee aan.
+//   - alleen 127.0.0.1; volgorde: Origin (403) → methode (405 + `Allow: POST`) → pad `/mcp` (404) →
+//     Bearer-token (401, scheme hoofdletterongevoelig) → doorgeven
+//   - body > 50 MiB ⇒ 413; onleesbare body ⇒ 400; geen antwoord binnen 120 s ⇒ 504
+//   - strikt één request tegelijk; antwoord `200 application/json`, ook een lege body (notificatie)
+//   - `Mcp-Session-Id` van het request gaat mee als `sessionId`; een `sessionId` in het antwoord wordt de
+//     header `Mcp-Session-Id`; `status: 404` ⇒ 404 zonder body (onbekende sessie)
 import http from 'node:http';
 import { timingSafeEqual } from 'node:crypto';
 import type { AddressInfo } from 'node:net';
-import { createRequestHandler } from '@/services/mcp/server';
+import { createRequestHandler, type McpResponseEvent } from '@/services/mcp/server';
 import type { McpContext } from '@/services/mcp/contracts';
 
 export const MIRROR_RESPONSE_TIMEOUT_SECS = 120;
@@ -69,13 +64,13 @@ function respondJson(res: http.ServerResponse, status: number, body: string): vo
 
 export async function startBridgeMirror(opts: BridgeMirrorOptions): Promise<BridgeMirror> {
   // Het `mcp://response`-kanaal: Rust correleert op een oplopend id (rs :102-171).
-  const pending = new Map<number, (body: string) => void>();
+  const pending = new Map<number, (reply: McpResponseEvent) => void>();
   let nextId = 1;
   const onRequest = createRequestHandler({
     emit: (_event, payload) => {
-      const { id, body } = payload as { id: number; body: string };
-      pending.get(id)?.(body);
-      pending.delete(id);
+      const reply = payload as McpResponseEvent;
+      pending.get(reply.id)?.(reply);
+      pending.delete(reply.id);
     },
     buildContext: opts.buildContext,
     handleMessage: opts.handleMessage,
@@ -85,6 +80,8 @@ export async function startBridgeMirror(opts: BridgeMirrorOptions): Promise<Brid
   let slot: Promise<void> = Promise.resolve();
 
   async function forward(req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
+    const header = req.headers['mcp-session-id'];
+    const sessionId = typeof header === 'string' && header !== '' ? header : undefined;
     const chunks: Buffer[] = [];
     let size = 0;
     for await (const chunk of req) {
@@ -110,12 +107,19 @@ export async function startBridgeMirror(opts: BridgeMirrorOptions): Promise<Brid
         respondJson(res, 504, MIRROR_TIMEOUT_BODY);
         resolve();
       }, MIRROR_RESPONSE_TIMEOUT_SECS * 1000);
-      pending.set(id, (answer) => {
+      pending.set(id, (reply) => {
         clearTimeout(timer);
-        respondJson(res, 200, answer);
+        if (reply.status === 404) {
+          respondEmpty(res, 404);
+        } else {
+          const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+          if (reply.sessionId && /^[\x21-\x7e]{1,128}$/.test(reply.sessionId)) headers['Mcp-Session-Id'] = reply.sessionId;
+          res.writeHead(200, headers);
+          res.end(reply.body);
+        }
         resolve();
       });
-      onRequest({ id, body }).catch(() => {
+      onRequest({ id, body, sessionId }).catch(() => {
         clearTimeout(timer);
         pending.delete(id);
         respondJson(res, 500, MIRROR_INTERNAL_BODY);

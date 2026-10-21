@@ -169,14 +169,15 @@ de browser-dev-build bestaat de bridge niet, dus voor browserzelftests blijft Ti
    anders `401`. Elk request met een aanwezige `Origin`-header wordt geweigerd met `403`, ongeacht
    token (DNS-rebinding-bescherming — een legitieme MCP-client stuurt geen `Origin`). Requests lopen
    strikt één-voor-één door de bridge (een `inflight`-mutex in `mcp_bridge.rs`): geen gelijktijdige
-   aanroepen.
+   aanroepen. Een geslaagde `initialize` geeft een `Mcp-Session-Id`; stuur die bij latere requests mee,
+   dan heeft je sessie een eigen documentanker (onbekende id ⇒ `404`, begin opnieuw met `initialize`).
 
 Voor de toolcatalogus (de `planner_*`-tools; taken, relaties, resources, kalender, project,
 baselines, documenten/bestanden, leestools, `planner_batch`) zie `.claude/rules/mcp.md` → *AI-assistent
 (MCP-bridge)* — niet hier gedupliceerd.
 
 **Getoetst met een externe client.** De officiële MCP-client toetst dit kanaal in `npm test`
-(`tests/mcp/cases-externe-client.ts`, tegen een Node-spiegel van de Rust-HTTP-laag) en in de aparte workflow
+(`tests/mcp/cases-externe-client.ts`, tegen een met de hand bijgehouden Node-kopie van de Rust-HTTP-laag) en in de aparte workflow
 `mcp-real-app.yml` tegen de echte bridge. Wat dat bewijst en wat niet geleverd is: `docs/mcp-verificatie.md`.
 
 **Begrenzing.** Dit kanaal bestaat alleen in de échte Tauri-runtime. Wil je de browser-dev-build
