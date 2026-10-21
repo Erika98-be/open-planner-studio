@@ -1,0 +1,135 @@
+// De headless kern (`src/core/`, pakket `@openaec/open-planner-core`) rekent precies zoals de app.
+//
+// 1. Voor ELK voorbeeldbestand (examples/ en public/examples/) geeft `openIfc → schedule()` per taak
+//    dezelfde vroege/late datums, totale speling en kritiek-vlag als de app-store langs de route
+//    van verify:examples (`loadState` → `runCPM`), en dezelfde projecteinddatum en -duur.
+// 2. `toIfc()` → opnieuw openen → `schedule()` geeft dezelfde datums (de kern verliest niets dat de
+//    berekening nodig heeft).
+// 3. Documenten zijn los: twee tegelijk open documenten beïnvloeden elkaar niet.
+// 4. Het foutmodel: één fouttype met een vaste `code` (INVALID_INPUT, NO_TASKS, SCHEDULE_FAILED).
+//
+// Het gebouwde pakket zelf (bundel, install, consumeervoorbeeld) toetst `npm run verify:core-package`.
+import { readdirSync, readFileSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { openIfc, PlannerCoreError, type ScheduleSummary } from '@/core';
+import { createAppStoreContext } from '@/state/appStore';
+import { readIFC } from '@/services/ifc/ifcReader';
+import { writeIFC } from '@/services/ifc/ifcWriter';
+import { buildWriteIFCInput } from '@/state/ifcSaveInput';
+
+const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
+const diffs: string[] = [];
+let checks = 0;
+function ok(label: string, condition: boolean, detail = ''): void {
+  checks++;
+  if (!condition) diffs.push(`${label}${detail ? `: ${detail}` : ''}`);
+}
+
+const files = [
+  ...readdirSync(join(root, 'examples')).filter(f => f.endsWith('.ifc')).map(f => join(root, 'examples', f)),
+  ...readdirSync(join(root, 'public/examples')).filter(f => f.endsWith('.ifc')).map(f => join(root, 'public/examples', f)),
+];
+ok('0 er zijn voorbeeldbestanden', files.length >= 20, `${files.length}`);
+
+type Dates = Record<string, string>;
+function datesOf(s: ScheduleSummary): Dates {
+  return Object.fromEntries(s.tasks.map(t => [t.id,
+    `${t.start}|${t.finish}|${t.lateStart}|${t.lateFinish}|${t.totalFloat}|${t.critical}`]));
+}
+function firstDiff(a: Dates, b: Dates): string {
+  for (const id of new Set([...Object.keys(a), ...Object.keys(b)])) {
+    if (a[id] !== b[id]) return `${id}: kern ${a[id] ?? '—'} ≠ app ${b[id] ?? '—'}`;
+  }
+  return '';
+}
+
+for (const file of files) {
+  const name = file.slice(root.length + 1);
+  const text = readFileSync(file, 'utf8');
+
+  // De app-route: een eigen storecontext, laden zoals verify:examples, dan F5.
+  const ctx = createAppStoreContext({ emitHostEvents: false });
+  ctx.store.getState().loadState(readIFC(text));
+  ctx.store.getState().runCPM();
+  const app = ctx.store.getState();
+  const appDates: Dates = Object.fromEntries(app.tasks.map(t => [t.id,
+    `${t.time.earlyStart}|${t.time.earlyFinish}|${t.time.lateStart}|${t.time.lateFinish}|${t.time.totalFloat}|${t.time.isCritical}`]));
+
+  const doc = await openIfc(text);
+  const summary = doc.schedule();
+  const coreDates = datesOf(summary);
+  const diff = firstDiff(coreDates, appDates);
+  ok(`1 ${name}: kern = app voor elke taak`, diff === '', diff);
+  ok(`1a ${name}: projecteinde gelijk`, summary.project.finish === app.cpmResult?.projectEnd,
+    `${summary.project.finish} ≠ ${app.cpmResult?.projectEnd}`);
+  ok(`1b ${name}: projectduur gelijk`, summary.project.durationWorkdays === app.cpmResult?.projectDuration);
+  ok(`1c ${name}: tellingen kloppen`,
+    summary.counts.tasks === app.tasks.length && summary.counts.relations === app.sequences.length
+      && summary.counts.resources === app.resources.length && summary.counts.assignments === app.assignments.length);
+  ok(`1d ${name}: kritiek pad gelijk`,
+    JSON.stringify(summary.criticalPath) === JSON.stringify(app.cpmResult?.criticalPath));
+  ok(`1e ${name}: samenvatting is gewone JSON`,
+    JSON.stringify(JSON.parse(JSON.stringify(summary))) === JSON.stringify(summary));
+
+  // 2. Terugschrijven en opnieuw openen geeft dezelfde berekening.
+  const again = (await openIfc(doc.toIfc())).schedule();
+  const roundDiff = firstDiff(datesOf(again), coreDates);
+  ok(`2 ${name}: toIfc → openIfc → schedule geeft dezelfde datums`, roundDiff === '', roundDiff);
+}
+
+// 3. Twee documenten tegelijk: los van elkaar.
+{
+  const a = await openIfc(readFileSync(files[0], 'utf8'));
+  const b = await openIfc(readFileSync(files[1], 'utf8'));
+  const first = JSON.stringify(a.schedule());
+  b.schedule();
+  ok('3 een tweede document verandert het eerste niet', JSON.stringify(a.schedule()) === first);
+}
+
+// 4. Foutmodel.
+async function codeOf(fn: () => Promise<unknown> | unknown): Promise<string> {
+  try {
+    await fn();
+    return 'geen fout';
+  } catch (err) {
+    return err instanceof PlannerCoreError ? err.code : `ander fouttype: ${String(err)}`;
+  }
+}
+ok('4a lege tekst ⇒ INVALID_INPUT', await codeOf(() => openIfc('')) === 'INVALID_INPUT');
+ok('4b geen STEP ⇒ INVALID_INPUT', await codeOf(() => openIfc('{"tasks": []}')) === 'INVALID_INPUT');
+ok('4c geen tekst ⇒ INVALID_INPUT', await codeOf(() => openIfc(42 as unknown as string)) === 'INVALID_INPUT');
+{
+  const empty = createAppStoreContext({ emitHostEvents: false }).store.getState();
+  const emptyIfc = writeIFC(buildWriteIFCInput(empty));
+  ok('4d IFC zonder taken ⇒ NO_TASKS', await codeOf(() => openIfc(emptyIfc)) === 'NO_TASKS');
+}
+{
+  // Een kring: twee bladtaken die elkaar opvolgen. De app weigert zo'n relatie bij invoer
+  // (`addSequence`), maar een bestand van elders kan hem bevatten; daarom direct in de writer-invoer.
+  const ctx = createAppStoreContext({ emitHostEvents: false });
+  ctx.store.getState().loadState(readIFC(readFileSync(files[0], 'utf8')));
+  const leaves = ctx.store.getState().tasks.filter(t => !t.isSummary && t.childIds.length === 0);
+  const [x, y] = [leaves[0].id, leaves[1].id];
+  const input = buildWriteIFCInput(ctx.store.getState());
+  const base = { type: 'FINISH_START' as const, lagDays: 0 };
+  input.sequences = [
+    ...input.sequences,
+    { ...base, id: 'seq-kring-1', predecessorId: x, successorId: y },
+    { ...base, id: 'seq-kring-2', predecessorId: y, successorId: x },
+  ];
+  const cyclic = await openIfc(writeIFC(input));
+  let err: unknown;
+  try { cyclic.schedule(); } catch (e) { err = e; }
+  ok('4e kring ⇒ SCHEDULE_FAILED', err instanceof PlannerCoreError && err.code === 'SCHEDULE_FAILED', String(err));
+  const ids = err instanceof PlannerCoreError ? (err.details.taskIds as string[] | undefined) : undefined;
+  ok('4f de fout noemt de taken van de kring', !!ids && ids.includes(x) && ids.includes(y), JSON.stringify(ids));
+}
+
+if (diffs.length === 0) {
+  console.log(`OK: headless kern — ${checks} checks groen (${files.length} voorbeeldbestanden)`);
+} else {
+  console.log(`XX headless kern — ${diffs.length} van ${checks} checks rood:`);
+  for (const d of diffs) console.log(`  - ${d}`);
+  process.exit(1);
+}

@@ -1,0 +1,124 @@
+# Headless kern: `@openaec/open-planner-core`
+
+De headless kern is de rekenkern van Open Planner Studio als los Node-pakket. Het pakket heeft geen
+React, geen DOM en geen desktopschil. Het opent een IFC-planning, rekent die door zoals de app en
+geeft een JSON-samenvatting. Het kan de planning ook weer als IFC schrijven.
+
+Dit document hoort bij issue #429 (ecosystem readiness) en het gedeelde contract in
+OpenAEC-style-book#12 (library en AWS).
+
+## Grens van de library
+
+| deel | waar | publiek? |
+|---|---|---|
+| API-module | `src/core/index.ts` | ja: alles wat hij exporteert |
+| publieke typen | `src/core/api.ts` (importeert niets) | ja |
+| store, solver, IFC-lezer en -schrijver | `src/state/`, `src/engine/`, `src/services/` | nee, intern |
+| pakketbouw | `scripts/build-core.mjs` → `dist-core/` | nee |
+| consumeervoorbeeld | `headless/consumer-example/` | voorbeeld, geen deel van het pakket |
+
+- Elk document krijgt een eigen storecontext (`createAppStoreContext` uit
+  `src/state/appStoreFactory.ts`). Documenten delen niets met elkaar.
+- De kern gebruikt niet de app-singleton (`appStoreContext`/`useAppStore` in `src/state/appStore.ts`).
+  `npm run verify:store-boundaries` weigert elke waarde-import uit `appStore.ts` in `src/core/`.
+- `npm run build:core` controleert de bundel. De bouw faalt als React, React DOM, `@tauri-apps/*`,
+  `src/state/appStore.ts`, `src/components/` of de i18n-UI-config (`src/i18n/config.ts` met alle
+  taalbestanden) in de bundel komt.
+- Code die alleen achter een dynamische import of een React-hook staat (bijv. Tauri-bestandstoegang),
+  vervangt de bouw door een stub. Die stub gooit pas een fout als iemand hem gebruikt. De
+  rekenroute gebruikt hem niet; `check-headless-core.ts` en `verify:core-package` bewijzen dat.
+- `zustand` gebruikt in het pakket alleen de vanilla store, zonder React-hook.
+
+## API
+
+```js
+import { openIfc, PlannerCoreError, VERSION } from '@openaec/open-planner-core';
+
+const doc = await openIfc(ifcTekst);  // PlannerDocument
+const samenvatting = doc.schedule();  // doorrekenen zoals F5 in de app
+const ifc = doc.toIfc();              // IFC-tekst met de berekende datums
+```
+
+| export | wat |
+|---|---|
+| `openIfc(text): Promise<PlannerDocument>` | Opent IFC-tekst zoals Bestand → Openen in de app (`openAsDocument`), zonder opslagdoel. Rekent nog niet. |
+| `PlannerDocument.schedule(): ScheduleSummary` | Draait `runCPM` op de store van dit document: dezelfde route als F5, met de werkregels en het rekenprofiel van het project. Geeft de samenvatting. |
+| `PlannerDocument.toIfc(): string` | Schrijft het document als IFC (`writeIFC(buildWriteIFCInput(...))`), in het IFC-schema van het project. |
+| `PlannerCoreError` | Het enige fouttype. Heeft `code` en `details`. |
+| `VERSION` | De versie van het pakket (gelijk aan de appversie). |
+| typen | `ScheduleSummary`, `ScheduleTaskSummary`, `ScheduleWarning`, `PlannerDocument`, `CoreErrorCode` |
+
+De samenvatting (`formatVersion: 1`) bevat:
+
+- `project`: id, naam, rekenprofiel, start, berekend einde, duur in werkdagen;
+- `counts`: taken, samenvattingstaken, mijlpalen, relaties, resources, toewijzingen, kritieke taken;
+- `tasks`: per taak id, naam, WBS, ouder, samenvatting ja/nee, mijlpaal ja/nee, vroege start en einde,
+  late start en einde, totale speling (werkdagen) en kritiek ja/nee, in de volgorde van het bestand;
+- `criticalPath`: de taak-id's van het kritieke pad;
+- `warnings`: waarschuwingen van de berekening met een vaste code en de betrokken id's
+  (`CONSTRAINT_VIOLATED`, `DEADLINE_MISSED`, `OUT_OF_SEQUENCE`, `CALENDAR_CAPPED`,
+  `RELATION_IGNORED`, `HAMMOCK_WITHOUT_FINISH_DRIVER`).
+
+Datums zijn ISO-8601-tekst zoals de app ze bewaart: een datum (`2027-03-01`) of, bij urenplanning,
+datum en tijd.
+
+## Foutmodel
+
+Elke fout is een `PlannerCoreError` met een vaste `code`. De `message` is Engels en is voor mensen,
+niet om te parsen.
+
+| code | wanneer |
+|---|---|
+| `INVALID_INPUT` | De invoer is geen tekst, is leeg, of begint niet met `ISO-10303-21;`. |
+| `IFC_READ_FAILED` | De IFC-lezer kan het bestand niet lezen. |
+| `NO_TASKS` | Het bestand heeft geen taken. |
+| `SCHEDULE_FAILED` | De planning is niet te berekenen, bijv. door een kring in de relaties. `details.reason` heeft de solvertekst, `details.taskIds` de taken van de kring. |
+| `IFC_WRITE_FAILED` | Het schrijven naar IFC mislukt. |
+
+## Versiemodel
+
+- De pakketversie is de appversie (CalVer, `YYYY.M.patch`). `npm run bump` werkt dus ook voor de kern.
+- Het publieke contract is `src/core/api.ts` plus de exports van `src/core/index.ts`. Een wijziging
+  daar is een contractwijziging en hoort in de releasetekst.
+- Een nieuw veld of een nieuwe code is een uitbreiding. Een veld weghalen of een betekenis veranderen
+  is brekend en verhoogt `formatVersion` van de samenvatting.
+- Het pakket wordt (nog) niet naar npm gepubliceerd. Een consument installeert de tarball van
+  `npm pack`.
+
+## Licentie
+
+Het pakket heeft dezelfde licentie als de repository: `LGPL-3.0-or-later`. De bouw kopieert
+`LICENSE` en `LICENSE.GPL` in het pakket. De bundel bevat ook code van dependencies (onder andere
+zustand, immer en i18next, alle MIT); esbuild zet hun licentiecommentaar aan het einde van
+`index.mjs`.
+
+## Bouwen en consumeervoorbeeld
+
+```bash
+npm run build:core                       # → dist-core/ (index.mjs, index.d.ts, api.d.ts, package.json, …)
+cd headless/consumer-example
+npm install                              # installeert dist-core als pakket
+node index.mjs ../../examples/01-grachtenpand-amsterdam.ifc
+node index.mjs ../../examples/01-grachtenpand-amsterdam.ifc --json --out /tmp/herberekend.ifc
+```
+
+Het voorbeeld importeert alleen `@openaec/open-planner-core`, nooit code uit `src/`.
+
+- Node 22 of nieuwer, alleen ESM.
+- Het pakket heeft geen runtime-dependencies; de bundel is ongeveer 2 MB.
+
+## Tests
+
+| test | wat hij bewijst |
+|---|---|
+| `tests/planning/check-headless-core.ts` | Voor elk voorbeeld in `examples/` en `public/examples/` geeft de kern dezelfde datums, speling, kritieke vlag, projecteinde en kritiek pad als de app-store (`loadState` → `runCPM`). Verder: `toIfc` → `openIfc` geeft dezelfde datums, twee documenten zijn los, en de foutcodes kloppen. |
+| `npm run verify:core-package` | Bouwt het pakket, maakt een tarball met `npm pack`, installeert die in een kopie van het consumeervoorbeeld, draait het voorbeeld (verwachte uitkomst, herberekend IFC, foutcode) en typecheckt een kleine TypeScript-consument tegen de declaraties. |
+| `tests/planning/check-store-runtime-boundaries.ts` | De grens: een waarde-import uit `appStore` in `src/core/` maakt `verify:store-boundaries` rood. |
+
+## Wat de kern niet doet
+
+- Geen andere invoerformaten (MSPDI, XER, `.mpp`, CSV). De lezers bestaan in de app; de kern
+  biedt ze nog niet aan.
+- Geen bewerkingen op de planning (taken toevoegen, nivelleren). Daarvoor is de MCP-bridge van de
+  app (`planner_*`).
+- Geen native DLL of `.so`. Dat is een apart punt van issue #429.
