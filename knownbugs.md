@@ -114,8 +114,6 @@ en noem het in je rapport of PR-tekst.
 
 ## Bibliotheek, bezetting, extensies, AI
 
-27. **Mislukte ZIP/JS-installatie van een extensie** geeft geen melding, alleen `console.error`
-    (`ExtensionManagerPanel` negeert `InstallOutcome`). — B
 28. **Bezettingsoverzicht bij een verouderd actief project** mengt oude startdatums met een nieuwe duur of
     inzet, onder de tekst "laatst berekende cijfers". — B
 29. **Hardgecodeerd Nederlands**: *Vereist Open Planner Studio ≥…* (`extensionLoader.ts:341`), foutmelding

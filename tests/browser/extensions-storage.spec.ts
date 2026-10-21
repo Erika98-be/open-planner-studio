@@ -368,3 +368,40 @@ test('extension storage: scant vier echte IndexedDB-records zonder code uit te v
     laterEffects: (window as unknown as { __opsAfterOnLoadError: number }).__opsAfterOnLoadError,
   }))).toEqual({ failedEffects: 1, laterEffects: 1 });
 });
+
+// Een andere route dan reparatie: lokale bestandinstallatie weigeren en daarna opnieuw proberen.
+test('mislukte lokale extensie-installatie meldt de fout; annuleren meldt niets', async ({ page, ops }) => {
+  ops.acceptError('[Extensies] ZIP-installatie mislukt:');
+  ops.acceptError('[Extensies] Installeren vanuit JS mislukt:');
+  await page.getByRole('button', { name: /^(File|Bestand)$/ }).click();
+  await page.getByRole('button', { name: /^(Extensions|Extensies)$/ }).click();
+  const errorMessage = 'The extension could not be installed. Check the file and try again.';
+  for (const kind of ['ZIP', 'JS']) {
+    const chooser = page.waitForEvent('filechooser');
+    await page.getByRole('button', { name: kind, exact: true }).click();
+    await (await chooser).setFiles({
+      name: `invalid.${kind.toLowerCase()}`, mimeType: 'application/octet-stream',
+      buffer: Buffer.from(kind === 'JS' ? '/* @manifest invalid */' : 'This is not a valid extension.'),
+    });
+    const toast = page.locator('.ops-toast', { hasText: errorMessage });
+    await expect(toast).toBeVisible();
+    expect(await page.evaluate(() => Object.keys(window.__OPS__!.store.getState().installedExtensions))).toEqual([]);
+    await toast.getByRole('button', { name: 'Close notification' }).click();
+    await expect(toast).toHaveCount(0);
+
+    const emptyChooser = page.waitForEvent('filechooser');
+    await page.getByRole('button', { name: kind, exact: true }).click();
+    await (await emptyChooser).setFiles([]);
+    await expect(page.locator('input[type="file"][accept]')).toHaveCount(0);
+    expect(await page.evaluate(() => window.__OPS__!.store.getState().ui.notifications)).toHaveLength(0);
+  }
+  // Ook expliciet weigeren in de vertrouwensvraag is geen installatiefout.
+  const declined = page.waitForEvent('filechooser');
+  await page.getByRole('button', { name: 'JS', exact: true }).click();
+  await (await declined).setFiles({ name: 'declined.js', mimeType: 'text/javascript', buffer: Buffer.from('module.exports = {};') });
+  await page.getByRole('button', { name: "Don't install", exact: true }).click();
+  await expect(page.getByRole('button', { name: "Don't install", exact: true })).toHaveCount(0);
+  expect(await page.evaluate(() => window.__OPS__!.store.getState().ui.notifications)).toHaveLength(0);
+  expect(await page.evaluate(() => Object.keys(window.__OPS__!.store.getState().installedExtensions))).toEqual([]);
+
+});

@@ -13,6 +13,7 @@
     "notifications.extHelpProjectOpenFailed": "61338a874001bc54",
     "notifications.extImportFailed": "d2f356f7ada900ae",
     "notifications.extensionMessage": "74db1a8428fb7088",
+    "notifications.extensionInstallFailed": "28bd74657a9bba78",
     "notifications.xerInvalidInput": "62667aa6a038056e",
     "notifications.xerInvalidFile": "c6a38dcfde69c5ca",
     "notifications.xerInvalidEncoding": "a8ba2475e987d4cc",
