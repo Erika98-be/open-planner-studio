@@ -144,21 +144,17 @@ export function useRecoveryRestore(): RecoveryRestore {
                 // Dialoog meteen weg zodra het herstel zelf klaar is — de opruimactie eronder is
                 // bestands-I/O en mag de gebruiker niet laten wachten.
                 setRecovery(null);
-                // Alleen wissen als ALLES is meegenomen. Is er iets overgeslagen, dan blijft de
+                // Alleen wissen als ALLES is meegenomen: ook vooraf onleesbare snapshots tellen
+                // mee, niet alleen documenten die restoreDocuments oversloeg. Anders blijft de
                 // volledige snapshotset staan — er is geen selectieve delete in `recoveryStore`, en
                 // de enige kopie van een overgeslagen document wissen zou het bewijs met de data
                 // weggooien (zelfde afweging als de parse-fout hierboven in de detectiefase).
                 //
-                // Prijs daarvan: de dialoog komt bij de volgende start opnieuw met dezelfde set, en
-                // de melding hierboven dus ook. Dat is bewust geaccepteerd en géén doodlopende weg —
-                // "Verwerpen" in de dialoog blijft de uitweg, en die keuze hoort bij de gebruiker
-                // en niet bij een stille `clearRecovery()`. Het is ook geen regressie: vóór deze fix
-                // gooide `restoreDocuments` op zo'n snapshot, kwam `clearRecovery()` net zo min aan
-                // bod en herstelde bovendien géén enkel document. De herstelde documenten zelf zijn
-                // hierna gewoon open, dus de eerstvolgende auto-save-ronde schrijft hún snapshots
-                // vers weg; de overgeslagen snapshot blijft ernaast bestaan via de carry-over in
-                // `planRecoveryCleanup` (een manifest van een vorige sessie is `foreign`).
-                if (skipped.length === 0) await clearRecovery();
+                // Prijs: de volgende start kan dezelfde set en foutmelding opnieuw tonen.
+                // "Verwerpen" blijft de expliciete uitweg. De herstelde documenten blijven open;
+                // hun volgende auto-save krijgt verse snapshots, terwijl de mislukte generatie
+                // beschermd blijft via holdRecoveryForLater (web) of carry-over (Tauri).
+                if (failed === 0 && skipped.length === 0) await clearRecovery();
                 else await holdRecoveryForLater();
               } catch (err) {
                 // Snapshots blijven staan. `finish()` gaat bewust wél door: de auto-save-poort
