@@ -42,6 +42,14 @@ export function importDateTime(s: string, hour: boolean): string {
   return hour ? formatInstant(parseImportedInstant(s), 'hour') : s.substring(0, 10);
 }
 
+/** `importDateTime` voor een datum die ook mag ONTBREKEN (MSPDI Baseline 0): lege of onleesbare
+ *  invoer (`NA`, geen `YYYY-MM-DD`-begin, of een tijd die geen instant geeft) ⇒ `undefined`, nooit
+ *  vandaag en nooit een `RangeError` uit `formatInstant`. Leesbare invoer ⇒ exact `importDateTime`. */
+export function importDateTimeOrUndefined(s: string, hour: boolean): string | undefined {
+  if (!/^\d{4}-\d{2}-\d{2}/.test(s) || Number.isNaN(parseImportedInstant(s).getTime())) return undefined;
+  return importDateTime(s, hour);
+}
+
 /** Statusdatum uit een bestand → `project.statusDate`, voor élke lezer die hem kent (IFC, MSPDI, P6,
  *  `.mpp` via `statusDateFromXml`).
  *  Zonder tijd ⇒ `YYYY-MM-DD`; mét tijd ⇒ de store-vorm van een uur-instant (`YYYY-MM-DDTHH:mm`),
