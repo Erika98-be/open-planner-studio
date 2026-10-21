@@ -10,6 +10,13 @@
 #   release-check.sh alive  "<naam>" <sec> <cmd...>    start cmd, OK als het na <sec> s nog leeft
 #   release-check.sh record OK|FOUT|INFO "<naam>" "<detail>"
 #   release-check.sh finish "<titel>"
+#   release-check.sh valid-tag "<tag>"                  exit 0 als de HELE waarde een geldige tag is
+#
+# Exitcodes van de helper: 0 = controle vastgelegd (ook als die FOUT is);
+# 2 = verkeerd gebruik; 3 = infrastructuur stuk (commando ontbreekt, exit
+# 126/127, syntaxfout in een `bash -c`/`sh -c`-controle). Aanroepers met
+# `set +e` geven een exitcode ≠ 0 door (`|| exit $?`), zodat rapportmodus
+# een kapotte controle nooit als gewone FOUT verbergt.
 set -uo pipefail
 
 LOG="${RELEASE_CHECKS:-${RUNNER_TEMP:-/tmp}/release-checks.tsv}"
@@ -24,21 +31,52 @@ record() {
 
 last_line() { grep -v '^[[:space:]]*$' "$1" | tail -n 1; }
 
+infra() { echo "::error::release-check: $*" >&2; exit 3; }
+
+# Vooraf: bestaat het commando, en is een inline shellscript syntactisch in orde?
+preflight() {
+  [ "$#" -ge 1 ] || infra "geen commando opgegeven"
+  command -v "$1" >/dev/null 2>&1 || infra "commando '$1' ontbreekt"
+  case "$(basename "$1")" in
+    bash|sh)
+      if [ "${2:-}" = "-c" ]; then
+        "$1" -n -c "${3:-}" 2>/dev/null || infra "syntaxfout in het $1 -c-script"
+      fi
+      ;;
+  esac
+}
+
+# Na afloop: exit 126/127 betekent dat de shell het commando niet kon starten.
+postflight() {
+  case "$1" in 126|127) infra "commando kon niet starten (exit $1): $2" ;; esac
+}
+
 cmd="${1:?subcommando ontbreekt}"; shift
 case "$cmd" in
   record)
+    [ "$#" -ge 2 ] || { echo "gebruik: record STATUS NAAM [DETAIL]" >&2; exit 2; }
+    case "$1" in OK|FOUT|INFO) ;; *) echo "onbekende status '$1'" >&2; exit 2 ;; esac
     record "$@"
     ;;
+  valid-tag)
+    # Bash-=~ ankert ^ en $ aan de hele waarde; een regeleinde valt buiten de klasse.
+    [ "$#" -eq 1 ] && [[ "$1" =~ ^v[0-9][0-9A-Za-z.-]*$ ]]
+    ;;
   run)
+    [ "$#" -ge 2 ] || { echo "gebruik: run NAAM CMD..." >&2; exit 2; }
     name="$1"; shift
+    preflight "$@"
     out="$(mktemp)"
     "$@" >"$out" 2>&1; rc=$?
     echo "::group::$name"; cat "$out"; echo "::endgroup::"
+    postflight "$rc" "$name"
     if [ "$rc" -eq 0 ]; then record OK "$name" "$(last_line "$out")"
     else record FOUT "$name" "exit $rc: $(last_line "$out")"; fi
     ;;
   alive)
+    [ "$#" -ge 3 ] || { echo "gebruik: alive NAAM SEC CMD..." >&2; exit 2; }
     name="$1"; secs="$2"; shift 2
+    preflight "$@"
     out="$(mktemp)"
     "$@" >"$out" 2>&1 &
     pid=$!
@@ -49,6 +87,8 @@ case "$cmd" in
       sleep 3
       pkill -KILL -P "$pid" 2>/dev/null; kill -KILL "$pid" 2>/dev/null
     else
+      # Geen postflight: exit 127 is hier ook een app die een bibliotheek mist (echte FOUT);
+      # dat het commando zelf bestaat, controleerde preflight al.
       wait "$pid"; rc=$?
       record FOUT "$name" "proces stopte binnen ${secs} s (exit $rc): $(last_line "$out")"
     fi
@@ -59,6 +99,10 @@ case "$cmd" in
     if [ ! -s "$LOG" ]; then
       echo "::error::geen enkele controle vastgelegd in $LOG" >&2
       exit 2
+    fi
+    if tr -d '\r' < "$LOG" | grep -qvE '^(OK|FOUT|INFO)'$'\t'; then
+      echo "::error::onbekende regel in $LOG" >&2
+      exit 3
     fi
     fails="$(tr -d '\r' < "$LOG" | grep -c '^FOUT' || true)"
     {

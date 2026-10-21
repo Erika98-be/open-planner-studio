@@ -1,13 +1,18 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash, generateKeyPairSync, randomBytes, sign } from 'node:crypto';
+import { execFileSync } from 'node:child_process';
+import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { dirname, join } from 'node:path';
 import {
   evaluateRelease,
   hasMacCodeSignature,
   keyIdHex,
   parsePublicKey,
   renderReport,
-  tarEntryNames,
+  checkUpdaterUrl,
+  tarGzEntryNames,
   verifyMinisign,
 } from '../../scripts/verify-release.mjs';
 
@@ -82,7 +87,7 @@ test('een andere sleutel met dezelfde id wordt afgekeurd', () => {
 test('een aangepaste trusted comment faalt op de globale handtekening', () => {
   const key = makeKey();
   const text = Buffer.from(minisign(key, DATA), 'base64').toString('utf8').replace('timestamp:1788331608', 'timestamp:1999999999');
-  const r = verifyMinisign({ publicKey: key.pubkey, signatureText: text, data: DATA });
+  const r = verifyMinisign({ publicKey: key.pubkey, signatureText: Buffer.from(text).toString('base64'), data: DATA });
   assert.equal(r.ok, false);
   assert.match(r.reason, /globale handtekening/);
 });
@@ -93,25 +98,130 @@ test('onzin als handtekening geeft een FOUT-uitkomst, geen exceptie', () => {
   assert.equal(r.ok, false);
 });
 
-// Minimale ustar-tar met lege bestanden.
-function tar(names) {
-  const blocks = names.map((name) => {
-    const h = Buffer.alloc(512);
-    h.write(name, 0, 'utf8');
-    h.write('0000644\0', 100);
-    h.write('00000000000\0', 124);
-    h[156] = name.endsWith('/') ? 0x35 : 0x30;
-    h.write('ustar\0' + '00', 257, 'latin1');
-    return h;
-  });
-  return Buffer.concat([...blocks, Buffer.alloc(1024)]);
+// Een echte .tar.gz via de systeem-tar (bevinding 7: geen eigen tar-parser meer).
+function tarGz(names) {
+  const dir = mkdtempSync(join(tmpdir(), 'tar-'));
+  const src = join(dir, 'src');
+  for (const n of names) {
+    const p = join(src, n);
+    mkdirSync(dirname(p), { recursive: true });
+    writeFileSync(p, '');
+  }
+  return execFileSync('tar', ['-czf', '-', '-C', src, ...names]);
 }
 
-test('tarEntryNames en hasMacCodeSignature herkennen een gecodesignde app', () => {
-  const signed = tarEntryNames(tar(['A.app/', 'A.app/Contents/Info.plist', 'A.app/Contents/_CodeSignature/CodeResources']));
-  assert.equal(signed.length, 3);
+test('tarGzEntryNames en hasMacCodeSignature herkennen een gecodesignde app', () => {
+  const signed = tarGzEntryNames(tarGz(['A B.app/Contents/Info.plist', 'A B.app/Contents/_CodeSignature/CodeResources']));
+  assert.ok(signed.includes('A B.app/Contents/_CodeSignature/CodeResources'));
   assert.equal(hasMacCodeSignature(signed), true);
-  assert.equal(hasMacCodeSignature(tarEntryNames(tar(['A.app/', 'A.app/Contents/Info.plist']))), false);
+  assert.equal(hasMacCodeSignature(tarGzEntryNames(tarGz(['A.app/Contents/Info.plist']))), false);
+  assert.throws(() => tarGzEntryNames(Buffer.from('geen tar')));
+});
+
+const REPO = 'OpenAEC-Foundation/open-planner-studio';
+const TAG = 'v2026.9.0';
+const LATEST = `https://github.com/${REPO}/releases/latest/download/`;
+const sha = (b) => `sha256:${createHash('sha256').update(b).digest('hex')}`;
+
+/** Een kleine release: zip + .sig en latest.json; `manifest` mag de JSON-tekst vervangen. */
+function release(key, { manifest, entry, sigFile } = {}) {
+  const zip = Buffer.from('zip');
+  const sig = minisign(key, zip);
+  const files = new Map([['app.nsis.zip', zip], ['app.nsis.zip.sig', Buffer.from(sigFile ?? sig)]]);
+  const json = manifest ?? JSON.stringify({
+    version: '2026.9.0',
+    pub_date: '2026-09-02T06:49:44.677Z',
+    platforms: { 'windows-x86_64': { url: `${LATEST}app.nsis.zip`, signature: sig, ...entry } },
+  });
+  files.set('latest.json', Buffer.from(json));
+  const assets = [...files.keys()].map((name) => ({ name, digest: sha(files.get(name)) }));
+  return { assets, read: (n) => files.get(n), sig };
+}
+
+function fails(key, opts, ctx = {}) {
+  const r = release(key, opts);
+  const rows = evaluateRelease({ publicKey: key.pubkey, assets: r.assets, read: r.read, repo: REPO, tag: TAG, isLatest: true, ...ctx });
+  return rows.filter((x) => x.status === 'FOUT').map((x) => `${x.item}: ${x.detail}`);
+}
+
+test('een geldige mini-release heeft nul FOUT-regels', () => {
+  assert.deepEqual(fails(makeKey()), []);
+});
+
+test('bevinding 2: een updater-URL buiten de bedoelde release is FOUT', () => {
+  const key = makeKey();
+  for (const url of [
+    'https://example.invalid/does-not-exist/app.nsis.zip',
+    `http://github.com/${REPO}/releases/latest/download/app.nsis.zip`,
+    `https://github.com/ander/repo/releases/latest/download/app.nsis.zip`,
+    `https://github.com.evil.example/${REPO}/releases/latest/download/app.nsis.zip`,
+    `https://github.com/${REPO}/releases/download/v2026.8.1/app.nsis.zip`,
+    `https://github.com/${REPO}/releases/latest/download/app.nsis.zip?x=1`,
+    `https://github.com/${REPO}/releases/latest/download/sub/app.nsis.zip`,
+    'geen url',
+  ]) {
+    const f = fails(key, { entry: { url } });
+    assert.equal(f.length, 1, `${url}: ${f.join(' | ')}`);
+  }
+  // De vaste tag-vorm is altijd goed; latest/download alleen voor de nieuwste release.
+  assert.deepEqual(fails(key, { entry: { url: `https://github.com/${REPO}/releases/download/${TAG}/app.nsis.zip` } }), []);
+  const old = fails(key, {}, { isLatest: false });
+  assert.equal(old.length, 1);
+  assert.match(old[0], /nieuwste release, niet naar v2026\.9\.0/);
+});
+
+test('checkUpdaterUrl geeft de gedecodeerde assetnaam', () => {
+  assert.deepEqual(checkUpdaterUrl(`${LATEST}Open.Planner.Studio%20x.zip`, { repo: REPO, tag: TAG, isLatest: true }), { asset: 'Open.Planner.Studio x.zip' });
+});
+
+test('bevinding 3: een onbruikbaar manifest is FOUT', () => {
+  const key = makeKey();
+  const { sig } = release(key);
+  const entries = { 'windows-x86_64': { url: `${LATEST}app.nsis.zip`, signature: sig } };
+  const cases = {
+    null: 'null',
+    array: '[]',
+    getal: '42',
+    'geen JSON': '{',
+    'zonder version': JSON.stringify({ platforms: entries }),
+    'andere version': JSON.stringify({ version: '2026.8.1', platforms: entries }),
+    'version geen tekst': JSON.stringify({ version: 2026, platforms: entries }),
+    'pub_date onzin': JSON.stringify({ version: '2026.9.0', pub_date: 'gisteren', platforms: entries }),
+    'zonder platforms': JSON.stringify({ version: '2026.9.0' }),
+    'platforms array': JSON.stringify({ version: '2026.9.0', platforms: [] }),
+    'lege platforms': JSON.stringify({ version: '2026.9.0', platforms: {} }),
+    'entry null': JSON.stringify({ version: '2026.9.0', platforms: { 'windows-x86_64': null } }),
+    'url geen tekst': JSON.stringify({ version: '2026.9.0', platforms: { 'windows-x86_64': { url: 1, signature: sig } } }),
+  };
+  for (const [label, manifest] of Object.entries(cases)) {
+    assert.ok(fails(key, { manifest }).length >= 1, label);
+  }
+  // 'v'-voorvoegsel in version telt als dezelfde versie (de updater strip het ook).
+  assert.deepEqual(fails(key, { manifest: JSON.stringify({ version: 'v2026.9.0', platforms: entries }) }), []);
+});
+
+test('bevinding 4: base64 en UTF-8 zo streng als de updater', () => {
+  const key = makeKey();
+  const { sig } = release(key);
+  const text = Buffer.from(sig, 'base64').toString('utf8');
+  for (const [label, bad] of Object.entries({
+    '! ervoor': `!${sig}`,
+    'regeleinde erachter': `${sig}\n`,
+    'spatie ervoor': ` ${sig}`,
+    'zonder padding': sig.replace(/=+$/, ''),
+    'ruwe minisign-tekst': text,
+    'url-safe alfabet': sig.replace(/\+/g, '-').replace(/\//g, '_'),
+  })) {
+    if (bad === sig) continue;
+    // Een kapotte .sig: de .sig-regel faalt, en latest.json (signature ≠ asset-.sig) ook.
+    assert.ok(fails(key, { sigFile: bad }).some((f) => /^app\.nsis\.zip: .*base64/.test(f)), `.sig ${label}`);
+    assert.equal(fails(key, { entry: { signature: bad } }).length, 1, `latest.json ${label}`);
+    assert.equal(verifyMinisign({ publicKey: key.pubkey, signatureText: bad, data: Buffer.from('zip') }).ok, false, label);
+  }
+  // Ongeldige UTF-8 binnen geldige base64.
+  const latin = Buffer.from(text.replace('trusted comment: ', 'trusted comment: \u00e9'), 'latin1').toString('base64');
+  assert.equal(verifyMinisign({ publicKey: key.pubkey, signatureText: latin, data: Buffer.from('zip') }).ok, false);
+  assert.throws(() => parsePublicKey(`!${key.pubkey}`), /base64/);
 });
 
 test('evaluateRelease: .sig, latest.json en digest, met precies de verwachte FOUT-regels', () => {
@@ -126,26 +236,27 @@ test('evaluateRelease: .sig, latest.json en digest, met precies de verwachte FOU
     ['app-setup.exe.sig', Buffer.from(minisign(key, Buffer.from('exe-voor-authenticode')))],
   ]);
   files.set('latest.json', Buffer.from(JSON.stringify({
+    version: '2026.9.0',
     platforms: {
-      'windows-x86_64': { url: 'https://example.invalid/releases/latest/download/app.nsis.zip', signature: files.get('app.nsis.zip.sig').toString() },
-      'linux-x86_64': { url: 'https://example.invalid/releases/latest/download/weg.AppImage', signature: 'x' },
+      'windows-x86_64': { url: `${LATEST}app.nsis.zip`, signature: files.get('app.nsis.zip.sig').toString() },
+      'linux-x86_64': { url: `${LATEST}weg.AppImage`, signature: 'x' },
     },
   })));
-  const sha = (b) => `sha256:${createHash('sha256').update(b).digest('hex')}`;
   const assets = [...files.keys()].map((name) => ({ name, digest: sha(files.get(name)) }));
   assets.find((a) => a.name === 'app.nsis.zip').digest = 'sha256:' + '0'.repeat(64);
   assets.find((a) => a.name === 'latest.json').digest = null;
 
-  const rows = evaluateRelease({ publicKey: key.pubkey, assets, read: (n) => files.get(n) });
-  const fails = rows.filter((r) => r.status === 'FOUT').map((r) => `${r.group}: ${r.item}`).sort();
-  assert.deepEqual(fails, [
+  const rows = evaluateRelease({ publicKey: key.pubkey, assets, read: (n) => files.get(n), repo: REPO, tag: TAG, isLatest: true });
+  const failed = rows.filter((r) => r.status === 'FOUT').map((r) => `${r.group}: ${r.item}`).sort();
+  assert.deepEqual(failed, [
     'latest.json: linux-x86_64',
     'sha256 = GitHub-digest: app.nsis.zip',
     'updater-handtekening (.sig): app-setup.exe',
   ]);
   assert.ok(rows.some((r) => r.status === 'OK' && r.group === 'latest.json' && r.item === 'windows-x86_64'));
+  assert.ok(rows.some((r) => r.status === 'OK' && r.item === 'version'));
   assert.ok(rows.some((r) => r.status === 'INFO' && r.item === 'latest.json'));
-  const md = renderReport({ tag: 'v0.0.0', repo: 'x/y', keyId: keyIdHex(key.keyId), rows });
+  const md = renderReport({ tag: TAG, repo: REPO, keyId: keyIdHex(key.keyId), rows });
   assert.match(md, /\*\*Oordeel: FOUT\*\* — 3 controle\(s\) faalden/);
 });
 

@@ -56,6 +56,7 @@ jobs:
     outputs:
       tag: ${{ steps.tag.outputs.tag }}
     steps:
+      - uses: actions/checkout@v5
       - name: Bepaal de tag
         id: tag
         env:
@@ -75,8 +76,10 @@ jobs:
           if [ -z "$TAG" ]; then
             TAG="$(gh release view --repo "$REPO" --json tagName --jq .tagName)"
           fi
-          if ! printf '%s' "$TAG" | grep -qE '^v[0-9][0-9A-Za-z.-]*$'; then
-            echo "::error::ongeldige tag '$TAG'"; exit 1
+          # De HELE waarde valideren (ook regeleinden): grep keek per regel, waardoor een
+          # tweede regel `tag=…$(…)` een extra output schreef (review #438, bevinding 1).
+          if ! bash scripts/release-check.sh valid-tag "$TAG"; then
+            echo "::error::ongeldige tag"; exit 1
           fi
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "Te controleren release: **$TAG** (event $EVENT_NAME, streng=$RELEASE_VERIFY_STRICT)" >> "$GITHUB_STEP_SUMMARY"
@@ -108,12 +111,14 @@ jobs:
         run: |
           # Bewust zonder -e: elke controle moet draaien, ook na een FOUT.
           set +e -uo pipefail
+          # Een exit ≠ 0 van de helper is een kapotte controle (tool weg, syntaxfout): hard stoppen.
+          chk() { bash scripts/release-check.sh "$@" || exit $?; }
           node scripts/verify-release.mjs "$TAG" --repo "$REPO" --dir "$RUNNER_TEMP/assets" --out "$RUNNER_TEMP/verify-release.md" > /dev/null
           rc=$?
           cat "$RUNNER_TEMP/verify-release.md" >> "$GITHUB_STEP_SUMMARY" || true
           case "$rc" in
-            0) bash scripts/release-check.sh record OK "verify-release.mjs" "alle .sig-, latest.json- en digestcontroles OK" ;;
-            1) bash scripts/release-check.sh record FOUT "verify-release.mjs" "minstens één controle FOUT, zie het rapport hierboven" ;;
+            0) chk record OK "verify-release.mjs" "alle .sig-, latest.json- en digestcontroles OK" ;;
+            1) chk record FOUT "verify-release.mjs" "minstens één controle FOUT, zie het rapport hierboven" ;;
             *) echo "::error::verify-release.mjs crashte (exit $rc)"; exit "$rc" ;;
           esac
 
@@ -121,40 +126,46 @@ jobs:
         run: |
           # Bewust zonder -e: elke controle moet draaien, ook na een FOUT.
           set +e -uo pipefail
+          # Een exit ≠ 0 van de helper is een kapotte controle (tool weg, syntaxfout): hard stoppen.
+          chk() { bash scripts/release-check.sh "$@" || exit $?; }
           DEB="$(find "$RUNNER_TEMP/assets" -name '*.deb' -print -quit)"
           test -n "$DEB" || { echo "::error::geen .deb in de release"; exit 1; }
           PKG="$(dpkg-deb -f "$DEB" Package)"
           # Een .deb kan een GPG-handtekening als _gpg*-member dragen (dpkg-sig/debsigs).
           if ar t "$DEB" | grep -q '^_gpg'; then
-            bash scripts/release-check.sh record INFO "deb: pakkethandtekening" "aanwezig ($(ar t "$DEB" | grep '^_gpg' | tr '\n' ' '))"
+            chk record INFO "deb: pakkethandtekening" "aanwezig ($(ar t "$DEB" | grep '^_gpg' | tr '\n' ' '))"
           else
-            bash scripts/release-check.sh record INFO "deb: pakkethandtekening" "geen (_gpg-member ontbreekt); alleen de updater-.sig"
+            chk record INFO "deb: pakkethandtekening" "geen (_gpg-member ontbreekt); alleen de updater-.sig"
           fi
-          bash scripts/release-check.sh run "deb: installeren (apt-get install ./…deb)" sudo apt-get install -y "$DEB"
+          chk run "deb: installeren (apt-get install ./…deb)" sudo apt-get install -y "$DEB"
           BIN="$(dpkg -L "$PKG" 2>/dev/null | grep -E '^/usr/bin/' | head -n 1)"
           if [ -n "$BIN" ] && [ -x "$BIN" ]; then
-            bash scripts/release-check.sh record OK "deb: programma geïnstalleerd" "$BIN (pakket $PKG $(dpkg-query -W -f '${Version}' "$PKG"))"
-            bash scripts/release-check.sh alive "deb: start onder xvfb-run en leeft na 20 s" 20 xvfb-run -a "$BIN"
+            chk record OK "deb: programma geïnstalleerd" "$BIN (pakket $PKG $(dpkg-query -W -f '${Version}' "$PKG"))"
+            chk alive "deb: start onder xvfb-run en leeft na 20 s" 20 xvfb-run -a "$BIN"
             pkill -f "$BIN" || true
           else
-            bash scripts/release-check.sh record FOUT "deb: programma geïnstalleerd" "geen uitvoerbaar bestand in /usr/bin voor pakket $PKG"
+            chk record FOUT "deb: programma geïnstalleerd" "geen uitvoerbaar bestand in /usr/bin voor pakket $PKG"
           fi
-          bash scripts/release-check.sh run "deb: verwijderen" sudo apt-get remove -y "$PKG"
+          chk run "deb: verwijderen" sudo apt-get remove -y "$PKG"
 
       - name: AppImage starten
         run: |
           # Bewust zonder -e: elke controle moet draaien, ook na een FOUT.
           set +e -uo pipefail
+          # Een exit ≠ 0 van de helper is een kapotte controle (tool weg, syntaxfout): hard stoppen.
+          chk() { bash scripts/release-check.sh "$@" || exit $?; }
           APPIMAGE="$(find "$RUNNER_TEMP/assets" -name '*.AppImage' -print -quit)"
           test -n "$APPIMAGE" || { echo "::error::geen AppImage in de release"; exit 1; }
           chmod +x "$APPIMAGE"
           # --appimage-extract-and-run: geen FUSE nodig (libfuse2 staat niet op elke schone machine).
-          bash scripts/release-check.sh alive "AppImage: start onder xvfb-run en leeft na 20 s" 20 \
+          chk alive "AppImage: start onder xvfb-run en leeft na 20 s" 20 \
             xvfb-run -a "$APPIMAGE" --appimage-extract-and-run
 
       - name: Eindoordeel
         if: always()
-        run: bash scripts/release-check.sh finish "Linux ${{ matrix.os }} — ${{ env.TAG }}"
+        env:
+          MATRIX_OS: ${{ matrix.os }}
+        run: bash scripts/release-check.sh finish "Linux $MATRIX_OS — $TAG"
 
   linux-rpm:
     needs: resolve
@@ -185,24 +196,26 @@ jobs:
         run: |
           # Bewust zonder -e: elke controle moet draaien, ook na een FOUT.
           set +e -uo pipefail
+          # Een exit ≠ 0 van de helper is een kapotte controle (tool weg, syntaxfout): hard stoppen.
+          chk() { bash scripts/release-check.sh "$@" || exit $?; }
           RPM="$(find "$RUNNER_TEMP/assets" -name '*.rpm' -print -quit)"
           SIG="$(rpm -qp --qf '%{RSAHEADER:pgpsig}' "$RPM" 2>/dev/null)"
-          bash scripts/release-check.sh record INFO "rpm: pakkethandtekening" "${SIG:-onbekend}"
-          bash scripts/release-check.sh run "rpm: digests in het pakket (rpm -K --nosignature)" rpm -K --nosignature "$RPM"
-          bash scripts/release-check.sh run "rpm: installeren (dnf install ./…rpm)" dnf install -y "$RPM"
+          chk record INFO "rpm: pakkethandtekening" "${SIG:-onbekend}"
+          chk run "rpm: digests in het pakket (rpm -K --nosignature)" rpm -K --nosignature "$RPM"
+          chk run "rpm: installeren (dnf install ./…rpm)" dnf install -y "$RPM"
           PKG="$(rpm -qp --qf '%{NAME}' "$RPM")"
-          bash scripts/release-check.sh run "rpm: rpm -qi $PKG" rpm -qi "$PKG"
+          chk run "rpm: rpm -qi $PKG" rpm -qi "$PKG"
           BIN="$(rpm -ql "$PKG" | grep -E '^/usr/bin/' | head -n 1)"
           if [ -n "$BIN" ] && [ -x "$BIN" ]; then
-            bash scripts/release-check.sh alive "rpm: start onder xvfb-run en leeft na 20 s" 20 xvfb-run -a "$BIN"
+            chk alive "rpm: start onder xvfb-run en leeft na 20 s" 20 xvfb-run -a "$BIN"
             pkill -f "$BIN" || true
           else
-            bash scripts/release-check.sh record FOUT "rpm: programma geïnstalleerd" "geen uitvoerbaar bestand in /usr/bin voor $PKG"
+            chk record FOUT "rpm: programma geïnstalleerd" "geen uitvoerbaar bestand in /usr/bin voor $PKG"
           fi
 
       - name: Eindoordeel
         if: always()
-        run: bash scripts/release-check.sh finish "Linux Fedora (rpm) — ${{ env.TAG }}"
+        run: bash scripts/release-check.sh finish "Linux Fedora (rpm) — $TAG"
 
   windows:
     needs: resolve
@@ -302,7 +315,7 @@ jobs:
           # Git Bash: zet het Windows-pad van RUNNER_TEMP om naar een POSIX-pad.
           RELEASE_CHECKS="$(cygpath -u "$RUNNER_TEMP")/release-checks.tsv"
           export RELEASE_CHECKS
-          bash scripts/release-check.sh finish "Windows — ${{ env.TAG }}"
+          bash scripts/release-check.sh finish "Windows — $TAG"
 
   macos:
     needs: resolve
@@ -337,20 +350,21 @@ jobs:
         run: |
           # Bewust zonder -e: elke controle moet draaien, ook na een FOUT.
           set +e -uo pipefail
-          C=scripts/release-check.sh
-          AUTH="$(codesign -dv --verbose=2 "$APP" 2>&1 | grep -E '^(Authority|TeamIdentifier|Signature)=' | tr '\n' ';')"
-          bash $C record INFO "app: handtekeninginfo (codesign -dv)" "${AUTH:-geen handtekening}"
-          bash $C run "app: codesign --verify --deep --strict" codesign --verify --deep --strict --verbose=2 "$APP"
-          bash $C run "app: Gatekeeper (spctl -a -t exec -vv)" spctl -a -t exec -vv "$APP"
-          bash $C run "dmg: Gatekeeper (spctl -a -t open --context context:primary-signature -v)" \
+          # Een exit ≠ 0 van de helper is een kapotte controle (tool weg, syntaxfout): hard stoppen.
+          chk() { bash scripts/release-check.sh "$@" || exit $?; }
+                    AUTH="$(codesign -dv --verbose=2 "$APP" 2>&1 | grep -E '^(Authority|TeamIdentifier|Signature)=' | tr '\n' ';')"
+          chk record INFO "app: handtekeninginfo (codesign -dv)" "${AUTH:-geen handtekening}"
+          chk run "app: codesign --verify --deep --strict" codesign --verify --deep --strict --verbose=2 "$APP"
+          chk run "app: Gatekeeper (spctl -a -t exec -vv)" spctl -a -t exec -vv "$APP"
+          chk run "dmg: Gatekeeper (spctl -a -t open --context context:primary-signature -v)" \
             spctl -a -t open --context context:primary-signature -v "$DMG"
-          bash $C run "dmg: notarisatieticket (xcrun stapler validate)" xcrun stapler validate "$DMG"
-          bash $C run "app: notarisatieticket (xcrun stapler validate)" xcrun stapler validate "$APP"
+          chk run "dmg: notarisatieticket (xcrun stapler validate)" xcrun stapler validate "$DMG"
+          chk run "app: notarisatieticket (xcrun stapler validate)" xcrun stapler validate "$APP"
           # Dezelfde poort die release.yml vóór publicatie draait (PR #390), als één controle.
-          bash $C run "release-poort: scripts/macos-verify-dmg.sh" bash scripts/macos-verify-dmg.sh "$(dirname "$DMG")"
-          bash $C alive "app: start en leeft na 20 s" 20 "$APP_BIN"
+          chk run "release-poort: scripts/macos-verify-dmg.sh" bash scripts/macos-verify-dmg.sh "$(dirname "$DMG")"
+          chk alive "app: start en leeft na 20 s" 20 "$APP_BIN"
           pkill -f "$APP_BIN" || true
 
       - name: Eindoordeel
         if: always()
-        run: bash scripts/release-check.sh finish "macOS — ${{ env.TAG }}"
+        run: bash scripts/release-check.sh finish "macOS — $TAG"
