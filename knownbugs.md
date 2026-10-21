@@ -162,8 +162,6 @@ en noem het in je rapport of PR-tekst.
     (`ReportPanel.tsx:1143`, `useTableReportSpec.tsx`). — B
 64. **Een uitgeschakelde `tutorials`-extensie wordt weer aangezet, ongeacht waar hij vandaan kwam**
     (review #261, punt O2). — S
-65. **Andere extensies kunnen `host:`-events uitzenden** via `api.events.emit` (`extensionApi.ts:~322`;
-    review #261, punt O3). — S
 74. **Nederlandse parameternamen en enumwaarden in het MCP-contract.** Na de vertaling naar Engels zijn deze
     sleutels bewust gebleven (ze zijn invoercontract): `planner_list_tasks` `kritiek`/`van`/`tot`/
     `zonder_relaties`, `planner_get_resource_histogram` `van`/`tot` en `bucket: dag|week|maand`,
