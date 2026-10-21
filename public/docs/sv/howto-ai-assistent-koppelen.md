@@ -10,9 +10,9 @@ Bryggan fungerar bara i desktopappen. Slår du på AI-läget i webbläsaren, ser
 
 ## Steg
 
-### 1. Slå på AI-läge
+### 1. Slå på AI-läget
 
-1. Välj *Inställningar › Projekt › Inställningar*. Du kan också välja *Fil › Inställningar*, eller kugghjulet högst upp.
+1. Välj *Inställningar › Projekt › Appinställningar*. Du kan också välja *Fil › Appinställningar*, eller kugghjulet högst upp.
 2. Välj fliken *Avancerat* och slå på *Aktivera AI-läge*. Fliken *AI* visas i menyfliksområdet.
 3. Vill du att bryggan är aktiv så snart appen startar, slå då också på *Starta bryggan automatiskt*. Det fungerar bara när AI-läget är på, och bara i desktopappen. Den är av som standard, eftersom det är ett avsiktligt val att öppna en port.
 
@@ -21,7 +21,7 @@ Slår du av AI-läget, stoppas bryggan och fliken *AI* försvinner.
 ### 2. Starta bryggan
 
 1. Gå till fliken *AI* och klicka på *Starta bryggan* under *Server*.
-2. Titta på statusen bredvid knappen. Den säger *Av*, *Aktiv på port 3877*, *Port 3877 är upptagen* eller *Fel*. Lyckas starten, då visar den *Aktiv på port 3877* och heter knappen *Stoppa bryggan*. Vid *Port 3877 är upptagen* eller *Fel* heter knappen kvar *Starta bryggan*. Se fallgroparna.
+2. Titta på statusen bredvid knappen. Den säger *Av*, *Aktiv på port 3877*, *Port 3877 är upptagen* eller *Fel*. Om starten lyckas visar den *Aktiv på port 3877* och heter knappen *Stoppa bryggan*. Vid *Port 3877 är upptagen* eller *Fel* heter knappen fortfarande *Starta bryggan*. Se fallgroparna.
 
 Bryggan lyssnar bara på din egen dator, på en enda port. Som standard är det port 3877. I gruppen *Anslutning* kan du välja en annan port under *Port*. Det går bara när bryggan är stoppad.
 
@@ -62,11 +62,11 @@ Backuperna ligger i mappen `ai-backups` i appens datamapp. Appen behåller de se
 
 ### 6. Låt assistenten planera väl
 
-En assistent som känner verktygen kan ändå bygga en tidsplan som ingen planerare har nytta av: uppgifter utan samband, ett fast datum på varje uppgift eller en uppdelning som är alldeles för fin. Därför får assistenten planeringsreglerna på tre sätt. För de två första behöver du inget göra.
+En assistent planerar bara väl om den känner planeringsreglerna. Varför det är viktigt och vad reglerna innehåller, läser du i [Så fungerar AI-kopplingen](docs://uitleg-ai-koppeling). Det här gör du själv:
 
-1. **Kärnreglerna följer med av sig själva.** När du ansluter skickar bryggan en kort text med kärnreglerna. Många klienter lägger den i sin systemprompt. Om din klient gör det beror på klienten. Texten säger bland annat: börja med milstolpar, bygg uppgifter som tar ungefär en dag till två veckor, styr tidsplanen med samband i stället för fasta datum och redovisa till slut vad du antog.
-2. **Anslutningsprompten pekar mot hela guiden.** Anslutningsprompten i fönstret *Anslutningsuppgifter* ber assistenten att först läsa planeringsguiden med verktyget `planner_get_planning_guide`. Det ger en engelsk guide för assistenter: samma principer som [Planera väl](docs://gids-goed-plannen), med för varje princip de verktyg som assistenten använder för den. Du kan själv läsa guiden på `https://open-planner-studio.open-aec.com/agent/planning-guide.md`. Använder du inte prompten, be assistenten själv: *Läs planeringsguiden med planner_get_planning_guide först, innan du ändrar något.*
-3. **Valfritt: skills.** En skill är en liten fil med instruktioner som en assistent läser i varje session. Så vet den också i ett senare samtal hur den ska arbeta. Det finns två skills, båda på engelska: *goed-plannen* för att sätta upp eller ordna om en tidsplan, och *progress-update* för den veckovisa uppdateringen av framdriften. Det fungerar bara med en assistent som stöder skills. Skillsen själva nämner Claude Code och liknande assistenter. Varje skill är en fil `SKILL.md` i en egen mapp med skillens namn: `.claude/skills/goed-plannen/SKILL.md` och `.claude/skills/progress-update/SKILL.md` i projektmappen som assistenten arbetar i. Eller samma mappar under `~/.claude/skills/` om du vill ha dem i alla projekt.
+1. **Gör inget för kärnreglerna.** De följer med när du ansluter. Om din klient lägger dem i sin systemprompt beror på klienten.
+2. **Låt assistenten läsa guiden.** Anslutningsprompten i fönstret *Anslutningsuppgifter* ber assistenten att först läsa guiden med verktyget `planner_get_planning_guide`. Använder du inte prompten, be assistenten själv: *Läs planeringsguiden med planner_get_planning_guide först, innan du ändrar något.* Du kan själv läsa guiden på `https://open-planner-studio.open-aec.com/agent/planning-guide.md`.
+3. **Valfritt: installera skills.** Det fungerar bara med en assistent som stöder skills. Lägg `SKILL.md` från *goed-plannen* och *progress-update* i `.claude/skills/goed-plannen/SKILL.md` och `.claude/skills/progress-update/SKILL.md` i projektmappen som assistenten arbetar i. Eller under `~/.claude/skills/` för alla projekt.
 
 Du får filerna på två sätt. Be assistenten anropa verktyget `planner_get_planning_guide` med `part` satt till `skill`. Svaret innehåller båda texterna och, för varje skill, de platser där den ska ligga. Eller ladda ner dem från `https://open-planner-studio.open-aec.com/skills/goed-plannen/SKILL.md` och `https://open-planner-studio.open-aec.com/skills/progress-update/SKILL.md`. Finns *goed-plannen* kvar från en äldre version av appen, ersätt den. Den gamla texten är på nederländska och pekar på hjälpartikeln i stället för guiden för assistenter.
 

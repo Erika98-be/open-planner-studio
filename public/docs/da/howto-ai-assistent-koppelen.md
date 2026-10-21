@@ -12,7 +12,7 @@ Broen virker kun i desktopappen. Hvis du slår AI-tilstand til i browseren, ser 
 
 ### 1. Slå AI-tilstand til
 
-1. Vælg *Indstillinger › Projekt › Indstillinger*. Du kan også vælge *Fil › Indstillinger*, eller tandhjulet øverst.
+1. Vælg *Indstillinger › Projekt › App-indstillinger*. Du kan også vælge *Fil › App-indstillinger*, eller tandhjulet øverst.
 2. Vælg fanen *Avanceret* og slå *Aktiver AI-tilstand* til. Fanen *AI* vises i båndet.
 3. Vil du have broen aktiv, så snart appen starter, så slå også *Start bro automatisk* til. Det virker kun, når AI-tilstand er til, og kun i desktopappen. Den er fra som standard, fordi det er et bevidst valg at åbne en port.
 
@@ -62,15 +62,15 @@ Backups ligger i mappen `ai-backups` i appens datamappe. Appen beholder de nyest
 
 ### 6. Sørg for, at assistenten laver en god tidsplan
 
-En assistent, der kender værktøjerne, kan stadig lave en tidsplan, som ingen planlægger har brug for: opgaver uden afhængigheder, en fast dato på hver opgave, eller en opdeling, der er alt for fin. Derfor får assistenten reglerne for god planlægning på tre måder. For de to første skal du ikke gøre noget.
+En assistent laver kun en god tidsplan, hvis den kender reglerne for god planlægning. Hvorfor det er vigtigt, og hvad reglerne indeholder, kan du læse i [Sådan virker AI-forbindelsen](docs://uitleg-ai-koppeling). Det her gør du selv:
 
-1. **Kernereglerne følger automatisk med.** Når du forbinder, sender broen en kort tekst med kernereglerne. Mange klienter sætter den tekst ind i deres systemprompt. Om din gør det, afhænger af klienten. Der står blandt andet: start ved milepæle, lav opgaver på cirka en dag til to uger, styr tidsplanen med afhængigheder i stedet for faste datoer, og skriv til sidst, hvilke antagelser du har gjort.
-2. **Forbindelsespromptet henviser til den fulde guide.** Forbindelsespromptet fra vinduet *Forbindelsesoplysninger* beder assistenten om først at læse planlægningsguiden, med værktøjet `planner_get_planning_guide`. Det giver en engelsk guide til assistenter: de samme principper som [God planlægning](docs://gids-goed-plannen), med for hvert princip de værktøjer, assistenten bruger til det. Du kan den selv læse på `https://open-planner-studio.open-aec.com/agent/planning-guide.md`. Bruger du ikke prompten, så spørg assistenten selv: *Læs planlægningsguiden med planner_get_planning_guide først, før du ændrer noget.*
-3. **Valgfrit: de skills.** En skill er en lille fil med instruktioner, som en assistent læser med i hver session. Så kender den også den rigtige måde at arbejde på i en senere samtale. Der er to, begge på engelsk: *goed-plannen* til at opsætte eller omstrukturere en tidsplan, og *progress-update* til den ugentlige fremdriftsopdatering. Det virker kun med en assistent, der understøtter skills. Selve skills nævner Claude Code og lignende assistenter. Hver skill er en fil `SKILL.md` i sin egen mappe med skillens navn: `.claude/skills/goed-plannen/SKILL.md` og `.claude/skills/progress-update/SKILL.md` i projektmappen, som assistenten arbejder i, eller de samme mapper under `~/.claude/skills/`, hvis de skal gælde i alle projekter.
+1. **Du behøver ikke gøre noget for kernereglerne.** De følger med, når du forbinder. Om din klient sætter dem ind i sin systemprompt, afhænger af klienten.
+2. **Lad assistenten læse guiden.** Forbindelsesprompten fra vinduet *Forbindelsesoplysninger* beder assistenten om at læse planlægningsguiden med værktøjet `planner_get_planning_guide`. Bruger du ikke prompten, så spørg assistenten selv: *Læs planlægningsguiden med planner_get_planning_guide først, før du ændrer noget.* Du kan selv læse guiden på `https://open-planner-studio.open-aec.com/agent/planning-guide.md`.
+3. **Valgfrit: installer skills.** Det virker kun med en assistent, der understøtter skills. Læg filen `SKILL.md` for *goed-plannen* og *progress-update* i `.claude/skills/goed-plannen/SKILL.md` og `.claude/skills/progress-update/SKILL.md` i den projektmappe, som assistenten arbejder i, eller under `~/.claude/skills/`, så de gælder for alle projekter.
 
 Du kan hente filerne på to måder. Bed assistenten om at kalde værktøjet `planner_get_planning_guide` med `part` sat til `skill`. Svaret indeholder begge tekster og, for hver skill, de steder, hvor den hører hjemme. Eller download dem fra `https://open-planner-studio.open-aec.com/skills/goed-plannen/SKILL.md` og `https://open-planner-studio.open-aec.com/skills/progress-update/SKILL.md`. Er *goed-plannen* stadig der fra en ældre version af appen, så erstat den: den gamle tekst er på nederlandsk og henviser til hjælpeartiklen i stedet for guiden til assistenter.
 
-Om assistenten virkelig har læst guiden, kan du se i *Handlingspanel*: der står så et kald til `planner_get_planning_guide`. Assistentens slutsvar skal indeholde en liste med antagelser: estimerede varigheder, den valgte opdeling, afhængigheder, den selv har oprettet, og alle begrænsninger, den har sat. Mangler listen, så bed om den. Efter en fremdriftsopdatering med *progress-update* skal svaret nævne statusdatoen, den nye slutdato og afvigelsen i forhold til den oprindelige plan.
+Om assistenten virkelig har læst guiden, kan du se det i *Handlingspanel*: der står så et kald til `planner_get_planning_guide`. Assistentens slutsvar skal indeholde en liste med antagelser: estimerede varigheder, den valgte opdeling, afhængigheder, den selv har oprettet, og alle begrænsninger, den har sat. Mangler listen, så bed om den. Efter en fremdriftsopdatering med *progress-update* skal svaret nævne statusdatoen, den nye slutdato og afvigelsen i forhold til den oprindelige plan.
 
 ## Faldgruber og hvad appen gør da
 
@@ -98,4 +98,4 @@ Om assistenten virkelig har læst guiden, kan du se i *Handlingspanel*: der stå
 - [Sådan virker AI-forbindelsen](docs://uitleg-ai-koppeling): hvad forbindelsen er, hvorfor assistenten arbejder i dit åbne projekt, og hvad den ikke må.
 - [AI-værktøjer](docs://ref-ai-tools): alle `planner_*`-værktøjer, grupperet, fejlkoderne og hvor længe backups gemmes.
 - [God planlægning](docs://gids-goed-plannen): planlægningsprincipperne; assistenten får dem i en engelsk version med værktøjerne tilføjet.
-- [Indstillinger](docs://ref-instellingen): AI-indstillingerne.
+- [App-indstillinger](docs://ref-instellingen): AI-indstillingerne.
