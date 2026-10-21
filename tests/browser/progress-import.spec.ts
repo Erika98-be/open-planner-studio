@@ -64,8 +64,10 @@ async function openViaBackstage(page: Page): Promise<void> {
   await page.evaluate(() => {
     window.__OPS__!.store.getState().setUI({ activeRibbonTab: 'file', backstageSection: 'import' });
   });
+  await expect(page.locator('[data-ops-progress-import-card]')).toContainText(/CSV.*XLSX/);
   await page.locator('[data-ops-progress-import-card]').click();
   await expect(dialog(page)).toBeVisible();
+  await expect(dialog(page)).toContainText(/CSV.*XLSX/);
 }
 
 const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';

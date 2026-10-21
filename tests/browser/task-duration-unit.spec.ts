@@ -53,7 +53,9 @@ test('dialoog en eigenschappenpaneel normaliseren duur zonder redundante suffix 
   const panelDuration = page.locator('[data-ops-task-duration]').first();
   await expect(panelDuration).toBeVisible();
   await expect(panelDuration.locator('[data-ops-duration-value]')).toHaveValue('4');
-  await panelDuration.locator('[data-ops-duration-value]').fill('12 hours');
+  // knownbugs #90: één klik en typen vervangt de oude waarde, zonder Ctrl+A.
+  await panelDuration.locator('[data-ops-duration-value]').click();
+  await page.keyboard.type('12 hours');
   await panelDuration.locator('[data-ops-duration-value]').blur();
 
   await expect.poll(() => page.evaluate((id) => {
@@ -66,7 +68,8 @@ test('dialoog en eigenschappenpaneel normaliseren duur zonder redundante suffix 
   const dialogDuration = page.getByRole('dialog').locator('[data-ops-task-duration]');
   await expect(dialogDuration.locator('[data-ops-duration-value]')).toHaveValue('12');
   await expect(dialogDuration.getByRole('button', { name: /^(Duration unit|Duureenheid)$/ })).toHaveText(/^(Hours|Uren)$/);
-  await dialogDuration.locator('[data-ops-duration-value]').fill('4 days');
+  await dialogDuration.locator('[data-ops-duration-value]').click();
+  await page.keyboard.type('4 days');
   await dialogDuration.locator('[data-ops-duration-value]').blur();
   await expect(dialogDuration.locator('[data-ops-duration-value]')).toHaveValue('4');
   await expect(dialogDuration.getByRole('button', { name: /^(Duration unit|Duureenheid)$/ })).toHaveText(/^(Days|Dagen)$/);

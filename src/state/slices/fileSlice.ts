@@ -326,9 +326,10 @@ export function exportP6TruncatedNotice(format: ExportFormat, truncated: number)
 
 /** Resultaat van `exportAs`: bij een cyclische planning wordt de export afgebroken vóór de
  *  opslaan-dialoog en de CPM-fout (`cpmResult.error` + `errorInfo`) meegegeven, zodat de aanroeper
- *  die kan tonen i.p.v. stilletjes niets te doen — vertaald via `scheduleErrorText`. */
+ *  die kan tonen i.p.v. stilletjes niets te doen — vertaald via `scheduleErrorText`.
+ *  Annuleren is geen fout, maar draagt `cancelled` zodat de UI niet als na succes sluit. */
 export type ExportResult =
-  | { ok: true; warnings: readonly XerExportLossWarning[] }
+  | { ok: true; warnings: readonly XerExportLossWarning[]; cancelled?: true }
   | { ok: false; error: string; errorInfo?: ScheduleErrorInfo };
 
 /** Opties voor `applyLoadedProject` — de één gedeelde "vul de actieve document-state met een
@@ -1234,7 +1235,7 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
         : await saveBytesDialog(defaultName, payload, filters, dialogOpts);
       // Cancel is geen export: geen toast en ook geen latente warnings in de succes-envelope.
       // De centrale plaatsing hier maakt Backstage en ribbon automatisch één meldschrijver.
-      if (!outcome) return { ok: true, warnings: [] };
+      if (!outcome) return { ok: true, warnings: [], cancelled: true };
       if (exportGoesToRecents(format)) await pushRecent(outcome.ref, outcome.name);
       noticeIfDownloaded(outcome);
       if (warnings.length > 0) {
@@ -1266,7 +1267,7 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
       const projectContent = writeIFC(buildExportIFCInput(state));
       const base = suggestedFileBase(state);
       const outcome = await saveFileDialog(`${base}.ifc`, projectContent, [{ name: 'IFC Files', extensions: ['ifc'] }]);
-      if (!outcome) return { ok: true, warnings: [] }; // dialoog geannuleerd — geen fout
+      if (!outcome) return { ok: true, warnings: [], cancelled: true }; // dialoog geannuleerd — geen fout
       await pushRecent(outcome.ref, outcome.name);
       noticeIfDownloaded(outcome);
       // 2. De pool ernaast (los bestand), alleen als het project aan een bedrijf gebonden is.
@@ -1274,7 +1275,10 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
       if (!companyId) return { ok: true, warnings: [] };
       const poolContent = state.exportPoolIFC(companyId);
       if (!poolContent) return { ok: true, warnings: [] };
-      noticeIfDownloaded(await saveFileDialog(`${base}-bibliotheek.ifc`, poolContent, [{ name: 'IFC Files', extensions: ['ifc'] }]));
+      const poolOutcome = await saveFileDialog(`${base}-bibliotheek.ifc`, poolContent, [{ name: 'IFC Files', extensions: ['ifc'] }]);
+      // Het projectbestand bestaat dan al; annuleren van het tweede bestand is geen voltooide export.
+      if (!poolOutcome) return { ok: true, warnings: [], cancelled: true };
+      noticeIfDownloaded(poolOutcome);
       return { ok: true, warnings: [] };
     },
 
