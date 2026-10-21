@@ -482,6 +482,12 @@ en noem het in je rapport of PR-tekst.
     1-4): `expect(locator).toBeFocused()` gaf `inactive`. Na een herhaling van de job groen, zonder wijziging;
     de PR raakt geen dialoog- of focuscode. Wisselvallig, oorzaak niet onderzocht. — S
 
+168. **Een IFC met een heel diepe WBS (6.000 niveaus) laat het openen vastlopen op een `RangeError`
+   (Maximum call stack size exceeded).** Gezien via de headless kern: `openAsDocument` gooit die fout op
+   een gegenereerd bestand met 6.000 geneste taken (`tests/planning/check-headless-core.ts` §4g). De kern
+   vangt hem nu af als `PlannerCoreError` (`IFC_READ_FAILED`); de recursie zelf is niet opgelost. In de
+   app zelf niet nagespeeld. Gemeld in de review van PR #440. — B
+
 ## Wensen en open taken (geen bug)
 
 45. **Extensie-API**: extensies kunnen geen relatie of kalender gericht wijzigen en de selectie niet lezen.

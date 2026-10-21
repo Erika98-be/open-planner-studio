@@ -6,7 +6,10 @@
 // 2. `toIfc()` → opnieuw openen → `schedule()` geeft dezelfde datums (de kern verliest niets dat de
 //    berekening nodig heeft).
 // 3. Documenten zijn los: twee tegelijk open documenten beïnvloeden elkaar niet.
-// 4. Het foutmodel: één fouttype met een vaste `code` (INVALID_INPUT, NO_TASKS, SCHEDULE_FAILED).
+// 4. Het foutmodel: één fouttype met een vaste `code` (INVALID_INPUT, NO_TASKS, SCHEDULE_FAILED),
+//    ook bij een fout ín de app-route (6.000 geneste taken, knownbugs.md).
+// 5. Een weggelaten XER-bronarchief komt als waarschuwing XER_ARCHIVE_DROPPED in de samenvatting.
+// 6. Het openen-contract: `toIfc()` vóór `schedule()` geeft de stand van de app na Bestand → Openen.
 //
 // Het gebouwde pakket zelf (bundel, install, consumeervoorbeeld) toetst `npm run verify:core-package`.
 import { readdirSync, readFileSync } from 'node:fs';
@@ -17,6 +20,7 @@ import { createAppStoreContext } from '@/state/appStore';
 import { readIFC } from '@/services/ifc/ifcReader';
 import { writeIFC } from '@/services/ifc/ifcWriter';
 import { buildWriteIFCInput } from '@/state/ifcSaveInput';
+import { readIFCWithXerReconstruction } from '@/services/formatRegistry';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const diffs: string[] = [];
@@ -124,6 +128,62 @@ ok('4c geen tekst ⇒ INVALID_INPUT', await codeOf(() => openIfc(42 as unknown a
   ok('4e kring ⇒ SCHEDULE_FAILED', err instanceof PlannerCoreError && err.code === 'SCHEDULE_FAILED', String(err));
   const ids = err instanceof PlannerCoreError ? (err.details.taskIds as string[] | undefined) : undefined;
   ok('4f de fout noemt de taken van de kring', !!ids && ids.includes(x) && ids.includes(y), JSON.stringify(ids));
+}
+
+{
+  // 4g. 6.000 geneste taken: de app-route gooit een RangeError (recursie); de kern geeft PlannerCoreError.
+  const ctx = createAppStoreContext({ emitHostEvents: false });
+  ctx.store.getState().loadState(readIFC(readFileSync(files[0], 'utf8')));
+  const st = ctx.store.getState();
+  const leaf = st.tasks.find(t => t.childIds.length === 0 && !t.isSummary)!;
+  const N = 6000;
+  const tasks = Array.from({ length: N }, (_, i) => ({
+    ...leaf, id: `nest-${i}`, name: `Nest ${i}`, wbsCode: `${i}`,
+    parentId: i ? `nest-${i - 1}` : null,
+    childIds: i < N - 1 ? [`nest-${i + 1}`] : [],
+    isSummary: i < N - 1 ? true : undefined,
+  }));
+  const deep = writeIFC({ ...buildWriteIFCInput(st), tasks, sequences: [], assignments: [] });
+  const code = await codeOf(async () => (await openIfc(deep)).schedule());
+  ok('4g 6.000 geneste taken ⇒ PlannerCoreError (geen RangeError)', !code.startsWith('ander fouttype') && code !== 'geen fout', code);
+}
+
+{
+  // 5. Fixture met een onbruikbaar XER-bronarchief (bytes ontbreken).
+  const text = readFileSync(join(root, 'tests/planning/fixtures/xer-archief-herschreven.ifc'), 'utf8');
+  const issue = readIFC(text).xerArchiveIssue;
+  ok('5 de fixture heeft een archiefprobleem', !!issue, JSON.stringify(issue));
+  const w = (await openIfc(text)).schedule().warnings.find(x => x.code === 'XER_ARCHIVE_DROPPED');
+  ok('5a de samenvatting meldt XER_ARCHIVE_DROPPED met de reden', !!w && w.detail === issue?.code && w.ids.length === 0, JSON.stringify(w));
+  const clean = (await openIfc(readFileSync(files[0], 'utf8'))).schedule().warnings;
+  ok('5b een gewoon bestand heeft die waarschuwing niet', !clean.some(x => x.code === 'XER_ARCHIVE_DROPPED'));
+}
+
+{
+  // 6. Een bestand waarvan de opgeslagen datums niet kloppen met de berekening.
+  const ctx = createAppStoreContext({ emitHostEvents: false });
+  ctx.store.getState().loadState(readIFC(readFileSync(files[0], 'utf8')));
+  ctx.store.getState().runCPM();
+  const target = ctx.store.getState().tasks.find(t => t.childIds.length === 0 && !t.isSummary && !t.isMilestone)!;
+  ctx.store.setState(d => {
+    const t = d.tasks.find(x => x.id === target.id)!;
+    t.time.earlyStart = '2030-01-07';
+    t.time.earlyFinish = '2030-01-11';
+  });
+  const stale = writeIFC(buildWriteIFCInput(ctx.store.getState()));
+  const datesIn = (ifc: string) => JSON.stringify(readIFC(ifc).tasks.map(t => [t.id, t.time.earlyStart, t.time.earlyFinish]));
+
+  const app = createAppStoreContext({ emitHostEvents: false });
+  app.store.getState().openAsDocument(await readIFCWithXerReconstruction(stale), { name: 'document.ifc', ref: null, saveTarget: false });
+  const appAfterOpen = datesIn(writeIFC(buildWriteIFCInput(app.store.getState())));
+
+  const doc = await openIfc(stale);
+  ok('6 toIfc() vóór schedule() = de app na Bestand → Openen', datesIn(doc.toIfc()) === appAfterOpen);
+  const s = doc.schedule();
+  const fresh = s.tasks.find(t => t.id === target.id);
+  ok('6a schedule() rekent de afwijkende datum terug', fresh?.start === target.time.earlyStart, `${fresh?.start} ≠ ${target.time.earlyStart}`);
+  ok('6b toIfc() na schedule() bevat de berekende datum',
+    readIFC(doc.toIfc()).tasks.find(t => t.id === target.id)?.time.earlyStart === target.time.earlyStart);
 }
 
 if (diffs.length === 0) {

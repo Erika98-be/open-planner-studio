@@ -43,8 +43,11 @@ const STEP_HEADER = 'ISO-10303-21;';
 
 /**
  * Open een project uit IFC-tekst (IFC 4.3 / IFC4, zoals de app het opslaat of andere pakketten het
- * schrijven). Het document wordt geopend zoals Bestand → Openen in de app het doet, maar nog niet
- * doorgerekend; roep daarvoor `schedule()` aan.
+ * schrijven). Het document wordt geopend precies zoals Bestand → Openen in de app het doet. Dat
+ * openen rekent al door; wijkt de uitkomst af van de datums in het bestand, dan kan de app (net als
+ * hier) de datums uit het bestand tonen ("datums zoals opgeslagen"). `toIfc()` direct na `openIfc()`
+ * schrijft dus de geopende stand, niet per se de datums uit de invoer. `schedule()` rekent opnieuw
+ * door zoals F5 en verlaat die stand.
  */
 export async function openIfc(text: string): Promise<PlannerDocument> {
   if (typeof text !== 'string') {
@@ -64,15 +67,31 @@ export async function openIfc(text: string): Promise<PlannerDocument> {
     throw new PlannerCoreError('NO_TASKS', 'The IFC file contains no tasks');
   }
 
+  // Een onbruikbaar XER-bronarchief laat de lezer weg; de app meldt dat verlies. Hier wordt het een
+  // vaste waarschuwing in elke samenvatting, omdat `toIfc()` het archief niet meer kan meeschrijven.
+  const importWarnings: ScheduleWarning[] = parsed.xerArchiveIssue
+    ? [{ code: 'XER_ARCHIVE_DROPPED', ids: [], detail: parsed.xerArchiveIssue.code }]
+    : [];
+
   // Een eigen context per document, zonder host-events: extensies van een app bestaan hier niet.
   const ctx = createAppStoreContext({ emitHostEvents: false });
   // De open-route van de app (Bestand → Openen) zonder opslagdoel: een naamloos document.
-  ctx.store.getState().openAsDocument(parsed, { name: 'document.ifc', ref: null, saveTarget: false });
+  try {
+    ctx.store.getState().openAsDocument(parsed, { name: 'document.ifc', ref: null, saveTarget: false });
+  } catch (err) {
+    throw new PlannerCoreError('IFC_READ_FAILED', `Could not open IFC: ${errorText(err)}`);
+  }
   const state = (): AppState => ctx.store.getState();
 
   return {
     schedule(): ScheduleSummary {
-      state().runCPM();
+      try {
+        state().runCPM();
+      } catch (err) {
+        throw new PlannerCoreError('SCHEDULE_FAILED', `The schedule cannot be calculated: ${errorText(err)}`, {
+          reason: errorText(err),
+        });
+      }
       const s = state();
       const result = s.cpmResult;
       if (!result || result.error) {
@@ -82,7 +101,11 @@ export async function openIfc(text: string): Promise<PlannerDocument> {
           ...(result?.cycleTaskIds ? { taskIds: [...result.cycleTaskIds] } : {}),
         });
       }
-      return summarize(s, result);
+      try {
+        return summarize(s, result, importWarnings);
+      } catch (err) {
+        throw new PlannerCoreError('SCHEDULE_FAILED', `The schedule summary failed: ${errorText(err)}`, { reason: errorText(err) });
+      }
     },
     toIfc(): string {
       try {
@@ -98,7 +121,7 @@ function errorText(err: unknown): string {
   return err instanceof Error ? err.message : String(err);
 }
 
-function summarize(s: AppState, result: CPMResult): ScheduleSummary {
+function summarize(s: AppState, result: CPMResult, importWarnings: readonly ScheduleWarning[]): ScheduleSummary {
   const tasks: ScheduleTaskSummary[] = s.tasks.map(t => ({
     id: t.id,
     name: t.name,
@@ -113,7 +136,7 @@ function summarize(s: AppState, result: CPMResult): ScheduleSummary {
     totalFloat: t.time.totalFloat,
     critical: t.time.isCritical,
   }));
-  const warnings: ScheduleWarning[] = [];
+  const warnings: ScheduleWarning[] = importWarnings.map(w => ({ ...w, ids: [...w.ids] }));
   const warn = (code: ScheduleWarning['code'], ids: readonly string[] | undefined) => {
     if (ids && ids.length > 0) warnings.push({ code, ids: [...ids] });
   };
