@@ -798,7 +798,7 @@ export function TaskGridSurface({
       name: milestone
         ? tTask('defaultMilestone', { defaultValue: 'Nieuwe mijlpaal' })
         : tTask('defaultTask', { defaultValue: 'Nieuwe taak' }),
-      ...(milestone ? { isMilestone: true, taskType: 'ATTENDANCE' as const } : {}),
+      ...(milestone ? { isMilestone: true, milestoneKind: 'FINISH' as const, taskType: 'USERDEFINED' as const } : {}),
       ...endOfListPosition(),
     });
     if (!id) return;
@@ -1312,7 +1312,8 @@ export function TaskGridSurface({
             addTask({
               name: tTask('defaultMilestone', { defaultValue: 'Nieuwe mijlpaal' }),
               isMilestone: true,
-              taskType: 'ATTENDANCE',
+              milestoneKind: 'FINISH',
+              taskType: 'USERDEFINED',
               parentId: contextMenu.task.id,
             });
           }}
