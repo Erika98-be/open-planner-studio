@@ -241,8 +241,11 @@ test('knownbug 83: wbsCode schrijven wordt geweigerd, zoals de leestools uitlegg
   assertEq(JSON.stringify(taskById(id)), before, 'taak blijft byte-identiek');
 
   const count = store.getState().tasks.length;
-  const added = await call('planner_add_tasks', { tasks: [{ name: 'Ongeldige WBS', wbsCode: '9.9' }] });
+  const added = await call('planner_add_tasks', { tasks: [{ tempId: 'ongeldige-wbs', name: 'Ongeldige WBS', wbsCode: '9.9' }] });
   assertEq(added.ok, false, 'ook toevoegen accepteert geen wbsCode');
+  const addError = (added as McpToolErr).error;
+  assert(/unknown field 'wbsCode'.*WBS code is derived/.test(addError),
+    `toevoegen weigert specifiek de afgeleide WBS: ${addError}`);
   assertEq(store.getState().tasks.length, count, 'geen taak aangemaakt bij ongeldige invoer');
 });
 
