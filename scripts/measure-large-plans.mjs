@@ -29,9 +29,9 @@
 // Niet in `npm run verify` en niet in CI: zwaar en machine-afhankelijk.
 import { spawnSync } from 'node:child_process';
 import { createServer } from 'node:http';
-import { createReadStream, existsSync, mkdirSync, mkdtempSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { createReadStream, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { cpus, totalmem, tmpdir, release, platform, arch } from 'node:os';
-import { dirname, extname, join, resolve, sep } from 'node:path';
+import { dirname, extname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from '@playwright/test';
 
@@ -105,12 +105,23 @@ const MIME = {
   '.md': 'text/markdown; charset=utf-8', '.ifc': 'text/plain; charset=utf-8', '.txt': 'text/plain; charset=utf-8',
 };
 function serve(dir) {
+  // Vaste lijst van de bestanden in de buildmap, vooraf opgebouwd: het verzoekpad kiest alleen uit
+  // die lijst en komt zelf nooit in een bestandspad terecht. Onbekend pad ⇒ index.html.
+  const files = new Map();
+  const walk = (abs, rel) => {
+    for (const entry of readdirSync(abs, { withFileTypes: true })) {
+      const childAbs = join(abs, entry.name);
+      const childRel = `${rel}/${entry.name}`;
+      if (entry.isDirectory()) walk(childAbs, childRel);
+      else if (entry.isFile()) files.set(childRel, childAbs);
+    }
+  };
+  walk(resolve(dir), '');
+  const index = files.get('/index.html');
   const server = createServer((req, res) => {
-    // Alleen bestanden binnen de buildmap: pad oplossen en daarna begrenzen (geen `..` naar buiten).
-    const root = resolve(dir);
-    let file = resolve(root, `.${decodeURIComponent((req.url ?? '/').split('?')[0])}`);
-    if (file !== root && !file.startsWith(root + sep)) { res.writeHead(403).end(); return; }
-    if (!existsSync(file) || statSync(file).isDirectory()) file = join(dir, 'index.html');
+    let key = '/';
+    try { key = decodeURIComponent((req.url ?? '/').split('?')[0]); } catch { /* ongeldig pad ⇒ index */ }
+    const file = files.get(key) ?? index;
     res.writeHead(200, { 'content-type': MIME[extname(file)] ?? 'application/octet-stream', 'cache-control': 'no-store' });
     createReadStream(file).pipe(res);
   });
