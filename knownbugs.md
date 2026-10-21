@@ -226,12 +226,6 @@ en noem het in je rapport of PR-tekst.
     bladtaak LeafA onder Fase X ⇒ het filter geeft `LeafA`, terwijl LeafA kritiek is en aan het netwerk
     hangt. De agentgids en `goed-plannen` waarschuwen er nu voor. Voorstel: relaties van voorouders
     meetellen, of het veld uitbreiden met "via fase". — B
-87. **De beschrijving van `planner_update_calendar` zegt dat een ongebruikte kalender opslaan niet
-    overleeft**, maar dat is sinds de A2-fix niet meer waar: `ifcReader.ts:~2801-2816` leest elke overige
-    IFCWORKCALENDAR terug, en `tests/mcp/cases-uurkalender.ts:~615-624` pint dat vast. Gevonden doordat de
-    eerste versie van de agentgids de zin overnam. Voorstel: de zin uit de beschrijving
-    (`calendarResourceTools.ts:~1042`) halen; alleen het behoud van urenbanden van een ongebruikte
-    urenkalender is apart te toetsen. — B
 88. **Feestdagen gegenereerd vóór de taken dekken een lang project niet.** Zonder rekenresultaat geeft
     `calendarSpan` geen projecteinde door en neemt `computeGenerateSpan` startjaar−1 t/m startjaar+3
     (`calendarResourceTools.ts:~585`, `generateCalendarHolidays.ts:~62`). Nagespeeld: start 7 juni 2027,
