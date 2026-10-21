@@ -838,7 +838,7 @@
       "projectEndUnchanged": "Projecteinddatum: ongewijzigd ({{date}})",
       "projectEndChanged": "Projecteinddatum: {{before}} → {{after}}",
       "remainingConflicts": "Resterende conflicten",
-      "remainingConflictsHint": "Deze taken passen niet binnen hun speling — vaak omdat een resource op die dagen niet werkt of onvoldoende capaciteit heeft.",
+      "remainingConflictsHint": "Voor deze taken blijven resourceconflicten bestaan. Bekijk de toelichting hieronder.",
       "intrinsicOverrun": "{{resource}} vraagt op de piek {{peak}} eenh./dag, capaciteit is {{capacity}} — niet oplosbaar door schuiven.",
       "noChanges": "Geen taken hoeven te verschuiven — de planning is al conflictvrij.",
       "notCalculated": "Klik op Berekenen om een nivelleervoorstel te maken.",
