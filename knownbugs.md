@@ -481,6 +481,13 @@ en noem het in je rapport of PR-tekst.
    een gegenereerd bestand met 6.000 geneste taken (`tests/planning/check-headless-core.ts` §4g). De kern
    vangt hem nu af als `PlannerCoreError` (`IFC_READ_FAILED`); de recursie zelf is niet opgelost. In de
    app zelf niet nagespeeld. Gemeld in de review van PR #440. — B
+169. **`tests/browser/document-switch.spec.ts:75` (Gantt documenttabs herstellen beide paneviews en
+   DOM-scrollbars) faalt soms in CI.** In de opbouw (`configureDocument`, regel 41) zet de test
+   `setScroll(…, 190)` en leest daarna `scrollY: 0` terug. Gezien één keer in CI op PR #439
+   (https://github.com/OpenAEC-Foundation/open-planner-studio/actions/runs/39577861612, job 119147770916),
+   op een head die verder alleen de MCP-laag raakt; op de vier eerdere heads van die PR was hij groen.
+   Lokaal 5× groen op `main` (b4ee5be3) en 25× groen op de PR na merge met main. Vermoedelijk zet iets de
+   verticale scroll terug (begrenzing op de inhoudshoogte) voordat de inhoud er is; niet onderzocht. — S
 
 ## Wensen en open taken (geen bug)
 
