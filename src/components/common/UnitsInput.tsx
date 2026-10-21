@@ -111,6 +111,10 @@ export function UnitsInput({
         ? { type: 'text', inputMode: 'decimal' as const }
         : { type: 'number', min: '0', step: 'any' })}
       value={text}
+      onFocus={event => {
+        // Ctrl+S/F5 herstelt de bestaande invoerfocus, niet een nieuwe veldbewerking.
+        if (event.currentTarget.dataset.opsRefocus !== 'true') event.currentTarget.select();
+      }}
       title={title}
       aria-label={ariaLabel}
       aria-invalid={invalid}

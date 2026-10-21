@@ -178,6 +178,48 @@ test('afdekken: het gebied is egaal in de verstuurde afbeelding', async ({ page,
   await page.locator('.annotator-editor').getByRole('button', { name: 'Cover' }).click();
   // Een vlak over het midden-links van de app (raster en kop: daar staat tekst).
   await dragOnCanvas(page, 0.02, 0.05, 0.45, 0.6);
+  const editor = page.locator('.annotator-editor');
+  // Alleen het losse uitvoercanvas faalt; het tekenvlak en de rest van de app blijven werken.
+  // Elke fout wordt één keer geïnjecteerd, zodat dezelfde bewerking daarna opnieuw kan slagen.
+  for (const failure of ['context', 'image', 'export', 'empty'] as const) {
+    await page.evaluate((failure) => {
+      const proto = HTMLCanvasElement.prototype;
+      if (failure === 'context') {
+        const original = proto.getContext;
+        proto.getContext = function (this: HTMLCanvasElement, ...args: Parameters<typeof original>) {
+          if (!this.isConnected) {
+            proto.getContext = original;
+            return null;
+          }
+          return original.apply(this, args);
+        } as typeof original;
+      } else if (failure === 'image') {
+        const descriptor = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, 'src')!;
+        Object.defineProperty(HTMLImageElement.prototype, 'src', {
+          ...descriptor,
+          set() {
+            Object.defineProperty(HTMLImageElement.prototype, 'src', descriptor);
+            descriptor.set!.call(this, 'data:image/png;base64,broken');
+          },
+        });
+      } else {
+        const original = proto.toDataURL;
+        proto.toDataURL = function () {
+          proto.toDataURL = original;
+          if (failure === 'export') throw new DOMException('Test export failure', 'SecurityError');
+          return 'data:,';
+        };
+      }
+    }, failure);
+    await editor.getByRole('button', { name: 'Done' }).click();
+    await expect(editor.getByRole('alert')).toContainText('Your edits could not be saved.');
+    await expect(editor).toBeVisible();
+    await expect(thumb).toHaveAttribute('src', rawSrc);
+    await expect(dialog.getByRole('button', { name: 'Send', exact: true })).toBeDisabled();
+    expect(seen).toHaveLength(0);
+    await expect(editor.getByTitle('Undo')).toBeEnabled();
+  }
+  // Opnieuw proberen bewaart de bestaande afdekking; de pixelcontrole hieronder controleert de upload.
   await page.locator('.annotator-editor').getByRole('button', { name: 'Done' }).click();
   await expect(page.locator('.annotator-editor')).toHaveCount(0);
 

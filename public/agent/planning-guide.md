@@ -61,7 +61,7 @@ First put down the moments that are fixed: start on site, permit final, weathert
 Below the milestones comes the structure: phases, work packages, tasks. A task lasts between roughly one day and two weeks. Shorter means planning the shop floor instead of the project, and nobody maintains that for months. Longer means a task you cannot estimate and cannot track: "finishing ground floor, 40 days, 45% complete" tells nobody whether things are going well. Schedule reviews count the tasks longer than about two months; above a few percent that counts as a lack of detail. Too fine is just as damaging: a schedule nobody updates is fiction within three weeks. Two deliberate exceptions: a lead time (a ten-week window frame delivery is one block of waiting) and continuous supervision.
 
 - Build the tree in one `planner_add_tasks` call. Every item has a `tempId` that starts with `tmp-` or `tmp_`; `parentId` may be an existing task id or a `tempId` from the same call.
-- A task with subtasks is a summary task: the app derives its dates and duration from the tasks below it. Do not send a `duration` for a summary task; it has no effect, the derived duration wins.
+- A task with subtasks is a summary task: the app derives its dates and duration from the tasks below it. Do not send a `duration` for a summary task: `planner_update_tasks` refuses that fields block. In `planner_add_tasks`, omit duration on a new parent that has children in the same call; an explicit parent duration makes the whole call fail validation.
 - Restructure with `planner_move_task` (`newParentId`, `position`). `planner_delete_tasks` deletes the whole subtree: check `cascadedTaskIds` in the answer.
 - Work that stops and resumes later stays one task with interruptions (`planner_set_task_splits`), not a series of tasks.
 - A hammock for continuous supervision cannot be set through the tools. If one is needed, ask the user to make it in the app.
@@ -87,7 +87,7 @@ Finish-to-start is the default; in a healthy construction schedule about nine ou
 - A lag in calendar days cannot be set through the tools. For concrete curing, add a visible curing task with `durationType: "ELAPSEDTIME"` instead of a lag.
 - Change a relationship with `planner_update_dependencies` and its `seqId` (in `planner_get_project_overview`, after the `#` in `rels`), not by removing and adding it again.
 - A summary task as predecessor or successor is allowed; the relationship applies to its leaf tasks. A circular dependency is a hard error (`CYCLE`) that rolls back the whole call.
-- Find tasks without any relationship with `planner_list_tasks` `zonder_relaties: true` (leaf tasks only). That filter only counts relationships on the task itself: a leaf task whose summary task carries the relationship is listed too, although it is tied into the network. Check such a row against the `rels` of its parent in `planner_get_project_overview` before you add anything. A task that has a predecessor but no successor does not show there: in `planner_get_project_overview` every row lists its outgoing relationships under `rels`, so a leaf task without `rels` (other than the final milestone, and unless its summary task carries the relationship) is missing a successor.
+- Find tasks without any relationship with `planner_list_tasks` `zonder_relaties: true` (leaf tasks only). The filter counts relationships on the task itself and on all its ancestor summary tasks, so leaves tied into the network through a phase are not listed. A task that has a predecessor but no successor does not show there: in `planner_get_project_overview` every row lists its outgoing relationships under `rels`, so a leaf task without `rels` (other than the final milestone, and unless its summary task carries the relationship) is missing a successor.
 
 ### Constraints and fixed dates: as few as possible
 
@@ -151,7 +151,7 @@ A small network from Monday 7 June 2027 on the default construction calendar (Mo
 
 Check, with the tools, the mistakes that make a schedule lie quietly:
 
-- No task without relationships: every row that `planner_list_tasks` with `zonder_relaties: true` returns is either fixed or tied in through a relationship on its summary task, and every leaf task except the final milestone has a successor, on itself or on its summary task (`rels` in `planner_get_project_overview`).
+- No task without relationships: every row that `planner_list_tasks` with `zonder_relaties: true` returns needs a relationship, and every leaf task except the final milestone has a successor, on itself or on its summary task (`rels` in `planner_get_project_overview`).
 - No constraint without an external date the user gave you, and no hard pin the user did not ask for.
 - Task lengths between roughly a day and two weeks, with any exception named.
 - No negative lags, and no unnamed lags where a visible task belongs.

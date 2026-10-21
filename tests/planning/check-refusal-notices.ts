@@ -168,6 +168,7 @@ const REFUSAL_KEYS = [
   'relationsSkippedOnInsert', 'schedulingTemplateLimit', 'phaseQuestionOutdated', 'ambiguousThousands',
 ];
 const NOT_A_REFUSAL: Record<string, string> = {
+  extensionInstallFailed: 'app-globale installatiefout (bijv. ongeldig bestand of opslag); geen documentgebonden weigering',
   extHelpProjectOpenFailed: 'storing (bestand niet te openen), echte fout',
   siteSaveConflict: 'opslaan geweigerd door de site: data staat op het spel, blijft een echte fout die nooit weggeduwd wordt',
   recoveryReadFailed: 'storing bij herstel', recoveryDocumentsSkipped: 'storing bij herstel',
