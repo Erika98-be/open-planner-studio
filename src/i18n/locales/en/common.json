@@ -1295,7 +1295,7 @@
   "progressImport": {
     "title": "Update progress from a spreadsheet",
     "chooseFile": "Choose file…",
-    "intro": "Pick a returned CSV sheet. The app only reads completion, actual start and actual finish — the rest of your plan stays unchanged.",
+    "intro": "Pick a returned CSV or XLSX sheet. The app only reads completion, actual start and actual finish — the rest of your plan stays unchanged.",
     "summaryApplied": "Applied: {{applied}}",
     "summaryNoop": "Unchanged: {{noop}}",
     "summaryNeedsLink": "Waiting for a link: {{needsLink}}",

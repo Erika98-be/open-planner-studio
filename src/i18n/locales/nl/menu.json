@@ -313,7 +313,7 @@
     "exportTitle": "Exporteren",
     "exportSubtitle": "Kies een formaat. Het project wordt geconverteerd en opgeslagen.",
     "progressImportCardTitle": "Voortgang bijwerken uit een blad",
-    "progressImportCardDesc": "Lees een teruggestuurd CSV-blad in en werk voltooiing, werkelijke start en werkelijk einde bij.",
+    "progressImportCardDesc": "Lees een teruggestuurd CSV- of XLSX-blad in en werk voltooiing, werkelijke start en werkelijk einde bij.",
     "printTitle": "Printen",
     "printSubtitle": "Open het rapportscherm voor afdrukvoorbeeld en instellingen.",
     "openPrintPreview": "Open afdrukvoorbeeld",
