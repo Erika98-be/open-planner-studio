@@ -22,7 +22,7 @@ dat wordt per run door GitHub zelf uitgegeven.
 |---|---|---|---|
 | `TAURI_SIGNING_PRIVATE_KEY` | `release.yml` (build-linux-mac, build-windows) | Signeert de updater-artefacten en `latest.json` met minisign | **Onherstelbaar** — zie §2 |
 | `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` | idem | Wachtwoord op die privésleutel | Idem: zonder wachtwoord is de sleutel onbruikbaar |
-| `AZURE_TENANT_ID` | `release.yml` (build-windows) | Azure Trusted Signing — Authenticode op de Windows-installer | Herstelbaar: nieuwe credentials aanvragen. Tot die tijd waarschuwt SmartScreen bij elke Windows-download |
+| `AZURE_TENANT_ID` | `release.yml` (build-windows), `windows-sign-check.yml` | Azure Artifact Signing (voorheen Trusted Signing) — Authenticode op het Windows-programma, de uninstaller en de installer, via `scripts/windows-sign.ps1` (Tauri `signCommand`). De drie ID/secret-waarden gaan als `EnvironmentCredential` naar de Microsoft-signeerclient; endpoint, account en profiel naar zijn `metadata.json` | Herstelbaar: nieuwe credentials aanvragen. Tot die tijd waarschuwt SmartScreen bij elke Windows-download |
 | `AZURE_CLIENT_ID` | idem | idem | idem |
 | `AZURE_CLIENT_SECRET` | idem | idem | idem — **en dit is er één met een vervaldatum**, zie §3 |
 | `AZURE_ENDPOINT` | idem | idem | idem |
@@ -125,9 +125,11 @@ Nuttig bij het lezen van een gefaalde release:
 - **Ontbrekende Tauri-signing-secrets** — `tauri-action` bouwt wel, maar
   produceert geen `.sig`-bestanden en geen bruikbare `latest.json`. De release
   slaagt ogenschijnlijk; de updater vindt niets. Stilste faalmodus van de keten.
-- **Ontbrekende of verlopen Azure-secrets** — de `azure/trusted-signing-action`
-  faalt hard in `build-windows`. Zichtbaar, en de release blijft draft. Dat is
-  het gewenste gedrag.
+- **Ontbrekende of verlopen Azure-secrets** — `scripts/windows-sign.ps1` faalt
+  hard in `build-windows`: bij `-Setup` als endpoint, account of profiel
+  ontbreekt, en tijdens de build als `signtool` niet kan inloggen of tekenen.
+  De poortstap *Verify Authenticode* vangt een ongetekend programma of
+  installer. Zichtbaar, en de release blijft draft. Dat is het gewenste gedrag.
 - **Ontbrekende Apple-secrets** — `tauri-action` bouwt dan een app zonder
   Developer ID-handtekening (zo ging v2026.9.0 de deur uit). Sinds PR #390 vangt
   `scripts/macos-verify-dmg.sh` dat in `release.yml`: de release blijft draft.
