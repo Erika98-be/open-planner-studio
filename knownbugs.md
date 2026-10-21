@@ -445,6 +445,11 @@ en noem het in je rapport of PR-tekst.
 132. ***Voortgang bijwerken uit een blad* zegt "Kies een teruggestuurd CSV-blad"** (nl) en "Pick a returned
     CSV sheet" (en), terwijl het venster ook `.xlsx` opent (`ProgressImportDialog.tsx:176-180`,
     `common.json` `progressImport.intro`). — B
+137. **Vertaalstraat: een nieuw concept zonder doelterm valt niet op.** Na #376 stond `work-category`
+    (werksoort) in `i18n/termbase/concepts.json`, maar in geen enkele `<taal>.json`. `validate-termbase` en
+    `verify:translations` bleven groen. De straat hield toen de oude taaktype-term aan (bijv. de: `Neue Vorgangsart`),
+    en de labelpoort dwong die oude tekst af. In de release-ronde van 2026-10-21 hersteld (termen +
+    `--keys`-ronde). Voorstel: `validate-termbase` rood bij een concept zonder term in een taal. — B
 
 ## Tests
 
