@@ -61,8 +61,20 @@ try {
   const tarball = join(work, packed.filename);
   const packedFiles = packed.files.map((f) => f.path).sort();
   ok('2 tarball bevat precies de pakketbestanden',
-    JSON.stringify(packedFiles) === JSON.stringify(['LICENSE', 'LICENSE.GPL', 'README.md', 'api.d.ts', 'api.js', 'index.d.ts', 'index.mjs', 'package.json']),
+    JSON.stringify(packedFiles) === JSON.stringify(['LICENSE', 'LICENSE.GPL', 'README.md', 'THIRD-PARTY-NOTICES.md', 'api.d.ts', 'index.d.ts', 'index.mjs', 'package.json']),
     packedFiles.join(', '));
+
+  // Licenties van de meegebundelde dependencies: elk pakket dat de bundel bevat, met zijn eigen
+  // licentietekst uit node_modules. De verwachte lijst komt uit de lockfile-versies, niet uit de bouw.
+  const notices = readFileSync(join(pkgDir, 'THIRD-PARTY-NOTICES.md'), 'utf8');
+  for (const dep of ['zustand', 'immer', 'i18next']) {
+    const meta = JSON.parse(readFileSync(join(root, 'node_modules', dep, 'package.json'), 'utf8'));
+    const license = readFileSync(join(root, 'node_modules', dep, 'LICENSE'), 'utf8').trim();
+    ok(`2a THIRD-PARTY-NOTICES noemt ${dep} ${meta.version} met de volledige licentietekst`,
+      notices.includes(`## ${dep} ${meta.version}`) && notices.includes(license));
+  }
+  const listed = /Bundled packages: ([^\n]+)\./.exec(notices)?.[1] ?? '';
+  ok('2b de notices noemen precies de gebundelde pakketten', listed === 'i18next, immer, zustand', listed);
 
   // 2. Het consumeervoorbeeld in een tijdelijke map, met het pakket uit de tarball.
   const consumer = join(work, 'consumer');

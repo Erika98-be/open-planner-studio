@@ -41,12 +41,19 @@ const ifc = doc.toIfc();              // IFC-tekst met de berekende datums
 
 | export | wat |
 |---|---|
-| `openIfc(text): Promise<PlannerDocument>` | Opent IFC-tekst zoals Bestand → Openen in de app (`openAsDocument`), zonder opslagdoel. Rekent nog niet. |
+| `openIfc(text): Promise<PlannerDocument>` | Opent IFC-tekst zoals Bestand → Openen in de app (`openAsDocument`), zonder opslagdoel. Dat openen rekent al door, net als in de app (zie hieronder). |
 | `PlannerDocument.schedule(): ScheduleSummary` | Draait `runCPM` op de store van dit document: dezelfde route als F5, met de werkregels en het rekenprofiel van het project. Geeft de samenvatting. |
 | `PlannerDocument.toIfc(): string` | Schrijft het document als IFC (`writeIFC(buildWriteIFCInput(...))`), in het IFC-schema van het project. |
 | `PlannerCoreError` | Het enige fouttype. Heeft `code` en `details`. |
 | `VERSION` | De versie van het pakket (gelijk aan de appversie). |
 | typen | `ScheduleSummary`, `ScheduleTaskSummary`, `ScheduleWarning`, `PlannerDocument`, `CoreErrorCode` |
+
+**Openen rekent al door.** De kern volgt de app: Bestand → Openen rekent het project meteen door.
+Wijkt die uitkomst af van de datums in het bestand, dan kan het document (zoals in de app) de datums
+uit het bestand tonen ("datums zoals opgeslagen", `docs`-rule `state`). `toIfc()` direct na
+`openIfc()` schrijft dus de stand van de app na het openen, niet per se de datums uit de invoer.
+`schedule()` rekent opnieuw door zoals F5 en verlaat die stand; daarna bevat `toIfc()` de berekende
+datums.
 
 De samenvatting (`formatVersion: 1`) bevat:
 
@@ -57,22 +64,26 @@ De samenvatting (`formatVersion: 1`) bevat:
 - `criticalPath`: de taak-id's van het kritieke pad;
 - `warnings`: waarschuwingen van de berekening met een vaste code en de betrokken id's
   (`CONSTRAINT_VIOLATED`, `DEADLINE_MISSED`, `OUT_OF_SEQUENCE`, `CALENDAR_CAPPED`,
-  `RELATION_IGNORED`, `HAMMOCK_WITHOUT_FINISH_DRIVER`).
+  `RELATION_IGNORED`, `HAMMOCK_WITHOUT_FINISH_DRIVER`), plus één waarschuwing van het openen:
+  `XER_ARCHIVE_DROPPED`. Die komt als het bestand een P6-bronarchief (XER) had dat niet bruikbaar is.
+  De lezer laat het archief dan weg, en `toIfc()` schrijft het niet meer mee. `detail` geeft de
+  reden (`bytes-missing`, `hash-mismatch`, …); de app meldt hetzelfde verlies bij het openen.
 
 Datums zijn ISO-8601-tekst zoals de app ze bewaart: een datum (`2027-03-01`) of, bij urenplanning,
 datum en tijd.
 
 ## Foutmodel
 
-Elke fout is een `PlannerCoreError` met een vaste `code`. De `message` is Engels en is voor mensen,
+Elke fout is een `PlannerCoreError` met een vaste `code`. Ook een onverwachte fout in de app-route
+(bij openen, rekenen of schrijven) komt als `PlannerCoreError` naar buiten. De `message` is Engels en is voor mensen,
 niet om te parsen.
 
 | code | wanneer |
 |---|---|
 | `INVALID_INPUT` | De invoer is geen tekst, is leeg, of begint niet met `ISO-10303-21;`. |
-| `IFC_READ_FAILED` | De IFC-lezer kan het bestand niet lezen. |
+| `IFC_READ_FAILED` | De IFC-lezer kan het bestand niet lezen, of het openen in de store mislukt (bijv. bij een extreem diepe WBS, knownbugs.md). |
 | `NO_TASKS` | Het bestand heeft geen taken. |
-| `SCHEDULE_FAILED` | De planning is niet te berekenen, bijv. door een kring in de relaties. `details.reason` heeft de solvertekst, `details.taskIds` de taken van de kring. |
+| `SCHEDULE_FAILED` | De planning is niet te berekenen, bijv. door een kring in de relaties, of de berekening gooit een fout. `details.reason` heeft de solvertekst, `details.taskIds` de taken van de kring. |
 | `IFC_WRITE_FAILED` | Het schrijven naar IFC mislukt. |
 
 ## Versiemodel
@@ -88,14 +99,18 @@ niet om te parsen.
 ## Licentie
 
 Het pakket heeft dezelfde licentie als de repository: `LGPL-3.0-or-later`. De bouw kopieert
-`LICENSE` en `LICENSE.GPL` in het pakket. De bundel bevat ook code van dependencies (onder andere
-zustand, immer en i18next, alle MIT); esbuild zet hun licentiecommentaar aan het einde van
-`index.mjs`.
+`LICENSE` en `LICENSE.GPL` in het pakket.
+
+De bundel bevat ook code van dependencies: nu zustand, immer en i18next, alle drie MIT. De bouw
+leidt die lijst af uit de esbuild-metafile en schrijft per pakket naam, versie, licentie en de
+volledige licentietekst uit `node_modules` in `THIRD-PARTY-NOTICES.md`. Een gebundeld pakket zonder
+licentiebestand laat de bouw falen. `verify:core-package` controleert dat het bestand in de tarball
+zit, met de licentietekst van elk pakket.
 
 ## Bouwen en consumeervoorbeeld
 
 ```bash
-npm run build:core                       # → dist-core/ (index.mjs, index.d.ts, api.d.ts, package.json, …)
+npm run build:core                       # → dist-core/ (index.mjs, index.d.ts, api.d.ts, package.json, THIRD-PARTY-NOTICES.md, …)
 cd headless/consumer-example
 npm install                              # installeert dist-core als pakket
 node index.mjs ../../examples/01-grachtenpand-amsterdam.ifc
@@ -111,8 +126,8 @@ Het voorbeeld importeert alleen `@openaec/open-planner-core`, nooit code uit `sr
 
 | test | wat hij bewijst |
 |---|---|
-| `tests/planning/check-headless-core.ts` | Voor elk voorbeeld in `examples/` en `public/examples/` geeft de kern dezelfde datums, speling, kritieke vlag, projecteinde en kritiek pad als de app-store (`loadState` → `runCPM`). Verder: `toIfc` → `openIfc` geeft dezelfde datums, twee documenten zijn los, en de foutcodes kloppen. |
-| `npm run verify:core-package` | Bouwt het pakket, maakt een tarball met `npm pack`, installeert die in een kopie van het consumeervoorbeeld, draait het voorbeeld (verwachte uitkomst, herberekend IFC, foutcode) en typecheckt een kleine TypeScript-consument tegen de declaraties. |
+| `tests/planning/check-headless-core.ts` | Voor elk voorbeeld in `examples/` en `public/examples/` geeft de kern dezelfde datums, speling, kritieke vlag, projecteinde en kritiek pad als de app-store (`loadState` → `runCPM`). Verder: `toIfc` → `openIfc` geeft dezelfde datums, twee documenten zijn los, de foutcodes kloppen (ook 6.000 geneste taken geeft een `PlannerCoreError`), een weggelaten XER-archief geeft `XER_ARCHIVE_DROPPED`, en `toIfc()` vóór `schedule()` is gelijk aan de app na openen. |
+| `npm run verify:core-package` | Bouwt het pakket, maakt een tarball met `npm pack`, installeert die in een kopie van het consumeervoorbeeld, controleert `THIRD-PARTY-NOTICES.md`, draait het voorbeeld (verwachte uitkomst, herberekend IFC, foutcode) en typecheckt een kleine TypeScript-consument tegen de declaraties. |
 | `tests/planning/check-store-runtime-boundaries.ts` | De grens: een waarde-import uit `appStore` in `src/core/` maakt `verify:store-boundaries` rood. |
 
 ## Wat de kern niet doet

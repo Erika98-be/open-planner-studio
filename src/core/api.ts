@@ -9,7 +9,7 @@
 export type CoreErrorCode =
   /** De invoer is geen tekst, is leeg, of is geen ISO-10303-21 (STEP/IFC) bestand. */
   | 'INVALID_INPUT'
-  /** De IFC-lezer kon het bestand niet lezen. */
+  /** De IFC-lezer kon het bestand niet lezen of openen. */
   | 'IFC_READ_FAILED'
   /** Het bestand bevat geen taken; er valt niets te plannen. */
   | 'NO_TASKS'
@@ -33,9 +33,16 @@ export interface ScheduleWarning {
     /** Een relatie wees naar een onbekende taak en is genegeerd. */
     | 'RELATION_IGNORED'
     /** Een hamertaak zonder finish-driver; de duur valt terug op nul. */
-    | 'HAMMOCK_WITHOUT_FINISH_DRIVER';
+    | 'HAMMOCK_WITHOUT_FINISH_DRIVER'
+    /** Het bestand had een P6-bronarchief (XER) dat niet bruikbaar is. Het is bij het openen
+     *  weggelaten; `toIfc()` schrijft het niet meer mee. `detail` is de reden
+     *  (`schema-version`, `hash-mismatch`, `truncated`, `bytes-missing`, `metadata-invalid`,
+     *  `structure`). `ids` is leeg. */
+    | 'XER_ARCHIVE_DROPPED';
   /** Taak-id's (of relatie-id's bij `OUT_OF_SEQUENCE`/`RELATION_IGNORED`) waar het om gaat. */
   ids: string[];
+  /** Een korte vaste reden, alleen bij codes die er een hebben. */
+  detail?: string;
 }
 
 /** Eén taak in de samenvatting. Datums zijn ISO-8601-tekst zoals de app ze bewaart (datum of
@@ -92,9 +99,12 @@ export interface ScheduleSummary {
 /** Eén geopend document. Elk document heeft een eigen, losse rekencontext; documenten delen niets. */
 export interface PlannerDocument {
   /** Reken het project door zoals de knop Berekenen (F5) in de app doet, en geef de samenvatting.
+   *  Het document is bij het openen al eens doorgerekend, zoals in de app; `schedule()` rekent
+   *  opnieuw en verlaat een eventuele stand "datums zoals opgeslagen".
    *  Gooit `PlannerCoreError` met code `SCHEDULE_FAILED` als de planning niet te berekenen is. */
   schedule(): ScheduleSummary;
   /** Schrijf het document als IFC-tekst, in het IFC-schema van het project. Na `schedule()` bevat
-   *  de tekst de berekende datums. Gooit `PlannerCoreError` met code `IFC_WRITE_FAILED`. */
+   *  de tekst de berekende datums; zonder `schedule()` de stand zoals de app hem na openen heeft.
+   *  Gooit `PlannerCoreError` met code `IFC_WRITE_FAILED`. */
   toIfc(): string;
 }

@@ -540,7 +540,7 @@ Let op in Git Bash op Windows: die zet een argument als `/pad/` om naar een Wind
 
 | script | npm-script | doet |
 |---|---|---|
-| `build-core.mjs` | `npm run build:core` | bundelt `src/core/index.ts` met esbuild tot één ESM-bestand voor Node 22 in `dist-core/` (of `--out <map>`), met typedeclaraties (`ts.transpileDeclaration`, alleen `index.d.ts` en `api.d.ts`, die niet naar interne modules mogen wijzen), een gegenereerde `package.json` (versie en licentie uit de root) en de licentieteksten. Faalt als React, Tauri, `src/state/appStore.ts`, UI-componenten of de i18n-UI-config in de bundel komen. Publiceert niets. Zie `docs/headless-kern.md` |
+| `build-core.mjs` | `npm run build:core` | bundelt `src/core/index.ts` met esbuild tot één ESM-bestand voor Node 22 in `dist-core/` (of `--out <map>`), met typedeclaraties (`ts.transpileDeclaration`, alleen `index.d.ts` en `api.d.ts`, die niet naar interne modules mogen wijzen), een gegenereerde `package.json` (versie en licentie uit de root), de eigen licentieteksten en `THIRD-PARTY-NOTICES.md` (per meegebundeld pakket uit de metafile: naam, versie en volledige licentietekst; zonder licentiebestand faalt de bouw). Faalt als React, Tauri, `src/state/appStore.ts`, UI-componenten of de i18n-UI-config in de bundel komen. Publiceert niets. Zie `docs/headless-kern.md` |
 
 ## Release en publicatie
 
