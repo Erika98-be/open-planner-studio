@@ -16,7 +16,7 @@
 // Logging: één JSON-regel per verzoek naar stdout. Nooit IFC-inhoud, querystring of token. De
 // console-uitvoer van de worker (de rekenkern kan taak- of relatie-id's loggen) wordt weggegooid.
 import { createServer } from 'node:http';
-import { createHmac, randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
+import { randomUUID, timingSafeEqual } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { Worker } from 'node:worker_threads';
 import { fileURLToPath } from 'node:url';
@@ -45,6 +45,7 @@ export function loadConfig(env = process.env) {
   token = token.trim();
   if (!token) throw new Error('No API token configured: set OPS_API_TOKEN or OPS_API_TOKEN_FILE');
   if (token.length < 16) throw new Error('The API token must be at least 16 characters');
+  if (Buffer.byteLength(token) > MAX_TOKEN_BYTES) throw new Error(`The API token must be at most ${MAX_TOKEN_BYTES} bytes`);
   return {
     token,
     host: env.HOST || '127.0.0.1',
@@ -66,17 +67,22 @@ function log(level, msg, fields = {}) {
 }
 
 // ── Auth ───────────────────────────────────────────────────────────────────────────────────────
-/** Vergelijk in constante tijd. Beide kanten eerst door een HMAC-SHA-256 met een willekeurige
- *  sleutel per proces, zodat ook de lengte niet lekt. Dit is geen opslag van een wachtwoord: de
- *  digest bestaat alleen in het geheugen, alleen om twee waarden van gelijke lengte te vergelijken. */
-const COMPARE_KEY = randomBytes(32);
-const compareDigest = (value) => createHmac('sha256', COMPARE_KEY).update(value).digest();
-function tokenMatches(header, expectedDigest) {
+/** Tokens zijn hooguit zo lang; beide kanten worden tot precies deze lengte aangevuld. */
+export const MAX_TOKEN_BYTES = 512;
+const padded = (value) => {
+  const buf = Buffer.alloc(MAX_TOKEN_BYTES);
+  buf.write(value, 'utf8');
+  return buf;
+};
+/** Vergelijk in constante tijd: beide kanten aangevuld tot MAX_TOKEN_BYTES, dan `timingSafeEqual`.
+ *  De duur hangt dus niet af van de inhoud of de lengte van het token. (Geen hash: dan meldt CodeQL
+ *  een te zwakke wachtwoordhash, terwijl hier niets wordt opgeslagen.) */
+function tokenMatches(header, expected) {
   if (typeof header !== 'string') return false;
   const m = /^Bearer ([^\s]+)$/.exec(header);
-  if (!m) return false;
-  const given = compareDigest(m[1]);
-  return timingSafeEqual(given, expectedDigest);
+  if (!m || Buffer.byteLength(m[1]) > MAX_TOKEN_BYTES) return false;
+  const same = timingSafeEqual(padded(m[1]), expected.padded);
+  return same && Buffer.byteLength(m[1]) === expected.length;
 }
 
 // ── Rekenen: één worker, één berekening tegelijk, geen wachtrij ────────────────────────────────
@@ -164,7 +170,7 @@ const ACCEPTED_TYPES = new Set(['application/x-step', 'application/ifc', 'model/
 const REQUEST_ID = /^[A-Za-z0-9._-]{1,64}$/;
 
 export function createApiServer(config) {
-  const tokenDigest = compareDigest(config.token);
+  const tokenDigest = { padded: padded(config.token), length: Buffer.byteLength(config.token) };
   const calculator = new Calculator(config.timeoutMs);
   let uploads = 0;
 

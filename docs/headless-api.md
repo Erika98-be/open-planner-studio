@@ -73,10 +73,10 @@ wordt alleen gelogd.
 ## Auth
 
 - De client stuurt `Authorization: Bearer <token>`.
-- De server vergelijkt het token in constante tijd: beide kanten gaan eerst door HMAC-SHA-256 met een willekeurige sleutel per proces, daarna
-  `crypto.timingSafeEqual`. Zo lekt ook de lengte niet.
+- De server vergelijkt het token in constante tijd: beide kanten worden aangevuld tot 512 bytes,
+  daarna `crypto.timingSafeEqual`. Zo lekt ook de lengte niet.
 - Het token komt uit `OPS_API_TOKEN` of uit het bestand in `OPS_API_TOKEN_FILE` (niet allebei). Het
-  token moet minstens 16 tekens hebben.
+  token moet minstens 16 tekens en hooguit 512 bytes hebben.
 - Zonder token start de server niet (exitcode 78). Er is geen "open" modus.
 - Het token staat nooit in de image, de broncode of de logs.
 - Er is één token met volledige toegang; rollen of meerdere gebruikers zijn er niet. De API bewaart
