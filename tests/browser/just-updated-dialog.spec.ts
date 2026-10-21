@@ -45,6 +45,7 @@ test('update-highlights volgen de app-ready route en houden externe link open', 
   await page.evaluate(() => window.__OPS__!.store.getState().setUI({ justUpdated: { from: '2026.8.0', to: '2026.8.1' } }));
   const dialog = page.locator('[data-ops-just-updated-dialog]');
   await expect(dialog).toBeVisible();
+  await expect(dialog.getByText("You've been updated!", { exact: true })).toBeVisible();
   await expect(dialog.locator('pre')).toHaveCount(0);
   await expect(dialog.locator('article')).toHaveCount(5);
   await expect(dialog.getByRole('button', { name: 'Read the guide' })).toHaveCount(1);

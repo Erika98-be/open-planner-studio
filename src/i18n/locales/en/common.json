@@ -600,7 +600,7 @@
     "copied": "Copied",
     "openDownloads": "Open downloads page",
     "justUpdated": {
-      "title": "You're up to date!",
+      "title": "You've been updated!",
       "smaller": "{{size}} smaller than the previous version",
       "larger": "{{size}} larger than the previous version",
       "sameSize": "Same size as the previous version",
