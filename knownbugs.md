@@ -416,8 +416,6 @@ en noem het in je rapport of PR-tekst.
 42. **Helpteksten van enkele conventies** noemen hun voorwaarden niet (alleen urenkalender, alleen
     `.xer`-herkomst). — B
 43. **EN-melding lege rapportperiode** zegt "Whole project"; de optie heet *Project duration*. — S
-44. **Oude interne documentatie**: `docs/library.md` (standaardweergave resourcepaneel),
-    `.claude/rules/mcp.md` (`MAX_PER_DOC`). — B
 56. **nl-label "Orientatie:"** in de rapportopties mist het trema. — S
 57. **Statusdatum-label in de Gantt** toont ISO (`2027-06-28`), de rest dd-mm-jjjj. Mogelijk bewust. — S
 70. **`howto-structuur-aanpassen` zegt dat slepen in de Gantt "hetzelfde werkt als slepen in de lijst".** De
