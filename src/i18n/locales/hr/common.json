@@ -17,6 +17,7 @@
     "extHelpProjectOpenFailed": "Projektnu datoteku {{file}} iz proširenja {{name}} nije bilo moguće otvoriti.",
     "extImportFailed": "Uvoz pomoću {{name}} nije uspio.",
     "extensionMessage": "Proširenje {{name}}: {{message}}",
+    "extensionInstallFailed": "Proširenje nije moglo biti instalirano. Provjerite datoteku i pokušajte ponovno.",
     "xerInvalidInput": "Uvoz XER-a zahtijeva izvorne bajtove datoteke.",
     "xerInvalidFile": "Ovo nije valjana ni podržana XER datoteka.",
     "xerInvalidEncoding": "Kodiranje teksta u ovoj XER datoteci nije valjano ili je skraćeno.",
@@ -285,6 +286,9 @@
   "no": "Ne",
   "days": "d",
   "daysLong": "dani",
+  "dayUnitLong_one": "dan",
+  "dayUnitLong_few": "dana",
+  "dayUnitLong_other": "dana",
   "ok": "U redu",
   "apply": "Primijeni",
   "create": "Stvori",
@@ -629,6 +633,7 @@
     "openGithub": "U redu, idi na GitHub",
     "annotate": "Označi",
     "editorDone": "Gotovo",
+    "annotationSaveFailed": "Vaše izmjene nisu mogle biti spremljene. Pokušajte ponovno. Vaša snimka zaslona nije promijenjena i neće biti poslana iz ovog uređivača.",
     "rotateFeedback": "Pošalji feedback",
     "rotateBug": "Prijavi grešku",
     "rotateFeature": "Dodaj novu značajku"
@@ -897,7 +902,7 @@
       "projectEndUnchanged": "Datum završetka projekta: nepromijenjen ({{date}})",
       "projectEndChanged": "Datum završetka projekta: {{before}} → {{after}}",
       "remainingConflicts": "Preostali sukobi",
-      "remainingConflictsHint": "Ovi zadaci ne stanu u svoju vremensku rezervu — često zato što resurs tih dana ne radi ili nema dovoljan kapacitet.",
+      "remainingConflictsHint": "Ovi zadaci i dalje imaju sukobe resursa. Pogledajte pojedinosti u nastavku.",
       "intrinsicOverrun": "Resurs {{resource}}: vrhunac dnevnih jedinica dodjele je {{peak}}, kapacitet je {{capacity}} — ne može se riješiti pomicanjem.",
       "noChanges": "Nijedan zadatak ne treba pomaknuti — raspored je već bez sukoba.",
       "notCalculated": "Kliknite Izračunaj da biste stvorili prijedlog uravnoteživanja.",
@@ -981,7 +986,7 @@
       "cancel": "Odustani"
     },
     "regen": {
-      "hint": "Praznici pokrivaju {{from}}–{{to}}; projekt traje do {{year}}. Želite li ponovno generirati?",
+      "hint": "Praznici pokrivaju {{from}}–{{to}}; želite li ponovno generirati do uključivo {{year}}?",
       "button": "Ponovno generiraj"
     },
     "countryName": {
@@ -1044,7 +1049,9 @@
       "bandEnd": "Završetak bloka",
       "shiftPreset": "Smjena",
       "breakHint": "Razmak između dvaju blokova je pauza — po potrebi prilagodite vremena."
-    }
+    },
+    "defaultConstructionName": "Građevinski kalendar NL",
+    "defaultStandardName": "Standardni kalendar"
   },
   "view": {
     "structureLockedHint": "Nije dostupno tijekom filtriranja, grupiranja ili sortiranja",
@@ -1366,7 +1373,7 @@
   "progressImport": {
     "title": "Ažuriranje napretka iz lista",
     "chooseFile": "Odaberi datoteku…",
-    "intro": "Odaberite vraćeni CSV list. Aplikacija čita samo dovršenost, stvarni početak i stvarni završetak. Ostatak vašeg rasporeda ostaje nepromijenjen.",
+    "intro": "Odaberite vraćeni CSV ili XLSX list. Aplikacija čita samo dovršenost, stvarni početak i stvarni završetak. Ostatak vašeg rasporeda ostaje nepromijenjen.",
     "summaryApplied": "Primijenjeno: {{applied}}",
     "summaryNoop": "Nepromijenjeno: {{noop}}",
     "summaryNeedsLink": "Čeka povezivanje: {{needsLink}}",

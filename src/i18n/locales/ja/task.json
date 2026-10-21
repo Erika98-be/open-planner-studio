@@ -431,7 +431,7 @@
     "completion": "進捗（%）",
     "progress": {
       "actualStart": "実績開始",
-      "actualFinish": "実績終了",
+      "actualFinish": "実績終了日",
       "actualDate": "実績日",
       "remaining": "残り",
       "summaryDerived": "サブタスクから算出されます。進捗はサブタスクで変更してください。計算（F5）後にサマリータスクへ反映されます。"

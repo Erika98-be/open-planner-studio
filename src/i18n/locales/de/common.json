@@ -17,6 +17,7 @@
     "extHelpProjectOpenFailed": "Die Projektdatei {{file}} der Erweiterung {{name}} konnte nicht geöffnet werden.",
     "extImportFailed": "Der Import mit {{name}} ist fehlgeschlagen.",
     "extensionMessage": "Erweiterung {{name}}: {{message}}",
+    "extensionInstallFailed": "Die Erweiterung konnte nicht installiert werden. Prüfen Sie die Datei und versuchen Sie es erneut.",
     "xerInvalidInput": "Der XER-Import benötigt die ursprünglichen Dateibytes.",
     "xerInvalidFile": "Dies ist keine gültige oder unterstützte XER-Datei.",
     "xerInvalidEncoding": "Die Textkodierung dieser XER-Datei ist ungültig oder abgeschnitten.",
@@ -228,6 +229,8 @@
   "no": "Nein",
   "days": "T",
   "daysLong": "Tage",
+  "dayUnitLong_one": "Tag",
+  "dayUnitLong_other": "Tage",
   "ok": "OK",
   "apply": "Anwenden",
   "create": "Erstellen",
@@ -571,6 +574,7 @@
     "openGithub": "OK, zu GitHub",
     "annotate": "Anmerken",
     "editorDone": "Fertig",
+    "annotationSaveFailed": "Ihre Bearbeitungen konnten nicht gespeichert werden. Versuchen Sie es erneut. Ihr Screenshot wurde nicht geändert und wird aus diesem Editor nicht gesendet.",
     "rotateFeedback": "Feedback geben",
     "rotateBug": "Einen Fehler melden",
     "rotateFeature": "Neue Funktion vorschlagen"
@@ -836,7 +840,7 @@
       "projectEndUnchanged": "Projektende: unverändert ({{date}})",
       "projectEndChanged": "Projektende: {{before}} → {{after}}",
       "remainingConflicts": "Verbleibende Konflikte",
-      "remainingConflictsHint": "Diese Vorgänge passen nicht in ihren Puffer — oft weil eine Ressource an diesen Tagen nicht arbeitet oder nicht genug Kapazität hat.",
+      "remainingConflictsHint": "Für diese Vorgänge bestehen weiterhin Ressourcenkonflikte. Die Details finden Sie unten.",
       "intrinsicOverrun": "{{resource}} erreicht einen Spitzenwert von {{peak}} Einh./Tag, Kapazität ist {{capacity}} — durch Verschieben nicht lösbar.",
       "noChanges": "Keine Vorgänge müssen verschoben werden — der Terminplan ist bereits konfliktfrei.",
       "notCalculated": "Klicken Sie auf Berechnen, um einen Abgleichsvorschlag zu erstellen.",
@@ -917,7 +921,7 @@
       "cancel": "Abbrechen"
     },
     "regen": {
-      "hint": "Feiertage decken {{from}}–{{to}} ab; Projekt läuft bis {{year}}. Neu generieren?",
+      "hint": "Feiertage decken {{from}}–{{to}} ab; bis {{year}} neu generieren?",
       "button": "Neu generieren"
     },
     "countryName": {
@@ -980,7 +984,9 @@
       "bandEnd": "Ende des Bandes",
       "shiftPreset": "Schicht",
       "breakHint": "Eine Lücke zwischen zwei Bändern ist eine Pause – passen Sie die Zeiten nach Bedarf an."
-    }
+    },
+    "defaultConstructionName": "Baukalender NL",
+    "defaultStandardName": "Standardkalender"
   },
   "view": {
     "structureLockedHint": "Nicht verfügbar während des Filterns/Gruppierens/Sortierens",
@@ -1295,7 +1301,7 @@
   "progressImport": {
     "title": "Fortschritt aus einer Tabelle aktualisieren",
     "chooseFile": "Datei wählen…",
-    "intro": "Wählen Sie ein zurückgesandtes CSV-Blatt. Die App liest nur Fertigstellungsgrad, tatsächlichen Start und Ist-Ende — der Rest Ihrer Planung bleibt unverändert.",
+    "intro": "Wählen Sie ein zurückgesendetes CSV- oder XLSX-Blatt. Die App liest nur Fertigstellung, Ist-Anfang und Ist-Ende — der Rest Ihres Terminplans bleibt unverändert.",
     "summaryApplied": "Angewendet: {{applied}}",
     "summaryNoop": "Unverändert: {{noop}}",
     "summaryNeedsLink": "Wartet auf Verknüpfung: {{needsLink}}",

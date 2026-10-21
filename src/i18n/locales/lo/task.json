@@ -52,7 +52,7 @@
     "columns": {
       "activityCodeData": "ຂໍ້ມູນລະຫັດກິດຈະກຳ",
       "actualDuration": "ໄລຍະເວລາຕົວຈິງ",
-      "actualFinish": "ມື້ສິ້ນສຸດຕົວຈິງ",
+      "actualFinish": "ວັນສຳເລັດຕົວຈິງ",
       "actualStart": "ມື້ເລີ່ມຕົ້ນຕົວຈິງ",
       "assignedResources": "ຊັບພະຍາກອນທີ່ຖືກມອບໝາຍ",
       "assignmentCurve": "ເສັ້ນໂຄ້ງການມອບໝາຍ",
@@ -431,7 +431,7 @@
     "completion": "ຄວາມຄືບໜ້າ (%)",
     "progress": {
       "actualStart": "ເລີ່ມຕົ້ນຕົວຈິງ",
-      "actualFinish": "ສິ້ນສຸດຕົວຈິງ",
+      "actualFinish": "ວັນສຳເລັດຕົວຈິງ",
       "actualDate": "ວັນທີຕົວຈິງ",
       "remaining": "ທີ່ເຫຼືອ",
       "summaryDerived": "ຄິດໄລ່ຕາມໜ້າວຽກຍ່ອຍ: ປ່ຽນຄວາມຄືບໜ້າຢູ່ນັ້ນ. ໜ້າວຽກສະຫຼຸບຈະປັບຕາມຫຼັງຈາກການຄິດໄລ່ (F5)."

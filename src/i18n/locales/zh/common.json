@@ -17,6 +17,7 @@
     "extHelpProjectOpenFailed": "无法打开扩展 {{name}} 的项目文件 {{file}}。",
     "extImportFailed": "使用 {{name}} 导入失败。",
     "extensionMessage": "扩展 {{name}}：{{message}}",
+    "extensionInstallFailed": "无法安装扩展。请检查文件，然后重试。",
     "xerInvalidInput": "导入 XER 需要原始文件字节。",
     "xerInvalidFile": "这不是有效或受支持的 XER 文件。",
     "xerInvalidEncoding": "此 XER 文件的文本编码无效或已截断。",
@@ -171,6 +172,7 @@
   "no": "否",
   "days": "天",
   "daysLong": "天",
+  "dayUnitLong_other": "天",
   "ok": "确定",
   "apply": "应用",
   "create": "创建",
@@ -513,6 +515,7 @@
     "openGithub": "确定，前往 GitHub",
     "annotate": "标注",
     "editorDone": "完成",
+    "annotationSaveFailed": "无法保存你的修改。请重试。你的截图未更改，也不会从此编辑器发送。",
     "rotateFeedback": "发送反馈",
     "rotateBug": "报告缺陷",
     "rotateFeature": "提出新功能"
@@ -775,7 +778,7 @@
       "projectEndUnchanged": "项目结束日期：不变（{{date}}）",
       "projectEndChanged": "项目结束日期：{{before}} → {{after}}",
       "remainingConflicts": "剩余冲突",
-      "remainingConflictsHint": "这些任务无法在其浮时内安排 — 通常是因为资源在这些天不工作，或产能不足。",
+      "remainingConflictsHint": "这些任务仍存在资源冲突。请查看下面的详细信息。",
       "intrinsicOverrun": "{{resource}} 峰值需求为 {{peak}} 单位/天，而产能为 {{capacity}} — 无法通过移动解决。",
       "noChanges": "没有任务需要移动 — 计划已无冲突。",
       "notCalculated": "点击计算以生成平衡方案。",
@@ -853,7 +856,7 @@
       "cancel": "取消"
     },
     "regen": {
-      "hint": "假日覆盖 {{from}}–{{to}}；项目持续至 {{year}}。是否重新生成？",
+      "hint": "假日覆盖 {{from}}–{{to}}；是否重新生成至 {{year}}（含）？",
       "button": "重新生成"
     },
     "countryName": {
@@ -916,7 +919,9 @@
       "bandEnd": "时段结束",
       "shiftPreset": "班次",
       "breakHint": "两个时段之间的间隔即为休息——可按需调整时间。"
-    }
+    },
+    "defaultConstructionName": "施工日历 NL",
+    "defaultStandardName": "标准日历"
   },
   "view": {
     "structureLockedHint": "筛选/分组/排序时不可用",
@@ -1224,7 +1229,7 @@
   "progressImport": {
     "title": "从表格更新进度",
     "chooseFile": "选择文件…",
-    "intro": "选择一份返回的 CSV 表格。应用只读取完成度、实际开始和实际完成——你计划的其余部分保持不变。",
+    "intro": "请选择一份返回的 CSV 或 XLSX 表格。应用只读取完成度、实际开始日期和实际完成日期，你计划的其余部分保持不变。",
     "summaryApplied": "已应用：{{applied}}",
     "summaryNoop": "未变化：{{noop}}",
     "summaryNeedsLink": "等待关联：{{needsLink}}",

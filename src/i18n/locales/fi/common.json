@@ -17,6 +17,7 @@
     "extHelpProjectOpenFailed": "Laajennuksen {{name}} projektitiedostoa {{file}} ei voitu avata.",
     "extImportFailed": "Tuonti ohjelmalla {{name}} epäonnistui.",
     "extensionMessage": "Laajennus {{name}}: {{message}}",
+    "extensionInstallFailed": "Laajennusta ei voitu asentaa. Tarkista tiedosto ja yritä uudelleen.",
     "xerInvalidInput": "XER-tuonti edellyttää tiedoston lähdetavuja.",
     "xerInvalidFile": "Tämä ei ole kelvollinen tai tuettu XER-tiedosto.",
     "xerInvalidEncoding": "Tämän XER-tiedoston merkistökoodaus on virheellinen tai katkaistu.",
@@ -228,6 +229,8 @@
   "no": "Ei",
   "days": "pv",
   "daysLong": "päivät",
+  "dayUnitLong_one": "päivä",
+  "dayUnitLong_other": "päivää",
   "ok": "OK",
   "apply": "Käytä",
   "create": "Luo",
@@ -571,6 +574,7 @@
     "openGithub": "OK, siirry GitHubiin",
     "annotate": "Merkitse",
     "editorDone": "Tehty",
+    "annotationSaveFailed": "Muokkauksia ei voitu tallentaa. Yritä uudelleen. Kuvakaappausta ei ole muutettu, eikä sitä lähetetä tästä editorista.",
     "rotateFeedback": "Anna palautetta",
     "rotateBug": "Tee virheraportti",
     "rotateFeature": "Lisää uusi ominaisuus"
@@ -836,7 +840,7 @@
       "projectEndUnchanged": "Projektin päättymispäivä: ennallaan ({{date}})",
       "projectEndChanged": "Projektin päättymispäivä: {{before}} → {{after}}",
       "remainingConflicts": "Jäljellä olevat ristiriidat",
-      "remainingConflictsHint": "Nämä tehtävät eivät mahdu pelivaransa sisään. Syy on usein se, että resurssi ei työskentele näinä päivinä tai sillä ei ole riittävästi kapasiteettia.",
+      "remainingConflictsHint": "Näiden tehtävien resurssiristiriidat eivät ratkea. Katso alla oleva selvitys.",
       "intrinsicOverrun": "{{resource}} vaatii huipussa {{peak}} kuormitusastetta/päivä, kapasiteetti on {{capacity}}. Tätä ei voi ratkaista siirtämällä.",
       "noChanges": "Yhtään tehtävää ei tarvitse siirtää — aikataulu on jo ristiriidaton.",
       "notCalculated": "Paina Laske, niin tasaamisen ehdotus luodaan.",
@@ -917,7 +921,7 @@
       "cancel": "Peruuta"
     },
     "regen": {
-      "hint": "Vapaapäivät kattavat {{from}}–{{to}}; projekti kestää vuoteen {{year}}. Luodaanko uudelleen?",
+      "hint": "Vapaapäivät kattavat {{from}}–{{to}}. Luodaanko uudelleen vuoteen {{year}} saakka?",
       "button": "Luo uudelleen"
     },
     "countryName": {
@@ -980,7 +984,9 @@
       "bandEnd": "Lohkon loppu",
       "shiftPreset": "Työvuoro",
       "breakHint": "Väli kahden lohkon välillä on tauko. Muokkaa aikoja tarpeen mukaan."
-    }
+    },
+    "defaultConstructionName": "Rakennuskalenteri NL",
+    "defaultStandardName": "Vakiokalenteri"
   },
   "view": {
     "structureLockedHint": "Ei käytettävissä suodatuksen, ryhmittelyn tai lajittelun aikana",
@@ -1295,7 +1301,7 @@
   "progressImport": {
     "title": "Tuo edistyminen taulukosta",
     "chooseFile": "Valitse tiedosto…",
-    "intro": "Valitse palautettu CSV-taulukko. Sovellus lukee vain valmiusasteen, toteutuneen alkamispäivän ja toteutuneen valmistumispäivän. Muu aikataulu pysyy ennallaan.",
+    "intro": "Valitse palautettu CSV- tai XLSX-taulukko. Sovellus lukee vain valmiusasteen, toteutuneen alkamispäivän ja toteutuneen valmistumispäivän. Muu aikataulu pysyy ennallaan.",
     "summaryApplied": "Sovellettu: {{applied}}",
     "summaryNoop": "Ennallaan: {{noop}}",
     "summaryNeedsLink": "Odottaa linkitystä: {{needsLink}}",

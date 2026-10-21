@@ -17,6 +17,7 @@
     "extHelpProjectOpenFailed": "Fișierul de proiect {{file}} din extensia {{name}} nu a putut fi deschis.",
     "extImportFailed": "Importul cu {{name}} a eșuat.",
     "extensionMessage": "Extensia {{name}}: {{message}}",
+    "extensionInstallFailed": "Extensia nu a putut fi instalată. Verificați fișierul și încercați din nou.",
     "xerInvalidInput": "Importul XER necesită octeții originali ai fișierului.",
     "xerInvalidFile": "Acesta nu este un fișier XER valid sau acceptat.",
     "xerInvalidEncoding": "Codificarea textului din acest fișier XER este nevalidă sau trunchiată.",
@@ -285,6 +286,9 @@
   "no": "Nu",
   "days": "z",
   "daysLong": "zile",
+  "dayUnitLong_one": "zi",
+  "dayUnitLong_few": "zile",
+  "dayUnitLong_other": "de zile",
   "ok": "OK",
   "apply": "Aplicare",
   "create": "Creare",
@@ -629,6 +633,7 @@
     "openGithub": "Deschidere GitHub",
     "annotate": "Adnotare",
     "editorDone": "Gata",
+    "annotationSaveFailed": "Modificările nu au putut fi salvate. Încercați din nou. Captura dumneavoastră de ecran nu a fost modificată și nu va fi trimisă din acest editor.",
     "rotateFeedback": "Trimitere feedback",
     "rotateBug": "Semnalare bug",
     "rotateFeature": "Adăugare funcție nouă"
@@ -897,7 +902,7 @@
       "projectEndUnchanged": "Data de sfârșit a proiectului: neschimbată ({{date}})",
       "projectEndChanged": "Data de sfârșit a proiectului: {{before}} → {{after}}",
       "remainingConflicts": "Conflicte rămase",
-      "remainingConflictsHint": "Aceste activități nu încap în marja lor — adesea pentru că o resursă nu lucrează în acele zile sau are capacitate insuficientă.",
+      "remainingConflictsHint": "Pentru aceste activități rămân conflicte de resurse. Consultați explicația de mai jos.",
       "intrinsicOverrun": "{{resource}} atinge la vârf {{peak}} unit./zi, capacitatea este {{capacity}} — nu se poate rezolva prin deplasare.",
       "noChanges": "Nicio activitate nu trebuie mutată — planificarea este deja fără conflicte.",
       "notCalculated": "Apăsați pe Calculare pentru a crea o propunere de redistribuire.",
@@ -981,7 +986,7 @@
       "cancel": "Anulare"
     },
     "regen": {
-      "hint": "Sărbătorile acoperă {{from}}–{{to}}; proiectul merge până în {{year}}. Regenerați?",
+      "hint": "Sărbătorile acoperă {{from}}–{{to}}; regenerați până la {{year}} inclusiv?",
       "button": "Regenerare"
     },
     "countryName": {
@@ -1044,7 +1049,9 @@
       "bandEnd": "Sfârșit al intervalului",
       "shiftPreset": "Tură",
       "breakHint": "Un spațiu între două intervale este o pauză — ajustați orele după cum este necesar."
-    }
+    },
+    "defaultConstructionName": "Calendar de construcție NL",
+    "defaultStandardName": "Calendar standard"
   },
   "view": {
     "structureLockedHint": "Indisponibil la filtrare, grupare sau sortare",
@@ -1366,7 +1373,7 @@
   "progressImport": {
     "title": "Actualizare progres dintr-o foaie de calcul",
     "chooseFile": "Alegere fișier…",
-    "intro": "Alegeți o foaie CSV returnată. Aplicația citește doar procentul de finalizare, începutul efectiv și sfârșitul efectiv. Restul planificării rămâne neschimbat.",
+    "intro": "Alegeți o foaie CSV sau XLSX returnată. Aplicația citește doar procentul de finalizare, începutul efectiv și sfârșitul efectiv. Restul planificării dumneavoastră rămâne neschimbat.",
     "summaryApplied": "Aplicat: {{applied}}",
     "summaryNoop": "Neschimbat: {{noop}}",
     "summaryNeedsLink": "În așteptarea legării: {{needsLink}}",

@@ -17,6 +17,7 @@
     "extHelpProjectOpenFailed": "拡張機能 {{name}} のプロジェクトファイル {{file}} を開けませんでした。",
     "extImportFailed": "{{name}} でのインポートに失敗しました。",
     "extensionMessage": "拡張機能 {{name}}: {{message}}",
+    "extensionInstallFailed": "拡張機能をインストールできませんでした。ファイルを確認して、もう一度お試しください。",
     "xerInvalidInput": "XER のインポートには元のファイルバイトが必要です。",
     "xerInvalidFile": "これは有効または対応済みの XER ファイルではありません。",
     "xerInvalidEncoding": "この XER ファイルの文字エンコーディングは無効または途中で切れています。",
@@ -171,6 +172,7 @@
   "no": "いいえ",
   "days": "日",
   "daysLong": "日間",
+  "dayUnitLong_other": "日",
   "ok": "OK",
   "apply": "適用",
   "create": "作成",
@@ -513,6 +515,7 @@
     "openGithub": "OK、GitHub へ移動",
     "annotate": "注釈を付ける",
     "editorDone": "完了",
+    "annotationSaveFailed": "編集内容を保存できませんでした。もう一度お試しください。スクリーンショットは変更されておらず、このエディターからは送信されません。",
     "rotateFeedback": "フィードバックを送る",
     "rotateBug": "バグを報告",
     "rotateFeature": "新機能を提案"
@@ -775,7 +778,7 @@
       "projectEndUnchanged": "プロジェクト終了日：変更なし（{{date}}）",
       "projectEndChanged": "プロジェクト終了日：{{before}} → {{after}}",
       "remainingConflicts": "残っている競合",
-      "remainingConflictsHint": "これらのタスクはフロート内に収まりません — 多くの場合、リソースがその日に稼働しないか、キャパシティが不足しているためです。",
+      "remainingConflictsHint": "これらのタスクでは、リソースの競合が残っています。下の詳細をご覧ください。",
       "intrinsicOverrun": "{{resource}} はピーク時に {{peak}} 単位/日必要ですが、キャパシティは {{capacity}} です — 移動では解決できません。",
       "noChanges": "移動が必要なタスクはありません — スケジュールはすでに競合がありません。",
       "notCalculated": "「計算」をクリックして山崩しの提案を作成してください。",
@@ -853,7 +856,7 @@
       "cancel": "キャンセル"
     },
     "regen": {
-      "hint": "祝日は{{from}}〜{{to}}をカバーしています。プロジェクトは{{year}}まで続きます。再生成しますか？",
+      "hint": "祝日は{{from}}〜{{to}}をカバーしています。{{year}}まで再生成しますか？",
       "button": "再生成"
     },
     "countryName": {
@@ -916,7 +919,9 @@
       "bandEnd": "帯の終了",
       "shiftPreset": "シフト",
       "breakHint": "2つの時間帯の間の空きは休憩です。必要に応じて時刻を調整してください。"
-    }
+    },
+    "defaultConstructionName": "建設カレンダー NL",
+    "defaultStandardName": "標準カレンダー"
   },
   "view": {
     "structureLockedHint": "フィルター/グループ化/並べ替え中は使用できません",
@@ -1224,7 +1229,7 @@
   "progressImport": {
     "title": "シートから進捗を更新",
     "chooseFile": "ファイルを選択…",
-    "intro": "返送されたCSVシートを選びます。アプリが読み込むのは完了率・実開始・実終了のみで、計画の他の部分は変わりません。",
+    "intro": "返送された CSV または XLSX のシートを選択してください。アプリが読み取るのは完了率、実績開始日、実績終了日だけです。それ以外のスケジュールは変わりません。",
     "summaryApplied": "適用済み: {{applied}}",
     "summaryNoop": "変更なし: {{noop}}",
     "summaryNeedsLink": "紐付け待ち: {{needsLink}}",

@@ -431,7 +431,7 @@
     "completion": "进度（%）",
     "progress": {
       "actualStart": "实际开始",
-      "actualFinish": "实际完成",
+      "actualFinish": "实际完成日期",
       "actualDate": "实际日期",
       "remaining": "剩余",
       "summaryDerived": "由子任务推导得出：请在子任务中修改进度。计算（F5）后摘要任务随之更新。"

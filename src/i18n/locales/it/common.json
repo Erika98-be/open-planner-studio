@@ -17,6 +17,7 @@
     "extHelpProjectOpenFailed": "Impossibile aprire il file di progetto {{file}} dell’estensione {{name}}.",
     "extImportFailed": "L'importazione con {{name}} non è riuscita.",
     "extensionMessage": "Estensione {{name}}: {{message}}",
+    "extensionInstallFailed": "L'estensione non può essere installata. Controlla il file e riprova.",
     "xerInvalidInput": "L’importazione XER richiede i byte originali del file.",
     "xerInvalidFile": "Questo file XER non è valido o supportato.",
     "xerInvalidEncoding": "La codifica di testo di questo file XER non è valida o è troncata.",
@@ -285,6 +286,9 @@
   "no": "No",
   "days": "g",
   "daysLong": "giorni",
+  "dayUnitLong_one": "giorno",
+  "dayUnitLong_many": "giorni",
+  "dayUnitLong_other": "giorni",
   "ok": "OK",
   "apply": "Applica",
   "create": "Crea",
@@ -629,6 +633,7 @@
     "openGithub": "OK, vai su GitHub",
     "annotate": "Annota",
     "editorDone": "Fatto",
+    "annotationSaveFailed": "Le modifiche non si sono potute salvare. Riprova. Lo screenshot non è stato modificato e non viene inviato da questo editor.",
     "rotateFeedback": "Invia feedback",
     "rotateBug": "Segnala un bug",
     "rotateFeature": "Proponi una nuova funzionalità"
@@ -897,7 +902,7 @@
       "projectEndUnchanged": "Data di fine progetto: invariata ({{date}})",
       "projectEndChanged": "Data di fine progetto: {{before}} → {{after}}",
       "remainingConflicts": "Conflitti rimanenti",
-      "remainingConflictsHint": "Queste attività non rientrano nel loro margine — spesso perché una risorsa non lavora in quei giorni o non ha capacità sufficiente.",
+      "remainingConflictsHint": "Per queste attività restano conflitti di risorse. Vedi i dettagli qui sotto.",
       "intrinsicOverrun": "{{resource}} raggiunge un picco di {{peak}} unità/giorno, la capacità è {{capacity}} — non risolvibile spostando.",
       "noChanges": "Nessuna attività deve essere spostata — la pianificazione è già priva di conflitti.",
       "notCalculated": "Fai clic su Calcola per creare una proposta di livellamento.",
@@ -981,7 +986,7 @@
       "cancel": "Annulla"
     },
     "regen": {
-      "hint": "Le festività coprono {{from}}–{{to}}; il progetto arriva fino al {{year}}. Rigenerare?",
+      "hint": "Le festività coprono {{from}}–{{to}}; vuoi rigenerarle fino al {{year}} compreso?",
       "button": "Rigenera"
     },
     "countryName": {
@@ -1044,7 +1049,9 @@
       "bandEnd": "Fine della fascia",
       "shiftPreset": "Turno",
       "breakHint": "Un intervallo tra due fasce è una pausa: regola gli orari secondo necessità."
-    }
+    },
+    "defaultConstructionName": "Calendario di cantiere NL",
+    "defaultStandardName": "Calendario standard"
   },
   "view": {
     "structureLockedHint": "Non disponibile durante filtro/raggruppamento/ordinamento",
@@ -1366,7 +1373,7 @@
   "progressImport": {
     "title": "Aggiorna l'avanzamento da un foglio",
     "chooseFile": "Scegli file…",
-    "intro": "Scegli un foglio CSV restituito. L'app legge solo completamento, inizio effettivo e fine effettiva — il resto della pianificazione resta invariato.",
+    "intro": "Scegli un foglio CSV o XLSX restituito. L'app legge solo completamento, inizio effettivo e fine effettiva — il resto della pianificazione resta invariato.",
     "summaryApplied": "Applicato: {{applied}}",
     "summaryNoop": "Invariato: {{noop}}",
     "summaryNeedsLink": "In attesa di collegamento: {{needsLink}}",

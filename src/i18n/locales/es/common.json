@@ -17,6 +17,7 @@
     "extHelpProjectOpenFailed": "No se pudo abrir el archivo de proyecto {{file}} de la extensión {{name}}.",
     "extImportFailed": "La importación con {{name}} ha fallado.",
     "extensionMessage": "Extensión {{name}}: {{message}}",
+    "extensionInstallFailed": "No se pudo instalar la extensión. Compruebe el archivo e inténtelo de nuevo.",
     "xerInvalidInput": "La importación XER requiere los bytes originales del archivo.",
     "xerInvalidFile": "Este archivo XER no es válido o compatible.",
     "xerInvalidEncoding": "La codificación de texto de este archivo XER es inválida o está truncada.",
@@ -285,6 +286,9 @@
   "no": "No",
   "days": "d",
   "daysLong": "días",
+  "dayUnitLong_one": "día",
+  "dayUnitLong_many": "de días",
+  "dayUnitLong_other": "días",
   "ok": "OK",
   "apply": "Aplicar",
   "create": "Crear",
@@ -629,6 +633,7 @@
     "openGithub": "OK, ir a GitHub",
     "annotate": "Anotar",
     "editorDone": "Listo",
+    "annotationSaveFailed": "No se pudieron guardar las modificaciones. Inténtelo de nuevo. Su captura de pantalla no se ha cambiado y no se enviará desde este editor.",
     "rotateFeedback": "Enviar comentarios",
     "rotateBug": "Reportar un error",
     "rotateFeature": "Sugerir una nueva función"
@@ -897,7 +902,7 @@
       "projectEndUnchanged": "Fecha de fin del proyecto: sin cambios ({{date}})",
       "projectEndChanged": "Fecha de fin del proyecto: {{before}} → {{after}}",
       "remainingConflicts": "Conflictos restantes",
-      "remainingConflictsHint": "Estas tareas no caben dentro de su holgura — a menudo porque un recurso no trabaja esos días o no tiene capacidad suficiente.",
+      "remainingConflictsHint": "Para estas tareas siguen existiendo conflictos de recursos. Consulte la explicación a continuación.",
       "intrinsicOverrun": "{{resource}} alcanza un pico de {{peak}} unidades/día, la capacidad es {{capacity}} — no se puede resolver desplazando.",
       "noChanges": "Ninguna tarea necesita moverse — la planificación ya está libre de conflictos.",
       "notCalculated": "Haz clic en Calcular para generar una propuesta de nivelación.",
@@ -981,7 +986,7 @@
       "cancel": "Cancelar"
     },
     "regen": {
-      "hint": "Los festivos cubren {{from}}–{{to}}; el proyecto llega hasta {{year}}. ¿Regenerar?",
+      "hint": "Los festivos cubren {{from}}–{{to}}. ¿Desea volver a generar hasta {{year}} inclusive?",
       "button": "Regenerar"
     },
     "countryName": {
@@ -1044,7 +1049,9 @@
       "bandEnd": "Fin de la banda",
       "shiftPreset": "Turno",
       "breakHint": "Un hueco entre dos franjas es una pausa: ajuste los horarios según sea necesario."
-    }
+    },
+    "defaultConstructionName": "Calendario de obra NL",
+    "defaultStandardName": "Calendario estándar"
   },
   "view": {
     "structureLockedHint": "No disponible mientras se filtra/agrupa/ordena",
@@ -1366,7 +1373,7 @@
   "progressImport": {
     "title": "Actualizar avance desde una hoja",
     "chooseFile": "Elegir archivo…",
-    "intro": "Elige una hoja CSV devuelta. La aplicación solo lee finalización, inicio real y fin real — el resto de tu planificación no cambia.",
+    "intro": "Elija una hoja CSV o XLSX devuelta. La aplicación solo lee la finalización, el inicio real y el fin real. El resto de su planificación no cambia.",
     "summaryApplied": "Aplicado: {{applied}}",
     "summaryNoop": "Sin cambios: {{noop}}",
     "summaryNeedsLink": "Esperando vínculo: {{needsLink}}",

@@ -17,6 +17,7 @@
     "extHelpProjectOpenFailed": "Súbor projektu {{file}} rozšírenia {{name}} sa nepodarilo otvoriť.",
     "extImportFailed": "Import pomocou „{{name}}“ zlyhal.",
     "extensionMessage": "Rozšírenie {{name}}: {{message}}",
+    "extensionInstallFailed": "Rozšírenie sa nepodarilo nainštalovať. Skontrolujte súbor a skúste to znova.",
     "xerInvalidInput": "Import XER vyžaduje pôvodné bajty súboru.",
     "xerInvalidFile": "Tento súbor nie je platný alebo podporovaný súbor XER.",
     "xerInvalidEncoding": "Kódovanie znakov tohto súboru XER je neplatné alebo skrátené.",
@@ -342,6 +343,10 @@
   "no": "Nie",
   "days": "d",
   "daysLong": "dni",
+  "dayUnitLong_one": "deň",
+  "dayUnitLong_few": "dni",
+  "dayUnitLong_many": "dňa",
+  "dayUnitLong_other": "dní",
   "ok": "OK",
   "apply": "Použiť",
   "create": "Vytvoriť",
@@ -687,6 +692,7 @@
     "openGithub": "OK, prejsť na GitHub",
     "annotate": "Anotovať",
     "editorDone": "Dokončiť",
+    "annotationSaveFailed": "Vaše úpravy sa nepodarilo uložiť. Skúste to znova. Vaša snímka obrazovky sa nezmenila a z tohto editora sa neodošle.",
     "rotateFeedback": "Poslať spätnú väzbu",
     "rotateBug": "Nahlásiť chybu",
     "rotateFeature": "Pridať novú funkciu"
@@ -958,7 +964,7 @@
       "projectEndUnchanged": "Dátum dokončenia projektu: bez zmeny ({{date}})",
       "projectEndChanged": "Dátum dokončenia projektu: {{before}} → {{after}}",
       "remainingConflicts": "Zostávajúce konflikty",
-      "remainingConflictsHint": "Tieto úlohy sa nezmestia do svojej časovej rezervy — často preto, že zdroj v tieto dni nepracuje alebo nemá dostatočnú kapacitu.",
+      "remainingConflictsHint": "Pre tieto úlohy zostávajú konflikty zdrojov. Pozrite si podrobnosti nižšie.",
       "intrinsicOverrun": "{{resource}} má v špičke {{peak}} jedn./deň, kapacita je {{capacity}} — posunutím sa to nedá vyriešiť.",
       "noChanges": "Žiadne úlohy sa nemusia posunúť — plán je už bez konfliktov.",
       "notCalculated": "Kliknutím na Prepočítať vytvorte návrh vyvažovania.",
@@ -1045,7 +1051,7 @@
       "cancel": "Zrušiť"
     },
     "regen": {
-      "hint": "Sviatky pokrývajú {{from}}–{{to}}; projekt beží do {{year}}. Chcete ich vygenerovať znova?",
+      "hint": "Sviatky pokrývajú {{from}}–{{to}}; vygenerovať znova až do roku {{year}}?",
       "button": "Vygenerovať znova"
     },
     "countryName": {
@@ -1108,7 +1114,9 @@
       "bandEnd": "Dokončenie bloku",
       "shiftPreset": "Pracovná zmena",
       "breakHint": "Medzera medzi dvoma blokmi je prestávka — podľa potreby upravte časy."
-    }
+    },
+    "defaultConstructionName": "Stavebný kalendár NL",
+    "defaultStandardName": "Štandardný kalendár"
   },
   "view": {
     "structureLockedHint": "Nedostupné počas filtrovania, zoskupovania a triedenia",
@@ -1437,7 +1445,7 @@
   "progressImport": {
     "title": "Aktualizovať postup z tabuľky",
     "chooseFile": "Vybrať súbor…",
-    "intro": "Vyberte vrátenú tabuľku CSV. Aplikácia číta iba percento dokončenia, skutočný začiatok a skutočné dokončenie. Zvyšok vášho plánu zostane nezmenený.",
+    "intro": "Vyberte vrátenú tabuľku CSV alebo XLSX. Aplikácia číta iba percento dokončenia, skutočný začiatok a skutočné dokončenie. Zvyšok vášho plánu zostane nezmenený.",
     "summaryApplied": "Použité: {{applied}}",
     "summaryNoop": "Nezmenené: {{noop}}",
     "summaryNeedsLink": "Čaká na prepojenie: {{needsLink}}",

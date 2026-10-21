@@ -17,6 +17,7 @@
     "extHelpProjectOpenFailed": "تعذّر فتح ملف المشروع {{file}} من الإضافة {{name}}.",
     "extImportFailed": "فشل الاستيراد باستخدام {{name}}.",
     "extensionMessage": "الإضافة {{name}}: {{message}}",
+    "extensionInstallFailed": "تعذّر تثبيت الإضافة. تحقّق من الملف وحاول مرة أخرى.",
     "xerInvalidInput": "يتطلب استيراد XER وحدات البايت الأصلية للملف.",
     "xerInvalidFile": "هذا ليس ملف XER صالحًا أو مدعومًا.",
     "xerInvalidEncoding": "ترميز النص في ملف XER هذا غير صالح أو مبتور.",
@@ -456,6 +457,12 @@
   "no": "لا",
   "days": "ي",
   "daysLong": "أيام",
+  "dayUnitLong_zero": "أيام",
+  "dayUnitLong_one": "يوم",
+  "dayUnitLong_two": "يومان",
+  "dayUnitLong_few": "أيام",
+  "dayUnitLong_many": "يومًا",
+  "dayUnitLong_other": "يوم",
   "ok": "موافق",
   "apply": "تطبيق",
   "create": "إنشاء",
@@ -803,6 +810,7 @@
     "openGithub": "موافق، الانتقال إلى GitHub",
     "annotate": "إضافة تعليق",
     "editorDone": "تم",
+    "annotationSaveFailed": "تعذّر حفظ التعديلات. حاول مرة أخرى. لم تتغيّر لقطة الشاشة الخاصة بك ولن تُرسل من هذا المحرر.",
     "rotateFeedback": "إرسال ملاحظات",
     "rotateBug": "الإبلاغ عن خطأ",
     "rotateFeature": "اقتراح ميزة جديدة"
@@ -1080,7 +1088,7 @@
       "projectEndUnchanged": "تاريخ نهاية المشروع: دون تغيير ({{date}})",
       "projectEndChanged": "تاريخ نهاية المشروع: {{before}} ← {{after}}",
       "remainingConflicts": "التعارضات المتبقية",
-      "remainingConflictsHint": "هذه المهام لا تتسع ضمن فائضها — غالبًا لأن موردًا لا يعمل في تلك الأيام أو لا يملك سعة كافية.",
+      "remainingConflictsHint": "تبقى تعارضات الموارد لهذه المهام. راجع الشرح أدناه.",
       "intrinsicOverrun": "{{resource}} يبلغ ذروته عند {{peak}} وحدة/يوم، والسعة {{capacity}} — لا يمكن حل ذلك بالإزاحة.",
       "noChanges": "لا حاجة لنقل أي مهمة — الجدول خالٍ من التعارضات بالفعل.",
       "notCalculated": "انقر على حساب لإنشاء اقتراح موازنة.",
@@ -1173,7 +1181,7 @@
       "cancel": "إلغاء"
     },
     "regen": {
-      "hint": "العطل الرسمية تغطي {{from}}–{{to}}؛ المشروع يمتد حتى {{year}}. إعادة الإنشاء؟",
+      "hint": "تغطي العطلات الرسمية الفترة {{from}}–{{to}}، هل تريد إعادة إنشائها حتى {{year}}؟",
       "button": "إعادة الإنشاء"
     },
     "countryName": {
@@ -1236,7 +1244,9 @@
       "bandEnd": "نهاية النطاق",
       "shiftPreset": "الوردية",
       "breakHint": "الفجوة بين نطاقين هي استراحة — عدّل الأوقات حسب الحاجة."
-    }
+    },
+    "defaultConstructionName": "تقويم البناء NL",
+    "defaultStandardName": "التقويم القياسي"
   },
   "view": {
     "structureLockedHint": "غير متاح أثناء التصفية/التجميع/الفرز",
@@ -1579,7 +1589,7 @@
   "progressImport": {
     "title": "تحديث التقدّم من ورقة بيانات",
     "chooseFile": "اختر ملفاً…",
-    "intro": "اختر ورقة CSV مُعادة. يقرأ التطبيق فقط نسبة الإنجاز والبداية الفعلية والنهاية الفعلية — تبقى بقية الخطة دون تغيير.",
+    "intro": "اختر ورقة CSV أو XLSX مُعادة. يقرأ التطبيق نسبة الإنجاز والبداية الفعلية والنهاية الفعلية فقط، ويبقى باقي الجدول الزمني دون تغيير.",
     "summaryApplied": "تم التطبيق: {{applied}}",
     "summaryNoop": "دون تغيير: {{noop}}",
     "summaryNeedsLink": "بانتظار الربط: {{needsLink}}",

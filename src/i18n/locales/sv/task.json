@@ -52,7 +52,7 @@
     "columns": {
       "activityCodeData": "Uppgiftskoddata",
       "actualDuration": "Verklig varaktighet",
-      "actualFinish": "Faktiskt slut",
+      "actualFinish": "Verkligt slut",
       "actualStart": "Verklig start",
       "assignedResources": "Tilldelade resurser",
       "assignmentCurve": "Tilldelningskurva",

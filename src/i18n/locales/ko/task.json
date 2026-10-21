@@ -431,7 +431,7 @@
     "completion": "진행률 (%)",
     "progress": {
       "actualStart": "실제 시작",
-      "actualFinish": "실제 종료",
+      "actualFinish": "실제 완료",
       "actualDate": "실제 날짜",
       "remaining": "남은 기간",
       "summaryDerived": "하위 작업에서 산출됩니다. 진행률은 하위 작업에서 변경하세요. 계산(F5) 후 요약 작업에 반영됩니다."

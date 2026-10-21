@@ -52,7 +52,7 @@
     "columns": {
       "activityCodeData": "Tehtäväkoodin tiedot",
       "actualDuration": "Toteutunut kesto",
-      "actualFinish": "Toteutunut lopetus",
+      "actualFinish": "Toteutunut valmistumispäivä",
       "actualStart": "Toteutunut alkamispäivä",
       "assignedResources": "Kohdistetut resurssit",
       "assignmentCurve": "Jakautumiskäyrä",

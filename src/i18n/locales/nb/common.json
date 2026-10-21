@@ -17,6 +17,7 @@
     "extHelpProjectOpenFailed": "Prosjektfilen {{file}} fra utvidelsen {{name}} kunne ikke åpnes.",
     "extImportFailed": "Import med {{name}} mislyktes.",
     "extensionMessage": "Utvidelse {{name}}: {{message}}",
+    "extensionInstallFailed": "Utvidelsen kunne ikke installeres. Kontroller filen og prøv igjen.",
     "xerInvalidInput": "XER-import krever de opprinnelige filbytene.",
     "xerInvalidFile": "Dette er ikke en gyldig eller støttet XER-fil.",
     "xerInvalidEncoding": "Tegnkodingen i denne XER-filen er ugyldig eller avkortet.",
@@ -228,6 +229,8 @@
   "no": "Nei",
   "days": "d",
   "daysLong": "dager",
+  "dayUnitLong_one": "dag",
+  "dayUnitLong_other": "dager",
   "ok": "OK",
   "apply": "Bruk",
   "create": "Opprett",
@@ -571,6 +574,7 @@
     "openGithub": "OK, gå til GitHub",
     "annotate": "Kommenter",
     "editorDone": "Ferdig",
+    "annotationSaveFailed": "Endringene kunne ikke lagres. Prøv igjen. Skjermbildet ditt er ikke endret og blir ikke sendt fra denne editoren.",
     "rotateFeedback": "Gi tilbakemelding",
     "rotateBug": "Meld en feil",
     "rotateFeature": "Legg til en ny funksjon"
@@ -836,7 +840,7 @@
       "projectEndUnchanged": "Prosjektets sluttdato: uendret ({{date}})",
       "projectEndChanged": "Prosjektets sluttdato: {{before}} → {{after}}",
       "remainingConflicts": "Gjenstående konflikter",
-      "remainingConflictsHint": "Disse aktivitetene passer ikke innenfor slakken. Ofte fordi en ressurs ikke arbeider disse dagene, eller har for liten kapasitet.",
+      "remainingConflictsHint": "Det finnes fortsatt ressurskonflikter for disse aktivitetene. Se forklaringen nedenfor.",
       "intrinsicOverrun": "{{resource}} krever {{peak}} tildelingsenheter/dag på toppen, kapasiteten er {{capacity}} — kan ikke løses ved å flytte.",
       "noChanges": "Ingen aktiviteter må flyttes — tidsplanen er allerede konfliktfri.",
       "notCalculated": "Klikk på Beregn for å lage et utjevningsforslag.",
@@ -917,7 +921,7 @@
       "cancel": "Avbryt"
     },
     "regen": {
-      "hint": "Helligdagene dekker {{from}}–{{to}}; prosjektet går til {{year}}. Vil du generere på nytt?",
+      "hint": "Helligdagene dekker {{from}}–{{to}}; vil du generere på nytt til og med {{year}}?",
       "button": "Generer på nytt"
     },
     "countryName": {
@@ -980,7 +984,9 @@
       "bandEnd": "Slutt for tidsbåndet",
       "shiftPreset": "Skift",
       "breakHint": "Et mellomrom mellom to bånd er en pause. Juster tidene etter behov."
-    }
+    },
+    "defaultConstructionName": "Byggekalender NL",
+    "defaultStandardName": "Standardkalender"
   },
   "view": {
     "structureLockedHint": "Ikke tilgjengelig under filtrering/gruppering/sortering",
@@ -1295,7 +1301,7 @@
   "progressImport": {
     "title": "Oppdater fremdrift fra et regneark",
     "chooseFile": "Velg fil…",
-    "intro": "Velg et tilbakesendt CSV-ark. Appen leser bare fullføringsgrad, faktisk start og faktisk slutt. Resten av tidsplanen forblir uendret.",
+    "intro": "Velg et tilbakesendt CSV- eller XLSX-ark. Appen leser bare fullføringsgrad, faktisk start og faktisk slutt — resten av tidsplanen din forblir uendret.",
     "summaryApplied": "Brukt: {{applied}}",
     "summaryNoop": "Uendret: {{noop}}",
     "summaryNeedsLink": "Venter på kobling: {{needsLink}}",

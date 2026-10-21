@@ -17,6 +17,7 @@
     "extHelpProjectOpenFailed": "Nie udało się otworzyć pliku projektu {{file}} z rozszerzenia {{name}}.",
     "extImportFailed": "Importowanie za pomocą {{name}} nie powiodło się.",
     "extensionMessage": "Rozszerzenie {{name}}: {{message}}",
+    "extensionInstallFailed": "Nie udało się zainstalować rozszerzenia. Sprawdź plik i spróbuj ponownie.",
     "xerInvalidInput": "Import XER wymaga oryginalnych bajtów pliku.",
     "xerInvalidFile": "Ten plik XER jest nieprawidłowy lub nieobsługiwany.",
     "xerInvalidEncoding": "Kodowanie tekstu w tym pliku XER jest nieprawidłowe lub ucięte.",
@@ -342,6 +343,10 @@
   "no": "Nie",
   "days": "d",
   "daysLong": "dni",
+  "dayUnitLong_one": "dzień",
+  "dayUnitLong_few": "dni",
+  "dayUnitLong_many": "dni",
+  "dayUnitLong_other": "dnia",
   "ok": "OK",
   "apply": "Zastosuj",
   "create": "Utwórz",
@@ -687,6 +692,7 @@
     "openGithub": "OK, przejdź do GitHub",
     "annotate": "Zaznacz",
     "editorDone": "Gotowe",
+    "annotationSaveFailed": "Twoje zmiany nie mogły zostać zapisane. Spróbuj ponownie. Twój zrzut ekranu nie został zmieniony i nie zostanie wysłany z tego edytora.",
     "rotateFeedback": "Wyślij opinię",
     "rotateBug": "Zgłoś błąd",
     "rotateFeature": "Zaproponuj nową funkcję"
@@ -958,7 +964,7 @@
       "projectEndUnchanged": "Data zakończenia projektu: bez zmian ({{date}})",
       "projectEndChanged": "Data zakończenia projektu: {{before}} → {{after}}",
       "remainingConflicts": "Pozostałe konflikty",
-      "remainingConflictsHint": "Te zadania nie mieszczą się w swoim zapasie — często dlatego, że zasób nie pracuje w te dni lub ma zbyt małą zdolność.",
+      "remainingConflictsHint": "Dla tych zadań nadal występują konflikty zasobów. Zobacz szczegóły poniżej.",
       "intrinsicOverrun": "{{resource}}: szczyt {{peak}} jedn./dzień, zdolność to {{capacity}} — nie da się tego rozwiązać przesunięciem.",
       "noChanges": "Żadne zadania nie wymagają przesunięcia — harmonogram jest już wolny od konfliktów.",
       "notCalculated": "Kliknij Oblicz, aby utworzyć propozycję bilansowania.",
@@ -1045,7 +1051,7 @@
       "cancel": "Anuluj"
     },
     "regen": {
-      "hint": "Święta obejmują {{from}}–{{to}}; projekt trwa do {{year}}. Wygenerować ponownie?",
+      "hint": "Święta obejmują {{from}}–{{to}}. Wygenerować ponownie do {{year}} włącznie?",
       "button": "Generuj ponownie"
     },
     "countryName": {
@@ -1108,7 +1114,9 @@
       "bandEnd": "Koniec pasma",
       "shiftPreset": "Zmiana",
       "breakHint": "Przerwa między dwoma pasmami to pauza — dostosuj godziny według potrzeb."
-    }
+    },
+    "defaultConstructionName": "Kalendarz budowlany NL",
+    "defaultStandardName": "Kalendarz standardowy"
   },
   "view": {
     "structureLockedHint": "Niedostępne podczas filtrowania/grupowania/sortowania",
@@ -1437,7 +1445,7 @@
   "progressImport": {
     "title": "Aktualizuj postęp z arkusza",
     "chooseFile": "Wybierz plik…",
-    "intro": "Wybierz zwrócony arkusz CSV. Aplikacja odczytuje tylko ukończenie, rzeczywiste rozpoczęcie i rzeczywiste zakończenie — reszta harmonogramu pozostaje bez zmian.",
+    "intro": "Wybierz zwrócony arkusz CSV lub XLSX. Aplikacja odczytuje tylko ukończenie, rzeczywiste rozpoczęcie i rzeczywiste zakończenie — reszta harmonogramu pozostaje bez zmian.",
     "summaryApplied": "Zastosowano: {{applied}}",
     "summaryNoop": "Bez zmian: {{noop}}",
     "summaryNeedsLink": "Czeka na powiązanie: {{needsLink}}",
