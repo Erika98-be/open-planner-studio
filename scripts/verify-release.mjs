@@ -52,11 +52,19 @@ function utf8Strict(buf, label) {
   }
 }
 
+/** Regels zoals Rust `str::lines()` (minisign-verify 0.2.5): splitsen op \n, één \r aan het eind weg. */
+function rustLines(text) {
+  const lines = text.split('\n').map((l) => (l.endsWith('\r') ? l.slice(0, -1) : l));
+  if (lines.length > 0 && lines[lines.length - 1] === '') lines.pop();
+  return lines;
+}
+
 /** Leest een minisign-pubkey zoals in tauri.conf.json: base64 van de minisign-tekst. */
 export function parsePublicKey(input) {
   const text = utf8Strict(decodeBase64Strict(input, 'pubkey'), 'pubkey');
-  const lines = text.split('\n').map((l) => l.trim());
-  if (lines.length < 2 || !lines[0].startsWith('untrusted comment:')) throw new Error('pubkey: geen minisign-formaat');
+  const lines = rustLines(text);
+  if (lines.length < 2) throw new Error('pubkey: geen minisign-formaat (2 regels)');
+  // Geen trim: minisign-verify decodeert de regel zoals hij is.
   const raw = decodeBase64Strict(lines[1], 'pubkey-sleutelregel');
   if (raw.length !== 42 || raw.subarray(0, 2).toString('latin1') !== 'Ed') {
     throw new Error(`pubkey: verwacht 42 bytes met 'Ed', kreeg ${raw.length} bytes`);
@@ -64,18 +72,20 @@ export function parsePublicKey(input) {
   return { keyId: raw.subarray(2, 10), key: raw.subarray(10, 42) };
 }
 
-/** Leest een minisign-handtekening zoals Tauri hem schrijft: base64 van de minisign-tekst. */
+/**
+ * Leest een minisign-handtekening zoals Tauri hem schrijft: base64 van de minisign-tekst.
+ * Volgt minisign-verify 0.2.5 (Signature::decode): vier regels, de eerste (untrusted
+ * comment) wordt niet gecontroleerd, de base64-regels worden NIET getrimd.
+ */
 export function parseSignature(input) {
   const text = utf8Strict(decodeBase64Strict(input, 'handtekening'), 'handtekening');
-  const lines = text.split('\n').map((l) => l.replace(/\r$/, ''));
-  if (lines.length < 4 || !lines[0].startsWith('untrusted comment:')) {
-    throw new Error('handtekening: geen minisign-formaat (4 regels, begint met "untrusted comment:")');
-  }
-  const sig = decodeBase64Strict(lines[1].trim(), 'handtekeningregel');
+  const lines = rustLines(text);
+  if (lines.length < 4) throw new Error('handtekening: geen minisign-formaat (4 regels)');
+  const sig = decodeBase64Strict(lines[1], 'handtekeningregel');
   if (sig.length !== 74) throw new Error(`handtekening: verwacht 74 bytes, kreeg ${sig.length}`);
   const prefix = 'trusted comment: ';
   if (!lines[2].startsWith(prefix)) throw new Error('handtekening: regel 3 is geen trusted comment');
-  const globalSig = decodeBase64Strict(lines[3].trim(), 'globale handtekening');
+  const globalSig = decodeBase64Strict(lines[3], 'globale handtekening');
   if (globalSig.length !== 64) throw new Error(`globale handtekening: verwacht 64 bytes, kreeg ${globalSig.length}`);
   return {
     alg: sig.subarray(0, 2).toString('latin1'),
@@ -144,7 +154,68 @@ export function hasMacCodeSignature(names) {
 export const TAG_PATTERN = /^v[0-9][0-9A-Za-z.-]*$/;
 
 const isPlainObject = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
-const RFC3339 = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$/;
+
+/**
+ * `pub_date` zoals de vastgelegde updater hem leest: tauri-plugin-updater 2.10.1 doet
+ * `OffsetDateTime::parse(date, Rfc3339)` (crate `time` 0.3.47, parse_offset_date_time).
+ * Dat betekent: 4+2+2 cijfers met '-', één willekeurig ASCII-scheidingsteken, uu:mm:ss,
+ * optioneel '.' met minstens één cijfer, dan 'Z'/'z' of ±uu:mm (uur ≤ 23, minuut ≤ 59),
+ * niets erachter; de datum moet bestaan; seconde 60 alleen als echte schrikkelseconde
+ * (UTC 23:59:60 op de laatste dag van de maand).
+ * @returns {string|null} foutmelding, of null als de updater de waarde accepteert
+ */
+export function pubDateError(value) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})[\x00-\x7f](\d{2}):(\d{2}):(\d{2})(?:\.\d+)?(?:[Zz]|([+-])(\d{2}):(\d{2}))$/.exec(value);
+  if (!m) return 'geen RFC 3339-tijdstip';
+  const [year, month, day, hour, minute, second] = m.slice(1, 7).map(Number);
+  const offH = m[8] === undefined ? 0 : Number(m[8]);
+  const offM = m[9] === undefined ? 0 : Number(m[9]);
+  const leap = (y) => y % 4 === 0 && (y % 100 !== 0 || y % 400 === 0);
+  const dim = (y, mo) => [31, leap(y) ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][mo - 1];
+  if (month < 1 || month > 12) return 'maand bestaat niet';
+  if (day < 1 || day > dim(year, month)) return 'dag bestaat niet';
+  if (hour > 23 || minute > 59 || second > 60) return 'tijd bestaat niet';
+  if (offH > 23 || offM > 59) return 'offset buiten bereik';
+  if (second === 60) {
+    // Naar UTC (lokaal min offset); de offset is minder dan een dag, dus hooguit één dag verschuiven.
+    const sign = m[7] === '-' ? -1 : 1;
+    let minutes = hour * 60 + minute - sign * (offH * 60 + offM);
+    let [y, mo, d] = [year, month, day];
+    if (minutes < 0) {
+      minutes += 1440;
+      d -= 1;
+      if (d === 0) { mo -= 1; if (mo === 0) { mo = 12; y -= 1; } d = dim(y, mo); }
+    } else if (minutes >= 1440) {
+      minutes -= 1440;
+      d += 1;
+      if (d > dim(y, mo)) { d = 1; mo += 1; if (mo === 13) { mo = 1; y += 1; } }
+    }
+    if (minutes !== 23 * 60 + 59 || d !== dim(y, mo)) return 'seconde 60 is hier geen schrikkelseconde';
+  }
+  return null;
+}
+
+/** semver 2.0.0 (crate `semver`): MAJOR.MINOR.PATCH[-pre][+build], geen voorloopnullen. */
+const SEMVER = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*))*))?(?:\+([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?$/;
+
+/**
+ * De updaterplatforms die release.yml schrijft, met het soort asset per sleutel. De
+ * updater zoekt eerst `{os}-{arch}-{installer}` en valt dan terug op `{os}-{arch}`
+ * (tauri-plugin-updater 2.10.1, get_urls). Ontbreekt een sleutel, dan vindt een
+ * installatie van dat soort geen update.
+ */
+export const EXPECTED_PLATFORMS = {
+  'linux-x86_64': '.AppImage',
+  'linux-x86_64-appimage': '.AppImage',
+  'linux-x86_64-deb': '.deb',
+  'linux-x86_64-rpm': '.rpm',
+  'darwin-aarch64': '.app.tar.gz',
+  'darwin-aarch64-app': '.app.tar.gz',
+  'darwin-x86_64': '.app.tar.gz',
+  'darwin-x86_64-app': '.app.tar.gz',
+  'windows-x86_64': '.nsis.zip',
+  'windows-x86_64-nsis': '.nsis.zip',
+};
 
 function textStrict(buf) {
   return new TextDecoder('utf-8', { fatal: true }).decode(buf);
@@ -255,17 +326,37 @@ export function evaluateRelease({ publicKey, assets, read, repo, tag, isLatest }
   if (latest !== undefined && !isPlainObject(latest)) {
     add(G, 'manifest', 'FOUT', `manifest is geen object maar ${latest === null ? 'null' : Array.isArray(latest) ? 'een array' : typeof latest}`);
   } else if (latest !== undefined) {
-    const want = tag.replace(/^v/, '');
-    if (typeof latest.version !== 'string') add(G, 'version', 'FOUT', 'veld version ontbreekt of is geen tekst');
-    else if (latest.version.replace(/^v/, '') !== want) add(G, 'version', 'FOUT', `version ${latest.version} hoort bij een andere release dan ${tag}`);
-    else add(G, 'version', 'OK', `${latest.version} = ${tag}`);
-    if (latest.pub_date !== undefined && (typeof latest.pub_date !== 'string' || !RFC3339.test(latest.pub_date))) {
-      add(G, 'pub_date', 'FOUT', `pub_date ${JSON.stringify(latest.pub_date)} is geen RFC 3339-tijdstip`);
+    // version: de updater strip alle voorloop-'v's en leest de rest als semver.
+    const want = tag.replace(/^v+/, '');
+    const version = latest.version ?? latest.name;
+    if (typeof version !== 'string') add(G, 'version', 'FOUT', 'veld version ontbreekt of is geen tekst');
+    else if (!SEMVER.test(version.replace(/^v+/, ''))) add(G, 'version', 'FOUT', `version ${version} is geen semver`);
+    else if (version.replace(/^v+/, '') !== want) add(G, 'version', 'FOUT', `version ${version} hoort bij een andere release dan ${tag}`);
+    else add(G, 'version', 'OK', `${version} = ${tag}`);
+    // notes: Option<String>; pub_date: Option<String> en daarna Rfc3339 (zie pubDateError).
+    if (latest.notes !== undefined && latest.notes !== null && typeof latest.notes !== 'string') {
+      add(G, 'notes', 'FOUT', `notes is ${Array.isArray(latest.notes) ? 'een array' : typeof latest.notes}, geen tekst; de updater weigert het manifest`);
+    }
+    if (latest.pub_date !== undefined && latest.pub_date !== null) {
+      const err = typeof latest.pub_date === 'string' ? pubDateError(latest.pub_date) : 'geen tekst';
+      if (err) add(G, 'pub_date', 'FOUT', `pub_date ${JSON.stringify(latest.pub_date)}: ${err}; de updater weigert het manifest`);
     }
     const platforms = latest.platforms;
     if (!isPlainObject(platforms) || Object.keys(platforms).length === 0) {
       add(G, 'platforms', 'FOUT', 'platforms ontbreekt, is geen object of is leeg');
     } else {
+      // Dekking: elk platform dat release.yml schrijft moet er zijn, met het juiste soort asset.
+      for (const [key, kind] of Object.entries(EXPECTED_PLATFORMS)) {
+        const e = platforms[key];
+        if (e === undefined) {
+          add(G, `dekking: ${key}`, 'FOUT', 'platform ontbreekt; een installatie die deze sleutel zoekt, vindt geen update');
+        } else if (isPlainObject(e) && typeof e.url === 'string' && !e.url.endsWith(kind)) {
+          add(G, `dekking: ${key}`, 'FOUT', `wijst niet naar een ${kind}-asset: ${e.url}`);
+        }
+      }
+      for (const key of Object.keys(platforms)) {
+        if (!(key in EXPECTED_PLATFORMS)) add(G, `dekking: ${key}`, 'INFO', 'platform staat niet in de verwachte lijst');
+      }
       for (const [platform, entry] of Object.entries(platforms).sort(([a], [b]) => a.localeCompare(b))) {
         if (!isPlainObject(entry) || typeof entry.url !== 'string' || typeof entry.signature !== 'string') {
           add(G, platform, 'FOUT', 'entry is geen object met url en signature als tekst');

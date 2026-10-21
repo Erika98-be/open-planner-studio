@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { chmodSync, mkdtempSync, readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -152,4 +152,62 @@ test('release.yml: elke `tauri signer sign` wist eerst de oude .sig en controlee
     assert.ok(yml[i - 1].includes('Remove-Item') && yml[i - 1].includes(`${target}.sig`), `oude .sig niet gewist vóór regel ${i + 1}`);
     assert.match(yml[i + 1], /if \(\$LASTEXITCODE -ne 0\) \{ throw /, `geen exitcodecontrole na regel ${i + 1}`);
   }
+});
+
+test('ronde 2: een syntaxfout in een shellbestand is hard (exit 3), ook in rapportmodus', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'shfile-'));
+  const broken = join(dir, 'kapot.sh');
+  writeFileSync(broken, '#!/usr/bin/env bash\nif then fi (\n');
+  chmodSync(broken, 0o755);
+  const ok = join(dir, 'goed.sh');
+  writeFileSync(ok, '#!/usr/bin/env bash\nexit 1\n');
+  chmodSync(ok, 0o755);
+  for (const args of [['run', 'kapot', 'bash', broken], ['run', 'kapot', broken], ['run', 'kapot', 'bash', '-e', broken], ['alive', 'kapot', '1', 'bash', broken]]) {
+    const r = helper(args, { RELEASE_VERIFY_STRICT: '0' });
+    assert.equal(r.status, 3, `${args.join(' ')}: ${r.stderr}`);
+    assert.equal(r.rows, '', args.join(' '));
+  }
+  // Een shellbestand dat gewoon FOUT geeft blijft een controle-uitkomst.
+  const r = helper(['run', 'goed maar faalt', 'bash', ok]);
+  assert.equal(r.status, 0);
+  assert.match(r.rows, /^FOUT\tgoed maar faalt\texit 1/);
+  // Een ontbrekend shellbestand is infrastructuur.
+  assert.equal(helper(['run', 'weg', 'bash', join(dir, 'bestaat-niet.sh')]).status, 3);
+  // De echte scripts die de workflow aanroept zijn syntactisch in orde.
+  for (const f of ['release-check.sh', 'macos-verify-dmg.sh']) {
+    assert.equal(spawnSync('bash', ['-n', join(ROOT, 'scripts', f)]).status, 0, f);
+  }
+});
+
+const PWSH = spawnSync('pwsh', ['-NoProfile', '-c', 'exit 0']).status === 0;
+
+test('ronde 2: Test-Alive registreert een mislukte start als FOUT, nooit als OK (Windows-job)', { skip: !PWSH && 'pwsh ontbreekt' }, () => {
+  const dir = mkdtempSync(join(tmpdir(), 'alive-ps-'));
+  const log = join(dir, 'c.tsv');
+  const ps = (body) => spawnSync('pwsh', ['-NoProfile', '-NonInteractive', '-c',
+    `$ErrorActionPreference = 'Continue'; . '${join(ROOT, 'scripts', 'release-check.ps1')}'; ${body}`], {
+    encoding: 'utf8', env: { ...process.env, RELEASE_CHECKS: log },
+  });
+  const rows = () => (existsSync(log) ? readFileSync(log, 'utf8').replace(/\r/g, '') : '');
+  // De reproductie uit de review: Start-Process geeft een NIET-terminerende fout en geen
+  // procesobject → de oude code registreerde "OK … pid ". Een functie gaat vóór de cmdlet.
+  let r = ps(`function Start-Process { [CmdletBinding()] param($FilePath, [switch]$PassThru, $ArgumentList) Write-Error 'kan niet starten' }; Test-Alive 'nep' 'x.exe' 1`);
+  assert.equal(r.status, 0, r.stderr);
+  assert.match(rows(), /^FOUT\tnep\tstart mislukt: kan niet starten/m);
+  // Zonder fout maar ook zonder procesobject: FOUT.
+  r = ps(`function Start-Process { [CmdletBinding()] param($FilePath, [switch]$PassThru, $ArgumentList) }; Test-Alive 'leeg' 'x.exe' 1`);
+  assert.match(rows(), /^FOUT\tleeg\tstart gaf geen procesobject/m);
+  // Een echt ontbrekend bestand: FOUT (op Windows "start mislukt", op Linux opent pwsh het via xdg/gio).
+  r = ps(`Test-Alive 'weg' '${join(dir, 'bestaat-niet.exe')}' 1`);
+  assert.match(rows(), /^FOUT\tweg\t/m);
+  assert.doesNotMatch(rows(), /^OK/m);
+  // Een proces dat meteen stopt: FOUT.
+  r = ps(`Test-Alive 'kort' '/bin/true' 1`);
+  assert.match(rows(), /^FOUT\tkort\tgestopt binnen 1 s/m);
+  // Een proces dat blijft draaien: OK met een echt pid.
+  r = ps(`Test-Alive 'lang' '/bin/sleep' 1 @('30')`);
+  assert.match(rows(), /^OK\tlang\tpid \d+ leeft na 1 s/m);
+  // Onbekende status is een fout in het script, geen regel.
+  r = ps(`Record 'GOED' 'x' 'y'`);
+  assert.notEqual(r.status, 0);
 });

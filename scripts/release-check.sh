@@ -14,7 +14,7 @@
 #
 # Exitcodes van de helper: 0 = controle vastgelegd (ook als die FOUT is);
 # 2 = verkeerd gebruik; 3 = infrastructuur stuk (commando ontbreekt, exit
-# 126/127, syntaxfout in een `bash -c`/`sh -c`-controle). Aanroepers met
+# 126/127, syntaxfout in een shellbestand of `bash -c`-script). Aanroepers met
 # `set +e` geven een exitcode ≠ 0 door (`|| exit $?`), zodat rapportmodus
 # een kapotte controle nooit als gewone FOUT verbergt.
 set -uo pipefail
@@ -33,15 +33,30 @@ last_line() { grep -v '^[[:space:]]*$' "$1" | tail -n 1; }
 
 infra() { echo "::error::release-check: $*" >&2; exit 3; }
 
-# Vooraf: bestaat het commando, en is een inline shellscript syntactisch in orde?
+# Vooraf: bestaat het commando, en is het shellscript dat het draait syntactisch in orde?
+# Een syntaxfout in een shellbestand geeft anders gewoon exit 2, wat er hetzelfde uitziet
+# als een controle die FOUT geeft (review #438, ronde 2).
 preflight() {
   [ "$#" -ge 1 ] || infra "geen commando opgegeven"
   command -v "$1" >/dev/null 2>&1 || infra "commando '$1' ontbreekt"
   case "$(basename "$1")" in
     bash|sh)
-      if [ "${2:-}" = "-c" ]; then
-        "$1" -n -c "${3:-}" 2>/dev/null || infra "syntaxfout in het $1 -c-script"
+      local shell="$1"; shift
+      # Sla opties over tot het eerste argument dat geen optie is; -c heeft een scriptstring.
+      while [ "$#" -gt 0 ]; do
+        case "$1" in
+          -c) "$shell" -n -c "${2:-}" 2>/dev/null || infra "syntaxfout in het $shell -c-script"; return 0 ;;
+          -*) shift ;;
+          *) break ;;
+        esac
+      done
+      if [ "$#" -gt 0 ]; then
+        [ -f "$1" ] || infra "shellbestand '$1' ontbreekt"
+        "$shell" -n "$1" 2>/dev/null || infra "syntaxfout in shellbestand $1"
       fi
+      ;;
+    *.sh)
+      bash -n "$1" 2>/dev/null || infra "syntaxfout in shellbestand $1"
       ;;
   esac
 }
