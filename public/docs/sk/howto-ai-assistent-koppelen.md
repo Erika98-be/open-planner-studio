@@ -12,7 +12,7 @@ Most funguje iba v desktopovej aplikácii. Ak v prehliadači zapnete režim AI, 
 
 ### 1. Zapnite režim AI
 
-1. Vyberte *Nastavenia › Projekt › Nastavenia*. Môžete tiež vybrať *Súbor › Nastavenia* alebo ozubené koliesko v hornej časti.
+1. Vyberte *Nastavenia › Projekt › Nastavenia aplikácie*. Môžete tiež vybrať *Súbor › Nastavenia aplikácie*, alebo ozubené koliesko v hornej časti.
 2. Vyberte kartu *Rozšírené* a zapnite možnosť *Zapnúť režim AI*. Na páse s nástrojmi sa zobrazí karta *AI*.
 3. Ak chcete, aby most bežal hneď po spustení aplikácie, zapnite aj *Spustiť most automaticky*. To sa prepne iba vtedy, keď je režim AI zapnutý, a funguje to iba v desktopovej aplikácii. Predvolené nastavenie je vypnuté, pretože otvorenie portu je vaše vedomé rozhodnutie.
 
@@ -54,7 +54,7 @@ V skupine *Bezpečnosť* sú tlačidlá, ktorými obmedzíte AI:
 
 - *Pozastaviť*: AI smie dočasne nič nemeniť, čítanie je stále povolené. Most zostáva aktívny. Tlačidlo sa zmení na *Obnoviť*.
 - *Iba na čítanie*: všetky nástroje, ktoré niečo menia, sú odmietnuté, kým je toto zapnuté.
-- *Auto-záloha: zapnutá*: pred prvou zmenou od AI v dokumente aplikácia zapíše zálohu vo formáte IFC. Predvolené nastavenie je zapnuté. Tlačidlom ju vypnete; potom sa zobrazí *Auto-záloha: vypnutá*. Toto sa stane raz pre každý dokument pri každom spustení mostu.
+- *Auto-záloha: zapnutá*: pred prvou zmenou, ktorú AI v dokumente urobí, aplikácia zapíše zálohu vo formáte IFC. Predvolené nastavenie je zapnuté. Tlačidlom ju vypnete; potom sa zobrazí *Auto-záloha: vypnutá*. Toto sa stane raz pre každý dokument pri každom spustení mostu.
 - *Zálohovať teraz*: okamžite vytvorí zálohu aktívneho dokumentu. Potom sa zobrazí *Záloha vytvorená:* s názvom súboru.
 - *Otvoriť priečinok záloh*: otvorí priečinok so zálohami.
 
@@ -62,13 +62,13 @@ Zálohy sú v priečinku `ai-backups` v dátovom priečinku aplikácie. Aplikác
 
 ### 6. Nechajte asistenta dobre plánovať
 
-Asistent, ktorý pozná nástroje, môže aj tak vytvoriť plán, z ktorého nemá plánovač žiadny úžitok: úlohy bez závislostí, pevný dátum pri každej úlohe alebo príliš jemné rozčlenenie. Preto asistent dostáva pravidlá plánovania tromi spôsobmi. Pri prvých dvoch nemusíte nič robiť.
+Asistent plánuje dobre, iba ak pozná pravidlá plánovania. Prečo je to dôležité a čo tieto pravidlá obsahujú, si prečítate v článku [Ako funguje prepojenie s AI](docs://uitleg-ai-koppeling). Toto urobíte sami:
 
-1. **Základné pravidlá prichádzajú samy.** Pri pripojení most pošle krátky text so základnými pravidlami. Mnohí klienti ho vložia do systémovej výzvy; či to urobí váš klient, závisí od klienta. Text hovorí okrem iného: začnite s medzníkmi, vytvárajte úlohy v rozsahu zhruba jedného dňa až dvoch týždňov, riaďte plán závislosťami namiesto pevných dátumov a na konci uveďte, čo ste predpokladali.
-2. **Výzva na pripojenie odkazuje na celý návod.** Výzva na pripojenie z okna *Údaje o pripojení* žiada asistenta, aby najprv prečítal plánovací návod nástrojom `planner_get_planning_guide`. Ten vráti anglický návod pre asistentov: rovnaké zásady ako v článku [Dobre plánovať](docs://gids-goed-plannen), a pri každej zásade nástroje, ktoré asistent na ňu používa. Môžete si ho prečítať sami na `https://open-planner-studio.open-aec.com/agent/planning-guide.md`. Ak výzvu nepoužijete, opýtajte sa asistenta sami: *Prečítajte si najprv plánovací návod nástrojom planner_get_planning_guide, skôr než čokoľvek zmeníte.*
-3. **Nepovinné: skilly.** Skill je malý súbor s pokynmi, ktorý asistent číta v každej relácii, aby aj v neskoršom rozhovore poznal správny spôsob práce. Sú dva, oba v angličtine: *goed-plannen* na zostavenie alebo prestavbu plánu a *progress-update* na týždenný záznam postupu. Funguje to iba s asistentom, ktorý skilly podporuje. Samotné skilly spomínajú Claude Code a podobných asistentov. Každý skill je súbor `SKILL.md` v priečinku s názvom skillu: `.claude/skills/goed-plannen/SKILL.md` a `.claude/skills/progress-update/SKILL.md` v priečinku projektu, v ktorom asistent pracuje, alebo rovnaké priečinky pod `~/.claude/skills/`, ak ich chcete mať v každom projekte.
+1. **Pri základných pravidlách nemusíte nič robiť.** Pri pripojení prídu k asistentovi samy. Či ich váš klient vloží do systémovej výzvy, závisí od klienta.
+2. **Nechajte asistenta prečítať návod.** Výzva na pripojenie z okna *Údaje o pripojení* žiada asistenta, aby najprv prečítal plánovací návod nástrojom `planner_get_planning_guide`. Ak výzvu nepoužijete, opýtajte sa asistenta sami: *Prečítajte si najprv plánovací návod nástrojom planner_get_planning_guide, skôr než čokoľvek zmeníte.* Návod si môžete prečítať sami na `https://open-planner-studio.open-aec.com/agent/planning-guide.md`.
+3. **Nepovinné: nainštalujte skilly.** Funguje to iba s asistentom, ktorý skilly podporuje. Uložte `SKILL.md` skillov *goed-plannen* a *progress-update* do priečinka projektu, v ktorom asistent pracuje, ako `.claude/skills/goed-plannen/SKILL.md` a `.claude/skills/progress-update/SKILL.md`. Alebo ich uložte pod `~/.claude/skills/`, ak ich chcete mať v každom projekte.
 
-Súbory získate dvoma spôsobmi. Požiadajte asistenta, aby zavolal nástroj `planner_get_planning_guide` s `part` nastaveným na `skill`: odpoveď obsahuje oba texty a pri každom skille miesta, kam patrí. Alebo si ich stiahnite z `https://open-planner-studio.open-aec.com/skills/goed-plannen/SKILL.md` a `https://open-planner-studio.open-aec.com/skills/progress-update/SKILL.md`. Ak je *goed-plannen* ešte zo staršej verzie aplikácie, nahraďte ho. Ten starý text je v holandčine a odkazuje na článok nápovedy namiesto na návod pre asistentov.
+Súbory získate dvoma spôsobmi. Požiadajte asistenta, aby zavolal nástroj `planner_get_planning_guide` s `part` nastaveným na `skill`: odpoveď obsahuje oba texty a pre každý skill miesta, kam patrí. Alebo si ich stiahnite z `https://open-planner-studio.open-aec.com/skills/goed-plannen/SKILL.md` a `https://open-planner-studio.open-aec.com/skills/progress-update/SKILL.md`. Ak je *goed-plannen* ešte zo staršej verzie aplikácie, nahraďte ho. Ten starý text je v holandčine a odkazuje na článok nápovedy namiesto na návod pre asistentov.
 
 Či asistent naozaj čítal návod, uvidíte v paneli *Panel činnosti*: je tam volanie `planner_get_planning_guide`. Konečná odpoveď asistenta by mala obsahovať zoznam predpokladov: odhadnuté trvania, zvolené rozčlenenie, závislosti, ktoré vytvoril sám, a každé obmedzenie, ktoré nastavil. Ak tento zoznam chýba, požiadajte o neho. Po zázname postupu podľa *progress-update* by odpoveď mala uviesť dátum kontroly stavu, nový dátum dokončenia a odchýlku oproti pôvodnému plánu.
 
@@ -98,4 +98,4 @@ Súbory získate dvoma spôsobmi. Požiadajte asistenta, aby zavolal nástroj `p
 - [Ako funguje prepojenie s AI](docs://uitleg-ai-koppeling): čo je prepojenie, prečo asistent pracuje vo vašom otvorenom projekte a čo nesmie robiť.
 - [Nástroje AI](docs://ref-ai-tools): všetky nástroje `planner_*` podľa skupín, chybové kódy a ako dlho sa zálohy uchovávajú.
 - [Dobre plánovať](docs://gids-goed-plannen): zásady plánovania; asistent ich dostane v anglickej verzii s pridanými nástrojmi.
-- [Nastavenia](docs://ref-instellingen): nastavenia AI.
+- [Nastavenia aplikácie](docs://ref-instellingen): nastavenia AI.

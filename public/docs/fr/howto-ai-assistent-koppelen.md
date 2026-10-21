@@ -12,7 +12,7 @@ Le pont ne fonctionne que dans l'application de bureau. Si vous activez le mode 
 
 ### 1. Activer le mode IA
 
-1. Choisissez *Paramètres › Projet › Paramètres*. Vous pouvez aussi choisir *Fichier › Paramètres*, ou l'engrenage en haut.
+1. Choisissez *Paramètres › Projet › Paramètres de l'application*. Vous pouvez aussi choisir *Fichier › Paramètres de l'application*, ou l'engrenage en haut.
 2. Choisissez l'onglet *Avancé* et activez *Activer le mode IA*. L'onglet *IA* apparaît dans le ruban.
 3. Si vous voulez que le pont soit actif dès le démarrage de l'application, activez aussi *Démarrer la passerelle automatiquement*. Cela n'agit que si le mode IA est activé, et ne fonctionne que dans l'application de bureau. Cette option est désactivée par défaut, car ouvrir un port est un choix délibéré.
 
@@ -42,7 +42,7 @@ Dans le groupe *Connexion*, il y a aussi le champ *Jeton*. C'est un long code al
 
 ### 4. Voir ce que fait l'IA
 
-1. Cliquez sur *Panneau d'activité* sous *Activité*. Dans la colonne latérale, le panneau *Activité IA* s'ouvre.
+1. Cliquez sur *Panneau d'activité* sous *Activité*. Dans le volet latéral, le panneau *Activité IA* s'ouvre.
 2. Chaque appel du pont figure sur une ligne, la plus récente en haut : l'heure, ce qui s'est passé, la durée, et si l'appel a réussi ou non. Cliquez sur une ligne pour développer *Arguments* et *Réponse*.
 3. Avec *Effacer*, vous videz la liste. Le panneau garde les 500 derniers appels. Tant que rien ne s'est passé, il affiche *Aucune activité IA pour l'instant. Les appels du pont apparaîtront ici*.
 
@@ -62,11 +62,11 @@ Les sauvegardes se trouvent dans le dossier `ai-backups`, dans le dossier de don
 
 ### 6. Faire en sorte que l'assistant planifie bien
 
-Un assistant IA qui connaît les outils peut tout de même construire un planning dont aucun planificateur ne tirerait profit : des tâches sans relations, une date fixe sur chaque tâche, ou une décomposition beaucoup trop fine. C'est pourquoi l'assistant reçoit les règles de planification de trois façons. Pour les deux premières, vous n'avez rien à faire.
+Un assistant ne planifie bien que s'il connaît les règles de planification. Pourquoi c'est important et ce qu'elles contiennent, vous le lisez dans [Comment fonctionne la liaison IA](docs://uitleg-ai-koppeling). Voici ce que vous faites vous-même :
 
-1. **Les règles de base arrivent d'elles-mêmes.** À la connexion, le pont envoie un court texte avec les règles de base. Beaucoup de clients placent ce texte dans leur invite système ; cela dépend du client utilisé. Il dit, entre autres : commencez par les jalons, créez des tâches d'environ un jour à deux semaines, pilotez le planning avec des relations plutôt que des dates fixes, et indiquez à la fin les hypothèses retenues.
-2. **L'invite de connexion renvoie vers le guide complet.** L'invite de connexion de la fenêtre *Détails de connexion* demande à l'assistant IA de lire d'abord le guide de planification, avec l'outil `planner_get_planning_guide`. Cela donne un guide en anglais destiné aux assistants : les mêmes principes que [Bien planifier](docs://gids-goed-plannen), avec pour chaque principe les outils que l'assistant utilise. Vous pouvez le lire vous-même à l'adresse `https://open-planner-studio.open-aec.com/agent/planning-guide.md`. Si vous n'utilisez pas l'invite, demandez-le vous-même à l'assistant : *Lisez d'abord le guide de planification avec planner_get_planning_guide, avant de modifier quoi que ce soit.*
-3. **Facultatif : les skills.** Un skill est un petit fichier d'instructions qu'un assistant IA lit à chaque session, afin qu'il connaisse aussi la bonne façon de travailler lors d'une conversation ultérieure. Il y en a deux, tous deux en anglais : *goed-plannen* pour créer ou restructurer un planning, et *progress-update* pour la mise à jour hebdomadaire de l'avancement. Cela ne fonctionne qu'avec un assistant IA qui prend en charge les skills ; les skills mentionnent eux-mêmes Claude Code et des assistants apparentés. Chaque skill est un fichier `SKILL.md` dans son propre dossier, portant le nom du skill : `.claude/skills/goed-plannen/SKILL.md` et `.claude/skills/progress-update/SKILL.md` dans le dossier du projet sur lequel l'assistant travaille, ou les mêmes dossiers sous `~/.claude/skills/` pour les avoir dans chaque projet.
+1. **Vous n'avez rien à faire pour les règles de base.** Elles arrivent à la connexion. Que votre client les place dans son invite système dépend de ce client.
+2. **Faites lire le guide.** L'invite de connexion de la fenêtre *Détails de connexion* demande à l'assistant de lire le guide avec l'outil `planner_get_planning_guide`. Si vous n'utilisez pas l'invite, demandez-le vous-même à l'assistant : *Lisez d'abord le guide de planification avec planner_get_planning_guide, avant de modifier quoi que ce soit.* Vous pouvez lire le guide vous-même à l'adresse `https://open-planner-studio.open-aec.com/agent/planning-guide.md`.
+3. **Facultatif : installez les skills.** Cela ne fonctionne qu'avec un assistant IA qui prend en charge les skills. Placez le `SKILL.md` de *goed-plannen* et de *progress-update* dans `.claude/skills/goed-plannen/SKILL.md` et `.claude/skills/progress-update/SKILL.md` dans le dossier du projet sur lequel l'assistant travaille, ou sous `~/.claude/skills/` pour chaque projet.
 
 Vous obtenez les fichiers de deux façons. Demandez à l'assistant d'appeler l'outil `planner_get_planning_guide` avec `part` défini sur `skill` : la réponse contient les deux textes et, pour chaque skill, les endroits où il doit être placé. Ou téléchargez-les depuis `https://open-planner-studio.open-aec.com/skills/goed-plannen/SKILL.md` et `https://open-planner-studio.open-aec.com/skills/progress-update/SKILL.md`. Si *goed-plannen* est encore présent d'une version plus ancienne de l'application, remplacez-le : cet ancien texte est en néerlandais et renvoie à l'article d'aide au lieu du guide destiné aux assistants.
 
