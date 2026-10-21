@@ -3,6 +3,7 @@ import { spawnSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 let passed = 0;
 let failed = 0;
@@ -10,7 +11,8 @@ function check(ok: boolean, label: string) {
   if (ok) { passed++; console.log('OK', label); }
   else { failed++; console.error('XX', label); }
 }
-const root = process.cwd();
+// run.sh bundelt naast deze bron; de aanroeper hoeft niet in de repository te staan.
+const root = fileURLToPath(new URL('../../', import.meta.url)).replace(/[\\/]$/, '');
 const dir = mkdtempSync(join(tmpdir(), 'ops-runts-check-'));
 function run(name: string, source: string | null, args: string[] = []) {
   const temp = join(dir, name);
