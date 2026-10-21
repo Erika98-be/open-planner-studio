@@ -329,9 +329,13 @@ export const ProjectInfoPanelContent = forwardRef<ProjectInfoPanelContentHandle,
 
       if (isNew) {
         const isCustom = calState.country === 'custom';
+        // Alleen bij aanmaak vertalen: een latere taalwissel hernoemt geen projectdata.
+        const calendarName = tCommon(constructionMode
+          ? 'calendar.defaultConstructionName'
+          : 'calendar.defaultStandardName');
         const calendar = isCustom
-          ? buildGeneratedCalendar({ country: 'none', bouwvak: 'geen' }, calSpan)
-          : buildGeneratedCalendar(calState as HolidayGenParams, calSpan);
+          ? buildGeneratedCalendar({ country: 'none', bouwvak: 'geen' }, calSpan, calendarName)
+          : buildGeneratedCalendar(calState as HolidayGenParams, calSpan, calendarName);
         // Ploeg-preset materialiseren: default 'day' laat de kalender een dag-kalender (geen
         // workTime); een niet-default preset zet workTime + shift + scalar-fallback op nieuwe entries.
         if (enableHourPlanning && shiftPreset !== 'day') {
