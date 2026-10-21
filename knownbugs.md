@@ -476,6 +476,13 @@ en noem het in je rapport of PR-tekst.
     (`scripts/measure-large-plans.mjs` doet dat met een passieve wrapper om `fillRect`). Voorstel: de
     teller ook laten lopen als de brug in een productiebuild aan staat. — B
 
+167. **Een browsershard van `ci.yml` blijft hangen voorbij `timeout-minutes: 45`.** Op 2026-10-21 bleef
+   `verify (browser 2-4)` van run 39559601987 (PR #440) ruim 50 minuten `in_progress` in de stap
+   *Verify (browser 2-4)*. Ook `gh run cancel` stopte hem niet; pas `force-cancel` via de API deed dat.
+   Een herhaling slaagde in 12 minuten, en dezelfde shard slaagde lokaal (213 passed). Rond dezelfde tijd
+   bleven ook shards van andere branches en van `main` lang `in_progress`. Dat wijst eerder op de runners
+   dan op een test. — S
+
 168. **Een IFC met een heel diepe WBS (6.000 niveaus) laat het openen vastlopen op een `RangeError`
    (Maximum call stack size exceeded).** Gezien via de headless kern: `openAsDocument` gooit die fout op
    een gegenereerd bestand met 6.000 geneste taken (`tests/planning/check-headless-core.ts` §4g). De kern
