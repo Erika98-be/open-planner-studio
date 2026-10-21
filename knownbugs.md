@@ -244,10 +244,6 @@ en noem het in je rapport of PR-tekst.
     op dezelfde browser, dan krijgt B de herstelvraag van A, en schrijft Ctrl+S na herstel naar het bestand van A
     met de rechten van B. Voorstel: de host levert een gebruikers-id en de tool sleutelt zijn opslag daarop.
     Gemeld door de review van #312. — S
-99. **Crashherstel gebruikt `crypto.randomUUID` zonder terugval op twee plekken** (`recoveryStore.ts`, het nemen
-    van een nieuwe sessie-id na een bezet tabblad). Die functie bestaat alleen in een veilige context (https of
-    localhost); op een gewoon http-adres gooit hij. Gezien bij #309 in de nep-site op de dev-server via
-    Tailscale (daar hersteld). Productie draait op https; de dev-server via een IP-adres niet. — S
 107. **`IfcTaskTime.Completion` krijgt `0.00` bij een taak zonder voortgang.** Het attribuut is een
     `IfcPositiveRatioMeasure`, en die moet groter dan 0 zijn (regel WR1). `ifcTaskSlots.ts`, slot `completion`
     (`ifcCompletionReal(... ?? 0)`). IfcOpenShell 0.9.0 (`ifcopenshell.validate`) geeft één melding per taak

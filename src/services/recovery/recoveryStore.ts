@@ -186,18 +186,19 @@ export function siteMetaFields(record: object | null | undefined):
 }
 
 /**
- * Id van DEZE app-instantie (proces/realm). Wordt in het manifest gezet zodat een volgende
- * schrijfronde kan zien of het manifest dat er staat van onszelf is of van iemand anders — zie
- * `manifestOwnership` en `planRecoveryCleanup`.
+ * Lokale herstelidentiteit voor instantie en websessie (geen authenticatietoken).
+ * Dezelfde terugval op alle aanmaak-/rotatiepaden: randomUUID kan ontbreken op een
+ * HTTP-dev-adres. Dat mag niet tot een gedeelde 'default'-sessie of een crash leiden.
  */
-function newInstanceId(): string {
+function newRecoveryId(): string {
   try {
     return crypto.randomUUID();
   } catch {
     return `inst-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
   }
 }
-const instanceId = newInstanceId();
+// Manifest-eigenaar van deze app-instantie (proces/realm).
+const instanceId = newRecoveryId();
 
 /** IFC-bestandsnamen die DEZE instantie ooit zelf heeft geschreven. */
 const ownWritten = new Set<string>();
@@ -890,7 +891,7 @@ async function resolveSessionId(): Promise<string> {
   let id: string;
   try {
     const stored = sessionStorage.getItem(SESSION_KEY);
-    id = stored ?? crypto.randomUUID();
+    id = stored ?? newRecoveryId();
     if (!stored) sessionStorage.setItem(SESSION_KEY, id);
   } catch {
     return 'default'; // sessionStorage geblokkeerd → vaste sleutel
@@ -904,7 +905,7 @@ async function resolveSessionId(): Promise<string> {
   if (await claimLock(key(id))) return id;
 
   // Bezet door een ander levend tab (gedupliceerd tabblad): eigen id nemen.
-  id = crypto.randomUUID();
+  id = newRecoveryId();
   try { sessionStorage.setItem(SESSION_KEY, id); } catch { /* niet te schrijven — id blijft lokaal */ }
   console.warn('Recovery: sessie-id was al in gebruik door een ander tabblad — nieuwe id genomen.');
   await claimLock(key(id));
@@ -974,7 +975,7 @@ async function holdWeb(): Promise<void> {
   writeHeldSessionIds(held);
   // De huidige generatie blijft onder haar id staan (de lock houdt dit tab al vast); nieuwe
   // snapshots gaan naar een verse id.
-  const fresh = crypto.randomUUID();
+  const fresh = newRecoveryId();
   try { sessionStorage.setItem(SESSION_KEY, fresh); } catch { /* id blijft lokaal */ }
   await claimLock(`${SESSION_KEY}:${fresh}`);
   sessionIdPromise = Promise.resolve(fresh);
