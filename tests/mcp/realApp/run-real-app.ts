@@ -56,6 +56,12 @@ const probe: AppProbe = {
 // AI-modus + automatisch starten aan, zoals de gebruiker in Instellingen doet; `useAiAutostart`
 // start de bridge daarop. Daarna wachten tot de Rust-bridge "running" meldt (status `live`).
 await ops('ping');
+// Een verse app opent het welkomstvenster; zolang dat open is, weigert de bridge elke tool met
+// DIALOG_OPEN (bewust, zie de gids). Sluit het zoals de gebruiker het wegklikt.
+await ops('dispatch', {
+  action: 'setUI',
+  args: [{ welcomePending: false, showWelcomeDialog: false, showTourOverlay: false, showTutorialOffer: false }],
+});
 await ops('dispatch', { action: 'setUI', args: [{ aiMode: true, aiAutostart: true }] });
 let conn: { port: number; token: string | null; status: { state: string; message?: string } } | null = null;
 for (let i = 0; i < 100; i++) {
