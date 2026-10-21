@@ -120,7 +120,7 @@ Windows-vertrouwensketen.
 
 ## Uitkomst v2026.9.0
 
-Run: <https://github.com/OpenAEC-Foundation/open-planner-studio/actions/runs/39559191898> (rapportmodus, PR #438, 2026-10-21).
+Run: <https://github.com/OpenAEC-Foundation/open-planner-studio/actions/runs/39565196501> (rapportmodus, PR #438, 2026-10-21; na reviewronde 1, gelijk aan de eerste run 39559191898).
 
 | platform | controle | uitkomst |
 |---|---|---|
