@@ -169,8 +169,9 @@ de browser-dev-build bestaat de bridge niet, dus voor browserzelftests blijft Ti
    anders `401`. Elk request met een aanwezige `Origin`-header wordt geweigerd met `403`, ongeacht
    token (DNS-rebinding-bescherming — een legitieme MCP-client stuurt geen `Origin`). Requests lopen
    strikt één-voor-één door de bridge (een `inflight`-mutex in `mcp_bridge.rs`): geen gelijktijdige
-   aanroepen. Een geslaagde `initialize` geeft een `Mcp-Session-Id`; stuur die bij latere requests mee,
-   dan heeft je sessie een eigen documentanker (onbekende id ⇒ `404`, begin opnieuw met `initialize`).
+   aanroepen. Een geslaagde `initialize` geeft een `Mcp-Session-Id`; elk later request moet die meesturen
+   (zonder ⇒ `400`, onbekend ⇒ `404`, begin dan opnieuw met `initialize`). Zo heeft elke sessie een eigen
+   documentanker. Met `curl` dus eerst `initialize` en de header uit het antwoord overnemen.
 
 Voor de toolcatalogus (de `planner_*`-tools; taken, relaties, resources, kalender, project,
 baselines, documenten/bestanden, leestools, `planner_batch`) zie `.claude/rules/mcp.md` → *AI-assistent

@@ -15,7 +15,8 @@
 //   - body > 50 MiB ⇒ 413; onleesbare body ⇒ 400; geen antwoord binnen 120 s ⇒ 504
 //   - strikt één request tegelijk; antwoord `200 application/json`, ook een lege body (notificatie)
 //   - `Mcp-Session-Id` van het request gaat mee als `sessionId`; een `sessionId` in het antwoord wordt de
-//     header `Mcp-Session-Id`; `status: 404` ⇒ 404 zonder body (onbekende sessie)
+//     header `Mcp-Session-Id`; `status: 400` ⇒ 400 met de JSON-body (header ontbreekt); `status: 404` ⇒
+//     404 zonder body (onbekende sessie); elke andere status ⇒ 200
 import http from 'node:http';
 import { timingSafeEqual } from 'node:crypto';
 import type { AddressInfo } from 'node:net';
@@ -111,6 +112,8 @@ export async function startBridgeMirror(opts: BridgeMirrorOptions): Promise<Brid
         clearTimeout(timer);
         if (reply.status === 404) {
           respondEmpty(res, 404);
+        } else if (reply.status === 400) {
+          respondJson(res, 400, reply.body);
         } else {
           const headers: Record<string, string> = { 'Content-Type': 'application/json' };
           if (reply.sessionId && /^[\x21-\x7e]{1,128}$/.test(reply.sessionId)) headers['Mcp-Session-Id'] = reply.sessionId;

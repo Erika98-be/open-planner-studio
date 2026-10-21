@@ -40,6 +40,12 @@ import {
 
 const HEX64 = /^[0-9a-f]{64}$/;
 
+/** Een `initialize` zoals een client hem stuurt; opent een sessie (sessie-id via `newSessionId`). */
+const INIT_BODY = JSON.stringify({ jsonrpc: '2.0', id: 'init', method: 'initialize', params: {} });
+/** Sessie-id die de tests via `newSessionId` injecteren. Elk request behalve `initialize` moet een bekende
+ *  sessie dragen (anders 400/404), dus tests die iets anders dan `initialize` sturen, openen er eerst een. */
+const TEST_SESSION = 'sessie-test';
+
 const stubEnvelope: McpEnvelope = {
   activeDocumentId: 'doc-1',
   documentTitle: 'Teststub',
@@ -85,7 +91,9 @@ test('createRequestHandler draait de ECHTE dispatcher en emit {id, body} met het
     emit: (event, payload) => { captured = { event, payload }; },
     buildContext: buildMcpContext,
     handleMessage: handleMcpMessage,
+    newSessionId: () => TEST_SESSION,
   });
+  await handler({ id: 1, body: INIT_BODY });
 
   const reqBody = JSON.stringify({
     jsonrpc: '2.0',
@@ -94,7 +102,7 @@ test('createRequestHandler draait de ECHTE dispatcher en emit {id, body} met het
     params: { name: 'planner_ping_stub', arguments: { v: 1 } },
   });
   // Rust levert het request-event met zijn eigen correlatie-id (99), los van het JSON-RPC-id (7).
-  await handler({ id: 99, body: reqBody });
+  await handler({ id: 99, body: reqBody, sessionId: TEST_SESSION });
 
   assert(captured != null, 'emit is niet aangeroepen');
   const cap = captured!;
@@ -112,9 +120,11 @@ test('createRequestHandler emit óók een (leeg) antwoord voor een notificatie (
     emit: (event, payload) => { captured = { event, payload }; },
     buildContext: buildMcpContext,
     handleMessage: handleMcpMessage,
+    newSessionId: () => TEST_SESSION,
   });
+  await handler({ id: 1, body: INIT_BODY });
   const noteBody = JSON.stringify({ jsonrpc: '2.0', method: 'notifications/initialized' });
-  await handler({ id: 42, body: noteBody });
+  await handler({ id: 42, body: noteBody, sessionId: TEST_SESSION });
   assert(captured != null, 'ook een notificatie moet een respons-emit krijgen (anders time-out in Rust)');
   assertEq(captured!.payload.id, 42, 'correlatie-id blijft');
   assertEq(captured!.payload.body, '', 'notificatie ⇒ lege respons-body');
@@ -131,10 +141,12 @@ test('createRequestHandler: het drift-anker overleeft de request-grens (user-tab
     emit: (_event, payload: any) => { responses.push(JSON.parse(payload.body)); },
     buildContext: () => buildMcpContext(undefined, undefined, noBackup),
     handleMessage: handleMcpMessage,
+    newSessionId: () => TEST_SESSION,
   });
+  await handler({ id: 0, body: INIT_BODY });
   let rpcId = 0;
   const call = async (name: string, args: unknown) => {
-    await handler({ id: ++rpcId, body: JSON.stringify({ jsonrpc: '2.0', id: rpcId, method: 'tools/call', params: { name, arguments: args } }) });
+    await handler({ id: ++rpcId, body: JSON.stringify({ jsonrpc: '2.0', id: rpcId, method: 'tools/call', params: { name, arguments: args } }), sessionId: TEST_SESSION });
     return responses[responses.length - 1].result.structuredContent;
   };
 
@@ -454,6 +466,8 @@ test('restart pikt een nieuw token op; het oude wordt niet meer aan Rust gegeven
   assertEq(fake.handlerCount('mcp://request'), 1, 'na restart precies één request-listener');
 });
 
+// De volgende twee tests sturen `initialize`: dat is het enige request zonder sessie, en de volgorde- en
+// deadlinelogica is voor elke methode dezelfde.
 test('createRequestHandler: requests lopen na elkaar; een werpende verwerking geeft een JSON-RPC-fout (audit 2026-09-26)', async () => {
   const order: string[] = [];
   let releaseFirst: () => void = () => {};
@@ -471,8 +485,8 @@ test('createRequestHandler: requests lopen na elkaar; een werpende verwerking ge
       return JSON.stringify({ jsonrpc: '2.0', id, result: {} });
     },
   });
-  const p1 = handler({ id: 11, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'x' }) });
-  const p2 = handler({ id: 12, body: JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'x' }) });
+  const p1 = handler({ id: 11, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'initialize' }) });
+  const p2 = handler({ id: 12, body: JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'initialize' }) });
   await Promise.resolve(); await Promise.resolve();
   assertEq(order, ['begin:1'], 'het tweede request wacht op het eerste');
   releaseFirst();
@@ -500,12 +514,12 @@ test('createRequestHandler: een request dat langer dan de deadline in de wachtri
       return JSON.stringify({ jsonrpc: '2.0', id, result: {} });
     },
   });
-  const p1 = handler({ id: 21, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'x' }) });
-  const p2 = handler({ id: 22, body: JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'x' }) });
+  const p1 = handler({ id: 21, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'initialize' }) });
+  const p2 = handler({ id: 22, body: JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'initialize' }) });
   await Promise.resolve(); await Promise.resolve();
   assertEq(executed, [1], 'request 1 loopt (binnen de deadline gestart)');
   clock = 60_000;
-  const p3 = handler({ id: 23, body: JSON.stringify({ jsonrpc: '2.0', id: 3, method: 'x' }) });
+  const p3 = handler({ id: 23, body: JSON.stringify({ jsonrpc: '2.0', id: 3, method: 'initialize' }) });
   clock = MCP_QUEUE_DEADLINE_MS + 1; // request 2 is verlopen, request 3 (aangekomen op 60 s) nog niet
   releaseFirst();
   await p1; await p2; await p3;
@@ -515,23 +529,60 @@ test('createRequestHandler: een request dat langer dan de deadline in de wachtri
   assertEq([err.id, err.error?.code], [2, -32001], 'overgeslagen ⇒ -32001 timeout met het JSON-RPC-id');
 });
 
-test('createRequestHandler: initialize (nieuwe MCP-sessie) wist het drift-anker (review 2026-09-28)', async () => {
-  const seen: (string | null)[] = [];
-  let bindTo: string | null = 'doc-A';
+test('createRequestHandler: zonder sessie-header ⇒ 400 en de dispatcher ziet het request niet (review 2 PR #439)', async () => {
+  const handled: string[] = [];
+  const emitted: McpResponseEvent[] = [];
+  const handler = createRequestHandler({
+    emit: (_e, p) => { emitted.push(p as McpResponseEvent); },
+    buildContext: buildMcpContext,
+    newSessionId: () => TEST_SESSION,
+    handleMessage: async (body) => {
+      const msg = JSON.parse(body) as { id?: number; method: string };
+      handled.push(msg.method);
+      return 'id' in msg ? JSON.stringify({ jsonrpc: '2.0', id: msg.id, result: {} }) : '';
+    },
+  });
+  // Vóór én ná een geslaagde initialize: een request zonder header komt er nooit door.
+  for (const method of ['tools/call', 'tools/list', 'ping']) {
+    await handler({ id: 1, body: JSON.stringify({ jsonrpc: '2.0', id: 5, method }) });
+  }
+  await handler({ id: 2, body: INIT_BODY });
+  await handler({ id: 3, body: JSON.stringify({ jsonrpc: '2.0', id: 6, method: 'tools/call' }) });
+  await handler({ id: 4, body: JSON.stringify({ jsonrpc: '2.0', method: 'notifications/initialized' }) });
+  assertEq(handled, ['initialize'], 'alleen initialize bereikt de dispatcher');
+  const refused = emitted.filter((e) => e.status === 400);
+  assertEq(refused.map((e) => e.id), [1, 1, 1, 3, 4], 'elk request zonder header krijgt 400');
+  const err = JSON.parse(refused[3].body) as { id: unknown; error: { code: number } };
+  assertEq([err.id, err.error.code], [6, -32600], '400 draagt een JSON-RPC-fout met het id van het request');
+});
+
+test('createRequestHandler: een initialize (ook zonder id, of van een andere client) raakt het anker van een sessie niet (review 2 PR #439)', async () => {
+  const seen: Array<string | null> = [];
+  let next = 0;
   const handler = createRequestHandler({
     emit: () => {},
     buildContext: buildMcpContext,
+    newSessionId: () => `s${++next}`,
     handleMessage: async (body, ctx) => {
-      seen.push(ctx.expectedDocId);
-      if (bindTo) ctx.expectedDocId = bindTo;
-      bindTo = null;
-      return JSON.stringify({ jsonrpc: '2.0', id: JSON.parse(body).id, result: {} });
+      const msg = JSON.parse(body) as { id?: unknown; method: string };
+      if (msg.method === 'tools/call') {
+        seen.push(ctx.expectedDocId);
+        if (ctx.expectedDocId === null) ctx.expectedDocId = 'doc-A';
+      }
+      return 'id' in msg ? JSON.stringify({ jsonrpc: '2.0', id: msg.id, result: {} }) : '';
     },
   });
-  await handler({ id: 31, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/call' }) });
-  await handler({ id: 32, body: JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'tools/call' }) });
-  await handler({ id: 33, body: JSON.stringify({ jsonrpc: '2.0', id: 3, method: 'initialize' }) });
-  assertEq(seen, [null, 'doc-A', null], 'binnen een sessie blijft het anker; initialize begint zonder');
+  const call = () => handler({ id: 9, body: JSON.stringify({ jsonrpc: '2.0', id: 9, method: 'tools/call' }), sessionId: 's1' });
+  await handler({ id: 1, body: INIT_BODY });                                                       // sessie s1
+  await call();                                                                                    // bindt doc-A
+  await handler({ id: 2, body: JSON.stringify({ jsonrpc: '2.0', method: 'initialize' }) });        // zonder id
+  await call();
+  await handler({ id: 3, body: INIT_BODY });                                                       // andere client: s2
+  await call();
+  await handler({ id: 4, body: INIT_BODY, sessionId: 's1' });                                      // initialize mét header s1: nieuwe sessie s3
+  await call();
+  assertEq(seen, [null, 'doc-A', 'doc-A', 'doc-A'], 'het anker van s1 blijft staan');
+  assertEq(next, 3, 'een initialize zonder id maakt geen sessie');
 });
 
 test('createRequestHandler: sessies — eigen anker per Mcp-Session-Id, onbekend ⇒ 404, begrensd (review PR #439)', async () => {
@@ -568,8 +619,8 @@ test('createRequestHandler: sessies — eigen anker per Mcp-Session-Id, onbekend
   await send('tools/call', 's2', 'doc-2');                   // B bindt zijn eigen doc
   assertEq(seen.slice(-2), [['x', 'doc-1'], ['doc-2', null]], 'ankers per sessie, niet gedeeld');
 
-  const legacy = await send('tools/call', undefined, 'doc-L');
-  assertEq([legacy.sessionId, legacy.status], [undefined, undefined], 'zonder header: gewoon antwoord, geen sessie');
+  const bare = await send('tools/call', undefined, 'doc-L');
+  assertEq([bare.sessionId, bare.status], [undefined, 400], 'zonder header: 400, geen sessie');
   const unknown = await send('tools/call', 'bestaat-niet');
   assertEq([unknown.status, unknown.body], [404, ''], 'onbekende sessie ⇒ 404 zonder body');
 
@@ -583,7 +634,8 @@ test('createRequestHandler: sessies — eigen anker per Mcp-Session-Id, onbekend
   assertEq(newest.status, undefined, 'de nieuwste sessie bestaat nog');
 });
 
-const REQ_BODY = JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'ping' });
+// `initialize`: het enige request dat zonder sessie de dispatcher bereikt.
+const REQ_BODY = JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'initialize' });
 
 test('één start koppelt exact één listener-set (één request- + één status-listener)', async () => {
   const fake = makeFakeTauri();

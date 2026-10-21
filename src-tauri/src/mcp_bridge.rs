@@ -21,8 +21,9 @@
 //!   7. Sessies (MCP streamable HTTP): een aanwezige `Mcp-Session-Id`-header gaat
 //!      als `sessionId` mee in het request-event. Geeft de webview een `sessionId`
 //!      terug (alleen na een geslaagde `initialize`), dan zet de bridge die als
-//!      `Mcp-Session-Id`-header op het antwoord. Geeft de webview `status: 404`
-//!      (onbekende sessie), dan antwoordt de bridge `404` zonder body. De
+//!      `Mcp-Session-Id`-header op het antwoord. Geeft de webview `status: 400`
+//!      (sessie-header ontbreekt), dan antwoordt de bridge `400` met de body als
+//!      JSON; bij `status: 404` (onbekende sessie) `404` zonder body. De
 //!      sessietabel zelf leeft in TS (`createRequestHandler`); Rust kent geen MCP.
 //!
 //! Status (`mcp://status` `{state, port, message}`) wordt geëmit bij
@@ -121,10 +122,12 @@ fn incoming_session_id(header: Option<&str>) -> Option<String> {
     header.filter(|v| !v.is_empty()).map(str::to_string)
 }
 
-/// De HTTP-status van een antwoord uit de webview. Alleen `404` (onbekende
-/// sessie) mag de webview kiezen; al het andere wordt `200`.
+/// De HTTP-status van een antwoord uit de webview. Alleen `400` (sessie-header
+/// ontbreekt) en `404` (onbekende sessie) mag de webview kiezen; al het andere
+/// wordt `200`.
 fn reply_status(status: Option<u16>) -> u16 {
     match status {
+        Some(400) => 400,
         Some(404) => 404,
         _ => 200,
     }
@@ -317,13 +320,20 @@ fn respond_json(request: tiny_http::Request, status: u16, body: &str) {
 }
 
 /// Antwoord uit de webview terug naar de client: `404` zonder body bij een
-/// onbekende sessie, anders `200 application/json` met de body 1-op-1, plus de
-/// `Mcp-Session-Id`-header als de webview een (geldige) sessie-id meegaf.
+/// onbekende sessie, `400 application/json` als de sessie-header ontbrak, anders
+/// `200 application/json` met de body 1-op-1, plus de `Mcp-Session-Id`-header als
+/// de webview een (geldige) sessie-id meegaf.
 fn respond_reply(request: tiny_http::Request, reply: Reply) {
-    let status = reply_status(reply.status);
-    if status != 200 {
-        respond_empty(request, status);
-        return;
+    match reply_status(reply.status) {
+        404 => {
+            respond_empty(request, 404);
+            return;
+        }
+        400 => {
+            respond_json(request, 400, &reply.body);
+            return;
+        }
+        _ => {}
     }
     let content_type =
         tiny_http::Header::from_bytes(&b"Content-Type"[..], &b"application/json"[..]).unwrap();
@@ -723,9 +733,11 @@ mod tests {
     }
 
     #[test]
-    fn webview_may_only_choose_404() {
+    fn webview_may_only_choose_400_or_404() {
         assert_eq!(reply_status(None), 200);
+        assert_eq!(reply_status(Some(400)), 400);
         assert_eq!(reply_status(Some(404)), 404);
+        assert_eq!(reply_status(Some(401)), 200);
         assert_eq!(reply_status(Some(200)), 200);
         assert_eq!(reply_status(Some(500)), 200);
         assert_eq!(reply_status(Some(302)), 200);

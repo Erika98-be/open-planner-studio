@@ -94,6 +94,15 @@ async function callTool(client: Client, name: string, args: Record<string, unkno
   };
 }
 
+/** Een kale JSON-RPC-POST (buiten de SDK om), met of zonder sessie-header. */
+async function rawPost(url: string, headers: Record<string, string>, message: unknown): Promise<Response> {
+  return await fetch(url, {
+    method: 'POST',
+    headers: { ...headers, 'Content-Type': 'application/json', Accept: 'application/json, text/event-stream' },
+    body: JSON.stringify(message),
+  });
+}
+
 const TWO_TASKS = {
   tasks: [
     { tempId: 'tmp-a', name: 'Externe client A', duration: 2 },
@@ -249,7 +258,28 @@ export function externalClientChecks(
               'B hoort een eigen sessie-id te krijgen');
             const again = await callTool(a.client, 'planner_add_tasks', { tasks: [{ tempId: 'tmp-a3', name: 'Sessie A na B', duration: 1 }] });
             assertSame(again.structured.code, 'DOC_DRIFT', 'A na initialize van B: anker van A hoort te blijven');
-            assertSame(await env.probe.taskCount(), 0, 'niets van A in het tweede document');
+
+            // Review 2: een initialize ZONDER id (notificatie) maakt geen sessie en raakt het anker van A niet.
+            const bareInit = await rawPost(env.url, auth, { jsonrpc: '2.0', method: 'initialize', params: {} });
+            assert(bareInit.headers.get('mcp-session-id') === null, 'initialize zonder id hoort geen sessie te geven');
+            const stillDrift = await callTool(a.client, 'planner_add_tasks', { tasks: [{ tempId: 'tmp-a4', name: 'Sessie A na kale init', duration: 1 }] });
+            assertSame(stillDrift.structured.code, 'DOC_DRIFT', 'A na initialize zonder id: anker blijft');
+
+            // Review 2: dezelfde mutatie zonder sessie-header (een client die de header weglaat, of een
+            // headerloze client) wordt geweigerd met 400 en landt nergens.
+            const addCall = {
+              jsonrpc: '2.0', id: 77, method: 'tools/call',
+              params: { name: 'planner_add_tasks', arguments: { tasks: [{ tempId: 'tmp-x', name: 'Zonder sessie', duration: 1 }] } },
+            };
+            const noHeader = await rawPost(env.url, auth, addCall);
+            assertSame(noHeader.status, 400, 'mutatie zonder sessie-header');
+            const noHeaderBody = (await noHeader.json()) as { id?: unknown; error?: { code?: number } };
+            assertSame([noHeaderBody.id, noHeaderBody.error?.code], [77, -32600], 'JSON-RPC-fout bij 400');
+            const withHeader = await rawPost(env.url, { ...auth, 'Mcp-Session-Id': a.transport.sessionId! }, addCall);
+            assertSame(withHeader.status, 200, 'dezelfde mutatie mét de sessie van A komt door de transportlaag');
+            const withHeaderBody = (await withHeader.json()) as { result?: { structuredContent?: { code?: string } } };
+            assertSame(withHeaderBody.result?.structuredContent?.code, 'DOC_DRIFT', 'en krijgt DOC_DRIFT');
+            assertSame(await env.probe.taskCount(), 0, 'niets van A of zonder sessie in het tweede document');
 
             const fromB = await callTool(b.client, 'planner_add_tasks', { tasks: [{ tempId: 'tmp-b1', name: 'Sessie B', duration: 1 }] });
             assert(!fromB.isError, `B: mutatie faalde: ${JSON.stringify(fromB.structured)}`);
@@ -270,7 +300,7 @@ export function externalClientChecks(
       },
     },
     {
-      name: 'onbekende sessie-id ⇒ 404; zonder sessie-header werkt een request nog (oude clients)',
+      name: 'onbekende sessie-id ⇒ 404; zonder sessie-header ⇒ 400, ook voor lezen',
       fn: async () => {
         const list = JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/list' });
         const unknown = await fetch(env.url, {
@@ -280,14 +310,14 @@ export function externalClientChecks(
         });
         assertSame(unknown.status, 404, 'status bij onbekende sessie');
         assertSame(await unknown.text(), '', 'geen body bij 404');
-        const legacy = await fetch(env.url, {
+        const bare = await fetch(env.url, {
           method: 'POST',
           headers: { ...auth, 'Content-Type': 'application/json' },
           body: list,
         });
-        assertSame(legacy.status, 200, 'status zonder sessie-header');
-        const parsed = (await legacy.json()) as { result?: { tools?: unknown[] } };
-        assertSame(parsed.result?.tools?.length, env.expected.tools.length, 'tools/list zonder sessie-header');
+        assertSame(bare.status, 400, 'tools/list zonder sessie-header');
+        const parsed = (await bare.json()) as { id?: unknown; error?: { code?: number } };
+        assertSame([parsed.id, parsed.error?.code], [1, -32600], 'JSON-RPC-fout bij 400');
       },
     },
     {

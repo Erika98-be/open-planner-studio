@@ -39,8 +39,11 @@ import { dateX, lastSize, paintCount, taskBarPoint, taskSegmentCount } from '@/u
  * en elke store-actie aanroepen — zonder WebDriver, zonder sudo. De native bestand-picker
  * wordt omzeild door een expliciet pad mee te geven (standaard testpraktijk).
  *
- * STRIKT dev-only: aangeroepen achter `import.meta.env.DEV` (main.tsx) via dynamische import,
- * dus dit verdwijnt volledig uit productie-builds. De poller start alleen in de Tauri-runtime.
+ * Laden: alleen achter `import.meta.env.DEV` óf de benchmarkvlag `VITE_OPS_BENCH_BRIDGE=1` (main.tsx),
+ * via dynamische import; een gewone productiebuild bevat dit bestand niet. De benchmarkbuild
+ * (`scripts/measure-large-plans.mjs`) gebruikt alleen `window.__OPS__` in de browser. De Tier-2-poller
+ * (en daarmee `mcpConnection`, die het MCP-token teruggeeft) start daarom ALLEEN in een dev-build in de
+ * Tauri-runtime (`import.meta.env.DEV && isTauri()`), ook als de benchmarkvlag aan staat (review PR #439).
  */
 
 type AppState = ReturnType<typeof useAppStore.getState>;
@@ -191,6 +194,8 @@ async function runOp(cmd: OpsCommand): Promise<Record<string, unknown>> {
       return { ok: true, result: { ret, state: stateSnapshot(useAppStore.getState()) } };
     }
     case 'mcpConnection': {
+      // Tweede slot naast de poller-poort: buiten een dev-build geeft dit nooit het token terug.
+      if (!import.meta.env.DEV) return { ok: false, error: 'mcpConnection is dev-only' };
       // Poort, token en status van de app-eigen MCP-bridge, zodat een geautomatiseerde externe client
       // (`.github/workflows/mcp-real-app.yml`) kan verbinden zoals een gebruiker via "Verbinden" doet.
       // Het token staat al leesbaar in localStorage en in die dialoog; dit kanaal is dev-only.
@@ -382,5 +387,6 @@ export function installDevBridge(): void {
     },
   };
   appLog.emit('event', 'devBridge', 'window.__OPS__ klaar (dev-only self-test haak)');
-  if (isTauri()) void startOpsTestPoller();
+  // Alleen dev: ook een benchmarkbuild (VITE_OPS_BENCH_BRIDGE=1) krijgt geen bestandskanaal.
+  if (import.meta.env.DEV && isTauri()) void startOpsTestPoller();
 }

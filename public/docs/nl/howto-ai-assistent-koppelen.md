@@ -36,7 +36,7 @@ Het venster biedt drie manieren om te koppelen:
 
 - *Configuratiefragment*: een stukje configuratie dat je in de MCP-instellingen van je client plakt.
 - *Koppelprompt*: een tekst die je in je AI-assistent plakt, waarna die zichzelf koppelt.
-- *Endpoint* en *Authenticatie*: de losse gegevens. Het endpoint is `http://localhost:3877/mcp` met transport *streamable HTTP*. Bij elke aanvraag hoort een header `Authorization: Bearer` gevolgd door je token.
+- *Endpoint* en *Authenticatie*: de losse gegevens. Het endpoint is `http://localhost:3877/mcp` met transport *streamable HTTP*. Bij elke aanvraag hoort een header `Authorization: Bearer` gevolgd door je token. Je client moet ook MCP-sessies ondersteunen: de bridge geeft bij het verbinden een sessiecode in de header `Mcp-Session-Id`, en weigert elke latere aanvraag zonder die code. Claude Code en `mcp-remote` doen dat vanzelf.
 
 **Claude Code.** Het configuratiefragment past direct in Claude Code. Geef in een terminal deze opdracht, met je eigen token in plaats van `<token>`:
 

@@ -44,8 +44,8 @@ Veiligheid is state, geen conventie: `ui.aiMode` (de hele AI-tab en bridge versc
 leest ze live, plus een drift-anker (`expectedDocId`) zodat een tool nooit op het verkeerde document
 landt. Het anker leeft per MCP-sessie (`Mcp-Session-Id`): een geslaagde `initialize` maakt een nieuwe sessie
 met een leeg anker, Rust zet de id als header en geeft hem bij latere requests door, en `createRequestHandler`
-houdt per sessie het anker bij (maximaal `MCP_MAX_SESSIONS`, onbekende id ⇒ `404`). Requests zonder header
-delen één anker, dat een `initialize` wist.
+houdt per sessie het anker bij (maximaal `MCP_MAX_SESSIONS`, onbekende id ⇒ `404`). Elk request behalve
+`initialize` zonder header krijgt `400` en bereikt de dispatcher niet; er is geen gedeeld anker.
 `createRequestHandler` (`server.ts`) verwerkt requests strikt na elkaar en voert een request dat langer
 dan `MCP_QUEUE_DEADLINE_MS` (110 s, net onder Rusts 120 s-time-out) in de wachtrij stond niet meer uit
 (`-32001`): de client had er al een 504 voor, dus uitvoeren zou bij een retry dubbel muteren. Instellingen staan onder de bekende `ops-`-prefix (`ops-aiMode`, `ops-aiAutostart` — default

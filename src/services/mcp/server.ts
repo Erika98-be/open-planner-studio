@@ -212,7 +212,8 @@ export interface McpRequestEvent {
 }
 
 /** Het antwoord terug naar Rust. `sessionId` ⇒ Rust zet de `Mcp-Session-Id`-header; `status` ⇒ Rust
- *  antwoordt met die HTTP-status in plaats van 200 (alleen 404 voor een onbekende sessie). */
+ *  antwoordt met die HTTP-status in plaats van 200: `400` (sessie-header ontbreekt, met JSON-RPC-fout als
+ *  body) of `404` (onbekende sessie, zonder body). */
 export interface McpResponseEvent {
   id: number;
   body: string;
@@ -348,15 +349,19 @@ function recordRequestActivity(reqBody: string, respBody: string, durationMs: nu
  * body) wordt geëmit — de Rust-loop correleert op id en wacht altijd op een antwoord, dus een
  * uitgebleven emit zou daar in een timeout lopen.
  *
- * SESSIES (MCP streamable HTTP, `Mcp-Session-Id`; review PR #439). Elke geslaagde `initialize` krijgt
- * een nieuwe sessie-id; Rust zet die als header op het antwoord en geeft de header van latere requests
- * door. Het drift-anker hoort bij de sessie: een tweede client die `initialize` doet, wist niet langer
- * het anker van de eerste (anders landde een mutatie van A na `DOC_DRIFT` alsnog op het andere
- * tabblad). Een onbekende sessie-id (verlopen, of na een herstart van de bridge) krijgt `404` zonder
- * body, zodat de client volgens de spec opnieuw initialiseert. Een request ZONDER sessie-header
- * (een client die de header niet terugstuurt) gebruikt één gedeeld anker, zoals vóór de sessies; een
- * `initialize` wist dat gedeelde anker ook, zodat zo'n client na een herstart niets erft. De
- * sessietabel zit hier en niet in Rust: alleen deze laag weet of een antwoord een geslaagde
+ * SESSIES (MCP streamable HTTP, `Mcp-Session-Id`; reviewrondes 1 en 2 van PR #439). Elke geslaagde
+ * `initialize` krijgt een nieuwe sessie-id; Rust zet die als header op het antwoord en geeft de header van
+ * latere requests door. Het drift-anker hoort bij de sessie en bij niets anders:
+ *   - ELK request behalve `initialize` moet een bekende sessie-id dragen, ook leesrequests, pings en
+ *     notificaties. Ontbreekt de header: `400` met een JSON-RPC-fout (de spec: "Servers that require a
+ *     session ID SHOULD respond to requests without an Mcp-Session-Id header (other than initialization)
+ *     with HTTP 400 Bad Request"). Onbekend (verlopen, of na een herstart van de bridge): `404` zonder
+ *     body, waarna de client volgens de spec opnieuw initialiseert. Eén regel voor alles is het
+ *     eenvoudigste dat spec-conform is: er bestaat geen pad meer waarlangs een request zonder sessie
+ *     een tool draait, dus ook geen gedeeld anker dat een ander kan wissen.
+ *   - Een `initialize` raakt nooit het anker van een andere sessie; een `initialize` zonder `id` is een
+ *     notificatie, maakt geen sessie en raakt niets.
+ * De sessietabel zit hier en niet in Rust: alleen deze laag weet of een antwoord een geslaagde
  * `initialize` is, en Rust blijft zo protocol-onwetend.
  */
 export function createRequestHandler(
@@ -369,7 +374,6 @@ export function createRequestHandler(
   // tabblad landde; ook het verzetten door `switch_document`/`new_document`/`duplicate_document`/
   // `import_schedule` ging met de weggegooide ctx verloren. `tempIdMap` blijft bewust per request
   // (batch-only, de batch-executor bezit hem).
-  let legacyAnchor: string | null = null;
   // Anker per sessie; de Map-volgorde is de gebruiksvolgorde (oudste eerst) voor het begrenzen.
   const sessions = new Map<string, string | null>();
   const newSessionId = deps.newSessionId ?? randomSessionId;
@@ -387,9 +391,11 @@ export function createRequestHandler(
     // Een nieuwe MCP-sessie (`initialize`) begint zonder anker: anders erfde een herstarte client
     // de documentbinding van de vorige en kreeg hij DOC_DRIFT op een tabblad dat hij nooit zag.
     let session: string | null = null;
-    if (isInitialize) {
-      legacyAnchor = null;
-    } else if (incoming !== null) {
+    if (!isInitialize) {
+      if (incoming === null) {
+        await deps.emit('mcp://response', { id: payload.id, body: missingSessionResponse(payload.body), status: 400 } satisfies McpResponseEvent);
+        return;
+      }
       if (!sessions.has(incoming)) {
         await deps.emit('mcp://response', { id: payload.id, body: '', status: 404 } satisfies McpResponseEvent);
         return;
@@ -402,7 +408,7 @@ export function createRequestHandler(
     }
     const ctx = deps.buildContext();
     if (ctx.expectedDocId === null) {
-      ctx.expectedDocId = isInitialize ? null : session !== null ? sessions.get(session)! : legacyAnchor;
+      ctx.expectedDocId = session !== null ? sessions.get(session)! : null;
     }
     const start = performance.now();
     let body: string;
@@ -415,11 +421,7 @@ export function createRequestHandler(
       // een JSON-RPC-fout terugsturen, anders wacht de client tot de Rust-time-out.
       body = internalErrorResponse(payload.body, error);
     } finally {
-      if (session !== null) {
-        if (sessions.has(session)) sessions.set(session, ctx.expectedDocId);
-      } else if (!isInitialize) {
-        legacyAnchor = ctx.expectedDocId;
-      }
+      if (session !== null && sessions.has(session)) sessions.set(session, ctx.expectedDocId);
     }
     const response: McpResponseEvent = { id: payload.id, body };
     if (isInitialize && isResultResponse(body)) {
@@ -438,6 +440,20 @@ export function createRequestHandler(
     tail = run.catch((error) => { console.error('MCP: antwoord versturen mislukt:', error); });
     return run;
   };
+}
+
+/** JSON-RPC-fout bij een request zonder `Mcp-Session-Id` (HTTP 400). */
+function missingSessionResponse(rawBody: string): string {
+  let id: unknown = null;
+  try {
+    const parsed = JSON.parse(rawBody) as { id?: unknown };
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) id = parsed.id ?? null;
+  } catch { /* onparseerbaar ⇒ id null */ }
+  return JSON.stringify({
+    jsonrpc: '2.0',
+    id,
+    error: { code: -32600, message: 'Bad Request: missing Mcp-Session-Id header; send initialize first and include the session id it returns' },
+  });
 }
 
 /** Is dit een geslaagd JSON-RPC-antwoord (met `result`, zonder `error`)? */
