@@ -6,7 +6,7 @@ import {
   commitTaskCellEditorValue,
 } from '@/components/task-grid/TaskCellEditor';
 import { createTaskGridAdapter } from '@/engine/taskGrid/taskGridAdapter';
-import { taskColumnId } from '@/engine/taskGrid/fieldIds';
+import { taskColumnId, activityCodeColumnId } from '@/engine/taskGrid/fieldIds';
 import type { GridIntent } from '@/types/taskGrid';
 import type { Task } from '@/types/task';
 import { buildRelationCellItems } from '@/engine/taskGrid/relationCell';
@@ -28,7 +28,7 @@ function ok(label: string, condition: boolean): void {
 const task = {
   id: 't-1', name: 'Fundering', description: '', wbsCode: '1', taskType: 'CONSTRUCTION',
   status: 'NOT_STARTED', isMilestone: false, priority: 500, parentId: null, childIds: [],
-  resourceIds: [], activityCodes: {}, customFields: {},
+  resourceIds: [], activityCodes: {}, customFields: {}, calendarId: 'cal-bouw',
   time: {
     durationType: 'WORKTIME', durationUnit: 'days', scheduleDuration: 1,
     scheduleStart: '2026-01-01', scheduleFinish: '2026-01-01',
@@ -43,7 +43,8 @@ const adapter = createTaskGridAdapter({
   surfaceId: 'full-task-grid', projectId: 'p-1',
   rows: [{ kind: 'task', rowKey: 'occ-1', task, depth: 0, dimmed: false }],
   tasks: [task], sequences: [], assignments: [], resources: [], baselines: [],
-  activityCodeTypes: [], customFieldDefs: [], scheduleStale: false, wbsAutoNumber: false,
+  activityCodeTypes: [{ id: 'discipline', name: 'Discipline', values: [{ id: 'code-bouw', code: 'BOUW', description: 'Bouwdiscipline' }] }],
+  customFieldDefs: [], scheduleStale: false, wbsAutoNumber: false,
   selectedTaskIds: [], labelForColumn: key => key,
   labelForBoolean: value => value ? 'WAAR' : 'ONWAAR',
   calendarOptions: [{ value: 'cal-bouw', label: 'Bouwkalender' }],
@@ -130,7 +131,7 @@ ok('Booleandescriptor rendert Select (geen kaal native <select> meer), al uitgek
     && booleanMarkup.includes('data-task-editor-kind="boolean"')
     && booleanMarkup.includes('ops-select__trigger')
     && booleanMarkup.includes('aria-expanded="true"'));
-const autocompleteMarkup = renderToStaticMarkup(createElement(TaskCellEditor, {
+const calendarMarkup = renderToStaticMarkup(createElement(TaskCellEditor, {
   adapter,
   cell: { rowKey: 'occ-1', columnId: taskColumnId('task.calendarId') },
   label: 'Kalender',
@@ -138,10 +139,24 @@ const autocompleteMarkup = renderToStaticMarkup(createElement(TaskCellEditor, {
   onCancel: () => undefined,
   onFocusCell: () => undefined,
 }));
-ok('Autocomplete-editor koppelt een echte suggestielijst',
+ok('Kalendereditor opent een keuzelijst met de kalendernaam, geen tekstveld met id',
+  calendarMarkup.includes('data-task-editor-kind="enum"')
+    && calendarMarkup.includes('ops-select__trigger')
+    && calendarMarkup.includes('aria-expanded="true"')
+    && calendarMarkup.includes('Bouwkalender')
+    && !calendarMarkup.includes('<datalist'));
+const autocompleteMarkup = renderToStaticMarkup(createElement(TaskCellEditor, {
+  adapter,
+  cell: { rowKey: 'occ-1', columnId: activityCodeColumnId('p-1', 'discipline') },
+  label: 'Discipline',
+  messageForError,
+  onCancel: () => undefined,
+  onFocusCell: () => undefined,
+}));
+ok('Activity-code-autocomplete koppelt nog steeds een echte suggestielijst',
   autocompleteMarkup.includes('data-task-editor-kind="autocomplete"')
     && autocompleteMarkup.includes('<datalist')
-    && autocompleteMarkup.includes('Bouwkalender'));
+    && autocompleteMarkup.includes('Bouwdiscipline'));
 const dateMarkup = renderToStaticMarkup(createElement(TaskCellEditor, {
   adapter,
   cell: { rowKey: 'occ-1', columnId: taskColumnId('task.deadline') },
