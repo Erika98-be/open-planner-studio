@@ -29,7 +29,7 @@ Kies de manier die bij je situatie past. Ze maken hetzelfde resultaat.
 
 1. Klik op de taak. Zie je het paneel *Eigenschappen* niet, zet het dan aan met *Beeld › Panelen › Eigensch.*
 2. Sleep de schuif *Voortgang (%)* naar het percentage dat klaar is.
-3. Vul zo nodig *Werkelijke start* en *Werkelijke einde* in, op dezelfde manier als de statusdatum. Het veld *Resterend* rekent de app zelf uit; je kunt het hier niet wijzigen.
+3. Vul zo nodig *Werkelijke start* en *Werkelijk einde* in, op dezelfde manier als de statusdatum. Het veld *Resterend* rekent de app zelf uit; je kunt het hier niet wijzigen.
 
 Bij een mijlpaal staat er één veld, *Werkelijke datum*.
 
@@ -40,7 +40,7 @@ Bij een mijlpaal staat er één veld, *Werkelijke datum*.
 
 **Meerdere taken in de tabel.** Handig als je een hele lijst bijwerkt.
 
-1. Klik op de **+** rechts in de kop van de takenlijst (*Kolom toevoegen*) en open de categorie *Voortgang*. Voeg de kolommen *Werkelijke start*, *Werkelijke einde*, *Resterend* en *Status* toe. De kolom *Voortgang* staat al op het tabblad *Tabel*.
+1. Klik op de **+** rechts in de kop van de takenlijst (*Kolom toevoegen*) en open de categorie *Voortgang*. Voeg de kolommen *Werkelijke start*, *Werkelijk einde*, *Resterend* en *Status* toe. De kolom *Voortgang* staat al op het tabblad *Tabel*.
 2. Dubbelklik op een cel, typ de waarde en druk op Enter. Een percentage typ je als `50` of `50%`, een datum als `25-06-2027`, een resterende duur als `1`.
 3. Bij *Status* druk je na een dubbelklik op Enter en kies je *Niet gestart*, *Bezig* of *Voltooid*.
 

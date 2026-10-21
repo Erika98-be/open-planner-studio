@@ -503,6 +503,22 @@ Maak een baseline daarom nooit langs ze heen:
 | `browser-shards.mjs` | `run-browser-tests.mjs` (`--duration-shard`); unit-test `tests/dev-server/browser-shards.test.mjs` | verdeelt de browserspecs op gemeten duur (`tests/browser/spec-durations.json`, langste eerst naar de lichtste shard) over de CI-shards; elke spec in precies één shard, ook zonder meting; `node scripts/browser-shards.mjs 4` toont de indeling, `--update "<bron>" <joblogs>` ververst de duren uit de CI-logs van een groene run |
 | `browser-test-server.mjs` | `webServer.command` in `playwright.config.ts`; `tests/dev-server/integration.sh` | leest `OPS_BROWSER_TEST_PORT` (moet in de browserbaan liggen), claimt het guard-slot voor die poort en start Vite op `127.0.0.1` (Playwright pollt bewust IPv4); geeft het slot bij afsluiten weer vrij |
 
+## Nulmeting grote planningen (niet in `verify`, niet in CI)
+
+`npm run measure:large-plans` → `measure-large-plans.mjs`, met `measure-large-plans-data.ts` (via
+`run-ts.mjs`) voor de datasets. Meet de prestaties bij 1.000, 5.000 en 10.000 activiteiten (#405 deel 2.4):
+openen, F5, nivelleren, autosave-tick, herstel, opslaan en de tijd per Gantt-tekening bij scrollen en zoomen.
+De datasets komen uit `generateBenchmarkProject` (vaste seed). De browsermeting draait op een tijdelijke
+productiebuild met `VITE_OPS_BENCH_BRIDGE=1`, geserveerd op `127.0.0.1` met een vrije poort, in headless
+Playwright-Chromium; elke herhaling krijgt een verse browsercontext. Het script legt commit, hardware, OS,
+Node- en Chromiumversie vast en schrijft één JSON-bestand (standaard
+`build/measure-large-plans/<datum>-<commit>.json`) plus een Markdown-tabel op stdout. Vlaggen:
+`--sizes 1000,5000,10000`, `--repeats 3`, `--out PAD`, `--dist BESTAANDE-BUILD`, `--headed`,
+`--skip fase,…` (`interaction`, `f5`, `level`, `autosave`, `recovery`, `save`; zonder `level` is er geen
+wijziging, dus dan mislukken autosave en herstel), `--step-timeout-s 900`. Exit 1 als een fase mislukt of een
+time-out geeft. Het script stelt
+geen doelen of drempels. De nulmeting staat in `docs/superpowers/evidence/nulmeting-grote-planningen.md`.
+
 ## Handmatige hulpmiddelen (geen aanroeper)
 
 Deze vijf worden door geen npm-script, workflow, ander script of test aangeroepen; ze zijn alleen met
@@ -547,6 +563,9 @@ Let op in Git Bash op Windows: die zet een argument als `/pad/` om naar een Wind
 | `verify-package-docs.mjs` | `.github/workflows/snap.yml`, direct na de Snap-build | leest de executable uit de zojuist gebouwde Snap en eist dat het manifest plus de aanwezige Help-artikelen (en per taal `index.json`) uit elke taalmap onder `public/docs/` als Tauri-assets zijn ingesloten, vóór upload of Store-publicatie |
 | `publish-wiki.mjs` | `npm run publish:wiki` | genereert de GitHub-wiki uit `public/docs/en`, `docs/wiki/*` en de changelog. De wiki is een build-artefact — nooit met de hand bewerken |
 | `download-stats.mjs` | `npm run stats:downloads` en `.github/workflows/download-stats.yml` (wekelijks + op verzoek) | downloadcijfers per besturingssysteem uit de `download_count` per release-asset van de GitHub Releases-API — tekst, markdown of JSON. Let op: Linux is install+update samen (de updater haalt hetzelfde `.deb`/`.rpm`/`.AppImage` op), de Snap Store zit er niet in, `.sig`-bestanden tellen niet mee. Unit-test: `tests/dev-server/download-stats.test.mjs` |
+| `verify-release.mjs` | `.github/workflows/release-verify.yml` (Linux-jobs); met de hand: `node scripts/verify-release.mjs [<tag>] [--dir <map>] [--out <rapport.md>]` | controleert de assets van één release: elke updater-`.sig` (minisign, tegen de pubkey in `tauri.conf.json`), `latest.json` (URL → asset, signature = asset-`.sig`), sha256 tegen de GitHub-`digest`, en informatief de codesign in de macOS-`app.tar.gz`. Markdown-rapport; exit 0 OK, 1 FOUT, 2 crash. Uitleg: `docs/release-verificatie.md`. Unit-test: `tests/dev-server/verify-release.test.mjs` |
+| `release-check.ps1` | `.github/workflows/release-verify.yml` (Windows-job, dot-source) | `Record` (zelfde TSV-log als `release-check.sh`) en `Test-Alive`: start een programma en registreert alleen OK als er na de wachttijd echt een proces draait; een mislukte start is FOUT. Test: `tests/dev-server/release-check.test.mjs` (als `pwsh` er is) |
+| `release-check.sh` | `.github/workflows/release-verify.yml` | boekhouding per job: `run`/`alive`/`record` leggen een controle vast zonder de job te stoppen; `finish` schrijft de tabel naar de job-samenvatting en faalt alleen bij een FOUT in strenge modus (`RELEASE_VERIFY_STRICT=1`); `valid-tag` keurt een tag als hele waarde. Exit 3 = kapotte infrastructuur (commando weg, exit 126/127, syntaxfout), ook in rapportmodus hard. Test: `tests/dev-server/release-check.test.mjs` |
 | `publish-stats-branch.sh` | `.github/workflows/download-stats.yml`, direct na het genereren | schrijft `download-stats.json` als `downloads.json` naar de `stats`-databranch met git-plumbing (`hash-object` → `mktree` → `commit-tree` → gewone push, dus geen checkout en geen force). Vaste leeslocatie: `https://raw.githubusercontent.com/OpenAEC-Foundation/open-planner-studio/stats/downloads.json` — hetzelfde raw-patroon als de extensiecatalogus, CORS-vrij, en een push naar `stats` triggert geen CI of deploy. Regressietest tegen een tijdelijke bare repo: `tests/dev-server/publish-stats-branch.test.mjs` |
 
 ## Overig
