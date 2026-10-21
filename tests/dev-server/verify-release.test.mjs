@@ -148,3 +148,8 @@ test('evaluateRelease: .sig, latest.json en digest, met precies de verwachte FOU
   const md = renderReport({ tag: 'v0.0.0', repo: 'x/y', keyId: keyIdHex(key.keyId), rows });
   assert.match(md, /\*\*Oordeel: FOUT\*\* — 3 controle\(s\) faalden/);
 });
+
+test('renderReport escapet backslash en pipe, zodat een detail de tabel niet breekt', () => {
+  const md = renderReport({ tag: 'v0', repo: 'x/y', keyId: 'AA', rows: [{ group: 'g', item: 'C:\\pad|x', status: 'OK', detail: 'a\\|b' }] });
+  assert.match(md, /\| C:\\\\pad\\\|x \| OK \| a\\\\\\\|b \|/);
+});

@@ -243,7 +243,7 @@ export function evaluateRelease({ publicKey, assets, read }) {
 
 export function renderReport({ tag, repo, keyId, rows }) {
   const fails = rows.filter((r) => r.status === 'FOUT').length;
-  const esc = (s) => String(s).replace(/\|/g, '\\|').replace(/\n/g, ' ');
+  const esc = (s) => String(s).replace(/\\/g, '\\\\').replace(/\|/g, '\\|').replace(/\n/g, ' ');
   const out = [`## Releaseverificatie ${tag} (${repo})`, '',
     `Updater-pubkey uit src-tauri/tauri.conf.json, sleutel-id ${keyId}.`, '',
     fails === 0 ? '**Oordeel: OK** — geen enkele controle faalde.' : `**Oordeel: FOUT** — ${fails} controle(s) faalden.`, ''];
