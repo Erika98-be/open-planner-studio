@@ -92,7 +92,7 @@ The dates of *Brickwork* do not change. But Friday 4 June is red in the histogra
 
 **"If I switch the project calendar, everything shifts."** Only the tasks without a calendar of their own move along. A task to which you yourself gave a calendar from the list keeps it, even if it happens to be the old project calendar. If you delete a calendar, the tasks and resources that used it fall back on the project calendar.
 
-**"The holidays are in there, aren't they?"** Holidays only exist for the years for which they were created. A day outside those years is simply a work day. In the calendar dialog the app says so with *Holidays cover 2025–2028; project runs to 2030. Regenerate?*
+**"The holidays are in there, aren't they?"** Holidays only exist for the years for which they were created. A day outside those years is simply a work day. In the calendar dialog the app says so with *Holidays cover 2025–2028; regenerate through 2030?*
 
 **"More hours per day make my task shorter."** Not for a task in days: it counts whole work days, whether the day has 6 or 8 hours. Only for a task with resources and the task type *Fixed work* or *Fixed units* does the duration change with it.
 

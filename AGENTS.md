@@ -53,7 +53,9 @@ and `npm run verify:release-highlights` (separate: local update highlights and s
 and current per `i18n/ui-sources/`; `release.yml` and the release skill run it). `npm run verify:audit` is
 deliberately NOT in `verify` (Dependabot is the notification channel; an advisory gets
 its own commit). `npm run measure:profiles` (separate) measures the cell baseline per scheduling profile (rule A:
-no exact cell may become inexact); the P6 part needs `OPS_XER_CORPUS`.
+no exact cell may become inexact); the P6 part needs `OPS_XER_CORPUS`. `npm run measure:large-plans` (separate, not in CI)
+measures open, F5, levelling, save, auto-save/recovery and Gantt scroll/zoom at 1k/5k/10k tasks in a production
+build in headless Chromium and writes a JSON result; the baseline is in `docs/superpowers/evidence/`.
 
 Translations: `npm run i18n:add` puts one string in `nl` + `en` (required) and any other locale you give
 (recipe `docs/recepten/i18n-sleutel.md`); missing locales fall back to `en` until the pipeline fills them,

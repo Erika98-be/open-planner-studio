@@ -57,7 +57,8 @@ const LAG_INPUT = new RegExp(`^([+-]?\\d+(?:[.,]\\d+)?)(${LAG_UNIT_SUFFIXES})?$`
  * (`u` in nl, `h` in en, zie `formatLagShort`); de invoer blijft taalonafhankelijk d/u/h/m, symmetrisch
  * met `parseDuration` in `durationFormat.ts`.
  *
- * Kale getallen = werkdagen. Geeft null terug bij onparseerbare invoer; lege invoer = lag 0
+ * Kale getallen = werkdagen. Dagen worden op hele dagen afgerond, halve dagen van nul af.
+ * Geeft null terug bij onparseerbare invoer; lege invoer = lag 0
  * (werkdagen). Elke branche zet de NIET-gebruikte lag-velden expliciet op `undefined`/0 —
  * anders overleeft een eerder gezette `lagMinutes` een omzetting naar dagen/procent stilletjes
  * (dezelfde valkuil als de MCP-bridge in `sequenceFields.ts` documenteert: de solver leest
@@ -83,5 +84,7 @@ export function parseLagInput(input: string): LagFields | null {
     // kennen.
     return { lagDays: 0, lagUnit, lagPercent: undefined, lagMinutes: Math.round(num * 60) };
   }
-  return { lagDays: Math.round(num), lagUnit, lagPercent: undefined, lagMinutes: undefined };
+  // Zelfde symmetrische dagafronding als resolveLagDays; -1,5 wordt -2, niet -1.
+  const days = Math.sign(num) * Math.round(Math.abs(num));
+  return { lagDays: days || 0, lagUnit, lagPercent: undefined, lagMinutes: undefined };
 }

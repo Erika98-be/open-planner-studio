@@ -48,7 +48,7 @@ import type {
 import { isRecord, isThenable } from '@/utils/guards';
 import { createSnapshot, documentDataChanged } from '@/state/snapshot';
 import { TEMP_ID_PATTERN } from './helpers';
-import { ensureFreshScheduleForRead } from '../staleGuard';
+import { ensureFreshSchedule, ensureFreshScheduleForRead } from '../staleGuard';
 
 /** Harde bovengrens op het aantal stappen. */
 export const MAX_BATCH_STEPS = 100;
@@ -492,11 +492,12 @@ const batch: McpToolDef = {
     // volgende call — ook niet na een rollback.
     ctx.tempIdMap.clear();
 
-    // Leesstappen geven altijd een verse planning (zie `freshenScheduleForRead` in runtime.ts), maar
+    // Lees- en nivelleerstappen vragen een verse planning, maar
     // BINNEN de transactie kan dat niet: daar telt een herrekening als datawijziging (undo-stap +
     // `isDirty`, ook voor een batch die alleen leest). Dus vóór de transactie, ná alle guards, net als
-    // F5: een verouderde planning doorrekenen als er een leesstap in het draaiboek staat. Niet in
-    // "datums zoals opgeslagen" (`ensureFreshScheduleForRead`). Na mutaties ververst
+    // F5: een verouderde planning doorrekenen als er een lees- of nivelleerstap staat. Leesstappen
+    // respecteren "datums zoals opgeslagen"; nivelleren volgt dezelfde verversing als een losse
+    // nivelleercall. Na mutaties ververst
     // `recomputeMidBatch` zoals voorheen.
     //
     // BEWUST bij ELKE leesstap, ook één ná een mutatie. Alleen "leesstap vóór de eerste mutatie"
@@ -506,9 +507,13 @@ const batch: McpToolDef = {
     // transactie kan niet meer zonder undo-stap worden bijgerekend (cases-undo-noop.ts pint dat geval).
     // Die extra solve valt alleen als de planning al bij de start verouderd was.
     const hasReadStep = parsed.some((step) => getTool(step.tool)?.kind === 'read');
+    const hasLevelStep = parsed.some((step) => step.tool === LEVEL_TOOL);
     let recalculatedBefore = false;
-    const beforeTransaction = hasReadStep
-      ? () => { recalculatedBefore = ensureFreshScheduleForRead(ctx.app).recomputed; }
+    const beforeTransaction = hasReadStep || hasLevelStep
+      ? () => {
+        const fresh = hasLevelStep ? ensureFreshSchedule(ctx.app) : ensureFreshScheduleForRead(ctx.app);
+        recalculatedBefore = fresh.recomputed;
+      }
       : undefined;
 
     // Eén muterende aanroep: één backup-trigger, één drift-/dialoog-check, één transactie.

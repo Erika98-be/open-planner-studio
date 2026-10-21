@@ -23,15 +23,39 @@ const session = new Map<string, string>();
   removeItem: (k: string) => { session.delete(k); },
 };
 
+// Knownbug 99: op een HTTP-adres ontbreekt randomUUID. Forceer bovendien een bezette
+// eerste sessieclaim, zodat ook het duplicaat-tabpad een nieuwe id moet maken.
+const uuidDescriptor = Object.getOwnPropertyDescriptor(crypto, 'randomUUID');
+Object.defineProperty(crypto, 'randomUUID', { configurable: true, value: undefined });
+const navigatorDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'navigator');
+const claimed: string[] = [];
+Object.defineProperty(globalThis, 'navigator', {
+  configurable: true,
+  value: { locks: {
+    request: (name: string, _options: unknown, callback: (lock: object | null) => unknown) => {
+      claimed.push(name);
+      callback(claimed.length <= 2 ? null : { name });
+      return Promise.resolve();
+    },
+  } },
+});
+
 const doc = (id: string) => ({ id, ifc: `ISO-10303-21; /* ${id} */`, filePath: null, isDirty: true, datesAsRecorded: false });
 const ids = async () => (await loadRecovery()).docs.map((d) => d.id).sort();
 
 // Vorige sessie liet document A achter.
 await saveRecovery(fullRecoverySave('A', [doc('A')]));
 eq('voorwaarde: A staat klaar voor herstel', await ids(), ['A']);
+const firstSession = session.get('ops-recovery-session');
+eq('zonder randomUUID ontstaat een eigen opgeslagen sessie-id', !!firstSession && firstSession !== 'default', true);
+eq('een bezette claim krijgt precies één retry en een nieuwe id', claimed.length, 3);
+eq('de retry gebruikt dezelfde eerste id', claimed[0], claimed[1]);
+eq('het gedupliceerde tab krijgt een andere id', claimed[2] !== claimed[0], true);
+
 
 // Gebruiker kiest "later"; daarna schrijft de crashherstel-ronde het nieuwe (lege) document B.
 await holdRecoveryForLater();
+eq('uitstellen roteert de sessie ook zonder randomUUID', session.get('ops-recovery-session') !== firstSession, true);
 await saveRecovery(fullRecoverySave('B', [doc('B')]));
 eq('A overleeft de volgende crashherstel-ronde', await ids(), ['A', 'B']);
 
@@ -52,6 +76,11 @@ eq('dubbele id wordt één keer aangeboden', await ids(), ['A', 'C', 'D']);
 await clearRecovery();
 eq('clearRecovery wist eigen + vastgehouden', await ids(), []);
 eq('geen records meer over', idb.store('records').size + idb.store('xer-archives').size, 0);
+
+if (uuidDescriptor) Object.defineProperty(crypto, 'randomUUID', uuidDescriptor);
+else Reflect.deleteProperty(crypto, 'randomUUID');
+if (navigatorDescriptor) Object.defineProperty(globalThis, 'navigator', navigatorDescriptor);
+else Reflect.deleteProperty(globalThis, 'navigator');
 
 if (diffs.length === 0) {
   console.log(`OK  recovery-web-hold: alle checks groen (${checks})`);

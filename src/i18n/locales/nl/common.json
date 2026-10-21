@@ -228,6 +228,8 @@
   "no": "Nee",
   "days": "d",
   "daysLong": "dagen",
+  "dayUnitLong_one": "dag",
+  "dayUnitLong_other": "dagen",
   "ok": "OK",
   "apply": "Toepassen",
   "create": "Aanmaken",
@@ -571,6 +573,7 @@
     "openGithub": "OK, ga naar GitHub",
     "annotate": "Annoteren",
     "editorDone": "Klaar",
+    "annotationSaveFailed": "De bewerkingen konden niet worden opgeslagen. Probeer opnieuw. Je screenshot is niet gewijzigd en wordt vanuit deze editor niet verstuurd.",
     "rotateFeedback": "Feedback geven",
     "rotateBug": "Meld een bug",
     "rotateFeature": "Voeg een nieuwe feature toe"
@@ -836,7 +839,7 @@
       "projectEndUnchanged": "Projecteinddatum: ongewijzigd ({{date}})",
       "projectEndChanged": "Projecteinddatum: {{before}} → {{after}}",
       "remainingConflicts": "Resterende conflicten",
-      "remainingConflictsHint": "Deze taken passen niet binnen hun speling — vaak omdat een resource op die dagen niet werkt of onvoldoende capaciteit heeft.",
+      "remainingConflictsHint": "Voor deze taken blijven resourceconflicten bestaan. Bekijk de toelichting hieronder.",
       "intrinsicOverrun": "{{resource}} vraagt op de piek {{peak}} eenh./dag, capaciteit is {{capacity}} — niet oplosbaar door schuiven.",
       "noChanges": "Geen taken hoeven te verschuiven — de planning is al conflictvrij.",
       "notCalculated": "Klik op Berekenen om een nivelleervoorstel te maken.",
@@ -917,7 +920,7 @@
       "cancel": "Annuleren"
     },
     "regen": {
-      "hint": "Feestdagen dekken {{from}}–{{to}}; project loopt tot {{year}}. Opnieuw genereren?",
+      "hint": "Feestdagen dekken {{from}}–{{to}}; opnieuw genereren tot en met {{year}}?",
       "button": "Opnieuw genereren"
     },
     "countryName": {
@@ -980,7 +983,9 @@
       "bandEnd": "Einde van het blok",
       "shiftPreset": "Ploeg",
       "breakHint": "Een gat tussen twee banden is een pauze — pas de tijden naar wens aan."
-    }
+    },
+    "defaultConstructionName": "Bouwkalender NL",
+    "defaultStandardName": "Standaardkalender"
   },
   "view": {
     "structureLockedHint": "Niet beschikbaar tijdens filteren/groeperen/sorteren",
@@ -1295,7 +1300,7 @@
   "progressImport": {
     "title": "Voortgang bijwerken uit een blad",
     "chooseFile": "Bestand kiezen…",
-    "intro": "Kies een teruggestuurd CSV-blad. De app leest alleen voltooiing, werkelijke start en werkelijk einde — de rest van je planning blijft ongewijzigd.",
+    "intro": "Kies een teruggestuurd CSV- of XLSX-blad. De app leest alleen voltooiing, werkelijke start en werkelijk einde — de rest van je planning blijft ongewijzigd.",
     "summaryApplied": "Toegepast: {{applied}}",
     "summaryNoop": "Ongewijzigd: {{noop}}",
     "summaryNeedsLink": "Wacht op koppeling: {{needsLink}}",

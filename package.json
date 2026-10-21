@@ -46,7 +46,8 @@
     "verify:audit": "npm audit --audit-level=high",
     "publish:wiki": "node scripts/publish-wiki.mjs",
     "stats:downloads": "node scripts/download-stats.mjs",
-    "measure:profiles": "node scripts/measure-profiles.mjs"
+    "measure:profiles": "node scripts/measure-profiles.mjs",
+    "measure:large-plans": "node scripts/measure-large-plans.mjs"
   },
   "dependencies": {
     "@fontsource/inter": "^5.2.8",
