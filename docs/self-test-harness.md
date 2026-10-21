@@ -175,6 +175,10 @@ Voor de toolcatalogus (de `planner_*`-tools; taken, relaties, resources, kalende
 baselines, documenten/bestanden, leestools, `planner_batch`) zie `.claude/rules/mcp.md` → *AI-assistent
 (MCP-bridge)* — niet hier gedupliceerd.
 
+**Getoetst met een externe client.** De officiële MCP-client toetst dit kanaal in `npm test`
+(`tests/mcp/cases-externe-client.ts`, tegen een Node-spiegel van de Rust-HTTP-laag) en in de aparte workflow
+`mcp-real-app.yml` tegen de echte bridge. Wat dat bewijst en wat niet geleverd is: `docs/mcp-verificatie.md`.
+
 **Begrenzing.** Dit kanaal bestaat alleen in de échte Tauri-runtime. Wil je de browser-dev-build
 zelftesten, dan blijft Tier 1 (Playwright MCP + `window.__OPS__`) het enige kanaal — daar is geen
 bridge om te starten.
@@ -205,6 +209,8 @@ hij `ready.json`. Op Linux is `appDataDir` = `~/.local/share/org.openaec.planner
    - `save` `{path}` — schrijf de state als IFC naar schijf (picker omzeild met vast pad)
    - `open` `{path}` — lees van schijf + `loadState`
    - `dispatch` `{action, args}` — roep een willekeurige store-actie aan, bv. `addTask`, `runCPM`, `newProject`
+   - `mcpConnection` — poort, token en status van de MCP-bridge (`{ port, token, status, aiMode }`); zo verbindt
+     `tests/mcp/realApp/run-real-app.ts` een externe client met de echte bridge
 3. Paden moeten binnen de fs-scope vallen (appData of home; zie `src-tauri/capabilities/default.json`).
 
 Voorbeeld:

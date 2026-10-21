@@ -55,3 +55,10 @@ is — zie `tests/mcp/`. Nieuwe tool ⇒ contract in `contracts.ts`, schema erbi
 `toolRegistry.ts`, en een case in `tests/mcp/`; zie `docs/recepten/mcp-tool.md` voor de volledige
 route. `tests/mcp/cases-toolregistry.ts` is het mechanische vangnet dat een vergeten registratie
 (of een spookregistratie zonder broncode) mechanisch afvangt.
+
+**Externe client.** `tests/mcp/cases-externe-client.ts` toetst de bridge met de officiële SDK-client over echt HTTP.
+De HTTP-schil daar is `tests/mcp/bridgeMirror.ts`, een spiegel van `mcp_bridge.rs`; een driftcheck leest het
+Rust-bestand. Verander je de HTTP-laag in Rust (statuscodes, volgorde van de poorten, limieten), pas dan
+`bridgeMirror.ts` mee aan. Dezelfde controles (`tests/mcp/externalClient.ts`) draaien in
+`.github/workflows/mcp-real-app.yml` tegen de echte Rust-bridge in een Tauri-dev-build. Wat geleverd is en wat
+niet: `docs/mcp-verificatie.md`.
