@@ -266,6 +266,12 @@ en noem het in je rapport of PR-tekst.
     `isReadyToInstall` (`'readyToInstall'`) vraagt (`UpdateDialog.tsx:125-128,205-208`). Na de download springt
     het venster naar *Herstarten…* (`:225-229`). Alleen in de code gezien. — S
 
+164. **Nivelleren bij 10.000 taken: tijdens *Berekenen* blokkeert de UI toch 2,8–4,1 s.** De berekening zelf
+    loopt in een Web Worker, maar de nulmeting (`npm run measure:large-plans`, 21-10-2026) zag in die fase één
+    long task van 2.825–4.115 ms op de hoofdthread (5.000 taken: 741–802 ms). Vermoedelijke oorzaak: de
+    voorsteltabel in `LevelingDialog.tsx:265` rendert alle 8.920 rijen zonder virtualisatie. Niet met een
+    profiel bevestigd. — S
+
 ## Bestanden en herstel
 
 35. **Showcase-voorbeelden openen als gewijzigd** (`applyDemoLibraryToShowcaseProject`). — S
@@ -481,6 +487,12 @@ en noem het in je rapport of PR-tekst.
 120. **`delete-under-dialog.spec.ts` (regel 40) faalt soms op focus.** In CI-run 39384273333 (PR #392, browser
     1-4): `expect(locator).toBeFocused()` gaf `inactive`. Na een herhaling van de job groen, zonder wijziging;
     de PR raakt geen dialoog- of focuscode. Wisselvallig, oorzaak niet onderzocht. — S
+
+165. **`window.__OPS__.gantt.paintCount` telt alleen in een dev-build.** `useGanttRendererHost.ts:32` roept
+    `recordGanttPaint` aan achter `import.meta.env.DEV`; in een productiebuild met `VITE_OPS_BENCH_BRIDGE=1`
+    blijft de teller 0. Een meting op die build moet de tekening zelf herkennen
+    (`scripts/measure-large-plans.mjs` doet dat met een passieve wrapper om `fillRect`). Voorstel: de
+    teller ook laten lopen als de brug in een productiebuild aan staat. — B
 
 ## Wensen en open taken (geen bug)
 
