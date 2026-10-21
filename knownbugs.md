@@ -220,12 +220,6 @@ en noem het in je rapport of PR-tekst.
     storten geweigerd (geplande start na de statusdatum), projecteinde vrijdag 25 juni (+2). Met expliciete
     werkelijke datums zijn beide routes gelijk (23 juni, +0). Voorstel: na een statusdatumwijziging binnen
     een batch tussentijds herrekenen, of 81 oplossen zodat de afleiding niet van de route afhangt. — B
-86. **`planner_list_tasks` met `zonder_relaties: true` meldt bladtaken die via hun fase in het netwerk zitten.**
-    Het filter telt alleen relaties op de taak zelf (`readTools.ts:~392`), terwijl de solver een relatie op
-    een samenvattingstaak doorgeeft aan haar bladtaken. Nagespeeld: Other —SS→ Fase X —FS→ Last, met
-    bladtaak LeafA onder Fase X ⇒ het filter geeft `LeafA`, terwijl LeafA kritiek is en aan het netwerk
-    hangt. De agentgids en `goed-plannen` waarschuwen er nu voor. Voorstel: relaties van voorouders
-    meetellen, of het veld uitbreiden met "via fase". — B
 87. **De beschrijving van `planner_update_calendar` zegt dat een ongebruikte kalender opslaan niet
     overleeft**, maar dat is sinds de A2-fix niet meer waar: `ifcReader.ts:~2801-2816` leest elke overige
     IFCWORKCALENDAR terug, en `tests/mcp/cases-uurkalender.ts:~615-624` pint dat vast. Gevonden doordat de

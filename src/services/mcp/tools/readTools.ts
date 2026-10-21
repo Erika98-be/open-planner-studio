@@ -22,7 +22,7 @@
 // `readOnlyHint:true` verdedigbaar (readOnlyHint staat op ALLE leestools).
 
 import type { AppState } from '@/state/appStore';
-import { flattenOrder } from '@/utils/wbs';
+import { ancestorIds, flattenOrder } from '@/utils/wbs';
 import type { ReadFreshResult } from '../staleGuard';
 import { McpStepError, runReadTool } from './runtime';
 import { lagLabel, seqAbbrev } from './sequenceFields';
@@ -366,7 +366,6 @@ function listTasks(s: AppState, args: ListTasksArgs) {
   requireIsoDate(args.tot, 'tot');
   requirePageArgs(args);
 
-  const inSeq = idsInAnySequence(s.sequences);
   let filtered = s.tasks;
 
   // Onbekende kritiekas (modus "datums zoals opgeslagen"): hoort bij
@@ -387,10 +386,18 @@ function listTasks(s: AppState, args: ListTasksArgs) {
     const tot = typeof args.tot === 'string' ? args.tot : '9999-12-31';
     filtered = filtered.filter((t) => shownSpanOverlapsDays(t, van, tot));
   }
-  // Wees-detectie: alléén LEAF-taken die in geen enkele relatie voorkomen. Verzameltaken hebben per
-  // definitie geen relaties en zijn dus geen "wezen" — die worden hier bewust uitgesloten.
+  // Wees-detectie telt ook relaties op voorouders: die verbinden hun bladtaken met het netwerk.
+  // Een relatie op een kind verbindt niet automatisch zijn ouder of zustertakken.
   if (args.zonder_relaties === true) {
-    filtered = filtered.filter((t) => isLeafTask(t) && !inSeq.has(t.id));
+    const inSeq = idsInAnySequence(s.sequences);
+    const parentOf = new Map(s.tasks.map((t) => [t.id, t.parentId]));
+    filtered = filtered.filter((t) => {
+      if (!isLeafTask(t) || inSeq.has(t.id)) return false;
+      for (const id of ancestorIds(t.id, (id) => parentOf.get(id))) {
+        if (inSeq.has(id)) return false;
+      }
+      return true;
+    });
   }
 
   const paged = paginate(filtered, args);
@@ -1079,7 +1086,7 @@ export const readTools: McpToolDef[] = [
       'get_project_info), `status` (NOT_STARTED|STARTED|COMPLETED), `van`/`tot` (from/to; ISO date window: ' +
       'tasks overlapping [van,tot], per day and with both bounds inclusive — also an hour task that starts ' +
       'on the `tot` day), `zonder_relaties` (without relationships; bool — orphan detection: ONLY LEAF tasks ' +
-      'that appear in no relationship at all; summary tasks are excluded). Pagination: `limit` (integer ' +
+      'without relationships on themselves or any ancestor summary task; summary tasks are excluded). Pagination: `limit` (integer ' +
       '1..1000, default 50), `offset` (≥ 0); returns `total`, `has_more`, `next_offset`. Every filter is ' +
       'validated STRICTLY: a wrongly typed or out-of-domain value gives a clean error listing the allowed ' +
       'values — never silently a different set.' + FRESH_NOTE,
@@ -1092,7 +1099,7 @@ export const readTools: McpToolDef[] = [
         status: { type: 'string', enum: ['NOT_STARTED', 'STARTED', 'COMPLETED'] },
         van: { type: 'string', description: 'ISO date lower bound of the window' },
         tot: { type: 'string', description: 'ISO date upper bound of the window' },
-        zonder_relaties: { type: 'boolean', description: 'Only leaf tasks without any relationship (orphans)' },
+        zonder_relaties: { type: 'boolean', description: 'Only leaf tasks without relationships on themselves or any ancestor summary task (orphans)' },
         limit: { type: 'number', description: 'Number per page (default 50)' },
         offset: { type: 'number', description: 'Start index (default 0)' },
       },
