@@ -24,8 +24,11 @@
   MCP volgt de classificatie van de UI vóór de gevolgregels (§5.2, route 3; §6.1). Ronde 6 (zelfde reviewer; oordeel
   NEE, twee BLOKKEERT) is verwerkt: een bruggevolg telt alleen als de taak aansluit op de verantwoorde toestand
   (§5.2, route 3), en bij dagzoom komt het splitwerk uit de kalender, niet uit de kloksnap van 1440 (§3.12, T24).
+  Ronde 7 (zelfde reviewer; oordeel JA, drie VERVOLG; geen nieuwe ronde) is vastgelegd: een maatwijziging door de
+  werkregelbrug is planning (F3-eis, §5.2), de splitsregel bij dagzoom in twee stappen met de werkdagdefinitie
+  (§3.12, T24), en Duurweergave in het OPS-profiel voorwaardelijk op de open vraag (§3.12, B8).
 - **Schrijver:** expert-agent (Opus 5.5), branch `claude/uren-spec`, vanaf `main` `adaf9ab37`; in fixronde 4
-  bijgewerkt met `main` `5266893af`; fixronde 5 en 6 op dezelfde stand.
+  bijgewerkt met `main` `5266893af`; fixronde 5, 6 en 7 op dezelfde stand.
 - **Regelnummers** gelden voor `adaf9ab37`. Elke verwijzing is zelf gelezen. Waar een feit uit de
   Haiku-inventaris komt en niet zelf is nagelezen, staat "(inventaris)".
 - **Zekerheid:** BEVESTIGD = zelf gemeten of in de code gelezen. VERMOED = afgeleid, niet getoetst.
@@ -560,10 +563,12 @@ normalisatie draait altijd; de markering `TimeModel` stuurt alleen de B5-overgan
   iedereen te typen, want de schakelaar Urenplanning verdwijnt (B2). Nu weigert `parseDuration` decimalen
   (`durationFormat.ts:40-41`). Een lag in dagen wordt niet meer afgerond (`lagFormat.ts:73`).
 - **Weergave.** De duur volgens B8: in het OPS-profiel een dagenmaat-taak in d en een urenmaat-taak in u; onder het
-  P6- en het MSP-profiel volgens de instelling Duurweergave, zoals nu. In het OPS-profiel verandert Duurweergave de
-  duur van een taak dus niet meer. B8 noemt dat nadeel voor een urenmaat-taak; dit ontwerp past het ook toe op een
-  dagenmaat-taak, anders betekent "u" in het OPS-profiel twee dingen (VERMOED: zo bedoeld). Datums volgens B4: een
-  tijd alleen als het moment midden op de werkdag valt.
+  P6- en het MSP-profiel volgens de instelling Duurweergave, zoals nu. Wat Duurweergave in het OPS-profiel nog doet,
+  is een open vraag aan de eigenaar (vraag 9, §8); dit ontwerp kiest niet. Vast staat alleen wat B8 optie 2 zelf
+  noemt: een urenmaat-taak toont daar nooit dagen, ook niet met "Altijd dagen". Open is of een dagenmaat-taak met
+  "Altijd uren" in uren verschijnt. Zo ja, dan betekent "u" in het OPS-profiel twee dingen. Zo nee, dan verandert
+  Duurweergave in het OPS-profiel de duur van een taak niet meer. Datums volgens B4: een tijd alleen als het moment
+  midden op de werkdag valt.
 - **Gantt.** Bij dagzoom snapt slepen per werkdag, van blokbegin tot blokeinde; bij uurzoom per uur of kwartier
   (`timelineSnap.ts:12-28`). De grenzen van dagzoom en uurzoom staan hieronder (T24).
 - **Projectinstellingen.** "Standaardmaat voor nieuwe taken" (§3.2) en het profielblok met de nieuwe conventie
@@ -603,18 +608,30 @@ normalisatie draait altijd; de markering `TimeModel` stuurt alleen de B5-overgan
       hoeveelheid werk. Nu geven `useSplitGesture.ts:97,108` en `useBarDrag.ts:225,251` de snap door aan
       `splitUnitMinutes` (`splitEdit.ts:206-208`), en het splitmodel rondt werkminuten daarop af (`snap`, `:76`).
       Met 1440 weigert een split na één werkdag (`position-out-of-range`), en een pauze van één werkdag die één
-      dag langer wordt, krijgt 1440 werkminuten: drie werkdagen op een kalender van 8 u. Regel: bij dagzoom valt
-      de pointer op het begin van de dag onder de muis (`utcDayStart`, zoals `snapTimelineDate` dat nu voor een
-      dagtaak doet, `timelineSnap.ts:25`). Afronden op de dichtstbijzijnde middernacht kiest bij een klik in de
-      middag de dag erna. De werkafstand komt uit de kalender van de taak: `workOffsetAtDate` voor de plek van de
-      split en `workAxisMinutesBetween` voor de lengte van pauze en werkstuk (`splitEdit.ts:119-165`), via
-      `CalendarEngine.workMinutesBetween` (`CalendarEngine.ts:828-854`). Die functies bestaan en rekenen zo al voor
-      urentaken. Het splitmodel rondt die minuten niet opnieuw af: niet op 1440, en ook niet op het uur, want een
-      werkdag van 8,5 u wordt dan 9 u (§10.5, probe S4). De kortste pauze, ook bij een klik zonder slepen, en het
-      kortste werkstuk zijn één werkdag van de taakkalender vanaf het grijppunt. Het label telt dan werkdagen
-      (`useSplitGesture.ts:223`, `useBarDrag.ts:414`). Bij uurzoom blijft de eenheid de snap van de tijdkop (60 of
-      15), zoals nu. De overige aanroepers van `splitUnitMinutes` (MCP, taakpaneel, `taskDefaults.ts`) geven geen
-      snap door en veranderen niet;
+      dag langer wordt, krijgt 1440 werkminuten: drie werkdagen op een kalender van 8 u. Regel, in twee aparte
+      stappen (review ronde 6; aangescherpt na review ronde 7, VERVOLG):
+      1. *Plek en afstand, zonder afronding.* Bij dagzoom valt de pointer op het begin van de werkdag onder de
+         muis: de werkdag van het moment (§0; een werkblok hoort bij de dag waarop het begint, B4), en daarvan het
+         begin van het eerste werkblok. Heeft die dag geen werkblok, dan het begin van de eerstvolgende werkdag. De
+         blokken van een werkdag geeft `CalendarEngine.effectiveBandsOn` (`CalendarEngine.ts:531-538`); de functie
+         "werkdag van een moment" bouwt F0 (§6.1). Klok-middernacht is fout: bij een nachtploeg 22:00–06:00 snijdt
+         die de ploeg doormidden, en afronden op de dichtstbijzijnde middernacht kiest bij een klik in de middag de
+         dag erna. De werkafstand tussen twee plekken komt uit de kalender van de taak: `workOffsetAtDate` voor de
+         plek van de split en `workAxisMinutesBetween` voor de lengte van pauze en werkstuk (`splitEdit.ts:119-165`),
+         via `CalendarEngine.workMinutesBetween` (`CalendarEngine.ts:828-854`). Het splitmodel rondt die minuten
+         niet opnieuw af: niet op 1440, en ook niet op het uur, want een werkdag van 8,5 u wordt dan 9 u (§10.5,
+         probe S4).
+      2. *Minimumlengte, apart daarna.* Een nieuwe pauze, ook bij een klik zonder slepen, is ten minste één
+         werkdag: de werkminuten van de werkdag van het grijppunt volgens dezelfde definitie. Bij een nachtploeg is
+         dat de hele ploeg (480 min), niet het venster van één kalenderdag (360 min). Een werkstuk loopt ten minste
+         tot de eerstvolgende werkdaggrens. Begint het midden op een werkdag, zoals bij een taak die ma 13:00
+         start, dan is dat de rest van die werkdag (180 min op de standaardkalender). Een pauze die op nul uitkomt,
+         wordt opgeheven: de stukken worden samengevoegd (`setGapLength` → `removeGap`, `splitEdit.ts:174-180`). De
+         minimumklem geldt niet voor nul.
+
+      Het label telt dan werkdagen (`useSplitGesture.ts:223`, `useBarDrag.ts:414`). Bij uurzoom blijft de eenheid de
+      snap van de tijdkop (60 of 15), zoals nu. De overige aanroepers van `splitUnitMinutes` (MCP, taakpaneel,
+      `taskDefaults.ts`) geven geen snap door en veranderen niet;
     - vanaf 400: dag en uur, slepen per uur; de schaal heet Uur (`scaleFromZoom`, nu vanaf 300 met de schakelaar);
     - met Kwartierzoom vanaf 1000 (`MAX_HOUR_ZOOM`, `timelineTiers.ts:25`): uur en kwartier, slepen per 15 min;
     - `maxGanttZoom`: 4000 met Kwartierzoom, anders 1000. De voorinstelling Uur (1000) staat altijd in de lijst;
@@ -1152,8 +1169,9 @@ punt 1 en 4, en ronde 3, punt 1 en 3).**
        gevolgregels, met dezelfde `changesOnlyDateNeutralFields` en op dezelfde merge als hun no-op-guard, net als
        `updateTask`. Dat zijn `updateTaskFields` (merge `createMcpTransactions.ts:420`, brug `:470-473`),
        `patchTaskFields` (`:536-537`, `:583-586`) en `setTaskWorkRule` (`:852-860`; alleen de regel verandert, dus
-       datumneutraal). De verantwoorde toestand van een taak is de snapshot met de al aanvaarde gevolgen erover; bij
-       de start van de transactie is dat de snapshot zelf. Een gevolg telt alleen als twee dingen gelden: de
+       datumneutraal). De verantwoorde toestand van een taak is de beginsnapshot plus, per taakveld, de laatst
+       aanvaarde brugwaarde; de echte undo-snapshot blijft intact (lezing van review ronde 7). Bij de start van de
+       transactie is dat de snapshot zelf. Een gevolg telt alleen als twee dingen gelden: de
        wijziging van de primitief is datumneutraal, én de taak wijkt vlak vóór de brug alleen in datumneutrale
        velden af van haar verantwoorde toestand (dezelfde `changesOnlyDateNeutralFields`). Dan legt de transactie
        de velden vast die de brug schreef: het verschil vóór en na `settleRuleChange`. De eindtoets legt die
@@ -1174,11 +1192,17 @@ punt 1 en 4, en ronde 3, punt 1 en 3).**
        af in `time` of in de contour, dus het gevolg telt niet. De UI komt op hetzelfde uit: `updateTask`
        classificeert de hele patch (`taskSlice.ts:1002`), en duur plus werkregel verlaat daar de modus. Probe van
        deze ronde (§10.5): beide varianten rekenen en verlaten de modus; de gevallen van ronde 5 houden de modus.
-     - *Voor F3 (B1a).* Een zuivere wissel naar vast werk op een dagenmaat-taak verandert met B1a de maat; de brug
-       schrijft dan `time`. Met de regel hierboven houden UI (`setTaskWorkRule` sluit zonder `stale`) en MCP allebei
-       de modus (probe I, §10.5). Op een kalender met ongelijke dagen verschuift zo'n taak bij de volgende
-       berekening (T14). F3 kiest één regel voor beide routes. Voorstel: een wissel die de maat verandert, is een
-       planningsbewerking; de UI sluit dan met `stale`, en de MCP-primitief telt dan niet als datumneutraal.
+     - *Implementatie-eis voor F3: een feitelijke maatwijziging is planning (review ronde 7, VERVOLG, BEVESTIGD).*
+       Met B1a maakt een wissel naar vast werk van een dagenmaat-taak een urenmaat-taak; de brug schrijft dan
+       `time`. Zonder deze eis blijft zo'n wissel datumneutraal in alle drie de routes: `setTaskWorkRule` (sluit
+       zonder `stale`, `taskSlice.ts:1110-1121`), `updateTask` (classificeert de patch vóór de brug, `:1002`) en
+       MCP (probe I, §10.5). Op de voorbeeldweek wordt 3 d vanaf wo 07:00 dan 24 u: de tabel houdt vr 14:00, en pas
+       na Bereken staat er ma 09:00 (probe van de review, `/tmp/uren-review7/mcp-b1a.log`). Eis: verandert de
+       werkregelbrug `time.durationUnit` van een taak, dan is de bewerking een planningsbewerking.
+       `setTaskWorkRule` en `updateTask` sluiten dan als een planningsbewerking (de modus gaat uit, verouderd via
+       `markScheduleStale`), en in MCP telt de primitief niet als datumneutraal, dus de transactie legt het gevolg
+       niet vast en rekent. Er komt geen nieuw classificatiestelsel: de enige vraag is of de maat vóór en na de brug
+       verschilt. Een wissel die de maat niet verandert, blijft datumneutraal zoals nu. Regressie: geval 11c.
      - *De bibliotheekverdeling op het actieve document (review ronde 3, punt 3, BEVESTIGD):* die loopt via
        `applyLeveling` (`librarySlice.ts:1407-1416`), en `latestDocumentDataEventSince` (`:1417`) wijst daarna
        het jongste event van het document aan. Met een eigen B5-event kwamen er twee events; `undoDistribution`
@@ -1243,7 +1267,11 @@ punt 1 en 4, en ronde 3, punt 1 en 3).**
     de modus en rekent. Varianten (review ronde 6), die allebei de modus verlaten en rekenen: (a) B als dagtaak,
     één `planner_update_tasks` met `duration: 2`, `durationUnit: 'days'` en `workRule: 'FIXED_WORK'`, ook met de
     B1a-omzetting van F3; Ctrl+Z geeft de modus en de duur van 1 d terug; (b) in één transactie eerst een ruwe
-    contourwijziging aan B, dan `setTaskWorkRule`.
+    contourwijziging aan B, dan `setTaskWorkRule`. Variant (c), regressie voor F3 (review ronde 7): op de
+    voorbeeldweek een dagenmaat-taak van 3 d vanaf wo 07:00 in de modus (einde vr 14:00), daarna alleen een wissel
+    naar vast werk, via `setTaskWorkRule`, via `updateTask` en via `planner_update_tasks`. In elke route wordt de
+    taak 24 u urenmaat, gaat de modus uit, en staat het einde meteen op ma 09:00. Ctrl+Z geeft de dagenmaat, de
+    modus en vr 14:00 terug.
 
 ### 5.3 Wat er verschuift bij het openen van een oud bestand
 
@@ -1340,7 +1368,9 @@ niet nodig.
 - **Nieuwe checks in F3:** de lopers van de dagenmaat (voorbeeldweek, breuk, feestdag, werkende uitzondering,
   nachtblok; vooruit en dan achteruit binnen de foutgrens uit §3.14, met willekeurige begins en het voorbeeld
   vr 07:03 met een zaterdag van 1 u); P6 ⇒ OPS ⇒ P6 geeft dezelfde taken en hetzelfde profiel; de regel T12 (een
-  pset zonder de sleutel: basis P6 ⇒ uit, basis OPS ⇒ aan); vast werk ⇒ urenmaat; de standaardmaat per profiel;
+  pset zonder de sleutel: basis P6 ⇒ uit, basis OPS ⇒ aan); vast werk ⇒ urenmaat, en die maatwijziging is een
+  planningsbewerking in UI en MCP (geval 11c, §5.2: 3 d vanaf wo wordt 24 u, einde meteen ma 09:00); de
+  standaardmaat per profiel;
   een dagenmaat-taak met een breuk en een kalendertijd-taak met een breuk door IFC heen en terug; de drie lagen uit
   §3.3 door IFC en door een profielwissel; de belasting per werkdag (§3.11: wo 0,5, do 1, vr 1, ma 0,5, in
   histogram, contourdialoog en nivelleerder); de nivelleerder per kandidaat (§3.11: ma 07:00 geweigerd,
@@ -1483,7 +1513,8 @@ wat Duurweergave in het OPS-profiel doet (§3.12, B8).
 **F3 — De dagenmaat (eigen fase).**
 - Inhoud: de conventie dagenmaat met T12 (§3.14); lopers voor een dagenmaat met een breuk, met de afronding en
   de foutgrens uit §3.14 (T23); onder P6 en MSP tellen een dagenmaat-taak, een lag in dagenmaat en een
-  dagenmaat-rest als urenmaat; vast werk ⇒ urenmaat; de standaardmaat (store en Projectinstellingen, §3.2);
+  dagenmaat-rest als urenmaat; vast werk ⇒ urenmaat, als planningsbewerking (§5.2, geval 11c); de standaardmaat
+  (store en Projectinstellingen, §3.2);
   werkdriehoek T14, de urenmaat zonder afronding; de rest exact (B3); de belasting per werkdag uit momenten in
   histogram, contourdialoog en nivelleerder, met de vraag per kandidaat (§3.11); speling in minuten (§3.4); IFC:
   maat en breuk voor duur, rest en lag, met de records van T21 in `OPS_Sequences` en een bestaande per-taak-pset
@@ -1516,10 +1547,14 @@ wat Duurweergave in het OPS-profiel doet (§3.12, B8).
   twee werkdagen splitst na één werkdag (pauze één werkdag), een pauze van één werkdag wordt één dag langer twee
   werkdagen (960 min), een werkstuk idem; op de voorbeeldweek met de korte vrijdag: een split op vrijdag geeft een
   pauze van 360 min, en een pauze die over de vrijdag één dag langer wordt, groeit met 360 min; op een dag van 8,5 u
-  splitst een taak na 510 min; een opgeslagen `ops-enableHourPlanning` (aan of uit) verandert niets; een urenmaat-taak
-  is te bewerken; "5d", "40u" en een kaal getal volgens B8, ook bij vast werk; de datums volgens B4 met de voorbeelden
-  uit §8. `verify:i18n` zonder de vervallen sleutels. Eén checkstap voor de eigenaar (licht en donker), met de
-  zoomgrenzen en de plek van `allowMixedDayHour`.
+  splitst een taak na 510 min; review ronde 7: een taak die ma 13:00 start, splitst op di na 180 min, en dat werkstuk
+  wordt bij inkorten niet korter dan 180 min; een pauze die naar nul gaat, voegt de stukken samen; op een nachtploeg
+  ma–vr 22:00–06:00 splitst een klik op di na de hele ploeg van ma (480 min, niet 120), een klik op za 02:00 valt op
+  de werkdag vr (pauze 480 min, niet 360), en een klik op za 10:00 valt op ma 22:00; een opgeslagen
+  `ops-enableHourPlanning` (aan of uit) verandert niets; een urenmaat-taak is te bewerken; "5d", "40u" en een kaal
+  getal volgens B8, ook bij vast werk; de datums volgens B4 met de voorbeelden uit §8. `verify:i18n` zonder de
+  vervallen sleutels. Eén checkstap voor de eigenaar (licht en donker), met de zoomgrenzen en de plek van
+  `allowMixedDayHour`.
 
 **F5a — Verliesvrije adapters voor duur, rest en lag (hoort bij de eerste release).**
 - Inhoud: I1, I2, I3, I5, I6, I7 (§1.3); T13 en T15 (§3.10); de OPS-markering voor de maat van taak en lag heen
@@ -1579,7 +1614,7 @@ wat Duurweergave in het OPS-profiel doet (§3.12, B8).
 
 Besloten op 2026-10-20: B1, B1a, B2, B3, B4, B5, B6, B7 en B8. De regel voor `isDirty` bij B5 is geen besluit van de
 eigenaar, maar een technische keuze van de orkestrator (2026-10-20; §5.2). Open bij de eigenaar: wat Duurweergave in
-het OPS-profiel doet. De lezing in §3.12 en B8 is een VERMOED van dit ontwerp, geen besluit.
+het OPS-profiel doet (vraag 9). §3.12 en B8 noemen beide mogelijkheden met hun gevolg; dit ontwerp kiest niet.
 
 ### B1. Wat is één dag (welke maat)? — besloten: optie 3, een maat per taak
 
@@ -1842,8 +1877,8 @@ geldt. MSP schrijft "5 ed" voor kalendertijd (5 × 24 u); OPS gebruikt "ed" al b
   5 × de werktijd per dag in de urenmaat (40 u op de standaardkalender), en de tabel toont daarna "40 u".
 - Onder het P6- en het MSP-profiel is "5 d" de urenmaat (5 × de werktijd per dag), zoals in P6 en MSP. Na een
   profielwissel betekent "d" dus iets anders.
-- In het OPS-profiel toont een urenmaat-taak nooit dagen, ook niet met Duurweergave "Altijd dagen". Dit ontwerp leest
-  dat ook omgekeerd: een dagenmaat-taak toont daar nooit uren (§3.12; VERMOED: zo bedoeld).
+- In het OPS-profiel toont een urenmaat-taak nooit dagen, ook niet met Duurweergave "Altijd dagen". Of een
+  dagenmaat-taak daar met "Altijd uren" in uren verschijnt, is een open vraag aan de eigenaar (vraag 9, §3.12, §8).
 
 **Verband met het besluit van 2026-10-15 ("een dag", §3.1; `docs/ifc-round-trip.md:249-256`).** Dat besluit blijft
 gelden voor de urenmaat. "1 d" in de urenmaat is de werktijd per dag van de taakkalender, niet `hoursPerDay`. Dat
@@ -1884,7 +1919,7 @@ dubbelzinnig, ook in een export, een rapport of het klembord).
 | T21 | De maat van duur, rest en lag gaat verliesvrij mee: nooit een gebroken `P…D`; het standaardveld draagt altijd de lengte; een breuk in dagen krijgt een record `[dagen, geschreven minuten]` in een bestaande OPS-pset (voor een lag `OPS_Sequences`), en de dagen tellen alleen zolang het standaardveld de geschreven minuten draagt; in MSPDI en P6 XML hetzelfde record in de OPS-markering, per relatie met voorganger en type | §3.3, §3.10; review ronde 2, punt 5, en ronde 3, punt 2 en 5; kleinste vorm die v2026.9.0 niet verkeerd leest (BEVESTIGD) |
 | T22 | De B5-overgang: één functie voor elke route; de vóór-toestand is de modus "datums zoals opgeslagen" met de vlag aan; een MCP-transactie met alleen metadata (`DATE_NEUTRAL_TASK_FIELDS`) houdt de modus, ook bij een werkregelwissel: de primitief classificeert vóór de gevolgregels, en de eindtoets legt de gevolgen over de snapshot, alleen als de taak vóór de brug aansluit op de verantwoorde toestand; twee expliciete snapshots in één `nonEdit`-event, of het omvattende event van de actie; alleen bij een verschuiving (de `isDirty`-regel van de orkestrator, 2026-10-20); een documentvlag "omzetting open" die elke route die blijvend rekent kent | §5.2; review ronde 2, punt 1 en 4; ronde 3, punt 1 en 3; ronde 4; ronde 5 (VERVOLG); ronde 6 |
 | T23 | Lopers van de dagenmaat in hele minuten, zonder verborgen rest; foutgrens ½ + ½ × (begindag ÷ einddag) minuut | §3.14; review ronde 2, punt 8 |
-| T24 | Zoomgrenzen zonder schakelaar: onder 400 de dagband en slepen per dag; vanaf 400 dag en uur; met Kwartierzoom vanaf 1000 uur en kwartier; maximum 1000 of 4000. Bij dagzoom valt de pointer op het dagbegin en komt splitwerk uit de kalender, zonder nieuwe afronding | §3.12; houdt de belofte "bij dagzoom per hele dag" na B2; review ronde 6 |
+| T24 | Zoomgrenzen zonder schakelaar: onder 400 de dagband en slepen per dag; vanaf 400 dag en uur; met Kwartierzoom vanaf 1000 uur en kwartier; maximum 1000 of 4000. Bij dagzoom valt de pointer op het begin van de werkdag (§0, B4) en komt splitwerk uit de kalender, zonder nieuwe afronding; daarna apart het minimum van één werkdag; nul heft een pauze op | §3.12; houdt de belofte "bij dagzoom per hele dag" na B2; review ronde 6 en 7 |
 | T25 | De oude sleutel `ops-enableHourPlanning` blijft ongelezen staan | §3.12; geen blijvend opruimpad; zo ook bij de layouts |
 
 ## 9. Wat dit oplost
@@ -2114,6 +2149,20 @@ Fixronde 6 (expert-agent, Opus 5.5), map `/tmp/uren-fix6/`. Alle logs eindigen o
     werk 360 (ma 07:00–14:00). Een pauze over de korte vrijdag één dag langer: oud ⇒ 1440; nieuw ⇒ +360 = 840.
   - S4, dag van 8,5 u (pauze 12:00–12:30): nieuw ⇒ split na 510 min; met eenheid 60 ⇒ 540.
 
+Fixronde 7 (expert-agent, Opus 5.5), `/tmp/uren-fix7/splits7.ts`, log `splits7.log` (exit 0). Dezelfde bestaande
+functies; de plek is nu het begin van de werkdag (blokken uit `effectiveBandsOn`), en het minimum is een aparte stap.
+De probe van review ronde 7 (`/tmp/uren-review7/splits.log`) liet de gaten zien.
+
+- S1–S4 van fixronde 6: dezelfde uitkomst.
+- R1, start ma 13:00, taak 660 min, klik op di: werk 180, pauze 480, werk 480; segmenten ma 13:00–16:00 en
+  wo 07:00–16:00. Het eerste werkstuk één dag inkorten: blijft 180 (de rest van ma). Eén dag verlengen: 660.
+- R2, pauze van één werkdag één dag terug: nul ⇒ samengevoegd tot één stuk van 960. Met de minimumklem uit fixronde
+  6 bleef er 480 staan.
+- R3, nachtploeg ma–vr 22:00–06:00: (a) taak ma 22:00, 1440 min, klik di 23:00: met klok-middernacht werk 120 (de
+  ploeg doormidden); nieuw werk 480, pauze 480, werk 960. (b) taak do 22:00, klik za 02:00: met de kalenderdag
+  pauze 360 en werk 600; nieuw valt de plek op vr 22:00 (werkdag vr), pauze 480, werk 480 en 960. (c) klik za
+  10:00 (geen werkdag): de plek valt op ma 22:00; werk 960, pauze 480, werk 480.
+
 ## 11. Wat niet gecontroleerd is
 
 - `measure:profiles` met het P6-corpus (geen `OPS_XER_CORPUS` op deze machine).
@@ -2150,7 +2199,8 @@ Fixronde 6 (expert-agent, Opus 5.5), map `/tmp/uren-fix6/`. Alle logs eindigen o
   gevolgregels die op een datumneutrale patch volgen, zijn niet gezocht; de regel dekt alleen `settleRuleChange`.
   De B1a-omzetting is een model van de review, geen F3-code.
 - De splitsregel van T24 is nagebootst met de bestaande functies, niet in de echte hooks en niet in een browser.
-  Een taak die midden op een dag begint, en werkdagencompressie zijn in die probe niet gedraaid.
+  Werkdagencompressie draaide alleen in de probe van review ronde 7. De F3-eis voor een maatwijziging is alleen in
+  de probe van de review gemeten, met een model van B1a.
 - De zoomgrenzen van T24 (400 en 1000) zijn niet op leesbaarheid gemeten; F4 toetst ze in de checkstap.
 - Of `allowMixedDayHour` na B8 nog iets toevoegt, is niet onderzocht. Of de tutorial-extensie in een andere repo
   staat, is niet nagekeken.
