@@ -573,6 +573,7 @@
     "openGithub": "OK, ga naar GitHub",
     "annotate": "Annoteren",
     "editorDone": "Klaar",
+    "annotationSaveFailed": "De bewerkingen konden niet worden opgeslagen. Probeer opnieuw. Je screenshot is niet gewijzigd en wordt vanuit deze editor niet verstuurd.",
     "rotateFeedback": "Feedback geven",
     "rotateBug": "Meld een bug",
     "rotateFeature": "Voeg een nieuwe feature toe"

@@ -573,6 +573,7 @@
     "openGithub": "OK, go to GitHub",
     "annotate": "Annotate",
     "editorDone": "Done",
+    "annotationSaveFailed": "Your edits could not be saved. Try again. Your screenshot has not been changed and will not be sent from this editor.",
     "rotateFeedback": "Give feedback",
     "rotateBug": "Report a bug",
     "rotateFeature": "Add a new feature"
