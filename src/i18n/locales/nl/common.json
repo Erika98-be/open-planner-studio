@@ -228,6 +228,8 @@
   "no": "Nee",
   "days": "d",
   "daysLong": "dagen",
+  "dayUnitLong_one": "dag",
+  "dayUnitLong_other": "dagen",
   "ok": "OK",
   "apply": "Toepassen",
   "create": "Aanmaken",

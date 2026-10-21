@@ -228,6 +228,8 @@
   "no": "No",
   "days": "d",
   "daysLong": "days",
+  "dayUnitLong_one": "day",
+  "dayUnitLong_other": "days",
   "ok": "OK",
   "apply": "Apply",
   "create": "Create",
