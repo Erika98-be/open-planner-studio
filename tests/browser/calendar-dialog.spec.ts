@@ -524,3 +524,27 @@ test('kalenderdialoog: na Continu krijgt een dag die weer aan gaat 00:00–24:00
     [1, 2, 3, 4, 5], allDay, [], 24,
   ]);
 });
+
+// Nieuwe route: eerder gegenereerde feestdagen uitbreiden na wijziging van de projectperiode.
+test('generatiehint noemt het doeljaar inclusief buffer, niet een verzonnen projecteinde', async ({ page, ops: _ops }) => {
+  for (const endDate of ['2029-12-31', '']) {
+    await page.evaluate(endDate => {
+      const s = window.__OPS__!.store.getState();
+      s.setProject({ startDate: '2026-01-01', endDate });
+      s.setCalendar({ ...s.calendar, generation: {
+        ruleSetId: 'NL', generatedFromYear: 2025, generatedToYear: 2028,
+      } });
+      s.setUI({ showCalendarDialog: true });
+    }, endDate);
+    const dialog = page.locator('[data-ops-calendar-dialog]');
+    const targetYear = endDate ? 2030 : 2029;
+    await expect(dialog.getByText(`Holidays cover 2025–2028; regenerate through ${targetYear}?`, { exact: true })).toBeVisible();
+    await expect(dialog).not.toContainText('project runs to');
+    await dialog.getByRole('button', { name: 'Regenerate', exact: true }).click();
+    await expect(dialog.getByRole('button', { name: 'Regenerate', exact: true })).toHaveCount(0);
+    await dialog.locator('[data-ops-cal-apply]').click();
+    await expect(dialog).toHaveCount(0);
+    await expect.poll(() => page.evaluate(() => window.__OPS__!.store.getState().calendar.generation?.generatedToYear)).toBe(targetYear);
+    expect(await page.evaluate(() => window.__OPS__!.store.getState().project.endDate ?? '')).toBe(endDate);
+  }
+});

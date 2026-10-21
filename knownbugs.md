@@ -124,12 +124,6 @@ en noem het in je rapport of PR-tekst.
 22. **Goede Vrijdag en Bevrijdingsdag** hebben `optional: true`, maar dat wordt nergens gelezen: ze worden
     altijd gegenereerd. — B
 
-123. **Hint *Opnieuw genereren* telt een jaar te ver.** "Feestdagen dekken {van}–{tot}; project loopt tot
-    {jaar}" toont `projectYearSpan.to` (`CalendarForm.tsx:764`). Dat is het einddatumjaar plus 1
-    (`computeGenerateSpan`, `generateCalendarHolidays.ts:58-71`; zonder einddatum startjaar plus 3). Een
-    project dat in 2029 eindigt, meldt "project loopt tot 2030". De Help-voorbeelden
-    (`uitleg-kalenders.md`, `howto-feestdagen-genereren.md`) volgen die tekst. Voorstel: het einde zelf tonen,
-    of de tekst "tot en met {jaar}" noemen. — B
 
 ## Bibliotheek, bezetting, extensies, AI
 
