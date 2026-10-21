@@ -133,7 +133,7 @@
   "barColorMode_auto": "به ازای هر کار — خودکار",
   "barColorMode_category": "بر اساس دسته",
   "barColorFieldLabel": "فیلد دسته",
-  "barColorMissingField": "این فیلد در این پروژه وجود ندارد. نوع وظیفه موقتاً استفاده می‌شود.",
+  "barColorMissingField": "این فیلد در این پروژه وجود ندارد. نوع کار موقتاً استفاده می‌شود.",
   "statusLineLabel": "خط وضعیت:",
   "statusLine_none": "هیچ",
   "statusLine_statusDate": "خط تاریخ وضعیت",

@@ -138,7 +138,7 @@
   "barColorMode_auto": "Na zadanie — automatycznie",
   "barColorMode_category": "Według kategorii",
   "barColorFieldLabel": "Pole kategorii",
-  "barColorMissingField": "To pole nie istnieje w tym projekcie. Tymczasowo używany jest typ zadania.",
+  "barColorMissingField": "To pole nie istnieje w tym projekcie. Tymczasowo używany jest typ pracy.",
   "statusLineLabel": "Linia statusu:",
   "statusLine_none": "Brak",
   "statusLine_statusDate": "Linia daty statusu",

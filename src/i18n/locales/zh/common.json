@@ -45,7 +45,7 @@
     "xerImportCalendarIssues_other": "日历发现：{{count}}",
     "xerImportNumberIssues_other": "数字格式问题：{{count}}",
     "xerImportEnumFallbacks_other": "枚举回退：{{count}}",
-    "xerImportMissingPlannedStarts_other": "{{count}} 个作业没有计划开始日期，现在从文件中的数据日期或项目开始日期开始。",
+    "xerImportMissingPlannedStarts_other": "{{count}} 个任务没有计划开始日期，现在从文件的状态日期或项目开始日期开始。",
     "xerImportUnsupportedSemantics_other": "使用安全回退的 P6 排程设置：{{count}}",
     "xerImportDatesAsRecorded_other": "显示 Primavera 记录日期（未重新计算）的任务：{{count}} 个",
     "importDatesAsRecorded_other": "显示文件中记录日期（未重新计算）的任务：{{count}} 个",
@@ -80,10 +80,10 @@
     "projectStartAnchorsClamped_other": "{{count}} 个任务随项目开始日期移动。",
     "mppTimephasedSteeringLost_other": "此次编辑后，MS Project 的工时分布不再驱动 {{count}} 项任务；原始分布仍保留在文件中。",
     "readMore": "了解更多",
-    "taskTypesUnlocked": "此文件包含已保存的工时或自定义工作规则；本项目将显示工作规则和剩余工时。",
-    "taskTypesUnlockedDetail": "此文件包含已保存的工时或自定义工作规则；本项目将显示工作规则和剩余工时。",
-    "workRulesReadMore": "工作规则说明",
-    "workRuleDurationsChanged_other": "更改日历后，工作规则调整了 {{count}} 个任务的工期（工时不变，每日工作小时数已更改）。",
+    "taskTypesUnlocked": "此文件包含已保存的工时或任务类型；本项目现在会显示任务类型和剩余工时。",
+    "taskTypesUnlockedDetail": "此文件包含已保存的工时或任务类型；本项目现在会显示任务类型和剩余工时。",
+    "workRulesReadMore": "任务类型说明",
+    "workRuleDurationsChanged_other": "更改日历后，任务类型调整了 {{count}} 个任务的工期（工时不变，每天的小时数已改变）。",
     "pasteSkippedReadOnly_other": "已跳过 {{count}} 个只读单元格（例如自动编号的 WBS 代码或计算列）。",
     "librarySaveFailed": "无法保存库",
     "levelingDelayRoundedToWorkdays_other": "资源平衡会将 MS Project 精确到分钟的平衡延迟（{{count}} 项任务）四舍五入为整个工作日。",
@@ -95,7 +95,7 @@
     "startBlockedByConstraintMany_other": "{{count}} 个任务的新开始日期未应用：这些任务有前置任务，且限制不是“不得早于…开始 (SNET)”。请修改这些限制以移动开始日期。",
     "dragStartIsActual": "“{{name}}”已开始：其开始日期为实际开始日期，不会移动。请通过进度进行更改。",
     "dragDatesAreActual": "“{{name}}”已完成：其开始和完成日期为实际日期，不会移动。请通过进度进行更改。",
-    "referencesClearedOnPaste_other": "有 {{count}} 个引用在此文档中不存在，已被清除（来自源文档的任务日历、自定义任务类型、活动代码或自定义字段）。",
+    "referencesClearedOnPaste_other": "有 {{count}} 个引用在本文档中不存在，已被清除（来自源文档的任务日历、自定义工作类别、活动代码或自定义字段）。",
     "milestoneRefusedAssignments_other": "{{count}} 个任务有资源分配，无法变为里程碑。请先移除这些分配。",
     "milestoneRefusedSummary_other": "{{count}} 个任务是带子任务的摘要任务，无法变为里程碑。",
     "assignmentsMovedToSubtask_other": "{{count}} 个分配已移至子任务“{{child}}”。",
@@ -104,7 +104,7 @@
     "phaseRefusedNoAssignableChild": "“{{phase}}”无法变成摘要任务：它的分配无处可去，因为新子任务都不能承载分配（里程碑或摘要任务）。未做任何更改。",
     "phaseRefusedDuplicateResource": "“{{phase}}”无法变成摘要任务：{{resource}} 的分配无法移至新子任务“{{child}}”，因为它已有 {{resource}}。未做任何更改。",
     "phaseQuestionOutdated": "任务或分配在问题未回答期间已更改。未做任何更改；请再试一次。",
-    "schedulingProfileApplied": "此项目按 {{profile}} 计算。可通过 文件 → 项目信息 → 计算配置文件和选项 更改。",
+    "schedulingProfileApplied": "本项目按 {{profile}} 计算。可通过 文件 → 项目信息 → 计算配置文件和选项 更改。",
     "schedulingTemplateSaved": "已保存模板“{{name}}”。",
     "schedulingTemplateLimit": "未保存模板：已有 {{max}} 个模板。请先删除一个模板。",
     "schedulingTemplateStorageFailed": "未保存模板：应用的存储空间已满或不可用。",
@@ -222,7 +222,7 @@
     "collapseAll": "全部折叠"
   },
   "settings": {
-    "title": "设置",
+    "title": "应用设置",
     "appearanceTab": "外观",
     "planningTab": "计划",
     "advancedTab": "高级",
@@ -267,8 +267,8 @@
     "hourPlanningSection": "小时计划",
     "enableHourPlanning": "启用小时计划",
     "enableHourPlanningHint": "启用小时/分钟排程：小时级时间刻度、带工作时间段的班次，以及精确到小时的任务条。关闭 ⇒ 应用将保持与之前一样完全按天粒度运行。",
-    "showTaskTypes": "显示工作规则和工时",
-    "showTaskTypesHint": "来自 MS Project 或 Primavera P6 的文件始终显示此项。关闭时：工期和单位保持不变，工时随之计算。",
+    "showTaskTypes": "使用任务类型",
+    "showTaskTypesHint": "为每个任务选择：当工期、单位或工时变化时，哪一项随之调整，如同 MS Project 中的 Task Type 和 P6 中的 Duration Type。关闭时：工期和单位保持不变。即使关闭，含有任务类型或已保存工时的文件仍会显示它们。",
     "allowMixedDayHour": "允许混合按天/按小时计划",
     "defaultTaskDurationUnit": "新任务的默认单位",
     "defaultTaskDurationUnitHint": "决定新任务以工作日还是工作小时开始。现有任务不会改变。",
@@ -458,8 +458,8 @@
   "feedback": {
     "buttonTooltip": "发送反馈",
     "title": "发送反馈",
-    "typeBug": "缺陷",
-    "typeFeature": "功能请求",
+    "typeBug": "功能异常",
+    "typeFeature": "想法",
     "typeGeneral": "问题或意见",
     "fieldTitle": "标题",
     "titlePlaceholder": "例如：保存后关键路径跳动",
@@ -471,7 +471,7 @@
     "removeScreenshot": "移除",
     "capturing": "正在截图…",
     "captureFailed": "截图失败。您仍然可以在没有截图的情况下发送反馈。",
-    "submit": "发送到 GitHub",
+    "submit": "发送",
     "sending": "正在发送…",
     "fieldEmail": "电子邮件地址（可选，用于回复）",
     "emailInvalid": "此电子邮件地址无效。请更正或将该字段留空。",
@@ -888,7 +888,7 @@
       "decreaseBreakDuration": "将休息时长减少15分钟",
       "start": "休息开始时间",
       "duration": "休息时长（分钟）",
-      "hint": "工作时段会自动推导。时长为 0 表示连续工作日。",
+      "hint": "设置休息的开始时间和时长；默认的工作日和时段会自动推算。把时长设为 0，即可得到连续的工作日。",
       "errors": {
         "invalidDuration": "休息时长必须是大于或等于 0 的整数分钟。",
         "outsideWorkingDay": "休息必须完全在设定的工作日内。",
@@ -1290,7 +1290,7 @@
     },
     "p6ZeroDurationUsesPlannedBoundary": {
       "label": "里程碑遵循计划的日历边界",
-      "help": "零工期里程碑保持在文件计划的日历边界上：一天的开始仍是开始里程碑，时段结束可以落在前置任务的完成时间上。"
+      "help": "零工期里程碑保持在文件所计划的日历边界上：一天的开始处仍是开始里程碑，时段的结束可以落在前置任务的完成时间上。"
     },
     "p6UseTaskPlannedStartFloor": {
       "label": "计划开始作为额外下限",
@@ -1298,11 +1298,11 @@
     },
     "p6FinishMilestoneBoundaryWindow": {
       "label": "完成里程碑作为边界窗口",
-      "help": "完成里程碑可以位于两个相邻的日历边界上：最早开始在一个时段的开头，最早完成在前一个时段的末尾。"
+      "help": "完成里程碑可以位于两个相邻的日历边界上：最早开始在一个时段的开头，最早完成在前一个时段的结尾。"
     },
     "p6PreserveActualInstants": {
       "label": "精确保留实际日期",
-      "help": "记录的实际开始和完成日期不会被移到工作时段上。"
+      "help": "已记录的实际开始和完成日期不会移到时段的边缘。"
     },
     "p6UseRemainingStartForProgress": {
       "label": "进行中任务：最早开始 = 剩余工作的开始",
@@ -1310,7 +1310,7 @@
     },
     "p6PreserveZeroDurationConstraintInstants": {
       "label": "里程碑上的精确约束时刻",
-      "help": "零工期里程碑上的日期时间约束是一个精确的点，即使在工作时段的开头也是如此。"
+      "help": "零工期里程碑上的日期和时间约束是一个精确的时间点，即使位于时段的开头也是如此。"
     },
     "resumeFromActualElapsed": {
       "label": "剩余工作在已用工期之后恢复",
@@ -1322,23 +1322,23 @@
     },
     "p6RelationFinishBoundary": {
       "label": "后续任务在完成边界开始",
-      "help": "对于共享时段边界上无延隔时间的完成-开始关系，后续任务在前置任务完成时开始（仅限文件如此标记的关系）。逆推时,后续任务的最晚开始直接显示为工作时段的开始。"
+      "help": "对于无延隔的完成-开始关系：若文件中后续任务恰好在前置任务的完成时刻开始，且该时刻位于时段末尾，则后续任务在该完成时刻开始，而不是在下一个时段的开始。文件不会标记这一点：打开 .xer 文件时，应用会自行识别此类关系。你自己建立的关系不属于此范围。逆推计算时，后续任务的最晚开始仍会显示为时段的开始。"
     },
     "p6BackwardLagFinishBoundary": {
       "label": "从完成边界逆推延隔时间",
-      "help": "当逆推计算从完成边界减去工作时间延隔并恰好落在时段开始时，它会落在前一个完成边界上。对于无延隔的完成-完成关系,落在时段结束处的最晚完成同样保持在该完成边界上。"
+      "help": "若逆推计算从完成边界减去工作时间的延隔后，恰好落在某个时段的开始，则结果落在前一个完成边界上。对于无延隔的完成-完成关系，位于时段结尾处的最晚完成同样保留在该完成边界上。"
     },
     "p6CompletedDataDateWindow": {
       "label": "状态日期窗口中的已完成任务",
-      "help": "已完成任务在状态日期窗口中获得最早日期，其完成计入项目完成（仅限来自 P6 的任务）。"
+      "help": "已完成任务在状态日期窗口内获得最早日期，其完成时间计入项目完成。"
     },
     "p6CompletedLoeActualFinish": {
       "label": "通过实际完成的已完成 LOE",
-      "help": "仅有开始-开始输入的已完成投入水平作业沿其实际完成的路径推算（仅限来自 P6 的任务）。"
+      "help": "若已完成的投入水平任务只有开始-开始输入，则沿其实际完成日期推算路径。"
     },
     "p6OpenLoeTargetSpan": {
       "label": "未开始的 LOE 采用目标窗口",
-      "help": "尚未开始的投入水平作业以其目标窗口作为工期（仅限来自 P6 的任务）。"
+      "help": "尚未开始的投入水平任务以其目标窗口作为工期。"
     },
     "p6CompletedPredecessorAtDataDate": {
       "label": "已完成的紧前任务不在状态日期之后约束",
@@ -1354,7 +1354,7 @@
     },
     "p6CompletedOutOfSequenceWindow": {
       "label": "顺序外完成的任务等待其紧前任务",
-      "help": "若已完成任务的某个紧前任务尚未完成，其零时段排在该紧前任务之后，而不是状态日期（保留逻辑）。"
+      "help": "已完成任务的前置任务尚未完成时，其零时段排在该前置任务之后，而不是排在状态日期上（P6：Retained Logic）。只有在以下两个选项也开启时，此项才起作用：“状态日期窗口中的已完成任务”和“进行中任务：最早开始 = 剩余工作的开始”。"
     },
     "p6CompletedPhysicalAtDataDate": {
       "label": "按实物进度完成的任务位于数据日期",
@@ -1366,7 +1366,7 @@
     },
     "p6FinishFinishStartMilestoneLateFinish": {
       "label": "指向开始里程碑的完成-完成关系绑定到里程碑本身",
-      "help": "指向开始里程碑的完成-完成关系计到里程碑本身，而不是其当天的开始：紧前任务的最晚完成可以延伸到里程碑的最晚完成。"
+      "help": "指向开始里程碑的完成-完成关系，计算到里程碑本身，而不是里程碑当天的开始：前置任务的最晚完成可以延伸到里程碑的最晚完成。"
     },
     "p6StartedTaskIgnoresPlannedStartFloor": {
       "label": "计划开始不是进行中任务的下限",
@@ -1374,7 +1374,7 @@
     },
     "p6LateFinishOnOwnCalendar": {
       "label": "最晚完成落在自身日历上",
-      "help": "如果后续工作所施加的最晚完成时间落在本作业的工作时间之外，则取本作业日历上前一个工作时段的结束时间。"
+      "help": "若后续任务施加的最晚完成落在任务的工作时间之外，则它变为该任务自身日历上前一个时段的结束。"
     },
     "p6ProgressOverrideIgnoresStartedSuccessor": {
       "label": "进度覆盖在逆推时也忽略已开始的紧后作业",
@@ -1382,11 +1382,11 @@
     },
     "p6FinishNotBeforeFinishFinishBound": {
       "label": "最早完成不早于完成-完成界限",
-      "help": "在完成-完成关系中，紧后作业的最早完成时间按时钟时间绝不早于紧前作业设定的界限。如果该界限落在紧后作业的非工作时间，完成时间取下一个工作时段的开始。"
+      "help": "在完成-完成关系中，后续任务的最早完成按钟表时间永远不会早于前置任务设定的界限。若该界限落在后续任务的非工作时间内，则完成时间变为下一个时段的开始。"
     },
     "p6AlapPositionedFromSuccessors": {
       "label": "ALAP 任务尽可能晚，以后续任务允许为限",
-      "help": "带有“越晚越好”限制的未开始任务，精确到分钟地在其后续任务需要它的时刻完成；先计算后续任务，使链条首尾相接。其自身计划开始不计；没有前置任务的任务不会早于状态日期开始。仅适用于按小时的日历。"
+      "help": "带有“越晚越好”约束的未开始任务，会在其后续任务需要它的那一分钟结束。先计算后续任务，使链条首尾相接。其自身的计划开始不计入；没有前置任务的任务，则不早于状态日期开始。"
     }
   },
   "profiles": {
@@ -1427,7 +1427,7 @@
       "msproject": "按 Microsoft Project 的进度",
       "ownProfilesOnly": "仅用于自定义配置"
     },
-    "ownProfilesOnlyNote": "这些规则在每个内置配置中都是关闭的，包括 Primavera P6。启用其中任何一项即成为自定义配置。",
+    "ownProfilesOnlyNote": "这些约定在每个内置计算配置文件中都是关闭的，包括 Primavera P6。只有自定义计算配置文件才能开启它们：为此请选择“新建配置文件”。",
     "deviatingCount": "已更改：{{n}}",
     "baseValue": "基准：{{value}}",
     "on": "开",

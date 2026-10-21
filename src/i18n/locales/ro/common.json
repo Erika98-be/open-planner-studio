@@ -125,12 +125,12 @@
     "mppTimephasedSteeringLost_few": "Fereastra de date din MS Project nu mai ghidează {{count}} activități după această modificare; distribuția orelor rămâne valabilă și este păstrată în fișier.",
     "mppTimephasedSteeringLost_other": "Fereastra de date din MS Project nu mai ghidează {{count}} de activități după această modificare; distribuția orelor rămâne valabilă și este păstrată în fișier.",
     "readMore": "Citiți mai multe",
-    "taskTypesUnlocked": "Acest fișier conține lucru salvat sau reguli de lucru proprii; regula de lucru și lucrul rămas sunt vizibile pentru acest proiect.",
-    "taskTypesUnlockedDetail": "Acest fișier conține lucru salvat sau reguli de lucru proprii; regula de lucru și lucrul rămas sunt vizibile pentru acest proiect.",
-    "workRulesReadMore": "Despre regulile de lucru",
-    "workRuleDurationsChanged_one": "După modificarea calendarului, regula de lucru a ajustat durata pentru {{count}} activitate (lucrul rămâne, orele pe zi s-au schimbat).",
-    "workRuleDurationsChanged_few": "După modificarea calendarului, regula de lucru a ajustat durata pentru {{count}} activități (lucrul rămâne, orele pe zi s-au schimbat).",
-    "workRuleDurationsChanged_other": "După modificarea calendarului, regula de lucru a ajustat durata pentru {{count}} de activități (lucrul rămâne, orele pe zi s-au schimbat).",
+    "taskTypesUnlocked": "Acest fișier conține lucru salvat sau tipuri de activitate; tipul de activitate și lucrul rămas sunt vizibile pentru acest proiect.",
+    "taskTypesUnlockedDetail": "Acest fișier conține lucru salvat sau tipuri de activitate; tipul de activitate și lucrul rămas sunt vizibile pentru acest proiect.",
+    "workRulesReadMore": "Despre tipurile de activitate",
+    "workRuleDurationsChanged_one": "După modificarea calendarului, tipul de activitate a ajustat durata pentru {{count}} activitate (lucrul rămâne, orele pe zi s-au schimbat).",
+    "workRuleDurationsChanged_few": "După modificarea calendarului, tipul de activitate a ajustat durata pentru {{count}} activități (lucrul rămâne, orele pe zi s-au schimbat).",
+    "workRuleDurationsChanged_other": "După modificarea calendarului, tipul de activitate a ajustat durata pentru {{count}} de activități (lucrul rămâne, orele pe zi s-au schimbat).",
     "pasteSkippedReadOnly_one": "{{count}} celulă omisă: este doar în citire (de exemplu un cod WBS numerotat automat sau o coloană calculată).",
     "pasteSkippedReadOnly_few": "{{count}} celule omise: sunt doar în citire (de exemplu un cod WBS numerotat automat sau o coloană calculată).",
     "pasteSkippedReadOnly_other": "{{count}} de celule omise: sunt doar în citire (de exemplu un cod WBS numerotat automat sau o coloană calculată).",
@@ -150,9 +150,9 @@
     "startBlockedByConstraintMany_other": "Noile începuturi pentru {{count}} de activități nu au fost aplicate: activitățile au un predecesor și o restricție diferită de Nu începe înainte de (SNET). Modificați restricțiile pentru a muta începuturile.",
     "dragStartIsActual": "„{{name}}” a început: începutul efectiv nu se deplasează. Modificați-l prin progres.",
     "dragDatesAreActual": "„{{name}}” este finalizată: începutul și sfârșitul sunt datele reale și nu se deplasează. Modificați-le prin progres.",
-    "referencesClearedOnPaste_one": "{{count}} referință nu exista în acest document și a fost eliminată (un calendar de activitate, un tip de activitate particularizat, un cod de activitate sau un câmp particularizat din documentul sursă).",
-    "referencesClearedOnPaste_few": "{{count}} referințe nu existau în acest document și au fost eliminate (calendare de activitate, tipuri de activitate particularizate, coduri de activitate sau câmpuri particularizate din documentul sursă).",
-    "referencesClearedOnPaste_other": "{{count}} de referințe nu existau în acest document și au fost eliminate (calendare de activitate, tipuri de activitate particularizate, coduri de activitate sau câmpuri particularizate din documentul sursă).",
+    "referencesClearedOnPaste_one": "{{count}} referință nu exista în acest document și a fost eliminată (un calendar de activitate, o categorie de lucru particularizată, un cod de activitate sau un câmp particularizat din documentul sursă).",
+    "referencesClearedOnPaste_few": "{{count}} referințe nu existau în acest document și au fost eliminate (calendare de activitate, categorii de lucru particularizate, coduri de activitate sau câmpuri particularizate din documentul sursă).",
+    "referencesClearedOnPaste_other": "{{count}} de referințe nu existau în acest document și au fost eliminate (calendare de activitate, categorii de lucru particularizate, coduri de activitate sau câmpuri particularizate din documentul sursă).",
     "milestoneRefusedAssignments_one": "Activitatea „{{task}}” are atribuiri de resurse și nu poate deveni jalon. Eliminați mai întâi atribuirile.",
     "milestoneRefusedAssignments_few": "{{count}} activități au atribuiri de resurse și nu pot deveni jaloane. Eliminați mai întâi atribuirile.",
     "milestoneRefusedAssignments_other": "{{count}} de activități au atribuiri de resurse și nu pot deveni jaloane. Eliminați mai întâi atribuirile.",
@@ -171,7 +171,7 @@
     "phaseRefusedNoAssignableChild": "„{{phase}}” nu poate deveni activitate rezumat: atribuirile sale nu pot merge nicăieri, pentru că niciuna dintre subactivitățile noi nu poate purta atribuiri (un jalon sau o activitate rezumat). Nu s-a schimbat nimic.",
     "phaseRefusedDuplicateResource": "„{{phase}}” nu poate deveni activitate rezumat: atribuirea resursei {{resource}} nu poate trece la noua subactivitate „{{child}}”, pentru că aceasta are deja {{resource}}. Nu s-a schimbat nimic.",
     "phaseQuestionOutdated": "Activitățile sau atribuirile au fost modificate cât timp întrebarea era deschisă. Nu s-a modificat nimic; încercați din nou.",
-    "schedulingProfileApplied": "Acest proiect se calculează conform profilului {{profile}}. Modificați din Fișier → Informații proiect → Profil de calcul și opțiuni de calcul.",
+    "schedulingProfileApplied": "Acest proiect se calculează ca {{profile}}. Modificați din Fișier → Informații despre proiect → Profil de calcul și opțiuni de calcul.",
     "schedulingTemplateSaved": "Șablonul „{{name}}” a fost salvat.",
     "schedulingTemplateLimit": "Șablonul nu a fost salvat: există deja {{max}} șabloane. Ștergeți mai întâi un șablon.",
     "schedulingTemplateStorageFailed": "Șablonul nu a fost salvat: spațiul de stocare al aplicației este plin sau nu este disponibil.",
@@ -335,7 +335,7 @@
     "collapseAll": "Restrângere totală"
   },
   "settings": {
-    "title": "Setări",
+    "title": "Setări aplicație",
     "appearanceTab": "Afișare",
     "planningTab": "Planificare",
     "advancedTab": "Avansat",
@@ -380,8 +380,8 @@
     "hourPlanningSection": "Planificare pe ore",
     "enableHourPlanning": "Activare planificare pe ore",
     "enableHourPlanningHint": "Pornește planificarea pe ore și minute: o scară de timp pe ore, ture cu benzi de timp de lucru și bare de activitate exacte pe ore. Dezactivat ⇒ aplicația rămâne complet pe zile, ca înainte.",
-    "showTaskTypes": "Afișare reguli de lucru și lucru",
-    "showTaskTypesHint": "Fișierele din MS Project sau Primavera P6 afișează mereu acest lucru. Dezactivat: durata și unitățile de atribuire rămân pe loc, iar lucrul se calculează în continuare.",
+    "showTaskTypes": "Tipuri de activitate",
+    "showTaskTypesHint": "Alegeți pentru fiecare activitate ce se modifică atunci când se schimbă durata, unitățile de atribuire sau lucrul, ca Task Type în MS Project și Duration Type în P6. Dezactivat: durata și unitățile de atribuire rămân fixe. Un fișier cu tipuri de activitate sau cu lucru salvat le afișează chiar dacă această opțiune este dezactivată.",
     "allowMixedDayHour": "Permitere planificare pe ore și zile combinate",
     "defaultTaskDurationUnit": "Unitate implicită pentru activități noi",
     "defaultTaskDurationUnitHint": "Stabilește dacă activitățile noi încep implicit în zile lucrătoare sau în ore de lucru. Activitățile existente nu se modifică.",
@@ -573,8 +573,8 @@
   "feedback": {
     "buttonTooltip": "Trimitere feedback",
     "title": "Trimiteți feedback",
-    "typeBug": "Eroare",
-    "typeFeature": "Solicitare de funcție",
+    "typeBug": "Ceva nu funcționează",
+    "typeFeature": "Idee",
     "typeGeneral": "Întrebare sau observație",
     "fieldTitle": "Titlu",
     "titlePlaceholder": "De exemplu: Drumul critic se mută brusc după salvare",
@@ -586,7 +586,7 @@
     "removeScreenshot": "Eliminare",
     "capturing": "Se creează captura de ecran…",
     "captureFailed": "Crearea capturii de ecran a eșuat. Puteți trimite feedback și fără captură de ecran.",
-    "submit": "Trimitere la GitHub",
+    "submit": "Trimitere",
     "sending": "Se trimite…",
     "fieldEmail": "Adresă de e-mail (opțional, pentru un răspuns)",
     "emailInvalid": "Această adresă de e-mail nu este corectă. Corectați-o sau lăsați câmpul gol.",
@@ -1015,7 +1015,7 @@
       "decreaseBreakDuration": "Micșorare durata pauzei cu 15 minute",
       "start": "Începutul pauzei",
       "duration": "Durata pauzei (minute)",
-      "hint": "Setați începutul și durata pauzei. Orele nete și intervalele de timp de lucru se calculează automat. Setați durata la 0 pentru o zi lucrătoare continuă.",
+      "hint": "Setați începutul și durata pauzei; ziua lucrătoare standard și intervalele de lucru se deduc automat. Setați durata la 0 pentru o zi lucrătoare continuă.",
       "errors": {
         "invalidDuration": "Durata pauzei trebuie să fie un număr întreg de minute, minim 0.",
         "outsideWorkingDay": "Pauza trebuie să se încadreze complet în ziua lucrătoare setată.",
@@ -1431,7 +1431,7 @@
     },
     "p6ZeroDurationUsesPlannedBoundary": {
       "label": "Jalonul urmează limita planificată a calendarului",
-      "help": "Un jalon fără durată rămâne pe limita calendarului planificată în fișier. Un început de zi rămâne jalon de început. Un sfârșit de interval poate ajunge la sfârșitul predecesorului."
+      "help": "Un jalon fără durată rămâne pe limita de calendar planificată în fișier: un început de zi rămâne jalon de început, iar un sfârșit de interval poate ajunge la sfârșitul predecesorului."
     },
     "p6UseTaskPlannedStartFloor": {
       "label": "Început planificat ca limită inferioară suplimentară",
@@ -1439,11 +1439,11 @@
     },
     "p6FinishMilestoneBoundaryWindow": {
       "label": "Jalon de sfârșit ca fereastră de limită",
-      "help": "Un jalon de sfârșit poate fi pe două limite calendaristice vecine. Început cel mai devreme la începutul unui interval, sfârșit cel mai devreme la sfârșitul intervalului anterior."
+      "help": "Un jalon de sfârșit poate fi pe două limite de calendar vecine: început cel mai devreme la începutul unui interval, sfârșit cel mai devreme la sfârșitul intervalului anterior."
     },
     "p6PreserveActualInstants": {
       "label": "Păstrare exactă a datelor reale",
-      "help": "Începutul efectiv și sfârșitul efectiv înregistrate nu se mută într-un interval de timp de lucru."
+      "help": "Începutul efectiv și sfârșitul efectiv înregistrate nu se mută la marginea unui interval de lucru."
     },
     "p6UseRemainingStartForProgress": {
       "label": "Activitate în curs: început cel mai devreme = începutul lucrului rămas",
@@ -1451,7 +1451,7 @@
     },
     "p6PreserveZeroDurationConstraintInstants": {
       "label": "Moment exact al restricției la un jalon",
-      "help": "O restricție de dată și oră la un jalon fără durată este un punct exact, chiar și la începutul unui interval de lucru."
+      "help": "O restricție de dată și oră la un jalon fără durată este un punct exact, chiar și la începutul unui interval."
     },
     "resumeFromActualElapsed": {
       "label": "Lucrul rămas se reia după timpul scurs",
@@ -1463,23 +1463,23 @@
     },
     "p6RelationFinishBoundary": {
       "label": "Succesorul începe la limita de sfârșit",
-      "help": "La o dependență sfârșit-început fără decalaj, pe o limită comună de interval, succesorul începe la sfârșitul predecesorului. Acest lucru se aplică doar dependențelor pe care fișierul le marchează așa. La calculul înapoi, succesorul își arată începutul târziu ca începutul unui interval de lucru."
+      "help": "La o dependență sfârșit-început fără decalaj, în care succesorul începe în fișier exact la sfârșitul predecesorului, la sfârșitul unui interval, succesorul începe la acel sfârșit și nu la începutul intervalului următor. Fișierul nu marchează acest lucru: aplicația recunoaște singură o astfel de dependență când deschide un fișier .xer. O dependență pe care o adăugați singur nu intră sub această regulă. La calculul înapoi, succesorul își afișează începutul târziu ca începutul unui interval de lucru."
     },
     "p6BackwardLagFinishBoundary": {
       "label": "Decalaj înapoi de la o limită de sfârșit",
-      "help": "Dacă, la calculul înapoi, un decalaj de timp de lucru se scade de la o limită de sfârșit și se ajunge exact la începutul unui interval, rezultatul cade pe limita de sfârșit anterioară. La o dependență sfârșit-sfârșit fără decalaj, un sfârșit târziu la sfârșitul unui interval rămâne pe această limită de sfârșit."
+      "help": "Dacă, la calculul înapoi, un decalaj de timp de lucru se scade de la o limită de sfârșit și ajunge exact la începutul unui interval, rezultatul cade pe limita de sfârșit anterioară. La o dependență sfârșit-sfârșit fără decalaj, un sfârșit târziu la sfârșitul unui interval rămâne pe această limită de sfârșit."
     },
     "p6CompletedDataDateWindow": {
       "label": "Activitate finalizată în fereastra datei raportului de stare",
-      "help": "O activitate finalizată primește date cele mai devreme în fereastra datei raportului de stare. Sfârșitul ei contează pentru sfârșitul proiectului. Acest lucru se aplică doar activităților cu proveniență P6."
+      "help": "O activitate finalizată primește date cele mai devreme în fereastra datei raportului de stare, iar sfârșitul ei contează pentru sfârșitul proiectului."
     },
     "p6CompletedLoeActualFinish": {
       "label": "LOE finalizat prin sfârșitul efectiv",
-      "help": "O activitate LOE (level of effort) finalizată, cu doar o intrare început-început, urmează traseul prin sfârșitul efectiv. Acest lucru se aplică doar activităților cu proveniență P6."
+      "help": "O activitate LOE (level of effort) finalizată, cu o singură intrare început-început, urmează traseul prin sfârșitul efectiv."
     },
     "p6OpenLoeTargetSpan": {
       "label": "LOE nepornit ia fereastra țintă",
-      "help": "O activitate LOE (level of effort) care nu a început ia fereastra ei țintă ca durată. Acest lucru se aplică doar activităților cu proveniență P6."
+      "help": "O activitate LOE (level of effort) care nu a început ia fereastra ei țintă drept durată."
     },
     "p6CompletedPredecessorAtDataDate": {
       "label": "Predecesor finalizat nu reține după data raportului de stare",
@@ -1495,7 +1495,7 @@
     },
     "p6CompletedOutOfSequenceWindow": {
       "label": "Activitate finalizată cu progres în afara secvenței așteaptă predecesorii",
-      "help": "O activitate finalizată al cărui predecesor nu este încă gata primește fereastra ei de zero după acel predecesor, în loc de data raportului de stare (P6: Retained Logic)."
+      "help": "O activitate finalizată al cărei predecesor nu este încă gata primește fereastra ei cu durată zero după acel predecesor, nu la data raportului de stare (P6: Retained Logic). Funcționează doar dacă sunt active și „Activitate finalizată în fereastra datei raportului de stare” și „Activitate în curs: început cel mai devreme = începutul lucrului rămas”."
     },
     "p6CompletedPhysicalAtDataDate": {
       "label": "Activitate finalizată cu progres fizic se află la data raportului de stare",
@@ -1507,7 +1507,7 @@
     },
     "p6FinishFinishStartMilestoneLateFinish": {
       "label": "Dependență sfârșit-sfârșit către un jalon de început se leagă de jalonul însuși",
-      "help": "O dependență sfârșit-sfârșit către un jalon de început se întinde până la jalonul însuși, nu până la începutul zilei jalonului. Sfârșitul târziu al predecesorului poate merge până la sfârșitul târziu al jalonului."
+      "help": "O dependență sfârșit-sfârșit către un jalon de început se întinde până la jalonul în sine, nu până la începutul zilei jalonului: sfârșitul târziu al predecesorului poate ajunge până la sfârșitul târziu al jalonului."
     },
     "p6StartedTaskIgnoresPlannedStartFloor": {
       "label": "Începutul planificat nu este limită pentru o activitate în curs",
@@ -1515,7 +1515,7 @@
     },
     "p6LateFinishOnOwnCalendar": {
       "label": "Sfârșit târziu în propriul calendar",
-      "help": "Dacă sfârșitul târziu impus de un succesor cade în afara timpului de lucru al activității, el devine sfârșitul perioadei de lucru anterioare din propriul calendar al activității."
+      "help": "Dacă sfârșitul târziu impus de un succesor cade în afara timpului de lucru al activității, acesta devine sfârșitul perioadei de lucru anterioare din propriul calendar."
     },
     "p6ProgressOverrideIgnoresStartedSuccessor": {
       "label": "Progress Override ignoră un succesor început și în calculul înapoi",
@@ -1523,11 +1523,11 @@
     },
     "p6FinishNotBeforeFinishFinishBound": {
       "label": "Sfârșitul cel mai devreme nu înaintea unei limite sfârșit-sfârșit",
-      "help": "La o dependență sfârșit-sfârșit, sfârșitul cel mai devreme al succesorului nu cade niciodată, în timp calendaristic, înaintea limitei stabilite de predecesor. Dacă acea limită cade în afara timpului de lucru al succesorului, sfârșitul devine începutul următoarei perioade de lucru."
+      "help": "La o dependență sfârșit-sfârșit, sfârșitul cel mai devreme al succesorului nu cade niciodată, în timp calendaristic, înaintea limitei stabilite de predecesor. Dacă această limită cade într-o zi nelucrătoare a succesorului, sfârșitul devine începutul următoarei perioade de lucru."
     },
     "p6AlapPositionedFromSuccessors": {
       "label": "Activități ALAP cât mai târziu permit succesorii",
-      "help": "O activitate nepornită cu restricția „cât mai târziu posibil” se termină în minutul în care succesorii o cer, succesorii primii, astfel încât un lanț se închide. Propriul ei început planificat nu contează. O activitate fără predecesor nu începe atunci mai devreme decât data raportului de stare. Se aplică doar pe un calendar pe ore."
+      "help": "O activitate nepornită, cu restricția „cât mai târziu posibil”, primește sfârșitul în minutul în care succesorii au nevoie de ea. Succesorii se calculează primii, astfel încât lanțul se închide. Începutul ei planificat nu contează; o activitate fără predecesor nu începe atunci mai devreme decât data raportului de stare."
     }
   },
   "profiles": {
@@ -1568,7 +1568,7 @@
       "msproject": "Progres ca în Microsoft Project",
       "ownProfilesOnly": "Doar pentru profiluri proprii"
     },
-    "ownProfilesOnlyNote": "Aceste convenții de calcul sunt dezactivate în fiecare profil integrat, inclusiv în Primavera P6. Dacă activați una, devine un profil propriu.",
+    "ownProfilesOnlyNote": "Aceste convenții de calcul sunt dezactivate în fiecare profil de calcul integrat, inclusiv în Primavera P6. Doar un profil de calcul propriu le poate activa: alegeți pentru aceasta „Creare profil”.",
     "deviatingCount": "diferit: {{n}}",
     "baseValue": "bază: {{value}}",
     "on": "pornit",

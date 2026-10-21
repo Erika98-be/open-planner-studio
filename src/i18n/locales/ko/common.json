@@ -45,7 +45,7 @@
     "xerImportCalendarIssues_other": "달력 발견 사항: {{count}}",
     "xerImportNumberIssues_other": "숫자 형식 문제: {{count}}",
     "xerImportEnumFallbacks_other": "열거형 대체: {{count}}",
-    "xerImportMissingPlannedStarts_other": "계획 시작이 없던 활동 {{count}}개가 이제 파일의 데이터 날짜 또는 프로젝트 시작일에 시작합니다.",
+    "xerImportMissingPlannedStarts_other": "계획 시작이 없던 작업 {{count}}개는 이제 파일의 상태 날짜 또는 프로젝트 시작일에 시작합니다.",
     "xerImportUnsupportedSemantics_other": "안전한 대체를 사용한 P6 일정 설정: {{count}}",
     "xerImportDatesAsRecorded_other": "Primavera에 기록된 날짜를 그대로 표시하는 작업: {{count}}개(다시 계산하지 않음)",
     "importDatesAsRecorded_other": "파일에 기록된 날짜를 그대로 표시하는 작업: {{count}}개(다시 계산하지 않음)",
@@ -80,10 +80,10 @@
     "projectStartAnchorsClamped_other": "작업 {{count}}개가 프로젝트 시작일과 함께 이동했습니다.",
     "mppTimephasedSteeringLost_other": "이 편집 이후 MS Project의 시간 분배가 더 이상 {{count}}개 작업을 제어하지 않습니다. 원래 분배는 파일에 그대로 보존됩니다.",
     "readMore": "더 알아보기",
-    "taskTypesUnlocked": "이 파일에는 저장된 작업량 또는 사용자 작업 규칙이 포함되어 있습니다. 이 프로젝트에서는 작업 규칙과 남은 작업량이 표시됩니다.",
-    "taskTypesUnlockedDetail": "이 파일에는 저장된 작업량 또는 사용자 작업 규칙이 포함되어 있습니다. 이 프로젝트에서는 작업 규칙과 남은 작업량이 표시됩니다.",
-    "workRulesReadMore": "작업 규칙 설명",
-    "workRuleDurationsChanged_other": "달력 변경 후 작업 규칙이 {{count}}개 작업의 기간을 조정했습니다(작업량 유지, 일일 시간 변경).",
+    "taskTypesUnlocked": "이 파일에는 저장된 작업량이나 작업 유형이 들어 있습니다. 이 프로젝트에서는 작업 유형과 남은 작업량이 표시됩니다.",
+    "taskTypesUnlockedDetail": "이 파일에는 저장된 작업량이나 작업 유형이 들어 있습니다. 이 프로젝트에서는 작업 유형과 남은 작업량이 표시됩니다.",
+    "workRulesReadMore": "작업 유형 설명",
+    "workRuleDurationsChanged_other": "달력 변경 후 작업 유형이 작업 {{count}}개의 기간을 조정했습니다(작업량은 유지되고 하루 시간은 바뀌었습니다).",
     "pasteSkippedReadOnly_other": "읽기 전용 셀 {{count}}개를 건너뛰었습니다(예: 자동 번호가 매겨진 WBS 코드 또는 계산된 열).",
     "librarySaveFailed": "라이브러리를 저장하지 못했습니다",
     "levelingDelayRoundedToWorkdays_other": "평준화는 MS Project의 분 단위로 정확한 평준화 지연({{count}}개 작업)을 전체 근무일로 반올림합니다.",
@@ -95,7 +95,7 @@
     "startBlockedByConstraintMany_other": "작업 {{count}}개의 새 시작일이 적용되지 않았습니다. 이 작업들에는 선행 작업과 지정일 이후 시작 (SNET)이 아닌 제약 조건이 있습니다. 시작일을 옮기려면 그 제약 조건을 변경하세요.",
     "dragStartIsActual": "'{{name}}'이(가) 시작되었습니다. 시작은 실제 시작이므로 이동하지 않습니다. 진행률에서 변경하세요.",
     "dragDatesAreActual": "'{{name}}'이(가) 완료되었습니다. 시작과 종료는 실제 날짜이므로 이동하지 않습니다. 진행률에서 변경하세요.",
-    "referencesClearedOnPaste_other": "이 문서에 없는 참조 {{count}}개를 비웠습니다(원본 문서의 작업 달력, 사용자 지정 작업 유형, 작업 코드 또는 사용자 지정 필드).",
+    "referencesClearedOnPaste_other": "이 문서에 없던 참조 {{count}}개를 비웠습니다(원본 문서의 작업 달력, 사용자 지정 작업 범주, 활동 코드 또는 사용자 지정 필드).",
     "milestoneRefusedAssignments_other": "리소스 할당이 있는 작업 {{count}}개는 마일스톤이 될 수 없습니다. 먼저 할당을 제거하세요.",
     "milestoneRefusedSummary_other": "하위 작업이 있는 요약 작업 {{count}}개는 마일스톤이 될 수 없습니다.",
     "assignmentsMovedToSubtask_other": "할당 {{count}}개를 하위 작업 '{{child}}'(으)로 옮겼습니다.",
@@ -222,7 +222,7 @@
     "collapseAll": "모두 접기"
   },
   "settings": {
-    "title": "설정",
+    "title": "앱 설정",
     "appearanceTab": "모양",
     "planningTab": "계획",
     "advancedTab": "고급",
@@ -267,8 +267,8 @@
     "hourPlanningSection": "시간 단위 계획",
     "enableHourPlanning": "시간 단위 계획 사용",
     "enableHourPlanningHint": "시간/분 단위 스케줄링을 켭니다: 시간 단위 시간축, 근무 시간대가 있는 교대, 시간 단위로 정확한 작업 막대. 끄면 ⇒ 앱은 이전처럼 완전히 일 단위로 유지됩니다.",
-    "showTaskTypes": "작업 규칙과 작업량 표시",
-    "showTaskTypesHint": "MS Project 또는 Primavera P6 파일에서는 항상 표시됩니다. 끄기: 기간과 단위는 그대로이고 작업량이 따라갑니다.",
+    "showTaskTypes": "작업 유형 사용",
+    "showTaskTypesHint": "작업마다 기간, 단위 또는 작업량이 바뀔 때 무엇이 함께 바뀔지 고르세요. MS Project의 Task Type, P6의 Duration Type과 같습니다. 끄면 기간과 단위는 그대로 유지됩니다. 작업 유형이나 저장된 작업량이 있는 파일은 이 설정이 꺼져 있어도 이를 표시합니다.",
     "allowMixedDayHour": "일/시간 혼합 계획 허용",
     "defaultTaskDurationUnit": "새 작업의 기본 단위",
     "defaultTaskDurationUnitHint": "새 작업을 근무일 또는 근무 시간 중 어떤 단위로 시작할지 정합니다. 기존 작업은 바뀌지 않습니다.",
@@ -458,8 +458,8 @@
   "feedback": {
     "buttonTooltip": "피드백 보내기",
     "title": "피드백 보내기",
-    "typeBug": "버그",
-    "typeFeature": "기능 요청",
+    "typeBug": "작동하지 않음",
+    "typeFeature": "아이디어",
     "typeGeneral": "질문 또는 의견",
     "fieldTitle": "제목",
     "titlePlaceholder": "예: 저장 후 주공정 경로가 달라짐",
@@ -471,7 +471,7 @@
     "removeScreenshot": "제거",
     "capturing": "스크린샷 캡처 중…",
     "captureFailed": "스크린샷 캡처에 실패했습니다. 스크린샷 없이도 피드백을 보낼 수 있습니다.",
-    "submit": "GitHub로 보내기",
+    "submit": "보내기",
     "sending": "보내는 중…",
     "fieldEmail": "이메일 주소 (선택 사항, 답변용)",
     "emailInvalid": "이메일 주소가 올바르지 않습니다. 수정하거나 칸을 비워 두세요.",
@@ -888,7 +888,7 @@
       "decreaseBreakDuration": "휴식 시간을 15분 줄이기",
       "start": "휴식 시작",
       "duration": "휴식 시간(분)",
-      "hint": "근무 시간대가 자동으로 계산됩니다. 0분은 연속 근무일입니다.",
+      "hint": "휴식 시작 시각과 기간을 설정하세요. 기본 근무일과 근무 구간은 자동으로 계산됩니다. 연속 근무일이면 기간을 0으로 설정하세요.",
       "errors": {
         "invalidDuration": "휴식 시간은 0 이상의 정수 분이어야 합니다.",
         "outsideWorkingDay": "휴식은 설정된 근무일 안에 모두 있어야 합니다.",
@@ -1148,7 +1148,7 @@
     "warnPast": "새 시작일이 과거입니다.",
     "noTasks": "이 프로젝트에는 아직 작업이 없습니다. 프로젝트 날짜만 이동합니다.",
     "invalidDate": "유효한 날짜를 선택하세요.",
-    "invalidCurrentStart": "프로젝트에 유효한 시작일이 없습니다. 먼저 프로젝트 정보에서 설정하세요.",
+    "invalidCurrentStart": "프로젝트 시작일이 유효하지 않습니다. 먼저 프로젝트 정보에서 설정하세요.",
     "apply": "이동",
     "calcError": "일정을 계산할 수 없습니다: {{error}}"
   },
@@ -1298,11 +1298,11 @@
     },
     "p6FinishMilestoneBoundaryWindow": {
       "label": "완료 마일스톤을 경계 창으로 처리",
-      "help": "완료 마일스톤은 인접한 두 달력 경계에 놓일 수 있습니다. 빠른 시작은 구간의 시작, 조기 완료는 이전 구간의 끝입니다."
+      "help": "완료 마일스톤은 인접한 두 달력 경계에 놓일 수 있습니다. 빠른 시작은 구간의 시작, 빠른 완료는 이전 구간의 끝입니다."
     },
     "p6PreserveActualInstants": {
       "label": "실적 날짜를 정확히 유지",
-      "help": "기록된 실적 시작 및 완료 날짜는 근무 시간 구간으로 이동되지 않습니다."
+      "help": "기록된 실제 날짜(실제 시작과 실제 완료)는 근무 구간의 가장자리로 옮겨지지 않습니다."
     },
     "p6UseRemainingStartForProgress": {
       "label": "진행 중 작업: 빠른 시작 = 남은 작업의 시작",
@@ -1310,7 +1310,7 @@
     },
     "p6PreserveZeroDurationConstraintInstants": {
       "label": "마일스톤의 제약 시점을 정확히",
-      "help": "기간이 0인 마일스톤의 날짜·시간 제약은 작업 구간의 시작에서도 정확한 시점입니다."
+      "help": "기간이 0인 마일스톤의 날짜·시간 제약 조건은 구간의 시작에서도 정확한 시점입니다."
     },
     "resumeFromActualElapsed": {
       "label": "남은 작업은 경과 기간 후에 재개",
@@ -1322,23 +1322,23 @@
     },
     "p6RelationFinishBoundary": {
       "label": "후속 작업은 완료 경계에서 시작",
-      "help": "공유 구간 경계에서 지연 없는 완료-시작 관계의 경우 후속 작업은 선행 작업의 완료 시점에 시작합니다(파일이 그렇게 표시한 관계만). 역산 시 후속 작업은 최종 시작을 단순히 작업 구간의 시작으로 표시합니다."
+      "help": "완료-시작 관계에 지연이 없고, 파일에서 후속 작업이 선행 작업의 완료 시점에 정확히 시작하며 그것이 근무 구간의 끝인 경우, 후속 작업은 다음 구간의 시작이 아니라 그 완료 시점에 시작합니다. 파일은 이를 표시하지 않습니다. 앱이 .xer 파일을 열 때 이런 관계를 스스로 인식합니다. 직접 추가한 관계는 여기에 해당하지 않습니다. 역산할 때 후속 작업은 늦은 시작을 구간의 시작으로 표시합니다."
     },
     "p6BackwardLagFinishBoundary": {
       "label": "완료 경계에서 역방향 지연",
-      "help": "역방향 계산이 완료 경계에서 근무 시간 지연을 빼서 정확히 구간 시작에 닿으면 이전 완료 경계에 놓입니다. 지연 없는 완료-완료 관계에서도 구간 끝에 있는 늦은 완료는 그 완료 경계에 머뭅니다."
+      "help": "역방향 계산이 완료 경계에서 근무 시간 지연을 빼고 정확히 구간의 시작에 닿으면, 결과는 이전 완료 경계에 놓입니다. 지연 없는 완료-완료 관계에서도 구간 끝에 있는 늦은 완료는 그 완료 경계에 머뭅니다."
     },
     "p6CompletedDataDateWindow": {
       "label": "상태 날짜 창 안의 완료 작업",
-      "help": "완료된 작업은 상태 날짜 창 안에서 조기 날짜를 받으며, 그 완료는 프로젝트 완료에 포함됩니다(P6 출처 작업만)."
+      "help": "완료된 작업은 상태 날짜 창 안에서 빠른 날짜를 받으며, 그 완료는 프로젝트 종료일에 포함됩니다."
     },
     "p6CompletedLoeActualFinish": {
       "label": "실적 완료를 통한 완료 LOE",
-      "help": "시작-시작 입력만 있는 완료된 LOE(level-of-effort) 활동은 실적 완료를 거치는 경로를 따릅니다(P6 출처 작업만)."
+      "help": "시작-시작 입력만 있는 완료된 LOE(level-of-effort) 작업은 실제 완료를 거치는 경로를 따릅니다."
     },
     "p6OpenLoeTargetSpan": {
       "label": "시작되지 않은 LOE는 목표 창을 사용",
-      "help": "아직 시작되지 않은 LOE(level-of-effort) 활동은 목표 창을 기간으로 사용합니다(P6 출처 작업만)."
+      "help": "아직 시작되지 않은 LOE(level-of-effort) 작업은 목표 창을 기간으로 사용합니다."
     },
     "p6CompletedPredecessorAtDataDate": {
       "label": "완료된 선행 작업은 상태 날짜 이후로 붙잡지 않음",
@@ -1354,7 +1354,7 @@
     },
     "p6CompletedOutOfSequenceWindow": {
       "label": "순서 밖에서 완료된 작업은 선행 작업을 기다림",
-      "help": "선행 작업이 아직 끝나지 않은 완료 작업은 영(0) 구간을 상태 날짜가 아니라 그 선행 작업 뒤에 둡니다(Retained Logic)."
+      "help": "선행 작업이 아직 끝나지 않은 완료 작업은 영(0) 창을 상태 날짜가 아니라 그 선행 작업 뒤에 둡니다(Retained Logic). ‘상태 날짜 창 안의 완료 작업’과 ‘진행 중 작업: 빠른 시작 = 남은 작업의 시작’도 켜져 있을 때만 작동합니다."
     },
     "p6CompletedPhysicalAtDataDate": {
       "label": "물리적 진척 완료 작업은 데이터 날짜에 놓임",
@@ -1382,11 +1382,11 @@
     },
     "p6FinishNotBeforeFinishFinishBound": {
       "label": "빠른 완료는 완료-완료 경계보다 앞서지 않음",
-      "help": "완료-완료 관계에서 후속 작업의 빠른 완료는 시계 시간으로 선행 작업이 정한 경계보다 앞서지 않습니다. 그 경계가 후속 작업의 비근무 시간에 해당하면, 종료는 다음 근무 시간대의 시작이 됩니다."
+      "help": "완료-완료 관계에서 후속 작업의 빠른 완료는 시계 시간으로 선행 작업이 정한 경계보다 앞서지 않습니다. 그 경계가 후속 작업의 비근무 시간에 놓이면, 완료는 다음 근무 기간의 시작이 됩니다."
     },
     "p6AlapPositionedFromSuccessors": {
       "label": "ALAP 작업을 후속 작업이 허용하는 만큼 늦게",
-      "help": "'가능한 한 늦게' 제약이 있는 시작되지 않은 작업은 후속 작업이 필요로 하는 분 단위 시점에 끝납니다. 후속 작업을 먼저 계산하므로 체인이 빈틈없이 이어집니다. 자체 계획 시작은 고려하지 않으며, 선행 작업이 없는 작업은 상태 날짜보다 먼저 시작하지 않습니다. 시간 단위 달력에만 적용됩니다."
+      "help": "‘가능한 한 늦게’ 제약 조건이 있는 아직 시작되지 않은 작업은 후속 작업이 필요로 하는 분 단위 시점에 끝납니다. 후속 작업을 먼저 계산하므로 체인이 빈틈없이 이어집니다. 자체 계획 시작은 고려하지 않으며, 선행 작업이 없는 작업은 상태 날짜보다 먼저 시작하지 않습니다."
     }
   },
   "profiles": {
@@ -1427,7 +1427,7 @@
       "msproject": "Microsoft Project 방식의 진행",
       "ownProfilesOnly": "사용자 프로필 전용"
     },
-    "ownProfilesOnlyNote": "이 규칙은 Primavera P6를 포함한 모든 기본 제공 프로필에서 꺼져 있습니다. 하나를 켜면 사용자 프로필이 됩니다.",
+    "ownProfilesOnlyNote": "이 규칙은 모든 기본 제공 프로필에서 꺼져 있습니다. 여기에는 Primavera P6 프로필도 포함됩니다. 켜려면 사용자 프로필만 가능하므로 ‘새 프로필’을 선택하세요.",
     "deviatingCount": "변경됨: {{n}}",
     "baseValue": "기준: {{value}}",
     "on": "켬",

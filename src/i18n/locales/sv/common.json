@@ -102,11 +102,11 @@
     "mppTimephasedSteeringLost_one": "Datumfönstret från MS Project styr inte längre {{count}} uppgift efter den här ändringen; timfördelningen gäller fortfarande och finns kvar i filen.",
     "mppTimephasedSteeringLost_other": "Datumfönstret från MS Project styr inte längre {{count}} uppgifter efter den här ändringen; timfördelningen gäller fortfarande och finns kvar i filen.",
     "readMore": "Läs mer",
-    "taskTypesUnlocked": "Den här filen innehåller sparat arbete eller egna arbetsregler; arbetsregeln och återstående arbete visas för det här projektet.",
-    "taskTypesUnlockedDetail": "Den här filen innehåller sparat arbete eller egna arbetsregler; arbetsregeln och återstående arbete visas för det här projektet.",
-    "workRulesReadMore": "Arbetsregler förklarade",
-    "workRuleDurationsChanged_one": "Efter kalenderändringen justerade arbetsregeln varaktigheten för {{count}} uppgift (arbetet blir kvar, timmar per dag ändrades).",
-    "workRuleDurationsChanged_other": "Efter kalenderändringen justerade arbetsregeln varaktigheten för {{count}} uppgifter (arbetet blir kvar, timmar per dag ändrades).",
+    "taskTypesUnlocked": "Den här filen innehåller sparat arbete eller uppgiftstyper; uppgiftstypen och återstående arbete visas för det här projektet.",
+    "taskTypesUnlockedDetail": "Den här filen innehåller sparat arbete eller uppgiftstyper; uppgiftstypen och återstående arbete visas för det här projektet.",
+    "workRulesReadMore": "Uppgiftstyper förklarade",
+    "workRuleDurationsChanged_one": "Uppgiftstypen justerade varaktigheten för {{count}} uppgift efter kalenderändringen (arbetet står kvar, timmar per dag ändrades).",
+    "workRuleDurationsChanged_other": "Uppgiftstypen justerade varaktigheten för {{count}} uppgifter efter kalenderändringen (arbetet står kvar, timmar per dag ändrades).",
     "pasteSkippedReadOnly_one": "{{count}} cell hoppades över: den är skrivskyddad (till exempel en automatiskt numrerad WBS-kod eller en beräknad kolumn).",
     "pasteSkippedReadOnly_other": "{{count}} celler hoppades över: de är skrivskyddade (till exempel automatiskt numrerade WBS-koder eller beräknade kolumner).",
     "librarySaveFailed": "Biblioteket kunde inte sparas",
@@ -122,8 +122,8 @@
     "startBlockedByConstraintMany_other": "De nya starterna för {{count}} uppgifter har inte tillämpats: uppgifterna har ett föregående och en annan restriktion än Starta tidigast (SNET). Ändra restriktionerna för att flytta starterna.",
     "dragStartIsActual": "”{{name}}” har startat: starten är den verkliga starten och flyttas inte. Ändra den via framdriften.",
     "dragDatesAreActual": "”{{name}}” är klar: början och slut är de verkliga datumen och flyttas inte. Ändra dem via framdriften.",
-    "referencesClearedOnPaste_one": "{{count}} referens fanns inte i det här dokumentet och har tagits bort (en uppgiftskalender, egen uppgiftstyp, aktivitetskod eller eget fält från källdokumentet).",
-    "referencesClearedOnPaste_other": "{{count}} referenser fanns inte i det här dokumentet och har tagits bort (uppgiftskalendrar, egna uppgiftstyper, aktivitetskoder eller egna fält från källdokumentet).",
+    "referencesClearedOnPaste_one": "{{count}} referens fanns inte i det här dokumentet och har tagits bort (en uppgiftskalender, egen arbetskategori, uppgiftskod eller eget fält från källdokumentet).",
+    "referencesClearedOnPaste_other": "{{count}} referenser fanns inte i det här dokumentet och har tagits bort (uppgiftskalendrar, egna arbetskategorier, uppgiftskoder eller egna fält från källdokumentet).",
     "milestoneRefusedAssignments_one": "'{{task}}' har resurstilldelningar och kan inte bli en milstolpe. Ta först bort tilldelningarna.",
     "milestoneRefusedAssignments_other": "{{count}} uppgifter har resurstilldelningar och kan inte bli milstolpar. Ta först bort tilldelningarna.",
     "milestoneRefusedSummary_one": "'{{task}}' är en sammanfattningsuppgift med underuppgifter och kan inte bli en milstolpe.",
@@ -137,7 +137,7 @@
     "phaseRefusedNoAssignableChild": "'{{phase}}' kan inte bli en sammanfattningsuppgift. Dess tilldelningar har ingenstans att ta vägen: ingen av de nya underuppgifterna kan ha tilldelningar (milstolpe eller sammanfattningsuppgift). Inget har ändrats.",
     "phaseRefusedDuplicateResource": "'{{phase}}' kan inte bli en sammanfattningsuppgift. Tilldelningen av {{resource}} kan inte flyttas till den nya underuppgiften '{{child}}', eftersom den redan har {{resource}}. Inget har ändrats.",
     "phaseQuestionOutdated": "Uppgifterna eller tilldelningarna har ändrats medan frågan var öppen. Ingenting har ändrats. Försök igen.",
-    "schedulingProfileApplied": "Det här projektet beräknas enligt {{profile}}. Ändra det via Arkiv → Projektinfo → Beräkningsprofil och beräkningsalternativ.",
+    "schedulingProfileApplied": "Det här projektet beräknas enligt {{profile}}. Ändra det via ”Arkiv” → ”Projektinfo” → ”Beräkningsprofil och beräkningsalternativ”.",
     "schedulingTemplateSaved": "Mallen ”{{name}}” sparad.",
     "schedulingTemplateLimit": "Mallen är inte sparad: det finns redan {{max}} mallar. Ta bort en mall först.",
     "schedulingTemplateStorageFailed": "Mallen är inte sparad: appens lagring är full eller inte tillgänglig.",
@@ -278,7 +278,7 @@
     "collapseAll": "Fäll ihop alla"
   },
   "settings": {
-    "title": "Inställningar",
+    "title": "Appinställningar",
     "appearanceTab": "Utseende",
     "planningTab": "Tidsplan",
     "advancedTab": "Avancerat",
@@ -323,8 +323,8 @@
     "hourPlanningSection": "Timplanering",
     "enableHourPlanning": "Aktivera timplanering",
     "enableHourPlanningHint": "Slår på tidsplanering per timme och minut. Du får en tidsskala per timme, skift med arbetstidsband och uppgiftsbalkar exakt per timme. Av ⇒ appen är helt dagsbaserad, som förut.",
-    "showTaskTypes": "Visa arbetsregler och arbete",
-    "showTaskTypesHint": "Filer från MS Project eller Primavera P6 visar alltid detta. Av: varaktighet och tilldelningsenhet står kvar och arbetet följer.",
+    "showTaskTypes": "Använd uppgiftstyper",
+    "showTaskTypesHint": "Välj per uppgift vad som ändras när varaktighet, tilldelningsenhet eller arbete ändras, som Task Type i MS Project och Duration Type i P6. Av: varaktighet och tilldelningsenhet står kvar. En fil med uppgiftstyper eller sparat arbete visar dem även när detta är av.",
     "allowMixedDayHour": "Tillåt blandad dag/timplanering",
     "defaultTaskDurationUnit": "Standardenhet för nya uppgifter",
     "defaultTaskDurationUnitHint": "Avgör om nya uppgifter börjar i arbetsdagar eller arbetstimmar. Befintliga uppgifter ändras inte.",
@@ -515,8 +515,8 @@
   "feedback": {
     "buttonTooltip": "Ge feedback",
     "title": "Ge feedback",
-    "typeBug": "Bugg",
-    "typeFeature": "Funktionsförfrågan",
+    "typeBug": "Något fungerar inte",
+    "typeFeature": "Idé",
     "typeGeneral": "Fråga eller kommentar",
     "fieldTitle": "Titel",
     "titlePlaceholder": "T.ex. Kritisk linje hoppar efter sparning",
@@ -528,7 +528,7 @@
     "removeScreenshot": "Ta bort",
     "capturing": "Skapar skärmbild…",
     "captureFailed": "Det gick inte att skapa en skärmbild. Du kan fortfarande skicka feedbacken utan skärmbild.",
-    "submit": "Skicka till GitHub",
+    "submit": "Skicka",
     "sending": "Skickar…",
     "fieldEmail": "E-postadress (valfritt, för ett svar)",
     "emailInvalid": "Den här e-postadressen är inte giltig. Rätta den eller lämna fältet tomt.",
@@ -951,7 +951,7 @@
       "decreaseBreakDuration": "Minska rastens varaktighet med 15 minuter",
       "start": "Rasten börjar",
       "duration": "Rastens varaktighet (minuter)",
-      "hint": "Ange en raststart och en varaktighet; nettotimmar och arbetstidsband härleds automatiskt. Sätt varaktigheten till 0 för en oavbruten arbetsdag.",
+      "hint": "Ange rastens start och varaktighet. Standardarbetsdagen och arbetstidsband härleds automatiskt. Sätt varaktigheten till 0 för en oavbruten arbetsdag.",
       "errors": {
         "invalidDuration": "Rastens varaktighet måste vara ett heltal minuter, 0 eller mer.",
         "outsideWorkingDay": "Rasten måste helt ligga inom den inställda arbetsdagen.",
@@ -1218,7 +1218,7 @@
     "warnPast": "Det nya startdatumet ligger i det förflutna.",
     "noTasks": "Projektet har ännu inga uppgifter; bara projektdatumen förskjuts.",
     "invalidDate": "Välj ett giltigt datum.",
-    "invalidCurrentStart": "Projektet har inget giltigt startdatum; ange det först under Projektinfo.",
+    "invalidCurrentStart": "Projektet har inget giltigt startdatum; ange det först under ”Projektinfo”.",
     "apply": "Flytta",
     "calcError": "Tidsplanen kunde inte beräknas: {{error}}"
   },
@@ -1360,7 +1360,7 @@
     },
     "p6ZeroDurationUsesPlannedBoundary": {
       "label": "Milstolpen följer den planerade kalendergränsen",
-      "help": "En milstolpe utan varaktighet stannar på den kalendergräns som filen planerade. En dagstart förblir en startmilstolpe, ett bandslut får hamna på föregående uppgifts slut."
+      "help": "En milstolpe utan varaktighet stannar på den kalendergräns som filen planerade: en dagsstart förblir en startmilstolpe, och ett bandslut får hamna på föregående uppgifts slut."
     },
     "p6UseTaskPlannedStartFloor": {
       "label": "Planerad start som extra undre gräns",
@@ -1372,7 +1372,7 @@
     },
     "p6PreserveActualInstants": {
       "label": "Behåll verkliga datum exakt",
-      "help": "Registrerade verkliga start- och slutdatum flyttas inte till ett arbetstidsband."
+      "help": "Datum för verklig start och verkligt slut som har registrerats flyttas inte till kanten av ett band."
     },
     "p6UseRemainingStartForProgress": {
       "label": "Pågående uppgift: tidigaste start = början av återstående arbete",
@@ -1380,7 +1380,7 @@
     },
     "p6PreserveZeroDurationConstraintInstants": {
       "label": "Restriktionens tidpunkt på en milstolpe exakt",
-      "help": "En datum-och-tid-restriktion på en milstolpe utan varaktighet är en exakt punkt, även i början av ett arbetsband."
+      "help": "En restriktion med datum och tid på en milstolpe utan varaktighet är en exakt punkt, även i början av ett band."
     },
     "resumeFromActualElapsed": {
       "label": "Återstående arbete återupptas efter den förflutna tiden",
@@ -1392,23 +1392,23 @@
     },
     "p6RelationFinishBoundary": {
       "label": "Efterföljande uppgift startar på slutgränsen",
-      "help": "Vid ett slut-till-start-samband utan fördröjning på en gemensam bandgräns startar den efterföljande uppgiften vid föregående uppgifts slut (endast samband som filen markerar så). Vid bakåtberäkning visar den efterföljande uppgiften sin senaste start helt enkelt som början av ett arbetsband."
+      "help": "Vid ett slut-till-start-samband utan fördröjning, där den efterföljande uppgiften i filen startar exakt vid den föregående uppgiftens slut, i slutet av ett band, startar den efterföljande uppgiften vid det slutet och inte i början av nästa band. Filen markerar inte detta. Appen känner själv igen ett sådant samband när den öppnar en .xer-fil. Ett samband som du lägger själv omfattas inte. Vid bakåtberäkning visar den efterföljande uppgiften sin senaste start helt enkelt som början av ett band."
     },
     "p6BackwardLagFinishBoundary": {
       "label": "Fördröjning bakåt från en slutgräns",
-      "help": "Drar bakåtberäkningen av en arbetstidsfördröjning från en slutgräns och hamnar den exakt på en bandstart, då hamnar den på föregående slutgräns. Även vid ett slut-till-slut-samband utan fördröjning stannar det senaste slutet på ett bandslut kvar på den slutgränsen."
+      "help": "När bakåtberäkningen drar av en fördröjning i arbetstid från en slutgräns och hamnar exakt i början av ett band, hamnar den på föregående slutgräns. Även vid ett slut-till-slut-samband utan fördröjning stannar ett senaste slut i slutet av ett band kvar på den slutgränsen."
     },
     "p6CompletedDataDateWindow": {
       "label": "Slutförd uppgift i rapportdatumfönstret",
-      "help": "En slutförd uppgift får tidiga datum i rapportdatumets fönster, och dess slut räknas med i projektslutet (endast uppgifter med P6-ursprung)."
+      "help": "En slutförd uppgift får tidigaste datum i rapportdatumfönstret, och dess slut räknas med i projektslutet."
     },
     "p6CompletedLoeActualFinish": {
       "label": "Slutförd LOE via det verkliga slutet",
-      "help": "En slutförd level-of-effort-uppgift med endast ett start-till-start-samband följer vägen via det verkliga slutet (endast uppgifter med P6-ursprung)."
+      "help": "En slutförd level-of-effort-uppgift med endast ett start-till-start-samband följer vägen via det verkliga slutet."
     },
     "p6OpenLoeTargetSpan": {
       "label": "Ej påbörjad LOE använder målfönstret",
-      "help": "En level-of-effort-uppgift som ännu inte har börjat använder sitt målfönster som varaktighet (endast uppgifter med P6-ursprung)."
+      "help": "En level-of-effort-uppgift som ännu inte har börjat använder sitt målfönster som varaktighet."
     },
     "p6CompletedPredecessorAtDataDate": {
       "label": "Slutförd föregående uppgift håller inte efter rapportdatumet",
@@ -1424,7 +1424,7 @@
     },
     "p6CompletedOutOfSequenceWindow": {
       "label": "Slutförd uppgift i fel ordning väntar på sina föregående uppgifter",
-      "help": "En slutförd uppgift vars föregående uppgift inte är klar än får sitt nollfönster efter den föregående uppgiften, i stället för på rapportdatumet (P6: Retained Logic)."
+      "help": "En slutförd uppgift vars föregående uppgift ännu inte är klar får sitt nollfönster efter den föregående uppgiften i stället för på rapportdatumet (P6: Retained Logic). Fungerar bara om ”Slutförd uppgift i rapportdatumfönstret” och ”Pågående uppgift: tidigaste start = början av återstående arbete” också är på."
     },
     "p6CompletedPhysicalAtDataDate": {
       "label": "Slutförd uppgift med fysisk framdrift ligger på rapportdatumet",
@@ -1436,15 +1436,15 @@
     },
     "p6FinishFinishStartMilestoneLateFinish": {
       "label": "Slut-till-slut-samband till en startmilstolpe binds till milstolpen själv",
-      "help": "Ett slut-till-slut-samband till en startmilstolpe räknas till milstolpen själv, inte till början av milstolpens dag: föregående uppgifts senaste slut får löpa till milstolpens senaste slut."
+      "help": "Ett slut-till-slut-samband till en startmilstolpe räknas fram till milstolpen själv, inte till början av milstolpens dag: föregående uppgifts senaste slut får löpa till milstolpens senaste slut."
     },
     "p6StartedTaskIgnoresPlannedStartFloor": {
       "label": "Planerad start är ingen undre gräns för en pågående uppgift",
       "help": "Det återstående arbetet för en påbörjad uppgift börjar på rapportdatumet och direkt efter dess föregående uppgifter, även om dess planerade start ligger senare."
     },
     "p6LateFinishOnOwnCalendar": {
-      "label": "Senaste slutet i den egna kalendern",
-      "help": "Ligger det senaste slutet som en efterföljande uppgift kräver utanför uppgiftens arbetstid, då blir det slutet av föregående arbetsperiod i den egna kalendern."
+      "label": "Senaste slutet i uppgiftens egna kalender",
+      "help": "Ligger det senaste slutet som en efterföljande uppgift kräver utanför uppgiftens arbetstid, blir det slutet av föregående arbetsperiod i den egna kalendern."
     },
     "p6ProgressOverrideIgnoresStartedSuccessor": {
       "label": "Progress Override negeras även för en påbörjad efterföljande uppgift bakåt",
@@ -1452,11 +1452,11 @@
     },
     "p6FinishNotBeforeFinishFinishBound": {
       "label": "Tidigaste slut inte före en slut-till-slut-gräns",
-      "help": "Vid ett slut-till-slut-samband ligger den efterföljande uppgiftens tidigaste slut aldrig före gränsen som den föregående uppgiften sätter, i klocktid. Faller den gränsen i den efterföljande uppgiftens ledig tid, då blir slutet början av nästa arbetsperiod."
+      "help": "Vid ett slut-till-slut-samband ligger den efterföljande uppgiftens tidigaste slut aldrig före gränsen som den föregående uppgiften sätter, i klocktid. Faller den gränsen inom den efterföljande uppgiftens ledig tid, blir slutet början av nästa arbetsperiod."
     },
     "p6AlapPositionedFromSuccessors": {
       "label": "ALAP-uppgifter så sent som efterföljande uppgifter tillåter",
-      "help": "En ej påbörjad uppgift med restriktionen 'så sent som möjligt' slutar vid den minut då dess efterföljande uppgifter behöver den, efterföljande först, så att en kedja sluter sig. Dess egen planerade start räknas inte. En uppgift utan föregående uppgift startar då inte tidigare än rapportdatumet. Gäller endast för en timkalender."
+      "help": "En uppgift som inte har startat ännu med restriktionen ”så sent som möjligt” slutar vid den minut då de efterföljande uppgifterna behöver den, efterföljande först, så att en kedja sluter sig. Dess egen planerade start räknas inte; en uppgift utan föregående uppgift startar då inte tidigare än rapportdatumet."
     }
   },
   "profiles": {
@@ -1497,7 +1497,7 @@
       "msproject": "Framdrift som i Microsoft Project",
       "ownProfilesOnly": "Endast egna profiler"
     },
-    "ownProfilesOnlyNote": "Dessa beräkningsregler är av i varje inbyggd profil, även i Primavera P6. Slår du på en blir den en egen profil.",
+    "ownProfilesOnlyNote": "Dessa beräkningsregler är av i varje inbyggd beräkningsprofil, även i ”Primavera P6”. Bara en egen profil kan slå på dem: välj ”Ny beräkningsprofil” för det.",
     "deviatingCount": "avvikande: {{n}}",
     "baseValue": "bas: {{value}}",
     "on": "på",

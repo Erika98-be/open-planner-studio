@@ -97,11 +97,11 @@
     "printPreview": "چاپ",
     "printPreviewTitle": "پیش‌نمایش چاپ (Ctrl+P)",
     "project": "پروژه",
-    "projectInfo": "اطلاعات پروژه",
+    "projectInfo": "تنظیمات پروژه",
     "projectSettings": "تنظیمات",
     "language": "زبان",
     "appearance": "ظاهر",
-    "ifcInfo": "IFC 4x3 - Industry Foundation Classes",
+    "ifcInfo": "IFC - Industry Foundation Classes، در شِمای پروژه (پیش‌فرض IFC 4.3 ADD2)",
     "reporting": "گزارش",
     "noRecentFiles": "فایل اخیری وجود ندارد",
     "trace": "ردیابی مسیر",
@@ -220,7 +220,7 @@
     "lines": "خط"
   },
   "projectInfo": {
-    "title": "اطلاعات پروژه",
+    "title": "تنظیمات پروژه",
     "name": "نام پروژه",
     "number": "شماره پروژه",
     "description": "توضیحات",
@@ -238,7 +238,7 @@
       "lagProjectDefault": "تقویم پروژه",
       "ssLagFrom": "محاسبهٔ تأخیر شروع-شروع (SS) پیش‌نیاز در حال اجرا از",
       "ssLagEarlyStart": "شروع زودهنگام (شروع کار باقی‌مانده)",
-      "ssLagActualStart": "شروع واقعی (تاریخ وضعیت)",
+      "ssLagActualStart": "تاریخ وضعیت (P6: Actual Start)",
       "ssLagNeedsConvention": "فقط وقتی اعمال می‌شود که قرارداد «{{convention}}» روشن باشد.",
       "ssLagNeedsHourPlanning": "فقط در برنامه‌ریزی ساعتی کار می‌کند: یک تقویم با بازه‌های کاری یا وظیفه‌هایی بر حسب ساعت. این پروژه در تقویم تأخیرِ انتخاب‌شده هیچ‌کدام را ندارد.",
       "criticalDefinition": "تعریف بحرانی",
@@ -317,8 +317,8 @@
     "printTitle": "چاپ",
     "printSubtitle": "صفحه گزارش را برای پیش‌نمایش چاپ و تنظیمات باز کنید.",
     "openPrintPreview": "باز کردن پیش‌نمایش چاپ",
-    "projectInfoTitle": "اطلاعات پروژه",
-    "projectInfoSubtitle": "ابرداده این پروژه.",
+    "projectInfoTitle": "تنظیمات پروژه",
+    "projectInfoSubtitle": "اطلاعات و تنظیمات این پروژه.",
     "help": "راهنما",
     "helpSubtitle": "مستندات و راهنمای کاربر که در برنامه جاسازی شده‌اند.",
     "helpSearchPlaceholder": "جستجو در مستندات…",
@@ -333,7 +333,7 @@
     "helpReadIn": "بخوانید به زبان:",
     "unapplied": {
       "title": "تغییرات اعمال نشده است",
-      "body": "اطلاعات پروژه را تغییر داده‌اید اما هنوز اعمال نکرده‌اید. با این تغییرات چه کنیم؟",
+      "body": "شما تنظیمات پروژه را تغییر داده‌اید، اما هنوز اعمال نکرده‌اید. با این تغییرات چه می‌خواهید بکنید؟",
       "marker": "تغییرات اعمال نشده است — برای نگه‌داشتن آن‌ها روی {{apply}} کلیک کنید.",
       "discard": "کنار گذاشتن",
       "invalid": "نمایه محاسبه سفارشی هنوز نامی ندارد. به آن نامی بدهید یا تغییرات را کنار بگذارید."
@@ -384,8 +384,8 @@
     "mspdiDesc": "در Microsoft Project باز می‌شود. ساختار کامل WBS.",
     "p6Label": "Primavera P6 XML",
     "p6Desc": "برای Oracle Primavera P6.",
-    "ifcLabel": "IFC 4x3",
-    "ifcDesc": "استاندارد BuildingSMART. پیوند چهاربُعدی با مدل‌های BIM.",
+    "ifcLabel": "IFC",
+    "ifcDesc": "استاندارد BuildingSMART، در شِمای IFC پروژه (پیش‌فرض IFC 4.3 ADD2). پیوند چهاربُعدی با مدل‌های BIM.",
     "csvShort": "CSV (;)"
   },
   "extensions": {
