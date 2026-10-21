@@ -72,11 +72,6 @@ en noem het in je rapport of PR-tekst.
     vastgelegde rest in (optie 3) na de release, in het rekenprofielen-spoor. — B voor de OPS-kant (gemeten),
     S voor de P6-kant
 
-119. **Een WBS-sjabloon verliest een lag in uren.** `wbsTemplates.ts:99-105` neemt per relatie `lagDays`,
-    `lagUnit` en `lagPercent` mee, maar niet `lagMinutes`. Een relatie met lag `4u` komt na het invoegen van
-    het sjabloon zonder lag terug, zonder melding. Gezien in de code (`Sequence.lagMinutes`,
-    `types/sequence.ts:23`); niet in de app nagespeeld. Voorstel: `lagMinutes` meenemen in
-    `WbsTemplateSequence`. — S
 121. **Nivelleervenster: de piekmelding blijft leeg bij een eigen urenverdeling of capaciteitsstappen.** De
     nivelleerder kiest `INTRINSIC_OVERRUN` op de echte dagwaarden (`assignmentDayUnits`) en op
     `maxCapacityOf` met stappen (`ResourceLeveler.ts`); het venster vult de details in met `distributeUnits` en
@@ -102,7 +97,6 @@ en noem het in je rapport of PR-tekst.
 21. ***Rapport › Afdruk*** doet op het tabblad Rapport niets. — B
 60. **Duur-kolom afgeknipt** in de standaard Gantt-weergave (WBS 60 + Taaknaam 240 + Duur 60 + de
     "+"-kolom): je leest "2c" in plaats van "2d", op 1600 én 1366 px breed. — B
-63. **"Werkelijke einde"** (kolomnaam, `task.json:55`) tegenover "Werkelijk einde" elders (`common.json`). — S
 135. **Vinkjes lijken op keuzerondjes.** De app-brede stijl `input[type="checkbox"]`
     (`src/styles/globals.css:2477`) geeft een vak van 15 px met `border-radius: var(--radius-sm)` (6 px) en
     zonder vinkteken. Het vak oogt daardoor rond, en aangevinkt is het een gevuld oranje rondje. Gezien bij
@@ -120,8 +114,6 @@ en noem het in je rapport of PR-tekst.
 
 ## Bibliotheek, bezetting, extensies, AI
 
-27. **Mislukte ZIP/JS-installatie van een extensie** geeft geen melding, alleen `console.error`
-    (`ExtensionManagerPanel` negeert `InstallOutcome`). — B
 28. **Bezettingsoverzicht bij een verouderd actief project** mengt oude startdatums met een nieuwe duur of
     inzet, onder de tekst "laatst berekende cijfers". — B
 29. **Hardgecodeerd Nederlands**: *Vereist Open Planner Studio ≥…* (`extensionLoader.ts:341`), foutmelding
@@ -163,12 +155,6 @@ en noem het in je rapport of PR-tekst.
     er komt geen undo-stap, maar `shifts` meldt taak 1.2 `oldStart 2026-03-16 → newStart 2026-03-09` (het
     verschil tussen opgeslagen en herberekend). Een agent leest dat als effect van de nivellering. Dat `dryRun`
     hetzelfde meldt, is afgeleid (zelfde preview), niet nagespeeld. — B
-82. **`planner_update_tasks` meldt een duur op een samenvattingstaak als `updated`, maar er verandert niets.**
-    `fields.duration: 20` op een fase met één subtaak van 2 dagen: antwoord `ok`, de fase staat in `updated`,
-    `planner_get_task` blijft `duration: 2` (afgeleid). Strijdig met "never silently ignored" in de
-    tool-beschrijving. Nagespeeld via de echte dispatcher. Voorstel: per item weigeren met een reden ("de duur
-    van een samenvattingstaak is afgeleid van zijn subtaken"); `planner_add_tasks` met een duur op een item dat
-    kinderen krijgt idem nakijken. — B
 84. **`planner_get_project_overview` beschrijft `dur` als werkdagen**, maar de rij geeft de duur in de eigen
     eenheid van de taak met `durUnit` ernaast (`readTools.ts:~315`, `nativeDuration`); bij een urentaak zijn
     het dus uren. Alleen in de code gezien. — S
@@ -181,12 +167,6 @@ en noem het in je rapport of PR-tekst.
     storten geweigerd (geplande start na de statusdatum), projecteinde vrijdag 25 juni (+2). Met expliciete
     werkelijke datums zijn beide routes gelijk (23 juni, +0). Voorstel: na een statusdatumwijziging binnen
     een batch tussentijds herrekenen, of 81 oplossen zodat de afleiding niet van de route afhangt. — B
-86. **`planner_list_tasks` met `zonder_relaties: true` meldt bladtaken die via hun fase in het netwerk zitten.**
-    Het filter telt alleen relaties op de taak zelf (`readTools.ts:~392`), terwijl de solver een relatie op
-    een samenvattingstaak doorgeeft aan haar bladtaken. Nagespeeld: Other —SS→ Fase X —FS→ Last, met
-    bladtaak LeafA onder Fase X ⇒ het filter geeft `LeafA`, terwijl LeafA kritiek is en aan het netwerk
-    hangt. De agentgids en `goed-plannen` waarschuwen er nu voor. Voorstel: relaties van voorouders
-    meetellen, of het veld uitbreiden met "via fase". — B
 88. **Feestdagen gegenereerd vóór de taken dekken een lang project niet.** Zonder rekenresultaat geeft
     `calendarSpan` geen projecteinde door en neemt `computeGenerateSpan` startjaar−1 t/m startjaar+3
     (`calendarResourceTools.ts:~585`, `generateCalendarHolidays.ts:~62`). Nagespeeld: start 7 juni 2027,
@@ -231,7 +211,6 @@ en noem het in je rapport of PR-tekst.
 
 35. **Showcase-voorbeelden openen als gewijzigd** (`applyDemoLibraryToShowcaseProject`). — S
 36. **Herstelvenster na een gewone herlaad** in de browser, ook als alles was opgeslagen. — S
-37. ***Herstellen* verwijdert ook onleesbare kopieën.** — S
 38. **Firefox: *Recent*** opent een lege pagina (de knop staat er wel). — B
 46. **`.mpp` neemt de kritiek-drempel uit MS Project niet over als projectinstelling** (wel voor *Datums zoals
     opgeslagen*; MSPDI doet het wel). Gevolg: drempel 0 na openen. — B
@@ -377,6 +356,13 @@ en noem het in je rapport of PR-tekst.
     (`getElementInt`) hem wel als Baseline 0 leest. `<TaskUID>01</TaskUID>` geeft bij gelijke baselines
     telling 1, terwijl de lezer wel aan taak 1 koppelt. VERVOLG 11 van #392. Voorstel: baselinenummer en
     taak-UID numeriek parsen zoals de lezer. — S
+161. **Voortgangsblad: de preview maakt geen verschil tussen een onbekende taak-ID en een dubbele WBS.** Beide
+    staan onder *Wacht op koppeling* (`ProgressImportDialog.tsx:147-149`), met alleen WBS en naam uit het blad,
+    het bladrijnummer en *Kies een taak…* (r. 369-400). De reden (`unmatched` of `ambiguousWbs`) en de
+    `OPS Task ID` uit het blad staan pas in het venster *Resultaat*, na *Toepassen* (r. 500). Een rij met
+    alleen een onbekende ID en geen WBS of naam toont dus een lege kop. Dubbele rijen (`duplicateRow`) staan
+    wel apart, met hun reden. De store-uitkomst is wel per soort apart: `check-progress-import-ronde.ts` deel D.
+    Voorstel: in *Wacht op koppeling* de reden en de ID uit het blad tonen (#405 deel 5). — B (code en test)
 162. **Desktop (Linux/macOS): Opslaan overschrijft een alleen-lezen projectbestand als de map schrijfbaar
     is.** `replaceUserFile` (`atomicWrite.ts`) schrijft een halffabricaat met de rechten van het origineel
     (0444) en hernoemt het over het doel; op POSIX mag dat. Het bestand krijgt de nieuwe inhoud en blijft

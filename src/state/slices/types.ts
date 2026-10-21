@@ -190,6 +190,7 @@ export type NotificationMessageKey =
   // `api.ui.showNotification` van een extensie — zie `src/extensions/extensionNotifications.ts`.
   // Parameters `name` (extensienaam) en `message` (onvertaalde extensietekst, als platte tekst).
   | 'notifications.extensionMessage'
+  | 'notifications.extensionInstallFailed'
   | 'notifications.saveFailed'
   // Inzet/werk (blok Toewijzingen): "1,500" in en of "1.500" in nl is dubbelzinnig (1500 of 1,5)
   // en wordt geweigerd. Parameters `text` (de getypte invoer) en `separator` (decimaalteken van de

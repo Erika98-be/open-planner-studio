@@ -293,7 +293,8 @@ function archiveRemovals(
  *
  * Is het manifest van een ander, dan worden diens documentregels NIET gewist maar meegenomen in
  * ons manifest (`carryOver`), zodat ze bij de volgende start nog steeds als herstelkandidaat
- * worden aangeboden in plaats van stil wees te worden.
+ * worden aangeboden in plaats van stil wees te worden. Zo'n overgenomen regel (`adopted`) gaat
+ * ook in elke volgende ronde mee, als het manifest inmiddels van ons (of legacy) is.
  *
  * Over `heartbeatAt`: dat veld wordt geschreven en is hier beschikbaar, maar het bepaalt bewust
  * NIET of we mogen wissen. Een verse heartbeat is niet te onderscheiden tussen "er draait nu een
@@ -339,9 +340,13 @@ export function planRecoveryCleanup(input: RecoveryCleanupInput): RecoveryCleanu
   }
 
   const carryOver: RecoveryManifestDoc[] = [];
-  if (prev && ownership === 'foreign') {
+  if (prev) {
     for (const d of prev.documents) {
       if (!d || typeof d.ifc !== 'string' || typeof d.id !== 'string') continue;
+      // Vreemd manifest: alle regels mee. Eigen of legacy manifest: alleen de regels die we eerder
+      // overnamen of vasthielden (`adopted`); anders valt hun verwijzing na één ronde weg en blijven
+      // alleen weesbytes over die `loadRecovery` niet meer aanbiedt.
+      if (ownership !== 'foreign' && !adopted.has(d.ifc)) continue;
       if (keepSet.has(d.ifc)) continue;      // zelfde document — onze eigen regel wint
       if (!present.has(d.ifc)) continue;     // snapshot is er niet (meer)
       carryOver.push({
@@ -826,6 +831,25 @@ async function clearOwnTauri(): Promise<void> {
   }
 }
 
+/**
+ * Zie `holdRecoveryForLater`. Neem de regels van het manifest dat er nu staat over (`adopted`):
+ * de opruimlus wist ze dan niet en draagt ze mee. Nodig voor een v1-manifest zonder `ownerId`
+ * (`legacy`): dat valt anders onder de eigen opruiming en is na één ronde weg.
+ */
+async function holdTauri(): Promise<void> {
+  const { exists, readTextFile } = await import('@tauri-apps/plugin-fs');
+  const { appDataDir, join } = await import('@tauri-apps/api/path');
+  try {
+    const manifestPath = await join(await appDataDir(), manifestName);
+    if (!(await exists(manifestPath))) return;
+    for (const d of parseRecoveryManifest(await readTextFile(manifestPath))?.documents ?? []) {
+      if (d && typeof d.ifc === 'string') adoptedIfc.add(d.ifc);
+    }
+  } catch (err) {
+    console.error('Recovery: kon het manifest niet lezen om de snapshots vast te houden:', err);
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Web-backend — IndexedDB 'ops-recovery', per-tab sessionId-scoping.
 // ---------------------------------------------------------------------------
@@ -926,8 +950,8 @@ function sessionId(): Promise<string> {
  * was — precies de uitgestelde snapshots. Daarom verhuist `holdRecoveryForLater` de huidige
  * generatie naar een vastgehouden id (in sessionStorage onder `HELD_KEY`) en krijgt het tab een
  * verse sessie-id voor nieuwe snapshots. `loadWeb` leest eigen + vastgehouden generaties,
- * `clearWeb` wist ze allemaal. Tauri heeft dit niet nodig: daar is een manifest van een vorige
- * app-start `foreign` en blijft het via de carry-over in `planRecoveryCleanup` staan.
+ * `clearWeb` wist ze allemaal. Tauri houdt vast via `holdTauri`: de manifestregels worden
+ * overgenomen en gaan via de carry-over in `planRecoveryCleanup` elke ronde mee.
  */
 const HELD_KEY = `${SESSION_KEY}:held`;
 
@@ -1323,9 +1347,8 @@ export function clearOwnRecovery(): Promise<void> {
 /**
  * "Nu niet herstellen, maar ook niet weggooien": de gevonden snapshots moeten de volgende
  * crashherstel-rondes overleven en bij de volgende start opnieuw aangeboden worden. Aanroepen
- * vóórdat de auto-save weer aan gaat. Tauri: no-op (een vorige app-start is `foreign` en wordt al
- * meegedragen); web: zie `holdWeb`.
+ * vóórdat de auto-save weer aan gaat. Tauri: zie `holdTauri`; web: zie `holdWeb`.
  */
 export function holdRecoveryForLater(): Promise<void> {
-  return serializeRecoveryWrite(() => (isTauri() ? Promise.resolve() : holdWeb()));
+  return serializeRecoveryWrite(() => (isTauri() ? holdTauri() : holdWeb()));
 }

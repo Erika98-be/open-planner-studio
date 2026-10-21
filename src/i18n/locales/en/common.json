@@ -17,6 +17,7 @@
     "extHelpProjectOpenFailed": "The project file {{file}} from the extension {{name}} could not be opened.",
     "extImportFailed": "Importing with {{name}} failed.",
     "extensionMessage": "Extension {{name}}: {{message}}",
+    "extensionInstallFailed": "The extension could not be installed. Check the file and try again.",
     "xerInvalidInput": "XER import requires the original file bytes.",
     "xerInvalidFile": "This is not a valid or supported XER file.",
     "xerInvalidEncoding": "This XER file has invalid or truncated text encoding.",
