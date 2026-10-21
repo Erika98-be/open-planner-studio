@@ -52,6 +52,35 @@ test('speling en restduur van een urentaak: leesbaar en overal gelijk', async ({
     .locator('xpath=following-sibling::input[1]');
   await expect(remaining).toHaveValue('3h');
 
+  // Dezelfde resultaatsectie: enkelvoud/meervoud volgt de zichtbare afgeronde speling.
+  for (const locale of ['en', 'nl']) {
+    await page.evaluate(() => window.__OPS__!.store.getState().setUI({ showSettingsDialog: true }));
+    const settings = page.locator('.settings-dialog');
+    await settings.locator('.settings-tab').nth(0).click();
+    await settings.getByRole('button', { name: /^(Language|Taal)$/ }).click();
+    await page.getByRole('option', { name: locale === 'en' ? /English/ : /Nederlands/ }).click();
+    await expect.poll(() => page.evaluate(() => document.documentElement.lang)).toBe(locale);
+    await page.keyboard.press('Escape');
+    await expect(settings).not.toBeVisible();
+    for (const [value, shown] of [[1, '1'], [-1, '-1'], [0, '0'], [2, '2'], [0.67, '0.67'], [0.999, '1'], [1.004, '1']] as const) {
+      await page.evaluate(({ id, value }) => window.__OPS__!.store.setState(s => {
+        const time = s.tasks.find(t => t.id === id)!.time;
+        time.totalFloat = value;
+        time.freeFloat = value;
+        time.interferingFloat = value;
+      }), { id: ids.A, value });
+      const singular = Math.abs(Number(shown)) === 1;
+      const unit = locale === 'nl' ? (singular ? 'dag' : 'dagen') : (singular ? 'day' : 'days');
+      const expected = (locale === 'nl' ? shown.replace('.', ',') : shown) + ' ' + unit;
+      await expect(valueAfter(/^(Total float:|Totale speling:)$/)).toHaveText(expected);
+      await expect(valueAfter(/^(Free float:|Vrije speling:)$/)).toHaveText(expected);
+      await expect(valueAfter(/^(Interfering float:|Interfererende speling:)$/)).toHaveText(expected);
+    }
+  }
+  // Bereken de echte fixture opnieuw vóór de bestaande tooltip- en tabelcontrole.
+  await page.keyboard.press('F5');
+  await expect(valueAfter(/^(Total float:|Totale speling:)$/)).toHaveText(/^0[.,]67 (days|dagen)$/);
+
   // Gantt-tooltip: echte hover op de balk.
   const body = await barPoint(page, ids.A, 'body');
   await page.mouse.move(body.x, body.y);
