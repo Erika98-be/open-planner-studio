@@ -153,7 +153,8 @@ export function useRecoveryRestore(): RecoveryRestore {
                 // Prijs: de volgende start kan dezelfde set en foutmelding opnieuw tonen.
                 // "Verwerpen" blijft de expliciete uitweg. De herstelde documenten blijven open;
                 // hun volgende auto-save krijgt verse snapshots, terwijl de mislukte generatie
-                // beschermd blijft via holdRecoveryForLater (web) of carry-over (Tauri).
+                // beschermd blijft via holdRecoveryForLater (web: vastgehouden generatie; Tauri:
+                // overgenomen manifestregels die elke ronde meegaan, ook bij een v1-manifest).
                 if (failed === 0 && skipped.length === 0) await clearRecovery();
                 else await holdRecoveryForLater();
               } catch (err) {
@@ -170,7 +171,7 @@ export function useRecoveryRestore(): RecoveryRestore {
                 });
                 // "Blijven staan" vraagt op het web een expliciete hold: anders ruimt de eerste
                 // crashherstel-ronde onder hetzelfde sessie-id deze generatie op (review 2026-09-28).
-                // Op Tauri een no-op (carry-over).
+                // Op Tauri neemt hij de manifestregels over (zie `holdTauri`).
                 try {
                   await holdRecoveryForLater();
                 } catch (holdErr) {
