@@ -135,7 +135,7 @@
   "barColorMode_auto": "Per attività — automatico",
   "barColorMode_category": "Per categoria",
   "barColorFieldLabel": "Campo categoria",
-  "barColorMissingField": "Questo campo non esiste nel progetto. Viene usato temporaneamente il tipo di attività.",
+  "barColorMissingField": "Questo campo non esiste in questo progetto. Viene usata temporaneamente la categoria di lavoro.",
   "statusLineLabel": "Linea di stato:",
   "statusLine_none": "Nessuna",
   "statusLine_statusDate": "Linea data di stato",

@@ -439,6 +439,30 @@ en noem het in je rapport of PR-tekst.
 131. **Engelse titel van het venster na een update is "You're up to date!"** (`en/common.json`
     `updates.justUpdated.title`). De Nederlandse is "Je bent bijgewerkt!". In het Engels leest dat als "geen
     update nodig". Voorstel: "You've been updated!". — B
+170. **Vertaalstraat: een nieuw concept zonder doelterm valt niet op.** Na #376 stond `work-category`
+    (werksoort) in `i18n/termbase/concepts.json`, maar in geen enkele `<taal>.json`. `validate-termbase` en
+    `verify:translations` bleven groen. De straat hield toen de oude taaktype-term aan (bijv. de: `Neue Vorgangsart`),
+    en de labelpoort dwong die oude tekst af. In de release-ronde van 2026-10-21 hersteld (termen +
+    `--keys`-ronde). Voorstel: `validate-termbase` rood bij een concept zonder term in een taal. — B
+171. **Meldingen met naam óf aantal verliezen de naam in talen met één meervoudsvorm.** `common.json`
+    `notifications.milestoneRefusedAssignments_one`/`_other` (en `milestoneRefusedSummary`, `milestoneClearedOnPhase`)
+    wisselen tussen "'{{task}}' heeft …" en "{{count}} taken hebben …". zh, ja, ko en lo kennen alleen `other`, dus
+    bij één taak tonen ze "1 个任务…" zonder naam. De Help-labelpoort eist dan in `ref-meldingen` die `other`-vorm,
+    terwijl het bronartikel de vorm met naam citeert: het artikel blijft rood in zh, ko en lo (ronde 2026-10-21).
+    Voorstel: twee sleutels (met naam, met aantal) in plaats van een meervoud. — B
+172. **Vertaalstraat: de korte uureenheid werd in ar en fa vertaald, tegen het besluit "10h".** `menu.json`
+    `…hoursValue` werd in de ronde van 2026-10-21 `{{hours}}س`. De test
+    `tests/browser/calendar-file-hours-notice.spec.ts:266` eist in ar/fa "10h" (besluit eigenaar 2026-10-20: geen
+    spatie, getal en "h" als één LTR-reeks). Alleen de browsersuite in CI ving het; `verify:translations` en de
+    straat zelf zagen niets. Met de hand teruggezet op `{{hours}}h`. Voorstel: in de straat een vaste-tekstregel
+    per sleutel (bijv. in `i18n/termbase/`), zodat een volgende ronde dit niet opnieuw vertaalt. — B
+173. **Toewijzingen: lange kolomkoppen laten in veel talen weinig ruimte voor de resourcenaam.** De bron is kort
+    (`task.json` `properties.assignments.units` "Units"/"Inzet", `workHours` "Work (h)"), maar de straat
+    vertaalde naar de volle term (uk "Одиниця призначення", ru "Единицы назначения", bg, hu, ro, sk, da, nb,
+    sv, cs, sr, hr). Gemeten bij een paneel van 320 px: in uk blijft voor de naamkolom 25 px over, in ru 47 px
+    (nl 182 px). Bij 200 px en 125 % duwden ze in 13 talen de regels buiten het paneel; dat is in de release
+    van v2026.10.0 opgelost met afkappen (`TaskAssignmentsSection.tsx`), de koppen zelf niet. Voorstel: korte
+    koppen in die talen, en de Help-artikelen die ze citeren mee. — B
 
 ## Tests
 
