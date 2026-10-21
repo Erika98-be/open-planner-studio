@@ -472,9 +472,6 @@ en noem het in je rapport of PR-tekst.
     logtekst wordt dan een CSS-regel in de bundel. Gezien bij #308 met `[build:platform]` (+36 bytes CSS);
     de logtekst is daarom aangepast. Voorstel: de bronnen van Tailwind beperken tot `src/` en `index.html`. — B
 
-103. **`scripts/run-ts.mjs` ruimt zijn tijdelijke map niet op.** Op de server stonden 1432 mappen
-     `ops-runts-*` in `/tmp`. Gezien door de reviewer van #323 (2026-10-12), niet verder nagegaan. — S
-
 104. **Geen automatische test voor de zegels en `check-docs`** (`scripts/translate/cli.ts`). In #323 alleen met
      de hand nagespeeld. De CLI werkt vanuit `process.cwd()`, dus een test in een tijdelijke map kan. — S
 
