@@ -421,24 +421,46 @@ jobs:
           # (na Authenticode); voorkomt dat deze run de linux/macos-entries raakt.
           includeUpdaterJson: false
 
-      # Poort: zonder geldige handtekening met tijdstempel op installer én
-      # programma faalt de job en blijft de release draft (publish-release hangt
-      # via `needs` aan deze job).
-      - name: Verify Authenticode (installer and program)
+      # Poort: zonder geldige handtekening met tijdstempel op installer, het
+      # geïnstalleerde programma en de uninstaller faalt de job en blijft de
+      # release draft (publish-release hangt via `needs` aan deze job).
+      # Controleer het programma ZOALS HET IN DE INSTALLER ZIT, niet
+      # target/release/open-planner-studio.exe: daar staat na het bundelen een
+      # ongetekende kopie (gemeten bij de eerste tag van v2026.10.0, run
+      # 39657625310: setup.exe Valid, die kopie NotSigned). Zelfde route als
+      # windows-sign-check.yml: stil installeren, controleren, verwijderen.
+      - name: Verify Authenticode (installer, program and uninstaller)
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          $files = @(
-            (Get-ChildItem "$env:GITHUB_WORKSPACE/src-tauri/target/release/bundle/nsis/*-setup.exe" | Select-Object -First 1),
-            (Get-Item "$env:GITHUB_WORKSPACE/src-tauri/target/release/open-planner-studio.exe"))
-          foreach ($f in $files) {
-            if ($null -eq $f) { throw "bestand voor de Authenticode-controle ontbreekt" }
-            $sig = Get-AuthenticodeSignature -FilePath $f.FullName
-            Write-Host "$($f.Name): $($sig.Status); $($sig.SignerCertificate.Subject); tijdstempel: $($sig.TimeStamperCertificate.Subject)"
-            if ($sig.Status -ne 'Valid' -or $null -eq $sig.TimeStamperCertificate) { throw "$($f.Name): geen geldige Authenticode-handtekening met tijdstempel" }
-            & $env:OPS_SIGNTOOL verify /pa /v $f.FullName
-            if ($LASTEXITCODE -ne 0) { throw "signtool verify faalde voor $($f.Name)" }
+          function Check-File($label, $path) {
+            if (-not (Test-Path $path)) { throw "${label}: bestand ontbreekt ($path)" }
+            $sig = Get-AuthenticodeSignature -FilePath $path
+            Write-Host "${label}: $($sig.Status); $($sig.SignerCertificate.Subject); tijdstempel: $($sig.TimeStamperCertificate.Subject)"
+            if ($sig.Status -ne 'Valid' -or $null -eq $sig.TimeStamperCertificate) { throw "${label}: geen geldige Authenticode-handtekening met tijdstempel" }
+            & $env:OPS_SIGNTOOL verify /pa /v $path
+            if ($LASTEXITCODE -ne 0) { throw "signtool verify faalde voor $label" }
           }
+
+          $setup = Get-ChildItem "$env:GITHUB_WORKSPACE/src-tauri/target/release/bundle/nsis/*-setup.exe" | Select-Object -First 1
+          if ($null -eq $setup) { throw "geen *-setup.exe gebouwd" }
+          Check-File 'setup.exe (installer)' $setup.FullName
+
+          $p = Start-Process -FilePath $setup.FullName -ArgumentList '/S' -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw "stil installeren faalde (exit $($p.ExitCode))" }
+          $keys = @('HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*',
+                    'HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*')
+          $entry = Get-ItemProperty $keys -ErrorAction SilentlyContinue |
+            Where-Object { $_.DisplayName -like 'Open Planner Studio*' } | Select-Object -First 1
+          if ($null -eq $entry) { throw "geen Uninstall-sleutel na installeren" }
+          $uninst = $entry.UninstallString.Trim('"')
+          $dir = Split-Path $uninst
+          Check-File 'open-planner-studio.exe (geïnstalleerd)' (Join-Path $dir 'open-planner-studio.exe')
+          Check-File "$(Split-Path $uninst -Leaf) (uninstaller)" $uninst
+
+          # Verwijderen ruimt alleen de runner op; dat houdt de release niet tegen.
+          $u = Start-Process -FilePath $uninst -ArgumentList '/S' -Wait -PassThru
+          if ($u.ExitCode -ne 0) { Write-Host "::warning::stil verwijderen gaf exit $($u.ExitCode)" }
 
       - name: Re-sign updater artifacts after Authenticode signing
         shell: pwsh
