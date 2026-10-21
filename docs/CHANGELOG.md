@@ -6,9 +6,9 @@ version has its own section (no gaps); the newest is at the top. It is deliberat
 running archive of every individual commit: within a version there is a curated description,
 grouped by whichever category applies (`Added`, `Changed`, `Fixed`, `Documentation`).
 
-## v2026.10.0 — 2026-10-19
+## v2026.10.0 — 2026-10-21
 
-A large release: 2,159 commits (227 merged pull requests) since v2026.9.0. It opens Primavera P6
+A large release: 2,165 commits (228 merged pull requests) since v2026.9.0. It opens Primavera P6
 (.xer) files natively and makes the difference between P6, MS Project and Open Planner Studio
 calculation explicit through scheduling profiles; adds task types (fixed duration, units or work), task splitting, saved layouts,
 a progress sheet that round-trips through a spreadsheet, a resource diagram and seven new table
