@@ -117,7 +117,7 @@
     "groupByWbs": "WBS (tree)",
     "templates": "Templates",
     "noTemplates": "No saved templates yet — right-click a summary task → 'Save branch as template'",
-    "insertTemplateHint": "Insert under the selected task (or at root level)",
+    "insertTemplateHint": "Insert as the last subtask of the selected task (or at the bottom of the root level)",
     "templateMeta": "{{tasks}} tasks, {{relations}} relations",
     "deleteTemplate": "Delete template",
     "collapseRibbon": "Collapse the ribbon",

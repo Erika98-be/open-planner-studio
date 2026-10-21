@@ -117,7 +117,7 @@
     "groupByWbs": "WBS (boom)",
     "templates": "Sjablonen",
     "noTemplates": "Nog geen sjablonen — rechtsklik op een samenvattingstaak → 'Bewaar tak als sjabloon'",
-    "insertTemplateHint": "Invoegen onder de geselecteerde taak (of op rootniveau)",
+    "insertTemplateHint": "Invoegen als laatste subtaak van de geselecteerde taak (of onderaan op rootniveau)",
     "templateMeta": "{{tasks}} taken, {{relations}} relaties",
     "deleteTemplate": "Sjabloon verwijderen",
     "collapseRibbon": "Lint inklappen",
