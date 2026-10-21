@@ -68,6 +68,7 @@
     "mppLegacy": "Denne .mpp-fil har et gammelt format (Project 2007 eller ældre). Eksportér den i MS Project som XML (Fil → Gem som → XML), og åbn den fil.",
     "mppEncrypted": "Denne .mpp-fil er beskyttet med en adgangskode. Eksportér den i MS Project som XML (Fil → Gem som → XML), og åbn den fil.",
     "saveFailed": "Kunne ikke gemme",
+    "ambiguousThousands": "\"{{text}}\" er tvetydig: mener du et decimaltal eller et tusindtal? Skriv decimaler med \"{{separator}}\" (1{{separator}}5) og tusindtal uden skilletegn (1500). Værdien er ikke ændret.",
     "siteSaveConflict": "Ikke gemt: '{{name}}' er i mellemtiden ændret på webstedet af en anden. Dine ændringer findes stadig i appen. Vælg Gem som for at gemme dem som ny fil.",
     "siteFileGone": "'{{name}}' findes ikke længere på webstedet. Filen er fjernet fra Seneste.",
     "savedViaDownload": "Gemt som download: '{{name}}' ligger nu i din downloadmappe. Dette miljø tillader ikke, at appen skriver direkte til den valgte placering.",

@@ -68,6 +68,7 @@
     "mppLegacy": "Den här .mpp-filen använder ett äldre format (Project 2007 eller äldre). Exportera den från MS Project som XML (Arkiv → Spara som → XML) och öppna den filen.",
     "mppEncrypted": "Den här .mpp-filen är lösenordsskyddad. Exportera den från MS Project som XML (Arkiv → Spara som → XML) och öppna den filen.",
     "saveFailed": "Kunde inte spara",
+    "ambiguousThousands": "”{{text}}” är tvetydigt: menar du ett decimaltal eller tusental? Skriv decimaler med ”{{separator}}” (1{{separator}}5) och tusental utan skiljetecken (1500). Värdet har inte ändrats.",
     "siteSaveConflict": "Inte sparat: ”{{name}}” har ändrats på webbplatsen av någon annan under tiden. Dina ändringar finns fortfarande i appen. Välj Spara som för att spara dem som en ny fil.",
     "siteFileGone": "”{{name}}” finns inte längre på webbplatsen. Filen har tagits bort från Senaste.",
     "savedViaDownload": "Sparad som nedladdning: '{{name}}' finns nu i din nedladdningsmapp. Den här miljön tillåter inte att appen skriver direkt till platsen du valde.",

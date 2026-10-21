@@ -311,7 +311,7 @@
     "builtinGroup": "Innebygde arbeidskategorier",
     "personalGroup": "Mine arbeidskategorier",
     "projectGroup": "Fra dette prosjektet",
-    "new": "+ Ny aktivitetstype…",
+    "new": "+ Ny arbeidskategori…",
     "manage": "Administrer arbeidskategorier…",
     "newTitle": "Ny arbeidskategori",
     "manageTitle": "Administrer arbeidskategorier",
@@ -321,7 +321,7 @@
     "rename": "Rediger",
     "remove": "Fjern",
     "addToMine": "Legg til i mine arbeidskategorier",
-    "confirmRemove": "Denne arbeidskategorien brukes i det åpne prosjektet. Vil du fjerne den fra Mine aktivitetstyper? Prosjektkopien beholdes."
+    "confirmRemove": "Denne arbeidskategorien brukes i det åpne prosjektet. Vil du fjerne den fra Mine arbeidskategorier? Prosjektkopien beholdes."
   },
   "duration": {
     "label": "Varighet",
@@ -463,9 +463,11 @@
     "recalculate": "Beregn",
     "assignments": {
       "title": "Tilordninger",
+      "resource": "Ressurs",
       "add": "Tildel ressurs",
       "remove": "Fjern",
       "unitsPerDay": "Enh./dag",
+      "units": "Tildelingsenheter",
       "curve": "Kurve",
       "empty": "Ingen tilordninger ennå.",
       "noResources": "Lag først ressurser (Ressurser-fanen).",
@@ -478,6 +480,8 @@
       "contouredHint": "Denne tilordningen har en egen timefordeling. Rediger den eller frigjør den via knappen Timefordeling.",
       "importedCurve": "Importert kurve",
       "work": "Arbeid (gjenst.)",
+      "workHours": "Arbeid (t)",
+      "detailsHint": "Vis kurve, timefordeling og flytt",
       "workHint": "Gjenstående arbeid i timer. Aktivitetstypen avgjør om varigheten eller tildelingsenhetene følger med.",
       "workDeviates": "Avviker fra tildelingsenheter × varighet",
       "workDeviatesHint": "Lagret arbeid {{stored}}t avviker fra tildelingsenheter × gjenstående varighet ({{derived}}t). Histogrammet følger det lagrede arbeidet over hele aktivitetens varighet. {{durationEffect}}",

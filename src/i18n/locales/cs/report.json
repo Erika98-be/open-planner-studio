@@ -138,7 +138,7 @@
   "barColorMode_auto": "Podle úkolu — automaticky",
   "barColorMode_category": "Podle kategorie",
   "barColorFieldLabel": "Pole kategorie",
-  "barColorMissingField": "Toto pole v tomto projektu neexistuje. Dočasně se použije typ práce.",
+  "barColorMissingField": "Toto pole v tomto projektu neexistuje. Dočasně se použije druh práce.",
   "statusLineLabel": "Čára stavu:",
   "statusLine_none": "Žádná",
   "statusLine_statusDate": "Čára datumu stavu",

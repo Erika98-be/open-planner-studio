@@ -98,6 +98,7 @@
     "mppLegacy": "Tento soubor .mpp používá starý formát (Project 2007 nebo starší). Exportujte jej v MS Project jako XML (Soubor → Uložit jako → XML) a otevřete tento soubor.",
     "mppEncrypted": "Tento soubor .mpp je chráněn heslem. Exportujte jej v MS Project jako XML (Soubor → Uložit jako → XML) a otevřete tento soubor.",
     "saveFailed": "Uložení se nezdařilo",
+    "ambiguousThousands": "„{{text}}“ je nejednoznačné: myslíte desetinné číslo, nebo tisíce? Desetinná čísla zadejte pomocí „{{separator}}“ (1{{separator}}5) a tisíce bez oddělovače (1500). Hodnota nebyla změněna.",
     "siteSaveConflict": "Neuloženo: někdo jiný mezitím změnil „{{name}}“ na webu. Vaše změny jsou stále v aplikaci. Zvolte „Uložit jako“, pokud je chcete uložit jako nový soubor.",
     "siteFileGone": "„{{name}}“ už na webu není. Aplikace odebrala soubor ze seznamu Nedávné.",
     "savedViaDownload": "Uloženo jako stažený soubor: „{{name}}“ je nyní ve složce Stažené. Toto prostředí neumožňuje aplikaci zapisovat přímo na zvolené místo.",

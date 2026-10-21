@@ -315,7 +315,7 @@
     "builtinGroup": "Categorie di lavoro integrate",
     "personalGroup": "Le mie categorie di lavoro",
     "projectGroup": "Da questo progetto",
-    "new": "+ Nuovo tipo di attività…",
+    "new": "+ Nuova categoria di lavoro…",
     "manage": "Gestisci categorie di lavoro…",
     "newTitle": "Nuova categoria di lavoro",
     "manageTitle": "Gestisci categorie di lavoro",
@@ -325,7 +325,7 @@
     "rename": "Modifica",
     "remove": "Rimuovi",
     "addToMine": "Aggiungi alle mie categorie di lavoro",
-    "confirmRemove": "Questa categoria di lavoro è usata nel progetto aperto. Rimuoverla da I miei tipi di attività? La copia del progetto resta."
+    "confirmRemove": "Questa categoria di lavoro è usata nel progetto aperto. Vuoi rimuoverla da «Le mie categorie di lavoro»? La copia del progetto resta."
   },
   "duration": {
     "label": "Durata",
@@ -467,9 +467,11 @@
     "recalculate": "Calcola",
     "assignments": {
       "title": "Assegnazioni",
+      "resource": "Risorsa",
       "add": "Assegna risorsa",
       "remove": "Rimuovi",
       "unitsPerDay": "Unità/giorno",
+      "units": "Unità",
       "curve": "Curva",
       "empty": "Ancora nessuna assegnazione.",
       "noResources": "Crea prima le risorse (scheda Risorse).",
@@ -482,6 +484,8 @@
       "contouredHint": "Questa assegnazione ha una propria distribuzione delle ore; modificala o rilasciala con il pulsante Distribuzione ore.",
       "importedCurve": "Curva importata",
       "work": "Lavoro (rim.)",
+      "workHours": "Lavoro (h)",
+      "detailsHint": "Mostra curva, distribuzione delle ore e sposta",
       "workHint": "Lavoro rimanente in ore; il tipo di attività decide se cambiano la durata o le unità.",
       "workDeviates": "Diverge da unità × durata",
       "workDeviatesHint": "Il lavoro salvato {{stored}} h si discosta da unità × durata rimanente ({{derived}} h). L'istogramma segue il lavoro salvato per tutta la durata dell'attività. {{durationEffect}}",

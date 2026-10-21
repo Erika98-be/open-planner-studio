@@ -135,7 +135,7 @@
   "barColorMode_auto": "Por tarefa — automático",
   "barColorMode_category": "Por categoria",
   "barColorFieldLabel": "Campo de categoria",
-  "barColorMissingField": "Este campo não existe neste projeto. O tipo de tarefa é usado temporariamente.",
+  "barColorMissingField": "Este campo não existe neste projeto. A categoria de trabalho é usada temporariamente.",
   "statusLineLabel": "Linha de status:",
   "statusLine_none": "Nenhuma",
   "statusLine_statusDate": "Linha de data de estado",

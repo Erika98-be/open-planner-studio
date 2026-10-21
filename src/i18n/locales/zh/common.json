@@ -95,7 +95,7 @@
     "startBlockedByConstraintMany_other": "{{count}} 个任务的新开始日期未应用：这些任务有前置任务，且限制不是“不得早于…开始 (SNET)”。请修改这些限制以移动开始日期。",
     "dragStartIsActual": "“{{name}}”已开始：其开始日期为实际开始日期，不会移动。请通过进度进行更改。",
     "dragDatesAreActual": "“{{name}}”已完成：其开始和完成日期为实际日期，不会移动。请通过进度进行更改。",
-    "referencesClearedOnPaste_other": "有 {{count}} 个引用在本文档中不存在，已被清除（来自源文档的任务日历、自定义工作类别、活动代码或自定义字段）。",
+    "referencesClearedOnPaste_other": "{{count}} 个引用在本文档中不存在，已被清除（来自源文档的任务日历、自定义工作类别、活动代码或自定义字段）。",
     "milestoneRefusedAssignments_other": "{{count}} 个任务有资源分配，无法变为里程碑。请先移除这些分配。",
     "milestoneRefusedSummary_other": "{{count}} 个任务是带子任务的摘要任务，无法变为里程碑。",
     "assignmentsMovedToSubtask_other": "{{count}} 个分配已移至子任务“{{child}}”。",

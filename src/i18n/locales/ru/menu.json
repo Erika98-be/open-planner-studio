@@ -209,7 +209,7 @@
     "screenColors_critical": "Критический путь",
     "screenColors_auto": "По задаче — автоматически",
     "screenColors_category": "По категории",
-    "screenColorsMissingField": "Этого поля нет в проекте. Временно используется тип задачи.",
+    "screenColorsMissingField": "Этого поля нет в проекте. Временно используется вид работ.",
     "screenColorsHint": "Вне режима «Критический путь» красная рамка отмечает критический путь.",
     "addLayout": "Создать макет",
     "toggleRelations": "Линии связей"
