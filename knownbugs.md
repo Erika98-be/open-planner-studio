@@ -436,6 +436,12 @@ en noem het in je rapport of PR-tekst.
     `verify:translations` bleven groen. De straat hield toen de oude taaktype-term aan (bijv. de: `Neue Vorgangsart`),
     en de labelpoort dwong die oude tekst af. In de release-ronde van 2026-10-21 hersteld (termen +
     `--keys`-ronde). Voorstel: `validate-termbase` rood bij een concept zonder term in een taal. — B
+168. **Meldingen met naam óf aantal verliezen de naam in talen met één meervoudsvorm.** `common.json`
+    `notifications.milestoneRefusedAssignments_one`/`_other` (en `milestoneRefusedSummary`, `milestoneClearedOnPhase`)
+    wisselen tussen "'{{task}}' heeft …" en "{{count}} taken hebben …". zh, ja, ko en lo kennen alleen `other`, dus
+    bij één taak tonen ze "1 个任务…" zonder naam. De Help-labelpoort eist dan in `ref-meldingen` die `other`-vorm,
+    terwijl het bronartikel de vorm met naam citeert: het artikel blijft rood in zh, ko en lo (ronde 2026-10-21).
+    Voorstel: twee sleutels (met naam, met aantal) in plaats van een meervoud. — B
 
 ## Tests
 
