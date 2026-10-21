@@ -8,7 +8,7 @@ Testers krijgen nieuwe bouwen van `main`, zonder dat gewone gebruikers die zien.
 In de desktop-app kiest een gebruiker in Instellingen een updatekanaal: Stabiel, Nightly of Dev.
 
 - **Dev**: een bouw na elke groene `ci.yml`-run op `main`.
-- **Nightly**: elke zaterdagavond de nieuwste Dev-bouw, als `main` sinds de vorige Nightly veranderd is (plus een knop).
+- **Nightly**: de nieuwste Dev-bouw, alleen als de beheerder dat met een commando start (`gh workflow run nightly.yml`).
 
 Op Nightly of Dev meldt de bestaande updatedialoog de nieuwste bouw van dat kanaal, net als een gewone update.
 
@@ -16,13 +16,14 @@ Op Nightly of Dev meldt de bestaande updatedialoog de nieuwste bouw van dat kana
 
 | # | Besluit | Wie, wanneer | Waarom |
 |---|---|---|---|
-| B1 | Bouw elke zaterdagavond, alleen als `main` sinds de vorige testbouw veranderd is, plus een knop (`workflow_dispatch`). | gebruiker, 2026-10-20 | Elke nacht is te vaak; per merge kost te veel bouwminuten en Windows-signing. |
+| B1 | ~~Bouw elke zaterdagavond, alleen als `main` sinds de vorige testbouw veranderd is, plus een knop (`workflow_dispatch`).~~ Vervangen door B1a. | gebruiker, 2026-10-20 | Elke nacht is te vaak; per merge kost te veel bouwminuten en Windows-signing. |
+| B1a | Nightly heeft geen vast tijdstip. De beheerder start hem alleen zelf, met `gh workflow run nightly.yml` (of de knop in Actions). Geen `schedule`. | gebruiker, 2026-10-21 ("nightly releases doe ik alleen met een command") | De beheerder kiest zelf welke Dev-bouw goed genoeg is voor Nightly. |
 | B2 | Eigen updatekanaal in de app, met een keuzelijst in Instellingen (zoals "Update track" in T3 Code). | gebruiker, 2026-10-20 | Testers krijgen nieuwe testbouwen vanzelf; terug naar Stabiel kan altijd. |
 | B3 | Geen nieuw Rust-commando. Het kanaal loopt via de `target`-optie van `check()` en een tweede endpoint. | voorstel orkestrator, 2026-10-20 | `AGENTS.md`: Rust blijft dun, elk commando is publiek oppervlak. |
 | B3a | Nightly-versie puur numeriek (`2026.9.1042`); terug naar Stabiel zonder downgrade: de app blijft op Nightly tot een hogere stabiele versie er is. | voorstel orkestrator na review r1, 2026-10-20 | Prerelease-tekst breekt dpkg-volgorde, RPM en macOS; RPM kan via de updater niet downgraden. |
 | B4 | Naam van het kanaal: "Nightly" (keuzelijst Stabiel / Nightly). Dezelfde naam voor tag, versie-achtervoegsel, target en workflow. | gebruiker, 2026-10-20 | Gangbare naam voor het kanaal met de nieuwste bouw; zegt niets over hoe vaak er gebouwd wordt. |
 | B5 | Arch-gebruikers krijgen een AUR-pakket `open-planner-studio-bin` (herverpakte `.deb` van de stabiele release). Updates gaan via `yay`/`paru`; de app installeert op Arch zelf niets en doet daar wat hij bij Snap doet. | gebruiker, 2026-10-20 | Dat verwachten Arch-gebruikers; de Tauri-updater kan geen pacman-pakket installeren (alleen AppImage, deb, rpm: `updater.rs` r. 1197-1214). |
-| B6 | Derde kanaal Dev: een bouw na elke groene CI-run op `main`. | gebruiker, 2026-10-20 | Nieuwste stand testen zonder te wachten op zaterdag. |
+| B6 | Derde kanaal Dev: een bouw na elke groene CI-run op `main`. | gebruiker, 2026-10-20 | Nieuwste stand testen zonder te wachten op een Nightly. |
 | B6a | Nightly bouwt en kopieert niets: hij zet alleen de Nightly-manifesten op een bestaande Dev-bouw. Eén gedeelde teller voor het versienummer. | voorstel orkestrator, 2026-10-20 | Geen dubbele bouw van dezelfde commit; versies over kanalen heen blijven oplopend. |
 | B7 | Alle Dev- en Nightly-bestanden en -manifesten staan op één vaste prerelease `channels` (titel "Kanalen") in deze repo, niet op een release per bouw. Opruimen: alleen bestanden waar een kanaal naar wijst, plus de vorige Dev-bouw, blijven staan. | gebruiker, 2026-10-20 ("bouw maar, we kunnen het in elk geval proberen") | Een release per bouw zette ~20 prereleases per dag op de Releases-pagina, duwde de stabiele release uit de 30 die `releaseInfo.ts` ophaalt en vervuilde de downloadcijfers. Eigen server (optie 1) vraagt serverbeheer dat nu niet geregeld is. |
 
@@ -133,10 +134,10 @@ Alles staat op de prerelease met tag `channels` en titel "Kanalen" (`prerelease:
 
 ## Workflow `.github/workflows/nightly.yml`
 
-- `on: schedule: cron '0 18 * * 6'` (zaterdag 20:00 zomertijd, 19:00 wintertijd) en `workflow_dispatch`.
+- Alleen `on: workflow_dispatch` (B1a). Geen `schedule`. Starten: `gh workflow run nightly.yml`.
 - Draait in `channels-publish` (met `queue: max`). Leest de huidige `dev-*.json`; promoveert alleen als ze allemaal
-  naar dezelfde generatie wijzen (anders faalt hij met een melding: Dev-publicatie eerst herstellen). Slaat over (groene
-  run, melding in de samenvatting) als `nightly-*.json` al naar die generatie wijst (alleen bij `schedule`).
+  naar dezelfde generatie wijzen (anders faalt hij met een melding: Dev-publicatie eerst herstellen). Schrijft niets (groene
+  run, melding in de samenvatting) als `nightly-*.json` al gelijk is aan `dev-*.json`.
 - Schrijft `nightly-*.json` met dezelfde inhoud als de `dev-*.json` (zelfde URL's, versie en handtekening). Geen bouw,
   geen kopie van bouwsels, geen signing.
 - Testers downloaden via de release "Kanalen"; de release-tekst noemt welke versie Dev en Nightly nu zijn.
