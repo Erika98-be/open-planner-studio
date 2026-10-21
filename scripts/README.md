@@ -514,7 +514,9 @@ Playwright-Chromium; elke herhaling krijgt een verse browsercontext. Het script 
 Node- en Chromiumversie vast en schrijft één JSON-bestand (standaard
 `build/measure-large-plans/<datum>-<commit>.json`) plus een Markdown-tabel op stdout. Vlaggen:
 `--sizes 1000,5000,10000`, `--repeats 3`, `--out PAD`, `--dist BESTAANDE-BUILD`, `--headed`,
-`--skip fase,…`, `--step-timeout-s 900`. Exit 1 als een fase mislukt of een time-out geeft. Het script stelt
+`--skip fase,…` (`interaction`, `f5`, `level`, `autosave`, `recovery`, `save`; zonder `level` is er geen
+wijziging, dus dan mislukken autosave en herstel), `--step-timeout-s 900`. Exit 1 als een fase mislukt of een
+time-out geeft. Het script stelt
 geen doelen of drempels. De nulmeting staat in `docs/superpowers/evidence/nulmeting-grote-planningen.md`.
 
 ## Handmatige hulpmiddelen (geen aanroeper)

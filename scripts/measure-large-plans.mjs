@@ -31,7 +31,7 @@ import { spawnSync } from 'node:child_process';
 import { createServer } from 'node:http';
 import { createReadStream, existsSync, mkdirSync, mkdtempSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { cpus, totalmem, tmpdir, release, platform, arch } from 'node:os';
-import { dirname, extname, join, normalize, resolve } from 'node:path';
+import { dirname, extname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from '@playwright/test';
 
@@ -106,9 +106,10 @@ const MIME = {
 };
 function serve(dir) {
   const server = createServer((req, res) => {
-    const url = decodeURIComponent((req.url ?? '/').split('?')[0]);
-    let file = normalize(join(dir, url));
-    if (!file.startsWith(dir)) { res.writeHead(403).end(); return; }
+    // Alleen bestanden binnen de buildmap: pad oplossen en daarna begrenzen (geen `..` naar buiten).
+    const root = resolve(dir);
+    let file = resolve(root, `.${decodeURIComponent((req.url ?? '/').split('?')[0])}`);
+    if (file !== root && !file.startsWith(root + sep)) { res.writeHead(403).end(); return; }
     if (!existsSync(file) || statSync(file).isDirectory()) file = join(dir, 'index.html');
     res.writeHead(200, { 'content-type': MIME[extname(file)] ?? 'application/octet-stream', 'cache-control': 'no-store' });
     createReadStream(file).pipe(res);
