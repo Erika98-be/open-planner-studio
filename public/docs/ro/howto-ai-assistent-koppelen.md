@@ -12,9 +12,9 @@ Puntea funcționează doar în aplicația desktop. Dacă activați modul AI în 
 
 ### 1. Activați modul AI
 
-1. Alegeți *Setări › Proiect › Setări*. Puteți alege și *Fișier › Setări*, sau pictograma roată dințată din partea de sus.
+1. Alegeți *Setări › Proiect › Setări aplicație*. Puteți alege și *Fișier › Setări aplicație*, sau pictograma roată dințată din partea de sus.
 2. Alegeți fila *Avansat* și activați *Activare mod AI*. Fila *AI* apare în panglică.
-3. Dacă doriți ca puntea să fie activă de cum pornește aplicația, activați și *Pornire automată bridge*. Aceasta se activează doar când modul AI este activat și funcționează doar în aplicația desktop. Implicit este dezactivată, deoarece deschiderea unui port este o alegere deliberată.
+3. Dacă doriți ca puntea să fie activă imediat ce pornește aplicația, activați și *Pornire automată bridge*. Aceasta se activează doar când modul AI este activat și funcționează doar în aplicația desktop. Implicit este dezactivată, deoarece deschiderea unui port este o alegere deliberată.
 
 Dacă dezactivați modul AI, puntea se oprește și fila *AI* dispare.
 
@@ -62,13 +62,13 @@ Backup-urile se află în dosarul `ai-backups` din dosarul de date al aplicație
 
 ### 6. Faceți ca asistentul să planifice bine
 
-Un asistent care cunoaște instrumentele poate totuși construi o planificare inutilă: activități fără dependențe, o dată fixă la fiecare activitate sau o descompunere mult prea fină. De aceea asistentul primește regulile de planificare în trei moduri. Pentru primele două nu trebuie să faceți nimic.
+Un asistent planifică bine doar dacă cunoaște regulile de planificare. Ce înseamnă asta și ce conțin aceste reguli, aflați în [Cum funcționează legătura AI](docs://uitleg-ai-koppeling). Acestea sunt pașii pe care îi faceți dumneavoastră:
 
-1. **Regulile fundamentale vin singure.** Când se conectează, puntea trimite un text scurt cu regulile fundamentale. Mulți clienți pun acest text în promptul de sistem. Dacă al dumneavoastră o face, depinde de client. Textul spune, printre altele, că asistentul trebuie să înceapă de la jaloane, să creeze activități de aproximativ o zi până la două săptămâni, să conducă planificarea cu dependențe în loc de date fixe și să spună la final ce a presupus.
-2. **Promptul de conectare trimite spre ghidul complet.** Promptul de conectare din fereastra *Date de conectare* cere asistentului să citească mai întâi ghidul de planificare, cu instrumentul `planner_get_planning_guide`. Acesta returnează un ghid în engleză pentru asistenți, cu aceleași principii ca în [Planificare bună](docs://gids-goed-plannen). Pentru fiecare principiu, ghidul arată instrumentele pe care asistentul le folosește. Îl puteți citi și dumneavoastră la `https://open-planner-studio.open-aec.com/agent/planning-guide.md`. Dacă nu folosiți promptul, cereți asistentului singur: *Citește mai întâi ghidul de planificare cu planner_get_planning_guide, înainte să modifici ceva.*
-3. **Opțional: skill-urile.** Un skill este un fișier mic cu instrucțiuni. Asistentul îl citește în fiecare sesiune, ca să știe și într-o conversație ulterioară cum trebuie să lucreze. Sunt două skill-uri, ambele în engleză: *goed-plannen* pentru a configura sau a reorganiza o planificare și *progress-update* pentru actualizarea săptămânală a progresului. Funcționează doar cu un asistent care acceptă skill-uri. Skill-urile însele menționează Claude Code și asistenți înrudiți. Fiecare skill este un fișier `SKILL.md` într-un dosar cu numele skill-ului: `.claude/skills/goed-plannen/SKILL.md` și `.claude/skills/progress-update/SKILL.md` în dosarul proiectului în care lucrează asistentul. Sau aceleași dosare sub `~/.claude/skills/`, ca să le aveți în fiecare proiect.
+1. **Nu faceți nimic pentru regulile fundamentale.** Ele vin odată cu conectarea. Dacă clientul le pune în promptul de sistem, depinde de client.
+2. **Cereți citirea ghidului.** Promptul de conectare din fereastra *Date de conectare* cere asistentului să citească ghidul cu instrumentul `planner_get_planning_guide`. Dacă nu folosiți promptul, cereți asistentului: *Citește mai întâi ghidul de planificare cu planner_get_planning_guide, înainte să modifici ceva.* Ghidul îl puteți citi și dumneavoastră la `https://open-planner-studio.open-aec.com/agent/planning-guide.md`.
+3. **Opțional: instalați skill-urile.** Acest pas funcționează doar cu un asistent care acceptă skill-uri. Puneți `SKILL.md` pentru *goed-plannen* și *progress-update* în `.claude/skills/goed-plannen/SKILL.md` și `.claude/skills/progress-update/SKILL.md`, în dosarul proiectului în care lucrează asistentul. Sau puneți-le în aceleași dosare sub `~/.claude/skills/`, pentru fiecare proiect.
 
-Fișierele le obțineți în două moduri. Cereți asistentului să apeleze instrumentul `planner_get_planning_guide` cu `part` pus pe `skill`: răspunsul conține ambele texte și, pentru fiecare skill, locurile unde trebuie să ajungă. Sau descărcați-le de la `https://open-planner-studio.open-aec.com/skills/goed-plannen/SKILL.md` și `https://open-planner-studio.open-aec.com/skills/progress-update/SKILL.md`. Dacă *goed-plannen* mai există dintr-o versiune mai veche a aplicației, înlocuiți-l. Acel text vechi este în neerlandeză și trimite la articolul de ajutor, nu la ghidul pentru asistenți.
+Fișierele le obțineți în două moduri. Cereți asistentului să apeleze instrumentul `planner_get_planning_guide` cu `part` pus pe `skill`: răspunsul conține ambele texte și, pentru fiecare skill, locurile unde trebuie să ajungă. Sau descărcați-le de la `https://open-planner-studio.open-aec.com/skills/goed-plannen/SKILL.md` și `https://open-planner-studio.open-aec.com/skills/progress-update/SKILL.md`. Dacă *goed-plannen* mai există dintr-o versiune mai veche a aplicației, înlocuiți-l: acel text vechi este în neerlandeză și trimite la articolul de ajutor, nu la ghidul pentru asistenți.
 
 Ca să vedeți dacă asistentul a citit ghidul într-adevăr, uitați-vă în *Panou de activitate*. Acolo apare un apel al `planner_get_planning_guide`. Răspunsul final trebuie să conțină o listă de presupuneri: duratele estimate, descompunerea aleasă, dependențele pe care le-a creat singur și fiecare restricție pe care a setat-o. Dacă lista lipsește, cereți-o. După o actualizare de progres făcută cu *progress-update*, răspunsul trebuie să numească data raportului de stare, noua dată de sfârșit și varianța față de referință.
 
@@ -98,4 +98,4 @@ Ca să vedeți dacă asistentul a citit ghidul într-adevăr, uitați-vă în *P
 - [Cum funcționează legătura AI](docs://uitleg-ai-koppeling): ce este legătura, de ce asistentul lucrează în proiectul dumneavoastră deschis și ce nu are voie să facă.
 - [Instrumente AI](docs://ref-ai-tools): toate instrumentele `planner_*` pe grupe, codurile de eroare și cât timp se păstrează backup-urile.
 - [Planificare bună](docs://gids-goed-plannen): principiile de planificare; asistentul le primește într-o versiune în engleză, cu instrumentele adăugate.
-- [Setări](docs://ref-instellingen): setările AI.
+- [Setări aplicație](docs://ref-instellingen): setările AI.

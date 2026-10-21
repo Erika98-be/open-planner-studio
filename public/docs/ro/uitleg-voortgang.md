@@ -16,7 +16,7 @@ O **referință** este o copie a planificării la un anumit moment, de obicei mo
 
 Exemplul de mai jos folosește profilul de calcul *Open Planner Studio*, cu care calculează un proiect nou. Mai jos puteți citi ce este diferit în profilurile Primavera P6 și Microsoft Project.
 
-Aplicația nu recalculează singură. După fiecare modificare a progresului sau a datei raportului de stare, bara de stare afișează *Învechit — recalculați (F5)*. Apăsați **Calculare** (F5), de exemplu prin *Planificare › Planificare › Calculare*. Dacă *Calculare automată* este activată (sub *Setări › Proiect › Setări*, fila *Planificare*, secțiunea *Calculare*), aplicația face asta singură.
+Aplicația nu recalculează singură. După fiecare modificare a progresului sau a datei raportului de stare, bara de stare afișează *Învechit — recalculați (F5)*. Apăsați **Calculare** (F5), de exemplu prin *Planificare › Planificare › Calculare*. Dacă *Calculare automată* este activată (sub *Setări › Proiect › Setări aplicație*, fila *Planificare*, secțiunea *Calculare*), aplicația face asta singură.
 
 ### Data raportului de stare
 
@@ -137,11 +137,11 @@ Predarea rămâne vineri 6 august în ambele cazuri: zugrăvirea avea oricum mar
 
 ### Alte profiluri de calcul
 
-În profilurile Primavera P6 și Microsoft Project, zugrăvirea din acest exemplu se încheie la aceleași date (27 și 22 iulie). Ele se deosebesc în următoarele puncte. Acestea sunt convenții de calcul ale profilului; le găsiți sub *Setări › Proiect › Informații proiect*, în blocul *Profil de calcul și opțiuni de calcul*.
+În profilurile Primavera P6 și Microsoft Project, zugrăvirea din acest exemplu se încheie la aceleași date (27 și 22 iulie). Ele se deosebesc în următoarele puncte. Acestea sunt convenții de calcul ale profilului; le găsiți sub *Setări › Proiect › Setări proiect*, în blocul *Profil de calcul și opțiuni de calcul*.
 
 - În profilul Microsoft Project, lucrul care nu a început nu se mută la data raportului de stare (convenția de calcul *Activități nepornite nu se mută la data raportului de stare*). Dacă în exemplul de mai sus setați doar o dată a raportului de stare și nu introduceți nimic, predarea în acest profil rămâne vineri 6 august.
 - În profilul Microsoft Project, lucrul rămas nu începe nici mai devreme decât începutul efectiv plus timpul scurs (convenția de calcul *Lucrul rămas se reia după timpul scurs*). Aceasta este o limită inferioară suplimentară, pe lângă data raportului de stare: contează cea mai târzie dintre cele două. Luați *Build inner cavity leaf* (5 zile lucrătoare), început marți 29 iunie, cu data raportului de stare miercuri 30 iunie și la 40% (două echipe zidesc în același timp, deci 40% este deja realizat după o zi). Tot ce precede activitatea este încheiat conform planului. Open Planner Studio și Primavera P6 lasă activitatea să se încheie vineri 2 iulie; Microsoft Project o lasă să se încheie luni 5 iulie, deoarece marți 29 iunie plus 2 zile lucrătoare scurse este joi 1 iulie, adică după data raportului de stare.
-- Primavera P6 afișează ca început cel mai devreme al unei activități în curs începutul lucrului rămas, nu începutul efectiv (în exemplul stratului interior, miercuri 30 iunie).
+- Primavera P6 afișează ca început cel mai devreme al unei activități în curs începutul lucrului rămas, nu începutul efectiv (în exemplul stratului interior, miercuri 30 iunie). Coloana *Început* și bara arată în fiecare profil începutul efectiv.
 - În profilul Primavera P6, la Progress Override, dependența față de un succesor care a început deja nu contează nici pentru predecesor: ea nu mai limitează datele târzii și marja liberă ale predecesorului (convenția de calcul *Progress Override ignoră un succesor început și în calculul înapoi*). În exemplul cu tencuitorul și zugravul nu se vede acest lucru, deoarece tencuirea este oricum critică prin șapa de egalizare: datele ei târzii și marja liberă sunt aceleași la Retained Logic și la Progress Override.
 - Când deschideți un fișier .xer, aplicația preia modul de progres din fișier. Modul Datele reale, al treilea mod P6, nu este cunoscut aplicației; un astfel de fișier se calculează ca Retained Logic.
 

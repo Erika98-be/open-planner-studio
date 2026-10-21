@@ -45,7 +45,7 @@ Un devans nu poate muta o activitate înainte de începutul proiectului. Dacă a
 
 ### În ce calendar se numără decalajul
 
-Fiecare activitate poate avea propriul calendar. Cu un decalaj în zile lucrătoare contează ce calendar numără zilele lucrătoare. Setarea *Calendar pentru decalaj* decide acest lucru, cu patru opțiuni: *Predecesor*, *Succesor*, *24 de ore* și *Calendar de proiect*. Implicit, decalajul se numără în calendarul **predecesorului**. Această setare o găsiți la *Setări › Proiect › Informații proiect*, în blocul *Profil de calcul și opțiuni de calcul*, la *Opțiunile de calcul ale acestui proiect*. Alegerea se salvează în fișierul proiectului și are efect abia după ce faceți clic pe *Aplicare*; planificarea se recalculează atunci.
+Fiecare activitate poate avea propriul calendar. Cu un decalaj în zile lucrătoare contează ce calendar numără zilele lucrătoare. Setarea *Calendar pentru decalaj* decide acest lucru, cu patru opțiuni: *Predecesor*, *Succesor*, *24 de ore* și *Calendar de proiect*. Implicit, decalajul se numără în calendarul **predecesorului**. Această setare o găsiți la *Setări › Proiect › Setări proiect*, în blocul *Profil de calcul și opțiuni de calcul*, la *Opțiunile de calcul ale acestui proiect*. Alegerea se salvează în fișierul proiectului și are efect abia după ce faceți clic pe *Aplicare*; planificarea se recalculează atunci.
 
 Un decalaj în zile calendaristice (`3ed`) numără întotdeauna toate zilele, indiferent de *Calendar pentru decalaj* pe care îl alegeți.
 
