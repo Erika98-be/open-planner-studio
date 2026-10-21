@@ -467,16 +467,31 @@ jobs:
 
           # --- Generate the updater signature for the rebuilt zip.
           # tauri signer sign writes a .sig file next to the input file.
+          Remove-Item "$ZIP_PATH.sig" -Force -ErrorAction SilentlyContinue
           npx tauri signer sign "$ZIP_PATH" --private-key "$env:TAURI_SIGNING_PRIVATE_KEY" --password "$env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD"
+          if ($LASTEXITCODE -ne 0) { throw "tauri signer sign faalde voor $ZIP_NAME (exit $LASTEXITCODE)" }
 
           # Read the freshly generated .sig file (the updater `signature` field is
           # the *contents* of the .sig, not a path or URL).
           $ZIP_SIG = (Get-Content "$ZIP_PATH.sig" -Raw).Trim()
           Write-Host "New zip signature: $($ZIP_SIG.Substring(0, [Math]::Min(50, $ZIP_SIG.Length)))..."
 
+          # --- Teken ook de setup.exe opnieuw. tauri-action tekende de exe vóór
+          # Authenticode; die oude .exe.sig paste daarna niet meer bij de
+          # gepubliceerde exe (gemeten op v2026.9.0, issue #429). Zonder deze stap
+          # blijft die verouderde .exe.sig als asset staan.
+          # Eerst de oude .sig weg: die bestond al van vóór Authenticode, dus "het
+          # bestand bestaat" bewijst niets (review #438, bevinding 6).
+          Remove-Item "$($EXE.FullName).sig" -Force -ErrorAction SilentlyContinue
+          npx tauri signer sign "$($EXE.FullName)" --private-key "$env:TAURI_SIGNING_PRIVATE_KEY" --password "$env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD"
+          if ($LASTEXITCODE -ne 0) { throw "tauri signer sign faalde voor $($EXE.Name) (exit $LASTEXITCODE)" }
+          if (-not (Test-Path "$($EXE.FullName).sig")) {
+            throw "tauri signer sign schreef geen $($EXE.Name).sig"
+          }
+
           # --- Upload the rebuilt updater artifacts plus the signed installer.
           # (The signed setup.exe is uploaded for humans who download directly.)
-          gh release upload $VERSION "$ZIP_PATH" "$ZIP_PATH.sig" "$($EXE.FullName)" --clobber --repo "$REPO"
+          gh release upload $VERSION "$ZIP_PATH" "$ZIP_PATH.sig" "$($EXE.FullName)" "$($EXE.FullName).sig" --clobber --repo "$REPO"
 
           # --- Resolve the asset NAME via the API. GitHub rewrites spaces in
           # asset names to dots (e.g. "Open Planner Studio_..." -> "Open.Planner.Studio_..."),
