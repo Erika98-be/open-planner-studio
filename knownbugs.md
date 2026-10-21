@@ -88,7 +88,6 @@ en noem het in je rapport of PR-tekst.
     en `check-tutorial-project.ts` legt dat laatste vast als bedoeld. Het type hangt dus van de route af
     (`shortcutRegistry.ts:376-380`, `GanttCanvas.tsx:403,1020`, `FullTaskGrid.tsx:799,1313`,
     `ribbonWidgets.tsx:188`). — B
-15. **Rechtsklikmenu op een lege plek** (*Nieuwe taak*, *Plakken*) is dode code: geen route opent het. — B
 16. **Taken kopiëren** heeft geen zichtbare bediening; alleen Ctrl+C/V met de Gantt in focus. — B
 17. **Verwijderen zonder bevestiging**: `confirm.deleteTask` staat in de locales maar wordt nergens gebruikt. — S
 18. **Hint *Sjabloon invoegen*** zegt "onder de geselecteerde taak"; de code maakt er de laatste subtaak van. — S
