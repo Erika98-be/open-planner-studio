@@ -363,6 +363,22 @@ en noem het in je rapport of PR-tekst.
     alleen een onbekende ID en geen WBS of naam toont dus een lege kop. Dubbele rijen (`duplicateRow`) staan
     wel apart, met hun reden. De store-uitkomst is wel per soort apart: `check-progress-import-ronde.ts` deel D.
     Voorstel: in *Wacht op koppeling* de reden en de ID uit het blad tonen (#405 deel 5). — B (code en test)
+162. **Desktop (Linux/macOS): Opslaan overschrijft een alleen-lezen projectbestand als de map schrijfbaar
+    is.** `replaceUserFile` (`atomicWrite.ts`) schrijft een halffabricaat met de rechten van het origineel
+    (0444) en hernoemt het over het doel; op POSIX mag dat. Het bestand krijgt de nieuwe inhoud en blijft
+    0444. Een editor als vim weigert hier zonder `!`. Gemeten met het echte bestandssysteem in
+    `check-save-failure-status.ts` §1R (MEETING-regel 1R-d). Is de map ook alleen-lezen, of Windows met het
+    kenmerk alleen-lezen, dan faalt opslaan wel netjes (zelfde check, §1 en §2). Voorstel: bij een doel zonder
+    schrijfbit eerst vragen of melden. Een besluit voor de eigenaar. — B
+163. **Web: Ctrl+S op een vergrendeld bestand opent zonder uitleg de bestandskiezer.** `saveToRefWeb`
+    (`webBackend.ts`) slikt elke fout (ook `NoModificationAllowedError`) en geeft `false`; `writeActiveDocument`
+    valt dan terug op Opslaan als. Annuleert de gebruiker, dan komt er geen melding (het document blijft
+    terecht gewijzigd). Gezien in `check-save-failure-status.ts` §3a/3b. Voorstel: een echte schrijffout
+    melden vóór de kiezer verschijnt. — B
+166. **Desktop: bij Openen en Importeren mist de reden in de foutmelding.** `fileSlice.ts` geeft daar
+    `(err as Error).message` door (`openFailed` en `importFailureNotice`, drie plekken). Tauri-plugins weigeren
+    met een tekst, niet met een `Error`, dus het detail is `undefined`. Bij Opslaan is dat in #434 opgelost met
+    `saveErrorDetail`. Afgeleid uit de code, niet nagespeeld. Voorstel: dezelfde helper gebruiken. — S
 
 ## Rondleiding, Help en extensie-gidsen
 
