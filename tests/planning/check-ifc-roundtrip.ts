@@ -73,7 +73,7 @@
 //   de afgeleide span — zie `projCal` hieronder (workEndHour 16, hoursPerDay 8: 16−7=9 ≠ 8).
 
 import { writeIFC } from '@/services/ifc/ifcWriter';
-import { checkIfcSchema } from './ifcSchemaCheck';
+import { checkIfcSchema, parseStep } from './ifcSchemaCheck';
 import { readIFC } from '@/services/ifc/ifcReader';
 import { solveProject } from '@/engine/scheduler/solveProject';
 import { ALL_RECORDED_SLOT_KEYS, IFC_TASKTIME_SLOTS, TASKTIME_SLOT, IFC_TASK_SLOTS, TASK_SLOT } from '@/services/ifc/ifcTaskSlots';
@@ -1178,11 +1178,33 @@ const hasP6BoundarySequence = (input: ImportResult) =>
   // (4c) De IFCWORKPLAN-slots zelf blijven ONGEWIJZIGD de afgeleide plan-omvang dragen (semantisch
   //      juist; andere IFC-tools lezen die slots). Dat is precies waarom de contractuele datums een
   //      eigen plek nodig hadden in plaats van dit slot over te nemen.
-  const wpLine = writeIFC(fixture).split('\n').find(l => l.includes('IFCWORKPLAN('))!;
-  assert(wpLine.includes("'2026-07-06") && wpLine.includes("'2026-07-24"),
-    `IFCWORKPLAN moet de AFGELEIDE taak-span houden (2026-07-06 … 2026-07-24) — kreeg: ${wpLine}`);
-  assert(!wpLine.includes('2026-06-15') && !wpLine.includes('2026-09-30'),
-    `IFCWORKPLAN mag de CONTRACTUELE datums niet dragen — kreeg: ${wpLine}`);
+  const ifc = writeIFC(fixture);
+  const workPlan = parseStep(ifc).find(entity => entity.type === 'IFCWORKPLAN')!;
+  // Alleen StartTime/FinishTime toetsen, niet CreationDate, Name of Description. De schema-slots
+  // zijn bewust onafhankelijk van de productielezer: 6 = CreationDate, 11/12 = de plan-omvang.
+  const derivedSpan = (args: typeof workPlan.args) =>
+    args[11]?.k === 'str' && args[11].raw.startsWith("'2026-07-06T")
+    && args[12]?.k === 'str' && args[12].raw.startsWith("'2026-07-24T");
+  assert(derivedSpan(workPlan.args),
+    'IFCWORKPLAN.StartTime/FinishTime moeten de AFGELEIDE taak-span houden (2026-07-06 … 2026-07-24)');
+  const creation = workPlan.args[6];
+  if (creation.k !== 'str') throw new Error('IFCWORKPLAN.CreationDate moet een datumstring zijn');
+  for (const date of ['2026-06-15', '2026-09-30']) {
+    // Reproduceert de kalenderafhankelijke fout zonder de globale klok te veranderen.
+    // CreationDate staat ook in de header: vervang gericht de entiteitsregel.
+    const wpLine = ifc.split('\n').find(line => line.includes('IFCWORKPLAN('))!;
+    const collisionLine = wpLine.replace(creation.raw, "'" + date + "T12:00:00'");
+    const collision = parseStep(ifc.replace(wpLine, collisionLine)).find(entity => entity.type === 'IFCWORKPLAN')!;
+    assert(collision.args[6].k === 'str' && collision.args[6].raw === "'" + date + "T12:00:00'",
+      'testvoorwaarde: CreationDate valt op de contractuele datum ' + date);
+    assert(derivedSpan(collision.args), 'CreationDate ' + date + ' verandert het oordeel over de taak-span niet');
+  }
+  const wrongStart = [...workPlan.args];
+  wrongStart[11] = { k: 'str', raw: "'2026-06-15T07:00:00'" };
+  assert(!derivedSpan(wrongStart), 'contractuele datum in StartTime wordt nog steeds afgekeurd');
+  const wrongFinish = [...workPlan.args];
+  wrongFinish[12] = { k: 'str', raw: "'2026-09-30T00:00:00'" };
+  assert(!derivedSpan(wrongFinish), 'contractuele datum in FinishTime wordt nog steeds afgekeurd');
 }
 
 // ════════════════════════════════════════════════════════════════════════════════════════════════
