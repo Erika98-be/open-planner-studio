@@ -134,7 +134,7 @@ Run: <https://github.com/OpenAEC-Foundation/open-planner-studio/actions/runs/395
 | Linux (Fedora) | `rpm -K --nosignature` (digests OK), `dnf install`, `rpm -qi`, starten, na 20 s in leven | OK |
 | Windows | setup.exe: Authenticode `Valid`, ondertekenaar `CN=Impertio Studio B.V.` (uitgever `Microsoft ID Verified CS EOC CA 04`), tijdstempel van `Microsoft Public RSA Time Stamping Authority`, `signtool verify /pa /v` exit 0 | OK |
 | Windows | stil installeren (`/S`) naar `%LOCALAPPDATA%\Open Planner Studio`, starten, na 20 s in leven, stil verwijderen | OK |
-| Windows | geïnstalleerd `open-planner-studio.exe`: Authenticode | **FOUT** — `NotSigned`. Azure Trusted Signing tekent alleen de setup.exe (`files-folder-depth: 1` in de nsis-map), niet het programma in de installer. Niet verwacht; zie *Open punten* |
+| Windows | geïnstalleerd `open-planner-studio.exe`: Authenticode | **FOUT** — `NotSigned`. Azure Trusted Signing tekent alleen de setup.exe (`files-folder-depth: 1` in de nsis-map), niet het programma in de installer. Niet verwacht; opgelost door PR #444, zie *Windows: Authenticode op installer, programma en uninstaller* |
 | macOS | app: `codesign --verify --deep --strict` | **FOUT** — "code object is not signed at all" (alleen een ad-hoc-handtekening op het binaire bestand, geen Team-ID) |
 | macOS | `spctl` op app en dmg | **FOUT** — "no usable signature" |
 | macOS | `xcrun stapler validate` op dmg en app | **FOUT** — geen ticket |
@@ -153,13 +153,39 @@ Wat deze run niet aantoont:
 - SmartScreen op Windows (reputatie, geen technische controle);
 - de Snap en de in-app updater zelf (een update van versie A naar B).
 
-## Open punten
+## Windows: Authenticode op installer, programma en uninstaller
 
-- **Het geïnstalleerde Windows-programma is niet getekend.** Alleen de setup.exe krijgt Authenticode. Na de
-  installatie is `open-planner-studio.exe` `NotSigned`. Een oplossing moet het programma tekenen vóórdat
-  NSIS het inpakt (bijvoorbeeld via `bundle.windows.signCommand` in `tauri.conf.json`). Dat is een eigen
-  wijziging met de Azure-credentials; deze PR doet dat niet. Tot die tijd blijft de controle in
-  `release-verify.yml` bij elke release FOUT geven.
+In v2026.9.0 tekende een losse stap ná de build alleen de setup.exe; het geïnstalleerde programma was
+`NotSigned` (zie de tabel hierboven). Sinds PR #444 tekent Tauri tijdens het bundelen, via
+`bundle.windows.signCommand`:
+
+- `scripts/windows-sign.ps1 -Setup` haalt de officiële Microsoft-signeerclient (NuGet
+  `Microsoft.ArtifactSigning.Client` 1.0.146; de SHA512 uit de NuGet-catalogus staat vast in het script) en
+  schrijft een Tauri-config-override met de `signCommand`. Alleen `release.yml` (build-windows) en
+  `windows-sign-check.yml` laden die override met `--config`. `ci.yml`, `tauri:dev` en lokale builds tekenen
+  dus niet en hebben geen credentials nodig.
+- Tauri roept `scripts/windows-sign.ps1 <bestand>` aan voor het programma, de NSIS-plugins, de uninstaller
+  en de installer: `signtool sign /fd SHA256 /tr http://timestamp.acs.microsoft.com /td SHA256` met de dlib.
+  Inloggen gaat alleen via `EnvironmentCredential` (`AZURE_TENANT_ID`, `AZURE_CLIENT_ID`,
+  `AZURE_CLIENT_SECRET`).
+- Waarom niet `artifact-signing-cli` uit de Tauri-docs: dat is een tool van een derde partij. Hij logt in met
+  `az login -p <secret>` (het secret staat dan in een procesargument) en downloadt dezelfde Microsoft-dlib
+  zonder hashcontrole.
+- `release.yml` eist daarna een geldige handtekening met tijdstempel op setup.exe en
+  `open-planner-studio.exe`. Anders faalt build-windows en blijft de release draft.
+
+Bewijs zonder tag: `windows-sign-check.yml`
+([run 39563362181](https://github.com/OpenAEC-Foundation/open-planner-studio/actions/runs/39563362181),
+2026-10-21) bouwt release-gelijk, installeert stil en controleert met `Get-AuthenticodeSignature` en
+`signtool verify /pa /v`:
+
+| bestand | status | ondertekenaar | tijdstempelautoriteit | tijdstempel (UTC) |
+|---|---|---|---|---|
+| setup.exe (installer) | Valid | CN=Impertio Studio B.V. | CN=Microsoft Public RSA Time Stamping Authority | 2026-10-21 07:47:37 |
+| open-planner-studio.exe (geïnstalleerd) | Valid | CN=Impertio Studio B.V. | CN=Microsoft Public RSA Time Stamping Authority | 2026-10-21 07:47:02 |
+| uninstall.exe (uninstaller) | Valid | CN=Impertio Studio B.V. | CN=Microsoft Public RSA Time Stamping Authority | 2026-10-21 07:47:23 |
+
+## Open punten
 
 - **Geen GPG-handtekening op Linux-pakketten en geen `SHA256SUMS`.** De `.deb` en `.rpm` dragen geen
   pakkethandtekening; alleen de updater-`.sig` (minisign) en de GitHub-`digest` per asset bestaan. Een
