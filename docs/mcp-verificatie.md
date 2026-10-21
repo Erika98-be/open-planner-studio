@@ -13,6 +13,11 @@ legt vast wat de app als MCP-server levert, wat niet, en welke test het bewijst.
 - Antwoord altijd `200 application/json` met één JSON-RPC-bericht. Geen SSE, geen GET-stream (`405`, `Allow:
   POST`), geen JSON-RPC-batch (`-32600`). Een notificatie krijgt `200` met een lege body, niet
   `202` zoals de spec vraagt (knownbugs 137).
+- Elk antwoord draagt `Connection: close`. tiny_http sluit bij een stop van de bridge de bestaande keep-alive-
+  verbindingen niet; een request dat een client vlak na een herstart over zo'n oude verbinding stuurde, kreeg
+  nooit antwoord (gevonden met de echte-app-run in review 3 van PR #439, nagespeeld met tiny_http 0.12.0 en
+  Node fetch). Na een stop probeert de bridge ook tot ~1 s opnieuw te binden, omdat de vorige server de poort
+  nog heel even kan vasthouden.
 - Requests lopen strikt één voor één. Na 120 s wachten geeft de bridge `504`; een request dat langer dan 110 s
   in de rij stond, voert de app niet meer uit (`-32001`).
 - Body groter dan 50 MiB: `413`. Ander pad: `404`.

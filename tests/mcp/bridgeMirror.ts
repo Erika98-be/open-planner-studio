@@ -14,6 +14,7 @@
 //     Bearer-token (401, scheme hoofdletterongevoelig) → doorgeven
 //   - body > 50 MiB ⇒ 413; onleesbare body ⇒ 400; geen antwoord binnen 120 s ⇒ 504
 //   - strikt één request tegelijk; antwoord `200 application/json`, ook een lege body (notificatie)
+//   - elk antwoord met `Connection: close` (tiny_http sluit oude keep-alive-verbindingen niet bij een stop)
 //   - `Mcp-Session-Id` van het request gaat mee als `sessionId`; een `sessionId` in het antwoord wordt de
 //     header `Mcp-Session-Id`; `status: 400` ⇒ 400 met de JSON-body (header ontbreekt); `status: 404` ⇒
 //     404 zonder body (onbekende sessie); elke andere status ⇒ 200
@@ -57,12 +58,12 @@ function isAuthorized(header: string | undefined, token: string): boolean {
 }
 
 function respondEmpty(res: http.ServerResponse, status: number, headers: Record<string, string> = {}): void {
-  res.writeHead(status, headers);
+  res.writeHead(status, { ...headers, Connection: 'close' });
   res.end();
 }
 
 function respondJson(res: http.ServerResponse, status: number, body: string): void {
-  res.writeHead(status, { 'Content-Type': 'application/json' });
+  res.writeHead(status, { 'Content-Type': 'application/json', Connection: 'close' });
   res.end(body);
 }
 
@@ -121,7 +122,7 @@ export async function startBridgeMirror(opts: BridgeMirrorOptions): Promise<Brid
         } else if (reply.status === 400) {
           respondJson(res, 400, reply.body);
         } else {
-          const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+          const headers: Record<string, string> = { 'Content-Type': 'application/json', Connection: 'close' };
           if (reply.sessionId && /^[\x21-\x7e]{1,128}$/.test(reply.sessionId)) headers['Mcp-Session-Id'] = reply.sessionId;
           res.writeHead(200, headers);
           res.end(reply.body);

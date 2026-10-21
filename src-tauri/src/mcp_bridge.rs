@@ -17,7 +17,8 @@
 //!   4. Body → webview via event `mcp://request` `{id, body}`; antwoord terug via
 //!      `mcp://response` `{id, body}` (id-correlatie op een mpsc-kanaal).
 //!   5. Timeout 120 s ⇒ `504` met een JSON-RPC-foutobject.
-//!   6. Antwoord-body 1-op-1 terug als `200 application/json`.
+//!   6. Antwoord-body 1-op-1 terug als `200 application/json`. Elk antwoord
+//!      draagt `Connection: close` (zie `raw_response`).
 //!   7. Sessies (MCP streamable HTTP): een aanwezige `Mcp-Session-Id`-header gaat
 //!      als `sessionId` mee in het request-event. Geeft de webview een `sessionId`
 //!      terug (alleen na een geslaagde `initialize`), dan zet de bridge die als
@@ -310,13 +311,53 @@ fn find_header<'a>(request: &'a tiny_http::Request, name: &str) -> Option<&'a st
         .map(|h| h.value.as_str())
 }
 
+/// Redenzin bij de statuscodes die de bridge gebruikt.
+fn reason_phrase(status: u16) -> &'static str {
+    match status {
+        200 => "OK",
+        400 => "Bad Request",
+        401 => "Unauthorized",
+        403 => "Forbidden",
+        404 => "Not Found",
+        405 => "Method Not Allowed",
+        413 => "Payload Too Large",
+        500 => "Internal Server Error",
+        504 => "Gateway Timeout",
+        _ => "Unknown",
+    }
+}
+
+/// Bouwt een volledig HTTP/1.1-antwoord, ALTIJD met `Connection: close`.
+///
+/// Waarom zelf schrijven: tiny_http sluit bij het stoppen van de server (drop)
+/// de bestaande keep-alive-verbindingen niet. Een client die vlak na een
+/// bridge-herstart een request over zo'n oude verbinding stuurt, belandt in de
+/// wachtrij van de gestopte server en krijgt nooit antwoord (gemeten met
+/// tiny_http 0.12.0 en Node fetch: hangt tot de client-time-out; review 3 PR
+/// #439). tiny_http laat geen eigen `Connection`-header toe op een `Response`,
+/// dus schrijven we het antwoord via `into_writer`. Met `Connection: close`
+/// sluit de client de verbinding na elk antwoord; op loopback kost dat niets.
+fn raw_response(status: u16, headers: &[(&str, &str)], body: &[u8]) -> Vec<u8> {
+    let mut out = format!("HTTP/1.1 {status} {}\r\n", reason_phrase(status));
+    for (name, value) in headers {
+        out.push_str(&format!("{name}: {value}\r\n"));
+    }
+    out.push_str(&format!("Content-Length: {}\r\nConnection: close\r\n\r\n", body.len()));
+    let mut bytes = out.into_bytes();
+    bytes.extend_from_slice(body);
+    bytes
+}
+
+fn respond_raw(request: tiny_http::Request, status: u16, headers: &[(&str, &str)], body: &str) {
+    use std::io::Write;
+    let bytes = raw_response(status, headers, body.as_bytes());
+    let mut writer = request.into_writer();
+    let _ = writer.write_all(&bytes);
+    let _ = writer.flush();
+}
+
 fn respond_json(request: tiny_http::Request, status: u16, body: &str) {
-    let header =
-        tiny_http::Header::from_bytes(&b"Content-Type"[..], &b"application/json"[..]).unwrap();
-    let response = tiny_http::Response::from_string(body)
-        .with_status_code(status)
-        .with_header(header);
-    let _ = request.respond(response);
+    respond_raw(request, status, &[("Content-Type", "application/json")], body);
 }
 
 /// Antwoord uit de webview terug naar de client: `404` zonder body bij een
@@ -325,40 +366,28 @@ fn respond_json(request: tiny_http::Request, status: u16, body: &str) {
 /// de webview een (geldige) sessie-id meegaf.
 fn respond_reply(request: tiny_http::Request, reply: Reply) {
     match reply_status(reply.status) {
-        404 => {
-            respond_empty(request, 404);
-            return;
-        }
-        400 => {
-            respond_json(request, 400, &reply.body);
-            return;
-        }
-        _ => {}
+        404 => respond_empty(request, 404),
+        400 => respond_json(request, 400, &reply.body),
+        _ => match reply.session_id.filter(|s| valid_session_id(s)) {
+            Some(sid) => respond_raw(
+                request,
+                200,
+                &[("Content-Type", "application/json"), (SESSION_HEADER, &sid)],
+                &reply.body,
+            ),
+            None => respond_json(request, 200, &reply.body),
+        },
     }
-    let content_type =
-        tiny_http::Header::from_bytes(&b"Content-Type"[..], &b"application/json"[..]).unwrap();
-    let mut response = tiny_http::Response::from_string(reply.body)
-        .with_status_code(200)
-        .with_header(content_type);
-    if let Some(sid) = reply.session_id.filter(|s| valid_session_id(s)) {
-        let header = tiny_http::Header::from_bytes(SESSION_HEADER.as_bytes(), sid.as_bytes());
-        if let Ok(header) = header {
-            response = response.with_header(header);
-        }
-    }
-    let _ = request.respond(response);
 }
 
 fn respond_empty(request: tiny_http::Request, status: u16) {
-    let _ = request.respond(tiny_http::Response::empty(status));
+    respond_raw(request, status, &[], "");
 }
 
 /// `405 Method Not Allowed` met een `Allow: POST`-header (HTTP-conform: een 405
 /// hóórt te vermelden welke methodes wél mogen).
 fn respond_method_not_allowed(request: tiny_http::Request) {
-    let allow = tiny_http::Header::from_bytes(&b"Allow"[..], &b"POST"[..]).unwrap();
-    let response = tiny_http::Response::empty(405).with_header(allow);
-    let _ = request.respond(response);
+    respond_raw(request, 405, &[("Allow", "POST")], "");
 }
 
 /// Verwerkt precies één request. Volgorde van de poorten:
@@ -474,6 +503,26 @@ fn run_loop(
 // Tauri-commands.
 // ---------------------------------------------------------------------------
 
+/// Bindt de server; na een stop/start op dezelfde poort kan de accept-thread
+/// van de vorige tiny_http-server de poort nog heel even vasthouden ("Address
+/// already in use", gemeten in een repro). Daarom tot ~1 s opnieuw proberen;
+/// een echt bezette poort meldt dus pas na die seconde "poort bezet".
+fn bind_with_retry(
+    port: u16,
+) -> Result<tiny_http::Server, Box<dyn std::error::Error + Send + Sync + 'static>> {
+    let mut attempt = 0;
+    loop {
+        match tiny_http::Server::http(bind_addr(port)) {
+            Ok(server) => return Ok(server),
+            Err(_) if attempt < 20 => {
+                attempt += 1;
+                std::thread::sleep(Duration::from_millis(50));
+            }
+            Err(e) => return Err(e),
+        }
+    }
+}
+
 /// Start de bridge op `127.0.0.1:<port>`. Een bezette poort (of andere bind-fout)
 /// ⇒ `Err(melding)` zodat de frontend "poort bezet" kan tonen.
 #[tauri::command]
@@ -488,7 +537,7 @@ pub fn mcp_bridge_start(
         return Err("mcp-bridge draait al".to_string());
     }
 
-    let server = match tiny_http::Server::http(bind_addr(port)) {
+    let server = match bind_with_retry(port) {
         Ok(s) => Arc::new(s),
         Err(e) => {
             let msg = format!("kon niet binden op 127.0.0.1:{port}: {e}");
@@ -778,5 +827,25 @@ mod tests {
                 }
             )
         );
+    }
+
+    #[test]
+    fn every_response_closes_the_connection() {
+        let bytes = raw_response(
+            200,
+            &[("Content-Type", "application/json"), ("Mcp-Session-Id", "abc")],
+            b"{}",
+        );
+        let text = String::from_utf8(bytes).unwrap();
+        assert!(text.starts_with("HTTP/1.1 200 OK\r\n"));
+        assert!(text.contains("\r\nContent-Type: application/json\r\n"));
+        assert!(text.contains("\r\nMcp-Session-Id: abc\r\n"));
+        assert!(text.contains("\r\nContent-Length: 2\r\n"));
+        assert!(text.contains("\r\nConnection: close\r\n"));
+        assert!(text.ends_with("\r\n\r\n{}"));
+        let empty = String::from_utf8(raw_response(405, &[("Allow", "POST")], b"")).unwrap();
+        assert!(empty.starts_with("HTTP/1.1 405 Method Not Allowed\r\n"));
+        assert!(empty.contains("\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"));
+        assert!(empty.ends_with("\r\n\r\n"));
     }
 }
