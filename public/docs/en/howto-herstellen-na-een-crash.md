@@ -33,7 +33,7 @@ The question mark at the top right of the window opens this article without maki
 
 **The window does not appear.** Then the app found no copy. That happens if you had not changed anything yet, if you use a new tab in the browser, if you threw the recovery away earlier with *Don't restore*, or if the crash came before the app kept the first copy: that can take up to about ten seconds after your first change.
 
-**A copy is damaged.** The app reports *Recovered file could not be read*, with the reason, and offers the other projects. If you choose *Restore*, the app afterwards deletes all copies, including the unreadable one. If no copy at all is readable, the window does not appear and the copies are kept.
+**A copy is damaged.** The app reports *Recovered file could not be read*, with the reason, and offers the other projects. If you choose *Restore*, the app afterwards deletes all copies, including the unreadable one. If no copy is readable, the window only offers *Keep copies* and *Delete copies*. Keeping, pressing Enter or Escape, or closing the window preserves the copies for a later recovery attempt. Deleting removes them permanently; the window warns that this cannot be undone.
 
 **Restoring fails.** The app reports *Restore failed* with the reason. The copies stay and the question comes back at the next start.
 

@@ -476,7 +476,10 @@
     "taskCount_one": "{{count}} task",
     "taskCount_other": "{{count}} tasks",
     "restore": "Restore",
-    "dontRestore": "Don't restore"
+    "dontRestore": "Don't restore",
+    "unreadableOnlyExplanation": "None of the recovery copies can be read. Keep them for a later recovery attempt, or delete them only if you no longer need them. Deletion cannot be undone.",
+    "keepCopies": "Keep copies",
+    "deleteCopies": "Delete copies"
   },
   "window": {
     "minimize": "Minimize",

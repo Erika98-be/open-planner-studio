@@ -114,15 +114,10 @@ export function useRecoveryRestore(): RecoveryRestore {
           }
         }
 
-        // Niets bruikbaars geparst → geen dialoog. Wél of niet opruimen hangt af van de RÉDEN:
-        // stond er domweg niets, dan is wissen correct. Liepen de snapshots stuk op het parsen,
-        // dan is dit de enige kopie van werk dat de gebruiker nooit heeft kunnen opslaan — die
-        // weggooien zonder iets te vragen wist het bewijs mét de data. De melding uit de catch
-        // hierboven blijft staan; de bestanden blijven op schijf, zodat een volgende versie (of
-        // een handmatige reparatie) er alsnog bij kan.
-        if (entries.length === 0) {
-          if (failed === 0) await clearRecovery();
-          else await holdRecoveryForLater();
+        // Ook uitsluitend onleesbare kopieën krijgen een expliciete keuze. Sluiten bewaart ze;
+        // alleen bewust verwerpen mag ze wissen. Zonder die keuze bleven ze onbeperkt terugkomen.
+        if (entries.length === 0 && failed === 0) {
+          await clearRecovery();
           finish();
           return;
         }
