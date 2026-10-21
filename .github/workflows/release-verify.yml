@@ -106,7 +106,8 @@ jobs:
 
       - name: Updater-handtekeningen, latest.json en digests (verify-release.mjs)
         run: |
-          set -uo pipefail
+          # Bewust zonder -e: elke controle moet draaien, ook na een FOUT.
+          set +e -uo pipefail
           node scripts/verify-release.mjs "$TAG" --repo "$REPO" --dir "$RUNNER_TEMP/assets" --out "$RUNNER_TEMP/verify-release.md" > /dev/null
           rc=$?
           cat "$RUNNER_TEMP/verify-release.md" >> "$GITHUB_STEP_SUMMARY" || true
@@ -118,7 +119,8 @@ jobs:
 
       - name: .deb installeren en starten
         run: |
-          set -uo pipefail
+          # Bewust zonder -e: elke controle moet draaien, ook na een FOUT.
+          set +e -uo pipefail
           DEB="$(find "$RUNNER_TEMP/assets" -name '*.deb' -print -quit)"
           test -n "$DEB" || { echo "::error::geen .deb in de release"; exit 1; }
           PKG="$(dpkg-deb -f "$DEB" Package)"
@@ -141,7 +143,8 @@ jobs:
 
       - name: AppImage starten
         run: |
-          set -uo pipefail
+          # Bewust zonder -e: elke controle moet draaien, ook na een FOUT.
+          set +e -uo pipefail
           APPIMAGE="$(find "$RUNNER_TEMP/assets" -name '*.AppImage' -print -quit)"
           test -n "$APPIMAGE" || { echo "::error::geen AppImage in de release"; exit 1; }
           chmod +x "$APPIMAGE"
@@ -180,7 +183,8 @@ jobs:
 
       - name: .rpm installeren en starten
         run: |
-          set -uo pipefail
+          # Bewust zonder -e: elke controle moet draaien, ook na een FOUT.
+          set +e -uo pipefail
           RPM="$(find "$RUNNER_TEMP/assets" -name '*.rpm' -print -quit)"
           SIG="$(rpm -qp --qf '%{RSAHEADER:pgpsig}' "$RPM" 2>/dev/null)"
           bash scripts/release-check.sh record INFO "rpm: pakkethandtekening" "${SIG:-onbekend}"
@@ -331,7 +335,8 @@ jobs:
 
       - name: Developer ID, Gatekeeper, notarisatie en starten
         run: |
-          set -uo pipefail
+          # Bewust zonder -e: elke controle moet draaien, ook na een FOUT.
+          set +e -uo pipefail
           C=scripts/release-check.sh
           AUTH="$(codesign -dv --verbose=2 "$APP" 2>&1 | grep -E '^(Authority|TeamIdentifier|Signature)=' | tr '\n' ';')"
           bash $C record INFO "app: handtekeninginfo (codesign -dv)" "${AUTH:-geen handtekening}"
