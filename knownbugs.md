@@ -123,8 +123,6 @@ en noem het in je rapport of PR-tekst.
 
 22. **Goede Vrijdag en Bevrijdingsdag** hebben `optional: true`, maar dat wordt nergens gelezen: ze worden
     altijd gegenereerd. — B
-25. **Kalendernaam in de wizard** is hardgecodeerd *Bouwkalender NL*, ook in het Engels (de
-    tutorialgenerator schrijft *Construction calendar NL*). — B
 
 123. **Hint *Opnieuw genereren* telt een jaar te ver.** "Feestdagen dekken {van}–{tot}; project loopt tot
     {jaar}" toont `projectYearSpan.to` (`CalendarForm.tsx:764`). Dat is het einddatumjaar plus 1
