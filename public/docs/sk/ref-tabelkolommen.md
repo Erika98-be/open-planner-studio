@@ -68,8 +68,8 @@ Podľa predvolenia tabuľka vedľa diagramu Gantt zobrazuje *WBS*, *Názov úloh
 - **Plánované jednotky na deň** — plánovaná miera na zdroj, ako `Name: 1.11`, s najviac dvoma desatinnými miestami, rovnako ako *Jednotky priradenia na deň*. Len pri priradení z Primavera P6 s inou zostávajúcou mierou; *Jednotky priradenia na deň* potom zobrazujú zostávajúcu mieru. Iba na čítanie.
 - **Krivka priradenia** — krivka na zdroj, ako `Name: Uniform`. Dá sa upraviť pri úlohe s priradeniami.
 - **Začiatok okna práce** a **Dokončenie okna práce** — okno práce na zdroj z importovaného súboru, ako `Name: date`. Iba na čítanie.
-- **Plánovaná práca (hodiny)** a **Skutočná práca (hodiny)** — plánovaná a skutočná práca na zdroj v hodinách, ako `Name: 12`, z importovaného súboru. Iba na čítanie.
-- **Zostávajúca práca (hodiny)** — zostávajúca práca na zdroj v hodinách, ako `Name: 6`. Je to uložená práca, inak zostávajúce trvanie × jednotky. Dá sa upraviť pri úlohe s priradeniami, na ktorú sa vzťahuje typ úlohy. Vo výbere sa zobrazí len vtedy, keď sú typy úloh viditeľné. Žlté ⚠ v bunke znamená, že uložená práca sa líši od jednotiek × zostávajúceho trvania, ako ⚠ pri *Práca (zostáva)* v paneli úlohy.
+- **Plánovaná práca (hodiny)** a **Skutočná práca (hodiny)** — plánovaná a skutočná práca na zdroj v hodinách, ako `Name: 617.14`, s najviac dvoma desatinnými miestami, z importovaného súboru. Iba na čítanie.
+- **Zostávajúca práca (hodiny)** — zostávajúca práca na zdroj v hodinách, ako `Name: 6` alebo `Name: 26.67`. Je to uložená práca, inak zostávajúce trvanie × jednotky. Dá sa upraviť pri úlohe s priradeniami, na ktorú sa vzťahuje typ úlohy, s čiarkou alebo bodkou ako desatinným oddeľovačom. Vo výbere sa zobrazí len vtedy, keď sú typy úloh viditeľné. Žlté ⚠ v bunke znamená, že uložená práca sa líši od jednotiek × zostávajúceho trvania, ako ⚠ pri *Práca (zostáva)* v paneli úlohy.
 
 ## Postup
 

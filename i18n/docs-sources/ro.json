@@ -5442,7 +5442,7 @@
         }
       },
       {
-        "hash": "929e26b38a587440",
+        "hash": "637d6bc401aa8edb",
         "labels": {
           "common:ai.auth": "94834c0eaeee4aaa",
           "common:ai.configSnippet": "91de06d994217835",
@@ -6897,6 +6897,7 @@
           "common:settings.statsTotal": "c9b3c38247f744e1",
           "common:shortcuts.category.edit": "12a72e68cf55ac1b",
           "common:shortcuts.category.view": "57fe7f347fc44ee1",
+          "common:siteFiles.nameLabel": "582ee8efec80e564",
           "common:view.filter.valueFrom": "a1006f6dc5cff877",
           "common:view.layout.edit": "919ff2e538bab319",
           "common:view.layout.name": "582ee8efec80e564",
@@ -6919,14 +6920,11 @@
           "report:tableReports.resourceLoading.type": "a4245a3c4f566cab",
           "task:contourDialog.from": "a1006f6dc5cff877",
           "task:dialog.name": "582ee8efec80e564",
-          "task:dialog.type": "a4245a3c4f566cab",
           "task:properties.calendar": "d5d0a30b517e3bea",
           "task:properties.calendarProject": "4faa650a133c367a",
           "task:properties.name": "582ee8efec80e564",
           "task:properties.recalculate": "b32e21e8b087ca02",
-          "task:properties.type": "a4245a3c4f566cab",
           "task:relations.type": "a4245a3c4f566cab",
-          "task:table.type": "a4245a3c4f566cab",
           "task:taskGrid.columns.calendar": "d5d0a30b517e3bea",
           "task:taskType.name": "582ee8efec80e564",
           "task:taskType.rename": "12a72e68cf55ac1b"
@@ -7036,7 +7034,7 @@
         }
       },
       {
-        "hash": "33e86d88cb27f2a4",
+        "hash": "d92eb4be8936d043",
         "labels": {
           "common:calendar.generate.bouwvak.none": "956085460113ec7b",
           "common:resource.availabilityStepsEditor.maxUnits": "231580dfe7d1252a",
@@ -7272,7 +7270,7 @@
         }
       },
       {
-        "hash": "7abd3b7f3864d61e",
+        "hash": "1fe40511cea98b6b",
         "labels": {
           "task:properties.assignments.work": "147a5ce04b8acfe2",
           "task:taskGrid.columns.assignmentUnits": "fdaae0f6dc48fd45"

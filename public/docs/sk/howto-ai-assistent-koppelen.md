@@ -35,8 +35,34 @@ Most počúva iba na vašom počítači, na jednom porte. Predvolené nastavenie
 Okno ponúka tri spôsoby pripojenia:
 
 - *Úryvok konfigurácie*: časť konfigurácie, ktorú vložíte do nastavení MCP vášho klienta.
-- *Výzva na pripojenie*: text, ktorý vložíte do AI asistenta. Potom sa asistent pripojí sám.
-- *Endpoint* a *Overenie*: samostatné údaje. Endpoint je `http://localhost:3877/mcp` s transportom *streamable HTTP*. Každá požiadavka potrebuje hlavičku `Authorization: Bearer` a za ňou váš token.
+- *Výzva na pripojenie*: text, ktorý vložíte do vášho AI asistenta. Potom sa asistent pripojí sám.
+- *Endpoint* a *Overenie*: samostatné údaje. Endpoint je `http://localhost:3877/mcp` s transportom *streamable HTTP*. Každá požiadavka potrebuje hlavičku `Authorization: Bearer` a za ňou váš token. Váš klient musí tiež podporovať relácie MCP: pri pripojení dá most kód relácie v hlavičke `Mcp-Session-Id` a každú ďalšiu požiadavku bez tohto kódu odmietne. Claude Code a `mcp-remote` to robia samy.
+
+**Po aktualizácii aplikácie sa pripojte znova.** Ak váš AI klient bol pripojený k staršej verzii aplikácie, ešte neposiela kód relácie, a most preto odmietne každú požiadavku. Po aktualizácii sa pripojte znova: v Claude Code spustite novú reláciu a úplne ukončite Claude Desktop a spustite ho znova.
+
+**Claude Code.** Úryvok konfigurácie sa do Claude Code hodí priamo. Zadajte tento príkaz v termináli a namiesto `<token>` vložte svoj token:
+
+```
+claude mcp add --transport http open-planner-studio http://localhost:3877/mcp --header "Authorization: Bearer <token>"
+```
+
+Úryvok môžete uložiť aj do súboru `.mcp.json` v priečinku projektu. Potom tento súbor nedávajte do gitu, pretože token dáva prístup k vášmu plánu. Server z `.mcp.json` musí Claude Code pri prvom použití schváliť.
+
+**Claude Desktop.** Úryvok konfigurácie sa do Claude Desktop priamo nehodí. Do súboru `claude_desktop_config.json` musíte uviesť program, ktorý Claude Desktop spustí sám, nie adresu. Preto použite externý nástroj `mcp-remote` ako prostredníka; potrebuje Node.js. V Claude Desktop vyberte *Nastavenia › Vývojár › Upraviť konfiguráciu*, vložte tento obsah do súboru (so svojím tokenom) a Claude Desktop znova spustite:
+
+```
+{
+  "mcpServers": {
+    "open-planner-studio": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "http://localhost:3877/mcp", "--header", "Authorization:${AUTH_HEADER}"],
+      "env": { "AUTH_HEADER": "Bearer <token>" }
+    }
+  }
+}
+```
+
+Token je v `env` a nie v `args` úmyselne: vo Windows Claude Desktop pokazí argument, ktorý obsahuje medzeru. Vlastný konektor v Claude (*Prispôsobiť › Konektory*) s mostom nefunguje. Claude sa potom pripojí z cloudu Anthropic a ten sa k mostu na vašom počítači dostať nemôže.
 
 V skupine *Pripojenie* je aj pole *Token*. Je to dlhý, náhodný kód, ktorý aplikácia pre vás vytvorí a uloží na tomto počítači. V okne je napísané: *Tento token dáva prístup k otvorenému plánu. Nezdieľajte ho s inými.* Ikonou *Vytvoriť nový token* vytvoríte nový token. Aplikácia najprv zobrazí otázku: *Vytvorenie nového tokenu preruší všetky existujúce pripojenia. Pokračovať?* Ak most beží, reštartuje sa s novým tokenom a starý token už nefunguje.
 
@@ -54,15 +80,15 @@ V skupine *Bezpečnosť* sú tlačidlá, ktorými obmedzíte AI:
 
 - *Pozastaviť*: AI smie dočasne nič nemeniť, čítanie je stále povolené. Most zostáva aktívny. Tlačidlo sa zmení na *Obnoviť*.
 - *Iba na čítanie*: všetky nástroje, ktoré niečo menia, sú odmietnuté, kým je toto zapnuté.
-- *Auto-záloha: zapnutá*: pred prvou zmenou, ktorú AI v dokumente urobí, aplikácia zapíše zálohu vo formáte IFC. Predvolené nastavenie je zapnuté. Tlačidlom ju vypnete; potom sa zobrazí *Auto-záloha: vypnutá*. Toto sa stane raz pre každý dokument pri každom spustení mostu.
+- *Auto-záloha: zapnutá*: pred prvou zmenou, ktorú AI v dokumente urobí, aplikácia zapíše zálohu vo formáte IFC. Predvolené nastavenie je zapnuté. Tlačidlom ju vypnete; potom sa zobrazí *Auto-záloha: vypnutá*. To sa stane raz pre každý dokument pri každom spustení mostu.
 - *Zálohovať teraz*: okamžite vytvorí zálohu aktívneho dokumentu. Potom sa zobrazí *Záloha vytvorená:* s názvom súboru.
 - *Otvoriť priečinok záloh*: otvorí priečinok so zálohami.
 
-Zálohy sú v priečinku `ai-backups` v dátovom priečinku aplikácie. Aplikácia uchováva posledné zálohy a staršie postupne odstraňuje. Presný postup je v článku [Nástroje AI](docs://ref-ai-tools).
+Zálohy sú v priečinku `ai-backups` v dátovom priečinku aplikácie. Aplikácia uchováva posledné zálohy a staršie postupne odstraňuje. Ako presne to funguje, je v článku [Nástroje AI](docs://ref-ai-tools).
 
 ### 6. Nechajte asistenta dobre plánovať
 
-Asistent plánuje dobre, iba ak pozná pravidlá plánovania. Prečo je to dôležité a čo tieto pravidlá obsahujú, si prečítate v článku [Ako funguje prepojenie s AI](docs://uitleg-ai-koppeling). Toto urobíte sami:
+Asistent dobre plánuje, iba ak pozná pravidlá plánovania. Prečo je to dôležité a čo tieto pravidlá obsahujú, si prečítate v článku [Ako funguje prepojenie s AI](docs://uitleg-ai-koppeling). Toto urobíte sami:
 
 1. **Pri základných pravidlách nemusíte nič robiť.** Pri pripojení prídu k asistentovi samy. Či ich váš klient vloží do systémovej výzvy, závisí od klienta.
 2. **Nechajte asistenta prečítať návod.** Výzva na pripojenie z okna *Údaje o pripojení* žiada asistenta, aby najprv prečítal plánovací návod nástrojom `planner_get_planning_guide`. Ak výzvu nepoužijete, opýtajte sa asistenta sami: *Prečítajte si najprv plánovací návod nástrojom planner_get_planning_guide, skôr než čokoľvek zmeníte.* Návod si môžete prečítať sami na `https://open-planner-studio.open-aec.com/agent/planning-guide.md`.
@@ -70,7 +96,7 @@ Asistent plánuje dobre, iba ak pozná pravidlá plánovania. Prečo je to dôle
 
 Súbory získate dvoma spôsobmi. Požiadajte asistenta, aby zavolal nástroj `planner_get_planning_guide` s `part` nastaveným na `skill`: odpoveď obsahuje oba texty a pre každý skill miesta, kam patrí. Alebo si ich stiahnite z `https://open-planner-studio.open-aec.com/skills/goed-plannen/SKILL.md` a `https://open-planner-studio.open-aec.com/skills/progress-update/SKILL.md`. Ak je *goed-plannen* ešte zo staršej verzie aplikácie, nahraďte ho. Ten starý text je v holandčine a odkazuje na článok nápovedy namiesto na návod pre asistentov.
 
-Či asistent naozaj čítal návod, uvidíte v paneli *Panel činnosti*: je tam volanie `planner_get_planning_guide`. Konečná odpoveď asistenta by mala obsahovať zoznam predpokladov: odhadnuté trvania, zvolené rozčlenenie, závislosti, ktoré vytvoril sám, a každé obmedzenie, ktoré nastavil. Ak tento zoznam chýba, požiadajte o neho. Po zázname postupu podľa *progress-update* by odpoveď mala uviesť dátum kontroly stavu, nový dátum dokončenia a odchýlku oproti pôvodnému plánu.
+Či asistent naozaj čítal návod, uvidíte na paneli *Panel činnosti*: je tam volanie `planner_get_planning_guide`. Konečná odpoveď asistenta by mala obsahovať zoznam predpokladov: odhadnuté trvania, zvolené rozčlenenie, závislosti, ktoré vytvoril sám, a každé obmedzenie, ktoré nastavil. Ak tento zoznam chýba, požiadajte o neho. Po zázname postupu podľa *progress-update* by odpoveď mala uviesť dátum kontroly stavu, nový dátum dokončenia a odchýlku oproti pôvodnému plánu.
 
 ## Úskalia a čo vtedy aplikácia robí
 

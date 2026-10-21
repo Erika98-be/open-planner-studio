@@ -64,12 +64,12 @@ Por padrão, a tabela ao lado do Gantt mostra *WBS*, *Nome da tarefa* e *Duraç�
 ## Recursos
 
 - **Recursos atribuídos** — os nomes dos recursos atribuídos, separados por vírgulas. Editável: ao acrescentar um nome, o recurso fica atribuído com 1 unidade por dia; ao remover um nome, a atribuição é eliminada. Em só leitura num marco ou numa tarefa de resumo.
-- **Unidades de atribuição por dia** — as unidades por recurso, como `Nome: 1; Nome: 0,5`, com no máximo duas casas decimais. O valor guardado mantém-se exato. Editável numa tarefa com atribuições.
+- **Unidades de atribuição por dia** — as unidades por recurso, como `Name: 1; Name: 0,5`, com no máximo duas casas decimais. O valor guardado mantém-se exato. Editável numa tarefa com atribuições.
 - **Unidades planeadas por dia** — o valor planeado por recurso, como `Name: 1.11`, com no máximo duas casas decimais, como em *Unidades de atribuição por dia*. Só para uma atribuição de Primavera P6 com um valor restante diferente; *Unidades de atribuição por dia* mostra então o valor restante. Só leitura.
-- **Curva de atribuição** — a curva por recurso, como `Nome: Uniforme`. Editável numa tarefa com atribuições.
-- **Início da janela de trabalho** e **Fim da janela de trabalho** — a janela de trabalho por recurso, de um ficheiro importado, como `Nome: data`. Só leitura.
-- **Trabalho previsto (horas)** e **Trabalho real (horas)** — o trabalho previsto e real por recurso em horas, como `Nome: 12`, de um ficheiro importado. Só leitura.
-- **Trabalho restante (horas)** — o trabalho restante por recurso em horas, como `Nome: 6`: o trabalho guardado; caso contrário, duração restante × unidades. Editável numa tarefa com atribuições à qual se aplica um tipo de tarefa. Só aparece no seletor quando os tipos de tarefa estão visíveis. Um ⚠ amarelo na célula indica que o trabalho guardado difere de unidades × duração restante, como o ⚠ em *Trabalho (rest.)* no painel da tarefa.
+- **Curva de atribuição** — a curva por recurso, como `Name: Uniforme`. Editável numa tarefa com atribuições.
+- **Início da janela de trabalho** e **Fim da janela de trabalho** — a janela de trabalho por recurso, de um ficheiro importado, como `Name: data`. Só leitura.
+- **Trabalho previsto (horas)** e **Trabalho real (horas)** — o trabalho previsto e real por recurso em horas, como `Name: 617,14`, com no máximo duas casas decimais, de um ficheiro importado. Só leitura.
+- **Trabalho restante (horas)** — o trabalho restante por recurso em horas, como `Name: 6` ou `Name: 26,67`: o trabalho guardado; caso contrário, duração restante × unidades. Editável numa tarefa com atribuições à qual se aplica um tipo de tarefa, com vírgula ou ponto como separador decimal. Só aparece no seletor quando os tipos de tarefa estão visíveis. Um ⚠ amarelo na célula indica que o trabalho guardado difere de unidades × duração restante, como o ⚠ em *Trabalho (rest.)* no painel da tarefa.
 
 ## Progresso
 

@@ -359,6 +359,19 @@ including a fidelity measurement against P6's own calculated output and the 216-
   An unfinished entry is committed before the document is switched, duplicated, closed, reloaded or
   the desktop app closes, so it never lands in the wrong document or is lost. This brings together
   the work of #369 and #389 (`TaskAssignmentsSection.tsx`, `UnitsInput.tsx`, `pendingTextEdits.ts`).
+- **Work and units in the task table use the number format of the language (#378).** The columns
+  *Units per day*, *Planned units*, *Planned work*, *Actual work* and *Remaining work* showed raw
+  values such as `617.14` and `1.71428571428571` next to a duration of `146,9d`. They now follow the
+  *Duration* column: at most two decimals, the decimal sign of the language and no needless zeros.
+  Typed or pasted text accepts a comma or a point, and the `name: hours; name: hours` separator stays
+  `;`. Opening a cell and confirming with Enter without a change writes nothing, and putting back the
+  text as shown keeps the exact stored value, so no history step and no stale schedule appear. In the
+  cell editor the units field is now a text field in the language (it was a number field that took
+  only a point) and *Remaining work* has an input field for the first time. Copying gives readable
+  text in the language with the tokens kept exact, and pasting inside the app is exact. The contour
+  window and the axis of the histogram use the decimal sign of the language too, and the
+  *Table columns* guide is updated (Dutch and English). The task panel *Assignments* block stays as
+  described above (#369).
 - **The macOS installers are signed and notarized.** The release workflow signs the app and the dmg
   with a Developer ID certificate, has Apple notarize both and staples the ticket, and then
   checks the dmg with `codesign`, Gatekeeper (`spctl`: *Notarized Developer ID*) and

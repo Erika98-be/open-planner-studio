@@ -68,8 +68,8 @@ Som standard viser aktivitetstabellen ved siden av Gantt-diagrammet *WBS*, *Akti
 - **Planlagte tildelingsenheter per dag** — de planlagte tildelingsenhetene per ressurs, som `Name: 1.11`, med høyst to desimaler, likt som *Tildelingsenheter per dag*. Bare for en tilordning fra Primavera P6 med en annen gjenstående tildeling. *Tildelingsenheter per dag* viser da den gjenstående tildelingen. Skrivebeskyttet.
 - **Tilordningskurve** — kurven per ressurs, som `Name: Uniform`. Kan redigeres på en aktivitet med tilordninger.
 - **Start for arbeidsvindu** og **Slutt for arbeidsvindu** — arbeidsvinduet per ressurs, fra en importert fil, som `Name: date`. Skrivebeskyttet.
-- **Planlagt arbeid (timer)** og **Faktisk arbeid (timer)** — det planlagte og faktiske arbeidet per ressurs i timer, som `Name: 12`, fra en importert fil. Skrivebeskyttet.
-- **Gjenstående arbeid (timer)** — det gjenstående arbeidet per ressurs i timer, som `Name: 6`: det lagrede arbeidet, ellers gjenstående varighet × tildelingsenheter. Kan redigeres på en aktivitet med tilordninger der en aktivitetstype gjelder. Vises bare i velgeren når aktivitetstypene er synlige. Et gult ⚠ i cellen betyr at det lagrede arbeidet avviker fra tildelingsenheter × gjenstående varighet, som ⚠ ved *Arbeid (gjenst.)* i aktivitetspanelet.
+- **Planlagt arbeid (timer)** og **Faktisk arbeid (timer)** — det planlagte og faktiske arbeidet per ressurs i timer, som `Name: 617.14`, med høyst to desimaler, fra en importert fil. Skrivebeskyttet.
+- **Gjenstående arbeid (timer)** — det gjenstående arbeidet per ressurs i timer, som `Name: 6` eller `Name: 26.67`: det lagrede arbeidet, ellers gjenstående varighet × tildelingsenheter. Kan redigeres på en aktivitet med tilordninger der en aktivitetstype gjelder, med komma eller punktum som desimaltegn. Vises bare i velgeren når aktivitetstypene er synlige. Et gult ⚠ i cellen betyr at det lagrede arbeidet avviker fra tildelingsenheter × gjenstående varighet, som ⚠ ved *Arbeid (gjenst.)* i aktivitetspanelet.
 
 ## Fremdrift
 

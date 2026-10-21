@@ -68,8 +68,8 @@ Som standard visar tabellen bredvid Gantt *WBS*, *Uppgiftsnamn* och *Varaktighet
 - **Planerade tilldelningsenheter per dag** — den planerade takten per resurs, som `Name: 1.11`, med högst två decimaler, på samma sätt som *Tilldelningsenheter per dag*. Bara för en tilldelning från Primavera P6 med en annan återstående takt; *Tilldelningsenheter per dag* visar då den återstående takten. Skrivskyddad.
 - **Tilldelningskurva** — kurvan per resurs, som `Name: Uniform`. Redigerbar på en uppgift med tilldelningar.
 - **Arbetsfönster start** och **Arbetsfönster slut** — arbetsfönstret per resurs, från en importerad fil, som `Name: datum`. Skrivskyddade.
-- **Planerat arbete (timmar)** och **Verkligt arbete (timmar)** — det planerade och verkliga arbetet per resurs i timmar, som `Name: 12`, från en importerad fil. Skrivskyddade.
-- **Återstående arbete (timmar)** — det återstående arbetet per resurs i timmar, som `Name: 6`: det lagrade arbetet, annars återstående varaktighet × tilldelningsenheter. Redigerbart på en uppgift med tilldelningar där en uppgiftstyp gäller. Visas i kolumnväljaren endast när uppgiftstyperna är synliga. En gul ⚠ i cellen betyder att det lagrade arbetet skiljer sig från tilldelningsenheter × återstående varaktighet, som ⚠-tecknet vid *Arbete (kvar)* i uppgiftspanelen.
+- **Planerat arbete (timmar)** och **Verkligt arbete (timmar)** — det planerade och verkliga arbetet per resurs i timmar, som `Name: 617.14`, med högst två decimaler, från en importerad fil. Skrivskyddade.
+- **Återstående arbete (timmar)** — det återstående arbetet per resurs i timmar, som `Name: 6` eller `Name: 26.67`: det lagrade arbetet, annars återstående varaktighet × tilldelningsenheter. Redigerbart på en uppgift med tilldelningar där en uppgiftstyp gäller, med komma eller punkt som decimaltecken. Visas i kolumnväljaren endast när uppgiftstyperna är synliga. En gul ⚠ i cellen betyder att det lagrade arbetet skiljer sig från tilldelningsenheter × återstående varaktighet, precis som ⚠-tecknet vid *Arbete (kvar)* i uppgiftspanelen.
 
 ## Framdrift
 

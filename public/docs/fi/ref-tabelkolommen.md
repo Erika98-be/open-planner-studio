@@ -63,13 +63,13 @@ Oletuksena Gantt-kaavion vieressä oleva taulukko näyttää sarakkeet *WBS*, *T
 
 ## Resurssit
 
-- **Kohdistetut resurssit** — kohdistettujen resurssien nimet, erotettuina pilkuilla. Muokattavissa: nimen lisääminen kohdistaa resurssin kuormitusasteella 1 päivässä, nimen poistaminen poistaa kohdistuksen. Vain luettava välitavoitteella ja yhteenvetotehtävällä.
+- **Kohdistetut resurssit** — kohdistettujen resurssien nimet, erotettuina pilkuilla. Muokattavissa: nimen lisääminen kohdistaa resurssin kuormitusasteella 1 päivässä, nimen poistaminen poistaa resurssikohdistuksen. Vain luettava välitavoitteella ja yhteenvetotehtävällä.
 - **Kuormitusaste päivässä** — kuormitusaste resurssia kohti muodossa `Nimi: 1; Nimi: 0.5`, enintään kahdella desimaalilla. Tallennettu arvo pysyy tarkkana. Muokattavissa tehtävällä, jolla on resurssikohdistuksia.
-- **Suunniteltu kuormitusaste päivässä** — suunniteltu kuormitusaste resurssia kohti muodossa `Name: 1.11`, enintään kahdella desimaalilla, kuten *Kuormitusaste päivässä*. Vain kohdistukselle, joka tulee tiedostosta Primavera P6 ja jonka jäljellä oleva kuormitusaste on eri. Silloin *Kuormitusaste päivässä* näyttää jäljellä olevan kuormitusasteen. Vain luettava.
+- **Suunniteltu kuormitusaste päivässä** — suunniteltu kuormitusaste resurssia kohti muodossa `Name: 1.11`, enintään kahdella desimaalilla, kuten *Kuormitusaste päivässä*. Vain kohdistukselle, joka on tuotu Primavera P6 -ohjelmasta ja jonka jäljellä oleva kuormitusaste on eri. Silloin *Kuormitusaste päivässä* näyttää jäljellä olevan kuormitusasteen. Vain luettava.
 - **Jakautumiskäyrä** — käyrä resurssia kohti muodossa `Nimi: Tasainen`. Muokattavissa tehtävällä, jolla on resurssikohdistuksia.
 - **Työikkunan alku** ja **Työikkunan loppu** — työikkuna resurssia kohti tuodusta tiedostosta muodossa `Nimi: päivämäärä`. Vain luettava.
-- **Suunniteltu työ (tunnit)** ja **Toteutunut työmäärä (tunnit)** — suunniteltu ja toteutunut työ resurssia kohti tunteina muodossa `Nimi: 12`, tuodusta tiedostosta. Vain luettava.
-- **Jäljellä oleva työ (tunnit)** — jäljellä oleva työ resurssia kohti tunteina muodossa `Nimi: 6`: tallennettu työ, muuten jäljellä oleva kesto × kuormitusaste. Muokattavissa tehtävällä, jolla on resurssikohdistuksia ja johon tehtävätyyppi soveltuu. Näkyy valitsimessa vain, kun tehtävätyypit näkyvät. Keltainen ⚠ solussa tarkoittaa, että tallennettu työ eroaa kuormitusasteen × jäljellä olevan keston arvosta, kuten ⚠ kohdassa *Työ (jäljellä)* tehtäväpaneelissa.
+- **Suunniteltu työ (tunnit)** ja **Toteutunut työmäärä (tunnit)** — suunniteltu työ ja toteutunut työmäärä resurssia kohti tunteina muodossa `Nimi: 617.14`, enintään kahdella desimaalilla, tuodusta tiedostosta. Vain luettava.
+- **Jäljellä oleva työ (tunnit)** — jäljellä oleva työ resurssia kohti tunteina muodossa `Nimi: 6` tai `Nimi: 26.67`: tallennettu työ, muuten jäljellä oleva kesto × kuormitusaste. Muokattavissa tehtävällä, jolla on resurssikohdistuksia ja johon tehtävätyyppi soveltuu. Desimaalierottimena kelpaa pilkku tai piste. Näkyy valitsimessa vain, kun tehtävätyypit näkyvät. Keltainen ⚠ solussa tarkoittaa, että tallennettu työ eroaa kuormitusasteen × jäljellä olevan keston arvosta, kuten ⚠ kohdassa *Työ (jäljellä)* tehtäväpaneelissa.
 
 ## Edistyminen
 

@@ -68,8 +68,8 @@ Prema zadanim postavkama tablica pored Gantt dijagrama prikazuje *WBS*, *Naziv z
 - **Planirane jedinice po danu** — planirana stopa po resursu, kao `Name: 1.11`, s najviše dvije decimale, kao *Jedinice dodjele po danu*. Samo za dodjelu iz Primavera P6 s drugačijom preostalom stopom; *Jedinice dodjele po danu* tada prikazuje preostalu stopu. Samo za čitanje.
 - **Krivulja dodjele** — krivulja po resursu, kao `Naziv: Uniform`. Može se uređivati na zadatku s dodjelama.
 - **Početak radnog prozora** i **Završetak radnog prozora** — radni prozor po resursu, iz uvezene datoteke, kao `Naziv: datum`. Samo za čitanje.
-- **Planirani rad (sati)** i **Stvarni rad (sati)** — planirani i stvarni rad po resursu u satima, kao `Naziv: 12`, iz uvezene datoteke. Samo za čitanje.
-- **Preostali posao (sati)** — preostali posao po resursu u satima, kao `Naziv: 6`: spremljeni rad, a inače preostalo trajanje × jedinice dodjele. Može se uređivati na zadatku s dodjelama na koje se primjenjuje vrsta zadatka. Vidljivo je u prozoru za odabir samo kad su vrste zadataka prikazane. Žuti ⚠ u ćeliji znači da se spremljeni rad razlikuje od jedinica dodjele × preostalo trajanje, kao ⚠ uz *Rad (preostalo)* u panelu zadatka.
+- **Planirani rad (sati)** i **Stvarni rad (sati)** — planirani i stvarni rad po resursu u satima, kao `Naziv: 617.14`, s najviše dvije decimale, iz uvezene datoteke. Samo za čitanje.
+- **Preostali posao (sati)** — preostali posao po resursu u satima, kao `Naziv: 6` ili `Naziv: 26.67`: spremljeni rad, a inače preostalo trajanje × jedinice dodjele. Može se uređivati na zadatku s dodjelama na koje se primjenjuje vrsta zadatka, s zarezom ili točkom kao decimalnim znakom. Vidljivo je u prozoru za odabir samo kad su vrste zadataka prikazane. Žuti ⚠ u ćeliji znači da se spremljeni rad razlikuje od jedinica dodjele × preostalo trajanje, kao ⚠ uz *Rad (preostalo)* u panelu zadatka.
 
 ## Napredak
 

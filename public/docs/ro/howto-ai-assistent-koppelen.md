@@ -36,15 +36,41 @@ Fereastra oferă trei moduri de conectare:
 
 - *Fragment de configurare*: o bucată de configurare pe care o lipiți în setările MCP ale clientului dumneavoastră.
 - *Prompt de conectare*: un text pe care îl lipiți în asistentul de inteligență artificială. După aceea asistentul se conectează singur.
-- *Endpoint* și *Autentificare*: detaliile separate. Endpoint-ul este `http://localhost:3877/mcp`, cu transport *streamable HTTP*. Fiecare cerere are nevoie de un antet `Authorization: Bearer`, urmat de tokenul dumneavoastră.
+- *Endpoint* și *Autentificare*: detaliile separate. Endpoint-ul este `http://localhost:3877/mcp`, cu transport *streamable HTTP*. Fiecare cerere are nevoie de un antet `Authorization: Bearer`, urmat de tokenul dumneavoastră. Clientul dumneavoastră trebuie să accepte și sesiuni MCP: când se conectează, puntea dă un cod de sesiune în antetul `Mcp-Session-Id` și refuză fiecare cerere ulterioară fără acest cod. Claude Code și `mcp-remote` fac asta singuri.
 
-În grupul *Conexiune* există și câmpul *Token*. Este un cod lung și aleatoriu. Aplicația îl creează pentru dumneavoastră și îl salvează pe acest computer. În fereastră scrie *Acest token oferă acces la planul deschis. Nu-l distribuiți altora.* Cu pictograma *Creare token nou* creați un token nou. Aplicația întreabă mai întâi *Crearea unui token nou încheie toate conexiunile existente. Continuați?* Dacă puntea rulează, ea se repornește cu noul token. Vechiul token nu mai funcționează.
+**Conectați-vă din nou după o actualizare a aplicației.** Dacă clientul dumneavoastră AI era deja conectat la o versiune mai veche a aplicației, el nu trimite încă un cod de sesiune, iar puntea refuză fiecare cerere. Conectați-vă deci din nou după actualizare: porniți o sesiune nouă în Claude Code, apoi închideți complet Claude Desktop și porniți-l din nou.
+
+**Claude Code.** Fragmentul de configurare se potrivește direct cu Claude Code. Dați această comandă într-un terminal, cu tokenul dumneavoastră în locul lui `<token>`:
+
+```
+claude mcp add --transport http open-planner-studio http://localhost:3877/mcp --header "Authorization: Bearer <token>"
+```
+
+Puteți pune fragmentul și în fișierul `.mcp.json` din dosarul proiectului dumneavoastră. Atunci nu puneți acest fișier în git, deoarece tokenul oferă acces la planul dumneavoastră. Un server din `.mcp.json` trebuie aprobat în Claude Code prima dată.
+
+**Claude Desktop.** Fragmentul de configurare nu se potrivește direct cu Claude Desktop. În fișierul `claude_desktop_config.json` numiți un program pe care Claude Desktop îl pornește singur, nu o adresă. Deci folosiți instrumentul extern `mcp-remote` între ele; el are nevoie de Node.js. În Claude Desktop alegeți *Setări › Dezvoltator › Editare configurare*, puneți acest text în fișier (cu tokenul dumneavoastră) și porniți Claude Desktop din nou:
+
+```
+{
+  "mcpServers": {
+    "open-planner-studio": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "http://localhost:3877/mcp", "--header", "Authorization:${AUTH_HEADER}"],
+      "env": { "AUTH_HEADER": "Bearer <token>" }
+    }
+  }
+}
+```
+
+Tokenul se află în `env` și nu în `args`, intenționat: pe Windows, Claude Desktop strică un argument care conține un spațiu. Un *conector personalizat* din Claude (*Personalizare › Conectori*) nu funcționează cu puntea. Claude se conectează atunci din cloudul Anthropic, iar acesta nu poate ajunge la punte de pe computerul dumneavoastră.
+
+În grupul *Conexiune* există și câmpul *Token*. Este un cod lung și aleatoriu, pe care aplicația îl creează pentru dumneavoastră și îl salvează pe acest computer. În fereastră scrie *Acest token oferă acces la planul deschis. Nu-l distribuiți altora*. Cu pictograma *Creare token nou* creați un token nou. Aplicația întreabă mai întâi *Crearea unui token nou încheie toate conexiunile existente. Continuați?* Dacă puntea rulează, ea se repornește cu noul token. Vechiul token nu mai funcționează.
 
 ### 4. Vedeți ce face AI-ul
 
-1. Faceți clic pe *Panou de activitate* sub *Activitate*. În bara laterală se deschide panoul *Activitate AI*.
+1. Faceți clic pe *Panou de activitate* sub *Activitate*. În coloana laterală se deschide panoul *Activitate AI*.
 2. Fiecare apel către punte apare pe câte un rând, cel mai nou sus: ora, ce s-a întâmplat, cât a durat și dacă a reușit sau nu. Faceți clic pe un rând ca să extindeți *Argumente* și *Răspuns*.
-3. Cu *Ștergere* goliți lista. Panoul păstrează ultimele 500 de apeluri. Cât timp nu s-a întâmplat nimic, apare *Încă nu există activitate AI. Apelurile către bridge apar aici.*
+3. Cu *Ștergere* goliți lista. Panoul păstrează ultimele 500 de apeluri. Cât timp nu s-a întâmplat nimic, apare *Încă nu există activitate AI. Apelurile către bridge apar aici*.
 
 Când modul AI este activat, în colțul din dreapta jos, în bara de stare, apare un punct cu *AI*. Culoarea arată starea punții. Un clic pe punct vă duce la fila *AI*.
 
@@ -52,25 +78,25 @@ Când modul AI este activat, în colțul din dreapta jos, în bara de stare, apa
 
 Sub *Siguranță* sunt butoanele cu care limitați AI-ul:
 
-- *Pauzare*: AI nu are voie să modifice nimic temporar, dar citirea rămâne permisă. Puntea rămâne activă. Butonul devine *Reluare*.
+- *Pauzare*: AI-ul nu are voie să modifice nimic temporar, dar citirea rămâne permisă. Puntea rămâne activă. Butonul devine *Reluare*.
 - *Doar în citire*: toate instrumentele care modifică ceva sunt refuzate cât timp este activat.
 - *Backup automat: activat*: înainte de prima modificare a AI-ului într-un document, aplicația scrie un backup IFC. Este activat implicit. Cu butonul îl dezactivați, apoi apare *Backup automat: oprit*. Aceasta se întâmplă o dată pentru fiecare document, la fiecare pornire a punții.
 - *Creare backup*: face imediat un backup al documentului activ. Apoi apare *Backup creat:* cu numele fișierului.
 - *Deschidere dosar backup*: deschide dosarul cu backup-urile.
 
-Backup-urile se află în dosarul `ai-backups` din dosarul de date al aplicației. Aplicația păstrează backup-urile recente și rărește pe cele mai vechi. Cum exact, este descris în [Instrumente AI](docs://ref-ai-tools).
+Backup-urile se află în dosarul `ai-backups` din dosarul de date al aplicației. Aplicația păstrează backup-urile recente și rărește pe cele mai vechi. Detaliile exacte sunt descrise în [Instrumente AI](docs://ref-ai-tools).
 
 ### 6. Faceți ca asistentul să planifice bine
 
-Un asistent planifică bine doar dacă cunoaște regulile de planificare. Ce înseamnă asta și ce conțin aceste reguli, aflați în [Cum funcționează legătura AI](docs://uitleg-ai-koppeling). Acestea sunt pașii pe care îi faceți dumneavoastră:
+Un asistent planifică bine doar dacă cunoaște regulile de planificare. Aflați de ce contează și ce conțin aceste reguli în [Cum funcționează legătura AI](docs://uitleg-ai-koppeling). Acestea sunt pașii pe care îi faceți dumneavoastră:
 
 1. **Nu faceți nimic pentru regulile fundamentale.** Ele vin odată cu conectarea. Dacă clientul le pune în promptul de sistem, depinde de client.
 2. **Cereți citirea ghidului.** Promptul de conectare din fereastra *Date de conectare* cere asistentului să citească ghidul cu instrumentul `planner_get_planning_guide`. Dacă nu folosiți promptul, cereți asistentului: *Citește mai întâi ghidul de planificare cu planner_get_planning_guide, înainte să modifici ceva.* Ghidul îl puteți citi și dumneavoastră la `https://open-planner-studio.open-aec.com/agent/planning-guide.md`.
-3. **Opțional: instalați skill-urile.** Acest pas funcționează doar cu un asistent care acceptă skill-uri. Puneți `SKILL.md` pentru *goed-plannen* și *progress-update* în `.claude/skills/goed-plannen/SKILL.md` și `.claude/skills/progress-update/SKILL.md`, în dosarul proiectului în care lucrează asistentul. Sau puneți-le în aceleași dosare sub `~/.claude/skills/`, pentru fiecare proiect.
+3. **Opțional: instalați skill-urile.** Acest pas funcționează doar cu un asistent care acceptă skill-uri. Puneți `SKILL.md` pentru *goed-plannen* și *progress-update* în `.claude/skills/goed-plannen/SKILL.md` și `.claude/skills/progress-update/SKILL.md`, în dosarul proiectului în care lucrează asistentul. Sau puneți-le sub `~/.claude/skills/`, pentru fiecare proiect.
 
-Fișierele le obțineți în două moduri. Cereți asistentului să apeleze instrumentul `planner_get_planning_guide` cu `part` pus pe `skill`: răspunsul conține ambele texte și, pentru fiecare skill, locurile unde trebuie să ajungă. Sau descărcați-le de la `https://open-planner-studio.open-aec.com/skills/goed-plannen/SKILL.md` și `https://open-planner-studio.open-aec.com/skills/progress-update/SKILL.md`. Dacă *goed-plannen* mai există dintr-o versiune mai veche a aplicației, înlocuiți-l: acel text vechi este în neerlandeză și trimite la articolul de ajutor, nu la ghidul pentru asistenți.
+Fișierele le obțineți în două moduri. Cereți asistentului să apeleze instrumentul `planner_get_planning_guide` cu `part` setat la `skill`: răspunsul conține ambele texte și, pentru fiecare skill, locurile unde trebuie să ajungă. Sau descărcați-le de la `https://open-planner-studio.open-aec.com/skills/goed-plannen/SKILL.md` și `https://open-planner-studio.open-aec.com/skills/progress-update/SKILL.md`. Dacă *goed-plannen* mai există dintr-o versiune mai veche a aplicației, înlocuiți-l: acel text vechi este în neerlandeză și trimite la articolul de ajutor, nu la ghidul pentru asistenți.
 
-Ca să vedeți dacă asistentul a citit ghidul într-adevăr, uitați-vă în *Panou de activitate*. Acolo apare un apel al `planner_get_planning_guide`. Răspunsul final trebuie să conțină o listă de presupuneri: duratele estimate, descompunerea aleasă, dependențele pe care le-a creat singur și fiecare restricție pe care a setat-o. Dacă lista lipsește, cereți-o. După o actualizare de progres făcută cu *progress-update*, răspunsul trebuie să numească data raportului de stare, noua dată de sfârșit și varianța față de referință.
+Ca să vedeți dacă asistentul a citit ghidul într-adevăr, uitați-vă în *Panou de activitate*. Acolo apare un apel al `planner_get_planning_guide`. Răspunsul final trebuie să conțină o listă de presupuneri: durate estimate, descompunerea aleasă, dependențele pe care le-a creat singur și fiecare restricție pe care a setat-o. Dacă lista lipsește, cereți-o. După o actualizare de progres făcută cu *progress-update*, răspunsul trebuie să numească data raportului de stare, noua dată de sfârșit și varianța față de referință.
 
 ## Capcane și ce face aplicația atunci
 

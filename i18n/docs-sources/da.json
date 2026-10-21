@@ -5441,7 +5441,7 @@
         }
       },
       {
-        "hash": "929e26b38a587440",
+        "hash": "637d6bc401aa8edb",
         "labels": {
           "common:ai.auth": "ccd20290da8e6825",
           "common:ai.configSnippet": "23a7f65f7f5e083a",
@@ -6896,6 +6896,7 @@
           "common:settings.statsTotal": "29bdccc8855a3656",
           "common:shortcuts.category.edit": "ed97c3104900e453",
           "common:shortcuts.category.view": "26ebfd9d6e9fc62f",
+          "common:siteFiles.nameLabel": "b3b3b01a7a062103",
           "common:view.filter.valueFrom": "1cd62752ceb5d75c",
           "common:view.layout.edit": "4d23b2d6702d444e",
           "common:view.layout.name": "b3b3b01a7a062103",
@@ -6918,14 +6919,11 @@
           "report:tableReports.resourceLoading.type": "baaddf70fb5d432b",
           "task:contourDialog.from": "1cd62752ceb5d75c",
           "task:dialog.name": "b3b3b01a7a062103",
-          "task:dialog.type": "baaddf70fb5d432b",
           "task:properties.calendar": "36f1504f51182fee",
           "task:properties.calendarProject": "e98ea0e3ccf4a867",
           "task:properties.name": "b3b3b01a7a062103",
           "task:properties.recalculate": "79248512a00eb5d8",
-          "task:properties.type": "baaddf70fb5d432b",
           "task:relations.type": "baaddf70fb5d432b",
-          "task:table.type": "baaddf70fb5d432b",
           "task:taskGrid.columns.calendar": "36f1504f51182fee",
           "task:taskType.name": "b3b3b01a7a062103",
           "task:taskType.rename": "ed97c3104900e453"
@@ -7035,7 +7033,7 @@
         }
       },
       {
-        "hash": "33e86d88cb27f2a4",
+        "hash": "d92eb4be8936d043",
         "labels": {
           "common:calendar.generate.bouwvak.none": "4caa44f124d9c5e5",
           "common:resource.availabilityStepsEditor.maxUnits": "e2be3ab0ae481b22",
@@ -7271,7 +7269,7 @@
         }
       },
       {
-        "hash": "7abd3b7f3864d61e",
+        "hash": "1fe40511cea98b6b",
         "labels": {
           "task:properties.assignments.work": "5c63bc858eb0fd5c",
           "task:taskGrid.columns.assignmentUnits": "e7ff0430641dd0d9"

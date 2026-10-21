@@ -36,14 +36,40 @@ Prozor nudi tri načina povezivanja:
 
 - *Fragment konfiguracije*: dio konfiguracije koji zalijepite u postavke MCP-a vašeg klijenta.
 - *Upit za povezivanje*: tekst koji zalijepite u AI pomoćnika. Nakon toga se pomoćnik sam poveže.
-- *Krajnja točka* i *Autentifikacija*: zasebni podaci. Krajnja točka je `http://localhost:3877/mcp` s transportom *streamable HTTP*. Svaki zahtjev mora imati zaglavlje `Authorization: Bearer`, nakon čega slijedi vaš token.
+- *Krajnja točka* i *Autentifikacija*: zasebni podaci. Krajnja točka je `http://localhost:3877/mcp` s transportom *streamable HTTP*. Svaki zahtjev mora imati zaglavlje `Authorization: Bearer`, nakon čega slijedi vaš token. Vaš klijent mora također podržavati MCP sesije: kad se poveže, most daje kod sesije u zaglavlju `Mcp-Session-Id` i odbija svaki sljedeći zahtjev bez tog koda. Claude Code i `mcp-remote` to rade sami.
 
-U grupi *Povezivanje* nalazi se i polje *Token*. To je dugi, nasumični kod koji aplikacija stvara za vas i sprema na ovom računalu. U prozoru piše *Ovaj token daje pristup otvorenom planu. Nemojte ga dijeliti s drugima.* Gumbom *Novi token* stvarate novi token. Aplikacija prvo pita *Stvaranjem novog tokena prekidaju se sve postojeće veze. Želite li nastaviti?* Ako most radi, ponovno se pokreće s novim tokenom. Stari token više ne radi.
+**Ponovno se povežite nakon ažuriranja aplikacije.** Ako je vaš AI klijent već bio povezan sa starijom verzijom aplikacije, još ne šalje kod sesije i most odbija svaki zahtjev. Zato se povežite ponovno nakon ažuriranja: pokrenite novu sesiju u Claude Code i potpuno zatvorite Claude Desktop, pa ga ponovno pokrenite.
+
+**Claude Code.** Fragment konfiguracije izravno odgovara alatu Claude Code. U terminalu upišite ovu naredbu, s vlastitim tokenom umjesto `<token>`:
+
+```
+claude mcp add --transport http open-planner-studio http://localhost:3877/mcp --header "Authorization: Bearer <token>"
+```
+
+Fragment možete staviti i u datoteku `.mcp.json` u mapi projekta. Tada tu datoteku nemojte staviti u git, jer token daje pristup vašem planu. Poslužitelj iz `.mcp.json` mora se prvi put odobriti u Claude Code.
+
+**Claude Desktop.** Fragment konfiguracije ne odgovara izravno aplikaciji Claude Desktop. U datoteci `claude_desktop_config.json` navodite program koji Claude Desktop sam pokreće, a ne adresu. Zato upotrijebite vanjski alat `mcp-remote` kao posrednika; potreban je Node.js. U aplikaciji Claude Desktop odaberite *Postavke › Programer › Uredi konfiguraciju*, u datoteku stavite ovo (s vlastitim tokenom) i ponovno pokrenite Claude Desktop:
+
+```
+{
+  "mcpServers": {
+    "open-planner-studio": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "http://localhost:3877/mcp", "--header", "Authorization:${AUTH_HEADER}"],
+      "env": { "AUTH_HEADER": "Bearer <token>" }
+    }
+  }
+}
+```
+
+Token je namjerno u `env`, a ne u `args`: u sustavu Windows aplikacija Claude Desktop pokvari argument koji sadrži razmak. *Prilagođeni konektor* u aplikaciji Claude (*Prilagodi › Konektori*) ne radi s mostom. Claude se tada povezuje iz oblaka Anthropic, a taj ne može doći do mosta na vašem računalu.
+
+U grupi *Povezivanje* nalazi se i polje *Token*. To je dugi, nasumični kod koji aplikacija stvara za vas i sprema na ovom računalu. U prozoru piše *Ovaj token daje pristup otvorenom planu. Nemojte ga dijeliti s drugima.* Ikonom *Novi token* stvarate novi token. Aplikacija prvo pita *Stvaranjem novog tokena prekidaju se sve postojeće veze. Želite li nastaviti?* Ako most radi, ponovno se pokreće s novim tokenom. Stari token više ne radi.
 
 ### 4. Pogledajte što AI radi
 
-1. Kliknite *Panel zadatka* pod *Dnevnik*. U bočnom stupcu otvara se panel *AI zadatak*.
-2. Svaki poziv mosta zauzima jedan redak, najnoviji je na vrhu: vrijeme, što se dogodilo, koliko je trajalo i je li uspjelo. Kliknite redak da proširite *Argumenti* i *Odgovor*.
+1. Kliknite *Panel zadatka* pod *Dnevnik*. U bočnom području otvara se panel *AI zadatak*.
+2. Svaki poziv mosta zauzima jedan redak, najnoviji je na vrhu: vrijeme, što se dogodilo, koliko je trajalo i je li uspjelo ili nije. Kliknite redak da proširite *Argumenti* i *Odgovor*.
 3. Gumbom *Obriši* ispraznite popis. Panel čuva zadnjih 500 poziva. Dok se ništa nije dogodilo, piše *Još nema AI zadatka. Pozivi mosta prikazat će se ovdje.*
 
 Kad je AI način rada uključen, u donjem desnom kutu trake stanja nalazi se točka s *AI*. Njezina boja pokazuje stanje mosta. Klik na nju vodi vas na karticu *AI*.

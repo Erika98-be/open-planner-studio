@@ -68,8 +68,8 @@ Implicit, tabelul de lângă Gantt arată *WBS*, *Nume activitate* și *Durată*
 - **Unități planificate pe zi** — unitățile planificate pe resursă, ca `Name: 1.11`, cu cel mult două zecimale, ca la *Unități de atribuire pe zi*. Doar pentru o atribuire din Primavera P6 cu alte unități rămase; *Unități de atribuire pe zi* arată atunci unitățile rămase. Doar în citire.
 - **Curbă de atribuire** — curba pe resursă, ca `Name: Uniform`. Editabilă la o activitate cu atribuiri.
 - **Început fereastră de lucru** și **Sfârșit fereastră de lucru** — fereastra de lucru pe resursă, dintr-un fișier importat, ca `Name: date`. Doar în citire.
-- **Lucru planificat (ore)** și **Lucru real (ore)** — lucrul planificat și lucrul real pe resursă, în ore, ca `Name: 12`, dintr-un fișier importat. Doar în citire.
-- **Lucru rămas (ore)** — lucrul rămas pe resursă, în ore, ca `Name: 6`: lucrul salvat, altfel durata rămasă × unități. Editabil la o activitate cu atribuiri, la care se aplică un tip de activitate. Apare în selector doar când tipurile de activitate sunt vizibile. Un ⚠ galben în celulă înseamnă că lucrul salvat diferă de unități × durata rămasă, ca ⚠-ul de la *Lucru (rămas)* din panoul activității.
+- **Lucru planificat (ore)** și **Lucru real (ore)** — lucrul planificat și lucrul real pe resursă, în ore, ca `Name: 617.14`, cu cel mult două zecimale, dintr-un fișier importat. Doar în citire.
+- **Lucru rămas (ore)** — lucrul rămas pe resursă, în ore, ca `Name: 6` sau `Name: 26.67`: lucrul salvat, altfel durata rămasă × unități. Editabil la o activitate cu atribuiri, la care se aplică un tip de activitate, cu virgulă sau punct ca separator zecimal. Apare în selector doar când tipurile de activitate sunt vizibile. Un ⚠ galben în celulă înseamnă că lucrul salvat diferă de unități × durata rămasă, ca ⚠-ul de la *Lucru (rămas)* din panoul activității.
 
 ## Progres
 

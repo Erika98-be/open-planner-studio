@@ -64,12 +64,12 @@ Varsayılan olarak Gantt'ın yanındaki tablo *WBS*, *Görev adı* ve *Süre* g�
 ## Kaynaklar
 
 - **Atanan kaynaklar** — atanan kaynakların adları, virgülle ayrılmış. Düzenlenebilir: bir ad eklemek kaynağı günde 1 birimle atar; bir adı kaldırmak atamayı siler. Bir kilometre taşında veya özet görevde salt okunurdur.
-- **Günlük atama birimleri** — kaynak başına birimler, `Name: 1; Name: 0.5` biçiminde. Atamaları olan bir görevde düzenlenebilir.
+- **Günlük atama birimleri** — kaynak başına birimler, `Name: 1; Name: 0.5` biçiminde, en fazla iki ondalık basamakla. Kayıtlı değer tam olarak kalır. Atamaları olan bir görevde düzenlenebilir.
 - **Planlanan günlük birimler** — kaynak başına planlanan oran, `Name: 1.11` biçiminde, en fazla iki ondalık basamakla, *Günlük atama birimleri* gibi. Yalnızca farklı bir kalan oranı olan bir Primavera P6 atamasında; *Günlük atama birimleri* o zaman kalan oranı gösterir. Salt okunur.
 - **Atama eğrisi** — kaynak başına eğri, `Name: Uniform` biçiminde. Atamaları olan bir görevde düzenlenebilir.
 - **İş penceresi başlangıcı** ve **İş penceresi bitişi** — içe aktarılmış bir dosyadan gelen, kaynak başına iş penceresi, `Name: date` biçiminde. Salt okunur.
-- **Planlanan iş (saat)** ve **Gerçek iş (saat)** — içe aktarılmış bir dosyadan gelen, kaynak başına saat cinsinden planlanan ve gerçek iş, `Name: 12` biçiminde. Salt okunur.
-- **Kalan iş (saat)** — kaynak başına saat cinsinden kalan iş, `Name: 6` biçiminde: kayıtlı iş; yoksa kalan süre × birim. Üzerinde bir görev türünün geçerli olduğu, atamaları olan bir görevde düzenlenebilir. Yalnızca görev türleri görünür olduğunda seçicide görünür. Hücredeki sarı ⚠ işareti, kayıtlı işin birim × kalan süreden farklı olduğu anlamına gelir; bu, görev panelindeki *İş (kalan)* yanındaki ⚠ ile aynıdır.
+- **Planlanan iş (saat)** ve **Gerçek iş (saat)** — içe aktarılmış bir dosyadan gelen, kaynak başına saat cinsinden planlanan ve gerçek iş, `Name: 617.14` biçiminde, en fazla iki ondalık basamakla. Salt okunur.
+- **Kalan iş (saat)** — kaynak başına saat cinsinden kalan iş, `Name: 6` veya `Name: 26.67` biçiminde: kayıtlı iş; yoksa kalan süre × birim. Üzerinde bir görev türünün geçerli olduğu, atamaları olan bir görevde düzenlenebilir; ondalık ayırıcı olarak virgül veya nokta kullanılabilir. Yalnızca görev türleri görünür olduğunda seçicide görünür. Hücredeki sarı ⚠ işareti, kayıtlı işin birim × kalan süreden farklı olduğu anlamına gelir; bu, görev panelindeki *İş (kalan)* yanındaki ⚠ ile aynıdır.
 
 ## İlerleme
 

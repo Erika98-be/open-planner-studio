@@ -36,13 +36,39 @@ Das Fenster bietet drei Wege zur Verbindung:
 
 - *Konfigurationsausschnitt*: ein Stück Konfiguration, das Sie in die MCP-Einstellungen Ihres Clients einfügen.
 - *Verbindungs-Prompt*: ein Text, den Sie in Ihren KI-Assistenten einfügen. Danach verbindet sich der Assistent selbst.
-- *Endpunkt* und *Authentifizierung*: die einzelnen Angaben. Der Endpunkt ist `http://localhost:3877/mcp` mit dem Transport *streamable HTTP*. Jede Anfrage braucht einen Header `Authorization: Bearer`, gefolgt von Ihrem Token.
+- *Endpunkt* und *Authentifizierung*: die einzelnen Angaben. Der Endpunkt ist `http://localhost:3877/mcp` mit dem Transport *streamable HTTP*. Jede Anfrage braucht einen Header `Authorization: Bearer`, gefolgt von Ihrem Token. Ihr Client muss außerdem MCP-Sitzungen unterstützen: Beim Verbinden gibt die Bridge einen Sitzungscode im Header `Mcp-Session-Id` aus, und sie lehnt jede spätere Anfrage ohne diesen Code ab. Claude Code und `mcp-remote` erledigen das selbst.
+
+**Verbinden Sie sich nach einem Update der App erneut.** Wenn Ihr KI-Client schon mit einer älteren Version der App verbunden war, sendet er noch keinen Sitzungscode, und die Bridge lehnt jede Anfrage ab. Verbinden Sie sich deshalb nach dem Update erneut: Starten Sie eine neue Sitzung in Claude Code, und beenden Sie Claude Desktop vollständig und starten Sie es neu.
+
+**Claude Code.** Der Konfigurationsausschnitt passt direkt zu Claude Code. Geben Sie diesen Befehl in einem Terminal ein, mit Ihrem eigenen Token statt `<token>`:
+
+```
+claude mcp add --transport http open-planner-studio http://localhost:3877/mcp --header "Authorization: Bearer <token>"
+```
+
+Sie können den Ausschnitt auch in die Datei `.mcp.json` in Ihrem Projektordner legen. Legen Sie diese Datei dann nicht in Git ab, denn das Token gewährt Zugriff auf Ihren Plan. Ein Server aus `.mcp.json` muss in Claude Code beim ersten Mal bestätigt werden.
+
+**Claude Desktop.** Der Konfigurationsausschnitt passt nicht direkt zu Claude Desktop. In der Datei `claude_desktop_config.json` nennen Sie ein Programm, das Claude Desktop selbst startet, keine Adresse. Verwenden Sie deshalb das externe Werkzeug `mcp-remote` dazwischen; es braucht Node.js. Wählen Sie in Claude Desktop *Einstellungen › Entwickler › Konfiguration bearbeiten*, fügen Sie dies in die Datei ein (mit Ihrem eigenen Token) und starten Sie Claude Desktop erneut:
+
+```
+{
+  "mcpServers": {
+    "open-planner-studio": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "http://localhost:3877/mcp", "--header", "Authorization:${AUTH_HEADER}"],
+      "env": { "AUTH_HEADER": "Bearer <token>" }
+    }
+  }
+}
+```
+
+Das Token steht absichtlich in `env` und nicht in `args`: Unter Windows zerbricht Claude Desktop ein Argument, das ein Leerzeichen enthält. Ein *benutzerdefinierter Connector* in Claude (*Anpassen › Connectors*) funktioniert nicht mit der Bridge. Claude verbindet sich dann aus der Anthropic-Cloud, und die kann die Bridge auf Ihrem eigenen Computer nicht erreichen.
 
 In der Gruppe *Verbindung* steht außerdem das Feld *Token*. Das ist ein langer, zufälliger Code, den die App für Sie erzeugt und auf diesem Computer speichert. Im Fenster steht *Dieses Token gewährt Zugriff auf den geöffneten Plan. Geben Sie es nicht weiter.* Mit dem Symbol *Neuer Token* erstellen Sie ein neues Token. Die App fragt zuerst *Ein neuer Token trennt alle bestehenden Verbindungen. Fortfahren?* Wenn die Bridge läuft, startet sie mit dem neuen Token neu, und das alte Token funktioniert nicht mehr.
 
-### 4. Sehen Sie, was die KI tut
+### 4. Die Aktivität der KI einsehen
 
-1. Klicken Sie unter *Aktivität* auf *Aktivitätsbereich*. In der seitlichen Spalte öffnet sich der Bereich *KI-Aktivität*.
+1. Klicken Sie unter *Aktivität* auf *Aktivitätsbereich*. In der Seitenleiste öffnet sich der Bereich *KI-Aktivität*.
 2. Jeder Aufruf der Bridge steht in einer Zeile, die neueste oben: Zeit, was passiert ist, wie lange es gedauert hat und ob es gelungen ist oder nicht. Klicken Sie auf eine Zeile, um *Argumente* und *Antwort* aufzuklappen.
 3. Mit *Leeren* entfernen Sie alle Einträge aus der Liste. Der Bereich behält die letzten 500 Aufrufe. Solange noch nichts passiert ist, steht dort *Noch keine KI-Aktivität. Aufrufe der Bridge erscheinen hier.*
 

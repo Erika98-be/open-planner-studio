@@ -5441,7 +5441,7 @@
         }
       },
       {
-        "hash": "929e26b38a587440",
+        "hash": "637d6bc401aa8edb",
         "labels": {
           "common:ai.auth": "c1d2fa4e6d1f40ac",
           "common:ai.configSnippet": "5f74c8d092dbbb1b",
@@ -7269,7 +7269,7 @@
         }
       },
       {
-        "hash": "7abd3b7f3864d61e",
+        "hash": "1fe40511cea98b6b",
         "labels": {
           "task:properties.assignments.work": "e5acbd3b6ee9f66a",
           "task:taskGrid.columns.assignmentUnits": "709add1e7bb0e9cb"
@@ -7335,10 +7335,10 @@
     ]
   },
   "ref-meldingen": {
-    "structure": "437606a51dc40eff",
+    "structure": "1568e21a0703b360",
     "sections": [
       {
-        "hash": "74d233b1c763ed58",
+        "hash": "601c33cb14f0d01c",
         "labels": {
           "common:warnings.title": "6c0f751064e5a1ca",
           "menu:ribbon.warningsPanel": "6c0f751064e5a1ca",
@@ -7347,7 +7347,7 @@
         }
       },
       {
-        "hash": "58ae878acd954a12",
+        "hash": "cd738557c829a920",
         "labels": {}
       },
       {
@@ -7439,14 +7439,42 @@
         }
       },
       {
-        "hash": "c710224de064247f",
+        "hash": "84d0e3d5d14c9966",
         "labels": {
+          "common:aiActivity.clear": "c8dbc399b9247135",
+          "common:debugTerminal.clear": "c8dbc399b9247135",
+          "common:feedback.clearDraft": "8a6da2bbb2f4d6d5",
+          "common:hourData.enable": "b0c01bc83c34973a",
+          "common:hourData.notice": "729cd9e796c5323c",
+          "common:recordedDates.recalculate": "bc7c185278f77c97",
+          "common:resource.leveling.stop": "92cdef3c5bc09f84",
+          "common:settings.enableHourPlanning": "b0c01bc83c34973a",
+          "common:view.dependencyModeHint": "bad04c61c9ea98cd",
+          "common:view.dependencyModeStop": "086bb5335d174a9a",
+          "common:view.filter.clear": "c8dbc399b9247135",
+          "common:view.splitModeHint": "2929e42e29d6fc38",
+          "common:view.splitModeStop": "086bb5335d174a9a",
+          "common:view.structureLockedHint": "6d5fe7024030874c",
+          "menu:ribbon.splitTask": "861f123fd56506a5",
+          "task:duration.enableHourPlanning": "d25827e34fdd602c"
+        }
+      },
+      {
+        "hash": "ff566da0a2d8c05a",
+        "labels": {
+          "common:aiActivity.clear": "c8dbc399b9247135",
+          "common:context.insertAbove": "ec910994f95f308a",
+          "common:context.insertBelow": "b87cf7e98d47d23f",
+          "common:debugTerminal.clear": "c8dbc399b9247135",
+          "common:feedback.clearDraft": "8a6da2bbb2f4d6d5",
           "common:feedback.tools.undo": "ce706412fa752a61",
+          "common:formatNotice.readMore": "0ea294193b6b4a2c",
+          "common:moveProject.apply": "83b651b85e13a225",
           "common:notifications.actions.openProjectInfo": "84d130ca794f8ce8",
           "common:notifications.assignmentsMovedToSubtask": "8767d8e41ce8fa1b",
           "common:notifications.autoSaveFailed": "2c984f2d253b1835",
           "common:notifications.dismiss": "f4c4e17ed04f2fd4",
-          "common:notifications.durationBelowDoneWork": "06191b38bbae9e20",
+          "common:notifications.durationBelowDoneWork": "7356df2cad9ac84d",
           "common:notifications.exportSplitsLost": "4e0cfb4a8eefe0da",
           "common:notifications.extGuideCallbackFailed": "0ba02ce7f41cb446",
           "common:notifications.extHelpProjectOpenFailed": "7f51d041e1b5147a",
@@ -7454,7 +7482,6 @@
           "common:notifications.hierarchyCycle": "12a21fcf3143a755",
           "common:notifications.ifcParseFailed": "9380f607ac97360d",
           "common:notifications.importDatesAsRecorded": "80c3d4df190b82cc",
-          "common:notifications.importDatesAsRecordedOffer": "48f0127079744b4d",
           "common:notifications.levelingDelayRoundedToWorkdays": "fa0336926d2bd4ad",
           "common:notifications.librarySaveFailed": "4a643bf259930836",
           "common:notifications.milestoneClearedOnPhase": "b2d7100086823e13",
@@ -7462,13 +7489,20 @@
           "common:notifications.milestoneRefusedSummary": "303513bfc05e7cad",
           "common:notifications.mppSourceScheduleNotes": "13c7e7a67f56da56",
           "common:notifications.openFailed": "de5f0a002d10a1de",
+          "common:notifications.p6xmlImportCrossProjectRelations": "1344654f7b6e65fa",
+          "common:notifications.p6xmlImportEmpty": "0ce92b42f8f9c317",
+          "common:notifications.p6xmlImportOpened": "1b38d203ec4892d4",
+          "common:notifications.p6xmlImportUnassignedActivities": "5eff2188dda8443d",
           "common:notifications.pasteSkippedReadOnly": "0ed8a87eacf38040",
+          "common:notifications.phaseQuestionOutdated": "04d0fabe4edbf248",
           "common:notifications.projectStartAnchorsClamped": "a49607c5f5708d98",
           "common:notifications.readMore": "7a24ee7be35f3d56",
           "common:notifications.recoveryDocumentsSkipped": "ba4ef235e4de141b",
           "common:notifications.recoveryReadFailed": "90c32b25e13b182b",
           "common:notifications.recoveryRestoreFailed": "fff6c3f36a341c45",
-          "common:notifications.referencesClearedOnPaste": "06ddf2b0d20f25de",
+          "common:notifications.referencesClearedOnPaste": "44166fb596b9dbcb",
+          "common:notifications.refusedRelationNames": "6a88c06fbc754543",
+          "common:notifications.refusedTaskNames": "9482907ae6b98ca8",
           "common:notifications.relationAncestorEndpoint": "144bda9ad796b581",
           "common:notifications.relationCycle": "aa88f3a3d0001344",
           "common:notifications.relationDuplicate": "27f80d12148217eb",
@@ -7478,13 +7512,15 @@
           "common:notifications.schedulingProfileApplied": "ff3693f2ecafc0bd",
           "common:notifications.schedulingProfileShifted": "fb68b06556d4adc6",
           "common:notifications.startSnetCreated": "e76e1234d2b2c240",
+          "common:notifications.startSnetUpdated": "87cc7d07758e0a30",
           "common:notifications.statusDateSetToday": "81cfa3e02d7f6e25",
           "common:notifications.summaryRelationsDropped": "a72b22f4d430937c",
-          "common:notifications.taskTypesUnlocked": "f45620815a06e5c6",
-          "common:notifications.taskTypesUnlockedDetail": "f45620815a06e5c6",
+          "common:notifications.taskAddedAtEnd": "9dc5817427727ec7",
+          "common:notifications.taskTypesUnlocked": "a58147704e65c2a2",
+          "common:notifications.taskTypesUnlockedDetail": "a58147704e65c2a2",
           "common:notifications.templateSaved": "1686b49bc8a80724",
-          "common:notifications.workRuleDurationsChanged": "de25491849e274cf",
-          "common:notifications.workRulesReadMore": "c4ecec7c1bd3d956",
+          "common:notifications.workRuleDurationsChanged": "2ab4612fefd14354",
+          "common:notifications.workRulesReadMore": "4097ecc97ec75c8d",
           "common:notifications.xerArchiveReasonHashMismatch": "07b2b2643308414c",
           "common:notifications.xerArchiveUnusable": "2dcbd3c2fe02ebd2",
           "common:notifications.xerDuplicateTable": "90b3a7fc1660aacd",
@@ -7495,7 +7531,6 @@
           "common:notifications.xerImportCalendarIssues": "4896317ce82dfe80",
           "common:notifications.xerImportDanglingBaselineReferences": "c56801cfa2cd030a",
           "common:notifications.xerImportDatesAsRecorded": "f243b85be6b73f10",
-          "common:notifications.xerImportDatesAsRecordedOffer": "48f0127079744b4d",
           "common:notifications.xerImportEmptyProjectsSkipped": "41352ff87034952c",
           "common:notifications.xerImportEncoding": "2ff4a8c317e04b3c",
           "common:notifications.xerImportEnumFallbacks": "8386c01fb3a4b05d",
@@ -7506,16 +7541,35 @@
           "common:notifications.xerImportProjectsSeen": "6e7c441d4ce9a544",
           "common:notifications.xerImportUnsupportedSemantics": "c0e94a8b603c8560",
           "common:notifications.xerInvalidFile": "8f8720aa639a9fe1",
+          "common:phaseAssignmentQuestion.title": "13c2ce79132a323b",
           "common:resource.leveling.calculate": "563601a7b905b978",
+          "common:resource.leveling.colTask": "01dfd369cfa718dd",
           "common:resource.occupancy.docCount": "edf359ff7dfb2931",
           "common:save": "5fb926229090001c",
+          "common:settings.planningTab": "b0fe4ea3ac5ac402",
+          "common:view.filter.clear": "c8dbc399b9247135",
+          "common:view.structureLockedHint": "6d5fe7024030874c",
           "menu:backstage.saveAs": "57950aff46bc8e3e",
           "menu:commands.undo": "ce706412fa752a61",
+          "menu:ribbon.baselines": "46331e4f7d18f931",
           "menu:ribbon.calculate": "563601a7b905b978",
+          "menu:ribbon.milestone": "eeff6b3a4a38277a",
+          "menu:ribbon.planning": "b0fe4ea3ac5ac402",
           "menu:ribbon.save": "5fb926229090001c",
+          "menu:ribbon.statusDate": "3aebdd0931a80d33",
+          "menu:ribbon.task": "01dfd369cfa718dd",
           "menu:ribbon.undo": "ce706412fa752a61",
+          "report:legend.milestone": "eeff6b3a4a38277a",
+          "report:statusDateLabel": "3aebdd0931a80d33",
+          "report:tableReports.statusDate": "4f530f3a5e917495",
+          "task:properties.milestone": "eeff6b3a4a38277a",
           "task:properties.recalculate": "563601a7b905b978",
-          "task:structure.templateSaved": "1686b49bc8a80724"
+          "task:properties.task": "01dfd369cfa718dd",
+          "task:structure.templateSaved": "1686b49bc8a80724",
+          "task:table.milestone": "eeff6b3a4a38277a",
+          "task:taskGrid.category.planning": "b0fe4ea3ac5ac402",
+          "task:taskGrid.category.task": "01dfd369cfa718dd",
+          "task:taskGrid.columns.milestone": "eeff6b3a4a38277a"
         }
       }
     ]

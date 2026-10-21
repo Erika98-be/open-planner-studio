@@ -5442,7 +5442,7 @@
         }
       },
       {
-        "hash": "929e26b38a587440",
+        "hash": "637d6bc401aa8edb",
         "labels": {
           "common:ai.auth": "c817eac28b02837d",
           "common:ai.configSnippet": "5da4bb43555f0ba0",
@@ -6153,7 +6153,7 @@
         }
       },
       {
-        "hash": "aeb5caf882d67cf7",
+        "hash": "be8884bca4333bb2",
         "labels": {
           "common:calendar.generate.cancel": "626b32485a17bbd3",
           "common:cancel": "626b32485a17bbd3",
@@ -6174,6 +6174,7 @@
           "common:sidebar.properties": "f192ed01d9828049",
           "common:view.layout.edit": "0f76c17435eb6545",
           "menu:commands.undo": "6b058c065258bde7",
+          "menu:export.ifcLabel": "7e743842e5f00e97",
           "menu:ribbon.calculate": "067cea42e0feea1d",
           "menu:ribbon.codesFields": "372ff6b9eeae2a95",
           "menu:ribbon.edit": "62e56bf03b5bd01f",
@@ -6201,13 +6202,13 @@
           "task:properties.splits.title": "3d16dc98a8ddff70",
           "task:structure.title": "372ff6b9eeae2a95",
           "task:table.title": "628f51eb99fac495",
-          "task:taskGrid.columns.workRule": "088d31c711656c3f",
+          "task:taskGrid.columns.workRule": "abc9b189557de172",
           "task:taskType.rename": "62e56bf03b5bd01f",
-          "task:workRule.label": "088d31c711656c3f"
+          "task:workRule.label": "abc9b189557de172"
         }
       },
       {
-        "hash": "08dbd1c75a4f6abd",
+        "hash": "9e4b2720b4a18023",
         "labels": {
           "common:feedback.fieldDescription": "fd358e89a7c6df63",
           "common:resource.leveling.calculate": "067cea42e0feea1d",
@@ -6238,12 +6239,12 @@
           "task:taskType.MOVE": "1c21d1f715c7b876",
           "task:taskType.RENOVATION": "05d5a9693e239508",
           "task:taskType.USERDEFINED": "fe8d634d41e4419a",
-          "task:taskType.addToMine": "2bca2758c05e6dad",
-          "task:taskType.builtinGroup": "51332d86d47670df",
-          "task:taskType.manage": "328d6984dcf5b324",
-          "task:taskType.manageTitle": "9b55209e02ec3cf9",
-          "task:taskType.new": "57b99e7c1a4fcb1a",
-          "task:taskType.personalGroup": "44afda4f56f42b51",
+          "task:taskType.addToMine": "7c4fbcae64236b2a",
+          "task:taskType.builtinGroup": "2e34549a087ef4e7",
+          "task:taskType.manage": "7929f58242ea07c8",
+          "task:taskType.manageTitle": "46c4d0d8a0dda105",
+          "task:taskType.new": "04e6dcf76c1f8c19",
+          "task:taskType.personalGroup": "4bad218f69c76e96",
           "task:taskType.projectGroup": "81b75d2ea86b3d2c"
         }
       },
@@ -6280,27 +6281,29 @@
         }
       },
       {
-        "hash": "a260d63893aaf4c6",
+        "hash": "ba35db03975ae3c6",
         "labels": {
           "common:duration.days": "e98b3f93d8219f8d",
           "common:duration.hours": "75cb84a8dd8fa9c8",
+          "common:feedback.tools.undo": "6b058c065258bde7",
           "common:hourData.enable": "5d4ad2921cfeef95",
+          "common:progressImport.field.actualStart": "4d72d0c1dbb2591b",
           "common:resource.leveling.calculate": "067cea42e0feea1d",
           "common:settings.allowMixedDayHour": "bdb3f0270e25a5e9",
           "common:settings.calculationSection": "0862b24abacdc24c",
           "common:settings.enableHourPlanning": "5d4ad2921cfeef95",
           "common:settings.planningTab": "6465764b64415edf",
-          "common:settings.showTaskTypes": "150e24cebb8def6b",
-          "common:settings.title": "109d0914682650db",
+          "common:settings.showTaskTypes": "6580380c40df732c",
+          "common:settings.title": "4ee81b554063d775",
           "menu:backstage.settings": "109d0914682650db",
+          "menu:commands.undo": "6b058c065258bde7",
           "menu:projectInfo.calc.title": "067cea42e0feea1d",
           "menu:ribbon.calculate": "067cea42e0feea1d",
           "menu:ribbon.planning": "6465764b64415edf",
           "menu:ribbon.projectSettings": "109d0914682650db",
-          "menu:ribbon.settings": "109d0914682650db",
+          "menu:ribbon.undo": "6b058c065258bde7",
           "report:milestoneReport.kind_START": "18231feefec78051",
           "report:projectStart": "737008610cbdb901",
-          "report:settings": "109d0914682650db",
           "report:tableHeaders.start": "18231feefec78051",
           "report:tableReports.common.start": "18231feefec78051",
           "task:constraintType.SNET": "393ad1a9c8056c44",
@@ -6309,24 +6312,22 @@
           "task:dialog.durationDays": "e98b3f93d8219f8d",
           "task:dialog.durationHours": "75cb84a8dd8fa9c8",
           "task:dialog.startDate": "1eab385697b6660d",
-          "task:duration.applyProposal": "22fcfe6872b14e4a",
           "task:duration.days": "e98b3f93d8219f8d",
           "task:duration.enableHourPlanning": "5d4ad2921cfeef95",
           "task:duration.hours": "75cb84a8dd8fa9c8",
           "task:duration.invalid": "3ee42b7314e9d197",
-          "task:duration.keepCurrent": "764d2e7824b87628",
+          "task:properties.progress.actualStart": "4d72d0c1dbb2591b",
           "task:properties.recalculate": "067cea42e0feea1d",
           "task:properties.start": "18231feefec78051",
           "task:table.start": "18231feefec78051",
           "task:taskGrid.category.planning": "6465764b64415edf",
+          "task:taskGrid.columns.actualStart": "4d72d0c1dbb2591b",
           "task:taskGrid.columns.scheduleStart": "2de7a38c95df8eec",
           "task:taskGrid.columns.start": "18231feefec78051",
           "task:workRule.FIXED_DURATION_RATE": "fd3bb8f63a525a13",
           "task:workRule.FIXED_DURATION_WORK": "dfd3ac83a3f38fa1",
           "task:workRule.FIXED_RATE": "c2e9cf64c6ed853e",
           "task:workRule.FIXED_WORK": "5b7b3cfcb05b250e",
-          "task:workRule.mspEffortDriven": "e3b0c44298fc1c14",
-          "task:workRule.mspNotEffortDriven": "63223e9ebb11d6c8",
           "task:workRule.projectDefault": "6d15ea96844996fa"
         }
       },
@@ -6359,7 +6360,7 @@
         }
       },
       {
-        "hash": "3cfcbf16bbc8835c",
+        "hash": "001e47b1752fb90e",
         "labels": {
           "common:actualStartQuestion.title": "af789e69bed05335",
           "common:progressImport.field.actualFinish": "ec0099dd83880888",
@@ -6369,6 +6370,7 @@
           "menu:export.progressXlsxValidation.dateTitle": "2611367854fde371",
           "menu:ribbon.calculate": "067cea42e0feea1d",
           "menu:ribbon.save": "887f19d386695b8f",
+          "report:legend.completion": "05c90932acbd51c9",
           "report:tableReports.lookAhead.status_inProgress": "4f595884885cd0d7",
           "report:tableReports.progress.sections.inProgress": "4f595884885cd0d7",
           "report:tableReports.progress.status_inProgress": "4f595884885cd0d7",
@@ -6465,8 +6467,9 @@
         }
       },
       {
-        "hash": "e2c74cab3e84c598",
+        "hash": "b2e3e711cd0575e0",
         "labels": {
+          "common:feedback.removeScreenshot": "57ea0607144dcb01",
           "common:resource.curve.backLoaded": "ea2db632b2741d01",
           "common:resource.curve.bell": "00250b8f19922c35",
           "common:resource.curve.doublePeak": "e22eb807f7391f5b",
@@ -6477,7 +6480,6 @@
           "common:resource.curve.uniform": "c2540e7fd98b08d1",
           "menu:extensions.remove": "57ea0607144dcb01",
           "report:tableHeaders.curve": "2c72725b4eeba60f",
-          "report:tableReports.resourceAssignments.units": "30112e8697249fef",
           "task:externalLinks.remove": "3f8cd2aa925b76af",
           "task:properties.assignments.add": "a6e6c82dcdd04098",
           "task:properties.assignments.allAssigned": "839df5d823eb57d3",
@@ -6488,10 +6490,11 @@
           "task:properties.assignments.moveTo": "35d08a2f1946cffe",
           "task:properties.assignments.noResources": "6e20063c87ecec60",
           "task:properties.assignments.remove": "57ea0607144dcb01",
-          "task:properties.assignments.unitsPerDay": "30112e8697249fef",
-          "task:properties.assignments.work": "d86d8b17c21da0ac",
+          "task:properties.assignments.units": "db07870e9daae395",
           "task:properties.assignments.workDeviates": "5de56740525ecbce",
+          "task:properties.assignments.workHours": "32dc2de1274581a6",
           "task:properties.notes.remove": "57ea0607144dcb01",
+          "task:taskGrid.columns.assignmentPlannedUnits": "f34e26e09e918b5c",
           "task:taskGrid.controls.remove": "57ea0607144dcb01",
           "task:taskType.remove": "57ea0607144dcb01"
         }
@@ -6516,16 +6519,25 @@
         }
       },
       {
-        "hash": "f1af93e1c5f702b4",
+        "hash": "6a6e17ef3038b135",
         "labels": {
+          "common:formatNotice.readMore": "ee7e687afbdfcc03",
           "common:notifications.readMore": "0a4a753d35ec3ef6",
+          "report:milestoneReport.kind_START": "18231feefec78051",
+          "report:projectStart": "737008610cbdb901",
+          "report:tableHeaders.start": "18231feefec78051",
+          "report:tableReports.common.start": "18231feefec78051",
           "task:properties.longFreePeriodWarning": "e9c69cd48a0938b2",
-          "task:properties.recordedDatesActive": "ea7e1f1eb2affbd6",
-          "task:properties.recordedDatesActiveNeutral": "d01838405b676c4e",
-          "task:properties.recordedDatesDeviates": "04c4ce33fcf9e3e0",
-          "task:properties.recordedDatesPartlyUnrecorded": "7f1fd6518e9d8aa8",
+          "task:properties.recordedDatesShown": "601fa88807d44c39",
+          "task:properties.recordedDatesShownNeutral": "ede86160f0d22ea9",
+          "task:properties.recordedDatesWillShift": "b010f5f32efa3a1b",
+          "task:properties.recordedDatesWillStay": "fa3765dc08182e91",
+          "task:properties.start": "18231feefec78051",
+          "task:properties.time": "1aa2d6b1a3ba2c5c",
           "task:properties.timephasedActive": "785e741c93173528",
-          "task:properties.timephasedContoured": "73c7f1135fd39e8c"
+          "task:properties.timephasedContoured": "73c7f1135fd39e8c",
+          "task:table.start": "18231feefec78051",
+          "task:taskGrid.columns.start": "18231feefec78051"
         }
       },
       {
@@ -7258,7 +7270,7 @@
         }
       },
       {
-        "hash": "7abd3b7f3864d61e",
+        "hash": "1fe40511cea98b6b",
         "labels": {
           "task:properties.assignments.work": "d86d8b17c21da0ac",
           "task:taskGrid.columns.assignmentUnits": "e0e356509bd23aed"
@@ -7324,10 +7336,10 @@
     ]
   },
   "ref-meldingen": {
-    "structure": "437606a51dc40eff",
+    "structure": "1568e21a0703b360",
     "sections": [
       {
-        "hash": "74d233b1c763ed58",
+        "hash": "601c33cb14f0d01c",
         "labels": {
           "common:warnings.title": "c898adffff4e9a24",
           "menu:ribbon.warningsPanel": "c898adffff4e9a24",
@@ -7336,7 +7348,7 @@
         }
       },
       {
-        "hash": "58ae878acd954a12",
+        "hash": "cd738557c829a920",
         "labels": {}
       },
       {
@@ -7428,9 +7440,37 @@
         }
       },
       {
-        "hash": "c710224de064247f",
+        "hash": "84d0e3d5d14c9966",
         "labels": {
+          "common:aiActivity.clear": "3f8cd2aa925b76af",
+          "common:debugTerminal.clear": "3f8cd2aa925b76af",
+          "common:feedback.clearDraft": "f86a882a3537ee8c",
+          "common:hourData.enable": "5d4ad2921cfeef95",
+          "common:hourData.notice": "29e6a577e271c7ed",
+          "common:recordedDates.recalculate": "df09d26020008d33",
+          "common:resource.leveling.stop": "b3207a20f32c953a",
+          "common:settings.enableHourPlanning": "5d4ad2921cfeef95",
+          "common:view.dependencyModeHint": "9f1788c46e7f2354",
+          "common:view.dependencyModeStop": "b3207a20f32c953a",
+          "common:view.filter.clear": "3f8cd2aa925b76af",
+          "common:view.splitModeHint": "bcea75446cf6eaf6",
+          "common:view.splitModeStop": "b3207a20f32c953a",
+          "common:view.structureLockedHint": "0a5099c88bc912fb",
+          "menu:ribbon.splitTask": "af038d3b42e6c71a",
+          "task:duration.enableHourPlanning": "5d4ad2921cfeef95"
+        }
+      },
+      {
+        "hash": "ff566da0a2d8c05a",
+        "labels": {
+          "common:aiActivity.clear": "3f8cd2aa925b76af",
+          "common:context.insertAbove": "5fe9ac7112eaab73",
+          "common:context.insertBelow": "218de358170f6221",
+          "common:debugTerminal.clear": "3f8cd2aa925b76af",
+          "common:feedback.clearDraft": "f86a882a3537ee8c",
           "common:feedback.tools.undo": "6b058c065258bde7",
+          "common:formatNotice.readMore": "ee7e687afbdfcc03",
+          "common:moveProject.apply": "1c21d1f715c7b876",
           "common:notifications.actions.openProjectInfo": "f80974a1a41b999c",
           "common:notifications.assignmentsMovedToSubtask": "0ccbc6019ddca2ab",
           "common:notifications.autoSaveFailed": "e705d59e457ff80b",
@@ -7443,37 +7483,45 @@
           "common:notifications.hierarchyCycle": "63fb48d8dc935409",
           "common:notifications.ifcParseFailed": "1d56197a495e06a7",
           "common:notifications.importDatesAsRecorded": "e26e7760946285b1",
-          "common:notifications.importDatesAsRecordedOffer": "03ba489476426265",
           "common:notifications.levelingDelayRoundedToWorkdays": "2dc2cf46667c9a0f",
           "common:notifications.librarySaveFailed": "82d0b92093453f5b",
           "common:notifications.milestoneClearedOnPhase": "dbd3e39468b5c40a",
-          "common:notifications.milestoneRefusedAssignments": "6bccb4b1a9d3e941",
-          "common:notifications.milestoneRefusedSummary": "d232d2d8c0b1acba",
+          "common:notifications.milestoneRefusedAssignments": "6404ef203a9ec3a9",
+          "common:notifications.milestoneRefusedSummary": "8b543e771236f6c6",
           "common:notifications.mppSourceScheduleNotes": "fdebc7e865c39e84",
           "common:notifications.openFailed": "6cb4f30d6899599c",
+          "common:notifications.p6xmlImportCrossProjectRelations": "f64bae54297dd14f",
+          "common:notifications.p6xmlImportEmpty": "0ccc7d6a6f23120e",
+          "common:notifications.p6xmlImportOpened": "afbd5237c52248c0",
+          "common:notifications.p6xmlImportUnassignedActivities": "b7117a622c5fc694",
           "common:notifications.pasteSkippedReadOnly": "ec37036551a43aff",
+          "common:notifications.phaseQuestionOutdated": "18210e110a52f17f",
           "common:notifications.projectStartAnchorsClamped": "eeda7a1e049c1005",
           "common:notifications.readMore": "0a4a753d35ec3ef6",
           "common:notifications.recoveryDocumentsSkipped": "5778c490379e4c7d",
           "common:notifications.recoveryReadFailed": "88d8db7db31e38da",
           "common:notifications.recoveryRestoreFailed": "7d54f7ec1731aad4",
-          "common:notifications.referencesClearedOnPaste": "48ed08423fb44b24",
+          "common:notifications.referencesClearedOnPaste": "142d75328ab2aead",
+          "common:notifications.refusedRelationNames": "f65b03e0011a0aa0",
+          "common:notifications.refusedTaskNames": "e0b3f0354d02db08",
           "common:notifications.relationAncestorEndpoint": "adcfc85c0a1b9b36",
           "common:notifications.relationCycle": "d951983c9615e0f4",
           "common:notifications.relationDuplicate": "09990690379f7605",
           "common:notifications.relationsExcludedByHierarchy": "9c38f9e4b7eee7a8",
           "common:notifications.saveFailed": "163538198675d0e4",
           "common:notifications.scheduleFailed": "67cd933dff921095",
-          "common:notifications.schedulingProfileApplied": "9f39e42863ba3640",
+          "common:notifications.schedulingProfileApplied": "939eb431a1bc3447",
           "common:notifications.schedulingProfileShifted": "46a70d29c658a6a7",
           "common:notifications.startSnetCreated": "69bf7b968b7059e5",
+          "common:notifications.startSnetUpdated": "27a9c49702dc0263",
           "common:notifications.statusDateSetToday": "037233a24731ead1",
           "common:notifications.summaryRelationsDropped": "8237a70a2c35d44c",
-          "common:notifications.taskTypesUnlocked": "a962ee4d49ee6792",
-          "common:notifications.taskTypesUnlockedDetail": "a962ee4d49ee6792",
+          "common:notifications.taskAddedAtEnd": "62f0a6caf7444b45",
+          "common:notifications.taskTypesUnlocked": "6819de6dcdcd7800",
+          "common:notifications.taskTypesUnlockedDetail": "6819de6dcdcd7800",
           "common:notifications.templateSaved": "e25e93022ed0db99",
-          "common:notifications.workRuleDurationsChanged": "01e7326ccc437acf",
-          "common:notifications.workRulesReadMore": "5aedb73e8ff31912",
+          "common:notifications.workRuleDurationsChanged": "0e9d0eedecb28e03",
+          "common:notifications.workRulesReadMore": "0e86561e60778c26",
           "common:notifications.xerArchiveReasonHashMismatch": "e9db26c07aa12ecf",
           "common:notifications.xerArchiveUnusable": "30d69a4b16491d0b",
           "common:notifications.xerDuplicateTable": "72586e7ecef00106",
@@ -7484,7 +7532,6 @@
           "common:notifications.xerImportCalendarIssues": "e3fc3acf9c7c1af5",
           "common:notifications.xerImportDanglingBaselineReferences": "534e65f139f5ea8a",
           "common:notifications.xerImportDatesAsRecorded": "89416447f2765fb0",
-          "common:notifications.xerImportDatesAsRecordedOffer": "03ba489476426265",
           "common:notifications.xerImportEmptyProjectsSkipped": "3e96f9ca287722b8",
           "common:notifications.xerImportEncoding": "47162f190ee842ec",
           "common:notifications.xerImportEnumFallbacks": "7c115ce2da201ea0",
@@ -7495,16 +7542,35 @@
           "common:notifications.xerImportProjectsSeen": "b5e99aa317ee7a77",
           "common:notifications.xerImportUnsupportedSemantics": "3823f6ed3c7e0f12",
           "common:notifications.xerInvalidFile": "3c6b1ab5df3dcd90",
+          "common:phaseAssignmentQuestion.title": "c0668c2463d9c723",
           "common:resource.leveling.calculate": "067cea42e0feea1d",
+          "common:resource.leveling.colTask": "a4ab5f37038a446c",
           "common:resource.occupancy.docCount": "ce79529bbca401bd",
           "common:save": "887f19d386695b8f",
+          "common:settings.planningTab": "6465764b64415edf",
+          "common:view.filter.clear": "3f8cd2aa925b76af",
+          "common:view.structureLockedHint": "0a5099c88bc912fb",
           "menu:backstage.saveAs": "c68e063a8558e897",
           "menu:commands.undo": "6b058c065258bde7",
+          "menu:ribbon.baselines": "a273c1adab6e9377",
           "menu:ribbon.calculate": "067cea42e0feea1d",
+          "menu:ribbon.milestone": "408749429f3c25bc",
+          "menu:ribbon.planning": "6465764b64415edf",
           "menu:ribbon.save": "887f19d386695b8f",
+          "menu:ribbon.statusDate": "7735639b2f763330",
+          "menu:ribbon.task": "a4ab5f37038a446c",
           "menu:ribbon.undo": "6b058c065258bde7",
+          "report:legend.milestone": "408749429f3c25bc",
+          "report:statusDateLabel": "7735639b2f763330",
+          "report:tableReports.statusDate": "7735639b2f763330",
+          "task:properties.milestone": "408749429f3c25bc",
           "task:properties.recalculate": "067cea42e0feea1d",
-          "task:structure.templateSaved": "e25e93022ed0db99"
+          "task:properties.task": "a4ab5f37038a446c",
+          "task:structure.templateSaved": "e25e93022ed0db99",
+          "task:table.milestone": "408749429f3c25bc",
+          "task:taskGrid.category.planning": "6465764b64415edf",
+          "task:taskGrid.category.task": "a4ab5f37038a446c",
+          "task:taskGrid.columns.milestone": "408749429f3c25bc"
         }
       }
     ]

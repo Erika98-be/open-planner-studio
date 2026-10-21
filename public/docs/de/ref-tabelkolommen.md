@@ -65,11 +65,11 @@ Standardmäßig zeigt die Vorgangstabelle neben dem Gantt *PSP*, *Vorgangsname* 
 
 - **Zugewiesene Ressourcen** — die Namen der zugewiesenen Ressourcen, durch Kommas getrennt. Bearbeitbar: Wenn Sie einen Namen hinzufügen, wird die Ressource mit 1 Zuordnungseinheit pro Tag zugewiesen; wenn Sie einen Namen entfernen, wird die Zuweisung gelöscht. Schreibgeschützt bei einem Meilenstein oder Sammelvorgang.
 - **Zuordnungseinheiten pro Tag** — die Einheiten je Ressource, als `Name: 1; Name: 0.5`, mit höchstens zwei Dezimalstellen. Der gespeicherte Wert bleibt genau. Bearbeitbar bei einem Vorgang mit Zuweisungen.
-- **Geplante Einheiten pro Tag** — die geplanten Einheiten je Ressource, als `Name: 1.11`, mit höchstens zwei Dezimalstellen, wie bei *Zuordnungseinheiten pro Tag*. Nur bei einer Zuweisung aus Primavera P6 mit anderen verbleibenden Einheiten; *Zuordnungseinheiten pro Tag* zeigt dann die verbleibenden Einheiten. Schreibgeschützt.
+- **Geplante Einheiten pro Tag** — die geplanten Einheiten je Ressource, als `Name: 1.11`, mit höchstens zwei Dezimalstellen, wie bei der Spalte *Zuordnungseinheiten pro Tag*. Nur bei einer Zuweisung aus Primavera P6 mit anderen verbleibenden Einheiten; *Zuordnungseinheiten pro Tag* zeigt dann die verbleibenden Einheiten. Schreibgeschützt.
 - **Zuordnungskurve** — die Kurve je Ressource, als `Name: Uniform`. Bearbeitbar bei einem Vorgang mit Zuweisungen.
 - **Arbeitsfenster Anfang** und **Arbeitsfenster Ende** — das Arbeitsfenster je Ressource aus einer importierten Datei, als `Name: date`. Schreibgeschützt.
-- **Geplante Arbeit (Stunden)** und **Ist-Arbeit (Stunden)** — die geplante Arbeit und die Ist-Arbeit je Ressource in Stunden, als `Name: 12`, aus einer importierten Datei. Schreibgeschützt.
-- **Restarbeit (Stunden)** — die Restarbeit je Ressource in Stunden, als `Name: 6`: die gespeicherte Arbeit, sonst Restdauer × Einheiten. Bearbeitbar bei einem Vorgang mit Zuweisungen, für den eine Vorgangsart gilt. Nur in der Auswahl sichtbar, wenn die Vorgangsarten sichtbar sind. Ein gelbes ⚠ in der Zelle bedeutet, dass die gespeicherte Arbeit von Einheiten × Restdauer abweicht, wie das ⚠ bei *Arbeit (Rest)* im Bereich des Vorgangs.
+- **Geplante Arbeit (Stunden)** und **Ist-Arbeit (Stunden)** — die geplante Arbeit und die Ist-Arbeit je Ressource in Stunden, als `Name: 617.14`, mit höchstens zwei Dezimalstellen, aus einer importierten Datei. Schreibgeschützt.
+- **Restarbeit (Stunden)** — die Restarbeit je Ressource in Stunden, als `Name: 6` oder `Name: 26.67`: die gespeicherte Arbeit, sonst Restdauer × Einheiten. Bearbeitbar bei einem Vorgang mit Zuweisungen, für den eine Vorgangsart gilt, mit Komma oder Punkt als Dezimaltrennzeichen. Nur in der Auswahl sichtbar, wenn die Vorgangsarten sichtbar sind. Ein gelbes ⚠ in der Zelle bedeutet, dass die gespeicherte Arbeit von Einheiten × Restdauer abweicht, wie das ⚠ beim Feld *Arbeit (Rest)* im Bereich des Vorgangs.
 
 ## Fortschritt
 

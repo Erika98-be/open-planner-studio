@@ -36,7 +36,33 @@ Ikkuna tarjoaa kolme tapaa kytkeytyä:
 
 - *Asetuskatkelma*: pieni asetusteksti, joka liitetään asiakkaan MCP-asetuksiin.
 - *Yhdistämiskehote*: teksti, joka liitetään tekoälyavustajaan. Sen jälkeen avustaja kytkeytyy itse.
-- *Päätepiste* ja *Todennus*: erilliset tiedot. Päätepiste on `http://localhost:3877/mcp` ja kuljetustapana *streamable HTTP*. Jokainen pyyntö tarvitsee otsakkeen `Authorization: Bearer`, jota seuraa token.
+- *Päätepiste* ja *Todennus*: erilliset tiedot. Päätepiste on `http://localhost:3877/mcp` ja kuljetustapana *streamable HTTP*. Jokainen pyyntö tarvitsee otsakkeen `Authorization: Bearer`, jota seuraa token. Asiakkaan on myös tuettava MCP-istuntoja: yhdistettäessä silta antaa istuntokoodin otsakkeessa `Mcp-Session-Id`, ja se hylkää jokaisen myöhemmän pyynnön ilman tätä koodia. Claude Code ja `mcp-remote` hoitavat tämän itse.
+
+**Yhdistä uudelleen sovelluksen päivityksen jälkeen.** Jos tekoälyasiakas oli jo yhdistettynä sovelluksen vanhempaan versioon, se ei vielä lähetä istuntokoodia, ja silta hylkää jokaisen pyynnön. Yhdistä siksi päivityksen jälkeen uudelleen: aloita uusi istunto Claude Code -ohjelmassa ja sulje Claude Desktop kokonaan ja käynnistä se uudelleen.
+
+**Claude Code.** Asetuskatkelma sopii suoraan Claude Code -ohjelmaan. Anna tämä komento päätteessä ja korvaa `<token>` omalla tokenillasi:
+
+```
+claude mcp add --transport http open-planner-studio http://localhost:3877/mcp --header "Authorization: Bearer <token>"
+```
+
+Katkelman voi myös laittaa tiedostoon `.mcp.json` projektikansiossa. Tätä tiedostoa ei silloin tallenneta gitiin, koska token antaa pääsyn aikatauluun. Palvelin tiedostosta `.mcp.json` on hyväksyttävä Claude Code -ohjelmassa ensimmäisellä kerralla.
+
+**Claude Desktop.** Asetuskatkelma ei sovi suoraan Claude Desktop -ohjelmaan. Tiedostossa `claude_desktop_config.json` nimetään ohjelma, jonka Claude Desktop käynnistää itse, eikä osoite. Käytä siksi välissä ulkoista työkalua `mcp-remote`, joka vaatii Node.js:n. Valitse Claude Desktop -ohjelmassa *Asetukset › Kehittäjä › Muokkaa asetuksia*, lisää tiedostoon tämä (omalla tokenillasi) ja käynnistä Claude Desktop uudelleen:
+
+```
+{
+  "mcpServers": {
+    "open-planner-studio": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "http://localhost:3877/mcp", "--header", "Authorization:${AUTH_HEADER}"],
+      "env": { "AUTH_HEADER": "Bearer <token>" }
+    }
+  }
+}
+```
+
+Token on tarkoituksella kohdassa `env` eikä kohdassa `args`: Windowsissa Claude Desktop rikkoo argumentin, jossa on väli. *Mukautettu liitin* Claudessa (*Mukauta › Liittimet*) ei toimi sillan kanssa. Claude yhdistää silloin Anthropicin pilvestä, eikä se pääse sillalle omalla tietokoneellasi.
 
 Ryhmässä *Kytkentä* on myös kenttä *Token*. Se on pitkä, satunnainen koodi, jonka sovellus luo ja tallentaa tälle tietokoneelle. Ikkunassa lukee *Tämä token antaa pääsyn avoimeen aikatauluun. Älä jaa sitä muille.* Painikkeella *Luo uusi token* luodaan uusi token. Sovellus kysyy ensin *Uuden tokenin luominen katkaisee kaikki nykyiset yhteydet. Jatketaanko?* Jos silta on käynnissä, se käynnistyy uudelleen uudella tokenilla, eikä vanha token toimi enää.
 

@@ -68,8 +68,8 @@ Per impostazione predefinita la tabella accanto al Gantt mostra *WBS*, *Nome att
 - **Unità pianificate al giorno** — il ritmo pianificato per risorsa, come `Name: 1.11`, con al massimo due decimali, come *Unità di assegnazione al giorno*. Solo per un'assegnazione da Primavera P6 con un ritmo rimanente diverso; *Unità di assegnazione al giorno* mostra allora il ritmo rimanente. In sola lettura.
 - **Curva di assegnazione** — la curva per risorsa, come `Nome: Uniforme`. Modificabile su un'attività con assegnazioni.
 - **Inizio finestra di lavoro** e **Fine finestra di lavoro** — la finestra di lavoro per risorsa, da un file importato, come `Nome: data`. In sola lettura.
-- **Lavoro previsto (ore)** e **Lavoro effettivo (ore)** — il lavoro previsto ed effettivo per risorsa in ore, come `Nome: 12`, da un file importato. In sola lettura.
-- **Lavoro rimanente (ore)** — il lavoro rimanente per risorsa in ore, come `Nome: 6`: il lavoro salvato, altrimenti la durata rimanente × unità. Modificabile su un'attività con assegnazioni a cui si applica un tipo di attività. Compare nel selettore solo quando i tipi di attività sono visibili. Un ⚠ giallo nella cella significa che il lavoro salvato è diverso da unità × durata rimanente, come il ⚠ accanto a *Lavoro (rim.)* nel pannello delle attività.
+- **Lavoro previsto (ore)** e **Lavoro effettivo (ore)** — il lavoro previsto ed effettivo per risorsa in ore, come `Nome: 617.14`, con al massimo due decimali, da un file importato. In sola lettura.
+- **Lavoro rimanente (ore)** — il lavoro rimanente per risorsa in ore, come `Nome: 6` o `Nome: 26.67`: il lavoro salvato, altrimenti la durata rimanente × unità. Modificabile su un'attività con assegnazioni a cui si applica un tipo di attività, con la virgola o il punto come separatore decimale. Compare nel selettore solo quando i tipi di attività sono visibili. Un ⚠ giallo nella cella significa che il lavoro salvato è diverso da unità × durata rimanente, come il ⚠ accanto a *Lavoro (rim.)* nel pannello delle attività.
 
 ## Avanzamento
 

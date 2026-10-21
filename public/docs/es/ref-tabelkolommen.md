@@ -65,11 +65,11 @@ De forma predeterminada, la tabla junto al diagrama de Gantt muestra *WBS*, *Nom
 
 - **Recursos asignados** — los nombres de los recursos asignados, separados por comas. Se puede editar: al añadir un nombre se asigna el recurso con 1 unidad por día; al quitar un nombre se elimina la asignación. Es de solo lectura en un hito o una tarea de resumen.
 - **Unidades de asignación por día** — las unidades por recurso, como `Name: 1; Name: 0.5`, con como máximo dos decimales. El valor guardado sigue siendo exacto. Se puede editar en una tarea con asignaciones.
-- **Unidades previstas por día** — las unidades previstas por recurso, como `Name: 1.11`, con como máximo dos decimales, igual que *Unidades de asignación por día*. Solo para una asignación de Primavera P6 con unidades restantes distintas; entonces *Unidades de asignación por día* muestra las unidades restantes. Es de solo lectura.
+- **Unidades planificadas por día** — las unidades planificadas por recurso, como `Name: 1.11`, con como máximo dos decimales, igual que *Unidades de asignación por día*. Solo para una asignación de Primavera P6 con unidades restantes distintas; entonces *Unidades de asignación por día* muestra las unidades restantes. Es de solo lectura.
 - **Curva de asignación** — la curva por recurso, como `Name: Uniform`. Se puede editar en una tarea con asignaciones.
 - **Inicio de la ventana de trabajo** y **Fin de la ventana de trabajo** — la ventana de trabajo por recurso, de un archivo importado, como `Name: date`. Es de solo lectura.
-- **Trabajo previsto (horas)** y **Trabajo real (horas)** — el trabajo previsto y el real por recurso en horas, como `Name: 12`, de un archivo importado. Es de solo lectura.
-- **Trabajo restante (horas)** — el trabajo restante por recurso en horas, como `Name: 6`: el trabajo guardado; si no, duración restante × unidades. Se puede editar en una tarea con asignaciones a las que se aplica un tipo de tarea. Solo aparece en el selector cuando los tipos de tarea son visibles. Un ⚠ amarillo en la celda indica que el trabajo guardado difiere de unidades × duración restante, igual que el ⚠ en *Trabajo (rest.)* del panel de tarea.
+- **Trabajo previsto (horas)** y **Trabajo real (horas)** — el trabajo previsto y el real por recurso en horas, como `Name: 617.14`, con como máximo dos decimales, de un archivo importado. Es de solo lectura.
+- **Trabajo restante (horas)** — el trabajo restante por recurso en horas, como `Name: 6` o `Name: 26.67`: el trabajo guardado; si no, duración restante × unidades. Se puede editar en una tarea con asignaciones a las que se aplica un tipo de tarea, con coma o punto como separador decimal. Solo aparece en el selector cuando los tipos de tarea son visibles. Un ⚠ amarillo en la celda indica que el trabajo guardado difiere de unidades × duración restante, igual que el ⚠ en *Trabajo (rest.)* del panel de tarea.
 
 ## Avance
 

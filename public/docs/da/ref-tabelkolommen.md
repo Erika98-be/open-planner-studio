@@ -64,12 +64,12 @@ Som standard viser tabellen ved siden af Gantt-diagrammet *WBS*, *Opgavenavn* og
 ## Ressourcer
 
 - **Tildelte ressourcer** — navnene på de tildelte ressourcer, adskilt af komma. Kan redigeres: et navn tilføjes, og ressourcen tildeles med 1 tildelingsenhed pr. dag; et navn fjernes, og tildelingen fjernes. Skrivebeskyttet på en milepæl eller hovedopgave.
-- **Tildelingsenheder pr. dag** — enhederne pr. ressource, som `Navn: 1; Navn: 0.5`, med højst to decimaler. Den gemte værdi forbliver nøjagtig. Kan redigeres på en opgave med tildelinger.
+- **Tildelingsenheder pr. dag** — tildelingsenhederne pr. ressource, som `Navn: 1; Navn: 0.5`, med højst to decimaler. Den gemte værdi forbliver nøjagtig. Kan redigeres på en opgave med tildelinger.
 - **Planlagte tildelingsenheder pr. dag** — den planlagte sats pr. ressource, som `Name: 1.11`, med højst to decimaler, ligesom *Tildelingsenheder pr. dag*. Kun for en tildeling fra Primavera P6 med en anden resterende sats; *Tildelingsenheder pr. dag* viser da den resterende sats. Skrivebeskyttet.
 - **Tildelingskurve** — kurven pr. ressource, som `Navn: Uniform`. Kan redigeres på en opgave med tildelinger.
 - **Arbejdsvindue startdato** og **Arbejdsvindue slutdato** — arbejdsvinduet pr. ressource, fra en importeret fil, som `Navn: dato`. Skrivebeskyttet.
-- **Planlagt arbejde (timer)** og **Faktisk arbejde (timer)** — det planlagte og faktiske arbejde pr. ressource i timer, som `Navn: 12`, fra en importeret fil. Skrivebeskyttet.
-- **Resterende arbejde (timer)** — det resterende arbejde pr. ressource i timer, som `Navn: 6`: det gemte arbejde, ellers resterende varighed × tildelingsenheder. Kan redigeres på en opgave med tildelinger, hvor en opgavetype gælder. Den vises kun i vælgeren, når opgavetyper er synlige. En gul ⚠ i cellen betyder, at det gemte arbejde afviger fra tildelingsenheder × resterende varighed, som ⚠ ved *Arbejde (rest.)* i opgavepanelet.
+- **Planlagt arbejde (timer)** og **Faktisk arbejde (timer)** — det planlagte og faktiske arbejde pr. ressource i timer, som `Navn: 617.14`, med højst to decimaler, fra en importeret fil. Skrivebeskyttet.
+- **Resterende arbejde (timer)** — det resterende arbejde pr. ressource i timer, som `Navn: 6` eller `Navn: 26.67`: det gemte arbejde, ellers resterende varighed × tildelingsenheder. Kan redigeres på en opgave med tildelinger, hvor en opgavetype gælder, med komma eller punktum som decimaltegn. Den vises kun i vælgeren, når opgavetyperne er synlige. En gul ⚠ i cellen betyder, at det gemte arbejde afviger fra tildelingsenheder × resterende varighed, som ⚠ ved *Arbejde (rest.)* i opgavepanelet.
 
 ## Fremdrift
 

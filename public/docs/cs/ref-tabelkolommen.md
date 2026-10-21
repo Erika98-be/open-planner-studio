@@ -67,9 +67,9 @@ Ve výchozím stavu tabulka vedle diagramu Gantt zobrazuje *WBS*, *Název úkolu
 - **Jednotky přiřazení za den** — jednotky na zdroj, jako `Name: 1; Name: 0.5`, s nejvýš dvěma desetinnými místy. Uložená hodnota zůstane přesná. Lze upravit u úkolu s přiřazeními.
 - **Plánované jednotky přiřazení za den** — plánovaná sazba na zdroj, jako `Name: 1.11`, s nejvýš dvěma desetinnými místy, stejně jako *Jednotky přiřazení za den*. Jen u přiřazení z Primavera P6 s jinou zbývající sazbou; *Jednotky přiřazení za den* pak ukazují zbývající sazbu. Jen pro čtení.
 - **Průběhová křivka přiřazení** — křivka na zdroj, jako `Name: Uniform`. Lze upravit u úkolu s přiřazeními.
-- **Začátek pracovního okna** a **Dokončení pracovního okna** — pracovní okno na zdroj ze importovaného souboru, jako `Name: date`. Jen pro čtení.
-- **Plánovaná práce (hodiny)** a **Skutečná práce (hodiny)** — plánovaná a skutečná práce na zdroj v hodinách, jako `Name: 12`, z importovaného souboru. Jen pro čtení.
-- **Zbývající práce (hodiny)** — zbývající práce na zdroj v hodinách, jako `Name: 6`: uložená práce, jinak zbývající doba trvání × jednotky. Lze upravit u úkolu s přiřazeními, na něž se vztahuje typ úkolu. Ve výběru sloupců se zobrazí jen tehdy, když jsou typy úkolů viditelné. Žlutý ⚠ v buňce znamená, že uložená práce se liší od jednotek × zbývající doba trvání, stejně jako ⚠ u pole *Práce (zbývá)* v panelu úkolu.
+- **Začátek pracovního okna** a **Dokončení pracovního okna** — pracovní okno na zdroj z importovaného souboru, jako `Name: date`. Jen pro čtení.
+- **Plánovaná práce (hodiny)** a **Skutečná práce (hodiny)** — plánovaná a skutečná práce na zdroj v hodinách, jako `Name: 617.14`, s nejvýš dvěma desetinnými místy, z importovaného souboru. Jen pro čtení.
+- **Zbývající práce (hodiny)** — zbývající práce na zdroj v hodinách, jako `Name: 6` nebo `Name: 26.67`: uložená práce, jinak zbývající doba trvání × jednotky. Lze upravit u úkolu s přiřazeními, na něž se vztahuje typ úkolu, s desetinnou čárkou nebo tečkou jako oddělovačem. Ve výběru sloupců se zobrazí jen tehdy, když jsou typy úkolů viditelné. Žlutý ⚠ v buňce znamená, že uložená práce se liší od jednotek × zbývající doba trvání, stejně jako ⚠ u pole *Práce (zbývá)* v panelu úkolu.
 
 ## Průběh
 

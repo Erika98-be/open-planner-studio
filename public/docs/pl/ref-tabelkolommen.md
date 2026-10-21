@@ -68,8 +68,8 @@ Domyślnie tabela obok wykresu Gantt pokazuje *WBS*, *Nazwa zadania* i *Czas trw
 - **Planowane jednostki dziennie** — planowane jednostki na zasób, w postaci `Name: 1.11`, z maksymalnie dwoma miejscami po przecinku, jak przy *Jednostki przydziału dziennie*. Dotyczy tylko przydziału z Primavera P6 z inną pozostałą liczbą jednostek; *Jednostki przydziału dziennie* pokazują wtedy pozostałą liczbę jednostek. Tylko do odczytu.
 - **Krzywa przydziału** — krzywa na zasób, w postaci `Name: Uniform`. Można edytować przy zadaniu z przydziałami.
 - **Początek okna pracy** i **Zakończenie okna pracy** — okno pracy na zasób z zaimportowanego pliku, w postaci `Name: date`. Tylko do odczytu.
-- **Praca planowana (godziny)** i **Praca rzeczywista (godziny)** — planowana i rzeczywista praca na zasób w godzinach, w postaci `Name: 12`, z zaimportowanego pliku. Tylko do odczytu.
-- **Pozostała praca (godziny)** — pozostała praca na zasób w godzinach, w postaci `Name: 6`: zapisana praca, a jeśli jej brak, pozostały czas trwania × jednostki. Można edytować przy zadaniu z przydziałami, do którego stosuje się typ zadania. Widoczne w oknie wyboru tylko wtedy, gdy widoczne są typy zadań. Żółte ⚠ w komórce oznacza, że zapisana praca różni się od jednostek × pozostałego czasu trwania, jak ⚠ przy *Praca (pozost.)* w panelu zadania.
+- **Praca planowana (godziny)** i **Praca rzeczywista (godziny)** — planowana i rzeczywista praca na zasób w godzinach, w postaci `Name: 617.14`, z maksymalnie dwoma miejscami po przecinku. Wartości pochodzą z zaimportowanego pliku. Tylko do odczytu.
+- **Pozostała praca (godziny)** — pozostała praca na zasób w godzinach, w postaci `Name: 6` lub `Name: 26.67`: zapisana praca, a jeśli jej brak, pozostały czas trwania × jednostki. Można edytować przy zadaniu z przydziałami, do którego stosuje się typ zadania, z przecinkiem lub kropką jako separatorem dziesiętnym. Widoczne w oknie wyboru tylko wtedy, gdy widoczne są typy zadań. Żółte ⚠ w komórce oznacza, że zapisana praca różni się od jednostek × pozostałego czasu trwania, jak ⚠ przy *Praca (pozost.)* w panelu zadania.
 
 ## Postęp
 
