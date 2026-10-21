@@ -183,14 +183,6 @@ en noem het in je rapport of PR-tekst.
     `import_schedule` doorgeeft (bv. `formatRegistry.ts:~99` "Onbekend XML-formaat…", `xerSourceArchive.ts`,
     `libraryOps.ts`). Of elk importpad werkelijk bij de agent uitkomt is afgeleid, niet nagespeeld. (De fout
     van `planner_get_planning_guide` is sinds de Engelse agentgids Engels.) — S (solver: B)
-77. **`planner_batch` met alleen een `planner_level_resources`-stap op een verouderde planning laat een undo-stap
-    achter, ook als er niets genivelleerd wordt.** De levelkern roept `ensureFreshSchedule` BINNEN de
-    batch-transactie aan (`calendarResourceTools.ts:~1665`); de transactie meet die herrekening als datawijziging
-    (`documentDataChanged` in `createMcpTransactions.ts`), dus volgt er een "MCP-bewerking"-undo-stap met
-    `isDirty`. Nagespeeld met een tijdelijke case tegen de echte dispatcher: A→B, duur van A gewijzigd via de
-    store, batch `[{ tool: 'planner_level_resources' }]` zonder resources ⇒ `delays: {}`, toch +1 undo-stap en
-    vuil. Leesstappen hebben dit niet meer (de batch rekent ze vóór de transactie door, PR #285). Voorstel:
-    dezelfde voor-de-transactie-verversing ook voor een levelstap. — B
 78. **`planner_level_resources` meldt in "datums zoals opgeslagen" verschuivingen die geen nivellering zijn.**
     De preview rekent tegen een verse solve, niet tegen de opgeslagen datums. Nagespeeld met de fixture
     `tests/fixtures/recordedDatesIfc.ts` (geen resources), zonder `dryRun`: `delays: {}`, de modus blijft aan en
