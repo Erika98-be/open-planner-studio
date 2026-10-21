@@ -127,8 +127,6 @@ en noem het in je rapport of PR-tekst.
 
 ## Bibliotheek, bezetting, extensies, AI
 
-26. **AI-poortveld blijft vergrendeld** na *Poort bezet*/*Fout* terwijl de bridge niet draait
-    (`portLocked = serverState !== 'off'`; voorstel `=== 'live'`). — B
 27. **Mislukte ZIP/JS-installatie van een extensie** geeft geen melding, alleen `console.error`
     (`ExtensionManagerPanel` negeert `InstallOutcome`). — B
 28. **Bezettingsoverzicht bij een verouderd actief project** mengt oude startdatums met een nieuwe duur of
