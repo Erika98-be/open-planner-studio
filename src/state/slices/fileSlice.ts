@@ -76,6 +76,18 @@ export function isActivePristine(s: AppState): boolean {
   );
 }
 
+/**
+ * De reden van een mislukte opslag als tekst, voor het detail van `notifications.saveFailed`.
+ * Tauri-plugins (plugin-fs, plugin-dialog) weigeren met een STRING, niet met een `Error`
+ * ("failed to open file at path: … Permission denied (os error 13)"); `(err as Error).message` gaf
+ * daar `undefined` en de gebruiker zag alleen "Opslaan mislukt" zonder reden.
+ */
+export function saveErrorDetail(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  if (typeof err === 'string') return err;
+  return String(err);
+}
+
 /** De bestandsnaam waaronder het document nu bekend is (`filePath` is in de browser al een naam, in
  *  Tauri een pad), of de voorgestelde naam voor een naamloos document. */
 function documentFileName(s: Pick<AppState, 'filePath' | 'project' | 'xerImportMetadata'>): string {
@@ -326,9 +338,10 @@ export function exportP6TruncatedNotice(format: ExportFormat, truncated: number)
 
 /** Resultaat van `exportAs`: bij een cyclische planning wordt de export afgebroken vóór de
  *  opslaan-dialoog en de CPM-fout (`cpmResult.error` + `errorInfo`) meegegeven, zodat de aanroeper
- *  die kan tonen i.p.v. stilletjes niets te doen — vertaald via `scheduleErrorText`. */
+ *  die kan tonen i.p.v. stilletjes niets te doen — vertaald via `scheduleErrorText`.
+ *  Annuleren is geen fout, maar draagt `cancelled` zodat de UI niet als na succes sluit. */
 export type ExportResult =
-  | { ok: true; warnings: readonly XerExportLossWarning[] }
+  | { ok: true; warnings: readonly XerExportLossWarning[]; cancelled?: true }
   | { ok: false; error: string; errorInfo?: ScheduleErrorInfo };
 
 /** Opties voor `applyLoadedProject` — de één gedeelde "vul de actieve document-state met een
@@ -708,7 +721,7 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
         return false;
       }
       console.error('Save failed:', err);
-      get().notify({ severity: 'error', messageKey: 'notifications.saveFailed', detail: (err as Error).message });
+      get().notify({ severity: 'error', messageKey: 'notifications.saveFailed', detail: saveErrorDetail(err) });
       return false;
     }
   });
@@ -752,7 +765,7 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
         return;
       }
       console.error('Save As failed:', err);
-      get().notify({ severity: 'error', messageKey: 'notifications.saveFailed', detail: (err as Error).message });
+      get().notify({ severity: 'error', messageKey: 'notifications.saveFailed', detail: saveErrorDetail(err) });
     }
   });
 
@@ -1234,7 +1247,7 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
         : await saveBytesDialog(defaultName, payload, filters, dialogOpts);
       // Cancel is geen export: geen toast en ook geen latente warnings in de succes-envelope.
       // De centrale plaatsing hier maakt Backstage en ribbon automatisch één meldschrijver.
-      if (!outcome) return { ok: true, warnings: [] };
+      if (!outcome) return { ok: true, warnings: [], cancelled: true };
       if (exportGoesToRecents(format)) await pushRecent(outcome.ref, outcome.name);
       noticeIfDownloaded(outcome);
       if (warnings.length > 0) {
@@ -1266,7 +1279,7 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
       const projectContent = writeIFC(buildExportIFCInput(state));
       const base = suggestedFileBase(state);
       const outcome = await saveFileDialog(`${base}.ifc`, projectContent, [{ name: 'IFC Files', extensions: ['ifc'] }]);
-      if (!outcome) return { ok: true, warnings: [] }; // dialoog geannuleerd — geen fout
+      if (!outcome) return { ok: true, warnings: [], cancelled: true }; // dialoog geannuleerd — geen fout
       await pushRecent(outcome.ref, outcome.name);
       noticeIfDownloaded(outcome);
       // 2. De pool ernaast (los bestand), alleen als het project aan een bedrijf gebonden is.
@@ -1274,7 +1287,10 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
       if (!companyId) return { ok: true, warnings: [] };
       const poolContent = state.exportPoolIFC(companyId);
       if (!poolContent) return { ok: true, warnings: [] };
-      noticeIfDownloaded(await saveFileDialog(`${base}-bibliotheek.ifc`, poolContent, [{ name: 'IFC Files', extensions: ['ifc'] }]));
+      const poolOutcome = await saveFileDialog(`${base}-bibliotheek.ifc`, poolContent, [{ name: 'IFC Files', extensions: ['ifc'] }]);
+      // Het projectbestand bestaat dan al; annuleren van het tweede bestand is geen voltooide export.
+      if (!poolOutcome) return { ok: true, warnings: [], cancelled: true };
+      noticeIfDownloaded(poolOutcome);
       return { ok: true, warnings: [] };
     },
 

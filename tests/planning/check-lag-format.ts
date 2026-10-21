@@ -47,6 +47,25 @@ eq('05 "50%" ⇒ lagPercent 50', parseLagInput('50%'), { lagDays: 0, lagUnit: un
 eq('06 "-25e%" ⇒ lagPercent -25, ELAPSEDTIME', parseLagInput('-25e%'), { lagDays: 0, lagUnit: 'ELAPSEDTIME', lagPercent: -25, lagMinutes: undefined });
 eq('07 "" ⇒ lag 0 (alles undefined/0)', parseLagInput(''), { lagDays: 0, lagUnit: undefined, lagPercent: undefined, lagMinutes: undefined });
 
+// knownbugs #120: halve dagen rondt de invoer symmetrisch van nul af, net als de motor.
+for (const [value, days] of [[-2.5, -3], [-1.51, -2], [-1.5, -2], [-1.49, -1], [-0.5, -1],
+  [-0.49, 0], [0, 0], [0.49, 0], [0.5, 1], [1.49, 1], [1.5, 2], [1.51, 2], [2.5, 3]]) {
+  for (const separator of ['.', ',']) {
+    const number = String(value).replace('.', separator);
+    for (const suffix of ['', 'd', 'ed']) {
+      eq(`dagafronding ${number}${suffix}`, parseLagInput(`${number}${suffix}`), {
+        lagDays: days, lagUnit: suffix === 'ed' ? 'ELAPSEDTIME' : undefined,
+        lagPercent: undefined, lagMinutes: undefined,
+      });
+    }
+    for (const suffix of ['', 'd']) {
+      eq(`externe dagafronding ${number}${suffix}`, parseExternalLagInput(`${number}${suffix}`), { lagDays: days });
+    }
+  }
+}
+eq('negatieve procenten blijven fracties', parseLagInput('-1,5%')?.lagPercent, -1.5);
+eq('negatieve uren blijven minuut-precies', parseLagInput('-1,5u')?.lagMinutes, -90);
+
 // Uren — de F1-toevoeging. "u" is de weergavevorm (taalonafhankelijk, zoals "d"); "h" is
 // ALLEEN-invoer, symmetrisch met parseDuration in durationFormat.ts.
 eq('08 "2u" ⇒ lagMinutes 120, lagDays 0', parseLagInput('2u'), { lagDays: 0, lagUnit: undefined, lagPercent: undefined, lagMinutes: 120 });

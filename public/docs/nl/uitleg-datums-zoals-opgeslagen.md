@@ -41,7 +41,7 @@ Een taak die klaar is, staat op de dagen waarop hij echt gebeurde: van de werkel
 
 Het bestand legt voor zo'n taak vaak andere vroege datums vast. Primavera zet de vroege start van een taak die bezig of klaar is op de statusdatum. Die datums zie je in de kolommen *Vroegste start* en *Vroegste einde*, niet in *Start* en *Einde*. Een taak die klaar is, telt daarom nooit mee als afwijking. Een taak die bezig is, telt alleen mee als het einde verschilt.
 
-Van een taak die gestart is, kun je de start niet meer intypen. In het taakraster, in het paneel *Eigenschappen* en in *Taak bewerken* is de start dan alleen-lezen. Bij een taak die klaar is, geldt dat ook voor het einde in het taakraster. Pas in plaats daarvan de *Werkelijke start* of het *Werkelijke einde* aan, bij de voortgang. In de Gantt verschuift de balk van zo'n taak niet; je krijgt dan een melding.
+Van een taak die gestart is, kun je de start niet meer intypen. In het taakraster, in het paneel *Eigenschappen* en in *Taak bewerken* is de start dan alleen-lezen. Bij een taak die klaar is, geldt dat ook voor het einde in het taakraster. Pas in plaats daarvan de *Werkelijke start* of het *Werkelijk einde* aan, bij de voortgang. In de Gantt verschuift de balk van zo'n taak niet; je krijgt dan een melding.
 
 ### Wat er in deze weergave leeg blijft
 

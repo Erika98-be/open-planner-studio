@@ -32,6 +32,7 @@ import {
   parseTaskFields,
   PROGRESS_FIELD_NAMES,
   TASK_FIELDS_DOC,
+  SUMMARY_DURATION_READ_ONLY,
   TASK_FIELD_NAMES,
   TASK_FIELD_SCHEMA_PROPERTIES,
   type ProgressPatch,
@@ -175,6 +176,14 @@ function parseAddTasks(args: unknown, state: AppState): ParsedAddItem[] | string
       ...(typeof raw.position === 'number' ? { position: raw.position } : {}),
       patch: res.patch,
     });
+  }
+  // Een ouder kan vóór of na zijn kinderen staan. Pas na vormvalidatie is de hele
+  // nieuwe boom bekend; weiger een expliciete ouderduur vóór de transactie.
+  const parentIds = new Set(parsed.map(item => item.parentId));
+  for (const item of parsed) {
+    if (parentIds.has(item.tempId) && item.patch.time?.scheduleDuration !== undefined) {
+      return `task '${item.tempId}': ${SUMMARY_DURATION_READ_ONLY}`;
+    }
   }
   return parsed;
 }

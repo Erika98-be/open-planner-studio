@@ -1070,9 +1070,9 @@ const updateCalendar: BatchStepTool = {
     'bands. `hoursPerDay` follows the new bands only if it was equal to the modal day sum of the bands ' +
     'before the change; a deliberate deviation (P6 `day_hr_cnt`, e.g. bands 14:00–24:00 with 8 hours per day) stays. A ' +
     '`hoursPerDay` you pass in the same item always wins. The working days are read from the ' +
-    'bands, so a calendar where they disagreed is repaired. KEEPING IN THE FILE (IFC): a newly created ' +
-    'calendar to which NO task and no resource is attached does NOT survive save+reload — so attach tasks to ' +
-    'it right away with `update_tasks.calendarId`. Hour bands survive IFC, also when they DIFFER PER ' +
+    'bands, so a calendar where they disagreed is repaired. KEEPING IN THE FILE (IFC): unused calendars survive IFC save+reload ' +
+    'even without task or resource assignments. There is no need to attach a task just to retain a calendar. ' +
+    'Hour bands survive IFC, also when they DIFFER PER ' +
     'WEEKDAY (for example a short Friday). A calendar in which tasks no longer fit (e.g. a long holiday block) gives no ' +
     'error but a prominent warning with `cappedTaskIds`. If, on the other hand, NO working time at all is ' +
     'left (empty `workDays`, or `workTime` bands on no day at all), the recalculation fails and the whole ' +
