@@ -12,6 +12,8 @@ import {
   parsePublicKey,
   renderReport,
   checkUpdaterUrl,
+  EXPECTED_PLATFORMS,
+  pubDateError,
   tarGzEntryNames,
   verifyMinisign,
 } from '../../scripts/verify-release.mjs';
@@ -123,28 +125,44 @@ const TAG = 'v2026.9.0';
 const LATEST = `https://github.com/${REPO}/releases/latest/download/`;
 const sha = (b) => `sha256:${createHash('sha256').update(b).digest('hex')}`;
 
-/** Een kleine release: zip + .sig en latest.json; `manifest` mag de JSON-tekst vervangen. */
-function release(key, { manifest, entry, sigFile } = {}) {
-  const zip = Buffer.from('zip');
-  const sig = minisign(key, zip);
-  const files = new Map([['app.nsis.zip', zip], ['app.nsis.zip.sig', Buffer.from(sigFile ?? sig)]]);
-  const json = manifest ?? JSON.stringify({
-    version: '2026.9.0',
-    pub_date: '2026-09-02T06:49:44.677Z',
-    platforms: { 'windows-x86_64': { url: `${LATEST}app.nsis.zip`, signature: sig, ...entry } },
-  });
-  files.set('latest.json', Buffer.from(json));
+const APP_TAR = tarGz(['A.app/Contents/Info.plist']);
+const ASSET_FOR = { '.nsis.zip': 'app.nsis.zip', '.AppImage': 'app.AppImage', '.deb': 'app.deb', '.rpm': 'app.rpm', '.app.tar.gz': 'app.app.tar.gz' };
+
+/**
+ * Een kleine, volledige release: per soort één asset met .sig, en latest.json met alle
+ * platforms uit EXPECTED_PLATFORMS. `entry` overschrijft windows-x86_64, `sigFile` de
+ * zip-.sig, `mutate(manifest)` past het manifestobject aan, `manifest` vervangt de JSON-tekst.
+ */
+function release(key, { manifest, entry, sigFile, mutate, extra = [] } = {}) {
+  const files = new Map();
+  const sigs = {};
+  for (const [kind, name] of Object.entries(ASSET_FOR)) {
+    const data = kind === '.app.tar.gz' ? APP_TAR : Buffer.from(name);
+    sigs[kind] = minisign(key, data);
+    files.set(name, data);
+    files.set(`${name}.sig`, Buffer.from(sigs[kind]));
+  }
+  if (sigFile !== undefined) files.set('app.nsis.zip.sig', Buffer.from(sigFile));
+  for (const [n, d] of extra) files.set(n, d);
+  const platforms = Object.fromEntries(Object.entries(EXPECTED_PLATFORMS).map(([k, kind]) => [k, { url: `${LATEST}${ASSET_FOR[kind]}`, signature: sigs[kind] }]));
+  platforms['windows-x86_64'] = { ...platforms['windows-x86_64'], ...entry };
+  const obj = { version: '2026.9.0', notes: 'tekst', pub_date: '2026-09-02T06:49:44.677Z', platforms };
+  if (mutate) mutate(obj);
+  files.set('latest.json', Buffer.from(manifest ?? JSON.stringify(obj)));
   const assets = [...files.keys()].map((name) => ({ name, digest: sha(files.get(name)) }));
-  return { assets, read: (n) => files.get(n), sig };
+  return { assets, read: (n) => files.get(n), sig: sigs['.nsis.zip'], platforms };
+}
+
+function evaluate(key, opts, ctx = {}) {
+  const r = release(key, opts);
+  return evaluateRelease({ publicKey: key.pubkey, assets: r.assets, read: r.read, repo: REPO, tag: TAG, isLatest: true, ...ctx });
 }
 
 function fails(key, opts, ctx = {}) {
-  const r = release(key, opts);
-  const rows = evaluateRelease({ publicKey: key.pubkey, assets: r.assets, read: r.read, repo: REPO, tag: TAG, isLatest: true, ...ctx });
-  return rows.filter((x) => x.status === 'FOUT').map((x) => `${x.item}: ${x.detail}`);
+  return evaluate(key, opts, ctx).filter((x) => x.status === 'FOUT').map((x) => `${x.item}: ${x.detail}`);
 }
 
-test('een geldige mini-release heeft nul FOUT-regels', () => {
+test('een geldige release met alle platforms heeft nul FOUT-regels', () => {
   assert.deepEqual(fails(makeKey()), []);
 });
 
@@ -158,16 +176,15 @@ test('bevinding 2: een updater-URL buiten de bedoelde release is FOUT', () => {
     `https://github.com/${REPO}/releases/download/v2026.8.1/app.nsis.zip`,
     `https://github.com/${REPO}/releases/latest/download/app.nsis.zip?x=1`,
     `https://github.com/${REPO}/releases/latest/download/sub/app.nsis.zip`,
-    'geen url',
   ]) {
-    const f = fails(key, { entry: { url } });
+    const f = fails(key, { entry: { url } }).filter((x) => x.startsWith('windows-x86_64:'));
     assert.equal(f.length, 1, `${url}: ${f.join(' | ')}`);
   }
-  // De vaste tag-vorm is altijd goed; latest/download alleen voor de nieuwste release.
+  assert.ok(fails(key, { entry: { url: 'geen url' } }).some((x) => x.startsWith('windows-x86_64:')));
   assert.deepEqual(fails(key, { entry: { url: `https://github.com/${REPO}/releases/download/${TAG}/app.nsis.zip` } }), []);
   const old = fails(key, {}, { isLatest: false });
-  assert.equal(old.length, 1);
-  assert.match(old[0], /nieuwste release, niet naar v2026\.9\.0/);
+  assert.equal(old.length, Object.keys(EXPECTED_PLATFORMS).length);
+  assert.ok(old.every((x) => /nieuwste release, niet naar v2026\.9\.0/.test(x)));
 });
 
 test('checkUpdaterUrl geeft de gedecodeerde assetnaam', () => {
@@ -176,28 +193,59 @@ test('checkUpdaterUrl geeft de gedecodeerde assetnaam', () => {
 
 test('bevinding 3: een onbruikbaar manifest is FOUT', () => {
   const key = makeKey();
-  const { sig } = release(key);
-  const entries = { 'windows-x86_64': { url: `${LATEST}app.nsis.zip`, signature: sig } };
+  const { platforms, sig } = release(key);
+  const m = (o) => JSON.stringify({ version: '2026.9.0', platforms, ...o });
   const cases = {
     null: 'null',
     array: '[]',
     getal: '42',
     'geen JSON': '{',
-    'zonder version': JSON.stringify({ platforms: entries }),
-    'andere version': JSON.stringify({ version: '2026.8.1', platforms: entries }),
-    'version geen tekst': JSON.stringify({ version: 2026, platforms: entries }),
-    'pub_date onzin': JSON.stringify({ version: '2026.9.0', pub_date: 'gisteren', platforms: entries }),
+    'zonder version': JSON.stringify({ platforms }),
+    'andere version': m({ version: '2026.8.1' }),
+    'version geen tekst': m({ version: 2026 }),
+    'version geen semver': m({ version: '2026.9' }),
+    'pub_date onzin': m({ pub_date: 'gisteren' }),
+    'pub_date 30 februari (ronde 2)': m({ pub_date: '2026-02-30T06:49:44.677Z' }),
+    'pub_date geen tekst': m({ pub_date: 1788332248 }),
+    'pub_date offset-uur 24': m({ pub_date: '2026-09-02T06:49:44+24:00' }),
+    'pub_date seconde 60 midden in de maand': m({ pub_date: '2016-12-30T23:59:60Z' }),
+    'pub_date tekst erachter': m({ pub_date: '2026-09-02T06:49:44Zx' }),
+    'notes object (ronde 2)': m({ notes: { nl: 'tekst' } }),
+    'notes getal': m({ notes: 1 }),
     'zonder platforms': JSON.stringify({ version: '2026.9.0' }),
-    'platforms array': JSON.stringify({ version: '2026.9.0', platforms: [] }),
-    'lege platforms': JSON.stringify({ version: '2026.9.0', platforms: {} }),
-    'entry null': JSON.stringify({ version: '2026.9.0', platforms: { 'windows-x86_64': null } }),
-    'url geen tekst': JSON.stringify({ version: '2026.9.0', platforms: { 'windows-x86_64': { url: 1, signature: sig } } }),
+    'platforms array': m({ platforms: [] }),
+    'lege platforms': m({ platforms: {} }),
+    'entry null': m({ platforms: { ...platforms, 'windows-x86_64': null } }),
+    'url geen tekst': m({ platforms: { ...platforms, 'windows-x86_64': { url: 1, signature: sig } } }),
   };
   for (const [label, manifest] of Object.entries(cases)) {
     assert.ok(fails(key, { manifest }).length >= 1, label);
   }
-  // 'v'-voorvoegsel in version telt als dezelfde versie (de updater strip het ook).
-  assert.deepEqual(fails(key, { manifest: JSON.stringify({ version: 'v2026.9.0', platforms: entries }) }), []);
+  // Wat de updater wél accepteert, mag geen FOUT geven (VERVOLG ronde 2).
+  for (const [label, o] of Object.entries({
+    "'v'-voorvoegsel": { version: 'v2026.9.0' },
+    'pub_date null': { pub_date: null },
+    'pub_date zonder': { pub_date: undefined },
+    'pub_date kleine t en z': { pub_date: '2026-09-02t06:49:44.677z' },
+    'pub_date spatie als scheiding': { pub_date: '2026-09-02 06:49:44Z' },
+    'pub_date offset': { pub_date: '2026-09-02T08:49:44.1+02:00' },
+    'pub_date echte schrikkelseconde': { pub_date: '2016-12-31T23:59:60Z' },
+    'pub_date schrikkelseconde met offset': { pub_date: '2017-01-01T00:59:60+01:00' },
+    'notes null': { notes: null },
+    'notes zonder': { notes: undefined },
+  })) {
+    assert.deepEqual(fails(key, { mutate: (x) => Object.assign(x, o) }), [], label);
+  }
+});
+
+test('pubDateError volgt time 0.3.47 (Rfc3339) in randgevallen', () => {
+  assert.equal(pubDateError('2024-02-29T00:00:00Z'), null);
+  assert.notEqual(pubDateError('2023-02-29T00:00:00Z'), null);
+  assert.notEqual(pubDateError('2026-13-01T00:00:00Z'), null);
+  assert.notEqual(pubDateError('2026-09-02T06:49:44.Z'), null);
+  assert.notEqual(pubDateError('2026-09-02T06:49:44'), null);
+  assert.equal(pubDateError('2026-09-02X06:49:44Z'), null);
+  assert.notEqual(pubDateError('2026-09-02é06:49:44Z'), null);
 });
 
 test('bevinding 4: base64 en UTF-8 zo streng als de updater', () => {
@@ -216,46 +264,77 @@ test('bevinding 4: base64 en UTF-8 zo streng als de updater', () => {
     // Een kapotte .sig: de .sig-regel faalt, en latest.json (signature ≠ asset-.sig) ook.
     assert.ok(fails(key, { sigFile: bad }).some((f) => /^app\.nsis\.zip: .*base64/.test(f)), `.sig ${label}`);
     assert.equal(fails(key, { entry: { signature: bad } }).length, 1, `latest.json ${label}`);
-    assert.equal(verifyMinisign({ publicKey: key.pubkey, signatureText: bad, data: Buffer.from('zip') }).ok, false, label);
+    assert.equal(verifyMinisign({ publicKey: key.pubkey, signatureText: bad, data: Buffer.from('app.nsis.zip') }).ok, false, label);
   }
   // Ongeldige UTF-8 binnen geldige base64.
-  const latin = Buffer.from(text.replace('trusted comment: ', 'trusted comment: \u00e9'), 'latin1').toString('base64');
-  assert.equal(verifyMinisign({ publicKey: key.pubkey, signatureText: latin, data: Buffer.from('zip') }).ok, false);
+  const latin = Buffer.from(text.replace('trusted comment: ', 'trusted comment: é'), 'latin1').toString('base64');
+  assert.equal(verifyMinisign({ publicKey: key.pubkey, signatureText: latin, data: Buffer.from('app.nsis.zip') }).ok, false);
   assert.throws(() => parsePublicKey(`!${key.pubkey}`), /base64/);
+});
+
+test('bevinding 4 (ronde 2): witruimte in de ingepakte minisign-regels wordt geweigerd, zoals minisign-verify 0.2.5', () => {
+  const key = makeKey();
+  const { sig } = release(key);
+  const lines = Buffer.from(sig, 'base64').toString('utf8').split('\n');
+  const wrap = (ls) => Buffer.from(ls.join('\n')).toString('base64');
+  const data = Buffer.from('app.nsis.zip');
+  assert.equal(verifyMinisign({ publicKey: key.pubkey, signatureText: wrap(lines), data }).ok, true);
+  // \r\n is wel goed: Rust lines() haalt een \r aan het eind weg.
+  assert.equal(verifyMinisign({ publicKey: key.pubkey, signatureText: wrap(lines.map((l) => (l ? `${l}\r` : l))), data }).ok, true);
+  for (const [label, ls] of Object.entries({
+    'spatie vóór de handtekeningregel': [lines[0], ` ${lines[1]}`, lines[2], lines[3], ''],
+    'tab achter de globale handtekening': [lines[0], lines[1], lines[2], `${lines[3]}\t`, ''],
+    'spatie achter de handtekeningregel': [lines[0], `${lines[1]} `, lines[2], lines[3], ''],
+  })) {
+    const bad = wrap(ls);
+    assert.equal(verifyMinisign({ publicKey: key.pubkey, signatureText: bad, data }).ok, false, label);
+    assert.ok(fails(key, { sigFile: bad }).some((f) => /^app\.nsis\.zip: /.test(f)), `.sig ${label}`);
+    assert.ok(fails(key, { entry: { signature: bad } }).some((f) => /^windows-x86_64: /.test(f)), `latest.json ${label}`);
+  }
+  // Ook de sleutelregel van de pubkey wordt niet getrimd.
+  const pk = Buffer.from(key.pubkey, 'base64').toString('utf8').split('\n');
+  assert.throws(() => parsePublicKey(Buffer.from(`${pk[0]}\n ${pk[1]}\n`).toString('base64')), /base64/);
+});
+
+test('nieuw (ronde 2): ontbrekende of verkeerde updaterplatforms zijn FOUT', () => {
+  const key = makeKey();
+  const noWindows = fails(key, { mutate: (x) => { delete x.platforms['windows-x86_64']; delete x.platforms['windows-x86_64-nsis']; } });
+  assert.deepEqual(noWindows.map((f) => f.split(':')[0] + ':' + f.split(':')[1]).sort(), ['dekking: windows-x86_64', 'dekking: windows-x86_64-nsis']);
+  for (const key2 of Object.keys(EXPECTED_PLATFORMS)) {
+    const f = fails(key, { mutate: (x) => { delete x.platforms[key2]; } });
+    assert.deepEqual(f.map((x) => x.split(': ')[0] + ': ' + x.split(': ')[1]), [`dekking: ${key2}`], key2);
+  }
+  // Een deb-installatie die de AppImage krijgt, is ook fout.
+  const wrong = fails(key, { mutate: (x) => { x.platforms['linux-x86_64-deb'] = x.platforms['linux-x86_64-appimage']; } });
+  assert.ok(wrong.some((f) => f.startsWith('dekking: linux-x86_64-deb: wijst niet naar een .deb-asset')), wrong.join(' | '));
+  // Een extra platform is alleen INFO.
+  const rows = evaluate(key, { mutate: (x) => { x.platforms['linux-aarch64'] = x.platforms['linux-x86_64']; } });
+  assert.ok(rows.some((r) => r.item === 'dekking: linux-aarch64' && r.status === 'INFO'));
 });
 
 test('evaluateRelease: .sig, latest.json en digest, met precies de verwachte FOUT-regels', () => {
   const key = makeKey();
-  const zip = Buffer.from('zip');
-  const exe = Buffer.from('exe-na-authenticode');
-  const files = new Map([
-    ['app.nsis.zip', zip],
-    ['app.nsis.zip.sig', Buffer.from(minisign(key, zip))],
-    ['app-setup.exe', exe],
-    // .exe.sig van vóór Authenticode: hoort bij andere bytes (zoals in v2026.9.0).
-    ['app-setup.exe.sig', Buffer.from(minisign(key, Buffer.from('exe-voor-authenticode')))],
-  ]);
-  files.set('latest.json', Buffer.from(JSON.stringify({
-    version: '2026.9.0',
-    platforms: {
-      'windows-x86_64': { url: `${LATEST}app.nsis.zip`, signature: files.get('app.nsis.zip.sig').toString() },
-      'linux-x86_64': { url: `${LATEST}weg.AppImage`, signature: 'x' },
-    },
-  })));
-  const assets = [...files.keys()].map((name) => ({ name, digest: sha(files.get(name)) }));
-  assets.find((a) => a.name === 'app.nsis.zip').digest = 'sha256:' + '0'.repeat(64);
-  assets.find((a) => a.name === 'latest.json').digest = null;
+  const r = release(key, {
+    extra: [
+      ['app-setup.exe', Buffer.from('exe-na-authenticode')],
+      // .exe.sig van vóór Authenticode: hoort bij andere bytes (zoals in v2026.9.0).
+      ['app-setup.exe.sig', Buffer.from(minisign(key, Buffer.from('exe-voor-authenticode')))],
+    ],
+    mutate: (x) => { x.platforms['linux-x86_64'] = { url: `${LATEST}weg.AppImage`, signature: 'x' }; },
+  });
+  r.assets.find((a) => a.name === 'app.nsis.zip').digest = 'sha256:' + '0'.repeat(64);
+  r.assets.find((a) => a.name === 'latest.json').digest = null;
 
-  const rows = evaluateRelease({ publicKey: key.pubkey, assets, read: (n) => files.get(n), repo: REPO, tag: TAG, isLatest: true });
-  const failed = rows.filter((r) => r.status === 'FOUT').map((r) => `${r.group}: ${r.item}`).sort();
+  const rows = evaluateRelease({ publicKey: key.pubkey, assets: r.assets, read: r.read, repo: REPO, tag: TAG, isLatest: true });
+  const failed = rows.filter((x) => x.status === 'FOUT').map((x) => `${x.group}: ${x.item}`).sort();
   assert.deepEqual(failed, [
     'latest.json: linux-x86_64',
     'sha256 = GitHub-digest: app.nsis.zip',
     'updater-handtekening (.sig): app-setup.exe',
   ]);
-  assert.ok(rows.some((r) => r.status === 'OK' && r.group === 'latest.json' && r.item === 'windows-x86_64'));
-  assert.ok(rows.some((r) => r.status === 'OK' && r.item === 'version'));
-  assert.ok(rows.some((r) => r.status === 'INFO' && r.item === 'latest.json'));
+  assert.ok(rows.some((x) => x.status === 'OK' && x.group === 'latest.json' && x.item === 'windows-x86_64'));
+  assert.ok(rows.some((x) => x.status === 'OK' && x.item === 'version'));
+  assert.ok(rows.some((x) => x.status === 'INFO' && x.item === 'latest.json'));
   const md = renderReport({ tag: TAG, repo: REPO, keyId: keyIdHex(key.keyId), rows });
   assert.match(md, /\*\*Oordeel: FOUT\*\* — 3 controle\(s\) faalden/);
 });

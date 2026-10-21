@@ -32,6 +32,7 @@ on:
       - '.github/workflows/release-verify.yml'
       - 'scripts/verify-release.mjs'
       - 'scripts/release-check.sh'
+      - 'scripts/release-check.ps1'
       - 'scripts/macos-verify-dmg.sh'
 
 permissions:
@@ -245,12 +246,8 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Continue'
-          $log = Join-Path $env:RUNNER_TEMP 'release-checks.tsv'
-          function Record($status, $name, $detail) {
-            $clean = { param($s) ("$s" -replace "[`t`r`n|]", ' ').Substring(0, [Math]::Min(240, "$s".Length)) }
-            Add-Content -Path $log -Encoding utf8 -Value ("{0}`t{1}`t{2}" -f $status, (& $clean $name), (& $clean $detail))
-            Write-Host "[$status] $name — $detail"
-          }
+          # Record en Test-Alive (een mislukte start is FOUT, nooit OK).
+          . scripts/release-check.ps1
           function Check-Authenticode($label, $path) {
             $sig = Get-AuthenticodeSignature -FilePath $path
             $signer = if ($sig.SignerCertificate) { $sig.SignerCertificate.Subject } else { 'geen' }
@@ -267,8 +264,12 @@ jobs:
           Record ($(if ($LASTEXITCODE -eq 0) { 'OK' } else { 'FOUT' })) 'setup.exe: signtool verify /pa /v' "exit $LASTEXITCODE"
 
           # 2. Stil installeren (NSIS /S).
-          $p = Start-Process -FilePath $env:SETUP_EXE -ArgumentList '/S' -Wait -PassThru
-          Record ($(if ($p.ExitCode -eq 0) { 'OK' } else { 'FOUT' })) 'installeren (/S)' "exit $($p.ExitCode)"
+          try {
+            $p = Start-Process -FilePath $env:SETUP_EXE -ArgumentList '/S' -Wait -PassThru -ErrorAction Stop
+            Record ($(if ($null -ne $p -and $p.ExitCode -eq 0) { 'OK' } else { 'FOUT' })) 'installeren (/S)' "exit $($p.ExitCode)"
+          } catch {
+            Record 'FOUT' 'installeren (/S)' "start mislukt: $($_.Exception.Message)"
+          }
           $uninstallKeys = @(
             'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*',
             'HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*',
@@ -287,17 +288,18 @@ jobs:
             } else {
               # 3. Het geïnstalleerde programma.
               Check-Authenticode $app.Name $app.FullName
-              $proc = Start-Process -FilePath $app.FullName -PassThru
-              Start-Sleep -Seconds 20
-              if ($proc.HasExited) { Record 'FOUT' "$($app.Name): start en leeft na 20 s" "gestopt met exit $($proc.ExitCode)" }
-              else { Record 'OK' "$($app.Name): start en leeft na 20 s" "pid $($proc.Id)"; Stop-Process -Id $proc.Id -Force }
+              Test-Alive "$($app.Name): start en leeft na 20 s" $app.FullName 20
               Start-Sleep -Seconds 3
               Get-Process -Name $app.BaseName -ErrorAction SilentlyContinue | Stop-Process -Force
             }
             # 4. Stil verwijderen. De NSIS-uninstaller start een kopie van zichzelf
             # en keert direct terug; wacht dus tot de registersleutel weg is.
             $uninst = $entry.UninstallString.Trim('"')
-            Start-Process -FilePath $uninst -ArgumentList '/S' -Wait
+            try {
+              Start-Process -FilePath $uninst -ArgumentList '/S' -Wait -ErrorAction Stop
+            } catch {
+              Record 'FOUT' 'verwijderen (/S)' "start mislukt: $($_.Exception.Message)"
+            }
             $gone = $false
             for ($i = 0; $i -lt 60 -and -not $gone; $i++) {
               Start-Sleep -Seconds 1

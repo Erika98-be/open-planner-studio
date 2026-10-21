@@ -8,6 +8,7 @@ paths:
   - "scripts/release-notes.mjs"
   - "scripts/verify-release.mjs"
   - "scripts/release-check.sh"
+  - "scripts/release-check.ps1"
   - "scripts/bump*"
   - "scripts/*release-highlights*"
   - "snap/**"
