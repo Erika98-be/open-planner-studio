@@ -395,7 +395,6 @@ en noem het in je rapport of PR-tekst.
     op `.slice(0,10)`. De balken zelf kloppen. — S
 62. **Melding schuift over de knoppen van het begeleidingspaneel** (1600×950, venster Baselines open):
     `toastPlacement.ts` houdt geen rekening met het paneel. — B (gezien), oorzaak afgeleid
-66. **Het UpdateDialog opent over een lopende gids heen** (review #261, punt O4). — S
 67. **`pendingHelpSection` blijft hangen** (review #261, punt O7). — S
 68. **Een gidsstap die eenmaal "gedaan" is, blijft gedaan**, ook na wisselen naar een leeg project. Gezien bij
     tutorial 6 stap 8; niet uitgezocht of dat bedoeld is. — S

@@ -80,6 +80,8 @@ A change takes effect immediately. There is no *Apply* button and no *Cancel*.
 
 **Version** — the version number of the app, with two buttons. *Check for updates* opens the update window. *What's new* shows the news of the current version. Where: *Advanced*, under *Version*.
 
+An automatically detected update waits until the welcome screens and any active tutorial guide have closed. You can still check manually using the button.
+
 **Show classic view buttons** — a replaced feature, under *Legacy features*. Default: off. Effect: on puts a group *Display* back on the *View* tab with the separate buttons *Columns…*, *Filter…*, *Group…* and *Sort…*. They have been replaced by the plus in the table header, the layout buttons and the layout window. Where: *Advanced*, under *Legacy features*.
 
 ## Remembered display choices outside the panel
