@@ -2,7 +2,8 @@
 //
 // Deze module bedient de Tauri-only bridge: token verzekeren, `mcp_bridge_start`/`mcp_bridge_stop`
 // invoken, en de twee Tauri-events koppelen aan de dispatcher + de ui-state:
-//   - `mcp://request`  {id, body}  → `handleMcpMessage(body, ctx)` → emit `mcp://response` {id, body}
+//   - `mcp://request`  {id, body, sessionId?} → `handleMcpMessage(body, ctx)` → emit `mcp://response`
+//     {id, body, sessionId?, status?} (sessie-afhandeling: zie `createRequestHandler`)
 //   - `mcp://status`   {state, port, message} → `setAiServerStatus(...)`
 //
 // HARDE REPO-REGEL: een top-niveau `import` van `@tauri-apps/*` breekt de web-build. Daarom staan
@@ -92,6 +93,9 @@ export function regenerateMcpToken(): string {
  */
 export async function regenerateAndApplyMcpToken(isRunning: () => boolean): Promise<string> {
   const token = regenerateMcpToken();
+  // Nieuw token = alle oude koppelingen vervallen, dus ook hun sessies en documentbindingen: wie opnieuw
+  // verbindt, begint een nieuwe sessie en bindt opnieuw. Ook als de bridge niet draait.
+  appMcpSessions.clear();
   if (isTauri() && isRunning()) {
     // Het nieuwe token staat al opgeslagen: ook als de herstart faalt (bv. `listen` of de dynamische
     // import werpt) moet het veld het tonen, anders liet de UI het oude, niet meer geldige token zien.
@@ -199,6 +203,99 @@ export interface RequestHandlerDeps {
   handleMessage: (body: string, ctx: McpContext) => Promise<string>;
   /** Klok in ms (test-injectie; echt: `Date.now`). */
   now?: () => number;
+  /** Nieuwe sessie-id (test-injectie; echt: 16 crypto-random bytes, hex). Alleen gebruikt als
+   *  `sessions` ontbreekt. */
+  newSessionId?: () => string;
+  /** De sessietabel. Echt: één per app-sessie (`appMcpSessions`, via de bridge-controller), zodat een
+   *  bridge-herstart sessies en ankers behoudt. Ontbreekt hij, dan krijgt deze handler een eigen tabel. */
+  sessions?: McpSessionTable;
+}
+
+/** Eén request zoals Rust het doorgeeft: de body plus de `Mcp-Session-Id`-header als die er was. */
+export interface McpRequestEvent {
+  id: number;
+  body: string;
+  sessionId?: string | null;
+}
+
+/** Het antwoord terug naar Rust. `sessionId` ⇒ Rust zet de `Mcp-Session-Id`-header; `status` ⇒ Rust
+ *  antwoordt met die HTTP-status in plaats van 200: `400` (sessie-header ontbreekt, met JSON-RPC-fout als
+ *  body) of `404` (onbekende sessie, zonder body). */
+export interface McpResponseEvent {
+  id: number;
+  body: string;
+  sessionId?: string;
+  status?: number;
+}
+
+/**
+ * Zoveel MCP-sessies (elk met een eigen drift-anker) onthoudt de app. Een nieuwe sessie boven die grens
+ * verdringt de oudste sessie ZONDER anker (die heeft geen binding te verliezen; de client krijgt `404` en
+ * begint opnieuw). Een sessie MET anker wordt nooit verdrongen: anders landde de mutatie van een client die
+ * net `DOC_DRIFT` kreeg na zijn nieuwe `initialize` stil op het andere tabblad (review 3 PR #439). Zijn alle
+ * plekken bezet door sessies met anker, dan weigert de app een nieuwe `initialize` met een JSON-RPC-fout.
+ * 32 is ruim boven wat een gebruiker tegelijk koppelt (één tot een paar AI-clients).
+ */
+export const MCP_MAX_SESSIONS = 32;
+
+/** De sessietabel: sessie-id → drift-anker (`null` = nog niet gebonden). */
+export interface McpSessionTable {
+  has(id: string): boolean;
+  anchor(id: string): string | null;
+  setAnchor(id: string, anchor: string | null): void;
+  /** Is er plek voor een nieuwe sessie (eventueel door een sessie zonder anker te verdringen)? */
+  canOpen(): boolean;
+  /** Open een nieuwe sessie; verdringt zo nodig de oudste sessie zonder anker. `null` = vol. */
+  open(): string | null;
+  /** Alle sessies weg (nieuw token: oude koppelingen gelden niet meer). */
+  clear(): void;
+  size(): number;
+}
+
+export function createMcpSessionTable(
+  newSessionId: () => string = randomSessionId,
+  max: number = MCP_MAX_SESSIONS,
+): McpSessionTable {
+  // Map-volgorde = volgorde van openen; de oudste sessie zonder anker gaat eerst.
+  const anchors = new Map<string, string | null>();
+  const oldestUnanchored = (): string | undefined => {
+    for (const [id, anchor] of anchors) if (anchor === null) return id;
+    return undefined;
+  };
+  return {
+    has: (id) => anchors.has(id),
+    anchor: (id) => anchors.get(id) ?? null,
+    setAnchor: (id, anchor) => { if (anchors.has(id)) anchors.set(id, anchor); },
+    canOpen: () => anchors.size < max || oldestUnanchored() !== undefined,
+    open: () => {
+      if (anchors.size >= max) {
+        const victim = oldestUnanchored();
+        if (victim === undefined) return null;
+        anchors.delete(victim);
+      }
+      const id = newSessionId();
+      anchors.set(id, null);
+      return id;
+    },
+    clear: () => { anchors.clear(); },
+    size: () => anchors.size,
+  };
+}
+
+/**
+ * De sessietabel van deze app-sessie (de webview). Leeft langer dan één bridge-start: stop/start en een
+ * poortwissel behouden sessies en ankers, zodat een client na een herstart met zijn oude sessie-id gewoon
+ * `DOC_DRIFT` blijft krijgen. Alleen een nieuw token wist hem (`regenerateAndApplyMcpToken`). Een herstart
+ * van de hele app begint leeg; dat is een nieuwe start.
+ */
+export const appMcpSessions: McpSessionTable = createMcpSessionTable();
+
+function randomSessionId(): string {
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  let hex = '';
+  for (const b of bytes) hex += b.toString(16).padStart(2, '0');
+  return hex;
 }
 
 /**
@@ -314,10 +411,25 @@ function recordRequestActivity(reqBody: string, respBody: string, durationMs: nu
  * terug als `mcp://response` met HETZELFDE Rust-correlatie-id. Óók een notificatie (lege respons-
  * body) wordt geëmit — de Rust-loop correleert op id en wacht altijd op een antwoord, dus een
  * uitgebleven emit zou daar in een timeout lopen.
+ *
+ * SESSIES (MCP streamable HTTP, `Mcp-Session-Id`; reviewrondes 1 en 2 van PR #439). Elke geslaagde
+ * `initialize` krijgt een nieuwe sessie-id; Rust zet die als header op het antwoord en geeft de header van
+ * latere requests door. Het drift-anker hoort bij de sessie en bij niets anders:
+ *   - ELK request behalve `initialize` moet een bekende sessie-id dragen, ook leesrequests, pings en
+ *     notificaties. Ontbreekt de header: `400` met een JSON-RPC-fout (de spec: "Servers that require a
+ *     session ID SHOULD respond to requests without an Mcp-Session-Id header (other than initialization)
+ *     with HTTP 400 Bad Request"). Onbekend (verdrongen zonder anker, na een nieuw token of na een herstart
+ *     van de app): `404` zonder body, waarna de client volgens de spec opnieuw initialiseert. Eén regel voor alles is het
+ *     eenvoudigste dat spec-conform is: er bestaat geen pad meer waarlangs een request zonder sessie
+ *     een tool draait, dus ook geen gedeeld anker dat een ander kan wissen.
+ *   - Een `initialize` raakt nooit het anker van een andere sessie; een `initialize` zonder `id` is een
+ *     notificatie, maakt geen sessie en raakt niets.
+ * De sessietabel zit hier en niet in Rust: alleen deze laag weet of een antwoord een geslaagde
+ * `initialize` is, en Rust blijft zo protocol-onwetend.
  */
 export function createRequestHandler(
   deps: RequestHandlerDeps,
-): (payload: { id: number; body: string }) => Promise<void> {
+): (payload: McpRequestEvent) => Promise<void> {
   // Het drift-anker leeft per VERBINDING (= per handler, dus per bridge-start), niet per request:
   // `buildContext` levert elk request een verse ctx met `expectedDocId: null`. Zonder deze overdracht
   // bond elke eerste mutatie van ieder request opnieuw aan het dán actieve document, zodat een
@@ -325,7 +437,8 @@ export function createRequestHandler(
   // tabblad landde; ook het verzetten door `switch_document`/`new_document`/`duplicate_document`/
   // `import_schedule` ging met de weggegooide ctx verloren. `tempIdMap` blijft bewust per request
   // (batch-only, de batch-executor bezit hem).
-  let expectedDocId: string | null = null;
+  // Anker per sessie, in een tabel die (in de app) langer leeft dan deze handler.
+  const sessions = deps.sessions ?? createMcpSessionTable(deps.newSessionId ?? randomSessionId);
   // Requests strikt NA elkaar (audit 2026-09-26). Rust houdt één request tegelijk in de lucht, maar
   // geeft dat slot na zijn time-out (120 s) vrij terwijl de webview nog aan het oude request werkt;
   // zonder deze keten liep het volgende request (vaak een retry van dezelfde import) bij elke await
@@ -334,12 +447,33 @@ export function createRequestHandler(
   // een nieuw request: een import opent dan wel een tweede tabblad (geen ontdubbeling op pad).
   let tail: Promise<void> = Promise.resolve();
   const now = deps.now ?? Date.now;
-  const handleOne = async (payload: { id: number; body: string }, arrivedAt: number): Promise<void> => {
+  const handleOne = async (payload: McpRequestEvent, arrivedAt: number): Promise<void> => {
+    const isInitialize = requestMethod(payload.body) === 'initialize';
+    const incoming = typeof payload.sessionId === 'string' && payload.sessionId !== '' ? payload.sessionId : null;
     // Een nieuwe MCP-sessie (`initialize`) begint zonder anker: anders erfde een herstarte client
     // de documentbinding van de vorige en kreeg hij DOC_DRIFT op een tabblad dat hij nooit zag.
-    if (requestMethod(payload.body) === 'initialize') expectedDocId = null;
+    let session: string | null = null;
+    if (!isInitialize) {
+      if (incoming === null) {
+        await deps.emit('mcp://response', { id: payload.id, body: missingSessionResponse(payload.body), status: 400 } satisfies McpResponseEvent);
+        return;
+      }
+      if (!sessions.has(incoming)) {
+        await deps.emit('mcp://response', { id: payload.id, body: '', status: 404 } satisfies McpResponseEvent);
+        return;
+      }
+      session = incoming;
+    } else if (requestHasId(payload.body) && !sessions.canOpen()) {
+      // Vol met gebonden sessies: niet stil verdringen, maar deze initialize weigeren.
+      const body = sessionsFullResponse(payload.body);
+      recordRequestActivity(payload.body, body, 0);
+      await deps.emit('mcp://response', { id: payload.id, body } satisfies McpResponseEvent);
+      return;
+    }
     const ctx = deps.buildContext();
-    if (ctx.expectedDocId === null) ctx.expectedDocId = expectedDocId;
+    if (ctx.expectedDocId === null) {
+      ctx.expectedDocId = session !== null ? sessions.anchor(session) : null;
+    }
     const start = performance.now();
     let body: string;
     try {
@@ -351,11 +485,22 @@ export function createRequestHandler(
       // een JSON-RPC-fout terugsturen, anders wacht de client tot de Rust-time-out.
       body = internalErrorResponse(payload.body, error);
     } finally {
-      expectedDocId = ctx.expectedDocId;
+      if (session !== null) sessions.setAnchor(session, ctx.expectedDocId);
+    }
+    const response: McpResponseEvent = { id: payload.id, body };
+    if (isInitialize && isResultResponse(body)) {
+      const id = sessions.open();
+      if (id !== null) {
+        response.sessionId = id;
+      } else {
+        // Kan alleen als de tabel tussen de controle en hier volliep (requests lopen serieel, dus niet in
+        // de praktijk); dan liever een fout dan een initialize zonder sessie.
+        response.body = sessionsFullResponse(payload.body);
+      }
     }
     // Leg de aanroep vast in het activiteitenlog (notificaties = lege body worden overgeslagen).
     recordRequestActivity(payload.body, body, performance.now() - start);
-    await deps.emit('mcp://response', { id: payload.id, body });
+    await deps.emit('mcp://response', response);
   };
   return (payload) => {
     const arrivedAt = now();
@@ -363,6 +508,50 @@ export function createRequestHandler(
     tail = run.catch((error) => { console.error('MCP: antwoord versturen mislukt:', error); });
     return run;
   };
+}
+
+/** Heeft dit JSON-RPC-bericht een `id` (een request, geen notificatie)? */
+function requestHasId(rawBody: string): boolean {
+  try {
+    const parsed = JSON.parse(rawBody) as Record<string, unknown>;
+    return !!parsed && typeof parsed === 'object' && !Array.isArray(parsed) && 'id' in parsed;
+  } catch { return false; }
+}
+
+/** JSON-RPC-fout voor een `initialize` terwijl alle sessieplekken bezet zijn door gebonden sessies. */
+function sessionsFullResponse(rawBody: string): string {
+  let id: unknown = null;
+  try { id = (JSON.parse(rawBody) as { id?: unknown }).id ?? null; } catch { /* id null */ }
+  return JSON.stringify({
+    jsonrpc: '2.0',
+    id,
+    error: {
+      code: -32000,
+      message: `Too many MCP sessions: all ${MCP_MAX_SESSIONS} are bound to a document. Close other AI connections, or generate a new token in Open Planner Studio (AI tab) to reset all connections.`,
+    },
+  });
+}
+
+/** JSON-RPC-fout bij een request zonder `Mcp-Session-Id` (HTTP 400). */
+function missingSessionResponse(rawBody: string): string {
+  let id: unknown = null;
+  try {
+    const parsed = JSON.parse(rawBody) as { id?: unknown };
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) id = parsed.id ?? null;
+  } catch { /* onparseerbaar ⇒ id null */ }
+  return JSON.stringify({
+    jsonrpc: '2.0',
+    id,
+    error: { code: -32600, message: 'Bad Request: missing Mcp-Session-Id header; send initialize first and include the session id it returns' },
+  });
+}
+
+/** Is dit een geslaagd JSON-RPC-antwoord (met `result`, zonder `error`)? */
+function isResultResponse(rawBody: string): boolean {
+  try {
+    const parsed = JSON.parse(rawBody) as { result?: unknown; error?: unknown };
+    return !!parsed && typeof parsed === 'object' && 'result' in parsed && !('error' in parsed);
+  } catch { return false; }
 }
 
 /** De `method` van een enkel JSON-RPC-request, of null (batch-array, onparseerbaar). */
@@ -475,12 +664,16 @@ export interface BridgeDeps {
   handleMessage: (body: string, ctx: McpContext) => Promise<string>;
   getPort: () => number;
   getToken: () => string;
+  /** Sessietabel die alle starts van deze controller delen (echt: `appMcpSessions`). Ontbreekt hij, dan
+   *  maakt de controller er één voor zijn hele levensduur. */
+  sessions?: McpSessionTable;
 }
 
 export interface BridgeController {
   start: () => Promise<void>;
   stop: () => Promise<void>;
-  /** Stop + start: pikt een gewijzigd token (of poort) op zonder dat de gebruiker het doet. */
+  /** Stop + start: pikt een gewijzigd token (of poort) op zonder dat de gebruiker het doet. Sessies en
+   *  ankers blijven (zie `appMcpSessions`). */
   restart: () => Promise<void>;
   /** Aantal op dit moment gekoppelde listeners (test-inspectie). */
   activeListenerCount: () => number;
@@ -496,6 +689,9 @@ export interface BridgeController {
  *     returnen (geen spuriëuze `port-busy` terwijl de bridge gewoon opstart).
  */
 export function createBridgeController(deps: BridgeDeps): BridgeController {
+  // Eén tabel voor alle starts: een herstart (nieuw token, poortwissel, handmatig stop/start) mag een
+  // client zijn documentbinding niet laten verliezen (review 3 PR #439).
+  const sessions = deps.sessions ?? createMcpSessionTable();
   let unlisteners: Array<() => void> = [];
   let starting = false;
 
@@ -522,10 +718,11 @@ export function createBridgeController(deps: BridgeDeps): BridgeController {
         emit: deps.emit,
         buildContext: deps.buildContext,
         handleMessage: deps.handleMessage,
+        sessions,
       });
       const onStatus = createStatusHandler({ setStatus: deps.setStatus });
 
-      const unReq = await deps.listen<{ id: number; body: string }>('mcp://request', (p) => { void onRequest(p); });
+      const unReq = await deps.listen<McpRequestEvent>('mcp://request', (p) => { void onRequest(p); });
       const unStatus = await deps.listen<{ state: string; port: number; message?: string }>('mcp://status', (p) => { onStatus(p); });
       unlisteners = [unReq, unStatus];
 
@@ -589,6 +786,7 @@ async function buildLiveController(): Promise<BridgeController> {
     handleMessage: handleMcpMessage,
     getPort: loadMcpPort,
     getToken: ensureMcpToken,
+    sessions: appMcpSessions,
   });
 }
 
