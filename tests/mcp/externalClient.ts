@@ -89,7 +89,14 @@ interface ToolOutcome {
 }
 
 async function callTool(client: Client, name: string, args: Record<string, unknown>): Promise<ToolOutcome> {
-  const res = await client.callTool({ name, arguments: args });
+  let res: Awaited<ReturnType<Client['callTool']>>;
+  try {
+    // 30 s i.p.v. de SDK-standaard (60 s): een hangend request moet de run snel en herkenbaar laten falen.
+    res = await client.callTool({ name, arguments: args }, undefined, { timeout: 30_000 });
+  } catch (error) {
+    const first = (args as { tasks?: Array<{ name?: string }> }).tasks?.[0]?.name;
+    throw new Error(`${name}${first ? ` (${first})` : ''}: ${String(error)}`);
+  }
   return {
     isError: res.isError === true,
     structured: (res.structuredContent ?? {}) as ToolOutcome['structured'],
@@ -255,14 +262,22 @@ export function externalClientChecks(
 
           // Review 3: meer nieuwe sessies dan de tabel kan houden verdringen A niet (A heeft een anker).
           for (let i = 0; i < 40; i++) {
-            const extra = await connectClient(env.url, auth);
-            await extra.client.close();
+            try {
+              const extra = await connectClient(env.url, auth);
+              await extra.client.close();
+            } catch (error) {
+              throw new Error(`extra sessie ${i + 1} van 40: ${String(error)}`);
+            }
           }
           const afterFlood = await callTool(a.client, 'planner_add_tasks', { tasks: [{ tempId: 'tmp-a5', name: 'Sessie A na 40 sessies', duration: 1 }] });
           assertSame(afterFlood.structured.code, 'DOC_DRIFT', 'A na 40 nieuwe sessies: geen 404, nog steeds DOC_DRIFT');
 
           // Review 3: een bridge-herstart behoudt de sessie van A en haar anker.
-          await env.probe.restartBridge();
+          try {
+            await env.probe.restartBridge();
+          } catch (error) {
+            throw new Error(`bridge-herstart: ${String(error)}`);
+          }
           const afterRestart = await callTool(a.client, 'planner_add_tasks', { tasks: [{ tempId: 'tmp-a6', name: 'Sessie A na herstart', duration: 1 }] });
           assertSame(afterRestart.structured.code, 'DOC_DRIFT', 'A na bridge-herstart: nog steeds DOC_DRIFT');
           assertSame(await env.probe.taskCount(), 0, 'niets van A in het tweede document');
