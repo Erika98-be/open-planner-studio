@@ -21,10 +21,14 @@ Exitcode 0 = alles OK, 1 = minstens één controle FOUT, 2 = het script zelf cra
 |---|---|---|
 | sha256 = GitHub-digest | sha256 van elke gedownloade asset tegen het veld `digest` in de Releases-API | de hash verschilt. Ontbreekt `digest`, dan is de uitkomst INFO |
 | updater-handtekening (.sig) | elke `*.sig` tegen de pubkey in `src-tauri/tauri.conf.json` (`plugins.updater.pubkey`). Minisign: sleutel-id, Ed25519 over BLAKE2b-512 van het bestand (`ED`; legacy `Ed` over de ruwe bytes), en de globale handtekening over `handtekening ‖ trusted comment` | het bijbehorende bestand ontbreekt, de sleutel-id is anders, of een van beide handtekeningen klopt niet |
-| latest.json | per platform: de URL wijst naar een asset van deze release, `signature` is gelijk aan de `.sig` van die asset en verifieert | een van die drie klopt niet |
+| latest.json | het manifest is een object; `version` is gelijk aan de tag (een `v` ervoor mag); `pub_date` is, als het er staat, een RFC 3339-tijdstip; `platforms` is een niet-leeg object. Per platform: `url` en `signature` zijn tekst, de URL heeft de vorm `https://github.com/<repo>/releases/download/<tag>/<asset>` of `https://github.com/<repo>/releases/latest/download/<asset>`, de asset bestaat, en `signature` is byte-gelijk aan de `.sig` van die asset en verifieert | een van die punten klopt niet. De vorm `releases/latest/download/` (die `release.yml` schrijft) wijst altijd naar de nieuwste release; voor een oudere tag is die URL dus FOUT |
 | macOS app.tar.gz (informatief) | staat er `Contents/_CodeSignature/CodeResources` in de updater-tar | alleen INFO; de echte macOS-controle staat in de macOS-job |
 
 De updater-pubkey heeft sleutel-id `28AC8F08A87C90CD`.
+
+De base64-laag is net zo streng als de updater (de STANDARD-decoder van de Rust-crate `base64`): geen witruimte,
+geen vreemde tekens, padding verplicht, en de tekst moet geldige UTF-8 zijn. Een handtekening die de app weigert,
+keurt het script dus ook af.
 
 ### `release-verify.yml` (schone runners)
 
@@ -37,6 +41,11 @@ De updater-pubkey heeft sleutel-id `28AC8F08A87C90CD`.
 
 Elke job draait alle controles, ook na een FOUT. `scripts/release-check.sh` houdt de uitkomsten bij en
 schrijft aan het eind een tabel naar de job-samenvatting (`$GITHUB_STEP_SUMMARY`).
+
+Kapotte infrastructuur is nooit een gewone FOUT. Ontbreekt een commando, start het niet (exit 126/127), of heeft
+een `bash -c`-controle een syntaxfout, dan stopt `release-check.sh` met exit 3. De stap geeft die exitcode door,
+dus de job wordt rood, ook in rapportmodus. De tag van `workflow_dispatch` wordt als hele waarde gecontroleerd;
+`run:`-blokken lezen invoer alleen via de omgeving, nooit via `${{ }}`.
 
 Wanneer een job rood wordt:
 
@@ -65,7 +74,9 @@ echo "exit $?"
 ```
 
 De test van de minisign-verificatie (eigen Ed25519-sleutel, mutatie, verkeerde sleutel-id) zit in de
-dev-server-suite: `node --test tests/dev-server/verify-release.test.mjs`.
+dev-server-suite: `node --test tests/dev-server/verify-release.test.mjs`. De helper en de workflow (tag-injectie,
+geen `${{ }}` in `run:`, kapotte controles, de exitcode van `tauri signer sign` in `release.yml`) staan in
+`tests/dev-server/release-check.test.mjs`.
 
 ### Authenticode handmatig controleren op Linux
 

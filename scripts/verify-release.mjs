@@ -20,7 +20,6 @@
 
 import { createHash, createPublicKey, verify as cryptoVerify } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
-import { gunzipSync } from 'node:zlib';
 import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
@@ -30,31 +29,53 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
 // ---------------------------------------------------------------- minisign
 
-/** Leest een minisign-pubkey: base64 van de tekst, of de tekst zelf, of alleen de sleutelregel. */
+// Zo streng als de updater: Tauri decodeert pubkey en signature met de
+// STANDARD-engine van de crate `base64` (padding verplicht, geen witruimte,
+// geen vreemde tekens) en leest de tekst als UTF-8. Een tolerantere decoder
+// zou een handtekening goedkeuren die de app zelf weigert.
+
+/** Strikte base64 (RFC 4648, standaardalfabet, padding verplicht, canoniek). */
+export function decodeBase64Strict(text, label) {
+  if (typeof text !== 'string' || text.length === 0 || text.length % 4 !== 0 || !/^[A-Za-z0-9+/]*={0,2}$/.test(text)) {
+    throw new Error(`${label}: geen geldige base64`);
+  }
+  const buf = Buffer.from(text, 'base64');
+  if (buf.toString('base64') !== text) throw new Error(`${label}: geen canonieke base64`);
+  return buf;
+}
+
+function utf8Strict(buf, label) {
+  try {
+    return new TextDecoder('utf-8', { fatal: true }).decode(buf);
+  } catch {
+    throw new Error(`${label}: geen geldige UTF-8`);
+  }
+}
+
+/** Leest een minisign-pubkey zoals in tauri.conf.json: base64 van de minisign-tekst. */
 export function parsePublicKey(input) {
-  const text = decodeMaybeBase64Text(input.trim());
-  const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
-  const keyLine = lines.find((l) => !l.startsWith('untrusted comment:'));
-  if (!keyLine) throw new Error('pubkey: geen sleutelregel');
-  const raw = Buffer.from(keyLine, 'base64');
+  const text = utf8Strict(decodeBase64Strict(input, 'pubkey'), 'pubkey');
+  const lines = text.split('\n').map((l) => l.trim());
+  if (lines.length < 2 || !lines[0].startsWith('untrusted comment:')) throw new Error('pubkey: geen minisign-formaat');
+  const raw = decodeBase64Strict(lines[1], 'pubkey-sleutelregel');
   if (raw.length !== 42 || raw.subarray(0, 2).toString('latin1') !== 'Ed') {
     throw new Error(`pubkey: verwacht 42 bytes met 'Ed', kreeg ${raw.length} bytes`);
   }
   return { keyId: raw.subarray(2, 10), key: raw.subarray(10, 42) };
 }
 
-/** Leest een minisign-handtekening (zoals Tauri hem schrijft: base64 van de tekst, of de tekst zelf). */
+/** Leest een minisign-handtekening zoals Tauri hem schrijft: base64 van de minisign-tekst. */
 export function parseSignature(input) {
-  const text = decodeMaybeBase64Text(input.trim());
-  const lines = text.split(/\r?\n/);
+  const text = utf8Strict(decodeBase64Strict(input, 'handtekening'), 'handtekening');
+  const lines = text.split('\n').map((l) => l.replace(/\r$/, ''));
   if (lines.length < 4 || !lines[0].startsWith('untrusted comment:')) {
     throw new Error('handtekening: geen minisign-formaat (4 regels, begint met "untrusted comment:")');
   }
-  const sig = Buffer.from(lines[1].trim(), 'base64');
+  const sig = decodeBase64Strict(lines[1].trim(), 'handtekeningregel');
   if (sig.length !== 74) throw new Error(`handtekening: verwacht 74 bytes, kreeg ${sig.length}`);
   const prefix = 'trusted comment: ';
   if (!lines[2].startsWith(prefix)) throw new Error('handtekening: regel 3 is geen trusted comment');
-  const globalSig = Buffer.from(lines[3].trim(), 'base64');
+  const globalSig = decodeBase64Strict(lines[3].trim(), 'globale handtekening');
   if (globalSig.length !== 64) throw new Error(`globale handtekening: verwacht 64 bytes, kreeg ${globalSig.length}`);
   return {
     alg: sig.subarray(0, 2).toString('latin1'),
@@ -63,11 +84,6 @@ export function parseSignature(input) {
     trustedComment: lines[2].slice(prefix.length),
     globalSignature: globalSig,
   };
-}
-
-function decodeMaybeBase64Text(s) {
-  if (s.startsWith('untrusted comment:')) return s;
-  return Buffer.from(s.replace(/\s+/g, ''), 'base64').toString('utf8');
 }
 
 /** Minisign toont een sleutel-id als hex van de bytes in omgekeerde volgorde. */
@@ -113,38 +129,10 @@ export function verifyMinisign({ publicKey, signatureText, data }) {
 
 // ---------------------------------------------------------------- tar
 
-/** Namen van alle entries in een (ongecomprimeerde) tar; kent ustar-prefix, GNU 'L' en pax 'path'. */
-export function tarEntryNames(tar) {
-  const names = [];
-  let offset = 0;
-  let pendingName = null;
-  while (offset + 512 <= tar.length) {
-    const header = tar.subarray(offset, offset + 512);
-    if (header.every((b) => b === 0)) break;
-    const field = (start, len) => {
-      const slice = header.subarray(start, start + len);
-      const end = slice.indexOf(0);
-      return slice.subarray(0, end === -1 ? len : end).toString('utf8');
-    };
-    const size = parseInt(field(124, 12).trim() || '0', 8);
-    const type = String.fromCharCode(header[156] || 0x30);
-    const body = tar.subarray(offset + 512, offset + 512 + size);
-    let name = field(0, 100);
-    // Alleen POSIX-ustar ("ustar\0") heeft een prefixveld; GNU ("ustar  ") gebruikt die bytes anders.
-    const prefix = header.subarray(257, 263).toString('latin1') === 'ustar\0' ? field(345, 155) : '';
-    if (prefix) name = `${prefix}/${name}`;
-    if (type === 'L') {
-      pendingName = body.toString('utf8').replace(/\0+$/, '');
-    } else if (type === 'x') {
-      const m = /\d+ path=([^\n]*)\n/.exec(body.toString('utf8'));
-      if (m) pendingName = m[1];
-    } else if (type !== 'g') {
-      names.push(pendingName ?? name);
-      pendingName = null;
-    }
-    offset += 512 + Math.ceil(size / 512) * 512;
-  }
-  return names;
+/** Namen in een .tar.gz, via de systeem-`tar` (alleen voor de informatieve macOS-controle). */
+export function tarGzEntryNames(buf) {
+  return execFileSync('tar', ['-tzf', '-'], { input: buf, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 })
+    .split('\n').filter(Boolean);
 }
 
 export function hasMacCodeSignature(names) {
@@ -153,19 +141,72 @@ export function hasMacCodeSignature(names) {
 
 // ---------------------------------------------------------------- controles
 
+export const TAG_PATTERN = /^v[0-9][0-9A-Za-z.-]*$/;
+
+const isPlainObject = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
+const RFC3339 = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$/;
+
+function textStrict(buf) {
+  return new TextDecoder('utf-8', { fatal: true }).decode(buf);
+}
+
+/**
+ * Controleert een updater-URL uit latest.json tegen de bedoelde release. Twee vormen
+ * zijn geldig: `https://github.com/<repo>/releases/download/<tag>/<asset>` en de vorm
+ * die release.yml schrijft, `https://github.com/<repo>/releases/latest/download/<asset>`.
+ * Die laatste wijst altijd naar de NIEUWSTE release; voor een oudere tag is hij dus fout
+ * (de asset met versienummer bestaat daar niet, of het is een ander bestand).
+ * @returns {{asset?:string, error?:string}}
+ */
+export function checkUpdaterUrl(url, { repo, tag, isLatest }) {
+  let u;
+  try {
+    u = new URL(url);
+  } catch {
+    return { error: `geen geldige URL: ${url}` };
+  }
+  if (u.protocol !== 'https:') return { error: `protocol ${u.protocol} is geen https` };
+  if (u.hostname !== 'github.com' || u.port || u.username || u.password) return { error: `host ${u.host} is niet github.com` };
+  if (u.search || u.hash) return { error: 'URL heeft een query of fragment' };
+  const prefix = `/${repo}/releases/`;
+  if (!u.pathname.startsWith(prefix)) return { error: `pad ${u.pathname} hoort niet bij ${repo}/releases` };
+  const rest = u.pathname.slice(prefix.length).split('/');
+  let encodedAsset;
+  if (rest.length === 3 && rest[0] === 'latest' && rest[1] === 'download') {
+    if (!isLatest) return { error: `releases/latest/download wijst naar de nieuwste release, niet naar ${tag}` };
+    encodedAsset = rest[2];
+  } else if (rest.length === 3 && rest[0] === 'download' && decodeURIComponent(rest[1]) === tag) {
+    encodedAsset = rest[2];
+  } else {
+    return { error: `pad ${u.pathname} is geen releases/latest/download/<asset> of releases/download/${tag}/<asset>` };
+  }
+  let asset;
+  try {
+    asset = decodeURIComponent(encodedAsset);
+  } catch {
+    return { error: `assetnaam ${encodedAsset} is ongeldig gecodeerd` };
+  }
+  if (!asset) return { error: 'assetnaam ontbreekt' };
+  return { asset };
+}
+
 /**
  * Pure kern: beoordeelt een release.
  * @param {object} o
  * @param {string} o.publicKey   pubkey uit tauri.conf.json
  * @param {{name:string, digest?:string|null}[]} o.assets  assetlijst van de API
  * @param {(name:string)=>Buffer} o.read  leest een gedownloade asset
+ * @param {string} o.repo   owner/naam
+ * @param {string} o.tag    de gecontroleerde tag
+ * @param {boolean} o.isLatest  is dit de nieuwste gepubliceerde release?
  * @returns {{group:string, item:string, status:'OK'|'FOUT'|'INFO', detail:string}[]}
  */
-export function evaluateRelease({ publicKey, assets, read }) {
+export function evaluateRelease({ publicKey, assets, read, repo, tag, isLatest }) {
   const rows = [];
   const add = (group, item, status, detail = '') => rows.push({ group, item, status, detail });
   const pub = parsePublicKey(publicKey);
   const names = new Set(assets.map((a) => a.name));
+  const readText = (name) => textStrict(read(name));
 
   // 1. sha256 tegen GitHub-digest
   for (const asset of assets) {
@@ -186,41 +227,73 @@ export function evaluateRelease({ publicKey, assets, read }) {
       add('updater-handtekening (.sig)', sigName, 'FOUT', `asset ${target} ontbreekt`);
       continue;
     }
-    const r = verifyMinisign({ publicKey: pub, signatureText: read(sigName).toString('utf8'), data: read(target) });
+    let sigText;
+    try {
+      sigText = readText(sigName);
+    } catch {
+      add('updater-handtekening (.sig)', target, 'FOUT', `${sigName} is geen geldige UTF-8`);
+      continue;
+    }
+    const r = verifyMinisign({ publicKey: pub, signatureText: sigText, data: read(target) });
     const detail = [r.alg && `alg ${r.alg}`, r.keyId && `sleutel ${r.keyId}`, r.trustedComment && `"${r.trustedComment}"`, r.reason]
       .filter(Boolean).join('; ');
     add('updater-handtekening (.sig)', target, r.ok ? 'OK' : 'FOUT', detail);
   }
 
-  // 3. latest.json
+  // 3. latest.json: object, versie = tag, platforms, en per platform URL + signature
+  const G = 'latest.json';
+  let latest;
   if (!names.has('latest.json')) {
-    add('latest.json', 'latest.json', 'FOUT', 'asset ontbreekt');
+    add(G, 'latest.json', 'FOUT', 'asset ontbreekt');
   } else {
-    let latest = null;
     try {
-      latest = JSON.parse(read('latest.json').toString('utf8'));
+      latest = JSON.parse(readText('latest.json'));
     } catch (err) {
-      add('latest.json', 'latest.json', 'FOUT', `geen geldige JSON: ${err.message}`);
+      add(G, 'latest.json', 'FOUT', `geen geldige JSON: ${err.message}`);
     }
-    const platforms = latest?.platforms ?? {};
-    if (latest && Object.keys(platforms).length === 0) add('latest.json', 'platforms', 'FOUT', 'geen platforms');
-    for (const [platform, entry] of Object.entries(platforms).sort(([a], [b]) => a.localeCompare(b))) {
-      const url = String(entry?.url ?? '');
-      const assetName = decodeURIComponent(url.split('/').pop() ?? '');
-      if (!names.has(assetName)) {
-        add('latest.json', platform, 'FOUT', `URL ${url} wijst niet naar een asset van deze release`);
-        continue;
+  }
+  if (latest !== undefined && !isPlainObject(latest)) {
+    add(G, 'manifest', 'FOUT', `manifest is geen object maar ${latest === null ? 'null' : Array.isArray(latest) ? 'een array' : typeof latest}`);
+  } else if (latest !== undefined) {
+    const want = tag.replace(/^v/, '');
+    if (typeof latest.version !== 'string') add(G, 'version', 'FOUT', 'veld version ontbreekt of is geen tekst');
+    else if (latest.version.replace(/^v/, '') !== want) add(G, 'version', 'FOUT', `version ${latest.version} hoort bij een andere release dan ${tag}`);
+    else add(G, 'version', 'OK', `${latest.version} = ${tag}`);
+    if (latest.pub_date !== undefined && (typeof latest.pub_date !== 'string' || !RFC3339.test(latest.pub_date))) {
+      add(G, 'pub_date', 'FOUT', `pub_date ${JSON.stringify(latest.pub_date)} is geen RFC 3339-tijdstip`);
+    }
+    const platforms = latest.platforms;
+    if (!isPlainObject(platforms) || Object.keys(platforms).length === 0) {
+      add(G, 'platforms', 'FOUT', 'platforms ontbreekt, is geen object of is leeg');
+    } else {
+      for (const [platform, entry] of Object.entries(platforms).sort(([a], [b]) => a.localeCompare(b))) {
+        if (!isPlainObject(entry) || typeof entry.url !== 'string' || typeof entry.signature !== 'string') {
+          add(G, platform, 'FOUT', 'entry is geen object met url en signature als tekst');
+          continue;
+        }
+        const u = checkUpdaterUrl(entry.url, { repo, tag, isLatest });
+        if (u.error) {
+          add(G, platform, 'FOUT', u.error);
+          continue;
+        }
+        const assetName = u.asset;
+        if (!names.has(assetName)) {
+          add(G, platform, 'FOUT', `URL ${entry.url} wijst niet naar een asset van ${tag}`);
+          continue;
+        }
+        const sigAsset = `${assetName}.sig`;
+        let sigText = null;
+        try {
+          sigText = names.has(sigAsset) ? readText(sigAsset) : null;
+        } catch {
+          sigText = null;
+        }
+        const same = sigText !== null && entry.signature === sigText;
+        const r = verifyMinisign({ publicKey: pub, signatureText: entry.signature, data: read(assetName) });
+        if (same && r.ok) add(G, platform, 'OK', `${assetName}; signature = ${sigAsset}, verifieert`);
+        else add(G, platform, 'FOUT',
+          `${assetName}; ${sigText === null ? `${sigAsset} ontbreekt of is onleesbaar` : same ? 'signature = asset-.sig' : 'signature ≠ asset-.sig'}; ${r.ok ? 'verifieert' : r.reason}`);
       }
-      const sigAsset = `${assetName}.sig`;
-      if (!names.has(sigAsset)) {
-        add('latest.json', platform, 'FOUT', `${sigAsset} ontbreekt`);
-        continue;
-      }
-      const same = String(entry.signature ?? '').trim() === read(sigAsset).toString('utf8').trim();
-      const r = verifyMinisign({ publicKey: pub, signatureText: String(entry.signature ?? ''), data: read(assetName) });
-      if (same && r.ok) add('latest.json', platform, 'OK', `${assetName}; signature = ${sigAsset}, verifieert`);
-      else add('latest.json', platform, 'FOUT',
-        `${assetName}; ${same ? 'signature = asset-.sig' : 'signature ≠ asset-.sig'}; ${r.ok ? 'verifieert' : r.reason}`);
     }
   }
 
@@ -228,9 +301,9 @@ export function evaluateRelease({ publicKey, assets, read }) {
   for (const name of [...names].filter((n) => n.endsWith('.app.tar.gz')).sort()) {
     let entries;
     try {
-      entries = tarEntryNames(gunzipSync(read(name)));
+      entries = tarGzEntryNames(read(name));
     } catch (err) {
-      add('macOS app.tar.gz (informatief)', name, 'FOUT', `tar niet leesbaar: ${err.message}`);
+      add('macOS app.tar.gz (informatief)', name, 'FOUT', `tar niet leesbaar: ${String(err.message).split('\n')[0]}`);
       continue;
     }
     add('macOS app.tar.gz (informatief)', name, 'INFO',
@@ -278,7 +351,8 @@ function parseArgs(argv) {
 function main() {
   const opts = parseArgs(process.argv.slice(2));
   if (!opts.tag) opts.tag = gh(['release', 'view', '--repo', opts.repo, '--json', 'tagName', '--jq', '.tagName']).trim();
-  if (!/^v[0-9][0-9A-Za-z.\-]*$/.test(opts.tag)) throw new Error(`ongeldige tag '${opts.tag}'`);
+  if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(opts.repo)) throw new Error(`ongeldige repo ${JSON.stringify(opts.repo)}`);
+  if (!TAG_PATTERN.test(opts.tag)) throw new Error(`ongeldige tag ${JSON.stringify(opts.tag)}`);
   const release = JSON.parse(gh(['api', `repos/${opts.repo}/releases/tags/${opts.tag}`]));
   const assets = release.assets.map((a) => ({ name: a.name, digest: a.digest ?? null }));
   if (assets.length === 0) throw new Error(`release ${opts.tag} heeft geen assets`);
@@ -296,7 +370,11 @@ function main() {
     if (!cache.has(name)) cache.set(name, readFileSync(join(dir, name)));
     return cache.get(name);
   };
-  const rows = evaluateRelease({ publicKey, assets, read });
+  // releases/latest/download in latest.json is alleen juist voor de nieuwste release.
+  const latestTag = gh(['api', `repos/${opts.repo}/releases/latest`, '--jq', '.tag_name']).trim();
+  const isLatest = latestTag === opts.tag;
+  process.stderr.write(`nieuwste release: ${latestTag}; ${opts.tag} is ${isLatest ? '' : 'NIET '}de nieuwste\n`);
+  const rows = evaluateRelease({ publicKey, assets, read, repo: opts.repo, tag: opts.tag, isLatest });
   const report = renderReport({ tag: opts.tag, repo: opts.repo, keyId: keyIdHex(parsePublicKey(publicKey).keyId), rows });
   process.stdout.write(`${report}\n`);
   if (opts.out) writeFileSync(opts.out, `${report}\n`);
