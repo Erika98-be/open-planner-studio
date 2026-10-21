@@ -77,18 +77,11 @@ en noem het in je rapport of PR-tekst.
     het sjabloon zonder lag terug, zonder melding. Gezien in de code (`Sequence.lagMinutes`,
     `types/sequence.ts:23`); niet in de app nagespeeld. Voorstel: `lagMinutes` meenemen in
     `WbsTemplateSequence`. — S
-120. **Lag `-1,5` rondt naar −1 dag, de motor naar −2.** `parseLagInput` rondt met `Math.round(num)`
-    (`lagFormat.ts:73`, JavaScript rondt −1,5 naar −1), terwijl de solver half van nul af rondt
-    (`CPMSolver.ts:272-279`, `Math.sign(raw) * Math.round(Math.abs(raw))`). Een lead die je als `-1,5`
-    typt, wordt dus anders opgeslagen dan dezelfde lead in uren wordt gerekend. Alleen in de code gezien. — S
 121. **Nivelleervenster: de piekmelding blijft leeg bij een eigen urenverdeling of capaciteitsstappen.** De
     nivelleerder kiest `INTRINSIC_OVERRUN` op de echte dagwaarden (`assignmentDayUnits`) en op
     `maxCapacityOf` met stappen (`ResourceLeveler.ts`); het venster vult de details in met `distributeUnits` en
     de vlakke `res.maxUnits` (`LevelingDialog.tsx:141-165`, `:293-304`). Dan ontbreken resource, piek en
     capaciteit in de melding. Niet nagespeeld. Zie ook 9. — S
-122. **Nivelleervenster: onder *Resterende conflicten* staat altijd "Deze taken passen niet binnen hun
-    speling"**, ook zonder smoothing (`LevelingDialog.tsx:282`, `resource.leveling.remainingConflictsHint`).
-    De tekst noemt een oorzaak die niet voor elk conflict geldt. Zie ook 9. — B
 
 ## Tabel, invoer en bediening
 
@@ -130,15 +123,7 @@ en noem het in je rapport of PR-tekst.
 
 22. **Goede Vrijdag en Bevrijdingsdag** hebben `optional: true`, maar dat wordt nergens gelezen: ze worden
     altijd gegenereerd. — B
-25. **Kalendernaam in de wizard** is hardgecodeerd *Bouwkalender NL*, ook in het Engels (de
-    tutorialgenerator schrijft *Construction calendar NL*). — B
 
-123. **Hint *Opnieuw genereren* telt een jaar te ver.** "Feestdagen dekken {van}–{tot}; project loopt tot
-    {jaar}" toont `projectYearSpan.to` (`CalendarForm.tsx:764`). Dat is het einddatumjaar plus 1
-    (`computeGenerateSpan`, `generateCalendarHolidays.ts:58-71`; zonder einddatum startjaar plus 3). Een
-    project dat in 2029 eindigt, meldt "project loopt tot 2030". De Help-voorbeelden
-    (`uitleg-kalenders.md`, `howto-feestdagen-genereren.md`) volgen die tekst. Voorstel: het einde zelf tonen,
-    of de tekst "tot en met {jaar}" noemen. — B
 
 ## Bibliotheek, bezetting, extensies, AI
 
@@ -183,14 +168,6 @@ en noem het in je rapport of PR-tekst.
     `import_schedule` doorgeeft (bv. `formatRegistry.ts:~99` "Onbekend XML-formaat…", `xerSourceArchive.ts`,
     `libraryOps.ts`). Of elk importpad werkelijk bij de agent uitkomt is afgeleid, niet nagespeeld. (De fout
     van `planner_get_planning_guide` is sinds de Engelse agentgids Engels.) — S (solver: B)
-77. **`planner_batch` met alleen een `planner_level_resources`-stap op een verouderde planning laat een undo-stap
-    achter, ook als er niets genivelleerd wordt.** De levelkern roept `ensureFreshSchedule` BINNEN de
-    batch-transactie aan (`calendarResourceTools.ts:~1665`); de transactie meet die herrekening als datawijziging
-    (`documentDataChanged` in `createMcpTransactions.ts`), dus volgt er een "MCP-bewerking"-undo-stap met
-    `isDirty`. Nagespeeld met een tijdelijke case tegen de echte dispatcher: A→B, duur van A gewijzigd via de
-    store, batch `[{ tool: 'planner_level_resources' }]` zonder resources ⇒ `delays: {}`, toch +1 undo-stap en
-    vuil. Leesstappen hebben dit niet meer (de batch rekent ze vóór de transactie door, PR #285). Voorstel:
-    dezelfde voor-de-transactie-verversing ook voor een levelstap. — B
 78. **`planner_level_resources` meldt in "datums zoals opgeslagen" verschuivingen die geen nivellering zijn.**
     De preview rekent tegen een verse solve, niet tegen de opgeslagen datums. Nagespeeld met de fixture
     `tests/fixtures/recordedDatesIfc.ts` (geen resources), zonder `dryRun`: `delays: {}`, de modus blijft aan en
@@ -203,11 +180,6 @@ en noem het in je rapport of PR-tekst.
     tool-beschrijving. Nagespeeld via de echte dispatcher. Voorstel: per item weigeren met een reden ("de duur
     van een samenvattingstaak is afgeleid van zijn subtaken"); `planner_add_tasks` met een duur op een item dat
     kinderen krijgt idem nakijken. — B
-83. **Leestool-beschrijvingen noemen `wbsCode` als schrijfveld, maar de schrijftools weigeren het.**
-    `planner_get_project_overview` en `planner_get_task` (`readTools.ts:~1063`, `~1119`): "`wbs` here and
-    `wbsCode` when writing (add_tasks/update_tasks)"; `taskFields.ts:153` weigert `wbsCode` ("the WBS code is
-    derived"). Nagespeeld: `fields.wbsCode` ⇒ `itemRejections`. Voorstel: de zin uit beide beschrijvingen
-    halen. — B
 84. **`planner_get_project_overview` beschrijft `dur` als werkdagen**, maar de rij geeft de duur in de eigen
     eenheid van de taak met `durUnit` ernaast (`readTools.ts:~315`, `nativeDuration`); bij een urentaak zijn
     het dus uren. Alleen in de code gezien. — S
@@ -220,12 +192,6 @@ en noem het in je rapport of PR-tekst.
     storten geweigerd (geplande start na de statusdatum), projecteinde vrijdag 25 juni (+2). Met expliciete
     werkelijke datums zijn beide routes gelijk (23 juni, +0). Voorstel: na een statusdatumwijziging binnen
     een batch tussentijds herrekenen, of 81 oplossen zodat de afleiding niet van de route afhangt. — B
-87. **De beschrijving van `planner_update_calendar` zegt dat een ongebruikte kalender opslaan niet
-    overleeft**, maar dat is sinds de A2-fix niet meer waar: `ifcReader.ts:~2801-2816` leest elke overige
-    IFCWORKCALENDAR terug, en `tests/mcp/cases-uurkalender.ts:~615-624` pint dat vast. Gevonden doordat de
-    eerste versie van de agentgids de zin overnam. Voorstel: de zin uit de beschrijving
-    (`calendarResourceTools.ts:~1042`) halen; alleen het behoud van urenbanden van een ongebruikte
-    urenkalender is apart te toetsen. — B
 88. **Feestdagen gegenereerd vóór de taken dekken een lang project niet.** Zonder rekenresultaat geeft
     `calendarSpan` geen projecteinde door en neemt `computeGenerateSpan` startjaar−1 t/m startjaar+3
     (`calendarResourceTools.ts:~585`, `generateCalendarHolidays.ts:~62`). Nagespeeld: start 7 juni 2027,
@@ -428,17 +394,12 @@ en noem het in je rapport of PR-tekst.
      agents in dezelfde map schrijven. Voorstel: dezelfde `seal`/`sealErrors` in `prepare`/`apply-terms`.
      Gevonden in de review van #323 (Opus, 2026-10-12), in de code aangewezen. — S
 
-129. **Het blok *CPM Resultaat* toont "1 dagen"** bij 1 dag speling: `TaskCpmResultSection.tsx:20-23` plakt
-    altijd `common:daysLong` ("dagen") achter het getal. Niet in de app nagespeeld. — S
 130. **De omschrijving van het voorbeeld *Refurbishment & Extension of a Family Home*** belooft een conflict
     dat "'Distribute' can resolve" (`public/examples/manifest.json:7`, getoond in `Backstage.tsx`). Er is geen
     Verdelen-knop; alleen de kern bestaat (`distributeUnits`, `ResourceLoad.ts`). — B
 131. **Engelse titel van het venster na een update is "You're up to date!"** (`en/common.json`
     `updates.justUpdated.title`). De Nederlandse is "Je bent bijgewerkt!". In het Engels leest dat als "geen
     update nodig". Voorstel: "You've been updated!". — B
-132. ***Voortgang bijwerken uit een blad* zegt "Kies een teruggestuurd CSV-blad"** (nl) en "Pick a returned
-    CSV sheet" (en), terwijl het venster ook `.xlsx` opent (`ProgressImportDialog.tsx:176-180`,
-    `common.json` `progressImport.intro`). — B
 
 ## Tests
 

@@ -1068,8 +1068,8 @@ export const readTools: McpToolDef[] = [
       'it). Type and lag appear here in exactly the notation those tools ACCEPT (FS/SS/FF/SF, "+2d", ' +
       '"+50%"). DELIBERATELY UNLIMITED: the complete relationship graph is guaranteed to be in this ONE ' +
       'response (every relationship appears once, at its predecessor), so one call is enough for structure ' +
-      'AND network WORK — you do not need a second call for ids. NAME DRIFT READ↔WRITE: the field is called ' +
-      '`wbs` here and `wbsCode` when writing (add_tasks/update_tasks); `id` is called `taskId` there. Hefty ' +
+      'AND network WORK — you do not need a second call for ids. IDENTIFIERS: `wbs` is read-only and derived ' +
+      'from the task hierarchy; `wbsCode` is not a writable field. Use stable task IDs with mutating tools. Hefty ' +
       'for large projects; use list_tasks if you want pagination.' + FRESH_NOTE,
     kind: 'read',
     batchable: true,
@@ -1125,8 +1125,8 @@ export const readTools: McpToolDef[] = [
       '`p6DurationType`, `p6ActivityType`, `p6ProjectId`, `p6TaskId`, `p6ExplicitTargetWindow` (also false), ' +
       '`p6CompletePctType`, `p6ExpectedFinish` and `p6SuspendResume` are visible as well. Relationship ' +
       'objects additionally show `p6StartAtPredecessorFinishBoundary`, if present. Unknown id ⇒ clean ' +
-      'NOT_FOUND. NAME DRIFT READ↔WRITE: `wbs` is called `wbsCode` when writing, and `calendar.effectiveId` ' +
-      'is called `calendarId` there (note: `effectiveId` can be the PROJECT calendar — then the task has no ' +
+      'NOT_FOUND. IDENTIFIERS: `wbs` is read-only and derived from the task hierarchy; `wbsCode` is not a writable field. ' +
+      '`calendar.effectiveId` is called `calendarId` when writing (note: `effectiveId` can be the PROJECT calendar — then the task has no ' +
       'own `calendarId`, see `calendar.isProjectDefault`). TWO DATES THAT LOOK WRONG BUT ARE NOT: (1) with ' +
       'NEGATIVE `totalFloat` the late dates lie before the early ones by definition — with tf −33 that is 33 ' +
       'working days back, before the project start if need be; that is the measure of the deadline overrun, ' +
