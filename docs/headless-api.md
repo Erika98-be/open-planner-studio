@@ -73,7 +73,7 @@ wordt alleen gelogd.
 ## Auth
 
 - De client stuurt `Authorization: Bearer <token>`.
-- De server vergelijkt het token in constante tijd: beide kanten gaan eerst door SHA-256, daarna
+- De server vergelijkt het token in constante tijd: beide kanten gaan eerst door HMAC-SHA-256 met een willekeurige sleutel per proces, daarna
   `crypto.timingSafeEqual`. Zo lekt ook de lengte niet.
 - Het token komt uit `OPS_API_TOKEN` of uit het bestand in `OPS_API_TOKEN_FILE` (niet allebei). Het
   token moet minstens 16 tekens hebben.

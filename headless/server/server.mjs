@@ -16,7 +16,7 @@
 // Logging: één JSON-regel per verzoek naar stdout. Nooit IFC-inhoud, querystring of token. De
 // console-uitvoer van de worker (de rekenkern kan taak- of relatie-id's loggen) wordt weggegooid.
 import { createServer } from 'node:http';
-import { createHash, randomUUID, timingSafeEqual } from 'node:crypto';
+import { createHmac, randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { Worker } from 'node:worker_threads';
 import { fileURLToPath } from 'node:url';
@@ -66,12 +66,16 @@ function log(level, msg, fields = {}) {
 }
 
 // ── Auth ───────────────────────────────────────────────────────────────────────────────────────
-/** Vergelijk in constante tijd. Beide kanten eerst door SHA-256, zodat ook de lengte niet lekt. */
+/** Vergelijk in constante tijd. Beide kanten eerst door een HMAC-SHA-256 met een willekeurige
+ *  sleutel per proces, zodat ook de lengte niet lekt. Dit is geen opslag van een wachtwoord: de
+ *  digest bestaat alleen in het geheugen, alleen om twee waarden van gelijke lengte te vergelijken. */
+const COMPARE_KEY = randomBytes(32);
+const compareDigest = (value) => createHmac('sha256', COMPARE_KEY).update(value).digest();
 function tokenMatches(header, expectedDigest) {
   if (typeof header !== 'string') return false;
   const m = /^Bearer ([^\s]+)$/.exec(header);
   if (!m) return false;
-  const given = createHash('sha256').update(m[1]).digest();
+  const given = compareDigest(m[1]);
   return timingSafeEqual(given, expectedDigest);
 }
 
@@ -160,7 +164,7 @@ const ACCEPTED_TYPES = new Set(['application/x-step', 'application/ifc', 'model/
 const REQUEST_ID = /^[A-Za-z0-9._-]{1,64}$/;
 
 export function createApiServer(config) {
-  const tokenDigest = createHash('sha256').update(config.token).digest();
+  const tokenDigest = compareDigest(config.token);
   const calculator = new Calculator(config.timeoutMs);
   let uploads = 0;
 
@@ -176,8 +180,11 @@ export function createApiServer(config) {
     };
     // Antwoord vóór de body gelezen is: de rest weggooien (niet bewaren), zodat de client het
     // antwoord kan lezen. Na 4× de body-grens of de uploadtijd verbreekt de server de verbinding.
+    // Bewust GEEN `Connection: close`: dan sluit Node de socket direct na het antwoord terwijl de
+    // client nog uploadt, en de TCP-reset kan het antwoord wegvagen (gezien in de containerjob: 413
+    // kwam als "fetch failed" aan).
     const failEarly = (code, message, headers = {}) => {
-      fail(code, message, {}, { Connection: 'close', ...headers });
+      fail(code, message, {}, headers);
       let discarded = 0;
       const cutoff = setTimeout(() => req.destroy(), config.uploadTimeoutMs);
       cutoff.unref();
