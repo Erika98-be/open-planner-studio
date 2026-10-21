@@ -388,6 +388,18 @@ en noem het in je rapport of PR-tekst.
 128. **CSV: een datum in een onleesbare vorm wordt stil "vandaag".** `csvDateOrToday` valt terug op
     `localTodayIso()` (`importDates.ts:71-74`, gebruikt door `csvReader.ts:135`). De Help noemt alleen de drie
     geldige vormen. Of er elders een melding voor komt, is niet nagegaan. Niet nagespeeld. — S
+162. **Desktop (Linux/macOS): Opslaan overschrijft een alleen-lezen projectbestand als de map schrijfbaar
+    is.** `replaceUserFile` (`atomicWrite.ts`) schrijft een halffabricaat met de rechten van het origineel
+    (0444) en hernoemt het over het doel; op POSIX mag dat. Het bestand krijgt de nieuwe inhoud en blijft
+    0444. Een editor als vim weigert hier zonder `!`. Gemeten met het echte bestandssysteem in
+    `check-save-failure-status.ts` §1R (MEETING-regel 1R-d). Is de map ook alleen-lezen, of Windows met het
+    kenmerk alleen-lezen, dan faalt opslaan wel netjes (zelfde check, §1 en §2). Voorstel: bij een doel zonder
+    schrijfbit eerst vragen of melden. Een besluit voor de eigenaar. — B
+163. **Web: Ctrl+S op een vergrendeld bestand opent zonder uitleg de bestandskiezer.** `saveToRefWeb`
+    (`webBackend.ts`) slikt elke fout (ook `NoModificationAllowedError`) en geeft `false`; `writeActiveDocument`
+    valt dan terug op Opslaan als. Annuleert de gebruiker, dan komt er geen melding (het document blijft
+    terecht gewijzigd). Gezien in `check-save-failure-status.ts` §3a/3b. Voorstel: een echte schrijffout
+    melden vóór de kiezer verschijnt. — B
 
 ## Rondleiding, Help en extensie-gidsen
 
