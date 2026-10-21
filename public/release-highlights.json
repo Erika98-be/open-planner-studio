@@ -1,15 +1,15 @@
 {
   "schema": 1,
   "product": "open-planner-studio",
-  "generated": "2026-10-21T18:12:03.604Z",
+  "generated": "2026-10-21T18:28:47.475Z",
   "releases": [
     {
       "version": "2026.10.0",
       "tag": "v2026.10.0",
       "stats": {
         "daysSincePrevious": 50,
-        "commitsSincePrevious": 2875,
-        "addedCodeLines": 248895
+        "commitsSincePrevious": 2877,
+        "addedCodeLines": 248898
       },
       "highlights": {
         "nl": {
