@@ -24,6 +24,14 @@ test('nivelleer-dialoog: berekenen via de worker levert een voorstel; toepassen 
   const dialog = page.getByRole('dialog');
   await expect(dialog).toBeVisible();
 
+  const conflictHint = 'Resource conflicts remain for these tasks. See the details below.';
+  // Met smoothing blijft een conflict over: de algemene hint beschrijft het resultaat,
+  // terwijl de toelichting per taak de oorzaak aanwijst.
+  await dialog.getByRole('checkbox').first().check();
+  await dialog.getByRole('button', { name: /^(Berekenen|Calculate)$/ }).click();
+  await expect(dialog.getByText(conflictHint, { exact: true })).toBeVisible();
+  await dialog.getByRole('checkbox').first().uncheck();
+
   await dialog.getByRole('button', { name: /^(Berekenen|Calculate)$/ }).click();
   // Het voorstel verschijnt (de worker heeft gerekend): één taak schuift drie werkdagen op.
   await expect(dialog.locator('table tbody tr')).toHaveCount(1);
@@ -37,6 +45,21 @@ test('nivelleer-dialoog: berekenen via de worker levert een voorstel; toepassen 
   }, [first, second]);
   expect(starts[0]).toBe('2026-09-07');
   expect(starts[1] > '2026-09-09').toBe(true);
+
+  // Zonder smoothing kan een taak intrinsiek meer vragen dan de ploeg kan leveren.
+  // Dit is géén tekort aan speling; de algemene hint mag die oorzaak niet suggereren.
+  await page.evaluate(id => {
+    const s = window.__OPS__!.store.getState();
+    const resourceId = s.addResource({ name: 'Kleine ploeg', type: 'LABOR', description: '', maxUnits: 1 });
+    s.assignResource(id, resourceId, 2);
+    s.runCPM();
+  }, first);
+  await page.locator('[data-ops-ribbon-item="levelResources"]').first().click();
+  await expect(dialog.getByRole('checkbox').first()).not.toBeChecked();
+  await dialog.getByRole('button', { name: /^(Berekenen|Calculate)$/ }).click();
+  await expect(dialog.getByText(conflictHint, { exact: true })).toBeVisible();
+  await expect(dialog.getByText('Kleine ploeg peaks at 2 units/day, capacity is 1 — cannot be resolved by shifting.', { exact: true })).toBeVisible();
+  await dialog.getByRole('button', { name: /^(Annuleren|Cancel)$/ }).click();
 });
 
 test('nivelleer-dialoog: tijdens een lange berekening blijft de dialoog bedienbaar en stopt "Stoppen" hem', async ({ page, ops: _ops }) => {
