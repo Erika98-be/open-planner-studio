@@ -8,13 +8,15 @@ grouped by whichever category applies (`Added`, `Changed`, `Fixed`, `Documentati
 
 ## v2026.10.0 — 2026-10-19
 
-A large release: 2,024 commits (190 merged pull requests) since v2026.9.0. It opens Primavera P6
+A large release: 2,159 commits (227 merged pull requests) since v2026.9.0. It opens Primavera P6
 (.xer) files natively and makes the difference between P6, MS Project and Open Planner Studio
 calculation explicit through scheduling profiles; adds task types (fixed duration, units or work), task splitting, saved layouts,
 a progress sheet that round-trips through a spreadsheet, a resource diagram and seven new table
 reports (with a DCMA 14-point assessment); writes schema-valid IFC 4.3 ADD2 by default; ships the
-interface and the Help in 28 languages; and replaces the Help with a Diátaxis-structured set of
-79 articles. The features are backed by planning, library, MCP and browser regression coverage,
+interface and the Help in 28 languages; replaces the Help with a Diátaxis-structured set of
+79 articles; and prepares the product for the OpenAEC ecosystem with a headless core package, a
+headless HTTP API with a container and AWS definition, a release verification workflow and signed
+Windows programs. The features are backed by planning, library, MCP and browser regression coverage,
 including a fidelity measurement against P6's own calculated output and the 216-file .mpp corpus.
 
 ### Added
@@ -137,18 +139,48 @@ including a fidelity measurement against P6's own calculated output and the 216-
   the kind of feedback) goes over the internet to `open-feedback-studio.pages.dev`, together with an
   optional e-mail address, an optional screenshot and the app version, operating system and language;
   the dialog states this in a privacy line, and the e-mail address is remembered only on your own
-  device. There are three kinds: *Something's not working*, *Idea* and *Question or comment*. The
+  device (#395, #397). There are three kinds: *Something's not working*, *Idea* and *Question or comment*. The
   screenshot editor gained *Cover* (a solid black block that is drawn into the sent image, so the
   pixels underneath are not sent) and *Retake*; an unsent draft survives closing the dialog during
   the session; and the dialog says when the same report has already arrived or when it is uncertain
   whether it arrived. Only when sending certainly failed does it offer the old route, *Open on
-  GitHub*, which prepares the issue as before. Until the studio is linked to this repository, reports
+  GitHub*, which prepares the issue as before. If the annotated screenshot cannot be prepared, nothing
+  is sent: the editor stays open with an error instead of falling back to the uncovered original
+  (#408). Until the studio is linked to this repository, reports
   arrive in the studio's dashboard, not as GitHub issues.
 - **Platform build for the OpenAEC app on Frappe.** `npm run build:platform -- --base /path/`
   produces a bundle for a sub-path with a manifest; extensions, AI mode and the demo start are off
   there. Open, Save, Save As, Recent files and crash recovery also work against the hosting site
   through a third file-reference kind (`window.openaecHost`, versions and conflict detection;
   AutoSave deliberately excluded), and `?fakeSite=1` installs a fake site for development.
+- **A headless core without the desktop interface: the Node package `@openaec/open-planner-core`
+  (#440).** `src/core/` offers three calls: `openIfc(text)` opens IFC text like *File → Open*,
+  `doc.schedule()` calculates like F5 (the project's task types and calculation profile) and returns
+  a JSON summary (project, start and finish, counts, tasks with dates, late dates, total float and
+  critical flag, the critical path and warnings), and `doc.toIfc()` writes the IFC back. Every failure
+  is a `PlannerCoreError` with a fixed code (`INVALID_INPUT`, `IFC_READ_FAILED`, `NO_TASKS`,
+  `SCHEDULE_FAILED`, `IFC_WRITE_FAILED`). `npm run build:core` builds one ESM bundle for Node 22 with
+  type declarations, a generated `package.json` (version = app version, LGPL-3.0-or-later) and the
+  licence texts of the bundled dependencies, and fails if React, Tauri or the app singleton end up in
+  it; the store itself now comes from a factory (`appStoreFactory.ts`) without that singleton. A test
+  proves that the core returns the same dates, float, critical flag, finish and critical path as the
+  app for all 32 example files, and `npm run verify:core-package` (new step in `npm run verify`)
+  builds the package, installs the tarball in an empty folder and runs the example in
+  `headless/consumer-example/`. **The package is not published to npm**: a consumer installs the
+  tarball from `npm pack` (`docs/headless-kern.md`).
+- **A headless HTTP API, a container and an AWS definition (#442).** `headless/server/` is a small
+  server on the headless core: `GET /healthz` (no authentication) and `POST /v1/schedule?output=summary|ifc`,
+  which takes IFC text and returns the JSON summary or the recalculated IFC. It needs a Bearer token
+  (`OPS_API_TOKEN` or `OPS_API_TOKEN_FILE`; without one the server refuses to start), limits the
+  body (20 MiB by default), the calculation time (60 s by default) and the number of calculations at
+  once, always answers errors as `{ "error": { "code", "message" } }`, and logs one JSON line per
+  request without IFC content or token. The contract is `headless/server/openapi.yaml` (OpenAPI 3.1)
+  and a 21-check smoke test runs against it. A multi-stage `Dockerfile` builds a container that runs
+  as a non-root user with a health check, and `deploy/aws/ecs-fargate.yaml` defines ECS Fargate
+  behind a load balancer with HTTPS, the token from AWS Secrets Manager and a minimal execution role.
+  CI (`headless-api.yml`) runs the server, builds the container, runs the smoke test against both
+  and lints the template with `cfn-lint`. **Nothing is deployed or published:** there is no AWS
+  account yet, so the template is only linted and no image is hosted (`docs/headless-api.md`).
 - **The interface and the in-app Help are available in 28 languages.** Thirteen languages are new
   (Russian, Ukrainian, Czech, Slovak, Serbian in Cyrillic, Croatian, Bulgarian, Hungarian,
   Romanian, Swedish, Norwegian Bokmål, Danish, Finnish), Lao joined from a community contribution,
@@ -204,7 +236,7 @@ including a fidelity measurement against P6's own calculated output and the 216-
   descriptions follow; the MCP descriptions name both terms, so an agent recognises either. Only the
   visible words changed: no data, IFC property, MCP parameter (`taskType`, `workRule`) or file format
   name (the CSV column `Task Type` still holds the work category).
-- **Hours are written the same everywhere: `10h` in English and `10u` in Dutch, without a space.**
+- **Hours are written the same everywhere: `10h` in English and `10u` in Dutch, without a space (#400).**
   This covers the *Duration* column, the Gantt bar labels, tooltips, the properties panel, print and
   reports, the remaining-work notice (`320u → 88u`), the work deviation on assignments, and lags in
   the grid, the lag field, warnings and the health report. Input is unchanged: `80u`, `80h`, `2u`
@@ -254,7 +286,7 @@ including a fidelity measurement against P6's own calculated output and the 216-
   different scroll heights (the ghost row counted on one side only), so the list jumped up when
   scrolling sideways and the rows no longer lined up; both now share one scroll extent
   (`src/engine/taskGrid/scrollExtent.ts`). Checked in Chromium and in WebKitGTK, the engine of the
-  Linux desktop app.
+  Linux desktop app (#362).
 - **"Dates as recorded" says per task what a recalculation would do.** The badge in capitals that ran
   outside the panel is gone. *Properties* shows an information block above *Start*, with the line
   "Recalculating changes this task" or "stays the same" and, when the file did not record everything,
@@ -286,6 +318,15 @@ including a fidelity measurement against P6's own calculated output and the 216-
   calculation-error brakes), `planner_update_calendar` accepts breaks and working exceptions from a
   read-out, and AI backups of a saved file are kept in one fixed folder and thinned instead of a
   fixed ten.
+- **MCP calls now belong to a session, and an official MCP client is part of the tests (#439).** A
+  successful `initialize` returns an `Mcp-Session-Id`; every later request must carry it (without it
+  the request gets `400`, an unknown id `404`), and the check that the document did not change
+  under the agent is kept per session, so a second client no longer shares the first one's
+  anchor. Sessions survive a bridge restart or port change and are cleared by a new token. The
+  bridge also closes each connection after its answer, which fixed a first request hanging after
+  a restart. The official MCP SDK now tests the server in `npm test` and, in a separate workflow
+  (`mcp-real-app.yml`), against the real desktop bridge. After updating, an AI client must connect
+  again (restart Claude Desktop).
 - **Notifications are shorter and closable.** Toasts are short, "Relation created" is gone, a
   notice closes with its cross and a click does nothing, an opening notice stays when the app changed
   the data, and a file opened in a format other than IFC explains what the app took over and how
@@ -324,13 +365,43 @@ including a fidelity measurement against P6's own calculated output and the 216-
   `stapler validate`. A failing check keeps the release as a draft, so Windows and publishing wait;
   pull requests that touch signing run the same checks in `macos-sign-check.yml`
   (`scripts/macos-notarize-dmg.sh`, `scripts/macos-verify-dmg.sh`, `release.yml`).
+- **On Windows the installed program and the uninstaller are now signed too, not only the installer
+  (#444).** In v2026.9.0 `open-planner-studio.exe` was `NotSigned` after installation. The release
+  build now has Tauri sign the program, the uninstaller and the setup during bundling
+  (`scripts/windows-sign.ps1`, Microsoft's signing client with a checked hash, RFC 3161 timestamp),
+  and a gate keeps the release a draft unless the setup and the program carry a valid, timestamped
+  signature. CI builds, `tauri:dev` and local builds stay unsigned. A release-like build without a
+  tag (`windows-sign-check.yml`) showed valid signatures on all three files; only a real release will
+  show that the signed setup, its `.exe.sig` and `latest.json` agree.
+- **Every release is now verified on clean runners (#438).** `scripts/verify-release.mjs <tag>`
+  checks the minisign updater signatures, `latest.json` and the sha256 of each asset against GitHub's
+  digest, and `release-verify.yml` installs, starts and removes the packages on fresh runners (Ubuntu
+  22.04 and 24.04, Fedora, Windows, macOS) and checks the platform signatures, automatically after
+  each release build. Run against v2026.9.0 it found three faults: the `.exe.sig` did not fit the
+  signed setup (the release workflow now signs and uploads it again after Authenticode), the macOS
+  app lacked notarization (the signed and notarized installers above) and the installed Windows
+  program was unsigned (the item above). Linux packages carry no GPG signature; that is still an
+  open decision (`docs/release-verificatie.md`).
+- **Reliability evidence for saving, recovery, progress import and large plans (issue #405).** New
+  tests prove that a failed save leaves the document marked as changed and the target file intact
+  (desktop, web and site; read-only and full-disk targets), that a crash-recovery copy restores every
+  document field and the calculated dates (#434), and that applying a progress sheet changes only
+  progress fields, that cancelling changes nothing and that applying the same sheet twice does
+  nothing the second time (#407). A first measurement of large plans (`npm run measure:large-plans`,
+  one machine, headless Chromium, no targets set) gives for 1,000, 5,000 and 10,000 tasks:
+  opening 0.5, 2.0 and 3.7 s, F5 0.2, 0.8 and 1.5 s, one leveling calculation 0.6, 8.4 and 37.6 s,
+  and an auto-save tick 0.09, 0.28 and 0.55 s; scrolling and zooming stay near 45 ms per wheel
+  step (#437).
 - **Engineering and release process.** `AGENTS.md` is the single instruction source, the CI runs
   the full verify in parallel parts (deploy now waits for a green CI run), a translation release
   gate and a documentation audit skill were added, code comments were trimmed across the codebase,
   and the full verify no longer runs locally before every push. The browser tests are now spread over
   the CI shards by measured duration (a test guards that every spec runs in exactly one shard), a new
   browser test first extends an existing scenario, a flaky document-switch test was made reliable, and
-  an update loop in the feedback dialog that lost the 52nd typed character was removed.
+  an update loop in the feedback dialog that lost the 52nd typed character was removed. The TypeScript
+  runner for tests now removes its temporary bundle folder after each run, also after a failure
+  (#427), and the IFC round-trip date check no longer fails on days when the creation date equals a
+  contract date (#428).
 - **A performance and robustness audit touched the hot paths.** Cycle detection and topological
   sorting are iterative and linear, bulk edits and bulk deletes are linear, path calculations and
   the histogram no longer sort or trace per task, relation arrows are clipped before drawing, the
@@ -427,6 +498,41 @@ including a fidelity measurement against P6's own calculated output and the 216-
 - **Extension reliability.** A removed extension no longer revives while its `onLoad` still runs, a
   hanging `onLoad` times out after 15 s, `api.ui.showNotification` is visible to the user, a failed
   extension importer reports an error, and the ZIP download has an idle limit.
+- **Entering and calculating values.** Clicking into *Duration*, *Max. units* or the units of an
+  assignment now selects the shown value, so typing `1` and then `2` no longer gives `21` (#416).
+  A lag of −1.5 days typed in days became −1 while the same lag in minutes rounds to −2; days now
+  round half away from zero in both directions, for internal and external relations (#411). Saving a
+  branch as a WBS template dropped the minutes of an hour lag (a 4-hour lag came back as nothing); the
+  template keeps them now, but templates saved earlier cannot get them back and must be saved again
+  (#410).
+- **Texts that said the wrong thing.** The Dutch column and property label is *Werkelijk einde*, as in
+  the progress import (#409). One day of float reads *1 day* instead of *1 days* in the three float
+  fields of *CPM result* (#430). The hint for regenerating holidays no longer calls the generator's
+  target year (end year + 1) the project end (#413). The English new-project wizard names its
+  calendar *Construction calendar NL* instead of *Bouwkalender NL* (#417). The header under
+  *Remaining conflicts* in leveling no longer blames every conflict on too little float, also not
+  when smoothing is off (#418). The progress import and the import card name CSV and XLSX, not CSV
+  only (#435).
+- **Files, recovery and extensions.** After a partial recovery, *Restore* deleted the one unreadable
+  copy together with the restored ones; unreadable copies are now kept (#424). In a browser without
+  `crypto.randomUUID` the first web recovery session fell back to one shared key, so a busy tab or
+  *Later* could crash; all three web paths now make their own id (#423). Cancelling an export in
+  Backstage jumped to *Start* as if it had succeeded; it now stays on *Export* (#425). *Save failed*
+  on the desktop showed no reason because Tauri plugins reject with a string, not an `Error` (#434).
+  A failing local ZIP or JS extension install showed nothing; it now gives a notice, while cancelling
+  stays silent (#415). After *Port busy* or *Error* the AI port field stayed locked although the
+  bridge was not running; only *live* locks it now (#412). `api.events.emit` in the extension API now
+  refuses the reserved `host:` namespace, so an extension cannot forge host events; this guards the
+  API contract, not a sandbox (#431).
+- **MCP texts and tools told agents the wrong thing.** `planner_get_project_overview` and
+  `planner_get_task` described the read-only `wbs` as writable `wbsCode` (#420); the
+  `planner_update_calendar` description still said an unused calendar does not survive save and
+  reload, though IFC keeps it (#421); `planner_update_tasks` reported an explicit duration on a phase
+  as updated although the duration is derived from the subtasks, and `planner_add_tasks` accepted a
+  duration on an item that got children in the same call; both are now refused (#422);
+  `planner_list_tasks` with `zonder_relaties` reported leaf tasks as orphans that are linked through
+  their phase, and now counts relations on all parent phases (#426); and a batch with
+  `planner_level_resources` on a stale schedule added an empty undo step (#432).
 
 - **The coloured marker before the WBS number in *Dependencies* no longer looks odd.** It was a pill or
   rectangle of 6 × 10 px with a ring in the text colour (white on dark). It is now 1em, the size of the
@@ -439,7 +545,10 @@ including a fidelity measurement against P6's own calculated output and the 216-
   task dates, but not of *Baseline 0* Start and Finish, so the baseline of a task from 09:00 to 12:00
   lost its times and no longer matched a baseline set in the app. *Baseline 0* now uses the same mode
   as the task dates: an hour task keeps the time, a day task keeps the date, as before
-  (`importDateTime` in `mspdiReader.ts`, `check-mspdi-hour-baseline.ts`).
+  (`importDateTime` in `mspdiReader.ts`, `check-mspdi-hour-baseline.ts`). A *Baseline 0* whose start
+  or finish is empty or unreadable (for example `NA`) counts as missing: the task gets no baseline
+  instead of aborting the import or receiving a made-up date (the text `NA` or today's date) that
+  would show a false variance (#406).
 ### Documentation
 - Rewrote the user documentation according to Diátaxis (how-to, reference, explanation): the 31
   articles of v2026.9.0 became 79 in Dutch and English, translated into all other languages, with
@@ -458,6 +567,17 @@ including a fidelity measurement against P6's own calculated output and the 216-
   calculation profile, splitting a task, using layouts, importing progress, choosing the IFC schema, editing the hours distribution, picking a
   reporting period and opening/saving through the site; the "Good planning" guide and the AI
   assistant guide were extended.
+- Ecosystem readiness (issue #429): `docs/ecosysteem-gereedheid.md` gives a capability matrix (installers,
+  updater, browser and platform build, headless core, HTTP API, AWS, MCP, Claude Code and Desktop) and
+  the status per requirement, linking to the detail documents added with it: `docs/headless-kern.md`,
+  `docs/headless-api.md`, `docs/release-verificatie.md` (outcome of the v2026.9.0 check) and
+  `docs/mcp-verificatie.md` (what was tested with the official MCP client and what is not delivered:
+  no `.mcpb` bundle, no Claude connector, no stdio server). Still open: a real AWS deployment, GPG
+  for Linux packages, publishing to npm, and testing Claude Desktop itself (#453).
+- The in-app guide *Connecting an AI assistant* explains how to connect Claude Code
+  (`claude mcp add --transport http …`) and Claude Desktop (through `mcp-remote`) (#439). The
+  progress-import guide now says that the CSV also accepts decimals with a comma or point and ISO
+  dates, not only whole numbers and dd-mm-yyyy (#407).
 - Repository documentation: `AGENTS.md` became the single agent instruction source (with
   path-bound rules in `.claude/rules/` and recipes in `docs/recepten/`), `knownbugs.md` collects
   side findings, `docs/platformbouw.md` describes the platform build and site storage, and design
