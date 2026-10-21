@@ -14,7 +14,7 @@ calculation explicit through scheduling profiles; adds task types (fixed duratio
 a progress sheet that round-trips through a spreadsheet, a resource diagram and seven new table
 reports (with a DCMA 14-point assessment); writes schema-valid IFC 4.3 ADD2 by default; ships the
 interface and the Help in 28 languages; replaces the Help with a Diátaxis-structured set of
-79 articles; and prepares the product for the OpenAEC ecosystem with a headless core package, a
+78 articles; and prepares the product for the OpenAEC ecosystem with a headless core package, a
 headless HTTP API with a container and AWS definition, a release verification workflow and signed
 Windows programs. The features are backed by planning, library, MCP and browser regression coverage,
 including a fidelity measurement against P6's own calculated output and the 216-file .mpp corpus.
@@ -188,7 +188,7 @@ including a fidelity measurement against P6's own calculated output and the 216-
   termbase, source hashes and a release gate (`verify:translations`) keeps them current. A Help
   article read in a language other than Dutch or English shows a notice with buttons to read the
   English or Dutch source.
-- **The Help was rewritten around the four Diátaxis kinds and grew from 31 to 79 articles**:
+- **The Help was rewritten around the four Diátaxis kinds and grew from 31 to 78 articles**:
   50 how-to articles, 15 references, 13 explanations and a planning guide, with `?` buttons in
   dialogs and panels that open the matching article, anchors, aliases and draft support. New
   explanations cover calculation profiles, task types, dates as recorded, days and hours, leveling,
@@ -564,7 +564,7 @@ including a fidelity measurement against P6's own calculated output and the 216-
   would show a false variance (#406).
 ### Documentation
 - Rewrote the user documentation according to Diátaxis (how-to, reference, explanation): the 31
-  articles of v2026.9.0 became 79 in Dutch and English, translated into all other languages, with
+  articles of v2026.9.0 became 78 in Dutch and English, translated into all other languages, with
   new references for shortcuts, settings, calculation options, formats, report types, permissions,
   calendars, columns, notices and the Project settings, and new explanations for calculation
   profiles and conventions, task types, dates as recorded, days and hours, and leveling.

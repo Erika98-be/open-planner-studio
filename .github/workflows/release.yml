@@ -519,7 +519,11 @@ jobs:
 
           # --- Upload the rebuilt updater artifacts plus the signed installer.
           # (The signed setup.exe is uploaded for humans who download directly.)
+          # $ErrorActionPreference stopt niet op een exitcode van een native
+          # programma; daarom na elke gh-aanroep zelf $LASTEXITCODE controleren
+          # (review release v2026.10.0, bevinding 2).
           gh release upload $VERSION "$ZIP_PATH" "$ZIP_PATH.sig" "$($EXE.FullName)" "$($EXE.FullName).sig" --clobber --repo "$REPO"
+          if ($LASTEXITCODE -ne 0) { throw "gh release upload van de Windows-assets faalde (exit $LASTEXITCODE)" }
 
           # --- Resolve the asset NAME via the API. GitHub rewrites spaces in
           # asset names to dots (e.g. "Open Planner Studio_..." -> "Open.Planner.Studio_..."),
@@ -529,15 +533,18 @@ jobs:
           # URL terug die na publicatie 404't (dit brak Windows-auto-update in
           # v2026.7.1). Bouw daarom zelf de stabiele `releases/latest/download/`-URL,
           # consistent met de linux/macos-entries die tauri-action schrijft.
-          $assets = (gh release view $VERSION --repo "$REPO" --json assets | ConvertFrom-Json).assets
-          $zipAsset = $assets | Where-Object { $_.name -like '*.nsis.zip' } | Select-Object -First 1
-          $ZIP_ASSET_NAME = $zipAsset.name
-          if ([string]::IsNullOrEmpty($ZIP_ASSET_NAME)) {
-            # Fallback: mimic GitHub's space->dot rewrite manually if the API lookup
-            # somehow came back empty.
-            $ZIP_ASSET_NAME = $ZIP_NAME -replace ' ', '.'
-            Write-Host "API lookup empty — using space->dot rewrite of the local zip name"
+          $assetsJson = gh release view $VERSION --repo "$REPO" --json assets
+          if ($LASTEXITCODE -ne 0) { throw "gh release view faalde (exit $LASTEXITCODE)" }
+          $assets = ($assetsJson | ConvertFrom-Json).assets
+          # Precies de asset die we net uploadden (GitHub maakt van spaties punten).
+          # Geen terugval op een zelfbedachte naam: ontbreekt de asset, dan wijst
+          # latest.json naar niets en krijgt geen Windows-installatie een update.
+          $expectedZipAsset = $ZIP_NAME -replace ' ', '.'
+          $zipAsset = @($assets | Where-Object { $_.name -eq $expectedZipAsset })
+          if ($zipAsset.Count -ne 1) {
+            throw "Asset $expectedZipAsset staat niet (precies één keer) in de draft; gevonden: $(($assets | ForEach-Object name) -join ', ')"
           }
+          $ZIP_ASSET_NAME = $zipAsset[0].name
           $ZIP_URL = "https://github.com/$REPO/releases/latest/download/$ZIP_ASSET_NAME"
           Write-Host "Zip URL: $ZIP_URL"
 
@@ -546,6 +553,7 @@ jobs:
           # a latest.json, but its Windows signatures predate the Authenticode
           # re-signing and are stale. We SET both Windows keys authoritatively here.
           gh release download $VERSION --pattern "latest.json" --output latest.json --clobber --repo "$REPO"
+          if ($LASTEXITCODE -ne 0) { throw "gh release download latest.json faalde (exit $LASTEXITCODE)" }
 
           $latest = Get-Content latest.json -Raw | ConvertFrom-Json
           if ($null -eq $latest.platforms) {
@@ -562,11 +570,12 @@ jobs:
 
           $latest | ConvertTo-Json -Depth 10 | Set-Content latest.json -NoNewline
           gh release upload $VERSION latest.json --clobber --repo "$REPO"
+          if ($LASTEXITCODE -ne 0) { throw "gh release upload latest.json faalde (exit $LASTEXITCODE)" }
 
           Write-Host "Windows updater entries set to the .nsis.zip with matching signature"
 
   publish-release:
-    timeout-minutes: 10
+    timeout-minutes: 20
     permissions:
       contents: write
     runs-on: ubuntu-latest
@@ -575,16 +584,22 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      # Node 22 zoals de rest van de workflow; verify-release.mjs en
+      # release-notes.mjs draaien hier.
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
       # Het `notes`-veld in latest.json is wat de updater-dialoog toont op het
       # moment dat de update wordt aangeboden. tauri-action laat het leeg, dus
       # zetten we het hier — als laatste stap vóór publicatie, zodat het niet
       # botst met de Windows-re-sign-stap die latest.json óók herschrijft.
       - name: Set updater notes in latest.json
-        # Bewust niet-blokkerend: de notes zijn cosmetisch, de publicatie niet.
-        # Een release met 15 assets die als draft blijft hangen omdat een
-        # tekstveld niet gezet kon worden, is erger dan een lege notes-tekst.
-        # De stap kleurt wel rood in de UI, dus stil gaat het niet.
-        continue-on-error: true
+        # Blokkerend: `gh release upload --clobber` verwijdert de oude
+        # latest.json vóór de upload. Faalt de upload, dan heeft de release geen
+        # manifest meer en vindt geen enkele installatie de update. Dan moet de
+        # release een draft blijven (review release v2026.10.0, bevinding 1).
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION: ${{ needs.create-release.outputs.version }}
@@ -602,6 +617,29 @@ jobs:
           '
           gh release upload "$VERSION" latest.json --clobber --repo "$REPO"
 
+      # Laatste poort vóór publicatie: dezelfde controle als release-verify.yml,
+      # maar op de draft. Elke platform-URL in latest.json wijst naar een asset
+      # van deze release, elke signature is gelijk aan die .sig en verifieert
+      # tegen de updater-pubkey, en alle tien platformsleutels zijn er. Bij een
+      # FOUT blijft de release een draft. Zie docs/release-verificatie.md.
+      - name: Controleer de draft vóór publicatie (verify-release.mjs --draft-id)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ needs.create-release.outputs.version }}
+          RELEASE_ID: ${{ needs.create-release.outputs.release_id }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/assets"
+          status=0
+          node scripts/verify-release.mjs "$VERSION" --repo "$REPO" --draft-id "$RELEASE_ID" \
+            --dir "$RUNNER_TEMP/assets" --out "$RUNNER_TEMP/verify-release.md" > /dev/null || status=$?
+          if [ -f "$RUNNER_TEMP/verify-release.md" ]; then cat "$RUNNER_TEMP/verify-release.md" >> "$GITHUB_STEP_SUMMARY"; fi
+          if [ "$status" -ne 0 ]; then
+            echo "::error::verify-release.mjs gaf exit $status; de release blijft een draft"
+            exit 1
+          fi
+
       - name: Publish release
         id: publish-release
         uses: actions/github-script@v8
@@ -609,7 +647,7 @@ jobs:
           release_id: ${{ needs.create-release.outputs.release_id }}
         with:
           script: |
-            github.rest.repos.updateRelease({
+            await github.rest.repos.updateRelease({
               owner: context.repo.owner,
               repo: context.repo.repo,
               release_id: process.env.release_id,
