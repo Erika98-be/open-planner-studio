@@ -667,7 +667,12 @@ function parse(text) {
 ## Host-events
 
 De app zendt lifecycle-events op dezelfde bus als `api.events`. Abonneer met
-`api.events.on(...)` (permissie `events`); de namen staan in `sdk.hostEvents`:
+`api.events.on(...)` (permissie `events`); de namen staan in `sdk.hostEvents`.
+De naamruimte `host:` is gereserveerd voor de app: `api.events.emit('host:…', ...)` gooit een fout,
+ook voor nog onbekende host-eventnamen. Eigen eventnamen zonder dit voorvoegsel blijven toegestaan.
+Dit is een API-contract, geen JavaScript-sandbox (zie de veiligheidsgrenzen hieronder).
+
+De beschikbare host-events:
 
 | Event (`sdk.hostEvents.…`) | Naam | Data |
 |---|---|---|
