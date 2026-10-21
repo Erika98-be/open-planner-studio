@@ -67,6 +67,8 @@ jobs:
           exit 1
       - name: Smoke-test
         run: node headless/server/smoke.mjs http://127.0.0.1:8080 "$OPS_API_TOKEN"
+      - name: Servertest (randgevallen; start een eigen server)
+        run: node headless/server/server-test.mjs
       - name: Logs bevatten geen token en geen IFC-inhoud
         if: always()
         run: |

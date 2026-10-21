@@ -4,6 +4,9 @@
 //   node headless/server/smoke.mjs <baseUrl> <token>
 //   node headless/server/smoke.mjs https://planner-api.example.org "$OPS_API_TOKEN"
 //
+// Draai hem tegen een server zonder ander verkeer: tijdens een berekening geeft de server meteen
+// 503 BUSY (geen wachtrij), en dat zou hier als fout tellen.
+//
 // Controleert: health (zonder token), 401 zonder en met een fout token, 404, 405, 415, een
 // voorbeeld-IFC doorrekenen met de verwachte uitkomst (JSON en IFC), 400 bij geen IFC, 422 bij een
 // IFC zonder taken, en 413 bij een body boven de grens die /healthz meldt. Exitcode 0 = groen.
@@ -51,7 +54,9 @@ try {
   // 1. Health, zonder token.
   const health = await call('/healthz', { auth: false });
   ok('GET /healthz → 200 zonder token', health.status === 200 && health.json?.status === 'ok', `${health.status} ${health.text.slice(0, 200)}`);
-  ok('/healthz noemt versie en body-grens', typeof health.json?.version === 'string' && Number.isInteger(health.json?.limits?.maxBodyBytes));
+  ok('/healthz noemt versie en grenzen', typeof health.json?.version === 'string' && Number.isInteger(health.json?.limits?.maxBodyBytes)
+    && Number.isInteger(health.json?.limits?.maxUploads) && Number.isInteger(health.json?.limits?.uploadTimeoutMs)
+    && typeof health.json?.busy === 'boolean', health.text.slice(0, 200));
   ok('elk antwoord heeft een X-Request-Id', !!health.headers.get('x-request-id'));
   const maxBody = health.json?.limits?.maxBodyBytes ?? 20 * 1024 * 1024;
   console.log(`    versie ${health.json?.version}, body-grens ${maxBody} bytes`);

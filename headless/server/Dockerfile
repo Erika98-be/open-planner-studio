@@ -7,7 +7,9 @@
 # Stap 1 bouwt het kernpakket reproduceerbaar uit de broncode (npm ci op de lockfile,
 # scripts/build-core.mjs). Stap 2 bevat alleen Node, het gebouwde pakket en de twee serverbestanden.
 # Geen token, geen configuratie en geen secrets in de image: alles via omgevingsvariabelen.
-ARG NODE_IMAGE=node:22-bookworm-slim
+# node:22-bookworm-slim, vastgepind op de digest van de multi-platform-index (opgezocht 2026-10-21).
+# Bijwerken: nieuwe digest van die tag opzoeken en hier zetten (zie docs/headless-api.md).
+ARG NODE_IMAGE=node:22-bookworm-slim@sha256:3ed98443660ff48413b5af19ecefce3b9d50845a901a43420d47cc63a9fddbe9
 
 FROM ${NODE_IMAGE} AS build
 WORKDIR /src

@@ -488,6 +488,7 @@ en noem het in je rapport of PR-tekst.
    Een herhaling slaagde in 12 minuten, en dezelfde shard slaagde lokaal (213 passed). Rond dezelfde tijd
    bleven ook shards van andere branches en van `main` lang `in_progress`. Dat wijst eerder op de runners
    dan op een test. — S
+
 168. **Een IFC met een heel diepe WBS (6.000 niveaus) laat het openen vastlopen op een `RangeError`
    (Maximum call stack size exceeded).** Gezien via de headless kern: `openAsDocument` gooit die fout op
    een gegenereerd bestand met 6.000 geneste taken (`tests/planning/check-headless-core.ts` §4g). De kern

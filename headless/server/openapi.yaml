@@ -51,9 +51,13 @@ paths:
       operationId: scheduleIfc
       summary: Calculate an IFC schedule
       description: |
-        One calculation runs at a time. Other requests wait in a short queue; when the queue is full
-        the API answers 503 `BUSY`. A calculation that takes longer than the timeout is stopped and
-        answers 503 `TIMEOUT`.
+        There is no queue. One calculation runs at a time. When a calculation runs, or when
+        `limits.maxUploads` request bodies are being received already, the API answers 503 `BUSY` at
+        once, before it reads the body. Retry after `Retry-After` seconds.
+
+        Time limits: the body must arrive within `limits.uploadTimeoutMs` (408 `UPLOAD_TIMEOUT`), and
+        the calculation must finish within `limits.timeoutMs` (503 `TIMEOUT`). Together they stay below
+        the 120 s idle timeout of the load balancer, so the API itself always answers.
       parameters:
         - name: output
           in: query
@@ -104,7 +108,7 @@ paths:
                 type: string
                 description: The recalculated IFC file (when `output=ifc`).
         '400':
-          description: '`INVALID_INPUT` (the body is not ISO-10303-21 text) or `BAD_REQUEST` (unknown `output`).'
+          description: '`INVALID_INPUT` (the body is not ISO-10303-21 text) or `BAD_REQUEST` (unknown `output`, or a request target that is not a valid URL).'
           content:
             application/json:
               schema:
@@ -122,6 +126,12 @@ paths:
                 $ref: '#/components/schemas/Error'
         '405':
           $ref: '#/components/responses/MethodNotAllowed'
+        '408':
+          description: '`UPLOAD_TIMEOUT`: the body did not arrive within `limits.uploadTimeoutMs`.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '413':
           description: '`PAYLOAD_TOO_LARGE`: the body is larger than the limit.'
           content:
@@ -149,7 +159,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
         '503':
-          description: '`BUSY` (queue full) or `TIMEOUT` (calculation stopped). Try again after `Retry-After` seconds.'
+          description: '`BUSY` (a calculation runs or too many uploads; decided before the body is read) or `TIMEOUT` (calculation stopped). Try again after `Retry-After` seconds.'
           headers:
             Retry-After:
               schema:
@@ -197,6 +207,7 @@ components:
                 - UNAUTHORIZED
                 - NOT_FOUND
                 - METHOD_NOT_ALLOWED
+                - UPLOAD_TIMEOUT
                 - PAYLOAD_TOO_LARGE
                 - UNSUPPORTED_MEDIA_TYPE
                 - IFC_READ_FAILED
@@ -213,7 +224,7 @@ components:
               additionalProperties: true
     Health:
       type: object
-      required: [status, version, limits, queue]
+      required: [status, version, limits, busy, uploads]
       properties:
         status:
           type: string
@@ -224,17 +235,25 @@ components:
           examples: ['2026.9.0']
         limits:
           type: object
-          required: [maxBodyBytes, timeoutMs, maxQueue]
+          required: [maxBodyBytes, timeoutMs, uploadTimeoutMs, maxUploads]
           properties:
             maxBodyBytes:
               type: integer
             timeoutMs:
               type: integer
-            maxQueue:
+              description: Maximum calculation time.
+            uploadTimeoutMs:
               type: integer
-        queue:
+              description: Maximum time to receive the body.
+            maxUploads:
+              type: integer
+              description: Bodies received at the same time; more get 503 `BUSY`.
+        busy:
+          type: boolean
+          description: A calculation runs now; a new request gets 503 `BUSY`.
+        uploads:
           type: integer
-          description: Calculations running or waiting now.
+          description: Request bodies being received now.
     ScheduleSummary:
       type: object
       required: [formatVersion, project, counts, tasks, criticalPath, warnings]
@@ -303,10 +322,14 @@ components:
                   - CALENDAR_CAPPED
                   - RELATION_IGNORED
                   - HAMMOCK_WITHOUT_FINISH_DRIVER
+                  - XER_ARCHIVE_DROPPED
               ids:
                 type: array
                 items:
                   type: string
+              detail:
+                type: string
+                description: Short fixed reason, only for codes that have one (`XER_ARCHIVE_DROPPED`).
     TaskSummary:
       type: object
       required: [id, name, wbs, parentId, summary, milestone, start, finish, lateStart, lateFinish, totalFloat, critical]

@@ -7,9 +7,14 @@
 //   POST /v1/schedule?output=ifc        IFC-tekst in, herberekende IFC-tekst uit
 //
 // Configuratie alleen via omgevingsvariabelen (zie `loadConfig`). Zonder token start de server niet.
-// De berekening draait in een worker-thread: één tegelijk, met een begrensde wachtrij en een harde
-// timeout (de worker wordt dan beëindigd en vervangen). Logging: één JSON-regel per verzoek naar
-// stdout, nooit IFC-inhoud of het token.
+//
+// Capaciteit (geen wachtrij): één berekening tegelijk, in een worker-thread met een harde deadline.
+// Is die bezig, of lopen er al `maxUploads` uploads, dan krijgt een nieuw verzoek METEEN 503 `BUSY`,
+// vóór de body gelezen wordt. Zo is het geheugen voor bodies begrensd op maxUploads × maxBodyBytes,
+// en duurt een geaccepteerd verzoek hooguit uploadtijd + rekentijd (onder de ALB-idle-timeout).
+//
+// Logging: één JSON-regel per verzoek naar stdout. Nooit IFC-inhoud, querystring of token. De
+// console-uitvoer van de worker (de rekenkern kan taak- of relatie-id's loggen) wordt weggegooid.
 import { createServer } from 'node:http';
 import { createHash, randomUUID, timingSafeEqual } from 'node:crypto';
 import { readFileSync } from 'node:fs';
@@ -18,6 +23,10 @@ import { fileURLToPath } from 'node:url';
 import { VERSION as CORE_VERSION } from '@openaec/open-planner-core';
 
 const MIB = 1024 * 1024;
+/** Bovengrenzen: uploadtijd (30 s) + rekentijd (85 s) = 115 s, onder de idle-timeout van de ALB
+ *  (120 s, deploy/aws/ecs-fargate.yaml). Een geaccepteerd verzoek krijgt dus altijd zelf antwoord. */
+export const MAX_UPLOAD_MS = 30_000;
+export const MAX_CALCULATION_MS = 85_000;
 
 /** Lees de configuratie. Gooit bij een fout; de aanroeper stopt dan het proces. */
 export function loadConfig(env = process.env) {
@@ -41,14 +50,19 @@ export function loadConfig(env = process.env) {
     host: env.HOST || '127.0.0.1',
     port: intVar('PORT', 8080, 0, 65535),
     maxBodyBytes: intVar('OPS_API_MAX_BODY_BYTES', 20 * MIB, 1024, 512 * MIB),
-    timeoutMs: intVar('OPS_API_TIMEOUT_MS', 60_000, 1_000, 15 * 60_000),
-    maxQueue: intVar('OPS_API_MAX_QUEUE', 4, 0, 100),
+    timeoutMs: intVar('OPS_API_TIMEOUT_MS', 60_000, 1_000, MAX_CALCULATION_MS),
+    maxUploads: intVar('OPS_API_MAX_UPLOADS', 2, 1, 16),
+    uploadTimeoutMs: intVar('OPS_API_UPLOAD_TIMEOUT_MS', MAX_UPLOAD_MS, 1_000, MAX_UPLOAD_MS),
   };
 }
 
 // ── Logging ────────────────────────────────────────────────────────────────────────────────────
 function log(level, msg, fields = {}) {
-  process.stdout.write(`${JSON.stringify({ time: new Date().toISOString(), level, msg, ...fields })}\n`);
+  try {
+    process.stdout.write(`${JSON.stringify({ time: new Date().toISOString(), level, msg, ...fields })}\n`);
+  } catch {
+    // Loggen mag het proces nooit stoppen.
+  }
 }
 
 // ── Auth ───────────────────────────────────────────────────────────────────────────────────────
@@ -61,79 +75,66 @@ function tokenMatches(header, expectedDigest) {
   return timingSafeEqual(given, expectedDigest);
 }
 
-// ── Rekenwachtrij (één worker, één berekening tegelijk) ────────────────────────────────────────
-class ScheduleQueue {
-  constructor({ timeoutMs, maxQueue }) {
+// ── Rekenen: één worker, één berekening tegelijk, geen wachtrij ────────────────────────────────
+class Calculator {
+  constructor(timeoutMs) {
     this.timeoutMs = timeoutMs;
-    this.maxQueue = maxQueue;
-    this.waiting = [];
     this.busy = false;
     this.worker = null;
-    this.closed = false;
   }
-
-  /** `null` = wachtrij vol. Anders een Promise met het workerresultaat. */
-  submit(job) {
-    if (this.closed) return null;
-    if (this.busy && this.waiting.length >= this.maxQueue) return null;
-    return new Promise((resolve) => {
-      this.waiting.push({ job, resolve });
-      this.#next();
-    });
-  }
-
-  get depth() { return this.waiting.length + (this.busy ? 1 : 0); }
 
   #spawn() {
-    const w = new Worker(fileURLToPath(new URL('./worker.mjs', import.meta.url)));
+    // stdout/stderr van de worker NIET naar het proces doorgeven: de kern logt soms id's uit het
+    // bestand (bijv. een relatie-id). Lezen en weggooien, anders loopt de buffer vol.
+    const w = new Worker(fileURLToPath(new URL('./worker.mjs', import.meta.url)), { stdout: true, stderr: true });
+    w.stdout.resume();
+    w.stderr.resume();
     w.unref();
     return w;
   }
 
-  #next() {
-    if (this.busy || this.waiting.length === 0) return;
-    const { job, resolve } = this.waiting.shift();
+  /** Alleen aanroepen als `busy` false is. */
+  run(job) {
     this.busy = true;
     if (!this.worker) this.worker = this.#spawn();
     const worker = this.worker;
-    let settled = false;
-    const finish = (result) => {
-      if (settled) return;
-      settled = true;
-      clearTimeout(timer);
-      worker.off('message', onMessage);
-      worker.off('error', onError);
-      worker.off('exit', onExit);
-      this.busy = false;
-      resolve(result);
-      this.#next();
-    };
-    const onMessage = (msg) => finish(msg);
-    const onError = (err) => {
-      this.worker = null;
-      finish({ ok: false, code: 'INTERNAL', message: `Worker failed: ${err?.message ?? err}` });
-    };
-    const onExit = () => {
-      this.worker = null;
-      finish({ ok: false, code: 'INTERNAL', message: 'Worker stopped unexpectedly' });
-    };
-    const timer = setTimeout(() => {
-      this.worker = null;
-      worker.terminate().catch(() => {});
-      finish({ ok: false, code: 'TIMEOUT', message: `The calculation took longer than ${this.timeoutMs} ms` });
-    }, this.timeoutMs);
-    worker.on('message', onMessage);
-    worker.on('error', onError);
-    worker.on('exit', onExit);
-    worker.postMessage(job);
+    return new Promise((resolve) => {
+      let settled = false;
+      const finish = (result) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        worker.off('message', onMessage);
+        worker.off('error', onError);
+        worker.off('exit', onExit);
+        this.busy = false;
+        resolve(result);
+      };
+      const onMessage = (msg) => finish(msg);
+      const onError = () => {
+        this.worker = null;
+        finish({ ok: false, code: 'INTERNAL', message: 'The calculation worker failed' });
+      };
+      const onExit = () => {
+        this.worker = null;
+        finish({ ok: false, code: 'INTERNAL', message: 'The calculation worker stopped unexpectedly' });
+      };
+      const timer = setTimeout(() => {
+        this.worker = null;
+        worker.terminate().catch(() => {});
+        finish({ ok: false, code: 'TIMEOUT', message: `The calculation took longer than ${this.timeoutMs} ms` });
+      }, this.timeoutMs);
+      worker.on('message', onMessage);
+      worker.on('error', onError);
+      worker.on('exit', onExit);
+      worker.postMessage(job);
+    });
   }
 
-  /** Wacht tot de lopende berekening en de wachtrij leeg zijn (max `ms`), stop dan de worker. */
-  async drain(ms) {
-    this.closed = true;
-    const until = Date.now() + ms;
-    while (this.depth > 0 && Date.now() < until) await new Promise((r) => setTimeout(r, 50));
-    await this.worker?.terminate();
+  async stop() {
+    const w = this.worker;
+    this.worker = null;
+    await w?.terminate();
   }
 }
 
@@ -144,6 +145,7 @@ const STATUS_OF = {
   UNAUTHORIZED: 401,
   NOT_FOUND: 404,
   METHOD_NOT_ALLOWED: 405,
+  UPLOAD_TIMEOUT: 408,
   PAYLOAD_TOO_LARGE: 413,
   UNSUPPORTED_MEDIA_TYPE: 415,
   IFC_READ_FAILED: 422,
@@ -159,125 +161,199 @@ const REQUEST_ID = /^[A-Za-z0-9._-]{1,64}$/;
 
 export function createApiServer(config) {
   const tokenDigest = createHash('sha256').update(config.token).digest();
-  const queue = new ScheduleQueue(config);
+  const calculator = new Calculator(config.timeoutMs);
+  let uploads = 0;
 
-  const server = createServer(async (req, res) => {
-    const started = process.hrtime.bigint();
-    const incoming = req.headers['x-request-id'];
-    const requestId = typeof incoming === 'string' && REQUEST_ID.test(incoming) ? incoming : randomUUID();
-    const url = new URL(req.url ?? '/', 'http://localhost');
-    let bytesIn = 0;
-    let errorCode;
-    res.setHeader('X-Request-Id', requestId);
-    res.setHeader('Cache-Control', 'no-store');
-    res.setHeader('X-Content-Type-Options', 'nosniff');
-    res.on('finish', () => {
-      log(res.statusCode >= 500 ? 'error' : 'info', 'request', {
-        requestId,
-        method: req.method,
-        path: url.pathname,
-        status: res.statusCode,
-        durationMs: Number((process.hrtime.bigint() - started) / 1000n) / 1000,
-        bytesIn,
-        ...(errorCode ? { errorCode } : {}),
-      });
-    });
-
+  async function handle(req, res, ctx) {
     const sendJson = (status, body, headers = {}) => {
       const text = JSON.stringify(body);
       res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Content-Length': Buffer.byteLength(text), ...headers });
       res.end(text);
     };
     const fail = (code, message, extra = {}, headers = {}) => {
-      errorCode = code;
+      ctx.errorCode = code;
       sendJson(STATUS_OF[code] ?? 500, { error: { code, message, ...extra } }, headers);
     };
+    // Antwoord vóór de body gelezen is: de rest weggooien (niet bewaren), zodat de client het
+    // antwoord kan lezen. Na 4× de body-grens of de uploadtijd verbreekt de server de verbinding.
+    const failEarly = (code, message, headers = {}) => {
+      fail(code, message, {}, { Connection: 'close', ...headers });
+      let discarded = 0;
+      const cutoff = setTimeout(() => req.destroy(), config.uploadTimeoutMs);
+      cutoff.unref();
+      req.on('data', (chunk) => {
+        discarded += chunk.length;
+        if (discarded > 4 * config.maxBodyBytes) req.destroy();
+      });
+      req.once('close', () => clearTimeout(cutoff));
+      req.resume();
+    };
 
+    let url;
     try {
-      if (url.pathname === '/healthz') {
-        if (req.method !== 'GET' && req.method !== 'HEAD') return fail('METHOD_NOT_ALLOWED', 'Use GET', {}, { Allow: 'GET, HEAD' });
-        return sendJson(200, {
-          status: 'ok',
-          version: CORE_VERSION,
-          limits: { maxBodyBytes: config.maxBodyBytes, timeoutMs: config.timeoutMs, maxQueue: config.maxQueue },
-          queue: queue.depth,
-        });
-      }
-      if (url.pathname !== '/v1/schedule') return fail('NOT_FOUND', `No route for ${url.pathname}`);
-      if (req.method !== 'POST') return fail('METHOD_NOT_ALLOWED', 'Use POST', {}, { Allow: 'POST' });
-      if (!tokenMatches(req.headers.authorization, tokenDigest)) {
-        return fail('UNAUTHORIZED', 'Missing or invalid bearer token', {}, { 'WWW-Authenticate': 'Bearer' });
-      }
-      const output = url.searchParams.get('output') ?? 'summary';
-      if (output !== 'summary' && output !== 'ifc') {
-        return fail('BAD_REQUEST', 'Query parameter "output" must be "summary" or "ifc"');
-      }
-      const type = String(req.headers['content-type'] ?? '').split(';')[0].trim().toLowerCase();
-      if (!ACCEPTED_TYPES.has(type)) {
-        return fail('UNSUPPORTED_MEDIA_TYPE', `Send the IFC file as one of: ${[...ACCEPTED_TYPES].join(', ')}`);
-      }
+      url = new URL(req.url ?? '/', 'http://localhost');
+    } catch {
+      return failEarly('BAD_REQUEST', 'The request target is not a valid URL');
+    }
+    ctx.path = url.pathname;
 
-      // Te groot: meteen 413 en de rest van de upload weggooien, zodat de client het antwoord kan
-      // lezen. Wie daarna blijft sturen (meer dan 4× de grens), verliest de verbinding.
-      const tooLarge = () => {
-        fail('PAYLOAD_TOO_LARGE', `The body is larger than ${config.maxBodyBytes} bytes`, {}, { Connection: 'close' });
-        req.on('data', (chunk) => {
-          bytesIn += chunk.length;
-          if (bytesIn > 4 * config.maxBodyBytes) req.destroy();
-        });
-        req.resume();
-      };
-      const declared = Number(req.headers['content-length']);
-      if (Number.isFinite(declared) && declared > config.maxBodyBytes) return tooLarge();
-      const chunks = await new Promise((resolve, reject) => {
+    if (url.pathname === '/healthz') {
+      if (req.method !== 'GET' && req.method !== 'HEAD') return failEarly('METHOD_NOT_ALLOWED', 'Use GET', { Allow: 'GET, HEAD' });
+      return sendJson(200, {
+        status: 'ok',
+        version: CORE_VERSION,
+        limits: {
+          maxBodyBytes: config.maxBodyBytes,
+          timeoutMs: config.timeoutMs,
+          uploadTimeoutMs: config.uploadTimeoutMs,
+          maxUploads: config.maxUploads,
+        },
+        busy: calculator.busy,
+        uploads,
+      });
+    }
+    if (url.pathname !== '/v1/schedule') return failEarly('NOT_FOUND', `No route for ${url.pathname}`);
+    if (req.method !== 'POST') return failEarly('METHOD_NOT_ALLOWED', 'Use POST', { Allow: 'POST' });
+    if (!tokenMatches(req.headers.authorization, tokenDigest)) {
+      return failEarly('UNAUTHORIZED', 'Missing or invalid bearer token', { 'WWW-Authenticate': 'Bearer' });
+    }
+    const output = url.searchParams.get('output') ?? 'summary';
+    if (output !== 'summary' && output !== 'ifc') {
+      return failEarly('BAD_REQUEST', 'Query parameter "output" must be "summary" or "ifc"');
+    }
+    const type = String(req.headers['content-type'] ?? '').split(';')[0].trim().toLowerCase();
+    if (!ACCEPTED_TYPES.has(type)) {
+      return failEarly('UNSUPPORTED_MEDIA_TYPE', `Send the IFC file as one of: ${[...ACCEPTED_TYPES].join(', ')}`);
+    }
+    const declared = Number(req.headers['content-length']);
+    if (Number.isFinite(declared) && declared > config.maxBodyBytes) {
+      return failEarly('PAYLOAD_TOO_LARGE', `The body is larger than ${config.maxBodyBytes} bytes`);
+    }
+    // Capaciteit VÓÓR de body: een lopende berekening of te veel uploads ⇒ meteen 503.
+    if (calculator.busy || uploads >= config.maxUploads) {
+      return failEarly('BUSY', 'The server is busy; try again later', { 'Retry-After': '5' });
+    }
+
+    uploads++;
+    let body;
+    try {
+      body = await new Promise((resolve) => {
         const parts = [];
+        let size = 0;
+        const done = (value) => {
+          clearTimeout(timer);
+          req.off('data', onData);
+          req.off('end', onEnd);
+          req.off('close', onClose);
+          resolve(value);
+        };
         const onData = (chunk) => {
-          bytesIn += chunk.length;
-          if (bytesIn > config.maxBodyBytes) {
-            req.off('data', onData);
-            resolve(null);
-            return;
-          }
+          size += chunk.length;
+          ctx.bytesIn = size;
+          if (size > config.maxBodyBytes) return done({ error: 'PAYLOAD_TOO_LARGE' });
           parts.push(chunk);
         };
+        const onEnd = () => done({ text: Buffer.concat(parts).toString('utf8') });
+        const onClose = () => done({ error: 'ABORTED' });
+        const timer = setTimeout(() => done({ error: 'UPLOAD_TIMEOUT' }), config.uploadTimeoutMs);
         req.on('data', onData);
-        req.once('end', () => resolve(parts));
-        req.once('error', reject);
+        req.once('end', onEnd);
+        req.once('close', onClose);
       });
-      if (chunks === null) return tooLarge();
-      const text = Buffer.concat(chunks).toString('utf8');
-
-      const pending = queue.submit({ text, output });
-      if (!pending) return fail('BUSY', 'Too many calculations are waiting; try again later', {}, { 'Retry-After': '5' });
-      const result = await pending;
-      if (!result.ok) {
-        return fail(result.code in STATUS_OF ? result.code : 'INTERNAL', result.message,
-          result.details && Object.keys(result.details).length ? { details: result.details } : {},
-          result.code === 'TIMEOUT' ? { 'Retry-After': '30' } : {});
-      }
-      if (output === 'ifc') {
-        res.writeHead(200, {
-          'Content-Type': 'application/x-step; charset=utf-8',
-          'Content-Length': Buffer.byteLength(result.ifc),
-          'Content-Disposition': 'attachment; filename="schedule.ifc"',
-        });
-        return res.end(result.ifc);
-      }
-      return sendJson(200, result.summary);
-    } catch (err) {
-      log('error', 'unhandled', { requestId, error: err instanceof Error ? err.message : String(err) });
-      if (!res.headersSent) fail('INTERNAL', 'Internal server error');
-      else res.destroy();
+    } finally {
+      uploads--;
     }
+    if (body.error === 'ABORTED') { ctx.errorCode = 'ABORTED'; return res.destroy(); }
+    if (body.error === 'PAYLOAD_TOO_LARGE') return failEarly('PAYLOAD_TOO_LARGE', `The body is larger than ${config.maxBodyBytes} bytes`);
+    if (body.error === 'UPLOAD_TIMEOUT') {
+      fail('UPLOAD_TIMEOUT', `The body did not arrive within ${config.uploadTimeoutMs} ms`, {}, { Connection: 'close' });
+      return res.once('finish', () => req.destroy());
+    }
+    // Intussen kan een andere upload de berekening hebben gekregen.
+    if (calculator.busy) return fail('BUSY', 'The server is busy; try again later', {}, { 'Retry-After': '5' });
+
+    const result = await calculator.run({ text: body.text, output });
+    if (res.destroyed) return;
+    if (!result.ok) {
+      return fail(result.code in STATUS_OF ? result.code : 'INTERNAL', result.message,
+        result.details && Object.keys(result.details).length ? { details: result.details } : {},
+        result.code === 'TIMEOUT' ? { 'Retry-After': '30' } : {});
+    }
+    if (output === 'ifc') {
+      res.writeHead(200, {
+        'Content-Type': 'application/x-step; charset=utf-8',
+        'Content-Length': Buffer.byteLength(result.ifc),
+        'Content-Disposition': 'attachment; filename="schedule.ifc"',
+      });
+      return res.end(result.ifc);
+    }
+    return sendJson(200, result.summary);
+  }
+
+  const server = createServer({
+    // Node controleert requestTimeout/headersTimeout standaard maar elke 30 s; dan zou een trage
+    // upload tot een minuut te lang open kunnen blijven.
+    connectionsCheckingInterval: 1_000,
+  }, (req, res) => {
+    const started = process.hrtime.bigint();
+    const incoming = req.headers['x-request-id'];
+    const ctx = {
+      requestId: typeof incoming === 'string' && REQUEST_ID.test(incoming) ? incoming : randomUUID(),
+      path: null,
+      bytesIn: 0,
+      errorCode: undefined,
+    };
+    // Een stream-fout zonder listener zou het proces stoppen.
+    req.on('error', () => {});
+    res.on('error', () => {});
+    res.on('close', () => {
+      log(res.statusCode >= 500 ? 'error' : 'info', 'request', {
+        requestId: ctx.requestId,
+        method: req.method,
+        path: ctx.path,
+        status: res.writableFinished ? res.statusCode : null,
+        durationMs: Number((process.hrtime.bigint() - started) / 1000n) / 1000,
+        bytesIn: ctx.bytesIn,
+        ...(ctx.errorCode ? { errorCode: ctx.errorCode } : {}),
+        ...(res.writableFinished ? {} : { aborted: true }),
+      });
+    });
+    try {
+      res.setHeader('X-Request-Id', ctx.requestId);
+      res.setHeader('Cache-Control', 'no-store');
+      res.setHeader('X-Content-Type-Options', 'nosniff');
+    } catch { /* headers al verstuurd: niets te doen */ }
+    handle(req, res, ctx).catch((err) => {
+      log('error', 'unhandled', { requestId: ctx.requestId, error: err instanceof Error ? err.name : 'error' });
+      try {
+        if (!res.headersSent) {
+          ctx.errorCode = 'INTERNAL';
+          const text = JSON.stringify({ error: { code: 'INTERNAL', message: 'Internal server error' } });
+          res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8', 'Content-Length': Buffer.byteLength(text), Connection: 'close' });
+          res.end(text);
+        } else {
+          res.destroy();
+        }
+      } catch {
+        res.destroy();
+      }
+    });
   });
 
-  // Upload- en headerlimieten van node:http zelf (een trage client houdt de server niet bezet).
-  // keepAliveTimeout ligt boven de idle-timeout van de ALB (120 s in deploy/aws/ecs-fargate.yaml),
-  // anders sluit Node een verbinding die de ALB nog hergebruikt (502). headersTimeout ligt daar boven.
-  server.requestTimeout = Math.max(30_000, config.timeoutMs);
+  // headersTimeout ≤ requestTimeout (anders draait Node 22 ze om). requestTimeout is een vangnet
+  // boven de eigen uploaddeadline. keepAliveTimeout ligt boven de ALB-idle-timeout (120 s), anders
+  // sluit Node een verbinding die de ALB nog hergebruikt (502).
+  server.requestTimeout = config.uploadTimeoutMs + 5_000;
+  server.headersTimeout = Math.min(10_000, server.requestTimeout);
   server.keepAliveTimeout = 125_000;
-  server.headersTimeout = 130_000;
-  return { server, queue };
+  server.on('clientError', (_err, socket) => {
+    // Onleesbaar HTTP: kort 400 en sluiten. Nooit gooien.
+    try {
+      if (socket.writable) socket.end('HTTP/1.1 400 Bad Request\r\nConnection: close\r\nContent-Length: 0\r\n\r\n');
+      else socket.destroy();
+    } catch { socket.destroy(); }
+  });
+  return { server, calculator };
 }
 
 // ── Start als los proces ───────────────────────────────────────────────────────────────────────
@@ -289,15 +365,40 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
     log('error', 'config', { error: err.message });
     process.exit(78); // EX_CONFIG
   }
-  const { server, queue } = createApiServer(config);
+  const { server, calculator } = createApiServer(config);
   server.listen(config.port, config.host, () => {
     const addr = server.address();
-    log('info', 'listening', { host: addr.address, port: addr.port, version: CORE_VERSION, maxBodyBytes: config.maxBodyBytes, timeoutMs: config.timeoutMs, maxQueue: config.maxQueue });
+    log('info', 'listening', {
+      host: addr.address, port: addr.port, version: CORE_VERSION,
+      maxBodyBytes: config.maxBodyBytes, timeoutMs: config.timeoutMs, uploadTimeoutMs: config.uploadTimeoutMs, maxUploads: config.maxUploads,
+    });
   });
+  // Laatste vangnet: een fout buiten de verzoekafhandeling wordt gelogd (zonder inhoud), het proces
+  // blijft draaien. Een fout in de afhandeling zelf vangt `handle(...).catch` al.
+  process.on('uncaughtException', (err) => log('error', 'uncaught', { error: err?.name ?? 'error' }));
+  process.on('unhandledRejection', (err) => log('error', 'unhandled-rejection', { error: err?.name ?? 'error' }));
+
+  const SHUTDOWN_MS = 25_000;
+  let stopping = false;
   const stop = (signal) => {
+    if (stopping) return;
+    stopping = true;
     log('info', 'shutdown', { signal });
-    server.close();
-    queue.drain(Math.min(config.timeoutMs, 25_000)).then(() => process.exit(0), () => process.exit(1));
+    // Geen nieuwe verbindingen; lopende verzoeken (upload + berekening) mogen afmaken.
+    const closed = new Promise((resolve) => server.close(() => resolve(true)));
+    // Een keep-alive-verbinding wordt pas na haar laatste antwoord idle: blijf die sluiten.
+    const idle = setInterval(() => server.closeIdleConnections(), 100);
+    idle.unref();
+    server.closeIdleConnections();
+    const deadline = new Promise((resolve) => setTimeout(() => resolve(false), SHUTDOWN_MS).unref());
+    Promise.race([closed, deadline])
+      .then(async (clean) => {
+        if (!clean) server.closeAllConnections();
+        await calculator.stop();
+        log('info', 'stopped', { clean });
+        process.exit(0);
+      })
+      .catch(() => process.exit(1));
   };
   process.once('SIGTERM', () => stop('SIGTERM'));
   process.once('SIGINT', () => stop('SIGINT'));
