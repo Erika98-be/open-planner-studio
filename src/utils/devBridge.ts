@@ -21,6 +21,7 @@ import {
 import { setConsentAsker, resetConsentAsker, type ConsentAsker } from '@/extensions';
 import { copyScreenshotToClipboard } from '@/services/feedback/feedbackService';
 import { isTauri } from '@/utils/platform';
+import { loadMcpPort, loadMcpToken } from '@/utils/settingsStore';
 import { registerHelpArticles, resetRegisteredHelpArticles } from '@/utils/helpArticleRegistry';
 import { dateX, lastSize, paintCount, taskBarPoint, taskSegmentCount } from '@/utils/ganttTestDriver';
 
@@ -155,7 +156,7 @@ async function scanStoredExtensions(): Promise<Array<{
 
 export interface OpsCommand {
   id?: string;
-  op: 'ping' | 'getState' | 'roundTrip' | 'save' | 'open' | 'dispatch' | 'feedbackTest';
+  op: 'ping' | 'getState' | 'roundTrip' | 'save' | 'open' | 'dispatch' | 'feedbackTest' | 'mcpConnection';
   args?: Record<string, unknown>;
 }
 
@@ -188,6 +189,16 @@ async function runOp(cmd: OpsCommand): Promise<Record<string, unknown>> {
       if (typeof fn !== 'function') return { ok: false, error: `no such action: ${action}` };
       const ret = await (fn as (...a: unknown[]) => unknown)(...actionArgs);
       return { ok: true, result: { ret, state: stateSnapshot(useAppStore.getState()) } };
+    }
+    case 'mcpConnection': {
+      // Poort, token en status van de app-eigen MCP-bridge, zodat een geautomatiseerde externe client
+      // (`.github/workflows/mcp-real-app.yml`) kan verbinden zoals een gebruiker via "Verbinden" doet.
+      // Het token staat al leesbaar in localStorage en in die dialoog; dit kanaal is dev-only.
+      const ui = useAppStore.getState().ui;
+      return {
+        ok: true,
+        result: { port: loadMcpPort(), token: loadMcpToken(), status: ui.aiServerStatus, aiMode: ui.aiMode },
+      };
     }
     case 'feedbackTest': {
       // Dev-only desktop-verificatie van de feedback-feature: toetst (1) of
