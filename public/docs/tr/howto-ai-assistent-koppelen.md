@@ -12,7 +12,7 @@ Köprü yalnızca masaüstü uygulamasında çalışır. Tarayıcıda yapay zeka
 
 ### 1. Yapay zeka modunu açın
 
-1. *Ayarlar › Proje › Ayarlar* öğesini seçin. Ayrıca *Dosya › Ayarlar* öğesini seçebilir veya en üstteki dişli simgeye tıklayabilirsiniz.
+1. *Ayarlar › Proje › Uygulama ayarları* öğesini seçin. Ayrıca *Dosya › Uygulama ayarları* öğesini seçebilir veya en üstteki dişli simgeye tıklayabilirsiniz.
 2. *Gelişmiş* sekmesini seçin ve *Yapay zeka modunu etkinleştir* seçeneğini açın. *Yapay Zeka* sekmesi şeritte görünür.
 3. Uygulama başlar başlamaz köprünün çalışmasını istiyorsanız *Köprüyü otomatik başlat* seçeneğini de açın. Bu seçenek yalnızca yapay zeka modu açıkken değiştirilebilir ve yalnızca masaüstü uygulamasında çalışır. Varsayılan olarak kapalıdır, çünkü bir port açmak bilinçli bir karardır.
 
@@ -42,7 +42,7 @@ Pencerede üç bağlantı yolu vardır:
 
 ### 4. Asistanın ne yaptığını görün
 
-1. *Etkinlik* altındaki *Etkinlik paneli*ne tıklayın. Yan sütunda *Yapay zeka etkinliği* paneli açılır.
+1. *Etkinlik* altındaki *Etkinlik paneli* öğesine tıklayın. Yan sütunda *Yapay zeka etkinliği* paneli açılır.
 2. Köprünün her çağrısı bir satırda görünür. En yenisi en üsttedir. Satırda zaman, ne olduğu, ne kadar sürdüğü ve başarılı olup olmadığı yazar. Bir satıra tıklayın. *Bağımsız değişkenler* ve *Yanıt* açılır.
 3. *Temizle* ile listeyi boşaltırsınız. Panel son 500 çağrıyı saklar. Henüz bir şey olmamışsa şu yazar: *Henüz yapay zeka etkinliği yok. Köprü çağrıları burada görünecek*.
 
@@ -62,15 +62,15 @@ Yedekler, uygulamanın veri klasöründeki `ai-backups` klasöründedir. Uygulam
 
 ### 6. Asistanın iyi plan yapmasını sağlayın
 
-Araçları bilen bir asistan bile hiçbir planlamacının işine yaramayan bir planlama oluşturabilir: ilişkisiz görevler, her görevde sabit bir tarih ya da çok ince bir ayrıştırma. Bu yüzden asistan planlama kurallarını üç yolla alır. İlk ikisi için bir şey yapmanız gerekmez.
+Bir asistan yalnızca planlama kurallarını biliyorsa iyi plan yapar. Bunun neden önemli olduğunu ve içinde neler olduğunu [Yapay zeka bağlantısı nasıl çalışır](docs://uitleg-ai-koppeling) sayfasında okursunuz. Bunları kendiniz yaparsınız:
 
-1. **Temel kurallar kendiliğinden gelir.** Bağlanırken köprü, temel kurallarla birlikte kısa bir metin gönderir. Birçok istemci bu metni sistem istemine koyar. Sizinkinin bunu yapıp yapmadığı istemciye bağlıdır. Metinde diğer şeylerle birlikte şunlar yazar: kilometre taşlarından başlayın, yaklaşık bir gün ile iki hafta arasında görevler oluşturun, planlamayı sabit tarihler yerine ilişkilerle yönlendirin ve sonunda neyi varsaydığınızı belirtin.
-2. **Bağlantı istemi tam kılavuza işaret eder.** *Bağlantı bilgileri* penceresindeki bağlantı istemi, asistanın önce planlama kılavuzunu okumasını ister. Bunu `planner_get_planning_guide` aracıyla yapar. Bu araç, asistanlar için İngilizce bir kılavuz döndürür. Bu kılavuz, [İyi planlama](docs://gids-goed-plannen) ile aynı ilkeleri içerir. Her ilke için asistanın o ilkede kullandığı araçlar da eklenmiştir. Kılavuzu kendiniz şu adreste okuyabilirsiniz: `https://open-planner-studio.open-aec.com/agent/planning-guide.md`. İstemi kullanmazsanız asistandan kendiniz isteyin: *Bir şey değiştirmeden önce planlama kılavuzunu planner_get_planning_guide ile okuyun.*
-3. **Isteğe bağlı: beceriler.** Bir beceri, asistanın her oturumda birlikte okuduğu küçük bir talimat dosyasıdır. Böylece sonraki bir konuşmada da doğru çalışma yolunu bilir. İki beceri vardır ve ikisi de İngilizcedir: planlama kurmak veya yeniden yapılandırmak için *goed-plannen*, haftalık ilerleme güncellemesi için *progress-update*. Bu yalnızca beceri desteği olan bir asistanla çalışır. Becerilerin kendileri Claude Code ve ilgili asistanlardan söz eder. Her beceri, kendi adını taşıyan klasördeki `SKILL.md` dosyasıdır: asistanın çalıştığı proje klasöründe `.claude/skills/goed-plannen/SKILL.md` ve `.claude/skills/progress-update/SKILL.md`. Ya da her projede kullanmak için `~/.claude/skills/` altındaki aynı klasörler.
+1. **Temel kurallar için bir şey yapmayın.** Bunlar bağlanırken kendiliğinden gelir. Bunları istemcinizin sistem istemine koyup koymadığı istemciye bağlıdır.
+2. **Kılavuzun okunmasını sağlayın.** *Bağlantı bilgileri* penceresindeki bağlantı istemi, asistandan kılavuzu `planner_get_planning_guide` aracıyla okumasını ister. Bu istemi kullanmazsanız asistandan kendiniz isteyin: *Bir şey değiştirmeden önce planlama kılavuzunu planner_get_planning_guide ile okuyun.* Kılavuzu kendiniz şu adreste okuyabilirsiniz: `https://open-planner-studio.open-aec.com/agent/planning-guide.md`.
+3. **İsteğe bağlı: becerileri kurun.** Bu yalnızca beceri destekleyen bir asistanla çalışır. *goed-plannen* ve *progress-update* için `SKILL.md` dosyasını, asistanın çalıştığı proje klasöründe `.claude/skills/goed-plannen/SKILL.md` ve `.claude/skills/progress-update/SKILL.md` olarak koyun. Ya da her proje için `~/.claude/skills/` altına koyun.
 
-Dosyaları iki yoldan alabilirsiniz. Asistandan `planner_get_planning_guide` aracını çağırmasını isteyin. `part` değeri `skill` olmalıdır. Yanıtta iki metin ve her beceri için nereye ait olduğu yer bulunur. Veya şu adreslerden indirin: `https://open-planner-studio.open-aec.com/skills/goed-plannen/SKILL.md` ve `https://open-planner-studio.open-aec.com/skills/progress-update/SKILL.md`. Uygulamanın eski bir sürümünden *goed-plannen* hâlâ duruyorsa değiştirin. O eski metin Hollandacadır ve asistanlar için kılavuz yerine Yardım makalesine işaret eder.
+Dosyalar iki yoldan alınabilir. Asistandan `planner_get_planning_guide` aracını çağırmasını isteyin; `part` değeri `skill` olmalıdır. Yanıtta iki metin ve her beceri için nereye ait olduğu yer bulunur. Ya da şu adreslerden indirin: `https://open-planner-studio.open-aec.com/skills/goed-plannen/SKILL.md` ve `https://open-planner-studio.open-aec.com/skills/progress-update/SKILL.md`. Uygulamanın eski bir sürümünden *goed-plannen* hâlâ duruyorsa değiştirin. O eski metin Hollandacadır ve asistanlar için kılavuz yerine Yardım makalesine işaret eder.
 
-Asistanın kılavuzu gerçekten okuyup okumadığını *Etkinlik paneli*nde görürsünüz. Orada `planner_get_planning_guide` çağrısı olmalıdır. Asistanın verdiği son yanıt bir varsayımlar listesi içermelidir: tahmini süreler, seçtiği ayrıştırma, kendisinin oluşturduğu ilişkiler ve koyduğu her kısıtlama. Bu liste yoksa isteyin. *progress-update* ile yapılan bir ilerleme güncellemesinden sonra yanıtta durum tarihi, yeni bitiş tarihi ve temel plana göre sapma belirtilmelidir.
+Asistanın kılavuzu gerçekten okuyup okumadığını *Etkinlik paneli* içinde görürsünüz. Orada `planner_get_planning_guide` çağrısı görünmelidir. Asistanın verdiği son yanıt bir varsayımlar listesi içermelidir: tahmini süreler, seçtiği ayrıştırma, kendisinin oluşturduğu ilişkiler ve koyduğu her kısıtlama. Bu liste yoksa isteyin. *progress-update* ile yapılan bir ilerleme güncellemesinden sonra yanıtta durum tarihi, yeni bitiş tarihi ve temel plana göre sapma belirtilmelidir.
 
 ## Sık karşılaşılan sorunlar ve uygulamanın o durumda yaptıkları
 
@@ -98,4 +98,4 @@ Asistanın kılavuzu gerçekten okuyup okumadığını *Etkinlik paneli*nde gör
 - [Yapay zeka bağlantısı nasıl çalışır](docs://uitleg-ai-koppeling): bağlantının ne olduğu, asistanın neden açık projenizde çalıştığı ve neleri yapamayacağı.
 - [AI araçları](docs://ref-ai-tools): tüm `planner_*` araçları gruplarına göre, hata kodları ve yedeklerin ne kadar süre saklandığı.
 - [İyi planlama](docs://gids-goed-plannen): planlama ilkeleri. Asistan bunları eklenmiş araçlarla birlikte İngilizce bir sürümde alır.
-- [Ayarlar](docs://ref-instellingen): yapay zeka ayarları.
+- [Uygulama ayarları](docs://ref-instellingen): yapay zeka ayarları.
