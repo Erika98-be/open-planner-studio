@@ -27,7 +27,7 @@ Je hebt drie manieren.
 
 - **Met het toetsenbord.** Alt+↑ en Alt+↓ wisselen de taak met haar buur op hetzelfde niveau. Een samenvattingstaak neemt haar subtaken mee. Bovenaan of onderaan het niveau gebeurt er niets. Bij een meervoudige selectie verplaatst alleen de eerst aangeklikte taak.
 - **Slepen in de takenlijst.** Druk op een rij en sleep verticaal. Het bovenste kwart van een rij betekent *ervoor*, het onderste kwart *erachter*. Het midden van een samenvattingstaak hangt de taak als laatste subtaak eronder. Het midden van een gewone taak telt als de dichtstbijzijnde rand. Sleep je een rij die bij een meervoudige selectie hoort, dan verhuist de hele selectie.
-- **Slepen in de Gantt.** Sleep de balk verticaal naar een andere rij. Dat werkt hetzelfde als slepen in de lijst en verandert geen datums. Sleep je horizontaal, dan verschuif je juist de datums.
+- **Slepen in de Gantt.** Sleep de balk verticaal naar een andere rij. De plekken voor vóór, na of onder een taak werken hetzelfde als in de lijst, maar de balk verplaatst alleen de gesleepte taak, ook bij een meervoudige selectie. De datums veranderen niet. Sleep je horizontaal, dan verschuif je juist de datums.
 
 Elke verplaatsing is één stap voor *Ongedaan* (Ctrl+Z).
 
