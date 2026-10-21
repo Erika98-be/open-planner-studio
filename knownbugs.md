@@ -181,12 +181,6 @@ en noem het in je rapport of PR-tekst.
     storten geweigerd (geplande start na de statusdatum), projecteinde vrijdag 25 juni (+2). Met expliciete
     werkelijke datums zijn beide routes gelijk (23 juni, +0). Voorstel: na een statusdatumwijziging binnen
     een batch tussentijds herrekenen, of 81 oplossen zodat de afleiding niet van de route afhangt. — B
-86. **`planner_list_tasks` met `zonder_relaties: true` meldt bladtaken die via hun fase in het netwerk zitten.**
-    Het filter telt alleen relaties op de taak zelf (`readTools.ts:~392`), terwijl de solver een relatie op
-    een samenvattingstaak doorgeeft aan haar bladtaken. Nagespeeld: Other —SS→ Fase X —FS→ Last, met
-    bladtaak LeafA onder Fase X ⇒ het filter geeft `LeafA`, terwijl LeafA kritiek is en aan het netwerk
-    hangt. De agentgids en `goed-plannen` waarschuwen er nu voor. Voorstel: relaties van voorouders
-    meetellen, of het veld uitbreiden met "via fase". — B
 88. **Feestdagen gegenereerd vóór de taken dekken een lang project niet.** Zonder rekenresultaat geeft
     `calendarSpan` geen projecteinde door en neemt `computeGenerateSpan` startjaar−1 t/m startjaar+3
     (`calendarResourceTools.ts:~585`, `generateCalendarHolidays.ts:~62`). Nagespeeld: start 7 juni 2027,
