@@ -415,8 +415,6 @@ en noem het in je rapport of PR-tekst.
      agents in dezelfde map schrijven. Voorstel: dezelfde `seal`/`sealErrors` in `prepare`/`apply-terms`.
      Gevonden in de review van #323 (Opus, 2026-10-12), in de code aangewezen. — S
 
-129. **Het blok *CPM Resultaat* toont "1 dagen"** bij 1 dag speling: `TaskCpmResultSection.tsx:20-23` plakt
-    altijd `common:daysLong` ("dagen") achter het getal. Niet in de app nagespeeld. — S
 130. **De omschrijving van het voorbeeld *Refurbishment & Extension of a Family Home*** belooft een conflict
     dat "'Distribute' can resolve" (`public/examples/manifest.json:7`, getoond in `Backstage.tsx`). Er is geen
     Verdelen-knop; alleen de kern bestaat (`distributeUnits`, `ResourceLoad.ts`). — B

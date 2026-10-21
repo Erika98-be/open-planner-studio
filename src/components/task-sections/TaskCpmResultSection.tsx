@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { useAppStore } from '@/state/appStore';
 import { useDisplayDate } from '@/hooks/displayDate';
 import { formatWorkDaysText } from '@/utils/taskDuration';
+import { formatReportNumber } from '@/utils/reportNumber';
 
 /**
  * CPM-resultaat (readonly: ES/EF/LS/LF/TF/FF/interfering float/kritiek) — sectie van
@@ -17,9 +18,10 @@ export function TaskCpmResultSection({ taskId }: { taskId: string }) {
   // Speling in werkdagen, fractioneel in urenmodus: één opmaak voor totale, vrije en interfererende
   // speling (twee decimalen, decimaalteken van de taal) — dezelfde als raster en tooltip. Hier stond
   // TS onafgerond ("1.6666666666666667") naast een afgeronde VS ("2").
+  // De meervoudsvorm volgt het afgeronde getal dat zichtbaar is, ook bij negatieve speling.
   const days = (value: number) => formatWorkDaysText(value, {
     locale: i18n.language,
-    suffixes: { day: ` ${tCommon('daysLong')}`, hour: 'h', minute: 'm' },
+    suffixes: { day: ` ${tCommon('dayUnitLong', { count: Number(formatReportNumber(value, 'en')) })}`, hour: 'h', minute: 'm' },
   });
 
   return (
