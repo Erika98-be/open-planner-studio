@@ -155,6 +155,41 @@ console.log('-- leveler-seam: nul-guard in de conflictverzamelaar (geval 3) --')
     !r3.unresolved['y5']?.includes('2026-06-01'));
 }
 
+// Knownbug 121: de uitleg gebruikt de echte dagvraag (werk/curve/som) en maximale
+// capaciteit inclusief stappen, precies zoals de reden-classificatie.
+{
+  const t = task('detail', '2026-06-01', '2026-06-03', 3);
+  const r = res('detail-resource', 1, { availabilitySteps: [{ from: '2026-01-01', maxUnits: 2 }] });
+  const a = assign('detail-a', t.id, r.id, 1);
+  const variants: [string, ResourceAssignment[]][] = [
+    ['opgeslagen werk', [{ ...a, remainingWorkMinutes: 3 * 3 * 8 * 60 }]],
+    ['exacte curve', [{ ...a, curveValues: [0, 100, ...Array<number>(19).fill(0)] }]],
+    ['som van toewijzingen', [{ ...a, unitsPerDay: 1.5 }, { ...a, id: 'detail-b', unitsPerDay: 1.5 }]],
+  ];
+  for (const [label, assignments] of variants) {
+    const result = levelResources([t], [], [r], assignments, PROJECT_CAL, [],
+      stubCpmResult('2026-06-03'), { constrainToFloat: false }, legacyCpmOptions());
+    eq(label + ': intrinsieke reden', result.unresolvedReasons[t.id], 'INTRINSIC_OVERRUN');
+    const detail = result.intrinsicOverruns?.[t.id];
+    eq(label + ': resource en capaciteit', detail && [detail.resourceId, detail.capacity], [r.id, 2]);
+    ok(label + ': dagpiek is 3', !!detail && Math.abs(detail.peak - 3) < 1e-9);
+  }
+  const contourTask: Task = { ...t, timephasedContours: [{
+    resourceUid: null, resourceId: r.id,
+    periods: [{ afterMinutes: 0, minutes: 480, workMinutes: 1440, kind: 'remaining' }],
+  }] };
+  const contour = levelResources([contourTask], [], [r], [a], PROJECT_CAL, [],
+    stubCpmResult('2026-06-03'), { constrainToFloat: false }, legacyCpmOptions());
+  eq('tijdgefaseerde urenverdeling: exacte details', contour.intrinsicOverruns?.[t.id],
+    { resourceId: r.id, peak: 3, capacity: 2 });
+  const enough = levelResources([t], [], [{ ...r, availabilitySteps: [{ from: '2026-01-01', maxUnits: 4 }] }],
+    variants[0][1], PROJECT_CAL, [], stubCpmResult('2026-06-03'), { constrainToFloat: false }, legacyCpmOptions());
+  eq('ruime capaciteitsstap: geen intrinsieke overvraag', enough.intrinsicOverruns, undefined);
+  const excluded = levelResources([t], [], [r, res('other', 1)], variants[0][1], PROJECT_CAL, [],
+    stubCpmResult('2026-06-03'), { constrainToFloat: false, resourceIds: ['other'] }, legacyCpmOptions());
+  eq('niet-geselecteerde resource: geen misleidende details', excluded.intrinsicOverruns, undefined);
+}
+
 // ── Uitslag ──────────────────────────────────────────────────────────────────
 if (diffs.length === 0) {
   console.log(`OK  leveler-seam: alle checks groen (${checks})`);

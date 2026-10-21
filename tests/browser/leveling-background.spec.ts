@@ -37,6 +37,27 @@ test('nivelleer-dialoog: berekenen via de worker levert een voorstel; toepassen 
   }, [first, second]);
   expect(starts[0]).toBe('2026-09-07');
   expect(starts[1] > '2026-09-09').toBe(true);
+
+  // Importfixture: inzet 1, maar opgeslagen werk geeft een echte dagvraag van 3.
+  // De capaciteit is door een stap 2, niet de vlakke standaardwaarde 1.
+  await page.evaluate(id => {
+    const ops = window.__OPS__!;
+    const s = ops.store.getState();
+    const resourceId = s.addResource({
+      name: 'Importploeg', type: 'LABOR', description: '', maxUnits: 1,
+      availabilitySteps: [{ from: '2026-01-01', maxUnits: 2 }],
+    });
+    s.assignResource(id, resourceId, 1);
+    ops.store.setState(st => {
+      st.assignments.find(a => a.taskId === id && a.resourceId === resourceId)!.remainingWorkMinutes = 3 * 3 * 8 * 60;
+    });
+    s.runCPM();
+  }, first);
+  await page.locator('[data-ops-ribbon-item="levelResources"]').first().click();
+  await dialog.getByRole('button', { name: /^(Berekenen|Calculate)$/ }).click();
+  await expect(dialog.getByText('Importploeg peaks at 3 units/day, capacity is 2 — cannot be resolved by shifting.', { exact: true })).toBeVisible();
+  await expect(dialog.getByText(/\{\{(?:resource|peak|capacity)\}\}/)).toHaveCount(0);
+  await dialog.getByRole('button', { name: /^(Annuleren|Cancel)$/ }).click();
 });
 
 test('nivelleer-dialoog: tijdens een lange berekening blijft de dialoog bedienbaar en stopt "Stoppen" hem', async ({ page, ops: _ops }) => {
