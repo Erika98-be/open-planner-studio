@@ -15,7 +15,7 @@
 
 import type { Task } from '@/types/task';
 import type { Sequence } from '@/types/sequence';
-import type { WbsTemplate } from '@/utils/wbsTemplates';
+import { saveBranchAsWbsTemplate, listWbsTemplates, type WbsTemplate } from '@/utils/wbsTemplates';
 import {
   relationStructureVerdict, relationVerdict, isSummaryTask, isAncestorRelation, type TaskLookup,
 } from '@/state/relationRules';
@@ -292,6 +292,55 @@ ok('de geldige Child→Sibling-relatie is mee ingevoegd met de nieuwe ids',
   && S().sequences.some(e => e.predecessorId === newTemplateChildId && e.successorId === newTemplateSiblingId));
 ok('de spookrelatie (Child→eigen Root) is NIET aangemaakt onder de nieuwe ids',
   !!newTemplateChildId && !S().sequences.some(e => e.predecessorId === newTemplateChildId && e.successorId === newTemplateRootId));
+
+// ── knownbugs #119: opslaan → opslag herlezen → invoegen bewaart de minutenlag ──
+const sourceTasks = S().tasks;
+const sourceRelation = S().sequences[0];
+const previousStorage = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
+const templateStorage = new Map<string, string>();
+Object.defineProperty(globalThis, 'localStorage', {
+  configurable: true,
+  value: {
+    getItem: (key: string) => templateStorage.get(key) ?? null,
+    setItem: (key: string, value: string) => { templateStorage.set(key, value); },
+  },
+});
+try {
+  for (const minutes of [240, -90, 0, undefined]) {
+    for (const unit of ['WORKTIME', 'ELAPSEDTIME'] as const) {
+      templateStorage.clear();
+      const relation: Sequence = {
+        ...sourceRelation, lagDays: minutes === undefined ? 2 : 0, lagUnit: unit,
+        ...(minutes !== undefined ? { lagMinutes: minutes } : {}),
+      };
+      saveBranchAsWbsTemplate('Lag bewaren', newTemplateRootId!, sourceTasks, [relation]);
+      const loaded = listWbsTemplates()[0];
+      ok(`sjabloonopslag bewaart ${minutes} minuten (${unit})`, loaded.sequences[0].lagMinutes === minutes);
+      ok(`oude dagsjablonen krijgen geen minutenveld (${unit}, ${minutes})`,
+        ('lagMinutes' in loaded.sequences[0]) === (minutes !== undefined));
+      S().newProject();
+      const insertedRoot = S().insertWbsTemplate(loaded, null);
+      const inserted = S().sequences[0];
+      ok(`opnieuw invoegen bewaart alle lagvelden (${unit}, ${minutes})`,
+        !!insertedRoot && S().sequences.length === 1 && inserted.lagMinutes === minutes
+        && inserted.lagDays === relation.lagDays && inserted.lagUnit === unit);
+      ok(`invoegen remapt beide eindpunten (${unit}, ${minutes})`,
+        inserted.predecessorId !== relation.predecessorId && inserted.successorId !== relation.successorId);
+    }
+  }
+  // Procentuele lag blijft ook intact; een ontbrekend minutenveld blijft afwezig.
+  templateStorage.clear();
+  saveBranchAsWbsTemplate('Percentage bewaren', newTemplateRootId!, sourceTasks,
+    [{ ...sourceRelation, lagDays: 0, lagPercent: 25 }]);
+  const percentTemplate = listWbsTemplates()[0];
+  S().newProject();
+  S().insertWbsTemplate(percentTemplate, null);
+  ok('procentuele lag doorstaat opslag en invoegen zonder minutenveld',
+    S().sequences[0].lagPercent === 25 && !('lagMinutes' in S().sequences[0]));
+} finally {
+  if (previousStorage) Object.defineProperty(globalThis, 'localStorage', previousStorage);
+  else Reflect.deleteProperty(globalThis, 'localStorage');
+}
 
 // ── Uitslag ──────────────────────────────────────────────────────────────────
 if (diffs.length === 0) {
