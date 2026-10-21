@@ -15,6 +15,7 @@ npm run dev          # browser dev; fixed port per worktree (3007–3106), refus
 npm run tauri:dev    # desktop app, same port assignment
 npm run build        # tsc && vite build → dist/
 npm run build:platform -- --base /pad/   # platform build for the OpenAEC app on Frappe → dist-platform/
+npm run build:core   # headless core package @openaec/open-planner-core → dist-core/ (not published)
 npm run verify       # THE gate — the same steps as CI (split in parallel), release and deploy gate
 npm run typecheck    # tsc over src/ AND scripts/+tests/ — use this, not just build (incremental)
 npm run lint         # deliberately minimal ESLint (promises, control-regex, React hooks)
@@ -39,7 +40,7 @@ runs no verify of its own: it starts after a green ci.yml run on `main` (`workfl
 tested (a serial verify there took 31–45 min and hit the 45-minute job limit on 2026-10-13). The
 steps, in order: `typecheck` → `lint` → `test` (all five suites) → `verify:examples` → `verify:docs` →
 `verify:i18n` → `verify:release-highlights-json` → `verify:store-boundaries` → `verify:conventions` →
-`verify:gantt-boundaries` → `verify:cycles` → `verify:text-roles`.
+`verify:gantt-boundaries` → `verify:cycles` → `verify:text-roles` → `verify:core-package`.
 
 Separate gates (most are in `verify`): `npm run verify:examples` (examples load/compute),
 `npm run verify:docs` (in-app guides + the mechanical claims in this file), `npm run verify:i18n` (keys + CLDR
@@ -47,6 +48,8 @@ plural forms + no cast on a key + fixed formatting), `npm run verify:store-bound
 `npm run verify:gantt-boundaries` (AST gates: store, renderer, viewport, pointer and table boundaries),
 `npm run verify:conventions` (AST gate: `src/engine/` reads no source format, options keys only from the
 convention registry, provenance data gates pinned), `npm run verify:cycles` (circular imports after type erasure),
+`npm run verify:core-package` (builds the headless core package, `npm pack`, installs it in a temporary copy of
+`headless/consumer-example/`, runs and type-checks that consumer),
 `npm run verify:text-roles` (only the six text roles), `npm run verify:release-highlights-json` (in the chain)
 and `npm run verify:release-highlights` (separate: local update highlights and stats before a tagged release).
 `npm run verify:translations` (release gate, deliberately NOT in `verify`: every UI key in every locale translated
@@ -113,6 +116,7 @@ Node 22 (see CI). Rust stable only for the `tauri:*` commands.
 | one CPM/calendar case battery | `bash tests/planning/run.sh cases-<x>.json` — skips all `check-*.ts` batteries and the matrix |
 | one targeted check | `bash tests/planning/run.sh check-<x>.ts` — skips all `cases-*.json` batteries and the matrix |
 | document field / IFC round-trip | `npm run typecheck` + `check-document-contract.ts` / `check-ifc-roundtrip.ts`; full planning suite before the PR |
+| headless core (`src/core/`, `scripts/build-core.mjs`) | `bash tests/planning/run.sh check-headless-core.ts` + `npm run verify:core-package` |
 | i18n key | `npm run verify:i18n` |
 | UI change | `node scripts/run-browser-tests.mjs tests/browser/smoke.spec.ts` (or a targeted spec), plus `window.__OPS__` |
 | MCP tool | `bash tests/mcp/run.sh cases-<x>.ts` |
@@ -146,10 +150,18 @@ Node 22 (see CI). Rust stable only for the `tauri:*` commands.
 - **Document contract.** New project data belongs in `DOCUMENT_FIELDS` (`src/state/documentContract.ts`),
   otherwise it does not survive a document switch, undo, crash recovery or save. A `DocumentPayload` field
   missing from that list is a compile error.
-- **One Zustand+Immer store built from slices** (`src/state/appStore.ts`); slices are typed against the full
+- **One Zustand+Immer store built from slices** (`src/state/appStore.ts`; the factory `createAppStoreContext`
+  lives in `src/state/appStoreFactory.ts`, `appStore.ts` adds the one mounted singleton); slices are typed against the full
   `AppState`. Core runtime factories and store-bound MCP tools never import `useAppStore`/`appStoreContext`.
   UI/dialog flags: type in `UIState` (`slices/types.ts`), action in `uiSlice.ts`; persistent settings in
   `src/utils/settingsRegistry.ts`. Undo/redo is snapshot-based (`beginUndoable` → mutation → `finishUndoable`).
+- **Headless core.** `src/core/` (`index.ts` + `api.ts`) is the public API of the package
+  `@openaec/open-planner-core` (`npm run build:core`, not published): open IFC text, `schedule()` like F5,
+  JSON summary, `toIfc()`, one error type with a fixed `code`. It builds its own context per document from
+  `appStoreFactory.ts` and imports no value from `appStore.ts` (`verify:store-boundaries`); the build fails if
+  React, Tauri, the singleton or the i18n UI config end up in the bundle. `api.ts` imports nothing and is the
+  contract: a change there is a contract change (`docs/headless-kern.md`). Guards: `check-headless-core.ts`
+  (core = app for every example) and `verify:core-package`.
 - **Scheduling is manual, not reactive.** `runCPM` → `solveProject()`; call it after mutating tasks,
   relations or the calendar (store actions do not do it themselves; only the opt-in setting Automatisch berekenen,
   `ui.autoCalcCPM`, runs it via `useAutoCalcCPM`). Always set `scheduleStale` via `markScheduleStale`
@@ -286,7 +298,8 @@ Design docs: start at `docs/superpowers/README.md` — read them as *why*, not a
 
 | Concern | Location |
 |---|---|
-| Store composition root | `src/state/appStore.ts` |
+| Store composition root | `src/state/appStore.ts` (factory: `src/state/appStoreFactory.ts`) |
+| Headless core (package API) | `src/core/`, build `scripts/build-core.mjs`, consumer `headless/consumer-example/` |
 | Slices | `src/state/slices/` |
 | CPM solver / calendar engine | `src/engine/scheduler/`, `src/engine/calendar/` |
 | Canvas renderer | `src/engine/renderer/` |
