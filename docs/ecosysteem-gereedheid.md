@@ -72,9 +72,8 @@ en de container. Zie [headless API](headless-api.md).
 ### 6. MCP-server met een externe client
 
 De officiële MCP-SDK test de server in `npm test` en in CI tegen de echte desktopapp
-(`mcp-real-app.yml`): transport, rechten, undo en de documentbinding per sessie. Zie
-[MCP-verificatie](mcp-verificatie.md), ook voor de AI-backup (die maakt een snapshot vóór de eerste
-mutatie per document, alleen als Auto-backup aanstaat).
+(`mcp-real-app.yml`): transport, rechten, undo en de documentbinding per sessie. Wat de AI-backup
+wel en niet beschermt, staat in [MCP-verificatie](mcp-verificatie.md).
 
 Beperking: de toetsing is gedaan op `main`. In v2026.9.0 heeft de server 39 tools en nog geen
 MCP-sessies (`Mcp-Session-Id`); dat komt met de volgende release.
@@ -129,5 +128,12 @@ vraag wie dat doet staat in #429. Tot die test is gedaan, heet Open Planner Stud
 
 ### 11. Bewijs per eis
 
-Elke eis hierboven verwijst naar een detaildoc met de run-links en versies. Nieuwe releases controleert
-`release-verify.yml` vanzelf.
+De runs waarop dit document steunt (21 oktober 2026):
+
+- releasecontrole tegen v2026.9.0: [Verify Release, run 39571015654](https://github.com/OpenAEC-Foundation/open-planner-studio/actions/runs/39571015654);
+- Windows-ondertekening zonder tag: [Windows sign check, run 39566056289](https://github.com/OpenAEC-Foundation/open-planner-studio/actions/runs/39566056289);
+- MCP met de officiële SDK tegen de echte desktopapp: [MCP echte app, run 39580908758](https://github.com/OpenAEC-Foundation/open-planner-studio/actions/runs/39580908758);
+- API, container en `cfn-lint` op `main`: [Headless API, run 39585147871](https://github.com/OpenAEC-Foundation/open-planner-studio/actions/runs/39585147871).
+
+De headless kern wordt bij elke CI-run getoetst (`verify:core-package` en `check-headless-core.ts` in
+`npm run verify`). Nieuwe releases controleert `release-verify.yml` vanzelf.
