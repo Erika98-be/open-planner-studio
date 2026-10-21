@@ -60,7 +60,7 @@
       "startHour": "شروع (ساعت)",
       "endHour": "پایان (ساعت)",
       "hoursPerDay": "ساعت در روز",
-      "hoursValue": "{{hours}}س",
+      "hoursValue": "{{hours}}h",
       "standardWorkday": "روز کاری استاندارد",
       "standardWorkdayInfo": "طول روز کاری‌ای که بیشتر پیش می‌آید. نرم‌افزار با آن یک روز را به ساعت تبدیل می‌کند.",
       "standardWorkdayInfoLabel": "توضیح روز کاری استاندارد",

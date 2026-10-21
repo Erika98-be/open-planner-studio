@@ -60,7 +60,7 @@
       "startHour": "البداية (ساعة)",
       "endHour": "النهاية (ساعة)",
       "hoursPerDay": "ساعات في اليوم",
-      "hoursValue": "{{hours}}س",
+      "hoursValue": "{{hours}}h",
       "standardWorkday": "يوم عمل قياسي",
       "standardWorkdayInfo": "طول يوم العمل الأكثر تكراراً. يستخدمه التطبيق لتحويل اليوم إلى ساعات.",
       "standardWorkdayInfoLabel": "شرح يوم العمل القياسي",
