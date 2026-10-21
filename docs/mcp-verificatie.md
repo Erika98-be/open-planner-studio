@@ -72,7 +72,8 @@ legt vast wat de app als MCP-server levert, wat niet, en welke test het bewijst.
 - Vóór de eerste wijziging per document per bridge-sessie schrijft de app een IFC-backup naar
   `<appDataDir>/ai-backups/<docId>/` (instelling *Auto-backup*, standaard aan). Een batch telt als één backup.
   Uitzondering: een kopie die `planner_duplicate_document` maakte, krijgt geen automatische backup (het
-  origineel is de bron); *Nu backup maken* werkt daar wel. Een herstart van de bridge begint de telling opnieuw.
+  origineel is de bron); *Nu backup maken* werkt daar wel. Handmatig stoppen en opnieuw starten wist de backuptellers en de kopie-uitzondering; de herstart
+  bij tokenvernieuwing doet dat niet.
 - Elke aanroep staat in het activiteitenpaneel (laatste 500).
 
 ## Hoe het getoetst wordt
