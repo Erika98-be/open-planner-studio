@@ -13,7 +13,7 @@
 // ook de vector-PDF) die niet kent. Zo zijn scherm en papier per constructie gelijk. De strepen
 // liggen vast aan `anchorX` (de linkerkant van de strook), dus ze schuiven mee bij pannen.
 
-import { parseDate, parseInstant } from '@/utils/dateUtils';
+import { MS_PER_DAY, parseDate, parseInstant } from '@/utils/dateUtils';
 import { finishInstant } from '@/utils/taskDates';
 
 /** Kleurplaats van een baseline in de strook: 0 = actief, 1 en 2 = de vergelijkingsbaselines. */
@@ -32,7 +32,7 @@ export interface BaselineMilestone {
   x: number;
   /** Het moment van de mijlpaal (`baselineSpanX`). Mijlpalen delen alleen een ruit bij hetzelfde
    *  moment: op de werkdag-as vallen ook verschillende momenten (za en zo) op dezelfde x. */
-  moment?: string;
+  moment: string;
 }
 
 /** Begin en einde van één baseline van één taak, zoals de baseline ze bewaart. */
@@ -49,7 +49,10 @@ export type BaselineSpanX = { kind: 'bar'; x1: number; x2: number } | { kind: 'm
  * Zet één baseline om naar x, met dezelfde regel als de taakbalk (`barGeometry` in de renderer):
  *  - datum mét tijd (urentaak, bv. een MSPDI-baseline van een urentaak): `[start, einde)` op het
  *    tijdstip zelf, zonder een hele dag erbij; een mijlpaal op haar tijdstip;
- *  - datum zonder tijd (dagtaak): de hele dag, `[start, einde + 1 dag)`; een mijlpaal midden op de dag.
+ *  - datum zonder tijd (dagtaak): de hele dag, `[start, begin van de dag na het einde)`, allebei via
+ *    de as; een mijlpaal midden op de dag. Het exclusieve einde gaat via de as en niet als
+ *    `dateToX(einde) + dayWidth`: op de werkdag-as vallen za en ma op dezelfde x, en een extra
+ *    pixelkolom zou daar overlap verzinnen. Een dag zonder werktijd krijgt zo geen breedte.
  * Scherm en afdruk geven hun eigen as mee (`dateToX`, ook de werkdag-as) en hun daggrootte.
  * Onleesbare datums geven `null`.
  */
@@ -73,7 +76,7 @@ export function baselineSpanX(
   const end = hourMode ? finishInstant(finishStr) : parseDate(finishStr);
   if (Number.isNaN(end.getTime())) return null;
   const x1 = dateToX(start);
-  const x2 = hourMode ? dateToX(end) : dateToX(end) + dayWidth;
+  const x2 = hourMode ? dateToX(end) : dateToX(new Date(end.getTime() + MS_PER_DAY));
   return { kind: 'bar', x1, x2 };
 }
 
@@ -143,17 +146,16 @@ export function widenShortRuns(pieces: readonly BaselineStripPiece[], minWidth: 
   return out;
 }
 
-/** Groepeert baseline-mijlpalen op hun moment (`moment`, anders de x): mijlpalen op hetzelfde moment
+/** Groepeert baseline-mijlpalen op hun moment (`moment`): mijlpalen op hetzelfde moment
  *  delen één ruit. Verschillende momenten blijven aparte ruiten, ook als ze op dezelfde x vallen
  *  (lage zoom, of za en zo op de werkdag-as): geen valse overlap. De volgorde is de tekenvolgorde:
  *  op x, en bij gelijke x in de volgorde van de invoer (de laatste ligt bovenop). */
 export function baselineDiamonds(milestones: readonly BaselineMilestone[]): BaselineDiamond[] {
   const byMoment = new Map<string, { x: number; slots: BaselineSlot[]; order: number }>();
   milestones.forEach((m, order) => {
-    const key = m.moment ?? `x${Math.round(m.x * 1e6) / 1e6}`;
-    const group = byMoment.get(key) ?? { x: m.x, slots: [], order };
+    const group = byMoment.get(m.moment) ?? { x: m.x, slots: [], order };
     if (!group.slots.includes(m.slot)) group.slots.push(m.slot);
-    byMoment.set(key, group);
+    byMoment.set(m.moment, group);
   });
   return [...byMoment.values()]
     .sort((a, b) => a.x - b.x || a.order - b.order)

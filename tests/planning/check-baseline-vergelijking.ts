@@ -66,12 +66,12 @@ eq(sig([{ slot: 0, x1: 0, x2: 20 }, { slot: 1, x1: 0, x2: 20 }, { slot: 2, x1: 0
 eq(sig([{ slot: 0, x1: 0, x2: 10 }, { slot: 1, x1: 20, x2: 30 }, { slot: 2, x1: 40, x2: 50 }]),
   ['0-10:0LR', '20-30:1LR', '40-50:2LR'], 'A 3 baselines niet-rakend: drie losse stukken');
 
-eq(baselineDiamonds([{ slot: 1, x: 40 }, { slot: 0, x: 40 }]), [{ x: 40, slots: [0, 1] }],
+eq(baselineDiamonds([{ slot: 1, x: 40, moment: 'm1' }, { slot: 0, x: 40, moment: 'm1' }]), [{ x: 40, slots: [0, 1] }],
   'A mijlpaal op dezelfde datum: één ruit met beide baselines');
-eq(baselineDiamonds([{ slot: 0, x: 40 }, { slot: 1, x: 40.2 }, { slot: 2, x: 80 }]),
+eq(baselineDiamonds([{ slot: 0, x: 40, moment: 'm1' }, { slot: 1, x: 40.2, moment: 'm2' }, { slot: 2, x: 80, moment: 'm3' }]),
   [{ x: 40, slots: [0] }, { x: 40.2, slots: [1] }, { x: 80, slots: [2] }],
   'A mijlpalen: alleen op precies hetzelfde moment samen (0,2 px uit elkaar = twee ruiten)');
-eq(baselineDiamonds([{ slot: 0, x: 40 }, { slot: 0, x: 40 }]), [{ x: 40, slots: [0] }],
+eq(baselineDiamonds([{ slot: 0, x: 40, moment: 'm1' }, { slot: 0, x: 40, moment: 'm1' }]), [{ x: 40, slots: [0] }],
   'A mijlpaal: dezelfde baseline twee keer telt één keer');
 
 // Tekenregel met een opnemende painter.
@@ -133,7 +133,7 @@ const bbox = (pts: [number, number][]) => {
 }
 {
   const { d, fills } = recordPainter();
-  paintBaselineStrip(d, [], baselineDiamonds([{ slot: 0, x: 50 }, { slot: 1, x: 50 }]), paintOpts);
+  paintBaselineStrip(d, [], baselineDiamonds([{ slot: 0, x: 50, moment: 'm1' }, { slot: 1, x: 50, moment: 'm1' }]), paintOpts);
   eq(fills[0]?.color, 'k0', 'A ruit 2 baselines: ondergrond actief');
   ok(fills.some(f => f.color === 'k1'), 'A ruit 2 baselines: strepen in de tweede kleur');
   const b = bbox(fills[0]?.pts ?? [[0, 0]]);
@@ -145,7 +145,7 @@ const bbox = (pts: [number, number][]) => {
   for (const s of [2.4, 3.2, 4, 4.8, 5, 5.6, 7]) {
     for (const w of [2, 3, 4]) {
       const { d, fills } = recordPainter();
-      paintBaselineStrip(d, [], baselineDiamonds([{ slot: 0, x: 123.5 }, { slot: 1, x: 123.5 }, { slot: 2, x: 123.5 }]),
+      paintBaselineStrip(d, [], baselineDiamonds([{ slot: 0, x: 123.5, moment: 'm1' }, { slot: 1, x: 123.5, moment: 'm1' }, { slot: 2, x: 123.5, moment: 'm1' }]),
         { ...paintOpts, top: 77.3, height: 7, stripeWidth: w, diamondSize: s });
       const cy = 77.3 + 3.5;
       const outside = fills.some(f => f.pts.some(([x, y]) => Math.abs(x - 123.5) + Math.abs(y - cy) > s + 1e-6));
@@ -304,7 +304,7 @@ function piecesPerRow(fills: Fill[]): Piece[][] {
 
 type Comparisons = { slot: 1 | 2; overlay: BaselineOverlay }[];
 /** Scherm: de echte GanttRenderer met een opnemende context. */
-function renderScreen(tasks: Task[], ov0: BaselineOverlay, comps: Comparisons, over: { zoom?: number; compress?: boolean; keep?: { r?: GanttRenderer } } = {}): Fill[] {
+function renderScreen(tasks: Task[], ov0: BaselineOverlay, comps: Comparisons, over: { zoom?: number; compress?: boolean; keep?: { r?: GanttRenderer }; viewStart?: string } = {}): Fill[] {
   const fills: Fill[] = [];
   let path: [number, number][] = [];
   const st = { fillStyle: '', strokeStyle: '' };
@@ -327,7 +327,7 @@ function renderScreen(tasks: Task[], ov0: BaselineOverlay, comps: Comparisons, o
   const renderer = new GanttRenderer(ctx as unknown as CanvasRenderingContext2D, {
     rows: tasks.map(t => ({ kind: 'task' as const, rowKey: t.id, task: t, depth: 0, dimmed: false })),
     sequences: [], calendar: st0.calendar,
-    view: { ...st0.view, scrollX: 0, scrollY: 0, zoom: over.zoom ?? 30 },
+    view: { ...st0.view, scrollX: 0, scrollY: 0, zoom: over.zoom ?? 30, ...(over.viewStart ? { viewStartDate: over.viewStart } : {}) },
     compressNonWorkdays: over.compress,
     selectedTaskIds: [], canvasWidth: 4000, canvasHeight: 300, rowHeight: 32, headerHeight: 60,
     showBaselineOverlay: true, baselineOverlay: ov0, baselineComparisons: comps,
@@ -672,6 +672,63 @@ eq(Math.round(barLayout(32, { resourceAccent: true, baselines: true }).barHeight
     const x0 = Math.min(...strip.map(b => b.x1));
     const at = (day: number) => keep.r?.getBaselineAt(x0 + day * 30 + 15, y)?.slots;
     eq([at(1), at(3), at(6)], [[0], [0, 1], [1]], 'H 30 px/dag stroken: hover geeft effen actief, gestreept beide, effen vergelijking');
+  }
+}
+
+// ══ I. Dagbaselines op de werkdag-as en de hover op de echte ruitvorm (review ronde 4) ═══════════════
+// Op de werkdag-as (ma–vr) vallen za 24 en ma 26 okt 2026 op dezelfde x. Het einde van een
+// dagbaseline is het BEGIN van de volgende kalenderdag, via de as geprojecteerd; za heeft daardoor
+// geen breedte en telt niet mee. De hover test eerst de echte ruitvorm, de marge pas daarna.
+{
+  const VIEW = '2026-10-19';
+  const dayOv = (from: string, to: string): BaselineOverlay => new Map([[bar.id, { start: from, finish: to, isMilestone: false }]]);
+  const baseFills = (fills: Fill[]) => fills.filter(f => BASE_COLORS.has(f.color));
+  const cases: { label: string; a: [string, string]; b: [string, string] }[] = [
+    { label: 'za 24 en ma 26 okt (eendaags)', a: ['2026-10-24', '2026-10-24'], b: ['2026-10-26', '2026-10-26'] },
+    { label: 'vr 23 t/m zo 25 en ma 26 09–10', a: ['2026-10-23', '2026-10-25'], b: ['2026-10-26T09:00', '2026-10-26T10:00'] },
+  ];
+  for (const c of cases) {
+    for (const zoom of [0.5, 5, 30]) {
+      const keep: { r?: GanttRenderer } = {};
+      const scr = renderScreen([bar], dayOv(...c.a), [{ slot: 1, overlay: dayOv(...c.b) }], { zoom, compress: true, keep, viewStart: VIEW });
+      const prt = renderPrint([bar], dayOv(...c.a), [{ slot: 1, overlay: dayOv(...c.b) }], { zoom, compress: true }).fills;
+      const sp = piecesPerRow(scr)[0] ?? [];
+      const pp = piecesPerRow(prt)[0] ?? [];
+      ok(sp.length > 0 && sp.every(p => p.stripes.length === 0), `I werkdag-as ${zoom} px/dag scherm, ${c.label}: geen strepen (kreeg ${J(sp)})`);
+      ok(pp.length > 0 && pp.every(p => p.stripes.length === 0), `I werkdag-as ${zoom} px/dag afdruk, ${c.label}: geen strepen (kreeg ${J(pp)})`);
+      let multi = 0;
+      for (const f of baseFills(scr)) {
+        const b = bbox(f.pts);
+        for (let x = b.x1 - 1; x <= b.x2 + 1; x += 0.05) if ((keep.r?.getBaselineAt(x, (b.y1 + b.y2) / 2)?.slots.length ?? 0) > 1) multi++;
+      }
+      eq(multi, 0, `I werkdag-as ${zoom} px/dag hover, ${c.label}: nergens twee baselines`);
+    }
+  }
+  // Kalender-as: za 24 en ma 26 blijven twee aparte dagen met een dag ertussen.
+  {
+    const scr = renderScreen([bar], dayOv('2026-10-24', '2026-10-24'), [{ slot: 1, overlay: dayOv('2026-10-26', '2026-10-26') }], { zoom: 30, viewStart: VIEW });
+    eq(baseFills(scr).map(f => f.color), [PRINT_PALETTE.baseline, PRINT_PALETTE.baselineCompare1], 'I kalender-as: za en ma zijn twee effen stukken');
+  }
+
+  // Hover op de echte ruitvorm: mijlpalen 09:00 (grijs) en 15:00 (cyaan) bij 5 px/dag. Het punt
+  // (grijs midden − 0,875; − 2,1) ligt alleen in de grijze ruit, wel in de rechthoek om de cyane.
+  {
+    const msOv = (iso: string): BaselineOverlay => new Map([[ms.id, { start: iso, finish: iso, isMilestone: true }]]);
+    const keep: { r?: GanttRenderer } = {};
+    const scr = renderScreen([ms], msOv(`${m0}T09:00`), [{ slot: 1, overlay: msOv(`${m0}T15:00`) }], { zoom: 5, keep });
+    const [grey, cyan] = baseFills(scr).map(f => bbox(f.pts));
+    const half = (grey.x2 - grey.x1) / 2;
+    const cg = { x: (grey.x1 + grey.x2) / 2, y: (grey.y1 + grey.y2) / 2 };
+    const cc = { x: (cyan.x1 + cyan.x2) / 2, y: (cyan.y1 + cyan.y2) / 2 };
+    const p = { x: cg.x - 0.875, y: cg.y - 2.1 };
+    const inGrey = Math.abs(p.x - cg.x) + Math.abs(p.y - cg.y) <= half;
+    const inCyan = Math.abs(p.x - cc.x) + Math.abs(p.y - cc.y) <= half;
+    const inCyanBox = p.x >= cyan.x1 && p.x <= cyan.x2;
+    ok(inGrey && !inCyan && inCyanBox, `I opzet: punt alleen in de grijze ruit, wel in de rechthoek van de cyane (halve diagonaal ${half})`);
+    eq(keep.r?.getBaselineAt(p.x, p.y)?.slots, [0], 'I hover op een zichtbaar deel van de grijze ruit geeft grijs [0]');
+    eq(keep.r?.getBaselineAt(cc.x + half * 0.5, cc.y)?.slots, [1], 'I hover op de cyane ruit geeft cyaan [1]');
+    // Marge pas als geen vorm geraakt is: net boven de punt van de grijze ruit (binnen 2 px).
+    eq(keep.r?.getBaselineAt(cg.x - 0.6, grey.y1 - 1)?.slots, [0], 'I hover net naast de grijze ruit (marge) geeft grijs');
   }
 }
 

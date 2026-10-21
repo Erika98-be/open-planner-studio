@@ -90,6 +90,8 @@ interface BaselineHitRect {
   x2: number;
   y1: number;
   y2: number;
+  /** Bij een mijlpaalruit: midden en halve diagonaal. De hover test dan de echte ruitvorm. */
+  diamond?: { cx: number; cy: number; s: number };
 }
 
 export interface GanttRenderOptions {
@@ -1032,7 +1034,10 @@ export class GanttRenderer {
       task,
       rects: [
         ...pieces.map(p => ({ slots: p.slots, x1: p.x1, x2: p.x2, y1: top, y2: top + h })),
-        ...diamonds.map(dm => ({ slots: dm.slots, x1: dm.x - diamondSize, x2: dm.x + diamondSize, y1: cy - diamondSize, y2: cy + diamondSize })),
+        ...diamonds.map(dm => ({
+          slots: dm.slots, x1: dm.x - diamondSize, x2: dm.x + diamondSize, y1: cy - diamondSize, y2: cy + diamondSize,
+          diamond: { cx: dm.x, cy, s: diamondSize },
+        })),
       ],
     });
   }
@@ -1045,15 +1050,28 @@ export class GanttRenderer {
     const hit = this.baselineHits.get(task.id);
     if (!hit) return null;
     const PAD = 2;
-    // Omgekeerde tekenvolgorde: de bovenste getekende vorm wint (bv. een ruit die net over een
-    // andere ligt).
+    // Afstand van de muis tot de echte vorm (0 = erin): een ruit is |dx| + |dy| <= s, een stuk
+    // van de strook een rechthoek.
+    const distance = (r: BaselineHitRect): number => {
+      if (r.diamond) {
+        return Math.max(0, Math.abs(canvasX - r.diamond.cx) + Math.abs(canvasY - r.diamond.cy) - r.diamond.s);
+      }
+      const dx = canvasX < r.x1 ? r.x1 - canvasX : canvasX > r.x2 ? canvasX - r.x2 : 0;
+      const dy = canvasY < r.y1 ? r.y1 - canvasY : canvasY > r.y2 ? canvasY - r.y2 : 0;
+      return Math.max(dx, dy);
+    };
+    // Eerst de getekende vormen zelf, in omgekeerde tekenvolgorde: de bovenste vorm wint (bv. een
+    // ruit die deels over een andere ligt). Pas als geen vorm geraakt is, telt de marge van 2 px;
+    // dan wint de dichtstbijzijnde vorm (bij gelijke afstand de bovenste).
+    let best: BaselineHitRect | null = null;
+    let bestDistance = Infinity;
     for (let i = hit.rects.length - 1; i >= 0; i--) {
       const r = hit.rects[i];
-      if (canvasX < r.x1 || canvasX > r.x2) continue;
-      if (canvasY < r.y1 - PAD || canvasY > r.y2 + PAD) continue;
-      return { task: hit.task, slots: r.slots };
+      const d = distance(r);
+      if (d === 0) return { task: hit.task, slots: r.slots };
+      if (d <= PAD && d < bestDistance) { best = r; bestDistance = d; }
     }
-    return null;
+    return best ? { task: hit.task, slots: best.slots } : null;
   }
 
   private drawTimelineHeader(): void {
