@@ -406,9 +406,12 @@ export function TaskGridSurface({
   }, [activeDocumentId]);
 
   const calendarEngine = useMemo(() => new CalendarEngine(calendar), [calendar]);
-  const calendarOptions = useMemo(() => [calendar, ...calendars]
-    .filter((item, index, all) => all.findIndex(candidate => candidate.id === item.id) === index)
-    .map(item => ({ value: item.id, label: item.name })), [calendar, calendars]);
+  const calendarOptions = useMemo(() => [
+    { value: '', label: tTask('properties.calendarProject') + ': ' + calendar.name },
+    ...[calendar, ...calendars]
+      .filter((item, index, all) => all.findIndex(candidate => candidate.id === item.id) === index)
+      .map(item => ({ value: item.id, label: item.name })),
+  ], [calendar, calendars, tTask]);
   const trace = useMemo(
     () => buildTrace(traceMode, selectedTaskIds, sequences, cpmResult),
     [cpmResult, selectedTaskIds, sequences, traceMode],
