@@ -9,7 +9,7 @@ import { Baseline, BaselineTask } from '@/types/baseline';
 import { generateId } from '@/utils/id';
 import { parseInstant, parseDate } from '@/utils/dateUtils';
 import { normalizeImportedProgress, deriveImportedWorkRules, rebuildImportedHierarchy, reconstructResourceIds } from '@/services/importNormalize';
-import { emptyMissingScheduleDates, importDateTime, isoDatePrefixOrToday, parseImportedInstant, resolveMissingScheduleDates } from '@/services/importDates';
+import { emptyMissingScheduleDates, importDateTime, importDateTimeOrUndefined, isoDatePrefixOrToday, parseImportedInstant, resolveMissingScheduleDates } from '@/services/importDates';
 import { tenthsOfMinutesToDays } from '@/services/importDurations';
 import { descendantText, toInt, toFloat } from '@/services/xmlDom';
 import { hasMsProjectImportLoss, type ImportResult } from '@/services/importTypes';
@@ -491,13 +491,19 @@ export function readMSPDI(content: string): ImportResult {
       const bEl = baselineEls[b];
       if (bEl.parentElement !== te) continue;
       if (getElementInt(bEl, 'Number', -1) !== 0) continue;
+      // Dezelfde modus als de taakdatums: een urentaak houdt het tijdstip van haar baseline
+      // (`YYYY-MM-DDTHH:mm`, zoals `saveBaseline` hem zelf vastlegt), een dagtaak alleen de datum
+      // (PR #392, fixronde 5).
+      const baselineStart = importDateTimeOrUndefined(getElementText(bEl, 'Start'), isHour);
+      const baselineFinish = importDateTimeOrUndefined(getElementText(bEl, 'Finish'), isHour);
+      // Onleesbaar (`NA`) = ontbrekend: zonder start én einde krijgt de taak geen baseline-entry, want
+      // `BaselineTask` eist beide datums en een verzonnen datum (vandaag) zou een valse afwijking tonen.
+      // Vóór deze regel brak `NA` bij een urentaak de hele import af (`RangeError`, VERVOLG 13 van #392).
+      if (baselineStart === undefined || baselineFinish === undefined) break;
       baselineEntries.push({
         taskId: id,
-        // Dezelfde modus als de taakdatums: een urentaak houdt het tijdstip van haar baseline
-        // (`YYYY-MM-DDTHH:mm`, zoals `saveBaseline` hem zelf vastlegt), een dagtaak alleen de datum
-        // (PR #392, fixronde 5).
-        start: importDateTime(getElementText(bEl, 'Start'), isHour),
-        finish: importDateTime(getElementText(bEl, 'Finish'), isHour),
+        start: baselineStart,
+        finish: baselineFinish,
         // Dezelfde dag als de taakduur (`mspdiBaselineDays`), anders leest een 24/7-taak haar eigen
         // baseline als 2,33 dagen terug, of een urentaak van 1870 u op 8 u/dag met blokken van 10 u
         // haar baseline als 234 d naast een taak van 187 d.

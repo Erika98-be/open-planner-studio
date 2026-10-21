@@ -224,6 +224,9 @@ const rondeDaarna = plan({
   names: PROD,
 });
 eqSet('4i overgenomen snapshot blijft beschermd', rondeDaarna.remove, []);
+// … en zijn manifestregel gaat ook deze ronde mee: zonder regel blijven alleen weesbytes over.
+eq('4i2 overgenomen regel blijft in ons manifest',
+  rondeDaarna.carryOver.map((d) => d.ifc), ['recovery.doc-5.ifc']);
 
 // Een vreemd manifest waarvan de snapshot niet meer bestaat, dragen we niet mee (dode regel).
 const vreemdWeg = plan({

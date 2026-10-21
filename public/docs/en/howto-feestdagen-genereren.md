@@ -26,7 +26,7 @@ The years follow the project period: from the year before the start date to the 
 
 ### Regenerating after a new project period
 
-If your project shifts, or gets a later end date, the holidays no longer cover the new years. The app says so in the *Calendars* window, for example *Holidays cover 2025–2028; project runs to 2030. Regenerate?* Then click *Regenerate*. The app uses the same choices as last time (country, region, construction holiday) for the years of the project. Then click *Apply*. You only see this message for a calendar whose holidays were generated earlier.
+If your project shifts, or gets a later end date, the holidays no longer cover the new years. The app says so in the *Calendars* window, for example *Holidays cover 2025–2028; regenerate through 2030?* Then click *Regenerate*. The app uses the same choices as last time (country, region, construction holiday) for the years of the project. Then click *Apply*. You only see this message for a calendar whose holidays were generated earlier.
 
 ### Adding a day or period off of your own
 
