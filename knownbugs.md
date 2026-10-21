@@ -223,8 +223,6 @@ en noem het in je rapport of PR-tekst.
 46. **`.mpp` neemt de kritiek-drempel uit MS Project niet over als projectinstelling** (wel voor *Datums zoals
     opgeslagen*; MSPDI doet het wel). Gevolg: drempel 0 na openen. — B
 
-95. **Recent opent een site-bestand met de bewaarde naam.** Is het bestand op de site hernoemd, dan zie je de
-    nieuwe naam pas na openen via *Openen van de site*. Gemeld door de bouwer van #309. — S
 96. **Het herstelmanifest schrijft een `version`, maar niemand controleert die** (`recoveryStore.ts`). Een
     oudere build leest een nieuwer manifest dus zonder waarschuwing. Gemeld door de bouwer van #309. — S
 97. **De sluitvraag van een tabblad ligt op een vaste z-index 80**, de gewone dialogen op 50/60. Elke vraag die
