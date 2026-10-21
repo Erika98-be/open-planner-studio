@@ -189,7 +189,7 @@ including a fidelity measurement against P6's own calculated output and the 216-
   article read in a language other than Dutch or English shows a notice with buttons to read the
   English or Dutch source.
 - **The Help was rewritten around the four Diátaxis kinds and grew from 31 to 78 articles**:
-  50 how-to articles, 15 references, 13 explanations and a planning guide, with `?` buttons in
+  49 how-to articles, 15 references, 13 explanations and a planning guide, with `?` buttons in
   dialogs and panels that open the matching article, anchors, aliases and draft support. New
   explanations cover calculation profiles, task types, dates as recorded, days and hours, leveling,
   calendars, constraints and the critical path.
