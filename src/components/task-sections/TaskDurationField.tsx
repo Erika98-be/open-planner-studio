@@ -182,6 +182,10 @@ export function TaskDurationField({ task, calendar, onChange }: {
         <input
           type="text"
           value={value}
+          onFocus={event => {
+            // Ctrl+S/F5 herstelt de bestaande invoerfocus, niet een nieuwe veldbewerking.
+            if (event.currentTarget.dataset.opsRefocus !== 'true') event.currentTarget.select();
+          }}
           onChange={(event) => setValue(event.target.value)}
           onBlur={commitInput}
           onKeyDown={(event) => {

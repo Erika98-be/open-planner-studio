@@ -459,6 +459,7 @@ function ExportSection() {
       return;
     }
     setExportError(null);
+    if (result.cancelled) return;
     setUI({ activeRibbonTab: 'start' });
   };
 
