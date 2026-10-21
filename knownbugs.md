@@ -122,8 +122,6 @@ en noem het in je rapport of PR-tekst.
     S (rest)
 30. **Onbekende extensiepermissie** laat de installatie mislukken; de code-commentaren zeggen "wordt
     gefilterd". — S
-31. **`companyLibrary.promoteHint`** noemt promoveren van resources via een knop die alleen voor kalenders
-    bestaat. — S
 32. ***Herkennen*: "Geen voorstel — kies handmatig"** zonder knop om handmatig te kiezen. — B
 33. **Bibliotheekkalender verwijderen** gaat zonder bevestiging; daarna staat hij nog als *al gekoppeld*. — S
 61. **PDF-bestandsnamen altijd Nederlands** (`-voortgang`, `-afwijkingen`), ook in het Engels

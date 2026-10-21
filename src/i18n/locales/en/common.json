@@ -705,7 +705,7 @@
     "calendars": "Calendars",
     "noCalendars": "No calendars in the pool yet.",
     "noResources": "No resources in the pool yet.",
-    "promoteHint": "Promote a project calendar or resource to the library with the “+ From project” button above.",
+    "promoteHint": "Promote a project calendar to the library with the “+ From project” button above.",
     "promoteFromProject": "From project",
     "alreadyLinked": "already linked",
     "editItem": "Edit",
