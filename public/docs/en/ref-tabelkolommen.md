@@ -68,8 +68,8 @@ By default the table next to the Gantt shows *WBS*, *Task name* and *Duration*. 
 - **Planned units per day** — the planned rate per resource, as `Name: 1.11`, with at most two decimals, like *Assignment units per day*. Only for an assignment from Primavera P6 with a different remaining rate; *Assignment units per day* then shows the remaining rate. Read-only.
 - **Assignment curve** — the curve per resource, as `Name: Uniform`. Editable on a task with assignments.
 - **Work window start** and **Work window finish** — the work window per resource, from an imported file, as `Name: date`. Read-only.
-- **Planned work (hours)** and **Actual work (hours)** — the planned and actual work per resource in hours, as `Name: 12`, from an imported file. Read-only.
-- **Remaining work (hours)** — the remaining work per resource in hours, as `Name: 6`: the stored work, otherwise remaining duration × units. Editable on a task with assignments on which a task type applies. Only visible in the picker when the task types are visible. A yellow ⚠ in the cell means that the stored work differs from units × remaining duration, like the ⚠ at *Work (rem.)* in the task panel.
+- **Planned work (hours)** and **Actual work (hours)** — the planned and actual work per resource in hours, as `Name: 617.14`, with at most two decimals, from an imported file. Read-only.
+- **Remaining work (hours)** — the remaining work per resource in hours, as `Name: 6` or `Name: 26.67`: the stored work, otherwise remaining duration × units. Editable on a task with assignments on which a task type applies, with a comma or a point as decimal separator. Only visible in the picker when the task types are visible. A yellow ⚠ in the cell means that the stored work differs from units × remaining duration, like the ⚠ at *Work (rem.)* in the task panel.
 
 ## Progress
 
