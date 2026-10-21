@@ -39,6 +39,11 @@ test('resource panel: pending-new opent één gefocuste draft en viewwissels rui
   const draft = page.locator('[data-ops-pending-new-row]');
   await expect(draft).toHaveCount(1);
   await expect(draft.getByPlaceholder(/^(Name|Naam)$/)).toBeFocused();
+  const units = draft.locator('[data-ops-grid-cell="__draft:maxUnits"]');
+  await expect(units).toHaveValue('1');
+  await units.click();
+  await page.keyboard.type('2');
+  await expect(units).toHaveValue('2');
   await expect.poll(() => page.evaluate(() => window.__OPS__!.store.getState().ui.pendingNewResource))
     .toBe(false);
 
