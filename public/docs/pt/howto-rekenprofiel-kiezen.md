@@ -50,7 +50,7 @@ Para eliminar um modelo, clique em *Eliminar modelo*. A aplicação pede confirm
 
 ## Cuidados e o que a aplicação faz
 
-**As datas deslocam-se.** Outro perfil pode alterar datas reais. Verifique o resultado. Se não gostar, escolha *Desfazer*: perfil e datas voltam juntos ao estado anterior.
+**As datas deslocam-se.** Outro perfil pode alterar as datas de verdade. Verifique o resultado. Se não gostar, escolha *Desfazer*: perfil e datas voltam juntos ao estado anterior.
 
 **Um bloco amarelo após Desfazer.** Se premir *Desfazer* ou *Refazer* com as Definições do projeto abertas, o bloco segue o estado do projeto. Se já tiver alterado algo no bloco, a sua escolha mantém-se. Um bloco amarelo indica então que *Aplicar* repõe essa escolha.
 

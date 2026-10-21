@@ -10,7 +10,7 @@ Trois grandeurs sont liées entre elles :
 - **Unités** : la part d'une ressource qui travaille sur la tâche par jour ouvré. Dans le volet *Propriétés*, cela s'appelle *Unités*, dans les autres fenêtres *Unités/jour*. Des unités de 1 correspondent à un plâtrier pour toute la journée, 2 à deux plâtriers et 0,5 à une demi-journée.
 - **Travail** : le nombre total d'heures que la ressource passe sur la tâche.
 
-La somme s'écrit : travail = durée × unités × heures par jour ouvré. Les heures par jour ouvré viennent du calendrier de la tâche. Un plâtrage de quatre jours ouvrés avec un seul plâtrier représente, avec un jour ouvré de 8 heures, 4 × 1 × 8 = 32 heures de travail.
+La formule s'écrit : travail = durée × unités × heures par jour ouvré. Les heures par jour ouvré viennent du calendrier de la tâche. Un plâtrage de quatre jours ouvrés avec un seul plâtrier représente, avec un jour ouvré de 8 heures, 4 × 1 × 8 = 32 heures de travail.
 
 Si vous modifiez une de ces trois grandeurs, au moins une des deux autres doit suivre, sinon la somme n'est plus juste. Le type de tâche décide laquelle. Vous le réglez par tâche, dans le volet *Propriétés*. L'application n'affiche le type de tâche et le travail qu'une fois que vous les avez activés ; le fonctionnement est décrit dans [Choisir un type de tâche](docs://howto-werkregel-kiezen).
 
@@ -26,7 +26,7 @@ Si un type de tâche modifie la durée de la tâche, le planning devient obsolè
 
 ### Quatre types de tâche
 
-Dans le volet *Propriétés*, il y a une icône i à côté de la liste déroulante *Type de tâche*. Pointez-la, cliquez dessus ou touchez-la, et l'application explique le type de tâche qui s'applique maintenant. Dans la liste déroulante ouverte, chaque option a aussi une icône i. L'explication commence par une phrase en gras. Les quatre types de tâche, avec cette phrase de l'application :
+Dans le volet *Propriétés*, il y a une icône i à côté de la liste déroulante *Type de tâche*. Survolez-la, cliquez dessus ou touchez-la, et l'application explique le type de tâche qui s'applique maintenant. Dans la liste déroulante ouverte, chaque option a aussi une icône i. L'explication commence par une phrase en gras. Les quatre types de tâche, avec cette phrase de l'application :
 
 - **Durée et unités fixes** (*Le travail découle de la durée et des unités.*). C'est la valeur par défaut. L'application ne modifie jamais la durée elle-même, et le travail découle de la durée et des unités. Si vous saisissez vous-même le travail, l'application ajuste les unités, car la durée est fixe.
 - **Durée et travail fixes** (*Les unités découlent de la durée et du travail.*). L'application ne modifie jamais la durée elle-même. Si vous modifiez la durée, le travail reste et les unités s'ajustent.
@@ -53,7 +53,7 @@ Si la tâche a déjà un avancement, le type de tâche agit sur la partie restan
 
 ### Tâches en heures
 
-Une tâche planifiée en heures se calcule de la même façon, mais en minutes. Si seule la grue est affectée à une tâche de 5 heures, cela représente 5 heures de travail. Avec Travail fixe, la durée passe alors à 2,5 heures pour des unités de 2. Le plancher à entrevous du projet d'exercice a aussi une équipe de charpentiers affectée. Il a toujours besoin de 5 heures de travail ; c'est la plus lente, donc la durée reste de 5 heures. La relation entre heures et jours est expliquée dans [Jours et heures](docs://uitleg-dagen-en-uren).
+Une tâche planifiée en heures se calcule de la même façon, mais en minutes. Si seule la grue est affectée à une tâche de 5 heures, cela représente 5 heures de travail. Avec Travail fixe, la durée passe alors à 2,5 heures pour des unités de 2. Le plancher en dalles alvéolées du projet d'exercice a aussi une équipe de charpentiers affectée. Il a toujours besoin de 5 heures de travail ; c'est la plus lente, donc la durée reste de 5 heures. La relation entre heures et jours est expliquée dans [Jours et heures](docs://uitleg-dagen-en-uren).
 
 ## Exemple détaillé : le plâtrage
 
@@ -91,11 +91,11 @@ Le plâtrage dure 4 jours ouvrés. Un plâtrier y est affecté, avec des unités
 
 ### Quand la somme ne tombe pas juste
 
-Avec Travail fixe, vous réglez les unités à 3. Le travail est de 32 heures, donc la durée devient 32 ÷ (3 × 8) = 1,33 jour ouvré. L'application arrondit cela à 2 jours ouvrés. Le travail (32 heures) et les unités (3) restent, mais 2 × 3 × 8 fait 48 heures. L'histogramme répartit donc les 32 heures sur les 2 jours ouvrés : 2 unités par jour, et non 3. Dans le champ *Travail (h)*, un signal d'avertissement apparaît, *Diffère de unités × durée*, pour le montrer.
+Avec Travail fixe, vous réglez les unités à 3. Le travail est de 32 heures, donc la durée devient 32 ÷ (3 × 8) = 1,33 jour ouvré. L'application arrondit cela à 2 jours ouvrés. Le travail (32 heures) et les unités (3) restent, mais 2 × 3 × 8 fait 48 heures. L'histogramme répartit donc les 32 heures sur les 2 jours ouvrés : 2 unités par jour, et non 3. Dans le champ *Travail (h)*, une icône d'avertissement apparaît, *Diffère de unités × durée*, pour le montrer.
 
 Avec deux ressources aux unités différentes, cela fonctionne de la même façon. Si, avec Travail fixe, vous ajoutez une deuxième ressource, par exemple *Plasterer 2*, avec des unités de 2, à côté du plâtrier qui a des unités de 1, l'application répartit les 32 heures dans la proportion 1 : 2, soit 10,7 et 21,3 heures. Les deux ont alors besoin de 1,33 jour ouvré. La durée devient 2 jours ouvrés.
 
-Un fichier de P6 ou de MS Project peut aussi contenir un *Travail (rest.)* qui n'est pas égal aux unités × la durée restante. Le même signal d'avertissement apparaît alors. L'application ne modifie pas ce travail d'elle-même. Si vous modifiez la durée d'une telle tâche, l'application suit le type de tâche, aussi quand le travail restant vient du fichier. Avec *Durée et unités fixes* et *Unités fixes*, le travail restant devient les unités × la nouvelle durée restante. Avec *Durée et travail fixes* et *Travail fixe*, le travail reste et les unités s'ajustent. Si un travail restant du fichier disparaît ainsi, vous recevez une notification avec l'ancien et le nouveau nombre d'heures. Ctrl+Z restaure l'ancienne valeur. L'explication à côté du signal d'avertissement vous indique, par tâche, lequel de ces deux cas se produit.
+Un fichier de P6 ou de MS Project peut aussi contenir un *Travail (rest.)* qui n'est pas égal aux unités × la durée restante. La même icône d'avertissement apparaît alors. L'application ne modifie pas ce travail d'elle-même. Si vous modifiez la durée d'une telle tâche, l'application suit le type de tâche, aussi quand le travail restant vient du fichier. Avec *Durée et unités fixes* et *Unités fixes*, le travail restant devient les unités × la nouvelle durée restante. Avec *Durée et travail fixes* et *Travail fixe*, le travail reste et les unités s'ajustent. Si un travail restant du fichier disparaît ainsi, vous recevez une notification avec l'ancien et le nouveau nombre d'heures. Ctrl+Z restaure l'ancienne valeur. L'explication à côté de l'icône d'avertissement vous indique, par tâche, lequel de ces deux cas se produit.
 
 ### Un autre calendrier
 
@@ -103,7 +103,7 @@ Avec Travail fixe, la journée de travail du calendrier passe de 8 à 6 heures. 
 
 ### Une tâche avec avancement
 
-Le parement intérieur du double mur dure 5 jours ouvrés et son avancement est de 40 % : 2 jours ouvrés sont faits et 3 jours ouvrés (24 heures) restent. Avec Travail fixe, vous réglez les unités de 1 à 2. Le travail restant reste à 24 heures et la durée restante devient 1,5, arrondie à 2 jours ouvrés. La tâche dure maintenant 2 + 2 = 4 jours ouvrés et l'avancement est de 50 %. Le pourcentage suit, car la partie faite reste la même et le reste se raccourcit.
+La paroi intérieure du mur creux dure 5 jours ouvrés et son avancement est de 40 % : 2 jours ouvrés sont faits et 3 jours ouvrés (24 heures) restent. Avec Travail fixe, vous réglez les unités de 1 à 2. Le travail restant reste à 24 heures et la durée restante devient 1,5, arrondie à 2 jours ouvrés. La tâche dure maintenant 2 + 2 = 4 jours ouvrés et l'avancement est de 50 %. Le pourcentage suit, car la partie faite reste la même et le reste se raccourcit.
 
 ## Conséquences et idées reçues
 

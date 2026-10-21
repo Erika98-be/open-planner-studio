@@ -53,7 +53,7 @@ Se l'attività ha già avanzamento, il tipo di attività lavora sulla parte rima
 
 ### Attività in ore
 
-Un'attività che pianifichi in ore si calcola allo stesso modo, ma in minuti. Se solo la gru è sull'attività di 5 ore, sono 5 ore di lavoro. Con Lavoro fisso, la durata con unità 2 diventa allora 2,5 ore. Anche il solaio alveolare nel progetto di esercizio ha assegnata la squadra dei carpentieri. Serve ancora 5 ore di lavoro, è la più lenta, quindi la durata resta 5 ore. Come si collegano ore e giorni è spiegato in [Giorni e ore](docs://uitleg-dagen-en-uren).
+Un'attività che pianifichi in ore si calcola allo stesso modo, ma in minuti. Se solo la gru è sull'attività di 5 ore, sono 5 ore di lavoro. Con Lavoro fisso, la durata con unità 2 diventa allora 2,5 ore. Anche il solaio alveolare nel progetto di esercizio ha assegnata la squadra dei carpentieri. Richiede ancora 5 ore di lavoro, è la risorsa più lenta, quindi la durata resta 5 ore. Come si collegano ore e giorni è spiegato in [Giorni e ore](docs://uitleg-dagen-en-uren).
 
 ## Esempio svolto: l'intonacatura
 
@@ -115,7 +115,7 @@ Il paramento interno della cavità dura 5 giorni lavorativi ed è fatto al 40%: 
 
 **Senza assegnazione un tipo di attività non fa nulla.** Non ci sono allora né unità né lavoro a cui collegare la durata.
 
-**I file di MS Project o di Primavera P6 mostrano sempre il tipo di attività.** Per un'attività di MS Project l'app a volte conserva l'impostazione basata sull’impegno. Quella impostazione salvata cambia il comportamento in due casi. Con *Durata e lavoro fissi* e basata sull’impegno, il lavoro si sposta quando cambi la durata, invece delle unità. Con *Unità fisse* e non basata sull’impegno, il lavoro si sposta quando aggiungi o rimuovi una risorsa, e la durata resta. Le attività che crei nell'app non hanno questa impostazione. La spiegazione dietro l'icona i tiene conto di questa impostazione.
+**I file di MS Project o di Primavera P6 mostrano sempre il tipo di attività.** Per un'attività di MS Project l'app a volte conserva l'impostazione basata sull'impegno. Quella impostazione salvata cambia il comportamento in due casi. Con *Durata e lavoro fissi* e basata sull'impegno, il lavoro si sposta quando cambi la durata, invece delle unità. Con *Unità fisse* e non basata sull’impegno, il lavoro si sposta quando aggiungi o rimuovi una risorsa, e la durata resta. Le attività che crei nell'app non hanno questa impostazione. La spiegazione dietro l'icona i tiene conto di questa impostazione.
 
 ## Vedi anche
 

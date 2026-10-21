@@ -46,7 +46,7 @@ En ny opgave får så en varighed på 5 timer i stedet for 5 dage. Eksisterende 
 
 ## Se også
 
-- [Dage og timer](docs://uitleg-dagen-en-uren): hvordan appen tæller timer, hvad der sker når dage og timer mødes, og hvor den runder af.
+- [Dage og timer](docs://uitleg-dagen-en-uren): hvordan appen tæller timer, hvad der sker, når dage og timer mødes, og hvor den runder af.
 - [Angiv arbejdstimer](docs://howto-werktijden-instellen): tiderne i en kalender pr. ugedag.
 - [Tilføj afhængigheder](docs://howto-relaties-leggen): en forsinkelse i timer mellem to opgaver.
 - [App-indstillinger](docs://ref-instellingen): indstillingen Slå timeplanlægning til og hvad den ellers ændrer.

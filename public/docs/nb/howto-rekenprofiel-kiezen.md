@@ -20,7 +20,7 @@ Du åpner et prosjekt som må beregnes som Primavera P6 eller Microsoft Project,
 2. I blokken *Beregningsprofil og beregningsalternativer* åpner du rullegardinlisten *Beregningsprofil* og velger en annen profil.
 3. Klikk **Bruk**. Appen omberegner tidsplanen med én gang, selv om *Beregne automatisk* er av. Hvis aktiviteter er forskjøvet, viser appen hvor mange.
 
-Til du klikker *Bruk*, finnes endringen bare i skjemaet. Hele byttet er ett trinn for *Angre*. Bytte endrer bare beregningsreglene. Beregningsalternativene dine forblir som de er.
+Til du klikker *Bruk*, finnes endringen bare i skjemaet. Hele byttet er ett trinn for *Angre*. Å bytte profil endrer bare beregningsreglene. Beregningsalternativene dine forblir som de er.
 
 ### Bygge en egendefinert beregningsprofil
 
@@ -50,9 +50,9 @@ Du sletter en mal med *Slett mal*. Appen ber om bekreftelse først.
 
 ## Fallgruver og hva appen gjør
 
-**Datoene forskyves.** En annen beregningsprofil kan endre de faktiske datoene. Kontroller resultatet. Vil du ikke ha det, velger du *Angre*: profil og datoer går tilbake sammen.
+**Datoene forskyves.** En annen beregningsprofil kan endre selve datoene. Kontroller resultatet. Vil du ikke ha det, velger du *Angre*: profil og datoer går tilbake sammen.
 
-**En gul blokk etter Angre.** Trykker du *Angre* eller *Gjør om* mens Prosjektinnstillinger er åpent, følger blokken tilstanden i prosjektet. Har du allerede endret noe i blokken selv, blir valget ditt. En gul blokk sier da at *Bruk* setter det valget tilbake.
+**En gul blokk etter Angre.** Trykker du *Angre* eller *Gjør om* mens Prosjektinnstillinger er åpent, følger blokken tilstanden i prosjektet. Har du allerede endret noe i blokken selv, blir valget ditt stående. En gul blokk sier da at *Bruk* setter det valget tilbake.
 
 **Det kan være maksimalt 100 maler.** Er det allerede 100, lagrer appen ikke malen, og den melder det. Slett først en mal. Er lagringen i appen full eller mangler den, får du også en melding.
 

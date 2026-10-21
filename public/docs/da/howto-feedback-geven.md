@@ -4,7 +4,7 @@ Mål: meld en fejl eller giv en idé videre, eventuelt med et skærmbillede, dir
 
 ## Hvornår du har brug for det
 
-Tidsplanen udregner noget, du ikke forstår, en knap gør ikke det, den skal, eller du savner noget i appen. En god melding hjælper udviklerne med at finde problemet. Derfor sætter appen selv versionen, operativsystemet og sproget i din melding. Det, du selv beskriver, bestemmer, om de kan gøre noget med den: hvad du gjorde, hvad du forventede, og hvad der skete.
+Tidsplanen beregner noget, du ikke forstår, en knap gør ikke det, den skal, eller du savner noget i appen. En god melding hjælper udviklerne med at finde problemet. Derfor sætter appen selv versionen, operativsystemet og sproget i din melding. Det, du selv beskriver, bestemmer, om de kan gøre noget med den: hvad du gjorde, hvad du forventede, og hvad der skete.
 
 ## Trin
 
@@ -13,7 +13,7 @@ Tidsplanen udregner noget, du ikke forstår, en knap gør ikke det, den skal, el
 3. Udfyld *Titel* og derefter *Beskrivelse*. De tomme felter viser et eksempel: en titel som *F.eks. Kritisk vej hopper, efter du har gemt*, og i beskrivelsen spørgsmålet *Hvad gjorde du, hvad forventede du, og hvad skete der?* Så længe knappen *Send* er grå, forklarer en grå linje ved siden af hvorfor, for eksempel *Skriv en titel.* eller at du skal skrive mindst 10 tegn i titel og beskrivelse tilsammen.
 4. Hvis du vil have et svar, skal du udfylde din *E-mailadresse*. Feltet er valgfrit. Appen husker adressen efter en vellykket melding, så den er der allerede næste gang.
 5. Hvis du vil vise noget, skal du slå *Vedhæft skærmbillede* til. Appen laver så et billede af appen uden dette vindue. Et øjeblik senere ser du en lille forhåndsvisning med tre knapper ved siden af: *Annotér*, *Tag igen* og *Fjern*.
-6. *Annotér* åbner en editor. I den sætter du pile, rektangler, frihåndslinjer og tekst på billedet. Med *Dæk over* tegner du et sort område over noget, der ikke må med, for eksempel et navn eller et beløb. Den del er så virkelig væk fra det billede, som appen sender. Du vælger farven, fortryder din sidste handling med *Fortryd* eller begynder forfra med *Ryd alt*. Klik på *Færdig* for at beholde dine ændringer, eller på *Annuller* (eller Esc) for at kassere dem.
+6. *Annotér* åbner en editor. I den sætter du pile, rektangler, frihåndslinjer og tekst på billedet. Med *Dæk over* tegner du et sort område over noget, der ikke må med, for eksempel et navn eller et beløb. Den del er så helt fjernet fra det billede, som appen sender. Du vælger farven, fortryder din sidste handling med *Fortryd* eller begynder forfra med *Ryd alt*. Klik på *Færdig* for at beholde dine ændringer, eller på *Annuller* (eller Esc) for at kassere dem.
 7. *Tag igen* laver et nyt skærmbillede og fjerner dine annoteringer. *Fjern* fjerner skærmbilledet og slår afkrydsningsfeltet fra.
 8. Se på den grå linje *Sendt med* under formularen. Den viser, hvad appen selv sender med: versionen, operativsystemet og sproget, for eksempel *Sendt med: v2026.10.1 · Windows · English*.
 9. Klik på *Send*. Mens den sender, står der *Sender…* på knappen.
@@ -25,7 +25,7 @@ Appen sender din melding til Open Feedback Studio fra OpenAEC. Du behøver ikke 
 
 ## Faldgruber, og hvad appen gør så
 
-**Din melding kan blive offentlig.** Skriv ikke noget i den, som du ikke vil dele. Det gælder også for skærmbilledet: billedet viser alt, der er synligt i appen på det tidspunkt, for eksempel opgavenavne og ressourcer i dit projekt. Appen laver skærmbilledet, på det øjeblik du slår *Vedhæft skærmbillede* til. Hvis skærmen ikke er rigtig endnu, skal du lukke vinduet, stille skærmen rigtigt, åbne vinduet igen og klikke på *Tag igen*. Brug *Dæk over* til at skjule det, du ikke vil vise.
+**Din melding kan blive offentlig.** Skriv ikke noget i den, som du ikke vil dele. Det gælder også for skærmbilledet: billedet viser alt, der er synligt i appen på det tidspunkt, for eksempel opgavenavne og ressourcer i dit projekt. Appen laver skærmbilledet i det øjeblik, du slår *Vedhæft skærmbillede* til. Hvis skærmen ikke viser det, du vil vise, endnu, skal du lukke vinduet, indstille appen, som du vil have den, åbne vinduet igen og klikke på *Tag igen*. Brug *Dæk over* til at skjule det, du ikke vil vise.
 
 **Skærmbilledet er for stort.** Appen gør skærmbilledet mindre, før den sender det. Hvis det stadig er for stort efter det, sendes din melding uden billede. Takkeskærmen siger så *Skærmbilledet var for stort, og det er ikke sendt med.*
 

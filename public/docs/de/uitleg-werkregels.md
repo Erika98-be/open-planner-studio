@@ -10,9 +10,9 @@ Drei Größen hängen zusammen:
 - **Einheiten**: wie viel von einer Ressource pro Arbeitstag an dem Vorgang arbeitet. Im Bereich *Eigenschaften* heißt das *Einheiten*, in anderen Fenstern *Einh./Tag*. Einheiten von 1 bedeuten einen Gipser für den ganzen Tag, 2 bedeutet zwei davon und 0,5 bedeutet einen halben Tag.
 - **Arbeit**: die Gesamtzahl der Stunden, die die Ressource an dem Vorgang arbeitet.
 
-Die Summe lautet: Arbeit = Dauer × Einheiten × Stunden pro Arbeitstag. Die Stunden pro Arbeitstag kommen aus dem Kalender des Vorgangs. Das Verputzen von vier Arbeitstagen mit einem Gipser ergibt bei einem Arbeitstag von 8 Stunden 4 × 1 × 8 = 32 Stunden Arbeit.
+Die Formel lautet: Arbeit = Dauer × Einheiten × Stunden pro Arbeitstag. Die Stunden pro Arbeitstag kommen aus dem Kalender des Vorgangs. Das Verputzen von vier Arbeitstagen mit einem Gipser ergibt bei einem Arbeitstag von 8 Stunden 4 × 1 × 8 = 32 Stunden Arbeit.
 
-Wenn Sie eine der drei Größen ändern, muss sich mindestens eine der beiden anderen mitbewegen. Sonst stimmt die Summe nicht mehr. Die Vorgangsart entscheidet, welche es ist. Sie legen sie pro Vorgang im Bereich *Eigenschaften* fest. Die App zeigt die Vorgangsart und die Arbeit erst, wenn Sie diese einschalten. Wie das funktioniert, steht in [Eine Vorgangsart wählen](docs://howto-werkregel-kiezen).
+Wenn Sie eine der drei Größen ändern, muss sich mindestens eine der beiden anderen mitbewegen. Sonst stimmt die Formel nicht mehr. Die Vorgangsart entscheidet, welche es ist. Sie legen sie pro Vorgang im Bereich *Eigenschaften* fest. Die App zeigt die Vorgangsart und die Arbeit erst, wenn Sie diese einschalten. Wie das funktioniert, steht in [Eine Vorgangsart wählen](docs://howto-werkregel-kiezen).
 
 Eine Vorgangsart gilt nur für normale Vorgänge. Meilensteine, Phasen (Sammelvorgänge), Hammocks und Vorgänge, deren *Dauertyp* *Verstrichene Zeit* ist, haben keine. Das Feld *Vorgangsart* fehlt dort. Material, zum Beispiel Beton oder Putzmörtel, zählt auch nicht. Die Materialmenge bestimmt nie die Dauer, und die App passt sie wegen einer Vorgangsart nie an.
 
@@ -20,7 +20,7 @@ Eine Vorgangsart gilt nur für normale Vorgänge. Meilensteine, Phasen (Sammelvo
 
 ### Die Vorgangsart wirkt auf das, was Sie ändern
 
-Die App berechnet Dauer, Einheiten und Arbeit nur neu, in dem Moment, in dem Sie eine davon ändern: die Dauer des Vorgangs, die Einheiten einer Zuweisung, die Arbeit, eine Ressource, die hinzukommt oder wegfällt, oder die Stunden pro Tag in einem Kalender. **Berechnen** (F5) ändert keine davon: F5 berechnet nur die Termine. Eine Vorgangsart zu wählen ändert ebenfalls keine einzige Zahl. Die Vorgangsart wirkt bei Ihrer nächsten Änderung.
+Die App berechnet Dauer, Einheiten und Arbeit nur in dem Moment neu, in dem Sie eine davon ändern: die Dauer des Vorgangs, die Einheiten einer Zuweisung, die Arbeit, eine Ressource, die hinzukommt oder wegfällt, oder die Stunden pro Tag in einem Kalender. **Berechnen** (F5) ändert keine davon: F5 berechnet nur die Termine. Eine Vorgangsart zu wählen ändert ebenfalls keine einzige Zahl. Die Vorgangsart wirkt bei Ihrer nächsten Änderung.
 
 Wenn eine Vorgangsart die Dauer des Vorgangs ändert, ist der Terminplan nicht mehr aktuell. Die Statusleiste zeigt dann *Veraltet — neu berechnen (F5)*, es sei denn, *Automatisch berechnen* ist eingeschaltet.
 
@@ -39,11 +39,11 @@ Die Rechenbeispiele unten zeigen, was jede Vorgangsart tut.
 
 ### Runden
 
-Die Dauer, die aus der Summe folgt, rundet die App auf. Bei einem Vorgang in Tagen rundet sie auf ganze Arbeitstage, bei einem Vorgang in Stunden auf ganze Minuten. Arbeit und Einheiten bleiben, was Sie eingegeben haben oder was die App aus der Summe übernommen hat. Dadurch stimmt die Summe manchmal nicht genau. Das Beispiel unten zeigt, was dann passiert.
+Die Dauer, die aus der Formel folgt, rundet die App auf. Bei einem Vorgang in Tagen rundet sie auf ganze Arbeitstage, bei einem Vorgang in Stunden auf ganze Minuten. Arbeit und Einheiten bleiben, was Sie eingegeben haben oder was die App aus der Summe übernommen hat. Dadurch stimmt die Formel manchmal nicht genau. Das Beispiel unten zeigt, was dann passiert.
 
 ### Mehrere Ressourcen
 
-Hat ein Vorgang mehrere Ressourcen, gelten zwei Vereinbarungen. Bei *Feste Dauer und Arbeit*, *Feste Arbeit* und *Feste Einheiten* bleibt die Gesamtarbeit gleich, wenn Sie eine Ressource hinzufügen oder entfernen. Die App teilt sie dann im Verhältnis der Einheiten auf. Bei *Feste Dauer und Einheiten* bringt eine neue Ressource dagegen ihre eigene Arbeit mit. Bei *Feste Arbeit* und *Feste Einheiten* bestimmt die langsamste Ressource die Dauer: pro Ressource ist das die Arbeit geteilt durch die Einheiten, und das größte Ergebnis zählt.
+Hat ein Vorgang mehrere Ressourcen, gelten zwei Regeln. Bei *Feste Dauer und Arbeit*, *Feste Arbeit* und *Feste Einheiten* bleibt die Gesamtarbeit gleich, wenn Sie eine Ressource hinzufügen oder entfernen. Die App teilt sie dann im Verhältnis der Einheiten auf. Bei *Feste Dauer und Einheiten* bringt eine neue Ressource dagegen ihre eigene Arbeit mit. Bei *Feste Arbeit* und *Feste Einheiten* bestimmt die langsamste Ressource die Dauer: pro Ressource ist das die Arbeit geteilt durch die Einheiten, und das größte Ergebnis zählt.
 
 Ein Beispiel: Zwei Ressourcen haben je 32 Stunden Arbeit und Einheiten von 1, zusammen 4 Arbeitstage. Sie setzen die Einheiten der ersten auf 0,5. Die Dauer wird dann 8 Arbeitstage. Bei *Feste Arbeit* behält die zweite Ressource ihre 32 Stunden Arbeit, und ihre Einheiten sinken auf 0,5. Bei *Feste Einheiten* behält die zweite Ressource ihre Einheiten von 1, und ihre Arbeit wächst auf 64 Stunden.
 
@@ -53,7 +53,7 @@ Hat der Vorgang schon Fortschritt, wirkt die Vorgangsart nur auf den Restteil: d
 
 ### Vorgänge in Stunden
 
-Ein Stundenvorgang rechnet genauso, aber in Minuten. Wenn nur der Kran an einem 5-Stunden-Vorgang arbeitet, sind das 5 Stunden Arbeit. Bei *Feste Arbeit* wird die Dauer bei Einheiten von 2 dann 2,5 Stunden. Auf dem Hohlkernboden im Übungsprojekt arbeitet außerdem die Zimmerer-Kolonne. Sie braucht weiterhin 5 Stunden Arbeit und ist die langsamste. Daher bleibt die Dauer 5 Stunden. Wie Stunden und Tage zusammenhängen, steht in [Tage und Stunden](docs://uitleg-dagen-en-uren).
+Ein Stundenvorgang rechnet genauso, aber in Minuten. Wenn nur der Kran an einem 5-Stunden-Vorgang arbeitet, sind das 5 Stunden Arbeit. Bei *Feste Arbeit* wird die Dauer bei Einheiten von 2 dann 2,5 Stunden. Auf der Hohlkammerdecke im Übungsprojekt arbeitet außerdem die Zimmerer-Kolonne. Sie braucht weiterhin 5 Stunden Arbeit und ist die langsamste. Daher bleibt die Dauer 5 Stunden. Wie Stunden und Tage zusammenhängen, steht in [Tage und Stunden](docs://uitleg-dagen-en-uren).
 
 ## Durchgerechnetes Beispiel: das Verputzen
 

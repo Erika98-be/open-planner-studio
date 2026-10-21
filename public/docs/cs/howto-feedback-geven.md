@@ -21,7 +21,7 @@ Plán vypočítá něco, čemu nerozumíte, tlačítko nedělá to, co má, nebo
 
 ## Kam hlášení jde
 
-Aplikace odešle vaše hlášení k Open Feedback Studio od OpenAEC. K tomu nepotřebujete účet, ani na GitHubu. Tvůrci vidí vaše hlášení ve svém přehledu. Pokud je aplikace tam propojena s GitHubem, Open Feedback Studio z něj také vytvoří veřejný záznam na GitHubu. U hlášení *Něco nefunguje* dostane záznam štítek *bug*, u *Nápad* štítek *enhancement*. Pod vaším popisem je potom řádek s verzí Open Planner Studio, vaším operačním systémem a jazykem aplikace.
+Aplikace odešle vaše hlášení k Open Feedback Studio od OpenAEC. K tomu nepotřebujete účet, ani na GitHubu. Tvůrci vidí vaše hlášení ve svém přehledu. Pokud je aplikace v Open Feedback Studio propojena s GitHubem, Open Feedback Studio z něj také vytvoří veřejný záznam na GitHubu. U hlášení *Něco nefunguje* dostane záznam štítek *bug*, u *Nápad* štítek *enhancement*. Pod vaším popisem je potom řádek s verzí Open Planner Studio, vaším operačním systémem a jazykem aplikace.
 
 ## Časté problémy a co aplikace potom udělá
 
@@ -44,7 +44,7 @@ Aplikace odešle vaše hlášení k Open Feedback Studio od OpenAEC. K tomu nepo
 
 **Snímek obrazovky se nezdařil.** Zobrazí se: *Pořízení snímku obrazovky se nezdařilo. Zpětnou vazbu můžete odeslat i bez snímku.* Zaškrtávací políčko se vypne a hlášení můžete odeslat bez obrázku.
 
-**Zavřete okno před odesláním.** Pokud je ve formuláři něco vyplněno, tlačítko dole se jmenuje *Uložit a zavřít*. U prázdného formuláře se jmenuje *Zavřít*. *Uložit a zavřít*, křížek a Esc okno zavřou. Vaše hlášení se uloží jako koncept, dokud ho neodešlete nebo neklikněte na *Vymazat*. Když okno znovu otevřete, druh, váš text, e-mailová adresa a snímek obrazovky s anotacemi jsou stále tam. Koncept se uchovává, dokud je aplikace otevřena. Po jejím ukončení zmizí. Po úspěšném hlášení je formulář zase prázdný. Chcete-li začít úplně znovu, klikněte vlevo dole na *Vymazat*. Klik vedle okna jej nezavře. Během odesílání Esc okno nezavře.
+**Okno zavřete před odesláním.** Pokud je ve formuláři něco vyplněno, tlačítko dole se jmenuje *Uložit a zavřít*. U prázdného formuláře se jmenuje *Zavřít*. *Uložit a zavřít*, křížek a Esc okno zavřou. Vaše hlášení se uloží jako koncept, dokud ho neodešlete nebo neklikněte na *Vymazat*. Když okno znovu otevřete, druh, váš text, e-mailová adresa a snímek obrazovky s anotacemi jsou stále tam. Koncept se uchovává, dokud je aplikace otevřena. Po jejím ukončení zmizí. Po úspěšném hlášení je formulář zase prázdný. Chcete-li začít úplně znovu, klikněte vlevo dole na *Vymazat*. Klik vedle okna jej nezavře. Během odesílání Esc okno nezavře.
 
 ## Viz také
 

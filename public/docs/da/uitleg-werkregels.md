@@ -29,17 +29,17 @@ Hvis en opgavetype ændrer opgavens varighed, bliver tidsplanen forældet. Statu
 I panelet *Egenskaber* står der et i-ikon ved siden af rullelisten *Opgavetype*. Peg på det, klik på det eller tryk på det, og appen forklarer den opgavetype, der gælder nu. I den åbne rulleliste har hver mulighed også et sådant i-ikon. Forklaringen begynder med en fed sætning. De fire opgavetyper, med den sætning fra appen:
 
 - **Fast varighed og faste enheder** (*Arbejdet følger af varigheden og tildelingsenhederne.*). Dette er standard. Appen ændrer aldrig selve varigheden, og arbejdet følger af varighed og enheder. Hvis du selv skriver arbejdet, tilpasser appen enhederne, fordi varigheden er fast.
-- **Fast varighed og fast arbejde** (*Tildelingsenhederne følger af varigheden og arbejdet.*). Appen ændrer aldrig selve varigheden. Hvis du ændrer varigheden, bliver arbejdet, og enhederne tilpasses.
+- **Fast varighed og fast arbejde** (*Tildelingsenhederne følger af varigheden og arbejdet.*). Appen ændrer aldrig selve varigheden. Hvis du ændrer varigheden, forbliver arbejdet uændret, og enhederne tilpasses.
 - **Fast arbejde** (*Varigheden følger af arbejdet og tildelingsenhederne.*). Arbejdet er fast, og varigheden følger af arbejde og tildelingsenheder.
 - **Faste enheder** (*Varigheden følger af arbejdet og tildelingsenhederne.*). Enhederne er faste, og varigheden følger af arbejdet.
 
-Altså lader to opgavetyper varigheden være. Med de to andre flytter varigheden sig, når du ændrer tildelingsenhederne, arbejdet eller antallet af ressourcer. Med één ressource gør Fast arbejde og Faste enheder præcis det samme dér. De adskiller sig, når du selv ændrer varigheden: med Fast arbejde bliver arbejdet, og enhederne tilpasses; med Faste enheder bliver enhederne, og arbejdet vokser med. De adskiller sig også, når der er flere ressourcer på opgaven (se nedenfor).
+Altså lader to opgavetyper varigheden være. Med de to andre flytter varigheden sig, når du ændrer tildelingsenhederne, arbejdet eller antallet af ressourcer. Med één ressource gør Fast arbejde og Faste enheder præcis det samme dér. De adskiller sig, når du selv ændrer varigheden: med Fast arbejde forbliver arbejdet uændret, og enhederne tilpasses; med Faste enheder forbliver enhederne uændrede, og arbejdet vokser med. De adskiller sig også, når der er flere ressourcer på opgaven (se nedenfor).
 
 De gennemregnede eksempler nedenfor viser, hvad hver opgavetype gør.
 
 ### Afrunding
 
-Varigheden, der følger af summen, runder appen op. For en opgave i dage er det op til hele arbejdsdage, for en opgave i timer op til hele minutter. Arbejde og tildelingsenheder bliver som du har indtastet, eller som appen har hentet fra summen. Derfor går summen nogle gange ikke helt op. Eksemplet nedenfor viser, hvad der sker da.
+Appen runder den varighed op, der følger af summen. For en opgave i dage er det op til hele arbejdsdage, for en opgave i timer op til hele minutter. Arbejde og tildelingsenheder bliver som du har indtastet, eller som appen har hentet fra summen. Derfor går summen nogle gange ikke helt op. Eksemplet nedenfor viser, hvad der sker da.
 
 ### Flere ressourcer
 
@@ -95,7 +95,7 @@ Under Fast arbejde sætter du tildelingsenhederne til 3. Arbejdet er 32 timer, s
 
 Med to ressourcer med forskellige tildelingsenheder virker det på samme måde. Hvis du under Fast arbejde tilføjer en anden ressource, for eksempel *Plasterer 2*, med tildelingsenheder på 2 til pudseren med tildelingsenheder på 1, deler appen de 32 timer i forholdet 1 : 2, altså 10,7 og 21,3 timer. Begge har så brug for 1,33 arbejdsdage. Varigheden bliver 2 arbejdsdage.
 
-En fil fra P6 eller MS Project kan også indeholde et *Arbejde (rest.)*, der ikke er lig med tildelingsenheder × resterende varighed. Så vises det samme advarselstegn. Appen ændrer selv ikke dette arbejde. Hvis du ændrer varigheden af en sådan opgave, følger appen opgavetypen, også når det resterende arbejde kom fra filen. Under *Fast varighed og faste enheder* og *Faste enheder* bliver det resterende arbejde lig med tildelingsenheder × ny resterende varighed. Under *Fast varighed og fast arbejde* og *Fast arbejde* bliver arbejdet, og tildelingsenhederne tilpasses. Hvis et resterende arbejde fra filen på den måde forsvinder, får du en melding med det gamle og det nye antal timer. Ctrl+Z gendanner den gamle værdi. Forklaringen ved advarselstegnet fortæller dig for hver opgave, hvilket af de to der sker.
+En fil fra P6 eller MS Project kan også indeholde et *Arbejde (rest.)*, der ikke er lig med tildelingsenheder × resterende varighed. Så vises det samme advarselstegn. Appen ændrer selv ikke dette arbejde. Hvis du ændrer varigheden af en sådan opgave, følger appen opgavetypen, også når det resterende arbejde kom fra filen. Under *Fast varighed og faste enheder* og *Faste enheder* bliver det resterende arbejde lig med tildelingsenheder × ny resterende varighed. Under *Fast varighed og fast arbejde* og *Fast arbejde* forbliver arbejdet uændret, og tildelingsenhederne tilpasses. Hvis et resterende arbejde fra filen på den måde forsvinder, får du en melding med det gamle og det nye antal timer. Ctrl+Z gendanner den gamle værdi. Forklaringen ved advarselstegnet fortæller dig for hver opgave, hvilket af de to der sker.
 
 ### En anden kalender
 

@@ -10,9 +10,9 @@ Tri veličine su međusobno povezane:
 - **Jedinice dodjele**: koliko resursa radi na zadatku po radnom danu. U oknu *Svojstva* to se zove *Jedinice dodjele*, u drugim prozorima *Jed./dan*. Jedinica 1 znači jednog žbukara za cijeli dan, 2 znači dvojicu, a 0,5 znači pola dana.
 - **Rad**: ukupan broj sati koje resurs provede na zadatku.
 
-Zbroj je: rad = trajanje × jedinice dodjele × sati po radnom danu. Sati po radnom danu dolaze iz kalendara zadatka. Žbukanje od četiri radna dana s jednim žbukarom, uz radni dan od 8 sati, iznosi 4 × 1 × 8 = 32 sata rada.
+Formula glasi: rad = trajanje × jedinice dodjele × sati po radnom danu. Sati po radnom danu dolaze iz kalendara zadatka. Žbukanje od četiri radna dana s jednim žbukarom, uz radni dan od 8 sati, iznosi 4 × 1 × 8 = 32 sata rada.
 
-Ako promijenite jednu od te tri veličine, mora se pomaknuti najmanje jedna od preostalih dviju. Inače zbroj više ne vrijedi. Vrsta zadatka odlučuje koja to je. Postavljate je po zadatku, u oknu *Svojstva*. Aplikacija prikazuje *Vrsta zadatka* i rad tek nakon što ih uključite. Kako to radi, opisano je u [Odabir vrste zadatka](docs://howto-werkregel-kiezen).
+Ako promijenite jednu od te tri veličine, mora se pomaknuti najmanje jedna od preostalih dviju. Inače formula više ne vrijedi. Vrsta zadatka odlučuje koja to je. Postavljate je po zadatku, u oknu *Svojstva*. Aplikacija prikazuje *Vrsta zadatka* i rad tek nakon što ih uključite. Kako to radi, opisano je u [Odabir vrste zadatka](docs://howto-werkregel-kiezen).
 
 Vrsta zadatka radi samo na običnim zadacima. Kontrolne točke, faze (zadaci sažetka), hamaci i zadaci čija je *Vrsta trajanja* *Proteklo vrijeme* nemaju vrstu zadatka. Polje *Vrsta zadatka* ondje ne postoji. Materijal se također ne računa, na primjer beton ili žbukna smjesa. Količina materijala nikad ne određuje trajanje. Aplikacija zbog vrste zadatka trajanje za materijal nikad ne prilagođava.
 
@@ -26,7 +26,7 @@ Ako vrsta zadatka promijeni trajanje zadatka, raspored je zastario. Traka stanja
 
 ### Četiri vrste zadatka
 
-U oknu *Svojstva* nalazi se ikona i pored padajućeg izbornika *Vrsta zadatka*. Ako pokažete na nju, kliknete ili dodirnete, aplikacija objašnjava vrstu zadatka koja sada vrijedi. U otvorenom padajućem izborniku svaka mogućnost ima takvu ikonu. Objašnjenje počinje podebljanom rečenicom. Četiri vrste zadatka, s tom rečenicom iz aplikacije:
+U oknu *Svojstva* nalazi se ikona „i“ pored padajućeg izbornika *Vrsta zadatka*. Ako pokažete na nju, kliknete ili dodirnete, aplikacija objašnjava vrstu zadatka koja sada vrijedi. U otvorenom padajućem izborniku svaka mogućnost ima takvu ikonu. Objašnjenje počinje podebljanom rečenicom. Četiri vrste zadatka, s tom rečenicom iz aplikacije:
 
 - **Fiksno trajanje i fiksne jedinice** (*Rad proizlazi iz trajanja i jedinica dodjele.*). Ovo je zadano. Aplikacija trajanje nikad sama ne mijenja. Rad slijedi iz trajanja i jedinica dodjele. Ako sami upišete rad, aplikacija prilagodi jedinice, jer je trajanje fiksno.
 - **Fiksno trajanje i fiksni rad** (*Jedinice dodjele proizlaze iz trajanja i rada.*). Aplikacija trajanje nikad sama ne mijenja. Ako promijenite trajanje, rad ostaje, a jedinice se prilagode.
@@ -39,7 +39,7 @@ Primjeri dolje pokazuju što svaka vrsta zadatka radi.
 
 ### Zaokruživanje
 
-Trajanje koje slijedi iz zbroja aplikacija zaokružuje naviše. Za zadatak u danima to znači na cijele radne dane. Za zadatak u satima to znači na cijele minute. Rad i jedinice ostaju kakvi ste ih upisali, ili kakve je aplikacija uzela iz zbroja. Zato zbroj ponekad više ne vrijedi točno. Primjer dolje pokazuje što se tada događa.
+Trajanje koje slijedi iz formule aplikacija zaokružuje naviše. Za zadatak u danima to znači na cijele radne dane. Za zadatak u satima to znači na cijele minute. Rad i jedinice ostaju kakvi ste ih upisali, ili kakve je aplikacija uzela iz formule. Zato formula ponekad više ne vrijedi točno. Primjer dolje pokazuje što se tada događa.
 
 ### Više resursa
 
@@ -89,13 +89,13 @@ Primjer je vježbeni projekt *House extension* iz lekcija. U lekciji 5 sami to i
 - U polje *Rad (h)* upisujete 48 sati: jedinice ostaju 1, a trajanje postaje 6 radnih dana.
 - Dodjeljujete drugi resurs, na primjer *Plasterer 2*, s jedinicama 1: 32 sata se dijele, po 16 sati. Trajanje postaje 2 radna dana.
 
-### Kad zbroj ne izlazi
+### Kad se formula ne poklapa
 
 Pod vrstom Fiksni rad postavite jedinice na 3. Rad je 32 sata, pa trajanje postaje 32 ÷ (3 × 8) = 1,33 radna dana. Aplikacija to zaokružuje naviše na 2 radna dana. Rad (32 sata) i jedinice (3) ostaju, ali 2 × 3 × 8 je 48 sati. Histogram zato raspoređuje 32 sata na 2 radna dana: 2 jedinice dnevno, a ne 3. U polju *Rad (h)* pojavljuje se znak upozorenja *Odstupa od jedinica dodjele × trajanja*, koji to pokazuje.
 
 Isto vrijedi za dva resursa s različitim jedinicama. Pod vrstom Fiksni rad dodajete drugi resurs, na primjer *Plasterer 2*, s jedinicama 2, uz žbukara s jedinicama 1. Aplikacija dijeli 32 sata u omjeru 1 : 2, dakle 10,7 i 21,3 sata. Oba tada trebaju po 1,33 radna dana. Trajanje postaje 2 radna dana.
 
-Datoteka iz P6 ili MS Projecta može imati i *Rad (preostalo)* koji nije jednak jedinicama × preostalom trajanju. Tada se pojavljuje isto upozorenje. Aplikacija taj rad sama ne mijenja. Ako promijenite trajanje takvog zadatka, aplikacija slijedi vrstu zadatka, i kad je preostali rad došao iz datoteke. Pod vrstama Fiksno trajanje i fiksne jedinice te Fiksne jedinice preostali rad postaje jedinice × novo preostalo trajanje. Pod vrstama Fiksno trajanje i fiksni rad te Fiksni rad rad ostaje, a jedinice se prilagode. Ako preostali rad iz datoteke tako nestane, dobivate obavijest sa starim i novim brojem sati. Ctrl+Z vraća staru vrijednost. Objašnjenje uz znak upozorenja kaže vam za svaki zadatak što se od ta dva događa.
+Datoteka iz P6 ili MS Projecta može imati i *Rad (preostalo)* koji nije jednak jedinicama × preostalom trajanju. Tada se pojavljuje isto upozorenje. Aplikacija taj rad sama ne mijenja. Ako promijenite trajanje takvog zadatka, aplikacija slijedi vrstu zadatka, i kad je preostali rad došao iz datoteke. Pod vrstama Fiksno trajanje i fiksne jedinice te Fiksne jedinice preostali rad postaje jedinice × novo preostalo trajanje. Pod vrstama Fiksno trajanje i fiksni rad te Fiksni rad rad ostaje, a jedinice se prilagode. Ako preostali posao iz datoteke tako nestane, dobivate obavijest sa starim i novim brojem sati. Ctrl+Z vraća staru vrijednost. Objašnjenje uz znak upozorenja kaže vam za svaki zadatak što se od ta dva događa.
 
 ### Drugi kalendar
 
@@ -115,7 +115,7 @@ Unutarnji sloj šupljeg zida traje 5 radnih dana i gotov je 40%. Gotova su 2 rad
 
 **Bez dodjele vrsta zadatka ne radi ništa.** Tada nema jedinica dodjele ni rada koje bi se vezale uz trajanje.
 
-**Datoteke iz MS Projecta ili Primavera P6 uvijek prikazuju vrstu zadatka.** Za zadatak iz MS Projecta aplikacija ponekad čuva postavku *vođeno radom*. Ta spremljena postavka mijenja dva slučaja. Pri vrsti Fiksno trajanje i fiksni rad, ako je zadatak vođen radom, rad se pomakne kad promijenite trajanje, umjesto jedinica dodjele. Pri vrsti Fiksne jedinice, ako zadatak nije vođen radom, rad se pomakne kad dodate ili uklonite resurs, a trajanje ostaje. Zadaci koje sami stvorite u aplikaciji nemaju tu postavku. Objašnjenje uz ikonu i uzima tu postavku u obzir.
+**Datoteke iz MS Projecta ili Primavera P6 uvijek prikazuju vrstu zadatka.** Za zadatak iz MS Projecta aplikacija ponekad čuva postavku *vođeno radom*. Ta spremljena postavka mijenja dva slučaja. Pri vrsti Fiksno trajanje i fiksni rad, ako je zadatak vođen radom, rad se pomakne kad promijenite trajanje, umjesto jedinica dodjele. Pri vrsti Fiksne jedinice, ako zadatak nije vođen radom, rad se pomakne kad dodate ili uklonite resurs, a trajanje ostaje. Zadaci koje sami stvorite u aplikaciji nemaju tu postavku. Objašnjenje uz ikonu „i“ uzima tu postavku u obzir.
 
 ## Vidi također
 

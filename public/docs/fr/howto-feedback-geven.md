@@ -21,7 +21,7 @@ Le planning calcule quelque chose que vous ne comprenez pas, un bouton ne fait p
 
 ## Où va votre signalement
 
-L'application envoie votre signalement à Open Feedback Studio, d'OpenAEC. Vous n'avez pas besoin de compte pour cela, pas même sur GitHub. Les créateurs voient votre signalement dans leur vue d'ensemble. Si cette vue est liée à GitHub, Open Feedback Studio en fait aussi une issue publique sur GitHub. Avec *Quelque chose ne fonctionne pas*, l'issue reçoit l'étiquette *bug* ; avec *Idée*, elle reçoit l'étiquette *enhancement*. Sous votre description, une ligne indique alors la version d'Open Planner Studio, votre système d'exploitation et la langue de l'application.
+L'application envoie votre signalement à Open Feedback Studio, d'OpenAEC. Vous n'avez pas besoin de compte pour cela, pas même sur GitHub. Les développeurs voient votre signalement dans leur vue d'ensemble. Si cette vue est liée à GitHub, Open Feedback Studio en fait aussi une issue publique sur GitHub. Avec *Quelque chose ne fonctionne pas*, l'issue reçoit l'étiquette *bug* ; avec *Idée*, elle reçoit l'étiquette *enhancement*. Sous votre description, une ligne indique alors la version d'Open Planner Studio, votre système d'exploitation et la langue de l'application.
 
 ## Pièges et ce que fait alors l'application
 

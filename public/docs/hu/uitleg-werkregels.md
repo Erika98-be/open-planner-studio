@@ -39,7 +39,7 @@ Az alábbi kidolgozott példák megmutatják, mit tesz mindegyik tevékenységt�
 
 ### Kerekítés
 
-Az összefüggésből következő időtartamot az alkalmazás felfelé kerekíti: napokban megadott tevékenységnél egész munkanapokra, órákban megadott tevékenységnél egész percekre. A munkát és a hozzárendelt mennyiséget azt tartja meg, amit megadott, vagy amit az alkalmazás az összefüggésből kapott. Emiatt az összefüggés néha nem áll fenn pontosan. Az alábbi példa megmutatja, mi történik ilyenkor.
+Az összefüggésből következő időtartamot az alkalmazás felfelé kerekíti: napokban megadott tevékenységnél egész munkanapokra, órákban megadott tevékenységnél egész percekre. A munka és a hozzárendelt mennyiség az marad, amit Ön megadott, vagy amit az alkalmazás az összefüggésből kapott. Emiatt az összefüggés néha nem áll fenn pontosan. Az alábbi példa megmutatja, mi történik ilyenkor.
 
 ### Több erőforrás
 
@@ -91,7 +91,7 @@ A vakolás 4 munkanapig tart. Egy vakoló van hozzárendelve, 1-es hozzárendelt
 
 ### Amikor az összefüggés nem jön ki
 
-*Rögzített munka* esetén a hozzárendelt mennyiséget 3-ra állítja. A munka 32 óra, ezért az időtartam 32 ÷ (3 × 8) = 1,33 munkanap lesz. Az alkalmazás ezt felfelé kerekíti 2 munkanapra. A munka (32 óra) és a hozzárendelt mennyiség (3) megmarad, de 2 × 3 × 8 pedig 48 óra. A hisztogram ezért a 32 órát a 2 munkanapra osztja el: naponta 2-es hozzárendelt mennyiséggel, nem 3-assal. A *Munka (ó)* mellett figyelmeztető jel jelenik meg, *Eltér a hozzárendelt mennyiség × időtartam szorzattól* felirattal, hogy ezt jelezze.
+*Rögzített munka* esetén a hozzárendelt mennyiséget 3-ra állítja. A munka 32 óra, ezért az időtartam 32 ÷ (3 × 8) = 1,33 munkanap lesz. Az alkalmazás ezt felfelé kerekíti 2 munkanapra. A munka (32 óra) és a hozzárendelt mennyiség (3) megmarad, de 2 × 3 × 8 a 48 óra. A hisztogram ezért a 32 órát a 2 munkanapra osztja el: naponta 2-es hozzárendelt mennyiséggel, nem 3-assal. A *Munka (ó)* mellett figyelmeztető jel jelenik meg, *Eltér a hozzárendelt mennyiség × időtartam szorzattól* felirattal, hogy ezt jelezze.
 
 Két erőforrással, eltérő hozzárendelt mennyiségekkel, ugyanígy működik. Ha *Rögzített munka* esetén egy második erőforrást ad hozzá, például a *Plasterer 2* erőforrást, 2-es hozzárendelt mennyiséggel az 1-es hozzárendelt mennyiségű vakolóhoz, az alkalmazás a 32 órát 1 : 2 arányban osztja el, azaz 10,7 és 21,3 órára. Mindkettőnek ekkor 1,33 munkanap kell. Az időtartam 2 munkanap lesz.
 

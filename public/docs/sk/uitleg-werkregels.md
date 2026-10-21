@@ -2,7 +2,7 @@
 
 Na úlohu plastering priradíte jedného omietkára a úloha trvá štyri dni. Ak pridáte druhého omietkára, prácu možno urobiť za dva dni. Môže to trvať aj štyri dni, ale s dvojnásobným množstvom práce. Obe možnosti dávajú zmysel. Ktorú z týchto dvoch možností aplikácia zvolí, závisí od **typu úlohy** danej úlohy. V tomto článku sa dozviete, ako aplikácia spája trvanie, jednotky priradenia a prácu a čo každý typ úlohy drží konštantné.
 
-## Pojem
+## Princíp
 
 Tri veličiny sú navzájom späté:
 
@@ -10,9 +10,9 @@ Tri veličiny sú navzájom späté:
 - **Jednotky priradenia**: koľko zdroja pracuje na úlohe za pracovný deň. V paneli *Vlastnosti* sa to volá *Jednotky priradenia*, v iných oknách *Jedn./deň*. Jednotky priradenia 1 znamenajú jedného omietkára na celý deň, 2 znamenajú dvoch omietkárov a 0,5 znamená pol dňa.
 - **Práca**: celkový počet hodín, ktoré zdroj strávi na úlohe.
 
-Súčet je: práca = trvanie × jednotky priradenia × hodiny za pracovný deň. Hodiny za pracovný deň pochádzajú z kalendára úlohy. Úloha plastering so štyrmi pracovnými dňami s jedným omietkárom je pri 8-hodinovom pracovnom dni 4 × 1 × 8 = 32 hodín práce.
+Vzorec je: práca = trvanie × jednotky priradenia × hodiny za pracovný deň. Hodiny za pracovný deň pochádzajú z kalendára úlohy. Úloha plastering so štyrmi pracovnými dňami s jedným omietkárom je pri 8-hodinovom pracovnom dni 4 × 1 × 8 = 32 hodín práce.
 
-Ak zmeníte jednu z troch veličín, aspoň jedna z ostatných sa musí zmeniť tiež. Inak súčet neplatí. Typ úlohy rozhodne, ktorá to bude. Nastavíte ho pre každú úlohu v paneli *Vlastnosti*. Aplikácia zobrazí typ úlohy a prácu až vtedy, keď ich zapnete. Ako to funguje, je opísané v článku [Výber typu úlohy](docs://howto-werkregel-kiezen).
+Ak zmeníte jednu z troch veličín, aspoň jedna z ostatných sa musí zmeniť tiež. Inak vzorec neplatí. Typ úlohy rozhodne, ktorá to bude. Nastavíte ho pre každú úlohu v paneli *Vlastnosti*. Aplikácia zobrazí typ úlohy a prácu až vtedy, keď ich zapnete. Ako to funguje, je opísané v článku [Výber typu úlohy](docs://howto-werkregel-kiezen).
 
 Typ úlohy platí len pre bežné úlohy. Medzníky, fázy (súhrnné úlohy), hamaky a úlohy, ktorých *Typ trvania* je *Uplynulé trvanie*, ho nemajú: pole *Typ úlohy* tam nie je. Materiál, napríklad betón alebo omietková malta, sa tiež nepočíta. Množstvo materiálu nikdy neurčí trvanie a aplikácia ho kvôli typu úlohy nikdy neupraví.
 
@@ -39,11 +39,11 @@ Príklady nižšie ukazujú, čo každý typ úlohy robí.
 
 ### Zaokrúhľovanie
 
-Trvanie, ktoré vyplynie zo súčtu, aplikácia zaokrúhli nahor. Pri úlohe v dňoch sa zaokrúhli na celé pracovné dni, pri úlohe v hodinách na celé minúty. Práca a jednotky priradenia zostanú také, aké ste zadali, alebo aké aplikácia prevzala zo súčtu. Súčet preto niekedy presne neplatí. Príklad nižšie ukazuje, čo sa vtedy stane.
+Trvanie, ktoré vyplynie zo súčtu, aplikácia zaokrúhli nahor. Pri úlohe v dňoch sa zaokrúhli na celé pracovné dni, pri úlohe v hodinách na celé minúty. Práca a jednotky priradenia zostanú také, aké ste zadali, alebo aké aplikácia prevzala zo súčtu. Vzorec preto niekedy presne neplatí. Príklad nižšie ukazuje, čo sa vtedy stane.
 
 ### Viac zdrojov
 
-Ak má úloha viac zdrojov, platia dve dohody. Pri typoch *Pevné trvanie a práca*, *Pevná práca* a *Pevné jednotky priradenia* zostane celková práca rovnaká, keď pridáte alebo odstránite zdroj. Aplikácia ju potom rozdelí úmerne jednotkám priradenia. Pri type *Pevné trvanie a jednotky priradenia* prinesie nový zdroj namiesto toho vlastnú prácu. Pri typoch *Pevná práca* a *Pevné jednotky priradenia* rozhodne o trvaní najpomalší zdroj: pri každom zdroji je to práca delená jednotkami priradenia a rozhodne najväčší výsledok.
+Ak má úloha viac zdrojov, platia dve pravidlá. Pri typoch *Pevné trvanie a práca*, *Pevná práca* a *Pevné jednotky priradenia* zostane celková práca rovnaká, keď pridáte alebo odstránite zdroj. Aplikácia ju potom rozdelí úmerne jednotkám priradenia. Pri type *Pevné trvanie a jednotky priradenia* prinesie nový zdroj namiesto toho vlastnú prácu. Pri typoch *Pevná práca* a *Pevné jednotky priradenia* rozhodne o trvaní najpomalší zdroj: pri každom zdroji je to práca delená jednotkami priradenia a rozhodne najväčší výsledok.
 
 Príklad: dva zdroje majú každý 32 hodín práce a jednotky priradenia 1. Spolu trvajú 4 pracovné dni. Jednotky priradenia prvého zdroja nastavíte na 0,5. Trvanie sa potom zmení na 8 pracovných dní. Pri type *Pevná práca* druhý zdroj zachová svoje 32 hodín práce a jeho jednotky priradenia klesnú na 0,5. Pri type *Pevné jednotky priradenia* druhý zdroj zachová jednotky priradenia 1 a jeho práca sa zvýši na 64 hodín.
 
@@ -89,7 +89,7 @@ Príklad je praktický projekt z návodov *House extension*. V návode 5 si to v
 - Do poľa *Práca (h)* zadáte 48 hodín: jednotky priradenia zostanú 1 a trvanie bude 6 pracovných dní.
 - Priradíte druhý zdroj, napríklad *Plasterer 2*, s jednotkami priradenia 1: 32 hodín sa rozdelí, po 16 hodinách, a trvanie bude 2 pracovné dni.
 
-### Keď súčet nevychádza
+### Keď vzorec nevychádza
 
 Pri type *Pevná práca* nastavíte jednotky priradenia na 3. Práca je 32 hodín, takže trvanie bude 32 ÷ (3 × 8) = 1,33 pracovného dňa. Aplikácia to zaokrúhli nahor na 2 pracovné dni. Práca (32 hodín) a jednotky priradenia (3) zostanú, ale 2 × 3 × 8 je 48 hodín. Histogram preto rozloží 32 hodín na 2 pracovné dni: 2 jednotky priradenia za deň, nie 3. Pri poli *Práca (h)* sa zobrazí výstražná značka *Líši sa od jednotiek priradenia × trvania*, ktorá to ukazuje.
 
@@ -103,7 +103,7 @@ Pri type *Pevná práca* sa pracovný deň v kalendári zmení z 8 na 6 hodín. 
 
 ### Úloha s postupom
 
-Úloha inner cavity leaf trvá 5 pracovných dní a je hotová na 40%: 2 pracovné dni sú hotové a 3 pracovné dni (24 hodín) zostávajú. Pri type *Pevná práca* nastavíte jednotky priradenia z 1 na 2. Zostávajúca práca zostane 24 hodín a zostávajúce trvanie bude 1,5, zaokrúhlené nahor na 2 pracovné dni. Úloha teraz trvá 2 + 2 = 4 pracovné dni a postup je 50%. Percento sa posunie, pretože hotová časť zostane rovnaká a zvyšok sa skráti.
+Úloha inner cavity leaf trvá 5 pracovných dní a je hotová na 40 %: 2 pracovné dni sú hotové a 3 pracovné dni (24 hodín) zostávajú. Pri type *Pevná práca* nastavíte jednotky priradenia z 1 na 2. Zostávajúca práca zostane 24 hodín a zostávajúce trvanie bude 1,5, zaokrúhlené nahor na 2 pracovné dni. Úloha teraz trvá 2 + 2 = 4 pracovné dni a postup je 50 %. Percento sa posunie, pretože hotová časť zostane rovnaká a zvyšok sa skráti.
 
 ## Dôsledky a nedorozumenia
 

@@ -35,7 +35,7 @@ Trzech wbudowanych profili nie można zmienić. Ich konwencje są pokazane tylko
 ### Zapisywanie własnego profilu jako szablonu
 
 1. Jeśli trzeba, nadaj własnemu profilowi inną nazwę w polu *Nazwa tego własnego profilu*.
-2. Kliknij *Zapisz jako szablon*. Aplikacja melduje, że szablon został zapisany, albo podaje, dlaczego się to nie udało.
+2. Kliknij *Zapisz jako szablon*. Aplikacja informuje, że szablon został zapisany, albo podaje, dlaczego się to nie udało.
 3. W innym projekcie w tej samej aplikacji szablon jest na liście rozwijanej *Profil obliczeń*.
 
 Jeśli profil później różni się od szablonu, żółty blok to pokazuje. Wtedy wybierz *Aktualizuj szablon z tego projektu* albo *Aktualizuj z szablonu*.
@@ -50,11 +50,11 @@ Szablon usuwasz przyciskiem *Usuń szablon*. Aplikacja najpierw prosi o potwierd
 
 ## Pułapki i co robi aplikacja
 
-**Daty się przesuwają.** Inny profil może zmienić rzeczywiste daty. Sprawdź wynik. Jeśli Ci się nie podoba, kliknij *Cofnij*: profil i daty wracają razem.
+**Daty się przesuwają.** Inny profil może faktycznie zmienić daty. Sprawdź wynik. Jeśli Ci się nie podoba, kliknij *Cofnij*: profil i daty wracają razem.
 
-**Żółty blok po cofnięciu.** Jeśli kliknisz *Cofnij* albo *Ponów*, gdy otwarte jest *Ustawienia projektu*, blok podąża za stanem projektu. Jeśli sam coś już zmieniłeś w bloku, Twój wybór zostaje. Żółty blok wtedy mówi, że *Zastosuj* przywraca ten wybór.
+**Żółty blok po cofnięciu.** Jeśli klikniesz *Cofnij* albo *Ponów*, gdy otwarte jest okno *Ustawienia projektu*, blok podąża za stanem projektu. Jeśli sam coś już zmieniłeś w bloku, Twój wybór zostaje. Żółty blok wtedy mówi, że *Zastosuj* przywraca ten wybór.
 
-**Mogą być najwyżej 100 szablonów.** Jeśli jest ich już 100, aplikacja nie zapisuje szablonu i to melduje. Najpierw usuń szablon. Pełny albo niedostępny magazyn danych aplikacji też pokazuje komunikat.
+**Może być najwyżej 100 szablonów.** Jeśli jest ich już 100, aplikacja nie zapisuje szablonu i to melduje. Najpierw usuń szablon. Pełny albo niedostępny magazyn danych aplikacji też pokazuje komunikat.
 
 **Szablony należą do aplikacji, profil do projektu.** Projekt zawsze ma własną kopię profilu. Jeśli później zmienisz szablon, projekt się z nim nie zmieni.
 

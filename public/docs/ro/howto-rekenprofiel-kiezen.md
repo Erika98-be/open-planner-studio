@@ -27,7 +27,7 @@ Până faceți clic pe *Aplicare*, modificarea există doar în formular. Între
 1. În secțiunea *Profil de calcul și opțiuni de calcul*, faceți clic pe *Creare profil*, lângă lista derulantă.
 2. Introduceți un nume. Aplicația propune *Copie a* urmat de profilul ales, de exemplu *Copie a Open Planner Studio*.
 3. Faceți clic pe *Creare*. Partea *Convențiile de calcul ale acestui profil* se extinde.
-4. Activați sau dezactivați convențiile cu casetele de validare. Pictograma i de după un rând arată explicația acelei convenții. O convenție care diferă de bază primește eticheta *înapoi la bază*.
+4. Activați sau dezactivați convențiile cu casetele de bifare. Pictograma i de după un rând arată explicația acelei convenții. O convenție care diferă de bază primește eticheta *înapoi la bază*.
 5. Faceți clic pe **Aplicare**. Abia atunci proiectul se calculează cu noul profil.
 
 Cele trei profiluri încorporate nu pot fi modificate. Convențiile lor sunt afișate doar cu titlu informativ.

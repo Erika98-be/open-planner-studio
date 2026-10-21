@@ -14,7 +14,7 @@ Du hyr en kran per timme, inte per dag. En gjutning på sex timmar får inte pla
 2. Under *Timplanering*, markera *Aktivera timplanering*. Det fungerar direkt. I meddelandet *Den här filen innehåller timplanering.* gör knappen *Aktivera timplanering* samma sak.
 3. Under den finns *Tillåt blandad dag/timplanering*, som är på som standard. Med den inställningen väljer du per uppgift om den räknas i dagar eller timmar. Om du stänger av den försvinner listan *Varaktighetsenhet*. Du kan då fortfarande skriva en varaktighet med enhet, till exempel `12h`.
 
-Det ändrar mer än varaktigheten för en uppgift. Under *Visa › Tidsskala* kan du välja skalan *Timme*. I fönstret *Kalendrar* kan en vanlig kalender få band med arbetstid (blocket *Arbetstider*; en kalender som redan har band visar det alltid). I fönstret *Nytt projekt* får du valen *Skift* och *Standardenhet för nya uppgifter*.
+Det ändrar mer än varaktigheten för en uppgift. Under *Visa › Tidsskala* kan du välja skalan *Timme*. I fönstret *Kalendrar* kan en vanlig kalender få block med arbetstid (blocket *Arbetstider*; en kalender som redan har block visar det alltid). I fönstret *Nytt projekt* får du valen *Skift* och *Standardenhet för nya uppgifter*.
 
 ### Planera en uppgift i timmar
 

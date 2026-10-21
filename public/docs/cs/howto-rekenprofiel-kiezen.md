@@ -10,13 +10,13 @@ Potřebujete to, když otevřete projekt, který musí počítat podle pravidel 
 
 ### Volba profilu pro nový projekt
 
-1. Zvolte *Domů › Soubor › Nový*. Otevře se okno *Nový projekt*.
+1. Zvolte na kartě *Domů › Soubor › Nový*. Otevře se okno *Nový projekt*.
 2. V rozbalovacím seznamu *Profil výpočtu* zvolte profil: *Open Planner Studio*, *Primavera P6* nebo *Microsoft Project*.
 3. Vytvořte projekt. Aplikace nahradí možnosti výpočtu, které jste už vyplnili, výchozími hodnotami profilu.
 
 ### Změna profilu existujícího projektu
 
-1. Zvolte *Nastavení › Projekt › Nastavení projektu*. Můžete také zvolit *Soubor › Nastavení projektu*.
+1. Zvolte na kartě *Nastavení › Projekt › Nastavení projektu*. Můžete také zvolit *Soubor › Nastavení projektu*.
 2. V části *Profil výpočtu a možnosti výpočtu* otevřete rozbalovací seznam *Profil výpočtu* a zvolte jiný profil.
 3. Klikněte na **Použít**. Aplikace přepočítá plán hned, i když je *Automaticky přepočítat* vypnuté. Když se úkoly posunuly, aplikace uvede, kolik.
 
@@ -50,7 +50,7 @@ Pokud se profil později liší od šablony, žlutý panel to oznámí. Potom zv
 
 ## Úskalí a co aplikace dělá
 
-**Termíny se posunou.** Jiný profil může změnit skutečné termíny. Zkontrolujte výsledek. Pokud se vám to nelíbí, zvolte *Vrátit zpět*: profil i termíny se vrátí spolu.
+**Termíny se posunou.** Jiný profil může opravdu posunout termíny. Zkontrolujte výsledek. Pokud se vám to nelíbí, zvolte *Vrátit zpět*: profil i termíny se vrátí spolu.
 
 **Žlutý panel po *Vrátit zpět*.** Když stisknete *Vrátit zpět* nebo *Znovu* při otevřeném Nastavení projektu, žlutý panel sleduje stav projektu. Pokud jste v části už něco změnili sami, vaše volba zůstane. Žlutý panel pak oznámí, že *Použít* znovu nastaví tuto volbu.
 

@@ -50,7 +50,7 @@ Du sletter en skabelon med *Slet skabelon*. Appen beder først om bekræftelse.
 
 ## Faldgruber, og hvad appen gør
 
-**Datoerne forskydes.** En anden profil kan ændre de faktiske datoer. Kontroller resultatet. Synes du ikke om det, så vælg *Fortryd*: profil og datoer går tilbage sammen.
+**Datoerne forskydes.** En anden profil kan reelt ændre datoerne. Kontroller resultatet. Synes du ikke om det, så vælg *Fortryd*: profil og datoer går tilbage sammen.
 
 **En gul blok efter Fortryd.** Trykker du på *Fortryd* eller *Gentag*, mens Projektindstillinger er åben, følger blokken projektets tilstand. Har du selv allerede ændret noget i blokken, bevares dit valg. En gul blok siger så, at *Anvend* sætter det valg tilbage.
 

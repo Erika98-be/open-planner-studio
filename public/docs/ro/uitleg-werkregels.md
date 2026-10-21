@@ -12,7 +12,7 @@ Trei mărimi sunt legate între ele:
 
 Suma este: lucru = durată × unități × ore pe zi lucrătoare. Orele pe zi lucrătoare vin din calendarul activității. Tencuiala durează patru zile lucrătoare cu un tencuitor. Cu o zi lucrătoare de 8 ore, lucrul este de 4 × 1 × 8 = 32 de ore.
 
-Dacă modificați una dintre cele trei mărimi, cel puțin una dintre celelalte două trebuie să se modifice, altfel suma nu mai este adevărată. Tipul de activitate decide care. Îl setați pe activitate, în panoul *Proprietăți*. Aplicația afișează tipul de activitate și lucrul abia după ce le activați. Cum funcționează, aflați în [Alegerea unui tip de activitate](docs://howto-werkregel-kiezen).
+Dacă modificați una dintre cele trei mărimi, cel puțin una dintre celelalte două trebuie să se modifice, altfel formula nu mai este valabilă. Tipul de activitate decide care. Îl setați pe activitate, în panoul *Proprietăți*. Aplicația afișează tipul de activitate și lucrul abia după ce le activați. Cum funcționează, aflați în [Alegerea unui tip de activitate](docs://howto-werkregel-kiezen).
 
 Tipul de activitate funcționează doar la activitățile obișnuite. Jaloanele, fazele (activitățile rezumat), hamacele și activitățile ale căror *Tip durată* este *Timp scurs* nu au unul: câmpul *Tip de activitate* nu apare. Materialul, de exemplu beton sau mortar de tencuială, nu intră nici el în calcul. Cantitatea de material nu determină niciodată durata, iar aplicația nu o ajustează niciodată din cauza unui tip de activitate.
 
@@ -28,18 +28,18 @@ Dacă un tip de activitate modifică durata activității, planificarea devine �
 
 În panoul *Proprietăți* există o pictogramă i lângă lista derulantă *Tip de activitate*. Treceți cu cursorul peste ea, faceți clic pe ea sau atingeți-o, iar aplicația explică tipul de activitate care se aplică acum. În lista derulantă deschisă, fiecare opțiune are și ea o pictogramă i. Explicația începe cu o propoziție îngroșată. Cele patru tipuri de activitate, cu propoziția respectivă din aplicație:
 
-- **Durată fixă și unități fixe** (*Lucrul rezultă din durată și din unități de atribuire.*). Acesta este valoarea implicită. Aplicația nu modifică niciodată durata, iar lucrul rezultă din durată și din unități de atribuire. Dacă scrieți singur lucrul, aplicația ajustează unitățile de atribuire, pentru că durata este fixă.
+- **Durată fixă și unități fixe** (*Lucrul rezultă din durată și din unități de atribuire.*). Acesta este tipul implicit. Aplicația nu modifică niciodată durata, iar lucrul rezultă din durată și din unități de atribuire. Dacă scrieți singur lucrul, aplicația ajustează unitățile de atribuire, pentru că durata este fixă.
 - **Durată fixă și lucru** (*Unitățile de atribuire rezultă din durată și din lucru.*). Aplicația nu modifică niciodată durata. Dacă modificați durata, lucrul rămâne, iar unitățile de atribuire se ajustează.
 - **Muncă fixă** (*Durata rezultă din lucru și din unități de atribuire.*). Lucrul este fixat, iar durata rezultă din lucru și din unități de atribuire.
 - **Unități fixe** (*Durata rezultă din lucru și din unități de atribuire.*). Unitățile de atribuire sunt fixate, iar durata rezultă din lucru.
 
 Deci două tipuri de activitate lasă durata neatinsă. La celelalte două, durata se modifică odată cu unitățile de atribuire, lucrul sau numărul de resurse. Cu o singură resursă, muncă fixă și unități fixe fac exact același lucru. Ele diferă atunci când modificați singur durata: la muncă fixă lucrul rămâne și unitățile de atribuire se ajustează, iar la unități fixe unitățile de atribuire rămân și lucrul crește odată cu durata. Ele diferă și când sunt mai multe resurse pe activitate (vezi mai jos).
 
-Exemplele lucrate de mai jos arată ce face fiecare tip de activitate.
+Exemplele rezolvate de mai jos arată ce face fiecare tip de activitate.
 
 ### Rotunjire
 
-Durata care rezultă din sumă este rotunjită în sus de aplicație. Pentru o activitate în zile, rotunjirea se face la zile lucrătoare întregi, pentru o activitate în ore, la minute întregi. Lucrul și unitățile de atribuire rămân cele pe care le-ați introdus sau cele pe care aplicația le-a luat din sumă. Din acest motiv suma nu mai este uneori exact adevărată. Exemplul de mai jos arată ce se întâmplă atunci.
+Durata care rezultă din sumă este rotunjită în sus de aplicație. Pentru o activitate în zile, rotunjirea se face la zile lucrătoare întregi, pentru o activitate în ore, la minute întregi. Lucrul și unitățile de atribuire rămân cele pe care le-ați introdus sau cele pe care aplicația le-a luat din sumă. Din acest motiv formula nu mai este uneori exact valabilă. Exemplul de mai jos arată ce se întâmplă atunci.
 
 ### Mai multe resurse
 
@@ -53,7 +53,7 @@ Dacă activitatea are deja progres, tipul de activitate lucrează cu partea răm
 
 ### Activități în ore
 
-O activitate pe ore se calculează la fel, dar în minute. Dacă pe o activitate de 5 ore este doar macaraua, atunci lucrul este de 5 ore. La muncă fixă, durata pentru unități de atribuire de 2 devine atunci 2,5 ore. Placa cu goluri din proiectul de exercițiu are pe ea și echipa de dulgherie. Ea are nevoie tot de 5 ore de lucru, este cea mai lentă, așa că durata rămâne 5 ore. Cum se leagă orele de zile este explicat în [Zile și ore](docs://uitleg-dagen-en-uren).
+O activitate pe ore se calculează la fel, dar în minute. Dacă pe o activitate de 5 ore este doar macaraua, atunci lucrul este de 5 ore. La muncă fixă, durata pentru unități de atribuire de 2 devine atunci 2,5 ore. Planșeul din plăci alveolare din proiectul de exercițiu are pe ea și echipa de dulgherie. Ea are nevoie tot de 5 ore de lucru, este cea mai lentă, așa că durata rămâne 5 ore. Cum se leagă orele de zile este explicat în [Zile și ore](docs://uitleg-dagen-en-uren).
 
 ## Exemplu lucrat: tencuiala
 

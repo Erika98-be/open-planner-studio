@@ -50,4 +50,4 @@
 - [设置工作时间](docs://howto-werktijden-instellen)：日历中按星期几设置的时间。
 - [添加关系](docs://howto-relaties-leggen)：两个任务之间以小时计的延隔。
 - [应用设置](docs://ref-instellingen)：启用小时计划这一设置，以及它还会改变的其他内容。
-- [De Vaart Apartment Complex](examples://showcase-appartementencomplex.ifc)：包含按小时计的任务（rebar fixing and pouring），并有自己的小时日历 *Hourly calendar, rebar fixing & pouring*。
+- [De Vaart Apartment Complex](examples://showcase-appartementencomplex.ifc)：包含按小时计的任务（钢筋绑扎和浇筑），并有自己的小时日历 *Hourly calendar, rebar fixing & pouring*。

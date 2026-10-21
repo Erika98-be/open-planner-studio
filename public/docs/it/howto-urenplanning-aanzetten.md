@@ -4,7 +4,7 @@ Obiettivo: pianificare attività in orari di lavoro, insieme alle attività in g
 
 ## Quando ti serve questo
 
-Noleggi una gru a ore, non a giorni. Un getto di sei ore non entra in un intero giorno lavorativo. Una squadra di notte lavora in orari diversi dalla squadra di giorno. Per questo tipo di lavoro vuoi una durata in ore e un inizio e una fine con un orario. Attivi questa opzione anche quando apri un file e l'app mostra *Questo file contiene una pianificazione oraria.* Perché l'app conta giorni e ore in modo diverso, puoi leggerlo in [Giorni e ore](docs://uitleg-dagen-en-uren).
+Noleggi una gru a ore, non a giorni. Un getto di sei ore non entra in un intero giorno lavorativo. Una squadra notturna lavora in orari diversi dalla squadra diurna. Per questo tipo di lavoro vuoi una durata in ore e un inizio e una fine con un orario. Attivi questa opzione anche quando apri un file e l'app mostra *Questo file contiene una pianificazione oraria.* Perché l'app conta giorni e ore in modo diverso, puoi leggerlo in [Giorni e ore](docs://uitleg-dagen-en-uren).
 
 ## Passaggi
 

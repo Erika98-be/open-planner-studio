@@ -18,7 +18,7 @@ Cél: döntse el, mely számítási profilt használja a projekt. Ön egy beép�
 
 1. Válassza a *Beállítások › Projekt › Projektbeállítások* lehetőséget. Ön a *Fájl › Projektbeállítások* lehetőséget is választhatja.
 2. A *Számítási profil és beállítások* blokkban nyissa meg a *Számítási profil* legördülő listát, és válasszon másik profilt.
-3. Kattintson az **Alkalmazás** gombra. Az alkalmazás azonnal újraszámítja az ütemezést, akkor is, ha az *Automatikus ütemezés-számítás* ki van kapcsolva. Ha tevékenységek mozdultak el, az alkalmazás megadja, hogy hányan.
+3. Kattintson az **Alkalmazás** gombra. Az alkalmazás azonnal újraszámítja az ütemezést, akkor is, ha az *Automatikus ütemezés-számítás* ki van kapcsolva. Ha tevékenységek mozdultak el, az alkalmazás megadja, hány tevékenység mozdult el.
 
 Amíg Ön nem kattint az *Alkalmazás* gombra, a változás csak az űrlapban létezik. A teljes váltás egy lépésben visszavonható a *Visszavonás* paranccsal. A váltás csak az ütemezési szabályokat módosítja, a számítási beállításai változatlanok maradnak.
 
@@ -50,7 +50,7 @@ A sablont a *Sablon törlése* gombbal törölheti. Az alkalmazás előbb meger�
 
 ## Buktatók és az alkalmazás működése
 
-**A dátumok eltolódnak.** Egy másik számítási profil megváltoztathatja a tényleges dátumokat. Ellenőrizze az eredményt. Ha nem tetszik, válassza a *Visszavonás* parancsot: a profil és a dátumok együtt térnek vissza.
+**A dátumok eltolódnak.** Egy másik számítási profil megváltoztathatja a dátumokat. Ellenőrizze az eredményt. Ha nem tetszik, válassza a *Visszavonás* parancsot: a profil és a dátumok együtt térnek vissza.
 
 **Sárga blokk a *Visszavonás* után.** Ha a *Visszavonás* vagy a *Megismétlés* gombot nyomja meg, miközben a *Projektbeállítások* ablak nyitva van, a blokk a projekt állapotát követi. Ha Ön már módosított valamit a blokkban, a választása megmarad. Ekkor egy sárga blokk jelzi, hogy az *Alkalmazás* gomb visszaállítja ezt a választást.
 

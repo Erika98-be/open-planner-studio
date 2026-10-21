@@ -4,12 +4,12 @@ Amaç: doğrudan uygulamadan bir hatayı bildirmek veya bir fikri iletmek. İste
 
 ## Bunu ne zaman kullanırsınız
 
-Planlama, anlamadığınız bir şey hesaplar. Bir düğme olması gerektiği gibi çalışmaz. Ya da uygulamada bir şeyi gözden kaçırırsınız. İyi bir bildirim, geliştiricilerin sorunu bulmasına yardımcı olur. Bu yüzden uygulama, bildiriminize sürümü, işletim sistemini ve dili kendisi ekler. Ne yaptığınızı, ne beklediğinizi ve ne olduğunu siz anlatırsınız. Bu bilgi, geliştiricilerin bununla bir şey yapıp yapamayacağını belirler.
+Planlama, anlamadığınız bir şey hesaplar. Bir düğme olması gerektiği gibi çalışmaz. Ya da uygulamada bir şeyin eksik olduğunu düşünürsünüz. İyi bir bildirim, geliştiricilerin sorunu bulmasına yardımcı olur. Bu yüzden uygulama, bildiriminize sürümü, işletim sistemini ve dili kendisi ekler. Ne yaptığınızı, ne beklediğinizi ve ne olduğunu siz anlatırsınız. Bu bilgi, geliştiricilerin bununla bir şey yapıp yapamayacağını belirler.
 
 ## Adımlar
 
 1. Pencerenin üstündeki *Geri bildirim ver* düğmesine tıklayın. Bu düğme her zaman başlık çubuğunda bulunur. Metin her on dakikada bir değişir: *Geri bildirim ver*, *Hata bildir* veya *Yeni bir özellik ekle*. Bu her zaman aynı düğmedir. *Geri bildirim gönder* penceresi açılır.
-2. Rapor türünü seçin. *Bir şey çalışmıyor* bir hata içindir: bir şey olması gerektiği gibi çalışmaz. *Fikir* ise özlediğiniz veya farklı olmasını istediğiniz şey içindir. *Soru veya yorum* kalan her şey içindir. *Bir şey çalışmıyor* varsayılan olarak seçilidir.
+2. Rapor türünü seçin. *Bir şey çalışmıyor* bir hata içindir: bir şey olması gerektiği gibi çalışmaz. *Fikir* ise eksik bulduğunuz veya farklı olmasını istediğiniz şey içindir. *Soru veya yorum* kalan her şey içindir. *Bir şey çalışmıyor* varsayılan olarak seçilidir.
 3. *Başlık* alanını, ardından *Açıklama* alanını doldurun. Boş alanlarda bir örnek görünür: başlık için *Örn. Kaydettikten sonra kritik yol kayıyor* gibi bir örnek, açıklama için ise *Ne yaptınız, ne bekliyordunuz ve ne oldu?* sorusu. *Gönderin* düğmesi gri olduğu sürece, yanındaki gri bir satır nedenini gösterir: örneğin *Bir başlık girin.* ya da başlık ve açıklamada birlikte en az 10 karakter yazmanız gerektiğini.
 4. Yanıt almak istiyorsanız *E-posta adresi* alanını doldurun. Bu alan isteğe bağlıdır. Uygulama adresi, başarılı bir rapordan sonra hatırlar. Bu yüzden bir dahaki sefere adres zaten dolu olur.
 5. Bir şey göstermek istiyorsanız *Ekran görüntüsü ekle* seçeneğini açın. Uygulama, bu pencere olmadan uygulamanın bir resmini çeker. Kısa bir süre sonra, yanında üç düğme bulunan küçük bir önizleme görürsünüz: *Not ekle*, *Yeniden al* ve *Kaldır*.

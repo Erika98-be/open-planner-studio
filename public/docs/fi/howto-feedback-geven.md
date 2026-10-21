@@ -4,7 +4,7 @@ Tavoite: kertoa virheestä tai esittää ideaa suoraan sovelluksesta, tarvittaes
 
 ## Milloin tarvitset tätä
 
-Aikataulu laskee jotain, mitä et ymmärrä, painike ei tee sitä, mitä sen pitäisi, tai sovelluksesta puuttuu jotain. Hyvä raportti auttaa kehittäjiä löytämään ongelman. Siksi sovellus itse lisää raporttiin version, käyttöjärjestelmän ja kielen. Se, mitä kuvaat itse, ratkaisee, voivatko he tehdä sillä jotain: mitä teit, mitä odotit ja mitä tapahtui.
+Aikataulu laskee jotain, mitä et ymmärrä, painike ei tee sitä, mitä sen pitäisi, tai sovelluksesta puuttuu jotain. Hyvä ilmoitus auttaa tekijöitä löytämään ongelman. Siksi sovellus itse lisää raporttiin version, käyttöjärjestelmän ja kielen. Se, mitä kuvaat itse, ratkaisee, voivatko he tehdä sillä jotain: mitä teit, mitä odotit ja mitä tapahtui.
 
 ## Vaiheet
 
@@ -15,7 +15,7 @@ Aikataulu laskee jotain, mitä et ymmärrä, painike ei tee sitä, mitä sen pit
 5. Jos haluat näyttää jotakin, ota käyttöön *Liitä kuvakaappaus*. Sovellus ottaa sen jälkeen kuvan sovelluksesta ilman tätä ikkunaa. Hetken kuluttua näkyy pieni esikatselu, jonka vieressä on kolme painiketta: *Merkitse*, *Ota uudelleen* ja *Poista*.
 6. *Merkitse* avaa muokkaimen. Muokkaimella kuvaan lisätään nuolia, suorakulmioita, vapaita viivoja ja tekstiä. Painikkeella *Peitä* piirretään musta alue kohteen päälle, joka ei saa mennä mukaan, esimerkiksi nimen tai summan. Tämä kohta poistuu silloin todella kuvasta, jonka sovellus lähettää. Väri valitaan itse. Viimeisen toiminnon voi peruuttaa painikkeella *Kumoa* tai aloittaa alusta painikkeella *Tyhjennä kaikki*. Muutokset säilyvät, kun valitaan *Tehty*. Ne hylätään valitsemalla *Peruuta* tai painamalla Esc.
 7. *Ota uudelleen* ottaa uuden kuvakaappauksen ja tyhjentää merkinnät. *Poista* poistaa kuvakaappauksen ja poistaa valinnan valintaruudusta.
-8. Katso lomakkeen alla olevaa harmaata riviä *Mukana*. Se näyttää, mitä sovellus lähettää mukana itse: version, käyttöjärjestelmän ja kielen. Esimerkiksi *Mukana: v2026.10.1 · Windows · English*.
+8. Katso lomakkeen alla olevaa harmaata riviä *Mukana*. Se näyttää, mitä sovellus lähettää mukana automaattisesti: version, käyttöjärjestelmän ja kielen. Esimerkiksi *Mukana: v2026.10.1 · Windows · English*.
 9. Napsauta *Lähetä*-painiketta. Lähetyksen aikana painikkeessa lukee *Lähetetään…*.
 10. Näkyviin tulee *Kiitos, ilmoitus on lähetetty.* Jos ilmoitukselle luotiin GitHubissa ongelma, näkyy myös painike *Näytä GitHubissa*. Napsauta *Sulje*-painiketta.
 
@@ -44,7 +44,7 @@ Sovellus lähettää ilmoituksesi OpenAECin Open Feedback Studiolle. Tähän ei 
 
 **Kuvakaappaus epäonnistuu.** Ikkunassa lukee *Kuvakaappauksen ottaminen epäonnistui. Palautteen voi silti lähettää ilman kuvakaappausta.* Valintaruudun valinta poistuu, ja ilmoituksen voi lähettää ilman kuvaa.
 
-**Suljet ikkunan ennen lähettämistä.** Jos lomakkeessa on jotakin, ikkunan alareunan painike on nimeltään *Tallenna ja sulje*. Jos lomake on tyhjä, painike on nimeltään *Sulje*. *Tallenna ja sulje*, rasti ja Esc sulkevat ikkunan, ja ilmoitus säilyy luonnoksena, kunnes se lähetetään tai napsautetaan *Tyhjennä*. Kun avaat ikkunan uudelleen, tyyppi, teksti, sähköpostiosoite ja merkinnöillä varustettu kuvakaappaus ovat yhä tallella. Luonnos säilyy niin kauan kuin sovellus on auki; kun sovelluksen sulkee, luonnos katoaa. Onnistuneen ilmoituksen jälkeen lomake on taas tyhjä. Jos haluat aloittaa alusta itse, napsauta *Tyhjennä* ikkunan alavasemmalla. Napsautus ikkunan vieressä ei sulje sitä. Lähetyksen aikana Esc ei sulje ikkunaa.
+**Suljet ikkunan ennen lähettämistä.** Jos lomakkeessa on jotakin, ikkunan alareunan painike on nimeltään *Tallenna ja sulje*. Jos lomake on tyhjä, painike on nimeltään *Sulje*. *Tallenna ja sulje*, rasti ja Esc sulkevat ikkunan, ja ilmoitus säilyy luonnoksena, kunnes se lähetetään tai napsautetaan *Tyhjennä*. Kun avaat ikkunan uudelleen, tyyppi, teksti, sähköpostiosoite ja merkinnöillä varustettu kuvakaappaus ovat yhä tallella. Luonnos säilyy niin kauan kuin sovellus on auki; kun sovelluksen sulkee, luonnos katoaa. Onnistuneen ilmoituksen jälkeen lomake on taas tyhjä. Jos lomake halutaan tyhjentää itse, napsauta *Tyhjennä* ikkunan vasemmassa alakulmassa. Napsautus ikkunan ulkopuolella ei sulje sitä. Lähetyksen aikana Esc ei sulje ikkunaa.
 
 ## Katso myös
 

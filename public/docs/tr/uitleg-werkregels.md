@@ -10,7 +10,7 @@ Bir sıvacıyı sıva işine koyarsınız ve görev dört gün sürer. Bir ikinc
 - **Birim**: bir kaynağın bir iş günü içinde göreve ne kadar çalıştığı. *Özellikler* panelinde buna *Birim* denir, diğer pencerelerde *Birim/gün*. Birim 1, bütün gün boyunca bir sıvacı demektir. 2, iki sıvacı demektir. 0,5 ise yarım gün demektir.
 - **İş**: kaynağın göreve harcadığı toplam saat.
 
-Toplam şöyledir: iş = süre × birim × iş günü başına saat. İş günü başına saat, görevin takviminden gelir. Bir sıvacıyla dört iş günü süren sıva işi, 8 saatlik iş gününde 4 × 1 × 8 = 32 saat iştir.
+Formül şöyledir: iş = süre × birim × iş günü başına saat. İş günü başına saat, görevin takviminden gelir. Bir sıvacıyla dört iş günü süren sıva işi, 8 saatlik iş gününde 4 × 1 × 8 = 32 saat iştir.
 
 Üçünden birini değiştirirseniz, diğer ikisinden en az biri de birlikte hareket etmelidir. Aksi halde toplam artık tutmaz. Hangisinin hareket edeceğini görev türü belirler. Bunu görev başına, *Özellikler* panelinde ayarlarsınız. Uygulama görev türünü ve işi, siz bunları açana kadar göstermez. Bunun nasıl çalıştığı [Görev türü seçmek](docs://howto-werkregel-kiezen) bölümünde yazar.
 
@@ -103,7 +103,7 @@ Sabit iş görev türünde takvimin iş günü 8 saatten 6 saate düşer. İş 3
 
 ### Görev ilerlemesiyle
 
-İç boşluklu duvar tabakası 5 iş günü sürer ve %40 tamamlanmıştır: 2 iş günü tamamlanmış, 3 iş günü (24 saat) kalmıştır. Sabit iş görev türünde birimleri 1'den 2'ye çıkarırsınız. Kalan iş 24 saat kalır. Kalan süre 1,5 olur ve 2 iş gününe yukarı yuvarlanır. Görev şimdi 2 + 2 = 4 iş günü sürer ve ilerleme %50'dir. Yüzde birlikte hareket eder, çünkü tamamlanmış kısım aynı kalır ve kalan kısım kısalır.
+Boşluklu duvarın iç tabakası 5 iş günü sürer ve %40 tamamlanmıştır: 2 iş günü tamamlanmış, 3 iş günü (24 saat) kalmıştır. Sabit iş görev türünde birimleri 1'den 2'ye çıkarırsınız. Kalan iş 24 saat kalır. Kalan süre 1,5 olur ve 2 iş gününe yukarı yuvarlanır. Görev şimdi 2 + 2 = 4 iş günü sürer ve ilerleme %50'dir. Yüzde birlikte hareket eder, çünkü tamamlanmış kısım aynı kalır ve kalan kısım kısalır.
 
 ## Sonuçlar ve yanlış anlamalar
 

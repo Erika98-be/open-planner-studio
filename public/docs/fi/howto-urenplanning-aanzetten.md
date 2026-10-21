@@ -19,7 +19,7 @@ Tämä muuttaa enemmän kuin tehtävän keston: kohdassa *Näkymä › Aikaskaal
 ### Tehtävän suunnittelu tunteina
 
 1. Valitse tehtävä ja katso paneelista *Ominaisuudet*, kohdasta *Aika*, kenttää *Kesto*.
-2. Kirjoita kesto mitan kanssa ja paina Enter: `12h` (`12u`, hollanninkielinen lyhenne, toimii myös) tarkoittaa kaksitoista tuntia ja `1h 30m` tuntia ja puolta. `1.5h` käy myös. Luku ilman mittaa lasketaan tehtävän nykyisessä mitassa.
+2. Kirjoita kesto mitan kanssa ja paina Enter: `12h` (`12u`, hollanninkielinen lyhenne, toimii myös) tarkoittaa kaksitoista tuntia ja `1h 30m` puolitoista tuntia. `1.5h` käy myös. Luku ilman mittaa lasketaan tehtävän nykyisessä mitassa.
 3. Jos olemassa oleva tehtävä halutaan muuntaa, valitse kohdasta *Kestomitta* mitta *Tunnit*. Sovellus muuntaa keston heti, esimerkiksi `2` päivästä `16` tuntiin. Jos haluat palata, käytä toimintoa *Kumoa*.
 4. Paluu päiviin onnistuu merkinnällä `2d` tai mitalla *Päivät*.
 5. Paina **Laske** (F5), esimerkiksi kohdasta *Aloitus › Aikataulu › Laske*. Tehtävällä on nyt alku- ja loppuaika kellonajoin.
@@ -36,7 +36,7 @@ Uuden tehtävän kestoksi tulee silloin 5 tuntia 5 päivän sijaan. Olemassa ole
 
 **Ei kelvollisia työaikoja.** Jos tehtävän kalenterissa ei ole käytettäviä työaikoja, sovellus näyttää *Tällä kalenterilla ei ole kelvollisia työaikoja. Tarkista työpäivät ja työajat*. Laskettaessa voi tulla ilmoitus *Tuntitehtävällä 'name' ei ole kelvollisia työtunteja kalenterissaan*.
 
-**Ei desimaaleja päivillä.** Kesto päivinä on kokonaisluku. `1.5d` antaa ilmoituksen *Syötä kokonaisluku päiviä tai tunteja, esimerkiksi 2d tai 12h*. Jos haluat puolitoista päivää, lasketaan tunneissa.
+**Ei desimaaleja päivillä.** Kesto päivinä on kokonaisluku. `1.5d` antaa ilmoituksen *Syötä kokonaisluku päiviä tai tunteja, esimerkiksi 2d tai 12h*. Jos tarvitaan puolitoista päivää, kesto lasketaan tunteina.
 
 **Muunnos ei voi olla tarkka.** Kaksitoista tuntia ei mahdu kokonaisiin 8 tunnin päiviin. Paneelissa *Ominaisuudet* ja ikkunassa *Muokkaa tehtävää* sovellus näyttää silloin keltaisen lohkon, jossa lukee *12h ei vastaa kokonaisia päiviä tässä kalenterissa. Mittayksikköä ei muutettu*. Sovellus jättää mitan ennalleen. Tehtävätaulukossa on lyhyempi ilmoitus: *Tätä kestoa ei voi muuntaa toiseen yksikköön tarkasti*.
 

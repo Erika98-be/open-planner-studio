@@ -22,7 +22,7 @@ Ez több annál, mint a tevékenység időtartamának megváltoztatása. A *Néz
 2. Írja be az időtartamot mértékegységgel, és nyomja le az Enter billentyűt: `12h` tizenkét órához, `1h 30m` másfél órához. A `12u` (a holland rövidítés) is működik. Az `1.5h` is megfelelő. Mértékegység nélküli szám a tevékenység már meglévő egységében számít.
 3. Ha egy meglévő tevékenységet szeretne átalakítani, válassza az *Órák* egységet az *Időtartam-egység* alatt. Az alkalmazás azonnal átszámítja az időtartamot, például `2` napról `16` órára. Ha vissza szeretne lépni, használja a *Visszavonás* parancsot.
 4. Napokra a `2d` megadásával vagy a *Napok* egység kiválasztásával térhet vissza.
-5. Nyomja meg a **Számítás** gombot (F5), például a *Kezdőlap › Ütemezés › Számítás* útvonalon. Ezután a tevékenységnek óraidőben megadott kezdési és befejezési időpontja van.
+5. Nyomja meg a **Számítás** gombot (F5), például a *Kezdőlap › Ütemezés › Számítás* útvonalon. Ezután a tevékenységnek pontos órával megadott kezdési és befejezési időpontja van.
 6. Ha az órákat látni szeretné a Gantt-diagramban, válassza az *Óra* skálát a *Nézet › Időskála* listában.
 
 ### Új tevékenységek alapértelmezetten órában
@@ -32,11 +32,11 @@ Ez több annál, mint a tevékenység időtartamának megváltoztatása. A *Néz
 
 Egy új tevékenység ezután 5 órás időtartammal jön létre, 5 nap helyett. A meglévő tevékenységek nem változnak. Új projektnél ugyanez a választás az *Új projekt* ablakban található. Ha ott a *Műszak* alatt a *Nappali műszak* lehetőséget választja, az *Órák* le van tiltva. Válasszon másik műszakot, vagy állítsa be az alapértelmezett egységet a projekt létrehozása után, a *Projektbeállítások* ablakban.
 
-## Valkuilok és mit tesz az alkalmazás ilyenkor
+## Buktatók és az, amit az alkalmazás ilyenkor tesz
 
 **Nincsenek érvényes munkaidők.** Ha a tevékenység naptárában nincsenek használható munkaidők, az alkalmazás ezt jelzi: *Ennek a naptárnak nincsenek érvényes munkaidői. Ellenőrizze a munkanapokat és a munkaidőket.* Számításkor megjelenhet ez az üzenet: *A(z) 'name' óraalapú tevékenység naptárában nincsenek érvényes munkaórák.*
 
-**Nincs tizedes szám napokkal.** Az időtartam napokban egész szám. Az `1.5d` megadása ezt az üzenetet adja: *Adjon meg egész számú napot vagy órát, például 2d vagy 12h.* Ha másfél napot szeretne, számoljon órákban.
+**Napoknál nem adhat meg törtszámot.** Az időtartam napokban egész szám. Az `1.5d` megadása ezt az üzenetet adja: *Adjon meg egész számú napot vagy órát, például 2d vagy 12h.* Ha másfél napot szeretne, számoljon órákban.
 
 **Átváltás, amely nem lehet pontos.** Tizenkét óra nem fér bele egész, 8 órás napokba. A *Tulajdonságok* panelen és a *Tevékenység szerkesztése* ablakban az alkalmazás ekkor egy sárga üzenetet jelenít meg: *12h ebben a naptárban nem ad ki egész napokat. Az egység nem változott.* Az egységet meghagyja. A tevékenységtáblázat rövidebb üzenetet ad: *Ez az időtartam nem alakítható át pontosan a másik egységre.*
 

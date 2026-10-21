@@ -42,7 +42,7 @@ Appen sender meldingen din til Open Feedback Studio fra OpenAEC. Du trenger inge
 
 **Liming fungerer ikke.** På GitHub-veien lagres skjermbildet også som en fil på datamaskinen din. I desktopappen viser vinduet stien: *Kan ikke lime inn? Vi har også lagret skjermbildet til* stien *— dra filen inn i tekstfeltet.* I nettleseren laster appen ned bildet som `feedback-` med et nummer og endelsen `.png`. Du finner det i nedlastingsmappen din, og du drar det inn i tekstfeltet.
 
-**Skjermbildet feiler.** Der står *Kunne ikke lage skjermbilde. Du kan fortsatt sende tilbakemeldingen uten skjermbilde.* Avkrysningsboksen skrur seg av, og du kan sende meldingen din uten bilde.
+**Skjermbildet feiler.** Da står det *Kunne ikke lage skjermbilde. Du kan fortsatt sende tilbakemeldingen uten skjermbilde.* Avkrysningsboksen skrur seg av, og du kan sende meldingen din uten bilde.
 
 **Du lukker vinduet før du sender.** Er det noe i skjemaet, heter knappen nederst *Lagre og lukk*. Er skjemaet tomt, heter den *Lukk*. *Lagre og lukk*, krysset og Esc lukker vinduet. Meldingen din blir da lagret som utkast, til du sender den eller klikker på *Tøm*. Når du åpner vinduet igjen, er typen, teksten din, e-postadressen og skjermbildet med kommentarene fortsatt der. Utkastet blir bevart så lenge appen er åpen. Etter at du har avsluttet appen, er det borte. Etter en vellykket melding er skjemaet tomt igjen. Vil du begynne på nytt selv, klikk på *Tøm* nederst til venstre. Et klikk ved siden av vinduet lukker det ikke. Mens meldingen sendes, lukker Esc ikke vinduet.
 

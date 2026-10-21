@@ -20,12 +20,12 @@ Apri un progetto che deve calcolare come Primavera P6 o Microsoft Project, oppur
 2. Nel blocco *Profilo di calcolo e opzioni* apri l'elenco a discesa *Profilo di calcolo* e scegli un altro profilo.
 3. Clicca su **Applica**. L'app ricalcola subito la pianificazione, anche se *Calcola automaticamente* è disattivata. Se delle attività si sono spostate, l'app indica quante.
 
-Finché non clicchi *Applica*, la modifica esiste solo nel modulo. Tutto il cambio è un solo passo per *Annulla*. Cambiare profilo modifica solo le convenzioni; le tue opzioni di calcolo restano come sono.
+Finché non clicchi *Applica*, la modifica esiste solo nel modulo. L'intero cambio conta come un unico passo per *Annulla*. Cambiare profilo modifica solo le convenzioni; le tue opzioni di calcolo restano come sono.
 
 ### Costruire un profilo personalizzato
 
 1. Nel blocco *Profilo di calcolo e opzioni* clicca su *Nuovo profilo*, accanto all'elenco a discesa.
-2. Inserisci un nome. L'app propone il nome *Copia di* con il profilo scelto, per esempio *Copia di Open Planner Studio*.
+2. Inserisci un nome. L'app propone il nome *Copia di* seguito dal nome del profilo scelto, per esempio *Copia di Open Planner Studio*.
 3. Clicca su *Crea*. La parte *Convenzioni di questo profilo* si espande.
 4. Attiva o disattiva le convenzioni con le caselle di controllo. L'icona i dopo una riga mostra la spiegazione di quella convenzione. Una convenzione che differisce dalla base riceve l'etichetta *torna alla base*.
 5. Clicca su **Applica**. Solo allora il progetto calcola con il nuovo profilo.
@@ -56,7 +56,7 @@ Elimini un modello con *Elimina modello*. L'app chiede prima una conferma.
 
 **Al massimo 100 modelli.** Se ce ne sono già 100, l'app non salva il modello e lo segnala. Elimina prima un modello. Anche uno spazio di archiviazione dell'app pieno o mancante dà un messaggio.
 
-**I modelli appartengono all'app, il profilo al progetto.** Il progetto ha sempre una propria copia del profilo. Se modifichi il modello in seguito, il progetto non cambia insieme a lui.
+**I modelli appartengono all'app, il profilo al progetto.** Il progetto ha sempre una propria copia del profilo. Se modifichi il modello in seguito, il progetto non cambia di conseguenza.
 
 **Impostazioni da un file di origine.** Se scegli *Primavera P6* o *Microsoft Project* per un progetto che proviene da un altro file, restano le impostazioni del file di origine. Qui non puoi cambiarle.
 

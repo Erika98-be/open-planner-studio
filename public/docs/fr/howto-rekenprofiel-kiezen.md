@@ -20,7 +20,7 @@ Vous ouvrez un projet qui doit calculer comme Primavera P6 ou Microsoft Project,
 2. Dans le bloc *Profil de calcul et options*, ouvrez la liste déroulante *Profil de calcul* et choisissez un autre profil.
 3. Cliquez sur **Appliquer**. L'application recalcule le planning tout de suite, même si *Calculer automatiquement* est désactivé. Si des tâches ont bougé, l'application indique combien.
 
-Tant que vous ne cliquez pas sur *Appliquer*, le changement n'existe que dans le formulaire. Tout le changement compte pour une seule étape pour *Annuler*. Changer de profil ne modifie que les conventions ; vos options de calcul restent telles quelles.
+Tant que vous ne cliquez pas sur *Appliquer*, le changement n'existe que dans le formulaire. Tout le changement forme une seule étape pour *Annuler*. Changer de profil ne modifie que les conventions ; vos options de calcul restent telles quelles.
 
 ### Créer un profil personnalisé
 
@@ -50,7 +50,7 @@ Vous supprimez un modèle avec *Supprimer le modèle*. L'application demande d'a
 
 ## Pièges et ce que fait l'application
 
-**Les dates se décalent.** Un autre profil peut modifier les dates réelles. Vérifiez le résultat. Si vous n'en voulez pas, choisissez *Annuler* : le profil et les dates reviennent ensemble.
+**Les dates se décalent.** Un autre profil peut modifier réellement les dates. Vérifiez le résultat. Si le résultat ne vous convient pas, choisissez *Annuler* : le profil et les dates reviennent ensemble.
 
 **Un bloc jaune après Annuler.** Si vous appuyez sur *Annuler* ou *Rétablir* pendant que *Paramètres du projet* est ouvert, le bloc suit l'état du projet. Si vous aviez déjà modifié quelque chose dans le bloc vous-même, votre choix reste. Un bloc jaune indique alors qu'*Appliquer* remet ce choix en place.
 

@@ -1,6 +1,6 @@
 # Trimiterea de feedback
 
-Scop: semnalați o eroare sau transmiteți o idee, opțional cu o captură de ecran, astfel încât să ajungă ca problemă pe GitHub.
+Scop: semnalați o eroare sau transmiteți o idee, opțional cu o captură de ecran, direct din aplicație.
 
 ## Când aveți nevoie de acest lucru
 
@@ -21,7 +21,7 @@ Aplicația calculează ceva ce nu înțelegeți, un buton nu face ce ar trebui s
 
 ## Unde ajunge sesizarea dumneavoastră
 
-Aplicația trimite sesizarea dumneavoastră către Open Feedback Studio de la OpenAEC. Pentru aceasta nu aveți nevoie de un cont, nici pe GitHub. Creatorii văd sesizarea dumneavoastră în prezentarea lor generală. Dacă aplicația este legată de GitHub acolo, Open Feedback Studio transformă sesizarea și într-o problemă publică pe GitHub. Cu *Ceva nu funcționează*, problema primește eticheta *bug*, iar cu *Idee* eticheta *enhancement*. Sub descrierea dumneavoastră apare apoi o linie cu versiunea Open Planner Studio, sistemul dumneavoastră de operare și limba aplicației.
+Aplicația trimite sesizarea dumneavoastră către Open Feedback Studio de la OpenAEC. Pentru aceasta nu aveți nevoie de un cont, nici pe GitHub. Dezvoltatorii văd sesizarea dumneavoastră în prezentarea lor generală. Dacă aplicația este legată de GitHub acolo, Open Feedback Studio transformă sesizarea și într-o problemă publică pe GitHub. Cu *Ceva nu funcționează*, problema primește eticheta *bug*, iar cu *Idee* eticheta *enhancement*. Sub descrierea dumneavoastră apare apoi o linie cu versiunea Open Planner Studio, sistemul dumneavoastră de operare și limba aplicației.
 
 ## Capcane și ce face aplicația atunci
 

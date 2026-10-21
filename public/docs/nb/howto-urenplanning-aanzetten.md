@@ -14,7 +14,7 @@ Du leier en kran per time, ikke per dag. En støp på seks timer får ikke plass
 2. Under *Timeplanlegging* krysser du av for *Slå på timeplanlegging*. Det virker med én gang. Knappen *Slå på timeplanlegging* i meldingen *Denne filen inneholder timeplanlegging* gjør det samme.
 3. Under dette står *Tillat blandet dag/timeplanlegging*, som er på som standard. Med denne innstillingen velger du per aktivitet om den telles i dager eller timer. Slår du den av, forsvinner listen *Varighetsenhet*. Du kan da fortsatt skrive inn en varighet med en enhet, for eksempel `12h`.
 
-Dette endrer mer enn varigheten til en aktivitet: under *Visning › Tidsskala* kan du velge skalaen *Time*. I vinduet *Kalendere* kan en vanlig kalender få tidsbånd (blokken *Arbeidstider*; en kalender som allerede har blokker, viser den alltid). Vinduet *Nytt prosjekt* får i tillegg valgene *Skift* og *Standardenhet for nye aktiviteter*.
+Dette endrer mer enn varigheten til en aktivitet: under *Visning › Tidsskala* kan du velge skalaen *Time*. I vinduet *Kalendere* kan en vanlig kalender få arbeidstidsblokker (blokken *Arbeidstider*; en kalender som allerede har blokker, viser den alltid). Vinduet *Nytt prosjekt* får i tillegg valgene *Skift* og *Standardenhet for nye aktiviteter*.
 
 ### Planlegge en aktivitet i timer
 

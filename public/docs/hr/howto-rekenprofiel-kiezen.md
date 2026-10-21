@@ -1,6 +1,6 @@
 # Odabir ili izrada profila izračuna
 
-Cilj: odlučite koja pravila izračuna projekt koristi. Odaberete ugrađeni profil ili izradite prilagođeni profil sa svojim pravilima izračuna.
+Cilj: odlučiti koja pravila izračuna projekt koristi. Birate ugrađeni profil ili izrađujete prilagođeni profil sa svojim pravilima izračuna.
 
 ## Kada vam ovo treba
 
@@ -50,7 +50,7 @@ Predložak izbrišete pomoću *Izbriši predložak*. Aplikacija prije brisanja t
 
 ## Zamke i što aplikacija radi
 
-**Datumi se pomiču.** Drugi profil može promijeniti stvarne datume. Provjerite rezultat. Ako vam se rezultat ne sviđa, odaberite *Poništi*: profil i datumi vraćaju se zajedno.
+**Datumi se pomiču.** Drugi profil može doista promijeniti datume. Provjerite rezultat. Ako vam se rezultat ne sviđa, odaberite *Poništi*: profil i datumi vraćaju se zajedno.
 
 **Žuti blok nakon poništavanja.** Ako pritisnete *Poništi* ili *Ponovi* dok su otvorene postavke projekta, blok prati stanje projekta. Ako ste u bloku već sami nešto promijenili, vaš izbor ostaje. Žuti blok tada kaže da *Primijeni* vraća taj izbor.
 

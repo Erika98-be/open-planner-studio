@@ -4,7 +4,7 @@ Objetivo: decidir qué reglas de cálculo usa un proyecto. Elija un perfil integ
 
 ## Cuándo lo necesita
 
-Usted abre un proyecto que debe calcularse como Primavera P6 o Microsoft Project, o desea ajustar una convención de otra forma que el perfil. Qué es un perfil y por qué pueden cambiar las fechas se explica en [Perfiles de cálculo y convenciones](docs://uitleg-rekenprofielen).
+Usted abre un proyecto que debe calcularse como Primavera P6 o Microsoft Project, o desea ajustar una convención de forma distinta a la del perfil. Qué es un perfil y por qué pueden cambiar las fechas se explica en [Perfiles de cálculo y convenciones](docs://uitleg-rekenprofielen).
 
 ## Pasos
 

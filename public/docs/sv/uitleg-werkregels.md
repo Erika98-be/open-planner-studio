@@ -1,6 +1,6 @@
 # Uppgiftstyper: varaktighet, tilldelningsenheter och arbete
 
-Du sätter en putsare på putsningen och uppgiften tar fyra dagar. Lägger du till en andra putsare kan arbetet bli klart på två dagar. Det kan också vara kvar på fyra dagar, med dubbelt så mycket arbete i. Båda är logiska. Vilken av de två appen väljer beror på uppgiftens **uppgiftstyp**. I den här artikeln läser du hur appen binder ihop varaktighet, tilldelningsenheter och arbete och vad varje uppgiftstyp håller konstant.
+Du sätter en putsare på putsningen och uppgiften tar fyra dagar. Lägger du till en andra putsare kan arbetet bli klart på två dagar. Det kan också vara kvar på fyra dagar, med dubbelt så mycket arbete i. Båda är rimliga. Vilken av de två appen väljer beror på uppgiftens **uppgiftstyp**. I den här artikeln läser du hur appen binder ihop varaktighet, tilldelningsenheter och arbete och vad varje uppgiftstyp håller konstant.
 
 ## Begreppet
 
@@ -35,7 +35,7 @@ I panelen *Egenskaper* finns en i-ikon bredvid rullgardinsmenyn *Uppgiftstyp*. P
 
 Två uppgiftstyper lämnar alltså varaktigheten ifred. Med de två andra följer varaktigheten med när du ändrar tilldelningsenheterna, arbetet eller antalet resurser. Med en resurs gör Fast arbete och Fasta enheter exakt samma sak. De skiljer sig när du ändrar varaktigheten själv: med Fast arbete blir arbetet kvar och tilldelningsenheterna justeras, med Fasta enheter blir tilldelningsenheterna kvar och arbetet växer. De skiljer sig också när det finns fler resurser på uppgiften (se nedan).
 
-De genomgångna exemplen nedan visar vad varje uppgiftstyp gör.
+De räknade exemplen nedan visar vad varje uppgiftstyp gör.
 
 ### Avrundning
 
@@ -93,7 +93,7 @@ Putsningen tar 4 arbetsdagar. En putsare är kopplad till den, med tilldelningse
 
 Med Fast arbete sätter du tilldelningsenheterna till 3. Arbetet är 32 timmar, så varaktigheten blir 32 ÷ (3 × 8) = 1,33 arbetsdagar. Appen avrundar det uppåt till 2 arbetsdagar. Arbete (32 timmar) och tilldelningsenheter (3) blir kvar, men 2 × 3 × 8 är 48 timmar. Histogrammet sprider därför de 32 timmarna över de 2 arbetsdagarna: 2 tilldelningsenheter per dag, inte 3. Bredvid *Arbete (h)* visas en varningssymbol, *Avviker från tilldelningsenheter × varaktighet*, för att visa detta.
 
-Med två resurser med olika tilldelningsenheter fungerar det på samma sätt. Med Fast arbete lägger du till en andra resurs, till exempel *Plasterer 2*, med tilldelningsenheter på 2 till putsaren med tilldelningsenheter på 1. Appen delar de 32 timmarna i förhållandet 1 : 2, alltså 10,7 och 21,3 timmar. Då behöver båda 1,33 arbetsdagar. Varaktigheten blir 2 arbetsdagar.
+Med två resurser med olika tilldelningsenheter fungerar det på samma sätt. Om du med Fast arbete lägger till en andra resurs, till exempel *Plasterer 2*, med tilldelningsenheter på 2 till putsaren med tilldelningsenheter på 1. Appen delar de 32 timmarna i förhållandet 1 : 2, alltså 10,7 och 21,3 timmar. Då behöver båda 1,33 arbetsdagar. Varaktigheten blir 2 arbetsdagar.
 
 En fil från P6 eller MS Project kan också innehålla ett *Arbete (kvar)* som inte är lika med tilldelningsenheter × återstående varaktighet. Samma varningssymbol visas då. Appen ändrar inte det arbetet av sig själv. Ändrar du varaktigheten för en sådan uppgift, följer appen uppgiftstypen, även när det återstående arbetet kom från filen. Under *Fast varaktighet och fasta enheter* och *Fasta enheter* blir det återstående arbetet tilldelningsenheter × ny återstående varaktighet. Under *Fast varaktighet och fast arbete* och *Fast arbete* blir arbetet kvar och tilldelningsenheterna justeras. Försvinner ett återstående arbete från filen på det här sättet, får du ett meddelande med det gamla och det nya antalet timmar. Ctrl+Z återställer det gamla värdet. Förklaringen vid varningssymbolen visar per uppgift vilket av de två som händer.
 
@@ -103,7 +103,7 @@ Med Fast arbete går kalenderns arbetsdag från 8 till 6 timmar. Arbetet blir kv
 
 ### En uppgift med framdrift
 
-Den inre skalmuren tar 5 arbetsdagar och är 40% klar: 2 arbetsdagar är gjorda och 3 arbetsdagar (24 timmar) återstår. Med Fast arbete sätter du tilldelningsenheterna från 1 till 2. Det återstående arbetet blir kvar på 24 timmar och den återstående varaktigheten blir 1,5, avrundat uppåt till 2 arbetsdagar. Uppgiften tar nu 2 + 2 = 4 arbetsdagar och framdriften är 50%. Procenten följer med, eftersom den delen som är klar blir kvar och resten blir kortare.
+Innerskalet i hålmuren tar 5 arbetsdagar och är 40 % klar: 2 arbetsdagar är gjorda och 3 arbetsdagar (24 timmar) återstår. Med Fast arbete sätter du tilldelningsenheterna från 1 till 2. Det återstående arbetet blir kvar på 24 timmar och den återstående varaktigheten blir 1,5, avrundat uppåt till 2 arbetsdagar. Uppgiften tar nu 2 + 2 = 4 arbetsdagar och framdriften är 50 %. Procenten följer med, eftersom den del som är klar blir kvar och resten blir kortare.
 
 ## Följder och missuppfattningar
 

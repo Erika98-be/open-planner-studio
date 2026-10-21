@@ -1,6 +1,6 @@
 # Tipos de tarea: duración, unidades y trabajo
 
-Usted asigna un yesero al enlucido y la tarea dura cuatro días. Si añade un segundo yesero, el trabajo puede hacerse en dos días. También puede seguir durando cuatro días, con el doble de trabajo. Las dos opciones tienen sentido. Cuál de las dos elige la aplicación depende del **tipo de tarea** que tiene la tarea. En este artículo ve cómo la aplicación relaciona duración, unidades y trabajo, y qué mantiene constante cada tipo de tarea.
+Usted asigna un yesero al enlucido y la tarea dura cuatro días. Si añade un segundo yesero, el trabajo puede hacerse en dos días. También puede seguir durando cuatro días, con el doble de trabajo. Las dos opciones tienen sentido. Cuál de las dos elige la aplicación depende del **tipo de tarea** de esa tarea. En este artículo ve cómo la aplicación relaciona duración, unidades y trabajo, y qué mantiene constante cada tipo de tarea.
 
 ## El concepto
 
@@ -43,7 +43,7 @@ La aplicación redondea hacia arriba la duración que resulta de la suma. En una
 
 ### Varios recursos
 
-Si una tarea tiene varios recursos, se aplican dos convenciones. Con Duración y trabajo fijos, Trabajo fijo y Unidades fijas, el trabajo total se mantiene igual cuando se añade o se quita un recurso. La aplicación lo divide entonces en proporción a las unidades. Con Duración y unidades fijas, un recurso nuevo aporta su propio trabajo. Con Trabajo fijo y Unidades fijas, el recurso más lento determina la duración: por recurso, es el trabajo dividido entre las unidades, y cuenta el resultado más grande.
+Si una tarea tiene varios recursos, se aplican dos reglas. Con Duración y trabajo fijos, Trabajo fijo y Unidades fijas, el trabajo total se mantiene igual cuando se añade o se quita un recurso. La aplicación lo divide entonces en proporción a las unidades. Con Duración y unidades fijas, un recurso nuevo aporta su propio trabajo. Con Trabajo fijo y Unidades fijas, el recurso más lento determina la duración: por recurso, es el trabajo dividido entre las unidades, y cuenta el resultado más grande.
 
 Un ejemplo: dos recursos tienen cada uno 32 horas de trabajo y unidades de 1, en total 4 días laborables. Usted pone las unidades del primero en 0,5. La duración pasa entonces a ser 8 días laborables. Con Trabajo fijo, el segundo recurso mantiene sus 32 horas de trabajo y sus unidades bajan a 0,5. Con Unidades fijas, el segundo mantiene sus unidades de 1 y su trabajo crece hasta 64 horas.
 

@@ -1,10 +1,10 @@
 # Przekazywanie opinii
 
-Cel: zgłosić błąd albo przekazać pomysł, opcjonalnie z zrzutem ekranu, bezpośrednio z aplikacji.
+Cel: zgłosić błąd albo przekazać pomysł, opcjonalnie ze zrzutem ekranu, bezpośrednio z aplikacji.
 
 ## Kiedy tego potrzebujesz
 
-Harmonogram oblicza coś, czego nie rozumiesz, przycisk nie działa tak, jak powinien, albo w aplikacji coś ci umyka. Dobra opinia pomaga twórcom znaleźć problem. Dlatego aplikacja sama dodaje do opinii wersję, system operacyjny i język. To, co sam opiszesz, decyduje, czy mogą coś z tym zrobić: co zrobiłeś, czego się spodziewałeś i co się stało.
+Harmonogram oblicza coś, czego nie rozumiesz, przycisk nie działa tak, jak powinien, albo w aplikacji brakuje Ci jakiejś funkcji. Dobra wiadomość pomaga twórcom znaleźć problem. Dlatego aplikacja sama dodaje do opinii wersję, system operacyjny i język. To, co sam opiszesz, decyduje, czy mogą coś z tym zrobić: co zostało zrobione, czego oczekiwano i co się stało.
 
 ## Kroki
 
@@ -12,7 +12,7 @@ Harmonogram oblicza coś, czego nie rozumiesz, przycisk nie działa tak, jak pow
 2. Wybierz rodzaj wiadomości. *Coś nie działa* służy do błędu: coś nie robi tego, co powinno. *Pomysł* służy do tego, czego brakuje albo co chcesz zmienić. *Pytanie lub uwaga* służy do reszty. *Coś nie działa* jest domyślnie zaznaczone.
 3. Wypełnij *Tytuł*, a potem *Opis*. Puste pola pokazują przykład: w tytule na przykład *Np. Ścieżka krytyczna przeskakuje po zapisaniu*, a w opisie pytanie *Co zrobiłeś, czego się spodziewałeś i co się stało?* Dopóki przycisk *Wyślij* jest szary, szara linia obok mówi, dlaczego, na przykład *Wpisz tytuł.* albo że w tytule i opisie razem musisz wpisać co najmniej 10 znaków.
 4. Jeśli chcesz odpowiedź, wypełnij swój *Adres e-mail*. To pole jest opcjonalne. Aplikacja zapamiętuje adres po udanym wysłaniu wiadomości, więc przy następnym razie jest już wpisany.
-5. Jeśli chcesz coś pokazać, włącz *Dołącz zrzut ekranu*. Aplikacja wtedy robi zdjęcie aplikacji bez tego okna. Chwilę później widzisz mały podgląd z trzema przyciskami obok: *Zaznacz*, *Zrób ponownie* i *Usuń*.
+5. Jeśli chcesz coś pokazać, włącz *Dołącz zrzut ekranu*. Aplikacja robi wtedy obraz ekranu bez tego okna. Chwilę później widzisz mały podgląd z trzema przyciskami obok: *Zaznacz*, *Zrób ponownie* i *Usuń*.
 6. *Zaznacz* otwiera edytor. W edytorze dodajesz na obrazku strzałki, prostokąty, odręczne linie i tekst. Za pomocą *Zakryj* rysujesz czarny obszar nad czymś, co nie może zostać wysłane, na przykład nad nazwiskiem albo kwotą. Ta część wtedy naprawdę znika z obrazu, który aplikacja wysyła. Wybierasz kolor, cofasz ostatnią czynność przyciskiem *Cofnij* albo zaczynasz od nowa przyciskiem *Wyczyść wszystko*. Kliknij *Gotowe*, aby zachować zmiany, albo *Anuluj* (lub Esc), aby je odrzucić.
 7. *Zrób ponownie* robi nowy zrzut ekranu i usuwa Twoje zaznaczenia. *Usuń* usuwa zrzut ekranu i wyłącza pole wyboru.
 8. Spójrz na szarą linię *Dołączono* pod formularzem. Pokazuje, co aplikacja sama dołącza: wersję, system operacyjny i język, na przykład *Dołączono: v2026.10.1 · Windows · English*.
@@ -27,14 +27,14 @@ Aplikacja wysyła Twoją wiadomość do Open Feedback Studio od OpenAEC. Do tego
 
 **Twoja wiadomość może stać się publiczna.** Nie wpisuj w niej niczego, czego nie chcesz udostępnić. Dotyczy to także zrzutu ekranu: obraz pokazuje wszystko, co w tym momencie widać w aplikacji, na przykład nazwy zadań i zasobów Twojego projektu. Aplikacja robi zrzut ekranu w chwili, gdy włączysz *Dołącz zrzut ekranu*. Jeśli ekran jeszcze nie jest dobry, zamknij okno, ustaw ekran, otwórz okno ponownie i kliknij *Zrób ponownie*. Użyj *Zakryj*, aby ukryć to, czego nie chcesz pokazać.
 
-**Zrzut ekranu jest za duży.** Aplikacja zmniejsza zrzut ekranu przed wysłaniem. Jeśli nadal jest za duży, wiadomość idzie bez obrazka. Ekran z podziękowaniem pokazuje wtedy *Zrzut ekranu był za duży i nie został dołączony.*
+**Zrzut ekranu jest za duży.** Aplikacja zmniejsza zrzut ekranu przed wysłaniem. Jeśli nadal jest za duży, wiadomość jest wysyłana bez obrazu. Ekran z podziękowaniem pokazuje wtedy *Zrzut ekranu był za duży i nie został dołączony.*
 
 **Wysyłanie nie działa.** W oknie pojawia się komunikat, a Twój tekst zostaje. Są cztery przypadki:
 
 - *Wiadomość nie została przyjęta.* Sprawdź tekst i adres e-mail. Wiadomość, która składa się głównie z linków, zostaje odrzucona.
 - *Wysłano wiele wiadomości w krótkim czasie.* Spróbuj ponownie za godzinę.
 - *Wysyłanie się nie powiodło.* Nie ma połączenia albo serwer nie odpowiada. Spróbuj ponownie albo kliknij *Otwórz na GitHub*. Tego przycisku nie ma, jeśli wcześniejsza próba była niepewna (zob. niżej).
-- *Nie wiemy na pewno, czy Twoja wiadomość dotarła. Poczekaj minutę i wyślij ją ponownie; jeśli już tam jest, zobaczymy to automatycznie.* Połączenie zerwało się, po tym jak aplikacja wysłała Twoją wiadomość. Twój tekst zostaje. Nie ma przycisku *Otwórz na GitHub*, bo Twoja wiadomość jeszcze może dotrzeć. Tak zostaje, dopóki wiadomość nie zostanie wysłana albo już przyjęta, także jeśli w międzyczasie zamkniesz okno i otworzysz je ponownie.
+- *Nie wiemy na pewno, czy Twoja wiadomość dotarła. Poczekaj minutę i wyślij ją ponownie; jeśli już tam jest, zobaczymy to automatycznie.* Połączenie zerwało się po tym, jak aplikacja wysłała Twoją wiadomość. Twój tekst zostaje. Nie ma przycisku *Otwórz na GitHub*, bo Twoja wiadomość jeszcze może dotrzeć. Tak zostaje, dopóki wiadomość nie zostanie wysłana albo już przyjęta, także jeśli w międzyczasie zamkniesz okno i otworzysz je ponownie.
 
 **Twoja wiadomość jest już przyjęta.** Jeśli wyślesz wiadomość, która już tam jest, formularz zostaje, a nad nim widzisz: *Ta wiadomość jest już u nas. Chcesz coś dodać? Zmień wtedy tekst i wyślij ponownie.* Twój tekst zostaje, a adres e-mail jest zapamiętany. Kliknij *Zamknij*, jeśli nic nie chcesz dodać; następnym razem formularz jest pusty. Jeśli wpiszesz coś więcej, komunikat znika i możesz wysłać ponownie; przycisk nazywa się wtedy znowu *Zapisz i zamknij*, a Twój tekst zostaje.
 

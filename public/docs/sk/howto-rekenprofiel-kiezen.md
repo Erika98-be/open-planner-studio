@@ -50,13 +50,13 @@ Ak sa profil neskôr líši od šablóny, žltý blok to oznámi. Potom vyberte 
 
 ## Úskalia a správanie aplikácie
 
-**Dátumy sa posunú.** Iný profil môže zmeniť skutočné dátumy. Skontrolujte výsledok. Ak sa vám nepáči, vyberte *Vrátiť späť*: profil aj dátumy sa vrátia spolu.
+**Dátumy sa posunú.** Iný profil môže zmeniť dátumy v pláne. Skontrolujte výsledok. Ak sa vám nepáči, vyberte *Vrátiť späť*: profil aj dátumy sa vrátia spolu.
 
 **Žltý blok po príkaze Vrátiť späť.** Ak stlačíte *Vrátiť späť* alebo *Vykonať znova*, keď je otvorené okno nastavení projektu, blok sleduje stav projektu. Ak ste v bloku už niečo zmenili sami, vaša voľba zostane. Žltý blok potom oznámi, že *Použiť* túto voľbu obnoví.
 
 **Môže existovať najviac 100 šablón.** Ak ich je už 100, aplikácia šablónu neuloží a oznámi to. Najprv odstráňte jednu šablónu. Plné alebo chýbajúce úložisko aplikácie tiež zobrazí hlásenie.
 
-**Šablóny patria aplikácii, profil projektu.** Projekt má vždy vlastnú kópiu profilu. Ak šablónu neskôr zmeníte, projekt sa s ňou nezmení.
+**Šablóny patria aplikácii a profil patrí projektu.** Projekt má vždy vlastnú kópiu profilu. Ak šablónu neskôr zmeníte, projekt sa s ňou nezmení.
 
 **Nastavenia zo zdrojového súboru.** Ak vyberiete *Primavera P6* alebo *Microsoft Project* pre projekt, ktorý pochádza z iného súboru, nastavenia zo zdrojového súboru zostanú. Tu ich nemôžete zmeniť.
 

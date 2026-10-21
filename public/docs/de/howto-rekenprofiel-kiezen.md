@@ -25,7 +25,7 @@ Bis Sie auf *Anwenden* klicken, existiert die Änderung nur im Formular. Mit *R�
 ### Ein eigenes Profil erstellen
 
 1. Klicken Sie im Block *Berechnungsprofil und Berechnungsoptionen* neben der Auswahlliste auf *Neues Profil*.
-2. Geben Sie einen Namen ein. Die App schlägt *Kopie von* plus das gewählte Profil vor, zum Beispiel *Kopie von Open Planner Studio*.
+2. Geben Sie einen Namen ein. Die App schlägt den Namen *Kopie von* gefolgt vom Namen des gewählten Profils vor, zum Beispiel *Kopie von Open Planner Studio*.
 3. Klicken Sie auf *Erstellen*. Der Teil *Konventionen dieses Profils* klappt auf.
 4. Schalten Sie die Konventionen mit den Kontrollkästchen ein oder aus. Das Symbol i hinter einer Zeile zeigt die Erklärung dieser Konvention. Eine Konvention, die vom Basisprofil abweicht, bekommt die Markierung *zurück zur Basis*.
 5. Klicken Sie auf **Anwenden**. Erst dann berechnet das Projekt mit dem neuen Profil.
@@ -46,7 +46,7 @@ Eine Vorlage löschen Sie mit *Vorlage löschen*. Die App fragt vorher nach eine
 
 - Der Block *Berechnungsprofil und Berechnungsoptionen* zeigt das gewählte Profil.
 - Nach *Anwenden* meldet die App verschobene Vorgänge, zum Beispiel *Nach dem Anwenden wurden 4 Vorgänge verschoben.*
-- Ein oranger Block über den Berechnungsoptionen sagt, dass Ihre Berechnungsoptionen vom Standard des Profils abweichen. Das ist oft absichtlich. Wenn Sie trotzdem den Standard wollen, klicken Sie auf *Standardeinstellungen von … verwenden*.
+- Ein orangefarbener Block über den Berechnungsoptionen sagt, dass Ihre Berechnungsoptionen vom Standard des Profils abweichen. Das ist oft absichtlich. Wenn Sie trotzdem den Standard wollen, klicken Sie auf *Standardeinstellungen von … verwenden*.
 
 ## Fallstricke und was die App tut
 

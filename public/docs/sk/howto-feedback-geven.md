@@ -4,7 +4,7 @@ Cieľ: nahlásiť chybu alebo odovzdať nápad, voliteľne so snímkou obrazovky
 
 ## Kedy to potrebujete
 
-Plán vypočíta niečo, čomu nerozumiete, tlačidlo nerobí to, čo by malo, alebo v aplikácii niečo prehliadnete. Dobré hlásenie pomáha tvorcom nájsť problém. Preto aplikácia sama do hlásenia pridá verziu, operačný systém a jazyk. To, čo opíšete vy, rozhoduje o tom, či s tým môžu niečo urobiť: čo ste urobili, čo ste čakali a čo sa stalo.
+Plán vypočíta niečo, čomu nerozumiete, tlačidlo nerobí to, čo by malo, alebo vám v aplikácii niečo chýba. Dobré hlásenie pomáha tvorcom nájsť problém. Preto aplikácia sama do hlásenia pridá verziu, operačný systém a jazyk. To, čo opíšete vy, rozhoduje o tom, či s tým môžu niečo urobiť: čo ste urobili, čo ste čakali a čo sa stalo.
 
 ## Kroky
 
@@ -34,13 +34,13 @@ Aplikácia odošle vaše hlásenie do Open Feedback Studio od OpenAEC. Na to nep
 - *Hlásenie nebolo prijaté.* Skontrolujte text a e-mailovú adresu. Hlásenie, ktoré obsahuje hlavne odkazy, sa odmietne.
 - *Odoslali ste veľa hlásení za krátky čas.* Skúste to znova o hodinu.
 - *Odoslanie zlyhalo.* Chýba pripojenie alebo server neodpovedá. Skúste to znova alebo kliknite na *Otvoriť na GitHube*. Toto tlačidlo sa nezobrazí, ak bol predchádzajúci pokus neistý (pozri nižšie).
-- *Nie sme si istí, či sa vaše hlásenie doručilo. Počkajte minútu a potom ho odošlite znova; ak už tam je, zistíme to automaticky.* Spojenie sa prerušilo po tom, čo aplikácia hlásenie odoslala. Váš text zostane. Tlačidlo *Otvoriť na GitHube* tu nie je, lebo vaše hlásenie ešte môže prísť. Tak to zostane, kým sa hlásenie nedoručí, alebo ak ho už máme prijaté, aj keď okno medzitým zatvoríte a znova otvoríte.
+- *Nie sme si istí, či sa vaše hlásenie doručilo. Počkajte minútu a potom ho odošlite znova; ak už tam je, zistíme to automaticky.* Spojenie sa prerušilo po tom, čo aplikácia hlásenie odoslala. Váš text zostane. Tlačidlo *Otvoriť na GitHube* tu nie je, lebo vaše hlásenie ešte môže prísť. Tak to zostane, kým sa hlásenie neodošle alebo kým ho nemáme prijaté, aj keď okno medzitým zatvoríte a znova otvoríte.
 
 **Vaše hlásenie je už prijaté.** Ak odošlete hlásenie, ktoré je už prijaté, nad formulárom zostane toto: *Toto hlásenie už máme. Chcete niečo doplniť? Potom upravte text a odošlite ho znova.* Váš text zostane a vaša e-mailová adresa sa zapamätá. Ak nechcete nič doplniť, kliknite na *Zavrieť*; formulár bude pri ďalšom otvorení prázdny. Ak napíšete niečo viac, oznam zmizne a môžete odoslať znova; tlačidlo sa potom volá znova *Uložiť a zavrieť* a váš text sa zachová.
 
 **Otvoriť na GitHube.** Toto je cesta bez Open Feedback Studio. Na to potrebujete účet na GitHube. Bez snímky obrazovky sa stránka GitHubu, na ktorej vytvoríte nový záznam, otvorí hneď vo vašom prehliadači, s vaším názvom a popisom už vyplnenými. So snímkou najprv uvidíte *Takmer hotovo — vaša snímka obrazovky je v schránke.* Potom nasledujú štyri kroky. Kliknite na *OK, prejsť na GitHub*, kliknite do veľkého textového poľa stránky záznamu a stlačte Ctrl+V (Cmd+V na Macu). Potom dole kliknite na *Odoslať nový záznam*. Až potom sa vaše hlásenie odošle.
 
-**Vkladanie nefunguje.** Cez cestu GitHubu sa snímka obrazovky uloží aj ako súbor na vašom počítači. V desktopovej aplikácii okno uvádza cestu: *Nedá sa vložiť? Snímku sme uložili aj do* tej cesty *— presuňte tento súbor do textového poľa.* V prehliadači aplikácia stiahne obrázok ako `feedback-` s číslom a príponou `.png`. Nájdete ho v priečinku na stiahnuté súbory a presuňte ho do textového poľa.
+**Vkladanie nefunguje.** Pri odoslaní cez GitHub sa snímka obrazovky uloží aj ako súbor na vašom počítači. V desktopovej aplikácii okno uvádza cestu: *Nedá sa vložiť? Snímku sme uložili aj do* tej cesty *— presuňte tento súbor do textového poľa.* V prehliadači aplikácia stiahne obrázok ako `feedback-` s číslom a príponou `.png`. Nájdete ho v priečinku na stiahnuté súbory a presuňte ho do textového poľa.
 
 **Snímka obrazovky zlyhala.** Zobrazí sa: *Vytvorenie snímky obrazovky zlyhalo. Spätnú väzbu môžete odoslať aj bez snímky.* Začiarkavacie políčko sa vypne a hlásenie môžete odoslať bez obrázka.
 

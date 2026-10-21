@@ -4,12 +4,12 @@ Objetivo: comunicar um erro ou transmitir uma ideia, se quiser com uma captura d
 
 ## Quando precisa disto
 
-O planeamento calcula algo que não compreende, um botão não faz o que deveria ou não encontra algo na aplicação. Um bom relatório ajuda os responsáveis pela aplicação a encontrar o problema. Por isso, a própria aplicação coloca no seu relatório a versão, o sistema operativo e o idioma. O que descreve por si decide se podem fazer algo com ele: o que fez, o que esperava e o que aconteceu.
+O planeamento calcula algo que não compreende, um botão não faz o que deveria ou sente a falta de algo na aplicação. Uma boa mensagem ajuda os responsáveis pela aplicação a encontrar o problema. Por isso, a própria aplicação coloca no seu relatório a versão, o sistema operativo e o idioma. O que descreve por si decide se podem fazer algo com ele: o que fez, o que esperava e o que aconteceu.
 
 ## Passos
 
 1. Clique no botão *Enviar feedback* no topo da janela. Esse botão está sempre na barra de título. O texto dele muda a cada dez minutos: *Enviar feedback*, *Reportar um erro* e *Sugerir uma nova funcionalidade*. É sempre o mesmo botão. Abre-se a janela *Enviar feedback*.
-2. Escolha o tipo de mensagem. *Algo não funciona* serve para um erro: algo não faz o que devia. *Ideia* serve para algo que lhe falta ou que quer diferente. *Pergunta ou comentário* serve para o resto. *Algo não funciona* está selecionado por padrão.
+2. Escolha o tipo de mensagem. *Algo não funciona* serve para um erro: algo não faz o que devia. *Ideia* serve para algo que lhe falta ou que quer diferente. *Pergunta ou comentário* serve para o resto. *Algo não funciona* está selecionado por predefinição.
 3. Preencha o *Título* e depois a *Descrição*. Os campos vazios mostram um exemplo: um título como *Ex.: o caminho crítico salta depois de guardar*, e para a descrição a pergunta *O que fez, o que esperava e o que aconteceu?* Enquanto o botão *Enviar* estiver cinzento, uma linha cinzenta ao lado indica o motivo, por exemplo *Introduza um título.* ou que tem de escrever pelo menos 10 caracteres no título e na descrição juntos.
 4. Se quiser uma resposta, preencha o seu *Endereço de email*. Esse campo é opcional. A aplicação guarda o endereço depois de um envio bem-sucedido, por isso já lá está da próxima vez.
 5. Se quiser mostrar algo, ative *Anexar captura de ecrã*. A aplicação tira então uma imagem da aplicação sem esta janela. Pouco depois vê uma pequena pré-visualização com três botões ao lado: *Anotar*, *Refazer* e *Remover*.
@@ -48,4 +48,4 @@ A aplicação envia a sua mensagem para a Open Feedback Studio, da OpenAEC. Para
 
 ## Ver também
 
-- [Atualizar a aplicação](docs://howto-app-bijwerken): antes de enviar um relatório, verifique se tem a versão mais recente.
+- [Atualizar a aplicação](docs://howto-app-bijwerken): antes de enviar uma mensagem, verifique se tem a versão mais recente.

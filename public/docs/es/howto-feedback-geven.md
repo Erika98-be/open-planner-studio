@@ -4,7 +4,7 @@ Objetivo: informar de un error o transmitir una idea, opcionalmente con una capt
 
 ## Cuándo lo necesita
 
-La planificación calcula algo que no entiende, un botón no hace lo que debe o se le escapa algo en la aplicación. Un buen informe ayuda a los creadores a encontrar el problema. Por eso la aplicación añade por sí misma la versión, el sistema operativo y el idioma a su informe. Lo que usted mismo describe decide si pueden hacer algo con él: qué hizo, qué esperaba y qué ocurrió.
+La planificación calcula algo que no entiende, un botón no hace lo que debe o se le escapa algo en la aplicación. Un buen informe ayuda a los desarrolladores a encontrar el problema. Por eso la aplicación añade por sí misma la versión, el sistema operativo y el idioma a su informe. Lo que usted mismo describe decide si pueden hacer algo con él: qué hizo, qué esperaba y qué ocurrió.
 
 ## Pasos
 
@@ -12,20 +12,20 @@ La planificación calcula algo que no entiende, un botón no hace lo que debe o 
 2. Elija el tipo de informe. *Algo no funciona* es para un error: algo no hace lo que debería. *Idea* es para algo que echa de menos o que quiere que sea diferente. *Pregunta o comentario* es para lo demás. *Algo no funciona* viene seleccionado de forma predeterminada.
 3. Rellene el *Título* y después la *Descripción*. Los campos vacíos muestran un ejemplo: un título como *Ej.: La ruta crítica cambia al guardar*, y para la descripción la pregunta *¿Qué hizo, qué esperaba y qué ocurrió?* Mientras el botón *Enviar* esté gris, una línea gris junto a él indica el motivo, por ejemplo *Escriba un título.* o que debe escribir al menos 10 caracteres entre el título y la descripción juntos.
 4. Si quiere recibir una respuesta, rellene su *Correo electrónico*. Ese campo es opcional. La aplicación recuerda la dirección tras un informe correcto, así que ya está ahí la próxima vez.
-5. Si quiere mostrar algo, active *Adjuntar captura de pantalla*. La aplicación hace entonces una imagen de la aplicación sin esta ventana. Un momento después ve una vista previa pequeña con tres botones al lado: *Anotar*, *Repetir captura* y *Quitar*.
+5. Si quiere mostrar algo, active *Adjuntar captura de pantalla*. La aplicación hace entonces una captura de la pantalla sin esta ventana. Un momento después ve una vista previa pequeña con tres botones al lado: *Anotar*, *Repetir captura* y *Quitar*.
 6. *Anotar* abre un editor. En él, coloca flechas, rectángulos, líneas a mano alzada y texto sobre la imagen. Con *Cubrir* dibuja una zona negra sobre algo que no debe enviarse, como un nombre o un importe. Esa parte desaparece de verdad de la imagen que envía la aplicación. Usted elige el color y deshace su última acción con *Deshacer*, o empieza de nuevo con *Borrar todo*. Haga clic en *Listo* para conservar los cambios, o en *Cancelar* (o Esc) para descartarlos.
 7. *Repetir captura* hace una captura nueva y borra sus anotaciones. *Quitar* quita la captura de pantalla y desactiva la casilla.
 8. Mire la línea gris *Enviado con* debajo del formulario. Muestra lo que la aplicación envía por sí misma: la versión, el sistema operativo y el idioma, por ejemplo *Enviado con: v2026.10.1 · Windows · English*.
-9. Haga clic en *Enviar*. Mientras envía, el botón dice *Enviando…*.
+9. Haga clic en *Enviar*. Mientras se envía, el botón dice *Enviando…*.
 10. Ve *Gracias, su mensaje se ha enviado.* Si se creó una incidencia en GitHub para su informe, también aparece el botón *Ver en GitHub*. Haga clic en *Cerrar*.
 
 ## Adónde va su informe
 
-La aplicación envía su informe a Open Feedback Studio de OpenAEC. Para ello no necesita una cuenta, tampoco en GitHub. Los creadores ven su informe en su resumen. Si la aplicación está conectada a GitHub allí, Open Feedback Studio también lo convierte en una incidencia pública en GitHub. Con *Algo no funciona* la incidencia recibe la etiqueta *bug*, con *Idea* la etiqueta *enhancement*. Debajo de su descripción aparece entonces una línea con la versión de Open Planner Studio, su sistema operativo y el idioma de la aplicación.
+La aplicación envía su informe a Open Feedback Studio de OpenAEC. Para ello no necesita una cuenta, tampoco en GitHub. Los desarrolladores ven su informe en su resumen. Si la aplicación está conectada a GitHub allí, Open Feedback Studio también lo convierte en una incidencia pública en GitHub. Con *Algo no funciona* la incidencia recibe la etiqueta *bug*, con *Idea* la etiqueta *enhancement*. Debajo de su descripción aparece entonces una línea con la versión de Open Planner Studio, su sistema operativo y el idioma de la aplicación.
 
 ## Problemas posibles y qué hace entonces la aplicación
 
-**Su informe puede hacerse público.** No ponga nada en él que no quiera compartir. Eso también vale para la captura de pantalla: la imagen muestra todo lo que es visible en la aplicación en ese momento, como nombres de tareas y recursos de su proyecto. La aplicación hace la captura en el momento en que activa *Adjuntar captura de pantalla*. Si la pantalla todavía no está bien, cierre la ventana, deje la pantalla bien, vuelva a abrir la ventana y haga clic en *Repetir captura*. Utilice *Cubrir* para ocultar lo que no quiere mostrar.
+**Su informe puede hacerse público.** No ponga nada en él que no quiera compartir. Eso también vale para la captura de pantalla: la imagen muestra todo lo que es visible en la aplicación en ese momento, como nombres de tareas y recursos de su proyecto. La aplicación hace la captura en el momento en que activa *Adjuntar captura de pantalla*. Si la pantalla todavía no está bien, cierre la ventana, ajuste la pantalla como quiere, vuelva a abrir la ventana y haga clic en *Repetir captura*. Utilice *Cubrir* para ocultar lo que no quiere mostrar.
 
 **La captura de pantalla es demasiado grande.** La aplicación reduce la captura antes de enviarla. Si sigue siendo demasiado grande, su informe se envía sin imagen. La pantalla de agradecimiento dice entonces *La captura de pantalla era demasiado grande y no se ha enviado.*
 

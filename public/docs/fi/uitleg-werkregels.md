@@ -8,7 +8,7 @@ Kolme suuretta on sidottu toisiinsa:
 
 - **Kesto**: kuinka kauan tehtävä kestää, työpäivinä tai tunteina.
 - **Kuormitusaste**: kuinka paljon resurssi työskentelee tehtävässä työpäivää kohden. *Ominaisuudet* -paneelissa tämän nimi on *Kuormitusaste*, muissa ikkunoissa *Kuormitusaste/pv*. Kuormitusaste 1 tarkoittaa yhtä rappaajaa koko päivän, 2 tarkoittaa kahta ja 0,5 tarkoittaa puolta päivää.
-- **Työ**: kokonaistyötunnit, jonka resurssi käyttää tehtävään.
+- **Työ**: kokonaistyötuntien määrä, jonka resurssi käyttää tehtävään.
 
 Summa on: työ = kesto × kuormitusaste × tuntia työpäivässä. Tuntia työpäivässä tulee tehtävän kalenterista. Neljän työpäivän rappaus yhdellä rappaajalla on 8 tunnin työpäivällä 4 × 1 × 8 = 32 tuntia työtä.
 
@@ -33,13 +33,13 @@ Jos tehtävätyyppi muuttaa tehtävän kestoa, aikataulu ei ole enää ajan tasa
 - **Kiinteä työmäärä** (*Kesto seuraa työstä ja kuormitusasteesta.*). Työ on kiinteä, ja kesto seuraa työstä ja kuormitusasteesta.
 - **Kiinteä yksikkömäärä** (*Kesto seuraa työstä ja kuormitusasteesta.*). Kuormitusaste on kiinteä, ja kesto seuraa työstä.
 
-Kaksi tehtävätyyppiä jättää keston rauhaan. Kahdella muulla kesto liikkuu mukana, kun muutetaan kuormitusastetta, työtä tai resurssien määrää. Yhden resurssin kohdalla Kiinteä työmäärä ja Kiinteä yksikkömäärä tekevät saman. Ne eroavat, kun kestoa muutetaan itse: Kiinteällä työmäärällä työ pysyy ja kuormitusaste sopeutuu, Kiinteällä yksikkömäärällä kuormitusaste pysyy ja työ kasvaa mukana. Ne eroavat myös, kun tehtävällä on enemmän resursseja (katso jäljempänä).
+Kahdessa tehtävätyypissä sovellus ei muuta kestoa. Kahdella muulla kesto liikkuu mukana, kun muutetaan kuormitusastetta, työtä tai resurssien määrää. Yhden resurssin kohdalla Kiinteä työmäärä ja Kiinteä yksikkömäärä tekevät saman. Ne eroavat, kun kestoa muutetaan itse: Kiinteällä työmäärällä työ pysyy ja kuormitusaste sopeutuu, Kiinteällä yksikkömäärällä kuormitusaste pysyy ja työ kasvaa mukana. Ne eroavat myös, kun tehtävällä on enemmän resursseja (katso jäljempänä).
 
 Esimerkit alla näyttävät, mitä kukin tehtävätyyppi tekee.
 
 ### Pyöristys
 
-Sovellus pyöristää summasta saadun keston ylöspäin. Tehtävän kesto pyöristetään kokonaisiin työpäiviin, jos se on päivissä, ja kokonaisiin minuutteihin, jos se on tunneissa. Työ ja kuormitusaste pysyvät sellaisina kuin ne syötettiin tai sovellus ne summasta otti. Siksi summa ei joskus täsmää tarkasti. Alla oleva esimerkki näyttää, mitä silloin tapahtuu.
+Sovellus pyöristää summasta saadun keston ylöspäin. Tehtävän kesto pyöristetään kokonaisiin työpäiviin, jos se on päivissä, ja kokonaisiin minuutteihin, jos se on tunneissa. Työ ja kuormitusaste pysyvät sellaisina kuin ne syötettiin tai kuten sovellus ne laski summasta. Siksi summa ei joskus täsmää tarkasti. Alla oleva esimerkki näyttää, mitä silloin tapahtuu.
 
 ### Useita resursseja
 
@@ -49,7 +49,7 @@ Esimerkki: kahdella resurssilla on kummallakin 32 tuntia työtä ja kuormitusast
 
 ### Edistyminen
 
-Jos tehtävässä on jo edistymistä, tehtävätyyppi toimii jäljellä olevaan osaan: jäljellä olevaan kestoon ja jäljellä olevaan työhön. *Ominaisuudet* -paneelissa tämä työ on sarakkeessa *Työ (h)*. Tehty työ säilyy.
+Jos tehtävässä on jo edistymistä, tehtävätyyppi vaikuttaa jäljellä olevaan osaan: jäljellä olevaan kestoon ja jäljellä olevaan työhön. *Ominaisuudet* -paneelissa tämä työ on sarakkeessa *Työ (h)*. Tehty työ säilyy.
 
 ### Tuntitehtävät
 
@@ -95,7 +95,7 @@ Kiinteällä työmäärällä kuormitusasteeksi asetetaan 3. Työ on 32 tuntia, 
 
 Kahdella resurssilla, joilla on eri kuormitusasteet, toimii sama tapa. Kun kiinteä työmäärä on päällä ja rappaajan kuormitusaste on 1, lisätään toinen resurssi, esimerkiksi *Plasterer 2*, kuormitusasteella 2. Sovellus jakaa 32 tuntia suhteessa 1 : 2, eli 10,7 ja 21,3 tuntia. Molemmat tarvitsevat silloin 1,33 työpäivää, ja kesto on 2 työpäivää.
 
-Tiedosto P6:sta tai MS Project -ohjelmasta voi myös sisältää arvon *Työ (jäljellä)*, joka ei ole yhtä suuri kuin kuormitusaste × jäljellä oleva kesto. Silloin näkyy sama varoitusmerkki. Sovellus ei muuta tätä työtä itse. Jos muutat tällaisen tehtävän kestoa, sovellus noudattaa tehtävätyyppiä, myös silloin kun jäljellä oleva työ tuli tiedostosta. Tehtävätyypeissä *Kiinteä kesto ja kuormitusaste* ja *Kiinteä yksikkömäärä* jäljellä oleva työ muuttuu arvoon kuormitusaste × uusi jäljellä oleva kesto. Tehtävätyypeissä *Kiinteä kesto ja työmäärä* ja *Kiinteä työmäärä* työ pysyy, ja kuormitusaste sopeutuu. Jos tiedostosta tuleva jäljellä oleva työ katoaa tällä tavoin, saat viestin, jossa on vanha ja uusi tuntimäärä. Ctrl+Z palauttaa vanhan arvon. Varoitusmerkin selitys kertoo tehtäväkohtaisesti, kumpi kahdesta tapahtuu.
+Tiedosto P6:sta tai MS Project -ohjelmasta voi myös sisältää arvon *Työ (jäljellä)*, joka ei ole yhtä suuri kuin kuormitusaste × jäljellä oleva kesto. Silloin näkyy sama varoitusmerkki. Sovellus ei muuta tätä työtä itse. Jos tällaisen tehtävän kestoa muutetaan, sovellus noudattaa tehtävätyyppiä, myös silloin kun jäljellä oleva työ tuli tiedostosta. Tehtävätyypeissä *Kiinteä kesto ja kuormitusaste* ja *Kiinteä yksikkömäärä* jäljellä oleva työ muuttuu arvoon kuormitusaste × uusi jäljellä oleva kesto. Tehtävätyypeissä *Kiinteä kesto ja työmäärä* ja *Kiinteä työmäärä* työ pysyy, ja kuormitusaste sopeutuu. Jos tiedostosta tuleva jäljellä oleva työ katoaa tällä tavoin, saat viestin, jossa on vanha ja uusi tuntimäärä. Ctrl+Z palauttaa vanhan arvon. Varoitusmerkin selitys kertoo tehtäväkohtaisesti, kumpi kahdesta tapahtuu.
 
 ### Toinen kalenteri
 
@@ -115,7 +115,7 @@ Inner cavity leaf -tehtävä vie 5 työpäivää, ja se on 40% valmis: 2 työpä
 
 **Ilman resurssikohdistusta tehtävätyyppi ei tee mitään.** Silloin ei ole kuormitusastetta eikä työtä, johon kestoa voidaan sitoa.
 
-**Tiedostot MS Project -ohjelmasta tai Primavera P6:sta näyttävät aina tehtävätyypin.** MS Project -ohjelmasta tuodussa tehtävässä sovellus säilyttää joskus työmäärään perustuvan asetuksen. Tämä tallennettu asetus muuttaa kahta tapausta. Kun *Kiinteä kesto ja työmäärä* on valittu ja tehtävä on työmäärään perustuva, kun kestoa muutetaan, työ liikkuu mukana kuormitusasteen sijaan. Kun *Kiinteä yksikkömäärä* on valittu ja tehtävä ei ole työmäärään perustuva, työ liikkuu mukana, kun resurssi lisätään tai poistetaan, ja kesto pysyy. Sovelluksessa luoduilla tehtävillä ei ole tätä asetusta. I-kuvakkeen takana oleva selitys ottaa tämän asetuksen huomioon.
+**Tiedostot MS Project -ohjelmasta tai Primavera P6:sta näyttävät aina tehtävätyypin.** MS Project -ohjelmasta tuodussa tehtävässä sovellus säilyttää joskus työmäärään perustuvan asetuksen. Tämä tallennettu asetus muuttaa kahta tapausta. Kun *Kiinteä kesto ja työmäärä* on valittu ja tehtävä on työmäärään perustuva, työ liikkuu mukana kuormitusasteen sijaan, kun kestoa muutetaan. Kun *Kiinteä yksikkömäärä* on valittu ja tehtävä ei ole työmäärään perustuva, työ liikkuu mukana, kun resurssi lisätään tai poistetaan, ja kesto pysyy. Sovelluksessa luoduilla tehtävillä ei ole tätä asetusta. I-kuvakkeen takana oleva selitys ottaa tämän asetuksen huomioon.
 
 ## Katso myös
 

@@ -4,7 +4,7 @@ Cel: planować zadania w godzinach pracy, obok zadań w dniach.
 
 ## Kiedy jest to potrzebne
 
-Dźwig wynajmujesz na godziny, nie na dni. Wylewanie trwające sześć godzin nie wypełnia całego dnia roboczego. Ekipa nocna pracuje o innych porach niż ekipa dzienna. Do takiej pracy chcesz czas trwania w godzinach oraz początek i zakończenie o konkretnej godzinie. Włączasz to również wtedy, gdy otworzysz plik, a aplikacja zgłasza *Ten plik zawiera planowanie godzinowe.* Dlaczego aplikacja liczy dni i godziny inaczej, przeczytasz w [Dni i godziny](docs://uitleg-dagen-en-uren).
+Dźwig wynajmujesz na godziny, nie na dni. Betonowanie trwające sześć godzin nie wypełnia całego dnia roboczego. Ekipa nocna pracuje o innych porach niż ekipa dzienna. Do takiej pracy chcesz czas trwania w godzinach oraz początek i zakończenie o konkretnej godzinie. Włączasz to również wtedy, gdy otworzysz plik, a aplikacja zgłasza *Ten plik zawiera planowanie godzinowe.* Dlaczego aplikacja liczy dni i godziny inaczej, przeczytasz w [Dni i godziny](docs://uitleg-dagen-en-uren).
 
 ## Kroki
 

@@ -10,7 +10,7 @@ Trzy wielkości są ze sobą powiązane:
 - **Jednostki**: ile zasobu pracuje przy zadaniu na jeden dzień roboczy. W panelu *Właściwości* nazywa się to *Jednostki*, w innych oknach *Jedn./dzień*. Jednostki równe 1 to jeden tynkarz przez cały dzień, 2 to dwóch tynkarzy, a 0,5 to pół dnia.
 - **Praca**: łączna liczba godzin, które zasób spędza na zadaniu.
 
-Suma wygląda tak: praca = czas trwania × jednostki × godziny na dzień roboczy. Godziny na dzień roboczy pochodzą z kalendarza zadania. Plastering trwający cztery dni robocze z jednym tynkarzem to przy 8-godzinnym dniu roboczym 4 × 1 × 8 = 32 godziny pracy.
+Wzór wygląda tak: praca = czas trwania × jednostki × godziny na dzień roboczy. Godziny na dzień roboczy pochodzą z kalendarza zadania. Plastering trwający cztery dni robocze z jednym tynkarzem to przy 8-godzinnym dniu roboczym 4 × 1 × 8 = 32 godziny pracy.
 
 Jeśli zmienisz jedną z tych trzech wielkości, co najmniej jedna z pozostałych dwóch musi się przesunąć. Inaczej suma przestaje się zgadzać. O tym, która to będzie, decyduje typ zadania. Ustawiasz go dla każdego zadania w panelu *Właściwości*. Aplikacja pokazuje typ zadania i pracę dopiero po ich włączeniu. Jak to działa, opisuje [Wybieranie typu zadania](docs://howto-werkregel-kiezen).
 
@@ -26,14 +26,14 @@ Jeśli typ zadania zmienia czas trwania zadania, harmonogram staje się nieaktua
 
 ### Cztery typy zadań
 
-W panelu *Właściwości* obok listy rozwijanej *Typ zadania* jest ikona i. Najedź na nią, kliknij ją lub dotknij, a aplikacja wyjaśni typ zadania, który obowiązuje w tej chwili. W otwartej liście rozwijanej ma każda opcja też taką ikonę i. Wyjaśnienie zaczyna się pogrubionym zdaniem. Cztery typy zadań, z tym zdaniem z aplikacji:
+W panelu *Właściwości* obok listy rozwijanej *Typ zadania* jest ikona i. Najedź na nią, kliknij ją lub dotknij, a aplikacja wyjaśni typ zadania, który obowiązuje w tej chwili. W otwartej liście rozwijanej każda opcja ma też taką ikonę i. Wyjaśnienie zaczyna się pogrubionym zdaniem. Cztery typy zadań, z tym zdaniem z aplikacji:
 
-- **Stały czas trwania i jednostki** (*Praca wynika z czasu trwania i jednostek.*). To jest ustawienie domyślne. Aplikacja nigdy sama nie zmienia czasu trwania, a praca wynika z czasu trwania i jednostek. Jeśli wpiszesz pracę sam, aplikacja dostosuje jednostki, bo czas trwania jest stały.
+- **Stały czas trwania i jednostki** (*Praca wynika z czasu trwania i jednostek.*). To jest ustawienie domyślne. Aplikacja nigdy sama nie zmienia czasu trwania, a praca wynika z czasu trwania i jednostek. Jeśli wpiszesz pracę samodzielnie, aplikacja dostosuje jednostki, bo czas trwania jest stały.
 - **Stały czas trwania i praca** (*Jednostki wynikają z czasu trwania i pracy.*). Aplikacja nigdy sama nie zmienia czasu trwania. Jeśli zmienisz czas trwania, praca zostaje, a jednostki się dostosowują.
 - **Stała praca** (*Czas trwania wynika z pracy i jednostek.*). Praca jest stała, a czas trwania wynika z pracy i jednostek.
 - **Stałe jednostki** (*Czas trwania wynika z pracy i jednostek.*). Jednostki są stałe, a czas trwania wynika z pracy.
 
-Dwa typy zadań zostawiają czas trwania w spokoju. Przy pozostałych dwóch czas trwania przesuwa się, gdy zmienisz jednostki, pracę albo liczbę zasobów. Przy jednym zasobie stała praca i stałe jednostki działają tam dokładnie tak samo. Różnią się, gdy sam zmienisz czas trwania. Przy typie stała praca pozostaje bez zmian, a jednostki się dostosowują. Przy typie stałe jednostki pozostają bez zmian, a praca rośnie razem z czasem trwania. Różnią się też, gdy przy zadaniu jest więcej zasobów (zobacz niżej).
+Dwa typy zadań nie zmieniają czasu trwania. Przy pozostałych dwóch czas trwania przesuwa się, gdy zmienisz jednostki, pracę albo liczbę zasobów. Przy jednym zasobie stała praca i stałe jednostki działają tam dokładnie tak samo. Różnią się, gdy sam zmienisz czas trwania. Przy typie stała praca praca się nie zmienia, a jednostki się dostosowują. Przy typie stałe jednostki pozostają bez zmian, a praca rośnie razem z czasem trwania. Różnią się też, gdy przy zadaniu jest więcej zasobów (zobacz niżej).
 
 Przykłady niżej pokazują, co robi każdy typ zadania.
 
@@ -43,7 +43,7 @@ Czas trwania, który wynika z sumy, aplikacja zaokrągla w górę. Dla zadania w
 
 ### Kilka zasobów
 
-Jeśli zadanie ma kilka zasobów, obowiązują dwie zasady. Przy typach zadań stały czas trwania i praca, stała praca i stałe jednostki łączna praca zostaje ta sama, gdy dodasz lub usuniesz zasób. Aplikacja dzieli ją wtedy proporcjonalnie do jednostek. Przy typie stały czas trwania i jednostki nowy zasób wnosi zamiast tego własną pracę. Przy typach stała praca i stałe jednostki najwolniejszy zasób decyduje o czasie trwania: dla każdego zasobu to praca podzielona przez jednostki, a liczy się największy wynik.
+Jeśli zadanie ma kilka zasobów, obowiązują dwie zasady. Przy typach *Stały czas trwania i praca*, *Stała praca* i *Stałe jednostki* łączna praca zostaje ta sama, gdy dodasz lub usuniesz zasób. Aplikacja dzieli ją wtedy proporcjonalnie do jednostek. Przy typie stały czas trwania i jednostki nowy zasób wnosi zamiast tego własną pracę. Przy typach stała praca i stałe jednostki najwolniejszy zasób decyduje o czasie trwania: dla każdego zasobu to praca podzielona przez jednostki, a liczy się największy wynik.
 
 Przykład: dwa zasoby mają każdy po 32 godziny pracy i jednostki 1, razem 4 dni robocze. Ustawiasz jednostki pierwszego na 0,5. Czas trwania wynosi wtedy 8 dni roboczych. Przy typie stała praca drugi zasób zachowuje swoje 32 godziny pracy, a jego jednostki spadają do 0,5. Przy typie stałe jednostki drugi zasób zachowuje jednostki 1, a jego praca rośnie do 64 godzin.
 
@@ -111,7 +111,7 @@ Zadanie inner cavity leaf trwa 5 dni roboczych i jest wykonane w 40%: 2 dni robo
 
 **„Jeśli wybiorę typ zadania, mój harmonogram się zmieni”.** Nie. Wybór nie zmienia żadnej liczby. Dopiero przy następnej zmianie typ zadania decyduje, co się przesunie. Przy typie, który chroni pracę, aplikacja ustala pracę w chwili wyboru, więc jest liczba do ochrony. Takie zadanie ma wtedy zapisaną wartość w polu *Praca (g)*.
 
-**„Czas trwania zmienił się bez mojej zmiany”.** Tak może być po zmianie jednostek, pracy, liczby zasobów albo godzin dziennie, przy typach *Stała praca* lub *Stałe jednostki*. Pasek stanu wtedy pokazuje, że harmonogram jest nieaktualny. Naciśnij **Oblicz** (F5), aby zobaczyć nowe daty.
+**„Czas trwania zmienił się, choć niczego nie ruszałem”.** Tak może być po zmianie jednostek, pracy, liczby zasobów albo godzin dziennie, przy typach *Stała praca* lub *Stałe jednostki*. Pasek stanu wtedy pokazuje, że harmonogram jest nieaktualny. Naciśnij **Oblicz** (F5), aby zobaczyć nowe daty.
 
 **Bez przydziału typ zadania nic nie robi.** Nie ma wtedy jednostek ani pracy, z którymi można by powiązać czas trwania.
 

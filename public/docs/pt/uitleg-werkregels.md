@@ -43,7 +43,7 @@ A duração que resulta da soma é arredondada para cima pela aplicação. Numa 
 
 ### Vários recursos
 
-Se uma tarefa tiver vários recursos, aplicam-se dois acordos. Com Duração e trabalho fixos, Trabalho fixo e Unidades fixas, o trabalho total mantém-se quando acrescenta ou remove um recurso. A aplicação divide-o então em proporção às unidades. Com Duração e unidades fixas, um novo recurso traz o seu próprio trabalho. Com Trabalho fixo e Unidades fixas, o recurso mais lento decide a duração: por recurso, é o trabalho dividido pelas unidades, e conta o maior resultado.
+Se uma tarefa tiver vários recursos, aplicam-se duas regras. Com Duração e trabalho fixos, Trabalho fixo e Unidades fixas, o trabalho total mantém-se quando acrescenta ou remove um recurso. A aplicação divide-o então em proporção às unidades. Com Duração e unidades fixas, um novo recurso traz o seu próprio trabalho. Com Trabalho fixo e Unidades fixas, o recurso mais lento decide a duração: por recurso, é o trabalho dividido pelas unidades, e conta o maior resultado.
 
 Um exemplo: dois recursos têm cada um 32 horas de trabalho e unidades de 1, ou seja, 4 dias úteis no total. Se definir as unidades do primeiro para 0,5, a duração passa então a ser de 8 dias úteis. Com Trabalho fixo, o segundo recurso mantém as suas 32 horas de trabalho e as unidades descem para 0,5. Com Unidades fixas, o segundo mantém as unidades de 1 e o trabalho cresce para 64 horas.
 
@@ -99,7 +99,7 @@ Um ficheiro do P6 ou do MS Project também pode ter um *Trabalho (rest.)* que n�
 
 ### Um calendário diferente
 
-Com Trabalho fixo, o dia útil do calendário passa de 8 para 6 horas. O trabalho mantém-se em 32 horas, por isso a duração passa a 32 ÷ 6 = 5,33, arredondada para cima para 6 dias úteis. A forma como a aplicação conta os dias úteis e os horários de trabalho explica-se em [Calendários e dias úteis](docs://uitleg-kalenders). A aplicação informa: *Após a alteração do calendário, o tipo de tarefa ajustou a duração de 1 tarefa (o trabalho mantém-se, as horas por dia mudaram).*
+Com Trabalho fixo, o dia útil do calendário passa de 8 para 6 horas. O trabalho mantém-se em 32 horas, por isso a duração passa a 32 ÷ 6 = 5,33, arredondada para cima para 6 dias úteis. A forma como a aplicação conta os dias úteis e as horas de trabalho explica-se em [Calendários e dias úteis](docs://uitleg-kalenders). A aplicação informa: *Após a alteração do calendário, o tipo de tarefa ajustou a duração de 1 tarefa (o trabalho mantém-se, as horas por dia mudaram).*
 
 ### Uma tarefa com progresso
 
@@ -107,7 +107,7 @@ O inner cavity leaf demora 5 dias úteis e está 40% concluído: 2 dias úteis e
 
 ## Consequências e ideias erradas
 
-**«Trabalho fixo significa que a duração é fixa.»** Não, é quase o contrário. Com *Duração e unidades fixas* e *Duração e trabalho fixos*, a duração é fixa. Com *Trabalho fixo* e *Unidades fixas*, a duração decorre das outras duas.
+**«Trabalho fixo significa que a duração é fixa.»** Não, é precisamente o contrário. Com *Duração e unidades fixas* e *Duração e trabalho fixos*, a duração é fixa. Com *Trabalho fixo* e *Unidades fixas*, a duração decorre das outras duas.
 
 **«Se eu escolher um tipo de tarefa, o meu planeamento muda.»** Não. Escolher não altera nenhum número. Só na sua próxima alteração o tipo de tarefa decide o que acompanha. Com um tipo de tarefa que protege o trabalho, a aplicação fixa o trabalho no momento em que escolhe, para haver um número a proteger. Essa tarefa tem então um *Trabalho (h)* guardado.
 
@@ -122,4 +122,4 @@ O inner cavity leaf demora 5 dias úteis e está 40% concluído: 2 dias úteis e
 - [Escolher um tipo de tarefa](docs://howto-werkregel-kiezen): os passos para definir o tipo de tarefa de uma tarefa.
 - [Atribuir recursos com uma curva](docs://howto-resource-toewijzen): colocar um recurso numa tarefa, com unidades e distribuição.
 - [Dias e horas](docs://uitleg-dagen-en-uren): como a aplicação converte dias e horas.
-- [Calendários e dias úteis](docs://uitleg-kalenders): como a aplicação conta os dias úteis e os horários de trabalho.
+- [Calendários e dias úteis](docs://uitleg-kalenders): como a aplicação conta os dias úteis e as horas de trabalho.

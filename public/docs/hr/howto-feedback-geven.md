@@ -21,13 +21,13 @@ Raspored izračunava nešto što ne razumijete, gumb ne radi kako bi trebao ili 
 
 ## Kamo ide vaša prijava
 
-Aplikacija šalje vašu prijavu u Open Feedback Studio od strane OpenAEC-a. Za to vam nije potreban račun, ni na GitHubu. Tvorci vide vašu prijavu u svom pregledu. Ako je aplikacija tamo povezana s GitHubom, Open Feedback Studio prijavu pretvara i u javni problem na GitHubu. Uz *Nešto ne radi* problem dobiva oznaku *bug*, uz *Ideja* oznaku *enhancement*. Ispod vašeg opisa se tada nalazi redak s verzijom Open Planner Studio, vašim operacijskim sustavom i jezikom aplikacije.
+Aplikacija šalje vašu prijavu u Open Feedback Studio tvrtke OpenAEC. Za to vam nije potreban račun, ni na GitHubu. Tvorci vide vašu prijavu u svom pregledu. Ako je aplikacija tamo povezana s GitHubom, Open Feedback Studio prijavu pretvara i u javni problem na GitHubu. Uz *Nešto ne radi* problem dobiva oznaku *bug*, uz *Ideja* oznaku *enhancement*. Ispod vašeg opisa se tada nalazi redak s verzijom Open Planner Studio, vašim operacijskim sustavom i jezikom aplikacije.
 
 ## Zamke i što aplikacija tada radi
 
-**Vaša prijava može postati javna.** Ne stavljajte u nju ništa što ne želite podijeliti. To vrijedi i za snimku zaslona: slika prikazuje sve što je u tom trenutku vidljivo u aplikaciji, na primjer nazive zadataka i resursa vašeg projekta. Aplikacija snimku zaslona pravi u trenutku kad uključite *Priloži snimku zaslona*. Ako ekran još nije ispravan, zatvorite prozor, postavite ekran kako treba, ponovno otvorite prozor i kliknite *Ponovno snimi*. Upotrijebite *Prekrij* da sakrijete ono što ne želite pokazati.
+**Vaša prijava može postati javna.** Ne stavljajte u nju ništa što ne želite podijeliti. To vrijedi i za snimku zaslona: slika prikazuje sve što je u tom trenutku vidljivo u aplikaciji, na primjer nazive zadataka i resursa vašeg projekta. Aplikacija snimku zaslona pravi u trenutku kad uključite *Priloži snimku zaslona*. Ako zaslon još nije ispravan, zatvorite prozor, namjestite zaslon kako treba, ponovno otvorite prozor i kliknite *Ponovno snimi*. Upotrijebite *Prekrij* da sakrijete ono što ne želite pokazati.
 
-**Snimka zaslona je prevelika.** Aplikacija prije slanja smanjuje snimku zaslona. Ako je i nakon toga prevelika, prijava se šalje bez slike. Ekran sa zahvalom tada kaže *Snimka zaslona bila je prevelika i nije poslana.*
+**Snimka zaslona je prevelika.** Aplikacija prije slanja smanjuje snimku zaslona. Ako je i nakon toga prevelika, prijava se šalje bez slike. Zaslon s zahvalom tada kaže *Snimka zaslona bila je prevelika i nije poslana.*
 
 **Slanje ne uspijeva.** U prozoru se pojavi poruka, a vaš tekst ostaje. Postoje četiri slučaja:
 
@@ -46,6 +46,6 @@ Aplikacija šalje vašu prijavu u Open Feedback Studio od strane OpenAEC-a. Za t
 
 **Zatvorite prozor prije slanja.** Ako je u obrascu nešto upisano, gumb na dnu zove se *Spremi i zatvori*. Kod praznog obrasca zove se *Zatvori*. *Spremi i zatvori*, križić i Esc zatvaraju prozor, a vaša prijava se čuva kao nacrt dok je ne pošaljete ili ne kliknete *Obriši*. Kad ponovno otvorite prozor, vrsta prijave, vaš tekst, adresa e-pošte i snimka zaslona s oznakama i dalje su tu. Nacrt se čuva dok je aplikacija otvorena. Nakon što zatvorite aplikaciju, nacrt je nestao. Nakon uspješne prijave obrazac je ponovno prazan. Ako sami želite početi ispočetka, kliknite *Obriši* dolje lijevo. Klik pokraj prozora ga ne zatvara. Dok se šalje, Esc ne zatvara prozor.
 
-## Pogledajte također
+## Vidi također
 
 - [Ažuriranje aplikacije](docs://howto-app-bijwerken): prije prijave provjerite imate li najnoviju verziju.

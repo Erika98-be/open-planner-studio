@@ -4,7 +4,7 @@ Cieľ: plánovať úlohy v pracovnej dobe spolu s úlohami v dňoch.
 
 ## Kedy to potrebujete
 
-Žeriav si prenajímate po hodinách, nie po dňoch. Betónovanie v trvaní šesť hodín sa nevojde do celého pracovného dňa. Nočná čata pracuje v iných časoch ako denná čata. Pri takej práci chcete trvanie v hodinách a začiatok a dokončenie s časom dňa. Zapnete to aj vtedy, ak otvoríte súbor a aplikácia zobrazí *Tento súbor obsahuje plánovanie v hodinách*. Prečo aplikácia počíta dni a hodiny inak, si môžete prečítať v článku [Dni a hodiny](docs://uitleg-dagen-en-uren).
+Žeriav si prenajímate po hodinách, nie po dňoch. Betónovanie v trvaní šesť hodín sa nevojde do celého pracovného dňa. Nočná čata pracuje v iných časoch ako denná čata. Pri takej práci chcete trvanie v hodinách a začiatok a dokončenie s presným časom. Zapnete to aj vtedy, ak otvoríte súbor a aplikácia zobrazí *Tento súbor obsahuje plánovanie v hodinách*. Prečo aplikácia počíta dni a hodiny inak, si môžete prečítať v článku [Dni a hodiny](docs://uitleg-dagen-en-uren).
 
 ## Postup
 
@@ -19,10 +19,10 @@ Zapnutie mení viac než trvanie úlohy. Na karte *Zobrazenie* v zozname *Časov
 ### Plánovanie úlohy v hodinách
 
 1. Vyberte úlohu. V paneli *Vlastnosti* pozrite pod nadpisom *Čas* na pole *Trvanie*.
-2. Zadajte trvanie s jednotkou a stlačte Enter: `12h` (`12u`, holandská skratka, funguje tiež) na dvanásť hodín, `1h 30m` na hodinu a pol. Funguje aj `1.5h`. Číslo bez jednotky sa počíta v jednotke, ktorú úloha už má.
+2. Zadajte trvanie s jednotkou a stlačte Enter: `12h` (`12u`, nizozemská skratka, funguje tiež) na dvanásť hodín, `1h 30m` na hodinu a pol. Funguje aj `1.5h`. Číslo bez jednotky sa počíta v jednotke, ktorú úloha už má.
 3. Ak chcete previesť existujúcu úlohu, vyberte jednotku *Hodiny* v zozname *Jednotka trvania*. Aplikácia trvanie hneď prevedie, napríklad z `2` dní na `16` hodín. Ak sa chcete vrátiť, použite *Vrátiť späť*.
 4. Späť na dni môžete prejsť zadaním `2d` alebo jednotkou *Dni*.
-5. Stlačte **Prepočítať** (F5), napríklad cez *Domov › Plán › Prepočítať*. Úloha má teraz začiatok a dokončenie s časom dňa.
+5. Stlačte **Prepočítať** (F5), napríklad cez *Domov › Plán › Prepočítať*. Úloha má teraz začiatok a dokončenie s presným časom.
 6. Ak chcete vidieť hodiny v Gantt diagrame, vyberte mierku *Hodina* v zozname *Časová škála* na karte *Zobrazenie*.
 
 ### Nové úlohy predvolene v hodinách

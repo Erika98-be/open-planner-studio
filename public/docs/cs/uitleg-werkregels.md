@@ -43,7 +43,7 @@ Doba trvání, která vyjde ze vztahu, se aplikací zaokrouhlí nahoru. U úkolu
 
 ### Více zdrojů
 
-Pokud má úkol více zdrojů, platí dvě dohody. U pevného trvání a práce, pevné práce a pevných jednotek zůstane celková práce stejná, když přidáte nebo odeberete zdroj. Aplikace ji pak rozdělí podle jednotek. U pevného trvání a jednotek přinese nový zdroj vlastní práci. U pevné práce a pevných jednotek rozhoduje o době trvání nejpomalejší zdroj. U každého zdroje je to práce vydělená jednotkami. Počítá se největší výsledek.
+Pokud má úkol více zdrojů, platí dvě pravidla. U pevného trvání a práce, pevné práce a pevných jednotek zůstane celková práce stejná, když přidáte nebo odeberete zdroj. Aplikace ji pak rozdělí podle jednotek. U pevného trvání a jednotek přinese nový zdroj vlastní práci. U pevné práce a pevných jednotek rozhoduje o době trvání nejpomalejší zdroj. U každého zdroje je to práce vydělená jednotkami. Počítá se největší výsledek.
 
 Příklad: dva zdroje mají každý 32 hodin práce a jednotky 1, dohromady 4 pracovní dny. Jednotky prvního nastavíte na 0,5. Doba trvání se pak změní na 8 pracovních dnů. U pevné práce si druhý zdroj ponechá 32 hodin práce a jeho jednotky klesnou na 0,5. U pevných jednotek si druhý zdroj ponechá jednotky 1 a jeho práce vzroste na 64 hodin.
 
@@ -103,7 +103,7 @@ U pevné práce se pracovní den v kalendáři zkrátí z 8 na 6 hodin. Práce z
 
 ### Úkol s průběhem
 
-Úkol inner cavity leaf trvá 5 pracovních dnů a je hotový z 40%: 2 pracovní dny jsou hotové a 3 pracovní dny (24 hodin) zbývají. U pevné práce nastavíte jednotky z 1 na 2. Zbývající práce zůstane 24 hodin a zbývající doba trvání bude 1,5, zaokrouhleno nahoru na 2 pracovní dny. Úkol teď trvá 2 + 2 = 4 pracovní dny a průběh je 50%. Procento se posune, protože hotová část zůstane stejná a zbytek se zkrátí.
+Úkol inner cavity leaf trvá 5 pracovních dnů a je hotový z 40 %: 2 pracovní dny jsou hotové a 3 pracovní dny (24 hodin) zbývají. U pevné práce nastavíte jednotky z 1 na 2. Zbývající práce zůstane 24 hodin a zbývající doba trvání bude 1,5, zaokrouhleno nahoru na 2 pracovní dny. Úkol teď trvá 2 + 2 = 4 pracovní dny a průběh je 50 %. Procento se posune, protože hotová část zůstane stejná a zbytek se zkrátí.
 
 ## Důsledky a mylné představy
 
