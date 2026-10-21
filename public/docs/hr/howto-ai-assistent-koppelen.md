@@ -12,9 +12,9 @@ Most radi samo u desktop-aplikaciji. Ako AI način rada uključite u pregledniku
 
 ### 1. Uključite AI način rada
 
-1. Odaberite *Postavke › Projekt › Postavke*. Također možete odabrati *Datoteka › Postavke* ili zupčanik na vrhu.
+1. Odaberite *Postavke › Projekt › Postavke aplikacije*. Također možete odabrati *Datoteka › Postavke aplikacije* ili zupčanik na vrhu.
 2. Odaberite karticu *Napredno* i uključite *Omogući AI način rada*. Kartica *AI* pojavljuje se na vrpci.
-3. Ako želite da most bude aktivan čim se aplikacija pokrene, uključite i *Automatski pokreni most*. Ta se postavka uključuje samo kad je AI način rada uključen. Radi samo u desktop-aplikaciji. Zadano je isključena, jer je otvaranje porta namjerna odluka.
+3. Ako želite da most bude aktivan čim se aplikacija pokrene, uključite i *Automatski pokreni most*. Ta se postavka uključuje samo kad je AI način rada uključen. Radi samo u stolnoj aplikaciji. Zadano je isključena, jer je otvaranje porta namjerna odluka.
 
 Ako isključite AI način rada, most se zaustavi i kartica *AI* nestane.
 
@@ -62,13 +62,13 @@ Sigurnosne kopije nalaze se u mapi `ai-backups` u mapi s podacima aplikacije. Ap
 
 ### 6. Neka pomoćnik dobro planira
 
-Pomoćnik koji poznaje alate ipak može izraditi raspored koji nijedan planer ne može koristiti: zadaci bez ovisnosti, fiksni datum kod svakog zadatka ili razrada koja je previše sitna. Zato pomoćnik dobiva pravila planiranja na tri načina. Za prva dva ne morate ništa raditi.
+Pomoćnik dobro planira samo ako poznaje pravila planiranja. Zašto je to važno i što ta pravila sadrže, pročitajte u [Kako radi povezivanje s AI-jem](docs://uitleg-ai-koppeling). Ovo radite sami:
 
-1. **Osnovna pravila dolaze sama od sebe.** Pri povezivanju most šalje kratki tekst s osnovnim pravilima. Mnogi klijenti taj tekst stavljaju u sistemski upit. Hoće li to vaš klijent učiniti, ovisi o njemu. Tekst, među ostalim, navodi da se počne od kontrolnih točaka, da zadaci traju od otprilike jednog dana do dva tjedna, da se raspored vodi ovisnostima umjesto fiksnih datuma i da se na kraju kaže što je pretpostavljeno.
-2. **Upit za povezivanje upućuje na cijeli vodič.** Upit za povezivanje iz prozora *Podaci za povezivanje* traži od pomoćnika da prvo pročita vodič za planiranje, alatom `planner_get_planning_guide`. Alat vraća engleski vodič za pomoćnike: ista načela kao u [Dobro planiranje](docs://gids-goed-plannen), s alatima koje pomoćnik za svako načelo koristi. Vodič možete sami pročitati na `https://open-planner-studio.open-aec.com/agent/planning-guide.md`. Ako ne koristite upit, zamolite pomoćnika sami: prije nego što išta promijeni, neka pročita vodič za planiranje alatom planner_get_planning_guide.
-3. **Neobavezno: vještine.** Vještina je mala datoteka s uputama koju pomoćnik čita u svakoj sesiji. Tako u kasnijem razgovoru također zna pravi način rada. Postoje dvije, obje na engleskom: *goed-plannen* za postavljanje ili prestrukturiranje rasporeda i *progress-update* za tjedno ažuriranje napretka. Ovo radi samo s pomoćnikom koji podržava vještine. Same vještine spominju Claude Code i slične pomoćnike. Svaka vještina je datoteka `SKILL.md` u vlastitoj mapi, nazvanoj po vještini: `.claude/skills/goed-plannen/SKILL.md` i `.claude/skills/progress-update/SKILL.md` u mapi projekta u kojoj pomoćnik radi, ili iste mape pod `~/.claude/skills/` da ih imate u svakom projektu.
+1. **Za osnovna pravila ne morate ništa raditi.** Ona dolaze pri povezivanju. Hoće li ih vaš klijent staviti u svoj sistemski upit, ovisi o klijentu.
+2. **Neka pomoćnik pročita vodič.** Upit za povezivanje iz prozora *Podaci za povezivanje* traži od pomoćnika da vodič za planiranje pročita alatom `planner_get_planning_guide`. Ako ne koristite taj upit, recite pomoćniku: *Pročitajte vodič za planiranje alatom planner_get_planning_guide prije nego što išta promijenite.* Vodič možete sami pročitati na `https://open-planner-studio.open-aec.com/agent/planning-guide.md`.
+3. **Neobavezno: instalirajte vještine.** Ovo radi samo s pomoćnikom koji podržava vještine. Stavite `SKILL.md` datoteke za *goed-plannen* i *progress-update* u mapu `.claude/skills/goed-plannen/SKILL.md` i `.claude/skills/progress-update/SKILL.md` u projektnoj mapi u kojoj pomoćnik radi, ili pod `~/.claude/skills/` za svaki projekt.
 
-Datoteke dobijete na dva načina. Zamolite pomoćnika da pozove alat `planner_get_planning_guide` s `part` postavljenim na `skill`. Odgovor sadrži oba teksta i, za svaku vještinu, mjesta gdje pripada. Ili ih preuzmite s `https://open-planner-studio.open-aec.com/skills/goed-plannen/SKILL.md` i `https://open-planner-studio.open-aec.com/skills/progress-update/SKILL.md`. Ako je *goed-plannen* još tu iz starije verzije aplikacije, zamijenite je. Taj stari tekst je na nizozemskom i upućuje na članak pomoći umjesto na vodič za pomoćnike.
+Datoteke dobijete na dva načina. Zamolite pomoćnika da pozove alat `planner_get_planning_guide` s `part` postavljenim na `skill`. Odgovor sadrži oba teksta i, za svaku vještinu, mjesta gdje pripada. Ili ih preuzmite s `https://open-planner-studio.open-aec.com/skills/goed-plannen/SKILL.md` i `https://open-planner-studio.open-aec.com/skills/progress-update/SKILL.md`. Ako je *goed-plannen* još uvijek tu iz starije verzije aplikacije, zamijenite je. Taj stari tekst je na nizozemskom i upućuje na članak pomoći umjesto na vodič za pomoćnike.
 
 Je li pomoćnik zaista pročitao vodič, vidite u *Panelu zadatka*: tamo je poziv alata `planner_get_planning_guide`. Konačni odgovor treba sadržavati popis pretpostavki: procijenjena trajanja, odabranu razradu, ovisnosti koje je sam stvorio i svako ograničenje koje je postavio. Ako taj popis nedostaje, zatražite ga. Nakon ažuriranja napretka prema *progress-update* odgovor treba navesti datum stanja, novi datum završetka i odstupanje u odnosu na temeljni plan.
 
@@ -96,6 +96,6 @@ Je li pomoćnik zaista pročitao vodič, vidite u *Panelu zadatka*: tamo je pozi
 
 - [Davanje povratnih informacija](docs://howto-feedback-geven): ako povezivanje radi drukčije nego što je ovdje opisano, prijavite to.
 - [Kako radi povezivanje s AI-jem](docs://uitleg-ai-koppeling): što je povezivanje, zašto pomoćnik radi u vašem otvorenom projektu i što smije, a što ne smije raditi.
-- [AI alati](docs://ref-ai-tools): svi alati `planner_*` po grupama, kodovi grešaka i koliko se sigurnosne kopije čuvaju.
+- [AI alati](docs://ref-ai-tools): svi alati `planner_*` po grupama, kodovi grešaka i koliko se sigurnosnih kopija čuva.
 - [Dobro planiranje](docs://gids-goed-plannen): načela planiranja. Pomoćnik ih dobiva u engleskoj verziji, s dodanim alatima.
-- [Postavke](docs://ref-instellingen): AI postavke.
+- [Postavke aplikacije](docs://ref-instellingen): AI postavke.

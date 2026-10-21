@@ -12,7 +12,7 @@ Mostek działa tylko w aplikacji desktopowej. Jeśli włączysz tryb AI w przegl
 
 ### 1. Włączanie trybu AI
 
-1. Wybierz *Ustawienia › Projekt › Ustawienia*. Możesz też wybrać *Plik › Ustawienia* albo koło zębate u góry.
+1. Wybierz *Ustawienia › Projekt › Ustawienia aplikacji*. Możesz też wybrać *Plik › Ustawienia aplikacji* albo koło zębate u góry.
 2. Wybierz kartę *Zaawansowane* i włącz opcję *Włącz tryb AI*. Karta *AI* pojawia się na wstążce.
 3. Jeśli chcesz, żeby mostek był aktywny zaraz po starcie aplikacji, włącz też *Automatycznie uruchamiaj most*. Ta opcja działa tylko wtedy, gdy tryb AI jest włączony, i tylko w aplikacji desktopowej. Domyślnie jest wyłączona, bo otwarcie portu to świadomy wybór.
 
@@ -34,7 +34,7 @@ Mostek nasłuchuje tylko na Twoim komputerze, na jednym porcie. Domyślnie to 38
 
 Okno oferuje trzy sposoby połączenia:
 
-- *Fragment konfiguracji*: fragment konfiguracji, który wklejasz w ustawienia MCP swojego klienta.
+- *Fragment konfiguracji*: fragment konfiguracji, który wklejasz w ustawieniach MCP swojego klienta.
 - *Polecenie połączenia*: tekst, który wklejasz do asystenta AI; potem połączy się sam.
 - *Punkt końcowy* i *Uwierzytelnianie*: osobne dane. Punkt końcowy to `http://localhost:3877/mcp` z transportem *streamable HTTP*. Każde żądanie potrzebuje nagłówka `Authorization: Bearer`, po którym następuje Twój token.
 
@@ -46,7 +46,7 @@ W grupie *Połączenie* jest też pole *Token*. To długi, losowy kod, który ap
 2. Każde wywołanie mostka to jeden wiersz, najnowszy na górze: czas, co się stało, jak długo to trwało i czy się udało. Kliknij wiersz, aby rozwinąć *Argumenty* i *Odpowiedź*.
 3. Przyciskiem *Wyczyść* opróżnisz listę. Panel zachowuje ostatnie 500 wywołań. Dopóki nic się nie wydarzyło, pisze: *Brak aktywności AI. Wywołania mostka pojawią się tutaj.*
 
-Przy włączonym trybie AI jest na dole po prawej, na pasku stanu, kropka z napisem *AI*. Jej kolor pokazuje stan mostka, a kliknięcie prowadzi do karty *AI*.
+Przy włączonym trybie AI zobaczysz na dole po prawej, na pasku stanu, kropkę z napisem *AI*. Jej kolor pokazuje stan mostka, a kliknięcie prowadzi do karty *AI*.
 
 ### 5. Ustawianie limitów
 
@@ -62,15 +62,15 @@ Kopie zapasowe są w folderze `ai-backups` w folderze danych aplikacji. Aplikacj
 
 ### 6. Zadbanie o dobre planowanie przez asystenta
 
-Asystent, który zna narzędzia, może mimo to zbudować harmonogram, z którego żaden planista nie ma pożytku: zadania bez relacji, stała data przy każdym zadaniu albo podział, który jest znacznie za drobny. Dlatego asystent dostaje zasady planowania na trzy sposoby. Przy pierwszych dwóch nic nie musisz robić.
+Asystent planuje dobrze tylko wtedy, gdy zna zasady planowania. Dlaczego to ważne i co w nich jest, przeczytasz w [Jak działa połączenie z AI](docs://uitleg-ai-koppeling). Tak wygląda to, co robisz sam:
 
-1. **Podstawowe zasady przychodzą same.** Podczas połączenia mostek wysyła krótki tekst z podstawowymi zasadami. Wiele klientów wstawia ten tekst do swojego promptu systemowego; czy Twój tak robi, zależy od klienta. Tekst zawiera m.in. zalecenia: zacznij od kamieni milowych, buduj zadania o czasie trwania od około dnia do dwóch tygodni, steruj harmonogramem relacjami zamiast stałych dat i powiedz na końcu, co założyłeś.
-2. **Polecenie połączenia wskazuje pełny przewodnik.** Polecenie połączenia z okna *Szczegóły połączenia* prosi asystenta, aby najpierw przeczytał przewodnik planowania narzędziem `planner_get_planning_guide`. Dostaje wtedy angielski przewodnik dla asystentów: te same zasady co [Dobre planowanie](docs://gids-goed-plannen), a przy każdej zasadzie podano narzędzia, których asystent do niej używa. Sam możesz go przeczytać pod adresem `https://open-planner-studio.open-aec.com/agent/planning-guide.md`. Jeśli nie używasz polecenia, zapytaj asystenta sam: *Przeczytaj najpierw przewodnik planowania narzędziem planner_get_planning_guide, zanim cokolwiek zmienisz.*
-3. **Opcjonalnie: skille.** Skill to mały plik z instrukcjami, który asystent czyta w każdej sesji. Dzięki temu zna właściwy sposób działania także w późniejszej rozmowie. Są dwa, oba po angielsku: *goed-plannen* do zakładania lub przebudowy harmonogramu oraz *progress-update* do cotygodniowej aktualizacji postępu. Działa to tylko z asystentem, który obsługuje skille; same skille wspominają Claude Code i podobnych asystentów. Każdy skill to plik `SKILL.md` w osobnym folderze, nazwanym jak skill: `.claude/skills/goed-plannen/SKILL.md` i `.claude/skills/progress-update/SKILL.md` w folderze projektu, w którym pracuje asystent, albo te same foldery pod `~/.claude/skills/`, żeby były dostępne w każdym projekcie.
+1. **Nie musisz nic robić przy podstawowych zasadach.** Przychodzą same podczas połączenia. Czy Twój klient wstawia je do swojego promptu systemowego, zależy od klienta.
+2. **Poproś o przeczytanie przewodnika.** Polecenie połączenia z okna *Szczegóły połączenia* prosi asystenta, aby przeczytał przewodnik narzędziem `planner_get_planning_guide`. Jeśli nie używasz polecenia, zapytaj asystenta sam: *Przeczytaj najpierw przewodnik planowania narzędziem planner_get_planning_guide, zanim cokolwiek zmienisz.* Przewodnik możesz przeczytać sam pod adresem `https://open-planner-studio.open-aec.com/agent/planning-guide.md`.
+3. **Opcjonalnie: zainstaluj skille.** To działa tylko z asystentem, który obsługuje skille. Zapisz `SKILL.md` skilla *goed-plannen* i *progress-update* jako `.claude/skills/goed-plannen/SKILL.md` i `.claude/skills/progress-update/SKILL.md` w folderze projektu, w którym pracuje asystent, albo pod `~/.claude/skills/`, aby były dostępne w każdym projekcie.
 
-Pliki otrzymasz na dwa sposoby. Poproś asystenta, aby wywołał narzędzie `planner_get_planning_guide` z `part` ustawionym na `skill`: odpowiedź zawiera obie treści i przy każdym skillu miejsca, gdzie ma się znaleźć. Albo pobierz je z `https://open-planner-studio.open-aec.com/skills/goed-plannen/SKILL.md` i `https://open-planner-studio.open-aec.com/skills/progress-update/SKILL.md`. Jeśli *goed-plannen* pochodzi jeszcze z starszej wersji aplikacji, zastąp go: ta stara treść jest po holendersku i odsyła do artykułu pomocy zamiast do przewodnika dla asystentów.
+Pliki otrzymasz na dwa sposoby. Poproś asystenta, aby wywołał narzędzie `planner_get_planning_guide` z `part` ustawionym na `skill`: odpowiedź zawiera obie treści i przy każdym skillu miejsca, gdzie ma się znaleźć. Albo pobierz je z `https://open-planner-studio.open-aec.com/skills/goed-plannen/SKILL.md` i `https://open-planner-studio.open-aec.com/skills/progress-update/SKILL.md`. Jeśli *goed-plannen* pochodzi jeszcze ze starszej wersji aplikacji, zastąp go: ta stara treść jest po holendersku i odsyła do artykułu pomocy zamiast do przewodnika dla asystentów.
 
-Czy asystent naprawdę przeczytał przewodnik, zobaczysz w *Panelu aktywności*: pojawi się wtedy wywołanie `planner_get_planning_guide`. Ostateczna odpowiedź asystenta powinna zawierać listę założeń: szacowane czasy trwania, wybrany podział, relacje, które sam utworzył, i każde ograniczenie, które ustawił. Jeśli tej listy brakuje, poproś o nią. Po aktualizacji postępu według *progress-update* odpowiedź powinna podać datę statusu, nowe zakończenie i odchylenie względem planu bazowego.
+Czy asystent naprawdę przeczytał przewodnik, zobaczysz w panelu *Panel aktywności*: pojawi się wtedy wywołanie `planner_get_planning_guide`. Końcowa odpowiedź asystenta powinna zawierać listę założeń: szacowane czasy trwania, wybrany podział, relacje, które sam utworzył, i każde ograniczenie, które ustawił. Jeśli tej listy brakuje, poproś o nią. Po aktualizacji postępu według *progress-update* odpowiedź powinna podać datę statusu, nową datę zakończenia i odchylenie względem planu bazowego.
 
 ## Pułapki i co aplikacja wtedy robi
 
@@ -98,4 +98,4 @@ Czy asystent naprawdę przeczytał przewodnik, zobaczysz w *Panelu aktywności*:
 - [Jak działa połączenie z AI](docs://uitleg-ai-koppeling): czym jest połączenie, dlaczego asystent pracuje w otwartym projekcie i czego nie może robić.
 - [Narzędzia AI](docs://ref-ai-tools): wszystkie narzędzia `planner_*` według grupy, kody błędów i jak długo kopie zapasowe są przechowywane.
 - [Dobre planowanie](docs://gids-goed-plannen): zasady planowania; asystent dostaje je w wersji angielskiej z dodanymi narzędziami.
-- [Ustawienia](docs://ref-instellingen): ustawienia AI.
+- [Ustawienia aplikacji](docs://ref-instellingen): ustawienia AI.

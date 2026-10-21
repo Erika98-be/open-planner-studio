@@ -12,11 +12,11 @@ Most funguje pouze v desktopové aplikaci. Když v prohlížeči zapnete režim 
 
 ### 1. Zapněte režim AI
 
-1. V nabídce zvolte *Nastavení › Projekt › Nastavení*. Můžete také zvolit *Soubor › Nastavení*, nebo ikonu ozubeného kola nahoře.
+1. V nabídce zvolte *Nastavení › Projekt › Nastavení aplikace*. Můžete také zvolit *Soubor › Nastavení aplikace*, nebo ikonu ozubeného kola nahoře.
 2. Zvolte kartu *Pokročilé* a zapněte volbu *Zapnout režim AI*. Karta *AI* se objeví na pásu karet.
 3. Chcete-li, aby most běžel hned po spuštění aplikace, zapněte také *Spustit most automaticky*. Volba se uplatní jen při zapnutém režimu AI a funguje jen v desktopové aplikaci. Ve výchozím stavu je vypnutá, protože otevření portu je vědomé rozhodnutí.
 
-Když režim AI vypnete, most se zastaví a karta *AI* zmizí.
+Když vypnete režim AI, most se zastaví a karta *AI* zmizí.
 
 ### 2. Spusťte most
 
@@ -30,7 +30,7 @@ Most naslouchá jen na vašem počítači, na jednom portu. Výchozí port je 38
 1. Ve skupině *Připojení* klikněte na *Připojit*. Otevře se okno *Údaje o připojení*.
 2. Zvolte, co váš klient potřebuje. Viz níže.
 3. Token je skrytý. Ikonou oka jej zobrazíte. Tlačítka pro kopírování vždy zkopírují skutečnou hodnotu, i když obrazovka token skrývá.
-4. Nechte asistenta vyžádat seznam nástrojů. Tuto kontrolu obsahuje i prompt pro propojení: asistent musí vidět nástroje s předponou `planner_`. Očekávaný počet je uveden v promptu pro propojení.
+4. Nechte asistenta vyžádat seznam nástrojů. Tuto kontrolu obsahuje i prompt pro propojení: asistent by měl vidět nástroje s předponou `planner_`. Očekávaný počet je uveden v promptu pro propojení.
 
 Okno nabízí tři způsoby propojení:
 
@@ -38,39 +38,39 @@ Okno nabízí tři způsoby propojení:
 - *Prompt pro propojení*: text, který vložíte do AI asistenta. Potom se asistent propojí sám.
 - *Endpoint* a *Ověření*: jednotlivé údaje. Endpoint je `http://localhost:3877/mcp` s přenosem *streamable HTTP*. Každý požadavek potřebuje hlavičku `Authorization: Bearer` a za ní váš token.
 
-Ve skupině *Připojení* je také pole *Token*. Je to dlouhý, náhodný kód. Aplikace jej vytvoří za vás a uloží na tomto počítači. V okně se zobrazí: *Tento token poskytuje přístup k otevřenému plánu. Nesdílejte ho s jinými*. Ikonou *Nový token* vytvoříte nový token. Aplikace se nejdřív zeptá: *Vytvořením nového tokenu přerušíte všechna stávající propojení. Pokračovat?* Pokud most běží, restartuje se s novým tokenem a starý token přestane fungovat.
+Ve skupině *Připojení* je také pole *Token*. Je to dlouhý, náhodný kód. Aplikace jej vytvoří za vás a uloží na tomto počítači. V okně se zobrazí: *Tento token poskytuje přístup k otevřenému plánu. Nesdílejte ho s jinými.* Ikonou *Nový token* vytvoříte nový token. Aplikace se nejdřív zeptá: *Vytvořením nového tokenu přerušíte všechna stávající propojení. Pokračovat?* Pokud most běží, restartuje se s novým tokenem a starý token přestane fungovat.
 
 ### 4. Zjistěte, co AI dělá
 
-1. Ve skupině *Činnost* klikněte na *Panel činnosti*. V postranní části okna se otevře panel *Činnost AI*.
+1. Ve skupině *Činnost* klikněte na *Panel činnosti*. V postranním sloupci se otevře panel *Činnost AI*.
 2. Každé volání mostu je na jednom řádku, nejnovější nahoře: čas, co se stalo, jak dlouho to trvalo a zda to uspělo. Klikněte na řádek a rozbalte *Argumenty* a *Odpověď*.
-3. Tlačítkem *Vymazat* seznam vyprázdníte. Panel si drží posledních 500 volání. Dokud se nic nestalo, zobrazí *Zatím žádná činnost AI. Volání mostu se zobrazí zde*.
+3. Tlačítkem *Vymazat* seznam vyprázdníte. Panel si drží posledních 500 volání. Dokud se nic nestalo, zobrazí se *Zatím žádná činnost AI. Volání mostu se zobrazí zde.*
 
-Když je režim AI zapnutý, vpravo dole ve stavovém řádku je tečka s *AI*. Její barva ukazuje stav mostu. Klik na ni vás přesune na kartu *AI*.
+Když je režim AI zapnutý, vpravo dole ve stavovém řádku je tečka s *AI*. Barva tečky ukazuje stav mostu. Kliknutím na ni se přesunete na kartu *AI*.
 
 ### 5. Nastavte omezení
 
 Ve skupině *Bezpečnost* jsou tlačítka, kterými AI omezíte:
 
-- *Pozastavit*: AI dočasně nesmí nic měnit. Čtení zůstává povoleno. Most zůstává aktivní. Tlačítko se změní na *Pokračovat*.
+- *Pozastavit*: AI dočasně nesmí nic měnit, čtení zůstává povolené. Most zůstává aktivní. Tlačítko se změní na *Pokračovat*.
 - *Jen pro čtení*: všechny nástroje, které něco mění, se odmítnou, dokud je tato volba zapnutá.
-- *Auto-záloha: zapnuto*: před první změnou od AI v dokumentu zapíše aplikace zálohu IFC. Ve výchozím stavu je to zapnuto. Tlačítkem to vypnete a potom se zobrazí *Auto-záloha: vypnuto*. Zálohování proběhne jednou pro každý dokument při každém spuštění mostu.
+- *Auto-záloha: zapnuto*: před první změnou od AI v dokumentu zapíše aplikace zálohu IFC. Ve výchozím stavu je to zapnuto. Tlačítkem to vypnete a potom se zobrazí *Auto-záloha: vypnuto*. Toto se stane jednou pro každý dokument při každém spuštění mostu.
 - *Zálohovat nyní*: vytvoří zálohu aktivního dokumentu hned. Potom se zobrazí *Záloha vytvořena:* a název souboru.
 - *Otevřít složku záloh*: otevře složku se zálohami.
 
-Zálohy jsou ve složce `ai-backups` v datové složce aplikace. Aplikace si nechává nedávné zálohy a starší průběžně promazává. Přesně jak to funguje, je v [Nástroje AI](docs://ref-ai-tools).
+Zálohy jsou ve složce `ai-backups` v datové složce aplikace. Aplikace si nechává nedávné zálohy a starší průběžně promazává. Přesně, jak to funguje, je popsáno v [Nástroje AI](docs://ref-ai-tools).
 
 ### 6. Nechte asistenta plánovat dobře
 
-Asistent, který zná nástroje, může přesto sestavit plán, který žádný plánovač nemůže použít: úkoly bez závislostí, pevné datum u každého úkolu nebo příliš jemné členění. Proto dostane asistent pravidla plánování třemi způsoby. U prvních dvou nemusíte nic dělat.
+Asistent dobře plánuje jen tehdy, když zná pravidla plánování. Proč na tom záleží a co pravidla obsahují, si přečtete v [Jak funguje propojení s AI](docs://uitleg-ai-koppeling). Tady je to, co uděláte sami:
 
-1. **Základní pravidla přijdou automaticky.** Při propojení pošle most krátký text se základními pravidly. Mnoho klientů vloží tento text do systémového promptu. Zda to váš klient udělá, závisí na klientovi. Text mimo jiné říká: začněte u milníků, vytvářejte úkoly v rozsahu zhruba jednoho dne až dvou týdnů, řiďte plán závislostmi místo pevných dat a na konci uveďte, co jste předpokládali.
-2. **Prompt pro propojení odkazuje na celý průvodce.** Prompt pro propojení z okna *Údaje o připojení* žádá asistenta, aby nejdřív přečetl průvodce plánováním nástrojem `planner_get_planning_guide`. Ten vrátí anglický průvodce pro asistenty: stejné zásady jako v [Dobře plánovat](docs://gids-goed-plannen), a u každé zásady nástroje, které asistent k tomu používá. Můžete jej přečíst sami na adrese `https://open-planner-studio.open-aec.com/agent/planning-guide.md`. Pokud prompt nepoužijete, požádejte asistenta sami: *Nejdřív si přečtěte průvodce plánováním pomocí `planner_get_planning_guide`, než cokoli změníte.*
-3. **Volitelné: dovednosti.** Dovednost je malý soubor s pokyny. Asistent si jej přečte při každé relaci, takže ví i v pozdějším rozhovoru, jak správně pracovat. Jsou dvě, obě v angličtině: *goed-plannen* pro sestavení nebo přestavbu plánu a *progress-update* pro týdenní aktualizaci průběhu. To funguje jen s asistentem, který dovednosti podporuje. Samotné dovednosti zmiňují Claude Code a příbuzné asistenty. Každá dovednost je soubor `SKILL.md` ve vlastní složce pojmenované podle dovednosti: `.claude/skills/goed-plannen/SKILL.md` a `.claude/skills/progress-update/SKILL.md` ve složce projektu, ve které asistent pracuje, nebo ve stejných složkách pod `~/.claude/skills/`, pokud je chcete mít v každém projektu.
+1. **Pro základní pravidla nemusíte nic dělat.** Přijdou při propojení. Zda je váš klient vloží do systémového promptu, závisí na klientovi.
+2. **Asistent si má přečíst průvodce.** Prompt pro propojení z okna *Údaje o připojení* žádá asistenta, aby nejdřív přečetl průvodce plánováním nástrojem `planner_get_planning_guide`. Pokud prompt nepoužijete, požádejte asistenta sami: *Nejdřív si přečtěte průvodce plánováním pomocí `planner_get_planning_guide`, než cokoli změníte.* Průvodce si můžete přečíst sami na adrese `https://open-planner-studio.open-aec.com/agent/planning-guide.md`.
+3. **Volitelně: dovednosti.** Funguje to jen s asistentem, který dovednosti podporuje. Uložte soubory `SKILL.md` dovedností *goed-plannen* a *progress-update* do `.claude/skills/goed-plannen/SKILL.md` a `.claude/skills/progress-update/SKILL.md` ve složce projektu, ve které asistent pracuje, nebo pod `~/.claude/skills/`, pokud je chcete mít v každém projektu.
 
-Soubory získáte dvěma způsoby. Požádejte asistenta, aby zavolal nástroj `planner_get_planning_guide` s hodnotou `skill` v parametru `part`. Odpověď obsahuje oba texty a u každé dovednosti místo, kam patří. Nebo je stáhněte z `https://open-planner-studio.open-aec.com/skills/goed-plannen/SKILL.md` a `https://open-planner-studio.open-aec.com/skills/progress-update/SKILL.md`. Pokud je *goed-plannen* ještě z dřívější verze aplikace, nahraďte ji. Ten starý text je v holandštině a odkazuje na nápovědu místo na průvodce pro asistenty.
+Soubory získáte dvěma způsoby. Požádejte asistenta, aby zavolal nástroj `planner_get_planning_guide` s hodnotou `skill` v parametru `part`. Odpověď obsahuje oba texty a u každé dovednosti místo, kam patří. Nebo je stáhněte z `https://open-planner-studio.open-aec.com/skills/goed-plannen/SKILL.md` a `https://open-planner-studio.open-aec.com/skills/progress-update/SKILL.md`. Pokud je *goed-plannen* ještě z dřívější verze aplikace, nahraďte ji. Ten starý text je v holandštině a odkazuje na článek nápovědy místo průvodce pro asistenty.
 
-Zda asistent průvodce opravdu přečetl, poznáte v panelu *Panel činnosti*: je tam volání `planner_get_planning_guide`. Konečná odpověď asistenta by měla obsahovat seznam předpokladů: odhadované doby trvání, zvolené členění, závislosti, které asistent vytvořil sám, a každé omezení, které nastavil. Když ten seznam chybí, požádejte o něj. Po aktualizaci průběhu podle *progress-update* má odpověď uvést datum stavu, nové datum dokončení a odchylku od směrného plánu.
+Zda asistent průvodce opravdu přečetl, poznáte v panelu *Panel činnosti*: je tam volání `planner_get_planning_guide`. Závěrečná odpověď asistenta by měla obsahovat seznam předpokladů: odhadované doby trvání, zvolené členění, závislosti, které asistent vytvořil sám, a každé omezení, které nastavil. Když ten seznam chybí, požádejte o něj. Po aktualizaci průběhu podle *progress-update* má odpověď uvést datum stavu, nové datum dokončení a odchylku od směrného plánu.
 
 ## Časté problémy a co aplikace potom dělá
 
@@ -96,6 +96,6 @@ Zda asistent průvodce opravdu přečetl, poznáte v panelu *Panel činnosti*: j
 
 - [Zpětná vazba](docs://howto-feedback-geven): pokud se propojení chová jinak, než je popsáno zde, nahlaste to.
 - [Jak funguje propojení s AI](docs://uitleg-ai-koppeling): co propojení je, proč asistent pracuje ve vašem otevřeném projektu a co nesmí dělat.
-- [Nástroje AI](docs://ref-ai-tools): všechny nástroje `planner_*` podle skupin, chybové kódy a jak dlouho se zálohy uchovávají.
+- [Nástroje AI](docs://ref-ai-tools): všechny nástroje `planner_*` podle skupin, chybové kódy a jak dlouho se uchovávají zálohy.
 - [Dobře plánovat](docs://gids-goed-plannen): zásady plánování. Asistent je dostane v anglické verzi s doplněnými nástroji.
-- [Nastavení](docs://ref-instellingen): nastavení AI.
+- [Nastavení aplikace](docs://ref-instellingen): nastavení AI.
