@@ -203,11 +203,6 @@ en noem het in je rapport of PR-tekst.
     tool-beschrijving. Nagespeeld via de echte dispatcher. Voorstel: per item weigeren met een reden ("de duur
     van een samenvattingstaak is afgeleid van zijn subtaken"); `planner_add_tasks` met een duur op een item dat
     kinderen krijgt idem nakijken. — B
-83. **Leestool-beschrijvingen noemen `wbsCode` als schrijfveld, maar de schrijftools weigeren het.**
-    `planner_get_project_overview` en `planner_get_task` (`readTools.ts:~1063`, `~1119`): "`wbs` here and
-    `wbsCode` when writing (add_tasks/update_tasks)"; `taskFields.ts:153` weigert `wbsCode` ("the WBS code is
-    derived"). Nagespeeld: `fields.wbsCode` ⇒ `itemRejections`. Voorstel: de zin uit beide beschrijvingen
-    halen. — B
 84. **`planner_get_project_overview` beschrijft `dur` als werkdagen**, maar de rij geeft de duur in de eigen
     eenheid van de taak met `durUnit` ernaast (`readTools.ts:~315`, `nativeDuration`); bij een urentaak zijn
     het dus uren. Alleen in de code gezien. — S

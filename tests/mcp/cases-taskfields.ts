@@ -230,6 +230,22 @@ test('X9: p6DurationType/p6ActivityType zijn via de echte MCP-update runtime rea
   assertEq(JSON.stringify(taskById(id)), before, 'beide geweigerde MCP-calls laten de taak byte-identiek');
 });
 
+test('knownbug 83: wbsCode schrijven wordt geweigerd, zoals de leestools uitleggen', async () => {
+  reset();
+  const id = seedTask('WBS blijft afgeleid', 5);
+  const before = JSON.stringify(taskById(id));
+  const res = await call('planner_update_tasks', { updates: [{ id, fields: { wbsCode: '9.9' } }] });
+  assertEq(rejections(res).length, 1, 'exact één weigering');
+  assert(/WBS code is derived/.test(rejections(res)[0].reason), 'weigering legt de afgeleide WBS uit');
+  assertEq(okData(res).updated, [], 'geen schijnsucces');
+  assertEq(JSON.stringify(taskById(id)), before, 'taak blijft byte-identiek');
+
+  const count = store.getState().tasks.length;
+  const added = await call('planner_add_tasks', { tasks: [{ name: 'Ongeldige WBS', wbsCode: '9.9' }] });
+  assertEq(added.ok, false, 'ook toevoegen accepteert geen wbsCode');
+  assertEq(store.getState().tasks.length, count, 'geen taak aangemaakt bij ongeldige invoer');
+});
+
 test('update_tasks: fields.time wordt geweigerd en laat de hele time-tak intact', async () => {
   reset();
   withStatusDate();
