@@ -417,9 +417,6 @@ en noem het in je rapport of PR-tekst.
 131. **Engelse titel van het venster na een update is "You're up to date!"** (`en/common.json`
     `updates.justUpdated.title`). De Nederlandse is "Je bent bijgewerkt!". In het Engels leest dat als "geen
     update nodig". Voorstel: "You've been updated!". — B
-132. ***Voortgang bijwerken uit een blad* zegt "Kies een teruggestuurd CSV-blad"** (nl) en "Pick a returned
-    CSV sheet" (en), terwijl het venster ook `.xlsx` opent (`ProgressImportDialog.tsx:176-180`,
-    `common.json` `progressImport.intro`). — B
 
 ## Tests
 

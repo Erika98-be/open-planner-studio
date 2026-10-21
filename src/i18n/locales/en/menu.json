@@ -313,7 +313,7 @@
     "exportTitle": "Export",
     "exportSubtitle": "Choose a format. The project will be converted and saved.",
     "progressImportCardTitle": "Update progress from a spreadsheet",
-    "progressImportCardDesc": "Read a returned CSV sheet and update completion, actual start and actual finish.",
+    "progressImportCardDesc": "Read a returned CSV or XLSX sheet and update completion, actual start and actual finish.",
     "printTitle": "Print",
     "printSubtitle": "Open the report screen for print preview and settings.",
     "openPrintPreview": "Open print preview",
