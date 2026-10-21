@@ -30,7 +30,7 @@ function eq(label: string, got: unknown, want: unknown): void {
 }
 function near(label: string, got: number | undefined, want: number): void {
   checks++;
-  if (got === undefined || Math.abs(got - want) > 1e-9) diffs.push(`${label}: kreeg ${got} ≠ verwacht ${want}`);
+  if (got === undefined || !(Math.abs(got - want) <= 1e-9)) diffs.push(`${label}: kreeg ${got} ≠ verwacht ${want}`);
 }
 
 const STATUS_DATE = '2026-06-01T10:00';

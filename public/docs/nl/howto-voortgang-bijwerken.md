@@ -14,7 +14,8 @@ De statusdatum is de dag waarop je de stand opneemt. Zet hem vóór je voortgang
 
 1. Ga naar *Planning › Baselines & voortgang › Statusdatum*.
 2. Typ de datum in de drie vakjes voor dag, maand en jaar (in de volgorde van je datumnotatie), bijvoorbeeld 28, 06 en 2027, en druk op Enter. De app springt zelf naar het volgende vakje.
-3. Met het kruisje naast het veld maak je de statusdatum weer leeg.
+3. Heeft de projectkalender werktijdblokken (het blok *Werktijden* in het venster *Kalenders*)? Dan rekent de app in uren en staat rechts een tijdveld, bijvoorbeeld 17:00. Typ een andere tijd, bijvoorbeeld 12:00, en druk op Enter. Maak je het tijdveld leeg, dan blijft alleen de datum over. Wijzig je alleen de datum, dan blijft de tijd staan. De tijd volgt je tijdnotatie (24 of 12 uur). Zonder werktijdblokken rekent de app in hele dagen: dan is er geen tijdveld en staat de statusdatumlijn op het begin van de dag.
+4. Met het kruisje naast het veld maak je de statusdatum weer leeg.
 
 Neem je de stand vrijdag na werktijd op, dan zet je de statusdatum op de eerstvolgende werkdag, maandag. De app plant het restwerk vanaf het begin van de statusdatum.
 
@@ -28,7 +29,7 @@ Kies de manier die bij je situatie past. Ze maken hetzelfde resultaat.
 
 1. Klik op de taak. Zie je het paneel *Eigenschappen* niet, zet het dan aan met *Beeld › Panelen › Eigensch.*
 2. Sleep de schuif *Voortgang (%)* naar het percentage dat klaar is.
-3. Vul zo nodig *Werkelijke start* en *Werkelijke einde* in, op dezelfde manier als de statusdatum. Het veld *Resterend* rekent de app zelf uit; je kunt het hier niet wijzigen.
+3. Vul zo nodig *Werkelijke start* en *Werkelijk einde* in, op dezelfde manier als de statusdatum. Het veld *Resterend* rekent de app zelf uit; je kunt het hier niet wijzigen.
 
 Bij een mijlpaal staat er één veld, *Werkelijke datum*.
 
@@ -39,11 +40,11 @@ Bij een mijlpaal staat er één veld, *Werkelijke datum*.
 
 **Meerdere taken in de tabel.** Handig als je een hele lijst bijwerkt.
 
-1. Klik op de **+** rechts in de kop van de takenlijst (*Kolom toevoegen*) en open de categorie *Voortgang*. Voeg de kolommen *Werkelijke start*, *Werkelijke einde*, *Resterend* en *Status* toe. De kolom *Voortgang* staat al op het tabblad *Tabel*.
+1. Klik op de **+** rechts in de kop van de takenlijst (*Kolom toevoegen*) en open de categorie *Voortgang*. Voeg de kolommen *Werkelijke start*, *Werkelijk einde*, *Resterend* en *Status* toe. De kolom *Voortgang* staat al op het tabblad *Tabel*.
 2. Dubbelklik op een cel, typ de waarde en druk op Enter. Een percentage typ je als `50` of `50%`, een datum als `25-06-2027`, een resterende duur als `1`.
 3. Bij *Status* druk je na een dubbelklik op Enter en kies je *Niet gestart*, *Bezig* of *Voltooid*.
 
-Typ je een resterende duur, dan rekent de app het percentage terug: bij een taak van 2 werkdagen geeft een rest van 1 een percentage van 50. Een rest van 0 maakt de taak voltooid. Kies je bij *Status* *Niet gestart*, dan gaat het percentage naar 0 en verdwijnen de werkelijke datums.
+Typ je een resterende duur, dan rekent de app het percentage terug: bij een taak van 2 werkdagen geeft een rest van 1 een percentage van 50. Een rest van 0 maakt de taak voltooid. De kolom *Werkelijke duur* (ook in de categorie *Voortgang*) werkt andersom: typ hoeveel werk al gedaan is, en de app rekent het percentage uit. Bij een taak van 4 werkdagen geeft een werkelijke duur van 1 een percentage van 25. Kies je bij *Status* *Niet gestart*, dan gaat het percentage naar 0 en verdwijnen de werkelijke datums.
 
 **Alles van één taak in het venster Taak bewerken.** Klik met de rechtermuisknop op de taak en kies *Bewerken...*. De voortgangsvelden staan er ook. Ze gelden pas als je op *Opslaan* klikt.
 

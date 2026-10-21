@@ -37,7 +37,7 @@ Bij een bestaand project kies je het profiel onder *Instellingen › Project ›
 
 Tot je op *Toepassen* drukt, staat een wijziging alleen in het formulier. Met *Toepassen* rekent de app de planning meteen opnieuw door, ook als *Automatisch berekenen* uit staat. Zijn er taken verschoven, dan meldt hij hoeveel, bijvoorbeeld *Na het toepassen zijn 4 taken verschoven.* De hele wissel is één stap voor *Ongedaan maken*. Druk je *Ongedaan maken* of *Opnieuw* terwijl Projectinstellingen open staat, dan volgt het blok de stand van het project. Had je in het blok zelf al iets gewijzigd, dan blijft jouw keuze staan en zegt een geel blok dat *Toepassen* die keuze terugzet.
 
-De drie ingebouwde profielen zijn niet te wijzigen. Wil je andere conventies, klik dan op *Nieuw profiel* naast de keuzelijst. De app vraagt een naam en stelt *Kopie van* het gekozen profiel voor, bijvoorbeeld *Kopie van Open Planner Studio*. Met *Maken* krijg je een eigen profiel met dezelfde conventies, en het deel *Conventies van dit profiel* klapt open. Nu kun je elke conventie aan- of uitzetten. Pas na *Toepassen* rekent het project met het nieuwe profiel. Je kunt het eigen profiel een andere naam geven en het met *Opslaan als sjabloon* bewaren voor andere projecten in deze app. De app meldt dat het sjabloon is opgeslagen, of waarom dat niet lukte. *Sjabloon verwijderen* vraagt eerst om bevestiging. Het project draagt altijd zijn eigen kopie: pas je later het sjabloon aan, dan verandert het project niet mee.
+De drie ingebouwde profielen zijn niet te wijzigen. Wil je andere conventies, dan maak je een eigen profiel; dat kun je ook als sjabloon bewaren voor andere projecten in deze app. Het project draagt altijd zijn eigen kopie: pas je later het sjabloon aan, dan verandert het project niet mee. De stappen staan in [Een rekenprofiel kiezen of samenstellen](docs://howto-rekenprofiel-kiezen).
 
 ### Wanneer de app zelf een profiel kiest
 
@@ -114,6 +114,7 @@ Hier verschillen de datums. Twee conventies in de groep *Voortgang zoals Microso
 ## Zie ook
 
 - [Voortgang, statusdatum en baseline](docs://uitleg-voortgang): wat de statusdatum en het restwerk doen, met de verschillen per profiel.
+- [Een rekenprofiel kiezen of samenstellen](docs://howto-rekenprofiel-kiezen): een profiel kiezen, wisselen of zelf samenstellen.
 - [De voortgangsmodus kiezen](docs://howto-voortgangsmodus-kiezen): Retained Logic of Progress Override kiezen.
 - [Kritiek pad en speling](docs://uitleg-kritiek-pad): de reken-opties voor kritiek en speling.
 - [Relaties en lag](docs://uitleg-relaties): de reken-optie *Lag-kalender*.

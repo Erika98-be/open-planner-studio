@@ -177,9 +177,9 @@ function resolveDays(data: Uint8Array | null, fallback: ReadonlyArray<DayResolut
  *  zet de echte, gematerialiseerde `holidays` erna. `description` wordt eveneens leeggemaakt: MPP kent
  *  geen per-kalender-omschrijving, en de hardgecodeerde default-tekst zou stil onwaar worden.
  *
- *  `hoursPerDayOverride` (niet-`null`) overschrijft de scalar-afgeleide `hoursPerDay` VÓÓR promotie,
- *  zodat promotie (die `hoursPerDay` via `deriveHoursPerDay` opnieuw kan afleiden) het laatste woord
- *  houdt — dezelfde volgorde als mspdiReader. */
+ *  `hoursPerDayOverride` (niet-`null`) overschrijft de scalar-afgeleide `hoursPerDay`. De promotie leidt
+ *  `hoursPerDay` opnieuw af uit de blokken; {@link promoteCalendarsForHourMode} zet de override daarna
+ *  terug, net als mspdiReader met `<MinutesPerDay>`. */
 function buildCalendarFromDays(name: string, days: ReadonlyArray<DayResolution>, hoursPerDayOverride: number | null): WorkCalendar {
   const cal = createDefaultCalendar();
   cal.id = generateId('mppcal');
@@ -210,8 +210,8 @@ function buildCalendarFromDays(name: string, days: ReadonlyArray<DayResolution>,
     cal.workEndHour = blocked.endHour;
     cal.hoursPerDay = deriveHoursPerDay(bands, blocked.netHours);
   } else if (scalarDay) {
-    // FLOOR op beide grenzen — spiegelt mspdiReader's `parseInt(toTime.split(':')[0])` (het
-    // hele-uurdeel van de kloktijd); `Math.ceil` gaf bij 17:30 een te hoge `hoursPerDay`.
+    // FLOOR op beide grenzen (het hele-uurdeel van de kloktijd); `Math.ceil` gaf bij 17:30 een te hoge
+    // `hoursPerDay`.
     cal.workStartHour = Math.floor(scalarDay[0].start / 60);
     cal.workEndHour = Math.floor(scalarDay[0].end / 60);
     cal.hoursPerDay = cal.workEndHour - cal.workStartHour;
@@ -408,6 +408,9 @@ interface RawCalendarEntry {
 export interface CalendarReadResult {
   /** Alle gematerialiseerde kalenders (basis + afgeleide), MPP-uniqueID → `WorkCalendar`. */
   calendarByUniqueId: ReadonlyMap<number, WorkCalendar>;
+  /** De kalender die MINUTES_PER_DAY als `hoursPerDay` kreeg, met die waarde. Alleen bij een geldige
+   *  waarde; {@link promoteCalendarsForHourMode} zet hem na de promotie terug. */
+  fileHoursPerDay?: { calendar: WorkCalendar; hoursPerDay: number };
   /** De gekozen PROJECTkalender (DEFAULT_CALENDAR_NAME-lookup, met terugval — zie onderaan
    *  `readCalendars`). Altijd gezet; bij een lege/onleesbare TBkndCal-storage de generieke
    *  `createDefaultCalendar()`. */
@@ -663,8 +666,12 @@ function readCalendarsUnsafe(
     if (cal !== projectCalendar) resourceCalendars.push(cal);
   }
 
+  const overriddenCalendar = projectCalendarUid !== null ? calendarByUniqueId.get(projectCalendarUid) : undefined;
   return {
     calendarByUniqueId,
+    ...(overriddenCalendar && hoursPerDayOverride !== null
+      ? { fileHoursPerDay: { calendar: overriddenCalendar, hoursPerDay: hoursPerDayOverride } }
+      : {}),
     projectCalendar,
     resourceCalendars,
     resourceCalendarUniqueIdByResourceUniqueId,
@@ -687,8 +694,13 @@ function readCalendarsUnsafe(
 export function promoteCalendarsForHourMode(
   calendarByUniqueId: ReadonlyMap<number, WorkCalendar>,
   signaledCalendars: ReadonlySet<WorkCalendar>,
+  fileHoursPerDay?: CalendarReadResult['fileHoursPerDay'],
 ): Set<WorkCalendar> {
-  return promoteHourCalendars(
+  const promoted = promoteHourCalendars(
     [...calendarByUniqueId.values()].map(cal => [cal, cal] as const), cal => signaledCalendars.has(cal), false,
   );
+  // MINUTES_PER_DAY gaat na de promotie terug, zoals `<MinutesPerDay>` in mspdiReader en de eigen
+  // uren per dag bij XER en IFC: de omrekening tussen dagen en uren mag afwijken van de blokken.
+  if (fileHoursPerDay) fileHoursPerDay.calendar.hoursPerDay = fileHoursPerDay.hoursPerDay;
+  return promoted;
 }

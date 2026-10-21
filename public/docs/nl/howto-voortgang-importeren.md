@@ -28,8 +28,8 @@ Het Excel-blad is beveiligd, zonder wachtwoord: alleen de drie invulkolommen zij
 
 De uitvoerder vult per taak in:
 
-- `Completion (%)`: 0 tot en met 100. In het Excel-blad mag met decimalen (bijvoorbeeld 33,3); in de CSV vraagt de instructie om hele getallen.
-- `Actual Start` en `Actual Finish`: in Excel als datum in de eigen landinstelling; in de CSV als dd-mm-jjjj.
+- `Completion (%)`: 0 tot en met 100. De app leest ook decimalen, met een komma of een punt (bijvoorbeeld 33,3 of 33.3). De instructie in de CSV vraagt toch om hele getallen: een spreadsheet met een andere landinstelling kan 8,38 als 838 lezen.
+- `Actual Start` en `Actual Finish`: in Excel als datum in de eigen landinstelling; in de CSV als dd-mm-jjjj of als jjjj-mm-dd.
 
 Wat leeg blijft, verandert niets. Met een leeg vak wis je dus ook geen bestaande voortgang; dat kan alleen in de app. Een taak die niet gestart is, laat hij helemaal leeg.
 

@@ -47,13 +47,12 @@
     "xerImportMissingPlannedStarts_other": "計画開始のないアクティビティ {{count}} 件は、ファイルのデータ日付またはプロジェクト開始日から開始するようになりました。",
     "xerImportUnsupportedSemantics_other": "安全なフォールバックを使った P6 計画設定: {{count}}",
     "xerImportDatesAsRecorded_other": "Primavera が記録した日付をそのまま表示しているタスク: {{count}} 件（再計算していません）",
-    "xerImportDatesAsRecordedOffer_other": "ファイルに記録された日付と異なるタスク: {{count}} 件（表示できます）",
     "importDatesAsRecorded_other": "ファイルに記録された日付をそのまま表示しているタスク: {{count}} 件（再計算していません）",
-    "importDatesAsRecordedOffer_other": "ファイルに記録された日付と異なるタスク: {{count}} 件（表示できます）",
     "xerExportLoss": "{{format}} へのエクスポートでは XER のソース情報が失われます。",
     "mppLegacy": "この .mpp ファイルは古い形式（Project 2007 以前）を使用しています。MS Project で XML としてエクスポートし（ファイル → 名前を付けて保存 → XML）、そのファイルを開いてください。",
     "mppEncrypted": "この .mpp ファイルはパスワードで保護されています。MS Project で XML としてエクスポートし（ファイル → 名前を付けて保存 → XML）、そのファイルを開いてください。",
     "saveFailed": "保存できませんでした",
+    "ambiguousThousands": "「{{text}}」はあいまいです。小数ですか、千の位ですか？小数は「{{separator}}」（1{{separator}}5）、千の位は区切りなし（1500）で入力してください。値は変更されていません。",
     "siteSaveConflict": "保存されていません。サイト上の「{{name}}」は、その間に他のユーザーによって変更されました。変更内容はまだアプリ内にあります。「名前を付けて保存」で新しいファイルとして残せます。",
     "siteFileGone": "「{{name}}」はサイト上にありません。このファイルは「最近」から削除されました。",
     "savedViaDownload": "ダウンロードとして保存しました。「{{name}}」はダウンロードフォルダーにあります。この環境では、アプリが選択した場所に直接書き込むことはできません。",
@@ -119,6 +118,8 @@
     "xerArchiveReasonStructure": "理由: IFC 内のアーカイブ構造が正しくありません（重複、並べ替え、または誤った関連付け）。",
     "statusDateSetToday": "状態日を今日（{{date}}）に設定しました。",
     "durationBelowDoneWork": "「{{name}}」はすでに {{percent}}% 完了しています。完了済みの作業より短い期間にはできません。期間は変更されていません。",
+    "remainingWorkRecomputed": "「{{name}}」の残り作業を再計算しました: {{before}} 時間 → {{after}} 時間（値はファイルからのものでした）。Ctrl+Z で元に戻せます。",
+    "remainingWorkRecomputedMany_other": "{{count}} 件のタスクの残り作業を再計算しました（値はファイルからのものでした）。Ctrl+Z で元に戻せます。",
     "tutorialOfferLater": "チュートリアルはいつでも ヘルプ › チュートリアル にあります。",
     "tutorialOfferUnavailable": "現在、チュートリアルをインストールまたは開始できませんでした。後で ヘルプ › チュートリアル からもう一度お試しください。"
   },
@@ -962,13 +963,10 @@
     "enable": "時間計画を有効にする"
   },
   "recordedDates": {
-    "offer_other": "再計算により、{{total}} 件中 {{count}} 件のタスクがファイル内の日付からずれました。",
     "activeCount_other": "Primavera が記録したスケジュールを表示しています。再計算すると {{count}} 件のタスクがずれます。",
     "activeCountNeutral_other": "ファイルに記録されている日付を表示しています。再計算すると {{count}} 件のタスクがずれます。",
-    "show": "記録された日付を表示",
     "active": "ファイルに記録されている日付をそのまま表示しています。再計算は行われていません。",
     "recalculate": "再計算",
-    "markDeviates": "乖離あり",
     "markPartlyUnrecorded": "一部未記録",
     "notRecorded": "未記録"
   },

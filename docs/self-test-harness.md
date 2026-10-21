@@ -169,11 +169,17 @@ de browser-dev-build bestaat de bridge niet, dus voor browserzelftests blijft Ti
    anders `401`. Elk request met een aanwezige `Origin`-header wordt geweigerd met `403`, ongeacht
    token (DNS-rebinding-bescherming — een legitieme MCP-client stuurt geen `Origin`). Requests lopen
    strikt één-voor-één door de bridge (een `inflight`-mutex in `mcp_bridge.rs`): geen gelijktijdige
-   aanroepen.
+   aanroepen. Een geslaagde `initialize` geeft een `Mcp-Session-Id`; elk later request moet die meesturen
+   (zonder ⇒ `400`, onbekend ⇒ `404`, begin dan opnieuw met `initialize`). Zo heeft elke sessie een eigen
+   documentanker. Met `curl` dus eerst `initialize` en de header uit het antwoord overnemen.
 
 Voor de toolcatalogus (de `planner_*`-tools; taken, relaties, resources, kalender, project,
 baselines, documenten/bestanden, leestools, `planner_batch`) zie `.claude/rules/mcp.md` → *AI-assistent
 (MCP-bridge)* — niet hier gedupliceerd.
+
+**Getoetst met een externe client.** De officiële MCP-client toetst dit kanaal in `npm test`
+(`tests/mcp/cases-externe-client.ts`, tegen een met de hand bijgehouden Node-kopie van de Rust-HTTP-laag) en in de aparte workflow
+`mcp-real-app.yml` tegen de echte bridge. Wat dat bewijst en wat niet geleverd is: `docs/mcp-verificatie.md`.
 
 **Begrenzing.** Dit kanaal bestaat alleen in de échte Tauri-runtime. Wil je de browser-dev-build
 zelftesten, dan blijft Tier 1 (Playwright MCP + `window.__OPS__`) het enige kanaal — daar is geen
@@ -205,6 +211,9 @@ hij `ready.json`. Op Linux is `appDataDir` = `~/.local/share/org.openaec.planner
    - `save` `{path}` — schrijf de state als IFC naar schijf (picker omzeild met vast pad)
    - `open` `{path}` — lees van schijf + `loadState`
    - `dispatch` `{action, args}` — roep een willekeurige store-actie aan, bv. `addTask`, `runCPM`, `newProject`
+   - `mcpRestart` — de MCP-bridge stoppen en starten (zoals Stop/Start op het AI-tabblad); dev-only
+   - `mcpConnection` — poort, token en status van de MCP-bridge (`{ port, token, status, aiMode }`); zo verbindt
+     `tests/mcp/realApp/run-real-app.ts` een externe client met de echte bridge
 3. Paden moeten binnen de fs-scope vallen (appData of home; zie `src-tauri/capabilities/default.json`).
 
 Voorbeeld:

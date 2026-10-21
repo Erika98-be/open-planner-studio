@@ -15,6 +15,7 @@ npm run dev          # browser dev; fixed port per worktree (3007–3106), refus
 npm run tauri:dev    # desktop app, same port assignment
 npm run build        # tsc && vite build → dist/
 npm run build:platform -- --base /pad/   # platform build for the OpenAEC app on Frappe → dist-platform/
+npm run build:core   # headless core package @openaec/open-planner-core → dist-core/ (not published)
 npm run verify       # THE gate — the same steps as CI (split in parallel), release and deploy gate
 npm run typecheck    # tsc over src/ AND scripts/+tests/ — use this, not just build (incremental)
 npm run lint         # deliberately minimal ESLint (promises, control-regex, React hooks)
@@ -31,7 +32,7 @@ replace the corpus-free CI gate.
 One battery: `bash tests/planning/run.sh cases-<x>.json` or `bash tests/planning/run.sh check-<x>.ts`.
 A new `check-*.ts` runs automatically (also in the timezone matrix); add your own `if bundle_check` line in
 `tests/planning/run.sh` only for an environment variable, a fixed order or no matrix (grep a neighbouring check).
-New `cases-*.json`: extend `EXPECTED_BATTERIES` — do not read run.sh (~1.7k lines) in full.
+New `cases-*.json`: extend `EXPECTED_BATTERIES` — do not read run.sh (~2k lines) in full.
 
 **`npm run verify` is one definition, in `package.json`** — the release gate runs that line; ci.yml runs the same
 steps in parallel jobs via `scripts/verify-parts.mjs`, which reads them from that definition. The deploy (live.yml)
@@ -39,7 +40,7 @@ runs no verify of its own: it starts after a green ci.yml run on `main` (`workfl
 tested (a serial verify there took 31–45 min and hit the 45-minute job limit on 2026-10-13). The
 steps, in order: `typecheck` → `lint` → `test` (all five suites) → `verify:examples` → `verify:docs` →
 `verify:i18n` → `verify:release-highlights-json` → `verify:store-boundaries` → `verify:conventions` →
-`verify:gantt-boundaries` → `verify:cycles` → `verify:text-roles`.
+`verify:gantt-boundaries` → `verify:cycles` → `verify:text-roles` → `verify:core-package`.
 
 Separate gates (most are in `verify`): `npm run verify:examples` (examples load/compute),
 `npm run verify:docs` (in-app guides + the mechanical claims in this file), `npm run verify:i18n` (keys + CLDR
@@ -47,13 +48,17 @@ plural forms + no cast on a key + fixed formatting), `npm run verify:store-bound
 `npm run verify:gantt-boundaries` (AST gates: store, renderer, viewport, pointer and table boundaries),
 `npm run verify:conventions` (AST gate: `src/engine/` reads no source format, options keys only from the
 convention registry, provenance data gates pinned), `npm run verify:cycles` (circular imports after type erasure),
+`npm run verify:core-package` (builds the headless core package, `npm pack`, installs it in a temporary copy of
+`headless/consumer-example/`, runs and type-checks that consumer),
 `npm run verify:text-roles` (only the six text roles), `npm run verify:release-highlights-json` (in the chain)
 and `npm run verify:release-highlights` (separate: local update highlights and stats before a tagged release).
 `npm run verify:translations` (release gate, deliberately NOT in `verify`: every UI key in every locale translated
 and current per `i18n/ui-sources/`; `release.yml` and the release skill run it). `npm run verify:audit` is
 deliberately NOT in `verify` (Dependabot is the notification channel; an advisory gets
 its own commit). `npm run measure:profiles` (separate) measures the cell baseline per scheduling profile (rule A:
-no exact cell may become inexact); the P6 part needs `OPS_XER_CORPUS`.
+no exact cell may become inexact); the P6 part needs `OPS_XER_CORPUS`. `npm run measure:large-plans` (separate, not in CI)
+measures open, F5, levelling, save, auto-save/recovery and Gantt scroll/zoom at 1k/5k/10k tasks in a production
+build in headless Chromium and writes a JSON result; the baseline is in `docs/superpowers/evidence/`.
 
 Translations: `npm run i18n:add` puts one string in `nl` + `en` (required) and any other locale you give
 (recipe `docs/recepten/i18n-sleutel.md`); missing locales fall back to `en` until the pipeline fills them,
@@ -92,6 +97,15 @@ Node 22 (see CI). Rust stable only for the `tauri:*` commands.
   check is red, fix it and push again. A red suite blocks both deploy and release.
 - Browser tests use real browser events. The dev-only `window.__OPS__` bridge may set fixtures and read state,
   but never replace the user action under test.
+- **A new browser test extends an existing scenario first.** Every `test()` block starts the app again
+  (`tests/browser/fixtures/ops.ts`), so a new block in an existing file costs as much as a new file. A user
+  route is fixed by its start state and the user's goal: find the `test()` block with the same start state
+  and goal and add your action and assertion as a step in it. A new block only when no block has the same
+  start state and goal, or for a step that would break the rest of the route; a new spec file only for a
+  route no existing file fits. A large file or a long route is no reason for a new block.
+  Browser-only behaviour (keys, focus, clicks, drags, animation frames, UI↔store wiring) stays in the
+  browser, edge cases included; scheduling logic and long input matrices belong in `tests/planning/`.
+  Detail: `.claude/rules/tests.md`.
 - Never assume port 3007: read it from the dev-server output or `.claude/launch.json`.
 
 ### Which check after which change
@@ -102,6 +116,7 @@ Node 22 (see CI). Rust stable only for the `tauri:*` commands.
 | one CPM/calendar case battery | `bash tests/planning/run.sh cases-<x>.json` — skips all `check-*.ts` batteries and the matrix |
 | one targeted check | `bash tests/planning/run.sh check-<x>.ts` — skips all `cases-*.json` batteries and the matrix |
 | document field / IFC round-trip | `npm run typecheck` + `check-document-contract.ts` / `check-ifc-roundtrip.ts`; full planning suite before the PR |
+| headless core (`src/core/`, `scripts/build-core.mjs`) | `bash tests/planning/run.sh check-headless-core.ts` + `npm run verify:core-package` |
 | i18n key | `npm run verify:i18n` |
 | UI change | `node scripts/run-browser-tests.mjs tests/browser/smoke.spec.ts` (or a targeted spec), plus `window.__OPS__` |
 | MCP tool | `bash tests/mcp/run.sh cases-<x>.ts` |
@@ -129,15 +144,27 @@ Node 22 (see CI). Rust stable only for the `tauri:*` commands.
   `filePath`/`fileHandle`; derive the save
   target only via `saveTargetRef`. Dev: `?fakeSite=1` installs a fake site. Detail: `docs/platformbouw.md`.
 - **IFC 4.3 is the native format**; there is no JSON project format. New domain data must round-trip through
-  `ifcWriter`/`ifcReader`, or it is gone after saving. CSV/MSPDI/P6/`.mpp`/`.xer` are adapters. Route:
-  `docs/ifc-round-trip.md`.
+  `ifcWriter`/`ifcReader`, or it is gone after saving. CSV/MSPDI/P6/`.mpp`/`.xer` are adapters. The file schema is
+  per project (`Project.ifcSchema`, default `IFC4X3_ADD2`); never write silently in another one. Route:
+  `docs/ifc-round-trip.md`; depth in the `tauri-ifc` rule.
 - **Document contract.** New project data belongs in `DOCUMENT_FIELDS` (`src/state/documentContract.ts`),
   otherwise it does not survive a document switch, undo, crash recovery or save. A `DocumentPayload` field
   missing from that list is a compile error.
-- **One Zustand+Immer store built from slices** (`src/state/appStore.ts`); slices are typed against the full
+- **One Zustand+Immer store built from slices** (`src/state/appStore.ts`; the factory `createAppStoreContext`
+  lives in `src/state/appStoreFactory.ts`, `appStore.ts` adds the one mounted singleton); slices are typed against the full
   `AppState`. Core runtime factories and store-bound MCP tools never import `useAppStore`/`appStoreContext`.
   UI/dialog flags: type in `UIState` (`slices/types.ts`), action in `uiSlice.ts`; persistent settings in
   `src/utils/settingsRegistry.ts`. Undo/redo is snapshot-based (`beginUndoable` → mutation → `finishUndoable`).
+- **Headless core.** `src/core/` (`index.ts` + `api.ts`) is the public API of the package
+  `@openaec/open-planner-core` (`npm run build:core`, not published): open IFC text, `schedule()` like F5,
+  JSON summary, `toIfc()`, one error type with a fixed `code`. It builds its own context per document from
+  `appStoreFactory.ts` and imports no value from `appStore.ts` (`verify:store-boundaries`); the build fails if
+  React, Tauri, the singleton or the i18n UI config end up in the bundle. `api.ts` imports nothing and is the
+  contract: a change there is a contract change (`docs/headless-kern.md`). Guards: `check-headless-core.ts`
+  (core = app for every example) and `verify:core-package`.
+  The HTTP API on top of it (`headless/server/`, contract `openapi.yaml`, container `Dockerfile`, AWS ECS
+  Fargate template `deploy/aws/ecs-fargate.yaml`) is tested by `.github/workflows/headless-api.yml`
+  (local server + container + smoke test, `cfn-lint`), not by `verify`. Detail: `docs/headless-api.md`.
 - **Scheduling is manual, not reactive.** `runCPM` → `solveProject()`; call it after mutating tasks,
   relations or the calendar (store actions do not do it themselves; only the opt-in setting Automatisch berekenen,
   `ui.autoCalcCPM`, runs it via `useAutoCalcCPM`). Always set `scheduleStale` via `markScheduleStale`
@@ -201,7 +228,7 @@ Node 22 (see CI). Rust stable only for the `tauri:*` commands.
   before reporting a "new" bug.
 - **User-visible feature ⇒ guide** in `public/docs/{nl,en}/` plus a manifest entry (recipe
   `docs/recepten/in-app-gids.md`). You write `nl` + `en` (the sources, required), organised by Diátaxis (`kind`:
-  how-to, explanation, reference; the tutorials ship as an extension); the other locales come from the translation
+  `howto`, `uitleg`, `referentie`; the tutorials ship as an extension); the other locales come from the translation
   pipeline (`public/docs/<locale>/` + a generated `index.json`, structure hashes in `i18n/docs-sources/`), and an
   article missing in a locale reads English with a notice.
   Renaming an article needs an alias in the manifest; ids the app uses live in `src/state/helpArticles.ts`.
@@ -246,10 +273,11 @@ Single-context: one `GLOSSARY.md` and `docs/adr/` at the root, created lazily. S
 | `taaktypes` | work rules / task types (`src/engine/work/`) |
 | `gantt-splits` | renderer, canvas interaction, task grid, splits |
 | `reports` | reports, PDF, print |
-| `ui-shell` | layout, ribbon, backstage, panels, dialogs |
+| `import-export` | progress sheet (Excel/CSV), XLSX, ZIP services |
+| `ui-shell` | layout, ribbon, backstage, panels, dialogs, first-start tour |
 | `text-roles` | the six text roles (`*.tsx`, `*.css`) |
 | `i18n` | `src/i18n/`, i18n scripts and tests |
-| `settings-autosave` | settings, auto-save, recovery, stats |
+| `settings-autosave` | settings, auto-save, recovery, clean quit, stats |
 | `extensions` | extension system |
 | `mcp` | MCP bridge and `planner_*` tools |
 | `library` | resource library |
@@ -265,14 +293,17 @@ last two: `public/skills/<name>/SKILL.md`, copied byte-identically; they are the
 `planner_get_planning_guide` hands out, next to the English agent guide `public/agent/planning-guide.md`).
 
 Recipes: `docs/recepten/` (MCP tool, setting, translation key, ribbon tab, text size, in-app guide,
-scheduling convention) and `docs/ifc-round-trip.md`. Self-test: `docs/self-test-harness.md`. Roadmap: `PLAN.md`
-(§4 obsolete). Design docs: start at `docs/superpowers/README.md` — read them as *why*, not as *what exists*.
+scheduling convention) and `docs/ifc-round-trip.md`. Self-test: `docs/self-test-harness.md`.
+Open work: `docs/TODO.md`. `PLAN.md` is the design-phase plan, not the current state.
+Design docs: start at `docs/superpowers/README.md` — read them as *why*, not as *what exists*.
 
 ## Key paths
 
 | Concern | Location |
 |---|---|
-| Store composition root | `src/state/appStore.ts` |
+| Store composition root | `src/state/appStore.ts` (factory: `src/state/appStoreFactory.ts`) |
+| Headless core (package API) | `src/core/`, build `scripts/build-core.mjs`, consumer `headless/consumer-example/` |
+| Headless HTTP API, container, AWS | `headless/server/`, `deploy/aws/ecs-fargate.yaml`, `.github/workflows/headless-api.yml` |
 | Slices | `src/state/slices/` |
 | CPM solver / calendar engine | `src/engine/scheduler/`, `src/engine/calendar/` |
 | Canvas renderer | `src/engine/renderer/` |

@@ -415,10 +415,6 @@
     "timephasedActive": "Podąża za rozkładem godzin z MS Project",
     "timephasedLost": "Rozkład godzin z MS Project nie jest już stosowany po edycji — pierwotny rozkład pozostaje zachowany w pliku",
     "timephasedContoured": "Własny rozkład godzin",
-    "recordedDatesActive": "Pokazuje własne daty zapisane przez Primaverę dla tego zadania",
-    "recordedDatesActiveNeutral": "Pokazuje daty zapisane w pliku dla tego zadania",
-    "recordedDatesDeviates": "Odbiega od zapisanych dat",
-    "recordedDatesPartlyUnrecorded": "Zapis jest częściowo niekompletny — zobacz kolumny późnego zakończenia/zapasu",
     "completion": "Postęp (%)",
     "progress": {
       "actualStart": "Rzeczywisty początek",
@@ -467,7 +463,7 @@
       "work": "Praca (pozost.)",
       "workHint": "Pozostała praca w godzinach; reguła pracy decyduje, czy zmienia się czas trwania, czy jednostki.",
       "workDeviates": "Różni się od jednostek × czasu trwania",
-      "workDeviatesHint": "Zapisana praca {{stored}} h różni się od jednostek × pozostałego czasu trwania ({{derived}} h). Histogram podąża za zapisaną pracą przez cały czas trwania zadania; jednostki pozostają takie jak w pliku.",
+      "workDeviatesHint": "Zapisana praca {{stored}} h różni się od jednostek × pozostałego czasu trwania ({{derived}} h). Histogram podąża za zapisaną pracą przez cały czas trwania zadania; jednostki pozostają takie jak w pliku. Jeśli zmienisz czas trwania, aplikacja przeliczy ją ponownie.",
       "locked": "Chronione przez regułę pracy {{rule}}"
     },
     "notes": {

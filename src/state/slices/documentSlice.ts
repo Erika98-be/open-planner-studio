@@ -36,6 +36,7 @@ import {
 import { sameIFCSource, type IFCSaveSource } from '../ifcSaveInput';
 import { withXerArchiveIssueNotice } from '../xerArchiveIssueNotice';
 import { scheduleFailedNotice } from '../scheduleErrorNotice';
+import { clearRefusals } from '../refusalNotice';
 import {
   mergeCalendarLibrarySettle, notifyCalendarLibrarySettle, NO_CALENDAR_LIBRARY_SETTLE, type CalendarLibrarySettle,
 } from '../calendarTasks';
@@ -95,6 +96,11 @@ function resetDocumentScopedUI(s: AppState): void {
   // dialoog openstaat (zie hasBlockingDialogOpen/BLOCKING_UI_FLAGS + de when-guards op Ctrl/⌘1-9 en
   // Ctrl+O). Gaat dit wél af, dan is er een wisselroute gemist; dat is een bug, geen normaal gedrag.
   s.ui.showProgressImportDialog = false;
+  // Zelfde vangnet: "Taak wordt een samenvattingstaak" noemt taken van het vorige document.
+  s.ui.pendingPhaseAssignmentQuestion = null;
+  // Weigeringen horen bij het uitgaande document (eigenaarsbesluit 2026-10-19 5b): weg, en ze komen
+  // niet terug bij terugwisselen. Echte fouten en infos blijven (`clearRefusals`).
+  clearRefusals(s.ui);
 }
 
 function publishActivation(s: AppState, activation: DocumentActivationMaterialization): void {
@@ -340,6 +346,8 @@ export const createDocumentSlice: AppSliceFactory<DocumentSlice> = (runtime) => 
   ...initialDocumentRegistry(),
 
   newDocument: () => {
+    // Open veldinvoer hoort bij het document dat nu actief is (zie pendingTextEdits.ts).
+    runtime.finishPendingTextEdits();
     const state = get();
     const outgoing = capturePayload(state);
     const newId = generateId('doc');
@@ -361,6 +369,9 @@ export const createDocumentSlice: AppSliceFactory<DocumentSlice> = (runtime) => 
   },
 
   duplicateDocument: (name) => {
+    // Eerst open veldinvoer in de bron committen: die hoort in de bron én (dus) in de kopie, en niet
+    // alleen in de kopie via de unmount van het veld (review #401, punt 1).
+    runtime.finishPendingTextEdits();
     // Een documentwissel breekt een lopende coalesce-reeks af (zie switchDocument): de kopie mag niet
     // stilzwijgend verdergaan op de undo-stap van de bron.
     runtime.resetUndoCoalescing();
@@ -452,8 +463,9 @@ export const createDocumentSlice: AppSliceFactory<DocumentSlice> = (runtime) => 
   },
 
   switchDocument: (id) => {
+    if (id === get().activeDocumentId) return;
+    runtime.finishPendingTextEdits(); // open veldinvoer hoort bij het uitgaande document (pendingTextEdits.ts)
     const state = get();
-    if (id === state.activeDocumentId) return;
     // Een documentwissel breekt een lopende coalesce-reeks af: terugswitchen mag niet
     // stilzwijgend verdergaan op de undo-stap van vóór de wissel.
     runtime.resetUndoCoalescing();
@@ -486,6 +498,7 @@ export const createDocumentSlice: AppSliceFactory<DocumentSlice> = (runtime) => 
   },
 
   closeDocument: (id) => {
+    runtime.finishPendingTextEdits(); // open veldinvoer hoort bij het document dat nu actief is
     const state = get();
     if (!state.documents.some((d) => d.id === id)) return;
 
@@ -593,6 +606,7 @@ export const createDocumentSlice: AppSliceFactory<DocumentSlice> = (runtime) => 
 
   restoreDocuments: (docs, activeId) => {
     if (docs.length === 0) return { skippedIds: [] };
+    runtime.finishPendingTextEdits(); // open veldinvoer hoort bij het document dat nu actief is
     // Herstel leest per document een ZELFSTANDIG IFC; identieke gevalideerde XER-bron-
     // archieven worden hier weer één gedeelde referentie vóór er payloads van gemaakt worden
     // (rehab-2 alleen al draagt 52.640 retained TASKRSRC-rijen). Deze stap GOOIT bewust bij een
@@ -624,8 +638,9 @@ export const createDocumentSlice: AppSliceFactory<DocumentSlice> = (runtime) => 
       try {
         const rawPayload = payloadFromInput(candidate);
         const p = prepareLoadedPayload(rawPayload, { recompute: true });
-        // Crashherstel herstelt het aanbod "datums zoals opgeslagen" (`recordedFields`, elk
-        // formaat) EN de modusvlag van vóór de crash —
+        // Crashherstel herstelt "datums zoals opgeslagen" (`recordedFields`, elk formaat) alleen
+        // als de modus vóór de crash aan stond; anders vergeet het de opgeslagen datums (geen
+        // aanbod-stand meer, eigenaar 2026-10-17). De modusvlag komt
         // uit de recovery-metadata (`candidate.datesAsRecorded`), dus een OPGESCHREVEN feit en
         // geen heuristiek: crashherstel is het hervatten van een sessie, geen heropening, en mag
         // dus niet opnieuw beslissen. `rawPayload.tasks` is bewust de PRE-solve array —

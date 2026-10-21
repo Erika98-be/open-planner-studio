@@ -61,9 +61,9 @@ import type {
   Task, TaskConstraint, TaskSplitGap, MspTaskType, TaskTimephasedContour, TimephasedContourPeriod,
 } from '@/types/task';
 import type { WorkCalendar } from '@/types/calendar';
-import { hourTaskScheduleDuration } from '@/utils/taskDuration';
+import { effHoursPerDay, hourTaskScheduleDuration } from '@/utils/taskDuration';
 import type { Resource, ResourceType } from '@/types/resource';
-import type { ImportLabels, ImportResult } from '@/services/importTypes';
+import { hasMsProjectImportLoss, type ImportLabels, type ImportResult } from '@/services/importTypes';
 import { generateId } from '@/utils/id';
 import { formatDate, formatInstant, parseInstant, localTodayIso } from '@/utils/dateUtils';
 import { normalizeImportedProgress, deriveImportedWorkRules, reconstructResourceIds } from '@/services/importNormalize';
@@ -88,6 +88,8 @@ import {
 import { readCalendars, promoteCalendarsForHourMode, type CalendarReadResult } from './mppCalendars';
 import { MAX_VAR_TEXT_BYTES, clampRemainingDurationTenths, clampManualDurationTenths, clampLevelingDelayTenths } from './limits';
 import { readRelations, readResources, readAssignments, readAssignmentTimephasedRaw } from './mppEntities';
+import { scanMppImportLoss } from './mppImportLoss';
+import { collectValidTaskIndices } from './mppRecords';
 import { builtInProfile } from '@/engine/scheduler/conventions/registry';
 import { buildRecordedTime, leafRecordedTimes, recordedFloatDays, type RecordedTime } from '@/engine/scheduler/recordedDates';
 import {
@@ -134,15 +136,6 @@ const TASK_FIXED_META_ITEM_SIZE = 47;
 /** TBkndTask/Fixed2Meta-itemgrootte-KANDIDATEN (MPP14Reader.java: `new FixedMeta(stream,
  *  taskFixedData, 92, 93, 94, 95, 96)` — de heuristische variant, `FixedMeta.withHeuristicItemSize`). */
 const TASK_FIXED2_META_ITEM_SIZES = [92, 93, 94, 95, 96];
-/** Fixed-data-blokken kleiner dan dit zijn "null-taak"-plaatshouders (verwijderde/vrijgemaakte
- *  unique-ID's die geen echte taak dragen) — MPP14Reader.java's `NULL_TASK_BLOCK_SIZE`. */
-const NULL_TASK_BLOCK_SIZE = 16;
-/** Bit 0x02 in de eerste 4 bytes van een FixedMeta-item markeert een verwijderde taak
- *  (`createTaskMap`'s `flags & 0x02`-check). */
-const DELETED_TASK_FLAG = 0x02;
-/** De eerste drie FixedData-slots zijn geen taken (MPP14Reader.java's `createTaskMap`: "First
- *  three items are not tasks, so let's skip them"). */
-const FIRST_TASK_INDEX = 3;
 
 /**
  * Klem op het RUWE outline-level (SHORT, 0..65535). Dat veld stuurt zowel de stackdiepte in
@@ -277,49 +270,6 @@ export function assignHierarchyAndWbs<T extends HierarchyTaskLike>(
   }
 }
 
-/** Poort van `MPP14Reader.processTaskData`'s `createTaskMap`, vereenvoudigd tot een
- *  `uniqueID → FixedData-index`-tabel zonder verwijderde/null-/spooktaken (KRITIEK voor
- *  taakaantal-pariteit met MS Project). Java itereert achterwaarts en voegt alleen toe als de sleutel
- *  nog niet bestaat (hoogste index wint); hier voorwaarts met overschrijven — zelfde resultaat. */
-function collectValidTaskIndices(fixedMeta: FixedMeta, fixedData: FixedData, varMeta: VarMeta12, uniqueIdOffset: number): Map<number, number> {
-  const itemCount = fixedMeta.getAdjustedItemCount();
-  const validIndexByUniqueId = new Map<number, number>();
-  const deletedIds = new Set<number>();
-
-  for (let index = FIRST_TASK_INDEX; index < itemCount; index++) {
-    const data = fixedData.getByteArrayValue(index);
-    if (!data) continue;
-    const metaItem = fixedMeta.getByteArrayValue(index);
-    if (!metaItem || metaItem.length < 4) continue;
-
-    const flags = getInt(metaItem, 0, 'TBkndTask/FixedMeta-flags');
-    if ((flags & DELETED_TASK_FLAG) !== 0) {
-      // Verwijderde-taak-marker: alleen de unique-ID onthouden (voor de spooktaak-check
-      // hieronder) — MPP14Reader.java leest 'm hier als SHORT ("Only a short stored for deleted
-      // tasks?"), niet als de gebruikelijke INT.
-      if (data.length >= 2) deletedIds.add(getShort(data, 0, 'TBkndTask/FixedData deleted-uid'));
-      continue;
-    }
-    // Null-taak-plaatshouder: MPXJ voegt deze wél toe (`task.setNull(true)`) om ID-continuïteit te
-    // bewaren, maar hij is nooit zichtbaar in de UI of een XML-export, dus hier overgeslagen. Dit
-    // verklaart ID-gaten in een rauwe TBkndTask/FixedData-dump.
-    if (data.length === NULL_TASK_BLOCK_SIZE) continue;
-
-    if (data.length < uniqueIdOffset + 4) continue;
-    const uniqueId = getInt(data, uniqueIdOffset, 'TBkndTask/FixedData uniqueId');
-    validIndexByUniqueId.set(uniqueId, index); // latere/hogere index wint
-  }
-
-  // Spooktaak-check (MPP14Reader.java): een unique-ID die zowel als verwijderd gemarkeerd staat
-  // ALS een normaal record heeft, telt alleen mee als er var-data voor bestaat.
-  for (const uid of deletedIds) {
-    if (validIndexByUniqueId.has(uid) && !varMeta.containsKey(uid)) {
-      validIndexByUniqueId.delete(uid);
-    }
-  }
-
-  return validIndexByUniqueId;
-}
 
 /** Percent complete: SHORT, 0..100 direct (MPPUtility.getPercentage) — buiten dat bereik ⇒ 0
  *  (spiegelt de Java-bron: een ongeldige waarde levert daar `null`, hier de neutrale 0). */
@@ -744,7 +694,7 @@ export function readTasks(ctx: ReadTasksContext): ReadTasksResult {
       (raw.finishTs != null && hasNonAnchorTime(formatInstant(raw.finishTs, 'hour'), anchor));
     if (durSignal || dateSignal) cSignalCals.add(cal);
   }
-  const hourModeCals = promoteCalendarsForHourMode(calResult.calendarByUniqueId, cSignalCals);
+  const hourModeCals = promoteCalendarsForHourMode(calResult.calendarByUniqueId, cSignalCals, calResult.fileHoursPerDay);
 
   // ── Fase C: de `Task`-objecten, met de nu bekende dag/uur-beslissing per taak. ─────────────────
   const taskIdByUniqueId = new Map<number, string>();
@@ -755,10 +705,9 @@ export function readTasks(ctx: ReadTasksContext): ReadTasksResult {
   for (const raw of raws) {
     const cal = raw.effCal;
     const isHour = hourModeCals.has(cal);
-    const effHpd = cal.hoursPerDay;
 
     // Duur: uur ⇒ minuten (bron van waarheid, geen dag-afronding); dag ⇒ werkdagen op de
-    // PROJECT-brede `hoursPerDay` (niet `effHpd`, zie de moduleheader). `durationMinutes` is
+    // PROJECT-brede `hoursPerDay` (niet die van de taakkalender, zie de moduleheader). `durationMinutes` is
     // klok-neutraal (een minuut is een minuut); de solver past ELAPSEDTIME 24/7 toe (`duration.ts`).
     // Beperkingen daar: MSO/MFO-snaps op een ELAPSEDTIME-taak (`CPMSolver.hardPinStart`) en de
     // vrije-speling-eenheid bij een elapsed voorganger (`scheduleAnalysis.ts`).
@@ -913,7 +862,8 @@ export function readTasks(ctx: ReadTasksContext): ReadTasksResult {
         if (tenths === null) return undefined;
         return raw.isElapsedDuration
           ? recordedFloatDays(tenths / 10, 24 * 60)
-          : recordedFloatDays(tenths / 10, (isHour ? effHpd : hoursPerDay) * 60);
+          // Urentaak: werktijd per dag, zoals XER (`readXerRecordedTimes`) — niet MINUTES_PER_DAY.
+          : recordedFloatDays(tenths / 10, (isHour ? effHoursPerDay(cal) : hoursPerDay) * 60);
       };
       const totalSlackRaw = mppTotalSlackTenths(raw.actualStartTs !== null, raw.startSlackRaw, raw.finishSlackRaw);
       const totalFloat = slackDays(totalSlackRaw);
@@ -1583,7 +1533,8 @@ export function readMPP(bytes: Uint8Array, labels?: ImportLabels): ImportResult 
   // (c)-signaal en promoveert ze daarna in-place (zelfde object-referenties), dus `calendar` en
   // `calResult.resourceCalendars` zijn na `readTasks` volledig gepromoveerd.
   // `calendarHoursPerDayOverride` (alleen bij een geldige MINUTES_PER_DAY) spiegelt mspdiReader's
-  // MinutesPerDay-override op de projectkalender in `readCalendars`.
+  // MinutesPerDay-override op de projectkalender in `readCalendars`; ook na de promotie blijft hij staan
+  // (`promoteCalendarsForHourMode`), zodat `.mpp` en MSPDI van hetzelfde project dezelfde kalender geven.
   const calResult = readCalendars(cfb, projectProps, applicationVersion, calendarHoursPerDayOverride);
   const calendar = calResult.projectCalendar;
   project.calendarId = calendar.id;
@@ -1660,6 +1611,13 @@ export function readMPP(bytes: Uint8Array, labels?: ImportLabels): ImportResult 
 
   // Pas ná beide mutatielussen staan `splitGaps` en de timephased-velden op de taak.
   const scheduleNotes = countScheduleNotes(tasks);
+  // Importverslag (issue #391): wat deze lezer niet overneemt (`mppImportLoss.ts`).
+  const msProjectReport = scanMppImportLoss({
+    cfb, taskFieldMap, resourceFieldMap, assignmentFieldMap,
+    taskUniqueIds: new Set(taskIdByUniqueId.keys()),
+    resourceUniqueIds: new Set(resourceIdByUniqueId.keys()),
+    criticalSlackLimitDays: criticalSlackLimitDaysOf(projectProps),
+  });
 
   return {
     project,
@@ -1674,6 +1632,7 @@ export function readMPP(bytes: Uint8Array, labels?: ImportLabels): ImportResult 
     // Alleen gezet als ≥1 taak een signaal draagt, zodat `fileSlice.ts` met
     // `parsed.sourceScheduleNotes?.total` volstaat.
     ...(scheduleNotes.total > 0 ? { sourceScheduleNotes: scheduleNotes } : {}),
+    ...(hasMsProjectImportLoss(msProjectReport) ? { msProjectReport } : {}),
     // Alleen bladtaken — zie `leafRecordedTimes`.
     ...(() => {
       const leafTimes = leafRecordedTimes(tasks, recordedTimes);

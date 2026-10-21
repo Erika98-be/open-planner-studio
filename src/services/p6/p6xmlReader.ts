@@ -1,9 +1,10 @@
 import { nameWithProjectCode } from '@/utils/projectCodeName';
 import { P6XmlImportError } from './p6xmlErrors';
+import { p6ConstraintFromCodeOrLabel } from './p6ConstraintTypes';
 import { Task, TaskConstraint, ConstraintType } from '@/types/task';
 import type { P6CompletePctType, P6DurationType } from '@/types/task';
 import { createDefaultTaskTime } from '@/utils/taskDefaults';
-import { hourTaskScheduleDuration } from '@/utils/taskDuration';
+import { effHoursPerDay, hourTaskScheduleDuration } from '@/utils/taskDuration';
 import { Sequence, SequenceType } from '@/types/sequence';
 import { Resource, ResourceAssignment, ResourceType, ResourceCurve } from '@/types/resource';
 import { Project } from '@/types/project';
@@ -173,23 +174,25 @@ function p6HoursToDays(hours: number, hoursPerDay: number): number {
 }
 
 /**
- * P6 `CS_*`-code → OPS-constraint (spiegel van `p6ConstraintCode` in de writer). De harde
- * `CS_MANDSTART`/`CS_MANDFIN` komen terug als `MSO`/`MFO` mét `hard:true`; de soft-typen als hun
- * OPS-equivalent. Onbekende code ⇒ `undefined` (veld afwezig).
+ * P6-constraintsoort → OPS-constraint. Echte P6 XML (PMXML) schrijft `<PrimaryConstraintType>` en
+ * `<SecondaryConstraintType>` als Engels label (`Start On or After`); de eigen writer schrijft het
+ * label sinds deze fix ook, maar oudere OPS-exports dragen het XER-token (`CS_MSOA`). Beide
+ * schrijfwijzen worden gelezen, via de gedeelde helper `p6ConstraintFromCodeOrLabel`
+ * (`p6ConstraintTypes.ts`, bron MPXJ `ConstraintTypeHelper`). De harde `Mandatory Start`/
+ * `Mandatory Finish` komen terug als `MSO`/`MFO` mét `hard:true`.
+ *
+ * `<Primary|SecondaryConstraintType>` → OPS-constraint. Leeg ⇒ `undefined` (ASAP). Een onbekende
+ * waarde ⇒ `undefined` mét waarschuwing, zodat een vreemd label zichtbaar blijft (zoals bij
+ * `<DurationType>`).
  */
-function p6CodeToConstraint(code: string): { type: ConstraintType; hard?: boolean } | undefined {
-  switch (code) {
-    case 'CS_MSO': return { type: 'MSO' };
-    case 'CS_MSOA': return { type: 'SNET' };
-    case 'CS_MSOB': return { type: 'SNLT' };
-    case 'CS_MEO': return { type: 'MFO' };
-    case 'CS_MEOA': return { type: 'FNET' };
-    case 'CS_MEOB': return { type: 'FNLT' };
-    case 'CS_ALAP': return { type: 'ALAP' };
-    case 'CS_MANDSTART': return { type: 'MSO', hard: true };
-    case 'CS_MANDFIN': return { type: 'MFO', hard: true };
-    default: return undefined;
-  }
+function p6ConstraintFromXml(raw: string, tag: string): { type: ConstraintType; hard?: boolean } | undefined {
+  const value = raw.trim();
+  if (!value) return undefined;
+  // Eigen sleutel (in de helper): een waarde als `toString` of `__proto__` raakt geen prototype-sleutel.
+  const known = p6ConstraintFromCodeOrLabel(value);
+  if (known) return known;
+  console.warn(`P6-XML-import: onbekende <${tag}>-waarde '${value}' — constraint blijft afwezig.`);
+  return undefined;
 }
 
 // P6-XML (PMXML) draagt `<DurationType>` als Engels label, niet als het XER-token
@@ -603,6 +606,13 @@ function readP6XmlProject(scope: P6XmlScope): P6XmlProjectRead {
   const projectCalEl = calElements.find(el => defaultCalObjId >= 0 && getElementInt(el, 'ObjectId', -1) === defaultCalObjId)
     ?? calElements[0];
   const calendar = projectCalEl ? readP6Calendar(projectCalEl, lastMinute) : createDefaultCalendar();
+  // Een eigen, geldige `HoursPerDay` per kalender; hij gaat na de uur-promotie terug (zie daar).
+  const fileHoursPerDay = new Map<WorkCalendar, number>();
+  const noteFileHoursPerDay = (cal: WorkCalendar, calEl: Element): void => {
+    const fileHpd = getElementFloat(calEl, 'HoursPerDay');
+    if (fileHpd > 0) fileHoursPerDay.set(cal, fileHpd);
+  };
+  if (projectCalEl) noteFileHoursPerDay(calendar, projectCalEl);
   const projectCalObjId = projectCalEl ? getElementInt(projectCalEl, 'ObjectId', -1) : -1;
   const hoursPerDay = calendar.hoursPerDay;
 
@@ -623,6 +633,7 @@ function readP6XmlProject(scope: P6XmlScope): P6XmlProjectRead {
     if (objId < 0 || objId === projectCalObjId || calObjIdToId.has(objId)) continue;
     if (getElementText(calEl, 'Type') !== 'Resource' && !referencedCalObjIds.has(objId)) continue;
     const cal = readP6Calendar(calEl, lastMinute);
+    noteFileHoursPerDay(cal, calEl);
     cal.id = generateId('rescal');
     calObjIdToId.set(objId, cal.id);
     resourceCalendars.push(cal);
@@ -858,6 +869,9 @@ function readP6XmlProject(scope: P6XmlScope): P6XmlProjectRead {
   // P6 valt terug op de scalar-synth zodra de geregistreerde canonical geen werkdag draagt
   // (preferCanonicalWhenEmpty = false) — zie `promoteHourCalendar`.
   const hourModeCalIds = promoteHourCalendars(calById, id => cSignalCalIds.has(id), false);
+  // Een eigen `HoursPerDay` uit het bestand (authoritatief, zie `readP6Calendar`) gaat na de promotie
+  // terug, zoals bij XER en IFC: de omrekening tussen dagen en uren mag afwijken van de blokken.
+  for (const [cal, fileHpd] of fileHoursPerDay) cal.hoursPerDay = fileHpd;
 
   // "Datums zoals opgeslagen" voor P6 XML: P6's EIGEN rekenuitvoer per activiteit —
   // `EarlyStartDate`/`EarlyFinishDate` (terugval `StartDate`/`FinishDate`), `LateStartDate`/
@@ -900,7 +914,8 @@ function readP6XmlProject(scope: P6XmlScope): P6XmlProjectRead {
     // dagtaak op een urenkalender blijft een dagtaak (eenheid uit de OPS-marker), maar haar datums
     // (ook de actuals) houden hun echte tijd.
     const hourDates = hourModeCalIds.has(effCalId);
-    const effHpd = calById.get(effCalId)?.hoursPerDay ?? hoursPerDay;
+    const effCal = calById.get(effCalId) ?? calendar;
+    const effHpd = effCal.hoursPerDay;
     // Datum-parser: uur ⇒ echte tijd (`parseInstant`+`formatInstant`), dag ⇒ tijd-strippen.
     const plannedStart = importDateTime(plannedStartRaw, hourDates);
     const plannedFinish = importDateTime(plannedFinishRaw, hourDates);
@@ -913,7 +928,11 @@ function readP6XmlProject(scope: P6XmlScope): P6XmlProjectRead {
       const floatDays = (raw: string): number | undefined => {
         if (!raw) return undefined;
         const hours = Number.parseFloat(raw);
-        return Number.isFinite(hours) ? recordedFloatDays(hours * 60, effHpd * 60) : undefined;
+        // Op een uurkalender in werktijd per dag, zoals XER (`readXerRecordedTimes`): de werktijd rekent
+        // en toont (eigenaarsbesluit 2026-10-15, "een dag"); de opgeslagen `HoursPerDay` telt hier niet.
+        return Number.isFinite(hours)
+          ? recordedFloatDays(hours * 60, effHoursPerDay(effCal) * 60)
+          : undefined;
       };
       const criticalRaw = getElementText(actEl, 'IsCritical');
       const recorded = buildRecordedTime({
@@ -948,7 +967,7 @@ function readP6XmlProject(scope: P6XmlScope): P6XmlProjectRead {
     // `hourTaskScheduleDuration`; dag ⇒ `Math.round(uren/hpd)` met de opgeslagen `HoursPerDay`.
     const durationMinutes = isHour ? Math.round(plannedDuration * 60) : undefined;
     const durationDays = isHour
-      ? hourTaskScheduleDuration(durationMinutes!, calById.get(effCalId) ?? calendar)
+      ? hourTaskScheduleDuration(durationMinutes!, effCal)
       : p6HoursToDays(plannedDuration, effHpd);
     const isMilestone = p6Type.includes('Milestone');
     // P6 onderscheidt Start/Finish Milestone — bewaar de soort expliciet.
@@ -958,13 +977,13 @@ function readP6XmlProject(scope: P6XmlScope): P6XmlProjectRead {
 
     const parentId = wbsObjId >= 0 ? wbsObjIdToId.get(wbsObjId) || null : null;
 
-    // Datumconstraints: primair + secundair uit de `CS_*`-codes. Secundair is altijd soft
+    // Datumconstraints: primair + secundair uit het PMXML-label of de `CS_*`-code. Secundair is altijd soft
     // (P6-invariant) ⇒ `hard` wordt gedropt. Datum: uur ⇒ echte tijd, dag ⇒ tijd-strippen.
     const parseCstrDate = (raw: string): string => importDateTime(raw, hourDates);
     let constraint: TaskConstraint | undefined;
     const primCode = getElementText(actEl, 'PrimaryConstraintType');
     if (primCode) {
-      const mapped = p6CodeToConstraint(primCode);
+      const mapped = p6ConstraintFromXml(primCode, 'PrimaryConstraintType');
       if (mapped) {
         const cdateRaw = getElementText(actEl, 'PrimaryConstraintDate');
         constraint = {
@@ -977,7 +996,7 @@ function readP6XmlProject(scope: P6XmlScope): P6XmlProjectRead {
     let constraint2: TaskConstraint | undefined;
     const secCode = getElementText(actEl, 'SecondaryConstraintType');
     if (secCode) {
-      const mapped2 = p6CodeToConstraint(secCode);
+      const mapped2 = p6ConstraintFromXml(secCode, 'SecondaryConstraintType');
       if (mapped2) {
         const cdate2Raw = getElementText(actEl, 'SecondaryConstraintDate');
         constraint2 = {

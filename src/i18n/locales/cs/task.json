@@ -414,10 +414,6 @@
     "timephasedActive": "Řídí se rozložením práce v čase z MS Project",
     "timephasedLost": "Datumové okno z MS Project se po úpravě už neuplatňuje. Rozložení práce v čase dál platí a zachová se v souboru.",
     "timephasedContoured": "Vlastní rozložení práce v čase",
-    "recordedDatesActive": "Zobrazuje vlastní uložená data Primavery pro tento úkol",
-    "recordedDatesActiveNeutral": "Zobrazuje data tak, jak jsou pro tento úkol uložena v souboru",
-    "recordedDatesDeviates": "Liší se od uložených dat",
-    "recordedDatesPartlyUnrecorded": "Záznam je částečně neúplný – viz sloupce pozdní zahájení, pozdní dokončení a časová rezerva",
     "completion": "Průběh (%)",
     "progress": {
       "actualStart": "Skutečné zahájení",
@@ -466,7 +462,7 @@
       "work": "Práce (zbývá)",
       "workHint": "Zbývající práce v hodinách. Pravidlo pevné veličiny určuje, zda se pohne doba trvání, nebo jednotky přiřazení.",
       "workDeviates": "Liší se od jednotek přiřazení × doby trvání",
-      "workDeviatesHint": "Uložená práce {{stored}} h se liší od jednotek přiřazení × zbývající doby trvání ({{derived}} h). Histogram sleduje uloženou práci po celou dobu trvání úkolu; jednotky přiřazení zůstávají tak, jak je uvedl soubor.",
+      "workDeviatesHint": "Uložená práce {{stored}} h se liší od jednotek přiřazení × zbývající doby trvání ({{derived}} h). Histogram sleduje uloženou práci po celou dobu trvání úkolu; jednotky přiřazení zůstávají tak, jak je uvedl soubor. Při změně doby trvání ji aplikace přepočítá.",
       "locked": "Chráněno pravidlem pevné veličiny {{rule}}"
     },
     "notes": {

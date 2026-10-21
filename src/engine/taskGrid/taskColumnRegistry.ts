@@ -1,5 +1,7 @@
 import { WORK_RULES } from '@/types/workRule';
 import { remainingMinutesOf, workRuleApplies } from '@/engine/work/workRuleApply';
+import { assignmentWorkDeviation, workDeviationEffectKey } from '@/engine/work/assignmentWorkDeviation';
+import { matchContoursToAssignments } from '@/engine/contour/contourEngine';
 import type { Baseline, BaselineTask } from '@/types/baseline';
 import { RESOURCE_CURVES, type ResourceAssignment, type ResourceCurve } from '@/types/resource';
 import type { ActivityCodeType, CustomFieldDef, CustomFieldValue } from '@/types/structure';
@@ -11,6 +13,7 @@ import type {
   GridResult,
   GridWriteIntent,
   RecordedTaskAxis,
+  TaskCellWarning,
   TaskAssignmentToken,
   TaskColumnCategory,
   TaskColumnContext,
@@ -39,7 +42,7 @@ import {
   type RelationCellItem,
 } from '@/engine/taskGrid/relationCell';
 import { isParsedRelationTokenArray } from '@/engine/taskGrid/relationPlan';
-import { parseDuration as parseDurationMinutes } from '@/utils/durationFormat';
+import { parseDuration as parseDurationMinutes, parseableHourSuffix } from '@/utils/durationFormat';
 import {
   formatTaskDurationInput,
   parseTaskDurationInput,
@@ -161,7 +164,6 @@ function formatScalar(value: unknown): string {
 /** Celtekst van de kolom `recorded.source` — gedeeld door `format` en `copy`, zodat het klembord
  *  nooit uit elkaar kan lopen met wat er op het scherm staat. */
 function recordedSourceText(value: unknown, ctx: TaskColumnContext): string {
-  if (value === 'deviates') return ctx.labelForText?.('recordedDates.markDeviates') ?? 'deviates';
   if (value === 'partly-unrecorded') return ctx.labelForText?.('recordedDates.markPartlyUnrecorded') ?? 'partly-unrecorded';
   return '—';
 }
@@ -279,6 +281,7 @@ function editableColumn(config: EditableColumnConfig): TaskColumnDescriptor {
     copy,
     editText: config.editText,
     tooltip: config.tooltip,
+    ...(config.warning ? { warning: config.warning } : {}),
     parse: config.parse,
     validate: config.validate,
     planWrite,
@@ -426,10 +429,11 @@ const validateScheduledTaskDuration: Validator = value =>
     ? success(value)
     : failure('duration', value);
 
-/** Kopieertekst van de Duur-kolom: de eigen taakeenheid in parsebare vorm ("2d", "1.5h"), zodat
- *  plakken terug hetzelfde oplevert. De WEERGAVE loopt via {@link durationCellText}. */
-function scheduledTaskDurationText(task: Task): string {
-  return `${formatTaskDurationInput(task)}${task.time.durationUnit === 'hours' ? 'h' : 'd'}`;
+/** Kopieertekst van de Duur-kolom: de eigen taakeenheid in parsebare vorm ("2d", "1.5u" in nl,
+ *  "1.5h" in en), zodat plakken terug hetzelfde oplevert. De WEERGAVE loopt via {@link durationCellText}. */
+function scheduledTaskDurationText(task: Task, ctx: TaskColumnContext): string {
+  if (task.time.durationUnit !== 'hours') return `${formatTaskDurationInput(task)}d`;
+  return `${formatTaskDurationInput(task)}${parseableHourSuffix(ctx.labelForText?.('duration.suffixHour'), 'h')}`;
 }
 
 /** De vertaalde duur-afkortingen en weergave-instellingen van het raster, voor de gedeelde formatter. */
@@ -714,6 +718,41 @@ function assignmentWorkTokens(task: Task, ctx: TaskColumnContext): TaskAssignmen
   }));
 }
 
+/**
+ * Het ⚠ in de kolom *Resterend werk (uren)* (eigenaarsbesluit 2026-10-19, optie 1): dezelfde toets als
+ * het ⚠ naast *Werk (rest)* in het paneel Toewijzingen (`TaskAssignmentsSection`), dus
+ * `assignmentWorkDeviation` met de contouruitzondering, zonder materiaal en alleen waar de regel werkt.
+ * Eén toewijzing in de cel ⇒ precies de uitleg van het paneel. Meer toewijzingen ⇒ één ⚠ met per
+ * afwijkende toewijzing de naam en de twee getallen, zodat je ziet welke het is.
+ */
+function remainingWorkWarning(task: Task, ctx: TaskColumnContext): TaskCellWarning | null {
+  if (!workRuleApplies(task)) return null;
+  const own = assignments(task, ctx);
+  if (own.length === 0) return null;
+  const hoursPerDay = effectiveHoursPerDay(task, ctx);
+  const contourOf = matchContoursToAssignments(task.timephasedContours, own);
+  const hits: { name: string; stored: number; derived: number }[] = [];
+  for (const assignment of own) {
+    const resource = ctx.resourcesById.get(assignment.resourceId);
+    if (resource?.type === 'MATERIAL') continue;
+    const deviation = assignmentWorkDeviation(
+      task, assignment.unitsPerDay, assignment.remainingWorkMinutes, hoursPerDay, contourOf.has(assignment.id),
+    );
+    if (deviation) hits.push({ name: resource?.name ?? assignment.resourceId, ...deviation });
+  }
+  if (hits.length === 0) return null;
+  const label = (key: string, values?: Readonly<Record<string, string | number>>) => ctx.labelForText?.(key, values) ?? '';
+  // Slotzin per regel (besluit V10): dezelfde keuze als het paneel en als de duurbewerking zelf.
+  const durationEffect = label(workDeviationEffectKey(task, ctx.defaultWorkRule));
+  const text = own.length === 1
+    ? label('properties.assignments.workDeviatesHint', { stored: hits[0].stored, derived: hits[0].derived, durationEffect })
+    : label('properties.assignments.workDeviatesMany', {
+      lines: hits.map(hit => label('properties.assignments.workDeviatesLine', hit)).join('\n'),
+      durationEffect,
+    });
+  return { kind: 'remaining-work-deviates', text };
+}
+
 function assignmentById(task: Task, ctx: TaskColumnContext, token: TaskAssignmentToken): ResourceAssignment {
   return assignments(task, ctx).find(item => item.id === token.assignmentId)
     ?? { id: token.assignmentId ?? '', taskId: task.id, resourceId: token.resourceId, unitsPerDay: token.unitsPerDay };
@@ -915,7 +954,7 @@ function fixedTimeColumns(): TaskColumnDescriptor[] {
   return [
     editableColumn({ id: 'task.time.durationType', labelKey: 'taskGrid.columns.durationType', category: 'planning', valueKind: 'enum', editorKind: 'enum', editorOptions: enumOptions('durationType', ['WORKTIME', 'ELAPSEDTIME']), route: 'task-schedule', read: task => task.time.durationType, parse: enumParser(['WORKTIME', 'ELAPSEDTIME']), validate: enumValidator(['WORKTIME', 'ELAPSEDTIME']) }),
     editableColumn({ id: 'task.time.durationUnit', labelKey: 'duration.unit', category: 'planning', valueKind: 'enum', editorKind: 'enum', editorOptions: [{ value: 'days', labelKey: 'duration.days' }, { value: 'hours', labelKey: 'duration.hours' }], route: 'task-schedule', read: task => task.time.durationUnit, readOnly: task => task.isHammock === true || task.childIds.length > 0 || task.isMilestone, parse: enumParser(['days', 'hours']), validate: enumValidator(['days', 'hours']) }),
-    editableColumn({ id: 'task.time.scheduleDuration', labelKey: 'taskGrid.columns.duration', category: 'planning', valueKind: 'duration', editorKind: 'duration', route: 'task-schedule', read: task => task.time.durationUnit === 'hours' ? task.time.durationMinutes : task.time.scheduleDuration, readOnly: task => task.isHammock === true || task.childIds.length > 0 || (task.isMilestone && task.time.scheduleDuration === 0), format: (_value, task, ctx) => durationCellText(task, ctx), copy: task => scheduledTaskDurationText(task), editText: task => formatTaskDurationInput(task), parse: parseScheduledTaskDuration, validate: validateScheduledTaskDuration }),
+    editableColumn({ id: 'task.time.scheduleDuration', labelKey: 'taskGrid.columns.duration', category: 'planning', valueKind: 'duration', editorKind: 'duration', route: 'task-schedule', read: task => task.time.durationUnit === 'hours' ? task.time.durationMinutes : task.time.scheduleDuration, readOnly: task => task.isHammock === true || task.childIds.length > 0 || (task.isMilestone && task.time.scheduleDuration === 0), format: (_value, task, ctx) => durationCellText(task, ctx), copy: (task, ctx) => scheduledTaskDurationText(task, ctx), editText: task => formatTaskDurationInput(task), parse: parseScheduledTaskDuration, validate: validateScheduledTaskDuration }),
     readonlyColumn({ id: 'task.time.durationMinutes', labelKey: 'taskGrid.columns.durationMinutes', category: 'technical', valueKind: 'number', read: task => task.time.durationMinutes }),
     // Start/Einde: de GETOONDE datums, dezelfde bron als Gantt-balk, tooltip, paneel en afdruk
     // (`shownStart`/`shownFinish`: een gestarte taak begint op haar werkelijke start, een voltooide
@@ -944,18 +983,16 @@ function fixedTimeColumns(): TaskColumnDescriptor[] {
     readonlyColumn({ id: 'task.time.interferingFloat', labelKey: 'taskGrid.columns.interferingFloat', category: 'computed', valueKind: 'duration', read: task => task.time.interferingFloat, format: (value, _task, ctx) => workDaysCellText(value, ctx) }),
     readonlyColumn({ id: 'task.time.isNearCritical', labelKey: 'taskGrid.columns.nearCritical', category: 'computed', valueKind: 'boolean', read: task => task.time.isNearCritical }),
     readonlyColumn({ id: 'task.time.floatPath', labelKey: 'taskGrid.columns.floatPath', category: 'computed', valueKind: 'number', read: task => task.time.floatPath }),
-    // "Datums zoals opgeslagen" — badge die toont of DEZE
-    // taak een vastlegging heeft die afwijkt van de herberekening, of onvolledig is. Bestaat
-    // uitsluitend op documenten met een vastlegging (`ctx.recordedMark !== undefined` ⇒
-    // `recordedDates !== null`, zie `FullTaskGrid.tsx`) — op elk ander document is deze kolom
-    // onzichtbaar, dus geen ruis op IFC/CSV/MSPDI/MPP-documenten zonder vastlegging.
+    // "Datums zoals opgeslagen" — badge die toont of de vastlegging van DEZE taak onvolledig is.
+    // Bestaat uitsluitend in de modus (`ctx.recordedMark !== undefined` ⇒ `datesAsRecorded`, zie
+    // `recordedGridBinding`) — op elk ander document is deze kolom onzichtbaar.
     readonlyColumn({
       id: 'recorded.source', labelKey: 'taskGrid.columns.recordedSource', category: 'computed', valueKind: 'text',
       available: ctx => ctx.recordedMark !== undefined,
       read: (task, ctx) => ctx.recordedMark?.(task),
       format: (value, _task, ctx) => recordedSourceText(value, ctx),
-      // Zonder eigen `copy` levert `copyScalar` het RAUWE token (`deviates`) in het klembord
-      // terwijl de cel "Wijkt af" toont. Dezelfde tekst als de
+      // Zonder eigen `copy` levert `copyScalar` het RAUWE token (`partly-unrecorded`) in het
+      // klembord terwijl de cel "Deels niet vastgelegd" toont. Dezelfde tekst als de
       // cel dus — en de lege markering blijft een lege klembordcel in plaats van een em-dash, want
       // dat is wat een plakactie in een spreadsheet verwacht.
       copy: (task, ctx) => {
@@ -1146,6 +1183,8 @@ function fixedAssignmentColumns(): TaskColumnDescriptor[] {
       ),
       editText: (task, ctx) => assignmentWorkTokens(task, ctx)
         .map(item => `${assignmentLabel(assignmentById(task, ctx, item), ctx)}: ${workHoursText(item.remainingWorkMinutes, ctx.numberLocale)}`).join('; '),
+      // ⚠ bij opgeslagen restwerk dat afwijkt van inzet × restduur, zoals in het paneel Toewijzingen.
+      warning: (_value, task, ctx) => remainingWorkWarning(task, ctx),
       parse: parseAssignmentWork,
       validate: (value, task, ctx) => validateAssignmentWorkTokens(value, task, ctx),
       planWrite: (value, task) => success([{

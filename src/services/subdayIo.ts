@@ -1,5 +1,5 @@
 import type { MilestoneKind, Task } from '@/types/task';
-import type { WorkCalendar, WorkTimeBands } from '@/types/calendar';
+import { isHourModeCalendar, type WorkCalendar, type WorkTimeBands } from '@/types/calendar';
 import { effectiveWorkTimeBands, firstBlockedDay, seedScalarBands } from '@/utils/effectiveWorkTime';
 // Writers moeten ook door tests/extensies aangeleverde objecten zonder `durationUnit`
 // veilig kunnen bewaren — `taskDurationUnit` draagt dezelfde legacy-regel als de documentmigratie.
@@ -166,6 +166,21 @@ export function canonicalizeBands(
 export const deriveHoursPerDay = modalBandHoursPerDay;
 
 /**
+ * Wijkt de opgeslagen `hoursPerDay` af van de uren per dag die uit de werktijd volgen? Strikte
+ * ongelijkheid, geen marge. Eén regel voor drie plekken:
+ *  - de IFC-schrijver schrijft `HoursPerDay` alleen bij een afwijking (`writeCalendarGenerationMeta`;
+ *    `docs/ifc-round-trip.md`, "Uren per dag bij een blokkenkalender");
+ *  - de uren per dag volgen de blokken alleen zonder afwijking ({@link hoursPerDayFollowsBlocks});
+ *  - het kalendervenster toont alleen bij een afwijking het oranje blok onder *Standaard werkdag*
+ *    (besluit eigenaar 2026-10-20, punt 8, optie 2).
+ * `derived` is `undefined` of `NaN` als er niets af te leiden is; dat telt als afwijking, zoals in de
+ * schrijver. Een aanroeper die dan geen afwijking wil, vangt dat zelf af.
+ */
+export function hoursPerDayDiffers(stored: number, derived: number | undefined): boolean {
+  return stored !== derived;
+}
+
+/**
  * De scalaire werkdag van één dag met werkblokken: begin van het EERSTE blok, einde van het LAATSTE
  * blok en de netto uren (som van de blokken). Eén definitie voor de MSPDI-, `.mpp`- en IFC-lezer en
  * voor de resourcebibliotheek (fix werkdag-einde, 2026-10): MS Projects 08:00–12:00 + 13:00–17:00 is
@@ -243,7 +258,7 @@ export type WorkTimeSessionStart = Pick<WorkCalendar, 'workTime' | 'hoursPerDay'
 export function hoursPerDayFollowsBlocks(start: WorkTimeSessionStart): boolean {
   if (!start.workTime) return true;
   const modal = deriveHoursPerDay(start.workTime, NaN);
-  return Number.isNaN(modal) || start.hoursPerDay === modal;
+  return Number.isNaN(modal) || !hoursPerDayDiffers(start.hoursPerDay, modal);
 }
 
 /**
@@ -410,7 +425,8 @@ export function getCalendarBands(
 
 /**
  * Promoveer één kalender naar uur-modus als hij afwijkt (a/b, `deviates`) of een (c)-signaal droeg
- * (`signaled`). Zet `workTime` + afgeleide `workDays`/`hoursPerDay`. Retourneert of de kalender (nu)
+ * (`signaled`). Zet `workTime` + afgeleide `workDays`/`hoursPerDay`; een lezer met een eigen uren per dag
+ * uit het bestand zet die daarna terug (XER, IFC, P6 XML, MSPDI, `.mpp`). Retourneert of de kalender (nu)
  * uur-modus is — inclusief het geval dat hij al `workTime` droeg. Gedeelde promotie-orkestratie;
  * de readers houden zelf hun format-specifieke signaal-verzameling (`cSignalCalIds`/`subDayCals`).
  *
@@ -548,10 +564,6 @@ export function exportCalendarLayout(tasks: Task[], calendar: WorkCalendar, reso
   return { libraryCalendars, calendarNumber, effCalByTask, hourTaskCalendarIds };
 }
 
-/** Een kalender is uur-modus zodra `workTime` aanwezig is. */
-export function isHourCalendar(cal: WorkCalendar | undefined): boolean {
-  return !!cal?.workTime;
-}
 
 /** Een urentaak kan gepland worden wanneer expliciete óf afleidbare geldige werkbands bestaan. */
 export function hasConcreteWorkBlocks(calendar: WorkCalendar): boolean {
@@ -565,7 +577,7 @@ export function hasConcreteWorkBlocks(calendar: WorkCalendar): boolean {
  * nooit stil wegronden.
  */
 export function fileHasHourData(tasks: Task[], calendars: WorkCalendar[]): boolean {
-  if (calendars.some(isHourCalendar)) return true;
+  if (calendars.some(isHourModeCalendar)) return true;
   return tasks.some((t) => taskDurationUnit(t) === 'hours');
 }
 

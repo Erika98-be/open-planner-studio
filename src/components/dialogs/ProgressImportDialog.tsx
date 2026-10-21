@@ -124,9 +124,10 @@ export function ProgressImportDialog() {
   // elke render opnieuw te lopen (typen in een koppelkiezer is child-state van
   // `ProgressImportLinkPicker` en kost zo geen herberekening).
   //
-  // `tasks` staat WEL in de deps: de documentwisselblokkade geldt niet voor `edit.undo`/`edit.redo`
-  // (geen `when`-guard), die `s.tasks` muteren terwijl deze dialoog open staat. Zonder `tasks` blijft
-  // het plan na Ctrl+Z/Ctrl+Y op de oude taken staan. `tasks` wordt niet TEKSTUEEL gebruikt in de
+  // `tasks` staat WEL in de deps: `edit.undo`/`edit.redo` zijn onder deze dialoog dicht
+  // (`isEditShortcutBlocked` in shortcutRegistry.ts), maar elke andere route die `s.tasks` muteert
+  // terwijl de dialoog openstaat (bv. een MCP-tool of een toekomstige sneltoets zonder poort) moet het
+  // plan meenemen. Zonder `tasks` blijft het plan dan op de oude taken staan. `tasks` wordt niet TEKSTUEEL gebruikt in de
   // closure hieronder (dat gebeurt binnen `previewProgressImport` zelf, via de store); de linter
   // kan die indirecte afhankelijkheid niet zien, vandaar de gerichte suppressie hieronder.
   const plan = useMemo(
