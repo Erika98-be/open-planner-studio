@@ -26,9 +26,9 @@ Deschideți fila *Raport* (sau apăsați Ctrl+P). În stânga este coloana *Rapo
 
 Planificarea ca diagramă cu bare, cu un tabel în stânga și o axă de timp în dreapta, pe mai multe pagini dacă este nevoie. Previzualizarea arată pagina cu antet, tabel, axă de timp și legendă. Blocul *Rezumat* numără *Activități:*, *Activități frunză:*, *Critic:* și *Dependențe:*. Toate opțiunile se află sub *Setări*.
 
-**Companie:** — compania din antetul paginii. Implicit: compania din informațiile proiectului. Efect: doar antetul raportului; ce introduceți aici nu se păstrează. Schimbați compania în *Setări › Proiect › Setări proiect*, în câmpul *Beneficiar/organizație*, și confirmați cu *Aplicare*.
+**Companie:** — compania din antetul paginii. Implicit: compania din setările proiectului. Efect: doar antetul raportului; ce introduceți aici nu se păstrează. Schimbați compania în *Setări › Proiect › Setări proiect*, în câmpul *Beneficiar/organizație*, și confirmați cu *Aplicare*.
 
-**Autor:** — autorul din antetul paginii. Doar în citire: aplicația îl preia din informațiile proiectului.
+**Autor:** — autorul din antetul paginii. Doar în citire: aplicația îl preia din setările proiectului.
 
 **Dimensiune font:** — dimensiunea textului și a tabelului din raport. Alegeți din 90%, 100%, 110% și 125%. Implicit: 100%. Efect: cu un font mai mare, textul, rândurile și tabelul cresc, iar axa de timp pierde din lățime. Independent de *Dimensiune text* din setări.
 
@@ -74,7 +74,7 @@ Planificarea ca diagramă cu bare, cu un tabel în stânga și o axă de timp î
 
 ## Diagramă resurse
 
-Aceleași bare ca la Diagrama Gantt, grupate pe resursă: cine face ce și când. Blocul *Rezumat* numără *Resurse:*, *Atribuiri:* și *Fără resursă:* (cu o perioadă și *În afara perioadei:*). Diagrama are toate opțiunile Diagramei Gantt, cu excepția *Urmărire vizualizare (filtru, grupare, sortare)*, *Drum critic* și *Dependențe*: rândurile nu vin de pe ecran, o activitate poate apărea sub mai multe resurse, iar dependențele nu sunt desenate aici. Caseta *Drum critic* este ascunsă și activată. Diagrama păstrează opțiunile Diagramei Gantt din *Setări*, cu aceste patru casete și perioada:
+Aceleași bare ca la Diagrama Gantt, grupate pe resursă: cine face ce și când. Blocul *Rezumat* numără *Resurse:*, *Atribuiri:* și *Fără resursă:* (cu o perioadă și *În afara perioadei:*). Diagrama are toate opțiunile Diagramei Gantt, cu excepția *Urmărire vizualizare (filtru, grupare, sortare)*, *Drum critic* și *Dependențe*: rândurile nu vin de pe ecran, o activitate poate apărea sub mai multe resurse, iar dependențele nu sunt desenate aici. Caseta *Drum critic* este ascunsă și activată. Diagrama vine cu opțiunile Diagramei Gantt din *Setări*, cu aceste patru casete și perioada:
 
 **Fiecare resursă pe pagină nouă** — Implicit: dezactivat. Efect: fiecare resursă începe pe o pagină nouă, ca să puteți înmâna câte o fișă pentru fiecare echipă sau angajat. Dezactivat, rezultă un singur document continuu.
 

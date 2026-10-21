@@ -75,11 +75,11 @@ Lucrul rămas al fundației începe la data raportului de stare: miercuri, 9, ș
 
 ### Primavera P6
 
-Totul este la fel ca în Open Planner Studio, cu o excepție: începutul cel mai devreme al activității *Pour foundation* este miercuri, 9 iunie. Acesta este începutul lucrului rămas, nu începutul efectiv. Asta se face prin convenția *Activitate în curs: început cel mai devreme = începutul lucrului rămas*, din grupul *Progres și lucru finalizat*. Sfârșitul și marja nu se schimbă din cauza ei. Predarea este luni, 21 iunie.
+Totul este la fel ca în Open Planner Studio, cu o excepție: începutul cel mai devreme al activității *Pour foundation* este miercuri, 9 iunie. Acesta este începutul lucrului rămas, nu începutul efectiv. Asta se face prin convenția de calcul *Activitate în curs: început cel mai devreme = începutul lucrului rămas*, din grupul *Progres și lucru finalizat*. Sfârșitul și marja nu se schimbă din cauza ei. Predarea este luni, 21 iunie.
 
 ### Microsoft Project
 
-Aici datele diferă. Două convenții din grupul *Progres ca în Microsoft Project* cauzează asta.
+Aici datele diferă. Două convenții de calcul din grupul *Progres ca în Microsoft Project* cauzează asta.
 
 *Activități nepornite nu se mută la data raportului de stare*: *Order window frames* rămâne de la luni, 7, până miercuri, 9 iunie, deși această perioadă se află parțial înaintea datei raportului de stare. Marja totală este de 7 zile lucrătoare.
 
@@ -87,7 +87,7 @@ Aici datele diferă. Două convenții din grupul *Progres ca în Microsoft Proje
 
 ### Ce se întâmplă dacă
 
-**Fundația este la 20 % în loc de 60 %.** Lucrul rămas este atunci de 4 zile lucrătoare. În toate cele trei profiluri, fundația se termină luni, 14 iunie, iar predarea este miercuri, 23 iunie. Convenția Microsoft Project pentru lucrul rămas nu face aici nicio diferență: luni, 7 iunie, plus 1 zi lucrătoare scursă este marți, 8 iunie, adică înainte de data raportului de stare. O asemenea convenție este o limită inferioară, care poate doar să întârzie lucrul rămas. *Order window frames* și începutul cel mai devreme din Primavera P6 diferă în continuare, ca mai sus. În Microsoft Project, *Order window frames* are atunci o marjă totală de 8 zile lucrătoare.
+**Fundația este la 20 % în loc de 60 %.** Lucrul rămas este atunci de 4 zile lucrătoare. În toate cele trei profiluri, fundația se termină luni, 14 iunie, iar predarea este miercuri, 23 iunie. Convenția de calcul din Microsoft Project pentru lucrul rămas nu face aici nicio diferență: luni, 7 iunie, plus 1 zi lucrătoare scursă este marți, 8 iunie, adică înainte de data raportului de stare. O asemenea convenție de calcul este o limită inferioară, care poate doar să întârzie lucrul rămas. *Order window frames* și începutul cel mai devreme din Primavera P6 diferă în continuare, ca mai sus. În Microsoft Project, *Order window frames* are atunci o marjă totală de 8 zile lucrătoare.
 
 **Setați doar o dată a raportului de stare, fără progres.** În Open Planner Studio și Primavera P6, întreaga rețea se mută la miercuri, 9 iunie. Fundația se desfășoară atunci de la miercuri, 9, până marți, 15 iunie, iar predarea devine joi, 24 iunie: cu două zile lucrătoare mai târziu decât fără dată a raportului de stare. În Microsoft Project, totul rămâne pe locul lui, iar predarea este marți, 22 iunie.
 
@@ -95,7 +95,7 @@ Aici datele diferă. Două convenții din grupul *Progres ca în Microsoft Proje
 
 **O opțiune de calcul în locul unei convenții.** Dacă setați *Definiția drumului critic* (*Marjă totală ≤ prag*) cu *Prag (zile lucrătoare)* 4 în Open Planner Studio, *Order window frames* devine critică, pentru că marja ei totală este exact 4. Nicio dată nu se schimbă. O opțiune de calcul este alegerea dumneavoastră pentru proiect și nu depinde de profil.
 
-**Un termen limită care nu este respectat.** Dați activității *Fit roof* un termen limită vineri, 18 iunie. În Open Planner Studio, marja totală a activității *Fit roof* este atunci de −1 zi lucrătoare, iar marja liberă este tot −1. În Primavera P6, marja totală rămâne −1, dar marja liberă devine 0. Asta face convenția *Marjă liberă niciodată negativă*, din grupul *Marjă și date târzii*. În Microsoft Project, ambele sunt −2, pentru că predarea cade acolo cu o zi mai târziu. [Restricții și termene limită](docs://uitleg-constraints) explică cum funcționează un termen limită.
+**Un termen limită care nu este respectat.** Dați activității *Fit roof* un termen limită vineri, 18 iunie. În Open Planner Studio, marja totală a activității *Fit roof* este atunci de −1 zi lucrătoare, iar marja liberă este tot −1. În Primavera P6, marja totală rămâne −1, dar marja liberă devine 0. Asta face convenția de calcul *Marjă liberă niciodată negativă*, din grupul *Marjă și date târzii*. În Microsoft Project, ambele sunt −2, pentru că predarea cade acolo cu o zi mai târziu. [Restricții și termene limită](docs://uitleg-constraints) explică cum funcționează un termen limită.
 
 ## Consecințe și neînțelegeri
 

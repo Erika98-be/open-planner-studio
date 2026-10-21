@@ -83,7 +83,7 @@ După o activitate pe zile, un decalaj funcționează altfel. *Pour foundation* 
 
 Acum vinerea are un singur interval, de la 07:00 la 12:00: 5 ore. Celelalte zile rămân la 8 ore. Ziua lucrătoare standard rămâne 8 ore, pentru că acesta este totalul zilnic cel mai frecvent. O săptămână are acum 37 de ore de lucru.
 
-O activitate de 40 de ore de la luni, 7 iunie, la 07:00 folosește de luni până joi (32 de ore) și vinerea (5 ore). Ultimele 3 ore cad luni următoare, de la 07:00 la 10:00. Sfârșitul este **luni, 14 iunie, la 10:00**. O activitate de 5 zile ar ocupa 37 de ore începând de luni, iar aceasta este propunerea aplicației dacă modificați unitatea de la 5 zile la ore.
+O activitate de 40 de ore de la luni, 7 iunie, la 07:00 ocupă zilele de luni până joi (32 de ore) și vinerea (5 ore). Ultimele 3 ore cad luni următoare, de la 07:00 la 10:00. Sfârșitul este **luni, 14 iunie, la 10:00**. O activitate de 5 zile ar ocupa 37 de ore începând de luni, iar aceasta este propunerea aplicației dacă modificați unitatea de la 5 zile la ore.
 
 În tutorialul 4, despre planificarea pe ore, planificați singur o lucrare cu macara în ore.
 

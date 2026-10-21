@@ -43,7 +43,7 @@ Durata care rezultă din sumă este rotunjită în sus de aplicație. Pentru o a
 
 ### Mai multe resurse
 
-Dacă o activitate are mai multe resurse, se aplică două principii. La durată fixă și lucru, la muncă fixă și la unități fixe, lucrul total rămâne același când adăugați sau scoateți o resursă. Aplicația îl împarte atunci proporțional cu unitățile de atribuire. La durată fixă și unități, o resursă nouă aduce în schimb lucrul ei. La muncă fixă și la unități fixe, resursa cea mai lentă decide durata: pentru fiecare resursă, aceasta este lucrul împărțit la unitățile de atribuire, iar contează cel mai mare rezultat.
+Dacă o activitate are mai multe resurse, se aplică două principii. La durată fixă și lucru, la muncă fixă și la unități fixe, lucrul total rămâne același când adăugați sau scoateți o resursă. Aplicația îl împarte atunci proporțional cu unitățile de atribuire. La durată fixă și unități fixe, o resursă nouă aduce în schimb lucrul ei. La muncă fixă și la unități fixe, resursa cea mai lentă decide durata: pentru fiecare resursă, aceasta este lucrul împărțit la unitățile de atribuire, iar contează cel mai mare rezultat.
 
 Un exemplu: două resurse au fiecare 32 de ore de lucru și unități de atribuire de 1, adică 4 zile lucrătoare împreună. Setați unitățile de atribuire ale primei resurse la 0,5. Durata devine atunci 8 zile lucrătoare. La muncă fixă, a doua resursă își păstrează cele 32 de ore de lucru, iar unitățile ei de atribuire scad la 0,5. La unități fixe, a doua resursă își păstrează unitățile de atribuire de 1, iar lucrul ei crește la 64 de ore.
 
@@ -103,7 +103,7 @@ La muncă fixă, ziua lucrătoare din calendar trece de la 8 la 6 ore. Lucrul r�
 
 ### Activitate cu progres
 
-Foaia interioară a zidului cu cavitate necesită 5 zile lucrătoare și este gata în proporție de 40%: sunt gata 2 zile lucrătoare, iar 3 zile lucrătoare (24 de ore) rămân. La muncă fixă setați unitățile de atribuire de la 1 la 2. Lucrul rămas rămâne 24 de ore, iar durata rămasă devine 1,5, rotunjită în sus la 2 zile lucrătoare. Activitatea durează acum 2 + 2 = 4 zile lucrătoare, iar progresul este de 50%. Procentul se modifică, pentru că partea făcută rămâne aceeași, iar restul devine mai scurt.
+Inner cavity leaf necesită 5 zile lucrătoare și este gata în proporție de 40%: sunt gata 2 zile lucrătoare, iar 3 zile lucrătoare (24 de ore) rămân. La muncă fixă setați unitățile de atribuire de la 1 la 2. Lucrul rămas rămâne 24 de ore, iar durata rămasă devine 1,5, rotunjită în sus la 2 zile lucrătoare. Activitatea durează acum 2 + 2 = 4 zile lucrătoare, iar progresul este de 50%. Procentul se modifică, pentru că partea făcută rămâne aceeași, iar restul devine mai scurt.
 
 ## Consecințe și concepții greșite
 

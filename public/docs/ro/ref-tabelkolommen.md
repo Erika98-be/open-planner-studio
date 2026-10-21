@@ -87,10 +87,10 @@ Coloanele de progres respectă regulile de progres ale aplicației: o dată real
 
 Toate coloanele din această categorie sunt doar în citire.
 
-- **Întârziere prin redistribuire** — cu câte zile lucrătoare a întârziat redistribuirea activitatea. O liniuță dacă nu s-a aplicat nicio redistribuire.
+- **Întârziere prin redistribuire** — cu câte zile lucrătoare redistribuirea a întârziat activitatea. O liniuță dacă nu s-a aplicat nicio redistribuire.
 - **Început cel mai devreme** și **Sfârșit cel mai devreme** — cele mai devreme date din calcul. Pentru o activitate care este în curs sau finalizată, ele pot diferi de *Început* și *Sfârșit*: profilul de calcul *Primavera P6* pune începutul cel mai devreme al unei activități în curs sau finalizate la data raportului de stare.
 - **Început târziu** și **Sfârșit târziu** — cele mai târzii date de început și de sfârșit ale activității, fără să întârzie proiectul.
-- **Marjă liberă** — zilele lucrătoare cu care activitatea poate aluneca, fără să întârzie o succesoare.
+- **Marjă liberă** — zilele lucrătoare cu care activitatea poate aluneca, fără să întârzie începutul niciunui succesor.
 - **Marjă totală** — zilele lucrătoare cu care activitatea poate aluneca, fără să întârzie sfârșitul proiectului. Negativă dacă o restricție sau un termen limită nu poate fi respectat.
 - **Critic** — *Da*, dacă activitatea se află pe drumul critic.
 - **Marjă de interferență** — marja totală minus marja liberă.

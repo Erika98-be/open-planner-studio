@@ -62,7 +62,7 @@ O dependență între o activitate și faza în care se află nu este permisă.
 
 ### Legături determinante
 
-Dacă un succesor are mai mulți predecesori, de obicei o singură dependență îi determină data de start: dependența care împiedică succesorul să înceapă cu o singură zi mai devreme decât începe acum. Această dependență se numește **determinantă**. La egalitate există mai multe legături determinante. Recunoașteți o legătură determinantă după simbolul cu fulger din coloanele *Predecesori* și *Succesori* ale tabelului, după coloana *Legătură determinantă* (semnul **+** din dreapta antetului tabelului, sub *Dependențe*) și după nuanța mai intensă când urmăriți un drum. Cum deschideți acel drum este descris în [Trasarea unui drum](docs://howto-pad-traceren).
+Dacă un succesor are mai mulți predecesori, de obicei o singură dependență îi determină data de start: dependența care împiedică succesorul să înceapă cu o singură zi mai devreme decât începe acum. Această dependență se numește **legătură determinantă**. La egalitate există mai multe legături determinante. Recunoașteți o legătură determinantă după simbolul cu fulger din coloanele *Predecesori* și *Succesori* ale tabelului, după coloana *Legătură determinantă* (semnul **+** din dreapta antetului tabelului, sub *Dependențe*) și după nuanța mai intensă când urmăriți un drum. Cum deschideți acel drum este descris în [Trasarea unui drum](docs://howto-pad-traceren).
 
 O legătură determinantă spune ceva despre date, nu despre durată. Un predecesor scurt poate fi și el determinant, de exemplu din cauza unui decalaj lung; vedeți acest lucru în exemplul de mai jos.
 
