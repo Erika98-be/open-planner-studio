@@ -13,13 +13,13 @@
 //   3. een kleine statische server op 127.0.0.1 met een vrije poort (geen dev-server, niet bereikbaar
 //      van buiten deze machine);
 //   4. per grootte en per herhaling een VERSE browsercontext (Playwright Chromium headless, 1600×1000,
-//      nl-NL) met de route: openen → scrollen en zoomen → F5 → opslaan (Ctrl+S) → nivelleren
-//      (berekenen + toepassen) → één autosave-tick → herstel na herladen;
+//      nl-NL) met de route: openen → scrollen en zoomen → F5 → nivelleren (berekenen + toepassen)
+//      → één autosave-tick → herstel na herladen → opslaan (Ctrl+S);
 //   5. schrijft één JSON-resultaat (standaard `build/measure-large-plans/<datum>-<commit>.json`) en
 //      print een Markdown-tabel (mediaan, min–max).
 //
 // Alle gemeten handelingen zijn echte browserinvoer (klik, toets, wiel, bestandskiezer). De brug
-// `window.__OPS__` leest alleen state (aantal taken, cpmResult, isDirty, paintteller van de Gantt).
+// `window.__OPS__` leest alleen state (aantal taken, cpmResult, isDirty).
 // Meetinstrumenten in de pagina (Long Tasks-observer, een passieve wrapper om IndexedDB-transacties,
 // een rAF-lus) veranderen geen productgedrag.
 //
@@ -78,6 +78,9 @@ function conditions() {
     commitShort: git('rev-parse', '--short=9', 'HEAD'),
     commitSubject: git('log', '-1', '--format=%s'),
     branch: git('rev-parse', '--abbrev-ref', 'HEAD'),
+    // Productcode: de laatste main-commit in deze stand (de meetscripts zelf raken geen productcode).
+    mainBase: git('merge-base', 'HEAD', 'origin/main'),
+    productCodeChangedSinceMain: git('diff', '--name-only', 'origin/main...HEAD', '--', 'src', 'public', 'index.html', 'vite.config.ts', 'package.json').split('\n').filter(Boolean),
     // Wijzigingen buiten de meetscripts zelf maken de meting niet meer gelijk aan de commit.
     worktreeDirty: git('status', '--porcelain').split('\n').filter(Boolean),
     appVersion: JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')).version,
@@ -114,7 +117,7 @@ function serve(dir) {
 }
 
 // ── meethulp in de pagina (alleen observeren) ────────────────────────────────────────────────────
-// Long Tasks, een passieve wrapper om IndexedDB-transacties op `ops-recovery` (start, einde, bytes),
+// Long Tasks, een passieve paintteller op het Gantt-canvas, een passieve wrapper om IndexedDB-transacties op `ops-recovery` (start, einde, bytes),
 // de tijdstempel van de laatste echte invoer (wheel/keydown/pointerdown) en een rAF-lus die wacht op
 // een vaste voorwaarde. Voorwaarden staan hier als vaste functies (geen eval in de pagina).
 const INIT_SCRIPT = `(() => {
@@ -147,13 +150,43 @@ const INIT_SCRIPT = `(() => {
     }
     return tx;
   };
+  // Gantt-tekeningen: \`__OPS__.gantt.paintCount\` telt alleen in een dev-build. Hier herkent een
+  // passieve wrapper om fillRect de achtergrondvulling (0,0) waarmee GanttRenderer.render() begint op
+  // het primaire Gantt-canvas. Begin = die vulling; einde = de microtaak direct na de synchrone
+  // tekenaanroep (dus inclusief wat dezelfde taak er nog synchroon achteraan doet).
+  nm.paintLog = [];
+  let inPaint = false;
+  const origFill = CanvasRenderingContext2D.prototype.fillRect;
+  CanvasRenderingContext2D.prototype.fillRect = function (x, y, w, h) {
+    if (x === 0 && y === 0 && !inPaint && this.canvas.dataset && this.canvas.dataset.testid === 'gantt-primary-canvas') {
+      inPaint = true;
+      const rec = { s: performance.now(), e: null };
+      nm.paintLog.push(rec);
+      queueMicrotask(() => { rec.e = performance.now(); inPaint = false; });
+    }
+    return origFill.call(this, x, y, w, h);
+  };
+  // Opslaan: tijdstip van de download-klik (terugvalroute) of van het sluiten van een FSA-schrijfstroom.
+  const origClick = HTMLAnchorElement.prototype.click;
+  HTMLAnchorElement.prototype.click = function () { if (this.download) nm.downloadAt = performance.now(); return origClick.call(this); };
+  if (typeof FileSystemWritableFileStream !== 'undefined') {
+    const origClose = FileSystemWritableFileStream.prototype.close;
+    FileSystemWritableFileStream.prototype.close = function () { return origClose.call(this).then(v => { nm.fsaCloseAt = performance.now(); return v; }); };
+  }
   const S = () => window.__OPS__.store.getState();
-  const paints = () => window.__OPS__.gantt.paintCount('primary');
+  // Store-voorwaarden: de subscription in arm() noteert het EERSTE moment dat ze waar zijn
+  // (synchroon binnen de store-update, dus vóór React en vóór de tekening).
+  const storeConds = {
+    loaded: (s, a) => s.tasks.length === a.tasks && s.tasks !== nm.refTasks,
+    cpm: s => s.cpmResult !== nm.refCpm,
+    clean: s => !s.isDirty,
+    tasksChanged: s => s.tasks !== nm.refTasks,
+  };
+  const paintAfter = t => nm.paintLog.find(p => p.s >= t && p.e != null) ?? null;
   const conds = {
-    loaded: a => S().tasks.length === a.tasks && paints() > a.p0,
-    paint: a => paints() > a.p0,
-    cpm: a => S().cpmResult !== nm.ref && paints() > a.p0,
-    clean: () => !S().isDirty,
+    // Taken in de store én daarna een complete Gantt-tekening.
+    store: a => nm.storeAt != null && (!a.paint || !!paintAfter(nm.storeAt)),
+    paint: a => nm.paintLog.length > a.p0 && nm.paintLog[a.p0].e != null,
     levelDone: () => {
       const d = document.querySelector('[role="dialog"]');
       if (!d || d.querySelector('[role="status"]')) return false;
@@ -161,21 +194,32 @@ const INIT_SCRIPT = `(() => {
       const apply = [...d.querySelectorAll('button')].find(b => /^(Toepassen|Apply)$/.test(b.textContent.trim()));
       return !!apply && !apply.disabled;
     },
-    levelApplied: a => !document.querySelector('[role="dialog"]') && paints() > a.p0,
     recoveryDialog: () => !!document.querySelector('[data-ops-recovery-dialog]'),
-    restored: a => !document.querySelector('[data-ops-recovery-dialog]') && S().tasks.length === a.tasks && paints() > a.p0,
   };
-  nm.arm = a => { nm.p0 = window.__OPS__ ? paints() : 0; nm.ref = window.__OPS__ ? S().cpmResult : null; nm.t0 = performance.now(); return { p0: nm.p0, t0: nm.t0 }; };
-  // Wacht via rAF tot de voorwaarde waar is; daarna nog één rAF plus een taak, zodat de tekening
-  // gepresenteerd is. Geeft het tijdstip (performance.now) terug, of null bij time-out.
+  nm.arm = (kind, a) => {
+    nm.p0 = nm.paintLog.length;
+    nm.storeAt = null;
+    if (nm.unsub) nm.unsub();
+    nm.unsub = null;
+    if (window.__OPS__) {
+      nm.refCpm = S().cpmResult; nm.refTasks = S().tasks;
+      if (kind) nm.unsub = window.__OPS__.store.subscribe(st => {
+        if (nm.storeAt == null && storeConds[kind](st, a)) nm.storeAt = performance.now();
+      });
+    }
+    nm.t0 = performance.now();
+    return { p0: nm.p0, t0: nm.t0 };
+  };
+  // Wacht via rAF tot de voorwaarde waar is. Geeft { hit (rAF-tijd van herkenning), storeAt,
+  // paintEnd (einde van de eerste Gantt-tekening na de store-wijziging, of na p0) } terug, of null.
   nm.until = (name, a, timeoutMs) => new Promise(resolve => {
     const start = performance.now();
     const tick = () => {
       let ok = false;
       try { ok = conds[name](a); } catch {}
       if (ok) {
-        const hit = performance.now();
-        requestAnimationFrame(() => { const ch = new MessageChannel(); ch.port1.onmessage = () => resolve({ hit, done: performance.now() }); ch.port2.postMessage(0); });
+        const p = name === 'paint' ? nm.paintLog[a.p0] : (nm.storeAt != null ? paintAfter(nm.storeAt) : null);
+        resolve({ hit: performance.now(), storeAt: nm.storeAt, paintStart: p ? p.s : null, paintEnd: p ? p.e : null });
         return;
       }
       if (performance.now() - start > timeoutMs) { resolve(null); return; }
@@ -212,7 +256,7 @@ async function oneRun(browser, baseUrl, dataset, ifcBuffer, repIndex) {
   const r = { rep: repIndex + 1, phases: {}, notes: [], errors };
   const ev = (fn, arg) => page.evaluate(fn, arg);
   const until = (name, a = {}, timeout = STEP_TIMEOUT_MS) => ev(([n, x, t]) => window.__nm.until(n, x, t), [name, a, timeout]);
-  const arm = () => ev(() => window.__nm.arm());
+  const arm = (kind = null, a = {}) => ev(([k, x]) => window.__nm.arm(k, x), [kind, a]);
   const longest = (from, to) => ev(([f, t]) => window.__nm.longTasks(f, t).reduce((m, e) => Math.max(m, e.d), 0), [from, to]);
   async function waitQuiet(quietMs = 1500, timeout = 120_000) {
     const t = Date.now(); let last = -1; let since = Date.now();
@@ -240,88 +284,75 @@ async function oneRun(browser, baseUrl, dataset, ifcBuffer, repIndex) {
       const chooserP = page.waitForEvent('filechooser');
       await openButton.click();
       const chooser = await chooserP;
-      const { t0, p0 } = await arm();
+      const { t0 } = await arm('loaded', { tasks: dataset.tasks });
       await chooser.setFiles({ name: dataset.file, mimeType: 'application/octet-stream', buffer: ifcBuffer });
-      const hit = await until('loaded', { tasks: dataset.tasks, p0 });
+      const hit = await until('store', { paint: true });
       if (!hit) fail('open', 'time-out');
       else {
-        const state = await ev(() => { const s = window.__OPS__.store.getState(); return { scheduleStale: s.scheduleStale, datesAsRecorded: s.datesAsRecorded, hasCpm: !!s.cpmResult, isDirty: s.isDirty }; });
-        r.phases.open = { ok: true, ms: r1(hit.done - t0), storeMs: r1(hit.hit - t0), longestTaskMs: r1(await longest(t0, hit.done)), ...state };
+        const state = await ev(() => { const s = window.__OPS__.store.getState(); return { scheduleStale: s.scheduleStale, datesAsRecorded: s.datesAsRecorded, hasCpm: !!s.cpmResult, isDirty: s.isDirty, documents: s.documents.length }; });
+        r.phases.open = { ok: true, ms: r1(hit.paintEnd - t0), storeMs: r1(hit.storeAt - t0), paintMs: r1(hit.paintEnd - hit.paintStart), longestTaskMs: r1(await longest(t0, hit.paintEnd)), ...state };
       }
       await waitQuiet();
     }
 
-    // ── 2 interactie: verticaal scrollen en zoomen in de Gantt, wiel → volgende Gantt-paint ──
+    // ── 2 interactie: verticaal scrollen en zoomen in de Gantt, wiel → einde volgende Gantt-tekening ──
+    // Standaard scrollmodus is 'drag' (src/utils/ganttWheel.ts): Shift+wiel scrolt de rijen, het
+    // wiel zonder toets zoomt (op de cursor). Dat zijn hier de twee gemeten handelingen.
     if (!SKIP.has('interaction') && r.phases.open?.ok) {
       const canvas = page.getByTestId('gantt-primary-canvas');
       const box = await canvas.boundingBox();
       await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-      const steps = async (n, dx, dy, ctrl) => {
-        const lat = []; let missed = 0;
-        if (ctrl) await page.keyboard.down('Control');
+      const steps = async (n, dy, shift) => {
+        const lat = []; const render = []; let missed = 0;
+        if (shift) await page.keyboard.down('Shift');
         for (let i = 0; i < n; i++) {
           const { p0 } = await arm();
-          await page.mouse.wheel(dx, dy);
+          await page.mouse.wheel(0, dy);
           const hit = await until('paint', { p0 }, 3000);
           if (!hit) { missed++; continue; }
           const input = await ev(() => window.__nm.input.wheel);
-          lat.push(hit.done - input);
+          lat.push(hit.paintEnd - input);
+          render.push(hit.paintEnd - hit.paintStart);
         }
-        if (ctrl) await page.keyboard.up('Control');
-        return { lat, missed };
+        if (shift) await page.keyboard.up('Shift');
+        return { lat, render, missed };
       };
+      const pack = st => ({
+        steps: st.lat.length, noPaint: st.missed,
+        frameMedianMs: r1(pct(st.lat, 0.5)), frameP95Ms: r1(pct(st.lat, 0.95)), frameMaxMs: r1(Math.max(...st.lat)),
+        renderMedianMs: r1(pct(st.render, 0.5)), renderMaxMs: r1(Math.max(...st.render)),
+      });
       const t0 = await ev(() => performance.now());
-      const scroll = await steps(30, 0, 300, false);
+      const scroll = await steps(30, 300, true);
+      const yAfter = await ev(() => window.__OPS__.store.getState().view.scrollY);
       await waitQuiet(800);
       const t1 = await ev(() => performance.now());
-      const zoomIn = await steps(10, 0, -200, true);
-      const zoomOut = await steps(10, 0, 200, true);
+      const zoomIn = await steps(8, -100, false);
+      const zoomOut = await steps(8, 100, false);
       await waitQuiet(800);
       const t2 = await ev(() => performance.now());
-      const pack = s => ({
-        steps: s.lat.length, noPaint: s.missed,
-        frameMedianMs: r1(pct(s.lat, 0.5)), frameP95Ms: r1(pct(s.lat, 0.95)), frameMaxMs: r1(Math.max(...s.lat)),
-      });
-      const sc = { ...pack(scroll), longestTaskMs: r1(await longest(t0, t1)) };
-      const zm = { ...pack({ lat: [...zoomIn.lat, ...zoomOut.lat], missed: zoomIn.missed + zoomOut.missed }), longestTaskMs: r1(await longest(t1, t2)) };
-      r.phases.scroll = { ok: sc.steps > 0, ...sc };
-      r.phases.zoom = { ok: zm.steps > 0, ...zm };
-      r.scrollState = await ev(() => { const v = window.__OPS__.store.getState().view; return { zoom: v.zoom, scrollY: v.scrollY }; });
+      r.phases.scroll = { ok: scroll.lat.length > 0, ...pack(scroll), scrollYAfter: r1(yAfter), longestTaskMs: r1(await longest(t0, t1)) };
+      r.phases.zoom = { ok: zoomIn.lat.length + zoomOut.lat.length > 0,
+        ...pack({ lat: [...zoomIn.lat, ...zoomOut.lat], render: [...zoomIn.render, ...zoomOut.render], missed: zoomIn.missed + zoomOut.missed }),
+        longestTaskMs: r1(await longest(t1, t2)) };
+      r.viewAfterInteraction = await ev(() => { const v = window.__OPS__.store.getState().view; return { zoom: v.zoom, scrollY: v.scrollY }; });
     }
 
     // ── 3 herberekenen: F5 → nieuw cpmResult in de store én de Gantt getekend ──
     if (!SKIP.has('f5') && r.phases.open?.ok) {
       await page.getByTestId('gantt-primary-canvas').hover();
-      const { p0 } = await arm();
+      await arm('cpm');
       const idbBefore = await ev(() => window.__nm.idb.length);
       await page.keyboard.press('F5');
-      const hit = await until('cpm', { p0 });
+      const hit = await until('store', { paint: true });
       const input = await ev(() => window.__nm.input.keydown);
       if (!hit) fail('f5', 'time-out (geen nieuw cpmResult)');
       else {
-        const overlap = await ev(([n, a, b]) => window.__nm.idb.slice(n).some(x => x.start >= a && x.start <= b), [idbBefore, input, hit.done]);
-        r.phases.f5 = { ok: true, ms: r1(hit.done - input), storeMs: r1(hit.hit - input), longestTaskMs: r1(await longest(input, hit.done)), autosaveInWindow: overlap,
+        const overlap = await ev(([n, a, b]) => window.__nm.idb.slice(n).some(x => x.start >= a && x.start <= b), [idbBefore, input, hit.paintEnd]);
+        r.phases.f5 = { ok: true, ms: r1(hit.paintEnd - input), storeMs: r1(hit.storeAt - input), paintMs: r1(hit.paintEnd - hit.paintStart), longestTaskMs: r1(await longest(input, hit.paintEnd)), autosaveInWindow: overlap,
           isDirtyAfter: await ev(() => window.__OPS__.store.getState().isDirty) };
       }
       await waitQuiet(2000);
-    }
-
-    // ── 4 opslaan: Ctrl+S → isDirty false (schrijven naar het geopende bestand of een download) ──
-    if (!SKIP.has('save') && r.phases.open?.ok) {
-      const dirty = await ev(() => window.__OPS__.store.getState().isDirty);
-      if (!dirty) r.notes.push('opslaan: document was niet gewijzigd vóór Ctrl+S');
-      const downloadP = page.waitForEvent('download', { timeout: STEP_TIMEOUT_MS }).catch(() => null);
-      await arm();
-      await page.keyboard.press('Control+s');
-      const input = await ev(() => window.__nm.input.keydown);
-      const hit = await until('clean', {});
-      if (!hit) fail('save', 'time-out (document bleef gewijzigd)');
-      else {
-        // Een download in de browser = de terugvalroute; anders schreef de app naar de bestandshandle.
-        const dl = await Promise.race([downloadP, new Promise(res => setTimeout(() => res(null), 500))]);
-        r.phases.save = { ok: true, ms: r1(hit.done - input), longestTaskMs: r1(await longest(input, hit.done)), route: dl ? 'download' : 'bestandshandle', wasDirty: dirty };
-      }
-      await waitQuiet(1500);
     }
 
     // ── 5 nivelleren: Resources → Nivelleren → Berekenen (worker) → Toepassen ──
@@ -330,7 +361,6 @@ async function oneRun(browser, baseUrl, dataset, ifcBuffer, repIndex) {
       await page.locator('[data-ops-ribbon-item="levelResources"]').first().click();
       const dialog = page.getByRole('dialog');
       await dialog.waitFor({ state: 'visible' });
-      await arm();
       await dialog.getByRole('button', { name: /^(Berekenen|Calculate)$/ }).click();
       const inCalc = await ev(() => window.__nm.input.pointerdown);
       const calc = await until('levelDone', {});
@@ -340,14 +370,15 @@ async function oneRun(browser, baseUrl, dataset, ifcBuffer, repIndex) {
           const d = document.querySelector('[role="dialog"]');
           return { rows: d.querySelectorAll('table tbody tr').length, problem: d.querySelector('[role="alert"]')?.textContent ?? null };
         });
-        r.phases.levelCalculate = { ok: !info.problem, ms: r1(calc.done - inCalc), longestTaskMs: r1(await longest(inCalc, calc.done)), ...info };
+        // Herkend in een rAF-lus: resolutie ±1 frame (16,7 ms).
+        r.phases.levelCalculate = { ok: !info.problem, ms: r1(calc.hit - inCalc), longestTaskMs: r1(await longest(inCalc, calc.hit)), ...info };
         if (!info.problem) {
-          const { p0 } = await arm();
+          await arm('tasksChanged');
           await dialog.getByRole('button', { name: /^(Toepassen|Apply)$/ }).click();
           const inApply = await ev(() => window.__nm.input.pointerdown);
-          const applied = await until('levelApplied', { p0 });
+          const applied = await until('store', { paint: true });
           if (!applied) fail('levelApply', 'time-out');
-          else r.phases.levelApply = { ok: true, ms: r1(applied.done - inApply), longestTaskMs: r1(await longest(inApply, applied.done)),
+          else r.phases.levelApply = { ok: true, ms: r1(applied.paintEnd - inApply), storeMs: r1(applied.storeAt - inApply), longestTaskMs: r1(await longest(inApply, applied.paintEnd)),
             isDirtyAfter: await ev(() => window.__OPS__.store.getState().isDirty) };
         }
       }
@@ -391,14 +422,37 @@ async function oneRun(browser, baseUrl, dataset, ifcBuffer, repIndex) {
       const shown = await until('recoveryDialog', {}, 120_000);
       if (!shown) fail('recoveryOffer', 'geen herstelvraag na herladen');
       else {
-        r.phases.recoveryOffer = { ok: true, ms: r1(shown.done), note: 'navigatiestart → herstelvraag zichtbaar (app-start + snapshot lezen en parsen)' };
-        const { p0 } = await arm();
+        r.phases.recoveryOffer = { ok: true, ms: r1(shown.hit), note: 'navigatiestart → herstelvraag zichtbaar (app-start + snapshot lezen en parsen)' };
+        await arm('loaded', { tasks: dataset.tasks });
         await page.locator('[data-ops-recovery-dialog] button').filter({ hasText: /^(Herstellen|Restore)$/ }).click();
         const inRestore = await ev(() => window.__nm.input.pointerdown);
-        const done = await until('restored', { tasks: dataset.tasks, p0 });
+        const done = await until('store', { paint: true });
         if (!done) fail('recoveryRestore', 'time-out');
-        else r.phases.recoveryRestore = { ok: true, ms: r1(done.done - inRestore), longestTaskMs: r1(await longest(inRestore, done.done)) };
+        else r.phases.recoveryRestore = { ok: true, ms: r1(done.paintEnd - inRestore), storeMs: r1(done.storeAt - inRestore), longestTaskMs: r1(await longest(inRestore, done.paintEnd)),
+          isDirtyAfter: await ev(() => window.__OPS__.store.getState().isDirty) };
       }
+      await waitQuiet(1500);
+    }
+
+    // ── 8 opslaan: Ctrl+S op het herstelde, gewijzigde document → bestand klaar ──
+    // Een document uit de bestandskiezer van Playwright heeft geen schrijfbare handle; de app valt dan
+    // terug op een download (dezelfde route als ifc-schema.spec.ts). Klaar = de download-klik van de
+    // app (IFC-tekst geschreven en als Blob aangeboden); daarnaast: isDirty → false.
+    if (!SKIP.has('save') && r.phases.open?.ok) {
+      const dirty = await ev(() => window.__OPS__.store.getState().isDirty);
+      if (!dirty) r.notes.push('opslaan: document was niet gewijzigd vóór Ctrl+S');
+      const downloadP = page.waitForEvent('download', { timeout: STEP_TIMEOUT_MS }).catch(() => null);
+      await arm('clean');
+      await ev(() => { window.__nm.downloadAt = null; window.__nm.fsaCloseAt = null; });
+      await page.keyboard.press('Control+s');
+      const input = await ev(() => window.__nm.input.keydown);
+      const dl = await downloadP;
+      const done = await ev(() => ({ downloadAt: window.__nm.downloadAt, fsaCloseAt: window.__nm.fsaCloseAt, cleanAt: window.__nm.storeAt }));
+      const end = done.downloadAt ?? done.fsaCloseAt;
+      if (end == null) fail('save', 'geen download of bestandsschrijfactie gezien');
+      else r.phases.save = { ok: true, ms: r1(end - input), cleanMs: done.cleanAt == null ? null : r1(done.cleanAt - input),
+        longestTaskMs: r1(await longest(input, end)), route: done.downloadAt != null ? 'download' : 'bestandshandle',
+        bytes: dl ? statSync(await dl.path()).size : null, wasDirty: dirty };
     }
   } catch (e) {
     r.notes.push(`afgebroken: ${e instanceof Error ? e.message.split('\n')[0] : e}`);
@@ -476,29 +530,32 @@ writeFileSync(outFile, JSON.stringify({ kind: 'ops-measure-large-plans', schema:
 // ── Markdown-tabel ──────────────────────────────────────────────────────────────────────────────
 const fmt = s => (s && s.median != null ? `${s.median} (${s.min}–${s.max})` : '—');
 const ROWS = [
-  ['open', 'ms', 'Openen (bestandskiezer → Gantt getekend)', 'browser'],
-  ['scroll', 'frameMedianMs', 'Verticaal scrollen: wiel → paint, mediaan per stap', 'browser'],
-  ['scroll', 'frameP95Ms', 'Verticaal scrollen: p95 per stap', 'browser'],
-  ['zoom', 'frameMedianMs', 'Zoomen (Ctrl+wiel): wiel → paint, mediaan per stap', 'browser'],
-  ['zoom', 'frameP95Ms', 'Zoomen: p95 per stap', 'browser'],
-  ['f5', 'ms', 'F5 herberekenen (toets → Gantt getekend)', 'browser'],
-  ['f5', 'storeMs', 'F5: toets → nieuw rekenresultaat in de store', 'browser'],
-  ['save', 'ms', 'Opslaan (Ctrl+S → opgeslagen)', 'browser'],
-  ['levelCalculate', 'ms', 'Nivelleren: Berekenen → voorstel', 'browser'],
-  ['levelApply', 'ms', 'Nivelleren: Toepassen → Gantt getekend', 'browser'],
-  ['autosave', 'ms', 'Autosave-tick (serialiseren + IndexedDB)', 'browser'],
-  ['autosave', 'serializeTaskMs', 'Autosave: serialiseren (long task)', 'browser'],
-  ['autosave', 'idbTransactionMs', 'Autosave: IndexedDB-transactie', 'browser'],
-  ['recoveryOffer', 'ms', 'Herstel: herladen → herstelvraag', 'browser'],
-  ['recoveryRestore', 'ms', 'Herstel: Herstellen → Gantt getekend', 'browser'],
+  ['open', 'ms', 'Openen: bestand gekozen → Gantt getekend'],
+  ['open', 'storeMs', 'Openen: bestand gekozen → taken in de store'],
+  ['scroll', 'frameMedianMs', 'Verticaal scrollen (Shift+wiel): wiel → tekening klaar, mediaan per stap'],
+  ['scroll', 'frameP95Ms', 'Verticaal scrollen: p95 per stap'],
+  ['scroll', 'renderMedianMs', 'Verticaal scrollen: duur van één Gantt-tekening, mediaan'],
+  ['zoom', 'frameMedianMs', 'Zoomen (wiel): wiel → tekening klaar, mediaan per stap'],
+  ['zoom', 'frameP95Ms', 'Zoomen: p95 per stap'],
+  ['zoom', 'renderMedianMs', 'Zoomen: duur van één Gantt-tekening, mediaan'],
+  ['f5', 'ms', 'F5: toets → Gantt getekend'],
+  ['f5', 'storeMs', 'F5: toets → nieuw rekenresultaat in de store'],
+  ['levelCalculate', 'ms', 'Nivelleren: Berekenen → voorstel zichtbaar'],
+  ['levelApply', 'ms', 'Nivelleren: Toepassen → Gantt getekend'],
+  ['autosave', 'ms', 'Autosave-tick: serialiseren + IndexedDB-transactie'],
+  ['autosave', 'serializeTaskMs', 'Autosave-tick: serialiseren (long task)'],
+  ['autosave', 'idbTransactionMs', 'Autosave-tick: IndexedDB-transactie'],
+  ['recoveryOffer', 'ms', 'Herstel: herladen → herstelvraag zichtbaar'],
+  ['recoveryRestore', 'ms', 'Herstel: Herstellen → Gantt getekend'],
+  ['save', 'ms', 'Opslaan: Ctrl+S → bestand klaar (download)'],
 ];
 const lines = [];
 lines.push(`Nulmeting grote planningen — commit ${cond.commitShort}, ${cond.date.slice(0, 10)}, ${REPEATS}× per grootte, mediaan (min–max) in ms`);
 lines.push('');
 lines.push(`| Fase | Waar | ${results.map(r => `${r.size}`).join(' | ')} |`);
 lines.push(`| --- | --- | ${results.map(() => '---:').join(' | ')} |`);
-for (const [phase, field, label, where] of ROWS) {
-  lines.push(`| ${label} | ${where} | ${results.map(r => fmt(r.summary[phase]?.[field])).join(' | ')} |`);
+for (const [phase, field, label] of ROWS) {
+  lines.push(`| ${label} | browser | ${results.map(r => fmt(r.summary[phase]?.[field])).join(' | ')} |`);
 }
 for (const [field, label] of [['cpmMs', 'Rekenen (CPMSolver.solve)'], ['ifcWriteMs', 'IFC schrijven (writeIFC)'], ['ifcReadMs', 'IFC lezen (readIFC)']]) {
   lines.push(`| ${label} | Node | ${results.map(r => fmt(r.dataset.node[field])).join(' | ')} |`);
