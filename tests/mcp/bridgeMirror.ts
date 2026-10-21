@@ -20,7 +20,7 @@
 import http from 'node:http';
 import { timingSafeEqual } from 'node:crypto';
 import type { AddressInfo } from 'node:net';
-import { createRequestHandler, type McpResponseEvent } from '@/services/mcp/server';
+import { createRequestHandler, createMcpSessionTable, type McpResponseEvent } from '@/services/mcp/server';
 import type { McpContext } from '@/services/mcp/contracts';
 
 export const MIRROR_RESPONSE_TIMEOUT_SECS = 120;
@@ -40,6 +40,9 @@ export interface BridgeMirror {
   url: string;
   port: number;
   close: () => Promise<void>;
+  /** Bootst een bridge-herstart na zoals `createBridgeController.restart()`: een nieuwe request-handler
+   *  met dezelfde sessietabel (in de app `appMcpSessions`). */
+  restart: () => void;
 }
 
 function isAuthorized(header: string | undefined, token: string): boolean {
@@ -67,7 +70,8 @@ export async function startBridgeMirror(opts: BridgeMirrorOptions): Promise<Brid
   // Het `mcp://response`-kanaal: Rust correleert op een oplopend id (rs :102-171).
   const pending = new Map<number, (reply: McpResponseEvent) => void>();
   let nextId = 1;
-  const onRequest = createRequestHandler({
+  const sessions = createMcpSessionTable();
+  const makeHandler = () => createRequestHandler({
     emit: (_event, payload) => {
       const reply = payload as McpResponseEvent;
       pending.get(reply.id)?.(reply);
@@ -75,7 +79,9 @@ export async function startBridgeMirror(opts: BridgeMirrorOptions): Promise<Brid
     },
     buildContext: opts.buildContext,
     handleMessage: opts.handleMessage,
+    sessions,
   });
+  let onRequest = makeHandler();
 
   // Het in-flight-slot (rs :319-320): één request tegelijk naar de "webview".
   let slot: Promise<void> = Promise.resolve();
@@ -151,6 +157,7 @@ export async function startBridgeMirror(opts: BridgeMirrorOptions): Promise<Brid
   return {
     url: `http://127.0.0.1:${port}/mcp`,
     port,
+    restart: () => { onRequest = makeHandler(); },
     close: () => new Promise<void>((resolve) => {
       server.closeAllConnections();
       server.close(() => resolve());

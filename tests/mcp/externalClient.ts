@@ -22,6 +22,8 @@ export interface AppProbe {
   closeDocument(id: string): Promise<void>;
   /** Naar een open document wisselen. */
   switchDocument(id: string): Promise<void>;
+  /** De bridge stoppen en weer starten (zoals Stop/Start op het AI-tabblad). */
+  restartBridge(): Promise<void>;
 }
 
 export interface ExpectedServer {
@@ -250,6 +252,20 @@ export function externalClientChecks(
           assert(docB !== docA, 'nieuw document hoort een ander id te hebben');
           const drift = await callTool(a.client, 'planner_add_tasks', { tasks: [{ tempId: 'tmp-a2', name: 'Sessie A drift', duration: 1 }] });
           assertSame(drift.structured.code, 'DOC_DRIFT', 'A na tabwissel');
+
+          // Review 3: meer nieuwe sessies dan de tabel kan houden verdringen A niet (A heeft een anker).
+          for (let i = 0; i < 40; i++) {
+            const extra = await connectClient(env.url, auth);
+            await extra.client.close();
+          }
+          const afterFlood = await callTool(a.client, 'planner_add_tasks', { tasks: [{ tempId: 'tmp-a5', name: 'Sessie A na 40 sessies', duration: 1 }] });
+          assertSame(afterFlood.structured.code, 'DOC_DRIFT', 'A na 40 nieuwe sessies: geen 404, nog steeds DOC_DRIFT');
+
+          // Review 3: een bridge-herstart behoudt de sessie van A en haar anker.
+          await env.probe.restartBridge();
+          const afterRestart = await callTool(a.client, 'planner_add_tasks', { tasks: [{ tempId: 'tmp-a6', name: 'Sessie A na herstart', duration: 1 }] });
+          assertSame(afterRestart.structured.code, 'DOC_DRIFT', 'A na bridge-herstart: nog steeds DOC_DRIFT');
+          assertSame(await env.probe.taskCount(), 0, 'niets van A in het tweede document');
 
           // B begint een sessie (de route uit de review) en doet nog niets anders.
           const b = await connectClient(env.url, auth);

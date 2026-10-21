@@ -44,7 +44,9 @@ Veiligheid is state, geen conventie: `ui.aiMode` (de hele AI-tab en bridge versc
 leest ze live, plus een drift-anker (`expectedDocId`) zodat een tool nooit op het verkeerde document
 landt. Het anker leeft per MCP-sessie (`Mcp-Session-Id`): een geslaagde `initialize` maakt een nieuwe sessie
 met een leeg anker, Rust zet de id als header en geeft hem bij latere requests door, en `createRequestHandler`
-houdt per sessie het anker bij (maximaal `MCP_MAX_SESSIONS`, onbekende id ⇒ `404`). Elk request behalve
+houdt per sessie het anker bij in een tabel per app-sessie (`appMcpSessions`; een bridge-herstart behoudt
+hem, een nieuw token wist hem), met maximaal `MCP_MAX_SESSIONS`: alleen sessies zonder anker worden
+verdrongen, vol met gebonden sessies ⇒ `initialize` geweigerd; onbekende id ⇒ `404`. Elk request behalve
 `initialize` zonder header krijgt `400` en bereikt de dispatcher niet; er is geen gedeeld anker.
 `createRequestHandler` (`server.ts`) verwerkt requests strikt na elkaar en voert een request dat langer
 dan `MCP_QUEUE_DEADLINE_MS` (110 s, net onder Rusts 120 s-time-out) in de wachtrij stond niet meer uit

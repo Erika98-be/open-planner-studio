@@ -54,7 +54,25 @@ const probe: AppProbe = {
   newDocument: async () => ((await ops('dispatch', { action: 'newDocument', args: [] })) as { ret: string }).ret,
   closeDocument: async (id) => { await ops('dispatch', { action: 'closeDocument', args: [id] }); },
   switchDocument: async (id) => { await ops('dispatch', { action: 'switchDocument', args: [id] }); },
+  restartBridge: async () => {
+    await ops('mcpRestart');
+    await waitLive();
+  },
 };
+
+/** Wacht tot de bridge `live` meldt; gooit bij `port-busy`/`error` of na 30 s. */
+async function waitLive(): Promise<{ port: number; token: string | null; status: { state: string; message?: string } }> {
+  let last: { port: number; token: string | null; status: { state: string; message?: string } } | null = null;
+  for (let i = 0; i < 100; i++) {
+    last = await ops('mcpConnection');
+    if (last!.status.state === 'live' && last!.token) return last!;
+    if (last!.status.state === 'port-busy' || last!.status.state === 'error') {
+      throw new Error(`bridge start mislukt: ${JSON.stringify(last!.status)}`);
+    }
+    await sleep(300);
+  }
+  throw new Error(`bridge niet live: ${JSON.stringify(last)}`);
+}
 
 // AI-modus + automatisch starten aan, zoals de gebruiker in Instellingen doet; `useAiAutostart`
 // start de bridge daarop. Daarna wachten tot de Rust-bridge "running" meldt (status `live`).
@@ -66,21 +84,12 @@ await ops('dispatch', {
   args: [{ welcomePending: false, showWelcomeDialog: false, showTourOverlay: false, showTutorialOffer: false }],
 });
 await ops('dispatch', { action: 'setUI', args: [{ aiMode: true, aiAutostart: true }] });
-let conn: { port: number; token: string | null; status: { state: string; message?: string } } | null = null;
-for (let i = 0; i < 100; i++) {
-  conn = await ops('mcpConnection');
-  if (conn!.status.state === 'live' && conn!.token) break;
-  if (conn!.status.state === 'port-busy' || conn!.status.state === 'error') {
-    throw new Error(`bridge start mislukt: ${JSON.stringify(conn!.status)}`);
-  }
-  await sleep(300);
-}
-if (!conn || conn.status.state !== 'live' || !conn.token) throw new Error(`bridge niet live: ${JSON.stringify(conn)}`);
+const conn = await waitLive();
 console.log(`bridge live op 127.0.0.1:${conn.port} (app ${APP_VERSION})`);
 
 const checks = externalClientChecks({
   url: `http://127.0.0.1:${conn.port}/mcp`,
-  token: conn.token,
+  token: conn.token!,
   probe,
   expected: {
     name: MCP_SERVER_NAME,

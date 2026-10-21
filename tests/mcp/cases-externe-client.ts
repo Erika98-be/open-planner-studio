@@ -49,6 +49,7 @@ const probe: AppProbe = {
   newDocument: async () => app.store.getState().newDocument(),
   closeDocument: async (id) => { app.store.getState().closeDocument(id); },
   switchDocument: async (id) => { app.store.getState().switchDocument(id); },
+  restartBridge: async () => { mirror.restart(); },
 };
 
 let historyBefore = 0;

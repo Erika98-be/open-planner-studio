@@ -159,7 +159,7 @@ async function scanStoredExtensions(): Promise<Array<{
 
 export interface OpsCommand {
   id?: string;
-  op: 'ping' | 'getState' | 'roundTrip' | 'save' | 'open' | 'dispatch' | 'feedbackTest' | 'mcpConnection';
+  op: 'ping' | 'getState' | 'roundTrip' | 'save' | 'open' | 'dispatch' | 'feedbackTest' | 'mcpConnection' | 'mcpRestart';
   args?: Record<string, unknown>;
 }
 
@@ -204,6 +204,15 @@ async function runOp(cmd: OpsCommand): Promise<Record<string, unknown>> {
         ok: true,
         result: { port: loadMcpPort(), token: loadMcpToken(), status: ui.aiServerStatus, aiMode: ui.aiMode },
       };
+    }
+    case 'mcpRestart': {
+      // Bridge stoppen en starten zoals Stop/Start op het AI-tabblad; voor de externe-clienttest dat een
+      // herstart sessies en documentbindingen behoudt. Dev-only, zoals `mcpConnection`.
+      if (!import.meta.env.DEV) return { ok: false, error: 'mcpRestart is dev-only' };
+      const { stopMcpServer, startMcpServer } = await import('@/services/mcp/server');
+      await stopMcpServer();
+      await startMcpServer();
+      return { ok: true, result: { status: useAppStore.getState().ui.aiServerStatus } };
     }
     case 'feedbackTest': {
       // Dev-only desktop-verificatie van de feedback-feature: toetst (1) of

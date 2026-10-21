@@ -38,6 +38,8 @@ Het venster biedt drie manieren om te koppelen:
 - *Koppelprompt*: een tekst die je in je AI-assistent plakt, waarna die zichzelf koppelt.
 - *Endpoint* en *Authenticatie*: de losse gegevens. Het endpoint is `http://localhost:3877/mcp` met transport *streamable HTTP*. Bij elke aanvraag hoort een header `Authorization: Bearer` gevolgd door je token. Je client moet ook MCP-sessies ondersteunen: de bridge geeft bij het verbinden een sessiecode in de header `Mcp-Session-Id`, en weigert elke latere aanvraag zonder die code. Claude Code en `mcp-remote` doen dat vanzelf.
 
+**Na een update van de app opnieuw verbinden.** Was je AI-client al verbonden met een oudere versie van de app, dan stuurt hij nog geen sessiecode mee en weigert de bridge elke aanvraag. Verbind daarom opnieuw na de update: start in Claude Code een nieuwe sessie, en sluit Claude Desktop helemaal af en start het opnieuw.
+
 **Claude Code.** Het configuratiefragment past direct in Claude Code. Geef in een terminal deze opdracht, met je eigen token in plaats van `<token>`:
 
 ```

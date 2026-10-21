@@ -31,6 +31,9 @@ import {
   MCP_QUEUE_DEADLINE_MS,
   MCP_MAX_SESSIONS,
   type McpResponseEvent,
+  createMcpSessionTable,
+  appMcpSessions,
+  regenerateAndApplyMcpToken,
   createStatusHandler,
   attemptBridgeStart,
   buildMcpContext,
@@ -627,11 +630,100 @@ test('createRequestHandler: sessies — eigen anker per Mcp-Session-Id, onbekend
   const failed = await send('initialize', undefined, 'fail');
   assertEq(failed.sessionId, undefined, 'mislukte initialize krijgt geen sessie-id');
 
+  // s1 en s2 hebben een anker; daarna 32 nieuwe sessies zonder anker (review 3).
   for (let i = 0; i < MCP_MAX_SESSIONS; i++) await send('initialize');
-  const evicted = await send('tools/call', 's1');
-  assertEq(evicted.status, 404, `na ${MCP_MAX_SESSIONS} nieuwere sessies is de oudste vergeten`);
-  const newest = await send('tools/call', `s${next}`);
-  assertEq(newest.status, undefined, 'de nieuwste sessie bestaat nog');
+  assertEq((await send('tools/call', 's1')).status, undefined, 'een sessie MET anker wordt nooit verdrongen (s1)');
+  assertEq((await send('tools/call', 's2')).status, undefined, 'een sessie MET anker wordt nooit verdrongen (s2)');
+  assertEq(seen.slice(-2), [[null, 'doc-1'], [null, 'doc-2']], 'en houdt haar anker');
+  assertEq((await send('tools/call', 's3')).status, 404, 'de oudste sessie ZONDER anker is verdrongen');
+  assertEq((await send('tools/call', `s${next}`)).status, undefined, 'de nieuwste sessie bestaat nog');
+});
+
+test('createRequestHandler: alle plekken bezet door gebonden sessies ⇒ initialize geweigerd, niets verdrongen (review 3 PR #439)', async () => {
+  let next = 0;
+  const handled: string[] = [];
+  const emitted: McpResponseEvent[] = [];
+  const handler = createRequestHandler({
+    emit: (_e, p) => { emitted.push(p as McpResponseEvent); },
+    buildContext: buildMcpContext,
+    sessions: createMcpSessionTable(() => `v${++next}`, 2),
+    handleMessage: async (body, ctx) => {
+      const msg = JSON.parse(body) as { id: number; method: string };
+      handled.push(msg.method);
+      if (msg.method === 'tools/call' && ctx.expectedDocId === null) ctx.expectedDocId = `doc-${msg.id}`;
+      return JSON.stringify({ jsonrpc: '2.0', id: msg.id, result: {} });
+    },
+  });
+  const send = (method: string, id: number, sessionId?: string) =>
+    handler({ id, body: JSON.stringify({ jsonrpc: '2.0', id, method }), sessionId });
+  await send('initialize', 1); await send('tools/call', 2, 'v1');
+  await send('initialize', 3); await send('tools/call', 4, 'v2');
+  handled.length = 0;
+  await send('initialize', 5);
+  const refused = emitted[emitted.length - 1];
+  assertEq(handled, [], 'de geweigerde initialize bereikt de dispatcher niet');
+  assertEq(refused.sessionId, undefined, 'geen sessie-id');
+  assertEq((JSON.parse(refused.body) as { error?: { code?: number } }).error?.code, -32000, 'JSON-RPC-fout -32000');
+  await send('tools/call', 6, 'v1');
+  await send('tools/call', 7, 'v2');
+  assertEq(emitted.slice(-2).map((e) => e.status), [undefined, undefined], 'beide gebonden sessies bestaan nog');
+});
+
+test('bridge-herstart (createBridgeController.restart) behoudt sessie en anker: de oude sessie krijgt DOC_DRIFT (review 3 PR #439)', async () => {
+  registerAllTools();
+  const st = useAppStore.getState();
+  st.setUI({ aiPaused: false, aiReadOnly: false });
+  st.newDocument();
+  const noBackup = { ensureBackup: async () => null, markDuplicateBorn: () => {} };
+  const fake = makeFakeTauri();
+  const responses: McpResponseEvent[] = [];
+  const controller = createBridgeController({
+    ...fake.deps,
+    emit: (_e, p) => { responses.push(p as McpResponseEvent); },
+    buildContext: () => buildMcpContext(undefined, undefined, noBackup),
+    handleMessage: handleMcpMessage,
+  });
+  await controller.start();
+  const settle = async () => { for (let i = 0; i < 20; i++) await new Promise((r) => setTimeout(r, 0)); };
+  let rid = 0;
+  const fire = async (body: unknown, sessionId?: string) => {
+    fake.fire('mcp://request', { id: ++rid, body: JSON.stringify(body), sessionId });
+    await settle();
+    return responses[responses.length - 1];
+  };
+  const init = await fire({ jsonrpc: '2.0', id: 1, method: 'initialize', params: {} });
+  const sid = init.sessionId!;
+  assert(sid, 'initialize via de controller geeft een sessie-id');
+  const add = (name: string) => fire({ jsonrpc: '2.0', id: 2, method: 'tools/call', params: { name: 'planner_add_tasks', arguments: { tasks: [{ tempId: 'tmp-r', name }] } } }, sid);
+  const code = (r: McpResponseEvent) => (JSON.parse(r.body) as { result: { structuredContent: { ok: boolean; code?: string } } }).result.structuredContent;
+  assertEq(code(await add('vóór')).ok, true, 'eerste mutatie bindt document A');
+  useAppStore.getState().newDocument();
+  const before = useAppStore.getState().tasks.length;
+  assertEq(code(await add('drift')).code, 'DOC_DRIFT', 'na tabwissel DOC_DRIFT');
+  await controller.restart();
+  const after = await add('na herstart');
+  assertEq(after.status, undefined, 'de oude sessie-id is na de herstart nog geldig (geen 404)');
+  assertEq(code(after).code, 'DOC_DRIFT', 'en geeft nog steeds DOC_DRIFT');
+  assertEq(useAppStore.getState().tasks.length, before, 'niets in document B');
+  await controller.stop();
+});
+
+test('nieuw token wist alle sessies van de app (review 3 PR #439)', async () => {
+  appMcpSessions.clear();
+  const emitted: McpResponseEvent[] = [];
+  const handler = createRequestHandler({
+    emit: (_e, p) => { emitted.push(p as McpResponseEvent); },
+    buildContext: buildMcpContext,
+    sessions: appMcpSessions,
+    handleMessage: async (body) => JSON.stringify({ jsonrpc: '2.0', id: (JSON.parse(body) as { id: number }).id, result: {} }),
+  });
+  await handler({ id: 1, body: INIT_BODY });
+  const sid = emitted[0].sessionId!;
+  assert(appMcpSessions.has(sid), 'voorwaarde: sessie staat in de app-tabel');
+  await regenerateAndApplyMcpToken(() => false);
+  assertEq(appMcpSessions.size(), 0, 'tabel leeg na nieuw token');
+  await handler({ id: 2, body: JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'ping' }), sessionId: sid });
+  assertEq(emitted[1].status, 404, 'de oude sessie krijgt 404 en moet opnieuw verbinden');
 });
 
 // `initialize`: het enige request dat zonder sessie de dispatcher bereikt.

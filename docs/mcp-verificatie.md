@@ -18,8 +18,12 @@ legt vast wat de app als MCP-server levert, wat niet, en welke test het bewijst.
 - Body groter dan 50 MiB: `413`. Ander pad: `404`.
 - Sessies volgens de spec: een geslaagde `initialize` krijgt een nieuwe `Mcp-Session-Id` (16 willekeurige bytes,
   hex) in de antwoordheader. De client stuurt die header daarna mee. Een onbekende of vergeten sessie-id krijgt
-  `404` zonder body; de client begint dan een nieuwe sessie. De app onthoudt per bridge-start de 32 laatst
-  gebruikte sessies. Elk request behalve `initialize` moet een bekende sessie-id dragen, ook lezen, `ping` en
+  `404` zonder body; de client begint dan een nieuwe sessie. De sessietabel leeft per app-sessie (de webview,
+  `appMcpSessions`), niet per bridge-start: stop/start en een poortwissel behouden sessies en ankers. Een nieuw
+  token wist alle sessies; een herstart van de hele app begint ook leeg, en dat is gewoon een nieuwe start. De
+  app onthoudt 32 sessies. Een nieuwe sessie boven die grens verdringt alleen de oudste sessie zonder anker;
+  een sessie met anker wordt nooit verdrongen. Zijn alle 32 gebonden, dan weigert de app een nieuwe
+  `initialize` met JSON-RPC-fout `-32000` (review 3 PR #439). Elk request behalve `initialize` moet een bekende sessie-id dragen, ook lezen, `ping` en
   notificaties; zonder header volgt `400` met een JSON-RPC-fout (`-32600`). Eén regel voor alles is het
   eenvoudigste dat spec-conform is, en er bestaat zo geen pad waarlangs een tool zonder sessie draait. Een client
   die de sessie-header niet ondersteunt, kan dus niet koppelen. Een `DELETE` om een sessie te beëindigen krijgt `405`; dat mag
@@ -52,7 +56,9 @@ legt vast wat de app als MCP-server levert, wat niet, en welke test het bewijst.
 - Drift-anker per sessie: de eerste mutatie van een sessie bindt aan het actieve document; wisselt de gebruiker
   van tabblad, dan krijgt de volgende mutatie van die sessie `DOC_DRIFT`. Een tweede client die `initialize`
   doet, krijgt een eigen sessie en wist het anker van de eerste niet; een `initialize` zonder `id` maakt geen
-  sessie en raakt niets (reviewrondes 1 en 2 van PR #439). Er is geen gedeeld anker meer.
+  sessie en raakt niets (reviewrondes 1 en 2 van PR #439). Er is geen gedeeld anker meer. Het anker blijft
+  staan bij een bridge-herstart en bij veel nieuwe sessies (review 3), dus een client die `DOC_DRIFT` kreeg,
+  blijft dat krijgen tot hij het document bevestigt of de gebruiker een nieuw token maakt.
 
 ## Mutatie, undo en backup
 
@@ -76,7 +82,10 @@ legt vast wat de app als MCP-server levert, wat niet, en welke test het bewijst.
    een sessie begon, na een `initialize` zonder `id`, en dezelfde mutatie zonder sessie-header krijgt `400`; B
    werkt in het actieve document), onbekende sessie `404`, `tools/list` zonder sessie-header `400`, `401` (geen token, fout token, ander scheme), `403` (Origin), `404` en `405`. De sessietabel zelf
    (eigen anker per sessie, `400` zonder header zonder dat de dispatcher het request ziet, `404`, mislukte
-   `initialize` en `initialize` zonder `id` zonder sessie, de grens van 32) toetst `tests/mcp/cases-server.ts`.
+   `initialize` en `initialize` zonder `id` zonder sessie, gebonden sessies niet verdrongen, volle tabel ⇒
+   `initialize` geweigerd, `createBridgeController.restart()` behoudt sessie en `DOC_DRIFT`, nieuw token wist
+   alles) toetst `tests/mcp/cases-server.ts`. De SDK-route toetst ook 40 extra sessies en een bridge-herstart
+   tegen een client die `DOC_DRIFT` kreeg: die houdt `DOC_DRIFT`.
    Draaien: `bash tests/mcp/run.sh cases-externe-client.ts`.
 2. **`.github/workflows/mcp-real-app.yml`** (apart, niet in de verplichte CI; draait op een PR die de MCP-route
    raakt, en met de hand). Bouwt de Tauri-dev-app onder xvfb, zet via het ops-test-kanaal
@@ -90,7 +99,9 @@ legt vast wat de app als MCP-server levert, wat niet, en welke test het bewijst.
    ervoor liet zien dat Claude Code en `mcp-remote` de `Mcp-Session-Id` na `initialize` bij elk volgend request
    meesturen. Claude Code stuurt vóór `initialize` eerst `server/discover` zonder header; dat krijgt `400` en
    hij gaat gewoon door met `initialize`. Na de verplichte sessie (review 2) zijn beide opnieuw getoetst:
-   koppelen, `tools/list` en een `planner_add_tasks` slagen.
+   koppelen, `tools/list` en een `planner_add_tasks` slagen. Na review 3 met `mcp-remote`: binden, tabwissel
+   (`DOC_DRIFT`), 40 extra sessies (`DOC_DRIFT`, geen `404`) en een bridge-herstart (`DOC_DRIFT`); niets in het
+   tweede document. Claude Code koppelt en muteert ook na deze wijziging.
    - Claude Code 2.1.306 met precies het configuratiefragment uit de app (`--mcp-config`): las het project en
      voegde een taak toe. `claude mcp add --transport http … --header "Authorization: Bearer …"` schrijft
      hetzelfde fragment (`type: "http"`, `url`, `headers`).

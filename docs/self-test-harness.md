@@ -211,6 +211,7 @@ hij `ready.json`. Op Linux is `appDataDir` = `~/.local/share/org.openaec.planner
    - `save` `{path}` — schrijf de state als IFC naar schijf (picker omzeild met vast pad)
    - `open` `{path}` — lees van schijf + `loadState`
    - `dispatch` `{action, args}` — roep een willekeurige store-actie aan, bv. `addTask`, `runCPM`, `newProject`
+   - `mcpRestart` — de MCP-bridge stoppen en starten (zoals Stop/Start op het AI-tabblad); dev-only
    - `mcpConnection` — poort, token en status van de MCP-bridge (`{ port, token, status, aiMode }`); zo verbindt
      `tests/mcp/realApp/run-real-app.ts` een externe client met de echte bridge
 3. Paden moeten binnen de fs-scope vallen (appData of home; zie `src-tauri/capabilities/default.json`).

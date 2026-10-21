@@ -38,6 +38,8 @@ The window offers three ways to connect:
 - *Connection prompt*: a text that you paste into your AI assistant, after which it connects itself.
 - *Endpoint* and *Authentication*: the separate details. The endpoint is `http://localhost:3877/mcp` with transport *streamable HTTP*. Every request needs a header `Authorization: Bearer` followed by your token. Your client must also support MCP sessions: when it connects, the bridge gives a session code in the header `Mcp-Session-Id`, and it refuses every later request without that code. Claude Code and `mcp-remote` do this by themselves.
 
+**Connect again after an update of the app.** If your AI client was already connected to an older version of the app, it does not send a session code yet, and the bridge refuses every request. So connect again after the update: start a new session in Claude Code, and quit Claude Desktop completely and start it again.
+
 **Claude Code.** The configuration snippet fits Claude Code directly. Give this command in a terminal, with your own token instead of `<token>`:
 
 ```
