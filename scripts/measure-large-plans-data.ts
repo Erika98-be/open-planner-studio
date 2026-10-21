@@ -7,7 +7,7 @@
 //   2. rekent hem één keer door (CPMSolver + `applyCpmResult`, net als de benchmarkrunner) en schrijft
 //      het resultaat als IFC naar `<out>/plan-<grootte>.ifc` — het bestand dat de browsermeting opent;
 //   3. beschrijft de dataset (relaties per type, samenvattingsniveaus, resources, toewijzingen, kalenders)
-//      en geeft de SHA-256 van het IFC-bestand, zodat een herhaling aantoonbaar dezelfde data gebruikt;
+//      en geeft een SHA-256 over de inhoud van het IFC-bestand (zonder schrijftijd), zodat een herhaling aantoonbaar dezelfde data gebruikt;
 //   4. meet in Node (esbuild-bundel, geen browser) de kernfasen los: rekenen, IFC schrijven, IFC lezen.
 //      Die getallen zijn een controle naast de browsermeting, geen vervanging ervan.
 //
@@ -53,6 +53,15 @@ function stats(samples: number[]) {
   const median = sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
   const r = (v: number) => Math.round(v * 10) / 10;
   return { median: r(median), min: r(sorted[0]), max: r(sorted[sorted.length - 1]), samples: samples.map(r) };
+}
+
+/** Haal de schrijftijd uit de IFC-tekst, zodat de hash alleen over de inhoud gaat. De schrijver zet
+ *  hetzelfde tijdstip in FILE_NAME, als aanmaakdatum van IFCWORKPLAN/IFCWORKSCHEDULE en (als
+ *  epoch-seconden) in IFCOWNERHISTORY. */
+function normalizeWriteTime(ifc: string): string {
+  const stamp = /^FILE_NAME\('[^']*','([^']*)'/m.exec(ifc)?.[1];
+  const withoutStamp = stamp ? ifc.split(`'${stamp}'`).join("'<tijd>'") : ifc;
+  return withoutStamp.replace(/^(#\d+=IFCOWNERHISTORY\((?:[^,]*,){7})\d+\)/m, '$1<tijd>)');
 }
 
 /** Diepte van een taak in de WBS (0 = wortel). */
@@ -119,7 +128,9 @@ for (const size of sizes) {
     size,
     file: `plan-${size}.ifc`,
     ifcBytes: Buffer.byteLength(ifc),
-    ifcSha256: createHash('sha256').update(ifc).digest('hex'),
+    // Inhoudshash: de schrijver zet het tijdstip van schrijven in FILE_NAME en IFCOWNERHISTORY. Die twee
+    // waarden worden genormaliseerd; al het andere (taken, relaties, GUID's) is bij dezelfde seed gelijk.
+    contentSha256: createHash('sha256').update(normalizeWriteTime(ifc)).digest('hex'),
     generator: { function: 'generateBenchmarkProject', seed: `0x${SEED.toString(16)}`, resourceCount: data.resources.length },
     tasks: data.tasks.length,
     leafWorkTasks: leaves.filter(t => !t.isMilestone).length,

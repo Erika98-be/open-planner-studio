@@ -503,6 +503,20 @@ Maak een baseline daarom nooit langs ze heen:
 | `browser-shards.mjs` | `run-browser-tests.mjs` (`--duration-shard`); unit-test `tests/dev-server/browser-shards.test.mjs` | verdeelt de browserspecs op gemeten duur (`tests/browser/spec-durations.json`, langste eerst naar de lichtste shard) over de CI-shards; elke spec in precies één shard, ook zonder meting; `node scripts/browser-shards.mjs 4` toont de indeling, `--update "<bron>" <joblogs>` ververst de duren uit de CI-logs van een groene run |
 | `browser-test-server.mjs` | `webServer.command` in `playwright.config.ts`; `tests/dev-server/integration.sh` | leest `OPS_BROWSER_TEST_PORT` (moet in de browserbaan liggen), claimt het guard-slot voor die poort en start Vite op `127.0.0.1` (Playwright pollt bewust IPv4); geeft het slot bij afsluiten weer vrij |
 
+## Nulmeting grote planningen (niet in `verify`, niet in CI)
+
+`npm run measure:large-plans` → `measure-large-plans.mjs`, met `measure-large-plans-data.ts` (via
+`run-ts.mjs`) voor de datasets. Meet de prestaties bij 1.000, 5.000 en 10.000 activiteiten (#405 deel 2.4):
+openen, F5, nivelleren, autosave-tick, herstel, opslaan en de tijd per Gantt-tekening bij scrollen en zoomen.
+De datasets komen uit `generateBenchmarkProject` (vaste seed). De browsermeting draait op een tijdelijke
+productiebuild met `VITE_OPS_BENCH_BRIDGE=1`, geserveerd op `127.0.0.1` met een vrije poort, in headless
+Playwright-Chromium; elke herhaling krijgt een verse browsercontext. Het script legt commit, hardware, OS,
+Node- en Chromiumversie vast en schrijft één JSON-bestand (standaard
+`build/measure-large-plans/<datum>-<commit>.json`) plus een Markdown-tabel op stdout. Vlaggen:
+`--sizes 1000,5000,10000`, `--repeats 3`, `--out PAD`, `--dist BESTAANDE-BUILD`, `--headed`,
+`--skip fase,…`, `--step-timeout-s 900`. Exit 1 als een fase mislukt of een time-out geeft. Het script stelt
+geen doelen of drempels. De nulmeting staat in `docs/superpowers/evidence/nulmeting-grote-planningen.md`.
+
 ## Handmatige hulpmiddelen (geen aanroeper)
 
 Deze vijf worden door geen npm-script, workflow, ander script of test aangeroepen; ze zijn alleen met
