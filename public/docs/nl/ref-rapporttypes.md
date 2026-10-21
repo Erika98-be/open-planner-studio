@@ -20,7 +20,7 @@ Open het tabblad *Rapport* (of druk op Ctrl+P). Links staat de kolom *Rapportage
 
 **Papier:** — het papierformaat van de PDF. Keuze uit A4, A3, A2 en A1. Standaard: A3. Effect: de pagina's worden voor dat formaat opgelegd. Er is één keuze voor alle rapporten: wat je bij het ene rapport kiest, geldt ook voor de andere. Op A4 staand wordt een brede tabel klein, want de tabel wordt op de paginabreedte geschaald. Waar: *Instellingen* (Gantt-afdruk en Resourcediagram) of *Rapportopties* (de zeven tabelrapporten). Het Mijlpalen-overzicht en de Variance tonen geen keuzes.
 
-**Orientatie:** — liggend of staand. Keuze uit *Liggend* en *Staand*. Standaard: *Liggend*. Effect: zoals *Papier:*. Waar: dezelfde plek als *Papier:*.
+**Oriëntatie:** — liggend of staand. Keuze uit *Liggend* en *Staand*. Standaard: *Liggend*. Effect: zoals *Papier:*. Waar: dezelfde plek als *Papier:*.
 
 ## Gantt-afdruk
 
