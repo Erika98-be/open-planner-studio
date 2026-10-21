@@ -163,12 +163,6 @@ en noem het in je rapport of PR-tekst.
     er komt geen undo-stap, maar `shifts` meldt taak 1.2 `oldStart 2026-03-16 → newStart 2026-03-09` (het
     verschil tussen opgeslagen en herberekend). Een agent leest dat als effect van de nivellering. Dat `dryRun`
     hetzelfde meldt, is afgeleid (zelfde preview), niet nagespeeld. — B
-82. **`planner_update_tasks` meldt een duur op een samenvattingstaak als `updated`, maar er verandert niets.**
-    `fields.duration: 20` op een fase met één subtaak van 2 dagen: antwoord `ok`, de fase staat in `updated`,
-    `planner_get_task` blijft `duration: 2` (afgeleid). Strijdig met "never silently ignored" in de
-    tool-beschrijving. Nagespeeld via de echte dispatcher. Voorstel: per item weigeren met een reden ("de duur
-    van een samenvattingstaak is afgeleid van zijn subtaken"); `planner_add_tasks` met een duur op een item dat
-    kinderen krijgt idem nakijken. — B
 84. **`planner_get_project_overview` beschrijft `dur` als werkdagen**, maar de rij geeft de duur in de eigen
     eenheid van de taak met `durUnit` ernaast (`readTools.ts:~315`, `nativeDuration`); bij een urentaak zijn
     het dus uren. Alleen in de code gezien. — S
