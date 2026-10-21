@@ -386,31 +386,59 @@ jobs:
       - name: Install frontend dependencies (npm ci)
         run: npm ci
 
+      # Authenticode tijdens het bundelen (issue #429). Tauri roept signCommand
+      # aan voor het programma (open-planner-studio.exe), de NSIS-uninstaller en
+      # de installer; vroeger tekende een losse stap ná de build alleen de
+      # setup.exe, en bleef het geïnstalleerde programma NotSigned. De
+      # signCommand staat bewust NIET in tauri.conf.json maar in een override die
+      # alleen deze job (en windows-sign-check.yml) laadt: ci.yml, tauri:dev en
+      # lokale builds hebben geen Azure-credentials. De dlib heeft .NET 8 nodig.
+      - name: Setup .NET 8 (Artifact Signing-dlib)
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Prepare Authenticode signing (Azure Artifact Signing)
+        shell: pwsh
+        env:
+          AZURE_ENDPOINT: ${{ secrets.AZURE_ENDPOINT }}
+          AZURE_TRUSTED_SIGNING_ACCOUNT_NAME: ${{ secrets.AZURE_TRUSTED_SIGNING_ACCOUNT_NAME }}
+          AZURE_CERTIFICATE_PROFILE_NAME: ${{ secrets.AZURE_CERTIFICATE_PROFILE_NAME }}
+        run: pwsh -NoProfile -File scripts/windows-sign.ps1 -Setup
+
       - name: Build Tauri app
         uses: tauri-apps/tauri-action@action-v0.6.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Voor signCommand (scripts/windows-sign.ps1): EnvironmentCredential van de dlib.
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
         with:
+          args: --config ${{ env.OPS_SIGN_CONFIG }}
           releaseId: ${{ needs.create-release.outputs.release_id }}
           # latest.json wordt uitsluitend door de re-sign-stap hieronder beheerd
           # (na Authenticode); voorkomt dat deze run de linux/macos-entries raakt.
           includeUpdaterJson: false
 
-      - name: Sign Windows executables
-        uses: azure/trusted-signing-action@v0.5.0
-        with:
-          azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          azure-client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
-          endpoint: ${{ secrets.AZURE_ENDPOINT }}
-          trusted-signing-account-name: ${{ secrets.AZURE_TRUSTED_SIGNING_ACCOUNT_NAME }}
-          certificate-profile-name: ${{ secrets.AZURE_CERTIFICATE_PROFILE_NAME }}
-          files-folder: ${{ github.workspace }}/src-tauri/target/release/bundle/nsis
-          files-folder-filter: exe
-          files-folder-depth: 1
-          file-digest: SHA256
-          timestamp-rfc3161: http://timestamp.acs.microsoft.com
-          timestamp-digest: SHA256
+      # Poort: zonder geldige handtekening met tijdstempel op installer én
+      # programma faalt de job en blijft de release draft (publish-release hangt
+      # via `needs` aan deze job).
+      - name: Verify Authenticode (installer and program)
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $files = @(
+            (Get-ChildItem "$env:GITHUB_WORKSPACE/src-tauri/target/release/bundle/nsis/*-setup.exe" | Select-Object -First 1),
+            (Get-Item "$env:GITHUB_WORKSPACE/src-tauri/target/release/open-planner-studio.exe"))
+          foreach ($f in $files) {
+            if ($null -eq $f) { throw "bestand voor de Authenticode-controle ontbreekt" }
+            $sig = Get-AuthenticodeSignature -FilePath $f.FullName
+            Write-Host "$($f.Name): $($sig.Status); $($sig.SignerCertificate.Subject); tijdstempel: $($sig.TimeStamperCertificate.Subject)"
+            if ($sig.Status -ne 'Valid' -or $null -eq $sig.TimeStamperCertificate) { throw "$($f.Name): geen geldige Authenticode-handtekening met tijdstempel" }
+            & $env:OPS_SIGNTOOL verify /pa /v $f.FullName
+            if ($LASTEXITCODE -ne 0) { throw "signtool verify faalde voor $($f.Name)" }
+          }
 
       - name: Re-sign updater artifacts after Authenticode signing
         shell: pwsh

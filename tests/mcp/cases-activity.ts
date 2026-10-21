@@ -153,14 +153,26 @@ function registerStub(): void {
   registerToolModules([[stub]]);
 }
 
-test('wiring: een tools/call door de echte handler legt één entry met toolnaam + ok + duur ≥ 0', async () => {
-  registerStub();
-  clear();
+/**
+ * De echte request-handler met een geopende MCP-sessie: elk request behalve `initialize` moet een sessie
+ * dragen (anders 400). De `initialize` zelf komt ook in het log; daarom daarna `clear()`.
+ */
+async function sessionHandler(): Promise<(payload: { id: number; body: string }) => Promise<void>> {
   const handler = createRequestHandler({
     emit: () => { /* niet relevant voor de log-assertie */ },
     buildContext: buildMcpContext,
     handleMessage: handleMcpMessage,
+    newSessionId: () => 'sessie-activiteit',
   });
+  await handler({ id: 1, body: JSON.stringify({ jsonrpc: '2.0', id: 'init', method: 'initialize', params: {} }) });
+  clear();
+  return (payload) => handler({ ...payload, sessionId: 'sessie-activiteit' });
+}
+
+test('wiring: een tools/call door de echte handler legt één entry met toolnaam + ok + duur ≥ 0', async () => {
+  registerStub();
+  clear();
+  const handler = await sessionHandler();
   const body = JSON.stringify({
     jsonrpc: '2.0',
     id: 5,
@@ -181,11 +193,7 @@ test('wiring: een tools/call door de echte handler legt één entry met toolnaam
 
 test('wiring: een notificatie (lege respons-body) wordt NIET gelogd', async () => {
   clear();
-  const handler = createRequestHandler({
-    emit: () => {},
-    buildContext: buildMcpContext,
-    handleMessage: handleMcpMessage,
-  });
+  const handler = await sessionHandler();
   const note = JSON.stringify({ jsonrpc: '2.0', method: 'notifications/initialized' });
   await handler({ id: 3, body: note });
   assertEq(getEntries().length, 0, 'een notificatie levert geen activiteitsregel op');
@@ -193,11 +201,7 @@ test('wiring: een notificatie (lege respons-body) wordt NIET gelogd', async () =
 
 test('wiring: een onbekende tool ⇒ entry met ok:false', async () => {
   clear();
-  const handler = createRequestHandler({
-    emit: () => {},
-    buildContext: buildMcpContext,
-    handleMessage: handleMcpMessage,
-  });
+  const handler = await sessionHandler();
   const body = JSON.stringify({
     jsonrpc: '2.0',
     id: 9,
@@ -213,11 +217,7 @@ test('wiring: een onbekende tool ⇒ entry met ok:false', async () => {
 test('wiring: een >20 kB arg wordt afgekapt met de marker', async () => {
   registerStub();
   clear();
-  const handler = createRequestHandler({
-    emit: () => {},
-    buildContext: buildMcpContext,
-    handleMessage: handleMcpMessage,
-  });
+  const handler = await sessionHandler();
   const body = JSON.stringify({
     jsonrpc: '2.0',
     id: 7,
