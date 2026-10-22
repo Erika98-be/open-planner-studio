@@ -70,10 +70,20 @@ function varBlocks(entries: Record<number, Record<number, Uint8Array>>): { meta:
 
 /** Een TASK_FIELD_MAP (Props 131092) met de velden van de lezer plus FIXED_COST op offset 130, zodat
  *  de vaste kosten in de data-gedreven veldkaart staan (`FieldMap.createFieldMap`, 28 bytes/entry). */
-function taskFieldMap(): Uint8Array {
-  const fixed: [number, number][] = [[86, 0], [23, 4], [249, 40], [29, 42], [17, 56], [35, 64], [36, 68], [401, 118], [8, 130]];
-  const entries = [...fixed.map(([typeValue, dataBlockOffset]) => ({ typeValue, dataBlockOffset })),
-    { typeValue: 14, dataBlockOffset: 65535 }];
+function taskFieldMap(includeCosts: boolean): Uint8Array {
+  const fixed: [number, number][] = [[86, 0], [23, 4], [249, 40], [29, 42], [17, 56], [35, 64], [36, 68], [401, 118]];
+  if (includeCosts) fixed.push([8, 130]);
+  return fieldMap([...fixed, [14, 65535]]);
+}
+
+/** Bewust andere tariefoffsets dan de terugval (28/36/84): een aanwezige kaart bepaalt de layout. */
+function resourceFieldMap(includeRates: boolean): Uint8Array {
+  const fixed: [number, number][] = includeRates ? [[27, 0], [6, 8], [7, 16], [18, 24], [4, 44]] : [[27, 0], [4, 44]];
+  return fieldMap([...fixed, [1, 65535]]);
+}
+
+function fieldMap(fields: [number, number][]): Uint8Array {
+  const entries = fields.map(([typeValue, dataBlockOffset]) => ({ typeValue, dataBlockOffset }));
   const out = new Uint8Array(entries.length * 28);
   const view = new DataView(out.buffer);
   entries.forEach((e, i) => { view.setUint16(i * 28 + 4, e.dataBlockOffset, true); view.setInt32(i * 28 + 12, e.typeValue, true); });
@@ -88,9 +98,12 @@ interface Fixture {
   /** Toewijzingen aan taak 10 en resource 1; `deleted` zet de verwijdermarkering (FixedMeta-byte 0). */
   assignments: FixtureAssignment[];
   criticalSlackLimit?: number;
+  /** Ontbrekend: primaire kaarten; `without-costs` bewaart bedragen op de terugvalposities als lokval. */
+  fieldMaps?: 'absent' | 'primary' | 'secondary' | 'without-costs';
+  resourceRates?: { standard?: number; overtime?: number; perUse?: number };
 }
 
-const RECORD = 140;
+const RECORD = 168;
 const TASK_META_ITEM = 47;
 const RESOURCE_META_ITEM = 37;
 const ASSIGNMENT_META_ITEM = 34;
@@ -98,6 +111,7 @@ const ASSIGNMENT_RECORD = 110;
 const START_DAYS = 15000;
 
 function buildMpp(fx: Fixture): Uint8Array {
+  const defaultLayout = fx.fieldMaps === 'absent' || fx.fieldMaps === 'without-costs';
   // Taken: drie lege meta-items (FIRST_TASK_INDEX = 3), dan één record per taak.
   const records = fx.tasks.map((task, i) => {
     const record = new Uint8Array(RECORD);
@@ -107,7 +121,7 @@ function buildMpp(fx: Fixture): Uint8Array {
     rv.setUint16(64, 0, true); rv.setUint16(66, START_DAYS, true);
     rv.setUint16(68, 0, true); rv.setUint16(70, START_DAYS + 1, true);
     rv.setInt32(118, -1, true);
-    rv.setFloat64(130, task.fixedCost ?? 0, true);
+    rv.setFloat64(defaultLayout ? 158 : 130, task.fixedCost ?? 0, true);
     return record;
   });
   const items = 3 + fx.tasks.length;
@@ -118,9 +132,13 @@ function buildMpp(fx: Fixture): Uint8Array {
   const taskVars = varBlocks(Object.fromEntries(fx.tasks.map(task => [task.uid, { 14: utf16(task.name), ...(task.vars ?? {}) }])));
 
   // Eén resource (uid 1): record met uid @0 (SHORT) en MaxUnits @44.
-  const rscRecord = new Uint8Array(60);
+  const rscRecord = new Uint8Array(96);
   new DataView(rscRecord.buffer).setInt16(0, 1, true);
   new DataView(rscRecord.buffer).setFloat64(44, 10000, true);
+  const rateOffsets = defaultLayout ? [28, 36, 84] : [8, 16, 24];
+  [fx.resourceRates?.standard, fx.resourceRates?.overtime, fx.resourceRates?.perUse].forEach((rate, i) => {
+    new DataView(rscRecord.buffer).setFloat64(rateOffsets[i], rate ?? 0, true);
+  });
   const rscMeta = new Uint8Array(16 + RESOURCE_META_ITEM);
   new DataView(rscMeta.buffer).setUint32(0, 0xfadfadba, true);
   new DataView(rscMeta.buffer).setInt32(8, 1, true);
@@ -146,7 +164,10 @@ function buildMpp(fx: Fixture): Uint8Array {
     { key: 37748739, data: mppTimestampBytes(0, START_DAYS + 30) },
     { key: 37748765, data: int32(480) },
     { key: 37748744, data: utf16('Verslag') },
-    { key: 131092, data: taskFieldMap() },
+    ...(fx.fieldMaps === 'absent' ? [] : [
+      { key: fx.fieldMaps === 'secondary' ? 50331668 : 131092, data: taskFieldMap(fx.fieldMaps !== 'without-costs') },
+      { key: fx.fieldMaps === 'secondary' ? 50331669 : 131093, data: resourceFieldMap(fx.fieldMaps !== 'without-costs') },
+    ]),
     ...(fx.criticalSlackLimit !== undefined ? [{ key: 37748756, data: int32(fx.criticalSlackLimit) }] : []),
   ]);
   const tree: Record<string, CfbTreeNode> = {
@@ -227,6 +248,20 @@ async function open(name: string, bytes: Uint8Array): Promise<OpenedImport> {
 }
 const resultsOf = (parsed: OpenedImport) => isMultiDocumentImport(parsed) ? parsed.results : [parsed];
 
+/** Alleen de lezer, zonder store-herberekening: de matrices hieronder toetsen verliesdetectie. */
+const readFixture = async (fx: Fixture) => activeImportResult(await parseOpenedFile({ name: 'verliesdetectie.mpp', bytes: buildMpp(fx) }));
+
+// Letterlijke MPP14-datumvelden: baseline 0–10, taak (estimated én gewone start/einde) en toewijzing.
+const TASK_BASELINE_DATES = [
+  [43, 44, 1299, 1300], [482, 483, 1302, 1303], [493, 494, 1305, 1306], [504, 505, 1308, 1309],
+  [515, 516, 1311, 1312], [526, 527, 1314, 1315], [544, 545, 1317, 1318], [555, 556, 1320, 1321],
+  [566, 567, 1323, 1324], [577, 578, 1326, 1327], [588, 589, 1329, 1330],
+];
+const ASSIGNMENT_BASELINE_DATES = [
+  [146, 147], [295, 296], [304, 305], [313, 314], [322, 323], [331, 332],
+  [340, 341], [349, 350], [358, 359], [367, 368], [376, 377],
+];
+
 async function main(): Promise<void> {
   // (1) RTF-aantekening: alleen zichtbare tekst telt.
   eq('1a aantekening met tekst', rtfHasVisibleText(NOTE), true);
@@ -285,6 +320,86 @@ async function main(): Promise<void> {
       .flatMap(c => [`msProjectLost${c}_one`, `msProjectLost${c}_other`])];
     for (const key of keys) eq(`5 ${loc}: ${key}`, typeof json.notifications[key], 'string');
   }
+
+  // (6) #155: terugval zonder kaarten en beide Props-sleutels. Ieder bedrag afzonderlijk;
+  // nulwaarden tellen niet en een aanwezige onvolledige kaart krijgt nooit default-offsets erbij.
+  for (const fieldMaps of ['absent', 'primary', 'secondary', 'without-costs'] as const) {
+    const cases = [
+      { label: 'nulwaarden', fixedCost: 0, resourceRates: { standard: 0, overtime: 0, perUse: 0 }, costs: 0, rates: 0 },
+      { label: 'vaste kosten', fixedCost: 250, resourceRates: {}, costs: 1, rates: 0 },
+      { label: 'standaardtarief', fixedCost: 0, resourceRates: { standard: 55 }, costs: 0, rates: 1 },
+      { label: 'overwerktarief', fixedCost: 0, resourceRates: { overtime: 75 }, costs: 0, rates: 1 },
+      { label: 'gebruikskosten', fixedCost: 0, resourceRates: { perUse: 10 }, costs: 0, rates: 1 },
+      { label: 'alle bedragen', fixedCost: 250, resourceRates: { standard: 55, overtime: 75, perUse: 10 }, costs: 1, rates: 1 },
+    ];
+    for (const c of cases) {
+      const result = await readFixture({
+        tasks: [{ uid: 10, name: 'Fundering', fixedCost: c.fixedCost }], resourceVars: {}, assignments: [],
+        fieldMaps, resourceRates: c.resourceRates,
+      });
+      const label = `6 ${fieldMaps} ${c.label}`;
+      const costs = fieldMaps === 'without-costs' ? 0 : c.costs;
+      const rates = fieldMaps === 'without-costs' ? 0 : c.rates;
+      eq(`${label}: verlies`, [result.msProjectReport?.fixedCosts ?? 0, result.msProjectReport?.resourceRates ?? 0], [costs, rates]);
+      if (costs + rates === 0) eq(`${label}: geen verslag`, result.msProjectReport, undefined);
+      eq(`${label}: import behoudt taak, datums en resource`, [
+        result.tasks[0]?.name, result.tasks[0]?.time.scheduleStart, result.tasks[0]?.time.scheduleFinish,
+        result.resources[0]?.name, result.resources[0]?.maxUnits, result.tasks.length, result.resources.length,
+      ], ['Fundering', '2025-01-24', '2025-01-25', 'Timmerman', 1, 1, 1]);
+    }
+  }
+  const bothRates = await readFixture({
+    tasks: [{ uid: 10, name: 'Fundering' }], resourceVars: { 61: rateTable(55) }, assignments: [],
+    fieldMaps: 'absent', resourceRates: { standard: 55, overtime: 75, perUse: 10 },
+  });
+  eq('6 vaste tarieven en tarieftabel tellen dezelfde resource één keer', bothRates.msProjectReport?.resourceRates, 1);
+
+  // (7) #158: alle datumvelden gebruiken de datumdecoder, inclusief gemengde 00/FF-sentinels.
+  // Alle baselines samen leeg aanbieden vangt ook één vergeten veld in de classificatie.
+  const emptyDates: [string, Uint8Array][] = [
+    ['nulbytes', new Uint8Array(4)], ['NB', NA_TIMESTAMP],
+    ['00 00 FF FF', Uint8Array.from([0, 0, 0xff, 0xff])],
+    ['FF FF 00 00', Uint8Array.from([0xff, 0xff, 0, 0])],
+    ['00 00 01 00', Uint8Array.from([0, 0, 1, 0])],
+    ['kleine dag met seconden', mppTimestampBytes(1, 50)],
+    ['te kort', Uint8Array.from([1, 2, 3])],
+  ];
+  for (const [label, bytes] of emptyDates) {
+    const result = await readFixture({
+      tasks: [{ uid: 10, name: 'Fundering', vars: Object.fromEntries(TASK_BASELINE_DATES.flat().map(key => [key, bytes])) }],
+      resourceVars: {},
+      assignments: [{ uid: 1, vars: Object.fromEntries(ASSIGNMENT_BASELINE_DATES.flat().map(key => [key, bytes])) }],
+    });
+    eq(`7 ${label}: geen datumverlies`, result.msProjectReport, undefined);
+    eq(`7 ${label}: toewijzing blijft ingelezen`, result.assignments.length, 1);
+  }
+  // Elk datumveld moet zelfstandig verlies blijven melden bij een geldige datum om middernacht.
+  for (const [entity, groups] of [['task', TASK_BASELINE_DATES], ['assignment', ASSIGNMENT_BASELINE_DATES]] as const) {
+    for (const [number, keys] of groups.entries()) for (const key of keys) {
+      const vars = { [key]: mppTimestampBytes(0, START_DAYS) };
+      const result = await readFixture({
+        tasks: [{ uid: 10, name: 'Fundering', vars: entity === 'task' ? vars : {} }], resourceVars: {},
+        assignments: [{ uid: 1, vars: entity === 'assignment' ? vars : {} }],
+      });
+      eq(`7 ${entity} baseline ${number} veld ${key}: geldige datum`, result.msProjectReport?.baselines, 1);
+      eq(`7 ${entity} veld ${key}: baseline niet geïmporteerd`, result.baselines ?? [], []);
+    }
+  }
+  for (const [label, time, days] of [['kleine geldige dag', 10, 50], ['NB-tijd met geldige dag', 65535, START_DAYS]] as const) {
+    const result = await readFixture({
+      tasks: [{ uid: 10, name: 'Fundering', vars: { 43: mppTimestampBytes(time, days) } }], resourceVars: {}, assignments: [],
+    });
+    eq(`7 ${label}: volgt getTimestamp`, result.msProjectReport?.baselines, 1);
+  }
+  const numericBaseline: Fixture = {
+    tasks: [{ uid: 10, name: 'Fundering', vars: { 1: double(0), 6: double(0), 27: int32(0), 1301: int32(0), 43: emptyDates[2][1] } }],
+    resourceVars: { 342: double(0), 343: double(0) },
+    assignments: [{ uid: 1, vars: { 16: double(0), 32: double(0), 146: emptyDates[3][1] } }],
+  };
+  eq('7 echt nulwerk, nulkosten en nulduur naast lege datums: geen verslag', (await readFixture(numericBaseline)).msProjectReport, undefined);
+  numericBaseline.tasks[0].vars = { 27: int32(4800), 43: emptyDates[2][1] };
+  numericBaseline.assignments[0].vars = { 32: double(500), 146: emptyDates[3][1] };
+  eq('7 duur en kosten naast lege datums blijven tellen, dezelfde baseline één keer', (await readFixture(numericBaseline)).msProjectReport?.baselines, 1);
 }
 
 main().then(() => {

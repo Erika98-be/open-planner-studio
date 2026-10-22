@@ -286,18 +286,12 @@ en noem het in je rapport of PR-tekst.
 128. **CSV: een datum in een onleesbare vorm wordt stil "vandaag".** `csvDateOrToday` valt terug op
     `localTodayIso()` (`importDates.ts:71-74`, gebruikt door `csvReader.ts:135`). De Help noemt alleen de drie
     geldige vormen. Of er elders een melding voor komt, is niet nagegaan. Niet nagespeeld. — S
-155. **`.mpp` zonder veldkaarten: vaste kosten en tarieven ontbreken in het importverslag.** De terugval op de
-    standaardveldkaarten kent die velden niet, dus het verslag meldt hun verlies niet. VERVOLG 5 van #392,
-    gemeld door de reviewer. Niet nagespeeld. — S
 156. **MSPDI-importverslag: één tariefrecord in tabel A met overwerktarief of gebruikskosten wordt niet
     bekeken.** `scanMspdiImportLoss` (`mspdiImportLoss.ts`, tarieven) kijkt bij tabel A alleen of er meer dan
     één record is; `OvertimeRate`/`CostPerUse` onder één `Rates/Rate` in tabel A geven geen melding.
     VERVOLG 6 van #392, gemeld door de reviewer. Niet nagespeeld. — S
 157. **`.mpp`: een gedeelde lange aantekening wordt per verwijzing opnieuw verwerkt.** 1.000 taken × 64 KiB
     kost ongeveer 1,4 s. VERVOLG 8 van #392 (meting van de reviewer). Voorstel: cache per gedeeld datablok. — S
-158. **`.mpp`-importverslag: een lege baselinedatum kan vals verlies geven.** `mppImportLoss.ts` controleert
-    de ruwe bytes in plaats van `getTimestamp()`; de bytes `00 00 FF FF`, `FF FF 00 00` en `00 00 01 00`
-    tellen dan als datum. Synthetisch; niet gezien in 34 echte bestanden. VERVOLG 9 van #392. — S
 159. **`.mpp`-importverslag: verborgen RTF-metadata kan een niet-bestaande afbeelding of object melden.**
     Bijvoorbeeld `{\info{\title \\pict}}` in een aantekening. Voorstel: herkennen via de tokenizer. VERVOLG 10
     van #392. Niet nagespeeld. — S
