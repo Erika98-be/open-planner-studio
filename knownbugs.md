@@ -433,7 +433,7 @@ en noem het in je rapport of PR-tekst.
 ## Tests
 
 175. **De optionele MPP-corpuscheck behandelt bewust geweigerde oude formaten als leesfout.**
-    `check-mpp-import.ts`, onderdeel `T7-crawl`, verwacht geen leesfouten over 658 lokale
+    `check-mpp-relations.ts`, onderdeel `T7-crawl`, verwacht geen leesfouten over 658 lokale
     corpusbestanden, maar `readMPP` weigert MPP9/MPP12 expliciet (bijvoorbeeld
     `taskFlags-mpp9Project2013.mpp`). Gezien tijdens de afgebroken volledige planningsrun voor
     de IFC-performancewijziging op 22-10-2026; dit pad raakt de IFC-reader niet. Voorstel: laat
