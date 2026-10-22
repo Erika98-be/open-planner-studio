@@ -432,6 +432,13 @@ en noem het in je rapport of PR-tekst.
 
 ## Tests
 
+175. **De optionele MPP-corpuscheck behandelt bewust geweigerde oude formaten als leesfout.**
+    `check-mpp-relations.ts`, onderdeel `T7-crawl`, verwacht geen leesfouten over 658 lokale
+    corpusbestanden, maar `readMPP` weigert MPP9/MPP12 expliciet (bijvoorbeeld
+    `taskFlags-mpp9Project2013.mpp`). Gezien tijdens de afgebroken volledige planningsrun voor
+    de IFC-performancewijziging op 22-10-2026; dit pad raakt de IFC-reader niet. Voorstel: laat
+    de corpusverwachting onderscheid maken tussen ondersteunde en bewust geweigerde versies. — B
+
 79. **`check-task-grid-performance` (relationIndex-mediaan ≤ 500 ms) zit lokaal op het randje.** Los gedraaid
     496–499 ms (5-10-2026); rood (535–790 ms) in `npm run verify` zodra de container druk is (meerdere agents
     tegelijk). In CI steeds groen. De grens meet de machine mee. Voorstel: grens relatief aan een
@@ -485,15 +492,6 @@ en noem het in je rapport of PR-tekst.
    op een head die verder alleen de MCP-laag raakt; op de vier eerdere heads van die PR was hij groen.
    Lokaal 5× groen op `main` (b4ee5be3) en 25× groen op de PR na merge met main. Vermoedelijk zet iets de
    verticale scroll terug (begrenzing op de inhoudshoogte) voordat de inhoud er is; niet onderzocht. — S
-
-175. **Oudere MPP-crawlchecks behandelen bewust niet-ondersteunde MPP9-bestanden als onverwachte
-   leesfouten.** Met `OPS_MPP_CRAWL` op het brede MPXJ-corpus geven `check-mpp-import.ts:6028`,
-   `check-mpp-calendars.ts` en `check-mpp-relations.ts` rode checks voor de `MPP_LEGACY`-weigeringen
-   van `readMPP` (22-10-2026: respectievelijk 449, 892 en 446 afwijkingen). De afzonderlijke
-   `check-mpp-fidelity.ts` slaat dezelfde niet-ondersteunde varianten wel over en blijft groen
-   (661 gescande bestanden, 2.196 checks). De drie oude crawlchecks hebben daarnaast tellingenpins
-   voor een kleiner corpus; een brede crawl is dus niet uitwisselbaar met dat oorspronkelijke
-   corpus. Gezien tijdens de F5-optimalisatie; reader en checks zijn daar niet gewijzigd. — B
 
 ## Wensen en open taken (geen bug)
 
