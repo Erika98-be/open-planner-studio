@@ -349,7 +349,8 @@ export function writeMSPDI(
   lines.push(`${indent(1)}<Author>${escapeXml(project.author)}</Author>`);
   lines.push(`${indent(1)}<Company>${escapeXml(project.company)}</Company>`);
   lines.push(`${indent(1)}<CreationDate>${toXmlDateTime(project.createdAt.substring(0, 10))}</CreationDate>`);
-  lines.push(`${indent(1)}<StartDate>${toXmlDateTime(project.startDate)}</StartDate>`);
+  // De lezer kan ook een ongeldige tekstprefix bewaren; datumopmaak is geen XML-escaping.
+  lines.push(`${indent(1)}<StartDate>${escapeXml(toXmlDateTime(project.startDate))}</StartDate>`);
   if (project.endDate) {
     lines.push(`${indent(1)}<FinishDate>${toXmlDateTime(project.endDate)}</FinishDate>`);
   }
