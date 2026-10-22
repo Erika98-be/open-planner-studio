@@ -120,6 +120,14 @@ export async function downloadAndInstall(
   }
 
   try {
+    // Ook buiten de dialoog om nooit een pakketbeheerinstallatie overschrijven.
+    // Wacht op de echte detectie; het onbekende type is geen toestemming om te downloaden.
+    const installKind = await getInstallKind();
+    if (installKind === 'aur' || installKind === 'snap') {
+      onStatus?.({ kind: 'upToDate' });
+      return;
+    }
+
     const { check } = await import('@tauri-apps/plugin-updater');
     const { relaunch } = await import('@tauri-apps/plugin-process');
 

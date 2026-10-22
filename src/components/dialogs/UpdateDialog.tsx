@@ -44,8 +44,8 @@ export function UpdateDialog() {
   const [currentVersion, setCurrentVersion] = useState<string>(__APP_VERSION__);
   const [status, setStatus] = useState<UpdateStatus | null>(null);
   const [busy, setBusy] = useState(false);
-  // Install-type bepaalt of/hoe we de update installeren (snap/deb/appimage/native).
-  const [installKind, setInstallKind] = useState<InstallKind>('native');
+  // Tot de detectie klaar is mag geen installatieknop verschijnen (ook AUR/Snap zijn mogelijk).
+  const [installKind, setInstallKind] = useState<InstallKind | null>(null);
   const { copiedKey, copy } = useCopyFeedback(2000);
   const copied = copiedKey !== null;
 
@@ -73,6 +73,7 @@ export function UpdateDialog() {
   useEffect(() => {
     if (!showUpdateDialog) return;
     let cancelled = false;
+    setInstallKind(null);
     void getInstallKind().then(kind => { if (!cancelled) setInstallKind(kind); });
     return () => { cancelled = true; };
   }, [showUpdateDialog]);
@@ -133,7 +134,7 @@ export function UpdateDialog() {
   const isSnap = installKind === 'snap';
   const isAur = installKind === 'aur';
   const isDeb = installKind === 'deb';
-  const canAutoInstall = !isSnap && !isAur;
+  const canAutoInstall = installKind !== null && !isSnap && !isAur;
 
   return (
     // Esc en backdrop-klik sluiten de dialoog, maar NIET tijdens een actieve download
