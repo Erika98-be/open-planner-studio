@@ -36,6 +36,7 @@ import { readCSV } from '@/services/csv/csvReader';
 import { CSV_FIXTURE_UNREADABLE_DATES } from '../fixtures/recordedTimesFormats';
 import { readIFC } from '@/services/ifc/ifcReader';
 import { writeIFC } from '@/services/ifc/ifcWriter';
+import { parseStep } from './ifcSchemaCheck';
 import { buildWriteIFCInput } from '@/state/ifcSaveInput';
 import { IFC_TASKTIME_SLOTS, TASKTIME_SLOT } from '@/services/ifc/ifcTaskSlots';
 import { externIfc, taskArgs } from '../fixtures/recordedDatesIfc';
@@ -700,6 +701,14 @@ const earlyStartOf = (id: string) => S().tasks.find((t) => t.id === id)!.time.ea
     let text = writeIFC({ ...input, project: { ...input.project, startDate: '2026-02-23', statusDate: '2026-03-10' },
       tasks: [source, ...children], recordedSourceFormat: 'ifc' });
     for (let n = 1; n <= 2; n++) {
+      // Knownbug 109: ook ín de opgeslagen-datummodus volgt de native planomvang de getoonde
+      // fase (werkelijke start, berekend einde), niet de invoer of alleen de bladen. De tweede
+      // ronde schrijft via buildWriteIFCInput, dus ook de opgeslagen modus en bronherkomst tellen mee.
+      const planHeaders = parseStep(text).filter(e => e.type === 'IFCWORKPLAN' || e.type === 'IFCWORKSCHEDULE');
+      eq(`7D ${variant.label}, ronde ${n}: workplan en schema volgen de getoonde fase`,
+        planHeaders.map(e => [e.type, ...[11, 12].map(i => { const v = e.args[i]; return v.k === 'str' ? v.raw : '$'; })]),
+        [['IFCWORKPLAN', "'2026-02-26T07:00:00'", "'2026-03-27T07:00:00'"],
+          ['IFCWORKSCHEDULE', "'2026-02-26T07:00:00'", "'2026-03-27T07:00:00'"]]);
       const parsed = readIFC(text);
       const payload = prepareLoadedPayload(payloadFromImport(parsed, null), { recompute: false });
       eq(`7D ${variant.label}, ronde ${n}: geen solve bij payloadvoorbereiding`, payload.cpmResult, null);

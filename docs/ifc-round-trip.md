@@ -386,6 +386,16 @@ IfcWorkPlan.StartTime. Valt die later dan de vroegste ingelezen taakstart, dan g
   2022-09-14 uit StartTime (59794aa55: 2022-10-01, en als einde de tekst `.NOTDEFINE`). De 9 taken zijn
   na doorrekenen gelijk.
 
+**Planomvang tegenover projectinvoer.** `IfcWorkPlan.StartTime`/`FinishTime` en de gelijknamige
+slots van het live `IfcWorkSchedule` delen de vroegste getoonde taakstart en het laatste getoonde
+taakeinde (`shownStart`/`shownFinish` uit `taskDates`, inclusief samenvattingen). Die helpers bepalen
+wanneer een werkelijke datum vaststaat en wanneer early of invoer geldt; de writer rekent niet opnieuw.
+Zonder taakdatum valt elke as terug op de projectinvoer. Zonder enige start krijgt het verplichte
+`StartTime` het schrijfmoment; een ontbrekend `FinishTime` blijft `$`. De expliciete projectinvoer
+blijft altijd apart in `OPS_ProjectSettings.ProjectStartDate`/`ProjectEndDate`, ook leeg.
+Regressie voor knownbug 109: `check-ifc-projectdatum-tijd.ts` §7 (elk projectschema, drie rondgangen,
+broninvoer blijft staan) en `check-recorded-dates.ts` §7D (twee rondgangen in de opgeslagen-datummodus).
+
 **Projectstart en -einde met tijd.** Na een XER-import hebben projectstart en -einde een tijd, zoals
 `2012-12-17T07:00`. De writer schrijft `ProjectStartDate`/`ProjectEndDate` dan als IFCDATETIME met
 seconden, net als `StatusDate`. Zonder tijd blijft het IFCDATE. De lezer neemt de tijd alleen uit
