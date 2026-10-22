@@ -57,7 +57,7 @@ De overige rapporten staan als tabel op het scherm. Wat je ziet is wat in de PDF
 
 ### 6. Exporteer naar PDF
 
-Klik in het lint op **Afdruk**, of onder aan de kolom links op **Exporteer PDF**. Beide knoppen exporteren het gekozen rapport met je huidige instellingen naar PDF. De voorgestelde bestandsnaam is de projectnaam gevolgd door de soort rapport, bij de Gantt-afdruk bijvoorbeeld *Aanbouw woning-planning.pdf*.
+Klik in het lint op **Afdruk**, of onder aan de kolom links op **Exporteer PDF**. Beide knoppen exporteren het gekozen rapport met je huidige instellingen naar PDF. De voorgestelde bestandsnaam is de projectnaam gevolgd door de soort rapport, bij de Gantt-afdruk bijvoorbeeld *Aanbouw woning-planning.pdf*. Het rapportdeel volgt de interfacetaal: een voortgangsrapport krijgt in het Nederlands `-voortgang.pdf` en in het Engels `-progress.pdf`. De projectnaam blijft gelijk; eerder opgeslagen bestanden worden niet hernoemd.
 
 - In de desktopapp, en in een browser die een opslagdialoog voor bestanden kent, kies je waar de PDF komt. Sluit je die dialoog zonder te bewaren, dan gebeurt er niets.
 - In een browser zonder zo'n dialoog zet de browser de PDF in je downloadmap.

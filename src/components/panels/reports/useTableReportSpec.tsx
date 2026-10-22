@@ -172,7 +172,7 @@ function buildLookAhead(ctx: ReportContext, o: TableReportOptions, t: T, dd: DD,
       { label: t('tableReports.common.nearCritical'), value: String(r.counts.nearCritical), color: r.counts.nearCritical ? REPORT_COLORS.warn : undefined },
     ],
     sections: [section<LookAheadRow>({ key: 'rows', columns, rows: r.rows, emptyText: t(`${p}.empty`) })],
-    fileSuffix: 'look-ahead',
+    fileSuffix: t('fileSuffix.lookAhead'),
   };
 }
 
@@ -199,7 +199,7 @@ function buildCritical(ctx: ReportContext, o: TableReportOptions, t: T, dd: DD, 
       { label: t('tableReports.health.leaves'), value: String(r.counts.leaves) },
     ],
     sections: [section<CriticalRow>({ key: 'rows', columns, rows: r.rows, emptyText: t(`${p}.empty`) })],
-    fileSuffix: 'kritiek',
+    fileSuffix: t('fileSuffix.critical'),
   };
 }
 
@@ -245,7 +245,7 @@ function buildProgress(ctx: ReportContext, o: TableReportOptions, t: T, dd: DD, 
       sec('overdue', r.overdue),
       sec('critical', r.critical),
     ],
-    fileSuffix: 'voortgang',
+    fileSuffix: t('fileSuffix.progress'),
   };
 }
 
@@ -351,7 +351,7 @@ function buildHealth(ctx: ReportContext, o: TableReportOptions, t: T, dd: DD, st
       section<HealthSummaryRow>({ key: 'summary', heading: t(`${p}.sectionSummary`), columns: summaryColumns, rows: summaryRows }),
       section<HealthDetailRow>({ key: 'details', heading: t(`${p}.sectionDetails`), columns: detailColumns, rows: detailRows, emptyText: t(`${p}.empty`) }),
     ],
-    fileSuffix: 'gezondheid',
+    fileSuffix: t('fileSuffix.health'),
   };
 }
 
@@ -409,7 +409,7 @@ function buildResourceLoading(ctx: ReportContext, o: TableReportOptions, t: T, t
       { label: t(`${p}.overloadedResources`), value: String(r.counts.overloadedResources), color: r.counts.overloadedResources ? REPORT_COLORS.error : undefined },
     ],
     sections: [section<ResourceLoadingRow>({ key: 'rows', columns, rows: r.rows, emptyText: t(`${p}.empty`) })],
-    fileSuffix: 'resourcebelasting',
+    fileSuffix: t('fileSuffix.resourceLoading'),
   };
 }
 
@@ -441,7 +441,7 @@ function buildResourceAssignments(ctx: ReportContext, o: TableReportOptions, t: 
       { label: t(`${p}.unassigned`), value: String(r.counts.unassignedTasks), color: r.counts.unassignedTasks ? REPORT_COLORS.warn : undefined },
     ],
     sections: [section<ResourceAssignmentRow>({ key: 'rows', columns, rows: r.rows, emptyText: t(`${p}.empty`) })],
-    fileSuffix: 'toewijzingen',
+    fileSuffix: t('fileSuffix.resourceAssignments'),
   };
 }
 
@@ -473,7 +473,7 @@ function buildWbsSummary(ctx: ReportContext, o: TableReportOptions, t: T, dd: DD
       { label: t(`${p}.activitiesLabel`), value: String(r.counts.activities) },
     ],
     sections: [section<WbsSummaryRow>({ key: 'rows', columns, rows: r.rows, emptyText: t(`${p}.empty`) })],
-    fileSuffix: 'wbs',
+    fileSuffix: t('fileSuffix.wbsSummary'),
   };
 }
 

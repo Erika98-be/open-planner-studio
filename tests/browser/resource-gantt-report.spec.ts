@@ -150,7 +150,7 @@ test('resourcediagram: rapporttype rendert per resource, opties sturen samenvatt
   const downloadPromise = page.waitForEvent('download');
   await page.getByRole('button', { name: /^(Export PDF|Exporteer PDF)$/ }).click();
   const download = await downloadPromise;
-  expect(download.suggestedFilename()).toMatch(/-resourcediagram\.pdf$/);
+  expect(download.suggestedFilename()).toMatch(/-resource-diagram\.pdf$/);
   const pdfPath = await download.path();
   expect(pdfPath).not.toBeNull();
   const pdf = await PDFDocument.load(await readFile(pdfPath!));

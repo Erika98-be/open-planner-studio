@@ -29,7 +29,7 @@ test('table reports: rapporttype kiezen rendert tabel, optie ververst live, PDF-
   await typePicker.click();
   await page.getByRole('option', { name: /^Look-ahead$/ }).click();
 
-  const report = page.locator('[data-ops-table-report="look-ahead"]');
+  const report = page.locator('[data-ops-table-report]');
   await expect(report).toBeVisible();
   // Beide taken raken de standaardperiode "volgende maand" vanaf de statusdatum (14 sep – 13 okt):
   // twee echte rijen (op naam, niet op aantal — de lege-staat is óók één <tr>).
@@ -161,7 +161,7 @@ test('table reports: resourcebelasting groepeert per resource en aggregeert per 
   await page.getByRole('button', { name: /^(Report|Rapport)$/ }).click();
   await page.getByLabel(/^(Report type|Rapporttype)$/).first().click();
   await page.getByRole('option', { name: /^(Resource loading|Resourcebelasting)$/ }).click();
-  const report = page.locator('[data-ops-table-report="resourcebelasting"]');
+  const report = page.locator('[data-ops-table-report]');
   await expect(report).toBeVisible();
   const rows = report.locator('[data-ops-report-section="rows"] tbody tr');
   // Zes kalenderweken (7 sep t/m 12 okt) met vraag; de resourcenaam staat alleen op de eerste rij.

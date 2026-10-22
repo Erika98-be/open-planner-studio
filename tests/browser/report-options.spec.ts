@@ -84,7 +84,7 @@ test('report options: preview en export gebruiken dezelfde actuele kop en legend
   const print = page.locator('[data-tour-anchor="ribbon:report:printPreview"]');
   await print.click();
   const download = await downloadPromise;
-  expect(download.suggestedFilename()).toMatch(/-planning\.pdf$/);
+  expect(download.suggestedFilename()).toMatch(/-schedule\.pdf$/);
   expect(downloads).toHaveLength(1);
   await expect(print).toBeFocused();
   await expect(company).toHaveValue(companyName);
@@ -116,7 +116,7 @@ test('report options: preview en export gebruiken dezelfde actuele kop en legend
   expect(downloads).toHaveLength(1);
   const panelDownloadPromise = page.waitForEvent('download');
   await page.getByRole('button', { name: /^(Export PDF|Exporteer PDF)$/ }).click();
-  expect((await panelDownloadPromise).suggestedFilename()).toMatch(/-planning\.pdf$/);
+  expect((await panelDownloadPromise).suggestedFilename()).toMatch(/-schedule\.pdf$/);
   expect(downloads).toHaveLength(2);
 });
 
