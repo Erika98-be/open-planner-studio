@@ -388,9 +388,9 @@ export function milestoneRefusalNotices(
     const group = refused.filter(r => r.refusal === reason);
     if (group.length === 0) continue;
     notices.push(refusalNotice({
-      messageKey: reason === 'assignments'
-        ? (group.length === 1 ? 'notifications.milestoneRefusedAssignments' : 'notifications.milestoneRefusedAssignmentsMany')
-        : (group.length === 1 ? 'notifications.milestoneRefusedSummary' : 'notifications.milestoneRefusedSummaryMany'),
+      messageKey: group.length === 1
+        ? (reason === 'assignments' ? 'notifications.milestoneRefusedAssignments' : 'notifications.milestoneRefusedSummary')
+        : (reason === 'assignments' ? 'notifications.milestoneRefusedAssignmentsMany' : 'notifications.milestoneRefusedSummaryMany'),
       params: group.length === 1 ? { task: shortName(group[0].name) } : { count: group.length },
       // Meer taken (contextmenu op een tak): noem welke geen mijlpaal werden.
       // Een omzetting naar mijlpaal raakt verder niets aan die taak, dus "Niet aangepast" klopt.
