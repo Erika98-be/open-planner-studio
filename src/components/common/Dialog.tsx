@@ -30,6 +30,8 @@ export interface DialogProps {
   panelClassName: string;
   /** Tijdelijk verborgen en zonder toetsen/focus-trap; inhoud en lokale invoerstaat blijven gemount. */
   suspended?: boolean;
+  /** Stabiele finder voor de beginfocus, ook bij hervatten; standaard het eerste focusbare element. */
+  initialFocus?: () => HTMLElement | null;
   /**
    * Backdrop-klik sluit de dialoog; weglaten = backdrop-klik doet niets. Alleen zetten op een
    * dialoog zonder bewerkbare invoer (zie de regel hierboven).
@@ -56,7 +58,7 @@ export interface DialogProps {
 }
 
 export function Dialog({
-  panelClassName, suspended = false, onBackdropClick, onCancel, onConfirm, focusedButtonOwnsEnter,
+  panelClassName, suspended = false, initialFocus, onBackdropClick, onCancel, onConfirm, focusedButtonOwnsEnter,
   overlayClassName = 'bg-black/60 z-50', stopBackdropPropagation = false,
   overlayProps, panelProps, children,
 }: DialogProps) {
@@ -82,6 +84,7 @@ export function Dialog({
       {!suspended && (
         <DialogBehavior
           panelRef={panelRef}
+          initialFocus={initialFocus}
           onConfirm={onConfirm}
           onCancel={onCancel}
           focusedButtonOwnsEnter={focusedButtonOwnsEnter}
@@ -103,11 +106,11 @@ export function Dialog({
 }
 
 /** Alleen het gedrag unmount bij een Help-pauze; de invoervelden zelf blijven bestaan. */
-function DialogBehavior({ panelRef, ...keys }: {
+function DialogBehavior({ panelRef, initialFocus, ...keys }: {
   panelRef: RefObject<HTMLDivElement | null>;
-} & Pick<DialogProps, 'onConfirm' | 'onCancel' | 'focusedButtonOwnsEnter'>) {
+} & Pick<DialogProps, 'initialFocus' | 'onConfirm' | 'onCancel' | 'focusedButtonOwnsEnter'>) {
   useDialogKeys(keys);
-  useFocusTrap(panelRef);
+  useFocusTrap(panelRef, initialFocus);
   return null;
 }
 

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppStore } from '@/state/appStore';
 import { Dialog, DialogHeader } from '@/components/common/Dialog';
@@ -67,10 +67,9 @@ function ActualStartDialogBody({ request }: { request: ActualStartQuestionReques
   };
   const cancel = () => answerActualStartQuestion(null);
 
-  // Ook na terugkeer uit Help focus op het eerste datumveld; de lokale antwoorden blijven staan.
-  useEffect(() => {
-    if (!hiddenForHelp) bodyRef.current?.querySelector<HTMLInputElement>('input')?.focus();
-  }, [hiddenForHelp]);
+  // De focus-trap kiest dit veld bij openen én hervatten. Een los effect zou bij hervatten met
+  // de opnieuw gemounte trap concurreren, die anders de ?-knop als eerste focusbare element kiest.
+  const initialFocus = useCallback(() => bodyRef.current?.querySelector<HTMLInputElement>('input') ?? null, []);
 
   const first = request.items[0];
   const intro = request.items.length === 1
@@ -80,6 +79,7 @@ function ActualStartDialogBody({ request }: { request: ActualStartQuestionReques
   return (
     <Dialog
       suspended={hiddenForHelp}
+      initialFocus={initialFocus}
       onCancel={cancel}
       onConfirm={confirm}
       focusedButtonOwnsEnter

@@ -312,6 +312,7 @@ test('Regel 2, paneel: de app vraagt de werkelijke start; annuleren verandert ni
   await page.keyboard.press('ArrowRight');
   const question = page.locator('[data-ops-actual-start-dialog]');
   await expect(question).toBeVisible();
+  await expect(question.getByRole('textbox').first()).toBeFocused();
   await expect(question).toContainText('Metselwerk');
   const [y, m, d] = statusDate.split('-');
   const segments = question.getByRole('group', { name: /Metselwerk/ }).getByRole('textbox');
@@ -468,6 +469,7 @@ test('Regel 2, Taak bewerken: de vraag stapelt boven de dialoog; Enter bevestigt
 
   const question = page.locator('[data-ops-actual-start-dialog]');
   await expect(question).toBeVisible();
+  await expect(question.getByRole('textbox').first()).toBeFocused();
   const actualStart = shiftDays(statusDate, -5);
   await fillQuestionDate(page, 'Metselwerk', actualStart);
   await visitActualStartHelp(page, B, { inspectNavigation: true });
