@@ -225,6 +225,14 @@ en noem het in je rapport of PR-tekst.
     kenmerk alleen-lezen, dan faalt opslaan wel netjes (zelfde check, §1 en §2). Voorstel: bij een doel zonder
     schrijfbit eerst vragen of melden. Een besluit voor de eigenaar. — B
 
+201. **Het versieloze webherstelmanifest met `docIds` forceert `isDirty=true`.** In
+    `recoveryStore.ts`, `loadWeb`, krijgt de terugvalmetadata voor `docIds` `isDirty: true`;
+    `document.isDirty ?? rec.isDirty ?? true` kiest daardoor die `true`, ook als het oude
+    documentrecord `isDirty: false` bevat. Statisch gezien bij het versiecontract van knownbug 96;
+    de bestaande legacysemantiek is in die fix behouden. Mogelijk verwant aan de herstelmelding
+    van 36, maar niet vastgesteld als dezelfde oorzaak. De bedoeling en runtimegevolgen zijn niet
+    onderzocht. — S
+
 ## Rondleiding, Help en extensie-gidsen
 
 62. **Melding schuift over de knoppen van het begeleidingspaneel** (1600×950, venster Baselines open):
