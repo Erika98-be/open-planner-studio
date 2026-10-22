@@ -1,4 +1,5 @@
 import { expect, seedProject, test } from './fixtures/ops';
+import type { GeneratedProject } from '@/services/benchmark/generateProject';
 
 // Nivelleren op de achtergrond (audit 2026-09-26): de nivelleer-dialoog rekent in een Web Worker.
 // Fixture via de brug (twee overlappende taken op één ploeg van 1); de geteste handelingen zijn echte
@@ -67,7 +68,7 @@ test('nivelleer-dialoog: berekenen via de worker levert een voorstel; toepassen 
   // Toepassen ook alle niet-gemounte regels verwerkt. Dezelfde route, met onafhankelijke taken.
   await page.evaluate(async () => {
     const { generateBenchmarkProject } = await import('/src/services/benchmark/generateProject.ts' as string);
-    const fixture = generateBenchmarkProject(160);
+    const fixture: GeneratedProject = generateBenchmarkProject(160);
     const template = window.__OPS__!.store.getState().tasks[0];
     fixture.tasks = Array.from({ length: 160 }, (_, index) => ({
       ...template,

@@ -45,6 +45,12 @@ export function LevelingPreviewTable({ rows, formatDate }: {
       role="region"
       aria-label={t('resource.leveling.dialogTitle')}
       onScroll={event => setScrollTop(event.currentTarget.scrollTop)}
+      onKeyDown={event => {
+        // De browser scrolt deze lijst; globale Gantt-sneltoetsen mogen Home/pijlen niet overnemen.
+        if (['Home', 'End', 'PageUp', 'PageDown', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(event.key)) {
+          event.stopPropagation();
+        }
+      }}
       data-ops-leveling-preview
     >
       <table className="w-full border-collapse table-fixed" aria-rowcount={rows.length + 1}>
