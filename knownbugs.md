@@ -306,6 +306,13 @@ en noem het in je rapport of PR-tekst.
     van v2026.10.0 opgelost met afkappen (`TaskAssignmentsSection.tsx`), de koppen zelf niet. Voorstel: korte
     koppen in die talen, en de Help-artikelen die ze citeren mee. — B
 
+193. **Het meldingscontract noemt nog veertien verplicht bij te werken locale-bestanden.**
+    Het commentaar bij `NotificationMessageKey` in `src/state/slices/types.ts` zegt dat een nieuwe
+    meldingssleutel ook in alle veertien `common.json`-bestanden hoort. Het huidige PR-contract vereist
+    NL/EN; de vertaalstraat verzorgt de overige talen en een release vereist alle 28 actuele UI-talen.
+    Gevonden bij CSV-fix 128 en statisch met AGENTS vergeleken; alleen deze verouderde instructie,
+    geen vastgestelde fout in de sleutelunie of runtime. — B
+
 ## Tests
 
 175. **De optionele MPP-corpuscheck behandelt bewust geweigerde oude formaten als leesfout.**
