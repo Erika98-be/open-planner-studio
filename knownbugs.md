@@ -86,6 +86,11 @@ en noem het in je rapport of PR-tekst.
 22. **Goede Vrijdag en Bevrijdingsdag** hebben `optional: true`, maar dat wordt nergens gelezen: ze worden
     altijd gegenereerd. — B
 
+182. **UI-kalendergeneratie gebruikt alleen de ingevoerde projecteinddatum.** `CalendarDialog.tsx:77`
+    en `ResourceCalendarDialog.tsx:57` geven alleen `project.endDate` aan `computeGenerateSpan`, ook
+    wanneer `cpmResult.projectEnd` later ligt. Dit is de open UI-vraag uit 124, waarvan het MCP-deel
+    is opgelost. Of dit UI-gedrag bedoeld is, is niet uitgezocht; niet in de app nagespeeld. — S
+
 
 ## Bibliotheek, bezetting, extensies, AI
 
@@ -156,14 +161,6 @@ en noem het in je rapport of PR-tekst.
     vergelijking. Symbolische links worden ook niet opgelost. Afgeleid uit de code door de review van #336,
     niet op een Mac nagespeeld. — S
 
-124. **`planner_update_calendar` `generate` dekt het projecteinde niet als `endDate` gezet is.**
-    `calendarSpan` (`calendarResourceTools.ts:585-590`) neemt `project.endDate || cpmResult.projectEnd`. Een
-    `endDate` gaat dus voor het berekende einde. Loopt de planning daarna door, dan krijgen die jaren geen
-    feestdagen en komt er geen waarschuwing; opnieuw genereren helpt niet, want de spanne blijft op `endDate`
-    staan. Nagespeeld in een scratch-script (agent-audit 2026-10-19). Anders dan 88 (geen rekenresultaat).
-    De UI-regeneratie gebruikt dezelfde `computeGenerateSpan` (`ResourceCalendarDialog.tsx:57`); of dat daar
-    bedoeld is, is niet uitgezocht. Voorstel: het latere van `endDate` en het berekende einde nemen, of een
-    `warnings`-regel geven. — B
 125. **De eerste bibliotheek heet hardgecodeerd "Mijn resourcebibliotheek"**, ook in de Engelse app
     (`types/library.ts:63`). Ook de terugvalnamen "Nieuwe resourcebibliotheek" (`librarySlice.ts:414`,
     `libraryOps.ts:463`). Valt buiten 29. — B
