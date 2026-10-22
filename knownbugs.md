@@ -455,13 +455,6 @@ en noem het in je rapport of PR-tekst.
     en de voortgangsvraag in hetzelfde scenario slaagden. De PR wijzigt alleen Vite 7.3.5 naar 7.3.7;
     de oorzaak en het verband met die wijziging zijn niet vastgesteld. — S
 
-176. **MSPDI: de projectstart wordt zonder XML-escaping geëxporteerd.** `mspdiWriter.ts` schrijft
-    `project.startDate` rechtstreeks in `<StartDate>`; de reader neemt een tekstprefix uit het
-    invoerveld over. Een ongeldige datum met XML-metatekens kan zo ongeldige XML opleveren. Gezien
-    bij de analyse van CodeQL #18; die melding is een false positive voor XSS omdat de reader
-    uitsluitend `application/xml` parseert en geen nodes in de pagina invoegt. De XML-integriteit
-    van zulke ongeldige datums is niet nagespeeld. Voorstel: datumvalidatie en escaping. — S
-
 179. **De website heeft geen PR-CI voor de automatische releasestap.** Op 2026-10-22 bevat
     `OpenAEC-Foundation/website/.github/workflows/` alleen `auto-assign-issues.yml`, `deploy.yml`
     (push op main/dispatch) en `update-stats.yml` (dagelijks/dispatch). `gh api .../actions/workflows`
@@ -470,3 +463,11 @@ en noem het in je rapport of PR-tekst.
     Daardoor kan een website-release-PR niet vóór de merge aan de eis “website-CI groen” voldoen.
     Voorstel: een website-PR-workflow met de bestaande checkers toevoegen en als poort instellen.
     De Nozzit-bypass voor reviews bestaat wel. Alleen gelezen; niets in de website gewijzigd. — B
+
+183. **MSPDI: andere projectdatumvelden worden nog zonder XML-escaping geschreven.**
+    Bij de statische analyse van 176 bleek dat `mspdiWriter.ts` ook `project.endDate` en
+    `project.statusDate` via `toXmlDateTime` rechtstreeks in `<FinishDate>`/`<StatusDate>` zet.
+    Die helper formatteert op lengte, zonder validatie of escaping; `mspdiReader.ts:parseProject`
+    kan bij deze velden eveneens een ongeldige tekstprefix bewaren. XML-metatekens zouden zo ook
+    daar de export kunnen beschadigen. Niet uitgevoerd; buiten de projectstartfix gehouden.
+    Voorstel: de XML-integriteit van deze velden afzonderlijk bewaken. — S

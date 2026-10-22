@@ -16,6 +16,8 @@
 //  8. P6-datumprecisie — de P6-lezer koppelde de tijd-van-de-dag aan de duureenheid: een dagtaak op
 //     een urenkalender verloor de tijd van al haar datums (ook actuals). Nu volgt de precisie de
 //     kalender, zoals mspdiReader en de IFC-lezer al deden.
+//  Knownbug176: een ongeldige projectstart met XML-metatekens blijft tekst bij MSPDI-export;
+//     geldige datumopmaak en de bestaande leesregels (prefix/ontbrekend anker) blijven behouden.
 //
 // Draait via run.sh. Exit 0 = alles groen.
 import { writeMSPDI } from '@/services/msproject/mspdiWriter';
@@ -110,6 +112,55 @@ function solve(r: { tasks: Task[]; sequences: Sequence[]; calendar: WorkCalendar
 }
 
 async function main(): Promise<void> {
+  // ════ Knownbug176. Projectstart blijft XML-tekst, ook na een vergevende import ═══════════════
+  {
+    const cal = DAY();
+    const project = proj('Projectstart', cal.id, '2026-07-06');
+    const tasks = [mkDay('anker', 'Ankertaak', '1', '2026-07-07', '2026-07-08', 2)];
+    // Letterlijke verwachtingen: de DOM-shim controleert geen XML-welgevormdheid. Alleen heropenen
+    // zou een kale '&' of een als element geïnterpreteerde '<…>' dus niet betrouwbaar afvangen.
+    const cases = [
+      ['dag', '2026-07-06', '2026-07-06T08:00:00', '2026-07-06'],
+      ['minuten', '2026-07-06T09:30', '2026-07-06T09:30:00', '2026-07-06'],
+      ['seconden', '2026-07-06T09:30:45', '2026-07-06T09:30:45', '2026-07-06'],
+      ['tijdzone', '2026-07-06T09:30:45+02:00', '2026-07-06T09:30:45+02:00', '2026-07-06'],
+      ['ongeldige maand', '2026-13-06', '2026-13-06T08:00:00', '2026-13-06'],
+      ['ongeldige tekst', 'onleesbaar', 'onleesbaarT08:00:00', 'onleesbaar'],
+      ['korte tekst', 'NA', 'NA', 'NA'],
+      ['leeg', '', '', '2026-07-07'],
+      ['XML-metatekens', `<&>"'abcde`, '&lt;&amp;&gt;&quot;&apos;abcdeT08:00:00', `<&>"'abcde`],
+      ['letterlijke entiteit', '&lt;abcde?', '&amp;lt;abcde?T08:00:00', '&lt;abcde?'],
+      ['CDATA-einde', 'ab]]>cdefg', 'ab]]&gt;cdefgT08:00:00', 'ab]]>cdefg'],
+      ['XML in minutenlengte', 'onleesbaar<&>abc', 'onleesbaar&lt;&amp;&gt;abc:00', 'onleesbaar'],
+      ['XML-elementen', '</StartDate><Injected/>', '&lt;/StartDate&gt;&lt;Injected/&gt;', '</StartDat'],
+    ] as const;
+    for (const [label, startDate, xmlText, importedStart] of cases) {
+      // Alleen de start vervangen: aanmaakdatum en taakdatums blijven geldige fixturedata.
+      const xml = writeMSPDI({ ...project, startDate }, cal, tasks, [], [], []);
+      eq(`176/${label}: letterlijke XML-inhoud`, xml.match(/<StartDate>([\s\S]*?)<\/StartDate>/)?.[1], xmlText);
+      const back = readMSPDI(xml);
+      eq(`176/${label}: heropenen volgt bestaande projectstartregel`, back.project.startDate, importedStart);
+      eq(`176/${label}: taak blijft heropenbaar`, back.tasks.map(t => [t.name, t.time.scheduleStart, t.time.scheduleFinish]),
+        [['Ankertaak', '2026-07-07', '2026-07-08']]);
+    }
+
+    // De oorspronkelijke route: geldige XML draagt ongeldige datumtekst. De reader bewaart de
+    // eerste tien tekens; export mag die niet als XML-syntaxis terugschrijven of normaliseren.
+    const imported = readMSPDI(`<Project xmlns="http://schemas.microsoft.com/project">
+      <Name>Doorvoer</Name><StartDate>&lt;&amp;&gt;&quot;&apos;abcde-ongeldig</StartDate>
+      <Tasks><Task><UID>1</UID><ID>1</ID><Name>Ankertaak</Name><OutlineLevel>1</OutlineLevel>
+        <Start>2026-07-07T08:00:00</Start><Finish>2026-07-08T08:00:00</Finish><Duration>PT16H0M0S</Duration>
+      </Task></Tasks></Project>`);
+    eq('176/doorvoer: reader bewaart ongeldige prefix', imported.project.startDate, `<&>"'abcde`);
+    const xml = writeMSPDI(imported.project, imported.calendar, imported.tasks, imported.sequences,
+      imported.resources, imported.assignments, imported.resourceCalendars);
+    eq('176/doorvoer: export bewaart prefix als XML-tekst', xml.match(/<StartDate>([\s\S]*?)<\/StartDate>/)?.[1],
+      '&lt;&amp;&gt;&quot;&apos;abcdeT08:00:00');
+    const reopened = readMSPDI(xml);
+    eq('176/doorvoer: projectstart blijft gelijk na heropenen', reopened.project.startDate, imported.project.startDate);
+    eq('176/doorvoer: taak blijft behouden', reopened.tasks.map(t => t.name), ['Ankertaak']);
+  }
+
   // ════ 3. XML-formaatherkenning op root-element/namespace, niet op vrije tekst ══════════════════
   {
     const cal = DAY();
