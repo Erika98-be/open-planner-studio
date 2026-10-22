@@ -100,6 +100,37 @@ test('datums zoals opgeslagen: een XER met restverschillen opent in de modus, me
   await expect(taskCell(page, ids.deviates, 'task.time.lateStart')).toHaveText(/10.01.2026|2026.01.10|01.10.2026/);
   await expect(taskCell(page, ids.deviates, 'task.time.lateStart')).not.toHaveText(/^(Niet vastgelegd|Not recorded)$/);
 
+  // Knownbug 183: dezelfde onbekende status in Bepalend én de relatiechips, in beide richtingen.
+  // De brug zet alleen de kolomvoorkeur; aanwijzen en springen blijven echte browserhandelingen.
+  await page.evaluate(() => {
+    const columns = window.__OPS__!.store.getState().taskGridSurfaces['full-task-grid'].columns;
+    window.__OPS__!.store.getState().setTaskGridColumns('full-task-grid', [
+      { id: 'task.name', width: 170, pinned: true },
+      { id: 'relation.predecessors', width: 150, pinned: false },
+      { id: 'relation.successors', width: 150, pinned: false },
+      { id: 'relation.driving', width: 130, pinned: false },
+      { id: 'task.time.totalFloat', width: 110, pinned: false },
+    ].map(column => ({ ...column, id: column.id as typeof columns[number]['id'] })));
+  });
+  const unknownText = /^(Onbekend|Unknown)$/;
+  const unknownExplanation = /^(Bepalende relaties onbekend zonder berekening\.|Driving relationships unknown without a calculation\.)$/;
+  const predecessorCell = taskCell(page, ids.earlyOnly, 'relation.predecessors');
+  const successorCell = taskCell(page, ids.deviates, 'relation.successors');
+  for (const id of [ids.deviates, ids.earlyOnly]) {
+    await expect(taskCell(page, id, 'relation.driving')).toHaveText(unknownText);
+  }
+  for (const cell of [predecessorCell, successorCell]) {
+    await expect(cell.getByRole('img', { name: unknownExplanation })).toBeVisible();
+    await expect(cell.locator('.task-grid-relation-chip--driving')).toHaveCount(0);
+  }
+  await predecessorCell.locator('.task-grid-relation-jump').hover();
+  await expect(page.locator('.gantt-tooltip')).toContainText(/Bepalende relaties onbekend zonder berekening\.|Driving relationships unknown without a calculation\./);
+  const beforeJump = await state(page);
+  await predecessorCell.locator('.task-grid-relation-jump').click();
+  await expect.poll(() => state(page).then(snapshot => snapshot.selectedTaskIds)).toEqual([ids.deviates]);
+  expect((await state(page)).sequences).toEqual(beforeJump.sequences);
+  expect((await state(page)).undoDepth).toBe(beforeJump.undoDepth);
+
   // Eigenschappenpaneel: de badge zegt per taak hetzelfde als de tabel, en noemt Primavera alleen
   // omdat dit een XER-herkomst is.
   await page.evaluate(() => {
@@ -171,6 +202,17 @@ test('datums zoals opgeslagen: een XER met restverschillen opent in de modus, me
     return { unknown: cpm?.drivingUnknown === true, driving: cpm?.drivingSequenceIds };
   })).toEqual({ unknown: false, driving: [] });
   await expect(tableRow(ids.deviates)).toHaveAttribute('data-grid-trace-role', 'predecessor');
+  for (const id of [ids.deviates, ids.earlyOnly]) {
+    await expect(taskCell(page, id, 'relation.driving')).toHaveText('—');
+  }
+  for (const cell of [predecessorCell, successorCell]) {
+    await expect(cell.getByRole('img', { name: unknownExplanation })).toHaveCount(0);
+    await expect(cell.locator('.task-grid-relation-chip--driving')).toHaveCount(0);
+    await expect(cell.locator('.task-grid-relation-jump')).toHaveCount(1);
+  }
+  await predecessorCell.locator('.task-grid-relation-jump').hover();
+  await expect(page.locator('.gantt-tooltip')).toContainText(/Niet bepalend|Not driving/);
+  expect((await state(page)).sequences).toEqual(beforeJump.sequences);
   await page.getByRole('button', { name: /^(Predecessors|Voorgangers)$/, exact: true }).click();
   await page.getByRole('button', { name: /^(Successors|Opvolgers)$/, exact: true }).click();
   await expect(tableRow(ids.deviates)).not.toHaveAttribute('data-grid-trace-role');

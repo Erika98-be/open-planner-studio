@@ -64,6 +64,8 @@ Een relatie tussen een taak en de fase waar hij zelf onder valt, is niet toegest
 
 Heeft een opvolger meer voorgangers, dan bepaalt meestal één relatie zijn startdatum: de relatie waar de opvolger geen dag eerder kan beginnen dan hij nu doet. Zo'n relatie heet **bepalend**. Bij een gelijkspel zijn er meer bepalende relaties. Een bepalende relatie herken je aan het bliksemsymbool in de kolommen *Voorgangers* en *Opvolgers* van de tabel, aan de kolom *Bepalend* (de **+** rechts in de tabelkop, onder *Relaties*) en aan de sterkere tint bij het traceren van een pad. Hoe je dat pad opent, staat in [Een pad traceren](docs://howto-pad-traceren).
 
+Zonder beschikbare berekening, ook bij **Datums zoals opgeslagen**, is onbekend welke relaties bepalend zijn. De tabelkolom *Bepalend* toont dan *Onbekend* en de interne relaties in *Voorgangers* en *Opvolgers* krijgen een vraagteken met uitleg, net als in het taakpaneel. Na een geslaagde berekening betekent `—` in *Bepalend* dat er geen bepalende relaties bij die taak zijn; een relatie zonder bliksem is dan niet bepalend. Externe relaties krijgen geen bepalend-markering. **Bereken** (F5) bepaalt dit opnieuw en verlaat *Datums zoals opgeslagen*; de datums kunnen daardoor veranderen.
+
 Bepalend zegt iets over datums, niet over duur. Ook een korte voorganger kan bepalend zijn, bijvoorbeeld door een lange lag; je ziet dat in het voorbeeld hieronder.
 
 ## Rekenvoorbeeld

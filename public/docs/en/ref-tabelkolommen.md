@@ -57,7 +57,7 @@ By default the table next to the Gantt shows *WBS*, *Task name* and *Duration*. 
 
 - **Predecessors** — the predecessors, as `WBS type±lag`, separated by `; `, for example `1.2 FS+2d`. Editable by typing the same form. You do not add an external relation here but with *Planning › Relations › Link › Add external relation…*.
 - **Successors** — the successors, in the same form. Editable.
-- **Driving** — the relations that determine the date of this task, as `← 1.2` (predecessor) or `→ 1.4` (successor). Read-only; outdated until *Calculate*.
+- **Driving** — the relations that determine the date of this task, as `← 1.2` (predecessor) or `→ 1.4` (successor). *Unknown* means no calculation is available, including in *Dates as recorded*. After a successful calculation, `—` means none of this task's relationships are driving. In *Predecessors* and *Successors*, a question mark shows the unknown status and a lightning bolt shows a driving relationship; without an icon, the internal relationship has been calculated and is not driving. Point at the task reference for an explanation. Read-only; after a change, previous results remain, outdated until *Calculate*.
 - **Free float** (in the category *Relations*) — the free float per relation, as `← 1.2: 3d`. Not the same column as *Free float* under *Calculated*, which shows the float of the task itself. Read-only.
 - **Warnings** — warnings per relation, for example *Out of sequence* or *Not included in the calculation*. Read-only. See [Notifications and warnings](docs://ref-meldingen).
 
