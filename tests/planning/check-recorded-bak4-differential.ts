@@ -155,7 +155,7 @@ const fixtures: Array<[string, (r: Readers) => Record<string, unknown>]> = [
   ['P6 XML-fixture', (r) => r.readP6XML(P6XML_FIXTURE)],
   ['MSPDI-fixture', (r) => r.readMSPDI(MSPDI_FIXTURE)],
   ['P6 XML-fixture (onleesbare datums)', (r) => r.readP6XML(P6XML_FIXTURE.replace(/<Activity>[\s\S]*?<\/Activity>/g,
-    block => block.replace(/<(EarlyStartDate|LateStartDate)>[^<]*<\/\1>/g, '<$1>NA</$1>')))],
+    block => block.replace(/<LateStartDate>[^<]*<\/LateStartDate>/g, '<LateStartDate>NA</LateStartDate>')))],
   ['MSPDI-fixture (onleesbare datums)', (r) => r.readMSPDI(MSPDI_FIXTURE.replace(/<Task>[\s\S]*?<\/Task>/g,
     block => block.replace(/<(EarlyStart|LateStart)>[^<]*<\/\1>/g, '<$1>NA</$1>')))],
   ['CSV-fixture', (r) => r.readCSV(CSV_FIXTURE)],
