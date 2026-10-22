@@ -382,9 +382,6 @@ en noem het in je rapport of PR-tekst.
 
 ## Rondleiding, Help en extensie-gidsen
 
-51. **Histogram-tooltip "0 taken dragen bij"** op de startdag van een urentaak: `contributingTaskNames` in
-    `useGanttHistogramInteraction.ts` vergelijkt "2027-06-28" met "2027-06-28T07:00". Voorstel: vergelijken
-    op `.slice(0,10)`. De balken zelf kloppen. — S
 62. **Melding schuift over de knoppen van het begeleidingspaneel** (1600×950, venster Baselines open):
     `toastPlacement.ts` houdt geen rekening met het paneel. — B (gezien), oorzaak afgeleid
 66. **Het UpdateDialog opent over een lopende gids heen** (review #261, punt O4). — S
