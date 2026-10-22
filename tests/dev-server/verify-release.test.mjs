@@ -168,6 +168,12 @@ test('een geldige release met alle platforms heeft nul FOUT-regels', () => {
   assert.deepEqual(fails(makeKey()), []);
 });
 
+test('releaseverificatie accepteert ISO-week 53, grote volgnummers en de jaarovergang', () => {
+  for (const version of ['2026.43.0', '2026.53.100', '2027.1.0']) {
+    assert.deepEqual(fails(makeKey(), { mutate: manifest => { manifest.version = version; } }, { tag: `v${version}` }), [], version);
+  }
+});
+
 test('bevinding 2: een updater-URL buiten de bedoelde release is FOUT', () => {
   const key = makeKey();
   for (const url of [

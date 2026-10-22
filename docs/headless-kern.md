@@ -88,7 +88,7 @@ niet om te parsen.
 
 ## Versiemodel
 
-- De pakketversie is de appversie (CalVer, `YYYY.M.patch`). `npm run bump` werkt dus ook voor de kern.
+- De pakketversie is de appversie (`JJJJ.W.N`: ISO-weekjaar, ISO-week zonder voorloopnul, volgnummer vanaf 0). `npm run bump` kiest de volgende versie uit vandaag, actuele origin-tags en de huidige versie (en stopt als origin niet bereikbaar is); `build-core.mjs` neemt die uit `package.json` over. De API-server, het consumeervoorbeeld en de OpenAPI-documentversie volgen hetzelfde nummer.
 - Het publieke contract is `src/core/api.ts` plus de exports van `src/core/index.ts`. Een wijziging
   daar is een contractwijziging en hoort in de releasetekst.
 - Een nieuw veld of een nieuwe code is een uitbreiding. Een veld weghalen of een betekenis veranderen
