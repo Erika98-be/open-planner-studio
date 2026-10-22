@@ -33,7 +33,7 @@ Het vraagteken rechtsboven in het venster opent dit artikel zonder dat je iets k
 
 **Het venster verschijnt niet.** Dan heeft de app geen kopie gevonden. Dat gebeurt als je nog niets had gewijzigd, als je in de browser een nieuw tabblad gebruikt, als je het herstel eerder met *Niet herstellen* hebt weggegooid, of als de crash kwam voordat de app de eerste kopie bewaarde: dat kan tot ongeveer tien seconden na je eerste wijziging duren.
 
-**Een kopie is beschadigd.** De app meldt *Hersteld bestand kon niet worden gelezen*, met de reden erbij, en biedt de overige projecten aan. Kies je *Herstellen*, dan blijven de onleesbare kopieën bewaard. Op desktop wordt een oude, wel herstelde kopie pas opgeruimd nadat een nieuwe herstelkopie veilig is vastgelegd. Is geen enkele kopie leesbaar, dan verschijnt het venster niet en blijven de kopieën bewaard.
+**Een kopie is beschadigd.** De app meldt *Hersteld bestand kon niet worden gelezen*, met de reden erbij, en biedt de overige projecten aan. Kies je *Herstellen*, dan blijven de onleesbare kopieën bewaard. Op desktop wordt een oude, wel herstelde kopie pas opgeruimd nadat een nieuwe herstelkopie veilig is vastgelegd. Is geen enkele kopie leesbaar, dan toont het venster alleen *Kopieën bewaren* en *Kopieën verwijderen*. Bewaren, Enter, Escape of sluiten laat de kopieën staan voor een latere herstelpoging. Verwijderen wist ze definitief; het venster waarschuwt dat dit niet ongedaan kan worden gemaakt.
 
 **Herstellen lukt niet.** De app meldt *Herstellen mislukt* met de reden erbij. De kopieën blijven staan en de vraag komt bij de volgende start terug.
 

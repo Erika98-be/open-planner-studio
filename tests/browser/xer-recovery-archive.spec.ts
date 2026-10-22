@@ -229,4 +229,64 @@ test('crashherstel: oude v1-snapshot herstelt en onleesbare kopie blijft bewaard
   await expect.poll(() => readRecoveryDb(page, edited), { timeout: 30_000, intervals: [500] })
     .toMatchObject({ snapshotHasName: true });
   expect((await readRecoveryDb(page, 'BROKEN_RECOVERY_FIXTURE')).snapshotHasName).toBe(true);
+
+  // Na het veiligstellen van de gezonde projecten blijft alleen een onleesbare kopie over.
+  // Fixture vóór de start; bewaren/verwerpen gebeurt vervolgens met echte gebruikershandelingen.
+  for (const locale of ['nl', 'en']) {
+    await page.goto('/icon.png');
+    await page.evaluate(async ({ sid, locale }) => {
+      await new Promise<void>((resolve, reject) => {
+        const request = indexedDB.open('ops-recovery');
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => {
+          const db = request.result;
+          const tx = db.transaction(['records', 'xer-archives'], 'readwrite');
+          const records = tx.objectStore('records');
+          records.clear();
+          tx.objectStore('xer-archives').clear();
+          records.put({ id: sid + '::doc::doc-corrupt', kind: 'doc', sessionId: sid,
+            docId: 'doc-corrupt', ifc: 'BROKEN_RECOVERY_FIXTURE', addedAt: Date.now() });
+          records.put({ id: sid + '::manifest', kind: 'manifest', sessionId: sid,
+            version: 4, activeDocumentId: 'doc-corrupt', addedAt: Date.now(),
+            documents: [{ id: 'doc-corrupt', ifc: sid + '::doc::doc-corrupt',
+              filePath: null, isDirty: true, datesAsRecorded: false }] });
+          tx.oncomplete = () => { db.close(); resolve(); };
+          tx.onerror = () => { db.close(); reject(tx.error); };
+        };
+      });
+      sessionStorage.setItem('ops-recovery-session', sid);
+      sessionStorage.removeItem('ops-recovery-session:held');
+      localStorage.setItem('ops-locale', locale);
+    }, { sid: 'alleen-onleesbaar-' + locale, locale });
+    await page.goto('/');
+    const dialog = page.locator('[data-ops-recovery-dialog]');
+    await expect(dialog).toBeVisible({ timeout: 15_000 });
+    await expect(dialog.getByRole('button', { name: /^(Herstellen|Restore)$/ })).toHaveCount(0);
+    const keepName = locale === 'nl' ? 'Kopieën bewaren' : 'Keep copies';
+    const discardName = locale === 'nl' ? 'Kopieën verwijderen' : 'Delete copies';
+    await expect(dialog.getByText(locale === 'nl'
+      ? /Verwijderen kan niet ongedaan worden gemaakt/
+      : /Deletion cannot be undone/)).toBeVisible();
+    if (locale === 'nl') await dialog.getByRole('button', { name: keepName, exact: true }).click();
+    else await page.keyboard.press('Escape');
+    await expect(dialog).toHaveCount(0);
+    expect((await readRecoveryDb(page, 'BROKEN_RECOVERY_FIXTURE')).snapshotHasName).toBe(true);
+    await page.reload();
+    await expect(dialog).toBeVisible({ timeout: 15_000 });
+    if (locale === 'nl') {
+      // Ook Enter kiest standaard de veilige uitweg, nooit verwijderen.
+      await page.keyboard.press('Enter');
+      await expect(dialog).toHaveCount(0);
+      expect((await readRecoveryDb(page, 'BROKEN_RECOVERY_FIXTURE')).snapshotHasName).toBe(true);
+      await page.reload();
+      await expect(dialog).toBeVisible({ timeout: 15_000 });
+    }
+    await dialog.getByRole('button', { name: discardName, exact: true }).click();
+    await expect(dialog).toHaveCount(0);
+    await expect.poll(() => readRecoveryDb(page, 'BROKEN_RECOVERY_FIXTURE'))
+      .toMatchObject({ snapshotHasName: false });
+    await page.reload();
+    await expect.poll(() => page.evaluate(() => !!window.__OPS__)).toBe(true);
+    await expect(dialog).toHaveCount(0);
+  }
 });
