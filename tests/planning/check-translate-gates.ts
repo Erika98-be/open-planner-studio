@@ -98,6 +98,34 @@ const has = (errs: string[], part: string) => errs.some(e => e.includes(part));
   ok('fout: token vertaald', has(errorsOf(t, { hint: 'Zadejte například 1.2 KZ+2d' }), 'token "FS" ontbreekt'));
 }
 
+// ── 5a. Vaste tekst (172): sleutel én namespace én taal begrenzen het contract ──────────────────
+{
+  const key = 'ribbon.calendarDialog.hoursValue';
+  const item = { key, nl: '{{hours}}u', en: '{{hours}}h' };
+  for (const lang of ['ar', 'fa']) {
+    // Bewust zonder fixedText-metadata: ook een ouder pakket moet door dezelfde poort.
+    const p = pkg(lang, [item, { key: 'otherHours', nl: '{{hours}}u', en: '{{hours}}h' }], { namespace: 'menu' });
+    const out = { [key]: '{{hours}}h', otherHours: '{{hours}} س' };
+    eq(`172 ${lang}: vaste tekst correct, ongerelateerde sleutel vrij`, checkPackage(p, out).errors, []);
+    for (const wrong of ['{{hours}}س', '{{hours}} h', '{{hours}}\u00a0h', 'h{{hours}}', '{{uren}}h', '10h', '{{hours}}{{hours}}h']) {
+      const errors = checkPackage(p, { ...out, [key]: wrong }).errors;
+      ok(`172 ${lang}: ${JSON.stringify(wrong)} is harde fout met contract`,
+        has(errors, `menu:${key}: vaste tekst voor ${lang} moet byte-gelijk "{{hours}}h" zijn`));
+    }
+    ok(`172 ${lang}: gewijzigde invulplek ook door bestaande placeholderpoort geweigerd`,
+      has(checkPackage(p, { ...out, [key]: '{{uren}}h' }).errors, 'invulplekken'));
+    const forged: UiPackage = { ...p, items: p.items.map(i => ({ ...i, fixedText: '{{hours}}س' })) };
+    ok(`172 ${lang}: bewerkte fixedText-metadata versoepelt de poort niet`,
+      has(checkPackage(forged, { ...out, [key]: '{{hours}}س' }).errors, 'vaste tekst'));
+    eq(`172 ${lang}: dezelfde sleutel in andere namespace blijft vrij`,
+      checkPackage({ ...p, namespace: 'task' }, { ...out, [key]: '{{hours}} س' }).errors, []);
+  }
+  for (const [lang, text] of [['nl', '{{hours}}u'], ['en', '{{hours}}h'], ['fr', '{{hours}} h'], ['da', '{{hours}}t']]) {
+    eq(`172 ${lang}: bestaande schrijfwijze blijft vrij`,
+      checkPackage(pkg(lang, [item], { namespace: 'menu' }), { [key]: text }).errors, []);
+  }
+}
+
 // ── 5b. Meervoud met per vorm andere invulplekken ────────────────────────────────────────────
 {
   const p = pkg('ru', [{ key: 'm', plural: true,

@@ -262,12 +262,6 @@ en noem het in je rapport of PR-tekst.
      agents in dezelfde map schrijven. Voorstel: dezelfde `seal`/`sealErrors` in `prepare`/`apply-terms`.
      Gevonden in de review van #323 (Opus, 2026-10-12), in de code aangewezen. — S
 
-172. **Vertaalstraat: de korte uureenheid werd in ar en fa vertaald, tegen het besluit "10h".** `menu.json`
-    `…hoursValue` werd in de ronde van 2026-10-21 `{{hours}}س`. De test
-    `tests/browser/calendar-file-hours-notice.spec.ts:266` eist in ar/fa "10h" (besluit eigenaar 2026-10-20: geen
-    spatie, getal en "h" als één LTR-reeks). Alleen de browsersuite in CI ving het; `verify:translations` en de
-    straat zelf zagen niets. Met de hand teruggezet op `{{hours}}h`. Voorstel: in de straat een vaste-tekstregel
-    per sleutel (bijv. in `i18n/termbase/`), zodat een volgende ronde dit niet opnieuw vertaalt. — B
 173. **Toewijzingen: lange kolomkoppen laten in veel talen weinig ruimte voor de resourcenaam.** De bron is kort
     (`task.json` `properties.assignments.units` "Units"/"Inzet", `workHours` "Work (h)"), maar de straat
     vertaalde naar de volle term (uk "Одиниця призначення", ru "Единицы назначения", bg, hu, ro, sk, da, nb,
@@ -331,11 +325,6 @@ en noem het in je rapport of PR-tekst.
    bleven ook shards van andere branches en van `main` lang `in_progress`. Dat wijst eerder op de runners
    dan op een test. — S
 
-168. **Een IFC met een heel diepe WBS (6.000 niveaus) laat het openen vastlopen op een `RangeError`
-   (Maximum call stack size exceeded).** Gezien via de headless kern: `openAsDocument` gooit die fout op
-   een gegenereerd bestand met 6.000 geneste taken (`tests/planning/check-headless-core.ts` §4g). De kern
-   vangt hem nu af als `PlannerCoreError` (`IFC_READ_FAILED`); de recursie zelf is niet opgelost. In de
-   app zelf niet nagespeeld. Gemeld in de review van PR #440. — B
 169. **`tests/browser/document-switch.spec.ts:75` (Gantt documenttabs herstellen beide paneviews en
    DOM-scrollbars) faalt soms in CI.** In de opbouw (`configureDocument`, regel 41) zet de test
    `setScroll(…, 190)` en leest daarna `scrollY: 0` terug. Gezien één keer in CI op PR #439

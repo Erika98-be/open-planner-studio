@@ -60,7 +60,8 @@ convention registry, provenance data gates pinned), `npm run verify:cycles` (cir
 `npm run verify:text-roles` (only the six text roles), `npm run verify:release-highlights-json` (in the chain)
 and `npm run verify:release-highlights` (separate: local update highlights and stats before a tagged release).
 `npm run verify:translations` (release gate, deliberately NOT in `verify`: every UI key in every locale translated
-and current per `i18n/ui-sources/`, plus a complete valid termbase for every target locale except nl/en;
+and current per `i18n/ui-sources/`, plus a complete valid termbase for every target locale except nl/en
+and the key/language-specific fixed UI text contracts in `scripts/translate/ui.ts`;
 `release.yml` and the release skill run it). `npm run verify:audit` is
 deliberately NOT in `verify` (Dependabot is the notification channel; an advisory gets
 its own commit). `npm run measure:profiles` (separate) measures the cell baseline per scheduling profile (rule A:

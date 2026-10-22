@@ -20,7 +20,7 @@ import { useAppStore } from '@/state/appStore';
 import { runGridMutation } from '@/state/gridTransaction';
 import { buildTaskColumnRegistry } from '@/engine/taskGrid/taskColumnRegistry';
 import { solveProject, cloneTasksForSolve } from '@/engine/scheduler/solveProject';
-import { applyCpmResult } from '@/engine/scheduler/applyCpmResult';
+import { applyCpmResult, rollupSummaryTasks } from '@/engine/scheduler/applyCpmResult';
 import type { CPMResult } from '@/engine/scheduler/CPMSolver';
 import type { CellEditIntent, TaskColumnContext } from '@/types/taskGrid';
 import type { Task } from '@/types/task';
@@ -278,6 +278,44 @@ function parentWithChild(days: number): { parent: string; child: string } {
   eq('Rollup over een childIds-kring eindigt zonder fout', error === null ? null : String(error), null);
   eq('Het blad krijgt zijn CPM-datums ondanks de kring', cyclic[2].time.earlyFinish, '2026-03-06');
   eq('De tussenlaag rolt het blad op', cyclic[1].time.earlyFinish, '2026-03-06');
+}
+
+// 168: terugkeer uit een tak blijft kinderen-vóór-ouders, ook bij gedeelde verwijzingen.
+// Een overgeslagen of handmatige fase blokkeert de rollup van haar kinderen niet.
+{
+  const base = S().tasks[0];
+  const node = (id: string, parentId: string | null, childIds: string[]): Task => ({
+    ...base, id, parentId, childIds, isSummary: childIds.length > 0,
+    isHammock: undefined, manuallyScheduled: undefined,
+    time: { ...base.time, earlyStart: '2026-03-02', earlyFinish: '2026-03-03' },
+  });
+  const r = node('R', null, ['A', 'B', 'M', 'ontbreekt']);
+  const a = node('A', r.id, ['C']);
+  const b = node('B', r.id, ['C']);
+  const c = node('C', a.id, ['L']);
+  const l = node('L', c.id, []);
+  l.time.earlyStart = '2026-03-10'; l.time.earlyFinish = '2026-03-12';
+  const m = node('M', r.id, ['C']);
+  m.manuallyScheduled = true;
+  m.time.scheduleStart = '2026-02-02'; m.time.scheduleFinish = '2026-02-04'; m.time.scheduleDuration = 3;
+  const empty = { ...node('E', null, []), isSummary: true };
+  const orphan = node('O', 'onbekende-ouder', ['L']);
+  const nodes = [r, a, b, c, l, m, empty, orphan];
+  const shape = JSON.stringify(nodes.map(t => [t.id, t.parentId, t.childIds, t.isSummary]));
+  const emptyTime = JSON.stringify(empty.time);
+  const orphanTime = JSON.stringify(orphan.time);
+  const order: string[] = [];
+  rollupSummaryTasks(nodes, { skip: t => { order.push(t.id); return t.id === 'A'; } });
+  eq('Rollup bezoekt gedeelde fasen één keer, in de oorspronkelijke terugkeervolgorde', order, ['C', 'A', 'B', 'M', 'R', 'E']);
+  eq('Kind onder overgeslagen fase wordt wel opgerold; gedeelde ouder ziet dat resultaat',
+    [c.time.earlyFinish, a.time.earlyFinish, b.time.earlyFinish], ['2026-03-12', '2026-03-03', '2026-03-12']);
+  eq('Handmatige fase houdt eigen datums en duur',
+    [m.time.earlyStart, m.time.earlyFinish, m.time.scheduleDuration], ['2026-02-02', '2026-02-04', 3]);
+  eq('Buitenste fase volgt de afgeronde kindresultaten', [r.time.earlyStart, r.time.earlyFinish], ['2026-02-02', '2026-03-12']);
+  eq('Expliciet lege fase en wees houden hun bestandswaarden',
+    [JSON.stringify(empty.time), JSON.stringify(orphan.time)], [emptyTime, orphanTime]);
+  eq('Rollup verandert geen taakvolgorde, identiteiten, verwijzingen of fasemarkeringen',
+    JSON.stringify(nodes.map(t => [t.id, t.parentId, t.childIds, t.isSummary])), shape);
 }
 
 if (diffs.length === 0) {
