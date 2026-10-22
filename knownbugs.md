@@ -168,12 +168,6 @@ en noem het in je rapport of PR-tekst.
     `isReadyToInstall` (`'readyToInstall'`) vraagt (`UpdateDialog.tsx:125-128,205-208`). Na de download springt
     het venster naar *Herstarten…* (`:225-229`). Alleen in de code gezien. — S
 
-164. **Nivelleren bij 10.000 taken: tijdens *Berekenen* blokkeert de UI toch 2,8–4,1 s.** De berekening zelf
-    loopt in een Web Worker, maar de nulmeting (`npm run measure:large-plans`, 21-10-2026) zag in die fase één
-    long task van 2.825–4.115 ms op de hoofdthread (5.000 taken: 741–802 ms). Vermoedelijke oorzaak: de
-    voorsteltabel in `LevelingDialog.tsx:265` rendert alle 8.920 rijen zonder virtualisatie. Niet met een
-    profiel bevestigd. — S
-
 ## Bestanden en herstel
 
 35. **Showcase-voorbeelden openen als gewijzigd** (`applyDemoLibraryToShowcaseProject`). — S
