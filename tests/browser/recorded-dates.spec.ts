@@ -161,10 +161,16 @@ test('datums zoals opgeslagen: een XER met restverschillen opent in de modus, me
   await page.getByRole('button', { name: /^(Table|Tabel)$/ }).click();
   await expect.poll(() => state(page).then(() => page.evaluate(() => window.__OPS__!.store.getState().datesAsRecorded))).toBe(false);
   await expect(taskCell(page, ids.earlyOnly, 'task.time.totalFloat')).not.toHaveText(/^(Niet vastgelegd|Not recorded)$/);
-  // Na expliciet herberekenen komt de bestaande driving-badge terug; de trace blijft bruikbaar.
+  // De geplande start in maart blijft onder het P6-profiel een ondergrens. De voorganger in
+  // januari is daardoor bekend niet-driving: geen onbekend-badge of bliksem, wel de gewone trace.
   await expect(unknownDriving).toHaveCount(0);
-  await expect(dependencies.locator('.lucide-zap')).toHaveCount(1);
-  await expect(tableRow(ids.deviates)).toHaveAttribute('data-grid-trace-role', 'predecessor-driving');
+  await expect(dependencies.locator('.dependency-wbs-link')).toHaveCount(1);
+  await expect(dependencies.locator('.lucide-zap')).toHaveCount(0);
+  expect(await page.evaluate(() => {
+    const cpm = window.__OPS__!.store.getState().cpmResult;
+    return { unknown: cpm?.drivingUnknown === true, driving: cpm?.drivingSequenceIds };
+  })).toEqual({ unknown: false, driving: [] });
+  await expect(tableRow(ids.deviates)).toHaveAttribute('data-grid-trace-role', 'predecessor');
   await page.getByRole('button', { name: /^(Predecessors|Voorgangers)$/, exact: true }).click();
   await page.getByRole('button', { name: /^(Successors|Opvolgers)$/, exact: true }).click();
   await expect(tableRow(ids.deviates)).not.toHaveAttribute('data-grid-trace-role');
