@@ -120,8 +120,6 @@ en noem het in je rapport of PR-tekst.
     bij een ontbrekende permissie, "Het bestaande projectbestand is niet schrijfbaar." (`actualAutoSave.ts`),
     het CFB-citaat (`cfb.ts`) en bestandsnaamdelen `-voortgang`/`-bibliotheek`. Zie ook 61. — B (eerste),
     S (rest)
-30. **Onbekende extensiepermissie** laat de installatie mislukken; de code-commentaren zeggen "wordt
-    gefilterd". — S
 31. **`companyLibrary.promoteHint`** noemt promoveren van resources via een knop die alleen voor kalenders
     bestaat. — S
 32. ***Herkennen*: "Geen voorstel — kies handmatig"** zonder knop om handmatig te kiezen. — B
