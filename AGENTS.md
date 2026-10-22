@@ -200,7 +200,9 @@ bridge tests against the real Rust bridge). Docs: `docs/release-verificatie.md`,
   is gone; the Rust side still registers `tauri-plugin-store`, unused), declared in `settingsRegistry.ts`.
   A setting in `SettingsPanelContent` automatically appears in all three places (⚙, Settings tab, Backstage);
   a remembered view choice via a ribbon button or dragging does not belong there.
-- **Auto-save** (crash recovery) is throttled to 10 s — deliberately a throttle, not a debounce. Runs in both
+- **Auto-save** (crash recovery) is throttled to 10 s — deliberately a throttle, not a debounce. Changed IFC snapshots
+  serialize on one reusable Web Worker (same writer fallback without Worker); only writer input and XER archive
+  references cross that boundary, never file handles or archive bytes. Stop is checked again before committing. Runs in both
   Tauri (`appDataDir`) and browser (IndexedDB), keyed by worktree instance slug.
 - **`immer` is pinned exactly to `11.1.4` (no `^`) — do not put the caret back.** Immer sits directly under
   undo/redo, snapshot sharing and auto-freeze; from 11.1.8 the build breaks too (typing of `current`/`original`,

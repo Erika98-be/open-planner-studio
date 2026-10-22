@@ -168,12 +168,6 @@ en noem het in je rapport of PR-tekst.
     `isReadyToInstall` (`'readyToInstall'`) vraagt (`UpdateDialog.tsx:125-128,205-208`). Na de download springt
     het venster naar *Herstarten…* (`:225-229`). Alleen in de code gezien. — S
 
-164. **Nivelleren bij 10.000 taken: tijdens *Berekenen* blokkeert de UI toch 2,8–4,1 s.** De berekening zelf
-    loopt in een Web Worker, maar de nulmeting (`npm run measure:large-plans`, 21-10-2026) zag in die fase één
-    long task van 2.825–4.115 ms op de hoofdthread (5.000 taken: 741–802 ms). Vermoedelijke oorzaak: de
-    voorsteltabel in `LevelingDialog.tsx:265` rendert alle 8.920 rijen zonder virtualisatie. Niet met een
-    profiel bevestigd. — S
-
 ## Bestanden en herstel
 
 35. **Showcase-voorbeelden openen als gewijzigd** (`applyDemoLibraryToShowcaseProject`). — S
@@ -250,14 +244,8 @@ en noem het in je rapport of PR-tekst.
 128. **CSV: een datum in een onleesbare vorm wordt stil "vandaag".** `csvDateOrToday` valt terug op
     `localTodayIso()` (`importDates.ts:71-74`, gebruikt door `csvReader.ts:135`). De Help noemt alleen de drie
     geldige vormen. Of er elders een melding voor komt, is niet nagegaan. Niet nagespeeld. — S
-155. **`.mpp` zonder veldkaarten: vaste kosten en tarieven ontbreken in het importverslag.** De terugval op de
-    standaardveldkaarten kent die velden niet, dus het verslag meldt hun verlies niet. VERVOLG 5 van #392,
-    gemeld door de reviewer. Niet nagespeeld. — S
 157. **`.mpp`: een gedeelde lange aantekening wordt per verwijzing opnieuw verwerkt.** 1.000 taken × 64 KiB
     kost ongeveer 1,4 s. VERVOLG 8 van #392 (meting van de reviewer). Voorstel: cache per gedeeld datablok. — S
-158. **`.mpp`-importverslag: een lege baselinedatum kan vals verlies geven.** `mppImportLoss.ts` controleert
-    de ruwe bytes in plaats van `getTimestamp()`; de bytes `00 00 FF FF`, `FF FF 00 00` en `00 00 01 00`
-    tellen dan als datum. Synthetisch; niet gezien in 34 echte bestanden. VERVOLG 9 van #392. — S
 162. **Desktop (Linux/macOS): Opslaan overschrijft een alleen-lezen projectbestand als de map schrijfbaar
     is.** `replaceUserFile` (`atomicWrite.ts`) schrijft een halffabricaat met de rechten van het origineel
     (0444) en hernoemt het over het doel; op POSIX mag dat. Het bestand krijgt de nieuwe inhoud en blijft
@@ -331,6 +319,13 @@ en noem het in je rapport of PR-tekst.
     Voorstel: de regel gelijkmaken aan het actuele docscontract. — S
 
 ## Tests
+
+175. **De optionele MPP-corpuscheck behandelt bewust geweigerde oude formaten als leesfout.**
+    `check-mpp-relations.ts`, onderdeel `T7-crawl`, verwacht geen leesfouten over 658 lokale
+    corpusbestanden, maar `readMPP` weigert MPP9/MPP12 expliciet (bijvoorbeeld
+    `taskFlags-mpp9Project2013.mpp`). Gezien tijdens de afgebroken volledige planningsrun voor
+    de IFC-performancewijziging op 22-10-2026; dit pad raakt de IFC-reader niet. Voorstel: laat
+    de corpusverwachting onderscheid maken tussen ondersteunde en bewust geweigerde versies. — B
 
 79. **`check-task-grid-performance` (relationIndex-mediaan ≤ 500 ms) zit lokaal op het randje.** Los gedraaid
     496–499 ms (5-10-2026); rood (535–790 ms) in `npm run verify` zodra de container druk is (meerdere agents
@@ -407,6 +402,20 @@ en noem het in je rapport of PR-tekst.
     eenduidig van de root afleiden. Niet opgelost in de fix van 119.
     — B (scopemismatch in de code), S (gemelde gevolgen, geen schone baselinevergelijking)
 
+184. **De Linux-build kan de volledige jobtijd verliezen tijdens `apt-get update`.** In CI-run
+    [39815362793, job 119952400741](https://github.com/OpenAEC-Foundation/open-planner-studio/actions/runs/39815362793/job/119952400741)
+    (PR #499, 2026-10-22) bleef *Install dependencies (Ubuntu only)* hangen bij `apt-get update`,
+    met herhaalde `Ign`-regels voor `azure.archive.ubuntu.com`. De job startte om 16:36:05 UTC en
+    eindigde geannuleerd om 17:21:24; de laatste APT-uitvoer was om 16:36:54. Frontendinstallatie
+    en build zijn niet uitgevoerd. Bewijs: `/tmp/ops-499-linux.log`. Een tweede waarneming is
+    [run 39815617661, job 119953318157](https://github.com/OpenAEC-Foundation/open-planner-studio/actions/runs/39815617661/job/119953318157)
+    (PR #500): dezelfde APT-stap en `Ign`-regels, laatste APT-uitvoer 16:39:04, geannuleerd om
+    17:23:31 na circa 45 minuten, zonder frontendinstallatie/build; overige jobs groen.
+    Log: `/tmp/ops-500-linux.log`. De ouder heeft alleen deze geannuleerde jobs opnieuw gestart.
+    Dit is het APT-detail, niet de browsershardmelding 167.
+    Voorstel: begrensde APT-netwerktime-outs en/of een mirrorfallback. Geen fout in runner of
+    applicatiecode aangetoond. — B (log), S (nadere oorzaak)
+
 ## Wensen en open taken (geen bug)
 
 45. **Extensie-API**: extensies kunnen geen relatie of kalender gericht wijzigen en de selectie niet lezen.
@@ -427,12 +436,6 @@ en noem het in je rapport of PR-tekst.
 133. **Het venster *Werkelijke start opgeven* heeft geen ?-knop** (`ActualStartDialog.tsx:82`,
     `DialogHeader` zonder `help`). Het doel zou `howto-voortgang-bijwerken` zijn. — B
 
-176. **MSPDI: de projectstart wordt zonder XML-escaping geëxporteerd.** `mspdiWriter.ts` schrijft
-    `project.startDate` rechtstreeks in `<StartDate>`; de reader neemt een tekstprefix uit het
-    invoerveld over. Een ongeldige datum met XML-metatekens kan zo ongeldige XML opleveren. Gezien
-    bij de analyse van CodeQL #18; die melding is een false positive voor XSS omdat de reader
-    uitsluitend `application/xml` parseert en geen nodes in de pagina invoegt. De XML-integriteit
-    van zulke ongeldige datums is niet nagespeeld. Voorstel: datumvalidatie en escaping. — S
 
 179. **De website heeft geen PR-CI voor de automatische releasestap.** Op 2026-10-22 bevat
     `OpenAEC-Foundation/website/.github/workflows/` alleen `auto-assign-issues.yml`, `deploy.yml`
@@ -442,3 +445,11 @@ en noem het in je rapport of PR-tekst.
     Daardoor kan een website-release-PR niet vóór de merge aan de eis “website-CI groen” voldoen.
     Voorstel: een website-PR-workflow met de bestaande checkers toevoegen en als poort instellen.
     De Nozzit-bypass voor reviews bestaat wel. Alleen gelezen; niets in de website gewijzigd. — B
+
+185. **MSPDI: andere projectdatumvelden worden nog zonder XML-escaping geschreven.**
+    Bij de statische analyse van 176 bleek dat `mspdiWriter.ts` ook `project.endDate` en
+    `project.statusDate` via `toXmlDateTime` rechtstreeks in `<FinishDate>`/`<StatusDate>` zet.
+    Die helper formatteert op lengte, zonder validatie of escaping; `mspdiReader.ts:parseProject`
+    kan bij deze velden eveneens een ongeldige tekstprefix bewaren. XML-metatekens zouden zo ook
+    daar de export kunnen beschadigen. Niet uitgevoerd; buiten de projectstartfix gehouden.
+    Voorstel: de XML-integriteit van deze velden afzonderlijk bewaken. — S

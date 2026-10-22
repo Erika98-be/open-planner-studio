@@ -6,6 +6,8 @@ import { ifcSchemaBlocksSilentWrite } from '@/services/ifc/ifcSchemaQuestion';
 import { buildWriteIFCInput } from '@/state/ifcSaveInput';
 import { RecoveryDeltaTracker, type RecoverySourceDocument } from '@/services/recovery/recoveryDelta';
 import { runRecoveryTick } from '@/services/recovery/recoverySnapshot';
+import { createRecoverySnapshotSerializer } from '@/services/recovery/recoverySnapshotSerializer';
+import { createRecoveryTickQueue } from '@/services/recovery/recoveryTickQueue';
 import { registerRecoveryFlush } from '@/services/recovery/recoveryFlush';
 import { canWriteToRefWithoutPrompt, saveTargetRef, saveToRefWithoutPrompt } from '@/services/fileAccess';
 import { actualAutoSaveDelay, createActualAutoSaveController, type ActualAutoSaveCandidate } from '@/services/actualAutosave/actualAutoSave';
@@ -27,20 +29,18 @@ const AUTOSAVE_INTERVAL_MS = 10_000;
 // recovery-snapshots niet overschrijft vóórdat de gebruiker heeft gekozen.
 export function useAutoSave(autoSaveEnabled: MutableRefObject<boolean>): void {
   useEffect(() => {
-    let saving = false;
-    let pending = false;
+    let disposed = false;
+    const serializer = createRecoverySnapshotSerializer();
+    const enabled = () => !disposed && autoSaveEnabled.current;
     // `RecoveryDeltaTracker` bewaart serialisatie los van de gepersisteerde basis: een mislukte
     // storage-transaction mag hergebruik van IFC-tekst toelaten, maar nooit doen alsof de bron al
     // veilig op schijf staat.
     const recoveryDelta = new RecoveryDeltaTracker();
 
-    const runAutoSave = async () => {
+    const saveRound = async () => {
       // Wacht tot de recovery-keuze gemaakt is: anders zou deze schrijfactie de
       // recovery-snapshots overschrijven vóórdat de gebruiker heeft gekozen.
-      if (!autoSaveEnabled.current) return;
-      // Voorkom overlappende schrijfacties; vraag een herhaling aan als er
-      // tijdens het schrijven nieuwe wijzigingen binnenkwamen.
-      if (saving) { pending = true; return; }
+      if (!enabled()) return;
       const state = useAppStore.getState();
       const docs = state.getOpenDocumentPayloads();
       // Een verse, volledig schone sessie hoeft geen crashsnapshot te maken. Vanaf de eerste
@@ -48,7 +48,6 @@ export function useAutoSave(autoSaveEnabled: MutableRefObject<boolean>): void {
       // document op dat moment dirty is. `isDirty` is dus hoogstens een eerste-eligibilityflag,
       // nooit de identiteit van IFC-inhoud.
       if (!docs.some((d) => d.payload.isDirty) && !recoveryDelta.hasPersistedSnapshot) return;
-      saving = true;
       try {
         // Vergelijk de echte IFC-bronvelden (Immer-referenties) en niet `isDirty`: zo krijgt één
         // taakbewerking één volledige IFC-upsert, terwijl een actieve-tabwissel manifest-only is.
@@ -68,8 +67,9 @@ export function useAutoSave(autoSaveEnabled: MutableRefObject<boolean>): void {
         // Backend-keuze (Tauri-bestanden of IndexedDB) zit in recoveryStore. De volledige
         // documentlijst is manifestmetadata; alleen `upserts` bevat IFC-teksten, en die dragen het
         // XER-bronarchief alleen als verwijzing (eigenaarsbesluit plan (9), `serializeRecoverySnapshot`).
-        await runRecoveryTick(recoveryDelta, state.activeDocumentId, recoveryDocs);
+        await runRecoveryTick(recoveryDelta, state.activeDocumentId, recoveryDocs, serializer.serialize, enabled);
       } catch (err) {
+        if (!enabled()) return;
         console.error('Auto-save failed:', err);
         // dedupeKey is hier niet optioneel: de auto-save probeert het elke ~10 s opnieuw, dus
         // zonder samenvouwen levert één aanhoudende schrijffout zes meldingen per minuut op.
@@ -79,11 +79,10 @@ export function useAutoSave(autoSaveEnabled: MutableRefObject<boolean>): void {
           detail: (err as Error).message,
           dedupeKey: 'autosave',
         });
-      } finally {
-        saving = false;
-        if (pending) { pending = false; void runAutoSave(); }
       }
     };
+
+    const runAutoSave = createRecoveryTickQueue(saveRound, enabled);
 
     // Throttle: plan hoogstens één save per interval. `lastSaveAt = 0` laat de eerste wijziging
     // na het laden meteen een snapshot krijgen; daarna wacht een save tot het interval sinds de
@@ -93,10 +92,7 @@ export function useAutoSave(autoSaveEnabled: MutableRefObject<boolean>): void {
     let lastSaveAt = 0;
     // Directe ronde op verzoek (updater vóór `relaunch`): wacht een lopende save af en schrijft
     // daarna de actuele staat, buiten de throttle om.
-    const unregisterFlush = registerRecoveryFlush(async () => {
-      for (let i = 0; saving && i < 200; i++) await new Promise((r) => setTimeout(r, 25));
-      await runAutoSave();
-    });
+    const unregisterFlush = registerRecoveryFlush(runAutoSave);
     const unsub = useAppStore.subscribe(() => {
       if (timer) return; // er staat al een save gepland binnen dit interval
       const wait = Math.max(0, AUTOSAVE_INTERVAL_MS - (Date.now() - lastSaveAt));
@@ -108,6 +104,8 @@ export function useAutoSave(autoSaveEnabled: MutableRefObject<boolean>): void {
     });
 
     return () => {
+      disposed = true;
+      serializer.dispose();
       if (timer) clearTimeout(timer);
       unsub();
       unregisterFlush();
