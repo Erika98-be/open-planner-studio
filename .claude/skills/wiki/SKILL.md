@@ -105,9 +105,9 @@ rode vlag — fix 'm of meld 'm expliciet.
 1. `npm run verify:docs` → manifest ↔ bestanden ↔ geen wezen; moet **groen** (exitcode 0).
 2. `npm run publish:wiki` → dry-run in `.wiki-build/`; check dat de **warnings-regel leeg** is (alle
    `docs://` opgelost) en bekijk de gewijzigde pagina's.
-3. **Dode-link-check** (alle interne wiki-links resolven naar een bestaande pagina):
+3. **Dode-link-check** vanuit de repo-root (echte interne wiki-links resolven naar een bestaande pagina; inline code en codeblokken tellen niet mee). `dead: 0` geeft exit 0, een dode link exit 1:
    ```bash
-   cd .wiki-build && node -e 'const fs=require("fs");const p=new Set(fs.readdirSync(".").filter(f=>f.endsWith(".md")).map(f=>f.replace(/\.md$/,"")));let d=0;for(const f of fs.readdirSync(".").filter(f=>f.endsWith(".md"))){for(const m of fs.readFileSync(f,"utf8").matchAll(/\]\(([^)]+)\)/g)){let t=m[1].trim();if(/^(https?:|mailto:|#|<)/.test(t)||/\.(png|jpe?g|gif|svg)$/i.test(t))continue;t=t.split("#")[0];if(t&&!p.has(t)){d++;console.log("DEAD",f,"->",t)}}}console.log("dead:",d)'
+   node scripts/run-ts.mjs scripts/check-wiki-links.ts
    ```
 4. **Publiceren:** `npm run publish:wiki -- --push` = publiceren van publieke content.
    - **Binnen een release:** gewoon een release-stap — de release-akkoord-poort dekt het publiceren al,

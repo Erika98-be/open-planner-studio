@@ -476,7 +476,10 @@
     "taskCount_one": "{{count}} taak",
     "taskCount_other": "{{count}} taken",
     "restore": "Herstellen",
-    "dontRestore": "Niet herstellen"
+    "dontRestore": "Niet herstellen",
+    "unreadableOnlyExplanation": "Geen van de herstelkopieën kan worden gelezen. Bewaar ze voor een latere herstelpoging of verwijder ze alleen als je ze niet meer nodig hebt. Verwijderen kan niet ongedaan worden gemaakt.",
+    "keepCopies": "Kopieën bewaren",
+    "deleteCopies": "Kopieën verwijderen"
   },
   "window": {
     "minimize": "Minimaliseren",
@@ -705,7 +708,7 @@
     "calendars": "Kalenders",
     "noCalendars": "Nog geen kalenders in de pool.",
     "noResources": "Nog geen resources in de pool.",
-    "promoteHint": "Promoveer een projectkalender of -resource naar de bibliotheek met de knop “+ Uit project” hierboven.",
+    "promoteHint": "Promoveer een projectkalender naar de bibliotheek met de knop “+ Uit project” hierboven.",
     "promoteFromProject": "Uit project",
     "alreadyLinked": "al gekoppeld",
     "editItem": "Bewerken",

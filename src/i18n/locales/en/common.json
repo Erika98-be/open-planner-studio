@@ -476,7 +476,10 @@
     "taskCount_one": "{{count}} task",
     "taskCount_other": "{{count}} tasks",
     "restore": "Restore",
-    "dontRestore": "Don't restore"
+    "dontRestore": "Don't restore",
+    "unreadableOnlyExplanation": "None of the recovery copies can be read. Keep them for a later recovery attempt, or delete them only if you no longer need them. Deletion cannot be undone.",
+    "keepCopies": "Keep copies",
+    "deleteCopies": "Delete copies"
   },
   "window": {
     "minimize": "Minimize",
@@ -602,7 +605,7 @@
     "copied": "Copied",
     "openDownloads": "Open downloads page",
     "justUpdated": {
-      "title": "You're up to date!",
+      "title": "You've been updated!",
       "smaller": "{{size}} smaller than the previous version",
       "larger": "{{size}} larger than the previous version",
       "sameSize": "Same size as the previous version",
@@ -705,7 +708,7 @@
     "calendars": "Calendars",
     "noCalendars": "No calendars in the pool yet.",
     "noResources": "No resources in the pool yet.",
-    "promoteHint": "Promote a project calendar or resource to the library with the “+ From project” button above.",
+    "promoteHint": "Promote a project calendar to the library with the “+ From project” button above.",
     "promoteFromProject": "From project",
     "alreadyLinked": "already linked",
     "editItem": "Edit",

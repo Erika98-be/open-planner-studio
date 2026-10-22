@@ -110,3 +110,41 @@ test('bibliotheekkalender bewerken: werkdag tot 14:00 ververst de gekoppelde pro
   expect(st.stale).toBe(true);
   await expect(durationNotice(page)).toHaveCount(1);
 });
+
+// Knownbug 31: aparte route, omdat de bestaande scenario's al gekoppelde kalenders bewerken.
+// Deze route begint met een lege bibliotheek en volgt de hint in Bestand → Bibliotheek.
+test('bibliotheekhint verwijst alleen naar kalenders en de knop promoveert een projectkalender', async ({ page, ops: _ops }) => {
+  for (const locale of ['nl', 'en']) {
+    const fixture = await page.evaluate(async locale => {
+      const localePath = '/src/i18n/config.ts';
+      const { setLocale } = await import(/* @vite-ignore */ localePath);
+      await setLocale(locale);
+      const s = window.__OPS__!.store.getState();
+      const companyId = s.addCompany(`Kalenderhint ${locale}`);
+      s.setDefaultCompany(companyId);
+      const calendar = window.__OPS__!.store.getState().calendars[0];
+      return { companyId, calendarName: calendar.name };
+    }, locale);
+    await page.locator('.ribbon-tab--file').click();
+    await page.locator('.backstage-nav-item').filter({ hasText: /^(Library|Bibliotheek)$/ }).click();
+    const section = page.locator('.library-section');
+    await expect(section.locator('.library-promote-hint')).toHaveText(locale === 'nl'
+      ? 'Promoveer een projectkalender naar de bibliotheek met de knop “+ Uit project” hierboven.'
+      : 'Promote a project calendar to the library with the “+ From project” button above.');
+    const toggle = section.locator('.library-promote-toggle');
+    await toggle.click();
+    const panel = section.locator('[data-ops-promote-calendar-panel]');
+    await expect(panel).toBeVisible();
+    await toggle.click();
+    await expect(panel).toBeHidden();
+    await toggle.click();
+    const row = panel.locator('li').filter({ hasText: fixture.calendarName }).first();
+    await row.locator('button').click();
+    await expect(row.locator('.library-promote-linked')).toBeVisible();
+    await expect.poll(() => page.evaluate(id => {
+      const pool = window.__OPS__!.store.getState().pools[id];
+      return { calendars: pool.calendars.map(c => c.name), resources: pool.resources.length };
+    }, fixture.companyId)).toEqual({ calendars: [fixture.calendarName], resources: 0 });
+    await page.locator('[data-ops-ribbon-tab="start"]').click();
+  }
+});

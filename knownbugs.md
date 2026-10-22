@@ -81,7 +81,6 @@ en noem het in je rapport of PR-tekst.
 ## Tabel, invoer en bediening
 
 13. **Tabelkolom *Kleur*** wordt in IFC bewaard, maar geen balk of rapport gebruikt hem. — B
-15. **Rechtsklikmenu op een lege plek** (*Nieuwe taak*, *Plakken*) is dode code: geen route opent het. — B
 16. **Taken kopiëren** heeft geen zichtbare bediening; alleen Ctrl+C/V met de Gantt in focus. — B
 17. **Verwijderen zonder bevestiging**: `confirm.deleteTask` staat in de locales maar wordt nergens gebruikt. — S
 19. ***Spring naar vandaag* (Ctrl+Home)** springt naar de statusdatum als die er is. — S
@@ -111,8 +110,6 @@ en noem het in je rapport of PR-tekst.
     bij een ontbrekende permissie, "Het bestaande projectbestand is niet schrijfbaar." (`actualAutoSave.ts`),
     het CFB-citaat (`cfb.ts`) en bestandsnaamdelen `-voortgang`/`-bibliotheek`. Zie ook 61. — B (eerste),
     S (rest)
-31. **`companyLibrary.promoteHint`** noemt promoveren van resources via een knop die alleen voor kalenders
-    bestaat. — S
 32. ***Herkennen*: "Geen voorstel — kies handmatig"** zonder knop om handmatig te kiezen. — B
 33. **Bibliotheekkalender verwijderen** gaat zonder bevestiging; daarna staat hij nog als *al gekoppeld*. — S
 61. **PDF-bestandsnamen altijd Nederlands** (`-voortgang`, `-afwijkingen`), ook in het Engels
@@ -395,7 +392,6 @@ en noem het in je rapport of PR-tekst.
     Primavera P6. — B
 42. **Helpteksten van enkele conventies** noemen hun voorwaarden niet (alleen urenkalender, alleen
     `.xer`-herkomst). — B
-43. **EN-melding lege rapportperiode** zegt "Whole project"; de optie heet *Project duration*. — S
 57. **Statusdatum-label in de Gantt** toont ISO (`2027-06-28`), de rest dd-mm-jjjj. Mogelijk bewust. — S
 73. **Namen en beschrijvingen van de voorbeeldprojecten zijn Engels in elke interfacetaal.** Gezien in de
     nl-interface bij *Bestand › Voorbeelden*; de Help-artikelen noemen daarom de Engelse namen. Niet
@@ -409,9 +405,6 @@ en noem het in je rapport of PR-tekst.
 130. **De omschrijving van het voorbeeld *Refurbishment & Extension of a Family Home*** belooft een conflict
     dat "'Distribute' can resolve" (`public/examples/manifest.json:7`, getoond in `Backstage.tsx`). Er is geen
     Verdelen-knop; alleen de kern bestaat (`distributeUnits`, `ResourceLoad.ts`). — B
-131. **Engelse titel van het venster na een update is "You're up to date!"** (`en/common.json`
-    `updates.justUpdated.title`). De Nederlandse is "Je bent bijgewerkt!". In het Engels leest dat als "geen
-    update nodig". Voorstel: "You've been updated!". — B
 170. **Vertaalstraat: een nieuw concept zonder doelterm valt niet op.** Na #376 stond `work-category`
     (werksoort) in `i18n/termbase/concepts.json`, maar in geen enkele `<taal>.json`. `validate-termbase` en
     `verify:translations` bleven groen. De straat hield toen de oude taaktype-term aan (bijv. de: `Neue Vorgangsart`),
@@ -500,9 +493,6 @@ en noem het in je rapport of PR-tekst.
     `api.settings.getApp(key)`: tutorial 4 leest nu `localStorage['ops-enableHourPlanning']`. — B
 49. **Release-notes, volgende release**: een nieuw MS Project-project rekent de speling nu *Automatisch*
     (#277); projecten die eerder via de wizard *Kleinste* kregen, houden dat (geen migratie). — B
-71. **De dode-link-check uit de `wiki`-skill meldt `project://start.ifc`** in `Extensions-Authoring.md`: dat
-    staat in een codevoorbeeld (inline code), geen echte link. De check slaat inline code niet over, dus de
-    dry-run is nooit "dead: 0". Voorstel: in de check eerst `` `…` `` strippen. — B
 93. **Het venster *Nieuw project* heeft geen ?-knop**, terwijl `ref-projectinfo` (*Nieuw project en
     Projectinfo*) het ook beschrijft. De ?-knop van `ProjectInfoDialog` staat bewust alleen in de modus
     Projectinformatie (besluit eigenaar: zes vensters, de wizard hoort er niet bij). Voorstel: als de eigenaar
@@ -515,11 +505,3 @@ en noem het in je rapport of PR-tekst.
     vader, punt 1. — B
 133. **Het venster *Werkelijke start opgeven* heeft geen ?-knop** (`ActualStartDialog.tsx:82`,
     `DialogHeader` zonder `help`). Het doel zou `howto-voortgang-bijwerken` zijn. — B
-134. **Werkelijke start en einde: paneel en dialoog weigeren een start na het einde niet, raster en startvraag
-    wel.** `planProgressEntry` controleert `isActualFinishBeforeStart` alleen bij een antwoord op de startvraag
-    (`progressEntry.ts:181`), terwijl `taskEditPlan.ts:625-632` het in het raster altijd doet. Een getypte start
-    10-09 bij een einde 10-05 (of een einde 09-20 bij een start 10-01) wordt in het paneel en de
-    taakdialoog geaccepteerd. Nagespeeld met `planProgressEntry` in een scratch-script (2026-10-19). Voorstel:
-    de controle ook zonder antwoord uitvoeren. De Help (`ref-taak-eigenschappen`) beschrijft nu het raster
-    en de startvraag. — B
-
