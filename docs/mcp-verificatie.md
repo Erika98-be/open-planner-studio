@@ -1,6 +1,6 @@
 # MCP-server: wat geleverd is en hoe het getoetst wordt
 
-Stand 2026-10-21, bij issue #429 (ecosystem readiness, deelpunten MCP en Claude Desktop/Code). Dit document
+Stand 2026-10-22, bij issue #429 (ecosystem readiness, deelpunten MCP en Claude Desktop/Code). Dit document
 legt vast wat de app als MCP-server levert, wat niet, en welke test het bewijst. De architectuur zelf staat in
 `.claude/rules/mcp.md`; de gebruikersgids is `public/docs/{nl,en}/howto-ai-assistent-koppelen.md`.
 
@@ -10,9 +10,10 @@ legt vast wat de app als MCP-server levert, wat niet, en welke test het bewijst.
   protocol en de tools zitten in TypeScript (`src/services/mcp/`). In de browserversie is er geen bridge.
 - Streamable HTTP, alleen `POST http://127.0.0.1:<poort>/mcp` (standaard 3877, instelling `ops-mcpPort`). De app
   toont het endpoint als `http://localhost:<poort>/mcp`.
-- Antwoord altijd `200 application/json` met één JSON-RPC-bericht. Geen SSE, geen GET-stream (`405`, `Allow:
-  POST`), geen JSON-RPC-batch (`-32600`). Een notificatie krijgt `200` met een lege body, niet
-  `202` zoals de spec vraagt (knownbugs 137).
+- Een request krijgt `200 application/json` met één JSON-RPC-bericht. Een geaccepteerde notificatie krijgt
+  `202 Accepted` zonder body of Content-Type, volgens de
+  [MCP-specificatie van 2025-06-18](https://modelcontextprotocol.io/specification/2025-06-18/basic/transports#sending-messages-to-the-server).
+  Geen SSE, geen GET-stream (`405`, `Allow: POST`), geen JSON-RPC-batch (`-32600`).
 - Elk antwoord draagt `Connection: close`. tiny_http sluit bij een stop van de bridge de bestaande keep-alive-
   verbindingen niet; een request dat een client vlak na een herstart over zo'n oude verbinding stuurde, kreeg
   nooit antwoord (gevonden met de echte-app-run in review 3 van PR #439, nagespeeld met tiny_http 0.12.0 en
@@ -83,7 +84,7 @@ legt vast wat de app als MCP-server levert, wat niet, en welke test het bewijst.
    praat over echt HTTP met `tests/mcp/bridgeMirror.ts`: een Node-host die het HTTP-contract van
    `mcp_bridge.rs` nabootst rond de echte `createRequestHandler`, dispatcher en tools op een eigen headless
    storecontext. De host is een kopie van de Rust-HTTP-laag en bewijst niets over Rust zelf; dat doet punt 2.
-   Getoetst: initialize (protocolversie, serverInfo, capabilities, instructions, `Mcp-Session-Id`), ping,
+   Controles: initialize (protocolversie, serverInfo, capabilities, instructions, `Mcp-Session-Id`), ping,
    `tools/list` (aantal en annotaties per tool gelijk aan de registry), een leestool, `planner_add_tasks` en
    `planner_batch` elk precies één undo-stap en één backup, `READ_ONLY` en `PAUSED` zonder undo-stap of
    backup (direct na elke weigering geteld), twee clients (A krijgt `DOC_DRIFT` na een tabwissel, ook nadat B
@@ -94,6 +95,10 @@ legt vast wat de app als MCP-server levert, wat niet, en welke test het bewijst.
    `initialize` geweigerd, `createBridgeController.restart()` behoudt sessie en `DOC_DRIFT`, nieuw token wist
    alles) toetst `tests/mcp/cases-server.ts`. De SDK-route toetst ook 40 extra sessies en een bridge-herstart
    tegen een client die `DOC_DRIFT` kreeg: die houdt `DOC_DRIFT`.
+   Het gedeelde `externalClient.ts` bevat ook rechtstreekse HTTP-controles: `notifications/initialized`
+   krijgt `202` zonder body of Content-Type; initialize, ping en JSON-RPC-fouten houden `200 application/json`.
+   Een notificatie met een onbekende sessie houdt `404`, en zonder sessie-header `400` met de JSON-RPC-fout.
+   Dezelfde HTTP-controles draaien in punt 2 tegen de echte Rust-bridge.
    Draaien: `bash tests/mcp/run.sh cases-externe-client.ts`.
 2. **`.github/workflows/mcp-real-app.yml`** (apart, niet in de verplichte CI; draait op een PR die de MCP-route
    raakt, en met de hand). Bouwt de Tauri-dev-app onder xvfb, zet via het ops-test-kanaal
