@@ -237,10 +237,13 @@ export type NotificationMessageKey =
   // wordt mijlpaal ⇒ weigeren; wordt fase ⇒ toewijzingen naar de eerste nieuwe subtaak, of weigeren
   // als dat niet schoon kan; een mijlpaal die kinderen krijgt verliest zijn mijlpaalvlag.
   | 'notifications.milestoneRefusedAssignments'
+  | 'notifications.milestoneRefusedAssignmentsMany'
   | 'notifications.milestoneRefusedSummary'
+  | 'notifications.milestoneRefusedSummaryMany'
   | 'notifications.assignmentsMovedToSubtask'
   | 'notifications.assignmentsMovedToSubtasks'
   | 'notifications.milestoneClearedOnPhase'
+  | 'notifications.milestoneClearedOnPhaseMany'
   | 'notifications.phaseRefusedNoAssignableChild'
   | 'notifications.phaseRefusedDuplicateResource'
   | 'notifications.phaseQuestionOutdated'
