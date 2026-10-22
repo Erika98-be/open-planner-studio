@@ -17,8 +17,8 @@ Bijwerken werkt alleen in de desktop-app. De browserversie kent geen updater.
 1. Start de desktop-app. Bij het opstarten controleert de app op de achtergrond of er een nieuwe versie is. Is er geen nieuwe versie, of lukt de controle niet, bijvoorbeeld zonder internet, dan merk je niets.
 2. Is er wel een nieuwe versie, dan opent het venster *Software-update*. Dat toont de *Huidige versie*, de *Nieuwe versie*, de melding *Er is een nieuwe versie beschikbaar* en onder *Wat is er nieuw* de tekst die bij de update hoort.
 3. Sla je open projecten op.
-4. Klik op *Downloaden & installeren*. Een voortgangsbalk laat *Bezig met downloaden…* zien, en daarna volgt de installatie. Tijdens het downloaden kun je het venster niet sluiten.
-5. Wacht tot de app zichzelf herstart. Dat is de nieuwe versie.
+4. Klik op *Downloaden & installeren*. De voortgangsbalk toont *Bezig met downloaden…*, met een percentage als de downloadgrootte bekend is. Zonder bekende grootte beweegt de balk zonder percentage. Daarna zie je *Installatie voorbereiden…* en *Bezig met installeren…*, zonder percentage. Tijdens het bijwerken kun je het venster niet sluiten.
+5. Wacht tot de app zichzelf herstart. Als de installatie de app laat doorlopen, verschijnt eerst *Herstarten…*. Dat is de nieuwe versie.
 
 Vlak voordat de update wordt geïnstalleerd, legt de app nog een herstelsnapshot (voor crashherstel) van je open werk vast, zie [Herstellen na een crash](docs://howto-herstellen-na-een-crash).
 
