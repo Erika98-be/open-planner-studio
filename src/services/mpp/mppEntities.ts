@@ -298,6 +298,11 @@ function readResourcesUnsafe(
   // volgens de field map). Alleen een interne join-sleutel; de echte unique-ID komt uit
   // `varMeta.getUniqueIdentifierArray()`. Bij < 65536 resources is de truncatie een no-op; bewust
   // letterlijk gespiegeld.
+  // MPXJ toetst de volledige fieldmap-lengte vóór de eerste-wint-join. Onze fieldmap kent alleen
+  // locaties, geen veldbreedtes: eis het volledige bereik van de velden die we lezen (SHORT-uid en
+  // optionele DOUBLE MAX_UNITS). De offsets komen uit het bestand, ook bij Project 2013/2016/2021;
+  // een vaste recordmaat zou geldige kortere layouts of de default-layout ten onrechte weren.
+  const minFixedDataSize = Math.max(uniqueIdOffset + 2, maxUnitsOffset === null ? 0 : maxUnitsOffset + 8);
   const { offset: typeOffset, mask: typeMask } = resourceTypeBitFlag(applicationVersion);
   const indexByShortUid = new Map<number, number>();
   const itemCount = fixedMeta.getAdjustedItemCount();
@@ -305,6 +310,9 @@ function readResourcesUnsafe(
     const data = fixedData.getByteArrayValue(index);
     if (!data || data.length < uniqueIdOffset + 2) continue;
     const shortUid = getShort(data, uniqueIdOffset, `${label}/FixedData uniqueId (short, spiegelt MPXJ)`);
+    // UID 0 blijft de bewust ondersteunde sentinel; voor echte resources mag een kort
+    // plaatshoudersrecord nooit de index (en daarmee type/meta en maxUnits) vastleggen.
+    if (shortUid !== 0 && data.length < minFixedDataSize) continue;
     if (!indexByShortUid.has(shortUid)) indexByShortUid.set(shortUid, index); // eerste-wint, spiegelt Java's containsKey-guard
   }
 
@@ -320,7 +328,7 @@ function readResourcesUnsafe(
     if (!data) continue;
 
     // UniqueID 0 is MPP's ingebouwde "niet-toegewezen"-plaatshouder. MPXJ slaat hem over
-    // (`createResourceMap`'s `data.length < maxFixedDataSize`-guard, niet geport), maar MS Project
+    // (`createResourceMap`'s `data.length < maxFixedDataSize`-guard), maar MS Project
     // schrijft hem WÉL naar zijn MSPDI-export ("Niet toegekend", maxUnits 1). Deze lezer kiest
     // COUNT-PARITEIT MET readMSPDI: het record blijft, met een VASTE naam/type/maxUnits (het
     // placeholder-record is typisch te kort om die uit te lezen). De calendarId-koppeling volgt de
