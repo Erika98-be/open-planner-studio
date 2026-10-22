@@ -65,6 +65,19 @@ en noem het in je rapport of PR-tekst.
     vastgelegde rest in (optie 3) na de release, in het rekenprofielen-spoor. — B voor de OPS-kant (gemeten),
     S voor de P6-kant
 
+186. **B3-voltooidvenster met een dagkalender kan een TypeError geven.** Gemeld bij de onafhankelijke
+    review van PR #480 op `620c9e775`: ook op basiscommit `522589202` zou de volledige CPM-route
+    met `p6CompletedDataDateWindow` en een dagkalender falen. Exacte invoer en stack nog niet
+    zelfstandig bevestigd; staat los van de PF-optimalisatie en is daar niet aangepast. — S
+
+187. **Drie einddatumafwijkingen van de MPP-fidelitypin, ook met main.** Bij de integratie van
+    PR #480 op main `3a2f597f3` geeft `check-mpp-fidelity.ts` voor het publieke
+    `mpxj/junit/data/timephased-cost-rollup.mpp` `finishExact: 6` (pin 9) en `finishDiff: 3`
+    (pin 0); ook de verzameling afwijkende bestanden wijkt daardoor af. Dezelfde uitslag met
+    `CPMSolver.ts` en `ResourceLeveler.ts` uit die main-commit, zonder de PF-optimalisatie.
+    De gecombineerde `measure:profiles` eindigt op exit 1; de P6-cellen zijn ongewijzigd.
+    Geen baseline of motorcode hiervoor aangepast; oorzaak niet verder onderzocht. — B
+
 ## Tabel, invoer en bediening
 
 183. **De tabelkolom *Bepalend* onderscheidt onbekende driving nog niet van berekend zonder driving.**
@@ -182,15 +195,6 @@ en noem het in je rapport of PR-tekst.
     op dezelfde browser, dan krijgt B de herstelvraag van A, en schrijft Ctrl+S na herstel naar het bestand van A
     met de rechten van B. Voorstel: de host levert een gebruikers-id en de tool sleutelt zijn opslag daarop.
     Gemeld door de review van #312. — S
-109. **`StartTime`/`FinishTime` van `IfcWorkPlan` en `IfcWorkSchedule` komen uit de invoerdatums, niet uit de
-    berekende planning.** `ifcWriter.ts` (blok `// Work plan & schedule`) neemt het minimum en maximum van
-    `time.scheduleStart`/`time.scheduleFinish`. Dat zijn invoervelden (`ifcTaskSlots.ts`,
-    `RECORDED_INPUT_SLOT_KEYS`). Het commentaar bij `ProjectStartDate` zegt dat deze plekken "de afgeleide
-    plan-omvang (min/max van de taak-span)" dragen. Gezien in `examples/10-villa-wassenaar.ifc`: het
-    werkschema eindigt op 2027-03-16, maar de laatste taak (Handover) eindigt volgens `IfcTaskTime`
-    (EarlyFinish/LateFinish) op 2027-12-01. Zo staat het ook op main (1e192b31a en later). Na
-    `MergeProjects` neemt IfcOpenShell deze datums over. Voorstel: de getoonde datums gebruiken (werkelijk,
-    anders early, anders invoer), zoals de baseline doet. Gevonden bij #292, niet daar opgelost. — B
 110. **Een samengevoegd 4D-bestand (bouwmodel plus planning) openen en weer opslaan wist het bouwmodel.** De
     writer schrijft alleen wat de app zelf kent; vreemde entiteiten zoals `IFCWALL`, `IFCBUILDING` en
     `IFCSITE` gaan niet mee (`ifcWriter.ts`). Nagemeten: `examples/10-villa-wassenaar.ifc` met ifcpatch
@@ -238,8 +242,6 @@ en noem het in je rapport of PR-tekst.
 128. **CSV: een datum in een onleesbare vorm wordt stil "vandaag".** `csvDateOrToday` valt terug op
     `localTodayIso()` (`importDates.ts:71-74`, gebruikt door `csvReader.ts:135`). De Help noemt alleen de drie
     geldige vormen. Of er elders een melding voor komt, is niet nagegaan. Niet nagespeeld. — S
-157. **`.mpp`: een gedeelde lange aantekening wordt per verwijzing opnieuw verwerkt.** 1.000 taken × 64 KiB
-    kost ongeveer 1,4 s. VERVOLG 8 van #392 (meting van de reviewer). Voorstel: cache per gedeeld datablok. — S
 162. **Desktop (Linux/macOS): Opslaan overschrijft een alleen-lezen projectbestand als de map schrijfbaar
     is.** `replaceUserFile` (`atomicWrite.ts`) schrijft een halffabricaat met de rechten van het origineel
     (0444) en hernoemt het over het doel; op POSIX mag dat. Het bestand krijgt de nieuwe inhoud en blijft
@@ -252,7 +254,6 @@ en noem het in je rapport of PR-tekst.
 
 62. **Melding schuift over de knoppen van het begeleidingspaneel** (1600×950, venster Baselines open):
     `toastPlacement.ts` houdt geen rekening met het paneel. — B (gezien), oorzaak afgeleid
-67. **`pendingHelpSection` blijft hangen** (review #261, punt O7). — S
 68. **Een gidsstap die eenmaal "gedaan" is, blijft gedaan**, ook na wisselen naar een leeg project. Gezien bij
     tutorial 6 stap 8; niet uitgezocht of dat bedoeld is. — S
 72. **Tutorials-extensie linkt nog naar twee id's van vóór fase 4.** `extensions/tutorials/main.js` (branch
@@ -301,12 +302,6 @@ en noem het in je rapport of PR-tekst.
     (nl 182 px). Bij 200 px en 125 % duwden ze in 13 talen de regels buiten het paneel; dat is in de release
     van v2026.10.0 opgelost met afkappen (`TaskAssignmentsSection.tsx`), de koppen zelf niet. Voorstel: korte
     koppen in die talen, en de Help-artikelen die ze citeren mee. — B
-
-180. **De docs-indexregel beschrijft alleen nl/en-gidsen als bestaande talen.**
-    `.claude/rules/docs-index.md` zegt bij `public/docs/{nl,en}/*.md` “Alleen nl + en; een andere
-    UI-taal leest Engels”, terwijl `AGENTS.md` de vertaalde gidsen en de fallback per ontbrekend
-    artikel beschrijft. Gezien bij het lezen voor de wekelijkse release-skill; niet in de app getoetst.
-    Voorstel: de regel gelijkmaken aan het actuele docscontract. — S
 
 ## Tests
 
@@ -367,14 +362,6 @@ en noem het in je rapport of PR-tekst.
    Lokaal 5× groen op `main` (b4ee5be3) en 25× groen op de PR na merge met main. Vermoedelijk zet iets de
    verticale scroll terug (begrenzing op de inhoudshoogte) voordat de inhoud er is; niet onderzocht. — S
 
-177. **`actionlint` meldt twee bestaande shellcheck-waarschuwingen in `release.yml`.**
-    De stap `Check release notes present` geeft SC2069 bij `2>&1 >/dev/null`; de stap
-    `Set updater notes in latest.json` geeft SC2016 bij de JavaScript-template-expressies in
-    een enkel-gequote Node-commando. Beide meldingen ook gereproduceerd op de ongewijzigde
-    basisversie `522589202` in een tijdelijk bestand. Zonder shellcheck is de workflowvalidatie
-    groen. Voorstel: bedoelde omleiding verduidelijken en de bedoelde JavaScript-expressies gericht
-    documenteren voor shellcheck. Geen releaseworkflow gestart. — B
-
 178. **`gh pr edit --body-file` faalt op deze host door Projects Classic.** Bij het bijwerken
     van PR #479 op 2026-10-22 gaf de CLI `GraphQL: Projects (classic) is being deprecated`
     op `repository.pullRequest.projectCards`. De body is wel bijgewerkt via
@@ -391,20 +378,6 @@ en noem het in je rapport of PR-tekst.
     geen gevolg van een codewijziging. Voorstel: de scopes afzonderlijk instelbaar maken of de submap
     eenduidig van de root afleiden. Niet opgelost in de fix van 119.
     — B (scopemismatch in de code), S (gemelde gevolgen, geen schone baselinevergelijking)
-
-184. **De Linux-build kan de volledige jobtijd verliezen tijdens `apt-get update`.** In CI-run
-    [39815362793, job 119952400741](https://github.com/OpenAEC-Foundation/open-planner-studio/actions/runs/39815362793/job/119952400741)
-    (PR #499, 2026-10-22) bleef *Install dependencies (Ubuntu only)* hangen bij `apt-get update`,
-    met herhaalde `Ign`-regels voor `azure.archive.ubuntu.com`. De job startte om 16:36:05 UTC en
-    eindigde geannuleerd om 17:21:24; de laatste APT-uitvoer was om 16:36:54. Frontendinstallatie
-    en build zijn niet uitgevoerd. Bewijs: `/tmp/ops-499-linux.log`. Een tweede waarneming is
-    [run 39815617661, job 119953318157](https://github.com/OpenAEC-Foundation/open-planner-studio/actions/runs/39815617661/job/119953318157)
-    (PR #500): dezelfde APT-stap en `Ign`-regels, laatste APT-uitvoer 16:39:04, geannuleerd om
-    17:23:31 na circa 45 minuten, zonder frontendinstallatie/build; overige jobs groen.
-    Log: `/tmp/ops-500-linux.log`. De ouder heeft alleen deze geannuleerde jobs opnieuw gestart.
-    Dit is het APT-detail, niet de browsershardmelding 167.
-    Voorstel: begrensde APT-netwerktime-outs en/of een mirrorfallback. Geen fout in runner of
-    applicatiecode aangetoond. — B (log), S (nadere oorzaak)
 
 ## Wensen en open taken (geen bug)
 
@@ -424,12 +397,6 @@ en noem het in je rapport of PR-tekst.
     verwacht je het Excel-gedrag: vastleggen en een kolom verder (Shift+Tab terug). Gezien bij review
     vader, punt 1. — B
 
-174. **De handmatige release-invoer begint met een verouderde voorbeeldtag.**
-    `.github/workflows/release.yml:12` stelt een tag van vóór het huidige versieschema voor.
-    De versiecontrole wijst die invoer af; de standaardwaarde is dus niet bruikbaar. Gezien bij
-    de versie-audit voor #450. Voorstel: verwijder de standaardwaarde en laat de gebruiker een
-    correcte tag invullen. Geen workflow gestart. — B (bestand en lokale versiecontrole)
-
 
 179. **De website heeft geen PR-CI voor de automatische releasestap.** Op 2026-10-22 bevat
     `OpenAEC-Foundation/website/.github/workflows/` alleen `auto-assign-issues.yml`, `deploy.yml`
@@ -439,11 +406,3 @@ en noem het in je rapport of PR-tekst.
     Daardoor kan een website-release-PR niet vóór de merge aan de eis “website-CI groen” voldoen.
     Voorstel: een website-PR-workflow met de bestaande checkers toevoegen en als poort instellen.
     De Nozzit-bypass voor reviews bestaat wel. Alleen gelezen; niets in de website gewijzigd. — B
-
-185. **MSPDI: andere projectdatumvelden worden nog zonder XML-escaping geschreven.**
-    Bij de statische analyse van 176 bleek dat `mspdiWriter.ts` ook `project.endDate` en
-    `project.statusDate` via `toXmlDateTime` rechtstreeks in `<FinishDate>`/`<StatusDate>` zet.
-    Die helper formatteert op lengte, zonder validatie of escaping; `mspdiReader.ts:parseProject`
-    kan bij deze velden eveneens een ongeldige tekstprefix bewaren. XML-metatekens zouden zo ook
-    daar de export kunnen beschadigen. Niet uitgevoerd; buiten de projectstartfix gehouden.
-    Voorstel: de XML-integriteit van deze velden afzonderlijk bewaken. — S

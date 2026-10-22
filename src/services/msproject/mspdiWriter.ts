@@ -142,6 +142,12 @@ function lagFields(seq: Sequence, hoursPerDay: number): { linkLag: number; lagFo
   return { linkLag: lagToTenthsOfMinutes(seq.lagDays, hoursPerDay), lagFormat: 7 };
 }
 
+/** Datumopmaak is geen XML-escaping: ook ongeldige (geïmporteerde) datumtekst blijft tekst.
+ *  Alle MSPDI-datumvelden gaan hier één keer door escaping, na de gedeelde datumformatter. */
+function dateTimeXmlText(iso: string): string {
+  return escapeXml(toXmlDateTime(iso));
+}
+
 /** Schrijft één `<Calendar>`-blok (WeekDays + Exceptions) — hergebruikt voor de
  *  projectkalender (UID 1, `IsBaseCalendar`) én voor resourcekalenders. */
 function writeCalendarBlock(
@@ -212,8 +218,8 @@ function writeCalendarBlock(
       lines.push(`${indent(4)}<Exception>`);
       lines.push(`${indent(5)}<EnteredByOccurrences>0</EnteredByOccurrences>`);
       lines.push(`${indent(5)}<TimePeriod>`);
-      lines.push(`${indent(6)}<FromDate>${toXmlDateTime(h.startDate)}</FromDate>`);
-      lines.push(`${indent(6)}<ToDate>${toXmlDateTime(holidayEndDate(h))}</ToDate>`);
+      lines.push(`${indent(6)}<FromDate>${dateTimeXmlText(h.startDate)}</FromDate>`);
+      lines.push(`${indent(6)}<ToDate>${dateTimeXmlText(holidayEndDate(h))}</ToDate>`);
       lines.push(`${indent(5)}</TimePeriod>`);
       lines.push(`${indent(5)}<Name>${escapeXml(h.name)}</Name>`);
       lines.push(`${indent(5)}<Type>1</Type>`);
@@ -224,8 +230,8 @@ function writeCalendarBlock(
       lines.push(`${indent(4)}<Exception>`);
       lines.push(`${indent(5)}<EnteredByOccurrences>0</EnteredByOccurrences>`);
       lines.push(`${indent(5)}<TimePeriod>`);
-      lines.push(`${indent(6)}<FromDate>${toXmlDateTime(we.startDate)}</FromDate>`);
-      lines.push(`${indent(6)}<ToDate>${toXmlDateTime(we.endDate)}</ToDate>`);
+      lines.push(`${indent(6)}<FromDate>${dateTimeXmlText(we.startDate)}</FromDate>`);
+      lines.push(`${indent(6)}<ToDate>${dateTimeXmlText(we.endDate)}</ToDate>`);
       lines.push(`${indent(5)}</TimePeriod>`);
       lines.push(`${indent(5)}<Name>${escapeXml(we.name)}</Name>`);
       lines.push(`${indent(5)}<Type>1</Type>`);
@@ -348,15 +354,14 @@ export function writeMSPDI(
   lines.push(`${indent(1)}<Title>${escapeXml(exportName)}</Title>`);
   lines.push(`${indent(1)}<Author>${escapeXml(project.author)}</Author>`);
   lines.push(`${indent(1)}<Company>${escapeXml(project.company)}</Company>`);
-  lines.push(`${indent(1)}<CreationDate>${toXmlDateTime(project.createdAt.substring(0, 10))}</CreationDate>`);
-  // De lezer kan ook een ongeldige tekstprefix bewaren; datumopmaak is geen XML-escaping.
-  lines.push(`${indent(1)}<StartDate>${escapeXml(toXmlDateTime(project.startDate))}</StartDate>`);
+  lines.push(`${indent(1)}<CreationDate>${dateTimeXmlText(project.createdAt.substring(0, 10))}</CreationDate>`);
+  lines.push(`${indent(1)}<StartDate>${dateTimeXmlText(project.startDate)}</StartDate>`);
   if (project.endDate) {
-    lines.push(`${indent(1)}<FinishDate>${toXmlDateTime(project.endDate)}</FinishDate>`);
+    lines.push(`${indent(1)}<FinishDate>${dateTimeXmlText(project.endDate)}</FinishDate>`);
   }
   // Statusdatum — P6 data date → MSPDI <StatusDate>. Alleen wanneer gezet.
   if (project.statusDate) {
-    lines.push(`${indent(1)}<StatusDate>${toXmlDateTime(project.statusDate)}</StatusDate>`);
+    lines.push(`${indent(1)}<StatusDate>${dateTimeXmlText(project.statusDate)}</StatusDate>`);
   }
   lines.push(`${indent(1)}<ScheduleFromStart>1</ScheduleFromStart>`);
   // De projectkalender staat hieronder altijd als UID 1 (`writeCalendarBlock(..., 1, true, ...)`).
@@ -502,8 +507,8 @@ export function writeMSPDI(
     }
     // Start/Finish zoals MS Project: een gestarte taak begint op haar werkelijke start, een voltooide
     // eindigt op haar werkelijke einde (`shownStart`/`shownFinish`).
-    lines.push(`${indent(3)}<Start>${toXmlDateTime(shownStart(task))}</Start>`);
-    lines.push(`${indent(3)}<Finish>${toXmlDateTime(shownFinish(task))}</Finish>`);
+    lines.push(`${indent(3)}<Start>${dateTimeXmlText(shownStart(task))}</Start>`);
+    lines.push(`${indent(3)}<Finish>${dateTimeXmlText(shownFinish(task))}</Finish>`);
     lines.push(`${indent(3)}<WBS>${escapeXml(task.wbsCode)}</WBS>`);
     lines.push(`${indent(3)}<OutlineLevel>${depthById.get(task.id) ?? 1}</OutlineLevel>`);
     lines.push(`${indent(3)}<Summary>${isSummary ? 1 : 0}</Summary>`);
@@ -513,10 +518,10 @@ export function writeMSPDI(
     lines.push(`${indent(3)}<PercentComplete>${Math.round((task.time.completion ?? 0) * 100)}</PercentComplete>`);
     // Actuals — alleen wanneer gezet (golden rule). RemainingDuration afgeleid.
     if (task.time.actualStart) {
-      lines.push(`${indent(3)}<ActualStart>${toXmlDateTime(task.time.actualStart)}</ActualStart>`);
+      lines.push(`${indent(3)}<ActualStart>${dateTimeXmlText(task.time.actualStart)}</ActualStart>`);
     }
     if (task.time.actualFinish) {
-      lines.push(`${indent(3)}<ActualFinish>${toXmlDateTime(task.time.actualFinish)}</ActualFinish>`);
+      lines.push(`${indent(3)}<ActualFinish>${dateTimeXmlText(task.time.actualFinish)}</ActualFinish>`);
     }
     if (isHourTask && task.time.remainingMinutes != null) {
       lines.push(`${indent(3)}<RemainingDuration>${minutesToIsoDuration(task.time.remainingMinutes)}</RemainingDuration>`);
@@ -539,14 +544,14 @@ export function writeMSPDI(
         lines.push(`${indent(3)}<ConstraintType>${mapped.code}</ConstraintType>`);
         // ConstraintDate vereist behalve bij 0/1 (ASAP/ALAP); ALAP (1) draagt geen datum.
         if (mapped.code !== 1 && task.constraint.date) {
-          lines.push(`${indent(3)}<ConstraintDate>${toXmlDateTime(task.constraint.date)}</ConstraintDate>`);
+          lines.push(`${indent(3)}<ConstraintDate>${dateTimeXmlText(task.constraint.date)}</ConstraintDate>`);
         }
       }
     }
     // Zachte deadline: MSPDI kent een native <Deadline> op de taak (verschuift balken niet — begrenst
     // total slack). Golden rule: geen deadline ⇒ geen element.
     if (task.deadline) {
-      lines.push(`${indent(3)}<Deadline>${toXmlDateTime(task.deadline)}</Deadline>`);
+      lines.push(`${indent(3)}<Deadline>${dateTimeXmlText(task.deadline)}</Deadline>`);
     }
     // Taakkalender: MSPDI ondersteunt taakkalenders native via dit element. Onbekende/verwijderde
     // calendarId valt terug op 1 (projectkalender), zelfde patroon als de resource-CalendarUID.
@@ -573,8 +578,8 @@ export function writeMSPDI(
     if (bt) {
       lines.push(`${indent(3)}<Baseline>`);
       lines.push(`${indent(4)}<Number>0</Number>`);
-      lines.push(`${indent(4)}<Start>${toXmlDateTime(bt.start)}</Start>`);
-      lines.push(`${indent(4)}<Finish>${toXmlDateTime(bt.finish)}</Finish>`);
+      lines.push(`${indent(4)}<Start>${dateTimeXmlText(bt.start)}</Start>`);
+      lines.push(`${indent(4)}<Finish>${dateTimeXmlText(bt.finish)}</Finish>`);
       // Dezelfde dag als de taakduur — anders staat naast een taakduur van 168 u een baseline van 56 u
       // en verzint MS Project 112 u afwijking. Dagtaak: `effHpd`, zoals <Duration>. Urentaak: haar
       // baselinedagen tellen in de werktijd per dag van de taakkalender, net als haar dagengetal
@@ -730,8 +735,8 @@ export function writeMSPDI(
         lines.push(`${indent(3)}<TimephasedData>`);
         lines.push(`${indent(4)}<Type>${d.kind === 'actual' ? 2 : 1}</Type>`);
         lines.push(`${indent(4)}<UID>${uid}</UID>`);
-        lines.push(`${indent(4)}<Start>${toXmlDateTime(formatInstant(d.start, 'hour'))}</Start>`);
-        lines.push(`${indent(4)}<Finish>${toXmlDateTime(formatInstant(d.finish, 'hour'))}</Finish>`);
+        lines.push(`${indent(4)}<Start>${dateTimeXmlText(formatInstant(d.start, 'hour'))}</Start>`);
+        lines.push(`${indent(4)}<Finish>${dateTimeXmlText(formatInstant(d.finish, 'hour'))}</Finish>`);
         lines.push(`${indent(4)}<Unit>2</Unit>`);
         lines.push(`${indent(4)}<Value>${minutesToMspdiValue(d.workMinutes)}</Value>`);
         lines.push(`${indent(3)}</TimephasedData>`);

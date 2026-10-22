@@ -228,6 +228,18 @@ export interface MppImportLossInput {
  *  op 0: het verslag mag het openen nooit breken. */
 export function scanMppImportLoss(input: MppImportLossInput): MsProjectImportReport {
   const report = emptyMsProjectImportReport('mpp');
+  // Var2Data levert voor gedeelde offsets dezelfde byteview. Elke storage heeft eigen views,
+  // ook als offset/inhoud gelijk zijn. Alleen notitievelden gebruiken deze cache; hij leeft één
+  // scan en bewaart ook false, zodat opmaak/verborgen metadata niet per entiteit opnieuw scant.
+  const noteContentByBlock = new WeakMap<Uint8Array, boolean>();
+  const noteHasContent = (bytes: Uint8Array | null): boolean => {
+    if (!bytes) return false;
+    const cached = noteContentByBlock.get(bytes);
+    if (cached !== undefined) return cached;
+    const content = rtfHasVisibleText(bytes);
+    noteContentByBlock.set(bytes, content);
+    return content;
+  };
   const customFields = new Set<string>();
   const baselines = new Set<number>();
   const guard = (part: () => void) => { try { part(); } catch { /* deel overslaan */ } };
@@ -238,8 +250,7 @@ export function scanMppImportLoss(input: MppImportLossInput): MsProjectImportRep
     for (const uid of input.taskUniqueIds) {
       if (!task.meta.containsKey(uid)) continue;
       const bytes = (key: number) => task.data.getByteArray(uid, key);
-      const notes = bytes(TASK_NOTES);
-      if (notes && rtfHasVisibleText(notes)) report.notes++;
+      if (noteHasContent(bytes(TASK_NOTES))) report.notes++;
       if (hyperlinkHasText(bytes(TASK_HYPERLINK_DATA))) report.hyperlinks++;
       if (hasValue(bytes(TASK_SUBPROJECT_UNIQUEID_OFFSET))) report.subprojects++;
       if (task.data.getInt(uid, TASK_SUBPROJECT_TASK_ID) !== 0) report.externalTasks++;
@@ -274,8 +285,7 @@ export function scanMppImportLoss(input: MppImportLossInput): MsProjectImportRep
     for (const uid of input.resourceUniqueIds) {
       if (!resource.meta.containsKey(uid)) continue;
       const bytes = (key: number) => resource.data.getByteArray(uid, key);
-      const notes = bytes(RESOURCE_NOTES);
-      if (notes && rtfHasVisibleText(notes)) report.notes++;
+      if (noteHasContent(bytes(RESOURCE_NOTES))) report.notes++;
       if (hyperlinkHasText(bytes(RESOURCE_HYPERLINK_DATA))) report.hyperlinks++;
       if (RESOURCE_COST_RATE_KEYS.some(key => rateTableHasRate(bytes(key)))) rateLost.add(uid);
       RESOURCE_BASELINE_KEYS.forEach((keys, number) => {
@@ -324,8 +334,7 @@ export function scanMppImportLoss(input: MppImportLossInput): MsProjectImportRep
     const data = new Var2Data(selected.varMeta, input.cfb.getStream(['   114', 'TBkndAssn', 'Var2Data']));
     for (const { uid } of selected.records) {
       const bytes = (key: number) => data.getByteArray(uid, key);
-      const notes = bytes(ASSIGNMENT_NOTES);
-      if (notes && rtfHasVisibleText(notes)) report.notes++;
+      if (noteHasContent(bytes(ASSIGNMENT_NOTES))) report.notes++;
       for (const key of ASSIGNMENT_CUSTOM_KEYS) if (hasValue(bytes(key))) customFields.add(`assignment:${key}`);
       ASSIGNMENT_BASELINE_KEYS.forEach((keys, number) => {
         if (baselineHasValue(data, uid, keys)) baselines.add(number);

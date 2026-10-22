@@ -7,9 +7,8 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version tag (e.g., v2026.43.0)'
+        description: 'Releasetag met v-prefix, gelijk aan de huidige projectversie'
         required: true
-        default: 'v0.1.0'
 
 # Minimale default; elke job hieronder zet zelf op wat hij écht nodig heeft
 # (`contents: write` voor de jobs die de release schrijven). Zonder deze regel
@@ -143,7 +142,8 @@ jobs:
             TAG_VERSION="${GITHUB_REF#refs/tags/}"
           fi
           # stderr (waar de ::warning:: op staat) naar de log, stdout weg.
-          node scripts/release-notes.mjs "$TAG_VERSION" --format=body 2>&1 >/dev/null
+          # De groep leidt stderr om vóór de stdout-omleiding van Node.
+          { node scripts/release-notes.mjs "$TAG_VERSION" --format=body >/dev/null; } 2>&1
 
   create-release:
     needs: gate
@@ -633,6 +633,8 @@ jobs:
           set -euo pipefail
           node scripts/release-notes.mjs "$VERSION" --format=notes > release-notes.txt
           gh release download "$VERSION" --pattern "latest.json" --output latest.json --clobber --repo "$REPO"
+          # ${...} en backticks zijn JavaScript; de shell mag ze niet uitbreiden.
+          # shellcheck disable=SC2016
           node -e '
             const fs = require("node:fs");
             const latest = JSON.parse(fs.readFileSync("latest.json", "utf8"));

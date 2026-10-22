@@ -18,6 +18,7 @@
 //     kalender, zoals mspdiReader en de IFC-lezer al deden.
 //  Knownbug176: een ongeldige projectstart met XML-metatekens blijft tekst bij MSPDI-export;
 //     geldige datumopmaak en de bestaande leesregels (prefix/ontbrekend anker) blijven behouden.
+//  Knownbug185: dezelfde XML-integriteit voor projecteinde/statusdatum en de overige MSPDI-datums.
 //
 // Draait via run.sh. Exit 0 = alles groen.
 import { writeMSPDI } from '@/services/msproject/mspdiWriter';
@@ -31,6 +32,7 @@ import type { Task, MilestoneKind } from '@/types/task';
 import type { Sequence } from '@/types/sequence';
 import type { WorkCalendar, WorkTimeBands } from '@/types/calendar';
 import type { Project } from '@/types/project';
+import type { Baseline } from '@/types/baseline';
 import { activeImportResult, type ImportResult } from '@/services/importTypes';
 import { installDOMParser } from './xmldom-shim';
 
@@ -159,6 +161,99 @@ async function main(): Promise<void> {
     const reopened = readMSPDI(xml);
     eq('176/doorvoer: projectstart blijft gelijk na heropenen', reopened.project.startDate, imported.project.startDate);
     eq('176/doorvoer: taak blijft behouden', reopened.tasks.map(t => t.name), ['Ankertaak']);
+  }
+
+  // ════ Knownbug185. Projecteinde/statusdatum en overige datums blijven XML-tekst ══════════════
+  {
+    const cal = DAY();
+    const project = proj('Projectdatums', cal.id, '2026-07-06');
+    const tasks = [mkDay('anker', 'Ankertaak', '1', '2026-07-07', '2026-07-08', 2)];
+    // De letterlijke uitvoer is de XML-oracle: de DOM-shim valideert geen welgevormdheid.
+    // Einddatum leest alleen de prefix; statusdatum bewaart een echte tijd, behalve het dag-anker.
+    const cases = [
+      ['dag', '2026-07-06', '2026-07-06T08:00:00', '2026-07-06', '2026-07-06'],
+      ['minuten', '2026-07-06T09:30', '2026-07-06T09:30:00', '2026-07-06', '2026-07-06T09:30'],
+      ['seconden', '2026-07-06T09:30:45', '2026-07-06T09:30:45', '2026-07-06', '2026-07-06T09:30'],
+      ['tijdzone', '2026-07-06T09:30:45+02:00', '2026-07-06T09:30:45+02:00', '2026-07-06', '2026-07-06T09:30'],
+      ['dag-anker', '2026-07-06T08:00', '2026-07-06T08:00:00', '2026-07-06', '2026-07-06'],
+      ['leeg', '', undefined, '', undefined],
+      ['ongeldige maand', '2026-13-06', '2026-13-06T08:00:00', '2026-13-06', '2026-13-06'],
+      ['ongeldige tekst', 'onleesbaar', 'onleesbaarT08:00:00', 'onleesbaar', 'onleesbaar'],
+      ['korte tekst', 'NA', 'NA', 'NA', 'NA'],
+      ['XML-metatekens', `<&>"'abcde`, '&lt;&amp;&gt;&quot;&apos;abcdeT08:00:00', `<&>"'abcde`, `<&>"'abcde`],
+      ['letterlijke entiteit', '&lt;abcde?', '&amp;lt;abcde?T08:00:00', '&lt;abcde?', '&lt;abcde?'],
+      ['letterlijke tekenverwijzing', '&#65;abcde', '&amp;#65;abcdeT08:00:00', '&#65;abcde', '&#65;abcde'],
+      ['CDATA-einde', 'ab]]>cdefg', 'ab]]&gt;cdefgT08:00:00', 'ab]]>cdefg', 'ab]]>cdefg'],
+      ['XML in minutenlengte', 'onleesbaar<&>abc', 'onleesbaar&lt;&amp;&gt;abc:00', 'onleesbaar', 'onleesbaar'],
+      ['XML na tijd', '2026-07-06T09:30<&>', '2026-07-06T09:30&lt;&amp;&gt;', '2026-07-06', '2026-07-06'],
+      ['einddatum-elementinvoeging', '</FinishDate><Injected/>', '&lt;/FinishDate&gt;&lt;Injected/&gt;', '</FinishDa', '</FinishDa'],
+      ['statusdatum-elementinvoeging', '</StatusDate><Injected/>', '&lt;/StatusDate&gt;&lt;Injected/&gt;', '</StatusDa', '</StatusDa'],
+    ] as const;
+    for (const [field, tag] of [['endDate', 'FinishDate'], ['statusDate', 'StatusDate']] as const) {
+      for (const [label, value, xmlText, importedEnd, importedStatus] of cases) {
+        const xml = writeMSPDI({ ...project, [field]: value }, cal, tasks, [], [], []);
+        eq(`185/${field}/${label}: letterlijke XML-inhoud`, xml.match(new RegExp(`<${tag}>([\\s\\S]*?)</${tag}>`))?.[1], xmlText);
+        assert(!xml.includes('<Injected/>'), `185/${field}/${label}: geen ingevoegd element`);
+        const back = readMSPDI(xml);
+        eq(`185/${field}/${label}: bestaande leesregel`, back.project[field], field === 'endDate' ? importedEnd : importedStatus);
+        eq(`185/${field}/${label}: taak blijft heropenbaar`, back.tasks.map(t => [t.name, t.time.scheduleStart, t.time.scheduleFinish]),
+          [['Ankertaak', '2026-07-07', '2026-07-08']]);
+      }
+    }
+    const withoutStatus = writeMSPDI(project, cal, tasks, [], [], []);
+    assert(!withoutStatus.includes('<StatusDate>'), '185/ontbrekend: geen StatusDate-element');
+    eq('185/ontbrekend: statusdatum blijft afwezig na heropenen', readMSPDI(withoutStatus).project.statusDate, undefined);
+
+    // Geldige XML met ongeldige datumtekst uit een ander programma: de bestaande prefix blijft
+    // door import → export → heropenen behouden, ook als de tekst zelf een entiteit bevat.
+    for (const [label, sourceText, prefix, xmlText] of [
+      ['metatekens', '&lt;&amp;&gt;&quot;&apos;abcde-ongeldig', `<&>"'abcde`, '&lt;&amp;&gt;&quot;&apos;abcdeT08:00:00'],
+      ['letterlijke entiteit', '&amp;lt;abcde?-ongeldig', '&lt;abcde?', '&amp;lt;abcde?T08:00:00'],
+    ] as const) {
+      const imported = readMSPDI(`<Project xmlns="http://schemas.microsoft.com/project">
+        <Name>Doorvoer</Name><StartDate>2026-07-06T08:00:00</StartDate>
+        <FinishDate>${sourceText}</FinishDate><StatusDate>${sourceText}</StatusDate>
+        <Tasks><Task><UID>1</UID><ID>1</ID><Name>Ankertaak</Name><OutlineLevel>1</OutlineLevel>
+          <Start>2026-07-07T08:00:00</Start><Finish>2026-07-08T08:00:00</Finish><Duration>PT16H0M0S</Duration>
+        </Task></Tasks></Project>`);
+      eq(`185/doorvoer/${label}: reader bewaart beide prefixes`, [imported.project.endDate, imported.project.statusDate], [prefix, prefix]);
+      const xml = writeMSPDI(imported.project, imported.calendar, imported.tasks, imported.sequences,
+        imported.resources, imported.assignments, imported.resourceCalendars);
+      eq(`185/doorvoer/${label}: letterlijke einddatum`, xml.match(/<FinishDate>([\s\S]*?)<\/FinishDate>/)?.[1], xmlText);
+      eq(`185/doorvoer/${label}: letterlijke statusdatum`, xml.match(/<StatusDate>([\s\S]*?)<\/StatusDate>/)?.[1], xmlText);
+      const reopened = activeImportResult(await parseOpenedFile({ name: 'projectdatums.xml', text: xml }));
+      eq(`185/doorvoer/${label}: beide datums blijven behouden na heropenen`, [reopened.project.endDate, reopened.project.statusDate], [prefix, prefix]);
+      eq(`185/doorvoer/${label}: taak blijft behouden`, reopened.tasks.map(t => t.name), ['Ankertaak']);
+    }
+  }
+
+  // Dezelfde schrijfgrens geldt voor aanmaakdatum, kalenderuitzonderingen, taakdatums en baseline.
+  // Onleesbare taak-/kalenderdatums hebben andere importregels: hier telt hun letterlijke XML-uitvoer.
+  {
+    const text = `<&>"'abcde`;
+    const xmlText = '&lt;&amp;&gt;&quot;&apos;abcdeT08:00:00';
+    const cal = DAY();
+    cal.holidays = [{ name: 'Vrij', startDate: text, endDate: text }];
+    cal.workingExceptions = [{ name: 'Werk', startDate: text, endDate: text }];
+    const task = mkDay('datums', 'Datums', '1', text, text, 1, { constraint: { type: 'SNET', date: text }, deadline: text });
+    task.time.actualStart = text;
+    task.time.actualFinish = text;
+    task.time.completion = 1;
+    const baseline: Baseline = {
+      id: 'b', name: 'Peildatum', createdAt: '2026-07-06T08:00', projectEnd: text, projectDuration: 1,
+      tasks: [{ taskId: task.id, start: text, finish: text, duration: 1, isMilestone: false }],
+    };
+    const xml = writeMSPDI({ ...proj('Datums', cal.id, '2026-07-06'), createdAt: text }, cal, [task], [], [], [], [], [baseline], baseline.id);
+    eq('185/overige: aanmaakdatum als XML-tekst', xml.match(/<CreationDate>([\s\S]*?)<\/CreationDate>/)?.[1], xmlText);
+    for (const tag of ['FromDate', 'ToDate']) {
+      eq(`185/overige: beide kalenderuitzonderingen/${tag}`, [...xml.matchAll(new RegExp(`<${tag}>([\\s\\S]*?)</${tag}>`, 'g'))].map(m => m[1]), [xmlText, xmlText]);
+    }
+    for (const tag of ['Start', 'Finish']) {
+      eq(`185/overige: taak en baseline/${tag}`, [...xml.matchAll(new RegExp(`<${tag}>([\\s\\S]*?)</${tag}>`, 'g'))].map(m => m[1]), [xmlText, xmlText]);
+    }
+    for (const tag of ['ActualStart', 'ActualFinish', 'ConstraintDate', 'Deadline']) {
+      eq(`185/overige: taak/${tag}`, xml.match(new RegExp(`<${tag}>([\\s\\S]*?)</${tag}>`))?.[1], xmlText);
+    }
   }
 
   // ════ 3. XML-formaatherkenning op root-element/namespace, niet op vrije tekst ══════════════════
