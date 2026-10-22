@@ -33,6 +33,8 @@ The question mark at the top right of the window opens this article without maki
 
 **The window does not appear.** Then the app found no copy. That happens if you had not changed anything yet, if you use a new tab in the browser, if you threw the recovery away earlier with *Don't restore*, or if the crash came before the app kept the first copy: that can take up to about ten seconds after your first change.
 
+**The recovery data has an unknown version or an invalid structure.** This app version cannot safely read or update that recovery set and shows a warning. The copies are kept, including when you edit or close the app. Open the same app version that created the copies or a newer version and try again. Save new work yourself: no new copies are committed for the blocked recovery set. In the browser, unknown copies from other tabs are also kept after seven days; shared archive blobs are then kept as well. Other supported tabs can still update their own copies.
+
 **A copy is damaged.** The app reports *Recovered file could not be read*, with the reason, and offers the other projects. If you choose *Restore*, unreadable copies are kept. On desktop, an old copy that was successfully restored is only removed after a new recovery copy has been safely committed. If no copy is readable, the window only offers *Keep copies* and *Delete copies*. Keeping, pressing Enter or Escape, or closing the window preserves the copies for a later recovery attempt. Deleting removes them permanently; the window warns that this cannot be undone.
 
 **Restoring fails.** The app reports *Restore failed* with the reason. The copies stay and the question comes back at the next start.

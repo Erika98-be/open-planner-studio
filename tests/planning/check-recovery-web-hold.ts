@@ -9,7 +9,7 @@
 import { ownRecoveryNames, type RecoveryManifest } from '@/hooks/recoveryPaths';
 import {
   clearOwnRecovery, clearRecovery, fullRecoverySave, holdRecoveryForLater, loadRecovery, saveRecovery,
-  RECOVERY_MANIFEST_VERSION,
+  RECOVERY_MANIFEST_VERSION, RecoveryManifestError,
 } from '@/services/recovery/recoveryStore';
 import { installFakeRecoveryIndexedDb } from './fakeRecoveryIndexedDb';
 
@@ -104,6 +104,109 @@ eq('dubbele id wordt één keer aangeboden', await ids(), ['A', 'C', 'D']);
 await clearRecovery();
 eq('clearRecovery wist eigen + vastgehouden', await ids(), []);
 eq('geen records meer over', idb.store('records').size + idb.store('xer-archives').size, 0);
+
+// ── Versiecontract (knownbug 96), echte opslaggrens met bestaande dubbels ────────────────────
+const rejectsManifest = async (label: string, action: () => Promise<unknown>) => {
+  let refused = false;
+  try { await action(); } catch (error) { refused = error instanceof RecoveryManifestError; }
+  eq(label + ': expliciete manifestweigering', refused, true);
+};
+const webBytes = () => JSON.stringify(['records', 'xer-archives'].map(name =>
+  [name, [...idb.store(name)].sort(([a], [b]) => a.localeCompare(b))]),
+  (_key, value: unknown) => value === undefined ? { type: 'undefined' }
+    : typeof value === 'number' && !Number.isFinite(value) ? { type: 'number', value: String(value) } : value);
+const webSid = session.get('ops-recovery-session')!;
+const webDoc = { ...doc('oud'), filePath: 'oud.ifc', isDirty: false };
+const webRecord = { id: webSid + '::doc::oud', kind: 'doc', sessionId: webSid,
+  docId: 'oud', ifc: webDoc.ifc, filePath: webDoc.filePath, isDirty: false, addedAt: 1 };
+const webManifest = { id: webSid + '::manifest', kind: 'manifest', sessionId: webSid,
+  version: 5, activeDocumentId: 'oud', addedAt: 1,
+  documents: [{ id: 'oud', ifc: webRecord.id, filePath: 'oud.ifc', isDirty: false,
+    datesAsRecorded: true, siteFileId: 'site-oud', siteFileVersion: 'basis-oud' }] };
+for (const version of [1, 2, 3, 4, 5]) {
+  idb.store('records').set(webRecord.id, webRecord);
+  idb.store('records').set(webManifest.id, { ...webManifest, version });
+  const loaded = await loadRecovery();
+  eq('web v' + version + ': bytes en metadata blijven behouden', loaded.docs.map(d =>
+    [d.ifc, d.filePath, d.isDirty, d.datesAsRecorded, d.siteFileId, d.siteFileVersion]),
+  [[webDoc.ifc, 'oud.ifc', false, true, 'site-oud', 'basis-oud']]);
+  await saveRecovery(fullRecoverySave('oud', [webDoc]));
+  eq('web v' + version + ': volgende commit gebruikt actueel contract',
+    (idb.store('records').get(webManifest.id) as { version: number }).version, 5);
+  await clearRecovery();
+}
+// Historische webvorm b1c174f4e: géén version, docIds en metadata in doc-record.
+idb.store('records').set(webRecord.id, webRecord);
+idb.store('records').set(webManifest.id, { id: webManifest.id, kind: 'manifest', sessionId: webSid,
+  activeDocumentId: 'oud', docIds: ['oud'], addedAt: 1 });
+eq('versieloos webmanifest: bestaand pad, dirty-terugval en geen verzonnen datumstand/site-doel',
+  (await loadRecovery()).docs.map(d => [d.id, d.filePath, d.isDirty, d.datesAsRecorded, d.siteFileId ?? null]),
+  [['oud', 'oud.ifc', true, false, null]]);
+await clearRecovery();
+
+// Elke geweigerde vorm blijft ook zonder voorafgaande read beschermd tegen schrijven/wissen/rotatie.
+const invalidWebManifests = [
+  ...[6, 999, 0, -1, 1.5, NaN, Infinity, '5', null, true, undefined].map(version => ({ ...webManifest, version })),
+  { ...webManifest, documents: {} },
+  { ...webManifest, documents: [null] },
+  { ...webManifest, documents: [{ id: 'oud' }] },
+];
+for (const [index, manifest] of invalidWebManifests.entries()) {
+  idb.store('records').set(webRecord.id, structuredClone(webRecord));
+  idb.store('records').set(webManifest.id, manifest);
+  idb.store('xer-archives').set('onbekende-blob', { id: 'onbekende-blob', bytes: new Uint8Array([0, 255, 42]) });
+  const before = webBytes();
+  const sessionBefore = [...session];
+  const input = fullRecoverySave('nieuw', [doc('nieuw')]);
+  const sourceBefore = JSON.stringify(input);
+  for (const [name, action] of [
+    ['save vóór read', () => saveRecovery(input)],
+    ['load', () => loadRecovery()],
+    ['save na geweigerde read', () => saveRecovery(input)],
+    ['clear', () => clearRecovery()],
+    ['hold', () => holdRecoveryForLater()],
+  ] as const) {
+    await rejectsManifest('web ' + index + ' ' + name, action);
+    eq('web ' + index + ' ' + name + ': alle records/archiefbytes intact', webBytes(), before);
+    eq('web ' + index + ' ' + name + ': geen sessierotatie', [...session], sessionBefore);
+    eq('web ' + index + ' ' + name + ': broninhoud intact', JSON.stringify(input), sourceBefore);
+  }
+  idb.store('records').clear();
+  idb.store('xer-archives').clear();
+}
+
+// Een onbekende VREEMDE sessie mag niet door zeven-dagen-GC of gedeelde blob-GC verdwijnen.
+const futureSid = 'vreemde-toekomst';
+const futureManifest = { ...webManifest, id: futureSid + '::manifest', sessionId: futureSid, version: 99 };
+const futureDoc = { ...webRecord, id: futureSid + '::doc::oud', sessionId: futureSid };
+idb.store('records').set(futureManifest.id, structuredClone(futureManifest));
+idb.store('records').set(futureDoc.id, structuredClone(futureDoc));
+idb.store('xer-archives').set('toekomstige-blob', { id: 'toekomstige-blob', bytes: new Uint8Array([12, 0, 255]) });
+await saveRecovery(fullRecoverySave('eigen', [doc('eigen')]));
+eq('onbekend vreemd manifest blokkeert eigen ondersteunde herstelset niet', await ids(), ['eigen']);
+eq('onbekend vreemd manifest blijft na verlopen ouderdom bytegelijk', idb.store('records').get(futureManifest.id), futureManifest);
+eq('onbekend vreemd document blijft na verlopen ouderdom bytegelijk', idb.store('records').get(futureDoc.id), futureDoc);
+await clearRecovery();
+eq('eigen clear bewaart onbekende vreemde records en alle gedeelde blobs',
+  [idb.store('records').size, idb.store('xer-archives').size], [2, 1]);
+
+// Ook een vastgehouden onbekende generatie mag niet via de verse sessie worden omzeild.
+idb.store('records').clear(); idb.store('xer-archives').clear();
+await saveRecovery(fullRecoverySave('oud', [webDoc]));
+await holdRecoveryForLater();
+const heldId = webSid + '::manifest';
+const heldManifest = idb.store('records').get(heldId) as object;
+idb.store('records').set(heldId, { ...heldManifest, version: 99 });
+const heldBefore = webBytes();
+for (const [name, action] of [
+  ['load', () => loadRecovery()], ['save', () => saveRecovery(fullRecoverySave('nieuw', [doc('nieuw')]))],
+  ['hold', () => holdRecoveryForLater()], ['clear', () => clearRecovery()],
+] as const) {
+  await rejectsManifest('web vastgehouden ' + name, action);
+  eq('web vastgehouden ' + name + ': alle bytes intact', webBytes(), heldBefore);
+}
+idb.store('records').set(heldId, heldManifest);
+await clearRecovery();
 
 if (uuidDescriptor) Object.defineProperty(crypto, 'randomUUID', uuidDescriptor);
 else Reflect.deleteProperty(crypto, 'randomUUID');
@@ -258,6 +361,67 @@ for (const legacy of [true, false]) {
   await expectHeld(label + ' schone afsluiting', brokenName);
   await clearRecovery();
 }
+// Desktopversies blijven leesbaar, zonder verzonnen metadata of migratie van IFC-bytes.
+for (const version of [1, 2, 3, 4, 5]) {
+  const snapshot = version <= 2 ? N.ifcName('contract') : N.generationIfcName('contract', 'oud');
+  put(snapshot, 'ongewijzigde IFC-bron');
+  put(N.manifest, JSON.stringify({ version, activeDocumentId: 'contract', documents: [
+    { id: 'contract', ifc: snapshot, filePath: '/project.ifc', isDirty: false },
+  ] }));
+  const loaded = await loadRecovery();
+  eq('tauri v' + version + ': legacydefaults en bronbytes', loaded.docs.map(d =>
+    [d.ifc, d.filePath, d.isDirty, d.datesAsRecorded, d.siteFileId ?? null]),
+  [['ongewijzigde IFC-bron', '/project.ifc', false, false, null]]);
+  await clearRecovery();
+}
+
+const diskBytes = () => [...disk].sort(([a], [b]) => a.localeCompare(b)).map(([name, bytes]) => [name, [...bytes]]);
+const invalidTauriManifests = [
+  ...[6, 999, 0, -1, 1.5, '5', null, true, undefined].map(version => JSON.stringify({ version,
+    documents: [{ id: 'contract', ifc: N.ifcName('contract') }] })),
+  '{"version":5,"documents":{}}', '{"version":5,"documents":[null]}',
+  '{"version":5,"documents":[{"id":"contract"}]}', '[]', 'null',
+];
+for (const [index, raw] of invalidTauriManifests.entries()) {
+  // Eerst eigen bytes schrijven: ook clearOwn mag deze straks niet weghalen onder een onbekend contract.
+  await saveRecovery(fullRecoverySave('eigen', [doc('eigen')]));
+  put(N.manifest, raw);
+  put(N.ifcName('contract'), 'stabiele snapshot: geen terugval bij onbekende versie');
+  put(N.legacy, 'legacy: geen terugval bij onbekende versie');
+  put(N.archiveName('a'.repeat(64)), 'archiefbytes');
+  put(N.manifest + '.tmp', 'halffabricaat');
+  const before = diskBytes();
+  const input = fullRecoverySave('nieuw', [doc('nieuw')]);
+  const sourceBefore = JSON.stringify(input);
+  for (const [name, action] of [
+    ['save vóór read', () => saveRecovery(input)], ['load', () => loadRecovery()],
+    ['save na geweigerde read', () => saveRecovery(input)], ['clear', () => clearRecovery()],
+    ['clearOwn', () => clearOwnRecovery()], ['hold', () => holdRecoveryForLater()],
+  ] as const) {
+    await rejectsManifest('tauri ' + index + ' ' + name, action);
+    eq('tauri ' + index + ' ' + name + ': alle bytes/manifest intact', diskBytes(), before);
+    eq('tauri ' + index + ' ' + name + ': broninhoud intact', JSON.stringify(input), sourceBefore);
+  }
+  disk.clear();
+}
+// De bestaande terugval bij onparseerbare JSON blijft uitsluitend stabiele snapshots lezen.
+put(N.manifest, '{"version":');
+put(N.ifcName('stabiel'), 'stabiele legacybron');
+put(N.generationIfcName('ongecommit', 'g1'), 'ongecommitte generatie');
+eq('afgekapt JSON: alleen stabiele legacybron aangeboden', await offered(), ['stabiel:stabiele legacybron']);
+const corruptBefore = diskBytes();
+for (const [name, action] of [
+  ['save', () => saveRecovery(fullRecoverySave('nieuw', [doc('nieuw')]))],
+  ['clear', () => clearRecovery()], ['clearOwn', () => clearOwnRecovery()], ['hold', () => holdRecoveryForLater()],
+] as const) {
+  await rejectsManifest('tauri afgekapt JSON ' + name, action);
+  eq('tauri afgekapt JSON ' + name + ': alle bytes intact', diskBytes(), corruptBefore);
+}
+disk.clear();
+// Zonder manifest blijft de oude enkele herstelkopie leesbaar.
+put(N.legacy, 'enkele legacybron');
+eq('manifestloze legacykopie blijft leesbaar', await offered(), ['legacy:enkele legacybron']);
+await clearRecovery();
 Reflect.deleteProperty(globalThis, 'window');
 
 if (diffs.length === 0) {

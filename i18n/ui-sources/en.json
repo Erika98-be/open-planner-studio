@@ -58,6 +58,7 @@
     "notifications.browserCannotOverwrite": "17ccc154801612c6",
     "notifications.browserSavesAsDownload": "49c461150023618e",
     "notifications.autoSaveFailed": "b8eb260c3c96cd1c",
+    "notifications.recoveryManifestBlocked": "0eea2fdc972ef498",
     "notifications.recoveryReadFailed": "f0c59bf2764629f7",
     "notifications.recoveryRestoreFailed": "e955d8d5e451d23d",
     "notifications.recoveryDocumentsSkipped": "1c84310a191b1dc2",

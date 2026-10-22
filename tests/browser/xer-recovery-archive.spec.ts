@@ -318,4 +318,104 @@ test('crashherstel: oude v1-snapshot herstelt en onleesbare kopie blijft bewaard
     await expect.poll(() => page.evaluate(() => !!window.__OPS__)).toBe(true);
     await expect(dialog).toHaveCount(0);
   }
+
+  // Knownbug 96: dezelfde opstartroute met leesbare IFC onder een geweigerd manifest.
+  // Alleen de fixture en observatie via IndexedDB; bewerken en melding sluiten via echte UI.
+  await page.clock.install();
+  await page.addInitScript(() => {
+    Object.assign(window, { __manifestWriteAttempts: 0 });
+    const transaction = IDBDatabase.prototype.transaction;
+    IDBDatabase.prototype.transaction = function (this: IDBDatabase, stores: string | string[], mode?: IDBTransactionMode, options?: IDBTransactionOptions) {
+      if (this.name === 'ops-recovery' && mode === 'readwrite') {
+        const observed = window as Window & { __manifestWriteAttempts: number };
+        observed.__manifestWriteAttempts++;
+      }
+      return transaction.call(this, stores, mode, options);
+    };
+  });
+  for (const locale of ['nl', 'en']) {
+    await page.goto('/icon.png');
+    await page.evaluate(async ({ xer, locale }) => {
+      const sid = 'geweigerd-manifest-' + locale;
+      const readerPath = '/src/services/xer/xerReader.ts';
+      const writerPath = '/src/services/ifc/ifcWriter.ts';
+      const { readXER } = (await import(/* @vite-ignore */ readerPath)) as { readXER: (bytes: Uint8Array) => { results: unknown[] } };
+      const { writeIFC } = (await import(/* @vite-ignore */ writerPath)) as { writeIFC: (input: unknown) => string };
+      const ifc = writeIFC(readXER(new TextEncoder().encode(xer)).results[0]);
+      await new Promise<void>((resolve, reject) => {
+        const request = indexedDB.open('ops-recovery');
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => {
+          const db = request.result;
+          const tx = db.transaction(['records', 'xer-archives'], 'readwrite');
+          const records = tx.objectStore('records');
+          records.clear(); tx.objectStore('xer-archives').clear();
+          records.put({ id: sid + '::doc::doc-oud', kind: 'doc', sessionId: sid,
+            docId: 'doc-oud', ifc, addedAt: 1 });
+          records.put({ id: sid + '::manifest', kind: 'manifest', sessionId: sid,
+            version: locale === 'nl' ? 99 : '5', activeDocumentId: 'doc-oud', addedAt: 1,
+            documents: [{ id: 'doc-oud', ifc: sid + '::doc::doc-oud', filePath: 'oud.ifc',
+              isDirty: true, datesAsRecorded: true, siteFileId: 'oude-site', siteFileVersion: 'oude-basis' }] });
+          tx.objectStore('xer-archives').put({ id: 'onbekende-blob', bytes: new Uint8Array([0, 255, 42]), addedAt: 1 });
+          tx.oncomplete = () => { db.close(); resolve(); };
+          tx.onerror = () => { db.close(); reject(tx.error); };
+        };
+      });
+      sessionStorage.setItem('ops-recovery-session', sid);
+      sessionStorage.removeItem('ops-recovery-session:held');
+      localStorage.setItem('ops-locale', locale);
+    }, { xer: XER_TWO_PROJECTS, locale });
+    const recoveryBytes = () => page.evaluate(() => new Promise<string>((resolve, reject) => {
+      const request = indexedDB.open('ops-recovery');
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => {
+        const db = request.result;
+        const tx = db.transaction(['records', 'xer-archives'], 'readonly');
+        const records = tx.objectStore('records').getAll();
+        const blobs = tx.objectStore('xer-archives').getAll();
+        tx.oncomplete = () => {
+          resolve(JSON.stringify([records.result, blobs.result.map((b: { id: string; bytes: Uint8Array }) =>
+            ({ ...b, bytes: [...b.bytes] }))]));
+          db.close();
+        };
+        tx.onerror = () => { db.close(); reject(tx.error); };
+      };
+    }));
+    const before = await recoveryBytes();
+    const sidBefore = await page.evaluate(() => sessionStorage.getItem('ops-recovery-session'));
+    await page.goto('/');
+    const warning = page.getByRole('alert').filter({ hasText: locale === 'nl'
+      ? 'De herstelgegevens hebben een onbekende versie of een ongeldige indeling.'
+      : 'The recovery data has an unknown version or an invalid structure.' });
+    await expect(warning).toBeVisible();
+    await expect(page.locator('[data-ops-recovery-dialog]')).toHaveCount(0);
+    const documentState = () => page.evaluate(() => {
+      const state = window.__OPS__!.store.getState();
+      return { tasks: state.tasks.length, filePath: state.filePath, siteFileId: state.siteFileId,
+        siteFileVersion: state.siteFileVersion, documents: state.documents.length };
+    });
+    expect(await documentState()).toEqual({ tasks: 0, filePath: null, siteFileId: null, siteFileVersion: null, documents: 1 });
+    const attempts = () => page.evaluate(() => (window as Window & { __manifestWriteAttempts: number }).__manifestWriteAttempts);
+    await page.clock.pauseAt(await page.evaluate(() => Date.now() + 500));
+    const addTask = page.getByRole('button', { name: /New task directly below the selection|Nieuwe taak direct onder de selectie/ });
+    let previousAttempts = await attempts();
+    await addTask.click();
+    await page.clock.runFor(10_000);
+    await expect.poll(attempts).toBeGreaterThan(previousAttempts);
+    expect(await recoveryBytes()).toBe(before);
+    expect(await documentState()).toEqual({ tasks: 1, filePath: null, siteFileId: null, siteFileVersion: null, documents: 1 });
+    expect(await page.evaluate(() => window.__OPS__!.store.getState().ui.notifications
+      .filter(n => n.messageKey === 'notifications.recoveryManifestBlocked').map(n => n.count))).toEqual([1]);
+    await warning.locator('[data-ops-toast-close]').click();
+    previousAttempts = await attempts();
+    await addTask.click();
+    await page.clock.runFor(10_000);
+    await expect.poll(attempts).toBeGreaterThan(previousAttempts);
+    await expect(warning).toHaveCount(0);
+    expect(await recoveryBytes()).toBe(before);
+    expect(await page.evaluate(() => sessionStorage.getItem('ops-recovery-session'))).toBe(sidBefore);
+    expect(await documentState()).toEqual({ tasks: 2, filePath: null, siteFileId: null, siteFileVersion: null, documents: 1 });
+    await page.clock.resume();
+  }
+
 });
