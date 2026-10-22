@@ -104,6 +104,8 @@ printen, projectgegevens, instellingen, extensies, bibliotheek en help.
 
 Onderdeel van de OpenAEC-Foundation-familie van desktop-apps, die een gedeeld patroon delen (Tauri 2 + React + Canvas, Office-achtige ribbon, `lucide-react`). De algehele shell volgt [Open 2D Studio](https://github.com/OpenAEC-Foundation/Open-2D-Studio) en [Open FEM2D Studio](https://github.com/OpenAEC-Foundation/Open-FEM2D-Studio); het [extensiesysteem](docs/extensions.md) en de huidige styling zijn gemodelleerd naar [Open Calc Studio](https://github.com/OpenAEC-Foundation/open-calc-studio).
 
+Wat de app levert voor het OpenAEC-ecosysteem (installers, headless kern, API, MCP, ondertekening, AWS) staat in [docs/ecosysteem-gereedheid.md](docs/ecosysteem-gereedheid.md).
+
 Zie [PLAN.md](PLAN.md) voor de roadmap. Let op: hoofdstuk 4 daarvan is een
 aangenomen ontwerp uit de ontwerpfase en beschrijft de huidige code niet — er
 staat een waarschuwing boven.

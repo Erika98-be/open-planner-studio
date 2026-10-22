@@ -192,7 +192,10 @@ export function parseExternalLagInput(input: string): ExternalLag | null {
   const value = Number.parseFloat(match[1].replace(',', '.'));
   if (!Number.isFinite(value) || Math.abs(value) > MAX_LAG_ABS) return null;
   const suffix = match[2] ?? 'd';
-  const storedValue = Math.round(suffix === 'u' || suffix === 'h' ? value * 60 : value);
+  // Daginvoer gebruikt dezelfde symmetrische afronding als interne relaties.
+  const storedValue = suffix === 'u' || suffix === 'h'
+    ? Math.round(value * 60)
+    : (Math.sign(value) * Math.round(Math.abs(value)) || 0);
   if (!Number.isSafeInteger(storedValue) || Math.abs(storedValue) > MAX_LAG_ABS) return null;
   return suffix === 'u' || suffix === 'h' ? { lagMinutes: storedValue } : { lagDays: storedValue };
 }

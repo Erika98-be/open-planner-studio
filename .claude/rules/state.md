@@ -13,7 +13,7 @@ paths:
 
 ### State: één Zustand + Immer store, samengesteld uit slices
 
-`src/state/appStore.ts` is een compositie-root: `create<AppState>()(immer(...))` combineert de slice-creators uit `src/state/slices/` plus de gridtransactieslice. Elke slice is getypeerd als `AppSlice<XSlice>` (zie `slices/types.ts`) tegen de **volledige** `AppState`, zodat cross-slice acties (runCPM, undo/redo, newProject, file-I/O) gewoon de hele Immer-draft muteren. Nieuwe state/acties horen in de passende slice; `slices/types.ts` bevat daarnaast gedeelde type/enum-definities (`ViewState`, `UIState`, …). Domain-types staan in `src/types/`. De renderer leest alleen uit de store.
+`src/state/appStoreFactory.ts` bevat de fabriek (`createAppStoreContext`) en `src/state/appStore.ts` de ene gemounte appcontext (die exporteert de fabriek opnieuw). De fabriek is de compositie-root: `create<AppState>()(immer(...))` combineert de slice-creators uit `src/state/slices/` plus de gridtransactieslice. Elke slice is getypeerd als `AppSlice<XSlice>` (zie `slices/types.ts`) tegen de **volledige** `AppState`, zodat cross-slice acties (runCPM, undo/redo, newProject, file-I/O) gewoon de hele Immer-draft muteren. Nieuwe state/acties horen in de passende slice; `slices/types.ts` bevat daarnaast gedeelde type/enum-definities (`ViewState`, `UIState`, …). Domain-types staan in `src/types/`. De renderer leest alleen uit de store.
 
 De gemounte productinterface gebruikt bewust exact één `appStoreContext`; React-componenten blijven
 die app-singleton atomisch lezen via `useAppStore(selector)`. Dezelfde compositie-root kan voor
@@ -31,7 +31,8 @@ Ownership is daarbij expliciet:
 | `batchTransaction.ts` en `mcpTransaction.ts` | dunne compatibiliteitsadapters die alleen `appStoreContext` binden |
 
 Core runtimefactories en storegebonden MCP-tools mogen daarom nooit zelf `useAppStore` of
-`appStoreContext` importeren. `npm run verify:store-boundaries` bewaakt die grens mechanisch. Een
+`appStoreContext` importeren. De headless kern (`src/core/`) importeert helemaal geen waarde uit
+`appStore.ts`, alleen uit `appStoreFactory.ts`: anders laadt hij de singleton mee. `npm run verify:store-boundaries` bewaakt die grens mechanisch. Een
 tweede context is een correct headless/testfundament, geen productbelofte voor multi-window of een
 multi-store-Reactinterface.
 

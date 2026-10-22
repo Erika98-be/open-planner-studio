@@ -11,7 +11,7 @@ const notStale: Check = { state: (s: Snap) => (s.stale ? ['planning nog verouder
 const status = (nl: string, en: string): Check => ({ see: statusBar, text: l(nl, en) });
 
 const ACTUAL_START = l('Werkelijke start', 'Actual start');
-const ACTUAL_FINISH = l('Werkelijke einde', 'Actual finish');
+const ACTUAL_FINISH = l('Werkelijk einde', 'Actual finish');
 const PROGRESS = l('Voortgang', 'Progress');
 
 /** Een kolom toevoegen via Tabel › Kolommen › Kolommen…: categorie openklappen en de kolom kiezen. */

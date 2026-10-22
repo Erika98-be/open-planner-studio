@@ -17,6 +17,7 @@
     "extHelpProjectOpenFailed": "The project file {{file}} from the extension {{name}} could not be opened.",
     "extImportFailed": "Importing with {{name}} failed.",
     "extensionMessage": "Extension {{name}}: {{message}}",
+    "extensionInstallFailed": "The extension could not be installed. Check the file and try again.",
     "xerInvalidInput": "XER import requires the original file bytes.",
     "xerInvalidFile": "This is not a valid or supported XER file.",
     "xerInvalidEncoding": "This XER file has invalid or truncated text encoding.",
@@ -228,6 +229,8 @@
   "no": "No",
   "days": "d",
   "daysLong": "days",
+  "dayUnitLong_one": "day",
+  "dayUnitLong_other": "days",
   "ok": "OK",
   "apply": "Apply",
   "create": "Create",
@@ -335,7 +338,7 @@
     "durationDisplayDays": "Always days",
     "durationDisplayHours": "Always hours",
     "barSplitMode": "Task bars at interruptions",
-    "barSplitModeHint": "Whether a task bar visually splits around non-working days.",
+    "barSplitModeHint": "For hour tasks only: split bars around breaks and non-working time. Actual task interruptions remain visible regardless of this setting.",
     "barSplitNever": "Never split",
     "barSplitSelection": "Split when selected",
     "barSplitAlways": "Always split",
@@ -473,7 +476,10 @@
     "taskCount_one": "{{count}} task",
     "taskCount_other": "{{count}} tasks",
     "restore": "Restore",
-    "dontRestore": "Don't restore"
+    "dontRestore": "Don't restore",
+    "unreadableOnlyExplanation": "None of the recovery copies can be read. Keep them for a later recovery attempt, or delete them only if you no longer need them. Deletion cannot be undone.",
+    "keepCopies": "Keep copies",
+    "deleteCopies": "Delete copies"
   },
   "window": {
     "minimize": "Minimize",
@@ -571,6 +577,7 @@
     "openGithub": "OK, go to GitHub",
     "annotate": "Annotate",
     "editorDone": "Done",
+    "annotationSaveFailed": "Your edits could not be saved. Try again. Your screenshot has not been changed and will not be sent from this editor.",
     "rotateFeedback": "Give feedback",
     "rotateBug": "Report a bug",
     "rotateFeature": "Add a new feature"
@@ -592,13 +599,14 @@
     "error": "Something went wrong while updating",
     "checking": "Checking…",
     "snapNotice": "This version is updated automatically via the Snap Store — you don't need to do anything.",
+    "packageManagerNotice": "Update through your package manager (for example yay -Syu).",
     "debExplanation": "Update manually by running this command in a terminal, or download the latest package.",
     "debCommandLabel": "Installation command",
     "copyCommand": "Copy command",
     "copied": "Copied",
     "openDownloads": "Open downloads page",
     "justUpdated": {
-      "title": "You're up to date!",
+      "title": "You've been updated!",
       "smaller": "{{size}} smaller than the previous version",
       "larger": "{{size}} larger than the previous version",
       "sameSize": "Same size as the previous version",
@@ -701,7 +709,7 @@
     "calendars": "Calendars",
     "noCalendars": "No calendars in the pool yet.",
     "noResources": "No resources in the pool yet.",
-    "promoteHint": "Promote a project calendar or resource to the library with the “+ From project” button above.",
+    "promoteHint": "Promote a project calendar to the library with the “+ From project” button above.",
     "promoteFromProject": "From project",
     "alreadyLinked": "already linked",
     "editItem": "Edit",
@@ -836,7 +844,7 @@
       "projectEndUnchanged": "Project end date: unchanged ({{date}})",
       "projectEndChanged": "Project end date: {{before}} → {{after}}",
       "remainingConflicts": "Remaining conflicts",
-      "remainingConflictsHint": "These tasks do not fit within their slack — often because a resource does not work on those days or lacks capacity.",
+      "remainingConflictsHint": "Resource conflicts remain for these tasks. See the details below.",
       "intrinsicOverrun": "{{resource}} peaks at {{peak}} units/day, capacity is {{capacity}} — cannot be resolved by shifting.",
       "noChanges": "No tasks need to move — the schedule is already conflict-free.",
       "notCalculated": "Click Calculate to build a leveling proposal.",
@@ -917,7 +925,7 @@
       "cancel": "Cancel"
     },
     "regen": {
-      "hint": "Holidays cover {{from}}–{{to}}; project runs to {{year}}. Regenerate?",
+      "hint": "Holidays cover {{from}}–{{to}}; regenerate through {{year}}?",
       "button": "Regenerate"
     },
     "countryName": {
@@ -980,7 +988,9 @@
       "bandEnd": "Block end",
       "shiftPreset": "Shift",
       "breakHint": "A gap between two bands is a break — adjust the times as needed."
-    }
+    },
+    "defaultConstructionName": "Construction calendar NL",
+    "defaultStandardName": "Standard calendar"
   },
   "view": {
     "structureLockedHint": "Not available while filtering/grouping/sorting",
@@ -1295,7 +1305,7 @@
   "progressImport": {
     "title": "Update progress from a spreadsheet",
     "chooseFile": "Choose file…",
-    "intro": "Pick a returned CSV sheet. The app only reads completion, actual start and actual finish — the rest of your plan stays unchanged.",
+    "intro": "Pick a returned CSV or XLSX sheet. The app only reads completion, actual start and actual finish — the rest of your plan stays unchanged.",
     "summaryApplied": "Applied: {{applied}}",
     "summaryNoop": "Unchanged: {{noop}}",
     "summaryNeedsLink": "Waiting for a link: {{needsLink}}",

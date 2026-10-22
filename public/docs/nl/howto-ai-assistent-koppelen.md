@@ -36,7 +36,33 @@ Het venster biedt drie manieren om te koppelen:
 
 - *Configuratiefragment*: een stukje configuratie dat je in de MCP-instellingen van je client plakt.
 - *Koppelprompt*: een tekst die je in je AI-assistent plakt, waarna die zichzelf koppelt.
-- *Endpoint* en *Authenticatie*: de losse gegevens. Het endpoint is `http://localhost:3877/mcp` met transport *streamable HTTP*. Bij elke aanvraag hoort een header `Authorization: Bearer` gevolgd door je token.
+- *Endpoint* en *Authenticatie*: de losse gegevens. Het endpoint is `http://localhost:3877/mcp` met transport *streamable HTTP*. Bij elke aanvraag hoort een header `Authorization: Bearer` gevolgd door je token. Je client moet ook MCP-sessies ondersteunen: de bridge geeft bij het verbinden een sessiecode in de header `Mcp-Session-Id`, en weigert elke latere aanvraag zonder die code. Claude Code en `mcp-remote` doen dat vanzelf.
+
+**Na een update van de app opnieuw verbinden.** Was je AI-client al verbonden met een oudere versie van de app, dan stuurt hij nog geen sessiecode mee en weigert de bridge elke aanvraag. Verbind daarom opnieuw na de update: start in Claude Code een nieuwe sessie, en sluit Claude Desktop helemaal af en start het opnieuw.
+
+**Claude Code.** Het configuratiefragment past direct in Claude Code. Geef in een terminal deze opdracht, met je eigen token in plaats van `<token>`:
+
+```
+claude mcp add --transport http open-planner-studio http://localhost:3877/mcp --header "Authorization: Bearer <token>"
+```
+
+Je kunt het fragment ook in het bestand `.mcp.json` in je projectmap zetten. Zet dat bestand dan niet in git, want het token geeft toegang tot je plan. Een server uit `.mcp.json` moet je de eerste keer goedkeuren in Claude Code.
+
+**Claude Desktop.** Het configuratiefragment past niet direct in Claude Desktop. In het bestand `claude_desktop_config.json` noem je een programma dat Claude Desktop zelf start, geen adres. Gebruik daarom het externe hulpprogramma `mcp-remote` als tussenstuk; daarvoor heb je Node.js nodig. Kies in Claude Desktop *Settings › Developer › Edit Config*, zet dit in het bestand (met je eigen token) en start Claude Desktop opnieuw:
+
+```
+{
+  "mcpServers": {
+    "open-planner-studio": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "http://localhost:3877/mcp", "--header", "Authorization:${AUTH_HEADER}"],
+      "env": { "AUTH_HEADER": "Bearer <token>" }
+    }
+  }
+}
+```
+
+Het token staat bewust in `env` en niet in `args`: op Windows breekt Claude Desktop een argument met een spatie. Een *custom connector* in Claude (*Customize › Connectors*) werkt niet met de bridge. Claude verbindt dan vanuit de cloud van Anthropic, en die kan de bridge op je eigen computer niet bereiken.
 
 In de groep *Verbinding* staat ook het veld *Token*. Dat is een lange, willekeurige code die de app voor je maakt en op deze computer bewaart. In het venster staat *Dit token geeft toegang tot het geopende plan. Deel het niet met anderen.* Met het pictogram *Nieuw token* maak je een nieuw token. De app vraagt eerst *Een nieuw token maken verbreekt alle bestaande koppelingen. Doorgaan?* Draait de bridge, dan herstart hij met het nieuwe token en werkt het oude niet meer.
 

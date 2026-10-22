@@ -24,6 +24,14 @@ test('nivelleer-dialoog: berekenen via de worker levert een voorstel; toepassen 
   const dialog = page.getByRole('dialog');
   await expect(dialog).toBeVisible();
 
+  const conflictHint = 'Resource conflicts remain for these tasks. See the details below.';
+  // Met smoothing blijft een conflict over: de algemene hint beschrijft het resultaat,
+  // terwijl de toelichting per taak de oorzaak aanwijst.
+  await dialog.getByRole('checkbox').first().check();
+  await dialog.getByRole('button', { name: /^(Berekenen|Calculate)$/ }).click();
+  await expect(dialog.getByText(conflictHint, { exact: true })).toBeVisible();
+  await dialog.getByRole('checkbox').first().uncheck();
+
   await dialog.getByRole('button', { name: /^(Berekenen|Calculate)$/ }).click();
   // Het voorstel verschijnt (de worker heeft gerekend): één taak schuift drie werkdagen op.
   await expect(dialog.locator('table tbody tr')).toHaveCount(1);
@@ -38,18 +46,34 @@ test('nivelleer-dialoog: berekenen via de worker levert een voorstel; toepassen 
   expect(starts[0]).toBe('2026-09-07');
   expect(starts[1] > '2026-09-09').toBe(true);
 
+  // Zonder smoothing kan een taak intrinsiek meer vragen dan de ploeg kan leveren.
+  // Dit is géén tekort aan speling; de algemene hint mag die oorzaak niet suggereren.
+  await page.evaluate(id => {
+    const s = window.__OPS__!.store.getState();
+    const resourceId = s.addResource({ name: 'Kleine ploeg', type: 'LABOR', description: '', maxUnits: 1 });
+    s.assignResource(id, resourceId, 2);
+    s.runCPM();
+  }, first);
+  await page.locator('[data-ops-ribbon-item="levelResources"]').first().click();
+  await expect(dialog.getByRole('checkbox').first()).not.toBeChecked();
+  await dialog.getByRole('button', { name: /^(Berekenen|Calculate)$/ }).click();
+  await expect(dialog.getByText(conflictHint, { exact: true })).toBeVisible();
+  await expect(dialog.getByText('Kleine ploeg peaks at 2 units/day, capacity is 1 — cannot be resolved by shifting.', { exact: true })).toBeVisible();
+  await dialog.getByRole('button', { name: /^(Annuleren|Cancel)$/ }).click();
+
   // Importfixture: inzet 1, maar opgeslagen werk geeft een echte dagvraag van 3.
   // De capaciteit is door een stap 2, niet de vlakke standaardwaarde 1.
   await page.evaluate(id => {
     const ops = window.__OPS__!;
     const s = ops.store.getState();
-    const resourceId = s.addResource({
-      name: 'Importploeg', type: 'LABOR', description: '', maxUnits: 1,
-      availabilitySteps: [{ from: '2026-01-01', maxUnits: 2 }],
+    const resourceId = s.resources.find(r => r.name === 'Kleine ploeg')!.id;
+    s.updateResource(resourceId, {
+      name: 'Importploeg', availabilitySteps: [{ from: '2026-01-01', maxUnits: 2 }],
     });
-    s.assignResource(id, resourceId, 1);
     ops.store.setState(st => {
-      st.assignments.find(a => a.taskId === id && a.resourceId === resourceId)!.remainingWorkMinutes = 3 * 3 * 8 * 60;
+      const assignment = st.assignments.find(a => a.taskId === id && a.resourceId === resourceId)!;
+      assignment.unitsPerDay = 1;
+      assignment.remainingWorkMinutes = 3 * 3 * 8 * 60;
     });
     s.runCPM();
   }, first);

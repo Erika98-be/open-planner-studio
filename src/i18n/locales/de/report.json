@@ -132,7 +132,7 @@
   "barColorMode_auto": "Pro Vorgang — automatisch",
   "barColorMode_category": "Nach Kategorie",
   "barColorFieldLabel": "Kategoriefeld",
-  "barColorMissingField": "Dieses Feld ist in diesem Projekt nicht vorhanden. Vorübergehend wird die Vorgangsart verwendet.",
+  "barColorMissingField": "Dieses Feld ist in diesem Projekt nicht vorhanden. Vorübergehend wird die Arbeitskategorie verwendet.",
   "statusLineLabel": "Statuslinie:",
   "statusLine_none": "Keine",
   "statusLine_statusDate": "Statusdatumslinie",

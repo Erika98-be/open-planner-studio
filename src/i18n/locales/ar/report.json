@@ -144,7 +144,7 @@
   "barColorMode_auto": "لكل مهمة — تلقائي",
   "barColorMode_category": "حسب الفئة",
   "barColorFieldLabel": "حقل الفئة",
-  "barColorMissingField": "هذا الحقل غير موجود في هذا المشروع. يُستخدم نوع المهمة مؤقتًا.",
+  "barColorMissingField": "هذا الحقل غير موجود في هذا المشروع. تُستخدم فئة العمل مؤقتًا.",
   "statusLineLabel": "خط الحالة:",
   "statusLine_none": "بدون",
   "statusLine_statusDate": "خط تاريخ الحالة",

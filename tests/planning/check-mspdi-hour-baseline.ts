@@ -5,7 +5,9 @@
 // - IFC-rondgang (`OPS_Baselines`): de baseline komt met tijd terug;
 // - Gantt-overlay (`buildBaselineOverlay`) en variance (`computeVariance`) geven voor de ingelezen
 //   baseline dezelfde uitkomst als voor een baseline die de app zelf vastlegt;
-// - een dagtaak houdt een baseline met alleen een datum.
+// - een dagtaak houdt een baseline met alleen een datum;
+// - een onleesbare (`NA`) of ontbrekende baselinedatum breekt de import niet af en geeft geen
+//   verzonnen datum: die baseline-entry valt weg, de rest blijft gelijk (VERVOLG 13 van #392).
 // Corpusloos (CI).
 import { readMSPDI } from '@/services/msproject/mspdiReader';
 import { writeIFC } from '@/services/ifc/ifcWriter';
@@ -16,6 +18,7 @@ import { CalendarEngine } from '@/engine/scheduler/CalendarEngine';
 import { shownFinish, shownStart } from '@/utils/taskDates';
 import { solveProject } from '@/engine/scheduler/solveProject';
 import { solveInputFor } from '@/engine/scheduler/solveInput';
+import { localTodayIso } from '@/utils/dateUtils';
 import { installDOMParser } from './xmldom-shim';
 
 declare const process: { exitCode?: number };
@@ -88,6 +91,57 @@ const variance = (b: Baseline) => computeVariance([t1!, t3!], b, cal).rows
   .map(row => [row.baselineStart, row.baselineFinish, row.deltaStart, row.deltaFinish, row.status]);
 eq('4b variance gelijk', variance(imported!), variance(inApp));
 eq('4c variance: op schema', variance(imported!).map(row => row[4]), ['onSchedule', 'onSchedule']);
+
+// (5) Onleesbare of ontbrekende baselinedatum (VERVOLG 13 van #392). Vóór de fix gaf `<Start>NA</Start>`
+//     bij een urentaak `RangeError: Invalid time value` en brak de hele import af; een dagtaak kreeg `NA`
+//     als baselinedatum en een `<Baseline>` zonder Start/Finish de datum van vandaag.
+//     Regel: onleesbaar = ontbrekend ⇒ de taak krijgt geen baseline-entry. Vergelijk met hetzelfde
+//     bestand zonder die kapotte baselines: taken en de overige baselines moeten gelijk zijn.
+function project(dayMode: boolean, broken: boolean): string {
+  const at = (d: string, h: string) => `${d}T${dayMode ? '08:00' /* dag-anker: geen uursignaal */ : (h === 'S' ? '09:00' : '12:00')}:00`;
+  const dur = dayMode ? 'PT8H0M0S' : 'PT3H0M0S';
+  const bl = (start: string, finish: string) =>
+    `<Baseline><Number>0</Number>${start}${finish}<Duration>${dur}</Duration></Baseline>`;
+  const task = (uid: number, name: string, day: string, baseline: string) =>
+    `<Task><UID>${uid}</UID><ID>${uid}</ID><Name>${name}</Name><OutlineLevel>1</OutlineLevel>
+      <Start>${at(day, 'S')}</Start><Finish>${at(day, 'F')}</Finish><Duration>${dur}</Duration>${baseline}</Task>`;
+  const good = bl(`<Start>${at('2026-03-02', 'S')}</Start>`, `<Finish>${at('2026-03-02', 'F')}</Finish>`);
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Project xmlns="http://schemas.microsoft.com/project">
+  <Name>Kapot</Name><StartDate>2026-03-02T08:00:00</StartDate><MinutesPerDay>480</MinutesPerDay>
+  <Tasks>
+    ${task(1, 'Geldig', '2026-03-02', good)}
+    ${task(2, 'StartNA', '2026-03-03', broken ? bl('<Start>NA</Start>', `<Finish>${at('2026-03-03', 'F')}</Finish>`) : '')}
+    ${task(3, 'FinishNA', '2026-03-04', broken ? bl(`<Start>${at('2026-03-04', 'S')}</Start>`, '<Finish>NA</Finish>') : '')}
+    ${task(4, 'Leeg', '2026-03-05', broken ? bl('', '') : '')}
+  </Tasks>
+</Project>`;
+}
+for (const dayMode of [false, true]) {
+  const tag = dayMode ? 'dagtaak' : 'urentaak';
+  let got: ReturnType<typeof readMSPDI> | undefined;
+  try {
+    got = readMSPDI(project(dayMode, true));
+  } catch (e) {
+    checks++;
+    fails.push(`5a ${tag}: import breekt af met ${String(e)}`);
+  }
+  if (!got) continue;
+  const ref = readMSPDI(project(dayMode, false));
+  eq(`5b ${tag}: modus`, got.tasks.map(t => t.time.durationUnit), ref.tasks.map(t => t.time.durationUnit));
+  eq(`5c ${tag}: taken gelijk aan het bestand zonder kapotte baselines`,
+    got.tasks.map(t => [t.name, t.time]), ref.tasks.map(t => [t.name, t.time]));
+  const named = (res: typeof got) => {
+    const b = res.baselines?.find(x => x.id === res.activeBaselineId);
+    return b ? { projectEnd: b.projectEnd, tasks: b.tasks.map(e => ({ ...e, taskId: res.tasks.find(t => t.id === e.taskId)?.name })) } : undefined;
+  };
+  eq(`5d ${tag}: alleen de geldige baseline, ongewijzigd`, named(got), named(ref));
+  eq(`5e ${tag}: geldige baseline zoals in het bestand`, named(got)?.tasks.map(e => [e.taskId, e.start, e.finish]),
+    [['Geldig', dayMode ? '2026-03-02' : '2026-03-02T09:00', dayMode ? '2026-03-02' : '2026-03-02T12:00']]);
+  const today = localTodayIso();
+  eq(`5f ${tag}: geen verzonnen of onleesbare baselinedatum`,
+    (named(got)?.tasks ?? []).flatMap(e => [e.start, e.finish]).filter(d => d.startsWith(today) || !/^\d{4}-\d{2}-\d{2}/.test(d)), []);
+}
 
 if (fails.length) {
   for (const f of fails) console.log(`XX  mspdi-hour-baseline: ${f}`);

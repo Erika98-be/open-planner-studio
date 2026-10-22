@@ -129,7 +129,7 @@
   "barColorMode_auto": "작업별 — 자동",
   "barColorMode_category": "범주별",
   "barColorFieldLabel": "범주 필드",
-  "barColorMissingField": "이 필드는 이 프로젝트에 없습니다. 작업 유형을 임시로 사용합니다.",
+  "barColorMissingField": "이 필드는 이 프로젝트에 없습니다. 공종을 임시로 사용합니다.",
   "statusLineLabel": "상태선:",
   "statusLine_none": "없음",
   "statusLine_statusDate": "상태 날짜선",

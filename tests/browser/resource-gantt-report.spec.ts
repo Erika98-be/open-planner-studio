@@ -7,6 +7,12 @@ import { PDFDocument } from 'pdf-lib';
 import { expect, seedProject, test } from './fixtures/ops';
 
 test('resourcediagram: rapporttype rendert per resource, opties sturen samenvatting en paginering, export krijgt eigen suffix', async ({ page, ops: _ops }) => {
+  // Deze regressie gaat specifiek over de Engelse optienaam.
+  await page.evaluate(async () => {
+    const localePath = '/src/i18n/config.ts';
+    const { setLocale } = await import(/* @vite-ignore */ localePath);
+    await setLocale('en');
+  });
   await seedProject(page, [
     { name: 'Fundering', start: '2026-09-07', finish: '2026-09-18', durationDays: 10 },
     { name: 'Casco', start: '2026-09-21', finish: '2026-10-16', durationDays: 20 },
@@ -84,7 +90,7 @@ test('resourcediagram: rapporttype rendert per resource, opties sturen samenvatt
   await nameWidth.fill('220');
   await page.getByLabel(/^(Paper:|Papier:)$/).click();
   await page.getByRole('option', { name: 'A4' }).click();
-  await page.getByLabel(/^(Orientation:|Orientatie:)$/).click();
+  await page.getByLabel(/^(Orientation:|Oriëntatie:)$/).click();
   await page.getByRole('option', { name: /^(Portrait|Staand)$/ }).click();
   const fontSize = page.getByLabel(/^(Font size:|Lettergrootte:)$/);
   await fontSize.click();
@@ -96,7 +102,7 @@ test('resourcediagram: rapporttype rendert per resource, opties sturen samenvatt
   await nameWidth.fill('130');
   await page.getByLabel(/^(Paper:|Papier:)$/).click();
   await page.getByRole('option', { name: 'A3' }).click();
-  await page.getByLabel(/^(Orientation:|Orientatie:)$/).click();
+  await page.getByLabel(/^(Orientation:|Oriëntatie:)$/).click();
   await page.getByRole('option', { name: /^(Landscape|Liggend)$/ }).click();
 
   // Rapportageperiode (manuvarkey punt 3): een eigen bereik dat alleen Fundering raakt ⇒ alleen Ploeg A
@@ -114,6 +120,25 @@ test('resourcediagram: rapporttype rendert per resource, opties sturen samenvatt
   await expect(count('unassigned')).toHaveText('0');
   await expect(count('outsidePeriod')).toHaveText('2');
   await expect(pages).toHaveCount(1);
+
+  // Knownbug 43: de lege-periodehint noemt exact de optie waarmee je alle taken terughaalt.
+  // De hint wordt in de rasterpreview getekend, niet als DOM-tekst. Observeer de bestaande
+  // Canvas-tekengrens zoals report-options.spec.ts; de echte datumvelden sturen de wijziging.
+  await page.evaluate(() => {
+    const original = CanvasRenderingContext2D.prototype.fillText;
+    const drawn: string[] = [];
+    CanvasRenderingContext2D.prototype.fillText = function (text, x, y, maxWidth) {
+      if (!(this.canvas?.dataset.testid ?? '').startsWith('gantt-')) drawn.push(String(text));
+      if (maxWidth === undefined) original.call(this, text, x, y);
+      else original.call(this, text, x, y, maxWidth);
+    };
+    Object.defineProperty(window, '__opsPeriodHintText', { configurable: true, value: drawn });
+  });
+  await toInput.fill('2027-01-31');
+  await fromInput.fill('2027-01-01');
+  await expect.poll(() => page.evaluate(() =>
+    (window as Window & { __opsPeriodHintText?: string[] }).__opsPeriodHintText ?? []
+  )).toContain('No tasks in the reporting period — choose another period or Project duration.');
   await periodField.getByLabel(/^(Reporting period:|Rapportageperiode:)$/).click();
   await page.getByRole('option', { name: /^(Project duration|Hele project)$/ }).click();
   await expect(count('outsidePeriod')).toHaveCount(0);
