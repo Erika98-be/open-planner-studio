@@ -12,7 +12,7 @@ De verkenning wees op leesproxies: bij 5.000 taken kostte dezelfde solve op gewo
 
 ## Methode
 
-- Basis: `522589202`; alleen `src/state/slices/scheduleSlice.ts` wordt voor de oude bundel vervangen
+- Basis: `522589202`, nameting `095af2528`; alleen `src/state/slices/scheduleSlice.ts` wordt voor de oude bundel vervangen
   door de versie uit die commit. Alle andere code en bundelopties zijn gelijk. De SHA-256 van beide
   bronversies staat in het [ruwe resultaat](2026-10-22-f5-writeback.json).
 - De bestaande `generateBenchmarkProject`, seed `0x5eed`, acht resources; 1.000/5.000/10.000 taken.
@@ -24,7 +24,7 @@ De verkenning wees op leesproxies: bij 5.000 taken kostte dezelfde solve op gewo
 - Na ieder paar: dezelfde SHA-256 over alle taken, het volledige CPM-resultaat en de resourcebelasting
   (Maps/Sets als arrays). Ook de opwarmrondes worden op uitkomstpariteit gecontroleerd.
 - Runtime: Node v24.22.0, V8 13.6.233.17-node.57, Linux, AMD Ryzen 7 3700U, 22 oktober 2026.
-  Gedeelde machine: load average tijdens meetparen 5,03–9,52; daarom de afwisselende volgorde en
+  Gedeelde machine: load average tijdens meetparen 1,87–2,83; daarom de afwisselende volgorde en
   rapportage van de verbetering per paar. In deze worktree liep tijdens de meting geen andere zware run.
 
 ## Resultaat
@@ -33,16 +33,16 @@ Mediaan in ms; verbetering = mediaan van `1 − na/voor` binnen ieder meetpaar.
 
 | Taken | Route | Voor | Na | Minder tijd per paar |
 | ---: | --- | ---: | ---: | ---: |
-| 1.000 | Ongewijzigde F5 | 167,5 | 61,2 | 65,7% |
-| 1.000 | F5 na duurwijziging | 374,3 | 219,3 | 42,5% |
-| 5.000 | Ongewijzigde F5 | 1.510,2 | 285,3 | 76,8% |
-| 5.000 | F5 na duurwijziging | 3.259,3 | 1.943,0 | 41,0% |
-| 10.000 | Ongewijzigde F5 | 2.267,0 | 612,0 | 73,6% |
-| 10.000 | F5 na duurwijziging | 3.202,9 | 1.924,3 | 46,1% |
+| 1.000 | Ongewijzigde F5 | 163,0 | 50,0 | 69,6% |
+| 1.000 | F5 na duurwijziging | 247,5 | 143,0 | 42,0% |
+| 5.000 | Ongewijzigde F5 | 831,6 | 168,5 | 79,7% |
+| 5.000 | F5 na duurwijziging | 1.440,3 | 865,1 | 43,7% |
+| 10.000 | Ongewijzigde F5 | 1.913,9 | 403,9 | 77,8% |
+| 10.000 | F5 na duurwijziging | 2.875,4 | 1.514,0 | 45,1% |
 
 Alle 54 meetparen inclusief opwarmrondes hadden gelijke uitkomsthashes. Bij 10.000 taken varieert
-ongewijzigde F5 van 2.153–3.104 ms vóór tot 538–818 ms na; na duurwijziging van 2.637–4.529 ms vóór
-tot 1.420–2.162 ms na. Iedere gemeten combinatie werd sneller.
+ongewijzigde F5 van 1.747–2.226 ms vóór tot 380–546 ms na; na duurwijziging van 2.501–3.294 ms vóór
+tot 1.349–1.808 ms na. Iedere gemeten combinatie werd sneller.
 
 Dit bewijst winst in de store-route, inclusief echt gewijzigde berekeningen. Het zijn geen browser-
 of Tauri-eindtijden en geen vergelijking met de oudere browsernulmeting. Een losse browsernulmeting
