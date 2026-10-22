@@ -177,6 +177,48 @@ async function fillQuestionDate(page: Page, taskName: string, iso: string): Prom
   await segments.nth(2).fill(y);
 }
 
+/** Lees Help met een echte klik; terug via Enter mag de wachtende voortgang niet bevestigen. */
+async function visitActualStartHelp(page: Page, taskId: string, via: 'click' | 'enter' = 'click'): Promise<void> {
+  const question = page.locator('[data-ops-actual-start-dialog]');
+  const pendingState = () => page.evaluate(() => {
+    const { ui } = window.__OPS__!.store.getState();
+    return {
+      question: ui.pendingActualStartQuestion,
+      showTaskDialog: ui.showTaskDialog,
+      editingTaskId: ui.editingTaskId,
+    };
+  });
+  const pendingBefore = await pendingState();
+  const progressBefore = await readProgress(page, taskId);
+  const undoBefore = (await state(page)).undoDepth;
+  const help = question.getByRole('button', { name: /^(Help on this topic|Help bij dit onderdeel)$/ });
+  if (via === 'enter') {
+    await help.focus();
+    await page.keyboard.press('Enter');
+  } else {
+    await help.click();
+  }
+  await expect(question).toBeHidden();
+  await expect(page.locator('[data-ops-task-dialog]')).toBeHidden();
+  await expect(page.locator('[data-ops-help-leave-dialog]')).toHaveCount(0);
+  await expect(page.locator('.help-panel')).toBeVisible();
+  const article = page.locator('.help-article-body');
+  await expect(article).toHaveAttribute('data-help-current', 'howto-voortgang-bijwerken');
+  await expect(article.getByRole('heading', { level: 1, name: /^(Updating progress|Voortgang bijwerken)$/ })).toBeVisible();
+  expect(await pendingState()).toEqual(pendingBefore);
+  expect(await readProgress(page, taskId)).toEqual(progressBefore);
+  expect((await state(page)).undoDepth).toBe(undoBefore);
+
+  // De dialoog luistert tijdens Help niet mee naar Enter; de echte Terug-knop krijgt die toets.
+  await page.locator('[data-ops-backstage-back]').focus();
+  await page.keyboard.press('Enter');
+  await expect(question).toBeVisible();
+  await expect(question.getByRole('textbox').first()).toBeFocused();
+  expect(await pendingState()).toEqual(pendingBefore);
+  expect(await readProgress(page, taskId)).toEqual(progressBefore);
+  expect((await state(page)).undoDepth).toBe(undoBefore);
+}
+
 test('Regel 2, paneel: de app vraagt de werkelijke start; annuleren verandert niets, bevestigen is één stap', async ({ page, ops: _ops }) => {
   const { B, statusDate } = await seedFutureChain(page);
   const point = await barPoint(page, B);
@@ -196,6 +238,15 @@ test('Regel 2, paneel: de app vraagt de werkelijke start; annuleren verandert ni
   await expect(segments.nth(1)).toHaveValue(m);
   await expect(segments.nth(2)).toHaveValue(y);
   expect(await readProgress(page, B)).toEqual({ statusDate, completion: 0, actualStart: null });
+
+  // Help bewaart de nog niet bevestigde datum en de actie. Daarna blijft annuleren mogelijk.
+  const helpDate = shiftDays(statusDate, -1);
+  await fillQuestionDate(page, 'Metselwerk', helpDate);
+  await visitActualStartHelp(page, B);
+  const [helpYear, helpMonth, helpDay] = helpDate.split('-');
+  await expect(segments.nth(0)).toHaveValue(helpDay);
+  await expect(segments.nth(1)).toHaveValue(helpMonth);
+  await expect(segments.nth(2)).toHaveValue(helpYear);
 
   // Annuleren (Escape): niets veranderd, geen undo-stap.
   await page.keyboard.press('Escape');
@@ -278,6 +329,7 @@ test('Regel 2, Taak bewerken: de vraag stapelt boven de dialoog; Enter bevestigt
   await page.mouse.dblclick(point.x, point.y);
   const taskDialog = page.locator('[data-ops-task-dialog]');
   await expect(taskDialog).toBeVisible();
+  await taskDialog.locator('[data-ops-task-name]').fill('Metselwerk concept');
   await taskDialog.locator('[data-ops-progress-slider]').focus();
   await page.keyboard.press('End');
 
@@ -285,6 +337,15 @@ test('Regel 2, Taak bewerken: de vraag stapelt boven de dialoog; Enter bevestigt
   await expect(question).toBeVisible();
   const actualStart = shiftDays(statusDate, -5);
   await fillQuestionDate(page, 'Metselwerk', actualStart);
+  await visitActualStartHelp(page, B);
+  await visitActualStartHelp(page, B, 'enter');
+  await expect(taskDialog).toBeVisible();
+  await expect(taskDialog.locator('[data-ops-task-name]')).toHaveValue('Metselwerk concept');
+  const [year, month, day] = actualStart.split('-');
+  const segments = question.getByRole('textbox');
+  await expect(segments.nth(0)).toHaveValue(day);
+  await expect(segments.nth(1)).toHaveValue(month);
+  await expect(segments.nth(2)).toHaveValue(year);
   await page.keyboard.press('Enter');
   await expect(question).toBeHidden();
   // De taakdialoog staat nog open: de voortgang staat op de concepttaak, nog niet in de store.

@@ -119,6 +119,9 @@ export const LIBRARY_LINK_HELP_ARTICLE_ID = 'howto-resourcebibliotheek-gebruiken
 /** Bibliotheek importeren (beheerscherm van de resourcebibliotheken). */
 export const LIBRARY_IMPORT_HELP_ARTICLE_ID = 'howto-bibliotheken-beheren';
 
+/** De vraag naar de werkelijke start bij voortgang invoeren. */
+export const ACTUAL_START_HELP_ARTICLE_ID = 'howto-voortgang-bijwerken';
+
 /** Voortgang bijwerken uit een blad. */
 export const PROGRESS_IMPORT_HELP_ARTICLE_ID = 'howto-voortgang-importeren';
 

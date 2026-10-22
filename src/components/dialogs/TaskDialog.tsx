@@ -50,6 +50,9 @@ export function TaskDialog() {
   const { t: tCommon } = useTranslation('common');
 
   const showTaskDialog = useAppStore(s => s.ui.showTaskDialog);
+  // Help vanuit de gestapelde startvraag laat deze bewerksessie (concept + historie) intact.
+  const actualStartHelpOpen = useAppStore(s => s.ui.pendingActualStartQuestion !== null
+    && s.ui.activeRibbonTab === 'file' && s.ui.backstageSection === 'help');
   const editingTaskId = useAppStore(s => s.ui.editingTaskId);
   const tasks = useAppStore(s => s.tasks);
   const setUI = useAppStore(s => s.setUI);
@@ -241,7 +244,7 @@ export function TaskDialog() {
     setUI({ showTaskDialog: false, editingTaskId: null });
   };
 
-  if (!showTaskDialog) return null;
+  if (!showTaskDialog || actualStartHelpOpen) return null;
 
   // Een gestarte taak (ook als de werkelijke start in deze dialoog net is ingevuld) begint op haar
   // werkelijke start: dan toont Startdatum die datum, alleen-lezen (eigenaarsbesluit 2026-10-12).
