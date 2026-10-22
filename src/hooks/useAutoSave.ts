@@ -7,6 +7,7 @@ import { buildWriteIFCInput } from '@/state/ifcSaveInput';
 import { RecoveryDeltaTracker, type RecoverySourceDocument } from '@/services/recovery/recoveryDelta';
 import { runRecoveryTick } from '@/services/recovery/recoverySnapshot';
 import { createRecoverySnapshotSerializer } from '@/services/recovery/recoverySnapshotSerializer';
+import { createRecoveryTickQueue } from '@/services/recovery/recoveryTickQueue';
 import { registerRecoveryFlush } from '@/services/recovery/recoveryFlush';
 import { canWriteToRefWithoutPrompt, saveTargetRef, saveToRefWithoutPrompt } from '@/services/fileAccess';
 import { actualAutoSaveDelay, createActualAutoSaveController, type ActualAutoSaveCandidate } from '@/services/actualAutosave/actualAutoSave';
@@ -28,8 +29,6 @@ const AUTOSAVE_INTERVAL_MS = 10_000;
 // recovery-snapshots niet overschrijft vóórdat de gebruiker heeft gekozen.
 export function useAutoSave(autoSaveEnabled: MutableRefObject<boolean>): void {
   useEffect(() => {
-    let inFlight: Promise<void> | null = null;
-    let pending = false;
     let disposed = false;
     const serializer = createRecoverySnapshotSerializer();
     const enabled = () => !disposed && autoSaveEnabled.current;
@@ -83,19 +82,7 @@ export function useAutoSave(autoSaveEnabled: MutableRefObject<boolean>): void {
       }
     };
 
-    const runAutoSave = (): Promise<void> => {
-      if (!enabled()) return Promise.resolve();
-      if (inFlight) { pending = true; return inFlight; }
-      // De belofte omvat ook een aangevraagde vervolgversie: flush mag nooit terugkeren terwijl
-      // de worker nog schrijft. Geen pollinglimiet van vijf seconden bij grote documenten.
-      inFlight = (async () => {
-        do {
-          pending = false;
-          await saveRound();
-        } while (pending && enabled());
-      })().finally(() => { inFlight = null; });
-      return inFlight;
-    };
+    const runAutoSave = createRecoveryTickQueue(saveRound, enabled);
 
     // Throttle: plan hoogstens één save per interval. `lastSaveAt = 0` laat de eerste wijziging
     // na het laden meteen een snapshot krijgen; daarna wacht een save tot het interval sinds de

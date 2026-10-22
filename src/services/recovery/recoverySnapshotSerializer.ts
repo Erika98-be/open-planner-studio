@@ -4,6 +4,8 @@ import type { RecoveryWorkerRequest, RecoveryWorkerResponse } from './recoverySn
 
 export type RecoveryWorker = Pick<Worker, 'postMessage' | 'terminate' | 'onmessage' | 'onerror' | 'onmessageerror'>;
 
+class RecoverySerializationError extends Error {}
+
 /** Eén herbruikbare worker per autosave-hook, met maximaal één verzoek tegelijk. */
 export function createRecoverySnapshotSerializer(
   createWorker: () => RecoveryWorker | null = () => typeof Worker === 'undefined' ? null
@@ -28,12 +30,14 @@ export function createRecoverySnapshotSerializer(
       if (!worker) return serializeRecoveryInput(snapshot);
       const activeWorker = worker;
       const id = ++nextId;
+      let timeout: ReturnType<typeof setTimeout> | undefined;
       try {
         return await new Promise<string>((resolve, reject) => {
           rejectActive = reject;
+          timeout = setTimeout(() => reject(new Error('Crashherstel-worker antwoordde niet binnen 60 seconden.')), 60_000);
           activeWorker.onmessage = ({ data }: MessageEvent<RecoveryWorkerResponse>) => {
             if (data.id !== id) return;
-            if ('error' in data) reject(new Error(data.error));
+            if ('error' in data) reject(new RecoverySerializationError(data.error));
             else resolve(data.ifc);
           };
           activeWorker.onerror = (event) => { event.preventDefault(); reject(new Error(event.message)); };
@@ -41,14 +45,18 @@ export function createRecoverySnapshotSerializer(
           activeWorker.postMessage({ id, snapshot } satisfies RecoveryWorkerRequest);
         });
       } catch (error) {
+        // Een inhoudelijke writerfout blijft een fout: niets committen, de worker blijft bruikbaar
+        // voor de volgende versie. Alleen transport-/opstartfouten gebruiken de synchrone terugval.
+        if (error instanceof RecoverySerializationError) throw error;
         activeWorker.terminate();
         worker = null;
         unavailable = true;
         if (disposed) throw error;
         // Ook CSP/start-/clonefouten mogen crashherstel niet uitschakelen. De fallback schrijft
-        // exact dezelfde vastgelegde versie; een echte writerfout faalt hier opnieuw.
+        // exact dezelfde vastgelegde versie.
         return serializeRecoveryInput(snapshot);
       } finally {
+        clearTimeout(timeout);
         rejectActive = null;
         activeWorker.onmessage = null;
         activeWorker.onerror = null;
