@@ -14,6 +14,8 @@ De app stuurt een rapport niet zelf naar een printer. Het eindpunt is altijd een
 
 Kies *Rapport* in het lint, of druk op Ctrl+P. Ctrl+P brengt je naar dit tabblad. Typ je in een veld, staat er een dialoog open of staat de presentatiemodus aan, dan werkt Ctrl+P niet. In de browser opent dan het printvenster van de browser, en dat drukt het scherm af, niet het rapport.
 
+Vanuit het bestandsmenu kies je *Bestand › Afdruk › Open afdrukvoorbeeld*. Het bestandsmenu sluit en het tabblad Rapport opent. Daarna kies je het rapport en de instellingen.
+
 Links staat de kolom *Rapportage* met de keuzelijst *Rapporttype*, een overzicht en de instellingen. Rechts staat het voorbeeld.
 
 ### 2. Kies het rapporttype

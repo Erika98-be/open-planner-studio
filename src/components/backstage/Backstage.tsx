@@ -165,7 +165,9 @@ export function Backstage() {
         {section === 'examples' && <ExamplesSection />}
         {section === 'export' && <ExportSection />}
         {section === 'import' && <ImportSection />}
-        {section === 'print' && <PrintSection onClose={closeBackstage} />}
+        {section === 'print' && (
+          <PrintSection onOpenPreview={() => leave(() => setUI({ activeRibbonTab: 'report' }))} />
+        )}
         {section === 'project-info' && (
           <ProjectInfoSection
             panelRef={projectInfoRef}
@@ -498,9 +500,8 @@ function ExportSection() {
 // Print section — opent Report-tab
 // ---------------------------------------------------------------------------
 
-function PrintSection({ onClose }: { onClose: () => void }) {
+function PrintSection({ onOpenPreview }: { onOpenPreview: () => void }) {
   const { t: tMenu } = useTranslation('menu');
-  const setUI = useAppStore(s => s.setUI);
 
   return (
     <>
@@ -508,10 +509,7 @@ function PrintSection({ onClose }: { onClose: () => void }) {
       <p className="backstage-subtitle">{tMenu('backstage.printSubtitle')}</p>
       <button
         className="btn btn--primary"
-        onClick={() => {
-          setUI({ activeRibbonTab: 'report' });
-          onClose();
-        }}
+        onClick={onOpenPreview}
       >
         {tMenu('backstage.openPrintPreview')}
       </button>

@@ -14,6 +14,8 @@ The app does not send a report to a printer itself. The end point is always a PD
 
 Choose *Report* in the ribbon, or press Ctrl+P. Ctrl+P takes you to this tab. If you are typing in a field, a dialog is open or presentation mode is on, Ctrl+P does not work. In the browser the print dialog of the browser then opens, and that prints the screen, not the report.
 
+From the file menu, choose *File › Print › Open print preview*. The file menu closes and the Report tab opens. Then choose your report and settings.
+
 On the left is the *Report* column with the *Report type* list, a summary and the settings. On the right is the preview.
 
 ### 2. Choose the report type
