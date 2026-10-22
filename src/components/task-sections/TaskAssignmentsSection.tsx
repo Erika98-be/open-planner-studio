@@ -173,25 +173,28 @@ export function TaskAssignmentsSection({ taskId }: { taskId: string }) {
           {taskAssignments.length > 0 && (
             <div className={`assignment-list !text-small${showWork ? '' : ' assignment-list--no-work'}`}>
               {/* Kop in hetzelfde raster als de regels (subgrid): elke kop staat recht boven zijn kolom,
-                  en een lange vertaling maakt de kolom breder in plaats van af te breken. */}
+                  en een lange vertaling maakt de kolom breder in plaats van af te breken. Is het paneel
+                  daar te smal voor, dan kapt de kop af met een ellips (`min-w-0` + `truncate`; de volle
+                  tekst staat in de tooltip) in plaats van de regels buiten het paneel te duwen: in 13
+                  talen gebeurde dat bij 200 px en 125 % (release v2026.10.0). */}
               <div className="assignment-header text-caption leading-3 uppercase tracking-wide" style={mutedStyle} data-ops-assignment-header>
                 <span className="assignment-name min-w-0 truncate ps-[16px]">{t('properties.assignments.resource')}</span>
                 <span
-                  className="assignment-units flex items-center gap-0.5 whitespace-nowrap"
+                  className="assignment-units flex min-w-0 items-center gap-0.5 whitespace-nowrap"
                   title={showWork && unitsProtected ? lockTitle : t('properties.assignments.unitsPerDay')}
                   data-ops-assignment-lock-units={showWork ? (unitsProtected ? 'locked' : 'free') : undefined}
                 >
                   {showWork && unitsProtected && <Lock size={9} className="shrink-0" />}
-                  <span>{t('properties.assignments.units')}</span>
+                  <span className="truncate">{t('properties.assignments.units')}</span>
                 </span>
                 {showWork && (
                   <span
-                    className="assignment-work flex items-center gap-0.5 whitespace-nowrap"
+                    className="assignment-work flex min-w-0 items-center gap-0.5 whitespace-nowrap"
                     title={workProtected ? lockTitle : t('properties.assignments.workHint')}
                     data-ops-assignment-lock-work={workProtected ? 'locked' : 'free'}
                   >
                     {workProtected && <Lock size={9} className="shrink-0" />}
-                    <span>{t('properties.assignments.workHours')}</span>
+                    <span className="truncate">{t('properties.assignments.workHours')}</span>
                   </span>
                 )}
               </div>
@@ -355,13 +358,13 @@ export function TaskAssignmentsSection({ taskId }: { taskId: string }) {
                         <button
                           type="button"
                           onClick={() => setContourAssignmentId(a.id)}
-                          className="dependency-add-button"
+                          className="dependency-add-button min-w-0 max-w-full"
                           style={contoured ? { color: 'var(--theme-accent)' } : undefined}
-                          title={contoured ? t('properties.assignments.contouredHint') : undefined}
+                          title={contoured ? t('properties.assignments.contouredHint') : t('properties.assignments.contour')}
                           data-ops-assignment-contour={contoured ? 'contoured' : 'formula'}
                         >
-                          <BarChart3 size={12} aria-hidden="true" />
-                          {t('properties.assignments.contour')}
+                          <BarChart3 size={12} aria-hidden="true" className="shrink-0" />
+                          <span className="truncate">{t('properties.assignments.contour')}</span>
                         </button>
                         {canMove && (
                           <MoveToSelect

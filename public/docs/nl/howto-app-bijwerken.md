@@ -6,6 +6,8 @@ Doel: weten of je de nieuwste versie hebt, de app bijwerken en lezen wat er in e
 
 Er komt regelmatig een nieuwe versie van Open Planner Studio uit. Je wilt weten of je die al hebt, bijvoorbeeld voordat je een fout meldt of omdat een extensie een nieuwere versie vraagt. Of je bent net bijgewerkt en wilt zien wat er veranderd is.
 
+Nieuwe releases gebruiken `JJJJ.W.N`: ISO-weekjaar, ISO-weeknummer zonder voorloopnul en een volgnummer vanaf 0. Zo volgen `2026.43.0` en `2026.43.1` elkaar in dezelfde week op. Rond nieuwjaar telt het ISO-weekjaar: 1 januari 2027 valt nog in `2026.53`, 4 januari begint `2027.1`. Oudere releases gebruiken een maandnummer in het middelste deel.
+
 Bijwerken werkt alleen in de desktop-app. De browserversie kent geen updater.
 
 ## Stappen
@@ -46,6 +48,8 @@ Wil je dit venster later nog een keer zien, dan kies je *Instellingen › Projec
 **Je hebt de app als .deb-pakket geïnstalleerd en de installatie lukt niet.** Het venster legt uit: *Werk handmatig bij door dit commando in een terminal uit te voeren, of download het nieuwste pakket.* Onder *Installatiecommando* staat het commando, met de knop *Commando kopiëren* (daarna staat er *Gekopieerd*). Met *Open downloadpagina* ga je naar de downloadpagina van de nieuwste versie.
 
 **Je hebt de app via de Snap Store.** De app werkt zichzelf dan niet bij en controleert bij het opstarten ook niet. De Snap Store doet dat. In het venster staat *Deze versie wordt automatisch via de Snap Store bijgewerkt — je hoeft niets te doen.*
+
+**Je hebt de app via het AUR (Arch Linux).** De app werkt zichzelf dan niet bij en controleert bij het opstarten ook niet. Je pakketbeheer doet dat. In het venster staat *Werk bij via je pakketbeheer (bijv. yay -Syu).*
 
 **Er komt niets bij het opstarten.** Dat is normaal als je al de nieuwste versie hebt. De opstartcontrole meldt geen fouten. Wil je zeker weten of je actueel bent, dan controleer je zelf, zoals hierboven.
 

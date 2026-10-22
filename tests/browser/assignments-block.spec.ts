@@ -94,6 +94,10 @@ test('inzet: toont twee decimalen, focus en blur zonder wijziging laten de opsla
   await expect(input).toBeFocused();
   await page.keyboard.press('Tab');
   await expect(input).not.toBeFocused();
+  await page.keyboard.press('Shift+Tab');
+  await expect(input).toBeFocused();
+  expect(await input.evaluate((el: HTMLInputElement) => [el.selectionStart, el.selectionEnd])).toEqual([0, expected.length]);
+  await page.keyboard.press('Tab');
   expect((await assignmentOf(page, unitsId))!.units).toBe(EXACT);
   // Nog een keer met een klik ernaast als blur.
   await input.click();
@@ -103,7 +107,7 @@ test('inzet: toont twee decimalen, focus en blur zonder wijziging laten de opsla
 
   // Een echte wijziging commit wel, ook met een komma als decimaalteken.
   await input.click();
-  await input.press('Control+a');
+  // knownbugs #90: de focus selecteert de weergave, typen vervangt die in één klik.
   await page.keyboard.type('2,5');
   await page.keyboard.press('Enter');
   await expect.poll(async () => (await assignmentOf(page, unitsId))!.units).toBe(2.5);

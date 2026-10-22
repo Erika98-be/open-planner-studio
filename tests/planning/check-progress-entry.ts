@@ -366,6 +366,46 @@ const UNTOUCHED = { completion: 0, status: 'NOT_STARTED', as: null, af: null };
   eq('3j vangnet setTaskProgress: afgeleide start zoals voorheen', taskOf(S, B).time.actualStart, taskOf(S, B).time.earlyStart);
 }
 
+// Werkelijke datums rechtstreeks invoeren: dezelfde volgordecontrole als raster/startvraag.
+for (const edit of [
+  { field: 'actualStart' as const, value: '2026-09-21' },
+  { field: 'actualFinish' as const, value: '2026-09-09' },
+  { field: 'actualStart' as const, value: '2026-09-20T13:00' },
+]) {
+  const { S } = fresh();
+  const { B } = setup(S);
+  S().setStatusDate('2026-10-01');
+  S().setActualStart(B, '2026-09-10');
+  S().setActualFinish(B, '2026-09-20');
+  const before = JSON.stringify(taskOf(S, B));
+  const depth = undoDepth(S);
+  const dirty = S().isDirty;
+  const res = S().enterTaskProgress(B, edit, { today: '2026-10-01' });
+  eq('4 directe datuminvoer weigert omgekeerde volgorde ' + edit.field + edit.value,
+    res, { ok: false, reason: 'actualFinishBeforeStart' });
+  eq('4 weigering wijzigt geen taak/undo/dirty', [JSON.stringify(taskOf(S, B)), undoDepth(S), S().isDirty],
+    [before, depth, dirty]);
+  const plan = planProgressEntry(taskOf(S, B), edit, { statusDate: '2026-10-01', today: '2026-10-01' });
+  eq('4 dialoog-concept weigert dezelfde bewerking', plan, { ok: false, reason: 'actualFinishBeforeStart' });
+  eq('4 conceptberekening muteert bron niet', JSON.stringify(taskOf(S, B)), before);
+}
+{
+  const { S } = fresh();
+  const { B } = setup(S);
+  S().setStatusDate('2026-10-01');
+  S().setActualStart(B, '2026-09-10');
+  S().setActualFinish(B, '2026-09-20');
+  for (const edit of [
+    { field: 'actualStart' as const, value: '2026-09-20' },
+    { field: 'actualFinish' as const, value: '2026-09-10' },
+    { field: 'actualStart' as const, value: '2026-09-09' },
+    { field: 'actualFinish' as const, value: undefined },
+  ]) {
+    const plan = planProgressEntry(taskOf(S, B), edit, { statusDate: '2026-10-01', today: '2026-10-01' });
+    eq('4 gelijke/grensdatums en wissen blijven toegestaan ' + edit.field + edit.value, plan.ok, true);
+  }
+}
+
 if (diffs.length === 0) {
   console.log(`OK  progress-entry: alle checks groen (${checks})`);
 } else {

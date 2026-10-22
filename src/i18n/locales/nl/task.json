@@ -52,7 +52,7 @@
     "columns": {
       "activityCodeData": "Activiteitscodedata",
       "actualDuration": "Werkelijke duur",
-      "actualFinish": "Werkelijke einde",
+      "actualFinish": "Werkelijk einde",
       "actualStart": "Werkelijke start",
       "assignedResources": "Toegewezen resources",
       "assignmentCurve": "Toewijzingscurve",
@@ -435,7 +435,7 @@
     "completion": "Voortgang (%)",
     "progress": {
       "actualStart": "Werkelijke start",
-      "actualFinish": "Werkelijke einde",
+      "actualFinish": "Werkelijk einde",
       "actualDate": "Werkelijke datum",
       "remaining": "Resterend",
       "summaryDerived": "Afgeleid uit de onderliggende taken: wijzig de voortgang daar. De samenvattende taak volgt na berekenen (F5)."

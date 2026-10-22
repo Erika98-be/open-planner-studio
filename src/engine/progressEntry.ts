@@ -157,7 +157,7 @@ export type ProgressEntryPlan =
  *     geweigerd: een feit ligt nooit in de toekomst van de peildatum — dus zonder statusdatum ook
  *     niet ná vandaag;
  *  3. per saldo geen wijziging ⇒ no-op, beslist op de UITKOMST (zie `commitProgressEdit`);
- *  4. het antwoord op de startvraag ná het werkelijke einde ⇒ geweigerd (melden, niet raden);
+ *  4. UI-invoer met een werkelijk einde vóór de werkelijke start ⇒ geweigerd (ook zonder startvraag);
  *  5. startvraag (alleen UI): zou de bewerking de werkelijke start afleiden uit een geplande start ná de
  *     statusdatum ⇒ eerst vragen, er verandert niets;
  *  6. statusdatum op vandaag: heeft de taak na de bewerking vastgelegde voortgang en was er geen
@@ -178,7 +178,7 @@ export function planProgressEntry(task: Task, edit: ProgressEdit, ctx: ProgressE
   };
   let next = run(statusDate);
   if (sameValue(task, next)) return { ok: true, change: null };
-  if (answer && isActualFinishBeforeStart(next.time)) return { ok: false, reason: 'actualFinishBeforeStart' };
+  if (ctx.today && isActualFinishBeforeStart(next.time)) return { ok: false, reason: 'actualFinishBeforeStart' };
   if (ctx.today) {
     const question = actualStartQuestionFor(task, next, statusDate, {
       actualStart: !!answer || (edit.field === 'actualStart' && !!edit.value),

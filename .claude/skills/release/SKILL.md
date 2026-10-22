@@ -25,9 +25,16 @@ per uitgebrachte versie (élke versie, geen gaten; géén `Ongepubliceerd`-kop, 
 (6) zelf aanvullen (de volledige technische procedure hieronder, incl. `AGENTS.md` bijwerken — stap 6).
 
 ## Vaste feiten
-- **Versie = CalVer** `YYYY.M.patch` (bv. `2026.7.13`); tags krijgen een `v`-prefix (`v2026.7.13`).
-- `npm run bump X.Y.Z` synct `package.json` + `src-tauri/tauri.conf.json` + lockfile.
-  `src-tauri/Cargo.toml` blijft **bewust `0.1.0`** — niet aanraken.
+- **Versie = `JJJJ.W.N`**: ISO-weekjaar, ISO-week zonder voorloopnul, volgnummer vanaf 0
+  (bv. `2026.43.0`); tags krijgen een `v`-prefix (`v2026.43.0`). Het ISO-weekjaar bepaalt
+  het jaar: 1 januari 2027 valt in `2026.53.N`, 4 januari in `2027.1.0`.
+- `npm run bump` leest actuele origin-tags (`git ls-remote --tags origin 'v*'`) en kiest voor
+  vandaag het hoogste volgnummer uit die tags én de huidige versie plus 1 (of `.0` als beide
+  ontbreken in de week). Een ontbrekende of onbereikbare origin stopt de bump zonder schrijven;
+  lokale tags zijn geen terugval. Een expliciet nummer
+  (`npm run bump 2026.44.1`) blijft mogelijk, met schema- en downgradecontrole. Het script
+  synct de app, npm-lockfile, beide headless-pakketten, OpenAPI-documentversie, Snap en
+  `src-tauri/Cargo.toml` + het eigen pakket in `Cargo.lock`; de kernbouw erft de appversie.
 - Release gebeurt **vanaf `main`**; feature-branch eerst mergen.
 - `release.yml` bouwt + signeert installers en publiceert `latest.json`; `snap.yml` verpakt de
   `.deb` tot Snap. Beide vuren op een `v*`-tag. **Sinds 2026-07-30 staat `SNAPCRAFT_STORE_CREDENTIALS`**
@@ -52,7 +59,9 @@ Lees de **volledige** lijst door. Dit is de bron voor zowel de changelog (uitgeb
 notes (paar bullets). Groepeer mentaal per rubriek: Added / Changed / Fixed / Documentation.
 
 ### 2. Kies de nieuwe versie
-Meestal patch +1 binnen dezelfde maand (`2026.7.12` → `2026.7.13`); nieuwe maand → `2026.8.0`.
+`npm run bump` kiest het eerstvolgende volgnummer binnen de ISO-week uit actuele origin-tags
+en de huidige versie; een nieuwe week begint bij `.0` (`2026.43.1` → `2026.44.0`). `OPS_BUMP_DATE=JJJJ-MM-DD`
+maakt de datum reproduceerbaar voor tests.
 
 ### 3. `docs/CHANGELOG.md` — de uitgebreide versiebeschrijving (eis 3)
 De changelog bevat **uitsluitend secties van échte, uitgebrachte versies** — **géén `Ongepubliceerd`-kop**,
@@ -98,7 +107,7 @@ primary-kaart met eventueel één gidslink, vier compacte secondary-kaarten zond
 link naar de GitHub-wiki. Kies daarom precies vijf gebruikersgerichte highlights en voeg in
 `src/services/updater/releaseHighlights.ts` **alleen een nieuw versieblok** toe; herschrijf geen
 copy van een al uitgebrachte versie. Dat blok bevat de primary, exact vier secondaries, de
-reproduceerbare statistieken en copy voor de veertien locales van `RELEASE_HIGHLIGHT_LOCALES` (de andere talen vallen terug op `en`).
+reproduceerbare statistieken en copy voor alle UI-locales van `RELEASE_HIGHLIGHT_LOCALES` (de 28 uit `src/i18n/locales.ts`; besluit eigenaar 2026-10-19, verplicht vanaf v2026.10.0). Blokken van vóór 2026.10.0 houden hun veertien oorspronkelijke talen en worden daarop gevalideerd; bij het tonen valt een ontbrekende locale terug op `en`.
 
 De routine-releasegegevens kennen bewust geen screenshots, afbeeldingen of layoutvelden. Wijzig
 `JustUpdatedDialog.tsx` alleen na een expliciet, afzonderlijk door de user goedgekeurd redesign;
@@ -322,7 +331,7 @@ branch en PR — `main` vereist daar een review en Nozzit heeft er géén bypass
 | Windows re-sign | Na Azure-signing klopt de updater-`.sig` niet meer; `release.yml` herbouwt de `.nsis.zip` zelf + haalt de URL via de release-API (spaties→punten in assetnamen → anders 404). |
 | Snap/AppImage | Slaan de in-app updater over (Snap Store werkt zelf bij). Detectie via `install_kind`. |
 | Snap Store publish | Sinds 2026-07-30 staat `SNAPCRAFT_STORE_CREDENTIALS` — elke release publiceert nu automatisch en onomkeerbaar naar het `stable`-kanaal. Verloopt/ontbreekt dit secret ooit weer (roteren via `snapcraft export-login`, zie `docs/release-secrets.md`), dan valt `snap.yml` stilzwijgend terug op alleen bouwen + als release-asset bijvoegen, zoals vóór 2026-07-30. |
-| Cargo.toml | Blijft `0.1.0` — `bump` raakt 'm bewust niet. |
+| Cargo.toml + Cargo.lock | `bump` houdt het eigen Rust-pakket gelijk aan de appversie; dependency-versies blijven staan. |
 | Versie-sync worktrees | Na een release lopen open worktrees achter op de versie; sync main→worktree waar relevant. |
 | latest.json markdown | De updater rendert geen markdown netjes → notes in `latest.json` = platte tekst. `scripts/release-notes.mjs --format=notes` stript inline-markdown, maar schrijf de bullets alsnog opmaak-arm. |
 | Website loopt achter | De dagelijkse Action werkt alleen de gegenereerde delen van de productpagina bij. Handgeschreven content — uitlichtblok, features, FAQ, vertalingen, screenshots — blijft op de vorige release staan tot iemand het doet. Zie stap 19. |

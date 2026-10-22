@@ -50,6 +50,7 @@ de `verify:i18n`-poort. De overige scripts draaien via hun npm-script in de kete
 | `verify-docs.ts` | `verify:docs` | de in-app gidsen in `public/docs/`: manifest v2 (`kind`, `draft`, `aliases`), nl en en verplicht (de andere taalmappen via poort 12), manifest-dekking, weesbestanden, `docs://`/`examples://`-links (incl. `#anker`), afbeeldingen (alt-tekst, bestand bestaat), of de inhoud binnen de mini-Markdown-subset blijft, en (poort 10) of elk artikel-id uit `src/state/helpArticles.ts` en de release-hoogtepunten bestaat; bewaakt daarnaast dat elke skill onder `public/skills/<naam>/SKILL.md` byte-identiek in `.claude/skills/<naam>/` staat (poort 9) en dat elk principe van `gids-goed-plannen` (nl én en) via de koppeltabel in `scripts/lib/agent-guide-coupling.ts` een tegenhanger heeft in de agentgids `public/agent/planning-guide.md` (poort 11) |
 | `verify-examples.ts` | `verify:examples` | de gebundelde voorbeeldprojecten laden en rekenen door zoals verwacht |
 | `verify-conventions.mjs` | `verify:conventions` | AST-poort van de rekenprofielen (ook aangeroepen door `tests/planning/check-conventions-boundary.ts`): de motor (`src/engine/` plus de motorhelper `src/utils/p6SuspendResume.ts`) leest geen bronformaat (`p6Source`/`importFormat`/`readFormat`/`xerSourceProjectId`/`xerSourceArchive`/`xerImportMetadata`, ook via string-index, `in` of destructuring; geen lezer-, `formatRegistry`- of `xerSourceArchive`-imports en geen niet-letterlijke dynamische imports); opties-sleutels alleen uit het register (`convention('…')` in `CONVENTIONS` plus de projectopties uit `interface SchedulingOptions`): een onbekende of niet-letterlijke sleutel op een opties-object, `Reflect.get`/`Object.keys|values|entries` op een opties-object (ook via hernoemde imports, type-aliassen en `import('…')`-typen), een registerconventie die in geen vanuit `solveProject.ts` bereikbaar bestand gelezen wordt, en een ongepind herkomstveld (`p6…`/`xer…`/`mpp…`/`msp…`/`mpx…` dat geen eigen lid op `this` of op een in hetzelfde bestand gedeclareerd object is) zijn rood (Fable-critreview PR #169, bevinding 4 + critreview 2e ronde). Grens: syntactisch, dus een opties-object dat via een helper in een ander bestand onder een neutrale naam binnenkomt, of een waarde die al als `any` binnenkomt, ziet de poort niet; herkomst-datagates (ook via destructuring en `in`) gepind in `verify-conventions.datagates.json`, alleen omlaag (`--write-baseline` herpint, alleen als alles groen is). Een optionele `verify-conventions.allowlist.json` kan overgangscode tijdelijk vrijstellen (alleen namen, alleen bestaande bestanden, reden met de overgangsmarkering); in de eindstand bestaat hij niet |
+| `verify-core-package.mjs` | `verify:core-package` | bouwt het kernpakket in een tijdelijke map, `npm pack`, installeert de tarball in een kopie van `headless/consumer-example/`, draait het voorbeeld (verwachte uitkomst voor `examples/01-grachtenpand-amsterdam.ifc`, herberekend IFC, foutcode) en typecheckt een TypeScript-consument tegen de declaraties. Zie `docs/headless-kern.md` |
 
 ## Vertaalstraat (`npm run translate`)
 
@@ -503,6 +504,22 @@ Maak een baseline daarom nooit langs ze heen:
 | `browser-shards.mjs` | `run-browser-tests.mjs` (`--duration-shard`); unit-test `tests/dev-server/browser-shards.test.mjs` | verdeelt de browserspecs op gemeten duur (`tests/browser/spec-durations.json`, langste eerst naar de lichtste shard) over de CI-shards; elke spec in precies één shard, ook zonder meting; `node scripts/browser-shards.mjs 4` toont de indeling, `--update "<bron>" <joblogs>` ververst de duren uit de CI-logs van een groene run |
 | `browser-test-server.mjs` | `webServer.command` in `playwright.config.ts`; `tests/dev-server/integration.sh` | leest `OPS_BROWSER_TEST_PORT` (moet in de browserbaan liggen), claimt het guard-slot voor die poort en start Vite op `127.0.0.1` (Playwright pollt bewust IPv4); geeft het slot bij afsluiten weer vrij |
 
+## Nulmeting grote planningen (niet in `verify`, niet in CI)
+
+`npm run measure:large-plans` → `measure-large-plans.mjs`, met `measure-large-plans-data.ts` (via
+`run-ts.mjs`) voor de datasets. Meet de prestaties bij 1.000, 5.000 en 10.000 activiteiten (#405 deel 2.4):
+openen, F5, nivelleren, autosave-tick, herstel, opslaan en de tijd per Gantt-tekening bij scrollen en zoomen.
+De datasets komen uit `generateBenchmarkProject` (vaste seed). De browsermeting draait op een tijdelijke
+productiebuild met `VITE_OPS_BENCH_BRIDGE=1`, geserveerd op `127.0.0.1` met een vrije poort, in headless
+Playwright-Chromium; elke herhaling krijgt een verse browsercontext. Het script legt commit, hardware, OS,
+Node- en Chromiumversie vast en schrijft één JSON-bestand (standaard
+`build/measure-large-plans/<datum>-<commit>.json`) plus een Markdown-tabel op stdout. Vlaggen:
+`--sizes 1000,5000,10000`, `--repeats 3`, `--out PAD`, `--dist BESTAANDE-BUILD`, `--headed`,
+`--skip fase,…` (`interaction`, `f5`, `level`, `autosave`, `recovery`, `save`; zonder `level` is er geen
+wijziging, dus dan mislukken autosave en herstel), `--step-timeout-s 900`. Exit 1 als een fase mislukt of een
+time-out geeft. Het script stelt
+geen doelen of drempels. De nulmeting staat in `docs/superpowers/evidence/nulmeting-grote-planningen.md`.
+
 ## Handmatige hulpmiddelen (geen aanroeper)
 
 Deze vijf worden door geen npm-script, workflow, ander script of test aangeroepen; ze zijn alleen met
@@ -535,19 +552,44 @@ keer met `--base /tools/planner/` en laadt de app vanaf dat subpad.
 Let op in Git Bash op Windows: die zet een argument als `/pad/` om naar een Windows-pad; gebruik daar
 `MSYS_NO_PATHCONV=1`.
 
+## Headless kern (`@openaec/open-planner-core`)
+
+| script | npm-script | doet |
+|---|---|---|
+| `build-core.mjs` | `npm run build:core` | bundelt `src/core/index.ts` met esbuild tot één ESM-bestand voor Node 22 in `dist-core/` (of `--out <map>`), met typedeclaraties (`ts.transpileDeclaration`, alleen `index.d.ts` en `api.d.ts`, die niet naar interne modules mogen wijzen), een gegenereerde `package.json` (versie en licentie uit de root), de eigen licentieteksten en `THIRD-PARTY-NOTICES.md` (per meegebundeld pakket uit de metafile: naam, versie en volledige licentietekst; zonder licentiebestand faalt de bouw). Faalt als React, Tauri, `src/state/appStore.ts`, UI-componenten of de i18n-UI-config in de bundel komen. Publiceert niets. Zie `docs/headless-kern.md` |
+
 ## Release en publicatie
 
 | script | aangeroepen door | doet |
 |---|---|---|
-| `bump-version.js` | `npm run bump X.Y.Z` | CalVer synchroon zetten in `package.json`, `tauri.conf.json` en de lockfile (`Cargo.toml` blijft bewust `0.1.0`) |
+| `bump-version.js` | `npm run bump [JJJJ.W.N]` | zonder argument: ISO-weekjaar/week van vandaag + hoogste volgnummer uit actuele origin-tags (`git ls-remote --tags origin 'v*'`) en de huidige versie plus 1 (of `.0` als beide ontbreken in die week). Ontbrekende/onbereikbare origin stopt zonder schrijven; geen lokale terugval; expliciet: schema en downgrade bewaken. Synct app, npm-lockfile, Cargo + eigen lockpakket, beide headless-pakketten, OpenAPI-documentversie en Snap. Kernbouw erft de appversie. `OPS_BUMP_DATE=JJJJ-MM-DD` of functieargumenten voor datum/tags in tests; `--check JJJJ.W.N` controleert alle velden tegen de releasetag zonder schrijven. Tests: `tests/dev-server/bump-version.test.mjs` (onderdeel van `npm test`). |
 | `release-notes.mjs` | `.github/workflows/release.yml` (twee plekken) | `docs/release-notes/v<versie>.md` → `--format=body` voor de GitHub-releasepagina, `--format=notes` (platte tekst) voor het `notes`-veld in `latest.json` |
-| `release-highlights.mjs` | `npm run verify:release-highlights` en `.github/workflows/release.yml` (met de tagversie) | start de getypeerde releasehighlight-verifier: eist één volledig versieblok met 14 locales, één primary en vier secondary-kaarten zonder gidslink, veilige pictogrammen en reproduceerbare Git-cijfers; docs, vertalingen, lock-, gegenereerde en vendorbestanden tellen niet mee |
+| `release-highlights.mjs` | `npm run verify:release-highlights` en `.github/workflows/release.yml` (met de tagversie) | start de getypeerde releasehighlight-verifier: eist één volledig versieblok met alle 28 UI-locales (blokken van vóór 2026.10.0: de 14 oorspronkelijke), één primary en vier secondary-kaarten zonder gidslink, veilige pictogrammen en reproduceerbare Git-cijfers; docs, vertalingen, lock-, gegenereerde en vendorbestanden tellen niet mee |
 | `verify-release-highlights.ts` | `release-highlights.mjs` hierboven (via `run-ts.mjs`; argumenten gaan door) | de eigenlijke verifier: valideert de catalogus in `src/services/updater/releaseHighlights.ts` voor de versie (argument, anders `package.json`) en vergelijkt de bewaarde cijfers (dagen, commits, toegevoegde coderegels) met `git` tussen de vorige stabiele tag en de huidige tag of `HEAD` |
 | `build-release-highlights-json.ts` | `npm run gen:release-highlights-json` (schrijven) en `npm run verify:release-highlights-json` (poort, in de `verify`-keten); tijdens een release stap 4a van de `release`-skill | genereert `public/release-highlights.json` uit `src/services/updater/releaseHighlights.ts` — de webbuild serveert dat als `https://open-planner-studio.open-aec.com/release-highlights.json` voor de releasetijdlijn op open-aec.com; `--check` faalt (exit 1) zodra het bestand achterloopt op de catalogus (`generated` telt niet mee) |
 | `verify-package-docs.mjs` | `.github/workflows/snap.yml`, direct na de Snap-build | leest de executable uit de zojuist gebouwde Snap en eist dat het manifest plus de aanwezige Help-artikelen (en per taal `index.json`) uit elke taalmap onder `public/docs/` als Tauri-assets zijn ingesloten, vóór upload of Store-publicatie |
 | `publish-wiki.mjs` | `npm run publish:wiki` | genereert de GitHub-wiki uit `public/docs/en`, `docs/wiki/*` en de changelog. De wiki is een build-artefact — nooit met de hand bewerken |
+| `check-wiki-links.ts` | `node scripts/run-ts.mjs scripts/check-wiki-links.ts [map]` | controleert de gegenereerde wiki (standaard `.wiki-build`), slaat codevoorbeelden over en faalt bij echte dode links; publiceert niets |
 | `download-stats.mjs` | `npm run stats:downloads` en `.github/workflows/download-stats.yml` (wekelijks + op verzoek) | downloadcijfers per besturingssysteem uit de `download_count` per release-asset van de GitHub Releases-API — tekst, markdown of JSON. Let op: Linux is install+update samen (de updater haalt hetzelfde `.deb`/`.rpm`/`.AppImage` op), de Snap Store zit er niet in, `.sig`-bestanden tellen niet mee. Unit-test: `tests/dev-server/download-stats.test.mjs` |
+| `windows-sign.ps1` | `.github/workflows/release.yml` (build-windows) en `.github/workflows/windows-sign-check.yml` | Authenticode met Azure Artifact Signing. `-Setup`: haalt de Microsoft-signeerclient (NuGet `Microsoft.ArtifactSigning.Client`, vaste versie, SHA512 gecontroleerd) en schrijft een Tauri-config-override met `bundle.windows.signCommand`; `<bestand>`: tekent één bestand (signtool, SHA256, RFC 3161-tijdstempel). Uitleg: `docs/release-verificatie.md` |
+| `verify-release.mjs` | `.github/workflows/release-verify.yml` (Linux-jobs); met de hand: `node scripts/verify-release.mjs [<tag>] [--dir <map>] [--out <rapport.md>]` | controleert de assets van één release: elke updater-`.sig` (minisign, tegen de pubkey in `tauri.conf.json`), `latest.json` (URL → asset, signature = asset-`.sig`), sha256 tegen de GitHub-`digest`, en informatief de codesign in de macOS-`app.tar.gz`. Markdown-rapport; exit 0 OK, 1 FOUT, 2 crash. Uitleg: `docs/release-verificatie.md`. Unit-test: `tests/dev-server/verify-release.test.mjs` |
+| `release-check.ps1` | `.github/workflows/release-verify.yml` (Windows-job, dot-source) | `Record` (zelfde TSV-log als `release-check.sh`) en `Test-Alive`: start een programma en registreert alleen OK als er na de wachttijd echt een proces draait; een mislukte start is FOUT. Test: `tests/dev-server/release-check.test.mjs` (als `pwsh` er is) |
+| `release-check.sh` | `.github/workflows/release-verify.yml` | boekhouding per job: `run`/`alive`/`record` leggen een controle vast zonder de job te stoppen; `finish` schrijft de tabel naar de job-samenvatting en faalt alleen bij een FOUT in strenge modus (`RELEASE_VERIFY_STRICT=1`); `valid-tag` keurt een tag als hele waarde. Exit 3 = kapotte infrastructuur (commando weg, exit 126/127, syntaxfout), ook in rapportmodus hard. Test: `tests/dev-server/release-check.test.mjs` |
+| `aur/render-pkgbuild.mjs` | `.github/workflows/aur.yml` | vult `packaging/aur/PKGBUILD` in (pkgver, pkgrel, sha256) voor een stabiele release en biedt een lokale vergelijking van twee `.SRCINFO`-bestanden. De push-stap vergelijkt versies met systeemgereedschap en voert geen uitgecheckte scripts uit met de SSH-sleutel in de omgeving. Test: `node --test scripts/aur/render-pkgbuild.test.mjs` |
+| `aur/build-in-container.sh` | `.github/workflows/aur.yml`, in de container `archlinux:base-devel` | `makepkg` als gewone gebruiker, `.SRCINFO`, `namcap` (een `E:` is fout), het pakket installeren, `ldd` zonder ontbrekende bibliotheken, en pacman bezit `/usr/bin/open-planner-studio` |
 | `publish-stats-branch.sh` | `.github/workflows/download-stats.yml`, direct na het genereren | schrijft `download-stats.json` als `downloads.json` naar de `stats`-databranch met git-plumbing (`hash-object` → `mktree` → `commit-tree` → gewone push, dus geen checkout en geen force). Vaste leeslocatie: `https://raw.githubusercontent.com/OpenAEC-Foundation/open-planner-studio/stats/downloads.json` — hetzelfde raw-patroon als de extensiecatalogus, CORS-vrij, en een push naar `stats` triggert geen CI of deploy. Regressietest tegen een tijdelijke bare repo: `tests/dev-server/publish-stats-branch.test.mjs` |
+
+### AUR-pakket
+
+`aur.yml` vult `packaging/aur/PKGBUILD` in na een stabiele release, test hem in een
+`archlinux`-container en pusht alleen met het secret `AUR_SSH_PRIVATE_KEY`.
+
+Een pakketreparatie bij dezelfde release: zet `pkgver` in `packaging/aur/PKGBUILD` eerst op
+de releaseversie en verhoog daarna `pkgrel`. Bij een afwijkende sjabloonversie zet de renderer
+`pkgrel` namelijk terug op 1.
+
+Lokaal controleren: `node --test scripts/aur/render-pkgbuild.test.mjs` en
+`actionlint .github/workflows/aur.yml`.
 
 ## Overig
 
