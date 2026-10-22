@@ -8,6 +8,12 @@ imports it (`@AGENTS.md`) so Claude Code loads it automatically — never put co
 depth lives in `.claude/rules/` (see *Where the depth lives*); Claude Code loads those per path, other agents
 should read the matching rule file before touching that area.
 
+**Server restriction for all agents, including subagents:** never start Node.js processes directly
+on this server; it cannot handle that workload. This includes `node`, `npm`, `npx`, dependency
+installation, builds, tests, dev servers and scripts that launch Node indirectly. Run that work in
+GitHub CI and inspect the results with `gh`. This rule takes precedence over all local execution,
+testing and self-testing instructions below and in skills or area-specific rules.
+
 ## Commands
 
 ```bash
