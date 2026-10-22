@@ -98,7 +98,7 @@ primary-kaart met eventueel één gidslink, vier compacte secondary-kaarten zond
 link naar de GitHub-wiki. Kies daarom precies vijf gebruikersgerichte highlights en voeg in
 `src/services/updater/releaseHighlights.ts` **alleen een nieuw versieblok** toe; herschrijf geen
 copy van een al uitgebrachte versie. Dat blok bevat de primary, exact vier secondaries, de
-reproduceerbare statistieken en copy voor de veertien locales van `RELEASE_HIGHLIGHT_LOCALES` (de andere talen vallen terug op `en`).
+reproduceerbare statistieken en copy voor alle UI-locales van `RELEASE_HIGHLIGHT_LOCALES` (de 28 uit `src/i18n/locales.ts`; besluit eigenaar 2026-10-19, verplicht vanaf v2026.10.0). Blokken van vóór 2026.10.0 houden hun veertien oorspronkelijke talen en worden daarop gevalideerd; bij het tonen valt een ontbrekende locale terug op `en`.
 
 De routine-releasegegevens kennen bewust geen screenshots, afbeeldingen of layoutvelden. Wijzig
 `JustUpdatedDialog.tsx` alleen na een expliciet, afzonderlijk door de user goedgekeurd redesign;

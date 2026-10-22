@@ -135,7 +135,7 @@
   "barColorMode_auto": "По задатку — аутоматски",
   "barColorMode_category": "По категорији",
   "barColorFieldLabel": "Поље категорије",
-  "barColorMissingField": "Ово поље не постоји у овом пројекту. Привремено се користи тип задатка.",
+  "barColorMissingField": "Ово поље не постоји у овом пројекту. Привремено се користи врста радова.",
   "statusLineLabel": "Линија статуса:",
   "statusLine_none": "Нема",
   "statusLine_statusDate": "Линија датума статуса",

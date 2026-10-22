@@ -114,9 +114,13 @@ test('Gantt-balk vertical slepen verplaatst de taak zonder haar datums te wijzig
     { name: 'Balk-doel', start: '2026-09-07', finish: '2026-09-18', durationDays: 10 },
     { name: 'Blijft derde', start: '2026-09-07', finish: '2026-09-18', durationDays: 10 },
   ]);
+  // Knownbug 70: anders dan de lijst vernauwt de balk-mousedown een meervoudige selectie.
+  // De fixture selecteert twee taken; de echte balksleep mag uitsluitend de eerste verplaatsen.
+  await page.evaluate(ids => window.__OPS__!.store.getState().selectTasks(ids, false), [firstId, secondId]);
+  await expect.poll(() => state(page).then(s => s.selectedTaskIds)).toEqual([firstId, secondId]);
   const before = await state(page);
   const source = await barPoint(page, firstId, 'body');
-  const targetRow = ganttTaskRow(page, secondId);
+  const targetRow = ganttTaskRow(page, thirdId);
   const target = await rowPoint(targetRow, 'after');
 
   await page.mouse.move(source.x, source.y);
@@ -128,7 +132,7 @@ test('Gantt-balk vertical slepen verplaatst de taak zonder haar datums te wijzig
   await page.mouse.up();
 
   await expect.poll(() => state(page).then(snapshot => snapshot.tasks.map(task => task.id)))
-    .toEqual([secondId, firstId, thirdId]);
+    .toEqual([secondId, thirdId, firstId]);
   const after = await state(page);
   expect(after.tasks.find(task => task.id === firstId)).toMatchObject({
     scheduleStart: '2026-09-07',
