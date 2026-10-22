@@ -14,6 +14,7 @@ import { fileURLToPath } from 'node:url';
 import {
   replaceUserFile, isForbiddenPathError, USER_FILE_TMP_SUFFIX, type UserFileFs,
 } from '@/services/fileAccess/atomicWrite';
+import { compareFilePaths, type FileIdentityInfo, type FileIdentityFs } from '@/services/fileAccess/fileIdentity';
 
 declare const process: { exit(code: number): never };
 
@@ -164,6 +165,77 @@ for (const link of ['sym', 'hard'] as const) {
   const fileTools = read('services/mcp/tools/fileTools.ts');
   truthy('7c MCP export_ifc (overwrite) via writeUserTextFileTauri', fileTools.includes('writeUserTextFileTauri(')
     && !/\bwriteTextFile\(p,/.test(fileTools));
+}
+
+// 8. Identiteitsbewaking vóór een stille MCP-export. `stat` volgt links; de fixture beschrijft
+//    daarom OS-objecten (dev+ino), niet de tekst van een pad of de bytes van een bestand.
+{
+  const source = '/volume/Model.ifc';
+  const entries = new Map<string, FileIdentityInfo>([
+    [source, { isFile: true, dev: 1, ino: 20 }],
+    ['/volume/model.ifc', { isFile: true, dev: 1, ino: 21 }], // case-sensitive: ander bestand
+    ['/volume/link.ifc', { isFile: true, dev: 1, ino: 20 }],
+    ['/volume/maplink/Model.ifc', { isFile: true, dev: 1, ino: 20 }],
+    ['/ander-volume/Model.ifc', { isFile: true, dev: 2, ino: 20 }],
+  ]);
+  const fs: FileIdentityFs = {
+    stat: async path => {
+      const entry = entries.get(path);
+      if (!entry) throw `failed to get metadata of path: ${path} with error: No such file or directory (os error 2)`;
+      return entry;
+    },
+  };
+  eq('8a hetzelfde pad is hetzelfde bestand', await compareFilePaths(fs, source, source), 'same');
+  eq('8b twee bestaande case-sensitive namen zijn verschillend',
+    await compareFilePaths(fs, '/volume/model.ifc', source), 'different');
+  for (const alias of ['/volume/link.ifc', '/volume/maplink/Model.ifc']) {
+    eq(`8c ${alias} volgt de bronidentiteit`, await compareFilePaths(fs, alias, source), 'same');
+  }
+  entries.set('/volume/model.ifc', entries.get(source)!); // case-insensitive: hetzelfde OS-object
+  eq('8d een case-alias met dezelfde identiteit is hetzelfde bestand',
+    await compareFilePaths(fs, '/volume/model.ifc', source), 'same');
+  eq('8e hetzelfde inode-nummer op een ander device is een ander bestand',
+    await compareFilePaths(fs, '/ander-volume/Model.ifc', source), 'different');
+  eq('8f een nieuw exportpad is vrij zonder metadata van een mogelijk ontoegankelijke bron',
+    await compareFilePaths(fs, '/volume/nieuw.ifc', '/ontoegankelijk/bron.ifc'), 'different');
+  const missingAsError: FileIdentityFs = { stat: async () => {
+    throw new Error('failed to get metadata of path: /volume/nieuw.ifc with error: No such file or directory (os error 2)');
+  } };
+  eq('8f een Error met ENOENT wordt net als de native string als nieuw doel herkend',
+    await compareFilePaths(missingAsError, '/volume/nieuw.ifc', source), 'different');
+
+  // Ontbrekende en onbetrouwbare IDs zijn geen bewijs van verschil, ook als het andere veld verschilt.
+  for (const info of [
+    { isFile: true, dev: null, ino: null },
+    { isFile: true, dev: 2, ino: null },
+    { isFile: true, dev: null, ino: 30 },
+    { isFile: true, dev: 2, ino: 0 },
+    { isFile: true, dev: 2, ino: Number.MAX_SAFE_INTEGER + 1 },
+    { isFile: true, dev: Number.MAX_SAFE_INTEGER + 1, ino: 30 },
+    { isFile: true, dev: 2, ino: NaN },
+    { isFile: true, dev: -1, ino: 30 },
+    { isFile: true, dev: 2, ino: 1.5 },
+    { isFile: false, dev: 2, ino: 30 },
+  ]) {
+    entries.set('/volume/onbekend.ifc', info);
+    eq(`8g onbetrouwbare doelmetadata ${J(info)}`, await compareFilePaths(fs, '/volume/onbekend.ifc', source), 'unknown');
+    eq(`8h onbetrouwbare bronmetadata ${J(info)}`, await compareFilePaths(fs, source, '/volume/onbekend.ifc'), 'unknown');
+  }
+
+  for (const error of [
+    'forbidden path: /volume/model.ifc',
+    new Error('failed to get metadata of path: /volume/model.ifc with error: Permission denied (os error 13)'),
+    'failed to get metadata of path: /volume/model.ifc with error: Too many levels of symbolic links (os error 40)',
+    'failed to get metadata of path: /volume/model.ifc with error: I/O error (os error 5)',
+    'failed to get metadata of path: /volume/model.ifc with error: Unknown failure (os error 3)',
+    'unknown metadata error (os error 2)', // niet de concrete plugin-fs-foutvorm
+  ]) {
+    const failing: FileIdentityFs = { stat: async () => { throw error; } };
+    eq(`8i fout is geen bewijs van een vrij doel: ${String(error)}`,
+      await compareFilePaths(failing, '/volume/model.ifc', source), 'unknown');
+  }
+  eq('8j een ontbrekende bron bewijst niet dat een bestaand exportdoel veilig is',
+    await compareFilePaths(fs, source, '/volume/verdwenen.ifc'), 'unknown');
 }
 
 if (diffs.length === 0) {

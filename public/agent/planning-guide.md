@@ -4,6 +4,8 @@ This guide is for an AI agent that builds or maintains a schedule in Open Planne
 
 Where this guide and a tool description disagree, the tool description wins: read it in `tools/list`, it comes straight from the code. Never guess a tool name or a parameter. The copy of this guide that `planner_get_planning_guide` returns belongs to the app version you are connected to; if it differs from the public URL, the copy from the tool wins.
 
+When exporting with `planner_export_ifc`, an unsupported source schema such as IFC2X3 must never be silently replaced in the opened file, including through a case alias or link. A different path spelling is not proof of a different file. If file identity cannot be established (including missing file IDs on Windows), the tool refuses an existing target. Choose a new file name, or ask the user to save in the app and choose the schema. Export does not change the document's save target or resolve its open schema question.
+
 Two skills go with this guide. `planner_get_planning_guide` returns this guide and both skills, with the paths where a skill belongs:
 
 - `goed-plannen`: building or restructuring a schedule (https://open-planner-studio.open-aec.com/skills/goed-plannen/SKILL.md)
