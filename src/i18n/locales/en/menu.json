@@ -418,6 +418,8 @@
     "quarantineEmptyName": "Invalid extension",
     "catalogEntriesSkipped": "Skipped catalog entries: {{count}}",
     "storageWriteFailed": "The extension status could not be saved.",
+    "minAppVersionRequired": "Requires Open Planner Studio ≥ {{minVersion}} (current version: {{appVersion}})",
+    "missingPermission": "Extension \"{{extensionId}}\" is missing permission: {{permission}}",
     "import": "Import",
     "importSubtitle": "Import project data through installed extensions.",
     "importEmpty": "No import extensions installed. Add one via Extensions."

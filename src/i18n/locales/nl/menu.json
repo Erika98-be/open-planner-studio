@@ -418,6 +418,8 @@
     "quarantineEmptyName": "Ongeldige extensie",
     "catalogEntriesSkipped": "Overgeslagen catalogusitems: {{count}}",
     "storageWriteFailed": "De extensiestatus kon niet worden opgeslagen.",
+    "minAppVersionRequired": "Vereist Open Planner Studio ≥ {{minVersion}} (huidige versie: {{appVersion}})",
+    "missingPermission": "Extensie \"{{extensionId}}\" mist permissie: {{permission}}",
     "import": "Importeren",
     "importSubtitle": "Importeer projectdata via geïnstalleerde extensies.",
     "importEmpty": "Geen import-extensies geïnstalleerd. Voeg er een toe via Extensies."

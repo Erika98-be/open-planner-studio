@@ -1,4 +1,6 @@
+import { readFileSync } from 'node:fs';
 import { expect, test, waitForOps } from './fixtures/ops';
+import { chooseLocale, LOCALE_CASES } from './fixtures/locale';
 
 test('extension storage: reparatie vervangt quarantaine zonder het geldige record te bedreigen', async ({ page, ops: _ops }) => {
   test.setTimeout(60_000);
@@ -404,4 +406,52 @@ test('mislukte lokale extensie-installatie meldt de fout; annuleren meldt niets'
   expect(await page.evaluate(() => window.__OPS__!.store.getState().ui.notifications)).toHaveLength(0);
   expect(await page.evaluate(() => Object.keys(window.__OPS__!.store.getState().installedExtensions))).toEqual([]);
 
+  // Een geldig bestand kan wel installeren maar niet activeren. Beide guards tonen hun concrete
+  // reden op de kaart, via echte JS-installaties en opnieuw inschakelen na een taalkeuze.
+  const appVersion = (JSON.parse(readFileSync('package.json', 'utf8')) as { version: string }).version;
+  const failures = [
+    {
+      id: 'language-min-version', minAppVersion: '9999.12.3',
+      code: 'module.exports = { onLoad() {} };',
+      en: `Requires Open Planner Studio ≥ 9999.12.3 (current version: ${appVersion})`,
+      nl: `Vereist Open Planner Studio ≥ 9999.12.3 (huidige versie: ${appVersion})`,
+    },
+    {
+      id: 'language-permission', minAppVersion: '0.0.0',
+      code: "module.exports = { onLoad(api) { api.events.emit('fixture:denied'); } };",
+      en: 'Extension "language-permission" is missing permission: events',
+      nl: 'Extensie "language-permission" mist permissie: events',
+    },
+  ];
+  for (const failure of failures) {
+    ops.acceptError(`[Extensies] Activeren van "${failure.id}" mislukt:`);
+    const manifest = {
+      id: failure.id, name: failure.id, version: '1.0.0', apiVersion: '1.0',
+      minAppVersion: failure.minAppVersion, author: 'Browserfixture', description: '',
+      category: 'Utility', main: 'main.js', permissions: [],
+    };
+    const chooser = page.waitForEvent('filechooser');
+    await page.getByRole('button', { name: 'JS', exact: true }).click();
+    await (await chooser).setFiles({
+      name: `${failure.id}.js`, mimeType: 'text/javascript',
+      buffer: Buffer.from(`/* @manifest ${JSON.stringify(manifest)} */\n${failure.code}`),
+    });
+    await page.locator('[data-ops-ext-consent-confirm]').click();
+    const card = page.getByTestId('extension-ready-card').filter({ hasText: failure.id });
+    await expect(card.locator('.ext-card-error-msg')).toHaveText(failure.en);
+    await expect(card.getByRole('button', { name: 'Enable', exact: true })).toBeEnabled();
+  }
+
+  await page.locator('[data-ops-backstage-back]').click();
+  await chooseLocale(page, LOCALE_CASES[2]); // Nederlands, via de echte taalkiezer.
+  await page.getByRole('button', { name: 'Bestand', exact: true }).click();
+  await page.getByRole('button', { name: 'Extensies', exact: true }).click();
+  for (const failure of failures) {
+    const card = page.getByTestId('extension-ready-card').filter({ hasText: failure.id });
+    await card.getByRole('button', { name: 'Inschakelen', exact: true }).click();
+    await expect(card.locator('.ext-card-error-msg')).toHaveText(failure.nl);
+    expect(await page.evaluate(id => window.__OPS__!.store.getState().installedExtensions[id]?.status, failure.id))
+      .toBe('error');
+  }
+  expect(await page.evaluate(() => window.__OPS__!.store.getState().ui.notifications)).toHaveLength(0);
 });
