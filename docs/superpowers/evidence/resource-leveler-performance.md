@@ -87,7 +87,7 @@ als `NULDOEL (regel A gehouden)`. MS Project: exit 0, 2.196 checks over 661 best
 vangrails exit 0. Geen herpin uitgevoerd.
 
 Bij de review werd daarnaast een mogelijke B3/dagkalender-TypeError op de basiscommit gemeld.
-Die is niet zelfstandig bevestigd en uitsluitend als S-item 184 in `knownbugs.md` vastgelegd.
+Die is niet zelfstandig bevestigd en uitsluitend als S-item 186 in `knownbugs.md` vastgelegd.
 
 De volledige planning-/tijdzonematrix en CI worden volgens de laatste werkverdeling door de parent
 bewaakt. Geen prestatiebudget, profielbaseline of semantische uitzondering is verruimd.
@@ -108,8 +108,8 @@ bash tests/planning/run.sh check-leveler-forward.ts check-leveler-differential.t
 Main `3a2f597f33c4da4b8948ccc922cea18664ae82eb` is met normale mergecommits opgenomen,
 inclusief #481 (IFC-lezen), #482 (F5-schrijfpad), #483 (recovery-worker) en #503 (MPP-importverslag).
 Het enige tekstconflict was `knownbugs.md`: de op main opgeloste bug 121 blijft verwijderd; alle
-andere main-mutaties blijven staan. De onbevestigde B3-bijvangst heet nu 184, omdat main nummer 176
-voor MSPDI gebruikt. De documentverwijzing is mee aangepast.
+andere main-mutaties blijven staan. De onbevestigde B3-bijvangst heet uiteindelijk 186; de aanvankelijk gekozen nummers
+176 en 184 waren inmiddels ook op main gebruikt. De documentverwijzing is mee aangepast.
 
 De automatisch samengevoegde `CPMSolver.ts` behoudt de nieuwe externe-lag-omrekening en de
 A22-uitleg van main; `ResourceLeveler.ts` behoudt de intrinsieke piekdetails uit #419. De geteste
@@ -127,8 +127,21 @@ externe lag, F5-schrijfpad en recovery-worker) plus 25 resource-leveling-cases e
 `npm run measure:profiles` eindigt bij deze integratie op **exit 1**: MS Project heeft voor het
 publieke `timephased-cost-rollup.mpp` drie einddatumafwijkingen van de pin (`finishExact` 9 → 6,
 `finishDiff` 0 → 3). Een controlebundel met `CPMSolver.ts` én `ResourceLeveler.ts` rechtstreeks
-uit main `3a2f597f3`, en alle overige productbronnen gelijk aan main, heeft exact dezelfde
-fidelity-uitkomst (exit 1). Er zijn geen baselines herpind. Bijvangst: knownbug 185.
+uit main `3a2f597f3`, en alle overige ingeladen productbronnen gelijk aan main, heeft exact dezelfde
+fidelity-uitkomst (exit 1). Er zijn geen baselines herpind. Bijvangst: knownbug 187.
 P6 houdt alle 221 bestaande inexacte cellen zonder enige celmutatie; zijn bestaande nuldoel
 geeft subcheck-exit 1, geclassificeerd als `NULDOEL (regel A gehouden)`.
 De corpusloze profielvangrails zijn groen (exit 0).
+
+De laatste opgenomen main is `86024504cf422d489b36f2a19775a9b72329a553`: #478 voegt alleen
+voorstel-UI, browserdekking en bewijs toe; #507 ontsnapt de MSPDI-projectstart en heeft eigen
+XML-adapterdekking. Geen van beide wijzigt de geteste enginebestanden of de F5/recovery-kern.
+Daarom zijn de engine-/profielruns niet herhaald, volgens de aanvullende opdracht. De bestaande
+main-bijvangstnummers 184 (APT) en 185 (MSPDI) blijven behouden; onze notities zijn 186 (B3) en
+187 (MPP-fidelity). Er zijn geen main-mutaties teruggedraaid.
+
+De nieuwe XML-adapterregressie uit #507 is op de uiteindelijke integratie uitgevoerd:
+`bash tests/planning/run.sh check-xml-adapter-fidelity.ts` — 120 checks, exit 0.
+Gerichte ESLint op de drie motorbestanden, `verify:conventions` en `verify:i18n` hebben exit 0.
+Na de laatste UI/XML-merge zijn engine-, F5- en recovery-bronnen bytegelijk aan de reeds geteste
+combinatie; typecheck en de engine-/profielbatterijen zijn daarom niet opnieuw gestart.

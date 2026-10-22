@@ -7,6 +7,7 @@ import { parseDate } from '@/utils/dateUtils';
 import { LEVELING_REASON_KEY } from '@/utils/levelingReasonKey';
 import { levelInBackground, LevelingCancelledError, type BackgroundLeveling } from '@/services/leveling/backgroundLeveling';
 import { LEVELING_HELP_ARTICLE_ID } from '@/state/helpArticles';
+import { LevelingPreviewTable } from './LevelingPreviewTable';
 
 function fmt(iso: string): string {
   if (!iso) return '—';
@@ -118,8 +119,9 @@ export function LevelingDialog() {
   // FS-opvolgers die alleen via de forward pass meeschuiven (die zaten niet in `delays`).
   const rows = useMemo(() => {
     if (!result) return [];
+    const tasksById = new Map(tasks.map(task => [task.id, task]));
     return Object.entries(result.shifts).map(([taskId, shift]) => {
-      const task = tasks.find(t => t.id === taskId);
+      const task = tasksById.get(taskId);
       return { taskId, name: task?.name || taskId, oldStart: shift.oldStart, newStart: shift.newStart, delay: shift.delta };
     }).sort((a, b) => a.oldStart.localeCompare(b.oldStart));
   }, [result, tasks]);
@@ -221,26 +223,7 @@ export function LevelingDialog() {
               {rows.length === 0 ? (
                 <div className="text-text-secondary">{t('resource.leveling.noChanges')}</div>
               ) : (
-                <table className="w-full border-collapse">
-                  <thead>
-                    <tr style={{ color: 'var(--theme-text-dim)' }}>
-                      <th className="text-left px-2 py-1 font-semibold border-b border-border">{t('resource.leveling.colTask')}</th>
-                      <th className="text-left px-2 py-1 font-semibold border-b border-border">{t('resource.leveling.colOldStart')}</th>
-                      <th className="text-left px-2 py-1 font-semibold border-b border-border">{t('resource.leveling.colNewStart')}</th>
-                      <th className="text-right px-2 py-1 font-semibold border-b border-border">{t('resource.leveling.colShift')}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {rows.map(row => (
-                      <tr key={row.taskId} className="border-b border-border-light">
-                        <td className="px-2 py-1 truncate" style={{ maxWidth: 260 }} title={row.name}>{row.name}</td>
-                        <td className="px-2 py-1">{fmt(row.oldStart)}</td>
-                        <td className="px-2 py-1">{fmt(row.newStart)}</td>
-                        <td className="px-2 py-1 text-right">{t('resource.leveling.shiftDays', { count: row.delay })}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                <LevelingPreviewTable rows={rows} formatDate={fmt} />
               )}
 
               {conflicts.length > 0 && (
