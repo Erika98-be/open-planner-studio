@@ -48,6 +48,22 @@ test('voltooide rondleiding → tutorialvraag; Ja met een geïnstalleerde tutori
   await expect(offer(page)).toHaveCount(0);
   await expect(page.locator('[data-ops-guide-panel="tut-1-eerste-planning"]')).toBeVisible();
   expect(await answered(page)).toBe('true');
+
+  // Knownbug 66: lever de automatische update-uitkomst aan terwijl de echte begeleiding loopt.
+  // De gebruiker sluit daarna zelf de gids; pas dan mag de wachtende dialoog verschijnen.
+  await page.evaluate(async () => {
+    const updatePath = '/src/hooks/useUpdateCheck.ts';
+    const { openUpdateDialogWhenIdle } = await import(/* @vite-ignore */ updatePath);
+    openUpdateDialogWhenIdle();
+  });
+  expect(await page.evaluate(() => window.__OPS__!.store.getState().ui.showUpdateDialog)).toBe(false);
+  const update = page.getByRole('dialog').filter({ hasText: /Software[- ]update/ });
+  await expect(update).toHaveCount(0);
+  await page.locator('[data-ops-guide-action="close"]').click();
+  await expect(page.locator('[data-ops-guide-panel]')).toHaveCount(0);
+  await expect(update).toBeVisible();
+  await update.getByRole('button', { name: /^(Close|Sluiten)$/ }).first().click();
+  await expect(update).toHaveCount(0);
 });
 
 test('Ja zonder extensie en zonder catalogus → Help › Tutorials met een melding', async ({ page, ops }) => {
