@@ -161,7 +161,7 @@ if (row) {
   }
 }
 
-// ═══ (b) "Verdeel automatisch" lost het op: geen blokkade, geen tekort, en er verschuift iets ═════
+// ═══ (b) De verdeelkern lost het op: geen blokkade, geen tekort, en er verschuift iets ═════════
 const distInputs: DistributionDocInput[] = inputs.map((input, i) => ({
   ...input,
   rank: i + 1,
@@ -222,9 +222,9 @@ if (poolItem) {
 //     "kleinere uitloop in beide standen, zonder tekort" is daarom niet alleen niet gehaald maar
 //     onbereikbaar: de twee standen kunnen per definitie alleen verschillen op het punt waar de
 //     uit-stand een tekort heeft.
-// De eerlijke, wél demonstreerbare belofte is dus deze: mét een plafond verandert de schakelaar een
-// ONOPLOSBAAR voorstel (tekort ⇒ Toepassen geblokkeerd) in een toepasbaar voorstel binnen datzelfde
-// plafond. Dat is het verschil dat de gids "Uitproberen met de voorbeelden" beschrijft.
+// Met een bindend plafond kan de verdeelkern een voorstel met tekorten veranderen in een
+// toepasbaar voorstel binnen hetzelfde plafond. Deze kerncheck bewaakt dat verschil;
+// het huidige bezettingsvenster biedt hiervoor geen Verdelen-bediening.
 {
   const CEILING = 15;        // werkdagen — het midden van het werkzame bereik 14 t/m 17 (zie hieronder)
   const AKKERS = 1;          // index van MIDDEL in SLUGS
@@ -272,13 +272,13 @@ if (poolItem) {
       'waarden, anders is het verschil in de demo niet te vinden. Vergroot het aantal vrije werkdagen vóór de ' +
       'blokkade via KLEIN\'s `anchorShiftDays` in scripts/showcases.ts.');
     assert(werkt.includes(15),
-      `het ronde plafond van 15 werkdagen (drie weken) — dat de gids noemt — zit niet in het werkzame bereik [${werkt.join(', ')}]`);
+      `het gekozen plafond van 15 werkdagen (drie weken) zit niet in het werkzame bereik [${werkt.join(', ')}]`);
   }
 }
 
 // ═══ (c) Geen intrinsieke overvraag: geen showcase-taak vraagt op één dag meer dan de poolcapaciteit ══
 // Zou één taak méér vragen dan het bedrijf heeft, dan is het conflict per definitie onoplosbaar en
-// levert "Verdeel automatisch" altijd een tekort — hoe de documenten ook geschoven worden.
+// levert de verdeelkern altijd een tekort — hoe de documenten ook geschoven worden.
 for (const { payload } of payloads) {
   const stamped = new Map(
     payload.resources
