@@ -59,7 +59,7 @@ export function materializeHolidays(
  * Standaard generatie-spanne: bij aanmaak (geen bekend projecteinde)
  * `startjaar−1 t/m startjaar+3`; bij een bekend projecteinde `projectstart−1 t/m projecteinde+1`.
  * Met een beschikbaar rekenresultaat telt het latere van het ingevoerde en het berekende einde.
- * Aanmaakpaden zonder projecteinde blijven beide einddatums weglaten.
+ * Een aanroeper die de aanmaakspanne wil, laat beide einddatums weg.
  */
 export function computeGenerateSpan(
   startDate: string,
