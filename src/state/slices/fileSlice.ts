@@ -76,6 +76,18 @@ export function isActivePristine(s: AppState): boolean {
   );
 }
 
+/**
+ * De reden van mislukte bestands-I/O als tekst, voor openen/importeren en opslaan.
+ * Tauri-plugins (plugin-fs, plugin-dialog) weigeren met een STRING, niet met een `Error`
+ * ("failed to open file at path: … Permission denied (os error 13)"); `(err as Error).message` gaf
+ * daar `undefined` en de gebruiker zag alleen "Opslaan mislukt" zonder reden.
+ */
+export function saveErrorDetail(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  if (typeof err === 'string') return err;
+  return String(err);
+}
+
 /** De bestandsnaam waaronder het document nu bekend is (`filePath` is in de browser al een naam, in
  *  Tauri een pad), of de voorgestelde naam voor een naamloos document. */
 function documentFileName(s: Pick<AppState, 'filePath' | 'project' | 'xerImportMetadata'>): string {
@@ -709,7 +721,7 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
         return false;
       }
       console.error('Save failed:', err);
-      get().notify({ severity: 'error', messageKey: 'notifications.saveFailed', detail: (err as Error).message });
+      get().notify({ severity: 'error', messageKey: 'notifications.saveFailed', detail: saveErrorDetail(err) });
       return false;
     }
   });
@@ -753,7 +765,7 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
         return;
       }
       console.error('Save As failed:', err);
-      get().notify({ severity: 'error', messageKey: 'notifications.saveFailed', detail: (err as Error).message });
+      get().notify({ severity: 'error', messageKey: 'notifications.saveFailed', detail: saveErrorDetail(err) });
     }
   });
 
@@ -1062,7 +1074,7 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
         await pushRecent(opened.ref, opened.name);
       } catch (err) {
         console.error('Failed to open file:', err);
-        get().notify(importFailureNotice(err, (err as Error).message));
+        get().notify(importFailureNotice(err, saveErrorDetail(err)));
       }
     },
 
@@ -1477,7 +1489,7 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
         await pushRecent(entry.ref, entry.name);
       } catch (err) {
         console.error('Failed to open recent file:', err);
-        get().notify(importFailureNotice(err, (err as Error).message));
+        get().notify(importFailureNotice(err, saveErrorDetail(err)));
       }
     },
 
@@ -1519,7 +1531,7 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
         // `params: { name }` achterwege gelaten: de bestaande `notifications.openFailed`-string
         // bevat geen {{name}}-placeholder, en i18n niet aanraken is een harde grens. De naam staat
         // wel in de debug-terminal (console.error hierboven).
-        get().notify({ severity: 'error', messageKey: 'notifications.openFailed', detail: (err as Error).message });
+        get().notify({ severity: 'error', messageKey: 'notifications.openFailed', detail: saveErrorDetail(err) });
         return false;
       }
     },

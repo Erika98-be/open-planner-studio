@@ -80,20 +80,11 @@ en noem het in je rapport of PR-tekst.
 
 ## Tabel, invoer en bediening
 
-12. **Tabelkolom *Kalender*** toont en bewerkt het interne kalender-id (`cal-…`) in plaats van de naam. — B
 13. **Tabelkolom *Kleur*** wordt in IFC bewaard, maar geen balk of rapport gebruikt hem. — B
-14. **Ctrl+M en rechtsklik *Mijlpaal toevoegen*** maken een mijlpaal van type Keuring. Ctrl+M zet hem
-    bovendien altijd onderaan en opent het paneel niet (gaat buiten `taskInsertActions` om). Het lint geeft
-    een mijlpaal een ander type: *Startmijlpaal* en *Eindmijlpaal* zetten `USERDEFINED` (werksoort *Overig*),
-    en `check-tutorial-project.ts` legt dat laatste vast als bedoeld. Het type hangt dus van de route af
-    (`shortcutRegistry.ts:376-380`, `GanttCanvas.tsx:403,1020`, `FullTaskGrid.tsx:799,1313`,
-    `ribbonWidgets.tsx:188`). — B
 15. **Rechtsklikmenu op een lege plek** (*Nieuwe taak*, *Plakken*) is dode code: geen route opent het. — B
 16. **Taken kopiëren** heeft geen zichtbare bediening; alleen Ctrl+C/V met de Gantt in focus. — B
 17. **Verwijderen zonder bevestiging**: `confirm.deleteTask` staat in de locales maar wordt nergens gebruikt. — S
-18. **Hint *Sjabloon invoegen*** zegt "onder de geselecteerde taak"; de code maakt er de laatste subtaak van. — S
 19. ***Spring naar vandaag* (Ctrl+Home)** springt naar de statusdatum als die er is. — S
-20. **Hint *Taakbalken bij onderbrekingen*** zegt "rond niet-werkdagen"; de code stuurt alleen urentaken. — S
 21. ***Rapport › Afdruk*** doet op het tabblad Rapport niets. — B
 60. **Duur-kolom afgeknipt** in de standaard Gantt-weergave (WBS 60 + Taaknaam 240 + Duur 60 + de
     "+"-kolom): je leest "2c" in plaats van "2d", op 1600 én 1366 px breed. — B
@@ -120,8 +111,6 @@ en noem het in je rapport of PR-tekst.
     bij een ontbrekende permissie, "Het bestaande projectbestand is niet schrijfbaar." (`actualAutoSave.ts`),
     het CFB-citaat (`cfb.ts`) en bestandsnaamdelen `-voortgang`/`-bibliotheek`. Zie ook 61. — B (eerste),
     S (rest)
-30. **Onbekende extensiepermissie** laat de installatie mislukken; de code-commentaren zeggen "wordt
-    gefilterd". — S
 31. **`companyLibrary.promoteHint`** noemt promoveren van resources via een knop die alleen voor kalenders
     bestaat. — S
 32. ***Herkennen*: "Geen voorstel — kies handmatig"** zonder knop om handmatig te kiezen. — B
@@ -200,6 +189,14 @@ en noem het in je rapport of PR-tekst.
     `updates.installing` staat achter `isDownloading` (`status.kind === 'downloading'`), terwijl de tekst
     `isReadyToInstall` (`'readyToInstall'`) vraagt (`UpdateDialog.tsx:125-128,205-208`). Na de download springt
     het venster naar *Herstarten…* (`:225-229`). Alleen in de code gezien. — S
+137. **De MCP-bridge antwoordt op een notificatie met `200` en een lege body, niet met `202 Accepted`.** De
+    MCP-spec (2025-06-18, Streamable HTTP) zegt: een geaccepteerde notificatie krijgt "MUST return HTTP status
+    code 202 Accepted with no body". `handleMcpMessage` geeft dan `''` (`dispatcher.ts`), en `forward_to_webview`
+    stuurt dat als `200 application/json` terug (`mcp_bridge.rs:331`). De officiële SDK-client (1.32.1), Claude
+    Code 2.1.306 en `mcp-remote` 0.15.2 accepteren het (gemeten met `tests/mcp/cases-externe-client.ts`); een
+    strikte client kan het weigeren. Gevolg bij de SDK: na `notifications/initialized` opent hij de GET-stream
+    niet (die is er ook niet, 405). Voorstel: in Rust bij een lege antwoordbody `202` zonder Content-Type, en
+    `bridgeMirror.ts` mee aanpassen. — B
 
 164. **Nivelleren bij 10.000 taken: tijdens *Berekenen* blokkeert de UI toch 2,8–4,1 s.** De berekening zelf
     loopt in een Web Worker, maar de nulmeting (`npm run measure:large-plans`, 21-10-2026) zag in die fase één
@@ -215,8 +212,6 @@ en noem het in je rapport of PR-tekst.
 46. **`.mpp` neemt de kritiek-drempel uit MS Project niet over als projectinstelling** (wel voor *Datums zoals
     opgeslagen*; MSPDI doet het wel). Gevolg: drempel 0 na openen. — B
 
-95. **Recent opent een site-bestand met de bewaarde naam.** Is het bestand op de site hernoemd, dan zie je de
-    nieuwe naam pas na openen via *Openen van de site*. Gemeld door de bouwer van #309. — S
 96. **Het herstelmanifest schrijft een `version`, maar niemand controleert die** (`recoveryStore.ts`). Een
     oudere build leest een nieuwer manifest dus zonder waarschuwing. Gemeld door de bouwer van #309. — S
 97. **De sluitvraag van een tabblad ligt op een vaste z-index 80**, de gewone dialogen op 50/60. Elke vraag die
@@ -363,12 +358,21 @@ en noem het in je rapport of PR-tekst.
     alleen een onbekende ID en geen WBS of naam toont dus een lege kop. Dubbele rijen (`duplicateRow`) staan
     wel apart, met hun reden. De store-uitkomst is wel per soort apart: `check-progress-import-ronde.ts` deel D.
     Voorstel: in *Wacht op koppeling* de reden en de ID uit het blad tonen (#405 deel 5). — B (code en test)
+162. **Desktop (Linux/macOS): Opslaan overschrijft een alleen-lezen projectbestand als de map schrijfbaar
+    is.** `replaceUserFile` (`atomicWrite.ts`) schrijft een halffabricaat met de rechten van het origineel
+    (0444) en hernoemt het over het doel; op POSIX mag dat. Het bestand krijgt de nieuwe inhoud en blijft
+    0444. Een editor als vim weigert hier zonder `!`. Gemeten met het echte bestandssysteem in
+    `check-save-failure-status.ts` §1R (MEETING-regel 1R-d). Is de map ook alleen-lezen, of Windows met het
+    kenmerk alleen-lezen, dan faalt opslaan wel netjes (zelfde check, §1 en §2). Voorstel: bij een doel zonder
+    schrijfbit eerst vragen of melden. Een besluit voor de eigenaar. — B
+163. **Web: Ctrl+S op een vergrendeld bestand opent zonder uitleg de bestandskiezer.** `saveToRefWeb`
+    (`webBackend.ts`) slikt elke fout (ook `NoModificationAllowedError`) en geeft `false`; `writeActiveDocument`
+    valt dan terug op Opslaan als. Annuleert de gebruiker, dan komt er geen melding (het document blijft
+    terecht gewijzigd). Gezien in `check-save-failure-status.ts` §3a/3b. Voorstel: een echte schrijffout
+    melden vóór de kiezer verschijnt. — B
 
 ## Rondleiding, Help en extensie-gidsen
 
-51. **Histogram-tooltip "0 taken dragen bij"** op de startdag van een urentaak: `contributingTaskNames` in
-    `useGanttHistogramInteraction.ts` vergelijkt "2027-06-28" met "2027-06-28T07:00". Voorstel: vergelijken
-    op `.slice(0,10)`. De balken zelf kloppen. — S
 62. **Melding schuift over de knoppen van het begeleidingspaneel** (1600×950, venster Baselines open):
     `toastPlacement.ts` houdt geen rekening met het paneel. — B (gezien), oorzaak afgeleid
 66. **Het UpdateDialog opent over een lopende gids heen** (review #261, punt O4). — S
@@ -392,14 +396,8 @@ en noem het in je rapport of PR-tekst.
 42. **Helpteksten van enkele conventies** noemen hun voorwaarden niet (alleen urenkalender, alleen
     `.xer`-herkomst). — B
 43. **EN-melding lege rapportperiode** zegt "Whole project"; de optie heet *Project duration*. — S
-44. **Oude interne documentatie**: `docs/library.md` (standaardweergave resourcepaneel),
-    `.claude/rules/mcp.md` (`MAX_PER_DOC`). — B
 56. **nl-label "Orientatie:"** in de rapportopties mist het trema. — S
 57. **Statusdatum-label in de Gantt** toont ISO (`2027-06-28`), de rest dd-mm-jjjj. Mogelijk bewust. — S
-70. **`howto-structuur-aanpassen` zegt dat slepen in de Gantt "hetzelfde werkt als slepen in de lijst".** De
-    oude gids `gids-plannen-wbs` en `docs/TODO.md` ("balk-mousedown") zeggen dat de balk altijd één taak
-    verplaatst, ook bij een meervoudige selectie; in de lijst verhuist de hele selectie. Niet in de app
-    nagespeeld. Voorstel: de zin nalopen en zo nodig "één taak" toevoegen (nl + en). — S
 73. **Namen en beschrijvingen van de voorbeeldprojecten zijn Engels in elke interfacetaal.** Gezien in de
     nl-interface bij *Bestand › Voorbeelden*; de Help-artikelen noemen daarom de Engelse namen. Niet
     nagegaan of dat voor alle voorbeelden geldt. Voorstel: bewust laten, of per taal vertalen. — B
@@ -415,6 +413,30 @@ en noem het in je rapport of PR-tekst.
 131. **Engelse titel van het venster na een update is "You're up to date!"** (`en/common.json`
     `updates.justUpdated.title`). De Nederlandse is "Je bent bijgewerkt!". In het Engels leest dat als "geen
     update nodig". Voorstel: "You've been updated!". — B
+170. **Vertaalstraat: een nieuw concept zonder doelterm valt niet op.** Na #376 stond `work-category`
+    (werksoort) in `i18n/termbase/concepts.json`, maar in geen enkele `<taal>.json`. `validate-termbase` en
+    `verify:translations` bleven groen. De straat hield toen de oude taaktype-term aan (bijv. de: `Neue Vorgangsart`),
+    en de labelpoort dwong die oude tekst af. In de release-ronde van 2026-10-21 hersteld (termen +
+    `--keys`-ronde). Voorstel: `validate-termbase` rood bij een concept zonder term in een taal. — B
+171. **Meldingen met naam óf aantal verliezen de naam in talen met één meervoudsvorm.** `common.json`
+    `notifications.milestoneRefusedAssignments_one`/`_other` (en `milestoneRefusedSummary`, `milestoneClearedOnPhase`)
+    wisselen tussen "'{{task}}' heeft …" en "{{count}} taken hebben …". zh, ja, ko en lo kennen alleen `other`, dus
+    bij één taak tonen ze "1 个任务…" zonder naam. De Help-labelpoort eist dan in `ref-meldingen` die `other`-vorm,
+    terwijl het bronartikel de vorm met naam citeert: het artikel blijft rood in zh, ko en lo (ronde 2026-10-21).
+    Voorstel: twee sleutels (met naam, met aantal) in plaats van een meervoud. — B
+172. **Vertaalstraat: de korte uureenheid werd in ar en fa vertaald, tegen het besluit "10h".** `menu.json`
+    `…hoursValue` werd in de ronde van 2026-10-21 `{{hours}}س`. De test
+    `tests/browser/calendar-file-hours-notice.spec.ts:266` eist in ar/fa "10h" (besluit eigenaar 2026-10-20: geen
+    spatie, getal en "h" als één LTR-reeks). Alleen de browsersuite in CI ving het; `verify:translations` en de
+    straat zelf zagen niets. Met de hand teruggezet op `{{hours}}h`. Voorstel: in de straat een vaste-tekstregel
+    per sleutel (bijv. in `i18n/termbase/`), zodat een volgende ronde dit niet opnieuw vertaalt. — B
+173. **Toewijzingen: lange kolomkoppen laten in veel talen weinig ruimte voor de resourcenaam.** De bron is kort
+    (`task.json` `properties.assignments.units` "Units"/"Inzet", `workHours` "Work (h)"), maar de straat
+    vertaalde naar de volle term (uk "Одиниця призначення", ru "Единицы назначения", bg, hu, ro, sk, da, nb,
+    sv, cs, sr, hr). Gemeten bij een paneel van 320 px: in uk blijft voor de naamkolom 25 px over, in ru 47 px
+    (nl 182 px). Bij 200 px en 125 % duwden ze in 13 talen de regels buiten het paneel; dat is in de release
+    van v2026.10.0 opgelost met afkappen (`TaskAssignmentsSection.tsx`), de koppen zelf niet. Voorstel: korte
+    koppen in die talen, en de Help-artikelen die ze citeren mee. — B
 
 ## Tests
 
@@ -452,6 +474,26 @@ en noem het in je rapport of PR-tekst.
     (`scripts/measure-large-plans.mjs` doet dat met een passieve wrapper om `fillRect`). Voorstel: de
     teller ook laten lopen als de brug in een productiebuild aan staat. — B
 
+167. **Een browsershard van `ci.yml` blijft hangen voorbij `timeout-minutes: 45`.** Op 2026-10-21 bleef
+   `verify (browser 2-4)` van run 39559601987 (PR #440) ruim 50 minuten `in_progress` in de stap
+   *Verify (browser 2-4)*. Ook `gh run cancel` stopte hem niet; pas `force-cancel` via de API deed dat.
+   Een herhaling slaagde in 12 minuten, en dezelfde shard slaagde lokaal (213 passed). Rond dezelfde tijd
+   bleven ook shards van andere branches en van `main` lang `in_progress`. Dat wijst eerder op de runners
+   dan op een test. — S
+
+168. **Een IFC met een heel diepe WBS (6.000 niveaus) laat het openen vastlopen op een `RangeError`
+   (Maximum call stack size exceeded).** Gezien via de headless kern: `openAsDocument` gooit die fout op
+   een gegenereerd bestand met 6.000 geneste taken (`tests/planning/check-headless-core.ts` §4g). De kern
+   vangt hem nu af als `PlannerCoreError` (`IFC_READ_FAILED`); de recursie zelf is niet opgelost. In de
+   app zelf niet nagespeeld. Gemeld in de review van PR #440. — B
+169. **`tests/browser/document-switch.spec.ts:75` (Gantt documenttabs herstellen beide paneviews en
+   DOM-scrollbars) faalt soms in CI.** In de opbouw (`configureDocument`, regel 41) zet de test
+   `setScroll(…, 190)` en leest daarna `scrollY: 0` terug. Gezien één keer in CI op PR #439
+   (https://github.com/OpenAEC-Foundation/open-planner-studio/actions/runs/39577861612, job 119147770916),
+   op een head die verder alleen de MCP-laag raakt; op de vier eerdere heads van die PR was hij groen.
+   Lokaal 5× groen op `main` (b4ee5be3) en 25× groen op de PR na merge met main. Vermoedelijk zet iets de
+   verticale scroll terug (begrenzing op de inhoudshoogte) voordat de inhoud er is; niet onderzocht. — S
+
 ## Wensen en open taken (geen bug)
 
 45. **Extensie-API**: extensies kunnen geen relatie of kalender gericht wijzigen en de selectie niet lezen.
@@ -459,8 +501,6 @@ en noem het in je rapport of PR-tekst.
     `api.settings.getApp(key)`: tutorial 4 leest nu `localStorage['ops-enableHourPlanning']`. — B
 49. **Release-notes, volgende release**: een nieuw MS Project-project rekent de speling nu *Automatisch*
     (#277); projecten die eerder via de wizard *Kleinste* kregen, houden dat (geen migratie). — B
-69. **Twee lege bestanden in de repo-root**: `dn.txt` en `dv.txt`, meegekomen in commit `b635c15c`
-    ("merge: geen verzonnen projecteinde-anker …"). Voorstel: weghalen. — B
 71. **De dode-link-check uit de `wiki`-skill meldt `project://start.ifc`** in `Extensions-Authoring.md`: dat
     staat in een codevoorbeeld (inline code), geen echte link. De check slaat inline code niet over, dus de
     dry-run is nooit "dead: 0". Voorstel: in de check eerst `` `…` `` strippen. — B
