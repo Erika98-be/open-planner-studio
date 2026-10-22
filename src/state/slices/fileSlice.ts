@@ -552,15 +552,16 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
    * opgeslagen maar nog wel in de app staat. Elke andere fout: de gewone opslaanfout met de tekst van
    * de site. Het document blijft in beide gevallen gewijzigd (er is niets gecommit).
    */
-  const notifySiteSaveError = (err: unknown, name: string) => {
+  const notifySiteSaveError = (err: unknown, name: string, dedupeKey?: string) => {
     console.error('Opslaan op de site mislukt:', err);
     if (isSiteConflict(err)) {
       get().notify({
         severity: 'error', messageKey: 'notifications.siteSaveConflict', params: { name }, detail: siteErrorMessage(err),
+        dedupeKey, replaceOnDedupe: true,
       });
       return;
     }
-    get().notify({ severity: 'error', messageKey: 'notifications.saveFailed', detail: siteErrorMessage(err) });
+    get().notify({ severity: 'error', messageKey: 'notifications.saveFailed', detail: siteErrorMessage(err), dedupeKey, replaceOnDedupe: true });
   };
 
   /** Sla het document op als NIEUW bestand op de site; daarna is de site het opslagdoel. Gooit bij
@@ -660,6 +661,7 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
     return true;
   };
 
+  let saveAttemptSequence = 0;
   const writeActiveDocument = (expectedDocumentId?: string): Promise<boolean> => runProjectFileWrite(async () => {
     if (expectedDocumentId && expectedDocumentId !== get().activeDocumentId) return false;
     if (!(await settleIfcSchemaQuestion())) return false;
@@ -670,6 +672,17 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
     // Gezet zolang er naar de SITE geschreven wordt: dan meldt de catch een sitefout (met conflict-
     // melding) in plaats van de gewone opslaanfout. Zonder site blijft hij `null`.
     let siteName: string | null = null;
+    let handleWriteFailed = false;
+    // Eén melding per opslagpoging: faalt ook de terugval, ververs dan de reden zonder een tweede
+    // toast of ×2. Een volgende Ctrl+S is een nieuwe poging met een eigen melding.
+    const failureNoticeKey = `project-save:${++saveAttemptSequence}`;
+    const notifyWriteError = (err: unknown) => {
+      console.error('Save failed:', err);
+      get().notify({
+        severity: 'error', messageKey: 'notifications.saveFailed', detail: saveErrorDetail(err),
+        dedupeKey: failureNoticeKey, replaceOnDedupe: true,
+      });
+    };
 
     try {
       const ref = saveTargetRef(state);
@@ -684,8 +697,16 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
         });
       }
       // Een site-ref geeft hier altijd `false` (zie `saveToRef`): dan loopt de route hieronder.
-      if (ref && await saveToRef(ref, content)) {
-        return commitSavedDocument(documentId, state);
+      if (ref) {
+        try {
+          if (await saveToRef(ref, content)) return commitSavedDocument(documentId, state);
+        } catch (err) {
+          // Alleen de browser biedt na een echte handle-schrijffout de bestaande uitweg Opslaan als.
+          // Meld de fout eerst; `false` (geen toestemming/annulering) blijft zonder foutmelding.
+          if (isTauri() || ref.kind !== 'handle') throw err;
+          handleWriteFailed = true;
+          notifyWriteError(err);
+        }
       }
 
       // Geen (bruikbaar) doel en wel site-opslag: eerst "Opslaan op de site" met de keuze voor deze
@@ -710,18 +731,19 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
       if (!outcome) return false;
       const saved = commitSavedDocument(documentId, state, localDestination(outcome));
       await pushRecent(outcome.ref, outcome.name);
-      if (!isTauri()) {
+      // Een geslaagde kopie na een schrijffout bewijst geen browserbeperking. De echte fout is al
+      // gemeld; alleen een download vraagt dan nog om uitleg over de nieuwe locatie.
+      if (!isTauri() && (!handleWriteFailed || outcome.viaDownload)) {
         const notice = browserSaveNotice({ hadFile, existingName: state.filePath ? basename(state.filePath) : null, outcome });
         if (notice) get().notify(notice);
       }
       return saved;
     } catch (err) {
       if (siteName !== null) {
-        notifySiteSaveError(err, siteName);
+        notifySiteSaveError(err, siteName, failureNoticeKey);
         return false;
       }
-      console.error('Save failed:', err);
-      get().notify({ severity: 'error', messageKey: 'notifications.saveFailed', detail: saveErrorDetail(err) });
+      notifyWriteError(err);
       return false;
     }
   });
