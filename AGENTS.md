@@ -191,6 +191,11 @@ bridge tests against the real Rust bridge). Docs: `docs/release-verificatie.md`,
 - **Pending modal questions.** While the actual-start or phase-assignment question waits,
   `isGlobalShortcutFrozen` blocks global app shortcuts and the surrounding shell controls are inert,
   including during the actual-start question's Help pause. Help navigation and the question's own controls stay active.
+- **Tailwind sources.** `src/styles/globals.css` disables automatic detection with `source(none)` and
+  registers only `src/` and `index.html` via `@source` (paths relative to that stylesheet). This includes
+  extension UI and HTML strings in `src/`; imported component CSS and fonts still build normally.
+  Add an explicit source there if runtime utility classes move outside these paths; scripts, tests and
+  docs must not generate app utilities. The legacy `tailwind.config.js` is not loaded by the v4 build.
 - **Text:** always via `t(...)`, never hard-coded; a PR needs `nl` + `en`, a release all 28 locales
   (translation pipeline, `verify:translations`). Text sizes only via the six roles
   (`text-caption`…`text-title`); `text-xs`/`text-sm` no longer exist and silently do nothing.

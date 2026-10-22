@@ -161,21 +161,10 @@ en noem het in je rapport of PR-tekst.
     vergelijking. Symbolische links worden ook niet opgelost. Afgeleid uit de code door de review van #336,
     niet op een Mac nagespeeld. — S
 
-125. **De eerste bibliotheek heet hardgecodeerd "Mijn resourcebibliotheek"**, ook in de Engelse app
-    (`types/library.ts:63`). Ook de terugvalnamen "Nieuwe resourcebibliotheek" (`librarySlice.ts:414`,
-    `libraryOps.ts:463`). Valt buiten 29. — B
 126. **Updatevenster: de tekst *Bezig met installeren…* is niet te bereiken.** De balk met
     `updates.installing` staat achter `isDownloading` (`status.kind === 'downloading'`), terwijl de tekst
     `isReadyToInstall` (`'readyToInstall'`) vraagt (`UpdateDialog.tsx:125-128,205-208`). Na de download springt
     het venster naar *Herstarten…* (`:225-229`). Alleen in de code gezien. — S
-137. **De MCP-bridge antwoordt op een notificatie met `200` en een lege body, niet met `202 Accepted`.** De
-    MCP-spec (2025-06-18, Streamable HTTP) zegt: een geaccepteerde notificatie krijgt "MUST return HTTP status
-    code 202 Accepted with no body". `handleMcpMessage` geeft dan `''` (`dispatcher.ts`), en `forward_to_webview`
-    stuurt dat als `200 application/json` terug (`mcp_bridge.rs:331`). De officiële SDK-client (1.32.1), Claude
-    Code 2.1.306 en `mcp-remote` 0.15.2 accepteren het (gemeten met `tests/mcp/cases-externe-client.ts`); een
-    strikte client kan het weigeren. Gevolg bij de SDK: na `notifications/initialized` opent hij de GET-stream
-    niet (die is er ook niet, 405). Voorstel: in Rust bij een lege antwoordbody `202` zonder Content-Type, en
-    `bridgeMirror.ts` mee aanpassen. — B
 
 164. **Nivelleren bij 10.000 taken: tijdens *Berekenen* blokkeert de UI toch 2,8–4,1 s.** De berekening zelf
     loopt in een Web Worker, maar de nulmeting (`npm run measure:large-plans`, 21-10-2026) zag in die fase één
@@ -247,17 +236,6 @@ en noem het in je rapport of PR-tekst.
     (niet in de PR) als 120 taken in 6 documenten; de meting bij #357 vond vóór die fix 120 in 5 documenten,
     waaronder de 4 lopende taken op 100 % in rehab-2 die nu gelijk blijven. Voorstel: besluiten welke kant
     wint (P6-status of actuals) en dat in beide lezers gelijk trekken. — B
-116. **`readIFC` geeft een fase op 100 % zonder werkelijk einde een verzonnen werkelijk einde** (en maakt een
-    lopende fase voltooid). De writer schrijft de fase-rollup (`summaryProgress.ts`). Die kan een fase op
-    100 % zonder werkelijk einde geven: STARTED als een niet-gestarte mijlpaal onder voltooide taken hangt, of
-    COMPLETED als de taken eronder alleen voltooid of lopend op 100 % zijn. `normalizeImportedProgress` maakt
-    van zo'n fase bij het lezen COMPLETED, met een werkelijk einde op de statusdatum. Na de solve rekent de rollup de fase opnieuw uit en is het weg; het telt dus alleen op
-    paden zonder solve, zoals "Datums zoals opgeslagen" (`documentActivation.ts`). Gemeten met een script, op
-    main en met #357 gelijk: fase P met alleen een lopende taak op 100 % (statusdatum 2015-01-07) krijgt AF
-    2015-01-07; fase *Pre-Construction* in `demo-sample.xer` krijgt AF 2024-06-01T08:00. Direct na de
-    XER-import (zonder IFC) heeft de fase geen werkelijk einde. Met #357 houdt de taak geen werkelijk einde
-    meer, dus spreekt het einde van de fase haar taak nu tegen. Voorstel: fasen in de lezer niet door de
-    voortgang-invarianten halen. — B (lezer), S (gevolg in "Datums zoals opgeslagen" niet nagespeeld)
 118. **Een XER-activiteit met een onbekende `status_code` blijft "niet gestart", ook op 100 % of met een
     werkelijk einde.** `statusOf` (`src/services/xer/xerReader.ts`) geeft bij een onbekende tekst (bv.
     `TK_Weird`) de enum-fallback NOT_STARTED, met melding. Een lege of ontbrekende status leidt de lezer sinds
@@ -267,35 +245,17 @@ en noem het in je rapport of PR-tekst.
     geval 0 keer voor. Gevonden bij de review van #358. Voorstel: een onbekende status behandelen als een lege
     (afleiden uit de voortgang, melding blijft), zoals MPXJ; besluit van de eigenaar nodig. — B
 
-127. **IFC-tab *Toepassen* wist de bibliotheekkoppeling en zet *Niet opgeslagen* uit.** *Toepassen*
-    (`IFCPanel.tsx:57-62`) roept `loadState` aan zonder `linkedOpen`; `applyLoadedProject` wist dan `companyId`
-    en `companyName` (`fileSlice.ts:797-799`) en `isDirty` wordt `false` (`documentContract.ts:489`). Een
-    gewijzigd project lijkt zo opgeslagen, en sluiten vraagt niets. Nagespeeld met het voorbeeld plus
-    bibliotheek en een gewijzigde taaknaam: vóór `isDirty` true, erna false, `companyName` null, de wijziging
-    blijft aanwezig. Voorstel: `isDirty` laten staan en de koppeling behouden. — B
 128. **CSV: een datum in een onleesbare vorm wordt stil "vandaag".** `csvDateOrToday` valt terug op
     `localTodayIso()` (`importDates.ts:71-74`, gebruikt door `csvReader.ts:135`). De Help noemt alleen de drie
     geldige vormen. Of er elders een melding voor komt, is niet nagegaan. Niet nagespeeld. — S
 155. **`.mpp` zonder veldkaarten: vaste kosten en tarieven ontbreken in het importverslag.** De terugval op de
     standaardveldkaarten kent die velden niet, dus het verslag meldt hun verlies niet. VERVOLG 5 van #392,
     gemeld door de reviewer. Niet nagespeeld. — S
-156. **MSPDI-importverslag: één tariefrecord in tabel A met overwerktarief of gebruikskosten wordt niet
-    bekeken.** `scanMspdiImportLoss` (`mspdiImportLoss.ts`, tarieven) kijkt bij tabel A alleen of er meer dan
-    één record is; `OvertimeRate`/`CostPerUse` onder één `Rates/Rate` in tabel A geven geen melding.
-    VERVOLG 6 van #392, gemeld door de reviewer. Niet nagespeeld. — S
 157. **`.mpp`: een gedeelde lange aantekening wordt per verwijzing opnieuw verwerkt.** 1.000 taken × 64 KiB
     kost ongeveer 1,4 s. VERVOLG 8 van #392 (meting van de reviewer). Voorstel: cache per gedeeld datablok. — S
 158. **`.mpp`-importverslag: een lege baselinedatum kan vals verlies geven.** `mppImportLoss.ts` controleert
     de ruwe bytes in plaats van `getTimestamp()`; de bytes `00 00 FF FF`, `FF FF 00 00` en `00 00 01 00`
     tellen dan als datum. Synthetisch; niet gezien in 34 echte bestanden. VERVOLG 9 van #392. — S
-159. **`.mpp`-importverslag: verborgen RTF-metadata kan een niet-bestaande afbeelding of object melden.**
-    Bijvoorbeeld `{\info{\title \\pict}}` in een aantekening. Voorstel: herkennen via de tokenizer. VERVOLG 10
-    van #392. Niet nagespeeld. — S
-160. **MSPDI-importverslag vergelijkt numerieke XML-waarden als tekst.** `<Number>00</Number>` telt niet als
-    Baseline 0 (`baseline0Dates` in `mspdiImportLoss.ts` vergelijkt met `'0'`), terwijl de lezer
-    (`getElementInt`) hem wel als Baseline 0 leest. `<TaskUID>01</TaskUID>` geeft bij gelijke baselines
-    telling 1, terwijl de lezer wel aan taak 1 koppelt. VERVOLG 11 van #392. Voorstel: baselinenummer en
-    taak-UID numeriek parsen zoals de lezer. — S
 162. **Desktop (Linux/macOS): Opslaan overschrijft een alleen-lezen projectbestand als de map schrijfbaar
     is.** `replaceUserFile` (`atomicWrite.ts`) schrijft een halffabricaat met de rechten van het origineel
     (0444) en hernoemt het over het doel; op POSIX mag dat. Het bestand krijgt de nieuwe inhoud en blijft
@@ -320,9 +280,6 @@ en noem het in je rapport of PR-tekst.
 
 ## Teksten en helpteksten
 
-40. **Helptekst *Restwerk hervat na de al verstreken duur*** zegt in alle talen "niet op de statusdatum";
-    de statusdatum blijft ook een ondergrens. Idem codecommentaar `CPMSolver.ts` ~2367, `types/project.ts`
-    ~128. — B
 41. **Intro *Instellingen uit het bronbestand*** zegt "uit een .xer"; verschijnt ook bij *Nieuw project* met
     Primavera P6. — B
 42. **Helpteksten van enkele conventies** noemen hun voorwaarden niet (alleen urenkalender, alleen
@@ -389,10 +346,6 @@ en noem het in je rapport of PR-tekst.
     `/opt/pw-browsers/chromium-1194` draaien de tests wel, maar elke test eindigt rood op één
     "Failed to load resource: 404" in de console, ook de bestaande `table-reports.spec.ts` (gedraaid op de
     branch van de DCMA-PR, die dat rapport niet raakt). Welke URL dat is, is niet vastgesteld. — S
-
-100. **Tailwind v4 scant ook bestanden buiten `src/`**, zoals `scripts/`. Een token als `[a:b]` in een
-    logtekst wordt dan een CSS-regel in de bundel. Gezien bij #308 met `[build:platform]` (+36 bytes CSS);
-    de logtekst is daarom aangepast. Voorstel: de bronnen van Tailwind beperken tot `src/` en `index.html`. — B
 
 104. **Geen automatische test voor de zegels en `check-docs`** (`scripts/translate/cli.ts`). In #323 alleen met
      de hand nagespeeld. De CLI werkt vanuit `process.cwd()`, dus een test in een tijdelijke map kan. — S

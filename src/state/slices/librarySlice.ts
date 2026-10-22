@@ -1,4 +1,5 @@
 import { castDraft, current } from 'immer';
+import i18next from 'i18next';
 import type { AppSlice, AppSliceFactory, NotifyInput } from './types';
 import type { Company, CompanyPool, CompanyLibrary } from '@/types/library';
 import { createDefaultLibrary, createEmptyPool, DEFAULT_COMPANY_ID } from '@/types/library';
@@ -411,7 +412,12 @@ export const createLibrarySlice: AppSliceFactory<LibrarySlice> = (runtime) => (s
 
   addCompany: (name) => {
     const id = generateId('company');
-    const company: Company = { id, name: name.trim() || 'Nieuwe resourcebibliotheek' };
+    const company: Company = {
+      id,
+      name: name.trim() || (i18next.isInitialized
+        ? i18next.t('companyLibrary.newCompany', { ns: 'common' })
+        : 'Nieuwe resourcebibliotheek'),
+    };
     set((s) => {
       s.companies.push(company);
       s.pools[id] = createEmptyPool(company);
