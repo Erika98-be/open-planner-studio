@@ -60,7 +60,11 @@ regel op 100% en 125%. Toepassen schrijft alle 159 verschuivingen, ook de niet-g
 
 De eerste onafhankelijke review op `4bb375eef` vond een ongetypeerde testfixture en een globale
 Gantt-sneltoets die Ctrl+Home onderschepte. Beide zijn opgelost in `77c588d53`; de controles hierboven
-zijn daarna opnieuw uitgevoerd. Een vervolgreview beoordeelt die oplossingen.
+zijn daarna opnieuw uitgevoerd. De onafhankelijke vervolgreview op `77c588d53` vond geen nieuwe
+blokkerende bevindingen. Die controleerde beide TypeScript-configuraties zonder cache en testte de
+echte tabel afzonderlijk met 8.920 regels: maximaal 27 gemounte gegevensrijen, native toetsenbordscroll,
+eerste/laatste regel volledig zichtbaar, correcte aria-indexen, Tab/Shift+Tab en Escape. Via de echte
+workerroute zijn alle 159 verschuivingen toegepast. De latere commits bevatten alleen dit meetbewijs.
 
 Resterende beperking: de sectie met onopgeloste conflicten is niet gevirtualiseerd. Deze PR verandert
 de oorzaakdetails daarvan niet; daarvoor bestaat afzonderlijk PR #419 (knownbug 121).
