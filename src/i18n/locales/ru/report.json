@@ -138,7 +138,7 @@
   "barColorMode_auto": "По задаче — автоматически",
   "barColorMode_category": "По категории",
   "barColorFieldLabel": "Поле категории",
-  "barColorMissingField": "Этого поля нет в проекте. Временно используется тип задачи.",
+  "barColorMissingField": "Этого поля нет в проекте. Временно используется вид работ.",
   "statusLineLabel": "Линия состояния:",
   "statusLine_none": "Нет",
   "statusLine_statusDate": "Линия даты отчета о состоянии",

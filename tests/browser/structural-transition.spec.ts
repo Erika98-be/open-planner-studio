@@ -683,8 +683,11 @@ test('lange subtaaknaam in het Arabisch (RTL): alle knoppen binnen het venster (
   await page.keyboard.press('Alt+Shift+ArrowRight');
   await expect(dialog(page)).toBeVisible();
   await expect(moveButton(page)).toBeFocused();
-  // Engelse terugvaltekst: het label loopt links-naar-rechts, de ellips staat aan het einde (rechts).
-  expect(await moveButton(page).locator('[data-ops-phase-move-label]').evaluate(el => getComputedStyle(el).direction)).toBe('ltr');
+  // Sinds de vertaalronde van v2026.10.0 is het label Arabisch: `dir="auto"` maakt het rechts-naar-links,
+  // de ellips staat dan aan het einde (links). Daarvoor was het de Engelse terugvaltekst (ltr).
+  const label = moveButton(page).locator('[data-ops-phase-move-label]');
+  await expect(label).toHaveText(/[\u0600-\u06FF]/);
+  expect(await label.evaluate(el => getComputedStyle(el).direction)).toBe('rtl');
 
   await checkAllSizesAndThemes(page, 'ar', 'ar-lang');
   await cancelButton(page).click();

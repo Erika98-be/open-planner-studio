@@ -144,8 +144,10 @@ export function useGanttHistogramInteraction(
       if (!task) continue;
       // Rekendatums, niet de getoonde: het histogram boekt vanaf `earlyStart`
       // (`ResourceLoad.taskWorkDayIsos`), dus de tooltip noemt de taken die dáár bijdragen.
-      const start = computedStart(task);
-      const finish = computedFinish(task);
+      // De plot is dag-granulair. Een urentaak met start 07:00 draagt ook op haar startdag
+      // bij: "2027-06-28" sorteert anders vóór "2027-06-28T07:00" en wordt ten onrechte gemist.
+      const start = computedStart(task)?.slice(0, 10);
+      const finish = computedFinish(task)?.slice(0, 10);
       if (start && finish && isoDate >= start && isoDate <= finish) names.add(task.name || task.id);
     }
     return [...names];
