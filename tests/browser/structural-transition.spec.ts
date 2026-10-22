@@ -42,6 +42,44 @@ test('mijlpaalvinkje op een taak met toewijzing wordt geweigerd met melding', as
   await expect(checkbox).not.toBeChecked();
   expect(await page.evaluate((id) => window.__OPS__!.store.getState().tasks.find(t => t.id === id)!.isMilestone, L)).toBe(false);
   expect(await assignmentTaskIds(page)).toEqual([L]);
+
+  // Dezelfde route in een taal zonder CLDR-one: een echte taalkeuze, daarna opnieuw klikken.
+  await page.locator('.ops-toast [data-ops-toast-close]').click();
+  await page.evaluate(() => window.__OPS__!.store.getState().setUI({ showSettingsDialog: true }));
+  await page.getByRole('button', { name: 'Language', exact: true }).click();
+  await page.getByRole('option', { name: /中文/ }).click();
+  await expect(page.locator('html')).toHaveAttribute('lang', 'zh');
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  const zhCheckbox = page.locator('[data-ops-rail] label', { hasText: /^里程碑$/ }).first().locator('input[type=checkbox]');
+  await zhCheckbox.click();
+  const named = page.locator('.ops-toast.toast-error');
+  await expect(named).toContainText('Metselen');
+  await expect(named).not.toContainText('{{');
+  await expect(named).toHaveAttribute('role', 'alert');
+  await expect(zhCheckbox).not.toBeChecked();
+  await named.locator('[data-ops-toast-close]').click();
+
+  // Bulk via het echte contextmenu: twee toegewezen taken blijven gewoon taken, beide namen
+  // staan onder het getal. De brug zet alleen de aanvullende fixture.
+  const N = await page.evaluate(() => {
+    const s = window.__OPS__!.store.getState();
+    const n = s.tasks.find(t => t.name === 'Voegen')!.id;
+    s.assignResource(n, s.resources[0].id, 1);
+    return n;
+  });
+  await selectRow(page, L);
+  await nameCell(page, N).click({ modifiers: ['Control'] });
+  await expect.poll(() => page.evaluate(() => window.__OPS__!.store.getState().selectedTaskIds.length)).toBe(2);
+  await nameCell(page, L).click({ button: 'right' });
+  await page.getByText('切换里程碑', { exact: true }).click();
+  const bulk = page.locator('.ops-toast.toast-error');
+  await expect(bulk).toHaveCount(1);
+  await expect(bulk).toContainText('2 个任务有资源分配，无法变为里程碑。请先移除这些分配。');
+  await expect(bulk).toContainText('Metselen, Voegen');
+  await expect(bulk).toHaveAttribute('role', 'alert');
+  expect(await page.evaluate(() => window.__OPS__!.store.getState().tasks.map(t => t.isMilestone))).toEqual([false, false]);
+  expect(await assignmentTaskIds(page)).toEqual([L, N]);
 });
 
 const dialog = (page: Page) => page.locator('[data-ops-phase-dialog]');

@@ -255,22 +255,19 @@ en noem het in je rapport of PR-tekst.
     nl-interface bij *Bestand › Voorbeelden*; de Help-artikelen noemen daarom de Engelse namen. Niet
     nagegaan of dat voor alle voorbeelden geldt. Voorstel: bewust laten, of per taal vertalen. — B
 
+200. **De strikte UI-vertaalpoort kan een volledig ontbrekende taalmap overslaan.**
+    `status` in `scripts/translate/cli.ts` bepaalt zonder expliciete taal de UI-talen via de aanwezige
+    mappen onder `src/i18n/locales/`. Ontbreekt bijvoorbeeld `lo/`, dan kan `status --strict` groen
+    blijven wanneer de overige UI actueel is en de Lao-termbase geldig is. De bestaande mapinventarisatie
+    staat los van de termbasedekking uit PR #537; die PR herstelt deze UI-inventarisatie niet.
+    Statisch afgeleid bij de review op `78583d1b` (regels 896–900), niet lokaal uitgevoerd.
+    De nieuwe CLI-test herstelt de verwijderde UI-map evenmin vóór zijn groene verwachting. — S
+
 102. **`apply-terms` vertrouwt `terms-NN.json` en `terms-check-01.map.json` zonder zegel.** De UI- en
      docs-pakketten hebben sinds #323 een zegel (`build/translate-seal/`); de termbase-pakketten niet, terwijl
      agents in dezelfde map schrijven. Voorstel: dezelfde `seal`/`sealErrors` in `prepare`/`apply-terms`.
      Gevonden in de review van #323 (Opus, 2026-10-12), in de code aangewezen. — S
 
-170. **Vertaalstraat: een nieuw concept zonder doelterm valt niet op.** Na #376 stond `work-category`
-    (werksoort) in `i18n/termbase/concepts.json`, maar in geen enkele `<taal>.json`. `validate-termbase` en
-    `verify:translations` bleven groen. De straat hield toen de oude taaktype-term aan (bijv. de: `Neue Vorgangsart`),
-    en de labelpoort dwong die oude tekst af. In de release-ronde van 2026-10-21 hersteld (termen +
-    `--keys`-ronde). Voorstel: `validate-termbase` rood bij een concept zonder term in een taal. — B
-171. **Meldingen met naam óf aantal verliezen de naam in talen met één meervoudsvorm.** `common.json`
-    `notifications.milestoneRefusedAssignments_one`/`_other` (en `milestoneRefusedSummary`, `milestoneClearedOnPhase`)
-    wisselen tussen "'{{task}}' heeft …" en "{{count}} taken hebben …". zh, ja, ko en lo kennen alleen `other`, dus
-    bij één taak tonen ze "1 个任务…" zonder naam. De Help-labelpoort eist dan in `ref-meldingen` die `other`-vorm,
-    terwijl het bronartikel de vorm met naam citeert: het artikel blijft rood in zh, ko en lo (ronde 2026-10-21).
-    Voorstel: twee sleutels (met naam, met aantal) in plaats van een meervoud. — B
 172. **Vertaalstraat: de korte uureenheid werd in ar en fa vertaald, tegen het besluit "10h".** `menu.json`
     `…hoursValue` werd in de ronde van 2026-10-21 `{{hours}}س`. De test
     `tests/browser/calendar-file-hours-notice.spec.ts:266` eist in ar/fa "10h" (besluit eigenaar 2026-10-20: geen
@@ -285,14 +282,6 @@ en noem het in je rapport of PR-tekst.
     van v2026.10.0 opgelost met afkappen (`TaskAssignmentsSection.tsx`), de koppen zelf niet. Voorstel: korte
     koppen in die talen, en de Help-artikelen die ze citeren mee. — B
 
-195. **Het i18n-recept en een helpercommentaar bevatten nog de oude aantallen locales/bestanden.**
-    `docs/recepten/i18n-sleutel.md:170` noemt naast de Nederlandse bron nog "overige 13 locales",
-    terwijl de app 28 UI-locales heeft. Het voorbeeld bij `--update` in `scripts/i18n-add.ts:19`
-    spreekt nog van "14 bestanden". Het actuele PR-contract is NL/EN, overige vertalingen lopen via
-    de vertaalstraat; beide teksten afzonderlijk nalopen en actualiseren zonder die werkwijze te veranderen.
-    Gezien bij PR #530 op `d2f60fc2`; statisch met AGENTS en de bron vergeleken, niets lokaal uitgevoerd.
-    — B (recept), S (helpercommentaar)
-
 
 ## Tests
 
@@ -300,6 +289,14 @@ en noem het in je rapport of PR-tekst.
     496–499 ms (5-10-2026); rood (535–790 ms) in `npm run verify` zodra de container druk is (meerdere agents
     tegelijk). In CI steeds groen. De grens meet de machine mee. Voorstel: grens relatief aan een
     referentiemeting in dezelfde run, of alleen in CI hard. — B
+199. **Linux-PR-CI kan stranden op de APT-updategrens via het officiële Ubuntu-archief.**
+    Bij PR #536 op `cc7d2aef` haalde de update metadata op via `https://archive.ubuntu.com/ubuntu/`,
+    maar na de start van de 14,1 MB `jammy/universe`-index brak de grens van twee minuten af met TERM.
+    Frontendinstallatie en build waren nog niet gestart. Zie
+    https://github.com/OpenAEC-Foundation/open-planner-studio/actions/runs/39859111765/job/120105089448.
+    Dit is een afzonderlijke netwerk-/doorlooptijdbevinding na #515/#523; oorzaak en herhaalbaarheid
+    zijn niet vastgesteld. De limieten en CI-poorten zijn niet verruimd. — B (CI-uitval), S (oorzaak)
+
 90. **`check-xer-tables` is rood als de `TextDecoder` van Node byte 0x80 (CP1252) niet naar € vertaalt**
     ("Café €" wordt "Café "; 6 asserties in deel 5). Gezien 7-10-2026 in een cloudcontainer (Node 22.22.0,
     ICU 77.1), óók op de onaangeraakte commit `c00163a`; daar geeft `new TextDecoder('windows-1252')` voor
@@ -315,10 +312,6 @@ en noem het in je rapport of PR-tekst.
 
 104. **Geen automatische test voor de zegels en `check-docs`** (`scripts/translate/cli.ts`). In #323 alleen met
      de hand nagespeeld. De CLI werkt vanuit `process.cwd()`, dus een test in een tijdelijke map kan. — S
-
-120. **`delete-under-dialog.spec.ts` (regel 40) faalt soms op focus.** In CI-run 39384273333 (PR #392, browser
-    1-4): `expect(locator).toBeFocused()` gaf `inactive`. Na een herhaling van de job groen, zonder wijziging;
-    de PR raakt geen dialoog- of focuscode. Wisselvallig, oorzaak niet onderzocht. — S
 
 165. **`window.__OPS__.gantt.paintCount` telt alleen in een dev-build.** `useGanttRendererHost.ts:32` roept
     `recordGanttPaint` aan achter `import.meta.env.DEV`; in een productiebuild met `VITE_OPS_BENCH_BRIDGE=1`
