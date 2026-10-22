@@ -2,7 +2,7 @@
 // node --test scripts/aur/render-pkgbuild.test.mjs
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync, mkdtempSync, writeFileSync, chmodSync, rmSync } from 'node:fs';
+import { readFileSync, mkdtempSync, writeFileSync, chmodSync, rmSync, mkdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
 import { spawnSync } from 'node:child_process';
@@ -135,5 +135,44 @@ test('aur.yml weigert PR-runs, vreemde bronrepos en pushes zonder releaseprefix 
       startsWith: (/** @type {string} */ value, /** @type {string} */ prefix) => value.startsWith(prefix),
     });
     assert.equal(actual, c.allowed, c.label);
+  }
+});
+
+// Geen script uit de checkout uitvoeren in de stap met de publicatiesleutel. Controleer het
+// echte shellfragment voor dezelfde versievolgorde, inclusief pkgrel boven negen en foute invoer.
+test('de AUR-push vergelijkt versies zonder uitgecheckte scripts uit te voeren', () => {
+  const workflow = readFileSync(join(ROOT, '.github/workflows/aur.yml'), 'utf8');
+  const pushStep = workflow.slice(workflow.indexOf('      - name: Push to AUR'));
+  assert.doesNotMatch(pushStep, /\b(?:node|bash)\s+scripts\//);
+  const match = /            CURRENT=[\s\S]*?(?=            case "\$ORDER" in)/.exec(pushStep);
+  assert.ok(match, 'systeemvergelijking ontbreekt');
+  const script = match[0].replace(/^          /gm, '');
+  const info = (/** @type {string} */ version, /** @type {number} */ rel) => SRCINFO
+    .replace(/^\tpkgver = .*$/m, `\tpkgver = ${version}`)
+    .replace(/^\tpkgrel = .*$/m, `\tpkgrel = ${rel}`);
+  const d = mkdtempSync(join(tmpdir(), 'ops-aur-push-'));
+  try {
+    mkdirSync(join(d, 'aur-repo'));
+    mkdirSync(join(d, 'aur-out'));
+    for (const [before, after, expected] of [
+      [info('2026.9.0', 1), info('2026.10.0', 1), 'push'],
+      [info('2026.43.1', 9), info('2026.43.1', 10), 'push'],
+      [info('2026.43.1', 10), info('2026.43.1', 2), 'older'],
+      [info('2026.43.1042', 1), info('2026.43.1043', 1), 'push'],
+      [info('2026.43.1', 1), info('2026.42.1000', 9), 'older'],
+      [info('2026.43.1', 2), info('2026.43.1', 2), 'same'],
+      [info('2026.43.1', 2), info('2027.1.0', 1), 'push'],
+      [info('2027.1.0', 1), info('2026.43.1', 2), 'older'],
+      [info('ongeldig', 1), info('2026.43.1', 1), 'error'],
+      [info('2026.43.1', 1), info('2026.43.1', 0), 'error'],
+    ]) {
+      writeFileSync(join(d, 'aur-repo/.SRCINFO'), before);
+      writeFileSync(join(d, 'aur-out/.SRCINFO'), after);
+      const result = spawnSync('bash', ['-c', `set -euo pipefail\n${script}\nprintf '%s' "$ORDER"`], { cwd: d, encoding: 'utf8' });
+      assert.equal(result.status, expected === 'error' ? 1 : 0, result.stderr);
+      if (expected !== 'error') assert.equal(result.stdout, expected);
+    }
+  } finally {
+    rmSync(d, { recursive: true, force: true });
   }
 });

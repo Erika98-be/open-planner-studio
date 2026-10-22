@@ -201,7 +201,22 @@ jobs:
           # Een nog niet bestaand pakket geeft een lege repo; de eerste push maakt het aan.
           git clone ssh://aur@aur.archlinux.org/open-planner-studio-bin.git aur-repo
           if [ -f aur-repo/.SRCINFO ]; then
-            ORDER="$(node scripts/aur/render-pkgbuild.mjs --compare-srcinfo aur-repo/.SRCINFO --srcinfo aur-out/.SRCINFO)"
+            # Met de SSH-sleutel in deze stap voeren we geen uitgecheckte scripts uit.
+            # Beide versies bestaan uitsluitend uit drie getallen en een positieve pkgrel.
+            CURRENT="$(sed -n 's/^\tpkgver = //p' aur-repo/.SRCINFO)-$(sed -n 's/^\tpkgrel = //p' aur-repo/.SRCINFO)"
+            NEXT="$(sed -n 's/^\tpkgver = //p' aur-out/.SRCINFO)-$(sed -n 's/^\tpkgrel = //p' aur-out/.SRCINFO)"
+            for PACKAGE_VERSION in "$CURRENT" "$NEXT"; do
+              if ! printf '%s' "$PACKAGE_VERSION" | grep -qxE '(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)-[1-9][0-9]*'; then
+                echo "::error::Ongeldige pkgver/pkgrel in .SRCINFO; niets gepusht." >&2
+                exit 1
+              fi
+            done
+            ORDER=push
+            if [ "$CURRENT" = "$NEXT" ]; then
+              ORDER=same
+            elif [ "$(printf '%s\n' "$CURRENT" "$NEXT" | LC_ALL=C sort -V | head -n 1)" != "$CURRENT" ]; then
+              ORDER=older
+            fi
             case "$ORDER" in
               older)
                 echo "::error::De AUR heeft al een hogere pkgver/pkgrel dan deze run; niets gepusht." >&2
