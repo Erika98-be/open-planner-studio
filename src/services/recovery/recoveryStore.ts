@@ -6,6 +6,8 @@ import {
 } from '@/hooks/recoveryPaths';
 import { writeBytesFileAtomic, writeTextFileAtomic } from '@/services/fileAccess/atomicWrite';
 import { precomputeSha256 } from '@/services/xerSourceArchive';
+import { checkRecoveryDocuments, checkRecoveryManifestVersion, RecoveryManifestError, RECOVERY_MANIFEST_VERSION } from './recoveryManifest';
+export { RECOVERY_MANIFEST_VERSION, RecoveryManifestError } from './recoveryManifest';
 
 /** Eén recovery-document (IFC-CONTENT, niet de bestandsnaam). */
 export interface RecoveryDocContent {
@@ -168,9 +170,6 @@ const legacyFile = names.legacy;
 
 /** Achtervoegsel van het halffabricaat van een atomaire schrijfactie (zie `saveTauri`). */
 const TMP_SUFFIX = recoveryTmpSuffix;
-
-/** Manifestversie mét eigenaarschapsvelden. Zie `RecoveryManifest` voor de migratieregel. */
-export const RECOVERY_MANIFEST_VERSION = 5;
 
 /**
  * De site-velden zoals ze in een manifestregel horen: weggelaten als er geen site-doel is. Zo heeft
@@ -681,23 +680,19 @@ async function readArchivesTauri(dir: string, documents: readonly RecoveryManife
 }
 
 /**
- * Lees het manifest defensief: één corrupt manifestbestand mag `loadRecovery()` niet laten gooien,
- * anders beschouwt de opstartflow alle documenten als verloren terwijl de losse
- * `recovery.*.ifc`-snapshots gewoon nog op schijf staan. Geeft `null` bij onleesbare of
- * vormvreemde inhoud, zodat de aanroeper kan terugvallen op de directory-scan.
+ * Alleen onparseerbare JSON geeft de bestaande terugval op stabiele v1/v2-snapshots.
+ * Een herkenbaar maar onbekend/ongeldig contract mag nooit via die terugval worden omzeild.
  */
 export function parseRecoveryManifest(raw: string): RecoveryManifest | null {
-  try {
-    const parsed = JSON.parse(raw) as unknown;
-    if (!parsed || typeof parsed !== 'object') return null;
-    const m = parsed as RecoveryManifest;
-    // Geldig JSON dat toevallig geen manifest is (`{"foo":1}`) moet net zo goed terugvallen:
-    // zonder deze check gooit de `for…of` eronder alsnog.
-    if (!Array.isArray(m.documents)) return null;
-    return m;
-  } catch {
-    return null;
+  let parsed: unknown;
+  try { parsed = JSON.parse(raw) as unknown; } catch { return null; }
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    throw new RecoveryManifestError('invalid-shape');
   }
+  const m = parsed as RecoveryManifest;
+  checkRecoveryManifestVersion(m.version);
+  checkRecoveryDocuments(m.documents);
+  return m;
 }
 
 /**
