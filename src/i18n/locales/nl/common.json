@@ -338,7 +338,7 @@
     "durationDisplayDays": "Altijd dagen",
     "durationDisplayHours": "Altijd uren",
     "barSplitMode": "Taakbalken bij onderbrekingen",
-    "barSplitModeHint": "Of een taakbalk visueel splitst rond niet-werkdagen.",
+    "barSplitModeHint": "Alleen voor urentaken: balken opsplitsen rond pauzes en niet-werktijd. Echte taakonderbrekingen blijven altijd zichtbaar.",
     "barSplitNever": "Nooit opsplitsen",
     "barSplitSelection": "Opsplitsen bij selectie",
     "barSplitAlways": "Altijd opsplitsen",

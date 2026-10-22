@@ -79,6 +79,11 @@ GitHub Releases API; the workflow publishes the JSON weekly to the `stats` data 
 
 Node 22 (see CI). Rust stable only for the `tauri:*` commands.
 
+Workflows outside `verify` (depth: `ci-release` and `mcp` rules): `headless-api.yml` (HTTP API, container, `cfn-lint`),
+`release-verify.yml` (checks a published release on clean runners: updater `.sig`s, digests, install, signatures),
+`windows-sign-check.yml` / `macos-sign-check.yml` (prove signing on a PR, without a tag), `mcp-real-app.yml` (MCP
+bridge tests against the real Rust bridge). Docs: `docs/release-verificatie.md`, `docs/mcp-verificatie.md`.
+
 ## Testing pitfalls
 
 - **Judge every suite by its exit code.** Intermediate lines such as "alles groen" only cover their own part;
@@ -162,6 +167,9 @@ Node 22 (see CI). Rust stable only for the `tauri:*` commands.
   React, Tauri, the singleton or the i18n UI config end up in the bundle. `api.ts` imports nothing and is the
   contract: a change there is a contract change (`docs/headless-kern.md`). Guards: `check-headless-core.ts`
   (core = app for every example) and `verify:core-package`.
+  The HTTP API on top of it (`headless/server/`, contract `openapi.yaml`, container `Dockerfile`, AWS ECS
+  Fargate template `deploy/aws/ecs-fargate.yaml`) is tested by `.github/workflows/headless-api.yml`
+  (local server + container + smoke test, `cfn-lint`), not by `verify`. Detail: `docs/headless-api.md`.
 - **Scheduling is manual, not reactive.** `runCPM` → `solveProject()`; call it after mutating tasks,
   relations or the calendar (store actions do not do it themselves; only the opt-in setting Automatisch berekenen,
   `ui.autoCalcCPM`, runs it via `useAutoCalcCPM`). Always set `scheduleStale` via `markScheduleStale`
@@ -300,6 +308,7 @@ Design docs: start at `docs/superpowers/README.md` — read them as *why*, not a
 |---|---|
 | Store composition root | `src/state/appStore.ts` (factory: `src/state/appStoreFactory.ts`) |
 | Headless core (package API) | `src/core/`, build `scripts/build-core.mjs`, consumer `headless/consumer-example/` |
+| Headless HTTP API, container, AWS | `headless/server/`, `deploy/aws/ecs-fargate.yaml`, `.github/workflows/headless-api.yml` |
 | Slices | `src/state/slices/` |
 | CPM solver / calendar engine | `src/engine/scheduler/`, `src/engine/calendar/` |
 | Canvas renderer | `src/engine/renderer/` |

@@ -129,7 +129,7 @@
   "barColorMode_auto": "ຕາມແຕ່ລະວຽກ — ອັດຕະໂນມັດ",
   "barColorMode_category": "ຕາມໝວດໝູ່",
   "barColorFieldLabel": "ຊ່ອງຂໍ້ມູນໝວດໝູ່",
-  "barColorMissingField": "ບໍ່ມີຊ່ອງຂໍ້ມູນນີ້ໃນໂຄງການ. ລະບົບຈະໃຊ້ປະເພດວຽກຊົ່ວຄາວ.",
+  "barColorMissingField": "ບໍ່ມີຊ່ອງຂໍ້ມູນນີ້ໃນໂຄງການ. ລະບົບຈະໃຊ້ໝວດວຽກຊົ່ວຄາວ.",
   "statusLineLabel": "ເສັ້ນສະຖານະ:",
   "statusLine_none": "ບໍ່ມີ",
   "statusLine_statusDate": "ເສັ້ນວັນທີສະຖານະ",

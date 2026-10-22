@@ -338,7 +338,7 @@
     "durationDisplayDays": "Always days",
     "durationDisplayHours": "Always hours",
     "barSplitMode": "Task bars at interruptions",
-    "barSplitModeHint": "Whether a task bar visually splits around non-working days.",
+    "barSplitModeHint": "For hour tasks only: split bars around breaks and non-working time. Actual task interruptions remain visible regardless of this setting.",
     "barSplitNever": "Never split",
     "barSplitSelection": "Split when selected",
     "barSplitAlways": "Always split",

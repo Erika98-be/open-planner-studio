@@ -1,7 +1,7 @@
 {
   "name": "open-planner-studio",
   "private": true,
-  "version": "2026.9.0",
+  "version": "2026.10.0",
   "license": "LGPL-3.0-or-later",
   "type": "module",
   "scripts": {
@@ -76,6 +76,7 @@
     "zustand": "^5.0.0"
   },
   "devDependencies": {
+    "@modelcontextprotocol/sdk": "1.32.1",
     "@playwright/test": "1.62.1",
     "@tailwindcss/postcss": "^4.2.0",
     "@tauri-apps/cli": "^2.12.0",

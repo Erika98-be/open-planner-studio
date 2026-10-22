@@ -18,7 +18,7 @@ test('document-plus kiest eerst nieuw of bestaand; annuleren verandert geen docu
 });
 
 test('Taak toevoegen selecteert, onthult en richt de nieuwe taak zonder zoomwijziging', async ({ page, ops: _ops }) => {
-  await seedProject(page, [
+  const [firstId] = await seedProject(page, [
     { name: 'Bestaande taak', start: '2026-09-07', finish: '2026-09-18', durationDays: 10 },
   ]);
   await page.evaluate(() => {
@@ -45,4 +45,26 @@ test('Taak toevoegen selecteert, onthult en richt de nieuwe taak zonder zoomwijz
   await page.keyboard.press('Enter');
   await expect.poll(() => state(page).then(s => s.tasks.find(task => task.id === created.id)?.name)).toBe('Directe naam');
   await expect(page.locator('[data-ops-rail]')).toBeVisible();
+
+  // Ctrl+M is dezelfde gewone invoegroute: onder de selectie, geen inspectiemoment.
+  await page.locator('[data-task-grid-surface-id="gantt-task-grid"] [data-grid-row-key="' + firstId + '"][data-grid-column-id="task.name"]').click();
+  await page.keyboard.press('ControlOrMeta+m');
+  await expect.poll(() => state(page).then(s => s.tasks.length)).toBe(3);
+  const milestone = await page.evaluate(() => {
+    const s = window.__OPS__!.store.getState();
+    const task = s.tasks.find(task => task.isMilestone)!;
+    return { id: task.id, type: task.taskType, kind: task.milestoneKind, mandatory: task.mandatory ?? false,
+      position: s.tasks.indexOf(task), selected: s.selectedTaskIds, zoom: s.view.zoom };
+  });
+  expect(milestone).toMatchObject({ type: 'USERDEFINED', kind: 'FINISH', mandatory: false, position: 1,
+    selected: [milestone.id], zoom: before.view.zoom });
+  await expect(name).toBeFocused();
+
+  // Alleen de expliciete inspectiekeuze blijft een verplichte keuring.
+  await page.getByRole('button', { name: 'Milestone ▾', exact: true }).click();
+  await page.getByRole('button', { name: 'Inspection point (mandatory)', exact: true }).click();
+  await expect.poll(() => page.evaluate(() => {
+    const t = window.__OPS__!.store.getState().tasks.find(t => t.mandatory);
+    return t && [t.isMilestone, t.taskType, t.milestoneKind];
+  })).toEqual([true, 'ATTENDANCE', 'FINISH']);
 });
