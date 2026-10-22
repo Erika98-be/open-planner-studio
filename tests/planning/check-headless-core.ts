@@ -6,7 +6,7 @@
 // 2. `toIfc()` → opnieuw openen → `schedule()` geeft dezelfde datums (de kern verliest niets dat de
 //    berekening nodig heeft).
 // 3. Documenten zijn los: twee tegelijk open documenten beïnvloeden elkaar niet.
-// 4. Het foutmodel: één fouttype met een vaste `code` (INVALID_INPUT, NO_TASKS, SCHEDULE_FAILED),
+// 4. Het foutmodel: één fouttype met een vaste `code` (INVALID_INPUT, IFC_READ_FAILED, NO_TASKS, SCHEDULE_FAILED),
 //    met de taakidentiteiten bij een onberekenbare planningskring.
 // 4g. Een IFC met 6.000 WBS-niveaus opent, rekent en bewaart zijn volledige structuur.
 // 5. Een weggelaten XER-bronarchief komt als waarschuwing XER_ARCHIVE_DROPPED in de samenvatting.
@@ -22,6 +22,9 @@ import { readIFC } from '@/services/ifc/ifcReader';
 import { writeIFC } from '@/services/ifc/ifcWriter';
 import { buildWriteIFCInput } from '@/state/ifcSaveInput';
 import { readIFCWithXerReconstruction } from '@/services/formatRegistry';
+import { createDefaultTaskTime } from '@/utils/taskDefaults';
+import { taskDepths } from '@/utils/wbs';
+import type { Task } from '@/types/task';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const diffs: string[] = [];
@@ -104,6 +107,7 @@ async function codeOf(fn: () => Promise<unknown> | unknown): Promise<string> {
 ok('4a lege tekst ⇒ INVALID_INPUT', await codeOf(() => openIfc('')) === 'INVALID_INPUT');
 ok('4b geen STEP ⇒ INVALID_INPUT', await codeOf(() => openIfc('{"tasks": []}')) === 'INVALID_INPUT');
 ok('4c geen tekst ⇒ INVALID_INPUT', await codeOf(() => openIfc(42 as unknown as string)) === 'INVALID_INPUT');
+ok('4c2 afgekapt STEP ⇒ IFC_READ_FAILED', await codeOf(() => openIfc('ISO-10303-21;\nHEADER;')) === 'IFC_READ_FAILED');
 {
   const empty = createAppStoreContext({ emitHostEvents: false }).store.getState();
   const emptyIfc = writeIFC(buildWriteIFCInput(empty));
@@ -132,27 +136,75 @@ ok('4c geen tekst ⇒ INVALID_INPUT', await codeOf(() => openIfc(42 as unknown a
 }
 
 {
-  // 4g. Diepe WBS: openen en expliciet berekenen moeten slagen, zonder diepte-afkap.
+  // 4g. De bestaande 6.000-niveaus-repro moet slagen. Zelfstandige fixture: geen toevallige
+  // constraints, hammocks of bronvelden uit een voorbeeldblad; vrije WBS-tekst en GEEN auto-vlag.
   const ctx = createAppStoreContext({ emitHostEvents: false });
-  ctx.store.getState().loadState(readIFC(readFileSync(files[0], 'utf8')));
   const st = ctx.store.getState();
-  const leaf = st.tasks.find(t => t.childIds.length === 0 && !t.isSummary)!;
   const N = 6000;
-  const tasks = Array.from({ length: N }, (_, i) => ({
-    ...leaf, id: `nest-${i}`, name: `Nest ${i}`, wbsCode: `${i}`,
+  const tasks: Task[] = Array.from({ length: N }, (_, i) => ({
+    id: `nest-${i}`, name: `Nest ${i}`, description: '', wbsCode: `vrij-${i}`,
+    taskType: 'CONSTRUCTION', status: 'NOT_STARTED', priority: 500, isMilestone: false,
     parentId: i ? `nest-${i - 1}` : null,
     childIds: i < N - 1 ? [`nest-${i + 1}`] : [],
     isSummary: i < N - 1 ? true : undefined,
+    time: createDefaultTaskTime('2026-03-02', 5), resourceIds: [],
   }));
-  const deep = writeIFC({ ...buildWriteIFCInput(st), tasks, sequences: [], assignments: [] });
+  const deep = writeIFC({
+    project: { ...st.project, id: 'diepe-wbs', startDate: '2026-03-02', wbsAutoNumber: undefined },
+    calendar: { ...st.calendar, holidays: [] }, tasks, sequences: [], resources: [], assignments: [],
+  });
+  const parsed = readIFC(deep);
+  const shape = (ts: readonly Task[]) => JSON.stringify(ts.map(t =>
+    [t.id, t.name, t.parentId, t.childIds, t.wbsCode, t.isSummary === true, t.isMilestone]));
+  const expectedShape = shape(tasks);
+  const sourceGuids = parsed.ifcGlobalIds ?? {};
+  ok('4g repro: lezer bewaart alle 6.000 identiteiten, vrije codes en fasen zonder auto-vlag',
+    parsed.project.wbsAutoNumber === undefined && shape(parsed.tasks) === expectedShape);
   const doc = await openIfc(deep);
+  const opened = readIFC(doc.toIfc());
+  ok('4g openen + opslaan vóór schedule bewaart de volledige WBS', shape(opened.tasks) === expectedShape);
+  ok('4g vrije codes activeren geen automatische hernummering', opened.project.wbsAutoNumber === undefined);
+  ok('4g de diepste taak heeft werkelijk niveau 6.000', taskDepths(opened.tasks).get(`nest-${N - 1}`) === N);
   const summary = doc.schedule();
-  ok('4g 6.000 geneste taken openen en berekenen volledig', summary.counts.tasks === N && summary.tasks.length === N);
+  ok('4g alle 6.000 taken staan met de juiste fase-identiteit in de publieke samenvatting',
+    summary.counts.tasks === N && summary.tasks.length === N
+      && summary.tasks.every((t, i) => t.id === tasks[i].id && t.parentId === tasks[i].parentId
+        && t.wbs === tasks[i].wbsCode && t.summary === (i < N - 1)));
+  const last = summary.tasks[N - 1];
+  ok('4g ook de buitenste fasen krijgen de berekende bladspan, geen gedeeltelijke rollup',
+    summary.tasks.every(t => t.start === last.start && t.finish === last.finish
+      && t.lateStart === last.lateStart && t.lateFinish === last.lateFinish && t.totalFloat === last.totalFloat));
   const saved = readIFC(doc.toIfc());
-  ok('4g alle WBS-identiteiten en ouder/kindverwijzingen blijven bewaard',
-    saved.tasks.length === N && saved.tasks.every((task, i) => task.id === tasks[i].id
-      && task.parentId === tasks[i].parentId && task.wbsCode === tasks[i].wbsCode
-      && JSON.stringify(task.childIds) === JSON.stringify(tasks[i].childIds)));
+  ok('4g opslaan na schedule bewaart de volledige WBS', shape(saved.tasks) === expectedShape);
+  ok('4g alle oorspronkelijke taak-GlobalIds blijven bewaard', tasks.every(t =>
+    !!sourceGuids[`task:${t.id}`] && saved.ifcGlobalIds?.[`task:${t.id}`] === sourceGuids[`task:${t.id}`]));
+
+  // Dezelfde save opnieuw via de app-route, met een expliciete false-vlag en ingeklapte wortel.
+  // Verborgen afstammelingen mogen niet via het wees-vangnet alsnog als losse rijen verschijnen.
+  saved.project.wbsAutoNumber = false;
+  ctx.store.setState(s => { s.ui.collapsedTaskIds = ['nest-0']; });
+  st.openAsDocument(saved, { name: 'diep.ifc', ref: null, saveTarget: false });
+  const deepId = ctx.store.getState().activeDocumentId;
+  ok('4g ingeklapte diepe WBS toont uitsluitend de wortel',
+    ctx.store.getState().viewRows.length === 1 && ctx.store.getState().viewRows[0].rowKey === 'nest-0');
+  ctx.store.getState().toggleCollapse('nest-0');
+  const rows = ctx.store.getState().viewRows;
+  ok('4g uitklappen toont alle rijen met hun echte diepte en stabiele sleutel', rows.length === N
+    && rows.every((row, i) => row.kind === 'task' && row.rowKey === tasks[i].id && row.depth === i));
+  ok('4g heropenen is schoon, zonder undo-stap en met expliciete false-vlag',
+    !ctx.store.getState().isDirty && ctx.store.getState().historyEvents.length === 0
+      && ctx.store.getState().project.wbsAutoNumber === false);
+  const appDates = JSON.stringify(ctx.store.getState().tasks.map(t => [t.id, t.time.earlyStart, t.time.earlyFinish]));
+  ok('4g heropenen rekent dezelfde datums als de headless kern', appDates
+    === JSON.stringify(summary.tasks.map(t => [t.id, t.start, t.finish])));
+  ctx.store.getState().newDocument();
+  ctx.store.getState().switchDocument(deepId);
+  const switched = ctx.store.getState();
+  ok('4g documentwissel bewaart WBS, false-vlag en alle zichtbare rijen',
+    shape(switched.tasks) === expectedShape && switched.project.wbsAutoNumber === false && switched.viewRows.length === N);
+  const appSaved = readIFC(writeIFC(buildWriteIFCInput(switched)));
+  ok('4g save na heropenen en documentwissel bewaart structuur en GlobalIds', shape(appSaved.tasks) === expectedShape
+    && tasks.every(t => appSaved.ifcGlobalIds?.[`task:${t.id}`] === sourceGuids[`task:${t.id}`]));
 }
 
 {

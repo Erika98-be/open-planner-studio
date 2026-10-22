@@ -259,7 +259,7 @@ export function rollupSummaryTasks(
     if (root.parentId) continue;
     // Bezoekmarkering bij binnenkomst, rollup bij terugkeer: exact dezelfde volgorde als
     // de recursieve wandeling, ook bij gedeelde kinderen of een corrupte childIds-kring.
-    const stack = [{ task: root, returning: false }];
+    const stack = [{ task: byId.get(root.id)!, returning: false }];
     while (stack.length > 0) {
       const { task, returning } = stack.pop()!;
       if (returning) {
