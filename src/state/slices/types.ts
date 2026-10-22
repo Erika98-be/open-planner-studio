@@ -209,6 +209,8 @@ export type NotificationMessageKey =
   | 'notifications.browserCannotOverwrite'
   | 'notifications.browserSavesAsDownload'
   | 'notifications.autoSaveFailed'
+  | 'notifications.recoveryManifestBlocked'
+  | 'notifications.recoveryStorageBlocked'
   | 'notifications.recoveryReadFailed'
   | 'notifications.recoveryRestoreFailed'
   // Recovery-robuustheid (corrupt herstelbestand): `restoreDocuments` slaat een

@@ -13,6 +13,7 @@ import { canWriteToRefWithoutPrompt, saveTargetRef, saveToRefWithoutPrompt } fro
 import { actualAutoSaveDelay, createActualAutoSaveController, type ActualAutoSaveCandidate } from '@/services/actualAutosave/actualAutoSave';
 import { isProjectFileWriteBusy, runProjectFileWrite } from '@/services/fileAccess/writeCoordinator';
 import { sameIFCSource } from '@/state/ifcSaveInput';
+import { notifyRecoveryError } from '@/state/recoveryManifestNotice';
 
 // Auto-save GETHROTTLED op ~10 s (bewust geen debounce): bij een reeks wijzigingen
 // schrijven we een recovery-snapshot HOOGSTENS eens per `AUTOSAVE_INTERVAL_MS`, óók tijdens
@@ -70,6 +71,7 @@ export function useAutoSave(autoSaveEnabled: MutableRefObject<boolean>): void {
         await runRecoveryTick(recoveryDelta, state.activeDocumentId, recoveryDocs, serializer.serialize, enabled);
       } catch (err) {
         if (!enabled()) return;
+        if (notifyRecoveryError(err, useAppStore.getState().notify)) return;
         console.error('Auto-save failed:', err);
         // dedupeKey is hier niet optioneel: de auto-save probeert het elke ~10 s opnieuw, dus
         // zonder samenvouwen levert één aanhoudende schrijffout zes meldingen per minuut op.

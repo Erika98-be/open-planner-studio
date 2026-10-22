@@ -8,6 +8,7 @@ import type { RecoveryEntry } from '@/components/dialogs/RecoveryDialog';
 import { recoveryInputFromParsed, type RecoveryDocInput } from '@/state/documentContract';
 import { loadRecovery, clearRecovery, holdRecoveryForLater } from '@/services/recovery/recoveryStore';
 import { buildImportLabels } from '@/i18n/importLabels';
+import { notifyRecoveryError } from '@/state/recoveryManifestNotice';
 
 // In-app herstel-dialoog (vervangt de native OS-`ask()`): de gedetecteerde
 // recovery-payload + de callbacks om te herstellen/verwerpen/uitstellen. Lokale
@@ -160,7 +161,7 @@ export function useRecoveryRestore(): RecoveryRestore {
                 // gebruikerszichtbaar via het meldingenkanaal; de debug-terminal houdt
                 // via appLog de volledige stack bij.
                 console.error('Recovery: herstellen mislukt — snapshots blijven staan:', err);
-                useAppStore.getState().notify({
+                if (!notifyRecoveryError(err, useAppStore.getState().notify)) useAppStore.getState().notify({
                   severity: 'error',
                   messageKey: 'notifications.recoveryRestoreFailed',
                   detail: (err as Error).message,
@@ -179,19 +180,33 @@ export function useRecoveryRestore(): RecoveryRestore {
               }
             })();
           },
-          onDiscard: () => { void clearRecovery(); setRecovery(null); finish(); },
+          onDiscard: () => {
+            void clearRecovery().catch((err: unknown) => {
+              if (!notifyRecoveryError(err, useAppStore.getState().notify)) {
+                console.error('Recovery: verwerpen mislukt:', err);
+              }
+            });
+            setRecovery(null);
+            finish();
+          },
           // Uitstellen: snapshots laten staan, niet herstellen (zie RecoveryDialog). Eerst
           // vasthouden, dan pas de auto-save aan: anders overschrijft de eerste crashherstel-ronde
           // op het web de uitgestelde generatie (zelfde sessie-id na een herlaad).
           onClose: () => {
             setRecovery(null);
             void holdRecoveryForLater()
-              .catch((err) => { console.error('Recovery: uitstellen kon de snapshots niet vasthouden:', err); })
+              .catch((err: unknown) => {
+                if (!notifyRecoveryError(err, useAppStore.getState().notify)) {
+                  console.error('Recovery: uitstellen kon de snapshots niet vasthouden:', err);
+                }
+              })
               .finally(finish);
           },
         });
       } catch (err) {
-        console.error('Recovery check failed:', err);
+        if (!notifyRecoveryError(err, useAppStore.getState().notify)) {
+          console.error('Recovery check failed:', err);
+        }
         finish();
       }
     })();

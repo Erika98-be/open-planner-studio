@@ -214,7 +214,15 @@ bridge tests against the real Rust bridge). Docs: `docs/release-verificatie.md`,
 - **Auto-save** (crash recovery) is throttled to 10 s — deliberately a throttle, not a debounce. Changed IFC snapshots
   serialize on one reusable Web Worker (same writer fallback without Worker); only writer input and XER archive
   references cross that boundary, never file handles or archive bytes. Stop is checked again before committing. Runs in both
-  Tauri (`appDataDir`) and browser (IndexedDB), keyed by worktree instance slug.
+  Tauri (`appDataDir`) and browser (IndexedDB), keyed by worktree instance slug. Recovery reads versions
+  1–5 plus the historical unversioned web `docIds` form. Unknown/invalid manifests also block later writes,
+  clearing and session rotation for that recovery set; unknown foreign web generations and shared archive blobs
+  are preserved during cleanup. A manifest has unique document IDs (also historical web `docIds`). Web recovery DB v3
+  adds a non-unique `records.kind` index without rewriting record/blob content: every `kind: manifest` record
+  plus every canonical manifest key is a candidate, regardless of key or candidate order. See `recoveryManifest.ts`
+  and `recoveryStore.ts`; upgrade/blocking/error limits are in `docs/xer-recovery-guardrails.md`.
+  A blocked web upgrade completes startup with a persistent storage warning; recovery refuses further DB
+  access until reload, even after unblocking. There is no fallback to writing an older DB version.
 - **`immer` is pinned exactly to `11.1.4` (no `^`) — do not put the caret back.** Immer sits directly under
   undo/redo, snapshot sharing and auto-freeze; from 11.1.8 the build breaks too (typing of `current`/`original`,
   see `src/state/immerDraft.ts`). Bumping is a deliberate, separately reviewed change.

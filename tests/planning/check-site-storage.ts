@@ -68,6 +68,7 @@ function fakeRequest(compute: () => unknown) {
   return request;
 }
 function fakeDb(name: string) {
+  const indexes = new Map<string, string>();
   return {
     objectStoreNames: { contains: () => true },
     createObjectStore: () => undefined,
@@ -82,6 +83,15 @@ function fakeDb(name: string) {
         objectStore: (storeName: string) => {
           const records = storeRecords(name, storeName);
           return {
+            indexNames: { contains: (indexName: string) => indexes.has(storeName + '::' + indexName) },
+            createIndex: (indexName: string, keyPath: string) => { indexes.set(storeName + '::' + indexName, keyPath); },
+            index: (indexName: string) => {
+              const keyPath = indexes.get(storeName + '::' + indexName);
+              if (!keyPath) throw new Error('Ontbrekende testindex ' + indexName);
+              return { keyPath, unique: false, getAll: (query: unknown) => fakeRequest(() => [...records.values()]
+                .filter(value => value !== null && typeof value === 'object' && Reflect.get(value, keyPath) === query)
+                .map(value => structuredClone(value))) };
+            },
             getAll: () => fakeRequest(() => [...records.values()].map((r) => structuredClone(r))),
             getAllKeys: () => fakeRequest(() => [...records.keys()]),
             get: (key: string) => fakeRequest(() => structuredClone(records.get(key))),
@@ -96,7 +106,8 @@ function fakeDb(name: string) {
 }
 g.indexedDB = {
   open: (name: string) => {
-    const request = { result: fakeDb(name), error: null, onupgradeneeded: null as (() => void) | null, onsuccess: null as (() => void) | null, onerror: null as (() => void) | null };
+    const db = fakeDb(name);
+    const request = { result: db, transaction: db.transaction(), error: null, onupgradeneeded: null as (() => void) | null, onsuccess: null as (() => void) | null, onerror: null as (() => void) | null };
     queueMicrotask(() => { request.onupgradeneeded?.(); request.onsuccess?.(); });
     return request;
   },

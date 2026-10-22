@@ -164,8 +164,6 @@ en noem het in je rapport of PR-tekst.
 46. **`.mpp` neemt de kritiek-drempel uit MS Project niet over als projectinstelling** (wel voor *Datums zoals
     opgeslagen*; MSPDI doet het wel). Gevolg: drempel 0 na openen. — B
 
-96. **Het herstelmanifest schrijft een `version`, maar niemand controleert die** (`recoveryStore.ts`). Een
-    oudere build leest een nieuwer manifest dus zonder waarschuwing. Gemeld door de bouwer van #309. — S
 97. **De sluitvraag van een tabblad ligt op een vaste z-index 80**, de gewone dialogen op 50/60. Elke vraag die
     vanuit *Opslaan* in die sluitvraag opent, valt eronder en lijkt te hangen. De twee site-dialogen liggen
     daarom op `z-[90]`; een volgende vraag op die route moet hetzelfde doen. Gezien bij #309 met een
@@ -227,6 +225,33 @@ en noem het in je rapport of PR-tekst.
     `check-save-failure-status.ts` §1R (MEETING-regel 1R-d). Is de map ook alleen-lezen, of Windows met het
     kenmerk alleen-lezen, dan faalt opslaan wel netjes (zelfde check, §1 en §2). Voorstel: bij een doel zonder
     schrijfbit eerst vragen of melden. Een besluit voor de eigenaar. — B
+
+201. **Het versieloze webherstelmanifest met `docIds` forceert `isDirty=true`.** In
+    `recoveryStore.ts`, `loadWeb`, krijgt de terugvalmetadata voor `docIds` `isDirty: true`;
+    `document.isDirty ?? rec.isDirty ?? true` kiest daardoor die `true`, ook als het oude
+    documentrecord `isDirty: false` bevat. Statisch gezien bij het versiecontract van knownbug 96;
+    de bestaande legacysemantiek is in die fix behouden. Mogelijk verwant aan de herstelmelding
+    van 36, maar niet vastgesteld als dezelfde oorzaak. De bedoeling en runtimegevolgen zijn niet
+    onderzocht. — S
+
+202. **Een Tauri-snapshot met een I/O-leesfout telt niet mee als mislukt herstel.** Brononderzoek,
+    niet uitgevoerd: `recoveryStore.ts`, `loadTauri`, logt een fout uit `readSnapshotTauri` en slaat
+    de manifestregel over. Als minstens één andere snapshot leesbaar is, retourneert hij alleen
+    die documenten; de I/O-uitval wordt niet in `LoadedRecovery` doorgegeven. `useRecoveryRestore`
+    telt alleen parsefouten van de wel geladen documenten (`failed`) en de door `restoreDocuments`
+    overgeslagen documenten. Na de keuze Herstellen en gezond herstel kan daardoor `clearRecovery()`
+    volgen, dat de hele ondersteunde herstelset probeert op te ruimen, ook een nog aanwezige maar
+    onleesbare snapshot. Dit betreft
+    falend lezen van de snapshottekst; een losse `stat`-fout geeft alleen `mtime: null`. Voorwaarde
+    en mogelijk opruimpad zijn statisch afgeleid; runtimegedrag en concreet dataverlies zijn niet
+    vastgesteld. — S
+203. **De updater gaat na een afgewezen recovery-flush door naar installatie.** Brononderzoek,
+    niet uitgevoerd: `updaterService.ts`, `downloadAndInstall`, vangt een rejection van
+    `flushRecoveryNow()` op en logt die, zonder de updateroute af te breken. Daarna probeert hij
+    `update.install()` en, als die slaagt, `relaunch()`. De bronroute bestond al vóór fix 96; dit
+    punt zegt niet dat iedere mislukte snapshotwrite als rejection uit de flush komt. Geen
+    runtime-repro of concreet dataverlies vastgesteld; bedoeling en gewenste foutafhandeling
+    niet onderzocht. — S
 
 ## Rondleiding, Help en extensie-gidsen
 
