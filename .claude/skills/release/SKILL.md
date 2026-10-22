@@ -18,15 +18,19 @@ Alleen deze skill mag een release uitvoeren. Een verzoek om de skill te wijzigen
   Een andere repo, ontbrekende origin of netwerkfout: stop vóór schrijven of publiceren.
 - Gebruik een schone, eigen release-worktree vanaf vers opgehaalde `origin/main`.
   Neem geen ongecommit werk over. Haal volledige historie en origin-tags op.
-- Noteer de basis-SHA en de nieuwste stabiele origin-tag (`vJJJJ.W.N`, numeriek gesorteerd).
-  Controleer dat die tag een voorouder van de basis is. Geen vorige tag: stop en meld dit.
-- Zoek de `ci.yml`-run op **die exacte SHA** met event `push` en branch `main`.
+- Noteer de nieuwste stabiele origin-tag (`vJJJJ.W.N`, numeriek gesorteerd). Geen tag: stop.
+  **Vóór de wijzigingscontrole en bump:** volg [Hervatten](referentie.md#hervatten).
+  Controleer GitHub-publicatie, release-/Snap-/AUR-runs, wiki en website. Rond onafgerond werk
+  voor dezelfde tag af, ook zonder nieuwe commits. Onopgelost: stop zonder nieuwe versie.
+- Pas na volledig herstel geldt die tag als `PREV`.
+  Haal `origin/main` opnieuw op als basis-SHA; `PREV` moet daarvan een voorouder zijn.
+- Zoek de `ci.yml`-run op **die exacte basis-SHA** met event `push` en branch `main`.
   Ontbreekt hij, loopt hij nog of is zijn conclusie niet `success`: stop zonder tag.
-- Geen commits sinds de vorige tag: stop zonder bump of tag en meld “niets veranderd”.
+- Geen commits sinds `PREV` en geen onafgerond werk: stop zonder bump/tag; meld “niets veranderd”.
 - Stop zonder tag bij falende `verify:translations`, falende `verify` of ontbrekende/lege
   `docs/release-notes/v<versie>.md`. Omzeil nooit een poort.
-- Geen gelijktijdige release-run. Bestaat de doeltag al: stop; verplaats of verwijder hem nooit.
-  Geen force-push, geen secrets wijzigen en geen ongepoort `workflow_dispatch`.
+- Geen gelijktijdige release-run. Een bestaande doeltag gaat uitsluitend via het hervatpad;
+  verplaats of verwijder hem nooit. Geen force-push, secretwijziging of ongepoort dispatch.
 
 ## 2. Release-inhoud
 
@@ -65,7 +69,8 @@ node scripts/run-ts.mjs scripts/check-wiki-links.ts
 ```
 `VERSION` is de versie uit stap 2. Beoordeel elke opdracht op zijn exitcode.
 Controleer vóór iedere commit `git status -sb`; commit alleen releasebestanden.
-Push de releasebranch en open een PR tegen `main`. Registreer de PR bij de huidige T3-thread.
+Push de releasebranch en open een PR tegen `main` met titel `Release v<VERSION>`.
+Registreer de PR bij T3. Bewaar het [hervatverslag](referentie.md#hervatten) in deze PR.
 De volledige `npm run verify` draait in CI, niet lokaal vóór de push.
 Wacht op een geslaagde `ci.yml`-run voor de exacte PR-head; bij rood: stop zonder tag.
 Merge zelf met `gh pr merge <nr> --squash --admin --match-head-commit <head-SHA>`.
@@ -87,15 +92,15 @@ Een falende poort of ontbrekende releasetekst betekent stoppen zonder tag.
 
 ## 4. Tag en uitlevering
 
-Alle poorten groen: maak zonder vraag de tag op de gecontroleerde main-SHA:
+Alle poorten groen: noteer de definitieve SHA in het hervatverslag en tag zonder vraag:
 ```bash
 git tag -a "v$VERSION" <gecontroleerde-main-SHA> -m "Open Planner Studio v$VERSION"
 git push origin "refs/tags/v$VERSION"
 ```
 `release.yml` herhaalt `verify:translations`, `verify` en de highlight-/versiecontroles.
 Daarna bouwt en signeert hij installers, verifieert de draft en publiceert `latest.json`.
-`snap.yml` volgt automatisch. Volg de workflows tot hun eindstatus.
-Bij falen na de tag: meld versie, SHA, run-URL en fout; geen nieuwe tag of herpublicatie op goed geluk.
+`snap.yml` en `aur.yml` volgen automatisch. Volg ze tot hun eindstatus en werk het hervatverslag bij.
+Bij falen na de tag: volg het hervatpad voor **dezelfde tag**; geen nieuwe versie zolang werk openstaat.
 
 Controleer de gepubliceerde release met [referentie.md](referentie.md#uitlevering-controleren):
 notes in de body én `latest.json`, juiste versie, volledige assets en groene Snap-publicatie.
@@ -103,12 +108,13 @@ notes in de body én `latest.json`, juiste versie, volledige assets en groene Sn
 ## 5. Wiki en website
 
 - Publiceer de wiki via de wiki-skill: `npm run publish:wiki -- --push`.
-  Controleer live de Home en een gewijzigde pagina. Geen aparte vraag.
+  Controleer live de Home en een gewijzigde pagina; noteer de wiki-commit in het hervatverslag.
 - Werk **elke release** `OpenAEC-Foundation/website` bij volgens
   [referentie.md](referentie.md#website): uitsluitend het nieuwe releaseblok onderaan en
   `#whats-new` bovenaan, met de bijbehorende vertalingen. Gebruik een websitebranch + PR.
   Merge zelf met `--admin` zodra website-CI op de exacte PR-head groen is. Geen aparte vraag.
   Ontbrekende website-CI is een blokkade voor die merge; meld die in het eindrapport.
+  Noteer website-PR en merge-SHA in het hervatverslag; een open PR blijft hervatwerk.
 
 ## 6. Opruimen en rapporteren
 

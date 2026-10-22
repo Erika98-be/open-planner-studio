@@ -243,7 +243,9 @@ bridge tests against the real Rust bridge). Docs: `docs/release-verificatie.md`,
 - **Releases**: only via the `release` skill; a `v*` tag is irreversible and rolls out to all users
   (updater + Snap Store). The weekly Saturday job on aia09-mp50 runs that skill automatically,
   without human approval before the tag (owner, conversation 2026-10-22). Green main CI and the
-  release gates are mandatory. UI translations, wiki publication and the two website release blocks
+  release gates are mandatory. Resume unfinished work for the latest tag before checking for new
+  commits or bumping; record workflow IDs, wiki commit and website PR in the release PR.
+  UI translations, wiki publication and the two website release blocks
   are included; guide translations beyond nl/en run only on the owner's separate request.
   The proposed schedule and literal job prompt live in `.claude/skills/release/scheduled-job.md`.
   Release text in `docs/release-notes/v<version>.md`; `docs/CHANGELOG.md` only at release.

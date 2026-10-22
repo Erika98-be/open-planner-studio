@@ -2,6 +2,69 @@
 
 Lees het passende onderdeel tijdens de release. Dit bestand geeft geen zelfstandig publicatiemandaat.
 
+## Hervatten
+
+Doe dit vóór “niets veranderd” en vóór `npm run bump`. Neem de numeriek nieuwste stabiele
+**origin-tag**, ook als zijn release ontbreekt of draft is. Zet `REPO=OpenAEC-Foundation/open-planner-studio`.
+`TAG` is die bestaande tag, `SHA` zijn gepelde commit en `VERSION="${TAG#v}"`.
+Werk in een schone worktree op `SHA`, niet op de nieuwere main.
+Een incomplete tag wordt nooit stil als vorige voltooide release gebruikt.
+
+Bewaar in de app-release-PR (titel `Release v<VERSION>`) één bijwerkbaar commentaar met marker
+`<!-- ops-release:TAG -->`: tag/SHA, run-ID's en eindstatus van release/Snap/AUR, wiki-bron-SHA en
+wiki-commit, website-PR-URL en merge-SHA, resterende fout. Vul `TAG` in de marker echt in.
+Schrijf het commentaar vóór de tag en na elke stap bij. Een lokaal bestand of chatbericht is geen
+hervatbewijs. Zonder bestaand verslag: reconstrueer dezelfde gegevens uit GitHub en de wiki;
+controleer de werkelijkheid ook als het verslag “klaar” zegt. Maak geen dubbele release of PR.
+
+1. **Publicatie en runs.** Lees `gh api "repos/$REPO/releases/tags/$TAG"`: de release moet bestaan,
+   `draft=false`, `prerelease=false` en een `published_at` hebben. Alleen HTTP 404 betekent
+   ontbrekend; auth-/netwerkfouten zijn geen aanleiding om opnieuw te publiceren.
+   Zoek de release-run met `gh run list --workflow release.yml --commit "$SHA"`.
+   Zoek vervolgruns met `gh run list --workflow snap.yml --event workflow_run` (idem `aur.yml`).
+   Hun eigen `head_sha` kan de defaultbranch zijn: koppel via getagde checkout/versie in de logs
+   en de vastgelegde run-ID's, niet blind via `--commit`. Een PR-run of overgeslagen publicatie
+   telt niet. Een lopende run afwachten, geen tweede starten.
+2. **Release herstellen.** Is de bijbehorende `release.yml`-run mislukt of geannuleerd: bekijk
+   eerst de fout en de geslaagde jobs met `gh run view <run-id> --json jobs` en `--log-failed`.
+   Bij een herstelbare runner-/netwerkfout: `gh run rerun <run-id> --failed` en afwachten.
+   Dit is publiceren en valt onder het zaterdagmandaat. Herhaal maximaal één keer per stap per run.
+   Nooit een hele release-run opnieuw starten als `create-release` al slaagde: die maakt een nieuwe
+   draft met `createRelease`, zonder bestaande-releasecontrole. Gebruik de bestaande run en outputs.
+   Ontbreken zowel release als run: start eenmaal de volledige gate op **de bestaande tag**:
+   `gh workflow run release.yml --ref "$TAG" -f "version=$TAG"`. Ontbreekt alleen de run maar
+   bestaat wel een draft/publicatie, of zijn de outputs onbruikbaar: stop met de exacte blokkade.
+   Bij inhoudelijke gate-/bouwfouten: stop; geen poort omzeilen, tag verplaatsen of nieuwe bump.
+3. **Snap en AUR herstellen.** Na een groene release-run moeten de bijbehorende vervolgworkflows
+   groen zijn. Gebruik bestaande run-ID's en controleer de geselecteerde versie in hun logs.
+   Een mislukte run: na foutanalyse eenmaal `gh run rerun <run-id> --failed`.
+   Ontbreekt een run: start niet de release opnieuw. `snap.yml`-dispatch is alleen een bouwtest
+   en publiceert niet. Stop daarvoor met de ontbrekende run als blokkade.
+   Voor een ontbrekende AUR-run mag de bestaande publicatieroute wel:
+   `gh workflow run aur.yml --ref "$TAG" -f "version=$TAG" -f publish=true`.
+   Controleer `Publish to Snap Store` en `Push to AUR` op `success`; ontbreken credentials, meld
+   de blokkade zonder secrets te wijzigen. Bestond een vervolgworkflow nog niet in deze historische
+   tag, leg “niet van toepassing” vast met bewijs uit `git cat-file -e "$TAG:.github/workflows/<naam>"`.
+4. **Gepubliceerde assets.** Voer [Uitlevering controleren](#uitlevering-controleren) uit voor `TAG`.
+   Een gepubliceerde release alleen is geen bewijs van complete of juiste assets.
+5. **Wiki hervatten.** Genereer uit `SHA` via de wiki-skill een dry-run en controleer links.
+   Clone/fetch de wiki. Een vastgelegde wiki-commit moet in de remote historie zitten en de
+   gegenereerde bestanden van `SHA` bevatten. Ontbreekt dat bewijs: vergelijk de beheerde
+   `.wiki-build/`-bestanden met de remote wiki. Bij ontbrekende wijzigingen opnieuw
+   `npm run publish:wiki -- --push` uit deze worktree. De generator doet niets als alles al gelijk is.
+   Controleer remote en live Home/gewijzigde pagina; noteer bron-SHA en wiki-commit. Bij fout stoppen.
+6. **Website hervatten.** Lees de bestaande website-PR uit het verslag; zoek bij ontbrekend verslag
+   in website-PR's op deze versie en controleer ook beide blokken op website-main/live.
+   Volg de ongewijzigde [websiteprocedure](#website). Hergebruik een open versie-PR, controleer
+   zijn gates en merge hem alleen als die groen zijn. Een gemergede PR vereist merge-SHA plus
+   livecontrole. Staat de juiste inhoud al op main zonder PR, leg die main-SHA als bewijs vast.
+   Bij ontbrekende wijziging maak je de versie-PR alsnog. Bij een gesloten, ongemergede PR of rode/
+   ontbrekende gate: meld de blokkade en stop zonder nieuwe appversie; een open PR is niet klaar.
+
+Pas wanneer alle toepasselijke stappen aantoonbaar af zijn: noteer de tag als `PREV`, ga terug naar
+actuele `origin/main` en controleer nieuwe commits. Geen wijzigingen: afronden zonder nieuwe tag.
+Wel wijzigingen: de reeds herstelde versie vormt de ondergrens voor de nieuwe releasetekst.
+
 ## Releasecijfers
 
 `scripts/verify-release-highlights.ts` vergelijkt exact met Git, niet met afgeronde schattingen.
@@ -96,7 +159,10 @@ en meld deze blokkade. Regel website-PR-CI vóór ingebruikname van de geplande 
 
 ## Uitlevering controleren
 
-- Volg `release.yml` en de bijbehorende `snap.yml` tot hun eindstatus; koppel run aan tag/SHA.
+Bij historisch hervatten vervallen alleen workflowcontroles die het hervatpad aantoonbaar als
+“niet van toepassing” heeft vastgelegd. De overige controles blijven verplicht.
+
+- Volg `release.yml`, `snap.yml` en `aur.yml` tot hun eindstatus; koppel run aan tag/SHA.
 - Vergelijk `gh release view "v$VERSION" --json body,assets` met de vorige release:
   alle platforminstallers, updaterarchieven, `.sig`-bestanden en `latest.json` moeten aanwezig zijn.
 - Download `latest.json` van **deze tag** naar een eigen tijdelijke map met `gh release download`.
@@ -106,6 +172,8 @@ en meld deze blokkade. Regel website-PR-CI vóór ingebruikname van de geplande 
 - Controleer in `snap.yml` de stap **Publish to Snap Store**: conclusie `success`.
   Alleen een bijgevoegde `.snap` bewijst geen publicatie. Ontbrekende credentials betekenen een
   onvolledige release; meld dit zonder secrets op te vragen of te wijzigen.
+- Controleer ook `aur.yml`, stap **Push to AUR**: `success`; een groen pakket zonder publicatie
+  is geen afgeronde AUR-uitlevering. Controleer de gepubliceerde `pkgver` voor deze versie.
 - Een `latest.json` met ontbrekende darwin-entry kan duiden op een ontbrekend macOS `app`-target.
   Windows-updaterarchief en `.sig` moeten ná Azure-signing opnieuw zijn gemaakt door de workflow.
 - Bij een afwijking: rapporteer het bewijs. Verplaats nooit de tag en wijzig assets niet op goed geluk.
