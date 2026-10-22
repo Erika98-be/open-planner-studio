@@ -283,10 +283,6 @@ en noem het in je rapport of PR-tekst.
 
 ## Teksten en helpteksten
 
-41. **Intro *Instellingen uit het bronbestand*** zegt "uit een .xer"; verschijnt ook bij *Nieuw project* met
-    Primavera P6. — B
-42. **Helpteksten van enkele conventies** noemen hun voorwaarden niet (alleen urenkalender, alleen
-    `.xer`-herkomst). — B
 57. **Statusdatum-label in de Gantt** toont ISO (`2027-06-28`), de rest dd-mm-jjjj. Mogelijk bewust. — S
 73. **Namen en beschrijvingen van de voorbeeldprojecten zijn Engels in elke interfacetaal.** Gezien in de
     nl-interface bij *Bestand › Voorbeelden*; de Help-artikelen noemen daarom de Engelse namen. Niet
