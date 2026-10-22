@@ -87,7 +87,7 @@ als `NULDOEL (regel A gehouden)`. MS Project: exit 0, 2.196 checks over 661 best
 vangrails exit 0. Geen herpin uitgevoerd.
 
 Bij de review werd daarnaast een mogelijke B3/dagkalender-TypeError op de basiscommit gemeld.
-Die is niet zelfstandig bevestigd en uitsluitend als S-item 176 in `knownbugs.md` vastgelegd.
+Die is niet zelfstandig bevestigd en uitsluitend als S-item 184 in `knownbugs.md` vastgelegd.
 
 De volledige planning-/tijdzonematrix en CI worden volgens de laatste werkverdeling door de parent
 bewaakt. Geen prestatiebudget, profielbaseline of semantische uitzondering is verruimd.

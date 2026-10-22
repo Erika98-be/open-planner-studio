@@ -151,6 +151,12 @@ export interface LevelingShift {
   delta: number;
 }
 
+export interface LevelingIntrinsicOverrun {
+  resourceId: string;
+  peak: number;
+  capacity: number;
+}
+
 export interface LevelingResult {
   /** taskId → toegepaste levelingDelay (werkdagen), alleen taken die daadwerkelijk een eigen delay
    *  krijgen. Vastgepinde/niet-geresourcete opvolgers staan hier NIET in (die schuiven via de CPM-
@@ -160,6 +166,8 @@ export interface LevelingResult {
   unresolved: Record<string, string[]>;
   /** taskId → reden van het onopgeloste conflict (parallel aan `unresolved`). */
   unresolvedReasons: Record<string, LevelingReason>;
+  /** Details uit dezelfde dagvraag/capaciteitscheck als INTRINSIC_OVERRUN; geen UI-herberekening. */
+  intrinsicOverruns?: Record<string, LevelingIntrinsicOverrun>;
   /** taskId → start-verschuiving voor de preview-tabel (elke taak wiens start wijzigt). */
   shifts: Record<string, LevelingShift>;
   projectEndBefore: string;
@@ -606,6 +614,7 @@ export function levelResources(
   const delays: Record<string, number> = {};
   const unresolved: Record<string, string[]> = {};
   const unresolvedReasons: Record<string, LevelingReason> = {};
+  const intrinsicOverruns: Record<string, LevelingIntrinsicOverrun> = {};
   // TaskId → de volledige, te schrijven `splitGaps`-waarde (bestaande
   // importsplits + eventuele nieuwe leveling-gaten). Alleen gezet voor taken die daadwerkelijk via
   // `findSlot`s scatter-tak geplaatst zijn — zonder `allowSplits` blijft dit `{}`.
@@ -769,6 +778,10 @@ export function levelResources(
     if (slotUnresolved.length > 0) {
       unresolved[pick] = slotUnresolved;
       if (slotReason) unresolvedReasons[pick] = slotReason;
+      if (slotReason === 'INTRINSIC_OVERRUN') {
+        const detail = intrinsicOverrunFor(demandByTask.get(pick)!);
+        if (detail) intrinsicOverruns[pick] = detail;
+      }
     }
     const newDelay = delay > 0 ? delay : undefined;
     if (workById.get(pick)!.levelingDelay !== newDelay) markChanged(pick);
@@ -806,6 +819,7 @@ export function levelResources(
     delays,
     unresolved,
     unresolvedReasons,
+    ...(Object.keys(intrinsicOverruns).length > 0 ? { intrinsicOverruns } : {}),
     shifts,
     projectEndBefore: cpmResult.projectEnd,
     projectEndAfter,
@@ -947,6 +961,15 @@ export function levelResources(
     };
   }
 
+  function intrinsicOverrunFor(byRes: Map<string, number[]>): LevelingIntrinsicOverrun | undefined {
+    for (const [resourceId, arr] of byRes) {
+      const peak = arr.length > 0 ? maxOf(arr) : 0;
+      const capacity = maxCapacityOf(resourceId);
+      if (exceedsCapacity(peak, capacity)) return { resourceId, peak, capacity };
+    }
+    return undefined;
+  }
+
   /** Reden waarom er geen slot bestaat. Volgorde: intrinsiek
    *  (de piekvraag overtreft de maximale capaciteit van de resource ongeacht plaatsing) →
    *  CEILING_UNREACHABLE (een deadline/backward-constraint maakt elk plafond onbereikbaar — gaat
@@ -969,10 +992,7 @@ export function levelResources(
     ceilingUnreachable: boolean,
     horizonExhausted: boolean,
   ): LevelingReason {
-    for (const [resId, arr] of byRes) {
-      const peak = arr.length > 0 ? maxOf(arr) : 0;
-      if (exceedsCapacity(peak, maxCapacityOf(resId))) return 'INTRINSIC_OVERRUN';
-    }
+    if (intrinsicOverrunFor(byRes)) return 'INTRINSIC_OVERRUN';
     if (ceilingUnreachable) return 'CEILING_UNREACHABLE';
     if (!calendarFeasibleSeen) return 'CALENDAR_MISMATCH';
     if (poolBlockedOnly) return 'RESIDUAL_FULL';

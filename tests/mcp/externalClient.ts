@@ -139,6 +139,55 @@ export function externalClientChecks(
 
   return [
     {
+      name: 'HTTP: notificatie krijgt 202 zonder body, requests blijven 200 JSON (knownbug 137)',
+      fn: async () => {
+        // De SDK accepteerde ook 200 met een lege body. Toets het HTTP-contract daarom rechtstreeks:
+        // https://modelcontextprotocol.io/specification/2025-06-18/basic/transports#sending-messages-to-the-server
+        const initialized = await rawPost(env.url, auth, {
+          jsonrpc: '2.0', id: 'http-initialize', method: 'initialize',
+          params: { protocolVersion: env.expected.protocolVersion, capabilities: {}, clientInfo: CLIENT_INFO },
+        });
+        assertSame(initialized.status, 200, 'initialize blijft HTTP 200');
+        assertSame(initialized.headers.get('content-type'), 'application/json', 'initialize blijft JSON');
+        const sessionId = initialized.headers.get('mcp-session-id');
+        assert(sessionId, 'initialize geeft een sessie-header');
+        const initBody = (await initialized.json()) as { id?: unknown; result?: { protocolVersion?: string } };
+        assertSame(initBody.id, 'http-initialize', 'initialize behoudt het request-id');
+        assertSame(initBody.result?.protocolVersion, env.expected.protocolVersion, 'protocolversie in de JSON-body');
+        const headers = { ...auth, 'Mcp-Session-Id': sessionId!, 'MCP-Protocol-Version': env.expected.protocolVersion };
+        const notification = { jsonrpc: '2.0', method: 'notifications/initialized' };
+        const accepted = await rawPost(env.url, headers, notification);
+        assertSame(accepted.status, 202, 'geaccepteerde notificatie krijgt HTTP 202');
+        assertSame(accepted.statusText, 'Accepted', 'redenzin bij HTTP 202');
+        assertSame(accepted.headers.get('content-type'), null, 'geen Content-Type bij een notificatie');
+        assertSame(accepted.headers.get('connection'), 'close', 'ook een notificatie sluit de verbinding');
+        assertSame(await accepted.text(), '', 'geen body bij een notificatie');
+
+        const ping = await rawPost(env.url, headers, { jsonrpc: '2.0', id: 0, method: 'ping' });
+        assertSame(ping.status, 200, 'request met id 0 blijft HTTP 200');
+        assertSame(ping.headers.get('content-type'), 'application/json', 'ping blijft JSON');
+        assertSame(ping.headers.get('connection'), 'close', 'ook een request sluit de verbinding');
+        assertSame(await ping.json(), { jsonrpc: '2.0', id: 0, result: {} }, 'ping behoudt zijn JSON-RPC-body');
+
+        const error = await rawPost(env.url, headers, { jsonrpc: '2.0', id: 'http-error', method: 'onbekend' });
+        assertSame(error.status, 200, 'JSON-RPC-fout blijft HTTP 200');
+        assertSame(error.headers.get('content-type'), 'application/json', 'JSON-RPC-fout blijft JSON');
+        const errorBody = (await error.json()) as { id?: unknown; error?: { code?: number } };
+        assertSame([errorBody.id, errorBody.error?.code], ['http-error', -32601], 'JSON-RPC-fout behoudt id en code');
+
+        // Een lege foutbody (404) mag niet door het nieuwe 202-pad worden geaccepteerd.
+        const unknown = await rawPost(env.url, { ...headers, 'Mcp-Session-Id': 'onbekende-sessie' }, notification);
+        assertSame(unknown.status, 404, 'notificatie met onbekende sessie blijft 404');
+        assertSame(unknown.headers.get('content-type'), null, 'geen Content-Type bij 404');
+        assertSame(await unknown.text(), '', 'geen body bij 404');
+        const bare = await rawPost(env.url, auth, notification);
+        assertSame(bare.status, 400, 'notificatie zonder sessie-header blijft 400');
+        assertSame(bare.headers.get('content-type'), 'application/json', 'sessiefout blijft JSON');
+        const bareBody = (await bare.json()) as { id?: unknown; error?: { code?: number } };
+        assertSame([bareBody.id, bareBody.error?.code], [null, -32600], 'JSON-RPC-fout bij ontbrekende sessie');
+      },
+    },
+    {
       name: 'initialize: protocolversie, serverInfo, capabilities, instructions en Mcp-Session-Id',
       fn: async () => {
         ({ client, transport } = await connectClient(env.url, auth));

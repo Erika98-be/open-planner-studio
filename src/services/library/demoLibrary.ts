@@ -16,8 +16,7 @@ import type { Resource, ResourceType } from '@/types/resource';
 import { generateId } from '@/utils/id';
 
 /** Vast, herkenbaar id — nooit dubbel aangemaakt (idempotente seed). Net als
- *  `DEFAULT_COMPANY_ID` in `@/types/library` is dit géén i18n-string: de bibliotheeknaam is
- *  opgeslagen data, geen UI-tekst. */
+ *  `DEFAULT_COMPANY_ID` in `@/types/library` is dit onafhankelijk van de bibliotheeknaam. */
 export const DEMO_COMPANY_ID = 'demo-resourcebibliotheek';
 
 /**
@@ -28,7 +27,7 @@ export const DEMO_COMPANY_ID = 'demo-resourcebibliotheek';
  */
 export const DEMO_LIBRARY_SEED_VERSION = 2;
 
-/** Vaste naam-literal (net als `createDefaultCompany()` in `@/types/library`) — bewust GEEN `t(...)`. */
+/** Vaste naam van de gedeelde demo-inhoud — bewust GEEN `t(...)`. */
 const DEMO_COMPANY_NAME = 'Demo resource library';
 
 const BOUWKALENDER_NL_NAAM = 'Construction calendar NL';

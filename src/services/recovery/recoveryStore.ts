@@ -188,13 +188,14 @@ export function siteMetaFields(record: object | null | undefined):
 /**
  * Lokale herstelidentiteit voor instantie en websessie (geen authenticatietoken).
  * Dezelfde terugval op alle aanmaak-/rotatiepaden: randomUUID kan ontbreken op een
- * HTTP-dev-adres. Dat mag niet tot een gedeelde 'default'-sessie of een crash leiden.
+ * HTTP-adres. getRandomValues werkt daar wel en levert ook dan 128 willekeurige bits.
  */
 function newRecoveryId(): string {
   try {
     return crypto.randomUUID();
   } catch {
-    return `inst-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+    const bytes = crypto.getRandomValues(new Uint8Array(16));
+    return `inst-${Array.from(bytes, byte => byte.toString(16).padStart(2, '0')).join('')}`;
   }
 }
 // Manifest-eigenaar van deze app-instantie (proces/realm).

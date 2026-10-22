@@ -2434,9 +2434,10 @@ export class CPMSolver {
             } else {
             // RETAINED_LOGIC: remaining respecteert óók de voorganger-druk (earlyStart).
             if (earlyStart > remStart) remStart = earlyStart;
-            // Conventie A22 `resumeFromActualElapsed`: MS Project hervat het restwerk NIET op de
-            // statusdatum zelf, maar op `actualStart + reeds-verstreken-duur` (`totalSpan − remaining`,
-            // vanaf de eigen `actualES`), doorgesnapt via dezelfde werk-optelling als het restwerk.
+            // Conventie A22 `resumeFromActualElapsed`: MS Project voegt `actualStart + reeds-verstreken-duur`
+            // (`totalSpan − remaining`, vanaf de eigen `actualES`) toe als derde ondergrens voor het restwerk,
+            // doorgesnapt via dezelfde werk-optelling als het restwerk. De statusdatum en de voorganger-druk
+            // blijven gelden: de laatste van de drie grenzen bepaalt `remStart`.
             // Bewijs (OzBuild "Create Technical Specification": 20% van 5d ⇒ verstreken 1d; actualStart
             // vr 08:00 + 1 werkdag → ma 08:00; + 4 werkdagen restwerk = MSP's eigen opgeslagen finish
             // EXACT). De statusdatum-vloer alléén geeft hier te vroeg.
@@ -2965,8 +2966,13 @@ export class CPMSolver {
     const days = isFiniteNumber(link.lagDays) ? link.lagDays : 0;
     return days * eng.hoursPerDay * 60;
   }
-  /** Externe-link-lag in DAGEN (dag-modus). Afwezig ⇒ 0. */
-  private externalLagDays(link: ExternalLink): number {
+  /** Externe-link-lag in DAGEN: minuten blijven de bron, net als in uurmodus.
+   *  Reken via de lokale kalender en rond halve dagen van nul af (symmetrische lead/lag). */
+  private externalLagDays(link: ExternalLink, eng: CalendarEngine): number {
+    if (isFiniteNumber(link.lagMinutes) && eng.hoursPerDay > 0) {
+      const days = link.lagMinutes / (eng.hoursPerDay * 60);
+      return Math.sign(days) * Math.round(Math.abs(days));
+    }
     return isFiniteNumber(link.lagDays) ? link.lagDays : 0;
   }
 
@@ -2991,7 +2997,7 @@ export class CPMSolver {
       const shifted = eng.addWorkingMinutesSigned(anchor, this.externalLagMinutes(link, eng));
       return startSide ? shifted : this.startFromFinish(eng, shifted, task);
     }
-    const lag = this.externalLagDays(link);
+    const lag = this.externalLagDays(link, eng);
     // FS: de werkdag ná het finish-anker (finish→start). Anders: het anker zelf (addWorkingDaysSigned
     // snapt zelf voorwaarts naar een werkdag). Beide takken tellen daarna `lag` werkdagen bij.
     const base = rel === 'FS' ? eng.nextWorkDayAfter(anchor) : anchor;
@@ -3017,7 +3023,7 @@ export class CPMSolver {
       const shifted = eng.addWorkingMinutesSigned(anchor, -this.externalLagMinutes(link, eng));
       return finishSide ? shifted : this.finishFromStart(eng, shifted, task);
     }
-    const lag = this.externalLagDays(link);
+    const lag = this.externalLagDays(link, eng);
     const base = rel === 'FS' ? eng.prevWorkDayBefore(anchor) : eng.prevWorkDay(anchor);
     const shifted = eng.addWorkingDaysSigned(base, -lag);
     return finishSide ? shifted : this.finishFromStart(eng, shifted, task);

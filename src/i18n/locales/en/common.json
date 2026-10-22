@@ -696,6 +696,7 @@
     "companies": "Resource libraries",
     "addCompany": "Add resource library",
     "newCompany": "New resource library",
+    "defaultCompany": "My resource library",
     "companyName": "Library name",
     "removeCompany": "Remove resource library",
     "cannotRemoveLast": "The last resource library cannot be removed.",
@@ -1322,6 +1323,7 @@
     "overrideDropped": "The link for row {{row}} points to a task that no longer exists and was ignored.",
     "moreRows": "…and {{more}} more",
     "sheetRowHint": "row {{row}} in the sheet",
+    "sheetTaskId": "OPS Task ID: {{id}}",
     "dateOrderTitle": "Day first or month first?",
     "dateOrderQuestion": "“{{sample}}” — which date is that?",
     "dateOrderOptionA": "{{date}}",
@@ -1395,7 +1397,7 @@
     },
     "resumeFromActualElapsed": {
       "label": "Remaining work resumes after the elapsed duration",
-      "help": "An in-progress task resumes its remaining work at the actual start plus the elapsed duration, not at the status date."
+      "help": "An in-progress task resumes its remaining work no earlier than the actual start plus the elapsed duration. The status date and predecessor boundary remain lower limits; the latest of the three applies."
     },
     "unstartedIgnoresStatusDate": {
       "label": "Don't move unstarted tasks to the status date",

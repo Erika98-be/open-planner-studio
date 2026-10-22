@@ -459,6 +459,7 @@
     "jumpToTask": "Go to task {{wbs}}",
     "relationPopoverTitle": "Relation type",
     "driving": "Driving relationship",
+    "drivingUnknown": "Driving relationships unknown without a calculation.",
     "lag": "Lag (e.g. 2d, 3ed, 2h, 50%, -25e%)",
     "recalculate": "Calculate",
     "assignments": {

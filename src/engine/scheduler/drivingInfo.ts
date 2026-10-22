@@ -1,9 +1,10 @@
 import type { CPMResult } from './CPMSolver';
 
 /**
- * De driving-relaties zoals Gantt en rapport ze mogen tekenen: `undefined` = geen informatie ⇒
- * alles neutraal doorgetrokken; een (eventueel lege) lijst = berekend ⇒ niet-genoemde relaties
- * gestreept.
+ * De gedeelde driving-informatie voor Gantt, rapport, taakpaneel, trace en MCP:
+ * `undefined` = onbekend; een (eventueel lege) lijst = geldig berekend.
+ * Gantt en rapport tekenen bij onbekend alle relaties neutraal doorgetrokken;
+ * bij een bekende lijst worden niet-genoemde relaties gestreept.
  *
  * Geen informatie is er bij: nog niets berekend, een mislukte berekening (`error`), en de
  * reconstructie "Datums zoals opgeslagen" (`drivingUnknown`). Dat laatste onderscheid ontbrak:

@@ -696,6 +696,7 @@
     "companies": "Resourcebibliotheken",
     "addCompany": "Resourcebibliotheek toevoegen",
     "newCompany": "Nieuwe resourcebibliotheek",
+    "defaultCompany": "Mijn resourcebibliotheek",
     "companyName": "Bibliotheeknaam",
     "removeCompany": "Resourcebibliotheek verwijderen",
     "cannotRemoveLast": "De laatste resourcebibliotheek kan niet worden verwijderd.",
@@ -1322,6 +1323,7 @@
     "overrideDropped": "De koppeling voor rij {{row}} wijst naar een taak die niet meer bestaat en is genegeerd.",
     "moreRows": "…en {{more}} meer",
     "sheetRowHint": "rij {{row}} in het blad",
+    "sheetTaskId": "OPS Task ID: {{id}}",
     "dateOrderTitle": "Dag of maand eerst?",
     "dateOrderQuestion": "“{{sample}}” — welke datum is dat?",
     "dateOrderOptionA": "{{date}}",
@@ -1395,7 +1397,7 @@
     },
     "resumeFromActualElapsed": {
       "label": "Restwerk hervat na de al verstreken duur",
-      "help": "Een lopende taak hervat haar restwerk op de werkelijke start plus de al verstreken duur, niet op de statusdatum."
+      "help": "Een lopende taak hervat haar restwerk niet eerder dan de werkelijke start plus de al verstreken duur. Ook de statusdatum en de voorgangergrens blijven ondergrenzen; de laatste van de drie geldt."
     },
     "unstartedIgnoresStatusDate": {
       "label": "Niet-gestarte taken niet naar de statusdatum",
