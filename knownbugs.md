@@ -478,6 +478,17 @@ en noem het in je rapport of PR-tekst.
    Lokaal 5× groen op `main` (b4ee5be3) en 25× groen op de PR na merge met main. Vermoedelijk zet iets de
    verticale scroll terug (begrenzing op de inhoudshoogte) voordat de inhoud er is; niet onderzocht. — S
 
+178. **`OPS_MPP_CRAWL` kiest twee verschillende corpusscopes in `check-mpp-import.ts`.** F4 (rond
+    regel 4024) gebruikt standaard de hele `testdata-crawl`-root en pint samen met `OPS_MPP_CORPUS`
+    216 bestanden / 3413 taken; T9 (rond regel 5968) gebruikt standaard de submap
+    `testdata-crawl/crawl-mpp` met een basislijn van 49 bestanden / 788 taken. Beide lezen dezelfde
+    omgevingsvariabele, dus één ingestelde root kan niet beide scopes correct kiezen. Vóór het verbod
+    op lokale Node-processen gemeld: met de hele root 449 mpp-import-mismatches, met de `crawl-mpp`-scope
+    7 F4-tellingfouten. Er is geen vergelijking met een schone baseline gedaan; deze aantallen bewijzen
+    geen gevolg van een codewijziging. Voorstel: de scopes afzonderlijk instelbaar maken of de submap
+    eenduidig van de root afleiden. Niet opgelost in de fix van 119; nummer 177 is gereserveerd in PR #492.
+    — B (scopemismatch in de code), S (gemelde gevolgen, geen schone baselinevergelijking)
+
 ## Wensen en open taken (geen bug)
 
 45. **Extensie-API**: extensies kunnen geen relatie of kalender gericht wijzigen en de selectie niet lezen.
