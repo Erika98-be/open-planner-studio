@@ -1,6 +1,6 @@
 import { claimTaskTypesNotice, notifyTaskTypesUnlocked, notifyTaskTypesUnlockedClaimed, TASK_TYPES_DETAIL_LINE } from '../taskTypesNotice';
 import { taskTypesNeedNotice } from '../taskTypesVisibility';
-import { writeIFC } from '@/services/ifc/ifcWriter';
+import { writeIFC, ifcObjectSeed } from '@/services/ifc/ifcWriter';
 import { writeCSV, writeProgressSheetCSV } from '@/services/csv/csvWriter';
 import { flattenOrder, inferWbsAutoNumberOnOpen } from '@/utils/wbs';
 import { writeMSPDI } from '@/services/msproject/mspdiWriter';
@@ -796,6 +796,20 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
       const { result: uniqueParsed, renamed: duplicateIds } = ensureUniqueImportIds(parsed);
       const payload = payloadFromImport(uniqueParsed, filePath);
       if (editing) {
+        // InternalProjectId kan in de tekst gewijzigd zijn. De reader sleutelt deze drie
+        // ankers op dat ingelezen id, terwijl de editor de sessie-identiteit hieronder behoudt.
+        // Verplaats de sleutels mee, anders vindt de writer de bewaarde GlobalIds niet terug.
+        if (payload.ifcGlobalIds && payload.project.id !== current.project.id) {
+          const globalIds = { ...payload.ifcGlobalIds };
+          for (const kind of ['proj', 'wp', 'ws'] as const) {
+            const sourceKey = ifcObjectSeed(kind, payload.project.id);
+            const guid = globalIds[sourceKey];
+            if (guid === undefined) continue;
+            globalIds[ifcObjectSeed(kind, current.project.id)] = guid;
+            delete globalIds[sourceKey];
+          }
+          payload.ifcGlobalIds = globalIds;
+        }
         // De tekst vervangt de inhoud, niet het document, zijn bibliotheek of de sessiekeuze
         // voor AutoSave. Pad, handle en site-versie blijven via de bestaande opties hieronder.
         payload.project = {

@@ -145,7 +145,14 @@ test('IFC toepassen behoudt documentbinding en sluitwaarschuwing, met één undo
   await page.locator('[data-ops-ribbon-tab="ifc"]').click();
   const editor = page.locator('textarea:visible');
   await expect(editor).toHaveValue(/Voor IFC-bewerking/);
-  await editor.fill((await editor.inputValue()).replace('Voor IFC-bewerking', 'Na IFC-bewerking'));
+  const sourceText = await editor.inputValue();
+  const editedText = sourceText.replace(/(=IFCTASK\('[^']*',#\d+,)'Voor IFC-bewerking'/, "$1'Na IFC-bewerking'");
+  // De eerste losse naam staat in IFCTASKTIME; wijzig doelgericht het IFCTASK-naamslot.
+  expect(editedText.match(/^#\d+=IFCTASK\(.*$/gm)).toHaveLength(1);
+  expect(/=IFCTASK\('[^']*',#\d+,'([^']*)'/.exec(editedText)?.[1]).toBe('Na IFC-bewerking');
+  expect(editedText.match(/^#\d+=IFCTASKTIME\(.*$/gm)).toEqual(sourceText.match(/^#\d+=IFCTASKTIME\(.*$/gm));
+  await editor.fill(editedText);
+  await expect(editor).toHaveValue(editedText);
   const apply = page.getByRole('button', { name: /^(Apply|Toepassen)$/ });
   await apply.click();
   await expect.poll(() => state(page).then(s => s.tasks[0]?.name)).toBe('Na IFC-bewerking');

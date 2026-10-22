@@ -170,6 +170,7 @@ const valuesA: Record<string, unknown> = {
   activityCodeTypes: [],
   customFieldDefs: [{ id: 'cfa', name: 'CFA', type: 'text', values: {} }],
   customTaskTypes: [{ id: 'tta', name: 'Engineering' }],
+  ifcGlobalIds: null,
   cpmResult: { marker: 'A' },
   resourceLoadResult: null,
   scheduleStale: false,
@@ -189,6 +190,7 @@ const valuesB: Record<string, unknown> = {
   activityCodeTypes: [{ id: 'acb', name: 'ACB', values: [] }],
   customFieldDefs: [],
   customTaskTypes: [{ id: 'ttb', name: 'Werkvoorbereiding' }],
+  ifcGlobalIds: { 'task:ta': '1BBBBBBBBBBBBBBBBBBBBB' },
   cpmResult: { marker: 'B' },
   resourceLoadResult: { marker: 'B' },
   scheduleStale: true,
@@ -560,10 +562,24 @@ for (const target of ['path', 'handle', 'site', 'untitled'] as const) {
     const beforeEdit = createSnapshot(editor());
     const historyBefore = historyDepthsForActiveScope(editor()).undoDepth;
     // Echte writer → reader, met behoud van libraryOrigin op resource én projectkalender.
-    const parsedEdit = readIFC(writeIFC(buildWriteIFCInput(editor()))
-      .replace('Voor IFC-bewerking', 'Na IFC-bewerking'));
-    // Ook geplakte tekst van een ander project mag de identiteit/binding van deze sessie niet overnemen.
-    parsedEdit.project = { ...parsedEdit.project, id: 'ander-project', companyId: 'andere-bibliotheek', companyName: 'Anders' };
+    const sourceText = writeIFC(buildWriteIFCInput(editor()));
+    const editedText = sourceText
+      .replace(/(=IFCTASK\('[^']*',#\d+,)'Voor IFC-bewerking'/, "$1'Na IFC-bewerking'")
+      // Ook geplakte tekst van een ander project mag de identiteit/binding van deze sessie niet overnemen.
+      .replace(`IFCPROPERTYSINGLEVALUE('InternalProjectId',$,IFCTEXT('${editor().project.id}')`,
+        "IFCPROPERTYSINGLEVALUE('InternalProjectId',$,IFCTEXT('ander-project')")
+      .replace("IFCPROPERTYSINGLEVALUE('CompanyId',$,IFCTEXT('editor-library')",
+        "IFCPROPERTYSINGLEVALUE('CompanyId',$,IFCTEXT('andere-bibliotheek')")
+      .replace("IFCPROPERTYSINGLEVALUE('CompanyName',$,IFCTEXT('Editorbibliotheek')",
+        "IFCPROPERTYSINGLEVALUE('CompanyName',$,IFCTEXT('Anders')");
+    eq(`${label}: IFCTASK.Name gewijzigd in de tekst`,
+      /=IFCTASK\('[^']*',#\d+,'([^']*)'/.exec(editedText)?.[1], 'Na IFC-bewerking');
+    eq(`${label}: IFCTASKTIME-naam ongemoeid`,
+      /=IFCTASKTIME\('([^']*)'/.exec(editedText)?.[1], 'Voor IFC-bewerking Time');
+    const parsedEdit = readIFC(editedText);
+    eq(`${label}: gewijzigd project-id werkelijk geparsed`, parsedEdit.project.id, 'ander-project');
+    eq(`${label}: gewijzigde bibliotheek werkelijk geparsed`,
+      [parsedEdit.project.companyId, parsedEdit.project.companyName], ['andere-bibliotheek', 'Anders']);
     let editPublications = 0;
     const stopObserving = store.subscribe(() => { editPublications++; });
     editor().applyProjectEdit(parsedEdit, { viewStartDate: '2030-06-03' });
