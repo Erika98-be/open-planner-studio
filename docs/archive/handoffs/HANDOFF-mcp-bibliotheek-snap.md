@@ -190,5 +190,6 @@ vreemde in handen durft te geven.
 - **Push vaak.** De checkout waarin deze hele sessie gewerkt werd
   (`/home/nozzit/open-aec/OPS/open-planner-studio`) is halverwege verdwenen. Al het werk overleefde
   uitsluitend doordat er na elke stap naar `origin/main` gepusht was.
-- **Releasen vraagt altijd expliciet akkoord.** Pushen naar main mag voor geverifieerd werk; een
-  `v*`-tag is onomkeerbaar en levert automatisch uit aan alle gebruikers, inclusief de Snap Store.
+- **Actuele releaseregel (eigenaar, gesprek 2026-10-22):** uitsluitend de `release`-skill voert
+  releases volledig automatisch uit, zonder menselijk akkoord vóór de tag. CI en releasepoorten
+  moeten groen zijn. Een `v*`-tag is onomkeerbaar en levert uit aan alle gebruikers, inclusief de Snap Store.

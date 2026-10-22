@@ -19,8 +19,8 @@ Ontwerp: `docs/superpowers/specs/2026-10-09-vertaalstraat-design.md`. Opdrachten
 `nl`/`en` aan. Alles gaat door de straat: pakket → Haiku-stations → poort → `apply`.
 
 ## Wanneer
-- Als stap in de release-skill (stap 6a). Werk dan op de releasebranch of een eigen branch die je vóór
-  stap 9 merget.
+- Bij elke expliciet gevraagde of geplande release (release-skill, stap 2), zonder aparte vraag.
+  Werk op de releasebranch en neem de vertalingen mee in de release-PR.
 - Los, als de user erom vraagt (bijvoorbeeld om `main` bij te werken). Werk dan op een eigen branch en
   open een PR.
 

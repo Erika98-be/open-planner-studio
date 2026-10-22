@@ -84,8 +84,9 @@ live in de Store (vereist account-stappen van de eigenaar — zie Follow-ups).
 
 `workflow_dispatch` met `version: v2026.6.0` → downloadt de bestaande release-deb,
 bouwt de snap, levert 'm als CI-artifact. **Groene build + downloadbare `.snap` = klaar**,
-zonder een nieuwe tag/release te maken (conform de afspraak: nieuwe tag = altijd eerst
-akkoord vragen).
+zonder een nieuwe tag/release te maken. Actuele regel (eigenaar, gesprek 2026-10-22):
+releases lopen uitsluitend via de `release`-skill, volledig automatisch zonder menselijk akkoord
+vóór de onomkeerbare `v*`-tag; CI en releasepoorten moeten groen zijn.
 
 ## Data flow
 

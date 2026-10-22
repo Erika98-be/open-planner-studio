@@ -97,8 +97,9 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>
 `docs/CHANGELOG.md` en `docs/TODO.md` zijn al bijgewerkt en zitten in de diff.
 
 **Pushen naar main mag** in dit project zonder te vragen zodra het geverifieerd is — maar let op:
-een push naar `main` deployt de web-build live. Doe dat dus pas ná STAP 3. **Releasen (bump/tag)
-vereist ALTIJD expliciet akkoord van de user op dat moment.**
+een push naar `main` deployt de web-build live. Doe dat dus pas ná STAP 3. **Actuele releaseregel (eigenaar, gesprek 2026-10-22):** uitsluitend de `release`-skill voert
+releases uit, volledig automatisch zonder menselijk akkoord vóór de onomkeerbare `v*`-tag.
+Groene CI en de releasepoorten blijven verplicht.
 
 ---
 
