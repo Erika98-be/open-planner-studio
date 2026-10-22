@@ -65,6 +65,19 @@ en noem het in je rapport of PR-tekst.
     vastgelegde rest in (optie 3) na de release, in het rekenprofielen-spoor. — B voor de OPS-kant (gemeten),
     S voor de P6-kant
 
+186. **B3-voltooidvenster met een dagkalender kan een TypeError geven.** Gemeld bij de onafhankelijke
+    review van PR #480 op `620c9e775`: ook op basiscommit `522589202` zou de volledige CPM-route
+    met `p6CompletedDataDateWindow` en een dagkalender falen. Exacte invoer en stack nog niet
+    zelfstandig bevestigd; staat los van de PF-optimalisatie en is daar niet aangepast. — S
+
+187. **Drie einddatumafwijkingen van de MPP-fidelitypin, ook met main.** Bij de integratie van
+    PR #480 op main `3a2f597f3` geeft `check-mpp-fidelity.ts` voor het publieke
+    `mpxj/junit/data/timephased-cost-rollup.mpp` `finishExact: 6` (pin 9) en `finishDiff: 3`
+    (pin 0); ook de verzameling afwijkende bestanden wijkt daardoor af. Dezelfde uitslag met
+    `CPMSolver.ts` en `ResourceLeveler.ts` uit die main-commit, zonder de PF-optimalisatie.
+    De gecombineerde `measure:profiles` eindigt op exit 1; de P6-cellen zijn ongewijzigd.
+    Geen baseline of motorcode hiervoor aangepast; oorzaak niet verder onderzocht. — B
+
 ## Tabel, invoer en bediening
 
 183. **De tabelkolom *Bepalend* onderscheidt onbekende driving nog niet van berekend zonder driving.**
