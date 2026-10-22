@@ -62,8 +62,32 @@ controleer de werkelijkheid ook als het verslag “klaar” zegt. Maak geen dubb
    ontbrekende gate: meld de blokkade en stop zonder nieuwe appversie; een open PR is niet klaar.
 
 Pas wanneer alle toepasselijke stappen aantoonbaar af zijn: noteer de tag als `PREV`, ga terug naar
-actuele `origin/main` en controleer nieuwe commits. Geen wijzigingen: afronden zonder nieuwe tag.
-Wel wijzigingen: de reeds herstelde versie vormt de ondergrens voor de nieuwe releasetekst.
+actuele `origin/main` en voer de kandidaatselectie hieronder uit. Een bestaande kandidaat gaat vóór
+“niets veranderd” en vóór een nieuwe bump. `PREV` blijft de ondergrens voor de releasetekst.
+
+## Kandidaatselectie
+
+Voer dit vóór **iedere** bump uit, na het afhandelen van de laatste tag. Lees open release-PR's
+(`gh pr list --repo OpenAEC-Foundation/open-planner-studio --base main --state open --limit 1000
+--json number,title,headRefName,headRefOid,url`) en hun pakketversie/voortgang. Vergelijk ook
+`git show origin/main:package.json` met de actuele origin-tags uit `git ls-remote --tags origin 'v*'`.
+Een versie in package.json zonder bijbehorende origin-tag is een bestaande kandidaat.
+
+- **Open release-PR:** `RELEASE_MODE=pr`. Gebruik zijn bestaande branch/head, versie en
+  hervatverslag. Maak geen tweede PR, bump niet en voeg geen dubbel notes-/highlights-/changelogblok toe.
+  Voeg zo nodig actuele main samen op die branch, behoud de kandidaatversie en vernieuw cijfers/CI.
+- **Ongetagde versie op main, geen open kandidaat-PR:** `RELEASE_MODE=main`. Gebruik die versie,
+  notes/highlights en de bestaande gemergde release-PR met zijn verslag. Hervat direct bij de
+  main-poorten van stap 3. Ontbreekt nog inhoud: vul die voor **dezelfde versie** aan via een
+  correctie-PR (`RELEASE_MODE=pr`) met normale PR/main-poorten; vernieuw de cijfers voor de extra
+  commit. Geen bump, ook niet op de volgende zaterdag.
+- **Geen van beide:** `RELEASE_MODE=nieuw`. Pas nu mag de wijzigingscontrole tot een nieuwe
+  `npm run bump` leiden. Zonder nieuwe commits sinds `PREV` is er niets te releasen.
+
+Match PR en main op versie. Verschillende kandidaatversies of meerdere open PR's voor dezelfde
+versie: stop en meld de botsing; kies niet stil een nieuwe versie. Controleer dat de PR-head echt
+de kandidaatversie bevat. Reconstructeer ontbrekende voortgang uit de bestaande PR en bestanden.
+Een al getagde kandidaat gaat terug naar [Hervatten](#hervatten), nooit naar een tweede bump.
 
 ## Releasecijfers
 
@@ -79,7 +103,7 @@ Een extra commit of een gewijzigde mergebasis verandert de cijfers. Plan daarom 
 4. Bereken `daysSincePrevious` volgens de formule in de verifier: afgeronde dagen tussen de
    commitdatum van `PREV` en de verwachte squashcommitdatum. Gebruik geen tag-aanmaakdatum.
 5. Controleer vlak vóór de squashmerge dat `origin/main` nog `BASE` is. Anders: stop deze kandidaat
-   en bereid opnieuw voor vanaf de nieuwe basis. Force-push geen verouderde kandidaat door.
+   en werk dezelfde kandidaatversie bij vanaf de nieuwe basis. Geen nieuwe bump of force-push.
 6. Controleer ná de merge op de echte main-commit `npm run verify:release-highlights -- "$VERSION"`.
    Vóór de merge zijn de cijfers van de uiteindelijke squashcommit nog niet tegen `HEAD` te toetsen.
    Een verschil (ook door datumafronding) blokkeert de tag. Corrigeer via een nieuwe PR, met cijfers

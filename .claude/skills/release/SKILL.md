@@ -23,6 +23,8 @@ Alleen deze skill mag een release uitvoeren. Een verzoek om de skill te wijzigen
   Controleer GitHub-publicatie, release-/Snap-/AUR-runs, wiki en website. Rond onafgerond werk
   voor dezelfde tag af, ook zonder nieuwe commits. Onopgelost: stop zonder nieuwe versie.
 - Pas na volledig herstel geldt die tag als `PREV`.
+  Volg daarna de [kandidaatselectie](referentie.md#kandidaatselectie): zoek open release-PR's
+  en een ongetagde versie op main. Hervat dezelfde versie/PR; bump uitsluitend bij `RELEASE_MODE=nieuw`.
   Haal `origin/main` opnieuw op als basis-SHA; `PREV` moet daarvan een voorouder zijn.
 - Zoek de `ci.yml`-run op **die exacte basis-SHA** met event `push` en branch `main`.
   Ontbreekt hij, loopt hij nog of is zijn conclusie niet `success`: stop zonder tag.
@@ -34,9 +36,15 @@ Alleen deze skill mag een release uitvoeren. Een verzoek om de skill te wijzigen
 
 ## 2. Release-inhoud
 
-Lees de volledige commitlijst sinds de vorige tag. Gebruik die als bron voor alle teksten.
-Draai `npm run bump` **zonder argument**. Lees daarna de versie uit `package.json`.
-Schema: `JJJJ.W.N`, ISO-weekjaar, week zonder voorloopnul, volgnummer vanaf 0.
+Lees de volledige commitlijst sinds `PREV`. Gebruik die als bron voor alle teksten.
+Neem bij hervatten de kandidaatversie, bestaande teksten en voortgang over; vul alleen aan wat ontbreekt.
+Voer na de kandidaatselectie, in de gekozen werkboom, uitsluitend bij een nieuwe kandidaat de bump uit:
+```bash
+: "${RELEASE_MODE:?Voer eerst de kandidaatselectie uit}"
+if [ "$RELEASE_MODE" = nieuw ]; then npm run bump; fi
+VERSION=$(node -p 'require("./package.json").version')
+```
+Een hervatte kandidaat krijgt ook na een weekwissel geen nieuwe bump. Schema: `JJJJ.W.N`, ISO-weekjaar, week zonder voorloopnul, volgnummer vanaf 0.
 De bump gebruikt actuele origin-tags én de huidige versie en synct alle eigen versievelden.
 
 - Schrijf 3–6 korte, opmaakarme bullets in `docs/release-notes/v<versie>.md`.
@@ -69,8 +77,9 @@ node scripts/run-ts.mjs scripts/check-wiki-links.ts
 ```
 `VERSION` is de versie uit stap 2. Beoordeel elke opdracht op zijn exitcode.
 Controleer vóór iedere commit `git status -sb`; commit alleen releasebestanden.
-Push de releasebranch en open een PR tegen `main` met titel `Release v<VERSION>`.
-Registreer de PR bij T3. Bewaar het [hervatverslag](referentie.md#hervatten) in deze PR.
+Staat de kandidaat al ongewijzigd op main met een gemergde PR, sla dan de PR/merge-stappen over.
+Anders: push de releasebranch en hergebruik de kandidaat-PR; maak alleen zonder bestaande PR
+`Release v<VERSION>`. Registreer hem bij T3 en bewaar daarin het hervatverslag.
 De volledige `npm run verify` draait in CI, niet lokaal vóór de push.
 Wacht op een geslaagde `ci.yml`-run voor de exacte PR-head; bij rood: stop zonder tag.
 Merge zelf met `gh pr merge <nr> --squash --admin --match-head-commit <head-SHA>`.
@@ -79,7 +88,7 @@ Hiervoor is geen menselijke review nodig. Bewaak de basis en cijfers zoals in de
 Haal `origin/main` opnieuw op en gebruik een schone checkout van de gemergede releasecommit.
 Wacht op de `ci.yml`-pushrun voor exact die commit: **alle jobs groen**.
 Controleer vóór de tag opnieuw dat `origin/main` nog die SHA heeft. Bij nieuwe commits:
-stop deze kandidaat; bereid opnieuw voor op de nieuwe basis met actuele cijfers en CI.
+behoud kandidaatversie en voortgang; werk de basis, cijfers en CI bij zonder nieuwe bump.
 Draai op de releasecommit:
 ```bash
 node scripts/bump-version.js --check "$VERSION"

@@ -77,7 +77,13 @@ Vergelijk `git status --short` vóór en na de stations: alleen nieuwe uitvoer o
 Schreef een agent buiten zijn pakketuitvoer of reviewbestand: stop en meld de afwijking.
 
 ### 4. Toepassen
+Blokkeer de hele apply-ronde zolang een vereist vertaal-, nalees- of herstelstation onafgerond is;
+een groene pakketcheck alleen volstaat niet. Onbekende stationstatus telt ook als onafgerond.
+Hervat eerst die stations met hun bestaande pakketten/taak-ID's; maak geen nieuwe `prepare`-ronde.
+Bepaal `OPEN_STATIONS` uit alle vereiste stations van alle pakketten die `apply` kan inlezen:
 ```bash
+: "${OPEN_STATIONS:?Controleer eerst alle vereiste stations}"
+test "$OPEN_STATIONS" -eq 0 || exit 1
 for l in <talen>; do npm run translate -- apply ui $l; done
 ```
 `apply` neemt alleen groene pakketten over. Een rood pakket blijft staan:

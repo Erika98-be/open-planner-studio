@@ -720,9 +720,7 @@ op 24-09 herschreven naar deze stand (voorstel `2026-09-24-pr169-body-voorstel.m
 ## 4. Vaste regels (uit het geheugen van de eigenaar, hier herhaald)
 
 - Poorten op exitcode; máx. één `verify`/zware suite tegelijk machinebreed (`ps aux | grep run.sh`).
-- Nooit naar `main` pushen; alles via PR; de eigenaar merget. Releases volgen de `release`-skill:
-  volledig automatisch, zonder menselijk akkoord vóór de onomkeerbare `v*`-tag; CI en releasepoorten
-  moeten groen zijn (eigenaar, gesprek 2026-10-22). De releasejob merget zijn eigen release-PR.
+- Nooit naar `main` pushen; alles via PR; de eigenaar merget. Releasen alleen met akkoord.
 - Subagents: nooit Fable, nooit Opus 5; `uitvoerder-opus-laag/-midden` (Opus 5.5); model in naam en
   rapport; critreviews via de `critreview`-skill met [BEVESTIGD]/[VERMOED].
 - Corpus: `OPS_XER_CORPUS="/home/nozzit/open-aec/voor claude/testdata-crawl"` (93/93); `.mpp` vindt

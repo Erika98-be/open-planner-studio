@@ -35,7 +35,9 @@ Controleer in het resultaat de provider en het model. Bewaar `taskId`; `childThr
 vervolgopdrachtadres. Een wacht-timeout stopt de child niet: lees `task_status(taskId)` of verwerk
 zijn gereedmelding. Start geen tweede child zolang dezelfde delegatie nog loopt of op input wacht.
 Bij ontbrekende rechten, mislukte child of ontbrekende uitvoer: markeer het pakket onafgerond;
-volgende stations voor dat pakket starten niet. Bewaar de fout voor de normale herstelronde.
+volgende stations voor dat pakket starten niet en **`apply ui` is voor de hele ronde geblokkeerd**.
+Hervat eerst het onafgeronde station met de bestaande pakketten/taak-ID's; geen `prepare` of apply
+zolang een vereist station onafgerond of onbekend is, ook als `<id>.out.json` groen keurt.
 
 1. **Vertalen.** De opdracht hierboven gebruikt `ui.md` (of `ui-termfix.md`). Die schrijft alleen
    `<repo>/build/translate/<lang>/<id>.out.json` en draait zijn eigen check, maximaal drie keer.
@@ -56,5 +58,6 @@ volgende stations voor dat pakket starten niet. Bewaar de fout voor de normale h
 
 Gebruik voor elk pakket eigen taak-ID's en bestanden. Deel de gitignored pakketten via
 `isolation:"shared"`; een nieuwe worktree zou de pakketten en ongeschreven wijzigingen missen.
-Na de stations gaat de ouder verder met `apply ui`, daarna `--stale` en de bestaande eindpoorten.
+Pas met alle vereiste stations afgerond (`OPEN_STATIONS=0`) mag de ouder `apply ui` uitvoeren.
+Daarna volgen `--stale` en de bestaande eindpoorten.
 Alleen de ouder past de locale-/hashbestanden toe en maakt de vertaalcommit.
