@@ -430,7 +430,7 @@ en noem het in je rapport of PR-tekst.
     van v2026.10.0 opgelost met afkappen (`TaskAssignmentsSection.tsx`), de koppen zelf niet. Voorstel: korte
     koppen in die talen, en de Help-artikelen die ze citeren mee. — B
 
-176. **De docs-indexregel beschrijft alleen nl/en-gidsen als bestaande talen.**
+180. **De docs-indexregel beschrijft alleen nl/en-gidsen als bestaande talen.**
     `.claude/rules/docs-index.md` zegt bij `public/docs/{nl,en}/*.md` “Alleen nl + en; een andere
     UI-taal leest Engels”, terwijl `AGENTS.md` de vertaalde gidsen en de fallback per ontbrekend
     artikel beschrijft. Gezien bij het lezen voor de wekelijkse release-skill; niet in de app getoetst.
@@ -537,6 +537,13 @@ en noem het in je rapport of PR-tekst.
     na `seedActualDates` en een canvasdubbelklik ontbrak `[data-ops-task-dialog]`. De eerste opening
     en de voortgangsvraag in hetzelfde scenario slaagden. De PR wijzigt alleen Vite 7.3.5 naar 7.3.7;
     de oorzaak en het verband met die wijziging zijn niet vastgesteld. — S
+
+176. **MSPDI: de projectstart wordt zonder XML-escaping geëxporteerd.** `mspdiWriter.ts` schrijft
+    `project.startDate` rechtstreeks in `<StartDate>`; de reader neemt een tekstprefix uit het
+    invoerveld over. Een ongeldige datum met XML-metatekens kan zo ongeldige XML opleveren. Gezien
+    bij de analyse van CodeQL #18; die melding is een false positive voor XSS omdat de reader
+    uitsluitend `application/xml` parseert en geen nodes in de pagina invoegt. De XML-integriteit
+    van zulke ongeldige datums is niet nagespeeld. Voorstel: datumvalidatie en escaping. — S
 
 179. **De website heeft geen PR-CI voor de automatische releasestap.** Op 2026-10-22 bevat
     `OpenAEC-Foundation/website/.github/workflows/` alleen `auto-assign-issues.yml`, `deploy.yml`
