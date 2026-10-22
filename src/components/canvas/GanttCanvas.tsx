@@ -397,7 +397,7 @@ export function GanttCanvas({
     const date = pointer.contextMenu?.clickDate;
     addTaskAtEnd({
       name: milestone ? defaultMilestoneName : defaultTaskName,
-      ...(milestone ? { isMilestone: true, taskType: 'ATTENDANCE' as const } : {}),
+      ...(milestone ? { isMilestone: true, milestoneKind: 'FINISH' as const, taskType: 'USERDEFINED' as const } : {}),
       ...(date ? { time: createDefaultTaskTime(date, milestone ? 0 : 5, 'days', calendar) } : {}),
     });
   };
@@ -1027,7 +1027,8 @@ export function GanttCanvas({
             addTask({
               name: defaultMilestoneName,
               isMilestone: true,
-              taskType: 'ATTENDANCE',
+              milestoneKind: 'FINISH',
+              taskType: 'USERDEFINED',
               parentId: contextMenu.task?.id || null,
             });
           }}
