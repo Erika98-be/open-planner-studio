@@ -18,8 +18,6 @@ en noem het in je rapport of PR-tekst.
 
 ## Rekenen en planning
 
-1. **Uur-lag op een externe relatie wordt bij een dagtaak genegeerd** (een interne relatie rondt hem wél
-   af). `CPMSolver` `externalForwardBound`/`externalBackwardBound` gebruiken in dagmodus alleen `lagDays`. — B
 2. **Dagtaak na urentaak op een kalender met werktijdblokken** eindigt te vroeg (1,6 in plaats van 2
    werkdagen), en de urentaak krijgt −0,5 speling zonder constraint. — B
 3. **Constraint en deadline op een fase** zijn invulbaar (paneel, Taak bewerken), maar de motor negeert ze. — B
@@ -72,12 +70,6 @@ en noem het in je rapport of PR-tekst.
     vastgelegde rest in (optie 3) na de release, in het rekenprofielen-spoor. — B voor de OPS-kant (gemeten),
     S voor de P6-kant
 
-121. **Nivelleervenster: de piekmelding blijft leeg bij een eigen urenverdeling of capaciteitsstappen.** De
-    nivelleerder kiest `INTRINSIC_OVERRUN` op de echte dagwaarden (`assignmentDayUnits`) en op
-    `maxCapacityOf` met stappen (`ResourceLeveler.ts`); het venster vult de details in met `distributeUnits` en
-    de vlakke `res.maxUnits` (`LevelingDialog.tsx:141-165`, `:293-304`). Dan ontbreken resource, piek en
-    capaciteit in de melding. Niet nagespeeld. Zie ook 9. — S
-
 ## Tabel, invoer en bediening
 
 13. **Tabelkolom *Kleur*** wordt in IFC bewaard, maar geen balk of rapport gebruikt hem. — B
@@ -87,21 +79,14 @@ en noem het in je rapport of PR-tekst.
 21. ***Rapport › Afdruk*** doet op het tabblad Rapport niets. — B
 60. **Duur-kolom afgeknipt** in de standaard Gantt-weergave (WBS 60 + Taaknaam 240 + Duur 60 + de
     "+"-kolom): je leest "2c" in plaats van "2d", op 1600 én 1366 px breed. — B
-135. **Vinkjes lijken op keuzerondjes.** De app-brede stijl `input[type="checkbox"]`
-    (`src/styles/globals.css:2477`) geeft een vak van 15 px met `border-radius: var(--radius-sm)` (6 px) en
-    zonder vinkteken. Het vak oogt daardoor rond, en aangevinkt is het een gevuld oranje rondje. Gezien bij
-    *Screenshot bijvoegen* in het feedbackvenster. Voorstel: een kleinere radius (2–3 px) en een vinkteken. — S
-136. **`.btn--secondary` valt meer op dan de primaire knop ernaast.** De stijl (`src/styles/globals.css:2207`)
-    heeft een rand van 2 px in tekstkleur. Naast de oranje primaire knop trekt de secundaire knop zo de
-    aandacht, bijvoorbeeld *Annuleren* naast *Versturen* in het feedbackvenster. Voorstel: een rand van 1 px in
-    `--theme-control-border`. — S
+
 
 ## Kalenders
 
 22. **Goede Vrijdag en Bevrijdingsdag** hebben `optional: true`, maar dat wordt nergens gelezen: ze worden
     altijd gegenereerd. — B
 
-177. **UI-kalendergeneratie gebruikt alleen de ingevoerde projecteinddatum.** `CalendarDialog.tsx:77`
+182. **UI-kalendergeneratie gebruikt alleen de ingevoerde projecteinddatum.** `CalendarDialog.tsx:77`
     en `ResourceCalendarDialog.tsx:57` geven alleen `project.endDate` aan `computeGenerateSpan`, ook
     wanneer `cpmResult.projectEnd` later ligt. Dit is de open UI-vraag uit 124, waarvan het MCP-deel
     is opgelost. Of dit UI-gedrag bedoeld is, is niet uitgezocht; niet in de app nagespeeld. — S
@@ -218,20 +203,6 @@ en noem het in je rapport of PR-tekst.
     op dezelfde browser, dan krijgt B de herstelvraag van A, en schrijft Ctrl+S na herstel naar het bestand van A
     met de rechten van B. Voorstel: de host levert een gebruikers-id en de tool sleutelt zijn opslag daarop.
     Gemeld door de review van #312. — S
-107. **`IfcTaskTime.Completion` krijgt `0.00` bij een taak zonder voortgang.** Het attribuut is een
-    `IfcPositiveRatioMeasure`, en die moet groter dan 0 zijn (regel WR1). `ifcTaskSlots.ts`, slot `completion`
-    (`ifcCompletionReal(... ?? 0)`). IfcOpenShell 0.9.0 (`ifcopenshell.validate`) geeft één melding per taak
-    zonder voortgang: 1155 in de 24 voorbeelden, 17 in het rijke testproject van `check-ifc-arity.ts`. Voorstel:
-    `$` bij 0 (de reader leest `$` al als 0); niet uitgezocht of de aanwezigheidsregistratie in hetzelfde
-    bestand dat toelaat. Gevonden bij #292, niet daar opgelost. — B
-108. **Gehele getallen in `IFCREAL(...)` en `IFCMONETARYMEASURE(...)` zonder decimale punt.** STEP vraagt voor
-    een REAL een punt (`8.`), de writer schrijft `8`. IfcOpenShell meldt dan
-    `IfcPropertySingleValue :: NominalValue: Not valid`: 210 keer in de 24 voorbeelden, 17 keer in het rijke
-    testproject (precies de 17 gehele waarden). Met `8.` in plaats van `8` verdwijnen de meldingen (met een
-    script nagemeten). Plekken: `ifcWriter.ts`: eigen velden `number`/`cost` (`case 'number'`), de
-    kalender-pset (`HoursPerDay`, `WorkStartHour`, `WorkEndHour`) en de resource-pset (`MaxUnits`,
-    `CostPerHour`). Voorstel: één hulpfunctie voor een STEP-REAL, zoals `ifcCompletionReal`. Gevonden bij
-    #292, niet daar opgelost. — B
 109. **`StartTime`/`FinishTime` van `IfcWorkPlan` en `IfcWorkSchedule` komen uit de invoerdatums, niet uit de
     berekende planning.** `ifcWriter.ts` (blok `// Work plan & schedule`) neemt het minimum en maximum van
     `time.scheduleStart`/`time.scheduleFinish`. Dat zijn invoervelden (`ifcTaskSlots.ts`,
@@ -426,6 +397,12 @@ en noem het in je rapport of PR-tekst.
     van v2026.10.0 opgelost met afkappen (`TaskAssignmentsSection.tsx`), de koppen zelf niet. Voorstel: korte
     koppen in die talen, en de Help-artikelen die ze citeren mee. — B
 
+180. **De docs-indexregel beschrijft alleen nl/en-gidsen als bestaande talen.**
+    `.claude/rules/docs-index.md` zegt bij `public/docs/{nl,en}/*.md` “Alleen nl + en; een andere
+    UI-taal leest Engels”, terwijl `AGENTS.md` de vertaalde gidsen en de fallback per ontbrekend
+    artikel beschrijft. Gezien bij het lezen voor de wekelijkse release-skill; niet in de app getoetst.
+    Voorstel: de regel gelijkmaken aan het actuele docscontract. — S
+
 ## Tests
 
 79. **`check-task-grid-performance` (relationIndex-mediaan ≤ 500 ms) zit lokaal op het randje.** Los gedraaid
@@ -482,6 +459,20 @@ en noem het in je rapport of PR-tekst.
    Lokaal 5× groen op `main` (b4ee5be3) en 25× groen op de PR na merge met main. Vermoedelijk zet iets de
    verticale scroll terug (begrenzing op de inhoudshoogte) voordat de inhoud er is; niet onderzocht. — S
 
+177. **`actionlint` meldt twee bestaande shellcheck-waarschuwingen in `release.yml`.**
+    De stap `Check release notes present` geeft SC2069 bij `2>&1 >/dev/null`; de stap
+    `Set updater notes in latest.json` geeft SC2016 bij de JavaScript-template-expressies in
+    een enkel-gequote Node-commando. Beide meldingen ook gereproduceerd op de ongewijzigde
+    basisversie `522589202` in een tijdelijk bestand. Zonder shellcheck is de workflowvalidatie
+    groen. Voorstel: bedoelde omleiding verduidelijken en de bedoelde JavaScript-expressies gericht
+    documenteren voor shellcheck. Geen releaseworkflow gestart. — B
+
+178. **`gh pr edit --body-file` faalt op deze host door Projects Classic.** Bij het bijwerken
+    van PR #479 op 2026-10-22 gaf de CLI `GraphQL: Projects (classic) is being deprecated`
+    op `repository.pullRequest.projectCards`. De body is wel bijgewerkt via
+    `gh api --method PATCH repos/OpenAEC-Foundation/open-planner-studio/pulls/479 -F body=@<bestand>`.
+    Voorstel: de GitHub CLI op de host bijwerken; de repo zelf is niet aangepast hiervoor. — B
+
 ## Wensen en open taken (geen bug)
 
 45. **Extensie-API**: extensies kunnen geen relatie of kalender gericht wijzigen en de selectie niet lezen.
@@ -520,3 +511,12 @@ en noem het in je rapport of PR-tekst.
     bij de analyse van CodeQL #18; die melding is een false positive voor XSS omdat de reader
     uitsluitend `application/xml` parseert en geen nodes in de pagina invoegt. De XML-integriteit
     van zulke ongeldige datums is niet nagespeeld. Voorstel: datumvalidatie en escaping. — S
+
+179. **De website heeft geen PR-CI voor de automatische releasestap.** Op 2026-10-22 bevat
+    `OpenAEC-Foundation/website/.github/workflows/` alleen `auto-assign-issues.yml`, `deploy.yml`
+    (push op main/dispatch) en `update-stats.yml` (dagelijks/dispatch). `gh api .../actions/workflows`
+    bevestigt deze workflows plus de dynamische Pages-deploy; branch protection geeft
+    `required_status_checks: null`. De checker-scripts staan alleen als lokale opdrachten in `CLAUDE.md`.
+    Daardoor kan een website-release-PR niet vóór de merge aan de eis “website-CI groen” voldoen.
+    Voorstel: een website-PR-workflow met de bestaande checkers toevoegen en als poort instellen.
+    De Nozzit-bypass voor reviews bestaat wel. Alleen gelezen; niets in de website gewijzigd. — B
