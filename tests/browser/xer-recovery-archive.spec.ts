@@ -323,11 +323,10 @@ test('crashherstel: oude v1-snapshot herstelt en onleesbare kopie blijft bewaard
   // Alleen de fixture en observatie via IndexedDB; bewerken en melding sluiten via echte UI.
   await page.clock.install();
   await page.addInitScript(() => {
-    Object.assign(window, { __manifestWriteAttempts: 0 });
+    const observed = Object.assign(window, { __manifestWriteAttempts: 0 });
     const transaction = IDBDatabase.prototype.transaction;
     IDBDatabase.prototype.transaction = function (this: IDBDatabase, stores: string | string[], mode?: IDBTransactionMode, options?: IDBTransactionOptions) {
       if (this.name === 'ops-recovery' && mode === 'readwrite') {
-        const observed = window as Window & { __manifestWriteAttempts: number };
         observed.__manifestWriteAttempts++;
       }
       return transaction.call(this, stores, mode, options);
@@ -395,7 +394,11 @@ test('crashherstel: oude v1-snapshot herstelt en onleesbare kopie blijft bewaard
         siteFileVersion: state.siteFileVersion, documents: state.documents.length };
     });
     expect(await documentState()).toEqual({ tasks: 0, filePath: null, siteFileId: null, siteFileVersion: null, documents: 1 });
-    const attempts = () => page.evaluate(() => (window as Window & { __manifestWriteAttempts: number }).__manifestWriteAttempts);
+    const attempts = () => page.evaluate(() => {
+      const value: unknown = Reflect.get(window, '__manifestWriteAttempts');
+      if (typeof value !== 'number') throw new Error('De herstelobservatie is niet geïnstalleerd.');
+      return value;
+    });
     await page.clock.pauseAt(await page.evaluate(() => Date.now() + 500));
     const addTask = page.getByRole('button', { name: /New task directly below the selection|Nieuwe taak direct onder de selectie/ });
     let previousAttempts = await attempts();
