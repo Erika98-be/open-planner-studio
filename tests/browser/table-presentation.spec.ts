@@ -185,6 +185,7 @@ test('tabel: relatiechips krijgen één kleur per richting, sturend als sterkere
       ...columns,
       { id: 'relation.predecessors', width: 240, pinned: false } as unknown as (typeof columns)[number],
       { id: 'relation.successors', width: 160, pinned: false } as unknown as (typeof columns)[number],
+      { id: 'relation.driving', width: 180, pinned: false } as unknown as (typeof columns)[number],
     ]);
     window.__OPS__!.store.getState().runCPM();
   }, { drivingPredId, slackPredId, mainId });
@@ -198,6 +199,14 @@ test('tabel: relatiechips krijgen één kleur per richting, sturend als sterkere
   const slackChip = predecessorsCell.locator('.task-grid-relation-chip:not(.task-grid-relation-chip--driving)');
   await expect(drivingChip).toHaveCount(1);
   await expect(slackChip).toHaveCount(1);
+  await expect(drivingChip.locator('.lucide-zap')).toHaveCount(1);
+  await expect(predecessorsCell.locator('.lucide-circle-help')).toHaveCount(0);
+  const drivingWbs = await page.evaluate(id => window.__OPS__!.store.getState().tasks.find(task => task.id === id)!.wbsCode, drivingPredId);
+  const mainWbs = await page.evaluate(id => window.__OPS__!.store.getState().tasks.find(task => task.id === id)!.wbsCode, mainId);
+  await expect(taskCell(page, mainId, 'relation.driving')).toHaveText(`← ${drivingWbs}`);
+  await expect(taskCell(page, drivingPredId, 'relation.driving')).toHaveText(`→ ${mainWbs}`);
+  await slackChip.locator('.task-grid-relation-jump').hover();
+  await expect(page.locator('.gantt-tooltip')).toContainText(/Niet bepalend|Not driving/);
 
   // Binnen één chip zijn referentie en type/lag exact dezelfde kleur — voor zowel de sturende als
   // de niet-sturende chip (klacht 1: niet langer alleen het WBS-deel gekleurd bij niet-sturend).

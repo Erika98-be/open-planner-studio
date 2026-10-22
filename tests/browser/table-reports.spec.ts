@@ -2,6 +2,8 @@
 // krijgt een gerenderde tabel met samenvatting; een optiewijziging ververst het rapport live en de
 // PDF-export levert een bestand met het rapport-eigen suffix. De rekenkant wordt headless bewaakt
 // (tests/planning/check-reports.ts); hier alleen de echte gebruikersflow door de DOM.
+import { readFile } from 'node:fs/promises';
+import { PDFDocument } from 'pdf-lib';
 import { expect, seedProject, test } from './fixtures/ops';
 
 test('table reports: rapporttype kiezen rendert tabel, optie ververst live, PDF-export gebruikt eigen suffix', async ({ page, ops: _ops }) => {
@@ -15,7 +17,14 @@ test('table reports: rapporttype kiezen rendert tabel, optie ververst live, PDF-
     s.runCPM();
   });
 
-  await page.getByRole('button', { name: /^(Report|Rapport)$/ }).click();
+  // R1 knownbug 21: vanuit het volledige resourcepaneel moet Rapport zijn eigen werkruimte
+  // openen; anders ontbreekt het formulier en doet de lintknop Afdruk verderop stil niets.
+  await page.locator('[data-ops-ribbon-tab="resources"]').click();
+  await page.locator('[data-tour-anchor="ribbon:resources:openResourcePanel"]').click();
+  const addResource = page.locator('[data-ops-resource-add]');
+  await expect(addResource).toBeVisible();
+  await page.locator('[data-ops-ribbon-tab="report"]').click();
+  await expect(addResource).toHaveCount(0);
   const typePicker = page.getByLabel(/^(Report type|Rapporttype)$/).first();
   await typePicker.click();
   await page.getByRole('option', { name: /^Look-ahead$/ }).click();
@@ -92,6 +101,14 @@ test('table reports: rapporttype kiezen rendert tabel, optie ververst live, PDF-
   await fromInput.fill('2026-10-05');
   await expect(periodField.getByRole('alert')).toHaveCount(0);
 
+  // De lintknop moet het gekozen tabelrapport met diens periode en papier exporteren.
+  const paper = page.getByLabel(/^(Paper:|Papier:)$/);
+  await paper.click();
+  await page.getByRole('option', { name: 'A2', exact: true }).click();
+  const orientation = page.getByLabel(/^(Orientation:|Oriëntatie:)$/);
+  await orientation.click();
+  await page.getByRole('option', { name: /^(Portrait|Staand)$/ }).click();
+
   // Review-bevinding 1: een export op een VEROUDERDE planning rekent eerst door én exporteert pas
   // ná de re-render — het rapport op het scherm draagt dan geen "planning gewijzigd"-melding meer
   // en de store staat niet meer op stale wanneer het bestand komt.
@@ -102,11 +119,26 @@ test('table reports: rapporttype kiezen rendert tabel, optie ververst live, PDF-
   });
   await expect(report.locator('[role=note]')).toHaveCount(1);
   const downloadPromise = page.waitForEvent('download');
-  await page.getByRole('button', { name: /^(Export PDF|Exporteer PDF)$/ }).click();
+  const print = page.locator('[data-tour-anchor="ribbon:report:printPreview"]');
+  await print.click();
   const download = await downloadPromise;
   expect(download.suggestedFilename()).toMatch(/-look-ahead\.pdf$/);
   expect(await page.evaluate(() => window.__OPS__!.store.getState().scheduleStale)).toBe(false);
   await expect(report.locator('[role=note]')).toHaveCount(0);
+  await expect(print).toBeFocused();
+  await expect(typePicker).toContainText('Look-ahead');
+  await expect(fromInput).toHaveValue('2026-10-05');
+  await expect(toInput).toHaveValue('2026-10-16');
+  await expect(paper).toContainText('A2');
+  await expect(orientation).toContainText(/^(Portrait|Staand)$/);
+  const pdfPath = await download.path();
+  expect(pdfPath).not.toBeNull();
+  const pdf = await PDFDocument.load(await readFile(pdfPath!));
+  expect(pdf.getPageCount()).toBeGreaterThan(0);
+  for (const pdfPage of pdf.getPages()) {
+    expect(pdfPage.getWidth()).toBeCloseTo(1190.55, 1);
+    expect(pdfPage.getHeight()).toBeCloseTo(1683.78, 1);
+  }
 });
 
 // Resourcebelasting (issue #119): gegroepeerd per resource (naam alleen op de eerste rij van de

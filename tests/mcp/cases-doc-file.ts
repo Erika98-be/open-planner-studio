@@ -7,6 +7,7 @@
 // De T16-hook `markDuplicateBorn` loopt via de requestcontext en wordt hier bespioneerd.
 import { appStoreContext, makeMcpContext, useAppStore, test, assert, assertEq, run, type McpContextOverrides } from './harness';
 import { getTool } from '@/services/mcp/toolRegistry';
+import { handleMcpMessage } from '@/services/mcp/dispatcher';
 import type { McpContext, McpToolResult, McpToolOk, McpToolErr } from '@/services/mcp/contracts';
 import { fileToolDeps, type McpFileFs } from '@/services/mcp/tools/fileTools';
 import { generateBenchmarkProject } from '@/services/benchmark/generateProject';
@@ -59,6 +60,17 @@ async function callErr(name: string, args: unknown = {}, ctx: McpContext = makeC
   return res as McpToolErr;
 }
 
+/** De identiteitsregressies doorlopen ook de echte tools/call-schemapoort. */
+async function exportRpc(path: string, overwrite = true, ctx = makeCtx()): Promise<McpToolResult> {
+  const raw = await handleMcpMessage(JSON.stringify({
+    jsonrpc: '2.0', id: 113, method: 'tools/call',
+    params: { name: 'planner_export_ifc', arguments: { path, overwrite } },
+  }), ctx);
+  const response = JSON.parse(raw);
+  assert(response.result !== undefined, `JSON-RPC-fout in plaats van toolresultaat: ${raw}`);
+  return response.result.structuredContent as McpToolResult;
+}
+
 // --- Fake fs (in-memory) -------------------------------------------------------------------------
 
 const HOME = '/home/tester';
@@ -68,6 +80,8 @@ let files = new Map<string, string>();
 // UTF-8-tekst zijn. Een echte CFB/MPP-container is willekeurige binaire data (sectorkoppen e.d.),
 // dus dat pad zou 'm stilzwijgend corrumperen. `binFiles` draagt de bytes ONGEWIJZIGD.
 let binFiles = new Map<string, Uint8Array>();
+// Expliciete OS-aliasfixtures: casevariant, link of maplink. De fake doet zelf geen lowercasing.
+let aliases = new Map<string, string>();
 
 /** Zet een binair testbestand klaar (bv. een synthetische .mpp) — de bytes komen ongewijzigd
  *  terug uit `readFile`, in tegenstelling tot `files` (tekst, via `readTextFile`). */
@@ -81,14 +95,21 @@ function setBinaryFile(path: string, bytes: Uint8Array): void {
  *  binair formaat (.mpp) echt via het bytes-pad (`readFile`) loopt. */
 export const readFileCalls: string[] = [];
 
-function installFakeFs(): void {
+function installFakeFs(): McpFileFs {
   files = new Map<string, string>();
   binFiles = new Map<string, Uint8Array>();
+  aliases = new Map<string, string>();
   readFileCalls.length = 0;
   const fs: McpFileFs = {
     homeDir: async () => HOME,
-    exists: async (p) => files.has(p) || binFiles.has(p),
-    writeTextFile: async (p, c) => { files.set(p, c); },
+    exists: async (p) => files.has(aliases.get(p) ?? p) || binFiles.has(aliases.get(p) ?? p),
+    stat: async (p) => {
+      const paths = [...files.keys(), ...binFiles.keys()];
+      const index = paths.indexOf(aliases.get(p) ?? p);
+      if (index < 0) throw `failed to get metadata of path: ${p} with error: No such file or directory (os error 2)`;
+      return { isFile: true, dev: 1, ino: index + 1 };
+    },
+    writeTextFile: async (p, c) => { files.set(aliases.get(p) ?? p, c); },
     readTextFile: async (p) => {
       const v = files.get(p);
       if (v === undefined) throw new Error(`ENOENT: ${p}`);
@@ -104,6 +125,7 @@ function installFakeFs(): void {
     },
   };
   fileToolDeps.getFs = async () => fs;
+  return fs;
 }
 
 // --- Minimale synthetische MPP14-fixture (T8-spec-review B1) -------------------------------------
@@ -679,6 +701,154 @@ test('export_ifc: IFC2X3-document naar een ander pad ⇒ ok, het antwoord meldt 
     fileToolDeps.getFs = previousGetFs;
     ipc.dispose();
     rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('export_ifc: case-alias en links beschermen dezelfde IFC2X3-inhoud via tools/call', async () => {
+  installFakeFs();
+  resetToSingleEmptyDocument();
+  loadSmallProject('Identiteit');
+  const own = `${HOME}/modellen/Model.ifc`;
+  files.set(own, 'ORIGINEEL IFC2X3');
+  zetSchemaVraag(own, undefined, 'IFC2X3');
+  const before = { path: S().filePath, dirty: S().isDirty, question: S().project.ifcSchemaUnconfirmed };
+  for (const target of [
+    `${HOME}/modellen/model.ifc`, // case-insensitive volume: hetzelfde OS-object
+    `${HOME}/symlink.ifc`,
+    `${HOME}/hardlink.ifc`,
+    `${HOME}/maplink/Model.ifc`,
+  ]) {
+    aliases.set(target, own);
+    const result = await exportRpc(target);
+    assert(!result.ok && result.code === 'VALIDATION' && result.error.includes('IFC2X3'),
+      `${target}: dezelfde bestandsidentiteit weigert de stille schemawijziging`);
+    assertEq(files.get(own), 'ORIGINEEL IFC2X3', 'geen alias mag de originele inhoud vervangen');
+  }
+  assertEq(files.size, 1, 'er is ook geen kopie of halffabricaat gemaakt');
+  assertEq({ path: S().filePath, dirty: S().isDirty, question: S().project.ifcSchemaUnconfirmed }, before,
+    'de geweigerde export verandert opslagdoel, dirty-status en schemavraag niet');
+
+  // Ook als het geopende pad de link is, moet de echte doelnaam beschermd blijven.
+  zetSchemaVraag(`${HOME}/symlink.ifc`, undefined, 'IFC2X3');
+  const reverse = await exportRpc(own);
+  assert(!reverse.ok && reverse.code === 'VALIDATION', 'bronlink en echt exportpad zijn hetzelfde bestand');
+  assertEq(files.get(own), 'ORIGINEEL IFC2X3', 'de omgekeerde alias blijft eveneens onaangeroerd');
+});
+
+test('export_ifc: case-sensitive volume houdt twee bestaande namen uit elkaar, met overwrite-toestemming', async () => {
+  installFakeFs();
+  resetToSingleEmptyDocument();
+  loadSmallProject('Verschillende bestanden');
+  const own = `${HOME}/Model.ifc`;
+  const other = `${HOME}/model.ifc`;
+  // Zelfs gelijke inhoud bewijst geen identiteit; de twee bestanden hebben verschillende inodes.
+  files.set(own, 'ORIGINEEL IFC2X3');
+  files.set(other, 'ORIGINEEL IFC2X3');
+  zetSchemaVraag(own, undefined, 'IFC2X3');
+  const denied = await exportRpc(other, false);
+  assert(!denied.ok && denied.code === 'VALIDATION' && denied.error.includes('overwrite'),
+    'een ander bestaand bestand vereist nog steeds expliciete overschrijftoestemming');
+  assertEq(files.get(other), 'ORIGINEEL IFC2X3', 'zonder toestemming blijft ook de kopie ongemoeid');
+  const result = await exportRpc(other);
+  assert(result.ok, 'een bewezen ander bestand mag met toestemming worden vervangen');
+  assert(files.get(other)!.includes("FILE_SCHEMA(('IFC4X3_ADD2'));"), 'de andere naam krijgt de export');
+  assertEq(files.get(own), 'ORIGINEEL IFC2X3', 'het geopende bestand houdt zijn oorspronkelijke schema');
+  assertEq(S().filePath, own, 'een export verzet het opslagdoel niet');
+  assertEq(S().project.ifcSchemaUnconfirmed, 'IFC2X3', 'de open vraag blijft bij het document');
+});
+
+test('export_ifc: onbekende identiteit en metadatarechten falen veilig; een nieuw doel blijft mogelijk', async () => {
+  const fs = installFakeFs();
+  resetToSingleEmptyDocument();
+  loadSmallProject('Metadata');
+  const own = `${HOME}/Model.ifc`;
+  const target = `${HOME}/ander.ifc`;
+  files.set(own, 'ORIGINEEL IFC2X3');
+  files.set(target, 'BESTAAND');
+  zetSchemaVraag(own, undefined, 'IFC2X3');
+  const originalStat = fs.stat;
+  fs.stat = async () => ({ isFile: true, dev: null, ino: null }); // plugin-fs op Windows
+  const unknown = await exportRpc(target);
+  assert(!unknown.ok && unknown.code === 'VALIDATION' && unknown.error.includes('identity'),
+    'ontbrekende IDs worden niet door een padgok vervangen');
+  fs.stat = async () => { throw 'forbidden path: metadata'; };
+  fs.exists = async () => false; // Path::exists maskeert ook sommige metadatafouten
+  const forbidden = await exportRpc(target);
+  assert(!forbidden.ok && forbidden.code === 'VALIDATION', 'exists:false maakt een metadatafout niet tot een vrij doel');
+  assertEq([...files.values()], ['ORIGINEEL IFC2X3', 'BESTAAND'], 'geen bestaand bestand aangeraakt');
+
+  fs.stat = async p => p === own ? { isFile: true, dev: null, ino: null } : originalStat(p);
+  const fresh = await exportRpc(`${HOME}/nieuw/model.ifc`, false);
+  assert(fresh.ok, 'een aantoonbaar nieuw doel mag ook zonder bruikbare bron-ID en in een nog niet bestaande map');
+  assertEq(files.get(own), 'ORIGINEEL IFC2X3', 'de nieuwe export raakt de bron niet');
+});
+
+test('export_ifc: een bron buiten de lexicale home-scope kan via een toegestane alias hetzelfde bestand zijn', async () => {
+  installFakeFs();
+  resetToSingleEmptyDocument();
+  loadSmallProject('Bron buiten home');
+  const own = '/mnt/model.ifc'; // eerder door de bestandskiezer vrijgegeven
+  const target = `${HOME}/link.ifc`;
+  files.set(own, 'ORIGINEEL IFC2X3');
+  aliases.set(target, own);
+  zetSchemaVraag(own, undefined, 'IFC2X3');
+  const result = await exportRpc(target);
+  assert(!result.ok && result.code === 'VALIDATION', 'de bron wordt niet vanwege zijn pad buiten de identiteitscontrole gelaten');
+  assertEq(files.get(own), 'ORIGINEEL IFC2X3', 'ook dit bronbestand blijft beschermd');
+});
+
+test('export_ifc: site- en browserhandle-doelen worden nooit als lokaal pad vergeleken', async () => {
+  for (const kind of ['site', 'handle'] as const) {
+    const fs = installFakeFs();
+    resetToSingleEmptyDocument();
+    loadSmallProject('Geen lokaal opslagdoel');
+    const target = `${HOME}/weergavenaam.ifc`;
+    zetSchemaVraag(target, undefined, 'IFC2X3');
+    useAppStore.setState(s => {
+      if (kind === 'site') s.siteFileId = 'site-bestand';
+      else s.fileHandle = { kind: 'file', name: 'weergavenaam.ifc' } as FileSystemFileHandle;
+    });
+    fs.stat = async () => { throw new Error('Een site-id of handle is geen lokaal pad'); };
+    const result = await exportRpc(target, false);
+    assert(result.ok, `${kind}: filePath is een weergavenaam, niet het lokale opslagdoel`);
+  }
+});
+
+test('export_ifc: pauze, alleen-lezen, dialoog, documentdrift en doel-/schemawijziging tijdens stat blokkeren schrijven', async () => {
+  const cases: Array<{ code: string; change(): void }> = [
+    { code: 'PAUSED', change: () => S().setAiPaused(true) },
+    { code: 'READ_ONLY', change: () => S().setAiReadOnly(true) },
+    { code: 'DIALOG_OPEN', change: () => S().setUI({ showTaskDialog: true }) },
+    { code: 'DOC_DRIFT', change: () => { S().newDocument(); } },
+    { code: 'VALIDATION', change: () => { useAppStore.setState(s => { s.filePath = `${HOME}/kopie.ifc`; }); } },
+    { code: 'VALIDATION', change: () => { useAppStore.setState(s => { s.project.ifcSchema = 'IFC4'; }); } },
+    { code: 'VALIDATION', change: () => { useAppStore.setState(s => { delete s.project.ifcSchemaUnconfirmed; }); } },
+  ];
+  for (const scenario of cases) {
+    const fs = installFakeFs();
+    resetToSingleEmptyDocument();
+    loadSmallProject('Late guard');
+    const own = `${HOME}/bron.ifc`;
+    const target = `${HOME}/kopie.ifc`;
+    files.set(own, 'ORIGINEEL IFC2X3');
+    files.set(target, 'BESTAAND');
+    zetSchemaVraag(own, undefined, 'IFC2X3');
+    const originalStat = fs.stat;
+    let changed = false;
+    fs.stat = async p => {
+      const info = await originalStat(p);
+      if (!changed) { changed = true; scenario.change(); }
+      return info;
+    };
+    try {
+      const result = await exportRpc(target);
+      assert(!result.ok && result.code === scenario.code, `wijziging tijdens stat ⇒ ${scenario.code}`);
+      assertEq([...files.values()], ['ORIGINEEL IFC2X3', 'BESTAAND'], 'na een late guard is niets geschreven');
+    } finally {
+      S().setAiPaused(false);
+      S().setAiReadOnly(false);
+      S().setUI({ showTaskDialog: false });
+    }
   }
 });
 

@@ -80,20 +80,19 @@ en noem het in je rapport of PR-tekst.
 
 ## Tabel, invoer en bediening
 
-183. **De tabelkolom *Bepalend* onderscheidt onbekende driving nog niet van berekend zonder driving.**
-    `taskGridAdapter.ts` geeft het hele `cpmResult` door aan `buildTaskRelationIndex`, dat rechtstreeks
-    `drivingSequenceIds` leest en `drivingUnknown` niet meeneemt. `relationDrivingText` maakt daarvan
-    in "Datums zoals opgeslagen" dezelfde `—` als bij een bekende lege lijst; ook de relatiechips
-    krijgen alleen `driving: false`. Gevonden bij knownbug 105; buiten de drie gevraagde lezers gelaten.
-    Statisch nagegaan op main `a4670d8b8`, niet in de browser nagespeeld (lokale processen verboden). — S
-
 13. **Tabelkolom *Kleur*** wordt in IFC bewaard, maar geen balk of rapport gebruikt hem. — B
 16. **Taken kopiëren** heeft geen zichtbare bediening; alleen Ctrl+C/V met de Gantt in focus. — B
 17. **Verwijderen zonder bevestiging**: `confirm.deleteTask` staat in de locales maar wordt nergens gebruikt. — S
 19. ***Spring naar vandaag* (Ctrl+Home)** springt naar de statusdatum als die er is. — S
-21. ***Rapport › Afdruk*** doet op het tabblad Rapport niets. — B
 60. **Duur-kolom afgeknipt** in de standaard Gantt-weergave (WBS 60 + Taaknaam 240 + Duur 60 + de
     "+"-kolom): je leest "2c" in plaats van "2d", op 1600 én 1366 px breed. — B
+
+192. **Backstage › Afdruk › Afdrukvoorbeeld keert terug naar Start in plaats van Rapport te openen.**
+    Gemeld bij de onafhankelijke R1-review van PR #524 op `2ce496878`: `PrintSection` in
+    `src/components/backstage/Backstage.tsx` zet eerst `activeRibbonTab: 'report'` en roept daarna
+    `onClose()` aan; de meegegeven `closeBackstage` zet het tabblad direct op `'start'`. Dezelfde
+    bronroute staat op basis `c7d45ecb8` en actueel main `247e66632`. Alleen statisch nagegaan,
+    niet runtime uitgevoerd; afzonderlijk oplossen, buiten de lintknopfix voor knownbug 21. — S
 
 
 ## Kalenders
@@ -169,12 +168,6 @@ en noem het in je rapport of PR-tekst.
     website volgt de laatste deploy, terwijl een desktopversie zijn eigen kopie meelevert; een oudere app kan
     dus naar een gids wijzen die tools beschrijft die hij niet heeft. De gids zegt nu dat de kopie van de tool
     voorgaat. Voorstel: een versiepad (bv. `/agent/<versie>/planning-guide.md`) of de versie in de gids. — S
-113. **`planner_export_ifc` herkent het eigen bestand niet bij een ander hoofdlettergebruik op macOS.** De
-    weigering voor een stille schemawijziging (`fileTools.ts`, `refuseSilentSchemaChange`) vergelijkt paden
-    alleen hoofdletterongevoelig bij een Windows-station. Op macOS is het bestandssysteem meestal
-    hoofdletterongevoelig, dus `Model.ifc` tegenover `model.ifc` is hetzelfde bestand maar komt door de
-    vergelijking. Symbolische links worden ook niet opgelost. Afgeleid uit de code door de review van #336,
-    niet op een Mac nagespeeld. — S
 
 126. **Updatevenster: de tekst *Bezig met installeren…* is niet te bereiken.** De balk met
     `updates.installing` staat achter `isDownloading` (`status.kind === 'downloading'`), terwijl de tekst

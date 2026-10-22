@@ -524,6 +524,8 @@
     "type": "Type",
     "lag": "Lag",
     "driving": "Driving",
+    "drivingUnknown": "Unknown",
+    "notDriving": "Not driving",
     "freeFloat": "Free float",
     "warnings": "Warnings",
     "warnTruncatedLead": "Lead truncated at the project start — the overlap is not fully used",

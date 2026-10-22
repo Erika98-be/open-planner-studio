@@ -57,7 +57,7 @@ Standaard toont de tabel naast de Gantt *WBS*, *Taaknaam* en *Duur*. De tabel op
 
 - **Voorgangers** — de voorgangers, als `WBS type±lag`, gescheiden door `; `, bijvoorbeeld `1.2 FS+2d`. Bewerkbaar door dezelfde vorm te typen. Een externe relatie voeg je niet hier toe maar met *Planning › Relaties › Relatie › Externe relatie toevoegen…*.
 - **Opvolgers** — de opvolgers, in dezelfde vorm. Bewerkbaar.
-- **Bepalend** — de relaties die de datum van deze taak bepalen, als `← 1.2` (voorganger) of `→ 1.4` (opvolger). Alleen-lezen; verouderd tot *Bereken*.
+- **Bepalend** — de relaties die de datum van deze taak bepalen, als `← 1.2` (voorganger) of `→ 1.4` (opvolger). *Onbekend* betekent dat er geen beschikbare berekening is, ook in *Datums zoals opgeslagen*. Na een geslaagde berekening betekent `—` dat geen relatie van deze taak bepalend is. In *Voorgangers* en *Opvolgers* toont een vraagteken de onbekende status, een bliksem een bepalende relatie; zonder icoon is de interne relatie berekend en niet bepalend. Aanwijzen van de taakreferentie geeft uitleg. Alleen-lezen; na een wijziging blijven de vorige resultaten staan, verouderd tot *Bereken*.
 - **Vrije speling** (in de categorie *Relaties*) — de vrije speling per relatie, als `← 1.2: 3d`. Niet dezelfde kolom als *Vrije speling* onder *Berekend*, die de speling van de taak zelf toont. Alleen-lezen.
 - **Meldingen** — waarschuwingen per relatie, bijvoorbeeld *Buiten volgorde* of *Niet meegerekend bij de berekening*. Alleen-lezen. Zie [Meldingen en waarschuwingen](docs://ref-meldingen).
 

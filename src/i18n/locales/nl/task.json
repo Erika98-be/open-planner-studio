@@ -524,6 +524,8 @@
     "type": "Type",
     "lag": "Lag",
     "driving": "Bepalend",
+    "drivingUnknown": "Onbekend",
+    "notDriving": "Niet bepalend",
     "freeFloat": "Vrije speling",
     "warnings": "Meldingen",
     "warnTruncatedLead": "Lead afgekapt op de projectstart — de overlap wordt niet volledig benut",

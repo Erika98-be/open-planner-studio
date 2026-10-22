@@ -1805,6 +1805,8 @@
     "relations.type": "188730c91fc270e6",
     "relations.lag": "0ec6149140989992",
     "relations.driving": "959cebc341ca6425",
+    "relations.drivingUnknown": "368e4062d61f36cd",
+    "relations.notDriving": "ba0c33e18879ccf7",
     "relations.freeFloat": "2f87ca238190b822",
     "relations.warnings": "e96eb5c062f57669",
     "relations.warnTruncatedLead": "d4cc590ab59cbc6d",
