@@ -8,7 +8,8 @@ Doe dit vóór “niets veranderd” en vóór `npm run bump`. Neem de numeriek 
 **origin-tag**, ook als zijn release ontbreekt of draft is. Zet `REPO=OpenAEC-Foundation/open-planner-studio`.
 `TAG` is die bestaande tag, `SHA` zijn gepelde commit en `VERSION="${TAG#v}"`.
 Werk voor publicatie in een schone worktree op `SHA`; CI-fixes krijgen apart een branch vanaf main.
-Een incomplete tag wordt nooit stil als vorige voltooide release gebruikt.
+Een incomplete app-uitlevering wordt nooit stil als vorige voltooide release gebruikt.
+Alleen open websitewerk blokkeert een volgende app-release niet; probeer het de volgende zaterdag opnieuw.
 
 **Controleer eerst afschrijving**, vóór enige release-/workflowpoging voor deze tag.
 De vaste regel staat in de body van de gemergde app-release-PR, titel `Release v<VERSION>`:
@@ -43,6 +44,8 @@ review-taak-ID's/head-SHA's, BLOKKEERT/VERVOLG en de deadline vast. Vul `TAG` in
 Schrijf het commentaar vóór de tag en na elke stap bij. Een lokaal bestand of chatbericht is geen
 hervatbewijs. Zonder bestaand verslag: reconstrueer dezelfde gegevens uit GitHub en de wiki;
 controleer de werkelijkheid ook als het verslag “klaar” zegt. Maak geen dubbele release of PR.
+Neem onafgerond websitewerk met de oorspronkelijke PR en merge-SHA over in het verslag van de
+volgende release, zodat het ook na een nieuwe tag hervatbaar blijft.
 
 1. **Publicatie en runs.** Lees `gh api "repos/$REPO/releases/tags/$TAG"`: de release moet bestaan,
    `draft=false`, `prerelease=false` en een `published_at` hebben. Alleen HTTP 404 betekent
@@ -86,14 +89,14 @@ controleer de werkelijkheid ook als het verslag “klaar” zegt. Maak geen dubb
    in website-PR's op deze versie en controleer ook beide blokken op website-main/live.
    Volg de [websiteprocedure](#website). Hergebruik een open versie-PR en merge direct met
    `gh pr merge <nr> --repo OpenAEC-Foundation/website --merge --admin`.
-   Een gemergede PR vereist de `deploy.yml`-pushrun voor de exacte merge-SHA met `success`, plus
-   livecontrole. Staat de juiste inhoud al op main zonder PR, leg die main-SHA en zijn deploy vast.
+   Controleer een gemergde PR via [Websitedeploy controleren en herstellen](#websitedeploy-controleren-en-herstellen).
+   Een geslaagde deploy op de merge-SHA of een bewezen afstammeling telt, mits beide blokken live staan.
+   Staat de juiste inhoud al op main zonder PR, leg die main-SHA vast als basis voor dezelfde controle.
    Bij ontbrekende wijziging maak je de versie-PR alsnog. Bij een gesloten, ongemergede PR of
-   mislukte/ontbrekende deploy: meld het resterende werk; de app-release blijft staan.
-   Hervat een mislukte deploy eenmaal met `gh run rerun <deploy-run-id> --failed` in het website-repo.
-   Bewaar die poging; blijft hij rood, rapporteer dat zonder een dubbele website-PR te maken.
+   blijvend mislukte/ontbrekende deploy: meld en bewaar het resterende werk voor de volgende zaterdag.
+   De app-release blijft staan; dit websitewerk blokkeert ook de volgende app-release niet.
 
-Na alle toepasselijke hervatstappen, of na vastgelegde afschrijving: noteer de tag als `PREV`.
+Na alle toepasselijke hervatstappen, uitgesteld websitewerk of vastgelegde afschrijving: noteer de tag als `PREV`.
 Ga terug naar actuele `origin/main` en voer de kandidaatselectie hieronder uit. Een bestaande kandidaat gaat vóór
 “niets veranderd” en vóór een nieuwe bump. `PREV` blijft de numerieke versieondergrens.
 Bij afschrijving blijft de oorspronkelijke releasetekst daarnaast de inhoudsbron voor de opvolger.
@@ -199,8 +202,11 @@ maak geen dubbele PR. Een al verbruikte rerunpoging begint na een weekwissel nie
    vraagt een nieuwe fixronde. Iedere gewijzigde head krijgt opnieuw review en PR-CI.
    Een mislukte/onvolledige review is geen akkoord. Een rode fix-PR-check volgt dezelfde
    eenmalige rerun en herstelronde op deze fixbranch; maak daarvoor geen keten van fix-PR's.
-4. Review akkoord en alle PR-CI groen voor dezelfde head: merge de fix met
-   `gh pr merge <nr> --merge --admin --match-head-commit <head-SHA>`.
+4. Review akkoord en alle PR-CI groen voor dezelfde head: merge een PR met uitsluitend cijfercorrecties met
+   `gh pr merge <nr> --squash --admin --match-head-commit <head-SHA>`.
+   Alle overige fixes: `gh pr merge <nr> --merge --admin --match-head-commit <head-SHA>`.
+   De cijfercorrectie voegt zo precies één commit toe; bereken vanaf de actuele basis volgens
+   [Releasecijfers](#releasecijfers). Na een inhoudelijke fix kan een aparte cijfercorrectie nodig zijn.
    Haal main opnieuw op en wacht op groene `ci.yml` met event `push`, branch `main` en exact de
    merge-SHA. Is main verder gegaan, controleer de nieuwste main-SHA; een oudere groene run volstaat niet.
 5. Hervat pas daarna de release. Bij een rode release-PR: neem de fix via een gewone merge van
@@ -294,8 +300,11 @@ Een extra commit of een gewijzigde mergebasis verandert de cijfers. Plan daarom 
    en werk dezelfde kandidaatversie bij vanaf de nieuwe basis. Geen nieuwe bump of force-push.
 6. Controleer ná de merge op de echte main-commit `npm run verify:release-highlights -- "$VERSION"`.
    Vóór de merge zijn de cijfers van de uiteindelijke squashcommit nog niet tegen `HEAD` te toetsen.
-   Een verschil (ook door datumafronding) blokkeert de tag. Corrigeer via een nieuwe PR, met cijfers
-   voor die extra squashcommit, en wacht opnieuw op groene CI. Tag uitsluitend de laatste groene main.
+   Een verschil (ook door datumafronding) blokkeert de tag. Corrigeer via een nieuwe PR met de
+   fix-/reviewroute uit [CI herstellen](#ci-herstellen), maar **verplicht met `--squash`**.
+   Neem de actuele main-SHA als nieuwe `BASE` en bereken de cijfers opnieuw voor precies één extra
+   squashcommit volgens stappen 2–5. Wacht opnieuw op groene PR-/main-CI en toets de echte main-commit.
+   Tag uitsluitend de laatste groene main.
 
 ## Website
 
@@ -362,18 +371,37 @@ Het highlight-blok `#whats-new` en zijn woordenboeken komen **niet** vanzelf mee
    Nozzit heeft een bypass in `required_pull_request_reviews.bypass_pull_request_allowances.users`
    (gecontroleerd via `gh api repos/OpenAEC-Foundation/website/branches/main/protection`).
 7. Lees `mergeCommit.oid` uit `gh pr view <nr> --repo OpenAEC-Foundation/website --json mergeCommit`.
-   Zoek `gh run list --repo OpenAEC-Foundation/website --workflow deploy.yml --event push
-   --branch main --commit <merge-SHA>` en wacht binnen de deadline op die run.
-   Controleer **conclusion `success` voor precies die SHA** en daarna beide blokken live.
-   Noteer PR, merge-SHA, deployrun-ID/URL, conclusie en livecontrole in het hervatverslag.
-   Een oudere groene deploy of alleen de dagelijkse stats-run volstaat niet.
-   Faalt de deploy, ontbreekt de run of verstrijkt de deadline: de app-release blijft staan.
-   Meld de deployfout/ontbrekende bevestiging in het eindrapport en bewaar het websitewerk voor hervatten.
+   Volg [Websitedeploy controleren en herstellen](#websitedeploy-controleren-en-herstellen), ook bij hervatten.
 
 Besluit: orkestrator na vraag aan eigenaar, gesprek 2026-10-22. De website heeft en behoeft
 geen PR-checks. De controle na merge is `deploy.yml` (push naar main of `workflow_dispatch`).
 De overige workflows zijn `update-stats.yml` (06:00 UTC) en `auto-assign-issues.yml`.
 Deze procedure voegt geen workflow of checkeis aan het website-repo toe.
+
+### Websitedeploy controleren en herstellen
+
+De website gebruikt `cancel-in-progress: true`. Een nieuwere push kan de oorspronkelijke deploy
+annuleren; soms ontbreekt die run geheel. De merge-SHA blijft de inhoudsbasis. Ook een afstammeling kan voldoen.
+
+1. Zoek eerst `gh run list --repo OpenAEC-Foundation/website --workflow deploy.yml --event push
+   --branch main --commit <merge-SHA>`. Lees ook nieuwere `deploy.yml`-runs op main, met event
+   `push` of `workflow_dispatch`. Wacht binnen de deadline op een lopende toepasselijke run;
+   start geen tweede zolang die loopt. Auth-/netwerkfouten zijn geen bewijs van een ontbrekende run.
+2. Bewijs vereist `conclusion=success` én beide juiste releaseblokken live (`#whats-new` en de tijdlijn).
+   Een geslaagde run op de merge-SHA telt. Een geslaagde run op een afstammeling telt ook:
+   fetch de actuele websitehistorie en controleer `git merge-base --is-ancestor <merge-SHA> <deploy-SHA>`
+   in de websitecheckout (exit 0). Noteer beide SHA's en het voorouderbewijs. Een oudere of niet-verwante
+   groene deploy, alleen live inhoud of alleen de dagelijkse stats-run volstaat niet.
+3. Ontbreekt dit bewijs na een ontbrekende, geannuleerde of mislukte run, en loopt er geen
+   toepasselijke deploy: start binnen het zaterdagmandaat eenmaal per job
+   `gh workflow run deploy.yml --repo OpenAEC-Foundation/website`.
+   Noteer dispatchtijd en de actuele main-SHA. Zoek de bijbehorende `workflow_dispatch`-run,
+   wacht binnen de deadline en toets zijn SHA, conclusie en liveblokken volgens stap 2.
+   Dit is het herstelpad zonder bruikbaar run-ID; maak geen dubbele website-PR.
+4. Noteer website-PR, merge-SHA, deploy-SHA, run-ID/URL, conclusie en livecontrole in het hervatverslag.
+   Blijft de deploy rood, ontbreekt bevestiging of verstrijkt de deadline: laat de app-release staan,
+   meld de fout in het eindrapport en bewaar het websitewerk. **Dit blokkeert de volgende app-release niet.**
+   Probeer het de volgende zaterdag opnieuw naast de nieuwe release en draag open werk over in diens verslag.
 
 ## Uitlevering controleren
 

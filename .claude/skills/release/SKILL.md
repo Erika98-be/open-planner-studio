@@ -24,8 +24,9 @@ Alleen deze skill mag een release uitvoeren. Een verzoek om de skill te wijzigen
 - Noteer de nieuwste stabiele origin-tag (`vJJJJ.W.N`, numeriek gesorteerd). Geen tag: stop.
   **Vóór de wijzigingscontrole en bump:** volg [Hervatten](referentie.md#hervatten).
   Controleer GitHub-publicatie, release-/Snap-/AUR-runs, wiki en website. Rond onafgerond werk
-  voor dezelfde tag af, ook zonder nieuwe commits. Onopgelost: stop, tenzij de tag is afgeschreven.
-- Na volledig herstel of vastgelegde afschrijving geldt die nieuwste tag als `PREV`.
+  voor dezelfde tag af, ook zonder nieuwe commits. Onopgelost: stop, tenzij de tag is afgeschreven
+  of alleen websitewerk openstaat. Probeer dat de volgende zaterdag opnieuw naast de nieuwe release.
+- Na herstel, uitgesteld websitewerk of vastgelegde afschrijving geldt die nieuwste tag als `PREV`.
   Volg daarna de [kandidaatselectie](referentie.md#kandidaatselectie): zoek open release-PR's
   en een ongetagde versie op main. Elke ongetagde kandidaat moet numeriek `VERSION > PREV` zijn;
   lager of gelijk: stop zonder tag. Hervat dezelfde versie/PR; bump uitsluitend bij `RELEASE_MODE=nieuw`.
@@ -34,7 +35,7 @@ Alleen deze skill mag een release uitvoeren. Een verzoek om de skill te wijzigen
   Ontbreekt hij: stop zonder tag. Loopt hij nog: wacht binnen de deadline.
   Rood: volg [CI herstellen](referentie.md#ci-herstellen): eenmaal rerun, dan een fix-PR
   met tweede Sol-review. Ga pas verder na groene CI op de actuele main-SHA.
-- Geen commits sinds `PREV` en geen onafgerond werk: stop zonder bump/tag; meld “niets veranderd”.
+- Geen commits sinds `PREV` en geen onafgerond app-werk: stop zonder bump/tag; meld “niets veranderd”.
 - Falende `verify:translations`, `verify` of ontbrekende/lege releasetekst blokkeert de tag.
   Herstel binnen de deadline volgens de referentie. Omzeil nooit een poort.
 - Geen gelijktijdige release-run. Een bestaande doeltag gaat uitsluitend via het hervatpad;
@@ -137,9 +138,10 @@ notes in de body én `latest.json`, juiste versie, volledige assets en groene Sn
   [referentie.md](referentie.md#website): uitsluitend het nieuwe releaseblok onderaan en
   `#whats-new` bovenaan, met de bijbehorende vertalingen. Gebruik een websitebranch + PR.
   Merge direct met `gh pr merge <nr> --merge --admin`. Geen aparte vraag.
-  Wacht op `deploy.yml` voor de exacte merge-SHA en controleer op `success` en beide blokken live.
-  Bij falen blijft de app-release staan; meld de deployfout in het eindrapport.
-  Noteer website-PR, merge-SHA en deployrun in het hervatverslag; onaf werk blijft hervatwerk.
+  Volg de referentie voor `deploy.yml`: `success` op de merge-SHA of een bewezen afstammeling,
+  plus beide blokken live. Ontbrekend/geannuleerd: controleer opvolgruns, anders eenmaal dispatch.
+  Bij falen blijft de app-release staan en blokkeert websitewerk de volgende app-release niet.
+  Meld de fout; bewaar PR, merge-SHA en deployrun voor een nieuwe poging de volgende zaterdag.
 
 ## 6. Opruimen en rapporteren
 

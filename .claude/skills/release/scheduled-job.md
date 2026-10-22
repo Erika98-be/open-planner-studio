@@ -19,12 +19,14 @@ Besluit: eigenaar, gesprek 2026-10-22.
   Blijft hij rood: kleinste fix-PR vanaf main, tweede Sol-review via T3 `delegate_task`
   (`codex`, `gpt-6.1-sol`, `reasoningEffort: xhigh`). Letterlijke reviewerbrief en BLOKKEERT/VERVOLG
   volgens de referentie. Na reviewakkoord en groene PR-CI: `--merge --admin`, dan groene main-CI.
+  Uitzondering: cijfercorrecties met `--squash --admin`, berekend voor precies één extra commit.
   Geen test overslaan of check verzwakken. Een bestaande tag blijft ongewijzigd.
 - Vereist herstel gewijzigde getagde broncode/workflow: fix op main, schrijf de tag af met de vaste
   PR-regel uit de referentie. Geen nieuwe poging op die tag; draft blijft draft. Alleen zonder bestaande
   opvolger: `npm run bump` zonder argument, oorspronkelijke tekst plus fix, alle normale poorten.
-- Website: merge de PR direct met `--merge --admin`, controleer daarna `deploy.yml` op de merge-SHA.
-  Een mislukte websitedeploy verandert de app-release niet; meld hem in het eindrapport.
+- Website: merge de PR direct met `--merge --admin`. Eis een geslaagde `deploy.yml` op de merge-SHA
+  of een bewezen afstammeling en beide blokken live. Ontbrekend/geannuleerd: opvolgruns, anders eenmaal dispatch.
+  Blijvende websitefout: meld en bewaar voor de volgende zaterdag; blokkeer de volgende app-release niet.
 
 ## Letterlijke prompt
 
@@ -38,6 +40,7 @@ Herstel rode CI volgens referentie.md: eenmaal rerun, dan fix-PR met tweede Sol-
 De reviewbrief bevat de letterlijke body van ~/.claude/agents/reviewer.md en BLOKKEERT/VERVOLG.
 Gebruik delegate_task met codex/gpt-6.1-sol en reasoningEffort xhigh; elke ronde is een nieuwe taak.
 Alleen BLOKKEERT vraagt een nieuwe fixronde. Merge pas na reviewakkoord en groene PR-CI.
+Cijfercorrecties squashen; bereken de cijfers vanaf actuele main voor precies één extra commit.
 Wacht daarna op groene CI voor de exacte main-SHA. Behoud kandidaatversie en bestaande tag.
 Vereist een tag gewijzigde broncode/workflow, schrijf hem af volgens de referentie. Geen nieuwe
 poging meer op die tag; draft blijft draft. Fix op main en maak zonder bestaande opvolger een
@@ -45,7 +48,10 @@ nieuwe versie via npm run bump zonder argument. Neem de releasetekst plus fix me
 Stop uiterlijk zaterdag 14:00 Europe/Amsterdam. Geen tag die week als er nog geen staat.
 Laat open fix-PR's staan. Hervat de volgende zaterdag de fix/opvolger; herken afschrijving vóór tagherstel.
 Rapporteer waarom het niet lukte en welke tags zijn afgeschreven.
-Merge de website-PR direct met --merge --admin en controleer deploy.yml voor de merge-SHA.
-Een mislukte websitedeploy laat de app-release staan; meld dat in het eindrapport.
+Merge de website-PR direct met --merge --admin. Controleer deploy.yml op de merge-SHA of een
+bewezen afstammeling en beide blokken live. Ontbrekend/geannuleerd: zoek opvolgruns, anders eenmaal
+gh workflow run deploy.yml --repo OpenAEC-Foundation/website, volgens de referentie.
+Een blijvende websitefout laat de app-release staan en blokkeert de volgende app-release niet.
+Meld en bewaar het werk voor de volgende zaterdag naast de nieuwe release.
 Rapporteer versie, SHA, workflowstatus, fix-PR's/reviews, VERVOLG, wiki, website en eventuele blokkade.
 ```
