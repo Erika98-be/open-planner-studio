@@ -315,13 +315,6 @@ en noem het in je rapport of PR-tekst.
     van v2026.10.0 opgelost met afkappen (`TaskAssignmentsSection.tsx`), de koppen zelf niet. Voorstel: korte
     koppen in die talen, en de Help-artikelen die ze citeren mee. — B
 
-186. **De docs-helpregel eist ten onrechte actuele gidsvertalingen bij een release.**
-    `.claude/rules/docs-help.md:21` zegt dat de releasepoort alle vertalingen actueel eist, terwijl
-    `strictStatus` in `scripts/translate/cli.ts:867-890` alleen UI-gaten laat blokkeren en achterlopende
-    docs alleen meldt. Dezelfde rule laat die gidsvertalingen verderop wel achterlopen, net als
-    `AGENTS.md` en de i18n-rule. Statisch gezien bij 180 op main `2f60c0c66`; niet uitgevoerd of
-    onafhankelijk getoetst. Voorstel: alleen de verouderde releaseclaim rechtzetten. — S
-
 ## Tests
 
 175. **De optionele MPP-corpuscheck behandelt bewust geweigerde oude formaten als leesfout.**
