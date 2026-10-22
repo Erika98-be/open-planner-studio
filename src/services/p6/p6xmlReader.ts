@@ -15,7 +15,7 @@ import { parseInstant, localTodayIso, parseDate, formatDate, addCalendarDays } f
 import { UNNAMED_HOLIDAY_NAME, UNNAMED_WORKING_EXCEPTION_NAME } from '@/services/calendarRecurrence';
 import { normalizeImportedProgress, deriveImportedWorkRules, reconstructResourceIds } from '@/services/importNormalize';
 import { flattenOrder } from '@/utils/wbs';
-import { emptyMissingScheduleDates, importDateTime, isoDatePrefixOrToday, parseImportedInstant, resolveMissingScheduleDates } from '@/services/importDates';
+import { emptyMissingScheduleDates, importDateTimeOrUndefined, isoDatePrefixOrToday, parseImportedInstant, resolveMissingScheduleDates } from '@/services/importDates';
 import { directChildText, toInt, toFloat } from '@/services/xmlDom';
 import type { ImportResult, OpenedImport, P6XmlEmptyReason, P6XmlImportReport } from '@/services/importTypes';
 import type { Baseline } from '@/types/baseline';
@@ -862,8 +862,10 @@ function readP6XmlProject(scope: P6XmlScope): P6XmlProjectRead {
     if (!cal) continue;
     const durHours = getElementFloat(actEl, 'PlannedDuration');
     const durSignal = durHours > 0 && isSubDayMinutes(Math.round(durHours * 60), cal.hoursPerDay);
-    const dateSignal = hasNonAnchorTime(getElementText(actEl, 'PlannedStartDate'), DAY_TIME_ANCHOR)
-      || hasNonAnchorTime(getElementText(actEl, 'PlannedFinishDate'), DAY_TIME_ANCHOR);
+    const dateSignal = ['PlannedStartDate', 'PlannedFinishDate'].some(field => {
+      const raw = getElementText(actEl, field);
+      return hasNonAnchorTime(raw, DAY_TIME_ANCHOR) && importDateTimeOrUndefined(raw, true) !== undefined;
+    });
     if (durSignal || dateSignal) cSignalCalIds.add(calId);
   }
   // P6 valt terug op de scalar-synth zodra de geregistreerde canonical geen werkdag draagt
@@ -917,14 +919,17 @@ function readP6XmlProject(scope: P6XmlScope): P6XmlProjectRead {
     const effCal = calById.get(effCalId) ?? calendar;
     const effHpd = effCal.hoursPerDay;
     // Datum-parser: uur ⇒ echte tijd (`parseInstant`+`formatInstant`), dag ⇒ tijd-strippen.
-    const plannedStart = importDateTime(plannedStartRaw, hourDates);
-    const plannedFinish = importDateTime(plannedFinishRaw, hourDates);
-    if (!plannedStartRaw) missingDates.start.add(id);
-    if (!plannedFinishRaw) missingDates.finish.add(id);
+    const parseTaskDate = (raw: string): string | undefined => importDateTimeOrUndefined(raw, hourDates);
+    const sourceStart = parseTaskDate(plannedStartRaw);
+    const sourceFinish = parseTaskDate(plannedFinishRaw);
+    const plannedStart = sourceStart ?? localTodayIso();
+    const plannedFinish = sourceFinish ?? localTodayIso();
+    // Onleesbaar is ontbrekend; alleen de invoer krijgt een plaatshouder, de bronuitvoer nooit.
+    if (sourceStart === undefined) missingDates.start.add(id);
+    if (sourceFinish === undefined) missingDates.finish.add(id);
 
     {
-      const recordedDate = (raw: string): string | undefined =>
-        raw ? importDateTime(raw, isHour) : undefined;
+      const recordedDate = (raw: string): string | undefined => importDateTimeOrUndefined(raw, isHour);
       const floatDays = (raw: string): number | undefined => {
         if (!raw) return undefined;
         const hours = Number.parseFloat(raw);
@@ -936,8 +941,8 @@ function readP6XmlProject(scope: P6XmlScope): P6XmlProjectRead {
       };
       const criticalRaw = getElementText(actEl, 'IsCritical');
       const recorded = buildRecordedTime({
-        start: recordedDate(getElementText(actEl, 'EarlyStartDate') || getElementText(actEl, 'StartDate')),
-        finish: recordedDate(getElementText(actEl, 'EarlyFinishDate') || getElementText(actEl, 'FinishDate')),
+        start: recordedDate(getElementText(actEl, 'EarlyStartDate')) ?? recordedDate(getElementText(actEl, 'StartDate')),
+        finish: recordedDate(getElementText(actEl, 'EarlyFinishDate')) ?? recordedDate(getElementText(actEl, 'FinishDate')),
         lateStart: recordedDate(getElementText(actEl, 'LateStartDate')),
         lateFinish: recordedDate(getElementText(actEl, 'LateFinishDate')),
         totalFloat: floatDays(getElementText(actEl, 'TotalFloat')),
@@ -956,8 +961,8 @@ function readP6XmlProject(scope: P6XmlScope): P6XmlProjectRead {
     const actualStartRaw = notStarted ? '' : getElementText(actEl, 'ActualStartDate');
     const actualFinishRaw = notStarted ? '' : getElementText(actEl, 'ActualFinishDate');
     const remainingRaw = getElementText(actEl, 'RemainingDuration');
-    const actualStart = actualStartRaw ? importDateTime(actualStartRaw, hourDates) : undefined;
-    const actualFinish = actualFinishRaw ? importDateTime(actualFinishRaw, hourDates) : undefined;
+    const actualStart = parseTaskDate(actualStartRaw);
+    const actualFinish = parseTaskDate(actualFinishRaw);
     // RemainingDuration: uur ⇒ minuten (`uren × 60`, geen afronding); dag ⇒ het dag-pad.
     const remainingMinutes = isHour && remainingRaw ? Math.round(parseFloat(remainingRaw) * 60) : undefined;
     // Zelfde `effHpd` als de duur hieronder — symmetrisch met de writer.
@@ -979,17 +984,16 @@ function readP6XmlProject(scope: P6XmlScope): P6XmlProjectRead {
 
     // Datumconstraints: primair + secundair uit het PMXML-label of de `CS_*`-code. Secundair is altijd soft
     // (P6-invariant) ⇒ `hard` wordt gedropt. Datum: uur ⇒ echte tijd, dag ⇒ tijd-strippen.
-    const parseCstrDate = (raw: string): string => importDateTime(raw, hourDates);
     let constraint: TaskConstraint | undefined;
     const primCode = getElementText(actEl, 'PrimaryConstraintType');
     if (primCode) {
       const mapped = p6ConstraintFromXml(primCode, 'PrimaryConstraintType');
       if (mapped) {
-        const cdateRaw = getElementText(actEl, 'PrimaryConstraintDate');
+        const cdate = parseTaskDate(getElementText(actEl, 'PrimaryConstraintDate'));
         constraint = {
           type: mapped.type,
           ...(mapped.hard ? { hard: true } : {}),
-          ...(cdateRaw ? { date: parseCstrDate(cdateRaw) } : {}),
+          ...(cdate ? { date: cdate } : {}),
         };
       }
     }
@@ -998,10 +1002,10 @@ function readP6XmlProject(scope: P6XmlScope): P6XmlProjectRead {
     if (secCode) {
       const mapped2 = p6ConstraintFromXml(secCode, 'SecondaryConstraintType');
       if (mapped2) {
-        const cdate2Raw = getElementText(actEl, 'SecondaryConstraintDate');
+        const cdate2 = parseTaskDate(getElementText(actEl, 'SecondaryConstraintDate'));
         constraint2 = {
           type: mapped2.type,
-          ...(cdate2Raw ? { date: parseCstrDate(cdate2Raw) } : {}),
+          ...(cdate2 ? { date: cdate2 } : {}),
         };
       }
     }

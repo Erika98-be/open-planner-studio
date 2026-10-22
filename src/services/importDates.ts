@@ -42,7 +42,7 @@ export function importDateTime(s: string, hour: boolean): string {
   return hour ? formatInstant(parseImportedInstant(s), 'hour') : s.substring(0, 10);
 }
 
-/** `importDateTime` voor een datum die ook mag ONTBREKEN (MSPDI Baseline 0): lege of onleesbare
+/** `importDateTime` voor een datum die ook mag ONTBREKEN (taakdatums en MSPDI Baseline 0): lege of onleesbare
  *  invoer (`NA`, geen `YYYY-MM-DD`-begin, of een tijd die geen instant geeft) ⇒ `undefined`, nooit
  *  vandaag en nooit een `RangeError` uit `formatInstant`. Leesbare invoer ⇒ exact `importDateTime`. */
 export function importDateTimeOrUndefined(s: string, hour: boolean): string | undefined {

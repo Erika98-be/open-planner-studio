@@ -34,6 +34,8 @@ Per file format: whether you can open, save and export it, what does and does no
 
 **Open** — yes. The app recognises an `.xml` file as MS Project XML by the root element `Project` in the MS Project namespace (or without a namespace). Calculation profile: *Open Planner Studio*. After opening, the app tells you in one message what it did not take over; see [Opening an MS Project file (.mpp)](docs://howto-mpp-openen).
 
+**Unreadable task dates.** A value such as `NA` counts as a missing date. The rest of the file still opens. A missing planned start uses the project start, or otherwise the earliest readable task start. A missing finish follows the same rules as an empty date field. An unreadable actual date, constraint date, deadline or date in the recorded calculation output is not imported as a date.
+
 **Save** — no. Such a project gets no save target.
 
 **Export** — yes, as *MS Project XML* (*Opens in Microsoft Project. Full WBS structure.*). Default name: the project name with `.xml`.
@@ -63,6 +65,8 @@ Per file format: whether you can open, save and export it, what does and does no
 ## Primavera P6 XML
 
 **Open** — yes. The app recognises an `.xml` file as P6 XML by the root element `APIBusinessObjects`. Calculation profile: *Open Planner Studio*.
+
+**Unreadable task dates.** The same rules apply as for MS Project XML: an unreadable date counts as missing and does not prevent the file from opening.
 
 **Several projects in one file.** Each project with activities opens in its own tab, named *Project name (Project ID)*. The app skips a project without activities. The active tab is the project with the most activities. The app does not carry over a relation to another project, nor an activity that belongs to no project. After opening, the app reports how many projects it opened.
 
