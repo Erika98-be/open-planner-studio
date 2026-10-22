@@ -166,12 +166,7 @@ export function rollupSummaryTasks(
     }
     return d;
   };
-  const updateSummary = (taskId: string): void => {
-    const task = byId.get(taskId);
-    if (!task || isLeafTask(task) || visited.has(taskId)) return;
-    visited.add(taskId);
-
-    for (const childId of task.childIds) updateSummary(childId);
+  const updateSummary = (task: Task): void => {
     if (options?.skip?.(task)) return;
 
     const children = task.childIds
@@ -260,7 +255,24 @@ export function rollupSummaryTasks(
     }
   };
 
-  for (const task of tasks) {
-    if (!task.parentId) updateSummary(task.id);
+  for (const root of tasks) {
+    if (root.parentId) continue;
+    // Bezoekmarkering bij binnenkomst, rollup bij terugkeer: exact dezelfde volgorde als
+    // de recursieve wandeling, ook bij gedeelde kinderen of een corrupte childIds-kring.
+    const stack = [{ task: root, returning: false }];
+    while (stack.length > 0) {
+      const { task, returning } = stack.pop()!;
+      if (returning) {
+        updateSummary(task);
+        continue;
+      }
+      if (isLeafTask(task) || visited.has(task.id)) continue;
+      visited.add(task.id);
+      stack.push({ task, returning: true });
+      for (let i = task.childIds.length - 1; i >= 0; i--) {
+        const child = byId.get(task.childIds[i]);
+        if (child) stack.push({ task: child, returning: false });
+      }
+    }
   }
 }

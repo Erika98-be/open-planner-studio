@@ -7,7 +7,8 @@
 //    berekening nodig heeft).
 // 3. Documenten zijn los: twee tegelijk open documenten beïnvloeden elkaar niet.
 // 4. Het foutmodel: één fouttype met een vaste `code` (INVALID_INPUT, NO_TASKS, SCHEDULE_FAILED),
-//    ook bij een fout ín de app-route (6.000 geneste taken, knownbugs.md).
+//    met de taakidentiteiten bij een onberekenbare planningskring.
+// 4g. Een IFC met 6.000 WBS-niveaus opent, rekent en bewaart zijn volledige structuur.
 // 5. Een weggelaten XER-bronarchief komt als waarschuwing XER_ARCHIVE_DROPPED in de samenvatting.
 // 6. Het openen-contract: `toIfc()` vóór `schedule()` geeft de stand van de app na Bestand → Openen.
 //
@@ -131,7 +132,7 @@ ok('4c geen tekst ⇒ INVALID_INPUT', await codeOf(() => openIfc(42 as unknown a
 }
 
 {
-  // 4g. 6.000 geneste taken: de app-route gooit een RangeError (recursie); de kern geeft PlannerCoreError.
+  // 4g. Diepe WBS: openen en expliciet berekenen moeten slagen, zonder diepte-afkap.
   const ctx = createAppStoreContext({ emitHostEvents: false });
   ctx.store.getState().loadState(readIFC(readFileSync(files[0], 'utf8')));
   const st = ctx.store.getState();
@@ -144,8 +145,14 @@ ok('4c geen tekst ⇒ INVALID_INPUT', await codeOf(() => openIfc(42 as unknown a
     isSummary: i < N - 1 ? true : undefined,
   }));
   const deep = writeIFC({ ...buildWriteIFCInput(st), tasks, sequences: [], assignments: [] });
-  const code = await codeOf(async () => (await openIfc(deep)).schedule());
-  ok('4g 6.000 geneste taken ⇒ PlannerCoreError (geen RangeError)', !code.startsWith('ander fouttype') && code !== 'geen fout', code);
+  const doc = await openIfc(deep);
+  const summary = doc.schedule();
+  ok('4g 6.000 geneste taken openen en berekenen volledig', summary.counts.tasks === N && summary.tasks.length === N);
+  const saved = readIFC(doc.toIfc());
+  ok('4g alle WBS-identiteiten en ouder/kindverwijzingen blijven bewaard',
+    saved.tasks.length === N && saved.tasks.every((task, i) => task.id === tasks[i].id
+      && task.parentId === tasks[i].parentId && task.wbsCode === tasks[i].wbsCode
+      && JSON.stringify(task.childIds) === JSON.stringify(tasks[i].childIds)));
 }
 
 {
