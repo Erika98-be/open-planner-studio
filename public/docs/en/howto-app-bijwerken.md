@@ -49,6 +49,8 @@ If you want to see this window once more later, choose *Settings › Project ›
 
 **You have the app through the Snap Store.** The app then does not update itself and does not check at startup either. The Snap Store does that. In the window it says *This version is updated automatically via the Snap Store — you don't need to do anything.*
 
+**You have the app through the AUR (Arch Linux).** The app then does not update itself and does not check at startup either. Your package manager does that. In the window it says *Update through your package manager (for example yay -Syu).*
+
 **Nothing shows up at startup.** That is normal if you already have the latest version. The startup check does not report errors. If you want to be sure you are up to date, check yourself, as above.
 
 ## See also

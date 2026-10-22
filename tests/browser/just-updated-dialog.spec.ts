@@ -5,6 +5,13 @@ import { completeTour, freshStart, startTourFromWelcome, tutorialOffer } from '.
 declare global {
   interface Window {
     openedReleaseUrls?: string[];
+    updaterProbe: {
+      kind: 'aur' | 'snap' | 'native';
+      delayed: boolean;
+      detections: Array<() => void>;
+      calls: string[];
+      installDone: boolean;
+    };
   }
 }
 
@@ -127,4 +134,103 @@ test('"Net bijgewerkt" pas na welkomst, rondleiding en tutorialvraag', async ({ 
   await tutorialOffer(page).getByRole('button', { name: /^(No|Nee)$/ }).click();
   await expect(tutorialOffer(page)).toHaveCount(0);
   await expect(justUpdated).toBeVisible();
+});
+
+// Andere route dan de highlights hierboven: een beschikbare update installeren. De desktop-API's
+// krijgen testdoubles; de echte UpdateDialog en updaterService blijven draaien in de browser.
+test('installeren wacht op detectie en laat AUR en Snap aan het pakketbeheer', async ({ page, ops: _ops }) => {
+  await page.addInitScript(() => {
+    window.updaterProbe = { kind: 'aur', delayed: true, detections: [], calls: [], installDone: false };
+  });
+  const doubles: Record<string, string> = {
+    platform: 'export const isTauri = () => true;',
+    recovery: 'export const flushRecoveryNow = async () => {};',
+    core: `export async function invoke() {
+      const probe = window.updaterProbe;
+      if (!probe.delayed) return probe.kind;
+      return new Promise(resolve => probe.detections.push(() => resolve(probe.kind)));
+    }`,
+    updater: `export async function check() {
+      return {
+        version: '2099.1.0', body: 'Test release',
+        download: async () => { window.updaterProbe.calls.push('download'); },
+        install: async () => { window.updaterProbe.calls.push('install'); },
+      };
+    }`,
+    process: `export async function relaunch() { window.updaterProbe.calls.push('relaunch'); }`,
+  };
+  await page.route('**/__updater_probe__/*.js', route => {
+    const name = new URL(route.request().url()).pathname.split('/').pop()!.replace('.js', '');
+    return route.fulfill({ contentType: 'text/javascript', body: doubles[name] });
+  });
+  await page.route('**/src/services/updater/updaterService.ts*', async route => {
+    const response = await route.fetch();
+    let body = await response.text();
+    // Alleen de externe afhankelijkheden van deze service vervangen; de app blijft een webbuild.
+    for (const [pattern, name] of [
+      [/(["'])\/src\/utils\/platform\.ts(?:\?[^"']*)?\1/g, 'platform'],
+      [/(["'])\/src\/services\/recovery\/recoveryFlush\.ts(?:\?[^"']*)?\1/g, 'recovery'],
+      [/(["'])[^"']*@tauri-apps_api_core[^"']*\1/g, 'core'],
+      [/(["'])[^"']*@tauri-apps_plugin-updater[^"']*\1/g, 'updater'],
+      [/(["'])[^"']*@tauri-apps_plugin-process[^"']*\1/g, 'process'],
+    ] as const) {
+      body = body.replace(pattern, `"/__updater_probe__/${name}.js"`);
+    }
+    await route.fulfill({ response, body });
+  });
+  await page.reload();
+  await expect.poll(() => page.evaluate(() => !!window.__OPS__)).toBe(true);
+  await page.evaluate(() => window.__OPS__!.store.getState().setUI({
+    showWelcomeDialog: false, showTourOverlay: false, showUpdateDialog: true,
+  }));
+  const dialog = page.getByRole('dialog').filter({ hasText: 'Software update' });
+  const install = dialog.getByRole('button', { name: 'Download & install', exact: true });
+  await expect(dialog.getByText('A new version is available', { exact: true })).toBeVisible();
+  await expect.poll(() => page.evaluate(() => window.updaterProbe.detections.length)).toBeGreaterThan(0);
+  const detections = await page.evaluate(() => window.updaterProbe.detections.length);
+  // De updatecheck is al klaar, de Arch-detectie nog niet: er is geen installeerknop.
+  await expect(install).toHaveCount(0);
+  await expect.poll(() => page.evaluate(() => window.updaterProbe.calls)).toEqual([]);
+
+  // Onafhankelijke servicecontrole: ook een rechtstreekse aanroep moet op detectie wachten.
+  await page.evaluate(async () => {
+    const moduleUrl = '/src/services/updater/updaterService.ts';
+    const service = await import(moduleUrl) as typeof import('@/services/updater/updaterService');
+    void service.downloadAndInstall().then(() => { window.updaterProbe.installDone = true; });
+  });
+  await expect.poll(() => page.evaluate(expected => (
+    window.updaterProbe.installDone || window.updaterProbe.detections.length === expected
+  ), detections + 1)).toBe(true);
+  await expect.poll(() => page.evaluate(() => window.updaterProbe.calls)).toEqual([]);
+  await page.evaluate(() => {
+    window.updaterProbe.delayed = false;
+    window.updaterProbe.detections.forEach(resolve => resolve());
+  });
+  await expect.poll(() => page.evaluate(() => window.updaterProbe.installDone)).toBe(true);
+  await expect(dialog.getByText('Update through your package manager (for example yay -Syu).')).toBeVisible();
+  await expect(install).toHaveCount(0);
+  await expect.poll(() => page.evaluate(() => window.updaterProbe.calls)).toEqual([]);
+
+  // Snap houdt dezelfde blokkade; een bekende native installatie hoeft geen tijdslimiet af te wachten.
+  for (const kind of ['snap', 'native'] as const) {
+    await dialog.getByRole('button', { name: 'Close', exact: true }).last().click();
+    await page.evaluate(kind => {
+      window.updaterProbe.kind = kind;
+      window.__OPS__!.store.getState().setUI({ showUpdateDialog: true });
+    }, kind);
+    await expect(dialog.getByText('A new version is available', { exact: true })).toBeVisible();
+    if (kind === 'snap') {
+      await expect(dialog.getByText(/automatically via the Snap Store/)).toBeVisible();
+      await expect(install).toHaveCount(0);
+      await page.evaluate(async () => {
+        const moduleUrl = '/src/services/updater/updaterService.ts';
+        const service = await import(moduleUrl) as typeof import('@/services/updater/updaterService');
+        await service.downloadAndInstall();
+      });
+      await expect.poll(() => page.evaluate(() => window.updaterProbe.calls)).toEqual([]);
+    } else {
+      await install.click();
+      await expect.poll(() => page.evaluate(() => window.updaterProbe.calls)).toEqual(['download', 'install', 'relaunch']);
+    }
+  }
 });

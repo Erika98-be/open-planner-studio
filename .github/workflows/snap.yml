@@ -84,7 +84,7 @@ jobs:
             if printf '%s' "$HEAD_BRANCH" | grep -qE '^v[0-9]'; then
               VERSION="$HEAD_BRANCH"
             else
-              VERSION="$(gh release list --exclude-drafts --limit 1 --json tagName --jq '.[0].tagName // empty')"
+              VERSION="$(gh release list --exclude-drafts --exclude-pre-releases --limit 1 --json tagName --jq '.[0].tagName // empty')"
             fi
           else
             VERSION=""

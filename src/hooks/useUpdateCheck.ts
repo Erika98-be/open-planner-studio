@@ -32,11 +32,11 @@ export function useUpdateCheck(): void {
     if (updateChecked.current) return;
     updateChecked.current = true;
     if (!isTauri()) return;
-    // Snap-builds worden door de Snap Store/snapd zelf bijgewerkt — de in-app
+    // Snap- en AUR-builds werkt de pakketbeheerder zelf bij (snapd, pacman) — de in-app
     // auto-check overslaan zodat we de gebruiker niet lastigvallen.
     getInstallKind()
       .then(kind => {
-        if (kind === 'snap') return;
+        if (kind === 'snap' || kind === 'aur') return;
         return checkForUpdates(true).then(info => {
           if (info) openUpdateDialogWhenIdle();
         });
