@@ -427,11 +427,3 @@ en noem het in je rapport of PR-tekst.
     Daardoor kan een website-release-PR niet vóór de merge aan de eis “website-CI groen” voldoen.
     Voorstel: een website-PR-workflow met de bestaande checkers toevoegen en als poort instellen.
     De Nozzit-bypass voor reviews bestaat wel. Alleen gelezen; niets in de website gewijzigd. — B
-
-185. **MSPDI: andere projectdatumvelden worden nog zonder XML-escaping geschreven.**
-    Bij de statische analyse van 176 bleek dat `mspdiWriter.ts` ook `project.endDate` en
-    `project.statusDate` via `toXmlDateTime` rechtstreeks in `<FinishDate>`/`<StatusDate>` zet.
-    Die helper formatteert op lengte, zonder validatie of escaping; `mspdiReader.ts:parseProject`
-    kan bij deze velden eveneens een ongeldige tekstprefix bewaren. XML-metatekens zouden zo ook
-    daar de export kunnen beschadigen. Niet uitgevoerd; buiten de projectstartfix gehouden.
-    Voorstel: de XML-integriteit van deze velden afzonderlijk bewaken. — S
