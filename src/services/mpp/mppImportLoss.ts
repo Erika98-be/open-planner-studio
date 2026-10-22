@@ -96,17 +96,15 @@ function hasValue(bytes: Uint8Array | null): boolean {
 /**
  * Inhoud in een RTF-aantekening (MS Project bewaart aantekeningen als 8-bit RTF). Inhoud is zichtbare
  * tekst (ook `\'hh` en Unicode via `\uN`), een afbeelding (`\pict`, ook binnen `{\*\shppict}`) of
- * een ingesloten object (`\object`). Een aantekening met alleen opmaak telt niet. Destinations met `\*`,
- * fonttbl, colortbl, stylesheet en info worden voor TEKST overgeslagen. De lezer neemt geen enkele
- * aantekening over, dus elke aantekening met inhoud is verloren.
+ * een ingesloten object (`\object`). Een aantekening met alleen opmaak telt niet. Metadata en
+ * onbekende destinations met `\*` worden volledig overgeslagen; afbeeldingswrappers mogen wel echte
+ * afbeeldingen bevatten. De lezer neemt geen enkele aantekening over, dus elke aantekening met
+ * inhoud is verloren.
  */
 export function rtfHasVisibleText(bytes: Uint8Array): boolean {
   let text = '';
   for (let i = 0; i < bytes.length && i < MAX_NOTE_BYTES && bytes[i] !== 0; i++) text += String.fromCharCode(bytes[i]);
   if (!text.startsWith('{\\rtf')) return text.trim() !== '';
-  // Een afbeelding of object is inhoud, waar het ook staat (Word/RichEdit zetten de afbeelding vaak in
-  // `{\*\shppict{\pict …}}`).
-  if (/\\(pict|object)(?![a-z])/.test(text)) return true;
   const SKIP = new Set(['fonttbl', 'colortbl', 'stylesheet', 'info', 'generator', 'listtable', 'listoverridetable']);
   const skipStack: boolean[] = [];
   let skip = false;
@@ -114,11 +112,12 @@ export function rtfHasVisibleText(bytes: Uint8Array): boolean {
     const c = text[i];
     if (c === '{') {
       skipStack.push(skip);
-      if (text.startsWith('{\\*', i)) skip = true;
-      else {
-        const word = /^\{\\([a-z]+)/.exec(text.slice(i, i + 40))?.[1];
-        if (word && SKIP.has(word)) skip = true;
-      }
+      const word = /^\{\\(?:\*\s*\\)?([a-z]+)/.exec(text.slice(i, i + 40))?.[1];
+      // Alleen een echte groepsbestemming telt: `\\pict` is tekst, en ook een echte `\pict` binnen
+      // metadata blijft verborgen. Escapes worden hieronder door de tokenizer overgeslagen.
+      if (!skip && (word === 'pict' || word === 'object')) return true;
+      // Word/RichEdit gebruikt `{\*\shppict{\pict …}}`. Deze wrapper heft een geërfde skip niet op.
+      if ((text.startsWith('{\\*', i) && word !== 'shppict' && word !== 'nonshppict') || (word && SKIP.has(word))) skip = true;
     } else if (c === '}') {
       skip = skipStack.pop() ?? false;
     } else if (c === '\\') {

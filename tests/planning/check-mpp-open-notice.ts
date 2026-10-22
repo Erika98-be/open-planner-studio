@@ -5,7 +5,7 @@
 // - die melding blijft staan tot het kruisje (`sticky`), want er is data weggelaten;
 // - een schoon bestand (ook met een lege aantekening, een NB-baseline en lege eigen velden) ⇒ geen
 //   verslag en geen melding;
-// - de RTF-aantekeningregel telt alleen zichtbare tekst.
+// - de RTF-aantekeningregel telt zichtbare tekst en echte afbeeldingen/objecten, geen metadata.
 // Corpusloos (CI): de fixtures zijn synthetische MPP14-containers (zelfde bouw als `mppFixtures.ts`).
 // De sleutels komen uit MPXJ (`FieldMap14.java`); de tellingen zijn lokaal ook nagemeten tegen de
 // MPP14-testbestanden van MPXJ (`junit/data/mpp14*.mpp`), zie de PR.
@@ -179,6 +179,10 @@ const PICTURE_NOTE = latin1('{\\rtf1\\ansi{\\fonttbl{\\f0 Arial;}}\\pard{\\*\\sh
 const UNICODE_NOTE = latin1('{\\rtf1\\ansi\\uc0\\u9629\\u20013\\par}');
 const EMPTY_NOTE = latin1('{\\rtf1\\ansi{\\fonttbl{\\f0 Arial;}}{\\*\\generator Riched20;}\\viewkind4\\pard\\f0\\fs20\\par}');
 
+/** Knownbug 159: de backslashes zijn ge-escapete tekst in verborgen metadata, geen afbeeldingen. */
+const METADATA_NOTE = latin1(String.raw`{\rtf1\ansi{\info{\title \\pict}{\comment {\\object}}}\par}`);
+const OBJECT_NOTE = latin1(String.raw`{\rtf1\ansi{\object\objemb{\*\objclass Package}{\*\objdata 0100}}\par}`);
+
 const LOSSY: Fixture = {
   tasks: [
     { uid: 10, name: 'Fundering', fixedCost: 250, vars: {
@@ -228,12 +232,36 @@ async function open(name: string, bytes: Uint8Array): Promise<OpenedImport> {
 const resultsOf = (parsed: OpenedImport) => isMultiDocumentImport(parsed) ? parsed.results : [parsed];
 
 async function main(): Promise<void> {
-  // (1) RTF-aantekening: alleen zichtbare tekst telt.
+  // (1) RTF-aantekening: zichtbare tekst en echte afbeeldingen/objecten tellen.
   eq('1a aantekening met tekst', rtfHasVisibleText(NOTE), true);
   eq('1b aantekening zonder tekst (alleen opmaak)', rtfHasVisibleText(EMPTY_NOTE), false);
   eq('1c escape telt als tekst', rtfHasVisibleText(latin1('{\\rtf1\\ansi \\\'e9\\par}')), true);
   eq('1d alleen een afbeelding telt als inhoud', rtfHasVisibleText(PICTURE_NOTE), true);
   eq('1e alleen Unicode-tekst telt als tekst', rtfHasVisibleText(UNICODE_NOTE), true);
+
+  // Knownbug 159: groepsbestemmingen herkennen zonder escaped tekst of metadata als inhoud te tellen.
+  eq('1f escaped pict/object in metadata', rtfHasVisibleText(METADATA_NOTE), false);
+  eq('1g alleen een ingesloten object', rtfHasVisibleText(OBJECT_NOTE), true);
+  const noteCases: readonly [string, string, boolean][] = [
+    ['oorspronkelijke title-repro', String.raw`{\rtf1{\info{\title \\pict}}\par}`, false],
+    ['escaped object in titel', String.raw`{\rtf1{\info{\title \\object}}\par}`, false],
+    ['geneste metadata en generator', String.raw`{\rtf1{\info{\title {\\pict}{\\object}}}{\*\generator \\pict \\object;}\par}`, false],
+    ['echte groepen binnen metadata blijven verborgen', String.raw`{\rtf1{\info{\title {\*\shppict{\pict\pngblip 00}}}{\comment {\object\objemb}}}\par}`, false],
+    ['onbekende destination blijft verborgen', String.raw`{\rtf1{\*\private{\pict\pngblip 00}{\object\objemb}}\par}`, false],
+    ['langere controlwoorden zijn geen pict/object', String.raw`{\rtf1{\picture}{\objectives}\par}`, false],
+    ['lege afbeeldingswrappers', String.raw`{\rtf1{\*\shppict}{\nonshppict}\par}`, false],
+    ['losse afbeelding zonder tekst', String.raw`{\rtf1{\pict\pngblip 00}\par}`, true],
+    ['alleen shppict zonder fallback', String.raw`{\rtf1{\*\shppict{\pict\pngblip 00}}\par}`, true],
+    ['alleen nonshppict', String.raw`{\rtf1{\nonshppict{\pict\wmetafile8 00}}\par}`, true],
+    ['ster bij echte pict-bestemming', String.raw`{\rtf1{\*\pict\pngblip 00}\par}`, true],
+    ['ster bij echte object-bestemming', String.raw`{\rtf1{\*\object\objemb{\*\objdata 00}}\par}`, true],
+    ['afbeelding na metadata', String.raw`{\rtf1{\info{\title \\pict}}{\*\shppict{\pict\pngblip 00}}\par}`, true],
+    ['zichtbare tekst na metadata', String.raw`{\rtf1{\info{\title \\object}}Let op: wapening keuren\par}`, true],
+    ['zichtbare letterlijke controlwoorden en accolades', String.raw`{\rtf1{\info{\title \\pict}}\\pict \\object \{tekst\}\par}`, true],
+    ['platte tekst met controlwoordnamen', String.raw`Controleer \pict en \object in de handleiding.`, true],
+    ['lege niet-RTF-tekst', ' \t\r\n', false],
+  ];
+  for (const [label, text, want] of noteCases) eq(`1h ${label}`, rtfHasVisibleText(latin1(text)), want);
 
   // (2) Elke categorie: de telling uit de lezer.
   let parsed = await open('verslag.mpp', buildMpp(LOSSY));
@@ -276,6 +304,34 @@ async function main(): Promise<void> {
   eq('4c geen verslag in de store', S().ui.notifications.some(n => n.messageKey === 'notifications.msProjectImportLoss'), false);
   parsed = await open('minimaal.mpp', minimalMpp14Bytes({ startDays: 11328, finishDays: 11330, projectStartDays: 11328 }));
   eq('4d minimaal bestand: geen verslag', activeImportResult(parsed).msProjectReport, undefined);
+
+  // (4e) Alleen verborgen metadata op taak, resource en toewijzing: geen verliesmelding.
+  const metadataOnly: Fixture = {
+    tasks: [{ uid: 10, name: 'Fundering', vars: { 15: METADATA_NOTE } }],
+    resourceVars: { 20: METADATA_NOTE },
+    assignments: [{ uid: 1, vars: { 71: METADATA_NOTE } }],
+  };
+  parsed = await open('metadata.mpp', buildMpp(metadataOnly));
+  eq('4e1 metadata: geen verslag', activeImportResult(parsed).msProjectReport, undefined);
+  eq('4e2 metadata: geen melding', msProjectImportNotice(resultsOf(parsed)), undefined);
+  eq('4e3 metadata: geen melding in de store', S().ui.notifications.some(n => n.messageKey === 'notifications.msProjectImportLoss'), false);
+
+  // (4f) Naast metadata blijven zichtbare tekst, een echte afbeelding en een object wel verlies.
+  parsed = await open('inhoud.mpp', buildMpp({
+    ...metadataOnly,
+    tasks: [...metadataOnly.tasks, { uid: 11, name: 'Metselwerk', vars: { 15: NOTE } }],
+    resourceVars: { 20: latin1(String.raw`{\rtf1{\*\shppict{\pict\pngblip 00}}\par}`) },
+    assignments: [{ uid: 1, vars: { 71: OBJECT_NOTE } }],
+  }));
+  const contentResult = activeImportResult(parsed);
+  eq('4f1 drie aantekeningen met inhoud', contentResult.msProjectReport?.notes, 3);
+  const contentNotices = S().ui.notifications.filter(n => n.messageKey === 'notifications.msProjectImportLoss');
+  eq('4f2 één verliesmelding', contentNotices.length, 1);
+  eq('4f3 juiste aantekeningentelling in melding', contentNotices[0]?.detailLines
+    ?.filter(l => l.messageKey === 'notifications.msProjectLostNotes').map(l => l.params?.count), [3]);
+  eq('4f4 import blijft twee taken en één toewijzing lezen',
+    [contentResult.tasks.length, contentResult.assignments.length], [2, 1]);
+  eq('4f5 de lezer neemt nog steeds geen aantekeningen over', contentResult.tasks.map(t => t.description ?? ''), ['', '']);
 
   // (5) De sleutels bestaan in nl en en (geen lege toast).
   for (const loc of ['nl', 'en']) {
