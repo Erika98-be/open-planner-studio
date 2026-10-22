@@ -2377,14 +2377,14 @@ interface PropertySetRelation {
 interface PropertySetIndex {
   all: PropertySetRelation[];
   byName: Map<string, PropertySetRelation[]>;
-  byTarget: Map<string, PropertySetRelation[]>;
+  calendarsByTarget: Map<string, PropertySetRelation[]>;
 }
 
 /**
  * Los property-relaties en hun psetnaam één keer op per gelezen bestand. De extractors lezen
  * dezelfde koppelingen; telkens alle entiteiten scannen en dezelfde referentie/naam parsen kost
  * bij grote plannen onnodig tijd. De lijsten behouden bestandsvolgorde en dubbele relaties.
- * Alleen de doelindex dedupliceert een herhaald doel binnen één relatie (de oude `includes`-toets
+ * Alleen de kalenderindex dedupliceert een herhaald doel binnen één relatie (de oude `includes`-toets
  * van de kalenderlezers); de andere extractors houden alle doelverwijzingen in hun eigen volgorde.
  * De entiteiten zijn vóór de eerste aanroep al STEP-gedecodeerd; de WeakMap houdt geen bestand vast.
  */
@@ -2392,7 +2392,7 @@ const propertySetRelationIndex = new WeakMap<StepEntity[], PropertySetIndex>();
 function propertySets(entities: StepEntity[], entityMap: Map<string, StepEntity>): PropertySetIndex {
   let index = propertySetRelationIndex.get(entities);
   if (!index) {
-    index = { all: [], byName: new Map(), byTarget: new Map() };
+    index = { all: [], byName: new Map(), calendarsByTarget: new Map() };
     for (const rel of entities) {
       if (rel.type !== 'IFCRELDEFINESBYPROPERTIES') continue;
       const pset = entityMap.get(parseRef(rel.args[5] || '') || '');
@@ -2402,10 +2402,13 @@ function propertySets(entities: StepEntity[], entityMap: Map<string, StepEntity>
       let named = index.byName.get(entry.name);
       if (!named) { named = []; index.byName.set(entry.name, named); }
       named.push(entry);
-      for (const target of new Set(entry.objectRefs)) {
-        let targets = index.byTarget.get(target);
-        if (!targets) { targets = []; index.byTarget.set(target, targets); }
-        targets.push(entry);
+      // Alleen kalenderlezers zoeken op doel; geen aparte doellijst voor elke taak alloceren.
+      if (entry.name === PSET.Calendar) {
+        for (const target of new Set(entry.objectRefs)) {
+          let targets = index.calendarsByTarget.get(target);
+          if (!targets) { targets = []; index.calendarsByTarget.set(target, targets); }
+          targets.push(entry);
+        }
       }
     }
     propertySetRelationIndex.set(entities, index);
@@ -2431,8 +2434,7 @@ function* opsCalendarPsetProps(
   entities: StepEntity[],
   entityMap: Map<string, StepEntity>,
 ): Generator<StepEntity[]> {
-  for (const { pset, name } of propertySets(entities, entityMap).byTarget.get(calStepId) ?? []) {
-    if (name !== PSET.Calendar) continue;
+  for (const { pset } of propertySets(entities, entityMap).calendarsByTarget.get(calStepId) ?? []) {
     yield parseRefs(pset.args[4] || '')
       .map(r => entityMap.get(r))
       .filter((p): p is StepEntity => !!p && p.type === 'IFCPROPERTYSINGLEVALUE');
