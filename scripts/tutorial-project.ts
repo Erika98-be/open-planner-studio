@@ -506,7 +506,10 @@ export function buildTutorialProject(lang: TutorialLang): TutorialBuild {
   // in de bibliotheek, `materializeHolidays` over de projectspanne, `commitCalendarLibrary`, runCPM.
   S().ensureProjectCalendarInLibrary();
   const projectCalId = S().project.calendarId;
-  const projectSpan = computeGenerateSpan(S().project.startDate, S().project.endDate || undefined);
+  // Na tutorial 2 is het einde berekend: dezelfde update-spanne als de UI, niet de wizardspanne.
+  const projectSpan = computeGenerateSpan(
+    S().project.startDate, S().project.endDate || undefined, S().cpmResult?.projectEnd,
+  );
   const { holidays, generation } = materializeHolidays(
     { country: 'NL', region: undefined, bouwvak: BOUWVAK_REGION }, projectSpan.from, projectSpan.to,
   );

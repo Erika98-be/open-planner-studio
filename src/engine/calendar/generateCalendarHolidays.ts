@@ -58,13 +58,20 @@ export function materializeHolidays(
 /**
  * Standaard generatie-spanne: bij aanmaak (geen bekend projecteinde)
  * `startjaar−1 t/m startjaar+3`; bij een bekend projecteinde `projectstart−1 t/m projecteinde+1`.
+ * Met een beschikbaar rekenresultaat telt het latere van het ingevoerde en het berekende einde.
+ * Een aanroeper die de aanmaakspanne wil, laat beide einddatums weg.
  */
-export function computeGenerateSpan(startDate: string, endDate: string | undefined): { from: number; to: number } {
+export function computeGenerateSpan(
+  startDate: string,
+  endDate: string | undefined,
+  calculatedEnd?: string,
+): { from: number; to: number } {
+  const projectEnd = (endDate || '') > (calculatedEnd || '') ? endDate : calculatedEnd;
   // Projectdatums zijn UTC-dagen (`parseDate`); met lokale getters werd 1 januari in Amerika het
   // vorige jaar. "Nu" blijft het lokale kalenderjaar van de gebruiker.
   const startYear = startDate ? parseDate(startDate).getUTCFullYear() : new Date().getFullYear();
-  if (endDate) {
-    const endYear = parseDate(endDate).getUTCFullYear();
+  if (projectEnd) {
+    const endYear = parseDate(projectEnd).getUTCFullYear();
     return { from: startYear - 1, to: Math.max(endYear + 1, startYear - 1) };
   }
   return { from: startYear - 1, to: startYear + 3 };

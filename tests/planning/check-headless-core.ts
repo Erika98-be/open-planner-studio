@@ -147,22 +147,39 @@ ok('4c2 afgekapt STEP ⇒ IFC_READ_FAILED', await codeOf(() => openIfc('ISO-1030
     parentId: i ? `nest-${i - 1}` : null,
     childIds: i < N - 1 ? [`nest-${i + 1}`] : [],
     isSummary: i < N - 1 ? true : undefined,
-    time: createDefaultTaskTime('2026-03-02', 5), resourceIds: [],
+    time: i === N - 1 ? createDefaultTaskTime('2026-03-18', 4) : createDefaultTaskTime('2026-03-02', 5), resourceIds: [],
   }));
   const deep = writeIFC({
     project: { ...st.project, id: 'diepe-wbs', startDate: '2026-03-02', wbsAutoNumber: undefined },
-    calendar: { ...st.calendar, holidays: [] }, tasks, sequences: [], resources: [], assignments: [],
+    calendar: { ...st.calendar, workDays: [1, 2, 3, 4, 5], holidays: [], generation: undefined }, tasks, sequences: [], resources: [], assignments: [],
   });
   const parsed = readIFC(deep);
   const shape = (ts: readonly Task[]) => JSON.stringify(ts.map(t =>
     [t.id, t.name, t.parentId, t.childIds, t.wbsCode, t.isSummary === true, t.isMilestone]));
   const expectedShape = shape(tasks);
   const sourceGuids = parsed.ifcGlobalIds ?? {};
+  // Onafhankelijk orakel: vier werkdagen = wo 18, do 19, vr 20 en ma 23 maart.
+  // Alle 5.999 fasen beginnen in het bestand met een ándere span (2–6 maart, vijf dagen).
+  // Dus een ontbrekende of voortijdig afgebroken rollup kan niet toevallig slagen.
+  const expectedStart = '2026-03-18';
+  const expectedFinish = '2026-03-23';
+  const expectedDuration = 4;
+  const hasExpectedSpan = (ts: readonly Task[]) => ts.length === N && ts.every(t =>
+    t.time.earlyStart === expectedStart && t.time.earlyFinish === expectedFinish
+      && t.time.lateStart === expectedStart && t.time.lateFinish === expectedFinish
+      && t.time.scheduleDuration === expectedDuration && t.time.totalFloat === 0 && t.time.freeFloat === 0);
+  ok('4g fixture: alle fasen hebben de oude span; alleen het diepste blad heeft de nieuwe span',
+    parsed.tasks.slice(0, -1).every(t => t.time.earlyStart === '2026-03-02'
+      && t.time.earlyFinish === '2026-03-06' && t.time.scheduleDuration === 5)
+      && parsed.tasks[N - 1].time.scheduleStart === expectedStart
+      && parsed.tasks[N - 1].time.scheduleFinish === expectedFinish
+      && parsed.tasks[N - 1].time.scheduleDuration === expectedDuration);
   ok('4g repro: lezer bewaart alle 6.000 identiteiten, vrije codes en fasen zonder auto-vlag',
     parsed.project.wbsAutoNumber === undefined && shape(parsed.tasks) === expectedShape);
   const doc = await openIfc(deep);
   const opened = readIFC(doc.toIfc());
   ok('4g openen + opslaan vóór schedule bewaart de volledige WBS', shape(opened.tasks) === expectedShape);
+  ok('4g openen rolt de letterlijke bladspan en vier dagen duur op naar alle fasen', hasExpectedSpan(opened.tasks));
   ok('4g vrije codes activeren geen automatische hernummering', opened.project.wbsAutoNumber === undefined);
   ok('4g de diepste taak heeft werkelijk niveau 6.000', taskDepths(opened.tasks).get(`nest-${N - 1}`) === N);
   const summary = doc.schedule();
@@ -170,12 +187,16 @@ ok('4c2 afgekapt STEP ⇒ IFC_READ_FAILED', await codeOf(() => openIfc('ISO-1030
     summary.counts.tasks === N && summary.tasks.length === N
       && summary.tasks.every((t, i) => t.id === tasks[i].id && t.parentId === tasks[i].parentId
         && t.wbs === tasks[i].wbsCode && t.summary === (i < N - 1)));
+  ok('4g expliciete berekening geeft alle fasen en het blad de onafhankelijk vastgelegde datums',
+    summary.tasks.every(t => t.start === expectedStart && t.finish === expectedFinish
+      && t.lateStart === expectedStart && t.lateFinish === expectedFinish && t.totalFloat === 0));
   const last = summary.tasks[N - 1];
   ok('4g ook de buitenste fasen krijgen de berekende bladspan, geen gedeeltelijke rollup',
     summary.tasks.every(t => t.start === last.start && t.finish === last.finish
       && t.lateStart === last.lateStart && t.lateFinish === last.lateFinish && t.totalFloat === last.totalFloat));
   const saved = readIFC(doc.toIfc());
   ok('4g opslaan na schedule bewaart de volledige WBS', shape(saved.tasks) === expectedShape);
+  ok('4g save na berekenen bewaart de verwachte span en duur op alle niveaus', hasExpectedSpan(saved.tasks));
   ok('4g alle oorspronkelijke taak-GlobalIds blijven bewaard', tasks.every(t =>
     !!sourceGuids[`task:${t.id}`] && saved.ifcGlobalIds?.[`task:${t.id}`] === sourceGuids[`task:${t.id}`]));
 
@@ -185,6 +206,7 @@ ok('4c2 afgekapt STEP ⇒ IFC_READ_FAILED', await codeOf(() => openIfc('ISO-1030
   ctx.store.setState(s => { s.ui.collapsedTaskIds = ['nest-0']; });
   st.openAsDocument(saved, { name: 'diep.ifc', ref: null, saveTarget: false });
   const deepId = ctx.store.getState().activeDocumentId;
+  ok('4g heropenen in de app behoudt de verwachte span en duur op alle niveaus', hasExpectedSpan(ctx.store.getState().tasks));
   ok('4g ingeklapte diepe WBS toont uitsluitend de wortel',
     ctx.store.getState().viewRows.length === 1 && ctx.store.getState().viewRows[0].rowKey === 'nest-0');
   ctx.store.getState().toggleCollapse('nest-0');
@@ -200,9 +222,11 @@ ok('4c2 afgekapt STEP ⇒ IFC_READ_FAILED', await codeOf(() => openIfc('ISO-1030
   ctx.store.getState().newDocument();
   ctx.store.getState().switchDocument(deepId);
   const switched = ctx.store.getState();
+  ok('4g documentwissel behoudt de verwachte span en duur op alle niveaus', hasExpectedSpan(switched.tasks));
   ok('4g documentwissel bewaart WBS, false-vlag en alle zichtbare rijen',
     shape(switched.tasks) === expectedShape && switched.project.wbsAutoNumber === false && switched.viewRows.length === N);
   const appSaved = readIFC(writeIFC(buildWriteIFCInput(switched)));
+  ok('4g laatste IFC-roundtrip bewaart de verwachte span en duur op alle niveaus', hasExpectedSpan(appSaved.tasks));
   ok('4g save na heropenen en documentwissel bewaart structuur en GlobalIds', shape(appSaved.tasks) === expectedShape
     && tasks.every(t => appSaved.ifcGlobalIds?.[`task:${t.id}`] === sourceGuids[`task:${t.id}`]));
 }

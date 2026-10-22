@@ -30,6 +30,7 @@ import { handleMcpMessage } from '@/services/mcp/dispatcher';
 import { createSnapshot } from '@/state/snapshot';
 import { shiftIso } from '@/engine/moveProject';
 import { CalendarEngine } from '@/engine/scheduler/CalendarEngine';
+import { computeGenerateSpan, materializeHolidays } from '@/engine/calendar/generateCalendarHolidays';
 import { parseDate, addCalendarDays, formatDate } from '@/utils/dateUtils';
 
 const store = useAppStore;
@@ -191,7 +192,7 @@ test('update_calendar: generator (NL-bouwvak) + rawHolidays ⇒ merge, generatio
 });
 
 // =================================================================================================
-// 3b) Bug 124 — het ingevoerde einde mag een latere berekende planning niet afkappen
+// 3b) Bugs 124/182 — dezelfde defaultspanne voor MCP-update en beide UI-generatoren
 // =================================================================================================
 for (const { label, endDate, withCpm, toYear } of [
   { label: 'ingevoerd einde vroeg, berekend einde later', endDate: '2027-12-31', withCpm: true, toYear: 2034 },
@@ -203,6 +204,11 @@ for (const { label, endDate, withCpm, toYear } of [
   test(`update_calendar: generate — ${label}`, async () => {
     reset();
     prepareCalendarSpan(endDate, withCpm);
+    // Beide dialogen geven deze drie waarden door; de bestaande matrix bewaakt ook hun helperpad.
+    const state = store.getState();
+    const span = computeGenerateSpan(state.project.startDate, state.project.endDate, state.cpmResult?.projectEnd);
+    assertEq(span, { from: 2026, to: toYear }, 'UI-defaultspanne dekt het latere beschikbare einde');
+    const direct = materializeHolidays({ country: 'NL', bouwvak: 'geen' }, span.from, span.to);
     const ctx = makeCtx();
     const id = store.getState().project.calendarId;
     const args = { calendars: [{ id, generate: { country: 'NL', bouwvak: 'geen' } }] };
@@ -211,6 +217,8 @@ for (const { label, endDate, withCpm, toYear } of [
       okData(res);
       assertEq(rejections(res), [], 'generate geaccepteerd');
       const cal = store.getState().calendars.find((c) => c.id === id)!;
+      assertEq(cal.holidays, direct.holidays, 'UI- en MCP-pad materialiseren dezelfde feestdagen');
+      assertEq(cal.generation, direct.generation, 'UI- en MCP-pad bewaren dezelfde generatieherkomst');
       assertEq(cal.generation?.generatedFromYear, 2026, 'generatie begint in het jaar vóór de projectstart');
       assertEq(cal.generation?.generatedToYear, toYear, 'generatie dekt de verwachte eindspanne');
       assert(cal.holidays.some((h) => h.startDate === `${toYear}-12-25`), 'feestdagen in het laatste jaar zijn gematerialiseerd');

@@ -22,13 +22,16 @@
 //  7. De tussenstanden van tutorial 6 (baseline, statusdatum, voorbereiding, ontgraven, fundering,
 //     metselwerk), nl en en: in het bestand nog niet gerekend (= wat de lezer vóór Bereken ziet), en
 //     geopend zoals de extensie ze opent (de app rekent dan): statusbalk, deadline, baseline, voortgang.
+//  8. De volledige feestdagen en generatieherkomst per stand, nl en en: wizardspanne t/m 2030;
+//     vanaf de expliciete generatie in tutorial 3 t/m 2028 (berekend projecteinde in 2027).
 //
 // Draait via run.sh. Exit 0 = alles groen.
 import './domStub';
 import { useAppStore } from '@/state/appStore';
 import { readIFC } from '@/services/ifc/ifcReader';
+import { materializeHolidays } from '@/engine/calendar/generateCalendarHolidays';
 import {
-  buildTutorialProject, collectStageFacts, STAGE_IDS, TASKS, RESOURCES,
+  buildTutorialProject, collectStageFacts, STAGE_IDS, TASKS, RESOURCES, BOUWVAK_REGION,
   type StageFacts, type StageId, type TaskKey, type TutorialBuild,
 } from '../../scripts/tutorial-project';
 
@@ -681,6 +684,23 @@ async function main(): Promise<void> {
       await S().openExampleFromString(stage.ifc, `${stage.id}.ifc`);
       eq(`${label}: geen datumverschuiving na herberekenen`, S().recordedDates, null);
       ok(`${label}: berekening zonder fout`, !S().cpmResult?.error);
+      // Vast bereik onafhankelijk van computeGenerateSpan: bewaakt de aanroep in de generator.
+      // De wizard houdt zijn aanmaakspanne; tutorial 3 vervangt de lijst via de echte generator.
+      const beforeCalendarEdit = ['start-tut-1', 'na-tut-1', 'na-tut-2'].includes(stage.id);
+      const expectedCalendar = materializeHolidays(
+        { country: 'NL', bouwvak: beforeCalendarEdit ? 'geen' : BOUWVAK_REGION },
+        2026, beforeCalendarEdit ? 2030 : 2028,
+      );
+      const calendar = S().calendar;
+      eq(`${label}: generatiejaren`,
+        [calendar.generation?.generatedFromYear, calendar.generation?.generatedToYear],
+        [expectedCalendar.generation?.generatedFromYear, expectedCalendar.generation?.generatedToYear]);
+      eq(`${label}: land, regio en bouwvak`,
+        [calendar.generation?.ruleSetId, calendar.generation?.region, calendar.generation?.breakChoice],
+        [expectedCalendar.generation?.ruleSetId, expectedCalendar.generation?.region, expectedCalendar.generation?.breakChoice]);
+      eq(`${label}: volledige feestdagenlijst`,
+        calendar.holidays.map(h => `${h.name} ${h.startDate}..${h.endDate}`).sort(),
+        expectedCalendar.holidays.map(h => `${h.name} ${h.startDate}..${h.endDate}`).sort());
       // Een tussenstand van tutorial 6 is in het bestand nog niet gerekend; geopend wél (TUT6_OPENED).
       const opened = TUT6_OPENED[stage.id];
       if (opened) compareFacts(`${label}:`, collectStageFacts(build.lang), opened);
