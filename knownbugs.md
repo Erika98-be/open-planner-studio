@@ -511,3 +511,9 @@ en noem het in je rapport of PR-tekst.
     De versiecontrole wijst die invoer af; de standaardwaarde is dus niet bruikbaar. Gezien bij
     de versie-audit voor #450. Voorstel: verwijder de standaardwaarde en laat de gebruiker een
     correcte tag invullen. Geen workflow gestart. — B (bestand en lokale versiecontrole)
+
+175. **`progress-entry.spec.ts` opent de taakdialoog soms niet opnieuw.** In CI-run 39750997457
+    (PR #476, browser 3-4, 2026-10-22) faalde het scenario *Regel 2, Taak bewerken* op regel 300:
+    na `seedActualDates` en een canvasdubbelklik ontbrak `[data-ops-task-dialog]`. De eerste opening
+    en de voortgangsvraag in hetzelfde scenario slaagden. De PR wijzigt alleen Vite 7.3.5 naar 7.3.7;
+    de oorzaak en het verband met die wijziging zijn niet vastgesteld. — S
