@@ -196,7 +196,8 @@ const IMPORT_ANNOTATIONS: McpToolAnnotations = {
  * Review #336 punt 4 (issue #292): de app verandert een bestandstype nooit stil. Is het actieve document
  * geopend uit een IFC-bestand in een schema dat de app niet schrijft (IFC2X3 e.d., een open schemavraag
  * zonder "houden"), dan zou een export over DAT bestand het stil IFC 4.3 ADD2 maken. Dat weigert de tool,
- * ook met `overwrite: true`; de gebruiker slaat het in de app op en kiest daar. Een ander pad mag.
+ * ook met `overwrite: true`; de gebruiker slaat het in de app op en kiest daar. Een aantoonbaar
+ * ander bestand mag; een andere schrijfwijze of link is geen bewijs van verschil.
  */
 async function refuseSilentSchemaChange(ctx: McpContext, fs: McpFileFs, path: string): Promise<McpToolResult | null> {
   const state = ctx.app.store.getState();
@@ -236,9 +237,11 @@ export const fileTools: McpToolDef[] = [
       'save target: it stays "not saved" in the app — it is an export, not a "save as". Note: the path comes ' +
       'from your arguments, not from a file dialog of the user; so always mention the chosen path in your ' +
       'answer. If the document was opened from an IFC file in a schema the app cannot write (such as ' +
-      'IFC2X3), writing over that same file is refused (it would silently change its file type); the user ' +
-      'saves it in the app and chooses the schema. To another path it is written as IFC 4.3 ADD2 and the ' +
-      'response says so in `schemaNotice`.',
+      'IFC2X3), writing over that same file is refused, including case aliases and links (it would ' +
+      'silently change its file type). If file identity metadata cannot prove that an existing target ' +
+      'is different (including when the platform provides no file IDs), export is refused: choose a ' +
+      'new file name, or ask the user to save in the app and choose the schema. A confirmed different ' +
+      'or new target is written as IFC 4.3 ADD2 and the response says so in `schemaNotice`.',
     kind: 'other',
     batchable: false, // export_ifc/import_schedule zijn uitgesloten van batch
     inputSchema: {

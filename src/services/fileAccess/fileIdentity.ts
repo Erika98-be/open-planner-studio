@@ -25,12 +25,12 @@ function usableIdentity(info: FileIdentityInfo): boolean {
  * Code 2 is ENOENT op Unix en FILE_NOT_FOUND op Windows. Andere fouten (ook scope, rechten,
  * kapotte metadata of een onbekende foutvorm) blijven onbekend. `exists() === false` volstaat
  * hier niet: plugin-fs gebruikt Path::exists, dat ook bij onleesbare metadata false kan geven.
- * Bron: plugins-workspace, tag fs-v2.5.0, plugins/fs/src/commands.rs.
+ * Bron: https://github.com/tauri-apps/plugins-workspace/blob/fs-v2.5.0/plugins/fs/src/commands.rs
  */
 function missingTarget(error: unknown): boolean {
   const message = error instanceof Error ? error.message : String(error);
   return message.startsWith('failed to get metadata of path: ')
-    && / with error: [^\r\n]*\(os error 2\)$/.test(message);
+    && message.includes(' with error: ') && message.endsWith(' (os error 2)');
 }
 
 /**

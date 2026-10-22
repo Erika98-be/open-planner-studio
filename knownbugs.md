@@ -156,12 +156,6 @@ en noem het in je rapport of PR-tekst.
     website volgt de laatste deploy, terwijl een desktopversie zijn eigen kopie meelevert; een oudere app kan
     dus naar een gids wijzen die tools beschrijft die hij niet heeft. De gids zegt nu dat de kopie van de tool
     voorgaat. Voorstel: een versiepad (bv. `/agent/<versie>/planning-guide.md`) of de versie in de gids. — S
-113. **`planner_export_ifc` herkent het eigen bestand niet bij een ander hoofdlettergebruik op macOS.** De
-    weigering voor een stille schemawijziging (`fileTools.ts`, `refuseSilentSchemaChange`) vergelijkt paden
-    alleen hoofdletterongevoelig bij een Windows-station. Op macOS is het bestandssysteem meestal
-    hoofdletterongevoelig, dus `Model.ifc` tegenover `model.ifc` is hetzelfde bestand maar komt door de
-    vergelijking. Symbolische links worden ook niet opgelost. Afgeleid uit de code door de review van #336,
-    niet op een Mac nagespeeld. — S
 
 126. **Updatevenster: de tekst *Bezig met installeren…* is niet te bereiken.** De balk met
     `updates.installing` staat achter `isDownloading` (`status.kind === 'downloading'`), terwijl de tekst
