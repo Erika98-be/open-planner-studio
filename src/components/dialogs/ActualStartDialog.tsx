@@ -59,15 +59,18 @@ function ActualStartDialogBody({ request }: { request: ActualStartQuestionReques
 
   const issues = request.items.map(item => issueOf(answers[item.taskId] ?? '', item));
   const valid = issues.every(issue => issue === null);
-  const confirm = () => { if (valid) answerActualStartQuestion({ ...answers }); };
+  const confirm = () => {
+    // Een onbestaande datum blijft lokaal in DateTextInput: bevestig nooit de oudere geldige waarde.
+    const invalid = bodyRef.current?.querySelector<HTMLInputElement>('input[aria-invalid="true"]');
+    if (invalid) { invalid.focus(); return; }
+    if (valid) answerActualStartQuestion({ ...answers });
+  };
   const cancel = () => answerActualStartQuestion(null);
 
   // Ook na terugkeer uit Help focus op het eerste datumveld; de lokale antwoorden blijven staan.
   useEffect(() => {
     if (!hiddenForHelp) bodyRef.current?.querySelector<HTMLInputElement>('input')?.focus();
   }, [hiddenForHelp]);
-
-  if (hiddenForHelp) return null;
 
   const first = request.items[0];
   const intro = request.items.length === 1
@@ -76,6 +79,7 @@ function ActualStartDialogBody({ request }: { request: ActualStartQuestionReques
 
   return (
     <Dialog
+      suspended={hiddenForHelp}
       onCancel={cancel}
       onConfirm={confirm}
       focusedButtonOwnsEnter

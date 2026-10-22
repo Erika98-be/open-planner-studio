@@ -244,7 +244,7 @@ export function TaskDialog() {
     setUI({ showTaskDialog: false, editingTaskId: null });
   };
 
-  if (!showTaskDialog || actualStartHelpOpen) return null;
+  if (!showTaskDialog) return null;
 
   // Een gestarte taak (ook als de werkelijke start in deze dialoog net is ingevuld) begint op haar
   // werkelijke start: dan toont Startdatum die datum, alleen-lezen (eigenaarsbesluit 2026-10-12).
@@ -261,6 +261,7 @@ export function TaskDialog() {
     // ná de `showTaskDialog`-gate hierboven, dus de toetsen zijn alleen actief bij een open dialoog.
     // Let op: overlaytint is hier bg-black/50 (historisch iets lichter dan de andere dialogs).
     <Dialog
+      suspended={actualStartHelpOpen}
       onCancel={handleClose}
       onConfirm={handleSave}
       overlayClassName="bg-black/50 z-50"
