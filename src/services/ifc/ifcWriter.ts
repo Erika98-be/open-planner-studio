@@ -22,6 +22,7 @@ import {
 import { PSET, PER_TASK_PSETS, OPS_APP_VERSION, ifcStr, ifcJson, asciiJson, ifcTypedReal, stepReal, ifcDateValue } from './ifcPsets';
 import { ifcSchemaQuestionFor } from './ifcSchemaQuestion';
 import { isSummaryTask } from '@/utils/taskHierarchy';
+import { latestFinish, shownFinish, shownStart } from '@/utils/taskDates';
 import { projectFileBase } from '@/utils/documents';
 import {
   XER_SOURCE_ARCHIVE_CHUNK_BYTES, XER_SOURCE_ARCHIVE_COMPACT_STORAGE_FORMAT,
@@ -393,11 +394,12 @@ export function writeIFC(input: WriteIFCInput): string {
   const projectCalWritten = writeCalendar(ctx, calendar, ownerHistId, '_calendar', hourTaskCalendarIds.has(calendar.id));
   writeCalendarGenerationMeta(ctx, calendar, ownerHistId, projectCalWritten);
 
-  // Work plan & schedule
-  const startDates = tasks.map(t => t.time.scheduleStart).filter(Boolean).sort();
-  const endDates = tasks.map(t => t.time.scheduleFinish).filter(Boolean).sort();
+  // Planomvang van de GETOONDE taken, zoals de Gantt en de basislijn: werkelijke datums waar
+  // die vaststaan, anders early, anders invoer (`taskDates`). Ook samenvattingen tellen mee.
+  // Invoerankers en contractuele projectdatums blijven apart bewaard; opslaan rekent niet.
+  const startDates = tasks.map(shownStart).filter(Boolean).sort();
   const planStart = startDates[0] || project.startDate;
-  const planEnd = endDates[endDates.length - 1] || project.endDate;
+  const planEnd = latestFinish(tasks.map(shownFinish)) || project.endDate;
 
   // IfcWorkPlan en IfcWorkSchedule: de 14 argumenten van het schema (`workControlArgs`). StartTime is
   // VERPLICHT. Een project zonder taken en zonder startdatum heeft geen planstart; dan het
