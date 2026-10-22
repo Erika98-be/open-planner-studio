@@ -12,6 +12,10 @@ import {
   RECOVERY_MANIFEST_VERSION, RecoveryManifestError,
 } from '@/services/recovery/recoveryStore';
 import { installFakeRecoveryIndexedDb } from './fakeRecoveryIndexedDb';
+import { writeIFC } from '@/services/ifc/ifcWriter';
+import { readIFC } from '@/services/ifc/ifcReader';
+import { createDefaultProject } from '@/state/defaults';
+import { createDefaultCalendar } from '@/engine/calendar/defaultCalendar';
 
 const diffs: string[] = [];
 let checks = 0;
@@ -20,7 +24,10 @@ const eq = (label: string, got: unknown, want: unknown) => {
   if (JSON.stringify(got) !== JSON.stringify(want)) diffs.push(`${label}: verwacht ${JSON.stringify(want)}, kreeg ${JSON.stringify(got)}`);
 };
 
-const idb = installFakeRecoveryIndexedDb();
+let failRecordRead = false;
+const idb = installFakeRecoveryIndexedDb({ onRead: (store, method) => {
+  if (failRecordRead && store === 'records' && method === 'getAll') throw new Error('Gesimuleerde IDB-leesfout');
+} });
 const session = new Map<string, string>();
 (globalThis as unknown as { sessionStorage: unknown }).sessionStorage = {
   getItem: (k: string) => session.get(k) ?? null,
@@ -150,6 +157,10 @@ const invalidWebManifests = [
   { ...webManifest, documents: {} },
   { ...webManifest, documents: [null] },
   { ...webManifest, documents: [{ id: 'oud' }] },
+  { ...webManifest, kind: 'doc' }, // canonieke sleutel, maar ontbreekt in de kind=manifest-index
+  { ...webManifest, documents: [webManifest.documents[0], { ...webManifest.documents[0], ifc: webSid + '::doc::andere' }] },
+  ...[null, 1, 2].map(version => ({ id: webManifest.id, kind: 'manifest', sessionId: webSid,
+    ...(version === null ? {} : { version }), activeDocumentId: 'oud', docIds: ['oud', 'oud'], addedAt: 1 })),
 ];
 for (const [index, manifest] of invalidWebManifests.entries()) {
   idb.store('records').set(webRecord.id, structuredClone(webRecord));
@@ -173,6 +184,74 @@ for (const [index, manifest] of invalidWebManifests.entries()) {
   }
   idb.store('records').clear();
   idb.store('xer-archives').clear();
+}
+
+// R1: iedere kind=manifest is kandidaat, ongeacht sleutel en aanwezigheid/volgorde van de canonieke.
+// Deze bronrepro's zijn hier regressies voor CI; lokaal zijn ze niet uitgevoerd.
+for (const suffix of ['::aaa-manifest-v6', '::zzz-manifest-v6', '::doc::metadata', '']) {
+  for (const order of ['alleen-afwijkend', 'canoniek-eerst', 'afwijkend-eerst']) {
+    const alias = { ...webManifest, id: webSid + suffix, version: 99 };
+    const candidates = order === 'alleen-afwijkend' ? [alias]
+      : order === 'canoniek-eerst' ? [webManifest, alias] : [alias, webManifest];
+    for (const candidate of candidates) idb.store('records').set(candidate.id, structuredClone(candidate));
+    idb.store('records').set(webRecord.id, structuredClone(webRecord));
+    idb.store('xer-archives').set('andere-vorm-blob', { id: 'andere-vorm-blob', bytes: new Uint8Array([0, 255, 91]) });
+    const before = webBytes();
+    const sessionBefore = [...session];
+    for (const [name, action] of [
+      ['save vóór read', () => saveRecovery(fullRecoverySave('nieuw', [doc('nieuw')]))],
+      ['load', () => loadRecovery()], ['save na read', () => saveRecovery(fullRecoverySave('nieuw', [doc('nieuw')]))],
+      ['clear', () => clearRecovery()], ['hold', () => holdRecoveryForLater()],
+    ] as const) {
+      const label = 'web kandidaat ' + suffix + ' ' + order + ' ' + name;
+      await rejectsManifest(label, action);
+      eq(label + ': manifesten/documenten/blobs behouden', webBytes(), before);
+      eq(label + ': geen rotatie of wijziging van held-lijst', [...session], sessionBefore);
+    }
+    idb.store('records').clear(); idb.store('xer-archives').clear();
+  }
+}
+// Ook de sleutel kan een EIGEN write raken terwijl de declaratie een andere sessie noemt.
+idb.store('records').set(webSid + '::doc::nieuw', { ...webManifest, id: webSid + '::doc::nieuw', sessionId: 'andere-sessie', version: 99 });
+const crossSessionBefore = webBytes();
+await rejectsManifest('afwijkende manifestdeclaratie onder te overschrijven eigen docsleutel',
+  () => saveRecovery(fullRecoverySave('nieuw', [doc('nieuw')])));
+eq('afwijkende declaratie: geen overschrijving', webBytes(), crossSessionBefore);
+idb.store('records').clear();
+
+// Een mislukte kandidaatinventarisatie geeft uitstellen geen recht op rotatie.
+idb.store('records').set(webSid + '::manifest-v6', { ...webManifest, id: webSid + '::manifest-v6', version: 99 });
+idb.store('records').set(webRecord.id, structuredClone(webRecord));
+const unreadableWebBefore = webBytes();
+const unreadableSessionBefore = [...session];
+failRecordRead = true;
+let holdReadRejected = false;
+try { await holdRecoveryForLater(); } catch { holdReadRejected = true; }
+finally { failRecordRead = false; }
+eq('uitstellen na IDB-leesfout wordt geweigerd', holdReadRejected, true);
+eq('uitstellen na IDB-leesfout bewaart herstelbytes', webBytes(), unreadableWebBefore);
+eq('uitstellen na IDB-leesfout roteert niet', [...session], unreadableSessionBefore);
+idb.store('records').clear();
+
+// Vreemde kandidaten: bescherm zowel hun fysieke sleutel als gedeclareerde/key-sessie en alle blobs.
+for (const aliasId of ['vreemd::manifest-v6', 'vreemd::doc::metadata', 'opaque-v6', 'andere-prefix::metadata']) {
+  for (const version of [5, 99]) {
+    const canonical = { ...webManifest, id: 'vreemd::manifest', sessionId: 'vreemd' };
+    const alias = { ...canonical, id: aliasId, version };
+    const foreignDoc = { ...webRecord, id: 'vreemd::doc::oud', sessionId: 'vreemd' };
+    for (const record of [canonical, alias, foreignDoc,
+      ...(aliasId.startsWith('andere-prefix::')
+        ? [{ ...webRecord, id: 'andere-prefix::doc::oud', sessionId: 'andere-prefix' }] : [])]) {
+      idb.store('records').set(record.id, structuredClone(record));
+    }
+    idb.store('xer-archives').set('vorm-onbekende-blob', { id: 'vorm-onbekende-blob', bytes: new Uint8Array([2, 0, 255]) });
+    const before = webBytes();
+    await saveRecovery(fullRecoverySave('eigen', [doc('eigen')]));
+    eq('vreemde afwijkende kandidaat laat eigen ondersteunde read toe', await ids(), ['eigen']);
+    await clearRecovery();
+    eq('vreemde ' + aliasId + ' v' + version + ': save/GC/clear bewaren alle vreemde bytes', webBytes(), before);
+    idb.store('records').clear(); idb.store('xer-archives').clear();
+  }
 }
 
 // Een onbekende VREEMDE sessie mag niet door zeven-dagen-GC of gedeelde blob-GC verdwijnen.
@@ -205,6 +284,27 @@ for (const [name, action] of [
   await rejectsManifest('web vastgehouden ' + name, action);
   eq('web vastgehouden ' + name + ': alle bytes intact', webBytes(), heldBefore);
 }
+idb.store('records').set(heldId, heldManifest);
+for (const aliasFirst of [true, false]) {
+  idb.store('records').clear();
+  const alias = { ...heldManifest, id: webSid + '::manifest-v6', kind: 'manifest', sessionId: webSid, version: 99 };
+  const canonical = { id: heldId, ...heldManifest };
+  for (const candidate of aliasFirst ? [alias, canonical] : [canonical, alias]) {
+    idb.store('records').set(candidate.id, candidate);
+  }
+  idb.store('records').set(webRecord.id, structuredClone(webRecord));
+  const before = webBytes();
+  const sessionBefore = [...session];
+  for (const [name, action] of [
+    ['load', () => loadRecovery()], ['save', () => saveRecovery(fullRecoverySave('nieuw', [doc('nieuw')]))],
+    ['clear', () => clearRecovery()], ['hold', () => holdRecoveryForLater()],
+  ] as const) {
+    await rejectsManifest('vastgehouden kandidaat ' + aliasFirst + ' ' + name, action);
+    eq('vastgehouden kandidaat: alle bytes intact', webBytes(), before);
+    eq('vastgehouden kandidaat: geen rotatie', [...session], sessionBefore);
+  }
+}
+idb.store('records').clear();
 idb.store('records').set(heldId, heldManifest);
 await clearRecovery();
 
@@ -401,6 +501,28 @@ for (const [index, raw] of invalidTauriManifests.entries()) {
     await rejectsManifest('tauri ' + index + ' ' + name, action);
     eq('tauri ' + index + ' ' + name + ': alle bytes/manifest intact', diskBytes(), before);
     eq('tauri ' + index + ' ' + name + ': broninhoud intact', JSON.stringify(input), sourceBefore);
+  }
+  disk.clear();
+}
+// R1: twee verschillende, geldige snapshots met dezelfde documentidentiteit mogen niet samenvallen.
+const duplicateSnapshots = ['Generatie Alfa', 'Generatie Beta'].map((name, index) => {
+  const ifc = writeIFC({ project: { ...createDefaultProject(), name }, calendar: createDefaultCalendar(),
+    tasks: [], sequences: [], resources: [], assignments: [] });
+  eq('dubbele-id fixture ' + name + ' is afzonderlijk leesbare IFC', readIFC(ifc).project.name, name);
+  return { name: N.generationIfcName('dup', 'generatie-' + index), ifc };
+});
+for (const reverse of [false, true]) {
+  const snapshots = reverse ? [...duplicateSnapshots].reverse() : duplicateSnapshots;
+  put(N.manifest, JSON.stringify({ version: 5, activeDocumentId: 'dup', documents: snapshots.map(snapshot =>
+    ({ id: 'dup', ifc: snapshot.name, filePath: null, isDirty: true })) }));
+  for (const snapshot of snapshots) put(snapshot.name, snapshot.ifc);
+  const before = diskBytes();
+  for (const [name, action] of [
+    ['load', () => loadRecovery()], ['save', () => saveRecovery(fullRecoverySave('nieuw', [doc('nieuw')]))],
+    ['clear', () => clearRecovery()], ['clearOwn', () => clearOwnRecovery()], ['hold', () => holdRecoveryForLater()],
+  ] as const) {
+    await rejectsManifest('tauri dubbele id, volgorde ' + reverse + ' ' + name, action);
+    eq('tauri dubbele id: beide generaties en manifest blijven exact behouden', diskBytes(), before);
   }
   disk.clear();
 }

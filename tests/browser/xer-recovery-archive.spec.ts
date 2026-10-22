@@ -4,7 +4,7 @@
 // taaknaam wijzigen in de tabel, herladen, en Herstellen in het herstelvenster. `window.__OPS__` en
 // IndexedDB worden alleen GELEZEN. Het tweede geval zet vóór de app-start een oude (v1) database met
 // een leesbare snapshot met ingebed archief én een onleesbare kopie — en bewijst
-// dat de upgrade naar v2 die snapshot nog herstelt.
+// dat de upgrade naar v3 die snapshot nog herstelt.
 import type { Locator, Page } from '@playwright/test';
 import { expect, test } from './fixtures/ops';
 
@@ -145,7 +145,7 @@ test('crashherstel: een XER met twee projecten komt terug mét archief, uit éé
   // (3) De auto-save-tick (throttle 10 s) afwachten in de echte IndexedDB: de snapshot draagt de
   // nieuwe naam, beide manifestregels verwijzen naar hetzelfde archief en er is precies één blob.
   await expect.poll(() => readRecoveryDb(page, RENAMED), { timeout: 30_000, intervals: [500] }).toMatchObject({
-    version: 2, blobs: 1, snapshotHasName: true,
+    version: 3, blobs: 1, snapshotHasName: true,
   });
   expect(workers.some(url => url.includes('recoverySnapshot.worker'))).toBe(true);
   const requests = await page.evaluate(() => (window as unknown as {
@@ -183,7 +183,7 @@ test('crashherstel: oude v1-snapshot herstelt en onleesbare kopie blijft bewaard
   test.setTimeout(90_000);
   // Zelfde herstelroute ook zonder Web Worker (bijvoorbeeld een beperkte webview).
   await page.addInitScript(() => { Object.defineProperty(window, 'Worker', { value: undefined, configurable: true }); });
-  // Fixture, vóór de app-start: de app is door de `ops`-fixture al geladen en heeft `ops-recovery` op v2
+  // Fixture, vóór de app-start: de app is door de `ops`-fixture al geladen en heeft `ops-recovery` op v3
   // gezet. Daarom eerst weg van de app naar een statisch bestand, de database wissen, en daar een v1-
   // database neerzetten met de snapshot die een vorige versie schreef: IFC met INGEBED archief (schema 2),
   // gemaakt met de eigen lezer/writer via de dev-server. Daarna pas de app openen.
@@ -240,9 +240,9 @@ test('crashherstel: oude v1-snapshot herstelt en onleesbare kopie blijft bewaard
   expect(restored!.archiveSha).toMatch(/^[0-9a-f]{64}$/);
   expect(restored!.archiveIssue).toBeNull();
   expect(restored!.sourceProjectId).toBe('P1');
-  // De database is geüpgraded naar v2 met de archiefstore ernaast.
+  // De database is geüpgraded naar v3 met archiefstore en kind-index.
   const db = await readRecoveryDb(page, 'Fundering');
-  expect(db.version).toBe(2);
+  expect(db.version).toBe(3);
   expect(db.stores.sort()).toEqual(['records', 'xer-archives']);
 
   // Niet alleen direct na Herstellen kijken: ook de eerstvolgende echte auto-save
@@ -341,8 +341,19 @@ test('crashherstel: oude v1-snapshot herstelt en onleesbare kopie blijft bewaard
       const { readXER } = (await import(/* @vite-ignore */ readerPath)) as { readXER: (bytes: Uint8Array) => { results: unknown[] } };
       const { writeIFC } = (await import(/* @vite-ignore */ writerPath)) as { writeIFC: (input: unknown) => string };
       const ifc = writeIFC(readXER(new TextEncoder().encode(xer)).results[0]);
+      // NL begint met de bestaande DB v2 zonder index. De app moet zelf upgraden en ALLE bytes
+      // bewaren, inclusief een gezond canoniek manifest naast een onbekende afwijkende kandidaat.
+      if (locale === 'nl') await new Promise<void>((resolve, reject) => {
+        const request = indexedDB.deleteDatabase('ops-recovery');
+        request.onsuccess = () => resolve();
+        request.onerror = () => reject(request.error);
+      });
       await new Promise<void>((resolve, reject) => {
-        const request = indexedDB.open('ops-recovery');
+        const request = indexedDB.open('ops-recovery', locale === 'nl' ? 2 : 3);
+        request.onupgradeneeded = () => {
+          request.result.createObjectStore('records', { keyPath: 'id' });
+          request.result.createObjectStore('xer-archives', { keyPath: 'id' });
+        };
         request.onerror = () => reject(request.error);
         request.onsuccess = () => {
           const db = request.result;
@@ -351,10 +362,12 @@ test('crashherstel: oude v1-snapshot herstelt en onleesbare kopie blijft bewaard
           records.clear(); tx.objectStore('xer-archives').clear();
           records.put({ id: sid + '::doc::doc-oud', kind: 'doc', sessionId: sid,
             docId: 'doc-oud', ifc, addedAt: 1 });
-          records.put({ id: sid + '::manifest', kind: 'manifest', sessionId: sid,
-            version: locale === 'nl' ? 99 : '5', activeDocumentId: 'doc-oud', addedAt: 1,
+          const manifest = { id: sid + '::manifest', kind: 'manifest', sessionId: sid,
+            version: locale === 'nl' ? 5 : '5', activeDocumentId: 'doc-oud', addedAt: 1,
             documents: [{ id: 'doc-oud', ifc: sid + '::doc::doc-oud', filePath: 'oud.ifc',
-              isDirty: true, datesAsRecorded: true, siteFileId: 'oude-site', siteFileVersion: 'oude-basis' }] });
+              isDirty: true, datesAsRecorded: true, siteFileId: 'oude-site', siteFileVersion: 'oude-basis' }] };
+          records.put(manifest);
+          if (locale === 'nl') records.put({ ...manifest, id: sid + '::manifest-v6', version: 99 });
           tx.objectStore('xer-archives').put({ id: 'onbekende-blob', bytes: new Uint8Array([0, 255, 42]), addedAt: 1 });
           tx.oncomplete = () => { db.close(); resolve(); };
           tx.onerror = () => { db.close(); reject(tx.error); };
@@ -388,6 +401,27 @@ test('crashherstel: oude v1-snapshot herstelt en onleesbare kopie blijft bewaard
       : 'The recovery data has an unknown version or an invalid structure.' });
     await expect(warning).toBeVisible();
     await expect(page.locator('[data-ops-recovery-dialog]')).toHaveCount(0);
+    expect(await recoveryBytes()).toBe(before);
+    if (locale === 'nl') {
+      const upgraded = await page.evaluate(() => new Promise((resolve, reject) => {
+        const request = indexedDB.open('ops-recovery');
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => {
+          const db = request.result;
+          const index = db.transaction('records', 'readonly').objectStore('records').index('kind');
+          const manifests = index.getAll('manifest');
+          manifests.onsuccess = () => {
+            resolve({ version: db.version, keyPath: index.keyPath, unique: index.unique,
+              ids: manifests.result.map((record: { id: string }) => record.id).sort() });
+            db.close();
+          };
+          manifests.onerror = () => { db.close(); reject(manifests.error); };
+        };
+      }));
+      expect(upgraded).toEqual({ version: 3, keyPath: 'kind', unique: false, ids: [
+        'geweigerd-manifest-nl::manifest', 'geweigerd-manifest-nl::manifest-v6',
+      ] });
+    }
     const documentState = () => page.evaluate(() => {
       const state = window.__OPS__!.store.getState();
       return { tasks: state.tasks.length, filePath: state.filePath, siteFileId: state.siteFileId,

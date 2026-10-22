@@ -18,6 +18,12 @@ export function checkRecoveryManifestVersion(version: unknown): void {
   if (version > RECOVERY_MANIFEST_VERSION) throw new RecoveryManifestError('unsupported-version');
 }
 
+/** Eén manifest mag een document maar één keer vertegenwoordigen, ook in de oude docIds-vorm. */
+export function checkRecoveryDocumentIds(ids: unknown): asserts ids is string[] {
+  if (!Array.isArray(ids) || ids.some((id: unknown) => typeof id !== 'string' || !id)
+    || new Set(ids).size !== ids.length) throw new RecoveryManifestError('invalid-shape');
+}
+
 /** Identiteiten zijn nodig om metadata en bytes te koppelen; optionele sitevelden blijven tolerant. */
 export function checkRecoveryDocuments(documents: unknown): asserts documents is RecoveryManifestDoc[] {
   if (!Array.isArray(documents) || documents.some((d: unknown) => {
@@ -26,4 +32,5 @@ export function checkRecoveryDocuments(documents: unknown): asserts documents is
     return typeof record.id !== 'string' || record.id.length === 0
       || typeof record.ifc !== 'string' || record.ifc.length === 0;
   })) throw new RecoveryManifestError('invalid-shape');
+  checkRecoveryDocumentIds(documents.map((document: RecoveryManifestDoc) => document.id));
 }

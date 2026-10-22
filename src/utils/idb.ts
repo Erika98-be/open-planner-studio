@@ -41,14 +41,23 @@ export function openDb(dbName: string, storeName: string, keyPath = 'id'): Promi
   return p;
 }
 
+/** Alleen schema-metadata; het aanmaken van een index herschrijft geen recordinhoud. */
+export interface DbStoreIndex {
+  storeName: string;
+  name: string;
+  keyPath: string;
+}
+
 /**
  * Verbinding met een database met MEERDERE object-stores (allemaal keyPath `id`) op een expliciete
  * versie. Alleen voor een database die uitsluitend via deze functie wordt geopend: `openDb` opent
  * altijd versie 1 en zou na een upgrade met `VersionError` falen. Gebruikt door crashherstel
- * (`ops-recovery` v2: snapshots + XER-archiefblobs in één transactie). Gooit bij een openingsfout.
+ * (`ops-recovery` v3: snapshots + XER-archiefblobs en een index op recordsoort). Gooit bij een openingsfout.
  */
-export function openDbStores(dbName: string, version: number, storeNames: readonly string[]): Promise<IDBDatabase> {
-  const cacheKey = `${dbName}::v${version}::${storeNames.join('+')}`;
+export function openDbStores(
+  dbName: string, version: number, storeNames: readonly string[], indexes: readonly DbStoreIndex[] = [],
+): Promise<IDBDatabase> {
+  const cacheKey = `${dbName}::v${version}::${storeNames.join('+')}::${JSON.stringify(indexes)}`;
   const existing = dbPromises.get(cacheKey);
   if (existing) return existing;
   const p = new Promise<IDBDatabase>((resolve, reject) => {
@@ -58,9 +67,24 @@ export function openDbStores(dbName: string, version: number, storeNames: readon
       for (const storeName of storeNames) {
         if (!db.objectStoreNames.contains(storeName)) db.createObjectStore(storeName, { keyPath: 'id' });
       }
+      for (const index of indexes) {
+        const store = req.transaction!.objectStore(index.storeName);
+        if (!store.indexNames.contains(index.name)) store.createIndex(index.name, index.keyPath);
+      }
     };
     req.onsuccess = () => {
       const db = req.result;
+      try {
+        for (const index of indexes) {
+          const actual = db.transaction(index.storeName, 'readonly').objectStore(index.storeName).index(index.name);
+          if (actual.keyPath !== index.keyPath || actual.unique) throw new Error('IndexedDB-index heeft een onverwachte definitie.');
+        }
+      } catch (error) {
+        db.close();
+        dbPromises.delete(cacheKey);
+        reject(error);
+        return;
+      }
       db.onversionchange = () => {
         db.close();
         dbPromises.delete(cacheKey);

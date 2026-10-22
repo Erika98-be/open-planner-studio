@@ -6,7 +6,7 @@ import {
 } from '@/hooks/recoveryPaths';
 import { writeBytesFileAtomic, writeTextFileAtomic } from '@/services/fileAccess/atomicWrite';
 import { precomputeSha256 } from '@/services/xerSourceArchive';
-import { checkRecoveryDocuments, checkRecoveryManifestVersion, RecoveryManifestError, RECOVERY_MANIFEST_VERSION } from './recoveryManifest';
+import { checkRecoveryDocumentIds, checkRecoveryDocuments, checkRecoveryManifestVersion, RecoveryManifestError, RECOVERY_MANIFEST_VERSION } from './recoveryManifest';
 export { RECOVERY_MANIFEST_VERSION, RecoveryManifestError } from './recoveryManifest';
 
 /** Eén recovery-document (IFC-CONTENT, niet de bestandsnaam). */
@@ -872,8 +872,13 @@ const WEB_STORE = 'records';
  * `getAll()` op de snapshots per tick nooit de (grote) archiefbytes meeleest. Sleutel = sha256.
  */
 const WEB_ARCHIVE_STORE = 'xer-archives';
-const WEB_DB_VERSION = 2;
-const openRecoveryDb = (): Promise<IDBDatabase> => openDbStores(WEB_DB, WEB_DB_VERSION, [WEB_STORE, WEB_ARCHIVE_STORE]);
+// v3: niet-unieke kind-index; vindt ook manifesten onder afwijkende sleutels zonder IFC te lezen.
+const WEB_DB_VERSION = 3;
+const WEB_KIND_INDEX = 'kind';
+const openRecoveryDb = (): Promise<IDBDatabase> => openDbStores(
+  WEB_DB, WEB_DB_VERSION, [WEB_STORE, WEB_ARCHIVE_STORE],
+  [{ storeName: WEB_STORE, name: WEB_KIND_INDEX, keyPath: 'kind' }],
+);
 const SESSION_KEY = 'ops-recovery-session';
 const MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 dagen
 
@@ -1006,7 +1011,7 @@ function heldSessionIds(): Promise<string[]> {
 async function holdWeb(): Promise<void> {
   const current = await sessionId();
   const held = await heldSessionIds();
-  checkWebGenerations((await readWebRecovery()).records, [current, ...held]);
+  checkWebGenerations((await readWebRecovery(true)).records, [current, ...held]);
   if (!held.includes(current)) held.push(current);
   writeHeldSessionIds(held);
   // De huidige generatie blijft onder haar id staan (de lock houdt dit tab al vast); nieuwe
@@ -1058,10 +1063,8 @@ function checkWebManifest(value: unknown): WebManifestRecord {
     throw new RecoveryManifestError('invalid-shape');
   }
   if (unversioned || (m.version! <= 2 && m.documents === undefined)) {
-    if (m.documents !== undefined || !Array.isArray(m.docIds)
-      || m.docIds.some(id => typeof id !== 'string' || !id)) {
-      throw new RecoveryManifestError('invalid-shape');
-    }
+    if (m.documents !== undefined) throw new RecoveryManifestError('invalid-shape');
+    checkRecoveryDocumentIds(m.docIds);
   } else {
     checkRecoveryDocuments(m.documents);
   }
@@ -1073,17 +1076,33 @@ function readableWebManifest(value: unknown): value is WebManifestRecord {
   try { checkWebManifest(value); return true; } catch { return false; }
 }
 
+/** Dezelfde kandidaatselectie voor lezen, schrijven, wissen, rotatie en blobbeheer. */
+function webManifestCandidates(records: readonly WebRecord[]): WebRecord[] {
+  return records.filter(record => record.kind === 'manifest'
+    || (typeof record.id === 'string' && record.id.endsWith('::manifest')));
+}
+
+function webKeySession(key: unknown): string | null {
+  if (typeof key !== 'string') return null;
+  const boundary = key.indexOf('::');
+  return boundary > 0 ? key.slice(0, boundary) : null;
+}
+
 function checkWebGenerations(records: readonly WebRecord[], generations: readonly string[]): void {
-  for (const generation of generations) {
-    const value = records.find(record => record.id === manifestKey(generation));
-    if (value !== undefined) checkWebManifest(value);
+  for (const candidate of webManifestCandidates(records)) {
+    // Een kandidaat kan via zijn declaratie worden gelezen/gewist, of via zijn sleutel worden
+    // overschreven/opgeruimd. Controleer ALLE kandidaten; een gezonde eerste maskeert geen tweede.
+    const keySession = webKeySession(candidate.id);
+    if (generations.includes(candidate.sessionId) || (keySession !== null && generations.includes(keySession))) {
+      checkWebManifest(candidate);
+    }
   }
 }
 
 /** Alle archiefverwijzingen van alle manifesten in de database (alle tabs, alle vastgehouden generaties). */
-function webArchiveReferences(manifests: Iterable<WebManifestRecord>): Set<string> {
+function webArchiveReferences(records: readonly WebRecord[]): Set<string> {
   const out = new Set<string>();
-  for (const manifest of manifests) {
+  for (const manifest of webManifestCandidates(records)) {
     if (!readableWebManifest(manifest)) continue;
     for (const document of manifest.documents ?? []) {
       if (document && typeof document.xerArchive === 'string') out.add(document.xerArchive);
@@ -1129,28 +1148,37 @@ async function saveWeb(input: RecoverySaveInput): Promise<void> {
 
     // Per tick NIET `getAll()`: dat las alle snapshots (bij rehab-2 ±35–60 MB) terug om er alleen de
     // sleutels en de manifesten uit te halen (prestatiemeting 2026-10-07, 0,3–0,8 s per tick). Nu:
-    // sleutels van beide stores, en alleen de kleine manifestrecords via `get`.
+    // sleutels van beide stores en manifestmetadata via de kind-index + canonieke sleutelchecks.
     const keysRequest = store.getAllKeys();
     keysRequest.onerror = () => fail(keysRequest.error ?? new Error('IndexedDB-recoverysleutels niet leesbaar.'));
     keysRequest.onsuccess = () => {
       const recordKeys = (keysRequest.result as IDBValidKey[]).filter((key): key is string => typeof key === 'string');
-      const manifestKeys = recordKeys.filter((key) => key.endsWith('::manifest'));
-      const manifests = new Map<string, unknown>();
-      let pending = manifestKeys.length + 1;
+      const canonicalKeys = recordKeys.filter(key => key.endsWith('::manifest'));
+      const manifestRecords: WebRecord[] = [];
+      let pending = 2; // kind-index + archiefsleutels; eventueel extra canonieke sleutelchecks
       const step = () => {
         pending -= 1;
         if (pending === 0) writeRound();
       };
-      for (const key of manifestKeys) {
-        const request = store.get(key);
-        request.onerror = () => fail(request.error ?? new Error('IndexedDB-recoverymanifest niet leesbaar.'));
-        request.onsuccess = () => {
-          if (request.result !== undefined) {
-            manifests.set(key.slice(0, -'::manifest'.length), request.result);
-          }
-          step();
-        };
-      }
+      // De index vindt iedere kind=manifest, ook buiten de canonieke sleutelvorm of doc-namespace.
+      const manifestRequest = store.index(WEB_KIND_INDEX).getAll('manifest');
+      manifestRequest.onerror = () => fail(manifestRequest.error ?? new Error('IndexedDB-recoverymanifesten niet leesbaar.'));
+      manifestRequest.onsuccess = () => {
+        manifestRecords.push(...manifestRequest.result as WebRecord[]);
+        const indexedIds = new Set(manifestRecords.map(record => record.id));
+        const missingKeys = canonicalKeys.filter(key => !indexedIds.has(key));
+        pending += missingKeys.length;
+        // Een canonieke manifestsleutel met een ongeldige kind ontbreekt juist in de index.
+        for (const key of missingKeys) {
+          const request = store.get(key);
+          request.onerror = () => fail(request.error ?? new Error('IndexedDB-recoverymanifest niet leesbaar.'));
+          request.onsuccess = () => {
+            if (request.result !== undefined) manifestRecords.push(request.result as WebRecord);
+            step();
+          };
+        }
+        step();
+      };
       // Alleen de SLEUTELS van de archiefstore: bestaan en opruimen zonder de bytes te lezen.
       let archiveKeys = new Set<string>();
       const archiveKeysRequest = archiveStore.getAllKeys();
@@ -1162,11 +1190,11 @@ async function saveWeb(input: RecoverySaveInput): Promise<void> {
 
       const writeRound = () => {
         try {
-          // Geweigerde eigen/vastgehouden generaties blokkeren de ronde vóór de eerste put/delete.
-          for (const generation of [sid, ...held]) {
-            if (manifests.has(generation)) checkWebManifest(manifests.get(generation));
-          }
-          const unknownManifest = [...manifests.values()].some(value => !readableWebManifest(value));
+          // Alle metadata komt uit dezelfde readwrite-transactie, vóór de eerste put/delete.
+          const candidates = webManifestCandidates(manifestRecords);
+          checkWebGenerations(candidates, [sid, ...held]);
+          const unknownManifest = candidates.some(value => !readableWebManifest(value));
+          const manifests = new Map(candidates.filter(readableWebManifest).map(manifest => [manifest.sessionId, manifest]));
           const upserts = checkedUpserts(input);
           const referenced = referencedArchives(input);
           const ownDocPrefix = `${sid}::doc::`;
@@ -1218,17 +1246,19 @@ async function saveWeb(input: RecoverySaveInput): Promise<void> {
           const keep = new Set(input.documents.map((document) => docKey(sid, document.id)));
           const survivingManifests: WebManifestRecord[] = [manifest];
           for (const key of recordKeys) {
-            const keySession = key.slice(0, key.indexOf('::'));
+            const keySession = webKeySession(key);
             if (keySession === sid) {
               if (key.startsWith(ownDocPrefix) && !keep.has(key)) store.delete(key);
               continue;
             }
-            const other = manifests.get(keySession);
-            if (other !== undefined && !readableWebManifest(other)) continue;
+            // Bij een onbekend contract kennen we diens verwijzingen niet: behoud alle vreemde
+            // records, ook als een afwijkende sleutel geen bruikbare sessieprefix heeft.
+            if (unknownManifest) continue;
+            const other = keySession !== null ? manifests.get(keySession) : undefined;
             if (!other || now - other.addedAt > MAX_AGE_MS) store.delete(key);
           }
           for (const [session, other] of manifests) {
-            if (session !== sid && readableWebManifest(other) && now - other.addedAt <= MAX_AGE_MS) survivingManifests.push(other);
+            if (session !== sid && now - other.addedAt <= MAX_AGE_MS) survivingManifests.push(other);
           }
           // Een blob verdwijnt zodra GEEN manifest in de database hem nog noemt.
           const stillReferenced = webArchiveReferences(survivingManifests);
@@ -1247,9 +1277,9 @@ async function saveWeb(input: RecoverySaveInput): Promise<void> {
   });
 }
 
-/** Lees alle snapshotrecords plus de verwezen archiefblobs in één readonly-transactie. Een fout geeft
- *  een lege uitkomst (stil), net als de oude `idbGetAll`: een kapotte IndexedDB mag de start niet blokkeren. */
-async function readWebRecovery(): Promise<{ records: WebRecord[]; archives: Map<string, Uint8Array> }> {
+/** Lees snapshots plus archiefblobs in één readonly-transactie. Opstarten houdt de bestaande lege
+ *  terugval bij een IDB-fout; uitstellen leest strict, zodat een leesfout geen sessierotatie toestaat. */
+async function readWebRecovery(strict = false): Promise<{ records: WebRecord[]; archives: Map<string, Uint8Array> }> {
   try {
     const db = await openRecoveryDb();
     return await new Promise((resolve, reject) => {
@@ -1258,7 +1288,7 @@ async function readWebRecovery(): Promise<{ records: WebRecord[]; archives: Map<
       allRequest.onerror = () => reject(allRequest.error);
       allRequest.onsuccess = () => {
         const records = allRequest.result as WebRecord[];
-        const wanted = [...webArchiveReferences(records.filter((r): r is WebManifestRecord => r.kind === 'manifest'))];
+        const wanted = [...webArchiveReferences(records)];
         const archives = new Map<string, Uint8Array>();
         if (wanted.length === 0) { resolve({ records, archives }); return; }
         let pending = wanted.length;
@@ -1274,7 +1304,8 @@ async function readWebRecovery(): Promise<{ records: WebRecord[]; archives: Map<
         }
       };
     });
-  } catch {
+  } catch (error) {
+    if (strict) throw error;
     return { records: [], archives: new Map() };
   }
 }
@@ -1283,13 +1314,14 @@ async function loadWeb(): Promise<LoadedRecovery> {
   const sid = await sessionId();
   const held = await heldSessionIds();
   const { records: all, archives: allArchives } = await readWebRecovery();
-  checkWebGenerations(all, [sid, ...held]);
+  const candidates = webManifestCandidates(all);
+  checkWebGenerations(candidates, [sid, ...held]);
   const docs: LoadedRecoveryDoc[] = [];
   const seen = new Set<string>();
   let activeDocumentId: string | null = null;
   // Eigen generatie eerst (haar actieve tabblad wint), daarna de vastgehouden, oudste eerst.
   for (const generation of [sid, ...held.filter((id) => id !== sid)]) {
-    const manifest = all.find((r) => r.kind === 'manifest' && r.sessionId === generation) as WebManifestRecord | undefined;
+    const manifest = candidates.find((r) => r.kind === 'manifest' && r.sessionId === generation) as WebManifestRecord | undefined;
     if (!manifest) continue;
     if (activeDocumentId === null) activeDocumentId = manifest.activeDocumentId;
     const metadata = Array.isArray(manifest.documents)
@@ -1343,17 +1375,17 @@ async function clearWeb(): Promise<void> {
       keysRequest.onerror = () => reject(keysRequest.error);
       keysRequest.onsuccess = () => {
         const all = allRequest.result as WebRecord[];
-        try { checkWebGenerations(all, [...generations]); } catch (err) {
+        const candidates = webManifestCandidates(all);
+        try { checkWebGenerations(candidates, [...generations]); } catch (err) {
           tx.abort();
           reject(err);
           return;
         }
-        const unknownManifest = all.some(record => record.id.endsWith('::manifest') && !readableWebManifest(record));
+        const unknownManifest = candidates.some(record => !readableWebManifest(record));
         const ours = all.filter((record) => generations.has(record.sessionId));
         for (const record of ours) store.delete(record.id);
         // Blobs zonder verwijzing uit een manifest van een ANDER tab gaan mee.
-        const stillReferenced = webArchiveReferences(all.filter((record): record is WebManifestRecord =>
-          record.kind === 'manifest' && !generations.has(record.sessionId)));
+        const stillReferenced = webArchiveReferences(candidates.filter(record => !generations.has(record.sessionId)));
         const orphanArchives = (unknownManifest ? [] : keysRequest.result as IDBValidKey[])
           .filter((key): key is string => typeof key === 'string' && !stillReferenced.has(key));
         for (const key of orphanArchives) archiveStore.delete(key);
