@@ -28,7 +28,7 @@
 //   docs-literal                       voorbeeldnamen (soort c) opnieuw uit scripts/tutorial-project.ts en
 //                                      public/examples/*.ifc → i18n/docs-literal.json (sources)
 //   status [taal] [--strict]           per taal en namespace (en docs): ontbreekt / verouderd / actueel;
-//                                      --strict = releasepoort `npm run verify:translations` (exit 1 bij elk UI-gat;
+//                                      --strict = releasepoort `npm run verify:translations` (exit 1 bij elk UI-gat of termbasefout;
 //                                      docsgaten alleen gemeld)
 //
 // Alle I/O staat hier; de logica zit in de pure modules ernaast (getoetst in tests/planning/check-translate-*.ts).
@@ -853,9 +853,9 @@ function docsBudget(args: string[]): void {
 
 /**
  * De releasepoort (besluit B5, 2026-10-10; verfijnd 2026-10-12): elke UI-sleutel in elke taal vertaald
- * en actueel (ontbreekt / verouderd / zonder hash), plus een complete geldige termbase. De docs blokkeren de release niet: alleen nl en en
- * moeten bij zijn (dat zijn de bronnen), de andere talen mogen achterlopen. De poort meldt de docsgaten
- * wel, zodat je kunt kiezen of je `update-docs-lang` eerst draait.
+ * en actueel (ontbreekt / verouderd / zonder hash), plus een complete geldige termbase. De docs
+ * blokkeren de release niet: alleen nl en en moeten bij zijn (dat zijn de bronnen), de andere talen
+ * mogen achterlopen. De poort meldt de docsgaten wel, zodat je kunt kiezen of je `update-docs-lang` eerst draait.
  */
 const uiGaps = (lang: string): ReleaseGap[] => uiReleaseGaps(lang, nsInputs(lang), readJsonOr<UiSources>(sourcesPath(lang), {}));
 /** De docsgaten per taal: alleen een melding (`where` = `docs:<id>` of `docs:<id>#<sectie>`). */

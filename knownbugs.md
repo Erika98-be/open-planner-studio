@@ -272,11 +272,6 @@ en noem het in je rapport of PR-tekst.
     apart in PR #532 / knownbug 130 gecorrigeerd; dit resterende broncommentaar is niet aangepast.
     Statisch bevestigd bij de review van #532 op `74e596d0`; geen lokale runtime uitgevoerd. — B
 
-170. **Vertaalstraat: een nieuw concept zonder doelterm valt niet op.** Na #376 stond `work-category`
-    (werksoort) in `i18n/termbase/concepts.json`, maar in geen enkele `<taal>.json`. `validate-termbase` en
-    `verify:translations` bleven groen. De straat hield toen de oude taaktype-term aan (bijv. de: `Neue Vorgangsart`),
-    en de labelpoort dwong die oude tekst af. In de release-ronde van 2026-10-21 hersteld (termen +
-    `--keys`-ronde). Voorstel: `validate-termbase` rood bij een concept zonder term in een taal. — B
 171. **Meldingen met naam óf aantal verliezen de naam in talen met één meervoudsvorm.** `common.json`
     `notifications.milestoneRefusedAssignments_one`/`_other` (en `milestoneRefusedSummary`, `milestoneClearedOnPhase`)
     wisselen tussen "'{{task}}' heeft …" en "{{count}} taken hebben …". zh, ja, ko en lo kennen alleen `other`, dus

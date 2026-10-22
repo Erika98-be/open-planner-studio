@@ -98,8 +98,8 @@ export function styleErrors(s: unknown, where: string): string[] {
 export function termEntryErrors(t: unknown, at: string): string[] {
   if (!isRecord(t)) return [`${at}: geen object`];
   const e: string[] = [];
-  // Een term met alleen witruimte of onzichtbare opmaak is inhoudelijk leeg. Opmaak ín een woord mag wel.
-  if (!isStr(t.term) || t.term.replace(/\p{Default_Ignorable_Code_Point}/gu, '').trim() === '') e.push(`${at}: term ontbreekt`);
+  // Een term met alleen witruimte, stuurtekens of onzichtbare opmaak is inhoudelijk leeg. Opmaak ín een woord mag wel.
+  if (!isStr(t.term) || t.term.replace(/[\p{Default_Ignorable_Code_Point}\p{Cc}]/gu, '').trim() === '') e.push(`${at}: term ontbreekt`);
   if (!isStrList(t.forms) || t.forms.length === 0) e.push(`${at}: forms moet een niet-lege lijst zijn`);
   else if (isStr(t.term)) {
     for (const f of t.forms) if (!sharesStem(t.term, f)) e.push(`${at}: vorm "${f}" deelt geen stam met "${t.term}"`);
@@ -117,7 +117,7 @@ export interface TermbaseReport { errors: string[]; missing: string[] }
  * tokens en keep-concepten niet. `missing` geeft de ontbrekende id's ook apart voor de telling.
  */
 export function validateLangTermbase(lang: string, tb: unknown, concepts: Concept[]): TermbaseReport {
-  const missing = concepts.filter(c => c.kind === 'term' && (!isRecord(tb) || !Object.hasOwn(tb, c.id))).map(c => c.id);
+  const missing = concepts.filter(c => c.kind === 'term' && (!isRecord(tb) || !Object.prototype.hasOwnProperty.call(tb, c.id))).map(c => c.id);
   const errors = missing.map(id => `${lang}.${id}: term ontbreekt`);
   if (!isRecord(tb)) return { errors: [`${lang}: ${tb === undefined ? 'taalbestand ontbreekt' : 'geen object'}`, ...errors], missing };
   const byId = new Map(concepts.map(c => [c.id, c]));
