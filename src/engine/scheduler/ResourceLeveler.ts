@@ -619,7 +619,8 @@ export function levelResources(
   //     taak die `find` zou kiezen.
   // (2) PF: één solver houdt de voorwaartse datums bij. Een delay/nieuw gat markeert alleen de
   //     gewijzigde taak; een topologische wachtrij propageert de wijziging tot de gevraagde taak.
-  //     ALAP en hammock hangen ook van late datums/opvolgers af en houden de volledige solve.
+  //     ALAP/hammock en voltooid gemelde taken zonder werkelijk einde houden de volledige solve:
+  //     hun uiteindelijke start kan ná de voorwaartse pass nog veranderen.
   //     Uitkomst identiek aan de oude route (`check-leveler-differential.ts`).
   const rankOf = new Map(sortedActive.map((id, i) => [id, i]));
   const succsOf = new Map<string, string[]>();
@@ -643,7 +644,8 @@ export function levelResources(
   };
 
   const globalDeps = workTasks.some(t => t.isHammock
-    || t.constraint?.type === 'ALAP' || t.constraint2?.type === 'ALAP');
+    || t.constraint?.type === 'ALAP' || t.constraint2?.type === 'ALAP'
+    || (t.time.completion >= 1 && !t.time.actualFinish));
   let forward: ReturnType<CPMSolver['createLevelingForwardPass']> = null;
   let pfEarlyStart = new Map([...baseline.tasks].map(([id, r]) => [id, r.earlyStart]));
   let globallyStale = false;

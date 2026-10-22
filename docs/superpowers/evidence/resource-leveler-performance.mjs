@@ -11,6 +11,7 @@ const root = resolve(fileURLToPath(new URL('../../../', import.meta.url)));
 const arg = name => { const i = process.argv.indexOf(name); return i < 0 ? undefined : process.argv[i + 1]; };
 const sizes = (arg('--sizes') ?? '1000,5000,10000').split(',').map(Number);
 const repeats = Number(arg('--repeats') ?? 3);
+if (!Number.isInteger(repeats) || repeats < 1 || sizes.some(n => !Number.isInteger(n) || n < 10)) throw new Error('ongeldige groottes/herhalingen');
 const base = '522589202727a4a519b25b94aed196d844dc6ab8';
 const temp = mkdtempSync(join(tmpdir(), 'ops-leveler-perf-'));
 const rows = [];
@@ -45,7 +46,7 @@ try {
       }
     }
   }
-  const evidence = { base, node: process.version, timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+  const evidence = { base, head: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(), node: process.version, timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     cpu: cpus()[0].model, logicalCpus: cpus().length, freeMemoryAtEnd: freemem(), at: new Date().toISOString(), rows };
   if (arg('--out')) writeFileSync(arg('--out'), JSON.stringify(evidence, null, 2) + '\n');
 } finally { rmSync(temp, { recursive: true, force: true }); }

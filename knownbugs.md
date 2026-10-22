@@ -78,6 +78,11 @@ en noem het in je rapport of PR-tekst.
     de vlakke `res.maxUnits` (`LevelingDialog.tsx:141-165`, `:293-304`). Dan ontbreken resource, piek en
     capaciteit in de melding. Niet nagespeeld. Zie ook 9. — S
 
+175. **B3-voltooidvenster met een dagkalender kan een TypeError geven.** Gemeld bij de onafhankelijke
+    review van PR #480 op `620c9e775`: ook op basiscommit `522589202` zou de volledige CPM-route
+    met `p6CompletedDataDateWindow` en een dagkalender falen. Exacte invoer en stack nog niet
+    zelfstandig bevestigd; staat los van de PF-optimalisatie en is daar niet aangepast. — S
+
 ## Tabel, invoer en bediening
 
 13. **Tabelkolom *Kleur*** wordt in IFC bewaard, maar geen balk of rapport gebruikt hem. — B

@@ -1663,13 +1663,16 @@ export class CPMSolver {
    *  Een wijziging schuift via een topologische wachtrij door de bestaande forward-pass, tot aan
    *  de gevraagde taak. Latere opvolgers wachten tot ze nodig zijn. Zo veroorzaakt een keten van
    *  plaatsingen geen volledige netwerkpass per taak. ALAP/hammock vereisen de volledige solve.
+   *  Dat geldt ook voor completion >= 1 zonder actualFinish: zo'n taak blijft actief in de
+   *  nivelleerder, terwijl de resultaatpass haar start nog op een voltooidvenster kan zetten.
    */
   createLevelingForwardPass(): {
     markChanged: (taskId: string) => void;
     earlyStart: (taskId: string) => string | undefined;
   } | null {
     if ([...this.tasks.values()].some(t => t.isHammock
-      || t.constraint?.type === 'ALAP' || t.constraint2?.type === 'ALAP')) return null;
+      || t.constraint?.type === 'ALAP' || t.constraint2?.type === 'ALAP'
+      || (t.time.completion >= 1 && !t.time.actualFinish))) return null;
     if (this.prepareSolve()) return null;
     const order = this.topologicalSort();
     const rankOf = new Map(order.map((id, rank) => [id, rank]));

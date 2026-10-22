@@ -2,12 +2,15 @@
 // Inclusief teruggenomen delays/gaten, samenvallende wijzigingen, late takken vóór vroege takken,
 // voortgangsvensters en alle profielen. De kostentoets telt kalenderwerk i.p.v. wandkloktijd.
 import { CPMSolver } from '@/engine/scheduler/CPMSolver';
+import { levelResources, LEVELER_TEST_HOOKS, type LevelingPoolLedger } from '@/engine/scheduler/ResourceLeveler';
+import { applyCpmResult } from '@/engine/scheduler/applyCpmResult';
 import { CalendarEngine } from '@/engine/scheduler/CalendarEngine';
 import { solveOptionsFor } from '@/engine/scheduler/solveInput';
 import { createDefaultTaskTime } from '@/utils/taskDefaults';
 import type { Task } from '@/types/task';
 import type { Sequence } from '@/types/sequence';
 import type { WorkCalendar } from '@/types/calendar';
+import type { Resource } from '@/types/resource';
 import type { BuiltInProfileId } from '@/types/project';
 
 let checks = 0;
@@ -26,7 +29,7 @@ function task(i: number, hours = false): Task {
   return {
     id: `t${i}`, name: `t${i}`, description: '', wbsCode: String(i), taskType: 'CONSTRUCTION',
     status: 'NOT_STARTED', isMilestone: false, priority: 500, parentId: null, childIds: [], resourceIds: [],
-    time: createDefaultTaskTime('2026-06-01', hours ? 16 : 2, hours ? 'hours' : 'days'),
+    time: { ...createDefaultTaskTime('2026-06-01', hours ? 16 : 2, hours ? 'hours' : 'days'), scheduleDuration: 2 },
   };
 }
 function relation(from: number, to: number, type: Sequence['type'] = 'FINISH_START', lagDays = 0): Sequence {
@@ -81,6 +84,56 @@ for (const baseId of ['ops', 'msproject', 'p6'] as const satisfies readonly Buil
     tasks[0].constraint = undefined;
     tasks[0].isHammock = true;
     eq('hammock blijft volledige solve', new CPMSolver(tasks, sequences, cal, [cal], options).createLevelingForwardPass(), null);
+  }
+}
+// Review P2: een voltooidvenster uit de resultaatpass is geen rauwe forward-start. Zonder
+// actualFinish blijft deze taak actief, zodat zowel het voorstel als de poolboeking die start nodig
+// hebben. De prefix dwingt óók een gewijzigde PF vóór die taak af (na de luie sessie-initialisatie).
+for (const prefix of [false, true]) {
+  for (const actualStart of ['2026-06-01T08:00', undefined]) {
+    const a = task(0, true), b = task(1, true);
+    a.id = 'a'; a.priority = 900;
+    b.id = 'b'; b.priority = 100;
+    for (const t of [a, b]) t.time = { ...createDefaultTaskTime('2026-06-01T08:00', 16, 'hours', hour), scheduleDuration: 2 };
+    Object.assign(a, { p6ProjectId: 'p', p6TaskId: 'a', p6ExplicitTargetWindow: true,
+      p6CompletePctType: 'CP_Drtn', p6DurationType: 'DT_FixedDUR2', p6ActivityType: 'TT_Task' });
+    a.time.completion = 1;
+    a.time.actualStart = actualStart;
+    const tasks = [a, b];
+    if (prefix) {
+      const pinned = task(2, true), delayed = task(3, true);
+      pinned.priority = 1000;
+      delayed.priority = 950;
+      tasks.unshift(pinned, delayed);
+    }
+    const options = solveOptionsFor({ startDate: '2026-06-01', endDate: '', statusDate: '2026-06-10T08:00',
+      schedulingProfile: { baseId: 'p6', id: 'p6', name: '', overrides: {
+        p6CompletedDataDateWindow: true, p6CompletedOutOfSequenceWindow: true,
+      } } });
+    const resource: Resource = { id: 'r', name: 'r', type: 'LABOR', description: '', maxUnits: 1 };
+    const assignments = tasks.map(t => ({ id: `a-${t.id}`, taskId: t.id, resourceId: 'r', unitsPerDay: 1 }));
+    const cpm = new CPMSolver(tasks, [], hour, [hour], options).solve();
+    applyCpmResult(tasks, cpm, { projectCalendar: hour, calendars: [hour] });
+    const run = (incremental: boolean) => {
+      const bookings: Array<[string, string, number]> = [];
+      const ledger: LevelingPoolLedger = { poolItemOf: () => 'pool', residualOn: () => 100,
+        horizonIso: null, book: (pool, iso, units) => { bookings.push([pool, iso, units]); } };
+      LEVELER_TEST_HOOKS.incremental = incremental;
+      try {
+        const result = levelResources(structuredClone(tasks), [], [resource], assignments,
+          hour, [hour], cpm, { constrainToFloat: false, poolLedger: ledger }, options);
+        return { result, bookings };
+      } finally { LEVELER_TEST_HOOKS.incremental = true; }
+    };
+    const reference = run(false), fast = run(true);
+    eq(`P2 voorstel prefix=${prefix}/actualStart=${actualStart}`, fast.result, reference.result);
+    eq(`P2 poolboekingen prefix=${prefix}/actualStart=${actualStart}`, fast.bookings, reference.bookings);
+    if (!prefix) {
+      eq('P2 verwachte vertraging', fast.result.delays, { b: 2 });
+      eq('P2 eerste boeking op statusdatum', fast.bookings[0], ['pool', '2026-06-10', 1]);
+    }
+    eq('voltooid zonder einde vereist volledige solve',
+      new CPMSolver(tasks, [], hour, [hour], options).createLevelingForwardPass(), null);
   }
 }
 function calendarWork(n: number): number {

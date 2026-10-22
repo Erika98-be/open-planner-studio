@@ -96,7 +96,7 @@ let withFeatures = 0;
 let local = 0;
 for (let rep = 0; rep < 300; rep++) {
   const p = project(rep);
-  const baseId = (['ops', 'msproject', 'p6'] as const)[rep % 3];
+  const baseId = (['ops', 'msproject', 'p6'] as const)[Math.floor(rep / 3) % 3];
   const schedulingOptions = effectiveSchedulingOptions({ schedulingProfile: { baseId, id: baseId, name: '', overrides: {} } });
   if (p.features.alap || p.features.hammock) withFeatures++; else local++;
   const calendars = [p.cal, SIX];
