@@ -500,6 +500,12 @@ en noem het in je rapport of PR-tekst.
     groen. Voorstel: bedoelde omleiding verduidelijken en de bedoelde JavaScript-expressies gericht
     documenteren voor shellcheck. Geen releaseworkflow gestart. — B
 
+178. **`gh pr edit --body-file` faalt op deze host door Projects Classic.** Bij het bijwerken
+    van PR #479 op 2026-10-22 gaf de CLI `GraphQL: Projects (classic) is being deprecated`
+    op `repository.pullRequest.projectCards`. De body is wel bijgewerkt via
+    `gh api --method PATCH repos/OpenAEC-Foundation/open-planner-studio/pulls/479 -F body=@<bestand>`.
+    Voorstel: de GitHub CLI op de host bijwerken; de repo zelf is niet aangepast hiervoor. — B
+
 ## Wensen en open taken (geen bug)
 
 45. **Extensie-API**: extensies kunnen geen relatie of kalender gericht wijzigen en de selectie niet lezen.
