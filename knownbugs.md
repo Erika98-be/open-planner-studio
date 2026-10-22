@@ -255,6 +255,14 @@ en noem het in je rapport of PR-tekst.
     nl-interface bij *Bestand › Voorbeelden*; de Help-artikelen noemen daarom de Engelse namen. Niet
     nagegaan of dat voor alle voorbeelden geldt. Voorstel: bewust laten, of per taal vertalen. — B
 
+200. **De strikte UI-vertaalpoort kan een volledig ontbrekende taalmap overslaan.**
+    `status` in `scripts/translate/cli.ts` bepaalt zonder expliciete taal de UI-talen via de aanwezige
+    mappen onder `src/i18n/locales/`. Ontbreekt bijvoorbeeld `lo/`, dan kan `status --strict` groen
+    blijven wanneer de overige UI actueel is en de Lao-termbase geldig is. De bestaande mapinventarisatie
+    staat los van de termbasedekking uit PR #537; die PR herstelt deze UI-inventarisatie niet.
+    Statisch afgeleid bij de review op `78583d1b` (regels 896–900), niet lokaal uitgevoerd.
+    De nieuwe CLI-test herstelt de verwijderde UI-map evenmin vóór zijn groene verwachting. — S
+
 102. **`apply-terms` vertrouwt `terms-NN.json` en `terms-check-01.map.json` zonder zegel.** De UI- en
      docs-pakketten hebben sinds #323 een zegel (`build/translate-seal/`); de termbase-pakketten niet, terwijl
      agents in dezelfde map schrijven. Voorstel: dezelfde `seal`/`sealErrors` in `prepare`/`apply-terms`.
@@ -267,11 +275,6 @@ en noem het in je rapport of PR-tekst.
     apart in PR #532 / knownbug 130 gecorrigeerd; dit resterende broncommentaar is niet aangepast.
     Statisch bevestigd bij de review van #532 op `74e596d0`; geen lokale runtime uitgevoerd. — B
 
-170. **Vertaalstraat: een nieuw concept zonder doelterm valt niet op.** Na #376 stond `work-category`
-    (werksoort) in `i18n/termbase/concepts.json`, maar in geen enkele `<taal>.json`. `validate-termbase` en
-    `verify:translations` bleven groen. De straat hield toen de oude taaktype-term aan (bijv. de: `Neue Vorgangsart`),
-    en de labelpoort dwong die oude tekst af. In de release-ronde van 2026-10-21 hersteld (termen +
-    `--keys`-ronde). Voorstel: `validate-termbase` rood bij een concept zonder term in een taal. — B
 173. **Toewijzingen: lange kolomkoppen laten in veel talen weinig ruimte voor de resourcenaam.** De bron is kort
     (`task.json` `properties.assignments.units` "Units"/"Inzet", `workHours` "Work (h)"), maar de straat
     vertaalde naar de volle term (uk "Одиниця призначення", ru "Единицы назначения", bg, hu, ro, sk, da, nb,
@@ -279,14 +282,6 @@ en noem het in je rapport of PR-tekst.
     (nl 182 px). Bij 200 px en 125 % duwden ze in 13 talen de regels buiten het paneel; dat is in de release
     van v2026.10.0 opgelost met afkappen (`TaskAssignmentsSection.tsx`), de koppen zelf niet. Voorstel: korte
     koppen in die talen, en de Help-artikelen die ze citeren mee. — B
-
-195. **Het i18n-recept en een helpercommentaar bevatten nog de oude aantallen locales/bestanden.**
-    `docs/recepten/i18n-sleutel.md:170` noemt naast de Nederlandse bron nog "overige 13 locales",
-    terwijl de app 28 UI-locales heeft. Het voorbeeld bij `--update` in `scripts/i18n-add.ts:19`
-    spreekt nog van "14 bestanden". Het actuele PR-contract is NL/EN, overige vertalingen lopen via
-    de vertaalstraat; beide teksten afzonderlijk nalopen en actualiseren zonder die werkwijze te veranderen.
-    Gezien bij PR #530 op `d2f60fc2`; statisch met AGENTS en de bron vergeleken, niets lokaal uitgevoerd.
-    — B (recept), S (helpercommentaar)
 
 
 ## Tests
@@ -318,10 +313,6 @@ en noem het in je rapport of PR-tekst.
 
 104. **Geen automatische test voor de zegels en `check-docs`** (`scripts/translate/cli.ts`). In #323 alleen met
      de hand nagespeeld. De CLI werkt vanuit `process.cwd()`, dus een test in een tijdelijke map kan. — S
-
-120. **`delete-under-dialog.spec.ts` (regel 40) faalt soms op focus.** In CI-run 39384273333 (PR #392, browser
-    1-4): `expect(locator).toBeFocused()` gaf `inactive`. Na een herhaling van de job groen, zonder wijziging;
-    de PR raakt geen dialoog- of focuscode. Wisselvallig, oorzaak niet onderzocht. — S
 
 165. **`window.__OPS__.gantt.paintCount` telt alleen in een dev-build.** `useGanttRendererHost.ts:32` roept
     `recordGanttPaint` aan achter `import.meta.env.DEV`; in een productiebuild met `VITE_OPS_BENCH_BRIDGE=1`

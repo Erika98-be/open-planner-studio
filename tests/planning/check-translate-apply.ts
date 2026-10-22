@@ -13,7 +13,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { applyUiBatch } from '../../scripts/translate/apply';
-import { hashUnit, hasUiBaseline, unitMap } from '../../scripts/translate/common';
+import { hashUnit, hasUiBaseline, LOCALES, unitMap } from '../../scripts/translate/common';
 import {
   buildUiPackages, orderSources, selectUnits, setSourceHash, uiReleaseGaps, uiStatus, updateSourceHashForAdd,
   type UiPackage, type UiSources,
@@ -198,6 +198,16 @@ const en: JsonObject = {
     symlinkSync(join(root, 'scripts'), join(work, 'scripts'), 'dir');
     symlinkSync(join(root, 'node_modules'), join(work, 'node_modules'), 'dir');
     mkdirSync(join(work, 'public/docs'), { recursive: true });
+    // De termbasepoort blijft actief: deze UI-fixture krijgt één geldige term in alle doeltalen.
+    writeJson(join(work, 'i18n/termbase/concepts.json'), [{
+      id: 'fixture-term', kind: 'term', nl: 'fixtureterm', en: ['fixture term'], definition: 'Term voor de CLI-fixture.',
+    }]);
+    for (const lang of LOCALES.filter(lang => lang !== 'nl' && lang !== 'en')) {
+      writeJson(join(work, 'i18n/termbase', `${lang}.json`), {
+        _style: { address: 'informal' },
+        'fixture-term': { term: 'Fixtureterm', forms: ['Fixtureterm'], source: 'model', status: 'arbitrated' },
+      });
+    }
     writeJson(join(work, 'keys.json'), [fullKey, 'menu:otherHours']);
     for (const [lang, want] of [['nl', '{{hours}}u'], ['en', '{{hours}}h'], ['ar', '{{hours}}h'], ['fa', '{{hours}}h']]) {
       const actual = unitMap(readObj(join(root, 'src/i18n/locales', lang, 'menu.json'))).get(key)!.text;

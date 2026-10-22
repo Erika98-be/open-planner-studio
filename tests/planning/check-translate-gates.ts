@@ -9,9 +9,15 @@
  */
 import { checkPackage, checkUi, formatResult } from '../../scripts/translate/gates';
 import { sharesStem, validateLangTermbase } from '../../scripts/translate/termbase';
+import { spawnSync } from 'node:child_process';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { LOCALES, NAMESPACES } from '../../scripts/i18n-tools';
 import type { UiPackage } from '../../scripts/translate/ui';
 import type { TermsPackage } from '../../scripts/translate/tbx';
-import { countToken, type Concept } from '../../scripts/translate/common';
+import { countToken, hashUnit, type Concept, type LangTermbase, type TermEntry } from '../../scripts/translate/common';
 
 let checks = 0;
 const diffs: string[] = [];
@@ -224,13 +230,36 @@ const has = (errs: string[], part: string) => errs.some(e => e.includes(part));
     { id: 'total-float', kind: 'term', nl: 'totale speling', en: ['total float'], definition: 'd' },
     { id: 'baseline', kind: 'term', nl: 'basislijn', en: ['baseline'], definition: 'd' },
     { id: 'rel-fs', kind: 'token', nl: 'FS', en: ['FS'], definition: 'd' },
+    { id: 'ifc', kind: 'keep', nl: 'IFC', en: ['IFC'], definition: 'd' },
   ];
-  const good = validateLangTermbase('de', {
+  const tb: LangTermbase = {
     _style: { address: 'informal', note: 'du-vorm' },
     'total-float': { term: 'Gesamtpuffer', forms: ['Gesamtpuffer', 'Gesamtpuffers'], avoid: ['Gesamtschlupf'], source: 'tbx', status: 'tbx' },
-  }, concepts);
-  eq('termbase: geen fouten', good.errors, []);
-  eq('termbase: ontbrekende term = rapport, token telt niet', good.missing, ['baseline']);
+    baseline: { term: 'Basisplan', forms: ['Basisplan'], source: 'tbx', status: 'tbx' },
+  };
+  const good = validateLangTermbase('de', tb, concepts);
+  eq('termbase: compleet zonder token- en keep-regels', good.errors, []);
+  eq('termbase: geen ontbrekende doeltermen', good.missing, []);
+  const partial = validateLangTermbase('de', { _style: tb._style, 'total-float': tb['total-float'] }, concepts);
+  eq('termbase: ontbrekend concept is rood met taal en id', partial.errors, ['de.baseline: term ontbreekt']);
+  eq('termbase: ontbrekende id blijft beschikbaar voor de telling', partial.missing, ['baseline']);
+  for (const [label, term] of [
+    ['lege tekst', ''], ['stuurtekens', '\u0000\u0007\u007f'], ['witruimte', ' \t\r\n\u00a0\u3000'],
+    ['alleen onzichtbare opmaak', '\u200b\u200c\u200d\u2060\ufe0f\u200e\u200f\u061c\u202a\u2066'],
+  ]) {
+    const errors = validateLangTermbase('de', { ...tb, baseline: { ...tb.baseline, term } }, concepts).errors;
+    ok(`termbase: ${label} is rood met taal en id`, has(errors, 'de.baseline: term ontbreekt'));
+  }
+  for (const entry of [null, {}, { term: null, forms: ['Basisplan'], source: 'tbx', status: 'tbx' }]) {
+    const errors = validateLangTermbase('de', { ...tb, baseline: entry }, concepts).errors;
+    ok('termbase: aanwezige ongeldige regel is rood met taal en id', has(errors, 'de.baseline:'));
+  }
+  // Geen alfabet- of scriptfilter: ook korte termen, symbolen en opmaak binnen woorden zijn geldig.
+  for (const term of ['終了日', 'مسیر\u200cبحرانی', '\u200fالمسار الحرج', '①', '≤', '🧱', ' Basisplan ']) {
+    eq(`termbase: geldige term ${JSON.stringify(term)}`, validateLangTermbase('de', {
+      ...tb, baseline: { term, forms: [term], source: 'model', status: 'arbitrated' },
+    }, concepts).errors, []);
+  }
   const bad = validateLangTermbase('de', {
     'total-float': { term: 'Gesamtpuffer', forms: [], source: '', status: 'guess' },
     onbekend: { term: 'x', forms: ['x'], source: 'tbx', status: 'tbx' },
@@ -246,6 +275,88 @@ const has = (errs: string[], part: string) => errs.some(e => e.includes(part));
     baseline: { term: 'Basisplan', forms: ['Basisplan'], source: 'tbx', status: 'tbx' },
   }, concepts).errors;
   ok('termbase: avoid mag geen term van een ander concept zijn', has(clash, 'avoid "Basisplan" is een term van baseline'));
+}
+
+// ── 8b. Echte CLI-poorten: nieuwe concepten, lege termen en verdwenen taalbestanden (170) ──────
+{
+  const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
+  const work = mkdtempSync(join(tmpdir(), 'ops-termbase-gates-'));
+  const bundle = join(work, 'translate.mjs');
+  const targets = LOCALES.filter(l => l !== 'nl' && l !== 'en');
+  const concepts: Concept[] = [
+    { id: 'baseline', kind: 'term', nl: 'basislijn', en: ['baseline'], definition: 'Referentieplanning.' },
+    { id: 'rel-fs', kind: 'token', nl: 'FS', en: ['FS'], definition: 'Relatiecode.' },
+    { id: 'ifc', kind: 'keep', nl: 'IFC', en: ['IFC'], definition: 'Formaatnaam.' },
+  ];
+  const workCategory: Concept = { id: 'work-category', kind: 'term', nl: 'werksoort', en: ['work category'], definition: 'Groepering van werk.' };
+  const baseline: TermEntry = { term: 'Basisplan', forms: ['Basisplan', 'Basisplans'], source: 'tbx', status: 'tbx' };
+  const category: TermEntry = { term: 'Arbeitsart', forms: ['Arbeitsart', 'Arbeitsarten'], avoid: ['Vorgangsart'], source: 'model', status: 'arbitrated' };
+  const termbase = (term = category): LangTermbase => ({ _style: { address: 'informal' }, baseline, 'work-category': term });
+  const tbPath = (lang: string) => join(work, 'i18n/termbase', `${lang}.json`);
+  const write = (path: string, data: unknown) => {
+    mkdirSync(dirname(path), { recursive: true });
+    writeFileSync(path, JSON.stringify(data));
+  };
+  const run = (args: string[], cwd = work) => {
+    const r = spawnSync(process.execPath, [bundle, ...args], { cwd, encoding: 'utf8', timeout: 30_000 });
+    return { status: r.status, out: `${r.stdout}${r.stderr}`, error: r.error?.message };
+  };
+  const commands = [['validate-termbase'], ['status', '--strict']];
+  try {
+    const build = spawnSync(join(root, 'node_modules', '.bin', 'esbuild'), [join(root, 'scripts/translate/cli.ts'),
+      '--bundle', '--platform=node', '--format=esm', '--log-level=error', `--outfile=${bundle}`], { encoding: 'utf8', timeout: 30_000 });
+    if (build.status !== 0) throw new Error(`bundelen van translate/cli.ts mislukt: ${build.stderr} ${build.error?.message ?? ''}`);
+    write(join(work, 'i18n/termbase/concepts.json'), concepts);
+    for (const lang of targets) write(tbPath(lang), { _style: { address: 'informal' }, baseline });
+    // Een complete en actuele UI, zonder doeltermbestanden voor de brontalen nl/en.
+    for (const lang of LOCALES) {
+      for (const ns of NAMESPACES) write(join(work, 'src/i18n/locales', lang, `${ns}.json`), ns === 'common' ? { sample: `Voorbeeld ${lang}` } : {});
+      if (lang !== 'nl') write(join(work, 'i18n/ui-sources', `${lang}.json`), { common: { sample: hashUnit('Voorbeeld nl') } });
+    }
+    mkdirSync(join(work, 'public/docs'), { recursive: true });
+    for (const args of commands) {
+      const r = run(args);
+      eq(`CLI ${args.join(' ')}: complete termen en UI, geen token/keep- of nl/en-doeltermen (${r.out})`, r.status, 0);
+    }
+    // Historische fout: één nieuw concept geregistreerd, nog in geen enkele doeltaal ingevuld.
+    write(join(work, 'i18n/termbase/concepts.json'), [...concepts, workCategory]);
+    for (const args of commands) {
+      const r = run(args);
+      eq(`CLI ${args.join(' ')}: nieuw concept zonder termen is rood`, r.status, 1);
+      ok(`CLI ${args.join(' ')}: noemt concept in de en lo (${r.out})`,
+        r.out.includes('XX  de.work-category: term ontbreekt') && r.out.includes('XX  lo.work-category: term ontbreekt'));
+    }
+    for (const lang of targets) write(tbPath(lang), termbase());
+    // Aanwezig zijn is onvoldoende: zowel de gewone als de releasepoort moet lege inhoud weigeren.
+    for (const term of ['', ' \t\n\u00a0', '\u200b\u200e\u2060']) {
+      write(tbPath('de'), termbase({ ...category, term }));
+      for (const args of commands) {
+        const r = run(args);
+        eq(`CLI ${args.join(' ')}: lege term ${JSON.stringify(term)} is rood`, r.status, 1);
+        ok(`CLI ${args.join(' ')}: lege term noemt taal en concept (${r.out})`, r.out.includes('XX  de.work-category: term ontbreekt'));
+      }
+    }
+    write(tbPath('de'), termbase());
+    // Ook als zowel de termbase als de UI-map van een vereiste taal verdwijnen, blijft die taal verplicht.
+    rmSync(tbPath('lo'));
+    rmSync(join(work, 'src/i18n/locales/lo'), { recursive: true });
+    for (const args of commands) {
+      const r = run(args);
+      eq(`CLI ${args.join(' ')}: ontbrekend taalbestand is rood`, r.status, 1);
+      ok(`CLI ${args.join(' ')}: ontbrekend bestand noemt lo en concept (${r.out})`,
+        r.out.includes('lo: taalbestand ontbreekt') && r.out.includes('lo.work-category: term ontbreekt'));
+    }
+    write(tbPath('lo'), termbase());
+    for (const args of commands) {
+      const r = run(args);
+      eq(`CLI ${args.join(' ')}: geldige doeltermen herstellen groen (${r.out})`, r.status, 0);
+    }
+    // De echte geregistreerde concepten en talen moeten in CI eveneens aan het contract voldoen.
+    const real = run(['validate-termbase'], root);
+    eq(`CLI: repository-termbase compleet en geldig (${real.out})`, real.status, 0);
+  } finally {
+    rmSync(work, { recursive: true, force: true });
+  }
 }
 
 // ── 9. Tokens en namen als los woord ───────────────────────────────────────────────────────
