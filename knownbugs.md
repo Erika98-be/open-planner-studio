@@ -375,14 +375,6 @@ en noem het in je rapport of PR-tekst.
    Lokaal 5× groen op `main` (b4ee5be3) en 25× groen op de PR na merge met main. Vermoedelijk zet iets de
    verticale scroll terug (begrenzing op de inhoudshoogte) voordat de inhoud er is; niet onderzocht. — S
 
-177. **`actionlint` meldt twee bestaande shellcheck-waarschuwingen in `release.yml`.**
-    De stap `Check release notes present` geeft SC2069 bij `2>&1 >/dev/null`; de stap
-    `Set updater notes in latest.json` geeft SC2016 bij de JavaScript-template-expressies in
-    een enkel-gequote Node-commando. Beide meldingen ook gereproduceerd op de ongewijzigde
-    basisversie `522589202` in een tijdelijk bestand. Zonder shellcheck is de workflowvalidatie
-    groen. Voorstel: bedoelde omleiding verduidelijken en de bedoelde JavaScript-expressies gericht
-    documenteren voor shellcheck. Geen releaseworkflow gestart. — B
-
 178. **`gh pr edit --body-file` faalt op deze host door Projects Classic.** Bij het bijwerken
     van PR #479 op 2026-10-22 gaf de CLI `GraphQL: Projects (classic) is being deprecated`
     op `repository.pullRequest.projectCards`. De body is wel bijgewerkt via
