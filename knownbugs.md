@@ -260,13 +260,6 @@ en noem het in je rapport of PR-tekst.
      agents in dezelfde map schrijven. Voorstel: dezelfde `seal`/`sealErrors` in `prepare`/`apply-terms`.
      Gevonden in de review van #323 (Opus, 2026-10-12), in de code aangewezen. — S
 
-196. **Showcasecommentaar verwijst naar een ontbrekende Verdelen-gids.**
-    `scripts/showcases.ts:56` noemt `gids-verdelen-restcapaciteit.md`, maar dat bestand bestaat niet
-    in de repository. Het omringende commentaar beschrijft nog "Verdelen…", "Verdeel automatisch"
-    en een verdeeldialoog, terwijl die bediening ontbreekt. De zichtbare voorbeeldbelofte wordt
-    apart in PR #532 / knownbug 130 gecorrigeerd; dit resterende broncommentaar is niet aangepast.
-    Statisch bevestigd bij de review van #532 op `74e596d0`; geen lokale runtime uitgevoerd. — B
-
 170. **Vertaalstraat: een nieuw concept zonder doelterm valt niet op.** Na #376 stond `work-category`
     (werksoort) in `i18n/termbase/concepts.json`, maar in geen enkele `<taal>.json`. `validate-termbase` en
     `verify:translations` bleven groen. De straat hield toen de oude taaktype-term aan (bijv. de: `Neue Vorgangsart`),
