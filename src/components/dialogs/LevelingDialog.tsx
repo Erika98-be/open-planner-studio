@@ -3,8 +3,6 @@ import { useAppStore } from '@/state/appStore';
 import { useTranslation } from 'react-i18next';
 import { Dialog, DialogHeader } from '@/components/common/Dialog';
 import type { LevelingResult } from '@/engine/scheduler/ResourceLeveler';
-import { distributeUnits } from '@/engine/scheduler/ResourceLoad';
-import { exceedsCapacity } from '@/engine/scheduler/capacityTolerance';
 import { parseDate } from '@/utils/dateUtils';
 import { LEVELING_REASON_KEY } from '@/utils/levelingReasonKey';
 import { levelInBackground, LevelingCancelledError, type BackgroundLeveling } from '@/services/leveling/backgroundLeveling';
@@ -28,7 +26,6 @@ function fmt(iso: string): string {
 export function LevelingDialog() {
   const { t, i18n } = useTranslation('common');
   const resources = useAppStore(s => s.resources);
-  const assignments = useAppStore(s => s.assignments);
   const tasks = useAppStore(s => s.tasks);
   const cpmResult = useAppStore(s => s.cpmResult);
   const levelingInput = useAppStore(s => s.levelingInput);
@@ -134,34 +131,6 @@ export function LevelingDialog() {
     () => new Intl.NumberFormat(i18n.language, { maximumFractionDigits: 2 }),
     [i18n.language],
   );
-
-  // Intrinsieke overvraag: een taak waarvan één toewijzing op zijn curve-piek méér
-  // eenheden/dag vraagt dan de resource-capaciteit kan nooit door schuiven opgelost worden — de
-  // dag zelf is al overbelast. Detecteer per onopgeloste taak de zwaarst overvragende toewijzing.
-  const intrinsicByTask = useMemo(() => {
-    const map: Record<string, { resource: string; peak: number; capacity: number } | null> = {};
-    if (!result) return map;
-    for (const taskId of Object.keys(result.unresolved)) {
-      const task = tasks.find(t => t.id === taskId);
-      let worst: { resource: string; peak: number; capacity: number } | null = null;
-      if (task) {
-        for (const a of assignments.filter(x => x.taskId === taskId)) {
-          const res = resources.find(r => r.id === a.resourceId);
-          if (!res) continue;
-          const days = distributeUnits(a.unitsPerDay, task.time.scheduleDuration, a.curve ?? 'UNIFORM');
-          const peak = days.length > 0 ? Math.max(...days) : 0;
-          if (exceedsCapacity(peak, res.maxUnits)) {
-            const gap = peak - res.maxUnits;
-            if (!worst || gap > worst.peak - worst.capacity) {
-              worst = { resource: res.name || res.id, peak, capacity: res.maxUnits };
-            }
-          }
-        }
-      }
-      map[taskId] = worst;
-    }
-    return map;
-  }, [result, tasks, assignments, resources]);
 
   return (
     <Dialog
@@ -283,29 +252,23 @@ export function LevelingDialog() {
                   {conflicts.map(([taskId, days]) => {
                     const task = tasks.find(t => t.id === taskId);
                     const reason = result?.unresolvedReasons[taskId];
-                    const intrinsic = intrinsicByTask[taskId];
+                    const intrinsic = result?.intrinsicOverruns?.[taskId];
                     // Reden-specifieke uitleg, gededupliceerd met
                     // de leveler-classificatie via `LEVELING_REASON_KEY`: de leveler kiest de reden,
-                    // de dialoog vult alleen de weergavedetails in. `INTRINSIC_OVERRUN` draagt
+                    // de motor levert ook de dagvraag en capaciteit voor de weergave. `INTRINSIC_OVERRUN` draagt
                     // interpolatie (resource/peak/capacity) en krijgt daarom zijn eigen tak; de
                     // overige zes lopen via de gedeelde mapping.
                     let explain: string | null = null;
                     if (reason === 'INTRINSIC_OVERRUN' && intrinsic) {
                       explain = t(LEVELING_REASON_KEY.INTRINSIC_OVERRUN, {
-                        resource: intrinsic.resource,
+                        resource: resources.find(r => r.id === intrinsic.resourceId)?.name || intrinsic.resourceId,
                         peak: numberFmt.format(intrinsic.peak),
                         capacity: numberFmt.format(intrinsic.capacity),
                       });
-                    } else if (reason) {
+                    } else if (reason && reason !== 'INTRINSIC_OVERRUN') {
                       explain = t(LEVELING_REASON_KEY[reason]);
-                    } else if (intrinsic) {
-                      // Vangnet (geen reden meegegeven, maar intrinsiek gedetecteerd).
-                      explain = t(LEVELING_REASON_KEY.INTRINSIC_OVERRUN, {
-                        resource: intrinsic.resource,
-                        peak: numberFmt.format(intrinsic.peak),
-                        capacity: numberFmt.format(intrinsic.capacity),
-                      });
                     }
+
                     return (
                       <div key={taskId} className="flex flex-col gap-0.5">
                         <div className="flex items-center justify-between !text-body">
