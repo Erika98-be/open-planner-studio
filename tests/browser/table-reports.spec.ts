@@ -17,7 +17,14 @@ test('table reports: rapporttype kiezen rendert tabel, optie ververst live, PDF-
     s.runCPM();
   });
 
-  await page.getByRole('button', { name: /^(Report|Rapport)$/ }).click();
+  // R1 knownbug 21: vanuit het volledige resourcepaneel moet Rapport zijn eigen werkruimte
+  // openen; anders ontbreekt het formulier en doet de lintknop Afdruk verderop stil niets.
+  await page.locator('[data-ops-ribbon-tab="resources"]').click();
+  await page.locator('[data-tour-anchor="ribbon:resources:openResourcePanel"]').click();
+  const addResource = page.locator('[data-ops-resource-add]');
+  await expect(addResource).toBeVisible();
+  await page.locator('[data-ops-ribbon-tab="report"]').click();
+  await expect(addResource).toHaveCount(0);
   const typePicker = page.getByLabel(/^(Report type|Rapporttype)$/).first();
   await typePicker.click();
   await page.getByRole('option', { name: /^Look-ahead$/ }).click();

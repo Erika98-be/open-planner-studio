@@ -369,7 +369,9 @@ function AppContent() {
             className="ui-card flex-1 flex overflow-hidden"
             {...(activeTab === 'report' ? { 'data-tour-anchor': 'report-panel' } : {})}
           >
-            {showResourcePanel && !resourcePanelDocked ? (
+            {/* Rapport heeft zijn eigen werkruimte, ook als het volledige resourcepaneel nog
+                openstaat: de rapportbediening moet bij het gemounte rapportformulier horen. */}
+            {activeTab !== 'report' && showResourcePanel && !resourcePanelDocked ? (
               <ResourcePanel />
             ) : (
               <Suspense fallback={null}>
