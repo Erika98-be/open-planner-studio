@@ -54,6 +54,8 @@ geheugenpiek en andere datasets zijn niet gemeten.
 ```bash
 node tests/planning/measure-cpm-writeback.mjs 522589202 /tmp/f5-writeback.json
 bash tests/planning/run.sh check-cpm-writeback.ts check-recorded-dates.ts check-auto-calc-cpm.ts check-solve-input.ts
+env -u OPS_XER_CORPUS -u OPS_MPP_CORPUS -u OPS_MPP_CRAWL bash tests/planning/run.sh
+npm run measure:profiles
 ```
 
 De meting verandert geen werkboom en maakt tijdelijke bundels die na afloop worden verwijderd.
@@ -63,5 +65,14 @@ uren, inclusief handmatige taken, hammock, voortgang en samenvattingen. Zij cont
 atomische publicatie, behoud van invoer/referenties, cyclusfouten en handmatig rekenen met undo/redo.
 De bestaande recorded-dates-check bewaakt onder meer de bijzondere F5-undo in die modus.
 
-Gerichte run: exit 0. De volledige planningssuite en profielmeting worden afzonderlijk vastgelegd
-in de PR; deze meting vervangt die poorten niet.
+Validatie op de definitieve productcode: gerichte run, `npm run typecheck`, `npm run lint`,
+prestatiemeting en volledige corpusloze planningssuite alle exit 0. De volledige suite bevatte
+560/560 planningscases; alle vijf tijdzones (395 bundels per zone) waren groen, met de bestaande
+prestatiepoorten actief.
+
+`npm run measure:profiles` met de bestaande corpusinstellingen: exit 0, regel A gehouden.
+P6 heeft geen cel-delta; het bestaande nuldoel van 76 afwijkingen blijft bestaan (onderliggende
+X12-check exit 1, door de meetpoort als ongewijzigd nuldoel beoordeeld). MS Project: 661 bestanden,
+2.196 checks, exit 0; corpusloze profielvangrails exit 0. Een eerdere volledige run met een brede
+`OPS_MPP_CRAWL` is gestopt (exit 143) na de niet-gerelateerde corpuscheckbevinding in `knownbugs.md`
+#175. De volledige herhaling hierboven gebruikt de corpusloze CI-instellingen.

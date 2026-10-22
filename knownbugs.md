@@ -486,6 +486,15 @@ en noem het in je rapport of PR-tekst.
    Lokaal 5× groen op `main` (b4ee5be3) en 25× groen op de PR na merge met main. Vermoedelijk zet iets de
    verticale scroll terug (begrenzing op de inhoudshoogte) voordat de inhoud er is; niet onderzocht. — S
 
+175. **Oudere MPP-crawlchecks behandelen bewust niet-ondersteunde MPP9-bestanden als onverwachte
+   leesfouten.** Met `OPS_MPP_CRAWL` op het brede MPXJ-corpus geven `check-mpp-import.ts:6028`,
+   `check-mpp-calendars.ts` en `check-mpp-relations.ts` rode checks voor de `MPP_LEGACY`-weigeringen
+   van `readMPP` (22-10-2026: respectievelijk 449, 892 en 446 afwijkingen). De afzonderlijke
+   `check-mpp-fidelity.ts` slaat dezelfde niet-ondersteunde varianten wel over en blijft groen
+   (661 gescande bestanden, 2.196 checks). De drie oude crawlchecks hebben daarnaast tellingenpins
+   voor een kleiner corpus; een brede crawl is dus niet uitwisselbaar met dat oorspronkelijke
+   corpus. Gezien tijdens de F5-optimalisatie; reader en checks zijn daar niet gewijzigd. — B
+
 ## Wensen en open taken (geen bug)
 
 45. **Extensie-API**: extensies kunnen geen relatie of kalender gericht wijzigen en de selectie niet lezen.
