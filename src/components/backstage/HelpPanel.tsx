@@ -122,7 +122,9 @@ export function HelpPanel() {
   const navigate = useCallback((target: string) => {
     const { id, anchor } = splitHelpTarget(target);
     setSelection(prev => ({ id, anchor, nonce: prev.nonce + 1 }));
-  }, []);
+    // Een nieuwe artikelkeuze vervangt een nog wachtend verzoek om Tutorials in beeld te brengen.
+    setUI({ pendingHelpSection: null });
+  }, [setUI]);
 
   // Een "lees meer"-link zette `ui.pendingHelpArticleId`; selecteer dat
   // artikel en consumeer het verzoek meteen (net als `pendingNewResource` elders). Volgorde-veilig
@@ -344,16 +346,19 @@ export function HelpPanel() {
 
   const inSearch = (a: HelpArticleMeta) => !matchedIds || matchedIds.has(a.id);
 
-  // Verzoek "breng Help › Tutorials in beeld". Pas als het eerste artikel getekend is: inhoudsopgave
-  // en artikel delen de scrollcontainer, en de layout-effect hierboven zet die bij een nieuw artikel
-  // terug naar boven. Een effect loopt ná de layout-effects van dezelfde commit, dus dit wint.
+  // Wacht op de eerste artikellayout: die zet de gedeelde scrollcontainer hierboven nog naar
+  // boven. Ook een ontbrekend/mislukt/leeg artikel is klaar; wachten op renderedContent laat het
+  // verzoek dan eeuwig hangen. Een manifestfout beëindigt het verzoek zonder een sectie te tonen.
   useEffect(() => {
-    if (pendingHelpSection !== 'tutorials' || !manifest || !renderedContent) return;
-    const section = tocRef.current?.querySelector<HTMLElement>('[data-help-section="kind-tutorial"]');
-    section?.scrollIntoView({ block: 'center' });
-    section?.querySelector<HTMLElement>('button')?.focus({ preventScroll: true });
+    if (pendingHelpSection !== 'tutorials') return;
+    if (!manifestError) {
+      if (!manifest || (selectedMeta && selectedContent === undefined && !selectedFailed)) return;
+      const section = tocRef.current?.querySelector<HTMLElement>('[data-help-section="kind-tutorial"]');
+      section?.scrollIntoView({ block: 'center' });
+      section?.querySelector<HTMLElement>('button')?.focus({ preventScroll: true });
+    }
     setUI({ pendingHelpSection: null });
-  }, [pendingHelpSection, manifest, renderedContent, setUI]);
+  }, [pendingHelpSection, manifest, manifestError, selectedMeta, selectedContent, selectedFailed, setUI]);
 
   const openTutorialCatalog = () => {
     if (!EXTENSIONS_ENABLED) return;
