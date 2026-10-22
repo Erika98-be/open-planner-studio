@@ -27,6 +27,22 @@ const read = (dir, path) => readFileSync(join(dir, path), 'utf8');
 const json = (dir, path) => JSON.parse(read(dir, path));
 const snapshot = dir => paths.map(path => read(dir, path));
 
+function gitEnvironment(dir, tags, error = '') {
+  const bin = join(dir, 'bin');
+  mkdirSync(bin);
+  // Lokale tags zijn bewust leeg. Alleen de remote heeft de opgegeven refs, inclusief annotated tags.
+  const refs = tags.flatMap(tag => ['0'.repeat(40) + `\trefs/tags/${tag}`, '1'.repeat(40) + `\trefs/tags/${tag}^{}`]).join('\n');
+  writeFileSync(join(bin, 'git'), `#!${process.execPath}
+import assert from 'node:assert/strict';
+const args = process.argv.slice(2);
+if (args[0] === 'tag' && args[1] === '--list') process.exit(0);
+assert.deepEqual(args, ['ls-remote', '--tags', 'origin', 'v*']);
+if (${JSON.stringify(error)}) { console.error(${JSON.stringify(error)}); process.exit(128); }
+console.log(${JSON.stringify(refs)});
+`, { mode: 0o755 });
+  return { ...process.env, PATH: `${bin}${delimiter}${process.env.PATH}` };
+}
+
 function assertVersions(dir, version) {
   for (const path of ['package.json', 'src-tauri/tauri.conf.json', 'headless/server/package.json', 'headless/consumer-example/package.json']) {
     assert.equal(json(dir, path).version, version, path);
@@ -96,7 +112,7 @@ test('een lager nummer of een ongeldig bestand laat alle bestanden ongewijzigd',
     assert.throws(() => bumpVersion({ root: dir, version }));
     assert.deepEqual(snapshot(dir), before);
   }
-  assert.throws(() => bumpVersion({ root: dir, date: '2026-10-22', tags: [] }), /lager/);
+  assert.throws(() => bumpVersion({ root: dir, date: '2026-10-15', tags: [] }), /lager/);
   assert.deepEqual(snapshot(dir), before);
   writeFileSync(join(dir, 'src-tauri/Cargo.lock'), read(dir, 'src-tauri/Cargo.lock').replace('name = "open-planner-studio"', 'name = "ontbreekt"'));
   const broken = snapshot(dir);
@@ -115,14 +131,50 @@ test('de releasecontrole weigert ieder afwijkend versieveld afzonderlijk', t => 
   }
 });
 
-test('CLI zonder argument leest de git-tags, gebruikt OPS_BUMP_DATE en ondersteunt --check', t => {
+test('huidige weekversie is ook zonder tag een ondergrens voor de automatische bump', t => {
   const dir = fixture(t);
-  const bin = join(dir, 'bin');
-  mkdirSync(bin);
-  // Geen echte tags aanmaken: deze git-vervanger bewaakt ook de read-only tagaanroep.
-  writeFileSync(join(bin, 'git'), `#!${process.execPath}\nimport assert from 'node:assert/strict';\nassert.deepEqual(process.argv.slice(2), ['tag', '--list', 'v2026.53.*']);\nconsole.log('v2026.53.2\\nv2026.53.10');\n`, { mode: 0o755 });
+  bumpVersion({ root: dir, version: '2026.43.0' });
+  assert.equal(bumpVersion({ root: dir, date: '2026-10-22', tags: [] }), '2026.43.1');
+  assert.equal(bumpVersion({ root: dir, date: '2026-10-22', tags: ['v2026.43.0'] }), '2026.43.2');
+  bumpVersion({ root: dir, version: '2026.43.10' });
+  assert.equal(bumpVersion({ root: dir, date: '2026-10-22', tags: ['v2026.43.9'] }), '2026.43.11');
+  assert.equal(bumpVersion({ root: dir, date: '2026-10-26', tags: [] }), '2026.44.0');
+});
+
+test('CLI: ontbrekende lokale releasetag wordt uit actuele origin-tags meegenomen', t => {
+  const dir = fixture(t);
+  const env = { ...gitEnvironment(dir, ['v2026.43.0']), OPS_BUMP_DATE: '2026-10-22' };
+  const local = spawnSync('git', ['tag', '--list', 'v*'], { cwd: dir, env, encoding: 'utf8' });
+  assert.equal(local.status, 0);
+  assert.equal(local.stdout, '', 'de lokale tags zijn leeg');
+  const run = () => spawnSync(process.execPath, ['scripts/bump-version.js'], { cwd: dir, env, encoding: 'utf8' });
+  const first = run();
+  assert.equal(first.status, 0, first.stderr);
+  assertVersions(dir, '2026.43.1');
+  const second = run();
+  assert.equal(second.status, 0, second.stderr);
+  assertVersions(dir, '2026.43.2');
+});
+
+test('CLI: onbereikbare of ontbrekende origin blokkeert zonder lokale terugval en zonder schrijven', t => {
+  for (const error of ['Could not resolve host: github.com', "'origin' does not appear to be a git repository"]) {
+    const dir = fixture(t);
+    const before = snapshot(dir);
+    const env = { ...gitEnvironment(dir, [], error), OPS_BUMP_DATE: '2026-10-22' };
+    const run = args => spawnSync(process.execPath, ['scripts/bump-version.js', ...args], { cwd: dir, env, encoding: 'utf8' });
+    const failed = run([]);
+    assert.equal(failed.status, 1, error);
+    assert.match(failed.stderr, /Kan de actuele tags van origin niet lezen/);
+    assert.deepEqual(snapshot(dir), before);
+    assert.equal(run(['2026.43.0']).status, 0, 'een expliciete versie heeft geen remote nodig');
+    assertVersions(dir, '2026.43.0');
+  }
+});
+
+test('CLI zonder argument leest origin-tags, gebruikt OPS_BUMP_DATE en ondersteunt --check', t => {
   for (const TZ of ['Europe/Amsterdam', 'Pacific/Kiritimati', 'America/Los_Angeles']) {
-    const env = { ...process.env, OPS_BUMP_DATE: '2027-01-01', PATH: `${bin}${delimiter}${process.env.PATH}`, TZ };
+    const dir = fixture(t);
+    const env = { ...gitEnvironment(dir, ['v2026.53.2', 'v2026.53.10']), OPS_BUMP_DATE: '2027-01-01', TZ };
     const run = args => spawnSync(process.execPath, ['scripts/bump-version.js', ...args], { cwd: dir, env, encoding: 'utf8' });
     const result = run([]);
     assert.equal(result.status, 0, result.stderr);

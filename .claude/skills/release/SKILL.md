@@ -28,8 +28,10 @@ per uitgebrachte versie (élke versie, geen gaten; géén `Ongepubliceerd`-kop, 
 - **Versie = `JJJJ.W.N`**: ISO-weekjaar, ISO-week zonder voorloopnul, volgnummer vanaf 0
   (bv. `2026.43.0`); tags krijgen een `v`-prefix (`v2026.43.0`). Het ISO-weekjaar bepaalt
   het jaar: 1 januari 2027 valt in `2026.53.N`, 4 januari in `2027.1.0`.
-- `npm run bump` kiest vandaag en het hoogste volgnummer in de lokale git-tags van die week
-  plus 1 (of `.0` zonder weektag); haal vóór een release de tags op. Een expliciet nummer
+- `npm run bump` leest actuele origin-tags (`git ls-remote --tags origin 'v*'`) en kiest voor
+  vandaag het hoogste volgnummer uit die tags én de huidige versie plus 1 (of `.0` als beide
+  ontbreken in de week). Een ontbrekende of onbereikbare origin stopt de bump zonder schrijven;
+  lokale tags zijn geen terugval. Een expliciet nummer
   (`npm run bump 2026.44.1`) blijft mogelijk, met schema- en downgradecontrole. Het script
   synct de app, npm-lockfile, beide headless-pakketten, OpenAPI-documentversie, Snap en
   `src-tauri/Cargo.toml` + het eigen pakket in `Cargo.lock`; de kernbouw erft de appversie.
@@ -57,8 +59,8 @@ Lees de **volledige** lijst door. Dit is de bron voor zowel de changelog (uitgeb
 notes (paar bullets). Groepeer mentaal per rubriek: Added / Changed / Fixed / Documentation.
 
 ### 2. Kies de nieuwe versie
-`npm run bump` kiest het eerstvolgende volgnummer binnen de ISO-week uit de lokale git-tags;
-een nieuwe week begint bij `.0` (`2026.43.1` → `2026.44.0`). `OPS_BUMP_DATE=JJJJ-MM-DD`
+`npm run bump` kiest het eerstvolgende volgnummer binnen de ISO-week uit actuele origin-tags
+en de huidige versie; een nieuwe week begint bij `.0` (`2026.43.1` → `2026.44.0`). `OPS_BUMP_DATE=JJJJ-MM-DD`
 maakt de datum reproduceerbaar voor tests.
 
 ### 3. `docs/CHANGELOG.md` — de uitgebreide versiebeschrijving (eis 3)

@@ -22,7 +22,7 @@ npm run lint         # deliberately minimal ESLint (promises, control-regex, Rea
 npm run lint:fast    # same lint with a cache, for iterating; `lint` stays the gate
 npm test             # all five suites
 npm run tauri:build  # installers
-npm run bump         # JJJJ.W.N: ISO week-year/week + next sequence from git tags; sync all package versions
+npm run bump         # JJJJ.W.N: ISO week-year/week + next sequence from current version and live origin tags; sync all package versions
 # Optional explicit version: npm run bump 2026.44.1 (never lower than the current version)
 ```
 

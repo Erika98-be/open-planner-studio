@@ -1,6 +1,6 @@
 // @ts-check
 // Versie-sync: JJJJ.W.N = ISO-weekjaar, ISO-week en volgnummer vanaf 0.
-// npm run bump kiest de eerstvolgende versie op basis van vandaag en lokale git-tags.
+// npm run bump kiest de eerstvolgende versie uit vandaag, actuele origin-tags en de huidige versie.
 // npm run bump 2026.43.1 zet een expliciete versie; --check controleert zonder schrijven.
 // OPS_BUMP_DATE=2027-01-01 maakt de datum reproduceerbaar; tests injecteren ook de tags.
 
@@ -58,6 +58,29 @@ export function nextVersion(date, tags) {
   return version;
 }
 
+/** Actuele tags ophalen zonder lokale refs te wijzigen; een onbereikbare origin blokkeert de bump.
+ * @param {string} root
+ */
+function readOriginTags(root) {
+  let output;
+  try {
+    output = execFileSync('git', ['ls-remote', '--tags', 'origin', 'v*'], {
+      cwd: root,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+      env: { ...process.env, GIT_TERMINAL_PROMPT: '0' },
+      timeout: 30_000,
+    });
+  } catch {
+    throw new Error("Kan de actuele tags van origin niet lezen (git ls-remote --tags origin 'v*'). Controleer origin en de netwerkverbinding; er zijn geen bestanden gewijzigd.");
+  }
+  return output.split(/\r?\n/).flatMap(line => {
+    const ref = line.split('\t')[1];
+    // Een annotated tag heeft ook een peeled ref met ^{}; beide wijzen naar dezelfde versie.
+    return ref?.startsWith('refs/tags/') ? [ref.slice('refs/tags/'.length).replace(/\^\{\}$/, '')] : [];
+  });
+}
+
 // Alleen eigen pakketvelden; dependency-, extensie-, API-contract- en bestandsformaatversies
 // hebben hun eigen levenscyclus. De OpenAPI-info is de documentversie van deze appbouw.
 const VERSION_FIELDS = [
@@ -105,14 +128,15 @@ export function checkVersionFiles(version, root = repoRoot) {
  * @param {{ root?: string, version?: string, date?: string, tags?: string[] }} [options]
  */
 export function bumpVersion({ root = repoRoot, version, date = process.env.OPS_BUMP_DATE ?? today(), tags } = {}) {
-  if (version === undefined) {
-    const { year, week } = isoWeek(date);
-    const localTags = tags ?? execFileSync('git', ['tag', '--list', `v${year}.${week}.*`], { cwd: root, encoding: 'utf8' }).split(/\r?\n/);
-    version = nextVersion(date, localTags);
-  }
-  const requested = parseVersion(version);
   const currentVersion = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')).version;
   const current = parseVersion(currentVersion);
+  if (version === undefined) {
+    isoWeek(date);
+    const originTags = tags ?? readOriginTags(root);
+    // Ook een nog niet getagde bump binnen deze week moet een hoger volgnummer krijgen.
+    version = nextVersion(date, [...originTags, `v${currentVersion}`]);
+  }
+  const requested = parseVersion(version);
   const different = requested.findIndex((value, index) => value !== current[index]);
   if (different >= 0 && requested[different] < current[different]) {
     throw new Error(`Versie ${version} is lager dan de huidige versie ${currentVersion}.`);
