@@ -155,11 +155,6 @@ en noem het in je rapport of PR-tekst.
     dus naar een gids wijzen die tools beschrijft die hij niet heeft. De gids zegt nu dat de kopie van de tool
     voorgaat. Voorstel: een versiepad (bv. `/agent/<versie>/planning-guide.md`) of de versie in de gids. — S
 
-126. **Updatevenster: de tekst *Bezig met installeren…* is niet te bereiken.** De balk met
-    `updates.installing` staat achter `isDownloading` (`status.kind === 'downloading'`), terwijl de tekst
-    `isReadyToInstall` (`'readyToInstall'`) vraagt (`UpdateDialog.tsx:125-128,205-208`). Na de download springt
-    het venster naar *Herstarten…* (`:225-229`). Alleen in de code gezien. — S
-
 ## Bestanden en herstel
 
 35. **Showcase-voorbeelden openen als gewijzigd** (`applyDemoLibraryToShowcaseProject`). — S

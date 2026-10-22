@@ -17,8 +17,8 @@ Updating only works in the desktop app. The browser version has no updater.
 1. Start the desktop app. At startup the app checks in the background whether there is a new version. If there is no new version, or the check fails, for example without internet, you notice nothing.
 2. If there is a new version, the window *Software update* opens. It shows the *Current version*, the *New version*, the message *A new version is available* and, under *What's new*, the text that goes with the update.
 3. Save your open projects.
-4. Click *Download & install*. A progress bar shows *Downloading…*, and then the installation follows. You cannot close the window while it is downloading.
-5. Wait until the app restarts itself. That is the new version.
+4. Click *Download & install*. The progress bar shows *Downloading…*, with a percentage when the download size is known. Without a known size, the bar moves without a percentage. Next you see *Preparing installation…* and *Installing…*, without a percentage. You cannot close the window while the update is in progress.
+5. Wait until the app restarts itself. *Restarting…* may appear during the restart. After restarting you are using the new version.
 
 Just before the update is installed, the app also takes a recovery snapshot (for crash recovery) of your open work, see [Recovering after a crash](docs://howto-herstellen-na-een-crash).
 
