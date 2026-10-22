@@ -2,8 +2,13 @@
 // Controleert de assets van één GitHub-release (issue #429).
 //
 //   node scripts/verify-release.mjs [<tag>] [--repo owner/naam] [--dir <map>] [--out <rapport.md>]
+//                                    [--draft-id <release-id>]
 //
-// Zonder tag: de laatste gepubliceerde release. Het script downloadt via `gh`
+// Zonder tag: de laatste gepubliceerde release. Met --draft-id: de nog niet
+// gepubliceerde draft met dat id en die tag. release.yml draait zo vlak vóór
+// publicatie, zodat een kapot latest.json de release als draft laat staan. Een
+// draft wordt bij publicatie de nieuwste release, dus releases/latest/download
+// is daar juist. Het script downloadt via `gh`
 // en controleert:
 //   1. elke `*.sig`-asset (minisign, updater-handtekening) tegen de pubkey in
 //      src-tauri/tauri.conf.json: sleutel-id, handtekening over het bestand
@@ -426,17 +431,34 @@ function gh(args) {
   return execFileSync('gh', args, { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
 }
 
-function parseArgs(argv) {
-  const o = { tag: null, repo: process.env.GITHUB_REPOSITORY || 'OpenAEC-Foundation/open-planner-studio', dir: null, out: null };
+export function parseArgs(argv) {
+  const o = { tag: null, repo: process.env.GITHUB_REPOSITORY || 'OpenAEC-Foundation/open-planner-studio', dir: null, out: null, draftId: null };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--repo') o.repo = argv[++i];
     else if (a === '--dir') o.dir = argv[++i];
     else if (a === '--out') o.out = argv[++i];
+    else if (a === '--draft-id') o.draftId = argv[++i];
     else if (a.startsWith('--')) throw new Error(`onbekende optie ${a}`);
     else o.tag = a;
   }
+  if (o.draftId !== null) {
+    if (!/^[1-9][0-9]*$/.test(o.draftId ?? '')) throw new Error(`ongeldig draft-id ${JSON.stringify(o.draftId)}`);
+    if (!o.tag) throw new Error('--draft-id vraagt ook de tag');
+  }
   return o;
+}
+
+/**
+ * Controleert dat de release van de API de bedoelde draft is.
+ * @returns {string|null}  foutmelding, of null als het klopt
+ */
+export function draftError(release, { tag, draftId }) {
+  if (String(release?.id) !== String(draftId)) return `release-id ${release?.id} is niet ${draftId}`;
+  if (release.draft !== true) return `release ${draftId} is geen draft (meer)`;
+  if (release.tag_name !== tag) return `draft ${draftId} heeft tag ${release.tag_name}, niet ${tag}`;
+  if (release.prerelease) return `draft ${draftId} is een prerelease; die wordt niet de nieuwste release`;
+  return null;
 }
 
 function main() {
@@ -444,7 +466,14 @@ function main() {
   if (!opts.tag) opts.tag = gh(['release', 'view', '--repo', opts.repo, '--json', 'tagName', '--jq', '.tagName']).trim();
   if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(opts.repo)) throw new Error(`ongeldige repo ${JSON.stringify(opts.repo)}`);
   if (!TAG_PATTERN.test(opts.tag)) throw new Error(`ongeldige tag ${JSON.stringify(opts.tag)}`);
-  const release = JSON.parse(gh(['api', `repos/${opts.repo}/releases/tags/${opts.tag}`]));
+  // De tags-route van de API kent geen drafts; een draft halen we op id.
+  const release = JSON.parse(gh(['api', opts.draftId
+    ? `repos/${opts.repo}/releases/${opts.draftId}`
+    : `repos/${opts.repo}/releases/tags/${opts.tag}`]));
+  if (opts.draftId) {
+    const err = draftError(release, opts);
+    if (err) throw new Error(err);
+  }
   const assets = release.assets.map((a) => ({ name: a.name, digest: a.digest ?? null }));
   if (assets.length === 0) throw new Error(`release ${opts.tag} heeft geen assets`);
   const dir = opts.dir ?? mkdtempSync(join(tmpdir(), 'ops-release-'));
@@ -462,9 +491,15 @@ function main() {
     return cache.get(name);
   };
   // releases/latest/download in latest.json is alleen juist voor de nieuwste release.
-  const latestTag = gh(['api', `repos/${opts.repo}/releases/latest`, '--jq', '.tag_name']).trim();
-  const isLatest = latestTag === opts.tag;
-  process.stderr.write(`nieuwste release: ${latestTag}; ${opts.tag} is ${isLatest ? '' : 'NIET '}de nieuwste\n`);
+  let isLatest;
+  if (opts.draftId) {
+    isLatest = true;
+    process.stderr.write(`draft ${opts.draftId} (${opts.tag}) wordt bij publicatie de nieuwste release\n`);
+  } else {
+    const latestTag = gh(['api', `repos/${opts.repo}/releases/latest`, '--jq', '.tag_name']).trim();
+    isLatest = latestTag === opts.tag;
+    process.stderr.write(`nieuwste release: ${latestTag}; ${opts.tag} is ${isLatest ? '' : 'NIET '}de nieuwste\n`);
+  }
   const rows = evaluateRelease({ publicKey, assets, read, repo: opts.repo, tag: opts.tag, isLatest });
   const report = renderReport({ tag: opts.tag, repo: opts.repo, keyId: keyIdHex(parsePublicKey(publicKey).keyId), rows });
   process.stdout.write(`${report}\n`);

@@ -132,7 +132,7 @@
   "barColorMode_auto": "Per uppgift — automatiskt",
   "barColorMode_category": "Efter kategori",
   "barColorFieldLabel": "Kategorifält",
-  "barColorMissingField": "Det här fältet finns inte i projektet. Uppgiftstyp används tillfälligt.",
+  "barColorMissingField": "Det här fältet finns inte i projektet. Arbetskategori används tillfälligt.",
   "statusLineLabel": "Statuslinje:",
   "statusLine_none": "Ingen",
   "statusLine_statusDate": "Rapportdatumlinje",

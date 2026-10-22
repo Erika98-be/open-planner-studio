@@ -152,11 +152,12 @@ export function useRecoveryRestore(): RecoveryRestore {
                 //
                 // Prijs: de volgende start kan dezelfde set en foutmelding opnieuw tonen.
                 // "Verwerpen" blijft de expliciete uitweg. De herstelde documenten blijven open;
-                // hun volgende auto-save krijgt verse snapshots, terwijl de mislukte generatie
-                // beschermd blijft via holdRecoveryForLater (web: vastgehouden generatie; Tauri:
+                // hun volgende auto-save krijgt verse snapshots; pas daarna mag desktop de vervangen
+                // gezonde generatie opruimen. De mislukte generatie
+                // blijft beschermd via holdRecoveryForLater (web: vastgehouden generatie; Tauri:
                 // overgenomen manifestregels die elke ronde meegaan, ook bij een v1-manifest).
                 if (failed === 0 && skipped.length === 0) await clearRecovery();
-                else await holdRecoveryForLater();
+                else await holdRecoveryForLater(restored.filter(doc => !skipped.includes(doc.id)).map(doc => doc.id));
               } catch (err) {
                 // Snapshots blijven staan. `finish()` gaat bewust wél door: de auto-save-poort
                 // dichthouden zou betekenen dat vanaf nu NIETS meer wordt weggeschreven — een

@@ -15,7 +15,9 @@
     "openFailed": "Datei konnte nicht geöffnet werden",
     "extGuideCallbackFailed": "Ein Schritt der Erweiterung {{name}} ist fehlgeschlagen. Die Anleitung läuft weiter.",
     "extHelpProjectOpenFailed": "Die Projektdatei {{file}} der Erweiterung {{name}} konnte nicht geöffnet werden.",
+    "extImportFailed": "Der Import mit {{name}} ist fehlgeschlagen.",
     "extensionMessage": "Erweiterung {{name}}: {{message}}",
+    "extensionInstallFailed": "Die Erweiterung konnte nicht installiert werden. Prüfen Sie die Datei und versuchen Sie es erneut.",
     "xerInvalidInput": "Der XER-Import benötigt die ursprünglichen Dateibytes.",
     "xerInvalidFile": "Dies ist keine gültige oder unterstützte XER-Datei.",
     "xerInvalidEncoding": "Die Textkodierung dieser XER-Datei ist ungültig oder abgeschnitten.",
@@ -55,8 +57,8 @@
     "xerImportNumberIssues_other": "{{count}} Zahlenformat-Hinweise.",
     "xerImportEnumFallbacks_one": "{{count}} Enum-Rückfall.",
     "xerImportEnumFallbacks_other": "{{count}} Enum-Rückfälle.",
-    "xerImportMissingPlannedStarts_one": "{{count}} Vorgang hatte keinen geplanten Anfang und beginnt jetzt am Datenstichtag oder Projektanfang aus der Datei.",
-    "xerImportMissingPlannedStarts_other": "{{count}} Vorgänge hatten keinen geplanten Anfang und beginnen jetzt am Datenstichtag oder Projektanfang aus der Datei.",
+    "xerImportMissingPlannedStarts_one": "{{count}} Vorgang hatte keinen geplanten Anfang und beginnt jetzt am Statusdatum oder am Projektstart aus der Datei.",
+    "xerImportMissingPlannedStarts_other": "{{count}} Vorgänge hatten keinen geplanten Anfang und beginnen jetzt am Statusdatum oder am Projektstart aus der Datei.",
     "xerImportUnsupportedSemantics_one": "{{count}} P6-Planungseinstellung mit sicherem Rückfall.",
     "xerImportUnsupportedSemantics_other": "{{count}} P6-Planungseinstellungen mit sicherem Rückfall.",
     "xerImportDatesAsRecorded_one": "{{count}} Vorgang zeigt die von Primavera gespeicherten Termine (nicht neu berechnet).",
@@ -95,16 +97,18 @@
     "mppSourceScheduleNotes_other": "Diese MS-Project-Datei enthält {{count}} Vorgänge mit unterbrochener, geglätteter oder ressourcengesteuerter Terminierung. Sie werden so eingelesen und angezeigt.",
     "exportSplitsLost_one": "{{count}} Vorgang mit Unterbrechungen wurde ohne seine Unterbrechungen exportiert: MS Project/P6 kennen diese nur als Arbeitsverteilung.",
     "exportSplitsLost_other": "{{count}} Vorgänge mit Unterbrechungen wurden ohne ihre Unterbrechungen exportiert: MS Project/P6 kennen diese nur als Arbeitsverteilung.",
+    "exportP6Truncated_one": "{{count}} Name oder Code wurde auf die von P6 zugelassene Länge gekürzt.",
+    "exportP6Truncated_other": "{{count}} Namen oder Codes wurden auf die von P6 zugelassene Länge gekürzt.",
     "projectStartAnchorsClamped_one": "{{count}} Vorgang wurde mit dem Projektanfang verschoben.",
     "projectStartAnchorsClamped_other": "{{count}} Vorgänge wurden mit dem Projektanfang verschoben.",
     "mppTimephasedSteeringLost_one": "Die Stundenverteilung aus MS Project steuert {{count}} Vorgang nach dieser Bearbeitung nicht mehr; die ursprüngliche Verteilung bleibt in der Datei erhalten.",
     "mppTimephasedSteeringLost_other": "Die Stundenverteilung aus MS Project steuert {{count}} Vorgänge nach dieser Bearbeitung nicht mehr; die ursprüngliche Verteilung bleibt in der Datei erhalten.",
     "readMore": "Mehr erfahren",
-    "taskTypesUnlocked": "Diese Datei enthält gespeicherte Arbeit oder eigene Arbeitsregeln; Arbeitsregel und Restarbeit werden für dieses Projekt angezeigt.",
-    "taskTypesUnlockedDetail": "Diese Datei enthält gespeicherte Arbeit oder eigene Arbeitsregeln; Arbeitsregel und Restarbeit werden für dieses Projekt angezeigt.",
-    "workRulesReadMore": "Arbeitsregeln erklärt",
-    "workRuleDurationsChanged_one": "Nach der Kalenderänderung hat die Arbeitsregel die Dauer von {{count}} Vorgang angepasst (Arbeit bleibt, Stunden pro Tag geändert).",
-    "workRuleDurationsChanged_other": "Nach der Kalenderänderung hat die Arbeitsregel die Dauer von {{count}} Vorgängen angepasst (Arbeit bleibt, Stunden pro Tag geändert).",
+    "taskTypesUnlocked": "Diese Datei enthält gespeicherte Arbeit oder Vorgangsarten; die Vorgangsart und die Restarbeit werden für dieses Projekt angezeigt.",
+    "taskTypesUnlockedDetail": "Diese Datei enthält gespeicherte Arbeit oder Vorgangsarten; die Vorgangsart und die Restarbeit werden für dieses Projekt angezeigt.",
+    "workRulesReadMore": "Vorgangsarten erklärt",
+    "workRuleDurationsChanged_one": "Nach der Kalenderänderung hat die Vorgangsart die Dauer von {{count}} Vorgang angepasst (Arbeit bleibt, Stunden pro Tag geändert).",
+    "workRuleDurationsChanged_other": "Nach der Kalenderänderung hat die Vorgangsart die Dauer von {{count}} Vorgängen angepasst (Arbeit bleibt, Stunden pro Tag geändert).",
     "pasteSkippedReadOnly_one": "{{count}} Zelle übersprungen: Sie ist schreibgeschützt (z. B. ein automatisch nummerierter PSP-Code oder eine berechnete Spalte).",
     "pasteSkippedReadOnly_other": "{{count}} Zellen übersprungen: Sie sind schreibgeschützt (z. B. ein automatisch nummerierter PSP-Code oder eine berechnete Spalte).",
     "librarySaveFailed": "Bibliothek konnte nicht gespeichert werden",
@@ -120,8 +124,8 @@
     "startBlockedByConstraintMany_other": "Die neuen Anfänge von {{count}} Vorgängen wurden nicht übernommen: Sie haben einen Vorgänger und eine andere Einschränkung als Anfang nicht früher als (SNET). Ändern Sie diese Einschränkungen, um die Anfänge zu verschieben.",
     "dragStartIsActual": "„{{name}}“ hat begonnen: der Anfang ist der Ist-Anfang und verschiebt sich nicht. Ändern Sie ihn über den Fortschritt.",
     "dragDatesAreActual": "„{{name}}“ ist abgeschlossen: Anfang und Ende sind die Ist-Termine und verschieben sich nicht. Ändern Sie sie über den Fortschritt.",
-    "referencesClearedOnPaste_one": "{{count}} Verweis existierte in diesem Dokument nicht und wurde geleert (ein Vorgangskalender, eigene Vorgangsart, Vorgangscode oder benutzerdefiniertes Feld aus dem Quelldokument).",
-    "referencesClearedOnPaste_other": "{{count}} Verweise existierten in diesem Dokument nicht und wurden geleert (Vorgangskalender, eigene Vorgangsarten, Vorgangscodes oder benutzerdefinierte Felder aus dem Quelldokument).",
+    "referencesClearedOnPaste_one": "{{count}} Verweis existierte in diesem Dokument nicht und wurde geleert (ein Vorgangskalender, eine benutzerdefinierte Arbeitskategorie, ein Aktivitätscode oder ein benutzerdefiniertes Feld aus dem Quelldokument).",
+    "referencesClearedOnPaste_other": "{{count}} Verweise existierten in diesem Dokument nicht und wurden geleert (Vorgangskalender, benutzerdefinierte Arbeitskategorien, Aktivitätscodes oder benutzerdefinierte Felder aus dem Quelldokument).",
     "milestoneRefusedAssignments_one": "„{{task}}“ hat Ressourcenzuweisungen und kann kein Meilenstein werden. Entfernen Sie zuerst die Zuweisungen.",
     "milestoneRefusedAssignments_other": "{{count}} Vorgänge haben Ressourcenzuweisungen und können keine Meilensteine werden. Entfernen Sie zuerst die Zuweisungen.",
     "milestoneRefusedSummary_one": "„{{task}}“ ist ein Sammelvorgang mit Teilvorgängen und kann kein Meilenstein werden.",
@@ -134,7 +138,12 @@
     "milestoneClearedOnPhase_other": "{{count}} Vorgänge sind keine Meilensteine mehr.",
     "phaseRefusedNoAssignableChild": "„{{phase}}“ kann kein Sammelvorgang werden: Ihre Zuweisungen können nirgendwohin, weil keine der neuen Teilvorgänge Zuweisungen tragen kann (ein Meilenstein oder ein Sammelvorgang). Es wurde nichts geändert.",
     "phaseRefusedDuplicateResource": "„{{phase}}“ kann kein Sammelvorgang werden: Die Zuweisung von {{resource}} kann nicht zum neuen Teilvorgang „{{child}}“, weil dieser {{resource}} bereits hat. Es wurde nichts geändert.",
+    "phaseQuestionOutdated": "Die Vorgänge oder Zuweisungen haben sich geändert, während die Frage offen stand. Es wurde nichts geändert; versuchen Sie es erneut.",
     "schedulingProfileApplied": "Dieses Projekt rechnet als {{profile}}. Ändern über Datei → Projektinfo → Berechnungsprofil und Berechnungsoptionen.",
+    "schedulingTemplateSaved": "Vorlage „{{name}}“ gespeichert.",
+    "schedulingTemplateLimit": "Vorlage nicht gespeichert: Es gibt bereits {{max}} Vorlagen. Löschen Sie zuerst eine Vorlage.",
+    "schedulingTemplateStorageFailed": "Vorlage nicht gespeichert: Der Speicher der App ist voll oder nicht verfügbar.",
+    "schedulingTemplateDeleteFailed": "Vorlage nicht gelöscht: Der Speicher der App ist voll oder nicht verfügbar.",
     "schedulingProfileShifted_one": "Nach dem Anwenden wurde {{count}} Vorgang verschoben.",
     "schedulingProfileShifted_other": "Nach dem Anwenden wurden {{count}} Vorgänge verschoben.",
     "actions": {
@@ -152,11 +161,61 @@
     "xerArchiveReasonStructure": "Grund: Der Aufbau des Archivs in der IFC stimmt nicht (doppelt, umsortiert oder falsch verknüpft).",
     "statusDateSetToday": "Statusdatum auf heute gesetzt ({{date}}).",
     "durationBelowDoneWork": "„{{name}}“ ist bereits zu {{percent}} % erledigt: Eine Dauer, die kürzer ist als die bereits geleistete Arbeit, ist nicht möglich. Die Dauer wurde nicht geändert.",
+    "refusedTaskNames": "Nicht geändert: {{names}}.",
+    "refusedTaskNamesMore_one": "Nicht geändert: {{names}} und noch {{count}} Vorgang.",
+    "refusedTaskNamesMore_other": "Nicht geändert: {{names}} und noch {{count}} Vorgänge.",
+    "notAppliedTaskNames": "Nicht angewendet bei: {{names}}.",
+    "notAppliedTaskNamesMore_one": "Nicht angewendet bei: {{names}} und noch {{count}} Vorgang.",
+    "notAppliedTaskNamesMore_other": "Nicht angewendet bei: {{names}} und noch {{count}} Vorgänge.",
+    "refusedRelationNames": "Nicht erstellt: {{names}}.",
+    "refusedRelationNamesMore_one": "Nicht erstellt: {{names}} und noch {{count}} Beziehung.",
+    "refusedRelationNamesMore_other": "Nicht erstellt: {{names}} und noch {{count}} Beziehungen.",
     "remainingWorkRecomputed": "Restarbeit von „{{name}}“ neu berechnet: {{before}} h → {{after}} h (der Wert stammte aus der Datei). Ctrl+Z stellt ihn wieder her.",
     "remainingWorkRecomputedMany_one": "Restarbeit von {{count}} Vorgang neu berechnet (der Wert stammte aus der Datei). Ctrl+Z stellt sie wieder her.",
     "remainingWorkRecomputedMany_other": "Restarbeit von {{count}} Vorgängen neu berechnet (die Werte stammten aus der Datei). Ctrl+Z stellt sie wieder her.",
     "tutorialOfferLater": "Du findest die Tutorials jederzeit unter Hilfe › Tutorials.",
-    "tutorialOfferUnavailable": "Die Tutorials konnten gerade nicht installiert oder gestartet werden. Unter Hilfe › Tutorials kannst du es später erneut versuchen."
+    "tutorialOfferUnavailable": "Die Tutorials konnten gerade nicht installiert oder gestartet werden. Unter Hilfe › Tutorials kannst du es später erneut versuchen.",
+    "taskAddedAtEnd": "Der neue Vorgang wurde am Ende hinzugefügt. Während Filtern, Gruppieren oder Sortieren kann die App ihn nicht unter Ihre Auswahl setzen.",
+    "p6xmlImportEmpty": "Diese Datei enthält keine Vorgänge, die die App lesen kann.",
+    "p6xmlImportEmptyNoObjectIds": "Die Vorgänge haben keine ObjectId. Daher kann die App sie nicht verknüpfen. Dies ist kein normales Primavera P6 XML.",
+    "p6xmlImportEmptyXerColumns": "Die Datei verwendet XER-Spaltennamen (zum Beispiel task_code) statt P6-XML-Felder. Öffnen Sie die .xer-Datei selbst.",
+    "p6xmlImportOpened_one": "P6-XML-Datei geöffnet: {{count}} Projektdokument.",
+    "p6xmlImportOpened_other": "P6-XML-Datei geöffnet: {{count}} Projektdokumente.",
+    "p6xmlImportCrossProjectRelations_one": "{{count}} Beziehung zwischen Projekten wurde nicht als Beziehung übernommen.",
+    "p6xmlImportCrossProjectRelations_other": "{{count}} Beziehungen zwischen Projekten wurden nicht als Beziehungen übernommen.",
+    "p6xmlImportUnassignedActivities_one": "{{count}} Vorgang ohne Projekt wurde nicht eingelesen.",
+    "p6xmlImportUnassignedActivities_other": "{{count}} Vorgänge ohne Projekt wurden nicht eingelesen.",
+    "msProjectImportLoss": "Nicht alles aus dieser MS Project-Datei wurde übernommen.",
+    "msProjectLostSubprojects_one": "{{count}} eingefügtes Projekt wurde als normaler Vorgang eingelesen, ohne die Verknüpfung mit der anderen Datei.",
+    "msProjectLostSubprojects_other": "{{count}} eingefügte Projekte wurden als normale Vorgänge eingelesen, ohne die Verknüpfung mit der anderen Datei.",
+    "msProjectLostExternalTasks_one": "{{count}} externer Vorgang aus einem anderen Projekt wurde als normaler Vorgang eingelesen.",
+    "msProjectLostExternalTasks_other": "{{count}} externe Vorgänge aus einem anderen Projekt wurden als normale Vorgänge eingelesen.",
+    "msProjectLostInactiveTasks_one": "{{count}} inaktiver Vorgang wurde als aktiver Vorgang eingelesen und wird in der Berechnung berücksichtigt.",
+    "msProjectLostInactiveTasks_other": "{{count}} inaktive Vorgänge wurden als aktive Vorgänge eingelesen und werden in der Berechnung berücksichtigt.",
+    "msProjectLostManualTasks_one": "{{count}} manuell geplanter Vorgang wurde als automatisch geplanter Vorgang eingelesen.",
+    "msProjectLostManualTasks_other": "{{count}} manuell geplante Vorgänge wurden als automatisch geplante Vorgänge eingelesen.",
+    "msProjectLostLevelingDelays_one": "Die Abgleichsverzögerung von {{count}} Vorgang wurde nicht übernommen.",
+    "msProjectLostLevelingDelays_other": "Die Abgleichsverzögerungen von {{count}} Vorgängen wurden nicht übernommen.",
+    "msProjectLostCriticalSlack_one": "Die Schwelle für „kritisch“ aus der Datei (Puffer bis {{count}} Arbeitstag) wurde nicht übernommen. Die App rechnet mit Schwelle 0.",
+    "msProjectLostCriticalSlack_other": "Die Schwelle für „kritisch“ aus der Datei (Puffer bis {{count}} Arbeitstage) wurde nicht übernommen. Die App rechnet mit Schwelle 0.",
+    "msProjectLostBaselines_one": "{{count}} Baseline wurde nicht übernommen.",
+    "msProjectLostBaselines_other": "{{count}} Baselines wurden nicht übernommen.",
+    "msProjectLostExtraBaselines_one": "{{count}} Baseline (Baseline 1–10) wurde nicht übernommen.",
+    "msProjectLostExtraBaselines_other": "{{count}} Baselines (Baseline 1–10) wurden nicht übernommen.",
+    "msProjectLostBaselineWorkCost_one": "Bei {{count}} Vorgang, einer Ressource oder Zuweisung wurden Arbeit oder Kosten aus Baseline 0 nicht übernommen.",
+    "msProjectLostBaselineWorkCost_other": "Bei {{count}} Vorgängen, Ressourcen oder Zuweisungen wurden Arbeit oder Kosten aus Baseline 0 nicht übernommen.",
+    "msProjectLostAssignmentBaselineDates_one": "Bei {{count}} Zuweisung weicht die Baseline vom Vorgang ab; diese Abweichung wurde nicht übernommen.",
+    "msProjectLostAssignmentBaselineDates_other": "Bei {{count}} Zuweisungen weicht die Baseline vom Vorgang ab; diese Abweichung wurde nicht übernommen.",
+    "msProjectLostCustomFields_one": "{{count}} benutzerdefiniertes Feld mit Werten (benutzerdefiniertes Feld oder Gliederungscode) wurde nicht übernommen.",
+    "msProjectLostCustomFields_other": "{{count}} benutzerdefinierte Felder mit Werten (benutzerdefinierte Felder und Gliederungscodes) wurden nicht übernommen.",
+    "msProjectLostNotes_one": "{{count}} Notiz wurde nicht übernommen.",
+    "msProjectLostNotes_other": "{{count}} Notizen wurden nicht übernommen.",
+    "msProjectLostHyperlinks_one": "{{count}} Hyperlink wurde nicht übernommen.",
+    "msProjectLostHyperlinks_other": "{{count}} Hyperlinks wurden nicht übernommen.",
+    "msProjectLostFixedCosts_one": "Die Fixkosten von {{count}} Vorgang wurden nicht übernommen.",
+    "msProjectLostFixedCosts_other": "Die Fixkosten von {{count}} Vorgängen wurden nicht übernommen.",
+    "msProjectLostResourceRates_one": "Die Tarife von {{count}} Ressource wurden nicht übernommen.",
+    "msProjectLostResourceRates_other": "Die Tarife von {{count}} Ressourcen wurden nicht übernommen."
   },
   "scheduleErrors": {
     "cycle": "Zirkelbezug zwischen Vorgängen: {{path}}",
@@ -170,6 +229,8 @@
   "no": "Nein",
   "days": "T",
   "daysLong": "Tage",
+  "dayUnitLong_one": "Tag",
+  "dayUnitLong_other": "Tage",
   "ok": "OK",
   "apply": "Anwenden",
   "create": "Erstellen",
@@ -221,7 +282,7 @@
     "collapseAll": "Alle einklappen"
   },
   "settings": {
-    "title": "Einstellungen",
+    "title": "App-Einstellungen",
     "appearanceTab": "Darstellung",
     "planningTab": "Planung",
     "advancedTab": "Erweitert",
@@ -266,8 +327,8 @@
     "hourPlanningSection": "Stundenplanung",
     "enableHourPlanning": "Stundenplanung aktivieren",
     "enableHourPlanningHint": "Aktiviert Stunden-/Minuten-Scheduling: eine Stunden-Zeitskala, Schichten mit Arbeitszeitbändern und stundengenaue Vorgangsbalken. Aus ⇒ die App bleibt wie bisher vollständig tagesgenau.",
-    "showTaskTypes": "Arbeitsregeln und Arbeit anzeigen",
-    "showTaskTypesHint": "Dateien aus MS Project oder Primavera P6 zeigen dies immer. Aus: Dauer und Einheiten bleiben, die Arbeit rechnet mit.",
+    "showTaskTypes": "Vorgangsarten verwenden",
+    "showTaskTypesHint": "Wählen Sie pro Vorgang, was sich mitbewegt, wenn Dauer, Einheiten oder Arbeit sich ändern, wie Task Type in MS Project und Duration Type in P6. Aus: Dauer und Einheiten bleiben stehen. Eine Datei mit Vorgangsarten oder gespeicherter Arbeit zeigt sie auch, wenn diese Option aus ist.",
     "allowMixedDayHour": "Gemischte Tages-/Stundenplanung zulassen",
     "defaultTaskDurationUnit": "Standardeinheit für neue Vorgänge",
     "defaultTaskDurationUnitHint": "Legt fest, ob neue Vorgänge in Arbeitstagen oder Arbeitsstunden beginnen. Bestehende Vorgänge ändern sich nicht.",
@@ -328,6 +389,10 @@
     "dateNotationDmy": "TT-MM-JJJJ",
     "dateNotationMdy": "MM-TT-JJJJ",
     "dateNotationYmd": "JJJJ-MM-TT",
+    "timeNotation": "Uhrzeitformat",
+    "timeNotationHint": "Legt fest, wie Uhrzeiten angezeigt und eingegeben werden: im Kalenderfenster, bei Vorgängen in Stunden in der Tabelle, auf der Stundenskala der Gantt-Ansicht und in Meldungen. Dateien und Berechnungen bleiben unverändert (24-Stunden-Format).",
+    "timeNotation24h": "24 Stunden (13:00)",
+    "timeNotation12h": "12 Stunden (1:00 PM)",
     "fontFamilyLabel": "Schriftart",
     "fontScaleLabel": "Textgröße",
     "fontScaleHint": "Skaliert Text und Layout der Benutzeroberfläche.",
@@ -441,6 +506,8 @@
     "newProject": "Neues Projekt",
     "openExistingProject": "Bestehendes Projekt öffnen",
     "allProjects": "Alle Projekte",
+    "scrollTabsStart": "Registerkarten zum Anfang schieben",
+    "scrollTabsEnd": "Registerkarten zum Ende schieben",
     "active": "Aktiv",
     "tasksWord": "Vorgänge",
     "criticalWord": "kritisch",
@@ -452,19 +519,45 @@
   "feedback": {
     "buttonTooltip": "Feedback geben",
     "title": "Feedback geben",
-    "typeBug": "Fehler",
-    "typeFeature": "Funktionswunsch",
+    "typeBug": "Etwas funktioniert nicht",
+    "typeFeature": "Idee",
+    "typeGeneral": "Frage oder Bemerkung",
     "fieldTitle": "Titel",
+    "titlePlaceholder": "Z. B. kritischer Pfad verschiebt sich nach dem Speichern",
     "fieldDescription": "Beschreibung",
+    "descriptionPlaceholder": "Was haben Sie getan, was haben Sie erwartet und was ist passiert?",
     "attachScreenshot": "Screenshot anhängen",
+    "screenshotPreview": "Vorschau des Screenshots",
+    "retake": "Neu erstellen",
+    "removeScreenshot": "Entfernen",
     "capturing": "Screenshot wird erstellt…",
     "captureFailed": "Screenshot-Erstellung fehlgeschlagen. Sie können Feedback trotzdem ohne Screenshot senden.",
-    "submit": "An GitHub senden",
+    "submit": "Senden",
+    "sending": "Wird gesendet…",
+    "fieldEmail": "E-Mail-Adresse (optional, für eine Antwort)",
+    "emailInvalid": "Diese E-Mail-Adresse ist nicht gültig. Korrigieren Sie sie oder lassen Sie das Feld leer.",
+    "titleRequired": "Geben Sie einen Titel ein.",
+    "tooShort": "Schreiben Sie in Titel und Beschreibung zusammen mindestens 10 Zeichen.",
+    "privacy": "Ihre Meldung und der Screenshot gehen an Open Feedback Studio von OpenAEC und können als öffentliches Issue auf GitHub erscheinen. Geben Sie nichts ein, was Sie nicht teilen möchten.",
+    "sentWith": "Mitgesendet: v{{version}} · {{os}} · {{language}}",
+    "sentTitle": "Danke, Ihre Meldung wurde gesendet.",
+    "alreadyIn": "Diese Meldung ist bei uns bereits eingegangen. Möchten Sie etwas hinzufügen? Dann ändern Sie den Text und senden Sie ihn erneut.",
+    "sentScreenshotDropped": "Der Screenshot war zu groß und wurde nicht mitgesendet.",
+    "viewOnGithub": "Auf GitHub ansehen",
+    "errorValidation": "Die Meldung wurde nicht angenommen. Prüfen Sie den Text (nicht nur Links) und die E-Mail-Adresse und versuchen Sie es erneut.",
+    "errorRateLimited": "Sie haben in kurzer Zeit viele Meldungen gesendet. Versuchen Sie es in einer Stunde erneut.",
+    "errorFailed": "Das Senden ist fehlgeschlagen. Prüfen Sie Ihre Internetverbindung und versuchen Sie es erneut oder öffnen Sie die Meldung auf GitHub.",
+    "errorUncertain": "Wir wissen nicht sicher, ob Ihre Meldung angekommen ist. Warten Sie eine Minute und senden Sie sie dann erneut; falls sie schon da ist, sehen wir das automatisch.",
+    "fallbackGithub": "Auf GitHub öffnen",
     "cancel": "Abbrechen",
+    "clearDraft": "Leeren",
+    "clearDraftTitle": "Alle Felder und den Screenshot löschen",
     "close": "Schließen",
+    "saveAndClose": "Speichern und schließen",
     "tools": {
       "arrow": "Pfeil",
       "rectangle": "Rechteck",
+      "mask": "Abdecken",
       "pen": "Stift",
       "text": "Text",
       "color": "Farbe",
@@ -481,6 +574,7 @@
     "openGithub": "OK, zu GitHub",
     "annotate": "Anmerken",
     "editorDone": "Fertig",
+    "annotationSaveFailed": "Ihre Bearbeitungen konnten nicht gespeichert werden. Versuchen Sie es erneut. Ihr Screenshot wurde nicht geändert und wird aus diesem Editor nicht gesendet.",
     "rotateFeedback": "Feedback geben",
     "rotateBug": "Einen Fehler melden",
     "rotateFeature": "Neue Funktion vorschlagen"
@@ -746,7 +840,7 @@
       "projectEndUnchanged": "Projektende: unverändert ({{date}})",
       "projectEndChanged": "Projektende: {{before}} → {{after}}",
       "remainingConflicts": "Verbleibende Konflikte",
-      "remainingConflictsHint": "Diese Vorgänge passen nicht in ihren Puffer — oft weil eine Ressource an diesen Tagen nicht arbeitet oder nicht genug Kapazität hat.",
+      "remainingConflictsHint": "Für diese Vorgänge bestehen weiterhin Ressourcenkonflikte. Die Details finden Sie unten.",
       "intrinsicOverrun": "{{resource}} erreicht einen Spitzenwert von {{peak}} Einh./Tag, Kapazität ist {{capacity}} — durch Verschieben nicht lösbar.",
       "noChanges": "Keine Vorgänge müssen verschoben werden — der Terminplan ist bereits konfliktfrei.",
       "notCalculated": "Klicken Sie auf Berechnen, um einen Abgleichsvorschlag zu erstellen.",
@@ -827,7 +921,7 @@
       "cancel": "Abbrechen"
     },
     "regen": {
-      "hint": "Feiertage decken {{from}}–{{to}} ab; Projekt läuft bis {{year}}. Neu generieren?",
+      "hint": "Feiertage decken {{from}}–{{to}} ab; bis {{year}} neu generieren?",
       "button": "Neu generieren"
     },
     "countryName": {
@@ -862,7 +956,7 @@
       "decreaseBreakDuration": "Pausendauer um 15 Minuten verringern",
       "start": "Pausenbeginn",
       "duration": "Pausendauer (Minuten)",
-      "hint": "Arbeitszeitbänder werden automatisch abgeleitet. Dauer 0 bedeutet einen durchgehenden Arbeitstag.",
+      "hint": "Legen Sie einen Pausenbeginn und eine Pausendauer fest; der Standard-Arbeitstag und die Bänder werden automatisch abgeleitet. Setzen Sie die Dauer auf 0 für einen durchgehenden Arbeitstag.",
       "errors": {
         "invalidDuration": "Die Pausendauer muss eine ganze Minutenanzahl ab 0 sein.",
         "outsideWorkingDay": "Die Pause muss vollständig innerhalb des Arbeitstags liegen.",
@@ -886,9 +980,13 @@
       "copyToAll": "Auf alle Arbeitstage kopieren",
       "noBands": "Arbeitsfrei",
       "nextDay": "nächster Tag",
+      "bandStart": "Beginn des Bandes",
+      "bandEnd": "Ende des Bandes",
       "shiftPreset": "Schicht",
       "breakHint": "Eine Lücke zwischen zwei Bändern ist eine Pause – passen Sie die Zeiten nach Bedarf an."
-    }
+    },
+    "defaultConstructionName": "Baukalender NL",
+    "defaultStandardName": "Standardkalender"
   },
   "view": {
     "structureLockedHint": "Nicht verfügbar während des Filterns/Gruppierens/Sortierens",
@@ -1203,7 +1301,7 @@
   "progressImport": {
     "title": "Fortschritt aus einer Tabelle aktualisieren",
     "chooseFile": "Datei wählen…",
-    "intro": "Wählen Sie ein zurückgesandtes CSV-Blatt. Die App liest nur Fertigstellungsgrad, tatsächlichen Start und Ist-Ende — der Rest Ihrer Planung bleibt unverändert.",
+    "intro": "Wählen Sie ein zurückgesendetes CSV- oder XLSX-Blatt. Die App liest nur Fertigstellung, Ist-Anfang und Ist-Ende — der Rest Ihres Terminplans bleibt unverändert.",
     "summaryApplied": "Angewendet: {{applied}}",
     "summaryNoop": "Unverändert: {{noop}}",
     "summaryNeedsLink": "Wartet auf Verknüpfung: {{needsLink}}",
@@ -1269,7 +1367,7 @@
     },
     "p6ZeroDurationUsesPlannedBoundary": {
       "label": "Meilenstein folgt der geplanten Kalendergrenze",
-      "help": "Ein Meilenstein ohne Dauer bleibt auf der Kalendergrenze, die die Datei geplant hat: ein Tagesbeginn bleibt ein Startmeilenstein, ein Bandende darf auf dem Ende des Vorgängers landen."
+      "help": "Ein Meilenstein ohne Dauer bleibt an der Kalendergrenze, die die Datei geplant hat: ein Tagesbeginn bleibt ein Startmeilenstein, ein Bandende darf auf dem Ende des Vorgängers landen."
     },
     "p6UseTaskPlannedStartFloor": {
       "label": "Geplanter Start als zusätzliche Untergrenze",
@@ -1277,11 +1375,11 @@
     },
     "p6FinishMilestoneBoundaryWindow": {
       "label": "Endmeilenstein als Grenzfenster",
-      "help": "Ein Endmeilenstein darf auf zwei benachbarten Kalendergrenzen stehen: frühester Anfang am Beginn eines Bandes, frühes Ende am Ende des vorherigen Bandes."
+      "help": "Ein Endmeilenstein darf auf zwei angrenzenden Kalendergrenzen liegen: frühester Anfang am Beginn eines Bandes, frühestes Ende am Ende des vorherigen Bandes."
     },
     "p6PreserveActualInstants": {
       "label": "Istdaten exakt übernehmen",
-      "help": "Erfasste Ist-Start- und Ist-Endtermine werden nicht auf ein Arbeitszeitband verschoben."
+      "help": "Erfasste Ist-Anfangs- und Ist-Endtermine werden nicht an den Rand eines Bandes verschoben."
     },
     "p6UseRemainingStartForProgress": {
       "label": "Laufender Vorgang: frühester Anfang = Beginn der Restarbeit",
@@ -1289,7 +1387,7 @@
     },
     "p6PreserveZeroDurationConstraintInstants": {
       "label": "Exakter Einschränkungszeitpunkt auf einem Meilenstein",
-      "help": "Eine Datums-und-Uhrzeit-Einschränkung auf einem Meilenstein ohne Dauer ist ein exakter Punkt, auch am Beginn eines Arbeitsbandes."
+      "help": "Eine Datums-und-Uhrzeit-Einschränkung auf einem Meilenstein ohne Dauer ist ein exakter Punkt, auch am Beginn eines Bandes."
     },
     "resumeFromActualElapsed": {
       "label": "Restarbeit wird nach der verstrichenen Dauer fortgesetzt",
@@ -1301,23 +1399,23 @@
     },
     "p6RelationFinishBoundary": {
       "label": "Nachfolger beginnt an der Endgrenze",
-      "help": "Bei einer Ende-Anfang-Beziehung ohne Zeitabstand auf einer gemeinsamen Bandgrenze beginnt der Nachfolger am Ende des Vorgängers (nur Beziehungen, die die Datei so kennzeichnet). Bei der Rückwärtsrechnung zeigt der Nachfolger seinen spätesten Anfang einfach als Beginn eines Arbeitsbands."
+      "help": "Bei einer Ende-Anfang-Beziehung ohne Zeitabstand, bei der der Nachfolger in der Datei genau am Ende des Vorgängers beginnt, am Ende eines Bandes, beginnt der Nachfolger an diesem Ende und nicht am Beginn des nächsten Bandes. Die Datei markiert das nicht: Die App erkennt eine solche Beziehung selbst beim Öffnen einer .xer-Datei. Eine Beziehung, die Sie selbst anlegen, fällt nicht darunter. Bei der Rückwärtsrechnung zeigt der Nachfolger seinen spätesten Anfang einfach als Beginn eines Bandes."
     },
     "p6BackwardLagFinishBoundary": {
       "label": "Zeitabstand rückwärts ab einer Endgrenze",
-      "help": "Zieht die Rückwärtsrechnung einen Arbeitszeit-Zeitabstand von einer Endgrenze ab und landet genau auf einem Bandbeginn, landet sie auf der vorherigen Endgrenze. Auch bei einer Ende-Ende-Beziehung ohne Zeitabstand bleibt ein spätestes Ende auf einem Bandende diese Endgrenze."
+      "help": "Zieht die Rückwärtsrechnung einen Zeitabstand in Arbeitszeit von einer Endgrenze ab und landet sie genau am Beginn eines Bandes, landet sie auf der vorherigen Endgrenze. Auch bei einer Ende-Ende-Beziehung ohne Zeitabstand bleibt ein spätestes Ende an einem Bandende auf dieser Endgrenze."
     },
     "p6CompletedDataDateWindow": {
       "label": "Abgeschlossener Vorgang im Statusdatumsfenster",
-      "help": "Ein abgeschlossener Vorgang erhält frühe Termine im Fenster des Statusdatums, und sein Ende zählt für das Projektende (nur Vorgänge mit P6-Herkunft)."
+      "help": "Ein abgeschlossener Vorgang erhält frühe Termine im Statusdatumsfenster, und sein Ende zählt für das Projektende."
     },
     "p6CompletedLoeActualFinish": {
       "label": "Abgeschlossene LOE über das Ist-Ende",
-      "help": "Eine abgeschlossene Level-of-Effort-Aktivität mit nur einem Anfang-Anfang-Eingang folgt der Route über ihr Ist-Ende (nur Vorgänge mit P6-Herkunft)."
+      "help": "Ein abgeschlossener Level-of-Effort-Vorgang mit nur einem Anfang-Anfang-Eingang folgt der Route über sein Ist-Ende."
     },
     "p6OpenLoeTargetSpan": {
       "label": "Nicht begonnene LOE übernimmt das Zielfenster",
-      "help": "Eine noch nicht begonnene Level-of-Effort-Aktivität übernimmt ihr Zielfenster als Laufzeit (nur Vorgänge mit P6-Herkunft)."
+      "help": "Ein Level-of-Effort-Vorgang, der noch nicht begonnen hat, übernimmt sein Zielfenster als Laufzeit."
     },
     "p6CompletedPredecessorAtDataDate": {
       "label": "Abgeschlossener Vorgänger hält nicht über das Statusdatum hinaus",
@@ -1333,7 +1431,7 @@
     },
     "p6CompletedOutOfSequenceWindow": {
       "label": "Abgeschlossener Vorgang außerhalb der Reihenfolge wartet auf seine Vorgänger",
-      "help": "Ein abgeschlossener Vorgang, dessen Vorgänger noch nicht fertig ist, erhält sein Nullfenster nach diesem Vorgänger statt am Statusdatum (Retained Logic)."
+      "help": "Ein abgeschlossener Vorgang, dessen Vorgänger noch nicht fertig ist, erhält sein Nullfenster nach diesem Vorgänger statt am Statusdatum (P6: Retained Logic). Das wirkt nur, wenn auch „Abgeschlossener Vorgang im Statusdatumsfenster“ und „Laufender Vorgang: frühester Anfang = Beginn der Restarbeit“ eingeschaltet sind."
     },
     "p6CompletedPhysicalAtDataDate": {
       "label": "Abgeschlossener Vorgang mit physischem Fortschritt steht am Statusdatum",
@@ -1345,7 +1443,7 @@
     },
     "p6FinishFinishStartMilestoneLateFinish": {
       "label": "Ende-Ende-Beziehung zu einem Startmeilenstein bindet an den Meilenstein selbst",
-      "help": "Eine Ende-Ende-Beziehung zu einem Startmeilenstein zählt bis zum Meilenstein selbst, nicht bis zum Beginn seines Tages: das späteste Ende des Vorgängers darf bis zum spätesten Ende des Meilensteins reichen."
+      "help": "Eine Ende-Ende-Beziehung zu einem Startmeilenstein zählt bis zum Meilenstein selbst, nicht bis zum Beginn seines Tages: Der Vorgänger darf mit seinem spätesten Ende bis zum spätesten Ende des Meilensteins reichen."
     },
     "p6StartedTaskIgnoresPlannedStartFloor": {
       "label": "Geplanter Anfang ist keine Untergrenze für einen laufenden Vorgang",
@@ -1353,7 +1451,7 @@
     },
     "p6LateFinishOnOwnCalendar": {
       "label": "Spätestes Ende im eigenen Kalender",
-      "help": "Fällt das späteste Ende, das ein Nachfolger vorgibt, außerhalb der Arbeitszeit des Vorgangs, wird es zum Ende der vorherigen Arbeitsperiode im eigenen Kalender."
+      "help": "Fällt ein spätestes Ende, das ein Nachfolger vorgibt, außerhalb der Arbeitszeit des Vorgangs, wird es das Ende der vorherigen Arbeitsperiode im eigenen Kalender."
     },
     "p6ProgressOverrideIgnoresStartedSuccessor": {
       "label": "Progress Override ignoriert einen begonnenen Nachfolger auch rückwärts",
@@ -1361,11 +1459,11 @@
     },
     "p6FinishNotBeforeFinishFinishBound": {
       "label": "Frühestes Ende nicht vor einer Ende-Ende-Grenze",
-      "help": "Bei einer Ende-Ende-Beziehung liegt das frühe Ende des Nachfolgers in Uhrzeit nie vor der Grenze, die der Vorgänger setzt. Fällt diese Grenze in arbeitsfreie Zeit des Nachfolgers, wird das Ende der Beginn der nächsten Arbeitsperiode."
+      "help": "Bei einer Ende-Ende-Beziehung liegt das früheste Ende des Nachfolgers in Uhrzeit nie vor der Grenze, die der Vorgänger setzt. Fällt diese Grenze in die arbeitsfreie Zeit des Nachfolgers, wird das Ende zum Beginn der nächsten Arbeitsperiode."
     },
     "p6AlapPositionedFromSuccessors": {
       "label": "ALAP-Vorgänge so spät, wie die Nachfolger es zulassen",
-      "help": "Ein nicht begonnener Vorgang mit der Einschränkung 'so spät wie möglich' endet auf die Minute, zu der seine Nachfolger ihn brauchen, Nachfolger zuerst, sodass eine Kette lückenlos anschließt. Sein eigener geplanter Anfang zählt nicht; ein Vorgang ohne Vorgänger beginnt dann nicht vor dem Statusdatum. Gilt nur bei einem Stundenkalender."
+      "help": "Ein nicht begonnener Vorgang mit der Einschränkung „so spät wie möglich“ endet in der Minute, in der seine Nachfolger ihn brauchen, Nachfolger zuerst, damit eine Kette lückenlos anschließt. Sein eigener geplanter Anfang zählt nicht; ein Vorgang ohne Vorgänger beginnt dann nicht vor dem Statusdatum."
     }
   },
   "profiles": {
@@ -1380,13 +1478,22 @@
   "schedulingProfile": {
     "title": "Berechnungsprofil und Berechnungsoptionen",
     "profile": "Berechnungsprofil",
+    "newProfile": "Neues Profil",
+    "newProfileTitle": "Neues Berechnungsprofil",
+    "newProfileIntro": "Das neue Profil erhält alle Konventionen von „{{name}}“, auch die Abweichungen. Danach können Sie jede Konvention selbst ein- oder ausschalten. Das Projekt rechnet erst nach Anwenden mit dem neuen Profil.",
+    "newProfileName": "Name des neuen Profils",
+    "newProfileCreate": "Erstellen",
+    "bareBaseHint": "„{{name}}“ ist die reine Basis, ohne die Abweichungen dieses Projekts. Wenn Sie diese behalten möchten, wählen Sie „{{modified}}“.",
     "conventionsTitle": "Konventionen dieses Profils",
+    "builtInReadOnly": "{{name}} ist ein eingebautes Profil. Die Konventionen werden nur zur Information angezeigt und können nicht geändert werden. Für andere Konventionen wählen Sie {{button}}.",
+    "builtInDeviations": "Dieses Projekt stammt aus einer älteren Datei. Die orange markierten Konventionen weichen von der Basis von {{name}} ab und werden so berücksichtigt. Wenn Sie diese ändern möchten, wählen Sie {{button}}.",
     "optionsTitle": "Berechnungsoptionen dieses Projekts",
     "customName": "Name dieses eigenen Profils",
     "saveAsTemplate": "Als Vorlage speichern",
     "updateTemplate": "Vorlage aus diesem Projekt aktualisieren",
     "applyTemplate": "Aus Vorlage aktualisieren",
     "deleteTemplate": "Vorlage löschen",
+    "deleteTemplateConfirm": "Vorlage „{{name}}“ löschen? Projekte mit diesem Profil behalten ihre eigene Kopie.",
     "templateDeviates": "Dieses Profil weicht von der Vorlage „{{name}}“ ab.",
     "themes": {
       "completedWork": "Fortschritt und abgeschlossene Arbeit",
@@ -1397,12 +1504,13 @@
       "msproject": "Fortschritt wie in Microsoft Project",
       "ownProfilesOnly": "Nur für eigene Profile"
     },
-    "ownProfilesOnlyNote": "Diese Konventionen sind in jedem integrierten Profil aus, auch unter Primavera P6. Wenn Sie eine einschalten, wird daraus ein eigenes Profil.",
+    "ownProfilesOnlyNote": "Diese Konventionen sind in jedem integrierten Berechnungsprofil ausgeschaltet, auch unter Primavera P6. Nur ein eigenes Berechnungsprofil kann sie einschalten: Wählen Sie dafür „Neues Profil“.",
     "deviatingCount": "abweichend: {{n}}",
     "baseValue": "Basis: {{value}}",
     "on": "an",
     "off": "aus",
     "resetToBase": "zurück zur Basis",
+    "storeChangedUnderDraft": "Das Berechnungsprofil des Projekts hat sich inzwischen geändert, zum Beispiel durch Rückgängig. Darunter steht noch Ihre eigene Auswahl. Mit {{apply}} übernehmen Sie diese Auswahl wieder in das Projekt.",
     "showHelp": "Erläuterung zu „{{name}}“",
     "sourceOptions": {
       "title": "Einstellungen aus der Quelldatei",
@@ -1411,6 +1519,23 @@
       "useProjectEndDateForFloat": "Puffer bis zum Projektendtermin berechnen",
       "p6CompletedLateFromRemainingWindow": "Abgeschlossener Vorgang: späte Termine ab dem Statusdatum",
       "needsConvention": "Wirkt nur zusammen mit der Konvention „{{convention}}“, die derzeit aus ist."
+    },
+    "requires": {
+      "xerOrigin": "nur Vorgänge aus .xer",
+      "hourPlanning": "nur bei Stundenplanung",
+      "hourPlanningTitle": "Funktioniert nur bei Stundenplanung: ein Kalender mit Zeitbändern, ein Vorgang in Stunden oder der Kalender für den Zeitabstand auf 24 Stunden."
+    },
+    "optionsDeviate": {
+      "line": "{{field}}: {{current}} (Standard: {{standard}})",
+      "intro": "Diese Berechnungsoptionen weichen von der Standardeinstellung von {{name}} ab. Das ist oft absichtlich, zum Beispiel weil sie aus der geöffneten Datei stammen.",
+      "introNeutral": "Diese Berechnungsoptionen weichen von der Standardeinstellung von {{name}} ab. Das kann eine bewusste Entscheidung sein.",
+      "useDefaults": "Standardeinstellungen von {{name}} verwenden",
+      "totalFloatAtMost": "Gesamtpuffer ≤ {{amount}}",
+      "hours_one": "{{count}} Stunde",
+      "hours_other": "{{count}} Stunden",
+      "days_one": "{{count}} Arbeitstag",
+      "days_other": "{{count}} Arbeitstage",
+      "tfAuto": "Automatisch"
     }
   },
   "dialogHelp": {
@@ -1468,5 +1593,71 @@
     "saveHint": "Das Projekt wird als neue IFC-Datei auf der Website gespeichert. Danach speichert Speichern (Strg+S) dort eine neue Version.",
     "saveToSite": "Auf der Website speichern",
     "toThisPc": "Auf diesem Computer…"
+  },
+  "formatNotice": {
+    "title": "{{format}} geöffnet",
+    "readMore": "Mehr erfahren",
+    "dontShowAgain": "Für {{format}} nicht mehr anzeigen",
+    "close": "Verstanden",
+    "settingsSection": "Erklärung anzeigen nach dem Öffnen von",
+    "formats": {
+      "xer": {
+        "name": "Primavera-Datei (.xer)",
+        "kept": "Die App hat die PSP und die Vorgänge übernommen, mit Beziehungen, Kalendern, Ressourcen, Fortschritt, Aktivitätscodes und benutzerdefinierten Feldern. Ein Baseline-Projekt wird zur Baseline des Projekts, das darauf verweist.",
+        "limited": "Eine Beziehung zwischen zwei Projekten wird keine Beziehung in Ihrem Terminplan. Weicht die Berechnung ab, sehen Sie zuerst die Daten, wie Primavera sie gespeichert hat.",
+        "save": "Speichern schreibt eine neue IFC-Datei mit der ursprünglichen .xer darin. Zurückschreiben in .xer ist nicht möglich: Ihre .xer ändert sich nie."
+      },
+      "mpp": {
+        "name": "MS Project-Datei (.mpp)",
+        "kept": "Die App hat Vorgänge mit Struktur, Dauer und Einschränkungen übernommen, dazu Beziehungen, Kalender, Ressourcen, Zuweisungen und Fortschritt.",
+        "limited": "Baselines, Kosten und Tarife, Notizen und die benutzerdefinierten Felder von MS Project werden nicht übernommen. Weicht die Berechnung ab, sehen Sie zuerst die Daten, wie MS Project sie gespeichert hat.",
+        "save": "Speichern schreibt eine neue IFC-Datei: Ihre .mpp ändert sich nie. Zurückschreiben in .mpp ist nicht möglich. Export nach MS Project XML ist möglich."
+      },
+      "mspdi": {
+        "name": "MS Project XML",
+        "kept": "Die App hat Vorgänge mit Struktur übernommen, dazu Beziehungen, Einschränkungen, Kalender, Ressourcen, Zuweisungen, Fortschritt, das Statusdatum und Baseline 0.",
+        "limited": "Notizen, Aktivitätscodes und benutzerdefinierte Felder werden nicht übernommen. Das Projekt rechnet mit dem Profil Open Planner Studio, nicht als Microsoft Project.",
+        "save": "Speichern schreibt eine neue IFC-Datei: Ihre XML-Datei bleibt unverändert. Zurückschreiben ist möglich über Exportieren › MS Project XML."
+      },
+      "p6xml": {
+        "name": "Primavera P6 XML",
+        "kept": "Die App übernahm den PSP und die Vorgänge, mit Beziehungen, Einschränkungen, Kalendern, Ressourcen, Zuweisungen, Fortschritt und dem Statusdatum. Ein Baseline-Projekt wird zu einer Baseline des Projekts, zu dem es gehört.",
+        "limited": "Stichtage, Aktivitätscodes, benutzerdefinierte Felder und Notizen werden nicht übernommen. Das Projekt rechnet mit dem Profil Open Planner Studio, nicht als Primavera P6.",
+        "save": "Speichern schreibt eine neue IFC-Datei: Ihre XML-Datei bleibt unverändert. Zurückschreiben ist möglich über Exportieren › Primavera P6 XML."
+      },
+      "csv": {
+        "name": "CSV-Datei",
+        "kept": "Die App las pro Zeile einen Vorgang: Name, PSP-Code, Dauer, Datumsangaben, Vorgänger und Fortschritt.",
+        "limited": "Eine CSV-Datei enthält keine Ressourcen, Kalender, Einschränkungen, Stichtage oder Baselines. Das Projekt heißt CSV Import.",
+        "save": "Speichern schreibt eine neue IFC-Datei: Ihre CSV-Datei bleibt unverändert. Zurückschreiben ist möglich über Exportieren › CSV (semikolon-getrennt)."
+      }
+    }
+  },
+  "ifcSchemaQuestion": {
+    "title": "In welchem IFC-Schema speichern?",
+    "body": "Diese Datei wurde als {{schema}} gespeichert. Die App speichert standardmäßig als IFC 4.3 ADD2, das Schema von IfcOpenShell und Bonsai. Möchten Sie diese Datei als {{schema}} behalten? Sie können dies später in „Projektinformationen“ ändern.",
+    "bodyUnwritable": "Diese Datei wurde als {{schema}} gespeichert. Dieses Schema kann die App nicht schreiben. Wählen Sie das Schema, in dem die App es speichert. Sie können dies später in „Projektinformationen“ ändern.",
+    "keep": "{{schema}} behalten",
+    "toDefault": "Als IFC 4.3 ADD2 speichern"
+  },
+  "phaseAssignmentQuestion": {
+    "title": "Vorgang wird zum Sammelvorgang",
+    "intro_one": "„{{phase}}“ bekommt den Teilvorgang „{{child}}“ und wird zum Sammelvorgang.",
+    "intro_other": "„{{phase}}“ bekommt {{count}} Teilvorgänge und wird zum Sammelvorgang.",
+    "introMany_one": "Diese Aktion macht {{count}} Vorgang zum Sammelvorgang.",
+    "introMany_other": "Diese Aktion macht {{count}} Vorgänge zu Sammelvorgängen.",
+    "noOwnAssignments": "Ein Sammelvorgang hat keine eigenen Zuweisungen.",
+    "question_one": "Was möchten Sie mit der Zuweisung von {{resources}} tun?",
+    "question_other": "Was möchten Sie mit den Zuweisungen von {{resources}} tun?",
+    "questionMany": "Was möchten Sie mit ihren Zuweisungen tun?",
+    "row": "„{{phase}}“: {{resources}}",
+    "remove_one": "Zuweisung entfernen",
+    "remove_other": "Zuweisungen entfernen",
+    "moveTo": "Nach „{{child}}“ verschieben",
+    "moveToSubtasks": "Zu den Teilvorgängen verschieben",
+    "blockedDuplicate": "Verschieben ist nicht möglich: „{{child}}“ hat {{resources}} bereits.",
+    "blockedNoChild": "Verschieben ist nicht möglich: „{{phase}}“ bekommt keinen Teilvorgang, der eine Zuweisung tragen kann, nur Meilensteine oder Sammelvorgänge.",
+    "actualWorkLost_one": "Auf der Zuweisung von {{resource}} ist bereits {{hours}} Stunde Ist-Arbeit erfasst. Beim Entfernen geht diese Arbeit verloren.",
+    "actualWorkLost_other": "Auf der Zuweisung von {{resource}} sind bereits {{hours}} Stunden Ist-Arbeit erfasst. Beim Entfernen geht diese Arbeit verloren."
   }
 }
