@@ -278,17 +278,6 @@ en noem het in je rapport of PR-tekst.
     koppen in die talen, en de Help-artikelen die ze citeren mee. — B
 
 
-197. **De kalendersreferentie citeert nog de oude hergeneratiehint.**
-    `public/docs/{nl,en}/ref-kalenders.md:47` beschrijft *Feestdagen dekken …–…; project loopt tot ….
-    Opnieuw genereren?* / *Holidays cover …–…; project runs to …. Regenerate?*.
-    `src/components/dialogs/CalendarForm.tsx:777–780` gebruikt `common:calendar.regen.hint` met het doeljaar inclusief buffer;
-    de NL/EN-brontekst is *Feestdagen dekken {{from}}–{{to}}; opnieuw genereren tot en met {{year}}?* /
-    *Holidays cover {{from}}–{{to}}; regenerate through {{year}}?*
-    (`src/i18n/locales/{nl,en}/common.json:930`). De bestaande browserroute
-    `tests/browser/calendar-dialog.spec.ts` ("generatiehint noemt het doeljaar inclusief buffer")
-    verwacht die huidige tekst. Statisch gezien bij 182 op basis `5fd9174a3`, niet lokaal uitgevoerd
-    of in de app nagespeeld; alleen de oude gidsquote apart actualiseren. — S
-
 ## Tests
 
 79. **`check-task-grid-performance` (relationIndex-mediaan ≤ 500 ms) zit lokaal op het randje.** Los gedraaid
