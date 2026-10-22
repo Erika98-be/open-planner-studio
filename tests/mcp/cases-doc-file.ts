@@ -83,6 +83,12 @@ function installFakeFs(): void {
   const fs: McpFileFs = {
     homeDir: async () => HOME,
     exists: async (p) => files.has(p) || binFiles.has(p),
+    stat: async (p) => {
+      const paths = [...files.keys(), ...binFiles.keys()];
+      const index = paths.indexOf(p);
+      if (index < 0) throw `failed to get metadata of path: ${p} with error: No such file or directory (os error 2)`;
+      return { isFile: true, dev: 1, ino: index + 1 };
+    },
     writeTextFile: async (p, c) => { files.set(p, c); },
     readTextFile: async (p) => {
       const v = files.get(p);

@@ -42,11 +42,13 @@ import { bindExpectedDoc, buildEnvelope, guardNonTransactional, postAwaitGuards,
 import { guardBridgeFlags } from './documentTools';
 import type { McpContext, McpToolAnnotations, McpToolDef, McpToolResult } from '../contracts';
 import { writeUserTextFileTauri } from '@/services/fileAccess/atomicWrite';
+import { compareFilePaths, type FileIdentityFs } from '@/services/fileAccess/fileIdentity';
+import { saveTargetRef } from '@/services/fileAccess';
 
 // --- fs-naad -------------------------------------------------------------------------------------
 
 /** Minimale bestandssysteem-abstractie voor de twee bestands-tools. */
-export interface McpFileFs {
+export interface McpFileFs extends FileIdentityFs {
   /** Wortel van de toegestane scope (`$HOME`). */
   homeDir(): Promise<string>;
   exists(path: string): Promise<boolean>;
@@ -64,11 +66,12 @@ async function realFs(): Promise<McpFileFs> {
       'access. Use File → Open/Export there.',
     );
   }
-  const { exists, readTextFile, readFile, mkdir } = await import('@tauri-apps/plugin-fs');
+  const { exists, stat, readTextFile, readFile, mkdir } = await import('@tauri-apps/plugin-fs');
   const { homeDir } = await import('@tauri-apps/api/path');
   return {
     homeDir: () => homeDir(),
     exists: (p) => exists(p),
+    stat: (p) => stat(p),
     readTextFile: (p) => readTextFile(p),
     readFile: (p) => readFile(p),
     writeTextFile: async (p, content) => {
@@ -195,12 +198,20 @@ const IMPORT_ANNOTATIONS: McpToolAnnotations = {
  * zonder "houden"), dan zou een export over DAT bestand het stil IFC 4.3 ADD2 maken. Dat weigert de tool,
  * ook met `overwrite: true`; de gebruiker slaat het in de app op en kiest daar. Een ander pad mag.
  */
-function refuseSilentSchemaChange(ctx: McpContext, home: string, path: string): McpToolResult | null {
+async function refuseSilentSchemaChange(ctx: McpContext, fs: McpFileFs, path: string): Promise<McpToolResult | null> {
   const state = ctx.app.store.getState();
-  if (!ifcSchemaBlocksSilentWrite(state.project) || !state.filePath) return null;
-  const own = checkScope(home, state.filePath);
-  const key = (p: string) => (/^[A-Za-z]:/.test(p) ? p.toLowerCase() : p);
-  if (!own.ok || key(own.path) !== key(path)) return null;
+  // De echte fs is hierboven al Tauri-only. De expliciete true houdt de injecteerbare naad
+  // headless testbaar; site-/handle-doelen zijn ook dan geen lokale paden.
+  const own = saveTargetRef(state, true);
+  if (!ifcSchemaBlocksSilentWrite(state.project) || own?.kind !== 'path') return null;
+  const identity = await compareFilePaths(fs, path, own.path);
+  if (identity === 'different') return null;
+  if (identity === 'unknown') {
+    return toolError(ctx, 'VALIDATION',
+      `Could not establish that '${path}' is a different file from the document's own file. ` +
+      'File identity metadata is unavailable or could not be read. Export to a new file name, or ask ' +
+      'the user to save the document in the app and choose its IFC schema.');
+  }
   const fileSchema = ifcSchemaQuestionFor(state.project)?.fileSchema ?? '?';
   return toolError(
     ctx,
@@ -270,8 +281,6 @@ export const fileTools: McpToolDef[] = [
         const scope = checkScope(home, raw.path);
         if (!scope.ok) return toolError(ctx, 'SCOPE', scope.reason);
         path = scope.path;
-        const refused = refuseSilentSchemaChange(ctx, home, path);
-        if (refused) return refused;
         existed = await fs.exists(path);
         if (existed && !overwrite) {
           return toolError(
@@ -288,10 +297,21 @@ export const fileTools: McpToolDef[] = [
       // Na de fs-awaits opnieuw: de gebruiker kan intussen gepauzeerd, alleen-lezen gezet, een
       // dialoog geopend of van tabblad gewisseld hebben — dan zou hier een ander document of een
       // half-bewerkte staat weggeschreven worden.
-      const lateBlocked = postAwaitGuards(ctx) ?? guardNonTransactional(ctx)
-        ?? refuseSilentSchemaChange(ctx, home, path);
+      const lateBlocked = postAwaitGuards(ctx) ?? guardNonTransactional(ctx);
       if (lateBlocked) return lateBlocked;
+      const checked = ctx.app.store.getState();
+      const refused = await refuseSilentSchemaChange(ctx, fs, path);
+      // Identiteit opvragen is ook async: pauze, dialoog en documentdrift winnen nog steeds.
+      const identityBlocked = postAwaitGuards(ctx) ?? guardNonTransactional(ctx);
+      if (identityBlocked) return identityBlocked;
       const state = ctx.app.store.getState();
+      if (state.filePath !== checked.filePath || state.fileHandle !== checked.fileHandle
+        || state.siteFileId !== checked.siteFileId
+        || projectIfcSchema(state.project) !== projectIfcSchema(checked.project)
+        || state.project.ifcSchemaUnconfirmed !== checked.project.ifcSchemaUnconfirmed) {
+        return toolError(ctx, 'VALIDATION', 'The document save target or IFC schema changed during the file identity check. Retry the export.');
+      }
+      if (refused) return refused;
       // Gedeelde state→writer-invoer (dezelfde bron als opslaan/auto-save), zodat deze route nooit
       // stil velden kan laten vallen. Een export: zonder een open schemavraag die niet bij de kop past.
       const input = buildExportIFCInput(state);
