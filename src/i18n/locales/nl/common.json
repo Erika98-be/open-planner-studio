@@ -696,6 +696,7 @@
     "companies": "Resourcebibliotheken",
     "addCompany": "Resourcebibliotheek toevoegen",
     "newCompany": "Nieuwe resourcebibliotheek",
+    "defaultCompany": "Mijn resourcebibliotheek",
     "companyName": "Bibliotheeknaam",
     "removeCompany": "Resourcebibliotheek verwijderen",
     "cannotRemoveLast": "De laatste resourcebibliotheek kan niet worden verwijderd.",

@@ -696,6 +696,7 @@
     "companies": "Resource libraries",
     "addCompany": "Add resource library",
     "newCompany": "New resource library",
+    "defaultCompany": "My resource library",
     "companyName": "Library name",
     "removeCompany": "Remove resource library",
     "cannotRemoveLast": "The last resource library cannot be removed.",
