@@ -13,7 +13,8 @@
 //  2. OVERSCHRIJVEN. `export_ifc` weigert een bestaand bestand zonder expliciete `overwrite: true`.
 //     Die controle is NIET atomair (check-dan-schrijf): tussen `exists` en
 //     `writeTextFile` kan een ander proces het bestand aanmaken. Acceptabel voor deze
-//     single-user-desktopcontext; er is geen exclusief-aanmaken-primitief in plugin-fs.
+//     single-user-desktopcontext; de exclusieve aanmaak in atomicWrite beschermt alleen het
+//     eigen halffabricaat. De uiteindelijke doelnaam is daarmee niet vergrendeld.
 //  3. GEEN USER-DIALOOG. Bewust geaccepteerd: het pad komt uit de AI-args in plaats
 //     van uit een bestandskiezer — de instemming verschuift naar de opt-in van de bridge zelf. Het
 //     resultaat is altijd zichtbaar (import = een tabblad, export = een gemeld pad).

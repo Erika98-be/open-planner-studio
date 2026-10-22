@@ -256,15 +256,6 @@ en noem het in je rapport of PR-tekst.
     kenmerk alleen-lezen, dan faalt opslaan wel netjes (zelfde check, §1 en §2). Voorstel: bij een doel zonder
     schrijfbit eerst vragen of melden. Een besluit voor de eigenaar. — B
 
-188. **Desktop: een vooraf geplaatste link op het tijdelijke opslagpad kan een ander bestand overschrijven (P2).**
-    Gemeld in de onafhankelijke review van [PR #519](https://github.com/OpenAEC-Foundation/open-planner-studio/pull/519),
-    ook aanwezig op de basis: `src/services/fileAccess/atomicWrite.ts:110-116` schrijft zonder exclusieve
-    aanmaak naar `${target}.ops-save.tmp`. Statische repro van de reviewer: open `bron.ifc` met IFC2X3,
-    laat `kopie.ifc` ontbreken en plaats vooraf `kopie.ifc.ops-save.tmp` als symlink naar `bron.ifc`.
-    Export naar de nieuwe naam wordt geaccepteerd; de tijdelijke write kan dan de bron overschrijven,
-    zonder race. Niet lokaal uitgevoerd; geen OS-bevestiging. Voorstel: exclusieve aanmaak van een eigen
-    tijdelijk bestand, zonder bestaande tijdelijke bestanden of links te volgen, overschrijven of verwijderen. — S
-
 ## Rondleiding, Help en extensie-gidsen
 
 62. **Melding schuift over de knoppen van het begeleidingspaneel** (1600×950, venster Baselines open):

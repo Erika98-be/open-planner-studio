@@ -129,6 +129,16 @@ function fakeFs(initial: Record<string, Entry>, roDirs: string[], windows: boole
       if (!e) throw `No such file or directory (os error 2)`;
       return { isSymlink: false, nlink: 1, mode: 0o100000 | (e.readonly ? 0o444 : 0o644) };
     },
+    createNew: async (p, mode) => {
+      if (files.has(p)) throw 'File exists (os error 17)';
+      if (roDirs.includes(dirOf(p))) throw denied(p);
+      const entry: Entry = { data: '', readonly: mode !== undefined && (mode & 0o222) === 0 };
+      files.set(p, entry);
+      return {
+        write: async data => { entry.data = data; },
+        close: async () => {},
+      };
+    },
     write: async (p, data, mode) => {
       const prev = files.get(p);
       if (prev?.readonly || (!prev && roDirs.includes(dirOf(p)))) throw denied(p);
@@ -158,7 +168,7 @@ function fakeFs(initial: Record<string, Entry>, roDirs: string[], windows: boole
     const err = await replaceUserFile(fs, P, 'NIEUW').then(() => null, (e: unknown) => e);
     truthy(`1a ${naam}: de weigering komt als fout terug`, /Permission denied|Access is denied/.test(String(err)));
     eq(`1b ${naam}: het doel heeft nog de complete oude inhoud`, files.get(P)?.data, OUD);
-    eq(`1c ${naam}: geen halffabricaat achtergebleven`, files.has(P + USER_FILE_TMP_SUFFIX), false);
+    eq(`1c ${naam}: geen halffabricaat achtergebleven`, [...files.keys()].some(p => p.endsWith(USER_FILE_TMP_SUFFIX)), false);
   }
 }
 
@@ -174,6 +184,13 @@ function fakeFs(initial: Record<string, Entry>, roDirs: string[], windows: boole
       lstat: async (p) => {
         const st = nodeFs.lstatSync(p);
         return { isSymlink: st.isSymbolicLink(), nlink: st.nlink, mode: st.mode };
+      },
+      createNew: async (p, mode) => {
+        const fd = nodeFs.openSync(p, 'wx', mode);
+        return {
+          write: async data => { nodeFs.writeFileSync(fd, data); },
+          close: async () => { nodeFs.closeSync(fd); },
+        };
       },
       write: async (p, data, mode) => { nodeFs.writeFileSync(p, data, mode === undefined ? {} : { mode }); },
       rename: async (a, b) => { nodeFs.renameSync(a, b); },
@@ -220,6 +237,8 @@ const tauri = {
   windows: false,
   dialogAnswer: null as string | null,
   calls: [] as string[],
+  handles: new Map<number, Entry>(),
+  nextRid: 1,
 };
 const dirOf = (p: string) => p.slice(0, p.lastIndexOf('/'));
 const deniedText = (p: string) => (tauri.windows
@@ -239,6 +258,29 @@ function installTauri() {
             birthtime: null, readonly: e.readonly, fileAttributes: null, dev: 1, ino: 1,
             mode: 0o100000 | (e.readonly ? 0o444 : 0o644), nlink: 1, uid: 1000, gid: 1000, rdev: 0, blksize: 4096, blocks: 1,
           };
+        }
+        case 'plugin:fs|open': {
+          const p = String(args.path);
+          const o = args.options as { createNew?: boolean; write?: boolean; mode?: number };
+          if (!o.createNew || !o.write) throw 'exclusieve aanmaak verwacht';
+          if (tauri.files.has(p)) throw 'File exists (os error 17)';
+          if (tauri.roDirs.includes(dirOf(p))) throw deniedText(p);
+          const entry: Entry = { data: '', readonly: o.mode !== undefined && (o.mode & 0o222) === 0 };
+          tauri.files.set(p, entry);
+          const rid = tauri.nextRid++;
+          tauri.handles.set(rid, entry);
+          return rid;
+        }
+        case 'plugin:fs|write': {
+          const entry = tauri.handles.get(Number(args.rid));
+          if (!entry) throw 'onbekende handle';
+          const bytes = args.data as Uint8Array;
+          entry.data += new TextDecoder().decode(bytes);
+          return bytes.length;
+        }
+        case 'plugin:resources|close': {
+          if (!tauri.handles.delete(Number(args.rid))) throw 'onbekende handle';
+          return null;
         }
         case 'plugin:fs|write_text_file': {
           const p = decodeURIComponent(options?.headers?.path ?? '');
@@ -288,7 +330,8 @@ const uninstallTauri = () => { delete win.__TAURI_INTERNALS__; };
   truthy('2-controle het bestand heeft de nieuwe IFC-inhoud', tauri.files.get(RW)!.data.includes('Fundering'));
   eq('2-controle geen saveFailed', S().ui.notifications.filter((n) => n.messageKey === 'notifications.saveFailed').length, 0);
   truthy('2-controle de route liep via plugin-fs (halffabricaat + rename)',
-    tauri.calls.includes('plugin:fs|write_text_file') && tauri.calls.includes('plugin:fs|rename'));
+    tauri.calls.includes('plugin:fs|open') && tauri.calls.includes('plugin:fs|write')
+      && tauri.calls.includes('plugin:resources|close') && tauri.calls.includes('plugin:fs|rename'));
 
   for (const windows of [false, true]) {
     const naam = windows ? 'Windows-kenmerk' : 'Unix-rechten';
@@ -305,7 +348,7 @@ const uninstallTauri = () => { delete win.__TAURI_INTERNALS__; };
     await eistMislukt(`2a Tauri Opslaan, ${naam}`, () => S().saveFile(), {
       target: () => tauri.files.get(RO)?.data, targetBefore: OUD, detail: /Permission denied|Access is denied/,
     });
-    eq(`2a Tauri Opslaan, ${naam}: geen halffabricaat`, tauri.files.has(RO + USER_FILE_TMP_SUFFIX), false);
+    eq(`2a Tauri Opslaan, ${naam}: geen halffabricaat`, [...tauri.files.keys()].some(p => p.startsWith(RO) && p.endsWith(USER_FILE_TMP_SUFFIX)), false);
     eq(`2a Tauri Opslaan, ${naam}: geen automatische terugvalkiezer`, tauri.calls.includes('plugin:dialog|save'), false);
 
     // 2b Opslaan als: de gebruiker kiest in de dialoog het alleen-lezen bestand.
