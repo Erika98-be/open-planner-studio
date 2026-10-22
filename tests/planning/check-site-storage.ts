@@ -633,8 +633,19 @@ const sameOriginParent = (extra: AnyRecord = {}): AnyRecord => ({ addEventListen
   // `not-found` haalt hem weg (ook met melding).
   S().newDocument();
   const recentP1 = () => S().recentFiles.find((e) => e.ref.kind === 'site' && e.ref.id === 'p1');
+  // Knownbug 95 is verouderd: de site is de bron voor de actuele naam, niet de bewaarde MRU-naam.
+  const oldName = recentP1()!.name;
+  const renamed = 'Hernoemd op de site.ifc';
+  site.files.get('p1')!.name = renamed;
+  eq('G13 voorwaarde: Recent kent nog de oude naam', recentP1()!.name, oldName);
+  truthy('G13 voorwaarde: de sitenaam is echt anders', oldName !== renamed);
   await S().openRecentFile(recentP1()!.id);
   eq('G13 heropenen uit Recent ⇒ site-doel en basis', [S().siteFileId, S().siteFileVersion], ['p1', site.latest(site.files.get('p1')!).version]);
+  eq('G13 actuele sitenaam wordt opslagnaam', S().filePath, renamed);
+  eq('G13 Recent krijgt de nieuwe naam', recentP1()!.name, renamed);
+  eq('G13 hernoemen maakt geen dubbele recent-entry', S().recentFiles.filter(e => e.ref.kind === 'site' && e.ref.id === 'p1').length, 1);
+  eq('G13 eerder opgeslagen bestandinhoud blijft dezelfde', S().tasks.map(t => t.name), ['Fundering', 'Ruwbouw']);
+  eq('G13 documenttitel gebruikt de nieuwe naam', S().getOpenDocuments().find(d => d.isActive)?.title, 'Hernoemd op de site');
   const flaky = memorySite({ openFail: 'Netwerkfout: geen verbinding' });
   setHost({ storage: flaky.storage });
   await S().openRecentFile(recentP1()!.id);

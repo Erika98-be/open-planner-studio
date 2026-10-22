@@ -132,7 +132,7 @@
   "barColorMode_auto": "Pr. opgave — automatisk",
   "barColorMode_category": "Efter kategori",
   "barColorFieldLabel": "Kategorifelt",
-  "barColorMissingField": "Dette felt findes ikke i dette projekt. Opgavetype bruges midlertidigt.",
+  "barColorMissingField": "Dette felt findes ikke i dette projekt. Arbejdskategori bruges midlertidigt.",
   "statusLineLabel": "Statuslinje:",
   "statusLine_none": "Ingen",
   "statusLine_statusDate": "Statusdatolinje",
