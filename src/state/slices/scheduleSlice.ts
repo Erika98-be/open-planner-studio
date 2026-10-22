@@ -24,7 +24,7 @@ import { isLeafTask } from '@/utils/taskHierarchy';
 function sameTaskTime(a: TaskTime, b: TaskTime): boolean {
   const keys = Object.keys(a) as (keyof TaskTime)[];
   return keys.length === Object.keys(b).length && keys.every(key =>
-    Object.hasOwn(b, key) && (a[key] === b[key] || Object.is(a[key], b[key])));
+    Object.prototype.hasOwnProperty.call(b, key) && (a[key] === b[key] || Object.is(a[key], b[key])));
 }
 
 export interface ScheduleSlice {
