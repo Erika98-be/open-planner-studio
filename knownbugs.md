@@ -244,8 +244,6 @@ en noem het in je rapport of PR-tekst.
 128. **CSV: een datum in een onleesbare vorm wordt stil "vandaag".** `csvDateOrToday` valt terug op
     `localTodayIso()` (`importDates.ts:71-74`, gebruikt door `csvReader.ts:135`). De Help noemt alleen de drie
     geldige vormen. Of er elders een melding voor komt, is niet nagegaan. Niet nagespeeld. — S
-157. **`.mpp`: een gedeelde lange aantekening wordt per verwijzing opnieuw verwerkt.** 1.000 taken × 64 KiB
-    kost ongeveer 1,4 s. VERVOLG 8 van #392 (meting van de reviewer). Voorstel: cache per gedeeld datablok. — S
 162. **Desktop (Linux/macOS): Opslaan overschrijft een alleen-lezen projectbestand als de map schrijfbaar
     is.** `replaceUserFile` (`atomicWrite.ts`) schrijft een halffabricaat met de rechten van het origineel
     (0444) en hernoemt het over het doel; op POSIX mag dat. Het bestand krijgt de nieuwe inhoud en blijft
