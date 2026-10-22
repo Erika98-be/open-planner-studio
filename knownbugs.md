@@ -303,13 +303,6 @@ en noem het in je rapport of PR-tekst.
 
 ## Tests
 
-175. **De optionele MPP-corpuscheck behandelt bewust geweigerde oude formaten als leesfout.**
-    `check-mpp-relations.ts`, onderdeel `T7-crawl`, verwacht geen leesfouten over 658 lokale
-    corpusbestanden, maar `readMPP` weigert MPP9/MPP12 expliciet (bijvoorbeeld
-    `taskFlags-mpp9Project2013.mpp`). Gezien tijdens de afgebroken volledige planningsrun voor
-    de IFC-performancewijziging op 22-10-2026; dit pad raakt de IFC-reader niet. Voorstel: laat
-    de corpusverwachting onderscheid maken tussen ondersteunde en bewust geweigerde versies. — B
-
 79. **`check-task-grid-performance` (relationIndex-mediaan ≤ 500 ms) zit lokaal op het randje.** Los gedraaid
     496–499 ms (5-10-2026); rood (535–790 ms) in `npm run verify` zodra de container druk is (meerdere agents
     tegelijk). In CI steeds groen. De grens meet de machine mee. Voorstel: grens relatief aan een
@@ -365,17 +358,6 @@ en noem het in je rapport of PR-tekst.
     op `repository.pullRequest.projectCards`. De body is wel bijgewerkt via
     `gh api --method PATCH repos/OpenAEC-Foundation/open-planner-studio/pulls/479 -F body=@<bestand>`.
     Voorstel: de GitHub CLI op de host bijwerken; de repo zelf is niet aangepast hiervoor. — B
-
-181. **`OPS_MPP_CRAWL` kiest twee verschillende corpusscopes in `check-mpp-import.ts`.** F4 (rond
-    regel 4024) gebruikt standaard de hele `testdata-crawl`-root en pint samen met `OPS_MPP_CORPUS`
-    216 bestanden / 3413 taken; T9 (rond regel 5968) gebruikt standaard de submap
-    `testdata-crawl/crawl-mpp` met een basislijn van 49 bestanden / 788 taken. Beide lezen dezelfde
-    omgevingsvariabele, dus één ingestelde root kan niet beide scopes correct kiezen. Vóór het verbod
-    op lokale Node-processen gemeld: met de hele root 449 mpp-import-mismatches, met de `crawl-mpp`-scope
-    7 F4-tellingfouten. Er is geen vergelijking met een schone baseline gedaan; deze aantallen bewijzen
-    geen gevolg van een codewijziging. Voorstel: de scopes afzonderlijk instelbaar maken of de submap
-    eenduidig van de root afleiden. Niet opgelost in de fix van 119.
-    — B (scopemismatch in de code), S (gemelde gevolgen, geen schone baselinevergelijking)
 
 ## Wensen en open taken (geen bug)
 
