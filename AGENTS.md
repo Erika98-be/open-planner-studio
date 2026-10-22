@@ -188,6 +188,11 @@ bridge tests against the real Rust bridge). Docs: `docs/release-verificatie.md`,
   `workdayAxis.ts`); interaction in `src/components/canvas/hooks/`. Change visual Gantt behaviour in the
   renderer, not in components.
 - **Notifications go through one channel** from the store — no `alert()` or ad-hoc toasts.
+- **Tailwind sources.** `src/styles/globals.css` disables automatic detection with `source(none)` and
+  registers only `src/` and `index.html` via `@source` (paths relative to that stylesheet). This includes
+  extension UI and HTML strings in `src/`; imported component CSS and fonts still build normally.
+  Add an explicit source there if runtime utility classes move outside these paths; scripts, tests and
+  docs must not generate app utilities. The legacy `tailwind.config.js` is not loaded by the v4 build.
 - **Text:** always via `t(...)`, never hard-coded; a PR needs `nl` + `en`, a release all 28 locales
   (translation pipeline, `verify:translations`). Text sizes only via the six roles
   (`text-caption`…`text-title`); `text-xs`/`text-sm` no longer exist and silently do nothing.
