@@ -6,6 +6,8 @@ Goal: know whether you have the latest version, update the app and read what is 
 
 A new version of Open Planner Studio comes out regularly. You want to know whether you already have it, for example before you report an error or because an extension asks for a newer version. Or you have just updated and want to see what has changed.
 
+New releases use `YYYY.W.N`: ISO week-year, ISO week number without a leading zero and a sequence starting at 0. For example, `2026.43.0` and `2026.43.1` are consecutive releases in the same week. At New Year the ISO week-year applies: 1 January 2027 still belongs to `2026.53`, while 4 January starts `2027.1`. Older releases use a month number in the middle segment.
+
 Updating only works in the desktop app. The browser version has no updater.
 
 ## Steps

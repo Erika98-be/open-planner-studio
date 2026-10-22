@@ -392,7 +392,6 @@ en noem het in je rapport of PR-tekst.
     Primavera P6. — B
 42. **Helpteksten van enkele conventies** noemen hun voorwaarden niet (alleen urenkalender, alleen
     `.xer`-herkomst). — B
-56. **nl-label "Orientatie:"** in de rapportopties mist het trema. — S
 57. **Statusdatum-label in de Gantt** toont ISO (`2027-06-28`), de rest dd-mm-jjjj. Mogelijk bewust. — S
 73. **Namen en beschrijvingen van de voorbeeldprojecten zijn Engels in elke interfacetaal.** Gezien in de
     nl-interface bij *Bestand › Voorbeelden*; de Help-artikelen noemen daarom de Engelse namen. Niet
@@ -506,3 +505,9 @@ en noem het in je rapport of PR-tekst.
     vader, punt 1. — B
 133. **Het venster *Werkelijke start opgeven* heeft geen ?-knop** (`ActualStartDialog.tsx:82`,
     `DialogHeader` zonder `help`). Het doel zou `howto-voortgang-bijwerken` zijn. — B
+
+174. **De handmatige release-invoer begint met een verouderde voorbeeldtag.**
+    `.github/workflows/release.yml:12` stelt een tag van vóór het huidige versieschema voor.
+    De versiecontrole wijst die invoer af; de standaardwaarde is dus niet bruikbaar. Gezien bij
+    de versie-audit voor #450. Voorstel: verwijder de standaardwaarde en laat de gebruiker een
+    correcte tag invullen. Geen workflow gestart. — B (bestand en lokale versiecontrole)

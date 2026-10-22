@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Open Planner Studio headless API
-  version: 1.0.0
+  version: 2026.10.0
   summary: Calculate an IFC construction schedule the same way the Open Planner Studio app does.
   description: |
     The API wraps the headless core `@openaec/open-planner-core`. Send an IFC file (IFC 4.3 or IFC4,
@@ -231,7 +231,7 @@ components:
           const: ok
         version:
           type: string
-          description: Version of the core package (equal to the app version, CalVer).
+          description: Version of the core package (equal to the app version, ISO week-based JJJJ.W.N).
           examples: ['2026.9.0']
         limits:
           type: object

@@ -6,6 +6,8 @@ Doel: weten of je de nieuwste versie hebt, de app bijwerken en lezen wat er in e
 
 Er komt regelmatig een nieuwe versie van Open Planner Studio uit. Je wilt weten of je die al hebt, bijvoorbeeld voordat je een fout meldt of omdat een extensie een nieuwere versie vraagt. Of je bent net bijgewerkt en wilt zien wat er veranderd is.
 
+Nieuwe releases gebruiken `JJJJ.W.N`: ISO-weekjaar, ISO-weeknummer zonder voorloopnul en een volgnummer vanaf 0. Zo volgen `2026.43.0` en `2026.43.1` elkaar in dezelfde week op. Rond nieuwjaar telt het ISO-weekjaar: 1 januari 2027 valt nog in `2026.53`, 4 januari begint `2027.1`. Oudere releases gebruiken een maandnummer in het middelste deel.
+
 Bijwerken werkt alleen in de desktop-app. De browserversie kent geen updater.
 
 ## Stappen
