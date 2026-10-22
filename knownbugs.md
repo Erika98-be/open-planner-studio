@@ -410,9 +410,6 @@ en noem het in je rapport of PR-tekst.
 130. **De omschrijving van het voorbeeld *Refurbishment & Extension of a Family Home*** belooft een conflict
     dat "'Distribute' can resolve" (`public/examples/manifest.json:7`, getoond in `Backstage.tsx`). Er is geen
     Verdelen-knop; alleen de kern bestaat (`distributeUnits`, `ResourceLoad.ts`). — B
-131. **Engelse titel van het venster na een update is "You're up to date!"** (`en/common.json`
-    `updates.justUpdated.title`). De Nederlandse is "Je bent bijgewerkt!". In het Engels leest dat als "geen
-    update nodig". Voorstel: "You've been updated!". — B
 170. **Vertaalstraat: een nieuw concept zonder doelterm valt niet op.** Na #376 stond `work-category`
     (werksoort) in `i18n/termbase/concepts.json`, maar in geen enkele `<taal>.json`. `validate-termbase` en
     `verify:translations` bleven groen. De straat hield toen de oude taaktype-term aan (bijv. de: `Neue Vorgangsart`),

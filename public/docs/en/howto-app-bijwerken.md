@@ -30,7 +30,7 @@ In the browser this button does nothing special: the window immediately says *Yo
 
 ### Read what is new
 
-1. If you start the desktop app for the first time in a different version than last time, a window opens by itself. In English it is called *You're up to date!* After a fresh installation it does not open: the first start is not an update. If you still want to see it, use the button *What's new* (see below).
+1. If you start the desktop app for the first time in a different version than last time, a window opens by itself. In English it is called *You've been updated!* After a fresh installation it does not open: the first start is not an update. If you still want to see it, use the button *What's new* (see below).
 2. At the top is the jump from the previous to the new version. With the button *What's new* only the new version is shown.
 3. If the app has a summary built in for this version, you see one main point and four smaller points. The main point may have a button *Read the guide*. Otherwise you only see the version jump and what is below.
 4. With *See full release notes* you open the changelog on GitHub. If that does not work, it says *The release notes could not be opened.*
