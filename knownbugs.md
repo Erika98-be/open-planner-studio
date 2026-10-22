@@ -332,11 +332,6 @@ en noem het in je rapport of PR-tekst.
    bleven ook shards van andere branches en van `main` lang `in_progress`. Dat wijst eerder op de runners
    dan op een test. — S
 
-168. **Een IFC met een heel diepe WBS (6.000 niveaus) laat het openen vastlopen op een `RangeError`
-   (Maximum call stack size exceeded).** Gezien via de headless kern: `openAsDocument` gooit die fout op
-   een gegenereerd bestand met 6.000 geneste taken (`tests/planning/check-headless-core.ts` §4g). De kern
-   vangt hem nu af als `PlannerCoreError` (`IFC_READ_FAILED`); de recursie zelf is niet opgelost. In de
-   app zelf niet nagespeeld. Gemeld in de review van PR #440. — B
 169. **`tests/browser/document-switch.spec.ts:75` (Gantt documenttabs herstellen beide paneviews en
    DOM-scrollbars) faalt soms in CI.** In de opbouw (`configureDocument`, regel 41) zet de test
    `setScroll(…, 190)` en leest daarna `scrollY: 0` terug. Gezien één keer in CI op PR #439
