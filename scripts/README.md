@@ -81,6 +81,16 @@ Bestandskolommen (CSV, voortgangsblad) staan in de bron als inline code; inline 
 anders toont, staat per artikel onder `display` in `i18n/docs-literal.json`. `docs-budget <taal…>` meet
 het grootste pakket (tekens en geschatte tokens).
 
+**Termbasecontract.** `validate-termbase` faalt bij elk ontbrekend term-concept in elke doeltaal
+uit `src/i18n/locales.ts` behalve `nl` en `en`, ook als het hele taalbestand ontbreekt. `nl` en `en`
+staan al in `concepts.json`; `token` en `keep` vereisen geen doelterm. Elke aanwezige regel moet aan
+het bestaande schema voldoen (term, vormen met gedeelde stam, bron, status en geen avoid-conflict).
+Een term met alleen witruimte of onzichtbare Unicode-opmaak geldt als leeg; zulke opmaak ín een
+inhoudelijke term blijft geldig. Iedere fout noemt taal en concept-id. `status --strict` en daarmee
+`verify:translations` voeren deze controle ook uit, vóór de controle op UI-vertalingen. Een nieuw
+term-concept vereist dus doeltermen in alle doeltalen; gedeeltelijke werkpakketten mogen tijdens de
+voorbereiding nog onvolledig zijn, de geregistreerde termbase niet.
+
 **Termbase veranderd?** `prepare ui <taal> --avoid` vindt precies de vertalingen waarin een `avoid`-variant
 van een term staat (zelfde regel als de zachte poort: eerst de vormen van de term wegstrepen,
 hoofdletterongevoelig). Zet de oude term als `avoid` in `i18n/termbase/<taal>.json`; het pakket krijgt
