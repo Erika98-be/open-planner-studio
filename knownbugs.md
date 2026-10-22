@@ -272,12 +272,6 @@ en noem het in je rapport of PR-tekst.
     `verify:translations` bleven groen. De straat hield toen de oude taaktype-term aan (bijv. de: `Neue Vorgangsart`),
     en de labelpoort dwong die oude tekst af. In de release-ronde van 2026-10-21 hersteld (termen +
     `--keys`-ronde). Voorstel: `validate-termbase` rood bij een concept zonder term in een taal. — B
-171. **Meldingen met naam óf aantal verliezen de naam in talen met één meervoudsvorm.** `common.json`
-    `notifications.milestoneRefusedAssignments_one`/`_other` (en `milestoneRefusedSummary`, `milestoneClearedOnPhase`)
-    wisselen tussen "'{{task}}' heeft …" en "{{count}} taken hebben …". zh, ja, ko en lo kennen alleen `other`, dus
-    bij één taak tonen ze "1 个任务…" zonder naam. De Help-labelpoort eist dan in `ref-meldingen` die `other`-vorm,
-    terwijl het bronartikel de vorm met naam citeert: het artikel blijft rood in zh, ko en lo (ronde 2026-10-21).
-    Voorstel: twee sleutels (met naam, met aantal) in plaats van een meervoud. — B
 172. **Vertaalstraat: de korte uureenheid werd in ar en fa vertaald, tegen het besluit "10h".** `menu.json`
     `…hoursValue` werd in de ronde van 2026-10-21 `{{hours}}س`. De test
     `tests/browser/calendar-file-hours-notice.spec.ts:266` eist in ar/fa "10h" (besluit eigenaar 2026-10-20: geen
@@ -307,6 +301,14 @@ en noem het in je rapport of PR-tekst.
     496–499 ms (5-10-2026); rood (535–790 ms) in `npm run verify` zodra de container druk is (meerdere agents
     tegelijk). In CI steeds groen. De grens meet de machine mee. Voorstel: grens relatief aan een
     referentiemeting in dezelfde run, of alleen in CI hard. — B
+199. **Linux-PR-CI kan stranden op de APT-updategrens via het officiële Ubuntu-archief.**
+    Bij PR #536 op `cc7d2aef` haalde de update metadata op via `https://archive.ubuntu.com/ubuntu/`,
+    maar na de start van de 14,1 MB `jammy/universe`-index brak de grens van twee minuten af met TERM.
+    Frontendinstallatie en build waren nog niet gestart. Zie
+    https://github.com/OpenAEC-Foundation/open-planner-studio/actions/runs/39859111765/job/120105089448.
+    Dit is een afzonderlijke netwerk-/doorlooptijdbevinding na #515/#523; oorzaak en herhaalbaarheid
+    zijn niet vastgesteld. De limieten en CI-poorten zijn niet verruimd. — B (CI-uitval), S (oorzaak)
+
 90. **`check-xer-tables` is rood als de `TextDecoder` van Node byte 0x80 (CP1252) niet naar € vertaalt**
     ("Café €" wordt "Café "; 6 asserties in deel 5). Gezien 7-10-2026 in een cloudcontainer (Node 22.22.0,
     ICU 77.1), óók op de onaangeraakte commit `c00163a`; daar geeft `new TextDecoder('windows-1252')` voor
