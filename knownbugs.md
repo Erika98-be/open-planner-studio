@@ -309,13 +309,6 @@ en noem het in je rapport of PR-tekst.
     van v2026.10.0 opgelost met afkappen (`TaskAssignmentsSection.tsx`), de koppen zelf niet. Voorstel: korte
     koppen in die talen, en de Help-artikelen die ze citeren mee. — B
 
-186. **De docs-helpregel eist ten onrechte actuele gidsvertalingen bij een release.**
-    `.claude/rules/docs-help.md:21` zegt dat de releasepoort alle vertalingen actueel eist, terwijl
-    `strictStatus` in `scripts/translate/cli.ts:867-890` alleen UI-gaten laat blokkeren en achterlopende
-    docs alleen meldt. Dezelfde rule laat die gidsvertalingen verderop wel achterlopen, net als
-    `AGENTS.md` en de i18n-rule. Statisch gezien bij 180 op main `2f60c0c66`; niet uitgevoerd of
-    onafhankelijk getoetst. Voorstel: alleen de verouderde releaseclaim rechtzetten. — S
-
 ## Tests
 
 175. **De optionele MPP-corpuscheck behandelt bewust geweigerde oude formaten als leesfout.**
@@ -374,14 +367,6 @@ en noem het in je rapport of PR-tekst.
    op een head die verder alleen de MCP-laag raakt; op de vier eerdere heads van die PR was hij groen.
    Lokaal 5× groen op `main` (b4ee5be3) en 25× groen op de PR na merge met main. Vermoedelijk zet iets de
    verticale scroll terug (begrenzing op de inhoudshoogte) voordat de inhoud er is; niet onderzocht. — S
-
-177. **`actionlint` meldt twee bestaande shellcheck-waarschuwingen in `release.yml`.**
-    De stap `Check release notes present` geeft SC2069 bij `2>&1 >/dev/null`; de stap
-    `Set updater notes in latest.json` geeft SC2016 bij de JavaScript-template-expressies in
-    een enkel-gequote Node-commando. Beide meldingen ook gereproduceerd op de ongewijzigde
-    basisversie `522589202` in een tijdelijk bestand. Zonder shellcheck is de workflowvalidatie
-    groen. Voorstel: bedoelde omleiding verduidelijken en de bedoelde JavaScript-expressies gericht
-    documenteren voor shellcheck. Geen releaseworkflow gestart. — B
 
 178. **`gh pr edit --body-file` faalt op deze host door Projects Classic.** Bij het bijwerken
     van PR #479 op 2026-10-22 gaf de CLI `GraphQL: Projects (classic) is being deprecated`

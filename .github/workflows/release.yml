@@ -142,7 +142,8 @@ jobs:
             TAG_VERSION="${GITHUB_REF#refs/tags/}"
           fi
           # stderr (waar de ::warning:: op staat) naar de log, stdout weg.
-          node scripts/release-notes.mjs "$TAG_VERSION" --format=body 2>&1 >/dev/null
+          # De groep leidt stderr om vóór de stdout-omleiding van Node.
+          { node scripts/release-notes.mjs "$TAG_VERSION" --format=body >/dev/null; } 2>&1
 
   create-release:
     needs: gate
@@ -632,6 +633,8 @@ jobs:
           set -euo pipefail
           node scripts/release-notes.mjs "$VERSION" --format=notes > release-notes.txt
           gh release download "$VERSION" --pattern "latest.json" --output latest.json --clobber --repo "$REPO"
+          # ${...} en backticks zijn JavaScript; de shell mag ze niet uitbreiden.
+          # shellcheck disable=SC2016
           node -e '
             const fs = require("node:fs");
             const latest = JSON.parse(fs.readFileSync("latest.json", "utf8"));
