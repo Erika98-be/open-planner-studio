@@ -80,7 +80,6 @@ en noem het in je rapport of PR-tekst.
 
 ## Tabel, invoer en bediening
 
-12. **Tabelkolom *Kalender*** toont en bewerkt het interne kalender-id (`cal-…`) in plaats van de naam. — B
 13. **Tabelkolom *Kleur*** wordt in IFC bewaard, maar geen balk of rapport gebruikt hem. — B
 14. **Ctrl+M en rechtsklik *Mijlpaal toevoegen*** maken een mijlpaal van type Keuring. Ctrl+M zet hem
     bovendien altijd onderaan en opent het paneel niet (gaat buiten `taskInsertActions` om). Het lint geeft
