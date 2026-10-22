@@ -644,9 +644,7 @@ export function levelResources(
 
   const globalDeps = workTasks.some(t => t.isHammock
     || t.constraint?.type === 'ALAP' || t.constraint2?.type === 'ALAP');
-  const forward = LEVELER_TEST_HOOKS.incremental && !globalDeps
-    ? new CPMSolver(workTasks, sequences, projectCalendar, resourceCalendars, cpmOptions).createLevelingForwardPass()
-    : null;
+  let forward: ReturnType<CPMSolver['createLevelingForwardPass']> = null;
   let pfEarlyStart = new Map([...baseline.tasks].map(([id, r]) => [id, r.earlyStart]));
   let globallyStale = false;
   const markChanged = (id: string) => {
@@ -656,6 +654,12 @@ export function levelResources(
   const pfFor = (id: string): Date => {
     if (!LEVELER_TEST_HOOKS.incremental) {
       return computePF(id, workTasks, sequences, projectCalendar, resourceCalendars, cpmOptions);
+    }
+    // Zonder gewijzigde plaatsing volstaat de baseline: geen extra pass voor plannen zonder
+    // capaciteitsdruk (of zonder actieve taken). Bouw de sessie pas bij de eerste gewijzigde PF.
+    if (!forward && !globalDeps && globallyStale) {
+      forward = new CPMSolver(workTasks, sequences, projectCalendar, resourceCalendars, cpmOptions).createLevelingForwardPass();
+      if (forward) globallyStale = false;
     }
     if (forward) {
       return parseDate(forward.earlyStart(id) ?? workById.get(id)!.time.earlyStart);
