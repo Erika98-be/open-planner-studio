@@ -98,6 +98,18 @@ hoofdletterongevoelig). Zet de oude term als `avoid` in `i18n/termbase/<taal>.js
 (alleen die woorden vervangen). Met `--stale` erbij komen ook de verouderde sleutels mee. `--keys <bestand>`
 kiest precies de sleutels uit een JSON-lijst `["ns:pad", …]`, met de huidige tekst als `previous`.
 
+**Vaste UI-tekst.** `fixedUiText` in `translate/ui.ts` legt alleen
+`menu:ribbon.calendarDialog.hoursValue` in ar/fa vast op `{{hours}}h` (besluit eigenaar 2026-10-20:
+"10h", geen spatie, cijfer en h als één LTR-reeks; knownbug 172). NL blijft `{{hours}}u`, EN
+`{{hours}}h`; andere talen, eenheden en sleutels vallen niet onder deze regel. Een termbase-token
+bewaakt aanwezigheid, niet de volledige tekst of spaties, en is hiervoor te breed. `prepare ui`
+geeft het item `fixedText` mee. De bestaande pakketpoort (`check.mjs`, `apply ui`, `apply-findings`)
+controleert de regel uit de code, ook zonder of met bewerkte pakketmetadata. `status --strict`
+(`verify:translations`, releasepoort) gebruikt dezelfde controle op de locale-tekst, óók met een
+actuele bron-hash. Een afwijking geeft `fixed-text` met sleutel, taal en verwachte tekst. Herstel
+zo'n bestaande tekst gericht via `prepare ui <taal> --keys <bestand>`; er start geen brede vertaalronde.
+De cijferopmaak en de browsercontrole op tekenposities blijven in de UI/browsersuite.
+
 **Labelpoort.** `prepare ui` geeft een item `labels` als zijn nl-tekst een andere UI-tekst letterlijk
 noemt (een knop, tab of blok: begint met een hoofdletter, ≥ 2 woorden of ≥ 10 tekens, geen invulplekken,
 niet aan het begin van een zin; bij overlap telt het langste). De check eist dan dat de huidige vertaling

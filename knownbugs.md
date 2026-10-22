@@ -269,12 +269,6 @@ en noem het in je rapport of PR-tekst.
     apart in PR #532 / knownbug 130 gecorrigeerd; dit resterende broncommentaar is niet aangepast.
     Statisch bevestigd bij de review van #532 op `74e596d0`; geen lokale runtime uitgevoerd. — B
 
-172. **Vertaalstraat: de korte uureenheid werd in ar en fa vertaald, tegen het besluit "10h".** `menu.json`
-    `…hoursValue` werd in de ronde van 2026-10-21 `{{hours}}س`. De test
-    `tests/browser/calendar-file-hours-notice.spec.ts:266` eist in ar/fa "10h" (besluit eigenaar 2026-10-20: geen
-    spatie, getal en "h" als één LTR-reeks). Alleen de browsersuite in CI ving het; `verify:translations` en de
-    straat zelf zagen niets. Met de hand teruggezet op `{{hours}}h`. Voorstel: in de straat een vaste-tekstregel
-    per sleutel (bijv. in `i18n/termbase/`), zodat een volgende ronde dit niet opnieuw vertaalt. — B
 173. **Toewijzingen: lange kolomkoppen laten in veel talen weinig ruimte voor de resourcenaam.** De bron is kort
     (`task.json` `properties.assignments.units` "Units"/"Inzet", `workHours` "Work (h)"), maar de straat
     vertaalde naar de volle term (uk "Одиниця призначення", ru "Единицы назначения", bg, hu, ro, sk, da, nb,
