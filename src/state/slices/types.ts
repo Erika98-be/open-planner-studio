@@ -822,8 +822,9 @@ export interface UIState {
    *  `pendingHelpArticleId`. */
   pendingExtensionsTab: 'browse' | null;
   /** session — eenmalig verzoek om in Backstage → Help een sectie van de inhoudsopgave in beeld te
-   *  brengen (de tutorialvraag valt terug op Help › Tutorials). Geconsumeerd (en direct weer op
-   *  `null` gezet) door `HelpPanel` — zelfde eenmalig-verzoek-patroon als `pendingHelpArticleId`. */
+   *  brengen (de tutorialvraag valt terug op Help › Tutorials). Blijft staan tijdens laden;
+   *  `HelpPanel` consumeert na de eerste artikellayout (ook bij een laadfout). Een andere
+   *  artikelkeuze of wegnavigeren uit Help annuleert het verzoek. */
   pendingHelpSection: 'tutorials' | null;
 }
 
