@@ -924,6 +924,35 @@ test('import_schedule: IFC neemt het bronpad over als opslagdoel, CSV NIET (Ctrl
   const ifcPath = `${HOME}/onderaannemer.ifc`;
   files.set(ifcPath, writeIFC(buildWriteIFCInput(s)));
 
+  // Knownbug 128: ook via MCP een gevulde onherkende datum weigeren vóór openAsDocument.
+  const badPath = `${HOME}/onleesbaar.csv`;
+  const ctx = makeCtx({ expectedDocId: s.activeDocumentId });
+  const headers = ['Name', 'Duration', 'Start', 'Finish', 'Actual Start', 'Actual Finish'];
+  for (const index of [2, 3, 4, 5]) {
+    const row = ['Onleesbaar', '1', '2015-01-06', '2015-01-06', '', ''];
+    row[index] = '2 maart 2026';
+    const content = [headers.join(';'), 'Geldig;1;2015-01-05;2015-01-05;;', row.join(';')].join('\n');
+    files.set(badPath, content);
+    const before = S();
+    const documentsBefore = JSON.stringify(before.getOpenDocumentPayloads());
+    const error = await callErr('planner_import_schedule', { path: badPath }, ctx);
+    assertEq(error.code, 'VALIDATION', 'onherkende CSV-datum ⇒ validatiefout');
+    assert(error.error.includes('CSV record 3') && error.error.includes(headers[index])
+      && error.error.includes('2 maart 2026') && error.error.includes('DD/MM/YYYY'),
+    'de Engelse fout noemt rij, oorspronkelijke kolom, celwaarde en ondersteunde vormen');
+    assertEq(S().activeDocumentId, before.activeDocumentId, 'geen documentwissel bij weigering');
+    assert(S().documents === before.documents && S().tasks === before.tasks && S().project === before.project,
+      'geen nieuw of gedeeltelijk geladen document, ook niet van de geldige eerste rij');
+    assertEq(JSON.stringify(S().getOpenDocumentPayloads()), documentsBefore, 'alle documentvelden blijven gelijk');
+    assert(S().historyEvents === before.historyEvents, 'geen undo-mutatie');
+    assertEq(S().nextHistorySequence, before.nextHistorySequence, 'geen verbruikte undo-volgorde');
+    assert(S().ui.notifications === before.ui.notifications, 'MCP gebruikt het bestaande foutantwoord zonder extra toast');
+    assertEq(S().filePath, before.filePath, 'het opslagdoel blijft staan');
+    assertEq(S().isDirty, before.isDirty, 'de dirty-status blijft staan');
+    assertEq(ctx.expectedDocId, s.activeDocumentId, 'het drift-anker blijft staan');
+    assertEq(files.get(badPath), content, 'de CSV-bron blijft intact');
+  }
+
   const csv = await callOk('planner_import_schedule', { path: csvPath });
   assertEq(csv.format, 'CSV', 'de extensie bepaalt het formaat');
   // Opslaan schrijft ALTIJD IFC: met csvPath als opslagdoel zou een Ctrl+S het CSV-bronbestand van

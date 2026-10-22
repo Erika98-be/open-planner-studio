@@ -33,7 +33,7 @@ import { LOCALES } from '../../scripts/i18n-tools';
 import { recordedDatesActiveKey, recordedDatesTaskMissingKey, recordedDatesTaskShownKey } from '@/components/layout/recordedDatesNoticeText';
 import { recordedTaskMark, recordedTaskWillShift, unrecordedExportGate } from '@/state/recordedDatesSelectors';
 import { writeCSV } from '@/services/csv/csvWriter';
-import { readCSV } from '@/services/csv/csvReader';
+import { CsvDateImportError, readCSV } from '@/services/csv/csvReader';
 import { CSV_FIXTURE_UNREADABLE_DATES } from '../fixtures/recordedTimesFormats';
 import { readIFC } from '@/services/ifc/ifcReader';
 import { writeIFC } from '@/services/ifc/ifcWriter';
@@ -1670,14 +1670,58 @@ const inMode = (ifcText: string): ImportResult => ({ ...offerOnly(ifcText), reco
   }
 }
 
-// ── (17) CSV met onleesbare datumcellen opent NIET in de modus (critreview ded4d8c3, bevinding 1) ─
-// Vóór de fix legde de CSV-lezer "vandaag" vast voor een gevulde maar onleesbare datumcel; B hangt
-// aan A, dus na de solve verschoof B t.o.v. die verzonnen vastlegging en ging het document de modus
-// in met alle taken op vandaag. Het laadpad hieronder is het echte (`applyOpenedImport`).
+// ── (17) CSV met onleesbare datumcellen weigert vóór activatie (knownbug 128) ────────────────────
+// De oude terugval kon een vastlegging op vandaag verzinnen en daarmee de datummodus aanzetten.
+// Een onleesbare CSV levert nu geen importresultaat op. Het bestaande, bewerkte IFC-document met
+// echte vastlegging moet volledig behouden blijven; de laadactie mag niet bereikt worden.
 {
-  S().newProject();
-  S().applyOpenedImport(readCSV(CSV_FIXTURE_UNREADABLE_DATES), { filePath: null, recompute: true });
-  eq('17a onleesbare CSV-datums: geen modus, geen vastlegging', [S().datesAsRecorded, S().recordedDates], [false, null]);
+  // Eigen context: de bestaande meldings-/documentstand van de volgende secties blijft ongemoeid.
+  const ctx = createAppStoreContext({ emitHostEvents: false });
+  const state = () => ctx.store.getState();
+  state().applyOpenedImport(readIFC(externIfc('17')), { filePath: '/projecten/bestaand-17.ifc', recompute: true });
+  const historyCount = state().historyEvents.length;
+  state().setProject({ description: 'Bestaande bewerking behouden bij een geweigerde CSV' });
+  const before = state();
+  const documentsBefore = J(before.getOpenDocumentPayloads());
+  eq('17a tegenproef: bestaand IFC met twee taken en echte vastlegging in de modus', {
+    tasks: before.tasks.map(t => [t.name, t.time.earlyStart, t.time.earlyFinish]),
+    datesAsRecorded: before.datesAsRecorded,
+    recordedCount: Object.keys(before.recordedDates?.times ?? {}).length,
+  }, {
+    tasks: [['A', '2026-03-02', '2026-03-06'], ['B', '2026-03-16', '2026-03-20']],
+    datesAsRecorded: true, recordedCount: 2,
+  });
+  eq('17b tegenproef: eigen bewerking, historie en bestaand opslagdoel',
+    [before.isDirty, before.historyEvents.length - historyCount, before.importPristine, before.filePath],
+    [true, 1, false, '/projecten/bestaand-17.ifc']);
+
+  let applyReached = false;
+  let error: CsvDateImportError | undefined;
+  try {
+    const parsed = readCSV(CSV_FIXTURE_UNREADABLE_DATES);
+    applyReached = true;
+    state().applyOpenedImport(parsed, { filePath: null, recompute: true });
+  } catch (e) {
+    if (!(e instanceof CsvDateImportError)) throw e;
+    error = e;
+  }
+  truthy('17c onleesbare CSV geeft de specifieke datumvalidatiefout', error instanceof CsvDateImportError);
+  eq('17d de fout noemt onafhankelijk verwachte naam, melding en oorspronkelijke celcontext', error ? {
+    name: error.name, message: error.message, row: error.row, column: error.column, value: error.value,
+  } : null, {
+    name: 'CsvDateImportError',
+    message: 'CSV record 2, column "Start": unrecognised date "Mon 3/2/26". Use YYYY-MM-DD, DD-MM-YYYY or DD/MM/YYYY.',
+    row: 2, column: 'Start', value: 'Mon 3/2/26',
+  });
+  eq('17e mislukte parse bereikt applyOpenedImport niet', applyReached, false);
+  truthy('17f geen activatie of andere storemutatie', state() === before);
+  eq('17g alle bestaande documenten en taakgegevens behouden', J(state().getOpenDocumentPayloads()), documentsBefore);
+  eq('17h bestaande datummodus en vastlegging behouden, geen verzonnen CSV-vastlegging',
+    [state().datesAsRecorded, state().recordedDates, state().importPristine],
+    [before.datesAsRecorded, before.recordedDates, before.importPristine]);
+  eq('17i historie, dirty-status en opslagdoel behouden',
+    [state().historyEvents, state().nextHistorySequence, state().isDirty, state().filePath, state().fileHandle, state().siteFileId, state().siteFileVersion],
+    [before.historyEvents, before.nextHistorySequence, before.isDirty, before.filePath, before.fileHandle, before.siteFileId, before.siteFileVersion]);
 }
 
 // ── (18) Heropenen van een EIGEN IFC geeft geen openingsmelding (critreview ded4d8c3, bevinding 6) ─
