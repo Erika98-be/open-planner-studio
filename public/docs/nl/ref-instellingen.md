@@ -80,6 +80,8 @@ Een wijziging werkt direct. Er is geen knop *Toepassen* en geen *Annuleren*.
 
 **Versie** — het versienummer van de app, met twee knoppen. *Controleren op updates* opent het updatevenster. *Wat is er nieuw* toont de nieuwigheden van de huidige versie. Bij een AUR-installatie (Arch Linux) werk je bij via je pakketbeheer (bijv. `yay -Syu`), niet via de app. Waar: *Geavanceerd*, onder *Versie*.
 
+Een automatisch gevonden update wacht tot de welkomstschermen en een lopende tutorialbegeleiding gesloten zijn. Handmatig controleren via de knop blijft mogelijk.
+
 **Klassieke weergaveknoppen tonen** — een vervangen functie, achter *Legacy-functies*. Standaard: uit. Effect: aan zet op het tabblad *Beeld* een groep *Weergave* terug met de losse knoppen *Kolommen…*, *Filteren…*, *Groeperen…* en *Sorteren…*. Die zijn vervangen door de plus in de tabelkop, de layoutknoppen en het layoutvenster. Waar: *Geavanceerd*, onder *Legacy-functies*.
 
 ## Onthouden weergavekeuzes buiten het paneel

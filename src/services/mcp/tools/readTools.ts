@@ -29,6 +29,7 @@ import { lagLabel, seqAbbrev } from './sequenceFields';
 import type { McpContext, McpToolDef } from '../contracts';
 import type { Task } from '@/types/task';
 import { taskDurationUnit } from '@/engine/scheduler/duration';
+import { knownDrivingSequenceIds } from '@/engine/scheduler/drivingInfo';
 import { countCriticalActivities } from '@/engine/scheduler/scheduleAnalysis';
 import { shownSpanOverlapsDays } from '@/utils/taskDates';
 import { booleanArgReason, READ_ANNOTATIONS, unknownArgsReason } from './helpers';
@@ -613,7 +614,7 @@ function getCriticalPath(s: AppState) {
         'circular dependency); every mutating tool that changes something recalculates the schedule at the ' +
         'end.',
       criticalTasks: [],
-      drivingRelations: [],
+      drivingRelations: null,
     };
   }
   const taskById = new Map(s.tasks.map((t) => [t.id, t]));
@@ -639,8 +640,8 @@ function getCriticalPath(s: AppState) {
 
   // Driving-relaties GEFILTERD op paren waarvan BEIDE eindpunten kritiek zijn.
   const seqById = new Map(s.sequences.map((seq) => [seq.id, seq]));
-  const drivingRelations = cpm.drivingSequenceIds
-    .map((id) => seqById.get(id))
+  const drivingIds = knownDrivingSequenceIds(cpm);
+  const drivingRelations = drivingIds?.map((id) => seqById.get(id))
     .filter((seq): seq is Sequence => !!seq && critSet.has(seq.predecessorId) && critSet.has(seq.successorId))
     .map((seq) => ({
       seqId: seq.id,
@@ -650,7 +651,7 @@ function getCriticalPath(s: AppState) {
       succWbs: wbsOf(taskById, seq.successorId),
       type: seqAbbrev(seq.type),
       lag: lagLabel(seq),
-    }));
+    })) ?? null;
 
   // Gescheiden parallelle ketens (`criticalPaths`) bestaan ALLEEN bij floatPaths.enabled mét
   // FREE_FLOAT; in elk ander geval is criticalPaths === [criticalPath] (één samengevoegd array).
@@ -663,6 +664,10 @@ function getCriticalPath(s: AppState) {
     projectEnd: cpm.projectEnd,
     criticalTasks,
     drivingRelations,
+    ...(drivingRelations === null ? {
+      note: 'Driving relationships are unknown in Dates as recorded mode. Recalculate explicitly to determine them; ' +
+        'null does not mean that no relationships are driving.',
+    } : {}),
     pathsMode: parallelAvailable ? ('parallel' as const) : ('merged' as const),
   };
   if (parallelAvailable) {
@@ -1151,7 +1156,9 @@ export const readTools: McpToolDef[] = [
     name: 'planner_get_critical_path',
     description:
       'Flattened critical task set (topological order) with total float per task, plus the driving ' +
-      'relationships FILTERED to pairs whose BOTH end points are critical. Reconstructing the chain from ' +
+      'relationships FILTERED to pairs whose BOTH end points are critical. `drivingRelations` is null when ' +
+      'driving information is unavailable (Dates as recorded or no valid calculation); [] means a valid ' +
+      'calculation found no driving relationships between critical tasks. Reconstructing the chain from ' +
       'these tasks+relationships is client work. `pathsMode` reports the situation: "merged" (one merged ' +
       'critical path — the normal case) or "parallel". Separate parallel chains (`criticalPaths`) are ONLY ' +
       'included when floatPaths with method FREE_FLOAT is active; otherwise there is by definition one ' +

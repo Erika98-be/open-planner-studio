@@ -1,4 +1,9 @@
-@import "tailwindcss";
+@import "tailwindcss" source(none);
+
+/* Alleen runtimebronnen scannen, ook de extensie-UI en HTML-strings in src/.
+   Paden zijn relatief aan dit bestand; scripts, tests en docs horen niet in de app-CSS. */
+@source "../";
+@source "../../index.html";
 
 /* De gedeelde taakgrid is een dicht planninginstrument: één DOM-boom, vaste rijhoogte en één
    scherpe actieve-celrand. Alle kleurkeuzes blijven via de bestaande thematokens lopen. */
@@ -2306,7 +2311,7 @@ body {
 .btn--secondary {
   background: transparent;
   color: var(--theme-text);
-  border: 2px solid var(--theme-text);
+  border: 1px solid var(--theme-control-border);
 }
 .btn--secondary:hover:not(:disabled) {
   background: var(--theme-text);
@@ -2565,17 +2570,18 @@ body {
 }
 
 /* ============================================================================
-   Uniforme checkboxes (2026-07-13) — ÉÉN stijl voor ALLE checkboxes in de app.
+   Uniforme checkboxes (2026-10-22) — ÉÉN stijl voor ALLE checkboxes in de app.
    `appearance: none` schakelt de native (blauwe, OS-afhankelijke) checkbox uit.
-   Aangevinkt = massief accent-oranje vlak ZONDER vinkje (er is bewust geen
-   ::after-content), zodat er nooit een scheef-gecentreerd vinkje kan ontstaan.
-   Het accent volgt het thema (oranje in dark/light, geel in high-contrast).
+   Vierkante vakjes met een gecentreerd vinkje zijn herkenbaar als meervoudige keuze.
+   Vlak en vinkje volgen het thema (oranje/wit in dark/light, geel/zwart in high-contrast).
    Vervangt de vroegere wildgroei: bare native (blauw), Tailwind `accent-accent`
    en losse `accent-color`-overrides renderen nu allemaal identiek.
    ============================================================================ */
 input[type="checkbox"] {
   appearance: none;
   -webkit-appearance: none;
+  display: inline-grid;
+  place-items: center;
   width: 15px;
   height: 15px;
   flex-shrink: 0;
@@ -2583,7 +2589,7 @@ input[type="checkbox"] {
   box-sizing: border-box;
   vertical-align: middle;
   border: 1.5px solid var(--theme-control-border);
-  border-radius: var(--radius-sm);
+  border-radius: 3px;
   background: var(--theme-surface);
   cursor: pointer;
   transition: background 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease;
@@ -2594,6 +2600,15 @@ input[type="checkbox"]:hover {
 input[type="checkbox"]:checked {
   background: var(--theme-accent);
   border-color: var(--theme-accent);
+}
+input[type="checkbox"]:checked::after {
+  content: '';
+  box-sizing: border-box;
+  width: 9px;
+  height: 5px;
+  border-left: 2px solid var(--theme-accent-on);
+  border-bottom: 2px solid var(--theme-accent-on);
+  transform: translateY(-1px) rotate(-45deg);
 }
 input[type="checkbox"]:focus-visible {
   outline: none;

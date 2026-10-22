@@ -9,6 +9,7 @@
 // De brug zet alleen fixtures (taken, relaties, weergave) en leest state; de geteste handelingen
 // gaan via muis en toetsenbord. Headless tegenhanger: tests/planning/check-progress-entry.ts.
 import type { Locator, Page } from '@playwright/test';
+import { computeEffectiveViewStart } from '@/utils/ganttViewport';
 import { barPoint, expect, state, test } from './fixtures/ops';
 
 /** Vandaag in de browser, zoals de gebruiker hem in het statusdatumveld typt (lokale kalenderdag). */
@@ -67,17 +68,71 @@ function shown(iso: string): string {
   return `${d}-${m}-${y}`;
 }
 
-/** Bestaande voltooide taak als fixture voor rechtstreeks bewerken van werkelijke datums. */
-async function seedActualDates(page: Page, taskId: string): Promise<void> {
-  await page.evaluate(id => {
-    const s = window.__OPS__!.store.getState();
+/** Bestaande voltooide taak; levert pas een balkpunt als de nieuwe datums én tijdas getekend zijn. */
+async function seedActualDates(
+  page: Page,
+  taskId: string,
+  viewStartDate = '2026-09-01',
+  zoom = 18,
+): Promise<{ x: number; y: number }> {
+  const actualStart = '2026-09-10';
+  const actualFinish = '2026-09-20';
+  const fixture = await page.evaluate(({ id, start, finish, viewStart, requestedZoom }) => {
+    const { store, gantt } = window.__OPS__!;
+    const paints = gantt.paintCount('primary');
+    const s = store.getState();
+    s.setUI({ compressNonWorkdays: false });
     s.setStatusDate('2026-10-01');
-    s.setActualStart(id, '2026-09-10');
-    s.setActualFinish(id, '2026-09-20');
+    s.setActualStart(id, start);
+    s.setActualFinish(id, finish);
     s.runCPM();
-    s.setViewStartDate('2026-09-01');
-    s.setZoom(18);
-  }, taskId);
+    s.setViewStartDate(viewStart);
+    s.setZoom(requestedZoom);
+    s.setScroll(0, 0);
+    const current = store.getState();
+    return { paints, tasks: current.tasks, view: current.view };
+  }, { id: taskId, start: actualStart, finish: actualFinish, viewStart: viewStartDate, requestedZoom: zoom });
+
+  // Een niet-null barPoint kan nog bij de vorige paint horen (knownbug175). Alleen een hogere
+  // paintteller is ook niet genoeg: een al ingepland frame kan nog de oude invoer tekenen.
+  // Lees daarom de echte as en beide balkranden in dezelfde observatie. De oorsprong komt uit
+  // dezelfde pure afleiding als de app; de fixture gebruikt dagbalken met een inclusieve einddag.
+  const origin = computeEffectiveViewStart(fixture.tasks, fixture.view.viewStartDate);
+  let point: { x: number; y: number } | null = null;
+  await expect.poll(async () => {
+    const observed = await page.evaluate(({ id, start, finish, viewOrigin, nextDay, paints, expectedZoom }) => {
+      const { gantt } = window.__OPS__!;
+      const bounds = document.querySelector<HTMLCanvasElement>('[data-testid="gantt-primary-canvas"]')!
+        .getBoundingClientRect();
+      const left = gantt.taskBarPoint(id, 'left');
+      const right = gantt.taskBarPoint(id, 'right');
+      const body = gantt.taskBarPoint(id);
+      const startX = gantt.dateX(start);
+      const finishX = gantt.dateX(finish);
+      const originX = gantt.dateX(viewOrigin);
+      const nextX = gantt.dateX(nextDay);
+      return {
+        point: body,
+        painted: gantt.paintCount('primary') > paints,
+        originX,
+        dayWidth: originX !== null && nextX !== null ? nextX - originX : null,
+        startMatches: left !== null && startX !== null && Math.abs(left.x - bounds.left - startX) < 0.01,
+        finishMatches: right !== null && finishX !== null
+          && Math.abs(right.x - bounds.left - finishX - expectedZoom) < 0.01,
+        visible: body !== null && body.x >= bounds.left && body.x < bounds.right
+          && body.y >= bounds.top && body.y < bounds.bottom,
+      };
+    }, {
+      id: taskId, start: actualStart, finish: actualFinish, viewOrigin: origin,
+      nextDay: shiftDays(origin, 1), paints: fixture.paints, expectedZoom: fixture.view.zoom,
+    });
+    point = observed.point;
+    return observed;
+  }, { message: 'de Gantt tekent de werkelijke datums met de gewijzigde oorsprong en zoom' }).toMatchObject({
+    painted: true, originX: 0 - fixture.view.scrollX, dayWidth: fixture.view.zoom,
+    startMatches: true, finishMatches: true, visible: true,
+  });
+  return point!;
 }
 
 async function rejectReversedDates(page: Page, scope: Locator, taskId: string): Promise<void> {
@@ -294,13 +349,16 @@ test('Regel 2, Taak bewerken: de vraag stapelt boven de dialoog; Enter bevestigt
   await taskDialog.locator('[data-ops-task-save]').click();
   await expect(taskDialog).toBeHidden();
   await expect.poll(() => readProgress(page, B)).toEqual({ statusDate, completion: 1, actualStart });
-  await seedActualDates(page, B);
-  const reopened = await barPoint(page, B);
-  await page.mouse.dblclick(reopened.x, reopened.y);
-  await expect(taskDialog).toBeVisible();
-  await rejectReversedDates(page, taskDialog, B);
-  expect((await readProgress(page, B)).actualStart).toBe('2026-09-10');
-  await taskDialog.locator('[data-ops-task-save]').click();
-  await expect(taskDialog).toBeHidden();
-  expect((await readProgress(page, B)).actualStart).toBe('2026-09-11');
+  // Heropen dezelfde taak in twee zichtbare standen. Ook als de werkelijke datums al bekend
+  // zijn, moet de nieuwe tijdas klaar zijn; coördinaten uit de vorige stand missen de balk.
+  for (const [viewStart, zoom] of [['2026-09-01', 18], ['2026-09-05', 12]] as const) {
+    const reopened = await seedActualDates(page, B, viewStart, zoom);
+    await page.mouse.dblclick(reopened.x, reopened.y);
+    await expect(taskDialog).toBeVisible();
+    await rejectReversedDates(page, taskDialog, B);
+    expect((await readProgress(page, B)).actualStart).toBe('2026-09-10');
+    await taskDialog.locator('[data-ops-task-save]').click();
+    await expect(taskDialog).toBeHidden();
+    expect((await readProgress(page, B)).actualStart).toBe('2026-09-11');
+  }
 });

@@ -17,8 +17,9 @@
 //!   4. Body → webview via event `mcp://request` `{id, body}`; antwoord terug via
 //!      `mcp://response` `{id, body}` (id-correlatie op een mpsc-kanaal).
 //!   5. Timeout 120 s ⇒ `504` met een JSON-RPC-foutobject.
-//!   6. Antwoord-body 1-op-1 terug als `200 application/json`. Elk antwoord
-//!      draagt `Connection: close` (zie `raw_response`).
+//!   6. Niet-lege antwoord-body 1-op-1 terug als `200 application/json`; een lege
+//!      antwoord-body wordt `202 Accepted` zonder Content-Type (notificatie).
+//!      Elk antwoord draagt `Connection: close` (zie `raw_response`).
 //!   7. Sessies (MCP streamable HTTP): een aanwezige `Mcp-Session-Id`-header gaat
 //!      als `sessionId` mee in het request-event. Geeft de webview een `sessionId`
 //!      terug (alleen na een geslaagde `initialize`), dan zet de bridge die als
@@ -315,6 +316,7 @@ fn find_header<'a>(request: &'a tiny_http::Request, name: &str) -> Option<&'a st
 fn reason_phrase(status: u16) -> &'static str {
     match status {
         200 => "OK",
+        202 => "Accepted",
         400 => "Bad Request",
         401 => "Unauthorized",
         403 => "Forbidden",
@@ -362,12 +364,14 @@ fn respond_json(request: tiny_http::Request, status: u16, body: &str) {
 
 /// Antwoord uit de webview terug naar de client: `404` zonder body bij een
 /// onbekende sessie, `400 application/json` als de sessie-header ontbrak, anders
-/// `200 application/json` met de body 1-op-1, plus de `Mcp-Session-Id`-header als
-/// de webview een (geldige) sessie-id meegaf.
+/// `202` zonder body of Content-Type bij een lege antwoord-body (notificatie).
+/// Een niet-lege body gaat 1-op-1 terug als `200 application/json`, plus de
+/// `Mcp-Session-Id`-header als de webview een (geldige) sessie-id meegaf.
 fn respond_reply(request: tiny_http::Request, reply: Reply) {
     match reply_status(reply.status) {
         404 => respond_empty(request, 404),
         400 => respond_json(request, 400, &reply.body),
+        _ if reply.body.is_empty() => respond_empty(request, 202),
         _ => match reply.session_id.filter(|s| valid_session_id(s)) {
             Some(sid) => respond_raw(
                 request,

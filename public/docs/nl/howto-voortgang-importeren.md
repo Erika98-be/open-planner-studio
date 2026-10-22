@@ -53,7 +53,7 @@ De app koppelt elke rij aan een taak, eerst op `OPS Task ID` en anders op het WB
 
 **Koppeling betwijfeld.** Vond de app de taak alleen op WBS-nummer, dan staat de rij onder *Koppeling betwijfeld*, met *Bevestigen* en *Wijzigen*. De rij wordt ook toegepast als je niets doet; controleer dus of de taak klopt. *Bevestigen* haalt de rij uit deze lijst; aan wat er wordt toegepast verandert het niets. *Wijzigen* laat je een andere taak kiezen. Met *Koppeling wissen* haal je een koppeling die je zelf legde weer weg. Let op: een blad van een ander project met dezelfde WBS-nummers wordt wél gekoppeld, onder *Koppeling betwijfeld*, en bij *Toepassen* doorgevoerd.
 
-**Wacht op koppeling.** Vond de app geen taak, of meerdere met hetzelfde WBS-nummer, dan staat de rij onder *Wacht op koppeling*. Kies bij *Kies een taak…* de juiste taak; je zoekt op WBS-nummer of naam. Koppel je hem niet, dan wordt de rij geweigerd.
+**Wacht op koppeling.** Vond de app geen taak, of meerdere met hetzelfde WBS-nummer, dan staat de rij onder *Wacht op koppeling*. In het voorbeeld staat al waarom: *Geen taak gevonden voor deze rij.* of *Deze WBS-code komt bij meerdere taken voor — koppel de rij met de hand.* Je ziet ook het rijnummer en, indien ingevuld, de `OPS Task ID` uit het blad. Ontbreken WBS en naam, dan staat die ID bovenaan de rij. Kies bij *Kies een taak…* de juiste taak; je zoekt op WBS-nummer of naam. Koppel je hem niet, dan wordt de rij geweigerd. Een dubbele rij staat apart met *Een andere rij claimde deze taak al.*
 
 ## Valkuilen en wat de app dan doet
 

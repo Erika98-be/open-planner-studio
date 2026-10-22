@@ -6,6 +6,7 @@
 //   1. update_calendar bulk 2 kalenders ⇒ ÉÉN undo-stap
 //   2. projectkalender-id op een VERS project ⇒ promotie naar de bibliotheek (WP5b) + wijziging landt
 //   3. generator-bouwvak + rawHolidays ⇒ merge + becameLiteral:true + generation weg
+//  3b. generatie tot het latere van ingevoerd/berekend einde, ontbrekende einddatums en hergeneratie
 //   4. onwerkbaar venster ⇒ WAARSCHUWING (cappedTaskIds), géén fout, wijziging gecommit
 //   5. onbekend id zonder create ⇒ zachte weigering + lege-batch-snelpad (geen snapshot/redo-wipe)
 //   6. create:true ⇒ nieuwe bibliotheek-kalender met generator-basis
@@ -72,6 +73,21 @@ function addTask(name: string, durationDays: number): string {
   const t = store.getState().tasks.find((x) => x.id === id)!;
   store.getState().updateTask(id, { time: { ...t.time, scheduleDuration: durationDays } });
   return id;
+}
+
+/** Vaste projectspanne met optioneel een echt rekenresultaat in een later jaar. */
+function prepareCalendarSpan(endDate: string, withCpm: boolean): void {
+  store.getState().setProject({ startDate: '2027-06-07', endDate });
+  if (withCpm) {
+    const id = addTask('Werk in 2033', 5);
+    const task = store.getState().tasks.find((t) => t.id === id)!;
+    store.getState().updateTask(id, { time: { ...task.time, scheduleStart: '2033-06-06' } });
+    store.getState().runCPM();
+    assertEq(store.getState().cpmResult?.error, undefined, 'testvoorwaarde: berekening geslaagd');
+    assertEq(store.getState().cpmResult?.projectEnd.slice(0, 4), '2033', 'testvoorwaarde: berekend einde in 2033');
+  } else {
+    assertEq(store.getState().cpmResult, null, 'testvoorwaarde: nog geen rekenresultaat');
+  }
 }
 
 // =================================================================================================
@@ -175,6 +191,41 @@ test('update_calendar: generator (NL-bouwvak) + rawHolidays ⇒ merge, generatio
 });
 
 // =================================================================================================
+// 3b) Bug 124 — het ingevoerde einde mag een latere berekende planning niet afkappen
+// =================================================================================================
+for (const { label, endDate, withCpm, toYear } of [
+  { label: 'ingevoerd einde vroeg, berekend einde later', endDate: '2027-12-31', withCpm: true, toYear: 2034 },
+  { label: 'ingevoerd einde later, berekend einde vroeg', endDate: '2037-12-31', withCpm: true, toYear: 2038 },
+  { label: 'geen ingevoerd einde, wel berekend einde', endDate: '', withCpm: true, toYear: 2034 },
+  { label: 'wel ingevoerd einde, geen rekenresultaat', endDate: '2037-12-31', withCpm: false, toYear: 2038 },
+  { label: 'geen ingevoerd einde en geen rekenresultaat', endDate: '', withCpm: false, toYear: 2030 },
+]) {
+  test(`update_calendar: generate — ${label}`, async () => {
+    reset();
+    prepareCalendarSpan(endDate, withCpm);
+    const ctx = makeCtx();
+    const id = store.getState().project.calendarId;
+    const args = { calendars: [{ id, generate: { country: 'NL', bouwvak: 'geen' } }] };
+    const checkGeneration = async (): Promise<void> => {
+      const res = await call('planner_update_calendar', args, ctx);
+      okData(res);
+      assertEq(rejections(res), [], 'generate geaccepteerd');
+      const cal = store.getState().calendars.find((c) => c.id === id)!;
+      assertEq(cal.generation?.generatedFromYear, 2026, 'generatie begint in het jaar vóór de projectstart');
+      assertEq(cal.generation?.generatedToYear, toYear, 'generatie dekt de verwachte eindspanne');
+      assert(cal.holidays.some((h) => h.startDate === `${toYear}-12-25`), 'feestdagen in het laatste jaar zijn gematerialiseerd');
+      assert(!cal.holidays.some((h) => h.startDate > `${toYear}-12-31`), 'geen feestdagen voorbij de gekozen spanne');
+    };
+    await checkGeneration();
+    if (withCpm) {
+      // De eindherberekening van de eerste call mag opnieuw genereren niet terugbrengen naar endDate.
+      await checkGeneration();
+    }
+    assertEq(store.getState().project.endDate, endDate, 'de ingevoerde einddatum blijft behouden');
+  });
+}
+
+// =================================================================================================
 // 4) WP7 — onwerkbaar venster ⇒ prominente WAARSCHUWING, géén fout, wijziging GECOMMIT
 // =================================================================================================
 test('update_calendar: onwerkbaar venster ⇒ cappedTaskIds als waarschuwing, geen fout, wijziging gecommit', async () => {
@@ -226,6 +277,7 @@ test('update_calendar: onbekend id zonder create ⇒ zachte weigering, GEEN snap
 // =================================================================================================
 test('update_calendar: create:true ⇒ nieuwe kalender met generator-basis en generation-metadata', async () => {
   reset();
+  prepareCalendarSpan('2037-12-31', true);
   const ctx = makeCtx();
   const before = store.getState().calendars.length;
   const res = await call(
@@ -243,6 +295,10 @@ test('update_calendar: create:true ⇒ nieuwe kalender met generator-basis en ge
   assertEq(cal.name, 'Onderaannemer', 'naam toegepast');
   assertEq(cal.workDays, [1, 2, 3, 4], 'workDays toegepast');
   assert(cal.generation != null, 'zuiver generator-pad ⇒ generation-metadata gezet');
+  assertEq(cal.generation?.generatedFromYear, 2026, 'aanmaak begint in startjaar−1');
+  assertEq(cal.generation?.generatedToYear, 2030, 'aanmaak houdt startjaar+3 ondanks beide latere projecteinddatums');
+  assert(cal.holidays.some((h) => h.startDate === '2030-12-25'), 'feestdagen tot en met startjaar+3 aangemaakt');
+  assert(!cal.holidays.some((h) => h.startDate >= '2031-01-01'), 'aanmaak neemt de latere projecteinddatums niet over');
   assertEq(row.becameLiteral, false, 'geen rawHolidays ⇒ becameLiteral false');
 });
 
