@@ -342,16 +342,25 @@ test('crashherstel: oude v1-snapshot herstelt en onleesbare kopie blijft bewaard
       const blobs = tx.objectStore('xer-archives').getAll();
       tx.oncomplete = () => {
         resolve(JSON.stringify([records.result, blobs.result.map((b: { id: string; bytes: Uint8Array }) =>
-          ({ ...b, bytes: [...b.bytes] }))]));
+          ({ ...b, bytes: [...b.bytes] }))], (_key, value: unknown) => {
+          // Alleen de waarneming coderen, niet de fixture: hole ≠ undefined/null in IndexedDB.
+          if (Array.isArray(value) && Object.keys(value).length < value.length) {
+            return { type: 'sparse-array', length: value.length, entries: Object.entries(value) };
+          }
+          return value;
+        }));
         db.close();
       };
       tx.onerror = () => { db.close(); reject(tx.error); };
     };
   }));
-  for (const locale of ['nl', 'en']) {
+  for (const { locale, shape } of [
+    { locale: 'nl', shape: 'unknown' }, { locale: 'en', shape: 'invalid-version' },
+    { locale: 'en', shape: 'sparse-documents' }, { locale: 'en', shape: 'sparse-docIds' },
+  ]) {
     await page.goto('/icon.png');
-    await page.evaluate(async ({ xer, locale }) => {
-      const sid = 'geweigerd-manifest-' + locale;
+    await page.evaluate(async ({ xer, locale, shape }) => {
+      const sid = 'geweigerd-manifest-' + locale + (shape.startsWith('sparse-') ? '-' + shape : '');
       const readerPath = '/src/services/xer/xerReader.ts';
       const writerPath = '/src/services/ifc/ifcWriter.ts';
       const { readXER } = (await import(/* @vite-ignore */ readerPath)) as { readXER: (bytes: Uint8Array) => { results: unknown[] } };
@@ -382,7 +391,17 @@ test('crashherstel: oude v1-snapshot herstelt en onleesbare kopie blijft bewaard
             version: locale === 'nl' ? 5 : '5', activeDocumentId: 'doc-oud', addedAt: 1,
             documents: [{ id: 'doc-oud', ifc: sid + '::doc::doc-oud', filePath: 'oud.ifc',
               isDirty: true, datesAsRecorded: true, siteFileId: 'oude-site', siteFileVersion: 'oude-basis' }] };
-          records.put(manifest);
+          // Native IndexedDB structured clone: de hole blijft afwezig, zonder JSON-normalisatie.
+          if (shape === 'sparse-documents') {
+            manifest.version = 5;
+            manifest.documents.length++;
+            records.put(manifest);
+          } else if (shape === 'sparse-docIds') {
+            const docIds = ['doc-oud'];
+            docIds.length++;
+            records.put({ id: manifest.id, kind: manifest.kind, sessionId: sid,
+              activeDocumentId: 'doc-oud', addedAt: 1, docIds });
+          } else records.put(manifest);
           if (locale === 'nl') records.put({ ...manifest, id: sid + '::manifest-v6', version: 99 });
           tx.objectStore('xer-archives').put({ id: 'onbekende-blob', bytes: new Uint8Array([0, 255, 42]), addedAt: 1 });
           tx.oncomplete = () => { db.close(); resolve(); };
@@ -392,8 +411,12 @@ test('crashherstel: oude v1-snapshot herstelt en onleesbare kopie blijft bewaard
       sessionStorage.setItem('ops-recovery-session', sid);
       sessionStorage.removeItem('ops-recovery-session:held');
       localStorage.setItem('ops-locale', locale);
-    }, { xer: XER_TWO_PROJECTS, locale });
+    }, { xer: XER_TWO_PROJECTS, locale, shape });
     const before = await recoveryBytes();
+    if (shape.startsWith('sparse-')) {
+      // De native read moet nog precies de afwezige tweede positie tonen, geen ingevulde null.
+      expect(before).toContain('"type":"sparse-array","length":2,"entries":[["0",');
+    }
     const sidBefore = await page.evaluate(() => sessionStorage.getItem('ops-recovery-session'));
     await page.goto('/');
     const warning = page.getByRole('alert').filter({ hasText: locale === 'nl'

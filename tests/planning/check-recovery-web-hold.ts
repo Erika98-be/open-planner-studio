@@ -121,8 +121,14 @@ const rejectsManifest = async (label: string, action: () => Promise<unknown>) =>
 };
 const webBytes = () => JSON.stringify(['records', 'xer-archives'].map(name =>
   [name, [...idb.store(name)].sort(([a], [b]) => a.localeCompare(b))]),
-  (_key, value: unknown) => value === undefined ? { type: 'undefined' }
-    : typeof value === 'number' && !Number.isFinite(value) ? { type: 'number', value: String(value) } : value);
+  (_key, value: unknown) => {
+    // Alleen observeren: ook het verschil tussen een hole en een aanwezige undefined/null bewaren.
+    if (Array.isArray(value) && Object.keys(value).length < value.length) {
+      return { type: 'sparse-array', length: value.length, entries: Object.entries(value) };
+    }
+    return value === undefined ? { type: 'undefined' }
+      : typeof value === 'number' && !Number.isFinite(value) ? { type: 'number', value: String(value) } : value;
+  });
 const webSid = session.get('ops-recovery-session')!;
 const webDoc = { ...doc('oud'), filePath: 'oud.ifc', isDirty: false };
 const webRecord = { id: webSid + '::doc::oud', kind: 'doc', sessionId: webSid,
@@ -141,6 +147,8 @@ for (const version of [1, 2, 3, 4, 5]) {
   await saveRecovery(fullRecoverySave('oud', [webDoc]));
   eq('web v' + version + ': volgende commit gebruikt actueel contract',
     (idb.store('records').get(webManifest.id) as { version: number }).version, 5);
+  idb.store('records').set(webManifest.id, { ...webManifest, version, documents: [] });
+  eq('web v' + version + ': geldig leeg manifest blijft leesbaar', (await loadRecovery()).docs, []);
   await clearRecovery();
 }
 // Historische webvorm b1c174f4e: géén version, docIds en metadata in doc-record.
@@ -152,9 +160,33 @@ eq('versieloos webmanifest: bestaand pad, dirty-terugval en geen verzonnen datum
   [['oud', 'oud.ifc', true, false, null]]);
 await clearRecovery();
 
+for (const version of [null, 1, 2]) {
+  idb.store('records').set(webManifest.id, { id: webManifest.id, kind: 'manifest', sessionId: webSid,
+    ...(version === null ? {} : { version }), activeDocumentId: null, docIds: [], addedAt: 1 });
+  eq('historisch web ' + version + ': geldige lege docIds blijven leesbaar', (await loadRecovery()).docs, []);
+  await clearRecovery();
+}
+
+// R3-bronrepro (niet lokaal uitgevoerd): één echte hole naast een geldige documentidentiteit.
+// structuredClone bewaart de ontbrekende positie; geen JSON-rondgang van de opgeslagen fixture.
+const sparseDocuments = structuredClone(webManifest.documents);
+sparseDocuments.length++;
+const sparseDocIds = ['oud'];
+sparseDocIds.length++;
+eq('sparse documents-fixture heeft één afwezige positie na structured clone',
+  [structuredClone(sparseDocuments).length, Object.keys(structuredClone(sparseDocuments))], [2, ['0']]);
+eq('sparse docIds-fixture heeft één afwezige positie na structured clone',
+  [structuredClone(sparseDocIds).length, Object.keys(structuredClone(sparseDocIds))], [2, ['0']]);
+
 // Elke geweigerde vorm blijft ook zonder voorafgaande read beschermd tegen schrijven/wissen/rotatie.
 const invalidWebManifests = [
   ...[6, 999, 0, -1, 1.5, NaN, Infinity, '5', null, true, undefined].map(version => ({ ...webManifest, version })),
+  { ...webManifest, documents: sparseDocuments },
+  { ...webManifest, documents: new Array<unknown>(1) }, // ook een uitsluitend ontbrekende positie is ongeldig
+  ...[null, 1, 2].flatMap(version => [sparseDocIds, new Array<unknown>(1)].map(docIds => ({
+    id: webManifest.id, kind: 'manifest', sessionId: webSid,
+    ...(version === null ? {} : { version }), activeDocumentId: 'oud', docIds, addedAt: 1,
+  }))),
   { ...webManifest, documents: {} },
   { ...webManifest, documents: [null] },
   { ...webManifest, documents: [{ id: 'oud' }] },
@@ -165,7 +197,7 @@ const invalidWebManifests = [
 ];
 for (const [index, manifest] of invalidWebManifests.entries()) {
   idb.store('records').set(webRecord.id, structuredClone(webRecord));
-  idb.store('records').set(webManifest.id, manifest);
+  idb.store('records').set(webManifest.id, structuredClone(manifest));
   idb.store('xer-archives').set('onbekende-blob', { id: 'onbekende-blob', bytes: new Uint8Array([0, 255, 42]) });
   const before = webBytes();
   const sessionBefore = [...session];
