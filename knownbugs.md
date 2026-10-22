@@ -86,6 +86,11 @@ en noem het in je rapport of PR-tekst.
 22. **Goede Vrijdag en Bevrijdingsdag** hebben `optional: true`, maar dat wordt nergens gelezen: ze worden
     altijd gegenereerd. — B
 
+182. **UI-kalendergeneratie gebruikt alleen de ingevoerde projecteinddatum.** `CalendarDialog.tsx:77`
+    en `ResourceCalendarDialog.tsx:57` geven alleen `project.endDate` aan `computeGenerateSpan`, ook
+    wanneer `cpmResult.projectEnd` later ligt. Dit is de open UI-vraag uit 124, waarvan het MCP-deel
+    is opgelost. Of dit UI-gedrag bedoeld is, is niet uitgezocht; niet in de app nagespeeld. — S
+
 
 ## Bibliotheek, bezetting, extensies, AI
 
@@ -156,14 +161,6 @@ en noem het in je rapport of PR-tekst.
     vergelijking. Symbolische links worden ook niet opgelost. Afgeleid uit de code door de review van #336,
     niet op een Mac nagespeeld. — S
 
-124. **`planner_update_calendar` `generate` dekt het projecteinde niet als `endDate` gezet is.**
-    `calendarSpan` (`calendarResourceTools.ts:585-590`) neemt `project.endDate || cpmResult.projectEnd`. Een
-    `endDate` gaat dus voor het berekende einde. Loopt de planning daarna door, dan krijgen die jaren geen
-    feestdagen en komt er geen waarschuwing; opnieuw genereren helpt niet, want de spanne blijft op `endDate`
-    staan. Nagespeeld in een scratch-script (agent-audit 2026-10-19). Anders dan 88 (geen rekenresultaat).
-    De UI-regeneratie gebruikt dezelfde `computeGenerateSpan` (`ResourceCalendarDialog.tsx:57`); of dat daar
-    bedoeld is, is niet uitgezocht. Voorstel: het latere van `endDate` en het berekende einde nemen, of een
-    `warnings`-regel geven. — B
 126. **Updatevenster: de tekst *Bezig met installeren…* is niet te bereiken.** De balk met
     `updates.installing` staat achter `isDownloading` (`status.kind === 'downloading'`), terwijl de tekst
     `isReadyToInstall` (`'readyToInstall'`) vraagt (`UpdateDialog.tsx:125-128,205-208`). Na de download springt
@@ -266,36 +263,10 @@ en noem het in je rapport of PR-tekst.
     `tests/planning/check-xer-status-afleiden.ts` pint het huidige gedrag vast. In het XER-corpus komt het
     geval 0 keer voor. Gevonden bij de review van #358. Voorstel: een onbekende status behandelen als een lege
     (afleiden uit de voortgang, melding blijft), zoals MPXJ; besluit van de eigenaar nodig. — B
-119. **`.mpp`: een werkresource kan als materiaal binnenkomen.** `readResources`
-    (`src/services/mpp/mppEntities.ts`) koppelt een resource aan het EERSTE FixedData-record met dezelfde
-    uid, ook als dat een kort plaatshoudersrecord van 16 bytes is. MPXJ's `createResourceMap` slaat records
-    korter dan de volle maat over. Gevolg: type (meta-item van de verkeerde index) en `maxUnits` komen uit het
-    plaatshoudersrecord. Gemeten met MPXJ's `junit/data/mpp14resource.mpp`: *Wade Golden* en *Jon Iles*
-    worden MATERIAL, in `mspdiresource.xml` (dezelfde planning) LABOR. Gevonden bij het importverslag
-    (#391). Voorstel: records korter dan de volle maat overslaan, zoals MPXJ. — B
 
-127. **IFC-tab *Toepassen* wist de bibliotheekkoppeling en zet *Niet opgeslagen* uit.** *Toepassen*
-    (`IFCPanel.tsx:57-62`) roept `loadState` aan zonder `linkedOpen`; `applyLoadedProject` wist dan `companyId`
-    en `companyName` (`fileSlice.ts:797-799`) en `isDirty` wordt `false` (`documentContract.ts:489`). Een
-    gewijzigd project lijkt zo opgeslagen, en sluiten vraagt niets. Nagespeeld met het voorbeeld plus
-    bibliotheek en een gewijzigde taaknaam: vóór `isDirty` true, erna false, `companyName` null, de wijziging
-    blijft aanwezig. Voorstel: `isDirty` laten staan en de koppeling behouden. — B
 128. **CSV: een datum in een onleesbare vorm wordt stil "vandaag".** `csvDateOrToday` valt terug op
     `localTodayIso()` (`importDates.ts:71-74`, gebruikt door `csvReader.ts:135`). De Help noemt alleen de drie
     geldige vormen. Of er elders een melding voor komt, is niet nagegaan. Niet nagespeeld. — S
-153. **MSPDI: een onleesbare taakdatum bij een urentaak breekt de hele import af.** `<Start>NA</Start>` (of
-    `<Finish>`, `<ActualStart>`, `<ConstraintDate>`, `<Deadline>`, `<EarlyStart>`, `<LateFinish>`) op een taak
-    met een uurkalender gaat door `importDateTime(raw, true)` (`importDates.ts`) → `formatInstant` →
-    `toISOString()` en geeft `RangeError: Invalid time value` (`mspdiReader.ts`, taakdatums, actuals,
-    constraint, deadline en "datums zoals opgeslagen"). Nagespeeld met een tijdelijke check op main én op de
-    lezer van vóór #392: in beide gevallen dezelfde `RangeError`, dus niet door #392 ingevoerd. Alleen
-    ongeldige invoer (het schema eist `xsd:dateTime`). Gevonden bij de fix van VERVOLG 13 van #392.
-    Voorstel: dezelfde regel als de baseline (`importDateTimeOrUndefined`): onleesbaar = ontbrekend, met de
-    bestaande terugval per veld. — B
-154. **P6 XML: dezelfde `RangeError` bij een onleesbare datum op een urentaak.** `p6xmlReader.ts` roept
-    `importDateTime(raw, hourDates)` aan voor geplande start/finish, actuals, constraints en de opgeslagen
-    datums (rond regel 920–982). Afgeleid uit de code, niet nagespeeld; de lezer is niet door #392
-    veranderd. Voorstel: zoals 153. — S
 155. **`.mpp` zonder veldkaarten: vaste kosten en tarieven ontbreken in het importverslag.** De terugval op de
     standaardveldkaarten kent die velden niet, dus het verslag meldt hun verlies niet. VERVOLG 5 van #392,
     gemeld door de reviewer. Niet nagespeeld. — S
@@ -316,13 +287,6 @@ en noem het in je rapport of PR-tekst.
     (`getElementInt`) hem wel als Baseline 0 leest. `<TaskUID>01</TaskUID>` geeft bij gelijke baselines
     telling 1, terwijl de lezer wel aan taak 1 koppelt. VERVOLG 11 van #392. Voorstel: baselinenummer en
     taak-UID numeriek parsen zoals de lezer. — S
-161. **Voortgangsblad: de preview maakt geen verschil tussen een onbekende taak-ID en een dubbele WBS.** Beide
-    staan onder *Wacht op koppeling* (`ProgressImportDialog.tsx:147-149`), met alleen WBS en naam uit het blad,
-    het bladrijnummer en *Kies een taak…* (r. 369-400). De reden (`unmatched` of `ambiguousWbs`) en de
-    `OPS Task ID` uit het blad staan pas in het venster *Resultaat*, na *Toepassen* (r. 500). Een rij met
-    alleen een onbekende ID en geen WBS of naam toont dus een lege kop. Dubbele rijen (`duplicateRow`) staan
-    wel apart, met hun reden. De store-uitkomst is wel per soort apart: `check-progress-import-ronde.ts` deel D.
-    Voorstel: in *Wacht op koppeling* de reden en de ID uit het blad tonen (#405 deel 5). — B (code en test)
 162. **Desktop (Linux/macOS): Opslaan overschrijft een alleen-lezen projectbestand als de map schrijfbaar
     is.** `replaceUserFile` (`atomicWrite.ts`) schrijft een halffabricaat met de rechten van het origineel
     (0444) en hernoemt het over het doel; op POSIX mag dat. Het bestand krijgt de nieuwe inhoud en blijft
@@ -330,11 +294,6 @@ en noem het in je rapport of PR-tekst.
     `check-save-failure-status.ts` §1R (MEETING-regel 1R-d). Is de map ook alleen-lezen, of Windows met het
     kenmerk alleen-lezen, dan faalt opslaan wel netjes (zelfde check, §1 en §2). Voorstel: bij een doel zonder
     schrijfbit eerst vragen of melden. Een besluit voor de eigenaar. — B
-163. **Web: Ctrl+S op een vergrendeld bestand opent zonder uitleg de bestandskiezer.** `saveToRefWeb`
-    (`webBackend.ts`) slikt elke fout (ook `NoModificationAllowedError`) en geeft `false`; `writeActiveDocument`
-    valt dan terug op Opslaan als. Annuleert de gebruiker, dan komt er geen melding (het document blijft
-    terecht gewijzigd). Gezien in `check-save-failure-status.ts` §3a/3b. Voorstel: een echte schrijffout
-    melden vóór de kiezer verschijnt. — B
 
 ## Rondleiding, Help en extensie-gidsen
 
@@ -472,6 +431,17 @@ en noem het in je rapport of PR-tekst.
     op `repository.pullRequest.projectCards`. De body is wel bijgewerkt via
     `gh api --method PATCH repos/OpenAEC-Foundation/open-planner-studio/pulls/479 -F body=@<bestand>`.
     Voorstel: de GitHub CLI op de host bijwerken; de repo zelf is niet aangepast hiervoor. — B
+
+181. **`OPS_MPP_CRAWL` kiest twee verschillende corpusscopes in `check-mpp-import.ts`.** F4 (rond
+    regel 4024) gebruikt standaard de hele `testdata-crawl`-root en pint samen met `OPS_MPP_CORPUS`
+    216 bestanden / 3413 taken; T9 (rond regel 5968) gebruikt standaard de submap
+    `testdata-crawl/crawl-mpp` met een basislijn van 49 bestanden / 788 taken. Beide lezen dezelfde
+    omgevingsvariabele, dus één ingestelde root kan niet beide scopes correct kiezen. Vóór het verbod
+    op lokale Node-processen gemeld: met de hele root 449 mpp-import-mismatches, met de `crawl-mpp`-scope
+    7 F4-tellingfouten. Er is geen vergelijking met een schone baseline gedaan; deze aantallen bewijzen
+    geen gevolg van een codewijziging. Voorstel: de scopes afzonderlijk instelbaar maken of de submap
+    eenduidig van de root afleiden. Niet opgelost in de fix van 119.
+    — B (scopemismatch in de code), S (gemelde gevolgen, geen schone baselinevergelijking)
 
 ## Wensen en open taken (geen bug)
 

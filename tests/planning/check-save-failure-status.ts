@@ -12,8 +12,9 @@
 //   §1R dezelfde kern tegen het ECHTE bestandssysteem (Linux/macOS; overgeslagen als root);
 //   §2  Tauri via de echte store-actie: een nep-`__TAURI_INTERNALS__.invoke` speelt plugin-fs en
 //       plugin-dialog na, met de fouttekst die plugin-fs echt geeft (een string, geen Error);
-//   §3  web met een FileSystemFileHandle: `createWritable` gooit `NoModificationAllowedError` of
-//       `NotAllowedError`;
+//   §3  web met een FileSystemFileHandle: echte fouten uit createWritable/write/close worden vóór
+//       de terugval gemeld; annuleren, mislukte/geslaagde kopie en wijzigen tijdens de kiezer;
+//       NotAllowedError blijft de download-terugval gebruiken;
 //   §4  de site (`window.openaecHost`): Opslaan als naar een nieuw site-bestand mislukt, en Opslaan
 //       naar een bestaand site-bestand mislukt.
 //
@@ -51,8 +52,9 @@ installFakeRecoveryIndexedDb();
 const { replaceUserFile, USER_FILE_TMP_SUFFIX } = await import('@/services/fileAccess/atomicWrite');
 type UserFileFs<D> = import('@/services/fileAccess/atomicWrite').UserFileFs<D>;
 const { useAppStore } = await import('@/state/appStore');
-const { resetWebWriteRefusalForTests } = await import('@/services/fileAccess/webBackend');
+const { saveToRefWeb, webWriteRefusedByPlatform, resetWebWriteRefusalForTests } = await import('@/services/fileAccess/webBackend');
 const { setSiteSaveAsker, resetSiteAskers } = await import('@/services/fileAccess/siteDialogs');
+const { resetBrowserSaveNoticeForTests } = await import('@/state/browserSaveNotice');
 const nodeFs = await import('node:fs');
 const nodePath = await import('node:path');
 const nodeOs = await import('node:os');
@@ -94,6 +96,7 @@ async function eistMislukt(label: string, run: () => Promise<unknown>, opts: {
   const nieuw = S().ui.notifications;
   eq(`${label} (1) precies één melding, en dat is saveFailed`,
     nieuw.map((n) => [n.severity, n.messageKey]), [['error', 'notifications.saveFailed']]);
+  eq(`${label} (1a) geen dubbele telling binnen één opslagpoging`, nieuw[0]?.count, 1);
   truthy(`${label} (1b) de melding noemt de reden (kreeg ${J(nieuw[0]?.detail)})`, opts.detail.test(String(nieuw[0]?.detail ?? '')));
   eq(`${label} (2) isDirty blijft true`, S().isDirty, true);
   eq(`${label} (3) geen opgeslagen-toestand: opslagdoel en recente bestanden ongewijzigd`,
@@ -298,10 +301,12 @@ const uninstallTauri = () => { delete win.__TAURI_INTERNALS__; };
     S().setProject({ name: `Alleen-lezen ${naam}`, startDate: '2026-06-01' });
     S().addTask({ name: 'Wijziging' });
     useAppStore.setState({ filePath: RO });
+    tauri.calls = [];
     await eistMislukt(`2a Tauri Opslaan, ${naam}`, () => S().saveFile(), {
       target: () => tauri.files.get(RO)?.data, targetBefore: OUD, detail: /Permission denied|Access is denied/,
     });
     eq(`2a Tauri Opslaan, ${naam}: geen halffabricaat`, tauri.files.has(RO + USER_FILE_TMP_SUFFIX), false);
+    eq(`2a Tauri Opslaan, ${naam}: geen automatische terugvalkiezer`, tauri.calls.includes('plugin:dialog|save'), false);
 
     // 2b Opslaan als: de gebruiker kiest in de dialoog het alleen-lezen bestand.
     S().newDocument();
@@ -322,21 +327,40 @@ const uninstallTauri = () => { delete win.__TAURI_INTERNALS__; };
 }
 
 // ═══ §3 Web met een bestandshandle ═════════════════════════════════════════════════════════════
-type HandleState = { data: string; writeError: () => DOMException };
+type HandleState = {
+  data: string; name?: string; permission?: PermissionState;
+  writeError?: () => unknown; failAt?: 'createWritable' | 'write' | 'close';
+};
 const makeHandle = (state: HandleState): FileSystemFileHandle => ({
   kind: 'file',
-  name: 'project.ifc',
+  name: state.name ?? 'project.ifc',
   isSameEntry: () => Promise.resolve(false),
-  getFile: () => Promise.resolve(new File([state.data], 'project.ifc')),
-  queryPermission: () => Promise.resolve('granted'),
-  requestPermission: () => Promise.resolve('granted'),
-  createWritable: () => Promise.reject(state.writeError()),
+  getFile: () => Promise.resolve(new File([state.data], state.name ?? 'project.ifc')),
+  queryPermission: () => Promise.resolve(state.permission ?? 'granted'),
+  requestPermission: () => Promise.resolve(state.permission ?? 'granted'),
+  createWritable: async () => {
+    const fail = (phase: HandleState['failAt']) => {
+      if (state.writeError && (state.failAt ?? 'createWritable') === phase) throw state.writeError();
+    };
+    fail('createWritable');
+    let pending = state.data;
+    return {
+      write: async (data: string) => { fail('write'); pending = data; },
+      close: async () => { fail('close'); state.data = pending; },
+    };
+  },
 } as unknown as FileSystemFileHandle);
 let pickerCalls = 0;
+let noticesAtPicker: Array<ReturnType<typeof S>['ui']['notifications']> = [];
 const installPicker = (answer: () => Promise<FileSystemFileHandle>) => {
   pickerCalls = 0;
+  noticesAtPicker = [];
   win.showOpenFilePicker = () => Promise.resolve([]);
-  win.showSaveFilePicker = () => { pickerCalls++; return answer(); };
+  win.showSaveFilePicker = () => {
+    pickerCalls++;
+    noticesAtPicker.push(S().ui.notifications);
+    return answer();
+  };
 };
 const vergrendeld = () => new DOMException('The object can not be modified in this way.', 'NoModificationAllowedError');
 const geweigerd = () => new DOMException(
@@ -345,7 +369,8 @@ const geweigerd = () => new DOMException(
 );
 {
   // 3a Opslaan naar een handle van een vergrendeld/alleen-lezen bestand. In-place schrijven mislukt;
-  // de app biedt dan de bestandskiezer aan. Kiest de gebruiker hetzelfde bestand: saveFailed.
+  // de app meldt de fout VÓÓR de bestandskiezer. Kiest de gebruiker hetzelfde bestand, dan blijft
+  // het één melding (ook geen ×2).
   resetWebWriteRefusalForTests();
   const ro: HandleState = { data: OUD, writeError: vergrendeld };
   const handle = makeHandle(ro);
@@ -358,12 +383,19 @@ const geweigerd = () => new DOMException(
   });
   eq('3a de app bood na de mislukte in-place-schrijfactie de bestandskiezer aan', pickerCalls, 1);
 
-  // 3b Zelfde, maar de gebruiker annuleert de kiezer: niets opgeslagen, geen melding, nog gewijzigd.
+  eq('3a de fout staat al in het centrale kanaal wanneer de kiezer opent',
+    noticesAtPicker[0]?.map((n) => [n.severity, n.messageKey, n.count]), [['error', 'notifications.saveFailed', 1]]);
+  eq('3a de terugval werkt dezelfde melding bij', S().ui.notifications[0]?.id, noticesAtPicker[0]?.[0]?.id);
+
+  // 3b Zelfde, maar de gebruiker annuleert de kiezer: fout blijft zichtbaar, niets opgeslagen. De
+  // sluitvraag krijgt false, zodat dit gewijzigde document niet alsnog sluit.
   installPicker(() => Promise.reject(new DOMException('The user aborted a request.', 'AbortError')));
-  leegMeldingen();
-  await S().saveFile();
-  eq('3b annuleren na een mislukte schrijfactie: geen melding en geen successtatus',
-    [S().ui.notifications.length, S().isDirty, S().fileHandle === handle], [0, true, true]);
+  let cancelled: boolean | undefined;
+  await eistMislukt('3b web Opslaan, terugval geannuleerd', async () => {
+    cancelled = await S().saveFileForDocument(S().activeDocumentId);
+  }, { target: () => ro.data, targetBefore: OUD, detail: /can not be modified/ });
+  eq('3b annuleren na een mislukte schrijfactie meldt false aan de sluitvraag', cancelled, false);
+  eq('3b geen dubbele kiezer', pickerCalls, 1);
 
   // 3c Opslaan als: de kiezer geeft een alleen-lezen bestand terug.
   installPicker(() => Promise.resolve(makeHandle(ro)));
@@ -372,6 +404,56 @@ const geweigerd = () => new DOMException(
   await eistMislukt('3c web Opslaan als, NoModificationAllowedError', () => S().saveFileAs(), {
     target: () => ro.data, targetBefore: OUD, detail: /can not be modified/,
   });
+
+  // 3c2 Ook een andere fout in de terugval vervangt de eerste reden in dezelfde melding.
+  const vol: HandleState = { data: OUD, writeError: () => new DOMException('disk full', 'QuotaExceededError') };
+  useAppStore.setState({ filePath: 'project.ifc', fileHandle: handle });
+  installPicker(() => Promise.resolve(makeHandle(vol)));
+  await eistMislukt('3c2 terugval mislukt met een andere reden', () => S().saveFile(), {
+    target: () => [ro.data, vol.data], targetBefore: [OUD, OUD], detail: /disk full/,
+  });
+  truthy('3c2 de eerste reden was al vóór de kiezer zichtbaar', /can not be modified/.test(noticesAtPicker[0]?.[0]?.detail ?? ''));
+  eq('3c2 dezelfde melding toont nu de reden van de terugval', S().ui.notifications[0]?.id, noticesAtPicker[0]?.[0]?.id);
+
+  // 3c3 Een geslaagde kopie maakt het document schoon en wordt het volgende opslagdoel. De fout
+  // over het origineel blijft staan; geen onterechte algemene uitleg over browserbeperkingen.
+  const copy: HandleState = { data: '', name: 'kopie.ifc' };
+  const copyHandle = makeHandle(copy);
+  installPicker(() => Promise.resolve(copyHandle));
+  leegMeldingen();
+  const saved = await S().saveFileForDocument(S().activeDocumentId);
+  eq('3c3 geslaagde terugval geeft true aan de sluitvraag en wist dirty', [saved, S().isDirty], [true, false]);
+  truthy('3c3 de kopie bevat het project', copy.data.includes('Web opslaan als'));
+  eq('3c3 het origineel blijft ongewijzigd', ro.data, OUD);
+  eq('3c3 alle doelvelden wijzen naar de kopie',
+    [S().filePath, S().fileHandle === copyHandle, S().siteFileId, S().siteFileVersion], ['kopie.ifc', true, null, null]);
+  const recent = S().recentFiles[0];
+  truthy('3c3 Recent wijst naar de kopie', recent?.name === 'kopie.ifc' && recent.ref.kind === 'handle' && recent.ref.handle === copyHandle);
+  eq('3c3 alleen de echte fout, geen browserbeperking of dubbele melding',
+    S().ui.notifications.map((n) => [n.severity, n.messageKey, n.count]), [['error', 'notifications.saveFailed', 1]]);
+  S().addTask({ name: 'Naar de kopie' });
+  installPicker(() => Promise.reject(new Error('geen tweede kiezer verwacht')));
+  leegMeldingen();
+  eq('3c3 volgende Opslaan werkt de kopie direct bij', await S().saveFileForDocument(S().activeDocumentId), true);
+  truthy('3c3 de nieuwe wijziging staat in de kopie', copy.data.includes('Naar de kopie'));
+  eq('3c3 geen kiezer of melding bij direct opslaan', [pickerCalls, S().ui.notifications.length], [0, 0]);
+
+  // 3c4 Wijzigen terwijl de terugvalkiezer openstaat: de opgeslagen momentopname maakt de latere
+  // wijziging niet schoon. Het nieuwe doel wordt wel onthouden voor de volgende Ctrl+S.
+  S().addTask({ name: 'Voor de kiezer' });
+  useAppStore.setState({ filePath: 'project.ifc', fileHandle: handle });
+  installPicker(async () => { S().addTask({ name: 'Tijdens de kiezer' }); return copyHandle; });
+  eq('3c4 een wijziging tijdens de terugval geeft false aan de sluitvraag', await S().saveFileForDocument(S().activeDocumentId), false);
+  eq('3c4 nieuwe wijziging blijft dirty, kopie is wel het opslagdoel', [S().isDirty, S().fileHandle === copyHandle], [true, true]);
+  truthy('3c4 de kopie bevat alleen de momentopname', copy.data.includes('Voor de kiezer') && !copy.data.includes('Tijdens de kiezer'));
+
+  // 3c5 Gewoon annuleren van Opslaan als, zonder eerdere schrijffout: stil en gewijzigd.
+  S().newDocument();
+  S().addTask({ name: 'Annuleren' });
+  installPicker(() => Promise.reject(new DOMException('Geannuleerd', 'AbortError')));
+  leegMeldingen();
+  await S().saveFileAs();
+  eq('3c5 annuleren zonder schrijffout meldt geen fout en wist dirty niet', [S().ui.notifications.length, S().isDirty, S().fileHandle], [0, true, null]);
 
   // 3d NotAllowedError: de app behandelt dit BEWUST als weigering door de omgeving (embedded webview
   // zonder schrijfrecht; check-web-save-fallback §1 en §7) en levert het project als download, met
@@ -393,6 +475,37 @@ const geweigerd = () => new DOMException(
   eq('3d de download is gebeurd', downloads.length, 1);
   eq('3d het bestand achter de handle is ongewijzigd', na.data, OUD);
   eq('3d de handle is daarna geen opslagdoel meer (volgende Ctrl+S schrijft niet stil naar de oude plek)', S().fileHandle, null);
+
+  // 3e Het backendcontract bewaart de echte exception uit elke schrijffase; de store kan zo vóór
+  // de kiezer melden wat er misging. Geen van deze fouten latcht de omgeving naar downloads.
+  resetWebWriteRefusalForTests();
+  for (const phase of ['createWritable', 'write', 'close'] as const) {
+    for (const name of ['NoModificationAllowedError', 'NotFoundError', 'QuotaExceededError']) {
+      const error = new DOMException(`schrijffout ${name}`, name);
+      const target: HandleState = { data: OUD, failAt: phase, writeError: () => error };
+      const result = await saveToRefWeb({ kind: 'handle', handle: makeHandle(target) }, 'NIEUW').then(() => null, (err: unknown) => err);
+      truthy(`3e ${phase}/${name}: dezelfde exception bereikt de aanroeper`, result === error);
+      eq(`3e ${phase}/${name}: geen permanente omgevingsweigering`, webWriteRefusedByPlatform(), false);
+      eq(`3e ${phase}/${name}: geen gecommitteerde nieuwe inhoud`, target.data, OUD);
+    }
+  }
+  const abort: HandleState = { data: OUD, writeError: () => new DOMException('Geannuleerd', 'AbortError') };
+  eq('3e annulering blijft false in het backendcontract', await saveToRefWeb({ kind: 'handle', handle: makeHandle(abort) }, 'NIEUW'), false);
+  eq('3e geweigerde toestemming blijft false in het backendcontract', await saveToRefWeb({ kind: 'handle', handle: makeHandle({ data: OUD, permission: 'denied' }) }, 'NIEUW'), false);
+  // 3f Na de echte schrijffout kan de terugval alsnog een download worden (SecurityError bij de
+  // kiezer). Zowel de eerdere fout als de downloadlocatie worden gemeld; het oude doel vervalt.
+  resetBrowserSaveNoticeForTests();
+  S().newDocument();
+  S().addTask({ name: 'Download na schrijffout' });
+  useAppStore.setState({ filePath: 'project.ifc', fileHandle: handle });
+  installPicker(() => Promise.reject(new DOMException('Geen gebruikersactivatie', 'SecurityError')));
+  downloads.length = 0;
+  leegMeldingen();
+  eq('3f download-terugval slaagt', await S().saveFileForDocument(S().activeDocumentId), true);
+  eq('3f fout en downloadlocatie elk één keer gemeld', S().ui.notifications.map(n => [n.severity, n.messageKey, n.count]),
+    [['error', 'notifications.saveFailed', 1], ['info', 'notifications.browserSavesAsDownload', 1]]);
+  eq('3f één download, schoon document en geen oude handle', [downloads.length, S().isDirty, S().fileHandle], [1, false, null]);
+  eq('3f het oorspronkelijke bestand is nog ongewijzigd', ro.data, OUD);
   resetWebWriteRefusalForTests();
   delete win.showSaveFilePicker;
   delete win.showOpenFilePicker;
@@ -425,6 +538,24 @@ const geweigerd = () => new DOMException(
   await eistMislukt('4b site Opslaan, de site weigert', () => S().saveFile(), {
     target: () => versions.get('p1'), targetBefore: [OUD], detail: /Geen schrijfrecht/,
   });
+
+  // 4c Een lokale browserhandle faalt vóór de site-vraag; ook als daarna de site weigert blijft
+  // het één foutmelding, met de reden van die laatste poging en zonder opslagstatus te wijzigen.
+  S().newDocument();
+  S().addTask({ name: 'Lokale kopie naar de site' });
+  const local: HandleState = { data: OUD, writeError: vergrendeld };
+  useAppStore.setState({ filePath: 'project.ifc', fileHandle: makeHandle(local) });
+  let firstNoticeId: string | undefined;
+  setSiteSaveAsker(async () => {
+    firstNoticeId = S().ui.notifications[0]?.id;
+    eq('4c de echte handle-fout staat al vóór de site-vraag in het kanaal',
+      S().ui.notifications.map(n => [n.messageKey, n.detail]), [['notifications.saveFailed', vergrendeld().message]]);
+    return { kind: 'site', name: 'Kopie.ifc' };
+  });
+  await eistMislukt('4c handle-fout gevolgd door sitefout', () => S().saveFile(), {
+    target: () => [local.data, versions.get('p1')], targetBefore: [OUD, [OUD]], detail: /Geen schrijfrecht/,
+  });
+  eq('4c de sitefout vervangt dezelfde melding', S().ui.notifications[0]?.id, firstNoticeId);
   resetSiteAskers();
   delete win.openaecHost;
 }
