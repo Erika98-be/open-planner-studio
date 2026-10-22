@@ -431,12 +431,6 @@ en noem het in je rapport of PR-tekst.
     de versie-audit voor #450. Voorstel: verwijder de standaardwaarde en laat de gebruiker een
     correcte tag invullen. Geen workflow gestart. — B (bestand en lokale versiecontrole)
 
-175. **`progress-entry.spec.ts` opent de taakdialoog soms niet opnieuw.** In CI-run 39750997457
-    (PR #476, browser 3-4, 2026-10-22) faalde het scenario *Regel 2, Taak bewerken* op regel 300:
-    na `seedActualDates` en een canvasdubbelklik ontbrak `[data-ops-task-dialog]`. De eerste opening
-    en de voortgangsvraag in hetzelfde scenario slaagden. De PR wijzigt alleen Vite 7.3.5 naar 7.3.7;
-    de oorzaak en het verband met die wijziging zijn niet vastgesteld. — S
-
 176. **MSPDI: de projectstart wordt zonder XML-escaping geëxporteerd.** `mspdiWriter.ts` schrijft
     `project.startDate` rechtstreeks in `<StartDate>`; de reader neemt een tekstprefix uit het
     invoerveld over. Een ongeldige datum met XML-metatekens kan zo ongeldige XML opleveren. Gezien
