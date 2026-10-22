@@ -400,6 +400,21 @@ en noem het in je rapport of PR-tekst.
     eenduidig van de root afleiden. Niet opgelost in de fix van 119.
     — B (scopemismatch in de code), S (gemelde gevolgen, geen schone baselinevergelijking)
 
+189. **De browserroute Tabel na Gantt kan na verkleinen naast het raster scrollen.**
+    Bevestigd in PR #517, head `33b95ba2ec915b3c07ff15501f0af7ac433e7a86`, CI-run
+    `39830820998`, job `120006178606` (browser 2/4: 208 geslaagd, 1 mislukt),
+    `tests/browser/task-grid-overlay-scrollbars.spec.ts:565`. De trace toont na
+    `setViewportSize(1280×460)` bij de bounding-boxmeting nog een corehoogte van 477 px;
+    bij de muisbeweging is die 217 px. Het oude middelpunt `(494, 444,5)` ligt dan in
+    de statusbalk (screenshot), zodat twintig echte wielgebeurtenissen de tabel niet raken.
+    Eindmeting: `scrollTop: 0`, `maxScrollTop: 6255`, `rowAtBottom: true`.
+    `FullTaskGrid.useElementSize` verwerkt de nieuwe containermaat via een `ResizeObserver`;
+    de test wacht alleen op een al zichtbare balk. Dit bewijst een synchronisatiefout in de test,
+    geen vastlopende productschuifstand. Afzonderlijk van documentwisselfixture 169.
+    Voorstel: wacht op de nieuwe viewport én overeenkomende container-/coregeometrie,
+    controleer het geraakte rasteroppervlak en behoud de echte tabklik, resize, wielroute
+    en bestaande eindasserties. — B
+
 ## Wensen en open taken (geen bug)
 
 45. **Extensie-API**: extensies kunnen geen relatie of kalender gericht wijzigen en de selectie niet lezen.
