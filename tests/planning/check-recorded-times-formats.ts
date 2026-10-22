@@ -10,7 +10,7 @@
 // de browserflow in `tests/browser/recorded-dates.spec.ts`.
 import { readP6XML } from '@/services/p6/p6xmlReader';
 import { readMSPDI } from '@/services/msproject/mspdiReader';
-import { readCSV } from '@/services/csv/csvReader';
+import { CsvDateImportError, readCSV } from '@/services/csv/csvReader';
 import { readIFC } from '@/services/ifc/ifcReader';
 import { writeIFC } from '@/services/ifc/ifcWriter';
 import { criticalSlackLimitDaysOf, mppTotalSlackTenths, openMppProject, parseProjectProperties, readMPP, readTasks } from '@/services/mpp/mppReader';
@@ -20,7 +20,6 @@ import type { ImportResult } from '@/services/importTypes';
 import type { RecordedTime } from '@/engine/scheduler/recordedDates';
 import { externIfc } from '../fixtures/recordedDatesIfc';
 import { CSV_FIXTURE, CSV_FIXTURE_DATES_ONLY, CSV_FIXTURE_UNREADABLE_DATES, MSPDI_FIXTURE, P6XML_FIXTURE } from '../fixtures/recordedTimesFormats';
-import { csvDateOrToday } from '@/services/importDates';
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { installDOMParser } from './xmldom-shim';
@@ -110,13 +109,14 @@ const recordedOf = (r: ImportResult, wbs: string): RecordedTime | undefined => {
   eq('3e zonder speling-/kritiekkolom: alleen start/einde', recordedOf(r2, '1.1'), { start: '2026-03-02', finish: '2026-03-06' });
   const r3 = readCSV(['WBS,Name,Duration', '1.1,A,5'].join('\n'));
   eq('3f zonder datumkolommen: geen kanaal en geen herkomst', [r3.recordedTimes, r3.recordedTimesOrigin], [undefined, undefined]);
-  // Critreview op ded4d8c3, bevinding 1: een GEVULDE maar onleesbare datumcel ("Mon 3/2/26",
-  // "2 maart 2026") is geen vastlegging — de vergevende lezing zou er "vandaag" van maken.
-  const r4 = readCSV(CSV_FIXTURE_UNREADABLE_DATES);
-  eq('3g onleesbare datumcellen ("Mon 3/2/26", "2 maart 2026") ⇒ geen vastlegging, geen kanaal, geen herkomst',
-    [r4.recordedTimes, r4.recordedTimesOrigin], [undefined, undefined]);
-  eq('3h …terwijl task.time de gewone, vergevende lezing houdt (vandaag-terugval, byte-identiek aan csvDateOrToday)',
-    [byWbs(r4, '1.1')?.time.scheduleStart, byWbs(r4, '1.2')?.time.scheduleStart], [csvDateOrToday('Mon 3/2/26'), csvDateOrToday('2 maart 2026')]);
+  // Knownbug 128: onherkende gevulde datums mogen geen taak-/vastleggingspayload opleveren.
+  let unreadableError: unknown;
+  try { readCSV(CSV_FIXTURE_UNREADABLE_DATES); } catch (err) { unreadableError = err; }
+  truthy('3g onleesbare datum ⇒ expliciete importweigering', unreadableError instanceof CsvDateImportError);
+  eq('3h weigering noemt het eerste onleesbare veld',
+    unreadableError instanceof CsvDateImportError
+      ? [unreadableError.row, unreadableError.column, unreadableError.value] : undefined,
+    [2, 'Start', 'Mon 3/2/26']);
   const r5 = readCSV(['WBS,Name,Duration,Start,Finish', '1.1,A,5,2026-02-31,2026-03-06', '1.2,B,5,02-03-2026,06/03/2026'].join('\n'));
   eq('3i een niet-bestaande datum (31 februari) is evenmin een vastlegging', recordedOf(r5, '1.1'), undefined);
   eq('3j DD-MM-YYYY en DD/MM/YYYY blijven herkend', recordedOf(r5, '1.2'), { start: '2026-03-02', finish: '2026-03-06' });

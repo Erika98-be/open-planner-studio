@@ -182,6 +182,7 @@ export type NotificationSeverity = 'error' | 'info';
  */
 export type NotificationMessageKey =
   | 'notifications.openFailed'
+  | 'notifications.csvInvalidDate'
   | 'notifications.extGuideCallbackFailed'
   | 'notifications.extHelpProjectOpenFailed'
   // Een extensie-importer (Backstage → Importeren) gooide een fout. Parameter `name` (de naam van de

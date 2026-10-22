@@ -2,6 +2,7 @@ import { claimTaskTypesNotice, notifyTaskTypesUnlocked, notifyTaskTypesUnlockedC
 import { taskTypesNeedNotice } from '../taskTypesVisibility';
 import { writeIFC, ifcObjectSeed } from '@/services/ifc/ifcWriter';
 import { writeCSV, writeProgressSheetCSV } from '@/services/csv/csvWriter';
+import { CsvDateImportError } from '@/services/csv/csvReader';
 import { flattenOrder, inferWbsAutoNumberOnOpen } from '@/utils/wbs';
 import { writeMSPDI } from '@/services/msproject/mspdiWriter';
 import { writeP6XMLWithReport } from '@/services/p6/p6xmlWriter';
@@ -237,9 +238,17 @@ export function xerImportNotice(
 /**
  * De melding bij een MISLUKTE import (elk open-pad). Een P6 XML-bestand zonder leesbare activiteit
  * (`P6XmlImportError`) krijgt `notifications.p6xmlImportEmpty` met de reden als detailregel; elke
- * andere fout de bestaande sleutel (`importErrorMessageKey`) met de technische tekst als detail.
+ * onherkende CSV-datum zijn rij/kolom/celwaarde; andere fouten de bestaande sleutel
+ * (`importErrorMessageKey`) met de technische tekst als detail.
  */
 export function importFailureNotice(err: unknown, detail: string): NotifyInput {
+  if (err instanceof CsvDateImportError) {
+    return {
+      severity: 'error',
+      messageKey: 'notifications.csvInvalidDate',
+      params: { row: err.row, column: err.column, value: err.value },
+    };
+  }
   if (err instanceof P6XmlImportError) {
     const reasonKey = err.reason === 'no-object-ids' ? 'notifications.p6xmlImportEmptyNoObjectIds' as const
       : err.reason === 'xer-columns' ? 'notifications.p6xmlImportEmptyXerColumns' as const
