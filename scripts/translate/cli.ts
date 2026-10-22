@@ -861,7 +861,7 @@ const uiGaps = (lang: string): ReleaseGap[] => uiReleaseGaps(lang, nsInputs(lang
 const docsGaps = (lang: string): ReleaseGap[] =>
   (lang !== 'en' && docsLangs().includes(lang) ? docsReleaseGaps(lang, docsStates(lang)) : []);
 
-const GAP_LABEL: Record<ReleaseGap['state'], string> = { missing: 'ontbreekt', stale: 'verouderd', unhashed: 'zonder hash' };
+const GAP_LABEL: Record<ReleaseGap['state'], string> = { missing: 'ontbreekt', stale: 'verouderd', unhashed: 'zonder hash', 'fixed-text': 'vaste tekst wijkt af' };
 
 /** `status --strict` = `npm run verify:translations`: exit 1 bij elk UI-gat in elke taal; docsgaten alleen gemeld. */
 function strictStatus(langs: string[]): void {
@@ -873,8 +873,8 @@ function strictStatus(langs: string[]): void {
     total += gaps.length;
     red.push(lang);
     const count = (state: ReleaseGap['state']) => gaps.filter(g => g.state === state).length;
-    console.log(`XX  ${lang}: ${count('missing')} ontbreekt, ${count('stale')} verouderd, ${count('unhashed')} zonder hash`);
-    for (const g of gaps.slice(0, 10)) console.log(`      ${g.where} (${GAP_LABEL[g.state]})`);
+    console.log(`XX  ${lang}: ${count('missing')} ontbreekt, ${count('stale')} verouderd, ${count('unhashed')} zonder hash, ${count('fixed-text')} vaste tekst wijkt af`);
+    for (const g of gaps.slice(0, 10)) console.log(`      ${g.where} (${GAP_LABEL[g.state]})${g.detail ? `: ${g.detail}` : ''}`);
     if (gaps.length > 10) console.log(`      … en ${gaps.length - 10} meer (\`npm run translate -- status ${lang}\`)`);
   }
   const docsBehind = langs.map(lang => ({ lang, n: new Set(docsGaps(lang).map(g => g.where.split('#')[0])).size }))
