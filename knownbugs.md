@@ -53,11 +53,6 @@ en noem het in je rapport of PR-tekst.
     gebouwd):** de afgeleide werkelijke start moet het oorspronkelijk geplande begin van vóór de
     statusdatumverschuiving zijn. — B (MCP), S (UI)
 
-105. **In "Datums zoals opgeslagen" tonen het taakpaneel, path tracing en de MCP-tool "geen driving"**, omdat
-    ze de driving-lijst nog rechtstreeks lezen. De Gantt en het rapport gebruiken sinds deze PR de helper
-    `drivingInfo.ts`, die "geen driving-informatie" onderscheidt van "berekend, niets driving"; de andere
-    lezers nog niet. Gevonden bij de prestatiefixes voor grote planningen (rehab-2). Voorstel: dezelfde helper
-    in die drie lezers. — S
 114. **De motor plant een lopende taak op 100 % niet met zijn vastgelegde restduur.** Zo'n taak (status
     STARTED, `completion` 1, geen werkelijk einde) komt uit P6 als `TK_Active` op 100 %. In P6 eindigt
     "Duration 100 %" (rest 0) op de statusdatum; "Physical 100 %" (rest > 0) plant de rest in. OPS zet beide
@@ -71,6 +66,13 @@ en noem het in je rapport of PR-tekst.
     S voor de P6-kant
 
 ## Tabel, invoer en bediening
+
+183. **De tabelkolom *Bepalend* onderscheidt onbekende driving nog niet van berekend zonder driving.**
+    `taskGridAdapter.ts` geeft het hele `cpmResult` door aan `buildTaskRelationIndex`, dat rechtstreeks
+    `drivingSequenceIds` leest en `drivingUnknown` niet meeneemt. `relationDrivingText` maakt daarvan
+    in "Datums zoals opgeslagen" dezelfde `—` als bij een bekende lege lijst; ook de relatiechips
+    krijgen alleen `driving: false`. Gevonden bij knownbug 105; buiten de drie gevraagde lezers gelaten.
+    Statisch nagegaan op main `a4670d8b8`, niet in de browser nagespeeld (lokale processen verboden). — S
 
 13. **Tabelkolom *Kleur*** wordt in IFC bewaard, maar geen balk of rapport gebruikt hem. — B
 16. **Taken kopiëren** heeft geen zichtbare bediening; alleen Ctrl+C/V met de Gantt in focus. — B

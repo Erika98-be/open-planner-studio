@@ -189,7 +189,7 @@ export function TaskDependenciesSection({ taskId, interactive = true }: { taskId
                   title={t('properties.drivingUnknown')}
                   style={{ color: 'var(--theme-text-muted)' }}
                 >
-                  <CircleHelp size={10} />
+                  <CircleHelp size={10} aria-hidden />
                 </span>
               ) : isDriving && (
                 <span title={t('properties.driving')} style={{ color: 'var(--theme-accent)' }}>
