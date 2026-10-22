@@ -1396,7 +1396,7 @@
     },
     "resumeFromActualElapsed": {
       "label": "Restwerk hervat na de al verstreken duur",
-      "help": "Een lopende taak hervat haar restwerk op de werkelijke start plus de al verstreken duur, niet op de statusdatum."
+      "help": "Een lopende taak hervat haar restwerk niet eerder dan de werkelijke start plus de al verstreken duur. Ook de statusdatum en de voorgangergrens blijven ondergrenzen; de laatste van de drie geldt."
     },
     "unstartedIgnoresStatusDate": {
       "label": "Niet-gestarte taken niet naar de statusdatum",

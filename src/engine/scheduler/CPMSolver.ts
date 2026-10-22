@@ -2372,9 +2372,10 @@ export class CPMSolver {
             } else {
             // RETAINED_LOGIC: remaining respecteert óók de voorganger-druk (earlyStart).
             if (earlyStart > remStart) remStart = earlyStart;
-            // Conventie A22 `resumeFromActualElapsed`: MS Project hervat het restwerk NIET op de
-            // statusdatum zelf, maar op `actualStart + reeds-verstreken-duur` (`totalSpan − remaining`,
-            // vanaf de eigen `actualES`), doorgesnapt via dezelfde werk-optelling als het restwerk.
+            // Conventie A22 `resumeFromActualElapsed`: MS Project voegt `actualStart + reeds-verstreken-duur`
+            // (`totalSpan − remaining`, vanaf de eigen `actualES`) toe als derde ondergrens voor het restwerk,
+            // doorgesnapt via dezelfde werk-optelling als het restwerk. De statusdatum en de voorganger-druk
+            // blijven gelden: de laatste van de drie grenzen bepaalt `remStart`.
             // Bewijs (OzBuild "Create Technical Specification": 20% van 5d ⇒ verstreken 1d; actualStart
             // vr 08:00 + 1 werkdag → ma 08:00; + 4 werkdagen restwerk = MSP's eigen opgeslagen finish
             // EXACT). De statusdatum-vloer alléén geeft hier te vroeg.
