@@ -457,7 +457,11 @@ test('crashherstel: oude v1-snapshot herstelt en onleesbare kopie blijft bewaard
       return value;
     });
     await page.clock.pauseAt(await page.evaluate(() => Date.now() + 500));
-    const addTask = page.getByRole('button', { name: /New task directly below the selection|Nieuwe taak direct onder de selectie/ });
+    // Zonder selectie heet de knop 'onderaan'; een klik kan de selectie en dus de naam wijzigen.
+    expect(await page.evaluate(() => window.__OPS__!.store.getState().selectedTaskIds)).toEqual([]);
+    const addTask = page.locator('button[data-ops-ribbon-item="addTask"]');
+    await expect(addTask).toHaveAccessibleName(locale === 'nl'
+      ? 'Nieuwe taak onderaan de lijst' : 'New task at the bottom of the list');
     let previousAttempts = await attempts();
     await addTask.click();
     await page.clock.runFor(10_000);
@@ -580,7 +584,9 @@ test('crashherstel: oude v1-snapshot herstelt en onleesbare kopie blijft bewaard
     });
     expect(await refusedOperations()).toEqual(Array(4).fill('IndexedDbUpgradeBlockedError'));
     await page.clock.pauseAt(await page.evaluate(() => Date.now() + 500));
-    const addTask = page.getByRole('button', { name: 'New task directly below the selection' });
+    expect(await page.evaluate(() => window.__OPS__!.store.getState().selectedTaskIds)).toEqual([]);
+    const addTask = page.locator('button[data-ops-ribbon-item="addTask"]');
+    await expect(addTask).toHaveAccessibleName('New task at the bottom of the list');
     await addTask.click();
     await page.clock.runFor(10_000);
     await expect(warning).toBeVisible(); // error-melding verloopt niet zoals een info-toast
