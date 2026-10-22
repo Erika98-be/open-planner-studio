@@ -9,15 +9,15 @@
 //
 // Draaien: bundel met esbuild zoals run.sh dat doet en start met node. Exit 0 = alles groen.
 import { readFileSync, mkdtempSync, mkdirSync, writeFileSync, readlinkSync, symlinkSync, linkSync, lstatSync, readdirSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { homedir, tmpdir } from 'node:os';
 import { installNodeFileIpc } from './nodeFileIpc';
-import { dirname, join, sep } from 'node:path';
+import { basename, dirname, join, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   replaceUserFile, isForbiddenPathError, USER_FILE_TMP_SUFFIX, writeUserTextFileTauri, writeUserBytesTauri, type UserFileFs,
 } from '@/services/fileAccess/atomicWrite';
 
-declare const process: { exit(code: number): never };
+declare const process: { exit(code: number): never; umask(): number };
 
 const diffs: string[] = [];
 let checks = 0;
@@ -181,6 +181,21 @@ for (const link of ['sym', 'hard'] as const) {
   eq('6b zonder resten', [...files.keys()], [N]);
 }
 
+// De zelfstandige naam blijft naast het gekozen doel: Windows-drive, UNC en een POSIX-naam
+// met een letterlijke backslash. Dit deel toetst padtekst; echte OS-creatie staat in deel 7.
+for (const [target, directory] of [
+  ['C:\\werk\\project.ifc', 'C:\\werk\\'],
+  ['\\\\server\\share\\project.ifc', '\\\\server\\share\\'],
+  ['/home/u/lang\\bestand.ifc', '/home/u/'],
+]) {
+  const { fs, files, temps } = fakeFs({});
+  await replaceUserFile(fs, target, NIEUW);
+  eq(`6 pad ${target}: complete uitvoer zonder resten`, [...files.keys()], [target]);
+  truthy(`6 pad ${target}: korte zelfstandige naam in de gekozen map`, temps.length === 1
+    && temps[0].startsWith(directory) && !/[\\/]/.test(temps[0].slice(directory.length))
+    && temps[0].length - directory.length < 80);
+}
+
 // 6a. Een fout vóór de exclusieve aanmaak geeft geen eigendom; nooit opruimen/direct terugvallen.
 for (const error of [new Error('File exists (os error 17)'), new Error('Permission denied (os error 13)')]) {
   const { fs, files, calls, opts } = fakeFs({ [P]: { data: OUD, mode: 0o600 } });
@@ -245,6 +260,37 @@ for (const kind of ['text', 'bytes'] as const) {
       truthy(`7 ${kind}/${preplaced}: sluit vóór rename`, ipc.calls.findIndex(c => c.command === 'plugin:resources|close')
         < ipc.calls.findIndex(c => c.command === 'plugin:fs|rename'));
       eq(`7 ${kind}/${preplaced}: geen open handles`, ipc.openHandles(), 0);
+    }
+
+    // R1: 236 ASCII-a's + .ifc = 240 bytes; het oude vaste tmp paste met 253 bytes nog op
+    // Ext4. Een id achter de hele doelnaam overschreed 255 bytes. Echte CI-fs onder HOME,
+    // zowel nieuw exportdoel als bestaand opslagdoel; nooit terugvallen op het oude tmp.
+    if (sep !== '\\') {
+      const longRoot = mkdtempSync(join(homedir(), 'ops-long-save-'));
+      const longName = `${'a'.repeat(236)}.ifc`;
+      const longTarget = join(longRoot, longName);
+      const oldTemp = longTarget + USER_FILE_TMP_SUFFIX;
+      try {
+        eq(`7 ${kind}/lange naam: doel heeft 240 bytes`, new TextEncoder().encode(longName).length, 240);
+        writeFileSync(oldTemp, 'ANDERMANS LANG TMP');
+        for (const existing of [false, true]) {
+          if (existing) writeFileSync(longTarget, OUD);
+          ipc.calls.length = 0;
+          await save(longTarget);
+          eq(`7 ${kind}/lange naam/${existing}: uitvoer exact`, read(longTarget), [...payload]);
+          eq(`7 ${kind}/lange naam/${existing}: oud tijdelijk bestand intact`, readFileSync(oldTemp, 'utf8'), 'ANDERMANS LANG TMP');
+          const opens = ipc.calls.filter(c => c.command === 'plugin:fs|open');
+          truthy(`7 ${kind}/lange naam/${existing}: korte basename in dezelfde map exclusief geopend`, opens.length === 1
+            && opens[0].path !== undefined && dirname(opens[0].path) === longRoot
+            && new TextEncoder().encode(basename(opens[0].path)).length < 80 && opens[0].options?.createNew === true);
+          truthy(`7 ${kind}/lange naam/${existing}: geen directe terugval`,
+            !ipc.calls.some(c => c.command === 'plugin:fs|write_text_file' || c.command === 'plugin:fs|write_file'));
+          eq(`7 ${kind}/lange naam/${existing}: alleen doel en oud tmp, geen handles`,
+            [readdirSync(longRoot).sort(), ipc.openHandles()], [[longName, longName + USER_FILE_TMP_SUFFIX], 0]);
+        }
+      } finally {
+        rmSync(longRoot, { recursive: true, force: true });
+      }
     }
 
     // Botsing juist op de verse naam: echte EEXIST, ook bij een link die naar de bron wijst.
@@ -328,7 +374,7 @@ for (const kind of ['text', 'bytes'] as const) {
       reset();
       writeFileSync(target, OUD, { mode: 0o600 });
       await save(target);
-      eq(`7 ${kind}/mode: vervangen behoudt 0600`, lstatSync(target).mode & 0o777, 0o600);
+      eq(`7 ${kind}/mode: aanmaakmode 0600 begrensd door de CI-umask`, lstatSync(target).mode & 0o777, 0o600 & ~process.umask());
       eq(`7 ${kind}/mode: uitvoer compleet`, read(target), [...payload]);
       // Ook doel-links blijven direct beschreven: link en alle andere namen behouden hun inode.
       for (const link of ['symlink', 'hardlink']) {

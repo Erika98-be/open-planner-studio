@@ -348,7 +348,7 @@ const uninstallTauri = () => { delete win.__TAURI_INTERNALS__; };
     await eistMislukt(`2a Tauri Opslaan, ${naam}`, () => S().saveFile(), {
       target: () => tauri.files.get(RO)?.data, targetBefore: OUD, detail: /Permission denied|Access is denied/,
     });
-    eq(`2a Tauri Opslaan, ${naam}: geen halffabricaat`, [...tauri.files.keys()].some(p => p.startsWith(RO) && p.endsWith(USER_FILE_TMP_SUFFIX)), false);
+    eq(`2a Tauri Opslaan, ${naam}: geen halffabricaat`, [...tauri.files.keys()].some(p => dirOf(p) === dirOf(RO) && p.endsWith(USER_FILE_TMP_SUFFIX)), false);
     eq(`2a Tauri Opslaan, ${naam}: geen automatische terugvalkiezer`, tauri.calls.includes('plugin:dialog|save'), false);
 
     // 2b Opslaan als: de gebruiker kiest in de dialoog het alleen-lezen bestand.

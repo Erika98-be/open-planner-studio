@@ -74,9 +74,9 @@ export async function writeBytesFileAtomic(dir: string, name: string, bytes: Uin
 //  - links: een rename zet een gewoon bestand op de plek van een symlink (het doel van de link
 //    blijft dan oud), en bij een harde link houdt de andere naam de oude inhoud. Een gelinkt bestand
 //    wordt daarom direct beschreven.
-//  - rechten: het halffabricaat krijgt de permissiebits van het bestaande bestand (Unix), zodat een
-//    0600-project na het vervangen niet ineens voor iedereen leesbaar is. Eigenaar en ACL's gaan
-//    bij een rename wel verloren; dat kan plugin-fs niet overzetten.
+//  - rechten: de permissiebits van het bestaande bestand worden als aanmaakmode meegegeven (Unix).
+//    De proces-umask kan die verder beperken; dit garandeert geen exact modebehoud. Eigenaar en
+//    ACL's gaan bij een rename wel verloren; dat kan plugin-fs niet overzetten.
 // Mislukt het vervangen zelf (bijv. Windows: het doel is geopend zonder deel-toegang), dan valt de
 // route terug op direct schrijven. Deze terugvallen hebben niet de foutveiligheid van vervangen.
 
@@ -118,7 +118,11 @@ export async function replaceUserFile<D>(fs: UserFileFs<D>, path: string, data: 
   }
   // Het oude vaste pad blijft geheel met rust, ook als daar een link of een andere save staat.
   // Een verse naam voorkomt normale botsingen; createNew beslist, niet de willekeur of een lstat.
-  const tmp = `${path}.${generateId('save')}${USER_FILE_TMP_SUFFIX}`;
+  // Een zelfstandige, korte basename laat ook lange doelnamen toe. Behoud de map letterlijk;
+  // in een absoluut POSIX-pad is een backslash een geldig onderdeel van de bestandsnaam.
+  const windowsPath = /^[a-z]:[\\/]|^\\\\/i.test(path);
+  const lastSeparator = windowsPath ? Math.max(path.lastIndexOf('/'), path.lastIndexOf('\\')) : path.lastIndexOf('/');
+  const tmp = `${path.slice(0, lastSeparator + 1)}${generateId('save')}${USER_FILE_TMP_SUFFIX}`;
   const mode = info?.mode != null ? info.mode & 0o777 : undefined;
   let file: Awaited<ReturnType<UserFileFs<D>['createNew']>>;
   try {

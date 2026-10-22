@@ -28,8 +28,19 @@ export function installNodeFileIpc() {
     const path = typeof a.path === 'string' ? a.path : undefined;
     calls.push({ command, path, options: a.options as OpenOptions | undefined });
     switch (command) {
+      case 'plugin:fs|stat':
       case 'plugin:fs|lstat': {
-        const st = fs.lstatSync(String(path));
+        let st: fs.Stats;
+        try {
+          st = command === 'plugin:fs|stat' ? fs.statSync(String(path)) : fs.lstatSync(String(path));
+        } catch (error) {
+          // plugin-fs 2.5.0 get_fs_metadata serialiseert ENOENT als deze string. Alleen Node's
+          // concrete ENOENT omzetten: andere fouten mogen geen ontbrekend doel suggereren.
+          if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
+            throw `failed to get metadata of path: ${path} with error: No such file or directory (os error 2)`;
+          }
+          throw error;
+        }
         return {
           isFile: st.isFile(), isDirectory: st.isDirectory(), isSymlink: st.isSymbolicLink(),
           size: st.size, mtime: st.mtimeMs, atime: st.atimeMs, birthtime: st.birthtimeMs,

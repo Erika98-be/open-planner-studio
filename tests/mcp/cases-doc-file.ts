@@ -630,19 +630,31 @@ test('export_ifc: IFC2X3-document naar een ander pad ⇒ ok, het antwoord meldt 
   const target = join(root, 'kopie.ifc');
   const legacy = target + USER_FILE_TMP_SUFFIX;
   try {
-    fileToolDeps.getFs = async () => ({
+    const { stat } = await import('@tauri-apps/plugin-fs');
+    // Afgeleid objecttype: standalone past dit op McpFileFs, en ook na #519 met verplichte stat.
+    // De echte plugin-JS-client houdt daarbij dezelfde foutvorm als de toekomstige schemaguard.
+    const fs = {
       homeDir: async () => root,
-      exists: async p => existsSync(p),
+      exists: async (p: string) => existsSync(p),
+      stat,
       writeTextFile: writeUserTextFileTauri,
-      readTextFile: async p => readFileSync(p, 'utf8'),
-      readFile: async p => readFileSync(p),
-    });
+      readTextFile: async (p: string) => readFileSync(p, 'utf8'),
+      readFile: async (p: string) => readFileSync(p),
+    };
+    fileToolDeps.getFs = async () => fs;
     for (const preplaced of (sep === '\\' ? ['file', 'missing'] : ['symlink', 'file', 'missing'])) {
       rmSync(target, { force: true });
       rmSync(legacy, { force: true });
       writeFileSync(source, 'ORIGINEEL IFC2X3');
       if (preplaced === 'symlink') symlinkSync(source, legacy);
       if (preplaced === 'file') writeFileSync(legacy, 'ANDERMANS TMP');
+      const missing = await fs.stat(target).then(() => null, (error: unknown) => error);
+      assertEq(missing, `failed to get metadata of path: ${target} with error: No such file or directory (os error 2)`, 'nieuw doel gebruikt plugin-ENOENT/2, geen rauwe Node-fout');
+      if (preplaced === 'symlink') {
+        const linkInfo = await fs.stat(legacy);
+        const sourceInfo = await fs.stat(source);
+        assertEq([linkInfo.isFile, linkInfo.dev, linkInfo.ino], [true, sourceInfo.dev, sourceInfo.ino], 'stat volgt de tijdelijke bronlink');
+      }
       zetSchemaVraag(source, undefined, 'IFC2X3');
       const result = await callOk('planner_export_ifc', { path: target });
       assertEq(result.ifcSchema, 'IFC4X3_ADD2', `${preplaced}: schema van kopie gemeld`);
