@@ -7,6 +7,7 @@ import { join, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { runInNewContext } from 'node:vm';
 
 import { comparePackages, renderPkgbuild, srcinfoVersion } from './render-pkgbuild.mjs';
 
@@ -99,5 +100,40 @@ printf '%s\\n' '{"draft":false,"prerelease":false}'
     }
   } finally {
     rmSync(d, { recursive: true, force: true });
+  }
+});
+
+// De jobvoorwaarde gebruikt alleen stringvergelijkingen, &&/|| en startsWith: evalueer die
+// echte expressie voor bron-events, zodat een versoepelde poort deze test rood maakt.
+test('aur.yml weigert PR-runs, vreemde bronrepos en pushes zonder releaseprefix vóór checkout', () => {
+  const workflow = readFileSync(join(ROOT, '.github/workflows/aur.yml'), 'utf8');
+  const match = /\n    if: >-\n([\s\S]*?)\n    runs-on:/.exec(workflow);
+  assert.ok(match, 'jobvoorwaarde ontbreekt');
+  const expression = match[1].trim();
+  const repo = 'OpenAEC-Foundation/open-planner-studio';
+  const fork = 'fork/open-planner-studio';
+  const cases = [
+    { label: 'push v*-tag uit eigen repo', event: 'push', branch: 'v2026.43.1', source: repo, allowed: true },
+    { label: 'release-workflow_dispatch uit eigen repo', event: 'workflow_dispatch', branch: 'main', source: repo, allowed: true },
+    { label: 'pull_request uit fork', event: 'pull_request', branch: 'v2026.43.1', source: fork, allowed: false },
+    { label: 'pull_request uit eigen repo', event: 'pull_request', branch: 'v2026.43.1', source: repo, allowed: false },
+    { label: 'push zonder tag', event: 'push', branch: 'main', source: repo, allowed: false },
+    { label: 'push v*-tag uit fork', event: 'push', branch: 'v2026.43.1', source: fork, allowed: false },
+    { label: 'workflow_dispatch uit fork', event: 'workflow_dispatch', branch: 'main', source: fork, allowed: false },
+    { label: 'mislukte eigen release', event: 'push', branch: 'v2026.43.1', source: repo, conclusion: 'failure', allowed: false },
+    { label: 'directe handmatige AUR-start', trigger: 'workflow_dispatch', event: '', branch: '', source: '', allowed: true },
+  ];
+  for (const c of cases) {
+    const actual = runInNewContext(expression, {
+      github: {
+        event_name: c.trigger ?? 'workflow_run', repository: repo,
+        event: { workflow_run: {
+          event: c.event, head_branch: c.branch, head_repository: { full_name: c.source },
+          conclusion: c.conclusion ?? 'success',
+        } },
+      },
+      startsWith: (/** @type {string} */ value, /** @type {string} */ prefix) => value.startsWith(prefix),
+    });
+    assert.equal(actual, c.allowed, c.label);
   }
 });
