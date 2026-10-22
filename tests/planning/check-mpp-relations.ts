@@ -33,11 +33,10 @@
 //
 // ⚠️ BEWUSTE MPXJ-DIVERGENTIE (T7-spec-review, B3) — resource-uniqueID 0: MPXJ's eigen
 // `createResourceMap` (MPP14Reader.java) slaat het TE KORTE plaatshouderrecord voor uniqueID 0 over
-// (`data.length < fieldMap.getMaxFixedDataSize(0)`-guard — NIET geport, zie de taakvariant se
-// toelichting bij `collectValidTaskIndices` in mppReader.ts), dus MPXJ's eigen resourcetelling voor
+// (`data.length < fieldMap.getMaxFixedDataSize(0)`-guard), dus MPXJ's eigen resourcetelling voor
 // dit corpus zou 8/6/4 zijn. MS Project schrijft dat record echter WÉL naar zijn eigen MSPDI-export
 // (als "Niet toegekend", type Work, maxUnits 1) — deze lezer kiest bewust voor COUNT-PARITEIT MET
-// readMSPDI (9/7/5) i.p.v. MPXJ-pariteit (8/6/4): zie `mppReader.ts`'s `readResourcesUnsafe` voor de
+// readMSPDI (9/7/5) i.p.v. MPXJ-pariteit (8/6/4): zie `mppEntities.ts`'s `readResourcesUnsafe` voor de
 // vaste vorm (naam uit `ImportLabels.unassignedResource`, default `'Unassigned'`; type LABOR;
 // maxUnits 1) die deze lezer aan dat record geeft i.p.v. de rauwe (onbetrouwbare) veldwaarden.
 //
@@ -62,7 +61,7 @@ import { CfbFile } from '@/services/mpp/cfb';
 import { readMPP } from '@/services/mpp/mppReader';
 import { readRelations, readResources, readAssignments, type ReadResourcesResult } from '@/services/mpp/mppEntities';
 import type { CalendarReadResult } from '@/services/mpp/mppCalendars';
-import { DEFAULT_RESOURCE_FIELDS, DEFAULT_ASSIGNMENT_FIELDS, type FieldMapTable } from '@/services/mpp/fieldMap14';
+import { DEFAULT_RESOURCE_FIELDS, DEFAULT_ASSIGNMENT_FIELDS, ResourceFieldId, type FieldMapTable } from '@/services/mpp/fieldMap14';
 import { readMSPDI } from '@/services/msproject/mspdiReader';
 import { createDefaultCalendar } from '@/engine/calendar/defaultCalendar';
 import { installDOMParser } from './xmldom-shim';
@@ -183,15 +182,18 @@ function buildConsFixedDataRecord(opts: {
   return out;
 }
 
-// ── TBkndRsc-fixturebouwers (resources) — FixedMeta itemSize=37 (typebit @9/0x02, want
-// applicationVersion===null in deze fixtures ⇒ de ≤2010-layout, `resourceTypeBitFlag`). FixedData
+// ── TBkndRsc-fixturebouwers (resources) — FixedMeta itemSize=37. Standaard de ≤2010-layout
+// (typebit @9/0x02); applicationVersion >14 kiest @12/0x10. FixedData
 // via `FixedData.fromMeta` (offset+auto-grootte uit de meta, net als de echte lezer). ─────────────
 const RSC_RECORD_SIZE = 60; // ruim boven maxUnitsOffset(44)+8=52
-function buildRscFixedMetaRecord(opts: { offsetIntoFixedData: number; isWork: boolean }): Uint8Array {
+function buildRscFixedMetaRecord(opts: { offsetIntoFixedData: number; isWork: boolean; applicationVersion?: number | null }): Uint8Array {
   const out = new Uint8Array(37);
   const view = new DataView(out.buffer);
   view.setInt32(4, opts.offsetIntoFixedData, true);
-  if (opts.isWork) out[9] = 0x02; // PROJECT2010_RESOURCE_META_DATA_BIT_FLAGS: offset 9, mask 0x02
+  if (opts.isWork) {
+    if ((opts.applicationVersion ?? 0) > 14) out[12] = 0x10; // PROJECT2013_RESOURCE_META_DATA_BIT_FLAGS
+    else out[9] = 0x02; // PROJECT2010_RESOURCE_META_DATA_BIT_FLAGS
+  }
   return out;
 }
 function buildRscFixedMetaBlob(records: Uint8Array[], magic = FIXED_META_MAGIC): Uint8Array {
@@ -523,6 +525,97 @@ const emptyCalResult: CalendarReadResult = {
 // `Props`-fixture hoeven te bouwen.
 const RESOURCE_DEFAULT_FIELD_MAP: FieldMapTable = new Map(Object.entries(DEFAULT_RESOURCE_FIELDS).map(([k, v]) => [Number(k), v]));
 const ASSIGNMENT_DEFAULT_FIELD_MAP: FieldMapTable = new Map(Object.entries(DEFAULT_ASSIGNMENT_FIELDS).map(([k, v]) => [Number(k), v]));
+
+// ── Knownbug 119: een 16-byte plaatshouder vóór het echte record met dezelfde UID mag niet
+// het type of maxUnits bepalen. MPP14 is het ondersteunde bestandsformaat voor Project 2010–2021;
+// toets beide versietabellen én data-gedreven offsets. De recordlengtes zijn onafhankelijk gepind:
+// de default-layout heeft MAX_UNITS @44 (52 bytes nodig), de verschoven layout @48 (56 bytes),
+// en een andere geldige fieldmap @72 (80 bytes). Een vast 16/52/60/188-byte-filter voldoet niet.
+// Deze checks draaien zonder corpus; de bestaande corpusbudgetten worden niet aangepast.
+for (const layout of [
+  { applicationVersion: null, uniqueIdOffset: 0, maxUnitsOffset: 44, minRecordSize: 52 },
+  { applicationVersion: 14, uniqueIdOffset: 0, maxUnitsOffset: 44, minRecordSize: 52 },
+  { applicationVersion: 15, uniqueIdOffset: 4, maxUnitsOffset: 48, minRecordSize: 56 },
+  { applicationVersion: 16, uniqueIdOffset: 4, maxUnitsOffset: 48, minRecordSize: 56 },
+  { applicationVersion: 16, uniqueIdOffset: 0, maxUnitsOffset: 72, minRecordSize: 80 },
+]) {
+  const { applicationVersion, uniqueIdOffset, maxUnitsOffset, minRecordSize } = layout;
+  const label = `T7 knownbug119 versie=${applicationVersion ?? 'onbekend'} uid@${uniqueIdOffset} units@${maxUnitsOffset}`;
+  const fieldMap = new Map(RESOURCE_DEFAULT_FIELD_MAP);
+  fieldMap.set(ResourceFieldId.UniqueId, { location: 'fixed', fixedOffset: uniqueIdOffset });
+  fieldMap.set(ResourceFieldId.MaxUnits, { location: 'fixed', fixedOffset: maxUnitsOffset });
+  const records = [
+    { uid: 0, size: 16, isWork: false, isCost: false, units: 0 }, // de bestaande sentinel blijft
+    { uid: 7, size: 16, isWork: false, isCost: false, units: 0 }, // de foutieve eerste match
+    { uid: 7, size: minRecordSize, isWork: true, isCost: false, units: 2500 },
+    { uid: 7, size: minRecordSize, isWork: false, isCost: true, units: 9000 }, // eerste geldige wint
+    { uid: 8, size: 16, isWork: false, isCost: false, units: 0 }, // geen volledig record: overslaan
+    { uid: 9, size: minRecordSize - 1, isWork: true, isCost: false, units: 0 }, // één byte te kort
+    { uid: 10, size: minRecordSize, isWork: false, isCost: false, units: 12500 }, // echt materiaal
+    { uid: 11, size: minRecordSize, isWork: false, isCost: true, units: 0 }, // kosten, nul is geldig
+  ];
+  let offset = 0;
+  const metaRecords = records.map(record => {
+    const meta = buildRscFixedMetaRecord({ offsetIntoFixedData: offset, isWork: record.isWork, applicationVersion });
+    offset += record.size;
+    return meta;
+  });
+  const dataRecords = records.map(record => {
+    const data = new Uint8Array(record.size);
+    const view = new DataView(data.buffer);
+    view.setInt32(uniqueIdOffset, record.uid, true);
+    if (record.size >= maxUnitsOffset + 8) view.setFloat64(maxUnitsOffset, record.units, true);
+    return data;
+  });
+  const cfb = new CfbFile(buildNestedCfb({
+    '   114': { children: { TBkndRsc: { children: {
+      FixedMeta: { data: buildRscFixedMetaBlob(metaRecords) },
+      FixedData: { data: concatBytes(...dataRecords) },
+      Fixed2Meta: { data: buildRsc2MetaBlob(records.map(record => buildRsc2MetaRecord({ isCost: record.isCost }))) },
+      VarMeta: { data: buildVarMetaBytes([0, 7, 8, 9, 10, 11].map(uniqueId => ({ uniqueId, type: 99, offset: 0 }))) },
+    } } } },
+  }));
+  const calendar = createDefaultCalendar();
+  const calResult: CalendarReadResult = {
+    ...emptyCalResult,
+    calendarByUniqueId: new Map([[42, calendar]]),
+    resourceCalendarUniqueIdByResourceUniqueId: new Map([[0, 42], [7, 42]]),
+  };
+  const result = readResources(cfb, fieldMap, applicationVersion, calResult);
+  const byUid = (uid: number) => result.resources.find(resource => resource.id === result.resourceIdByUniqueId.get(uid));
+  truthy(`${label}: precies vier resources en UID-koppelingen`, result.resources.length === 4 && result.resourceIdByUniqueId.size === 4);
+  truthy(`${label}: volledig werkrecord levert LABOR`, byUid(7)?.type === 'LABOR');
+  truthy(`${label}: eerste volledige record levert maxUnits 0.25`, byUid(7)?.maxUnits === 0.25);
+  truthy(`${label}: kalenderkoppeling van de echte resource blijft`, byUid(7)?.calendarId === calendar.id);
+  truthy(`${label}: losse 16-byte plaatshouder valt weg`, !result.resourceIdByUniqueId.has(8));
+  truthy(`${label}: record één byte onder de minimumlengte valt weg`, !result.resourceIdByUniqueId.has(9));
+  truthy(`${label}: echt materiaal op de lengtegrens blijft`, byUid(10)?.type === 'MATERIAL' && byUid(10)?.maxUnits === 1.25);
+  truthy(`${label}: kostenresource gebruikt Fixed2Meta van de juiste index`, byUid(11)?.type === 'LABOR' && byUid(11)?.maxUnits === 0);
+  truthy(`${label}: korte UID-0-sentinel behoudt naam, type en inzet`, byUid(0)?.name === 'Unassigned' && byUid(0)?.type === 'LABOR' && byUid(0)?.maxUnits === 1);
+  truthy(`${label}: korte UID-0-sentinel behoudt kalenderkoppeling`, byUid(0)?.calendarId === calendar.id);
+}
+
+// MAX_UNITS mag legitiem ontbreken in de fieldmap (alles-of-niets, geen default-offset bijmengen).
+// Dan volstaat het bereik van de SHORT-join: ook een minimaal record op een verplaatste UID-offset
+// blijft geldig, met de bestaande maxUnits-terugval 1.
+for (const [uniqueIdOffset, size] of [[0, 2], [18, 20]]) {
+  const fieldMap = new Map(RESOURCE_DEFAULT_FIELD_MAP);
+  fieldMap.set(ResourceFieldId.UniqueId, { location: 'fixed', fixedOffset: uniqueIdOffset });
+  fieldMap.delete(ResourceFieldId.MaxUnits);
+  const data = new Uint8Array(size);
+  new DataView(data.buffer).setUint16(uniqueIdOffset, 12, true);
+  const cfb = new CfbFile(buildNestedCfb({
+    '   114': { children: { TBkndRsc: { children: {
+      FixedMeta: { data: buildRscFixedMetaBlob([buildRscFixedMetaRecord({ offsetIntoFixedData: 0, isWork: true })]) },
+      FixedData: { data },
+      VarMeta: { data: buildVarMetaBytes([{ uniqueId: 12, type: 99, offset: 0 }]) },
+    } } } },
+  }));
+  const result = readResources(cfb, fieldMap, null, emptyCalResult);
+  truthy(`T7 knownbug119 zonder MAX_UNITS uid@${uniqueIdOffset}: minimaal record blijft geldig`,
+    result.resources.length === 1 && result.resources[0]?.type === 'LABOR' && result.resources[0]?.maxUnits === 1
+    && result.resourceIdByUniqueId.get(12) === result.resources[0]?.id);
+}
 
 // ── (c) Ontbrekende Var2Data op TBkndRsc — legitiem afwezig (mppPrimitives.ts se Var2Data-
 // moduleheader), moet niet gooien: de resource wordt nog steeds gematerialiseerd, met de generieke

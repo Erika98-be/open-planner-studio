@@ -86,6 +86,11 @@ en noem het in je rapport of PR-tekst.
 22. **Goede Vrijdag en Bevrijdingsdag** hebben `optional: true`, maar dat wordt nergens gelezen: ze worden
     altijd gegenereerd. — B
 
+182. **UI-kalendergeneratie gebruikt alleen de ingevoerde projecteinddatum.** `CalendarDialog.tsx:77`
+    en `ResourceCalendarDialog.tsx:57` geven alleen `project.endDate` aan `computeGenerateSpan`, ook
+    wanneer `cpmResult.projectEnd` later ligt. Dit is de open UI-vraag uit 124, waarvan het MCP-deel
+    is opgelost. Of dit UI-gedrag bedoeld is, is niet uitgezocht; niet in de app nagespeeld. — S
+
 
 ## Bibliotheek, bezetting, extensies, AI
 
@@ -156,14 +161,6 @@ en noem het in je rapport of PR-tekst.
     vergelijking. Symbolische links worden ook niet opgelost. Afgeleid uit de code door de review van #336,
     niet op een Mac nagespeeld. — S
 
-124. **`planner_update_calendar` `generate` dekt het projecteinde niet als `endDate` gezet is.**
-    `calendarSpan` (`calendarResourceTools.ts:585-590`) neemt `project.endDate || cpmResult.projectEnd`. Een
-    `endDate` gaat dus voor het berekende einde. Loopt de planning daarna door, dan krijgen die jaren geen
-    feestdagen en komt er geen waarschuwing; opnieuw genereren helpt niet, want de spanne blijft op `endDate`
-    staan. Nagespeeld in een scratch-script (agent-audit 2026-10-19). Anders dan 88 (geen rekenresultaat).
-    De UI-regeneratie gebruikt dezelfde `computeGenerateSpan` (`ResourceCalendarDialog.tsx:57`); of dat daar
-    bedoeld is, is niet uitgezocht. Voorstel: het latere van `endDate` en het berekende einde nemen, of een
-    `warnings`-regel geven. — B
 125. **De eerste bibliotheek heet hardgecodeerd "Mijn resourcebibliotheek"**, ook in de Engelse app
     (`types/library.ts:63`). Ook de terugvalnamen "Nieuwe resourcebibliotheek" (`librarySlice.ts:414`,
     `libraryOps.ts:463`). Valt buiten 29. — B
@@ -269,37 +266,15 @@ en noem het in je rapport of PR-tekst.
     `tests/planning/check-xer-status-afleiden.ts` pint het huidige gedrag vast. In het XER-corpus komt het
     geval 0 keer voor. Gevonden bij de review van #358. Voorstel: een onbekende status behandelen als een lege
     (afleiden uit de voortgang, melding blijft), zoals MPXJ; besluit van de eigenaar nodig. — B
-119. **`.mpp`: een werkresource kan als materiaal binnenkomen.** `readResources`
-    (`src/services/mpp/mppEntities.ts`) koppelt een resource aan het EERSTE FixedData-record met dezelfde
-    uid, ook als dat een kort plaatshoudersrecord van 16 bytes is. MPXJ's `createResourceMap` slaat records
-    korter dan de volle maat over. Gevolg: type (meta-item van de verkeerde index) en `maxUnits` komen uit het
-    plaatshoudersrecord. Gemeten met MPXJ's `junit/data/mpp14resource.mpp`: *Wade Golden* en *Jon Iles*
-    worden MATERIAL, in `mspdiresource.xml` (dezelfde planning) LABOR. Gevonden bij het importverslag
-    (#391). Voorstel: records korter dan de volle maat overslaan, zoals MPXJ. — B
 
-127. **IFC-tab *Toepassen* wist de bibliotheekkoppeling en zet *Niet opgeslagen* uit.** *Toepassen*
-    (`IFCPanel.tsx:57-62`) roept `loadState` aan zonder `linkedOpen`; `applyLoadedProject` wist dan `companyId`
-    en `companyName` (`fileSlice.ts:797-799`) en `isDirty` wordt `false` (`documentContract.ts:489`). Een
-    gewijzigd project lijkt zo opgeslagen, en sluiten vraagt niets. Nagespeeld met het voorbeeld plus
-    bibliotheek en een gewijzigde taaknaam: vóór `isDirty` true, erna false, `companyName` null, de wijziging
-    blijft aanwezig. Voorstel: `isDirty` laten staan en de koppeling behouden. — B
 128. **CSV: een datum in een onleesbare vorm wordt stil "vandaag".** `csvDateOrToday` valt terug op
     `localTodayIso()` (`importDates.ts:71-74`, gebruikt door `csvReader.ts:135`). De Help noemt alleen de drie
     geldige vormen. Of er elders een melding voor komt, is niet nagegaan. Niet nagespeeld. — S
-156. **MSPDI-importverslag: één tariefrecord in tabel A met overwerktarief of gebruikskosten wordt niet
-    bekeken.** `scanMspdiImportLoss` (`mspdiImportLoss.ts`, tarieven) kijkt bij tabel A alleen of er meer dan
-    één record is; `OvertimeRate`/`CostPerUse` onder één `Rates/Rate` in tabel A geven geen melding.
-    VERVOLG 6 van #392, gemeld door de reviewer. Niet nagespeeld. — S
 157. **`.mpp`: een gedeelde lange aantekening wordt per verwijzing opnieuw verwerkt.** 1.000 taken × 64 KiB
     kost ongeveer 1,4 s. VERVOLG 8 van #392 (meting van de reviewer). Voorstel: cache per gedeeld datablok. — S
 159. **`.mpp`-importverslag: verborgen RTF-metadata kan een niet-bestaande afbeelding of object melden.**
     Bijvoorbeeld `{\info{\title \\pict}}` in een aantekening. Voorstel: herkennen via de tokenizer. VERVOLG 10
     van #392. Niet nagespeeld. — S
-160. **MSPDI-importverslag vergelijkt numerieke XML-waarden als tekst.** `<Number>00</Number>` telt niet als
-    Baseline 0 (`baseline0Dates` in `mspdiImportLoss.ts` vergelijkt met `'0'`), terwijl de lezer
-    (`getElementInt`) hem wel als Baseline 0 leest. `<TaskUID>01</TaskUID>` geeft bij gelijke baselines
-    telling 1, terwijl de lezer wel aan taak 1 koppelt. VERVOLG 11 van #392. Voorstel: baselinenummer en
-    taak-UID numeriek parsen zoals de lezer. — S
 162. **Desktop (Linux/macOS): Opslaan overschrijft een alleen-lezen projectbestand als de map schrijfbaar
     is.** `replaceUserFile` (`atomicWrite.ts`) schrijft een halffabricaat met de rechten van het origineel
     (0444) en hernoemt het over het doel; op POSIX mag dat. Het bestand krijgt de nieuwe inhoud en blijft
@@ -307,11 +282,6 @@ en noem het in je rapport of PR-tekst.
     `check-save-failure-status.ts` §1R (MEETING-regel 1R-d). Is de map ook alleen-lezen, of Windows met het
     kenmerk alleen-lezen, dan faalt opslaan wel netjes (zelfde check, §1 en §2). Voorstel: bij een doel zonder
     schrijfbit eerst vragen of melden. Een besluit voor de eigenaar. — B
-163. **Web: Ctrl+S op een vergrendeld bestand opent zonder uitleg de bestandskiezer.** `saveToRefWeb`
-    (`webBackend.ts`) slikt elke fout (ook `NoModificationAllowedError`) en geeft `false`; `writeActiveDocument`
-    valt dan terug op Opslaan als. Annuleert de gebruiker, dan komt er geen melding (het document blijft
-    terecht gewijzigd). Gezien in `check-save-failure-status.ts` §3a/3b. Voorstel: een echte schrijffout
-    melden vóór de kiezer verschijnt. — B
 
 ## Rondleiding, Help en extensie-gidsen
 
@@ -449,6 +419,17 @@ en noem het in je rapport of PR-tekst.
     op `repository.pullRequest.projectCards`. De body is wel bijgewerkt via
     `gh api --method PATCH repos/OpenAEC-Foundation/open-planner-studio/pulls/479 -F body=@<bestand>`.
     Voorstel: de GitHub CLI op de host bijwerken; de repo zelf is niet aangepast hiervoor. — B
+
+181. **`OPS_MPP_CRAWL` kiest twee verschillende corpusscopes in `check-mpp-import.ts`.** F4 (rond
+    regel 4024) gebruikt standaard de hele `testdata-crawl`-root en pint samen met `OPS_MPP_CORPUS`
+    216 bestanden / 3413 taken; T9 (rond regel 5968) gebruikt standaard de submap
+    `testdata-crawl/crawl-mpp` met een basislijn van 49 bestanden / 788 taken. Beide lezen dezelfde
+    omgevingsvariabele, dus één ingestelde root kan niet beide scopes correct kiezen. Vóór het verbod
+    op lokale Node-processen gemeld: met de hele root 449 mpp-import-mismatches, met de `crawl-mpp`-scope
+    7 F4-tellingfouten. Er is geen vergelijking met een schone baseline gedaan; deze aantallen bewijzen
+    geen gevolg van een codewijziging. Voorstel: de scopes afzonderlijk instelbaar maken of de submap
+    eenduidig van de root afleiden. Niet opgelost in de fix van 119.
+    — B (scopemismatch in de code), S (gemelde gevolgen, geen schone baselinevergelijking)
 
 ## Wensen en open taken (geen bug)
 
