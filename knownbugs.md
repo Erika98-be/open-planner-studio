@@ -255,6 +255,14 @@ en noem het in je rapport of PR-tekst.
     nl-interface bij *Bestand › Voorbeelden*; de Help-artikelen noemen daarom de Engelse namen. Niet
     nagegaan of dat voor alle voorbeelden geldt. Voorstel: bewust laten, of per taal vertalen. — B
 
+200. **De strikte UI-vertaalpoort kan een volledig ontbrekende taalmap overslaan.**
+    `status` in `scripts/translate/cli.ts` bepaalt zonder expliciete taal de UI-talen via de aanwezige
+    mappen onder `src/i18n/locales/`. Ontbreekt bijvoorbeeld `lo/`, dan kan `status --strict` groen
+    blijven wanneer de overige UI actueel is en de Lao-termbase geldig is. De bestaande mapinventarisatie
+    staat los van de termbasedekking uit PR #537; die PR herstelt deze UI-inventarisatie niet.
+    Statisch afgeleid bij de review op `78583d1b` (regels 896–900), niet lokaal uitgevoerd.
+    De nieuwe CLI-test herstelt de verwijderde UI-map evenmin vóór zijn groene verwachting. — S
+
 102. **`apply-terms` vertrouwt `terms-NN.json` en `terms-check-01.map.json` zonder zegel.** De UI- en
      docs-pakketten hebben sinds #323 een zegel (`build/translate-seal/`); de termbase-pakketten niet, terwijl
      agents in dezelfde map schrijven. Voorstel: dezelfde `seal`/`sealErrors` in `prepare`/`apply-terms`.
@@ -267,11 +275,6 @@ en noem het in je rapport of PR-tekst.
     apart in PR #532 / knownbug 130 gecorrigeerd; dit resterende broncommentaar is niet aangepast.
     Statisch bevestigd bij de review van #532 op `74e596d0`; geen lokale runtime uitgevoerd. — B
 
-170. **Vertaalstraat: een nieuw concept zonder doelterm valt niet op.** Na #376 stond `work-category`
-    (werksoort) in `i18n/termbase/concepts.json`, maar in geen enkele `<taal>.json`. `validate-termbase` en
-    `verify:translations` bleven groen. De straat hield toen de oude taaktype-term aan (bijv. de: `Neue Vorgangsart`),
-    en de labelpoort dwong die oude tekst af. In de release-ronde van 2026-10-21 hersteld (termen +
-    `--keys`-ronde). Voorstel: `validate-termbase` rood bij een concept zonder term in een taal. — B
 172. **Vertaalstraat: de korte uureenheid werd in ar en fa vertaald, tegen het besluit "10h".** `menu.json`
     `…hoursValue` werd in de ronde van 2026-10-21 `{{hours}}س`. De test
     `tests/browser/calendar-file-hours-notice.spec.ts:266` eist in ar/fa "10h" (besluit eigenaar 2026-10-20: geen
