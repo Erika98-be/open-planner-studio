@@ -249,6 +249,32 @@ for (const source of componentSources) {
     !text.includes('ResourcePanel') && !text.includes('ResourcePanelCompact'));
 }
 
+// Kalendernamen horen in de cel en de keuzelijst; ids blijven de canonieke schrijf-/klembordwaarde.
+{
+  const options = [
+    { value: '', label: 'Projectkalender: Basis' },
+    { value: 'cal-a', label: 'Ploegkalender' },
+    { value: 'cal-b', label: 'Ploegkalender' },
+  ];
+  for (const [calendarId, label] of [
+    [undefined, 'Projectkalender: Basis'], ['cal-a', 'Ploegkalender'],
+    ['cal-b', 'Ploegkalender'], ['verdwenen', 'verdwenen'],
+  ] as const) {
+    const calendarTask = { ...task, calendarId };
+    const adapter = createTaskGridAdapter({
+      ...baseInput, surfaceId: 'full-task-grid', tasks: [calendarTask],
+      rows: [{ kind: 'task', rowKey: task.id, task: calendarTask, depth: 0, dimmed: false }],
+      calendarOptions: options,
+    });
+    const cell = adapter.getCell(task.id, taskColumnId('task.calendarId'))!;
+    eq('kalendercel toont naam of onbekend-id als terugval: ' + calendarId, cell.text, label);
+    eq('kalendereditor behoudt id ook bij dubbele namen: ' + calendarId, cell.editText, calendarId ?? '');
+    eq('kalenderklembord behoudt canoniek id: ' + calendarId, cell.copyText, calendarId ?? '');
+    eq('kalender heeft een keuzelijst: ' + calendarId,
+      adapter.descriptorsById.get(taskColumnId('task.calendarId'))?.editorKind, 'enum');
+  }
+}
+
 if (diffs.length) {
   console.error(`FAIL task-grid-adapter: ${diffs.length}/${checks}`);
   for (const diff of diffs) console.error(` - ${diff}`);

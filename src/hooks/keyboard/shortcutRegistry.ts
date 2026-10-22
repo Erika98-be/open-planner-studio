@@ -25,7 +25,7 @@ import { isBackstageLeaveGuardActive, leaveBackstageGuarded } from '@/components
 // DOM-vrij en JSX-vrij bij constructie (zie de kop van dat bestand): de anker- en weergaveregels
 // voor nieuwe taken wonen daar zodat sneltoets, menu, lintknop én regressiebatterij letterlijk
 // dezelfde functie draaien.
-import { insertTaskRelativeToScope } from '@/state/taskInsertActions';
+import { insertTaskRelativeToScope, addTaskNearSelection } from '@/state/taskInsertActions';
 import { computeScrollToDate } from '@/utils/ganttViewport';
 // De acties die het lint EN het toetsenbord delen, staan één keer gedefinieerd.
 import { COMMANDS } from '@/state/commands';
@@ -430,11 +430,12 @@ export const SHORTCUTS: ShortcutDef[] = [
     category: 'structure',
     labelKey: 'context.addMilestone',
     when: () => !isShortcutBlockedByDialog(),
-    run: (store) => {
-      store.addTask({
+    run: () => {
+      addTaskNearSelection({
         name: i18n.t('defaultMilestone', { ns: 'task' }),
         isMilestone: true,
-        taskType: 'ATTENDANCE',
+        milestoneKind: 'FINISH',
+        taskType: 'USERDEFINED',
       });
     },
   },

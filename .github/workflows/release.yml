@@ -386,31 +386,81 @@ jobs:
       - name: Install frontend dependencies (npm ci)
         run: npm ci
 
+      # Authenticode tijdens het bundelen (issue #429). Tauri roept signCommand
+      # aan voor het programma (open-planner-studio.exe), de NSIS-uninstaller en
+      # de installer; vroeger tekende een losse stap ná de build alleen de
+      # setup.exe, en bleef het geïnstalleerde programma NotSigned. De
+      # signCommand staat bewust NIET in tauri.conf.json maar in een override die
+      # alleen deze job (en windows-sign-check.yml) laadt: ci.yml, tauri:dev en
+      # lokale builds hebben geen Azure-credentials. De dlib heeft .NET 8 nodig.
+      - name: Setup .NET 8 (Artifact Signing-dlib)
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Prepare Authenticode signing (Azure Artifact Signing)
+        shell: pwsh
+        env:
+          AZURE_ENDPOINT: ${{ secrets.AZURE_ENDPOINT }}
+          AZURE_TRUSTED_SIGNING_ACCOUNT_NAME: ${{ secrets.AZURE_TRUSTED_SIGNING_ACCOUNT_NAME }}
+          AZURE_CERTIFICATE_PROFILE_NAME: ${{ secrets.AZURE_CERTIFICATE_PROFILE_NAME }}
+        run: pwsh -NoProfile -File scripts/windows-sign.ps1 -Setup
+
       - name: Build Tauri app
         uses: tauri-apps/tauri-action@action-v0.6.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Voor signCommand (scripts/windows-sign.ps1): EnvironmentCredential van de dlib.
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
         with:
+          args: --config ${{ env.OPS_SIGN_CONFIG }}
           releaseId: ${{ needs.create-release.outputs.release_id }}
           # latest.json wordt uitsluitend door de re-sign-stap hieronder beheerd
           # (na Authenticode); voorkomt dat deze run de linux/macos-entries raakt.
           includeUpdaterJson: false
 
-      - name: Sign Windows executables
-        uses: azure/trusted-signing-action@v0.5.0
-        with:
-          azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          azure-client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
-          endpoint: ${{ secrets.AZURE_ENDPOINT }}
-          trusted-signing-account-name: ${{ secrets.AZURE_TRUSTED_SIGNING_ACCOUNT_NAME }}
-          certificate-profile-name: ${{ secrets.AZURE_CERTIFICATE_PROFILE_NAME }}
-          files-folder: ${{ github.workspace }}/src-tauri/target/release/bundle/nsis
-          files-folder-filter: exe
-          files-folder-depth: 1
-          file-digest: SHA256
-          timestamp-rfc3161: http://timestamp.acs.microsoft.com
-          timestamp-digest: SHA256
+      # Poort: zonder geldige handtekening met tijdstempel op installer, het
+      # geïnstalleerde programma en de uninstaller faalt de job en blijft de
+      # release draft (publish-release hangt via `needs` aan deze job).
+      # Controleer het programma ZOALS HET IN DE INSTALLER ZIT, niet
+      # target/release/open-planner-studio.exe: daar staat na het bundelen een
+      # ongetekende kopie (gemeten bij de eerste tag van v2026.10.0, run
+      # 39657625310: setup.exe Valid, die kopie NotSigned). Zelfde route als
+      # windows-sign-check.yml: stil installeren, controleren, verwijderen.
+      - name: Verify Authenticode (installer, program and uninstaller)
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          function Check-File($label, $path) {
+            if (-not (Test-Path $path)) { throw "${label}: bestand ontbreekt ($path)" }
+            $sig = Get-AuthenticodeSignature -FilePath $path
+            Write-Host "${label}: $($sig.Status); $($sig.SignerCertificate.Subject); tijdstempel: $($sig.TimeStamperCertificate.Subject)"
+            if ($sig.Status -ne 'Valid' -or $null -eq $sig.TimeStamperCertificate) { throw "${label}: geen geldige Authenticode-handtekening met tijdstempel" }
+            & $env:OPS_SIGNTOOL verify /pa /v $path
+            if ($LASTEXITCODE -ne 0) { throw "signtool verify faalde voor $label" }
+          }
+
+          $setup = Get-ChildItem "$env:GITHUB_WORKSPACE/src-tauri/target/release/bundle/nsis/*-setup.exe" | Select-Object -First 1
+          if ($null -eq $setup) { throw "geen *-setup.exe gebouwd" }
+          Check-File 'setup.exe (installer)' $setup.FullName
+
+          $p = Start-Process -FilePath $setup.FullName -ArgumentList '/S' -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw "stil installeren faalde (exit $($p.ExitCode))" }
+          $keys = @('HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*',
+                    'HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*')
+          $entry = Get-ItemProperty $keys -ErrorAction SilentlyContinue |
+            Where-Object { $_.DisplayName -like 'Open Planner Studio*' } | Select-Object -First 1
+          if ($null -eq $entry) { throw "geen Uninstall-sleutel na installeren" }
+          $uninst = $entry.UninstallString.Trim('"')
+          $dir = Split-Path $uninst
+          Check-File 'open-planner-studio.exe (geïnstalleerd)' (Join-Path $dir 'open-planner-studio.exe')
+          Check-File "$(Split-Path $uninst -Leaf) (uninstaller)" $uninst
+
+          # Verwijderen ruimt alleen de runner op; dat houdt de release niet tegen.
+          $u = Start-Process -FilePath $uninst -ArgumentList '/S' -Wait -PassThru
+          if ($u.ExitCode -ne 0) { Write-Host "::warning::stil verwijderen gaf exit $($u.ExitCode)" }
 
       - name: Re-sign updater artifacts after Authenticode signing
         shell: pwsh
@@ -467,16 +517,35 @@ jobs:
 
           # --- Generate the updater signature for the rebuilt zip.
           # tauri signer sign writes a .sig file next to the input file.
+          Remove-Item "$ZIP_PATH.sig" -Force -ErrorAction SilentlyContinue
           npx tauri signer sign "$ZIP_PATH" --private-key "$env:TAURI_SIGNING_PRIVATE_KEY" --password "$env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD"
+          if ($LASTEXITCODE -ne 0) { throw "tauri signer sign faalde voor $ZIP_NAME (exit $LASTEXITCODE)" }
 
           # Read the freshly generated .sig file (the updater `signature` field is
           # the *contents* of the .sig, not a path or URL).
           $ZIP_SIG = (Get-Content "$ZIP_PATH.sig" -Raw).Trim()
           Write-Host "New zip signature: $($ZIP_SIG.Substring(0, [Math]::Min(50, $ZIP_SIG.Length)))..."
 
+          # --- Teken ook de setup.exe opnieuw. tauri-action tekende de exe vóór
+          # Authenticode; die oude .exe.sig paste daarna niet meer bij de
+          # gepubliceerde exe (gemeten op v2026.9.0, issue #429). Zonder deze stap
+          # blijft die verouderde .exe.sig als asset staan.
+          # Eerst de oude .sig weg: die bestond al van vóór Authenticode, dus "het
+          # bestand bestaat" bewijst niets (review #438, bevinding 6).
+          Remove-Item "$($EXE.FullName).sig" -Force -ErrorAction SilentlyContinue
+          npx tauri signer sign "$($EXE.FullName)" --private-key "$env:TAURI_SIGNING_PRIVATE_KEY" --password "$env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD"
+          if ($LASTEXITCODE -ne 0) { throw "tauri signer sign faalde voor $($EXE.Name) (exit $LASTEXITCODE)" }
+          if (-not (Test-Path "$($EXE.FullName).sig")) {
+            throw "tauri signer sign schreef geen $($EXE.Name).sig"
+          }
+
           # --- Upload the rebuilt updater artifacts plus the signed installer.
           # (The signed setup.exe is uploaded for humans who download directly.)
-          gh release upload $VERSION "$ZIP_PATH" "$ZIP_PATH.sig" "$($EXE.FullName)" --clobber --repo "$REPO"
+          # $ErrorActionPreference stopt niet op een exitcode van een native
+          # programma; daarom na elke gh-aanroep zelf $LASTEXITCODE controleren
+          # (review release v2026.10.0, bevinding 2).
+          gh release upload $VERSION "$ZIP_PATH" "$ZIP_PATH.sig" "$($EXE.FullName)" "$($EXE.FullName).sig" --clobber --repo "$REPO"
+          if ($LASTEXITCODE -ne 0) { throw "gh release upload van de Windows-assets faalde (exit $LASTEXITCODE)" }
 
           # --- Resolve the asset NAME via the API. GitHub rewrites spaces in
           # asset names to dots (e.g. "Open Planner Studio_..." -> "Open.Planner.Studio_..."),
@@ -486,15 +555,18 @@ jobs:
           # URL terug die na publicatie 404't (dit brak Windows-auto-update in
           # v2026.7.1). Bouw daarom zelf de stabiele `releases/latest/download/`-URL,
           # consistent met de linux/macos-entries die tauri-action schrijft.
-          $assets = (gh release view $VERSION --repo "$REPO" --json assets | ConvertFrom-Json).assets
-          $zipAsset = $assets | Where-Object { $_.name -like '*.nsis.zip' } | Select-Object -First 1
-          $ZIP_ASSET_NAME = $zipAsset.name
-          if ([string]::IsNullOrEmpty($ZIP_ASSET_NAME)) {
-            # Fallback: mimic GitHub's space->dot rewrite manually if the API lookup
-            # somehow came back empty.
-            $ZIP_ASSET_NAME = $ZIP_NAME -replace ' ', '.'
-            Write-Host "API lookup empty — using space->dot rewrite of the local zip name"
+          $assetsJson = gh release view $VERSION --repo "$REPO" --json assets
+          if ($LASTEXITCODE -ne 0) { throw "gh release view faalde (exit $LASTEXITCODE)" }
+          $assets = ($assetsJson | ConvertFrom-Json).assets
+          # Precies de asset die we net uploadden (GitHub maakt van spaties punten).
+          # Geen terugval op een zelfbedachte naam: ontbreekt de asset, dan wijst
+          # latest.json naar niets en krijgt geen Windows-installatie een update.
+          $expectedZipAsset = $ZIP_NAME -replace ' ', '.'
+          $zipAsset = @($assets | Where-Object { $_.name -eq $expectedZipAsset })
+          if ($zipAsset.Count -ne 1) {
+            throw "Asset $expectedZipAsset staat niet (precies één keer) in de draft; gevonden: $(($assets | ForEach-Object name) -join ', ')"
           }
+          $ZIP_ASSET_NAME = $zipAsset[0].name
           $ZIP_URL = "https://github.com/$REPO/releases/latest/download/$ZIP_ASSET_NAME"
           Write-Host "Zip URL: $ZIP_URL"
 
@@ -503,6 +575,7 @@ jobs:
           # a latest.json, but its Windows signatures predate the Authenticode
           # re-signing and are stale. We SET both Windows keys authoritatively here.
           gh release download $VERSION --pattern "latest.json" --output latest.json --clobber --repo "$REPO"
+          if ($LASTEXITCODE -ne 0) { throw "gh release download latest.json faalde (exit $LASTEXITCODE)" }
 
           $latest = Get-Content latest.json -Raw | ConvertFrom-Json
           if ($null -eq $latest.platforms) {
@@ -519,11 +592,12 @@ jobs:
 
           $latest | ConvertTo-Json -Depth 10 | Set-Content latest.json -NoNewline
           gh release upload $VERSION latest.json --clobber --repo "$REPO"
+          if ($LASTEXITCODE -ne 0) { throw "gh release upload latest.json faalde (exit $LASTEXITCODE)" }
 
           Write-Host "Windows updater entries set to the .nsis.zip with matching signature"
 
   publish-release:
-    timeout-minutes: 10
+    timeout-minutes: 20
     permissions:
       contents: write
     runs-on: ubuntu-latest
@@ -532,16 +606,22 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      # Node 22 zoals de rest van de workflow; verify-release.mjs en
+      # release-notes.mjs draaien hier.
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
       # Het `notes`-veld in latest.json is wat de updater-dialoog toont op het
       # moment dat de update wordt aangeboden. tauri-action laat het leeg, dus
       # zetten we het hier — als laatste stap vóór publicatie, zodat het niet
       # botst met de Windows-re-sign-stap die latest.json óók herschrijft.
       - name: Set updater notes in latest.json
-        # Bewust niet-blokkerend: de notes zijn cosmetisch, de publicatie niet.
-        # Een release met 15 assets die als draft blijft hangen omdat een
-        # tekstveld niet gezet kon worden, is erger dan een lege notes-tekst.
-        # De stap kleurt wel rood in de UI, dus stil gaat het niet.
-        continue-on-error: true
+        # Blokkerend: `gh release upload --clobber` verwijdert de oude
+        # latest.json vóór de upload. Faalt de upload, dan heeft de release geen
+        # manifest meer en vindt geen enkele installatie de update. Dan moet de
+        # release een draft blijven (review release v2026.10.0, bevinding 1).
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION: ${{ needs.create-release.outputs.version }}
@@ -559,6 +639,29 @@ jobs:
           '
           gh release upload "$VERSION" latest.json --clobber --repo "$REPO"
 
+      # Laatste poort vóór publicatie: dezelfde controle als release-verify.yml,
+      # maar op de draft. Elke platform-URL in latest.json wijst naar een asset
+      # van deze release, elke signature is gelijk aan die .sig en verifieert
+      # tegen de updater-pubkey, en alle tien platformsleutels zijn er. Bij een
+      # FOUT blijft de release een draft. Zie docs/release-verificatie.md.
+      - name: Controleer de draft vóór publicatie (verify-release.mjs --draft-id)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ needs.create-release.outputs.version }}
+          RELEASE_ID: ${{ needs.create-release.outputs.release_id }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/assets"
+          status=0
+          node scripts/verify-release.mjs "$VERSION" --repo "$REPO" --draft-id "$RELEASE_ID" \
+            --dir "$RUNNER_TEMP/assets" --out "$RUNNER_TEMP/verify-release.md" > /dev/null || status=$?
+          if [ -f "$RUNNER_TEMP/verify-release.md" ]; then cat "$RUNNER_TEMP/verify-release.md" >> "$GITHUB_STEP_SUMMARY"; fi
+          if [ "$status" -ne 0 ]; then
+            echo "::error::verify-release.mjs gaf exit $status; de release blijft een draft"
+            exit 1
+          fi
+
       - name: Publish release
         id: publish-release
         uses: actions/github-script@v8
@@ -566,7 +669,7 @@ jobs:
           release_id: ${{ needs.create-release.outputs.release_id }}
         with:
           script: |
-            github.rest.repos.updateRelease({
+            await github.rest.repos.updateRelease({
               owner: context.repo.owner,
               repo: context.repo.repo,
               release_id: process.env.release_id,

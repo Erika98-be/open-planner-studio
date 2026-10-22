@@ -186,27 +186,30 @@ export function siteMetaFields(record: object | null | undefined):
 }
 
 /**
- * Id van DEZE app-instantie (proces/realm). Wordt in het manifest gezet zodat een volgende
- * schrijfronde kan zien of het manifest dat er staat van onszelf is of van iemand anders — zie
- * `manifestOwnership` en `planRecoveryCleanup`.
+ * Lokale herstelidentiteit voor instantie en websessie (geen authenticatietoken).
+ * Dezelfde terugval op alle aanmaak-/rotatiepaden: randomUUID kan ontbreken op een
+ * HTTP-dev-adres. Dat mag niet tot een gedeelde 'default'-sessie of een crash leiden.
  */
-function newInstanceId(): string {
+function newRecoveryId(): string {
   try {
     return crypto.randomUUID();
   } catch {
     return `inst-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
   }
 }
-const instanceId = newInstanceId();
+// Manifest-eigenaar van deze app-instantie (proces/realm).
+const instanceId = newRecoveryId();
 
 /** IFC-bestandsnamen die DEZE instantie ooit zelf heeft geschreven. */
 const ownWritten = new Set<string>();
 /**
  * IFC-bestandsnamen die we van een VREEMDE eigenaar in ons manifest hebben overgenomen. Ze staan
- * daarmee wel in "ons" manifest, maar ze zijn niet van ons en mogen dus nooit door onze opruimlus
- * gewist worden.
+ * daarmee wel in "ons" manifest, maar onze opruimlus mag ze pas wissen nadat ze aantoonbaar
+ * hersteld én door een nieuwe gecommitte generatie vervangen zijn.
  */
 const adoptedIfc = new Set<string>();
+/** Alleen aantoonbaar herstelde snapshots mogen na een nieuwe manifestcommit verdwijnen. */
+const restoredIfc = new Set<string>();
 /** Archief-sha's waarvan DEZE instantie de blob schreef (zie `archiveRemovals`). */
 const ownWrittenArchives = new Set<string>();
 
@@ -241,6 +244,8 @@ export interface RecoveryCleanupInput {
   ownWritten: string[];
   /** IFC-bestandsnamen die we van een vreemde eigenaar hebben overgenomen. */
   adopted: string[];
+  /** Aantoonbaar herstelde snapshots waarvoor deze ronde een nieuwe generatie commit. */
+  replaced?: string[];
   /** Naamgeving van DEZE base. */
   names: RecoveryNames;
   /** Archief-sha's waar het NIEUWE manifest (zonder carry-over) naar verwijst. */
@@ -292,22 +297,25 @@ function archiveRemovals(
  *
  * Is het manifest van een ander, dan worden diens documentregels NIET gewist maar meegenomen in
  * ons manifest (`carryOver`), zodat ze bij de volgende start nog steeds als herstelkandidaat
- * worden aangeboden in plaats van stil wees te worden.
+ * worden aangeboden in plaats van stil wees te worden. Zo'n overgenomen regel (`adopted`) gaat
+ * ook in elke volgende ronde mee, als het manifest inmiddels van ons (of legacy) is.
  *
  * Over `heartbeatAt`: dat veld wordt geschreven en is hier beschikbaar, maar het bepaalt bewust
  * NIET of we mogen wissen. Een verse heartbeat is niet te onderscheiden tussen "er draait nu een
  * tweede venster" en "het proces is drie seconden geleden gecrasht" — precies het geval waarvoor
  * recovery bestaat. Elke drempel kiest dus tussen het wissen van de bestanden van een levend
  * venster en het wissen van de bestanden van een crashslachtoffer. Daarom wissen we hier
- * überhaupt niets van een vreemde eigenaar; opruimen van vreemde snapshots gebeurt uitsluitend
- * via `clearRecovery()`, dus nadat de gebruiker ze aangeboden heeft gekregen en heeft gekozen.
+ * niets van een vreemde eigenaar zonder expliciete herstelkeuze. Alleen aantoonbaar herstelde
+ * snapshots met een nieuwe generatie mogen via `replaced` weg; anders gebeurt opruimen uitsluitend
+ * via `clearRecovery()`, nadat de gebruiker de snapshots aangeboden kreeg en koos.
  */
 export function planRecoveryCleanup(input: RecoveryCleanupInput): RecoveryCleanupPlan {
   const { listing, prev, self, keep, names: n } = input;
   const ownership = manifestOwnership(prev, self);
   const present = new Set(listing);
   const keepSet = new Set(keep);
-  const adopted = new Set(input.adopted);
+  const replaced = new Set(input.replaced ?? []);
+  const adopted = new Set(input.adopted.filter(name => !replaced.has(name)));
 
   const candidates = new Set<string>();
   if (prev && (ownership === 'own' || ownership === 'legacy')) {
@@ -316,6 +324,7 @@ export function planRecoveryCleanup(input: RecoveryCleanupInput): RecoveryCleanu
     }
   }
   for (const name of input.ownWritten) candidates.add(name);
+  for (const name of replaced) candidates.add(name);
 
   const remove: string[] = [];
   for (const name of candidates) {
@@ -338,9 +347,14 @@ export function planRecoveryCleanup(input: RecoveryCleanupInput): RecoveryCleanu
   }
 
   const carryOver: RecoveryManifestDoc[] = [];
-  if (prev && ownership === 'foreign') {
+  if (prev) {
     for (const d of prev.documents) {
       if (!d || typeof d.ifc !== 'string' || typeof d.id !== 'string') continue;
+      // Vreemd manifest: alle regels mee. Eigen of legacy manifest: alleen de regels die we eerder
+      // overnamen of vasthielden (`adopted`); anders valt hun verwijzing na één ronde weg en blijven
+      // alleen weesbytes over die `loadRecovery` niet meer aanbiedt.
+      if (ownership !== 'foreign' && !adopted.has(d.ifc)) continue;
+      if (replaced.has(d.ifc)) continue;    // hersteld én vervangen door een nieuwe generatie
       if (keepSet.has(d.ifc)) continue;      // zelfde document — onze eigen regel wint
       if (!present.has(d.ifc)) continue;     // snapshot is er niet (meer)
       carryOver.push({
@@ -359,6 +373,9 @@ export function planRecoveryCleanup(input: RecoveryCleanupInput): RecoveryCleanu
   const archiveCandidates = [...(input.ownWrittenArchives ?? [])];
   if (prev && (ownership === 'own' || ownership === 'legacy')) {
     for (const d of prev.documents) if (d && typeof d.xerArchive === 'string') archiveCandidates.push(d.xerArchive);
+  }
+  for (const d of prev?.documents ?? []) {
+    if (replaced.has(d.ifc) && typeof d.xerArchive === 'string') archiveCandidates.push(d.xerArchive);
   }
   for (const name of archiveRemovals(archiveCandidates, referencedArchives, present, n)) {
     if (!remove.includes(name)) remove.push(name);
@@ -591,10 +608,16 @@ async function saveTauri(input: RecoverySaveInput): Promise<void> {
   }
   const keep = snapshotPlan.documents.map((document) => document.ifc);
 
+  // Alleen expliciet geslaagd herstel geeft dit recht: een toevallig gelijk doc-id van een
+  // vreemde of uitgestelde snapshot is geen reden om die kopie te verwijderen.
+  const currentById = new Map(snapshotPlan.documents.map(document => [document.id, document.ifc]));
+  const replaced = (prev?.documents ?? []).filter(document =>
+    restoredIfc.has(document.ifc) && currentById.has(document.id)
+    && currentById.get(document.id) !== document.ifc).map(document => document.ifc);
   const listing = await listAppDataTauri(dir);
   const plan = planRecoveryCleanup({
     listing, prev, self: instanceId, keep,
-    ownWritten: [...ownWritten], adopted: [...adoptedIfc], names,
+    ownWritten: [...ownWritten], adopted: [...adoptedIfc], replaced, names,
     keepArchives, ownWrittenArchives: [...ownWrittenArchives],
   });
   if (plan.ownership === 'foreign') {
@@ -623,6 +646,13 @@ async function saveTauri(input: RecoverySaveInput): Promise<void> {
   // nieuwe verzameling generaties zichtbaar voor loadTauri. Opruimen staat bewust erná.
   await writeAtomic(manifestName, JSON.stringify(manifest));
 
+  // Pas na het commitpoint: bij een mislukte manifestwrite blijven de oude bytes én hun
+  // bescherming intact. Vanaf nu mag ook een latere opruimronde deze vervangen kopie wissen.
+  for (const name of replaced) {
+    adoptedIfc.delete(name);
+    restoredIfc.delete(name);
+    ownWritten.add(name);
+  }
   for (const name of plan.remove) {
     try { await remove(await join(dir, name)); } catch { /* al weg */ }
     ownWritten.delete(name);
@@ -781,6 +811,7 @@ async function clearTauri(): Promise<void> {
     try { await remove(await join(dir, name)); } catch { /* al weg */ }
     ownWritten.delete(name);
     adoptedIfc.delete(name);
+    restoredIfc.delete(name);
     const sha = names.archiveSha(name);
     if (sha) ownWrittenArchives.delete(sha);
   }
@@ -822,6 +853,28 @@ async function clearOwnTauri(): Promise<void> {
     ownWritten.delete(name);
     const sha = names.archiveSha(name);
     if (sha) ownWrittenArchives.delete(sha);
+  }
+}
+
+/**
+ * Zie `holdRecoveryForLater`. Neem de regels van het manifest dat er nu staat over (`adopted`):
+ * de opruimlus wist ze dan niet en draagt ze mee. Nodig voor een v1-manifest zonder `ownerId`
+ * (`legacy`): dat valt anders onder de eigen opruiming en is na één ronde weg.
+ */
+async function holdTauri(restoredDocumentIds: readonly string[]): Promise<void> {
+  const { exists, readTextFile } = await import('@tauri-apps/plugin-fs');
+  const { appDataDir, join } = await import('@tauri-apps/api/path');
+  try {
+    const manifestPath = await join(await appDataDir(), manifestName);
+    if (!(await exists(manifestPath))) return;
+    for (const d of parseRecoveryManifest(await readTextFile(manifestPath))?.documents ?? []) {
+      if (d && typeof d.ifc === 'string') {
+        adoptedIfc.add(d.ifc);
+        if (restoredDocumentIds.includes(d.id)) restoredIfc.add(d.ifc);
+      }
+    }
+  } catch (err) {
+    console.error('Recovery: kon het manifest niet lezen om de snapshots vast te houden:', err);
   }
 }
 
@@ -890,7 +943,7 @@ async function resolveSessionId(): Promise<string> {
   let id: string;
   try {
     const stored = sessionStorage.getItem(SESSION_KEY);
-    id = stored ?? crypto.randomUUID();
+    id = stored ?? newRecoveryId();
     if (!stored) sessionStorage.setItem(SESSION_KEY, id);
   } catch {
     return 'default'; // sessionStorage geblokkeerd → vaste sleutel
@@ -904,7 +957,7 @@ async function resolveSessionId(): Promise<string> {
   if (await claimLock(key(id))) return id;
 
   // Bezet door een ander levend tab (gedupliceerd tabblad): eigen id nemen.
-  id = crypto.randomUUID();
+  id = newRecoveryId();
   try { sessionStorage.setItem(SESSION_KEY, id); } catch { /* niet te schrijven — id blijft lokaal */ }
   console.warn('Recovery: sessie-id was al in gebruik door een ander tabblad — nieuwe id genomen.');
   await claimLock(key(id));
@@ -925,8 +978,8 @@ function sessionId(): Promise<string> {
  * was — precies de uitgestelde snapshots. Daarom verhuist `holdRecoveryForLater` de huidige
  * generatie naar een vastgehouden id (in sessionStorage onder `HELD_KEY`) en krijgt het tab een
  * verse sessie-id voor nieuwe snapshots. `loadWeb` leest eigen + vastgehouden generaties,
- * `clearWeb` wist ze allemaal. Tauri heeft dit niet nodig: daar is een manifest van een vorige
- * app-start `foreign` en blijft het via de carry-over in `planRecoveryCleanup` staan.
+ * `clearWeb` wist ze allemaal. Tauri houdt vast via `holdTauri`: de manifestregels worden
+ * overgenomen en gaan via de carry-over in `planRecoveryCleanup` elke ronde mee.
  */
 const HELD_KEY = `${SESSION_KEY}:held`;
 
@@ -974,7 +1027,7 @@ async function holdWeb(): Promise<void> {
   writeHeldSessionIds(held);
   // De huidige generatie blijft onder haar id staan (de lock houdt dit tab al vast); nieuwe
   // snapshots gaan naar een verse id.
-  const fresh = crypto.randomUUID();
+  const fresh = newRecoveryId();
   try { sessionStorage.setItem(SESSION_KEY, fresh); } catch { /* id blijft lokaal */ }
   await claimLock(`${SESSION_KEY}:${fresh}`);
   sessionIdPromise = Promise.resolve(fresh);
@@ -1322,9 +1375,10 @@ export function clearOwnRecovery(): Promise<void> {
 /**
  * "Nu niet herstellen, maar ook niet weggooien": de gevonden snapshots moeten de volgende
  * crashherstel-rondes overleven en bij de volgende start opnieuw aangeboden worden. Aanroepen
- * vóórdat de auto-save weer aan gaat. Tauri: no-op (een vorige app-start is `foreign` en wordt al
- * meegedragen); web: zie `holdWeb`.
+ * vóórdat de auto-save weer aan gaat. Tauri: zie `holdTauri`; web: zie `holdWeb`.
+ * Alleen ids die daadwerkelijk zijn hersteld meegeven: op desktop mag hun oude generatie pas
+ * na een geslaagde nieuwe snapshot-/manifestcommit worden opgeruimd. Uitstellen geeft geen ids.
  */
-export function holdRecoveryForLater(): Promise<void> {
-  return serializeRecoveryWrite(() => (isTauri() ? Promise.resolve() : holdWeb()));
+export function holdRecoveryForLater(restoredDocumentIds: readonly string[] = []): Promise<void> {
+  return serializeRecoveryWrite(() => (isTauri() ? holdTauri(restoredDocumentIds) : holdWeb()));
 }

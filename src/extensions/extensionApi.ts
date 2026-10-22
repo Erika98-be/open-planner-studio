@@ -324,6 +324,10 @@ export function createExtensionApi(
         unsubscribeExtensionEvent(event, listener);
       },
       emit(event: string, data?: unknown) {
+        // De host-naamruimte is alleen-lezen voor extensies, inclusief toekomstige host-events.
+        if (event.startsWith('host:')) {
+          throw new Error('The host: event namespace is reserved for the application.');
+        }
         emitExtensionEvent(event, data);
       },
     },

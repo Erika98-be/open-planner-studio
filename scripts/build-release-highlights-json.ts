@@ -46,6 +46,7 @@ function buildDocument(generated: string): unknown {
       const highlights: Record<string, { primary: JsonHighlight; secondary: JsonHighlight[] }> = {};
       for (const locale of RELEASE_HIGHLIGHT_LOCALES as readonly ReleaseHighlightLocale[]) {
         const copy = block.copy[locale];
+        if (!copy) continue; // oudere versieblokken kennen alleen de veertien oorspronkelijke talen
         const [primaryCopy, ...secondaryCopy] = copy;
         const primary: JsonHighlight = {
           category: primaryCopy.category,

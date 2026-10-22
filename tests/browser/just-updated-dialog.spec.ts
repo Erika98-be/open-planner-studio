@@ -85,6 +85,23 @@ test('update-highlights werken smal, licht/donker en RTL', async ({ page, ops: _
   await expect(dialog.evaluate(element => element.scrollWidth <= element.clientWidth)).resolves.toBe(true);
 });
 
+// Besluit eigenaar 2026-10-19: vanaf 2026.10.0 hebben de hoogtepunten alle 28 UI-talen; oudere
+// blokken houden hun veertien en vallen voor een nieuwere taal terug op Engels.
+test('update-highlights: nieuwe taal toont 2026.10.0, een ouder blok valt terug op Engels', async ({ page, ops: _ops }) => {
+  await stubReleasesApi(page);
+  await selectLocale(page, 'SV — Svenska', 'sv');
+  const dialog = page.locator('[data-ops-just-updated-dialog]');
+  await page.evaluate(() => window.__OPS__!.store.getState().setUI({ justUpdated: { from: null, to: '2026.10.0' } }));
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByText('Öppna Primavera P6-filer')).toBeVisible();
+  await expect(dialog.locator('article')).toHaveCount(5);
+  await page.evaluate(() => window.__OPS__!.store.getState().setUI({ justUpdated: null }));
+  await expect(dialog).toHaveCount(0);
+  await page.evaluate(() => window.__OPS__!.store.getState().setUI({ justUpdated: { from: null, to: '2026.9.0' } }));
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByText('Edit faster in one shared task grid')).toBeVisible();
+});
+
 // Eerste start met een bestaande `ops-lastVersion` maar zonder `ops-welcomeSeen` (bv. opslag
 // gedeeltelijk gewist): "Net bijgewerkt" wacht op de hele eerste-startervaring (`isOnboardingActive`)
 // — eerst welkom, rondleiding en tutorialvraag, pas daarna de updatehoogtepunten. De detectie zelf

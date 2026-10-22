@@ -15,7 +15,9 @@
     "openFailed": "A fájl megnyitása sikertelen",
     "extGuideCallbackFailed": "A(z) {{name}} bővítmény egyik lépése hibát jelzett. Az útmutató folytatódik.",
     "extHelpProjectOpenFailed": "A(z) {{name}} bővítmény projektfájlja ({{file}}) nem nyitható meg.",
+    "extImportFailed": "Az importálás a(z) {{name}} segítségével nem sikerült.",
     "extensionMessage": "Bővítmény ({{name}}): {{message}}",
+    "extensionInstallFailed": "A bővítményt nem sikerült telepíteni. Ellenőrizze a fájlt, és próbálja meg újra.",
     "xerInvalidInput": "Az XER-importhoz szükség van az eredeti fájlbájtokra.",
     "xerInvalidFile": "Ez a fájl nem érvényes vagy nem támogatott XER-fájl.",
     "xerInvalidEncoding": "Ennek az XER-fájlnak érvénytelen vagy csonka a szövegkódolása.",
@@ -55,6 +57,8 @@
     "xerImportNumberIssues_other": "{{count}} számformátum-probléma.",
     "xerImportEnumFallbacks_one": "{{count}} tartalék felsorolási érték.",
     "xerImportEnumFallbacks_other": "{{count}} tartalék felsorolási érték.",
+    "xerImportMissingPlannedStarts_one": "Egy tevékenységnek nem volt tervezett kezdése; most a fájlban szereplő állapotdátumon vagy projektkezdésen indul.",
+    "xerImportMissingPlannedStarts_other": "{{count}} tevékenységnek nem volt tervezett kezdése; most a fájlban szereplő állapotdátumon vagy projektkezdésen indulnak.",
     "xerImportUnsupportedSemantics_one": "{{count}} P6-ütemezési beállítás biztonságos tartalékot használt.",
     "xerImportUnsupportedSemantics_other": "{{count}} P6-ütemezési beállítás biztonságos tartalékot használt.",
     "xerImportDatesAsRecorded_one": "{{count}} tevékenység a Primavera által rögzített dátumokat mutatja (nem lett újraszámítva).",
@@ -65,6 +69,7 @@
     "mppLegacy": "Ez a .mpp-fájl régi formátumot használ (Project 2007 vagy korábbi). Exportálja MS Project-ben XML-ként (Fájl → Mentés másként → XML), és nyissa meg azt a fájlt.",
     "mppEncrypted": "Ez a .mpp-fájl jelszóval védett. Exportálja MS Project-ben XML-ként (Fájl → Mentés másként → XML), és nyissa meg azt a fájlt.",
     "saveFailed": "Mentés sikertelen",
+    "ambiguousThousands": "„{{text}}” kétértelmű: decimális számra vagy ezresekre gondol? Tizedesjegyeket a(z) „{{separator}}” jellel írjon (1{{separator}}5), ezreseket elválasztójel nélkül (1500). Az érték nem változott.",
     "siteSaveConflict": "Nem mentve: „{{name}}” közben valaki más módosította a webhelyen. A módosításai még benne vannak az alkalmazásban. Válassza a „Mentés másként” parancsot, ha új fájlként szeretné megőrizni őket.",
     "siteFileGone": "A(z) „{{name}}” már nincs a webhelyen. Az alkalmazás eltávolította a fájlt a Legutóbbi listából.",
     "savedViaDownload": "Letöltésként mentve: a(z) „{{name}}” most a letöltési mappában van. Ebben a környezetben az alkalmazás nem írhat közvetlenül a kiválasztott helyre.",
@@ -92,16 +97,18 @@
     "mppSourceScheduleNotes_other": "Ez az MS Project-fájl {{count}} tevékenységet tartalmaz szünetes, simított vagy munkamennyiség alapú ütemezéssel. A program ilyenként olvassa be és jeleníti meg.",
     "exportSplitsLost_one": "{{count}} szünetes tevékenység szünetek nélkül lett exportálva. Az MS Project és a P6 csak munkaeloszlásként ismeri a szüneteket.",
     "exportSplitsLost_other": "{{count}} szünetes tevékenység szünetek nélkül lett exportálva. Az MS Project és a P6 csak munkaeloszlásként ismeri a szüneteket.",
+    "exportP6Truncated_one": "Egy név vagy kód a P6 által megengedett hosszra lett rövidítve.",
+    "exportP6Truncated_other": "{{count}} név vagy kód a P6 által megengedett hosszra lett rövidítve.",
     "projectStartAnchorsClamped_one": "{{count}} tevékenység a projektkezdéssel együtt tolódott.",
     "projectStartAnchorsClamped_other": "{{count}} tevékenység a projektkezdéssel együtt tolódott.",
     "mppTimephasedSteeringLost_one": "Az MS Project dátumablaka ettől a művelettől már nem irányít {{count}} tevékenységet. Az órák eloszlása továbbra is érvényes, és megmarad a fájlban.",
     "mppTimephasedSteeringLost_other": "Az MS Project dátumablaka ettől a művelettől már nem irányít {{count}} tevékenységet. Az órák eloszlása továbbra is érvényes, és megmarad a fájlban.",
     "readMore": "Bővebben",
-    "taskTypesUnlocked": "Ez a fájl mentett munkát vagy saját munkaszabályokat tartalmaz; a munkaszabály és a hátralévő munka ennél a projektnél látható.",
-    "taskTypesUnlockedDetail": "Ez a fájl mentett munkát vagy saját munkaszabályokat tartalmaz; a munkaszabály és a hátralévő munka ennél a projektnél látható.",
-    "workRulesReadMore": "Munkaszabályok ismertetése",
-    "workRuleDurationsChanged_one": "A munkaszabály a naptármódosítás után {{count}} tevékenység időtartamát módosította (a munka megmaradt, a napi órák száma változott).",
-    "workRuleDurationsChanged_other": "A munkaszabály a naptármódosítás után {{count}} tevékenység időtartamát módosította (a munka megmaradt, a napi órák száma változott).",
+    "taskTypesUnlocked": "Ez a fájl mentett munkát vagy tevékenységtípusokat tartalmaz; a tevékenységtípus és a hátralévő munka ennél a projektnél látható.",
+    "taskTypesUnlockedDetail": "Ez a fájl mentett munkát vagy tevékenységtípusokat tartalmaz; a tevékenységtípus és a hátralévő munka ennél a projektnél látható.",
+    "workRulesReadMore": "Tevékenységtípusok ismertetése",
+    "workRuleDurationsChanged_one": "A tevékenységtípus a naptármódosítás után {{count}} tevékenység időtartamát módosította (a munka megmaradt, a napi órák száma változott).",
+    "workRuleDurationsChanged_other": "A tevékenységtípus a naptármódosítás után {{count}} tevékenység időtartamát módosította (a munka megmaradt, a napi órák száma változott).",
     "pasteSkippedReadOnly_one": "{{count}} cella kihagyva: csak olvasható (például automatikusan számozott WBS-kód vagy számított oszlop).",
     "pasteSkippedReadOnly_other": "{{count}} cella kihagyva: csak olvashatók (például automatikusan számozott WBS-kód vagy számított oszlop).",
     "librarySaveFailed": "Az erőforrástár nem menthető",
@@ -115,8 +122,10 @@
     "startBlockedByConstraintNoDate": "A(z) „{{name}}” tevékenység új kezdése nem lépett érvénybe: a tevékenységnek van elődje és $t(task:constraintType.{{type}}) korlátozása, és ezek határozzák meg a kezdést. A kezdés áthelyezéséhez módosítsa ezt a korlátozást.",
     "startBlockedByConstraintMany_one": "{{count}} tevékenység új kezdése nem lett alkalmazva: ennek a tevékenységnek van elődje, és a nem korábban kezdődő (SNET) korlátozástól eltérő korlátozása van. Módosítsa ezt a korlátozást a kezdés áthelyezéséhez.",
     "startBlockedByConstraintMany_other": "{{count}} tevékenység új kezdése nem lett alkalmazva: ezeknek a tevékenységeknek van elődje, és a nem korábban kezdődő (SNET) korlátozástól eltérő korlátozásuk van. Módosítsa ezeket a korlátozásokat a kezdések áthelyezéséhez.",
-    "referencesClearedOnPaste_one": "Egy hivatkozás nem létezett ebben a dokumentumban, ezért törölve lett (egy tevékenységnaptár, egyéni tevékenységtípus, tevékenységkód vagy egyéni mező a forrásdokumentumból).",
-    "referencesClearedOnPaste_other": "{{count}} hivatkozás nem létezett ebben a dokumentumban, ezért törölve lett (tevékenységnaptárak, egyéni tevékenységtípusok, tevékenységkódok vagy egyéni mezők a forrásdokumentumból).",
+    "dragStartIsActual": "A(z) „{{name}}” már elindult: a kezdése a tényleges kezdés, ezért nem mozdul el. Módosítsa az előrehaladáson keresztül.",
+    "dragDatesAreActual": "A(z) „{{name}}” kész: a kezdés és a befejezés a tényleges dátumai, ezért nem mozdulnak el. Módosítsa az előrehaladáson keresztül.",
+    "referencesClearedOnPaste_one": "{{count}} hivatkozás nem létezett ebben a dokumentumban, ezért törölve lett (egy tevékenységnaptár, egyéni munkanem, tevékenységkód vagy egyéni mező a forrásdokumentumból).",
+    "referencesClearedOnPaste_other": "{{count}} hivatkozás nem létezett ebben a dokumentumban, ezért törölve lett (tevékenységnaptárak, egyéni munkanemek, tevékenységkódok vagy egyéni mezők a forrásdokumentumból).",
     "milestoneRefusedAssignments_one": "A(z) „{{task}}” tevékenységnek vannak erőforrás-hozzárendelései, ezért nem lehet mérföldkő. Előbb távolítsa el a hozzárendeléseket.",
     "milestoneRefusedAssignments_other": "{{count}} tevékenységnek van erőforrás-hozzárendelése, ezért egyik sem lehet mérföldkő. Előbb távolítsa el a hozzárendeléseket.",
     "milestoneRefusedSummary_one": "A(z) „{{task}}” összefoglaló tevékenység altevékenységekkel rendelkezik, ezért nem lehet mérföldkő.",
@@ -129,7 +138,12 @@
     "milestoneClearedOnPhase_other": "{{count}} tevékenység már nem mérföldkő.",
     "phaseRefusedNoAssignableChild": "„{{phase}}” nem lehet összefoglaló tevékenység: a hozzárendelései nem kerülhetnek sehová, mert az új altevékenységek közül egyik sem tartalmazhat hozzárendelést (mérföldkő vagy összefoglaló tevékenység). Nem történt változás.",
     "phaseRefusedDuplicateResource": "„{{phase}}” nem lehet összefoglaló tevékenység: {{resource}} hozzárendelése nem kerülhet át az új „{{child}}” altevékenységhez, mert az már tartalmazza {{resource}} hozzárendelését. Nem történt változás.",
-    "schedulingProfileApplied": "Ez a projekt a(z) {{profile}} számítási profillal számol. Módosítsa a Fájl → Projektinfó → Számítási profil és beállítások menüpontban.",
+    "phaseQuestionOutdated": "A tevékenységek vagy hozzárendelések megváltoztak, miközben a kérdés még nyitva volt. Nem történt módosítás; próbálja meg újra.",
+    "schedulingProfileApplied": "Ez a projekt a(z) {{profile}} szerint számol. Módosítsa a Fájl → Projektadatok → Számítási profil és beállítások menüpontban.",
+    "schedulingTemplateSaved": "Sablon „{{name}}” mentve.",
+    "schedulingTemplateLimit": "A sablon nincs mentve: már {{max}} sablon van. Először törölje az egyik sablont.",
+    "schedulingTemplateStorageFailed": "A sablon nincs mentve: az alkalmazás tárhelye tele van, vagy nem érhető el.",
+    "schedulingTemplateDeleteFailed": "A sablon nincs törölve: az alkalmazás tárhelye tele van, vagy nem érhető el.",
     "schedulingProfileShifted_one": "Az alkalmazás után egy tevékenység eltolódott.",
     "schedulingProfileShifted_other": "Az alkalmazás után {{count}} tevékenység tolódott el.",
     "actions": {
@@ -147,8 +161,61 @@
     "xerArchiveReasonStructure": "Ok: az archívum felépítése hibás az IFC-ben (duplikált, átrendezett vagy hibásan összekapcsolt).",
     "statusDateSetToday": "Az állapotdátum a mai napra lett állítva ({{date}}).",
     "durationBelowDoneWork": "„{{name}}” már {{percent}}%-ban kész: az időtartam nem lehet rövidebb a már elvégzett munkánál. Az időtartam nem módosult.",
+    "refusedTaskNames": "Nem módosítva: {{names}}.",
+    "refusedTaskNamesMore_one": "Nem módosítva: {{names}} és még egy tevékenység.",
+    "refusedTaskNamesMore_other": "Nem módosítva: {{names}} és még {{count}} tevékenység.",
+    "notAppliedTaskNames": "Nem alkalmazva a következőknél: {{names}}.",
+    "notAppliedTaskNamesMore_one": "Nem alkalmazva a következőknél: {{names}} és még egy tevékenység.",
+    "notAppliedTaskNamesMore_other": "Nem alkalmazva a következőknél: {{names}} és még {{count}} tevékenység.",
+    "refusedRelationNames": "Nem jött létre: {{names}}.",
+    "refusedRelationNamesMore_one": "Nem jött létre: {{names}} és még egy kapcsolat.",
+    "refusedRelationNamesMore_other": "Nem jött létre: {{names}} és még {{count}} kapcsolat.",
+    "remainingWorkRecomputed": "„{{name}}” hátralévő munkája újraszámítva: {{before}} ó → {{after}} ó (az érték a fájlból származott). Ctrl+Z visszavonja.",
+    "remainingWorkRecomputedMany_one": "Egy tevékenység hátralévő munkája újraszámítva (az érték a fájlból származott). Ctrl+Z visszavonja.",
+    "remainingWorkRecomputedMany_other": "{{count}} tevékenység hátralévő munkája újraszámítva (az értékek a fájlból származtak). Ctrl+Z visszavonja.",
     "tutorialOfferLater": "Az oktatóanyagokat mindig megtalálja a Súgó › Oktatóanyagok menüpontban.",
-    "tutorialOfferUnavailable": "Az oktatóanyagokat most nem lehetett telepíteni vagy elindítani. Később újra megpróbálhatja a Súgó › Oktatóanyagok menüpontban."
+    "tutorialOfferUnavailable": "Az oktatóanyagokat most nem lehetett telepíteni vagy elindítani. Később újra megpróbálhatja a Súgó › Oktatóanyagok menüpontban.",
+    "taskAddedAtEnd": "Az új tevékenység a lista végére került. Szűrés, csoportosítás vagy rendezés közben az alkalmazás nem tudja a kijelölés alá helyezni.",
+    "p6xmlImportEmpty": "Ez a fájl nem tartalmaz olyan tevékenységet, amelyet az alkalmazás be tud olvasni.",
+    "p6xmlImportEmptyNoObjectIds": "A tevékenységeknek nincs ObjectId-juk, ezért az alkalmazás nem tudja őket összekapcsolni. Ez nem szabványos Primavera P6 XML.",
+    "p6xmlImportEmptyXerColumns": "A fájl XER-oszlopneveket használ (például task_code) a P6 XML-mezők helyett. Nyissa meg magát a .xer fájlt.",
+    "p6xmlImportOpened_one": "P6 XML-fájl megnyitva: egy projektdokumentum.",
+    "p6xmlImportOpened_other": "P6 XML-fájl megnyitva: {{count}} projektdokumentum.",
+    "p6xmlImportCrossProjectRelations_one": "Egy kapcsolat a projektek között nem lett kapcsolatként átvéve.",
+    "p6xmlImportCrossProjectRelations_other": "{{count}} kapcsolat a projektek között nem lett kapcsolatként átvéve.",
+    "p6xmlImportUnassignedActivities_one": "Egy projekt nélküli tevékenység nem lett beolvasva.",
+    "p6xmlImportUnassignedActivities_other": "{{count}} projekt nélküli tevékenység nem lett beolvasva.",
+    "msProjectImportLoss": "Nem minden került át ebből az MS Project-fájlból.",
+    "msProjectLostSubprojects_one": "Egy beszúrt projekt normál tevékenységként lett beolvasva, a másik fájlhoz való kapcsolat nélkül.",
+    "msProjectLostSubprojects_other": "{{count}} beszúrt projekt normál tevékenységként lett beolvasva, a másik fájlhoz való kapcsolat nélkül.",
+    "msProjectLostExternalTasks_one": "Egy másik projektből származó külső tevékenység normál tevékenységként lett beolvasva.",
+    "msProjectLostExternalTasks_other": "{{count}} másik projektből származó külső tevékenység normál tevékenységként lett beolvasva.",
+    "msProjectLostInactiveTasks_one": "Egy inaktív tevékenység aktív tevékenységként lett beolvasva, és beleszámít a számításba.",
+    "msProjectLostInactiveTasks_other": "{{count}} inaktív tevékenység aktív tevékenységként lett beolvasva, és beleszámít a számításba.",
+    "msProjectLostManualTasks_one": "Egy kézzel ütemezett tevékenység automatikusan ütemezett tevékenységként lett beolvasva.",
+    "msProjectLostManualTasks_other": "{{count}} kézzel ütemezett tevékenység automatikusan ütemezett tevékenységként lett beolvasva.",
+    "msProjectLostLevelingDelays_one": "Egy tevékenység kiegyenlítési késleltetése nem lett átvéve.",
+    "msProjectLostLevelingDelays_other": "{{count}} tevékenység kiegyenlítési késleltetése nem lett átvéve.",
+    "msProjectLostCriticalSlack_one": "A fájlból származó kritikus küszöbérték (tartalékidő legfeljebb egy munkanap) nem lett átvéve. Az alkalmazás 0 küszöbértékkel számol.",
+    "msProjectLostCriticalSlack_other": "A fájlból származó kritikus küszöbérték (tartalékidő legfeljebb {{count}} munkanap) nem lett átvéve. Az alkalmazás 0 küszöbértékkel számol.",
+    "msProjectLostBaselines_one": "Egy alapterv nem lett átvéve.",
+    "msProjectLostBaselines_other": "{{count}} alapterv nem lett átvéve.",
+    "msProjectLostExtraBaselines_one": "Egy alapterv (Baseline 1–10) nem lett átvéve.",
+    "msProjectLostExtraBaselines_other": "{{count}} alapterv (Baseline 1–10) nem lett átvéve.",
+    "msProjectLostBaselineWorkCost_one": "Egy tevékenység, erőforrás vagy hozzárendelés esetében a munka vagy költség a Baseline 0-ból nem lett átvéve.",
+    "msProjectLostBaselineWorkCost_other": "{{count}} tevékenység, erőforrás és hozzárendelés esetében a munka vagy költség a Baseline 0-ból nem lett átvéve.",
+    "msProjectLostAssignmentBaselineDates_one": "Egy hozzárendelésnél az alapterv eltér a tevékenységtől; ez az eltérés nem lett átvéve.",
+    "msProjectLostAssignmentBaselineDates_other": "{{count}} hozzárendelésnél az alapterv eltér a tevékenységtől; ez az eltérés nem lett átvéve.",
+    "msProjectLostCustomFields_one": "Egy értékekkel rendelkező egyéni mező (egyéni mező vagy körvonalkód) nem lett átvéve.",
+    "msProjectLostCustomFields_other": "{{count}} értékekkel rendelkező egyéni mező (egyéni mezők vagy körvonalkódok) nem lett átvéve.",
+    "msProjectLostNotes_one": "Egy megjegyzés nem lett átvéve.",
+    "msProjectLostNotes_other": "{{count}} megjegyzés nem lett átvéve.",
+    "msProjectLostHyperlinks_one": "Egy hiperhivatkozás nem lett átvéve.",
+    "msProjectLostHyperlinks_other": "{{count}} hiperhivatkozás nem lett átvéve.",
+    "msProjectLostFixedCosts_one": "Egy tevékenység fix költsége nem lett átvéve.",
+    "msProjectLostFixedCosts_other": "{{count}} tevékenység fix költségei nem lettek átvéve.",
+    "msProjectLostResourceRates_one": "Egy erőforrás alapdíja nem lett átvéve.",
+    "msProjectLostResourceRates_other": "{{count}} erőforrás alapdíjai nem lettek átvéve."
   },
   "scheduleErrors": {
     "cycle": "Körkörös kapcsolat a tevékenységek között: {{path}}",
@@ -162,6 +229,8 @@
   "no": "Nem",
   "days": "n",
   "daysLong": "napok",
+  "dayUnitLong_one": "nap",
+  "dayUnitLong_other": "nap",
   "ok": "OK",
   "apply": "Alkalmazás",
   "create": "Létrehozás",
@@ -213,7 +282,7 @@
     "collapseAll": "Összes összecsukása"
   },
   "settings": {
-    "title": "Beállítások",
+    "title": "Alkalmazásbeállítások",
     "appearanceTab": "Megjelenés",
     "planningTab": "Ütemezés",
     "advancedTab": "Speciális",
@@ -258,8 +327,8 @@
     "hourPlanningSection": "Óraalapú tervezés",
     "enableHourPlanning": "Óraalapú tervezés bekapcsolása",
     "enableHourPlanningHint": "Bekapcsolja az óra/perc szerinti ütemezést: óraskála, műszakok munkaidő-sávokkal és óra pontosságú tevékenységsávok. Kikapcsolva ⇒ az alkalmazás továbbra is teljesen napalapon működik.",
-    "showTaskTypes": "Munkaszabályok és munka megjelenítése",
-    "showTaskTypesHint": "Az MS Projectből vagy Primavera P6-ból származó fájlok ezt mindig megjelenítik. Kikapcsolva: az időtartam és a hozzárendelt mennyiség megmarad, a munka pedig ehhez igazodik.",
+    "showTaskTypes": "Tevékenységtípusok használata",
+    "showTaskTypesHint": "Válassza ki tevékenységenként, mi változzon, ha az időtartam, a hozzárendelt mennyiség vagy a munka módosul, például az MS Project Task Type és a P6 Duration Type beállítása szerint. Ki: az időtartam és a hozzárendelt mennyiség megmarad. A tevékenységtípusokat vagy mentett munkát tartalmazó fájl ezeket akkor is megjeleníti, ha ki van kapcsolva.",
     "allowMixedDayHour": "Vegyes nap/óraalapú tervezés engedélyezése",
     "defaultTaskDurationUnit": "Alapértelmezett egység új tevékenységekhez",
     "defaultTaskDurationUnitHint": "Meghatározza, hogy az új tevékenységek időtartama alapértelmezés szerint munkanapokban vagy munkaórákban legyen megadva. A meglévő tevékenységek nem változnak.",
@@ -320,6 +389,10 @@
     "dateNotationDmy": "nn-hh-éééé",
     "dateNotationMdy": "hh-nn-éééé",
     "dateNotationYmd": "éééé-hh-nn",
+    "timeNotation": "Időformátum",
+    "timeNotationHint": "Meghatározza, hogyan jelennek meg és hogyan adhatók meg az időpontok: a naptárablakban, az órában mért tevékenységeknél a táblázatban, a Gantt óraskáláján és az üzenetekben. A fájlok és a számítások nem változnak (24 órás).",
+    "timeNotation24h": "24 órás (13:00)",
+    "timeNotation12h": "12 órás (1:00 PM)",
     "fontFamilyLabel": "Betűtípus",
     "fontScaleLabel": "Betűméret",
     "fontScaleHint": "Méretezi a felület szövegét és elrendezését.",
@@ -433,6 +506,8 @@
     "newProject": "Új projekt",
     "openExistingProject": "Meglévő projekt megnyitása",
     "allProjects": "Összes projekt",
+    "scrollTabsStart": "Lapfülek görgetése az elejére",
+    "scrollTabsEnd": "Lapfülek görgetése a végére",
     "active": "Aktív",
     "tasksWord": "tevékenység",
     "criticalWord": "kritikus",
@@ -444,19 +519,45 @@
   "feedback": {
     "buttonTooltip": "Visszajelzés küldése",
     "title": "Visszajelzés küldése",
-    "typeBug": "Hiba",
-    "typeFeature": "Funkciókérés",
+    "typeBug": "Valami nem működik",
+    "typeFeature": "Ötlet",
+    "typeGeneral": "Kérdés vagy megjegyzés",
     "fieldTitle": "Cím",
+    "titlePlaceholder": "Pl. A kritikus út a mentés után ugrik",
     "fieldDescription": "Leírás",
+    "descriptionPlaceholder": "Mit csinált, mit várt, és mi történt?",
     "attachScreenshot": "Képernyőkép összekapcsolása",
+    "screenshotPreview": "Képernyőkép előnézete",
+    "retake": "Újrakészítés",
+    "removeScreenshot": "Eltávolítás",
     "capturing": "Képernyőkép készítése…",
     "captureFailed": "A képernyőkép készítése nem sikerült. A visszajelzést képernyőkép nélkül is elküldheti.",
-    "submit": "Küldés a GitHubra",
+    "submit": "Küldés",
+    "sending": "Küldés…",
+    "fieldEmail": "E-mail-cím (nem kötelező, válaszhoz)",
+    "emailInvalid": "Ez az e-mail-cím nem megfelelő. Javítsa ki, vagy hagyja üresen a mezőt.",
+    "titleRequired": "Adjon meg egy címet.",
+    "tooShort": "Írjon a címbe és a leírásba együttesen legalább 10 karaktert.",
+    "privacy": "A bejelentése és a képernyőkép az OpenAEC Open Feedback Studio szolgáltatásába kerül, és nyilvános hibajegyként megjelenhet a GitHubon. Ne írjon bele olyat, amit nem szeretne megosztani.",
+    "sentWith": "Mellékelve: v{{version}} · {{os}} · {{language}}",
+    "sentTitle": "Köszönjük, a bejelentését elküldtük.",
+    "alreadyIn": "Ez a bejelentés már megérkezett hozzánk. Szeretne valamit hozzáfűzni? Akkor módosítsa a szöveget, és küldje el újra.",
+    "sentScreenshotDropped": "A képernyőkép túl nagy volt, ezért nem lett elküldve.",
+    "viewOnGithub": "Megtekintés a GitHubon",
+    "errorValidation": "A bejelentést nem fogadtuk el. Ellenőrizze a szöveget (nem csak hivatkozásokat) és az e-mail-címet, majd próbálja újra.",
+    "errorRateLimited": "Rövid idő alatt sok bejelentést küldött. Próbálja újra egy óra múlva.",
+    "errorFailed": "A küldés nem sikerült. Ellenőrizze az internetkapcsolatot, és próbálja újra, vagy nyissa meg a bejelentést a GitHubon.",
+    "errorUncertain": "Nem vagyunk biztosak abban, hogy a bejelentése megérkezett. Várjon egy percet, és küldje el újra. Ha már megérkezett, ezt automatikusan észrevesszük.",
+    "fallbackGithub": "Megnyitás a GitHubon",
     "cancel": "Mégse",
+    "clearDraft": "Ürítés",
+    "clearDraftTitle": "Minden mező és a képernyőkép törlése",
     "close": "Bezárás",
+    "saveAndClose": "Mentés és bezárás",
     "tools": {
       "arrow": "Nyíl",
       "rectangle": "Téglalap",
+      "mask": "Takarás",
       "pen": "Toll",
       "text": "Szöveg",
       "color": "Szín",
@@ -473,6 +574,7 @@
     "openGithub": "OK, ugrás a GitHubra",
     "annotate": "Jegyzetelés",
     "editorDone": "Befejezés",
+    "annotationSaveFailed": "A szerkesztéseket nem sikerült menteni. Próbálja meg újra. A képernyőképe nem változott, és ebből a szerkesztőből nem kerül elküldésre.",
     "rotateFeedback": "Visszajelzés küldése",
     "rotateBug": "Hiba bejelentése",
     "rotateFeature": "Új funkció kérése"
@@ -738,7 +840,7 @@
       "projectEndUnchanged": "Projekt befejezése: változatlan ({{date}})",
       "projectEndChanged": "Projekt befejezése: {{before}} → {{after}}",
       "remainingConflicts": "Fennmaradó ütközések",
-      "remainingConflictsHint": "Ezek a tevékenységek nem férnek bele a tartalékidejükbe — gyakran azért, mert egy erőforrás ezeken a napokon nem dolgozik, vagy nincs elég kapacitása.",
+      "remainingConflictsHint": "Ezeknél a tevékenységeknél erőforrás-ütközések maradnak. Tekintse meg alul a magyarázatot.",
       "intrinsicOverrun": "{{resource}} csúcsán {{peak}} hozzárendelt mennyiség/nap igény van, a kapacitás {{capacity}} — eltolással nem oldható meg.",
       "noChanges": "Egyetlen tevékenységet sem kell eltolni — az ütemezés már ütközésmentes.",
       "notCalculated": "Kattintson a Számítás gombra egy kiegyenlítési javaslat létrehozásához.",
@@ -819,7 +921,7 @@
       "cancel": "Mégse"
     },
     "regen": {
-      "hint": "Az ünnepnapok a(z) {{from}}–{{to}} időszakot fedik le; a projekt {{year}}-ig tart. Újragenerálja?",
+      "hint": "Az ünnepnapok a(z) {{from}}–{{to}} időszakot fedik le; újragenerálja {{year}}-ig?",
       "button": "Újragenerálás"
     },
     "countryName": {
@@ -854,7 +956,7 @@
       "decreaseBreakDuration": "Szünet időtartamának csökkentése 15 perccel",
       "start": "Szünet kezdete",
       "duration": "Szünet időtartama (perc)",
-      "hint": "Adjon meg szünetkezdést és szünet időtartamot. A nettó órákat és a munkaidő-sávokat a rendszer automatikusan kiszámítja. Állítsa az időtartamot 0-ra egy folyamatos munkanapnál.",
+      "hint": "Adja meg a szünet kezdetét és időtartamát; a rendszer automatikusan kiszámítja a szokásos munkanapot és az idősávokat. Állítsa az időtartamot 0-ra egy folyamatos munkanapnál.",
       "errors": {
         "invalidDuration": "A szünet időtartamának 0 vagy annál nagyobb, egész számú percnek kell lennie.",
         "outsideWorkingDay": "A szünetnek teljesen a beállított munkanapon belül kell esnie.",
@@ -878,9 +980,13 @@
       "copyToAll": "Másolás az összes munkanapra",
       "noBands": "Nem munkanap",
       "nextDay": "következő nap",
+      "bandStart": "Idősáv kezdete",
+      "bandEnd": "Idősáv befejezése",
       "shiftPreset": "Műszak",
       "breakHint": "A két sáv közötti rés szünet. Szükség szerint módosítsa az időpontokat."
-    }
+    },
+    "defaultConstructionName": "Építési naptár NL",
+    "defaultStandardName": "Standard naptár"
   },
   "view": {
     "structureLockedHint": "Szűrés/csoportosítás/rendezés közben nem érhető el",
@@ -1119,7 +1225,7 @@
     "warnPast": "Az új kezdődátum a múltban van.",
     "noTasks": "Ennek a projektnek még nincs tevékenysége; csak a projektdátumok tolódnak el.",
     "invalidDate": "Válasszon érvényes dátumot.",
-    "invalidCurrentStart": "A projektnek nincs érvényes kezdődátuma; állítsa be először a Projektinfo részben.",
+    "invalidCurrentStart": "A projektnek nincs érvényes kezdődátuma; állítsa be előbb a Projektadatok részben.",
     "apply": "Áthelyezés",
     "calcError": "Az ütemezést nem lehetett kiszámítani: {{error}}"
   },
@@ -1195,7 +1301,7 @@
   "progressImport": {
     "title": "Előrehaladás frissítése táblázatból",
     "chooseFile": "Fájl kiválasztása…",
-    "intro": "Válasszon ki egy visszaküldött CSV-táblázatot. Az alkalmazás csak az elkészültséget, a tényleges kezdést és a tényleges befejezést olvassa be. A többi ütemezés változatlan marad.",
+    "intro": "Válasszon ki egy visszaküldött CSV- vagy XLSX-táblázatot. Az alkalmazás csak az elkészültséget, a tényleges kezdést és a tényleges befejezést olvassa be. A többi ütemezés változatlan marad.",
     "summaryApplied": "Alkalmazva: {{applied}}",
     "summaryNoop": "Változatlan: {{noop}}",
     "summaryNeedsLink": "Összekapcsolásra vár: {{needsLink}}",
@@ -1261,7 +1367,7 @@
     },
     "p6ZeroDurationUsesPlannedBoundary": {
       "label": "A mérföldkő a tervezett naptárhatárt követi",
-      "help": "A nulla időtartamú mérföldkő a fájlban tervezett naptárhatáron marad. A napkezdet kezdőmérföldkő marad. A sávvég egybeeshet az előd befejezésével."
+      "help": "A nulla időtartamú mérföldkő a fájlban tervezett naptárhatáron marad: a napkezdés kezdőmérföldkő marad, az idősáv vége egybeeshet az előd befejezésével."
     },
     "p6UseTaskPlannedStartFloor": {
       "label": "A tervezett kezdés további alsó határ",
@@ -1269,11 +1375,11 @@
     },
     "p6FinishMilestoneBoundaryWindow": {
       "label": "A befejező mérföldkő határablakként",
-      "help": "A befejező mérföldkő két szomszédos naptárhatáron állhat. A korai kezdés egy sáv elején, a korai befejezés az előző sáv végén van."
+      "help": "A befejező mérföldkő két szomszédos naptárhatáron állhat: a korai kezdés egy idősáv elején, a korai befejezés az előző idősáv végén van."
     },
     "p6PreserveActualInstants": {
       "label": "A tényleges dátumok pontos megtartása",
-      "help": "A rögzített tényleges kezdési és befejezési dátumokat a rendszer nem tolja át munkaidő-sávra."
+      "help": "A rögzített tényleges kezdést és tényleges befejezést a rendszer nem helyezi át egy idősáv széléhez."
     },
     "p6UseRemainingStartForProgress": {
       "label": "Folyamatban lévő tevékenység: korai kezdés = a hátralévő munka kezdete",
@@ -1281,7 +1387,7 @@
     },
     "p6PreserveZeroDurationConstraintInstants": {
       "label": "Korlátozás pontos időpontja mérföldkövön",
-      "help": "Egy nulla időtartamú mérföldkő dátum-és-idő korlátozása pontos pont, a munkasáv elején is."
+      "help": "Egy nulla időtartamú mérföldkő dátum-és-idő korlátozása pontos pont, az idősáv kezdetén is."
     },
     "resumeFromActualElapsed": {
       "label": "A hátralévő munka a már eltelt időtartam után folytatódik",
@@ -1293,23 +1399,23 @@
     },
     "p6RelationFinishBoundary": {
       "label": "Az utód a befejezési határon kezdődik",
-      "help": "Befejezés-kezdés kapcsolatnál, késleltetés nélkül, közös sávhatáron az utód az előd befejezésén kezdődik. Ez csak azokra a kapcsolatokra igaz, amelyeket a fájl így jelöl. Visszafelé számítva az utód legkésőbbi kezdését egyszerűen egy munkasáv kezdeteként mutatja."
+      "help": "Befejezés-kezdés kapcsolatnál késleltetés nélkül, ha a fájl szerint az utód pontosan az előd befejezésén kezdődik, egy idősáv végén, akkor az utód ezen a befejezésen kezdődik, és nem a következő idősáv elején. A fájl ezt nem jelöli meg: az alkalmazás a .xer fájl megnyitásakor maga ismeri fel az ilyen kapcsolatot. Az Ön által létrehozott kapcsolatra ez nem vonatkozik. Visszafelé számítva az utód legkésőbbi kezdését egyszerűen egy idősáv kezdeteként jeleníti meg."
     },
     "p6BackwardLagFinishBoundary": {
       "label": "Késleltetés visszafelé számítása befejezési határról",
-      "help": "Ha a visszafelé számítás munkaidő-késleltetést von le egy befejezési határról, és pontosan egy sáv kezdetére érkezik, az előző befejezési határra kerül. Befejezés-befejezés kapcsolatnál késleltetés nélkül a legkésőbbi befejezés egy sáv végén is ezen a befejezési határon marad."
+      "help": "Ha a visszafelé számítás munkaidőben mért késleltetést von le egy befejezési határról, és pontosan egy idősáv kezdetére érkezik, akkor az előző befejezési határra kerül. Befejezés-befejezés kapcsolatnál késleltetés nélkül a legkésőbbi befejezés egy idősáv végén is ezen a befejezési határon marad."
     },
     "p6CompletedDataDateWindow": {
       "label": "Befejezett tevékenység az állapotdátum-ablakban",
-      "help": "Egy befejezett tevékenység korai dátumokat kap az állapotdátum ablakában. Befejezése beleszámít a projektbefejezésbe (csak P6 eredetű tevékenységek)."
+      "help": "Egy befejezett tevékenység korai dátumokat kap az állapotdátum-ablakban, befejezése pedig beleszámít a projektbefejezésbe."
     },
     "p6CompletedLoeActualFinish": {
       "label": "Befejezett LOE a tényleges befejezésén keresztül",
-      "help": "Egy befejezett ráfordítás-szintű (LOE) tevékenység, amelynek csak kezdés-kezdés bemenete van, a tényleges befejezésén keresztül követi az útvonalat (csak P6 eredetű tevékenységek)."
+      "help": "Egy befejezett ráfordításszintű (LOE) tevékenység, amelynek csak kezdés-kezdés bemenete van, a tényleges befejezésén keresztül követi az útvonalat."
     },
     "p6OpenLoeTargetSpan": {
       "label": "Nem elkezdett LOE a célablakot használja",
-      "help": "Egy még nem elkezdett LOE-tevékenység a célablakát veszi futamidőnek (csak P6 eredetű tevékenységek)."
+      "help": "Egy még el nem kezdett ráfordításszintű (LOE) tevékenység a célablakát veszi futamidőnek."
     },
     "p6CompletedPredecessorAtDataDate": {
       "label": "A befejezett előd nem tart vissza az állapotdátum után",
@@ -1325,7 +1431,7 @@
     },
     "p6CompletedOutOfSequenceWindow": {
       "label": "A befejezett, sorrenden kívüli tevékenység az elődjeire vár",
-      "help": "Egy befejezett tevékenység, amelynek előde még nincs kész, nulla ablakát az állapotdátum helyett az előde után kapja (P6: Retained Logic)."
+      "help": "Egy befejezett tevékenység, amelynek előde még nincs kész, az állapotdátum helyett az előde utáni nulla ablakot kapja (P6: Retained Logic). Csak akkor működik, ha mindkét beállítás be van kapcsolva: a „Befejezett tevékenység az állapotdátum-ablakban” és a „Folyamatban lévő tevékenység: korai kezdés = a hátralévő munka kezdete”."
     },
     "p6CompletedPhysicalAtDataDate": {
       "label": "A befejezett, fizikai előrehaladású tevékenység az állapotdátumon áll",
@@ -1337,7 +1443,7 @@
     },
     "p6FinishFinishStartMilestoneLateFinish": {
       "label": "Befejezés-befejezés kapcsolat kezdőmérföldkő esetén magához a mérföldkőhöz köt",
-      "help": "Befejezés-befejezés kapcsolat egy kezdőmérföldkőhöz magáig a mérföldkőig számít, nem a mérföldkő napjának kezdetéig. Az előd legkésőbbi befejezése a mérföldkő legkésőbbi befejezéséig terjedhet."
+      "help": "Befejezés-befejezés kapcsolat egy kezdőmérföldkőhöz magáig a mérföldkőig számít, nem a mérföldkő napjának kezdetéig: az előd legkésőbbi befejezése a mérföldkő legkésőbbi befejezéséig terjedhet."
     },
     "p6StartedTaskIgnoresPlannedStartFloor": {
       "label": "A tervezett kezdés nem alsó határ a folyamatban lévő tevékenységnél",
@@ -1345,7 +1451,7 @@
     },
     "p6LateFinishOnOwnCalendar": {
       "label": "Legkésőbbi befejezés a saját naptárban",
-      "help": "Ha egy utód által előírt legkésőbbi befejezés a tevékenység munkaidején kívül esik, a tevékenység saját naptárában az előző munkaidőszak befejezése lesz."
+      "help": "Ha az utód által előírt legkésőbbi befejezés a tevékenység munkaidején kívül esik, akkor a tevékenység saját naptárában az előző idősáv vége lesz."
     },
     "p6ProgressOverrideIgnoresStartedSuccessor": {
       "label": "A Progress Override a már elkezdett utódot visszafelé is figyelmen kívül hagyja",
@@ -1353,11 +1459,11 @@
     },
     "p6FinishNotBeforeFinishFinishBound": {
       "label": "A korai befejezés nem lehet befejezés-befejezés határ előtt",
-      "help": "Befejezés-befejezés kapcsolatnál az utód korai befejezése óraidőben soha nem esik az előd által megadott határ elé. Ha ez a határ az utód munkán kívüli idejébe esik, a befejezés a következő munkaidőszak kezdete lesz."
+      "help": "Befejezés-befejezés kapcsolatnál az utód korai befejezése óraidőben soha nem lehet az előd által megadott határ előtt. Ha ez a határ az utód munkaidőn kívüli idejére esik, a befejezés a következő idősáv kezdete lesz."
     },
     "p6AlapPositionedFromSuccessors": {
       "label": "ALAP-tevékenységek az utódok által megengedett legkésőbbi időpontra",
-      "help": "Egy nem elkezdett tevékenység, amelynek korlátozása „lehető legkésőbb”, abban a percben végződik, amikor az utódjainak szükségük van rá. Az utódokkal kezdve számít, így a lánc összezáródik. A saját tervezett kezdése nem számít. Előd nélküli tevékenység viszont nem kezdődik az állapotdátum előtt. Csak órás naptáron érvényes."
+      "help": "Egy el nem kezdett tevékenység, amelynek korlátozása „lehető legkésőbb”, abban a percben fejeződik be, amikor az utódjainak szükségük van rá. Az utódokat előbb veszi figyelembe, így a lánc összezáródik. A saját tervezett kezdése nem számít; előd nélküli tevékenység nem kezdődik az állapotdátum előtt."
     }
   },
   "profiles": {
@@ -1372,13 +1478,22 @@
   "schedulingProfile": {
     "title": "Számítási profil és beállítások",
     "profile": "Számítási profil",
+    "newProfile": "Új profil",
+    "newProfileTitle": "Új számítási profil",
+    "newProfileIntro": "Az új profil megkapja „{{name}}” összes ütemezési szabályát, az eltéréseket is beleértve. Ezután minden szabályt maga kapcsolhat be vagy ki. A projekt csak az Alkalmazás után számol az új profillal.",
+    "newProfileName": "Az új profil neve",
+    "newProfileCreate": "Létrehozás",
+    "bareBaseHint": "„{{name}}” az üres alapprofil, a projekt eltérései nélkül. Ha ezeket meg szeretné tartani, válassza a „{{modified}}” profilt.",
     "conventionsTitle": "Ennek a profilnak az ütemezési szabályai",
+    "builtInReadOnly": "{{name}} beépített profil. Az ütemezési szabályok itt tájékoztatásul szerepelnek, és nem módosíthatók. Ha más szabályokra van szüksége, válassza ezt: {{button}}.",
+    "builtInDeviations": "Ez a projekt egy régebbi fájlból származik. A narancssárga ütemezési szabályok eltérnek {{name}} alapjától, és ezek szerint vesznek részt a számításban. Ha módosítani szeretné őket, válassza ezt: {{button}}.",
     "optionsTitle": "Ennek a projektnek a számítási beállításai",
     "customName": "Ennek az egyéni profilnak a neve",
     "saveAsTemplate": "Mentés sablonként",
     "updateTemplate": "Sablon frissítése ebből a projektből",
     "applyTemplate": "Frissítés sablonból",
     "deleteTemplate": "Sablon törlése",
+    "deleteTemplateConfirm": "Törli a(z) „{{name}}” sablont? Az ezt a profilt használó projektek megtartják a saját másolatukat.",
     "templateDeviates": "Ez a profil eltér a(z) „{{name}}” sablontól.",
     "themes": {
       "completedWork": "Befejezett munka és előrehaladás",
@@ -1389,12 +1504,13 @@
       "msproject": "Előrehaladás a Microsoft Project szerint",
       "ownProfilesOnly": "Csak saját profilok"
     },
-    "ownProfilesOnlyNote": "Ezek az ütemezési szabályok minden beépített profilban ki vannak kapcsolva, a Primavera P6 profilban is. Ha bekapcsolja valamelyiket, a profil saját profillá válik.",
+    "ownProfilesOnlyNote": "Ezek az ütemezési szabályok minden beépített számítási profilban ki vannak kapcsolva, a Primavera P6 profilban is. Csak saját számítási profil kapcsolhatja be őket: ehhez válassza az Új profil lehetőséget.",
     "deviatingCount": "eltérő: {{n}}",
     "baseValue": "alap: {{value}}",
     "on": "be",
     "off": "ki",
     "resetToBase": "Visszaállítás az alapra",
+    "storeChangedUnderDraft": "A projekt számítási profilja közben megváltozott, például a Visszavonás miatt. Alul még az Ön saját választása látszik. A(z) {{apply}} gombbal visszaállíthatja ezt a választást a projektben.",
     "showHelp": "A(z) „{{name}}” súgója",
     "sourceOptions": {
       "title": "Beállítások a forrásfájlból",
@@ -1403,6 +1519,23 @@
       "useProjectEndDateForFloat": "Tartalékidő ütemezés-számítása a projektbefejezési dátumig",
       "p6CompletedLateFromRemainingWindow": "Befejezett tevékenység: legkésőbbi dátumok az állapotdátumtól",
       "needsConvention": "Csak a(z) „{{convention}}” ütemezési szabály mellett működik, amely jelenleg ki van kapcsolva."
+    },
+    "requires": {
+      "xerOrigin": "csak .xer-tevékenységek",
+      "hourPlanning": "csak óraalapú tervezésnél",
+      "hourPlanningTitle": "Csak óraalapú tervezésnél működik: idősávokat tartalmazó naptárnál, órában mért tevékenységnél, vagy 24 órásra állított késleltetési naptárnál."
+    },
+    "optionsDeviate": {
+      "line": "{{field}}: {{current}} (alapértelmezett: {{standard}})",
+      "intro": "Ezek a számítási beállítások eltérnek {{name}} alapértelmezett értékeitől. Ez gyakran szándékos, például mert a megnyitott fájlból származnak.",
+      "introNeutral": "Ezek a számítási beállítások eltérnek {{name}} alapértelmezett értékeitől. Ez szándékos döntés is lehet.",
+      "useDefaults": "{{name}} alapértelmezett beállításainak használata",
+      "totalFloatAtMost": "teljes tartalékidő ≤ {{amount}}",
+      "hours_one": "egy óra",
+      "hours_other": "{{count}} óra",
+      "days_one": "egy munkanap",
+      "days_other": "{{count}} munkanap",
+      "tfAuto": "Automatikus"
     }
   },
   "dialogHelp": {
@@ -1460,5 +1593,71 @@
     "saveHint": "A projekt új IFC-fájlként kerül a webhelyre. Ezután a Mentés (Ctrl+S) ott új verziót ment.",
     "saveToSite": "Mentés a webhelyre",
     "toThisPc": "Erre a számítógépre…"
+  },
+  "formatNotice": {
+    "title": "{{format}} megnyitva",
+    "readMore": "További információ",
+    "dontShowAgain": "Többé ne jelenjen meg ehhez: {{format}}",
+    "close": "Rendben",
+    "settingsSection": "Magyarázat megjelenítése megnyitás után",
+    "formats": {
+      "xer": {
+        "name": "Primavera-fájl (.xer)",
+        "kept": "Az alkalmazás átvette a WBS-t és a tevékenységeket, a kapcsolatokkal, naptárakkal, erőforrásokkal, előrehaladással, tevékenységkódokkal és egyéni mezőkkel együtt. Az alapterv-projekt lesz annak a projektnek az alaptervje, amely rá hivatkozik.",
+        "limited": "Két projekt közötti kapcsolat nem lesz kapcsolat az ütemezésben. Ha a számítás eltér, először a Primavera által mentett dátumok jelennek meg.",
+        "save": "A Mentés új IFC-fájlt ír, benne az eredeti .xer-fájllal. Visszaírás .xer-fájlba nem lehetséges: a .xer-fájl soha nem változik."
+      },
+      "mpp": {
+        "name": "MS Project-fájl (.mpp)",
+        "kept": "Az alkalmazás átvette a tevékenységeket szerkezetükkel, időtartamukkal és korlátozásaikkal, valamint a kapcsolatokat, naptárakat, erőforrásokat, hozzárendeléseket és előrehaladást.",
+        "limited": "Az alapterveket, a költségeket és az alapdíjakat, a megjegyzéseket és az MS Project egyéni mezőit nem veszi át. Ha a számítás eltér, előbb a dátumokat látja úgy, ahogy az MS Project tárolta.",
+        "save": "A Mentés új IFC-fájlt ír: a .mpp-fájl soha nem változik. Visszaírás .mpp-fájlba nem lehetséges. Exportálás › MS Project XML lehetséges."
+      },
+      "mspdi": {
+        "name": "MS Project XML",
+        "kept": "Az alkalmazás átvette a tevékenységeket szerkezetükkel, valamint a kapcsolatokat, korlátozásokat, naptárakat, erőforrásokat, hozzárendeléseket, előrehaladást, az állapotdátumot és a 0. alaptervet.",
+        "limited": "Megjegyzések, tevékenységkódok és egyéni mezők nem kerülnek át. A projekt az Open Planner Studio profil szerint számol, nem a Microsoft Project szerint.",
+        "save": "A Mentés új IFC-fájlt ír: az XML-fájl nem változik. Visszaírás az Exportálás › MS Project XML menüponttal lehetséges."
+      },
+      "p6xml": {
+        "name": "Primavera P6 XML",
+        "kept": "Az alkalmazás átvette a WBS-t és a tevékenységeket, a kapcsolatokkal, korlátozásokkal, naptárakkal, erőforrásokkal, hozzárendelésekkel, előrehaladással és az állapotdátummal együtt. Egy alapterv-projekt abban a projektben lesz alapterv, amelyhez tartozik.",
+        "limited": "Határidők, tevékenységkódok, egyéni mezők és megjegyzések nem kerülnek át. A projekt az Open Planner Studio profil szerint számol, nem a Primavera P6 szerint.",
+        "save": "A Mentés új IFC-fájlt ír: az XML-fájl nem változik. Visszaírás az Exportálás › Primavera P6 XML menüponttal lehetséges."
+      },
+      "csv": {
+        "name": "CSV-fájl",
+        "kept": "Az alkalmazás soronként egy tevékenységet olvasott be: név, WBS-kód, időtartam, dátumok, elődök és előrehaladás.",
+        "limited": "Egy CSV-fájl nem tartalmaz erőforrásokat, naptárakat, korlátozásokat, határidőket vagy alapterveket. A projekt neve CSV Import.",
+        "save": "A Mentés új IFC-fájlt ír: a CSV-fájl nem változik. Visszaírás az Exportálás › CSV (pontosvesszővel tagolt) menüponttal lehetséges."
+      }
+    }
+  },
+  "ifcSchemaQuestion": {
+    "title": "Melyik IFC-sémában mentse?",
+    "body": "Ez a fájl {{schema}} sémával lett mentve. Az alkalmazás alapértelmezés szerint IFC 4.3 ADD2 sémával ment, az IfcOpenShell és a Bonsai sémájával. Meg akarja tartani ezt a fájlt {{schema}} sémával? Ezt később a Projektadatok részben módosíthatja.",
+    "bodyUnwritable": "Ez a fájl {{schema}} sémával lett mentve. Az alkalmazás ezt a sémát nem tudja írni. Válassza ki azt a sémát, amelyben az alkalmazás menti. Ezt később a Projektadatok részben módosíthatja.",
+    "keep": "{{schema}} megtartása",
+    "toDefault": "Mentés IFC 4.3 ADD2-ként"
+  },
+  "phaseAssignmentQuestion": {
+    "title": "Összefoglaló tevékenység lesz",
+    "intro_one": "„{{phase}}” megkapja az altevékenységet: „{{child}}”, és összefoglaló tevékenység lesz.",
+    "intro_other": "„{{phase}}” {{count}} altevékenységet kap, és összefoglaló tevékenység lesz.",
+    "introMany_one": "Ez a művelet {{count}} tevékenységet összefoglaló tevékenységgé alakít.",
+    "introMany_other": "Ez a művelet {{count}} tevékenységet összefoglaló tevékenységgé alakít.",
+    "noOwnAssignments": "Egy összefoglaló tevékenységnek nincsenek saját hozzárendelései.",
+    "question_one": "Mit tegyen {{resources}} hozzárendelésével?",
+    "question_other": "Mit tegyen {{resources}} hozzárendeléseivel?",
+    "questionMany": "Mit tegyen a hozzárendeléseikkel?",
+    "row": "„{{phase}}”: {{resources}}",
+    "remove_one": "Hozzárendelés törlése",
+    "remove_other": "Hozzárendelések törlése",
+    "moveTo": "Áthelyezés ide: „{{child}}”",
+    "moveToSubtasks": "Áthelyezés az altevékenységekre",
+    "blockedDuplicate": "Az áthelyezés nem lehetséges: „{{child}}” már rendelkezik ezzel: {{resources}}.",
+    "blockedNoChild": "Az áthelyezés nem lehetséges: „{{phase}}” nem kap olyan altevékenységet, amely hozzárendelést képes hordozni, csak mérföldköveket vagy összefoglaló tevékenységeket.",
+    "actualWorkLost_one": "A(z) {{resource}} hozzárendelésén már {{hours}} óra tényleges munka van rögzítve. A törlés ezt a munkát elveti.",
+    "actualWorkLost_other": "A(z) {{resource}} hozzárendelésén már {{hours}} óra tényleges munka van rögzítve. A törlés ezt a munkát elveti."
   }
 }

@@ -15,7 +15,9 @@
     "openFailed": "Dosya açılamadı",
     "extGuideCallbackFailed": "{{name}} uzantısının bir adımı başarısız oldu. Rehber devam ediyor.",
     "extHelpProjectOpenFailed": "{{name}} uzantısının {{file}} proje dosyası açılamadı.",
+    "extImportFailed": "{{name}} ile içe aktarma başarısız oldu.",
     "extensionMessage": "{{name}} uzantısı: {{message}}",
+    "extensionInstallFailed": "Uzantı yüklenemedi. Dosyayı kontrol edin ve yeniden deneyin.",
     "xerInvalidInput": "XER içe aktarma işlemi özgün dosya baytlarını gerektirir.",
     "xerInvalidFile": "Bu, geçerli veya desteklenen bir XER dosyası değil.",
     "xerInvalidEncoding": "Bu XER dosyasının metin kodlaması geçersiz veya eksik.",
@@ -55,8 +57,8 @@
     "xerImportNumberIssues_other": "{{count}} sayı biçimi sorunu.",
     "xerImportEnumFallbacks_one": "{{count}} enum geri dönüşü.",
     "xerImportEnumFallbacks_other": "{{count}} enum geri dönüşü.",
-    "xerImportMissingPlannedStarts_one": "{{count}} faaliyetin planlanan başlangıcı yoktu; artık dosyadaki veri tarihinde veya proje başlangıcında başlıyor.",
-    "xerImportMissingPlannedStarts_other": "{{count}} faaliyetin planlanan başlangıcı yoktu; artık dosyadaki veri tarihinde veya proje başlangıcında başlıyor.",
+    "xerImportMissingPlannedStarts_one": "Planlanmış başlangıcı olmayan {{count}} görev artık dosyadaki durum tarihinde veya proje başlangıcında başlıyor.",
+    "xerImportMissingPlannedStarts_other": "Planlanmış başlangıcı olmayan {{count}} görev artık dosyadaki durum tarihinde veya proje başlangıcında başlıyor.",
     "xerImportUnsupportedSemantics_one": "{{count}} P6 planlama ayarı güvenli geri dönüş kullandı.",
     "xerImportUnsupportedSemantics_other": "{{count}} P6 planlama ayarı güvenli geri dönüş kullandı.",
     "xerImportDatesAsRecorded_one": "{{count}} görev, Primavera'nın kaydettiği tarihleri gösteriyor (yeniden hesaplanmadı).",
@@ -95,16 +97,18 @@
     "mppSourceScheduleNotes_other": "Bu MS Project dosyası, bölünmüş, dengelenmiş veya kaynak odaklı planlanmış {{count}} görev içeriyor. Böyle içe aktarılır ve gösterilir.",
     "exportSplitsLost_one": "Kesintili {{count}} görev kesintileri olmadan dışa aktarıldı: MS Project/P6 bunları yalnızca iş dağılımı olarak tanır.",
     "exportSplitsLost_other": "Kesintili {{count}} görev kesintileri olmadan dışa aktarıldı: MS Project/P6 bunları yalnızca iş dağılımı olarak tanır.",
+    "exportP6Truncated_one": "{{count}} ad veya kod, P6’nın izin verdiği uzunluğa kısaltıldı.",
+    "exportP6Truncated_other": "{{count}} ad veya kod, P6’nın izin verdiği uzunluğa kısaltıldı.",
     "projectStartAnchorsClamped_one": "{{count}} görev proje başlangıcıyla birlikte kaydırıldı.",
     "projectStartAnchorsClamped_other": "{{count}} görev proje başlangıcıyla birlikte kaydırıldı.",
     "mppTimephasedSteeringLost_one": "MS Project'ten gelen saat dağılımı bu düzenlemeden sonra {{count}} görevi artık yönlendirmiyor; özgün dağılım dosyada saklı kalıyor.",
     "mppTimephasedSteeringLost_other": "MS Project'ten gelen saat dağılımı bu düzenlemeden sonra {{count}} görevi artık yönlendirmiyor; özgün dağılım dosyada saklı kalıyor.",
     "readMore": "Daha fazla bilgi",
-    "taskTypesUnlocked": "Bu dosya kaydedilmiş iş veya özel iş kuralları içeriyor; iş kuralı ve kalan iş bu proje için gösteriliyor.",
-    "taskTypesUnlockedDetail": "Bu dosya kaydedilmiş iş veya özel iş kuralları içeriyor; iş kuralı ve kalan iş bu proje için gösteriliyor.",
-    "workRulesReadMore": "İş kuralları açıklaması",
-    "workRuleDurationsChanged_one": "Takvim değişikliğinden sonra iş kuralı {{count}} görevin süresini ayarladı (iş aynı kaldı, günlük saatler değişti).",
-    "workRuleDurationsChanged_other": "Takvim değişikliğinden sonra iş kuralı {{count}} görevin süresini ayarladı (iş aynı kaldı, günlük saatler değişti).",
+    "taskTypesUnlocked": "Bu dosya kayıtlı iş veya görev türü içeriyor; görev türü ve kalan iş bu proje için görünür.",
+    "taskTypesUnlockedDetail": "Bu dosya kayıtlı iş veya görev türü içeriyor; görev türü ve kalan iş bu proje için görünür.",
+    "workRulesReadMore": "Görev türleri açıklaması",
+    "workRuleDurationsChanged_one": "Takvim değişikliğinden sonra görev türü {{count}} görev için süreyi ayarladı (iş aynı kaldı, günlük saatler değişti).",
+    "workRuleDurationsChanged_other": "Takvim değişikliğinden sonra görev türü {{count}} görev için süreyi ayarladı (iş aynı kaldı, günlük saatler değişti).",
     "pasteSkippedReadOnly_one": "{{count}} hücre atlandı: salt okunur (örneğin otomatik numaralandırılmış bir WBS kodu veya hesaplanan bir sütun).",
     "pasteSkippedReadOnly_other": "{{count}} hücre atlandı: salt okunur (örneğin otomatik numaralandırılmış bir WBS kodu veya hesaplanan bir sütun).",
     "librarySaveFailed": "Kitaplık kaydedilemedi",
@@ -120,8 +124,8 @@
     "startBlockedByConstraintMany_other": "{{count}} görevin yeni başlangıçları uygulanmadı: bu görevlerin bir öncülü ve Şu tarihten önce başlamaz (SNET) dışında bir kısıtlaması var. Başlangıçları taşımak için bu kısıtlamaları değiştirin.",
     "dragStartIsActual": "'{{name}}' başladı: başlangıcı gerçek başlangıçtır ve kaymaz. Bunu ilerleme üzerinden değiştirin.",
     "dragDatesAreActual": "'{{name}}' tamamlandı: başlangıcı ve bitişi gerçek tarihlerdir ve kaymaz. Bunları ilerleme üzerinden değiştirin.",
-    "referencesClearedOnPaste_one": "{{count}} başvuru bu belgede yoktu ve temizlendi (kaynak belgeden bir görev takvimi, özel görev türü, aktivite kodu veya kullanıcı alanı).",
-    "referencesClearedOnPaste_other": "{{count}} başvuru bu belgede yoktu ve temizlendi (kaynak belgeden görev takvimleri, özel görev türleri, aktivite kodları veya kullanıcı alanları).",
+    "referencesClearedOnPaste_one": "{{count}} başvuru bu belgede yoktu ve temizlendi (kaynak belgeden bir görev takvimi, özel iş kategorisi, etkinlik kodu veya özel alan).",
+    "referencesClearedOnPaste_other": "{{count}} başvuru bu belgede yoktu ve temizlendi (kaynak belgeden görev takvimleri, özel iş kategorileri, etkinlik kodları veya özel alanlar).",
     "milestoneRefusedAssignments_one": "'{{task}}' kaynak atamalarına sahip ve kilometre taşı olamaz. Önce atamaları kaldırın.",
     "milestoneRefusedAssignments_other": "{{count}} görev kaynak atamalarına sahip ve kilometre taşı olamaz. Önce atamaları kaldırın.",
     "milestoneRefusedSummary_one": "'{{task}}' alt görevleri olan bir özet görevdir ve kilometre taşı olamaz.",
@@ -134,7 +138,12 @@
     "milestoneClearedOnPhase_other": "{{count}} görev artık kilometre taşı değil.",
     "phaseRefusedNoAssignableChild": "'{{phase}}' özet görev olamaz: atamalarının gidebileceği bir yer yok, çünkü yeni alt görevlerin hiçbiri atama taşıyamaz (kilometre taşı veya özet görev). Hiçbir şey değiştirilmedi.",
     "phaseRefusedDuplicateResource": "'{{phase}}' özet görev olamaz: {{resource}} ataması yeni alt görev '{{child}}' görevine taşınamaz, çünkü onda zaten {{resource}} var. Hiçbir şey değiştirilmedi.",
-    "schedulingProfileApplied": "Bu proje {{profile}} olarak hesaplanıyor. Dosya → Proje bilgisi → Hesaplama profili ve seçenekleri üzerinden değiştirin.",
+    "phaseQuestionOutdated": "Görevler veya atamalar, soru açıkken değişti. Hiçbir şey değiştirilmedi; lütfen yeniden deneyin.",
+    "schedulingProfileApplied": "Bu proje {{profile}} olarak hesaplanıyor. Değiştirmek için “Dosya” → “Proje Bilgileri” → “Hesaplama profili ve seçenekleri” yolunu izleyin.",
+    "schedulingTemplateSaved": "Şablon “{{name}}” kaydedildi.",
+    "schedulingTemplateLimit": "Şablon kaydedilmedi: zaten {{max}} şablon var. Önce bir şablonu silin.",
+    "schedulingTemplateStorageFailed": "Şablon kaydedilmedi: uygulamanın depolama alanı dolu veya kullanılamıyor.",
+    "schedulingTemplateDeleteFailed": "Şablon silinmedi: uygulamanın depolama alanı dolu veya kullanılamıyor.",
     "schedulingProfileShifted_one": "Uygulamadan sonra {{count}} görev kaydı.",
     "schedulingProfileShifted_other": "Uygulamadan sonra {{count}} görev kaydı.",
     "actions": {
@@ -152,11 +161,61 @@
     "xerArchiveReasonStructure": "Neden: arşivin IFC içindeki yapısı hatalı (yinelenmiş, yeniden sıralanmış veya yanlış bağlanmış).",
     "statusDateSetToday": "Durum tarihi bugüne ayarlandı ({{date}}).",
     "durationBelowDoneWork": "'{{name}}' zaten %{{percent}} tamamlandı: yapılmış işten kısa bir süre olamaz. Süre değiştirilmedi.",
-    "remainingWorkRecomputed": "“{{name}}” için kalan iş yeniden hesaplandı: {{before}} sa → {{after}} sa (değer dosyadan geliyordu). Ctrl+Z geri alır.",
+    "refusedTaskNames": "Değiştirilmedi: {{names}}.",
+    "refusedTaskNamesMore_one": "Değiştirilmedi: {{names}} ve {{count}} görev daha.",
+    "refusedTaskNamesMore_other": "Değiştirilmedi: {{names}} ve {{count}} görev daha.",
+    "notAppliedTaskNames": "Uygulanmadı: {{names}}.",
+    "notAppliedTaskNamesMore_one": "Uygulanmadı: {{names}} ve {{count}} görev daha.",
+    "notAppliedTaskNamesMore_other": "Uygulanmadı: {{names}} ve {{count}} görev daha.",
+    "refusedRelationNames": "Oluşturulmadı: {{names}}.",
+    "refusedRelationNamesMore_one": "Oluşturulmadı: {{names}} ve {{count}} ilişki daha.",
+    "refusedRelationNamesMore_other": "Oluşturulmadı: {{names}} ve {{count}} ilişki daha.",
+    "remainingWorkRecomputed": "“{{name}}” için kalan iş yeniden hesaplandı: {{before}} sa → {{after}} sa (değer dosyadan gelmişti). Ctrl+Z bunu geri alır.",
     "remainingWorkRecomputedMany_one": "{{count}} görevin kalan işi yeniden hesaplandı (değer dosyadan geliyordu). Ctrl+Z geri alır.",
     "remainingWorkRecomputedMany_other": "{{count}} görevin kalan işi yeniden hesaplandı (değerler dosyadan geliyordu). Ctrl+Z geri alır.",
     "tutorialOfferLater": "Eğitimleri her zaman Yardım › Eğitimler bölümünde bulabilirsiniz.",
-    "tutorialOfferUnavailable": "Eğitimler şu anda yüklenemedi veya başlatılamadı. Daha sonra Yardım › Eğitimler bölümünden yeniden deneyebilirsiniz."
+    "tutorialOfferUnavailable": "Eğitimler şu anda yüklenemedi veya başlatılamadı. Daha sonra Yardım › Eğitimler bölümünden yeniden deneyebilirsiniz.",
+    "taskAddedAtEnd": "Yeni görev en sona eklendi. Filtreleme, gruplama veya sıralama sırasında uygulama onu seçiminizin altına yerleştiremez.",
+    "p6xmlImportEmpty": "Bu dosyada uygulamanın okuyabileceği görev yok.",
+    "p6xmlImportEmptyNoObjectIds": "Görevlerin ObjectId’si yok. Bu yüzden uygulama bunlar arasında ilişki oluşturamıyor. Bu, normal bir Primavera P6 XML dosyası değil.",
+    "p6xmlImportEmptyXerColumns": "Dosya, P6 XML alanları yerine XER sütun adlarını (task_code gibi) kullanıyor. Doğrudan .xer dosyasını açın.",
+    "p6xmlImportOpened_one": "P6 XML dosyası açıldı: {{count}} proje belgesi.",
+    "p6xmlImportOpened_other": "P6 XML dosyası açıldı: {{count}} proje belgesi.",
+    "p6xmlImportCrossProjectRelations_one": "Projeler arasındaki {{count}} ilişki, planda ilişki olarak aktarılmadı.",
+    "p6xmlImportCrossProjectRelations_other": "Projeler arasındaki {{count}} ilişki, planda ilişki olarak aktarılmadı.",
+    "p6xmlImportUnassignedActivities_one": "Projesi olmayan {{count}} görev okunmadı.",
+    "p6xmlImportUnassignedActivities_other": "Projesi olmayan {{count}} görev okunmadı.",
+    "msProjectImportLoss": "Bu MS Project dosyasındaki bazı veriler aktarılmadı.",
+    "msProjectLostSubprojects_one": "{{count}} eklenmiş proje, diğer dosyaya olan bağlantısı olmadan normal bir görev olarak okundu.",
+    "msProjectLostSubprojects_other": "{{count}} eklenmiş proje, diğer dosyaya olan bağlantısı olmadan normal görev olarak okundu.",
+    "msProjectLostExternalTasks_one": "Başka bir projeden {{count}} dış görev normal görev olarak okundu.",
+    "msProjectLostExternalTasks_other": "Başka bir projeden {{count}} dış görev normal görev olarak okundu.",
+    "msProjectLostInactiveTasks_one": "{{count}} devre dışı görev, etkin görev olarak okundu ve hesaplamaya dahil edildi.",
+    "msProjectLostInactiveTasks_other": "{{count}} devre dışı görev, etkin görev olarak okundu ve hesaplamaya dahil edildi.",
+    "msProjectLostManualTasks_one": "{{count}} elle planlanan görev, otomatik planlanan görev olarak okundu.",
+    "msProjectLostManualTasks_other": "{{count}} elle planlanan görev, otomatik planlanan görev olarak okundu.",
+    "msProjectLostLevelingDelays_one": "{{count}} görevin dengeleme gecikmesi aktarılmadı.",
+    "msProjectLostLevelingDelays_other": "{{count}} görevin dengeleme gecikmesi aktarılmadı.",
+    "msProjectLostCriticalSlack_one": "Dosyadaki kritik eşik (bolluk {{count}} iş gününe kadar) aktarılmadı. Uygulama eşik 0 ile hesaplıyor.",
+    "msProjectLostCriticalSlack_other": "Dosyadaki kritik eşik (bolluk {{count}} iş gününe kadar) aktarılmadı. Uygulama eşik 0 ile hesaplıyor.",
+    "msProjectLostBaselines_one": "{{count}} temel plan aktarılmadı.",
+    "msProjectLostBaselines_other": "{{count}} temel plan aktarılmadı.",
+    "msProjectLostExtraBaselines_one": "{{count}} temel plan (1–10 arası) aktarılmadı.",
+    "msProjectLostExtraBaselines_other": "{{count}} temel plan (1–10 arası) aktarılmadı.",
+    "msProjectLostBaselineWorkCost_one": "{{count}} görev, kaynak veya atamada temel plan 0’daki iş veya maliyet aktarılmadı.",
+    "msProjectLostBaselineWorkCost_other": "{{count}} görev, kaynak veya atamada temel plan 0’daki iş veya maliyet aktarılmadı.",
+    "msProjectLostAssignmentBaselineDates_one": "{{count}} atamada temel plan görevden farklıydı; bu sapma aktarılmadı.",
+    "msProjectLostAssignmentBaselineDates_other": "{{count}} atamada temel plan görevden farklıydı; bu sapma aktarılmadı.",
+    "msProjectLostCustomFields_one": "Değer içeren {{count}} özel alan (özel alan veya anahat kodu) aktarılmadı.",
+    "msProjectLostCustomFields_other": "Değer içeren {{count}} özel alan (özel alanlar ve anahat kodları) aktarılmadı.",
+    "msProjectLostNotes_one": "{{count}} not aktarılmadı.",
+    "msProjectLostNotes_other": "{{count}} not aktarılmadı.",
+    "msProjectLostHyperlinks_one": "{{count}} köprü aktarılmadı.",
+    "msProjectLostHyperlinks_other": "{{count}} köprü aktarılmadı.",
+    "msProjectLostFixedCosts_one": "{{count}} görevin sabit maliyeti aktarılmadı.",
+    "msProjectLostFixedCosts_other": "{{count}} görevin sabit maliyeti aktarılmadı.",
+    "msProjectLostResourceRates_one": "{{count}} kaynağın ücreti aktarılmadı.",
+    "msProjectLostResourceRates_other": "{{count}} kaynağın ücretleri aktarılmadı."
   },
   "scheduleErrors": {
     "cycle": "Görevler arasında döngüsel ilişki: {{path}}",
@@ -170,6 +229,8 @@
   "no": "Hayır",
   "days": "g",
   "daysLong": "gün",
+  "dayUnitLong_one": "gün",
+  "dayUnitLong_other": "gün",
   "ok": "Tamam",
   "apply": "Uygula",
   "create": "Oluştur",
@@ -221,7 +282,7 @@
     "collapseAll": "Tümünü daralt"
   },
   "settings": {
-    "title": "Ayarlar",
+    "title": "Uygulama ayarları",
     "appearanceTab": "Görünüm",
     "planningTab": "Planlama",
     "advancedTab": "Gelişmiş",
@@ -266,8 +327,8 @@
     "hourPlanningSection": "Saat planlaması",
     "enableHourPlanning": "Saat planlamasını etkinleştir",
     "enableHourPlanningHint": "Saat/dakika zamanlamasını açar: saatlik zaman ölçeği, çalışma saati bantlarına sahip vardiyalar ve saat hassasiyetinde görev çubukları. Kapalı ⇒ uygulama önceki gibi tamamen gün bazlı kalır.",
-    "showTaskTypes": "İş kurallarını ve işi göster",
-    "showTaskTypesHint": "MS Project veya Primavera P6 dosyaları bunu her zaman gösterir. Kapalı: süre ve birimler kalır, iş buna göre hesaplanır.",
+    "showTaskTypes": "Görev türlerini kullanın",
+    "showTaskTypesHint": "Her görev için, süre, birim veya iş değiştiğinde neyin değişeceğini seçin. Bu, MS Project'teki Task Type ve P6'daki Duration Type gibidir. Kapalı: süre ve birimler sabit kalır. Görev türü veya kayıtlı iş içeren bir dosya bunları, bu ayar kapalı olsa bile gösterir.",
     "allowMixedDayHour": "Karma gün/saat planlamasına izin ver",
     "defaultTaskDurationUnit": "Yeni görevler için varsayılan birim",
     "defaultTaskDurationUnitHint": "Yeni görevlerin iş günüyle mi çalışma saatiyle mi başlayacağını belirler. Mevcut görevler değişmez.",
@@ -328,6 +389,10 @@
     "dateNotationDmy": "gg-aa-yyyy",
     "dateNotationMdy": "aa-gg-yyyy",
     "dateNotationYmd": "yyyy-aa-gg",
+    "timeNotation": "Saat biçimi",
+    "timeNotationHint": "Saatlerin nasıl gösterileceğini ve girileceğini belirler: takvim penceresinde, tabloda saat cinsinden olan görevlerde, Gantt’ın saat ölçeğinde ve bildirimlerde. Dosyalar ve hesaplamalar değişmez (24 saat).",
+    "timeNotation24h": "24 saat (13:00)",
+    "timeNotation12h": "12 saat (1:00 PM)",
     "fontFamilyLabel": "Yazı tipi",
     "fontScaleLabel": "Metin boyutu",
     "fontScaleHint": "Arayüz metnini ve düzenini ölçeklendirir.",
@@ -441,6 +506,8 @@
     "newProject": "Yeni proje",
     "openExistingProject": "Mevcut projeyi aç",
     "allProjects": "Tüm projeler",
+    "scrollTabsStart": "Sekmeleri başa kaydırın",
+    "scrollTabsEnd": "Sekmeleri sona kaydırın",
     "active": "Etkin",
     "tasksWord": "görev",
     "criticalWord": "kritik",
@@ -452,19 +519,45 @@
   "feedback": {
     "buttonTooltip": "Geri bildirim gönder",
     "title": "Geri bildirim gönder",
-    "typeBug": "Hata",
-    "typeFeature": "Özellik isteği",
+    "typeBug": "Bir şey çalışmıyor",
+    "typeFeature": "Fikir",
+    "typeGeneral": "Soru veya yorum",
     "fieldTitle": "Başlık",
+    "titlePlaceholder": "Örn. Kaydettikten sonra kritik yol kayıyor",
     "fieldDescription": "Açıklama",
+    "descriptionPlaceholder": "Ne yaptınız, ne bekliyordunuz ve ne oldu?",
     "attachScreenshot": "Ekran görüntüsü ekle",
+    "screenshotPreview": "Ekran görüntüsü önizlemesi",
+    "retake": "Yeniden al",
+    "removeScreenshot": "Kaldır",
     "capturing": "Ekran görüntüsü alınıyor…",
     "captureFailed": "Ekran görüntüsü alınamadı. Ekran görüntüsü olmadan da geri bildirim gönderebilirsiniz.",
-    "submit": "GitHub'a gönder",
+    "submit": "Gönderin",
+    "sending": "Gönderiliyor…",
+    "fieldEmail": "E-posta adresi (isteğe bağlı, yanıt için)",
+    "emailInvalid": "Bu e-posta adresi doğru değil. Düzeltin veya alanı boş bırakın.",
+    "titleRequired": "Bir başlık girin.",
+    "tooShort": "Başlık ve açıklamada birlikte en az 10 karakter yazın.",
+    "privacy": "Geri bildiriminiz ve ekran görüntünüz, OpenAEC’nin Open Feedback Studio uygulamasına gider. Bunlar GitHub’da herkese açık bir issue olarak görünebilir. Paylaşmak istemediğiniz hiçbir şeyi eklemeyin.",
+    "sentWith": "Birlikte gönderildi: v{{version}} · {{os}} · {{language}}",
+    "sentTitle": "Teşekkürler, geri bildiriminiz gönderildi.",
+    "alreadyIn": "Bu geri bildirim bize zaten ulaşmış. Bir şey eklemek ister misiniz? O zaman metni değiştirin ve yeniden gönderin.",
+    "sentScreenshotDropped": "Ekran görüntüsü çok büyüktü ve gönderilmedi.",
+    "viewOnGithub": "GitHub’da görüntüleyin",
+    "errorValidation": "Geri bildirim kabul edilmedi. Metni (yalnızca bağlantılar değil) ve e-posta adresini kontrol edin; sonra yeniden deneyin.",
+    "errorRateLimited": "Kısa sürede çok geri bildirim gönderdiniz. Bir saat sonra yeniden deneyin.",
+    "errorFailed": "Gönderilemedi. İnternet bağlantınızı kontrol edip yeniden deneyin, ya da geri bildirimi GitHub’da açın.",
+    "errorUncertain": "Geri bildiriminizin ulaşıp ulaşmadığını bilmiyoruz. Bir dakika bekleyip yeniden gönderin; zaten varsa bunu otomatik olarak göreceğiz.",
+    "fallbackGithub": "GitHub’da açın",
     "cancel": "İptal",
+    "clearDraft": "Temizle",
+    "clearDraftTitle": "Tüm alanları ve ekran görüntüsünü temizleyin",
     "close": "Kapat",
+    "saveAndClose": "Kaydet ve kapat",
     "tools": {
       "arrow": "Ok",
       "rectangle": "Dikdörtgen",
+      "mask": "Kapla",
       "pen": "Kalem",
       "text": "Metin",
       "color": "Renk",
@@ -481,6 +574,7 @@
     "openGithub": "Tamam, GitHub'a git",
     "annotate": "Not ekle",
     "editorDone": "Bitti",
+    "annotationSaveFailed": "Düzenlemeleriniz kaydedilemedi. Yeniden deneyin. Ekran görüntünüz değiştirilmedi ve bu düzenleyiciden gönderilmez.",
     "rotateFeedback": "Geri bildirim ver",
     "rotateBug": "Hata bildir",
     "rotateFeature": "Yeni bir özellik ekle"
@@ -746,7 +840,7 @@
       "projectEndUnchanged": "Proje bitiş tarihi: değişmedi ({{date}})",
       "projectEndChanged": "Proje bitiş tarihi: {{before}} → {{after}}",
       "remainingConflicts": "Kalan çakışmalar",
-      "remainingConflictsHint": "Bu görevler bolluklarına sığmıyor — genellikle bir kaynağın o günlerde çalışmaması veya yeterli kapasiteye sahip olmamasından kaynaklanır.",
+      "remainingConflictsHint": "Bu görevlerde kaynak çakışmaları devam ediyor. Aşağıdaki açıklamaya bakın.",
       "intrinsicOverrun": "{{resource}} zirvede {{peak}} birim/gün istiyor, kapasite {{capacity}} — kaydırarak çözülemez.",
       "noChanges": "Hiçbir görevin taşınması gerekmiyor — plan zaten çakışmasız.",
       "notCalculated": "Bir dengeleme önerisi oluşturmak için Hesapla'ya tıklayın.",
@@ -827,7 +921,7 @@
       "cancel": "İptal"
     },
     "regen": {
-      "hint": "Tatiller {{from}}–{{to}} aralığını kapsıyor; proje {{year}} yılına kadar sürüyor. Yeniden oluşturulsun mu?",
+      "hint": "Tatiller {{from}}–{{to}} aralığını kapsıyor. {{year}} yılına kadar yeniden oluşturulsun mu?",
       "button": "Yeniden oluştur"
     },
     "countryName": {
@@ -862,7 +956,7 @@
       "decreaseBreakDuration": "Mola süresini 15 dakika azalt",
       "start": "Mola başlangıcı",
       "duration": "Mola süresi (dakika)",
-      "hint": "Çalışma aralıkları otomatik türetilir. 0 süre molayı kaldırır.",
+      "hint": "Molanın başlangıcını ve süresini ayarlayın; standart iş günü ve çalışma bantları otomatik türetilir. Kesintisiz bir iş günü için süreyi 0 yapın.",
       "errors": {
         "invalidDuration": "Süre 0 veya daha büyük tam dakika olmalıdır.",
         "outsideWorkingDay": "Mola çalışma günü içinde olmalıdır.",
@@ -886,9 +980,13 @@
       "copyToAll": "Tüm iş günlerine kopyala",
       "noBands": "Çalışılmayan",
       "nextDay": "sonraki gün",
+      "bandStart": "Bandın başlangıcı",
+      "bandEnd": "Bandın sonu",
       "shiftPreset": "Vardiya",
       "breakHint": "İki bant arasındaki boşluk bir moladır — saatleri gerektiği gibi ayarlayın."
-    }
+    },
+    "defaultConstructionName": "İnşaat takvimi NL",
+    "defaultStandardName": "Standart takvim"
   },
   "view": {
     "structureLockedHint": "Filtreleme/gruplama/sıralama sırasında kullanılamaz",
@@ -1016,7 +1114,7 @@
   },
   "duration": {
     "suffixDay": "g",
-    "suffixHour": "h",
+    "suffixHour": "sa",
     "days": "Gün",
     "hours": "Saat",
     "suffixMinute": "dk"
@@ -1127,7 +1225,7 @@
     "warnPast": "Yeni başlangıç tarihi geçmişte.",
     "noTasks": "Bu projede henüz görev yok; yalnızca proje tarihleri kayar.",
     "invalidDate": "Geçerli bir tarih seçin.",
-    "invalidCurrentStart": "Projenin geçerli bir başlangıç tarihi yok; önce Proje bilgileri bölümünde ayarlayın.",
+    "invalidCurrentStart": "Projenin geçerli bir başlangıç tarihi yok; önce “Proje Bilgileri” bölümünde ayarlayın.",
     "apply": "Taşı",
     "calcError": "Plan hesaplanamadı: {{error}}"
   },
@@ -1203,7 +1301,7 @@
   "progressImport": {
     "title": "Bir tablodan ilerlemeyi güncelle",
     "chooseFile": "Dosya seç…",
-    "intro": "Geri gönderilen bir CSV tablosu seçin. Uygulama yalnızca tamamlanma, gerçek başlangıç ve gerçek bitişi okur — planınızın geri kalanı değişmez.",
+    "intro": "Geri gönderilen bir CSV veya XLSX sayfası seçin. Uygulama yalnızca tamamlanma, gerçek başlangıç ve gerçek bitişi okur; planlamanızın geri kalanı değişmez.",
     "summaryApplied": "Uygulandı: {{applied}}",
     "summaryNoop": "Değişmedi: {{noop}}",
     "summaryNeedsLink": "Eşleştirme bekliyor: {{needsLink}}",
@@ -1269,7 +1367,7 @@
     },
     "p6ZeroDurationUsesPlannedBoundary": {
       "label": "Kilometre taşı planlanan takvim sınırını izler",
-      "help": "Süresiz bir kilometre taşı dosyanın planladığı takvim sınırında kalır: gün başlangıcı bir başlangıç taşı olarak kalır, bant sonu öncülün bitişine denk gelebilir."
+      "help": "Süresiz bir kilometre taşı, dosyanın planladığı takvim sınırında kalır: bir gün başlangıcı başlangıç kilometre taşı olarak kalır, bir bant sonu öncülün bitişine denk gelebilir."
     },
     "p6UseTaskPlannedStartFloor": {
       "label": "Planlanan başlangıç ek alt sınır olarak",
@@ -1277,11 +1375,11 @@
     },
     "p6FinishMilestoneBoundaryWindow": {
       "label": "Bitiş kilometre taşı sınır penceresi olarak",
-      "help": "Bir bitiş kilometre taşı iki bitişik takvim sınırında durabilir: erken başlangıç bir bandın başında, erken bitiş önceki bandın sonunda."
+      "help": "Bir bitiş kilometre taşı iki bitişik takvim sınırında olabilir: erken başlangıç bir çalışma bandının başında, erken bitiş önceki çalışma bandının sonunda."
     },
     "p6PreserveActualInstants": {
       "label": "Gerçek tarihleri aynen al",
-      "help": "Kayıtlı gerçek başlangıç ve bitiş tarihleri bir çalışma zamanı bandına kaydırılmaz."
+      "help": "Kaydedilmiş gerçek tarihler, yani gerçek başlangıç ve gerçek bitiş, bir çalışma bandının kenarına kaydırılmaz."
     },
     "p6UseRemainingStartForProgress": {
       "label": "Devam eden görev: erken başlangıç = kalan işin başlangıcı",
@@ -1289,7 +1387,7 @@
     },
     "p6PreserveZeroDurationConstraintInstants": {
       "label": "Kilometre taşında kesin kısıt anı",
-      "help": "Süresiz bir kilometre taşındaki tarih-saat kısıtı, bir çalışma bandının başında da kesin bir noktadır."
+      "help": "Süresiz bir kilometre taşındaki tarih-saat kısıtlaması kesin bir noktadır; bir çalışma bandının başında da öyledir."
     },
     "resumeFromActualElapsed": {
       "label": "Kalan iş geçen süreden sonra devam eder",
@@ -1301,23 +1399,23 @@
     },
     "p6RelationFinishBoundary": {
       "label": "Ardıl bitiş sınırında başlar",
-      "help": "Ortak bir bant sınırında gecikmesiz bir bitiş-başlangıç ilişkisinde ardıl, öncülün bitişinde başlar (yalnızca dosyanın böyle işaretlediği ilişkiler). Geriye hesaplamada ardıl, en geç başlangıcını basitçe bir çalışma bandının başlangıcı olarak gösterir."
+      "help": "Gecikmesiz bir bitiş-başlangıç ilişkisinde, dosyada ardıl tam olarak öncülün bitişinde başlıyorsa ve bu bir çalışma bandının sonuysa, ardıl o bitişte başlar; bir sonraki çalışma bandının başında değil. Dosya bunu işaretlemez: uygulama, bir .xer dosyasını açarken böyle bir ilişkiyi kendisi tanır. Kendiniz eklediğiniz ilişkiler bunun kapsamında değildir. Geriye hesaplamada ardıl, geç başlangıcını basitçe bir çalışma bandının başı olarak gösterir."
     },
     "p6BackwardLagFinishBoundary": {
       "label": "Bitiş sınırından geriye gecikme",
-      "help": "Geri hesaplama bir bitiş sınırından çalışma zamanı gecikmesini çıkarıp tam bir bant başlangıcına denk gelirse, önceki bitiş sınırına iner. Gecikmesiz bir bitiş-bitiş ilişkisinde de bant sonundaki geç bitiş o bitiş sınırında kalır."
+      "help": "Geriye hesaplama, bir bitiş sınırından çalışma saati cinsinden bir gecikmeyi çıkarır ve tam olarak bir çalışma bandının başına denk gelirse, önceki bitiş sınırına iner. Gecikmesiz bir bitiş-bitiş ilişkisinde de bir bant sonundaki geç bitiş o bitiş sınırında kalır."
     },
     "p6CompletedDataDateWindow": {
       "label": "Durum tarihi penceresinde tamamlanan görev",
-      "help": "Tamamlanmış bir görev durum tarihi penceresinde erken tarihler alır ve bitişi proje bitişine sayılır (yalnızca P6 kaynaklı görevler)."
+      "help": "Tamamlanmış bir görev durum tarihi penceresinde erken tarihler alır ve bitişi proje bitişine sayılır."
     },
     "p6CompletedLoeActualFinish": {
       "label": "Gerçek bitiş üzerinden tamamlanan LOE",
-      "help": "Yalnızca başlangıç-başlangıç girişi olan tamamlanmış bir level-of-effort etkinliği gerçek bitişi üzerinden yolu izler (yalnızca P6 kaynaklı görevler)."
+      "help": "Yalnızca bir başlangıç-başlangıç ilişkisi olan tamamlanmış bir level-of-effort görevi, rotayı gerçek bitişi üzerinden izler."
     },
     "p6OpenLoeTargetSpan": {
       "label": "Başlamamış LOE hedef pencereyi alır",
-      "help": "Henüz başlamamış bir level-of-effort etkinliği hedef penceresini süre olarak alır (yalnızca P6 kaynaklı görevler)."
+      "help": "Henüz başlamamış bir level-of-effort görevi, hedef penceresini süre olarak alır."
     },
     "p6CompletedPredecessorAtDataDate": {
       "label": "Tamamlanmış öncül durum tarihinden sonra tutmaz",
@@ -1333,7 +1431,7 @@
     },
     "p6CompletedOutOfSequenceWindow": {
       "label": "Sıra dışı tamamlanan görev öncüllerini bekler",
-      "help": "Öncülü henüz bitmemiş tamamlanmış bir görevin sıfır penceresi, durum tarihine değil o öncülden sonraya yerleştirilir (Retained Logic)."
+      "help": "Öncülü henüz bitmemiş tamamlanmış bir görev, durum tarihi yerine öncülünden sonra gelen sıfır penceresini alır (P6: “Retained Logic”). Bu ayar yalnızca şu seçenekler de açıksa çalışır: “Durum tarihi penceresinde tamamlanan görev” ve “Devam eden görev: erken başlangıç = kalan işin başlangıcı”."
     },
     "p6CompletedPhysicalAtDataDate": {
       "label": "Fiziksel ilerlemeli tamamlanan görev durum tarihinde durur",
@@ -1345,15 +1443,15 @@
     },
     "p6FinishFinishStartMilestoneLateFinish": {
       "label": "Başlangıç kilometre taşına bitiş-bitiş ilişkisi kilometre taşının kendisine bağlanır",
-      "help": "Başlangıç kilometre taşına bitiş-bitiş ilişkisi, kilometre taşının gününün başına değil kendisine kadar sayılır: öncülün geç bitişi kilometre taşının geç bitişine kadar uzayabilir."
+      "help": "Bir başlangıç kilometre taşına giden bitiş-bitiş ilişkisi, kilometre taşının gününün başına değil, kilometre taşının kendisine kadar sayılır: öncülün geç bitişi, kilometre taşının geç bitişine kadar uzanabilir."
     },
     "p6StartedTaskIgnoresPlannedStartFloor": {
       "label": "Planlanan başlangıç, devam eden bir görev için alt sınır değildir",
       "help": "Başlamış bir görevin kalan işi, planlanan başlangıcı daha geç olsa bile durum tarihinde ve öncüllerinin hemen ardından başlar."
     },
     "p6LateFinishOnOwnCalendar": {
-      "label": "Geç bitiş, faaliyetin kendi takviminde",
-      "help": "Ardıl faaliyetin belirlediği geç bitiş, faaliyetin çalışma saatleri dışına düşerse, faaliyetin kendi takvimindeki önceki çalışma döneminin sonu olur."
+      "label": "Geç bitiş, görevin kendi takviminde",
+      "help": "Bir ardılın koyduğu geç bitiş, görevin çalışma saatleri dışına düşerse, görevin kendi takvimindeki önceki çalışma döneminin sonu olur."
     },
     "p6ProgressOverrideIgnoresStartedSuccessor": {
       "label": "Progress Override başlamış bir ardılı geriye doğru da yok sayar",
@@ -1361,11 +1459,11 @@
     },
     "p6FinishNotBeforeFinishFinishBound": {
       "label": "Erken bitiş bir bitiş-bitiş sınırından önce olmaz",
-      "help": "Bitiş-bitiş ilişkisinde ardılın erken bitişi, saat olarak öncülün koyduğu sınırdan asla önce olmaz. Bu sınır ardılın çalışma dışı zamanına denk gelirse, bitiş bir sonraki çalışma döneminin başlangıcı olur."
+      "help": "Bitiş-bitiş ilişkisinde, ardılın erken bitişi saat olarak öncülün koyduğu sınırdan asla önce olmaz. Bu sınır ardılın çalışılmayan zamanına düşerse, bitiş bir sonraki çalışma saatlerinin başlangıcı olur."
     },
     "p6AlapPositionedFromSuccessors": {
       "label": "ALAP görevleri ardılların izin verdiği kadar geç",
-      "help": "'Olabildiğince geç' kısıtlı, başlamamış bir görev, ardıllarının ona ihtiyaç duyduğu dakikada biter; önce ardıllar hesaplanır, böylece bir zincir kesintisiz birleşir. Kendi planlanan başlangıcı sayılmaz; öncülü olmayan bir görev bu durumda durum tarihinden önce başlamaz. Yalnızca saatlik takvimde geçerlidir."
+      "help": "“Mümkün olduğunca geç” kısıtlamasına sahip, henüz başlamamış bir görev, ardıllarının ona ihtiyaç duyduğu dakikada biter; ardıllar önce hesaplanır, böylece bir zincir kesintisiz birleşir. Kendi planlanmış başlangıcı sayılmaz; öncülü olmayan bir görev durum tarihinden önce başlamaz."
     }
   },
   "profiles": {
@@ -1380,13 +1478,22 @@
   "schedulingProfile": {
     "title": "Hesaplama profili ve seçenekleri",
     "profile": "Hesaplama profili",
+    "newProfile": "Yeni profil",
+    "newProfileTitle": "Yeni hesaplama profili",
+    "newProfileIntro": "Yeni profil, “{{name}}” profilinin tüm kurallarını alır, farklılıklar dahil. Ardından her kuralı kendiniz açıp kapatabilirsiniz. Proje yeni profille ancak Uygula seçildikten sonra hesaplar.",
+    "newProfileName": "Yeni profilin adı",
+    "newProfileCreate": "Oluştur",
+    "bareBaseHint": "“{{name}}” sade temeldir, bu projenin farklılıkları olmadan. Bunları korumak istiyorsanız, “{{modified}}” seçin.",
     "conventionsTitle": "Bu profilin kuralları",
+    "builtInReadOnly": "{{name}} yerleşik bir profildir. Kurallar burada bilgi amaçlı gösterilir ve değiştirilemez. Başka kurallar istiyorsanız {{button}} seçin.",
+    "builtInDeviations": "Bu proje eski bir dosyadan geliyor. Turuncu kurallar {{name}} temelinden farklıdır ve olduğu gibi hesaplanır. Bunları değiştirmek istiyorsanız {{button}} seçin.",
     "optionsTitle": "Bu projenin hesaplama seçenekleri",
     "customName": "Bu özel profilin adı",
     "saveAsTemplate": "Şablon olarak kaydet",
     "updateTemplate": "Şablonu bu projeden güncelle",
     "applyTemplate": "Şablondan güncelle",
     "deleteTemplate": "Şablonu sil",
+    "deleteTemplateConfirm": "“{{name}}” şablonu silinsin mi? Bu profili kullanan projeler kendi kopyalarını tutar.",
     "templateDeviates": "Bu profil “{{name}}” şablonundan farklı.",
     "themes": {
       "completedWork": "İlerleme ve tamamlanan iş",
@@ -1397,12 +1504,13 @@
       "msproject": "Microsoft Project gibi ilerleme",
       "ownProfilesOnly": "Yalnızca özel profiller için"
     },
-    "ownProfilesOnlyNote": "Bu kurallar Primavera P6 dahil her yerleşik profilde kapalıdır. Birini açarsanız özel bir profil oluşur.",
+    "ownProfilesOnlyNote": "Bu kurallar, Primavera P6 dahil her yerleşik hesaplama profilinde kapalıdır. Bunları yalnızca özel bir hesaplama profili açabilir: bunun için “Yeni profil” seçin.",
     "deviatingCount": "değişen: {{n}}",
     "baseValue": "temel: {{value}}",
     "on": "açık",
     "off": "kapalı",
     "resetToBase": "temele dön",
+    "storeChangedUnderDraft": "Projenin hesaplama profili bu arada değişti, örneğin Geri al ile. Aşağıda hâlâ kendi seçiminiz duruyor. {{apply}} seçeneğiyle bu seçimi projeye geri koyarsınız.",
     "showHelp": "“{{name}}” açıklaması",
     "sourceOptions": {
       "title": "Kaynak dosyadaki ayarlar",
@@ -1411,6 +1519,23 @@
       "useProjectEndDateForFloat": "Bolluğu proje bitiş tarihine kadar hesapla",
       "p6CompletedLateFromRemainingWindow": "Tamamlanan görev: durum tarihinden itibaren geç tarihler",
       "needsConvention": "Yalnızca şu anda kapalı olan “{{convention}}” kuralıyla birlikte çalışır."
+    },
+    "requires": {
+      "xerOrigin": "yalnızca .xer görevleri",
+      "hourPlanning": "yalnızca saat planlamasında",
+      "hourPlanningTitle": "Yalnızca saat planlamasında çalışır: bantları olan bir takvim, saat cinsinden bir görev ya da gecikme takvimi 24 saat olarak ayarlı."
+    },
+    "optionsDeviate": {
+      "line": "{{field}}: {{current}} (varsayılan: {{standard}})",
+      "intro": "Bu hesaplama seçenekleri {{name}} varsayılanından farklılık gösteriyor. Bu genellikle bilerek yapılır, örneğin seçenekler açılan dosyadan geldiği için.",
+      "introNeutral": "Bu hesaplama seçenekleri {{name}} varsayılanından farklılık gösteriyor. Bu bilinçli bir seçim olabilir.",
+      "useDefaults": "{{name}} varsayılan ayarlarını kullan",
+      "totalFloatAtMost": "toplam bolluk ≤ {{amount}}",
+      "hours_one": "{{count}} saat",
+      "hours_other": "{{count}} saat",
+      "days_one": "{{count}} iş günü",
+      "days_other": "{{count}} iş günü",
+      "tfAuto": "Otomatik"
     }
   },
   "dialogHelp": {
@@ -1468,5 +1593,71 @@
     "saveHint": "Proje sitede yeni bir IFC dosyası olarak kaydedilir. Daha sonra Kaydet (Ctrl+S) orada yeni bir sürüm kaydeder.",
     "saveToSite": "Siteye kaydet",
     "toThisPc": "Bu bilgisayara…"
+  },
+  "formatNotice": {
+    "title": "{{format}} açıldı",
+    "readMore": "Devamını oku",
+    "dontShowAgain": "{{format}} için bir daha gösterme",
+    "close": "Anladım",
+    "settingsSection": "Şunu açtıktan sonra açıklama göster",
+    "formats": {
+      "xer": {
+        "name": "Primavera dosyası (.xer)",
+        "kept": "Uygulama WBS’yi ve görevleri; ilişkiler, takvimler, kaynaklar, ilerleme, etkinlik kodları ve özel alanlarla birlikte aktardı. Bir temel plan projesi, ona başvuran projenin temel planı olur.",
+        "limited": "Projeler arasındaki bir ilişki planlamanızda ilişki olarak kalmaz. Hesaplama farklıysa önce Primavera’nın kaydettiği tarihleri görürsünüz.",
+        "save": "Kaydettiğinizde, orijinal .xer dosyasını içeren yeni bir IFC dosyası yazılır. Geri .xer dosyasına yazmak mümkün değildir: .xer dosyanız hiçbir zaman değişmez."
+      },
+      "mpp": {
+        "name": "MS Project dosyası (.mpp)",
+        "kept": "Uygulama yapısı, süresi ve kısıtlamalarıyla görevleri; ayrıca ilişkileri, takvimleri, kaynakları, atamaları ve ilerlemeyi aktardı.",
+        "limited": "Temel planlar, maliyetler ve ücretler, notlar ve MS Project’in özel alanları dahil edilmez. Hesaplama farklıysa önce MS Project’in kaydettiği tarihleri görürsünüz.",
+        "save": "Kaydettiğinizde yeni bir IFC dosyası yazılır: .mpp dosyanız hiçbir zaman değişmez. Geri .mpp dosyasına yazmak mümkün değildir. MS Project XML dosyası olarak dışa aktarmak mümkündür."
+      },
+      "mspdi": {
+        "name": "MS Project XML",
+        "kept": "Uygulama yapısıyla birlikte görevleri; ayrıca ilişkileri, kısıtlamaları, takvimleri, kaynakları, atamaları, ilerlemeyi, durum tarihini ve temel plan 0’ı aktardı.",
+        "limited": "Notlar, etkinlik kodları ve özel alanlar aktarılmaz. Proje, Open Planner Studio profiliyle hesaplanır, Microsoft Project gibi değil.",
+        "save": "Kaydet yeni bir IFC dosyası yazar: XML dosyanız değişmez. Geri yazmak için Dışa aktar › MS Project XML seçeneğini kullanın."
+      },
+      "p6xml": {
+        "name": "Primavera P6 XML",
+        "kept": "Uygulama WBS'yi ve görevleri aldı. İlişkiler, kısıtlamalar, takvimler, kaynaklar, atamalar, ilerleme ve durum tarihi de alındı. Bir temel plan projesi, ait olduğu projenin temel planı olur.",
+        "limited": "Son tarihler, etkinlik kodları, özel alanlar ve notlar aktarılmaz. Proje, Open Planner Studio profiliyle hesaplanır, Primavera P6 gibi değil.",
+        "save": "Kaydet yeni bir IFC dosyası yazar: XML dosyanız değişmez. Geri yazmak için Dışa aktar › Primavera P6 XML seçeneğini kullanın."
+      },
+      "csv": {
+        "name": "CSV dosyası",
+        "kept": "Uygulama her satırdan bir görev okudu: ad, WBS kodu, süre, tarihler, öncüller ve ilerleme.",
+        "limited": "Bir CSV dosyasında kaynaklar, takvimler, kısıtlamalar, son tarihler veya temel planlar bulunmaz. Proje CSV Import adını alır.",
+        "save": "Kaydet yeni bir IFC dosyası yazar: CSV dosyanız değişmez. Geri yazmak için Dışa aktar › CSV (noktalı virgülle ayrılmış) seçeneğini kullanın."
+      }
+    }
+  },
+  "ifcSchemaQuestion": {
+    "title": "Hangi IFC şemasında kaydedilsin?",
+    "body": "Bu dosya {{schema}} olarak kaydedildi. Uygulama varsayılan olarak IFC 4.3 ADD2 ile kaydeder; bu, IfcOpenShell ve Bonsai'nin şemasıdır. Bu dosyayı {{schema}} olarak tutmak ister misiniz? Bunu daha sonra Proje Bilgileri içinde değiştirebilirsiniz.",
+    "bodyUnwritable": "Bu dosya {{schema}} olarak kaydedildi. Uygulama bu şemayı yazamaz. Uygulamanın kaydedeceği şemayı seçin. Bunu daha sonra Proje Bilgileri içinde değiştirebilirsiniz.",
+    "keep": "{{schema}} olarak tutun",
+    "toDefault": "IFC 4.3 ADD2 olarak kaydedin"
+  },
+  "phaseAssignmentQuestion": {
+    "title": "Görev özet göreve dönüşür",
+    "intro_one": "'{{phase}}' görevine '{{child}}' alt görevi eklenir ve özet göreve dönüşür.",
+    "intro_other": "'{{phase}}' görevine {{count}} alt görev eklenir ve özet göreve dönüşür.",
+    "introMany_one": "Bu işlem bir görevi özet göreve dönüştürür.",
+    "introMany_other": "Bu işlem {{count}} görevi özet göreve dönüştürür.",
+    "noOwnAssignments": "Özet görevin kendi atamaları bulunmaz.",
+    "question_one": "{{resources}} atamasıyla ne yapmak istersiniz?",
+    "question_other": "{{resources}} atamalarıyla ne yapmak istersiniz?",
+    "questionMany": "Bu atamalarla ne yapmak istersiniz?",
+    "row": "'{{phase}}': {{resources}}",
+    "remove_one": "Atamayı kaldırın",
+    "remove_other": "Atamaları kaldırın",
+    "moveTo": "'{{child}}' görevine taşıyın",
+    "moveToSubtasks": "Alt görevlere taşıyın",
+    "blockedDuplicate": "Taşıma mümkün değil: '{{child}}' görevinde zaten {{resources}} var.",
+    "blockedNoChild": "Taşıma mümkün değil: '{{phase}}' görevine atama taşıyabilen alt görev eklenmez; yalnızca kilometre taşı veya özet görev eklenir.",
+    "actualWorkLost_one": "{{resource}} atamasında zaten {{hours}} saat gerçek iş kayıtlı. Atamayı kaldırırsanız bu iş silinir.",
+    "actualWorkLost_other": "{{resource}} atamasında zaten {{hours}} saat gerçek iş kayıtlı. Atamayı kaldırırsanız bu iş silinir."
   }
 }

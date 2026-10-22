@@ -24,6 +24,7 @@
 //
 // Draait via run.sh. Exit 0 = alles groen.
 import './domStub';
+import { emitExtensionEvent, HOST_EVENTS } from '@/services/extensionEvents';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { IfcSchemaId, Project } from '@/types/project';
@@ -1620,6 +1621,44 @@ function leesWijzigLaadToewijzing(a: ResourceAssignment): ResourceAssignment | u
     melding?.params, melding?.detail, naFout.activeDocumentId === voorFout.activeDocumentId,
     naFout.documents.length === voorFout.documents.length,
   ], [false, 1, 'error', 'notifications.extImportFailed', { name: 'Kapotte importer' }, 'Kolom "Start" ontbreekt', true, true]);
+}
+
+// Host-events mogen worden beluisterd, maar uitsluitend door de app worden uitgezonden.
+{
+  const host = { app: appStoreContext, showNotification: () => {} };
+  const api = createExtensionApi('host-event-isolatie', ['events'], undefined, appStoreContext, host);
+  const withoutPermission = createExtensionApi('zonder-events', [], undefined, appStoreContext, host);
+  const seen: unknown[] = [];
+  for (const event of [...Object.values(HOST_EVENTS), 'host:future-event', 'host:']) {
+    const unsubscribe = api.events.on(event, value => seen.push(value));
+    const before = seen.length;
+    let error = '';
+    try { api.events.emit(event, 'vervalst'); } catch (e) { error = String(e); }
+    eq(event + ': duidelijke weigering voor gereserveerde naam', error.includes('reserved'), true);
+    eq(event + ': geweigerde emissie bereikt geen luisteraar', seen.length, before);
+    emitExtensionEvent(event, 'echte host');
+    eq(event + ': echte host-emissie blijft werken', seen.slice(before), ['echte host']);
+    unsubscribe();
+    emitExtensionEvent(event, 'afgemeld');
+    eq(event + ': afmelden blijft werken', seen.length, before + 1);
+  }
+  const custom: unknown[] = [];
+  const listener = (value: unknown) => { custom.push(value); };
+  api.events.on('fixture:custom', listener);
+  api.events.emit('fixture:custom', { ok: true });
+  eq('eigen extensie-event blijft toegestaan', custom, [{ ok: true }]);
+  let denied = false;
+  try { withoutPermission.events.emit('fixture:custom', 'geen permissie'); } catch { denied = true; }
+  eq('events-permissie blijft verplicht', denied, true);
+  eq('geen permissie betekent geen verzending', custom.length, 1);
+  api.events.off('fixture:custom', listener);
+  api.events.emit('fixture:custom', 'afgemeld');
+  eq('off werkt voor eigen events', custom.length, 1);
+  api.events.on(HOST_EVENTS.projectNew, listener);
+  api._cleanup();
+  emitExtensionEvent(HOST_EVENTS.projectNew, 'na cleanup');
+  eq('cleanup verwijdert ook host-abonnementen', custom.length, 1);
+  withoutPermission._cleanup();
 }
 
 // ── Uitslag ──────────────────────────────────────────────────────────────────
