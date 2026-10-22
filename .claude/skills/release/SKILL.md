@@ -24,7 +24,8 @@ Alleen deze skill mag een release uitvoeren. Een verzoek om de skill te wijzigen
   voor dezelfde tag af, ook zonder nieuwe commits. Onopgelost: stop zonder nieuwe versie.
 - Pas na volledig herstel geldt die tag als `PREV`.
   Volg daarna de [kandidaatselectie](referentie.md#kandidaatselectie): zoek open release-PR's
-  en een ongetagde versie op main. Hervat dezelfde versie/PR; bump uitsluitend bij `RELEASE_MODE=nieuw`.
+  en een ongetagde versie op main. Elke ongetagde kandidaat moet numeriek `VERSION > PREV` zijn;
+  lager of gelijk: stop zonder tag. Hervat dezelfde versie/PR; bump uitsluitend bij `RELEASE_MODE=nieuw`.
   Haal `origin/main` opnieuw op als basis-SHA; `PREV` moet daarvan een voorouder zijn.
 - Zoek de `ci.yml`-run op **die exacte basis-SHA** met event `push` en branch `main`.
   Ontbreekt hij, loopt hij nog of is zijn conclusie niet `success`: stop zonder tag.
@@ -89,8 +90,14 @@ Haal `origin/main` opnieuw op en gebruik een schone checkout van de gemergede re
 Wacht op de `ci.yml`-pushrun voor exact die commit: **alle jobs groen**.
 Controleer vóór de tag opnieuw dat `origin/main` nog die SHA heeft. Bij nieuwe commits:
 behoud kandidaatversie en voortgang; werk de basis, cijfers en CI bij zonder nieuwe bump.
-Draai op de releasecommit:
+Draai op de releasecommit; vergelijk ook hier jaar, week en volgnummer numeriek met `PREV`:
 ```bash
+node --input-type=module - "$VERSION" "$PREV" <<'JS'
+import { parseVersion } from './scripts/bump-version.js';
+const [version, previous] = process.argv.slice(2).map(v => parseVersion(v.replace(/^v/, '')));
+const first = version.findIndex((n, i) => n !== previous[i]);
+if (first < 0 || version[first] < previous[first]) throw new Error('Versie is niet hoger dan PREV; stop zonder tag');
+JS
 node scripts/bump-version.js --check "$VERSION"
 test -s "docs/release-notes/v$VERSION.md"
 npm run verify:translations

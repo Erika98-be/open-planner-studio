@@ -67,11 +67,49 @@ actuele `origin/main` en voer de kandidaatselectie hieronder uit. Een bestaande 
 
 ## Kandidaatselectie
 
-Voer dit vóór **iedere** bump uit, na het afhandelen van de laatste tag. Lees open release-PR's
-(`gh pr list --repo OpenAEC-Foundation/open-planner-studio --base main --state open --limit 1000
---json number,title,headRefName,headRefOid,url`) en hun pakketversie/voortgang. Vergelijk ook
-`git show origin/main:package.json` met de actuele origin-tags uit `git ls-remote --tags origin 'v*'`.
-Een versie in package.json zonder bijbehorende origin-tag is een bestaande kandidaat.
+Voer dit vóór **iedere** bump uit, na het afhandelen van de laatste tag. Een pakketversie zonder
+origin-tag is alleen hervatbaar als hij **numeriek hoger is dan `PREV`**. Vergelijk JJJJ, W en N
+als getallen, in die volgorde. Lager of gelijk: stoppen met versie en `PREV` in de melding;
+geen bump of tag. De kalenderweek van vandaag is geen ondergrens: een oudere week boven `PREV` mag.
+
+Voer vanuit de repo dit uitsluitend lezende blok uit. Alleen titels `Release v<versie>` tellen als
+release-PR (de vaste titel uit stap 3); gewone feature-PR's worden genegeerd. Twee release-PR's
+betekenen stoppen. Lees hun echte pakketversie op de PR-head; titel en pakket moeten overeenkomen.
+Neem `mode`, `version` en de bestaande `pr` uit de JSON over; `mode` wordt `RELEASE_MODE`.
+
+```bash
+PREV="$PREV" node --input-type=module <<'JS'
+import { execFileSync } from 'node:child_process';
+import { parseVersion } from './scripts/bump-version.js';
+const repo = 'OpenAEC-Foundation/open-planner-studio';
+const read = (cmd, ...args) => execFileSync(cmd, args, { encoding: 'utf8' }).trim();
+const previous = parseVersion(process.env.PREV.replace(/^v/, ''));
+const tags = new Set(read('git', 'ls-remote', '--tags', 'origin', 'v*').split('\n')
+  .map(line => line.split('\t')[1]?.replace(/^refs\/tags\//, '').replace(/\^\{\}$/, '')));
+const main = JSON.parse(read('git', 'show', 'origin/main:package.json')).version;
+const prs = JSON.parse(read('gh', 'pr', 'list', '--repo', repo, '--base', 'main', '--state', 'open',
+  '--limit', '1000', '--json', 'number,title,headRefName,headRefOid,url'))
+  .filter(pr => /^Release v[0-9]+\.[0-9]+\.[0-9]+$/.test(pr.title));
+if (prs.length > 1) throw new Error('Meerdere open release-PRs; stop zonder bump of tag');
+const candidates = tags.has(`v${main}`) ? [] : [{ mode: 'main', version: main }];
+for (const pr of prs) {
+  const version = JSON.parse(read('gh', 'api', `repos/${repo}/contents/package.json?ref=${pr.headRefOid}`,
+    '-H', 'Accept: application/vnd.github.raw+json')).version;
+  if (pr.title !== `Release v${version}`) throw new Error('Titel en PR-pakketversie verschillen; stop');
+  if (tags.has(`v${version}`)) throw new Error('PR-versie is al getagd; eerst het hervatpad volgen');
+  candidates.push({ mode: 'pr', version, pr });
+}
+for (const { version } of candidates) {
+  const fields = parseVersion(version);
+  const first = fields.findIndex((n, i) => n !== previous[i]);
+  if (first < 0 || fields[first] < previous[first]) {
+    throw new Error(`Kandidaat ${version} is niet hoger dan PREV ${process.env.PREV}; stop zonder tag`);
+  }
+}
+if (new Set(candidates.map(c => c.version)).size > 1) throw new Error('Kandidaatversies botsen; stop');
+console.log(JSON.stringify(candidates.find(c => c.mode === 'pr') ?? candidates[0] ?? { mode: 'nieuw' }));
+JS
+```
 
 - **Open release-PR:** `RELEASE_MODE=pr`. Gebruik zijn bestaande branch/head, versie en
   hervatverslag. Maak geen tweede PR, bump niet en voeg geen dubbel notes-/highlights-/changelogblok toe.

@@ -244,7 +244,8 @@ bridge tests against the real Rust bridge). Docs: `docs/release-verificatie.md`,
   (updater + Snap Store). The weekly Saturday job on aia09-mp50 runs that skill automatically,
   without human approval before the tag (owner, conversation 2026-10-22). Green main CI and the
   release gates are mandatory. Resume unfinished work for the latest tag before checking for new
-  commits or bumping. Also resume open release PRs and untagged versions on main without another bump;
+  commits or bumping. Also resume open release PRs and untagged versions on main without another bump,
+  only when their candidate version is numerically newer than the previous release; otherwise stop.
   record workflow IDs, wiki commit and website PR in the release PR.
   UI translations, wiki publication and the two website release blocks
   are included; guide translations beyond nl/en run only on the owner's separate request.
