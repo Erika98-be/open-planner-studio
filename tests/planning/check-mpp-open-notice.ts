@@ -14,6 +14,7 @@ import { parseOpenedFile } from '@/services/formatRegistry';
 import { useAppStore } from '@/state/appStore';
 import { msProjectImportNotice } from '@/state/msProjectImportNotice';
 import { rtfHasVisibleText } from '@/services/mpp/mppImportLoss';
+import { CfbFile } from '@/services/mpp/cfb';
 import { readMPP } from '@/services/mpp/mppReader';
 import { Var2Data } from '@/services/mpp/mppPrimitives';
 import { activeImportResult, isMultiDocumentImport, type OpenedImport } from '@/services/importTypes';
@@ -140,7 +141,7 @@ const ASSIGNMENT_META_ITEM = 34;
 const ASSIGNMENT_RECORD = 110;
 const START_DAYS = 15000;
 
-function buildMpp(fx: Fixture): Uint8Array {
+function buildMpp(fx: Fixture, largeVarStreams?: Map<string, Uint8Array>): Uint8Array {
   const defaultLayout = fx.fieldMaps === 'absent' || fx.fieldMaps === 'without-costs';
   // Taken: drie lege meta-items (FIRST_TASK_INDEX = 3), dan één record per taak.
   const records = fx.tasks.map((task, i) => {
@@ -201,6 +202,13 @@ function buildMpp(fx: Fixture): Uint8Array {
     ]),
     ...(fx.criticalSlackLimit !== undefined ? [{ key: 37748756, data: int32(fx.criticalSlackLimit) }] : []),
   ]);
+  // De 64 KiB-notities passen niet in de ene FAT-sector van buildNestedCfb. Alleen in die
+  // gevallen bewaart de test de echte Var2Data-stream apart; VarMeta en alle records blijven gelijk.
+  const varStream = (storage: string, data: Uint8Array): CfbTreeNode => {
+    if (!largeVarStreams || data.length < 4096) return { data };
+    largeVarStreams.set(`   114/${storage}/Var2Data`, data);
+    return { data: new Uint8Array(0) };
+  };
   const tree: Record<string, CfbTreeNode> = {
     '\x01CompObj': { data: encodeCompObjFileFormat('MSProject.MPP14') },
     Props14: { data: encodePropsSingleByteEntry(893386752, 0) },
@@ -209,15 +217,15 @@ function buildMpp(fx: Fixture): Uint8Array {
         Props: { data: props },
         TBkndTask: { children: {
           FixedMeta: { data: meta }, FixedData: { data: concatBytes(...records) },
-          VarMeta: { data: taskVars.meta }, Var2Data: { data: taskVars.data },
+          VarMeta: { data: taskVars.meta }, Var2Data: varStream('TBkndTask', taskVars.data),
         } },
         TBkndRsc: { children: {
           FixedMeta: { data: rscMeta }, FixedData: { data: concatBytes(...rscRecords) },
-          VarMeta: { data: rscVars.meta }, Var2Data: { data: rscVars.data },
+          VarMeta: { data: rscVars.meta }, Var2Data: varStream('TBkndRsc', rscVars.data),
         } },
         TBkndAssn: { children: {
           FixedMeta: { data: asnMeta }, FixedData: { data: concatBytes(...asnRecords) },
-          VarMeta: { data: asnVars.meta }, Var2Data: { data: asnVars.data },
+          VarMeta: { data: asnVars.meta }, Var2Data: varStream('TBkndAssn', asnVars.data),
         } },
       },
     },
@@ -314,10 +322,18 @@ function noteFixture(
 
 /** Observeer echte bytelezingen via de bestaande Var2Data-grens, zonder productiehaak of klok.
  *  Eén proxy per byteview bewaart de identiteit van de gedeelde datablokken. */
-function readWithNoteReads(bytes: Uint8Array) {
+function readWithNoteReads(bytes: Uint8Array, largeVarStreams?: ReadonlyMap<string, Uint8Array>) {
   const notes: { type: number; length: number; byteReads: number }[] = [];
   const views = new Map<Uint8Array, Uint8Array>();
   const original = Var2Data.prototype.getByteArray;
+  const originalGetStream = CfbFile.prototype.getStream;
+  if (largeVarStreams) {
+    // De echte VarMeta/Var2Data-lezer verwerkt ook de lange blokken, zonder de CFB-bouwer uit te
+    // breiden. De overige imports toetsen ongewijzigd de volledige containerroute.
+    CfbFile.prototype.getStream = function (this: CfbFile, path: string[]): Uint8Array | null {
+      return largeVarStreams.get(path.join('/')) ?? originalGetStream.call(this, path);
+    };
+  }
   Var2Data.prototype.getByteArray = function (this: Var2Data, uid: number, type: number): Uint8Array | null {
     const raw = original.call(this, uid, type);
     if (!raw || ![15, 20, 71].includes(type)) return raw;
@@ -339,6 +355,7 @@ function readWithNoteReads(bytes: Uint8Array) {
     return { result: readMPP(bytes), notes };
   } finally {
     Var2Data.prototype.getByteArray = original;
+    CfbFile.prototype.getStream = originalGetStream;
   }
 }
 
@@ -408,16 +425,23 @@ async function main(): Promise<void> {
   for (const [label, text, want] of noteCases) eq(`1i ${label}`, rtfHasVisibleText(latin1(text)), want);
 
   // Knownbug 157: alle tokenizergevallen uit #505 ook via gedeelde VarMeta-offsets inlezen.
-  const repeatedCases = noteCases.flatMap(([, text]) => {
-    const block = latin1(text);
-    return [block, block];
-  });
-  const sharedCases = readWithNoteReads(buildMpp(noteFixture(repeatedCases)));
-  eq('1j gedeelde tokenizergevallen tellen per entiteit', sharedCases.result.msProjectReport?.notes,
-    noteCases.filter(([, , content]) => content).length * 2 * 3);
-  eq('1j één datablok per geval per storage', sharedCases.notes.length, noteCases.length * 3);
-  eq('1j alle notitiebytes eenmaal gelezen, ook bij false',
-    sharedCases.notes.every(note => note.byteReads === note.length), true);
+  // Vier gevallen × twee verwijzingen per storage: met de huidige notities (max. 84 bytes)
+  // hoogstens 107 minisectoren en 21 gewone sectoren, onder de twee helpergrenzen van 128.
+  const CASES_PER_IMPORT = 4;
+  for (let start = 0; start < noteCases.length; start += CASES_PER_IMPORT) {
+    const batch = noteCases.slice(start, start + CASES_PER_IMPORT);
+    const repeatedCases = batch.flatMap(([, text]) => {
+      const block = latin1(text);
+      return [block, block];
+    });
+    const sharedCases = readWithNoteReads(buildMpp(noteFixture(repeatedCases)));
+    const label = `1j gevallen ${start + 1}–${start + batch.length}`;
+    eq(`${label}: gedeelde tokenizergevallen tellen per entiteit`, sharedCases.result.msProjectReport?.notes ?? 0,
+      batch.filter(([, , content]) => content).length * 2 * 3);
+    eq(`${label}: één datablok per geval per storage`, sharedCases.notes.length, batch.length * 3);
+    eq(`${label}: alle notitiebytes eenmaal gelezen, ook bij false`,
+      sharedCases.notes.every(note => note.byteReads === note.length), true);
+  }
 
   // Lange zichtbare tekst én lange verborgen metadata: veel verwijzingen, drie bronblokken.
   // De tweede import hergebruikt offsets met andere inhoud; geen resultaat uit het vorige document.
@@ -426,7 +450,11 @@ async function main(): Promise<void> {
     ['metadata', latin1(String.raw`{\rtf1{\info{\title ${'x'.repeat(64 * 1024)}}}\par}`), false],
   ];
   for (const [label, block, content] of longNotes) {
-    const shared = readWithNoteReads(buildMpp(noteFixture(Array<Uint8Array>(12).fill(block))));
+    // Zonder de drie externe Var2Data-streams: 119 minisectoren en 22 gewone sectoren.
+    const largeVarStreams = new Map<string, Uint8Array>();
+    const bytes = buildMpp(noteFixture(Array<Uint8Array>(12).fill(block)), largeVarStreams);
+    const shared = readWithNoteReads(bytes, largeVarStreams);
+    eq(`1k ${label}: drie lange Var2Data-streams aangeboden`, largeVarStreams.size, 3);
     eq(`1k ${label}: alle entiteiten blijven ingelezen`,
       [shared.result.tasks.length, shared.result.resources.length, shared.result.assignments.length], [12, 12, 12]);
     eq(`1k ${label}: verlies per entiteit`, shared.result.msProjectReport?.notes ?? 0, content ? 36 : 0);
@@ -436,6 +464,7 @@ async function main(): Promise<void> {
 
   // Gelijke offsets in verschillende storages hebben andere inhoud. Binnen één storage blijven
   // ontbrekende notities, andere offsets en aparte blokken met gelijke inhoud onafhankelijk.
+  // Met een ruime notitiegrens van 256 bytes: hoogstens 91 minisectoren en 19 gewone sectoren.
   const mixed = noteFixture(
     [METADATA_NOTE, NOTE, NOTE, NOTE.slice(), null],
     [BINARY_PICTURE_NOTE, METADATA_NOTE, BINARY_PICTURE_NOTE],
