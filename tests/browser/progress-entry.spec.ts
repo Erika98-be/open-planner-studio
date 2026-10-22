@@ -177,9 +177,15 @@ async function fillQuestionDate(page: Page, taskName: string, iso: string): Prom
   await segments.nth(2).fill(y);
 }
 
+function titleHistoryButton(page: Page, kind: 'undo' | 'redo'): Locator {
+  return page.locator('.quick-access-toolbar').getByTitle(kind === 'undo'
+    ? /^(Undo|Ongedaan maken) \(Ctrl\+Z\)$/
+    : /^(Redo|Opnieuw) \(Ctrl\+Y\)$/);
+}
+
 /** Lees Help met een echte klik; terug via Enter mag de wachtende voortgang niet bevestigen. */
 async function visitActualStartHelp(page: Page, taskId: string, options: {
-  via?: 'click' | 'enter'; inspectNavigation?: boolean;
+  via?: 'click' | 'enter'; inspectNavigation?: boolean; inspectHistory?: boolean;
 } = {}): Promise<void> {
   const question = page.locator('[data-ops-actual-start-dialog]');
   const pendingState = () => page.evaluate(() => {
@@ -189,6 +195,9 @@ async function visitActualStartHelp(page: Page, taskId: string, options: {
       activeDocumentId: s.activeDocumentId,
       documentIds: s.documents.map(document => document.id),
       isDirty: s.isDirty,
+      tasks: s.tasks,
+      sequences: s.sequences,
+      history: s.historyEvents.map(event => ({ sequence: event.sequence, state: event.state })),
       pendingCloseDocId: ui.pendingCloseDocId,
       showNewProjectDialog: ui.showNewProjectDialog,
       showProjectOverview: ui.showProjectOverview,
@@ -199,7 +208,8 @@ async function visitActualStartHelp(page: Page, taskId: string, options: {
   });
   const pendingBefore = await pendingState();
   const progressBefore = await readProgress(page, taskId);
-  const undoBefore = (await state(page)).undoDepth;
+  const historyBefore = await state(page);
+  const undoBefore = historyBefore.undoDepth;
   const help = question.getByRole('button', { name: /^(Help on this topic|Help bij dit onderdeel)$/ });
   if (options.via === 'enter') {
     await help.focus();
@@ -229,7 +239,7 @@ async function visitActualStartHelp(page: Page, taskId: string, options: {
     ]) await expect(sidebar.getByRole('button', { name })).toBeDisabled();
     // force slaat Playwrights enabled-check over; de echte browserklik op disabled doet niets.
     await sidebar.getByRole('button', { name: /^(Close project|Sluit project)$/ }).click({ force: true });
-    await page.locator('[data-ops-pill]').click();
+    await page.locator('[data-ops-pill]').click({ force: true });
     expect(await pendingState()).toEqual(pendingBefore);
     await expect(page.locator('.help-panel')).toBeVisible();
 
@@ -244,6 +254,34 @@ async function visitActualStartHelp(page: Page, taskId: string, options: {
     expect(await pendingState()).toEqual(pendingBefore);
   }
 
+  if (options.inspectHistory) {
+    // Beide richtingen zijn in de fixture beschikbaar; disabled komt van de vraag, niet van lege historie.
+    expect(historyBefore.undoDepth).toBeGreaterThan(0);
+    expect(historyBefore.redoDepth).toBeGreaterThan(0);
+    const undo = titleHistoryButton(page, 'undo');
+    const redo = titleHistoryButton(page, 'redo');
+    await expect(undo).toBeDisabled();
+    await expect(redo).toBeDisabled();
+    for (const button of [undo, redo]) {
+      await button.click({ force: true });
+      expect(await pendingState()).toEqual(pendingBefore);
+    }
+    // Ook niet-documentaire ingangen naar mutaties (instellingen, AutoSave, feedback) wachten.
+    const title = page.locator('.title-bar');
+    await expect(title.locator('[data-ops-autosave]')).toBeDisabled();
+    await expect(title.getByTitle(/^(App settings|App-instellingen)$/)).toBeDisabled();
+    await expect(title.locator('[data-tour-anchor="feedback-button"]')).toBeDisabled();
+    for (const region of ['title', 'notices', 'status', 'overlays']) {
+      await expect(page.locator(`[data-ops-background-controls="${region}"]`)).toHaveJSProperty('inert', true);
+    }
+    // Geen tekstveld-focus: de app moet de historie blokkeren, niet de native tekst-undo.
+    await page.locator('[data-ops-backstage-back]').focus();
+    for (const key of ['Control+z', 'Control+y', 'Control+Shift+z', 'Meta+z', 'Meta+Shift+z']) {
+      await page.keyboard.press(key);
+      expect(await pendingState()).toEqual(pendingBefore);
+    }
+  }
+
   // De dialoog luistert tijdens Help niet mee naar Enter; de echte Terug-knop krijgt die toets.
   await page.locator('[data-ops-backstage-back]').focus();
   await page.keyboard.press('Enter');
@@ -256,6 +294,14 @@ async function visitActualStartHelp(page: Page, taskId: string, options: {
 
 test('Regel 2, paneel: de app vraagt de werkelijke start; annuleren verandert niets, bevestigen is één stap', async ({ page, ops: _ops }) => {
   const { B, statusDate } = await seedFutureChain(page);
+  // Fixture met beschikbare undo én redo: een echte Undo-klik zet de beschrijvingswijziging klaar.
+  const redoDescription = 'Nog niet opnieuw toegepast';
+  const description = () => page.evaluate(id => window.__OPS__!.store.getState().tasks.find(task => task.id === id)!.description, B);
+  await page.evaluate(({ id, description }) => window.__OPS__!.store.getState().updateTask(id, { description }),
+    { id: B, description: redoDescription });
+  await titleHistoryButton(page, 'undo').click();
+  await expect.poll(() => state(page).then(snapshot => snapshot.redoDepth)).toBeGreaterThan(0);
+  await expect.poll(description).toBe('');
   const point = await barPoint(page, B);
   await page.mouse.click(point.x, point.y);
   const slider = page.locator('[data-ops-progress-slider]').first();
@@ -277,7 +323,7 @@ test('Regel 2, paneel: de app vraagt de werkelijke start; annuleren verandert ni
   // Help bewaart de nog niet bevestigde datum en de actie. Daarna blijft annuleren mogelijk.
   const helpDate = shiftDays(statusDate, -1);
   await fillQuestionDate(page, 'Metselwerk', helpDate);
-  await visitActualStartHelp(page, B);
+  await visitActualStartHelp(page, B, { inspectHistory: true });
   const [helpYear, helpMonth, helpDay] = helpDate.split('-');
   await expect(segments.nth(0)).toHaveValue(helpDay);
   await expect(segments.nth(1)).toHaveValue(helpMonth);
@@ -309,6 +355,21 @@ test('Regel 2, paneel: de app vraagt de werkelijke start; annuleren verandert ni
   await expect(question).toBeHidden();
   expect(await readProgress(page, B)).toEqual({ statusDate, completion: 0, actualStart: null });
   expect((await state(page)).undoDepth).toBe(before.undoDepth);
+
+  // Vraag geannuleerd: de shell is weer bedienbaar en dezelfde historie kan echt redo/undo doen.
+  await expect(page.locator('[data-ops-background-controls="title"]')).toHaveJSProperty('inert', false);
+  await expect(titleHistoryButton(page, 'undo')).toBeEnabled();
+  await expect(titleHistoryButton(page, 'redo')).toBeEnabled();
+  await titleHistoryButton(page, 'redo').click();
+  await expect.poll(description).toBe(redoDescription);
+  await titleHistoryButton(page, 'undo').click();
+  await expect.poll(description).toBe('');
+  await page.keyboard.press('Control+y');
+  await expect.poll(description).toBe(redoDescription);
+  await page.keyboard.press('Control+z');
+  await expect.poll(description).toBe('');
+  expect((await state(page)).undoDepth).toBe(before.undoDepth);
+  expect((await state(page)).redoDepth).toBe(before.redoDepth);
 
   // Opnieuw; een datum ná de statusdatum bestaat niet: gemeld, Toepassen blijft uit.
   await slider.focus();

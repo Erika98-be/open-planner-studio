@@ -188,6 +188,9 @@ bridge tests against the real Rust bridge). Docs: `docs/release-verificatie.md`,
   `workdayAxis.ts`); interaction in `src/components/canvas/hooks/`. Change visual Gantt behaviour in the
   renderer, not in components.
 - **Notifications go through one channel** from the store — no `alert()` or ad-hoc toasts.
+- **Pending modal questions.** While the actual-start or phase-assignment question waits,
+  `isGlobalShortcutFrozen` blocks global app shortcuts and the surrounding shell controls are inert,
+  including during the actual-start question's Help pause. Help navigation and the question's own controls stay active.
 - **Text:** always via `t(...)`, never hard-coded; a PR needs `nl` + `en`, a release all 28 locales
   (translation pipeline, `verify:translations`). Text sizes only via the six roles
   (`text-caption`…`text-title`); `text-xs`/`text-sm` no longer exist and silently do nothing.
