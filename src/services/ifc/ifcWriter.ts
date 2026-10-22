@@ -119,6 +119,12 @@ function ifcDateTimeHour(iso: string): string {
   return `'${iso}'`;
 }
 
+/** Eén formatterkeuze voor de taakslots én hun getoonde planomvang: een kale datum is bij
+ *  een urentaak middernacht, bij een dagtaak het bestaande IFC-daganker. */
+function taskDateTimeFormatter(task: Task): (iso: string) => string {
+  return taskDurationUnit(task) === 'hours' ? ifcDateTimeHour : ifcDateTime;
+}
+
 /**
  * Het getal in een ISO-8601-dagduur (`P…D`). Hele dagen (en niet-eindige waarden) blijven exact
  * `${days}`. Een fractionele dag (CSV-import, Tabel
@@ -160,7 +166,9 @@ function ifcDurationHour(minutes: number): string {
  */
 function workControlArgs(a: {
   guid: string; ownerHistId: number; name: string; description: string;
-  creationDate: string; startTime: string; finishTime: string; predefinedType: 'PLANNED' | 'BASELINE';
+  creationDate: string; predefinedType: 'PLANNED' | 'BASELINE';
+  // Al geformatteerde STEP-waarden: de taakgebonden dag-/uursemantiek moet behouden blijven.
+  startTimeArg: string; finishTimeArg: string;
 }): string {
   return [
     ifcStr(a.guid), `#${a.ownerHistId}`, ifcStr(a.name), ifcStr(a.description),
@@ -171,8 +179,8 @@ function workControlArgs(a: {
     '$', // Purpose
     '$', // Duration
     '$', // TotalFloat
-    ifcDateTime(a.startTime),
-    ifcDateTime(a.finishTime),
+    a.startTimeArg,
+    a.finishTimeArg,
     `.${a.predefinedType}.`,
   ].join(',');
 }
@@ -397,24 +405,30 @@ export function writeIFC(input: WriteIFCInput): string {
   // Planomvang van de GETOONDE taken, zoals de Gantt en de basislijn: werkelijke datums waar
   // die vaststaan, anders early, anders invoer (`taskDates`). Ook samenvattingen tellen mee.
   // Invoerankers en contractuele projectdatums blijven apart bewaard; opslaan rekent niet.
-  const startDates = tasks.map(shownStart).filter(Boolean).sort();
-  const endDates = tasks.map(shownFinish).filter(Boolean).sort();
-  const planStart = startDates[0] || project.startDate;
-  const planEnd = endDates[endDates.length - 1] || project.endDate;
+  // Normaliseer VÓÓR min/max met dezelfde formatter als IfcTaskTime: een kale datum bij een urentaak
+  // is 00:00, bij een dagtaak 07:00. Vergelijk de ISO-strings inclusief hun STEP-aanhalingstekens;
+  // zo dragen de headers vanaf de eerste save dezelfde tijden als de gekozen taakslots.
+  const taskSpans = tasks.map(task => {
+    const dt = taskDateTimeFormatter(task);
+    return { start: dt(shownStart(task)), finish: dt(shownFinish(task)) };
+  });
+  const startArgs = taskSpans.map(span => span.start).filter(arg => arg !== '$').sort();
+  const endArgs = taskSpans.map(span => span.finish).filter(arg => arg !== '$').sort();
 
   // IfcWorkPlan en IfcWorkSchedule: de 14 argumenten van het schema (`workControlArgs`). StartTime is
   // VERPLICHT. Een project zonder taken en zonder startdatum heeft geen planstart; dan het
   // schrijfmoment, zodat StartTime nooit `$` is. De OPS-lezer gebruikt dit slot dan niet:
   // OPS_ProjectSettings draagt `ProjectStartDate` altijd (ook leeg) en wint.
-  const workControlStart = planStart || now;
+  const workControlStartArg = startArgs[0] || ifcDateTime(project.startDate || now);
+  const workControlFinishArg = endArgs[endArgs.length - 1] || ifcDateTime(project.endDate);
   const workPlanId = addLine(ctx, '_workplan', `IFCWORKPLAN(${workControlArgs({
     guid: objectGuid(ctx, 'wp', project.id), ownerHistId, name: project.name, description: project.description,
-    creationDate: now, startTime: workControlStart, finishTime: planEnd, predefinedType: 'PLANNED',
+    creationDate: now, startTimeArg: workControlStartArg, finishTimeArg: workControlFinishArg, predefinedType: 'PLANNED',
   })})`);
 
   const workSchedId = addLine(ctx, '_worksched', `IFCWORKSCHEDULE(${workControlArgs({
     guid: objectGuid(ctx, 'ws', project.id), ownerHistId, name: 'Construction schedule v1.0', description: '',
-    creationDate: now, startTime: workControlStart, finishTime: planEnd, predefinedType: 'PLANNED',
+    creationDate: now, startTimeArg: workControlStartArg, finishTimeArg: workControlFinishArg, predefinedType: 'PLANNED',
   })})`);
 
   // Baselines — per baseline één `.BASELINE.`-IfcWorkSchedule-header (Name +
@@ -426,9 +440,11 @@ export function writeIFC(input: WriteIFCInput): string {
   // De OPS-lezer leest deze slots niet (de datums staan in het JSON); ze zijn er voor andere pakketten.
   const baselineSchedRefs: string[] = [];
   for (const b of baselines) {
+    const start = baselineStart(b);
     const bId = addLine(ctx, `_baseline_ws_${b.id}`, `IFCWORKSCHEDULE(${workControlArgs({
       guid: guidOf(ctx, 'baseline_ws_' + b.id), ownerHistId, name: b.name, description: '',
-      creationDate: b.createdAt || now, startTime: baselineStart(b) || workControlStart, finishTime: b.projectEnd,
+      creationDate: b.createdAt || now, startTimeArg: start ? ifcDateTime(start) : workControlStartArg,
+      finishTimeArg: ifcDateTime(b.projectEnd),
       predefinedType: 'BASELINE',
     })})`);
     baselineSchedRefs.push(`#${bId}`);
@@ -1429,7 +1445,7 @@ function writeTask(
   // In UUR-modus dragen de datetimes de echte tijd-van-de-dag en is de duur minuut-precies
   // (`durationMinutes`, bron van waarheid; anders afgeleid uit de dag-duur). In DAG-modus valt alles
   // terug op het `T07:00:00`/`P0Y0M{days}D`-pad.
-  const dt = isHour ? ifcDateTimeHour : ifcDateTime;
+  const dt = taskDateTimeFormatter(task);
   // De ISO-vorm bewaart de TAAK-eenheid: P…D = werkdagen, PT…H…M = werkuren. De kalender bepaalt
   // alleen de datetime-precisie en plaatsing; een uurkalender maakt van een dagtaak geen urentaak.
   const schedDurArg = taskDurationUnit(task) === 'hours'

@@ -256,7 +256,12 @@ for (const schema of ['IFC4X3_ADD2', 'IFC4X3', 'IFC4'] as const) {
   const noDates: Partial<Task['time']> = {
     scheduleStart: '', scheduleFinish: '', earlyStart: '', earlyFinish: '', lateStart: '', lateFinish: '',
   };
-  const cases: { label: string; tasks: Task[]; start: string; end: string; repeat?: boolean }[] = [
+  const cases: {
+    label: string; tasks: Task[]; start: string; end: string; repeat?: boolean;
+    taskTimeSlots?: readonly [number, number];
+    inputDates?: Record<string, readonly [string, string]>;
+    projectDates?: readonly [string, string];
+  }[] = [
     { label: 'voltooid: werkelijke datums winnen van early én invoer', tasks: [task('a', {
       actualStart: '2026-02-24T09:00', actualFinish: '2026-02-26T15:00', completion: 1, remainingTime: 0,
     }, { status: 'COMPLETED' })], start: "'2026-02-24T09:00:00'", end: "'2026-02-26T15:00:00'" },
@@ -266,6 +271,41 @@ for (const schema of ['IFC4X3_ADD2', 'IFC4X3', 'IFC4'] as const) {
     { label: 'lopend: werkelijke start en berekend resteinde', tasks: [task('a', {
       actualStart: '2026-02-25T11:00', completion: 0.5,
     }, { status: 'STARTED' })], start: "'2026-02-25T11:00:00'", end: "'2026-04-10T16:00:00'" },
+    // Review P2: een urentaak kan kale actuals/early/invoer dragen. De eerste save moet al
+    // dezelfde kloktijd als IfcTaskTime hebben, vóór readIFC die velden tot uur-instants aanvult.
+    { label: 'uurtaak: kale werkelijke start is middernacht', tasks: [task('a', {
+      actualStart: '2026-02-24', completion: 0.5,
+    }, { status: 'STARTED' })], start: "'2026-02-24T00:00:00'", end: "'2026-04-10T16:00:00'", taskTimeSlots: [16, 8] },
+    { label: 'uurtaak: kale werkelijke start en einde zijn middernacht', tasks: [task('a', {
+      actualStart: '2026-02-24', actualFinish: '2026-02-26', completion: 1, remainingTime: 0,
+    }, { status: 'COMPLETED' })], start: "'2026-02-24T00:00:00'", end: "'2026-02-26T00:00:00'", taskTimeSlots: [16, 17] },
+    { label: 'uurtaak: kale finish als startterugval is ook middernacht', tasks: [task('a', {
+      actualFinish: '2026-02-26', completion: 1, remainingTime: 0,
+    }, { status: 'COMPLETED' })], start: "'2026-02-26T00:00:00'", end: "'2026-02-26T00:00:00'", taskTimeSlots: [17, 17] },
+    { label: 'uurtaak: kale early-datums zijn middernacht', tasks: [task('a', {
+      earlyStart: '2026-04-06', earlyFinish: '2026-04-10',
+    })], start: "'2026-04-06T00:00:00'", end: "'2026-04-10T00:00:00'", taskTimeSlots: [7, 8] },
+    { label: 'uurtaak: kale invoerterugval is middernacht', tasks: [task('a', {
+      scheduleStart: '2026-03-02', scheduleFinish: '2026-03-03', earlyStart: '', earlyFinish: '',
+    })], start: "'2026-03-02T00:00:00'", end: "'2026-03-03T00:00:00'", taskTimeSlots: [5, 6],
+      inputDates: { a: ['2026-03-02T00:00', '2026-03-03T00:00'] } },
+    { label: 'uurtaak: alleen het kale invoereinde valt terug', tasks: [task('a', {
+      earlyStart: '2026-03-06T11:00', earlyFinish: '', scheduleFinish: '2026-03-10',
+    })], start: "'2026-03-06T11:00:00'", end: "'2026-03-10T00:00:00'", taskTimeSlots: [7, 6],
+      inputDates: { a: ['2026-03-02T07:00', '2026-03-10T00:00'] } },
+    { label: 'dagtaak: kale actuals behouden het daganker', tasks: [task('a', {
+      durationUnit: 'days', durationMinutes: undefined, scheduleDuration: 1,
+      actualStart: '2026-02-24', actualFinish: '2026-02-26', completion: 1, remainingTime: 0,
+    }, { status: 'COMPLETED' })], start: "'2026-02-24T07:00:00'", end: "'2026-02-26T07:00:00'", taskTimeSlots: [16, 17] },
+    { label: 'dagtaak: kale early-datums behouden het daganker', tasks: [task('a', {
+      durationUnit: 'days', durationMinutes: undefined, scheduleDuration: 1,
+      earlyStart: '2026-04-06', earlyFinish: '2026-04-10',
+    })], start: "'2026-04-06T07:00:00'", end: "'2026-04-10T07:00:00'", taskTimeSlots: [7, 8] },
+    { label: 'dagtaak: kale invoerterugval behoudt het daganker', tasks: [task('a', {
+      durationUnit: 'days', durationMinutes: undefined, scheduleDuration: 1,
+      scheduleStart: '2026-03-02', scheduleFinish: '2026-03-03', earlyStart: '', earlyFinish: '',
+    })], start: "'2026-03-02T07:00:00'", end: "'2026-03-03T07:00:00'", taskTimeSlots: [5, 6],
+      inputDates: { a: ['2026-03-02T07:00', '2026-03-03T07:00'] } },
     { label: '100 procent zonder werkelijk einde blijft lopend', tasks: [task('a', {
       actualStart: '2026-02-26T11:00', completion: 1, remainingTime: 1,
     }, { status: 'STARTED' })], start: "'2026-02-26T11:00:00'", end: "'2026-04-10T16:00:00'" },
@@ -289,7 +329,14 @@ for (const schema of ['IFC4X3_ADD2', 'IFC4X3', 'IFC4'] as const) {
       task('a', { earlyStart: '2026-03-06T10:00', earlyFinish: '2026-03-06T13:00' }),
       task('d', { durationUnit: 'days', durationMinutes: undefined, scheduleDuration: 1,
         scheduleStart: '2026-03-06', scheduleFinish: '2026-03-06', earlyStart: '2026-03-06', earlyFinish: '2026-03-06' }),
-    ], start: "'2026-03-06T07:00:00'", end: "'2026-03-06T13:00:00'" },
+    ], start: "'2026-03-06T07:00:00'", end: "'2026-03-06T13:00:00'",
+      inputDates: { d: ['2026-03-06T07:00', '2026-03-06T07:00'] } },
+    { label: 'daganker en uurgrenzen worden vóór min/max genormaliseerd', tasks: [
+      task('a', { earlyStart: '2026-03-06T06:00', earlyFinish: '2026-03-06T06:30' }),
+      task('d', { durationUnit: 'days', durationMinutes: undefined, scheduleDuration: 1,
+        scheduleStart: '2026-03-06', scheduleFinish: '2026-03-06', earlyStart: '2026-03-06', earlyFinish: '2026-03-06' }),
+    ], start: "'2026-03-06T06:00:00'", end: "'2026-03-06T07:00:00'",
+      inputDates: { d: ['2026-03-06T07:00', '2026-03-06T07:00'] } },
     { label: 'lege taakdatums verdringen geen aanwezige taakdatums', tasks: [task('leeg', noDates), task('a')],
       start: "'2026-04-06T07:00:00'", end: "'2026-04-10T16:00:00'", repeat: false },
     // Ontbrekende taakdatums krijgen bij LEZEN de gedeelde importterugvallen. Hier toetsen we de
@@ -300,15 +347,21 @@ for (const schema of ['IFC4X3_ADD2', 'IFC4X3', 'IFC4'] as const) {
       start: "'2026-01-05T08:00:00'", end: "'2026-04-10T16:00:00'", repeat: false },
     { label: 'alleen taakeinde ontbreekt', tasks: [task('a', { scheduleFinish: '', earlyFinish: '' })],
       start: "'2026-04-06T07:00:00'", end: "'2026-12-31T17:00:00'", repeat: false },
+    { label: 'kale projectterugval behoudt het daganker', tasks: [], projectDates: ['2026-01-05', '2026-12-31'],
+      start: "'2026-01-05T07:00:00'", end: "'2026-12-31T07:00:00'" },
     { label: 'leeg plan valt terug op projectinvoer', tasks: [],
       start: "'2026-01-05T08:00:00'", end: "'2026-12-31T17:00:00'" },
   ];
   for (const schema of IFC_SCHEMAS) {
     for (const c of cases) {
-      let input: ImportResult = { ...buildProject('2026-01-05T08:00', '2026-12-31T17:00'),
+      const projectDates = c.projectDates ?? ['2026-01-05T08:00', '2026-12-31T17:00'];
+      let input: ImportResult = { ...buildProject(projectDates[0], projectDates[1]),
         tasks: c.tasks, sequences: [], resources: [], assignments: [] };
       input.project = { ...input.project, ifcSchema: schema };
-      const originalInput = c.tasks.map(t => [t.id, t.time.scheduleStart, t.time.scheduleFinish]);
+      // De uurkalender leest kale taakdatums als expliciete tijden terug: 00:00 voor uurtaken,
+      // het 07:00-anker voor dagtaken. De verwachte normalisatie staat per geval letterlijk vast.
+      const originalInput = c.tasks.map(t => [t.id, ...(c.inputDates?.[t.id]
+        ?? [t.time.scheduleStart, t.time.scheduleFinish])]);
       for (let round = 1; round <= (c.repeat === false ? 1 : 3); round++) {
         const label = `§7 ${schema}, ${c.label}, ronde ${round}`;
         const before = JSON.stringify(input);
@@ -316,10 +369,16 @@ for (const schema of ['IFC4X3_ADD2', 'IFC4X3', 'IFC4'] as const) {
         same(`${label}: opslaan muteert of berekent niets`, JSON.stringify(input), before);
         same(`${label}: workplan en schema hebben dezelfde getoonde omvang`, spans(text),
           [['IFCWORKPLAN', c.start, c.end], ['IFCWORKSCHEDULE', c.start, c.end]]);
+        if (c.taskTimeSlots) {
+          const taskTime = parseStep(text).find(e => e.type === 'IFCTASKTIME')!;
+          same(`${label}: headergrenzen zijn exact de gekozen IfcTaskTime-slots`,
+            c.taskTimeSlots.map(i => taskTime.args[i]),
+            [{ k: 'str', raw: c.start }, { k: 'str', raw: c.end }]);
+        }
         const parsed = readIFC(text);
         same(`${label}: projectschema behouden`, parsed.project.ifcSchema, schema);
         same(`${label}: contractuele projectinvoer behouden`, [parsed.project.startDate, parsed.project.endDate],
-          ['2026-01-05T08:00', '2026-12-31T17:00']);
+          projectDates);
         if (c.repeat !== false) same(`${label}: broninvoer niet vervangen door planomvang`,
           parsed.tasks.map(t => [t.id, t.time.scheduleStart, t.time.scheduleFinish]), originalInput);
         if (round === 1) {
