@@ -433,8 +433,6 @@ en noem het in je rapport of PR-tekst.
     zonder naar de volgende kolom te gaan. Bij snel invoeren via de spookregel (typ naam, Tab, typ duur)
     verwacht je het Excel-gedrag: vastleggen en een kolom verder (Shift+Tab terug). Gezien bij review
     vader, punt 1. — B
-133. **Het venster *Werkelijke start opgeven* heeft geen ?-knop** (`ActualStartDialog.tsx:82`,
-    `DialogHeader` zonder `help`). Het doel zou `howto-voortgang-bijwerken` zijn. — B
 
 174. **De handmatige release-invoer begint met een verouderde voorbeeldtag.**
     `.github/workflows/release.yml:12` stelt een tag van vóór het huidige versieschema voor.

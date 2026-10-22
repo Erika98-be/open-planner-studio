@@ -77,6 +77,7 @@ export function HelpPanel() {
   const { t: tCommon, i18n } = useTranslation('common');
   const openExampleFromString = useAppStore(s => s.openExampleFromString);
   const setUI = useAppStore(s => s.setUI);
+  const startQuestionOpen = useAppStore(s => s.ui.pendingActualStartQuestion !== null);
   // "Lees meer"-diepe-link vanuit een melding of het eigenschappenpaneel
   // (`openHelpArticle` in uiSlice.ts). Eenmalig-verzoek-patroon: lezen + direct weer op `null`.
   const pendingHelpArticleId = useAppStore(s => s.ui.pendingHelpArticleId);
@@ -318,11 +319,14 @@ export function HelpPanel() {
     if (!selectedContent) return null;
     return renderMiniMarkdown(selectedContent, {
       onNavigate: navigate,
-      onOpenExample: (f) => { void handleOpenExample(f); },
-      ...(openProject ? { onOpenProject: openProject } : {}),
+      // Lezen blijft mogelijk; voorbeeld-/tutorialprojecten zouden het actieve document verlaten.
+      ...(!startQuestionOpen ? {
+        onOpenExample: (f: string) => { void handleOpenExample(f); },
+        ...(openProject ? { onOpenProject: openProject } : {}),
+      } : {}),
       resolveImage,
     });
-  }, [selectedContent, navigate, handleOpenExample, resolveImage, openProject]);
+  }, [selectedContent, navigate, handleOpenExample, resolveImage, openProject, startQuestionOpen]);
 
   // Na een artikelwissel: naar het anker scrollen als de link er een had, anders naar boven. De
   // scrollcontainer is `.backstage-main` (de omringende Backstage-sectie), niet het paneel zelf.

@@ -24,6 +24,7 @@ import { NewOrOpenProjectDialog } from '@/components/dialogs/NewOrOpenProjectDia
 import { ProjectOverview } from '@/components/layout/DocumentChrome/ProjectOverview';
 import { CloseDocumentDialog } from '@/components/layout/DocumentChrome/CloseDocumentDialog';
 import { useKeyboardShortcuts } from '@/hooks/keyboard/useKeyboardShortcuts';
+import { isGlobalShortcutFrozen } from '@/hooks/keyboard/shortcutRegistry';
 import { useSettingsBootstrap } from '@/hooks/useSettingsBootstrap';
 import { useDemoStartExample } from '@/hooks/useDemoStartExample';
 import { useSiteInitialFile } from '@/hooks/useSiteInitialFile';
@@ -106,6 +107,7 @@ function AppContent() {
   const { t } = useTranslation('common');
 
   const activeTab = useAppStore(s => s.ui.activeRibbonTab);
+  const questionPending = useAppStore(s => isGlobalShortcutFrozen(s.ui));
   const showProjectInfoDialog = useAppStore(s => s.ui.showProjectInfoDialog);
   const showNewProjectDialog = useAppStore(s => s.ui.showNewProjectDialog);
   const showNewOrOpenProjectDialog = useAppStore(s => s.ui.showNewOrOpenProjectDialog);
@@ -301,32 +303,37 @@ function AppContent() {
 
   return (
     <div className="flex flex-col h-screen w-screen overflow-hidden bg-surface text-text-primary">
-      {/* Custom Title Bar */}
-      <TitleBar />
+      {/* De Help-pauze heft de modaliteit van de vraag niet op. Scherm achtergrondbediening per
+          shellgebied af, inclusief toekomstige knoppen; Help en de vraag staan buiten deze grenzen. */}
+      <div className="contents" inert={questionPending} data-ops-background-controls="title">
+        <TitleBar />
+      </div>
 
       {/* Ribbon Toolbar */}
       <Ribbon />
 
-      {/* Uur-data-melding: niet-blokkerende strook onder het lint wanneer een geladen
-          bestand urenplanning bevat terwijl de hoofdschakelaar uit staat. */}
-      <HourDataNotice />
+      <div className="contents" inert={questionPending} data-ops-background-controls="notices">
+        {/* Uur-data-melding: niet-blokkerende strook onder het lint wanneer een geladen
+            bestand urenplanning bevat terwijl de hoofdschakelaar uit staat. */}
+        <HourDataNotice />
 
-      {/* Structuur-vergrendeld-melding: verschijnt wanneer in-/uitspringen geweigerd
-          wordt omdat er gefilterd/gegroepeerd/gesorteerd wordt. */}
-      <StructureLockedNotice />
+        {/* Structuur-vergrendeld-melding: verschijnt wanneer in-/uitspringen geweigerd
+            wordt omdat er gefilterd/gegroepeerd/gesorteerd wordt. */}
+        <StructureLockedNotice />
 
-      {/* Relatiemodus-strook: zichtbaar zolang de Relatie-knop/het contextmenu de
-          "plakkende Shift" heeft aangezet — sleep dan in de Gantt van balk naar balk. */}
-      <DependencyModeNotice />
+        {/* Relatiemodus-strook: zichtbaar zolang de Relatie-knop/het contextmenu de
+            "plakkende Shift" heeft aangezet — sleep dan in de Gantt van balk naar balk. */}
+        <DependencyModeNotice />
 
-      {/* Splits-modus-strook: zichtbaar zolang de knop Taak splitsen aan staat — klik
-          dan op een balk waar de onderbreking begint en sleep naar rechts voor de lengte. */}
-      <SplitModeNotice />
+        {/* Splits-modus-strook: zichtbaar zolang de knop Taak splitsen aan staat — klik
+            dan op een balk waar de onderbreking begint en sleep naar rechts voor de lengte. */}
+        <SplitModeNotice />
 
-      {/* "Datums zoals opgeslagen"-strook: de modus zolang hij aan staat. Bewust BOVEN de
-          `activeTab === 'file'`-vertakking (net als de meldingen hierboven), zodat de strook
-          zichtbaar blijft in élke weergave — Gantt, tabel, rapport én Backstage. */}
-      <RecordedDatesNotice />
+        {/* "Datums zoals opgeslagen"-strook: de modus zolang hij aan staat. Bewust BOVEN de
+            `activeTab === 'file'`-vertakking (net als de meldingen hierboven), zodat de strook
+            zichtbaar blijft in élke weergave — Gantt, tabel, rapport én Backstage. */}
+        <RecordedDatesNotice />
+      </div>
 
       {/* Backstage view (File-tab actief) — neemt de volledige body over.
           Anders: gradient strip + main content. */}
@@ -392,11 +399,11 @@ function AppContent() {
         </>
       )}
 
-      {/* Status Bar */}
-      <StatusBar />
-
-      {/* Projectoverzicht-overlay (gedeeld door alle multi-document-stijlen) */}
-      <ProjectOverview />
+      <div className="contents" inert={questionPending} data-ops-background-controls="status">
+        <StatusBar />
+        {/* Projectoverzicht-overlay (gedeeld door alle multi-document-stijlen) */}
+        <ProjectOverview />
+      </div>
 
       {/* Sluit-bevestiging bij niet-opgeslagen wijzigingen (3-weg) */}
       <CloseDocumentDialog />
@@ -487,15 +494,17 @@ function AppContent() {
         </div>
       )}
 
-      {/* Begeleidingspaneel van een extensie (contract 1.4.0) — net als de meldingen buiten de
-          Backstage-vertakking, zodat een tutorial door alle weergaven heen zichtbaar blijft. */}
-      {guideActive && <Suspense fallback={null}><GuidePanel /></Suspense>}
+      <div className="contents" inert={questionPending} data-ops-background-controls="overlays">
+        {/* Begeleidingspaneel van een extensie (contract 1.4.0) — net als de meldingen buiten de
+            Backstage-vertakking, zodat een tutorial door alle weergaven heen zichtbaar blijft. */}
+        {guideActive && <Suspense fallback={null}><GuidePanel /></Suspense>}
 
-      {/* Gebruikersmeldingen — buiten de Backstage-vertakking gemount (ná het
-          Suspense-dialogenblok, als laatste kind van de buitenste div), zodat een opslaafout óók
-          zichtbaar is wanneer de File-tab (Backstage) de body overneemt. */}
-      <NotificationHost />
-      <TooltipHost />
+        {/* Gebruikersmeldingen — buiten de Backstage-vertakking gemount, ná het
+            Suspense-dialogenblok, zodat een opslaafout óók zichtbaar is wanneer de
+            File-tab (Backstage) de body overneemt. */}
+        <NotificationHost />
+        <TooltipHost />
+      </div>
     </div>
   );
 }

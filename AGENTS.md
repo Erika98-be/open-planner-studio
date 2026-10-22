@@ -188,6 +188,9 @@ bridge tests against the real Rust bridge). Docs: `docs/release-verificatie.md`,
   `workdayAxis.ts`); interaction in `src/components/canvas/hooks/`. Change visual Gantt behaviour in the
   renderer, not in components.
 - **Notifications go through one channel** from the store — no `alert()` or ad-hoc toasts.
+- **Pending modal questions.** While the actual-start or phase-assignment question waits,
+  `isGlobalShortcutFrozen` blocks global app shortcuts and the surrounding shell controls are inert,
+  including during the actual-start question's Help pause. Help navigation and the question's own controls stay active.
 - **Tailwind sources.** `src/styles/globals.css` disables automatic detection with `source(none)` and
   registers only `src/` and `index.html` via `@source` (paths relative to that stylesheet). This includes
   extension UI and HTML strings in `src/`; imported component CSS and fonts still build normally.
