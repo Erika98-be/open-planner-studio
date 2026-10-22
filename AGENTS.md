@@ -241,7 +241,16 @@ bridge tests against the real Rust bridge). Docs: `docs/release-verificatie.md`,
   Those guides use a limited Markdown subset (no tables/blockquotes/h4/HTML). The GitHub wiki is generated,
   never edited by hand (`wiki` skill).
 - **Releases**: only via the `release` skill; a `v*` tag is irreversible and rolls out to all users
-  (updater + Snap Store). Release text in `docs/release-notes/v<version>.md`; `docs/CHANGELOG.md` only at release.
+  (updater + Snap Store). The weekly Saturday job on aia09-mp50 runs that skill automatically,
+  without human approval before the tag (owner, conversation 2026-10-22). Green main CI and the
+  release gates are mandatory. Resume unfinished work for the latest tag before checking for new
+  commits or bumping. Also resume open release PRs and untagged versions on main without another bump,
+  only when their candidate version is numerically newer than the previous release; otherwise stop.
+  record workflow IDs, wiki commit and website PR in the release PR.
+  UI translations, wiki publication and the two website release blocks
+  are included; guide translations beyond nl/en run only on the owner's separate request.
+  The proposed schedule and literal job prompt live in `.claude/skills/release/scheduled-job.md`.
+  Release text in `docs/release-notes/v<version>.md`; `docs/CHANGELOG.md` only at release.
 - The user term is "resourcebibliotheek"; code/IFC still say `companyId`/`companyName`.
 - Screen evidence in a PR: `artifacts/<topic>/`, PNG ≤ ~150 KB, a handful; local QA screenshots in `qa/`.
 - Changing the architecture, a command or a fact above? Update this file in the same PR.

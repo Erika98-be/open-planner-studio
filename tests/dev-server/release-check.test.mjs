@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { chmodSync, mkdtempSync, readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { chmodSync, mkdtempSync, readFileSync, rmSync, writeFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -45,6 +45,40 @@ function runBlocks(yaml) {
   }
   return blocks;
 }
+
+test('release-gate geeft de ingevoerde versie bij dispatch en de tagversie bij een push aan de highlightscheck', (t) => {
+  const step = runBlocks(readFileSync(join(ROOT, '.github', 'workflows', 'release.yml'), 'utf8'))
+    .find((b) => b.name === 'Verify visual release highlights');
+  assert.ok(step, 'highlightstap niet gevonden');
+  const dir = mkdtempSync(join(tmpdir(), 'release-highlights-version-'));
+  t.after(() => rmSync(dir, { recursive: true, force: true }));
+  // Vang de echte shellaanroep af; voer geen verifier, Git of netwerkverzoek uit.
+  writeFileSync(join(dir, 'node'), `#!${process.execPath}\nprocess.stdout.write(JSON.stringify(process.argv.slice(2)));\n`);
+  chmodSync(join(dir, 'node'), 0o755);
+  for (const [event, ref, input, expected] of [
+    ['workflow_dispatch', 'refs/heads/main', 'v2026.43.0', '2026.43.0'],
+    ['workflow_dispatch', 'refs/heads/main', '2026.43.1', '2026.43.1'],
+    ['push', 'refs/tags/v2026.43.2', '', '2026.43.2'],
+    ['push', 'refs/tags/v2026.43.3', 'v2026.1.0', '2026.43.3'],
+    ['workflow_dispatch', 'refs/heads/main', INJECTION, INJECTION.slice(1)],
+  ]) {
+    const r = spawnSync('bash', ['-e', '-c', step.body], {
+      cwd: ROOT,
+      encoding: 'utf8',
+      env: {
+        ...process.env,
+        PATH: `${dir}:${process.env.PATH}`,
+        GITHUB_EVENT_NAME: event,
+        GITHUB_REF: ref,
+        GITHUB_REF_NAME: ref.split('/').at(-1),
+        INPUT_VERSION: input,
+      },
+    });
+    assert.equal(r.status, 0, r.stderr);
+    assert.deepEqual(JSON.parse(r.stdout), ['scripts/release-highlights.mjs', expected]);
+    assert.equal(r.stderr, '', 'vrije invoer mag geen shellcode uitvoeren');
+  }
+});
 
 test('valid-tag keurt de hele waarde, ook met een regeleinde (bevinding 1)', () => {
   assert.equal(helper(['valid-tag', 'v2026.9.0']).status, 0);

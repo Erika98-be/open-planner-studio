@@ -46,11 +46,11 @@ if (!ROOT) {
 /** De UIT-mutaties: [bestand (relatief aan src/), zoektekst, vervanging]. Elk moet exact 1× raken. */
 const OFF_MUTATIONS: Array<[string, string, string]> = [
   ['services/msproject/mspdiReader.ts',
-    '    {\n      const recordedDate = (raw: string): string | undefined =>\n        raw ? importDateTime(raw, isHour)',
-    '    if (false) {\n      const recordedDate = (raw: string): string | undefined =>\n        raw ? importDateTime(raw, isHour)'],
+    '    {\n      const slackDays = (raw: string): number | undefined => {',
+    '    if (false) {\n      const slackDays = (raw: string): number | undefined => {'],
   ['services/p6/p6xmlReader.ts',
-    '    {\n      const recordedDate = (raw: string): string | undefined =>\n        raw ? importDateTime(raw, isHour)',
-    '    if (false) {\n      const recordedDate = (raw: string): string | undefined =>\n        raw ? importDateTime(raw, isHour)'],
+    '    {\n      const recordedDate = (raw: string): string | undefined => importDateTimeOrUndefined(raw, isHour);',
+    '    if (false) {\n      const recordedDate = (raw: string): string | undefined => importDateTimeOrUndefined(raw, isHour);'],
   ['services/mpp/mppReader.ts',
     '    {\n      const slackDays = (tenths: number | null): number | undefined => {',
     '    if (false) {\n      const slackDays = (tenths: number | null): number | undefined => {'],
@@ -154,6 +154,10 @@ function runBoth(read: (r: Readers) => Record<string, unknown>): { on: Outcome; 
 const fixtures: Array<[string, (r: Readers) => Record<string, unknown>]> = [
   ['P6 XML-fixture', (r) => r.readP6XML(P6XML_FIXTURE)],
   ['MSPDI-fixture', (r) => r.readMSPDI(MSPDI_FIXTURE)],
+  ['P6 XML-fixture (onleesbare datums)', (r) => r.readP6XML(P6XML_FIXTURE.replace(/<Activity>[\s\S]*?<\/Activity>/g,
+    block => block.replace(/<LateStartDate>[^<]*<\/LateStartDate>/g, '<LateStartDate>NA</LateStartDate>')))],
+  ['MSPDI-fixture (onleesbare datums)', (r) => r.readMSPDI(MSPDI_FIXTURE.replace(/<Task>[\s\S]*?<\/Task>/g,
+    block => block.replace(/<(EarlyStart|LateStart)>[^<]*<\/\1>/g, '<$1>NA</$1>')))],
   ['CSV-fixture', (r) => r.readCSV(CSV_FIXTURE)],
   ['CSV-fixture (alleen datums)', (r) => r.readCSV(CSV_FIXTURE_DATES_ONLY)],
   ['CSV-fixture (onleesbare datums)', (r) => r.readCSV(CSV_FIXTURE_UNREADABLE_DATES)],
