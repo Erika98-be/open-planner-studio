@@ -7,9 +7,8 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version tag (e.g., v2026.43.0)'
+        description: 'Releasetag met v-prefix, gelijk aan de huidige projectversie'
         required: true
-        default: 'v0.1.0'
 
 # Minimale default; elke job hieronder zet zelf op wat hij écht nodig heeft
 # (`contents: write` voor de jobs die de release schrijven). Zonder deze regel

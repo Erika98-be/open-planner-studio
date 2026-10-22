@@ -427,12 +427,6 @@ en noem het in je rapport of PR-tekst.
 133. **Het venster *Werkelijke start opgeven* heeft geen ?-knop** (`ActualStartDialog.tsx:82`,
     `DialogHeader` zonder `help`). Het doel zou `howto-voortgang-bijwerken` zijn. — B
 
-174. **De handmatige release-invoer begint met een verouderde voorbeeldtag.**
-    `.github/workflows/release.yml:12` stelt een tag van vóór het huidige versieschema voor.
-    De versiecontrole wijst die invoer af; de standaardwaarde is dus niet bruikbaar. Gezien bij
-    de versie-audit voor #450. Voorstel: verwijder de standaardwaarde en laat de gebruiker een
-    correcte tag invullen. Geen workflow gestart. — B (bestand en lokale versiecontrole)
-
 176. **MSPDI: de projectstart wordt zonder XML-escaping geëxporteerd.** `mspdiWriter.ts` schrijft
     `project.startDate` rechtstreeks in `<StartDate>`; de reader neemt een tekstprefix uit het
     invoerveld over. Een ongeldige datum met XML-metatekens kan zo ongeldige XML opleveren. Gezien
