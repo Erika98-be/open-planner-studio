@@ -113,3 +113,13 @@ test('fetchAllReleases faalt hard op een niet-2xx-antwoord', async () => {
   const fetchImpl = async () => ({ ok: false, status: 403, text: async () => 'rate limit' });
   await assert.rejects(fetchAllReleases('o/r', { token: undefined, fetchImpl }), /GitHub API 403/);
 });
+
+// Assetherkenning mag geen maandbereik of klein patchnummer veronderstellen.
+test('weekversies tellen dezelfde assets en sorteren op publicatiedatum', () => {
+  const versions = ['2026.43.0', '2026.53.100', '2027.1.0'];
+  const stats = aggregate(versions.map((version, i) => release(`v${version}`, V2026_9_0.map(([name, count]) => [name.replaceAll('2026.9.0', version), count]), { published_at: `2027-01-0${i + 1}T00:00:00Z` })));
+  assert.deepEqual(stats.releases.map(item => item.tag), ['v2027.1.0', 'v2026.53.100', 'v2026.43.0']);
+  assert.equal(userDownloads(stats.totals.windows), 3 * 43);
+  assert.equal(userDownloads(stats.totals.linux), 3 * 19);
+  assert.deepEqual(stats.unknown, []);
+});

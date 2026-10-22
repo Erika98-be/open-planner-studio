@@ -19,7 +19,7 @@ import {
 // `run-ts.mjs` bundelt naar /tmp maar draait met de repo-root als cwd (net als verify-docs.ts).
 const OUTPUT = join(process.cwd(), 'public', 'release-highlights.json');
 
-/** CalVer `YYYY.M.patch`: numeriek segment-voor-segment, nieuwste eerst. */
+/** `JJJJ.W.N` en historische maandversies: numeriek segment-voor-segment, nieuwste eerst. */
 function compareVersionsDescending(a: string, b: string): number {
   const pa = a.split('.').map(Number);
   const pb = b.split('.').map(Number);

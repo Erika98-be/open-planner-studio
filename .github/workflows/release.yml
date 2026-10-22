@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version tag (e.g., v1.0.0)'
+        description: 'Version tag (e.g., v2026.43.0)'
         required: true
         default: 'v0.1.0'
 
@@ -115,15 +115,7 @@ jobs:
           fi
           # Strip de leidende 'v' (v2026.7.12 -> 2026.7.12).
           TAG_VERSION="${TAG_VERSION#v}"
-          PKG_VERSION="$(node -p "require('./package.json').version")"
-          TAURI_VERSION="$(node -p "require('./src-tauri/tauri.conf.json').version")"
-          echo "Tag (zonder v):     $TAG_VERSION"
-          echo "package.json:       $PKG_VERSION"
-          echo "tauri.conf.json:    $TAURI_VERSION"
-          if [ "$TAG_VERSION" != "$PKG_VERSION" ] || [ "$TAG_VERSION" != "$TAURI_VERSION" ]; then
-            echo "::error::Versie kloppendheid mislukt: tag=$TAG_VERSION package.json=$PKG_VERSION tauri.conf.json=$TAURI_VERSION — draai 'npm run bump <versie>' voor je tagt." >&2
-            exit 1
-          fi
+          node scripts/bump-version.js --check "$TAG_VERSION"
 
       # Vroege signalering: ontbreekt docs/release-notes/<tag>.md, dan valt de
       # release terug op de generieke tekst en blijft het updater-notes-veld
@@ -194,7 +186,7 @@ jobs:
               ;;
           esac
           if ! printf '%s' "$VERSION" | grep -qE '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
-            echo "::error::Versie '$VERSION' heeft niet de vorm vX.Y.Z." >&2
+            echo "::error::Versie '$VERSION' heeft niet de vorm vJJJJ.W.N." >&2
             exit 1
           fi
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
