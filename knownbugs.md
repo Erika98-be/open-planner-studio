@@ -161,9 +161,6 @@ en noem het in je rapport of PR-tekst.
     vergelijking. Symbolische links worden ook niet opgelost. Afgeleid uit de code door de review van #336,
     niet op een Mac nagespeeld. — S
 
-125. **De eerste bibliotheek heet hardgecodeerd "Mijn resourcebibliotheek"**, ook in de Engelse app
-    (`types/library.ts:63`). Ook de terugvalnamen "Nieuwe resourcebibliotheek" (`librarySlice.ts:414`,
-    `libraryOps.ts:463`). Valt buiten 29. — B
 126. **Updatevenster: de tekst *Bezig met installeren…* is niet te bereiken.** De balk met
     `updates.installing` staat achter `isDownloading` (`status.kind === 'downloading'`), terwijl de tekst
     `isReadyToInstall` (`'readyToInstall'`) vraagt (`UpdateDialog.tsx:125-128,205-208`). Na de download springt
