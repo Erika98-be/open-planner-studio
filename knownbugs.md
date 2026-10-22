@@ -400,27 +400,6 @@ en noem het in je rapport of PR-tekst.
     eenduidig van de root afleiden. Niet opgelost in de fix van 119.
     — B (scopemismatch in de code), S (gemelde gevolgen, geen schone baselinevergelijking)
 
-191. **CI herstelt trage APT-pakketdownloads niet na een geslaagde indexupdate.**
-    `.github/workflows/ci.yml`, stap *Install dependencies (Ubuntu only)*: de officiële
-    archieffallback staat alleen in het foutpad van `apt-get update`. Bevestigd in
-    [PR #518, run 39833286779, job 120015771225](https://github.com/OpenAEC-Foundation/open-planner-studio/actions/runs/39833286779/job/120015771225)
-    op head `005505135af4832009df83735eaa33ae4a057ce6`, Ubuntu-image `20261012.322.1`.
-    Log `/tmp/ops-518-linux-failed.log`: de stap begint 22-10-2026 18:41:55 UTC;
-    update slaagt (13,5 MB in 6 s), installatie begint 18:42:10 en blijft tot `Get:58`
-    via `azure.archive.ubuntu.com` kleine pakketten ophalen. Om 18:47:10.495 stuurt
-    `timeout` TERM; de stap eindigt expliciet met exit 1 vóór `npm ci` en de build.
-    De begrenzing uit #515 werkt; dit is geen aangetoonde codefout van #518. De
-    downloadroute krijgt alleen geen herstelkans. Voorstel: officiële archiefbron
-    vóór installatie kiezen of uitsluitend downloads begrensd herstellen, zonder
-    een mogelijk onderbroken dpkg-installatie opnieuw te starten. Niet lokaal
-    uitgevoerd; bevestigd door de echte CI-logs en de workflow. Tweede geval:
-    [PR #520, run 39833825928, job 120017160413](https://github.com/OpenAEC-Foundation/open-planner-studio/actions/runs/39833825928/job/120017160413)
-    op head `859ab6b3e8f93e09ba9413262f49acb608c926f3`, dezelfde Ubuntu-image.
-    Log `/tmp/ops-520-linux-failed.log`: update slaagt; `Get:63`–`Get:67` blijven
-    18:49:46–18:49:54 UTC via Azure lopen, om 18:49:56.964 volgt TERM en exit 1;
-    `npm ci` en build zijn overgeslagen. De 15 s datatime-out voorkomt deze trage
-    voortgang niet. — B
-
 ## Wensen en open taken (geen bug)
 
 45. **Extensie-API**: extensies kunnen geen relatie of kalender gericht wijzigen en de selectie niet lezen.
