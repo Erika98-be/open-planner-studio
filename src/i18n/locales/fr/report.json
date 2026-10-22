@@ -135,7 +135,7 @@
   "barColorMode_auto": "Par tâche — automatique",
   "barColorMode_category": "Par catégorie",
   "barColorFieldLabel": "Champ de catégorie",
-  "barColorMissingField": "Ce champ n’existe pas dans ce projet. Le type de tâche est utilisé temporairement.",
+  "barColorMissingField": "Ce champ n’existe pas dans ce projet. La catégorie de travaux est utilisée temporairement.",
   "statusLineLabel": "Ligne d’état :",
   "statusLine_none": "Aucune",
   "statusLine_statusDate": "Ligne de date d’état",

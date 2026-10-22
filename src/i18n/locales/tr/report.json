@@ -132,7 +132,7 @@
   "barColorMode_auto": "Görev başına — otomatik",
   "barColorMode_category": "Kategoriye göre",
   "barColorFieldLabel": "Kategori alanı",
-  "barColorMissingField": "Bu alan bu projede yok. Geçici olarak görev türü kullanılıyor.",
+  "barColorMissingField": "Bu alan bu projede yok. Geçici olarak iş kategorisi kullanılıyor.",
   "statusLineLabel": "Durum çizgisi:",
   "statusLine_none": "Yok",
   "statusLine_statusDate": "Durum tarihi çizgisi",

@@ -10,6 +10,11 @@ Er zijn twee onderdelen:
 - `.github/workflows/release-verify.yml` installeert en start de app op schone GitHub-runners en
   controleert de platformhandtekeningen. Die workflow draait ook `verify-release.mjs`.
 
+`release.yml` draait `verify-release.mjs` ook vlak vóór publicatie, op de draft (`--draft-id <release-id>`).
+Faalt daar een controle, dan blijft de release een draft en publiceert niets. In die modus haalt het script
+de release op id op (de tags-route van de API kent geen drafts), eist het dat het een draft met die tag en
+geen prerelease is, en behandelt het de draft als de nieuwste release: bij publicatie wordt hij dat.
+
 ## Wat elke controle doet
 
 ### `verify-release.mjs` (elk platform)

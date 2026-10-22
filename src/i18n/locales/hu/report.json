@@ -132,7 +132,7 @@
   "barColorMode_auto": "Tevékenységenként — automatikus",
   "barColorMode_category": "Kategória szerint",
   "barColorFieldLabel": "Kategóriamező",
-  "barColorMissingField": "Ez a mező nincs ebben a projektben. Ideiglenesen a tevékenységtípus használatos.",
+  "barColorMissingField": "Ez a mező nincs ebben a projektben. Ideiglenesen a munkanem használatos.",
   "statusLineLabel": "Előrehaladássor:",
   "statusLine_none": "Nincs",
   "statusLine_statusDate": "Állapotdátum-vonal",

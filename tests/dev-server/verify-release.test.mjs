@@ -12,7 +12,9 @@ import {
   parsePublicKey,
   renderReport,
   checkUpdaterUrl,
+  draftError,
   EXPECTED_PLATFORMS,
+  parseArgs,
   pubDateError,
   tarGzEntryNames,
   verifyMinisign,
@@ -342,4 +344,23 @@ test('evaluateRelease: .sig, latest.json en digest, met precies de verwachte FOU
 test('renderReport escapet backslash en pipe, zodat een detail de tabel niet breekt', () => {
   const md = renderReport({ tag: 'v0', repo: 'x/y', keyId: 'AA', rows: [{ group: 'g', item: 'C:\\pad|x', status: 'OK', detail: 'a\\|b' }] });
   assert.match(md, /\| C:\\\\pad\\\|x \| OK \| a\\\\\\\|b \|/);
+});
+
+test('--draft-id: alleen een positief geheel getal, en alleen samen met de tag', () => {
+  assert.equal(parseArgs(['v2026.10.0', '--draft-id', '123']).draftId, '123');
+  assert.equal(parseArgs(['v2026.10.0']).draftId, null);
+  assert.throws(() => parseArgs(['v2026.10.0', '--draft-id']), /ongeldig draft-id/);
+  assert.throws(() => parseArgs(['v2026.10.0', '--draft-id', 'abc']), /ongeldig draft-id/);
+  assert.throws(() => parseArgs(['v2026.10.0', '--draft-id', '0']), /ongeldig draft-id/);
+  assert.throws(() => parseArgs(['--draft-id', '123']), /vraagt ook de tag/);
+});
+
+test('draftError: alleen de bedoelde, nog niet gepubliceerde draft van deze tag is goed', () => {
+  const ok = { id: 123, draft: true, tag_name: 'v2026.10.0', prerelease: false };
+  const want = { tag: 'v2026.10.0', draftId: '123' };
+  assert.equal(draftError(ok, want), null);
+  assert.match(draftError({ ...ok, id: 124 }, want), /niet 123/);
+  assert.match(draftError({ ...ok, draft: false }, want), /geen draft/);
+  assert.match(draftError({ ...ok, tag_name: 'v2026.9.0' }, want), /heeft tag v2026\.9\.0/);
+  assert.match(draftError({ ...ok, prerelease: true }, want), /prerelease/);
 });

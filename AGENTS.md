@@ -79,6 +79,11 @@ GitHub Releases API; the workflow publishes the JSON weekly to the `stats` data 
 
 Node 22 (see CI). Rust stable only for the `tauri:*` commands.
 
+Workflows outside `verify` (depth: `ci-release` and `mcp` rules): `headless-api.yml` (HTTP API, container, `cfn-lint`),
+`release-verify.yml` (checks a published release on clean runners: updater `.sig`s, digests, install, signatures),
+`windows-sign-check.yml` / `macos-sign-check.yml` (prove signing on a PR, without a tag), `mcp-real-app.yml` (MCP
+bridge tests against the real Rust bridge). Docs: `docs/release-verificatie.md`, `docs/mcp-verificatie.md`.
+
 ## Testing pitfalls
 
 - **Judge every suite by its exit code.** Intermediate lines such as "alles groen" only cover their own part;

@@ -19,6 +19,15 @@ async function setupLinkedProject(page: import('@playwright/test').Page): Promis
 
 test('resource panel: reset op mount maar niet na een handmatige weergavekeuze', async ({ page, ops: _ops }) => {
   await setupLinkedProject(page);
+  // Knownbug 44: ook een gevulde bibliotheek maakt Bibliotheek niet de standaardweergave.
+  await page.evaluate(() => {
+    const s = window.__OPS__!.store.getState();
+    s.addPoolResource(s.project.companyId!, { name: 'Bibliotheekploeg', type: 'LABOR', description: '', maxUnits: 2 });
+  });
+  await expect.poll(() => page.evaluate(() => {
+    const s = window.__OPS__!.store.getState();
+    return s.pools[s.project.companyId!].resources.length;
+  })).toBe(1);
   await page.getByTitle(/Open the full resource panel|volledige resourcepaneel/i).click();
   await expect.poll(() => page.evaluate(() => window.__OPS__!.store.getState().ui.resourcesView))
     .toBe('project');

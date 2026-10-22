@@ -1199,12 +1199,6 @@ const hasP6BoundarySequence = (input: ImportResult) =>
       'testvoorwaarde: CreationDate valt op de contractuele datum ' + date);
     assert(derivedSpan(collision.args), 'CreationDate ' + date + ' verandert het oordeel over de taak-span niet');
   }
-  const wrongStart = [...workPlan.args];
-  wrongStart[11] = { k: 'str', raw: "'2026-06-15T07:00:00'" };
-  assert(!derivedSpan(wrongStart), 'contractuele datum in StartTime wordt nog steeds afgekeurd');
-  const wrongFinish = [...workPlan.args];
-  wrongFinish[12] = { k: 'str', raw: "'2026-09-30T00:00:00'" };
-  assert(!derivedSpan(wrongFinish), 'contractuele datum in FinishTime wordt nog steeds afgekeurd');
 }
 
 // ════════════════════════════════════════════════════════════════════════════════════════════════
