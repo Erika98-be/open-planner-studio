@@ -129,11 +129,11 @@ export interface SchedulingOptions {
   nearCriticalThreshold?: number;
   /** Multiple float paths. Afwezig ⇒ uit. */
   floatPaths?: { enabled: boolean; method: 'FREE_FLOAT' | 'TOTAL_FLOAT'; maxPaths: number };
-  /** A22 — MS Project hervat het restwerk van een lopende taak niet op `max(statusDate,
-   *  voorgangerdruk)` (P6 RETAINED_LOGIC, de voortgangstak van `CPMSolver.ts`) maar op `actualStart +
-   *  reeds verstreken duur` (`scheduleDuration`/`durationMinutes` − rest, via dezelfde werk-optelling
-   *  als het restwerk): een derde, uitsluitend verhogende vloer. Uit ⇒ het P6-gedrag dat
-   *  `cases-progress.json` (Scenario A/B/C) bewaakt.
+  /** A22 — MS Project gebruikt de werkelijke start plus de reeds verstreken duur
+   *  (`scheduleDuration`/`durationMinutes` − rest, via dezelfde werk-optelling als het restwerk)
+   *  als extra ondergrens voor het restwerk van een lopende taak, naast de statusdatum en de
+   *  voorgangerdruk. De laatste van de drie geldt: de extra grens kan de hervatting alleen later
+   *  zetten. Uit ⇒ het P6-gedrag dat `cases-progress.json` (Scenario A/B/C) bewaakt.
    *  MS Project aan (het profiel van elke `.mpp`-import) / P6 uit / OPS uit. */
   resumeFromActualElapsed?: boolean;
   /** A23 — MS Project verschuift een niet-gestarte taak (`completion === 0`) niet naar op-of-ná de

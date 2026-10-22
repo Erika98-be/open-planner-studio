@@ -335,9 +335,6 @@ en noem het in je rapport of PR-tekst.
 
 ## Teksten en helpteksten
 
-40. **Helptekst *Restwerk hervat na de al verstreken duur*** zegt in alle talen "niet op de statusdatum";
-    de statusdatum blijft ook een ondergrens. Idem codecommentaar `CPMSolver.ts` ~2367, `types/project.ts`
-    ~128. — B
 41. **Intro *Instellingen uit het bronbestand*** zegt "uit een .xer"; verschijnt ook bij *Nieuw project* met
     Primavera P6. — B
 42. **Helpteksten van enkele conventies** noemen hun voorwaarden niet (alleen urenkalender, alleen
