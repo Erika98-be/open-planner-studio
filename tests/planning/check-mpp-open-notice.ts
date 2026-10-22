@@ -101,6 +101,27 @@ interface Fixture {
   /** Ontbrekend: primaire kaarten; `without-costs` bewaart bedragen op de terugvalposities als lokval. */
   fieldMaps?: 'absent' | 'primary' | 'secondary' | 'without-costs';
   resourceRates?: { standard?: number; overtime?: number; perUse?: number };
+  resourceRecords?: Uint8Array[];
+  resourceVarsByUid?: Record<number, Record<number, Uint8Array>>;
+  resourceMap?: Uint8Array;
+}
+
+/** Schrijf eerst volledige velden en kort daarna af: gedeeltelijke DOUBLEs houden echte bytes. */
+function resourceRecord(options: {
+  length: number; uid?: number; uidOffset?: number; maxUnitsOffset?: number | null; maxUnits?: number;
+  rates?: Fixture['resourceRates']; rateOffsets?: readonly number[];
+}): Uint8Array {
+  const uidOffset = options.uidOffset ?? 0;
+  const maxUnitsOffset = options.maxUnitsOffset === undefined ? 44 : options.maxUnitsOffset;
+  const rateOffsets = options.rateOffsets ?? [28, 36, 84];
+  const out = new Uint8Array(Math.max(options.length, uidOffset + 4, (maxUnitsOffset ?? 0) + 8, ...rateOffsets.map(offset => offset + 8)));
+  const view = new DataView(out.buffer);
+  view.setInt32(uidOffset, options.uid ?? 1, true);
+  if (maxUnitsOffset !== null) view.setFloat64(maxUnitsOffset, (options.maxUnits ?? 1) * 10000, true);
+  [options.rates?.standard, options.rates?.overtime, options.rates?.perUse].forEach((rate, i) => {
+    view.setFloat64(rateOffsets[i], rate ?? 0, true);
+  });
+  return out.subarray(0, options.length);
 }
 
 const RECORD = 168;
@@ -131,18 +152,19 @@ function buildMpp(fx: Fixture): Uint8Array {
   fx.tasks.forEach((_, i) => mv.setInt32(16 + (3 + i) * TASK_META_ITEM + 4, i * RECORD, true));
   const taskVars = varBlocks(Object.fromEntries(fx.tasks.map(task => [task.uid, { 14: utf16(task.name), ...(task.vars ?? {}) }])));
 
-  // Eén resource (uid 1): record met uid @0 (SHORT) en MaxUnits @44.
-  const rscRecord = new Uint8Array(96);
-  new DataView(rscRecord.buffer).setInt16(0, 1, true);
-  new DataView(rscRecord.buffer).setFloat64(44, 10000, true);
-  const rateOffsets = defaultLayout ? [28, 36, 84] : [8, 16, 24];
-  [fx.resourceRates?.standard, fx.resourceRates?.overtime, fx.resourceRates?.perUse].forEach((rate, i) => {
-    new DataView(rscRecord.buffer).setFloat64(rateOffsets[i], rate ?? 0, true);
+  // Standaard één resource; grensgevallen kunnen korte en dubbele FixedData-records aanbieden.
+  const rscRecords = fx.resourceRecords ?? [resourceRecord({
+    length: 96, rates: fx.resourceRates, rateOffsets: defaultLayout ? [28, 36, 84] : [8, 16, 24],
+  })];
+  const rscMeta = new Uint8Array(16 + rscRecords.length * RESOURCE_META_ITEM);
+  const rmv = new DataView(rscMeta.buffer);
+  rmv.setUint32(0, 0xfadfadba, true); rmv.setInt32(8, rscRecords.length, true);
+  let resourceOffset = 0;
+  rscRecords.forEach((record, i) => {
+    rmv.setInt32(16 + i * RESOURCE_META_ITEM + 4, resourceOffset, true);
+    resourceOffset += record.length;
   });
-  const rscMeta = new Uint8Array(16 + RESOURCE_META_ITEM);
-  new DataView(rscMeta.buffer).setUint32(0, 0xfadfadba, true);
-  new DataView(rscMeta.buffer).setInt32(8, 1, true);
-  const rscVars = varBlocks({ 1: { 1: utf16('Timmerman'), ...fx.resourceVars } });
+  const rscVars = varBlocks(fx.resourceVarsByUid ?? { 1: { 1: utf16('Timmerman'), ...fx.resourceVars } });
   // Toewijzingen: FixedMeta (34 bytes/item, byte 0 = verwijderd, offset @4) en FixedData (110 bytes/record:
   // uid @0, taak @4, resource @8, eenheden @46), zoals `readAssignments` ze leest.
   const asnMeta = new Uint8Array(16 + fx.assignments.length * ASSIGNMENT_META_ITEM);
@@ -166,7 +188,7 @@ function buildMpp(fx: Fixture): Uint8Array {
     { key: 37748744, data: utf16('Verslag') },
     ...(fx.fieldMaps === 'absent' ? [] : [
       { key: fx.fieldMaps === 'secondary' ? 50331668 : 131092, data: taskFieldMap(fx.fieldMaps !== 'without-costs') },
-      { key: fx.fieldMaps === 'secondary' ? 50331669 : 131093, data: resourceFieldMap(fx.fieldMaps !== 'without-costs') },
+      { key: fx.fieldMaps === 'secondary' ? 50331669 : 131093, data: fx.resourceMap ?? resourceFieldMap(fx.fieldMaps !== 'without-costs') },
     ]),
     ...(fx.criticalSlackLimit !== undefined ? [{ key: 37748756, data: int32(fx.criticalSlackLimit) }] : []),
   ]);
@@ -181,7 +203,7 @@ function buildMpp(fx: Fixture): Uint8Array {
           VarMeta: { data: taskVars.meta }, Var2Data: { data: taskVars.data },
         } },
         TBkndRsc: { children: {
-          FixedMeta: { data: rscMeta }, FixedData: { data: rscRecord },
+          FixedMeta: { data: rscMeta }, FixedData: { data: concatBytes(...rscRecords) },
           VarMeta: { data: rscVars.meta }, Var2Data: { data: rscVars.data },
         } },
         TBkndAssn: { children: {
@@ -353,6 +375,87 @@ async function main(): Promise<void> {
     fieldMaps: 'absent', resourceRates: { standard: 55, overtime: 75, perUse: 10 },
   });
   eq('6 vaste tarieven en tarieftabel tellen dezelfde resource één keer', bothRates.msProjectReport?.resourceRates, 1);
+
+  // (6b) #155 review: de reader selecteert default-records al vanaf 52 bytes; tarieven worden
+  // daarna per volledig beschikbaar DOUBLE-veld geteld. Controleer de import en het verslag samen.
+  async function checkResources(
+    label: string, records: Uint8Array[], rates: number, maxUnits: number[], resourceMap?: Uint8Array, uids = [1],
+  ): Promise<void> {
+    const result = await readFixture({
+      tasks: [{ uid: 10, name: 'Fundering' }], assignments: [], resourceVars: {},
+      fieldMaps: resourceMap ? 'primary' : 'absent', resourceMap, resourceRecords: records,
+      resourceVarsByUid: Object.fromEntries(uids.map(uid => [uid, { 1: utf16(`Resource ${uid}`) }])),
+    });
+    eq(`6b ${label}: geselecteerde resources`, result.resources.map(resource => resource.maxUnits), maxUnits);
+    eq(`6b ${label}: tariefverlies`, result.msProjectReport?.resourceRates ?? 0, rates);
+    if (rates === 0) eq(`6b ${label}: geen verliesmelding`, result.msProjectReport, undefined);
+  }
+  const rateCases: [string, Fixture['resourceRates']][] = [
+    ['nul', { standard: 0, overtime: 0, perUse: 0 }], ['min nul', { standard: -0, overtime: -0, perUse: -0 }],
+    ['standaardtarief', { standard: 55 }], ['overwerktarief', { overtime: 75 }], ['gebruikskosten', { perUse: 10 }],
+  ];
+  for (const length of [52, 91, 92]) for (const [label, rates] of rateCases) {
+    const expected = label === 'standaardtarief' || label === 'overwerktarief' || (label === 'gebruikskosten' && length === 92) ? 1 : 0;
+    await checkResources(`${length} bytes ${label}`, [resourceRecord({ length, rates })], expected, [1]);
+  }
+  await checkResources('geen FixedData-records', [], 0, []);
+  await checkResources('51 bytes is geen volledige resource', [resourceRecord({ length: 51, rates: { standard: 55 } })], 0, []);
+  await checkResources('plaatshouder vóór kort volledig record', [
+    resourceRecord({ length: 16 }), resourceRecord({ length: 52, maxUnits: 2, rates: { standard: 55 } }),
+  ], 1, [2]);
+  await checkResources('onvolledige MAX_UNITS claimt geen UID', [
+    resourceRecord({ length: 51, rates: { standard: 55 } }), resourceRecord({ length: 52, maxUnits: 2 }),
+  ], 0, [2]);
+  await checkResources('eerste volledig record met nultarief wint', [
+    resourceRecord({ length: 52 }), resourceRecord({ length: 92, maxUnits: 2, rates: { standard: 55 } }),
+  ], 0, [1]);
+  await checkResources('eerste volledig record met tarief wint', [
+    resourceRecord({ length: 52, rates: { standard: 55 } }), resourceRecord({ length: 92, maxUnits: 2 }),
+  ], 1, [1]);
+  await checkResources('UID 0 behoudt de korte sentinel', [
+    resourceRecord({ length: 2, uid: 0 }), resourceRecord({ length: 92, uid: 0, rates: { standard: 55 } }),
+  ], 0, [1], undefined, [0]);
+  await checkResources('record zonder VarMeta-resource telt niet', [
+    resourceRecord({ length: 92, uid: 2, rates: { standard: 55 } }), resourceRecord({ length: 52 }),
+  ], 0, [1]);
+  await checkResources('VarMeta-resource zonder overeenkomstig record telt niet', [
+    resourceRecord({ length: 92, uid: 2, rates: { standard: 55 } }),
+  ], 0, []);
+  await checkResources('eerste-wint geldt per resource', [
+    resourceRecord({ length: 52, rates: { standard: 55 } }), resourceRecord({ length: 92, uid: 2, rates: { perUse: 10 } }),
+  ], 2, [1, 1], undefined, [1, 2]);
+  await checkResources('een gedeeltelijk veld leest niet door in het volgende record', [
+    resourceRecord({ length: 91, rates: { perUse: 10 } }), resourceRecord({ length: 52, uid: 2 }),
+  ], 0, [1, 1], undefined, [1, 2]);
+
+  // Bij een kortere opgegeven layout kunnen ook standaard-/overwerktarieven gedeeltelijk zijn.
+  const smallResourceMap = fieldMap([[27, 0], [4, 8], [6, 28], [7, 36], [18, 84], [1, 65535]]);
+  for (const [field, end] of [['standard', 36], ['overtime', 44], ['perUse', 92]] as const) {
+    for (const length of [end - 1, end]) {
+      await checkResources(`${field}: ${length}/${end} bytes`, [
+        resourceRecord({ length, maxUnitsOffset: 8, rates: { [field]: 55 } }),
+      ], length === end ? 1 : 0, [1], smallResourceMap);
+    }
+  }
+  const lateUnitsMap = fieldMap([[27, 0], [6, 28], [7, 36], [4, 72], [18, 84], [1, 65535]]);
+  for (const length of [79, 80]) {
+    await checkResources(`opgegeven MAX_UNITS-grens ${length}/80`, [
+      resourceRecord({ length, maxUnitsOffset: 72, rates: { standard: 55 } }),
+    ], length === 80 ? 1 : 0, length === 80 ? [1] : [], lateUnitsMap);
+  }
+  const lateUidMap = fieldMap([[6, 28], [7, 36], [4, 44], [27, 60], [18, 84], [1, 65535]]);
+  for (const length of [61, 62]) {
+    await checkResources(`opgegeven SHORT-UID-grens ${length}/62`, [
+      resourceRecord({ length, uidOffset: 60, rates: { standard: 55 } }),
+    ], length === 62 ? 1 : 0, length === 62 ? [1] : [], lateUidMap);
+  }
+  const noUnitsMap = fieldMap([[27, 0], [6, 28], [7, 36], [18, 84], [1, 65535]]);
+  await checkResources('ontbrekende MAX_UNITS vereist geen 52 bytes', [
+    resourceRecord({ length: 36, maxUnitsOffset: null, rates: { standard: 55 } }),
+  ], 1, [1], noUnitsMap);
+  await checkResources('zonder MAX_UNITS wint het eerste record met volledige UID', [
+    resourceRecord({ length: 2, maxUnitsOffset: null }), resourceRecord({ length: 92, rates: { standard: 55 } }),
+  ], 0, [1], noUnitsMap);
 
   // (7) #158: alle datumvelden gebruiken de datumdecoder, inclusief gemengde 00/FF-sentinels.
   // Alle baselines samen leeg aanbieden vangt ook één vergeten veld in de classificatie.

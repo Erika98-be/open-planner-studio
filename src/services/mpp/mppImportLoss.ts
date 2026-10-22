@@ -256,21 +256,25 @@ export function scanMppImportLoss(input: MppImportLossInput): MsProjectImportRep
       const offsets = [ResourceFieldId.StandardRate, ResourceFieldId.OvertimeRate, ResourceFieldId.CostPerUse]
         .map(field => fixedOffsetOf(input.resourceFieldMap, field));
       const uidOffset = fixedOffsetOf(input.resourceFieldMap, ResourceFieldId.UniqueId);
+      const maxUnitsOffset = fixedOffsetOf(input.resourceFieldMap, ResourceFieldId.MaxUnits);
       const metaBytes = input.cfb.getStream(['   114', 'TBkndRsc', 'FixedMeta']);
       const dataBytes = input.cfb.getStream(['   114', 'TBkndRsc', 'FixedData']);
       if (uidOffset === null || !metaBytes || !dataBytes) return;
       const meta = FixedMeta.withItemSize(metaBytes, RESOURCE_FIXED_META_ITEM_SIZE, 'TBkndRsc/FixedMeta');
       const data = FixedData.fromMeta(meta, dataBytes, 0, 0, 'TBkndRsc/FixedData');
-      const minLength = Math.max(uidOffset + 2, ...offsets.map(offset => (offset ?? 0) + 8));
+      // Dezelfde selectie als `readResources`: UID en optionele MAX_UNITS moeten passen, behalve
+      // bij de ondersteunde UID-0-sentinel. Tariefvelden bepalen de recordselectie niet.
+      const minLength = Math.max(uidOffset + 2, maxUnitsOffset === null ? 0 : maxUnitsOffset + 8);
       const seen = new Set<number>();
       for (let index = 0; index < meta.getAdjustedItemCount(); index++) {
         const item = data.getByteArrayValue(index);
-        // Een kort plaatshoudersrecord (16 bytes) telt niet mee: MPXJ's `createResourceMap` slaat
-        // records korter dan de volle maat over. Daarna: SHORT op de uid-offset, eerste wint.
-        if (!item || item.length < minLength) continue;
+        if (!item || item.length < uidOffset + 2) continue;
         const uid = getShort(item, uidOffset);
+        if (uid !== 0 && item.length < minLength) continue;
         if (seen.has(uid) || !input.resourceUniqueIds.has(uid)) continue;
         seen.add(uid);
+        // Een geselecteerd kort record kan al een volledig tarief dragen. Ontbrekende of slechts
+        // gedeeltelijk aanwezige DOUBLE-velden geven via `doubleAt` afzonderlijk 0.
         if (offsets.some(offset => doubleAt(item, offset) !== 0)) rateLost.add(uid);
       }
     });
