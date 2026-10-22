@@ -6,7 +6,7 @@
 // de datums en duur van Baseline 0 van een taak (bij een urentaak met tijdstip), taak- en resourcekalenders, deadlines, `CriticalSlackLimit`, constraints, het
 // standaardtarief (`<StandardRate>` → kostprijs per uur) en de onderbrekingen uit `<TimephasedData>`.
 // Terugkerende taken tellen bewust niet: MS Project schrijft de keren als gewone subtaken mee.
-import { directChildText } from '@/services/xmlDom';
+import { directChildText, toInt } from '@/services/xmlDom';
 import { DAY_TIME_ANCHOR } from '@/services/xmlInterchange';
 import { emptyMsProjectImportReport, type MsProjectImportReport } from '@/services/importTypes';
 
@@ -92,13 +92,14 @@ export function scanMspdiImportLoss(root: Element, isConsumed: ConsumedExtendedA
    * zone-omrekening en dus los van de systeemtijdzone; review ronde 3 en 4 #392), of `undefined`.
    */
   const baseline0Dates = (el: Element): { start?: string; finish?: string } | undefined => {
-    const baseline = directChildren(el, 'Baseline').find(b => directChildText(b, 'Number') === '0');
+    // Dezelfde numerieke lezing als `getElementInt` in de reader: ook `00` is Baseline 0.
+    const baseline = directChildren(el, 'Baseline').find(b => toInt(directChildText(b, 'Number'), -1) === 0);
     if (!baseline) return undefined;
     const at = (tag: string) => mspdiWallClock(directChildText(baseline, tag));
     return { start: at('Start'), finish: at('Finish') };
   };
   /** Baseline 0-datums per taak-UID: die komen WEL over (de taakbaseline van de lezer). */
-  const taskBaseline0 = new Map<string, { start?: string; finish?: string }>();
+  const taskBaseline0 = new Map<number, { start?: string; finish?: string }>();
 
   const hasHyperlink = (el: Element) => ['Hyperlink', 'HyperlinkAddress', 'HyperlinkSubAddress']
     .some(tag => directChildText(el, tag) !== '');
@@ -129,7 +130,7 @@ export function scanMspdiImportLoss(root: Element, isConsumed: ConsumedExtendedA
 
     collectBaselines(task);
     const taskDates = baseline0Dates(task);
-    if (taskDates) taskBaseline0.set(String(uid), taskDates);
+    if (taskDates) taskBaseline0.set(uid, taskDates);
     collectExtendedAttributes(task);
     if (hasHyperlink(task)) report.hyperlinks++;
     // `<FixedCost>`: de lezer leest geen kosten.
@@ -161,6 +162,9 @@ export function scanMspdiImportLoss(root: Element, isConsumed: ConsumedExtendedA
     const rateLost = nonZero(directChildText(resource, 'OvertimeRate'))
       || nonZero(directChildText(resource, 'CostPerUse'))
       || tableA.length > 1
+      // Ook één record in tabel A kan een overwerktarief of gebruikskosten bevatten die verloren gaan.
+      || tableA.some(rate => ['OvertimeRate', 'CostPerUse']
+        .some(tag => nonZero(directChildText(rate, tag))))
       || otherTables.some(rate => ['StandardRate', 'OvertimeRate', 'CostPerUse']
         .some(tag => nonZero(directChildText(rate, tag))));
     if (rateLost) report.resourceRates++;
@@ -175,7 +179,8 @@ export function scanMspdiImportLoss(root: Element, isConsumed: ConsumedExtendedA
     // bestand met een baseline een melding).
     const own = baseline0Dates(assignment);
     if (own) {
-      const ofTask = taskBaseline0.get(directChildText(assignment, 'TaskUID'));
+      // De reader koppelt numeriek: `TaskUID` 01 verwijst naar taak 1.
+      const ofTask = taskBaseline0.get(toInt(directChildText(assignment, 'TaskUID'), -1));
       const differs = (['start', 'finish'] as const)
         .some(key => own[key] !== undefined && own[key] !== ofTask?.[key]);
       if (differs) report.assignmentBaselineDates++;

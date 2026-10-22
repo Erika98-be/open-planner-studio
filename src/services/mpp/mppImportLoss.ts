@@ -103,34 +103,68 @@ function hasValue(bytes: Uint8Array | null): boolean {
  */
 export function rtfHasVisibleText(bytes: Uint8Array): boolean {
   let text = '';
-  for (let i = 0; i < bytes.length && i < MAX_NOTE_BYTES && bytes[i] !== 0; i++) text += String.fromCharCode(bytes[i]);
-  if (!text.startsWith('{\\rtf')) return text.trim() !== '';
+  // Eén byte per teken: ook nulbytes kunnen binnen een `\binN`-payload vallen.
+  for (let i = 0; i < bytes.length && i < MAX_NOTE_BYTES; i++) text += String.fromCharCode(bytes[i]);
+  if (!/^\{[\r\n]*\\rtf/.test(text)) {
+    const end = text.indexOf('\0');
+    return (end < 0 ? text : text.slice(0, end)).trim() !== '';
+  }
   const SKIP = new Set(['fonttbl', 'colortbl', 'stylesheet', 'info', 'generator', 'listtable', 'listoverridetable']);
   const skipStack: boolean[] = [];
   let skip = false;
+  let destination: 'start' | 'starred' | 'body' = 'body';
   for (let i = 0; i < text.length; i++) {
     const c = text[i];
+    // CR/LF zijn geen teksttokens; een nulbyte is alleen buiten binaire payload de terminator.
+    if (c === '\0') break;
+    if (c === '\r' || c === '\n') continue;
     if (c === '{') {
+      if (destination === 'starred') skip = true;
       skipStack.push(skip);
-      const word = /^\{\\(?:\*\s*\\)?([a-z]+)/.exec(text.slice(i, i + 40))?.[1];
-      // Alleen een echte groepsbestemming telt: `\\pict` is tekst, en ook een echte `\pict` binnen
-      // metadata blijft verborgen. Escapes worden hieronder door de tokenizer overgeslagen.
-      if (!skip && (word === 'pict' || word === 'object')) return true;
-      // Word/RichEdit gebruikt `{\*\shppict{\pict …}}`. Deze wrapper heft een geërfde skip niet op.
-      if ((text.startsWith('{\\*', i) && word !== 'shppict' && word !== 'nonshppict') || (word && SKIP.has(word))) skip = true;
+      destination = 'start';
     } else if (c === '}') {
       skip = skipStack.pop() ?? false;
+      destination = 'body';
     } else if (c === '\\') {
       const next = text[i + 1];
-      if (next === "'") { if (!skip) return true; i += 3; continue; }
-      if (next === '\\' || next === '{' || next === '}') { if (!skip) return true; i++; continue; }
+      if (next === '*' && destination !== 'body') {
+        destination = 'starred';
+        i++;
+        continue;
+      }
       const m = /^\\([a-z]+)(-?\d+)? ?/.exec(text.slice(i, i + 40));
-      // `\uN` is één Unicode-teken (`\uc0` en `\ucN` zijn alleen een instelling).
-      if (m && m[1] === 'u' && m[2] !== undefined && !skip) return true;
-      if (m) i += m[0].length - 1;
-      else i++;
-    } else if (!skip && !/\s/.test(c)) {
-      return true;
+      if (m) {
+        const word = m[1];
+        if (destination !== 'body') {
+          // De eerste controlwoordtoken bepaalt de bestemming, ook na CR/LF of `\*`.
+          // Geërfde metadata blijft verborgen; `\\pict` wordt hieronder als tekstescape verwerkt.
+          if (!skip && (word === 'pict' || word === 'object')) return true;
+          // Word/RichEdit gebruikt `{\*\shppict{\pict …}}`; deze wrapper heft een geërfde skip niet op.
+          if (SKIP.has(word) || (destination === 'starred' && word !== 'shppict' && word !== 'nonshppict')) skip = true;
+        }
+        destination = 'body';
+        // `\uN` is één Unicode-teken (`\uc0` en `\ucN` zijn alleen een instelling).
+        if (word === 'u' && m[2] !== undefined && !skip) return true;
+        i += m[0].length - 1;
+        if (word === 'bin' && m[2] !== undefined) {
+          // Ruwe bytes zijn geen tokens, ook niet in overgeslagen bestemmingen. Accolades,
+          // backslashes, CR/LF en nulbytes in de payload veranderen dus geen groepsgrenzen.
+          i += Math.min(Math.max(0, Number(m[2])), text.length - i - 1);
+        }
+      } else {
+        if (destination === 'starred') skip = true;
+        destination = 'body';
+        if (next === "'") { if (!skip) return true; i += 3; continue; }
+        if (next === '\\' || next === '{' || next === '}') { if (!skip) return true; i++; continue; }
+        i++;
+      }
+    } else {
+      if (destination === 'starred') {
+        if (/\s/.test(c)) continue;
+        skip = true;
+      }
+      destination = 'body';
+      if (!skip && !/\s/.test(c)) return true;
     }
   }
   return false;

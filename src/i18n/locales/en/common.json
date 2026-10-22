@@ -1396,7 +1396,7 @@
     },
     "resumeFromActualElapsed": {
       "label": "Remaining work resumes after the elapsed duration",
-      "help": "An in-progress task resumes its remaining work at the actual start plus the elapsed duration, not at the status date."
+      "help": "An in-progress task resumes its remaining work no earlier than the actual start plus the elapsed duration. The status date and predecessor boundary remain lower limits; the latest of the three applies."
     },
     "unstartedIgnoresStatusDate": {
       "label": "Don't move unstarted tasks to the status date",

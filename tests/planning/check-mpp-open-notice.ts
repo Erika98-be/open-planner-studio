@@ -181,7 +181,8 @@ const EMPTY_NOTE = latin1('{\\rtf1\\ansi{\\fonttbl{\\f0 Arial;}}{\\*\\generator 
 
 /** Knownbug 159: de backslashes zijn ge-escapete tekst in verborgen metadata, geen afbeeldingen. */
 const METADATA_NOTE = latin1(String.raw`{\rtf1\ansi{\info{\title \\pict}{\comment {\\object}}}\par}`);
-const OBJECT_NOTE = latin1(String.raw`{\rtf1\ansi{\object\objemb{\*\objclass Package}{\*\objdata 0100}}\par}`);
+const OBJECT_NOTE = latin1('{\\rtf1\\ansi{\r\n\\object\\objemb{\\*\\objclass Package}{\\*\\objdata 0100}}\\par}');
+const BINARY_PICTURE_NOTE = latin1(String.raw`{\rtf1{\*\private\bin1 {}{\pict\pngblip 00}}`);
 
 const LOSSY: Fixture = {
   tasks: [
@@ -241,7 +242,8 @@ async function main(): Promise<void> {
 
   // Knownbug 159: groepsbestemmingen herkennen zonder escaped tekst of metadata als inhoud te tellen.
   eq('1f escaped pict/object in metadata', rtfHasVisibleText(METADATA_NOTE), false);
-  eq('1g alleen een ingesloten object', rtfHasVisibleText(OBJECT_NOTE), true);
+  eq('1g object met CR/LF vóór bestemming', rtfHasVisibleText(OBJECT_NOTE), true);
+  eq('1h afbeelding na binaire accolade in verborgen groep', rtfHasVisibleText(BINARY_PICTURE_NOTE), true);
   const noteCases: readonly [string, string, boolean][] = [
     ['oorspronkelijke title-repro', String.raw`{\rtf1{\info{\title \\pict}}\par}`, false],
     ['escaped object in titel', String.raw`{\rtf1{\info{\title \\object}}\par}`, false],
@@ -258,10 +260,24 @@ async function main(): Promise<void> {
     ['afbeelding na metadata', String.raw`{\rtf1{\info{\title \\pict}}{\*\shppict{\pict\pngblip 00}}\par}`, true],
     ['zichtbare tekst na metadata', String.raw`{\rtf1{\info{\title \\object}}Let op: wapening keuren\par}`, true],
     ['zichtbare letterlijke controlwoorden en accolades', String.raw`{\rtf1{\info{\title \\pict}}\\pict \\object \{tekst\}\par}`, true],
+    ['binaire sluitaccolade maakt verborgen tekst niet zichtbaar', String.raw`{\rtf1{\*\private\bin1 }verborgen}}`, false],
+    ['binaire backslash verbergt geen zichtbare tekst', String.raw`{\rtf1{\*\private\bin1 \}Zichtbaar\par}`, true],
+    ['binaire payload is geen pict-groep', String.raw`{\rtf1\bin7 {\pict}\par}`, false],
+    ['nulbytes in binaire payload verbergen geen afbeelding', String.raw`{\rtf1{\*\private\bin1 ${'\0'}}{\pict\pngblip 00}}`, true],
+    ['CR/LF tellen mee in binaire payload', String.raw`{\rtf1{\*\private\bin2 ${'\r\n'}}{\pict\pngblip 00}}`, true],
+    ['afgekapt bin-blok blijft ruwe payload', String.raw`{\rtf1\bin100 {\pict}}`, false],
+    ['lege binaire payload verbergt geen afbeelding', String.raw`{\rtf1{\*\private\bin0 }{\pict\pngblip 00}}`, true],
+    ['CR vóór object', String.raw`{\rtf1{${'\r'}\object\objemb{\*\objdata 00}}}`, true],
+    ['LF vóór object', String.raw`{\rtf1{${'\n'}\object\objemb{\*\objdata 00}}}`, true],
+    ['CR/LF vóór metadata en object blijft verborgen', String.raw`{\rtf1{${'\r\n'}\info{\title {${'\r\n'}\object\objemb{\*\objdata 00}}}}}`, false],
+    ['CR/LF rondom ster en afbeeldingsbestemming', String.raw`{\rtf1{${'\r\n'}\*${'\r\n'}\shppict{${'\r\n'}\pict\pngblip 00}}}`, true],
+    ['CR/LF vóór RTF-header en verborgen metadata', String.raw`{${'\r\n'}\rtf1{\info{\title \\pict}}}`, false],
+    ['RTF-terminator buiten binaire payload', String.raw`{\rtf1\par}${'\0'}{\pict\pngblip 00}`, false],
+    ['niet-RTF-terminator blijft gelden', '\0tekst na terminator', false],
     ['platte tekst met controlwoordnamen', String.raw`Controleer \pict en \object in de handleiding.`, true],
     ['lege niet-RTF-tekst', ' \t\r\n', false],
   ];
-  for (const [label, text, want] of noteCases) eq(`1h ${label}`, rtfHasVisibleText(latin1(text)), want);
+  for (const [label, text, want] of noteCases) eq(`1i ${label}`, rtfHasVisibleText(latin1(text)), want);
 
   // (2) Elke categorie: de telling uit de lezer.
   let parsed = await open('verslag.mpp', buildMpp(LOSSY));
@@ -316,11 +332,11 @@ async function main(): Promise<void> {
   eq('4e2 metadata: geen melding', msProjectImportNotice(resultsOf(parsed)), undefined);
   eq('4e3 metadata: geen melding in de store', S().ui.notifications.some(n => n.messageKey === 'notifications.msProjectImportLoss'), false);
 
-  // (4f) Naast metadata blijven zichtbare tekst, een echte afbeelding en een object wel verlies.
+  // (4f) Gedeelde tokenizer voor taak/resource/toewijzing: zichtbare tekst, bin-grenzen en CR/LF.
   parsed = await open('inhoud.mpp', buildMpp({
     ...metadataOnly,
     tasks: [...metadataOnly.tasks, { uid: 11, name: 'Metselwerk', vars: { 15: NOTE } }],
-    resourceVars: { 20: latin1(String.raw`{\rtf1{\*\shppict{\pict\pngblip 00}}\par}`) },
+    resourceVars: { 20: BINARY_PICTURE_NOTE },
     assignments: [{ uid: 1, vars: { 71: OBJECT_NOTE } }],
   }));
   const contentResult = activeImportResult(parsed);

@@ -168,14 +168,6 @@ en noem het in je rapport of PR-tekst.
     `updates.installing` staat achter `isDownloading` (`status.kind === 'downloading'`), terwijl de tekst
     `isReadyToInstall` (`'readyToInstall'`) vraagt (`UpdateDialog.tsx:125-128,205-208`). Na de download springt
     het venster naar *Herstarten…* (`:225-229`). Alleen in de code gezien. — S
-137. **De MCP-bridge antwoordt op een notificatie met `200` en een lege body, niet met `202 Accepted`.** De
-    MCP-spec (2025-06-18, Streamable HTTP) zegt: een geaccepteerde notificatie krijgt "MUST return HTTP status
-    code 202 Accepted with no body". `handleMcpMessage` geeft dan `''` (`dispatcher.ts`), en `forward_to_webview`
-    stuurt dat als `200 application/json` terug (`mcp_bridge.rs:331`). De officiële SDK-client (1.32.1), Claude
-    Code 2.1.306 en `mcp-remote` 0.15.2 accepteren het (gemeten met `tests/mcp/cases-externe-client.ts`); een
-    strikte client kan het weigeren. Gevolg bij de SDK: na `notifications/initialized` opent hij de GET-stream
-    niet (die is er ook niet, 405). Voorstel: in Rust bij een lege antwoordbody `202` zonder Content-Type, en
-    `bridgeMirror.ts` mee aanpassen. — B
 
 164. **Nivelleren bij 10.000 taken: tijdens *Berekenen* blokkeert de UI toch 2,8–4,1 s.** De berekening zelf
     loopt in een Web Worker, maar de nulmeting (`npm run measure:large-plans`, 21-10-2026) zag in die fase één
@@ -273,20 +265,11 @@ en noem het in je rapport of PR-tekst.
 155. **`.mpp` zonder veldkaarten: vaste kosten en tarieven ontbreken in het importverslag.** De terugval op de
     standaardveldkaarten kent die velden niet, dus het verslag meldt hun verlies niet. VERVOLG 5 van #392,
     gemeld door de reviewer. Niet nagespeeld. — S
-156. **MSPDI-importverslag: één tariefrecord in tabel A met overwerktarief of gebruikskosten wordt niet
-    bekeken.** `scanMspdiImportLoss` (`mspdiImportLoss.ts`, tarieven) kijkt bij tabel A alleen of er meer dan
-    één record is; `OvertimeRate`/`CostPerUse` onder één `Rates/Rate` in tabel A geven geen melding.
-    VERVOLG 6 van #392, gemeld door de reviewer. Niet nagespeeld. — S
 157. **`.mpp`: een gedeelde lange aantekening wordt per verwijzing opnieuw verwerkt.** 1.000 taken × 64 KiB
     kost ongeveer 1,4 s. VERVOLG 8 van #392 (meting van de reviewer). Voorstel: cache per gedeeld datablok. — S
 158. **`.mpp`-importverslag: een lege baselinedatum kan vals verlies geven.** `mppImportLoss.ts` controleert
     de ruwe bytes in plaats van `getTimestamp()`; de bytes `00 00 FF FF`, `FF FF 00 00` en `00 00 01 00`
     tellen dan als datum. Synthetisch; niet gezien in 34 echte bestanden. VERVOLG 9 van #392. — S
-160. **MSPDI-importverslag vergelijkt numerieke XML-waarden als tekst.** `<Number>00</Number>` telt niet als
-    Baseline 0 (`baseline0Dates` in `mspdiImportLoss.ts` vergelijkt met `'0'`), terwijl de lezer
-    (`getElementInt`) hem wel als Baseline 0 leest. `<TaskUID>01</TaskUID>` geeft bij gelijke baselines
-    telling 1, terwijl de lezer wel aan taak 1 koppelt. VERVOLG 11 van #392. Voorstel: baselinenummer en
-    taak-UID numeriek parsen zoals de lezer. — S
 162. **Desktop (Linux/macOS): Opslaan overschrijft een alleen-lezen projectbestand als de map schrijfbaar
     is.** `replaceUserFile` (`atomicWrite.ts`) schrijft een halffabricaat met de rechten van het origineel
     (0444) en hernoemt het over het doel; op POSIX mag dat. Het bestand krijgt de nieuwe inhoud en blijft
@@ -311,9 +294,6 @@ en noem het in je rapport of PR-tekst.
 
 ## Teksten en helpteksten
 
-40. **Helptekst *Restwerk hervat na de al verstreken duur*** zegt in alle talen "niet op de statusdatum";
-    de statusdatum blijft ook een ondergrens. Idem codecommentaar `CPMSolver.ts` ~2367, `types/project.ts`
-    ~128. — B
 41. **Intro *Instellingen uit het bronbestand*** zegt "uit een .xer"; verschijnt ook bij *Nieuw project* met
     Primavera P6. — B
 42. **Helpteksten van enkele conventies** noemen hun voorwaarden niet (alleen urenkalender, alleen
