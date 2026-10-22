@@ -22,6 +22,7 @@ import {
   shiftedTaskIds,
   type RecordedTime,
 } from '@/engine/scheduler/recordedDates';
+import { knownDrivingSequenceIds } from '@/engine/scheduler/drivingInfo';
 import { createDefaultCalendar } from '@/engine/calendar/defaultCalendar';
 import type { ImportResult } from '@/services/importTypes';
 import type { Task } from '@/types/task';
@@ -301,6 +302,20 @@ for (const [label, got] of [
 }
 eq('3g sequenceFreeFloat blijft leeg', rec.sequenceFreeFloat, {});
 eq('3h floatPathByTask blijft leeg', rec.floatPathByTask, {});
+
+// Knownbug 105: een gereconstrueerde lege lijst betekent onbekend, geen berekend "niets driving".
+eq('3h1 opgeslagen datums markeren driving als onbekend', rec.drivingUnknown, true);
+eq('3h2 lezers krijgen geen driving-informatie uit de reconstructie', knownDrivingSequenceIds(rec), undefined);
+eq('3h3 onbekend wint ook van een achtergebleven driving-id',
+  knownDrivingSequenceIds({ ...rec, drivingSequenceIds: ['oud'] }), undefined);
+eq('3h4 berekend zonder driving blijft een bekende lege lijst',
+  knownDrivingSequenceIds({ ...rec, drivingUnknown: undefined, drivingSequenceIds: [] }), []);
+eq('3h5 bekende driving-ids blijven beschikbaar',
+  knownDrivingSequenceIds({ ...rec, drivingUnknown: undefined, drivingSequenceIds: ['ab'] }), ['ab']);
+eq('3h6 geen berekening is onbekend', knownDrivingSequenceIds(null), undefined);
+eq('3h7 ontbrekend resultaat is onbekend', knownDrivingSequenceIds(undefined), undefined);
+eq('3h8 mislukte berekening verbergt achtergebleven driving-ids',
+  knownDrivingSequenceIds({ ...rec, drivingUnknown: undefined, drivingSequenceIds: ['ab'], error: 'kring' }), undefined);
 
 // Zonder isCritical in het bestand: géén kritiek pad beweren. Schedule-paar aanwezig (MOET 1),
 // anders wordt 'a' hier overgeslagen en toont deze reconstructie niets.
