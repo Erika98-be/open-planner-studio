@@ -428,8 +428,12 @@ en noem het in je rapport of PR-tekst.
     (PR #499, 2026-10-22) bleef *Install dependencies (Ubuntu only)* hangen bij `apt-get update`,
     met herhaalde `Ign`-regels voor `azure.archive.ubuntu.com`. De job startte om 16:36:05 UTC en
     eindigde geannuleerd om 17:21:24; de laatste APT-uitvoer was om 16:36:54. Frontendinstallatie
-    en build zijn niet uitgevoerd. Bewijs: `/tmp/ops-499-linux.log`; de ouder heeft alleen de
-    geannuleerde job opnieuw gestart. Dit is het APT-detail, niet de browsershardmelding 167.
+    en build zijn niet uitgevoerd. Bewijs: `/tmp/ops-499-linux.log`. Een tweede waarneming is
+    [run 39815617661, job 119953318157](https://github.com/OpenAEC-Foundation/open-planner-studio/actions/runs/39815617661/job/119953318157)
+    (PR #500): dezelfde APT-stap en `Ign`-regels, laatste APT-uitvoer 16:39:04, geannuleerd om
+    17:23:31 na circa 45 minuten, zonder frontendinstallatie/build; overige jobs groen.
+    Log: `/tmp/ops-500-linux.log`. De ouder heeft alleen deze geannuleerde jobs opnieuw gestart.
+    Dit is het APT-detail, niet de browsershardmelding 167.
     Voorstel: begrensde APT-netwerktime-outs en/of een mirrorfallback. Geen fout in runner of
     applicatiecode aangetoond. — B (log), S (nadere oorzaak)
 
