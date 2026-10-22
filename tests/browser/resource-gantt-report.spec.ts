@@ -90,7 +90,7 @@ test('resourcediagram: rapporttype rendert per resource, opties sturen samenvatt
   await nameWidth.fill('220');
   await page.getByLabel(/^(Paper:|Papier:)$/).click();
   await page.getByRole('option', { name: 'A4' }).click();
-  await page.getByLabel(/^(Orientation:|Orientatie:)$/).click();
+  await page.getByLabel(/^(Orientation:|Oriëntatie:)$/).click();
   await page.getByRole('option', { name: /^(Portrait|Staand)$/ }).click();
   const fontSize = page.getByLabel(/^(Font size:|Lettergrootte:)$/);
   await fontSize.click();
@@ -102,7 +102,7 @@ test('resourcediagram: rapporttype rendert per resource, opties sturen samenvatt
   await nameWidth.fill('130');
   await page.getByLabel(/^(Paper:|Papier:)$/).click();
   await page.getByRole('option', { name: 'A3' }).click();
-  await page.getByLabel(/^(Orientation:|Orientatie:)$/).click();
+  await page.getByLabel(/^(Orientation:|Oriëntatie:)$/).click();
   await page.getByRole('option', { name: /^(Landscape|Liggend)$/ }).click();
 
   // Rapportageperiode (manuvarkey punt 3): een eigen bereik dat alleen Fundering raakt ⇒ alleen Ploeg A
