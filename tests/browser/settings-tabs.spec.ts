@@ -64,6 +64,11 @@ async function assertThreeTabsAndSections(container: Locator): Promise<void> {
     await tabs.nth(i).click();
     // Scopen op directe kinderen: de theme-kaartjes (Weergave → Thema) hebben zelf ook een <h4>
     // per kleurstaal, die géén sectiekop is en dus niet mag meetellen.
+    if (i === 0) {
+      await expect(container.getByText(
+        /^(Alleen voor urentaken: balken opsplitsen rond pauzes en niet-werktijd\. Echte taakonderbrekingen blijven altijd zichtbaar\.|For hour tasks only: split bars around breaks and non-working time\. Actual task interruptions remain visible regardless of this setting\.)$/,
+      )).toBeVisible();
+    }
     const headings = container.locator('.settings-section-list > .settings-section > h3, .settings-section-list > h3.settings-subhead');
     await expect(headings).toHaveCount(SECTION_HEADINGS[i].length);
     for (let j = 0; j < SECTION_HEADINGS[i].length; j++) {
@@ -77,6 +82,11 @@ async function assertThreeTabsAndSections(container: Locator): Promise<void> {
 }
 
 test('gear-popup, Instellingen-ribbontab en Backstage tonen dezelfde drie tabs zonder de sectie Project', async ({ page, ops: _ops }) => {
+  await page.evaluate(async () => {
+    const localePath = '/src/i18n/config.ts';
+    const { setLocale } = await import(/* @vite-ignore */ localePath);
+    await setLocale('en');
+  });
   // 1) Tandwiel-popup (⚙) in de titelbalk.
   await page.getByTitle(/^(App settings|App-instellingen)$/, { exact: true }).click();
   const gearDialog = page.locator('.settings-dialog');
@@ -99,5 +109,13 @@ test('gear-popup, Instellingen-ribbontab en Backstage tonen dezelfde drie tabs z
   const backstage = page.locator('.backstage');
   await expect(backstage).toBeVisible();
   await backstage.locator('.backstage-nav-item').filter({ hasText: /^(App settings|App-instellingen)$/ }).click();
+  await assertThreeTabsAndSections(backstage.locator('.backstage-main'));
+
+  // Taalfixture: dezelfde zichtbare secties en de urentaakhint ook in het Nederlands.
+  await page.evaluate(async () => {
+    const localePath = '/src/i18n/config.ts';
+    const { setLocale } = await import(/* @vite-ignore */ localePath);
+    await setLocale('nl');
+  });
   await assertThreeTabsAndSections(backstage.locator('.backstage-main'));
 });

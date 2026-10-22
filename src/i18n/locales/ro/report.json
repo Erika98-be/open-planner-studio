@@ -135,7 +135,7 @@
   "barColorMode_auto": "Per activitate — automat",
   "barColorMode_category": "Pe categorie",
   "barColorFieldLabel": "Câmp de categorie",
-  "barColorMissingField": "Acest câmp nu există în acest proiect. Se folosește temporar tipul de activitate.",
+  "barColorMissingField": "Acest câmp nu există în acest proiect. Se folosește temporar categoria de lucrări.",
   "statusLineLabel": "Linie de stare:",
   "statusLine_none": "Niciuna",
   "statusLine_statusDate": "Linia datei raportului de stare",

@@ -27,7 +27,7 @@ You have three ways.
 
 - **With the keyboard.** Alt+↑ and Alt+↓ swap the task with its neighbour at the same level. A summary task takes its subtasks along. At the top or bottom of the level nothing happens. With several tasks selected, only the task you clicked first moves.
 - **Dragging in the task list.** Press on a row and drag vertically. The top quarter of a row means *before*, the bottom quarter *after*. The middle of a summary task hangs the task under it as its last subtask. The middle of an ordinary task counts as the nearest edge. If you drag a row that is part of a multiple selection, the whole selection moves.
-- **Dragging in the Gantt.** Drag the bar vertically to another row. That works the same as dragging in the list and changes no dates. If you drag horizontally, you shift the dates instead.
+- **Dragging in the Gantt.** Drag the bar vertically to another row. The positions for before, after or under a task work the same as in the list, but dragging a bar moves only that task, even with a multiple selection. The dates do not change. If you drag horizontally, you shift the dates instead.
 
 Each move is one step for *Undo* (Ctrl+Z).
 

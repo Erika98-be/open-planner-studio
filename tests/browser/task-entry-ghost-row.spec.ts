@@ -129,6 +129,21 @@ test('tabel: rechtsklik op lege ruimte → Nieuwe taak, naam meteen typen', asyn
   const afterPaste = await state(page);
   expect(new Set(afterPaste.tasks.map(t => t.id)).size).toBe(3);
   expect(afterPaste.undoDepth).toBe(beforePaste.undoDepth + 1);
+  const freshBox = (await grid.boundingBox())!;
+  await page.mouse.click(freshBox.x + 60, freshBox.y + freshBox.height - 40, { button: 'right' });
+  await page.getByRole('button', { name: 'Add milestone', exact: true }).click();
+  await page.keyboard.type('Gewone mijlpaal');
+  await page.keyboard.press('Enter');
+  await expect.poll(() => page.evaluate(() => {
+    const t = window.__OPS__!.store.getState().tasks.find(t => t.isMilestone);
+    return t && [t.taskType, t.milestoneKind, t.parentId, t.mandatory ?? false];
+  })).toEqual(['USERDEFINED', 'FINISH', null, false]);
+  await page.locator(ganttGrid + ' [data-grid-row-key="' + first + '"][data-grid-column-id="task.name"]').click({ button: 'right' });
+  await page.getByRole('button', { name: 'Add milestone', exact: true }).click();
+  await expect.poll(() => page.evaluate(parentId => {
+    const t = window.__OPS__!.store.getState().tasks.find(t => t.isMilestone && t.parentId === parentId);
+    return t && [t.taskType, t.milestoneKind, t.mandatory ?? false];
+  }, first)).toEqual(['USERDEFINED', 'FINISH', false]);
 
 });
 
@@ -165,4 +180,20 @@ test('Gantt: rechtsklik op lege ruimte → Nieuwe taak begint op de aangeklikte 
   expect(new Set(afterPaste.tasks.map(t => t.id)).size).toBe(3);
   expect(afterPaste.undoDepth).toBe(beforePaste.undoDepth + 1);
 
+  const currentBar = await barPoint(page, first);
+  await page.mouse.click(currentBar.x, currentBar.y + 160, { button: 'right' });
+  await page.getByRole('button', { name: 'Add milestone', exact: true }).click();
+  await expect.poll(() => page.evaluate(() => {
+    const t = window.__OPS__!.store.getState().tasks.find(t => t.isMilestone);
+    return t && [t.taskType, t.milestoneKind, t.parentId, t.mandatory ?? false];
+  })).toEqual(['USERDEFINED', 'FINISH', null, false]);
+
+  // Op een bestaande taak blijft het een subtaak, maar eveneens een gewone eindmijlpaal.
+  const parentBar = await barPoint(page, first);
+  await page.mouse.click(parentBar.x, parentBar.y, { button: 'right' });
+  await page.getByRole('button', { name: 'Add milestone', exact: true }).click();
+  await expect.poll(() => page.evaluate(parentId => {
+    const t = window.__OPS__!.store.getState().tasks.find(t => t.isMilestone && t.parentId === parentId);
+    return t && [t.taskType, t.milestoneKind, t.mandatory ?? false];
+  }, first)).toEqual(['USERDEFINED', 'FINISH', false]);
 });

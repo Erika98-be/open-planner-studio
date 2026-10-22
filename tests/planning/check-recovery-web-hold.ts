@@ -94,6 +94,7 @@ else Reflect.deleteProperty(globalThis, 'navigator');
 // herstelde document open.
 const DIR = '/appdata';
 const disk = new Map<string, Uint8Array>();
+let failManifestCommit = false;
 const enc = new TextEncoder();
 const dec = new TextDecoder();
 type TauriArgs = { path: string; paths: string[]; oldPath: string; newPath: string };
@@ -110,7 +111,11 @@ type TauriArgs = { path: string; paths: string[]; oldPath: string; newPath: stri
       case 'plugin:fs|stat': need(args.path); return { mtime: 0, atime: null, birthtime: null };
       case 'plugin:fs|write_text_file': case 'plugin:fs|write_file':
         disk.set(decodeURIComponent(options!.headers!.path!), new Uint8Array(args)); return null;
-      case 'plugin:fs|rename': disk.set(args.newPath, need(args.oldPath)); disk.delete(args.oldPath); return null;
+      case 'plugin:fs|rename':
+        if (failManifestCommit && args.newPath === DIR + '/' + ownRecoveryNames.manifest) {
+          throw new Error('Gesimuleerde mislukte manifestcommit');
+        }
+        disk.set(args.newPath, need(args.oldPath)); disk.delete(args.oldPath); return null;
       case 'plugin:fs|remove': need(args.path); disk.delete(args.path); return null;
       default: throw new Error(`nep-Tauri kent ${cmd} niet`);
     }
@@ -146,6 +151,7 @@ const expectHeld = async (label: string, brokenName: string) => {
   await expectHeld('tauri v1 ronde 1', N.ifcName('doc-b'));
   await saveRecovery(fullRecoverySave('doc-a', [restored('ISO-10303-21; /* A2 */')]));
   await expectHeld('tauri v1 ronde 2', N.ifcName('doc-b'));
+  eq('tauri v1: zonder bevestigde herstel-ids blijft oude doc-a beschermd', bytesOf(N.ifcName('doc-a')), 'ISO-10303-21; /* A0 */');
   // Schone afsluiting haalt alleen de eigen snapshots weg; doc-b blijft voor de volgende start.
   await clearOwnRecovery();
   eq('tauri v1: na schone afsluiting alleen doc-b', (await offered()), [`doc-b:${BROKEN}`]);
@@ -180,6 +186,50 @@ const expectHeld = async (label: string, brokenName: string) => {
     upserts: [],
   });
   await expectHeld('tauri v5 ronde 3', brokenName);
+  await clearRecovery();
+}
+// 3. Geslaagd gedeeltelijk herstel: alleen de bevestigde gezonde generatie mag verdwijnen,
+//    en pas ná de nieuwe manifestcommit. De onleesbare kopie blijft ook na 250 rondes aangeboden.
+for (const legacy of [true, false]) {
+  const label = legacy ? 'v1' : 'v5';
+  const healthyName = legacy ? N.ifcName('doc-a') : N.generationIfcName('doc-a', 'herstel');
+  const brokenName = legacy ? N.ifcName('doc-b') : N.generationIfcName('doc-b', 'herstel');
+  const healthy = 'ISO-10303-21; /* herstelde oude A */';
+  put(N.manifest, JSON.stringify({
+    version: legacy ? 1 : RECOVERY_MANIFEST_VERSION,
+    ...(legacy ? {} : { ownerId: 'vorige-start', heartbeatAt: 1 }),
+    activeDocumentId: 'doc-a',
+    documents: [
+      { id: 'doc-a', ifc: healthyName, filePath: null, isDirty: true, datesAsRecorded: false },
+      { id: 'doc-b', ifc: brokenName, filePath: null, isDirty: true, datesAsRecorded: false },
+    ],
+  }));
+  put(healthyName, healthy);
+  put(brokenName, BROKEN);
+  await holdRecoveryForLater(['doc-a']);
+  eq(label + ': vasthouden verwijdert nog niets', bytesOf(healthyName), healthy);
+  const oldManifest = bytesOf(N.manifest);
+  failManifestCommit = true;
+  let rejected = false;
+  try { await saveRecovery(fullRecoverySave('doc-a', [restored('ISO-10303-21; /* poging */')])); }
+  catch { rejected = true; }
+  finally { failManifestCommit = false; }
+  eq(label + ': de gesimuleerde commitfout bereikt de aanroeper', rejected, true);
+  eq(label + ': oude manifest blijft intact bij commitfout', bytesOf(N.manifest), oldManifest);
+  eq(label + ': gezonde oude snapshot blijft intact bij commitfout', bytesOf(healthyName), healthy);
+  await expectHeld(label + ' mislukte commit', brokenName);
+  for (let round = 0; round < 250; round++) {
+    await saveRecovery(fullRecoverySave('doc-a', [restored('ISO-10303-21; /* ronde ' + round + ' */')]));
+    eq(label + ': vervangen gezonde snapshot weg in ronde ' + round, bytesOf(healthyName), null);
+    await expectHeld(label + ' ronde ' + round, brokenName);
+  }
+  eq(label + ': alleen actuele gezonde en beschermde onleesbare snapshot staan op schijf',
+    [...disk.keys()].filter(path => N.snapshotDocId(path.slice(DIR.length + 1)) !== null).length, 2);
+  await clearOwnRecovery();
+  eq(label + ': na schone afsluiting geen gezonde weesbytes',
+    [...disk.keys()].filter(path => N.snapshotDocId(path.slice(DIR.length + 1)) !== null),
+    [DIR + '/' + brokenName]);
+  await expectHeld(label + ' schone afsluiting', brokenName);
   await clearRecovery();
 }
 Reflect.deleteProperty(globalThis, 'window');
