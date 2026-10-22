@@ -126,13 +126,14 @@ export function UpdateDialog() {
   const progress = isDownloading ? status.progress : 0;
   const indeterminate = isDownloading && status.indeterminate;
   const isReadyToInstall = status?.kind === 'readyToInstall';
-  // Snap is het enige install-type zonder in-app installatie (snapd werkt zelf
-  // bij). .deb installeert de updater-plugin gewoon in-place (pkexec + dpkg -i),
+  // Snap en AUR hebben geen in-app installatie: de pakketbeheerder werkt bij.
+  // .deb installeert de updater-plugin gewoon in-place (pkexec + dpkg -i),
   // dus deb krijgt de normale installeerknop; het handmatige commando is enkel
   // nog een fallback als die installatie faalt.
   const isSnap = installKind === 'snap';
+  const isAur = installKind === 'aur';
   const isDeb = installKind === 'deb';
-  const canAutoInstall = !isSnap;
+  const canAutoInstall = !isSnap && !isAur;
 
   return (
     // Esc en backdrop-klik sluiten de dialoog, maar NIET tijdens een actieve download
@@ -196,6 +197,14 @@ export function UpdateDialog() {
                 <div className="flex items-start gap-2 text-text-secondary bg-surface-hover border border-border rounded-[8px] p-3">
                   <PackageOpen size={14} className="text-accent mt-0.5 shrink-0" />
                   <span>{t('updates.snapNotice')}</span>
+                </div>
+              )}
+
+              {/* AUR: pacman beheert het pakket — bijwerken via yay/paru, geen in-app installatie. */}
+              {isAur && (
+                <div className="flex items-start gap-2 text-text-secondary bg-surface-hover border border-border rounded-[8px] p-3" data-ops-update-package-manager-notice>
+                  <PackageOpen size={14} className="text-accent mt-0.5 shrink-0" />
+                  <span>{t('updates.packageManagerNotice')}</span>
                 </div>
               )}
 

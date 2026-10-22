@@ -22,12 +22,14 @@ export interface UpdateInfo {
  * Hoe de app op deze machine geïnstalleerd is — bepaalt óf en hoe de updater werkt.
  * - `appimage` / `native` (Windows/macOS): normale auto-install-flow.
  * - `snap`: read-only, snapd updatet zelf → in-app updater overslaan.
+ * - `aur`: pacman beheert het programma (Arch, AUR-pakket `open-planner-studio-bin`).
+ *   De app installeert niets; de gebruiker werkt bij via zijn pakketbeheer.
  * - `deb`: normale auto-install-flow — de updater-plugin (≥2.6) matcht de
  *   `linux-x86_64-deb`-entry in latest.json (via de bundle-type-stempel in het
  *   binary) en installeert in-place via pkexec/sudo + `dpkg -i`. Alleen als dát
  *   faalt toont de dialog nog handmatige instructies als fallback.
  */
-export type InstallKind = 'appimage' | 'snap' | 'deb' | 'native';
+export type InstallKind = 'appimage' | 'snap' | 'aur' | 'deb' | 'native';
 
 /** GitHub-release-pagina (laatste release) voor handmatige .deb-installatie. */
 export const RELEASES_PAGE_URL = `https://github.com/${GITHUB_REPO}/releases/latest`;
@@ -44,7 +46,7 @@ export async function getInstallKind(): Promise<InstallKind> {
   try {
     const { invoke } = await import('@tauri-apps/api/core');
     const kind = await invoke<string>('install_kind');
-    if (kind === 'appimage' || kind === 'snap' || kind === 'deb' || kind === 'native') {
+    if (kind === 'appimage' || kind === 'snap' || kind === 'aur' || kind === 'deb' || kind === 'native') {
       return kind;
     }
     return 'native';

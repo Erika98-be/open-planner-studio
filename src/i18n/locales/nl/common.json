@@ -599,6 +599,7 @@
     "error": "Er ging iets mis bij het bijwerken",
     "checking": "Bezig met controleren…",
     "snapNotice": "Deze versie wordt automatisch via de Snap Store bijgewerkt — je hoeft niets te doen.",
+    "packageManagerNotice": "Werk bij via je pakketbeheer (bijv. yay -Syu).",
     "debExplanation": "Werk handmatig bij door dit commando in een terminal uit te voeren, of download het nieuwste pakket.",
     "debCommandLabel": "Installatiecommando",
     "copyCommand": "Commando kopiëren",

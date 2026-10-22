@@ -47,6 +47,8 @@ Wil je dit venster later nog een keer zien, dan kies je *Instellingen › Projec
 
 **Je hebt de app via de Snap Store.** De app werkt zichzelf dan niet bij en controleert bij het opstarten ook niet. De Snap Store doet dat. In het venster staat *Deze versie wordt automatisch via de Snap Store bijgewerkt — je hoeft niets te doen.*
 
+**Je hebt de app via het AUR (Arch Linux).** De app werkt zichzelf dan niet bij en controleert bij het opstarten ook niet. Je pakketbeheer doet dat. In het venster staat *Werk bij via je pakketbeheer (bijv. yay -Syu).*
+
 **Er komt niets bij het opstarten.** Dat is normaal als je al de nieuwste versie hebt. De opstartcontrole meldt geen fouten. Wil je zeker weten of je actueel bent, dan controleer je zelf, zoals hierboven.
 
 ## Zie ook

@@ -25,6 +25,10 @@ fn focus_existing_window(app: &tauri::AppHandle) {
 }
 
 fn main() {
+    // Installatietype één keer per proces bepalen, vroeg en buiten de UI-thread (zie
+    // `commands::install_kind`): later kan het programmapad al vervangen zijn door een pakketupdate.
+    std::thread::spawn(commands::warm_install_kind);
+
     let mut builder = tauri::Builder::default();
 
     // ── Single instance (bevinding K5) ──────────────────────────────────────────────────────
