@@ -516,11 +516,3 @@ en noem het in je rapport of PR-tekst.
     vader, punt 1. — B
 133. **Het venster *Werkelijke start opgeven* heeft geen ?-knop** (`ActualStartDialog.tsx:82`,
     `DialogHeader` zonder `help`). Het doel zou `howto-voortgang-bijwerken` zijn. — B
-134. **Werkelijke start en einde: paneel en dialoog weigeren een start na het einde niet, raster en startvraag
-    wel.** `planProgressEntry` controleert `isActualFinishBeforeStart` alleen bij een antwoord op de startvraag
-    (`progressEntry.ts:181`), terwijl `taskEditPlan.ts:625-632` het in het raster altijd doet. Een getypte start
-    10-09 bij een einde 10-05 (of een einde 09-20 bij een start 10-01) wordt in het paneel en de
-    taakdialoog geaccepteerd. Nagespeeld met `planProgressEntry` in een scratch-script (2026-10-19). Voorstel:
-    de controle ook zonder antwoord uitvoeren. De Help (`ref-taak-eigenschappen`) beschrijft nu het raster
-    en de startvraag. — B
-

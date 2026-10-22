@@ -8,7 +8,7 @@
 //
 // De brug zet alleen fixtures (taken, relaties, weergave) en leest state; de geteste handelingen
 // gaan via muis en toetsenbord. Headless tegenhanger: tests/planning/check-progress-entry.ts.
-import type { Page } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
 import { barPoint, expect, state, test } from './fixtures/ops';
 
 /** Vandaag in de browser, zoals de gebruiker hem in het statusdatumveld typt (lokale kalenderdag). */
@@ -67,6 +67,39 @@ function shown(iso: string): string {
   return `${d}-${m}-${y}`;
 }
 
+/** Bestaande voltooide taak als fixture voor rechtstreeks bewerken van werkelijke datums. */
+async function seedActualDates(page: Page, taskId: string): Promise<void> {
+  await page.evaluate(id => {
+    const s = window.__OPS__!.store.getState();
+    s.setStatusDate('2026-10-01');
+    s.setActualStart(id, '2026-09-10');
+    s.setActualFinish(id, '2026-09-20');
+    s.runCPM();
+    s.setViewStartDate('2026-09-01');
+    s.setZoom(18);
+  }, taskId);
+}
+
+async function rejectReversedDates(page: Page, scope: Locator, taskId: string): Promise<void> {
+  const before = await readProgress(page, taskId);
+  const depth = (await state(page)).undoDepth;
+  for (const [label, day] of [
+    [/^(Actual start|Werkelijke start)$/i, '21'],
+    [/^(Actual finish|Werkelijk einde|Werkelijke einde)$/i, '09'],
+  ] as const) {
+    const field = scope.getByRole('group', { name: label }).getByRole('textbox').first();
+    await field.fill(day);
+    await scope.locator('[data-ops-progress-slider]').first().focus();
+    await expect(scope.getByText(/^(The actual start is after the actual finish\.|De werkelijke start ligt ná het werkelijke einde\.)$/)).toBeVisible();
+    expect(await readProgress(page, taskId)).toEqual(before);
+    expect((await state(page)).undoDepth).toBe(depth);
+  }
+  // Een geldige correctie blijft mogelijk na de weigering.
+  const start = scope.getByRole('group', { name: /^(Actual start|Werkelijke start)$/i }).getByRole('textbox').first();
+  await start.fill('11');
+  await scope.locator('[data-ops-progress-slider]').first().focus();
+}
+
 test('Regel 1, paneel: voortgang zonder statusdatum zet hem op vandaag, meldt dat, en is één Ctrl+Z', async ({ page, ops: _ops }) => {
   const today = await browserToday(page);
   const { B } = await seedChain(page, -28);
@@ -99,6 +132,10 @@ test('Regel 1, paneel: voortgang zonder statusdatum zet hem op vandaag, meldt da
   await page.mouse.click(point.x, point.y);
   await page.keyboard.press('Control+z');
   await expect.poll(() => readProgress(page, B)).toEqual({ statusDate: null, completion: 0, actualStart: null });
+  await seedActualDates(page, B);
+  await page.locator(`[data-grid-row-key="${B}"] [data-grid-column-id="task.name"]`).first().click();
+  await rejectReversedDates(page, page.locator('body'), B);
+  expect((await readProgress(page, B)).actualStart).toBe('2026-09-11');
 });
 
 test('Regel 1, contextmenu: 50 % zonder statusdatum zet hem op vandaag', async ({ page, ops: _ops }) => {
@@ -257,4 +294,13 @@ test('Regel 2, Taak bewerken: de vraag stapelt boven de dialoog; Enter bevestigt
   await taskDialog.locator('[data-ops-task-save]').click();
   await expect(taskDialog).toBeHidden();
   await expect.poll(() => readProgress(page, B)).toEqual({ statusDate, completion: 1, actualStart });
+  await seedActualDates(page, B);
+  const reopened = await barPoint(page, B);
+  await page.mouse.dblclick(reopened.x, reopened.y);
+  await expect(taskDialog).toBeVisible();
+  await rejectReversedDates(page, taskDialog, B);
+  expect((await readProgress(page, B)).actualStart).toBe('2026-09-10');
+  await taskDialog.locator('[data-ops-task-save]').click();
+  await expect(taskDialog).toBeHidden();
+  expect((await readProgress(page, B)).actualStart).toBe('2026-09-11');
 });
