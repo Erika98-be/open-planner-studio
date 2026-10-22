@@ -84,9 +84,15 @@ en noem het in je rapport of PR-tekst.
 16. **Taken kopiëren** heeft geen zichtbare bediening; alleen Ctrl+C/V met de Gantt in focus. — B
 17. **Verwijderen zonder bevestiging**: `confirm.deleteTask` staat in de locales maar wordt nergens gebruikt. — S
 19. ***Spring naar vandaag* (Ctrl+Home)** springt naar de statusdatum als die er is. — S
-21. ***Rapport › Afdruk*** doet op het tabblad Rapport niets. — B
 60. **Duur-kolom afgeknipt** in de standaard Gantt-weergave (WBS 60 + Taaknaam 240 + Duur 60 + de
     "+"-kolom): je leest "2c" in plaats van "2d", op 1600 én 1366 px breed. — B
+
+192. **Backstage › Afdruk › Afdrukvoorbeeld keert terug naar Start in plaats van Rapport te openen.**
+    Gemeld bij de onafhankelijke R1-review van PR #524 op `2ce496878`: `PrintSection` in
+    `src/components/backstage/Backstage.tsx` zet eerst `activeRibbonTab: 'report'` en roept daarna
+    `onClose()` aan; de meegegeven `closeBackstage` zet het tabblad direct op `'start'`. Dezelfde
+    bronroute staat op basis `c7d45ecb8` en actueel main `247e66632`. Alleen statisch nagegaan,
+    niet runtime uitgevoerd; afzonderlijk oplossen, buiten de lintknopfix voor knownbug 21. — S
 
 
 ## Kalenders
