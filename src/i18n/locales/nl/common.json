@@ -708,7 +708,7 @@
     "calendars": "Kalenders",
     "noCalendars": "Nog geen kalenders in de pool.",
     "noResources": "Nog geen resources in de pool.",
-    "promoteHint": "Promoveer een projectkalender of -resource naar de bibliotheek met de knop “+ Uit project” hierboven.",
+    "promoteHint": "Promoveer een projectkalender naar de bibliotheek met de knop “+ Uit project” hierboven.",
     "promoteFromProject": "Uit project",
     "alreadyLinked": "al gekoppeld",
     "editItem": "Bewerken",
