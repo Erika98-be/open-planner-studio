@@ -80,13 +80,6 @@ en noem het in je rapport of PR-tekst.
 
 ## Tabel, invoer en bediening
 
-183. **De tabelkolom *Bepalend* onderscheidt onbekende driving nog niet van berekend zonder driving.**
-    `taskGridAdapter.ts` geeft het hele `cpmResult` door aan `buildTaskRelationIndex`, dat rechtstreeks
-    `drivingSequenceIds` leest en `drivingUnknown` niet meeneemt. `relationDrivingText` maakt daarvan
-    in "Datums zoals opgeslagen" dezelfde `—` als bij een bekende lege lijst; ook de relatiechips
-    krijgen alleen `driving: false`. Gevonden bij knownbug 105; buiten de drie gevraagde lezers gelaten.
-    Statisch nagegaan op main `a4670d8b8`, niet in de browser nagespeeld (lokale processen verboden). — S
-
 13. **Tabelkolom *Kleur*** wordt in IFC bewaard, maar geen balk of rapport gebruikt hem. — B
 16. **Taken kopiëren** heeft geen zichtbare bediening; alleen Ctrl+C/V met de Gantt in focus. — B
 17. **Verwijderen zonder bevestiging**: `confirm.deleteTask` staat in de locales maar wordt nergens gebruikt. — S
