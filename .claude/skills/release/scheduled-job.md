@@ -12,7 +12,7 @@ Besluit: eigenaar, gesprek 2026-10-22.
   Dit is een schatting, geen garantie bij runnerwachtrijen of vertaalachterstand.
 - Werkplek: repo `OpenAEC-Foundation/open-planner-studio`; schone eigen worktree vanaf `origin/main`.
 - Eén actieve run tegelijk. Volg het hervatpad voor onafgerond werk; begin geen tweede versie.
-- Voor ingebruikname: website-PR-CI regelen (knownbugs.md, punt 175).
+- Voor ingebruikname: website-PR-CI regelen (knownbugs.md, punt 179).
 
 ## Letterlijke prompt
 

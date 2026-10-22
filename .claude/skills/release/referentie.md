@@ -178,7 +178,7 @@ Het highlight-blok `#whats-new` en zijn woordenboeken komen **niet** vanzelf mee
 
 **Bekende ontbrekende poort:** op 2026-10-22 bevat de website alleen issue-, deploy- en dagelijkse
 stats-workflows, geen PR-CI; branch protection heeft `required_status_checks: null`.
-Zie `knownbugs.md`, punt 175. Geen checks is geen groene CI. Laat in dat geval de website-PR open
+Zie `knownbugs.md`, punt 179. Geen checks is geen groene CI. Laat in dat geval de website-PR open
 en meld deze blokkade. Regel website-PR-CI vóór ingebruikname van de geplande job.
 
 ## Uitlevering controleren
