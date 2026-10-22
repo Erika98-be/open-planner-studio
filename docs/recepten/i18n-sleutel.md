@@ -127,6 +127,17 @@ een letterlijke sleutelvergelijking:
   taal, dan meldt het één regel per taal met aantallen en eindigt het op exit 0; `--verbose` noemt de
   sleutels. `--json` blijft rapportagemodus (exit 0) met `errors` en `absent` apart.
 
+## Een naam is geen meervoudsvorm
+
+Kies de boodschap vóór pluralisatie. Eén concrete taak met `{{task}}` of `{{phase}}` krijgt een gewone
+sleutel; een verzameling met `{{count}}` een afzonderlijke meervoudsfamilie, zoals
+`notifications.milestoneRefusedAssignments` en `notifications.milestoneRefusedAssignmentsMany`.
+`one` betekent niet in elke taal precies één taak; zh/ja/ko/lo hebben alleen `other`.
+De Help-labelkaart koppelt de geciteerde Engelse zin aan dezelfde semantische sleutel. Een
+naamcitaat mag daarom geen teltekst als vertaaldoel krijgen. Migreer alleen aantoonbaar gelijke
+teksten letterlijk en geef ze zonder vertaalbevestiging geen nieuwe bronhash. Een ontbrekende
+sleutel volgt de Engelse terugval (B5); een behouden tekst zonder hash gaat mee in `--stale`.
+
 ## Een samengestelde sleutel: geen `as`
 
 De typecheck controleert elke sleutel die je aan `t(...)` geeft tegen de nl-bronbestanden

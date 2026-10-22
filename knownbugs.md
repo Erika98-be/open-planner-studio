@@ -155,11 +155,6 @@ en noem het in je rapport of PR-tekst.
     dus naar een gids wijzen die tools beschrijft die hij niet heeft. De gids zegt nu dat de kopie van de tool
     voorgaat. Voorstel: een versiepad (bv. `/agent/<versie>/planning-guide.md`) of de versie in de gids. — S
 
-126. **Updatevenster: de tekst *Bezig met installeren…* is niet te bereiken.** De balk met
-    `updates.installing` staat achter `isDownloading` (`status.kind === 'downloading'`), terwijl de tekst
-    `isReadyToInstall` (`'readyToInstall'`) vraagt (`UpdateDialog.tsx:125-128,205-208`). Na de download springt
-    het venster naar *Herstarten…* (`:225-229`). Alleen in de code gezien. — S
-
 ## Bestanden en herstel
 
 35. **Showcase-voorbeelden openen als gewijzigd** (`applyDemoLibraryToShowcaseProject`). — S
@@ -280,12 +275,6 @@ en noem het in je rapport of PR-tekst.
     apart in PR #532 / knownbug 130 gecorrigeerd; dit resterende broncommentaar is niet aangepast.
     Statisch bevestigd bij de review van #532 op `74e596d0`; geen lokale runtime uitgevoerd. — B
 
-171. **Meldingen met naam óf aantal verliezen de naam in talen met één meervoudsvorm.** `common.json`
-    `notifications.milestoneRefusedAssignments_one`/`_other` (en `milestoneRefusedSummary`, `milestoneClearedOnPhase`)
-    wisselen tussen "'{{task}}' heeft …" en "{{count}} taken hebben …". zh, ja, ko en lo kennen alleen `other`, dus
-    bij één taak tonen ze "1 个任务…" zonder naam. De Help-labelpoort eist dan in `ref-meldingen` die `other`-vorm,
-    terwijl het bronartikel de vorm met naam citeert: het artikel blijft rood in zh, ko en lo (ronde 2026-10-21).
-    Voorstel: twee sleutels (met naam, met aantal) in plaats van een meervoud. — B
 172. **Vertaalstraat: de korte uureenheid werd in ar en fa vertaald, tegen het besluit "10h".** `menu.json`
     `…hoursValue` werd in de ronde van 2026-10-21 `{{hours}}س`. De test
     `tests/browser/calendar-file-hours-notice.spec.ts:266` eist in ar/fa "10h" (besluit eigenaar 2026-10-20: geen
@@ -311,17 +300,18 @@ en noem het in je rapport of PR-tekst.
 
 ## Tests
 
-175. **De optionele MPP-corpuscheck behandelt bewust geweigerde oude formaten als leesfout.**
-    `check-mpp-relations.ts`, onderdeel `T7-crawl`, verwacht geen leesfouten over 658 lokale
-    corpusbestanden, maar `readMPP` weigert MPP9/MPP12 expliciet (bijvoorbeeld
-    `taskFlags-mpp9Project2013.mpp`). Gezien tijdens de afgebroken volledige planningsrun voor
-    de IFC-performancewijziging op 22-10-2026; dit pad raakt de IFC-reader niet. Voorstel: laat
-    de corpusverwachting onderscheid maken tussen ondersteunde en bewust geweigerde versies. — B
-
 79. **`check-task-grid-performance` (relationIndex-mediaan ≤ 500 ms) zit lokaal op het randje.** Los gedraaid
     496–499 ms (5-10-2026); rood (535–790 ms) in `npm run verify` zodra de container druk is (meerdere agents
     tegelijk). In CI steeds groen. De grens meet de machine mee. Voorstel: grens relatief aan een
     referentiemeting in dezelfde run, of alleen in CI hard. — B
+199. **Linux-PR-CI kan stranden op de APT-updategrens via het officiële Ubuntu-archief.**
+    Bij PR #536 op `cc7d2aef` haalde de update metadata op via `https://archive.ubuntu.com/ubuntu/`,
+    maar na de start van de 14,1 MB `jammy/universe`-index brak de grens van twee minuten af met TERM.
+    Frontendinstallatie en build waren nog niet gestart. Zie
+    https://github.com/OpenAEC-Foundation/open-planner-studio/actions/runs/39859111765/job/120105089448.
+    Dit is een afzonderlijke netwerk-/doorlooptijdbevinding na #515/#523; oorzaak en herhaalbaarheid
+    zijn niet vastgesteld. De limieten en CI-poorten zijn niet verruimd. — B (CI-uitval), S (oorzaak)
+
 90. **`check-xer-tables` is rood als de `TextDecoder` van Node byte 0x80 (CP1252) niet naar € vertaalt**
     ("Café €" wordt "Café "; 6 asserties in deel 5). Gezien 7-10-2026 in een cloudcontainer (Node 22.22.0,
     ICU 77.1), óók op de onaangeraakte commit `c00163a`; daar geeft `new TextDecoder('windows-1252')` voor
@@ -373,17 +363,6 @@ en noem het in je rapport of PR-tekst.
     op `repository.pullRequest.projectCards`. De body is wel bijgewerkt via
     `gh api --method PATCH repos/OpenAEC-Foundation/open-planner-studio/pulls/479 -F body=@<bestand>`.
     Voorstel: de GitHub CLI op de host bijwerken; de repo zelf is niet aangepast hiervoor. — B
-
-181. **`OPS_MPP_CRAWL` kiest twee verschillende corpusscopes in `check-mpp-import.ts`.** F4 (rond
-    regel 4024) gebruikt standaard de hele `testdata-crawl`-root en pint samen met `OPS_MPP_CORPUS`
-    216 bestanden / 3413 taken; T9 (rond regel 5968) gebruikt standaard de submap
-    `testdata-crawl/crawl-mpp` met een basislijn van 49 bestanden / 788 taken. Beide lezen dezelfde
-    omgevingsvariabele, dus één ingestelde root kan niet beide scopes correct kiezen. Vóór het verbod
-    op lokale Node-processen gemeld: met de hele root 449 mpp-import-mismatches, met de `crawl-mpp`-scope
-    7 F4-tellingfouten. Er is geen vergelijking met een schone baseline gedaan; deze aantallen bewijzen
-    geen gevolg van een codewijziging. Voorstel: de scopes afzonderlijk instelbaar maken of de submap
-    eenduidig van de root afleiden. Niet opgelost in de fix van 119.
-    — B (scopemismatch in de code), S (gemelde gevolgen, geen schone baselinevergelijking)
 
 ## Wensen en open taken (geen bug)
 

@@ -100,7 +100,7 @@ export function checkUi(pkg: UiPackage, out: unknown): CheckResult {
         + `${missing.length ? ` — ontbreekt ${missing.join(', ')}` : ''}${extra.length ? ` — overbodig ${extra.join(', ')}` : ''}`);
     }
     // Elke vorm vergelijkt met de nl-vorm voor dezelfde getallen: `one` met nl `one`, de rest met nl `other`.
-    // Een familie mag per vorm andere invulplekken hebben ("'{{task}}' heeft…" tegenover "{{count}} taken…").
+    // Een vorm mag het getal uitschrijven (bijv. Arabisch); naam versus verzameling heeft eigen sleutels.
     const nlFor = (c: string): string[] => {
       if (typeof item.nl === 'string') return nl;
       const src = c === 'one' && item.nl.one !== undefined ? item.nl.one : item.nl.other;

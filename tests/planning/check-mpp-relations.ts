@@ -65,6 +65,7 @@ import { DEFAULT_RESOURCE_FIELDS, DEFAULT_ASSIGNMENT_FIELDS, ResourceFieldId, ty
 import { readMSPDI } from '@/services/msproject/mspdiReader';
 import { createDefaultCalendar } from '@/engine/calendar/defaultCalendar';
 import { installDOMParser } from './xmldom-shim';
+import { readMppCorpusEntry, resolveMppCrawlScopes } from './mppCorpus';
 import type { Task } from '@/types/task';
 import type { Sequence } from '@/types/sequence';
 import type { Resource, ResourceAssignment } from '@/types/resource';
@@ -1136,9 +1137,9 @@ if (!corpusPresent) {
 // T7-crawl — breed corpus (49 `.mpp`): geen-crash/plausibiliteitspoort + gemeten totaalbasislijnen
 // ═══════════════════════════════════════════════════════════════════════════════════════════
 {
-  const CRAWL = process.env.OPS_MPP_CRAWL ?? '/home/nozzit/open-aec/voor claude/testdata-crawl/crawl-mpp';
+  const CRAWL = resolveMppCrawlScopes(process.env).smoke;
   if (!existsSync(CRAWL)) {
-    console.log('OK  mpp-relations: T7-crawl niet aanwezig (OPS_MPP_CRAWL) — crawlsectie overgeslagen');
+    console.log('OK  mpp-relations: T7-crawl niet aanwezig (OPS_MPP_CRAWL_SMOKE of OPS_MPP_CRAWL/crawl-mpp) — crawlsectie overgeslagen');
   } else {
     function listMppFilesRecursive(dir: string): string[] {
       const out: string[] = [];
@@ -1170,9 +1171,17 @@ if (!corpusPresent) {
       const CRAWL_MATERIAL_BASELINE = 18;
 
       let totalRelations = 0, totalResources = 0, totalAssignments = 0, totalLabor = 0, totalMaterial = 0, readFailures = 0;
+      let supportedFiles = 0;
+      const legacyRejected = { MPP8: 0, MPP9: 0, MPP12: 0 };
       for (const file of crawlFiles) {
         try {
-          const r = readMPP(new Uint8Array(readFileSync(file)));
+          const entry = readMppCorpusEntry(new Uint8Array(readFileSync(file)), readMPP);
+          if (entry.kind === 'legacy') {
+            legacyRejected[entry.variant]++;
+            continue;
+          }
+          const r = entry.value;
+          supportedFiles++;
           totalRelations += r.sequences.length;
           totalResources += r.resources.length;
           totalAssignments += r.assignments.length;
@@ -1186,7 +1195,11 @@ if (!corpusPresent) {
           diffs.push(`[T7-crawl] readMPP gooide onverwacht op ${file}: ${err instanceof Error ? err.message : String(err)}`);
         }
       }
-      truthy(`[T7-crawl] geen leesfouten over ${crawlFiles.length} bestanden`, readFailures === 0);
+      const legacyFiles = legacyRejected.MPP8 + legacyRejected.MPP9 + legacyRejected.MPP12;
+      truthy(`[T7-crawl] alle bestanden verantwoord (${supportedFiles} ondersteund / ${legacyFiles} bewust geweigerd / ${readFailures} leesfouten)`,
+        supportedFiles + legacyFiles + readFailures === crawlFiles.length);
+      truthy(`[T7-crawl] minstens één ondersteund bestand (${supportedFiles})`, supportedFiles > 0);
+      truthy(`[T7-crawl] geen onverwachte leesfouten over ${crawlFiles.length} bestanden`, readFailures === 0);
       truthy(`[T7-crawl] totaal relaties > 0 (${totalRelations})`, totalRelations > 0);
       truthy(`[T7-crawl] totaal resources > 0 (${totalResources})`, totalResources > 0);
       truthy(`[T7-crawl] totaal assignments > 0 (${totalAssignments})`, totalAssignments > 0);
@@ -1196,7 +1209,9 @@ if (!corpusPresent) {
       truthy(`[T7-crawl] resourcetype LABOR op/boven de gemeten basislijn (${totalLabor}/${CRAWL_LABOR_BASELINE})`, totalLabor >= CRAWL_LABOR_BASELINE);
       truthy(`[T7-crawl] resourcetype MATERIAL op/boven de gemeten basislijn (${totalMaterial}/${CRAWL_MATERIAL_BASELINE})`, totalMaterial >= CRAWL_MATERIAL_BASELINE);
       console.log(
-        `   . [T7-crawl] ${crawlFiles.length} bestanden: relaties=${totalRelations} (basislijn ${CRAWL_RELATIONS_BASELINE}), `
+        `   . [T7-crawl] ${crawlFiles.length} bestanden: ${supportedFiles} ondersteund, `
+        + `bewust geweigerd MPP8=${legacyRejected.MPP8}/MPP9=${legacyRejected.MPP9}/MPP12=${legacyRejected.MPP12}, `
+        + `${readFailures} onverwachte leesfouten; relaties=${totalRelations} (basislijn ${CRAWL_RELATIONS_BASELINE}), `
         + `resources=${totalResources} (basislijn ${CRAWL_RESOURCES_BASELINE}, LABOR=${totalLabor}/${CRAWL_LABOR_BASELINE} MATERIAL=${totalMaterial}/${CRAWL_MATERIAL_BASELINE}), `
         + `assignments=${totalAssignments} (basislijn ${CRAWL_ASSIGNMENTS_BASELINE})`,
       );

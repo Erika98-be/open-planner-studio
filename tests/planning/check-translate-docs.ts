@@ -23,9 +23,10 @@ import {
   serializeDocsIndex, titleOf, tutorialNames, RIBBON_TABS, SETTINGS_TAB_KEYS,
   type DocsLiteral, type DocsSources,
 } from '../../scripts/translate/docs';
-import { checkDocs, checkDocsArticle } from '../../scripts/translate/gates';
+import { checkDocs, checkDocsArticle, checkUi } from '../../scripts/translate/gates';
 import type { Concept, LangTermbase } from '../../scripts/translate/common';
-import type { NsInput } from '../../scripts/translate/ui';
+import { applyUiPackage, buildUiPackages, uiUnitStates, type NsInput, type UiOut, type UiSources } from '../../scripts/translate/ui';
+import { unitMap } from '../../scripts/translate/common';
 import type { JsonObject } from '../../scripts/i18n-tools';
 
 let checks = 0;
@@ -587,6 +588,89 @@ const run = (out: string) => checkDocs(PKG.pkg, PKG.src, out);
   const SRC_D = "# T\n\n## Valkuilen\n\nThe app can report *Hour task 'name' has no valid working hours in its calendar*.\n";
   eq('18h „naam“ i.p.v. \'naam\' rond de plek: groen', errs(SRC_D, '# T\n\n## Valkuilen\n\nAplikace může hlásit *Hodinový úkol „name“ nemá platné pracovní hodiny ve svém kalendáři*.\n'), []);
   has('18i andere woorden blijven rood', errs(SRC_D, '# T\n\n## Valkuilen\n\nAplikace může hlásit *Hodinový úkol „name“ nemá pracovní dobu*.\n'), /volgens het patroon/);
+}
+
+// ── 19. Mijlpaalmeldingen: echte broncitaten, één pluralcategorie en de UI→docs-keten (#171) ──
+{
+  const namedKeys = ['milestoneRefusedAssignments', 'milestoneRefusedSummary', 'milestoneClearedOnPhase'];
+  const allKeys = namedKeys.flatMap(key => [key, `${key}Many`]);
+  const readCommon = (lang: string) => JSON.parse(readFileSync(new URL(`../../src/i18n/locales/${lang}/common.json`, import.meta.url), 'utf8')) as JsonObject;
+  const subset = (data: JsonObject): JsonObject => ({ notifications: Object.fromEntries(
+    Object.entries(data.notifications as JsonObject).filter(([key]) =>
+      allKeys.includes(key.replace(/_(zero|one|two|few|many|other)$/, ''))),
+  ) });
+  const nl = subset(readCommon('nl'));
+  const en = subset(readCommon('en'));
+  const enUnits = unitMap(en);
+  const ref = readFileSync(new URL('../../public/docs/en/ref-meldingen.md', import.meta.url), 'utf8');
+  const quotes = italicsOf(ref.split('\n').filter(line =>
+    line.startsWith('- **Milestone refused**') || line.startsWith('- **Milestone flag removed**')).join('\n'));
+
+  for (const lang of ['zh', 'ja', 'ko', 'lo']) {
+    eq(`19 ${lang}: één CLDR-categorie`, new Intl.PluralRules(lang).resolvedOptions().pluralCategories, ['other']);
+    // Migratie-fixture: de bestaande telteksten blijven, de naamvertaling ontbreekt nog (B5).
+    // Alleen in het geheugen vullen we de namen met Engels; dit levert geen localevertalingen op.
+    const real = readCommon(lang).notifications as JsonObject;
+    let target: JsonObject = { notifications: Object.fromEntries(namedKeys.map(key =>
+      [`${key}Many_other`, real[`${key}Many_other`] ?? (en.notifications as JsonObject)[`${key}Many_other`]])) };
+    const sources: UiSources = {};
+    const input = () => ({ ns: 'common', nl, en, target });
+    const expectedStates = namedKeys.flatMap(key => [
+      { key: `notifications.${key}`, state: 'missing' },
+      { key: `notifications.${key}Many`, state: 'unhashed' },
+    ]);
+    eq(`19 ${lang}: geen onterechte actuele bronhash na splitsing`, uiUnitStates(lang, input(), sources), expectedStates);
+    const packs = (mode: 'missing' | 'stale') => buildUiPackages({ lang, inputs: [input()], mode, sources, concepts: [] });
+    const missing = packs('missing');
+    const stale = packs('stale');
+    eq(`19 ${lang}: --missing vindt de naamteksten`, missing.flatMap(p => p.items.map(i => i.key)), namedKeys.map(k => `notifications.${k}`));
+    eq(`19 ${lang}: --stale bewaart de bestaande telteksten`, stale.flatMap(p => p.items.map(i => [i.key, i.previous])),
+      namedKeys.map(k => [`notifications.${k}Many`, { other: (target.notifications as JsonObject)[`${k}Many_other`] }]));
+    const before = buildEnLabelIndex([input()], lang, sources);
+    const outputs: UiOut = {};
+    for (const pkg of [...missing, ...stale]) {
+      const out: UiOut = {};
+      for (const item of pkg.items) {
+        out[item.key] = item.previous ?? enUnits.get(item.key)!.text;
+        outputs[item.key] = out[item.key];
+      }
+      eq(`19 ${lang}: echte UI-poort accepteert de juiste sleutelsoorten`, checkUi(pkg, out).errors, []);
+      // Een teltekst op de naamsleutel mist {{task}}/{{phase}} en blijft hard rood.
+      const first = pkg.items[0];
+      if (first && !first.plural) {
+        ok(`19 ${lang}: teltekst mag de naam niet vervangen`, checkUi(pkg, { ...out, [first.key]: '2 tasks cannot become milestones.' }).errors.length > 0);
+      }
+      target = applyUiPackage(pkg, out, target, nl, sources);
+    }
+    eq(`19 ${lang}: apply bevestigt alle zes bronnen`, uiUnitStates(lang, input(), sources).map(u => u.state), allKeys.map(() => 'current'));
+    eq(`19 ${lang}: na apply geen ontbrekende of verouderde pakketten`, [packs('missing').length, packs('stale').length], [0, 0]);
+    const after = buildEnLabelIndex([input()], lang, sources);
+    const keysInArticle = new Set(quotes.flatMap(q => classifyItalic(q, after, new Set()).flatMap(c => c.hits.map(h => h.key))));
+    eq(`19 ${lang}: bronartikel citeert elk van de zes betekenissen`, [...keysInArticle].sort(), allKeys.map(k => `common:notifications.${k}`).sort());
+
+    for (const key of allKeys) {
+      const path = `common:notifications.${key}`;
+      const quote = quotes.find(q => classifyItalic(q, after, new Set()).some(c => c.hits.some(h => h.key === path)))!;
+      const src = `# Milestones\n\n*${quote}*\n`;
+      const make = (idx: typeof after) => buildDocsPackages({ lang, articles: [{ id: 'milestones', md: src }],
+        mode: 'missing', sources: {}, index: idx, literal, concepts: [] })[0].pkg;
+      const render = (key: string) => {
+        const text = outputs[`notifications.${key}`];
+        return (typeof text === 'string' ? text : text.other).replace(/\{\{(task|phase)\}\}/g, 'Metselen').replace(/\{\{count\}\}/g, '2');
+      };
+      const pkg = make(after);
+      const out = `# Milestones\n\n*${render(key)}*\n`;
+      eq(`19 ${lang}/${key}: runtimezin voldoet aan de echte Help-labelpoort`, checkDocs(pkg, src, out).errors, []);
+      const paired = key.endsWith('Many') ? key.slice(0, -4) : `${key}Many`;
+      has(`19 ${lang}/${key}: naam en aantal zijn niet uitwisselbaar`,
+        checkDocs(pkg, src, `# Milestones\n\n*${render(paired)}*\n`).errors, /label .*volgens het patroon/);
+      if (!key.endsWith('Many')) {
+        const result = checkDocs(make(before), src, out);
+        eq(`19 ${lang}/${key}: ontbrekende UI-naam eist geen oude other-tekst`, result.errors, []);
+        has(`19 ${lang}/${key}: ontbrekende UI-naam blijft zichtbaar als waarschuwing`, result.warnings, /nog geen vertaling in de UI/);
+      }
+    }
+  }
 }
 
 if (diffs.length === 0) {
