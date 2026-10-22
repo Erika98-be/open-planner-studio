@@ -42,6 +42,40 @@ Vertrouw pas op een gerichte run voor snel itereren; draai vóór een commit/PR 
 argumenten. Een onbekende bestandsnaam (geen bestaand `cases-*.json`/`check-*.ts` in deze map) geeft
 een `XX`-foutregel en exitcode ≠ 0, zonder de rest van de gevraagde bestanden te blokkeren.
 
+### Optionele MPP-corpora: brede root en rooktestset
+
+De scopes hebben verschillende, ongewijzigde meetlatten. `mppCorpus.ts` kiest de paden zonder
+bestanden te lezen, mapnamen te raden of een ontbrekende scope door een andere te vervangen.
+
+| Optie | Scope | Checks |
+|---|---|---|
+| `OPS_MPP_CORPUS` | Bedrijfscorpus, los van de crawl | Bestaande corpuschecks; samen met de brede crawl de F4-pin van 216 bestanden / 3413 taken |
+| `OPS_MPP_CRAWL` | Brede `testdata-crawl`-root, met onder meer `mpxj/junit/data` en `crawl-mpp` | Import H4/F4/Z2/Z3/Z4; F4 telt recursief samen met het bedrijfscorpus |
+| `OPS_MPP_CRAWL_SMOKE` | Exacte map voor de rooktestset; standaard `<OPS_MPP_CRAWL>/crawl-mpp` | T9-import (49 bestanden / 788 taken), T7-relaties en T6-kalenders |
+
+Zonder opties blijven de historische standaardpaden gelijk: de brede root is
+`/home/nozzit/open-aec/voor claude/testdata-crawl`, de rooktestset de submap `crawl-mpp`.
+`OPS_MPP_CRAWL_SMOKE` kan ook zonder `OPS_MPP_CRAWL` worden gezet; de brede root houdt dan zijn
+standaard. `OPS_MPP_DURATION_FIXTURE` blijft een afzonderlijke override voor de T10-fixture.
+Ontbrekende mappen blijven optioneel en geven de bestaande skipmelding; een aanwezige map kiest
+geen andere baseline en schakelt geen inhoudelijke guard uit.
+
+Bestaande configuraties bewust migreren:
+
+- `OPS_MPP_CRAWL=/data/testdata-crawl` blijft de brede root. T6/T7/T9 gebruiken voortaan de submap
+  `crawl-mpp`, precies zoals bij de configuratie zonder override.
+- `OPS_MPP_CRAWL=/data/testdata-crawl/crawl-mpp` koos vroeger alleen voor T6/T7/T9 de juiste scope
+  en gaf F4 de verkeerde meetlat. Zet voortaan `OPS_MPP_CRAWL=/data/testdata-crawl`. Staat de
+  rooktestset elders, stel daarnaast `OPS_MPP_CRAWL_SMOKE=/andere/rooktestset` in. Een kale map
+  met alleen rooktestbestanden is geen vervanging voor de brede root.
+- Om beide crawls bewust over te slaan, moet de brede root ontbreken en mag er geen bestaande
+  rooktestoverride zijn. `OPS_MPP_CRAWL=/niet-aanwezig` kiest standaard ook een ontbrekende
+  `/niet-aanwezig/crawl-mpp`; het bedrijfscorpus blijft apart via `OPS_MPP_CORPUS` instelbaar.
+
+T6 krijgt uitsluitend dezelfde padselectie: zijn kalenderverwachtingen blijven gelijk. De overige
+optionele corpuschecks (onder meer fidelity en recorded-times) houden hun bestaande brede
+`OPS_MPP_CRAWL`-scope en vallen buiten deze wijziging.
+
 ## Hoe het werkt (en waarom zo)
 
 Een testgeval is **data**: een netwerkje van taken + relaties + de verwachte uitkomst. `harness.ts`

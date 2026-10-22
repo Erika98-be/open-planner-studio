@@ -65,6 +65,7 @@ import { DEFAULT_RESOURCE_FIELDS, DEFAULT_ASSIGNMENT_FIELDS, ResourceFieldId, ty
 import { readMSPDI } from '@/services/msproject/mspdiReader';
 import { createDefaultCalendar } from '@/engine/calendar/defaultCalendar';
 import { installDOMParser } from './xmldom-shim';
+import { resolveMppCrawlScopes } from './mppCorpus';
 import type { Task } from '@/types/task';
 import type { Sequence } from '@/types/sequence';
 import type { Resource, ResourceAssignment } from '@/types/resource';
@@ -1136,9 +1137,9 @@ if (!corpusPresent) {
 // T7-crawl — breed corpus (49 `.mpp`): geen-crash/plausibiliteitspoort + gemeten totaalbasislijnen
 // ═══════════════════════════════════════════════════════════════════════════════════════════
 {
-  const CRAWL = process.env.OPS_MPP_CRAWL ?? '/home/nozzit/open-aec/voor claude/testdata-crawl/crawl-mpp';
+  const CRAWL = resolveMppCrawlScopes(process.env).smoke;
   if (!existsSync(CRAWL)) {
-    console.log('OK  mpp-relations: T7-crawl niet aanwezig (OPS_MPP_CRAWL) — crawlsectie overgeslagen');
+    console.log('OK  mpp-relations: T7-crawl niet aanwezig (OPS_MPP_CRAWL_SMOKE of OPS_MPP_CRAWL/crawl-mpp) — crawlsectie overgeslagen');
   } else {
     function listMppFilesRecursive(dir: string): string[] {
       const out: string[] = [];
