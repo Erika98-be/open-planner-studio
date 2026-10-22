@@ -13,13 +13,13 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { applyUiBatch } from '../../scripts/translate/apply';
-import { hashUnit, hasUiBaseline, LOCALES, unitMap } from '../../scripts/translate/common';
+import { hashUnit, hasUiBaseline, unitMap } from '../../scripts/translate/common';
 import {
   buildUiPackages, orderSources, selectUnits, setSourceHash, uiReleaseGaps, uiStatus, updateSourceHashForAdd,
   type UiPackage, type UiSources,
 } from '../../scripts/translate/ui';
 import { checkPackage } from '../../scripts/translate/gates';
-import { serialize, type JsonObject } from '../../scripts/i18n-tools';
+import { LOCALES, serialize, type JsonObject } from '../../scripts/i18n-tools';
 
 let checks = 0;
 const diffs: string[] = [];
