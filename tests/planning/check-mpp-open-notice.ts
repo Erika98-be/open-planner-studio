@@ -14,6 +14,8 @@ import { parseOpenedFile } from '@/services/formatRegistry';
 import { useAppStore } from '@/state/appStore';
 import { msProjectImportNotice } from '@/state/msProjectImportNotice';
 import { rtfHasVisibleText } from '@/services/mpp/mppImportLoss';
+import { readMPP } from '@/services/mpp/mppReader';
+import { Var2Data } from '@/services/mpp/mppPrimitives';
 import { activeImportResult, isMultiDocumentImport, type OpenedImport } from '@/services/importTypes';
 import {
   buildNestedCfb, buildVarMetaBytes, concatBytes, encodeCompObjFileFormat, encodePropsEntries,
@@ -53,16 +55,23 @@ const rateTable = (standardRate: number) => {
   return out;
 };
 
-/** Var2Data + VarMeta uit `{ uid: { key: bytes } }`. */
+/** Var2Data + VarMeta uit `{ uid: { key: bytes } }`. Dezelfde bytearray binnen één storage
+ *  betekent een echte gedeelde offset; een kopie met gelijke inhoud blijft een apart blok. */
 function varBlocks(entries: Record<number, Record<number, Uint8Array>>): { meta: Uint8Array; data: Uint8Array } {
   const metaEntries: { uniqueId: number; offset: number; type: number }[] = [];
   const parts: Uint8Array[] = [];
+  const offsets = new Map<Uint8Array, number>();
   let offset = 0;
   for (const [uid, fields] of Object.entries(entries)) {
     for (const [key, bytes] of Object.entries(fields)) {
-      metaEntries.push({ uniqueId: Number(uid), offset, type: Number(key) });
-      parts.push(int32(bytes.length), bytes);
-      offset += 4 + bytes.length;
+      let blockOffset = offsets.get(bytes);
+      if (blockOffset === undefined) {
+        blockOffset = offset;
+        offsets.set(bytes, blockOffset);
+        parts.push(int32(bytes.length), bytes);
+        offset += 4 + bytes.length;
+      }
+      metaEntries.push({ uniqueId: Number(uid), offset: blockOffset, type: Number(key) });
     }
   }
   return { meta: buildVarMetaBytes(metaEntries), data: concatBytes(...parts) };
@@ -82,9 +91,12 @@ function taskFieldMap(): Uint8Array {
 
 interface FixtureAssignment { uid: number; deleted?: boolean; vars: Record<number, Uint8Array> }
 interface FixtureTask { uid: number; name: string; fixedCost?: number; vars?: Record<number, Uint8Array> }
+interface FixtureResource { uid: number; name: string; vars?: Record<number, Uint8Array> }
 interface Fixture {
   tasks: FixtureTask[];
   resourceVars: Record<number, Uint8Array>;
+  /** Optioneel meerdere resources in plaats van de standaardresource (uid 1). */
+  resources?: FixtureResource[];
   /** Toewijzingen aan taak 10 en resource 1; `deleted` zet de verwijdermarkering (FixedMeta-byte 0). */
   assignments: FixtureAssignment[];
   criticalSlackLimit?: number;
@@ -117,14 +129,20 @@ function buildMpp(fx: Fixture): Uint8Array {
   fx.tasks.forEach((_, i) => mv.setInt32(16 + (3 + i) * TASK_META_ITEM + 4, i * RECORD, true));
   const taskVars = varBlocks(Object.fromEntries(fx.tasks.map(task => [task.uid, { 14: utf16(task.name), ...(task.vars ?? {}) }])));
 
-  // Eén resource (uid 1): record met uid @0 (SHORT) en MaxUnits @44.
-  const rscRecord = new Uint8Array(60);
-  new DataView(rscRecord.buffer).setInt16(0, 1, true);
-  new DataView(rscRecord.buffer).setFloat64(44, 10000, true);
-  const rscMeta = new Uint8Array(16 + RESOURCE_META_ITEM);
+  // Resources: uid @0 (SHORT) en MaxUnits @44.
+  const resources = fx.resources ?? [{ uid: 1, name: 'Timmerman', vars: fx.resourceVars }];
+  const rscMeta = new Uint8Array(16 + resources.length * RESOURCE_META_ITEM);
   new DataView(rscMeta.buffer).setUint32(0, 0xfadfadba, true);
-  new DataView(rscMeta.buffer).setInt32(8, 1, true);
-  const rscVars = varBlocks({ 1: { 1: utf16('Timmerman'), ...fx.resourceVars } });
+  new DataView(rscMeta.buffer).setInt32(8, resources.length, true);
+  const rscRecords = resources.map((resource, i) => {
+    new DataView(rscMeta.buffer).setInt32(16 + i * RESOURCE_META_ITEM + 4, i * 60, true);
+    const record = new Uint8Array(60);
+    new DataView(record.buffer).setInt16(0, resource.uid, true);
+    new DataView(record.buffer).setFloat64(44, 10000, true);
+    return record;
+  });
+  const rscVars = varBlocks(Object.fromEntries(resources.map(resource =>
+    [resource.uid, { 1: utf16(resource.name), ...(resource.vars ?? {}) }])));
   // Toewijzingen: FixedMeta (34 bytes/item, byte 0 = verwijderd, offset @4) en FixedData (110 bytes/record:
   // uid @0, taak @4, resource @8, eenheden @46), zoals `readAssignments` ze leest.
   const asnMeta = new Uint8Array(16 + fx.assignments.length * ASSIGNMENT_META_ITEM);
@@ -160,7 +178,7 @@ function buildMpp(fx: Fixture): Uint8Array {
           VarMeta: { data: taskVars.meta }, Var2Data: { data: taskVars.data },
         } },
         TBkndRsc: { children: {
-          FixedMeta: { data: rscMeta }, FixedData: { data: rscRecord },
+          FixedMeta: { data: rscMeta }, FixedData: { data: concatBytes(...rscRecords) },
           VarMeta: { data: rscVars.meta }, Var2Data: { data: rscVars.data },
         } },
         TBkndAssn: { children: {
@@ -232,6 +250,53 @@ async function open(name: string, bytes: Uint8Array): Promise<OpenedImport> {
 }
 const resultsOf = (parsed: OpenedImport) => isMultiDocumentImport(parsed) ? parsed.results : [parsed];
 
+/** Dezelfde blokken op echte taak-, resource- en toewijzingsrecords. De eerste notitie staat in
+ *  alle drie storages op offset 12, na een 4-byte lengte + vier UTF-16-tekens. */
+function noteFixture(
+  taskNotes: readonly (Uint8Array | null)[],
+  resourceNotes = taskNotes,
+  assignmentNotes = taskNotes,
+): Fixture {
+  return {
+    tasks: taskNotes.map<FixtureTask>((note, i) => ({ uid: 10 + i, name: 'Taak', vars: note ? { 15: note } : {} })),
+    resourceVars: {},
+    resources: resourceNotes.map<FixtureResource>((note, i) => ({ uid: 1 + i, name: 'Mens', vars: note ? { 20: note } : {} })),
+    assignments: assignmentNotes.map<FixtureAssignment>((note, i) => ({
+      uid: 1 + i, vars: { 1: utf16('Slot'), ...(note ? { 71: note } : {}) },
+    })),
+  };
+}
+
+/** Observeer echte bytelezingen via de bestaande Var2Data-grens, zonder productiehaak of klok.
+ *  Eén proxy per byteview bewaart de identiteit van de gedeelde datablokken. */
+function readWithNoteReads(bytes: Uint8Array) {
+  const notes: { type: number; length: number; byteReads: number }[] = [];
+  const views = new Map<Uint8Array, Uint8Array>();
+  const original = Var2Data.prototype.getByteArray;
+  Var2Data.prototype.getByteArray = function (this: Var2Data, uid: number, type: number): Uint8Array | null {
+    const raw = original.call(this, uid, type);
+    if (!raw || ![15, 20, 71].includes(type)) return raw;
+    let view = views.get(raw);
+    if (!view) {
+      const note = { type, length: raw.length, byteReads: 0 };
+      notes.push(note);
+      view = new Proxy(raw, {
+        get(target, key) {
+          if (typeof key === 'string' && /^\d+$/.test(key)) note.byteReads++;
+          return Reflect.get(target, key, target);
+        },
+      });
+      views.set(raw, view);
+    }
+    return view;
+  };
+  try {
+    return { result: readMPP(bytes), notes };
+  } finally {
+    Var2Data.prototype.getByteArray = original;
+  }
+}
+
 async function main(): Promise<void> {
   // (1) RTF-aantekening: zichtbare tekst en echte afbeeldingen/objecten tellen.
   eq('1a aantekening met tekst', rtfHasVisibleText(NOTE), true);
@@ -276,8 +341,63 @@ async function main(): Promise<void> {
     ['niet-RTF-terminator blijft gelden', '\0tekst na terminator', false],
     ['platte tekst met controlwoordnamen', String.raw`Controleer \pict en \object in de handleiding.`, true],
     ['lege niet-RTF-tekst', ' \t\r\n', false],
+    ['alleen RTF-opmaak', String.raw`{\rtf1{\fonttbl{\f0 Arial;}}\pard\f0\par}`, false],
+    ['Unicode blijft zichtbaar', String.raw`{\rtf1\uc0\u9629\u20013\par}`, true],
+    ['8-bit escape blijft zichtbaar', String.raw`{\rtf1\ansi \'e9\par}`, true],
+    ['leeg bronblok', '', false],
   ];
   for (const [label, text, want] of noteCases) eq(`1i ${label}`, rtfHasVisibleText(latin1(text)), want);
+
+  // Knownbug 157: alle tokenizergevallen uit #505 ook via gedeelde VarMeta-offsets inlezen.
+  const repeatedCases = noteCases.flatMap(([, text]) => {
+    const block = latin1(text);
+    return [block, block];
+  });
+  const sharedCases = readWithNoteReads(buildMpp(noteFixture(repeatedCases)));
+  eq('1j gedeelde tokenizergevallen tellen per entiteit', sharedCases.result.msProjectReport?.notes,
+    noteCases.filter(([, , content]) => content).length * 2 * 3);
+  eq('1j één datablok per geval per storage', sharedCases.notes.length, noteCases.length * 3);
+  eq('1j alle notitiebytes eenmaal gelezen, ook bij false',
+    sharedCases.notes.every(note => note.byteReads === note.length), true);
+
+  // Lange zichtbare tekst én lange verborgen metadata: veel verwijzingen, drie bronblokken.
+  // De tweede import hergebruikt offsets met andere inhoud; geen resultaat uit het vorige document.
+  const longNotes: readonly [string, Uint8Array, boolean][] = [
+    ['tekst', latin1(String.raw`{\rtf1 ${'x'.repeat(64 * 1024)}\par}`), true],
+    ['metadata', latin1(String.raw`{\rtf1{\info{\title ${'x'.repeat(64 * 1024)}}}\par}`), false],
+  ];
+  for (const [label, block, content] of longNotes) {
+    const shared = readWithNoteReads(buildMpp(noteFixture(Array<Uint8Array>(12).fill(block))));
+    eq(`1k ${label}: alle entiteiten blijven ingelezen`,
+      [shared.result.tasks.length, shared.result.resources.length, shared.result.assignments.length], [12, 12, 12]);
+    eq(`1k ${label}: verlies per entiteit`, shared.result.msProjectReport?.notes ?? 0, content ? 36 : 0);
+    eq(`1k ${label}: drie gedeelde blokken eenmaal gedecodeerd`,
+      shared.notes.map(note => [note.type, note.byteReads]), [[15, block.length], [20, block.length], [71, block.length]]);
+  }
+
+  // Gelijke offsets in verschillende storages hebben andere inhoud. Binnen één storage blijven
+  // ontbrekende notities, andere offsets en aparte blokken met gelijke inhoud onafhankelijk.
+  const mixed = noteFixture(
+    [METADATA_NOTE, NOTE, NOTE, NOTE.slice(), null],
+    [BINARY_PICTURE_NOTE, METADATA_NOTE, BINARY_PICTURE_NOTE],
+    [OBJECT_NOTE, METADATA_NOTE, OBJECT_NOTE],
+  );
+  // Hetzelfde blok mag ook een ander veld bedienen; die interpretatie hoort niet in de notitiecache.
+  mixed.tasks[0].vars = { ...mixed.tasks[0].vars, 51: NOTE };
+  mixed.assignments.push({ uid: 4, deleted: true, vars: { 71: NOTE.slice() } });
+  const mixedBytes = buildMpp(mixed);
+  for (let pass = 1; pass <= 2; pass++) {
+    const imported = readWithNoteReads(mixedBytes);
+    eq(`1l ${pass}: verlies per entiteit, verwijderd record telt niet`, imported.result.msProjectReport?.notes, 7);
+    eq(`1l ${pass}: eigen veld blijft apart geteld`, imported.result.msProjectReport?.customFields, 1);
+    eq(`1l ${pass}: zeven verschillende notitieblokken`, imported.notes.length, 7);
+    eq(`1l ${pass}: ieder blok eenmaal gelezen`, imported.notes.every(note => note.byteReads === note.length), true);
+    eq(`1l ${pass}: zichtbare taaktekst blijft gelijk`, imported.result.tasks.map(task => [task.name, task.description]),
+      Array.from({ length: 5 }, () => ['Taak', '']));
+    eq(`1l ${pass}: zichtbare resourcetekst blijft gelijk`, imported.result.resources.map(resource => [resource.name, resource.description]),
+      Array.from({ length: 3 }, () => ['Mens', '']));
+    eq(`1l ${pass}: drie actieve toewijzingen`, imported.result.assignments.length, 3);
+  }
 
   // (2) Elke categorie: de telling uit de lezer.
   let parsed = await open('verslag.mpp', buildMpp(LOSSY));
@@ -348,6 +468,13 @@ async function main(): Promise<void> {
   eq('4f4 import blijft twee taken en één toewijzing lezen',
     [contentResult.tasks.length, contentResult.assignments.length], [2, 1]);
   eq('4f5 de lezer neemt nog steeds geen aantekeningen over', contentResult.tasks.map(t => t.description ?? ''), ['', '']);
+
+  // (4g) De cache verandert de melding niet: twee verwijzingen per storage blijven zes verliezen.
+  parsed = await open('gedeelde-notities.mpp', buildMpp(noteFixture([NOTE, NOTE])));
+  eq('4g1 gedeelde notities tellen per entiteit', activeImportResult(parsed).msProjectReport?.notes, 6);
+  eq('4g2 één melding met zes verloren notities', S().ui.notifications
+    .filter(n => n.messageKey === 'notifications.msProjectImportLoss')
+    .map(n => n.detailLines?.filter(line => line.messageKey === 'notifications.msProjectLostNotes').map(line => line.params?.count)), [[6]]);
 
   // (5) De sleutels bestaan in nl en en (geen lege toast).
   for (const loc of ['nl', 'en']) {
