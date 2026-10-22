@@ -320,6 +320,18 @@ for (const schema of ['IFC4X3_ADD2', 'IFC4X3', 'IFC4'] as const) {
         earlyFinish: '2026-04-17T16:00', completion: 0.5 }, { status: 'STARTED', childIds: ['a'] }),
       task('a', {}, { parentId: 'f' }),
     ], start: "'2026-02-23T07:00:00'", end: "'2026-04-17T16:00:00'" },
+    { label: 'dagfase: early om 06:00 wint vóór de kale actual om 07:00', tasks: [
+      task('f', { durationUnit: 'days', durationMinutes: undefined, scheduleDuration: 1,
+        actualStart: '2026-03-06', earlyStart: '2026-03-06T06:00', completion: 0.5 },
+      { status: 'STARTED', childIds: ['a'] }),
+      task('a', {}, { parentId: 'f' }),
+    ], start: "'2026-03-06T06:00:00'", end: "'2026-04-10T16:00:00'", taskTimeSlots: [7, 8] },
+    { label: 'dagfase: invoer om 06:00 wint vóór de kale actual om 07:00', tasks: [
+      task('f', { durationUnit: 'days', durationMinutes: undefined, scheduleDuration: 1,
+        actualStart: '2026-03-06', earlyStart: '', scheduleStart: '2026-03-06T06:00', completion: 0.5 },
+      { status: 'STARTED', childIds: ['a'] }),
+      task('a', {}, { parentId: 'f' }),
+    ], start: "'2026-03-06T06:00:00'", end: "'2026-04-10T16:00:00'", taskTimeSlots: [5, 8] },
     { label: 'bladen bepalen beide grenzen buiten hun samenvatting', tasks: [
       task('a', {}, { parentId: 'f' }),
       task('f', { earlyStart: '2026-03-02T07:00', earlyFinish: '2026-03-06T16:00' }, { childIds: ['a', 'b'] }),

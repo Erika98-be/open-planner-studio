@@ -390,9 +390,11 @@ IfcWorkPlan.StartTime. Valt die later dan de vroegste ingelezen taakstart, dan g
 slots van het live `IfcWorkSchedule` delen de vroegste getoonde taakstart en het laatste getoonde
 taakeinde (`shownStart`/`shownFinish` uit `taskDates`, inclusief samenvattingen). Die helpers bepalen
 wanneer een werkelijke datum vaststaat en wanneer early of invoer geldt; de writer rekent niet opnieuw.
-Vóór min/max gebruikt elke gekozen taakdatum dezelfde formatter als `IfcTaskTime`: een kale datum
-wordt bij een urentaak `00:00`, bij een dagtaak het bestaande `07:00`-anker. De headers nemen die
-STEP-waarden rechtstreeks over, zodat de eerste save en herhaalde rondgangen dezelfde tijden dragen.
+Vóór de getoonde datumkeuze én min/max gebruikt een tijdelijke taakkopie dezelfde formatter als
+`IfcTaskTime`: een kale datum wordt bij een urentaak `00:00`, bij een dagtaak het bestaande
+`07:00`-anker. De headers nemen die
+STEP-waarden rechtstreeks over. Ook de vergelijking van werkelijke en berekende fase-starts ziet
+dan genormaliseerde tijden, zodat de eerste save en herhaalde rondgangen dezelfde tijden dragen.
 Zonder taakdatum valt elke as terug op de projectinvoer. Zonder enige start krijgt het verplichte
 `StartTime` het schrijfmoment; een ontbrekend `FinishTime` blijft `$`. De expliciete projectinvoer
 blijft altijd apart in `OPS_ProjectSettings.ProjectStartDate`/`ProjectEndDate`, ook leeg.

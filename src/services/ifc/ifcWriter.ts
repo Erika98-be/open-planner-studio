@@ -405,12 +405,20 @@ export function writeIFC(input: WriteIFCInput): string {
   // Planomvang van de GETOONDE taken, zoals de Gantt en de basislijn: werkelijke datums waar
   // die vaststaan, anders early, anders invoer (`taskDates`). Ook samenvattingen tellen mee.
   // Invoerankers en contractuele projectdatums blijven apart bewaard; opslaan rekent niet.
-  // Normaliseer VÓÓR min/max met dezelfde formatter als IfcTaskTime: een kale datum bij een urentaak
-  // is 00:00, bij een dagtaak 07:00. Vergelijk de ISO-strings inclusief hun STEP-aanhalingstekens;
-  // zo dragen de headers vanaf de eerste save dezelfde tijden als de gekozen taakslots.
+  // Normaliseer vóór de GETOONDE datumkeuze én min/max met de IfcTaskTime-formatter: een kale
+  // uurdatum is 00:00, een kale dagdatum 07:00. Ook de vergelijking actual/computed in een fase
+  // moet die tijden zien. Alleen een tijdelijke kopie; de invoer en taakslots blijven onaangeroerd.
   const taskSpans = tasks.map(task => {
     const dt = taskDateTimeFormatter(task);
-    return { start: dt(shownStart(task)), finish: dt(shownFinish(task)) };
+    // Hergebruik de echte writersemantiek en haal alleen de STEP-aanhalingstekens weg, zodat
+    // shownStart/shownFinish ISO-datums vergelijken. Leeg blijft leeg; `$` is geen taakdatum.
+    const iso = (value: string | undefined): string => value ? dt(value).slice(1, -1) : '';
+    const normalized: Task = { ...task, time: { ...task.time,
+      scheduleStart: iso(task.time.scheduleStart), scheduleFinish: iso(task.time.scheduleFinish),
+      earlyStart: iso(task.time.earlyStart), earlyFinish: iso(task.time.earlyFinish),
+      actualStart: iso(task.time.actualStart), actualFinish: iso(task.time.actualFinish),
+    } };
+    return { start: dt(shownStart(normalized)), finish: dt(shownFinish(normalized)) };
   });
   const startArgs = taskSpans.map(span => span.start).filter(arg => arg !== '$').sort();
   const endArgs = taskSpans.map(span => span.finish).filter(arg => arg !== '$').sort();
