@@ -432,12 +432,6 @@ en noem het in je rapport of PR-tekst.
     verwacht je het Excel-gedrag: vastleggen en een kolom verder (Shift+Tab terug). Gezien bij review
     vader, punt 1. — B
 
-174. **De handmatige release-invoer begint met een verouderde voorbeeldtag.**
-    `.github/workflows/release.yml:12` stelt een tag van vóór het huidige versieschema voor.
-    De versiecontrole wijst die invoer af; de standaardwaarde is dus niet bruikbaar. Gezien bij
-    de versie-audit voor #450. Voorstel: verwijder de standaardwaarde en laat de gebruiker een
-    correcte tag invullen. Geen workflow gestart. — B (bestand en lokale versiecontrole)
-
 
 179. **De website heeft geen PR-CI voor de automatische releasestap.** Op 2026-10-22 bevat
     `OpenAEC-Foundation/website/.github/workflows/` alleen `auto-assign-issues.yml`, `deploy.yml`
