@@ -178,7 +178,9 @@ export type NotificationSeverity = 'error' | 'info';
  * een unie over twee namespaces typecheckt niet, zelf nagemeten). Daarom staat de
  * tak-als-sjabloon-melding hier als `notifications.templateSaved` en niet als
  * `task:structure.templateSaved` — dezelfde vertaalde tekst, in de namespace die het kanaal kan
- * typeren. Een nieuwe melding zet zijn sleutel hier én in alle veertien `common.json`-bestanden.
+ * typeren. Een nieuwe melding zet zijn sleutel in deze unie én in de `common.json`-bronnen voor `nl` en `en`.
+ * `i18n:add` beheert de bronhashes in `i18n/ui-sources/`; de vertaalstraat vult de overige talen aan.
+ * Een release vereist volledige, actuele UI-vertalingen in alle 28 talen (`verify:translations`).
  */
 export type NotificationMessageKey =
   | 'notifications.openFailed'

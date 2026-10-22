@@ -92,7 +92,6 @@ en noem het in je rapport of PR-tekst.
 22. **Goede Vrijdag en Bevrijdingsdag** hebben `optional: true`, maar dat wordt nergens gelezen: ze worden
     altijd gegenereerd. — B
 
-
 198. **Een onparseerbare projecteinddatum kan een ongeldige kalendergeneratie-spanne geven.**
     `computeGenerateSpan` in `src/engine/calendar/generateCalendarHolidays.ts` haalt uit een
     geselecteerde einddatum direct het UTC-jaar. Bij bijvoorbeeld `endDate = 'ongeldig'` kan
@@ -156,11 +155,6 @@ en noem het in je rapport of PR-tekst.
     website volgt de laatste deploy, terwijl een desktopversie zijn eigen kopie meelevert; een oudere app kan
     dus naar een gids wijzen die tools beschrijft die hij niet heeft. De gids zegt nu dat de kopie van de tool
     voorgaat. Voorstel: een versiepad (bv. `/agent/<versie>/planning-guide.md`) of de versie in de gids. — S
-
-126. **Updatevenster: de tekst *Bezig met installeren…* is niet te bereiken.** De balk met
-    `updates.installing` staat achter `isDownloading` (`status.kind === 'downloading'`), terwijl de tekst
-    `isReadyToInstall` (`'readyToInstall'`) vraagt (`UpdateDialog.tsx:125-128,205-208`). Na de download springt
-    het venster naar *Herstarten…* (`:225-229`). Alleen in de code gezien. — S
 
 ## Bestanden en herstel
 
@@ -267,9 +261,13 @@ en noem het in je rapport of PR-tekst.
      agents in dezelfde map schrijven. Voorstel: dezelfde `seal`/`sealErrors` in `prepare`/`apply-terms`.
      Gevonden in de review van #323 (Opus, 2026-10-12), in de code aangewezen. — S
 
-130. **De omschrijving van het voorbeeld *Refurbishment & Extension of a Family Home*** belooft een conflict
-    dat "'Distribute' can resolve" (`public/examples/manifest.json:7`, getoond in `Backstage.tsx`). Er is geen
-    Verdelen-knop; alleen de kern bestaat (`distributeUnits`, `ResourceLoad.ts`). — B
+196. **Showcasecommentaar verwijst naar een ontbrekende Verdelen-gids.**
+    `scripts/showcases.ts:56` noemt `gids-verdelen-restcapaciteit.md`, maar dat bestand bestaat niet
+    in de repository. Het omringende commentaar beschrijft nog "Verdelen…", "Verdeel automatisch"
+    en een verdeeldialoog, terwijl die bediening ontbreekt. De zichtbare voorbeeldbelofte wordt
+    apart in PR #532 / knownbug 130 gecorrigeerd; dit resterende broncommentaar is niet aangepast.
+    Statisch bevestigd bij de review van #532 op `74e596d0`; geen lokale runtime uitgevoerd. — B
+
 170. **Vertaalstraat: een nieuw concept zonder doelterm valt niet op.** Na #376 stond `work-category`
     (werksoort) in `i18n/termbase/concepts.json`, maar in geen enkele `<taal>.json`. `validate-termbase` en
     `verify:translations` bleven groen. De straat hield toen de oude taaktype-term aan (bijv. de: `Neue Vorgangsart`),
@@ -295,12 +293,14 @@ en noem het in je rapport of PR-tekst.
     van v2026.10.0 opgelost met afkappen (`TaskAssignmentsSection.tsx`), de koppen zelf niet. Voorstel: korte
     koppen in die talen, en de Help-artikelen die ze citeren mee. — B
 
-193. **Het meldingscontract noemt nog veertien verplicht bij te werken locale-bestanden.**
-    Het commentaar bij `NotificationMessageKey` in `src/state/slices/types.ts` zegt dat een nieuwe
-    meldingssleutel ook in alle veertien `common.json`-bestanden hoort. Het huidige PR-contract vereist
-    NL/EN; de vertaalstraat verzorgt de overige talen en een release vereist alle 28 actuele UI-talen.
-    Gevonden bij CSV-fix 128 en statisch met AGENTS vergeleken; alleen deze verouderde instructie,
-    geen vastgestelde fout in de sleutelunie of runtime. — B
+195. **Het i18n-recept en een helpercommentaar bevatten nog de oude aantallen locales/bestanden.**
+    `docs/recepten/i18n-sleutel.md:170` noemt naast de Nederlandse bron nog "overige 13 locales",
+    terwijl de app 28 UI-locales heeft. Het voorbeeld bij `--update` in `scripts/i18n-add.ts:19`
+    spreekt nog van "14 bestanden". Het actuele PR-contract is NL/EN, overige vertalingen lopen via
+    de vertaalstraat; beide teksten afzonderlijk nalopen en actualiseren zonder die werkwijze te veranderen.
+    Gezien bij PR #530 op `d2f60fc2`; statisch met AGENTS en de bron vergeleken, niets lokaal uitgevoerd.
+    — B (recept), S (helpercommentaar)
+
 
 197. **De kalendersreferentie citeert nog de oude hergeneratiehint.**
     `public/docs/{nl,en}/ref-kalenders.md:47` beschrijft *Feestdagen dekken …–…; project loopt tot ….
@@ -314,13 +314,6 @@ en noem het in je rapport of PR-tekst.
     of in de app nagespeeld; alleen de oude gidsquote apart actualiseren. — S
 
 ## Tests
-
-175. **De optionele MPP-corpuscheck behandelt bewust geweigerde oude formaten als leesfout.**
-    `check-mpp-relations.ts`, onderdeel `T7-crawl`, verwacht geen leesfouten over 658 lokale
-    corpusbestanden, maar `readMPP` weigert MPP9/MPP12 expliciet (bijvoorbeeld
-    `taskFlags-mpp9Project2013.mpp`). Gezien tijdens de afgebroken volledige planningsrun voor
-    de IFC-performancewijziging op 22-10-2026; dit pad raakt de IFC-reader niet. Voorstel: laat
-    de corpusverwachting onderscheid maken tussen ondersteunde en bewust geweigerde versies. — B
 
 79. **`check-task-grid-performance` (relationIndex-mediaan ≤ 500 ms) zit lokaal op het randje.** Los gedraaid
     496–499 ms (5-10-2026); rood (535–790 ms) in `npm run verify` zodra de container druk is (meerdere agents
@@ -377,17 +370,6 @@ en noem het in je rapport of PR-tekst.
     op `repository.pullRequest.projectCards`. De body is wel bijgewerkt via
     `gh api --method PATCH repos/OpenAEC-Foundation/open-planner-studio/pulls/479 -F body=@<bestand>`.
     Voorstel: de GitHub CLI op de host bijwerken; de repo zelf is niet aangepast hiervoor. — B
-
-181. **`OPS_MPP_CRAWL` kiest twee verschillende corpusscopes in `check-mpp-import.ts`.** F4 (rond
-    regel 4024) gebruikt standaard de hele `testdata-crawl`-root en pint samen met `OPS_MPP_CORPUS`
-    216 bestanden / 3413 taken; T9 (rond regel 5968) gebruikt standaard de submap
-    `testdata-crawl/crawl-mpp` met een basislijn van 49 bestanden / 788 taken. Beide lezen dezelfde
-    omgevingsvariabele, dus één ingestelde root kan niet beide scopes correct kiezen. Vóór het verbod
-    op lokale Node-processen gemeld: met de hele root 449 mpp-import-mismatches, met de `crawl-mpp`-scope
-    7 F4-tellingfouten. Er is geen vergelijking met een schone baseline gedaan; deze aantallen bewijzen
-    geen gevolg van een codewijziging. Voorstel: de scopes afzonderlijk instelbaar maken of de submap
-    eenduidig van de root afleiden. Niet opgelost in de fix van 119.
-    — B (scopemismatch in de code), S (gemelde gevolgen, geen schone baselinevergelijking)
 
 ## Wensen en open taken (geen bug)
 

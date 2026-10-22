@@ -70,8 +70,7 @@ const KLEIN: ProjectSpec = {
     'SNET permit constraint, a start milestone and a mandatory handover milestone, a comfortable deadline ' +
     '(no conflict) and one baseline taken right after set-up. A small crew set from the shared demo ' +
     'resource library, without any overallocation of its own — the masonry crew is booked in the same ' +
-    'week as the terraced houses showcase, so the occupancy overview shows a cross-project conflict ' +
-    'that "Distribute" can resolve.',
+    'week as the terraced houses showcase, so the occupancy overview shows a cross-project conflict.',
   tags: ['residential', 'small', 'entry-level', 'milestones', 'constraints', 'baseline', 'resources'],
   anchorShiftDays: 66,
   tasks: [

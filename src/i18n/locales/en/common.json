@@ -594,6 +594,7 @@
     "releaseNotes": "What's new",
     "downloadInstall": "Download & install",
     "downloading": "Downloading…",
+    "preparingInstall": "Preparing installation…",
     "installing": "Installing…",
     "restarting": "Restarting…",
     "retry": "Try again",
