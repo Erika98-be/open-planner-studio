@@ -293,12 +293,14 @@ en noem het in je rapport of PR-tekst.
     van v2026.10.0 opgelost met afkappen (`TaskAssignmentsSection.tsx`), de koppen zelf niet. Voorstel: korte
     koppen in die talen, en de Help-artikelen die ze citeren mee. — B
 
-193. **Het meldingscontract noemt nog veertien verplicht bij te werken locale-bestanden.**
-    Het commentaar bij `NotificationMessageKey` in `src/state/slices/types.ts` zegt dat een nieuwe
-    meldingssleutel ook in alle veertien `common.json`-bestanden hoort. Het huidige PR-contract vereist
-    NL/EN; de vertaalstraat verzorgt de overige talen en een release vereist alle 28 actuele UI-talen.
-    Gevonden bij CSV-fix 128 en statisch met AGENTS vergeleken; alleen deze verouderde instructie,
-    geen vastgestelde fout in de sleutelunie of runtime. — B
+195. **Het i18n-recept en een helpercommentaar bevatten nog de oude aantallen locales/bestanden.**
+    `docs/recepten/i18n-sleutel.md:170` noemt naast de Nederlandse bron nog "overige 13 locales",
+    terwijl de app 28 UI-locales heeft. Het voorbeeld bij `--update` in `scripts/i18n-add.ts:19`
+    spreekt nog van "14 bestanden". Het actuele PR-contract is NL/EN, overige vertalingen lopen via
+    de vertaalstraat; beide teksten afzonderlijk nalopen en actualiseren zonder die werkwijze te veranderen.
+    Gezien bij PR #530 op `d2f60fc2`; statisch met AGENTS en de bron vergeleken, niets lokaal uitgevoerd.
+    — B (recept), S (helpercommentaar)
+
 
 ## Tests
 
