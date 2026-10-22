@@ -76,6 +76,22 @@ T6 krijgt uitsluitend dezelfde padselectie: zijn kalenderverwachtingen blijven g
 optionele corpuschecks (onder meer fidelity en recorded-times) houden hun bestaande brede
 `OPS_MPP_CRAWL`-scope en vallen buiten deze wijziging.
 
+T7 en F4 onderscheiden ondersteund MPP14 van bewust geweigerd MPP8/9/12. De container moet
+onafhankelijk de oude variant herkennen én de echte lezer moet `MppUnsupportedError` met
+`MPP_LEGACY` gooien. Die bestanden tellen apart, niet als gelezen bestanden of leesfouten.
+Alle andere fouten blijven rood: gewone lees-/containerfouten, onbekende formaten, versleuteling,
+een legacyfout op MPP14 en een lezer die een oude variant ineens accepteert. F4 meldt onverwachte
+fouten alleen met hash (indien leesbaar) en fouttype om bedrijfsnamen buiten de uitvoer te houden.
+De 216/3413-pins, TYPE/EFFORT_DRIVEN-pins en T7-domeinbaselines blijven staan, ook als alle
+gevonden bestanden geweigerd of onleesbaar zijn. T9 blijft een strikte rooktest van 49 bestanden
+met 788 taken; daar worden geen versieafwijzingen vrijgesteld.
+
+`check-mpp-corpus-contract.ts` draait automatisch in de gewone suite, ook zonder extern corpus.
+Hij controleert standaardpaden, verplaatste roots, beide onafhankelijke overrides en migratie,
+en gebruikt synthetische CFB/MPP-bytes met de echte reader plus geïnjecteerde foutpaden voor de
+versieclassificatie. Dit bewijst niet dat de optionele echte corpora hun historische totalen of
+fidelity behouden: zonder die data slaat CI die corpuslagen over.
+
 ## Hoe het werkt (en waarom zo)
 
 Een testgeval is **data**: een netwerkje van taken + relaties + de verwachte uitkomst. `harness.ts`

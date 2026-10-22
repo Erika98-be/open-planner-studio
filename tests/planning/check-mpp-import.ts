@@ -102,7 +102,7 @@ import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { opsSolveInput } from './legacySolveOptions';
 import { builtInProfile } from '@/engine/scheduler/conventions/registry';
-import { resolveMppCrawlScopes } from './mppCorpus';
+import { readMppCorpusEntry, resolveMppCrawlScopes } from './mppCorpus';
 
 const crawlScopes = resolveMppCrawlScopes(process.env);
 
@@ -4047,8 +4047,10 @@ if (corpusPresent) {
       return out;
     }
 
+    let filesFound = 0;
     let filesScanned = 0;
     let filesFailed = 0;
+    let legacyRejected = 0;
     let tasksScanned = 0;
     let typeFieldPresent = 0; // mspTaskTypeRaw !== null (het veld staat in dit bestand se field map)
     let fixedUnits = 0, fixedDuration = 0, fixedWork = 0; // gedecodeerd via mspTaskTypeFromRaw
@@ -4056,8 +4058,17 @@ if (corpusPresent) {
     for (const root of [F4_CORPUS, F4_CRAWL]) {
       if (!existsSync(root)) continue;
       for (const file of listMppFilesRecursiveF4(root)) {
+        filesFound++;
+        let tag = 'ongelezen bestand';
         try {
-          const result = scanZ2(new Uint8Array(readFileSync(file)));
+          const bytes = new Uint8Array(readFileSync(file));
+          tag = hashOf(bytes);
+          const entry = readMppCorpusEntry(bytes, scanZ2);
+          if (entry.kind === 'legacy') {
+            legacyRejected++;
+            continue;
+          }
+          const result = entry.value;
           filesScanned++;
           for (const raw of result.rawScans) {
             tasksScanned++;
@@ -4070,12 +4081,16 @@ if (corpusPresent) {
             }
             if (raw.effortDrivenRaw) effortDrivenCount++;
           }
-        } catch {
-          filesFailed++; // niet-.mpp14-bestanden of andere onleesbare varianten in de crawl-boom
+        } catch (err) {
+          filesFailed++;
+          checks++;
+          // F4 omvat bedrijfsdata: geen bestandsnamen of mogelijk padbevattende fouttekst.
+          diffs.push(`[F4 corpustelling ${tag}] onverwachte leesfout (${err instanceof Error ? err.name : typeof err})`);
         }
       }
     }
-    if (filesScanned === 0) {
+    truthy(`[F4 corpustelling] geen onverwachte leesfouten (${filesFailed})`, filesFailed === 0);
+    if (filesFound === 0) {
       console.log(`OK  mpp-import: F4 corpusbrede task-type/effort-driven-telling (${F4_CORPUS} / ${F4_CRAWL}) niet aanwezig — overgeslagen`);
     } else {
       truthy(`[F4 corpustelling] minstens 1 bestand gescand (kreeg ${filesScanned})`, filesScanned > 0);
@@ -4092,7 +4107,7 @@ if (corpusPresent) {
       truthy(`[F4 corpustelling] EFFORT_DRIVEN === 216 (kreeg ${effortDrivenCount})`, effortDrivenCount === 216);
       console.log(
         `OK  mpp-import: F4 corpusbrede task-type/effort-driven-telling — ${filesScanned} bestand(en) gescand ` +
-        `(${filesFailed} onleesbaar/overgeslagen), ${tasksScanned} taken totaal, ${typeFieldPresent} met TYPE-veld ` +
+        `(${legacyRejected} bewust geweigerd legacy / ${filesFailed} onverwachte leesfouten), ${tasksScanned} taken totaal, ${typeFieldPresent} met TYPE-veld ` +
         `(${fixedUnits} FIXED_UNITS / ${fixedDuration} FIXED_DURATION / ${fixedWork} FIXED_WORK), ${effortDrivenCount} EFFORT_DRIVEN`,
       );
     }
@@ -6068,6 +6083,7 @@ function z4MakeTask(id: string, scheduleStart: Date, childIds: string[] = []): T
           ratio <= SUSPECT_RATIO_BUDGET,
         );
       }
+      truthy(`[T9-crawl] aantal bestanden exact op de gemeten basislijn (${crawlFiles.length}/49)`, crawlFiles.length === 49);
       truthy(`[T9-crawl] geen leesfouten over ${crawlFiles.length} bestanden`, readFailures === 0);
       truthy(
         `[T9-crawl] taakloze bestanden exact op de gemeten basislijn (${filesWithZeroTasks}/${CRAWL_ZERO_TASK_FILES_BASELINE}, zie de bevinding hierboven)`,
