@@ -3,6 +3,7 @@
 import { readFile } from 'node:fs/promises';
 import { PDFDocument } from 'pdf-lib';
 import { expect, seedProject, test } from './fixtures/ops';
+import { chooseLocale, LOCALE_CASES } from './fixtures/locale';
 
 test('report options: preview en export gebruiken dezelfde actuele kop en legendaoptie', async ({ page, ops: _ops }) => {
   await seedProject(page, [
@@ -84,7 +85,7 @@ test('report options: preview en export gebruiken dezelfde actuele kop en legend
   const print = page.locator('[data-tour-anchor="ribbon:report:printPreview"]');
   await print.click();
   const download = await downloadPromise;
-  expect(download.suggestedFilename()).toMatch(/-planning\.pdf$/);
+  expect(download.suggestedFilename()).toBe('Rapportopties-schedule.pdf');
   expect(downloads).toHaveLength(1);
   await expect(print).toBeFocused();
   await expect(company).toHaveValue(companyName);
@@ -116,8 +117,39 @@ test('report options: preview en export gebruiken dezelfde actuele kop en legend
   expect(downloads).toHaveLength(1);
   const panelDownloadPromise = page.waitForEvent('download');
   await page.getByRole('button', { name: /^(Export PDF|Exporteer PDF)$/ }).click();
-  expect((await panelDownloadPromise).suggestedFilename()).toMatch(/-planning\.pdf$/);
+  expect((await panelDownloadPromise).suggestedFilename()).toBe('Rapportopties-schedule.pdf');
   expect(downloads).toHaveLength(2);
+
+  // Knownbug 61: ook de drie rapporttypen zonder TableReportSpec gebruiken de gekozen taal.
+  // De bestaande kop-, papier-, focus- en rasterfallbackcontroles hierboven blijven intact.
+  const typePicker = page.getByLabel(/^(Report type|Rapporttype)$/).first();
+  const exports = [
+    { option: /^(Gantt chart|Gantt-afdruk)$/, nl: 'planning', en: 'schedule' },
+    { option: /^(Milestone overview|Mijlpalen-overzicht)$/, nl: 'mijlpalen', en: 'milestones' },
+    { option: /^Variance$/, nl: 'afwijkingen', en: 'variance' },
+  ];
+  for (const locale of [LOCALE_CASES[2], LOCALE_CASES[3]]) {
+    await chooseLocale(page, locale);
+    for (const reportExport of exports) {
+      await typePicker.click();
+      await page.getByRole('option', { name: reportExport.option }).click();
+      const nextDownload = page.waitForEvent('download');
+      await page.getByRole('button', { name: /^(Export PDF|Exporteer PDF)$/ }).click();
+      expect((await nextDownload).suggestedFilename()).toBe(`Rapportopties-${reportExport[locale.code]}.pdf`);
+    }
+  }
+
+  // Alleen het rapportdeel wisselt van taal: de naamloze basis blijft in beide talen `project`.
+  await page.evaluate(() => window.__OPS__!.store.getState().setProject({ name: '   ' }));
+  for (const [locale, filename] of [
+    [LOCALE_CASES[3], 'project-variance.pdf'],
+    [LOCALE_CASES[2], 'project-afwijkingen.pdf'],
+  ] as const) {
+    await chooseLocale(page, locale);
+    const nextDownload = page.waitForEvent('download');
+    await page.getByRole('button', { name: /^(Export PDF|Exporteer PDF)$/ }).click();
+    expect((await nextDownload).suggestedFilename()).toBe(filename);
+  }
 });
 
 // Naamkolom van de rapporttabel: de gebruiker zet "Taaknamen afkappen" uit en ziet de volledige

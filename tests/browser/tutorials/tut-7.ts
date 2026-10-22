@@ -53,7 +53,7 @@ export const TUTORIAL_7: TutorialScript = {
       id: 'pdf',
       do: [{
         download: { click: { button: l('Exporteer PDF', 'Export PDF'), within: report } },
-        filename: l('Aanbouw woning-voortgang.pdf', 'House extension-voortgang.pdf'),
+        filename: l('Aanbouw woning-voortgang.pdf', 'House extension-progress.pdf'),
       }],
       expect: [],
     },

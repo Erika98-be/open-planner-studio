@@ -59,7 +59,7 @@ The other reports are shown on screen as a table. What you see is what ends up i
 
 ### 6. Export to PDF
 
-Click **Print** in the ribbon, or **Export PDF** at the bottom of the left column. Both buttons export the selected report with your current settings to PDF. The suggested file name is the project name followed by the kind of report, for the Gantt chart for example *Extension house-planning.pdf*.
+Click **Print** in the ribbon, or **Export PDF** at the bottom of the left column. Both buttons export the selected report with your current settings to PDF. The suggested file name is the project name followed by the kind of report, for the Gantt chart for example *Extension house-schedule.pdf*. The report part follows the interface language: a progress report gets `-progress.pdf` in English and `-voortgang.pdf` in Dutch. The project name stays the same; previously saved files are not renamed.
 
 - In the desktop app, and in a browser that has a save dialog for files, you choose where the PDF goes. If you close that dialog without saving, nothing happens.
 - In a browser without such a dialog, the browser puts the PDF in your downloads folder.

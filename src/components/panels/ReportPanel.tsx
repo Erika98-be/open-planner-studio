@@ -1141,7 +1141,7 @@ export function ReportPanel() {
         console.warn('[ReportPanel] Vector-PDF-export mislukt, terugval op raster:', describeVectorFallback(err));
         pdfBytes = exportRaster();
       }
-      await writePdf(pdfBytes, `${fileBase}-${reportType === 'resourceGantt' ? 'resourcediagram' : 'planning'}.pdf`);
+      await writePdf(pdfBytes, `${fileBase}-${reportType === 'resourceGantt' ? t('fileSuffix.resourceGantt') : t('fileSuffix.gantt')}.pdf`);
       return;
     }
 
@@ -1150,7 +1150,7 @@ export function ReportPanel() {
     // gepagineerd door dezelfde paginateVectorToPdfBytes als de Gantt-tak hierboven. Bij een fout
     // valt de export terug op het BESTAANDE DOM-screenshot-pad (modern-screenshot), zodat de export
     // nooit stukloopt.
-    const suffix = tableSpec ? tableSpec.fileSuffix : reportType === 'milestones' ? 'mijlpalen' : 'afwijkingen';
+    const suffix = tableSpec ? tableSpec.fileSuffix : reportType === 'milestones' ? t('fileSuffix.milestones') : t('fileSuffix.variance');
 
     const exportTableRaster = async (): Promise<Uint8Array> => {
       const node = tableSpec ? tableReportRef.current : reportType === 'milestones' ? milestoneRef.current : varianceRef.current;
