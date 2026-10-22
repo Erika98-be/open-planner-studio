@@ -245,13 +245,6 @@ en noem het in je rapport of PR-tekst.
     maar de linktekst *Nivelleringsopties* past niet meer bij het artikel *Overbezetting oplossen*.
     Voorstel: in de extensie de nieuwe id's en titels gebruiken. — B
 
-194. **De NL/EN-extensiegids zegt ten onrechte dat een mislukte lokale ZIP/JS-installatie geen foutmelding geeft.**
-    `public/docs/{nl,en}/howto-extensie-installeren.md:34` verwijst uitsluitend naar de debug-terminal.
-    De bestaande `installLocal`-route in `ExtensionManagerPanel.tsx:41–48` toont bij uitkomst `failed`
-    of een onverwachte afwijzing juist `notifications.extensionInstallFailed` via het centrale meldingskanaal.
-    Annuleren/weigeren blijft zonder foutmelding. Statisch bevestigd bij PR #529 op `437c87a4`;
-    geen lokale runtime uitgevoerd. Alleen de gidsclaim apart actualiseren. — B
-
 
 ## Teksten en helpteksten
 
