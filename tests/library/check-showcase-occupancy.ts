@@ -1,13 +1,13 @@
-// B1c — "Verdelen over projecten" op de ECHTE showcase-voorbeelden.
+// B1c — Bezetting over projecten op de ECHTE showcase-voorbeelden.
 //
 // Waarom deze check bestaat: de drie showcase-IFC's zijn het materiaal waarmee een gebruiker (en
-// een demo) het bezettingsoverzicht en de knop "Verdelen…" leert kennen. Dat werkt alleen als er
-// in die bestanden ook echt een OPLOSBAAR kruis-project-conflict zit. Dat conflict is een
-// eigenschap van gegenereerde DATA (scripts/showcases.ts → public/examples/*.ifc), niet van code —
-// dus kan het bij elke spec-tweak stilzwijgend verdwijnen zonder dat één unit-test rood wordt.
+// een demo) het bezettingsoverzicht leert kennen. De gegevens moeten daarom een zichtbaar én in
+// de verdeelkern OPLOSBAAR kruis-project-conflict bevatten. Dat conflict is een eigenschap van
+// gegenereerde DATA (scripts/showcases.ts → public/examples/*.ifc), niet van code — dus kan het bij
+// elke spec-tweak stilzwijgend verdwijnen zonder dat één unit-test rood wordt.
 // Deze batterij leest daarom de bestanden zoals ze op schijf staan, doet exact wat de app doet bij
 // Backstage → Voorbeelden (`applyDemoLibraryToShowcaseProject`: demo-bibliotheek seeden, project
-// binden, ondubbelzinnige naam-matches koppelen) en toetst de belofte headless.
+// binden, ondubbelzinnige naam-matches koppelen) en toetst de bezetting en verdeelkern headless.
 //
 // Patroon: de ECHTE Zustand-store (zoals check-demo-library.ts / check-library-slice.ts) met drie
 // open documenten, daarna de pure kernen `computeLibraryOccupancy` en `computeDistribution` over
