@@ -1465,7 +1465,7 @@
     },
     "p6FinishNotBeforeFinishFinishBound": {
       "label": "Vroeg einde niet vóór een eind-eind-grens",
-      "help": "Alleen bij uurplanning op de kalender van de opvolger én de lag-kalender, voor een eind-eindrelatie in werktijd, zonder hammock of harde einde-constraint. Ligt de voorgangergrens later dan het vroege einde maar zit er geen werktijd tussen, dan wordt het einde de eerste werkgrens op of na die grens. De start blijft staan; niet voor lag in klokuren."
+      "help": "Datumcorrectie: bij een eind-eindrelatie met lag in werktijd, zonder hammocks en met uurplanning op de kalender van de opvolger (bij restwerk: de voortgangskalender) én de lag-kalender. Ligt de relatiegrens later dan het vroege einde zonder werktijd ertussen, dan schuift alleen het einde naar de eerste werkgrens op of na die grens. Geldt voor automatisch geplande, niet-gestarte en lopende opvolgers; bij niet-gestarte taken gaat een harde eindpin voor. Vrije speling: afzonderlijk telt een niet-voltooide voorganger bij eind-eind zonder lag en zonder procentlag, met bestaande relatievrije speling en een berekend vroeg einde van de opvolger, in haar eigen uurkalender van haar vroege einde tot het vroege einde van de opvolger. Dit geldt ook bij nul-lag in klokuren, zonder extra uurvoorwaarde op de opvolger- of lag-kalender. Hammocks en handmatig geplande taken houden uiteindelijk vrije speling 0."
     },
     "p6AlapPositionedFromSuccessors": {
       "label": "ALAP-taken zo laat als de opvolgers toestaan",

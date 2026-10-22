@@ -1465,7 +1465,7 @@
     },
     "p6FinishNotBeforeFinishFinishBound": {
       "label": "Early finish not before a finish-to-finish boundary",
-      "help": "Only with hour planning on both the successor’s calendar and the lag calendar, for a working-time finish-to-finish relationship, without a hammock or hard finish constraint. If the predecessor boundary is later than early finish with no working time between them, finish becomes the first working boundary on or after it. Start stays unchanged; excludes elapsed-time lag."
+      "help": "Date correction: for a finish-to-finish relationship with working-time lag, without hammocks and with hour planning on both the successor’s calendar (for remaining work: its progress calendar) and the lag calendar. If the relationship boundary is later than early finish with no working time between them, only finish moves to the first working boundary on or after it. Applies to automatically scheduled unstarted and in-progress successors; an unstarted task’s hard finish pin takes precedence. Free float: separately, for a zero-lag finish-to-finish relationship without percentage lag, an unfinished predecessor with existing relationship free float and a calculated successor early finish counts from its own early finish to the successor’s early finish on its own hour calendar. This also applies to zero elapsed-time lag, with no extra hour-planning condition on the successor or lag calendar. Hammocks and manually scheduled tasks ultimately keep free float at zero."
     },
     "p6AlapPositionedFromSuccessors": {
       "label": "ALAP tasks as late as the successors allow",
