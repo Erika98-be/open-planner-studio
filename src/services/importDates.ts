@@ -177,7 +177,8 @@ export function resolveMissingScheduleDates(
  * niet bestaat (maand 13, 31 februari) — geeft `undefined` in plaats van "vandaag". Een verzonnen
  * vandaag-datum als "zo stond het in het bestand" zou het document anders in de modus openen met
  * alle taken op vandaag. `task.time` blijft de gewone,
- * vergevende lezing via `csvDateOrToday`.
+ * vergevende lezing via `csvDateOrToday`; de CSV-lezer weigert onherkende niet-lege cellen vóór
+ * hij een importresultaat teruggeeft.
  */
 export function csvDateOrUndefined(s: string): string | undefined {
   const trimmed = s.trim();

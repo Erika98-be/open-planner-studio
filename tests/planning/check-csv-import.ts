@@ -12,12 +12,13 @@
 //  4. (bijvangst review) decimale komma: "2,5" dagen / "33,4" % werden stil 2 / 33.
 //
 // Draait via run.sh (esbuild-bundel). Exit 0 = alles groen — alleen de exitcode telt.
-import { readCSV } from '@/services/csv/csvReader';
+import { CsvDateImportError, readCSV } from '@/services/csv/csvReader';
 import { writeCSV } from '@/services/csv/csvWriter';
 import { parseSheetPercent } from '@/services/progressImport/sheetValues';
 import { formatLagShort, parseLagInput } from '@/utils/lagFormat';
 import { createDefaultTaskTime } from '@/utils/taskDefaults';
 import { useAppStore } from '@/state/appStore';
+import { importFailureNotice } from '@/state/slices/fileSlice';
 import type { Task } from '@/types/task';
 import type { Sequence } from '@/types/sequence';
 import type { Project } from '@/types/project';
@@ -266,6 +267,29 @@ const lagsByLink = (r: ImportResult) => {
   for (const head of ['Task Type', 'Werksoort', 'Work category', 'taaktype']) {
     const r = readCSV(csvOf(['WBS', 'Name', head], [['1', 'A', 'INSTALLATION']]));
     eq(`6 kop "${head}" ⇒ werksoort INSTALLATION`, r.tasks[0]?.taskType, 'INSTALLATION');
+  }
+}
+
+// 7. Knownbug 128: een gevulde maar onherkende datum weigert de HELE CSV, vóór taakconstructie.
+//    Alle vier datumkolommen delen dit pad; ook een fout ná een geldige rij mag geen deelresultaat geven.
+{
+  const H = ['WBS', 'Name', 'Duration', 'Start', 'Finish', 'Actual Start', 'Actual Finish', 'Completion (%)'];
+  const valid = ['1', 'Geldig', '5', '2015-01-05', '2015-01-09', '', '', '0'];
+  for (const column of ['Start', 'Finish', 'Actual Start', 'Actual Finish']) {
+    const invalid = ['2', 'Onleesbaar', '5', '2015-01-05', '2015-01-09', '', '', '100'];
+    invalid[H.indexOf(column)] = '2 maart 2026';
+    let result: ImportResult | undefined;
+    let error: unknown;
+    try { result = readCSV(csvOf(H, [valid, invalid])); } catch (err) { error = err; }
+    ok(`7 ${column}: specifieke weigering`, error instanceof CsvDateImportError);
+    eq(`7 ${column}: geen gedeeltelijk importresultaat`, result, undefined);
+    eq(`7 ${column}: rij, oorspronkelijke kolomkop en celwaarde`,
+      error instanceof CsvDateImportError ? [error.row, error.column, error.value] : undefined,
+      [3, column, '2 maart 2026']);
+    eq(`7 ${column}: één vertaalbare foutmelding met hersteladvies`, importFailureNotice(error, 'technisch'), {
+      severity: 'error', messageKey: 'notifications.csvInvalidDate',
+      params: { row: 3, column, value: '2 maart 2026' },
+    });
   }
 }
 
