@@ -34,6 +34,8 @@ Per bestandsformaat: of je het kunt openen, opslaan en exporteren, wat er wel en
 
 **Openen** — ja. De app herkent een `.xml`-bestand als MS Project XML aan het hoofdelement `Project` in de namespace van MS Project (of zonder namespace). Rekenprofiel: *Open Planner Studio*. Na het openen zegt de app in één melding wat ze niet heeft overgenomen; zie [Een MS Project-bestand (.mpp) openen](docs://howto-mpp-openen).
 
+**Onleesbare taakdatums.** Een waarde zoals `NA` geldt als een ontbrekende datum. De rest van het bestand opent gewoon. Een ontbrekende geplande start gebruikt de projectstart, of anders de vroegste leesbare taakstart. Voor een ontbrekend einde gelden dezelfde regels als bij een leeg datumveld. Een onleesbare werkelijke datum, constraintdatum, deadline of datum in de opgeslagen rekenuitvoer wordt niet als datum overgenomen.
+
 **Opslaan** — nee. Zo'n project krijgt geen opslagdoel.
 
 **Exporteren** — ja, als *MS Project XML* (*Te openen in Microsoft Project. Volledige WBS-structuur.*). Standaardnaam: de projectnaam met `.xml`.
@@ -63,6 +65,8 @@ Per bestandsformaat: of je het kunt openen, opslaan en exporteren, wat er wel en
 ## Primavera P6 XML
 
 **Openen** — ja. De app herkent een `.xml`-bestand als P6 XML aan het hoofdelement `APIBusinessObjects`. Rekenprofiel: *Open Planner Studio*.
+
+**Onleesbare taakdatums.** Hiervoor gelden dezelfde regels als bij MS Project XML: een onleesbare datum geldt als ontbrekend en breekt het openen niet af.
 
 **Meerdere projecten in één bestand.** Elk project met activiteiten opent in een eigen tabblad, met de naam *Projectnaam (Project-ID)*. Een project zonder activiteiten slaat de app over. Het actieve tabblad is het project met de meeste activiteiten. Een relatie naar een ander project neemt de app niet mee, en ook geen activiteit die bij geen project hoort. Na het openen meldt de app hoeveel projecten ze opende.
 
