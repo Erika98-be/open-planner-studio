@@ -236,17 +236,6 @@ en noem het in je rapport of PR-tekst.
     (niet in de PR) als 120 taken in 6 documenten; de meting bij #357 vond vóór die fix 120 in 5 documenten,
     waaronder de 4 lopende taken op 100 % in rehab-2 die nu gelijk blijven. Voorstel: besluiten welke kant
     wint (P6-status of actuals) en dat in beide lezers gelijk trekken. — B
-116. **`readIFC` geeft een fase op 100 % zonder werkelijk einde een verzonnen werkelijk einde** (en maakt een
-    lopende fase voltooid). De writer schrijft de fase-rollup (`summaryProgress.ts`). Die kan een fase op
-    100 % zonder werkelijk einde geven: STARTED als een niet-gestarte mijlpaal onder voltooide taken hangt, of
-    COMPLETED als de taken eronder alleen voltooid of lopend op 100 % zijn. `normalizeImportedProgress` maakt
-    van zo'n fase bij het lezen COMPLETED, met een werkelijk einde op de statusdatum. Na de solve rekent de rollup de fase opnieuw uit en is het weg; het telt dus alleen op
-    paden zonder solve, zoals "Datums zoals opgeslagen" (`documentActivation.ts`). Gemeten met een script, op
-    main en met #357 gelijk: fase P met alleen een lopende taak op 100 % (statusdatum 2015-01-07) krijgt AF
-    2015-01-07; fase *Pre-Construction* in `demo-sample.xer` krijgt AF 2024-06-01T08:00. Direct na de
-    XER-import (zonder IFC) heeft de fase geen werkelijk einde. Met #357 houdt de taak geen werkelijk einde
-    meer, dus spreekt het einde van de fase haar taak nu tegen. Voorstel: fasen in de lezer niet door de
-    voortgang-invarianten halen. — B (lezer), S (gevolg in "Datums zoals opgeslagen" niet nagespeeld)
 118. **Een XER-activiteit met een onbekende `status_code` blijft "niet gestart", ook op 100 % of met een
     werkelijk einde.** `statusOf` (`src/services/xer/xerReader.ts`) geeft bij een onbekende tekst (bv.
     `TK_Weird`) de enum-fallback NOT_STARTED, met melding. Een lege of ontbrekende status leidt de lezer sinds
@@ -267,9 +256,6 @@ en noem het in je rapport of PR-tekst.
 158. **`.mpp`-importverslag: een lege baselinedatum kan vals verlies geven.** `mppImportLoss.ts` controleert
     de ruwe bytes in plaats van `getTimestamp()`; de bytes `00 00 FF FF`, `FF FF 00 00` en `00 00 01 00`
     tellen dan als datum. Synthetisch; niet gezien in 34 echte bestanden. VERVOLG 9 van #392. — S
-159. **`.mpp`-importverslag: verborgen RTF-metadata kan een niet-bestaande afbeelding of object melden.**
-    Bijvoorbeeld `{\info{\title \\pict}}` in een aantekening. Voorstel: herkennen via de tokenizer. VERVOLG 10
-    van #392. Niet nagespeeld. — S
 162. **Desktop (Linux/macOS): Opslaan overschrijft een alleen-lezen projectbestand als de map schrijfbaar
     is.** `replaceUserFile` (`atomicWrite.ts`) schrijft een halffabricaat met de rechten van het origineel
     (0444) en hernoemt het over het doel; op POSIX mag dat. Het bestand krijgt de nieuwe inhoud en blijft
@@ -360,10 +346,6 @@ en noem het in je rapport of PR-tekst.
     `/opt/pw-browsers/chromium-1194` draaien de tests wel, maar elke test eindigt rood op één
     "Failed to load resource: 404" in de console, ook de bestaande `table-reports.spec.ts` (gedraaid op de
     branch van de DCMA-PR, die dat rapport niet raakt). Welke URL dat is, is niet vastgesteld. — S
-
-100. **Tailwind v4 scant ook bestanden buiten `src/`**, zoals `scripts/`. Een token als `[a:b]` in een
-    logtekst wordt dan een CSS-regel in de bundel. Gezien bij #308 met `[build:platform]` (+36 bytes CSS);
-    de logtekst is daarom aangepast. Voorstel: de bronnen van Tailwind beperken tot `src/` en `index.html`. — B
 
 104. **Geen automatische test voor de zegels en `check-docs`** (`scripts/translate/cli.ts`). In #323 alleen met
      de hand nagespeeld. De CLI werkt vanuit `process.cwd()`, dus een test in een tijdelijke map kan. — S
@@ -463,11 +445,6 @@ en noem het in je rapport of PR-tekst.
     de versie-audit voor #450. Voorstel: verwijder de standaardwaarde en laat de gebruiker een
     correcte tag invullen. Geen workflow gestart. — B (bestand en lokale versiecontrole)
 
-175. **`progress-entry.spec.ts` opent de taakdialoog soms niet opnieuw.** In CI-run 39750997457
-    (PR #476, browser 3-4, 2026-10-22) faalde het scenario *Regel 2, Taak bewerken* op regel 300:
-    na `seedActualDates` en een canvasdubbelklik ontbrak `[data-ops-task-dialog]`. De eerste opening
-    en de voortgangsvraag in hetzelfde scenario slaagden. De PR wijzigt alleen Vite 7.3.5 naar 7.3.7;
-    de oorzaak en het verband met die wijziging zijn niet vastgesteld. — S
 
 179. **De website heeft geen PR-CI voor de automatische releasestap.** Op 2026-10-22 bevat
     `OpenAEC-Foundation/website/.github/workflows/` alleen `auto-assign-issues.yml`, `deploy.yml`
