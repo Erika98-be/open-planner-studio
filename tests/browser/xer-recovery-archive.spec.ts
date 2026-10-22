@@ -101,6 +101,21 @@ async function acceptRecovery(page: Page): Promise<void> {
 
 test('crashherstel: een XER met twee projecten komt terug mét archief, uit één gedeelde blob', async ({ page, ops: _ops }) => {
   test.setTimeout(90_000);
+  const workers: string[] = [];
+  page.on('worker', worker => workers.push(worker.url()));
+  // Alleen observeren: echte worker, berichten en IndexedDB; de gebruikersroute blijft ongewijzigd.
+  await page.evaluate(() => {
+    const requests: Array<{ inputKeys: string[]; archiveKeys: string[] }> = [];
+    Object.assign(window, { __recoveryWorkerRequests: requests });
+    const post = Worker.prototype.postMessage;
+    Worker.prototype.postMessage = function (value: unknown, ...rest: unknown[]) {
+      const message = value as { snapshot?: { input: object; archive?: object } };
+      if (message?.snapshot) requests.push({
+        inputKeys: Object.keys(message.snapshot.input), archiveKeys: Object.keys(message.snapshot.archive ?? {}),
+      });
+      Reflect.apply(post, this, [value, ...rest]);
+    };
+  });
   // (1) Openen via de echte bestandsroute.
   const openButton = page.locator('button.ribbon-btn').filter({ hasText: /^(Open|Openen)$/ });
   await expect(openButton).toHaveCount(1);
@@ -132,6 +147,18 @@ test('crashherstel: een XER met twee projecten komt terug mét archief, uit éé
   await expect.poll(() => readRecoveryDb(page, RENAMED), { timeout: 30_000, intervals: [500] }).toMatchObject({
     version: 2, blobs: 1, snapshotHasName: true,
   });
+  expect(workers.some(url => url.includes('recoverySnapshot.worker'))).toBe(true);
+  const requests = await page.evaluate(() => (window as unknown as {
+    __recoveryWorkerRequests: Array<{ inputKeys: string[]; archiveKeys: string[] }>;
+  }).__recoveryWorkerRequests);
+  expect(requests.length).toBeGreaterThan(0);
+  for (const request of requests) {
+    expect(request.archiveKeys.sort()).toEqual(['byteLength', 'format', 'selectorValid', 'sha256']);
+    expect(request.inputKeys).not.toContain('xerSourceArchive');
+    expect(request.inputKeys).not.toContain('xer');
+    expect(request.inputKeys).not.toContain('fileHandle');
+    expect(request.inputKeys).not.toContain('siteFileId');
+  }
   const db = await readRecoveryDb(page, RENAMED);
   expect(db.stores.sort()).toEqual(['records', 'xer-archives']);
   expect(db.manifestRefs).toHaveLength(2);
@@ -154,6 +181,8 @@ test('crashherstel: een XER met twee projecten komt terug mét archief, uit éé
 
 test('crashherstel: oude v1-snapshot herstelt en onleesbare kopie blijft bewaard na nieuwe auto-save', async ({ page, ops }) => {
   test.setTimeout(90_000);
+  // Zelfde herstelroute ook zonder Web Worker (bijvoorbeeld een beperkte webview).
+  await page.addInitScript(() => { Object.defineProperty(window, 'Worker', { value: undefined, configurable: true }); });
   // Fixture, vóór de app-start: de app is door de `ops`-fixture al geladen en heeft `ops-recovery` op v2
   // gezet. Daarom eerst weg van de app naar een statisch bestand, de database wissen, en daar een v1-
   // database neerzetten met de snapshot die een vorige versie schreef: IFC met INGEBED archief (schema 2),
