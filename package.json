@@ -1,13 +1,14 @@
 {
   "name": "open-planner-studio",
   "private": true,
-  "version": "2026.9.0",
+  "version": "2026.10.0",
   "license": "LGPL-3.0-or-later",
   "type": "module",
   "scripts": {
     "dev": "node scripts/dev-server.mjs",
     "build": "tsc && vite build",
     "build:platform": "node scripts/build-platform.mjs",
+    "build:core": "node scripts/build-core.mjs",
     "typecheck": "tsc --noEmit --incremental --tsBuildInfoFile node_modules/.cache/ops-tsc/app.tsbuildinfo && tsc --noEmit -p tsconfig.tests.json --incremental --tsBuildInfoFile node_modules/.cache/ops-tsc/tests.tsbuildinfo",
     "lint": "eslint src",
     "lint:fast": "eslint src --cache --cache-strategy content --cache-location node_modules/.cache/ops-eslint/",
@@ -18,7 +19,7 @@
     "test:dev-server": "node --test tests/dev-server/*.test.mjs && bash tests/dev-server/integration.sh",
     "test:browser": "node scripts/run-browser-tests.mjs",
     "test:browser:x11": "node tests/browser/x11-xer-evidence.mjs",
-    "verify": "npm run typecheck && npm run lint && npm test && npm run verify:examples && npm run verify:docs && npm run verify:i18n && npm run verify:release-highlights-json && npm run verify:store-boundaries && npm run verify:conventions && npm run verify:gantt-boundaries && npm run verify:cycles && npm run verify:text-roles",
+    "verify": "npm run typecheck && npm run lint && npm test && npm run verify:examples && npm run verify:docs && npm run verify:i18n && npm run verify:release-highlights-json && npm run verify:store-boundaries && npm run verify:conventions && npm run verify:gantt-boundaries && npm run verify:cycles && npm run verify:text-roles && npm run verify:core-package",
     "preview": "vite preview",
     "tauri": "tauri",
     "tauri:dev": "node scripts/tauri-dev.mjs",
@@ -43,10 +44,12 @@
     "verify:gantt-boundaries": "node scripts/verify-gantt-boundaries.mjs",
     "verify:cycles": "node scripts/verify-cycles.mjs",
     "verify:text-roles": "node scripts/verify-text-roles.mjs",
+    "verify:core-package": "node scripts/verify-core-package.mjs",
     "verify:audit": "npm audit --audit-level=high",
     "publish:wiki": "node scripts/publish-wiki.mjs",
     "stats:downloads": "node scripts/download-stats.mjs",
-    "measure:profiles": "node scripts/measure-profiles.mjs"
+    "measure:profiles": "node scripts/measure-profiles.mjs",
+    "measure:large-plans": "node scripts/measure-large-plans.mjs"
   },
   "dependencies": {
     "@fontsource/inter": "^5.2.8",
@@ -73,6 +76,7 @@
     "zustand": "^5.0.0"
   },
   "devDependencies": {
+    "@modelcontextprotocol/sdk": "1.32.1",
     "@playwright/test": "1.62.1",
     "@tailwindcss/postcss": "^4.2.0",
     "@tauri-apps/cli": "^2.12.0",

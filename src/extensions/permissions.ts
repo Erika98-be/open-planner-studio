@@ -110,10 +110,11 @@ export const KNOWN_PERMISSIONS: readonly ExtensionPermission[] = [
 ];
 
 /**
- * Filter een (mogelijk uit een nieuwere extensie afkomstige) permissie-lijst tot wat deze
- * app-versie kent. Onbekende strings worden weggelaten met een appLog-warn — forward-compat:
- * een extensie voor een latere versie installeert/activeert nog steeds, ze verliest alleen de
- * onbekende permissie(s). Legt géén dubbele waarden of niet-string-invoer door.
+ * Defensieve normalisatie voor de API-opbouw: behoud bekende permissies zonder duplicaten
+ * en laat niet-string-invoer weg. Onbekende strings geven een appLog-warn en worden weggelaten.
+ * Dit is géén installatiebeleid: parseExtensionManifest weigert onbekende permissies bij verse
+ * JS-/ZIP-/catalogusinvoer. Alleen de parser voor al opgeslagen legacyrecords filtert ze met
+ * een waarschuwing; bij normale activatie is die parse al afgerond vóór deze extra grens.
  */
 export function sanitizeManifestPermissions(
   raw: unknown,

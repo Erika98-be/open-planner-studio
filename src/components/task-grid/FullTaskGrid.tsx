@@ -406,9 +406,12 @@ export function TaskGridSurface({
   }, [activeDocumentId]);
 
   const calendarEngine = useMemo(() => new CalendarEngine(calendar), [calendar]);
-  const calendarOptions = useMemo(() => [calendar, ...calendars]
-    .filter((item, index, all) => all.findIndex(candidate => candidate.id === item.id) === index)
-    .map(item => ({ value: item.id, label: item.name })), [calendar, calendars]);
+  const calendarOptions = useMemo(() => [
+    { value: '', label: tTask('properties.calendarProject') + ': ' + calendar.name },
+    ...[calendar, ...calendars]
+      .filter((item, index, all) => all.findIndex(candidate => candidate.id === item.id) === index)
+      .map(item => ({ value: item.id, label: item.name })),
+  ], [calendar, calendars, tTask]);
   const trace = useMemo(
     () => buildTrace(traceMode, selectedTaskIds, sequences, cpmResult),
     [cpmResult, selectedTaskIds, sequences, traceMode],
@@ -798,7 +801,7 @@ export function TaskGridSurface({
       name: milestone
         ? tTask('defaultMilestone', { defaultValue: 'Nieuwe mijlpaal' })
         : tTask('defaultTask', { defaultValue: 'Nieuwe taak' }),
-      ...(milestone ? { isMilestone: true, taskType: 'ATTENDANCE' as const } : {}),
+      ...(milestone ? { isMilestone: true, milestoneKind: 'FINISH' as const, taskType: 'USERDEFINED' as const } : {}),
       ...endOfListPosition(),
     });
     if (!id) return;
@@ -1312,7 +1315,8 @@ export function TaskGridSurface({
             addTask({
               name: tTask('defaultMilestone', { defaultValue: 'Nieuwe mijlpaal' }),
               isMilestone: true,
-              taskType: 'ATTENDANCE',
+              milestoneKind: 'FINISH',
+              taskType: 'USERDEFINED',
               parentId: contextMenu.task.id,
             });
           }}

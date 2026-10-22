@@ -129,7 +129,7 @@
   "barColorMode_auto": "按任务 — 自动",
   "barColorMode_category": "按类别",
   "barColorFieldLabel": "类别字段",
-  "barColorMissingField": "此项目中不存在该字段。暂时使用任务类型。",
+  "barColorMissingField": "此项目中不存在该字段。暂时使用工作类别。",
   "statusLineLabel": "状态线：",
   "statusLine_none": "无",
   "statusLine_statusDate": "状态日期线",
