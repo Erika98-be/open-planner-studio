@@ -258,12 +258,22 @@ function noteFixture(
   assignmentNotes = taskNotes,
 ): Fixture {
   return {
-    tasks: taskNotes.map<FixtureTask>((note, i) => ({ uid: 10 + i, name: 'Taak', vars: note ? { 15: note } : {} })),
+    tasks: taskNotes.map<FixtureTask>((note, i) => {
+      const vars: Record<number, Uint8Array> = {};
+      if (note !== null) vars[15] = note;
+      return { uid: 10 + i, name: 'Taak', vars };
+    }),
     resourceVars: {},
-    resources: resourceNotes.map<FixtureResource>((note, i) => ({ uid: 1 + i, name: 'Mens', vars: note ? { 20: note } : {} })),
-    assignments: assignmentNotes.map<FixtureAssignment>((note, i) => ({
-      uid: 1 + i, vars: { 1: utf16('Slot'), ...(note ? { 71: note } : {}) },
-    })),
+    resources: resourceNotes.map<FixtureResource>((note, i) => {
+      const vars: Record<number, Uint8Array> = {};
+      if (note !== null) vars[20] = note;
+      return { uid: 1 + i, name: 'Mens', vars };
+    }),
+    assignments: assignmentNotes.map<FixtureAssignment>((note, i) => {
+      const vars: Record<number, Uint8Array> = { 1: utf16('Slot') };
+      if (note !== null) vars[71] = note;
+      return { uid: 1 + i, vars };
+    }),
   };
 }
 
