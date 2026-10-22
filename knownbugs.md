@@ -392,7 +392,6 @@ en noem het in je rapport of PR-tekst.
     Primavera P6. — B
 42. **Helpteksten van enkele conventies** noemen hun voorwaarden niet (alleen urenkalender, alleen
     `.xer`-herkomst). — B
-43. **EN-melding lege rapportperiode** zegt "Whole project"; de optie heet *Project duration*. — S
 56. **nl-label "Orientatie:"** in de rapportopties mist het trema. — S
 57. **Statusdatum-label in de Gantt** toont ISO (`2027-06-28`), de rest dd-mm-jjjj. Mogelijk bewust. — S
 73. **Namen en beschrijvingen van de voorbeeldprojecten zijn Engels in elke interfacetaal.** Gezien in de
