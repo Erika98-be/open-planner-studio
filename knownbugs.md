@@ -324,10 +324,6 @@ en noem het in je rapport of PR-tekst.
 155. **`.mpp` zonder veldkaarten: vaste kosten en tarieven ontbreken in het importverslag.** De terugval op de
     standaardveldkaarten kent die velden niet, dus het verslag meldt hun verlies niet. VERVOLG 5 van #392,
     gemeld door de reviewer. Niet nagespeeld. — S
-156. **MSPDI-importverslag: één tariefrecord in tabel A met overwerktarief of gebruikskosten wordt niet
-    bekeken.** `scanMspdiImportLoss` (`mspdiImportLoss.ts`, tarieven) kijkt bij tabel A alleen of er meer dan
-    één record is; `OvertimeRate`/`CostPerUse` onder één `Rates/Rate` in tabel A geven geen melding.
-    VERVOLG 6 van #392, gemeld door de reviewer. Niet nagespeeld. — S
 157. **`.mpp`: een gedeelde lange aantekening wordt per verwijzing opnieuw verwerkt.** 1.000 taken × 64 KiB
     kost ongeveer 1,4 s. VERVOLG 8 van #392 (meting van de reviewer). Voorstel: cache per gedeeld datablok. — S
 158. **`.mpp`-importverslag: een lege baselinedatum kan vals verlies geven.** `mppImportLoss.ts` controleert
@@ -336,11 +332,6 @@ en noem het in je rapport of PR-tekst.
 159. **`.mpp`-importverslag: verborgen RTF-metadata kan een niet-bestaande afbeelding of object melden.**
     Bijvoorbeeld `{\info{\title \\pict}}` in een aantekening. Voorstel: herkennen via de tokenizer. VERVOLG 10
     van #392. Niet nagespeeld. — S
-160. **MSPDI-importverslag vergelijkt numerieke XML-waarden als tekst.** `<Number>00</Number>` telt niet als
-    Baseline 0 (`baseline0Dates` in `mspdiImportLoss.ts` vergelijkt met `'0'`), terwijl de lezer
-    (`getElementInt`) hem wel als Baseline 0 leest. `<TaskUID>01</TaskUID>` geeft bij gelijke baselines
-    telling 1, terwijl de lezer wel aan taak 1 koppelt. VERVOLG 11 van #392. Voorstel: baselinenummer en
-    taak-UID numeriek parsen zoals de lezer. — S
 161. **Voortgangsblad: de preview maakt geen verschil tussen een onbekende taak-ID en een dubbele WBS.** Beide
     staan onder *Wacht op koppeling* (`ProgressImportDialog.tsx:147-149`), met alleen WBS en naam uit het blad,
     het bladrijnummer en *Kies een taak…* (r. 369-400). De reden (`unmatched` of `ambiguousWbs`) en de
