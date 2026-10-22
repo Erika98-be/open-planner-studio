@@ -2,8 +2,8 @@
 // §Bestands-tools 107-111, §Sessie-semantiek/drift-anker 116).
 //
 // Draait headless tegen de ECHTE Zustand-store. De fs/Tauri-rand is GEFAKED via de geëxporteerde
-// dependency-naad `fileToolDeps.getFs` (in-memory bestandsmap) — er wordt in deze suite dus nooit
-// een echt bestand geschreven en `isTauri()` (die `window` leest) wordt nooit aangeraakt.
+// dependency-naad `fileToolDeps.getFs` (in-memory bestandsmap). De 188-regressie in de bestaande
+// IFC2X3-kopieroute gebruikt ook echte Node-fs via de plugin-JS-client (geen Rust/Tauri-runtime).
 // De T16-hook `markDuplicateBorn` loopt via de requestcontext en wordt hier bespioneerd.
 import { appStoreContext, makeMcpContext, useAppStore, test, assert, assertEq, run, type McpContextOverrides } from './harness';
 import { getTool } from '@/services/mcp/toolRegistry';
@@ -18,6 +18,11 @@ import { writeP6XML } from '@/services/p6/p6xmlWriter';
 import { buildWriteIFCInput } from '@/state/ifcSaveInput';
 import { installDOMParser } from '../planning/xmldom-shim';
 import type { CPMResult } from '@/engine/scheduler/CPMSolver';
+import { mkdtempSync, writeFileSync, readFileSync, symlinkSync, readlinkSync, existsSync, readdirSync, rmSync } from 'node:fs';
+import { join, sep } from 'node:path';
+import { tmpdir } from 'node:os';
+import { installNodeFileIpc } from '../planning/nodeFileIpc';
+import { writeUserTextFileTauri, USER_FILE_TMP_SUFFIX } from '@/services/fileAccess/atomicWrite';
 // T8-spec-review (B1): CFB-/Props-boilerplate NIET opnieuw uitschrijven — hergebruik de gedeelde
 // builders uit tests/planning/mppFixtures.ts (M6-fixturebouwers, ook door check-mpp-import.ts's
 // I4-fixture gebruikt). Sinds T11 (fixture-consolidatie) ook `buildVarMetaBytes` cross-suite van
@@ -637,6 +642,66 @@ test('export_ifc: IFC2X3-document naar een ander pad ⇒ ok, het antwoord meldt 
   assert(written.includes("FILE_SCHEMA(('IFC4X3_ADD2'));"), 'de kop is IFC4X3_ADD2');
   assert(!written.includes("'IfcSchemaUnconfirmed'"), 'geen markering IFC2X3 die niet bij de kop past');
   assertEq(S().project.ifcSchemaUnconfirmed, 'IFC2X3', 'het document houdt zijn vraag');
+
+  // Review #519, sidefinding 188: de gekozen kopienaam is nieuw, het oude tijdelijke pad kan
+  // toch al naar de bron wijzen. Doorloop de echte tool + schrijfadapter op het CI-filesysteem.
+  const root = mkdtempSync(join(tmpdir(), 'ops-mcp-export-'));
+  const ipc = installNodeFileIpc();
+  const previousGetFs = fileToolDeps.getFs;
+  const source = join(root, 'bron.ifc');
+  const target = join(root, 'kopie.ifc');
+  const legacy = target + USER_FILE_TMP_SUFFIX;
+  try {
+    const { stat } = await import('@tauri-apps/plugin-fs');
+    // Afgeleid objecttype: standalone past dit op McpFileFs, en ook na #519 met verplichte stat.
+    // De echte plugin-JS-client houdt daarbij dezelfde foutvorm als de toekomstige schemaguard.
+    const fs = {
+      homeDir: async () => root,
+      exists: async (p: string) => existsSync(p),
+      stat,
+      writeTextFile: writeUserTextFileTauri,
+      readTextFile: async (p: string) => readFileSync(p, 'utf8'),
+      readFile: async (p: string) => readFileSync(p),
+    };
+    fileToolDeps.getFs = async () => fs;
+    for (const preplaced of (sep === '\\' ? ['file', 'missing'] : ['symlink', 'file', 'missing'])) {
+      rmSync(target, { force: true });
+      rmSync(legacy, { force: true });
+      writeFileSync(source, 'ORIGINEEL IFC2X3');
+      if (preplaced === 'symlink') symlinkSync(source, legacy);
+      if (preplaced === 'file') writeFileSync(legacy, 'ANDERMANS TMP');
+      const missing = await fs.stat(target).then(() => null, (error: unknown) => error);
+      assertEq(missing, `failed to get metadata of path: ${target} with error: No such file or directory (os error 2)`, 'nieuw doel gebruikt plugin-ENOENT/2, geen rauwe Node-fout');
+      if (preplaced === 'symlink') {
+        const linkInfo = await fs.stat(legacy);
+        const sourceInfo = await fs.stat(source);
+        assertEq([linkInfo.isFile, linkInfo.dev, linkInfo.ino], [true, sourceInfo.dev, sourceInfo.ino], 'stat volgt de tijdelijke bronlink');
+      }
+      zetSchemaVraag(source, undefined, 'IFC2X3');
+      const result = await callOk('planner_export_ifc', { path: target });
+      assertEq(result.ifcSchema, 'IFC4X3_ADD2', `${preplaced}: schema van kopie gemeld`);
+      assert(readFileSync(target, 'utf8').includes("FILE_SCHEMA(('IFC4X3_ADD2'));"), `${preplaced}: volledige IFC-kopie`);
+      assertEq(readFileSync(source, 'utf8'), 'ORIGINEEL IFC2X3', `${preplaced}: bron intact`);
+      assertEq(S().project.ifcSchemaUnconfirmed, 'IFC2X3', `${preplaced}: schemavraag niet beantwoord door export`);
+      if (preplaced === 'symlink') assertEq(readlinkSync(legacy), source, 'oude tijdelijke link behouden');
+      if (preplaced === 'file') assertEq(readFileSync(legacy, 'utf8'), 'ANDERMANS TMP', 'oud tijdelijk bestand behouden');
+      assertEq(readdirSync(root).length, preplaced === 'missing' ? 2 : 3, 'geen eigen tijdelijke resten');
+    }
+
+    // Schrijven van de kopie mislukt halverwege: geen succesantwoord, bron én oude kopie intact.
+    ipc.faults.writeErrorAfter = 5;
+    const before = readFileSync(target, 'utf8');
+    const failure = await callErr('planner_export_ifc', { path: target, overwrite: true });
+    assertEq(failure.code, 'INTERNAL', 'schrijffout bereikt de MCP-client');
+    assert(failure.error.includes('No space left'), 'MCP-fout behoudt de echte schrijfreden');
+    assertEq([readFileSync(source, 'utf8'), readFileSync(target, 'utf8')], ['ORIGINEEL IFC2X3', before], 'bron en bestaande kopie niet afgekapt');
+    assertEq(readdirSync(root).sort(), ['bron.ifc', 'kopie.ifc'], 'alleen eigen halffabricaat opgeruimd');
+    assertEq(ipc.openHandles(), 0, 'geen gelekte handles na fout');
+  } finally {
+    fileToolDeps.getFs = previousGetFs;
+    ipc.dispose();
+    rmSync(root, { recursive: true, force: true });
+  }
 });
 
 test('export_ifc: case-alias en links beschermen dezelfde IFC2X3-inhoud via tools/call', async () => {
