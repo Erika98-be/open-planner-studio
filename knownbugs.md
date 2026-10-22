@@ -307,6 +307,14 @@ en noem het in je rapport of PR-tekst.
     496–499 ms (5-10-2026); rood (535–790 ms) in `npm run verify` zodra de container druk is (meerdere agents
     tegelijk). In CI steeds groen. De grens meet de machine mee. Voorstel: grens relatief aan een
     referentiemeting in dezelfde run, of alleen in CI hard. — B
+199. **Linux-PR-CI kan stranden op de APT-updategrens via het officiële Ubuntu-archief.**
+    Bij PR #536 op `cc7d2aef` haalde de update metadata op via `https://archive.ubuntu.com/ubuntu/`,
+    maar na de start van de 14,1 MB `jammy/universe`-index brak de grens van twee minuten af met TERM.
+    Frontendinstallatie en build waren nog niet gestart. Zie
+    https://github.com/OpenAEC-Foundation/open-planner-studio/actions/runs/39859111765/job/120105089448.
+    Dit is een afzonderlijke netwerk-/doorlooptijdbevinding na #515/#523; oorzaak en herhaalbaarheid
+    zijn niet vastgesteld. De limieten en CI-poorten zijn niet verruimd. — B (CI-uitval), S (oorzaak)
+
 90. **`check-xer-tables` is rood als de `TextDecoder` van Node byte 0x80 (CP1252) niet naar € vertaalt**
     ("Café €" wordt "Café "; 6 asserties in deel 5). Gezien 7-10-2026 in een cloudcontainer (Node 22.22.0,
     ICU 77.1), óók op de onaangeraakte commit `c00163a`; daar geeft `new TextDecoder('windows-1252')` voor
