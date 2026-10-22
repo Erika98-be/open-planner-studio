@@ -2903,8 +2903,13 @@ export class CPMSolver {
     const days = isFiniteNumber(link.lagDays) ? link.lagDays : 0;
     return days * eng.hoursPerDay * 60;
   }
-  /** Externe-link-lag in DAGEN (dag-modus). Afwezig ⇒ 0. */
-  private externalLagDays(link: ExternalLink): number {
+  /** Externe-link-lag in DAGEN: minuten blijven de bron, net als in uurmodus.
+   *  Reken via de lokale kalender en rond halve dagen van nul af (symmetrische lead/lag). */
+  private externalLagDays(link: ExternalLink, eng: CalendarEngine): number {
+    if (isFiniteNumber(link.lagMinutes) && eng.hoursPerDay > 0) {
+      const days = link.lagMinutes / (eng.hoursPerDay * 60);
+      return Math.sign(days) * Math.round(Math.abs(days));
+    }
     return isFiniteNumber(link.lagDays) ? link.lagDays : 0;
   }
 
@@ -2929,7 +2934,7 @@ export class CPMSolver {
       const shifted = eng.addWorkingMinutesSigned(anchor, this.externalLagMinutes(link, eng));
       return startSide ? shifted : this.startFromFinish(eng, shifted, task);
     }
-    const lag = this.externalLagDays(link);
+    const lag = this.externalLagDays(link, eng);
     // FS: de werkdag ná het finish-anker (finish→start). Anders: het anker zelf (addWorkingDaysSigned
     // snapt zelf voorwaarts naar een werkdag). Beide takken tellen daarna `lag` werkdagen bij.
     const base = rel === 'FS' ? eng.nextWorkDayAfter(anchor) : anchor;
@@ -2955,7 +2960,7 @@ export class CPMSolver {
       const shifted = eng.addWorkingMinutesSigned(anchor, -this.externalLagMinutes(link, eng));
       return finishSide ? shifted : this.finishFromStart(eng, shifted, task);
     }
-    const lag = this.externalLagDays(link);
+    const lag = this.externalLagDays(link, eng);
     const base = rel === 'FS' ? eng.prevWorkDayBefore(anchor) : eng.prevWorkDay(anchor);
     const shifted = eng.addWorkingDaysSigned(base, -lag);
     return finishSide ? shifted : this.finishFromStart(eng, shifted, task);

@@ -201,14 +201,13 @@ export function parseExternalLagInput(input: string): ExternalLag | null {
 }
 
 /** De lag van een externe relatie is óf minuten óf dagen, nooit beide: minuten winnen zodra ze
- *  gezet zijn (ook 0), anders de dagen (standaard 0). Let op: `canonicalLag` hieronder, voor de
- *  WEERGAVE, behandelt 0 minuten juist als afwezig en rondt af. */
+ *  gezet zijn (ook 0), anders de dagen (standaard 0). De weergave hieronder volgt dezelfde voorrang. */
 export function exclusiveExternalLag(lag: ExternalLagFields): ExternalLag {
   return lag.lagMinutes !== undefined ? { lagMinutes: lag.lagMinutes } : { lagDays: lag.lagDays ?? 0 };
 }
 
 function canonicalLag(lag: ExternalLagFields): ExternalLag {
-  if (isFiniteNumber(lag.lagMinutes) && lag.lagMinutes !== 0) {
+  if (isFiniteNumber(lag.lagMinutes)) {
     return { lagMinutes: Math.round(lag.lagMinutes) };
   }
   if (isFiniteNumber(lag.lagDays)) {
