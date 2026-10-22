@@ -7,6 +7,8 @@
  */
 import type { ExtensionPermission } from './types';
 import { appLog } from '@/services/debug/appLog';
+// Zelfde kale instantie als de loader: UI-tekst zonder de DOM-afhankelijke i18n/config te laden.
+import i18next from 'i18next';
 
 /**
  * Afdwing-modus per guard:
@@ -147,7 +149,9 @@ function enforce(
 ): void {
   if (permissions.includes(check.perm)) return;
   if (check.mode === 'throw') {
-    throw new Error(`Extensie "${extensionId}" mist permissie: ${check.perm}`);
+    throw new Error(i18next.t('extensions.missingPermission', {
+      ns: 'menu', extensionId, permission: check.perm,
+    }));
   }
   // warn-modus: doorlaten, maar loggen (deprecatiepad).
   appLog.emit(

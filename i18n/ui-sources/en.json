@@ -2667,6 +2667,8 @@
     "extensions.quarantineEmptyName": "7420f77e1755a98d",
     "extensions.catalogEntriesSkipped": "69bee4e04654e2c3",
     "extensions.storageWriteFailed": "e7e574e0ac8103bf",
+    "extensions.minAppVersionRequired": "7204be679fb73a62",
+    "extensions.missingPermission": "f4454a35865cfe85",
     "extensions.import": "7e2f0c7dec39428c",
     "extensions.importSubtitle": "19674fce606cf995",
     "extensions.importEmpty": "51746cf284fc4dce",

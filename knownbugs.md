@@ -102,10 +102,9 @@ en noem het in je rapport of PR-tekst.
 
 28. **Bezettingsoverzicht bij een verouderd actief project** mengt oude startdatums met een nieuwe duur of
     inzet, onder de tekst "laatst berekende cijfers". — B
-29. **Hardgecodeerd Nederlands**: *Vereist Open Planner Studio ≥…* (`extensionLoader.ts:341`), foutmelding
-    bij een ontbrekende permissie, "Het bestaande projectbestand is niet schrijfbaar." (`actualAutoSave.ts`),
-    het CFB-citaat (`cfb.ts`) en bestandsnaamdelen `-voortgang`/`-bibliotheek`. Zie ook 61. — B (eerste),
-    S (rest)
+29. **Hardgecodeerd Nederlands**: "Het bestaande projectbestand is niet schrijfbaar."
+    (`actualAutoSave.ts`), het CFB-citaat (`cfb.ts`) en bestandsnaamdelen
+    `-voortgang`/`-bibliotheek`. Zie ook 61 voor PDF-bestandsnamen. — S
 32. ***Herkennen*: "Geen voorstel — kies handmatig"** zonder knop om handmatig te kiezen. — B
 33. **Bibliotheekkalender verwijderen** gaat zonder bevestiging; daarna staat hij nog als *al gekoppeld*. — S
 64. **Een uitgeschakelde `tutorials`-extensie wordt weer aangezet, ongeacht waar hij vandaan kwam**
@@ -245,6 +244,14 @@ en noem het in je rapport of PR-tekst.
     via een alias (→ `howto-overbezetting-oplossen`, → `ref-instellingen`; in de productiebuild aangeklikt),
     maar de linktekst *Nivelleringsopties* past niet meer bij het artikel *Overbezetting oplossen*.
     Voorstel: in de extensie de nieuwe id's en titels gebruiken. — B
+
+194. **De NL/EN-extensiegids zegt ten onrechte dat een mislukte lokale ZIP/JS-installatie geen foutmelding geeft.**
+    `public/docs/{nl,en}/howto-extensie-installeren.md:34` verwijst uitsluitend naar de debug-terminal.
+    De bestaande `installLocal`-route in `ExtensionManagerPanel.tsx:41–48` toont bij uitkomst `failed`
+    of een onverwachte afwijzing juist `notifications.extensionInstallFailed` via het centrale meldingskanaal.
+    Annuleren/weigeren blijft zonder foutmelding. Statisch bevestigd bij PR #529 op `437c87a4`;
+    geen lokale runtime uitgevoerd. Alleen de gidsclaim apart actualiseren. — B
+
 
 ## Teksten en helpteksten
 

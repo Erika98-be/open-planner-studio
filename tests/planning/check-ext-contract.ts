@@ -24,6 +24,9 @@
 //
 // Draait via run.sh. Exit 0 = alles groen.
 import './domStub';
+import i18next from 'i18next';
+import nlMenu from '@/i18n/locales/nl/menu.json';
+import enMenu from '@/i18n/locales/en/menu.json';
 import { emitExtensionEvent, HOST_EVENTS } from '@/services/extensionEvents';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -800,23 +803,36 @@ function leesWijzigLaadToewijzing(a: ResourceAssignment): ResourceAssignment | u
       app: appStoreContext,
       showNotification: () => {},
     });
-    const throwsWithout = (fn: () => unknown): boolean => {
-      try { fn(); return false; } catch (error) {
-        return error instanceof Error && /mist permissie: importSource/.test(error.message);
-      }
-    };
-    eq('P1 zonder permissies gooien alle drie de bronmethoden een permissiefout', [
-      throwsWithout(() => apiNoPerm.data.getImportSourceInfo()),
-      throwsWithout(() => apiNoPerm.data.getImportSourceChunk(0)),
-      throwsWithout(() => apiNoPerm.data.getImportSourceCatalogPage('taskSourceRows')),
-      throwsWithout(() => apiNoPerm.data.getImportSourceIssue()),
-    ], [true, true, true, true]);
-    eq('P1a een ONgerelateerde permissie (ribbon/events) geeft geen toegang tot importSource', [
-      throwsWithout(() => apiOtherPerm.data.getImportSourceInfo()),
-      throwsWithout(() => apiOtherPerm.data.getImportSourceChunk(0)),
-      throwsWithout(() => apiOtherPerm.data.getImportSourceCatalogPage('taskSourceRows')),
-      throwsWithout(() => apiOtherPerm.data.getImportSourceIssue()),
-    ], [true, true, true, true]);
+    // Dezelfde reeds opgebouwde API's blijven weigeren na een taalwissel, mét id en permissie.
+    // Echte bronmethoden tegen het document; geen losse vertaalsleuteltest.
+    await i18next.init({
+      lng: 'en', fallbackLng: 'en', ns: ['menu'],
+      resources: { nl: { menu: nlMenu }, en: { menu: enMenu } },
+      interpolation: { escapeValue: false },
+    });
+    for (const { lng, message } of [
+      { lng: 'nl', message: (id: string) => `Extensie "${id}" mist permissie: importSource` },
+      { lng: 'en', message: (id: string) => `Extension "${id}" is missing permission: importSource` },
+    ]) {
+      await i18next.changeLanguage(lng);
+      const throwsWithout = (fn: () => unknown, id: string): boolean => {
+        try { fn(); return false; } catch (error) {
+          return error instanceof Error && error.message === message(id);
+        }
+      };
+      eq(`P1 ${lng} zonder permissies gooien alle bronmethoden een concrete permissiefout`, [
+        throwsWithout(() => apiNoPerm.data.getImportSourceInfo(), 'xer-source-read-contract-no-perm'),
+        throwsWithout(() => apiNoPerm.data.getImportSourceChunk(0), 'xer-source-read-contract-no-perm'),
+        throwsWithout(() => apiNoPerm.data.getImportSourceCatalogPage('taskSourceRows'), 'xer-source-read-contract-no-perm'),
+        throwsWithout(() => apiNoPerm.data.getImportSourceIssue(), 'xer-source-read-contract-no-perm'),
+      ], [true, true, true, true]);
+      eq(`P1a ${lng} een ONgerelateerde permissie (ribbon/events) geeft geen toegang tot importSource`, [
+        throwsWithout(() => apiOtherPerm.data.getImportSourceInfo(), 'xer-source-read-contract-other-perm'),
+        throwsWithout(() => apiOtherPerm.data.getImportSourceChunk(0), 'xer-source-read-contract-other-perm'),
+        throwsWithout(() => apiOtherPerm.data.getImportSourceCatalogPage('taskSourceRows'), 'xer-source-read-contract-other-perm'),
+        throwsWithout(() => apiOtherPerm.data.getImportSourceIssue(), 'xer-source-read-contract-other-perm'),
+      ], [true, true, true, true]);
+    }
     apiNoPerm._cleanup();
     apiOtherPerm._cleanup();
   }
