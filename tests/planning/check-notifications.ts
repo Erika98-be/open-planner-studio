@@ -29,7 +29,8 @@ import type { PreparedGridMutation } from '@/state/gridTransaction';
 import type { Sequence } from '@/types/sequence';
 import type { ImportResult, MultiDocumentImport, XerImportMetadata, XerImportReport } from '@/services/importTypes';
 import { notificationDetailText } from '@/utils/notificationDetail';
-import { notifyRecoveryManifestError } from '@/state/recoveryManifestNotice';
+import { notifyRecoveryError } from '@/state/recoveryManifestNotice';
+import { IndexedDbUpgradeBlockedError } from '@/utils/idb';
 import { RecoveryManifestError } from '@/services/recovery/recoveryManifest';
 import { isStickyOpenNotice, withOpenNoticeSticky } from '@/state/openNoticeSticky';
 
@@ -757,19 +758,34 @@ eq('125 uitgestelde gridmelding gebruikt het normale app-globale kanaal', N()[0]
 clearAll();
 const beforeManifestNotice = S().getOpenDocumentPayloads();
 eq('M1 een andere fout blijft bij zijn bestaande foutafhandeling',
-  notifyRecoveryManifestError(new Error('gewone opslagfout'), S().notify), false);
+  notifyRecoveryError(new Error('gewone opslagfout'), S().notify), false);
 eq('M2 geweigerd manifest wordt via het meldingenkanaal afgehandeld',
-  notifyRecoveryManifestError(new RecoveryManifestError('unsupported-version'), S().notify), true);
+  notifyRecoveryError(new RecoveryManifestError('unsupported-version'), S().notify), true);
 eq('M3 passende blijvende melding met herstelhulp',
   N().map(n => [n.messageKey, n.severity, n.helpArticleId, n.count]),
   [['notifications.recoveryManifestBlocked', 'error', 'howto-herstellen-na-een-crash', 1]]);
-notifyRecoveryManifestError(new RecoveryManifestError('invalid-version'), S().notify);
+notifyRecoveryError(new RecoveryManifestError('invalid-version'), S().notify);
 eq('M4 een volgende schrijfronde verhoogt ook de teller niet', N()[0]?.count, 1);
 eq('M5 melding verandert documentinhoud en opslagdoel niet', S().getOpenDocumentPayloads(), beforeManifestNotice);
 clearAll();
 S().newDocument();
-notifyRecoveryManifestError(new RecoveryManifestError('invalid-shape'), S().notify);
+notifyRecoveryError(new RecoveryManifestError('invalid-shape'), S().notify);
 eq('M6 ook na wegklikken en documentwissel geen nieuwe melding', N().length, 0);
+
+// Een gezonde maar geblokkeerde v2-database krijgt géén melding over onbekende/ongeldige data.
+const beforeStorageNotice = S().getOpenDocumentPayloads();
+eq('B1 upgradeblokkade wordt expliciet afgehandeld',
+  notifyRecoveryError(new IndexedDbUpgradeBlockedError('ops-recovery', 3), S().notify), true);
+eq('B2 eigen blijvende opslagmelding met herstelhulp',
+  N().map(n => [n.messageKey, n.severity, n.helpArticleId, n.count]),
+  [['notifications.recoveryStorageBlocked', 'error', 'howto-herstellen-na-een-crash', 1]]);
+notifyRecoveryError(new IndexedDbUpgradeBlockedError('ops-recovery', 3), S().notify);
+eq('B3 herhaalde opslagpogingen verhogen de teller niet', N()[0]?.count, 1);
+eq('B4 melding behoudt documentinhoud en opslagdoel', S().getOpenDocumentPayloads(), beforeStorageNotice);
+clearAll();
+S().newDocument();
+notifyRecoveryError(new IndexedDbUpgradeBlockedError('ops-recovery', 3), S().notify);
+eq('B5 ook na wegklikken en documentwissel geen opslagmeldingsspam', N().length, 0);
 
 // ── Uitkomst ────────────────────────────────────────────────────────────────
 if (diffs.length) {

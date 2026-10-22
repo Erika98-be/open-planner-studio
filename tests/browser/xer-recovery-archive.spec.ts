@@ -332,6 +332,22 @@ test('crashherstel: oude v1-snapshot herstelt en onleesbare kopie blijft bewaard
       return transaction.call(this, stores, mode, options);
     };
   });
+  const recoveryBytes = () => page.evaluate(() => new Promise<string>((resolve, reject) => {
+    const request = indexedDB.open('ops-recovery');
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => {
+      const db = request.result;
+      const tx = db.transaction(['records', 'xer-archives'], 'readonly');
+      const records = tx.objectStore('records').getAll();
+      const blobs = tx.objectStore('xer-archives').getAll();
+      tx.oncomplete = () => {
+        resolve(JSON.stringify([records.result, blobs.result.map((b: { id: string; bytes: Uint8Array }) =>
+          ({ ...b, bytes: [...b.bytes] }))]));
+        db.close();
+      };
+      tx.onerror = () => { db.close(); reject(tx.error); };
+    };
+  }));
   for (const locale of ['nl', 'en']) {
     await page.goto('/icon.png');
     await page.evaluate(async ({ xer, locale }) => {
@@ -377,22 +393,6 @@ test('crashherstel: oude v1-snapshot herstelt en onleesbare kopie blijft bewaard
       sessionStorage.removeItem('ops-recovery-session:held');
       localStorage.setItem('ops-locale', locale);
     }, { xer: XER_TWO_PROJECTS, locale });
-    const recoveryBytes = () => page.evaluate(() => new Promise<string>((resolve, reject) => {
-      const request = indexedDB.open('ops-recovery');
-      request.onerror = () => reject(request.error);
-      request.onsuccess = () => {
-        const db = request.result;
-        const tx = db.transaction(['records', 'xer-archives'], 'readonly');
-        const records = tx.objectStore('records').getAll();
-        const blobs = tx.objectStore('xer-archives').getAll();
-        tx.oncomplete = () => {
-          resolve(JSON.stringify([records.result, blobs.result.map((b: { id: string; bytes: Uint8Array }) =>
-            ({ ...b, bytes: [...b.bytes] }))]));
-          db.close();
-        };
-        tx.onerror = () => { db.close(); reject(tx.error); };
-      };
-    }));
     const before = await recoveryBytes();
     const sidBefore = await page.evaluate(() => sessionStorage.getItem('ops-recovery-session'));
     await page.goto('/');
@@ -453,6 +453,149 @@ test('crashherstel: oude v1-snapshot herstelt en onleesbare kopie blijft bewaard
     expect(await page.evaluate(() => sessionStorage.getItem('ops-recovery-session'))).toBe(sidBefore);
     expect(await documentState()).toEqual({ tasks: 2, filePath: null, siteFileId: null, siteFileVersion: null, documents: 1 });
     await page.clock.resume();
+  }
+
+  // R2: een ECHTE v2-verbinding weigert versionchange. Gezonde data mag dan geen lege read worden
+  // en na het sluiten van de blocker ook niet alsnog door de nieuwe lege sessie worden overschreven.
+  const previousData: unknown = JSON.parse(await recoveryBytes());
+  if (!Array.isArray(previousData) || !Array.isArray(previousData[0])) throw new Error('Herstelfixture ontbreekt.');
+  const snapshot: unknown = previousData[0].find((record: unknown) =>
+    record !== null && typeof record === 'object' && typeof Reflect.get(record, 'ifc') === 'string');
+  const ifc: unknown = snapshot && typeof snapshot === 'object' ? Reflect.get(snapshot, 'ifc') : undefined;
+  if (typeof ifc !== 'string') throw new Error('Leesbare IFC-fixture ontbreekt.');
+  await page.goto('/icon.png');
+  const blocker = await page.context().newPage();
+  try {
+    await blocker.goto('/icon.png');
+    await blocker.evaluate(async (ifc) => {
+      await new Promise<void>((resolve, reject) => {
+        const request = indexedDB.deleteDatabase('ops-recovery');
+        request.onsuccess = () => resolve();
+        request.onerror = () => reject(request.error);
+      });
+      await new Promise<void>((resolve, reject) => {
+        const request = indexedDB.open('ops-recovery', 2);
+        request.onupgradeneeded = () => {
+          request.result.createObjectStore('records', { keyPath: 'id' });
+          request.result.createObjectStore('xer-archives', { keyPath: 'id' });
+        };
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => {
+          const db = request.result;
+          const observed = Object.assign(window, { __blockedRecoveryDb: db, __recoveryVersionChanges: 0 });
+          db.onversionchange = () => { observed.__recoveryVersionChanges++; }; // bewust NIET sluiten
+          const tx = db.transaction(['records', 'xer-archives'], 'readwrite');
+          tx.objectStore('records').put({ id: 'blocked-upgrade::doc::oud', kind: 'doc', sessionId: 'blocked-upgrade',
+            docId: 'oud', ifc, addedAt: 1 });
+          tx.objectStore('records').put({ id: 'blocked-upgrade::manifest', kind: 'manifest', sessionId: 'blocked-upgrade',
+            version: 5, activeDocumentId: 'oud', addedAt: 1,
+            documents: [{ id: 'oud', ifc: 'blocked-upgrade::doc::oud', filePath: 'bestaand.ifc', isDirty: false, datesAsRecorded: true }] });
+          tx.objectStore('xer-archives').put({ id: 'bewaarde-blob', bytes: new Uint8Array([0, 255, 42]), addedAt: 1 });
+          tx.oncomplete = () => resolve();
+          tx.onerror = () => reject(tx.error);
+        };
+      });
+    }, ifc);
+    // Lezen via de blokkadeverbinding zelf: een nieuwe openaanvraag zou achter de upgrade wachten.
+    const blockedBytes = () => blocker.evaluate(() => new Promise<string>((resolve, reject) => {
+      const db: unknown = Reflect.get(window, '__blockedRecoveryDb');
+      if (!(db instanceof IDBDatabase)) throw new Error('Blokkadeverbinding ontbreekt.');
+      const tx = db.transaction(['records', 'xer-archives'], 'readonly');
+      const records = tx.objectStore('records').getAll();
+      const blobs = tx.objectStore('xer-archives').getAll();
+      tx.oncomplete = () => resolve(JSON.stringify([records.result, blobs.result.map((b: { id: string; bytes: Uint8Array }) =>
+        ({ ...b, bytes: [...b.bytes] }))]));
+      tx.onerror = () => reject(tx.error);
+    }));
+    const before = await blockedBytes();
+    await page.evaluate(() => {
+      sessionStorage.setItem('ops-recovery-session', 'blocked-upgrade');
+      sessionStorage.removeItem('ops-recovery-session:held');
+      localStorage.setItem('ops-locale', 'en');
+      localStorage.removeItem('ops-welcomeSeen');
+    });
+    await page.addInitScript(() => {
+      const events: string[] = [];
+      Object.assign(window, { __recoveryOpenEvents: events });
+      const open = indexedDB.open;
+      indexedDB.open = function (this: IDBFactory, name: string, version?: number) {
+        const request = version === undefined ? open.call(this, name) : open.call(this, name, version);
+        if (name === 'ops-recovery' && version === 3) {
+          for (const event of ['blocked', 'upgradeneeded', 'error', 'success']) {
+            request.addEventListener(event, () => events.push(event));
+          }
+        }
+        return request;
+      };
+    });
+    await page.goto('/');
+    const warning = page.getByRole('alert').filter({ hasText: 'Recovery storage is temporarily blocked by another open connection.' });
+    await expect(warning).toBeVisible();
+    await expect(warning).toContainText('Save your work yourself');
+    await expect(page.locator('[data-ops-recovery-dialog]')).toHaveCount(0);
+    // Welkom wacht op recoveryResolved: deze echte opstartstap bewijst dat finish() bereikt is.
+    await expect(page.locator('[data-ops-welcome-dialog]')).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(page.locator('[data-ops-welcome-dialog]')).toHaveCount(0);
+    expect(await blocker.evaluate(() => Reflect.get(window, '__recoveryVersionChanges'))).toBe(1);
+    const openEvents = () => page.evaluate(() => Reflect.get(window, '__recoveryOpenEvents'));
+    expect(await openEvents()).toEqual(['blocked']);
+    expect(await blockedBytes()).toBe(before);
+    const refusedOperations = () => page.evaluate(async () => {
+      const path = '/src/services/recovery/recoveryStore.ts';
+      const recovery: typeof import('@/services/recovery/recoveryStore') = await import(/* @vite-ignore */ path);
+      const errors: string[] = [];
+      for (const action of [
+        () => recovery.loadRecovery(), () => recovery.clearRecovery(), () => recovery.holdRecoveryForLater(),
+        () => recovery.saveRecovery(recovery.fullRecoverySave('nieuw', [{ id: 'nieuw', ifc: 'nieuwe bron',
+          filePath: null, isDirty: true, datesAsRecorded: false }])),
+      ]) {
+        try { await action(); errors.push('onverwacht geslaagd'); }
+        catch (error) { errors.push(error instanceof Error ? error.name : 'ongetypeerde fout'); }
+      }
+      return errors;
+    });
+    expect(await refusedOperations()).toEqual(Array(4).fill('IndexedDbUpgradeBlockedError'));
+    await page.clock.pauseAt(await page.evaluate(() => Date.now() + 500));
+    const addTask = page.getByRole('button', { name: 'New task directly below the selection' });
+    await addTask.click();
+    await page.clock.runFor(10_000);
+    await expect(warning).toBeVisible(); // error-melding verloopt niet zoals een info-toast
+    expect(await blockedBytes()).toBe(before);
+    await blocker.evaluate(() => {
+      const db: unknown = Reflect.get(window, '__blockedRecoveryDb');
+      if (!(db instanceof IDBDatabase)) throw new Error('Blokkadeverbinding ontbreekt.');
+      db.close();
+    });
+    await expect.poll(openEvents).toEqual(['blocked', 'upgradeneeded', 'error']);
+    expect((await readRecoveryDb(page, 'Fundering')).version).toBe(2); // late upgrade is afgebroken
+    expect(await refusedOperations()).toEqual(Array(4).fill('IndexedDbUpgradeBlockedError'));
+    await addTask.click();
+    await page.clock.runFor(10_000);
+    expect(await recoveryBytes()).toBe(before);
+    expect(await page.evaluate(() => window.__OPS__!.store.getState().ui.notifications
+      .filter(n => n.messageKey === 'notifications.recoveryStorageBlocked').map(n => n.count))).toEqual([1]);
+    await warning.locator('[data-ops-toast-close]').click();
+    await addTask.click();
+    await page.clock.runFor(10_000);
+    await expect(warning).toHaveCount(0);
+    expect(await recoveryBytes()).toBe(before);
+    expect(await openEvents()).toEqual(['blocked', 'upgradeneeded', 'error']);
+    expect(await page.evaluate(() => {
+      const state = window.__OPS__!.store.getState();
+      return { tasks: state.tasks.length, filePath: state.filePath, siteFileId: state.siteFileId,
+        documents: state.documents.length, session: sessionStorage.getItem('ops-recovery-session') };
+    })).toEqual({ tasks: 3, filePath: null, siteFileId: null, documents: 1, session: 'blocked-upgrade' });
+    await page.clock.resume();
+    // Alleen een nieuwe paginastart probeert opnieuw; gezond v2-herstel en de v3-index blijven werken.
+    page.once('dialog', dialog => { void dialog.accept(); });
+    await page.reload();
+    await acceptRecovery(page);
+    expect((await readRecoveryDb(page, 'Fundering')).version).toBe(3);
+    expect((await openDocuments(page)).flatMap(doc => doc.tasks)).toEqual(['Fundering']);
+    await expect(page.getByRole('alert').filter({ hasText: 'Recovery storage is temporarily blocked' })).toHaveCount(0);
+  } finally {
+    await blocker.close();
   }
 
 });

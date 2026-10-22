@@ -219,6 +219,8 @@ bridge tests against the real Rust bridge). Docs: `docs/release-verificatie.md`,
   adds a non-unique `records.kind` index without rewriting record/blob content: every `kind: manifest` record
   plus every canonical manifest key is a candidate, regardless of key or candidate order. See `recoveryManifest.ts`
   and `recoveryStore.ts`; upgrade/blocking/error limits are in `docs/xer-recovery-guardrails.md`.
+  A blocked web upgrade completes startup with a persistent storage warning; recovery refuses further DB
+  access until reload, even after unblocking. There is no fallback to writing an older DB version.
 - **`immer` is pinned exactly to `11.1.4` (no `^`) — do not put the caret back.** Immer sits directly under
   undo/redo, snapshot sharing and auto-freeze; from 11.1.8 the build breaks too (typing of `current`/`original`,
   see `src/state/immerDraft.ts`). Bumping is a deliberate, separately reviewed change.

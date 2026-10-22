@@ -11,6 +11,7 @@ import {
   clearOwnRecovery, clearRecovery, fullRecoverySave, holdRecoveryForLater, loadRecovery, saveRecovery,
   RECOVERY_MANIFEST_VERSION, RecoveryManifestError,
 } from '@/services/recovery/recoveryStore';
+import { IndexedDbUpgradeBlockedError, openDbStores } from '@/utils/idb';
 import { installFakeRecoveryIndexedDb } from './fakeRecoveryIndexedDb';
 import { writeIFC } from '@/services/ifc/ifcWriter';
 import { readIFC } from '@/services/ifc/ifcReader';
@@ -545,6 +546,77 @@ put(N.legacy, 'enkele legacybron');
 eq('manifestloze legacykopie blijft leesbaar', await offered(), ['legacy:enkele legacybron']);
 await clearRecovery();
 Reflect.deleteProperty(globalThis, 'window');
+
+// ── Openaanvraag-lifecycle: echte browserblokkade staat in de bestaande browserroute. ─────────
+// Hier ook de defensieve gebeurtenisvolgordes die de browser niet deterministisch kan leveren:
+// blocked → retry → late upgrade/error/success. Geen oude aanvraag mag een nieuwe verbinding wissen.
+const openings = Array.from({ length: 6 }, () => {
+  const observed = { closes: 0, aborts: 0, schemaWrites: 0, transactions: 0, unique: false };
+  const store = {
+    indexNames: { contains: () => false },
+    createIndex: () => { observed.schemaWrites++; },
+    index: () => ({ keyPath: 'kind', unique: observed.unique }),
+  };
+  const dbHandlers: Record<'onversionchange' | 'onclose', (() => void) | null> = { onversionchange: null, onclose: null };
+  const db = {
+    ...dbHandlers,
+    close: () => { observed.closes++; },
+    objectStoreNames: { contains: () => true },
+    transaction: () => { observed.transactions++; return { objectStore: () => store }; },
+  };
+  const requestHandlers: Record<'onupgradeneeded' | 'onblocked' | 'onerror' | 'onsuccess', (() => void) | null> = {
+    onupgradeneeded: null, onblocked: null, onerror: null, onsuccess: null,
+  };
+  const request = {
+    ...requestHandlers,
+    result: db, error: new Error('gesimuleerde openfout'),
+    transaction: { abort: () => { observed.aborts++; }, objectStore: () => store },
+  };
+  return { observed, request };
+});
+let openCount = 0;
+Object.defineProperty(globalThis, 'indexedDB', { configurable: true, value: {
+  open: () => openings[openCount++]!.request,
+} });
+const openLifecycle = () => openDbStores('recovery-open-lifecycle', 3, ['records'],
+  [{ storeName: 'records', name: 'kind', keyPath: 'kind' }]);
+const rejectedOpen = openLifecycle().catch((error: unknown) => error);
+openings[0]!.request.onblocked?.();
+const blocked = await rejectedOpen;
+eq('IDB blocked: getypeerde fout zonder op succes te wachten',
+  blocked instanceof IndexedDbUpgradeBlockedError && blocked.databaseName === 'recovery-open-lifecycle' && blocked.version === 3, true);
+const retryOpen = openLifecycle();
+eq('IDB blocked: volgende generieke open kan opnieuw proberen', openCount, 2);
+openings[0]!.request.onupgradeneeded?.();
+openings[0]!.request.onerror?.();
+openings[0]!.request.onsuccess?.();
+eq('IDB late events: upgrade afgebroken, verbinding gesloten, geen schema-/recordtransacties',
+  openings[0]!.observed, { closes: 1, aborts: 1, schemaWrites: 0, transactions: 0, unique: false });
+eq('IDB late error: nieuwe cache-entry blijft staan', openLifecycle() === retryOpen, true);
+openings[1]!.request.onupgradeneeded?.();
+openings[1]!.request.onsuccess?.();
+await retryOpen;
+eq('IDB gezond: index aanmaken en valideren, verbinding gecachet',
+  [openings[1]!.observed.schemaWrites, openings[1]!.observed.transactions, openLifecycle() === retryOpen], [1, 1, true]);
+openings[1]!.request.result.onversionchange?.();
+eq('IDB versionchange: verbinding sluit', openings[1]!.observed.closes, 1);
+const errorOpen = openLifecycle().catch((error: unknown) => error);
+openings[2]!.request.onerror?.();
+eq('IDB openfout: oorspronkelijke fout propageert', await errorOpen === openings[2]!.request.error, true);
+const invalidIndex = openLifecycle().catch((error: unknown) => error);
+openings[3]!.observed.unique = true;
+openings[3]!.request.onsuccess?.();
+eq('IDB afwijkende index: fout en verbinding gesloten',
+  [await invalidIndex instanceof Error, openings[3]!.observed.closes], [true, 1]);
+const healthyAgain = openLifecycle();
+openings[4]!.request.onsuccess?.();
+await healthyAgain;
+openings[4]!.request.result.onclose?.();
+const afterClose = openLifecycle();
+openings[5]!.request.onsuccess?.();
+await afterClose;
+eq('IDB onverwacht sluiten: volgende aanroep opent opnieuw', openCount, 6);
+openings[5]!.request.result.onversionchange?.();
 
 if (diffs.length === 0) {
   console.log(`OK  recovery-web-hold: alle checks groen (${checks})`);

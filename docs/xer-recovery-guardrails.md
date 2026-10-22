@@ -103,14 +103,33 @@ is een technische indexupgrade, geen migratie van documentinhoud.
 De bestaande browserroute bewaakt v1-herstel en de upgrade van v2 met gezonde én onbekende
 manifestkandidaten en een blob, inclusief inhoudsbehoud en het opvullen van de index.
 
-Een bestaande verbinding moet de versionchange toestaan. De huidige helper sluit zijn verbinding
-bij `onversionchange`; een andere build die zijn verbinding open houdt kan de upgrade laten wachten.
-Er is geen timeout of omweg die dan de oudere database alsnog beschrijft. Bij een open-/upgradefout
-reject de helper via `onerror`; de bestaande recovery-leesroute kan een IDB-fout als een lege uitkomst
-behandelen, terwijl schrijffouten de auto-save bereiken. Uitstellen laat een leesfout wel
-propageren en roteert dan geen sessie. Het openen van een nieuwere DB-versie met
-versie 3 geeft eveneens een fout; de code verlaagt of wist die database niet. Dit beschrijft de
-bronroute, geen gemeten garantie over quota, browserherstel of onderbroken browserupgrades.
+Een bestaande verbinding moet de versionchange toestaan. De helper sluit zijn eigen verbinding bij
+`onversionchange`; een andere build kan die open houden. Het native `blocked`-event reject dan direct
+met de storevrije `IndexedDbUpgradeBlockedError`. De opstartread geeft die fout door (geen lege
+uitkomst), waarna de recovery-hook zijn opstartpoort afrondt en een blijvende centrale melding over
+**tijdelijk geblokkeerde opslag** toont, met handmatig-opslaan-instructie en herstelhulp. Gezonde v2-data
+krijgt geen melding over onbekende/ongeldige manifesten. De melding komt per paginastart één keer,
+ook als schrijfrondes opnieuw falen of de melding is weggeklikt. Echte AutoSave deelt de afgeronde
+opstartpoort en behoudt zijn bestaande bestands-/permissiecontract.
+
+Recovery onthoudt deze blokkade tot herladen en weigert intussen lezen, schrijven, wissen en rotatie.
+Alleen de blocker sluiten mag de nog niet aangeboden herstelset niet opeens laten overschrijven.
+Sla nieuw werk daarom zelf op, sluit andere app-tabbladen en herlaad om herstel opnieuw te proberen.
+Er is geen timeout of terugval naar een oudere DB-schrijfroute. De generieke helper zelf mag opnieuw
+openen na een fout: cache-opruiming geldt alleen voor de eigen aanvraag. Een IDB-openaanvraag kan niet
+worden geannuleerd; komt na weigering alsnog `upgradeneeded`, dan wordt die transactie afgebroken
+vóór schemawerk. Een eventueel laat `success` sluit de verbinding zonder hem uit te leveren. Fouten
+rejecten, een afwijkende index sluit de verbinding, en versionchange/onverwacht sluiten ruimt de
+verbindingscache op. De bestaande browserroute houdt een echte v2-verbinding open, controleert de
+blijvende melding en bytebehoud vóór/na ontgrendelen, en probeert na herladen gezond herstel opnieuw.
+De recoverybatterij dekt daarnaast defensieve late eventvolgordes en cache-/verbindingscleanup.
+
+Andere open-/upgradefouten houden de bestaande route: een opstartleesfout kan leeg terugvallen,
+uitstellen leest strikt en roteert niet bij een leesfout, schrijffouten rejecten. Een nieuwere
+DB-versie openen met versie 3 geeft eveneens een fout; de code verlaagt of wist die database niet.
+Dit is een broncontract met regressies, geen lokaal uitgevoerde of gemeten garantie over quota,
+browserherstel of onderbroken browserupgrades. Het pad reageert op native `blocked`/`error`, zonder
+eigen timeout voor een browser die geen van die events levert.
 
 ## Informatieve schaalmeting
 

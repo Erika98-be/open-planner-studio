@@ -1,5 +1,5 @@
 import { isTauri } from '@/utils/platform';
-import { openDbStores } from '@/utils/idb';
+import { IndexedDbUpgradeBlockedError, openDbStores } from '@/utils/idb';
 import {
   ownRecoveryNames, recoveryTmpSuffix,
   type RecoveryNames, type RecoveryManifest, type RecoveryManifestDoc,
@@ -875,10 +875,21 @@ const WEB_ARCHIVE_STORE = 'xer-archives';
 // v3: niet-unieke kind-index; vindt ook manifesten onder afwijkende sleutels zonder IFC te lezen.
 const WEB_DB_VERSION = 3;
 const WEB_KIND_INDEX = 'kind';
-const openRecoveryDb = (): Promise<IDBDatabase> => openDbStores(
-  WEB_DB, WEB_DB_VERSION, [WEB_STORE, WEB_ARCHIVE_STORE],
-  [{ storeName: WEB_STORE, name: WEB_KIND_INDEX, keyPath: 'kind' }],
-);
+// Na een geblokkeerde detectie is de oude herstelkeuze nog niet gemaakt. Laat een late ontgrendeling
+// daarom niet alsnog schrijven/wissen/roteren; alleen een nieuwe paginastart probeert herstel opnieuw.
+let webUpgradeBlocked: IndexedDbUpgradeBlockedError | null = null;
+const openRecoveryDb = async (): Promise<IDBDatabase> => {
+  if (webUpgradeBlocked) throw webUpgradeBlocked;
+  try {
+    return await openDbStores(
+      WEB_DB, WEB_DB_VERSION, [WEB_STORE, WEB_ARCHIVE_STORE],
+      [{ storeName: WEB_STORE, name: WEB_KIND_INDEX, keyPath: 'kind' }],
+    );
+  } catch (error) {
+    if (error instanceof IndexedDbUpgradeBlockedError) webUpgradeBlocked = error;
+    throw error;
+  }
+};
 const SESSION_KEY = 'ops-recovery-session';
 const MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 dagen
 
@@ -1278,7 +1289,8 @@ async function saveWeb(input: RecoverySaveInput): Promise<void> {
 }
 
 /** Lees snapshots plus archiefblobs in één readonly-transactie. Opstarten houdt de bestaande lege
- *  terugval bij een IDB-fout; uitstellen leest strict, zodat een leesfout geen sessierotatie toestaat. */
+ *  terugval bij een IDB-fout, behalve bij upgradeblokkade: die moet zichtbaar worden en mutaties stoppen.
+ *  Uitstellen leest strict, zodat een leesfout geen sessierotatie toestaat. */
 async function readWebRecovery(strict = false): Promise<{ records: WebRecord[]; archives: Map<string, Uint8Array> }> {
   try {
     const db = await openRecoveryDb();
@@ -1305,7 +1317,7 @@ async function readWebRecovery(strict = false): Promise<{ records: WebRecord[]; 
       };
     });
   } catch (error) {
-    if (strict) throw error;
+    if (strict || error instanceof IndexedDbUpgradeBlockedError) throw error;
     return { records: [], archives: new Map() };
   }
 }
