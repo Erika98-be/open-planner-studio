@@ -511,3 +511,10 @@ en noem het in je rapport of PR-tekst.
     De versiecontrole wijst die invoer af; de standaardwaarde is dus niet bruikbaar. Gezien bij
     de versie-audit voor #450. Voorstel: verwijder de standaardwaarde en laat de gebruiker een
     correcte tag invullen. Geen workflow gestart. — B (bestand en lokale versiecontrole)
+
+176. **MSPDI: de projectstart wordt zonder XML-escaping geëxporteerd.** `mspdiWriter.ts` schrijft
+    `project.startDate` rechtstreeks in `<StartDate>`; de reader neemt een tekstprefix uit het
+    invoerveld over. Een ongeldige datum met XML-metatekens kan zo ongeldige XML opleveren. Gezien
+    bij de analyse van CodeQL #18; die melding is een false positive voor XSS omdat de reader
+    uitsluitend `application/xml` parseert en geen nodes in de pagina invoegt. De XML-integriteit
+    van zulke ongeldige datums is niet nagespeeld. Voorstel: datumvalidatie en escaping. — S
