@@ -32,6 +32,21 @@ const session = new Map<string, string>();
 // eerste sessieclaim, zodat ook het duplicaat-tabpad een nieuwe id moet maken.
 const uuidDescriptor = Object.getOwnPropertyDescriptor(crypto, 'randomUUID');
 Object.defineProperty(crypto, 'randomUUID', { configurable: true, value: undefined });
+const randomDescriptor = Object.getOwnPropertyDescriptor(Math, 'random')!;
+Object.defineProperty(Math, 'random', {
+  configurable: true,
+  value: () => { throw new Error('Herstelidentiteiten mogen geen Math.random gebruiken'); },
+});
+const valuesDescriptor = Object.getOwnPropertyDescriptor(crypto, 'getRandomValues');
+const getRandomValues = crypto.getRandomValues.bind(crypto);
+const randomByteLengths: number[] = [];
+Object.defineProperty(crypto, 'getRandomValues', {
+  configurable: true,
+  value: (bytes: Uint8Array) => {
+    randomByteLengths.push(bytes.byteLength);
+    return getRandomValues(bytes);
+  },
+});
 const navigatorDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'navigator');
 const claimed: string[] = [];
 Object.defineProperty(globalThis, 'navigator', {
@@ -53,14 +68,22 @@ await saveRecovery(fullRecoverySave('A', [doc('A')]));
 eq('voorwaarde: A staat klaar voor herstel', await ids(), ['A']);
 const firstSession = session.get('ops-recovery-session');
 eq('zonder randomUUID ontstaat een eigen opgeslagen sessie-id', !!firstSession && firstSession !== 'default', true);
+eq('de HTTP-terugval bewaart alle 128 willekeurige bits als hex', /^inst-[0-9a-f]{32}$/.test(firstSession ?? ''), true);
+eq('aanmaken en duplicaat-tabrotatie gebruiken elk 16 cryptografische bytes', randomByteLengths, [16, 16]);
 eq('een bezette claim krijgt precies één retry en een nieuwe id', claimed.length, 3);
 eq('de retry gebruikt dezelfde eerste id', claimed[0], claimed[1]);
 eq('het gedupliceerde tab krijgt een andere id', claimed[2] !== claimed[0], true);
 
 
 // Gebruiker kiest "later"; daarna schrijft de crashherstel-ronde het nieuwe (lege) document B.
+// Ook een aanwezige maar werpende randomUUID gebruikt de sterke HTTP-terugval.
+Object.defineProperty(crypto, 'randomUUID', {
+  configurable: true,
+  value: () => { throw new Error('randomUUID is niet beschikbaar'); },
+});
 await holdRecoveryForLater();
 eq('uitstellen roteert de sessie ook zonder randomUUID', session.get('ops-recovery-session') !== firstSession, true);
+eq('uitstellen na een werpende randomUUID gebruikt opnieuw 16 cryptografische bytes', randomByteLengths, [16, 16, 16]);
 await saveRecovery(fullRecoverySave('B', [doc('B')]));
 eq('A overleeft de volgende crashherstel-ronde', await ids(), ['A', 'B']);
 
@@ -84,6 +107,9 @@ eq('geen records meer over', idb.store('records').size + idb.store('xer-archives
 
 if (uuidDescriptor) Object.defineProperty(crypto, 'randomUUID', uuidDescriptor);
 else Reflect.deleteProperty(crypto, 'randomUUID');
+Object.defineProperty(Math, 'random', randomDescriptor);
+if (valuesDescriptor) Object.defineProperty(crypto, 'getRandomValues', valuesDescriptor);
+else Reflect.deleteProperty(crypto, 'getRandomValues');
 if (navigatorDescriptor) Object.defineProperty(globalThis, 'navigator', navigatorDescriptor);
 else Reflect.deleteProperty(globalThis, 'navigator');
 
