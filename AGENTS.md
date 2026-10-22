@@ -8,6 +8,12 @@ imports it (`@AGENTS.md`) so Claude Code loads it automatically — never put co
 depth lives in `.claude/rules/` (see *Where the depth lives*); Claude Code loads those per path, other agents
 should read the matching rule file before touching that area.
 
+**Server restriction for all agents, including subagents:** never start Node.js processes directly
+on this server; it cannot handle that workload. This includes `node`, `npm`, `npx`, dependency
+installation, builds, tests, dev servers and scripts that launch Node indirectly. Run that work in
+GitHub CI and inspect the results with `gh`. This rule takes precedence over all local execution,
+testing and self-testing instructions below and in skills or area-specific rules.
+
 ## Commands
 
 ```bash
@@ -188,6 +194,9 @@ bridge tests against the real Rust bridge). Docs: `docs/release-verificatie.md`,
   `workdayAxis.ts`); interaction in `src/components/canvas/hooks/`. Change visual Gantt behaviour in the
   renderer, not in components.
 - **Notifications go through one channel** from the store — no `alert()` or ad-hoc toasts.
+- **Pending modal questions.** While the actual-start or phase-assignment question waits,
+  `isGlobalShortcutFrozen` blocks global app shortcuts and the surrounding shell controls are inert,
+  including during the actual-start question's Help pause. Help navigation and the question's own controls stay active.
 - **Tailwind sources.** `src/styles/globals.css` disables automatic detection with `source(none)` and
   registers only `src/` and `index.html` via `@source` (paths relative to that stylesheet). This includes
   extension UI and HTML strings in `src/`; imported component CSS and fonts still build normally.

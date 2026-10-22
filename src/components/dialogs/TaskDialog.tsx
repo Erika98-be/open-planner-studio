@@ -50,6 +50,9 @@ export function TaskDialog() {
   const { t: tCommon } = useTranslation('common');
 
   const showTaskDialog = useAppStore(s => s.ui.showTaskDialog);
+  // Help vanuit de gestapelde startvraag laat deze bewerksessie (concept + historie) intact.
+  const actualStartHelpOpen = useAppStore(s => s.ui.pendingActualStartQuestion !== null
+    && s.ui.activeRibbonTab === 'file' && s.ui.backstageSection === 'help');
   const editingTaskId = useAppStore(s => s.ui.editingTaskId);
   const tasks = useAppStore(s => s.tasks);
   const setUI = useAppStore(s => s.setUI);
@@ -258,6 +261,7 @@ export function TaskDialog() {
     // ná de `showTaskDialog`-gate hierboven, dus de toetsen zijn alleen actief bij een open dialoog.
     // Let op: overlaytint is hier bg-black/50 (historisch iets lichter dan de andere dialogs).
     <Dialog
+      suspended={actualStartHelpOpen}
       onCancel={handleClose}
       onConfirm={handleSave}
       overlayClassName="bg-black/50 z-50"

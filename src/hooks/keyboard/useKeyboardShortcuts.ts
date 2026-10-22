@@ -101,7 +101,7 @@ export function useKeyboardShortcuts() {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (!shouldHandleGlobalShortcutEvent(e)) return;
-      // Een open vraag "Taak wordt een samenvattingstaak": geen enkele globale sneltoets voert iets
+      // Een wachtende start- of samenvattingsvraag: geen enkele globale sneltoets voert iets
       // uit (ook F5/Ctrl+S van de voorpoort hieronder niet). Browsertoetsen (F5 = herladen, Ctrl+S =
       // pagina opslaan) blijven geblokkeerd, ook in dev: anders herlaadt F5 de pagina en is de vraag
       // met de wachtende handeling weg.

@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { SwitcherPill } from '@/components/layout/DocumentChrome/SwitcherPill';
 import { canRedo, canUndo } from '@/state/sessionHistory';
+import { isGlobalShortcutFrozen } from '@/hooks/keyboard/shortcutRegistry';
 import { canWriteToRefWithoutPrompt, saveTargetRef } from '@/services/fileAccess';
 
 // Het label van de feedback-knop roteert elke 10 minuten door deze drie.
@@ -33,6 +34,8 @@ export function TitleBar() {
   const redo = useAppStore(s => s.redo);
   const undoAvailable = useAppStore(canUndo);
   const redoAvailable = useAppStore(canRedo);
+  // Ook in Help blijft de wachtende vraag modaal; geschiedenis en instellingen moeten wachten.
+  const questionPending = useAppStore(s => isGlobalShortcutFrozen(s.ui));
   const isDirty = useAppStore(s => s.isDirty);
   const setUI = useAppStore(s => s.setUI);
   const filePath = useAppStore(s => s.filePath);
@@ -151,7 +154,7 @@ export function TitleBar() {
             role="switch"
             aria-checked={autoSaveActive}
             aria-label={tCommon('autosave.label')}
-            disabled={!autoSaveRef}
+            disabled={questionPending || !autoSaveRef}
             title={autoSaveTitle}
             onClick={toggleAutoSave}
             data-ops-autosave
@@ -165,16 +168,16 @@ export function TitleBar() {
           <button
             className="quick-access-btn"
             title={tMenu('ribbon.undoTitle')}
-            disabled={!undoAvailable}
-            onClick={() => undo()}
+            disabled={questionPending || !undoAvailable}
+            onClick={() => { if (!isGlobalShortcutFrozen()) undo(); }}
           >
             <Undo2 size={16} />
           </button>
           <button
             className="quick-access-btn"
             title={tMenu('ribbon.redoTitle')}
-            disabled={!redoAvailable}
-            onClick={() => redo()}
+            disabled={questionPending || !redoAvailable}
+            onClick={() => { if (!isGlobalShortcutFrozen()) redo(); }}
           >
             <Redo2 size={16} />
           </button>
@@ -186,6 +189,7 @@ export function TitleBar() {
           <button
             className="quick-access-btn"
             title={tMenu('ribbon.projectSettings')}
+            disabled={questionPending}
             onClick={() => setUI({ showSettingsDialog: true })}
           >
             <Settings size={16} />
@@ -199,6 +203,7 @@ export function TitleBar() {
           <button
             className="title-bar-feedback-btn"
             data-tour-anchor="feedback-button"
+            disabled={questionPending}
             onClick={() => setUI({ showFeedbackDialog: true })}
           >
             {tCommon(FEEDBACK_LABEL_KEYS[feedbackLabelIdx])}
