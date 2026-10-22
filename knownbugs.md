@@ -413,7 +413,13 @@ en noem het in je rapport of PR-tekst.
     downloadroute krijgt alleen geen herstelkans. Voorstel: officiële archiefbron
     vóór installatie kiezen of uitsluitend downloads begrensd herstellen, zonder
     een mogelijk onderbroken dpkg-installatie opnieuw te starten. Niet lokaal
-    uitgevoerd; bevestigd door het echte CI-log en de workflow. — B
+    uitgevoerd; bevestigd door de echte CI-logs en de workflow. Tweede geval:
+    [PR #520, run 39833825928, job 120017160413](https://github.com/OpenAEC-Foundation/open-planner-studio/actions/runs/39833825928/job/120017160413)
+    op head `859ab6b3e8f93e09ba9413262f49acb608c926f3`, dezelfde Ubuntu-image.
+    Log `/tmp/ops-520-linux-failed.log`: update slaagt; `Get:63`–`Get:67` blijven
+    18:49:46–18:49:54 UTC via Azure lopen, om 18:49:56.964 volgt TERM en exit 1;
+    `npm ci` en build zijn overgeslagen. De 15 s datatime-out voorkomt deze trage
+    voortgang niet. — B
 
 ## Wensen en open taken (geen bug)
 
