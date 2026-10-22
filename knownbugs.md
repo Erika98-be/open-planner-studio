@@ -262,13 +262,6 @@ en noem het in je rapport of PR-tekst.
      agents in dezelfde map schrijven. Voorstel: dezelfde `seal`/`sealErrors` in `prepare`/`apply-terms`.
      Gevonden in de review van #323 (Opus, 2026-10-12), in de code aangewezen. — S
 
-196. **Showcasecommentaar verwijst naar een ontbrekende Verdelen-gids.**
-    `scripts/showcases.ts:56` noemt `gids-verdelen-restcapaciteit.md`, maar dat bestand bestaat niet
-    in de repository. Het omringende commentaar beschrijft nog "Verdelen…", "Verdeel automatisch"
-    en een verdeeldialoog, terwijl die bediening ontbreekt. De zichtbare voorbeeldbelofte wordt
-    apart in PR #532 / knownbug 130 gecorrigeerd; dit resterende broncommentaar is niet aangepast.
-    Statisch bevestigd bij de review van #532 op `74e596d0`; geen lokale runtime uitgevoerd. — B
-
 173. **Toewijzingen: lange kolomkoppen laten in veel talen weinig ruimte voor de resourcenaam.** De bron is kort
     (`task.json` `properties.assignments.units` "Units"/"Inzet", `workHours` "Work (h)"), maar de straat
     vertaalde naar de volle term (uk "Одиниця призначення", ru "Единицы назначения", bg, hu, ro, sk, da, nb,

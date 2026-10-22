@@ -80,7 +80,7 @@ interface DemoResourceSpec {
  * het overzicht gebruikt, met marge naar boven), met exact twee uitzonderingen:
  *
  *  • **Masonry crew** (1) — dezelfde ploeg die in KLEIN én MIDDEL tegelijk gevraagd wordt. Dat is
- *    HET kruis-project-conflict waar "Verdeel automatisch" op gedemonstreerd wordt.
+ *    het kruis-project-conflict dat het bezettingsoverzicht zichtbaar maakt.
  *  • **Plasterers** (3) — één stukadoorsploeg die in alle drie de showcases meedoet. MIDDEL en
  *    GROOT hebben daarbij ook nog hun eigen, bedoelde interne
  *    stukadoors-overallocatie; het overzicht laat zien hoe die drie samenkomen.
