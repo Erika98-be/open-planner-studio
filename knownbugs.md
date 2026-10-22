@@ -523,8 +523,6 @@ en noem het in je rapport of PR-tekst.
     `api.settings.getApp(key)`: tutorial 4 leest nu `localStorage['ops-enableHourPlanning']`. — B
 49. **Release-notes, volgende release**: een nieuw MS Project-project rekent de speling nu *Automatisch*
     (#277); projecten die eerder via de wizard *Kleinste* kregen, houden dat (geen migratie). — B
-69. **Twee lege bestanden in de repo-root**: `dn.txt` en `dv.txt`, meegekomen in commit `b635c15c`
-    ("merge: geen verzonnen projecteinde-anker …"). Voorstel: weghalen. — B
 71. **De dode-link-check uit de `wiki`-skill meldt `project://start.ifc`** in `Extensions-Authoring.md`: dat
     staat in een codevoorbeeld (inline code), geen echte link. De check slaat inline code niet over, dus de
     dry-run is nooit "dead: 0". Voorstel: in de check eerst `` `…` `` strippen. — B
