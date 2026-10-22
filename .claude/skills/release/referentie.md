@@ -7,12 +7,13 @@ Lees het passende onderdeel tijdens de release. Dit bestand geeft geen zelfstand
 Doe dit vóór “niets veranderd” en vóór `npm run bump`. Neem de numeriek nieuwste stabiele
 **origin-tag**, ook als zijn release ontbreekt of draft is. Zet `REPO=OpenAEC-Foundation/open-planner-studio`.
 `TAG` is die bestaande tag, `SHA` zijn gepelde commit en `VERSION="${TAG#v}"`.
-Werk in een schone worktree op `SHA`, niet op de nieuwere main.
+Werk voor publicatie in een schone worktree op `SHA`; CI-fixes krijgen apart een branch vanaf main.
 Een incomplete tag wordt nooit stil als vorige voltooide release gebruikt.
 
 Bewaar in de app-release-PR (titel `Release v<VERSION>`) één bijwerkbaar commentaar met marker
 `<!-- ops-release:TAG -->`: tag/SHA, run-ID's en eindstatus van release/Snap/AUR, wiki-bron-SHA en
-wiki-commit, website-PR-URL en merge-SHA, resterende fout. Vul `TAG` in de marker echt in.
+wiki-commit, website-PR-URL, merge-SHA en deployrun, resterende fout. Leg ook reruns, fix-PR's,
+review-taak-ID's/head-SHA's, BLOKKEERT/VERVOLG en de deadline vast. Vul `TAG` in de marker echt in.
 Schrijf het commentaar vóór de tag en na elke stap bij. Een lokaal bestand of chatbericht is geen
 hervatbewijs. Zonder bestaand verslag: reconstrueer dezelfde gegevens uit GitHub en de wiki;
 controleer de werkelijkheid ook als het verslag “klaar” zegt. Maak geen dubbele release of PR.
@@ -24,20 +25,22 @@ controleer de werkelijkheid ook als het verslag “klaar” zegt. Maak geen dubb
    Zoek vervolgruns met `gh run list --workflow snap.yml --event workflow_run` (idem `aur.yml`).
    Hun eigen `head_sha` kan de defaultbranch zijn: koppel via getagde checkout/versie in de logs
    en de vastgelegde run-ID's, niet blind via `--commit`. Een PR-run of overgeslagen publicatie
-   telt niet. Een lopende run afwachten, geen tweede starten.
+   telt niet. Wacht binnen de deadline op een lopende run; start geen tweede.
 2. **Release herstellen.** Is de bijbehorende `release.yml`-run mislukt of geannuleerd: bekijk
    eerst de fout en de geslaagde jobs met `gh run view <run-id> --json jobs` en `--log-failed`.
-   Bij een herstelbare runner-/netwerkfout: `gh run rerun <run-id> --failed` en afwachten.
-   Dit is publiceren en valt onder het zaterdagmandaat. Herhaal maximaal één keer per stap per run.
+   Volg [CI herstellen](#ci-herstellen): eerst eenmaal `gh run rerun <run-id> --failed`, ook bij een
+   inhoudelijke fout. Blijft hij rood: fix-PR met Sol-review, binnen de deadline.
+   Dit is publiceren en valt onder het zaterdagmandaat. Bewaar de gebruikte rerunpoging.
    Nooit een hele release-run opnieuw starten als `create-release` al slaagde: die maakt een nieuwe
    draft met `createRelease`, zonder bestaande-releasecontrole. Gebruik de bestaande run en outputs.
    Ontbreken zowel release als run: start eenmaal de volledige gate op **de bestaande tag**:
    `gh workflow run release.yml --ref "$TAG" -f "version=$TAG"`. Ontbreekt alleen de run maar
    bestaat wel een draft/publicatie, of zijn de outputs onbruikbaar: stop met de exacte blokkade.
-   Bij inhoudelijke gate-/bouwfouten: stop; geen poort omzeilen, tag verplaatsen of nieuwe bump.
+   Een main-fix werkt niet vanzelf door in deze tag; volg de herstelgrens hieronder.
+   Geen poort omzeilen, tag verplaatsen of nieuwe bump.
 3. **Snap en AUR herstellen.** Na een groene release-run moeten de bijbehorende vervolgworkflows
    groen zijn. Gebruik bestaande run-ID's en controleer de geselecteerde versie in hun logs.
-   Een mislukte run: na foutanalyse eenmaal `gh run rerun <run-id> --failed`.
+   Een mislukte run: volg CI herstellen, met dezelfde grens voor getagde broncode.
    Ontbreekt een run: start niet de release opnieuw. `snap.yml`-dispatch is alleen een bouwtest
    en publiceert niet. Stop daarvoor met de ontbrekende run als blokkade.
    Voor een ontbrekende AUR-run mag de bestaande publicatieroute wel:
@@ -55,11 +58,14 @@ controleer de werkelijkheid ook als het verslag “klaar” zegt. Maak geen dubb
    Controleer remote en live Home/gewijzigde pagina; noteer bron-SHA en wiki-commit. Bij fout stoppen.
 6. **Website hervatten.** Lees de bestaande website-PR uit het verslag; zoek bij ontbrekend verslag
    in website-PR's op deze versie en controleer ook beide blokken op website-main/live.
-   Volg de ongewijzigde [websiteprocedure](#website). Hergebruik een open versie-PR, controleer
-   zijn gates en merge hem alleen als die groen zijn. Een gemergede PR vereist merge-SHA plus
-   livecontrole. Staat de juiste inhoud al op main zonder PR, leg die main-SHA als bewijs vast.
-   Bij ontbrekende wijziging maak je de versie-PR alsnog. Bij een gesloten, ongemergede PR of rode/
-   ontbrekende gate: meld de blokkade en stop zonder nieuwe appversie; een open PR is niet klaar.
+   Volg de [websiteprocedure](#website). Hergebruik een open versie-PR en merge direct met
+   `gh pr merge <nr> --repo OpenAEC-Foundation/website --merge --admin`.
+   Een gemergede PR vereist de `deploy.yml`-pushrun voor de exacte merge-SHA met `success`, plus
+   livecontrole. Staat de juiste inhoud al op main zonder PR, leg die main-SHA en zijn deploy vast.
+   Bij ontbrekende wijziging maak je de versie-PR alsnog. Bij een gesloten, ongemergede PR of
+   mislukte/ontbrekende deploy: meld het resterende werk; de app-release blijft staan.
+   Hervat een mislukte deploy eenmaal met `gh run rerun <deploy-run-id> --failed` in het website-repo.
+   Bewaar die poging; blijft hij rood, rapporteer dat zonder een dubbele website-PR te maken.
 
 Pas wanneer alle toepasselijke stappen aantoonbaar af zijn: noteer de tag als `PREV`, ga terug naar
 actuele `origin/main` en voer de kandidaatselectie hieronder uit. Een bestaande kandidaat gaat vóór
@@ -126,6 +132,95 @@ Match PR en main op versie. Verschillende kandidaatversies of meerdere open PR's
 versie: stop en meld de botsing; kies niet stil een nieuwe versie. Controleer dat de PR-head echt
 de kandidaatversie bevat. Reconstructeer ontbrekende voortgang uit de bestaande PR en bestanden.
 Een al getagde kandidaat gaat terug naar [Hervatten](#hervatten), nooit naar een tweede bump.
+
+## CI herstellen
+
+Besluit 8: eigenaar, gesprek 2026-10-22. Dit geldt voor rode main-CI, release-PR-CI en
+releaseworkflows na de tag. Een rode poort blijft blokkeren; de job repareert de oorzaak zelf.
+
+### Deadline en voortgang
+
+De zaterdagjob stopt uiterlijk **14:00 Europe/Amsterdam**, dezelfde zaterdag als de start om 07:00.
+Gebruik de lokale datum/tijd met die IANA-tijdzone; geen vaste UTC-offset (zomer-/wintertijd).
+Controleer de tijd vóór reruns, delegaties, commits, merges, dispatches en tag/publicatie.
+Wacht begrensd op runs en reviewtaken. Start geen nieuwe stap die niet meer binnen de deadline past.
+Om 14:00: geen nieuwe mutaties; bewaar de actuele status en rapporteer de precieze oorzaak.
+Nog geen tag: die week geen tag. Een open fix-PR blijft staan. Al getagd: niets terugdraaien;
+de volgende zaterdag hervat dezelfde tag, zonder nieuwe bump of tweede release.
+
+Leg run-ID/attempt, rerunpoging, foutbewijs, fix-PR/branch/head, review-taak-ID's en resterend werk
+vast in het hervatverslag. Vóór een release-PR bestaat, staat dit in de fix-PR; verwijs er later naar.
+Zoek bij de volgende start eerst die open fix-PR voor dezelfde fout. Hervat die branch en review;
+maak geen dubbele PR. Een al verbruikte rerunpoging begint na een weekwissel niet opnieuw.
+
+### Rerun, kleinste fix, merge
+
+1. Lees de rode jobs en logs van de **exacte** main-/PR-head of getagde run:
+   `gh run view <run-id> --json jobs` en `gh run view <run-id> --log-failed`.
+   Draai de mislukte checks eerst eenmaal opnieuw met `gh run rerun <run-id> --failed`.
+   Bewaar de poging en wacht binnen de deadline. Groen: hercontroleer de SHA en vervolg de poorten.
+   Ontbrekende runs of auth-/netwerkfouten zijn geen rode check; verzin geen succes of nieuwe run.
+2. Nog rood: maak een eigen fixbranch vanaf vers opgehaalde `origin/main` en een fix-PR tegen main.
+   Reproduceer de oorzaak en maak de kleinste fix die haar repareert. Geen test uitzetten of
+   overslaan, geen check verzwakken. Draai gerichte checks; volledige `verify` loopt in PR-CI.
+   Lees vóór iedere commit `git status -sb`. Geen directe push naar main of force-push.
+   Open de fix-PR vroeg, registreer hem bij T3 en leg fout, run en releasekandidaat vast.
+3. Laat een tweede Sol-agent de actuele fix-PR-head reviewen zoals hieronder. Alleen BLOKKEERT
+   vraagt een nieuwe fixronde. Iedere gewijzigde head krijgt opnieuw review en PR-CI.
+   Een mislukte/onvolledige review is geen akkoord. Een rode fix-PR-check volgt dezelfde
+   eenmalige rerun en herstelronde op deze fixbranch; maak daarvoor geen keten van fix-PR's.
+4. Review akkoord en alle PR-CI groen voor dezelfde head: merge de fix met
+   `gh pr merge <nr> --merge --admin --match-head-commit <head-SHA>`.
+   Haal main opnieuw op en wacht op groene `ci.yml` met event `push`, branch `main` en exact de
+   merge-SHA. Is main verder gegaan, controleer de nieuwste main-SHA; een oudere groene run volstaat niet.
+5. Hervat pas daarna de release. Bij een rode release-PR: neem de fix via een gewone merge van
+   main op in de bestaande releasebranch. Los conflicten op, behoud de kandidaatversie en vernieuw
+   cijfers/JSON volgens [Releasecijfers](#releasecijfers). Ook een fout die alleen in de kandidaat
+   optreedt moet op die kandidaat gereproduceerd en na de fix opnieuw getest worden.
+   Wacht opnieuw op groene release-PR-CI en main-CI. Geen tweede bump.
+   Een lokale releasepoort krijgt dezelfde kleinste fix en review; zonder run valt alleen de rerun weg.
+
+### Tweede Sol-review via T3
+
+Lees op aia09-mp50 **`~/.claude/agents/reviewer.md`**. Neem de volledige body vanaf
+`# Hyperkritische review` **letterlijk** op in `task`. Daarmee staan de houding, bewijslast en
+rapportvorm in de brief zelf. Alleen naar het bestand verwijzen is onvoldoende.
+De YAML-keuze voor Opus neem je niet over. Lees `orchestrator_capabilities` en kies provider
+`codex`, model `gpt-6.1-sol`, met `target.options.reasoningEffort="xhigh"`.
+Ontbreekt het bestand, model of de optie: bewaar de fix-PR en meld de exacte blokkade.
+
+Gebruik een nieuwe T3 `delegate_task` per reviewronde:
+```json
+{
+  "target": {"providerInstanceId":"codex","model":"gpt-6.1-sol","options":{"reasoningEffort":"xhigh"}},
+  "isolation": "shared",
+  "mode": "wait",
+  "timeoutMs": 60000,
+  "clientRequestId": "<fix-PR>:<head-SHA>:review-<ronde>",
+  "task": "<letterlijke volledige reviewer-body>\n<oorspronkelijke fout, run/logbewijs, PR-URL, exacte head-SHA, scope en gerichte checks>\n<alle vorige bevindingen, antwoorden/fixes en open bezwaren; leeg bij ronde 1>\nWerk alleen lezend. Geen commits, pushes, publicatie of delegatie. Behoud de voorgeschreven vijfdelige rapportvorm en bewijslabels. Deel de bevindingen binnen punt 2 in BLOKKEERT en VERVOLG in. Alleen BLOKKEERT vraagt een nieuwe fixronde; vermeld VERVOLG in het eindrapport. Geef akkoord voor deze head als er geen BLOKKEERT overblijft."
+}
+```
+Vul de brief concreet in. BLOKKEERT omvat fouten die correct herstel verhinderen of regressies
+veroorzaken; VERVOLG omvat niet-blokkerende verbeteringen. Behoud [BEVESTIGD]/[VERMOED] en onderbouwing.
+Controleer geretourneerde provider, model en opties. Bewaar elk `taskId` en het rapport voor die head.
+Een timeout laat de child doorlopen: lees `task_status(taskId)` binnen de deadline, start geen duplicaat.
+Gebruik `childThreadId` nooit als vervolgronde. Elke nieuwe ronde krijgt een nieuwe `delegate_task`
+met de oorspronkelijke brief én eerdere bevindingen/antwoorden; een retry van dezelfde aanvraag
+houdt dezelfde `clientRequestId`. Bij de deadline: leg een nog actieve taak vast en hervat die eerst.
+
+### Herstel na de tag
+
+Ook een rode `release.yml` begint met één `--failed`-rerun en daarna een fix-PR met bovenstaande review.
+Een merge op main verandert de getagde broncode of workflow **niet**. Een rerun gebruikt de oude
+SHA/workflow. Claim daarom nooit dat een groene fix-PR de bestaande release gerepareerd heeft.
+Controleer of de oorzaak voor dezelfde tag echt is weggenomen, bijvoorbeeld een externe storing.
+Hervat dan uitsluitend de mislukte jobs van de bestaande run, met behoud van geslaagde publicatiejobs.
+Na een aantoonbare fix is zo'n gerichte herstart een herstelpoging, geen tweede gok op dezelfde fout;
+leg het bewijs vast en herhaal niet ongewijzigd als die weer faalt.
+Vereist herstel gewijzigde getagde code of een gewijzigde workflow: behoud de fix-PR/main-fix,
+noteer deze technische blokkade en hervat de volgende zaterdag via [Hervatten](#hervatten).
+Geen tag verplaatsen, nieuwe versie, volledige rerun na geslaagde `create-release` of dispatch op
+main om de tag te omzeilen. De deadline verruimt dit mandaat niet.
 
 ## Releasecijfers
 
@@ -208,16 +303,22 @@ Het highlight-blok `#whats-new` en zijn woordenboeken komen **niet** vanzelf mee
    ```
    Beoordeel ook de vijf `#whats-new`-blokken en parseer de vier JSON-woordenboeken.
 6. Commit, push de websitebranch, open een PR tegen `main` en registreer die bij de T3-thread.
-   Controleer CI op de **exacte PR-head**. Pas bij groene CI:
-   `gh pr merge <nr> --squash --admin --match-head-commit <head-SHA>`.
+   Merge direct: `gh pr merge <nr> --repo OpenAEC-Foundation/website --merge --admin`.
    Nozzit heeft een bypass in `required_pull_request_reviews.bypass_pull_request_allowances.users`
    (gecontroleerd via `gh api repos/OpenAEC-Foundation/website/branches/main/protection`).
-   Er is dus geen menselijke review nodig. Controleer daarna de deploy en beide blokken live.
+7. Lees `mergeCommit.oid` uit `gh pr view <nr> --repo OpenAEC-Foundation/website --json mergeCommit`.
+   Zoek `gh run list --repo OpenAEC-Foundation/website --workflow deploy.yml --event push
+   --branch main --commit <merge-SHA>` en wacht binnen de deadline op die run.
+   Controleer **conclusion `success` voor precies die SHA** en daarna beide blokken live.
+   Noteer PR, merge-SHA, deployrun-ID/URL, conclusie en livecontrole in het hervatverslag.
+   Een oudere groene deploy of alleen de dagelijkse stats-run volstaat niet.
+   Faalt de deploy, ontbreekt de run of verstrijkt de deadline: de app-release blijft staan.
+   Meld de deployfout/ontbrekende bevestiging in het eindrapport en bewaar het websitewerk voor hervatten.
 
-**Bekende ontbrekende poort:** op 2026-10-22 bevat de website alleen issue-, deploy- en dagelijkse
-stats-workflows, geen PR-CI; branch protection heeft `required_status_checks: null`.
-Zie `knownbugs.md`, punt 179. Geen checks is geen groene CI. Laat in dat geval de website-PR open
-en meld deze blokkade. Regel website-PR-CI vóór ingebruikname van de geplande job.
+Besluit: orkestrator na vraag aan eigenaar, gesprek 2026-10-22. De website heeft en behoeft
+geen PR-checks. De controle na merge is `deploy.yml` (push naar main of `workflow_dispatch`).
+De overige workflows zijn `update-stats.yml` (06:00 UTC) en `auto-assign-issues.yml`.
+Deze procedure voegt geen workflow of checkeis aan het website-repo toe.
 
 ## Uitlevering controleren
 

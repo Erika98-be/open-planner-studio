@@ -8,11 +8,20 @@ Besluit: eigenaar, gesprek 2026-10-22.
 - Tijdzone: **Europe/Amsterdam**. Controleer dat de scheduler deze lokale tijdzone gebruikt.
 - Schedule: `{"type":"fixed_time","timeOfDay":"07:00","weekdays":[6]}`.
 - Begroting: **4–6 uur** voor vertalingen, PR-CI, main-CI, release-gate, installers en website.
-  Vanaf 07:00 is de verwachte afronding 11:00–13:00, met ruimte tot de middag.
+  Vanaf 07:00 is de verwachte afronding 11:00–13:00.
   Dit is een schatting, geen garantie bij runnerwachtrijen of vertaalachterstand.
+- Harde deadline: **zaterdag 14:00 Europe/Amsterdam**, ook tijdens CI-herstel en hervatten.
+  Nog geen tag: geen tag die week. Open fix-PR's blijven staan. Al getagd: behoud de release.
+  Rapporteer de oorzaak en hervat de volgende zaterdag dezelfde PR/kandidaat/tag.
 - Werkplek: repo `OpenAEC-Foundation/open-planner-studio`; schone eigen worktree vanaf `origin/main`.
 - Eén actieve run tegelijk. Volg het hervatpad voor onafgerond werk; begin geen tweede versie.
-- Voor ingebruikname: website-PR-CI regelen (knownbugs.md, punt 179).
+- Rode main-/release-PR-/releaseworkflow: eerst eenmaal `gh run rerun <id> --failed`.
+  Blijft hij rood: kleinste fix-PR vanaf main, tweede Sol-review via T3 `delegate_task`
+  (`codex`, `gpt-6.1-sol`, `reasoningEffort: xhigh`). Letterlijke reviewerbrief en BLOKKEERT/VERVOLG
+  volgens de referentie. Na reviewakkoord en groene PR-CI: `--merge --admin`, dan groene main-CI.
+  Geen test overslaan of check verzwakken. Een bestaande tag blijft ongewijzigd.
+- Website: merge de PR direct met `--merge --admin`, controleer daarna `deploy.yml` op de merge-SHA.
+  Een mislukte websitedeploy verandert de app-release niet; meld hem in het eindrapport.
 
 ## Letterlijke prompt
 
@@ -22,5 +31,14 @@ Lees AGENTS.md, .claude/rules/ci-release.md en .claude/skills/release/SKILL.md.
 Volg de release-skill en de gekoppelde referentie en skills volledig.
 Het zaterdagmandaat omvat publiceren en gecontroleerd hervatten, zonder menselijk akkoord.
 Rond eerst onafgerond werk voor de laatste tag af. Respecteer alle stopregels.
-Rapporteer versie, SHA, workflowstatus, wiki, website-PR en eventuele blokkade.
+Herstel rode CI volgens referentie.md: eenmaal rerun, dan fix-PR met tweede Sol-review.
+De reviewbrief bevat de letterlijke body van ~/.claude/agents/reviewer.md en BLOKKEERT/VERVOLG.
+Gebruik delegate_task met codex/gpt-6.1-sol en reasoningEffort xhigh; elke ronde is een nieuwe taak.
+Alleen BLOKKEERT vraagt een nieuwe fixronde. Merge pas na reviewakkoord en groene PR-CI.
+Wacht daarna op groene CI voor de exacte main-SHA. Behoud kandidaatversie en bestaande tag.
+Stop uiterlijk zaterdag 14:00 Europe/Amsterdam. Geen tag die week als er nog geen staat.
+Laat open fix-PR's staan en hervat die de volgende zaterdag. Rapporteer waarom het niet lukte.
+Merge de website-PR direct met --merge --admin en controleer deploy.yml voor de merge-SHA.
+Een mislukte websitedeploy laat de app-release staan; meld dat in het eindrapport.
+Rapporteer versie, SHA, workflowstatus, fix-PR's/reviews, VERVOLG, wiki, website en eventuele blokkade.
 ```
