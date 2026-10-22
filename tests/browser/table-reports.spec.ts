@@ -5,6 +5,7 @@
 import { readFile } from 'node:fs/promises';
 import { PDFDocument } from 'pdf-lib';
 import { expect, seedProject, test } from './fixtures/ops';
+import { chooseLocale, LOCALE_CASES } from './fixtures/locale';
 
 test('table reports: rapporttype kiezen rendert tabel, optie ververst live, PDF-export gebruikt eigen suffix', async ({ page, ops: _ops }) => {
   await seedProject(page, [
@@ -122,7 +123,7 @@ test('table reports: rapporttype kiezen rendert tabel, optie ververst live, PDF-
   const print = page.locator('[data-tour-anchor="ribbon:report:printPreview"]');
   await print.click();
   const download = await downloadPromise;
-  expect(download.suggestedFilename()).toMatch(/-look-ahead\.pdf$/);
+  expect(download.suggestedFilename()).toBe('Tabelrapporten-look-ahead.pdf');
   expect(await page.evaluate(() => window.__OPS__!.store.getState().scheduleStale)).toBe(false);
   await expect(report.locator('[role=note]')).toHaveCount(0);
   await expect(print).toBeFocused();
@@ -138,6 +139,29 @@ test('table reports: rapporttype kiezen rendert tabel, optie ververst live, PDF-
   for (const pdfPage of pdf.getPages()) {
     expect(pdfPage.getWidth()).toBeCloseTo(1190.55, 1);
     expect(pdfPage.getHeight()).toBeCloseTo(1683.78, 1);
+  }
+
+  // Knownbug 61: dezelfde gemonteerde rapportwerkruimte volgt echte taalkeuzes. Exporteer elk
+  // tabeltype via de bestaande knop; controleer de volledige naam, inclusief project en extensie.
+  const exports = [
+    { option: /^Look-ahead$/, nl: 'look-ahead', en: 'look-ahead' },
+    { option: /^(Critical & near-critical|Kritiek & near-critical)$/, nl: 'kritiek', en: 'critical' },
+    { option: /^(Progress report|Voortgangsrapport)$/, nl: 'voortgang', en: 'progress' },
+    { option: /^(Schedule health|Planningsgezondheid)$/, nl: 'gezondheid', en: 'schedule-health' },
+    { option: /^(Resource loading|Resourcebelasting)$/, nl: 'resourcebelasting', en: 'resource-loading' },
+    { option: /^(Resource assignments|Resourcetoewijzingen)$/, nl: 'toewijzingen', en: 'resource-assignments' },
+    { option: /^(WBS summary|WBS-samenvatting)$/, nl: 'wbs', en: 'wbs' },
+  ];
+  for (const locale of [LOCALE_CASES[2], LOCALE_CASES[3]]) {
+    await chooseLocale(page, locale);
+    for (const reportExport of exports) {
+      await typePicker.click();
+      await page.getByRole('option', { name: reportExport.option }).click();
+      await expect(report).toBeVisible();
+      const nextDownload = page.waitForEvent('download');
+      await page.getByRole('button', { name: /^(Export PDF|Exporteer PDF)$/ }).click();
+      expect((await nextDownload).suggestedFilename()).toBe(`Tabelrapporten-${reportExport[locale.code]}.pdf`);
+    }
   }
 });
 

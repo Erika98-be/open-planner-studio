@@ -5,6 +5,7 @@
 import { readFile } from 'node:fs/promises';
 import { PDFDocument } from 'pdf-lib';
 import { expect, seedProject, test } from './fixtures/ops';
+import { chooseLocale, LOCALE_CASES } from './fixtures/locale';
 
 test('resourcediagram: rapporttype rendert per resource, opties sturen samenvatting en paginering, export krijgt eigen suffix', async ({ page, ops: _ops }) => {
   // Deze regressie gaat specifiek over de Engelse optienaam.
@@ -150,9 +151,16 @@ test('resourcediagram: rapporttype rendert per resource, opties sturen samenvatt
   const downloadPromise = page.waitForEvent('download');
   await page.getByRole('button', { name: /^(Export PDF|Exporteer PDF)$/ }).click();
   const download = await downloadPromise;
-  expect(download.suggestedFilename()).toMatch(/-resource-diagram\.pdf$/);
+  expect(download.suggestedFilename()).toBe('Resourcediagram-resource-diagram.pdf');
   const pdfPath = await download.path();
   expect(pdfPath).not.toBeNull();
   const pdf = await PDFDocument.load(await readFile(pdfPath!));
   expect(pdf.getPageCount()).toBe(3);
+
+  // Knownbug 61: een echte taalwissel behoudt de projectnaam en geeft het Nederlandse rapportdeel.
+  await chooseLocale(page, LOCALE_CASES[2]);
+  await expect(typePicker).toContainText('Resourcediagram');
+  const dutchDownload = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Exporteer PDF', exact: true }).click();
+  expect((await dutchDownload).suggestedFilename()).toBe('Resourcediagram-resourcediagram.pdf');
 });
