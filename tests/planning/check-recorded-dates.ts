@@ -26,7 +26,8 @@ import { createDefaultCalendar } from '@/engine/calendar/defaultCalendar';
 import type { ImportResult } from '@/services/importTypes';
 import type { Task } from '@/types/task';
 import { createAppStoreContext, useAppStore } from '@/state/appStore';
-import { recoveryInputFromParsed } from '@/state/documentContract';
+import { payloadFromImport, recoveryInputFromParsed } from '@/state/documentContract';
+import { applyRestoredRecordedMode, prepareLoadedPayload } from '@/state/documentActivation';
 import { LOCALES } from '../../scripts/i18n-tools';
 import { recordedDatesActiveKey, recordedDatesTaskMissingKey, recordedDatesTaskShownKey } from '@/components/layout/recordedDatesNoticeText';
 import { recordedTaskMark, recordedTaskWillShift, unrecordedExportGate } from '@/state/recordedDatesSelectors';
@@ -664,6 +665,57 @@ const earlyStartOf = (id: string) => S().tasks.find((t) => t.id === id)!.time.ea
   S().restoreDocuments([input], 'rec-63');
   eq('7aj crashherstel van een gewoon #63-document zet de modus NIET aan', S().datesAsRecorded, false);
   eq('7ak …en vergeet de opgeslagen datums (geen aanbod)', S().recordedDates, null);
+}
+
+// ── (7D) Knownbug 116: IFC-faseactuals in opgeslagen-datummodus, expliciet ZONDER solve ──────────
+// Dezelfde productiehelpers als slapend crashherstel: lees → payload → reconstructie → save.
+// De fasedatums verschillen bewust van de kinderen: dit pad moet de bron bewaren, niet oprollen.
+{
+  const input = buildWriteIFCInput(createAppStoreContext().store.getState());
+  const variants: { label: string; children: Task[] }[] = [
+    { label: 'lopend op 100 %', children: [mk('L', { completion: 1, actualStart: '2026-03-02' }, { status: 'STARTED' })] },
+    { label: 'voltooid + niet-gestarte mijlpaal', children: [
+      mk('V', { completion: 1, actualStart: '2026-03-02', actualFinish: '2026-03-06' }, { status: 'COMPLETED' }),
+      mk('M', { scheduleDuration: 0, scheduleStart: '2026-03-09', scheduleFinish: '2026-03-09',
+        earlyStart: '2026-03-09', earlyFinish: '2026-03-09' }, { isMilestone: true }),
+    ] },
+  ];
+  const saved = (task: Task) => ({
+    status: task.status, completion: task.time.completion,
+    actualStart: task.time.actualStart ?? null, actualFinish: task.time.actualFinish ?? null,
+    remainingTime: task.time.remainingTime,
+    scheduleStart: task.time.scheduleStart, scheduleFinish: task.time.scheduleFinish,
+    earlyStart: task.time.earlyStart, earlyFinish: task.time.earlyFinish,
+    lateStart: task.time.lateStart, lateFinish: task.time.lateFinish,
+    totalFloat: task.time.totalFloat, freeFloat: task.time.freeFloat, isCritical: task.time.isCritical,
+  });
+  for (const variant of variants) {
+    const children = variant.children.map(t => ({ ...t, parentId: 'F' }));
+    const source = mk('F', {
+      completion: 1, actualStart: '2026-02-26', remainingTime: 3,
+      scheduleStart: '2026-03-16', scheduleFinish: '2026-03-27',
+      earlyStart: '2026-03-16', earlyFinish: '2026-03-27',
+      lateStart: '2026-03-23', lateFinish: '2026-04-03', totalFloat: 5, freeFloat: 2,
+    }, { status: 'STARTED', childIds: children.map(t => t.id) });
+    let text = writeIFC({ ...input, project: { ...input.project, startDate: '2026-02-23', statusDate: '2026-03-10' },
+      tasks: [source, ...children], recordedSourceFormat: 'ifc' });
+    for (let n = 1; n <= 2; n++) {
+      const parsed = readIFC(text);
+      const payload = prepareLoadedPayload(payloadFromImport(parsed, null), { recompute: false });
+      eq(`7D ${variant.label}, ronde ${n}: geen solve bij payloadvoorbereiding`, payload.cpmResult, null);
+      applyRestoredRecordedMode(payload, parsed);
+      eq(`7D ${variant.label}, ronde ${n}: opgeslagen-datummodus actief`,
+        [payload.datesAsRecorded, payload.scheduleStale, payload.recordedDates?.sourceFormat], [true, false, 'ifc']);
+      const phase = payload.tasks.find(t => t.id === source.id)!;
+      eq(`7D ${variant.label}, ronde ${n}: fase houdt al haar eigen datums en voortgang`, saved(phase), saved(source));
+      eq(`7D ${variant.label}, ronde ${n}: vastlegging heeft geen verzonnen werkelijk einde`,
+        payload.recordedDates?.times[source.id]?.summaryProgress,
+        { completion: 1, status: 'STARTED', actualStart: '2026-02-26' });
+      eq(`7D ${variant.label}, ronde ${n}: reconstructie toont het opgeslagen fase-einde`,
+        payload.cpmResult?.tasks.get(source.id)?.earlyFinish, '2026-03-27');
+      text = writeIFC(buildWriteIFCInput(payload));
+    }
+  }
 }
 
 /**

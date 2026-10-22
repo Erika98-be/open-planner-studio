@@ -3,6 +3,7 @@ import { WORK_RULES, type WorkRule } from '@/types/workRule';
 import { normalizeCurveValues } from '@/engine/contour/contourEngine';
 import type { CustomTaskType } from '@/types/taskType';
 import { createDefaultTaskTime } from '@/utils/taskDefaults';
+import { isLeafTask, isSummaryTask } from '@/utils/taskHierarchy';
 import { effHoursPerDay, hourTaskScheduleDuration } from '@/utils/taskDuration';
 import { Sequence, SequenceType } from '@/types/sequence';
 import { Resource, ResourceAssignment, AvailabilityStep, ResourceCurve, isResourceCurve } from '@/types/resource';
@@ -342,11 +343,21 @@ export function readIFC(
     (task) => resolveCalendar(task.calendarId, resourceCalendars, calendar));
   if (!project.startDate && !projectStartRecorded.value) project.startDate = startAnchor;
 
-  // Voortgang-invarianten op de rauw ingelezen actuals — ná extractStructure zodat
+  // Alleen bladtaken volgen de voortgang-invarianten — ná extractStructure zodat
   // project.statusDate (uit OPS_ProjectSettings) beschikbaar is als default-actualFinish.
   // `runningStatusIds`: taken met `IfcTask.Status` = 'STARTED' — een lopende taak op 100 % blijft
   // dan lopend (eigenaarsbesluit 2026-10-14). Oude bestanden (`$`) lezen als voorheen.
-  normalizeImportedProgress(tasks, project.statusDate, runningStatusIds);
+  normalizeImportedProgress(tasks.filter(isLeafTask), project.statusDate, runningStatusIds);
+  // Fasen dragen bron- of rollupwaarden: 100 % kan zonder werkelijk einde voorkomen
+  // (bv. afgeronde voortgang of een niet-gestarte mijlpaal naast voltooid werk). Bewaar hun
+  // voortgang, actuals en restduur; een taakdefault zou ook "datums zoals opgeslagen" vervalsen.
+  // Status wordt niet apart opgeslagen voor fasen: leid hem af zonder datums te verzinnen.
+  for (const task of tasks) {
+    if (!isSummaryTask(task)) continue;
+    const t = task.time;
+    task.status = t.actualFinish ? 'COMPLETED'
+      : t.actualStart || t.completion > 0 ? 'STARTED' : 'NOT_STARTED';
+  }
 
   const ifcGlobalIds = collectIfcGlobalIds(entities, entityMap, taskStepIdMap, project.id, guidLog);
 
