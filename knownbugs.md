@@ -379,10 +379,6 @@ en noem het in je rapport of PR-tekst.
     valt dan terug op Opslaan als. Annuleert de gebruiker, dan komt er geen melding (het document blijft
     terecht gewijzigd). Gezien in `check-save-failure-status.ts` §3a/3b. Voorstel: een echte schrijffout
     melden vóór de kiezer verschijnt. — B
-166. **Desktop: bij Openen en Importeren mist de reden in de foutmelding.** `fileSlice.ts` geeft daar
-    `(err as Error).message` door (`openFailed` en `importFailureNotice`, drie plekken). Tauri-plugins weigeren
-    met een tekst, niet met een `Error`, dus het detail is `undefined`. Bij Opslaan is dat in #434 opgelost met
-    `saveErrorDetail`. Afgeleid uit de code, niet nagespeeld. Voorstel: dezelfde helper gebruiken. — S
 
 ## Rondleiding, Help en extensie-gidsen
 
