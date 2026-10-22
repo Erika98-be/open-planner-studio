@@ -167,7 +167,7 @@ geen generieke poort die elke `t(key, { count })`-aanroep in de hele codebase vi
 | onderwerp | bestand |
 |---|---|
 | brontaal-sleutels (vier namespaces) | `src/i18n/locales/nl/{common,task,report,menu}.json` |
-| overige 13 locales, zelfde structuur | `src/i18n/locales/<taal>/{common,task,report,menu}.json` |
+| overige 27 locales: `en` (verplicht bij een PR) en 26 andere (via de vertaalstraat), zelfde structuur | `src/i18n/locales/<taal>/{common,task,report,menu}.json` |
 | i18next-init, eager (en) vs. lazy (overige) | `src/i18n/config.ts` |
 | lazy-loader per taal | `src/i18n/` (`loadLocale()`) |
 | de poort: CLDR-pluralcategorieën per locale | `scripts/i18n-diff.mjs` (`npm run verify:i18n`) |
