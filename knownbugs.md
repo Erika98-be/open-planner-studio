@@ -423,6 +423,16 @@ en noem het in je rapport of PR-tekst.
     eenduidig van de root afleiden. Niet opgelost in de fix van 119.
     — B (scopemismatch in de code), S (gemelde gevolgen, geen schone baselinevergelijking)
 
+184. **De Linux-build kan de volledige jobtijd verliezen tijdens `apt-get update`.** In CI-run
+    [39815362793, job 119952400741](https://github.com/OpenAEC-Foundation/open-planner-studio/actions/runs/39815362793/job/119952400741)
+    (PR #499, 2026-10-22) bleef *Install dependencies (Ubuntu only)* hangen bij `apt-get update`,
+    met herhaalde `Ign`-regels voor `azure.archive.ubuntu.com`. De job startte om 16:36:05 UTC en
+    eindigde geannuleerd om 17:21:24; de laatste APT-uitvoer was om 16:36:54. Frontendinstallatie
+    en build zijn niet uitgevoerd. Bewijs: `/tmp/ops-499-linux.log`; de ouder heeft alleen de
+    geannuleerde job opnieuw gestart. Dit is het APT-detail, niet de browsershardmelding 167.
+    Voorstel: begrensde APT-netwerktime-outs en/of een mirrorfallback. Geen fout in runner of
+    applicatiecode aangetoond. — B (log), S (nadere oorzaak)
+
 ## Wensen en open taken (geen bug)
 
 45. **Extensie-API**: extensies kunnen geen relatie of kalender gericht wijzigen en de selectie niet lezen.
@@ -464,7 +474,7 @@ en noem het in je rapport of PR-tekst.
     Voorstel: een website-PR-workflow met de bestaande checkers toevoegen en als poort instellen.
     De Nozzit-bypass voor reviews bestaat wel. Alleen gelezen; niets in de website gewijzigd. — B
 
-183. **MSPDI: andere projectdatumvelden worden nog zonder XML-escaping geschreven.**
+185. **MSPDI: andere projectdatumvelden worden nog zonder XML-escaping geschreven.**
     Bij de statische analyse van 176 bleek dat `mspdiWriter.ts` ook `project.endDate` en
     `project.statusDate` via `toXmlDateTime` rechtstreeks in `<FinishDate>`/`<StatusDate>` zet.
     Die helper formatteert op lengte, zonder validatie of escaping; `mspdiReader.ts:parseProject`
