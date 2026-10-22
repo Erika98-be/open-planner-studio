@@ -13,6 +13,7 @@
  * tabbladfilter weghalen ⇒ 16b en 16f rood; de tabbladpoort in `checkDocsSection` uitzetten ⇒ 16f rood.
  */
 import { readFileSync, readdirSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
 import { resolve } from 'node:path';
 import { sectionHash, splitSections, structureHash } from '../../scripts/lib/docs-structure';
 import {
@@ -114,6 +115,26 @@ ok('02f los woord', hasWord('Gebruik Puffer hier', 'puffer') && !hasWord('Gesamt
 eq('02g avoid alleen als los woord, eigen term weggestreept', avoidWords('fri slakk og slakken', ['fri slakk'], ['slakk']), []);
 eq('02h avoid als los woord gevonden', avoidWords('de nástupce úlohy', ['následník'], ['nástupce']), ['nástupce']);
 eq('02i normLabel', [normLabel('Save…'), normLabel('Link ▾'), normLabel('Done.'), normLabel('Note:')], ['Save', 'Link', 'Done', 'Note']);
+eq('02j normLabel: gemengde eindtekens en witruimte', normLabel('  Opslaan \t… . : ...\n'), 'Opslaan');
+eq('02k normLabel: punten middenin blijven staan', normLabel('Versie 1.2: klaar!'), 'Versie 1.2: klaar!');
+eq('02l normLabel: alleen eindtekens', normLabel(' ... … : . '), '');
+eq('02m normLabel: pijlen en hun witruimte', [normLabel(' A \t▾\n B '), normLabel(' A ▾ ▾ B ')], ['A B', 'A  B']);
+{
+  // Een regressie mag de suite niet laten hangen: voer de echte functie met tijdslimiet uit.
+  const probe = spawnSync(process.execPath, ['--input-type=module', '-e', `
+    const normalize = (${normLabel.toString()});
+    const samples = [
+      'Opslaan' + '.'.repeat(100_000) + '!',
+      'Opslaan' + ' '.repeat(100_000) + '!',
+      'Opslaan' + ' . : … '.repeat(20_000),
+    ];
+    if (normalize(samples[0]) !== samples[0] || normalize(samples[1]) !== samples[1]
+      || normalize(samples[2]) !== 'Opslaan') process.exit(1);
+  `], { encoding: 'utf8', timeout: 5_000 });
+  eq('02n normLabel: lange vijandige invoer eindigt binnen de proceslimiet',
+    { status: probe.status, error: probe.error?.message, stderr: probe.stderr },
+    { status: 0, stderr: '' });
+}
 
 // ── 03. Labelkaart a/b/c ─────────────────────────────────────────────────────────────────────
 {
