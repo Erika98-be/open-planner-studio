@@ -10,6 +10,32 @@ Doe dit vóór “niets veranderd” en vóór `npm run bump`. Neem de numeriek 
 Werk voor publicatie in een schone worktree op `SHA`; CI-fixes krijgen apart een branch vanaf main.
 Een incomplete tag wordt nooit stil als vorige voltooide release gebruikt.
 
+**Controleer eerst afschrijving**, vóór enige release-/workflowpoging voor deze tag.
+De vaste regel staat in de body van de gemergde app-release-PR, titel `Release v<VERSION>`:
+`Afgeschreven tag: v<VERSION>`. Alleen een volledige, exacte regel voor deze tag telt.
+Voer dit uitsluitend lezende blok uit en neem `actie` en `prev` over:
+
+```bash
+TAG="$TAG" node --input-type=module <<'JS'
+import { execFileSync } from 'node:child_process';
+const tag = process.env.TAG;
+const prs = JSON.parse(execFileSync('gh', ['pr', 'list', '--repo', 'OpenAEC-Foundation/open-planner-studio',
+  '--base', 'main', '--state', 'merged', '--search', `"Release ${tag}" in:title`, '--limit', '1000',
+  '--json', 'title,body,url'], { encoding: 'utf8' }));
+const afgeschreven = prs.find(pr => pr.title === `Release ${tag}` &&
+  pr.body.split(/\r?\n/).includes(`Afgeschreven tag: ${tag}`));
+console.log(JSON.stringify({ actie: afgeschreven ? 'opvolger' : 'hervatten', prev: tag,
+  releasePr: afgeschreven?.url }));
+JS
+```
+
+- `actie=hervatten`: voer hieronder de normale hervatstappen uit. Een leesfout stopt de job.
+- `actie=opvolger`: zet `AFGESCHREVEN_TAG="$TAG"` en **`PREV="$TAG"`**, ook bij een draft of ontbrekende
+  GitHub-release. Sla hervatstappen 1–6 voor deze tag over: geen rerun, dispatch, publicatie, wiki of
+  website voor deze tag. Ga naar actuele main, rond eerst de bijbehorende fix-PR/review af en eis groene
+  main-CI. Voer daarna de kandidaatselectie uit. Een bestaande opvolger boven `PREV` gaat voor;
+  anders `RELEASE_MODE=nieuw`, dan pas `npm run bump` zonder argument. Volg [Herstel na de tag](#herstel-na-de-tag).
+
 Bewaar in de app-release-PR (titel `Release v<VERSION>`) één bijwerkbaar commentaar met marker
 `<!-- ops-release:TAG -->`: tag/SHA, run-ID's en eindstatus van release/Snap/AUR, wiki-bron-SHA en
 wiki-commit, website-PR-URL, merge-SHA en deployrun, resterende fout. Leg ook reruns, fix-PR's,
@@ -36,8 +62,8 @@ controleer de werkelijkheid ook als het verslag “klaar” zegt. Maak geen dubb
    Ontbreken zowel release als run: start eenmaal de volledige gate op **de bestaande tag**:
    `gh workflow run release.yml --ref "$TAG" -f "version=$TAG"`. Ontbreekt alleen de run maar
    bestaat wel een draft/publicatie, of zijn de outputs onbruikbaar: stop met de exacte blokkade.
-   Een main-fix werkt niet vanzelf door in deze tag; volg de herstelgrens hieronder.
-   Geen poort omzeilen, tag verplaatsen of nieuwe bump.
+   Een main-fix werkt niet vanzelf door in deze tag; volg [Herstel na de tag](#herstel-na-de-tag).
+   Bij afschrijving stopt dit hervatpad voor de oude tag. Geen poort omzeilen of tag verplaatsen.
 3. **Snap en AUR herstellen.** Na een groene release-run moeten de bijbehorende vervolgworkflows
    groen zijn. Gebruik bestaande run-ID's en controleer de geselecteerde versie in hun logs.
    Een mislukte run: volg CI herstellen, met dezelfde grens voor getagde broncode.
@@ -67,9 +93,10 @@ controleer de werkelijkheid ook als het verslag “klaar” zegt. Maak geen dubb
    Hervat een mislukte deploy eenmaal met `gh run rerun <deploy-run-id> --failed` in het website-repo.
    Bewaar die poging; blijft hij rood, rapporteer dat zonder een dubbele website-PR te maken.
 
-Pas wanneer alle toepasselijke stappen aantoonbaar af zijn: noteer de tag als `PREV`, ga terug naar
-actuele `origin/main` en voer de kandidaatselectie hieronder uit. Een bestaande kandidaat gaat vóór
-“niets veranderd” en vóór een nieuwe bump. `PREV` blijft de ondergrens voor de releasetekst.
+Na alle toepasselijke hervatstappen, of na vastgelegde afschrijving: noteer de tag als `PREV`.
+Ga terug naar actuele `origin/main` en voer de kandidaatselectie hieronder uit. Een bestaande kandidaat gaat vóór
+“niets veranderd” en vóór een nieuwe bump. `PREV` blijft de numerieke versieondergrens.
+Bij afschrijving blijft de oorspronkelijke releasetekst daarnaast de inhoudsbron voor de opvolger.
 
 ## Kandidaatselectie
 
@@ -126,12 +153,14 @@ JS
   correctie-PR (`RELEASE_MODE=pr`) met normale PR/main-poorten; vernieuw de cijfers voor de extra
   commit. Geen bump, ook niet op de volgende zaterdag.
 - **Geen van beide:** `RELEASE_MODE=nieuw`. Pas nu mag de wijzigingscontrole tot een nieuwe
-  `npm run bump` leiden. Zonder nieuwe commits sinds `PREV` is er niets te releasen.
+  `npm run bump` leiden. Een afgeschreven tag met nog te maken opvolger blijft onafgerond werk;
+  anders is er zonder nieuwe commits sinds `PREV` niets te releasen.
 
 Match PR en main op versie. Verschillende kandidaatversies of meerdere open PR's voor dezelfde
 versie: stop en meld de botsing; kies niet stil een nieuwe versie. Controleer dat de PR-head echt
 de kandidaatversie bevat. Reconstructeer ontbrekende voortgang uit de bestaande PR en bestanden.
-Een al getagde kandidaat gaat terug naar [Hervatten](#hervatten), nooit naar een tweede bump.
+Een al getagde kandidaat gaat terug naar [Hervatten](#hervatten). Alleen vastgelegde afschrijving
+maakt de route naar een nieuwe opvolgversie vrij; een bestaande ongetagde opvolger krijgt geen extra bump.
 
 ## CI herstellen
 
@@ -145,8 +174,9 @@ Gebruik de lokale datum/tijd met die IANA-tijdzone; geen vaste UTC-offset (zomer
 Controleer de tijd vóór reruns, delegaties, commits, merges, dispatches en tag/publicatie.
 Wacht begrensd op runs en reviewtaken. Start geen nieuwe stap die niet meer binnen de deadline past.
 Om 14:00: geen nieuwe mutaties; bewaar de actuele status en rapporteer de precieze oorzaak.
-Nog geen tag: die week geen tag. Een open fix-PR blijft staan. Al getagd: niets terugdraaien;
-de volgende zaterdag hervat dezelfde tag, zonder nieuwe bump of tweede release.
+Nog geen nieuwe tag: die week geen tag meer. Een open fix-PR blijft staan. Al getagd: niets terugdraaien.
+De volgende zaterdag hervat de bestaande voortgang: dezelfde tag tenzij afgeschreven, dan zijn
+fix/opvolger. Een al ongetagde opvolgversie behoudt zijn nummer, ook na een weekwissel.
 
 Leg run-ID/attempt, rerunpoging, foutbewijs, fix-PR/branch/head, review-taak-ID's en resterend werk
 vast in het hervatverslag. Vóór een release-PR bestaat, staat dit in de fix-PR; verwijs er later naar.
@@ -211,16 +241,41 @@ houdt dezelfde `clientRequestId`. Bij de deadline: leg een nog actieve taak vast
 ### Herstel na de tag
 
 Ook een rode `release.yml` begint met één `--failed`-rerun en daarna een fix-PR met bovenstaande review.
-Een merge op main verandert de getagde broncode of workflow **niet**. Een rerun gebruikt de oude
-SHA/workflow. Claim daarom nooit dat een groene fix-PR de bestaande release gerepareerd heeft.
-Controleer of de oorzaak voor dezelfde tag echt is weggenomen, bijvoorbeeld een externe storing.
-Hervat dan uitsluitend de mislukte jobs van de bestaande run, met behoud van geslaagde publicatiejobs.
-Na een aantoonbare fix is zo'n gerichte herstart een herstelpoging, geen tweede gok op dezelfde fout;
-leg het bewijs vast en herhaal niet ongewijzigd als die weer faalt.
-Vereist herstel gewijzigde getagde code of een gewijzigde workflow: behoud de fix-PR/main-fix,
-noteer deze technische blokkade en hervat de volgende zaterdag via [Hervatten](#hervatten).
-Geen tag verplaatsen, nieuwe versie, volledige rerun na geslaagde `create-release` of dispatch op
-main om de tag te omzeilen. De deadline verruimt dit mandaat niet.
+Een main-fix verandert de getagde broncode of workflow niet; een rerun gebruikt de oude SHA/workflow.
+Is uitsluitend een externe oorzaak weggenomen, hervat dan gericht de mislukte jobs van de bestaande
+run. Bewaar het bewijs; herhaal niet ongewijzigd als die weer faalt. Nooit een volledige rerun na
+geslaagde `create-release` of een dispatch op main om de getagde gate te omzeilen.
+
+**Besluit orkestrator, 2026-10-22:** heeft de tag gewijzigde broncode of workflow nodig, dan geldt:
+
+1. Repareer de oorzaak via de fix-PR-route op main: rerun → kleinste fix-PR → tweede Sol-review →
+   groene PR-CI → merge → groene CI op de exacte main-SHA. Behoud de fix-PR bij de deadline.
+2. Schrijf de mislukte tag af. Zet in de body van zijn gemergde release-PR een eigen, vaste regel:
+   ```text
+   Afgeschreven tag: v2026.43.0
+   ```
+   Vul de echte tag in. Noteer eronder reden, fout/run-URL, fix-PR en later de opvolger-PR/tag.
+   Bewaar ook het bestaande hervatverslag. Er komt geen apart register of nieuwe release-status.
+   Lees de opgeslagen body terug voordat je doorgaat. Een nog niet vastgelegde afschrijving is
+   geen vrijbrief voor een nieuwe bump. Staat de fix bij de deadline nog open, zet de afschrijfregel
+   alvast met het foutbewijs en die fix-PR; de volgende job rondt eerst de fix af, vóór een nieuwe bump.
+3. **Vanaf die regel geen enkele nieuwe poging meer op de afgeschreven tag.** Verplaats, verwijder
+   of push hem nooit opnieuw. Een eventuele draft blijft draft; publiceer hem niet. Laat een reeds
+   gepubliceerde release staan. Vermeld de afgeschreven tag en reden altijd in het eindrapport.
+4. Zet `AFGESCHREVEN_TAG="$TAG"`, `PREV="$TAG"` en ga naar actuele main. Zoek eerst een bestaande
+   opvolgkandidaat zoals in [Kandidaatselectie](#kandidaatselectie). Alleen zonder opvolger:
+   `RELEASE_MODE=nieuw` en **`npm run bump` zonder argument**. De origin-tag blijft meetellen,
+   bijvoorbeeld `2026.43.0` → `2026.43.1`; op een volgende week geldt het bestaande weekschema.
+   De opvolger moet numeriek `VERSION > PREV` zijn; de afgeschreven versie wordt nooit hergebruikt.
+5. Neem `docs/release-notes/v<afgeschreven-versie>.md` uit die tag over naar het nieuwe notesbestand
+   en vul de tekst aan met de fix. Bij meerdere afschrijvingen bevat elke opvolger ook alle eerdere
+   nog niet uitgebrachte inhoud. Verplaats de nog niet uitgebrachte changelogsectie naar de opvolgversie
+   en voeg de fix toe; behoud uitgebrachte secties. Maak het nieuwe highlight-versieblok met die
+   inhoud en vernieuw de cijfers/JSON. De bestaande cijferverifier blijft de nieuwste origin-tag
+   als basis gebruiken, ook bij afschrijving; verwissel die niet stil met de vorige publicatie.
+6. Doorloop de normale release-PR, poorten, groene main, nieuwe tag en uitlevering. De afschrijving
+   slaat geen enkele poort over. Is het 14:00: stop en bewaar fix/opvolger in de PR's. De volgende
+   zaterdag herkent de vaste regel de afschrijving en hervat dezelfde opvolger, zonder extra bump.
 
 ## Releasecijfers
 

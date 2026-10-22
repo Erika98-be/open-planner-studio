@@ -20,12 +20,12 @@ Alleen deze skill mag een release uitvoeren. Een verzoek om de skill te wijzigen
   Neem geen ongecommit werk over. Haal volledige historie en origin-tags op.
 - Harde deadline zaterdagjob: **14:00 Europe/Amsterdam**. Stop dan met herstel/publicatie.
   Vóór de tag: geen tag die week; behoud open fix-PR's en rapporteer de oorzaak.
-  Na de tag: behoud de release en hervat dezelfde tag de volgende zaterdag.
+  Na de tag: behoud tag/draft en hervat de voortgang de volgende zaterdag; sla afgeschreven tags over.
 - Noteer de nieuwste stabiele origin-tag (`vJJJJ.W.N`, numeriek gesorteerd). Geen tag: stop.
   **Vóór de wijzigingscontrole en bump:** volg [Hervatten](referentie.md#hervatten).
   Controleer GitHub-publicatie, release-/Snap-/AUR-runs, wiki en website. Rond onafgerond werk
-  voor dezelfde tag af, ook zonder nieuwe commits. Onopgelost: stop zonder nieuwe versie.
-- Pas na volledig herstel geldt die tag als `PREV`.
+  voor dezelfde tag af, ook zonder nieuwe commits. Onopgelost: stop, tenzij de tag is afgeschreven.
+- Na volledig herstel of vastgelegde afschrijving geldt die nieuwste tag als `PREV`.
   Volg daarna de [kandidaatselectie](referentie.md#kandidaatselectie): zoek open release-PR's
   en een ongetagde versie op main. Elke ongetagde kandidaat moet numeriek `VERSION > PREV` zijn;
   lager of gelijk: stop zonder tag. Hervat dezelfde versie/PR; bump uitsluitend bij `RELEASE_MODE=nieuw`.
@@ -38,12 +38,13 @@ Alleen deze skill mag een release uitvoeren. Een verzoek om de skill te wijzigen
 - Falende `verify:translations`, `verify` of ontbrekende/lege releasetekst blokkeert de tag.
   Herstel binnen de deadline volgens de referentie. Omzeil nooit een poort.
 - Geen gelijktijdige release-run. Een bestaande doeltag gaat uitsluitend via het hervatpad;
-  verplaats of verwijder hem nooit. Geen force-push, secretwijziging of ongepoort dispatch.
+  verplaats, verwijder of push hem nooit opnieuw. Geen force-push, secretwijziging of ongepoort dispatch.
 
 ## 2. Release-inhoud
 
 Lees de volledige commitlijst sinds `PREV`. Gebruik die als bron voor alle teksten.
 Neem bij hervatten de kandidaatversie, bestaande teksten en voortgang over; vul alleen aan wat ontbreekt.
+Na afschrijving: neem de oorspronkelijke releasetekst plus de fix over naar de opvolgversie.
 Voer na de kandidaatselectie, in de gekozen werkboom, uitsluitend bij een nieuwe kandidaat de bump uit:
 ```bash
 : "${RELEASE_MODE:?Voer eerst de kandidaatselectie uit}"
@@ -121,8 +122,9 @@ git push origin "refs/tags/v$VERSION"
 `release.yml` herhaalt `verify:translations`, `verify` en de highlight-/versiecontroles.
 Daarna bouwt en signeert hij installers, verifieert de draft en publiceert `latest.json`.
 `snap.yml` en `aur.yml` volgen automatisch. Volg ze tot hun eindstatus en werk het hervatverslag bij.
-Bij falen na de tag: volg CI herstellen en het hervatpad voor **dezelfde tag**, binnen de deadline.
-Geen nieuwe versie zolang werk openstaat; een main-fix verandert de bestaande tag niet.
+Bij falen na de tag: volg [Herstel na de tag](referentie.md#herstel-na-de-tag), binnen de deadline.
+Vereist herstel gewijzigde broncode/workflow: fix op main, schrijf de tag af en maak een opvolgversie.
+De afgeschreven tag blijft staan; een eventuele draft blijft draft. Hervat die tag nooit meer.
 
 Controleer de gepubliceerde release met [referentie.md](referentie.md#uitlevering-controleren):
 notes in de body én `latest.json`, juiste versie, volledige assets en groene Snap-publicatie.
