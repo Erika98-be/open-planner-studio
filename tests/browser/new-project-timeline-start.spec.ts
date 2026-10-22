@@ -136,6 +136,14 @@ test('lege tijdlijn: Ctrl+0, kale 0 en Ctrl+Home brengen de projectstart terug i
   await page.keyboard.press('0');
   await expectProjectStartAtOrigin(page);
 
+  // Het sneltoetsenoverzicht benoemt de statusdatumvoorrang, niet uitsluitend vandaag (19).
+  await page.keyboard.press('Control+/');
+  const shortcuts = page.locator('[data-ops-shortcuts-dialog]');
+  await expect(shortcuts).toBeVisible();
+  await expect(shortcuts.getByText(/^(Spring naar statusdatum of vandaag|Jump to status date or today)$/)).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(shortcuts).toBeHidden();
+
   // Ctrl+Home springt naar de statusdatum (anders vandaag) met drie dagen marge, in dezelfde
   // oorsprong als de renderer.
   await page.evaluate(() => window.__OPS__!.store.getState().setProject({ statusDate: '2027-03-10' }));
