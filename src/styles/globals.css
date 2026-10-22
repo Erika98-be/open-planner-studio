@@ -1,4 +1,9 @@
-@import "tailwindcss";
+@import "tailwindcss" source(none);
+
+/* Alleen runtimebronnen scannen, ook de extensie-UI en HTML-strings in src/.
+   Paden zijn relatief aan dit bestand; scripts, tests en docs horen niet in de app-CSS. */
+@source "../";
+@source "../../index.html";
 
 /* De gedeelde taakgrid is een dicht planninginstrument: één DOM-boom, vaste rijhoogte en één
    scherpe actieve-celrand. Alle kleurkeuzes blijven via de bestaande thematokens lopen. */
