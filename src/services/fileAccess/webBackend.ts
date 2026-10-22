@@ -253,9 +253,10 @@ export async function saveToRefWeb(ref: FileRef, content: string): Promise<boole
     // bestandskiezer, om vervolgens alsnog in de download-terugval te landen. `SecurityError` (geen
     // gebruikersactivatie op dít moment) latcht bewust NIET — de eerstvolgende handmatige Ctrl+S
     // heeft weer een vers gebaar en verdient een eigen, verse in-place poging in plaats van meteen
-    // gedegradeerd te worden. Andere fouten blijven `false` geven — de aanroeper valt dan terug
-    // op "opslaan als", wat bij een verdwenen of vergrendeld bestand precies de
-    // juiste uitweg is.
+    // gedegradeerd te worden. Annuleren en een omgevingsweigering blijven `false`; een echte
+    // schrijffout gaat naar de aanroeper, zodat die de reden meldt VÓÓR een eventuele opslaan-als-
+    // terugval. Anders lijkt een vergrendeld bestand op een gewone browserbeperking (knownbug163).
+    if (!isAbort(err) && !isPlatformRefusal(err)) throw err;
     if (isNotAllowedRefusal(err)) platformRefusesWrites = true;
     return false;
   }

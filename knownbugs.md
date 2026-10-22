@@ -333,11 +333,6 @@ en noem het in je rapport of PR-tekst.
     `check-save-failure-status.ts` §1R (MEETING-regel 1R-d). Is de map ook alleen-lezen, of Windows met het
     kenmerk alleen-lezen, dan faalt opslaan wel netjes (zelfde check, §1 en §2). Voorstel: bij een doel zonder
     schrijfbit eerst vragen of melden. Een besluit voor de eigenaar. — B
-163. **Web: Ctrl+S op een vergrendeld bestand opent zonder uitleg de bestandskiezer.** `saveToRefWeb`
-    (`webBackend.ts`) slikt elke fout (ook `NoModificationAllowedError`) en geeft `false`; `writeActiveDocument`
-    valt dan terug op Opslaan als. Annuleert de gebruiker, dan komt er geen melding (het document blijft
-    terecht gewijzigd). Gezien in `check-save-failure-status.ts` §3a/3b. Voorstel: een echte schrijffout
-    melden vóór de kiezer verschijnt. — B
 
 ## Rondleiding, Help en extensie-gidsen
 
