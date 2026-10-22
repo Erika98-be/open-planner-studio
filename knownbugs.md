@@ -348,13 +348,6 @@ en noem het in je rapport of PR-tekst.
     (`getElementInt`) hem wel als Baseline 0 leest. `<TaskUID>01</TaskUID>` geeft bij gelijke baselines
     telling 1, terwijl de lezer wel aan taak 1 koppelt. VERVOLG 11 van #392. Voorstel: baselinenummer en
     taak-UID numeriek parsen zoals de lezer. — S
-161. **Voortgangsblad: de preview maakt geen verschil tussen een onbekende taak-ID en een dubbele WBS.** Beide
-    staan onder *Wacht op koppeling* (`ProgressImportDialog.tsx:147-149`), met alleen WBS en naam uit het blad,
-    het bladrijnummer en *Kies een taak…* (r. 369-400). De reden (`unmatched` of `ambiguousWbs`) en de
-    `OPS Task ID` uit het blad staan pas in het venster *Resultaat*, na *Toepassen* (r. 500). Een rij met
-    alleen een onbekende ID en geen WBS of naam toont dus een lege kop. Dubbele rijen (`duplicateRow`) staan
-    wel apart, met hun reden. De store-uitkomst is wel per soort apart: `check-progress-import-ronde.ts` deel D.
-    Voorstel: in *Wacht op koppeling* de reden en de ID uit het blad tonen (#405 deel 5). — B (code en test)
 162. **Desktop (Linux/macOS): Opslaan overschrijft een alleen-lezen projectbestand als de map schrijfbaar
     is.** `replaceUserFile` (`atomicWrite.ts`) schrijft een halffabricaat met de rechten van het origineel
     (0444) en hernoemt het over het doel; op POSIX mag dat. Het bestand krijgt de nieuwe inhoud en blijft
