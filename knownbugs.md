@@ -422,6 +422,12 @@ en noem het in je rapport of PR-tekst.
     van v2026.10.0 opgelost met afkappen (`TaskAssignmentsSection.tsx`), de koppen zelf niet. Voorstel: korte
     koppen in die talen, en de Help-artikelen die ze citeren mee. — B
 
+180. **De docs-indexregel beschrijft alleen nl/en-gidsen als bestaande talen.**
+    `.claude/rules/docs-index.md` zegt bij `public/docs/{nl,en}/*.md` “Alleen nl + en; een andere
+    UI-taal leest Engels”, terwijl `AGENTS.md` de vertaalde gidsen en de fallback per ontbrekend
+    artikel beschrijft. Gezien bij het lezen voor de wekelijkse release-skill; niet in de app getoetst.
+    Voorstel: de regel gelijkmaken aan het actuele docscontract. — S
+
 ## Tests
 
 79. **`check-task-grid-performance` (relationIndex-mediaan ≤ 500 ms) zit lokaal op het randje.** Los gedraaid
@@ -478,6 +484,20 @@ en noem het in je rapport of PR-tekst.
    Lokaal 5× groen op `main` (b4ee5be3) en 25× groen op de PR na merge met main. Vermoedelijk zet iets de
    verticale scroll terug (begrenzing op de inhoudshoogte) voordat de inhoud er is; niet onderzocht. — S
 
+177. **`actionlint` meldt twee bestaande shellcheck-waarschuwingen in `release.yml`.**
+    De stap `Check release notes present` geeft SC2069 bij `2>&1 >/dev/null`; de stap
+    `Set updater notes in latest.json` geeft SC2016 bij de JavaScript-template-expressies in
+    een enkel-gequote Node-commando. Beide meldingen ook gereproduceerd op de ongewijzigde
+    basisversie `522589202` in een tijdelijk bestand. Zonder shellcheck is de workflowvalidatie
+    groen. Voorstel: bedoelde omleiding verduidelijken en de bedoelde JavaScript-expressies gericht
+    documenteren voor shellcheck. Geen releaseworkflow gestart. — B
+
+178. **`gh pr edit --body-file` faalt op deze host door Projects Classic.** Bij het bijwerken
+    van PR #479 op 2026-10-22 gaf de CLI `GraphQL: Projects (classic) is being deprecated`
+    op `repository.pullRequest.projectCards`. De body is wel bijgewerkt via
+    `gh api --method PATCH repos/OpenAEC-Foundation/open-planner-studio/pulls/479 -F body=@<bestand>`.
+    Voorstel: de GitHub CLI op de host bijwerken; de repo zelf is niet aangepast hiervoor. — B
+
 ## Wensen en open taken (geen bug)
 
 45. **Extensie-API**: extensies kunnen geen relatie of kalender gericht wijzigen en de selectie niet lezen.
@@ -516,3 +536,12 @@ en noem het in je rapport of PR-tekst.
     bij de analyse van CodeQL #18; die melding is een false positive voor XSS omdat de reader
     uitsluitend `application/xml` parseert en geen nodes in de pagina invoegt. De XML-integriteit
     van zulke ongeldige datums is niet nagespeeld. Voorstel: datumvalidatie en escaping. — S
+
+179. **De website heeft geen PR-CI voor de automatische releasestap.** Op 2026-10-22 bevat
+    `OpenAEC-Foundation/website/.github/workflows/` alleen `auto-assign-issues.yml`, `deploy.yml`
+    (push op main/dispatch) en `update-stats.yml` (dagelijks/dispatch). `gh api .../actions/workflows`
+    bevestigt deze workflows plus de dynamische Pages-deploy; branch protection geeft
+    `required_status_checks: null`. De checker-scripts staan alleen als lokale opdrachten in `CLAUDE.md`.
+    Daardoor kan een website-release-PR niet vóór de merge aan de eis “website-CI groen” voldoen.
+    Voorstel: een website-PR-workflow met de bestaande checkers toevoegen en als poort instellen.
+    De Nozzit-bypass voor reviews bestaat wel. Alleen gelezen; niets in de website gewijzigd. — B
