@@ -2,7 +2,7 @@
 // node --test scripts/aur/render-pkgbuild.test.mjs
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { readFileSync, mkdtempSync, writeFileSync, chmodSync, rmSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
 import { spawnSync } from 'node:child_process';
@@ -61,4 +61,43 @@ test('cli: schrijft het PKGBUILD; exit 1 bij een ongeldige versie', () => {
   assert.match(readFileSync(join(d, 'PKGBUILD'), 'utf8'), /^pkgver=2026\.10\.0$/m);
   const bad = spawnSync(process.execPath, [script, '--template', tpl, '--version', '2026.43.1-beta', '--sha256', SHA, '--out', join(d, 'X')], { encoding: 'utf8' });
   assert.equal(bad.status, 1);
+});
+
+// Draai het echte versiescript zonder GitHub of publicatie: gh accepteert alleen de API-aanroep
+// voor de gekozen tag. Een terugval naar `gh release list` laat deze test dus falen.
+test('aur.yml gebruikt de gebouwde pakketversie, of de expliciete dispatch-tag', () => {
+  const workflow = readFileSync(join(ROOT, '.github/workflows/aur.yml'), 'utf8');
+  const match = /      - name: Get version[\s\S]*?        run: \|\n([\s\S]*?)\n      - name:/.exec(workflow);
+  assert.ok(match, 'versiestap ontbreekt');
+  const script = match[1].replace(/^          /gm, '');
+  const d = mkdtempSync(join(tmpdir(), 'ops-aur-version-'));
+  try {
+    writeFileSync(join(d, 'package.json'), JSON.stringify({ version: '2026.43.1' }));
+    const gh = join(d, 'gh');
+    writeFileSync(gh, `#!/usr/bin/env bash
+set -eu
+[ "$1" = api ] || { echo "onverwachte gh-aanroep: $*" >&2; exit 1; }
+printf '%s\\n' "$2" >> "$API_LOG"
+printf '%s\\n' '{"draft":false,"prerelease":false}'
+`);
+    chmodSync(gh, 0o755);
+    for (const [event, expected] of [['workflow_run', '2026.43.1'], ['workflow_dispatch', '2099.1.0']]) {
+      const output = join(d, `${event}.output`);
+      const apiLog = join(d, `${event}.api`);
+      const result = spawnSync('bash', ['-c', script], {
+        cwd: d,
+        encoding: 'utf8',
+        env: {
+          ...process.env, PATH: `${d}:${process.env.PATH}`, EVENT_NAME: event,
+          DISPATCH_VERSION: 'v2099.1.0', HEAD_BRANCH: 'main', REPO: 'test/repo',
+          GITHUB_OUTPUT: output, API_LOG: apiLog,
+        },
+      });
+      assert.equal(result.status, 0, result.stderr);
+      assert.equal(readFileSync(output, 'utf8'), `version=v${expected}\nversion_number=${expected}\n`);
+      assert.equal(readFileSync(apiLog, 'utf8'), `repos/test/repo/releases/tags/v${expected}\n`);
+    }
+  } finally {
+    rmSync(d, { recursive: true, force: true });
+  }
 });

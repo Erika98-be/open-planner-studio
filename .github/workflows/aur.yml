@@ -62,21 +62,16 @@ jobs:
           # Niet-vertrouwde invoer via env (zelfde whitelist als release.yml en snap.yml).
           EVENT_NAME: ${{ github.event_name }}
           DISPATCH_VERSION: ${{ github.event.inputs.version }}
-          HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
           if [ "$EVENT_NAME" = workflow_dispatch ]; then
             VERSION="$DISPATCH_VERSION"
-          elif printf '%s' "$HEAD_BRANCH" | grep -qE '^v[0-9]'; then
-            # Tag-push: head_branch is precies de release-tag.
-            VERSION="$HEAD_BRANCH"
           else
-            # release.yml liep via workflow_dispatch op een branch; de tag staat niet in het
-            # workflow_run-event. Dezelfde terugval als snap.yml: de nieuwste stabiele release.
-            VERSION="$(gh release list --repo "$REPO" --exclude-drafts --exclude-pre-releases --limit 1 --json tagName --jq '.[0].tagName // empty')"
-            echo "::warning::Release-tag afgeleid als nieuwste stabiele release: $VERSION"
+            # De uitgecheckte head_sha hoort bij de gebouwde release. release.yml bewaakt
+            # dat de tag gelijk is aan deze pakketversie; een nieuwere release is hier irrelevant.
+            VERSION="v$(node -p 'require("./package.json").version')"
           fi
           case "$VERSION" in
             *[!v0-9.]*|'')
@@ -203,7 +198,7 @@ jobs:
                   echo "AUR: al actueel, niets te doen." >> "$GITHUB_STEP_SUMMARY"
                   exit 0
                 fi
-                echo "::error::Zelfde pkgver-pkgrel als in de AUR, maar een ander PKGBUILD. Verhoog pkgrel in packaging/aur/PKGBUILD." >&2
+                echo "::error::Zelfde pkgver-pkgrel als in de AUR, maar een ander PKGBUILD. Zet pkgver in packaging/aur/PKGBUILD eerst op de releaseversie en verhoog daarna pkgrel (anders zet de renderer pkgrel terug op 1)." >&2
                 exit 1
                 ;;
               push) ;;

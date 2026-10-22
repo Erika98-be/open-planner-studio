@@ -584,6 +584,10 @@ Let op in Git Bash op Windows: die zet een argument als `/pad/` om naar een Wind
 `aur.yml` vult `packaging/aur/PKGBUILD` in na een stabiele release, test hem in een
 `archlinux`-container en pusht alleen met het secret `AUR_SSH_PRIVATE_KEY`.
 
+Een pakketreparatie bij dezelfde release: zet `pkgver` in `packaging/aur/PKGBUILD` eerst op
+de releaseversie en verhoog daarna `pkgrel`. Bij een afwijkende sjabloonversie zet de renderer
+`pkgrel` namelijk terug op 1.
+
 Lokaal controleren: `node --test scripts/aur/render-pkgbuild.test.mjs` en
 `actionlint .github/workflows/aur.yml`.
 

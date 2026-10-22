@@ -7,7 +7,9 @@
 //
 // Invullen: `pkgver`, `pkgrel` en `sha256sums_x86_64`. pkgrel blijft die uit het sjabloon als de
 // versie gelijk is aan de pkgver in het sjabloon (een pakketwijziging bij dezelfde release), en wordt
-// anders 1. De workflow controleert dat de release gepubliceerd is en geen prerelease is.
+// anders 1. Voor een pakketreparatie: zet het sjabloon eerst op de release-pkgver en verhoog
+// daarna pkgrel. Alleen pkgrel verhogen bij een oudere sjabloonversie heeft dus geen effect.
+// De workflow controleert dat de release gepubliceerd is en geen prerelease is.
 //
 // Vergelijken: drukt `push`, `same` of `older` af. `older` = de AUR heeft al een hogere
 // pkgver/pkgrel (nooit terugzetten); `same` = zelfde pkgver-pkgrel (de aanroeper kijkt of de inhoud
