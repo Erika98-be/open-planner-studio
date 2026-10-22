@@ -61,7 +61,10 @@ export type UpdateStatus =
   // `indeterminate`: de totale download-grootte is onbekend (geen contentLength) —
   // toon dan een onbepaalde voortgangsbalk i.p.v. een vastgepinde 0%.
   | { kind: 'downloading'; progress: number; indeterminate: boolean }
+  // Download afgerond; de plugin controleert nog de handtekening, daarna volgt de herstelsnapshot.
   | { kind: 'readyToInstall' }
+  | { kind: 'installing' }
+  | { kind: 'restarting' }
   | { kind: 'error'; message: string };
 
 /**
@@ -109,7 +112,7 @@ export async function checkForUpdates(
 
 /**
  * Download en installeer een beschikbare update, herstart daarna de app.
- * @param onStatus Callback om de download-voortgang te volgen.
+ * @param onStatus Callback om de download-voortgang en installatie te volgen.
  */
 export async function downloadAndInstall(
   onStatus?: (status: UpdateStatus) => void,
@@ -172,7 +175,10 @@ export async function downloadAndInstall(
     } catch (flushErr) {
       console.error('Herstelsnapshot vóór de update-herstart mislukt:', flushErr);
     }
+    // Pas na de geslaagde download (inclusief handtekeningcontrole) en het herstelwerk installeren.
+    onStatus?.({ kind: 'installing' });
     await update.install();
+    onStatus?.({ kind: 'restarting' });
     await relaunch();
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

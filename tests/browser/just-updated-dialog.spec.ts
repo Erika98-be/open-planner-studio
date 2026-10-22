@@ -1,16 +1,21 @@
 import { expect, test } from './fixtures/ops';
 import type { Page } from '@playwright/test';
+import type { DownloadEvent } from '@tauri-apps/plugin-updater';
 import { completeTour, freshStart, startTourFromWelcome, tutorialOffer } from './fixtures/onboarding';
+
+type UpdaterStep = 'download' | 'recovery' | 'install' | 'relaunch';
 
 declare global {
   interface Window {
     openedReleaseUrls?: string[];
     updaterProbe: {
-      kind: 'aur' | 'snap' | 'native';
+      kind: 'aur' | 'snap' | 'native' | 'deb';
       delayed: boolean;
       detections: Array<() => void>;
       calls: string[];
       installDone: boolean;
+      downloadEvent?: (event: DownloadEvent) => void;
+      steps: Partial<Record<UpdaterStep, { resolve: () => void; reject: (reason: Error) => void }>>;
     };
   }
 }
@@ -138,26 +143,47 @@ test('"Net bijgewerkt" pas na welkomst, rondleiding en tutorialvraag', async ({ 
 
 // Andere route dan de highlights hierboven: een beschikbare update installeren. De desktop-API's
 // krijgen testdoubles; de echte UpdateDialog en updaterService blijven draaien in de browser.
-test('installeren wacht op detectie en laat AUR en Snap aan het pakketbeheer', async ({ page, ops: _ops }) => {
+test('bijwerken toont voortgang, installatie en herstart; AUR en Snap blijven bij pakketbeheer', async ({ page, ops: _ops }) => {
+  const dialog = page.getByRole('dialog').filter({ hasText: /Software[- ]update/ });
+  const install = dialog.getByRole('button', { name: /^(Download & install|Downloaden & installeren)$/ });
+  const closeButtons = dialog.getByRole('button', { name: /^(Close|Sluiten)$/ });
+  const progress = dialog.getByRole('progressbar');
+  // Zonder desktop-API blijft de bestaande webroute een no-op.
+  await page.evaluate(() => window.__OPS__!.store.getState().setUI({ showUpdateDialog: true }));
+  await expect(dialog.getByText("You're running the latest version", { exact: true })).toBeVisible();
+  await expect(install).toHaveCount(0);
+  await closeButtons.last().click();
   await page.addInitScript(() => {
-    window.updaterProbe = { kind: 'aur', delayed: true, detections: [], calls: [], installDone: false };
+    window.updaterProbe = { kind: 'aur', delayed: true, detections: [], calls: [], installDone: false, steps: {} };
   });
   const doubles: Record<string, string> = {
     platform: 'export const isTauri = () => true;',
-    recovery: 'export const flushRecoveryNow = async () => {};',
+    gates: `export function waitFor(step) {
+      window.updaterProbe.calls.push(step);
+      return new Promise((resolve, reject) => {
+        window.updaterProbe.steps[step] = { resolve, reject };
+      });
+    }`,
+    recovery: `import { waitFor } from '/__updater_probe__/gates.js';
+      export const flushRecoveryNow = () => waitFor('recovery');`,
     core: `export async function invoke() {
       const probe = window.updaterProbe;
       if (!probe.delayed) return probe.kind;
       return new Promise(resolve => probe.detections.push(() => resolve(probe.kind)));
     }`,
-    updater: `export async function check() {
+    updater: `import { waitFor } from '/__updater_probe__/gates.js';
+    export async function check() {
       return {
         version: '2099.1.0', body: 'Test release',
-        download: async () => { window.updaterProbe.calls.push('download'); },
-        install: async () => { window.updaterProbe.calls.push('install'); },
+        download: async (onEvent) => {
+          window.updaterProbe.downloadEvent = onEvent;
+          await waitFor('download');
+        },
+        install: () => waitFor('install'),
       };
     }`,
-    process: `export async function relaunch() { window.updaterProbe.calls.push('relaunch'); }`,
+    process: `import { waitFor } from '/__updater_probe__/gates.js';
+      export const relaunch = () => waitFor('relaunch');`,
   };
   await page.route('**/__updater_probe__/*.js', route => {
     const name = new URL(route.request().url()).pathname.split('/').pop()!.replace('.js', '');
@@ -183,8 +209,6 @@ test('installeren wacht op detectie en laat AUR en Snap aan het pakketbeheer', a
   await page.evaluate(() => window.__OPS__!.store.getState().setUI({
     showWelcomeDialog: false, showTourOverlay: false, showUpdateDialog: true,
   }));
-  const dialog = page.getByRole('dialog').filter({ hasText: 'Software update' });
-  const install = dialog.getByRole('button', { name: 'Download & install', exact: true });
   await expect(dialog.getByText('A new version is available', { exact: true })).toBeVisible();
   await expect.poll(() => page.evaluate(() => window.updaterProbe.detections.length)).toBeGreaterThan(0);
   const detections = await page.evaluate(() => window.updaterProbe.detections.length);
@@ -211,6 +235,32 @@ test('installeren wacht op detectie en laat AUR en Snap aan het pakketbeheer', a
   await expect(install).toHaveCount(0);
   await expect.poll(() => page.evaluate(() => window.updaterProbe.calls)).toEqual([]);
 
+  const sendDownloadEvent = async (event: DownloadEvent) => {
+    await expect.poll(() => page.evaluate(() => !!window.updaterProbe.steps.download)).toBe(true);
+    await page.evaluate(event => window.updaterProbe.downloadEvent!(event), event);
+  };
+  const completeStep = async (step: UpdaterStep, error?: string) => {
+    await expect.poll(() => page.evaluate(step => !!window.updaterProbe.steps[step], step)).toBe(true);
+    await page.evaluate(({ step, error }) => {
+      const pending = window.updaterProbe.steps[step]!;
+      if (error) pending.reject(new Error(error));
+      else pending.resolve();
+    }, { step, error });
+  };
+  const expectLocked = async () => {
+    for (const button of await dialog.getByRole('button').all()) await expect(button).toBeDisabled();
+    await page.keyboard.press('Escape');
+    await dialog.locator('..').click({ position: { x: 1, y: 1 } });
+    await expect(dialog).toBeVisible();
+  };
+  const expectPhase = async (label: string) => {
+    await expect(dialog.getByRole('status')).toHaveText(label);
+    await expect(progress).toHaveCount(0);
+    await expect(dialog.getByText(/^\d+%$/)).toHaveCount(0);
+    await expect(dialog.getByText(/^(Checking…|Bezig met controleren…)$/)).toHaveCount(0);
+    await expectLocked();
+  };
+
   // Snap houdt dezelfde blokkade; een bekende native installatie hoeft geen tijdslimiet af te wachten.
   for (const kind of ['snap', 'native'] as const) {
     await dialog.getByRole('button', { name: 'Close', exact: true }).last().click();
@@ -230,7 +280,80 @@ test('installeren wacht op detectie en laat AUR en Snap aan het pakketbeheer', a
       await expect.poll(() => page.evaluate(() => window.updaterProbe.calls)).toEqual([]);
     } else {
       await install.click();
-      await expect.poll(() => page.evaluate(() => window.updaterProbe.calls)).toEqual(['download', 'install', 'relaunch']);
+      await sendDownloadEvent({ event: 'Started', data: { contentLength: 1000 } });
+      await sendDownloadEvent({ event: 'Progress', data: { chunkLength: 250 } });
+      await expect(progress).toHaveAttribute('aria-valuenow', '25');
+      await expect(dialog.getByText('25%', { exact: true })).toBeVisible();
+      await expect(dialog.getByText('Downloading…', { exact: true })).toBeVisible();
+      await expectLocked();
+      await sendDownloadEvent({ event: 'Progress', data: { chunkLength: 750 } });
+      await expect(progress).toHaveAttribute('aria-valuenow', '100');
+      await expect(dialog.getByText('100%', { exact: true })).toBeVisible();
+      // Finished is alleen het einde van de bytes; de handtekeningcontrole kan nog mislukken.
+      await sendDownloadEvent({ event: 'Finished' });
+      await expectPhase('Preparing installation…');
+      await expect.poll(() => page.evaluate(() => window.updaterProbe.calls)).toEqual(['download']);
+      await completeStep('download');
+      await expect.poll(() => page.evaluate(() => window.updaterProbe.calls)).toEqual(['download', 'recovery']);
+      await expectPhase('Preparing installation…');
+      await completeStep('recovery');
+      await expectPhase('Installing…');
+      await expect.poll(() => page.evaluate(() => window.updaterProbe.calls)).toEqual(['download', 'recovery', 'install']);
+      await completeStep('install');
+      await expectPhase('Restarting…');
+      await expect.poll(() => page.evaluate(() => window.updaterProbe.calls)).toEqual(['download', 'recovery', 'install', 'relaunch']);
+      await completeStep('relaunch', 'Test restart failure');
+      await expect(dialog.getByText('Test restart failure', { exact: true })).toBeVisible();
+      await expect(dialog.getByRole('status')).toHaveCount(0);
+      await expect(closeButtons.first()).toBeEnabled();
+      await expect(closeButtons.last()).toBeEnabled();
     }
   }
+
+  // Een mislukte herstart laat opnieuw controleren toe. Zonder contentLength geen verzonnen 0%.
+  await dialog.getByRole('button', { name: 'Try again', exact: true }).click();
+  await expect(install).toBeVisible();
+  await page.evaluate(() => { window.updaterProbe.calls = []; window.updaterProbe.steps = {}; });
+  await install.click();
+  await sendDownloadEvent({ event: 'Started', data: {} });
+  await sendDownloadEvent({ event: 'Progress', data: { chunkLength: 250 } });
+  await expect(progress).toBeVisible();
+  await expect(progress).not.toHaveAttribute('aria-valuenow');
+  await expect(dialog.getByText(/^\d+%$/)).toHaveCount(0);
+  await sendDownloadEvent({ event: 'Finished' });
+  await expectPhase('Preparing installation…');
+  await completeStep('download', 'Test signature failure');
+  await expect(dialog.getByText('Test signature failure', { exact: true })).toBeVisible();
+  await expect.poll(() => page.evaluate(() => window.updaterProbe.calls)).toEqual(['download']);
+  await expect(dialog.getByRole('status')).toHaveCount(0);
+  await closeButtons.last().click();
+  await expect(dialog).toHaveCount(0);
+
+  // Dezelfde installatie in het Nederlands; .deb houdt zijn handmatige terugval na een fout.
+  await selectLocale(page, 'NL — Nederlands', 'nl');
+  await page.evaluate(() => {
+    window.updaterProbe.kind = 'deb';
+    window.updaterProbe.calls = [];
+    window.updaterProbe.steps = {};
+    window.__OPS__!.store.getState().setUI({ showUpdateDialog: true });
+  });
+  await install.click();
+  await sendDownloadEvent({ event: 'Started', data: {} });
+  await sendDownloadEvent({ event: 'Finished' });
+  await expectPhase('Installatie voorbereiden…');
+  await completeStep('download');
+  await completeStep('recovery');
+  await expectPhase('Bezig met installeren…');
+  await completeStep('install', 'Test installation failure');
+  await expect(dialog.getByText('Er ging iets mis bij het bijwerken', { exact: true })).toBeVisible();
+  await expect(dialog.getByText('Test installation failure', { exact: true })).toBeVisible();
+  await expect.poll(() => page.evaluate(() => window.updaterProbe.calls)).toEqual(['download', 'recovery', 'install']);
+  await expect(dialog.getByRole('status')).toHaveCount(0);
+  await expect(dialog.getByText('Installatiecommando', { exact: true })).toBeVisible();
+  await expect(dialog.getByRole('button', { name: 'Commando kopiëren', exact: true })).toBeEnabled();
+  await expect(dialog.getByRole('button', { name: 'Open downloadpagina', exact: true })).toBeEnabled();
+  await dialog.getByRole('button', { name: 'Opnieuw proberen', exact: true }).click();
+  await expect(install).toBeEnabled();
+  await closeButtons.last().click();
+  await expect(dialog).toHaveCount(0);
 });
