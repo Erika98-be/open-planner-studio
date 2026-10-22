@@ -101,3 +101,34 @@ npm run verify:conventions
 npm run measure:profiles
 bash tests/planning/run.sh check-leveler-forward.ts check-leveler-differential.ts cases-resource-leveling.json check-leveler-splits.ts check-leveler-ceiling.ts check-leveler-scope.ts check-leveler-splitmode.ts check-leveler-pool-ledger.ts
 ```
+
+
+## Integratie met actuele main op 22 oktober 2026
+
+Main `3a2f597f33c4da4b8948ccc922cea18664ae82eb` is met normale mergecommits opgenomen,
+inclusief #481 (IFC-lezen), #482 (F5-schrijfpad), #483 (recovery-worker) en #503 (MPP-importverslag).
+Het enige tekstconflict was `knownbugs.md`: de op main opgeloste bug 121 blijft verwijderd; alle
+andere main-mutaties blijven staan. De onbevestigde B3-bijvangst heet nu 184, omdat main nummer 176
+voor MSPDI gebruikt. De documentverwijzing is mee aangepast.
+
+De automatisch samengevoegde `CPMSolver.ts` behoudt de nieuwe externe-lag-omrekening en de
+A22-uitleg van main; `ResourceLeveler.ts` behoudt de intrinsieke piekdetails uit #419. De geteste
+P2-terugval voor voltooid zonder werkelijk einde en de luie opbouw van de PF-sessie zijn intact.
+De locale-resolutie is na beide merges uitgevoerd; de locale-inhoud blijft gelijk aan main.
+
+De prestatiegetallen hierboven blijven bewijs van productcode `c9d5e5138`, niet van een nieuwe
+meting na deze integratie. De integratie is opnieuw op gedrag en profielpariteit gecontroleerd.
+
+Integratiechecks: de veertien gerichte planningbatterijen (nivelleerder incl. P2/forward,
+differential, splits, scope, pool, piekdetails, plafond, delay-eenheden, invoer, toepassen,
+externe lag, F5-schrijfpad en recovery-worker) plus 25 resource-leveling-cases eindigen op exit 0.
+`npm run typecheck` eindigt eveneens op exit 0.
+
+`npm run measure:profiles` eindigt bij deze integratie op **exit 1**: MS Project heeft voor het
+publieke `timephased-cost-rollup.mpp` drie einddatumafwijkingen van de pin (`finishExact` 9 → 6,
+`finishDiff` 0 → 3). Een controlebundel met `CPMSolver.ts` én `ResourceLeveler.ts` rechtstreeks
+uit main `3a2f597f3`, en alle overige productbronnen gelijk aan main, heeft exact dezelfde
+fidelity-uitkomst (exit 1). Er zijn geen baselines herpind. Bijvangst: knownbug 185.
+P6 houdt alle 221 bestaande inexacte cellen zonder enige celmutatie; zijn bestaande nuldoel
+geeft subcheck-exit 1, geclassificeerd als `NULDOEL (regel A gehouden)`.
+De corpusloze profielvangrails zijn groen (exit 0).

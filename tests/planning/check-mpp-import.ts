@@ -884,6 +884,7 @@ const PROPSKEY_ASSIGNMENT_FIELD_MAP = 131095;
     'I4/I3 fieldMap: veld niet in de aanwezige field-map-bytes ⇒ GEEN terugval op defaults (alles-of-niets)',
     fixedOffsetOf(table, TaskFieldId.OutlineLevel) === null,
   );
+  truthy('I4/I3 veldkaart aanwezig: geen terugval voor vaste kosten', fixedOffsetOf(table, TaskFieldId.FixedCost) === null);
 }
 {
   const resFieldMapBytes = buildFieldMapEntryBytes([
@@ -894,6 +895,9 @@ const PROPSKEY_ASSIGNMENT_FIELD_MAP = 131095;
   const resTable = createResourceFieldMap(resProps);
   truthy('I4 createResourceFieldMap: FIXED_DATA-entry correct', fixedOffsetOf(resTable, ResourceFieldId.UniqueId) === 5);
   truthy('I4 createResourceFieldMap: VAR_DATA-entry correct', varDataKeyOf(resTable, ResourceFieldId.Name) === ResourceFieldId.Name);
+  for (const field of [ResourceFieldId.StandardRate, ResourceFieldId.OvertimeRate, ResourceFieldId.CostPerUse]) {
+    truthy(`I4/I3 veldkaart aanwezig: geen terugval voor tariefveld ${field}`, fixedOffsetOf(resTable, field) === null);
+  }
 }
 {
   const asgFieldMapBytes = buildFieldMapEntryBytes([
@@ -919,6 +923,12 @@ const PROPSKEY_ASSIGNMENT_FIELD_MAP = 131095;
   // enige plek die een verkeerde DEFAULT-offset (bv. 94→96) kan betrappen is DEZE directe
   // eenheidstoets tegen de defaulttabel zelf, spiegelt de assertie hierboven voor OutlineLevel/Name.
   truthy('I4/I3 fieldMap: ontbrekende sleutel ⇒ defaulttabel (Type@94)', fixedOffsetOf(table, TaskFieldId.Type) === 94);
+  // #155: het importverslag gebruikt dezelfde kaart, ook als beide Props-sleutels ontbreken.
+  truthy('I4/I3 ontbrekende taakveldkaart: FixedCost@158', fixedOffsetOf(table, TaskFieldId.FixedCost) === 158);
+  const resourceTable = createResourceFieldMap(props);
+  truthy('I4/I3 ontbrekende resourceveldkaart: StandardRate@28', fixedOffsetOf(resourceTable, ResourceFieldId.StandardRate) === 28);
+  truthy('I4/I3 ontbrekende resourceveldkaart: OvertimeRate@36', fixedOffsetOf(resourceTable, ResourceFieldId.OvertimeRate) === 36);
+  truthy('I4/I3 ontbrekende resourceveldkaart: CostPerUse@84', fixedOffsetOf(resourceTable, ResourceFieldId.CostPerUse) === 84);
 }
 
 // ── C1: clampOutlineLevel — triviale aritmetiek, los van het stack-algoritme hieronder. ─────────
