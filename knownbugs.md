@@ -306,12 +306,6 @@ en noem het in je rapport of PR-tekst.
     worden MATERIAL, in `mspdiresource.xml` (dezelfde planning) LABOR. Gevonden bij het importverslag
     (#391). Voorstel: records korter dan de volle maat overslaan, zoals MPXJ. — B
 
-127. **IFC-tab *Toepassen* wist de bibliotheekkoppeling en zet *Niet opgeslagen* uit.** *Toepassen*
-    (`IFCPanel.tsx:57-62`) roept `loadState` aan zonder `linkedOpen`; `applyLoadedProject` wist dan `companyId`
-    en `companyName` (`fileSlice.ts:797-799`) en `isDirty` wordt `false` (`documentContract.ts:489`). Een
-    gewijzigd project lijkt zo opgeslagen, en sluiten vraagt niets. Nagespeeld met het voorbeeld plus
-    bibliotheek en een gewijzigde taaknaam: vóór `isDirty` true, erna false, `companyName` null, de wijziging
-    blijft aanwezig. Voorstel: `isDirty` laten staan en de koppeling behouden. — B
 128. **CSV: een datum in een onleesbare vorm wordt stil "vandaag".** `csvDateOrToday` valt terug op
     `localTodayIso()` (`importDates.ts:71-74`, gebruikt door `csvReader.ts:135`). De Help noemt alleen de drie
     geldige vormen. Of er elders een melding voor komt, is niet nagegaan. Niet nagespeeld. — S
