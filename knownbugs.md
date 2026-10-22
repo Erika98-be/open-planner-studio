@@ -53,11 +53,6 @@ en noem het in je rapport of PR-tekst.
     gebouwd):** de afgeleide werkelijke start moet het oorspronkelijk geplande begin van vóór de
     statusdatumverschuiving zijn. — B (MCP), S (UI)
 
-105. **In "Datums zoals opgeslagen" tonen het taakpaneel, path tracing en de MCP-tool "geen driving"**, omdat
-    ze de driving-lijst nog rechtstreeks lezen. De Gantt en het rapport gebruiken sinds deze PR de helper
-    `drivingInfo.ts`, die "geen driving-informatie" onderscheidt van "berekend, niets driving"; de andere
-    lezers nog niet. Gevonden bij de prestatiefixes voor grote planningen (rehab-2). Voorstel: dezelfde helper
-    in die drie lezers. — S
 114. **De motor plant een lopende taak op 100 % niet met zijn vastgelegde restduur.** Zo'n taak (status
     STARTED, `completion` 1, geen werkelijk einde) komt uit P6 als `TK_Active` op 100 %. In P6 eindigt
     "Duration 100 %" (rest 0) op de statusdatum; "Physical 100 %" (rest > 0) plant de rest in. OPS zet beide
@@ -71,6 +66,13 @@ en noem het in je rapport of PR-tekst.
     S voor de P6-kant
 
 ## Tabel, invoer en bediening
+
+183. **De tabelkolom *Bepalend* onderscheidt onbekende driving nog niet van berekend zonder driving.**
+    `taskGridAdapter.ts` geeft het hele `cpmResult` door aan `buildTaskRelationIndex`, dat rechtstreeks
+    `drivingSequenceIds` leest en `drivingUnknown` niet meeneemt. `relationDrivingText` maakt daarvan
+    in "Datums zoals opgeslagen" dezelfde `—` als bij een bekende lege lijst; ook de relatiechips
+    krijgen alleen `driving: false`. Gevonden bij knownbug 105; buiten de drie gevraagde lezers gelaten.
+    Statisch nagegaan op main `a4670d8b8`, niet in de browser nagespeeld (lokale processen verboden). — S
 
 13. **Tabelkolom *Kleur*** wordt in IFC bewaard, maar geen balk of rapport gebruikt hem. — B
 16. **Taken kopiëren** heeft geen zichtbare bediening; alleen Ctrl+C/V met de Gantt in focus. — B
@@ -248,12 +250,6 @@ en noem het in je rapport of PR-tekst.
 128. **CSV: een datum in een onleesbare vorm wordt stil "vandaag".** `csvDateOrToday` valt terug op
     `localTodayIso()` (`importDates.ts:71-74`, gebruikt door `csvReader.ts:135`). De Help noemt alleen de drie
     geldige vormen. Of er elders een melding voor komt, is niet nagegaan. Niet nagespeeld. — S
-155. **`.mpp` zonder veldkaarten: vaste kosten en tarieven ontbreken in het importverslag.** De terugval op de
-    standaardveldkaarten kent die velden niet, dus het verslag meldt hun verlies niet. VERVOLG 5 van #392,
-    gemeld door de reviewer. Niet nagespeeld. — S
-158. **`.mpp`-importverslag: een lege baselinedatum kan vals verlies geven.** `mppImportLoss.ts` controleert
-    de ruwe bytes in plaats van `getTimestamp()`; de bytes `00 00 FF FF`, `FF FF 00 00` en `00 00 01 00`
-    tellen dan als datum. Synthetisch; niet gezien in 34 echte bestanden. VERVOLG 9 van #392. — S
 162. **Desktop (Linux/macOS): Opslaan overschrijft een alleen-lezen projectbestand als de map schrijfbaar
     is.** `replaceUserFile` (`atomicWrite.ts`) schrijft een halffabricaat met de rechten van het origineel
     (0444) en hernoemt het over het doel; op POSIX mag dat. Het bestand krijgt de nieuwe inhoud en blijft
@@ -327,6 +323,13 @@ en noem het in je rapport of PR-tekst.
     Voorstel: de regel gelijkmaken aan het actuele docscontract. — S
 
 ## Tests
+
+175. **De optionele MPP-corpuscheck behandelt bewust geweigerde oude formaten als leesfout.**
+    `check-mpp-relations.ts`, onderdeel `T7-crawl`, verwacht geen leesfouten over 658 lokale
+    corpusbestanden, maar `readMPP` weigert MPP9/MPP12 expliciet (bijvoorbeeld
+    `taskFlags-mpp9Project2013.mpp`). Gezien tijdens de afgebroken volledige planningsrun voor
+    de IFC-performancewijziging op 22-10-2026; dit pad raakt de IFC-reader niet. Voorstel: laat
+    de corpusverwachting onderscheid maken tussen ondersteunde en bewust geweigerde versies. — B
 
 79. **`check-task-grid-performance` (relationIndex-mediaan ≤ 500 ms) zit lokaal op het randje.** Los gedraaid
     496–499 ms (5-10-2026); rood (535–790 ms) in `npm run verify` zodra de container druk is (meerdere agents
@@ -428,12 +431,6 @@ en noem het in je rapport of PR-tekst.
     De versiecontrole wijst die invoer af; de standaardwaarde is dus niet bruikbaar. Gezien bij
     de versie-audit voor #450. Voorstel: verwijder de standaardwaarde en laat de gebruiker een
     correcte tag invullen. Geen workflow gestart. — B (bestand en lokale versiecontrole)
-
-175. **`progress-entry.spec.ts` opent de taakdialoog soms niet opnieuw.** In CI-run 39750997457
-    (PR #476, browser 3-4, 2026-10-22) faalde het scenario *Regel 2, Taak bewerken* op regel 300:
-    na `seedActualDates` en een canvasdubbelklik ontbrak `[data-ops-task-dialog]`. De eerste opening
-    en de voortgangsvraag in hetzelfde scenario slaagden. De PR wijzigt alleen Vite 7.3.5 naar 7.3.7;
-    de oorzaak en het verband met die wijziging zijn niet vastgesteld. — S
 
 176. **MSPDI: de projectstart wordt zonder XML-escaping geëxporteerd.** `mspdiWriter.ts` schrijft
     `project.startDate` rechtstreeks in `<StartDate>`; de reader neemt een tekstprefix uit het

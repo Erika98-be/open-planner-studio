@@ -2,8 +2,8 @@
  * Importverslag voor `.mpp` (MPP14): wat `readMPP` NIET overneemt (issue #391, "exchange without
  * silent loss"). Alleen tellen; de lezer zelf blijft ongewijzigd.
  *
- * De lezer leest uitsluitend de velden in `fieldMap14.ts` (`TaskFieldId`, `ResourceFieldId`,
- * `AssignmentFieldId`) plus kalenders, relaties en timephased werk. Alles hieronder valt daarbuiten.
+ * De veldkaarten in `fieldMap14.ts` dienen zowel de lezer als dit verslag; kosten en tarieven
+ * worden alleen voor verliesdetectie opgezocht. De lezer neemt de hieronder getelde velden niet over.
  * De var-data-sleutels en fixed-data-veld-id's komen letterlijk uit MPXJ (`FieldMap14.java`,
  * `getDefaultTaskData`/`getDefaultResourceData`/`getDefaultAssignmentData`; MPP14 gebruikt de
  * veld-id zelf als var-data-sleutel, `useTypeAsVarDataKey()`), de baseline-sleutels uit
@@ -28,16 +28,20 @@ const TASK_HYPERLINK_DATA = 215;
 const TASK_SUBPROJECT_UNIQUEID_OFFSET = 458;
 /** `SUBPROJECT_TASK_ID` ≠ 0 ⇒ externe taak (MPP14Reader.java: `task.setExternalTask(true)`). */
 const TASK_SUBPROJECT_TASK_ID = 255;
-/** `FIXED_COST` (fixed data, CURRENCY = 8-byte double). */
-const TASK_FIXED_COST_FIELD = 8;
+/** Baselinevelden gescheiden naar datatype: datums volgen dezelfde decoder als de lezer,
+ *  numerieke velden houden hun bestaande nulcontrole. */
+interface BaselineFields {
+  dates: readonly number[];
+  values: readonly number[];
+}
 /** Baseline 0–10 van een taak: alle var-data-velden met gegevens (`FieldMap14.getDefaultTaskData`):
  *  start, einde en duur (in MPP14 onder de *_ESTIMATED_*-id's, `MPPTaskField.mapMpp14`, plus de
  *  1299+-varianten), werk en kosten. De eenhedenvelden (`*_DURATION_UNITS`) tellen niet. */
-const TASK_BASELINE_KEYS: readonly (readonly number[])[] = [
-  [1, 6, 27, 43, 44, 1299, 1300, 1301],
+const TASK_BASELINE_KEYS: readonly BaselineFields[] = [
+  { dates: [43, 44, 1299, 1300], values: [1, 6, 27, 1301] },
   ...[482, 493, 504, 515, 526, 544, 555, 566, 577, 588].map((start, i) => {
     const late = 1302 + i * 3;
-    return [start, start + 1, start + 2, start + 3, start + 5, late, late + 1, late + 2];
+    return { dates: [start, start + 1, late, late + 1], values: [start + 2, start + 3, start + 5, late + 2] };
   }),
 ];
 /** Baseline 1–10 van een resource: werk en kosten (var-data). Baseline 0 staat in vaste velden en is
@@ -46,9 +50,11 @@ const RESOURCE_BASELINE_KEYS: readonly (readonly number[])[] = [
   [], ...[342, 352, 362, 372, 382, 392, 402, 412, 422, 432].map(work => [work, work + 1]),
 ];
 /** Baseline 0–10 van een toewijzing: werk, kosten, start, einde. */
-const ASSIGNMENT_BASELINE_KEYS: readonly (readonly number[])[] = [
-  [16, 32, 146, 147],
-  ...[289, 298, 307, 316, 325, 334, 343, 352, 361, 370].map(work => [work, work + 1, work + 6, work + 7]),
+const ASSIGNMENT_BASELINE_KEYS: readonly BaselineFields[] = [
+  { dates: [146, 147], values: [16, 32] },
+  ...[289, 298, 307, 316, 325, 334, 343, 352, 361, 370].map(work => ({
+    dates: [work + 6, work + 7], values: [work, work + 1],
+  })),
 ];
 /** Eigen velden van een taak (Text/Number/Date/Start/Finish/Cost/Duration 1–n, Outline Code 1–10 en
  *  de enterprise-varianten): var-data-sleutels uit `FieldMap14.getDefaultTaskData`. */
@@ -61,9 +67,6 @@ const TASK_CUSTOM_KEYS = ranges([
 // ── Resource (TBkndRsc) ──────────────────────────────────────────────────────────────────────────
 const RESOURCE_NOTES = 20;
 const RESOURCE_HYPERLINK_DATA = 136;
-const RESOURCE_STANDARD_RATE_FIELD = 6;
-const RESOURCE_OVERTIME_RATE_FIELD = 7;
-const RESOURCE_COST_PER_USE_FIELD = 18;
 /** `COST_RATE_A`…`COST_RATE_E`. */
 const RESOURCE_COST_RATE_KEYS = [61, 62, 63, 64, 65];
 const RESOURCE_CUSTOM_KEYS = ranges([
@@ -91,6 +94,11 @@ function ranges(list: readonly (readonly [number, number])[]): number[] {
 function hasValue(bytes: Uint8Array | null): boolean {
   if (!bytes || bytes.length === 0) return false;
   return bytes.some(b => b !== 0) && bytes.some(b => b !== 0xff);
+}
+
+function baselineHasValue(data: Var2Data, uid: number, fields: BaselineFields): boolean {
+  return fields.dates.some(key => data.getTimestamp(uid, key) !== null)
+    || fields.values.some(key => hasValue(data.getByteArray(uid, key)));
 }
 
 /**
@@ -247,14 +255,14 @@ export function scanMppImportLoss(input: MppImportLossInput): MsProjectImportRep
       if (hasValue(bytes(TASK_SUBPROJECT_UNIQUEID_OFFSET))) report.subprojects++;
       if (task.data.getInt(uid, TASK_SUBPROJECT_TASK_ID) !== 0) report.externalTasks++;
       TASK_BASELINE_KEYS.forEach((keys, number) => {
-        if (keys.some(key => hasValue(bytes(key)))) baselines.add(number);
+        if (baselineHasValue(task.data, uid, keys)) baselines.add(number);
       });
       for (const key of TASK_CUSTOM_KEYS) if (hasValue(bytes(key))) customFields.add(`task:${key}`);
     }
   });
 
   guard(() => {
-    const offset = fixedOffsetOf(input.taskFieldMap, TASK_FIXED_COST_FIELD);
+    const offset = fixedOffsetOf(input.taskFieldMap, TaskFieldId.FixedCost);
     const uidOffset = fixedOffsetOf(input.taskFieldMap, TaskFieldId.UniqueId);
     const metaBytes = input.cfb.getStream(['   114', 'TBkndTask', 'FixedMeta']);
     const dataBytes = input.cfb.getStream(['   114', 'TBkndTask', 'FixedData']);
@@ -288,24 +296,28 @@ export function scanMppImportLoss(input: MppImportLossInput): MsProjectImportRep
     // Tabel A slaat MS Project soms niet op (CostRateTableFactory: "economises"); dan staan de tarieven
     // alleen in de vaste velden.
     guard(() => {
-      const offsets = [RESOURCE_STANDARD_RATE_FIELD, RESOURCE_OVERTIME_RATE_FIELD, RESOURCE_COST_PER_USE_FIELD]
+      const offsets = [ResourceFieldId.StandardRate, ResourceFieldId.OvertimeRate, ResourceFieldId.CostPerUse]
         .map(field => fixedOffsetOf(input.resourceFieldMap, field));
       const uidOffset = fixedOffsetOf(input.resourceFieldMap, ResourceFieldId.UniqueId);
+      const maxUnitsOffset = fixedOffsetOf(input.resourceFieldMap, ResourceFieldId.MaxUnits);
       const metaBytes = input.cfb.getStream(['   114', 'TBkndRsc', 'FixedMeta']);
       const dataBytes = input.cfb.getStream(['   114', 'TBkndRsc', 'FixedData']);
       if (uidOffset === null || !metaBytes || !dataBytes) return;
       const meta = FixedMeta.withItemSize(metaBytes, RESOURCE_FIXED_META_ITEM_SIZE, 'TBkndRsc/FixedMeta');
       const data = FixedData.fromMeta(meta, dataBytes, 0, 0, 'TBkndRsc/FixedData');
-      const minLength = Math.max(uidOffset + 2, ...offsets.map(offset => (offset ?? 0) + 8));
+      // Dezelfde selectie als `readResources`: UID en optionele MAX_UNITS moeten passen, behalve
+      // bij de ondersteunde UID-0-sentinel. Tariefvelden bepalen de recordselectie niet.
+      const minLength = Math.max(uidOffset + 2, maxUnitsOffset === null ? 0 : maxUnitsOffset + 8);
       const seen = new Set<number>();
       for (let index = 0; index < meta.getAdjustedItemCount(); index++) {
         const item = data.getByteArrayValue(index);
-        // Een kort plaatshoudersrecord (16 bytes) telt niet mee: MPXJ's `createResourceMap` slaat
-        // records korter dan de volle maat over. Daarna: SHORT op de uid-offset, eerste wint.
-        if (!item || item.length < minLength) continue;
+        if (!item || item.length < uidOffset + 2) continue;
         const uid = getShort(item, uidOffset);
+        if (uid !== 0 && item.length < minLength) continue;
         if (seen.has(uid) || !input.resourceUniqueIds.has(uid)) continue;
         seen.add(uid);
+        // Een geselecteerd kort record kan al een volledig tarief dragen. Ontbrekende of slechts
+        // gedeeltelijk aanwezige DOUBLE-velden geven via `doubleAt` afzonderlijk 0.
         if (offsets.some(offset => doubleAt(item, offset) !== 0)) rateLost.add(uid);
       }
     });
@@ -325,7 +337,7 @@ export function scanMppImportLoss(input: MppImportLossInput): MsProjectImportRep
       if (noteHasContent(bytes(ASSIGNMENT_NOTES))) report.notes++;
       for (const key of ASSIGNMENT_CUSTOM_KEYS) if (hasValue(bytes(key))) customFields.add(`assignment:${key}`);
       ASSIGNMENT_BASELINE_KEYS.forEach((keys, number) => {
-        if (keys.some(key => hasValue(bytes(key)))) baselines.add(number);
+        if (baselineHasValue(data, uid, keys)) baselines.add(number);
       });
     }
   });

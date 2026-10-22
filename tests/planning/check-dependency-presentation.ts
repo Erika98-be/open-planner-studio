@@ -45,7 +45,8 @@ expectSource(
 expectSource(
   'driving-kolom bestaat altijd; alleen de inhoud is conditioneel',
   component,
-  /className="dependency-driving-slot"[\s\S]*?\{isDriving\s*&&/,
+  // Ook de onbekend-markering staat binnen dit vaste vak; de berekende driving-tak blijft bewaakt.
+  /className="dependency-driving-slot"[\s\S]*?\{(?:drivingIds\s*===\s*undefined\s*\?[\s\S]*?:\s*)?isDriving\s*&&/,
 );
 expectSource(
   'smalle dependencylijst schakelt via een eigen container om naar twee regels',
