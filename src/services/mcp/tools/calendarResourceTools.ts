@@ -579,13 +579,16 @@ function classifyCalendars(s: StoreState, items: CalendarItem[]): { plans: Calen
   return { plans, rejections };
 }
 
-/** Spanne voor `computeGenerateSpan` (via resolveCalendarHolidays). Bij AANMAAK geven we bewust een
+/** Spanne voor `computeGenerateSpan` (via resolveCalendarHolidays). Bij wijzigen telt het latere van
+ *  het ingevoerde en het berekende projecteinde. Bij AANMAAK geven we bewust een
  *  LEEG projecteinde door: dan geldt de create-spanne (startjaar−1 t/m startjaar+3) i.p.v. een
  *  spanne rond een einddatum die nog niets met deze nieuwe kalender te maken heeft. */
 function calendarSpan(s: StoreState, forCreate: boolean): { projectStart: string; projectEnd: string } {
+  const endDate = s.project.endDate || '';
+  const calculatedEnd = s.cpmResult?.projectEnd || '';
   return {
     projectStart: s.project.startDate,
-    projectEnd: forCreate ? '' : (s.project.endDate || s.cpmResult?.projectEnd || ''),
+    projectEnd: forCreate ? '' : (endDate > calculatedEnd ? endDate : calculatedEnd),
   };
 }
 
@@ -1143,7 +1146,9 @@ const updateCalendar: BatchStepTool = {
             },
             generate: {
               type: 'object',
-              description: 'Generator basis for holidays; the year span is derived from the project.',
+              description: 'Generator basis for holidays. Updating covers the year before the project start ' +
+                'through the year after the later of the entered and calculated project ends; without ' +
+                'either end, through start year + 3. Creating always uses start year - 1 through start year + 3.',
               required: ['country'],
               properties: {
                 country: {
