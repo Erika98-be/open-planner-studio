@@ -1,21 +1,25 @@
 // Reproduceerbare, geïsoleerde productiemeting van de ECHTE recovery-tick en worker.
 // Vanuit de reporoot: node docs/superpowers/evidence/2026-10-22-recovery-worker.mjs [uitvoer.json]
+// Met --http-check-only: alleen de HTTP-grens en één echte worker-/IFC-ronde controleren.
 // Bouwt tijdelijk met de eigen Vite-config; geen dev-server, gewijzigde appstate of nieuwe buildvlag.
 import { build } from 'vite';
 import { chromium } from '@playwright/test';
-import { createServer } from 'node:http';
+import { createServer, request } from 'node:http';
+import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, rmSync } from 'node:fs';
 import { cpus, totalmem, loadavg } from 'node:os';
 import { resolve, join, dirname, extname } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
+import { fileURLToPath } from 'node:url';
 
 const root = process.cwd();
 mkdirSync(join(root, 'node_modules/.cache'), {recursive:true});
 const temporary = mkdtempSync(join(root, 'node_modules/.cache/ops-recovery-worker-'));
 const out = join(temporary, 'dist');
 const entry = join(temporary, 'measure.js');
-const resultFile = resolve(process.argv[2] ?? 'build/recovery-worker.json');
+const httpCheckOnly = process.argv.includes('--http-check-only');
+const resultFile = resolve(process.argv.slice(2).find(arg => arg !== '--http-check-only') ?? 'build/recovery-worker.json');
 mkdirSync(dirname(resultFile), {recursive:true});
 writeFileSync(entry, `
 import { generateBenchmarkProject } from '@/services/benchmark/generateProject';
@@ -120,15 +124,59 @@ try {
   }});
   const output = (Array.isArray(built) ? built[0] : built).output;
   const script = output.find(chunk => chunk.type === 'chunk' && chunk.isEntry).fileName;
-  writeFileSync(join(out, 'index.html'), `<html><body><script type="module" src="/${script}"></script></body></html>`);
+  // Alleen vertrouwde Rollup-output mag worden geserveerd. Na deze voorbereiding leest de
+  // requesthandler uitsluitend uit deze vaste Map; een requestpad bereikt nooit het bestandssysteem.
+  const assets = new Map(output.map(file => [`/${file.fileName}`, {
+    bytes: Buffer.from(file.type === 'chunk' ? file.code : file.source),
+    mime: extname(file.fileName) === '.js' ? 'text/javascript; charset=utf-8' : 'application/octet-stream',
+  }]));
+  const index = {
+    bytes: Buffer.from(`<html><body><script type="module" src="/${script}"></script></body></html>`),
+    mime: 'text/html; charset=utf-8',
+  };
+  assets.set('/', index);
+  assets.set('/index.html', index);
   server = createServer((req, res) => {
-    try {
-      const path = req.url === '/' ? 'index.html' : req.url.slice(1).split('?')[0];
-      res.setHeader('content-type', extname(path) === '.js' ? 'text/javascript' : 'text/html');
-      res.end(readFileSync(join(out, path)));
-    } catch { res.writeHead(404); res.end(); }
+    const asset = assets.get((req.url ?? '').split('?')[0]);
+    if (!asset) { res.writeHead(404); res.end('Not found'); return; }
+    res.setHeader('content-type', asset.mime);
+    res.end(asset.bytes);
   });
   await new Promise(r => server.listen(0, '127.0.0.1', r));
+  // Ruwe HTTP-paden: fetch/URL zou ../ vóór het verzenden al normaliseren en de grens niet testen.
+  const get = path => new Promise((resolveResponse, reject) => {
+    const req = request({hostname:'127.0.0.1', port:server.address().port, method:'GET', path}, response => {
+      const chunks = [];
+      response.on('data', chunk => chunks.push(chunk));
+      response.on('end', () => resolveResponse({status:response.statusCode, mime:response.headers['content-type'],
+        bytes:Buffer.concat(chunks)}));
+      response.on('error', reject);
+    });
+    req.on('error', reject);
+    req.end();
+  });
+  const workerPath = [...assets.keys()].find(key => key.includes('recoverySnapshot.worker'));
+  assert.ok(workerPath, 'workerasset moet in de vertrouwde Rollup-output staan');
+  const httpChecks = [];
+  for (const path of ['/', '/index.html', `/${script}`, workerPath]) {
+    const response = await get(path);
+    assert.equal(response.status, 200, path);
+    assert.equal(response.mime, assets.get(path).mime, path);
+    assert.deepEqual(response.bytes, assets.get(path).bytes, path);
+    httpChecks.push({path, status:response.status, bytes:response.bytes.length});
+  }
+  // Ook bestaande bestanden binnen en buiten out zijn onbereikbaar als ze niet in de Map staan.
+  const sentinel = 'NIET_SERVEERBAAR_PR483';
+  writeFileSync(join(out, 'niet-in-rollup.txt'), sentinel);
+  writeFileSync(join(temporary, 'buiten-output.txt'), sentinel);
+  for (const path of ['/niet-in-rollup.txt', '/../buiten-output.txt', '/assets/../../buiten-output.txt',
+    '/%2e%2e/buiten-output.txt', '/assets/%2e%2e/%2e%2e/buiten-output.txt', '/%2e/package.json',
+    '/outside-path', '/etc/passwd']) {
+    const response = await get(path);
+    assert.equal(response.status, 404, path);
+    assert.equal(response.bytes.toString(), 'Not found', path);
+    httpChecks.push({path, status:response.status, bytes:response.bytes.length});
+  }
   browser = await chromium.launch({headless:true});
   const page = await browser.newPage({viewport:{width:1600,height:1000},locale:'nl-NL'});
   page.on('pageerror', e => console.error(e));
@@ -137,12 +185,12 @@ try {
   const samples = [];
   // Koude worker apart; daarna afwisselend vijf hoofdthread- en worker-rondes.
   const cold = await page.evaluate(() => window.measure('worker'));
-  for (let i=0; i<5; i++) {
+  for (let i=0; !httpCheckOnly && i<5; i++) {
     for (const mode of (i%2 ? ['worker','sync'] : ['sync','worker'])) {
       samples.push(await page.evaluate(mode => window.measure(mode), mode));
     }
   }
-  const cloneProbe = await page.evaluate(() => window.cloneProbe());
+  const cloneProbe = httpCheckOnly ? [] : await page.evaluate(() => window.cloneProbe());
   const dataset = await page.evaluate(() => window.dataset);
   const hashes = new Set([cold, ...samples].map(x=>x.normalizedSha256));
   if (hashes.size !== 1) throw new Error('IFC-pariteit mislukt');
@@ -152,7 +200,9 @@ try {
   ].map(name => 'src/services/recovery/' + name)];
   const sourceSha256 = Object.fromEntries(sourceFiles.map(file => [file,
     createHash('sha256').update(readFileSync(join(root, file))).digest('hex')]));
-  const result = {date:new Date().toISOString(), baselineCommit:'522589202727a4a519b25b94aed196d844dc6ab8', sourceSha256,
+  const result = {date:new Date().toISOString(), httpCheckOnly, httpChecks,
+    harnessSha256:createHash('sha256').update(readFileSync(fileURLToPath(import.meta.url))).digest('hex'),
+    baselineCommit:'522589202727a4a519b25b94aed196d844dc6ab8', sourceSha256,
     dirty:execFileSync('git',['status','--porcelain'],{encoding:'utf8'}).trim(), commit:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),
     browser:browser.version(), cpu:cpus()[0].model, logicalCores:cpus().length, ramGiB:totalmem()/2**30,
     load:loadavg(), node:process.version, dataset, cold, samples, cloneProbe};
