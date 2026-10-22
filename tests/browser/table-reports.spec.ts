@@ -26,6 +26,27 @@ test('table reports: rapporttype kiezen rendert tabel, optie ververst live, PDF-
   await expect(addResource).toBeVisible();
   await page.locator('[data-ops-ribbon-tab="report"]').click();
   await expect(addResource).toHaveCount(0);
+
+  // Knownbug 192: ook Bestand → Afdruk → Open afdrukvoorbeeld opent Rapport, zonder dat
+  // de algemene sluitactie daarna Start kiest. Het volledige resourcepaneel blijft onthouden.
+  await page.locator('[data-tour-anchor="ribbon-tab:file"]').click();
+  const backstage = page.getByRole('region', { name: /^(File menu|Bestandsmenu)$/ });
+  await backstage.locator('.backstage-sidebar').getByRole('button', { name: /^(Print|Afdruk)$/ }).click();
+  await backstage.getByRole('button', { name: /^(Open print preview|Open afdrukvoorbeeld)$/ }).click();
+  await expect(backstage).toHaveCount(0);
+  // Werkruimte en preview delen dit anker; alleen de werkruimte bevat het exportformulier
+  // in de instellingenkolom naast de preview.
+  const reportWorkspace = page.locator('[data-tour-anchor="report-panel"]').filter({
+    has: page.locator('form#report-pdf-export'),
+  });
+  await expect(reportWorkspace).toBeVisible();
+  await expect(addResource).toHaveCount(0);
+  expect(await page.evaluate(() => {
+    const { activeRibbonTab, showResourcePanel, resourcePanelDocked } = window.__OPS__!.store.getState().ui;
+    return { activeRibbonTab, showResourcePanel, resourcePanelDocked };
+  })).toEqual({ activeRibbonTab: 'report', showResourcePanel: true, resourcePanelDocked: false });
+
+  // De volgende echte rapportkeuze en PDF-export bewaken dat de werkruimte ook bedienbaar is.
   const typePicker = page.getByLabel(/^(Report type|Rapporttype)$/).first();
   await typePicker.click();
   await page.getByRole('option', { name: /^Look-ahead$/ }).click();

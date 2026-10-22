@@ -87,14 +87,6 @@ en noem het in je rapport of PR-tekst.
 60. **Duur-kolom afgeknipt** in de standaard Gantt-weergave (WBS 60 + Taaknaam 240 + Duur 60 + de
     "+"-kolom): je leest "2c" in plaats van "2d", op 1600 én 1366 px breed. — B
 
-192. **Backstage › Afdruk › Afdrukvoorbeeld keert terug naar Start in plaats van Rapport te openen.**
-    Gemeld bij de onafhankelijke R1-review van PR #524 op `2ce496878`: `PrintSection` in
-    `src/components/backstage/Backstage.tsx` zet eerst `activeRibbonTab: 'report'` en roept daarna
-    `onClose()` aan; de meegegeven `closeBackstage` zet het tabblad direct op `'start'`. Dezelfde
-    bronroute staat op basis `c7d45ecb8` en actueel main `247e66632`. Alleen statisch nagegaan,
-    niet runtime uitgevoerd; afzonderlijk oplossen, buiten de lintknopfix voor knownbug 21. — S
-
-
 ## Kalenders
 
 22. **Goede Vrijdag en Bevrijdingsdag** hebben `optional: true`, maar dat wordt nergens gelezen: ze worden
@@ -143,9 +135,6 @@ en noem het in je rapport of PR-tekst.
     er komt geen undo-stap, maar `shifts` meldt taak 1.2 `oldStart 2026-03-16 → newStart 2026-03-09` (het
     verschil tussen opgeslagen en herberekend). Een agent leest dat als effect van de nivellering. Dat `dryRun`
     hetzelfde meldt, is afgeleid (zelfde preview), niet nagespeeld. — B
-84. **`planner_get_project_overview` beschrijft `dur` als werkdagen**, maar de rij geeft de duur in de eigen
-    eenheid van de taak met `durUnit` ernaast (`readTools.ts:~315`, `nativeDuration`); bij een urentaak zijn
-    het dus uren. Alleen in de code gezien. — S
 85. **Dezelfde voortgang geeft in één `planner_batch` een ander resultaat dan in losse calls.** Binnen een
     batch rekent `recomputeMidBatch` alleen vóór een lees- of levelstap (`batchTool.ts:~320`), dus tussen
     `planner_update_project` (statusdatum) en `planner_update_tasks` niet: de voortgang ziet de geplande
@@ -236,9 +225,6 @@ en noem het in je rapport of PR-tekst.
     geval 0 keer voor. Gevonden bij de review van #358. Voorstel: een onbekende status behandelen als een lege
     (afleiden uit de voortgang, melding blijft), zoals MPXJ; besluit van de eigenaar nodig. — B
 
-128. **CSV: een datum in een onleesbare vorm wordt stil "vandaag".** `csvDateOrToday` valt terug op
-    `localTodayIso()` (`importDates.ts:71-74`, gebruikt door `csvReader.ts:135`). De Help noemt alleen de drie
-    geldige vormen. Of er elders een melding voor komt, is niet nagegaan. Niet nagespeeld. — S
 162. **Desktop (Linux/macOS): Opslaan overschrijft een alleen-lezen projectbestand als de map schrijfbaar
     is.** `replaceUserFile` (`atomicWrite.ts`) schrijft een halffabricaat met de rechten van het origineel
     (0444) en hernoemt het over het doel; op POSIX mag dat. Het bestand krijgt de nieuwe inhoud en blijft
@@ -299,6 +285,13 @@ en noem het in je rapport of PR-tekst.
     (nl 182 px). Bij 200 px en 125 % duwden ze in 13 talen de regels buiten het paneel; dat is in de release
     van v2026.10.0 opgelost met afkappen (`TaskAssignmentsSection.tsx`), de koppen zelf niet. Voorstel: korte
     koppen in die talen, en de Help-artikelen die ze citeren mee. — B
+
+193. **Het meldingscontract noemt nog veertien verplicht bij te werken locale-bestanden.**
+    Het commentaar bij `NotificationMessageKey` in `src/state/slices/types.ts` zegt dat een nieuwe
+    meldingssleutel ook in alle veertien `common.json`-bestanden hoort. Het huidige PR-contract vereist
+    NL/EN; de vertaalstraat verzorgt de overige talen en een release vereist alle 28 actuele UI-talen.
+    Gevonden bij CSV-fix 128 en statisch met AGENTS vergeleken; alleen deze verouderde instructie,
+    geen vastgestelde fout in de sleutelunie of runtime. — B
 
 ## Tests
 
