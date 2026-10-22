@@ -168,12 +168,6 @@ en noem het in je rapport of PR-tekst.
     `isReadyToInstall` (`'readyToInstall'`) vraagt (`UpdateDialog.tsx:125-128,205-208`). Na de download springt
     het venster naar *Herstarten…* (`:225-229`). Alleen in de code gezien. — S
 
-164. **Nivelleren bij 10.000 taken: tijdens *Berekenen* blokkeert de UI toch 2,8–4,1 s.** De berekening zelf
-    loopt in een Web Worker, maar de nulmeting (`npm run measure:large-plans`, 21-10-2026) zag in die fase één
-    long task van 2.825–4.115 ms op de hoofdthread (5.000 taken: 741–802 ms). Vermoedelijke oorzaak: de
-    voorsteltabel in `LevelingDialog.tsx:265` rendert alle 8.920 rijen zonder virtualisatie. Niet met een
-    profiel bevestigd. — S
-
 ## Bestanden en herstel
 
 35. **Showcase-voorbeelden openen als gewijzigd** (`applyDemoLibraryToShowcaseProject`). — S
@@ -406,6 +400,20 @@ en noem het in je rapport of PR-tekst.
     eenduidig van de root afleiden. Niet opgelost in de fix van 119.
     — B (scopemismatch in de code), S (gemelde gevolgen, geen schone baselinevergelijking)
 
+184. **De Linux-build kan de volledige jobtijd verliezen tijdens `apt-get update`.** In CI-run
+    [39815362793, job 119952400741](https://github.com/OpenAEC-Foundation/open-planner-studio/actions/runs/39815362793/job/119952400741)
+    (PR #499, 2026-10-22) bleef *Install dependencies (Ubuntu only)* hangen bij `apt-get update`,
+    met herhaalde `Ign`-regels voor `azure.archive.ubuntu.com`. De job startte om 16:36:05 UTC en
+    eindigde geannuleerd om 17:21:24; de laatste APT-uitvoer was om 16:36:54. Frontendinstallatie
+    en build zijn niet uitgevoerd. Bewijs: `/tmp/ops-499-linux.log`. Een tweede waarneming is
+    [run 39815617661, job 119953318157](https://github.com/OpenAEC-Foundation/open-planner-studio/actions/runs/39815617661/job/119953318157)
+    (PR #500): dezelfde APT-stap en `Ign`-regels, laatste APT-uitvoer 16:39:04, geannuleerd om
+    17:23:31 na circa 45 minuten, zonder frontendinstallatie/build; overige jobs groen.
+    Log: `/tmp/ops-500-linux.log`. De ouder heeft alleen deze geannuleerde jobs opnieuw gestart.
+    Dit is het APT-detail, niet de browsershardmelding 167.
+    Voorstel: begrensde APT-netwerktime-outs en/of een mirrorfallback. Geen fout in runner of
+    applicatiecode aangetoond. — B (log), S (nadere oorzaak)
+
 ## Wensen en open taken (geen bug)
 
 45. **Extensie-API**: extensies kunnen geen relatie of kalender gericht wijzigen en de selectie niet lezen.
@@ -432,12 +440,6 @@ en noem het in je rapport of PR-tekst.
     de versie-audit voor #450. Voorstel: verwijder de standaardwaarde en laat de gebruiker een
     correcte tag invullen. Geen workflow gestart. — B (bestand en lokale versiecontrole)
 
-176. **MSPDI: de projectstart wordt zonder XML-escaping geëxporteerd.** `mspdiWriter.ts` schrijft
-    `project.startDate` rechtstreeks in `<StartDate>`; de reader neemt een tekstprefix uit het
-    invoerveld over. Een ongeldige datum met XML-metatekens kan zo ongeldige XML opleveren. Gezien
-    bij de analyse van CodeQL #18; die melding is een false positive voor XSS omdat de reader
-    uitsluitend `application/xml` parseert en geen nodes in de pagina invoegt. De XML-integriteit
-    van zulke ongeldige datums is niet nagespeeld. Voorstel: datumvalidatie en escaping. — S
 
 179. **De website heeft geen PR-CI voor de automatische releasestap.** Op 2026-10-22 bevat
     `OpenAEC-Foundation/website/.github/workflows/` alleen `auto-assign-issues.yml`, `deploy.yml`
@@ -447,3 +449,11 @@ en noem het in je rapport of PR-tekst.
     Daardoor kan een website-release-PR niet vóór de merge aan de eis “website-CI groen” voldoen.
     Voorstel: een website-PR-workflow met de bestaande checkers toevoegen en als poort instellen.
     De Nozzit-bypass voor reviews bestaat wel. Alleen gelezen; niets in de website gewijzigd. — B
+
+185. **MSPDI: andere projectdatumvelden worden nog zonder XML-escaping geschreven.**
+    Bij de statische analyse van 176 bleek dat `mspdiWriter.ts` ook `project.endDate` en
+    `project.statusDate` via `toXmlDateTime` rechtstreeks in `<FinishDate>`/`<StatusDate>` zet.
+    Die helper formatteert op lengte, zonder validatie of escaping; `mspdiReader.ts:parseProject`
+    kan bij deze velden eveneens een ongeldige tekstprefix bewaren. XML-metatekens zouden zo ook
+    daar de export kunnen beschadigen. Niet uitgevoerd; buiten de projectstartfix gehouden.
+    Voorstel: de XML-integriteit van deze velden afzonderlijk bewaken. — S
