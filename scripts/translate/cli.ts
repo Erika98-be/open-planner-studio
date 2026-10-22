@@ -852,7 +852,8 @@ function docsBudget(args: string[]): void {
 
 /**
  * De releasepoort (besluit B5, 2026-10-10; verfijnd 2026-10-12): elke UI-sleutel in elke taal vertaald
- * en actueel (ontbreekt / verouderd / zonder hash). De docs blokkeren de release niet: alleen nl en en
+ * en actueel (ontbreekt / verouderd / zonder hash), met de vaste doeltekst waar afgesproken.
+ * De docs blokkeren de release niet: alleen nl en en
  * moeten bij zijn (dat zijn de bronnen), de andere talen mogen achterlopen. De poort meldt de docsgaten
  * wel, zodat je kunt kiezen of je `update-docs-lang` eerst draait.
  */
