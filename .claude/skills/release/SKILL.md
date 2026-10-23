@@ -5,6 +5,11 @@ description: Gebruik alleen bij een expliciete /release of een verzoek om een ni
 
 # Wekelijkse release — Open Planner Studio
 
+Besluit 9: eigenaar, verduidelijkt door de orkestrator op 2026-10-23. Alleen de zaterdagjob heeft de smalle
+Node-uitzondering op [AGENTS.md](../../../AGENTS.md). De [exacte lijst en werkplekgrenzen](referentie.md#node-uitzondering-voor-de-zaterdagjob)
+omvatten de lichte vertaalscripts en pakketchecks door de ouder en zijn Haiku-stations.
+Alleen binnen die job en release-worktree. Andere runs en onderhoud aan deze skill krijgen geen uitzondering.
+
 Mandaat: eigenaar, gesprek 2026-10-22. De zaterdagjob op aia09-mp50 voert deze skill
 volledig automatisch uit. Er is geen menselijk akkoord vóór de tag. Stel geen vragen.
 Een `v*`-tag is onomkeerbaar: installers, updater en Snap Store leveren aan alle gebruikers.
@@ -18,27 +23,36 @@ Alleen deze skill mag een release uitvoeren. Een verzoek om de skill te wijzigen
   Een andere repo, ontbrekende origin of netwerkfout: stop vóór schrijven of publiceren.
 - Gebruik een schone, eigen release-worktree vanaf vers opgehaalde `origin/main`.
   Neem geen ongecommit werk over. Haal volledige historie en origin-tags op.
+  Alleen de zaterdagjob: eenmaal per run `npm ci` in die worktree vóór de eerste Node-stap.
+  De hoofdcheckout heeft geen `node_modules`; maak geen link daarheen. Zie de exacte lijst hierboven.
+- Harde deadline zaterdagjob: **14:00 Europe/Amsterdam**. Stop dan met herstel/publicatie.
+  Vóór de tag: geen tag die week; behoud open fix-PR's en rapporteer de oorzaak.
+  Na de tag: behoud tag/draft en hervat de voortgang de volgende zaterdag; sla afgeschreven tags over.
 - Noteer de nieuwste stabiele origin-tag (`vJJJJ.W.N`, numeriek gesorteerd). Geen tag: stop.
   **Vóór de wijzigingscontrole en bump:** volg [Hervatten](referentie.md#hervatten).
   Controleer GitHub-publicatie, release-/Snap-/AUR-runs, wiki en website. Rond onafgerond werk
-  voor dezelfde tag af, ook zonder nieuwe commits. Onopgelost: stop zonder nieuwe versie.
-- Pas na volledig herstel geldt die tag als `PREV`.
+  voor dezelfde tag af, ook zonder nieuwe commits. Onopgelost: stop, tenzij de tag is afgeschreven
+  of alleen websitewerk openstaat. Probeer dat de volgende zaterdag opnieuw naast de nieuwe release.
+- Na herstel, uitgesteld websitewerk of vastgelegde afschrijving geldt die nieuwste tag als `PREV`.
   Volg daarna de [kandidaatselectie](referentie.md#kandidaatselectie): zoek open release-PR's
   en een ongetagde versie op main. Elke ongetagde kandidaat moet numeriek `VERSION > PREV` zijn;
   lager of gelijk: stop zonder tag. Hervat dezelfde versie/PR; bump uitsluitend bij `RELEASE_MODE=nieuw`.
   Haal `origin/main` opnieuw op als basis-SHA; `PREV` moet daarvan een voorouder zijn.
 - Zoek de `ci.yml`-run op **die exacte basis-SHA** met event `push` en branch `main`.
-  Ontbreekt hij, loopt hij nog of is zijn conclusie niet `success`: stop zonder tag.
-- Geen commits sinds `PREV` en geen onafgerond werk: stop zonder bump/tag; meld “niets veranderd”.
-- Stop zonder tag bij falende `verify:translations`, falende `verify` of ontbrekende/lege
-  `docs/release-notes/v<versie>.md`. Omzeil nooit een poort.
+  Ontbreekt hij: stop zonder tag. Loopt hij nog: wacht binnen de deadline.
+  Rood: volg [CI herstellen](referentie.md#ci-herstellen): eenmaal rerun, dan een fix-PR
+  met tweede Sol-review. Ga pas verder na groene CI op de actuele main-SHA.
+- Geen commits sinds `PREV` en geen onafgerond app-werk: stop zonder bump/tag; meld “niets veranderd”.
+- Falende `verify:translations`, `verify` in CI of ontbrekende/lege releasetekst blokkeert de tag.
+  Herstel binnen de deadline volgens de referentie. Omzeil nooit een poort.
 - Geen gelijktijdige release-run. Een bestaande doeltag gaat uitsluitend via het hervatpad;
-  verplaats of verwijder hem nooit. Geen force-push, secretwijziging of ongepoort dispatch.
+  verplaats, verwijder of push hem nooit opnieuw. Geen force-push, secretwijziging of ongepoort dispatch.
 
 ## 2. Release-inhoud
 
 Lees de volledige commitlijst sinds `PREV`. Gebruik die als bron voor alle teksten.
 Neem bij hervatten de kandidaatversie, bestaande teksten en voortgang over; vul alleen aan wat ontbreekt.
+Na afschrijving: neem de oorspronkelijke releasetekst plus de fix over naar de opvolgversie.
 Voer na de kandidaatselectie, in de gekozen werkboom, uitsluitend bij een nieuwe kandidaat de bump uit:
 ```bash
 : "${RELEASE_MODE:?Voer eerst de kandidaatselectie uit}"
@@ -81,8 +95,8 @@ Controleer vóór iedere commit `git status -sb`; commit alleen releasebestanden
 Staat de kandidaat al ongewijzigd op main met een gemergde PR, sla dan de PR/merge-stappen over.
 Anders: push de releasebranch en hergebruik de kandidaat-PR; maak alleen zonder bestaande PR
 `Release v<VERSION>`. Registreer hem bij T3 en bewaar daarin het hervatverslag.
-De volledige `npm run verify` draait in CI, niet lokaal vóór de push.
-Wacht op een geslaagde `ci.yml`-run voor de exacte PR-head; bij rood: stop zonder tag.
+De volledige `npm run verify`, alle tests en app-builds draaien uitsluitend in CI, ook vóór de tag.
+Wacht op een geslaagde `ci.yml`-run voor de exacte PR-head; bij rood: volg CI herstellen.
 Merge zelf met `gh pr merge <nr> --squash --admin --match-head-commit <head-SHA>`.
 Hiervoor is geen menselijke review nodig. Bewaak de basis en cijfers zoals in de referentie.
 
@@ -104,7 +118,7 @@ npm run verify:translations
 npm run verify:release-highlights -- "$VERSION"
 npm run verify:release-highlights-json
 ```
-Een falende poort of ontbrekende releasetekst betekent stoppen zonder tag.
+Een falende poort of ontbrekende releasetekst blokkeert de tag tot gecontroleerd herstel.
 
 ## 4. Tag en uitlevering
 
@@ -116,7 +130,9 @@ git push origin "refs/tags/v$VERSION"
 `release.yml` herhaalt `verify:translations`, `verify` en de highlight-/versiecontroles.
 Daarna bouwt en signeert hij installers, verifieert de draft en publiceert `latest.json`.
 `snap.yml` en `aur.yml` volgen automatisch. Volg ze tot hun eindstatus en werk het hervatverslag bij.
-Bij falen na de tag: volg het hervatpad voor **dezelfde tag**; geen nieuwe versie zolang werk openstaat.
+Bij falen na de tag: volg [Herstel na de tag](referentie.md#herstel-na-de-tag), binnen de deadline.
+Vereist herstel gewijzigde broncode/workflow: fix op main, schrijf de tag af en maak een opvolgversie.
+De afgeschreven tag blijft staan; een eventuele draft blijft draft. Hervat die tag nooit meer.
 
 Controleer de gepubliceerde release met [referentie.md](referentie.md#uitlevering-controleren):
 notes in de body én `latest.json`, juiste versie, volledige assets en groene Snap-publicatie.
@@ -128,15 +144,18 @@ notes in de body én `latest.json`, juiste versie, volledige assets en groene Sn
 - Werk **elke release** `OpenAEC-Foundation/website` bij volgens
   [referentie.md](referentie.md#website): uitsluitend het nieuwe releaseblok onderaan en
   `#whats-new` bovenaan, met de bijbehorende vertalingen. Gebruik een websitebranch + PR.
-  Merge zelf met `--admin` zodra website-CI op de exacte PR-head groen is. Geen aparte vraag.
-  Ontbrekende website-CI is een blokkade voor die merge; meld die in het eindrapport.
-  Noteer website-PR en merge-SHA in het hervatverslag; een open PR blijft hervatwerk.
+  Merge direct met `gh pr merge <nr> --merge --admin`. Geen aparte vraag.
+  Volg de referentie voor `deploy.yml`: `success` op de merge-SHA of een bewezen afstammeling,
+  plus beide blokken live. Ontbrekend/geannuleerd: controleer opvolgruns, anders eenmaal dispatch.
+  Geen websitecheckers of PR-checks vereist; generatoren, diffcontrole en dit deploy-/livebewijs volstaan.
+  Bij falen blijft de app-release staan en blokkeert websitewerk de volgende app-release niet.
+  Meld de fout; bewaar PR, merge-SHA en deployrun voor een nieuwe poging de volgende zaterdag.
 
 ## 6. Opruimen en rapporteren
 
 Verwijder alleen eigen of aantoonbaar gemergede, schone worktrees zonder actieve sessie/dev-server.
 Controleer per worktree `git status --porcelain`; behoud ongemergd of twijfelachtig werk.
 Gebruik `git worktree remove` zonder force en daarna `git worktree prune`.
-Meld versie, tag-SHA, release-/workflow-URL's, UI-vertalingen, wiki, website-PR en eindstatus.
+Meld versie, tag-SHA, workflow-URL's, fix-PR's/reviews, deadline, UI-vertalingen, wiki en websitedeploy.
 Bij een stop vóór de tag: meld de precieze reden en dat niets is uitgebracht.
 Leg bijvangst buiten deze release vast in `knownbugs.md`; los die niet stil mee op.

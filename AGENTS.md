@@ -14,6 +14,14 @@ installation, builds, tests, dev servers and scripts that launch Node indirectly
 GitHub CI and inspect the results with `gh`. This rule takes precedence over all local execution,
 testing and self-testing instructions below and in skills or area-specific rules.
 
+Exception: the scheduled weekly release job on aia09-mp50 may run only the listed light Node
+steps in its own release worktree, including package checks by its Haiku translation stations
+(website generators in a temporary copy there); see
+[`.claude/skills/release/SKILL.md`](.claude/skills/release/SKILL.md) and its exact list in `referentie.md`.
+Owner decision 9, clarified by the orchestrator on 2026-10-23. This does not cover agents outside
+that job or maintenance of the skill.
+Tests, app builds, the full `npm run verify` and dev servers remain CI-only.
+
 ## Commands
 
 ```bash
@@ -270,7 +278,8 @@ bridge tests against the real Rust bridge). Docs: `docs/release-verificatie.md`,
   (updater + Snap Store). The weekly Saturday job on aia09-mp50 runs that skill automatically,
   without human approval before the tag (owner, conversation 2026-10-22). Green main CI and the
   release gates are mandatory. Resume unfinished work for the latest tag before checking for new
-  commits or bumping. Also resume open release PRs and untagged versions on main without another bump,
+  commits or bumping. Outstanding website work does not block the next app release; retry it the next
+  Saturday alongside that release. Also resume open release PRs and untagged versions on main without another bump,
   only when their candidate version is numerically newer than the previous release; otherwise stop.
   record workflow IDs, wiki commit and website PR in the release PR.
   UI translations, wiki publication and the two website release blocks

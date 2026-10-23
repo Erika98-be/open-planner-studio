@@ -363,13 +363,3 @@ en noem het in je rapport of PR-tekst.
     zonder naar de volgende kolom te gaan. Bij snel invoeren via de spookregel (typ naam, Tab, typ duur)
     verwacht je het Excel-gedrag: vastleggen en een kolom verder (Shift+Tab terug). Gezien bij review
     vader, punt 1. — B
-
-
-179. **De website heeft geen PR-CI voor de automatische releasestap.** Op 2026-10-22 bevat
-    `OpenAEC-Foundation/website/.github/workflows/` alleen `auto-assign-issues.yml`, `deploy.yml`
-    (push op main/dispatch) en `update-stats.yml` (dagelijks/dispatch). `gh api .../actions/workflows`
-    bevestigt deze workflows plus de dynamische Pages-deploy; branch protection geeft
-    `required_status_checks: null`. De checker-scripts staan alleen als lokale opdrachten in `CLAUDE.md`.
-    Daardoor kan een website-release-PR niet vóór de merge aan de eis “website-CI groen” voldoen.
-    Voorstel: een website-PR-workflow met de bestaande checkers toevoegen en als poort instellen.
-    De Nozzit-bypass voor reviews bestaat wel. Alleen gelezen; niets in de website gewijzigd. — B
