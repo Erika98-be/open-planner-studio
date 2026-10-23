@@ -515,6 +515,16 @@ Maak een baseline daarom nooit langs ze heen:
   manifest-SHA-256 is gepind in de v2- en cel-baselines. Het leest twee bak-2-kolommen, maar alleen
   hier in `scripts/`; in `src/` blijft dat verboden (`check-xer-field-whitelist.ts`).
 
+## README-beelden
+
+`npm run gen:readme-screenshots` → `generate-readme-screenshots.mjs` maakt de acht PNG-beelden in
+`docs/images/readme/` met één Chromium-browser en opeenvolgende browsercontexten (Engels, licht thema,
+1600×900). `-- --demo` maakt ook `demo.gif` en `demo.mp4`; `-- --demo-only` alleen die twee.
+`-- --only critical-path,ai-tab` kiest beelden. Met `-- --url http://100.86.248.78:3221/` gebruikt het script een
+apart gestarte Vite-dienst; zonder `--url` start en stopt het zelf Vite op een vrije browsertestpoort.
+Zet `TMPDIR` op een map onder `~/tmp` voor video-opnamen en draai met `nice -n 19` op de gedeelde server.
+PNG's boven 150 KiB worden met ffmpeg verkleind; de demo gebruikt 8 beelden per seconde en 80 kleuren.
+
 ## Browsertests
 
 `npm run test:browser` (en dus `npm test` en `npm run verify`) loopt via deze twee; zie
