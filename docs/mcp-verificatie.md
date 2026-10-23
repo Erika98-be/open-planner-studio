@@ -129,7 +129,7 @@ legt vast wat de app als MCP-server levert, wat niet, en welke test het bewijst.
    (versie = appversie, `mcp_config`, `user_config.token` verplicht en `sensitive`, `user_config.port`
    standaard gelijk aan `MCP_DEFAULT_PORT`). Daarna start hij de server **uit de ZIP** zoals Claude Desktop dat
    doet (`node server/index.mjs`, token en poort in `env`) en praat er met de SDK-client
-   (`StdioClientTransport`) tegen de spiegel uit punt 1: `initialize` met serverInfo en instructions van de
+   (`Client` over een eigen stdio-transport met de `ReadBuffer` van de SDK) tegen de spiegel uit punt 1: `initialize` met serverInfo en instructions van de
    bridge, `tools/list` met alle `planner_*`-tools, een leestool; een app-herstart op dezelfde poort (nieuwe
    sessietabel): de leestool wordt herhaald en slaagt, een `planner_add_tasks` wordt niet uitgevoerd en geeft
    een heldere fout, daarna slaagt hij één keer; fout token, geen token en een bridge die uit staat geven elk

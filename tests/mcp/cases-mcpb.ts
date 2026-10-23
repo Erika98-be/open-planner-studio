@@ -1,13 +1,15 @@
 // Claude Desktop-bundel (`.mcpb`): bouwt hem met `scripts/build-mcpb.mjs`, controleert de ZIP en het
 // manifest, en laat de MEEGELEVERDE doorstuurserver (uit de ZIP gehaald) via stdio praten met de
 // bridge-spiegel (`bridgeMirror.ts`) rond de echte TS-kant op een eigen headless store. De client is
-// de officiële SDK-client met `StdioClientTransport`, zoals Claude Desktop de server start.
+// de officiële SDK-client; het stdio-transport hieronder start de server zoals Claude Desktop dat doet
+// (`node server/index.mjs`). Niet de `StdioClientTransport` van de SDK: die sleept `cross-spawn` (CommonJS)
+// mee, en dat laadt niet in de ESM-testbundel van `run.sh`.
 //
 // Wat dit NIET bewijst: dat Claude Desktop de bundel installeert en het installatievenster toont.
 // De volledige schemacontrole van het manifest doet de officiële `mcpb validate` in
 // `.github/workflows/mcpb.yml` en `release.yml`; hier staan de velden waar de stekker op leunt.
 import { test, assert, assertEq, run } from './harness';
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import http from 'node:http';
 import type { AddressInfo } from 'node:net';
@@ -15,8 +17,9 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
-import { ToolListChangedNotificationSchema } from '@modelcontextprotocol/sdk/types.js';
+import { ReadBuffer, serializeMessage } from '@modelcontextprotocol/sdk/shared/stdio.js';
+import type { Transport } from '@modelcontextprotocol/sdk/shared/transport.js';
+import { ToolListChangedNotificationSchema, type JSONRPCMessage } from '@modelcontextprotocol/sdk/types.js';
 import { createAppStoreContext } from '@/state/appStore';
 import { buildMcpContext } from '@/services/mcp/server';
 import { handleMcpMessage, MCP_INSTRUCTIONS, MCP_SERVER_NAME } from '@/services/mcp/dispatcher';
@@ -73,16 +76,47 @@ interface Session {
   stderr: () => string;
 }
 
+/** Minimaal stdio-clienttransport: één regel JSON per bericht, zoals de MCP-specificatie voor stdio. */
+function stdioTransport(env: Record<string, string>, onStderr: (text: string) => void): Transport {
+  const child = spawn(process.execPath, [serverFile], { env, stdio: ['pipe', 'pipe', 'pipe'] });
+  const buffer = new ReadBuffer();
+  const transport: Transport = {
+    start: async () => {
+      child.stdout.on('data', (chunk: Buffer) => {
+        buffer.append(chunk);
+        for (let message = buffer.readMessage(); message !== null; message = buffer.readMessage()) {
+          transport.onmessage?.(message);
+        }
+      });
+      child.stderr.on('data', (chunk: Buffer) => onStderr(chunk.toString('utf8')));
+      child.on('error', (error) => transport.onerror?.(error));
+      child.on('close', () => transport.onclose?.());
+    },
+    send: async (message: JSONRPCMessage) => {
+      await new Promise<void>((resolve, reject) => {
+        child.stdin.write(serializeMessage(message), (error) => (error ? reject(error) : resolve()));
+      });
+    },
+    close: async () => {
+      child.stdin.end();
+      if (child.exitCode === null) {
+        await new Promise<void>((resolve) => {
+          const timer = setTimeout(() => { child.kill(); resolve(); }, 2000);
+          child.once('close', () => { clearTimeout(timer); resolve(); });
+        });
+      }
+    },
+  };
+  return transport;
+}
+
 /** Start de meegeleverde server zoals Claude Desktop: `node server/index.mjs` met token en poort in env. */
 async function startExtension(token: string, port: number): Promise<Session> {
-  const transport = new StdioClientTransport({
-    command: process.execPath,
-    args: [serverFile],
-    env: { PATH: process.env.PATH ?? '', OPS_MCP_TOKEN: token, OPS_MCP_PORT: String(port) },
-    stderr: 'pipe',
-  });
   let log = '';
-  transport.stderr?.on('data', (chunk: Buffer) => { log += chunk.toString('utf8'); });
+  const transport = stdioTransport(
+    { PATH: process.env.PATH ?? '', OPS_MCP_TOKEN: token, OPS_MCP_PORT: String(port) },
+    (text) => { log += text; },
+  );
   const client = new Client({ name: 'ops-mcpb-test', version: '1.0.0' });
   let changes = 0;
   client.setNotificationHandler(ToolListChangedNotificationSchema, () => { changes++; });
