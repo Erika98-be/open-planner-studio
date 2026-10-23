@@ -251,6 +251,7 @@ async function finish() {
   store.setState(s => { s.tasks.find(t => t.id === bId)!.timephasedContours = [{ resourceUid: null, resourceId: r, periods: [{ afterMinutes: 0, minutes: 2400, workMinutes: 1200, kind: 'remaining' }] }]; });
   const ui = createAppStoreContext().store;
   ui.setState(s => hydratePayload(s, capturePayload(store.getState())));
+  const beforeRule = structuredClone({ task: store.getState().tasks.find(t => t.id === bId), assignments: store.getState().assignments });
   ui.getState().setTaskWorkRule(bId, 'FIXED_WORK');
   const ruleResult = await getTool('planner_update_tasks')!.handler({ updates: [{ id: bId, fields: { workRule: 'FIXED_WORK' } }] }, ctx) as McpToolResult;
   eq('echte tool werkregel slaagt', ruleResult.ok, true);
@@ -258,6 +259,21 @@ async function finish() {
   eq('werkregel geeft hetzelfde restwerk als UI', store.getState().assignments, ui.getState().assignments);
   eq('werkregel geeft dezelfde contour als UI', store.getState().tasks.find(t => t.id === bId)!.timephasedContours, ui.getState().tasks.find(t => t.id === bId)!.timephasedContours);
   store.getState().undo();
+  eq('werkregel undo herstelt taak, contour en restwerk',
+    { task: store.getState().tasks.find(t => t.id === bId), assignments: store.getState().assignments }, beforeRule);
+  const ruleBatch = await getTool('planner_batch')!.handler({ steps: [
+    { tool: 'planner_update_tasks', args: { updates: [{ id: bId, fields: { workRule: 'FIXED_WORK' } }] } },
+    { tool: 'planner_get_task', args: { taskId: bId } },
+  ] }, ctx) as McpToolResult;
+  eq('werkregelbatch met echte leesstap slaagt', ruleBatch.ok, true);
+  eq('werkregelbatch met leesstap houdt datum en modus',
+    [bStart(), store.getState().datesAsRecorded], ['2026-03-16T07:00', true]);
+  eq('werkregelbatch geeft hetzelfde restwerk als UI', store.getState().assignments, ui.getState().assignments);
+  eq('werkregelbatch geeft dezelfde contour als UI', store.getState().tasks.find(t => t.id === bId)!.timephasedContours,
+    ui.getState().tasks.find(t => t.id === bId)!.timephasedContours);
+  store.getState().undo();
+  eq('werkregelbatch undo herstelt taak, contour en restwerk',
+    { task: store.getState().tasks.find(t => t.id === bId), assignments: store.getState().assignments }, beforeRule);
   const planResult = await getTool('planner_update_tasks')!.handler({ updates: [{ id: bId, fields: { duration: 2, durationUnit: 'days', workRule: 'FIXED_WORK' } }] }, ctx) as McpToolResult;
   eq('duur en werkregel samen slaagt', planResult.ok, true);
   eq('duur plus werkregel verlaat modus', store.getState().datesAsRecorded, false);
