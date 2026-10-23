@@ -1,3 +1,7 @@
+import type { AppState } from './appStore';
+import type { NotifyInput } from './slices/types';
+import { snapshotOfPayload } from './snapshot';
+import { recordSessionHistoryDeltas } from './sessionHistory';
 import type { DocumentPayload } from './documentContract';
 import type { RecordedDates, RecordedTime } from '@/engine/scheduler/recordedDates';
 import { applyRecordedTimesToTasks, shiftedTaskIds } from '@/engine/scheduler/recordedDates';
@@ -73,4 +77,22 @@ export function minuteModelTransition(input: DocumentPayload, computed: Document
   }
   markDocumentUnsaved(after);
   return { before, after, shifted, maxWorkdays: Math.round(maxWorkdays * 10) / 10 };
+}
+
+export type MinuteModelTransition = ReturnType<typeof minuteModelTransition>;
+
+export function recordMinuteModelTransition(state: AppState, transition: MinuteModelTransition,
+  documentId = state.activeDocumentId): void {
+  if (transition.shifted.length === 0) return;
+  recordSessionHistoryDeltas(state, 'Omzetting naar minuten', [{
+    kind: 'document-data', documentId, before: snapshotOfPayload(transition.before),
+    after: snapshotOfPayload(transition.after), nonEdit: true,
+  }]);
+}
+
+export function minuteModelNotice(transition: MinuteModelTransition): NotifyInput | undefined {
+  if (transition.shifted.length === 0) return undefined;
+  return { severity: 'info', messageKey: 'notifications.minuteModelConverted',
+    params: { count: transition.shifted.length, document: transition.after.project.name },
+    numberParams: { days: transition.maxWorkdays }, sticky: true };
 }

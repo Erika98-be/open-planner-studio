@@ -1,3 +1,4 @@
+import { migrateToMinuteModel } from './migrations/minuteModel';
 import { hasTaskTypeData } from '@/state/taskTypesVisibility';
 import type { Project } from '@/types/project';
 import type { WorkCalendar } from '@/types/calendar';
@@ -462,7 +463,7 @@ export function payloadFromInput(d: RecoveryDocInput): DocumentPayload {
  *  worden overgenomen; selectie/cpm/history/scheduleStale starten vers. `view`/`collapsedTaskIds`
  *  vult de aanroeper (`applyLoadedProject` behoudt die van het huidige document — load-semantiek). */
 export function payloadFromImport(parsed: ImportResult, filePath: string | null): DocumentPayload {
-  return {
+  const payload: DocumentPayload = {
     ...freshPayload(),
     project: parsed.project,
     calendar: parsed.calendar,
@@ -491,6 +492,8 @@ export function payloadFromImport(parsed: ImportResult, filePath: string | null)
     filePath,
     isDirty: false,
   };
+  const migrated = migrateToMinuteModel(payload, { timeModel: parsed.timeModel, milestonesAtDayEnd: parsed.milestonesAtDayEnd });
+  return { ...migrated.payload, minuteModelPending: migrated.report.conversionPending };
 }
 
 /** Zie `ImportResult.recordedTimesOrigin`: verse import (automatisch aan bij afwijkingen) versus

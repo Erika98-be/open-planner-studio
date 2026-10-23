@@ -52,7 +52,7 @@ export function useExitRecordedDates(): void {
         if (doc === null) return;
         const s = useAppStore.getState();
         if (!needsExitRecompute(doc, observe())) return;
-        s.runCPM();
+        s.runCPM({ withinEvent: true });
       }, 0);
     });
 

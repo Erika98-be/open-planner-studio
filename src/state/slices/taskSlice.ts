@@ -1,3 +1,5 @@
+import { changesOnlyDateNeutralFields } from '../taskDateChanges';
+import { normalizeTaskDates } from '../migrations/minuteModel';
 import { Task, type ExternalLink } from '@/types/task';
 import { taskAssignmentDrafts, taskIndexById } from '@/state/immerDraft';
 import { type SplitPiece, type SplitRefusal } from '@/engine/scheduler/splitEdit';
@@ -829,7 +831,7 @@ function commitProgressEdit(
     s.project.statusDate = statusDateToday;
     s.project.modifiedAt = new Date().toISOString();
   }
-  task.time = plan.change.task.time;
+  task.time = normalizeTaskDates(plan.change.task, s).time;
   task.status = plan.change.task.status;
   settleProgressWork(task, taskAssignmentDrafts(s, task.id), progressWork); // eigen toewijzingen, zonder proxy per stuk
   // Invalidatie van nivelleergaten, klasse voortgang. Voortgang loopt buiten `updateTask` om, dus
@@ -923,19 +925,6 @@ function finishStructural(get: () => AppState, outcome: StructuralOutcome): void
  * getoonde datums blijven dan kloppen met het bestand). Zie de gids `uitleg-datums-zoals-opgeslagen`:
  * "Een naam wijzigen doet dat niet."
  */
-const DATE_NEUTRAL_TASK_FIELDS: ReadonlySet<string> = new Set([
-  'name', 'description', 'wbsCode', 'color', 'notes', 'activityCodes', 'customFields',
-  'taskType', 'customTaskTypeId', 'workRule',
-]);
-
-function changesOnlyDateNeutralFields(before: Task, after: Task): boolean {
-  const keys = new Set([...Object.keys(before), ...Object.keys(after)]) as Set<keyof Task>;
-  for (const key of keys) {
-    if (sameValue(before[key], after[key])) continue;
-    if (!DATE_NEUTRAL_TASK_FIELDS.has(key)) return false;
-  }
-  return true;
-}
 
 export const createTaskSlice: AppSliceFactory<TaskSlice> = (runtime) => (set, get) => {
   // De handeling die op het antwoord van "Taak wordt een samenvattingstaak" wacht. Een functie is geen state en
@@ -1057,7 +1046,7 @@ export const createTaskSlice: AppSliceFactory<TaskSlice> = (runtime) => (set, ge
         const insertAt = partial.position!.where === 'above' ? anchorIdx : anchorIdx + 1;
         s.tasks.splice(insertAt, 0, task);
       } else {
-        s.tasks.push(task);
+        s.tasks.push(normalizeTaskDates(task, s));
       }
 
       // Add to parent's children
@@ -1134,7 +1123,7 @@ export const createTaskSlice: AppSliceFactory<TaskSlice> = (runtime) => (set, ge
       // wordt afgedwongen) stil bestaande verplichte velden (completion/floats/…), en crasht writeIFC
       // later op die lege plek. Zie
       // `mergeTaskTime` in taskDefaults.ts voor de ADD-vs-UPDATE-basissemantiek.
-      const next = mergeTaskUpdate(task, updates);
+      const next = normalizeTaskDates(mergeTaskUpdate(task, updates), s);
       // Per saldo niets gewijzigd — "Taak bewerken" → OK zonder wijziging stuurt álle velden terug
       // (TaskDialog.handleSave) — ⇒ net als een onbekend id: geen snapshot, geen isDirty, geen
       // gevolgregel en dus ook geen melding.
@@ -1242,6 +1231,7 @@ export const createTaskSlice: AppSliceFactory<TaskSlice> = (runtime) => (set, ge
       // Datum-rakende mutatie (duur/start/constraint/mijlpaal → planning verouderd tot F5). Alleen
       // een datumneutrale patch ín de modus laat de modus staan; buiten de modus blijft dit pad
       // ongewijzigd `stale`.
+      Object.assign(task, normalizeTaskDates(task, s));
       runtime.finishMutation(s, { stale: !keepsRecordedMode });
     });
     for (const notice of refusedNotices) get().notify(notice);
@@ -1321,6 +1311,7 @@ export const createTaskSlice: AppSliceFactory<TaskSlice> = (runtime) => (set, ge
       clearLevelingGaps(task);
       // Ingevoerd einde bijwerken — ná `clearLevelingGaps`, zie `updateTask`.
       reconcileHourInputFinish(task, finishBasis, resolveCalendar(calendarId, s.calendars, s.calendar));
+      Object.assign(task, normalizeTaskDates(task, s));
       runtime.finishMutation(s, { stale: true }); // taak-kalender-toewijzing is datum-beïnvloedend.
     });
     if (lostTimephasedGuidance) notifyTimephasedLoss(get().notify, get().activeDocumentId, 1);

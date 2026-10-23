@@ -107,6 +107,7 @@ function sanitizeLeveling(value: unknown): LevelingSettings | undefined {
 /** Compile-time: elke sleutel van `LegacySchedulingOptions` moet hieronder een tak hebben. */
 type HandledKeys =
   | (typeof BOOLEAN_KEYS)[number]
+  | 'milestoneWithoutPredecessorAtDayEnd' // In oude opties bewust genegeerd; uitsluitend profieldata.
   | 'p6Source' | 'lagCalendar' | 'criticalDefinition' | 'totalFloatMode'
   | 'nearCriticalThreshold' | 'floatPaths' | 'startToStartLagFrom' | 'leveling';
 type MissingKeys = Exclude<keyof LegacySchedulingOptions, HandledKeys>;
@@ -221,7 +222,7 @@ export function sanitizeSchedulingProfile(input: unknown): SchedulingProfile | u
   const resolved: Partial<SchedulingConventions> = {};
   for (const d of CONVENTIONS) {
     const value = raw[d.id];
-    resolved[d.id] = typeof value === 'boolean' ? value : d.legacyValue;
+    resolved[d.id] = typeof value === 'boolean' ? value : d.legacyFromBase ? d.builtIn[baseId] : d.legacyValue;
   }
   let id = validId(input.id) ? input.id : baseId;
   if (isBuiltInProfileId(id) && id !== baseId) id = baseId;

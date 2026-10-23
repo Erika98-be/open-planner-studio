@@ -1,3 +1,4 @@
+import { milestoneWasAtDayEnd } from './ifcPsets';
 import { Task, TaskTime, TaskType, TASK_TYPES } from '@/types/task';
 import { WORK_RULES, type WorkRule } from '@/types/workRule';
 import { normalizeCurveValues } from '@/engine/contour/contourEngine';
@@ -369,8 +370,14 @@ export function readIFC(
 
   const ifcGlobalIds = collectIfcGlobalIds(entities, entityMap, taskStepIdMap, project.id, guidLog);
 
+  const timeModel = entities.filter(e => e.type === 'IFCPROPERTYSET' && stripQuotes(e.args[2] || '') === 'OPS_Project')
+    .flatMap(e => parseRefs(e.args[4] || '').map(id => entityMap.get(id)))
+    .filter((e): e is StepEntity => !!e && stripQuotes(e.args[0] || '') === 'TimeModel')
+    .map(e => parseTypedValue(e.args[2] || '')).find((value): value is string => typeof value === 'string');
   return {
     project, calendar, tasks, sequences, resources, assignments,
+    ...(timeModel ? { timeModel } : {}),
+    milestonesAtDayEnd: new Set(tasks.filter(milestoneWasAtDayEnd).map(task => task.id)),
     activityCodeTypes, customFieldDefs, customTaskTypes, resourceCalendars,
     baselines, activeBaselineId,
     libraryPool: libraryPoolOut.value,
@@ -1488,7 +1495,7 @@ function applyHourModeIFC(
     const effCal = effCalOf(t);
     // Een urentaak op een gemarkeerd-scalaire kalender draagt in het geheugen óók echte tijden en
     // minuten — lees hem dus zoals op een uurkalender. Dagtaken daarop blijven dag-precies.
-    const minutePrecise = !!effCal.workTime
+    const minutePrecise = literalTimeCalendars.has(effCal) || !!effCal.workTime
       || (declaredScalarCalendars.has(effCal) && t.time.durationUnit === 'hours');
     if (!minutePrecise) {
       // Dag-kalender, uur-taak (kale `PT{n}H` uit andermans bestand): de compatibiliteitsafgeleide
@@ -2588,13 +2595,14 @@ function extractCalendarHourMeta(
   calStepId: string,
   entities: StepEntity[],
   entityMap: Map<string, StepEntity>,
-): { hourMode?: boolean } & Partial<Pick<WorkCalendar, 'workStartHour' | 'workEndHour'>> {
-  const result: { hourMode?: boolean } & Partial<Pick<WorkCalendar, 'workStartHour' | 'workEndHour'>> = {};
+): { hourMode?: boolean; literalTimes?: boolean } & Partial<Pick<WorkCalendar, 'workStartHour' | 'workEndHour'>> {
+  const result: { hourMode?: boolean; literalTimes?: boolean } & Partial<Pick<WorkCalendar, 'workStartHour' | 'workEndHour'>> = {};
   for (const props of opsCalendarPsetProps(calStepId, entities, entityMap)) {
     for (const prop of props) {
       const name = stripQuotes(prop.args[0] || '');
       const value = parseTypedValue(prop.args[2] || '');
-      if (name === 'IsHourCalendar' && typeof value === 'boolean') result.hourMode = value;
+      if (name === 'LiteralTimes' && value === true) result.literalTimes = true;
+      else if (name === 'IsHourCalendar' && typeof value === 'boolean') result.hourMode = value;
       else if (name === 'WorkStartHour' && typeof value === 'number' && value >= 0 && value <= 24) {
         result.workStartHour = value;
       } else if (name === 'WorkEndHour' && typeof value === 'number' && value >= 0 && value <= 24) {
@@ -2648,6 +2656,7 @@ function legacyScalarFromEffectiveBands(
  * tussen twee `readIFC`-aanroepen. `applyHourModeIFC` promoveert deze kalenders nooit, en leest de
  * urentaken erop toch minuut-precies. */
 const declaredScalarCalendars = new WeakSet<WorkCalendar>();
+const literalTimeCalendars = new WeakSet<WorkCalendar>();
 
 /**
  * Het STEP-id-signaal
@@ -3015,6 +3024,7 @@ function buildCalendarFromEntity(
   // per definitie gegenereerd) — een uit IFC gelezen kalender is dat NIET tenzij de OPS_Calendar-
   // pset het expliciet zegt. Eerst wissen, dan (evt.) invullen uit de pset.
   delete calendar.generation;
+  if (hourMeta.literalTimes) literalTimeCalendars.add(calendar);
   calendar.generation = extractCalendarGeneration(cal.id, entities, entityMap);
   calendar.libraryOrigin = extractCalendarLibraryOrigin(cal.id, entities, entityMap);
 

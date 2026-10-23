@@ -253,7 +253,7 @@ function repairCalendar(cal: WorkCalendar, repairs: CalendarRepair[], unresolved
 
 // ── De migratie ──────────────────────────────────────────────────────────────────────────────
 
-const TIME_FIELDS = [
+export const TIME_FIELDS = [
   'scheduleStart', 'scheduleFinish', 'earlyStart', 'earlyFinish', 'lateStart', 'lateFinish',
   'actualStart', 'actualFinish', 'resume', 'stop',
 ] as const satisfies readonly (keyof TaskTime & TaskDateField)[];
@@ -283,24 +283,24 @@ class Normalizer {
   }
 }
 
-function migrateTask(task: Task, ctx: TaskDateContext, n: Normalizer): Task {
+export function mapTaskDates(task: Task, valueOf: (value: string, field: TaskDateField) => string): Task {
   let time: TaskTime | null = null;
   for (const field of TIME_FIELDS) {
     const v = task.time[field];
     if (typeof v !== 'string') continue;
-    const out = n.value(v, field, ctx, 'task', task.id);
+    const out = valueOf(v, field);
     if (out !== v) {
       time ??= { ...task.time };
       time[field] = out;
     }
   }
   let deadline = task.deadline;
-  if (typeof deadline === 'string') deadline = n.value(deadline, 'deadline', ctx, 'task', task.id);
+  if (typeof deadline === 'string') deadline = valueOf(deadline, 'deadline');
   const constraintOf = (c: Task['constraint']) => {
     if (!c || typeof c.date !== 'string') return c;
     const field = constraintDateField(c.type);
     if (!field) return c;
-    const date = n.value(c.date, field, ctx, 'task', task.id);
+    const date = valueOf(c.date, field);
     return date === c.date ? c : { ...c, date };
   };
   const constraint = constraintOf(task.constraint);
@@ -309,7 +309,7 @@ function migrateTask(task: Task, ctx: TaskDateContext, n: Normalizer): Task {
   if (externalLinks) {
     const mapped = externalLinks.map((e) => {
       if (typeof e.anchorDate !== 'string') return e;
-      const anchorDate = n.value(e.anchorDate, externalAnchorField(e.direction, e.relType), ctx, 'task', task.id);
+      const anchorDate = valueOf(e.anchorDate, externalAnchorField(e.direction, e.relType));
       return anchorDate === e.anchorDate ? e : { ...e, anchorDate };
     });
     if (mapped.some((e, i) => e !== externalLinks![i])) externalLinks = mapped;
@@ -326,6 +326,17 @@ function migrateTask(task: Task, ctx: TaskDateContext, n: Normalizer): Task {
     ...(constraint2 !== task.constraint2 ? { constraint2 } : {}),
     ...(externalLinks !== task.externalLinks ? { externalLinks } : {}),
   };
+}
+
+
+function migrateTask(task: Task, ctx: TaskDateContext, n: Normalizer): Task {
+  return mapTaskDates(task, (value, field) => n.value(value, field, ctx, 'task', task.id));
+}
+
+/** Dezelfde D1–D7 bij invoer, zonder schemamigratie of wijziging aan duur/werk. */
+export function normalizeTaskDates(task: Task, calendars: Pick<DocumentPayload, 'calendar' | 'calendars'>): Task {
+  const ctx = taskDateContext(task, new DayClockCache(calendars.calendar, calendars.calendars));
+  return mapTaskDates(task, (value, field) => normalizeTaskDate(value, field, ctx) ?? value);
 }
 
 function migrateBaseline(

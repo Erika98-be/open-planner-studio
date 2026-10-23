@@ -30,7 +30,7 @@ export type IFCSaveSource = Pick<
 >
   & Partial<Pick<DocumentPayload,
     | 'xerImportMetadata' | 'xerSourceArchive' | 'xerSourceProjectId' | 'importPristine'
-    | 'recordedDates' | 'datesAsRecorded'>>;
+    | 'recordedDates' | 'datesAsRecorded' | 'minuteModelPending'>>;
 
 /**
  * "Datums zoals opgeslagen": in de modus draagt `task.time` op de
@@ -71,6 +71,7 @@ export function buildWriteIFCInput(src: IFCSaveSource): WriteIFCInput {
   const withheld = withheldFieldsFor(src);
   return {
     project: src.project,
+    minuteModelPending: src.minuteModelPending ?? false,
     calendar: src.calendar,
     tasks: src.tasks,
     sequences: src.sequences,
@@ -113,7 +114,7 @@ const IFC_SAVE_KEYS = [
   'project', 'calendar', 'tasks', 'sequences', 'resources', 'assignments',
   'activityCodeTypes', 'customFieldDefs', 'customTaskTypes', 'calendars', 'baselines', 'activeBaselineId',
   'xerImportMetadata', 'xerSourceArchive', 'xerSourceProjectId', 'importPristine',
-  'recordedDates', 'datesAsRecorded', 'ifcGlobalIds',
+  'recordedDates', 'datesAsRecorded', 'minuteModelPending', 'ifcGlobalIds',
 ] as const;
 
 type MissingSaveKey = Exclude<keyof IFCSaveSource, typeof IFC_SAVE_KEYS[number]>;

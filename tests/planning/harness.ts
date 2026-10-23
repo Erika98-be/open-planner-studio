@@ -1113,7 +1113,10 @@ function runCase(c: Case): CaseResult {
   } catch (e) {
     return { id: c.id, title: c.title, pass: false, diffs: [`THREW: ${String(e)}`] };
   }
-  const diffs = evaluateCase(c, c.expect ?? {}, built, EXACT);
+  const dayCase = !hourCaseReason(c);
+  const reason = c.minuteModel && (REASON_RUNS[c.minuteModel.reason] as readonly number[]).includes(1);
+  const expected = dayCase && reason ? mergeExpect(c.expect ?? {}, c.minuteModel!.expect ?? {}) : c.expect ?? {};
+  const diffs = evaluateCase(c, expected, built, minuteComparer(built.ids));
   return { id: c.id, title: c.title, pass: diffs.length === 0, diffs };
 }
 

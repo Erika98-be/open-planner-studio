@@ -203,7 +203,7 @@ export function computeScheduleResults(input: ScheduleAnalysisInput): CPMResult 
       // regel "voltooide opvolger ⇒ ff = 0": alleen in rehab-2 (P3-uitvoer) gezien, geen effect op de
       // P6-populatie (zelfde criterium als C1/C4).
       const ownCalendarFreeFloat = so?.p6FreeFloatOnOwnCalendar === true
-        && cal.isHourMode && taskObj.time.completion < 1;
+        && cal.hasOwnWorkBlocks && taskObj.time.completion < 1;
       const lagOnOwnCalendar = so?.lagCalendar === undefined || so.lagCalendar === 'predecessor';
       const ownCalendarStarted = !!taskObj.time.actualStart || taskObj.time.completion > 0;
       for (const seq of succs) {
@@ -230,7 +230,7 @@ export function computeScheduleResults(input: ScheduleAnalysisInput): CPMResult 
         // lag telt de vrije speling in de eigen kalender tot de vroege FINISH van de opvolger (die C12 op de
         // relatiegrens kan leggen zonder haar start te verplaatsen), niet via de afgeleide startgrens.
         // Alleen vanuit een open voorganger (docblok).
-        if (so?.p6FinishNotBeforeFinishFinishBound === true && ff !== undefined && cal.isHourMode
+        if (so?.p6FinishNotBeforeFinishFinishBound === true && ff !== undefined && cal.hasOwnWorkBlocks
           && taskObj.time.completion < 1 && seq.type === 'FINISH_FINISH'
           && seq.lagPercent === undefined && (seq.lagMinutes ?? 0) === 0 && seq.lagDays === 0) {
           const succEarly = earlyDates.get(seq.successorId);

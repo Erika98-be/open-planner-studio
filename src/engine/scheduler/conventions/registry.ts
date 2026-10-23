@@ -2,7 +2,7 @@
  * Rekenprofielen — het conventieregister.
  *
  * Twee lagen, disjuncte sleutels:
- *  - **Conventies** (`ConventionKey`, zevenentwintig booleans): regels die per planningspakket verschillen.
+ *  - **Conventies** (`ConventionKey`, achtentwintig booleans): regels die per planningspakket verschillen.
  *    Ze leven in het profiel (`Project.schedulingProfile`), als basis + afwijkingen.
  *  - **Projectopties** (`ProjectOptionKey`, elf sleutels): per-bestand projectinstellingen
  *    (lagCalendar, kritiek-definitie, TF-modus, SS-lag-variant, nivelleerinstellingen als data, …). Ze blijven in `Project.schedulingOptions`.
@@ -56,6 +56,8 @@ export interface ConventionDescriptor {
    *  sleutel dan eerlijk als afwijking. Nooit de waarde van de GEKOZEN basis. Geldt niet voor de
    *  legacy-migratie van bestanden zonder die pset — daarvoor zie `legacyOptionsToProfile`. */
   legacyValue: boolean;
+  /** Nieuwe regel: een ouder profiel koos hierover niets (T12). */
+  legacyFromBase?: true;
   /** Was deze conventie vóór de rekenprofielen alleen actief onder de XER-bronmarkering? Zo ja, dan
    *  was een losse vlag zonder die markering inert en gooit de legacy-migratie hem weg. */
   gatedByP6Source: boolean;
@@ -137,6 +139,7 @@ function convention(
 /** Het register, in vaste volgorde (die volgorde is ook de sleutelvolgorde in de IFC-JSON).
   *  Registernummers: A12, A13, A15–A20, A22, A23, B1–B5, C1–C9, C11, C12, C14 (C10 en C13 bestaan niet). */
 export const CONVENTIONS: readonly ConventionDescriptor[] = [
+  { ...convention('milestoneWithoutPredecessorAtDayEnd', 'C', 'milestones', { p6: false, msproject: false, ops: true }, false, '2026-10-23'), legacyFromBase: true },
   // A17, B3 en B4 staan in elk ingebouwd profiel uit: geen effect op P6-doorgerekende bestanden (ze
   // komen uit rehab-2, P3-uitvoer); aan of uit verandert geen enkele gemeten cel.
   // Thema per regel: het ONDERWERP van de conventie (zie `ConventionTheme`), met de reden erachter.
@@ -182,6 +185,7 @@ export const CONVENTIONS: readonly ConventionDescriptor[] = [
 // conventie is, is per constructie onmogelijk (`ProjectOptionKey` is het complement) — de assertie
 // hieronder maakt dat expliciet.
 const _everyConventionNamed: Record<ConventionKey, true> = {
+  milestoneWithoutPredecessorAtDayEnd: true,
   preserveActualDatesInBackwardPass: true, clampNegativeFreeFloat: true,
   p6ZeroDurationUsesPlannedBoundary: true, p6UseTaskPlannedStartFloor: true,
   p6FinishMilestoneBoundaryWindow: true, p6PreserveActualInstants: true,
