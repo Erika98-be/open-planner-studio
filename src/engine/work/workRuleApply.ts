@@ -344,8 +344,8 @@ const NO_DURATION_CHANGE: DurationEditWriteBack = { ...NO_CHANGE, recomputedWork
  * extensies; het taakraster: cel, plakken, doorvullen; de MCP-draft; splitsen). Drie stappen:
  *
  *  1. De restduur volgt de duur. Een NIET-gestarte taak (0 %, geen werkelijke datums) met een
- *     expliciet restveld krijgt rest = nieuwe duur (`applyRemainingDuration`, dezelfde afleiding als
- *     elke voortgangsbewerking). Zonder deze stap bleef een uit het bestand gelezen restveld (P6
+ *     expliciet restveld krijgt rest = volledige nieuwe duur, zonder afronding (B3).
+ *     Zonder deze stap bleef een uit het bestand gelezen restveld (P6
  *     `remain_drtn_hr_cnt`, MSP `RemainingDuration`) op de oude duur staan: *Resterend* en de balk
  *     liepen uiteen, de driehoek zag geen wijziging, en een latere werkelijke start op 0 % liet het
  *     restwerk alsnog springen. Een LOPENDE taak hoort dit al gehad te hebben
@@ -716,7 +716,7 @@ export function settleCalendarChange(
  * - EXACT, zonder afrondingsdrift: de restduur schuift in de eigen eenheid van de taak met precies het
  *   duurverschil (dagtaak: `remainingTime` in werkdagen; urentaak: `remainingMinutes` in minuten met
  *   de werkdagfractie van `hourRemainingDays`). Ontbreekt een expliciet restveld, dan is de rest vóór
- *   de bewerking de gewone afleiding uit het percentage (`applyRemainingDuration`) — die wordt
+ *   de bewerking de exacte afleiding uit het percentage (B3) — die wordt
  *   geschreven, anders zou de solver hem opnieuw als `nieuwe duur × (1 − %)` afleiden en schuift het
  *   gedane werk mee. Het percentage wordt NIET afgerond: oud % × oude duur ÷ nieuwe duur, zodat
  *   % × duur (het gedane werk) gelijk blijft; de weergave rondt pas af (IFC schrijft verliesvrij, zie

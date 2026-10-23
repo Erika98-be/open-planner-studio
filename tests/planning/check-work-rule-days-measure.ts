@@ -11,6 +11,7 @@ import {
 import type { WorkCalendar } from '@/types/calendar';
 import type { ResourceAssignment } from '@/types/resource';
 import type { Task } from '@/types/task';
+import { WORK_RULES } from '@/types/workRule';
 import { createDefaultTaskTime } from '@/utils/taskDefaults';
 
 let checks = 0;
@@ -60,6 +61,20 @@ for (const wholeDays of [true, false]) {
   near(`kern ${wholeDays}: werk verdeeld over inzet 3`, added.ok ? added.state.remainingMinutes : undefined, 400);
 }
 near('slot houdt de effectieve factor exact', slotMinutesOf({ hoursPerDay: 7.123 }), 427.38);
+
+// Elke werkregel beschermt ook na exact terugschrijven dezelfde hoek van de driehoek.
+for (const rule of WORK_RULES) {
+  const { task, assignments, deps } = fixture(2.5);
+  settleRuleChange(task, assignments, deps, rule);
+  assignments[0].remainingWorkMinutes = 1200;
+  const captured = captureTriangle(task, assignments, deps);
+  task.time.scheduleDuration = 1.25;
+  if (task.time.durationUnit === 'hours') task.time.durationMinutes = 600;
+  settleDurationEdit(task, captured);
+  const keepWork = rule === 'FIXED_WORK' || rule === 'FIXED_DURATION_WORK';
+  near(`${rule}: inzet na halveren duur`, assignments[0].unitsPerDay, keepWork ? 2 : 1);
+  near(`${rule}: restwerk na halveren duur`, assignments[0].remainingWorkMinutes, keepWork ? 1200 : 600);
+}
 
 // Brug: terugschrijven mag de exacte kernuitkomst niet opnieuw afronden.
 for (const unit of ['days', 'hours'] as const) {
@@ -133,6 +148,22 @@ for (const excluded of ['milestone', 'summary', 'hammock', 'elapsed'] as const) 
   near('B3: dagenrest volgt minuten', task.time.remainingTime, 3.4 / 7);
 }
 {
+  const { task, assignments, deps } = fixture(2.5);
+  task.workRule = 'FIXED_RATE'; task.time.actualStart = task.time.scheduleStart;
+  const captured = captureTriangle(task, assignments, deps);
+  assignments[0].unitsPerDay = 7;
+  settleUnitsEdit(task, assignments, captured, 'a', 7);
+  near('gestart op 0 %: dagenrest expliciet en exact', task.time.remainingTime, 2.5 / 7);
+  near('gestart op 0 %: geen verricht deel verzonnen', task.time.completion, 0);
+}
+{
+  const { task, assignments, deps } = fixture();
+  task.time.completion = 0.32; task.time.remainingTime = 0.93;
+  settleRuleChange(task, assignments, deps, 'FIXED_WORK');
+  near('omzetting: expliciete rest wint van percentage', task.time.remainingMinutes, 446.4);
+  near('omzetting: percentage blijft staan', task.time.completion, 0.32);
+}
+{
   const { task, assignments, deps } = fixture();
   task.time.completion = 0.32; assignments[0].remainingWorkMinutes = 1632;
   const captured = captureProgressWork(task, deps);
@@ -169,6 +200,19 @@ for (const excluded of ['milestone', 'summary', 'hammock', 'elapsed'] as const) 
   near('contour: werkveld', assignments[0].remainingWorkMinutes, 1000);
   near('contour: hoogte volgt werkveld', task.timephasedContours?.[0].periods[0].workMinutes, 1000);
   near('contour: werkidentiteit', 1440 * assignments[0].unitsPerDay, 1000);
+}
+{
+  const { task, assignments, deps } = fixture(3);
+  task.time.completion = 0.5;
+  task.timephasedContours = [{ resourceUid: null, resourceId: 'r', periods: [
+    { afterMinutes: 0, minutes: 720, workMinutes: 720, kind: 'actual' },
+    { afterMinutes: 720, minutes: 720, workMinutes: 720, kind: 'remaining' },
+  ] }];
+  assignments[0].actualWorkMinutes = 720;
+  settleWorkEdit(task, assignments, deps, 'a', 500);
+  near('contour: verrichte periode blijft', task.timephasedContours?.[0].periods[0].workMinutes, 720);
+  near('contour: resterende periode volgt werk', task.timephasedContours?.[0].periods[1].workMinutes, 500);
+  near('contour: verricht veld blijft', assignments[0].actualWorkMinutes, 720);
 }
 // Kalenderwissel 8 → 6 u: dagenmaat FIXED_RATE houdt 32 u en krijgt 16/3d; urenmaat houdt minuten.
 for (const hour of [false, true]) {
