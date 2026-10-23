@@ -63,6 +63,19 @@ function eq(label: string, got: unknown, want: unknown) {
     [{ ...sf, predecessorId: 'A', successorId: 'Eind', type: 'FINISH_START' }], calendar, [], options).solve();
   eq('mijlpaal zonder soort na FS gebruikt de startkant voor late daggrens', term.tasks.get('Eind')?.lateFinish, '2026-06-05T07:00');
 }
+{
+  // Twee actuele takken blijven twee kritieke paden, ook met een gedeelde voltooide voorganger.
+  const completed = task('C', 1);
+  completed.time = { ...completed.time, completion: 1, actualStart: '2026-06-01T07:00', actualFinish: '2026-06-01T16:00' };
+  const result = new CPMSolver([completed, task('A', 2), task('B', 2)], ['A', 'B'].map(id => ({
+    ...sf, id, predecessorId: 'C', successorId: id, type: 'FINISH_START' as const,
+  })), calendar, [], { ...options, dataDate: '2026-06-02T07:00', schedulingOptions: effectiveSchedulingOptions({ schedulingOptions: {
+    floatPaths: { enabled: true, method: 'FREE_FLOAT', maxPaths: 4 },
+  } }) }).solve();
+  eq('twee kritieke takken met gedeelde historie blijven herkenbaar', result.criticalPaths.length, 2);
+  eq('extra kritieke paden bevatten alleen kritieke activiteiten',
+    result.criticalPaths.slice(1).every(path => path.every(id => result.tasks.get(id)?.isCritical)), true);
+}
 for (const error of errors) console.log(`XX ${error}`);
 console.log(`Minutenmodel-grenzen: ${checks - errors.length}/${checks} gelijk.`);
 if (errors.length) process.exitCode = 1;

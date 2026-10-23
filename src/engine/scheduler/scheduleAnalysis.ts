@@ -570,7 +570,11 @@ export function computeScheduleResults(input: ScheduleAnalysisInput): CPMResult 
         }
         for (const id of chain) candidates.delete(id);
         const ids = [...chain].sort((a, b) => indexInOrder(a) - indexInOrder(b));
-        peeled.push({ ids, critical: ids.every((id) => taskResults.get(id)?.isCritical === true) });
+        // De driving-walk mag door gedeelde historie lopen. Voltooid werk is nooit kritiek,
+        // maar mag een actuele kritieke tak niet uit de padenlijst laten verdwijnen.
+        const openIds = ids.filter(id => !dataDate || (tasks.get(id)?.time.completion ?? 0) < 1);
+        peeled.push({ ids: openIds, critical: openIds.length > 0
+          && openIds.every((id) => taskResults.get(id)?.isCritical === true) });
       }
       // criticalPaths = alle gepeelde ketens die kritiek zijn. Pad 1 is (indien kritiek) al door
       // `criticalPath` gerepresenteerd op index 0; extra kritieke ketens (bij ties)
