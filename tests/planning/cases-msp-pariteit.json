@@ -1311,6 +1311,11 @@
         { "setLevelingDelay": { "task": "A", "days": 2 } },
         { "runCPM": true }
       ],
+      "minuteModel": {
+        "reason": "KALENDERTIJD-EINDE",
+        "note": "§4.2 D1 en §4.5 T16: na de relatie en twee kalenderdagen vertraging start A za 07:00; twee keer 24 uur eindigt exclusief ma 07:00.",
+        "expect": { "tasks": { "A": { "es": "2026-06-06T07:00", "ef": "2026-06-08T07:00" } } }
+      },
       "expect": {
         "tasks": { "A": { "es": "2026-06-06", "ef": "2026-06-08" } },
         "error": false

@@ -17,18 +17,12 @@
     "lag-advanced": [
       "lagadv-pct-fs50-odd-roundup"
     ],
-    "milestone-kinds": [
-      "mk-14"
-    ],
+    "milestone-kinds": [],
     "milestones": [],
     "move-project": [],
-    "msp-pariteit": [
-      "msp-51-z6-invariant-elapsed-opvolger-hele-dagen-delay"
-    ],
+    "msp-pariteit": [],
     "probes": [],
-    "progress": [
-      "prog-T9-elapsed-restwerk-24-7"
-    ],
+    "progress": [],
     "relations": [],
     "resource-leveling": [],
     "resource-load": [],
@@ -65,9 +59,7 @@
       "msp-56-z9a-manual-anchor-raw-no-snap"
     ],
     "probes": [],
-    "progress": [
-      "prog-T9-elapsed-restwerk-24-7"
-    ],
+    "progress": [],
     "relations": [],
     "resource-leveling": [],
     "resource-load": [],

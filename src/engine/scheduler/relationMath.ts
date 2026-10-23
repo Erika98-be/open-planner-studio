@@ -787,14 +787,16 @@ function sfReqFinishHour(
   const elapsedMin = () => deps.resolveElapsedMinutes(seq, predTask) * MS_PER_MIN;
   const succElapsed = isElapsedTask(successor);
 
-  const startMoment = predStartsNextDay ? deps.snapStrictAfter(pe, predResult.es) : predResult.es;
+  // T8: een dagtaak bindt aan het echte startmoment, ook bij een eindmijlpaal.
+  const daySuccessor = isDayTaskOnBands(successor, se);
+  const startMoment = predStartsNextDay && !daySuccessor ? deps.snapStrictAfter(pe, predResult.es) : predResult.es;
   if (elapsed) {
     return succElapsed
       ? new Date(startMoment.getTime() + elapsedMin())
       : deps.snapOnOrAfter(se, new Date(startMoment.getTime() + elapsedMin()));
   }
   const lagged = deps.shiftLagPred(lagEng, startMoment, seq, predTask, 1);
-  if ((succIsFinishMs || succElapsed) && pe.isHourMode
+  if ((succIsFinishMs || succElapsed || daySuccessor) && pe.isHourMode
     && lagged.getTime() === deps.snapOnOrAfter(lagEng, startMoment).getTime()) {
     return landRawInstant(deps, se, startMoment, succElapsed);
   }

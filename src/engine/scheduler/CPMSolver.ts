@@ -1527,7 +1527,8 @@ export class CPMSolver {
     if (eng.isHourMode && (!task || isZeroDurationMilestone(task) || taskDurationUnit(task) === 'hours')) {
       return eng.workMinutesBetween(a, b) / (eng.hoursPerDay * 60);
     }
-    return eng.signedWorkDaysBetween(a, b);
+    // F2 houdt de dagspeling: kloktijden mogen de laatste kalenderdag niet laten wegvallen.
+    return eng.signedWorkDaysBetween(utcDayStart(a), utcDayStart(b));
   }
 
   /** Gedeelde voorbereiding van `solve()` en `solveEarlyStarts()`: toestand resetten, de guards
@@ -1879,7 +1880,12 @@ export class CPMSolver {
       const eng = this.calendarFor(t);
       // `isZeroDurationMilestone` i.p.v. de kale vlag — een mijlpaal-met-duur die zelf ELAPSEDTIME is,
       // telt als "root-elapsed" (spiegelt `snapSuccessorEarlyStart` hierboven).
-      const s = this.rootFloor(eng, t.time.scheduleStart, isElapsedTask(t));
+      // D7 geeft een eindmijlpaal een eindmoment. De projectvloer blijft startachtig (D1),
+      // anders duwt het normaliseren van dat einde alle opvolgers een extra werkdag op.
+      const anchor = isZeroDurationMilestone(t) && !eng.hasOwnWorkBlocks && taskDurationUnit(t) !== 'hours'
+        ? this.dayFirstBandStart(eng, this.parseIn(eng, t.time.scheduleStart))?.toISOString().slice(0, 16) ?? t.time.scheduleStart
+        : t.time.scheduleStart;
+      const s = this.rootFloor(eng, anchor, isElapsedTask(t));
       if (!projectStart || s < projectStart) projectStart = s;
     }
     return projectStart;
@@ -2319,20 +2325,16 @@ export class CPMSolver {
           const preserveP6ActualInstants = task.p6ProjectId !== undefined
             && this.options.schedulingOptions?.p6PreserveActualInstants === true;
           const actualStart = this.parseIn(progressCal, t.actualStart ?? t.actualFinish);
-          let es = preserveP6ActualInstants
+          const preserveActualInstants = preserveP6ActualInstants || isElapsedTask(task) || isZeroDurationMilestone(task);
+          let es = preserveActualInstants
             ? actualStart
             : this.snapActualForward(progressCal, actualStart);
-          // Milestone: start én finish landen op dezelfde werk(dag)-grens (snap op-of-ná, niet -vóór).
-          // `isZeroDurationMilestone` i.p.v. de kale vlag — een VOLTOOIDE mijlpaal-met-duur is voor de
-          // PLANNING een gewone taak en volgt de NORMALE `snapOnOrBefore`-tak (haar `actualFinish` kan
-          // dagen ná haar `actualStart` liggen); `snapOnOrAfter` zou haar EF voorbij haar eigen
-          // actualFinish kunnen duwen.
+          // Een voltooide nulduurmijlpaal heeft één moment; kalendertijd rekent zonder werksnap.
           const actualFinish = this.parseIn(progressCal, t.actualFinish);
-          let ef = preserveP6ActualInstants
-            ? actualFinish
-            : isZeroDurationMilestone(task)
-              ? this.snapOnOrAfter(progressCal, actualFinish)
-              : this.snapOnOrBefore(progressCal, actualFinish);
+          // D3/D7: kalendertijd en een voltooide mijlpaal bewaren het genormaliseerde feit.
+          // Een eindmijlpaal op vrijdag 16:00 mag niet naar maandag 07:00 snappen.
+          let ef = preserveActualInstants ? actualFinish : this.snapOnOrBefore(progressCal, actualFinish);
+          if (isZeroDurationMilestone(task)) es = ef;
           // Inversie-randgeval: het HELE geregistreerde venster valt in onwerkbare tijd (weekend,
           // bouwvak, feestdagenblok) — dan snapt de start vóóruit tot ná de finish, die achteruit
           // snapte. Er bestaat dan geen werkdag binnen het feit, dus één van beide moet wijken.
@@ -3616,8 +3618,11 @@ export class CPMSolver {
       // Start-Start-opvolger een late finish ná het projecteinde opleveren, en krijgt de voorganger
       // ten onrechte speling).
       const predCal = this.calendarFor(task);
-      let lateFinish = isZeroDurationMilestone(task) && task.milestoneKind === 'START'
-        && taskDurationUnit(task) !== 'hours'
+      let lateFinish = isZeroDurationMilestone(task)
+        && (task.milestoneKind === 'START' || (!task.milestoneKind
+          && (this.predecessors.get(taskId)?.length ?? 0) > 0
+          && !(this.predecessors.get(taskId) ?? []).some(seq => seq.type === 'FINISH_FINISH' || seq.type === 'START_FINISH')))
+        && taskDurationUnit(task) !== 'hours' && !predCal.hasOwnWorkBlocks
         ? this.dayFirstBandStart(predCal, projectEnd) ?? projectEnd : projectEnd;
       let lateFinishSource: CpmLateFinishSource = 'projectEnd';
       for (const seq of succs) {
