@@ -321,9 +321,6 @@
     "themeHighContrast": "Hög kontrast",
     "themeFollowSystem": "Följ systemtema",
     "themeSystemHint": "Följer färgschemat i ditt system (nu: {{theme}}).",
-    "hourPlanningSection": "Timplanering",
-    "enableHourPlanning": "Aktivera timplanering",
-    "enableHourPlanningHint": "Slår på tidsplanering per timme och minut. Du får en tidsskala per timme, skift med arbetstidsband och uppgiftsbalkar exakt per timme. Av ⇒ appen är helt dagsbaserad, som förut.",
     "showTaskTypes": "Använd uppgiftstyper",
     "showTaskTypesHint": "Välj per uppgift vad som ändras när varaktighet, tilldelningsenhet eller arbete ändras, som Task Type i MS Project och Duration Type i P6. Av: varaktighet och tilldelningsenhet står kvar. En fil med uppgiftstyper eller sparat arbete visar dem även när detta är av.",
     "allowMixedDayHour": "Tillåt blandad dag/timplanering",
@@ -1094,10 +1091,6 @@
     "day": "dag",
     "month": "månad",
     "year": "år"
-  },
-  "hourData": {
-    "notice": "Den här filen innehåller timplanering.",
-    "enable": "Aktivera timplanering"
   },
   "recordedDates": {
     "activeCount_one": "Du ser tidsplanen så som Primavera sparade den; när du beräknar om skulle {{count}} uppgift flyttas.",

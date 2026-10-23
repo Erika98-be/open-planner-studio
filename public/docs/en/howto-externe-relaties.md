@@ -22,7 +22,7 @@ Which date you enter as the anchor for a manual link depends on the direction an
 - With an external **predecessor** the first letter of the type counts: F means the finish date of the external task, S the start date. With FS and FF you therefore enter the finish, with SS and SF the start.
 - With an external **successor** the second letter counts: S is the start date of the external task, F the finish date. With FS and SS you therefore enter the start, with FF and SF the finish.
 
-If you plan in hours (hour planning on and a task on a calendar with working times), the *Anchor date* field also asks for a time.
+If you plan in hours (a task on a calendar with working times), the *Anchor date* field also asks for a time.
 
 Example: the site project finishes on Friday 18 June 2027. You link *Groundwork* with an external predecessor of type FS, anchor date 18 June 2027. After **Calculate** the groundwork starts on Monday 21 June, the first work day after the anchor. An external successor works the other way round: it limits how late your task may finish.
 

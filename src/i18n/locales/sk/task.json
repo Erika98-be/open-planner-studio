@@ -181,7 +181,6 @@
       "calendar": "Vyberte kalendár zo zoznamu.",
       "calendarNotFound": "Vybraný kalendár neexistuje.",
       "calendarHours": "Kalendár tejto úlohy nemá pracovnú dobu za deň.",
-      "hourPlanningDisabled": "V „Nastavenia“ aplikácie je plánovanie v hodinách vypnuté.",
       "durationConversionNotExact": "Toto trvanie sa nedá presne previesť na druhú jednotku.",
       "milestoneRequired": "Toto pole platí iba pre medzníky.",
       "milestoneUnavailable": "Súhrnná úloha, ktorá má čiastkové úlohy, nemôže byť medzníkom.",
@@ -337,9 +336,6 @@
     "days": "Dni",
     "hours": "Hodiny",
     "invalid": "Zadajte celé číslo dní alebo hodín, napríklad 2d alebo 12h.",
-    "enableHourPlanningFirst": "Na úpravu hodinovej úlohy zapnite plánovanie v hodinách.",
-    "enableHourPlanning": "Zapnúť plánovanie v hodinách",
-    "requiresWorkBlocks": "Tento kalendár nemá platné pracovné časy. Skontrolujte pracovné dni a pracovné časy.",
     "conversionNotExact": "{{value}} v tomto kalendári nevychádza na celé dni. Jednotka sa nezmenila.",
     "unitInfo": "Zvolená jednotka patrí k tejto úlohe. Dni sa počítajú ako pracovné dni; hodiny sa počítajú ako pracovné hodiny v rámci kalendára. Iný kalendár nemení jednotku ani zadané trvanie, ale môže zmeniť dátum dokončenia."
   },

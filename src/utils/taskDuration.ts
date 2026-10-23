@@ -168,18 +168,15 @@ export function formatRemainingDurationText(task: Task, fmt?: DurationTextFormat
 
 /**
  * Geformatteerde duur voor tabellen/panelen/tooltips op basis van de effectieve kalender:
- * {@link formatTaskDurationText} met de uren per dag van `cal`. `enableHourPlanning` doet bewust
- * niets — de blijvende taakeenheid blijft ook zichtbaar als de schakelaar uit staat.
+ * {@link formatTaskDurationText} met de uren per dag van `cal`.
  */
 export function formatTaskDurationDisplay(
   task: Task,
   cal: WorkCalendar,
   display: DurationDisplay,
-  enableHourPlanning: boolean,
   suffixes?: DurationSuffixes,
   locale?: string,
 ): string {
-  void enableHourPlanning;
   return formatTaskDurationText(task, effHoursPerDay(cal), { display, suffixes, locale });
 }
 

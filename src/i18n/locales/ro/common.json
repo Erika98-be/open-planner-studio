@@ -376,9 +376,6 @@
     "themeHighContrast": "Contrast ridicat",
     "themeFollowSystem": "Urmează tema sistemului",
     "themeSystemHint": "Urmează schema de culori a sistemului (acum: {{theme}}).",
-    "hourPlanningSection": "Planificare pe ore",
-    "enableHourPlanning": "Activare planificare pe ore",
-    "enableHourPlanningHint": "Pornește planificarea pe ore și minute: o scară de timp pe ore, ture cu benzi de timp de lucru și bare de activitate exacte pe ore. Dezactivat ⇒ aplicația rămâne complet pe zile, ca înainte.",
     "showTaskTypes": "Tipuri de activitate",
     "showTaskTypesHint": "Alegeți pentru fiecare activitate ce se modifică atunci când se schimbă durata, unitățile de atribuire sau lucrul, ca Task Type în MS Project și Duration Type în P6. Dezactivat: durata și unitățile de atribuire rămân fixe. Un fișier cu tipuri de activitate sau cu lucru salvat le afișează chiar dacă această opțiune este dezactivată.",
     "allowMixedDayHour": "Permitere planificare pe ore și zile combinate",
@@ -1156,10 +1153,6 @@
     "day": "zi",
     "month": "lună",
     "year": "an"
-  },
-  "hourData": {
-    "notice": "Acest fișier conține planificare pe ore.",
-    "enable": "Activare planificare pe ore"
   },
   "recordedDates": {
     "activeCount_one": "Vizualizați planificarea așa cum a salvat-o Primavera; la recalculare, {{count}} activitate s-ar deplasa.",

@@ -376,9 +376,6 @@
     "themeHighContrast": "Contraste élevé",
     "themeFollowSystem": "Suivre le thème du système",
     "themeSystemHint": "Suit le schéma de couleurs de votre système (actuellement : {{theme}}).",
-    "hourPlanningSection": "Planification horaire",
-    "enableHourPlanning": "Activer la planification horaire",
-    "enableHourPlanningHint": "Active la planification heure/minute : une échelle de temps en heures, des équipes avec des plages horaires de travail et des barres de tâche précises à l'heure près. Désactivé ⇒ l'application reste entièrement en granularité journalière, comme auparavant.",
     "showTaskTypes": "Utiliser les types de tâche",
     "showTaskTypesHint": "Choisissez pour chaque tâche ce qui s'ajuste quand la durée, les unités ou le travail changent, comme Task Type dans MS Project et Duration Type dans P6. Désactivé : la durée et les unités restent fixes. Un fichier avec des types de tâche ou du travail enregistré les affiche aussi lorsque cette option est désactivée.",
     "allowMixedDayHour": "Autoriser la planification mixte jour/heure",
@@ -1156,10 +1153,6 @@
     "day": "jour",
     "month": "mois",
     "year": "année"
-  },
-  "hourData": {
-    "notice": "Ce fichier contient une planification horaire.",
-    "enable": "Activer la planification horaire"
   },
   "recordedDates": {
     "activeCount_one": "Vous consultez le planning tel qu'enregistré par Primavera ; un recalcul déplacerait {{count}} tâche.",

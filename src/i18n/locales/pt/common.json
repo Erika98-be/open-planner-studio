@@ -376,9 +376,6 @@
     "themeHighContrast": "Alto contraste",
     "themeFollowSystem": "Seguir o tema do sistema",
     "themeSystemHint": "Segue o esquema de cores do sistema (agora: {{theme}}).",
-    "hourPlanningSection": "Planeamento por horas",
-    "enableHourPlanning": "Ativar planeamento por horas",
-    "enableHourPlanningHint": "Ativa o escalonamento por hora/minuto: uma escala de tempo horária, turnos com faixas de horário de trabalho e barras de tarefa com precisão à hora. Desativado ⇒ a aplicação permanece totalmente granular por dias, como antes.",
     "showTaskTypes": "Usar tipos de tarefa",
     "showTaskTypesHint": "Escolha, por tarefa, o que se ajusta quando a duração, as unidades ou o trabalho mudam, como Task Type no MS Project e Duration Type no P6. Desligado: a duração e as unidades mantêm-se. Um ficheiro com tipos de tarefa ou trabalho guardado mostra-os também quando isto estiver desligado.",
     "allowMixedDayHour": "Permitir planeamento misto de dias/horas",
@@ -1156,10 +1153,6 @@
     "day": "dia",
     "month": "mês",
     "year": "ano"
-  },
-  "hourData": {
-    "notice": "Este ficheiro contém planeamento por horas.",
-    "enable": "Ativar planeamento por horas"
   },
   "recordedDates": {
     "activeCount_one": "Está a ver o planeamento tal como o Primavera o registou; recalcular deslocaria {{count}} tarefa.",

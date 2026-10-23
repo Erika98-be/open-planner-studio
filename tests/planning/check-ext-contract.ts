@@ -859,7 +859,7 @@ function leesWijzigLaadToewijzing(a: ResourceAssignment): ResourceAssignment | u
     api.data.getImportSourceChunk(0), api.data.getImportSourceCatalogPage('taskSourceRows'),
   ], [null, null]);
   const applied = useAppStore.getState().applyOpenedImport(opened, {
-    filePath: null, recompute: false, fit: false, hourDataNotice: false, linkedOpen: true,
+    filePath: null, recompute: false, fit: false, linkedOpen: true,
   });
   const p2DocumentId = applied.documentIds[1];
   if (p2DocumentId) useAppStore.getState().switchDocument(p2DocumentId);

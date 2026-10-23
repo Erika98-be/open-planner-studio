@@ -22,7 +22,7 @@ Welke datum je bij een handmatige koppeling als anker invult, hangt af van de ri
 - Bij een externe **voorganger** telt de eerste letter van het type: F betekent de einddatum van de externe taak, S de startdatum. Bij FS en FF vul je dus het einde in, bij SS en SF de start.
 - Bij een externe **opvolger** telt de tweede letter: S is de startdatum van de externe taak, F de einddatum. Bij FS en SS vul je dus de start in, bij FF en SF het einde.
 
-Plan je in uren (urenplanning aan en een taak op een kalender met werktijden), dan vraagt het veld *Ankerdatum* ook een tijdstip.
+Plan je in uren (een taak op een kalender met werktijden), dan vraagt het veld *Ankerdatum* ook een tijdstip.
 
 Voorbeeld: het terreinproject eindigt vrijdag 18 juni 2027. Je koppelt *Grondwerk* met een externe voorganger van type FS, ankerdatum 18 juni 2027. Na **Bereken** begint het grondwerk op maandag 21 juni, de eerste werkdag na het anker. Een externe opvolger werkt de andere kant op: hij begrenst hoe laat jouw taak klaar mag zijn.
 

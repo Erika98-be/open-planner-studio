@@ -159,7 +159,6 @@ const kopie = <T>(v: T): T => structuredClone(v);
 
 // ── 1. Een rijk project, opgebouwd met de gewone store-acties ───────────────────────────────────
 S().newProject();
-S().setUI({ enableHourPlanning: true });
 S().setProject({ name: 'Herstelproef', startDate: '2026-06-01' });
 
 // Projectkalender: urenkalender ma-vr 07:00-16:00 met pauze, één vrije dag en één werkende zaterdag.
