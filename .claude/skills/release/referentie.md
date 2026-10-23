@@ -4,10 +4,13 @@ Lees het passende onderdeel tijdens de release. Dit bestand geeft geen zelfstand
 
 ## Node-uitzondering voor de zaterdagjob
 
-**Besluit 9: eigenaar, gesprek 2026-10-23.** Dit is de vaste, smalle uitzondering op de
+**Besluit 9: eigenaar, verduidelijkt door de orkestrator op 2026-10-23.** Lichte release-scripts
+mogen op de server; de bedoeling is overbelasting voorkomen, niet de release blokkeren.
+Dit is de vaste, smalle uitzondering op de
 [Server restriction in AGENTS.md](../../../AGENTS.md), aangehaald in [SKILL.md](SKILL.md).
 Alleen de geplande wekelijkse releasejob op aia09-mp50 mag onderstaande Node-stappen uitvoeren.
-Onderhoud aan de skill, losse releases, CI-fixagents en vertaal-/reviewsubagents krijgen geen uitzondering.
+Zijn Haiku-vertaalstations mogen hun eigen pakketchecks uitvoeren binnen dezelfde job en worktree.
+Onderhoud aan de skill, losse releases, CI-fixagents en agents voor codereview krijgen geen uitzondering.
 
 Gebruik uitsluitend de eigen release-worktree. Houd de Node-stappen daar, ook bij hervatten of
 wisselen van releasecommit. Geen Node in de hoofdcheckout, een CI-fixworktree of een andere checkout.
@@ -20,12 +23,19 @@ De volledige lijst:
 - `npm run bump` en `node scripts/bump-version.js --check "$VERSION"`.
 - De bestaande kleine inline `node`-blokken in deze skill: afschrijving herkennen,
   kandidaatselectie, pakketversie lezen en jaar/week/volgnummer numeriek vergelijken.
+  Ook `node -p 'process.execPath'` om het Node-pad voor de vertaalstations vast te stellen.
 - `node scripts/release-notes.mjs "v$VERSION" --format=body` en dezelfde opdracht met `--format=notes`.
 - `npm run gen:release-highlights-json`, `npm run verify:release-highlights -- "$VERSION"`
   en `npm run verify:release-highlights-json`.
 - `npm run translate -- prepare ui <taal> --missing`, `--stale` of `--avoid`;
-  `npm run translate -- apply ui <taal>` en `npm run translate -- status [taal]`.
-- `npm run verify:translations`.
+  `npm run translate -- apply ui <taal>`, `npm run translate -- packages ui <talen> [--red]`
+  en `npm run translate -- status [taal] [--strict]`.
+  Voor termbaseherstel uit `update-ui-lang`: `npm run translate -- terms-lookup <taal>`
+  en `npm run translate -- apply-terms <taal>`.
+- `node build/translate/check.mjs <pakket>` bij de ouder én zijn Haiku-vertaalstations.
+  Het absolute Node-pad mag ook; checker en pakket blijven in dezelfde release-worktree.
+- `npm run i18n:add -- ...`, `npm run i18n:fmt`, `npm run i18n:resolve`,
+  `npm run verify:i18n` en `npm run verify:translations`.
 - `npm run verify:docs`, `npm run publish:wiki` (dry-run), `npm run publish:wiki -- --push`
   en `node scripts/run-ts.mjs scripts/check-wiki-links.ts`.
 - Alleen in de tijdelijke websitekopie: `node scripts/generate-release-notes.js`,
@@ -42,14 +52,14 @@ Gerichte tests en foutreproducties horen eveneens in PR-CI; sla geen check over 
 ### Grenzen bij aangeroepen skills
 
 De [wiki-skill](../wiki/SKILL.md) vraagt alleen Node-stappen uit de lijst hierboven.
-De [update-ui-lang-skill](../update-ui-lang/SKILL.md) bevat daarnaast opdrachten buiten de lijst:
-`translate -- packages ui`, de losse pakketcheck `node build/translate/check.mjs` bij ouder én
-stations, `npm run i18n:add`, `npm run verify:i18n` en termbaseherstel via `apply-terms`.
-Ook zijn Node-padprobe en `node_modules`-link geven geen extra toestemming.
-`verify:i18n` draait al in PR-/main-CI. De overige opdrachten worden met besluit 9 niet toegestaan.
-Is vertaalwerk afhankelijk van deze stappen, stop dan vóór de tag en meld precies welke stap ontbreekt.
-Start geen stations die hier verboden Node-checks moeten draaien. Laat hun pakketpoort niet vervallen.
-Deze beperking vraagt een aparte uitvoeringsroute of aanvullend eigenaarsbesluit; verruim de lijst niet zelf.
+Ook de lichte stappen uit [update-ui-lang](../update-ui-lang/SKILL.md) vallen binnen de lijst,
+inclusief pakketselectie, pakketchecks, i18n-onderhoud en termbaseherstel.
+Gebruik de bestaande release-worktree en zijn eenmaal geïnstalleerde dependencies. Sla de losse
+werkplekinrichting van `update-ui-lang` over; geen extra worktree, installatie of `node_modules`-link.
+Geef elk T3-Haiku-station expliciet het zaterdagmandaat, de release-worktree en toestemming voor
+zijn eigen `build/translate/check.mjs`-pakketcheck uit deze lijst mee. Dit geldt voor vertalen,
+nalezen en herstellen, uitsluitend binnen deze zaterdagjob. De stations installeren niets.
+Behoud de bestaande pakketpoorten en wacht op alle vereiste stations vóór `apply ui`.
 
 ## Hervatten
 
@@ -407,28 +417,16 @@ Het highlight-blok `#whats-new` en zijn woordenboeken komen **niet** vanzelf mee
 4. De diff mag alleen die twee blokken, de twee Planner-databestanden en de `whatsnew`-objecten
    bevatten. Geen feature-grid, FAQ, meta-teksten, JSON-LD, screenshots, nieuws, `/md/` of `llms.txt`.
    Laat de dagelijkse Action zijn overige bestaande werk doen.
-5. Lees de websitecheckers uit de actuele repo-instructies. Op onderzoeksdatum:
-   ```bash
-   node scripts/check-open-pile-plan-studio.js
-   node scripts/check-homepage-catalog-product-pages.js
-   node scripts/check-release-timeline.js
-   node scripts/check-release-notes-generator.js
-   ```
-   Dit zijn checks buiten de Node-uitzondering, geen toegestane generatoren. Draai ze hier niet;
-   tests horen in CI. Gebruik bestaand CI-bewijs als dat er is. Zonder groen checkerbewijs blijft
-   het websitewerk onafgerond; meld dit en draag het over in het hervatverslag. De volgende
-   app-release wordt daardoor niet geblokkeerd. Er komt geen nieuwe PR-checkeis bij.
-   Beoordeel ook de vijf `#whats-new`-blokken en parseer de vier JSON-woordenboeken zonder Node;
-   behoud de verplichte diff- en livecontrole hieronder.
-6. Commit, push de websitebranch, open een PR tegen `main` en registreer die bij de T3-thread.
+5. Commit, push de websitebranch, open een PR tegen `main` en registreer die bij de T3-thread.
    Merge direct: `gh pr merge <nr> --repo OpenAEC-Foundation/website --merge --admin`.
    Nozzit heeft een bypass in `required_pull_request_reviews.bypass_pull_request_allowances.users`
    (gecontroleerd via `gh api repos/OpenAEC-Foundation/website/branches/main/protection`).
-7. Lees `mergeCommit.oid` uit `gh pr view <nr> --repo OpenAEC-Foundation/website --json mergeCommit`.
+6. Lees `mergeCommit.oid` uit `gh pr view <nr> --repo OpenAEC-Foundation/website --json mergeCommit`.
    Volg [Websitedeploy controleren en herstellen](#websitedeploy-controleren-en-herstellen), ook bij hervatten.
 
 Besluit: orkestrator na vraag aan eigenaar, gesprek 2026-10-22. De website heeft en behoeft
-geen PR-checks. De controle na merge is `deploy.yml` (push naar main of `workflow_dispatch`).
+geen PR-checks of websitecheckers. Generatoren, diffcontrole en de geslaagde `deploy.yml`-run
+(push naar main of `workflow_dispatch`) plus beide juiste blokken live zijn voldoende bewijs.
 De overige workflows zijn `update-stats.yml` (06:00 UTC) en `auto-assign-issues.yml`.
 Deze procedure voegt geen workflow of checkeis aan het website-repo toe.
 

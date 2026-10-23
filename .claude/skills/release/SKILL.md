@@ -5,9 +5,10 @@ description: Gebruik alleen bij een expliciete /release of een verzoek om een ni
 
 # Wekelijkse release — Open Planner Studio
 
-Besluit 9: eigenaar, gesprek 2026-10-23. Alleen de geplande zaterdagjob heeft de smalle
+Besluit 9: eigenaar, verduidelijkt door de orkestrator op 2026-10-23. Alleen de zaterdagjob heeft de smalle
 Node-uitzondering op [AGENTS.md](../../../AGENTS.md). De [exacte lijst en werkplekgrenzen](referentie.md#node-uitzondering-voor-de-zaterdagjob)
-gelden ook bij aangeroepen skills. Andere agents en onderhoud aan deze skill krijgen geen uitzondering.
+omvatten de lichte vertaalscripts en pakketchecks door de ouder en zijn Haiku-stations.
+Alleen binnen die job en release-worktree. Andere runs en onderhoud aan deze skill krijgen geen uitzondering.
 
 Mandaat: eigenaar, gesprek 2026-10-22. De zaterdagjob op aia09-mp50 voert deze skill
 volledig automatisch uit. Er is geen menselijk akkoord vóór de tag. Stel geen vragen.
@@ -146,6 +147,7 @@ notes in de body én `latest.json`, juiste versie, volledige assets en groene Sn
   Merge direct met `gh pr merge <nr> --merge --admin`. Geen aparte vraag.
   Volg de referentie voor `deploy.yml`: `success` op de merge-SHA of een bewezen afstammeling,
   plus beide blokken live. Ontbrekend/geannuleerd: controleer opvolgruns, anders eenmaal dispatch.
+  Geen websitecheckers of PR-checks vereist; generatoren, diffcontrole en dit deploy-/livebewijs volstaan.
   Bij falen blijft de app-release staan en blokkeert websitewerk de volgende app-release niet.
   Meld de fout; bewaar PR, merge-SHA en deployrun voor een nieuwe poging de volgende zaterdag.
 

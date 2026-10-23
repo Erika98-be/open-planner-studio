@@ -17,6 +17,8 @@ Besluit: eigenaar, gesprek 2026-10-22.
 - Besluit 9, eigenaar, 2026-10-23: alleen deze job heeft de Node-uitzondering uit AGENTS.md en
   [de exacte lijst](referentie.md#node-uitzondering-voor-de-zaterdagjob). Eenmaal `npm ci` per run,
   uitsluitend in de release-worktree. Geen lokale tests, app-builds, volledige verify of dev-servers.
+  Verduidelijking orkestrator, 2026-10-23: de lichte vertaalscripts en pakketchecks bij ouder
+  en T3-Haiku-stations zijn inbegrepen, alleen binnen deze job en dezelfde release-worktree.
 - Eén actieve run tegelijk. Volg het hervatpad; alleen afschrijving opent de route naar een opvolgversie.
 - Rode main-/release-PR-/releaseworkflow: eerst eenmaal `gh run rerun <id> --failed`.
   Blijft hij rood: kleinste fix-PR vanaf main, tweede Sol-review via T3 `delegate_task`
@@ -29,6 +31,7 @@ Besluit: eigenaar, gesprek 2026-10-22.
   opvolger: `npm run bump` zonder argument, oorspronkelijke tekst plus fix, alle normale poorten.
 - Website: merge de PR direct met `--merge --admin`. Eis een geslaagde `deploy.yml` op de merge-SHA
   of een bewezen afstammeling en beide blokken live. Ontbrekend/geannuleerd: opvolgruns, anders eenmaal dispatch.
+  Geen websitecheckers of PR-checks vereist. Generatoren, diffcontrole en het deploy-/livebewijs volstaan.
   Blijvende websitefout: meld en bewaar voor de volgende zaterdag; blokkeer de volgende app-release niet.
 
 ## Letterlijke prompt
@@ -40,8 +43,9 @@ Gebruik alleen de Node-uitzondering van besluit 9 (eigenaar, 2026-10-23), met de
 en werkplekgrenzen in referentie.md. Eenmaal npm ci per run in de release-worktree, geen link naar
 node_modules in de hoofdcheckout. Tests, app-builds en volledige verify draaien alleen in CI.
 Volg de release-skill en de gekoppelde referentie en skills volledig.
-Een aangeroepen skill verruimt de lijst niet. Stop bij een vereiste vertaalstap buiten de lijst;
-meld die blokkade en start geen subagent die hier verboden Node-opdrachten moet uitvoeren.
+De lichte vertaalscripts, i18n-onderhoud en pakketchecks uit update-ui-lang vallen binnen de lijst.
+Geef elk T3-Haiku-station het zaterdagmandaat en toestemming voor zijn eigen pakketcheck mee,
+alleen in dezelfde release-worktree. De stations installeren niets. Behoud alle vertaalpoorten.
 Het zaterdagmandaat omvat publiceren en gecontroleerd hervatten, zonder menselijk akkoord.
 Rond eerst onafgerond werk voor de laatste tag af. Respecteer alle stopregels.
 Herstel rode CI volgens referentie.md: eenmaal rerun, dan fix-PR met tweede Sol-review.
@@ -59,6 +63,7 @@ Rapporteer waarom het niet lukte en welke tags zijn afgeschreven.
 Merge de website-PR direct met --merge --admin. Controleer deploy.yml op de merge-SHA of een
 bewezen afstammeling en beide blokken live. Ontbrekend/geannuleerd: zoek opvolgruns, anders eenmaal
 gh workflow run deploy.yml --repo OpenAEC-Foundation/website, volgens de referentie.
+Geen websitecheckers of PR-checks vereist. Generatoren, diffcontrole en het deploy-/livebewijs volstaan.
 Een blijvende websitefout laat de app-release staan en blokkeert de volgende app-release niet.
 Meld en bewaar het werk voor de volgende zaterdag naast de nieuwe release.
 Rapporteer versie, SHA, workflowstatus, fix-PR's/reviews, VERVOLG, wiki, website en eventuele blokkade.
