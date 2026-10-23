@@ -1,18 +1,59 @@
 import type { CustomFieldValue } from '@/types/structure';
+import type { WorkCalendar } from '@/types/calendar';
+import {
+  blocksClock, dayEndInstant, dayStartInstant, ELAPSED_CLOCK, isDateOnly, workdayOfInstant,
+  type InstantSide,
+} from '@/engine/calendar/workdayRules';
+import { isElapsedTask, isZeroDurationMilestone } from '@/engine/scheduler/duration';
 import type { Task, TaskTime } from '@/types/task';
 import { parseDate, parseInstant } from '@/utils/dateUtils';
 import { orderActualsAfterDerivedFinish } from '@/engine/actualDatesOrder';
 import { taskDurationUnit } from '@/engine/scheduler/duration';
 
 /**
- * Vergelijkt een actual met de statusdatum op dezelfde precisie als de bestaande taaksetters.
- * Een statusdatum zonder tijd staat de hele kalenderdag toe; mét tijd geldt instantprecisie.
+ * De statusregel (§4.2): zonder tijd telt de werkdag van de taakkalender; met tijd het moment.
+ * Bij een nachtblok kan een feit op donderdag bij de statuswerkdag woensdag horen.
  */
-export function isActualPastStatusDate(dateIso: string, statusDateIso: string): boolean {
+export function isActualPastStatusDate(
+  dateIso: string,
+  statusDateIso: string,
+  calendar?: WorkCalendar,
+  side: InstantSide = 'start',
+): boolean {
   if (!statusDateIso.includes('T')) {
-    return parseDate(dateIso).getTime() > parseDate(statusDateIso).getTime();
+    const day = workdayOfInstant(calendar ? blocksClock(calendar) : ELAPSED_CLOCK, dateIso, side);
+    return parseDate(day).getTime() > parseDate(statusDateIso).getTime();
   }
   return parseInstant(dateIso).getTime() > parseInstant(statusDateIso).getTime();
+}
+
+/** D1/D2/D4/D6 bij voortgangsinvoer in het urenpad. Letterlijke tijden blijven rauw (N0).
+ *  Dagkalenders met dagtaken houden tot F2 hun bestaande datumvorm. */
+export function normalizeActualDate(
+  task: Task,
+  field: 'actualStart' | 'actualFinish',
+  value: string | undefined,
+  statusDate: string | undefined,
+  calendar: WorkCalendar | undefined,
+): string | undefined {
+  if (!value || !isDateOnly(value) || !calendar
+    || (!calendar.workTime && taskDurationUnit(task) !== 'hours')) return value;
+  const clock = isElapsedTask(task) ? ELAPSED_CLOCK : blocksClock(calendar);
+  const side = isZeroDurationMilestone(task)
+    ? task.milestoneKind === 'FINISH' ? 'end' : 'start'
+    : field === 'actualFinish' ? 'end' : 'start';
+  const moment = (side === 'end' ? dayEndInstant(clock, value) : dayStartInstant(clock, value)) ?? value;
+  // Alleen een datumloze invoer op de statuswerkdag mag tot het expliciete statusmoment klemmen.
+  if (statusDate?.includes('T') && value === workdayOfInstant(clock, statusDate, 'start')
+    && parseInstant(moment) > parseInstant(statusDate)) return statusDate;
+  return moment;
+}
+
+/** Ook een door completion afgeleid einde volgt D6; bestaande letterlijke momenten blijven gelijk. */
+export function normalizeProgressActuals(task: Task, statusDate: string | undefined, calendar?: WorkCalendar): void {
+  for (const field of ['actualStart', 'actualFinish'] as const) {
+    task.time[field] = normalizeActualDate(task, field, task.time[field], statusDate, calendar);
+  }
 }
 
 /**

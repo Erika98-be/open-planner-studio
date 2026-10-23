@@ -142,6 +142,38 @@ test('Taak bewerken: voortgang opslaan volgt dezelfde regels als het eigenschapp
   const panelAt100 = await progressOf(page, panelId);
   expect(panelAt100).toMatchObject({ completion: 1, status: 'COMPLETED', actualFinish: '2026-03-13', remainingTime: 0 });
   expect(await progressOf(page, dialogId)).toEqual(panelAt100);
+
+  // F1: een datumloos werkelijk einde op de statusdag krijgt het blokeinde of het statusmoment.
+  for (const [statusDate, finish] of [
+    ['2026-03-13', '2026-03-13T16:00'],
+    ['2026-03-13T12:00', '2026-03-13T12:00'],
+  ]) {
+    await page.evaluate(({ id, statusDate }) => {
+      const store = window.__OPS__!.store.getState();
+      const bands = [{ start: 480, end: 960 }];
+      store.setCalendar({ ...store.calendar, workTime: { byWeekday: {
+        1: bands, 2: bands, 3: bands, 4: bands, 5: bands, 6: [], 7: [],
+      } } });
+      store.setProject({ statusDate });
+      const task = window.__OPS__!.store.getState().tasks.find(task => task.id === id)!;
+      store.updateTask(id, { status: 'STARTED', time: {
+        ...task.time, durationUnit: 'hours', durationMinutes: 4800, completion: 0.2,
+        actualStart: '2026-03-02T08:00', actualFinish: undefined,
+      } });
+      window.__OPS__!.store.getState().runCPM();
+    }, { id: dialogId, statusDate });
+    dialog = await openDialogByDoubleClick(page, dialogId);
+    const finishGroup = dialog.getByRole('group', { name: /^(Actual finish|Werkelijk einde|Werkelijke einde)$/i });
+    const segments = finishGroup.getByRole('textbox');
+    for (const [index, value] of ['13', '03', '2026'].entries()) await segments.nth(index).fill(value);
+    await dialog.locator('[data-ops-progress-slider]').focus();
+    await dialog.locator('[data-ops-task-save]').click();
+    await expect(dialog).toBeHidden();
+    await expect.poll(() => readTask(page, dialogId).then(task => task.actualFinish)).toBe(finish);
+    await recalculate(page);
+    expect((await readTask(page, dialogId)).earlyFinish).toBe(finish);
+  }
+  await page.screenshot({ path: 'qa/uren-f1b-status.png' });
 });
 
 test('Taak bewerken: voortgang alleen via de dialoog zet de status (gestart, voltooid)', async ({ page, ops: _ops }) => {
