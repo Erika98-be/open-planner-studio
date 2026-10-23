@@ -2,6 +2,7 @@ import { makeMcpContext } from '../mcp/harness';
 import { resolveEffectiveLagDays } from '@/engine/scheduler/CPMSolver';
 import { getTool } from '@/services/mcp/toolRegistry';
 import type { DistributionProposal } from '@/services/library/distribute';
+import type { TaskColumnId } from '@/types/taskGrid';
 import type { McpToolResult } from '@/services/mcp/contracts';
 import { capturePayload, hydratePayload } from '@/state/documentContract';
 import { freshPayload } from '@/state/documentContract';
@@ -215,6 +216,20 @@ for (const id of ['ops', 'p6', 'msproject'] as const) {
   const modern = payloadFromImport({ ...source, timeModel: 'MINUTES-1' }, null);
   eq('nieuw bestand normaliseert een ankerdatum ook', modern.tasks[0].time.earlyStart.includes('T'), true);
   eq('nieuw bestand heeft geen open omzetting', modern.minuteModelPending, false);
+}
+// T17: ook een gewone rastercel normaliseert; dit mag niet alleen bij meerdere relatiewrites lopen.
+{
+  const app = createAppStoreContext().store;
+  app.getState().setProject({ startDate: '2026-06-01', statusDate: '2026-06-10' });
+  const id = app.getState().addTask({ name: 'Rasterdatum', time: createDefaultTaskTime('2026-06-01', 1) });
+  const start = app.getState().runGridMutation([{ kind: 'cell-edit', taskId: id,
+    columnId: 'task.time.actualStart' as TaskColumnId, route: 'task-progress', value: '2026-06-03' }]);
+  eq('raster accepteert een oudere werkelijke start', start.ok, true);
+  eq('raster normaliseert één cel met D1', app.getState().tasks.find(t => t.id === id)!.time.actualStart, '2026-06-03T07:00');
+  const finish = app.getState().runGridMutation([{ kind: 'cell-edit', taskId: id,
+    columnId: 'task.time.actualFinish' as TaskColumnId, route: 'task-progress', value: '2026-06-04' }]);
+  eq('raster accepteert een ouder werkelijk einde', finish.ok, true);
+  eq('raster normaliseert één cel met D2', app.getState().tasks.find(t => t.id === id)!.time.actualFinish, '2026-06-04T16:00');
 }
 async function finish() {
   // Het echte MCP-oppervlak, ook een leesstap midden in een batch.

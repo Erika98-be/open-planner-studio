@@ -68,9 +68,12 @@ function setup(kind: Kind, statusDate: string | undefined, rows = 1, withPredece
   return { S, ids, time$, status$ };
 }
 
-/** Voltooid, met werkelijke start = werkelijk einde = `finish`, en geen omgekeerd paar. */
+/** Voltooid op de gekozen werkdag: D1 voor de start, D2 voor het einde; momenten blijven letterlijk. */
 function expectClamped(label: string, time: TaskTime, status: string | undefined, finish: string): void {
-  eq(`${label}: werkelijke start = werkelijk einde`, { as: time.actualStart, af: time.actualFinish }, { as: finish, af: finish });
+  const startInstant = finish.includes('T') ? finish : `${finish}T07:00`;
+  const finishInstant = finish.includes('T') ? finish : `${finish}T16:00`;
+  eq(`${label}: afgeleide start en einde volgen D1/D2`,
+    { as: time.actualStart, af: time.actualFinish }, { as: startInstant, af: finishInstant });
   eq(`${label}: geen einde vóór start`, isActualFinishBeforeStart(time), false);
   eq(`${label}: voltooid`, { completion: time.completion, status }, { completion: 1, status: 'COMPLETED' });
 }
@@ -198,6 +201,8 @@ for (const { kind, statusDate } of SCENARIOS) {
 
   // 8. Een EXPLICIET opgegeven werkelijke start blijft onaangeroerd.
   const explicitStart = kind === 'uur' ? '2026-06-03T09:00' : '2026-06-03';
+  const explicitStartInstant = kind === 'uur' ? explicitStart : `${explicitStart}T07:00`;
+  const statusFinishInstant = kind === 'uur' ? statusDate : `${statusDate}T16:00`;
   {
     const { S, ids, time$ } = setup(kind, statusDate);
     const t = ids[0]!;
@@ -206,7 +211,7 @@ for (const { kind, statusDate } of SCENARIOS) {
     eq(`${tag} expliciet: daarna 100% (enkele cel) geaccepteerd`,
       S().runGridMutation([cell(t, 'task.time.completion', 'task-progress', 1)]).ok, true);
     eq(`${tag} expliciet + raster enkel 100%: start blijft de opgegeven start`,
-      { as: time$(t).actualStart, af: time$(t).actualFinish }, { as: explicitStart, af: statusDate });
+      { as: time$(t).actualStart, af: time$(t).actualFinish }, { as: explicitStartInstant, af: statusFinishInstant });
   }
   {
     const { S, ids, time$ } = setup(kind, statusDate);
@@ -217,7 +222,7 @@ for (const { kind, statusDate } of SCENARIOS) {
     ])]);
     eq(`${tag} expliciet + raster meer (Actual Start + 100%): geaccepteerd`, res.ok, true);
     eq(`${tag} expliciet + raster meer (Actual Start + 100%): start blijft de opgegeven start`,
-      { as: time$(t).actualStart, af: time$(t).actualFinish }, { as: explicitStart, af: statusDate });
+      { as: time$(t).actualStart, af: time$(t).actualFinish }, { as: explicitStartInstant, af: statusFinishInstant });
   }
   {
     const { S, ids, time$ } = setup(kind, statusDate);
@@ -225,7 +230,7 @@ for (const { kind, statusDate } of SCENARIOS) {
     S().setActualStart(t, explicitStart);
     S().setTaskProgress(t, 1);
     eq(`${tag} expliciet + store setTaskProgress(1): start blijft de opgegeven start`,
-      { as: time$(t).actualStart, af: time$(t).actualFinish }, { as: explicitStart, af: statusDate });
+      { as: time$(t).actualStart, af: time$(t).actualFinish }, { as: explicitStartInstant, af: statusFinishInstant });
   }
   {
     // Een opgegeven paar met einde vóór start blijft geweigerd — niet stil geklemd.
@@ -268,7 +273,7 @@ for (const { kind, statusDate } of SCENARIOS) {
   // Dagtaak op dezelfde dag: start = einde was al zo, er valt niets te klemmen.
   const { S, ids, time$, status$ } = setup('dag', '2026-06-10', 1, false);
   const t = ids[0]!;
-  eq('dag zelfde dag: voorwaarde vroege start = statusdatum', time$(t).earlyStart, '2026-06-10');
+  eq('dag zelfde dag: vroege start volgt D1 van de statusdag', time$(t).earlyStart, '2026-06-10T07:00');
   S().setTaskProgress(t, 1);
   expectClamped('dag zelfde dag: store setTaskProgress(1)', time$(t), status$(t), '2026-06-10');
 }

@@ -973,11 +973,14 @@ export function prepareGridMutation(
       });
       if (!finalGraph.ok) errors.push(...relationCellErrors(finalGraph.errors));
     }
-    if (errors.length === 0 && appliedRelationWrites.length > 1) {
-      for (const [taskId, task] of draftTasksById) {
-        Object.assign(task, normalizeTaskDates(task, draft));
-        draftTasksById.set(taskId, task);
+    // T17 geldt voor elke invoerroute, ook één gewone datumcel of een plakactie.
+    if (errors.length === 0) {
+      for (const taskId of wroteTaskIds) {
+        const task = draftTasksById.get(taskId);
+        if (task) Object.assign(task, normalizeTaskDates(task, draft));
       }
+    }
+    if (errors.length === 0 && appliedRelationWrites.length > 1) {
       const finalRelationIndex = buildTaskRelationIndex(draft.tasks, draft.sequences, draft.cpmResult);
       for (const write of appliedRelationWrites) {
         if (!isParsedRelationTokenArray(write.value)) continue;

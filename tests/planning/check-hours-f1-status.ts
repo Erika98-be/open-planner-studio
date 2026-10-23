@@ -110,7 +110,7 @@ for (const c of cases) for (const route of ['dialoog', 'paneel', 'raster', 'plak
   eq('zonder statusdag blijft datumvorm staan', normalizeActualDate(f.task(), 'actualFinish',
     '2026-06-04', undefined, f.calendar), '2026-06-04');
   eq('paneel accepteert ouder feit', f.S().setActualFinish(f.id, '2026-06-04'), true);
-  eq('paneel bewaart ouder feit', f.task().time.actualFinish, '2026-06-04');
+  eq('F2-paneel normaliseert ouder feit met D2', f.task().time.actualFinish, '2026-06-04T16:00');
 }
 // Een gecombineerde MCP-invoer toetst het opgegeven einde vóór completion < 100 het wist.
 for (const [actualFinish, applied] of [
