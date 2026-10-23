@@ -1564,6 +1564,7 @@ nodig heeft. B2, B4 en B8 zijn besloten (2026-10-20) en bepalen F4. B9 = optie 1
   `allowMixedDayHour`.
 
 **F5a — Verliesvrije adapters voor duur, rest en lag (hoort bij de eerste release).**
+- Stand: F5a-1 bouwt I1–I3, I5–I7 en de urenmaat als importstandaard (T15), met minuutgetrouwe duur, rest en lag en gerichte rondgangen; F5a-2 volgt na F3 voor T13, T21 en de volledige dagenmaat-markering met records. De bestaande markering blijft leesbaar; voortgangsnormalisatie van gemarkeerde dagtaken blijft afhankelijk van F2.
 - Inhoud: I1, I2, I3, I5, I6, I7 (§1.3); T13 en T15 (§3.10); de OPS-markering voor de maat van taak en lag heen
   en terug (T21, §3.3).
 - Bestanden: `mspdiReader.ts`, `mspdiWriter.ts`, `p6xmlReader.ts`, `p6xmlWriter.ts`, `importDurations.ts`,

@@ -19,6 +19,7 @@ import { encodeCustomTaskType, OPS_DURATION_UNIT_NAME, toXmlDateTime } from '@/s
 import { p6ConstraintLabel } from './p6ConstraintTypes';
 import { leaf, node, renderP6XmlWithReport, P6_ID_MAX_LENGTH, type P6Node } from './p6xmlSchemaOrder';
 import { taskDurationUnit } from '@/engine/scheduler/duration';
+import { effHoursPerDay } from '@/utils/taskDuration';
 import { computedStart, computedFinish } from '@/utils/taskDates';
 import { P6_DURATION_TYPE_NAME, XER_DURATION_TYPE_TOKEN } from '@/engine/work/workRuleMapping';
 
@@ -539,12 +540,16 @@ export function writeP6XMLWithReport(
     const succObjId = taskObjMap.get(seq.successorId);
     if (predObjId === undefined || succObjId === undefined) continue;
 
-    let lagDays = Number.isFinite(seq.lagDays) ? seq.lagDays : 0;
+    const lagDays = Number.isFinite(seq.lagDays) ? seq.lagDays : 0;
+    let percentLagMinutes: number | undefined;
     if (typeof seq.lagPercent === 'number' && Number.isFinite(seq.lagPercent)) {
       const pred = taskById.get(seq.predecessorId);
-      const predDur = pred && !pred.isMilestone ? pred.time.scheduleDuration : 0;
-      lagDays = Math.round((predDur * seq.lagPercent) / 100);
-      console.warn(`P6-export: procent-lag (${seq.lagPercent}%) uitgebakken naar ${lagDays} dagen — P6 kent geen procent-lag.`);
+      const predCal = pred ? effCalByTask.get(pred.id) ?? calendar : calendar;
+      // De voorgangerduur is leidend, in minuten; nooit eerst naar hele dagen afronden (I6).
+      const predHpd = pred?.time.durationType === 'ELAPSEDTIME' ? 24 : effHoursPerDay(predCal);
+      const predMinutes = pred && !pred.isMilestone ? taskMinutesForWrite(pred, predHpd) : 0;
+      percentLagMinutes = Math.round(predMinutes * seq.lagPercent / 100);
+      console.warn(`P6-export: procent-lag (${seq.lagPercent}%) uitgebakken naar ${percentLagMinutes} minuten — P6 kent geen procent-lag.`);
     }
     if (seq.lagUnit === 'ELAPSEDTIME') {
       console.warn('P6-export: kalenderdag-lag geëxporteerd als gewone lag-uren — P6 heeft geen lag-eenheid per relatie.');
@@ -554,7 +559,8 @@ export function writeP6XMLWithReport(
     // al uitgebakken). Anders het `lagDays × hpd`-uren-pad.
     const hourLag = typeof seq.lagMinutes === 'number' && Number.isFinite(seq.lagMinutes)
       && !(typeof seq.lagPercent === 'number' && Number.isFinite(seq.lagPercent));
-    const lagHours = hourLag ? seq.lagMinutes! / 60 : durationToP6Hours(lagDays, calendar.hoursPerDay);
+    const lagHours = percentLagMinutes !== undefined ? percentLagMinutes / 60
+      : hourLag ? seq.lagMinutes! / 60 : durationToP6Hours(lagDays, calendar.hoursPerDay);
 
     inProject.push(node('Relationship', [
       ...leaf('Lag', lagHours),
